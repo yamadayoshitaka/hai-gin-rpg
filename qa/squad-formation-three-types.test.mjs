@@ -59,7 +59,9 @@ const html=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'ut
 assert.match(html,/openingPlan\.id='openingSquadStrategies'/);
 assert.match(html,/for\(const type of FORMATION_TYPES\)/);
 assert.match(html,/selectedSquadFormations\.set\('0:'\+id,type\)/);
-assert.match(html,/manualRatios\[id\]/);
+assert.match(html,/manualJobs\[id\]/);
+assert.match(html,/function openManualJobEditor\(id\)/);
+assert.doesNotMatch(html,/range\.type='range'/,'Job counts use buttons rather than sliders');
 assert.match(html,/refs\.buttons\.querySelectorAll\('button'\)/);
 assert.match(html,/refreshFormationPreview\(\)/);
 assert.match(html,/massWorker\?\.setSquadFormationTypes\(types,team,plan\.assignments,jobs\)/);
