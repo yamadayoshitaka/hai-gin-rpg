@@ -6,7 +6,12 @@
 #hud{display:none;position:fixed;top:10px;left:10px;z-index:5;background:#101e33e8;border:1px solid #5b91b5;padding:12px;border-radius:10px;max-width:min(90vw,350px)}#hud b{color:#f7dfa0}#hud small{display:block;color:#a9c7d9;margin-top:4px}
 #battleLoading{position:fixed;inset:0;z-index:40;background:linear-gradient(145deg,#071121,#132e4b);display:flex;align-items:center;justify-content:center;padding:24px;text-align:center}#battleLoading[hidden]{display:none}#loadingCard{width:min(440px,100%);max-height:calc(100dvh - 24px);overflow-y:auto;overscroll-behavior:contain;padding:26px 20px;border:1px solid #668eaf;border-radius:16px;background:#091c30;box-shadow:0 16px 50px #000b}#loadingCard h1{font-size:22px;color:#ffe1a7;margin:0 0 12px}#loadingStage{min-height:3em;line-height:1.5;color:#c8e0f2}#loadingBar{height:15px;background:#203952;border:1px solid #6589a2;border-radius:12px;overflow:hidden;margin:18px 0 8px}#loadingFill{height:100%;width:0%;background:linear-gradient(90deg,#4c9ccc,#a4dcc1);transition:width .15s}#loadingPercent{font-variant-numeric:tabular-nums;color:#ffe7a7;font-weight:700}#loadingError{white-space:pre-wrap;color:#ffc4c4;margin-top:12px}#loadingRetry{margin-top:12px}
 #jobTools{display:flex;gap:4px;flex-wrap:wrap;margin-top:7px}#jobTools select{background:#1a3857;color:white;border:1px solid #81b7d8;padding:7px;max-width:140px}#commands{position:fixed;bottom:12px;left:10px;z-index:5;width:min(265px,72vw);display:flex;flex-direction:column;gap:5px;background:#101e33ed;border:2px solid #a4b7d1;border-radius:6px;padding:10px;box-shadow:0 6px 20px #0009}#commands:before{content:'コマンド';color:#f7dfa0;font-weight:700;border-bottom:1px solid #68849d;padding-bottom:5px}#commands button{text-align:left;padding:9px 12px;border:0;background:transparent;border-radius:3px}#commands button:hover,#commands button:focus{background:#31577d}#commands button.active{background:#365d84;color:#ffe8a2}#commands button:before{content:'›  ';color:#e9c46d}#commands button.utility{font-size:11px;color:#b4c9db;border-top:1px solid #455b75}#hud{max-width:min(90vw,350px)}#selected{margin-top:8px;line-height:1.6}#endScreen{display:none;position:fixed;inset:0;background:#08111edb;z-index:20;align-items:center;justify-content:center;flex-direction:column;gap:15px;text-align:center}#endScreen h1{font-size:32px;color:#ffe4a0}#endScreen button{font-size:18px}button{background:#1a3857;color:#fff;border:1px solid #81b7d8;border-radius:8px;padding:11px 15px;font-weight:700}button:disabled{opacity:.4}#log{max-width:300px;white-space:pre-wrap;font-size:11px;color:#e8d39c;margin-top:5px}
-.actor-status{position:fixed;z-index:4;transform:translate(-50%,-100%);width:112px;padding:4px 5px;border:1px solid #b7c9dc99;border-radius:6px;background:#081827e8;color:#fff;text-align:center;font:10px system-ui;pointer-events:none}.actor-name{font-weight:700;margin-bottom:3px}.meter{height:13px;position:relative;background:#26313f;border-radius:3px;overflow:hidden;margin-top:2px}.meter>div{height:100%;background:#40c36e}.meter.mp>div{background:#328ddd}.meter span{position:absolute;inset:0;line-height:13px;text-shadow:0 1px 2px #000;font-weight:700}#cameraTools{position:fixed;top:12px;right:12px;z-index:8;display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;max-width:80vw}#cameraTools button{padding:9px 11px;background:#102a43e8;border:1px solid #8baeca;font-size:12px;box-shadow:0 2px 8px #0008}#cameraTools button.active{background:#3476a1}#stageViewport{position:fixed;inset:0 0 94px 0;overflow:hidden}#stageViewport canvas{width:100%;height:100%}#commands{position:fixed;left:0;right:0;bottom:0;width:100%;height:94px;z-index:9;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;padding:10px 8px calc(10px + env(safe-area-inset-bottom,0px));border:0;border-top:2px solid #6d91ad;border-radius:0;background:#0e2136;box-shadow:0 -3px 16px #0007}#commands:before{display:none}#commands button{font-size:13px;text-align:center;padding:8px 2px;border:1px solid #52728c;background:#1b3855;min-width:0}#commands button:before{display:none}#cameraTools{top:8px;right:8px}#cameraTools button{padding:7px 9px}@media(max-width:380px){#commands button{font-size:12px}}#battleStatus{position:fixed;bottom:94px;left:0;right:0;z-index:9;min-height:43px;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:5px 12px;background:#0d2235ed;border-top:1px solid #426783;color:#eaf5ff;font:12px system-ui;pointer-events:none}#battleStatus .unit{display:flex;flex-direction:column;gap:2px;min-width:0}#battleStatus .unit.enemy{text-align:right}#battleStatus .values{font-size:12px;white-space:nowrap}#stageViewport{bottom:137px!important}.actor-status{display:none!important}#commands{height:105px;grid-template-columns:1.1fr 1.1fr .65fr;grid-template-rows:1fr 22px;align-items:center;padding:8px;gap:4px}#commands label{font-size:10px;color:#a9cde3;display:flex;flex-direction:column;gap:4px}#commands select{min-width:0;width:100%;padding:9px 3px;color:#fff;background:#1a3857;border:1px solid #7199b6;border-radius:5px;font-size:13px}#commands button{height:42px}#unitInfo{grid-column:1/3;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-size:11px;color:#d4e5f1}#specShortcut{grid-column:3/4;align-self:center;text-align:center;color:#ffe0a3;background:#254762;border:1px solid #648ca6;border-radius:5px;padding:2px 5px;text-decoration:none;font-size:11px;font-weight:700;white-space:nowrap}#specShortcut:focus-visible{outline:2px solid #ffe0a3;outline-offset:2px}#battleStatus{bottom:105px}#stageViewport{bottom:145px!important}</style><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script></head>
+.actor-status{position:fixed;z-index:4;transform:translate(-50%,-100%);width:112px;padding:4px 5px;border:1px solid #b7c9dc99;border-radius:6px;background:#081827e8;color:#fff;text-align:center;font:10px system-ui;pointer-events:none}.actor-name{font-weight:700;margin-bottom:3px}.meter{height:13px;position:relative;background:#26313f;border-radius:3px;overflow:hidden;margin-top:2px}.meter>div{height:100%;background:#40c36e}.meter.mp>div{background:#328ddd}.meter span{position:absolute;inset:0;line-height:13px;text-shadow:0 1px 2px #000;font-weight:700}#cameraTools{position:fixed;top:12px;right:12px;z-index:8;display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;max-width:80vw}#cameraTools button{padding:9px 11px;background:#102a43e8;border:1px solid #8baeca;font-size:12px;box-shadow:0 2px 8px #0008}#cameraTools button.active{background:#3476a1}#stageViewport{position:fixed;inset:0 0 94px 0;overflow:hidden}#stageViewport canvas{width:100%;height:100%}#commands{position:fixed;left:0;right:0;bottom:0;width:100%;height:94px;z-index:9;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;padding:10px 8px calc(10px + env(safe-area-inset-bottom,0px));border:0;border-top:2px solid #6d91ad;border-radius:0;background:#0e2136;box-shadow:0 -3px 16px #0007}#commands:before{display:none}#commands button{font-size:13px;text-align:center;padding:8px 2px;border:1px solid #52728c;background:#1b3855;min-width:0}#commands button:before{display:none}#cameraTools{top:8px;right:8px}#cameraTools button{padding:7px 9px}@media(max-width:380px){#commands button{font-size:12px}}#battleStatus{position:fixed;bottom:94px;left:0;right:0;z-index:9;min-height:43px;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:5px 12px;background:#0d2235ed;border-top:1px solid #426783;color:#eaf5ff;font:12px system-ui;pointer-events:none}#battleStatus .unit{display:flex;flex-direction:column;gap:2px;min-width:0}#battleStatus .unit.enemy{text-align:right}#battleStatus .values{font-size:12px;white-space:nowrap}#stageViewport{bottom:137px!important}.actor-status{display:none!important}#commands{height:105px;grid-template-columns:1.1fr 1.1fr .65fr;grid-template-rows:1fr 22px;align-items:center;padding:8px;gap:4px}#commands label{font-size:10px;color:#a9cde3;display:flex;flex-direction:column;gap:4px}#commands select{min-width:0;width:100%;padding:9px 3px;color:#fff;background:#1a3857;border:1px solid #7199b6;border-radius:5px;font-size:13px}#commands button{height:42px}#unitInfo{grid-column:1/3;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-size:11px;color:#d4e5f1}#specShortcut{grid-column:3/4;align-self:center;text-align:center;color:#ffe0a3;background:#254762;border:1px solid #648ca6;border-radius:5px;padding:2px 5px;text-decoration:none;font-size:11px;font-weight:700;white-space:nowrap}#specShortcut:focus-visible{outline:2px solid #ffe0a3;outline-offset:2px}#battleStatus{bottom:105px}#stageViewport{bottom:145px!important}</style><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script><style id="realTownModeStyle">
+body.town-mode > :not(#stageViewport):not(#battleLoading):not(script):not(style){display:none!important}
+body.town-mode #stageViewport{position:fixed!important;inset:0!important;width:100%!important;height:100dvh!important}
+body.town-mode #stageViewport canvas{width:100%!important;height:100%!important}
+body.town-mode #battleLoading[hidden]{display:none!important}
+</style></head>
 <body><div id="hud"><b>灰銀戦記 ― 沈黙の星鐘 — リアルタイム軍団戦 v4.6.49</b><small>自動戦闘・階段移動 / 開戦時固定作戦と部隊号令 / ドラッグで視点回転</small><div id="selected">軍団配置中…</div><div id="log"></div><div id="jobTools" style="display:none"><select id="jobSelect"></select><select id="motionSelect"></select><button id="playMotion">動作再生</button></div><small><a style="color:#9adfff" href="./motion-external-test.html">外部モーション検証</a></small></div><div id="stageViewport"></div><div id="battleStatus" aria-live="polite"><div class="unit" id="allyStats">味方 HP -- / MP --</div><div class="unit enemy" id="enemyStats">敵 HP -- / MP --</div></div><button id="menuToggle" style="position:fixed;top:68px;left:10px;z-index:25;background:#203c55;color:white;padding:9px 15px;border:1px solid #9bb4c7;border-radius:8px">☰ メニュー</button><div id="commands"><label>全軍作戦<select id="strategy"><option value="eliminate">全滅</option><option value="environment_prepare">環境整備</option><option value="recovery">回復</option></select></label><label hidden aria-hidden="true">個別命令<select id="unitOrder" disabled><option value="inherit">全軍に従う</option><option value="charge">突撃</option><option value="defend">防御</option><option value="hold">陣地維持</option><option value="retreat">後退</option></select></label><button id="pause">一時停止</button><button id="igniteBridge" disabled style="position:fixed;right:8px;bottom:157px;z-index:12;background:#9b4026;color:white;border-radius:7px;padding:9px">🔥 木橋を燃やす</button><span id="unitInfo">味方をタップして個別指示</span><a id="specShortcut" href="./battle-specifications.html" target="_blank" rel="noopener" aria-label="ゲーム仕様一覧を別タブで開く">📖 仕様</a></div>
 <style>
 #commands,#menuToggle{display:none!important}#allySquadRibbon[hidden],#enemySquadRibbon[hidden]{display:none!important}
@@ -605,6 +610,9 @@ function loadingProgress(stage,percent){
 loadingProgress('地形・建造物を構築中…',5);
 await new Promise(resolve=>requestAnimationFrame(()=>setTimeout(resolve,0)));
 const battleParams=new URLSearchParams(location.search);
+const TOWN_MODE=battleParams.get('town')==='1';
+const TOWN_STAGE_ID=battleParams.get('townStage')||'c01-s01';
+if(TOWN_MODE)document.body.classList.add('town-mode');
 const storyRequest=(()=>{
  if(battleParams.get('storyBattle')!=='1')return null;
  try{const data=JSON.parse(sessionStorage.getItem('hai-gin-story-sortie-v1')||'null');
@@ -1497,7 +1505,7 @@ function hutShotClear(from,to){
 
 // 大規模モードは実際のワールドを使い、全員を既存7頭身・衣装の実メッシュで描画。
 // 先頭24体は独立スケルトン、その他は同じ実メッシュのGPUインスタンス。
-const TEAM_SIZE=MASS_SIZE?12:50,BATTLE_SIZE=TEAM_SIZE*2;
+const TEAM_SIZE=TOWN_MODE?6:MASS_SIZE?12:50,BATTLE_SIZE=TOWN_MODE?6:TEAM_SIZE*2;
 let massSim=null,skirmishActions=null,combatObjectRenderer=null;
 // Shared flight/seat phase for riders AND their independently instanced mounts.
 let creatureVisualTime=0;
@@ -2315,11 +2323,13 @@ const spawnOutside=(x,z,team)=>{
 const randomRosters=[randomJobRoster(JOBS,TEAM_SIZE),randomJobRoster(JOBS,TEAM_SIZE)];
 for(let team=0;team<2;team++)for(let i=0;i<TEAM_SIZE;i++){
  const storyUnit=storyRequest&&team===0?storyRequest.units[i]:null;
- if(storyRequest&&(team===0&&!storyUnit||team===1&&i>=storyRequest.enemyCount))continue;
- const job=storyUnit?JOBS.find(j=>j.name===storyUnit.job)||randomRosters[team][i]:randomRosters[team][i];
+ if((TOWN_MODE&&team===1)||(storyRequest&&(team===0&&!storyUnit||team===1&&i>=storyRequest.enemyCount)))continue;
+ const job=TOWN_MODE?(i===0?JOBS.find(j=>j.name==='剣士'):JOBS[(i*2+1)%JOBS.length]):storyUnit?JOBS.find(j=>j.name===storyUnit.job)||randomRosters[team][i]:randomRosters[team][i];
  const monsterId=storyRequest?.enemyMode==='monsters'&&team===1?storyRequest.enemyMonsterIds?.[i%storyRequest.enemyMonsterIds.length]:null;
  const monsterSpec=monsterId?MONSTER_CATALOG.find(m=>m.id===monsterId)||null:null;
- const root=createSoldier(job,team),formation=storyUnit?placeStoryFormation(team,storyUnit):placeFormation(team,i,job),candidate=gridFromWorld(formation);
+ const root=createSoldier(job,team),formation=TOWN_MODE?
+ new THREE.Vector3(((i===0?178:168+(i%3)*5)-6)*CELL,0,((i===0?119:112+Math.floor(i/3)*8)-6)*CELL):
+ storyUnit?placeStoryFormation(team,storyUnit):placeFormation(team,i,job),candidate=gridFromWorld(formation);
  if(massSim){for(const child of [...root.children])if(child!==root.userData.ring)root.remove(child);root.userData.ring.visible=false;}
  let cell=null;
  if(!cell)cell=spawnOutside(candidate.x,candidate.z,team);
@@ -2328,6 +2338,79 @@ for(let team=0;team<2;team++)for(let i=0;i<TEAM_SIZE;i++){
  root.position.set(pos.x,terrainY(pos.x,pos.z),pos.z);root.rotation.y=team===0?Math.PI/2:-Math.PI/2;scene.add(root);
  const actor={id:team*TEAM_SIZE+i,team,job,monsterSpec,jobId:combatJobId(job.name),rarity:storyUnit?.rarity||(i%13===0?'UR':i%3===0?'R':'N'),root,cell,nextCell:null,defeated:false,hp:job.hp,maxHp:job.hp,mp:COMBAT_RULES.maxMp,maxMp:COMBAT_RULES.maxMp,speed:job.speed,jumpY:job.jumpY,jumping:false,attackTimer:Math.random()*2,thinkTimer:Math.random()*.4,order:null,targetId:null,home:pos.clone(),velocity:new THREE.Vector3(),walkPhase:0,
   squadId:storyUnit?.squadId??Math.floor(i/Math.max(10,Math.ceil(TEAM_SIZE/5))),commanderId:storyUnit?.commanderId??'provisional'};actors.push(actor);occupiedCells.set(cellKey(cell.x,cell.z),actor)
+}
+// Peaceful town mode drives the ORIGINAL battle map and rigged character models.
+// No substitute primitives, replica terrain, or substitute stage renderer.
+const townInput={x:0,y:0};
+const townAvatar=()=>actors[0]||null;
+function townPost(type,extra={}){
+ if(!TOWN_MODE)return;
+ try{parent.postMessage({type,stageId:TOWN_STAGE_ID,source:'real-battle-stage',...extra},location.origin)}
+ catch(error){console.warn('[Town] cannot notify hub',error)}
+}
+function townFacility(){
+ const a=townAvatar();if(!a)return;
+ const x=a.root.position.x/CELL+6,z=a.root.position.z/CELL+6;
+ const matches=townInstances.map(b=>{
+  const bx=b.data.x,bz=b.data.z;
+  const dx=Math.max(0,Math.abs(x-bx)-b.data.w/2);
+  const dz=Math.max(0,Math.abs(z-bz)-b.data.d/2);
+  return {b,dist:Math.hypot(dx,dz)};
+ }).sort((v,w)=>v.dist-w.dist);
+ const nearest=matches[0];
+ if(!nearest||nearest.dist>8){
+  townPost('hai-gin-town-notice',{text:'近くの建物に移動して施設を利用してください。'});
+  return;
+ }
+ const kind=nearest.b.data.kind;
+ const panel=['weapon','shop'].includes(kind)?'shop':kind==='inn'||kind==='church'?'save':
+  kind==='castle'?'story':'formation';
+ townPost('hai-gin-town-facility',{panel});
+}
+window.addEventListener('message',event=>{
+ if(!TOWN_MODE||event.origin!==location.origin||event.source!==parent)return;
+ const data=event.data||{};
+ if(data.stageId!==TOWN_STAGE_ID)return;
+ if(data.type==='hai-gin-town-input'){
+  const x=Number(data.x),y=Number(data.y);
+  townInput.x=Number.isFinite(x)?Math.max(-1,Math.min(1,x)):0;
+  townInput.y=Number.isFinite(y)?Math.max(-1,Math.min(1,y)):0;
+ }else if(data.type==='hai-gin-town-interact')townFacility();
+ else if(data.type==='hai-gin-town-view'){
+  const a=townAvatar();if(!a)return;
+  const focus=a.root.position.clone().add(new THREE.Vector3(0,1.2,0));
+  const close=camera.position.distanceTo(controls.target)<15;
+  controls.target.copy(focus);
+  camera.position.copy(focus).add(close?new THREE.Vector3(12,11,15):new THREE.Vector3(5,5,8));
+  controls.update();
+ }
+});
+function updateTownAvatar(dt){
+ const a=townAvatar();if(!a||!battleReady)return;
+ const mx=townInput.x,my=townInput.y;
+ if(Math.hypot(mx,my)>.12){
+  const cam= camera.position.clone().sub(controls.target),yaw=Math.atan2(cam.x,cam.z);
+  const length=Math.max(1,Math.hypot(mx,my)),forward=-my/length,side=mx/length;
+  const dx=(side*Math.cos(yaw)+forward*Math.sin(yaw))*dt*6.2;
+  const dz=(-side*Math.sin(yaw)+forward*Math.cos(yaw))*dt*6.2;
+  const old=a.root.position;
+  const tryAxis=(nx,nz)=>{
+   const cell=gridFromWorld(new THREE.Vector3(nx,0,nz));
+   if(!availableCell(cell.x,cell.z,a))return false;
+   const blocked=townBuildings.some(b=>Math.abs(nx/CELL+6-b.x)<b.w/2+.6&&Math.abs(nz/CELL+6-b.z)<b.d/2+.6);
+   if(blocked)return false;
+   const oldKey=cellKey(a.cell.x,a.cell.z),newKey=cellKey(cell.x,cell.z);
+   if(oldKey!==newKey){occupiedCells.delete(oldKey);occupiedCells.set(newKey,a);a.cell=cell;}
+   a.root.position.set(nx,terrainY(nx,nz),nz);return true;
+  };
+  tryAxis(old.x+dx,old.z);
+  tryAxis(a.root.position.x,a.root.position.z+dz);
+  a.root.rotation.y=Math.atan2(dx,dz);
+  a.lastMovedAt=elapsed;
+ }
+ const anchor=a.root.position.clone().add(new THREE.Vector3(0,1.2,0));
+ const diff=anchor.sub(controls.target);
+ controls.target.add(diff);camera.position.add(diff);
 }
 // 実物の衣装と7頭身モデルを各職業で1回だけ準備し、同じ実メッシュを一括描画する。
 if(massSim){
@@ -6573,7 +6656,8 @@ function animate(){
  simAccumulator+=dt;
  massRenderFrame++;massRenderDelta=paused?0:Math.max(.001,dt);
  if(!paused)creatureVisualTime+=dt;
- while(simAccumulator>=.05){tickAI(.05);simAccumulator-=.05}
+ if(TOWN_MODE){elapsed+=dt;updateTownAvatar(dt);simAccumulator=0;}
+ else while(simAccumulator>=.05){tickAI(.05);simAccumulator-=.05}
  if(!paused){updateActiveSquadBuffVfx();actionVfx.update(dt);}
  updateSquadMarkerPositions(dt);
  if(riverFlow)riverFlow.offset.y-=dt*.07;
@@ -6596,7 +6680,7 @@ function animate(){
   controls.update();followCamera=old.follow;
  }
   actorVisibility.beginFrame(performance.now()/1000);
-  if(skirmishDistanceLod)skirmishDistanceLod.update(camera,elapsed,paused);
+  if(skirmishDistanceLod&&!TOWN_MODE)skirmishDistanceLod.update(camera,elapsed,paused);
   if(!massSim&&elapsed-lastCorpseVisibilityAt>=.8){
    lastCorpseVisibilityAt=elapsed;
    // Cap full-rig corpses; otherwise dozens of dead bodies still submit
@@ -6653,7 +6737,7 @@ function animate(){
       ((!a.nextCell&&!a.jumping)||(a.mountId&&mountedCreatureOf(a)?.flying)))
     a.root.position.y=terrainY(a.root.position.x,a.root.position.z)+riderElevation(a,creatureVisualTime);
    if(!visual.visible)continue;
-   const skirmishVisual=!massSim?smoothSkirmishRenderPosition(a,paused?0:dt):null;
+   const skirmishVisual=!massSim&&!TOWN_MODE?smoothSkirmishRenderPosition(a,paused?0:dt):null;
   if(a.character){
     if(a.crowdSampling)continue;
     // Restore the unmodified clip pose before sampling the next frame. This
@@ -6819,7 +6903,7 @@ async function finishBattleLoading(){
   await installBattleModels();
   // The original photographed live rigs represent tiny faraway actors.
   // Near characters continue to use their complete rig, texture and outfit.
-  if(!massSim&&!storyRequest){
+  if(!TOWN_MODE&&!massSim&&!storyRequest){
    try{
     skirmishDistanceLod=await createSkirmishDistanceLod(scene,renderer,actors,{threshold:45});
    }catch(error){
@@ -6828,6 +6912,21 @@ async function finishBattleLoading(){
    }
   }
   if(massSim)await prepareMassRenderer();
+  if(TOWN_MODE){
+   loadingProgress('町の3D地形・城・人物の準備完了',100);
+   battleAudio.disable();
+   const hero=townAvatar();
+   if(!hero)throw Error('町のプレイヤーモデルが見つかりません。');
+   controls.enablePan=false;controls.enableZoom=true;controls.minDistance=3;controls.maxDistance=24;
+   controls.target.copy(hero.root.position).add(new THREE.Vector3(0,1.2,0));
+   camera.position.copy(controls.target).add(new THREE.Vector3(7,7,10));
+   controls.update();battleReady=true;loading.hidden=true;
+   // No battle ceremony, no enemy, no squad tactics. Just the real 3D stage.
+   document.title='灰銀戦記 ― '+selectedStage.name+'（町探索）';
+   clock.getDelta();animate();
+   townPost('hai-gin-town-stage-ready',{preset:selectedStage.id,buildings:townInstances.length,actors:actors.length});
+   return;
+  }
   loadingProgress('戦闘AIの起動を確認中…',96);
   if(massWorker){
    const limit=performance.now()+6000;
