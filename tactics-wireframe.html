@@ -4137,6 +4137,19 @@ function renderBattleItemManagement(){
  itemTargetSelect.value=hasTarget?String(lastBattleItemTarget):String(weakest?.id??allyUnits[0]?.id??'');
  itemTargetSelect.onchange=()=>lastBattleItemTarget=itemTargetSelect.value;
  targetRow.append(itemTargetSelect);itemPanel.append(targetRow);
+ const squadRow=document.createElement('label');
+ squadRow.style.cssText='display:grid;gap:5px;font:12px system-ui;margin:9px 0';
+ squadRow.textContent='部隊全体に使う（効果は選択した隊だけ）';
+ const itemSquadSelect=document.createElement('select');itemSquadSelect.id='battleItemsSquad';
+ itemSquadSelect.style.cssText='padding:8px;background:#183d5a;color:white;border:1px solid #7199b6;border-radius:6px';
+ for(const id of squadIds){
+  const option=document.createElement('option');option.value=id;option.textContent=squadName(id);
+  itemSquadSelect.append(option);
+ }
+ const defaultSquad=String(lastBattleItemSquad??selectedSquadId??allyUnits[0]?.squadId??'');
+ itemSquadSelect.value=squadIds.includes(defaultSquad)?defaultSquad:squadIds[0]??'';
+ itemSquadSelect.onchange=()=>lastBattleItemSquad=itemSquadSelect.value;
+ squadRow.append(itemSquadSelect);itemPanel.append(squadRow);
  const inventoryHeading=document.createElement('h3');inventoryHeading.textContent='所持アイテム';
  inventoryHeading.style.cssText='font-size:14px;margin:10px 0 6px';itemPanel.append(inventoryHeading);
  const inventory=roomItemRegistry.owned();
@@ -4186,7 +4199,52 @@ function renderBattleItemManagement(){
    lastBattleItemTarget=itemTargetSelect.value;
    renderBattleItemManagement();
   };
-  row.append(label,use,give);inventoryList.append(row);
+  const squadUse=document.createElement('button');
+  squadUse.type='button';
+  const type=ROOM_ITEM_TYPES[stack.itemId];
+  squadUse.textContent=type?.kind==='heal'?'✨ 隊全体を回復':
+   type?.kind==='squad_buff'?'✨ 隊全体を強化':'部隊使用不可';
+  squadUse.disabled=!['heal','squad_buff'].includes(type?.kind)||!allyUnits.length;
+  squadUse.onclick=()=>{
+   const id=itemSquadSelect.value;
+   const members=allyUnits.filter(u=>String(u.squadId)===id);
+   if(!members.length)return;
+   if(type.kind==='heal'&&!members.some(u=>u.hp<u.maxHp)){
+    log(squadName(id)+'は負傷者がいません。回復薬を消費しません');return;
+   }
+   const supply=roomItemRegistry.consumeSquad(stack.ownerId,stack.itemId);
+   if(!supply)return;
+   let effect='';
+   if(supply.kind==='heal'){
+    const result=massSim?massSim.healSquadFromItem(id,supply.squadHealHp):
+     applySquadHeal(actors,id,supply.squadHealHp);
+    if(massWorker?.active)massWorker.healSquadItem(id,supply.squadHealHp);
+    effect='部隊合計HP +'+Math.round(result.total)+'／回復 '+result.affected+'人（上限'+supply.squadHealHp+'HP）';
+   }else{
+    const buff={attack:supply.attack||0,defense:supply.defense||0,speed:supply.speed||0};
+    if(massSim){
+     massSim.applySquadItemBuff(id,supply.id,buff,supply.duration);
+     if(massWorker?.active)massWorker.buffSquadItem(id,supply.id,buff,supply.duration);
+    }else activateSkirmishSquadItemBuff(id,supply);
+    effect=supply.description||'部隊強化 '+supply.duration+'秒';
+   }
+   lastBattleItemSquad=id;
+   if(owner)owner.inventory=roomItemRegistry.owned(owner.id).map(item=>({
+    id:item.itemId,name:item.name,quantity:item.quantity
+   }));
+   itemPanel.hidden=true;
+   battleCeremony.showOrder('🎒 '+supply.name+'：'+squadName(id),effect);
+   beginCommanderCinematic(id);
+   emitSquadBuffEffect(id,supply.kind==='heal'?'nature':
+    supply.defense?'earth':supply.speed?'arcane':'fire');
+   battleAudio.orderFanfare();
+   battleDialogue.push({key:'squad-item:'+id+':'+supply.id+':'+Math.floor(elapsed*10),
+    speaker:'軍師',kind:'success',priority:98,forceDisplay:true,squadId:id,
+    text:squadName(id)+'が'+supply.name+'を使用！ '+effect});
+   log(squadName(id)+'：'+supply.name+'／'+effect);
+   updateUI();
+  };
+  row.append(label,use,give,squadUse);inventoryList.append(row);
  }
  itemPanel.append(inventoryList);
  const roomHeading=document.createElement('h3');roomHeading.textContent='各部屋の配置・取得状況';
