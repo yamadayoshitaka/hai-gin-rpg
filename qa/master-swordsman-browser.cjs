@@ -42,6 +42,8 @@ function changed(a,b,threshold=48){
    throw Error('Visible upper eyelids missing; blank staring eye regression');
   if(!Number.isFinite(data.openEyeClearanceRatio)||data.openEyeClearanceRatio<.04)
    throw Error('Upper lids close the eyes at rest, despite open-eye state: '+data.openEyeClearanceRatio);
+  if(data.fittedNativeOcularMeshes!==4)
+   throw Error('Actual native eye spheres were not fitted back into the sockets: '+data.fittedNativeOcularMeshes);
   if(data.visibleIrisMeshes!==2||data.realPupilMeshes!==2)
    throw Error('White-eye regression: visible real pupil/iris overlays missing '+JSON.stringify(data));
   if(data.shoulderAlignment?.plateGroups!==2||
