@@ -12,7 +12,7 @@ import {createSwordsmanAppearance,SWORDSMAN_FACE_KEYS}
  from './master-swordsman-1000-appearance.js';
 
 const definitions=[
- ['hero-01','端正な美少年','hero',3,
+ ['hero-01','美少年化改修中・外観未承認','hero',3,
   [.07,.16,.43,.08,.18,.14,.25],'#e7bca4','#4e80a7','#30242b','#263d5e','#bfc5ce',.91,1.085,.78],
  ['hero-02','クール系美少年','hero',9,
   [.18,.15,.55,.10,.17,.26,.38],'#d4a68c','#537482','#241f26','#2f394f','#a8b6bf',.93,1.12,.78],
