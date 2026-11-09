@@ -4809,8 +4809,11 @@ function buildSquadQuickCommands(){
  const ratio=survivors.length/Math.max(1,members.length);
  const jobs=new Set(survivors.map(u=>u.jobId||u.job?.id||''));
  const general=squadStrategist(id);
- const recommended=ratio<=.35?'retreat':
-    jobs.has('archer')||jobs.has('ninja')?'defend':'charge';
+ // Recommend based on this squad's live health, jobs, usable inventory and active effects.
+ const activeBuffIds=[...activeSquadBuffVfx].filter(([key,value])=>
+  key.startsWith(id+':')&&value.until>elapsed).map(([key])=>key.slice(id.length+1));
+ const advice=recommendBattleTactics(members,allyItemStocks(),{activeBuffIds});
+ const recommended=advice.order;
  const heading=text=>{
   const node=document.createElement('div');node.className='quickGroup';
   node.textContent=text;squadQuickList.appendChild(node);
@@ -4832,6 +4835,23 @@ function buildSquadQuickCommands(){
  // Individual structure/target missions remain part of story/AI logic,
  // but manual tactical control is now limited to squads and destinations.
  const cooldown=squadOrderCooldownSeconds(id);
+ heading('★ 推奨号令');
+ add('★ '+({charge:'⚔ 突撃',defend:'🛡 守備',hold:'⏸ 待機',retreat:'↘ 退却'}[advice.order]||advice.order)+
+  '（'+advice.orderReason+'）','recommend_order',()=>{
+  if(issueSquadOrder(advice.order))closeSquadTactics();
+ });
+ heading('★ 推奨アイテム');
+ const recommendedStock=allyItemStocks().find(x=>x.itemId===advice.itemId);
+ const recommendedType=ROOM_ITEM_TYPES[advice.itemId];
+ add(recommendedType?'✨ '+recommendedType.name+' ×'+
+    allyItemStocks().filter(x=>x.itemId===advice.itemId).reduce((sum,x)=>sum+x.quantity,0)+
+    '（'+advice.itemReason+'）':'所持品に使用可能なアイテムなし',
+   'recommend_item',()=>{
+    if(advice.itemId&&useSquadBattleItem(advice.itemId,id))closeSquadTactics();
+   },{needsCommander:false,enabled:Boolean(commander&&recommendedStock&&recommendedType)});
+ add('🎒 別のアイテムを選ぶ','item_picker',()=>{
+  closeSquadTactics();openBattleItemsForSquad(id);
+ },{needsCommander:false,enabled:allyItemStocks().length>0});
  heading(cooldown?'号令：再変更まであと'+cooldown+'秒':'号令：タップですぐ実行');
  instant('⚔ 突撃','charge');instant('🛡 守備','defend');
  instant('⏸ 待機','hold');instant('↘ 退却','retreat');
