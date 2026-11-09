@@ -178,7 +178,7 @@ export class CombatActionRuntime {
     damage *= defensiveDamageMultiplier(target,element);
     if ((target.guardUntil || 0) > this.time) damage *= .45;
     if ((target.absorbUntil || 0) > this.time) { target.hp = Math.min(target.maxHp, target.hp + damage * .25); damage *= .5; }
-    damage = Math.max(0, Math.round(damage));
+    damage = Math.max(0, Math.round(damage * .5));
     const lostHp=Math.min(target.hp,damage);
     target.hp = Math.max(0, target.hp - damage);
     target.hitFlash = .22;
@@ -225,7 +225,7 @@ export class CombatActionRuntime {
   }
   damageObject(o, amount, attacker = null, element = 'physical', linked = false) {
     if (!o?.alive || o.category === 'structure' && o.opened) return 0;
-    const damage = Math.max(0, Math.round(amount * (1 + (attacker?.attackBonus || 0)) *
+    const damage = Math.max(0, Math.round(amount * .5 * (1 + (attacker?.attackBonus || 0)) *
       (1 + (attacker?.strategistAttackBonus || 0)) *
       (1 + (attacker?.itemAttackBonus || 0))));
     if (o.category === 'structure') {
@@ -547,7 +547,7 @@ export class CombatActionRuntime {
   /** Shared HP pipeline for fire, spells, C4 and direct hits. */
   hitStructure(o,power,element,{x=o.x,z=o.z}={}) {
     if (!o?.alive || o.category !== 'structure' || !(power > 0)) return 0;
-    const damage=Math.min(o.hp,Math.max(1,Math.round(power)));
+    const damage=Math.min(o.hp,Math.max(1,Math.round(power*.5)));
     o.hp-=damage;this.objectDamage+=damage;
     this.event('structureHit',{objectId:o.id,x,z,effect:element,damage,hp:o.hp,maxHp:o.maxHp});
     if(o.hp===0){o.blocking=false;this.removeObject(o,'destroyed');this.openNavigationCell(o);}
