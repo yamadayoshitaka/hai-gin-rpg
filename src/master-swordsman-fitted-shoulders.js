@@ -120,6 +120,57 @@ export function slimSourceTunicUpperSilhouette(tunic,body,{
 }
 
 /**
+ * Remove only dangling outer-arm triangles of the source T-pose sleeve.
+ * They are what look like two floating black fins after converting the
+ * Viking garment to the narrower A-pose body. Keep the torso, back surface,
+ * UV map and original licensed source untouched.
+ */
+export function trimDanglingTunicSleeveFins(tunic,body){
+ if(!tunic?.isMesh||!body)throw Error('Body/tunic required for sleeve hem trimming');
+ const fit=measureSwordsmanShoulders(body,tunic);
+ const original=tunic.geometry,pos=original.getAttribute('position');
+ if(!pos)throw Error('Source garment position buffer unavailable');
+ const idx=original.getIndex(),count=idx?.count||pos.count;
+ if(count%3!==0)throw Error('Cloth mesh must consist of triangles');
+ tunic.updateWorldMatrix(true,false);
+ const centerX=new THREE.Box3().setFromObject(body).getCenter(new THREE.Vector3()).x;
+ const span=Math.abs(fit.right.x-centerX);
+ const outside=span+.027,hemY=fit.right.y-.19;
+ const get=i=>idx?idx.getX(i):i;
+ const coords=[new THREE.Vector3(),new THREE.Vector3(),new THREE.Vector3()];
+ const keep=[];let removed=0,lowerArmTriangles=0;
+ for(let i=0;i<count;i+=3){
+  for(let k=0;k<3;k++)
+   coords[k].fromBufferAttribute(pos,get(i+k)).applyMatrix4(tunic.matrixWorld);
+  const out=coords.filter(p=>Math.abs(p.x-centerX)>outside).length;
+  const yMin=Math.min(...coords.map(p=>p.y));
+  const yAvg=coords.reduce((sum,p)=>sum+p.y,0)/3;
+  // Never cut torso or a triangle whose vertices don't belong to the
+  // outer sleeve, even if the same height occurs down at the waist.
+  const dangling=out>=2&&yMin<hemY&&yAvg<hemY+.045;
+  if(dangling){removed++;lowerArmTriangles++;continue}
+  keep.push(get(i),get(i+1),get(i+2));
+ }
+ if(removed){
+  const preview=original.clone();
+  preview.setIndex(keep);
+  preview.computeVertexNormals();
+  preview.computeBoundingBox();preview.computeBoundingSphere();
+  tunic.geometry=preview;
+ }
+ return Object.freeze({
+  removedDanglingTriangles:removed,
+  originalTriangleCount:count/3,
+  remainingTriangleCount:keep.length/3,
+  originalUvPreserved:tunic.geometry.getAttribute('uv')?.count===original.getAttribute('uv')?.count,
+  originalClothSourceUnmodified:true,
+  torsoBackNotTrimmed:true,
+  hemY:Number(hemY.toFixed(4)),
+  previewOnly:true
+ });
+}
+
+/**
  * A sealed 360-degree sleeve bridge. The earlier preview used a single thin
  * cylinder and sometimes showed the front yet left a missing rear shoulder
  * wedge. Here each of the four rings has full back/front faces, a gentle
