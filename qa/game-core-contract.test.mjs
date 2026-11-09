@@ -109,7 +109,8 @@ for(const name of ['game.html','town-hub.html','town-stage-scene.html','world-ma
 }
 const townHtml=fs.readFileSync(path.join(base,'town-hub.html'),'utf8');
 const sceneHtml=fs.readFileSync(path.join(base,'town-stage-scene.html'),'utf8');
-assert.ok(townHtml.includes('src="./tactics-wireframe.html?town=1&amp;stage=royal-castle&amp;townStage=c01-s01"'),
+assert.ok(townHtml.includes('src="about:blank"'),'Heavy 3D town must only load after game stage is resolved');
+assert.ok(townHtml.includes("townSceneUrl='./tactics-wireframe.html?town=1&stage='"),
  'Town must directly embed the original stage/character engine, not a re-created map');
 assert.ok(!townHtml.includes('play-v23-1.html'),'Legacy action scene is not the campaign town');
 assert.ok(!townHtml.includes('<iframe id="townScene" src="./town-stage-scene.html'),'Do not use the simplified duplicate town renderer');
