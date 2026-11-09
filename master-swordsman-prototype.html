@@ -668,6 +668,8 @@ const loader=new GLTFLoader();
    $('bodyStudyMode').value='anatomy';
    syncAnatomyPreview();refreshWireDisplay();
   }
+  // Deep-link to an actual enlarged 3D portrait for face topology QA.
+  if(qs.get('view')==='portrait')targetView('portrait','front');
   if(['1','overlay','only'].includes(qs.get('wire'))){
    meshMode=qs.get('wire')==='only'?'wire':'overlay';
    $('meshMode').value=meshMode;refreshWireDisplay();
