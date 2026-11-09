@@ -4725,7 +4725,7 @@ function refreshSquadOrderLabel(){
  $('squadTacticsName').textContent=squadName(id);
  const commanderReason=squadCommanderUnavailableReason(id);
  $('squadTypeStatus').dataset.commandReason=commanderReason;
- $('squadTypeStatus').textContent='編成：'+FORMATION_NAMES[selectedSquadType(id)]+'（開戦後変更不可）'｜'+
+ $('squadTypeStatus').textContent='編成：'+FORMATION_NAMES[selectedSquadType(id)]+'（開戦後変更不可）｜'+
   (commanderReason||'軍師：指揮可能');
  $('squadTypeStatus').style.color=commanderReason?'#ffd0a0':'';
  const currentIntent=squadIntent(id,0,false,commanderReason);
