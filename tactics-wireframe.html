@@ -2379,7 +2379,13 @@ const randomRosters=[randomJobRoster(JOBS,TEAM_SIZE),randomJobRoster(JOBS,TEAM_S
 for(let team=0;team<2;team++)for(let i=0;i<TEAM_SIZE;i++){
  const storyUnit=storyRequest&&team===0?storyRequest.units[i]:null;
  if((TOWN_MODE&&team===1)||(storyRequest&&(team===0&&!storyUnit||team===1&&i>=storyRequest.enemyCount)))continue;
- const job=TOWN_MODE?(i===0?JOBS.find(j=>j.name==='剣士'):JOBS[(i*2+1)%JOBS.length]):storyUnit?JOBS.find(j=>j.name===storyUnit.job)||randomRosters[team][i]:randomRosters[team][i];
+ const baseJob=TOWN_MODE?(i===0?JOBS.find(j=>j.name==='剣士'):JOBS[(i*2+1)%JOBS.length]):storyUnit?JOBS.find(j=>j.name===storyUnit.job)||randomRosters[team][i]:randomRosters[team][i];
+ // Squad gear is a passive applied before the first combat frame; unlike an
+ // order buff, it has no timer and does not require the strategist to survive.
+ const passive=storyUnit?.equipmentBuff||{};
+ const attackBuff=Math.max(0,Math.min(.6,Number(passive.attack)||0));
+ const defenseBuff=Math.max(0,Math.min(.6,Number(passive.defense)||0));
+ const job=storyUnit?{...baseJob,damage:Math.round(baseJob.damage*(1+attackBuff)),hp:Math.round(baseJob.hp*(1+defenseBuff))}:baseJob;
  const monsterId=storyRequest?.enemyMode==='monsters'&&team===1?storyRequest.enemyMonsterIds?.[i%storyRequest.enemyMonsterIds.length]:null;
  const monsterSpec=monsterId?MONSTER_CATALOG.find(m=>m.id===monsterId)||null:null;
  const root=createSoldier(job,team),formation=TOWN_MODE?
