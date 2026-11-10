@@ -27,7 +27,7 @@ export function resolveTownConversation({npcId='',name='',role='',panel='',chapt
  const citizen=STARTER_TOWN.citizens[index%STARTER_TOWN.citizens.length];
  const speaker=citizen?.name||name||role||'村人';
  const lines=[citizen?.line||'この町にも多くの旅人が来ます。',
-  '大陸の外にも私たちの知らない暮らしがあります。'+continent.climate+'を旅するなら気をつけて。',
+  '大陸の外にも私たちの知らない暮らしがあります。'+continent.name+'は'+continent.climate+'の土地です。旅するなら気をつけて。',
   '【'+story.title+'】'+continent.conflict,
   story.dialogues[index%story.dialogues.length]?.line||story.narration];
  return {id:npcId||'street-0',name:speaker,role:citizen?.role||role||'civilian',panel:null,
