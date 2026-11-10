@@ -89,10 +89,26 @@ test('natural makeup edits real face vertex colors, resets and preserves source 
  geometry.setAttribute('color',new THREE.BufferAttribute(base.slice(),3));
  const before=p.array.slice();
  const face=new THREE.Mesh(geometry,new THREE.MeshStandardMaterial({vertexColors:true}));
- const result=applyHeroineMakeupToFace(face,base,{strength:.72});
- assert.equal(result.strength,.72);
- assert.ok(result.blushVertices+result.lipVertices+result.linerVertices>0);
- assert.notDeepEqual(geometry.getAttribute('color').array,base);
+ const result=applyHeroineMakeupToFace(face,base,{
+  strength:.93,blush:.91,lip:.95,eyeliner:.96,
+  eyeAnchors:[new THREE.Vector3(-.075,.095,.1),new THREE.Vector3(.075,.095,.1)]
+ });
+ assert.equal(result.strength,.93);
+ assert.ok(result.blushVertices>0,'Cheek color missing');
+ assert.ok(result.lipVertices>0,'Rose-tinted lips missing');
+ assert.ok(result.linerVertices>0,'Eye-following upper lash color missing');
+ assert.ok(result.changedVertices>100,'Cosmetics are too faint to affect the face');
+ assert.equal(result.skinShaderUsesVertexColors,true,
+  'The actual head shader must render the cosmetic vertex colors');
+ const colored=geometry.getAttribute('color');
+ let rose=0,liner=0;
+ for(let i=0;i<colored.count;i++){
+  if(colored.getX(i)>colored.getY(i)+.04)rose++;
+  if(colored.getY(i)<.75)liner++;
+ }
+ assert.ok(rose>10,'Makeup never produced visible rosy hues');
+ assert.ok(liner>0,'Eyeliner never produced visible dark pixels');
+ assert.notDeepEqual(colored.array,base);
  applyHeroineMakeupToFace(face,base,{strength:0});
  assert.deepEqual(geometry.getAttribute('color').array,base);
  assert.deepEqual(p.array,before);
@@ -130,7 +146,12 @@ test('heroine face has balanced original eye nose mouth and chin ratios',()=>{
  assert.ok(girl.proportions.mouthWidth>=.90&&girl.proportions.mouthWidth<1);
  assert.ok(girl.proportions.chinLength>=.95&&girl.proportions.chinLength<1.02);
  assert.ok(girl.proportions.cheekRoundness>=1&&girl.proportions.cheekRoundness<1.12);
- assert.ok(girl.makeup.strength>.5);
+ assert.ok(girl.makeup.strength>.9);
+ assert.ok(girl.makeup.lip>.9&&girl.makeup.eyeliner>.9);
+ assert.ok(girl.proportions.eyeTilt>.04);
+ assert.ok(girl.proportions.noseBridge>=1.05&&girl.proportions.noseBridge<=1.11);
+ assert.ok(girl.proportions.jawTaper<.94);
+ assert.match(girl.visualDirection,/lightning-inspired/);
  assert.equal(girl.makeup.sourceFaceOnly,true);
  assert.equal(girl.facialArtistApproval,false);
 });
