@@ -30,6 +30,25 @@ const coincident=Array.from({length:20},(_,n)=>({
 check(coincident,{left:4,right:386,top:220,bottom:610}); // 20 squads on Android
 check(coincident.slice(0,10),{left:4,right:386,top:220,bottom:610}); // 50v50
 check(coincident,{left:4,right:346,top:220,bottom:425}); // short screen
+
+// Two explicit army columns: friends never join the red column and vice versa.
+// Fallen squads move to the bottom of their OWN army's callout stack.
+const roster=[
+ ...Array.from({length:10},(_,i)=>({key:'a'+i,team:0,squadIndex:i,x:190,y:450,defeated:i===1||i===3})),
+ ...Array.from({length:10},(_,i)=>({key:'e'+i,team:1,squadIndex:i,x:190,y:450,defeated:i===2||i===5}))
+];
+const columns=layoutSquadCallouts(roster,{left:4,right:386,top:220,bottom:1050});
+assert.equal(columns.lanesPerTeam,1,'Portrait overhead view should use one left and one right column');
+const leftColumn=roster.filter(p=>p.team===0).map(p=>columns.placements.get(p.key));
+const rightColumn=roster.filter(p=>p.team===1).map(p=>columns.placements.get(p.key));
+assert.ok(leftColumn.every(p=>p.x<195),'Every blue label stays at the left edge');
+assert.ok(rightColumn.every(p=>p.x>195),'Every red label stays at the right edge');
+assert.ok(Math.max(...leftColumn.filter(p=>!p.defeated).map(p=>p.y))<
+ Math.min(...leftColumn.filter(p=>p.defeated).map(p=>p.y)),
+ 'All defeated blue squads sort after every living blue squad');
+assert.ok(Math.max(...rightColumn.filter(p=>!p.defeated).map(p=>p.y))<
+ Math.min(...rightColumn.filter(p=>p.defeated).map(p=>p.y)),
+ 'All defeated red squads sort after every living red squad');
 const offscreen=layoutSquadCallouts([{key:'0:1',team:0,x:-200,y:900}],
  {left:4,right:386,top:220,bottom:610});
 assert.equal(offscreen.placements.get('0:1').outside,true,
