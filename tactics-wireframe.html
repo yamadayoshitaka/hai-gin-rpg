@@ -662,6 +662,23 @@ body.compact-command-dock.compact-explore-open #enemySquadRibbon{display:none!im
   width:min(100%,230px)!important;max-height:30dvh!important
  }
 }
+
+/* Distance control remains visible when the exploration building list scrolls. */
+body.compact-command-dock.compact-explore-open .exploreRangeControls{flex:0 0 auto}
+body.compact-command-dock.compact-explore-open .exploreRangeControls label{
+ display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;
+ color:#e8f4ff;font:800 12px/1.4 system-ui;
+}
+body.compact-command-dock.compact-explore-open .exploreRangeControls select{
+ min-height:38px;max-width:100%;border:1px solid #7cb6d9;border-radius:7px;
+ background:#184967;color:#fff;padding:5px 7px;font:700 12px system-ui
+}
+body.compact-command-dock.compact-explore-open .exploreDistanceSummary{
+ font:700 11px/1.4 system-ui;color:#ffe5ab
+}
+body.compact-command-dock.compact-explore-open .exploreBuildingList button{
+ white-space:normal!important;overflow-wrap:anywhere!important
+}
 @media(max-width:390px){
  :root{--battleCommandHeight:138px;--battleSelectedHeight:60px}
  body.compact-command-dock #squadOneClickOrders .quickActions button{min-width:64px!important;flex-basis:64px!important;font-size:11px!important}
@@ -5459,6 +5476,7 @@ for(const id of squadIds)if(!squadStrategies.has(id)){
 const STRATEGY_LABELS={eliminate:'⚔ 全滅',environment_prepare:'🛠 環境整備',recovery:'✚ 支援'};
 const INITIAL_ORDER_LABELS={charge:'⚔ 突撃',defend:'🛡 守備',hold:'⏸ 待機',retreat:'↘ 退却',explore:'🔎 探索'};
 const startingSquadOrders=new Map(),activeBuildingExplorations=new Map(),explorationQueues=new Map();
+const exploreRangeBySquad=new Map(); // 0 means unrestricted, measured in map cells.
 let lastEnemyItemDecisionAt=-Infinity,lastEnemyTacticalDecisionAt=-Infinity,lastAllyItemDecisionAt=-Infinity;
 let allyAutoItemCursor=0;
 const lastEnemyTacticalOrderAt=new Map();
@@ -5475,56 +5493,123 @@ function availableExplorationBuildings({all=false}={}){
  }).filter(b=>all||b.treasure.length>0);
 }
 function createExplorationPicker(defaultIds=[]){
- const buildings=availableExplorationBuildings({all:true}),selected=new Set(defaultIds.map(String));
- const root=document.createElement('div');root.style.cssText='display:grid;gap:5px;border:1px solid #658aa8;border-radius:7px;padding:6px';
+ // Distance is measured from the CURRENT selected friendly squad's living
+ // soldier centroid to each building centre, in grid cells (not walking ETA).
+ const squad=String(orderedSquad());
+ const origin=squadCenter(squad,0);
+ const distance=b=>origin?Math.ceil(Math.hypot(
+  (Number(b.building.data.x)||0)-origin.x,
+  (Number(b.building.data.z)||0)-origin.z)):null;
+ const buildings=availableExplorationBuildings({all:true}).sort((a,b)=>
+  (distance(a)??Infinity)-(distance(b)??Infinity)||a.index-b.index);
+ const selected=new Set(defaultIds.map(String));
+ let maxRange=Number(exploreRangeBySquad.get(squad)||0);
+ const allowed=b=>!maxRange||distance(b)!=null&&distance(b)<=maxRange;
+ const root=document.createElement('div');
+ root.className='explorePickerBody';
+ const controlsRow=document.createElement('div');
+ controlsRow.className='exploreRangeControls';
+ const distanceTitle=document.createElement('label');
+ distanceTitle.textContent='📍 第'+(squadIds.indexOf(squad)+1)+'隊からの探索距離（直線）';
+ const distanceSelect=document.createElement('select');
+ distanceSelect.setAttribute('aria-label','探索可能な距離の上限');
+ for(const value of [0,10,20,40,80,160,320]){
+  const opt=document.createElement('option');
+  opt.value=String(value);opt.textContent=value?'半径 '+value+'マス':'全距離（制限なし）';
+  distanceSelect.append(opt);
+ }
+ distanceSelect.value=String(maxRange);
+ if(distanceSelect.value!==String(maxRange)){maxRange=0;distanceSelect.value='0'}
+ distanceTitle.append(distanceSelect);controlsRow.append(distanceTitle);
+ const summary=document.createElement('small');summary.className='exploreDistanceSummary';
  const map=document.createElement('canvas');map.width=240;map.height=240;
  map.style.cssText='width:min(100%,340px);aspect-ratio:1;touch-action:manipulation;display:block;margin:auto;border:1px solid #779aaf;cursor:pointer';
- map.setAttribute('aria-label','建物の場所をタップして複数選択する地図');
+ map.setAttribute('aria-label','選択隊と建物の距離を示す地図。タップして探索先を選択');
  const label=document.createElement('small');
- label.style.cssText='display:block;color:#ffe2a5;font:11px/1.4 system-ui;white-space:nowrap;overflow:hidden;text-overflow:ellipsis';
+ label.style.cssText='display:block;color:#ffe2a5;font:11px/1.4 system-ui;white-space:normal';
  const position=b=>({x:Number(b.building.data.x)||0,z:Number(b.building.data.z)||0});
  const list=document.createElement('div');list.className='exploreBuildingList';
  const buttons=new Map();
  for(const b of buildings){
   const button=document.createElement('button');button.type='button';
-  button.textContent=b.name+(b.treasure.length?' 🎁':'');
   button.setAttribute('aria-pressed',String(selected.has(b.id)));
-  button.onclick=()=>{selected.has(b.id)?selected.delete(b.id):selected.add(b.id);redraw()};
+  button.onclick=()=>{if(!allowed(b))return;
+   selected.has(b.id)?selected.delete(b.id):selected.add(b.id);redraw()};
   list.append(button);buttons.set(b.id,button);
  }
  function redraw(){
+  let availableCount=0;
   for(const b of buildings){
-   const node=buttons.get(b.id),isSelected=selected.has(b.id);
+   const node=buttons.get(b.id),visible=allowed(b),isSelected=selected.has(b.id);
+   node.hidden=!visible;
+   if(visible)availableCount++;
+   node.textContent=b.name+'　'+(distance(b)==null?'距離不明':distance(b)+'マス')+
+    (b.treasure.length?' 🎁':'');
    node.classList.toggle('selected',isSelected);
    node.setAttribute('aria-pressed',String(isSelected));
   }
-  const ctx=map.getContext('2d');ctx.clearRect(0,0,240,240);
+  const ctx=map.getContext('2d');
+  ctx.clearRect(0,0,240,240);
   ctx.drawImage(miniBase,0,0,240,240);
+  // Show the origin plus optional selection radius. World and centre are both
+  // expressed in grid cells; the marker positions use that same coordinate.
+  if(origin){
+   const px=origin.x/WORLD_SIZE*240,pz=origin.z/WORLD_SIZE*240;
+   if(maxRange){
+    ctx.beginPath();ctx.arc(px,pz,maxRange/WORLD_SIZE*240,0,Math.PI*2);
+    ctx.fillStyle='rgba(70,200,255,.13)';ctx.fill();
+    ctx.lineWidth=2;ctx.strokeStyle='#a6efff';ctx.setLineDash([5,4]);
+    ctx.stroke();ctx.setLineDash([]);
+   }
+  }
   buildings.forEach((b,i)=>{
-   const {x,z}=position(b),selectedNow=selected.has(b.id);
+   const {x,z}=position(b),selectedNow=selected.has(b.id),inside=allowed(b);
    const px=x/WORLD_SIZE*240,pz=z/WORLD_SIZE*240;
-   ctx.fillStyle=selectedNow?'#ffe286':'#65d9ff';ctx.strokeStyle='#0c2538';ctx.lineWidth=2;
-   ctx.beginPath();ctx.arc(px,pz,selectedNow?9:6,0,Math.PI*2);ctx.fill();ctx.stroke();
-   ctx.fillStyle='#fff';ctx.font='bold 10px sans-serif';ctx.fillText(String(i+1),px+7,pz-6);
+   ctx.fillStyle=!inside?'#687e90':selectedNow?'#ffe286':'#65d9ff';
+   ctx.strokeStyle='#0c2538';ctx.lineWidth=2;
+   ctx.beginPath();ctx.arc(px,pz,selectedNow?8:inside?5:3,0,Math.PI*2);
+   ctx.fill();ctx.stroke();
+   if(inside){
+    ctx.fillStyle='#fff';ctx.font='bold 9px sans-serif';
+    ctx.fillText(String(i+1),px+6,pz-5);
+   }
   });
-  const names=buildings.filter(b=>selected.has(b.id)).map(b=>b.name);
-  label.textContent=names.length?'選択 '+names.length+'件：'+names.join(' → '):'地図の建物をタップして探索先を選択';
-  label.title=label.textContent;
+  if(origin){
+   const px=origin.x/WORLD_SIZE*240,pz=origin.z/WORLD_SIZE*240;
+   ctx.beginPath();ctx.arc(px,pz,8,0,Math.PI*2);
+   ctx.fillStyle='#0b5aab';ctx.fill();
+   ctx.lineWidth=2.5;ctx.strokeStyle='#fff7c0';ctx.stroke();
+   ctx.fillStyle='#fff';ctx.font='bold 11px sans-serif';
+   ctx.fillText('自隊',Math.min(211,px+8),Math.max(12,pz-9));
+  }
+  const chosen=buildings.filter(b=>selected.has(b.id));
+  summary.textContent='候補 '+availableCount+'/'+buildings.length+'件 · 選択 '+chosen.length+
+   '件 · '+(maxRange?'半径'+maxRange+'マス以内':'距離制限なし');
+  label.textContent=chosen.length?'選択：'+chosen.map(b=>b.name+' ('+distance(b)+'マス)').join(' → '):
+   '建物または地図をタップして探索先を選択';
  }
+ distanceSelect.onchange=()=>{
+  maxRange=Number(distanceSelect.value)||0;
+  exploreRangeBySquad.set(squad,maxRange);
+  for(const b of buildings)if(!allowed(b))selected.delete(b.id);
+  redraw();
+ };
  map.addEventListener('pointerup',event=>{
   const rect=map.getBoundingClientRect();
-  const x=(event.clientX-rect.left)/rect.width*WORLD_SIZE,z=(event.clientY-rect.top)/rect.height*WORLD_SIZE;
-  const nearest=buildings.map(b=>({b,p:position(b)})).sort((a,b)=>
-   Math.hypot(a.p.x-x,a.p.z-z)-Math.hypot(b.p.x-x,b.p.z-z))[0];
-  // World-space distance to the squad is irrelevant; on a 160px map
-  // even distant buildings need a finger-sized, reliable tap target.
+  const x=(event.clientX-rect.left)/rect.width*WORLD_SIZE,
+   z=(event.clientY-rect.top)/rect.height*WORLD_SIZE;
+  const nearest=buildings.filter(allowed).map(b=>({b,p:position(b)}))
+   .sort((a,b)=>Math.hypot(a.p.x-x,a.p.z-z)-Math.hypot(b.p.x-x,b.p.z-z))[0];
   if(!nearest||Math.hypot(nearest.p.x-x,nearest.p.z-z)>32){
-   label.textContent='青い建物マーカーをタップしてください（遠距離でも指定可能）';return;
+   label.textContent='距離制限内の青い建物マーカーをタップしてください';
+   return;
   }
-  selected.has(nearest.b.id)?selected.delete(nearest.b.id):selected.add(nearest.b.id);redraw();
+  selected.has(nearest.b.id)?selected.delete(nearest.b.id):selected.add(nearest.b.id);
+  redraw();
  });
- root.append(map,label,list);redraw();
- return {element:root,getIds:()=>buildings.filter(b=>selected.has(b.id)).map(b=>b.id)};
+ root.append(controlsRow,summary,map,label,list);
+ redraw();
+ return {element:root,getIds:()=>buildings.filter(b=>selected.has(b.id)&&allowed(b)).map(b=>b.id)};
 }
 function queueSquadExplorations(team,id,ids,{beforeBattle=false}={}){
  const key=squadOrderKey(team,id),choices=[...new Set(ids.map(String))]
