@@ -57,16 +57,16 @@ function buildPreset(row,i){
     // or copyrighted texture: slender natural nose, calm almond eyes and
     // focused expression, softer rose-pink skin, fine jaw with full cheeks.
     faceHeight:.982,upperThird:1.015,middleThird:.985,lowerThird:1.005,
-    jawTaper:.91,cheekRoundness:1.062,chinLength:.975,
+    jawTaper:.905,cheekRoundness:1.062,chinLength:.975,
     preEarFullness:.75,lowerCheekLateral:.81,parotidWidth:.73,
-    eyeWidth:1.105,eyeHeight:1.018,eyeSpacing:1.012,
-    eyeVertical:.002,eyeTilt:.051,
+    eyeWidth:1.115,eyeHeight:1.015,eyeSpacing:1.012,
+    eyeVertical:.002,eyeTilt:.061,
     browVertical:.004,browEyeGap:1.008,
     browWidth:1.065,browThickness:.745,browAngle:.025,
-    noseOverall:.84,noseLength:.975,noseWidth:.79,
-    noseBridge:1.072,noseTip:.79,
+    noseOverall:.84,noseLength:.975,noseWidth:.78,
+    noseBridge:1.072,noseTip:.785,
     mouthWidth:.925,mouthHeight:1.027,mouthVertical:.004,
-    lipFullness:1.15,mouthCorner:.008
+    lipFullness:1.18,mouthCorner:.008
    }):i===0?validateFaceProportions({
    faceHeight:.947,upperThird:1.07,middleThird:.86,lowerThird:.925,
    jawTaper:.85,chinLength:.87,eyeWidth:1.045,eyeHeight:1.045,
@@ -87,7 +87,7 @@ function buildPreset(row,i){
   youthfulness:female?.69:category==='hero'?.97:.49+(i-5)*.035,
   skinRoughness:category==='hero'?(female?.55:i===0?.43:.47):.54,
   makeup:female?Object.freeze({
-   strength:.93,blush:.91,lip:.95,eyeliner:.96,
+   strength:.96,blush:.90,lip:1,eyeliner:.96,
    style:'light-natural-rose',eyeLiner:'defined upper lash',
    lips:'soft-rose',sourceFaceOnly:true
   }):null,

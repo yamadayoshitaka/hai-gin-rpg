@@ -26,6 +26,26 @@ test('heroine wig paints every upper-crown vertex and keeps face skin uncovered'
  }
  assert.ok(crown>40&&frontalFace>20);
  assert.ok(report.coverageRatio>.95);
+ assert.equal(report.crownOnlyCapNoLongerSmooth,true);
+ assert.equal(report.fullForeheadFringe,true);
+ assert.equal(report.fringeRibbonCount,288);
+ assert.ok(report.frontalAnchorSamples>=35);
+ assert.ok(report.crownCombLines>=20);
+ assert.ok(report.fringeTipMinYNormalized>.64);
+ assert.equal(cap.children.length,2,'Cap needs crown-flow and real 3D bangs');
+ const fringe=cap.getObjectByName('HEROINE_288_REAL_SCALP_SWEEP_BANG_RIBBONS');
+ const crownFlow=cap.getObjectByName('HEROINE_VISIBLE_COMBED_CROWN_HAIR');
+ assert.ok(fringe?.isMesh&&fringe.geometry.index?.count>=3000);
+ assert.ok(crownFlow?.isLineSegments);
+ assert.equal(fringe.userData.noEyeOcclusion,true);
+ const v=fringe.geometry.getAttribute('position');
+ let minX=Infinity,maxX=-Infinity,maxY=-Infinity;
+ for(let i=0;i<v.count;i++){
+  minX=Math.min(minX,v.getX(i));maxX=Math.max(maxX,v.getX(i));
+  maxY=Math.max(maxY,v.getY(i));
+ }
+ assert.ok(maxX-minX>size.x*.36,'Full forehead must have bangs, not a single temple spike');
+ assert.ok(maxY<=box.max.y+.02,'Wig fringe must start on the real head');
  assert.deepEqual(geometry.getAttribute('position').array,source);
  cap.geometry.dispose();cap.material.dispose();scalp.geometry.dispose();
  scalp.material.dispose();geometry.dispose();skin.material.dispose();

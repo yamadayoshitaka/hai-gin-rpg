@@ -193,8 +193,12 @@ export function applyHeroineMakeupToFace(faceMesh,neutralColors,{
   const cheek=front*bell(Math.abs(x),.57,.235)*bell(y,.50,.105)*
    intensity*THREE.MathUtils.clamp(blush,0,1);
   // Actual three-dimensional vermilion surface, including a soft top lip.
-  const lips=front*bell(x,0,.34)*
-   (.71*bell(y,.388,.036)+.46*bell(y,.355,.029))*
+  // Defined but softly feathered rose lipstick on UPPER and LOWER lip
+  // (anatomical lip ridge is near the .40 face-height landmark).
+  const lips=front*bell(x,0,.315)*
+   (.88*bell(y,.489,.018)+.80*bell(y,.447,.020))*
+   intensity*THREE.MathUtils.clamp(lip,0,1);
+  const lipSeam=front*bell(x,0,.29)*bell(y,.467,.0065)*
    intensity*THREE.MathUtils.clamp(lip,0,1);
   // Dark-brown upper lash line, located against the SOURCE sclera anchors,
   // not an unrelated eyebrow-height strip. Keeps the eyeballs exposed.
@@ -204,10 +208,12 @@ export function applyHeroineMakeupToFace(faceMesh,neutralColors,{
   const n=i*3;
   // Linear vertex color multipliers are multiplied by the actual PBR skin
   // material. Tint rather than merely dimming every RGB channel together.
-  const red=Math.min(1.22,neutralColors[n]*
-   (1+.15*cheek+.31*lips-.49*liner));
-  const green=neutralColors[n+1]*(1-.25*cheek-.48*lips-.56*liner);
-  const blue=neutralColors[n+2]*(1-.20*cheek-.32*lips-.52*liner);
+  const red=Math.min(1.24,neutralColors[n]*
+   (1+.15*cheek+.25*lips-.18*lipSeam-.49*liner));
+  const green=neutralColors[n+1]*
+   (1-.25*cheek-.32*lips-.30*lipSeam-.56*liner);
+  const blue=neutralColors[n+2]*
+   (1-.20*cheek-.16*lips-.20*lipSeam-.52*liner);
   attr.setXYZ(i,red,green,blue);
   if(cheek>.08)blushVertices++;
   if(lips>.08)lipVertices++;

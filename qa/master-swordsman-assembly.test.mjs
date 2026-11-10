@@ -333,6 +333,10 @@ test('heroine wig root crown is source-conforming and covers the bald head witho
  assert.equal(report.sourceAnatomyUntouched,true);
  assert.ok(report.crownSamples>35);
  assert.ok(report.coverageRatio>.95,'No transparent bald patches over crown');
+ assert.ok(report.fringeRibbonCount>=250,'Visible fringe geometry is missing');
+ assert.ok(report.crownCombLines>=20,'Cap is a flat bald-looking pink shell');
+ assert.ok(report.frontalAnchorSamples>=35);
+ assert.ok(report.fringeTipMinYNormalized>.64);
  assert.equal(cap.isMesh,true);
  assert.equal(cap.name,'HEROINE_WIG_ROOT_CROWN_NOT_DONOR_HAIR');
  assert.equal(cap.material.vertexColors,true);

@@ -325,7 +325,7 @@ function targetView(view='full',axis='front'){
  // the canvas. Frame the ENTIRE real head with margin, not just the eyes/chin.
  const femalePortrait=isFace&&currentAppearance?.gender==='female';
  if(femalePortrait)center.y+=Math.min(size.y*.16,.09);
- const len=femalePortrait?Math.max(.98,size.y*2.45):
+ const len=femalePortrait?Math.max(1.14,size.y*2.85):
   isFace?Math.max(.65,size.y*1.9):Math.max(3.1,size.y*2.05);
  const tilt=femalePortrait?.06:.10;
  const direction=axis==='side'?new THREE.Vector3(1,tilt,0):
