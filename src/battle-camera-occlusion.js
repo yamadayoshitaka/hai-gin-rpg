@@ -55,3 +55,39 @@ export function safeSelectedInteriorFloor({selectedInside=false,selected=null,ca
   return Number.isInteger(selected.indoorFloor)&&selected.indoorFloor>0
     ?selected.indoorFloor:cameraFloor;
 }
+
+/**
+ * Choose an eye position that actually looks at the specified combatant.
+ * Penalize trees touching the eye or intersecting the sightline. Call this
+ * only on cinematic transitions, never once per render frame.
+ */
+export function chooseClearBattleCameraOffset(focus,trees,{terrainHeight=()=>-Infinity}={}){
+ const options=[
+  {x:4.8,y:7.6,z:11.5},{x:-4.8,y:7.6,z:11.5},
+  {x:11.5,y:7.6,z:4.8},{x:-11.5,y:7.6,z:-4.8},
+  {x:4.8,y:8.6,z:-11.5},{x:-4.8,y:8.6,z:-11.5},
+  {x:11.5,y:8.6,z:-4.8},{x:-11.5,y:8.6,z:4.8},
+  {x:0.1,y:12,z:12},{x:12,y:12,z:0.1},
+  {x:0.1,y:12,z:-12},{x:-12,y:12,z:0.1}
+ ];
+ let best=options[0],bestScore=Infinity;
+ for(const offset of options){
+  const eye={x:focus.x+offset.x,y:focus.y+offset.y,z:focus.z+offset.z};
+  let penalty=0;
+  const ground=terrainHeight(eye.x,eye.z);
+  if(Number.isFinite(ground)&&eye.y<ground+3)penalty+=500;
+  for(const tree of trees||[]){
+   if(!tree?.bounds)continue;
+   const box=tree.bounds;
+   const inside=eye.x>=box.minX-1&&eye.x<=box.maxX+1&&
+     eye.z>=box.minZ-1&&eye.z<=box.maxZ+1&&
+     eye.y>=box.minY-1&&eye.y<=box.maxY+2;
+   if(inside)penalty+=150;
+   if(cameraSegmentHitsBox(eye,focus,box,.3)!==null)penalty+=30;
+  }
+  // Slight preference for the shorter, lower cinematic angle if equally clear.
+  penalty+=Math.abs(offset.y-7.6)*.08;
+  if(penalty<bestScore){bestScore=penalty;best=offset;}
+ }
+ return {...best};
+}
