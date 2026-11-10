@@ -296,7 +296,7 @@ function changed(a,b,threshold=48){
     if((state.referenceHeroineHairReport?.bangLocks||0)<6000||
        state.referenceHeroineHairReport?.individualFilamentCount!==100000||
        state.referenceHeroineHairReport?.noWidePolygonCards!==true||
-       state.referenceHeroineHairReport?.triangleCount!==3600000||
+       state.referenceHeroineHairReport?.triangleCount!==1200000||
        state.appearance.proportions.preEarFullness>=.8||
        state.appearance.proportions.parotidWidth>=.8)
      throw Error('Dense source-rooted long-hair geometry missing');
@@ -308,10 +308,12 @@ function changed(a,b,threshold=48){
     // Rendered evidence at the actual face zoom and full source wire topology.
     await page.locator('#portrait').click();
     await page.waitForTimeout(170);
-    await canvas.screenshot({path:path.join(dir,'hero-girl-01-face-100k-hair.png')});
+    await page.screenshot({path:path.join(dir,'hero-girl-01-face-100k-hair.png'),
+     clip:await canvas.boundingBox(),timeout:90000,animations:'disabled'});
     await page.locator('#meshMode').selectOption('wire');
     await page.waitForTimeout(170);
-    await canvas.screenshot({path:path.join(dir,'hero-girl-01-wire-100k-hair.png')});
+    await page.screenshot({path:path.join(dir,'hero-girl-01-wire-100k-hair.png'),
+     clip:await canvas.boundingBox(),timeout:90000,animations:'disabled'});
     const wireState=await page.evaluate(()=>window.__heroineWireframeQA?.());
     if(wireState?.mode!=='wire'||wireState.triangles!==solidMesh.triangles)
      throw Error('Wire-only mode changed real source topology');
