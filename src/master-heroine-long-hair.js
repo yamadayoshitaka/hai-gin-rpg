@@ -44,9 +44,16 @@ export function buildHeroineFantasyLongHair(scalp,{lengthInHeads=3.25}={}){
  };
  const pick=region=>all.slice().sort((a,b)=>score(b,region)-score(a,region))
   .slice(0,Math.max(30,Math.ceil(all.length*.16)));
- const rear=pick('rear'),left=pick('left'),right=pick('right'),fringe=pick('fringe');
+ const rear=pick('rear'),left=pick('left'),right=pick('right');
+ // The forehead hairline must use upper-crown vertices: global ranking by
+ // frontmost Z alone accidentally sampled lower cheek-height scalp on the
+ // segmented female sculpt (actual QA: fringe tip y=.608). Keep roots high
+ // and shorten to the eyebrow-safe band regardless of donor head proportions.
+ const highCrown=all.filter(q=>(q[1]-b.min.y)/d.y>.88);
+ const fringe=highCrown.sort((a,b)=>score(b,'fringe')-score(a,'fringe'))
+  .slice(0,Math.max(30,Math.ceil(highCrown.length*.50)));
  if([rear,left,right,fringe].some(a=>a.length<30))
-  throw Error('Female source scalp does not contain usable source-rooted hair regions');
+  throw Error('Female source scalp lacks safe crown, temple or fringe anchors');
  const VERTICES=COUNT*SEGMENTS*2;
  const positions=new Float32Array(VERTICES*3);
  const colors=new Float32Array(VERTICES*3);
@@ -68,7 +75,8 @@ export function buildHeroineFantasyLongHair(scalp,{lengthInHeads=3.25}={}){
    const seed=global+1,scatter=hash(seed*1.19),waveSeed=hash(seed*3.71);
    const rootX=q[0]+(hash(seed*4.1)-.5)*d.x*.003;
    const rootY=q[1],rootZ=q[2];
-   const strandLength=bang?d.y*(.025+.022*scatter):
+   const strandLength=bang?
+    Math.min(d.y*(.025+.022*scatter),Math.max(.001,rootY-(b.min.y+d.y*.78))):
     d.y*lengthInHeads*(side?.84:1)*(.83+.17*scatter);
    const sway=(hash(seed*11.3)-.5)*d.x*.14;
    const sideDirection=side||Math.sign(rootX-cx)||1;
