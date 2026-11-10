@@ -392,7 +392,12 @@ body.squad-closeup #enemySquadIntel{display:none!important}
 .squadScreenLabel .squadStrength{max-height:23px!important}
 .squadScreenLabel>span{pointer-events:none!important}
 /* Overhead command view: Excel-like connectors keep ALL squads selectable without overlaps. */
-#squadCalloutLines{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none}
+#squadScreenLabels{isolation:isolate}
+#squadCalloutLines{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none;z-index:0}
+#squadScreenLabels .squadScreenLabel.ally{background:#062b45!important}
+#squadScreenLabels .squadScreenLabel.enemy{background:#55212d!important}
+#squadScreenLabels .squadScreenLabel{z-index:2;box-shadow:0 2px 8px #000c!important}
+#squadScreenLabels .squadScreenLabel.selected{z-index:3}
 #squadCalloutLines path{stroke-width:2;stroke-linecap:round;stroke-linejoin:round;fill:none;opacity:.92}
 #squadCalloutLines circle{stroke:#132335;stroke-width:1;opacity:.98}
 #squadCalloutLines .ally{stroke:#5cdbff}
@@ -7044,6 +7049,31 @@ function updateSquadScreenLabels(dt){
  const prior=squadScreenLayout;
  const {diameter,placements}=layoutSquadCallouts(points,bounds,prior);
  squadScreenLayout=placements;
+ // SVG masks cut a clear circular hole around EVERY information bubble.
+ // The connector cannot cross label text even if a different squad's
+ // projected troop position happens to fall behind that label.
+ let circleMask=lineLayer.querySelector('#squadCalloutExclusionMask');
+ if(!circleMask){
+  const ns='http://www.w3.org/2000/svg',defs=document.createElementNS(ns,'defs');
+  circleMask=document.createElementNS(ns,'mask');
+  circleMask.id='squadCalloutExclusionMask';
+  circleMask.setAttribute('maskUnits','userSpaceOnUse');
+  circleMask.setAttribute('maskContentUnits','userSpaceOnUse');
+  defs.append(circleMask);lineLayer.prepend(defs);
+ }
+ const ns='http://www.w3.org/2000/svg';
+ const maskBase=document.createElementNS(ns,'rect');
+ maskBase.setAttribute('width',String(innerWidth));
+ maskBase.setAttribute('height',String(innerHeight));
+ maskBase.setAttribute('fill','white');
+ const excluded=[maskBase];
+ for(const pos of placements.values()){
+  const circle=document.createElementNS(ns,'circle');
+  circle.setAttribute('cx',String(pos.x));circle.setAttribute('cy',String(pos.y));
+  circle.setAttribute('r',String(pos.diameter/2+6));circle.setAttribute('fill','black');
+  excluded.push(circle);
+ }
+ circleMask.replaceChildren(...excluded);
  container.style.setProperty('--squadCircleSize',diameter+'px');
  container.classList.toggle('compact-circles',diameter<52);
  lineLayer.setAttribute('viewBox','0 0 '+Math.max(1,innerWidth)+' '+Math.max(1,innerHeight));
@@ -7071,9 +7101,12 @@ function updateSquadScreenLabels(dt){
   leader.style.opacity=chosen?'1':'.24';
   leader.style.strokeWidth=chosen?'3':'1.1';
   if(showLeader)leader.setAttribute('d',line);
+  leader.setAttribute('mask','url(#squadCalloutExclusionMask)');
   dot.setAttribute('cx',String(Math.round(pos.anchorX*10)/10));
   dot.setAttribute('cy',String(Math.round(pos.anchorY*10)/10));
-  dot.style.display='';
+  const dotCovered=[...placements.values()].some(circle=>
+   Math.hypot(pos.anchorX-circle.x,pos.anchorY-circle.y)<circle.diameter/2+7);
+  dot.style.display=dotCovered?'none':'';
   if(selectedCircleSquad?.team===team&&selectedCircleSquad?.id===id&&!squadCircleInfo.hidden)
    positionSquadCircleInfo(label);
   if(chosen&&!$('squadTactics').hidden)positionSquadMenuBelowLabel(id);
