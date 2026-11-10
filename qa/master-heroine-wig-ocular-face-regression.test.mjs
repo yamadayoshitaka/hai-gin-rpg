@@ -61,7 +61,7 @@ test('upper eyelid drives lashes in blink, and returning to zero restores the po
  const parent=new THREE.Group(),upper=new THREE.Group(),lower=new THREE.Group(),
   lashes=new THREE.Group(),lid=new THREE.Group();
  parent.add(upper,lower,lid);upper.add(lashes);
- upper.position.y=.25;lower.position.y=.12;lashes.position.y=.02;
+ upper.position.y=.25;upper.scale.y=1.08;lower.position.y=.12;lashes.position.y=.02;
  upper.userData.openLocalY=.25;upper.userData.openScaleY=1.08;
  upper.userData.blinkTravelLocal=.06;
  lower.userData.openLocalY=.12;lower.userData.blinkTravelLocal=.06;
