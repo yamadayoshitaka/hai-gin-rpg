@@ -290,7 +290,9 @@ test('heroine golden hair has dense independently shaped real polygon locks and 
  assert.equal(report.scalpAnchored,true);
  assert.equal(report.originalSourceGeometryIntact,true);
  assert.equal(report.roundedCrossSection,false);
- assert.equal(hair.isLineSegments,true,'All filaments must be real GPU line primitives');
+ assert.equal(hair.isGroup,true,'Front, sides and rear layers must be separate');
+ assert.equal(hair.children.length,6);
+ assert.ok(hair.children.every(part=>part.isLineSegments));
  assert.equal(report.denseFringe,true);
  assert.equal(report.softTaperedTips,true);
  assert.equal(report.eyebrowSafeFringe,true);
@@ -301,7 +303,8 @@ test('heroine golden hair has dense independently shaped real polygon locks and 
  assert.ok(report.bangLocks>=96,'Dense upper-forehead fringe required');
  assert.equal(report.lockCount,report.rearLocks+report.faceFramingLocks+report.bangLocks);
  assert.equal(report.triangleCount,0);
- assert.equal(report.strandSegmentCount,hair.geometry.getAttribute('position').count/2);
+ assert.equal(report.strandSegmentCount,
+  hair.children.reduce((n,part)=>n+part.geometry.getAttribute('position').count/2,0));
  assert.equal(report.individualFilamentCount,100000);
  assert.equal(report.strandSegmentCount,600000,
   'One hundred thousand curved filaments with six 3D line sections must be present');
@@ -314,7 +317,7 @@ test('heroine golden hair has dense independently shaped real polygon locks and 
  assert.ok(report.lengthInHeads>=3);
  assert.deepEqual(source.getAttribute('position').array,base,
   'Actual source head geometry must not change when adding hair');
- hair.geometry.dispose();hair.material.dispose();scalp.geometry.dispose();scalp.material.dispose();
+ for(const part of hair.children){part.geometry.dispose();part.material.dispose();}scalp.geometry.dispose();scalp.material.dispose();
  source.dispose();face.material.dispose();
 });
 
@@ -362,7 +365,7 @@ test('heroine wig reroutes 100k hair around measured 3D shoulder and back surfac
  assert.equal(report.individualFilamentCount,100000);
  assert.deepEqual(torso.geometry.getAttribute('position').array,before,
   'Measuring silhouette must never deform the actual body');
- hair.geometry.dispose();hair.material.dispose();scalp.geometry.dispose();scalp.material.dispose();
+ for(const part of hair.children){part.geometry.dispose();part.material.dispose();}scalp.geometry.dispose();scalp.material.dispose();
  face.geometry.dispose();face.material.dispose();torso.geometry.dispose();torso.material.dispose();
 });
 
@@ -431,17 +434,20 @@ test('heroine 01 has real long blonde 3D hair past shoulders, without a floating
  assert.equal(report.noFloatingBun,true);
  assert.equal(report.sourceHeadUnchanged,true);
  assert.equal(report.staticUnrigged,true);
- assert.equal(hair.isLineSegments,true,'High-density hair must render every independent curved strand');
+ assert.equal(hair.isGroup,true,'Front, sides and rear layers must be separate');
+ assert.equal(hair.children.length,6);
  assert.equal(report.noWidePolygonCards,true,'No flat clump cards are allowed');
  assert.equal(report.layeredVolume,true,'Missing layered long-hair mass');
  assert.equal(report.strandSegmentCount,600000,'Individual 3D filaments are missing');
- assert.equal(hair.material.isLineBasicMaterial,true,'Coarse card mesh shader must be retired');
- const positions=hair.geometry.getAttribute('position');
- for(let i=0;i<positions.count;i+=71)
-  assert.ok(Number.isFinite(positions.getX(i))&&
+ assert.ok(hair.children.every(part=>part.material.isLineBasicMaterial));
+ for(const part of hair.children){
+  const positions=part.geometry.getAttribute('position');
+  for(let i=0;i<positions.count;i+=71)
+   assert.ok(Number.isFinite(positions.getX(i))&&
     Number.isFinite(positions.getY(i))&&Number.isFinite(positions.getZ(i)));
+ }
  assert.deepEqual(original.getAttribute('position').array,snapshot);
- hair.geometry.dispose();hair.material.dispose();scalp.geometry.dispose();
+ for(const part of hair.children){part.geometry.dispose();part.material.dispose();}scalp.geometry.dispose();
  scalp.material.dispose();mesh.material.dispose();original.dispose();
 });
 
