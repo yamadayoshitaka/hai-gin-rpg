@@ -8,7 +8,9 @@ on:
       - 'town-stage-scene.html'
       - 'tactics-wireframe.html'
       - 'src/town-scene-policy.js'
+      - 'src/town-npc-motion.js'
       - 'qa/town-scene-isolation.test.mjs'
+      - 'qa/town-npc-motion.test.mjs'
       - 'src/campaign-stage-plan.js'
       - 'qa/town-real-stage-browser-smoke.cjs'
   workflow_dispatch:
@@ -31,7 +33,9 @@ jobs:
           npm install --no-save --package-lock=false playwright@1.56.0
           npx playwright install --with-deps chromium
       - name: Verify town-only physics and isolated cherry-blossom camera
-        run: node qa/town-scene-isolation.test.mjs
+        run: |
+          node qa/town-scene-isolation.test.mjs
+          node qa/town-npc-motion.test.mjs
       - name: Serve genuine local game assets
         run: |
           python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/town-3d-server.log 2>&1 &

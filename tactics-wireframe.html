@@ -823,6 +823,7 @@ import {OutputPass} from 'three/addons/postprocessing/OutputPass.js';
 import {FXAAShader} from 'three/addons/shaders/FXAAShader.js';
 import {CHARACTER_MODEL_REGISTRY} from './src/character-model-registry.js';
 import {MODEL_FIRST_CATALOG} from './src/model-first-catalog.js';
+import {selectTownNpcClip,createTownNpcProceduralPose} from './src/town-npc-motion.js';
 import {TOWN_ADULT_HEIGHT,TOWN_BODY_RADIUS,TOWN_HEIGHT_LIMIT,TOWN_SCENE_MODE,townVisualCorrection,townCapsuleClear,townCameraOccluders} from './src/town-scene-policy.js';
 import {STARTER_TOWN} from './src/starter-town.js';
 import {createCharacter} from './src/character-system/shared-character-runtime.js?v=4.6.36';
@@ -3003,16 +3004,15 @@ async function hydrateTownCitizens(){
    node.frustumCulled=false;node.castShadow=false;node.receiveShadow=true;
   }});
   citizen.root.add(model);
-  const poseBones={};
-  model.traverse(node=>{
-   if(!node.isBone||!['thigh_l','thigh_r','upperarm_l','upperarm_r','spine_01'].includes(node.name))return;
-   poseBones[node.name]={bone:node,rest:node.quaternion.clone()};
-  });
-  citizen.poseBones=poseBones;
-  const clips=source.animations||[];
-  const clip=clips.find(c=>citizen.walk?/walk|run/i.test(c.name):/idle|stand/i.test(c.name))||
-   clips.find(c=>/idle|stand/i.test(c.name));
-  if(clip){citizen.mixer=new THREE.AnimationMixer(model);citizen.mixer.clipAction(clip).play();}
+  // The catalog Peasant GLTFs contain a skeleton but no embedded walk/idle
+  // animations. Lower their bind-pose arms before procedural leg/arm gait.
+  const clip=selectTownNpcClip(source.animations,citizen.walk?'walk':'idle');
+  if(clip){
+   citizen.mixer=new THREE.AnimationMixer(model);
+   citizen.mixer.clipAction(clip).play();
+  }else{
+   citizen.townProceduralMotion=createTownNpcProceduralPose(THREE,model);
+  }
   fitTownHumanScale(citizen.root,TOWN_ADULT_HEIGHT[citizen.sex],citizen.id);
   citizen.loaded=true;
  }
@@ -3039,8 +3039,13 @@ async function hydrateTownCitizens(){
    if(child!==actor.root.userData.ring)actor.root.remove(child);
   actor.root.add(model);
   actor.character=null;actor.outfit=null;actor.townRegisteredModel=model;
-  const idle=source.animations?.find(c=>/idle|stand/i.test(c.name));
-  if(idle){actor.townVisualMixer=new THREE.AnimationMixer(model);actor.townVisualMixer.clipAction(idle).play();}
+  const idle=selectTownNpcClip(source.animations,'idle');
+  if(idle){
+   actor.townVisualMixer=new THREE.AnimationMixer(model);
+   actor.townVisualMixer.clipAction(idle).play();
+  }else{
+   actor.townProceduralMotion=createTownNpcProceduralPose(THREE,model);
+  }
   fitTownHumanScale(actor.root,TOWN_ADULT_HEIGHT[sex],'town-fallback-'+actor.id);
   console.info('[Town] oversized imported outfit replaced by registered '+key+' model:',actor.id);
  }
@@ -3203,6 +3208,11 @@ window.getTownVisitStats=()=>({
  registeredFallbacks:actors.filter(a=>a.townRegisteredModel).length,
  citizenHeights:townStreetCitizens.map(c=>c.root.userData.townHeight||0),
  solidCitizens:townStreetCitizens.filter(c=>c.loaded&&c.root.userData.nonColliding===false).length,
+ npcMotion:{
+  procedural:[...actors,...townStreetCitizens].filter(n=>n.townProceduralMotion).length,
+  tPoses:[...actors,...townStreetCitizens].filter(n=>n.townProceduralMotion&&!n.townProceduralMotion.report().armsLowered).length,
+  registeredModels:[...townStreetCitizens,...actors.filter(n=>n.townRegisteredModel)].length
+ },
  registeredCitizenModels:townStreetCitizens.filter(c=>c.loaded).length,
  streetCitizens:townStreetCitizens.length,riggedPeople:actors.length,
  indoor:townIndoor?.kind||null,
@@ -8279,6 +8289,7 @@ function animateTown(){
  updateTownAvatar(dt);
  for(const a of actors){
   a.townVisualMixer?.update(dt);
+  a.townProceduralMotion?.update(elapsed,{walking:false,phase:a.id*.7});
   if(!a.character||a.hp<=0)continue;
   const walk=a===townAvatar()&&a.townMotion!=='idle'&&Boolean(a.townMotion);
   const desired=walk?a.townMotion:'idle';
@@ -8292,16 +8303,7 @@ function animateTown(){
  }
  for(const citizen of townStreetCitizens){
   citizen.mixer?.update(dt);
-  if(!citizen.mixer&&citizen.poseBones){
-   const t=elapsed*2.9+citizen.phase,swing=citizen.walk ? 0.23 : 0.026;
-   for(const [key,entry] of Object.entries(citizen.poseBones)){
-    const side=key.endsWith('_l')?1:key.endsWith('_r')?-1:0;
-    const angle=key.startsWith('thigh')?Math.sin(t)*swing*side:
-     key.startsWith('upperarm')?Math.sin(t)*swing*-.65*side:Math.sin(t*.4)*.018;
-    const delta=new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1,0,0),angle);
-    entry.bone.quaternion.copy(entry.rest).multiply(delta);
-   }
-  }
+  citizen.townProceduralMotion?.update(elapsed,{walking:citizen.walk,phase:citizen.phase});
   if(!citizen.walk)continue;
   const phase=elapsed*1.7+citizen.phase;
   citizen.root.position.x=citizen.x+Math.sin(phase)*.42;
