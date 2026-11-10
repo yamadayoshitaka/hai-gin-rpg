@@ -186,8 +186,23 @@ export function buildHeroineFantasyLongHair(scalp,{lengthInHeads=3.25,bodyEnvelo
   .slice(0,Math.max(30,Math.ceil(all.length*.16)));
  const rear=all.filter(q=>q[2]<cz+d.z*.08&&(q[1]-b.min.y)/d.y>.52);
  const crown=all.filter(q=>(q[1]-b.min.y)/d.y>.82);
- const left=all.filter(q=>q[0]<cx-d.x*.35&&(q[1]-b.min.y)/d.y>.51);
- const right=all.filter(q=>q[0]>cx+d.x*.35&&(q[1]-b.min.y)/d.y>.51);
+ // Keep enough REAL lateral scalp anchors on segmented female donor heads.
+ // A strict x>.35 head-width cutoff left fewer than thirty valid vertices.
+ // Prefer rearward and genuinely lateral follicles so no side lock cuts
+ // across the eye line, extending onto the same source rear scalp if needed.
+ const sideRoots=side=>{
+  const base=all.filter(q=>side*(q[0]-cx)>d.x*.20&&
+   (q[1]-b.min.y)/d.y>.51);
+  const safe=base.filter(q=>Math.abs(q[0]-cx)>d.x*.315||
+   q[2]<cz+d.z*.16);
+  if(safe.length>=30)return safe;
+  const rearExtras=all.filter(q=>side*(q[0]-cx)>d.x*.12&&
+   (q[1]-b.min.y)/d.y>.51&&q[2]<cz+d.z*.14);
+  const expanded=[...new Set([...safe,...rearExtras])];
+  return expanded.length>=30?expanded:base;
+ };
+ const left=sideRoots(-1);
+ const right=sideRoots(1);
  if([rear,crown,left,right].some(v=>v.length<30))throw Error('Incomplete source-rooted wig scalp coverage');
  // The forehead hairline must use upper-crown vertices: global ranking by
  // frontmost Z alone accidentally sampled lower cheek-height scalp on the
