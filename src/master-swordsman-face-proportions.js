@@ -11,6 +11,9 @@ export const FACE_PROPORTION_FIELDS=Object.freeze([
  ['lowerThird','下顔面（鼻下→顎）',.65,1.35,1,'顔・3等分'],
  ['jawTaper','顎と輪郭の細さ',.62,1.35,1,'顔・3等分'],
  ['cheekRoundness','頬・輪郭の丸み',.70,1.65,1,'顔・3等分'],
+ ['preEarFullness','耳前の張り',.65,1.25,1,'顔・3等分'],
+ ['lowerCheekLateral','下頬の外側の張り',.70,1.25,1,'顔・3等分'],
+ ['parotidWidth','耳下腺付近の横幅',.65,1.25,1,'顔・3等分'],
  ['chinLength','顎先の長さ',.65,1.35,1,'顔・3等分'],
  ['eyeWidth','目の横幅',.65,1.55,1,'目'],
  ['eyeHeight','目の縦幅',.60,1.50,1,'目'],
@@ -125,6 +128,16 @@ export function deformFacePoint(x,y,z,box,p=FACE_PROPORTION_DEFAULTS){
  // Slight lateral lower-cheek fullness softens a pinched, adult jaw.
  const lowerCheek=bell(Math.abs(xn),.52,.33)*bell(yn,.37,.115);
  xx+=(x-cx)*((p.cheekRoundness??1)-1)*lowerCheek*.17;
+ // Independent ear-front/parotid contours. Apply them on the lateral
+ // facial wall, not by shrinking the face as a whole or pinching the chin.
+ // In particular, leave the mid-cheek forward bulge and the nose untouched.
+ const lateralWall=smooth(.24,.54,zn)*(1-smooth(.84,.97,zn));
+ const preEar=bell(Math.abs(xn),.84,.16)*bell(yn,.56,.115)*lateralWall;
+ const lowerLateral=bell(Math.abs(xn),.70,.19)*bell(yn,.405,.105)*lateralWall;
+ const parotid=bell(Math.abs(xn),.85,.17)*bell(yn,.445,.115)*lateralWall;
+ xx+=(x-cx)*((p.preEarFullness??1)-1)*preEar*.50;
+ xx+=(x-cx)*((p.lowerCheekLateral??1)-1)*lowerLateral*.36;
+ xx+=(x-cx)*((p.parotidWidth??1)-1)*parotid*.41;
  xx+=(x-cx)*((p.mouthWidth??1)-1)*mouth*.74;
  xx+=(x-cx)*((p.noseWidth??1)-1)*nose*.80;
  xx+=(x-cx)*((p.noseOverall??1)-1)*nose*.56;
