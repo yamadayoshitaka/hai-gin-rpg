@@ -10,10 +10,10 @@ import {featuredSwordsmanProfile} from '../src/master-swordsman-featured-profile
 import {createSwordsmanAppearance,validateAppearanceOverrides}
  from '../src/master-swordsman-1000-appearance.js';
 
-test('all 45 facial and XYZ sliders have distinct bounded names and stable neutral defaults',()=>{
- assert.equal(FACE_PROPORTION_FIELDS.length,45);
+test('all 48 facial and XYZ sliders have distinct bounded names and stable neutral defaults',()=>{
+ assert.equal(FACE_PROPORTION_FIELDS.length,48);
  assert.equal(FACE_XYZ_FIELDS.length,18);
- assert.equal(new Set(FACE_PROPORTION_FIELDS.map(f=>f[0])).size,45);
+ assert.equal(new Set(FACE_PROPORTION_FIELDS.map(f=>f[0])).size,48);
  const grouped=new Set(FACE_PROPORTION_FIELDS.map(f=>f[5]));
  assert.deepEqual([...grouped],['顔・3等分','目','眉','鼻','口','位置XYZ']);
  const defaults=validateFaceProportions({});
