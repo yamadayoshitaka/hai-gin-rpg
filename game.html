@@ -42,7 +42,7 @@ $('continueGame').disabled=!saved;
 $('continueGame').textContent=saved?'続きから　—　'+saved.playerName:'続きから（セーブなし）';
 $('continueGame').onclick=()=>{if(!saved)return;sessionStorage.setItem('hai-gin-core-active-v1',JSON.stringify(saved));location.href='./town-hub.html?v=town-visit-20261110';};
 $('versus').onclick=()=>openModal('versusModal');
-$('vsCpu').onclick=()=>location.href='./tactics-wireframe.html?army=50&mode=cpu&v=4.6.67';
+$('vsCpu').onclick=()=>location.href='./tactics-wireframe.html?army=50&mode=cpu&v=4.6.68';
 $('settings').onclick=()=>{renderSettings();openModal('settingsModal')};
 function renderSettings(){$('optBgm').textContent=options.bgm?'ON':'OFF';$('optVoice').textContent=options.voice?'ON':'OFF';$('optQuality').value=options.quality;}
 $('optBgm').onclick=()=>{options.bgm=!options.bgm;renderSettings()};
