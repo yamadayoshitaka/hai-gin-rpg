@@ -130,7 +130,11 @@ function openTownDialogue(data){
  openPanel('dialogue');
 }
 let townReady=false,insideFacility=null,townFacilities=[],townPlayerPosition=null,townMapImage=null;
-let paperPending=(new URLSearchParams(location.search).get('opening')==='1'&&!game.storyFlags.openingEventCompleted)
+game.storyFlags??={};
+const townChapter=CAMPAIGN_STAGE_BY_ID[game.townStage]?.chapter||1;
+const chapterOpeningCompleted=Boolean(game.storyFlags.chapterOpenings?.[townChapter]||
+ (townChapter===1&&game.storyFlags.openingEventCompleted));
+let paperPending=(new URLSearchParams(location.search).get('opening')==='1'&&!chapterOpeningCompleted)
  ||new URLSearchParams(location.search).get('paper')==='1';
 const pages=(rows,size=3)=>({rows:rows.slice(page*size,(page+1)*size),pages:Math.max(1,Math.ceil(rows.length/size))});
 const notice=message=>$('toast').textContent=message;
@@ -384,6 +388,7 @@ let narrationContext=null,narrationNodes=[];
 function stopNarration(){
  townAudio.setNarrationActive(false);
  try{narration?.pause()}catch{}
+ try{window.speechSynthesis?.cancel()}catch{}
  narration=null;
  for(const node of narrationNodes){try{node.disconnect()}catch{}}
  narrationNodes=[];
@@ -447,7 +452,16 @@ async function speakChapter(number,{autoplay=false}={}){
     $('eventVoice').textContent='▶ タップして音声再生';
    }else throw error;
   }
- }catch(error){notice(error.message||'音声を再生できませんでした。');$('eventVoice').textContent='▶ 音声を再試行';}
+ }catch(error){
+  if('speechSynthesis' in window){
+   speakTownLine(chapter.narration);
+   $('eventVoice').textContent='■ ナレーション停止';
+   notice('録音音声の代わりに端末の日本語読み上げを利用しています。');
+  }else{
+   notice(error.message||'音声を再生できませんでした。');
+   $('eventVoice').textContent='▶ 音声を再試行';
+  }
+ }
 }
 // Story cards follow the actual narration script, rather than unrelated battle dialogue.
 const chapterNarration=STORY_CHAPTERS[CAMPAIGN_STAGE_BY_ID[game.townStage].chapter-1]?.narration||STORY_CHAPTERS[0].narration;
@@ -455,7 +469,11 @@ const eventScenes=(chapterNarration.match(/[^。！？]+[。！？]?/g)||[chapte
 let eventIndex=0;
 function eventRender(){
  $('eventText').textContent=eventScenes[eventIndex];
- $('eventSceneArt').textContent=['✧　星鐘の残響　✧','♜　灰銀の王城　♜','⚔　三国の戦火　⚔','✦　軍師の旅立ち　✦'][eventIndex%4];
+ $('eventSceneArt').textContent=[
+  '✧　'+continentForChapter(townChapter).name+'　✧',
+  '♜　'+STORY_CHAPTERS[townChapter-1].title+'　♜',
+  '⚔　'+continentForChapter(townChapter).arc+'　⚔',
+  '✦　記憶と選択の戦記　✦'][eventIndex%4];
  $('eventText').style.animation='none';void $('eventText').offsetWidth;$('eventText').style.animation='';
  $('eventNext').textContent=eventIndex===eventScenes.length-1?'町へ進む ▶':'次へ ▶';
 }
@@ -466,20 +484,27 @@ $('eventNext').onclick=()=>{
 };
 $('eventVoice').onclick=()=>{
  if(narration&&!narration.paused){stopNarration();$('eventVoice').textContent='▶ ナレーションを再生';return;}
- if(narration){void (async()=>{await narrationContext?.resume();await narration.play();$('eventVoice').textContent='■ ナレーション停止';})().catch(()=>void speakChapter(1));return;}
- void speakChapter(1);
+ if(narration){void (async()=>{await narrationContext?.resume();await narration.play();$('eventVoice').textContent='■ ナレーション停止';})().catch(()=>void speakChapter(townChapter));return;}
+ if(window.speechSynthesis?.speaking){stopNarration();$('eventVoice').textContent='▶ ナレーションを再生';return;}
+ void speakChapter(townChapter);
 };
 function closePaperStory(){
  $('opening').hidden=true;paperPending=false;
- game.storyFlags.openingEventCompleted=true;persist();stopNarration();
+ game.storyFlags.chapterOpenings??={};
+ game.storyFlags.chapterOpenings[townChapter]=true;
+ if(townChapter===1)game.storyFlags.openingEventCompleted=true;
+ persist();stopNarration();
 }
 function startPaperStory(){
  if(!townReady){paperPending=true;return;}
  townAudio.effect('paper');
  resetTownMovement();$('townGuide').hidden=true;closePanel();
+ const chapterData=STORY_CHAPTERS[townChapter-1],continent=continentForChapter(townChapter);
+ document.querySelector('#opening .eyebrow').textContent='第'+townChapter+'章・紙芝居　'+chapterData.title;
+ document.querySelector('#opening .sceneCard h1').textContent=continent.name;
  eventIndex=0;eventRender();$('opening').hidden=false;
  $('eventVoice').textContent='▶ ナレーション再生';
- void speakChapter(CAMPAIGN_STAGE_BY_ID[game.townStage].chapter,{autoplay:true});
+ void speakChapter(townChapter,{autoplay:true});
 }
 $('skipPaper').onclick=closePaperStory;
 window.addEventListener('pagehide',()=>{stopNarration();townAudio.dispose();});
