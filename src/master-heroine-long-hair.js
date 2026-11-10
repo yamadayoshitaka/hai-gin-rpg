@@ -128,7 +128,7 @@ export function buildHeroineWigRootCap(scalp){
   const lateral=clamp(Math.abs((x-cx)/(d.x*.5)),0,1);
   const limit=.45+.32*front+.055*lateral;
   const u=clamp((yn-limit+.06)/.115,0,1);
-  const a=u*u*(3-2*u);
+  const a=yn>.86?1:u*u*(3-2*u);
   const o=i*4;
   color[o]=.99;color[o+1]=.96;color[o+2]=.97;color[o+3]=a;
   if(yn>.87){crownSamples++;if(a>.98)coveredCrown++;}
