@@ -63,10 +63,10 @@ function buildPreset(row,i){
     eyeVertical:.002,eyeTilt:.051,
     browVertical:.004,browEyeGap:1.008,
     browWidth:1.065,browThickness:.745,browAngle:.025,
-    noseOverall:.85,noseLength:.975,noseWidth:.79,
-    noseBridge:1.115,noseTip:.79,
-    mouthWidth:.935,mouthHeight:.985,mouthVertical:.004,
-    lipFullness:1.105,mouthCorner:.008
+    noseOverall:.84,noseLength:.975,noseWidth:.79,
+    noseBridge:1.072,noseTip:.79,
+    mouthWidth:.925,mouthHeight:1.027,mouthVertical:.004,
+    lipFullness:1.15,mouthCorner:.008
    }):i===0?validateFaceProportions({
    faceHeight:.947,upperThird:1.07,middleThird:.86,lowerThird:.925,
    jawTaper:.85,chinLength:.87,eyeWidth:1.045,eyeHeight:1.045,
