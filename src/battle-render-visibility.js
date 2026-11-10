@@ -5,12 +5,16 @@
 export function createBattleActorVisibility(THREE,camera){
   const frustum=new THREE.Frustum();
   const projection=new THREE.Matrix4();
-  const bounds=new THREE.Sphere(new THREE.Vector3(),2.4);
+  const bounds=new THREE.Sphere(new THREE.Vector3(),3.0);
+  const cameraForward=new THREE.Vector3();
+  let hasCameraForward=false;
   const states=new WeakMap();
   let frameTime=0,visible=0,culled=0,throttled=0;
   function beginFrame(now){
     frameTime=now;visible=0;culled=0;throttled=0;
     camera.updateMatrixWorld();
+    hasCameraForward=typeof camera.getWorldDirection==='function';
+    if(hasCameraForward)camera.getWorldDirection(cameraForward);
     projection.multiplyMatrices(camera.projectionMatrix,camera.matrixWorldInverse);
     frustum.setFromProjectionMatrix(projection);
   }
@@ -19,11 +23,21 @@ export function createBattleActorVisibility(THREE,camera){
     if(!state){state={lastUpdate:frameTime,shadowEnabled:null,result:{visible:false,update:false,delta:0}};states.set(actor,state)}
     const result=state.result;
     bounds.center.set(actor.root.position.x,actor.root.position.y+1.05,actor.root.position.z);
-    const inFrame=frustum.intersectsSphere(bounds);
+    // Never lose an inspectable full-size human because the root-only
+    // frustum probe barely clips the near plane during a camera zoom.
+    const distance=camera.position.distanceTo(bounds.center);
+    // A near-plane exception applies only to bodies genuinely IN FRONT of
+    // the camera. Offscreen soldiers behind the player must remain culled.
+    const inFront=hasCameraForward&&
+      ((bounds.center.x-camera.position.x)*cameraForward.x+
+       (bounds.center.y-camera.position.y)*cameraForward.y+
+       (bounds.center.z-camera.position.z)*cameraForward.z)>0.15;
+    const inFrame=frustum.intersectsSphere(bounds)||(distance<14&&inFront);
     actor.root.visible=inFrame;
+    if(inFrame&&actor.hp>0&&!actor.crowdSampling&&actor.character?.object3D&&
+       !actor.character.object3D.visible)actor.character.object3D.visible=true;
     if(!inFrame){culled++;result.visible=false;result.update=false;result.delta=0;return result}
     visible++;
-    const distance=camera.position.distanceTo(bounds.center);
     const tier=distance<28?0:distance<75?1:2;
     // Previously every moving soldier past 75m had their feet updated only
     // ten times per second while the body root interpolated every frame.

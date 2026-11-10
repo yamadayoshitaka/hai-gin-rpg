@@ -10,7 +10,7 @@ assert.match(game,/\.squadScreenLabel\{[^}]*touch-action:none/,
   'tapping squad text must not enable browser pinch magnification');
 assert.match(game,/const pageZoomed=\(window\.visualViewport\?\.scale\?\?1\)>1\.08/,
   'hide screen overlays if the browser ignores the page-level zoom lock');
-assert.match(game,/if\(pageZoomed\|\|!marker\.visible\)\{\s*label\.hidden=true;marker\.userData\.calloutLine\.style\.display='none';\s*marker\.userData\.calloutDot\.style\.display='none';continue;\s*\}/,
+assert.match(game,/if\(pageZoomed\|\|!marker\.visible\|\|\(targetTeam!==null&&marker\.userData\.team!==targetTeam\)\)\{\s*label\.hidden=true;marker\.userData\.calloutLine\.style\.display='none';\s*marker\.userData\.calloutDot\.style\.display='none';continue;\s*\}/,
   'never render giant squad labels when native browser magnification is active');
 assert.match(game,/body\.squad-closeup #squadScreenLabels/,
   'all squad circles are hidden together while inspecting close-up characters');

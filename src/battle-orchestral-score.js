@@ -38,8 +38,8 @@ export function createBattleOrchestralScore({
  let preparedMedia=null,preparedSource='',prepared=false;
  const duration={intro:.27,battle:.225,victory:.245,defeat:.42};
  const battleRecording=()=> './assets/audio/battle/'+stageTheme.file;
- const recordedVolume=track=>track==='battle'?(narrationActive?.20:.64):track==='victory'?.78:.70;
- const fallbackMixGain=()=>narrationActive&&phase==='battle'?.27:.78;
+ const recordedVolume=track=>track==='battle'?(narrationActive?.14:.43):track==='victory'?.78:.70;
+ const fallbackMixGain=()=>narrationActive&&phase==='battle'?.18:.50;
  const pitch=n=>440*Math.pow(2,(n-69)/12);
  function initialize(){
   if(ctx||!AudioContextClass)return Boolean(ctx);

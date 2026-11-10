@@ -57,7 +57,10 @@ export function createBattleReportSpeech({
  }
  function findRecording(item){
   const profile=BATTLE_REPORT_VOICES[item.category];
-  if(!profile||profile.speaker!==item.speaker)return null;
+  if(!profile)return null;
+  // Visual reporters can differ from the narrator on a prerecorded generic
+  // status summary (e.g. a scout's enemy-order message read by the strategist).
+  // The clip speaker is always taken from the actual recording profile.
   // Limit replay to actual selected report categories, not arbitrary messages.
   const choices=[];
   for(const line of profile.lines)for(const speaker of profile.voices){
@@ -77,7 +80,7 @@ export function createBattleReportSpeech({
    try{
     const audio=new AudioCtor('./'+recording.path);
     audio.preload='auto';audio.volume=1;
-    current={...item,audio,spokenSummary:recording.line};
+    current={...item,audio,speaker:BATTLE_REPORT_VOICES[item.category].speaker,spokenSummary:recording.line};
     lastStarted=stamp;notifyPlayback(true);
     audio.onended=()=>{
      if(current?.audio===audio){spokenCount++;stopCurrent(audio)}

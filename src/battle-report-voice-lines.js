@@ -19,7 +19,10 @@ export const BATTLE_REPORT_VOICES=Object.freeze({
 });
 export function reportAudioCategory(report){
  const key=String(report?.key||'');
- if(key.startsWith('massmission:'))return 'mission';
+ if(key.startsWith('massmission:')||key.startsWith('explore-done:'))return 'mission';
+ // Existing recordings can narrate dynamic tactical dispatches in neutral
+ // summary form. Without this mapping they were silent despite being displayed.
+ if(/^(enemy-tactical|enemy-item|ally-auto-item|explore-next|circle-enemy|squad-order):/.test(key))return 'overview';
  const category=key.split(':')[0];
  return Object.prototype.hasOwnProperty.call(BATTLE_REPORT_VOICES,category)?category:null;
 }

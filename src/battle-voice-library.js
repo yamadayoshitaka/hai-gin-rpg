@@ -65,7 +65,7 @@ export function createBattleVoiceDirector({storage=globalThis.localStorage,fetch
  // Report narration is the lead track; character shouts stay quieter even
  // when multiple recorded WAVs overlap it.
  let messagePriority=false;
- const characterVolume=()=>messagePriority?.20:.32;
+ const characterVolume=()=>messagePriority?.42:.74;
  function stopClips(){for(const audio of activeAudio){try{audio.pause()}catch{}}activeAudio.clear();}
  // Static speech audio is produced in free GitHub Actions and cached by the browser.
  // No native text-to-speech when sound files fail or have not been recorded.
