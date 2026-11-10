@@ -2644,7 +2644,7 @@ function townFacility(){
  const hero=townAvatar();if(!hero||!battleReady)return;
  if(townIndoor){
   const keeper=actors.find(a=>a.townRole===townShopkeeperRoles[townIndoor.kind]);
-  if(keeper&&hero.root.position.distanceTo(keeper.root.position)>4.2){
+  if(keeper&&hero.root.position.distanceTo(keeper.root.position)>6.5){
    townPost('hai-gin-town-notice',{text:'店主まで近づくと会話・買い物ができます。'});
    return;
   }
