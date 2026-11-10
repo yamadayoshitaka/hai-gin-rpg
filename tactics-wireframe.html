@@ -487,6 +487,9 @@ body[data-circle-target] .squadCommandRibbon .ribbonSquad.eligible-target:not(:d
 body[data-circle-target] .squadCommandRibbon .ribbonSquad.command-source{
  animation:issuingSquadPulse .94s ease-in-out infinite!important
 }
+body[data-circle-target] .squadCommandRibbon .ribbonSquad.auto-suggested{
+ outline:3px solid #ffef9b!important;outline-offset:-2px;
+}
 body[data-circle-target] .squadCommandRibbon .ribbonSquad:not(.eligible-target):not(.command-source){
  animation:none!important;opacity:.48!important
 }
@@ -5875,6 +5878,7 @@ let pickingSquadDestination=false,pickingSquadMission=null,pickingStrategistWarp
 // An issued command is selected from a stable full-field tactical overview.
 let commandOverviewLocked=false;
 let pendingSquadMission=null,missionPreviewBox=null,pendingCircleTarget=null;
+let lastCircleTargetResolvedAt=-Infinity;
 const orderedSquad=()=>selectedSquadId;
 function squadCommanderId(id){return storyRequest?.units.find(u=>String(u.squadId)===String(id))?.commanderId??'provisional';}
 function squadCommanderUnavailableReason(id){
@@ -6345,15 +6349,13 @@ function beginCircleTargetSelection(kind,itemId=null){
   return false;
  }
  pendingCircleTarget=candidate;
- // First charge is automatic: lock the nearest eligible enemy before starting.
- // Later charges still allow explicit targeting.
+ // Auto-select a recommended enemy, but DO NOT issue the charge until the
+ // player taps an eligible opponent. Immediate commitment used to cause that
+ // enemy tap to open the unrelated enemy-info menu.
  if(kind==='attack'&&!firstAutoChargeIssued.has(String(source))){
   const suggested=currentSquadAttackTarget(0,source,lastRibbonSums)?.id;
-  const autoTarget=[suggested,...ids].find(id=>id!=null&&isSquadCircleTargetActionable(id,1,candidate));
-  if(autoTarget!=null){
-   const accepted=chooseCircleActionTarget(autoTarget,1);
-   if(accepted){firstAutoChargeIssued.add(String(source));return true}
-  }
+  candidate.suggestedTargetId=[suggested,...ids].find(id=>id!=null&&
+   isSquadCircleTargetActionable(id,1,candidate))??null;
  }
  enterCommandOverview();
  document.body.dataset.circleTarget=kind==='attack'?'enemy':'ally';
@@ -6361,7 +6363,9 @@ function beginCircleTargetSelection(kind,itemId=null){
  $('squadTactics').hidden=true;$('destinationPrompt').hidden=false;
  $('destinationPrompt').textContent=kind==='item'?'🎒 使用先の味方（青）のサークルをタップ・ここで取消':
   kind==='support'?'✚ 回復先の味方（青）のサークルをタップ・ここで取消':
-  '⚔ 攻撃対象の敵（赤）のサークルをタップ・ここで取消';
+  '⚔ 右側の点滅中の敵隊をタップで突撃確定'+
+  (candidate.suggestedTargetId!=null?'（自動候補：敵第'+(enemySquadIds.indexOf(String(candidate.suggestedTargetId))+1)+'隊）':'')+
+  '・ここで取消';
  return true;
 }
 function chooseCircleActionTarget(id,team){
@@ -6388,7 +6392,13 @@ function chooseCircleActionTarget(id,team){
   if(center)ok=issueSquadOrder('mission',{type:'eliminate_squad',
    targetSquadId:String(id),x:Math.round(center.x),z:Math.round(center.z),height:2});
  }
- if(ok){closeSquadTactics();return true;}
+ if(ok){
+  if(action.kind==='attack')firstAutoChargeIssued.add(String(action.source));
+  lastCircleTargetResolvedAt=performance.now();
+  cancelPendingSquadCircleInfo();
+  closeSquadTactics();
+  return true;
+ }
  $('destinationPrompt').textContent='実行できません。別の部隊を選ぶかここで取消';
  return false;
 }
@@ -7015,7 +7025,8 @@ function zoomToSquadMember(id,team){
 function activateSquadLabel(id,team,x=0,y=0){
  // Show the inspection strip only after the double-tap window expires.
  // A double tap must zoom without even a single-frame strip flash.
- if(!battleReady||finished||squadCloseupLabelsHidden)return;
+ if(!battleReady||finished||squadCloseupLabelsHidden||
+   performance.now()-lastCircleTargetResolvedAt<950)return;
  if(pendingCircleTarget){chooseCircleActionTarget(id,team);return;}
  const key=squadKey(team,String(id)),now=performance.now();
  const tap=registerSquadCircleTap(lastSquadCircleTap,{key,x,y,at:now});
@@ -7141,7 +7152,8 @@ function ribbonCommanderAlive(team,id){
 }
 function showEnemySquadIntel(id){
  closeSquadCircleInfo();
- if(!battleReady||finished||battleCeremony.locked)return;
+ if(!battleReady||finished||battleCeremony.locked||pendingCircleTarget||
+   performance.now()-lastCircleTargetResolvedAt<950)return;
  const row=lastRibbonSums.get(squadKey(1,id)),alive=ribbonCommanderAlive(1,id);
  if(!row)return;
  if(!$('squadTactics').hidden)closeSquadTactics();
@@ -7343,6 +7355,9 @@ function renderSquadRibbons(sums){
    const selectable=pendingCircleTarget?
    isSquadCircleTargetActionable(row.id,team,pendingCircleTarget):false;
   button.classList.toggle('eligible-target',Boolean(selectable));
+  button.classList.toggle('auto-suggested',Boolean(selectable&&team===1&&
+    pendingCircleTarget?.kind==='attack'&&
+    String(pendingCircleTarget.suggestedTargetId)===String(row.id)));
   button.classList.toggle('command-source',Boolean(pendingCircleTarget&&team===0&&
    String(row.id)===String(pendingCircleTarget.source)));
   button.disabled=pendingCircleTarget?!selectable:!state.enabled;
