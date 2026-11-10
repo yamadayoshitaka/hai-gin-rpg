@@ -120,13 +120,13 @@ test('all six anatomical XYZ groups support independent reversible axes with mil
 import {polishHeroineFacePoint,HEROINE_FACE_POLISH_VERSION}
  from '../src/master-heroine-facial-refinement.js';
 
-test('heroine 3D cheek sculpt rounds lower cheek without tapering chin to a point',()=>{
+test('heroine 3D cheek sculpt gently narrows lower cheeks without tapering chin to a point',()=>{
  const box={min:{x:-.16,y:-.18,z:-.12},max:{x:.16,y:.20,z:.13}};
  const v=(x,y,z)=>polishHeroineFacePoint(x,y,z,box);
  const cheek=v(.105,-.012,.11),original={x:.105,y:-.012,z:.11};
  const negative=v(-.105,-.012,.11);
- assert.ok(cheek.x>original.x+.002,'Lower cheek must gain lateral volume');
- assert.ok(cheek.z>original.z+.001,'Lower cheek needs a smooth 3D roundness');
+ assert.ok(cheek.x<original.x-.001,'Lower cheek must lose lateral bulge');
+ assert.ok(cheek.z<original.z,'Lower cheek must not protrude from front view');
  assert.ok(Math.abs(cheek.x+negative.x)<1e-10,'Cheek outline must remain bilateral');
  assert.ok(Math.abs(cheek.z-negative.z)<1e-10,'Cheek depth should stay symmetric');
  assert.ok(Math.abs(cheek.x-original.x)<.016,'Do not create overwide jaw');
@@ -152,9 +152,9 @@ test('heroine lower cheek is continuously round, while nostrils and mouth corner
  const box={min:{x:-.16,y:-.18,z:-.12},max:{x:.16,y:.20,z:.13}};
  const fit=(x,y,z=.11)=>polishHeroineFacePoint(x,y,z,box);
  const upper=fit(.102,-.007),lower=fit(.104,-.055);
- assert.ok(upper.x>.105,'Volume must fill the hollow below the cheekbone');
- assert.ok(lower.x>.105,'Lower cheek transitions into the jaw, not a V-shaped point');
- assert.ok(upper.x<.118&&lower.x<.118,'Avoid an oversized gibbon-like cheek bulge');
+ assert.ok(upper.x<.102,'Upper cheek must stop bulging sideways');
+ assert.ok(lower.x<.104,'Lower cheek transitions inward to the jaw');
+ assert.ok(upper.x>.087&&lower.x>.085,'Narrow cheeks must retain a smooth natural contour');
  const noseWing=fit(.037,.016);
  assert.ok(noseWing.x<.037,'Nose wing must be slightly narrower, not widened by cheek shaping');
  const mouthCorner=fit(.062,-.030);
