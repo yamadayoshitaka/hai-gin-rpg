@@ -36,6 +36,11 @@ assert.match(game,/if\(!townCapsuleClear\(px,pz,townObstacles,\.01\*CELL\)\)retu
 assert.match(game,/fitTownHumanScale\(actor\.root,TOWN_ADULT_HEIGHT\[actor\.sex\]/);
 assert.match(game,/fitTownHumanScale\(citizen\.root,TOWN_ADULT_HEIGHT\[citizen\.sex\]/);
 assert.match(game,/root\.userData\.townCitizenId='street-'\+i;root\.userData\.nonColliding=false/);
+assert.match(game,/actor\.townRegisteredModel=model;/,
+ 'An oversized shopkeeper must replace malformed combat garments with a registered civilian mesh');
+assert.match(game,/if\(\(actor\.root\.userData\.townHeight\|\|0\)>\.75\)continue;/,
+ 'Only physically broken imported outfits use the replacement');
+
 assert.match(game,/const focuses=TOWN_MODE\?\[controls\.target\]:cameraGoalFocuses\(\)/);
 assert.match(game,/if\(TOWN_MODE\)\{elapsed\+=dt;updateTownAvatar\(dt\);simAccumulator=0;/,
  'town uses a separate non-combat tick instead of battle simulation');
