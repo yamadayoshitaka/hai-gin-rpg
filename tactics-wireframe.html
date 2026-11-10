@@ -3610,7 +3610,7 @@ function moveActor(a,goal,dt,stop){
     if(e.skillId&&!String(e.skillId).startsWith('chant:')&&
        availableCombatSkills(e.jobId,'UR').some(skill=>skill.rank==='UR'&&skill.id===e.skillId)){
      queueBattleFocusCinematic((e.x-6)*CELL,(e.z-6)*CELL,
-      {kind:'ultimate',priority:99,team:e.team,detail:e.skillId});
+      {kind:'ultimate',priority:130,team:e.team,detail:e.skillId});
     }
     const a=massSim?actors.find(actor=>actor.massUnitId===e.sourceId):actors.find(actor=>actor.id===e.sourceId);
     if(a?.character){a.attackPoseUntil=elapsed+.60;requestMotion(a,e.animation==='cast'?'skill':e.animation==='ranged'?'attack':e.animation||'attack');}
@@ -5180,7 +5180,7 @@ function issueBuildingExploration(team,squadId,buildingId,{beforeBattle=false}={
   battleDialogue.push({key:'explore:'+key+':'+Math.floor(elapsed),speaker:'伝令',kind:'info',priority:72,
    squadId:side===0?id:null,text:(side===0?'味方':'敵')+squadName(id,side)+'：'+target.buildingName+'を探索開始'});
   if(side===0){
-   queueBattleFocusCinematic((target.x-6)*CELL,(target.z-6)*CELL,{kind:'explore',priority:102});
+   queueBattleFocusCinematic((target.x-6)*CELL,(target.z-6)*CELL,{kind:'explore',priority:120});
    log(squadName(id)+'：'+target.buildingName+'の探索を指示');
   }
  }
@@ -5301,7 +5301,7 @@ function checkCompletedExplorations(){
    explorationQueues.set(key,pending);
    const nextTarget=activeBuildingExplorations.get(key);
    if(team===0&&nextTarget)queueBattleFocusCinematic(
-    (nextTarget.x-6)*CELL,(nextTarget.z-6)*CELL,{kind:'explore',priority:102});
+    (nextTarget.x-6)*CELL,(nextTarget.z-6)*CELL,{kind:'explore',priority:120});
    battleDialogue.push({key:'explore-next:'+key+':'+Math.floor(elapsed),speaker:'伝令',kind:'info',priority:70,
     text:squadName(id,team)+'：次の建物へ移動・残り'+pending.length+'件'});
    continue;
@@ -5310,7 +5310,7 @@ function checkCompletedExplorations(){
   setStartingSquadOrder(team,id,'charge');
   if(team===0){
    updateSquadTarget(id,null);drawSquadMiniMap();
-   queueBattleFocusCinematic((task.x-6)*CELL,(task.z-6)*CELL,{kind:'explore',priority:102});
+   queueBattleFocusCinematic((task.x-6)*CELL,(task.z-6)*CELL,{kind:'explore',priority:120});
   }
   battleDialogue.push({key:'explore-done:'+key,speaker:'伝令',kind:'success',priority:80,
    squadId:team===0?id:null,text:(team===0?'味方':'敵')+squadName(id,team)+
@@ -5404,7 +5404,7 @@ const squadName=(id,team=0)=>(team===0?'第':'敵第')+
  FORMATION_NAMES[selectedSquadType(id,team)];
 let dialogueCameraReturn=null,commanderCinematic=null;
 const cinematicFocusQueue=[];
-let lastAutomaticFocusAt=-Infinity;
+let lastAutomaticFocusAt=-Infinity,lastUltimateFocusAt=-Infinity;
 // Commander/runner/scout reports use only prerecorded VOICEVOX recordings.
 // Dynamic details remain text. No electronic voice or paid TTS.
 const reportSpeech=createBattleReportSpeech({
@@ -5557,12 +5557,22 @@ function queueBattleFocusCinematic(x,z,{kind='order',priority=90,team=0,detail='
  if(!battleReady||finished||TOWN_MODE||!Number.isFinite(x)||!Number.isFinite(z))return false;
  if(battleCeremony.state==='intro'||battleCeremony.state==='outro')return false;
  const stamp=performance.now(),automatic=kind==='ultimate'||kind==='result';
- if(automatic&&stamp-lastAutomaticFocusAt<6500)return false;
- if(automatic)lastAutomaticFocusAt=stamp;
+ // Maximum skills have their own cooldown; normal result reports never
+ // steal priority from a real UR-rank action.
+ if(kind==='ultimate'){
+  if(stamp-lastUltimateFocusAt<6500)return false;
+  lastUltimateFocusAt=stamp;
+ }else if(kind==='result'){
+  if(stamp-lastAutomaticFocusAt<6500)return false;
+  lastAutomaticFocusAt=stamp;
+ }
  const entry={x,z,kind,priority,team,detail};
  if(commanderCinematic){
-  if(automatic||cinematicFocusQueue.length>=8)return false;
-  cinematicFocusQueue.push(entry);return true;
+  if(cinematicFocusQueue.length>=12||
+     (automatic&&cinematicFocusQueue.some(item=>item.kind===kind)))return false;
+  cinematicFocusQueue.push(entry);
+  cinematicFocusQueue.sort((a,b)=>b.priority-a.priority);
+  return true;
  }
  return startBattleFocusCinematic(entry);
 }
@@ -5587,7 +5597,7 @@ function beginSquadFocusCinematic(squadId,team=0,kind='order'){
  if(!unit)return false;
  const x=massSim?(unit.x-6)*CELL:unit.root?.position?.x;
  const z=massSim?(unit.z-6)*CELL:unit.root?.position?.z;
- return queueBattleFocusCinematic(x,z,{kind,team,priority:kind==='order'?105:90});
+ return queueBattleFocusCinematic(x,z,{kind,team,priority:kind==='order'?110:100});
 }
 function beginCommanderCinematic(squadId){
  return beginSquadFocusCinematic(squadId,0,'order');
