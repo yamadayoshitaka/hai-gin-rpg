@@ -34,6 +34,10 @@ fs.mkdirSync(dir,{recursive:true});
      d.heroineActualBodyClearance!==true||
      d.heroineWigCrownVisible!==true||
      d.heroineWigCrown?.coverageRatio<.95||
+     d.heroineWigCrown?.crownFlowLocks!==8000||
+     d.heroineWigCrown?.crownFlowTriangles!==64000||
+     d.heroineWigCrown?.crownHasActualTangentFibreGeometry!==true||
+     d.facialQA?.heroineMakeup?.chinLipVertices!==0||
      d.heroineWigCrown?.fringeLockCount!==520||
      d.heroineWigCrown?.fringeTriangleCount!==6240||
      d.heroineWigCrown?.fringeFaceClear!==true||

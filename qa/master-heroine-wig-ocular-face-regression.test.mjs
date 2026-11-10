@@ -28,6 +28,13 @@ test('heroine wig paints every upper-crown vertex and keeps face skin uncovered'
  assert.ok(report.coverageRatio>.95);
  assert.equal(report.coveredBySolidSourceTopology,true);
  assert.equal(report.foreheadBangsVisible,true);
+ assert.equal(report.crownFlowLocks,8000);
+ assert.equal(report.crownFlowTriangles,64000);
+ assert.equal(report.crownHasActualTangentFibreGeometry,true);
+ const fibers=cap.getObjectByName('HEROINE_CROWN_DENSE_SURFACE_FIBRE_FLOW');
+ assert.ok(fibers?.isMesh&&fibers.geometry.index.count===64000*3,
+  'The wig cap is still an opaque bald-looking dome without top hair');
+ assert.ok(fibers.userData.sourceScalpRoots);
  assert.equal(report.fringeLockCount,520);
  assert.equal(report.fringeTriangleCount,520*6*2);
  assert.ok(report.fringeTipMinNormalized>=.69);
@@ -106,6 +113,9 @@ test('natural makeup edits real face vertex colors, resets and preserves source 
  assert.equal(result.strength,.93);
  assert.ok(result.blushVertices>0,'Cheek color missing');
  assert.ok(result.lipVertices>0,'Rose-tinted lips missing');
+ assert.equal(result.chinLipVertices,0,'Lipstick has leaked below the lips onto the chin');
+ assert.equal(result.chinLipMaskExcluded,true);
+ assert.deepEqual(result.mouthMaskYNormalized,[.400,.537]);
  assert.ok(result.linerVertices>0,'Eye-following upper lash color missing');
  assert.ok(result.changedVertices>100,'Cosmetics are too faint to affect the face');
  assert.equal(result.skinShaderUsesVertexColors,true,

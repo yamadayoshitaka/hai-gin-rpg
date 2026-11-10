@@ -143,20 +143,21 @@ export function buildHeroineFrontFringe(scalp,{locks=520}={}){
   const x0=q[0],y0=q[1],z0=q[2],base=positions.length/3;
   // A layered sweep moves from the upper-left crown toward the right temple.
   // A minority of shorter inner locks cross over to hide a visible hairline.
-  const length=d.y*(.165+.09*hash(seed*2.71));
-  const wave=(hash(seed*5.53)-.5)*d.x*.017;
-  const drift=d.x*(.13+.095*hash(seed*3.43));
-  const width=d.x*(.0065+.006*hash(seed*1.69));
+  const length=d.y*(.115+.125*hash(seed*2.71));
+  const wave=(hash(seed*5.53)-.5)*d.x*.027;
+  const drift=d.x*(.072+.120*hash(seed*3.43));
+  // Small overlapping fillets: avoid a single opaque horizontal fringe slab.
+  const width=d.x*(.0038+.0033*hash(seed*1.69));
   for(let j=0;j<=N;j++){
    const t=j/N,e=t*t*(3-2*t);
    const x=clamp(x0+drift*e+wave*Math.sin(Math.PI*t),
     b.min.x+d.x*.03,b.max.x-d.x*.025);
-   const y=Math.max(b.min.y+d.y*.695,y0-length*t);
+   const y=Math.max(b.min.y+d.y*.705,y0-length*t);
    // Follow the forehead rather than stabbing outward from the hairline:
    // only a small surface stand-off above the actual source frontal Z.
-   const z=z0+d.z*(.012+.105*t+.020*Math.sin(Math.PI*t));
+   const z=z0+d.z*(.009+.047*t+.016*Math.sin(Math.PI*t));
    if(j===N){minTipY=Math.min(minTipY,y);maxTipY=Math.max(maxTipY,y);}
-   const taper=(.92-.83*e)*width;
+   const taper=(.82-.75*e)*width;
    for(const sign of [-1,1]){
     positions.push(x+sign*taper,y,z);
     const v=.88+.11*hash(seed*.75),shine=.94+.06*Math.sin(t*4+seed*.13);
@@ -189,7 +190,81 @@ export function buildHeroineFrontFringe(scalp,{locks=520}={}){
   lockCount:locks,triangleCount:indices.length/3,
   tipMinNormalized:Number(((minTipY-b.min.y)/d.y).toFixed(3)),
   tipMaxNormalized:Number(((maxTipY-b.min.y)/d.y).toFixed(3)),
-  faceZoneProtected:minTipY>=b.min.y+d.y*.695-.00001
+  faceZoneProtected:minTipY>=b.min.y+d.y*.705-.00001
+ })};
+}
+
+/**
+ * Dense SHORT fibre flow over the actual sculpt surface; the pink foundation
+ * is a scalp mask, never intended to look like a bare plastic helmet.
+ * This crown-only ribbon layer is independent of the 100k long filaments.
+ */
+export function buildHeroineCrownFlow(scalp,{locks=8000}={}){
+ const source=scalp?.geometry,p=source?.getAttribute('position'),
+  mask=source?.getAttribute('color');
+ if(!p||!mask||mask.itemSize!==4)throw Error('A source head scalp is required for crown flow');
+ source.computeBoundingBox();
+ const box=source.boundingBox,d=box.getSize(new THREE.Vector3());
+ const cx=(box.min.x+box.max.x)*.5,cy=(box.min.y+box.max.y)*.5,
+  cz=(box.min.z+box.max.z)*.5;
+ const roots=[];
+ for(let i=0;i<p.count;i++){
+  const y=(p.getY(i)-box.min.y)/d.y;
+  if(y<.745||mask.getW(i)<.90)continue;
+  roots.push([p.getX(i),p.getY(i),p.getZ(i)]);
+ }
+ if(roots.length<80)throw Error('Actual crown lacks enough visible hair roots');
+ const pts=[],col=[],indices=[],sections=4;
+ const radial=new THREE.Vector3(),tangent=new THREE.Vector3(),
+  side=new THREE.Vector3(),point=new THREE.Vector3();
+ for(let i=0;i<locks;i++){
+  const seed=i+1;
+  const root=roots[(i*67+Math.floor(hash(seed*3.17)*roots.length))%roots.length];
+  radial.set((root[0]-cx)/d.x,(root[1]-cy)/d.y,(root[2]-cz)/d.z).normalize();
+  // Along the scalp, not straight out from the vertex (no upright spikes).
+  tangent.set(.58+hash(seed*1.83)*.20,-.51,.29+hash(seed*7.7)*.26);
+  tangent.addScaledVector(radial,-tangent.dot(radial)).normalize();
+  side.crossVectors(tangent,radial).normalize();
+  const length=d.y*(.044+.054*hash(seed*1.31)),
+   halfWidth=d.x*(.00115+.00080*hash(seed*4.91)),
+   base=pts.length/3;
+  for(let j=0;j<=sections;j++){
+   const t=j/sections,taper=1-t*.94;
+   point.set(...root)
+    .addScaledVector(tangent,length*t)
+    .addScaledVector(radial,d.y*(.009+.003*Math.sin(Math.PI*t)));
+   for(const sign of [-1,1]){
+    const x=point.x+sign*halfWidth*taper*side.x;
+    const y=point.y+sign*halfWidth*taper*side.y;
+    const z=point.z+sign*halfWidth*taper*side.z;
+    pts.push(x,y,z);
+    const shade=.72+.22*hash(seed*.71)+.045*Math.sin(t*6+seed*.17);
+    col.push(shade,shade*.93,shade*.96);
+   }
+   if(j<sections){
+    const k=base+j*2;
+    indices.push(k,k+1,k+2,k+1,k+3,k+2);
+   }
+  }
+ }
+ const geometry=new THREE.BufferGeometry();
+ geometry.setAttribute('position',new THREE.Float32BufferAttribute(pts,3));
+ geometry.setAttribute('color',new THREE.Float32BufferAttribute(col,3));
+ geometry.setIndex(indices);geometry.computeVertexNormals();
+ geometry.computeBoundingSphere();
+ const mat=new THREE.MeshStandardMaterial({
+  color:0xe6aec6,vertexColors:true,roughness:.88,metalness:0,
+  side:THREE.DoubleSide,depthTest:true,depthWrite:true
+ });
+ const hair=new THREE.Mesh(geometry,mat);
+ hair.name='HEROINE_CROWN_DENSE_SURFACE_FIBRE_FLOW';
+ hair.castShadow=true;
+ hair.renderOrder=1;
+ hair.userData.sourceScalpRoots=true;
+ return {hair,report:Object.freeze({
+  locks,triangles:indices.length/3,
+  sourceScalpRooted:true,rootPool:roots.length,
+  layeredCrownNoBaldDome:true,shortTangentFlow:true
  })};
 }
 
@@ -233,12 +308,17 @@ export function buildHeroineWigRootCap(scalp){
  mesh.userData.donorHairMustBeHidden=true;
  // The underlay and fringe are a single independently toggleable wig module.
  // Both inherit the source head's exact transform, with no donor wig visible.
+ const crownFlow=buildHeroineCrownFlow(scalp);
+ mesh.add(crownFlow.hair);
  const bangs=buildHeroineFrontFringe(scalp);
  mesh.add(bangs.fringe);
  return {cap:mesh,report:Object.freeze({
   sourceHeadConforming:true,sourceScalpHidden:true,wigRootFoundationOnly:true,
   crownSamples,coveredCrown,coverageRatio:coveredCrown/crownSamples,
   coveredBySolidSourceTopology:true,foreheadBangsVisible:true,
+  crownFlowLocks:crownFlow.report.locks,
+  crownFlowTriangles:crownFlow.report.triangles,
+  crownHasActualTangentFibreGeometry:true,
   fringeLockCount:bangs.report.lockCount,
   fringeTriangleCount:bangs.report.triangleCount,
   fringeTipMinNormalized:bangs.report.tipMinNormalized,
