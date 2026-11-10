@@ -735,7 +735,7 @@ import {createCharacter} from './src/character-system/shared-character-runtime.j
 import {buildRiggedJobOutfit} from './src/character-system/rigged-outfit-runtime.js?v=4.6.15';
 import {batchStaticStageDecorations} from './src/stage-static-instancing.js?v=4.6.36';
 import {batchStaticBuildingShells} from './src/stage-building-instancing.js?v=2';
-import {cameraSegmentHitsBox,selectCameraOccluders,selectCanopiesAroundCamera,shouldRevealBuildingInterior,safeSelectedInteriorFloor} from './src/battle-camera-occlusion.js?v=4.6.65';
+import {cameraSegmentHitsBox,selectCameraOccluders,selectCanopiesAroundCamera,chooseClearBattleCameraOffset,shouldRevealBuildingInterior,safeSelectedInteriorFloor} from './src/battle-camera-occlusion.js?v=4.6.66';
 import {registerSquadCircleTap,chooseSquadZoomTarget,SQUAD_CIRCLE_DOUBLE_TAP_MS,shouldHideSquadLabelsAtDistance} from './src/battle-squad-circle-tap.js?v=4.6.36';
 import {createBattleActorVisibility} from './src/battle-render-visibility.js?v=zoom-human-1';
 import {shouldShowOverheadSquadCallouts,closestAliveBattleFocus} from './src/battle-zoom-visibility-policy.js?v=1';
@@ -5805,7 +5805,7 @@ function squadStrategist(id,team=0){
  * Return to the whole map rather than the squad's former local camera focus.
  * Keep the 1000v1000 presentation stable by throttling automatic highlights.
  */
-function queueBattleFocusCinematic(x,z,{kind='order',priority=90,team=0,detail=''}={}){
+function queueBattleFocusCinematic(x,z,{kind='order',priority=90,team=0,detail='',focusUnitId=null,focusY=null}={}){
  if(!battleReady||finished||TOWN_MODE||commandOverviewLocked||!Number.isFinite(x)||!Number.isFinite(z))return false;
  if(battleCeremony.state==='intro'||battleCeremony.state==='outro')return false;
  const stamp=performance.now(),automatic=kind==='ultimate'||kind==='result';
@@ -5818,7 +5818,7 @@ function queueBattleFocusCinematic(x,z,{kind='order',priority=90,team=0,detail='
   if(stamp-lastAutomaticFocusAt<6500)return false;
   lastAutomaticFocusAt=stamp;
  }
- const entry={x,z,kind,priority,team,detail};
+ const entry={x,z,kind,priority,team,detail,focusUnitId,focusY};
  if(commanderCinematic){
   if(cinematicFocusQueue.length>=12||
      (automatic&&cinematicFocusQueue.some(item=>item.kind===kind)))return false;
@@ -5828,34 +5828,57 @@ function queueBattleFocusCinematic(x,z,{kind='order',priority=90,team=0,detail='
  }
  return startBattleFocusCinematic(entry);
 }
-function startBattleFocusCinematic({x,z,priority=90,kind='order'}){
- // Leave exploration focused on its building. Other cut-ins should look
- // toward a living combatant instead of zooming onto empty furniture.
- const actorFocus=kind==='explore'?null:closestAliveBattleFocus(massSim?.units??actors,x,z,{
-  gridOffset:massSim?6:0,cellSize:massSim?CELL:1,maxDistance:20*CELL
- });
- if(actorFocus){x=actorFocus.x;z=actorFocus.z;}
- const closeTarget=new THREE.Vector3(x,terrainY(x,z)+1.4,z);
- const fromTarget=controls.target.clone(),center=(WORLD_SIZE/2-6)*CELL;
+function cinematicHumanWorldPoint(unit){
+ if(!unit||unit.alive===false||unit.hp<=0)return null;
+ if(massSim){
+  const x=(unit.x-6)*CELL,z=(unit.z-6)*CELL,motion=unit._visualMotion;
+  if(motion&&Number.isFinite(motion.x)&&Number.isFinite(motion.z))
+   return new THREE.Vector3(motion.x,motion.y+1.35,motion.z);
+  return new THREE.Vector3(x,unitGroundY(unit,x,z)+1.35,z);
+ }
+ return unit.root?.position?unit.root.position.clone().add(new THREE.Vector3(0,1.35,0)):null;
+}
+function startBattleFocusCinematic({x,z,priority=90,kind='order',team=0,focusUnitId=null,focusY=null}){
+ // Target the real soldier, not an unrelated opponent or empty foliage.
+ const roster=massSim?.units??actors;
+ let focusUnit=focusUnitId==null?null:roster.find(u=>u.id===focusUnitId&&u.team===team&&
+  u.hp>0&&u.alive!==false&&!u.isStrategist);
+ if(!focusUnit&&kind!=='explore'){
+  const nearby=closestAliveBattleFocus(roster,x,z,{
+   team,gridOffset:massSim?6:0,cellSize:massSim?CELL:1,maxDistance:20*CELL
+  });
+  focusUnit=nearby?.unit??null;
+ }
+ const actual=focusUnit?cinematicHumanWorldPoint(focusUnit):null;
+ if(kind!=='explore'&&!actual)return false;
+ const closeTarget=actual||new THREE.Vector3(x,Number.isFinite(focusY)?focusY:terrainY(x,z)+1.4,z);
+ const center=(WORLD_SIZE/2-6)*CELL;
  const overTarget=new THREE.Vector3(center,terrainY(center,center)+1,center);
- commanderCinematic={
-  priority,kind,start:performance.now(),
-  fromPosition:camera.position.clone(),fromTarget,
-  closePosition:closeTarget.clone().add(new THREE.Vector3(4.5,5.6,10.2)),
-  closeTarget,overPosition:overTarget.clone().add(cameraOverviewOffset),overTarget
- };
+ const nearbyTrees=cameraTreeCandidates.filter(t=>{
+  const b=t.bounds,cx=(b.minX+b.maxX)*.5,cz=(b.minZ+b.maxZ)*.5;
+  return Math.abs(cx-closeTarget.x)<28&&Math.abs(cz-closeTarget.z)<28;
+ });
+ const offset=chooseClearBattleCameraOffset(closeTarget,nearbyTrees,{terrainHeight:terrainY});
+ const closeOffset=new THREE.Vector3(offset.x,offset.y,offset.z);
+ commanderCinematic={priority,kind,team,focusUnitId:focusUnit?.id??null,closeOffset,
+  start:performance.now(),fromPosition:camera.position.clone(),fromTarget:controls.target.clone(),
+  closePosition:closeTarget.clone().add(closeOffset),closeTarget,
+  overPosition:overTarget.clone().add(cameraOverviewOffset),overTarget};
  dialogueCameraReturn=null;followCamera=false;focusedHumanUnitId=null;
  return true;
 }
 function beginSquadFocusCinematic(squadId,team=0,kind='order'){
  const members=(massSim?.units??actors).filter(u=>
-  u.team===team&&String(u.squadId)===String(squadId));
- const unit=members.find(u=>u.isStrategist&&u.hp>0&&u.alive!==false)||
-  members.find(u=>u.hp>0&&u.alive!==false)||members[0];
+  u.team===team&&String(u.squadId)===String(squadId)&&
+  u.hp>0&&u.alive!==false&&!u.isStrategist);
+ const detailed=members.find(u=>massSim?actors.some(a=>a.massUnitId===u.id&&a.root.visible):
+  u.root?.visible);
+ const unit=detailed||members[0];
  if(!unit)return false;
- const x=massSim?(unit.x-6)*CELL:unit.root?.position?.x;
- const z=massSim?(unit.z-6)*CELL:unit.root?.position?.z;
- return queueBattleFocusCinematic(x,z,{kind,team,priority:kind==='order'?110:100});
+ const point=cinematicHumanWorldPoint(unit);
+ return point?queueBattleFocusCinematic(point.x,point.z,{
+  kind,team,focusUnitId:unit.id,focusY:point.y,priority:kind==='order'?110:100
+ }):false;
 }
 function beginCommanderCinematic(squadId){
  return beginSquadFocusCinematic(squadId,0,'order');
@@ -5867,16 +5890,22 @@ function updateCommanderCinematic(){
   if(cinematicFocusQueue.length)startBattleFocusCinematic(cinematicFocusQueue.shift());
   return;
  }
+ // Track the exact living model throughout the held close-up.
+ if(shot.focusUnitId!=null){
+  const live=(massSim?.units??actors).find(u=>u.id===shot.focusUnitId&&u.team===shot.team);
+  const current=cinematicHumanWorldPoint(live);
+  if(current){shot.closeTarget.copy(current);shot.closePosition.copy(current).add(shot.closeOffset);}
+ }
  const ms=performance.now()-shot.start;
  const ease=t=>{const x=Math.max(0,Math.min(1,t));return x*x*(3-2*x);};
- if(ms<470){
-  const a=ease(ms/470);
+ if(ms<850){
+  const a=ease(ms/850);
   camera.position.lerpVectors(shot.fromPosition,shot.closePosition,a);
   controls.target.lerpVectors(shot.fromTarget,shot.closeTarget,a);
- }else if(ms<1750){
+ }else if(ms<5050){
   camera.position.copy(shot.closePosition);controls.target.copy(shot.closeTarget);
- }else if(ms<2950){
-  const a=ease((ms-1750)/1200);
+ }else if(ms<6750){
+  const a=ease((ms-5050)/1700);
   camera.position.lerpVectors(shot.closePosition,shot.overPosition,a);
   controls.target.lerpVectors(shot.closeTarget,shot.overTarget,a);
  }else{
