@@ -41,7 +41,7 @@ assert.ok(+clothFidelity[1]>=32&&+clothFidelity[3]>=8&&
   +clothFidelity[1]<=+clothFidelity[2]&&+clothFidelity[3]<=+clothFidelity[4],
   'battle cloth must retain curved limbs with a bounded geometry budget');
 assert.match(cloth,/radialSegments=96,heightSegments=32/);
-assert.match(game,/const TEAM_SIZE=MASS_SIZE\?12:50,BATTLE_SIZE=TEAM_SIZE\*2/);
+assert.match(game,/const TEAM_SIZE=TOWN_MODE\?6:MASS_SIZE\?12:50,BATTLE_SIZE=TOWN_MODE\?6:TEAM_SIZE\*2/);
 assert.match(game,/const MASS_SIZE=\[100,200,500,1000\]\.includes\(requestedArmy\)/);
 assert.match(game,/createMassBattleRealArmy\(scene,massSim/);
 assert.match(game,/new MassBattleGridSimulation\(MASS_SIZE,20261104/,'大軍モードが実マップの通行判定を使用する');
