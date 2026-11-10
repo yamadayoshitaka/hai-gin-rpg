@@ -100,12 +100,18 @@ fs.mkdirSync(dir,{recursive:true});
    clip:await canvas.boundingBox(),timeout:90000,animations:'disabled'});
   // WebGL evidence: cosmetics ON and OFF must visibly differ.
   // Disable animated blinking so the only variable is the 3D face material.
-  await page.locator('#autoBlink').uncheck();
-  await page.evaluate(()=>window.__heroSwordsmanHoldBlink?.(0));
+  await page.evaluate(()=>{
+   const c=document.querySelector('#autoBlink');c.checked=false;
+   c.dispatchEvent(new Event('change',{bubbles:true}));
+   window.__heroSwordsmanHoldBlink?.(0);
+  });
   await page.waitForTimeout(180);
   const makeupOn=PNG.sync.read(await page.screenshot({
    clip:await canvas.boundingBox(),timeout:90000,animations:'disabled'}));
-  await page.locator('#makeupOn').uncheck();
+  await page.evaluate(()=>{
+   const c=document.querySelector('#makeupOn');c.checked=false;
+   c.dispatchEvent(new Event('change',{bubbles:true}));
+  });
   await page.waitForTimeout(180);
   const makeupOffQA=await page.evaluate(()=>window.__heroSwordsmanQA().facialQA?.heroineMakeup);
   if(makeupOffQA?.strength!==0||makeupOffQA.changedVertices!==0)
@@ -125,7 +131,10 @@ fs.mkdirSync(dir,{recursive:true});
   }
   if(cosmeticPixelChanges<65)
    throw Error('Makeup changes did not visibly affect WebGL pixels: '+cosmeticPixelChanges);
-  await page.locator('#makeupOn').check();
+  await page.evaluate(()=>{
+   const c=document.querySelector('#makeupOn');c.checked=true;
+   c.dispatchEvent(new Event('change',{bubbles:true}));
+  });
   await page.waitForTimeout(180);
   const restoredMakeup=await page.evaluate(()=>window.__heroSwordsmanQA().facialQA?.heroineMakeup);
   if(restoredMakeup?.strength<.9||restoredMakeup.changedVertices<100)
