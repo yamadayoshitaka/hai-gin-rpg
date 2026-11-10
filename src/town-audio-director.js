@@ -7,9 +7,10 @@ const MUSIC={
  tavern:'./assets/audio/town.mp3',
  inn:'./assets/audio/town.mp3',
  church:'./assets/audio/battle/forest.ogg',
- castle:'./assets/audio/battle/forest.ogg'
+ castle:'./assets/audio/battle/forest.ogg',
+ paper:'./assets/audio/battle/ruins.ogg'
 };
-const LEVEL={town:.32,shop:.21,tavern:.34,inn:.24,church:.26,castle:.30};
+const LEVEL={town:.32,shop:.21,tavern:.34,inn:.24,church:.26,castle:.30,paper:.29};
 const TONES={
  select:[[640,.07,0],[920,.09,.045]],
  cancel:[[420,.10,0],[330,.12,.065]],
