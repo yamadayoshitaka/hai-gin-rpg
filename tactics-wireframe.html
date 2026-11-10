@@ -451,6 +451,22 @@ body.squad-closeup #enemySquadIntel{display:none!important}
 #squadTactics[data-panel="main"] .tacticsActions{display:none!important}
 #squadTactics[data-panel="main"] #squadOneClickOrders{overflow:hidden!important}
 #battleMenu .retiredRibbonSettings{display:none!important}
+
+/* v4.6.64: two compact scrollable ten-squad target rosters. */
+#allySquadRibbon,#enemySquadRibbon,body.squad-closeup #allySquadRibbon,body.squad-closeup #enemySquadRibbon{display:flex!important;top:calc(var(--battleTopBottom,185px) + 6px)!important;bottom:calc(110px + env(safe-area-inset-bottom,0px))!important;width:clamp(72px,20vw,94px)!important;padding:3px!important;gap:2px!important;z-index:24!important}
+.squadCommandRibbon h2{font:800 10px/1.2 system-ui!important;margin:1px 0 3px!important}
+.squadCommandRibbon .ribbonItemButton,.squadCommandRibbon .ribbonPager{display:none!important}
+.squadCommandRibbon .ribbonList{overflow-y:auto!important;overflow-x:hidden!important;display:flex!important;flex-direction:column!important;gap:3px!important;flex:1!important}
+.squadCommandRibbon .ribbonSquad{min-height:42px!important;flex:0 0 auto!important;padding:4px 2px!important;gap:2px!important;font:800 11px/1.15 system-ui!important;display:flex!important;flex-direction:column!important}
+.squadCommandRibbon .ribbonIcon,.squadCommandRibbon .ribbonDeaths,.squadCommandRibbon .ribbonCooldown{display:none!important}
+.squadCommandRibbon .ribbonOrder{font:700 9px/1.1 system-ui!important;color:#cee2ef!important}
+.squadCommandRibbon .ribbonTarget{font:900 10px/1.1 system-ui;color:#ffe59c;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.squadCommandRibbon .ribbonTarget.tracking{color:#c4dffc}
+.squadCommandRibbon .ribbonTarget.none{color:#b4bec8}
+.squadCommandRibbon .ribbonSquad.selected{outline:2px solid #ffe38b;box-shadow:0 0 12px #f5d768!important}
+.squadCommandRibbon .ribbonSquad.target-locked{border-color:#ffc46d!important;box-shadow:0 0 10px #ff7e4c!important}
+@media(max-width:390px){#allySquadRibbon,#enemySquadRibbon{width:72px!important}.squadCommandRibbon .ribbonSquad{min-height:39px!important}}
+#squadSelectedAttackArrow{stroke:#ffcd58;stroke-width:4;stroke-linecap:round;fill:none;opacity:.98;filter:drop-shadow(0 0 5px #a94b27);pointer-events:none}
 </style>
 <div id="squadScreenLabels" aria-label="全味方・敵部隊の接続線付き情報サークル"><svg id="squadCalloutLines" aria-hidden="true"></svg></div>
 <div id="squadCircleInfo" hidden role="status" aria-live="polite" aria-label="選択した部隊の情報・1行表示">
@@ -5939,7 +5955,7 @@ function openSquadTactics(id){
  // optional tactical bank has already been exhausted.
  if(!paused)setBattlePaused(true);
  if(tacticalBankRemaining>0)tacticalPlanningActive=true;
- selectedSquadId=String(id);squadQuickPage='home';squadQuickPageIndex=0;$('dockSquadSelect').value=String(id);
+ selectedSquadId=String(id);trackedAllySquadId=String(id);squadQuickPage='home';squadQuickPageIndex=0;$('dockSquadSelect').value=String(id);
  pickingSquadDestination=false;pickingSquadMission=null;pickingStrategistWarp=false;clearMissionPreview();
  // Focus the ACTUAL surviving squad, not a distant or fallen strategist.
  // Keep one confirmed survivor tracked so moving troops remain visible.
@@ -6766,6 +6782,8 @@ for(const id of enemySquadIds)squadMarkers.set(squadKey(1,id),makeSquadLabel(id,
 const squadRibbonButtons=new Map(),lastRibbonOrderAt=new Map(),ribbonPageNodes=new Map();
 const ribbonPages=[0,0],ribbonPageSize=5;
 let lastRibbonSums=new Map(),ribbonPressing=false,lastRibbonInteractionAt=-Infinity,selectedEnemySquadId=null;
+let trackedAllySquadId=squadIds[0]??null;
+const firstAutoChargeIssued=new Set();
 const ribbonIconForType=type=>({attack:'⚔',balanced:'♟',ranged:'🏹',support:'✚'})[type]||'♟';
 function ribbonCommanderAlive(team,id){
  if(team===0)return hasSquadCommander(id);
@@ -6841,7 +6859,7 @@ function markRibbonOrderIssued(id){
 function renderSquadRibbons(sums){
  lastRibbonSums=sums;
  // The only live controls are now 3D squad circles; do not reflow invisible sidebars.
- if(document.querySelector('#allySquadRibbon')?.matches('nav'))return;
+ /* Target rosters enabled. */
  // Top telemetry grows or shrinks with DPI, so anchor both side ribbons
  // below its *actual* bottom rather than a hard-coded phone offset.
  const dockBottom=Math.ceil($('battleTopDock').getBoundingClientRect().bottom+6);
@@ -6865,8 +6883,7 @@ function renderSquadRibbons(sums){
     changedAt:lastRibbonOrderAt.get(squadKey(team,id))??-Infinity};
   });
   const sorted=sortSquadRibbon(entries,now);
-  const visibleRibbonPageSize=Math.max(1,Math.min(ribbonPageSize,
-   Math.floor((window.innerHeight-dockBottom-140)/70)));
+  const visibleRibbonPageSize=Math.max(1,sorted.length);
   const pageCount=Math.max(1,Math.ceil(sorted.length/visibleRibbonPageSize));
   ribbonPages[team]=Math.min(ribbonPages[team],pageCount-1);
   const navigator=ribbonPageNodes.get(team);
