@@ -7,7 +7,7 @@ import * as THREE from 'three';
  * Roots are sampled from the source CC0 scalp's alpha-masked vertices.
  * The battle model and archived GLBs remain untouched.
  */
-const COUNT=100000,SEGMENTS=6,SIDES=3;
+const COUNT=100000,SEGMENTS=2,SIDES=3;
 const fract=x=>x-Math.floor(x);
 const hash=x=>fract(Math.sin(x*127.1+17.79)*43758.5453123);
 const lerp=(a,b,t)=>a+(b-a)*t;
@@ -126,9 +126,9 @@ export function buildHeroineFantasyLongHair(scalp,{lengthInHeads=3.25}={}){
  g.setAttribute('color',new THREE.BufferAttribute(colors,3));
  g.setIndex(new THREE.BufferAttribute(indices,1));
  g.computeBoundingSphere();g.computeBoundingBox();
- const material=new THREE.MeshPhysicalMaterial({
-  color:0xffffff,vertexColors:true,roughness:.43,metalness:0,
-  clearcoat:.13,clearcoatRoughness:.30,side:THREE.DoubleSide
+ const material=new THREE.MeshStandardMaterial({
+  color:0xffffff,vertexColors:true,roughness:.44,metalness:0,
+  side:THREE.DoubleSide
  });
  const hair=new THREE.Mesh(g,material);
  hair.name='HEROINE_PREVIEW_100000_INDIVIDUAL_3D_LONG_STRANDS';
