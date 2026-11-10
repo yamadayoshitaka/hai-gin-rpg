@@ -6,11 +6,15 @@ export function createBattleActorVisibility(THREE,camera){
   const frustum=new THREE.Frustum();
   const projection=new THREE.Matrix4();
   const bounds=new THREE.Sphere(new THREE.Vector3(),3.0);
+  const cameraForward=new THREE.Vector3();
+  let hasCameraForward=false;
   const states=new WeakMap();
   let frameTime=0,visible=0,culled=0,throttled=0;
   function beginFrame(now){
     frameTime=now;visible=0;culled=0;throttled=0;
     camera.updateMatrixWorld();
+    hasCameraForward=typeof camera.getWorldDirection==='function';
+    if(hasCameraForward)camera.getWorldDirection(cameraForward);
     projection.multiplyMatrices(camera.projectionMatrix,camera.matrixWorldInverse);
     frustum.setFromProjectionMatrix(projection);
   }
@@ -22,7 +26,13 @@ export function createBattleActorVisibility(THREE,camera){
     // Never lose an inspectable full-size human because the root-only
     // frustum probe barely clips the near plane during a camera zoom.
     const distance=camera.position.distanceTo(bounds.center);
-    const inFrame=distance<14||frustum.intersectsSphere(bounds);
+    // A near-plane exception applies only to bodies genuinely IN FRONT of
+    // the camera. Offscreen soldiers behind the player must remain culled.
+    const inFront=hasCameraForward&&
+      ((bounds.center.x-camera.position.x)*cameraForward.x+
+       (bounds.center.y-camera.position.y)*cameraForward.y+
+       (bounds.center.z-camera.position.z)*cameraForward.z)>0.15;
+    const inFrame=frustum.intersectsSphere(bounds)||(distance<14&&inFront);
     actor.root.visible=inFrame;
     if(inFrame&&actor.hp>0&&!actor.crowdSampling&&actor.character?.object3D&&
        !actor.character.object3D.visible)actor.character.object3D.visible=true;
