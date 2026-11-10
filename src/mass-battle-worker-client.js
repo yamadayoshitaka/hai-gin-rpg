@@ -1,4 +1,4 @@
-import {applyMassStats,applyMassUnits} from './mass-battle-worker-protocol.js';
+import {applyMassStats,applyMassUnits} from './mass-battle-worker-protocol.js?v=4.6.64';
 
 /** Main-thread presentation mirror; the authoritative 2000-unit AI runs in a Worker. */
 export function createMassBattleWorkerClient(sim,{width,height,walkable,water,opaque,bridges,riverXAt,elevationMap=null,highGroundRoutes=[]},{onSnapshot,onFailure,preferWebGpu=false,basicCombatOnly=false}={}){
