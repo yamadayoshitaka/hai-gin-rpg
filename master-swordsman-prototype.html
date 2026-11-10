@@ -254,7 +254,8 @@ function refreshWireDisplay(){
   }
  }
  $('meshStats').textContent=actualMeshCount+'メッシュ / '+
-   actualTriangles.toLocaleString('ja-JP')+'三角形（実3D）';
+   actualTriangles.toLocaleString('ja-JP')+'三角形（実3D） / '+
+   (hairReport?.styledHairReport?.individualFilamentCount||0).toLocaleString('ja-JP')+'本の髪';
 }
 $('meshMode').addEventListener('change',()=>{
  meshMode=$('meshMode').value;refreshWireDisplay();printState();
@@ -483,7 +484,7 @@ function tintOriginalCloth(root,color){
 function disposeOwnedPreviewHair(root){
  if(!root)return;
  root.traverse(o=>{
-  if(!o.isMesh)return;
+  if(!o.isMesh&&!o.isLineSegments)return;
   // Donor meshes share their geometry with the GLTFLoader cache.
   // Their hierarchy root, not each child mesh, is named LICENSE_....
   for(let ancestor=o;ancestor&&ancestor!==root;ancestor=ancestor.parent)
@@ -536,7 +537,7 @@ function tintFittedHair(root,hex){
  const base=new THREE.Color(hex);
  const warm=new THREE.Color('#997b69');
  root.traverse(o=>{
-  if(!o.isMesh)return;
+  if(!o.isMesh&&!o.isLineSegments)return;
   const authored=o.name==='FEMALE_REAL_HEAD_SWEPT_STRAND_GEOMETRY';
   const bun=o.name==='REFERENCE_LOW_GATHERED_BUN_CORE';
   const coils=o.name.startsWith('BUN_COILED_HAIR_');
@@ -803,6 +804,8 @@ window.__heroSwordsmanUpdate=overrides=>{applyCustomization(overrides);return di
 window.__heroSwordsmanQA=()=>diagnostics();
 window.__heroineWireframeQA=()=>({
  mode:meshMode,meshCount:actualMeshCount,triangles:actualTriangles,
+ strandCount:hairReport?.styledHairReport?.individualFilamentCount||0,
+ strandSegments:hairReport?.styledHairReport?.strandSegmentCount||0,
  featuredKey:activeFeaturedKey,sourceGeometry:true,
  overlayCount:wireOverlays.length
 });
