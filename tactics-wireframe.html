@@ -7415,7 +7415,12 @@ function updateCameraObstructions(){
   if(tree){
    const centerX=(tree.bounds.minX+tree.bounds.maxX)*.5;
    const centerZ=(tree.bounds.minZ+tree.bounds.maxZ)*.5;
-   const hide=closeup; // No layered pink petals when camera-to-character ray intersects a tree.
+   // Even when the camera target is far away, a camera physically inside
+   // the petals needs the ENTIRE intersecting canopy removed, not alpha-ghosts.
+   const insideCrown=camera.position.x>=tree.bounds.minX-1&&camera.position.x<=tree.bounds.maxX+1&&
+     camera.position.z>=tree.bounds.minZ-1&&camera.position.z<=tree.bounds.maxZ+1&&
+     camera.position.y>=tree.bounds.minY-1&&camera.position.y<=tree.bounds.maxY+2;
+   const hide=closeup||insideCrown;
    stageBatchStats.setDecorationOccludedAt(tree.id,tree.x,tree.z,true,{hide});
   }
  }
