@@ -611,7 +611,7 @@ import {createCharacter} from './src/character-system/shared-character-runtime.j
 import {buildRiggedJobOutfit} from './src/character-system/rigged-outfit-runtime.js?v=4.6.15';
 import {batchStaticStageDecorations} from './src/stage-static-instancing.js?v=4.6.36';
 import {batchStaticBuildingShells} from './src/stage-building-instancing.js?v=2';
-import {cameraSegmentHitsBox,selectCameraOccluders,shouldRevealBuildingInterior,safeSelectedInteriorFloor} from './src/battle-camera-occlusion.js?v=4.6.18';
+import {cameraSegmentHitsBox,selectCameraOccluders,selectCanopiesAroundCamera,shouldRevealBuildingInterior,safeSelectedInteriorFloor} from './src/battle-camera-occlusion.js?v=4.6.63';
 import {registerSquadCircleTap,chooseSquadZoomTarget,SQUAD_CIRCLE_DOUBLE_TAP_MS,shouldHideSquadLabelsAtDistance} from './src/battle-squad-circle-tap.js?v=4.6.36';
 import {createBattleActorVisibility} from './src/battle-render-visibility.js?v=zoom-human-1';
 import {shouldShowOverheadSquadCallouts,closestAliveBattleFocus} from './src/battle-zoom-visibility-policy.js?v=1';
@@ -7560,13 +7560,8 @@ function updateCameraObstructions(){
  }
  // Test camera immersion independently of the center ray and its result
  // limit. Wide-angle close-ups can be entirely surrounded by pink petals.
- for(const tree of cameraTreeCandidates){
-  const b=tree.bounds;
-  if(camera.position.x>=b.minX-2.5&&camera.position.x<=b.maxX+2.5&&
-   camera.position.z>=b.minZ-2.5&&camera.position.z<=b.maxZ+2.5&&
-   camera.position.y>=b.minY-1&&camera.position.y<=b.maxY+3)
-   newTrees.add(tree.key);
- }
+ for(const tree of selectCanopiesAroundCamera(camera.position,cameraTreeCandidates))
+  newTrees.add(tree.key);
  for(const key of cameraOccludedTrees){
   if(newTrees.has(key))continue;
   const tree=cameraTreeByKey.get(key);
