@@ -1098,6 +1098,11 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false,gen
  }
  function setPart(part,show){
   const o=parts.get(part);if(!o)return false;
+  // Female preview never shows the Viking donor's moustache or beard,
+  // even when the generic viewer toggles beard visibility on.
+  if(gender==='female'&&['beard','moustache'].includes(part)){
+   o.visible=false;return true;
+  }
   if(currentIsHero&&['tunic','pants','boots'].includes(part)){
    o.visible=false;
    if(part==='tunic')youthOutfit.object.visible=Boolean(show);
