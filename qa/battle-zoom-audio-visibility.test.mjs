@@ -52,7 +52,7 @@ for(const token of [
  'refreshBattleVoiceHealth();'
 ])assert.ok(html.includes(token),token+' is wired into the battle renderer');
 const visibility=readFileSync(new URL('../src/battle-render-visibility.js',import.meta.url),'utf8');
-assert.match(visibility,/distance<14\|\|frustum\.intersectsSphere\(bounds\)/,
+assert.match(visibility,/frustum\.intersectsSphere\(bounds\)\|\|\(distance<14&&inFront\)/,
  'Never cull near-camera real rigs at the frustum edge');
 assert.match(visibility,/actor\.character\.object3D\.visible=true/,
  'Recover a character root hidden by an older shared scene state');
