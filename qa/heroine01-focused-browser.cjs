@@ -96,6 +96,9 @@ fs.mkdirSync(dir,{recursive:true});
   const canvas=page.locator('#canvas');
   await page.locator('#portrait').click();
   await page.waitForTimeout(200);
+  const portraitFrame=await page.evaluate(()=>window.__heroinePortraitFrameQA?.());
+  if(portraitFrame?.cameraView!=='portrait'||portraitFrame.fullHeadInFrame!==true)
+   throw Error('Heroine wig/forehead is clipped out of portrait view '+JSON.stringify(portraitFrame));
   await page.screenshot({path:path.join(dir,'hero-girl-01-face-100k.png'),
    clip:await canvas.boundingBox(),timeout:90000,animations:'disabled'});
   // WebGL evidence: cosmetics ON and OFF must visibly differ.
