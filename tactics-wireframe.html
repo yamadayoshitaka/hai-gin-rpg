@@ -408,10 +408,14 @@ body.squad-closeup #enemySquadIntel{display:none!important}
  padding:3px 2px!important;gap:1px!important;font-size:10px!important;
  border-radius:50%!important;overflow:hidden!important;
 }
-#squadScreenLabels .squadScreenLabel .squadStrength{font:800 17px/1.1 system-ui!important}
+#squadScreenLabels .squadScreenLabel .squadStrength{
+ font:800 14px/1.05 system-ui!important;letter-spacing:-.3px!important;
+ overflow:visible!important;text-overflow:clip!important;white-space:nowrap!important;
+ max-height:19px!important;
+}
 #squadScreenLabels .squadScreenLabel .squadCurrentOrder{font:700 9px/1.1 system-ui!important}
 #squadScreenLabels.compact-circles .squadScreenLabel{font-size:8px!important;gap:0!important;padding:1px!important}
-#squadScreenLabels.compact-circles .squadScreenLabel .squadStrength{font:800 12px/1.0 system-ui!important}
+#squadScreenLabels.compact-circles .squadScreenLabel .squadStrength{font:800 11px/1.0 system-ui!important}
 #squadScreenLabels.compact-circles .squadScreenLabel .squadCurrentOrder{font:700 8px/1.0 system-ui!important}
 #squadScreenLabels .squadScreenLabel.selected{z-index:2}
 #squadOneClickOrders .circleHomeButtons{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:6px}
@@ -613,7 +617,7 @@ import {ActionVfxRuntime} from './src/character-system/action-vfx-runtime.js?v=4
 import {ConfirmedHitOverlay,selectConfirmedHitEvents} from './src/confirmed-hit-overlay.js?v=4.6.36';
 import {combatEffectDirective} from './src/combat-effect-directives.js?v=4.6.15';
  import {CombatActionRuntime} from './src/combat-action-runtime.js?v=4.6.50';
- import {COMBAT_RULES,combatJobId} from './src/combat-action-spec.js?v=4.6.50';
+ import {COMBAT_RULES,combatJobId,availableCombatSkills} from './src/combat-action-spec.js?v=4.6.50';
  import {createCombatWorldObjectRenderer} from './src/combat-world-object-renderer.js?v=4.6.36';
 import {describeDestructibleWorld} from './src/destructible-world.js?v=4.6.15';
 import {StructureCollapseVfx} from './src/structure-collapse-vfx.js?v=4.4.34';
@@ -1775,6 +1779,7 @@ const battleCeremony=createBattleCeremony({
 // Result cut-ins are queued: the new troop/HP/item status is narrated only
 // AFTER the visual cut-in has closed. Never interrupt the opening or outro.
 const resultCutinQueue=[],reportsAfterCutin=[];
+const firstHealingReportPerSquad=new Set();
 let battleResultSerial=0;
 function reportAfterBattleCutin(text,{team=0,squadId=null,priority=86}={}){
  reportsAfterCutin.push({key:'battle-result:'+ ++battleResultSerial,
@@ -5671,11 +5676,13 @@ function issueSquadOrder(mode,point=null){
  refreshSquadOrderLabel();drawSquadMiniMap();log(squadOrderText(id));
  if(['charge','defend','hold','retreat'].includes(mode)){
   const effect=describeSquadOrder(mode,{massBattle:Boolean(massSim)});
-  battleDialogue.push({key:'squad-order:'+id+':'+Math.floor(elapsed*10),
+  // Charge is not a success event: report success only when the target
+  // actually gets wiped out (the defeated-squad cut-in below).
+  if(mode!=='charge')battleDialogue.push({key:'squad-order:'+id+':'+Math.floor(elapsed*10),
    speaker:'軍師',kind:'success',priority:97,forceDisplay:true,squadId:id,
    text:squadName(id)+'：'+effect.name+' 発令！ 効果：'+effect.effect});
   const message={charge:'全隊、突撃！',defend:'防御陣形！ 回復と耐性強化を優先！',hold:'全隊、持ち場を守れ！',retreat:'退却！'}[mode];
-  battleCeremony.showOrder(message,effect.effect);
+  if(mode!=='charge')battleCeremony.showOrder(message,effect.effect);
   beginCommanderCinematic(id);
   emitSquadBuffEffect(id,mode==='defend'?'earth':mode==='charge'?'fire':'arcane');
   battleAudio.orderFanfare();
@@ -6685,9 +6692,13 @@ function updateSquadMarkerPositions(dt){
     queueBattleResultCutin(defeatedEnemy?'⚔ 敵部隊撃破':'☠ 味方部隊壊滅',
      (defeatedEnemy?'敵':'味方')+squadName(marker.userData.squadId,marker.userData.team)+
      'が全滅。現在 0/'+sum.total+'人、戦闘不能 '+sum.total+'人。',
-     {team:defeatedEnemy?0:1,squadId:String(marker.userData.squadId),priority:96});
+     {team:defeatedEnemy?0:1,cameraTeam:marker.userData.team,
+      squadId:String(marker.userData.squadId),priority:96});
    }else if(marker.userData.team===0&&previousHp!=null&&sum.hp>previousHp+15&&
-    elapsed-(marker.userData.lastHealReportAt??-Infinity)>12){
+    !firstHealingReportPerSquad.has(id)){
+    // A successful healing action is still applied every time, but only the
+    // FIRST healing result per squad earns a cut-in/report in this battle.
+    firstHealingReportPerSquad.add(id);
     marker.userData.lastHealReportAt=elapsed;
     queueBattleResultCutin('✚ 回復報告',
      squadName(marker.userData.squadId)+'の総HP '+Math.round(previousHp)+'→'+Math.round(sum.hp)+
@@ -6777,6 +6788,8 @@ function updateSquadScreenLabels(dt){
   // Even an off-screen squad gets an edge-anchored leader line. Never hide
   // a live or defeated formation simply because another circle is near it.
   points.push({key,x,y,team:marker.userData.team,
+   defeated:label.classList.contains('defeated'),
+   squadIndex:(marker.userData.team===0?squadIds:enemySquadIds).indexOf(String(marker.userData.squadId)),
    priority:labelPriority(marker),marker});
  }
  const prior=squadScreenLayout;
