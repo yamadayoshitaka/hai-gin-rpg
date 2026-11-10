@@ -385,6 +385,35 @@ body.squad-closeup #enemySquadIntel{display:none!important}
 .squadScreenLabel .squadCurrentOrder{font:700 10px/1.15 system-ui!important;max-height:12px!important}
 .squadScreenLabel .squadStrength{max-height:23px!important}
 .squadScreenLabel>span{pointer-events:none!important}
+/* Overhead command view: Excel-like connectors keep ALL squads selectable without overlaps. */
+#squadCalloutLines{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none}
+#squadCalloutLines path{stroke-width:2;stroke-linecap:round;stroke-linejoin:round;fill:none;opacity:.92}
+#squadCalloutLines circle{stroke:#132335;stroke-width:1;opacity:.98}
+#squadCalloutLines .ally{stroke:#5cdbff}
+#squadCalloutLines .enemy{stroke:#ff8191}
+#squadCalloutLines circle.ally{fill:#5cdbff}
+#squadCalloutLines circle.enemy{fill:#ff8191}
+#squadScreenLabels .squadScreenLabel,
+#squadScreenLabels .squadScreenLabel.ally,
+#squadScreenLabels .squadScreenLabel.enemy,
+#squadScreenLabels .squadScreenLabel.selected,
+#squadScreenLabels .squadScreenLabel.half-strength,
+#squadScreenLabels .squadScreenLabel.critical-strength{
+ z-index:1;width:var(--squadCircleSize,64px)!important;
+ height:var(--squadCircleSize,64px)!important;
+ min-width:var(--squadCircleSize,64px)!important;
+ min-height:var(--squadCircleSize,64px)!important;
+ max-width:var(--squadCircleSize,64px)!important;
+ max-height:var(--squadCircleSize,64px)!important;
+ padding:3px 2px!important;gap:1px!important;font-size:10px!important;
+ border-radius:50%!important;overflow:hidden!important;
+}
+#squadScreenLabels .squadScreenLabel .squadStrength{font:800 17px/1.1 system-ui!important}
+#squadScreenLabels .squadScreenLabel .squadCurrentOrder{font:700 9px/1.1 system-ui!important}
+#squadScreenLabels.compact-circles .squadScreenLabel{font-size:8px!important;gap:0!important;padding:1px!important}
+#squadScreenLabels.compact-circles .squadScreenLabel .squadStrength{font:800 12px/1.0 system-ui!important}
+#squadScreenLabels.compact-circles .squadScreenLabel .squadCurrentOrder{font:700 8px/1.0 system-ui!important}
+#squadScreenLabels .squadScreenLabel.selected{z-index:2}
 #squadOneClickOrders .circleHomeButtons{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:6px}
 #squadOneClickOrders .circleHomeButtons button{min-height:64px;font-size:16px;padding:6px 2px}
 #destinationPrompt{z-index:36!important;pointer-events:auto!important}
@@ -392,7 +421,7 @@ body.squad-closeup #enemySquadIntel{display:none!important}
 #squadTactics[data-panel="main"] #squadOneClickOrders{overflow:hidden!important}
 #battleMenu .retiredRibbonSettings{display:none!important}
 </style>
-<div id="squadScreenLabels" aria-label="味方と敵の部隊位置・タップで部隊情報"></div>
+<div id="squadScreenLabels" aria-label="全味方・敵部隊の接続線付き情報サークル"><svg id="squadCalloutLines" aria-hidden="true"></svg></div>
 <div id="squadCircleInfo" hidden role="status" aria-live="polite" aria-label="選択した部隊の情報・1行表示">
  <div id="squadCircleInfoContent"></div>
  <button id="squadCircleInfoClose" type="button" aria-label="部隊情報を閉じる">✕</button>
@@ -401,6 +430,7 @@ body.squad-closeup #enemySquadIntel{display:none!important}
 <button id="loadingStart" type="button" hidden style="font:bold 17px system-ui;padding:13px 17px;border:2px solid #eacb87;background:#245d7a;color:#fff;border-radius:10px;margin:12px auto;min-height:54px">♪ 音楽を有効にして開戦</button>
 <button id="loadingSkipAudio" type="button" hidden style="font:12px system-ui;padding:9px;border:1px solid #92a5bb;background:#132a3b;color:#c9d8e5;border-radius:8px;margin:4px auto">音声なしで開戦</button></div></div><div id="runtimeError" style="display:none;position:fixed;top:65px;left:8px;right:8px;z-index:30;padding:10px;background:#631f28;color:#fff;border:1px solid #ff9d9d;border-radius:8px;font-size:12px;white-space:pre-wrap"></div><script>function showRuntimeError(message){const el=document.getElementById('runtimeError');if(el){el.style.display='block';el.textContent='実行エラー: '+message}const loading=document.getElementById('battleLoading');if(loading&&!loading.hidden){document.getElementById('loadingStage').textContent='ゲームの準備に失敗しました';const detail=document.getElementById('loadingError');detail.hidden=false;detail.textContent=String(message);document.getElementById('loadingRetry').hidden=false}}window.addEventListener('error',e=>showRuntimeError((e.message||'スクリプトの読み込みに失敗')+'\n'+(e.filename||'')+':'+(e.lineno||'')));window.addEventListener('unhandledrejection',e=>showRuntimeError(e.reason?.stack||e.reason?.message||String(e.reason)));</script><script type="module">
 import * as THREE from 'three';
+import {layoutSquadCallouts,squadCalloutLeader} from './src/battle-squad-callout-layout.js?v=1';
 import {createBattleCeremony} from './src/battle-ceremony.js?v=4.6.54';
 import {updateDefensivePosture} from './src/battle-defensive-doctrine.js?v=4.6.15';
 import {chooseBlockedMovementDetour} from './src/battle-movement-recovery.js?v=4.6.15';
@@ -6138,7 +6168,15 @@ function makeSquadLabel(id,team){
  label.addEventListener('pointercancel',event=>{
   if(activeSquadLabelPress?.id===event.pointerId)activeSquadLabelPress=null;
  });
+ const svgNS='http://www.w3.org/2000/svg',lineLayer=$('squadCalloutLines');
+ const leader=document.createElementNS(svgNS,'path'),anchorDot=document.createElementNS(svgNS,'circle');
+ leader.setAttribute('class',team===0?'ally':'enemy');
+ anchorDot.setAttribute('class',team===0?'ally':'enemy');
+ anchorDot.setAttribute('r','3.3');
+ leader.hidden=true;anchorDot.hidden=true;
+ lineLayer.append(leader,anchorDot);
  $('squadScreenLabels').append(label);
+ sprite.userData.calloutLine=leader;sprite.userData.calloutDot=anchorDot;
  sprite.userData.screenLabel=label;
  sprite.userData.visualTarget=new THREE.Vector3();scene.add(sprite);return sprite;
 }
@@ -6379,26 +6417,26 @@ function updateSquadMarkerPositions(dt){
 // Update small DOM text overlays at 10Hz; the 2000 actor GPU animation
 // continues smoothly on the separate rendering path without layout reads.
 let squadScreenClock=0;
+let squadScreenLayout=new Map();
 const squadScreenPoint=new THREE.Vector3();
 function updateSquadScreenLabels(dt){
  if(squadCloseupLabelsHidden)return;
  squadScreenClock+=dt;if(squadScreenClock<.1)return;squadScreenClock=0;
- // Never move or hide a button between touch-down and touch-up: mobile
- // browsers would otherwise discard the click for moving squad labels.
+ // Freeze both the bubbles and their connecting lines while tapping; moving
+ // the hit target between pointerdown and pointerup loses Android clicks.
  if(activeSquadLabelPress)return;
  camera.updateMatrixWorld();
- // Some mobile browsers retain page-level magnification after a gesture even
- // on a fullscreen WebGL canvas. Suppress floating labels in that state so
- // they never become enormous buttons covering the soldiers.
+ const container=$('squadScreenLabels'),lineLayer=$('squadCalloutLines');
  const pageZoomed=(window.visualViewport?.scale??1)>1.08;
- const rect=renderer.domElement.getBoundingClientRect(),occupied=[];
- const circleRadius=44,circleClearance=5;
- const topClip=Math.max(circleRadius+8,
-  $('battleTopDock').getBoundingClientRect().bottom+circleRadius+circleClearance);
- const battleReport=document.getElementById('battleDialogue');
- const reportTop=battleReport&&!battleReport.hidden?
-  battleReport.getBoundingClientRect().top:rect.bottom;
- const bottomClip=Math.min(rect.bottom,reportTop)-circleRadius-circleClearance;
+ const rect=renderer.domElement.getBoundingClientRect();
+ const report=document.getElementById('battleDialogue');
+ const reportTop=report&&!report.hidden?report.getBoundingClientRect().top:rect.bottom;
+ const bounds={
+  left:Math.max(4,rect.left+4),
+  right:Math.min(innerWidth-4,rect.right-4),
+  top:Math.max(rect.top+4,$('battleTopDock').getBoundingClientRect().bottom+6),
+  bottom:Math.min(rect.bottom-4,reportTop-6)
+ };
  const activeId=String(orderedSquad());
  const selecting=pickingSquadDestination||Boolean(pickingSquadMission)||pickingStrategistWarp;
  const labelPriority=marker=>{
@@ -6408,48 +6446,59 @@ function updateSquadScreenLabels(dt){
   if(team===0&&id===activeId&&!$('squadTactics').hidden)return 2;
   return team===0?1:0;
  };
- const items=[...squadMarkers.values()].sort((a,b)=>labelPriority(b)-labelPriority(a));
- for(const marker of items){
+ const points=[];
+ for(const [key,marker] of squadMarkers){
   const label=marker.userData.screenLabel;
-  if(pageZoomed||!marker.visible){label.hidden=true;continue;}
-  // Native browser pinch changes visualViewport.scale on some devices.
-  // Keep squad buttons available instead of silently disabling all labels.
+  if(pageZoomed||!marker.visible){
+   label.hidden=true;marker.userData.calloutLine.hidden=true;
+   marker.userData.calloutDot.hidden=true;continue;
+  }
   squadScreenPoint.copy(marker.position).project(camera);
-  if(squadScreenPoint.z<-1||squadScreenPoint.z>1){label.hidden=true;continue;}
   const x=rect.left+(squadScreenPoint.x+1)*rect.width*.5;
-  const originalY=rect.top+(1-squadScreenPoint.y)*rect.height*.5;
-  if(x<circleRadius+4||x>innerWidth-circleRadius-4||
-      originalY<topClip||originalY>bottomClip){label.hidden=true;continue;}
-  const selectedCircle=selectedCircleSquad?.team===marker.userData.team&&
-   selectedCircleSquad?.id===String(marker.userData.squadId)&&!squadCircleInfo.hidden;
-  const chosen=selectedCircle||
-   (marker.userData.team===0&&String(marker.userData.squadId)===activeId&&
-    (selecting||!$('squadTactics').hidden))||
-   (marker.userData.team===1&&String(marker.userData.squadId)===String(selectedEnemySquadId)&&
-    !$('enemySquadIntel').hidden);
-  // Inspecting a squad up close should reveal its members, not a wall of
-  // labels positioned directly between the camera and their bodies.
-  if(!chosen&&!label.classList.contains('defeated')&&camera.position.distanceTo(marker.position)<13){label.hidden=true;continue;}
-  label.classList.toggle('selected',chosen);
-  // Only the tapped squad's single tactics/intel panel shows detailed order
-  // and objective text. Markers remain circular even when selected.
+  const y=rect.top+(1-squadScreenPoint.y)*rect.height*.5;
+  if(!Number.isFinite(x)||!Number.isFinite(y)){
+   label.hidden=true;marker.userData.calloutLine.hidden=true;
+   marker.userData.calloutDot.hidden=true;continue;
+  }
+  // Even an off-screen squad gets an edge-anchored leader line. Never hide
+  // a live or defeated formation simply because another circle is near it.
+  points.push({key,x,y,team:marker.userData.team,
+   priority:labelPriority(marker),marker});
+ }
+ const prior=squadScreenLayout;
+ const {diameter,placements}=layoutSquadCallouts(points,bounds,prior);
+ squadScreenLayout=placements;
+ container.style.setProperty('--squadCircleSize',diameter+'px');
+ container.classList.toggle('compact-circles',diameter<52);
+ lineLayer.setAttribute('viewBox','0 0 '+Math.max(1,innerWidth)+' '+Math.max(1,innerHeight));
+ for(const point of points){
+  const marker=point.marker,label=marker.userData.screenLabel;
+  const pos=placements.get(point.key),leader=marker.userData.calloutLine,dot=marker.userData.calloutDot;
+  if(!pos){label.hidden=true;leader.hidden=true;dot.hidden=true;continue;}
+  const id=String(marker.userData.squadId),team=marker.userData.team;
+  const chosen=(selectedCircleSquad?.team===team&&selectedCircleSquad?.id===id&&!squadCircleInfo.hidden)||
+   (team===0&&id===activeId&&(selecting||!$('squadTactics').hidden))||
+   (team===1&&id===String(selectedEnemySquadId)&&!$('enemySquadIntel').hidden);
+  label.classList.toggle('selected',Boolean(chosen));
   label.userDataCurrentOrder.hidden=false;
   label.userDataObjective.hidden=true;
   label.userDataObjective.style.display='none';
   label.style.pointerEvents=selecting?'none':'auto';
-  const halfW=circleRadius+circleClearance,halfH=circleRadius+circleClearance;
-  const y=originalY;
-  // Collision resolution cannot move a circle away from its real squad.
-  // Suppress the lower-priority overlapping circle until the view separates.
-  if(occupied.some(p=>Math.abs(p.x-x)<p.halfW+halfW&&
-      Math.abs(p.y-y)<p.halfH+halfH)){label.hidden=true;continue;}
-  occupied.push({x,y,halfW,halfH});
-  label.style.left=Math.round(x)+'px';label.style.top=Math.round(y)+'px';
+  label.style.left=Math.round(pos.x)+'px';label.style.top=Math.round(pos.y)+'px';
+  label.dataset.offscreen=pos.outside?'true':'false';
   label.hidden=false;
-  if(selectedCircle)positionSquadCircleInfo(label);
-  if(chosen&&!$('squadTactics').hidden)positionSquadMenuBelowLabel(marker.userData.squadId);
+  const line=squadCalloutLeader(pos);
+  leader.hidden=!line;
+  if(line)leader.setAttribute('d',line);
+  dot.setAttribute('cx',String(Math.round(pos.anchorX*10)/10));
+  dot.setAttribute('cy',String(Math.round(pos.anchorY*10)/10));
+  dot.hidden=false;
+  if(selectedCircleSquad?.team===team&&selectedCircleSquad?.id===id&&!squadCircleInfo.hidden)
+   positionSquadCircleInfo(label);
+  if(chosen&&!$('squadTactics').hidden)positionSquadMenuBelowLabel(id);
  }
 }
+
 // The selected squad's info is independent of world-space marker visibility.
 if(selectedCircleSquad&&!squadCircleInfo.hidden)
  positionSquadCircleInfo(squadMarkers.get(squadKey(selectedCircleSquad.team,selectedCircleSquad.id))?.userData.screenLabel);
