@@ -291,12 +291,28 @@ body.squad-menu-closed #stageViewport{bottom:0!important}
 #battleLoading.prebattle-setup #loadingSkipAudio{flex:none;margin:0 auto!important}
 #battleLoading.prebattle-setup #openingSquadOrders canvas{width:150px!important;height:150px!important}
 @media(max-height:600px){#battleLoading.prebattle-setup #loadingCard{gap:3px}#battleLoading.prebattle-setup #openingSquadStrategies,#battleLoading.prebattle-setup #openingSquadOrders{padding:5px!important;gap:2px}#battleLoading.prebattle-setup #openingSquadOrders canvas{width:112px!important;height:112px!important}}
-/* Pulse the valid second-step target circles, not the source squad. */
+/* Distinct pulses: the squad issuing orders is cyan; eligible targets are gold.
+   The source remains visible throughout both stages, including on Android. */
+@keyframes commandSourcePulse{
+  0%,100%{outline-width:2px;outline-offset:3px;filter:brightness(1)}
+  50%{outline-width:6px;outline-offset:5px;filter:brightness(1.55)}
+}
+body.battle-command-active #squadScreenLabels .squadScreenLabel.command-source{
+  outline:3px solid #46dbff!important;
+  animation:commandSourcePulse .92s ease-in-out infinite!important;
+  opacity:1!important;
+}
+/* Pulse only valid second-step targets, never disabled or defeated squads. */
 @keyframes targetSquadPulse{0%,100%{outline-width:2px;outline-offset:3px;filter:brightness(1)}50%{outline-width:6px;outline-offset:5px;filter:brightness(1.65)}}
 body[data-circle-target] .squadScreenLabel.eligible-target:not(.defeated){outline:3px solid #ffe899;animation:targetSquadPulse .85s ease-in-out infinite}
-body[data-circle-target] .squadScreenLabel:not(.eligible-target){animation:none!important;outline:none!important;opacity:.62}
+body[data-circle-target] .squadScreenLabel:not(.eligible-target):not(.command-source){animation:none!important;outline:none!important;opacity:.62}
 body[data-circle-target] #destinationPrompt{border:2px solid #ffed9c;box-shadow:0 0 12px #ffe68a66}
-@media(prefers-reduced-motion:reduce){body[data-circle-target] .squadScreenLabel.eligible-target{animation:none!important;outline:4px solid #ffe899}}
+@media(prefers-reduced-motion:reduce){
+  body[data-circle-target] .squadScreenLabel.eligible-target{animation:none!important;outline:4px solid #ffe899}
+  body.battle-command-active #squadScreenLabels .squadScreenLabel.command-source{
+   animation:none!important;outline:4px solid #46dbff!important
+  }
+}
 </style>
 <div id="vitalsPanel" hidden role="region" aria-label="戦況HP・MP一覧"><div class="vitalsHead"><strong>部隊別 HP / MP（⏸ 一時停止中）</strong><button id="vitalsClose" aria-label="戦況を閉じる">✕ 閉じる</button></div><div id="vitalsOverview"></div><div class="vitalsFilters"><label>軍<select id="vitalsTeam"><option value="0">味方</option><option value="1">敵</option></select></label><label>部隊<select id="vitalsSquad"><option value="all">全部隊</option></select></label><label>職業<select id="vitalsJob"><option value="all">全職業</option></select></label></div><div class="squadHelp" id="vitalsSquadStatus">部隊を選ぶと個人のHPとMPを確認できます。</div><button id="vitalsHealing" disabled>✚ この部隊へ回復支援を要請</button><div id="vitalsJobSummary"></div><div id="vitalsIndividuals"></div><div class="vitalsPages"><button id="vitalsPrev">◀ 前</button><span id="vitalsPageLabel">1 / 1</span><button id="vitalsNext">次 ▶</button></div></div>
 <button id="battleMenuToggle" aria-expanded="false">☰ メニュー</button>
@@ -6066,6 +6082,7 @@ function closeSquadTactics(){
  document.body.classList.add('squad-menu-closed');
  const previous=squadSelectionReturn;squadSelectionReturn=null;
  commandOverviewLocked=false;
+ document.body.classList.remove('battle-command-active');
  controls.enabled=true;
  $('squadInspect').disabled=false;
  tacticalPlanningActive=false;
@@ -7039,6 +7056,9 @@ function updateSquadScreenLabels(dt){
   const actionable=targetTeam!==null&&isSquadCircleTargetActionable(
    marker.userData.squadId,marker.userData.team,pendingCircleTarget);
   label.classList.toggle('eligible-target',Boolean(actionable));
+  label.classList.toggle('command-source',Boolean(commandOverviewLocked&&
+   selectedSquadId!=null&&marker.userData.team===0&&
+   String(marker.userData.squadId)===String(selectedSquadId)));
   if(pageZoomed||!marker.visible||(targetTeam!==null&&!actionable)){
    label.hidden=true;marker.userData.calloutLine.style.display='none';
    marker.userData.calloutDot.style.display='none';continue;
@@ -7107,7 +7127,10 @@ function updateSquadScreenLabels(dt){
   // Location dots persist for every squad; only the selected squad's leader
   // connects by default. Avoid ten overlapping full-screen lines on phones.
   const line=squadCalloutLeader(pos);
-  const showLeader=Boolean(line)&&(chosen||showAllSquadLeaders);
+  // Never draw a forest of full-width lines during normal combat.
+  // One selected command source line only; full wiring is explicit opt-in.
+  const showLeader=Boolean(line)&&(showAllSquadLeaders||
+   (commandOverviewLocked&&team===0&&id===String(selectedSquadId)));
   leader.style.display=showLeader?'':'none';
   leader.style.opacity=chosen?'1':'.24';
   leader.style.strokeWidth=chosen?'3':'1.1';
@@ -7117,7 +7140,7 @@ function updateSquadScreenLabels(dt){
   dot.setAttribute('cy',String(Math.round(pos.anchorY*10)/10));
   const dotCovered=[...placements.values()].some(circle=>
    Math.hypot(pos.anchorX-circle.x,pos.anchorY-circle.y)<circle.diameter/2+7);
-  dot.style.display=dotCovered?'none':'';
+  dot.style.display=showLeader&&!dotCovered?'':'none';
   if(selectedCircleSquad?.team===team&&selectedCircleSquad?.id===id&&!squadCircleInfo.hidden)
    positionSquadCircleInfo(label);
   if(chosen&&!$('squadTactics').hidden)positionSquadMenuBelowLabel(id);
@@ -7226,6 +7249,7 @@ function setCameraActive(id){for(const name of ['camOverview','camFollow'])$(nam
 function enterCommandOverview(){
  // Cancel camera-stealing cut-ins, dialogue follow and pending target movement.
  commandOverviewLocked=true;
+ document.body.classList.add('battle-command-active');
  commanderCinematic=null;cinematicFocusQueue.length=0;dialogueCameraReturn=null;
  followCamera=false;focusedHumanUnitId=null;
  controls.enabled=false;
@@ -7234,10 +7258,17 @@ function enterCommandOverview(){
  setCameraActive('camOverview');
  syncSquadCloseupLabels();
 }
-setBattleCamera(cameraHome,cameraCloseOffset);
+// Battle must never open inside pink petals. Begin above the whole map; users
+// can still zoom toward a soldier intentionally. Town exploration stays close.
+const openingOverviewCenter=(WORLD_SIZE/2-6)*CELL;
+if(TOWN_MODE)setBattleCamera(cameraHome,cameraCloseOffset);
+else setBattleCamera(new THREE.Vector3(openingOverviewCenter,terrainY(openingOverviewCenter,openingOverviewCenter),openingOverviewCenter),cameraOverviewOffset);
 $('camOverview').onclick=()=>{focusedHumanUnitId=null;followCamera=false;setBattleCamera(new THREE.Vector3((WORLD_SIZE/2-6)*CELL,0,(WORLD_SIZE/2-6)*CELL),cameraOverviewOffset);setCameraActive('camOverview')};
 $('camFollow').onclick=()=>{if(commandOverviewLocked)return;focusedHumanUnitId=null;followCamera=true;const p=selected?.root.position||actors[0]?.root.position||cameraHome;setBattleCamera(p,new THREE.Vector3(5,8,12));setCameraActive('camFollow')};
-$('camReset').onclick=()=>{if(commandOverviewLocked)return;focusedHumanUnitId=null;followCamera=false;setBattleCamera(cameraHome,cameraCloseOffset);setCameraActive(null)};
+$('camReset').onclick=()=>{if(commandOverviewLocked)return;focusedHumanUnitId=null;followCamera=false;
+ if(TOWN_MODE)setBattleCamera(cameraHome,cameraCloseOffset);
+ else setBattleCamera(new THREE.Vector3(openingOverviewCenter,terrainY(openingOverviewCenter,openingOverviewCenter),openingOverviewCenter),cameraOverviewOffset);
+ setCameraActive(TOWN_MODE?null:'camOverview')};
 let down=null,touchGestureEngaged=false,lastGroundTap=null;
 let focusedHumanUnitId=null;
 // Screen-space selection works for BOTH the 50v50 detailed meshes and all
