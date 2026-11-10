@@ -75,9 +75,9 @@ try{
  await new Promise(resolve=>setImmediate(resolve));
  voice.unlock();
  assert.equal(voice.preview('剣士','attack','male'),true);
- assert.equal(generated[0].volume,.32,'Character voice default remains discreet');
+ assert.equal(generated[0].volume,.74,'Character voice remains audible above music');
  voice.setMessagePriority(true);
- assert.equal(generated[0].volume,.20,'Existing character clip is automatically ducked by message');
+ assert.equal(generated[0].volume,.42,'Character voice is ducked but still audible under reports');
  let active=[];
  const spoken='前線が押されている！守備を固めろ！';
  const report=createBattleReportSpeech({storage:stored,now:()=>stamp,AudioCtor:globalThis.Audio,
@@ -94,7 +94,7 @@ try{
  generated[1].onended();
  assert.deepEqual(active,[true,false]);
  voice.setMessagePriority(false);
- assert.equal(generated[0].volume,.32);
+ assert.equal(generated[0].volume,.74);
 }finally{
  if(oldAudio===undefined)delete globalThis.Audio;else globalThis.Audio=oldAudio;
 }
