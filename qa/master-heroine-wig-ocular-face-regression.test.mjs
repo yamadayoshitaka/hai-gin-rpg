@@ -115,7 +115,7 @@ test('natural makeup edits real face vertex colors, resets and preserves source 
  assert.ok(result.lipVertices>0,'Rose-tinted lips missing');
  assert.equal(result.chinLipVertices,0,'Lipstick has leaked below the lips onto the chin');
  assert.equal(result.chinLipMaskExcluded,true);
- assert.deepEqual(result.mouthMaskYNormalized,[.400,.537]);
+ assert.deepEqual(result.mouthMaskYNormalized,[.417,.498]);
  assert.ok(result.linerVertices>0,'Eye-following upper lash color missing');
  assert.ok(result.changedVertices>100,'Cosmetics are too faint to affect the face');
  assert.equal(result.skinShaderUsesVertexColors,true,
@@ -161,11 +161,12 @@ test('heroine face has balanced original eye nose mouth and chin ratios',()=>{
  const girl=featuredSwordsmanProfile('hero-girl-01');
  assert.match(girl.referenceDesign,/^original-/);
  assert.ok(girl.proportions.eyeWidth>1.04&&girl.proportions.eyeWidth<1.12);
- assert.ok(girl.proportions.eyeHeight>1&&girl.proportions.eyeHeight<1.08);
+ assert.ok(girl.proportions.eyeHeight>.96&&girl.proportions.eyeHeight<1.03);
  assert.ok(girl.proportions.noseWidth>=.78&&girl.proportions.noseWidth<.88);
  assert.ok(girl.proportions.mouthWidth>=.90&&girl.proportions.mouthWidth<1);
  assert.ok(girl.proportions.chinLength>=.95&&girl.proportions.chinLength<1.02);
- assert.ok(girl.proportions.cheekRoundness>=1&&girl.proportions.cheekRoundness<1.12);
+ assert.ok(girl.proportions.cheekRoundness>=1&&girl.proportions.cheekRoundness<1.035);
+ assert.ok(girl.proportions.preEarFullness<=.70&&girl.proportions.lowerCheekLateral<=.75);
  assert.ok(girl.makeup.strength>.9);
  assert.ok(girl.makeup.lip>.9&&girl.makeup.eyeliner>.9);
  assert.ok(girl.proportions.eyeTilt>.04);
