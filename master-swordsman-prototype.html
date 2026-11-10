@@ -669,6 +669,7 @@ const loader=new GLTFLoader();
   const qs=new URLSearchParams(location.search);
   const id=qs.get('featured');
   await applyFeaturedCharacter(FEATURED_SWORDSMEN.some(p=>p.key===id)?id:'hero-01');
+  if(qs.get('view')==='face')targetView('portrait');
   if(qs.get('skin')==='1'){
    $('bodyStudyMode').value='anatomy';
    syncAnatomyPreview();refreshWireDisplay();
