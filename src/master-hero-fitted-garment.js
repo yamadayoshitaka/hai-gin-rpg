@@ -438,8 +438,15 @@ export function createFittedFantasyHeroGarment(body,{female=false}={}){
    if(part==='boots')lower.boots.visible=Boolean(visible);
   },
   changeAppearance(profile){
-   fabric.color.set(profile.gender==='female'?0x26384b:0x283b4a);
-   plating.color.set(profile.gender==='female'?0x576779:0x5b6876);
+   const roseKnight=profile.gender==='female'&&
+    profile.referenceDesign?.includes('lightning-inspired');
+   // A pale fitted standing collar, dark bodysuit and light armour plates.
+   // Own silhouette/materials, NOT a copied copyrighted mesh or texture.
+   fabric.color.set(roseKnight?0x42485b:profile.gender==='female'?0x26384b:0x283b4a);
+   baseFabric.color.copy(fabric.color);
+   plating.color.set(roseKnight?0xb6c2ca:profile.gender==='female'?0x576779:0x5b6876);
+   collarFabric.color.set(roseKnight?0xe6dfd2:profile.gender==='female'?0x26384b:0x283b4a);
+   trim.color.set(roseKnight?0xa5a7aa:0xb39a73);
   },
   dispose(){
    group.traverse(o=>{if(o.isMesh)o.geometry.dispose()});

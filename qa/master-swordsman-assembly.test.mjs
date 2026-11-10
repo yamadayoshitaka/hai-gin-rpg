@@ -276,7 +276,7 @@ test('hero-01 uses a distinctive youthful face sculpt and understated shoulder a
 
 
 import {buildReferenceHeroineHair} from '../src/master-heroine-coiffure.js';
-import {buildHeroineFantasyLongHair,measureHeroineTorsoEnvelope} from '../src/master-heroine-long-hair.js';
+import {buildHeroineFantasyLongHair,buildHeroineWigRootCap,measureHeroineTorsoEnvelope} from '../src/master-heroine-long-hair.js';
 test('heroine golden hair has dense independently shaped real polygon locks and retains its scalp master',()=>{
  const head=new THREE.Group();
  const source=new THREE.SphereGeometry(.19,48,32);
@@ -294,7 +294,7 @@ test('heroine golden hair has dense independently shaped real polygon locks and 
  assert.equal(report.denseFringe,true);
  assert.equal(report.softTaperedTips,true);
  assert.equal(report.eyebrowSafeFringe,true);
- assert.ok(report.fringeTipMinYNormalized>.73,
+ assert.ok(report.fringeTipMinYNormalized>.64,
   'Full fringe should end above the actual eyebrow ridge');
  assert.ok(report.rearLocks>=320,'Five staggered back-hair layers required');
  assert.ok(report.faceFramingLocks>=216,'Both temples require dense layers');
@@ -312,6 +312,28 @@ test('heroine golden hair has dense independently shaped real polygon locks and 
   'Actual source head geometry must not change when adding hair');
  hair.geometry.dispose();hair.material.dispose();scalp.geometry.dispose();scalp.material.dispose();
  source.dispose();face.material.dispose();
+});
+
+test('heroine wig root crown is source-conforming and covers the bald head without donor hair',()=>{
+ const head=new THREE.Group();
+ const face=new THREE.Mesh(new THREE.SphereGeometry(.19,48,32),
+  new THREE.MeshStandardMaterial());
+ head.add(face);head.updateMatrixWorld(true,true);
+ const original=face.geometry.getAttribute('position').array.slice();
+ const {scalp}=buildHeadConformingScalp(head);
+ const {cap,report}=buildHeroineWigRootCap(scalp);
+ assert.equal(report.wigRootFoundationOnly,true);
+ assert.equal(report.sourceAnatomyUntouched,true);
+ assert.ok(report.crownSamples>35);
+ assert.ok(report.coverageRatio>.95,'No transparent bald patches over crown');
+ assert.equal(cap.isMesh,true);
+ assert.equal(cap.name,'HEROINE_WIG_ROOT_CROWN_NOT_DONOR_HAIR');
+ assert.equal(cap.material.vertexColors,true);
+ assert.equal(cap.geometry.getAttribute('color').itemSize,4);
+ assert.deepEqual(face.geometry.getAttribute('position').array,original);
+ cap.geometry.dispose();cap.material.dispose();
+ scalp.geometry.dispose();scalp.material.dispose();
+ face.geometry.dispose();face.material.dispose();
 });
 
 test('heroine wig reroutes 100k hair around measured 3D shoulder and back surfaces',()=>{
@@ -386,7 +408,7 @@ test('adopted knight heroine gets a low swept 3D bun without moving original fem
 
 test('heroine 01 has real long blonde 3D hair past shoulders, without a floating bun',()=>{
  const profile=featuredSwordsmanProfile('hero-girl-01');
- assert.equal(profile.hairColor,'#e6bc71');
+ assert.equal(profile.hairColor,'#d6a5ba');
  assert.equal(profile.coiffureStyle,'fantasy-long-blonde');
  const head=new THREE.Group();
  const original=new THREE.SphereGeometry(.19,64,48);

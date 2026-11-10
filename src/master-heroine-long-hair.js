@@ -92,22 +92,63 @@ function clearBodyForLongStrand(x,y,z,region,envelope){
   rx:lerp(a.rx,b.rx,w),rz:lerp(a.rz,b.rz,w)
  }:a||b;
  const clearance=envelope.clearanceMeters||.025;
- if(region==='rear'){
+ if(region==='rear'||region==='left'||region==='right'){
   // The back curtain must be BEHIND the actual rear torso at this height,
   // including at the shoulder blades; no straight hair through the back.
   const q=(x-ring.x)/(ring.rx+clearance);
   if(Math.abs(q)>1)return [x,z,false];
   const rear=ring.z-(ring.rz+clearance)*Math.sqrt(Math.max(.07,1-q*q));
+  // Side locks route behind the SHOULDER rather than being flung out beyond
+  // the arms. This eliminates the large V-shaped "wings" in rear view.
   return z>rear?[x,rear,true]:[x,z,false];
  }
- // Ear-side locks bend outward around the shoulder (not through it),
- // then drape next to the arm once the actual body becomes narrower.
- const side=region==='left'?-1:1;
- const zn=(z-ring.z)/(ring.rz+clearance);
- if(Math.abs(zn)>1)return [x,z,false];
- const bound=ring.x+side*(ring.rx+clearance)*Math.sqrt(Math.max(.08,1-zn*zn));
- if(side*x>=side*bound)return [x,z,false];
- return [bound,z,true];
+ return [x,z,false];
+}
+
+
+/**
+ * Source-topology wig foundation, not a second hairstyle or a floating dome.
+ * 100k one-pixel filaments leave gaps on phones; this rose-toned, alpha-faded
+ * crown surface fills ONLY those gaps and stays attached to the real head.
+ * The original opaque/donor hair and source scalp remain hidden.
+ */
+export function buildHeroineWigRootCap(scalp){
+ const src=scalp?.geometry,colors=src?.getAttribute('color'),positions=src?.getAttribute('position');
+ if(!positions||!colors||colors.itemSize!==4)throw Error('Real 3D source scalp required for wig crown');
+ src.computeBoundingBox();
+ const bb=src.boundingBox,d=bb.getSize(new THREE.Vector3());
+ const cx=(bb.min.x+bb.max.x)*.5;
+ const cap=src.clone(),color=new Float32Array(positions.count*4);
+ let crownSamples=0,coveredCrown=0;
+ for(let i=0;i<positions.count;i++){
+  const x=positions.getX(i),y=positions.getY(i),z=positions.getZ(i);
+  const yn=(y-bb.min.y)/d.y,zn=(z-bb.min.z)/d.z;
+  // Cover entire crown and occiput, fading along side temples and eyebrow.
+  const front=clamp((zn-.27)/.55,0,1);
+  const lateral=clamp(Math.abs((x-cx)/(d.x*.5)),0,1);
+  const limit=.45+.32*front+.055*lateral;
+  const u=clamp((yn-limit+.06)/.115,0,1);
+  const a=yn>.86?1:u*u*(3-2*u);
+  const o=i*4;
+  color[o]=.99;color[o+1]=.96;color[o+2]=.97;color[o+3]=a;
+  if(yn>.87){crownSamples++;if(a>.98)coveredCrown++;}
+ }
+ if(crownSamples<35||coveredCrown/crownSamples<.95)
+  throw Error('Wig crown leaves a bald scalp: '+coveredCrown+'/'+crownSamples);
+ cap.setAttribute('color',new THREE.BufferAttribute(color,4));
+ const material=new THREE.MeshStandardMaterial({
+  color:0xcfa8b4,vertexColors:true,side:THREE.DoubleSide,
+  roughness:.88,metalness:0,transparent:true,alphaTest:.08,depthWrite:true
+ });
+ const mesh=new THREE.Mesh(cap,material);
+ mesh.name='HEROINE_WIG_ROOT_CROWN_NOT_DONOR_HAIR';
+ mesh.matrixAutoUpdate=false;mesh.matrix.copy(scalp.matrix);
+ mesh.castShadow=true;mesh.renderOrder=0;
+ return {cap:mesh,report:Object.freeze({
+  sourceHeadConforming:true,sourceScalpHidden:true,wigRootFoundationOnly:true,
+  crownSamples,coveredCrown,coverageRatio:coveredCrown/crownSamples,
+  sourceAnatomyUntouched:true
+ })};
 }
 
 export function buildHeroineFantasyLongHair(scalp,{lengthInHeads=3.25,bodyEnvelope=null}={}){
@@ -141,7 +182,11 @@ export function buildHeroineFantasyLongHair(scalp,{lengthInHeads=3.25,bodyEnvelo
  };
  const pick=region=>all.slice().sort((a,b)=>score(b,region)-score(a,region))
   .slice(0,Math.max(30,Math.ceil(all.length*.16)));
- const rear=pick('rear'),left=pick('left'),right=pick('right');
+ const rear=all.filter(q=>q[2]<cz+d.z*.08&&(q[1]-b.min.y)/d.y>.52);
+ const crown=all.filter(q=>(q[1]-b.min.y)/d.y>.82);
+ const left=all.filter(q=>q[0]<cx-d.x*.20&&(q[1]-b.min.y)/d.y>.51);
+ const right=all.filter(q=>q[0]>cx+d.x*.20&&(q[1]-b.min.y)/d.y>.51);
+ if([rear,crown,left,right].some(v=>v.length<30))throw Error('Incomplete source-rooted wig scalp coverage');
  // The forehead hairline must use upper-crown vertices: global ranking by
  // frontmost Z alone accidentally sampled lower cheek-height scalp on the
  // segmented female sculpt (actual QA: fringe tip y=.608). Keep roots high
@@ -169,15 +214,19 @@ export function buildHeroineFantasyLongHair(scalp,{lengthInHeads=3.25,bodyEnvelo
   for(let j=0;j<count;j++,global++){
    // Prime-strided traversal keeps the original scalp population uniformly
    // distributed; jitter is sub-millimetre and never repositions the wig.
-   const q=anchors[(j*67+Math.floor(hash(global+4)*anchors.length))%anchors.length];
+   // A broad crown population avoids concentrating 70k roots into a
+   // narrow rear strip which reads as a vertical plastic hair curtain.
+   const pool=region==='rear'&&j%4===0?crown:anchors;
+   const q=pool[(j*67+Math.floor(hash(global+4)*pool.length))%pool.length];
    const seed=global+1,scatter=hash(seed*1.19),waveSeed=hash(seed*3.71);
    const rootX=q[0]+(hash(seed*4.1)-.5)*d.x*.003;
    const rootY=q[1],rootZ=q[2];
    const strandLength=bang?
-    Math.min(d.y*(.075+.040*scatter),Math.max(.001,rootY-(b.min.y+d.y*.75))):
-    d.y*lengthInHeads*(side?.84:1)*(.83+.17*scatter);
+    Math.min(d.y*(.24+.10*scatter),Math.max(.001,rootY-(b.min.y+d.y*.68))):
+    side?d.y*(1.30+.55*scatter):
+    d.y*lengthInHeads*(.83+.17*scatter);
    const sway=(hash(seed*11.3)-.5)*d.x*.14;
-   const sideDirection=side||Math.sign(rootX-cx)||1;
+   const sideDirection=bang?1:(side||Math.sign(rootX-cx)||1);
    const light=.82+.17*hash(seed*7.83);
    let previous=null;
    for(let section=0;section<=SEGMENTS;section++){
@@ -186,12 +235,13 @@ export function buildHeroineFantasyLongHair(scalp,{lengthInHeads=3.25,bodyEnvelo
       Math.sin(Math.PI*t)*d.x*(bang?.010:side?.038:.026);
     // Temple hairs sweep out from the ear, preserving the cheek outline;
     // the back follows the occiput toward the waist with individual waves.
-    let x=bang?rootX+sideDirection*d.x*.075*t+curl:
-     rootX+(side?side*d.x*(.11*t+.07*fall):sway*fall)+curl;
+    let x=bang?rootX+sideDirection*d.x*(.22*t+.09*fall)+curl:
+     rootX+(side?side*d.x*(.035*t+.012*fall):sway*fall)+curl;
     const y=rootY-strandLength*t;
-    let z=bang?rootZ+d.z*(.17*t+.045*Math.sin(Math.PI*t)):
-     side?lerp(rootZ,cz-d.z*.11,clamp(t*1.6,0,1))-d.z*.035*fall:
-     Math.min(rootZ,cz-d.z*.11)-d.z*(.055*t+.12*fall);
+    let z=bang?rootZ+d.z*(.13*t+.035*Math.sin(Math.PI*t)):
+     side?lerp(rootZ,cz-d.z*.23,clamp(t*1.45,0,1))-d.z*.08*fall:
+     lerp(rootZ,Math.min(rootZ,cz-d.z*.11),clamp(t*1.8,0,1))-
+      d.z*(.085*t+.10*fall);
     // Screen-space appearance is not a collision check: push EACH REAL
     // filament vertex outside measured shoulder and back envelopes.
     if(bodyEnvelope&&!bang){
@@ -247,11 +297,13 @@ export function buildHeroineFantasyLongHair(scalp,{lengthInHeads=3.25,bodyEnvelo
   noWidePolygonCards:true,individualFilamentCount:COUNT,
   strandRenderer:'gpu-line-segments',strandSegmentCount:COUNT*SEGMENTS,
   allStrandsRendered:true,previewOnlyLinePrimitive:true,
-  templeClearanceStrategy:'actual-body-shoulder-envelope',
+  templeClearanceStrategy:'behind-real-shoulder-no-side-wings',
+  rootDistribution:'full-crown-and-occiput-not-rear-strip',
+  sweptAsymmetricBangs:true,shorterSideLocks:true,
   rearClearanceStrategy:'actual-body-back-envelope',
   donorScalpOnlyForRoots:true,bodyClearanceMeasured:!!bodyEnvelope,
   bodyCollisionCorrections,sideShoulderCorrections,rearBackCorrections,
-  scalpRegions:Object.freeze(regions),
+  scalpRegions:Object.freeze(regions),scalpCrownRootPool:crown.length,
   rearLocks:regions.rear,faceFramingLocks:regions.templeLeft+regions.templeRight,
   bangLocks:regions.bangs,lockCount:COUNT,
   fringeTipMinYNormalized:Number(((lowestBangY-b.min.y)/d.y).toFixed(3)),
