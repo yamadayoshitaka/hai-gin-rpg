@@ -592,7 +592,8 @@ import {batchStaticStageDecorations} from './src/stage-static-instancing.js?v=4.
 import {batchStaticBuildingShells} from './src/stage-building-instancing.js?v=2';
 import {cameraSegmentHitsBox,selectCameraOccluders,shouldRevealBuildingInterior,safeSelectedInteriorFloor} from './src/battle-camera-occlusion.js?v=4.6.18';
 import {registerSquadCircleTap,chooseSquadZoomTarget,SQUAD_CIRCLE_DOUBLE_TAP_MS,shouldHideSquadLabelsAtDistance} from './src/battle-squad-circle-tap.js?v=4.6.36';
-import {createBattleActorVisibility} from './src/battle-render-visibility.js?v=4.6.15';
+import {createBattleActorVisibility} from './src/battle-render-visibility.js?v=zoom-human-1';
+import {shouldShowOverheadSquadCallouts,closestAliveBattleFocus} from './src/battle-zoom-visibility-policy.js?v=1';
 import {createSkirmishDistanceLod} from './src/skirmish-distance-impostors.js?v=4.6.15';
 import {createCatalogObject} from './src/object-catalog.js?v=4.6.36';
 import {RoomItemRegistry,ROOM_ITEM_TYPES,applySquadHeal} from './src/room-item-registry.js?v=4.6.44';
@@ -645,6 +646,7 @@ voiceMenu.innerHTML='<strong>🗣 自然な戦闘ボイス（VOICEVOX収録音�
  +'<label><input id="battleVoiceLearn" type="checkbox"> AIで新しいセリフを増やす（最大10件／状況、手動有効化）</label>'
  +'<button id="battleVoiceTest" type="button">▶ 剣士の声を試す</button>'
  +'<small id="battleVoiceReport">収録済みの自然音声のみ再生。未収録時は字幕だけ表示。AI学習は標準でOFF。</small>'
+ +'<small id="battleVoiceHealth" aria-live="polite">戦闘音声の読込状態を確認中…</small>'
  +'<details><summary>VOICEVOX収録クレジット</summary><small id="battleVoiceCredits">読み込み中</small></details>'
  +'<details><summary>AI中継URL（学習機能の設定）</summary><input id="battleVoiceEndpoint" type="url" autocomplete="off" placeholder="https://...workers.dev/api/battle-voice" style="width:100%;max-width:100%;padding:6px"></details>';
 $('menuSoundSlot').insertAdjacentElement('afterend',voiceMenu);
@@ -4292,6 +4294,12 @@ function syncMassBattleSnapshot(){
    a.defeated=false;a.deathElapsed=0;a.root.visible=true;a.root.rotation.z=0;
    requestMotion(a,'idle');
   }
+  // The mass combat worker bypasses skirmish sound triggers. Give near,
+  // real combat transitions natural recorded voices, with director rate limits.
+  const audibleActor=a.root.visible&&camera.position.distanceTo(a.root.position)<85;
+  if(audibleActor&&a.lastMassAction!==unit.action&&
+    ['attack','skill','heal','guard'].includes(unit.action))
+   battleVoice.cue(unit.action==='skill'?'magic':unit.action,a);
   if(unit.action==='attack'&&a.lastMassAction!=='attack'){
     const target=nearestEnemy(a),isArcher=a.job.name==='弓使い';
     actionVfx.emit(isArcher?'arrow':a.job.role==='support'?'magic':'attack',{
@@ -5479,6 +5487,18 @@ const reportSpeech=createBattleReportSpeech({
  enabled:()=>battleAudio.enabled,
  onPlaybackChange:active=>battleAudio.setMessagePriority(active)
 });
+const battleVoiceHealth=$('battleVoiceHealth');
+let lastBattleVoiceHealthAt=-Infinity;
+function refreshBattleVoiceHealth(){
+ if(elapsed-lastBattleVoiceHealthAt<2)return;
+ lastBattleVoiceHealthAt=elapsed;
+ const actorsStatus=battleVoice.status,reportStatus=reportSpeech.status;
+ battleVoiceHealth.textContent='🎙 兵士の収録 '+actorsStatus.recordedClips+
+  '件／戦況の収録 '+reportStatus.recordedClips+'件｜再生中 '+actorsStatus.playing+
+  '・戦況 '+(reportStatus.active||'待機')+
+  (actorsStatus.lastError?'｜兵士：'+actorsStatus.lastError:
+   reportStatus.lastError?'｜戦況：'+reportStatus.lastError:'');
+}
 const reportSpeechControl=$('battleReportSpeechEnabled');
 reportSpeechControl.checked=reportSpeech.enabled;
 reportSpeechControl.onchange=event=>reportSpeech.enable(event.target.checked);
@@ -5645,6 +5665,12 @@ function queueBattleFocusCinematic(x,z,{kind='order',priority=90,team=0,detail='
  return startBattleFocusCinematic(entry);
 }
 function startBattleFocusCinematic({x,z,priority=90,kind='order'}){
+ // Leave exploration focused on its building. Other cut-ins should look
+ // toward a living combatant instead of zooming onto empty furniture.
+ const actorFocus=kind==='explore'?null:closestAliveBattleFocus(massSim?.units??actors,x,z,{
+  gridOffset:massSim?6:0,cellSize:massSim?CELL:1,maxDistance:20*CELL
+ });
+ if(actorFocus){x=actorFocus.x;z=actorFocus.z;}
  const closeTarget=new THREE.Vector3(x,terrainY(x,z)+1.4,z);
  const fromTarget=controls.target.clone(),center=(WORLD_SIZE/2-6)*CELL;
  const overTarget=new THREE.Vector3(center,terrainY(center,center)+1,center);
@@ -6904,10 +6930,26 @@ function updateSquadScreenLabels(dt){
   if(team===0&&id===activeId&&!$('squadTactics').hidden)return 2;
   return team===0?1:0;
  };
+ const zoomDistance=camera.position.distanceTo(controls.target);
+ const showCallouts=shouldShowOverheadSquadCallouts(zoomDistance,{
+  selectingTarget:Boolean(pendingCircleTarget),
+  selectingDestination:pickingSquadDestination||pickingStrategistWarp,
+  selectingMission:Boolean(pickingSquadMission)
+ });
+ if(!showCallouts){
+  // The previous edge-pinned offscreen circles obscured actual people.
+  for(const marker of squadMarkers.values()){
+   marker.userData.screenLabel.hidden=true;
+   marker.userData.calloutLine.style.display='none';
+   marker.userData.calloutDot.style.display='none';
+  }
+  return;
+ }
+ const targetTeam=pendingCircleTarget?(pendingCircleTarget.kind==='attack'?1:0):null;
  const points=[];
  for(const [key,marker] of squadMarkers){
   const label=marker.userData.screenLabel;
-  if(pageZoomed||!marker.visible){
+  if(pageZoomed||!marker.visible||(targetTeam!==null&&marker.userData.team!==targetTeam)){
    label.hidden=true;marker.userData.calloutLine.style.display='none';
    marker.userData.calloutDot.style.display='none';continue;
   }
@@ -7603,6 +7645,7 @@ function animate(){
  }
  battleDialogue.update(squadRoster,paused,finished);
  reportSpeech.update();
+ refreshBattleVoiceHealth();
  if(dialogueCameraReturn&&elapsed>=dialogueCameraReturn.time){
   const old=dialogueCameraReturn;dialogueCameraReturn=null;
   camera.position.copy(old.position);controls.target.copy(old.target);
