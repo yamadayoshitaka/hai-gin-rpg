@@ -13,7 +13,7 @@ const smooth=(a,b,x)=>{
  return t*t*(3-2*t);
 };
 
-export const HEROINE_FACE_POLISH_VERSION='round-cheek-refined-nose-lips-v3';
+export const HEROINE_FACE_POLISH_VERSION='slim-cheek-curved-jaw-v4';
 
 export function polishHeroineFacePoint(x,y,z,box,{strength=1}={}){
  const sx=box.max.x-box.min.x,sy=box.max.y-box.min.y,sz=box.max.z-box.min.z;
@@ -36,8 +36,9 @@ export function polishHeroineFacePoint(x,y,z,box,{strength=1}={}){
  const cheekSpike=bell(ax,.85,.18)*bell(yn,.60,.105);
  const midCheek=bell(ax,.51,.26)*bell(yn,.53,.14);
  const noseZone=bell(ax,.22,.16)*bell(yn,.52,.07);
- const lateral=sx*(.033*lowerCheek+.012*jawBlend-.012*cheekSpike)*(1-.91*noseZone);
- const cheekDepth=sz*(.033*lowerCheek+.018*midCheek-.010*cheekSpike);
+ // Do not sculpt round protruding cheeks on an already youthful head.
+ const lateral=sx*(-.020*lowerCheek-.009*jawBlend-.021*cheekSpike)*(1-.91*noseZone);
+ const cheekDepth=sz*(-.012*lowerCheek+.009*midCheek-.014*cheekSpike);
 
  // Anatomical nasal subregions have separate subtle offsets: soft bridge,
  // rounded nasal tip and recessed nostril wings rather than a triangular nose.
