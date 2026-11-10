@@ -379,8 +379,8 @@ test('heroine 01 has real long blonde 3D hair past shoulders, without a floating
  assert.equal(report.noFloatingBun,true);
  assert.equal(report.sourceHeadUnchanged,true);
  assert.equal(report.staticUnrigged,true);
- assert.equal(report.roundedCrossSection,true,
-  'Golden hair must use volumetric 3D strands rather than flat cards');
+ assert.equal(hair.isLineSegments,true,'High-density hair must render every independent curved strand');
+ assert.equal(report.noWidePolygonCards,true,'No flat clump cards are allowed');
  assert.equal(report.layeredVolume,true,'Missing layered long-hair mass');
  assert.equal(report.strandSegmentCount,300000,'Individual 3D filaments are missing');
  assert.equal(hair.material.isLineBasicMaterial,true,'Coarse card mesh shader must be retired');
