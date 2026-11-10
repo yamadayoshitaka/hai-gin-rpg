@@ -33,8 +33,8 @@ const definitions=[
   [.48,.39,.42,.34,.38,.53,.42],'#c59573','#526f73','#332c26','#3f5145','#8d9ba4',1.00,1.00,1.02],
  ['ally-05','軽装の俊敏剣士','ally',7,
   [.19,.22,.39,.17,.26,.22,.33],'#cfa085','#6e8251','#604039','#533c49','#919c9e',.95,1.08,.80],
- ['hero-girl-01','ライトニング系女騎士・3D造形試作','hero',2,
-  [.08,.19,.31,.07,.16,.10,.18],'#e8c7b7','#75a6ad','#d6a5ba','#393e53','#bdc5cb',.955,1.12,.67]
+ ['hero-girl-01','美少女01・オリジナル女騎士（造形確認中）','hero',2,
+  [.25,.26,.29,.25,.21,.28,.25],'#e8c7b7','#75a6ad','#d6a5ba','#393e53','#bdc5cb',.965,1.075,.70]
 ];
 function buildPreset(row,i){
  const [key,label,category,hairStyle,faceVector,skin,iris,hairColor,clothColor,armorColor,
@@ -49,32 +49,24 @@ function buildPreset(row,i){
     '-'+String(1+(i%5)).padStart(2,'0'),
   category,role:key,label,face,skin,iris,hairStyle,hairColor,clothColor,armorColor,
   gender:female?'female':'male',headSource:female?'realistic-head-sculpt':'realistic-head-animation',
-  referenceDesign:female?'ff13-lightning-inspired-female-knight-20261110':null,
+  referenceDesign:female?'original-rose-hair-fantasy-knight-20261110':null,
   coiffureStyle:female?'fantasy-long-blonde':null, // Legacy runtime key; 100k rose-pink asymmetric wig
   proportions:female?validateFaceProportions({
-   // Reference-image direction: larger softer eyes and shorter midface,
-   // restrained small nose and lips. 3D aesthetic still needs user review.
-   // Restore natural human proportions; previous extreme chin, eye, nose
-   // and mouth compression made a gaunt, doll-like face. Added 3D cheek
-   // volume now reaches the lateral malar region as well.
-   // Emergency visual rollback: use conservative real-source proportions
-   // rather than successive caricature morphs / enlarged jaws.
-   // Original adult heroine sculpt: round the mid-cheek while reducing
-   // the heavy lower jaw. Retain measured native 3D eyes and socket depth.
-   // Soft young-adult knight, preserving the actual photographic-style
-   // source eye sockets/nasal features rather than a doll-face warp.
-   // Narrow the LOWER jaw while retaining malar cheek fullness.
-   faceHeight:.954,upperThird:1.045,middleThird:.94,lowerThird:.97,
-   jawTaper:.93,cheekRoundness:1.115,chinLength:.935,
-   preEarFullness:.72,lowerCheekLateral:.82,parotidWidth:.72,
-   eyeWidth:1.115,eyeHeight:1.07,
-   eyeSpacing:.99,eyeVertical:.003,eyeTilt:.018,
-   browVertical:.002,browEyeGap:.94,
-   browWidth:1.015,browThickness:.81,browAngle:.015,
-   noseOverall:.90,noseLength:.91,noseWidth:.88,noseBridge:.97,noseTip:.88,
-   mouthWidth:.89,mouthHeight:.96,mouthVertical:.003,
-   lipFullness:1.12,mouthCorner:.006
-  }):i===0?validateFaceProportions({
+    // Individualize the source face without imitating a named character.
+    // Use balanced almond eyes, a slimmer pre-ear wall, a continuous cheek
+    // into the jaw and a real nose/lip profile (not extreme doll morphs).
+    faceHeight:.972,upperThird:1.025,middleThird:.98,lowerThird:1.01,
+    jawTaper:.955,cheekRoundness:1.055,chinLength:.968,
+    preEarFullness:.78,lowerCheekLateral:.84,parotidWidth:.76,
+    eyeWidth:1.075,eyeHeight:1.035,eyeSpacing:1.018,
+    eyeVertical:.002,eyeTilt:.012,
+    browVertical:.002,browEyeGap:1.015,
+    browWidth:1.04,browThickness:.77,browAngle:.012,
+    noseOverall:.93,noseLength:.96,noseWidth:.91,
+    noseBridge:1.01,noseTip:.91,
+    mouthWidth:.93,mouthHeight:1.0,mouthVertical:.002,
+    lipFullness:1.065,mouthCorner:.006
+   }):i===0?validateFaceProportions({
    faceHeight:.947,upperThird:1.07,middleThird:.86,lowerThird:.925,
    jawTaper:.85,chinLength:.87,eyeWidth:1.045,eyeHeight:1.045,
    eyeSpacing:.99,eyeVertical:-.004,browVertical:-.007,browEyeGap:.90,
@@ -91,7 +83,7 @@ function buildPreset(row,i){
   }):base.proportions,
   faceWidth,eyeSize:1+(eyeSize-1)*.70,shoulderSize,
   headScale:category==='hero'?(female?1.065:1.075):1,
-  youthfulness:female?.70:category==='hero'?.97:.49+(i-5)*.035,
+  youthfulness:female?.66:category==='hero'?.97:.49+(i-5)*.035,
   skinRoughness:category==='hero'?(female?.58:i===0?.43:.47):.54,
   armorStyle:female?0:category==='hero'?(i===0?1:i%3):1+(i%3),
   build:female?.955:category==='hero'?(i===0?.955:.965+i*.007):.975+(i-5)*.008,
