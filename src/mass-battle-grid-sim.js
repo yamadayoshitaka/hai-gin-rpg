@@ -935,22 +935,50 @@ export class MassBattleGridSimulation {
     if(![0,1].includes(side)||!buildingId||
       !this.units.some(u=>u.team===side&&String(u.squadId)===id&&u.alive))return false;
     if(!Number.isInteger(x)||!Number.isInteger(z)||!this._inside(x,z))return false;
-    let goal=null,dist=Infinity;
-    for(let dz=-5;dz<=5;dz++)for(let dx=-5;dx<=5;dx++){
+    // The loot can be 10+ tiles inside a large castle. The old +/-5
+    // search rejected otherwise valid distant exploration orders outright.
+    // Look for a genuinely reachable entrance, independent of army distance.
+    const members=this.units.filter(u=>u.team===side&&String(u.squadId)===id&&u.alive);
+    const nearX=members.reduce((n,u)=>n+u.x,0)/members.length;
+    const nearZ=members.reduce((n,u)=>n+u.z,0)/members.length;
+    const candidates=[];
+    for(let dz=-28;dz<=28;dz++)for(let dx=-28;dx<=28;dx++){
       const tx=x+dx,tz=z+dz;
       if(!this._walkable(tx,tz))continue;
-      const d=dx*dx+dz*dz;
-      if(d<dist){dist=d;goal={x:tx,z:tz};}
+      const distance=dx*dx+dz*dz;
+      // For equally close entrances, prefer the side of the building where
+      // the squad is actually standing; do not turn distant orders into a
+      // hidden hard range restriction.
+      const approach=Math.hypot(tx-nearX,tz-nearZ);
+      candidates.push({x:tx,z:tz,score:distance+.2*approach});
+    }
+    candidates.sort((a,b)=>a.score-b.score);
+    let goal=null,flows=null,attempts=0;
+    const directions=new Set();
+    for(const candidate of candidates){
+      const dx=candidate.x-x,dz=candidate.z-z;
+      const direction=Math.round(Math.atan2(dz,dx)*8/Math.PI);
+      if(directions.has(direction))continue;
+      directions.add(direction);
+      const goals=[];
+      for(let oz=-2;oz<=2;oz++)for(let ox=-2;ox<=2;ox++){
+        const gx=candidate.x+ox,gz=candidate.z+oz;
+        if(ox*ox+oz*oz<=4&&this._walkable(gx,gz))goals.push({x:gx,z:gz});
+      }
+      if(!goals.length)continue;
+      const regular=makeFlow(this.width,this.height,this.walkable,goals);
+      const ninja=makeFlow(this.width,this.height,this.ninjaWalkable,goals);
+      const reachable=members.some(u=>{
+        if(!this._inside(u.x,u.z))return false;
+        const steps=(u.jobId==='ninja'?ninja:regular)[u.z*this.width+u.x];
+        return steps<0x3fffffff;
+      });
+      if(reachable){goal=candidate;flows={regular,ninja};break;}
+      if(++attempts>=12)break;
     }
     if(!goal)return false;
-    const goals=[];
-    for(let dz=-2;dz<=2;dz++)for(let dx=-2;dx<=2;dx++){
-      const gx=goal.x+dx,gz=goal.z+dz;
-      if(dx*dx+dz*dz<=4&&this._walkable(gx,gz))goals.push({x:gx,z:gz});
-    }
     this.explorationOrders.set(key,{buildingId,x:goal.x,z:goal.z});
-    this.explorationFlows.set(key,{regular:makeFlow(this.width,this.height,this.walkable,goals),
-      ninja:makeFlow(this.width,this.height,this.ninjaWalkable,goals)});
+    this.explorationFlows.set(key,flows);
     for(const u of this.units)if(u.team===side&&String(u.squadId)===id){u.tacticalOrder=null;u.tacticalOrderUntil=0;}
     (side===0?this.squadCommands:this.enemySquadCommands).set(id,'explore');
     if(side===0){
