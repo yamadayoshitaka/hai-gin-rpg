@@ -10,7 +10,7 @@ for(const sex of ['Male','Female']){
  assert.ok(fs.existsSync(new URL('../'+townHeadSourceForSex(sex.toLowerCase()).slice(2),import.meta.url)),
   'actual face GLTF source must exist');
  const base=JSON.parse(read('assets/characters/quaternius-base/Superhero_'+sex+'_FullBody.gltf'));
- assert.ok(base.meshes.some(x=>/eye/i.test(x.name)),'face needs actual 3D eye geometry');
+ assert.ok(base.nodes.some(x=>/Eyes|Eyebrows/i.test(x.name)),'face needs actual eyes and eyebrow mesh nodes');
  assert.ok(base.nodes.some(x=>x.name==='Head'),'source body must have a matching skull bone');
 }
 assert.match(town,/import \{attachTownCivilianHead,townHeadSourceForSex\}/);
