@@ -28,6 +28,13 @@ test('heroine wig paints every upper-crown vertex and keeps face skin uncovered'
  assert.ok(report.coverageRatio>.95);
  assert.equal(report.coveredBySolidSourceTopology,true);
  assert.equal(report.foreheadBangsVisible,true);
+ assert.equal(report.crownFlowLocks,8000);
+ assert.equal(report.crownFlowTriangles,64000);
+ assert.equal(report.crownHasActualTangentFibreGeometry,true);
+ const fibers=cap.getObjectByName('HEROINE_CROWN_DENSE_SURFACE_FIBRE_FLOW');
+ assert.ok(fibers?.isMesh&&fibers.geometry.index.count===64000*3,
+  'The wig cap is still an opaque bald-looking dome without top hair');
+ assert.ok(fibers.userData.sourceScalpRoots);
  assert.equal(report.fringeLockCount,520);
  assert.equal(report.fringeTriangleCount,520*6*2);
  assert.ok(report.fringeTipMinNormalized>=.69);
