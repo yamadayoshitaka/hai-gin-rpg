@@ -148,6 +148,23 @@ test('heroine 3D nose and mouth use subtle separate anatomical surface changes',
   'Refinement must support exact restoration');
 });
 
+test('heroine lower cheek is continuously round, while nostrils and mouth corners retain fine 3D detail',()=>{
+ const box={min:{x:-.16,y:-.18,z:-.12},max:{x:.16,y:.20,z:.13}};
+ const fit=(x,y,z=.11)=>polishHeroineFacePoint(x,y,z,box);
+ const upper=fit(.102,-.007),lower=fit(.104,-.055);
+ assert.ok(upper.x>.105,'Volume must fill the hollow below the cheekbone');
+ assert.ok(lower.x>.105,'Lower cheek transitions into the jaw, not a V-shaped point');
+ assert.ok(upper.x<.118&&lower.x<.118,'Avoid an oversized gibbon-like cheek bulge');
+ const noseWing=fit(.037,.016);
+ assert.ok(noseWing.x<.037,'Nose wing must be slightly narrower, not widened by cheek shaping');
+ const mouthCorner=fit(.062,-.030);
+ assert.ok(mouthCorner.y>-.030,'Mouth corner is lifted on the true face mesh');
+ const reverse=fit(-.104,-.055);
+ assert.ok(Math.abs(reverse.x+lower.x)<1e-10,'Left and right cheeks mirror exactly');
+ assert.deepEqual(fit(.104,-.055,-.12),{x:.104,y:-.055,z:-.12},
+  'Back-of-head geometry must remain identical');
+});
+
 test('boy and girl presets use different measured facial proportions, with original masters unapproved',()=>{
  const boy=featuredSwordsmanProfile('hero-01');
  const girl=featuredSwordsmanProfile('hero-girl-01');
