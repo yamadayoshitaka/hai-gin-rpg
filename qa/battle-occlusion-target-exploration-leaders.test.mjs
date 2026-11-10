@@ -35,7 +35,7 @@ assert.equal(sim.setSquadExploration(id,'unavailable',-1,-1,0),false,
 const battle=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
 for(const token of [
  "item.id==='tree_deciduous_001'||item.id==='flower_tree_001'",
- 'const hide=closeup;',
+ 'const hide=closeup||insideCrown;',
  'isSquadCircleTargetActionable(id,team,action)',
  "label.classList.toggle('eligible-target',Boolean(actionable))",
  "const message='現在選べる対象部隊がありません",
