@@ -2700,7 +2700,7 @@ const townStreetCitizens=(()=>{
   root.userData.townRole=role;root.userData.modelRegistryId=modelKey;
   root.userData.townCitizenId='street-'+i;root.userData.nonColliding=true;scene.add(root);
   return {root,name:citizen?.name||role,role,id:'street-'+i,sex,modelKey,
-   x:root.position.x,z:root.position.z,phase:i*1.13,walk:i%3===0,mixer:null,loaded:false};
+   x:root.position.x,z:root.position.z,phase:i*1.13,walk:i%3===0,mixer:null,poseBones:null,loaded:false};
  });
 })();
 async function hydrateTownCitizens(){
@@ -2725,6 +2725,12 @@ async function hydrateTownCitizens(){
    node.frustumCulled=false;node.castShadow=false;node.receiveShadow=true;
   }});
   citizen.root.add(model);
+  const poseBones={};
+  model.traverse(node=>{
+   if(!node.isBone||!['thigh_l','thigh_r','upperarm_l','upperarm_r','spine_01'].includes(node.name))return;
+   poseBones[node.name]={bone:node,rest:node.quaternion.clone()};
+  });
+  citizen.poseBones=poseBones;
   const clips=source.animations||[];
   const clip=clips.find(c=>citizen.walk?/walk|run/i.test(c.name):/idle|stand/i.test(c.name))||
    clips.find(c=>/idle|stand/i.test(c.name));
@@ -7484,6 +7490,16 @@ function animateTown(){
  }
  for(const citizen of townStreetCitizens){
   citizen.mixer?.update(dt);
+  if(!citizen.mixer&&citizen.poseBones){
+   const t=elapsed*2.9+citizen.phase,swing=citizen.walk?.23:.026;
+   for(const [key,entry] of Object.entries(citizen.poseBones)){
+    const side=key.endsWith('_l')?1:key.endsWith('_r')?-1:0;
+    const angle=key.startsWith('thigh')?Math.sin(t)*swing*side:
+     key.startsWith('upperarm')?Math.sin(t)*swing*-.65*side:Math.sin(t*.4)*.018;
+    const delta=new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1,0,0),angle);
+    entry.bone.quaternion.copy(entry.rest).multiply(delta);
+   }
+  }
   if(!citizen.walk)continue;
   const phase=elapsed*1.7+citizen.phase;
   citizen.root.position.x=citizen.x+Math.sin(phase)*.42;
