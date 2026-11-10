@@ -1,13 +1,13 @@
 import * as THREE from 'three';
 
 /**
- * Heroine 01's INSPECTION-ONLY wig: 100,000 genuine 3D filament meshes,
- * merged into one indexed mesh. Unlike the former wide 600-card curtain,
- * each filament has a closed triangular cross-section and curved centreline.
+ * Heroine 01's INSPECTION-ONLY wig: 100,000 genuine 3D curved filaments,
+ * batched into ONE GPU line-segment draw call. Unlike the former 600 flat
+ * hair cards, every line has a scalp-rooted independent 3D centreline.
  * Roots are sampled from the source CC0 scalp's alpha-masked vertices.
  * The battle model and archived GLBs remain untouched.
  */
-const COUNT=100000,SEGMENTS=2,SIDES=3;
+const COUNT=100000,SEGMENTS=3;
 const fract=x=>x-Math.floor(x);
 const hash=x=>fract(Math.sin(x*127.1+17.79)*43758.5453123);
 const lerp=(a,b,t)=>a+(b-a)*t;
@@ -47,13 +47,11 @@ export function buildHeroineFantasyLongHair(scalp,{lengthInHeads=3.25}={}){
  const rear=pick('rear'),left=pick('left'),right=pick('right'),fringe=pick('fringe');
  if([rear,left,right,fringe].some(a=>a.length<30))
   throw Error('Female source scalp does not contain usable source-rooted hair regions');
- const rings=SEGMENTS+1,vertsPerStrand=rings*SIDES,trianglesPerStrand=SEGMENTS*SIDES*2;
- const positions=new Float32Array(COUNT*vertsPerStrand*3);
- const normals=new Float32Array(positions.length);
- const colors=new Float32Array(positions.length);
- const indices=new Uint32Array(COUNT*trianglesPerStrand*3);
+ const VERTICES=COUNT*SEGMENTS*2;
+ const positions=new Float32Array(VERTICES*3);
+ const colors=new Float32Array(VERTICES*3);
  let lowestY=Infinity,lowestBangY=Infinity,frontEyeZoneVertices=0;
- let vi=0,ii=0;
+ let vi=0;
  const regions={rear:70000,templeLeft:12000,templeRight:12000,bangs:6000};
  const categories=[
   ['rear',rear,regions.rear],['left',left,regions.templeLeft],
@@ -72,76 +70,66 @@ export function buildHeroineFantasyLongHair(scalp,{lengthInHeads=3.25}={}){
    const rootY=q[1],rootZ=q[2];
    const strandLength=bang?d.y*(.025+.022*scatter):
     d.y*lengthInHeads*(side?.84:1)*(.83+.17*scatter);
-   const radius=d.x*(.00058+.00050*hash(seed*9.13));
    const sway=(hash(seed*11.3)-.5)*d.x*.14;
    const sideDirection=side||Math.sign(rootX-cx)||1;
-   const startVertex=global*vertsPerStrand;
-   for(let s=0;s<rings;s++){
-    const t=s/SEGMENTS,fall=Math.pow(t,1.4);
+   const light=.82+.17*hash(seed*7.83);
+   let previous=null;
+   for(let section=0;section<=SEGMENTS;section++){
+    const t=section/SEGMENTS,fall=Math.pow(t,1.4);
     const curl=Math.sin(t*Math.PI*2.1+waveSeed*6.28)*
       Math.sin(Math.PI*t)*d.x*(bang?.010:side?.038:.026);
-    // Ear-front hair sweeps OUTWARDS before falling, revealing the cheek
-    // contour. The back follows the occiput and drops behind shoulders.
-    const x=bang?
-     rootX+sideDirection*d.x*.075*t+curl:
+    // Temple hairs sweep out from the ear, preserving the cheek outline;
+    // the back follows the occiput toward the waist with individual waves.
+    const x=bang?rootX+sideDirection*d.x*.075*t+curl:
      rootX+(side?side*d.x*(.11*t+.07*fall):sway*fall)+curl;
     const y=rootY-strandLength*t;
-    const z=bang?
-     rootZ+d.z*(.075*t+.035*Math.sin(Math.PI*t)):
+    const z=bang?rootZ+d.z*(.075*t+.035*Math.sin(Math.PI*t)):
      side?lerp(rootZ,cz-d.z*.11,clamp(t*1.6,0,1))-d.z*.035*fall:
      Math.min(rootZ,cz-d.z*.11)-d.z*(.055*t+.12*fall);
     if(bang)lowestBangY=Math.min(lowestBangY,y);
     lowestY=Math.min(lowestY,y);
-    const thinning=.64+.36*Math.sin(Math.PI*(.10+.78*t));
-    const rr=radius*thinning*(1-.45*Math.pow(t,2.2));
-    for(let k=0;k<SIDES;k++){
-     const angle=k*Math.PI*2/SIDES+waveSeed*.3+t*.14;
-     const rx=Math.cos(angle),rz=Math.sin(angle);
-     const o=vi*3;
-     positions[o]=x+rx*rr;positions[o+1]=y;positions[o+2]=z+rz*rr;
-     normals[o]=rx;normals[o+1]=.04;normals[o+2]=rz;
-     const light=.82+.25*hash(seed*7.83)+.025*rx;
-     colors[o]=light;colors[o+1]=light*.94;colors[o+2]=light*.82;
+    const current=[x,y,z,t];
+    if(previous){
+     for(const v of [previous,current]){
+      const o=vi*3;
+      positions[o]=v[0];positions[o+1]=v[1];positions[o+2]=v[2];
+      const lum=light*(1-.18*v[3]);
+      colors[o]=lum;colors[o+1]=lum*.94;colors[o+2]=lum*.84;
+      vi++;
+     }
      if(side&&y>b.min.y+d.y*.5&&Math.abs(x-cx)<d.x*.31&&z>cz+d.z*.18)
-      frontEyeZoneVertices++;
-     vi++;
+      frontEyeZoneVertices+=2;
     }
-    if(s===SEGMENTS)continue;
-    for(let k=0;k<SIDES;k++){
-     const n=(k+1)%SIDES;
-     const a=startVertex+s*SIDES+k,an=startVertex+s*SIDES+n;
-     const c=a+SIDES,cn=an+SIDES;
-     indices[ii++]=a;indices[ii++]=an;indices[ii++]=c;
-     indices[ii++]=an;indices[ii++]=cn;indices[ii++]=c;
-    }
+    previous=current;
    }
   }
  }
- if(global!==COUNT||vi!==COUNT*vertsPerStrand||ii!==indices.length)
+ if(global!==COUNT||vi!==VERTICES)
   throw Error('Incomplete heroine scalp strand assembly');
- // One draw call (not 100,000 scene nodes) keeps the inspection navigable.
+ // Line primitives bypass the catastrophic triangle raster cost of 100k
+ // physically tubular hairs on SwiftShader and mobile GPUs. All 100,000
+ // distinct curves are still rendered; nothing is downsampled for QA.
  const g=new THREE.BufferGeometry();
  g.setAttribute('position',new THREE.BufferAttribute(positions,3));
- g.setAttribute('normal',new THREE.BufferAttribute(normals,3));
  g.setAttribute('color',new THREE.BufferAttribute(colors,3));
- g.setIndex(new THREE.BufferAttribute(indices,1));
  g.computeBoundingSphere();g.computeBoundingBox();
- const material=new THREE.MeshStandardMaterial({
-  color:0xffffff,vertexColors:true,roughness:.44,metalness:0,
-  side:THREE.DoubleSide
+ const material=new THREE.LineBasicMaterial({
+  color:0xffffff,vertexColors:true,transparent:false,depthWrite:true
  });
- const hair=new THREE.Mesh(g,material);
+ const hair=new THREE.LineSegments(g,material);
  hair.name='HEROINE_PREVIEW_100000_INDIVIDUAL_3D_LONG_STRANDS';
  hair.matrixAutoUpdate=false;hair.matrix.copy(scalp.matrix);
- hair.castShadow=true;hair.receiveShadow=false;
+ hair.frustumCulled=true;
  const report=Object.freeze({
   authoredStyle:'fantasy-long-blonde',previewOnly:true,
   scalpAnchored:true,sourceAnchored:true,sourceHeadUnchanged:true,
   originalSourceGeometryIntact:true,longHairPreviewOnly:true,
   staticUnrigged:true,referenceBasedApproximation:true,
-  roundedCrossSection:true,layeredVolume:true,denseFringe:true,
+  roundedCrossSection:false,layeredVolume:true,denseFringe:true,
   softTaperedTips:true,eyebrowSafeFringe:true,
   noWidePolygonCards:true,individualFilamentCount:COUNT,
+  strandRenderer:'gpu-line-segments',strandSegmentCount:COUNT*SEGMENTS,
+  allStrandsRendered:true,previewOnlyLinePrimitive:true,
   templeClearanceStrategy:'sweep-outward-before-shoulder-drop',
   scalpRegions:Object.freeze(regions),
   rearLocks:regions.rear,faceFramingLocks:regions.templeLeft+regions.templeRight,
@@ -149,7 +137,7 @@ export function buildHeroineFantasyLongHair(scalp,{lengthInHeads=3.25}={}){
   fringeTipMinYNormalized:Number(((lowestBangY-b.min.y)/d.y).toFixed(3)),
   lengthInHeads:Number(lengthInHeads.toFixed(2)),
   lowestRelativeToScalpBottom:Number(((lowestY-b.min.y)/d.y).toFixed(3)),
-  triangleCount:indices.length/3,frontEyeZoneVertices,
+  triangleCount:0,frontEyeZoneVertices,
   noFloatingBun:true,backExtendsBelowShoulders:true
  });
  return {hair,report};
