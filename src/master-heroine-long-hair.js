@@ -144,18 +144,22 @@ export function buildHeroineVisibleCrownAndFringe(scalp){
   root.fromBufferAttribute(p,i);
   if(normals)n.fromBufferAttribute(normals,i).normalize();
   else n.set(x,y-.42,z-.5).normalize();
-  const length=d.y*(.045+.038*hash(i*1.51));
-  const sweep=1+hash(i*4.71)*.7;
-  const start=root.clone().addScaledVector(n,.0040);
-  const finish=start.clone().add(new THREE.Vector3(
-   -d.x*(.022+.014*hash(i*3.13))*sweep,
-   -length*.75,
-   -d.z*.018
-  )).addScaledVector(n,.0013);
-  // Avoid turning source-rooted scalp streaks into long spikes.
-  const q=hash(i*2.17),lum=.74+.25*q;
-  crownSegments.push(start.x,start.y,start.z,finish.x,finish.y,finish.z);
-  crownColors.push(lum,lum*.92,lum*.91,lum*.92,lum*.86,lum*.91);
+  // Micro-comb many closely spaced hairs over each REAL crown follicle.
+  // Short conforming strokes restore density without a spiked plastic cap.
+  for(let strand=0;strand<8;strand++){
+   const q=hash(i*2.17+strand*6.73);
+   const jitter=(strand-3.5)*d.x*.00065;
+   const length=d.y*(.015+.017*hash(i*1.51+strand*2.3));
+   const start=root.clone().addScaledVector(n,.0038)
+    .add(new THREE.Vector3(jitter,0,0));
+   const finish=start.clone().add(new THREE.Vector3(
+    -d.x*(.009+.006*hash(i*3.13+strand)),
+    -length*.56,-d.z*.008
+   )).addScaledVector(n,.0007);
+   const lum=.72+.26*q;
+   crownSegments.push(start.x,start.y,start.z,finish.x,finish.y,finish.z);
+   crownColors.push(lum,lum*.92,lum*.91,lum*.90,lum*.84,lum*.90);
+  }
  }
  if(upperSourceSamples<35||crownSegments.length<120)
   throw Error('Not enough genuine source crown follicles for visible wig');
@@ -214,14 +218,14 @@ export function buildHeroineVisibleCrownAndFringe(scalp){
   rootErrorMax=Math.max(rootErrorMax,Math.hypot(rootX-q.x,rootY-q.y,rootZ-q.z));
   frontalRoots++;
   const xNorm=(rootX-cx)/d.x;
-  const tipN=.685+.015*hash(i*3.71)+.023*Math.abs(xNorm);
+  const tipN=.695+.038*hash(i*3.71)+.034*Math.abs(xNorm);
   const endY=Math.min(rootY-d.y*.045,b.min.y+d.y*tipN);
   // Most locks drift diagonally toward the viewer's left; a smaller
   // secondary sweep gives the pink fringe an identifiable parting.
-  const sideways=row===2?-.08:-.19;
+  const sideways=row===2?-.035:-.105;
   const sway=d.x*(sideways+.015*(hash(i*6.3)-.5));
   const frontLimit=Math.max(rootZ,foreheadDepth+d.z*.025);
-  const width=d.x*(.0065+.003*hash(i*7.17));
+  const width=d.x*(.0045+.002*hash(i*7.17));
   const base=verts.length/3;
   for(let j=0;j<=sections;j++){
    const t=j/sections,ease=t*t*(3-2*t);
@@ -425,7 +429,7 @@ export function buildHeroineFantasyLongHair(scalp,{lengthInHeads=3.25,bodyEnvelo
     const curl=Math.sin(t*4.2+flowPhase)*Math.sin(Math.PI*t)*
       d.x*(bang?.006:side?.012:.018);
     // Side locks fold behind the shoulders instead of pointing outwards.
-    let x=bang?rootX+sideDirection*d.x*(.13*t+.055*fall)+curl:
+    let x=bang?rootX+sideDirection*d.x*(.050*t+.047*fall)+curl:
      side?rootX+(cx-rootX)*(.075*t+.10*fall)+curl:
      rootX+sway*fall+curl;
     let y=rootY-strandLength*t;
