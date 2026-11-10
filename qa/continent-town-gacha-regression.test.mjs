@@ -68,8 +68,8 @@ assert.match(stageHtml,/MODEL_FIRST_CATALOG\[key\]\.url/,
  'villager model loader must resolve paths from the registered model catalog');
 assert.match(stageHtml,/getSource\(citizen\.modelKey\)/,
  'each displayed citizen must use its catalog model key');
-assert.match(stageHtml,/occlusionCandidates\.filter\(item=>item\.id==='tree_deciduous_001'\)/,
- 'fence and flower cutaway must not be eligible');
+assert.match(stageHtml,/townCameraOccluders\(stageBatchStats\.occlusionCandidates,TOWN_MODE\)/,
+ 'town preserves sakura and decorative props; battle can clear obstructing sakura');
 assert.match(hubHtml,/data-gacha-draw/);
 assert.match(hubHtml,/hai-gin-town-npc/);
 assert.match(worldHtml,/continentMapUrl\(chapter\)/);
