@@ -13,7 +13,7 @@ const smooth=(a,b,x)=>{
  return t*t*(3-2*t);
 };
 
-export const HEROINE_FACE_POLISH_VERSION='round-cheek-natural-features-v2';
+export const HEROINE_FACE_POLISH_VERSION='round-cheek-refined-nose-lips-v3';
 
 export function polishHeroineFacePoint(x,y,z,box,{strength=1}={}){
  const sx=box.max.x-box.min.x,sy=box.max.y-box.min.y,sz=box.max.z-box.min.z;
@@ -31,30 +31,33 @@ export function polishHeroineFacePoint(x,y,z,box,{strength=1}={}){
  // Round the lateral transition from cheekbone to lower jaw. Instead of
  // pulling the chin to a point, fill the hollow below the malar area with
  // a smooth Gaussian volume; gently knock down the isolated cheekbone peak.
- const lowerCheek=bell(ax,.67,.24)*bell(yn,.44,.155);
- const jawBlend=bell(ax,.63,.22)*bell(yn,.31,.115);
- const cheekSpike=bell(ax,.85,.18)*bell(yn,.60,.087);
+ const lowerCheek=bell(ax,.64,.28)*bell(yn,.435,.175);
+ const jawBlend=bell(ax,.62,.25)*bell(yn,.33,.14);
+ const cheekSpike=bell(ax,.85,.18)*bell(yn,.60,.105);
  const midCheek=bell(ax,.51,.26)*bell(yn,.53,.14);
- const lateral=sx*(.025*lowerCheek+.010*jawBlend-.009*cheekSpike);
- const cheekDepth=sz*(.027*lowerCheek+.015*midCheek-.008*cheekSpike);
+ const lateral=sx*(.033*lowerCheek+.012*jawBlend-.012*cheekSpike);
+ const cheekDepth=sz*(.033*lowerCheek+.018*midCheek-.010*cheekSpike);
 
  // Anatomical nasal subregions have separate subtle offsets: soft bridge,
  // rounded nasal tip and recessed nostril wings rather than a triangular nose.
  const bridge=bell(ax,.10,.17)*bell(yn,.66,.115);
  const tip=bell(ax,.08,.175)*bell(yn,.536,.056);
  const wing=bell(ax,.23,.11)*bell(yn,.515,.040);
- const noseDepth=sz*(.008*bridge+.015*tip-.009*wing);
+ const noseDepth=sz*(.009*bridge+.013*tip-.010*wing);
+ const noseWidthShift=-Math.sign(xn)*sx*.004*wing;
 
  // Upper and lower vermilion get individual small three-dimensional ridges.
  // This enhances the real lip mesh without pasting fake mouth cards.
  const cupid=bell(ax,.16,.14)*bell(yn,.405,.023);
  const lowerLip=bell(ax,.16,.21)*bell(yn,.363,.028);
  const corner=bell(ax,.39,.10)*bell(yn,.392,.034);
- const lipDepth=sz*(.015*cupid+.018*lowerLip-.004*corner);
+ const philtrum=bell(ax,.06,.09)*bell(yn,.458,.022);
+ const lipDepth=sz*(.016*cupid+.019*lowerLip-.004*corner-.003*philtrum);
+ const mouthCornerLift=sy*.0036*corner;
 
  return {
-  x:x+Math.sign(xn)*lateral*w,
-  y:y,
+  x:x+(Math.sign(xn)*lateral+noseWidthShift)*w,
+  y:y+mouthCornerLift*w,
   z:z+(cheekDepth+noseDepth+lipDepth)*w
  };
 }
