@@ -5952,11 +5952,43 @@ function beginStrategistWarp(){
 }
 $('squadStrategistWarp').onclick=beginStrategistWarp;
 // The source squad is already chosen; the next circle is the action target.
+/** A pulsing target must really be selectable at the moment it is tapped. */
+function isSquadCircleTargetActionable(id,team,action){
+ if(!action||!battleReady||finished||!hasSquadCommander(action.source)||
+    (action.kind!=='item'&&!canChangeSquadOrder(action.source)))return false;
+ const all=massSim?.units??actors;
+ if(!all.some(u=>u.team===0&&String(u.squadId)===String(action.source)&&
+   u.hp>0&&u.alive!==false&&!u.isStrategist))return false;
+ if(team!==(action.kind==='attack'?1:0))return false;
+ const soldiers=all.filter(u=>u.team===team&&String(u.squadId)===String(id)&&
+   u.hp>0&&u.alive!==false&&!u.isStrategist);
+ if(!soldiers.length)return false;
+ if(action.kind==='support'){
+  if(!hasSquadCommander(id)||!canChangeSquadOrder(id)||
+     !soldiers.some(u=>u.hp<u.maxHp))return false;
+  return all.some(u=>u.team===0&&u.hp>0&&u.alive!==false&&u.jobId==='priest'&&
+    hasSquadCommander(String(u.squadId))&&(!massSim||u.formationType==='support'));
+ }
+ if(action.kind==='item'){
+  const kind=ROOM_ITEM_TYPES[action.itemId]?.kind;
+  if(!['heal','squad_buff'].includes(kind)||
+     !allyItemStocks().some(stock=>stock.itemId===action.itemId&&stock.quantity>0))return false;
+  return kind!=='heal'||soldiers.some(u=>u.hp<u.maxHp);
+ }
+ return action.kind==='attack';
+}
 function beginCircleTargetSelection(kind,itemId=null){
  const source=orderedSquad();
  if(source==null||!hasSquadCommander(source))return false;
  if(kind!=='item'&&!canChangeSquadOrder(source))return false;
- pendingCircleTarget={kind,itemId,source};
+ const candidate={kind,itemId,source},targetTeam=kind==='attack'?1:0;
+ const ids=targetTeam===0?squadIds:enemySquadIds;
+ if(!ids.some(id=>isSquadCircleTargetActionable(id,targetTeam,candidate))){
+  const message='現在選べる対象部隊がありません（負傷者・僧侶・軍師・所持数・号令制限を確認）';
+  $('squadOrderStatus').textContent=message;log(message);
+  return false;
+ }
+ pendingCircleTarget=candidate;
  document.body.dataset.circleTarget=kind==='attack'?'enemy':'ally';
  drawSquadMiniMap();
  $('squadTactics').hidden=true;$('destinationPrompt').hidden=false;
@@ -5968,9 +6000,7 @@ function beginCircleTargetSelection(kind,itemId=null){
 function chooseCircleActionTarget(id,team){
  const action=pendingCircleTarget;if(!action)return false;
  const expected=action.kind==='attack'?1:0;
- const units=squadRoster.filter(u=>u.team===team&&String(u.squadId)===String(id)&&
-  u.hp>0&&u.alive!==false&&!u.isStrategist);
- if(team!==expected||!units.length){
+ if(!isSquadCircleTargetActionable(id,team,action)){
   $('destinationPrompt').textContent='有効な'+(expected===0?'味方（青）':'敵（赤）')+
    'の部隊サークルを選択してください・ここで取消';return false;
  }
@@ -6954,11 +6984,18 @@ function updateSquadScreenLabels(dt){
   return;
  }
  const targetTeam=pendingCircleTarget?(pendingCircleTarget.kind==='attack'?1:0):null;
+ if(pendingCircleTarget&&!(targetTeam===0?squadIds:enemySquadIds).some(id=>
+   isSquadCircleTargetActionable(id,targetTeam,pendingCircleTarget))){
+  closeSquadTactics();return;
+ }
  const showAllSquadLeaders=$('showAllSquadLeaderLines')?.checked===true;
  const points=[];
  for(const [key,marker] of squadMarkers){
   const label=marker.userData.screenLabel;
-  if(pageZoomed||!marker.visible||(targetTeam!==null&&marker.userData.team!==targetTeam)){
+  const actionable=targetTeam!==null&&isSquadCircleTargetActionable(
+   marker.userData.squadId,marker.userData.team,pendingCircleTarget);
+  label.classList.toggle('eligible-target',Boolean(actionable));
+  if(pageZoomed||!marker.visible||(targetTeam!==null&&!actionable)){
    label.hidden=true;marker.userData.calloutLine.style.display='none';
    marker.userData.calloutDot.style.display='none';continue;
   }
