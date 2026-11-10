@@ -167,6 +167,8 @@ fs.mkdirSync(dir,{recursive:true});
    cheek:p.cheekRoundness,preEar:p.preEarFullness,parotid:p.parotidWidth,
    sourceFaceTriangles:w.triangles,wigCollisionCorrections:h.bodyCollisionCorrections,
    oldScalpHidden:d.heroineOldScalpHidden,makeupVisiblePixels:cosmeticPixelChanges,
+   foreheadBangs:d.heroineWigCrown.fringeRibbonCount,
+   crownFlowLines:d.heroineWigCrown.crownCombLines,
    wigCrownCoverage:wig.crownCoverage,eyelashCount:wig.eyelashCount,
    eyeMorphRestores:restoredEye.ocularGeometryDigest===baseEye.ocularGeometryDigest,
    images:['hero-girl-01-face-100k.png','hero-girl-01-eye-morph-lashes.png','hero-girl-01-wire-100k.png','hero-girl-01-back-shoulder-clearance.png']
