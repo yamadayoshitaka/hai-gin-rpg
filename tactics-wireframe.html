@@ -8156,14 +8156,19 @@ function animate(){
  }
  battleCeremony.update();
  updateBattleResultCutins();
- simAccumulator+=dt;
- massRenderFrame++;massRenderDelta=paused?0:Math.max(.001,dt);
- if(!paused)creatureVisualTime+=dt;
+ // Real-time camera and UI stay responsive; only battle simulation/rigs slow.
+ // Preserve the authoritative mass Worker tick duration; space ticks farther apart.
+ const cinematicPlaybackScale=!TOWN_MODE&&!paused&&
+  (commanderCinematic||battleCeremony.state==='order'||battleCeremony.state==='result')?.32:1;
+ const worldDt=dt*cinematicPlaybackScale;
+ simAccumulator+=worldDt;
+ massRenderFrame++;massRenderDelta=paused?0:Math.max(.001,worldDt);
+ if(!paused)creatureVisualTime+=worldDt;
  if(TOWN_MODE){elapsed+=dt;updateTownAvatar(dt);simAccumulator=0;}
  else while(simAccumulator>=.05){tickAI(.05);simAccumulator-=.05}
- if(!paused){updateActiveSquadBuffVfx();actionVfx.update(dt);}
+ if(!paused){updateActiveSquadBuffVfx();actionVfx.update(worldDt);}
  updateSquadMarkerPositions(dt);
- if(riverFlow)riverFlow.offset.y-=dt*.07;
+ if(riverFlow)riverFlow.offset.y-=worldDt*.07;
  interiorVisibilityTimer+=dt;
  if(interiorVisibilityTimer>=(commanderCinematic||followCamera?.10:.24)){updateCameraObstructions();updateTownInteriorVisibility();updateGoalIndoorOcclusion();interiorVisibilityTimer=0}
  uiTimer+=dt;if(uiTimer>.25){
@@ -8195,7 +8200,9 @@ function animate(){
      b.root.position.distanceToSquared(camera.position));
    skirmishVisibleCorpseIds=new Set(candidates.slice(0,20).map(a=>a.id));
   }
-  const massAlpha=massSim?(massWorker?.active?Math.min(1,Math.max(0,(performance.now()-lastMassSnapshotMs)/100)):Math.min(1,massAccumulator/.1)):0;
+  const massAlpha=massSim?(massWorker?.active?Math.min(1,Math.max(0,
+    (performance.now()-lastMassSnapshotMs)/(100/cinematicPlaybackScale))):
+    Math.min(1,massAccumulator/.1)):0;
   const corpseTime=massSim?massSim.time+massEndElapsed:elapsed;
   const visibleCorpseIds=massSim?corpsePolicy.visibleIds(massSim.units,corpseTime,massSim.tickCount+Math.floor(massEndElapsed*10)):null;
   for(const a of actors){
@@ -8286,7 +8293,7 @@ function animate(){
        (a.hitPoseUntil&&elapsed<a.hitPoseUntil)){}
      else requestMotion(a,'idle');
     }
-    if(visual.update){a.character.update(paused&&!finished?0:visual.delta);applyCreatureRidingPose(a);a.outfit?.sync()}
+    if(visual.update){a.character.update(paused&&!finished?0:visual.delta*cinematicPlaybackScale);applyCreatureRidingPose(a);a.outfit?.sync()}
     if(skirmishVisual){
      // The authoritative actor root remains on the grid for AI/collisions.
      // Only its visible rig is eased between discrete 50ms simulation ticks.
@@ -8316,7 +8323,7 @@ function animate(){
       if(t>=1)a._summonFall=null;
     }else a.character.object3D.position.y=0;
     a.poseMoving=false;
-   }else if(visual.update){if(a.mixer)a.mixer.update(visual.delta);else updateBattlePose(a,visual.delta)}
+   }else if(visual.update){if(a.mixer)a.mixer.update(visual.delta*cinematicPlaybackScale);else updateBattlePose(a,visual.delta*cinematicPlaybackScale)}
   }
   if(followCamera){
    const tracked=focusedHumanUnitId!=null?massSim?.units?.[focusedHumanUnitId]:null;
