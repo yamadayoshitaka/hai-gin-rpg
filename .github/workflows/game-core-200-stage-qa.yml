@@ -5,6 +5,11 @@ on:
     paths:
       - '.github/workflows/game-core-200-stage-qa.yml'
       - 'src/campaign-stage-plan.js'
+      - 'src/continent-campaign.js'
+      - 'src/stage-library.js'
+      - 'src/town-recruit-gacha.js'
+      - 'src/town-dialogue-catalog.js'
+      - 'qa/continent-town-gacha-regression.test.mjs'
       - 'src/game-core-flow.js'
       - 'src/core-battle-bridge.js'
       - 'qa/game-core-contract.test.mjs'
@@ -29,7 +34,13 @@ jobs:
       - name: Compile stage, save and adapter modules
         run: |
           node --check src/campaign-stage-plan.js
+          node --check src/continent-campaign.js
+          node --check src/stage-library.js
+          node --check src/town-recruit-gacha.js
+          node --check src/town-dialogue-catalog.js
           node --check src/game-core-flow.js
           node --check src/core-battle-bridge.js
       - name: Validate 200-stage progression and UI transitions
-        run: node --experimental-vm-modules qa/game-core-contract.test.mjs
+        run: |
+          node --experimental-vm-modules qa/game-core-contract.test.mjs
+          node qa/continent-town-gacha-regression.test.mjs
