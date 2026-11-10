@@ -112,6 +112,87 @@ function clearBodyForLongStrand(x,y,z,region,envelope){
  * crown surface fills ONLY those gaps and stays attached to the real head.
  * The original opaque/donor hair and source scalp remain hidden.
  */
+/**
+ * Tapered rose-pink foreground bangs, actually attached to the upper, FRONT
+ * side of the original sculpt. The 100k one-pixel strands alone cannot
+ * conceal the forehead scalp on mobile. These narrow, continuous 3D ribbons
+ * are hair roots/flow, NOT a second helmet-shaped wig or a face texture.
+ */
+export function buildHeroineFrontFringe(scalp,{locks=520}={}){
+ const g=scalp?.geometry,p=g?.getAttribute('position'),a=g?.getAttribute('color');
+ if(!p||!a||a.itemSize!==4)throw Error('A real head-conforming scalp is required for front fringe');
+ g.computeBoundingBox();
+ const b=g.boundingBox,d=b.getSize(new THREE.Vector3());
+ const cx=(b.min.x+b.max.x)*.5,cz=(b.min.z+b.max.z)*.5;
+ const sources=[];
+ for(let i=0;i<p.count;i++){
+  const y=(p.getY(i)-b.min.y)/d.y;
+  if(y<.80||a.getW(i)<.80)continue;
+  sources.push([p.getX(i),p.getY(i),p.getZ(i)]);
+ }
+ if(sources.length<40)throw Error('Insufficient actual frontal crown roots');
+ sources.sort((a,b)=>b[2]-a[2]);
+ // Prefer the forward-facing follicles over rear high-crown roots;
+ // first 40% represent the actual front hairline of the source head.
+ const candidates=sources.slice(0,Math.max(40,Math.floor(sources.length*.40)));
+ const positions=[],colors=[],indices=[];
+ let minTipY=Infinity,maxTipY=-Infinity;
+ const N=6;
+ for(let i=0;i<locks;i++){
+  const seed=i+1,q=candidates[(i*67+Math.floor(hash(seed*9.31)*candidates.length))%candidates.length];
+  const x0=q[0],y0=q[1],z0=q[2],base=positions.length/3;
+  // A layered sweep moves from the upper-left crown toward the right temple.
+  // A minority of shorter inner locks cross over to hide a visible hairline.
+  const length=d.y*(.165+.09*hash(seed*2.71));
+  const wave=(hash(seed*5.53)-.5)*d.x*.017;
+  const drift=d.x*(.13+.095*hash(seed*3.43));
+  const width=d.x*(.0065+.006*hash(seed*1.69));
+  for(let j=0;j<=N;j++){
+   const t=j/N,e=t*t*(3-2*t);
+   const x=clamp(x0+drift*e+wave*Math.sin(Math.PI*t),
+    b.min.x+d.x*.03,b.max.x-d.x*.025);
+   const y=Math.max(b.min.y+d.y*.695,y0-length*t);
+   // Follow the forehead rather than stabbing outward from the hairline:
+   // only a small surface stand-off above the actual source frontal Z.
+   const z=z0+d.z*(.012+.105*t+.020*Math.sin(Math.PI*t));
+   if(j===N){minTipY=Math.min(minTipY,y);maxTipY=Math.max(maxTipY,y);}
+   const taper=(.92-.83*e)*width;
+   for(const sign of [-1,1]){
+    positions.push(x+sign*taper,y,z);
+    const v=.88+.11*hash(seed*.75),shine=.94+.06*Math.sin(t*4+seed*.13);
+    colors.push(v*shine,v*.90*shine,v*.91*shine);
+   }
+   if(j<N){
+    const k=base+j*2;
+    indices.push(k,k+1,k+2,k+1,k+3,k+2);
+   }
+  }
+ }
+ const geo=new THREE.BufferGeometry();
+ geo.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
+ geo.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));
+ geo.setIndex(indices);geo.computeVertexNormals();
+ geo.computeBoundingSphere();
+ const material=new THREE.MeshStandardMaterial({
+  color:0xe5b0c4,vertexColors:true,roughness:.81,metalness:0,
+  side:THREE.DoubleSide,depthTest:true,depthWrite:true
+ });
+ const mesh=new THREE.Mesh(geo,material);
+ mesh.name='HEROINE_FRONT_FRINGE_SOURCE_ROOTED_ROSE_PINK';
+ mesh.castShadow=true;
+ mesh.renderOrder=1;
+ mesh.userData.sourceCrownRoots=true;
+ mesh.userData.sweptSideFringe=true;
+ mesh.userData.eyebrowClear=true;
+ return {fringe:mesh,report:Object.freeze({
+  sourceHeadRooted:true,sweptSideFringe:true,
+  lockCount:locks,triangleCount:indices.length/3,
+  tipMinNormalized:Number(((minTipY-b.min.y)/d.y).toFixed(3)),
+  tipMaxNormalized:Number(((maxTipY-b.min.y)/d.y).toFixed(3)),
+  faceZoneProtected:minTipY>=b.min.y+d.y*.695-.00001
+ })};
+}
+
 export function buildHeroineWigRootCap(scalp){
  const src=scalp?.geometry,colors=src?.getAttribute('color'),positions=src?.getAttribute('position');
  if(!positions||!colors||colors.itemSize!==4)throw Error('Real 3D source scalp required for wig crown');
@@ -150,9 +231,18 @@ export function buildHeroineWigRootCap(scalp){
  mesh.castShadow=true;mesh.renderOrder=0;
  mesh.userData.wigCapFromSourceTopology=true;
  mesh.userData.donorHairMustBeHidden=true;
+ // The underlay and fringe are a single independently toggleable wig module.
+ // Both inherit the source head's exact transform, with no donor wig visible.
+ const bangs=buildHeroineFrontFringe(scalp);
+ mesh.add(bangs.fringe);
  return {cap:mesh,report:Object.freeze({
   sourceHeadConforming:true,sourceScalpHidden:true,wigRootFoundationOnly:true,
   crownSamples,coveredCrown,coverageRatio:coveredCrown/crownSamples,
+  coveredBySolidSourceTopology:true,foreheadBangsVisible:true,
+  fringeLockCount:bangs.report.lockCount,
+  fringeTriangleCount:bangs.report.triangleCount,
+  fringeTipMinNormalized:bangs.report.tipMinNormalized,
+  fringeFaceClear:bangs.report.faceZoneProtected,
   sourceAnatomyUntouched:true
  })};
 }
