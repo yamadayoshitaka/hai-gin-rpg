@@ -85,7 +85,30 @@ const presets = [
   {id:'green-capital',name:'翠嵐の王都',description:'庭園の緑と石造りの街路が続く都市。広場と迎賓門を守る。',biome:'urban',size:216,waterway:'none',bridgeCount:0,buildingMode:'town',buildingLimit:45,treeRate:.67,season:'spring',difficulty:5,huts:true,farmland:true,seed:211,territoryId:'green-capital'},
   {id:'southern-woods',name:'南の樹海',description:'湿った深緑の密林。曲がる獣道と古い石柱がわずかな目印。',biome:'forest',size:204,waterway:'none',bridgeCount:0,buildingMode:'wild',buildingLimit:0,treeRate:1.5,season:'summer',difficulty:4,huts:false,farmland:false,seed:223,territoryId:'southern-woods'},
 ];
-export const STAGE_PRESETS = Object.freeze(presets.map(p=>Object.freeze({...p})));
+// Keep a distinct deterministic stage for every chapter/slot, including towns.
+export const CAMPAIGN_SCENE_PRESETS=Object.freeze(Array.from({length:20},(_,ch)=>
+ Array.from({length:10},(_,slot)=>{
+  const chapter=ch+1,number=slot+1,seed=7919*chapter+1049*number;
+  const biomes=['temperate','plains','forest','coast','highland','snow','marsh','urban','ruins','desert','village'];
+  const biome=biomes[(ch*7+slot*3)%biomes.length],town=slot===0;
+  const buildingMode=town?'town':slot===8?'fort':slot===9?'ruins':
+   slot===3?'village':slot===5?'wild':slot%3===0?'town':'wild';
+  const river=(ch+slot)%4===0||town&&ch%3===0;
+  return Object.freeze({
+   id:'campaign-c'+String(chapter).padStart(2,'0')+'-s'+String(number).padStart(2,'0'),
+   name:'第'+chapter+'章・第'+number+'戦域',
+   description:'第'+chapter+'章の独立地形。地点'+number+'／10。地形・街路・季節を固有シードで生成。',
+   continentId:'continent-'+String(chapter).padStart(2,'0'),
+   biome:town?(ch%2?'village':'urban'):biome,
+   size:184+(seed%7)*8,waterway:river?'river':'none',bridgeCount:river?1+(slot===8?1:0):0,
+   buildingMode,buildingLimit:town?32:buildingMode==='fort'?13:buildingMode==='village'?19:buildingMode==='town'?25:buildingMode==='ruins'?8:0,
+   treeRate:biome==='forest'?1.3:biome==='desert'?.08:biome==='snow'?.25:.42+(seed%4)*.12,
+   season:['spring','summer','autumn','winter'][(ch+Math.floor(slot/3))%4],
+   difficulty:Math.min(100,chapter*3+number),
+   huts:buildingMode!=='wild',farmland:town||buildingMode==='village',seed
+  });
+ })).flat());
+export const STAGE_PRESETS = Object.freeze([...presets,...CAMPAIGN_SCENE_PRESETS].map(p=>Object.freeze({...p})));
 export const TERRITORY_STAGE_IDS=Object.freeze(Object.fromEntries(presets.filter(p=>p.territoryId).map(p=>[p.territoryId,p.id])));
 export const stageForTerritory=(territoryId,terrain)=>TERRITORY_STAGE_IDS[territoryId]||stageForTerrain(terrain);
 export function stageForTerrain(terrain){
@@ -360,7 +383,8 @@ export function selectStageObjects(objects,stage,data=null){
  const filtered=objects.filter(o=>{
   if(!insideStage(stage,o.x,o.z,3))return false;
   if(!passable(o.x,o.z))return false;
-  if(o.id==='wood_fence'&&stage.buildingMode==='wild')return false;
+
+   // Authored fences survive biome filtering; bridge collision still applies.
   if(!o.id.includes('tree'))return true;
   return hash(o.x,o.z,stage.seed+7)<Math.min(1,stage.treeRate);
  });
