@@ -1372,6 +1372,10 @@ export class MassBattleGridSimulation {
       // A soldier directly beside a living opponent protects itself before
       // following a mission farther away. Mission focus wins outside contact.
       if(missionNearest&&(!nearest||best>4)){nearest=missionNearest;best=missionBest;}
+      // Expose the opponent actually acquired by this agent to the command HUD.
+      // -1 means no acquired squad (do not misreport the closest squad as a lock).
+      u.currentTargetSquadId=nearest?.squadId!=null&&nearest.team!==u.team
+        ?Number(nearest.squadId):-1;
       if(nearest){
         u.pursuitMemory={x:nearest.x,z:nearest.z,until:this.time+5};
       }else if(hiddenEnemy){
