@@ -1779,7 +1779,7 @@ const battleCeremony=createBattleCeremony({
 // Result cut-ins are queued: the new troop/HP/item status is narrated only
 // AFTER the visual cut-in has closed. Never interrupt the opening or outro.
 const resultCutinQueue=[],reportsAfterCutin=[];
-const firstHealingReportPerSquad=new Set();
+let firstHealingReportShown=false;
 let battleResultSerial=0;
 function reportAfterBattleCutin(text,{team=0,squadId=null,priority=86}={}){
  reportsAfterCutin.push({key:'battle-result:'+ ++battleResultSerial,
@@ -6743,10 +6743,10 @@ function updateSquadMarkerPositions(dt){
      {team:defeatedEnemy?0:1,cameraTeam:marker.userData.team,
       squadId:String(marker.userData.squadId),priority:96});
    }else if(marker.userData.team===0&&previousHp!=null&&sum.hp>previousHp+15&&
-    !firstHealingReportPerSquad.has(id)){
-    // A successful healing action is still applied every time, but only the
-    // FIRST healing result per squad earns a cut-in/report in this battle.
-    firstHealingReportPerSquad.add(id);
+    !firstHealingReportShown){
+    // HP keeps recovering normally; only the first successful healing event
+    // across the ENTIRE battle gets a result cut-in/report.
+    firstHealingReportShown=true;
     marker.userData.lastHealReportAt=elapsed;
     queueBattleResultCutin('✚ 回復報告',
      squadName(marker.userData.squadId)+'の総HP '+Math.round(previousHp)+'→'+Math.round(sum.hp)+
