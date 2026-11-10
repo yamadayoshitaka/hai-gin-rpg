@@ -1216,6 +1216,153 @@ function townHouse(b){
 for(const b of townBuildings)townHouse(b);
 const buildingBatchStats=batchStaticBuildingShells(townInstances,stageObjects,THREE,{cellSize:CELL});
 loadingProgress('建造物の共通メッシュと描画バッチを準備しました',25);
+// Town-only authored visual decoration. The props are deliberately NOT
+// registered in solidPropCells or the navigation map: no contact collision.
+// They remain hidden outdoors, avoiding extra calls in large battle mode.
+const townInteriorPalette={
+ wood:new THREE.MeshStandardMaterial({color:0x79523a,roughness:.78}),
+ darkWood:new THREE.MeshStandardMaterial({color:0x453222,roughness:.84}),
+ cloth:new THREE.MeshStandardMaterial({color:0x6d3847,roughness:1,side:THREE.DoubleSide}),
+ blueCloth:new THREE.MeshStandardMaterial({color:0x324a77,roughness:1,side:THREE.DoubleSide}),
+ ivory:new THREE.MeshStandardMaterial({color:0xe7c9a0,roughness:.88}),
+ gold:new THREE.MeshStandardMaterial({color:0xd9b25d,metalness:.68,roughness:.30}),
+ brass:new THREE.MeshStandardMaterial({color:0xae8146,metalness:.52,roughness:.44}),
+ emerald:new THREE.MeshStandardMaterial({color:0x399f8b,metalness:.12,roughness:.25}),
+ scarlet:new THREE.MeshStandardMaterial({color:0xb34751,roughness:.56}),
+ stone:new THREE.MeshStandardMaterial({color:0x888079,roughness:.94}),
+ glass:new THREE.MeshStandardMaterial({color:0x9ccac7,metalness:.12,roughness:.19,transparent:true,opacity:.72}),
+ flame:new THREE.MeshStandardMaterial({color:0xffc977,emissive:0xf08c25,emissiveIntensity:1.3,roughness:.4})
+};
+function townDecorBox(root,w,h,d,x,y,z,mat){
+ const mesh=townBox(root,w,h,d,x,y,z,mat);
+ mesh.userData.nonColliding=true;mesh.userData.townDecoration=true;return mesh;
+}
+function townDecorCylinder(root,top,bottom,h,x,y,z,mat){
+ const mesh=new THREE.Mesh(new THREE.CylinderGeometry(top,bottom,h,10),mat);
+ mesh.position.set(x,y,z);mesh.castShadow=true;mesh.receiveShadow=true;
+ mesh.userData.nonColliding=true;root.add(mesh);return mesh;
+}
+function townDecorSphere(root,r,x,y,z,mat){
+ const mesh=new THREE.Mesh(new THREE.SphereGeometry(r,12,9),mat);
+ mesh.position.set(x,y,z);mesh.castShadow=true;mesh.receiveShadow=true;
+ mesh.userData.nonColliding=true;root.add(mesh);return mesh;
+}
+function townCourtFigure(root,name,x,z,{princess=false,king=false}={}){
+ const figure=new THREE.Group();figure.name='王城人物_'+name;
+ figure.userData.townRole=name;figure.userData.nonColliding=true;
+ const p=townInteriorPalette;
+ townDecorCylinder(figure,princess?.28:.33,princess?.48:.36,princess?1.12:.96,0,.78,0,princess?p.blueCloth:p.scarlet);
+ townDecorSphere(figure,.22,0,1.53,0,p.ivory);
+ townDecorBox(figure,.42,.13,.22,0,1.37,.10,princess?p.gold:p.cloth);
+ townDecorBox(figure,.18,.54,.22,-.31,1.14,0,princess?p.blueCloth:p.scarlet);
+ townDecorBox(figure,.18,.54,.22,.31,1.14,0,princess?p.blueCloth:p.scarlet);
+ townDecorSphere(figure,.05,-.31,.87,.01,p.ivory);
+ townDecorSphere(figure,.05,.31,.87,.01,p.ivory);
+ // Tapered crown with visible jewels for the monarch and royal daughter.
+ townDecorCylinder(figure,princess?.19:.24,princess?.19:.24,.12,0,1.75,0,p.gold);
+ for(let n=0;n<7;n++){
+  const angle=n*Math.PI*2/7;
+  const cx=Math.sin(angle)*(princess?.16:.21),cz=Math.cos(angle)*(princess?.16:.21);
+  townDecorSphere(figure,.045,cx,1.84,cz,n%2?p.emerald:p.scarlet);
+ }
+ for(const side of [-1,1]){
+  townDecorSphere(figure,.024,side*.08,1.55,.195,p.darkWood);
+  townDecorBox(figure,.12,.4,.17,side*.145,.33,.02,princess?p.blueCloth:p.darkWood);
+ }
+ if(king){
+  // Seated posture: the king sits against the throne, legs bent forward.
+  figure.position.y=-.2;
+  for(const side of [-1,1])townDecorBox(figure,.16,.16,.58,side*.145,.36,.32,p.scarlet);
+ }
+ figure.position.set(x,figure.position.y,z);root.add(figure);return figure;
+}
+function createTownRoomDecor(building){
+ const {data,model}=building,kind=data.kind;
+ if(!TOWN_MODE)return;
+ const root=new THREE.Group();root.name='NonCollidingTownRoomDecor_'+kind;
+ root.userData.nonColliding=true;root.userData.collisionMask=0;
+ const worldX=(data.x-6)*CELL,worldZ=(data.z-6)*CELL;
+ root.position.y=terrainY(worldX,worldZ)-model.position.y+.05;
+ model.add(root);building.townDecor=root;root.visible=false;
+ const p=townInteriorPalette;
+ if(kind==='castle'){
+  // Royal throne hall is inside the south entrance, visible when walking in.
+  const z=data.d/2-11;
+  townDecorBox(root,8,.20,9,0,.1,z,p.stone);
+  townDecorBox(root,4.2,.35,2.4,0,.25,z-3.2,p.stone);
+  townDecorBox(root,2.2,.15,1.75,0,.48,z-3.8,p.gold);
+  townDecorBox(root,1.5,2.4,.35,0,1.7,z-4.9,p.gold);
+  townDecorBox(root,1.8,.22,1.8,0,.85,z-4.1,p.scarlet);
+  for(const sign of [-1,1]){
+   townDecorBox(root,.28,2.8,.32,sign*.88,1.58,z-4.8,p.gold);
+   townDecorSphere(root,.24,sign*.88,3.08,z-4.8,p.gold);
+   townDecorBox(root,.9,2.7,.10,sign*3.3,1.6,z-3.8,p.scarlet);
+   townDecorBox(root,.72,.13,.12,sign*3.3,2.95,z-3.75,p.gold);
+  }
+  townCourtFigure(root,'国王',0,z-3.65,{king:true});
+  townCourtFigure(root,'王女',2.4,z-2.7,{princess:true});
+  townCourtFigure(root,'王子',-2.4,z-2.8);
+  townCourtFigure(root,'大臣',-3.8,z+.6);
+  townDecorBox(root,2,.035,6.2,0,.03,z+3.3,p.cloth);
+  for(const x of [-3.7,3.7]){
+   townDecorCylinder(root,.13,.18,2.5,x,1.25,z+2.3,p.stone);
+   townDecorSphere(root,.18,x,2.58,z+2.3,p.flame);
+  }
+  building.royalFamily=['国王','王女','王子','大臣'];
+  return;
+ }
+ // Every enterable room has at least six nonblocking objects.
+ const w=Math.min(14,data.w),d=Math.min(14,data.d),left=-w/2+.9,right=w/2-.9,back=-d/2+1.25;
+ const carpet=kind==='church'?p.blueCloth:kind==='tavern'?p.scarlet:p.cloth;
+ townDecorBox(root,Math.min(4.3,w-2),.035,Math.min(4.6,d-2),0,.035,.25,carpet);
+ for(const side of [-1,1]){
+  const px=side<0?left:right;
+  // Shelves with bottles/books and lit wall fixtures.
+  townDecorBox(root,.48,1.35,1.8,px,1.03,back,p.wood);
+  for(let shelf=0;shelf<3;shelf++){
+   townDecorBox(root,.59,.065,1.85,px,.60+shelf*.54,back,p.darkWood);
+   for(let k=0;k<4;k++)townDecorCylinder(root,.075,.09,.23,px,.77+shelf*.54,back-.65+k*.43,k%3===0?p.glass:p.brass);
+  }
+  townDecorBox(root,.18,.28,.18,px,2.3,back+.9,p.brass);
+  townDecorSphere(root,.16,px,2.53,back+.9,p.flame);
+ }
+ const counterZ=kind==='shop'||kind==='weapon'?-.10:kind==='inn'||kind==='tavern'?-.7:back+.25;
+ townDecorBox(root,Math.min(3.1,w-2),.85,.7,0,.45,counterZ,p.wood);
+ townDecorBox(root,Math.min(3.3,w-2),.10,.88,0,.93,counterZ,p.darkWood);
+ if(kind==='tavern'||kind==='inn'||kind==='house'){
+  townDecorCylinder(root,.64,.56,.65,left+1.5,.39,1.1,p.wood);
+  for(const a of [-1,1]){
+   townDecorBox(root,.58,.47,.55,left+1.5+a*.9,.32,1.1,p.darkWood);
+  }
+ }
+ if(kind==='church'){
+  townDecorBox(root,.8,2.2,.24,0,1.65,back+.1,p.gold);
+  townDecorBox(root,1.2,.30,.23,0,2.14,back+.1,p.gold);
+ }
+ if(kind==='weapon'){
+  for(const a of [-1,0,1]){
+   townDecorCylinder(root,.065,.065,1.6,a*.55,1.3,back+.3,p.brass);
+   townDecorBox(root,.36,.09,.08,a*.55,.72,back+.3,p.gold);
+  }
+ }
+}
+for(const b of townInstances)createTownRoomDecor(b);
+// Signboards and timber awnings improve the public-facing architecture at
+// street scale; these are visual-only and never block a doorway.
+for(const b of townInstances){
+ if(!TOWN_MODE||!['shop','weapon','tavern','inn','church'].includes(b.data.kind))continue;
+ const root=new THREE.Group();root.name='TownFacadeFinish_'+b.data.kind;
+ root.userData.nonColliding=true;b.model.add(root);
+ const z=b.data.d/2+.34,p=townInteriorPalette;
+ const tint=b.data.kind==='church'?p.blueCloth:b.data.kind==='weapon'?p.scarlet:p.cloth;
+ townDecorBox(root,3.9,.18,1.1,0,2.83,z+.28,p.darkWood);
+ townDecorBox(root,3.7,.14,1.05,0,2.70,z+.28,tint);
+ for(const x of [-1.8,1.8]){
+  townDecorBox(root,.13,2.2,.13,x,1.7,z+.75,p.wood);
+  townDecorSphere(root,.15,x,2.95,z+.75,p.brass);
+ }
+}
+
 console.info('[Town GPU shell instancing]',buildingBatchStats);
 window.__haiGinBuildingStructureQA=townInstances.map(({model,data,entryDoor,structure})=>({
  id:model.userData.catalogId??data.kind,floors:structure?.floors?.length??1,
@@ -2492,6 +2639,7 @@ function townEnterBuilding(b){
  buildingBatchStats.setBuildingRoofVisible(b.model,false);
  if(b.roof)b.roof.visible=false;
  if(b.groundFurnishings)b.groundFurnishings.visible=true;
+ if(b.townDecor)b.townDecor.visible=true;
  const focus=hero.root.position.clone().add(new THREE.Vector3(0,1.15,0));
  controls.target.copy(focus);camera.position.copy(focus).add(new THREE.Vector3(0,9,7));
  controls.maxDistance=16;controls.update();sun.shadow.needsUpdate=true;
@@ -2506,6 +2654,7 @@ function townLeaveBuilding(){
  buildingBatchStats.setBuildingRoofVisible(b.model,true);
  if(b.roof)b.roof.visible=true;
  if(b.groundFurnishings)b.groundFurnishings.visible=false;
+ if(b.townDecor)b.townDecor.visible=false;
  controls.maxDistance=85;
  const focus=hero.root.position.clone().add(new THREE.Vector3(0,1.15,0));
  controls.target.copy(focus);camera.position.copy(focus).add(new THREE.Vector3(0,22,13));
@@ -7082,6 +7231,7 @@ function updateTownInteriorVisibility(){
   // monumental hall columns absent even though all geometry was loaded.
   const groundFurnishings=b.groundFurnishings;
   if(groundFurnishings)groundFurnishings.visible=cutaway;
+  if(b.townDecor)b.townDecor.visible=TOWN_MODE&&townIndoor?.building===b;
   const decks=b.upperDecks;
   const furnishings=b.upperFurnishings;
   if(!decks)continue;
