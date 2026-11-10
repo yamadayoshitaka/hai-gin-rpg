@@ -7798,7 +7798,7 @@ const lastShadowFocus=new THREE.Vector3(Infinity,Infinity,Infinity);
 // shared instanced material: only the selected tree is temporarily rehydrated.
 // The sightline cutaway must only affect ordinary opaque tree crowns.
 // Never ghost or hide fences, flower trees, planters, stalls or street furniture.
-const cameraTreeCandidates=stageBatchStats.occlusionCandidates.filter(item=>item.id==='tree_deciduous_001');
+const cameraTreeCandidates=stageBatchStats.occlusionCandidates.filter(item=>item.tree);
 const cameraTreeByKey=new Map(cameraTreeCandidates.map(tree=>[tree.key,tree]));
 let cameraOccludedTrees=new Set();
 let cameraOccludedBuildings=new Set();
@@ -7815,6 +7815,7 @@ const cameraBuildingCandidates=townInstances.map(building=>{
  // squad can mask it even while the generic tree cutaway works.
 function cameraGoalFocuses(){
  const focuses=[controls.target];
+ if(commanderCinematic?.closeTarget)focuses.push(commanderCinematic.closeTarget);
  const selectedMarker=selectedCircleSquad??(selectedSquadId==null?null:{id:selectedSquadId,team:0});
  if(selectedMarker){
   const center=squadCenter(selectedMarker.id,selectedMarker.team);
@@ -7839,7 +7840,7 @@ function updateCameraObstructions(){
  const focuses=cameraGoalFocuses();
  // Close-range combat needs a clear view across the frustum, not just six
  // translucent canopies intersecting the centre ray.
- const defaultCandidates=closeup?cameraTreeCandidates:cameraTreeCandidates.filter(item=>item.tree);
+ const defaultCandidates=closeup?cameraTreeCandidates:cameraTreeCandidates.filter(item=>item.id==='tree_deciduous_001');
  const newTrees=new Set(selectCameraOccluders(camera.position,controls.target,defaultCandidates,
   {limit:closeup?48:6,padding:closeup?6:.5}).map(tree=>tree.key));
  if(closeup)for(const target of focuses.slice(1)){
@@ -7866,7 +7867,7 @@ function updateCameraObstructions(){
  }
  // Test camera immersion independently of the center ray and its result
  // limit. Wide-angle close-ups can be entirely surrounded by pink petals.
- for(const tree of selectCanopiesAroundCamera(camera.position,cameraTreeCandidates))
+ for(const tree of selectCanopiesAroundCamera(camera.position,defaultCandidates))
   newTrees.add(tree.key);
  for(const key of cameraOccludedTrees){
   if(newTrees.has(key))continue;
@@ -8164,7 +8165,7 @@ function animate(){
  updateSquadMarkerPositions(dt);
  if(riverFlow)riverFlow.offset.y-=dt*.07;
  interiorVisibilityTimer+=dt;
- if(interiorVisibilityTimer>=.24){updateCameraObstructions();updateTownInteriorVisibility();updateGoalIndoorOcclusion();interiorVisibilityTimer=0}
+ if(interiorVisibilityTimer>=(commanderCinematic||followCamera?.10:.24)){updateCameraObstructions();updateTownInteriorVisibility();updateGoalIndoorOcclusion();interiorVisibilityTimer=0}
  uiTimer+=dt;if(uiTimer>.25){
   updateUI();
   if(MASS_SIZE){
