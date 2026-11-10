@@ -32,7 +32,7 @@ fs.mkdirSync(dir,{recursive:true});
      d.heroineOldScalpHidden!==true||d.heroineBaldHeadSingleWig!==true||
      d.heroineActualBodyClearance!==true||
      h?.bodyClearanceMeasured!==true||h?.bodyCollisionCorrections<1||
-     d.appearance?.youthfulness<.8||
+     d.appearance?.youthfulness<.68||
      h?.lengthInHeads<3||h?.fringeTipMinYNormalized<.70||
      p?.preEarFullness>=.8||p?.parotidWidth>=.8||
      p?.lowerCheekLateral>=1||p?.cheekRoundness<=1||
