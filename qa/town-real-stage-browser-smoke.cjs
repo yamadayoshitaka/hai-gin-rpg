@@ -57,6 +57,14 @@ const assert=require('node:assert/strict');
    'town movement and population must use peaceful-scene physics');
   assert.equal(stats.solidCitizens,stats.streetCitizens,
    'every loaded town resident needs a physical capsule');
+  assert.equal(stats.headMeshes.length,stats.streetCitizens,
+   'each registered town NPC must have an actual head geometry, not only a Head bone');
+  assert.ok(stats.headMeshes.every(n=>n>=2),
+   'villagers must receive actual face and eye/eyebrow mesh parts');
+  assert.ok(stats.headTriangles.every(n=>n>=30),
+   'all village heads must be built from real facial polygons');
+  assert.ok(stats.fallbackHeadMeshes.every(n=>n>=2),
+   'registered replacement shopkeepers must have restored facial meshes');
   assert.ok(stats.npcMotion.procedural>=stats.streetCitizens,
    'registered villagers without embedded animation clips must have an active full-body procedural gait');
   assert.equal(stats.npcMotion.tPoses,0,
@@ -132,7 +140,8 @@ const assert=require('node:assert/strict');
    'entering the actual 3D building displays an exit');
   const shopStats=await page.evaluate(()=>document.querySelector('#townScene').contentWindow.getTownVisitStats());
   assert.equal(shopStats.roomDecorVisible,true,'interior decoration is visible while inside the shop');
-  assert.ok(shopStats.roomDecorCount>=6,'room contains multiple non-colliding visual objects');
+  assert.ok(shopStats.roomDecorCount>=6,'room contains multiple decorated 3D objects');
+  assert.ok(shopStats.indoorSolidCount>=3,'shelves and counter must block indoor walking, while carpet/bottles remain decorative');
   await page.locator('#townInteract').click();
   await page.waitForFunction(()=>!document.querySelector('#panel').hidden,null,{timeout:12000});
   assert.match(await page.locator('#panelTitle').innerText(),/道具屋/,
@@ -151,6 +160,7 @@ const assert=require('node:assert/strict');
    null,{timeout:12000});
   const castleStats=await page.evaluate(()=>document.querySelector('#townScene').contentWindow.getTownVisitStats());
   assert.ok(castleStats.roomDecorVisible,'royal hall must be visible when visiting');
+  assert.ok(castleStats.indoorSolidCount>=3,'throne, columns and furnishings must obey physical collision');
   assert.ok(castleStats.royalFamily.includes('国王')&&castleStats.royalFamily.includes('王女'),
    'the throne room has the king and princess');
   await page.locator('#townExitBuilding').click();
