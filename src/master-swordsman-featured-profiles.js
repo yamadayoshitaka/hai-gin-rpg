@@ -87,7 +87,7 @@ function buildPreset(row,i){
   youthfulness:female?.69:category==='hero'?.97:.49+(i-5)*.035,
   skinRoughness:category==='hero'?(female?.55:i===0?.43:.47):.54,
   makeup:female?Object.freeze({
-   strength:.93,blush:.91,lip:.95,eyeliner:.96,
+   strength:.96,blush:.90,lip:1,eyeliner:.96,
    style:'light-natural-rose',eyeLiner:'defined upper lash',
    lips:'soft-rose',sourceFaceOnly:true
   }):null,
