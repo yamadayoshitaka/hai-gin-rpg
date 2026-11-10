@@ -165,6 +165,15 @@ test('heroine lower cheek is continuously round, while nostrils and mouth corner
   'Back-of-head geometry must remain identical');
 });
 
+test('slim Pages can display original CC0 heroine masters, not a missing archive URL',async()=>{
+ const {readFile}=await import('node:fs/promises');
+ const html=await readFile(new URL('../master-swordsman-prototype.html',import.meta.url),'utf8');
+ assert.match(html,/location\.hostname\.endsWith\('\.github\.io'\)/);
+ assert.match(html,/raw\.githubusercontent\.com\/yamadayoshitaka\/hai-gin-rpg\/main\/assets\/master-sources\/blender/);
+ assert.match(html,/qs\.get\('view'\)==='face'/);
+ assert.match(html,/qs\.get\('featured'\)/);
+});
+
 test('boy and girl presets use different measured facial proportions, with original masters unapproved',()=>{
  const boy=featuredSwordsmanProfile('hero-01');
  const girl=featuredSwordsmanProfile('hero-girl-01');
