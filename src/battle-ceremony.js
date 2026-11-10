@@ -81,7 +81,12 @@ export function createBattleCeremony({
   if(state==='outro'&&kind!=='victory'&&kind!=='defeat')return;
   const major=kind==='intro'||kind==='victory'||kind==='defeat';
   state=kind==='intro'?'intro':major?'outro':kind;
-  locked=major;until=now()+(duration??(kind==='intro'?2400:kind==='order'?1250:kind==='result'?1100:3500));
+  // Give players enough real time to read multi-line cut-in text.
+  const readingCharacters=String(detail||'').length+String(buffText||'').length;
+  const readableMs=kind==='order'?Math.min(6500,3500+readingCharacters*43):
+   kind==='result'?Math.min(5800,3900+readingCharacters*65):
+   kind==='intro'?2400:3500;
+  locked=major;until=now()+(duration??readableMs);
   el.hidden=false;el.className=kind+' visible'+(locked?' locked':'');
   // Restart CSS transitions/entrance per command, without dynamic 3D work.
   for(const child of el.children){child.style.animation='none';void child.offsetWidth;child.style.animation='';}
