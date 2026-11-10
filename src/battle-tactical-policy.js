@@ -28,7 +28,7 @@ export function selectedSoldierCount(total,choice='all'){
  * Enemy numbers alone must not force permanent defense: compare local
  * contact, enemy condition and recovered HP before deciding.
  */
-export function chooseEnemyOrder(own=[],opponents=[],previous='charge'){
+export function chooseEnemyOrder(own=[],opponents=[],previous='charge',context={}){
  const living=own.filter(u=>u.alive!==false&&(u.hp??0)>0&&!u.isStrategist);
  const hostile=opponents.filter(u=>u.alive!==false&&(u.hp??0)>0&&!u.isStrategist);
  if(!living.length)return {mode:'hold',reason:'部隊壊滅'};
@@ -49,6 +49,21 @@ export function chooseEnemyOrder(own=[],opponents=[],previous='charge'){
   if(distance<=34){nearCount++;nearHp+=(u.hp||0)/Math.max(1,u.maxHp||1);}
  }
  const nearbyEnemyHp=nearCount?nearHp/nearCount:1;
+ // Strategic superiority matters more than the fatigue of a single unit.
+ // Earlier AI evaluated only its OWN casualties, so 40 surviving attackers
+ // kept guarding against 10 remaining defenders until the timer expired.
+ const army=context.friendlyArmy?.filter(u=>u.alive!==false&&(u.hp??0)>0&&!u.isStrategist)||living;
+ const armyRatio=army.length/Math.max(1,hostile.length);
+ const armyStrength=army.reduce((n,u)=>n+Math.max(.1,(u.hp||0)/Math.max(1,u.maxHp||1)),0);
+ const enemyStrength=hostile.reduce((n,u)=>n+Math.max(.1,(u.hp||0)/Math.max(1,u.maxHp||1)),0);
+ const favorable=armyRatio>=1.5&&armyStrength>=enemyStrength*1.2;
+ const defenseElapsed=Number(context.defenseElapsed)||0;
+ if(favorable&&hp>=.30&&casualties<.80)
+  return {mode:'charge',reason:previous==='defend'?
+   '友軍が優勢のため守備を解除して反攻':'優勢を活かして突撃'};
+ if(previous==='defend'&&defenseElapsed>=120&&hp>=.38&&casualties<.75&&
+    (armyRatio>=1.15||nearbyEnemyHp<.62))
+  return {mode:'charge',reason:'防御時間が経過・戦機を見て反撃'};
  // Defense is a recovery phase, not an irreversible state. A squad that
  // can still fight may seize a nearby weakness or break out of a siege.
  if(previous==='defend'&&hp>=.36&&casualties<.68&&(
