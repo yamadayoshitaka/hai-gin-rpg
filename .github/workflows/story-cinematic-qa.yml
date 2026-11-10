@@ -1,0 +1,44 @@
+name: Story Cinematic and Audio QA
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/story-cinematic-qa.yml'
+      - 'src/story-cinematic.js'
+      - 'src/game-page-audio.js'
+      - 'src/story-chapters.js'
+      - 'game.html'
+      - 'town-hub.html'
+      - 'world-map.html'
+      - 'tactics-wireframe.html'
+      - 'src/town-audio-director.js'
+      - 'qa/story-cinematic-audio.test.mjs'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/story-cinematic-qa.yml'
+      - 'src/story-cinematic.js'
+      - 'src/game-page-audio.js'
+      - 'src/story-chapters.js'
+      - 'game.html'
+      - 'town-hub.html'
+      - 'world-map.html'
+      - 'tactics-wireframe.html'
+      - 'src/town-audio-director.js'
+      - 'qa/story-cinematic-audio.test.mjs'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  cinematic:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate all twenty-character cinematics and original chapter art
+        run: |
+          node --check src/story-cinematic.js
+          node --check src/game-page-audio.js
+          node --experimental-vm-modules qa/story-cinematic-audio.test.mjs
