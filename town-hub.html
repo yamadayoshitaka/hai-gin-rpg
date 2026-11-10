@@ -79,6 +79,9 @@ body:has(#panel:not([hidden])) #townExplorerControls *,body:has(#opening:not([hi
 <section id="opening" aria-label="紙芝居・オープニング" hidden><div class="sceneCard"><div class="eyebrow">第1章・紙芝居　灰の勅命</div><div id="eventSceneArt" aria-hidden="true">✦　✧　✦</div><h1>レヴナの町</h1><p id="eventText">星鐘が鳴った。</p><div class="controls"><button id="eventVoice">▶ ナレーション再生</button><button id="eventNext">次へ ▶</button></div><button id="skipPaper" type="button">紙芝居を閉じて町へ進む</button></div></section>
 <script type="module">
 import {STORY_CHAPTERS,storyVoiceKey} from './src/story-chapters.js';
+import {continentForChapter} from './src/continent-campaign.js';
+import {drawRecruitGacha,RECRUIT_GACHA} from './src/town-recruit-gacha.js';
+import {resolveTownConversation} from './src/town-dialogue-catalog.js';
 import {createTownAudioDirector} from './src/town-audio-director.js';
 import {TOWN_SHOP,TOWN_EVENTS,loadGame,persistSession,saveAtTown,buyTownItem,equipSquadItem,squadEquipmentBonus,acceptTownEvent,claimTownEvent,stageAtTown,leaveTown,validGame} from './src/game-core-flow.js';
 import {CAMPAIGN_STAGE_BY_ID,stagesInChapter} from './src/campaign-stage-plan.js';
@@ -106,6 +109,26 @@ const townSceneUrl='./tactics-wireframe.html?town=1&stage='+encodeURIComponent(c
  '&commanderName='+encodeURIComponent(game.playerName)+'&v=town-visit-20261110';
 if(townFrame.getAttribute('src')!==townSceneUrl)townFrame.src=townSceneUrl;
 let panel='',page=0,shopCategory='道具',armyPriority='均衡',narration=null,selectedSquadId=game.campaign.squads[0]?.id||0;
+let activeTalk=null,activeTalkIndex=0;
+function speakTownLine(line){
+ let enabled=true;
+ try{enabled=JSON.parse(localStorage.getItem('hai-gin-core-settings-v1')||'null')?.voice!==false}catch{}
+ if(!enabled||!('speechSynthesis' in window))return;
+ speechSynthesis.cancel();
+ const utterance=new SpeechSynthesisUtterance(String(line||'').slice(0,320));
+ utterance.lang='ja-JP';utterance.rate=.93;utterance.pitch=.97;utterance.volume=.94;
+ const japanese=speechSynthesis.getVoices().filter(v=>v.lang.toLowerCase().startsWith('ja'));
+ if(japanese.length)utterance.voice=japanese.find(v=>v.localService)||japanese[0];
+ speechSynthesis.speak(utterance);
+}
+function openTownDialogue(data){
+ const chapter=CAMPAIGN_STAGE_BY_ID[game.townStage]?.chapter||1;
+ activeTalk=resolveTownConversation({...data,chapter});
+ activeTalkIndex=0;
+ game.npcTalked??={};game.npcTalked[activeTalk.id]=(game.npcTalked[activeTalk.id]||0)+1;
+ persistSession(game,sessionStorage);
+ openPanel('dialogue');
+}
 let townReady=false,insideFacility=null,townFacilities=[],townPlayerPosition=null,townMapImage=null;
 let paperPending=(new URLSearchParams(location.search).get('opening')==='1'&&!game.storyFlags.openingEventCompleted)
  ||new URLSearchParams(location.search).get('paper')==='1';
@@ -180,9 +203,18 @@ function rowsHtml(list,renderer){const p=pages(list);page=Math.min(page,p.pages-
  '<div class="pager"><button type="button" data-page="-1" '+(page===0?'disabled':'')+'>◀</button><span>'+(page+1)+' / '+p.pages+'ページ</span><button type="button" data-page="1" '+(page>=p.pages-1?'disabled':'')+'>▶</button></div>';}
 function renderPanel(){
  if(!panel)return;
- $('panelTitle').textContent=({weapons:'武具屋・隊列装備',items:'道具屋・消耗品',formation:'宿屋・隊列設定',tavern:'酒場・イベント請負',save:'教会・旅の記録',story:'王城・物語'})[panel]||'町の施設';
+ $('panelTitle').textContent=({weapons:'武具屋・隊列装備',items:'道具屋・消耗品',formation:'宿屋・隊列設定',tavern:'酒場・イベント請負',save:'教会・旅の記録',story:'王城・物語',dialogue:activeTalk?.name||'町人との会話'})[panel]||'町の施設';
  $('panelSummary').innerHTML='<div class="stat">軍師：<strong>'+escapeHtml(game.playerName)+'</strong></div><div class="stat">現在：<strong>第'+CAMPAIGN_STAGE_BY_ID[game.townStage].chapter+'章・町</strong></div>';
- if(panel==='weapons'||panel==='items'){
+ if(panel==='dialogue'){
+   const talk=activeTalk;
+   if(!talk){$('panelContent').textContent='話しかける相手が見つかりません。';return;}
+   const continent=continentForChapter(CAMPAIGN_STAGE_BY_ID[game.townStage].chapter);
+   $('panelContent').innerHTML='<p>📍 '+escapeHtml(continent.name)+'　・　登録モデル：'+escapeHtml(talk.modelId)+'</p>'+
+    '<div class="entry"><div><b>'+escapeHtml(talk.name)+'</b><small>'+escapeHtml(talk.lines[activeTalkIndex]||talk.lines[0])+'</small></div></div>'+
+    '<div class="controls"><button type="button" data-talk-next>さらに聞く ▶</button><button type="button" data-talk-voice>🔊 声を聴く</button></div>'+
+    (talk.panel?'<button type="button" class="primary" data-talk-service="'+talk.panel+'">'+escapeHtml(talk.name)+'のサービスを利用</button>':'')+
+    '<button type="button" data-talk-close>会話を終える</button>';
+  }else if(panel==='weapons'||panel==='items'){
   const armory=panel==='weapons',stock=TOWN_SHOP.filter(item=>armory?item.category===shopCategory:item.category==='道具');
   const squads=game.campaign.squads.filter(s=>s.count>0);
   if(!squads.some(s=>s.id===selectedSquadId))selectedSquadId=squads[0]?.id||0;
@@ -200,6 +232,7 @@ function renderPanel(){
    return '<div class="entry"><div><b>隊列 #'+s.id+' '+escapeHtml(s.job)+' '+s.count+'人</b><small>武器 '+escapeHtml(weapon)+' / 防具 '+escapeHtml(armor)+' · 常時：攻撃+'+Math.round(buff.attack*100)+'%、HP+'+Math.round(buff.defense*100)+'%</small></div></div>';
   }).join('');
   $('panelContent').innerHTML='<p>宿屋では隊列を編成・雇用します。軍師1人あたり100人、全軍1000人まで。購入済みの武具のバフは出撃直後から適用されます。</p>'+
+   '<div class="entry"><div><b>✦ 星鐘の召喚・仲間ガチャ</b><small>1回 '+RECRUIT_GACHA.cost+'G ／ N 78%・R 20%・UR 2% ／ 10回以内R以上・40回以内UR保証。獲得兵は予備隊へ。</small><small>累計 '+(game.recruitGacha?.total||0)+'回'+(game.recruitGacha?.last?' · 前回：'+escapeHtml(game.recruitGacha.last.job)+'（'+game.recruitGacha.last.rarity+'）':'')+'</small></div><button type="button" class="primary" data-gacha-draw>召喚</button></div>'+
    '<div class="stats"><div class="stat">軍資金 <strong>'+game.campaign.treasury+'G</strong></div><div class="stat">予備兵 <strong>'+reserveTroops(game.campaign)+'人</strong></div></div>'+
    '<div class="entries">'+rowsHtml(jobs,entry=>'<div class="entry"><div><b>'+escapeHtml(entry.job)+'</b><small>保有兵 '+entry.count+'人 · N傭兵 10G/人</small></div><button type="button" data-recruit="'+escapeHtml(entry.job)+'">＋10人雇う</button></div>')+'</div>'+
    '<div class="controls"><select id="autoPriority">'+['均衡','攻撃重視','防御重視','機動重視','支援重視'].map(x=>'<option '+(armyPriority===x?'selected':'')+'>'+x+'</option>').join('')+'</select><button type="button" class="primary" data-auto>オート編成</button></div>'+
@@ -227,6 +260,15 @@ $('panelContent').addEventListener('change',event=>{if(event.target.id==='equipS
 $('panelContent').onclick=event=>{
  const target=event.target.closest('button');if(!target)return;
  try{
+  if(target.hasAttribute('data-talk-next')){activeTalkIndex=(activeTalkIndex+1)%activeTalk.lines.length;renderPanel();return;}
+  if(target.hasAttribute('data-talk-voice')){speakTownLine(activeTalk.lines[activeTalkIndex]);return;}
+  if(target.hasAttribute('data-talk-service')){openPanel(target.dataset.talkService);return;}
+  if(target.hasAttribute('data-talk-close')){window.speechSynthesis?.cancel();closePanel();return;}
+  if(target.hasAttribute('data-gacha-draw')){
+   const draw=drawRecruitGacha(game);
+   persist();renderPanel();townAudio.effect('buy');
+   notice('✦ '+draw.rarity+' '+draw.job+'が仲間になりました！予備隊に登録しました。');return;
+  }
   if(target.hasAttribute('data-page')){page+=Number(target.dataset.page);renderPanel();return;}
   if(target.hasAttribute('data-shop-category')){shopCategory=target.dataset.shopCategory;page=0;renderPanel();return;}
   if(target.hasAttribute('data-buy')){
@@ -269,7 +311,8 @@ window.addEventListener('message',event=>{
  const data=event.data||{};
  if(data.stageId!==game.townStage)return;
  if(data.type==='hai-gin-town-exit'){goMap();return;}
- if(data.type==='hai-gin-town-facility'&&['weapons','items','formation','tavern','save','story'].includes(data.panel))openPanel(data.panel);
+ if(data.type==='hai-gin-town-facility'&&['weapons','items','formation','tavern','save','story'].includes(data.panel))openTownDialogue({panel:data.panel});
+ if(data.type==='hai-gin-town-npc')openTownDialogue({npcId:data.npcId,name:data.name,role:data.role,panel:data.panel});
  if(data.type==='hai-gin-town-entered'){
   insideFacility=data.panel;resetTownMovement();
   townAudio.effect('enter');
