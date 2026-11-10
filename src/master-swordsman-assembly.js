@@ -13,7 +13,7 @@ import {buildHeadConformingScalp,buildFittedShortHairStrands,buildFantasyRearHai
 import {prepareYouthfulFace} from './master-swordsman-youthful-face.js';
 import {createFittedFantasyHeroGarment} from './master-hero-fitted-garment.js';
 import {buildReferenceHeroineHair} from './master-heroine-coiffure.js';
-import {buildHeroineFantasyLongHair} from './master-heroine-long-hair.js';
+import {buildHeroineFantasyLongHair,measureHeroineTorsoEnvelope} from './master-heroine-long-hair.js';
 import {applyHeroineSkinPBR,HEROINE_SKIN_TEXTURE_INFO} from './master-heroine-skin-pbr.js';
 import {validateFaceProportions} from './master-swordsman-face-proportions.js';
 
@@ -224,7 +224,7 @@ export function maskBodyUnderSourceGarment(bodyRoot,dressParts,{margin=.028}={})
 }
 
 export function fitCCBYHairToHead(asset,actorHead,{density='source-lod0',featured=false,style=1,
-  femaleHair=false,referenceCoiffure=null}={}){
+  femaleHair=false,referenceCoiffure=null,torso=null}={}){
  if(!asset||!actorHead)throw Error('Actual head and separately credited hairstyle required');
  asset.updateWorldMatrix(true,true);actorHead.updateWorldMatrix(true,true);
  const original=new THREE.Box3().setFromObject(asset);
@@ -263,8 +263,13 @@ export function fitCCBYHairToHead(asset,actorHead,{density='source-lod0',feature
   // polygon clumps and missing side layers. Keep source intact for troops.
   fitted.visible=!!femaleHair&&!authoredHeroine;
   if(authoredHeroine){
+   // A bald original female head plus ONE authored wig is the only visual
+   // stack. Keep the source-geometry scalp as a non-rendered ROOT provider:
+   // previously its alpha-shell was visible as a second jagged hair helmet.
+   scalp.visible=false;
+   const envelope=longHeroine&&torso?measureHeroineTorsoEnvelope(torso,scalp):null;
    const {hair:coiffure,report}=longHeroine?
-    buildHeroineFantasyLongHair(scalp):buildReferenceHeroineHair(scalp);
+    buildHeroineFantasyLongHair(scalp,{bodyEnvelope:envelope}):buildReferenceHeroineHair(scalp);
    hairGroup.add(coiffure);
    styledHairReport=report;
   }else{
@@ -312,7 +317,11 @@ export function fitCCBYHairToHead(asset,actorHead,{density='source-lod0',feature
   disjointDonorHiddenForFeatured:featured&&(!femaleHair||authoredHeroine),
   referenceHeroineHairShown:authoredHeroine,
   longBlondeHeroineHairShown:longHeroine,
-  femaleLicensedHairShown:!!femaleHair&&!authoredHeroine,originalHairMeshesPreserved:true,sourceAttribution:
+  femaleLicensedHairShown:!!femaleHair&&!authoredHeroine,
+  oldScalpHiddenForWig:authoredHeroine&&!scalp.visible,
+  sourceHeadBaldUnderWig:authoredHeroine&&!fitted.visible&&!scalp.visible,
+  bodySurfaceClearanceActive:longHeroine&&!!torso,
+  originalHairMeshesPreserved:true,sourceAttribution:
   'Vincent Freelance CC BY 4.0; see assets/characters/hair-fitted-v1/ATTRIBUTION.md',
   actual3d:true,headMeshFittedApproximate:true,helmetIntersectionApproved:false})};
 }
