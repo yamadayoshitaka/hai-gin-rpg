@@ -218,7 +218,8 @@ export function buildHeroineFantasyLongHair(scalp,{lengthInHeads=3.25,bodyEnvelo
  const colors=new Float32Array(VERTICES*3);
  let lowestY=Infinity,lowestBangY=Infinity,frontEyeZoneVertices=0;
  let bodyCollisionCorrections=0,sideShoulderCorrections=0,rearBackCorrections=0;
- let maxSideOutwardDrift=0;
+ let maxSideOutwardDrift=0,neckSideSplitCorrections=0,neckBeardIntrusionVertices=0;
+ let lowestNeckSideRadius=Infinity;
  let vi=0;
  const regions={rear:70000,templeLeft:12000,templeRight:12000,bangs:6000};
  const categories=[
@@ -275,6 +276,30 @@ export function buildHeroineFantasyLongHair(scalp,{lengthInHeads=3.25,bodyEnvelo
       else rearBackCorrections++;
      }
     }
+    if(!bang){
+     // A rear scalp curtain visible beneath the front-view chin resembles a
+     // long pink beard. Split the 3D locks around the actual neck silhouette
+     // BEFORE they descend to the chest; preserve full length BEHIND the back.
+     // This is a scalp-rooted hair-path adjustment, never a beard mesh.
+     const neckBlend=clamp((b.min.y+d.y*.52-y)/(d.y*.32),0,1);
+     if(neckBlend>0){
+      const lockSide=side||(rootX<cx?-1:1);
+      // Divide dense occipital hair across the shoulders rather than letting
+      // hundreds of central strands hang under the face and chin.
+      const clearanceWidth=d.x*(.425+.065*hash(seed*7.21));
+      const edge=cx+lockSide*clearanceWidth;
+      if(Math.abs(x-cx)<clearanceWidth){
+       x=lerp(x,edge,neckBlend);
+       neckSideSplitCorrections++;
+      }
+      z=lerp(z,Math.min(z,cz-d.z*.46),neckBlend);
+     }
+     if(y<=b.min.y+d.y*.19&&y>=b.min.y-d.y*.70){
+      const radial=Math.abs(x-cx)/d.x;
+      lowestNeckSideRadius=Math.min(lowestNeckSideRadius,radial);
+      if(radial<.40)neckBeardIntrusionVertices++;
+     }
+    }
     if(bang)lowestBangY=Math.min(lowestBangY,y);
     lowestY=Math.min(lowestY,y);
     const current=[x,y,z,t];
@@ -327,6 +352,9 @@ export function buildHeroineFantasyLongHair(scalp,{lengthInHeads=3.25,bodyEnvelo
   bodyCollisionCorrections,sideShoulderCorrections,rearBackCorrections,
    maxSideOutwardDriftMeters:Number(maxSideOutwardDrift.toFixed(5)),
    coherentScalpFlow:true,templeTipsTurnBehindShoulders:true,
+   neckSideSplitCorrections,neckBeardIntrusionVertices,
+   minimumNeckSideRadiusNormalized:Number(lowestNeckSideRadius.toFixed(4)),
+   beardFreeFrontNeck:neckBeardIntrusionVertices===0,
   scalpRegions:Object.freeze(regions),scalpCrownRootPool:crown.length,
   rearLocks:regions.rear,faceFramingLocks:regions.templeLeft+regions.templeRight,
   bangLocks:regions.bangs,lockCount:COUNT,
