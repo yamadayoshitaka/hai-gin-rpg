@@ -23,21 +23,30 @@ export function buildHeroineFantasyLongHair(scalp,{lengthInHeads=3.25}={}){
  if(d.x<.1||d.y<.1||d.z<.07||lengthInHeads<2.5)
   throw Error('Invalid heroine head dimensions or long-hair length');
  const cx=(b.min.x+b.max.x)*.5,cz=(b.min.z+b.max.z)*.5;
- const all=[],rear=[],left=[],right=[],fringe=[];
+ const all=[];
  for(let i=0;i<p.count;i++){
   if(alpha.getW(i)<.86)continue;
   const x=p.getX(i),y=p.getY(i),z=p.getZ(i);
-  const yn=(y-b.min.y)/d.y;
-  if(yn<.49)continue;
-  const item=[x,y,z];
-  all.push(item);
-  if(z<cz+d.z*.04&&yn>.58)rear.push(item);
-  if(x<cx-d.x*.35&&yn>.56&&z>cz-d.z*.20)left.push(item);
-  if(x>cx+d.x*.35&&yn>.56&&z>cz-d.z*.20)right.push(item);
-  if(z>cz+d.z*.08&&yn>.79&&Math.abs(x-cx)<d.x*.39)fringe.push(item);
+  if((y-b.min.y)/d.y<.49)continue;
+  all.push([x,y,z]);
  }
- if(all.length<100||rear.length<35||left.length<10||right.length<10||fringe.length<10)
-  throw Error('Source scalp lacks connected crown, temple and fringe anchors');
+ if(all.length<100)throw Error('Source hairline has too few real scalp anchors');
+ // The authored female head has an irregular/segmented topology, unlike the
+ // smooth sphere used in unit tests. Rank available REAL alpha-masked vertices
+ // per scalp region instead of assuming hard XYZ cutoffs at every temple.
+ // Never fabricate a root or project strands from unrelated floating planes.
+ const score=(q,region)=>{
+  const x=(q[0]-cx)/d.x,y=(q[1]-b.min.y)/d.y,z=(q[2]-cz)/d.z;
+  if(region==='rear')return -z*1.6+y*.18;
+  if(region==='left')return -x*1.3+z*.40+y*.23;
+  if(region==='right')return x*1.3+z*.40+y*.23;
+  return z*1.3+y*1.1-Math.abs(x)*.70;
+ };
+ const pick=region=>all.slice().sort((a,b)=>score(b,region)-score(a,region))
+  .slice(0,Math.max(30,Math.ceil(all.length*.16)));
+ const rear=pick('rear'),left=pick('left'),right=pick('right'),fringe=pick('fringe');
+ if([rear,left,right,fringe].some(a=>a.length<30))
+  throw Error('Female source scalp does not contain usable source-rooted hair regions');
  const rings=SEGMENTS+1,vertsPerStrand=rings*SIDES,trianglesPerStrand=SEGMENTS*SIDES*2;
  const positions=new Float32Array(COUNT*vertsPerStrand*3);
  const normals=new Float32Array(positions.length);
