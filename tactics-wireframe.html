@@ -5883,7 +5883,7 @@ function cinematicHumanWorldPoint(unit){
  if(massSim){
   const x=(unit.x-6)*CELL,z=(unit.z-6)*CELL,motion=unit._visualMotion;
   if(motion&&Number.isFinite(motion.x)&&Number.isFinite(motion.z))
-   return new THREE.Vector3(motion.x,motion.y+1.35,motion.z);
+   return new THREE.Vector3(motion.x,(Number.isFinite(motion.y)?motion.y:unitGroundY(unit,motion.x,motion.z))+1.35,motion.z);
   return new THREE.Vector3(x,unitGroundY(unit,x,z)+1.35,z);
  }
  return unit.root?.position?unit.root.position.clone().add(new THREE.Vector3(0,1.35,0)):null;
@@ -5963,6 +5963,17 @@ function updateCommanderCinematic(){
   commanderCinematic=null;setCameraActive('camOverview');
  }
 }
+window.getBattleCinematicQA=()=>({
+ active:Boolean(commanderCinematic),
+ unitId:commanderCinematic?.focusUnitId??null,
+ team:commanderCinematic?.team??null,
+ shotKind:commanderCinematic?.kind??null,
+ shotElapsedMs:commanderCinematic?Math.round(performance.now()-commanderCinematic.start):0,
+ slowMotionScale:commanderCinematic||battleCeremony.state==='order'||battleCeremony.state==='result'?.32:1,
+ treeCandidates:cameraTreeCandidates?.length??0,
+ hiddenTreeCanopies:cameraOccludedTrees?.size??0,
+ target:commanderCinematic?.closeTarget?.toArray()??null
+});
 function emitSquadBuffEffect(squadId,element='arcane',team=0){
  const friends=(massSim?.units??actors).filter(u=>u.team===team&&String(u.squadId)===String(squadId)&&u.hp>0&&u.alive!==false);
  const step=Math.max(1,Math.ceil(friends.length/9));
