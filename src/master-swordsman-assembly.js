@@ -851,7 +851,7 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false,gen
   // only and never substitutes a raster portrait for the geometry.
   if(femalePortrait&&typeof document!=='undefined'){
    applyHeroineSkinPBR(faceSource,{face:true});
-   for(const mat of faceSkinBaseMaterials.keys())mat.roughness=profile.skinRoughness??.55;
+   for(const mat of faceSkinBaseMaterials.keys())mat.roughness=.78;
   }else{
    for(const [mat,base] of faceSkinBaseMaterials){
     mat.map=base.map;mat.normalMap=base.normalMap;
