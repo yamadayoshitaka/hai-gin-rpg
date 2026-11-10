@@ -7491,7 +7491,7 @@ function animateTown(){
  for(const citizen of townStreetCitizens){
   citizen.mixer?.update(dt);
   if(!citizen.mixer&&citizen.poseBones){
-   const t=elapsed*2.9+citizen.phase,swing=citizen.walk?.23:.026;
+   const t=elapsed*2.9+citizen.phase,swing=citizen.walk ? 0.23 : 0.026;
    for(const [key,entry] of Object.entries(citizen.poseBones)){
     const side=key.endsWith('_l')?1:key.endsWith('_r')?-1:0;
     const angle=key.startsWith('thigh')?Math.sin(t)*swing*side:
