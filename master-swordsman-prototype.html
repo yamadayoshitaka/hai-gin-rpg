@@ -446,6 +446,7 @@ function diagnostics(){
   hairScalpCoverage:hairReport?.headConformingScalp||null,
   styledHairGeometry:hairReport?.styledHairReport||null,
   fantasyBackHair:hairReport?.fantasyBackReport||null,
+  previewHairFilaments:hairReport?.styledHairReport?.individualFilamentCount||0,
    femaleLicensedHairShown:hairReport?.femaleLicensedHairShown===true,
    referenceHeroineHairShown:hairReport?.referenceHeroineHairShown===true,
    longBlondeHeroineHairShown:hairReport?.longBlondeHeroineHairShown===true,
@@ -479,6 +480,16 @@ function tintOriginalCloth(root,color){
   }
  });
 }
+function disposeOwnedPreviewHair(root){
+ if(!root)return;
+ root.traverse(o=>{
+  if(!o.isMesh||o.name.startsWith('LICENSE_CC_BY_4_HIGH_DENSITY'))return;
+  // Do not dispose the fetched CC-BY donor asset. Heroine 100k filaments,
+  // authored coiffures and the cloned fitted scalp are preview-owned.
+  o.geometry?.dispose();
+  for(const mat of Array.isArray(o.material)?o.material:[o.material])mat?.dispose();
+ });
+}
 async function changeHairstyle(profile){
  if(!master)return;
  const wanted=profile.hairStyle,serial=++hairRequest;
@@ -499,15 +510,11 @@ async function changeHairstyle(profile){
    featured:profile.category==='hero'||profile.category==='ally',
    style:profile.hairStyle,femaleHair:profile.gender==='female',
    referenceCoiffure:profile.coiffureStyle||null});
+  clearWireDisplay();
   if(importedHair){
    master.actor.remove(importedHair);
-   importedHair.traverse(o=>{
-    if(!o.isMesh||!/^(HEAD_CONFORMING_SOURCE_TOPOLOGY_SCALP|SOURCE_HEAD_SURFACE_MICRO_STRANDS)$/.test(o.name))return;
-    o.geometry?.dispose();
-    for(const m of Array.isArray(o.material)?o.material:[o.material])m?.dispose();
-   });
+   disposeOwnedPreviewHair(importedHair);
   }
-  clearWireDisplay();
   importedHair=fit.hair;hairReport=fit.report;
   master.actor.add(importedHair);
   importedHair.visible=$('hairOn').checked;
@@ -561,6 +568,8 @@ function ensureModelGender(gender){
  clearWireDisplay();
  // Fully replace the real source body and head; changing skin colour alone
  // is NOT presented as a female character.
+ clearWireDisplay();
+ disposeOwnedPreviewHair(importedHair);
  scene.remove(old.actor);
  master=next;activeModelGender=chosen;
  $('referenceContour').setAttribute('aria-pressed','false');
@@ -581,7 +590,7 @@ async function applySelectedProfile(profile){
  $('hairStyle').value=String(profile.hairStyle);
  const chosenStyle=$('hairStyle').querySelector('option[value="2"]');
  if(chosenStyle)chosenStyle.textContent=profile.gender==='female'?
-  '髪型 02（ロング）':'髪型 02';
+  '髪型 02（確認専用・10万本の立体ロング）':'髪型 02';
  $('clothingColor').value=profile.clothColor;
  $('metalColor').value=profile.armorColor;
  $('youthfulness').value=String(profile.youthfulness??0);
