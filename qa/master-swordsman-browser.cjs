@@ -92,7 +92,7 @@ function changed(a,b,threshold=48){
   await page.locator('#hairOn').uncheck();
   await page.waitForTimeout(100);
   const baseFace=await page.evaluate(()=>window.__heroSwordsmanQA());
-  if(await page.locator('#faceProportionControls input[type="range"]').count()!==45||
+  if(await page.locator('#faceProportionControls input[type="range"]').count()!==48||
      baseFace.facialProportionFields!==45)
    throw Error('Missing facial third / eye / brow / nose / mouth sliders');
   if(baseFace.facialQA?.maxIrisCenterOffsetRatio>.20||baseFace.facialQA?.maxPupilIrisOffsetRatio>.55)
@@ -293,15 +293,25 @@ function changed(a,b,threshold=48){
     // The reference hero must be inspectable as actual source triangles,
     // including dense 3D hair. These controls must not replace the model
     // with a filtered portrait or contaminate PBR material state.
-    if((state.referenceHeroineHairReport?.bangLocks||0)<30||
-       (state.referenceHeroineHairReport?.triangleCount||0)<60000)
+    if((state.referenceHeroineHairReport?.bangLocks||0)<6000||
+       state.referenceHeroineHairReport?.individualFilamentCount!==100000||
+       state.referenceHeroineHairReport?.noWidePolygonCards!==true||
+       state.referenceHeroineHairReport?.triangleCount!==3600000||
+       state.appearance.proportions.preEarFullness>=.8||
+       state.appearance.proportions.parotidWidth>=.8)
      throw Error('Dense source-rooted long-hair geometry missing');
     const solidMesh=await page.evaluate(()=>window.__heroineWireframeQA?.());
     if(solidMesh?.featuredKey!=='hero-girl-01'||
        solidMesh?.sourceGeometry!==true||
        solidMesh?.triangles<50000)
      throw Error('Expected genuine 3D heroine triangle topology: '+JSON.stringify(solidMesh));
+    // Rendered evidence at the actual face zoom and full source wire topology.
+    await page.locator('#portrait').click();
+    await page.waitForTimeout(170);
+    await canvas.screenshot({path:path.join(dir,'hero-girl-01-face-100k-hair.png')});
     await page.locator('#meshMode').selectOption('wire');
+    await page.waitForTimeout(170);
+    await canvas.screenshot({path:path.join(dir,'hero-girl-01-wire-100k-hair.png')});
     const wireState=await page.evaluate(()=>window.__heroineWireframeQA?.());
     if(wireState?.mode!=='wire'||wireState.triangles!==solidMesh.triangles)
      throw Error('Wire-only mode changed real source topology');
