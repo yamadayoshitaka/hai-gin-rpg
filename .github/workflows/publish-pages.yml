@@ -33,6 +33,8 @@ jobs:
         run: node qa/story-chronicle.test.mjs
       - name: Verify new game core, town save, shops and 200-stage transitions
         run: node --experimental-vm-modules qa/game-core-contract.test.mjs
+      - name: Verify continents, gacha, NPC models and fences/flowers
+        run: node qa/continent-town-gacha-regression.test.mjs
       - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
@@ -55,13 +57,14 @@ jobs:
           # These IDs are commit-scoped Pages deployment IDs, not Actions run IDs.
           for stale in \
             c094e70554f6e601655657887bef1fcc6b9470d5 \
-            49de908d6bc6197e8334b9d0ec2dfab8b6c88e18; do
+            49de908d6bc6197e8334b9d0ec2dfab8b6c88e18 \
+            77f657a0972e2af5087fb048f9d202b2721c407a; do
           endpoint="repos/${GITHUB_REPOSITORY}/pages/deployments/${stale}"
           echo "Checking previous Pages deployment ${stale}"
           if state=$(gh api "${endpoint}" --jq '.status' 2>/tmp/pages-status-error); then
             echo "Pages deployment state: ${state}"
             case "${state}" in
-              succeed|failed|cancelled|canceled)
+              succeed|failed|cancelled|canceled|deployment_cancelled|deployment_succeeded|deployment_failed)
                 echo "Previous Pages deployment is already terminal"
                 ;;
               *)

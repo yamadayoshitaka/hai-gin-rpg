@@ -12,7 +12,14 @@ for(const id of ['allySquadRibbon','allySquadRibbonList','enemySquadRibbon','ene
 assert.match(html,/squadRibbonStatus\(row\)/);
 assert.match(html,/button\.disabled=!state\.enabled/);
 assert.match(html,/if\(!battleReady\|\|finished\|\|battleCeremony\.locked\)return;/);
-assert.match(html,/button\.onclick=\(\)=>team===0\?openSquadTactics\(id\):showEnemySquadIntel\(id\)/);
+assert.match(html,/if\(pendingCircleTarget\)\{chooseCircleActionTarget\(id,team\);return;\}/,
+ 'the actual circular squad markers must support two-step target selection');
+assert.ok(html.includes('else openSquadTactics(id);'),
+ 'friendly squad circle opens orders');
+assert.ok(html.includes('const row=lastRibbonSums.get(key),intent=squadIntent(id,1,row?.n===0);'),
+ 'enemy squad circle only exposes scout information');
+assert.ok(html.includes('#allySquadRibbon,#enemySquadRibbon,#squadCircleInfo{display:none!important}'),
+ 'old ribbons are intentionally hidden and cannot obscure combat');
 assert.match(html,/markRibbonOrderIssued\(id\)/);
 assert.match(html,/lastSquadOrderAt\.set\(String\(id\),elapsed\)/);
 assert.match(html,/if\(!canChangeSquadOrder\(id\)\)return false/);
@@ -30,7 +37,7 @@ assert.match(html,/focusedHumanUnitId=null;\s*followCamera=false;/,
 assert.match(html,/lastRibbonOrderAt\.set\(squadKey\(0,String\(id\)\),elapsed\*1000\)/);
 assert.match(html,/const now=elapsed\*1000/);
 assert.match(html,/renderSquadRibbons\(sums\)/);
-assert.match(html,/sortSquadRibbon\(entries,now\)/);
+assert.match(html,/const sorted=entries;/,'circle selection keeps squad order stable');
 assert.match(html,/battleHotspots\.add\(\{x:hit\.x,z:hit\.z,damage:hit\.damage/);
 assert.match(html,/battleHotspots\.draw\(miniCtx,\{limit:24\}\)/);
 assert.match(html,/topQuickActions'\)\.appendChild\(\$\('battleMenuToggle'\)\)/);
@@ -99,4 +106,4 @@ soundtrack.setPhase('victory');
 assert.match(soundtrack.phase,/victory/);
 soundtrack.setEnabled(false);
 assert.equal(soundtrack.enabled,false);
-console.log('PASS: side command ribbons, death-locked enemy inspector, command rotation, battle radar heat, loaded BGM before opening');
+console.log('PASS: squad circle commands, enemy scouting, cooldown, battle radar heat, and recorded BGM');
