@@ -42,6 +42,40 @@ jobs:
         run: python -m pip install --disable-pip-version-check -r scripts/requirements-pages.txt
       - name: Assemble compact game website without master asset archives
         run: python scripts/prepare-pages-site.py --out pages-dist
+      # GitHub Pages can leave the deployment lock active even after the
+      # original deploy-pages job times out. Release the known orphan from
+      # the 2026-11-10 09:53 UTC attempt before creating a new deployment.
+      - name: Release stale Pages deployment lock
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          stale="49de908d6bc6197e8334b9d0ec2dfab8b6c88e18"
+          endpoint="repos/${GITHUB_REPOSITORY}/pages/deployments/${stale}"
+          echo "Checking previous Pages deployment ${stale}"
+          if state=$(gh api "${endpoint}" --jq '.status' 2>/tmp/pages-status-error); then
+            echo "Pages deployment state: ${state}"
+            case "${state}" in
+              succeed|failed|cancelled|canceled)
+                echo "Previous Pages deployment is already terminal"
+                ;;
+              *)
+                if gh api -X POST "${endpoint}/cancel"; then
+                  echo "Stale Pages deployment cancelled"
+                else
+                  echo "::warning::Pages cancellation API refused; deployment may still be locked"
+                fi
+                ;;
+            esac
+          else
+            echo "::warning::Could not read stale Pages status; checking whether cancellation is possible"
+            if gh api -X POST "${endpoint}/cancel"; then
+              echo "Stale Pages deployment cancelled"
+            else
+              echo "::warning::Pages cancellation unavailable (status read/cancel both failed)"
+            fi
+          fi
       - uses: actions/configure-pages@v6
       - uses: actions/upload-pages-artifact@v5
         with:
