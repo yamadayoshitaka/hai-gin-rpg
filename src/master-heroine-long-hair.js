@@ -140,7 +140,7 @@ export function buildHeroineVisibleCrownAndFringe(scalp){
   if(y>.84&&alpha>.75)upperSourceSamples++;
   // Draw combed highlight texture ON the head topology, not a smooth
   // pink bald skull. All strands use the source vertex normals.
-  if(i%9!==0||alpha<.88||y<.66)continue;
+  if(i%5!==0||alpha<.88||y<.66)continue;
   root.fromBufferAttribute(p,i);
   if(normals)n.fromBufferAttribute(normals,i).normalize();
   else n.set(x,y-.42,z-.5).normalize();
@@ -157,14 +157,14 @@ export function buildHeroineVisibleCrownAndFringe(scalp){
   crownSegments.push(start.x,start.y,start.z,finish.x,finish.y,finish.z);
   crownColors.push(lum,lum*.92,lum*.91,lum*.92,lum*.86,lum*.91);
  }
- if(upperSourceSamples<35||crownSegments.length<600)
+ if(upperSourceSamples<35||crownSegments.length<120)
   throw Error('Not enough genuine source crown follicles for visible wig');
  const streakGeo=new THREE.BufferGeometry();
  streakGeo.setAttribute('position',new THREE.Float32BufferAttribute(crownSegments,3));
  streakGeo.setAttribute('color',new THREE.Float32BufferAttribute(crownColors,3));
  streakGeo.computeBoundingSphere();
  const crownStreaks=new THREE.LineSegments(streakGeo,
-  new THREE.LineBasicMaterial({color:0xffffff,vertexColors:true,depthWrite:true}));
+  new THREE.LineBasicMaterial({color:0xd6a5ba,vertexColors:true,depthWrite:true}));
  crownStreaks.name='HEROINE_VISIBLE_COMBED_CROWN_HAIR';
  crownStreaks.renderOrder=1;
  // Fallback still uses actual upper source vertices if the segmented donor
@@ -319,6 +319,7 @@ export function buildHeroineWigRootCap(scalp){
 export function buildHeroineFantasyLongHair(scalp,{lengthInHeads=3.25,bodyEnvelope=null}={}){
  const source=scalp?.geometry;
  const p=source?.getAttribute('position'),alpha=source?.getAttribute('color');
+ const normals=source?.getAttribute('normal');
  if(!p||!alpha||alpha.itemSize<4||p.count<400)
   throw Error('Heroine 100k hair requires the real alpha-masked source scalp');
  source.computeBoundingBox();
@@ -331,7 +332,10 @@ export function buildHeroineFantasyLongHair(scalp,{lengthInHeads=3.25,bodyEnvelo
   if(alpha.getW(i)<.86)continue;
   const x=p.getX(i),y=p.getY(i),z=p.getZ(i);
   if((y-b.min.y)/d.y<.49)continue;
-  all.push([x,y,z]);
+  // Follicle origin is raised slightly above the tinted undercoat so
+  // the 100,000 line segments remain visible, not depth-hidden by the cap.
+  const nx=normals?.getX(i)||0,ny=normals?.getY(i)||0,nz=normals?.getZ(i)||0;
+  all.push([x,y,z,nx,ny,nz]);
  }
  if(all.length<100)throw Error('Source hairline has too few real scalp anchors');
  // The authored female head has an irregular/segmented topology, unlike the
@@ -402,8 +406,8 @@ export function buildHeroineFantasyLongHair(scalp,{lengthInHeads=3.25,bodyEnvelo
    const pool=region==='rear'&&j%4===0?crown:anchors;
    const q=pool[(j*67+Math.floor(hash(global+4)*pool.length))%pool.length];
    const seed=global+1,scatter=hash(seed*1.19);
-   const rootX=q[0]+(hash(seed*4.1)-.5)*d.x*.003;
-   const rootY=q[1],rootZ=q[2];
+   const rootX=q[0]+(hash(seed*4.1)-.5)*d.x*.003+q[3]*.0045;
+   const rootY=q[1]+q[4]*.0045,rootZ=q[2]+q[5]*.0045;
    // Three distinct rear layers with overlapping ends, not two long sheets.
    const backLayer=region==='rear'?Math.min(2,Math.floor(j*3/count)):0;
    const strandLength=bang?
@@ -411,7 +415,7 @@ export function buildHeroineFantasyLongHair(scalp,{lengthInHeads=3.25,bodyEnvelo
     side?d.y*(1.02+.54*scatter):
     d.y*lengthInHeads*([.40,.54,.66][backLayer]+.06*scatter);
    const sway=(hash(seed*11.3)-.5)*d.x*.055;
-   const sideDirection=bang?1:(side||Math.sign(rootX-cx)||1);
+   const sideDirection=bang?-1:(side||Math.sign(rootX-cx)||1);
    // Nearby follicles follow a shared wave phase, not unrelated spikes.
    const flowPhase=(rootX-cx)/d.x*6.1+(rootZ-cz)/d.z*2.8;
    const light=.82+.17*hash(seed*7.83);
@@ -421,13 +425,13 @@ export function buildHeroineFantasyLongHair(scalp,{lengthInHeads=3.25,bodyEnvelo
     const curl=Math.sin(t*4.2+flowPhase)*Math.sin(Math.PI*t)*
       d.x*(bang?.006:side?.012:.018);
     // Side locks fold behind the shoulders instead of pointing outwards.
-    let x=bang?rootX+sideDirection*d.x*(.17*t+.035*fall)+curl:
+    let x=bang?rootX+sideDirection*d.x*(.13*t+.055*fall)+curl:
      side?rootX+(cx-rootX)*(.075*t+.10*fall)+curl:
      rootX+sway*fall+curl;
     let y=rootY-strandLength*t;
     const ease=t*t*(3-2*t);
     const sweep=clamp(t*1.18,0,1),sideEase=sweep*sweep*(3-2*sweep);
-    let z=bang?rootZ+d.z*(.085*t+.012*Math.sin(Math.PI*t)):
+    let z=bang?rootZ+d.z*(.12*t+.018*Math.sin(Math.PI*t)):
      side?lerp(rootZ,Math.min(rootZ,cz-d.z*.28),sideEase)-d.z*(.06*t+.06*fall):
      lerp(rootZ,Math.min(rootZ,cz-d.z*.18),ease)-
       d.z*(.05*t+.08*fall+.035*backLayer*ease);
@@ -505,7 +509,7 @@ export function buildHeroineFantasyLongHair(scalp,{lengthInHeads=3.25,bodyEnvelo
   geo.setAttribute('color',new THREE.BufferAttribute(colors.subarray(begin,finish),3));
   geo.computeBoundingBox();geo.computeBoundingSphere();
   const mat=new THREE.LineBasicMaterial({
-   color:0xffffff,vertexColors:true,depthTest:true,depthWrite:true
+   color:0xd6a5ba,vertexColors:true,depthTest:true,depthWrite:true
   });
   const strands=new THREE.LineSegments(geo,mat);
   strands.name=name;strands.userData.strands=last-first;
