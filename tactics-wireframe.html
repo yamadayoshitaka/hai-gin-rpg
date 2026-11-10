@@ -2966,6 +2966,33 @@ async function hydrateTownCitizens(){
   citizen.loaded=true;
  }
  if(townStreetCitizens.some(c=>!c.loaded))throw Error('Town citizen models are incomplete');
+ // Some imported battle garments have a bounding box tens of metres tall.
+ // Scaling the entire rig would shrink the HUMAN to a few centimetres.
+ // A peaceful shopkeeper instead uses a real, registered civilian model;
+ // keep the avatar, battle rigs and combat camera unchanged.
+ for(const actor of actors.slice(1)){
+  if((actor.root.userData.townHeight||0)>.75)continue;
+  const sex=actor.sex==='female'?'female':'male';
+  const key=sex==='female'?'civilianFemale':'civilianMale';
+  const source=await getSource(key),model=cloneSkinned(source.scene);
+  const bounds=new THREE.Box3().setFromObject(model,true);
+  const height=bounds.getSize(new THREE.Vector3()).y;
+  if(!Number.isFinite(height)||height<=.01)throw Error('Invalid town fallback '+key);
+  const factor=Math.max(.1,Math.min(10,TOWN_ADULT_HEIGHT[sex]/height));
+  const center=bounds.getCenter(new THREE.Vector3());
+  model.scale.setScalar(factor);
+  model.position.set(-center.x*factor,-bounds.min.y*factor,-center.z*factor);
+  model.userData.sourceModelId=key;
+  actor.root.scale.setScalar(1);
+  for(const child of [...actor.root.children])
+   if(child!==actor.root.userData.ring)actor.root.remove(child);
+  actor.root.add(model);
+  actor.character=null;actor.outfit=null;actor.townRegisteredModel=model;
+  const idle=source.animations?.find(c=>/idle|stand/i.test(c.name));
+  if(idle){actor.townVisualMixer=new THREE.AnimationMixer(model);actor.townVisualMixer.clipAction(idle).play();}
+  fitTownHumanScale(actor.root,TOWN_ADULT_HEIGHT[sex],'town-fallback-'+actor.id);
+  console.info('[Town] oversized imported outfit replaced by registered '+key+' model:',actor.id);
+ }
 }
 const townContactShadowTex=(()=>{
  if(!TOWN_MODE)return null;
@@ -3122,6 +3149,7 @@ function townFacility(){
 window.getTownVisitStats=()=>({
  ready:battleReady,sceneMode:TOWN_SCENE_MODE,people:actors.length+townStreetCitizens.length,
  actorHeights:actors.map(a=>a.root.userData.townHeight||0),
+ registeredFallbacks:actors.filter(a=>a.townRegisteredModel).length,
  citizenHeights:townStreetCitizens.map(c=>c.root.userData.townHeight||0),
  solidCitizens:townStreetCitizens.filter(c=>c.loaded&&c.root.userData.nonColliding===false).length,
  registeredCitizenModels:townStreetCitizens.filter(c=>c.loaded).length,
@@ -8187,6 +8215,7 @@ function animateTown(){
  elapsed+=dt;
  updateTownAvatar(dt);
  for(const a of actors){
+  a.townVisualMixer?.update(dt);
   if(!a.character||a.hp<=0)continue;
   const walk=a===townAvatar()&&a.townMotion!=='idle'&&Boolean(a.townMotion);
   const desired=walk?a.townMotion:'idle';
@@ -8498,7 +8527,7 @@ function animate(){
 }
 window.getBattleStartupStats=()=>({ready:battleReady,error:loadingFailure?String(loadingFailure):null,
  resolutionScale:BATTLE_RESOLUTION_SCALE,pixelRatio:renderer.getPixelRatio(),antiAliasing:fxaaComposer?'GPU FXAA':'WebGL MSAA',bufferWidth:renderer.domElement.width,bufferHeight:renderer.domElement.height,
- actors:actors.length,dressed:actors.filter(a=>a.outfit).length,buildingBatchStats,stageBatchStats,
+ actors:actors.length,dressed:actors.filter(a=>a.outfit||a.townRegisteredModel).length,buildingBatchStats,stageBatchStats,
  massModelBatches:massRenderer?.drawMeshes??0,bodyDrawLayers:massRenderer?.bodyDrawLayers??0,visibility:actorVisibility.stats,elapsed});
 async function finishBattleLoading(){
  try{
