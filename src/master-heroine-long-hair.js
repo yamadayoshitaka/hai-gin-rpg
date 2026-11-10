@@ -46,18 +46,19 @@ export function buildHeroineFantasyLongHair(scalp,{lengthInHeads=3.25}={}){
   color:0xffffff,vertexColors:true,roughness:.48,metalness:0,
   clearcoat:.12,clearcoatRoughness:.36,side:THREE.DoubleSide
  });
- let rearLocks=0,faceFramingLocks=0,bangLocks=0,lowestY=Infinity,aboveEyeFrontVertices=0;
+ let rearLocks=0,faceFramingLocks=0,bangLocks=0,lowestY=Infinity,lowestBangY=Infinity,aboveEyeFrontVertices=0;
  const segments=24,radial=7;
  const addLock=({root,sign,side=false,bang=false,index=0,layer=0})=>{
   if(!root)return;
   const start=verts.length/3;
-  const length=bang?dim.y*(.18+.08*(index%5)/4):
+  // Dense forehead fringe stays above the eyebrow ridge instead of hiding it.
+  const length=bang?dim.y*(.105+.025*(index%7)/6):
    dim.y*lengthInHeads*(side?.88:1)*
    (1-.08*Math.abs((root.x-cx)/(dim.x*.5)))*
    (1-.055*layer);
   // Broader curved lock surfaces overlap to remove the string-like look;
   // geometry remains individually inspectable and scalp anchored.
-  const width=dim.x*(bang?.021:side?.0245:.0285)*(layer?.955:1);
+  const width=dim.x*(bang?.0185:side?.0245:.0285)*(layer?.955:1);
   const baseZ=Math.min(root.z,cz-dim.z*.12);
   for(let i=0;i<=segments;i++){
    const t=i/segments;
@@ -77,6 +78,7 @@ export function buildHeroineFantasyLongHair(scalp,{lengthInHeads=3.25}={}){
    // ending in narrow soft tips rather than full-width flat ribbons.
    const r=width*(.96-.83*Math.pow(t,1.84))*(1+.14*Math.sin(t*Math.PI));
    lowestY=Math.min(lowestY,y);
+   if(bang)lowestBangY=Math.min(lowestBangY,y);
    for(let k=0;k<radial;k++){
     const u=k/(radial-1);
     // A shallow curved cross-section gives each long lock real volume.
@@ -154,6 +156,8 @@ export function buildHeroineFantasyLongHair(scalp,{lengthInHeads=3.25}={}){
   staticUnrigged:true,referenceBasedApproximation:true,
   roundedCrossSection:true,layeredVolume:true,
   denseFringe:true,softTaperedTips:true,sourceAnchored:true,
+  eyebrowSafeFringe:true,
+  fringeTipMinYNormalized:Number(((lowestBangY-box.min.y)/dim.y).toFixed(3)),
   rearLocks,faceFramingLocks,bangLocks,
   lockCount:rearLocks+faceFramingLocks+bangLocks,
   lengthInHeads:Number(lengthInHeads.toFixed(2)),
