@@ -21,7 +21,7 @@ on:
 permissions:
   contents: read
 jobs:
-  100k-face-wire-render:
+  heroine-face-wire-render:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
