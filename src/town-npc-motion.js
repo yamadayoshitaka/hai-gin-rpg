@@ -24,10 +24,10 @@ export function townNpcGait(seconds,{walking=false,phase=0,speed=1}={}){
  const t=(seconds*2.6+phase)*Math.max(.65,Math.min(1.5,speed));
  const sine=Math.sin(t),step=walking?sine:0;
  return {
-  leftLeg:step*.35,rightLeg:-step*.35,
+  leftLeg:walking?step*.35:0,rightLeg:walking?-step*.35:0,
   leftKnee:walking?Math.max(0,-sine)*.19:0,
   rightKnee:walking?Math.max(0,sine)*.19:0,
-  leftArm:-step*.25,rightArm:step*.25,
+  leftArm:walking?-step*.25:0,rightArm:walking?step*.25:0,
   breathing:Math.sin(seconds*1.4+phase)*.012
  };
 }
