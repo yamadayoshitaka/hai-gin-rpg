@@ -577,6 +577,8 @@ import {ShaderPass} from 'three/addons/postprocessing/ShaderPass.js';
 import {OutputPass} from 'three/addons/postprocessing/OutputPass.js';
 import {FXAAShader} from 'three/addons/shaders/FXAAShader.js';
 import {CHARACTER_MODEL_REGISTRY} from './src/character-model-registry.js';
+import {MODEL_FIRST_CATALOG} from './src/model-first-catalog.js';
+import {STARTER_TOWN} from './src/starter-town.js';
 import {createCharacter} from './src/character-system/shared-character-runtime.js?v=4.6.36';
 import {buildRiggedJobOutfit} from './src/character-system/rigged-outfit-runtime.js?v=4.6.15';
 import {batchStaticStageDecorations} from './src/stage-static-instancing.js?v=4.6.36';
@@ -2676,62 +2678,55 @@ function townShopkeeperSetup(){
  }
 }
 
-// Twenty visible outdoor citizens in addition to the six fully rigged player
-// and shopkeeper models. Shared geometries keep the crowd inexpensive on mobile.
+// Town residents share the model-first register; none are cylinder/sphere stand-ins.
 const townStreetCitizens=(()=>{
  if(!TOWN_MODE)return [];
- const sites=[
-  ...townNpcSites.slice(6),
+ const sites=[...townNpcSites.slice(6),
   [163,117,'住民'],[168,118,'住民'],[165,121,'旅人'],
-  [170,115,'住民'],[164,114,'子ども'],[169,122,'商人']
- ];
- const skinColors=[0xe7c19d,0xc89d77,0xf2ccb2,0xb58762,0xd4ab8a];
- const clothes=[0x486c8c,0x7a654d,0x536d57,0x874e5c,0x78658e,0x877c45];
- const hairs=[0x372e29,0x65442e,0x241d1c,0x796348,0x4b3633];
- const faceGeo=new THREE.SphereGeometry(.19,10,8);
- const armGeo=new THREE.CylinderGeometry(.066,.053,.52,7);
- const legGeo=new THREE.CylinderGeometry(.083,.07,.7,7);
- const torsoGeo=new THREE.CylinderGeometry(.20,.24,.64,9);
- const neckGeo=new THREE.CylinderGeometry(.08,.09,.15,7);
- const bootsGeo=new THREE.BoxGeometry(.15,.13,.26);
- const eyesGeo=new THREE.SphereGeometry(.017,6,5);
- const hairGeo=new THREE.SphereGeometry(.195,10,6,0,Math.PI*2,0,Math.PI*.45);
- const part=(parent,geo,material,x,y,z)=>{
-  const mesh=new THREE.Mesh(geo,material);mesh.position.set(x,y,z);
-  mesh.castShadow=true;mesh.receiveShadow=true;parent.add(mesh);return mesh;
- };
+  [170,115,'住民'],[164,114,'子ども'],[169,122,'商人']];
  return sites.map((site,i)=>{
   const [gx,gz]=site,role=site[3]||site[2];
-  const root=new THREE.Group();root.name='TownCitizen_'+i+'_'+role;
-  const skin=new THREE.MeshStandardMaterial({color:skinColors[i%skinColors.length],roughness:.9});
-  const fabric=new THREE.MeshStandardMaterial({color:clothes[i%clothes.length],roughness:1});
-  const pants=new THREE.MeshStandardMaterial({color:clothes[(i+2)%clothes.length],roughness:1});
-  const hair=new THREE.MeshStandardMaterial({color:hairs[i%hairs.length],roughness:.94});
-  const eye=new THREE.MeshStandardMaterial({color:0x221b17,roughness:.9});
-  part(root,torsoGeo,fabric,0,1.08,0);
-  part(root,neckGeo,skin,0,1.47,0);
-  part(root,faceGeo,skin,0,1.65,0);
-  part(root,hairGeo,hair,0,1.72,0);
-  for(const side of [-1,1]){
-   const arm=new THREE.Group();arm.position.set(side*.235,1.35,0);
-   part(arm,armGeo,fabric,side*.02,-.26,0);
-   part(arm,new THREE.SphereGeometry(.067,7,6),skin,side*.02,-.52,0);
-   root.add(arm);
-   const leg=new THREE.Group();leg.position.set(side*.112,.77,0);
-   part(leg,legGeo,pants,0,-.38,0);
-   part(leg,bootsGeo,hair,0,-.74,.055);
-   root.add(leg);
-   if(side<0)root.userData.leftLeg=leg;
-   else root.userData.rightLeg=leg;
-   part(root,eyesGeo,eye,side*.075,1.66,.171);
-  }
-  root.scale.setScalar(role==='子ども'?.76:1);
-  root.rotation.y=i%7*Math.PI/3.5;
+  const citizen=STARTER_TOWN.citizens[i%STARTER_TOWN.citizens.length];
+  const sex=(i%4===0||/ミラ|娘|少女|買い物客/.test(citizen?.name||''))?'female':'male';
+  const modelKey=sex==='female'?'civilianFemale':'civilianMale';
+  const root=new THREE.Group();root.name='TownCitizen_'+i+'_'+(citizen?.name||role);
   root.position.set((gx-6)*CELL,terrainY((gx-6)*CELL,(gz-6)*CELL),(gz-6)*CELL);
-  root.userData.townRole=role;root.traverse(n=>{if(n.isMesh)n.castShadow=false;});scene.add(root);
-  return {root,x:root.position.x,z:root.position.z,phase:i*1.13,walk:i%3===0};
+  root.userData.townRole=role;root.userData.modelRegistryId=modelKey;
+  root.userData.townCitizenId='street-'+i;root.userData.nonColliding=true;scene.add(root);
+  return {root,name:citizen?.name||role,role,id:'street-'+i,sex,modelKey,
+   x:root.position.x,z:root.position.z,phase:i*1.13,walk:i%3===0,mixer:null,loaded:false};
  });
 })();
+async function hydrateTownCitizens(){
+ if(!TOWN_MODE)return;
+ const loader=new GLTFLoader(),sources=new Map();
+ const getSource=key=>{
+  if(!sources.has(key))sources.set(key,loader.loadAsync(MODEL_FIRST_CATALOG[key].url));
+  return sources.get(key);
+ };
+ await Promise.all(['civilianMale','civilianFemale'].map(getSource));
+ for(const citizen of townStreetCitizens){
+  const source=await getSource(citizen.modelKey);
+  const model=cloneSkinned(source.scene);
+  const bounds=new THREE.Box3().setFromObject(model,true);
+  const dimensions=bounds.getSize(new THREE.Vector3()),center=bounds.getCenter(new THREE.Vector3());
+  if(!Number.isFinite(dimensions.y)||dimensions.y<=.01)throw Error('Invalid registered villager model: '+citizen.modelKey);
+  const factor=Math.max(.1,Math.min(10,(citizen.sex==='female'?1.63:1.74)/dimensions.y));
+  model.scale.setScalar(factor);
+  model.position.set(-center.x*factor,-bounds.min.y*factor,-center.z*factor);
+  model.userData.sourceModelId=citizen.modelKey;
+  model.traverse(node=>{if(node.isMesh||node.isSkinnedMesh){
+   node.frustumCulled=false;node.castShadow=false;node.receiveShadow=true;
+  }});
+  citizen.root.add(model);
+  const clips=source.animations||[];
+  const clip=clips.find(c=>citizen.walk?/walk|run/i.test(c.name):/idle|stand/i.test(c.name))||
+   clips.find(c=>/idle|stand/i.test(c.name));
+  if(clip){citizen.mixer=new THREE.AnimationMixer(model);citizen.mixer.clipAction(clip).play();}
+  citizen.loaded=true;
+ }
+ if(townStreetCitizens.some(c=>!c.loaded))throw Error('Town citizen models are incomplete');
+}
 const townContactShadowTex=(()=>{
  if(!TOWN_MODE)return null;
  const canvas=document.createElement('canvas');canvas.width=canvas.height=64;
@@ -7459,12 +7454,12 @@ function animateTown(){
   a.outfit?.sync();
  }
  for(const citizen of townStreetCitizens){
+  citizen.mixer?.update(dt);
   if(!citizen.walk)continue;
   const phase=elapsed*1.7+citizen.phase;
   citizen.root.position.x=citizen.x+Math.sin(phase)*.42;
   citizen.root.position.y=terrainY(citizen.root.position.x,citizen.root.position.z);
-  citizen.root.userData.leftLeg.rotation.x=Math.sin(phase*2.1)*.32;
-  citizen.root.userData.rightLeg.rotation.x=-Math.sin(phase*2.1)*.32;
+  // Registered animations own the skeleton. No primitive leg rotations.
  }
  controls.update();
  const floor=terrainY(camera.position.x,camera.position.z)+1.8;
@@ -7747,6 +7742,7 @@ async function finishBattleLoading(){
   const stageBgmReady=battleAudio.prepare();
   loadingProgress('人物モデルと衣装をロード中…',42);
   await installBattleModels();
+  if(TOWN_MODE)await hydrateTownCitizens();
   // The original photographed live rigs represent tiny faraway actors.
   // Near characters continue to use their complete rig, texture and outfit.
   if(!TOWN_MODE&&!massSim&&!storyRequest){
