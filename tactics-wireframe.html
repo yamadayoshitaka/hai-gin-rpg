@@ -6173,7 +6173,7 @@ function makeSquadLabel(id,team){
  leader.setAttribute('class',team===0?'ally':'enemy');
  anchorDot.setAttribute('class',team===0?'ally':'enemy');
  anchorDot.setAttribute('r','3.3');
- leader.hidden=true;anchorDot.hidden=true;
+ leader.style.display='none';anchorDot.style.display='none';
  lineLayer.append(leader,anchorDot);
  $('squadScreenLabels').append(label);
  sprite.userData.calloutLine=leader;sprite.userData.calloutDot=anchorDot;
@@ -6450,15 +6450,15 @@ function updateSquadScreenLabels(dt){
  for(const [key,marker] of squadMarkers){
   const label=marker.userData.screenLabel;
   if(pageZoomed||!marker.visible){
-   label.hidden=true;marker.userData.calloutLine.hidden=true;
-   marker.userData.calloutDot.hidden=true;continue;
+   label.hidden=true;marker.userData.calloutLine.style.display='none';
+   marker.userData.calloutDot.style.display='none';continue;
   }
   squadScreenPoint.copy(marker.position).project(camera);
   const x=rect.left+(squadScreenPoint.x+1)*rect.width*.5;
   const y=rect.top+(1-squadScreenPoint.y)*rect.height*.5;
   if(!Number.isFinite(x)||!Number.isFinite(y)){
-   label.hidden=true;marker.userData.calloutLine.hidden=true;
-   marker.userData.calloutDot.hidden=true;continue;
+   label.hidden=true;marker.userData.calloutLine.style.display='none';
+   marker.userData.calloutDot.style.display='none';continue;
   }
   // Even an off-screen squad gets an edge-anchored leader line. Never hide
   // a live or defeated formation simply because another circle is near it.
@@ -6474,7 +6474,7 @@ function updateSquadScreenLabels(dt){
  for(const point of points){
   const marker=point.marker,label=marker.userData.screenLabel;
   const pos=placements.get(point.key),leader=marker.userData.calloutLine,dot=marker.userData.calloutDot;
-  if(!pos){label.hidden=true;leader.hidden=true;dot.hidden=true;continue;}
+  if(!pos){label.hidden=true;leader.style.display='none';dot.style.display='none';continue;}
   const id=String(marker.userData.squadId),team=marker.userData.team;
   const chosen=(selectedCircleSquad?.team===team&&selectedCircleSquad?.id===id&&!squadCircleInfo.hidden)||
    (team===0&&id===activeId&&(selecting||!$('squadTactics').hidden))||
@@ -6488,11 +6488,11 @@ function updateSquadScreenLabels(dt){
   label.dataset.offscreen=pos.outside?'true':'false';
   label.hidden=false;
   const line=squadCalloutLeader(pos);
-  leader.hidden=!line;
+  leader.style.display=line?'':'none';
   if(line)leader.setAttribute('d',line);
   dot.setAttribute('cx',String(Math.round(pos.anchorX*10)/10));
   dot.setAttribute('cy',String(Math.round(pos.anchorY*10)/10));
-  dot.hidden=false;
+  dot.style.display='';
   if(selectedCircleSquad?.team===team&&selectedCircleSquad?.id===id&&!squadCircleInfo.hidden)
    positionSquadCircleInfo(label);
   if(chosen&&!$('squadTactics').hidden)positionSquadMenuBelowLabel(id);
