@@ -483,9 +483,12 @@ function tintOriginalCloth(root,color){
 function disposeOwnedPreviewHair(root){
  if(!root)return;
  root.traverse(o=>{
-  if(!o.isMesh||o.name.startsWith('LICENSE_CC_BY_4_HIGH_DENSITY'))return;
-  // Do not dispose the fetched CC-BY donor asset. Heroine 100k filaments,
-  // authored coiffures and the cloned fitted scalp are preview-owned.
+  if(!o.isMesh)return;
+  // Donor meshes share their geometry with the GLTFLoader cache.
+  // Their hierarchy root, not each child mesh, is named LICENSE_....
+  for(let ancestor=o;ancestor&&ancestor!==root;ancestor=ancestor.parent)
+   if(ancestor.name==='LICENSE_CC_BY_4_HIGH_DENSITY_FITTED_HAIR')return;
+  // Only the separately authored coiffure and cloned scalp are owned.
   o.geometry?.dispose();
   for(const mat of Array.isArray(o.material)?o.material:[o.material])mat?.dispose();
  });
