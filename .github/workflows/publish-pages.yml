@@ -12,9 +12,9 @@ permissions:
   id-token: write
 concurrency:
   group: pages
-  # A stale oversized deployment should never block the corrected compact build.
-  # The latest commit supersedes a failing Pages sync immediately.
-  cancel-in-progress: true
+  # Concurrent main merges used to cancel every Pages deploy before upload.
+  # Keep one running and one queued so rapid changes cannot starve publishing.
+  cancel-in-progress: false
 jobs:
   deploy:
     if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
