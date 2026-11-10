@@ -196,4 +196,11 @@ test('boy and girl presets use different measured facial proportions, with origi
  assert.equal(changed.proportions.irisOffsetY,.002);
  assert.equal(changed.proportions.browOffsetZ,-.003);
  assert.equal(girl.proportions.irisOffsetY,0,'Featured preset was mutated');
+ const bare=validateAppearanceOverrides(girl,{makeup:{strength:0}});
+ assert.equal(bare.makeup.strength,0);
+ assert.equal(girl.makeup.strength,.93,'Makeup toggle must not mutate authored default');
+ const on=validateAppearanceOverrides(bare,{makeup:{strength:.93}});
+ assert.equal(on.makeup.strength,.93);
+ assert.throws(()=>validateAppearanceOverrides(boy,{makeup:{strength:1}}),/only available/);
+ assert.throws(()=>validateAppearanceOverrides(girl,{makeup:{strength:2}}),/out of range/);
 });
