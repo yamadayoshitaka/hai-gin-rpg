@@ -22,17 +22,21 @@ header{display:flex;align-items:center;justify-content:space-between;gap:8px;bac
 #selectedInfo small{display:block;color:#c3d0d5;font-size:11px;line-height:1.35}
 #sortie{border:1px solid #e0c184;background:#795b31;border-radius:7px;min-width:91px;padding:11px 10px;font-weight:800;white-space:nowrap}
 #feedback{min-height:15px;font-size:11px;color:#ffe0aa;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#continentLore{color:#eee2c6;font-size:11px;line-height:1.45;background:#122637b8;border-left:3px solid #d8bf87;padding:6px 8px;max-height:57px;overflow:auto}
+.pin.stage-pin{min-width:80px;background:#132637ea;line-height:1.2;font-size:11px}.pin.stage-pin.selected{outline:3px solid #ffe3a2}.pin.stage-pin.locked{opacity:.65}
 @media(max-height:660px){#chapterPanel{gap:5px;padding-top:5px}#stageGrid{grid-template-rows:repeat(2,minmax(37px,1fr))}.stage{min-height:37px;padding:4px}#selectedInfo{min-height:45px;padding:5px 8px}.pin{padding:3px}}
 </style></head><body>
 <main id="world"><header><div><strong>大陸全図・戦記</strong><small id="summary">領地とステージを選択</small></div><nav><button id="homeTown">🏘 町へ戻る</button><button id="toTitle">☰ タイトル</button></nav></header>
 <section id="mapViewport" aria-label="ワールドマップ"><div id="mapBoard" role="group" aria-label="三勢力の領土"></div><div class="map-caption">地図で領地を選択・ステージは下の10枠から</div><div class="pan"><button id="panLeft" type="button">◀ 地図</button><button id="panReset" type="button">中央</button><button id="panRight" type="button">地図 ▶</button></div></section>
 <section id="chapterPanel"><div class="chapter-head"><button id="prevChapter">◀ 前章</button><h2 id="chapterTitle">第1章</h2><button id="nextChapter">次章 ▶</button></div>
 <div class="meta"><span id="chapterSubtitle"></span><span id="clearCount">0 / 200</span></div>
+<div id="continentLore" aria-live="polite"></div>
 <div id="stageGrid" role="group" aria-label="選択した章の全10ステージ"></div>
 <div id="selectedInfo"><div><strong id="stageTitle"></strong><small id="stageRequirement"></small></div><button id="sortie" type="button">出撃 ▶</button></div>
 <div id="feedback" role="status" aria-live="polite"></div></section></main>
 <script type="module">
 import {STORY_CHAPTERS} from './src/story-chapters.js';
+import {continentForChapter,continentMapUrl,continentStagePoints} from './src/continent-campaign.js';
 import {TERRITORIES,FACTIONS} from './src/story-campaign.js';
 import {CAMPAIGN_STAGES,CAMPAIGN_STAGE_BY_ID,STAGE_KINDS,chapterAvailable,stagesInChapter,stageUnlocked} from './src/campaign-stage-plan.js';
 import {loadGame,persistSession,stageAtTown,selectCampaignStage,validGame} from './src/game-core-flow.js';
@@ -55,19 +59,37 @@ function setPan(amount){
  pan=Math.max(-extra,Math.min(extra,amount));board.style.setProperty('--pan',pan+'px');
 }
 function renderPins(){
- $('mapBoard').innerHTML=TERRITORIES.map(t=>{
-  const owner=game.campaign.owners[t.id]||t.owner;
-  const color=({player:'#68c7ee',crimson:'#f58a78',verdant:'#94d7a1',neutral:'#8d98a5'})[owner]||'#8d98a5';
-  return '<button type="button" class="pin" data-territory="'+t.id+'" style="left:'+t.mapX+'%;top:'+t.mapY+'%;--faction:'+color+'" aria-pressed="'+(territory===t.id)+'" title="'+escapeHtml(FACTIONS[owner]?.name||'未所属')+'">'+escapeHtml(t.name)+'</button>';
+ const board=$('mapBoard');
+ if(chapter===1){
+  board.style.backgroundImage="url('./assets/story-world-map-v0.5.webp')";
+  board.setAttribute('aria-label','第1章・灰銀大陸の領土');
+  board.innerHTML=TERRITORIES.map(t=>{
+   const owner=game.campaign.owners[t.id]||t.owner;
+   const color=({player:'#68c7ee',crimson:'#f58a78',verdant:'#94d7a1',neutral:'#8d98a5'})[owner]||'#8d98a5';
+   return '<button type="button" class="pin" data-territory="'+t.id+'" style="left:'+t.mapX+'%;top:'+t.mapY+'%;--faction:'+color+'" aria-pressed="'+(territory===t.id)+'" title="'+escapeHtml(FACTIONS[owner]?.name||'領地')+'">'+escapeHtml(t.name)+'</button>';
+  }).join('');
+  return;
+ }
+ board.style.backgroundImage=continentMapUrl(chapter);
+ board.setAttribute('aria-label','第'+chapter+'章・'+continentForChapter(chapter).name);
+ const stages=stagesInChapter(chapter),spots=continentStagePoints(chapter);
+ board.innerHTML=stages.map((stage,i)=>{
+  const spot=spots[i],unlocked=stageUnlocked(stage,game.completedStages),done=game.completedStages.includes(stage.id);
+  const label=String(stage.slot).padStart(2,'0')+' '+(stage.slot===1?'拠点':stage.slot===10?'決戦':stage.storyBeat);
+  return '<button type="button" class="pin stage-pin '+(unlocked?'':'locked ')+(selected===stage.id?'selected':'')+'" data-stage-pin="'+stage.id+
+   '" style="left:'+spot.x.toFixed(2)+'%;top:'+spot.y.toFixed(2)+'%;--faction:'+(done?'#8bd9a6':unlocked?'#e9c989':'#7b8b95')+
+   '" aria-pressed="'+(selected===stage.id)+'" title="'+escapeHtml(stage.name)+'">'+(done?'✓ ':unlocked?'':'🔒 ')+escapeHtml(label)+'</button>';
  }).join('');
 }
 function render(){
  $('prevChapter').disabled=chapter===1;$('nextChapter').disabled=chapter===20;
  const ch=STORY_CHAPTERS[chapter-1],available=chapterAvailable(chapter,game.completedStages);
  $('chapterTitle').textContent='第'+chapter+'章　'+ch.title;
- $('chapterSubtitle').textContent=(available?'作戦可能':'未解放')+' · '+ch.location+' · 10ステージ';
+ $('chapterSubtitle').textContent=(available?'作戦可能':'未解放')+' · '+continentForChapter(chapter).name+' · 10ステージ';
  $('clearCount').textContent=game.completedStages.length+' / 200';
  $('summary').textContent=game.playerName+'の軍団　'+game.campaign.squads.reduce((n,s)=>n+s.count,0)+'人';
+ const continent=continentForChapter(chapter);
+ $('continentLore').textContent='【'+continent.arc+'】'+continent.conflict+'　'+ch.synopsis;
  const stages=stagesInChapter(chapter);
  $('stageGrid').innerHTML=stages.map(stage=>{
   const cleared=game.completedStages.includes(stage.id),unlocked=stageUnlocked(stage,game.completedStages);
@@ -82,6 +104,8 @@ function render(){
  renderPins();
 }
 $('mapBoard').addEventListener('click',event=>{
+ const stagePin=event.target.closest('[data-stage-pin]');
+ if(stagePin){selected=stagePin.dataset.stagePin;render();message(CAMPAIGN_STAGE_BY_ID[selected].name+'を選択しました。');return;}
  const el=event.target.closest('[data-territory]');if(!el)return;
  territory=el.dataset.territory;
  const matches=CAMPAIGN_STAGES.filter(s=>s.territoryId===territory);
