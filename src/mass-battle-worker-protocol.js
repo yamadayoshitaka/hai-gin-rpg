@@ -10,7 +10,7 @@ export const MASS_UNIT_FIELDS=Object.freeze([
   'defendSeconds','defendPhysicalReduction','defendElementalReduction',
   'strategistAttackBonus','strategistDefenseMultiplier',
   'highGroundRouteIndex','highGroundPhase','highGroundStep','highGroundT','highGroundFloor',
-  'upperPursuitTargetId'
+  'upperPursuitTargetId','currentTargetSquadId'
 ]);
 export const MASS_UNIT_STRIDE=MASS_UNIT_FIELDS.length;
 const ACTIONS=Object.freeze(['advance','walk','attack','hold','blocked','skill','idle']);
