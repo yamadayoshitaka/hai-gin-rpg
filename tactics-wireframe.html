@@ -7791,7 +7791,7 @@ const lastShadowFocus=new THREE.Vector3(Infinity,Infinity,Infinity);
 // shared instanced material: only the selected tree is temporarily rehydrated.
 // The sightline cutaway must only affect ordinary opaque tree crowns.
 // Never ghost or hide fences, flower trees, planters, stalls or street furniture.
-const cameraTreeCandidates=stageBatchStats.occlusionCandidates.filter(item=>item.tree);
+const cameraTreeCandidates=stageBatchStats.occlusionCandidates.filter(item=>item.id==='tree_deciduous_001');
 const cameraTreeByKey=new Map(cameraTreeCandidates.map(tree=>[tree.key,tree]));
 let cameraOccludedTrees=new Set();
 let cameraOccludedBuildings=new Set();
