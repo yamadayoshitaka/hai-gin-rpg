@@ -5734,6 +5734,9 @@ function issueSquadOrder(mode,point=null){
   beginCommanderCinematic(id);
   emitSquadBuffEffect(id,mode==='defend'?'earth':mode==='charge'?'fire':'arcane');
   battleAudio.orderFanfare();
+ }else{
+  // Movement, cancellation and structure missions also count as orders.
+  beginCommanderCinematic(id);
  }
  return true;
 }
@@ -5934,6 +5937,7 @@ function requestSquadRecovery(targetId){
  markRibbonOrderIssued(id);
  squadOrderRegistry.set(request.supportId,{mode:'heal',...request});
  battleCeremony.showOrder(squadName(id)+'へ回復支援！');
+ beginCommanderCinematic(id);
  battleAudio.orderFanfare();
  log(squadName(id)+'へ回復要請：'+squadName(request.supportId)+'が広域回復魔法で支援');
  refreshSquadOrderLabel();drawSquadMiniMap();
