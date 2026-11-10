@@ -33,7 +33,7 @@ export function layoutSquadCallouts(points, bounds, previous = new Map()) {
     for(const index of free){
       const spot=slots[index],distance=Math.hypot(spot.x-anchorX,spot.y-anchorY);
       // A callout normally sits beside its target, not directly over the unit.
-      const coverPenalty=Math.max(0,diameter*.83-distance)*1.2;
+      const coverPenalty=Math.max(0,diameter*.90-distance)*4;
       // Blue labels prefer west, red east; a congested side can still spill.
       const sidePenalty=point.team===0?Math.max(0,spot.x-middle)*.6:
         Math.max(0,middle-spot.x)*.6;
