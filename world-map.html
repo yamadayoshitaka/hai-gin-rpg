@@ -128,7 +128,7 @@ $('prevChapter').onclick=()=>changeChapter(-1);$('nextChapter').onclick=()=>chan
 $('sortie').onclick=()=>{
  try{
   const stage=selectCampaignStage(game,selected);
-  if(stage.kind==='town'){saveSession();location.href='./town-hub.html?v=town-visit-20261110';return;}
+  if(stage.kind==='town'){saveSession();location.href='./town-hub.html?opening=1&v=continent-visit-20261110';return;}
   const request=makeCoreBattleRequest(game,stage.id,Date.now().toString(36)+'-'+Math.random().toString(36).slice(2));
   sessionStorage.setItem(CORE_BATTLE_PENDING_KEY,JSON.stringify(request));
   sessionStorage.setItem('hai-gin-story-sortie-v1',JSON.stringify(request));
