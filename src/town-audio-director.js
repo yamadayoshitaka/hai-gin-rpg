@@ -23,7 +23,10 @@ const TONES={
 };
 export function createTownAudioDirector({storage=null,onChange=()=>{}}={}){
  let enabled=true;
- try{enabled=storage?.getItem(PREF_KEY)!=='false'}catch{}
+ try{
+  const core=JSON.parse(storage?.getItem('hai-gin-core-settings-v1')||'{}')||{};
+  enabled=core.bgm!==false&&storage?.getItem(PREF_KEY)!=='false';
+ }catch{}
  let scene='town',audio=null,context=null,unlocked=false,narration=false,disposed=false;
  let lastToneAt=0;
  const notify=()=>onChange({enabled,scene,unlocked,playing:Boolean(audio&&!audio.paused)});
@@ -84,7 +87,11 @@ export function createTownAudioDirector({storage=null,onChange=()=>{}}={}){
  }
  function setEnabled(value){
   enabled=Boolean(value);
-  try{storage?.setItem(PREF_KEY,enabled?'true':'false')}catch{}
+  try{
+   storage?.setItem(PREF_KEY,enabled?'true':'false');
+   const core=JSON.parse(storage?.getItem('hai-gin-core-settings-v1')||'{}')||{};
+   storage?.setItem('hai-gin-core-settings-v1',JSON.stringify({...core,bgm:enabled}));
+  }catch{}
   if(!enabled)audio?.pause();
   else tryPlay();
   notify();
