@@ -5531,7 +5531,7 @@ const battleDialogue=createBattleStrategistDialogue({
   return storyRequest?.commanders?.find(c=>String(c.id)===String(cmdId))??null;
  },
  onFocus:report=>{
-  if(!battleReady||finished||pickingSquadDestination||pickingSquadMission||pickingStrategistWarp)return;
+  if(!battleReady||finished||commandOverviewLocked||pickingSquadDestination||pickingSquadMission||pickingStrategistWarp)return;
   if(dialogueCameraReturn&&!report.fromMessageTap)return;
   const roster=massSim?.units??actors;
   const strategist=roster.find(u=>u.team===0&&u.isStrategist&&
@@ -5574,6 +5574,8 @@ const squadRecoveryRequests=new Map();
 
 const squadCommanderAliveHistory=new Map();
 let pickingSquadDestination=false,pickingSquadMission=null,pickingStrategistWarp=false,squadMarkerClock=0,squadSelectionReturn=null,selectedSquadId=null;
+// An issued command is selected from a stable full-field tactical overview.
+let commandOverviewLocked=false;
 let pendingSquadMission=null,missionPreviewBox=null,pendingCircleTarget=null;
 const orderedSquad=()=>selectedSquadId;
 function squadCommanderId(id){return storyRequest?.units.find(u=>String(u.squadId)===String(id))?.commanderId??'provisional';}
@@ -5659,7 +5661,7 @@ function squadStrategist(id,team=0){
  * Keep the 1000v1000 presentation stable by throttling automatic highlights.
  */
 function queueBattleFocusCinematic(x,z,{kind='order',priority=90,team=0,detail=''}={}){
- if(!battleReady||finished||TOWN_MODE||!Number.isFinite(x)||!Number.isFinite(z))return false;
+ if(!battleReady||finished||TOWN_MODE||commandOverviewLocked||!Number.isFinite(x)||!Number.isFinite(z))return false;
  if(battleCeremony.state==='intro'||battleCeremony.state==='outro')return false;
  const stamp=performance.now(),automatic=kind==='ultimate'||kind==='result';
  // Maximum skills have their own cooldown; normal result reports never
@@ -5714,6 +5716,7 @@ function beginCommanderCinematic(squadId){
  return beginSquadFocusCinematic(squadId,0,'order');
 }
 function updateCommanderCinematic(){
+ if(commandOverviewLocked)return;
  const shot=commanderCinematic;
  if(!shot){
   if(cinematicFocusQueue.length)startBattleFocusCinematic(cinematicFocusQueue.shift());
@@ -5911,7 +5914,10 @@ function openSquadTactics(id){
   return false;
  }
  squadSelectionReturn={wasPaused:paused,follow:followCamera,gesture:cameraPanMode};
- if(!paused&&tacticalBankRemaining>0){tacticalPlanningActive=true;setBattlePaused(true);}
+ // Freeze combat for the whole order-selection transaction, even when the
+ // optional tactical bank has already been exhausted.
+ if(!paused)setBattlePaused(true);
+ if(tacticalBankRemaining>0)tacticalPlanningActive=true;
  selectedSquadId=String(id);squadQuickPage='home';squadQuickPageIndex=0;$('dockSquadSelect').value=String(id);
  pickingSquadDestination=false;pickingSquadMission=null;pickingStrategistWarp=false;clearMissionPreview();
  // Focus the ACTUAL surviving squad, not a distant or fallen strategist.
@@ -5942,6 +5948,7 @@ function openSquadTactics(id){
   setBattleCamera(focus,offset);
   setCameraActive(null);
  }
+ enterCommandOverview(); // Wide, static camera wins over the initial squad focus.
  closeBattleMenu();
  $('squadDockIdle').hidden=true;
  $('squadTactics').hidden=false;showSquadTacticsPanel('main');
@@ -5998,6 +6005,7 @@ function beginCircleTargetSelection(kind,itemId=null){
   return false;
  }
  pendingCircleTarget=candidate;
+ enterCommandOverview();
  document.body.dataset.circleTarget=kind==='attack'?'enemy':'ally';
  drawSquadMiniMap();
  $('squadTactics').hidden=true;$('destinationPrompt').hidden=false;
@@ -6038,6 +6046,7 @@ function beginSquadDestination(id){
  if(!hasSquadCommander(id)||!canChangeSquadOrder(id))return false;
  if(orderedSquad()!==String(id)&&!openSquadTactics(id))return false;
  pickingSquadDestination=true;pickingSquadMission=null;pickingStrategistWarp=false;clearMissionPreview();$('squadTactics').hidden=true;
+ enterCommandOverview();
  $('destinationPrompt').hidden=false;
  $('destinationPrompt').textContent='📍 '+squadName(id)+'：戦場または全域地図で目的地をタップ（ここで取消）';
  return true;
@@ -6049,7 +6058,11 @@ function closeSquadTactics(){
  $('squadTactics').hidden=true;$('destinationPrompt').hidden=true;$('squadDockIdle').hidden=true;
  document.body.classList.add('squad-menu-closed');
  const previous=squadSelectionReturn;squadSelectionReturn=null;
- if(tacticalPlanningActive){tacticalPlanningActive=false;if(previous&&!previous.wasPaused&&!finished)setBattlePaused(false);}
+ commandOverviewLocked=false;
+ controls.enabled=true;
+ tacticalPlanningActive=false;
+ // Restore the caller's pause state only after the order is confirmed/cancelled.
+ if(previous&&!finished&&paused!==previous.wasPaused)setBattlePaused(previous.wasPaused);
  // Restore the previous pause state; only the five-minute tactical budget pauses on entry.
  selectedSquadId=null;
  drawSquadMiniMap();
@@ -7165,6 +7178,17 @@ function setBattleCamera(focus,offset){
  controls.update();
 }
 function setCameraActive(id){for(const name of ['camOverview','camFollow'])$(name).classList.toggle('active',id===name)}
+function enterCommandOverview(){
+ // Cancel camera-stealing cut-ins, dialogue follow and pending target movement.
+ commandOverviewLocked=true;
+ commanderCinematic=null;cinematicFocusQueue.length=0;dialogueCameraReturn=null;
+ followCamera=false;focusedHumanUnitId=null;
+ controls.enabled=false;
+ const center=(WORLD_SIZE/2-6)*CELL;
+ setBattleCamera(new THREE.Vector3(center,terrainY(center,center),center),cameraOverviewOffset);
+ setCameraActive('camOverview');
+ syncSquadCloseupLabels();
+}
 setBattleCamera(cameraHome,cameraCloseOffset);
 $('camOverview').onclick=()=>{focusedHumanUnitId=null;followCamera=false;setBattleCamera(new THREE.Vector3((WORLD_SIZE/2-6)*CELL,0,(WORLD_SIZE/2-6)*CELL),cameraOverviewOffset);setCameraActive('camOverview')};
 $('camFollow').onclick=()=>{focusedHumanUnitId=null;followCamera=true;const p=selected?.root.position||actors[0]?.root.position||cameraHome;setBattleCamera(p,new THREE.Vector3(5,8,12));setCameraActive('camFollow')};
@@ -7691,7 +7715,7 @@ function animate(){
  const now=performance.now(),bankDelta=Math.max(0,(now-tacticalFrameAt)/1000);tacticalFrameAt=now;
  if(tacticalPlanningActive&&!finished){
   tacticalBankRemaining=Math.max(0,tacticalBankRemaining-bankDelta);refreshTacticalBankLabel();
-  if(tacticalBankRemaining<=0){tacticalPlanningActive=false;setBattlePaused(false);}
+  if(tacticalBankRemaining<=0){tacticalPlanningActive=false;if(!commandOverviewLocked)setBattlePaused(false);}
  }
  battleCeremony.update();
  updateBattleResultCutins();
