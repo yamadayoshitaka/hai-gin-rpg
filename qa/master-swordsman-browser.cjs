@@ -291,7 +291,7 @@ function changed(a,b,threshold=48){
        state.referenceHeroineHairReport?.lowestRelativeToScalpBottom>-.8||
        state.referenceHeroineHairReport?.noFloatingBun!==true||
        state.referenceHeroineHairReport?.originalSourceGeometryIntact!==true||
-       state.appearance.hairColor?.toLowerCase()!=='#e6bc71')
+       state.appearance.hairColor?.toLowerCase()!=='#d6a5ba')
      throw Error('Heroine must show actual source-fitted blonde LONG 3D hair: '+
        JSON.stringify({hairReport:state.referenceHeroineHairReport,
         hairError:state.hairError,visible:state.longBlondeHeroineHairShown,
@@ -304,7 +304,7 @@ function changed(a,b,threshold=48){
     if((state.referenceHeroineHairReport?.bangLocks||0)<6000||
        state.referenceHeroineHairReport?.individualFilamentCount!==100000||
        state.referenceHeroineHairReport?.noWidePolygonCards!==true||
-       state.referenceHeroineHairReport?.strandSegmentCount!==300000||
+       state.referenceHeroineHairReport?.strandSegmentCount!==600000||
        state.referenceHeroineHairReport?.strandRenderer!=='gpu-line-segments'||
        state.referenceHeroineHairReport?.allStrandsRendered!==true||
        state.appearance.proportions.preEarFullness>=.8||
@@ -314,7 +314,7 @@ function changed(a,b,threshold=48){
     if(solidMesh?.featuredKey!=='hero-girl-01'||
        solidMesh?.sourceGeometry!==true||
        solidMesh?.strandCount!==100000||
-       solidMesh?.strandSegments!==300000||
+       solidMesh?.strandSegments!==600000||
        solidMesh?.triangles<1000)
      throw Error('Expected genuine 3D heroine triangle topology: '+JSON.stringify(solidMesh));
     // Rendered evidence at the actual face zoom and full source wire topology.
