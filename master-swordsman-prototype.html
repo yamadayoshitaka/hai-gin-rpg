@@ -452,6 +452,9 @@ function diagnostics(){
    referenceHeroineHairShown:hairReport?.referenceHeroineHairShown===true,
    longBlondeHeroineHairShown:hairReport?.longBlondeHeroineHairShown===true,
    referenceHeroineHairReport:hairReport?.styledHairReport||null,
+   heroineOldScalpHidden:hairReport?.oldScalpHiddenForWig===true,
+   heroineBaldHeadSingleWig:hairReport?.sourceHeadBaldUnderWig===true,
+   heroineActualBodyClearance:hairReport?.bodySurfaceClearanceActive===true,
   displayCode:currentAppearance.displayCode,
    faceGeometryDigest:master.getFaceReport().geometryDigest,
    referencePortraitContour:master.getFaceReport().referenceSilhouette||null,
@@ -802,6 +805,14 @@ window.__heroSwordsmanSelectId=id=>applyCharacterId(id);
 window.__heroSwordsmanSelectFeatured=key=>applyFeaturedCharacter(key);
 window.__heroSwordsmanUpdate=overrides=>{applyCustomization(overrides);return diagnostics()};
 window.__heroSwordsmanQA=()=>diagnostics();
+window.__heroineWigQA=()=>({
+ sourceScalpVisible:importedHair?.getObjectByName('HEAD_CONFORMING_SOURCE_TOPOLOGY_SCALP')?.visible,
+ donorHairVisible:importedHair?.getObjectByName('LICENSE_CC_BY_4_HIGH_DENSITY_FITTED_HAIR')?.visible,
+ oldVikingScalpVisible:master?.getPart('scalp')?.visible,
+ strandCount:hairReport?.styledHairReport?.individualFilamentCount||0,
+ torsoCorrections:hairReport?.styledHairReport?.bodyCollisionCorrections||0,
+ sourceHeadUnchanged:hairReport?.styledHairReport?.sourceHeadUnchanged===true
+});
 window.__heroineWireframeQA=()=>({
  mode:meshMode,meshCount:actualMeshCount,triangles:actualTriangles,
  strandCount:hairReport?.styledHairReport?.individualFilamentCount||0,
