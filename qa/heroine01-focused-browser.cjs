@@ -3,6 +3,7 @@
 // face close-up + wireframe images without the unrelated full roster suite.
 const {chromium}=require('playwright');
 const fs=require('node:fs'),path=require('node:path');
+const {PNG}=require('pngjs');
 const dir='qa-screenshots/heroine01-focused';
 fs.mkdirSync(dir,{recursive:true});
 (async()=>{
@@ -37,7 +38,13 @@ fs.mkdirSync(dir,{recursive:true});
      h?.frontEyeZoneVertices>10||
      h?.neckRearClearanceCorrections<1||h?.beardFreeFrontNeck!==true||
      h?.frontNeckIntrusionVertices!==0||h?.rearLayerCount!==3||
-     h?.separatedHairObjects!==true||d.facialQA?.heroineMakeup?.strength<.5||
+     h?.separatedHairObjects!==true||
+      d.facialQA?.heroineMakeup?.strength<.9||
+      d.facialQA?.heroineMakeup?.changedVertices<100||
+      d.facialQA?.heroineMakeup?.blushVertices<1||
+      d.facialQA?.heroineMakeup?.lipVertices<1||
+      d.facialQA?.heroineMakeup?.linerVertices<1||
+      d.facialQA?.heroineMakeup?.skinShaderUsesVertexColors!==true||
      d.appearance?.youthfulness<.68||
      h?.lengthInHeads<3||h?.fringeTipMinYNormalized<.64||
      p?.preEarFullness>=.8||p?.parotidWidth>=.8||
@@ -89,8 +96,52 @@ fs.mkdirSync(dir,{recursive:true});
   const canvas=page.locator('#canvas');
   await page.locator('#portrait').click();
   await page.waitForTimeout(200);
+  const portraitFrame=await page.evaluate(()=>window.__heroinePortraitFrameQA?.());
+  if(portraitFrame?.cameraView!=='portrait'||portraitFrame.fullHeadInFrame!==true)
+   throw Error('Heroine wig/forehead is clipped out of portrait view '+JSON.stringify(portraitFrame));
   await page.screenshot({path:path.join(dir,'hero-girl-01-face-100k.png'),
    clip:await canvas.boundingBox(),timeout:90000,animations:'disabled'});
+  // WebGL evidence: cosmetics ON and OFF must visibly differ.
+  // Disable animated blinking so the only variable is the 3D face material.
+  await page.evaluate(()=>{
+   const c=document.querySelector('#autoBlink');c.checked=false;
+   c.dispatchEvent(new Event('change',{bubbles:true}));
+   window.__heroSwordsmanHoldBlink?.(0);
+  });
+  await page.waitForTimeout(180);
+  const makeupOn=PNG.sync.read(await page.screenshot({
+   clip:await canvas.boundingBox(),timeout:90000,animations:'disabled'}));
+  await page.evaluate(()=>{
+   const c=document.querySelector('#makeupOn');c.checked=false;
+   c.dispatchEvent(new Event('change',{bubbles:true}));
+  });
+  await page.waitForTimeout(180);
+  const makeupOffQA=await page.evaluate(()=>window.__heroSwordsmanQA().facialQA?.heroineMakeup);
+  if(makeupOffQA?.strength!==0||makeupOffQA.changedVertices!==0)
+   throw Error('Makeup OFF did not restore the original face vertex colors');
+  const makeupOff=PNG.sync.read(await page.screenshot({
+   path:path.join(dir,'hero-girl-01-no-makeup.png'),
+   clip:await canvas.boundingBox(),timeout:90000,animations:'disabled'}));
+  let cosmeticPixelChanges=0;
+  const width=Math.min(makeupOn.width,makeupOff.width);
+  const height=Math.min(makeupOn.height,makeupOff.height);
+  for(let y=0;y<height;y+=2)for(let x=0;x<width;x+=2){
+   const a=(y*makeupOn.width+x)*4,b=(y*makeupOff.width+x)*4;
+   const delta=Math.abs(makeupOn.data[a]-makeupOff.data[b])+
+    Math.abs(makeupOn.data[a+1]-makeupOff.data[b+1])+
+    Math.abs(makeupOn.data[a+2]-makeupOff.data[b+2]);
+   if(delta>18)cosmeticPixelChanges++;
+  }
+  if(cosmeticPixelChanges<65)
+   throw Error('Makeup changes did not visibly affect WebGL pixels: '+cosmeticPixelChanges);
+  await page.evaluate(()=>{
+   const c=document.querySelector('#makeupOn');c.checked=true;
+   c.dispatchEvent(new Event('change',{bubbles:true}));
+  });
+  await page.waitForTimeout(180);
+  const restoredMakeup=await page.evaluate(()=>window.__heroSwordsmanQA().facialQA?.heroineMakeup);
+  if(restoredMakeup?.strength<.9||restoredMakeup.changedVertices<100)
+   throw Error('Makeup ON did not restore the heroine face');
   await page.locator('#meshMode').selectOption('wire');
   await page.waitForTimeout(200);
   const wire=await page.evaluate(()=>window.__heroineWireframeQA());
@@ -111,7 +162,7 @@ fs.mkdirSync(dir,{recursive:true});
    fibers:h.individualFilamentCount,segments:h.strandSegmentCount,
    cheek:p.cheekRoundness,preEar:p.preEarFullness,parotid:p.parotidWidth,
    sourceFaceTriangles:w.triangles,wigCollisionCorrections:h.bodyCollisionCorrections,
-   oldScalpHidden:d.heroineOldScalpHidden,
+   oldScalpHidden:d.heroineOldScalpHidden,makeupVisiblePixels:cosmeticPixelChanges,
    wigCrownCoverage:wig.crownCoverage,eyelashCount:wig.eyelashCount,
    eyeMorphRestores:restoredEye.ocularGeometryDigest===baseEye.ocularGeometryDigest,
    images:['hero-girl-01-face-100k.png','hero-girl-01-eye-morph-lashes.png','hero-girl-01-wire-100k.png','hero-girl-01-back-shoulder-clearance.png']
