@@ -8,7 +8,7 @@ export const GAME_PAGE_MUSIC=Object.freeze({
  paper:'./assets/audio/battle/ruins.ogg'
 });
 const SETTINGS_KEY='hai-gin-core-settings-v1';
-export function createGamePageAudio({storage=null,initialScene='title'}={}){
+export function createGamePageAudio({storage=null,initialScene='title',effectsOnly=false}={}){
  let enabled=true,scene=initialScene,started=false,disposed=false,element=null,ctx=null,lastSelect=0;
  try{enabled=JSON.parse(storage?.getItem(SETTINGS_KEY)||'null')?.bgm!==false}catch{}
  const ensure=()=>{
@@ -18,7 +18,7 @@ export function createGamePageAudio({storage=null,initialScene='title'}={}){
   element.volume=.29;return element;
  };
  const play=()=>{
-  if(!started||!enabled||disposed)return;
+  if(!started||!enabled||disposed||effectsOnly)return;
   const audio=ensure(),next=GAME_PAGE_MUSIC[scene]||GAME_PAGE_MUSIC.title;
   if(!audio.src.endsWith(next.replace('./','')))audio.src=next;
   audio.volume=scene==='opening'?.38:scene==='paper'?.23:.28;
