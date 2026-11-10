@@ -5199,7 +5199,11 @@ function createExplorationPicker(defaultIds=[]){
   const x=(event.clientX-rect.left)/rect.width*WORLD_SIZE,z=(event.clientY-rect.top)/rect.height*WORLD_SIZE;
   const nearest=buildings.map(b=>({b,p:position(b)})).sort((a,b)=>
    Math.hypot(a.p.x-x,a.p.z-z)-Math.hypot(b.p.x-x,b.p.z-z))[0];
-  if(!nearest||Math.hypot(nearest.p.x-x,nearest.p.z-z)>18)return;
+  // World-space distance to the squad is irrelevant; on a 160px map
+  // even distant buildings need a finger-sized, reliable tap target.
+  if(!nearest||Math.hypot(nearest.p.x-x,nearest.p.z-z)>32){
+   label.textContent='青い建物マーカーをタップしてください（遠距離でも指定可能）';return;
+  }
   selected.has(nearest.b.id)?selected.delete(nearest.b.id):selected.add(nearest.b.id);redraw();
  });
  root.append(map,label);redraw();
@@ -6212,6 +6216,11 @@ function buildSquadQuickCommands(){
   squadQuickList.append(picker.element);
   add('✓ 選択した建物を探索開始','explore',()=>{
    if(queueSquadExplorations(0,id,picker.getIds()))closeSquadTactics();
+   else{
+    const message=picker.getIds().length?'建物に到達できる経路が見つかりません。別の建物を選んでください':
+     '建物を選択してください。全域地図の青い丸は遠距離からも指定できます';
+    $('squadOrderStatus').textContent=message;log(message);
+   }
   },{enabled:availableExplorationBuildings().length>0});
  }else{
   heading('道具・移動・状態確認');
@@ -6465,7 +6474,8 @@ miniCanvas.addEventListener('pointerup',event=>{
  if(pendingCircleTarget){
   const team=pendingCircleTarget.kind==='attack'?1:0;
   const ids=team===0?squadIds:enemySquadIds;
-  const nearest=ids.map(id=>({id,center:squadCenter(id,team)})).filter(row=>row.center)
+  const nearest=ids.map(id=>({id,center:squadCenter(id,team)})).filter(row=>row.center&&
+   isSquadCircleTargetActionable(row.id,team,pendingCircleTarget))
    .sort((a,b)=>Math.hypot(a.center.x-point.x,a.center.z-point.z)-
     Math.hypot(b.center.x-point.x,b.center.z-point.z))[0];
   if(nearest&&Math.hypot(nearest.center.x-point.x,nearest.center.z-point.z)<20)
