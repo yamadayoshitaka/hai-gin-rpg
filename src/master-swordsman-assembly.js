@@ -198,7 +198,7 @@ export function applyHeroineMakeupToFace(faceMesh,neutralColors,{
   const lips=front*bell(x,0,.315)*
    (.88*bell(y,.489,.018)+.80*bell(y,.447,.020))*
    intensity*THREE.MathUtils.clamp(lip,0,1);
-  const lipSeam=front*bell(x,0,.29)*bell(y,.395,.009)*
+  const lipSeam=front*bell(x,0,.29)*bell(y,.467,.0065)*
    intensity*THREE.MathUtils.clamp(lip,0,1);
   // Dark-brown upper lash line, located against the SOURCE sclera anchors,
   // not an unrelated eyebrow-height strip. Keeps the eyeballs exposed.
