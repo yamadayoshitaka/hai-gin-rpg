@@ -740,7 +740,7 @@ import {updateDefensivePosture} from './src/battle-defensive-doctrine.js?v=4.6.1
 import {chooseBlockedMovementDetour} from './src/battle-movement-recovery.js?v=4.6.15';
 import {findStableGridPath,stableGridNext,sameNavigationCell} from './src/battle-stable-grid-route.js?v=4.6.36';
 import {formatSquadIntent} from './src/battle-squad-intent.js?v=4.6.45';
-import {sortSquadRibbon,squadRibbonStatus,secondsUntilNextOrder} from './src/battle-command-roster.js?v=4.6.47';
+import {sortSquadRibbon,squadRibbonStatus,ORDER_COOLDOWN_SECONDS} from './src/battle-command-roster.js?v=4.6.69';
 import {describeSquadOrder,describeCommanderBuff} from './src/battle-order-message.js?v=4.6.40';
 import {recommendBattleTactics} from './src/battle-quick-recommendation.js?v=4.6.43';
 import {chooseAutoSquadItem} from './src/battle-auto-item-policy.js?v=1';
@@ -2074,7 +2074,7 @@ let globalOrder='eliminate',selected=null,paused=false,finished=false,elapsed=0,
 let tacticalBankRemaining=TACTICAL_TIME_BANK_SECONDS,tacticalPlanningActive=false,tacticalFrameAt=performance.now();
 let squadQuickPage='home',squadQuickPageIndex=0;
 // Manual orders and manual item use share ONE 60 combat-second cooldown per squad.
-const SQUAD_MANUAL_COMMAND_COOLDOWN=60;
+const SQUAD_MANUAL_COMMAND_COOLDOWN=ORDER_COOLDOWN_SECONDS;
 const lastSquadOrderAt=new Map();
 let lastGlobalOrderAt=null;
 function squadOrderCooldownSeconds(id){
