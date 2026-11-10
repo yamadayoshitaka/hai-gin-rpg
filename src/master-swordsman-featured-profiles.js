@@ -62,8 +62,8 @@ function buildPreset(row,i){
     eyeVertical:.002,eyeTilt:.012,
     browVertical:.002,browEyeGap:1.015,
     browWidth:1.04,browThickness:.77,browAngle:.012,
-    noseOverall:.93,noseLength:.96,noseWidth:.91,
-    noseBridge:1.01,noseTip:.91,
+    noseOverall:.88,noseLength:.96,noseWidth:.82,
+    noseBridge:1.06,noseTip:.85,
     mouthWidth:.93,mouthHeight:1.0,mouthVertical:.002,
     lipFullness:1.065,mouthCorner:.006
    }):i===0?validateFaceProportions({
@@ -84,7 +84,11 @@ function buildPreset(row,i){
   faceWidth,eyeSize:1+(eyeSize-1)*.70,shoulderSize,
   headScale:category==='hero'?(female?1.065:1.075):1,
   youthfulness:female?.69:category==='hero'?.97:.49+(i-5)*.035,
-  skinRoughness:category==='hero'?(female?.58:i===0?.43:.47):.54,
+  skinRoughness:category==='hero'?(female?.54:i===0?.43:.47):.54,
+  makeup:female?Object.freeze({
+   strength:.72,style:'natural-rose',eyeLiner:'soft',blush:'subtle',
+   lips:'rose-nude',sourceFaceOnly:true
+  }):null,
   armorStyle:female?0:category==='hero'?(i===0?1:i%3):1+(i%3),
   build:female?.955:category==='hero'?(i===0?.955:.965+i*.007):.975+(i-5)*.008,
   importance:'authored-featured-profile',sourceAssetUnique:false,
