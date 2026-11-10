@@ -250,7 +250,7 @@ export function buildHeroineFantasyLongHair(scalp,{lengthInHeads=3.25,bodyEnvelo
    const strandLength=bang?
     Math.min(d.y*(.24+.10*scatter),Math.max(.001,rootY-(b.min.y+d.y*.68))):
     side?d.y*(1.02+.54*scatter):
-    d.y*lengthInHeads*([.56,.78,.94][backLayer]+.08*scatter);
+    d.y*lengthInHeads*([.40,.54,.66][backLayer]+.06*scatter);
    const sway=(hash(seed*11.3)-.5)*d.x*.055;
    const sideDirection=bang?1:(side||Math.sign(rootX-cx)||1);
    // Nearby follicles follow a shared wave phase, not unrelated spikes.
@@ -379,6 +379,8 @@ export function buildHeroineFantasyLongHair(scalp,{lengthInHeads=3.25,bodyEnvelo
    separatedHairObjects:true,
    hairPartNames:Object.freeze(zones.map(([name])=>name)),
    rearLayerCount:3,wigPartCount:hair.children.length,
+   rearMaxLengthInHeads:Number((lengthInHeads*.72).toFixed(2)),
+   rearLayersCutBeforeAnkles:true,
   scalpRegions:Object.freeze(regions),scalpCrownRootPool:crown.length,
   rearLocks:regions.rear,faceFramingLocks:regions.templeLeft+regions.templeRight,
   bangLocks:regions.bangs,lockCount:COUNT,
