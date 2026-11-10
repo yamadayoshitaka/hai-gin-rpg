@@ -321,13 +321,29 @@ function targetView(view='full',axis='front'){
  const isFace=view==='portrait';
  const b=new THREE.Box3().setFromObject(isFace?master.head:master.actor);
  const center=b.getCenter(new THREE.Vector3()),size=b.getSize(new THREE.Vector3());
- const len=isFace?Math.max(.65,size.y*1.9):Math.max(3.1,size.y*2.05);
- const direction=axis==='side'?new THREE.Vector3(1,.10,0):
-  axis==='back'?new THREE.Vector3(0,.10,-1):new THREE.Vector3(.28,.085,1);
+ // The former .65m camera clipped the heroine's forehead and wig cap above
+ // the canvas. Frame the ENTIRE real head with margin, not just the eyes/chin.
+ if(isFace)center.y+=Math.min(size.y*.16,.09);
+ const len=isFace?Math.max(.98,size.y*2.45):Math.max(3.1,size.y*2.05);
+ const direction=axis==='side'?new THREE.Vector3(1,.06,0):
+  axis==='back'?new THREE.Vector3(0,.06,-1):new THREE.Vector3(.15,.045,1);
  orbit.target.copy(center);
  camera.position.copy(center).add(direction.normalize().multiplyScalar(len));
  camera.near=.005;camera.far=90;camera.updateProjectionMatrix();orbit.update();
 }
+window.__heroinePortraitFrameQA=()=>{
+ if(!master)return null;
+ const box=new THREE.Box3().setFromObject(master.head);
+ const center=box.getCenter(new THREE.Vector3());
+ camera.updateMatrixWorld(true);
+ const top=new THREE.Vector3(center.x,box.max.y,center.z).project(camera);
+ const bottom=new THREE.Vector3(center.x,box.min.y,center.z).project(camera);
+ return {
+  cameraView:look,topNDC:top.y,bottomNDC:bottom.y,
+  fullHeadInFrame:top.y<.91&&bottom.y>-.91&&top.y>bottom.y,
+  portraitCameraDistance:camera.position.distanceTo(orbit.target)
+ };
+};
 $('featuredCharacter').addEventListener('change',()=>{
  const key=$('featuredCharacter').value;
  (key==='soldier'?applyCharacterId(selectedId):applyFeaturedCharacter(key)).catch(console.error);
