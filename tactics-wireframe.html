@@ -772,6 +772,7 @@ import {OutputPass} from 'three/addons/postprocessing/OutputPass.js';
 import {FXAAShader} from 'three/addons/shaders/FXAAShader.js';
 import {CHARACTER_MODEL_REGISTRY} from './src/character-model-registry.js';
 import {MODEL_FIRST_CATALOG} from './src/model-first-catalog.js';
+import {TOWN_ADULT_HEIGHT,TOWN_BODY_RADIUS,TOWN_HEIGHT_LIMIT,TOWN_SCENE_MODE,townVisualCorrection,townCapsuleClear,townCameraOccluders} from './src/town-scene-policy.js';
 import {STARTER_TOWN} from './src/starter-town.js';
 import {createCharacter} from './src/character-system/shared-character-runtime.js?v=4.6.36';
 import {buildRiggedJobOutfit} from './src/character-system/rigged-outfit-runtime.js?v=4.6.15';
@@ -2840,6 +2841,16 @@ for(let team=0;team<2;team++)for(let i=0;i<TEAM_SIZE;i++){
 // Peaceful town mode drives the ORIGINAL battle map and rigged character models.
 // No substitute primitives, replica terrain, or substitute stage renderer.
 const townInput={x:0,y:0};
+// Town movement uses independent, non-combat crowd collision.
+function townHumanObstacles(hero){
+ return [
+  ...actors.filter(a=>a!==hero&&a.hp>0&&a.root.visible).map(a=>({
+   x:a.root.position.x,z:a.root.position.z,radius:TOWN_BODY_RADIUS*CELL})),
+  ...townStreetCitizens.filter(c=>c.loaded&&c.root.visible).map(c=>({
+   x:c.root.position.x,z:c.root.position.z,radius:TOWN_BODY_RADIUS*CELL}))
+ ];
+}
+
 const townAvatar=()=>actors[0]||null;
 let townShadowUpdatedAt=-Infinity,townIndoor=null,townTourView=null,townPlayerReportAt=-Infinity;
 const townServices={weapon:'weapons',shop:'items',inn:'formation',tavern:'tavern',church:'save',castle:'story'};
@@ -2902,11 +2913,23 @@ const townStreetCitizens=(()=>{
   const root=new THREE.Group();root.name='TownCitizen_'+i+'_'+(citizen?.name||role);
   root.position.set((gx-6)*CELL,terrainY((gx-6)*CELL,(gz-6)*CELL),(gz-6)*CELL);
   root.userData.townRole=role;root.userData.modelRegistryId=modelKey;
-  root.userData.townCitizenId='street-'+i;root.userData.nonColliding=true;scene.add(root);
+  root.userData.townCitizenId='street-'+i;root.userData.nonColliding=false;scene.add(root);
   return {root,name:citizen?.name||role,role,id:'street-'+i,sex,modelKey,
    x:root.position.x,z:root.position.z,phase:i*1.13,walk:i%3===0,mixer:null,poseBones:null,loaded:false};
  });
 })();
+function fitTownHumanScale(root,targetHeight,label){
+ root.updateMatrixWorld(true);
+ const before=new THREE.Box3().setFromObject(root,true).getSize(new THREE.Vector3());
+ const correction=townVisualCorrection(before,targetHeight);
+ if(correction<1){root.scale.multiplyScalar(correction);root.updateMatrixWorld(true);}
+ const measured=new THREE.Box3().setFromObject(root,true).getSize(new THREE.Vector3());
+ if(measured.y>TOWN_HEIGHT_LIMIT+1e-5)
+  throw Error('Oversized town character '+label+': '+measured.y.toFixed(2)+'m');
+ root.userData.townHeight=measured.y;
+ root.userData.townScaleCorrection=correction;
+ return measured.y;
+}
 async function hydrateTownCitizens(){
  if(!TOWN_MODE)return;
  const loader=new GLTFLoader(),sources=new Map();
@@ -2939,6 +2962,7 @@ async function hydrateTownCitizens(){
   const clip=clips.find(c=>citizen.walk?/walk|run/i.test(c.name):/idle|stand/i.test(c.name))||
    clips.find(c=>/idle|stand/i.test(c.name));
   if(clip){citizen.mixer=new THREE.AnimationMixer(model);citizen.mixer.clipAction(clip).play();}
+  fitTownHumanScale(citizen.root,TOWN_ADULT_HEIGHT[citizen.sex],citizen.id);
   citizen.loaded=true;
  }
  if(townStreetCitizens.some(c=>!c.loaded))throw Error('Town citizen models are incomplete');
@@ -3096,7 +3120,10 @@ function townFacility(){
  townEnterBuilding(entry.b);
 }
 window.getTownVisitStats=()=>({
- ready:battleReady,people:actors.length+townStreetCitizens.length,
+ ready:battleReady,sceneMode:TOWN_SCENE_MODE,people:actors.length+townStreetCitizens.length,
+ actorHeights:actors.map(a=>a.root.userData.townHeight||0),
+ citizenHeights:townStreetCitizens.map(c=>c.root.userData.townHeight||0),
+ solidCitizens:townStreetCitizens.filter(c=>c.loaded&&c.root.userData.nonColliding===false).length,
  registeredCitizenModels:townStreetCitizens.filter(c=>c.loaded).length,
  streetCitizens:townStreetCitizens.length,riggedPeople:actors.length,
  indoor:townIndoor?.kind||null,
@@ -3181,18 +3208,18 @@ function updateTownAvatar(dt){
   const dx=(side*Math.cos(yaw)+forward*Math.sin(yaw))*dt*speed;
   const dz=(-side*Math.sin(yaw)+forward*Math.cos(yaw))*dt*speed;
   const old=a.root.position;
+  const townObstacles=townHumanObstacles(a);
   const tryAxis=(nx,nz)=>{
    // A centre-only grid check clips the shoulders through trees, props and
    // walls. Sample the actual moving body capsule's horizontal footprint.
    const r=.27*CELL,diagonal=r*.707;
    for(const [ox,oz] of [[0,0],[r,0],[-r,0],[0,r],[0,-r],[diagonal,diagonal],[diagonal,-diagonal],[-diagonal,diagonal],[-diagonal,-diagonal]]){
     const px=nx+ox,pz=nz+oz,gx=px/CELL+6,gz=pz/CELL+6;
+    if(!townCapsuleClear(px,pz,townObstacles,.01*CELL))return false;
     if(townIndoor){
      const b=townIndoor.building.data;
      if(Math.abs(gx-b.x)>b.w/2-.9||Math.abs(gz-b.z)>b.d/2-.9)return false;
-     // The shopkeeper is a real solid character, not an image behind the counter.
-     if(actors.some(other=>other!==a&&other.hp>0&&
-      Math.hypot(px-other.root.position.x,pz-other.root.position.z)<.62*CELL))return false;
+     // Shopkeepers use the same physical capsules as outdoor residents.
      continue;
     }
     const probe=gridFromWorld(new THREE.Vector3(px,0,pz));
@@ -7864,7 +7891,7 @@ const lastShadowFocus=new THREE.Vector3(Infinity,Infinity,Infinity);
 // shared instanced material: only the selected tree is temporarily rehydrated.
 // The sightline cutaway must only affect ordinary opaque tree crowns.
 // Never ghost or hide fences, flower trees, planters, stalls or street furniture.
-const cameraTreeCandidates=stageBatchStats.occlusionCandidates.filter(item=>item.tree);
+const cameraTreeCandidates=townCameraOccluders(stageBatchStats.occlusionCandidates,TOWN_MODE);
 const cameraTreeByKey=new Map(cameraTreeCandidates.map(tree=>[tree.key,tree]));
 let cameraOccludedTrees=new Set();
 let cameraOccludedBuildings=new Set();
@@ -7903,7 +7930,7 @@ function cameraGoalFocuses(){
 }
 function updateCameraObstructions(){
  const distance=camera.position.distanceTo(controls.target),closeup=distance<52;
- const focuses=cameraGoalFocuses();
+ const focuses=TOWN_MODE?[controls.target]:cameraGoalFocuses();
  // Close-range combat needs a clear view across the frustum, not just six
  // translucent canopies intersecting the centre ray.
  const defaultCandidates=closeup?cameraTreeCandidates:cameraTreeCandidates.filter(item=>item.id==='tree_deciduous_001');
@@ -8478,7 +8505,11 @@ async function finishBattleLoading(){
   const stageBgmReady=battleAudio.prepare();
   loadingProgress('人物モデルと衣装をロード中…',42);
   await installBattleModels();
-  if(TOWN_MODE)await hydrateTownCitizens();
+  if(TOWN_MODE){
+   for(const actor of actors)
+    fitTownHumanScale(actor.root,TOWN_ADULT_HEIGHT[actor.sex]||1.74,'actor-'+actor.id);
+   await hydrateTownCitizens();
+  }
   // The original photographed live rigs represent tiny faraway actors.
   // Near characters continue to use their complete rig, texture and outfit.
   if(!TOWN_MODE&&!massSim&&!storyRequest){

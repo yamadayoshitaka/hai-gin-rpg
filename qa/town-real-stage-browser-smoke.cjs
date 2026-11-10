@@ -53,6 +53,16 @@ const assert=require('node:assert/strict');
   const stats=await page.evaluate(()=>document.querySelector('#townScene').contentWindow.getTownVisitStats());
   assert.ok(stats.streetCitizens>=20,'at least 20 outdoor people must exist');
   assert.ok(stats.people>=26,'the 3D stage must contain townsfolk beyond hidden shopkeepers');
+  assert.equal(stats.sceneMode,'peaceful-exploration',
+   'town movement and population must use peaceful-scene physics');
+  assert.equal(stats.solidCitizens,stats.streetCitizens,
+   'every loaded town resident needs a physical capsule');
+  for(const [kind,heights] of [['battle-origin adults',stats.actorHeights],
+    ['registered villagers',stats.citizenHeights]]){
+   assert.ok(heights.length>0,kind+' must render');
+   assert.ok(heights.every(h=>h>.45&&h<=2.05),
+    kind+' may not contain giants or tiny proxies: '+JSON.stringify(heights));
+  }
   const sunBefore=JSON.stringify([stats.shadowLight,stats.shadowTarget]);
   await page.waitForTimeout(1000);
   const sunAfter=await page.evaluate(()=>document.querySelector('#townScene').contentWindow.getTownVisitStats());
