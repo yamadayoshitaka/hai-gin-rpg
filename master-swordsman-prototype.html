@@ -141,7 +141,7 @@ footer{max-width:1170px;margin:0 auto 20px;padding:8px 16px;color:#b0c4d6;font-s
 </select>
 <h2 style="margin-top:14px">衣装・装飾</h2>
 <label><input id="outfitOn" type="checkbox" checked>実OBJ衣装・ブーツを表示</label>
-<label><input id="hairOn" type="checkbox" checked>CC BY 4.0の高密度髪（頭部合わせ）を表示</label>
+<label><input id="hairOn" type="checkbox" checked>髪を表示（美少女01は素体を坊主にし、専用ロングウィッグのみ表示）</label>
 <label><input id="beardOn" type="checkbox">ヒゲ・口ヒゲを表示</label>
 <label><input id="armorOn" type="checkbox" checked>剣・肩甲・金具（仮の造形装飾）</label>
 <label><input id="autoBlink" type="checkbox" checked>自動瞬き</label>
@@ -513,7 +513,7 @@ async function changeHairstyle(profile){
   const fit=fitCCBYHairToHead(asset.scene,master.head,{density:'source-lod0',
    featured:profile.category==='hero'||profile.category==='ally',
    style:profile.hairStyle,femaleHair:profile.gender==='female',
-   referenceCoiffure:profile.coiffureStyle||null});
+   referenceCoiffure:profile.coiffureStyle||null,torso:master.body});
   clearWireDisplay();
   if(importedHair){
    master.actor.remove(importedHair);
