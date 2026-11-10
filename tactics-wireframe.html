@@ -1464,8 +1464,8 @@ const proposedTownProps=[
 if(selectedStage.buildingMode==='wild')proposedTownProps.length=0;
 else if(selectedStage.id!=='royal-castle'){
  const allowed=id=>{
-  if(selectedStage.biome==='desert'||selectedStage.biome==='ruins')return /^(stone_|town_well)/.test(id);
-  if(selectedStage.biome==='snow'||selectedStage.biome==='highland')return /^(stone_|wooden_watchtower|town_fence)/.test(id);
+  if(selectedStage.biome==='desert'||selectedStage.biome==='ruins')return /^(stone_|town_well|town_fence|town_planter)/.test(id);
+  if(selectedStage.biome==='snow'||selectedStage.biome==='highland')return /^(stone_|wooden_watchtower|town_fence|town_planter)/.test(id);
   if(selectedStage.biome==='village')return /^(rice_paddy|vegetable_field|haystack|cottage_barrel|town_|street_lamp)/.test(id)&&!id.includes('fountain');
   if(selectedStage.biome==='coast')return !id.includes('fountain')&&!id.includes('stone_column');
   return true;
@@ -2230,7 +2230,13 @@ for(const obj of [...stageObjects.children]){
  for(let dx=-2;dx<=2&&!near;dx++)for(let dz=-2;dz<=2;dz++){
   const key=(gx+dx)+','+(gz+dz);if(bridgeCells.has(key)||bridgeApproachCells.has(key)){near=true;break}
  }
- if(near || ((gx>=62&&gx<=89&&gz>=182&&gz<=209)||(gx>=145&&gx<=172&&gz>=120&&gz<=147)) || (stageCrossingRows.some(row=>Math.abs(gz-row)<=6&&gx>=96&&gx<=136)) || (obj.userData.assetId?.includes('tree')&&((gx+gz)%11===0)))stageObjects.remove(obj);
+ const isTree=/tree/i.test(String(obj.userData.assetId||''));
+ const buildingConflict=isTree&&(
+  (gx>=62&&gx<=89&&gz>=182&&gz<=209)||
+  (gx>=145&&gx<=172&&gz>=120&&gz<=147)||
+  stageCrossingRows.some(row=>Math.abs(gz-row)<=6&&gx>=96&&gx<=136));
+ // Keep fences, hedges and flowers unless physically overlapping a bridge.
+ if(near||buildingConflict)stageObjects.remove(obj);
 }
 // The vegetation and fences are immutable during combat. Draw the exact same
 // meshes/materials through spatial GPU instancing; collision tiles stay as-is.
@@ -2839,6 +2845,18 @@ function townNearestFacility(){
  }).sort((a,b)=>a.distance-b.distance)[0];
  return nearest||null;
 }
+function townNearestResident(){
+ const hero=townAvatar();if(!hero)return null;
+ const keepers=new Set(Object.values(townShopkeeperRoles));
+ const list=[
+  ...actors.slice(1).filter(a=>a.townRole&&!keepers.has(a.townRole)).map(a=>({
+   root:a.root,id:'actor-'+a.id,name:a.displayName||a.townRole,role:a.townRole
+  })),
+  ...townStreetCitizens.map(c=>({root:c.root,id:c.id,name:c.name,role:c.role}))
+ ];
+ return list.map(c=>({...c,distance:Math.hypot(hero.root.position.x-c.root.position.x,hero.root.position.z-c.root.position.z)}))
+  .sort((a,b)=>a.distance-b.distance)[0]||null;
+}
 function townFacility(){
  const hero=townAvatar();if(!hero||!battleReady)return;
  if(townIndoor){
@@ -2847,10 +2865,18 @@ function townFacility(){
    townPost('hai-gin-town-notice',{text:'店主まで近づくと会話・買い物ができます。'});
    return;
   }
-  townPost('hai-gin-town-facility',{panel:townServices[townIndoor.kind]});
+  townPost('hai-gin-town-npc',{
+    npcId:'keeper-'+townIndoor.kind,name:townShopkeeperRoles[townIndoor.kind]||'王城の侍従',
+    panel:townServices[townIndoor.kind]
+   });
   return;
  }
  const entry=townNearestFacility();
+ const resident=townNearestResident();
+ if(resident&&resident.distance<=5.1&&(!entry||entry.distance>2)){
+  townPost('hai-gin-town-npc',{npcId:resident.id,name:resident.name,role:resident.role});
+  return;
+ }
  if(!entry||entry.distance>5){
   townPost('hai-gin-town-notice',{text:entry?'施設に近づいてください（あと'+Math.ceil(entry.distance-5)+'マス）':'利用できる建物がありません。'});
   return;
@@ -2861,6 +2887,7 @@ function townFacility(){
 }
 window.getTownVisitStats=()=>({
  ready:battleReady,people:actors.length+townStreetCitizens.length,
+ registeredCitizenModels:townStreetCitizens.filter(c=>c.loaded).length,
  streetCitizens:townStreetCitizens.length,riggedPeople:actors.length,
  indoor:townIndoor?.kind||null,
  roomDecorVisible:townIndoor?.building.townDecor?.visible||false,
