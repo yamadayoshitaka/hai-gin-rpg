@@ -245,6 +245,9 @@ window.addEventListener('message',event=>{
   $('townInteract').textContent='話す・施設';
   $('townExitBuilding').hidden=true;renderState();
  }
+ if(data.type==='hai-gin-town-near-facility'&&!insideFacility&&townReady){
+  $('townInteract').textContent=data.name?'入る・'+data.name:'話す・施設';
+ }
  if(data.type==='hai-gin-town-player'){townPlayerPosition={x:data.x,z:data.z};updateTownPlayerPin();}
  if(data.type==='hai-gin-town-stage-ready'){
   townReady=true;
