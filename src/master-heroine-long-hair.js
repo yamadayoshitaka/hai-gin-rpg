@@ -7,7 +7,7 @@ import * as THREE from 'three';
  * Roots are sampled from the source CC0 scalp's alpha-masked vertices.
  * The battle model and archived GLBs remain untouched.
  */
-const COUNT=100000,SEGMENTS=3;
+const COUNT=100000,SEGMENTS=6; // Six curved sections prevent angular temple tips.
 const fract=x=>x-Math.floor(x);
 const hash=x=>fract(Math.sin(x*127.1+17.79)*43758.5453123);
 const lerp=(a,b,t)=>a+(b-a)*t;
@@ -126,9 +126,11 @@ export function buildHeroineWigRootCap(scalp){
   // Cover entire crown and occiput, fading along side temples and eyebrow.
   const front=clamp((zn-.27)/.55,0,1);
   const lateral=clamp(Math.abs((x-cx)/(d.x*.5)),0,1);
-  const limit=.45+.32*front+.055*lateral;
-  const u=clamp((yn-limit+.06)/.115,0,1);
-  const a=yn>.86?1:u*u*(3-2*u);
+  // Hair-colored source topology must conceal the skin between pixel-wide hairs.
+  // Keep the frontal face clear; make the rear and crown consistently opaque.
+  const limit=.34+.46*front+.045*lateral;
+  const u=clamp((yn-limit+.075)/.13,0,1);
+  const a=yn>.82?1:u*u*(3-2*u);
   const o=i*4;
   color[o]=.99;color[o+1]=.96;color[o+2]=.97;color[o+3]=a;
   if(yn>.87){crownSamples++;if(a>.98)coveredCrown++;}
@@ -137,7 +139,7 @@ export function buildHeroineWigRootCap(scalp){
   throw Error('Wig crown leaves a bald scalp: '+coveredCrown+'/'+crownSamples);
  cap.setAttribute('color',new THREE.BufferAttribute(color,4));
  const material=new THREE.MeshStandardMaterial({
-  color:0xcfa8b4,vertexColors:true,side:THREE.DoubleSide,
+  color:0xb98999,vertexColors:true,side:THREE.DoubleSide,
   roughness:.88,metalness:0,transparent:true,alphaTest:.08,depthWrite:true
  });
  const mesh=new THREE.Mesh(cap,material);
@@ -201,6 +203,7 @@ export function buildHeroineFantasyLongHair(scalp,{lengthInHeads=3.25,bodyEnvelo
  const colors=new Float32Array(VERTICES*3);
  let lowestY=Infinity,lowestBangY=Infinity,frontEyeZoneVertices=0;
  let bodyCollisionCorrections=0,sideShoulderCorrections=0,rearBackCorrections=0;
+ let maxSideOutwardDrift=0;
  let vi=0;
  const regions={rear:70000,templeLeft:12000,templeRight:12000,bangs:6000};
  const categories=[
@@ -218,30 +221,34 @@ export function buildHeroineFantasyLongHair(scalp,{lengthInHeads=3.25,bodyEnvelo
    // narrow rear strip which reads as a vertical plastic hair curtain.
    const pool=region==='rear'&&j%4===0?crown:anchors;
    const q=pool[(j*67+Math.floor(hash(global+4)*pool.length))%pool.length];
-   const seed=global+1,scatter=hash(seed*1.19),waveSeed=hash(seed*3.71);
+   const seed=global+1,scatter=hash(seed*1.19);
    const rootX=q[0]+(hash(seed*4.1)-.5)*d.x*.003;
    const rootY=q[1],rootZ=q[2];
    const strandLength=bang?
     Math.min(d.y*(.24+.10*scatter),Math.max(.001,rootY-(b.min.y+d.y*.68))):
     side?d.y*(1.30+.55*scatter):
     d.y*lengthInHeads*(.83+.17*scatter);
-   const sway=(hash(seed*11.3)-.5)*d.x*.14;
+   const sway=(hash(seed*11.3)-.5)*d.x*.055;
    const sideDirection=bang?1:(side||Math.sign(rootX-cx)||1);
+   // Nearby follicles follow a shared wave phase, not unrelated spikes.
+   const flowPhase=(rootX-cx)/d.x*6.1+(rootZ-cz)/d.z*2.8;
    const light=.82+.17*hash(seed*7.83);
    let previous=null;
    for(let section=0;section<=SEGMENTS;section++){
     const t=section/SEGMENTS,fall=Math.pow(t,1.4);
-    const curl=Math.sin(t*Math.PI*2.1+waveSeed*6.28)*
-      Math.sin(Math.PI*t)*d.x*(bang?.010:side?.038:.026);
-    // Temple hairs sweep out from the ear, preserving the cheek outline;
-    // the back follows the occiput toward the waist with individual waves.
-    let x=bang?rootX+sideDirection*d.x*(.22*t+.09*fall)+curl:
-     rootX+(side?side*d.x*(.035*t+.012*fall):sway*fall)+curl;
+    const curl=Math.sin(t*4.2+flowPhase)*Math.sin(Math.PI*t)*
+      d.x*(bang?.006:side?.012:.018);
+    // Side locks fold behind the shoulders instead of pointing outwards.
+    let x=bang?rootX+sideDirection*d.x*(.17*t+.035*fall)+curl:
+     side?rootX+(cx-rootX)*(.075*t+.10*fall)+curl:
+     rootX+sway*fall+curl;
     const y=rootY-strandLength*t;
-    let z=bang?rootZ+d.z*(.13*t+.035*Math.sin(Math.PI*t)):
-     side?lerp(rootZ,cz-d.z*.23,clamp(t*1.45,0,1))-d.z*.08*fall:
-     lerp(rootZ,Math.min(rootZ,cz-d.z*.11),clamp(t*1.8,0,1))-
-      d.z*(.085*t+.10*fall);
+    const ease=t*t*(3-2*t);
+    const sweep=clamp(t*1.18,0,1),sideEase=sweep*sweep*(3-2*sweep);
+    let z=bang?rootZ+d.z*(.085*t+.012*Math.sin(Math.PI*t)):
+     side?lerp(rootZ,Math.min(rootZ,cz-d.z*.28),sideEase)-d.z*(.06*t+.06*fall):
+     lerp(rootZ,Math.min(rootZ,cz-d.z*.18),ease)-d.z*(.05*t+.10*fall);
+    if(side)maxSideOutwardDrift=Math.max(maxSideOutwardDrift,side*(x-rootX));
     // Screen-space appearance is not a collision check: push EACH REAL
     // filament vertex outside measured shoulder and back envelopes.
     if(bodyEnvelope&&!bang){
@@ -303,6 +310,8 @@ export function buildHeroineFantasyLongHair(scalp,{lengthInHeads=3.25,bodyEnvelo
   rearClearanceStrategy:'actual-body-back-envelope',
   donorScalpOnlyForRoots:true,bodyClearanceMeasured:!!bodyEnvelope,
   bodyCollisionCorrections,sideShoulderCorrections,rearBackCorrections,
+   maxSideOutwardDriftMeters:Number(maxSideOutwardDrift.toFixed(5)),
+   coherentScalpFlow:true,templeTipsTurnBehindShoulders:true,
   scalpRegions:Object.freeze(regions),scalpCrownRootPool:crown.length,
   rearLocks:regions.rear,faceFramingLocks:regions.templeLeft+regions.templeRight,
   bangLocks:regions.bangs,lockCount:COUNT,
