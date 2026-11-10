@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import {buildHeadConformingScalp} from '../src/master-swordsman-scalp-shell.js';
 import {buildHeroineWigRootCap,buildHeroineFantasyLongHair}
  from '../src/master-heroine-long-hair.js';
-import {applyEyeFixtureBlink} from '../src/master-swordsman-assembly.js';
+import {applyEyeFixtureBlink,applyHeroineMakeupToFace} from '../src/master-swordsman-assembly.js';
 import {featuredSwordsmanProfile} from '../src/master-swordsman-featured-profiles.js';
 
 test('heroine wig paints every upper-crown vertex and keeps face skin uncovered',()=>{
@@ -31,49 +31,72 @@ test('heroine wig paints every upper-crown vertex and keeps face skin uncovered'
  scalp.material.dispose();geometry.dispose();skin.material.dispose();
 });
 
-test('100k long-hair lines remain continuous with no spiky sideward flight',()=>{
+test('100k strand wig has separate fringe, temple and layered back objects',()=>{
  const head=new THREE.Group();
- const skin=new THREE.Mesh(new THREE.SphereGeometry(.19,48,32),new THREE.MeshStandardMaterial());
+ const skin=new THREE.Mesh(new THREE.SphereGeometry(.19,48,32),
+  new THREE.MeshStandardMaterial());
  head.add(skin);
  const {scalp}=buildHeadConformingScalp(head);
  const {hair,report}=buildHeroineFantasyLongHair(scalp);
+ assert.equal(hair.isGroup,true);
  assert.equal(report.individualFilamentCount,100000);
  assert.equal(report.strandSegmentCount,600000);
- assert.equal(report.coherentScalpFlow,true);
- assert.equal(report.templeTipsTurnBehindShoulders,true);
+ assert.equal(report.separatedHairObjects,true);
+ assert.equal(report.rearLayerCount,3);
+ assert.equal(report.wigPartCount,6);
+ assert.equal(hair.children.length,6);
+ assert.ok(hair.children.every(p=>p.isLineSegments&&p.userData.bodyClipped));
  assert.ok(report.maxSideOutwardDriftMeters<.02);
- assert.ok(report.neckSideSplitCorrections>1000,'The back hair must part around the neck');
  assert.equal(report.beardFreeFrontNeck,true);
- assert.equal(report.neckBeardIntrusionVertices,0);
- assert.ok(report.minimumNeckSideRadiusNormalized>=.40,
-  'Long hair must not hang from the centre of the front-view chin');
- const p=hair.geometry.getAttribute('position');
- // Independently inspect the 3D hair vertex positions, not just QA flags:
- // no rear/side hair may hang under the chin at the neck centre.
- const bb=scalp.geometry.boundingBox,sz=bb.getSize(new THREE.Vector3());
- const midX=(bb.min.x+bb.max.x)*.5;
- let napeVertices=0;
- for(let i=0;i<p.count;i+=13){
-  const y=p.getY(i);
-  if(y<=bb.min.y+sz.y*.19&&y>=bb.min.y-sz.y*.70){
-   napeVertices++;
-   assert.ok(Math.abs(p.getX(i)-midX)>=sz.x*.40-1e-5,
-    'Pink hair has fallen under the frontal chin like a beard');
+ assert.equal(report.frontNeckIntrusionVertices,0);
+ assert.ok(report.neckRearClearanceCorrections>0);
+ assert.equal(report.rearFlow,'overlapping-layers-not-forced-neck-v');
+ const bb=scalp.geometry.boundingBox,d=bb.getSize(new THREE.Vector3());
+ const cx=(bb.min.x+bb.max.x)*.5,cz=(bb.min.z+bb.max.z)*.5;
+ let napeVertices=0,segments=0;
+ for(const part of hair.children){
+  const attr=part.geometry.getAttribute('position');
+  assert.equal(attr.count%(6*2),0,'Each wig part must hold complete strands');
+  segments+=attr.count/2;
+  for(let i=0;i<attr.count;i+=37){
+   const y=attr.getY(i),x=attr.getX(i),z=attr.getZ(i);
+   if(y<=bb.min.y+d.y*.19&&y>=bb.min.y-d.y*.70){
+    napeVertices++;
+    assert.ok(Math.abs(x-cx)>=d.x*.40||z<=cz-d.z*.38+1e-5,
+     'Long pink hair hangs in front of the chin');
+   }
+  }
+  for(let strand=0;strand<attr.count/12;strand+=Math.max(1,Math.floor(attr.count/1200))){
+   const start=strand*12;
+   for(let section=0;section<5;section++){
+    const a=start+section*2+1,b=start+(section+1)*2;
+    for(const axis of ['X','Y','Z'])
+     assert.equal(attr['get'+axis](a),attr['get'+axis](b),'Broken follicle strand');
+   }
   }
  }
- assert.ok(napeVertices>200,'No measurable nape hair found');
- // The 70k rear strands are followed by 12k left and 12k right temple locks.
- const sections=report.strandSegmentCount/report.individualFilamentCount;
- for(const strand of [70000,70111,75999,81999,82000,88111,93999]){
-  const start=strand*sections*2;
-  for(let j=0;j<sections-1;j++){
-   const a=start+j*2+1,b=start+(j+1)*2;
-   for(const axis of ['X','Y','Z'])
-    assert.equal(p['get'+axis](a),p['get'+axis](b),'Disconnected hair filament');
-  }
- }
- hair.geometry.dispose();hair.material.dispose();scalp.geometry.dispose();
- scalp.material.dispose();skin.geometry.dispose();skin.material.dispose();
+ assert.equal(segments,600000);
+ assert.ok(napeVertices>200);
+ for(const part of hair.children){part.geometry.dispose();part.material.dispose();}
+ scalp.geometry.dispose();scalp.material.dispose();
+ skin.geometry.dispose();skin.material.dispose();
+});
+
+test('natural makeup edits real face vertex colors, resets and preserves source vertices',()=>{
+ const geometry=new THREE.SphereGeometry(.19,64,48);
+ const p=geometry.getAttribute('position');
+ const base=new Float32Array(p.count*3).fill(1);
+ geometry.setAttribute('color',new THREE.BufferAttribute(base.slice(),3));
+ const before=p.array.slice();
+ const face=new THREE.Mesh(geometry,new THREE.MeshStandardMaterial({vertexColors:true}));
+ const result=applyHeroineMakeupToFace(face,base,{strength:.72});
+ assert.equal(result.strength,.72);
+ assert.ok(result.blushVertices+result.lipVertices+result.linerVertices>0);
+ assert.notDeepEqual(geometry.getAttribute('color').array,base);
+ applyHeroineMakeupToFace(face,base,{strength:0});
+ assert.deepEqual(geometry.getAttribute('color').array,base);
+ assert.deepEqual(p.array,before);
+ geometry.dispose();face.material.dispose();
 });
 
 test('upper eyelid drives lashes in blink, and returning to zero restores the pose',()=>{
@@ -103,9 +126,11 @@ test('heroine face has balanced original eye nose mouth and chin ratios',()=>{
  assert.match(girl.referenceDesign,/^original-/);
  assert.ok(girl.proportions.eyeWidth>1.04&&girl.proportions.eyeWidth<1.12);
  assert.ok(girl.proportions.eyeHeight>1&&girl.proportions.eyeHeight<1.08);
- assert.ok(girl.proportions.noseWidth>=.88&&girl.proportions.noseWidth<1);
+ assert.ok(girl.proportions.noseWidth>=.78&&girl.proportions.noseWidth<.88);
  assert.ok(girl.proportions.mouthWidth>=.90&&girl.proportions.mouthWidth<1);
  assert.ok(girl.proportions.chinLength>=.95&&girl.proportions.chinLength<1.02);
  assert.ok(girl.proportions.cheekRoundness>=1&&girl.proportions.cheekRoundness<1.12);
+ assert.ok(girl.makeup.strength>.5);
+ assert.equal(girl.makeup.sourceFaceOnly,true);
  assert.equal(girl.facialArtistApproval,false);
 });
