@@ -53,6 +53,6 @@
     "test:master-face": "node --test qa/master-swordsman-assembly.test.mjs qa/master-swordsman-face-proportions.test.mjs",
     "test:face-analysis": "node qa/facial-feature-analysis.test.mjs",
     "test:town-services": "node qa/town-facility-squad-gear.test.mjs",
-    "test:town-visit": "node qa/town-visit-experience.test.mjs"
+    "test:town-visit": "node qa/town-visit-experience.test.mjs && node qa/town-audio-director.test.mjs"
   }
 }
