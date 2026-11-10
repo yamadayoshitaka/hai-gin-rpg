@@ -52,8 +52,9 @@ for(const code of [
  "delete document.body.dataset.circleTarget",
  'targetSquadPulse'
 ])assert.ok(html.includes(code),'Missing battle wiring: '+code);
-assert.match(html,/body\[data-circle-target="ally"\] \.squadScreenLabel\.ally/);
-assert.match(html,/body\[data-circle-target="enemy"\] \.squadScreenLabel\.enemy/);
+assert.match(html,/body\[data-circle-target\] \.squadScreenLabel\.eligible-target/);
+assert.doesNotMatch(html,/body\[data-circle-target="ally"\] \.squadScreenLabel\.ally/,
+ 'Unselectable friendly squads must not blink');
 assert.match(html,/lastAllyItemDecisionAt<10/,'Auto item decisions are globally rate-limited');
 assert.match(html,/function useSquadBattleItem\(itemId,squadId\)/,
  'Legacy manual item use interface stays unchanged');
