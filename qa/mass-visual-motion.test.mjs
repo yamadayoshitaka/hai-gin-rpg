@@ -37,8 +37,8 @@ const atlas=read('../src/crowd-impostor-atlas.js');
 const motion=read('../src/character-system/battle-motion-policy.js');
 const squadOpen=game.split('function openSquadTactics(id){')[1]?.split('function beginSquadDestination')[0];
 assert.ok(squadOpen,'Squad formation UI exists');
-assert.match(squadOpen,/tacticalBankRemaining>0\)\{tacticalPlanningActive=true;setBattlePaused\(true\)/,'The squad menu pauses only while five-minute tactical time remains');
-assert.match(game,/if\(tacticalBankRemaining<=0\)\{tacticalPlanningActive=false;setBattlePaused\(false\)/,'Battle automatically resumes when the tactical bank is exhausted');
+assert.match(squadOpen,/if\(!paused\)setBattlePaused\(true\)/,'Order selection must pause, even when the tactical bank is empty');
+assert.match(game,/if\(tacticalBankRemaining<=0\)\{tacticalPlanningActive=false;if\(!commandOverviewLocked\)setBattlePaused\(false\)/,'Bank exhaustion must not resume combat until an active command is committed or canceled');
 assert.match(game,/moveActor\(a,goal,0,stop\)/,
  '50v50 should reserve its next tile immediately after completing the current one');
 assert.match(game,/function smoothSkirmishRenderPosition\(/,
