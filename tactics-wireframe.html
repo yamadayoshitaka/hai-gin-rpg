@@ -606,11 +606,59 @@ body.compact-command-dock .squadCommandRibbon .ribbonSquad{
 body.compact-command-dock .squadCommandRibbon .ribbonTarget{font-size:10px!important}
 body.compact-command-dock.squad-closeup #allySquadRibbon,
 body.compact-command-dock.squad-closeup #enemySquadRibbon{display:none!important}
-/* Exploring needs a contained picker, never the full-screen old popup. */
-body.compact-command-dock.compact-explore-open{--battleCommandHeight:200px}
-body.compact-command-dock.compact-explore-open #squadTactics{height:200px!important;max-height:200px!important}
-body.compact-command-dock.compact-explore-open #squadOneClickOrders .quickActions{flex:0 0 44px!important}
-body.compact-command-dock.compact-explore-open #squadOneClickOrders .explorePickerArea{flex:1!important;min-height:0!important;overflow-y:auto!important}
+/* Exploration is a deliberately enlarged map panel; ordinary orders remain compact. */
+body.compact-command-dock.compact-explore-open #squadTactics,
+body.compact-command-dock.compact-explore-open #squadTactics[data-panel="main"]{
+ top:calc(var(--battleTopBottom,175px) + 7px)!important;
+ bottom:calc(var(--battleReportHeight,82px) + 6px)!important;
+ left:5px!important;right:5px!important;width:calc(100% - 10px)!important;
+ height:auto!important;max-height:none!important;min-height:280px!important;
+ padding:9px!important;z-index:42!important;overflow:hidden!important;
+ border:2px solid #9cc7ed!important;background:#0b2439fa!important;
+}
+body.compact-command-dock.compact-explore-open #squadOneClickOrders{
+ height:100%!important;flex:1 1 auto!important;min-height:0!important;
+ display:flex!important;flex-direction:column!important;gap:7px!important;
+}
+body.compact-command-dock.compact-explore-open #squadOneClickOrders .quickTabs{
+ flex:0 0 38px!important;order:0!important;
+}
+body.compact-command-dock.compact-explore-open #squadOneClickOrders .explorePickerArea{
+ flex:1 1 auto!important;order:1!important;min-height:0!important;
+ overflow:auto!important;overscroll-behavior:contain!important;
+}
+body.compact-command-dock.compact-explore-open .explorePickerArea>div{
+ display:flex!important;flex-direction:column!important;gap:9px!important;
+ border:none!important;padding:0 3px!important;
+}
+body.compact-command-dock.compact-explore-open .explorePickerArea canvas{
+ display:block!important;width:min(100%,340px)!important;max-width:100%!important;
+ max-height:38dvh!important;height:auto!important;aspect-ratio:1!important;
+ flex:0 0 auto!important;margin:0 auto!important;
+ border:2px solid #7fa7c3!important;border-radius:8px!important;
+}
+body.compact-command-dock.compact-explore-open #squadOneClickOrders .exploreBuildingList{
+ grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:6px!important;
+}
+body.compact-command-dock.compact-explore-open #squadOneClickOrders .exploreBuildingList button{
+ font:700 12px/1.3 system-ui!important;min-height:44px!important;
+ border-radius:7px!important;text-align:left!important;padding:8px 6px!important;
+}
+body.compact-command-dock.compact-explore-open #squadOneClickOrders .quickActions{
+ flex:0 0 52px!important;order:2!important;overflow:hidden!important;
+ border-top:1px solid #658ba4;padding-top:4px;
+}
+body.compact-command-dock.compact-explore-open #squadOneClickOrders .quickActions button{
+ min-height:44px!important;flex:1 1 auto!important;
+}
+body.compact-command-dock.compact-explore-open #battleSelectedTargetBar{display:none!important}
+body.compact-command-dock.compact-explore-open #allySquadRibbon,
+body.compact-command-dock.compact-explore-open #enemySquadRibbon{display:none!important}
+@media(max-height:690px){
+ body.compact-command-dock.compact-explore-open .explorePickerArea canvas{
+  width:min(100%,230px)!important;max-height:30dvh!important
+ }
+}
 @media(max-width:390px){
  :root{--battleCommandHeight:138px;--battleSelectedHeight:60px}
  body.compact-command-dock #squadOneClickOrders .quickActions button{min-width:64px!important;flex-basis:64px!important;font-size:11px!important}
@@ -5417,7 +5465,7 @@ function createExplorationPicker(defaultIds=[]){
  const buildings=availableExplorationBuildings({all:true}),selected=new Set(defaultIds.map(String));
  const root=document.createElement('div');root.style.cssText='display:grid;gap:5px;border:1px solid #658aa8;border-radius:7px;padding:6px';
  const map=document.createElement('canvas');map.width=240;map.height=240;
- map.style.cssText='width:min(100%,160px);aspect-ratio:1;touch-action:manipulation;display:block;margin:auto;border:1px solid #779aaf;cursor:pointer';
+ map.style.cssText='width:min(100%,340px);aspect-ratio:1;touch-action:manipulation;display:block;margin:auto;border:1px solid #779aaf;cursor:pointer';
  map.setAttribute('aria-label','建物の場所をタップして複数選択する地図');
  const label=document.createElement('small');
  label.style.cssText='display:block;color:#ffe2a5;font:11px/1.4 system-ui;white-space:nowrap;overflow:hidden;text-overflow:ellipsis';
@@ -6557,7 +6605,7 @@ function buildSquadQuickCommands(){
      '建物を選択してください。全域地図の青い丸は遠距離からも指定できます';
     $('squadOrderStatus').textContent=message;log(message);
    }
-  },{enabled:availableExplorationBuildings().length>0});
+  },{enabled:availableExplorationBuildings({all:true}).length>0});
  }else{
   heading('道具・移動・状態確認');
   const stock=allyItemStocks().find(x=>x.itemId===advice.itemId);
