@@ -617,7 +617,7 @@ import {massCombatEffectBudget} from './src/mass-battle-vfx-policy.js?v=4.6.36';
 import {territoryAt,NEUTRAL_HALF_WIDTH} from './src/battle-territory.js?v=4.6.15';
 import {squadTypeOf,SQUAD_TYPE_NAMES} from './src/mass-battle-formations.js?v=4.6.45';
 import {recomposeSquadAssignments,applySquadRecomposition,FORMATION_TYPES,FORMATION_NAMES,FORMATION_ICONS,normalizeFormationType} from './src/battle-squad-recomposition.js?v=4.6.49';
-import {squadJobComposition,chooseEnemyOrder,TACTICAL_TIME_BANK_SECONDS} from './src/battle-tactical-policy.js?v=4.6.47';
+import {squadJobComposition,chooseEnemyOrder,enemyOrderRefreshSeconds,TACTICAL_TIME_BANK_SECONDS} from './src/battle-tactical-policy.js?v=4.6.61';
 import {createMassBattleRealArmy} from './src/mass-battle-real-army.js?v=4.6.39';
 import {BattleCorpsePolicy,corpseOpacity} from './src/battle-corpse-policy.js?v=4.4.35';
 import {CrowdPerformanceBudget} from './src/crowd-performance-budget.js?v=4.6.36';
@@ -5274,13 +5274,16 @@ function updateEnemyTacticalDecisions(){
  const units=massSim?.units??actors,allies=units.filter(u=>u.team===0&&u.hp>0&&u.alive!==false&&!u.isStrategist);
  if(!allies.length)return;
  for(const id of enemySquadIds){
-  if(elapsed-(lastEnemyTacticalOrderAt.get(id)??-Infinity)<120)continue;
   const own=units.filter(u=>u.team===1&&String(u.squadId)===id&&!u.isStrategist);
   const living=own.filter(u=>u.hp>0&&u.alive!==false);
   if(!living.length)continue;
   if(massSim&&!units.some(u=>u.team===1&&String(u.squadId)===id&&u.isStrategist&&u.alive&&u.hp>0))continue;
   const previous=startingSquadOrders.get(squadOrderKey(1,id))?.mode||'charge';
   const friendlyArmy=units.filter(u=>u.team===1&&u.hp>0&&u.alive!==false&&!u.isStrategist);
+  // The ordinary command cooldown is preserved except for defending squads
+  // whose whole army now decisively outnumbers the opponent.
+  const secondsUntilReissue=enemyOrderRefreshSeconds(previous,friendlyArmy.length,allies.length);
+  if(elapsed-(lastEnemyTacticalOrderAt.get(id)??-Infinity)<secondsUntilReissue)continue;
   const defenseElapsed=elapsed-(lastEnemyTacticalOrderAt.get(id)??elapsed);
   const choice=chooseEnemyOrder(own,allies,previous,{friendlyArmy,defenseElapsed});
   let mode=choice.mode,buildingId=null;
