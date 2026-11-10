@@ -375,6 +375,13 @@ export function selectStageBuildings(buildings,stage){
  scored.sort((a,b)=>a.score-b.score);
  const selected=scored.slice(0,stage.buildingLimit).map(e=>({...e.b}));
  if(mode==='fort'&&insideStage(stage,56,93,14))selected.unshift({kind:'manor_noble',x:56,z:93,w:17,d:15});
+ if(stage.continentId&&stage.id.endsWith('-s01')){
+  // Keep the facilities playable in every continental town.
+  const requiredKinds=new Set(['weapon','shop','inn','tavern','church']);
+  const required=candidates.filter(b=>requiredKinds.has(b.kind));
+  const protectedSites=new Set(required.map(b=>b.x+','+b.z));
+  return [...required.map(b=>({...b})),...selected.filter(b=>!protectedSites.has(b.x+','+b.z))].slice(0,stage.buildingLimit);
+ }
  return selected;
 }
 export function selectStageObjects(objects,stage,data=null){
