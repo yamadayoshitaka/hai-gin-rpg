@@ -82,6 +82,8 @@ jobs:
           node qa/battle-auto-item-countercharge-targets.test.mjs
           node qa/battle-occlusion-target-exploration-leaders.test.mjs
           node qa/battle-static-overview-target-lines.test.mjs
+          node qa/battle-canopy-source-pulse-lines.test.mjs
+          node qa/battle-camera-occlusion.test.mjs
           node qa/battle-zoom-audio-visibility.test.mjs
           node qa/battle-stage-audio-priority.test.mjs
           node qa/recorded-report-voice.test.mjs

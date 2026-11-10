@@ -49,7 +49,7 @@ for(const token of [
  'isSquadCircleTargetActionable(row.id,team,pendingCircleTarget)',
  'if(pendingCircleTarget&&!(targetTeam===0?squadIds:enemySquadIds).some',
  "id=\"showAllSquadLeaderLines\"",
- 'const showLeader=Boolean(line)&&(chosen||showAllSquadLeaders)',
+ 'const showLeader=Boolean(line)&&(showAllSquadLeaders||',
  "leader.style.display=showLeader?'':'none';",
  'Math.hypot(nearest.p.x-x,nearest.p.z-z)>32',
  'const choice=chooseEnemyOrder(own,allies,previous,{friendlyArmy,defenseElapsed});',

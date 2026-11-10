@@ -29,6 +29,16 @@ export function selectCameraOccluders(camera,focus,candidates,{limit=6,padding=.
   return matches.slice(0,limit).map(({candidate})=>candidate);
 }
 
+/** Tree cutaway around the EYE, even when no trunk intersects the focus ray.
+ * Only camera-adjacent crowns are returned; unrelated garden objects stay.
+ */
+export function selectCanopiesAroundCamera(camera,candidates,{padding=2.5}={}){
+ return (candidates||[]).filter(({bounds:b,tree})=>tree&&
+  camera.x>=b.minX-padding&&camera.x<=b.maxX+padding&&
+  camera.z>=b.minZ-padding&&camera.z<=b.maxZ+padding&&
+  camera.y>=b.minY-1&&camera.y<=b.maxY+padding+.5);
+}
+
 // Exterior shells are opaque at strategic zoom. Even if the focus sits
 // inside a house or soldiers are traversing its stairs, only a close camera
 // may reveal interior floors. Hysteresis avoids flicker around the cutoff.

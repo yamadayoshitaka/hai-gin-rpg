@@ -16,7 +16,7 @@ const required=[
  'pickingSquadDestination=true;pickingSquadMission=null;pickingStrategistWarp=false;',
  'if(commandOverviewLocked&&!next)return;',
  'if(!commandOverviewLocked)setBattlePaused(false)',
- 'commandOverviewLocked=false;\n controls.enabled=true;',
+ 'commandOverviewLocked=false;\n document.body.classList.remove(\'battle-command-active\');\n controls.enabled=true;',
  'if(previous&&!finished&&paused!==previous.wasPaused)setBattlePaused(previous.wasPaused);',
  'if(commandOverviewLocked)return;',
  "const eligible=ids.filter(id=>isSquadCircleTargetActionable(id,team,pendingCircleTarget))",
