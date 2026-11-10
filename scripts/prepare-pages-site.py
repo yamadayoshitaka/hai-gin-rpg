@@ -50,7 +50,7 @@ REQUIRED = (
 # Large binary clips and models are fetched on demand from this exact commit.
 # This affects only pages-dist; it does not modify or shrink git master files.
 OFFLOAD_BINARY_SUFFIXES = {".glb", ".bin", ".bvh", ".mp3", ".ogg", ".wav", ".mp4", ".fbx", ".webm"}
-OFFLOAD_MIN_BYTES = 500_000
+OFFLOAD_MIN_BYTES = 128_000
 REMOTE_ONLY_PREFIXES = (
     "audio/voicevox/clips/", "assets/master-sources/", "assets/ai-reference/",
     "motions/candidates/", "assets/characters/experimental/",
