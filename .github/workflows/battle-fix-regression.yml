@@ -80,6 +80,10 @@ jobs:
           node qa/battle-message-oneclick.test.mjs
           node qa/mobile-camera-zoom-regression.test.mjs
           node qa/battle-auto-item-countercharge-targets.test.mjs
+          node qa/battle-zoom-audio-visibility.test.mjs
+          node qa/battle-stage-audio-priority.test.mjs
+          node qa/recorded-report-voice.test.mjs
+          node qa/natural-battle-voice.test.mjs
       - name: Stair and riding contracts
         run: |
           node qa/building-floor-navigation.test.mjs
