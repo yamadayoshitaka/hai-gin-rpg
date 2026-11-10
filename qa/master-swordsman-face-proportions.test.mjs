@@ -185,7 +185,7 @@ test('boy and girl presets use different measured facial proportions, with origi
   'Girl silhouette is guarded against an oversized cartoon jaw');
  assert.ok(girl.proportions.jawTaper>=.88&&girl.proportions.jawTaper<=1.05,
   'Jaw sculpt must stay close to the real source');
- assert.ok(girl.proportions.noseWidth>=.88&&girl.proportions.noseWidth<=1,
+ assert.ok(girl.proportions.noseWidth>=.78&&girl.proportions.noseWidth<=.88,
   'Nose should remain natural after emergency rollback');
  assert.notEqual(girl.hairStyle,boy.hairStyle);
  assert.equal(boy.facialArtistApproval,false);

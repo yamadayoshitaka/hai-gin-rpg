@@ -35,8 +35,9 @@ fs.mkdirSync(dir,{recursive:true});
      d.heroineWigCrown?.coverageRatio<.95||
      h?.bodyClearanceMeasured!==true||h?.bodyCollisionCorrections<1||
      h?.frontEyeZoneVertices>10||
-     h?.neckSideSplitCorrections<1||h?.beardFreeFrontNeck!==true||
-     h?.neckBeardIntrusionVertices!==0||
+     h?.neckRearClearanceCorrections<1||h?.beardFreeFrontNeck!==true||
+     h?.frontNeckIntrusionVertices!==0||h?.rearLayerCount!==3||
+     h?.separatedHairObjects!==true||d.facialQA?.heroineMakeup?.strength<.5||
      d.appearance?.youthfulness<.68||
      h?.lengthInHeads<3||h?.fringeTipMinYNormalized<.64||
      p?.preEarFullness>=.8||p?.parotidWidth>=.8||

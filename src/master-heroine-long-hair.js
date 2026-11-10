@@ -130,22 +130,26 @@ export function buildHeroineWigRootCap(scalp){
   // Keep the frontal face clear; make the rear and crown consistently opaque.
   const limit=.34+.46*front+.045*lateral;
   const u=clamp((yn-limit+.075)/.13,0,1);
-  const a=yn>.82?1:u*u*(3-2*u);
+  const a=yn>.78?1:u*u*(3-2*u);
   const o=i*4;
-  color[o]=.99;color[o+1]=.96;color[o+2]=.97;color[o+3]=a;
+  const l=.94+.06*Math.sin(x*79+z*47+y*29);
+  color[o]=l;color[o+1]=l*.98;color[o+2]=l;color[o+3]=a;
   if(yn>.87){crownSamples++;if(a>.98)coveredCrown++;}
  }
  if(crownSamples<35||coveredCrown/crownSamples<.95)
   throw Error('Wig crown leaves a bald scalp: '+coveredCrown+'/'+crownSamples);
  cap.setAttribute('color',new THREE.BufferAttribute(color,4));
  const material=new THREE.MeshStandardMaterial({
-  color:0xb98999,vertexColors:true,side:THREE.DoubleSide,
-  roughness:.88,metalness:0,transparent:true,alphaTest:.08,depthWrite:true
+  color:0xd6a5ba,vertexColors:true,side:THREE.DoubleSide,
+  roughness:.82,metalness:0,transparent:true,alphaTest:.02,depthWrite:true,
+  polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2
  });
  const mesh=new THREE.Mesh(cap,material);
  mesh.name='HEROINE_WIG_ROOT_CROWN_NOT_DONOR_HAIR';
  mesh.matrixAutoUpdate=false;mesh.matrix.copy(scalp.matrix);
  mesh.castShadow=true;mesh.renderOrder=0;
+ mesh.userData.wigCapFromSourceTopology=true;
+ mesh.userData.donorHairMustBeHidden=true;
  return {cap:mesh,report:Object.freeze({
   sourceHeadConforming:true,sourceScalpHidden:true,wigRootFoundationOnly:true,
   crownSamples,coveredCrown,coverageRatio:coveredCrown/crownSamples,
@@ -218,8 +222,9 @@ export function buildHeroineFantasyLongHair(scalp,{lengthInHeads=3.25,bodyEnvelo
  const colors=new Float32Array(VERTICES*3);
  let lowestY=Infinity,lowestBangY=Infinity,frontEyeZoneVertices=0;
  let bodyCollisionCorrections=0,sideShoulderCorrections=0,rearBackCorrections=0;
- let maxSideOutwardDrift=0,neckSideSplitCorrections=0,neckBeardIntrusionVertices=0;
- let lowestNeckSideRadius=Infinity;
+ let maxSideOutwardDrift=0,neckRearClearanceCorrections=0;
+ let frontNeckIntrusionVertices=0,bodyCutStrands=0,bodyCutSections=0;
+ let minimumRearDepth=Infinity;
  let vi=0;
  const regions={rear:70000,templeLeft:12000,templeRight:12000,bangs:6000};
  const categories=[
@@ -240,16 +245,18 @@ export function buildHeroineFantasyLongHair(scalp,{lengthInHeads=3.25,bodyEnvelo
    const seed=global+1,scatter=hash(seed*1.19);
    const rootX=q[0]+(hash(seed*4.1)-.5)*d.x*.003;
    const rootY=q[1],rootZ=q[2];
+   // Three distinct rear layers with overlapping ends, not two long sheets.
+   const backLayer=region==='rear'?Math.min(2,Math.floor(j*3/count)):0;
    const strandLength=bang?
     Math.min(d.y*(.24+.10*scatter),Math.max(.001,rootY-(b.min.y+d.y*.68))):
-    side?d.y*(1.30+.55*scatter):
-    d.y*lengthInHeads*(.83+.17*scatter);
+    side?d.y*(1.02+.54*scatter):
+    d.y*lengthInHeads*([.40,.54,.66][backLayer]+.06*scatter);
    const sway=(hash(seed*11.3)-.5)*d.x*.055;
    const sideDirection=bang?1:(side||Math.sign(rootX-cx)||1);
    // Nearby follicles follow a shared wave phase, not unrelated spikes.
    const flowPhase=(rootX-cx)/d.x*6.1+(rootZ-cz)/d.z*2.8;
    const light=.82+.17*hash(seed*7.83);
-   let previous=null;
+   let previous=null,cut=false;
    for(let section=0;section<=SEGMENTS;section++){
     const t=section/SEGMENTS,fall=Math.pow(t,1.4);
     const curl=Math.sin(t*4.2+flowPhase)*Math.sin(Math.PI*t)*
@@ -258,47 +265,45 @@ export function buildHeroineFantasyLongHair(scalp,{lengthInHeads=3.25,bodyEnvelo
     let x=bang?rootX+sideDirection*d.x*(.17*t+.035*fall)+curl:
      side?rootX+(cx-rootX)*(.075*t+.10*fall)+curl:
      rootX+sway*fall+curl;
-    const y=rootY-strandLength*t;
+    let y=rootY-strandLength*t;
     const ease=t*t*(3-2*t);
     const sweep=clamp(t*1.18,0,1),sideEase=sweep*sweep*(3-2*sweep);
     let z=bang?rootZ+d.z*(.085*t+.012*Math.sin(Math.PI*t)):
      side?lerp(rootZ,Math.min(rootZ,cz-d.z*.28),sideEase)-d.z*(.06*t+.06*fall):
-     lerp(rootZ,Math.min(rootZ,cz-d.z*.18),ease)-d.z*(.05*t+.10*fall);
+     lerp(rootZ,Math.min(rootZ,cz-d.z*.18),ease)-
+      d.z*(.05*t+.08*fall+.035*backLayer*ease);
     if(side)maxSideOutwardDrift=Math.max(maxSideOutwardDrift,side*(x-rootX));
-    // Screen-space appearance is not a collision check: push EACH REAL
-    // filament vertex outside measured shoulder and back envelopes.
-    if(bodyEnvelope&&!bang){
-     const result=clearBodyForLongStrand(x,y,z,region,bodyEnvelope);
-     x=result[0];z=result[1];
-     if(result[2]){
+    // Behind-neck routing replaces the hard side split that created a V
+    // shaped hole. Middle rear locks retain the centre-back silhouette.
+    if(!bang){
+     const nape=clamp((b.min.y+d.y*.54-y)/(d.y*.33),0,1);
+     if(nape>0){
+      const limit=cz-d.z*(.46+.04*backLayer);
+      const behind=lerp(z,Math.min(z,limit),nape);
+      if(behind<z-.00001)neckRearClearanceCorrections++;
+      z=behind;
+     }
+    }
+    // Trim a deep intersection, but keep any safe preceding part of
+    // the strand. Subsequent segments collapse at the trim endpoint.
+    if(!cut&&bodyEnvelope&&!bang){
+     const [safeX,safeZ,contact]=clearBodyForLongStrand(x,y,z,region,bodyEnvelope);
+     if(contact){
       bodyCollisionCorrections++;
       if(side)sideShoulderCorrections++;
       else rearBackCorrections++;
+      if(section>=2&&y<b.min.y-d.y*.25&&z-safeZ>d.z*.20){
+       cut=true;bodyCutStrands++;
+      }else {x=safeX;z=safeZ;}
      }
     }
-    if(!bang){
-     // A rear scalp curtain visible beneath the front-view chin resembles a
-     // long pink beard. Split the 3D locks around the actual neck silhouette
-     // BEFORE they descend to the chest; preserve full length BEHIND the back.
-     // This is a scalp-rooted hair-path adjustment, never a beard mesh.
-     const neckBlend=clamp((b.min.y+d.y*.52-y)/(d.y*.32),0,1);
-     if(neckBlend>0){
-      const lockSide=side||(rootX<cx?-1:1);
-      // Divide dense occipital hair across the shoulders rather than letting
-      // hundreds of central strands hang under the face and chin.
-      const clearanceWidth=d.x*(.425+.065*hash(seed*7.21));
-      const edge=cx+lockSide*clearanceWidth;
-      if(Math.abs(x-cx)<clearanceWidth){
-       x=lerp(x,edge,neckBlend);
-       neckSideSplitCorrections++;
-      }
-      z=lerp(z,Math.min(z,cz-d.z*.46),neckBlend);
-     }
-     if(y<=b.min.y+d.y*.19&&y>=b.min.y-d.y*.70){
-      const radial=Math.abs(x-cx)/d.x;
-      lowestNeckSideRadius=Math.min(lowestNeckSideRadius,radial);
-      if(radial<.40)neckBeardIntrusionVertices++;
-     }
+    if(cut&&previous){
+     x=previous[0];y=previous[1];z=previous[2];bodyCutSections++;
+    }
+    if(!bang&&y<=b.min.y+d.y*.19&&y>=b.min.y-d.y*.70){
+     minimumRearDepth=Math.min(minimumRearDepth,z);
+     if(Math.abs(x-cx)<d.x*.4&&z>cz-d.z*.38)
+      frontNeckIntrusionVertices++;
     }
     if(bang)lowestBangY=Math.min(lowestBangY,y);
     lowestY=Math.min(lowestY,y);
@@ -320,20 +325,34 @@ export function buildHeroineFantasyLongHair(scalp,{lengthInHeads=3.25,bodyEnvelo
  }
  if(global!==COUNT||vi!==VERTICES)
   throw Error('Incomplete heroine scalp strand assembly');
- // Line primitives bypass the catastrophic triangle raster cost of 100k
- // physically tubular hairs on SwiftShader and mobile GPUs. All 100,000
- // distinct curves are still rendered; nothing is downsampled for QA.
- const g=new THREE.BufferGeometry();
- g.setAttribute('position',new THREE.BufferAttribute(positions,3));
- g.setAttribute('color',new THREE.BufferAttribute(colors,3));
- g.computeBoundingSphere();g.computeBoundingBox();
- const material=new THREE.LineBasicMaterial({
-  color:0xffffff,vertexColors:true,transparent:false,depthWrite:true
- });
- const hair=new THREE.LineSegments(g,material);
- hair.name='HEROINE_PREVIEW_100000_INDIVIDUAL_3D_LONG_STRANDS';
+ // One independent object for each front/temple part and each of three
+ // rear layers. 100,000 scalp-rooted curves remain real GPU line primitives.
+ const hair=new THREE.Group();
+ hair.name='HEROINE_WIG_SEPARATE_PARTS';
  hair.matrixAutoUpdate=false;hair.matrix.copy(scalp.matrix);
- hair.frustumCulled=true;
+ const zones=[
+  ['HEROINE_WIG_REAR_UPPER',0,Math.floor(regions.rear/3)],
+  ['HEROINE_WIG_REAR_MIDDLE',Math.floor(regions.rear/3),Math.floor(regions.rear*2/3)],
+  ['HEROINE_WIG_REAR_LOWER',Math.floor(regions.rear*2/3),regions.rear],
+  ['HEROINE_WIG_TEMPLE_LEFT',regions.rear,regions.rear+regions.templeLeft],
+  ['HEROINE_WIG_TEMPLE_RIGHT',regions.rear+regions.templeLeft,
+   regions.rear+regions.templeLeft+regions.templeRight],
+  ['HEROINE_WIG_FRINGE',COUNT-regions.bangs,COUNT]
+ ];
+ for(const [name,first,last] of zones){
+  const begin=first*SEGMENTS*2*3,finish=last*SEGMENTS*2*3;
+  const geo=new THREE.BufferGeometry();
+  geo.setAttribute('position',new THREE.BufferAttribute(positions.subarray(begin,finish),3));
+  geo.setAttribute('color',new THREE.BufferAttribute(colors.subarray(begin,finish),3));
+  geo.computeBoundingBox();geo.computeBoundingSphere();
+  const mat=new THREE.LineBasicMaterial({
+   color:0xffffff,vertexColors:true,depthTest:true,depthWrite:true
+  });
+  const strands=new THREE.LineSegments(geo,mat);
+  strands.name=name;strands.userData.strands=last-first;
+  strands.userData.bodyClipped=true;
+  hair.add(strands);
+ }
  const report=Object.freeze({
   authoredStyle:'fantasy-long-blonde',previewOnly:true,
   scalpAnchored:true,sourceAnchored:true,sourceHeadUnchanged:true,
@@ -346,15 +365,22 @@ export function buildHeroineFantasyLongHair(scalp,{lengthInHeads=3.25,bodyEnvelo
   allStrandsRendered:true,previewOnlyLinePrimitive:true,
   templeClearanceStrategy:'behind-real-shoulder-no-side-wings',
   rootDistribution:'full-crown-and-occiput-not-rear-strip',
+   rearFlow:'overlapping-layers-not-forced-neck-v',
   sweptAsymmetricBangs:true,shorterSideLocks:true,
   rearClearanceStrategy:'actual-body-back-envelope',
   donorScalpOnlyForRoots:true,bodyClearanceMeasured:!!bodyEnvelope,
   bodyCollisionCorrections,sideShoulderCorrections,rearBackCorrections,
    maxSideOutwardDriftMeters:Number(maxSideOutwardDrift.toFixed(5)),
    coherentScalpFlow:true,templeTipsTurnBehindShoulders:true,
-   neckSideSplitCorrections,neckBeardIntrusionVertices,
-   minimumNeckSideRadiusNormalized:Number(lowestNeckSideRadius.toFixed(4)),
-   beardFreeFrontNeck:neckBeardIntrusionVertices===0,
+   neckRearClearanceCorrections,frontNeckIntrusionVertices,
+   bodyCutStrands,bodyCutSections,bodyContactPolicy:'trim-deep-contact',
+   minimumRearDepth:Number(minimumRearDepth.toFixed(4)),
+   beardFreeFrontNeck:frontNeckIntrusionVertices===0,
+   separatedHairObjects:true,
+   hairPartNames:Object.freeze(zones.map(([name])=>name)),
+   rearLayerCount:3,wigPartCount:hair.children.length,
+   rearMaxLengthInHeads:Number((lengthInHeads*.72).toFixed(2)),
+   rearLayersCutBeforeAnkles:true,
   scalpRegions:Object.freeze(regions),scalpCrownRootPool:crown.length,
   rearLocks:regions.rear,faceFramingLocks:regions.templeLeft+regions.templeRight,
   bangLocks:regions.bangs,lockCount:COUNT,

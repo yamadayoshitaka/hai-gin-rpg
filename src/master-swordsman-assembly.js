@@ -158,6 +158,45 @@ function makeEyeLid(width,height){
  * Anatomical eyelid blink moves the upper-lid group and ALL of its lashes.
  * Exported for regression testing without loading multi-megabyte donor GLBs.
  */
+/**
+ * Original 3D face makeup, reprojected after EVERY facial slider update.
+ * Multiplicative vertex colors stay on the actual sculpt, not floating
+ * eyeliner/lip cards. Each pass reconstructs from immutable neutral colors.
+ */
+export function applyHeroineMakeupToFace(faceMesh,neutralColors,{strength=0}={}){
+ const geometry=faceMesh?.geometry,attr=geometry?.getAttribute('color');
+ const p=geometry?.getAttribute('position');
+ if(!attr||attr.itemSize<3||!p||neutralColors?.length!==attr.array.length)
+  throw Error('Real face with original RGB vertex colors required for makeup');
+ geometry.computeBoundingBox();
+ const b=geometry.boundingBox,d=b.getSize(new THREE.Vector3());
+ const cx=(b.min.x+b.max.x)*.5;
+ const intensity=THREE.MathUtils.clamp(Number(strength)||0,0,1);
+ const bell=(x,c,w)=>Math.exp(-.5*((x-c)/w)**2);
+ const smooth=(a,b,x)=>{const t=THREE.MathUtils.clamp((x-a)/(b-a),0,1);return t*t*(3-2*t)};
+ let blushVertices=0,lipVertices=0,linerVertices=0;
+ for(let i=0;i<p.count;i++){
+  const x=(p.getX(i)-cx)/Math.max(.001,d.x*.5);
+  const y=(p.getY(i)-b.min.y)/Math.max(.001,d.y);
+  const z=(p.getZ(i)-b.min.z)/Math.max(.001,d.z);
+  const front=smooth(.61,.82,z);
+  const cheek=front*bell(Math.abs(x),.54,.21)*bell(y,.50,.11)*intensity;
+  const lip=front*bell(x,0,.30)*bell(y,.385,.043)*intensity;
+  const liner=front*bell(Math.abs(x),.45,.21)*bell(y,.752,.025)*intensity;
+  const n=i*3;
+  attr.setXYZ(i,
+   neutralColors[n]*(1-.085*cheek-.080*lip-.30*liner),
+   neutralColors[n+1]*(1-.19*cheek-.20*lip-.32*liner),
+   neutralColors[n+2]*(1-.12*cheek-.14*lip-.26*liner));
+  if(cheek>.1)blushVertices++;
+  if(lip>.1)lipVertices++;
+  if(liner>.1)linerVertices++;
+ }
+ attr.needsUpdate=true;
+ return {strength:intensity,blushVertices,lipVertices,linerVertices,
+  sourceVertexColorsUnchanged:true,faceMeshVertices:p.count};
+}
+
 export function applyEyeFixtureBlink(fixture,value){
  const blink=THREE.MathUtils.clamp(Number(value)||0,0,1);
  const {upper,lower,lashes,lid}=fixture;
@@ -397,6 +436,8 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false,gen
  // attachment. Facial proportion edits deform these vertices, but formerly
  // left both native sclera meshes at their undeformed source positions.
  const faceSource=youthfulFace.faceMesh;
+ const faceNeutralColors=faceSource.geometry.getAttribute('color').array.slice();
+ let heroineMakeupReport=null;
  const neutralFacePositions=faceSource.geometry.getAttribute('position').array.slice();
  function socketDisplacement(reference){
   const updated=faceSource.geometry.getAttribute('position');
@@ -769,6 +810,10 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false,gen
   detailedHead.updateWorldMatrix(true,true);
   const proportions=validateFaceProportions(profile.proportions||{});
   const youthfulReport=youthfulFace.apply(profile.youthfulness??0,proportions);
+  heroineMakeupReport=applyHeroineMakeupToFace(
+   faceSource,faceNeutralColors,{
+    strength:profile.gender==='female'?(profile.makeup?.strength??.66):0
+   });
   // Apply source expression morphs before fitting eye geometry and lids.
   for(const key of HERO_FACE_MORPHS)
    if(profile.face&&profile.face[key]!==undefined)setMorph(key,profile.face[key]);
@@ -897,8 +942,9 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false,gen
    fixture.upper.rotation.z=proportions.eyeTilt*.18;
    fixture.lower.rotation.z=proportions.eyeTilt*.18;
    fixture.lashes.visible=true;
-   fixture.lashes.material.color.set(profile.hairColor||'#594048')
-    .lerp(new THREE.Color(0x33242d),.32);
+   fixture.lashes.material.color.set(
+    profile.gender==='female'?'#292027':profile.hairColor||'#594048');
+   fixture.lashes.scale.y=profile.gender==='female'?1.15:1;
    fixture.lid.scale.x=proportions.eyeWidth;
    // Keep the brow on the supraorbital ridge rather than directly on
    // the upper eyelid: the earlier brow looked like a second lash line.
@@ -1017,6 +1063,7 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false,gen
    upperLidPoseDigest:poseChecksum(eyeFixtures.map(x=>x.upper)),
    lowerLidPoseDigest:poseChecksum(eyeFixtures.map(x=>x.lower)),
    sourceBrowMeshes:eyeFixtures.length,
+    heroineMakeup:heroineMakeupReport,
    realEyebrowVisibleCount:eyeFixtures.filter(e=>e.brow.visible&&
     e.brow.material.visible!==false&&
     (e.brow.geometry.getAttribute('position')?.count||0)>=14).length,
