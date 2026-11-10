@@ -2518,6 +2518,63 @@ function townShopkeeperSetup(){
   townActorGridPosition(actor,b.data.x,b.data.z-1.4);actor.root.rotation.y=Math.PI;
  }
 }
+
+// Twenty visible outdoor citizens in addition to the six fully rigged player
+// and shopkeeper models. Shared geometries keep the crowd inexpensive on mobile.
+const townStreetCitizens=(()=>{
+ if(!TOWN_MODE)return [];
+ const sites=[
+  ...townNpcSites.slice(6),
+  [158,109,'住民'],[171,112,'住民'],[160,117,'旅人'],
+  [174,105,'住民'],[154,117,'子ども'],[169,120,'商人']
+ ];
+ const skinColors=[0xe7c19d,0xc89d77,0xf2ccb2,0xb58762,0xd4ab8a];
+ const clothes=[0x486c8c,0x7a654d,0x536d57,0x874e5c,0x78658e,0x877c45];
+ const hairs=[0x372e29,0x65442e,0x241d1c,0x796348,0x4b3633];
+ const faceGeo=new THREE.SphereGeometry(.19,10,8);
+ const armGeo=new THREE.CylinderGeometry(.066,.053,.52,7);
+ const legGeo=new THREE.CylinderGeometry(.083,.07,.7,7);
+ const torsoGeo=new THREE.CylinderGeometry(.20,.24,.64,9);
+ const neckGeo=new THREE.CylinderGeometry(.08,.09,.15,7);
+ const bootsGeo=new THREE.BoxGeometry(.15,.13,.26);
+ const eyesGeo=new THREE.SphereGeometry(.017,6,5);
+ const hairGeo=new THREE.SphereGeometry(.195,10,6,0,Math.PI*2,0,Math.PI*.45);
+ const part=(parent,geo,material,x,y,z)=>{
+  const mesh=new THREE.Mesh(geo,material);mesh.position.set(x,y,z);
+  mesh.castShadow=true;mesh.receiveShadow=true;parent.add(mesh);return mesh;
+ };
+ return sites.map((site,i)=>{
+  const [gx,gz]=site,role=site[3]||site[2];
+  const root=new THREE.Group();root.name='TownCitizen_'+i+'_'+role;
+  const skin=new THREE.MeshStandardMaterial({color:skinColors[i%skinColors.length],roughness:.9});
+  const fabric=new THREE.MeshStandardMaterial({color:clothes[i%clothes.length],roughness:1});
+  const pants=new THREE.MeshStandardMaterial({color:clothes[(i+2)%clothes.length],roughness:1});
+  const hair=new THREE.MeshStandardMaterial({color:hairs[i%hairs.length],roughness:.94});
+  const eye=new THREE.MeshStandardMaterial({color:0x221b17,roughness:.9});
+  part(root,torsoGeo,fabric,0,1.08,0);
+  part(root,neckGeo,skin,0,1.47,0);
+  part(root,faceGeo,skin,0,1.65,0);
+  part(root,hairGeo,hair,0,1.72,0);
+  for(const side of [-1,1]){
+   const arm=new THREE.Group();arm.position.set(side*.235,1.35,0);
+   part(arm,armGeo,fabric,side*.02,-.26,0);
+   part(arm,new THREE.SphereGeometry(.067,7,6),skin,side*.02,-.52,0);
+   root.add(arm);
+   const leg=new THREE.Group();leg.position.set(side*.112,.77,0);
+   part(leg,legGeo,pants,0,-.38,0);
+   part(leg,bootsGeo,hair,0,-.74,.055);
+   root.add(leg);
+   if(side<0)root.userData.leftLeg=leg;
+   else root.userData.rightLeg=leg;
+   part(root,eyesGeo,eye,side*.075,1.66,.171);
+  }
+  root.scale.setScalar(role==='子ども'?.76:1);
+  root.rotation.y=i%7*Math.PI/3.5;
+  root.position.set((gx-6)*CELL,terrainY((gx-6)*CELL,(gz-6)*CELL),(gz-6)*CELL);
+  root.userData.townRole=role;scene.add(root);
+  return {root,x:root.position.x,z:root.position.z,phase:i*1.13,walk:i%3===0};
+ });
+})();
 const townContactShadowTex=(()=>{
  if(!TOWN_MODE)return null;
  const canvas=document.createElement('canvas');canvas.width=canvas.height=64;
@@ -2528,13 +2585,14 @@ const townContactShadowTex=(()=>{
 const townContactShadows=TOWN_MODE?new THREE.InstancedMesh(
  new THREE.PlaneGeometry(1.35,1.25).rotateX(-Math.PI/2),
  new THREE.MeshBasicMaterial({map:townContactShadowTex,transparent:true,depthWrite:false,opacity:.72,polygonOffset:true,polygonOffsetFactor:-2}),
- actors.length):null;
+ actors.length+townStreetCitizens.length):null;
 if(townContactShadows){townContactShadows.frustumCulled=false;townContactShadows.name='TownGroundingContactShadows';scene.add(townContactShadows);}
 const townShadowDummy=new THREE.Object3D();
 function updateTownContactShadows(){
  if(!townContactShadows)return;
- for(let i=0;i<actors.length;i++){
-  const p=actors[i].root.position;
+ const allRoots=[...actors.map(a=>a.root),...townStreetCitizens.map(c=>c.root)];
+ for(let i=0;i<allRoots.length;i++){
+  const p=allRoots[i].position;
   townShadowDummy.position.set(p.x,terrainY(p.x,p.z)+.035,p.z);
   townShadowDummy.scale.setScalar(1);townShadowDummy.rotation.set(0,0,0);
   townShadowDummy.updateMatrix();townContactShadows.setMatrixAt(i,townShadowDummy.matrix);
@@ -7067,6 +7125,14 @@ function animateTown(){
   }
   a.character.update(dt);
   a.outfit?.sync();
+ }
+ for(const citizen of townStreetCitizens){
+  if(!citizen.walk)continue;
+  const phase=elapsed*1.7+citizen.phase;
+  citizen.root.position.x=citizen.x+Math.sin(phase)*.42;
+  citizen.root.position.y=terrainY(citizen.root.position.x,citizen.root.position.z);
+  citizen.root.userData.leftLeg.rotation.x=Math.sin(phase*2.1)*.32;
+  citizen.root.userData.rightLeg.rotation.x=-Math.sin(phase*2.1)*.32;
  }
  controls.update();
  const floor=terrainY(camera.position.x,camera.position.z)+1.8;
