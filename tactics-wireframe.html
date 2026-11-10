@@ -318,10 +318,10 @@ body[data-circle-target] #destinationPrompt{border:2px solid #ffed9c;box-shadow:
 <button id="battleMenuToggle" aria-expanded="false">☰ メニュー</button>
 <div id="teamLegend" aria-label="陣地識別色"><span class="ally">■ 味方陣地・西</span><span class="enemy">■ 敵陣地・東</span><span>▣ 中立帯</span></div>
 <div id="battleTopDock" aria-label="戦況・戦死者・性能計測"><div id="topRadarSlot"></div><div id="topBattleInfo"><div id="battleTopRow"><div id="topMenuSlot"></div><div id="topTeamsSlot"></div><div id="topQuickActions"><button id="topBgm" aria-label="BGMと効果音を切り替える">♪ BGM</button><button id="topSurrender" aria-label="降参を確認する">🏳 降参</button></div></div><div id="battleCasualties" aria-live="polite"><span class="allyLoss">味方戦闘不能 <b id="allyCasualties">0/50</b>人</span><span class="enemyLoss">敵戦闘不能 <b id="enemyCasualties">0/50</b>人</span></div><div id="topPerformanceSlot"></div><div id="topStructureSlot"></div></div></div>
-<div id="battleMenu" hidden aria-label="ゲームメニュー"><strong>戦闘メニュー</strong><div class="menuLine" id="armyScaleSlot"></div><div class="menuLine" id="menuSoundSlot"></div><div class="menuLine" id="menuPauseSlot"></div><div class="menuLine" id="lockedSquadStrategies" aria-label="現在の隊列作戦（開戦後変更不可）"></div><div class="menuLine menuDisplayOptions retiredRibbonSettings"><strong>左右の隊列ラベル</strong><label><input id="showAllySquadRibbon" type="checkbox" checked> 味方ラベル</label><label><input id="showEnemySquadRibbon" type="checkbox" checked> 敵ラベル</label></div><div class="menuLine menuDisplayOptions"><label><input id="showAllSquadLeaderLines" type="checkbox"> 全隊の引き出し線を表示（通常は選択した隊のみ）</label></div><div class="menuLine menuDisplayOptions"><strong>上部ボタンの表示</strong><label><input id="showTopBgm" type="checkbox" checked> BGM</label><label><input id="showTopSurrender" type="checkbox" checked> 降参</label></div><div class="menuLine"><label for="corpseLifetime">死体の表示（最大100体）</label><select id="corpseLifetime" aria-label="死体が消えるまでの時間"><option value="30">30秒</option><option value="60" selected>60秒</option><option value="120">120秒</option><option value="never">消滅しない</option></select></div><small>号令・行き先は青い部隊名をタップして選択できます。部隊タイプは編成時から固定です。</small><div class="menuLine" id="menuBridgeSlot"></div><div class="menuLine"><button id="surrender">🏳 降参する</button></div></div>
+<div id="battleMenu" hidden aria-label="ゲームメニュー"><strong>戦闘メニュー</strong><div class="menuLine" id="armyScaleSlot"></div><div class="menuLine" id="menuSoundSlot"></div><div class="menuLine" id="menuPauseSlot"></div><div class="menuLine" id="lockedSquadStrategies" aria-label="現在の隊列作戦（開戦後変更不可）"></div><div class="menuLine menuDisplayOptions retiredRibbonSettings"><strong>左右の隊列ラベル</strong><label><input id="showAllySquadRibbon" type="checkbox" checked> 味方ラベル</label><label><input id="showEnemySquadRibbon" type="checkbox" checked> 敵ラベル</label></div><div class="menuLine menuDisplayOptions"><label><input id="showAllSquadLeaderLines" type="checkbox"> 全隊の引き出し線を表示（通常は選択した隊のみ）</label></div><div class="menuLine menuDisplayOptions"><strong>上部ボタンの表示</strong><label><input id="showTopBgm" type="checkbox" checked> BGM</label><label><input id="showTopSurrender" type="checkbox" checked> 降参</label></div><div class="menuLine"><label for="corpseLifetime">死体の表示（最大100体）</label><select id="corpseLifetime" aria-label="死体が消えるまでの時間"><option value="30">30秒</option><option value="60" selected>60秒</option><option value="120">120秒</option><option value="never">消滅しない</option></select></div><small>号令は青い部隊名をタップして選択できます。部隊タイプは編成時から固定です。</small><div class="menuLine" id="menuBridgeSlot"></div><div class="menuLine"><button id="surrender">🏳 降参する</button></div></div>
 <div id="squadTactics" hidden aria-label="部隊の号令・行き先"><div class="tacticsHeading"><strong id="squadTacticsName">部隊を選択</strong><button id="squadInspect">🔍 近景</button><button id="squadTacticsClose">✕ 戻る</button></div><div id="squadTypeStatus">編成タイプは固定</div>
 <div id="squadActiveOrder" style="font-weight:800;color:#8be0ff;margin-top:6px">現在の号令：自動行動</div>
-<small id="squadOrderStatus">現在の目的：自動迎撃</small><div class="tacticsActions"><button id="squadOrderChoice">📯 号令</button><button id="squadDestination">📍 行き先</button><button id="squadStrategistWarp" hidden>✨ 軍師ワープ</button><button id="squadMissionChoice" hidden aria-hidden="true" tabindex="-1">⚑ 命令</button><button id="squadDetails">📊 HP</button></div><div id="squadTacticsOrders" hidden><strong>一時的な号令（編成は変更されません）</strong><select id="squadTacticalCommand" aria-label="部隊への号令"><option value="">号令を選択</option><option value="charge">⚔ 突撃</option><option value="defend">🛡 守備</option><option value="hold">⏸ 待機</option><option value="retreat">↘ 退却</option></select><div id="squadTacticsCommanderSlot"></div></div><div id="squadTacticsMissions" hidden aria-hidden="true"><strong>部隊ごとの作戦目標</strong><select id="squadMission" aria-label="作戦命令"><option value="">命令を選択</option><option value="destroy_bridge">🌉 橋を破壊</option><option value="burn_tree">🔥 木を焼き払う</option><option value="burn_building">🔥 建物を焼き払う</option><option value="demolish_structure">🧨 障害物を破壊</option><option value="repair_structure">🛠 建物・橋を修理</option><option value="extinguish_fire">💧 火災を消火</option><option value="eliminate_squad">⚔ 指定敵部隊の全滅</option><option value="eliminate_commander">♟ 敵軍師を打ち取れ</option><option value="retreat">↩ 後退</option><option value="clear">× 命令解除</option></select><small>対象をタップして輪郭を表示し、「確定」を押すと命令します。</small></div></div>
+<small id="squadOrderStatus">現在の目的：自動迎撃</small><div class="tacticsActions"><button id="squadOrderChoice">📯 号令</button><button id="squadDestination" hidden aria-hidden="true" tabindex="-1">📍 行き先</button><button id="squadStrategistWarp" hidden>✨ 軍師ワープ</button><button id="squadMissionChoice" hidden aria-hidden="true" tabindex="-1">⚑ 命令</button><button id="squadDetails">📊 HP</button></div><div id="squadTacticsOrders" hidden><strong>一時的な号令（編成は変更されません）</strong><select id="squadTacticalCommand" aria-label="部隊への号令"><option value="">号令を選択</option><option value="charge">⚔ 突撃</option><option value="defend">🛡 守備</option><option value="hold">⏸ 待機</option><option value="retreat">↘ 退却</option></select><div id="squadTacticsCommanderSlot"></div></div><div id="squadTacticsMissions" hidden aria-hidden="true"><strong>部隊ごとの作戦目標</strong><select id="squadMission" aria-label="作戦命令"><option value="">命令を選択</option><option value="destroy_bridge">🌉 橋を破壊</option><option value="burn_tree">🔥 木を焼き払う</option><option value="burn_building">🔥 建物を焼き払う</option><option value="demolish_structure">🧨 障害物を破壊</option><option value="repair_structure">🛠 建物・橋を修理</option><option value="extinguish_fire">💧 火災を消火</option><option value="eliminate_squad">⚔ 指定敵部隊の全滅</option><option value="eliminate_commander">♟ 敵軍師を打ち取れ</option><option value="retreat">↩ 後退</option><option value="clear">× 命令解除</option></select><small>対象をタップして輪郭を表示し、「確定」を押すと命令します。</small></div></div>
 <div id="missionTargetConfirm" hidden aria-label="作戦対象の確認"><strong id="missionTargetName">対象を選択</strong><div><button id="missionTargetAccept">✓ この対象で確定</button><button id="missionTargetBack">↩ 選び直す</button></div></div>
 <div id="squadMiniMap" aria-label="上空から見下ろす戦場全域レーダー"><div class="miniHeading"><span>🛰 上空俯瞰・全域</span><button id="miniMapToggle" aria-label="地図を折りたたむ">−</button></div><canvas id="squadMapCanvas" width="232" height="232" aria-label="上空俯瞰・青い部隊と目的地"></canvas><p id="miniMapCurrent">行き先未設定：自動行動中</p><p>青＝味方陣地（西）　赤＝敵陣地（東）　灰＝中立帯<br>白線＝境界・軍師URは自陣全域へ1回ワープ可能</p></div>
 <button id="destinationPrompt" hidden>行き先を指定してください（ここを押すと取り消し）</button>
@@ -467,7 +467,108 @@ body.squad-closeup #enemySquadIntel{display:none!important}
 .squadCommandRibbon .ribbonSquad.target-locked{border-color:#ffc46d!important;box-shadow:0 0 10px #ff7e4c!important}
 @media(max-width:390px){#allySquadRibbon,#enemySquadRibbon{width:72px!important}.squadCommandRibbon .ribbonSquad{min-height:39px!important}}
 #squadSelectedAttackArrow{stroke:#ffcd58;stroke-width:4;stroke-linecap:round;fill:none;opacity:.98;filter:drop-shadow(0 0 5px #a94b27);pointer-events:none}
+
+/* v4.6.65: REAL DOM command dock. Never float a menu over the battlefield. */
+:root{--battleReportHeight:90px;--battleCommandHeight:126px;--battleSelectedHeight:64px}
+body.compact-command-dock #squadTactics,
+body.compact-command-dock #squadTactics[data-panel="main"]{
+ position:fixed!important;top:auto!important;left:4px!important;right:4px!important;
+ bottom:calc(var(--battleReportHeight) + 4px)!important;
+ width:calc(100vw - 8px)!important;max-width:none!important;min-width:0!important;
+ height:var(--battleCommandHeight)!important;max-height:var(--battleCommandHeight)!important;
+ margin:0!important;padding:5px 7px!important;overflow:hidden!important;
+ display:flex;flex-direction:column;z-index:33!important;
+ border:1px solid #77afcc!important;border-radius:10px!important;
+ background:#082039f6!important;box-shadow:0 2px 13px #000b!important;
+}
+body.compact-command-dock #squadTactics[hidden]{display:none!important}
+body.compact-command-dock #squadTactics .tacticsHeading,
+body.compact-command-dock #squadTactics #squadTypeStatus,
+body.compact-command-dock #squadTactics #squadActiveOrder,
+body.compact-command-dock #squadTactics #squadOrderStatus,
+body.compact-command-dock #squadTactics .tacticsActions,
+body.compact-command-dock #squadTactics #squadTacticsOrders,
+body.compact-command-dock #squadTactics #squadTacticsMissions{display:none!important}
+body.compact-command-dock #squadTactics #squadOneClickOrders{
+ display:flex!important;flex-direction:column!important;flex:1!important;gap:5px!important;
+ margin:0!important;min-height:0!important;max-height:none!important;overflow:hidden!important;
+}
+body.compact-command-dock #squadTactics #squadOneClickOrders[hidden]{display:none!important}
+body.compact-command-dock #squadOneClickOrders .quickGroup{display:none!important}
+body.compact-command-dock #squadOneClickOrders .quickTabs{
+ display:flex!important;flex-direction:row!important;flex:0 0 33px!important;
+ align-items:stretch!important;justify-content:flex-start!important;gap:5px!important;flex-wrap:nowrap!important;
+}
+body.compact-command-dock #squadOneClickOrders .quickTabs button{
+ min-height:32px!important;max-height:33px!important;min-width:0!important;flex:1!important;
+ padding:4px 1px!important;text-align:center!important;font-size:11px!important;
+ background:#163c5c!important;border:1px solid #74a6c5!important;border-radius:7px!important;
+}
+body.compact-command-dock #squadOneClickOrders .quickTabs button.active{
+ background:#246994!important;border-color:#ffe4a3!important;color:#ffe7ab!important
+}
+body.compact-command-dock #squadOneClickOrders .quickActions{
+ display:flex!important;flex-direction:row!important;align-items:stretch!important;gap:4px!important;
+ flex:1 1 auto!important;min-height:0!important;overflow-x:auto!important;overflow-y:hidden!important;
+ touch-action:pan-x!important;overscroll-behavior-x:contain;scrollbar-width:thin;
+}
+body.compact-command-dock #squadOneClickOrders .quickActions button{
+ min-height:55px!important;min-width:70px!important;flex:1 0 70px!important;
+ text-align:center!important;font:bold 12px/1.3 system-ui!important;padding:6px 2px!important;
+ border-radius:8px!important;border:1px solid #8ab2cd!important;
+ background:linear-gradient(#22567b,#12324f)!important;
+ color:#fff!important;white-space:normal!important
+}
+body.compact-command-dock #squadOneClickOrders .quickActions button[data-command="charge"]{
+ background:linear-gradient(#8a3f35,#4f2430)!important;border-color:#f3d07f!important;
+ box-shadow:inset 0 0 8px #f0b16455
+}
+body.compact-command-dock #squadOneClickOrders .quickActions button[data-command="back"]{
+ min-width:62px!important;flex:0 0 62px!important;background:#19364f!important
+}
+body.compact-command-dock #squadOneClickOrders .quickActions button:disabled{opacity:.42!important}
+body.compact-command-dock #squadOneClickOrders .quickPager,
+body.compact-command-dock #squadOneClickOrders .quickCountChoices{flex:0 0 25px!important;margin:0!important}
+#battleSelectedTargetBar{
+ position:fixed;left:4px;right:4px;bottom:calc(var(--battleReportHeight) + 5px);
+ min-height:var(--battleSelectedHeight);height:var(--battleSelectedHeight);
+ border:1px solid #7dacc9;border-radius:9px;background:#0a243cee;color:white;
+ z-index:30;display:flex;align-items:center;justify-content:space-around;gap:4px;
+ padding:5px 8px;box-shadow:0 2px 12px #0009;pointer-events:none;
+}
+#battleSelectedTargetBar[hidden],body.squad-closeup #battleSelectedTargetBar{display:none!important}
+body.compact-command-dock.compact-orders-open #battleSelectedTargetBar{
+ bottom:calc(var(--battleReportHeight) + var(--battleCommandHeight) + 7px)
+}
+#battleSelectedTargetBar .targetHalf{min-width:0;flex:1;display:flex;flex-direction:column;gap:2px}
+#battleSelectedTargetBar .targetHalf.right{text-align:right}
+#battleSelectedTargetBar .targetHeading{font:800 11px/1.3 system-ui;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#battleSelectedTargetBar .targetHalf.left .targetHeading{color:#95deff}
+#battleSelectedTargetBar .targetHalf.right .targetHeading{color:#ffadbd}
+#battleSelectedTargetBar .targetCount{font:700 12px/1.25 system-ui;font-variant-numeric:tabular-nums}
+#battleSelectedTargetBar .targetDirection{font:bold 24px system-ui;color:#ffdc82;flex:0 0 auto}
+#battleSelectedTargetBar .targetMode{font:10px/1.15 system-ui;color:#d5e4ef;white-space:nowrap}
+body.compact-command-dock #allySquadRibbon,body.compact-command-dock #enemySquadRibbon{
+ bottom:calc(var(--battleReportHeight) + var(--battleSelectedHeight) + 12px)!important
+}
+body.compact-command-dock.compact-orders-open #allySquadRibbon,
+body.compact-command-dock.compact-orders-open #enemySquadRibbon{
+ bottom:calc(var(--battleReportHeight) + var(--battleSelectedHeight) + var(--battleCommandHeight) + 14px)!important
+}
+/* Favor the ten visible squad numbers/targets over decorative order rows. */
+body.compact-command-dock .squadCommandRibbon .ribbonOrder{display:none!important}
+body.compact-command-dock .squadCommandRibbon .ribbonList{overflow-y:auto!important}
+body.compact-command-dock .squadCommandRibbon .ribbonSquad{
+ min-height:28px!important;max-height:54px!important;flex:1 1 0!important;padding:1px 0!important;gap:0!important
+}
+body.compact-command-dock .squadCommandRibbon .ribbonTarget{font-size:10px!important}
+@media(max-width:390px){
+ :root{--battleCommandHeight:122px;--battleSelectedHeight:60px}
+ body.compact-command-dock #squadOneClickOrders .quickActions button{min-width:64px!important;flex-basis:64px!important;font-size:11px!important}
+ #battleSelectedTargetBar .targetHeading{font-size:10px}
+}
 </style>
+<div id="battleSelectedTargetBar" role="status" aria-live="off" hidden><div class="targetHalf left"><div class="targetHeading" id="battleSelectedAlly">味方 第1隊</div><div class="targetCount" id="battleSelectedAllyCount">--/--</div><div class="targetMode" id="battleSelectedAllyOrder">号令：自動</div></div><div class="targetDirection">➜</div><div class="targetHalf right"><div class="targetHeading" id="battleSelectedEnemy">索敵中</div><div class="targetCount" id="battleSelectedEnemyCount">--/--</div><div class="targetMode" id="battleSelectedTargetMode">攻撃対象（自動選択）</div></div></div>
 <div id="squadScreenLabels" aria-label="全味方・敵部隊の接続線付き情報サークル"><svg id="squadCalloutLines" aria-hidden="true"></svg></div>
 <div id="squadCircleInfo" hidden role="status" aria-live="polite" aria-label="選択した部隊の情報・1行表示">
  <div id="squadCircleInfoContent"></div>
@@ -5905,7 +6006,7 @@ function issueSquadOrder(mode,point=null){
 // assigning a destination. The original pause/camera mode is restored.
 let lastSquadMenuPlacementAt=-Infinity;
 function positionSquadMenuBelowLabel(id,force=false){
- const popup=$('squadTactics');if(popup.hidden)return;
+ const popup=$('squadTactics');if(popup.hidden||document.body.classList.contains('compact-command-dock'))return;
  // Avoid layout measurement/write on every animated character frame.
  const stamp=performance.now();
  if(!force&&stamp-lastSquadMenuPlacementAt<110)return;
@@ -5955,7 +6056,7 @@ function openSquadTactics(id){
  // optional tactical bank has already been exhausted.
  if(!paused)setBattlePaused(true);
  if(tacticalBankRemaining>0)tacticalPlanningActive=true;
- selectedSquadId=String(id);trackedAllySquadId=String(id);squadQuickPage='home';squadQuickPageIndex=0;$('dockSquadSelect').value=String(id);
+ selectedSquadId=String(id);trackedAllySquadId=String(id);squadQuickPage='orders';squadQuickPageIndex=0;document.body.classList.add('compact-orders-open');$('dockSquadSelect').value=String(id);
  pickingSquadDestination=false;pickingSquadMission=null;pickingStrategistWarp=false;clearMissionPreview();
  // Focus the ACTUAL surviving squad, not a distant or fallen strategist.
  // Keep one confirmed survivor tracked so moving troops remain visible.
@@ -6106,6 +6207,7 @@ function closeSquadTactics(){
  pickingSquadDestination=false;pickingSquadMission=null;pickingStrategistWarp=false;clearMissionPreview();
  $('squadTactics').hidden=true;$('destinationPrompt').hidden=true;$('squadDockIdle').hidden=true;
  document.body.classList.add('squad-menu-closed');
+ document.body.classList.remove('compact-orders-open');
  const previous=squadSelectionReturn;squadSelectionReturn=null;
  commandOverviewLocked=false;
  document.body.classList.remove('battle-command-active');
@@ -6171,7 +6273,8 @@ const tacticalBankLabel=document.createElement('small');
   tacticalBankLabel.textContent='📯 指揮停止 残り '+m+':'+String(seconds).padStart(2,'0')+
    (tacticalBankRemaining<=0?'（移動しながら号令）':'');
  }
- const squadQuickList=document.createElement('div');
+ document.body.classList.add('compact-command-dock');
+const squadQuickList=document.createElement('div');
 squadQuickList.id='squadOneClickOrders';
 squadQuickList.setAttribute('aria-label','一回のタップで選べる部隊命令の一覧');
 $('squadTactics').insertBefore(squadQuickList,$('squadTacticsOrders'));
