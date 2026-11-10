@@ -64,8 +64,10 @@ assert.ok(villager.lines.length>=3);
 const stageHtml=fs.readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
 const hubHtml=fs.readFileSync(new URL('../town-hub.html',import.meta.url),'utf8');
 const worldHtml=fs.readFileSync(new URL('../world-map.html',import.meta.url),'utf8');
-assert.match(stageHtml,/MODEL_FIRST_CATALOG\[citizen\.modelKey\]\.url/,
- 'all non-player townsfolk must reference a registered model');
+assert.match(stageHtml,/MODEL_FIRST_CATALOG\[key\]\.url/,
+ 'villager model loader must resolve paths from the registered model catalog');
+assert.match(stageHtml,/getSource\(citizen\.modelKey\)/,
+ 'each displayed citizen must use its catalog model key');
 assert.match(stageHtml,/occlusionCandidates\.filter\(item=>item\.id==='tree_deciduous_001'\)/,
  'fence and flower cutaway must not be eligible');
 assert.match(hubHtml,/data-gacha-draw/);
