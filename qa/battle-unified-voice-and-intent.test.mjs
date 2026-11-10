@@ -47,7 +47,8 @@ assert.ok(battle.includes('label.userDataCurrentOrder.textContent=shortOrder'));
 assert.ok(battle.includes("label.userDataStrength.textContent=sum.n+'/'+sum.total"));
 assert.ok(battle.includes('label.userDataObjective.textContent=intent.purpose'));
 // Both armies use circular markers showing live counts; tapping an allied circle opens the action chooser.
-assert.ok(battle.includes('label.userDataCurrentOrder.hidden=true'));
+assert.ok(battle.includes('label.userDataCurrentOrder.hidden=false'),
+ 'Status must remain legible inside the overhead callout circle');
 assert.ok(battle.includes('label.userDataObjective.hidden=true'));
 assert.ok(battle.includes('compactSquadMarkerStyles'));
 assert.ok(battle.includes("label.classList.toggle('defeated',sum.n===0)"));
