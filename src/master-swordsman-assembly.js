@@ -155,6 +155,26 @@ function makeEyeLid(width,height){
 }
 
 /**
+ * Anatomical eyelid blink moves the upper-lid group and ALL of its lashes.
+ * Exported for regression testing without loading multi-megabyte donor GLBs.
+ */
+export function applyEyeFixtureBlink(fixture,value){
+ const blink=THREE.MathUtils.clamp(Number(value)||0,0,1);
+ const {upper,lower,lashes,lid}=fixture;
+ lid.visible=blink>.015;
+ lid.scale.y=Math.max(.001,blink);
+ if(Number.isFinite(upper.userData.openLocalY)){
+  upper.position.y=upper.userData.openLocalY-
+   blink*upper.userData.blinkTravelLocal;
+  upper.scale.y=upper.userData.openScaleY*(1-blink*.18);
+  lower.position.y=lower.userData.openLocalY+
+   blink*lower.userData.blinkTravelLocal*.12;
+ }
+ lashes.visible=true;
+ return blink;
+}
+
+/**
  * Preview-specific cover mask. Selectively removes donor-skin triangles
  * underneath real cloth volumes (tunic/pants/boots). The imported GLB is never
  * modified: every displayed geometry is a clone. This is a coarse first pass,
@@ -706,21 +726,7 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false,gen
   outfitRigRetargeted:false,helmetFitted:false,ff13ArtGatePassed:false};
  let blink=0;
  function syncBlinkPose(){
-  for(const fixture of eyeFixtures){
-   const {upper,lower,lashes,lid}=fixture;
-   lid.visible=blink>.015;
-   lid.scale.y=Math.max(.001,blink);
-   // One upper lid node owns the lashes during both edits and blinks.
-   // Local open-eye anchors prevent drift after repeated slider changes.
-   if(Number.isFinite(upper.userData.openLocalY)){
-    upper.position.y=upper.userData.openLocalY-
-     blink*upper.userData.blinkTravelLocal;
-    upper.scale.y=upper.userData.openScaleY*(1-blink*.18);
-    lower.position.y=lower.userData.openLocalY+
-     blink*lower.userData.blinkTravelLocal*.12;
-   }
-   lashes.visible=true;
-  }
+  for(const fixture of eyeFixtures)applyEyeFixtureBlink(fixture,blink);
  }
  function setBlink(value){
   blink=THREE.MathUtils.clamp(Number(value)||0,0,1);
