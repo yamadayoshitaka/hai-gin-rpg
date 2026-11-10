@@ -6327,13 +6327,19 @@ function buildSquadQuickCommands(){
  }
  // Button-based navigation, never scroll-to-find.
  const nav=document.createElement('div');nav.className='quickTabs';
- const choices=[['orders','📯 号令'],['items','🎒 アイテム'],['explore','🔎 探索']];
+ const selectTab=document.createElement('button');selectTab.type='button';
+ selectTab.textContent='🎯 選択';selectTab.onclick=()=>closeSquadTactics();
+ nav.append(selectTab);
+ const choices=[['orders','📯 号令'],['items','🎒 アイテム']];
  for(const [page,label] of choices){
   const tab=document.createElement('button');tab.type='button';tab.textContent=label;
   tab.className=page===squadQuickPage?'active':'';
   tab.onclick=()=>{squadQuickPage=page;squadQuickPageIndex=0;buildSquadQuickCommands()};
   nav.append(tab);
  }
+ const detailsTab=document.createElement('button');detailsTab.type='button';detailsTab.textContent='📊 詳細';
+ detailsTab.onclick=()=>{const current=orderedSquad();closeSquadTactics();openVitals(current)};
+ nav.append(detailsTab);
  const backTab=document.createElement('button');backTab.type='button';backTab.textContent='↩ 戻る';
  backTab.onclick=()=>closeSquadTactics();nav.append(backTab);
  squadQuickList.append(nav);
@@ -6376,6 +6382,7 @@ function buildSquadQuickCommands(){
    add(ROOM_ITEM_TYPES[itemId].name+' ×'+count,'item_'+itemId,
     ()=>beginCircleTargetSelection('item',itemId),{needsCommander:false});
   }
+  add('🔎 探索','explore_page',()=>{squadQuickPage='explore';buildSquadQuickCommands()},{needsCommander:false});
   pager(items.length);
  }else if(squadQuickPage==='support'){
   heading('✚ 支援先は1部隊のみ選択');
