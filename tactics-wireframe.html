@@ -2628,19 +2628,58 @@ function townPost(type,extra={}){
  try{parent.postMessage({type,stageId:TOWN_STAGE_ID,source:'real-battle-stage',...extra},location.origin)}
  catch(error){console.warn('[Town] cannot notify hub',error)}
 }
+function townNearestFacility(){
+ const hero=townAvatar();if(!hero)return null;
+ const x=hero.root.position.x/CELL+6,z=hero.root.position.z/CELL+6;
+ const nearest=townInstances.filter(b=>townServices[b.data.kind]).map(b=>{
+  const dx=Math.max(0,Math.abs(x-b.data.x)-b.data.w/2);
+  const dz=Math.max(0,Math.abs(z-b.data.z)-b.data.d/2);
+  const borderDistance=Math.hypot(dx,dz);
+  const doorDistance=Math.hypot(x-b.data.x,z-(b.data.z+b.data.d/2+1.2));
+  return {b,borderDistance,doorDistance,distance:Math.min(borderDistance,doorDistance)};
+ }).sort((a,b)=>a.distance-b.distance)[0];
+ return nearest||null;
+}
 function townFacility(){
  const hero=townAvatar();if(!hero||!battleReady)return;
- if(townIndoor){townPost('hai-gin-town-facility',{panel:townServices[townIndoor.kind]});return;}
- const x=hero.root.position.x/CELL+6,z=hero.root.position.z/CELL+6;
- const entrance=townInstances.filter(b=>townServices[b.data.kind]).map(b=>({
-  b,dist:Math.hypot(x-b.data.x,z-(b.data.z+b.data.d/2+1.1))
- })).sort((a,b)=>a.dist-b.dist)[0];
- if(!entrance||entrance.dist>5){
-  townPost('hai-gin-town-notice',{text:entrance?'施設南側の入口に近づいてください（あと'+Math.ceil(entrance.dist)+'マス）':'利用可能な施設がありません。'});
+ if(townIndoor){
+  const keeper=actors.find(a=>a.townRole===townShopkeeperRoles[townIndoor.kind]);
+  if(keeper&&hero.root.position.distanceTo(keeper.root.position)>4.2){
+   townPost('hai-gin-town-notice',{text:'店主まで近づくと会話・買い物ができます。'});
+   return;
+  }
+  townPost('hai-gin-town-facility',{panel:townServices[townIndoor.kind]});
   return;
  }
- townEnterBuilding(entrance.b);
+ const entry=townNearestFacility();
+ if(!entry||entry.distance>5){
+  townPost('hai-gin-town-notice',{text:entry?'施設に近づいてください（あと'+Math.ceil(entry.distance-5)+'マス）':'利用できる建物がありません。'});
+  return;
+ }
+ // Touch the exterior wall or the marked south doorway. The actual entrance
+ // is then used, instead of requiring a hidden 5-cell-radius hot spot.
+ townEnterBuilding(entry.b);
 }
+window.getTownVisitStats=()=>({
+ ready:battleReady,people:actors.length+townStreetCitizens.length,
+ streetCitizens:townStreetCitizens.length,riggedPeople:actors.length,
+ indoor:townIndoor?.kind||null,
+ nearby:townNearestFacility()?.b.data.kind||null,
+ shadowLight:[sun.position.x,sun.position.y,sun.position.z],
+ shadowTarget:[sun.target.position.x,sun.target.position.y,sun.target.position.z]
+});
+// Only a local QA browser may position the hero for testing the real door.
+if(TOWN_MODE&&['localhost','127.0.0.1'].includes(location.hostname))
+ window.__qaPlaceTownAvatarAtEntrance=(kind)=>{
+  const b=townInstances.find(x=>x.data.kind===kind);
+  if(!b)return false;
+  townActorGridPosition(townAvatar(),b.data.x,b.data.z+b.data.d/2+2.2);
+  const focus=townAvatar().root.position.clone().add(new THREE.Vector3(0,1.2,0));
+  controls.target.copy(focus);
+  camera.position.copy(focus).add(new THREE.Vector3(0,14,12));
+  controls.update();
+  return true;
+ };
 window.addEventListener('message',event=>{
  if(!TOWN_MODE||event.origin!==location.origin||event.source!==parent)return;
  const data=event.data||{};
@@ -7144,6 +7183,11 @@ function animateTown(){
   updateCameraObstructions();updateTownInteriorVisibility();townShadowUpdatedAt=elapsed;
  }
  if(elapsed-townPlayerReportAt>.38){
+  const near=townNearestFacility();
+  townPost('hai-gin-town-near-facility',{
+   kind:!townIndoor&&near?.distance<=5?near.b.data.kind:null,
+   name:!townIndoor&&near?.distance<=5?({weapon:'武具屋',shop:'道具屋',inn:'宿屋',tavern:'酒場',church:'教会',castle:'王城'})[near.b.data.kind]:null
+  });
   const p=townAvatar().root.position;
   townPost('hai-gin-town-player',{x:p.x/CELL+6,z:p.z/CELL+6});townPlayerReportAt=elapsed;
  }
