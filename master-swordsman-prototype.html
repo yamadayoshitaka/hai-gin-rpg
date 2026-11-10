@@ -632,7 +632,12 @@ function printState(){if(master)$('diagnostics').textContent=JSON.stringify(diag
 const loader=new GLTFLoader();
 (async()=>{
  try{
-  const base='./assets/master-sources/blender/';
+  // The public Pages bundle excludes archived GLB masters to remain small.
+  // On github.io load the same CC0 originals from the public source repository,
+  // while the full local/CI checkout keeps the regular local paths.
+  const base=location.hostname.endsWith('.github.io')?
+   'https://raw.githubusercontent.com/yamadayoshitaka/hai-gin-rpg/main/assets/master-sources/blender/':
+   './assets/master-sources/blender/';
   const [b,h,bFemale,hFemale,o,hairGLB]=await Promise.all([
    loader.loadAsync(base+'realistic-body-male.glb'),
    loader.loadAsync(base+'realistic-head-animation.glb'),
