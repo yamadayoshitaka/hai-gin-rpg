@@ -196,7 +196,7 @@ export function applyHeroineMakeupToFace(faceMesh,neutralColors,{
   // Defined but softly feathered rose lipstick on UPPER and LOWER lip
   // (anatomical lip ridge is near the .40 face-height landmark).
   const lips=front*bell(x,0,.315)*
-   (.92*bell(y,.416,.023)+.86*bell(y,.375,.025))*
+   (.88*bell(y,.489,.018)+.80*bell(y,.447,.020))*
    intensity*THREE.MathUtils.clamp(lip,0,1);
   const lipSeam=front*bell(x,0,.29)*bell(y,.395,.009)*
    intensity*THREE.MathUtils.clamp(lip,0,1);
