@@ -5367,7 +5367,21 @@ function createExplorationPicker(defaultIds=[]){
  const label=document.createElement('small');
  label.style.cssText='display:block;color:#ffe2a5;font:11px/1.4 system-ui;white-space:nowrap;overflow:hidden;text-overflow:ellipsis';
  const position=b=>({x:Number(b.building.data.x)||0,z:Number(b.building.data.z)||0});
+ const list=document.createElement('div');list.className='exploreBuildingList';
+ const buttons=new Map();
+ for(const b of buildings){
+  const button=document.createElement('button');button.type='button';
+  button.textContent=b.name+(b.treasure.length?' 🎁':'');
+  button.setAttribute('aria-pressed',String(selected.has(b.id)));
+  button.onclick=()=>{selected.has(b.id)?selected.delete(b.id):selected.add(b.id);redraw()};
+  list.append(button);buttons.set(b.id,button);
+ }
  function redraw(){
+  for(const b of buildings){
+   const node=buttons.get(b.id),isSelected=selected.has(b.id);
+   node.classList.toggle('selected',isSelected);
+   node.setAttribute('aria-pressed',String(isSelected));
+  }
   const ctx=map.getContext('2d');ctx.clearRect(0,0,240,240);
   ctx.drawImage(miniBase,0,0,240,240);
   buildings.forEach((b,i)=>{
@@ -5393,7 +5407,7 @@ function createExplorationPicker(defaultIds=[]){
   }
   selected.has(nearest.b.id)?selected.delete(nearest.b.id):selected.add(nearest.b.id);redraw();
  });
- root.append(map,label);redraw();
+ root.append(map,label,list);redraw();
  return {element:root,getIds:()=>buildings.filter(b=>selected.has(b.id)).map(b=>b.id)};
 }
 function queueSquadExplorations(team,id,ids,{beforeBattle=false}={}){
