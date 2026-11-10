@@ -292,6 +292,9 @@ test('heroine golden hair has dense independently shaped real polygon locks and 
  assert.equal(report.roundedCrossSection,true);
  assert.equal(report.denseFringe,true);
  assert.equal(report.softTaperedTips,true);
+ assert.equal(report.eyebrowSafeFringe,true);
+ assert.ok(report.fringeTipMinYNormalized>.73,
+  'Full fringe should end above the actual eyebrow ridge');
  assert.ok(report.rearLocks>=320,'Five staggered back-hair layers required');
  assert.ok(report.faceFramingLocks>=216,'Both temples require dense layers');
  assert.ok(report.bangLocks>=96,'Dense upper-forehead fringe required');
