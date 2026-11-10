@@ -13,7 +13,8 @@ const check=(points,bounds)=>{
   assert.ok(p.x-laid.diameter/2>=bounds.left-1&&p.x+laid.diameter/2<=bounds.right+1);
   assert.ok(p.y-laid.diameter/2>=bounds.top-1&&p.y+laid.diameter/2<=bounds.bottom+1);
   assert.ok(Number.isFinite(p.anchorX)&&Number.isFinite(p.anchorY));
-  assert.match(squadCalloutLeader({...p,x:p.x+laid.diameter,y:p.y}),/^M /);
+  const leader=squadCalloutLeader(p);
+  if(leader)assert.match(leader,/^M /);
  }
  for(let i=0;i<positions.length;i++)for(let j=i+1;j<positions.length;j++)
   assert.ok(Math.abs(positions[i].x-positions[j].x)>=gap||
@@ -34,6 +35,7 @@ const offscreen=layoutSquadCallouts([{key:'0:1',team:0,x:-200,y:900}],
 assert.equal(offscreen.placements.get('0:1').outside,true,
  'Off-screen units get edge-connected callouts, not silently omitted');
 assert.equal(squadCalloutLeader({x:50,y:50,anchorX:50,anchorY:50,diameter:60}),'');
+assert.match(squadCalloutLeader({x:70,y:70,anchorX:150,anchorY:120,diameter:60}),/^M /);
 
 const html=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
 assert.match(html,/id="squadCalloutLines"/);
