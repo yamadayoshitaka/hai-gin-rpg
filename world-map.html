@@ -22,6 +22,7 @@ header{display:flex;align-items:center;justify-content:space-between;gap:8px;bac
 #selectedInfo small{display:block;color:#c3d0d5;font-size:11px;line-height:1.35}
 #sortie{border:1px solid #e0c184;background:#795b31;border-radius:7px;min-width:91px;padding:11px 10px;font-weight:800;white-space:nowrap}
 #feedback{min-height:15px;font-size:11px;color:#ffe0aa;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#stageNarration{font-size:12px;min-height:28px;border:1px solid #b9a172;background:#3c3540;border-radius:6px;padding:5px 9px;justify-self:start;color:#ffe7af}
 #continentLore{color:#eee2c6;font-size:11px;line-height:1.45;background:#122637b8;border-left:3px solid #d8bf87;padding:6px 8px;max-height:57px;overflow:auto}
 .pin.stage-pin{min-width:80px;background:#132637ea;line-height:1.2;font-size:11px}.pin.stage-pin.selected{outline:3px solid #ffe3a2}.pin.stage-pin.locked{opacity:.65}
 @media(max-height:660px){#chapterPanel{gap:5px;padding-top:5px}#stageGrid{grid-template-rows:repeat(2,minmax(37px,1fr))}.stage{min-height:37px;padding:4px}#selectedInfo{min-height:45px;padding:5px 8px}.pin{padding:3px}}
@@ -30,13 +31,14 @@ header{display:flex;align-items:center;justify-content:space-between;gap:8px;bac
 <section id="mapViewport" aria-label="ワールドマップ"><div id="mapBoard" role="group" aria-label="三勢力の領土"></div><div class="map-caption">地図で領地を選択・ステージは下の10枠から</div><div class="pan"><button id="panLeft" type="button">◀ 地図</button><button id="panReset" type="button">中央</button><button id="panRight" type="button">地図 ▶</button></div></section>
 <section id="chapterPanel"><div class="chapter-head"><button id="prevChapter">◀ 前章</button><h2 id="chapterTitle">第1章</h2><button id="nextChapter">次章 ▶</button></div>
 <div class="meta"><span id="chapterSubtitle"></span><span id="clearCount">0 / 200</span></div>
-<div id="continentLore" aria-live="polite"></div>
+<div id="continentLore" aria-live="polite"></div><button id="stageNarration" type="button">▶ 選択した場面を聴く</button>
 <div id="stageGrid" role="group" aria-label="選択した章の全10ステージ"></div>
 <div id="selectedInfo"><div><strong id="stageTitle"></strong><small id="stageRequirement"></small></div><button id="sortie" type="button">出撃 ▶</button></div>
 <div id="feedback" role="status" aria-live="polite"></div></section></main>
 <script type="module">
 import {STORY_CHAPTERS} from './src/story-chapters.js';
 import {continentForChapter,continentMapUrl,continentStagePoints} from './src/continent-campaign.js';
+import {narrativeForStage} from './src/chapter-story-events.js';
 import {TERRITORIES,FACTIONS} from './src/story-campaign.js';
 import {CAMPAIGN_STAGES,CAMPAIGN_STAGE_BY_ID,STAGE_KINDS,chapterAvailable,stagesInChapter,stageUnlocked} from './src/campaign-stage-plan.js';
 import {loadGame,persistSession,stageAtTown,selectCampaignStage,validGame} from './src/game-core-flow.js';
@@ -46,6 +48,20 @@ let game=loadGame(localStorage,sessionStorage);
 if(!validGame(game)){location.replace('./game.html');throw Error('No game');}
 game.location='map';
 let chapter=1,selected='c01-s02',territory=null,pan=0;
+function narrateSelection(){
+ const stage=CAMPAIGN_STAGE_BY_ID[selected],story=narrativeForStage(stage);
+ if(!('speechSynthesis' in window)){message('この端末では日本語読み上げを利用できません。');return;}
+ if(speechSynthesis.speaking){speechSynthesis.cancel();$('stageNarration').textContent='▶ 選択した場面を聴く';return;}
+ const voice=new SpeechSynthesisUtterance(story.narration);
+ voice.lang='ja-JP';voice.rate=.88;voice.pitch=.97;
+ const voices=speechSynthesis.getVoices().filter(x=>x.lang.toLowerCase().startsWith('ja'));
+ if(voices.length)voice.voice=voices.find(x=>x.localService)||voices[0];
+ voice.onend=()=>{$('stageNarration').textContent='▶ 選択した場面を聴く';};
+ voice.onerror=()=>{$('stageNarration').textContent='▶ 選択した場面を聴く';};
+ $('stageNarration').textContent='■ 読み上げを停止';
+ speechSynthesis.speak(voice);
+}
+$('stageNarration').onclick=narrateSelection;
 const message=m=>$('feedback').textContent=m;
 function saveSession(){persistSession(game,sessionStorage);}
 function returnTown(){
@@ -89,7 +105,8 @@ function render(){
  $('clearCount').textContent=game.completedStages.length+' / 200';
  $('summary').textContent=game.playerName+'の軍団　'+game.campaign.squads.reduce((n,s)=>n+s.count,0)+'人';
  const continent=continentForChapter(chapter);
- $('continentLore').textContent='【'+continent.arc+'】'+continent.conflict+'　'+ch.synopsis;
+ const sceneNarrative=narrativeForStage(CAMPAIGN_STAGE_BY_ID[selected]);
+ $('continentLore').textContent='【'+continent.arc+'】'+sceneNarrative.scene+'　'+sceneNarrative.consequence+'　'+sceneNarrative.speaker+'「'+sceneNarrative.line+'」';
  const stages=stagesInChapter(chapter);
  $('stageGrid').innerHTML=stages.map(stage=>{
   const cleared=game.completedStages.includes(stage.id),unlocked=stageUnlocked(stage,game.completedStages);
@@ -118,10 +135,11 @@ $('mapBoard').addEventListener('click',event=>{
 });
 $('stageGrid').addEventListener('click',event=>{
  const el=event.target.closest('[data-stage]');if(!el)return;
- selected=el.dataset.stage;render();
+ selected=el.dataset.stage;window.speechSynthesis?.cancel();$('stageNarration').textContent='▶ 選択した場面を聴く';render();
 });
 function changeChapter(step){
  chapter=Math.max(1,Math.min(20,chapter+step));
+ window.speechSynthesis?.cancel();$('stageNarration').textContent='▶ 選択した場面を聴く';
  selected=stagesInChapter(chapter)[0].id;territory=STORY_CHAPTERS[chapter-1].territory;render();
 }
 $('prevChapter').onclick=()=>changeChapter(-1);$('nextChapter').onclick=()=>changeChapter(1);
