@@ -26,6 +26,16 @@ test('heroine wig paints every upper-crown vertex and keeps face skin uncovered'
  }
  assert.ok(crown>40&&frontalFace>20);
  assert.ok(report.coverageRatio>.95);
+ assert.equal(report.coveredBySolidSourceTopology,true);
+ assert.equal(report.foreheadBangsVisible,true);
+ assert.equal(report.fringeLockCount,520);
+ assert.equal(report.fringeTriangleCount,520*6*2);
+ assert.ok(report.fringeTipMinNormalized>=.69);
+ assert.equal(report.fringeFaceClear,true);
+ const fringe=cap.getObjectByName('HEROINE_FRONT_FRINGE_SOURCE_ROOTED_ROSE_PINK');
+ assert.ok(fringe?.isMesh&&fringe.geometry.index.count>5000,
+  'Missing actual 3D pink bangs above the face');
+ assert.ok(fringe.userData.sourceCrownRoots&&fringe.userData.eyebrowClear);
  assert.deepEqual(geometry.getAttribute('position').array,source);
  cap.geometry.dispose();cap.material.dispose();scalp.geometry.dispose();
  scalp.material.dispose();geometry.dispose();skin.material.dispose();
