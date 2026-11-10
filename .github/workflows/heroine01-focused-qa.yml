@@ -33,10 +33,10 @@ jobs:
           node-version: '22'
       - name: Install real 3D browser
         run: |
-          npm install --no-save --package-lock=false playwright@1.56.0 three@0.160.1
+          npm install --no-save --package-lock=false playwright@1.56.0 pngjs@7.0.0 three@0.160.1
           npx playwright install --with-deps chromium
       - name: Verify scalp, real-body clearance and face geometry without browser
-        run: node --test qa/master-swordsman-assembly.test.mjs qa/master-swordsman-face-proportions.test.mjs
+        run: node --test qa/master-swordsman-assembly.test.mjs qa/master-swordsman-face-proportions.test.mjs qa/master-heroine-wig-ocular-face-regression.test.mjs
       - name: Host genuine CC0 3D masters
         run: |
           python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/heroine01-qa-http.log 2>&1 &

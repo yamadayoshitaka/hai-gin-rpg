@@ -111,6 +111,24 @@ export function validateAppearanceOverrides(appearance,overrides={}){
   if(!Number.isFinite(v)||v<.5||v>1.3)throw Error('Shoulder size out of range');
   resolved.shoulderSize=v;
  }
+ if(overrides.makeup!==undefined){
+  if(appearance.gender!=='female'||!appearance.makeup)
+   throw Error('Makeup overrides are only available on the heroine');
+  if(!overrides.makeup||typeof overrides.makeup!=='object'||
+     Array.isArray(overrides.makeup))
+   throw Error('Makeup controls must be an object');
+  const permitted=['strength','blush','lip','eyeliner'];
+  const keys=Object.keys(overrides.makeup);
+  if(keys.some(key=>!permitted.includes(key)))throw Error('Unknown makeup control');
+  const next={...appearance.makeup};
+  for(const key of keys){
+   const value=overrides.makeup[key];
+   if(typeof value!=='number'||!Number.isFinite(value)||value<0||value>1)
+    throw Error('Makeup strength out of range: '+key);
+   next[key]=Number(value.toFixed(3));
+  }
+  resolved.makeup=Object.freeze(next);
+ }
  return Object.freeze({...resolved,face:Object.freeze(resolved.face),
   proportions:resolved.proportions});
 }
