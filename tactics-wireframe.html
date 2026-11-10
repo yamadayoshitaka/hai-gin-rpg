@@ -4943,7 +4943,7 @@ function allyItemStocks(){
  const alliedIds=new Set((massSim?.units??actors).filter(u=>u.team===0).map(u=>String(u.id)));
  return roomItemRegistry.owned().filter(stack=>stack.quantity>0&&alliedIds.has(String(stack.ownerId)));
 }
-function useSquadBattleItem(itemId,squadId,{automatic=false}={}){
+function performSquadBattleItem(itemId,squadId,{automatic=false}={}){
  const id=String(squadId),stocks=allyItemStocks();
  const stack=stocks.find(s=>s.itemId===itemId),type=ROOM_ITEM_TYPES[itemId];
  const members=(massSim?.units??actors).filter(u=>u.team===0&&String(u.squadId)===id&&u.hp>0&&u.alive!==false);
@@ -4995,6 +4995,7 @@ function useSquadBattleItem(itemId,squadId,{automatic=false}={}){
  log(squadName(id)+'：'+supply.name+'／'+effect);updateUI();
  return true;
 }
+function useSquadBattleItem(itemId,squadId){return performSquadBattleItem(itemId,squadId);}
 function openBattleItemsForSquad(id){
  if(id!=null)lastBattleItemSquad=String(id);
  battleItemSide='ally';itemPanel.hidden=false;
@@ -5350,7 +5351,7 @@ function updateAllyAutoItemDecisions(){
   const now=massSim?.time??elapsed;
   const activeIds=active.filter(b=>b.until>now).map(b=>b.itemId);
   const itemId=chooseAutoSquadItem(members,stocks,ROOM_ITEM_TYPES,activeIds);
-  if(itemId&&useSquadBattleItem(itemId,id,{automatic:true})){
+  if(itemId&&performSquadBattleItem(itemId,id,{automatic:true})){
    allyAutoItemCursor=(index+1)%squadIds.length;
    break; // One allied item per 10 seconds globally.
   }
