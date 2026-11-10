@@ -1,13 +1,13 @@
 {
   "key": "hero-girl-01",
   "referenceDesign": "approved-heroine-knight-portrait-20261109",
-  "approvalScope": "2D design direction only; 3D art approval pending",
+  "approvalScope": "FF13 Lightning-inspired art direction; implementation and 3D beauty approval pending",
   "visualTargets": {
-    "genderPresentation": "young female knight",
-    "hair": "Preview-only 100,000 fine 3D strands rooted across the complete scalp: connected fringe, temples, ear-adjacent sides, occiput and waist-length blonde back curtain. No large flat hair cards. Ear-front facial contour remains visible.",
-    "eyes": "Naturally aligned blue irises, upper/lower lids fitted to eye sockets and realistic subtle catchlights",
-    "face": "Softer rounded cheeks with dedicated lower lateral cheek, pre-ear and parotid width control; natural chin and native 3D nose/nostrils/lips preserved.",
-    "costume": "Dark knight chest armor with interlocking metal ring detail"
+    "genderPresentation": "lean young-adult female knight; Lightning-class facial and material design target, source geometry original",
+    "hair": "Single rose-pink asymmetric wig (100,000 authored 3D centreline filaments) on source-conforming pink crown; no bald patches, no old donor hair, swept fringe, shoulder-length side layers, long rear layers safely clearing body",
+    "eyes": "Blue-green sclera/iris/pupil remain visible across width/height/spacing/tilt/vertical edits; attached eyelashes follow upper eyelids and blink",
+    "face": "FF13-style attractive but anatomically natural face; soft cheek-to-jawline, restrained almond eyes and realistic nose/lips; no 2D warp",
+    "costume": "Pale fitted standing collar, silver armour plates and dark knight bodysuit; original source meshes, no extracted Lightning assets"
   },
   "viewsRequired": [
     "front",
@@ -27,5 +27,17 @@
   "fixedSourceAssets": true,
   "skinned": false,
   "artGradeCertified": false,
-  "previewOnlyHairFilaments": 100000
+  "previewOnlyHairFilaments": 100000,
+  "artReference": "Lightning (Final Fantasy XIII) is a visual goal only; no third-party original character model or texture is imported",
+  "qaRequired": [
+    "crownCoverage",
+    "sideBackClearance",
+    "frontFace",
+    "sideFace",
+    "eyeMorphFiveControls",
+    "eyeballVisibility",
+    "eyelashLidTracking",
+    "wireframe",
+    "blink"
+  ]
 }
