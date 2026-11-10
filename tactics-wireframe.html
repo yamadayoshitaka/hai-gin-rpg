@@ -6312,7 +6312,13 @@ $('missionTargetBack').onclick=()=>{
 };
 window.getSquadCommandState=()=>({picking:pickingSquadDestination,warpPicking:pickingStrategistWarp,paused,
  selectedSquad:selectedSquadId,mission:pickingSquadMission,cameraPolar:controls.getPolarAngle(),
- previousPaused:squadSelectionReturn?.wasPaused??null});
+ previousPaused:squadSelectionReturn?.wasPaused??null,
+ commandOverviewLocked,cameraControlsEnabled:controls.enabled,
+ overviewDistance:Math.round(camera.position.distanceTo(controls.target)),
+ targetKind:pendingCircleTarget?.kind??null,
+ selectableTargets:pendingCircleTarget?(pendingCircleTarget.kind==='attack'?enemySquadIds:squadIds)
+  .filter(id=>isSquadCircleTargetActionable(id,pendingCircleTarget.kind==='attack'?1:0,pendingCircleTarget)):[]
+});
 
 function squadCenter(id,team=0){
  const alive=squadRoster.filter(u=>u.team===team&&String(u.squadId)===String(id)&&
