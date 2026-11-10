@@ -143,11 +143,11 @@ export function buildHeroineFrontFringe(scalp,{locks=520}={}){
   const x0=q[0],y0=q[1],z0=q[2],base=positions.length/3;
   // A layered sweep moves from the upper-left crown toward the right temple.
   // A minority of shorter inner locks cross over to hide a visible hairline.
-  const length=d.y*(.115+.125*hash(seed*2.71));
-  const wave=(hash(seed*5.53)-.5)*d.x*.027;
-  const drift=d.x*(.072+.120*hash(seed*3.43));
+  const length=d.y*(.11+.14*hash(seed*2.71));
+  const wave=(hash(seed*5.53)-.5)*d.x*.040;
+  const drift=d.x*(.048+.135*hash(seed*3.43));
   // Small overlapping fillets: avoid a single opaque horizontal fringe slab.
-  const width=d.x*(.0038+.0033*hash(seed*1.69));
+  const width=d.x*(.0027+.0026*hash(seed*1.69));
   for(let j=0;j<=N;j++){
    const t=j/N,e=t*t*(3-2*t);
    const x=clamp(x0+drift*e+wave*Math.sin(Math.PI*t),
@@ -155,9 +155,9 @@ export function buildHeroineFrontFringe(scalp,{locks=520}={}){
    const y=Math.max(b.min.y+d.y*.705,y0-length*t);
    // Follow the forehead rather than stabbing outward from the hairline:
    // only a small surface stand-off above the actual source frontal Z.
-   const z=z0+d.z*(.009+.047*t+.016*Math.sin(Math.PI*t));
+   const z=z0+d.z*(.008+.028*t+.012*Math.sin(Math.PI*t));
    if(j===N){minTipY=Math.min(minTipY,y);maxTipY=Math.max(maxTipY,y);}
-   const taper=(.82-.75*e)*width;
+   const taper=(.80-.74*e)*width;
    for(const sign of [-1,1]){
     positions.push(x+sign*taper,y,z);
     const v=.88+.11*hash(seed*.75),shine=.94+.06*Math.sin(t*4+seed*.13);
@@ -222,23 +222,28 @@ export function buildHeroineCrownFlow(scalp,{locks=8000}={}){
   const root=roots[(i*67+Math.floor(hash(seed*3.17)*roots.length))%roots.length];
   radial.set((root[0]-cx)/d.x,(root[1]-cy)/d.y,(root[2]-cz)/d.z).normalize();
   // Along the scalp, not straight out from the vertex (no upright spikes).
-  tangent.set(.58+hash(seed*1.83)*.20,-.51,.29+hash(seed*7.7)*.26);
+  const sweep=(root[0]-cx)/d.x;
+  tangent.set(.50+hash(seed*1.83)*.28,
+   -.32-.19*hash(seed*2.07),
+   -.22-.30*hash(seed*7.7)+sweep*.24);
   tangent.addScaledVector(radial,-tangent.dot(radial)).normalize();
   side.crossVectors(tangent,radial).normalize();
-  const length=d.y*(.044+.054*hash(seed*1.31)),
-   halfWidth=d.x*(.00115+.00080*hash(seed*4.91)),
+  // Longer scalp-tangent paths overlap the foundation instead of short
+  // stubble stuck into a single-colour helmet surface.
+  const length=d.y*(.078+.097*hash(seed*1.31)),
+   halfWidth=d.x*(.00105+.00072*hash(seed*4.91)),
    base=pts.length/3;
   for(let j=0;j<=sections;j++){
    const t=j/sections,taper=1-t*.94;
    point.set(...root)
     .addScaledVector(tangent,length*t)
-    .addScaledVector(radial,d.y*(.009+.003*Math.sin(Math.PI*t)));
+    .addScaledVector(radial,d.y*(.006+.002*Math.sin(Math.PI*t)));
    for(const sign of [-1,1]){
     const x=point.x+sign*halfWidth*taper*side.x;
     const y=point.y+sign*halfWidth*taper*side.y;
     const z=point.z+sign*halfWidth*taper*side.z;
     pts.push(x,y,z);
-    const shade=.72+.22*hash(seed*.71)+.045*Math.sin(t*6+seed*.17);
+    const shade=.67+.27*hash(seed*.71)+.05*Math.sin(t*6+seed*.17);
     col.push(shade,shade*.93,shade*.96);
    }
    if(j<sections){
@@ -288,8 +293,11 @@ export function buildHeroineWigRootCap(scalp){
   const u=clamp((yn-limit+.075)/.13,0,1);
   const a=yn>.78?1:u*u*(3-2*u);
   const o=i*4;
-  const l=.94+.06*Math.sin(x*79+z*47+y*29);
-  color[o]=l;color[o+1]=l*.98;color[o+2]=l;color[o+3]=a;
+  // The cap is the UNDERCOAT, not the visible finish: broad micro-contrast
+   // reads as hair depth when the independent scalp fibers cross it.
+   const direction=(x-cx)*93+z*67-y*38;
+   const l=.77+.19*Math.sin(direction)*Math.sin(direction*.41+1.2);
+  color[o]=l;color[o+1]=l*.94;color[o+2]=l*.97;color[o+3]=a;
   if(yn>.87){crownSamples++;if(a>.98)coveredCrown++;}
  }
  if(crownSamples<35||coveredCrown/crownSamples<.95)
