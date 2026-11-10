@@ -468,6 +468,28 @@ body.squad-closeup #enemySquadIntel{display:none!important}
 @media(max-width:390px){#allySquadRibbon,#enemySquadRibbon{width:72px!important}.squadCommandRibbon .ribbonSquad{min-height:39px!important}}
 #squadSelectedAttackArrow{stroke:#ffcd58;stroke-width:4;stroke-linecap:round;fill:none;opacity:.98;filter:drop-shadow(0 0 5px #a94b27);pointer-events:none}
 
+
+/* Live living / assigned count remains visible beside each squad name. */
+.squadCommandRibbon .ribbonTop{
+ display:flex!important;width:100%!important;align-items:baseline!important;
+ justify-content:space-between!important;gap:2px!important;
+ white-space:nowrap!important;font:800 10px/1.15 system-ui!important
+}
+.squadCommandRibbon .ribbonCount{
+ font:900 10px/1.15 system-ui!important;font-variant-numeric:tabular-nums!important;
+ color:#f7eea9!important;white-space:nowrap!important;flex:none!important
+}
+.squadCommandRibbon .ribbonCount.low{color:#ffb7ae!important}
+.squadCommandRibbon .ribbonCount.empty{color:#ffa1a1!important}
+body.compact-command-dock .squadCommandRibbon .ribbonSquad:disabled{
+ opacity:.76!important;filter:none!important
+}
+body.compact-command-dock[data-circle-target] .squadCommandRibbon
+ .ribbonSquad:disabled:not(.command-source){opacity:.44!important}
+@media(max-width:390px){
+ .squadCommandRibbon .ribbonTop{font-size:9px!important}
+ .squadCommandRibbon .ribbonCount{font-size:9px!important}
+}
 /* Retire the old battlefield circles; one attack arrow and both rosters remain. */
 #squadScreenLabels .squadScreenLabel{visibility:hidden!important;pointer-events:none!important}
 #squadCalloutLines path:not(#squadSelectedAttackArrow),
@@ -7278,13 +7300,15 @@ function makeRibbonSquad(team,id,index){
  const icon=document.createElement('span');icon.className='ribbonIcon';
  icon.textContent=ribbonIconForType(selectedSquadType(id,team));
  const title=document.createElement('span');title.textContent='第'+(index+1)+'隊';
+ const count=document.createElement('span');count.className='ribbonCount';count.textContent='0/0';
+ const header=document.createElement('span');header.className='ribbonTop';header.append(title,count);
  const order=document.createElement('span');order.className='ribbonOrder';
  const timer=document.createElement('span');timer.className='ribbonCooldown';timer.hidden=true;
  const deaths=document.createElement('span');deaths.className='ribbonDeaths';deaths.textContent='☠ 0';
  order.textContent='自動';
  const target=document.createElement('span');target.className='ribbonTarget none';target.textContent='索敵中';
- button.append(icon,title,target,deaths,order,timer);
- button.userDataTarget=target;
+ button.append(icon,header,target,deaths,order,timer);
+ button.userDataCount=count;button.userDataTarget=target;
  button.userDataDeaths=deaths;
  button.userDataIcon=icon;button.userDataOrder=order;button.userDataCooldown=timer;button.userDataIndex=index;
  button.onclick=()=>{if(pendingCircleTarget){chooseCircleActionTarget(id,team);return}if(team===0){trackedAllySquadId=String(id);openSquadTactics(id)}else showEnemySquadIntel(id)};
@@ -7445,6 +7469,10 @@ function renderSquadRibbons(sums){
    button.userDataTarget.className='ribbonTarget '+(index<0?'none':lock.mode==='tracking'?'tracking':'locked');
    button.classList.toggle('target-locked',team===1&&String(row.id)===
      currentSquadAttackTarget(0,trackedAllySquadId,sums)?.id);
+   const liveCount=row.alive+'/'+row.total;
+   if(button.userDataCount.textContent!==liveCount)button.userDataCount.textContent=liveCount;
+   button.userDataCount.classList.toggle('low',row.total>0&&row.alive/row.total<=.5);
+   button.userDataCount.classList.toggle('empty',row.alive===0);
    const dead=Math.max(0,row.total-row.alive);
    if(button.userDataDeaths.textContent!=='☠ '+dead)button.userDataDeaths.textContent='☠ '+dead;
    const selectable=pendingCircleTarget?
