@@ -19,11 +19,11 @@ export function createBattleStrategistDialogue({
  #battleReportInfo{flex:1;min-width:0}
  #battleReportHeader{display:flex;align-items:center;gap:7px;color:#ffdea0;font:bold 11px system-ui}
  #battleReportTime{color:#b8ccdf;font-weight:normal}
- #battleReportText{font:12px/1.4 system-ui;margin-top:4px}
+ #battleReportText{font:13px/1.5 system-ui;margin-top:4px}
  #battleReportHistoryToggle{margin-left:auto;padding:2px 6px;color:#e9efff;background:#1d3a54;border:1px solid #7297b0;border-radius:5px;font:10px system-ui;cursor:pointer}
  #battleReportHistory{position:fixed;z-index:33;left:8px;right:8px;bottom:calc(var(--battleReportHeight,88px) + 5px);max-height:min(230px,38dvh);overflow:auto;border:1px solid #7299b5;border-radius:9px;padding:9px;background:#0a1d32f6;color:#f3f6fb;font:11px/1.45 system-ui}
  #battleReportHistory p{margin:0;padding:5px 2px;border-bottom:1px solid #405e77}
- @media(max-width:390px){#battleDialogue{gap:5px;padding:5px 6px}#battleReportFace{min-width:51px;width:51px;min-height:55px}#battleReportText{font-size:11px}}
+ @media(max-width:390px){#battleDialogue{gap:5px;padding:5px 6px}#battleReportFace{min-width:51px;width:51px;min-height:55px}#battleReportText{font-size:12px}}
  `;
  document.head.append(css);
  const box=document.createElement('section');
@@ -39,6 +39,8 @@ export function createBattleStrategistDialogue({
  };
  const advisor=createBattleStrategistAdvisor({nameSquad});
  const events=[],queue=[];let lastScan=-Infinity,lastShown=-Infinity,first=true,currentEvent=null;
+ let currentReadUntil=-Infinity;
+ const readableDuration=text=>Math.min(12,Math.max(6.5,3.5+String(text||'').length/11));
  // The spoken report is also an interactive unit locator. The separate
  // history button still works and never accidentally moves the camera.
  box.tabIndex=0;
@@ -65,7 +67,7 @@ export function createBattleStrategistDialogue({
   nameEl.textContent=name;timeEl.textContent='戦闘 '+Math.floor(getTime())+'秒';
   textEl.textContent=event.text;
   document.documentElement.style.setProperty('--battleReportHeight',Math.ceil(box.getBoundingClientRect().height)+'px');
-  lastShown=getTime();first=false;
+  lastShown=getTime();currentReadUntil=lastShown+readableDuration(event.text);first=false;
   onDisplay({...event,speakerName:name});
   if(event.focus)onFocus(event);
  }
@@ -77,7 +79,9 @@ export function createBattleStrategistDialogue({
   if(events.length>40)events.length=40;
   const row=document.createElement('p');row.textContent=Math.floor(time)+'秒　'+event.speaker+'：'+event.text;
   history.prepend(row);while(history.childElementCount>40)history.lastChild.remove();
-  if(first||event.forceDisplay||event.priority>=95&&time-lastShown>1.2)display(event);
+  // Forced reports are prioritized, not allowed to erase an unread report.
+  if(first||time>=currentReadUntil||
+    event.kind==='critical'&&time-lastShown>=3)display(event);
   else{queue.push(event);queue.sort((a,b)=>(b.priority||0)-(a.priority||0));queue.length=Math.min(queue.length,15);}
  }
  function update(units,paused=false,finished=false){
@@ -89,7 +93,7 @@ export function createBattleStrategistDialogue({
       push(item);
     }
   }
-  if(queue.length&&time-lastShown>=4.6)display(queue.shift());
+  if(queue.length&&time>=currentReadUntil)display(queue.shift());
  }
  return {push,update,get status(){return {visible:!box.hidden,current:textEl.textContent,
    history:events.slice(0,20),queued:queue.length,
