@@ -9,8 +9,10 @@ on:
       - 'tactics-wireframe.html'
       - 'src/town-scene-policy.js'
       - 'src/town-npc-motion.js'
+      - 'src/town-civilian-head.js'
       - 'qa/town-scene-isolation.test.mjs'
       - 'qa/town-npc-motion.test.mjs'
+      - 'qa/town-complete-scene-regression.test.mjs'
       - 'src/campaign-stage-plan.js'
       - 'qa/town-real-stage-browser-smoke.cjs'
   workflow_dispatch:
@@ -36,6 +38,7 @@ jobs:
         run: |
           node qa/town-scene-isolation.test.mjs
           node qa/town-npc-motion.test.mjs
+          node qa/town-complete-scene-regression.test.mjs
       - name: Serve genuine local game assets
         run: |
           python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/town-3d-server.log 2>&1 &
