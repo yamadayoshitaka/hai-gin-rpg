@@ -209,7 +209,7 @@ export function applyHeroineMakeupToFace(faceMesh,neutralColors,{
   // Linear vertex color multipliers are multiplied by the actual PBR skin
   // material. Tint rather than merely dimming every RGB channel together.
   const red=Math.min(1.24,neutralColors[n]*
-   (1+.15*cheek+.43*lips-.25*lipSeam-.49*liner));
+   (1+.15*cheek+.25*lips-.18*lipSeam-.49*liner));
   const green=neutralColors[n+1]*
    (1-.25*cheek-.57*lips-.48*lipSeam-.56*liner);
   const blue=neutralColors[n+2]*
