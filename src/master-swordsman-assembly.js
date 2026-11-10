@@ -510,7 +510,7 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false,gen
   for(let i=0;i<p.count;i++){
    const x=p.getX(i),y=p.getY(i),z=p.getZ(i);
    p.setXYZ(i,center.x+(x-center.x)*.87,
-    center.y+(y-center.y)*.73,
+    center.y+(y-center.y)*(gender==='female'?.68:.73),
     center.z+(z-center.z)*.76-.0028);
   }
   p.needsUpdate=true;modified.computeVertexNormals();
