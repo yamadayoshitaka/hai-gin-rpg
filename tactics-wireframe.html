@@ -291,6 +291,12 @@ body.squad-menu-closed #stageViewport{bottom:0!important}
 #battleLoading.prebattle-setup #loadingSkipAudio{flex:none;margin:0 auto!important}
 #battleLoading.prebattle-setup #openingSquadOrders canvas{width:150px!important;height:150px!important}
 @media(max-height:600px){#battleLoading.prebattle-setup #loadingCard{gap:3px}#battleLoading.prebattle-setup #openingSquadStrategies,#battleLoading.prebattle-setup #openingSquadOrders{padding:5px!important;gap:2px}#battleLoading.prebattle-setup #openingSquadOrders canvas{width:112px!important;height:112px!important}}
+/* Pulse the valid second-step target circles, not the source squad. */
+@keyframes targetSquadPulse{0%,100%{outline-width:2px;outline-offset:3px;filter:brightness(1)}50%{outline-width:6px;outline-offset:5px;filter:brightness(1.65)}}
+body[data-circle-target="ally"] .squadScreenLabel.ally:not(.defeated),
+body[data-circle-target="enemy"] .squadScreenLabel.enemy:not(.defeated){outline:3px solid #ffe899;animation:targetSquadPulse .85s ease-in-out infinite}
+body[data-circle-target] #destinationPrompt{border:2px solid #ffed9c;box-shadow:0 0 12px #ffe68a66}
+@media(prefers-reduced-motion:reduce){body[data-circle-target] .squadScreenLabel{animation:none!important;outline:4px solid #ffe899}}
 </style>
 <div id="vitalsPanel" hidden role="region" aria-label="戦況HP・MP一覧"><div class="vitalsHead"><strong>部隊別 HP / MP（⏸ 一時停止中）</strong><button id="vitalsClose" aria-label="戦況を閉じる">✕ 閉じる</button></div><div id="vitalsOverview"></div><div class="vitalsFilters"><label>軍<select id="vitalsTeam"><option value="0">味方</option><option value="1">敵</option></select></label><label>部隊<select id="vitalsSquad"><option value="all">全部隊</option></select></label><label>職業<select id="vitalsJob"><option value="all">全職業</option></select></label></div><div class="squadHelp" id="vitalsSquadStatus">部隊を選ぶと個人のHPとMPを確認できます。</div><button id="vitalsHealing" disabled>✚ この部隊へ回復支援を要請</button><div id="vitalsJobSummary"></div><div id="vitalsIndividuals"></div><div class="vitalsPages"><button id="vitalsPrev">◀ 前</button><span id="vitalsPageLabel">1 / 1</span><button id="vitalsNext">次 ▶</button></div></div>
 <button id="battleMenuToggle" aria-expanded="false">☰ メニュー</button>
@@ -443,6 +449,7 @@ import {formatSquadIntent} from './src/battle-squad-intent.js?v=4.6.45';
 import {sortSquadRibbon,squadRibbonStatus,secondsUntilNextOrder} from './src/battle-command-roster.js?v=4.6.47';
 import {describeSquadOrder,describeCommanderBuff} from './src/battle-order-message.js?v=4.6.40';
 import {recommendBattleTactics} from './src/battle-quick-recommendation.js?v=4.6.43';
+import {chooseAutoSquadItem} from './src/battle-auto-item-policy.js?v=1';
 import {BattleHotspotMap} from './src/battle-hotspot-map.js?v=4.6.15';
 import {createBattleOrchestralScore} from './src/battle-orchestral-score.js?v=4.6.15';
 import {createBattleVoiceDirector} from './src/battle-voice-library.js?v=voice-roster-25';
@@ -4438,6 +4445,7 @@ function tickAI(dt){
  if(!battleReady||battleCeremony.locked||paused||finished)return;elapsed+=dt;updateBridgeFires();
  if(!massSim)updateSkirmishSquadStrategies();
  updateEnemyItemDecisions();
+ updateAllyAutoItemDecisions();
  updateEnemyTacticalDecisions();
  refreshLockedSquadStrategyList();
  if(!massSim)collectNearbyRoomItems();
@@ -4935,7 +4943,7 @@ function allyItemStocks(){
  const alliedIds=new Set((massSim?.units??actors).filter(u=>u.team===0).map(u=>String(u.id)));
  return roomItemRegistry.owned().filter(stack=>stack.quantity>0&&alliedIds.has(String(stack.ownerId)));
 }
-function useSquadBattleItem(itemId,squadId){
+function performSquadBattleItem(itemId,squadId,{automatic=false}={}){
  const id=String(squadId),stocks=allyItemStocks();
  const stack=stocks.find(s=>s.itemId===itemId),type=ROOM_ITEM_TYPES[itemId];
  const members=(massSim?.units??actors).filter(u=>u.team===0&&String(u.squadId)===id&&u.hp>0&&u.alive!==false);
@@ -4964,22 +4972,30 @@ function useSquadBattleItem(itemId,squadId){
  if(owner)owner.inventory=roomItemRegistry.owned(owner.id).map(item=>({
   id:item.itemId,name:item.name,quantity:item.quantity
  }));
- itemPanel.hidden=true;
+ if(!automatic)itemPanel.hidden=true;
  registerActiveSquadBuffVfx(id,supply);
  battleCeremony.showOrder('🎒 '+supply.name+'：'+squadName(id),effect);
- beginCommanderCinematic(id);
+ if(!automatic)beginCommanderCinematic(id);
  emitSquadBuffEffect(id,supply.kind==='heal'?'nature':
    supply.defense?'earth':supply.speed?'arcane':'fire');
- battleAudio.orderFanfare();
- reportAfterBattleCutin(squadName(id)+'が'+supply.name+'を使用！ '+effect+
-  '。使用後の生存 '+members.length+'名',{squadId:id,priority:98});
+ if(!automatic){
+  battleAudio.orderFanfare();
+  reportAfterBattleCutin(squadName(id)+'が'+supply.name+'を使用！ '+effect+
+   '。使用後の生存 '+members.length+'名',{squadId:id,priority:98});
+ }else{
+  battleDialogue.push({key:'ally-auto-item:'+id+':'+Math.floor(elapsed),
+   speaker:'伝令',kind:'info',priority:42,
+   text:squadName(id)+'が自動で'+supply.name+'を使用：'+effect});
+ }
  if(supply.kind==='heal'){
   const squadMarker=squadMarkers.get(squadKey(0,id));
   if(squadMarker)squadMarker.userData.lastHealReportAt=elapsed;
  }
+ if(automatic&&!itemPanel.hidden&&battleItemSide==='ally')renderBattleItemManagement();
  log(squadName(id)+'：'+supply.name+'／'+effect);updateUI();
  return true;
 }
+function useSquadBattleItem(itemId,squadId){return performSquadBattleItem(itemId,squadId);}
 function openBattleItemsForSquad(id){
  if(id!=null)lastBattleItemSquad=String(id);
  battleItemSide='ally';itemPanel.hidden=false;
@@ -5100,6 +5116,8 @@ const selectedSquadFormations=new Map();
 const selectedSquadType=(id,team=0)=>selectedSquadFormations.get(team+':'+String(id))||normalizeFormationType(squadTypeOf(id));
 const squadIds=[...new Set(squadRoster.filter(u=>u.team===0).map(u=>String(u.squadId)))];
 squadIds.sort((a,b)=>Number(a)-Number(b)||a.localeCompare(b,'ja'));
+// Item spending is manual until the user opts each squad into automation.
+const squadItemPolicies=new Map(squadIds.map(id=>[id,'manual']));
 // Finite tutorial supplies let the squad buffs be tested immediately.
 if(!storyRequest)for(const team of [0,1]){
  const supplier=squadRoster.find(u=>u.team===team&&u.hp>0&&!u.isStrategist);
@@ -5122,7 +5140,8 @@ for(const id of squadIds)if(!squadStrategies.has(id)){
 const STRATEGY_LABELS={eliminate:'⚔ 全滅',environment_prepare:'🛠 環境整備',recovery:'✚ 支援'};
 const INITIAL_ORDER_LABELS={charge:'⚔ 突撃',defend:'🛡 守備',hold:'⏸ 待機',retreat:'↘ 退却',explore:'🔎 探索'};
 const startingSquadOrders=new Map(),activeBuildingExplorations=new Map(),explorationQueues=new Map();
-let lastEnemyItemDecisionAt=-Infinity,lastEnemyTacticalDecisionAt=-Infinity;
+let lastEnemyItemDecisionAt=-Infinity,lastEnemyTacticalDecisionAt=-Infinity,lastAllyItemDecisionAt=-Infinity;
+let allyAutoItemCursor=0;
 const lastEnemyTacticalOrderAt=new Map();
 const squadOrderKey=(team,id)=>team+':'+String(id);
 const BUILDING_TYPE_NAMES={
@@ -5315,6 +5334,27 @@ function updateEnemyItemDecisions(){
    text:'敵'+squadName(id,1)+'が'+type.name+'を使用：'+effect});
   if(!itemPanel.hidden&&battleItemSide==='enemy')renderBattleItemManagement();
   break; // At most one enemy item per 7-second global decision interval.
+ }
+}
+/** Use only finite allied inventory, and only for auto-enabled squads. */
+function updateAllyAutoItemDecisions(){
+ if(!battleReady||finished||paused||elapsed-lastAllyItemDecisionAt<10)return;
+ lastAllyItemDecisionAt=elapsed;
+ const units=massSim?.units??actors,stocks=allyItemStocks();
+ if(!stocks.length||!squadIds.length)return;
+ for(let offset=0;offset<squadIds.length;offset++){
+  const index=(allyAutoItemCursor+offset)%squadIds.length,id=squadIds[index];
+  if(squadItemPolicies.get(id)!=='auto')continue;
+  const members=units.filter(u=>u.team===0&&String(u.squadId)===id&&u.hp>0&&u.alive!==false&&!u.isStrategist);
+  if(!members.length)continue;
+  const active=massSim?.squadItemBuffs?.get(id)||skirmishSquadItemBuffs.get(id)||[];
+  const now=massSim?.time??elapsed;
+  const activeIds=active.filter(b=>b.until>now).map(b=>b.itemId);
+  const itemId=chooseAutoSquadItem(members,stocks,ROOM_ITEM_TYPES,activeIds);
+  if(itemId&&performSquadBattleItem(itemId,id,{automatic:true})){
+   allyAutoItemCursor=(index+1)%squadIds.length;
+   break; // One allied item per 10 seconds globally.
+  }
  }
 }
 function checkCompletedExplorations(){
@@ -5883,6 +5923,8 @@ function beginCircleTargetSelection(kind,itemId=null){
  if(source==null||!hasSquadCommander(source))return false;
  if(kind!=='item'&&!canChangeSquadOrder(source))return false;
  pendingCircleTarget={kind,itemId,source};
+ document.body.dataset.circleTarget=kind==='attack'?'enemy':'ally';
+ drawSquadMiniMap();
  $('squadTactics').hidden=true;$('destinationPrompt').hidden=false;
  $('destinationPrompt').textContent=kind==='item'?'🎒 使用先の味方（青）のサークルをタップ・ここで取消':
   kind==='support'?'✚ 回復先の味方（青）のサークルをタップ・ここで取消':
@@ -5929,6 +5971,7 @@ function beginSquadDestination(id){
 }
 function closeSquadTactics(){
  pendingCircleTarget=null;
+ delete document.body.dataset.circleTarget;
  pickingSquadDestination=false;pickingSquadMission=null;pickingStrategistWarp=false;clearMissionPreview();
  $('squadTactics').hidden=true;$('destinationPrompt').hidden=true;$('squadDockIdle').hidden=true;
  document.body.classList.add('squad-menu-closed');
@@ -7855,7 +7898,7 @@ async function finishBattleLoading(){
   const planHeading=document.createElement('strong');
   planHeading.textContent='⚑ 開戦前の隊列編成';
   const planHint=document.createElement('p');
-  planHint.textContent='3ボタンは自動編成。手動は「職業を選ぶ」から別画面で人数を決めます。割合スライダーは廃止し、実際の職業構成から攻撃・バランス・支援を再判定します。';
+  planHint.textContent='3ボタンは自動編成。職業は手動指定もできます。アイテムは部隊ごとに自動／手動を設定（初期値は手動）。実際の職業構成から部隊タイプを判定します。';
   planHint.style.cssText='font:11px/1.55 system-ui;color:#c3dcea;margin:5px 0 8px';
   const planList=document.createElement('div');planList.id='openingPlanList';
   planList.style.cssText='overflow:hidden;display:grid;gap:6px';
@@ -7906,8 +7949,20 @@ async function finishBattleLoading(){
    manual.textContent='✎ 職業を選んで手動編成';
    manual.style.cssText='grid-column:1/-1;min-height:38px;color:#fff;background:#30577b;border:1px solid #94b5d1;border-radius:7px';
    manual.onclick=()=>openManualJobEditor(id);
-   formationRows.set(id,{name,preview,buttons,manual});
-   row.append(name,buttons,preview,manual);planList.append(row);
+   const itemModeLine=document.createElement('label');
+   itemModeLine.style.cssText='grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:7px;color:#bde7f9;font:11px system-ui';
+   const itemModeText=document.createElement('span');itemModeText.textContent='🎒 アイテム使用';
+   const itemMode=document.createElement('select');
+   itemMode.setAttribute('aria-label',squadName(id)+'のアイテム使用方法');
+   itemMode.style.cssText='min-width:118px;padding:7px;color:white;background:#204967;border:1px solid #84b5d1;border-radius:6px;font:12px system-ui';
+   for(const [value,label] of [['manual','手動アイテム'],['auto','オートアイテム']]){
+    const option=document.createElement('option');option.value=value;option.textContent=label;itemMode.append(option);
+   }
+   itemMode.value=squadItemPolicies.get(id);
+   itemMode.onchange=()=>{if(!battleReady)squadItemPolicies.set(id,itemMode.value);};
+   itemModeLine.append(itemModeText,itemMode);
+   formationRows.set(id,{name,preview,buttons,manual,itemMode});
+   row.append(name,buttons,preview,manual,itemModeLine);planList.append(row);
   }
   // Full-screen profession editor: one tap reserves actual soldiers of that
   // class (10 for large squads, one for small squads). Counts, not percentages.

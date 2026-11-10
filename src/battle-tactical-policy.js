@@ -23,25 +23,40 @@ export function selectedSoldierCount(total,choice='all'){
  if(choice==='all'||!Number.isFinite(value)||value<=0)return total;
  return Math.max(1,Math.min(total,Math.floor(value)));
 }
+/**
+ * An under-strength squad can counterattack after a defensive phase.
+ * Enemy numbers alone must not force permanent defense: compare local
+ * contact, enemy condition and recovered HP before deciding.
+ */
 export function chooseEnemyOrder(own=[],opponents=[],previous='charge'){
  const living=own.filter(u=>u.alive!==false&&(u.hp??0)>0&&!u.isStrategist);
  const hostile=opponents.filter(u=>u.alive!==false&&(u.hp??0)>0&&!u.isStrategist);
  if(!living.length)return {mode:'hold',reason:'部隊壊滅'};
- const hp=living.reduce((n,u)=>n+(u.hp||0)/Math.max(1,u.maxHp||1),0)/living.length;
- const casualties=(own.length-living.length)/Math.max(1,own.length);
  if(!hostile.length)return {mode:'hold',reason:'敵影なし'};
- if(hp<.30||casualties>.72)return {mode:'retreat',reason:'壊滅回避'};
- if(hp<.62||casualties>.45)return {mode:'defend',reason:'損耗を抑え回復'};
+ const hp=living.reduce((n,u)=>n+(u.hp||0)/Math.max(1,u.maxHp||1),0)/living.length;
+ const casualties=(own.filter(u=>!u.isStrategist).length-living.length)/
+  Math.max(1,own.filter(u=>!u.isStrategist).length);
+ if(hp<.28||casualties>.76)return {mode:'retreat',reason:'壊滅回避'};
  let cx=0,cz=0;
  for(const u of living){cx+=u.x??u.cell?.x??0;cz+=u.z??u.cell?.z??0}
  cx/=living.length;cz/=living.length;
  const sample=hostile.length>120?hostile.filter((_,i)=>i%Math.ceil(hostile.length/120)===0):hostile;
- let minDist=Infinity;
+ let minDist=Infinity,nearCount=0,nearHp=0;
  for(const u of sample){
   const dx=(u.x??u.cell?.x??0)-cx,dz=(u.z??u.cell?.z??0)-cz;
-  minDist=Math.min(minDist,Math.hypot(dx,dz));
+  const distance=Math.hypot(dx,dz);
+  minDist=Math.min(minDist,distance);
+  if(distance<=34){nearCount++;nearHp+=(u.hp||0)/Math.max(1,u.maxHp||1);}
  }
+ const nearbyEnemyHp=nearCount?nearHp/nearCount:1;
+ // Defense is a recovery phase, not an irreversible state. A squad that
+ // can still fight may seize a nearby weakness or break out of a siege.
+ if(previous==='defend'&&hp>=.36&&casualties<.68&&(
+   (nearCount>0&&(nearbyEnemyHp<.55||
+     (minDist<22&&hp>=.42)))||
+   (minDist>40&&hp>=.50)
+  ))return {mode:'charge',reason:'守備から反撃へ転換'};
+ if(hp<.62||casualties>.45)return {mode:'defend',reason:'損耗を抑え態勢を立て直す'};
  if(minDist<14)return {mode:'charge',reason:'敵と接敵'};
- if(minDist>75&&hp<.85)return {mode:'hold',reason:'陣形を整える'};
- return {mode:'charge',reason:'敵陣を攻める'};
+ return {mode:'charge',reason:minDist>75?'敵陣へ進軍':'攻勢を維持'};
 }
