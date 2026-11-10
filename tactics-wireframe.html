@@ -5280,7 +5280,9 @@ function updateEnemyTacticalDecisions(){
   if(!living.length)continue;
   if(massSim&&!units.some(u=>u.team===1&&String(u.squadId)===id&&u.isStrategist&&u.alive&&u.hp>0))continue;
   const previous=startingSquadOrders.get(squadOrderKey(1,id))?.mode||'charge';
-  const choice=chooseEnemyOrder(own,allies,previous);
+  const friendlyArmy=units.filter(u=>u.team===1&&u.hp>0&&u.alive!==false&&!u.isStrategist);
+  const defenseElapsed=elapsed-(lastEnemyTacticalOrderAt.get(id)??elapsed);
+  const choice=chooseEnemyOrder(own,allies,previous,{friendlyArmy,defenseElapsed});
   let mode=choice.mode,buildingId=null;
   if(mode==='charge'&&previous!=='explore'&&elapsed>12){
    const px=living.reduce((v,u)=>v+(u.x??u.cell?.x??0),0)/living.length;
