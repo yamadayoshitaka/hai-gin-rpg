@@ -92,8 +92,8 @@ function changed(a,b,threshold=48){
   await page.locator('#hairOn').uncheck();
   await page.waitForTimeout(100);
   const baseFace=await page.evaluate(()=>window.__heroSwordsmanQA());
-  if(await page.locator('#faceProportionControls input[type="range"]').count()!==45||
-     baseFace.facialProportionFields!==45)
+  if(await page.locator('#faceProportionControls input[type="range"]').count()!==48||
+     baseFace.facialProportionFields!==48)
    throw Error('Missing facial third / eye / brow / nose / mouth sliders');
   if(baseFace.facialQA?.maxIrisCenterOffsetRatio>.20||baseFace.facialQA?.maxPupilIrisOffsetRatio>.55)
    throw Error('Native eye/iris/pupil not aligned: '+JSON.stringify(baseFace.facialQA));
@@ -268,6 +268,14 @@ function changed(a,b,threshold=48){
               'ally-01','ally-02','ally-03','ally-04','ally-05','hero-girl-01'];
   const featured=[];
   for(const key of keys){
+   const captureFeatured=async(name)=>{
+    const file=path.join(dir,name);
+    // A software-rendered 100k-hair scene is valid WebGL evidence,
+    // but the element-stability check stalls while the canvas animates.
+    if(key==='hero-girl-01')return page.screenshot({
+     path:file,clip:await canvas.boundingBox(),timeout:90000,animations:'disabled'});
+    return canvas.screenshot({path:file});
+   };
    await page.evaluate(k=>window.__heroSwordsmanSelectFeatured(k),key);
    await page.waitForFunction(k=>window.__heroSwordsmanQA?.()?.featuredKey===k,key,{timeout:30000});
    await page.waitForTimeout(140);
@@ -293,15 +301,31 @@ function changed(a,b,threshold=48){
     // The reference hero must be inspectable as actual source triangles,
     // including dense 3D hair. These controls must not replace the model
     // with a filtered portrait or contaminate PBR material state.
-    if((state.referenceHeroineHairReport?.bangLocks||0)<30||
-       (state.referenceHeroineHairReport?.triangleCount||0)<60000)
+    if((state.referenceHeroineHairReport?.bangLocks||0)<6000||
+       state.referenceHeroineHairReport?.individualFilamentCount!==100000||
+       state.referenceHeroineHairReport?.noWidePolygonCards!==true||
+       state.referenceHeroineHairReport?.strandSegmentCount!==300000||
+       state.referenceHeroineHairReport?.strandRenderer!=='gpu-line-segments'||
+       state.referenceHeroineHairReport?.allStrandsRendered!==true||
+       state.appearance.proportions.preEarFullness>=.8||
+       state.appearance.proportions.parotidWidth>=.8)
      throw Error('Dense source-rooted long-hair geometry missing');
     const solidMesh=await page.evaluate(()=>window.__heroineWireframeQA?.());
     if(solidMesh?.featuredKey!=='hero-girl-01'||
        solidMesh?.sourceGeometry!==true||
-       solidMesh?.triangles<50000)
+       solidMesh?.strandCount!==100000||
+       solidMesh?.strandSegments!==300000||
+       solidMesh?.triangles<1000)
      throw Error('Expected genuine 3D heroine triangle topology: '+JSON.stringify(solidMesh));
+    // Rendered evidence at the actual face zoom and full source wire topology.
+    await page.locator('#portrait').click();
+    await page.waitForTimeout(170);
+    await page.screenshot({path:path.join(dir,'hero-girl-01-face-100k-hair.png'),
+     clip:await canvas.boundingBox(),timeout:90000,animations:'disabled'});
     await page.locator('#meshMode').selectOption('wire');
+    await page.waitForTimeout(170);
+    await page.screenshot({path:path.join(dir,'hero-girl-01-wire-100k-hair.png'),
+     clip:await canvas.boundingBox(),timeout:90000,animations:'disabled'});
     const wireState=await page.evaluate(()=>window.__heroineWireframeQA?.());
     if(wireState?.mode!=='wire'||wireState.triangles!==solidMesh.triangles)
      throw Error('Wire-only mode changed real source topology');
@@ -353,7 +377,7 @@ function changed(a,b,threshold=48){
     const guided=await page.evaluate(()=>window.__heroSwordsmanQA());
     if(guided.referenceContourGuideVisible!==true)
      throw Error('Source reference trace not visible on heroine 3D face');
-    await canvas.screenshot({path:path.join(dir,'hero-girl-01-user-portrait-contour-overlay.png')});
+    await captureFeatured('hero-girl-01-user-portrait-contour-overlay.png');
     await page.locator('#referenceContour').click();
     const unguided=await page.evaluate(()=>window.__heroSwordsmanQA());
     if(unguided.referenceContourGuideVisible===true)
@@ -429,25 +453,25 @@ function changed(a,b,threshold=48){
        state.hairError||state.appearance.artGradeCertified!==false||
        state.styledHairGeometry?.maxRibbonLength>.032)
     throw Error('Featured 3D model has missing scalp or inaccurate art claim: '+JSON.stringify({key,state}));
-   await canvas.screenshot({path:path.join(dir,key+'-portrait.png')});
+   await captureFeatured(key+'-portrait.png');
    if(key==='hero-01'||key==='hero-girl-01'){
     await page.locator('#full').click();
     await page.waitForTimeout(140);
-    await canvas.screenshot({path:path.join(dir,key+'-fitted-outfit-front.png')});
+    await captureFeatured(key+'-fitted-outfit-front.png');
     await page.locator('#side').click();
     await page.waitForTimeout(140);
-    await canvas.screenshot({path:path.join(dir,key+'-fitted-outfit-side.png')});
+    await captureFeatured(key+'-fitted-outfit-side.png');
     await page.locator('#back').click();
     await page.waitForTimeout(140);
-    await canvas.screenshot({path:path.join(dir,key+'-fitted-outfit-back.png')});
+    await captureFeatured(key+'-fitted-outfit-back.png');
     await page.locator('#portrait').click();
     await page.waitForTimeout(140);
-    await canvas.screenshot({path:path.join(dir,key+'-portrait.png')});
+    await captureFeatured(key+'-portrait.png');
    }
    if(key==='hero-01'||key==='hero-girl-01'){
     await page.evaluate(()=>window.__heroSwordsmanBrowsVisible(false));
     await page.waitForTimeout(90);
-    await canvas.screenshot({path:path.join(dir,key+'-no-eyebrows.png')});
+    await captureFeatured(key+'-no-eyebrows.png');
     await page.evaluate(()=>window.__heroSwordsmanBrowsVisible(true));
     await page.waitForTimeout(90);
     const difference=changed(key+'-portrait.png',key+'-no-eyebrows.png',12);
@@ -470,16 +494,16 @@ function changed(a,b,threshold=48){
     console.log('HEROINE_GLTF_STATIC_3D_EXPORT_PASS '+JSON.stringify({bytes:buffer.length}));
     await page.locator('#side').click();
     await page.waitForTimeout(180);
-    await canvas.screenshot({path:path.join(dir,'hero-girl-01-side-low-bun.png')});
+    await captureFeatured('hero-girl-01-side-low-bun.png');
     await page.locator('#back').click();
     await page.waitForTimeout(180);
-    await canvas.screenshot({path:path.join(dir,'hero-girl-01-back-low-bun.png')});
+    await captureFeatured('hero-girl-01-back-low-bun.png');
     await page.locator('#portrait').click();
    }
    if(key==='hero-01'){
     await page.locator('#back').click();
     await page.waitForTimeout(180);
-    await canvas.screenshot({path:path.join(dir,'hero-01-back-scalp.png')});
+    await captureFeatured('hero-01-back-scalp.png');
     await page.locator('#portrait').click();
    }
   }

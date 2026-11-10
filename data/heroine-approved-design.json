@@ -4,9 +4,9 @@
   "approvalScope": "2D design direction only; 3D art approval pending",
   "visualTargets": {
     "genderPresentation": "young female knight",
-    "hair": "Dark chestnut brushed-back hair gathered into a low bun. Tidy hairline and restrained wisps; no spikes or facial penetration",
+    "hair": "Preview-only 100,000 fine 3D strands rooted across the complete scalp: connected fringe, temples, ear-adjacent sides, occiput and waist-length blonde back curtain. No large flat hair cards. Ear-front facial contour remains visible.",
     "eyes": "Naturally aligned blue irises, upper/lower lids fitted to eye sockets and realistic subtle catchlights",
-    "face": "Balanced youthful jaw, natural small nose and lips, softly shaded peach skin",
+    "face": "Softer rounded cheeks with dedicated lower lateral cheek, pre-ear and parotid width control; natural chin and native 3D nose/nostrils/lips preserved.",
     "costume": "Dark knight chest armor with interlocking metal ring detail"
   },
   "viewsRequired": [
@@ -14,6 +14,7 @@
     "side",
     "rear",
     "close-up",
+    "wireframe",
     "blink"
   ],
   "sourceMaterials": {
@@ -22,8 +23,9 @@
     "outfit": "Makehuman-2 CC0 Viking outfit",
     "hair": "Authored fitted Three.js 3D geometry on CC0 female head"
   },
-  "output": "master-swordsman-prototype.html -> hero-girl-01-static-preview.glb",
+  "output": "master-swordsman-prototype.html?featured=hero-girl-01&view=portrait -> hero-girl-01-static-preview.glb",
   "fixedSourceAssets": true,
   "skinned": false,
-  "artGradeCertified": false
+  "artGradeCertified": false,
+  "previewOnlyHairFilaments": 100000
 }

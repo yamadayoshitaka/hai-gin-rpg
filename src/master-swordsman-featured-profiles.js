@@ -62,7 +62,8 @@ function buildPreset(row,i){
    // Original adult heroine sculpt: round the mid-cheek while reducing
    // the heavy lower jaw. Retain measured native 3D eyes and socket depth.
    faceHeight:.964,upperThird:1.04,middleThird:.95,lowerThird:.98,
-   jawTaper:.92,cheekRoundness:1.22,chinLength:.945,
+   jawTaper:.965,cheekRoundness:1.165,chinLength:.96,
+   preEarFullness:.72,lowerCheekLateral:.85,parotidWidth:.74,
    eyeWidth:1.13,eyeHeight:1.09,
    eyeSpacing:.99,eyeVertical:.001,eyeTilt:.012,
    browVertical:.002,browEyeGap:.955,

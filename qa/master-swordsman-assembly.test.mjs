@@ -289,7 +289,8 @@ test('heroine golden hair has dense independently shaped real polygon locks and 
  assert.equal(report.authoredStyle,'fantasy-long-blonde');
  assert.equal(report.scalpAnchored,true);
  assert.equal(report.originalSourceGeometryIntact,true);
- assert.equal(report.roundedCrossSection,true);
+ assert.equal(report.roundedCrossSection,false);
+ assert.equal(hair.isLineSegments,true,'All filaments must be real GPU line primitives');
  assert.equal(report.denseFringe,true);
  assert.equal(report.softTaperedTips,true);
  assert.equal(report.eyebrowSafeFringe,true);
@@ -299,9 +300,13 @@ test('heroine golden hair has dense independently shaped real polygon locks and 
  assert.ok(report.faceFramingLocks>=216,'Both temples require dense layers');
  assert.ok(report.bangLocks>=96,'Dense upper-forehead fringe required');
  assert.equal(report.lockCount,report.rearLocks+report.faceFramingLocks+report.bangLocks);
- assert.equal(report.triangleCount,hair.geometry.getIndex().count/3);
- assert.ok(report.triangleCount>150000&&report.triangleCount<250000,
-  'Detailed static hair must retain controlled polygon budget');
+ assert.equal(report.triangleCount,0);
+ assert.equal(report.strandSegmentCount,hair.geometry.getAttribute('position').count/2);
+ assert.equal(report.individualFilamentCount,100000);
+ assert.equal(report.strandSegmentCount,300000,
+  'One hundred thousand curved filaments with three 3D line sections must be present');
+ assert.equal(report.noWidePolygonCards,true);
+ assert.equal(Object.values(report.scalpRegions).reduce((a,b)=>a+b,0),100000);
  assert.ok(report.lengthInHeads>=3);
  assert.deepEqual(source.getAttribute('position').array,base,
   'Actual source head geometry must not change when adding hair');
@@ -365,19 +370,20 @@ test('heroine 01 has real long blonde 3D hair past shoulders, without a floating
  const {scalp}=buildHeadConformingScalp(head);
  const {hair,report}=buildHeroineFantasyLongHair(scalp);
  assert.equal(report.authoredStyle,'fantasy-long-blonde');
- assert.ok(report.rearLocks>=35);
- assert.ok(report.faceFramingLocks>=16);
+ assert.equal(report.individualFilamentCount,100000);
+ assert.ok(report.rearLocks>=70000);
+ assert.ok(report.faceFramingLocks>=24000);
  assert.ok(report.lengthInHeads>=2.5);
  assert.ok(report.lowestRelativeToScalpBottom<-.8);
- assert.ok(report.triangleCount>1000);
+ assert.ok(report.strandSegmentCount>=300000);
  assert.equal(report.noFloatingBun,true);
  assert.equal(report.sourceHeadUnchanged,true);
  assert.equal(report.staticUnrigged,true);
- assert.equal(report.roundedCrossSection,true,
-  'Golden hair must use volumetric 3D strands rather than flat cards');
+ assert.equal(hair.isLineSegments,true,'High-density hair must render every independent curved strand');
+ assert.equal(report.noWidePolygonCards,true,'No flat clump cards are allowed');
  assert.equal(report.layeredVolume,true,'Missing layered long-hair mass');
- assert.ok(report.triangleCount>=60000,'Insufficient authored hair topology');
- assert.ok(hair.material.roughness<.55,'Hair surface still looks like coarse strips');
+ assert.equal(report.strandSegmentCount,300000,'Individual 3D filaments are missing');
+ assert.equal(hair.material.isLineBasicMaterial,true,'Coarse card mesh shader must be retired');
  const positions=hair.geometry.getAttribute('position');
  for(let i=0;i<positions.count;i+=71)
   assert.ok(Number.isFinite(positions.getX(i))&&
@@ -611,4 +617,31 @@ test('portrait-derived 3D jaw fit rounds cheek to chin without flattening nose d
  assert.ok(Number.isFinite(report.geometryDigest));
  assert.deepEqual(geometry.getAttribute('position').array,base);
  mesh.geometry.dispose();mesh.material.dispose();geometry.dispose();
+});
+
+test('heroine ear-front morph controls narrow the lateral wall without shrinking central cheek or chin',async()=>{
+ const {deformFacePoint,FACE_PROPORTION_DEFAULTS,validateFaceProportions}=
+  await import('../src/master-swordsman-face-proportions.js');
+ const girl=featuredSwordsmanProfile('hero-girl-01');
+ assert.ok(girl.proportions.preEarFullness<.8);
+ assert.ok(girl.proportions.parotidWidth<.8);
+ assert.ok(girl.proportions.lowerCheekLateral<1);
+ assert.ok(girl.proportions.cheekRoundness>1,'Rounded cheeks retained');
+ const box={min:{x:-.16,y:-.18,z:-.12},max:{x:.16,y:.20,z:.13}};
+ const source={x:.134,y:.034,z:.025};
+ const neutral=deformFacePoint(source.x,source.y,source.z,box,FACE_PROPORTION_DEFAULTS);
+ const slim=deformFacePoint(source.x,source.y,source.z,box,
+  validateFaceProportions({preEarFullness:.72,lowerCheekLateral:.85,parotidWidth:.74}));
+ assert.ok(slim.x<neutral.x-.001,'Ear-front side must move inward');
+ const center={x:.034,y:.018,z:.11};
+ const before=deformFacePoint(center.x,center.y,center.z,box,FACE_PROPORTION_DEFAULTS);
+ const after=deformFacePoint(center.x,center.y,center.z,box,
+  validateFaceProportions({preEarFullness:.72,lowerCheekLateral:.85,parotidWidth:.74}));
+ assert.ok(Math.abs(before.x-after.x)<.00015,'The central round cheek must remain intact');
+ const chin={x:0,y:-.125,z:.11};
+ assert.equal(deformFacePoint(chin.x,chin.y,chin.z,box,FACE_PROPORTION_DEFAULTS).x,
+  deformFacePoint(chin.x,chin.y,chin.z,box,girl.proportions).x);
+ const reversed=deformFacePoint(-source.x,source.y,source.z,box,
+  validateFaceProportions({preEarFullness:.72,lowerCheekLateral:.85,parotidWidth:.74}));
+ assert.ok(Math.abs(reversed.x+slim.x)<1e-10,'Left and right ears must be symmetric');
 });
