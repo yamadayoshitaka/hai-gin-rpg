@@ -91,7 +91,7 @@ test('natural makeup edits real face vertex colors, resets and preserves source 
  const face=new THREE.Mesh(geometry,new THREE.MeshStandardMaterial({vertexColors:true}));
  const result=applyHeroineMakeupToFace(face,base,{
   strength:.93,blush:.91,lip:.95,eyeliner:.96,
-  eyeAnchors:[new THREE.Vector3(-.075,.14,.1),new THREE.Vector3(.075,.14,.1)]
+  eyeAnchors:[new THREE.Vector3(-.075,.095,.1),new THREE.Vector3(.075,.095,.1)]
  });
  assert.equal(result.strength,.93);
  assert.ok(result.blushVertices>0,'Cheek color missing');
