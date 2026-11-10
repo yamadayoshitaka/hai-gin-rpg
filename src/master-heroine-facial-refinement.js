@@ -35,7 +35,8 @@ export function polishHeroineFacePoint(x,y,z,box,{strength=1}={}){
  const jawBlend=bell(ax,.62,.25)*bell(yn,.33,.14);
  const cheekSpike=bell(ax,.85,.18)*bell(yn,.60,.105);
  const midCheek=bell(ax,.51,.26)*bell(yn,.53,.14);
- const lateral=sx*(.033*lowerCheek+.012*jawBlend-.012*cheekSpike);
+ const noseZone=bell(ax,.22,.16)*bell(yn,.52,.07);
+ const lateral=sx*(.033*lowerCheek+.012*jawBlend-.012*cheekSpike)*(1-.91*noseZone);
  const cheekDepth=sz*(.033*lowerCheek+.018*midCheek-.010*cheekSpike);
 
  // Anatomical nasal subregions have separate subtle offsets: soft bridge,
