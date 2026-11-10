@@ -47,10 +47,19 @@ assert.match(html,/if\(ok\)markRibbonOrderIssued\(action\.source\)/,
 assert.match(html,/targetSquadId:String\(id\),x:Math\.round\(center\.x\)/);
 assert.match(html,/if\(ok\)\{closeSquadTactics\(\);return true;\}/);
 
-// The established finite planning budget pauses the simulation while choosing.
-assert.match(html,/if\(!paused&&tacticalBankRemaining>0\)\{tacticalPlanningActive=true;setBattlePaused\(true\);\}/);
+// Player command selection ALWAYS pauses the battle in a locked far overview.
+// The existing 5-minute tactical bank still counts down but cannot resume combat mid-selection.
+assert.match(html,/if\(!paused\)setBattlePaused\(true\)/,
+ 'Opening the command selector pauses even after the tactical bank expires');
+assert.match(html,/enterCommandOverview\(\); \/\/ Wide, static camera wins/,
+ 'Opening a squad order forces the full-map overview');
+assert.match(html,/commandOverviewLocked=true/);
+assert.match(html,/controls\.enabled=false/);
 assert.match(html,/tacticalBankRemaining=Math\.max\(0,tacticalBankRemaining-bankDelta\)/);
-assert.match(html,/if\(tacticalBankRemaining<=0\)\{tacticalPlanningActive=false;setBattlePaused\(false\);\}/);
+assert.match(html,/if\(tacticalBankRemaining<=0\)\{tacticalPlanningActive=false;if\(!commandOverviewLocked\)setBattlePaused\(false\);\}/,
+ 'Reaching zero time must not resume combat while choosing targets');
+assert.match(html,/if\(previous&&!finished&&paused!==previous\.wasPaused\)setBattlePaused\(previous\.wasPaused\)/,
+ 'Command completion restores the pause state from before selection');
 assert.equal(ORDER_COOLDOWN_SECONDS,120);
 assert.equal(secondsUntilNextOrder(10,50),80);
 assert.equal(secondsUntilNextOrder(10,130),0);
@@ -72,4 +81,4 @@ const syntax=spawnSync(process.execPath,['--check','--input-type=module'],{
  input:match[1],encoding:'utf8',timeout:15000
 });
 assert.equal(syntax.status,0,syntax.stderr||'Battle module syntax');
-console.log('PASS circle-only squad command UX, target choice, timed pause, 120s lock and post-cutin reports');
+console.log('PASS circle-only squad command UX, target choice, always-frozen overview, 120s lock and post-cutin reports');
