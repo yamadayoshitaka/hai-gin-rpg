@@ -804,7 +804,7 @@ function setCameraGesture(){
 }
 setCameraGesture();
 controls.addEventListener('start',()=>{followCamera=false});
-scene.add(new THREE.HemisphereLight(0xe6f3ff,0x50617b,TOWN_MODE?1.05:2.5));const sun=new THREE.DirectionalLight(0xffffff,TOWN_MODE?3.0:2.2);sun.position.set(-130,260,95);sun.castShadow=true;sun.shadow.mapSize.set(MASS_SIZE?1024:2048,MASS_SIZE?1024:2048);sun.shadow.camera.left=TOWN_MODE?-31:-65;sun.shadow.camera.right=TOWN_MODE?31:65;sun.shadow.camera.top=TOWN_MODE?31:65;sun.shadow.camera.bottom=TOWN_MODE?-31:-65;sun.shadow.camera.near=1;sun.shadow.camera.far=700;sun.shadow.bias=-0.00025;sun.shadow.normalBias=TOWN_MODE?.009:.035;sun.shadow.radius=TOWN_MODE?1.4:2;scene.add(sun);scene.add(sun.target);
+scene.add(new THREE.HemisphereLight(0xe6f3ff,0x50617b,TOWN_MODE?1.05:2.5));const sun=new THREE.DirectionalLight(0xffffff,TOWN_MODE?3.0:2.2);sun.position.set(-130,260,95);sun.castShadow=true;sun.shadow.mapSize.set(MASS_SIZE?1024:2048,MASS_SIZE?1024:2048);sun.shadow.camera.left=TOWN_MODE?-145:-65;sun.shadow.camera.right=TOWN_MODE?145:65;sun.shadow.camera.top=TOWN_MODE?145:65;sun.shadow.camera.bottom=TOWN_MODE?-145:-65;sun.shadow.camera.near=1;sun.shadow.camera.far=700;if(TOWN_MODE){sun.position.set(65,180,165);sun.target.position.set(110,1,110);sun.target.updateMatrixWorld();}sun.shadow.bias=-0.00025;sun.shadow.normalBias=TOWN_MODE?.009:.035;sun.shadow.radius=TOWN_MODE?1.4:2;scene.add(sun);scene.add(sun.target);
 // Buildings and walls are static between collapse events; rendering their
 // entire shadow depth pass 18 times/sec is wasted mobile GPU work. Shadows
 // remain detailed, but refresh when the camera moves or once each second.
@@ -7072,8 +7072,9 @@ function animateTown(){
  const floor=terrainY(camera.position.x,camera.position.z)+1.8;
  if(camera.position.y<floor)camera.position.y=floor;
  if(elapsed-townShadowUpdatedAt>.65){
-  const anchor=townIndoor?.building.model.position||townTourView?.model.position||townAvatar()?.root.position;
-  if(anchor){sun.position.set(anchor.x-32,anchor.y+68,anchor.z+30);sun.target.position.copy(anchor);sun.target.updateMatrixWorld();sun.shadow.needsUpdate=true;}
+  // Keep the daylight direction and its shadow projection fixed in world space.
+  // Previously recentering around the player made shadows visibly teleport.
+  sun.shadow.needsUpdate=true;
   updateCameraObstructions();updateTownInteriorVisibility();townShadowUpdatedAt=elapsed;
  }
  if(elapsed-townPlayerReportAt>.38){
