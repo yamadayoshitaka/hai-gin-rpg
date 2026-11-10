@@ -28,8 +28,12 @@ assert.match(game,/\.squadScreenLabel\.selected\{[^}]*font-size:17px/,
 assert.match(game,/function updateSquadScreenLabels\(dt\)/);
 assert.match(game,/squadScreenPoint\.copy\(marker\.position\)\.project\(camera\)/,
   'ワールド座標を画面上へ射影してラベルを追従させる');
-assert.match(game,/if\(occupied\.some\(p=>/,
-  '付近の部隊名が重なり合うことを防ぐ');
+assert.match(game,/layoutSquadCallouts\(points,bounds,prior\)/,
+  '全隊を隠さず衝突回避し、折れ線で実際の位置と結ぶ');
+assert.match(game,/lineLayer\.append\(leader,anchorDot\)/,
+  'Excel式のコネクタと部隊位置マークを設ける');
+assert.doesNotMatch(game,/if\(occupied\.some\(/,
+  '重なった部隊を消す旧方式を復活させない');
 assert.match(game,/label\.style\.pointerEvents=selecting\?'none':'auto'/,
   '行き先・作戦指定中はラベルが目標タップを妨げない');
 assert.match(game,/updateSquadScreenLabels\(dt\);/,
