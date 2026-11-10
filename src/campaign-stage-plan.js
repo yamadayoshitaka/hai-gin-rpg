@@ -6,6 +6,7 @@
 import {STORY_CHAPTERS} from './story-chapters.js';
 import {MONSTER_CATALOG} from './monster-catalog.js';
 import {STAGE_PRESETS,stageForTerritory} from './stage-library.js';
+import {continentForChapter} from './continent-campaign.js';
 export const TOTAL_CHAPTERS=20;
 export const STAGES_PER_CHAPTER=10;
 export const TOTAL_STAGES=TOTAL_CHAPTERS*STAGES_PER_CHAPTER;
@@ -34,7 +35,7 @@ const names={
  boss:['星鐘の残響','章の決戦','忘れられた守護者','迫り来る影']
 };
 const terrainFor=['forest','plains','highland','village','marsh','snow','desert','ruins','coast','urban'];
-const availablePresets=STAGE_PRESETS.filter(s=>s.id!=='royal-castle'&&!s.territoryId);
+const chapterBeats=['拠点に到着','証人を探す','交易路を押さえる','敵の記録を調べる','民を救出','秘密の通路','反乱と決断','最後の準備','王権の防衛線','章の決戦'];
 function chooseMonsters(chapter,slot){
  // Each enemy ID is guaranteed to be registered in the existing bestiary.
  const start=((chapter-1)*5+slot*3)%MONSTER_CATALOG.length;
@@ -48,7 +49,7 @@ export const CAMPAIGN_STAGES=Object.freeze(STORY_CHAPTERS.flatMap(chapter=>
   const town=kind==='town';
   const name=slot===1?(chapter.id===1?'黎明の王都レヴナ':chapter.location+'・軍の拠点'):
    slot===10?chapter.title+'・決戦':
-   names[kind][(chapter.id+slot)%names[kind].length];
+   chapter.location+'・'+names[kind][(chapter.id+slot)%names[kind].length];
   const id='c'+String(chapter.id).padStart(2,'0')+'-s'+String(slot).padStart(2,'0');
   const territoryId=chapter.territory;
   const biome=terrainFor[(chapter.id+slot*3)%terrainFor.length];
@@ -57,13 +58,14 @@ export const CAMPAIGN_STAGES=Object.freeze(STORY_CHAPTERS.flatMap(chapter=>
   const townPreset=chapter.id===1?'royal-castle':
    homeStage&&['capital','fort','town','village'].includes(homeStage.buildingMode)?homeStage.id:
    ['river-village','border-town','river-port','green-capital'][(chapter.id-2)%4];
-  const scenePreset=town?townPreset:
-   ['capture','defend','siege'].includes(kind)?mapped:
-   (availablePresets[(chapter.id*11+slot*7)%availablePresets.length]?.id||mapped);
+  const scenePreset=chapter.id===1&&slot===1?'royal-castle':
+   'campaign-c'+String(chapter.id).padStart(2,'0')+'-s'+String(slot).padStart(2,'0');
+  const continent=continentForChapter(chapter.id);
   return Object.freeze({
    id,number:(chapter.id-1)*10+slot,chapter:chapter.id,slot,
    chapterTitle:chapter.title,act:chapter.act,name,kind,
-   territoryId,scenePreset,biome,
+   territoryId,scenePreset,biome,continentId:continent.id,continentName:continent.name,
+   chapterConflict:continent.conflict,storyBeat:chapterBeats[i],
    winCondition:STAGE_WIN_CONDITIONS[kind],
    monsters:kind==='explore'||kind==='boss'?Object.freeze(chooseMonsters(chapter.id,slot)):Object.freeze([]),
    enemyFaction:['siege','capture','defend'].includes(kind)?(chapter.id%3===0?'verdant':'crimson'):null,
