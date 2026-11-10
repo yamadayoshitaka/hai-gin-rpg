@@ -144,21 +144,27 @@ export function buildHeroineVisibleCrownAndFringe(scalp){
   root.fromBufferAttribute(p,i);
   if(normals)n.fromBufferAttribute(normals,i).normalize();
   else n.set(x,y-.42,z-.5).normalize();
-  // Micro-comb many closely spaced hairs over each REAL crown follicle.
-  // Short conforming strokes restore density without a spiked plastic cap.
-  for(let strand=0;strand<8;strand++){
+  // Combed hair travels TANGENT to the actual curved source scalp.
+  // The old negative-Y strokes pierced the dome and left upright stubble.
+  // Two connected segments per strand make the surface visibly hairy.
+  const flow=new THREE.Vector3(-.74,-.57,.42);
+  flow.addScaledVector(n,-flow.dot(n)).normalize();
+  for(let strand=0;strand<12;strand++){
    const q=hash(i*2.17+strand*6.73);
-   const jitter=(strand-3.5)*d.x*.00065;
-   const length=d.y*(.015+.017*hash(i*1.51+strand*2.3));
-   const start=root.clone().addScaledVector(n,.0038)
+   const jitter=(strand-5.5)*d.x*.00058;
+   const length=d.y*(.035+.042*hash(i*1.51+strand*2.3));
+   const normalOffset=.0055+.0008*q;
+   const start=root.clone().addScaledVector(n,normalOffset)
     .add(new THREE.Vector3(jitter,0,0));
-   const finish=start.clone().add(new THREE.Vector3(
-    -d.x*(.009+.006*hash(i*3.13+strand)),
-    -length*.56,-d.z*.008
-   )).addScaledVector(n,.0007);
-   const lum=.72+.26*q;
-   crownSegments.push(start.x,start.y,start.z,finish.x,finish.y,finish.z);
-   crownColors.push(lum,lum*.92,lum*.91,lum*.90,lum*.84,lum*.90);
+   const mid=start.clone().addScaledVector(flow,length*.52)
+    .addScaledVector(n,.0016);
+   const finish=mid.clone().addScaledVector(flow,length*.48)
+    .addScaledVector(n,.0022);
+   const lum=.76+.22*q;
+   crownSegments.push(start.x,start.y,start.z,mid.x,mid.y,mid.z,
+    mid.x,mid.y,mid.z,finish.x,finish.y,finish.z);
+   crownColors.push(lum,lum*.92,lum*.91,lum*.94,lum*.87,lum*.90,
+    lum*.94,lum*.87,lum*.90,lum*.88,lum*.83,lum*.87);
   }
  }
  if(upperSourceSamples<35||crownSegments.length<120)
