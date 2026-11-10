@@ -277,6 +277,38 @@ test('hero-01 uses a distinctive youthful face sculpt and understated shoulder a
 
 import {buildReferenceHeroineHair} from '../src/master-heroine-coiffure.js';
 import {buildHeroineFantasyLongHair} from '../src/master-heroine-long-hair.js';
+test('heroine golden hair has dense independently shaped real polygon locks and retains its scalp master',()=>{
+ const head=new THREE.Group();
+ const source=new THREE.SphereGeometry(.19,48,32);
+ const base=source.getAttribute('position').array.slice();
+ const face=new THREE.Mesh(source,new THREE.MeshStandardMaterial());
+ face.name='SOURCE_CC0_FEMALE_HEAD_TEST';head.add(face);
+ head.updateWorldMatrix(true,true);
+ const {scalp}=buildHeadConformingScalp(head);
+ const {hair,report}=buildHeroineFantasyLongHair(scalp);
+ assert.equal(report.authoredStyle,'fantasy-long-blonde');
+ assert.equal(report.scalpAnchored,true);
+ assert.equal(report.originalSourceGeometryIntact,true);
+ assert.equal(report.roundedCrossSection,true);
+ assert.equal(report.denseFringe,true);
+ assert.equal(report.softTaperedTips,true);
+ assert.equal(report.eyebrowSafeFringe,true);
+ assert.ok(report.fringeTipMinYNormalized>.73,
+  'Full fringe should end above the actual eyebrow ridge');
+ assert.ok(report.rearLocks>=320,'Five staggered back-hair layers required');
+ assert.ok(report.faceFramingLocks>=216,'Both temples require dense layers');
+ assert.ok(report.bangLocks>=96,'Dense upper-forehead fringe required');
+ assert.equal(report.lockCount,report.rearLocks+report.faceFramingLocks+report.bangLocks);
+ assert.equal(report.triangleCount,hair.geometry.getIndex().count/3);
+ assert.ok(report.triangleCount>150000&&report.triangleCount<250000,
+  'Detailed static hair must retain controlled polygon budget');
+ assert.ok(report.lengthInHeads>=3);
+ assert.deepEqual(source.getAttribute('position').array,base,
+  'Actual source head geometry must not change when adding hair');
+ hair.geometry.dispose();hair.material.dispose();scalp.geometry.dispose();scalp.material.dispose();
+ source.dispose();face.material.dispose();
+});
+
 test('adopted knight heroine gets a low swept 3D bun without moving original female head vertices',()=>{
  const head=new THREE.Group();
  const geometry=new THREE.SphereGeometry(.19,64,48);

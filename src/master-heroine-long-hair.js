@@ -46,18 +46,19 @@ export function buildHeroineFantasyLongHair(scalp,{lengthInHeads=3.25}={}){
   color:0xffffff,vertexColors:true,roughness:.48,metalness:0,
   clearcoat:.12,clearcoatRoughness:.36,side:THREE.DoubleSide
  });
- let rearLocks=0,faceFramingLocks=0,bangLocks=0,lowestY=Infinity,aboveEyeFrontVertices=0;
+ let rearLocks=0,faceFramingLocks=0,bangLocks=0,lowestY=Infinity,lowestBangY=Infinity,aboveEyeFrontVertices=0;
  const segments=24,radial=7;
  const addLock=({root,sign,side=false,bang=false,index=0,layer=0})=>{
   if(!root)return;
   const start=verts.length/3;
-  const length=bang?dim.y*(.18+.08*(index%5)/4):
+  // Dense forehead fringe stays above the eyebrow ridge instead of hiding it.
+  const length=bang?dim.y*(.105+.025*(index%7)/6):
    dim.y*lengthInHeads*(side?.88:1)*
    (1-.08*Math.abs((root.x-cx)/(dim.x*.5)))*
    (1-.055*layer);
   // Broader curved lock surfaces overlap to remove the string-like look;
   // geometry remains individually inspectable and scalp anchored.
-  const width=dim.x*(bang?.023:side?.025:.031)*(layer?.94:1);
+  const width=dim.x*(bang?.0185:side?.0245:.0285)*(layer?.955:1);
   const baseZ=Math.min(root.z,cz-dim.z*.12);
   for(let i=0;i<=segments;i++){
    const t=i/segments;
@@ -75,8 +76,9 @@ export function buildHeroineFantasyLongHair(scalp,{lengthInHeads=3.25}={}){
      baseZ-dim.z*(.07*t+.08*t*t)-layer*dim.z*.032;
    // A light wave and thicker root/mid-shaft produce natural tresses,
    // ending in narrow soft tips rather than full-width flat ribbons.
-   const r=width*(.96-.92*Math.pow(t,1.72))*(1+.12*Math.sin(t*Math.PI));
+   const r=width*(.96-.83*Math.pow(t,1.84))*(1+.14*Math.sin(t*Math.PI));
    lowestY=Math.min(lowestY,y);
+   if(bang)lowestBangY=Math.min(lowestBangY,y);
    for(let k=0;k<radial;k++){
     const u=k/(radial-1);
     // A shallow curved cross-section gives each long lock real volume.
@@ -85,7 +87,7 @@ export function buildHeroineFantasyLongHair(scalp,{lengthInHeads=3.25}={}){
     const twist=Math.sin(t*Math.PI*1.2+index*.13)*.24*t;
     const pointX=x+offset*Math.cos(twist);
     const pointZ=z+offset*Math.sin(twist)*.55+
-      dim.z*.052*(1-cross*cross)*(1-.52*t);
+      dim.z*.064*(1-cross*cross)*(1-.55*t);
     verts.push(pointX,y,pointZ);
     uv.push(u,t);
     const highlight=Math.pow(Math.max(0,1-Math.abs(cross-.10)),1.8);
@@ -104,8 +106,8 @@ export function buildHeroineFantasyLongHair(scalp,{lengthInHeads=3.25}={}){
  };
  // Four staggered 3D curtain layers create the dense silhouette of the
  // image reference; each strand is a real curved polygonal strip. 
- for(const layer of [0,1,2,3]){
-  const columns=[74,66,58,50][layer];
+ for(const layer of [0,1,2,3,4]){
+  const columns=[82,74,64,56,44][layer];
   for(let i=0;i<columns;i++){
    const t=(i+.5)/columns;
    const x=box.min.x+dim.x*(.06+.88*t);
@@ -117,8 +119,8 @@ export function buildHeroineFantasyLongHair(scalp,{lengthInHeads=3.25}={}){
  // Three thick face-framing layers drape along the shoulders and in front
  // of the outfit, staying outside the pupil/eyebrow silhouette.
  for(const layer of [0,1,2]){
-  for(const sign of [-1,1])for(let i=0;i<32;i++){
-   const t=i/31;
+  for(const sign of [-1,1])for(let i=0;i<36;i++){
+   const t=i/35;
    const x=cx+sign*dim.x*(.35+.11*t);
    const root=nearest(x,box.min.y+dim.y*(.84-.16*t-.045*layer),
     cz+dim.z*(.07-.08*layer),false);
@@ -127,8 +129,8 @@ export function buildHeroineFantasyLongHair(scalp,{lengthInHeads=3.25}={}){
  }
  // Short layered fringe anchored on top of the genuine source scalp.
  // Its tips end at the upper forehead, above the eyes.
- for(let i=0;i<72;i++){
-  const t=(i+.5)/72;
+ for(let i=0;i<96;i++){
+  const t=(i+.5)/96;
   const x=box.min.x+dim.x*(.18+.64*t);
   const root=nearest(x,box.min.y+dim.y*.91,box.max.z-dim.z*.23,false);
   addLock({root,sign:t<.5?-1:1,bang:true,index:i,layer:0});
@@ -153,7 +155,11 @@ export function buildHeroineFantasyLongHair(scalp,{lengthInHeads=3.25}={}){
   sourceHeadUnchanged:true,longHairPreviewOnly:true,
   staticUnrigged:true,referenceBasedApproximation:true,
   roundedCrossSection:true,layeredVolume:true,
+  denseFringe:true,softTaperedTips:true,sourceAnchored:true,
+  eyebrowSafeFringe:true,
+  fringeTipMinYNormalized:Number(((lowestBangY-box.min.y)/dim.y).toFixed(3)),
   rearLocks,faceFramingLocks,bangLocks,
+  lockCount:rearLocks+faceFramingLocks+bangLocks,
   lengthInHeads:Number(lengthInHeads.toFixed(2)),
   lowestRelativeToScalpBottom:Number(((lowestY-box.min.y)/dim.y).toFixed(3)),
   triangleCount:indices.length/3,
