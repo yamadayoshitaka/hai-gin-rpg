@@ -38,7 +38,7 @@ for(const token of [
  'const hide=closeup;',
  'isSquadCircleTargetActionable(id,team,action)',
  "label.classList.toggle('eligible-target',Boolean(actionable))",
- 'return false; // No invalid pulse',
+ "const message='現在選べる対象部隊がありません",
  "if(!isSquadCircleTargetActionable(id,team,action)){",
  'isSquadCircleTargetActionable(row.id,team,pendingCircleTarget)',
  'if(pendingCircleTarget&&!(targetTeam===0?squadIds:enemySquadIds).some',
