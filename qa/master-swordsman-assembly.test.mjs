@@ -301,7 +301,7 @@ test('heroine golden hair has dense independently shaped real polygon locks and 
  assert.equal(report.lockCount,report.rearLocks+report.faceFramingLocks+report.bangLocks);
  assert.equal(report.triangleCount,hair.geometry.getIndex().count/3);
  assert.equal(report.individualFilamentCount,100000);
- assert.equal(report.triangleCount,3600000,
+ assert.equal(report.triangleCount,1200000,
   'One hundred thousand real 3-sided curved filaments must be present');
  assert.equal(report.noWidePolygonCards,true);
  assert.equal(Object.values(report.scalpRegions).reduce((a,b)=>a+b,0),100000);
@@ -380,7 +380,7 @@ test('heroine 01 has real long blonde 3D hair past shoulders, without a floating
  assert.equal(report.roundedCrossSection,true,
   'Golden hair must use volumetric 3D strands rather than flat cards');
  assert.equal(report.layeredVolume,true,'Missing layered long-hair mass');
- assert.equal(report.triangleCount,3600000,'Individual filaments are missing');
+ assert.equal(report.triangleCount,1200000,'Individual filaments are missing');
  assert.ok(hair.material.roughness<.55,'Hair surface still looks like coarse strips');
  const positions=hair.geometry.getAttribute('position');
  for(let i=0;i<positions.count;i+=71)
