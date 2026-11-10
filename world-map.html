@@ -27,7 +27,7 @@ header{display:flex;align-items:center;justify-content:space-between;gap:8px;bac
 .pin.stage-pin{min-width:80px;background:#132637ea;line-height:1.2;font-size:11px}.pin.stage-pin.selected{outline:3px solid #ffe3a2}.pin.stage-pin.locked{opacity:.65}
 @media(max-height:660px){#chapterPanel{gap:5px;padding-top:5px}#stageGrid{grid-template-rows:repeat(2,minmax(37px,1fr))}.stage{min-height:37px;padding:4px}#selectedInfo{min-height:45px;padding:5px 8px}.pin{padding:3px}}
 </style></head><body>
-<main id="world"><header><div><strong>大陸全図・戦記</strong><small id="summary">領地とステージを選択</small></div><nav><button id="homeTown">🏘 町へ戻る</button><button id="toTitle">☰ タイトル</button></nav></header>
+<main id="world"><header><div><strong>大陸全図・戦記</strong><small id="summary">領地とステージを選択</small></div><nav><button id="worldBgm" aria-label="ワールドマップBGMのオン・オフ" aria-pressed="true">♪</button><button id="homeTown">🏘 町へ戻る</button><button id="toTitle">☰ タイトル</button></nav></header>
 <section id="mapViewport" aria-label="ワールドマップ"><div id="mapBoard" role="group" aria-label="三勢力の領土"></div><div class="map-caption">地図で領地を選択・ステージは下の10枠から</div><div class="pan"><button id="panLeft" type="button">◀ 地図</button><button id="panReset" type="button">中央</button><button id="panRight" type="button">地図 ▶</button></div></section>
 <section id="chapterPanel"><div class="chapter-head"><button id="prevChapter">◀ 前章</button><h2 id="chapterTitle">第1章</h2><button id="nextChapter">次章 ▶</button></div>
 <div class="meta"><span id="chapterSubtitle"></span><span id="clearCount">0 / 200</span></div>
@@ -37,6 +37,8 @@ header{display:flex;align-items:center;justify-content:space-between;gap:8px;bac
 <div id="feedback" role="status" aria-live="polite"></div></section></main>
 <script type="module">
 import {STORY_CHAPTERS} from './src/story-chapters.js';
+import {storyCastForChapter} from './src/story-cinematic.js';
+import {createGamePageAudio} from './src/game-page-audio.js';
 import {continentForChapter,continentMapUrl,continentStagePoints} from './src/continent-campaign.js';
 import {narrativeForStage} from './src/chapter-story-events.js';
 import {TERRITORIES,FACTIONS} from './src/story-campaign.js';
@@ -47,6 +49,19 @@ const $=id=>document.getElementById(id),escapeHtml=s=>String(s).replace(/[&<>"']
 let game=loadGame(localStorage,sessionStorage);
 if(!validGame(game)){location.replace('./game.html');throw Error('No game');}
 game.location='map';
+const mapAudio=createGamePageAudio({storage:localStorage,initialScene:'map'});
+const musicToggle=$('worldBgm');
+function updateMapMusicButton(){
+ musicToggle.textContent=mapAudio.enabled?'♪ ON':'♪ OFF';
+ musicToggle.setAttribute('aria-pressed',String(mapAudio.enabled));
+}
+updateMapMusicButton();
+musicToggle.onclick=()=>{mapAudio.setEnabled(!mapAudio.enabled);updateMapMusicButton();};
+document.addEventListener('pointerdown',()=>mapAudio.unlock(),{once:true,passive:true});
+document.addEventListener('click',event=>{
+ if(event.target.closest('button,a')){mapAudio.unlock();mapAudio.effect('select');}
+});
+window.addEventListener('pagehide',()=>mapAudio.dispose());
 let chapter=1,selected='c01-s02',territory=null,pan=0;
 function narrateSelection(){
  const stage=CAMPAIGN_STAGE_BY_ID[selected],story=narrativeForStage(stage);
@@ -106,7 +121,7 @@ function render(){
  $('summary').textContent=game.playerName+'の軍団　'+game.campaign.squads.reduce((n,s)=>n+s.count,0)+'人';
  const continent=continentForChapter(chapter);
  const sceneNarrative=narrativeForStage(CAMPAIGN_STAGE_BY_ID[selected]);
- $('continentLore').textContent='【'+continent.arc+'】'+sceneNarrative.scene+'　'+sceneNarrative.consequence+'　'+sceneNarrative.speaker+'「'+sceneNarrative.line+'」';
+ $('continentLore').textContent='【'+continent.arc+'】'+sceneNarrative.scene+'　'+sceneNarrative.consequence+'　'+sceneNarrative.speaker+'「'+sceneNarrative.line+'」　主要人物：'+storyCastForChapter(chapter).map(p=>p.name).join('・');
  const stages=stagesInChapter(chapter);
  $('stageGrid').innerHTML=stages.map(stage=>{
   const cleared=game.completedStages.includes(stage.id),unlocked=stageUnlocked(stage,game.completedStages);
