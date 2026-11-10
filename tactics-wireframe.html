@@ -613,6 +613,14 @@ body.compact-command-dock #squadOneClickOrders .quickCountChoices{flex:0 0 25px!
  padding:5px 8px;box-shadow:0 2px 12px #0009;pointer-events:none;
 }
 #battleSelectedTargetBar[hidden],body.squad-closeup #battleSelectedTargetBar{display:none!important}
+#battleCancelCircleTarget{display:none!important}
+body[data-circle-target] #battleCancelCircleTarget{
+ display:flex!important;flex:0 0 34px;align-items:center;justify-content:center;
+ pointer-events:auto!important;min-height:34px;border:1px solid #ddb66a;
+ border-radius:8px;background:#453328;color:#fff4c3;font:900 16px system-ui
+}
+body[data-circle-target] #battleSelectedTargetBar{border-color:#ffe08a!important}
+body[data-circle-target] #battleSelectedTargetBar .targetMode{color:#fff0aa!important}
 body.compact-command-dock.compact-orders-open #battleSelectedTargetBar{
  bottom:calc(var(--battleReportHeight) + var(--battleCommandHeight) + 7px)
 }
@@ -716,7 +724,7 @@ body.compact-command-dock.compact-explore-open .exploreBuildingList button{
  #battleSelectedTargetBar .targetHeading{font-size:10px}
 }
 </style>
-<div id="battleSelectedTargetBar" role="status" aria-live="off" hidden><div class="targetHalf left"><div class="targetHeading" id="battleSelectedAlly">味方 第1隊</div><div class="targetCount" id="battleSelectedAllyCount">--/--</div><div class="targetMode" id="battleSelectedAllyOrder">号令：自動</div></div><div class="targetDirection">➜</div><div class="targetHalf right"><div class="targetHeading" id="battleSelectedEnemy">索敵中</div><div class="targetCount" id="battleSelectedEnemyCount">--/--</div><div class="targetMode" id="battleSelectedTargetMode">攻撃対象（自動選択）</div></div></div>
+<div id="battleSelectedTargetBar" role="status" aria-live="off" hidden><div class="targetHalf left"><div class="targetHeading" id="battleSelectedAlly">味方 第1隊</div><div class="targetCount" id="battleSelectedAllyCount">--/--</div><div class="targetMode" id="battleSelectedAllyOrder">号令：自動</div></div><div class="targetDirection">➜</div><div class="targetHalf right"><div class="targetHeading" id="battleSelectedEnemy">索敵中</div><div class="targetCount" id="battleSelectedEnemyCount">--/--</div><div class="targetMode" id="battleSelectedTargetMode">攻撃対象（自動選択）</div></div><button id="battleCancelCircleTarget" type="button" hidden aria-label="対象選択を取り消す">✕</button></div>
 <div id="squadScreenLabels" aria-label="全味方・敵部隊の接続線付き情報サークル"><svg id="squadCalloutLines" aria-hidden="true"></svg></div>
 <div id="squadCircleInfo" hidden role="status" aria-live="polite" aria-label="選択した部隊の情報・1行表示">
  <div id="squadCircleInfoContent"></div>
@@ -6497,8 +6505,14 @@ function beginCircleTargetSelection(kind,itemId=null){
  }
  enterCommandOverview();
  document.body.dataset.circleTarget=kind==='attack'?'enemy':'ally';
+ document.body.classList.remove('compact-orders-open','compact-explore-open');
+ if(!$('enemySquadIntel').hidden){$('enemySquadIntel').hidden=true;selectedEnemySquadId=null;}
+ cancelPendingSquadCircleInfo();closeSquadCircleInfo();
  drawSquadMiniMap();
- $('squadTactics').hidden=true;$('destinationPrompt').hidden=false;
+ // Roster buttons blink and the existing battle target strip explains the
+ // selection. Never open another panel or the old destinationPrompt.
+ $('squadTactics').hidden=true;$('destinationPrompt').hidden=true;
+ refreshBattleTargetSummary(lastRibbonSums);
  $('destinationPrompt').textContent=kind==='item'?'🎒 使用先の味方（青）のサークルをタップ・ここで取消':
   kind==='support'?'✚ 回復先の味方（青）のサークルをタップ・ここで取消':
   '⚔ 右側の点滅中の敵隊をタップで突撃確定'+
@@ -6534,6 +6548,7 @@ function chooseCircleActionTarget(id,team){
   if(action.kind==='attack')firstAutoChargeIssued.add(String(action.source));
   lastCircleTargetResolvedAt=performance.now();
   cancelPendingSquadCircleInfo();
+  $('enemySquadIntel').hidden=true;selectedEnemySquadId=null;
   closeSquadTactics();
   return true;
  }
@@ -6568,6 +6583,7 @@ function closeSquadTactics(){
  selectedSquadId=null;
  drawSquadMiniMap();
 }
+$('battleCancelCircleTarget').onclick=()=>{if(pendingCircleTarget)closeSquadTactics();};
 function finishSquadDestination(accepted){closeSquadTactics();if(!accepted)log('目的地・命令の指定を取り消しました');}
 function requestSquadRecovery(targetId){
  const id=String(targetId),unavailable=squadCommanderUnavailableReason(id);
@@ -7170,7 +7186,7 @@ function activateSquadLabel(id,team,x=0,y=0){
  // Show the inspection strip only after the double-tap window expires.
  // A double tap must zoom without even a single-frame strip flash.
  if(!battleReady||finished||squadCloseupLabelsHidden||
-   performance.now()-lastCircleTargetResolvedAt<950)return;
+   performance.now()-lastCircleTargetResolvedAt<1500)return;
  if(pendingCircleTarget){chooseCircleActionTarget(id,team);return;}
  const key=squadKey(team,String(id)),now=performance.now();
  const tap=registerSquadCircleTap(lastSquadCircleTap,{key,x,y,at:now});
@@ -7297,7 +7313,7 @@ function ribbonCommanderAlive(team,id){
 function showEnemySquadIntel(id){
  closeSquadCircleInfo();
  if(!battleReady||finished||battleCeremony.locked||pendingCircleTarget||
-   performance.now()-lastCircleTargetResolvedAt<950)return;
+   performance.now()-lastCircleTargetResolvedAt<1500)return;
  const row=lastRibbonSums.get(squadKey(1,id)),alive=ribbonCommanderAlive(1,id);
  if(!row)return;
  if(!$('squadTactics').hidden)closeSquadTactics();
@@ -7431,6 +7447,13 @@ function refreshBattleTargetSummary(sums){
   $('battleSelectedEnemy').textContent='対象なし';
   $('battleSelectedEnemyCount').textContent='--/--';
   $('battleSelectedTargetMode').textContent=lock?.mode==='mission'?'別任務中':'索敵中';
+ }
+ if(pendingCircleTarget){
+  const attack=pendingCircleTarget.kind==='attack';
+  $('battleSelectedEnemy').textContent=attack?'敵隊を選択':'味方隊を選択';
+  $('battleSelectedEnemyCount').textContent='点滅中の隊をタップ';
+  $('battleSelectedTargetMode').textContent=attack?
+   'タップで突撃を確定':'タップで使用先を確定';
  }
 }
 function renderSquadRibbons(sums){
