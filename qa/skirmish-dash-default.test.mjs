@@ -59,7 +59,8 @@ assert.equal(report.exceptions[0].id,0,'report regressed run visuals for targete
 
 const game=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
 const rig=readFileSync(new URL('../src/character-system/shared-character-runtime.js',import.meta.url),'utf8');
-assert.match(game,/if\(!massSim\)state=skirmishTravelMotion\(state/);
+assert.match(game,/if\(!massSim&&!TOWN_MODE\)state=skirmishTravelMotion\(state/,
+ 'Only battle animations (not peaceful-town motion) apply skirmish dash override');
 assert.match(game,/floorPhase:a\.floorTravel\?\.phase/);
 assert.match(game,/else if\(a\.floorTravel\?\.phase==='climb'\)requestMotion\(a,'walk',true\)/);
 assert.match(game,/window\.getSkirmishDashReport/,'query actual run/walk ratio during battle');
