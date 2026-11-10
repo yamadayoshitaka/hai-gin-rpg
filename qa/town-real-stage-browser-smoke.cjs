@@ -59,6 +59,49 @@ const assert=require('node:assert/strict');
   assert.equal(JSON.stringify([sunAfter.shadowLight,sunAfter.shadowTarget]),sunBefore,
    'the sun/shadow projection must never jump while moving or visiting buildings');
 
+  // Full town map must represent actual terrain and rooftops, not a decorative
+  // unchanging background. Its canvas pixels must be populated by the scene.
+  await page.locator('#showTownGuide').click();
+  assert.equal(await page.locator('#townGuide').isVisible(),true);
+  await page.waitForFunction(()=>{
+   const c=document.querySelector('#townGuideCanvas');
+   return c?.getContext('2d').getImageData(125,125,1,1).data[3]===255;
+  },null,{timeout:16000});
+  assert.ok(await page.locator('#townGuideBoard button').count()>=6,
+   'all six civic building markers must be on the map');
+  await page.locator('#townOverhead').click();
+  await page.waitForFunction(()=>
+   document.querySelector('#townScene').contentWindow.getTownVisitStats().overview,
+   null,{timeout:12000});
+  await page.locator('#townCameraView').click();
+  await page.waitForFunction(()=>
+   !document.querySelector('#townScene').contentWindow.getTownVisitStats().overview,
+   null,{timeout:12000});
+
+  // Low analogue input must really play walk clips. A full stick throw must
+  // switch to run. Merely scaling the root position without changing motion
+  // would reproduce the sliding animation reported on Android.
+  const axis=async(x,y)=>page.evaluate(({x,y})=>{
+   const frame=document.querySelector('#townScene');
+   const stageId=new URL(frame.src).searchParams.get('townStage');
+   frame.contentWindow.postMessage({type:'hai-gin-town-input',stageId,x,y},location.origin);
+  },{x,y});
+  await axis(.34,0);
+  await page.waitForFunction(()=>
+   document.querySelector('#townScene').contentWindow.getTownVisitStats().movement==='walk',
+   null,{timeout:10000});
+  const walkStats=await page.evaluate(()=>document.querySelector('#townScene').contentWindow.getTownVisitStats());
+  await axis(1,0);
+  await page.waitForFunction(()=>
+   document.querySelector('#townScene').contentWindow.getTownVisitStats().movement==='run',
+   null,{timeout:10000});
+  const runStats=await page.evaluate(()=>document.querySelector('#townScene').contentWindow.getTownVisitStats());
+  assert.ok(runStats.movementSpeed>walkStats.movementSpeed*1.5,
+   'walking must be physically slower than the full-speed dash');
+  assert.equal(runStats.shadowLive,true,
+   'the full shadow map must follow running people every rendered frame');
+  await axis(0,0);
+
   // Exercise real door proximity via the same button a mobile user taps.
   // Only the QA browser may position the hero at the shop's authored entrance;
   // the production build has no teleport/debug entry controls.
@@ -71,6 +114,9 @@ const assert=require('node:assert/strict');
    null,{timeout:12000});
   assert.equal(await page.locator('#townExitBuilding').isVisible(),true,
    'entering the actual 3D building displays an exit');
+  const shopStats=await page.evaluate(()=>document.querySelector('#townScene').contentWindow.getTownVisitStats());
+  assert.equal(shopStats.roomDecorVisible,true,'interior decoration is visible while inside the shop');
+  assert.ok(shopStats.roomDecorCount>=6,'room contains multiple non-colliding visual objects');
   await page.locator('#townInteract').click();
   await page.waitForFunction(()=>!document.querySelector('#panel').hidden,null,{timeout:12000});
   assert.match(await page.locator('#panelTitle').innerText(),/道具屋/,
@@ -80,11 +126,26 @@ const assert=require('node:assert/strict');
   await page.waitForFunction(()=>
    document.querySelector('#townScene').contentWindow.getTownVisitStats().indoor===null,
    null,{timeout:12000});
-  assert.equal(errors.length,0,'no browser errors after shop enter/exit: '+errors.join('; '));
+  const inCastle=await page.evaluate(()=>
+   document.querySelector('#townScene').contentWindow.__qaPlaceTownAvatarAtEntrance('castle'));
+  assert.ok(inCastle,'the authoring map includes a castle doorway');
+  await page.locator('#townInteract').click();
+  await page.waitForFunction(()=>
+   document.querySelector('#townScene').contentWindow.getTownVisitStats().indoor==='castle',
+   null,{timeout:12000});
+  const castleStats=await page.evaluate(()=>document.querySelector('#townScene').contentWindow.getTownVisitStats());
+  assert.ok(castleStats.roomDecorVisible,'royal hall must be visible when visiting');
+  assert.ok(castleStats.royalFamily.includes('国王')&&castleStats.royalFamily.includes('王女'),
+   'the throne room has the king and princess');
+  await page.locator('#townExitBuilding').click();
+  await page.waitForFunction(()=>
+   document.querySelector('#townScene').contentWindow.getTownVisitStats().indoor===null,
+   null,{timeout:12000});
+  assert.equal(errors.length,0,'no browser errors after shop and castle: '+errors.join('; '));
   await page.locator('#leaveTown').click();
   await page.waitForURL(/world-map\.html/,{timeout:25000});
   assert.equal(await page.locator('#chapterTitle').count(),1,'world map renders');
-  console.log('PASS: original 3D castle, six full rigs + twenty outdoor civilians, stable shadows, actual shop enter/exit');
+  console.log('PASS: original 3D castle, whole-town map, walk/run, live shadow, decorated shop and occupied castle');
  }catch(error){
   const frames=page.frames();
   for(const frame of frames){
