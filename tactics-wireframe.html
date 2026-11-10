@@ -458,7 +458,12 @@ body.squad-closeup #enemySquadIntel{display:none!important}
 .squadCommandRibbon .ribbonItemButton,.squadCommandRibbon .ribbonPager{display:none!important}
 .squadCommandRibbon .ribbonList{overflow-y:auto!important;overflow-x:hidden!important;display:flex!important;flex-direction:column!important;gap:3px!important;flex:1!important}
 .squadCommandRibbon .ribbonSquad{min-height:42px!important;flex:0 0 auto!important;padding:4px 2px!important;gap:2px!important;font:800 11px/1.15 system-ui!important;display:flex!important;flex-direction:column!important}
-.squadCommandRibbon .ribbonIcon,.squadCommandRibbon .ribbonDeaths,.squadCommandRibbon .ribbonCooldown{display:none!important}
+.squadCommandRibbon .ribbonIcon,.squadCommandRibbon .ribbonDeaths{display:none!important}
+.squadCommandRibbon .ribbonCooldown:not([hidden]){
+ display:block!important;max-width:100%!important;color:#ffe39b!important;
+ font:900 11px/1.05 system-ui!important;white-space:nowrap!important;
+ font-variant-numeric:tabular-nums!important
+}
 .squadCommandRibbon .ribbonOrder{font:700 9px/1.1 system-ui!important;color:#cee2ef!important}
 .squadCommandRibbon .ribbonTarget{font:900 10px/1.1 system-ui;color:#ffe59c;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .squadCommandRibbon .ribbonTarget.tracking{color:#c4dffc}
@@ -481,6 +486,10 @@ body.squad-closeup #enemySquadIntel{display:none!important}
 }
 .squadCommandRibbon .ribbonCount.low{color:#ffb7ae!important}
 .squadCommandRibbon .ribbonCount.empty{color:#ffa1a1!important}
+body.compact-command-dock .squadCommandRibbon .ribbonSquad.cooldown-locked{
+ border-color:#bea66a!important;background:#26384ae8!important;
+ cursor:not-allowed!important;opacity:.85!important
+}
 body.compact-command-dock .squadCommandRibbon .ribbonSquad:disabled{
  opacity:.76!important;filter:none!important
 }
@@ -2138,7 +2147,7 @@ function refreshCommanderOrderOptions(){
   leaderSquad!=null?squadCommanderUnavailableReason(leaderSquad):'軍師未配置：命令不可';
  const cooldown=leaderSquad!=null?squadOrderCooldownSeconds(leaderSquad):0;
  battleOrderSelect.disabled=Boolean(blockReason)||cooldown>0;
- battleOrderStatus.textContent=blockReason||(cooldown?'号令の再変更まで'+cooldown+'秒':
+ battleOrderStatus.textContent=blockReason||(cooldown?'⏳'+cooldown+'秒 命令・アイテム不可':
   active?active.name+' 発令中（残り'+Math.ceil(liveCommanderOrders.get(battleCommanderSelect.value).until-elapsed)+'秒）':
    '号令を選ぶと配下の兵士全員に発令します');
 }
@@ -6259,7 +6268,7 @@ function refreshSquadOrderLabel(){
  const currentIntent=squadIntent(id,0,false,commanderReason);
  const seconds=squadOrderCooldownSeconds(id);
  $('squadActiveOrder').textContent='現在の'+currentIntent.order+
-  (seconds?' ｜ 次の変更まで'+seconds+'秒':'');
+  (seconds?' ｜ ⏳'+seconds+'秒 命令・アイテム不可':'');
  $('squadOrderStatus').textContent='現在の'+squadOrderText(id);
  for(const name of ['squadOrderChoice','squadDestination','squadMissionChoice'])
   $(name).disabled=Boolean(commanderReason)||seconds>0;
@@ -6454,7 +6463,7 @@ function isSquadCircleTargetActionable(id,team,action){
    u.hp>0&&u.alive!==false&&!u.isStrategist);
  if(!soldiers.length)return false;
  if(action.kind==='support'){
-  if(!hasSquadCommander(id)||!canChangeSquadOrder(id)||
+  if(!hasSquadCommander(id)||squadOrderCooldownSeconds(id)>0||
      !soldiers.some(u=>u.hp<u.maxHp))return false;
   return all.some(u=>u.team===0&&u.hp>0&&u.alive!==false&&u.jobId==='priest'&&
     hasSquadCommander(String(u.squadId))&&(!massSim||u.formationType==='support'));
@@ -6638,8 +6647,14 @@ function buildSquadQuickCommands(){
   const button=document.createElement('button');button.type='button';button.textContent=label;
   button.dataset.command=key;
   const cooldown=squadOrderCooldownSeconds(id);
-  button.disabled=!enabled||(needsCommander&&(!commander||cooldown>0));
-  if(needsCommander&&cooldown)button.title='次の号令まで'+cooldown+'秒';
+  // Unlike the old system, manual items and orders are locked together.
+  const isCommand=!['explore_page','details','hp','item_picker'].includes(key);
+  const locked=isCommand&&cooldown>0;
+  button.disabled=!enabled||(needsCommander&&!commander)||locked;
+  if(locked){
+   button.textContent=label+' ⏳'+cooldown+'秒';
+   button.title='命令・アイテム再使用まで'+cooldown+'秒';
+  }
   button.onclick=()=>{if(!button.disabled)action()};
   (quickActionRow||squadQuickList).append(button);return button;
  };
@@ -6691,7 +6706,7 @@ function buildSquadQuickCommands(){
   const cooldown=squadOrderCooldownSeconds(id);
   heading(cooldown?'再号令まで '+cooldown+'秒':'📯 号令（選択した部隊全員に適用）');
   const issue=mode=>{if(issueSquadOrder(mode))closeSquadTactics()};
-  heading('号令 · 部隊全員（発令後2分間は変更不可）');
+  heading('号令 · 部隊全員（使用後60秒は号令・アイテム不可）');
   add('⚔ 突撃','charge',()=>beginCircleTargetSelection('attack'));
   add('✚ 支援','heal_target',()=>beginCircleTargetSelection('support'));
   add('🛡 防御','defend',()=>issue('defend'));
@@ -7469,6 +7484,7 @@ function renderSquadRibbons(sums){
    const marker=state.marker==='⚠'?'⚠':state.marker==='☠'?'☠':ribbonIconForType(selectedSquadType(row.id,row.team));
    if(button.userDataIcon.textContent!==marker)button.userDataIcon.textContent=marker;
    const remaining=team===0?squadOrderCooldownSeconds(row.id):0;
+   button.classList.toggle('cooldown-locked',Boolean(team===0&&remaining));
    const label=intent.order.replace(/^号令：/,'').replace(/（.*$/,'');
    if(button.userDataOrder.textContent!==label)button.userDataOrder.textContent=label;
    button.userDataCooldown.hidden=!remaining;
@@ -7495,7 +7511,8 @@ function renderSquadRibbons(sums){
     String(pendingCircleTarget.suggestedTargetId)===String(row.id)));
   button.classList.toggle('command-source',Boolean(pendingCircleTarget&&team===0&&
    String(row.id)===String(pendingCircleTarget.source)));
-  button.disabled=pendingCircleTarget?!selectable:!state.enabled;
+  button.disabled=pendingCircleTarget?!selectable:!state.enabled||
+    (team===0&&remaining>0);
    button.classList.toggle('needsReview',state.marker==='⚠');
    button.classList.toggle('selected',team===0?trackedAllySquadId===String(row.id):
     selectedEnemySquadId===String(row.id));
@@ -7804,7 +7821,7 @@ function updateUI(){
    if($('squadTactics').dataset.panel==='main')showSquadTacticsPanel('main');
    else $('squadTactics').dataset.cooldownBlocked=String(seconds>0);
   }
-  const newStatus='現在の'+liveIntent.order+(seconds?' ｜ 次の変更まで'+seconds+'秒':'');
+  const newStatus='現在の'+liveIntent.order+(seconds?' ｜ ⏳'+seconds+'秒 命令・アイテム不可':'');
   if($('squadActiveOrder').textContent!==newStatus)$('squadActiveOrder').textContent=newStatus;
   const newPurpose='現在の'+squadOrderText(selectedSquadId);
   if($('squadOrderStatus').textContent!==newPurpose)$('squadOrderStatus').textContent=newPurpose;
@@ -7822,7 +7839,7 @@ $('enemyCasualties').textContent=Math.max(0,initialCounts[1]-aliveCounts[1])+'/'
   const reason=leader?.active===false?'☠ 軍師戦死：命令不可':
    squad!=null?squadCommanderUnavailableReason(squad):'軍師未配置';
   battleOrderSelect.disabled=Boolean(reason)||remaining>0;
-  battleOrderStatus.textContent=reason||(remaining?'号令の再変更まで'+remaining+'秒':
+  battleOrderStatus.textContent=reason||(remaining?'⏳'+remaining+'秒 命令・アイテム不可':
    order?order.name+' 発令中（残り'+Math.ceil(liveCommanderOrders.get(battleCommanderSelect.value).until-elapsed)+'秒）':
     '号令を選ぶと配下の兵士に一時的な効果が発動');
  }
