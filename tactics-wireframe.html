@@ -7540,6 +7540,33 @@ function updateCameraObstructions(){
   for(const item of selectCameraOccluders(camera.position,target,cameraTreeCandidates,
     {limit:24,padding:.65}))newTrees.add(item.key);
  }
+ // The old single-ray test could miss the canopy DIRECTLY AROUND THE EYE.
+ // Flower-tree crowns can fill the entire phone even though their trunks do
+ // not cross the line to OrbitControls.target. Include all canopies touching
+ // the camera and four independent rays through the near field of the view.
+ if(closeup){
+  const forward=controls.target.clone().sub(camera.position).normalize();
+  const right=new THREE.Vector3().crossVectors(forward,camera.up);
+  if(right.lengthSq()<.000001)right.set(1,0,0);else right.normalize();
+  const up=new THREE.Vector3().crossVectors(right,forward).normalize();
+  const travel=Math.min(40,Math.max(10,distance*.85));
+  for(const [sx,sy] of [[-.65,-.5],[.65,-.5],[-.65,.5],[.65,.5]]){
+   const rayEnd=camera.position.clone().addScaledVector(forward,travel)
+    .addScaledVector(right,sx*travel*.65)
+    .addScaledVector(up,sy*travel*.45);
+   for(const candidate of selectCameraOccluders(camera.position,rayEnd,cameraTreeCandidates,
+     {limit:32,padding:.5}))newTrees.add(candidate.key);
+  }
+ }
+ // Test camera immersion independently of the center ray and its result
+ // limit. Wide-angle close-ups can be entirely surrounded by pink petals.
+ for(const tree of cameraTreeCandidates){
+  const b=tree.bounds;
+  if(camera.position.x>=b.minX-2.5&&camera.position.x<=b.maxX+2.5&&
+   camera.position.z>=b.minZ-2.5&&camera.position.z<=b.maxZ+2.5&&
+   camera.position.y>=b.minY-1&&camera.position.y<=b.maxY+3)
+   newTrees.add(tree.key);
+ }
  for(const key of cameraOccludedTrees){
   if(newTrees.has(key))continue;
   const tree=cameraTreeByKey.get(key);
