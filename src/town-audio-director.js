@@ -7,9 +7,10 @@ const MUSIC={
  tavern:'./assets/audio/town.mp3',
  inn:'./assets/audio/town.mp3',
  church:'./assets/audio/battle/forest.ogg',
- castle:'./assets/audio/battle/forest.ogg'
+ castle:'./assets/audio/battle/forest.ogg',
+ paper:'./assets/audio/battle/ruins.ogg'
 };
-const LEVEL={town:.32,shop:.21,tavern:.34,inn:.24,church:.26,castle:.30};
+const LEVEL={town:.32,shop:.21,tavern:.34,inn:.24,church:.26,castle:.30,paper:.29};
 const TONES={
  select:[[640,.07,0],[920,.09,.045]],
  cancel:[[420,.10,0],[330,.12,.065]],
@@ -22,7 +23,10 @@ const TONES={
 };
 export function createTownAudioDirector({storage=null,onChange=()=>{}}={}){
  let enabled=true;
- try{enabled=storage?.getItem(PREF_KEY)!=='false'}catch{}
+ try{
+  const core=JSON.parse(storage?.getItem('hai-gin-core-settings-v1')||'{}')||{};
+  enabled=core.bgm!==false&&storage?.getItem(PREF_KEY)!=='false';
+ }catch{}
  let scene='town',audio=null,context=null,unlocked=false,narration=false,disposed=false;
  let lastToneAt=0;
  const notify=()=>onChange({enabled,scene,unlocked,playing:Boolean(audio&&!audio.paused)});
@@ -83,7 +87,11 @@ export function createTownAudioDirector({storage=null,onChange=()=>{}}={}){
  }
  function setEnabled(value){
   enabled=Boolean(value);
-  try{storage?.setItem(PREF_KEY,enabled?'true':'false')}catch{}
+  try{
+   storage?.setItem(PREF_KEY,enabled?'true':'false');
+   const core=JSON.parse(storage?.getItem('hai-gin-core-settings-v1')||'{}')||{};
+   storage?.setItem('hai-gin-core-settings-v1',JSON.stringify({...core,bgm:enabled}));
+  }catch{}
   if(!enabled)audio?.pause();
   else tryPlay();
   notify();

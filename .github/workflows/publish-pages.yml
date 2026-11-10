@@ -35,6 +35,8 @@ jobs:
         run: node --experimental-vm-modules qa/game-core-contract.test.mjs
       - name: Verify continents, gacha, NPC models and fences/flowers
         run: node qa/continent-town-gacha-regression.test.mjs
+      - name: Verify illustrated dialogue, original opening and scene music
+        run: node --experimental-vm-modules qa/story-cinematic-audio.test.mjs
       - uses: actions/setup-python@v6
         with:
           python-version: '3.12'

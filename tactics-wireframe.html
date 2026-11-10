@@ -734,6 +734,7 @@ body.compact-command-dock.compact-explore-open .exploreBuildingList button{
 <button id="loadingStart" type="button" hidden style="font:bold 17px system-ui;padding:13px 17px;border:2px solid #eacb87;background:#245d7a;color:#fff;border-radius:10px;margin:12px auto;min-height:54px">♪ 音楽を有効にして開戦</button>
 <button id="loadingSkipAudio" type="button" hidden style="font:12px system-ui;padding:9px;border:1px solid #92a5bb;background:#132a3b;color:#c9d8e5;border-radius:8px;margin:4px auto">音声なしで開戦</button></div></div><div id="runtimeError" style="display:none;position:fixed;top:65px;left:8px;right:8px;z-index:30;padding:10px;background:#631f28;color:#fff;border:1px solid #ff9d9d;border-radius:8px;font-size:12px;white-space:pre-wrap"></div><script>function showRuntimeError(message){const el=document.getElementById('runtimeError');if(el){el.style.display='block';el.textContent='実行エラー: '+message}const loading=document.getElementById('battleLoading');if(loading&&!loading.hidden){document.getElementById('loadingStage').textContent='ゲームの準備に失敗しました';const detail=document.getElementById('loadingError');detail.hidden=false;detail.textContent=String(message);document.getElementById('loadingRetry').hidden=false}}window.addEventListener('error',e=>showRuntimeError((e.message||'スクリプトの読み込みに失敗')+'\n'+(e.filename||'')+':'+(e.lineno||'')));window.addEventListener('unhandledrejection',e=>showRuntimeError(e.reason?.stack||e.reason?.message||String(e.reason)));</script><script type="module">
 import * as THREE from 'three';
+import {createGamePageAudio} from './src/game-page-audio.js';
 import {layoutSquadCallouts,squadCalloutLeader} from './src/battle-squad-callout-layout.js?v=2';
 import {createBattleCeremony} from './src/battle-ceremony.js?v=4.6.69';
 import {updateDefensivePosture} from './src/battle-defensive-doctrine.js?v=4.6.15';
@@ -983,6 +984,18 @@ loadingProgress('地形・建造物を構築中…',5);
 await new Promise(resolve=>requestAnimationFrame(()=>setTimeout(resolve,0)));
 const battleParams=new URLSearchParams(location.search);
 const TOWN_MODE=battleParams.get('town')==='1';
+// Town already has its own music/effects in the parent page. Battle uses
+// recorded orchestral score and an effects-only UI chime (no second BGM).
+const battleUiSound=TOWN_MODE?null:createGamePageAudio({storage:localStorage,effectsOnly:true});
+if(battleUiSound){
+ document.addEventListener('pointerdown',()=>battleUiSound.unlock(),{once:true,passive:true});
+ document.addEventListener('click',event=>{
+  if(event.target.closest('button,select,[role="button"],.squadScreenLabel')){
+   battleUiSound.unlock();battleUiSound.effect('select');
+  }
+ });
+ window.addEventListener('pagehide',()=>battleUiSound.dispose());
+}
 const TOWN_STAGE_ID=battleParams.get('townStage')||'c01-s01';
 if(TOWN_MODE)document.body.classList.add('town-mode');
 const storyRequest=(()=>{
@@ -6979,7 +6992,9 @@ const frontierLine=new THREE.Line(
  new THREE.BufferGeometry().setAttribute('position',new THREE.Float32BufferAttribute(borderPoints,3)),
  new THREE.LineBasicMaterial({color:0xf5edbe,transparent:true,opacity:.6,depthTest:true}));
 frontierLine.name='BlueRedInitialTerritoryBoundary';frontierLine.frustumCulled=false;
-scene.add(frontierLine);
+// Remove the stray floating visual ribbon above humanoid models; the actual
+// team boundary remains represented in the mini-map and combat AI data.
+frontierLine.visible=false;scene.add(frontierLine);
 function drawSquadMiniMap(){
  if($('squadMiniMap').classList.contains('collapsed'))return;
  miniCtx.drawImage(miniBase,0,0);
