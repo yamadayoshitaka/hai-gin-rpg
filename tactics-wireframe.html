@@ -2860,7 +2860,14 @@ window.getTownVisitStats=()=>({
  ready:battleReady,people:actors.length+townStreetCitizens.length,
  streetCitizens:townStreetCitizens.length,riggedPeople:actors.length,
  indoor:townIndoor?.kind||null,
+ roomDecorVisible:townIndoor?.building.townDecor?.visible||false,
+ roomDecorCount:townIndoor?.building.townDecor?.children.length||0,
+ royalFamily:townInstances.find(b=>b.data.kind==='castle')?.royalFamily||[],
  nearby:townNearestFacility()?.b.data.kind||null,
+ overview:townTourView?.overview===true,
+ movement:townAvatar()?.townMotion||'idle',
+ movementSpeed:townAvatar()?.townSpeed||0,
+ shadowLive:sun.shadow.autoUpdate,
  shadowLight:[sun.position.x,sun.position.y,sun.position.z],
  shadowTarget:[sun.target.position.x,sun.target.position.y,sun.target.position.z]
 });
