@@ -276,7 +276,7 @@ test('hero-01 uses a distinctive youthful face sculpt and understated shoulder a
 
 
 import {buildReferenceHeroineHair} from '../src/master-heroine-coiffure.js';
-import {buildHeroineFantasyLongHair} from '../src/master-heroine-long-hair.js';
+import {buildHeroineFantasyLongHair,measureHeroineTorsoEnvelope} from '../src/master-heroine-long-hair.js';
 test('heroine golden hair has dense independently shaped real polygon locks and retains its scalp master',()=>{
  const head=new THREE.Group();
  const source=new THREE.SphereGeometry(.19,48,32);
@@ -312,6 +312,32 @@ test('heroine golden hair has dense independently shaped real polygon locks and 
   'Actual source head geometry must not change when adding hair');
  hair.geometry.dispose();hair.material.dispose();scalp.geometry.dispose();scalp.material.dispose();
  source.dispose();face.material.dispose();
+});
+
+test('heroine wig reroutes 100k hair around measured 3D shoulder and back surfaces',()=>{
+ const actor=new THREE.Group(),head=new THREE.Group();
+ const face=new THREE.Mesh(new THREE.SphereGeometry(.19,48,32),new THREE.MeshStandardMaterial());
+ face.position.y=.66;head.add(face);actor.add(head);
+ const torso=new THREE.Mesh(new THREE.CylinderGeometry(.215,.19,.70,32,24),
+  new THREE.MeshStandardMaterial());
+ torso.position.y=.12;actor.add(torso);
+ actor.updateWorldMatrix(true,true);
+ const before=torso.geometry.getAttribute('position').array.slice();
+ const {scalp}=buildHeadConformingScalp(head);
+ const envelope=measureHeroineTorsoEnvelope(torso,scalp);
+ assert.equal(envelope.meshDerived,true);
+ assert.equal(envelope.hairLocalCoordinates,true);
+ assert.ok(envelope.sampledBodyVertices>=200);
+ const {hair,report}=buildHeroineFantasyLongHair(scalp,{bodyEnvelope:envelope});
+ assert.equal(report.bodyClearanceMeasured,true);
+ assert.ok(report.bodyCollisionCorrections>0,'Some back or side strands must be redirected');
+ assert.ok(report.rearBackCorrections>0,'Back hair must not enter torso');
+ assert.ok(report.sideShoulderCorrections>0,'Side locks must drape around the shoulders');
+ assert.equal(report.individualFilamentCount,100000);
+ assert.deepEqual(torso.geometry.getAttribute('position').array,before,
+  'Measuring silhouette must never deform the actual body');
+ hair.geometry.dispose();hair.material.dispose();scalp.geometry.dispose();scalp.material.dispose();
+ face.geometry.dispose();face.material.dispose();torso.geometry.dispose();torso.material.dispose();
 });
 
 test('adopted knight heroine gets a low swept 3D bun without moving original female head vertices',()=>{
