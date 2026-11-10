@@ -13,7 +13,7 @@ import {buildHeadConformingScalp,buildFittedShortHairStrands,buildFantasyRearHai
 import {prepareYouthfulFace} from './master-swordsman-youthful-face.js';
 import {createFittedFantasyHeroGarment} from './master-hero-fitted-garment.js';
 import {buildReferenceHeroineHair} from './master-heroine-coiffure.js';
-import {buildHeroineFantasyLongHair,measureHeroineTorsoEnvelope} from './master-heroine-long-hair.js';
+import {buildHeroineFantasyLongHair,buildHeroineWigRootCap,measureHeroineTorsoEnvelope} from './master-heroine-long-hair.js';
 import {applyHeroineSkinPBR,HEROINE_SKIN_TEXTURE_INFO} from './master-heroine-skin-pbr.js';
 import {validateFaceProportions} from './master-swordsman-face-proportions.js';
 
@@ -254,7 +254,7 @@ export function fitCCBYHairToHead(asset,actorHead,{density='source-lod0',feature
  const {scalp,report:scalpReport}=buildHeadConformingScalp(actorHead);
  const hairGroup=new THREE.Group();hairGroup.name='CC_BY_HAIR_AND_REAL_HEAD_SCALP';
  hairGroup.add(fitted,scalp);
- let styledHairReport=null,fantasyBackReport=null;
+ let styledHairReport=null,fantasyBackReport=null,wigCrownReport=null;
  const longHeroine=featured&&femaleHair&&referenceCoiffure==='fantasy-long-blonde';
  const authoredHeroine=featured&&femaleHair&&(longHeroine||referenceCoiffure==='swept-low-bun');
  if(featured){
@@ -268,6 +268,10 @@ export function fitCCBYHairToHead(asset,actorHead,{density='source-lod0',feature
    // previously its alpha-shell was visible as a second jagged hair helmet.
    scalp.visible=false;
    const envelope=longHeroine&&torso?measureHeroineTorsoEnvelope(torso,scalp):null;
+   if(longHeroine){
+    const foundation=buildHeroineWigRootCap(scalp);
+    hairGroup.add(foundation.cap);wigCrownReport=foundation.report;
+   }
    const {hair:coiffure,report}=longHeroine?
     buildHeroineFantasyLongHair(scalp,{bodyEnvelope:envelope}):buildReferenceHeroineHair(scalp);
    hairGroup.add(coiffure);
@@ -314,11 +318,13 @@ export function fitCCBYHairToHead(asset,actorHead,{density='source-lod0',feature
  if(vertices<500)throw Error('Licensed hairstyle has no meaningful 3D geometry');
  return {hair:hairGroup,report:Object.freeze({vertices,materials,density,
   headConformingScalp:scalpReport,styledHairReport,fantasyBackReport,
+  wigCrownReport,
   disjointDonorHiddenForFeatured:featured&&(!femaleHair||authoredHeroine),
   referenceHeroineHairShown:authoredHeroine,
   longBlondeHeroineHairShown:longHeroine,
   femaleLicensedHairShown:!!femaleHair&&!authoredHeroine,
   oldScalpHiddenForWig:authoredHeroine&&!scalp.visible,
+  newFittedWigCrownVisible:longHeroine&&!!wigCrownReport,
   sourceHeadBaldUnderWig:authoredHeroine&&!fitted.visible&&!scalp.visible,
   bodySurfaceClearanceActive:longHeroine&&!!torso,
   originalHairMeshesPreserved:true,sourceAttribution:
