@@ -22,7 +22,7 @@ export function recommendBattleTactics(members,stocks=[],{activeBuffIds=[]}={}){
  let order='charge',orderReason='前進して攻勢を維持';
  if(aliveRatio<=.35){order='retreat';orderReason='生存兵が35%以下'}
  else if(hpRatio<.45){order='defend';orderReason='部隊HPが45%未満'}
- else if(jobs.has('archer')||jobs.has('ninja')){order='defend';orderReason='遠距離・機動兵を守る'}
+ else if((jobs.has('archer')||jobs.has('ninja'))&&hpRatio<.70&&aliveRatio<.65){order='defend';orderReason='損耗した遠距離・機動兵を保護'}
  const buffIds=new Set(activeBuffIds);
  let priority;
  if(deficit>=Math.max(45,maxHp*.22)){
