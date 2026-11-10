@@ -1,0 +1,52 @@
+name: Verify lean Pages runtime package
+on:
+  pull_request:
+    paths:
+      - 'scripts/prepare-pages-site.py'
+      - '.github/workflows/pages-lean-package-qa.yml'
+      - '.github/workflows/publish-pages.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/prepare-pages-site.py'
+      - '.github/workflows/pages-lean-package-qa.yml'
+permissions:
+  contents: read
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install exact image optimizer
+        run: pip install --disable-pip-version-check -r scripts/requirements-pages.txt
+      - name: Validate Python source and produce slim game site
+        run: |
+          python -m py_compile scripts/prepare-pages-site.py
+          python scripts/prepare-pages-site.py --out pages-dist
+      - name: Validate pinned remote binary relay, complete source and size
+        run: |
+          node --check pages-dist/pages-asset-relay-sw.js
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          dist = Path('pages-dist')
+          release = json.loads((dist/'release.json').read_text())
+          remote_files = release['offloaded_binary_count']
+          assert remote_files >= 35, f'Unexpectedly few binaries offloaded: {remote_files}'
+          assert remote_files < 250, f'Wrong offload rules: {remote_files}'
+          assert (dist/'index.html').is_file()
+          assert (dist/'game.html').is_file()
+          assert (dist/'master-swordsman-prototype.html').is_file()
+          assert 'pages-asset-relay-bootstrap' in (dist/'game.html').read_text()
+          assert 'pages-asset-relay-bootstrap' in (dist/'master-swordsman-prototype.html').read_text()
+          assert 'https://raw.githubusercontent.com/yamadayoshitaka/hai-gin-rpg/' in (dist/'pages-asset-relay-sw.js').read_text()
+          assert not (dist/'assets/audio/town.mp3').exists()
+          assert not (dist/'assets/characters/quaternius-base/animations.glb').exists()
+          size=sum(p.stat().st_size for p in dist.rglob('*') if p.is_file())
+          print(f'PASS: {remote_files} external binaries, {size / 2**20:.2f} MiB published runtime')
+          assert size < 90 * 2**20
+          PY
