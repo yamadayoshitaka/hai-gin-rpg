@@ -45,6 +45,103 @@ REQUIRED = (
 )
 
 
+
+# Publish only lightweight, urgently needed runtime assets through Pages.
+# Large binary clips and models are fetched on demand from this exact commit.
+# This affects only pages-dist; it does not modify or shrink git master files.
+OFFLOAD_BINARY_SUFFIXES = {".glb", ".bin", ".bvh", ".mp3", ".ogg", ".wav", ".mp4", ".fbx", ".webm"}
+OFFLOAD_MIN_BYTES = 128_000
+REMOTE_ONLY_PREFIXES = (
+    "audio/voicevox/clips/", "assets/master-sources/", "assets/ai-reference/",
+    "motions/candidates/", "assets/characters/experimental/",
+)
+ASSET_RELAY_NAME = "pages-asset-relay-sw.js"
+
+
+def is_large_runtime_binary(rel: Path, src: Path) -> bool:
+    return rel.suffix.lower() in OFFLOAD_BINARY_SUFFIXES and src.stat().st_size > OFFLOAD_MIN_BYTES
+
+
+def add_asset_relay(out: Path, offloaded: list[str], commit_sha: str) -> None:
+    """Route only explicit missing binaries to GitHub raw (commit-pinned)."""
+    if not offloaded:
+        raise RuntimeError("Asset relay received an empty offload set")
+    worker = r"""
+'use strict';
+const COMMIT = '__COMMIT__';
+const ROOT = 'https://raw.githubusercontent.com/yamadayoshitaka/hai-gin-rpg/' + COMMIT + '/';
+const OFFLOADED = new Set(__OFFLOAD_LIST__);
+const EXTRA_PREFIXES = __EXTRA_PREFIXES__;
+self.addEventListener('install', (event) => event.waitUntil(self.skipWaiting()));
+self.addEventListener('activate', (event) => event.waitUntil(self.clients.claim()));
+self.addEventListener('fetch', (event) => {
+  const request = event.request;
+  if (request.method !== 'GET') return;
+  const url = new URL(request.url);
+  if (url.origin !== self.location.origin) return;
+  const scope = new URL(self.registration.scope).pathname;
+  if (!url.pathname.startsWith(scope)) return;
+  let file;
+  try { file = decodeURIComponent(url.pathname.slice(scope.length)); }
+  catch { return; }
+  if (!OFFLOADED.has(file) && !EXTRA_PREFIXES.some((p) => file.startsWith(p))) return;
+  const remote = ROOT + file.split('/').map(encodeURIComponent).join('/');
+  event.respondWith((async () => {
+    try {
+      const headers = new Headers();
+      const range = request.headers.get('Range');
+      if (range) headers.set('Range', range);
+      const response = await fetch(remote, {
+        mode: 'cors', credentials: 'omit', redirect: 'follow', headers
+      });
+      if (response.ok || response.status === 206) return response;
+    } catch (e) { /* Online fallback: retry the original local path. */ }
+    return fetch(request);
+  })());
+});
+"""
+    worker = (worker.replace("__COMMIT__", commit_sha)
+                    .replace("__OFFLOAD_LIST__", json.dumps(offloaded, ensure_ascii=False))
+                    .replace("__EXTRA_PREFIXES__", json.dumps(REMOTE_ONLY_PREFIXES)))
+    (out / ASSET_RELAY_NAME).write_text(worker, encoding="utf-8")
+    # Self-install on all standalone game/preview routes, including deep links.
+    # Existing visitors get one reload after the new worker claims the page;
+    # subsequent loads remain controlled and use normal browser caching.
+    boot = """<script id="pages-asset-relay-bootstrap">
+(function () {
+  if (!('serviceWorker' in navigator)) return;
+  const version = '__COMMIT__';
+  const key = 'hai-gin-pages-relay-reload';
+  navigator.serviceWorker.addEventListener('controllerchange', function () {
+    if (sessionStorage.getItem(key) === version) return;
+    sessionStorage.setItem(key, version);
+    location.reload();
+  });
+  navigator.serviceWorker.register('./pages-asset-relay-sw.js', {scope: './'})
+    .catch(function (error) { console.warn('Pages asset relay unavailable', error); });
+})();
+</script>
+""".replace("__COMMIT__", commit_sha)
+    changed = 0
+    for html in out.rglob("*.html"):
+        contents = html.read_text(encoding="utf-8")
+        if 'id="pages-asset-relay-bootstrap"' in contents:
+            continue
+        if re.search(r"</head>", contents, flags=re.IGNORECASE):
+            contents = re.sub(r"</head>", boot + "</head>", contents, count=1,
+                              flags=re.IGNORECASE)
+        elif re.search(r"<body", contents, flags=re.IGNORECASE):
+            contents = re.sub(r"<body", boot + "<body", contents, count=1,
+                              flags=re.IGNORECASE)
+        else:
+            continue
+        html.write_text(contents, encoding="utf-8")
+        changed += 1
+    if changed < 5:
+        raise RuntimeError("Pages relay must be available on all game routes")
+    print(f"PAGES ASSET RELAY: {len(offloaded)} large binaries offloaded, {changed} HTML routes bootstrapped.")
+
+
 def include(path: Path) -> bool:
     rel = path.as_posix()
     parts = path.parts
@@ -91,6 +188,8 @@ def main() -> None:
         shutil.rmtree(out)
     out.mkdir(parents=True)
     file_count = 0
+    offloaded: list[str] = []
+    offloaded_bytes = 0
     for root, dirs, files in os.walk(SOURCE):
         root_path = Path(root)
         dirs[:] = [d for d in dirs if not d.startswith(".") and d not in IGNORED_DIRS
@@ -99,6 +198,10 @@ def main() -> None:
             src = root_path / name
             rel = src.relative_to(SOURCE)
             if not include(rel) or src.is_symlink():
+                continue
+            if is_large_runtime_binary(rel, src):
+                offloaded.append(rel.as_posix())
+                offloaded_bytes += src.stat().st_size
                 continue
             dst = out / rel
             dst.parent.mkdir(parents=True, exist_ok=True)
@@ -109,6 +212,8 @@ def main() -> None:
     # Without this, mobile browsers can reuse an older 3D page despite the
     # latest Pages deployment completing successfully.
     stamp = os.environ.get("GITHUB_SHA", "local")[:12]
+    # URLs are bound to the exact deployed revision to prevent stale assets.
+    add_asset_relay(out, sorted(offloaded), os.environ.get("GITHUB_SHA", "main"))
     for page in ("game.html", "world-map.html", "town-hub.html"):
         file = out / page
         if file.exists():
@@ -119,7 +224,9 @@ def main() -> None:
     (out / ".nojekyll").touch()
     release = {
         "sha": os.environ.get("GITHUB_SHA", "local"),
-        "version": "town-pages-slim-v1",
+        "version": "town-pages-slim-asset-relay-v2",
+        "offloaded_binary_count": len(offloaded),
+        "offloaded_binary_bytes": offloaded_bytes,
         "voice_source": "github-raw",
         "creature_high_source": "github-raw",
     }
@@ -131,8 +238,9 @@ def main() -> None:
             raise RuntimeError("Missing required runtime asset: " + file)
     content_bytes = sum(p.stat().st_size for p in out.rglob("*") if p.is_file())
     mb = content_bytes / 1024 / 1024
-    print(f"PAGES RUNTIME: {file_count} files, {mb:.1f} MiB, source remains intact.")
-    if content_bytes > 195 * 1024 * 1024 or file_count > 1600:
+    print(f"PAGES RUNTIME: {file_count} files, {mb:.1f} MiB, "
+          f"{offloaded_bytes / 1024 / 1024:.1f} MiB binaries offloaded, source intact.")
+    if content_bytes > 90 * 1024 * 1024 or file_count > 1600:
         raise RuntimeError(
             f"Pages payload is still too large ({mb:.1f} MiB / {file_count} files). "
             "Refine the package instead of publishing the entire repository."
