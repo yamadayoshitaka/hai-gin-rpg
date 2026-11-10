@@ -2056,15 +2056,19 @@ const JOBS=[
 let globalOrder='eliminate',selected=null,paused=false,finished=false,elapsed=0,uiTimer=0,simAccumulator=0;
 let tacticalBankRemaining=TACTICAL_TIME_BANK_SECONDS,tacticalPlanningActive=false,tacticalFrameAt=performance.now();
 let squadQuickPage='home',squadQuickPageIndex=0;
-// Every order path shares the same 120-second active-combat cooldown.
+// Manual orders and manual item use share ONE 60 combat-second cooldown per squad.
+const SQUAD_MANUAL_COMMAND_COOLDOWN=60;
 const lastSquadOrderAt=new Map();
 let lastGlobalOrderAt=null;
 function squadOrderCooldownSeconds(id){
- return secondsUntilNextOrder(lastSquadOrderAt.get(String(id)),elapsed);
+ if(id==null)return 0;
+ const usedAt=lastSquadOrderAt.get(String(id));
+ return Number.isFinite(usedAt)?Math.max(0,Math.ceil(usedAt+
+  SQUAD_MANUAL_COMMAND_COOLDOWN-elapsed)):0;
 }
 function canChangeSquadOrder(id){
  const remain=squadOrderCooldownSeconds(id);
- if(remain){log(squadName(id)+'：号令の再変更まで'+remain+'秒');return false;}
+ if(remain){log(squadName(id)+'：⏳'+remain+'秒は命令・アイテム使用不可');return false;}
  return true;
 }
 const battleCeremony=createBattleCeremony({
@@ -5301,8 +5305,9 @@ function allyItemStocks(){
  const alliedIds=new Set((massSim?.units??actors).filter(u=>u.team===0).map(u=>String(u.id)));
  return roomItemRegistry.owned().filter(stack=>stack.quantity>0&&alliedIds.has(String(stack.ownerId)));
 }
-function performSquadBattleItem(itemId,squadId,{automatic=false}={}){
- const id=String(squadId),stocks=allyItemStocks();
+function performSquadBattleItem(itemId,squadId,{automatic=false,issuerSquadId=null}={}){
+ const id=String(squadId),commandSquad=String(issuerSquadId??squadId),stocks=allyItemStocks();
+ if(!automatic&&(!hasSquadCommander(commandSquad)||!canChangeSquadOrder(commandSquad)))return false;
  const stack=stocks.find(s=>s.itemId===itemId),type=ROOM_ITEM_TYPES[itemId];
  const members=(massSim?.units??actors).filter(u=>u.team===0&&String(u.squadId)===id&&u.hp>0&&u.alive!==false);
  if(!battleReady||finished||!stack||!type||!['heal','squad_buff'].includes(type.kind)||!members.length)return false;
@@ -5326,6 +5331,7 @@ function performSquadBattleItem(itemId,squadId,{automatic=false}={}){
   effect=supply.description||'部隊強化 '+supply.duration+'秒';
  }
  lastBattleItemSquad=id;lastSelectedBattleItemId=itemId;
+ if(!automatic)markRibbonOrderIssued(commandSquad);
  const owner=(massSim?.units??actors).find(u=>String(u.id)===String(stack.ownerId)&&u.team===0);
  if(owner)owner.inventory=roomItemRegistry.owned(owner.id).map(item=>({
   id:item.itemId,name:item.name,quantity:item.quantity
@@ -5353,7 +5359,9 @@ function performSquadBattleItem(itemId,squadId,{automatic=false}={}){
  log(squadName(id)+'：'+supply.name+'／'+effect);updateUI();
  return true;
 }
-function useSquadBattleItem(itemId,squadId){return performSquadBattleItem(itemId,squadId);}
+function useSquadBattleItem(itemId,squadId,issuerSquadId=null){
+ return performSquadBattleItem(itemId,squadId,{issuerSquadId});
+}
 function openBattleItemsForSquad(id){
  if(id!=null)lastBattleItemSquad=String(id);
  battleItemSide='ally';itemPanel.hidden=false;
@@ -5411,7 +5419,8 @@ function renderBattleItemManagement(){
   const survivors=squad.filter(u=>u.hp>0&&u.alive!==false);
   const opt=document.createElement('option');opt.value=id;
   opt.textContent=squadName(id)+'（'+survivors.length+'/'+squad.length+'人）';
-  opt.disabled=!survivors.length;itemSquadSelect.append(opt);
+  opt.disabled=!survivors.length||squadOrderCooldownSeconds(id)>0;
+  itemSquadSelect.append(opt);
  }
  const id=[existingSquad,lastBattleItemSquad,selectedSquadId].map(String)
   .find(key=>squadIds.includes(key)&&units.some(u=>u.team===0&&String(u.squadId)===key&&u.hp>0&&u.alive!==false));
@@ -5425,8 +5434,10 @@ function renderBattleItemManagement(){
   const content=def?.kind==='heal'?'部隊全体で最大'+def.squadHealHp+'HP回復'+(missing?'／負傷HP合計 '+Math.round(missing):'／負傷者なし'):
    def?.kind==='squad_buff'?def.description||'部隊強化':'使用できる所持品がありません';
   preview.textContent=content;
+  const cooldown=squadOrderCooldownSeconds(itemSquadSelect.value);
   use.disabled=!def||!['heal','squad_buff'].includes(def.kind)||!target.length||
-   (def.kind==='heal'&&!missing)||!stocks.some(x=>x.itemId===choice.value);
+   cooldown>0||(def.kind==='heal'&&!missing)||!stocks.some(x=>x.itemId===choice.value);
+  use.textContent=cooldown?'⏳ 使用まで '+cooldown+'秒':'✨ ③ この部隊に使用';
  };
  choice.onchange=()=>{lastSelectedBattleItemId=choice.value;updatePreview()};
  itemSquadSelect.onchange=()=>{lastBattleItemSquad=itemSquadSelect.value;updatePreview()};
@@ -6354,7 +6365,9 @@ function positionSquadMenuBelowLabel(id,force=false){
 }
 function openSquadTactics(id){
  closeSquadCircleInfo();
- if(!battleReady||finished||!squadIds.includes(String(id)))return false;
+ if(!battleReady||finished||!squadIds.includes(String(id))||pendingCircleTarget)return false;
+ const remaining=squadOrderCooldownSeconds(id);
+ if(remaining){log(squadName(id)+'：⏳'+remaining+'秒は命令・アイテム操作不可');return false;}
  const unavailable=squadCommanderUnavailableReason(id);
  if(unavailable){
   battleDialogue.push({key:'dead-general:'+id+':'+Math.floor(elapsed*10),speaker:'伝令',
@@ -6432,7 +6445,7 @@ $('squadStrategistWarp').onclick=beginStrategistWarp;
 /** A pulsing target must really be selectable at the moment it is tapped. */
 function isSquadCircleTargetActionable(id,team,action){
  if(!action||!battleReady||finished||!hasSquadCommander(action.source)||
-    (action.kind!=='item'&&!canChangeSquadOrder(action.source)))return false;
+    squadOrderCooldownSeconds(action.source)>0)return false;
  const all=massSim?.units??actors;
  if(!all.some(u=>u.team===0&&String(u.squadId)===String(action.source)&&
    u.hp>0&&u.alive!==false&&!u.isStrategist))return false;
@@ -6456,8 +6469,7 @@ function isSquadCircleTargetActionable(id,team,action){
 }
 function beginCircleTargetSelection(kind,itemId=null){
  const source=orderedSquad();
- if(source==null||!hasSquadCommander(source))return false;
- if(kind!=='item'&&!canChangeSquadOrder(source))return false;
+ if(source==null||!hasSquadCommander(source)||!canChangeSquadOrder(source))return false;
  const candidate={kind,itemId,source},targetTeam=kind==='attack'?1:0;
  const ids=targetTeam===0?squadIds:enemySquadIds;
  if(!ids.some(id=>isSquadCircleTargetActionable(id,targetTeam,candidate))){
@@ -6499,7 +6511,7 @@ function chooseCircleActionTarget(id,team){
   closeSquadTactics();return false;
  }
  let ok=false;
- if(action.kind==='item')ok=useSquadBattleItem(action.itemId,id);
+ if(action.kind==='item')ok=useSquadBattleItem(action.itemId,id,action.source);
  else if(action.kind==='support'){
   ok=requestSquadRecovery(id);
   if(ok)markRibbonOrderIssued(action.source);
