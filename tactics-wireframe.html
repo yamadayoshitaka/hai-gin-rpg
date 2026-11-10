@@ -2628,6 +2628,53 @@ function townPost(type,extra={}){
  try{parent.postMessage({type,stageId:TOWN_STAGE_ID,source:'real-battle-stage',...extra},location.origin)}
  catch(error){console.warn('[Town] cannot notify hub',error)}
 }
+// Orthographic full-extent town-map raster generated from the authoritative
+// 232×232 terrain, street paving, trees and exact building footprints.
+// Never infer building positions from image pixels or a second hand-drawn map.
+function createTownOverviewTexture(){
+ const canvas=document.createElement('canvas');canvas.width=canvas.height=WORLD_SIZE;
+ const ctx=canvas.getContext('2d');
+ const image=ctx.createImageData(WORLD_SIZE,WORLD_SIZE);
+ const color={
+  grass:[83,125,71],dirt:[154,118,81],cobble:[154,154,139],
+  stone:[171,166,150],gravel:[137,135,120],water:[63,119,158],
+  river:[57,120,157],forest:[54,109,62],snow:[220,227,223],
+  sand:[192,176,130],cliff:[112,107,101],paved:[176,170,158]
+ };
+ for(let z=0;z<WORLD_SIZE;z++)for(let x=0;x<WORLD_SIZE;x++){
+  const i=z*WORLD_SIZE+x,terrain=stageData.tiles[i];
+  const base=color[terrain]||color.grass;
+  const light=(Math.round(stageData.heights?.[i]||0)*4+((x*17+z*31)%13)-6);
+  const off=i*4;
+  for(let k=0;k<3;k++)image.data[off+k]=Math.max(0,Math.min(255,base[k]+light));
+  image.data[off+3]=255;
+ }
+ ctx.putImageData(image,0,0);
+ // Architectural roofs are projected at the same world grid coordinates.
+ for(const b of townInstances){
+  const colors={
+   castle:'#786f73',church:'#b3a9a0',weapon:'#a97b56',
+   inn:'#aa7657',tavern:'#895365',shop:'#786f9a',
+   house:'#97765e'
+  };
+  ctx.fillStyle=colors[b.data.kind]||'#9d8874';
+  ctx.fillRect(b.data.x-b.data.w/2,b.data.z-b.data.d/2,b.data.w,b.data.d);
+  ctx.strokeStyle='#2c302e';ctx.lineWidth=.8;
+  ctx.strokeRect(b.data.x-b.data.w/2,b.data.z-b.data.d/2,b.data.w,b.data.d);
+ }
+ // Landmark objects mirror actual accepted placement; rejected proposals
+ // never enter the preview.
+ for(const [id,x,z] of townProps){
+  if(id==='fountain_001'){ctx.fillStyle='#5da9c1';ctx.beginPath();ctx.arc(x,z,3,0,Math.PI*2);ctx.fill();}
+  if(id==='rice_paddy_001'||id==='vegetable_field_001'){ctx.fillStyle='#83a76f';ctx.fillRect(x-4,z-4,8,8);}
+ }
+ for(const obj of stageData.objects){
+  if(!obj.id.includes('tree'))continue;
+  ctx.fillStyle=obj.id.includes('flower')?'#b1af88':'#3a753f';
+  ctx.fillRect(obj.x-1,obj.z-1,3,3);
+ }
+ return canvas.toDataURL('image/png');
+}
 function townNearestFacility(){
  const hero=townAvatar();if(!hero)return null;
  const x=hero.root.position.x/CELL+6,z=hero.root.position.z/CELL+6;
@@ -2713,7 +2760,8 @@ window.addEventListener('message',event=>{
   const focus=a.root.position.clone().add(new THREE.Vector3(0,1.2,0));
   const close=camera.position.distanceTo(controls.target)<15;
   controls.target.copy(focus);
-  townTourView=null;camera.position.copy(focus).add(townIndoor?new THREE.Vector3(0,9,7):close?new THREE.Vector3(0,50,3):new THREE.Vector3(0,18,12));
+  townTourView=null;controls.maxDistance=townIndoor?16:85;controls.minPolarAngle=.08;
+  camera.position.copy(focus).add(townIndoor?new THREE.Vector3(0,9,7):close?new THREE.Vector3(0,50,3):new THREE.Vector3(0,18,12));
   controls.update();
  }
 });
@@ -7496,6 +7544,7 @@ async function finishBattleLoading(){
    })),
    player:{x:hero.root.position.x/CELL+6,z:hero.root.position.z/CELL+6}
   });
+  townPost('hai-gin-town-overview',{image:createTownOverviewTexture()});
    animateTown();
    return;
   }
