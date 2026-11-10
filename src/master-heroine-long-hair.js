@@ -240,7 +240,8 @@ export function buildHeroineFantasyLongHair(scalp,{lengthInHeads=3.25,bodyEnvelo
     const y=rootY-strandLength*t;
     let z=bang?rootZ+d.z*(.13*t+.035*Math.sin(Math.PI*t)):
      side?lerp(rootZ,cz-d.z*.23,clamp(t*1.45,0,1))-d.z*.08*fall:
-     Math.min(rootZ,cz-d.z*.11)-d.z*(.085*t+.10*fall);
+     lerp(rootZ,Math.min(rootZ,cz-d.z*.11),clamp(t*1.8,0,1))-
+      d.z*(.085*t+.10*fall);
     // Screen-space appearance is not a collision check: push EACH REAL
     // filament vertex outside measured shoulder and back envelopes.
     if(bodyEnvelope&&!bang){
