@@ -32,8 +32,8 @@ export function buildHeroineFantasyLongHair(scalp,{lengthInHeads=3.25}={}){
   const item=[x,y,z];
   all.push(item);
   if(z<cz+d.z*.04&&yn>.58)rear.push(item);
-  if(x<cx-d.x*.27&&yn>.56&&z>cz-d.z*.20)left.push(item);
-  if(x>cx+d.x*.27&&yn>.56&&z>cz-d.z*.20)right.push(item);
+  if(x<cx-d.x*.35&&yn>.56&&z>cz-d.z*.20)left.push(item);
+  if(x>cx+d.x*.35&&yn>.56&&z>cz-d.z*.20)right.push(item);
   if(z>cz+d.z*.08&&yn>.79&&Math.abs(x-cx)<d.x*.39)fringe.push(item);
  }
  if(all.length<100||rear.length<35||left.length<10||right.length<10||fringe.length<10)
@@ -61,7 +61,7 @@ export function buildHeroineFantasyLongHair(scalp,{lengthInHeads=3.25}={}){
    const seed=global+1,scatter=hash(seed*1.19),waveSeed=hash(seed*3.71);
    const rootX=q[0]+(hash(seed*4.1)-.5)*d.x*.003;
    const rootY=q[1],rootZ=q[2];
-   const strandLength=bang?d.y*(.09+.065*scatter):
+   const strandLength=bang?d.y*(.025+.022*scatter):
     d.y*lengthInHeads*(side?.84:1)*(.83+.17*scatter);
    const radius=d.x*(.00058+.00050*hash(seed*9.13));
    const sway=(hash(seed*11.3)-.5)*d.x*.14;
