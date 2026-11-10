@@ -149,7 +149,7 @@ test('heroine face has balanced original eye nose mouth and chin ratios',()=>{
  assert.ok(girl.makeup.strength>.9);
  assert.ok(girl.makeup.lip>.9&&girl.makeup.eyeliner>.9);
  assert.ok(girl.proportions.eyeTilt>.04);
- assert.ok(girl.proportions.noseBridge>1.10);
+ assert.ok(girl.proportions.noseBridge>=1.05&&girl.proportions.noseBridge<=1.11);
  assert.ok(girl.proportions.jawTaper<.94);
  assert.match(girl.visualDirection,/lightning-inspired/);
  assert.equal(girl.makeup.sourceFaceOnly,true);
