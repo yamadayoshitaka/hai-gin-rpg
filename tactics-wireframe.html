@@ -811,7 +811,7 @@ scene.add(new THREE.HemisphereLight(0xe6f3ff,0x50617b,TOWN_MODE?1.05:2.5));const
 // Preserve the full shadow-map texture resolution. Cache the expensive
 // depth-only pass for 50v50 actors, refreshing it periodically instead of
 // resubmitting thousands of moving armor pieces 60 times every second.
-sun.shadow.autoUpdate=TOWN_MODE;sun.shadow.needsUpdate=true;
+sun.shadow.autoUpdate=false;sun.shadow.needsUpdate=true;
 const SIZE=13,CELL=1.0;// One grid tile is one adult footstep/occupied footprint.
 // Keep body height independent of tile width.
 const WORLD_SIZE=232;let stageData=null;if(!stageData||stageData.width!==232){const tiles=Array(232*232).fill('grass'),objects=[];for(let z=0;z<232;z++)for(let x=0;x<232;x++){const d=Math.abs(z-29-Math.sin(x*.18)*5);if(d<2)tiles[z*232+x]='stone';else if(d<4)tiles[z*232+x]='cobble';if(d>5&&x<231&&z<231&&(x*17+z*31)%71===0&&!(x<13&&z<13))objects.push({id:(x+z)%3?'tree_deciduous_001':'flower_tree_001',x,z});if(d>=3&&d<=4&&x%2===0)objects.push({id:'wood_fence',x,z})}for(let z=0;z<232;z++){const cx=116+Math.round(5*Math.sin(z*.055));for(let dx=-2;dx<=2;dx++){const x=cx+dx;if(x>=0&&x<232)tiles[z*232+x]='river'}}stageData={width:232,height:232,season:'summer',tiles,objects}}if(!Array.isArray(stageData.heights)||stageData.heights.length!==232*232)stageData.heights=Array.from({length:232*232},(_,i)=>{const x=i%232,z=Math.floor(i/232);return Math.max(0,Math.min(7,Math.round(1.8+Math.max(0,5-Math.abs(z-12-Math.sin(x*.17)*5))*.55+2.3*Math.sin(x*.19)*Math.cos(z*.14)+1.5*Math.cos((x+z)*.11))))});
@@ -2720,7 +2720,7 @@ const townStreetCitizens=(()=>{
   root.scale.setScalar(role==='子ども'?.76:1);
   root.rotation.y=i%7*Math.PI/3.5;
   root.position.set((gx-6)*CELL,terrainY((gx-6)*CELL,(gz-6)*CELL),(gz-6)*CELL);
-  root.userData.townRole=role;scene.add(root);
+  root.userData.townRole=role;root.traverse(n=>{if(n.isMesh)n.castShadow=false;});scene.add(root);
   return {root,x:root.position.x,z:root.position.z,phase:i*1.13,walk:i%3===0};
  });
 })();
@@ -2867,7 +2867,7 @@ window.getTownVisitStats=()=>({
  overview:townTourView?.overview===true,
  movement:townAvatar()?.townMotion||'idle',
  movementSpeed:townAvatar()?.townSpeed||0,
- shadowLive:sun.shadow.autoUpdate,
+ shadowLive:townContactShadows!==null,
  shadowLight:[sun.position.x,sun.position.y,sun.position.z],
  shadowTarget:[sun.target.position.x,sun.target.position.y,sun.target.position.z]
 });
@@ -7397,7 +7397,9 @@ function animateTown(){
  if(elapsed-townShadowUpdatedAt>.65){
   // Keep the daylight direction and its shadow projection fixed in world space.
   // Previously recentering around the player made shadows visibly teleport.
-  // Dynamic town shadows refresh on each rendered frame, without trailing runners.
+  // A per-frame contact-shadow batch follows feet without a full scene depth pass.
+  // Static castle/tree shadows only need this refresh every .65 seconds.
+  sun.shadow.needsUpdate=true;
   updateCameraObstructions();updateTownInteriorVisibility();townShadowUpdatedAt=elapsed;
  }
  if(elapsed-townPlayerReportAt>.38){
@@ -7690,7 +7692,11 @@ async function finishBattleLoading(){
    controls.target.copy(hero.root.position).add(new THREE.Vector3(0,1.2,0));
    camera.position.copy(controls.target).add(new THREE.Vector3(0,17,12));
    controls.update();battleReady=true;loading.hidden=true;
-   townShopkeeperSetup();updateTownContactShadows();
+   townShopkeeperSetup();
+   // Static scenery casts high-detail shadows; moving actors use synchronous
+   // instanced ground contact shadows, so no stale silhouette remains behind.
+   for(const actor of actors)actor.root.traverse(n=>{if(n.isMesh||n.isSkinnedMesh)n.castShadow=false;});
+   updateTownContactShadows();
    // No battle ceremony, no enemy, no squad tactics. Just the real 3D stage.
    document.title='灰銀戦記 ― '+selectedStage.name+'（町探索）';
    clock.getDelta();
