@@ -468,6 +468,48 @@ body.squad-closeup #enemySquadIntel{display:none!important}
 @media(max-width:390px){#allySquadRibbon,#enemySquadRibbon{width:72px!important}.squadCommandRibbon .ribbonSquad{min-height:39px!important}}
 #squadSelectedAttackArrow{stroke:#ffcd58;stroke-width:4;stroke-linecap:round;fill:none;opacity:.98;filter:drop-shadow(0 0 5px #a94b27);pointer-events:none}
 
+/* Retire the old battlefield circles; one attack arrow and both rosters remain. */
+#squadScreenLabels .squadScreenLabel{visibility:hidden!important;pointer-events:none!important}
+#squadCalloutLines path:not(#squadSelectedAttackArrow),
+#squadCalloutLines circle{display:none!important}
+@keyframes eligibleSquadPulse{
+ 0%,100%{border-color:#ffe9a3;box-shadow:0 0 0 1px #ffe38b99,0 0 5px #ffcc5b77;filter:brightness(1)}
+ 50%{border-color:#ffffff;box-shadow:0 0 0 3px #ffe584,0 0 20px #ffd768;filter:brightness(1.35)}
+}
+@keyframes issuingSquadPulse{
+ 0%,100%{box-shadow:0 0 0 1px #64d7f7;filter:brightness(1)}
+ 50%{box-shadow:0 0 0 3px #35d3ff,0 0 15px #37d5ff;filter:brightness(1.3)}
+}
+body[data-circle-target] .squadCommandRibbon .ribbonSquad.eligible-target:not(:disabled){
+ animation:eligibleSquadPulse .86s ease-in-out infinite!important;
+ background:#655021!important;color:#fff5ca!important;opacity:1!important
+}
+body[data-circle-target] .squadCommandRibbon .ribbonSquad.command-source{
+ animation:issuingSquadPulse .94s ease-in-out infinite!important
+}
+body[data-circle-target] .squadCommandRibbon .ribbonSquad:not(.eligible-target):not(.command-source){
+ animation:none!important;opacity:.48!important
+}
+body[data-circle-target] .squadCommandRibbon .ribbonSquad:disabled:not(.command-source){
+ animation:none!important;box-shadow:none!important;filter:grayscale(.5)!important
+}
+@media(prefers-reduced-motion:reduce){
+ body[data-circle-target] .squadCommandRibbon .ribbonSquad.eligible-target:not(:disabled){
+  animation:none!important;outline:3px solid #ffe07c!important
+ }
+ body[data-circle-target] .squadCommandRibbon .ribbonSquad.command-source{
+  animation:none!important;outline:3px solid #43d7ff!important
+ }
+}
+#squadOneClickOrders .exploreBuildingList{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:3px}
+#squadOneClickOrders .exploreBuildingList button{
+ min-height:34px!important;font:11px/1.2 system-ui!important;padding:4px!important;text-align:left!important
+}
+#squadOneClickOrders .exploreBuildingList button.selected{
+ color:#ffe6a7!important;border-color:#ffc768!important;background:#314e62!important
+}
+
+
 /* v4.6.65: REAL DOM command dock. Never float a menu over the battlefield. */
 :root{--battleReportHeight:90px;--battleCommandHeight:140px;--battleSelectedHeight:64px}
 body.compact-command-dock #squadTactics,
@@ -5309,15 +5351,15 @@ const BUILDING_TYPE_NAMES={
  castle:'城',church:'教会',weapon:'武器屋',inn:'宿屋',shop:'道具屋',
  house:'民家',manor_noble:'領主の屋敷',manor_merchant:'商人の屋敷',manor_garden:'庭園屋敷'
 };
-function availableExplorationBuildings(){
+function availableExplorationBuildings({all=false}={}){
  return townInstances.map((b,index)=>{
   const treasure=roomItemRegistry.list({instanceId:b.model.uuid,state:'placed'});
   return {id:b.model.uuid,index,name:(BUILDING_TYPE_NAMES[b.data.kind]||b.data.kind||'建物')+' '+(index+1),
    building:b,treasure};
- }).filter(b=>b.treasure.length>0);
+ }).filter(b=>all||b.treasure.length>0);
 }
 function createExplorationPicker(defaultIds=[]){
- const buildings=availableExplorationBuildings(),selected=new Set(defaultIds.map(String));
+ const buildings=availableExplorationBuildings({all:true}),selected=new Set(defaultIds.map(String));
  const root=document.createElement('div');root.style.cssText='display:grid;gap:5px;border:1px solid #658aa8;border-radius:7px;padding:6px';
  const map=document.createElement('canvas');map.width=240;map.height=240;
  map.style.cssText='width:min(100%,160px);aspect-ratio:1;touch-action:manipulation;display:block;margin:auto;border:1px solid #779aaf;cursor:pointer';
@@ -5367,8 +5409,9 @@ function selectedExplorationLoot(buildingId){
  if(!b)return null;
  const treasure=roomItemRegistry.list({instanceId:b.model.uuid,state:'placed'});
  const loot=treasure.find(item=>item.floor===1)||treasure[0];
- if(!loot)return null;
- const x=Math.round((b.model.position.x+loot.x)/CELL+6),z=Math.round((b.model.position.z+loot.z)/CELL+6);
+ // An empty house is still an explorable building; it simply has no loot.
+ const x=loot?Math.round((b.model.position.x+loot.x)/CELL+6):Math.round(b.data.x);
+ const z=loot?Math.round((b.model.position.z+loot.z)/CELL+6):Math.round(b.data.z);
  return {building:b,loot,x,z,buildingName:BUILDING_TYPE_NAMES[b.data.kind]||b.data.kind||'建物'};
 }
 function issueBuildingExploration(team,squadId,buildingId,{beforeBattle=false}={}){
@@ -7169,7 +7212,12 @@ function renderSquadRibbons(sums){
      currentSquadAttackTarget(0,trackedAllySquadId,sums)?.id);
    const dead=Math.max(0,row.total-row.alive);
    if(button.userDataDeaths.textContent!=='☠ '+dead)button.userDataDeaths.textContent='☠ '+dead;
-   button.disabled=!state.enabled;
+   const selectable=pendingCircleTarget?
+   isSquadCircleTargetActionable(row.id,team,pendingCircleTarget):false;
+  button.classList.toggle('eligible-target',Boolean(selectable));
+  button.classList.toggle('command-source',Boolean(pendingCircleTarget&&team===0&&
+   String(row.id)===String(pendingCircleTarget.source)));
+  button.disabled=pendingCircleTarget?!selectable:!state.enabled;
    button.classList.toggle('needsReview',state.marker==='⚠');
    button.classList.toggle('selected',team===0?trackedAllySquadId===String(row.id):
     selectedEnemySquadId===String(row.id));
