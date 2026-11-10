@@ -1282,7 +1282,7 @@ function createTownRoomDecor(building){
  const root=new THREE.Group();root.name='NonCollidingTownRoomDecor_'+kind;
  root.userData.nonColliding=true;root.userData.collisionMask=0;
  const worldX=(data.x-6)*CELL,worldZ=(data.z-6)*CELL;
- root.position.y=terrainY(worldX,worldZ)-model.position.y+.05;
+ root.position.y=smoothHeight(data.x,data.z)-model.position.y+.05;
  model.add(root);building.townDecor=root;root.visible=false;
  const p=townInteriorPalette;
  if(kind==='castle'){
