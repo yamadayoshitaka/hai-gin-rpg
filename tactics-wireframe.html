@@ -6777,6 +6777,23 @@ function makeSquadLabel(id,team){
 }
 for(const id of squadIds)squadMarkers.set(squadKey(0,id),makeSquadLabel(id,0));
 for(const id of enemySquadIds)squadMarkers.set(squadKey(1,id),makeSquadLabel(id,1));
+// One selected source->target arrow, not ten crossing lines.
+const squadTargetSvg=$('squadCalloutLines'),squadTargetNS='http://www.w3.org/2000/svg';
+const arrowDefs=document.createElementNS(squadTargetNS,'defs');
+const arrowTip=document.createElementNS(squadTargetNS,'marker');
+arrowTip.id='squadTargetArrowHead';
+arrowTip.setAttribute('markerWidth','11');arrowTip.setAttribute('markerHeight','11');
+arrowTip.setAttribute('refX','9');arrowTip.setAttribute('refY','5');
+arrowTip.setAttribute('orient','auto');arrowTip.setAttribute('markerUnits','userSpaceOnUse');
+const arrowShape=document.createElementNS(squadTargetNS,'path');
+arrowShape.setAttribute('d','M0,1 L10,5 L0,9 Z');
+arrowShape.setAttribute('fill','#ffcd58');
+arrowTip.append(arrowShape);arrowDefs.append(arrowTip);squadTargetSvg.append(arrowDefs);
+const squadSelectedAttackArrow=document.createElementNS(squadTargetNS,'path');
+squadSelectedAttackArrow.id='squadSelectedAttackArrow';
+squadSelectedAttackArrow.setAttribute('marker-end','url(#squadTargetArrowHead)');
+squadSelectedAttackArrow.style.display='none';
+squadTargetSvg.append(squadSelectedAttackArrow);
 // Two compact mirrored squad selectors; only allied living commanders can
 // issue orders. Enemy squads are inspectable, but never player-controlled.
 const squadRibbonButtons=new Map(),lastRibbonOrderAt=new Map(),ribbonPageNodes=new Map();
@@ -7103,6 +7120,7 @@ function updateSquadScreenLabels(dt){
   selectingMission:Boolean(pickingSquadMission)
  });
  if(!showCallouts){
+  squadSelectedAttackArrow.style.display='none';
   // The previous edge-pinned offscreen circles obscured actual people.
   for(const marker of squadMarkers.values()){
    marker.userData.screenLabel.hidden=true;
@@ -7112,6 +7130,8 @@ function updateSquadScreenLabels(dt){
   return;
  }
  const targetTeam=pendingCircleTarget?(pendingCircleTarget.kind==='attack'?1:0):null;
+ const focusAlly=selectedSquadId??trackedAllySquadId;
+ const focusEnemy=currentSquadAttackTarget(0,focusAlly,lastRibbonSums)?.id??null;
  if(pendingCircleTarget&&!(targetTeam===0?squadIds:enemySquadIds).some(id=>
    isSquadCircleTargetActionable(id,targetTeam,pendingCircleTarget))){
   closeSquadTactics();return;
@@ -7126,7 +7146,11 @@ function updateSquadScreenLabels(dt){
   label.classList.toggle('command-source',Boolean(commandOverviewLocked&&
    selectedSquadId!=null&&marker.userData.team===0&&
    String(marker.userData.squadId)===String(selectedSquadId)));
-  if(pageZoomed||!marker.visible||(targetTeam!==null&&!actionable)){
+  const isFocus=marker.userData.team===0?
+   String(marker.userData.squadId)===String(focusAlly):
+   String(marker.userData.squadId)===String(focusEnemy);
+  if(pageZoomed||!marker.visible||(targetTeam!==null&&!actionable)||
+     (targetTeam===null&&!isFocus)){
    label.hidden=true;marker.userData.calloutLine.style.display='none';
    marker.userData.calloutDot.style.display='none';continue;
   }
@@ -7175,12 +7199,30 @@ function updateSquadScreenLabels(dt){
  container.style.setProperty('--squadCircleSize',diameter+'px');
  container.classList.toggle('compact-circles',diameter<52);
  lineLayer.setAttribute('viewBox','0 0 '+Math.max(1,innerWidth)+' '+Math.max(1,innerHeight));
+ const sourcePosition=placements.get(squadKey(0,focusAlly));
+ const targetPosition=focusEnemy==null?null:placements.get(squadKey(1,focusEnemy));
+ squadSelectedAttackArrow.style.display='none';
+ if(sourcePosition&&targetPosition&&targetTeam===null){
+  const dx=targetPosition.x-sourcePosition.x,dy=targetPosition.y-sourcePosition.y;
+  const distance=Math.hypot(dx,dy);
+  if(distance>22){
+   const begin=Math.min(sourcePosition.diameter/2+6,distance/4);
+   const end=Math.min(targetPosition.diameter/2+18,distance/4);
+   const x1=sourcePosition.x+dx/distance*begin,y1=sourcePosition.y+dy/distance*begin;
+   const x2=targetPosition.x-dx/distance*end,y2=targetPosition.y-dy/distance*end;
+   squadSelectedAttackArrow.setAttribute('d','M'+x1.toFixed(1)+','+y1.toFixed(1)+
+    ' L'+x2.toFixed(1)+','+y2.toFixed(1));
+   squadSelectedAttackArrow.style.display='';
+  }
+ }
  for(const point of points){
   const marker=point.marker,label=marker.userData.screenLabel;
   const pos=placements.get(point.key),leader=marker.userData.calloutLine,dot=marker.userData.calloutDot;
   if(!pos){label.hidden=true;leader.style.display='none';dot.style.display='none';continue;}
   const id=String(marker.userData.squadId),team=marker.userData.team;
-  const chosen=(selectedCircleSquad?.team===team&&selectedCircleSquad?.id===id&&!squadCircleInfo.hidden)||
+  const chosen=(team===0&&id===String(focusAlly))||
+   (team===1&&id===String(focusEnemy))||
+   (selectedCircleSquad?.team===team&&selectedCircleSquad?.id===id&&!squadCircleInfo.hidden)||
    (team===0&&id===activeId&&(selecting||!$('squadTactics').hidden))||
    (team===1&&id===String(selectedEnemySquadId)&&!$('enemySquadIntel').hidden);
   label.classList.toggle('selected',Boolean(chosen));
