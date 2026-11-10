@@ -27,13 +27,14 @@ fs.mkdirSync(dir,{recursive:true});
   const p=d.appearance?.proportions,h=d.referenceHeroineHairReport;
   if(errors.length||d.hairError||d.sourceGender!=='female'||
      d.longBlondeHeroineHairShown!==true||h?.scalpAnchored!==true||
-     h?.individualFilamentCount!==100000||h?.strandSegmentCount!==300000||
+     h?.individualFilamentCount!==100000||h?.strandSegmentCount!==600000||
      h?.allStrandsRendered!==true||h?.noWidePolygonCards!==true||
      d.heroineOldScalpHidden!==true||d.heroineBaldHeadSingleWig!==true||
      d.heroineActualBodyClearance!==true||
      d.heroineWigCrownVisible!==true||
      d.heroineWigCrown?.coverageRatio<.95||
      h?.bodyClearanceMeasured!==true||h?.bodyCollisionCorrections<1||
+     h?.frontEyeZoneVertices>10||
      d.appearance?.youthfulness<.68||
      h?.lengthInHeads<3||h?.fringeTipMinYNormalized<.64||
      p?.preEarFullness>=.8||p?.parotidWidth>=.8||
@@ -80,7 +81,7 @@ fs.mkdirSync(dir,{recursive:true});
      restoredEye.ocularGeometryDigest!==baseEye.ocularGeometryDigest)
    throw Error('Reset did not restore both real eyes and eyelashes '+JSON.stringify({baseEye,restoredEye}));
   const w=await page.evaluate(()=>window.__heroineWireframeQA?.());
-  if(w?.strandCount!==100000||w?.strandSegments!==300000||w?.triangles<1000)
+  if(w?.strandCount!==100000||w?.strandSegments!==600000||w?.triangles<1000)
    throw Error('Real hair and face/source geometry not present '+JSON.stringify(w));
   const canvas=page.locator('#canvas');
   await page.locator('#portrait').click();
@@ -91,7 +92,7 @@ fs.mkdirSync(dir,{recursive:true});
   await page.waitForTimeout(200);
   const wire=await page.evaluate(()=>window.__heroineWireframeQA());
   if(wire.mode!=='wire'||wire.triangles!==w.triangles||
-     wire.strandCount!==100000||wire.strandSegments!==300000)
+     wire.strandCount!==100000||wire.strandSegments!==600000)
    throw Error('Wire mode must preserve all real hair filaments '+JSON.stringify(wire));
   await page.screenshot({path:path.join(dir,'hero-girl-01-wire-100k.png'),
    clip:await canvas.boundingBox(),timeout:90000,animations:'disabled'});

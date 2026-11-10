@@ -50,7 +50,7 @@
     "test:creature-import": "node qa/creature-import-pipeline.test.mjs",
     "test:quaternius-50": "node qa/quaternius-ultimate50.test.mjs",
     "test:canine-quality": "node qa/canine-fur-face-regression.test.mjs",
-    "test:master-face": "node --test qa/master-swordsman-assembly.test.mjs qa/master-swordsman-face-proportions.test.mjs",
+    "test:master-face": "node --test qa/master-swordsman-assembly.test.mjs qa/master-swordsman-face-proportions.test.mjs qa/master-heroine-wig-ocular-face-regression.test.mjs",
     "test:face-analysis": "node qa/facial-feature-analysis.test.mjs",
     "test:town-services": "node qa/town-facility-squad-gear.test.mjs",
     "test:town-visit": "node qa/town-visit-experience.test.mjs && node qa/town-audio-director.test.mjs"

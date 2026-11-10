@@ -112,8 +112,9 @@ function makeAttachedUpperLashes(width,height){
  for(let i=0;i<13;i++){
   const t=i/6-1,arch=(1-t*t)*height*.24;
   const x=t*width*.46,y=arch,z=.0025+height*.04*(1-t*t);
-  const len=height*(.15+.10*(1-Math.abs(t)));
-  pts.push(x,y,z,x+t*len*.31,y+len,z+len*.34);
+  const len=height*(.10+.09*(1-Math.abs(t)));
+  // Roots lie on the upper rim spline; its transform drives every lash.
+  pts.push(x,y,z,x+t*len*.22,y+len*.55,z+len*.28);
  }
  const geo=new THREE.BufferGeometry();
  geo.setAttribute('position',new THREE.Float32BufferAttribute(pts,3));
@@ -151,6 +152,26 @@ function makeEyeLid(width,height){
  geo.setAttribute('color',new THREE.Float32BufferAttribute(colors,4));
  geo.setIndex(indices);geo.computeVertexNormals();
  return geo;
+}
+
+/**
+ * Anatomical eyelid blink moves the upper-lid group and ALL of its lashes.
+ * Exported for regression testing without loading multi-megabyte donor GLBs.
+ */
+export function applyEyeFixtureBlink(fixture,value){
+ const blink=THREE.MathUtils.clamp(Number(value)||0,0,1);
+ const {upper,lower,lashes,lid}=fixture;
+ lid.visible=blink>.015;
+ lid.scale.y=Math.max(.001,blink);
+ if(Number.isFinite(upper.userData.openLocalY)){
+  upper.position.y=upper.userData.openLocalY-
+   blink*upper.userData.blinkTravelLocal;
+  upper.scale.y=upper.userData.openScaleY*(1-blink*.18);
+  lower.position.y=lower.userData.openLocalY+
+   blink*lower.userData.blinkTravelLocal*.12;
+ }
+ lashes.visible=true;
+ return blink;
 }
 
 /**
@@ -704,12 +725,12 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false,gen
   youthfulFacePreviewMorph:true,
   outfitRigRetargeted:false,helmetFitted:false,ff13ArtGatePassed:false};
  let blink=0;
+ function syncBlinkPose(){
+  for(const fixture of eyeFixtures)applyEyeFixtureBlink(fixture,blink);
+ }
  function setBlink(value){
   blink=THREE.MathUtils.clamp(Number(value)||0,0,1);
-  for(const lid of lids){
-   lid.visible=blink>.015;
-   lid.scale.y=Math.max(.001,blink);
-  }
+  syncBlinkPose();
   return blink;
  }
  function setAppearance(profile){
@@ -748,6 +769,9 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false,gen
   detailedHead.updateWorldMatrix(true,true);
   const proportions=validateFaceProportions(profile.proportions||{});
   const youthfulReport=youthfulFace.apply(profile.youthfulness??0,proportions);
+  // Apply source expression morphs before fitting eye geometry and lids.
+  for(const key of HERO_FACE_MORPHS)
+   if(profile.face&&profile.face[key]!==undefined)setMorph(key,profile.face[key]);
   const headDim=faceSource.geometry.boundingBox.getSize(new THREE.Vector3());
   // Re-anchor both real eye sockets to the already deformed face surface,
   // then let iris, pupil, blink and both rims use the new native sclera box.
@@ -827,7 +851,7 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false,gen
    // directly caused detached pupils above the native eye sockets.
    // Keep iris in front of face even after a socket moves forward.
    const skinEyeZ=sourceSkinDepth(center.x,center.y,box.max.z+.003);
-   const exposedIrisZ=Math.max(box.max.z+.0075,skinEyeZ+.006);
+   const exposedIrisZ=Math.max(box.max.z+.008,skinEyeZ+.0075);
    group.position.copy(detailedHead.worldToLocal(
     new THREE.Vector3(center.x,center.y,exposedIrisZ)));
    group.visible=true;fixture.sclera.visible=true;
@@ -840,7 +864,9 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false,gen
    // Native sclera geometry already applied eyeWidth/eyeHeight/tilt.
    // Do not multiply them AGAIN on the iris overlay.
    const irisScale=THREE.MathUtils.clamp(profile.eyeSize??1,.92,1.24);
-   group.scale.set(irisScale,irisScale,1);
+   group.scale.set(
+    irisScale*Math.sqrt(proportions.eyeWidth),
+    irisScale*Math.sqrt(proportions.eyeHeight),1);
    group.rotation.z=proportions.eyeTilt*.15;
    fixture.upper.position.copy(detailedHead.worldToLocal(
     new THREE.Vector3(center.x,center.y+dim.y*.16,box.max.z+.009)));
@@ -856,6 +882,16 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false,gen
     center.clone().add(new THREE.Vector3(0,0,dim.z*.56+.004))));
    fixture.upper.scale.y=proportions.eyeHeight;
    fixture.lower.scale.y=proportions.eyeHeight;
+   // Capture the latest transformed socket position and blinking travel.
+   fixture.upper.userData.openLocalY=fixture.upper.position.y;
+   fixture.upper.userData.openScaleY=fixture.upper.scale.y;
+   fixture.lower.userData.openLocalY=fixture.lower.position.y;
+   const blinkTarget=detailedHead.worldToLocal(
+    new THREE.Vector3(center.x,center.y-dim.y*.36,box.max.z+.009));
+   fixture.upper.userData.blinkTravelLocal=Math.max(
+    0,fixture.upper.position.y-blinkTarget.y);
+   fixture.lower.userData.blinkTravelLocal=
+    fixture.upper.userData.blinkTravelLocal;
    fixture.upper.scale.x=proportions.eyeWidth;
    fixture.lower.scale.x=proportions.eyeWidth;
    fixture.upper.rotation.z=proportions.eyeTilt*.18;
@@ -896,8 +932,7 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false,gen
     .lerp(new THREE.Color(0x181015),.34);
    fixture.brow.visible=true;
   }
-  for(const key of HERO_FACE_MORPHS)
-   if(profile.face&&profile.face[key]!==undefined)setMorph(key,profile.face[key]);
+  syncBlinkPose();
   // Shape the ACTUAL face mesh, not merely the accompanying preview portrait.
   // Target of .93..1.02 makes youthful candidates subtly narrower at the jaw.
   const eyeScale=THREE.MathUtils.clamp(Number(profile.eyeSize)||1,.92,1.24);
@@ -999,6 +1034,9 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false,gen
    attachedEyelashMeshCount:upperEyelashes.length,
    visibleEyelashMeshCount:upperEyelashes.filter(x=>x.visible&&x.parent?.visible).length,
    lashFollowsUpperLid:eyeFixtures.every(x=>x.lashes.parent===x.upper),
+   blinkLashPoseSynchronized:eyeFixtures.every(x=>x.lashes.parent===x.upper&&
+    Number.isFinite(x.upper.userData.openLocalY)&&
+    Number.isFinite(x.upper.userData.blinkTravelLocal)),
    visibleNativeEyeballCount:eyeFixtures.filter(x=>x.sclera.visible).length,
    visibleIrisOverlayCount:eyeFixtures.filter(x=>x.irisGroup.visible).length,
    eyelashPoseDigest:poseChecksum(upperEyelashes),

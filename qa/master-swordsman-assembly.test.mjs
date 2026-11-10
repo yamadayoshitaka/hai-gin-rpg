@@ -303,9 +303,13 @@ test('heroine golden hair has dense independently shaped real polygon locks and 
  assert.equal(report.triangleCount,0);
  assert.equal(report.strandSegmentCount,hair.geometry.getAttribute('position').count/2);
  assert.equal(report.individualFilamentCount,100000);
- assert.equal(report.strandSegmentCount,300000,
-  'One hundred thousand curved filaments with three 3D line sections must be present');
+ assert.equal(report.strandSegmentCount,600000,
+  'One hundred thousand curved filaments with six 3D line sections must be present');
  assert.equal(report.noWidePolygonCards,true);
+ assert.equal(report.coherentScalpFlow,true);
+ assert.equal(report.templeTipsTurnBehindShoulders,true);
+ assert.ok(report.maxSideOutwardDriftMeters<.02,
+  'Temple hair tips must not form lateral spikes');
  assert.equal(Object.values(report.scalpRegions).reduce((a,b)=>a+b,0),100000);
  assert.ok(report.lengthInHeads>=3);
  assert.deepEqual(source.getAttribute('position').array,base,
@@ -423,14 +427,14 @@ test('heroine 01 has real long blonde 3D hair past shoulders, without a floating
  assert.ok(report.faceFramingLocks>=24000);
  assert.ok(report.lengthInHeads>=2.5);
  assert.ok(report.lowestRelativeToScalpBottom<-.8);
- assert.ok(report.strandSegmentCount>=300000);
+ assert.ok(report.strandSegmentCount>=600000);
  assert.equal(report.noFloatingBun,true);
  assert.equal(report.sourceHeadUnchanged,true);
  assert.equal(report.staticUnrigged,true);
  assert.equal(hair.isLineSegments,true,'High-density hair must render every independent curved strand');
  assert.equal(report.noWidePolygonCards,true,'No flat clump cards are allowed');
  assert.equal(report.layeredVolume,true,'Missing layered long-hair mass');
- assert.equal(report.strandSegmentCount,300000,'Individual 3D filaments are missing');
+ assert.equal(report.strandSegmentCount,600000,'Individual 3D filaments are missing');
  assert.equal(hair.material.isLineBasicMaterial,true,'Coarse card mesh shader must be retired');
  const positions=hair.geometry.getAttribute('position');
  for(let i=0;i<positions.count;i+=71)
