@@ -34,7 +34,7 @@ const definitions=[
  ['ally-05','軽装の俊敏剣士','ally',7,
   [.19,.22,.39,.17,.26,.22,.33],'#cfa085','#6e8251','#604039','#533c49','#919c9e',.95,1.08,.80],
  ['hero-girl-01','女騎士・採用デザイン準拠の3D試作','hero',2,
-  [.08,.19,.31,.07,.16,.10,.18],'#e8c5b0','#6c94a9','#e6bc71','#353a5c','#b8bcc8',.973,1.13,.67]
+  [.08,.19,.31,.07,.16,.10,.18],'#e8c5b0','#6c94a9','#e6bc71','#353a5c','#b8bcc8',.955,1.145,.67]
 ];
 function buildPreset(row,i){
  const [key,label,category,hairStyle,faceVector,skin,iris,hairColor,clothColor,armorColor,
@@ -61,16 +61,19 @@ function buildPreset(row,i){
    // rather than successive caricature morphs / enlarged jaws.
    // Original adult heroine sculpt: round the mid-cheek while reducing
    // the heavy lower jaw. Retain measured native 3D eyes and socket depth.
-   faceHeight:.964,upperThird:1.04,middleThird:.95,lowerThird:.98,
-   jawTaper:.965,cheekRoundness:1.165,chinLength:.96,
-   preEarFullness:.72,lowerCheekLateral:.85,parotidWidth:.74,
-   eyeWidth:1.13,eyeHeight:1.09,
-   eyeSpacing:.99,eyeVertical:.001,eyeTilt:.012,
-   browVertical:.002,browEyeGap:.955,
-   browWidth:1.015,browThickness:.82,browAngle:.012,
-   noseOverall:.93,noseLength:.93,noseWidth:.90,noseBridge:.97,noseTip:.90,
-   mouthWidth:.87,mouthHeight:.95,mouthVertical:.003,
-   lipFullness:1.105,mouthCorner:.004
+   // Soft young-adult knight, preserving the actual photographic-style
+   // source eye sockets/nasal features rather than a doll-face warp.
+   // Narrow the LOWER jaw while retaining malar cheek fullness.
+   faceHeight:.954,upperThird:1.045,middleThird:.94,lowerThird:.97,
+   jawTaper:.93,cheekRoundness:1.115,chinLength:.935,
+   preEarFullness:.72,lowerCheekLateral:.82,parotidWidth:.72,
+   eyeWidth:1.15,eyeHeight:1.105,
+   eyeSpacing:.99,eyeVertical:.003,eyeTilt:.018,
+   browVertical:.002,browEyeGap:.94,
+   browWidth:1.015,browThickness:.81,browAngle:.015,
+   noseOverall:.90,noseLength:.91,noseWidth:.88,noseBridge:.97,noseTip:.88,
+   mouthWidth:.89,mouthHeight:.96,mouthVertical:.003,
+   lipFullness:1.12,mouthCorner:.006
   }):i===0?validateFaceProportions({
    faceHeight:.947,upperThird:1.07,middleThird:.86,lowerThird:.925,
    jawTaper:.85,chinLength:.87,eyeWidth:1.045,eyeHeight:1.045,
@@ -88,7 +91,7 @@ function buildPreset(row,i){
   }):base.proportions,
   faceWidth,eyeSize:1+(eyeSize-1)*.70,shoulderSize,
   headScale:category==='hero'?(female?1.065:1.075):1,
-  youthfulness:female?.67:category==='hero'?.97:.49+(i-5)*.035,
+  youthfulness:female?.70:category==='hero'?.97:.49+(i-5)*.035,
   skinRoughness:category==='hero'?(female?.58:i===0?.43:.47):.54,
   armorStyle:female?0:category==='hero'?(i===0?1:i%3):1+(i%3),
   build:female?.955:category==='hero'?(i===0?.955:.965+i*.007):.975+(i-5)*.008,

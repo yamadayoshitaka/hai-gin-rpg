@@ -13,7 +13,104 @@ const hash=x=>fract(Math.sin(x*127.1+17.79)*43758.5453123);
 const lerp=(a,b,t)=>a+(b-a)*t;
 const clamp=(a,min,max)=>Math.min(max,Math.max(min,a));
 
-export function buildHeroineFantasyLongHair(scalp,{lengthInHeads=3.25}={}){
+/**
+ * Measure the *real* displayed CC0 body in the same local coordinate frame
+ * as the female scalp source mesh. A width/depth ring at each torso height
+ * gives an inexpensive conservative shoulder/back clearance envelope.
+ * No new naked/armoured body is invented or edited.
+ */
+export function measureHeroineTorsoEnvelope(body,scalp){
+ if(!body?.traverse||!scalp?.geometry)throw Error('Torso and scalp are required for 3D wig clearance');
+ body.updateWorldMatrix(true,true);
+ scalp.geometry.computeBoundingBox();
+ const bb=scalp.geometry.boundingBox,d=bb.getSize(new THREE.Vector3());
+ const cx=(bb.min.x+bb.max.x)*.5;
+ const lower=bb.min.y-3.95*d.y,upper=bb.min.y+.30*d.y;
+ const COUNT_BINS=64,step=(upper-lower)/COUNT_BINS;
+ const bins=Array.from({length:COUNT_BINS},()=>({
+  count:0,minX:Infinity,maxX:-Infinity,minZ:Infinity,maxZ:-Infinity
+ }));
+ // buildHeadConformingScalp stores an actor-local face-mesh transform;
+ // the real torso vertices are converted through both actual world matrices.
+ const scalpToWorld=(body.parent?.matrixWorld||new THREE.Matrix4())
+  .clone().multiply(scalp.matrix);
+ const toScalp=scalpToWorld.invert();
+ const point=new THREE.Vector3(),matrix=new THREE.Matrix4();
+ let sampled=0;
+ body.traverse(mesh=>{
+  if(!mesh.isMesh)return;
+  const a=mesh.geometry?.getAttribute('position');
+  if(!a)return;
+  matrix.copy(toScalp).multiply(mesh.matrixWorld);
+  for(let i=0;i<a.count;i++){
+   point.fromBufferAttribute(a,i).applyMatrix4(matrix);
+   if(Math.abs(point.x-cx)>d.x*1.25||point.y<lower||point.y>=upper)continue;
+   const k=Math.floor((point.y-lower)/step),b=bins[k];
+   b.minX=Math.min(b.minX,point.x);b.maxX=Math.max(b.maxX,point.x);
+   b.minZ=Math.min(b.minZ,point.z);b.maxZ=Math.max(b.maxZ,point.z);
+   b.count++;sampled++;
+  }
+ });
+ if(sampled<200)throw Error('Actual heroine body lacks measurable 3D torso surface');
+ const raw=bins.map((b,i)=>{
+  if(b.count<3)return null;
+  const cxBody=(b.maxX+b.minX)*.5,czBody=(b.maxZ+b.minZ)*.5;
+  return {x:cxBody,z:czBody,
+   rx:Math.max(.035,(b.maxX-b.minX)*.5),
+   rz:Math.max(.035,(b.maxZ-b.minZ)*.5),y:lower+(i+.5)*step};
+ });
+ // Sparse shoulder/jaw bands should not produce abrupt radial steps.
+ const rings=raw.map((v,i)=>{
+  const nearby=[];
+  for(let k=Math.max(0,i-3);k<=Math.min(raw.length-1,i+3);k++)
+   if(raw[k])nearby.push({ring:raw[k],w:1/(1+Math.abs(i-k))});
+  if(!nearby.length)return null;
+  const total=nearby.reduce((a,r)=>a+r.w,0);
+  return {
+   x:nearby.reduce((a,r)=>a+r.ring.x*r.w,0)/total,
+   z:nearby.reduce((a,r)=>a+r.ring.z*r.w,0)/total,
+   // Max of neighbouring real body radii (rather than their average)
+   // conservatively encloses raised shoulders and armour-adjacent seams.
+   rx:Math.max(...nearby.map(r=>r.ring.rx)),
+   rz:Math.max(...nearby.map(r=>r.ring.rz))
+  };
+ });
+ return Object.freeze({lower,upper,step,rings,meshDerived:true,
+  sampledBodyVertices:sampled,clearanceMeters:.029,
+  hairLocalCoordinates:true,sourceBodyUnmodified:true});
+}
+function clearBodyForLongStrand(x,y,z,region,envelope){
+ if(!envelope||y<envelope.lower||y>=envelope.upper||region==='bang')
+  return [x,z,false];
+ const t=(y-envelope.lower)/envelope.step,i=Math.floor(t);
+ const a=envelope.rings[clamp(i,0,envelope.rings.length-1)];
+ const b=envelope.rings[clamp(i+1,0,envelope.rings.length-1)];
+ if(!a&&!b)return [x,z,false];
+ const w=fract(t);
+ const ring=a&&b?{
+  x:lerp(a.x,b.x,w),z:lerp(a.z,b.z,w),
+  rx:lerp(a.rx,b.rx,w),rz:lerp(a.rz,b.rz,w)
+ }:a||b;
+ const clearance=envelope.clearanceMeters||.025;
+ if(region==='rear'){
+  // The back curtain must be BEHIND the actual rear torso at this height,
+  // including at the shoulder blades; no straight hair through the back.
+  const q=(x-ring.x)/(ring.rx+clearance);
+  if(Math.abs(q)>1)return [x,z,false];
+  const rear=ring.z-(ring.rz+clearance)*Math.sqrt(Math.max(.07,1-q*q));
+  return z>rear?[x,rear,true]:[x,z,false];
+ }
+ // Ear-side locks bend outward around the shoulder (not through it),
+ // then drape next to the arm once the actual body becomes narrower.
+ const side=region==='left'?-1:1;
+ const zn=(z-ring.z)/(ring.rz+clearance);
+ if(Math.abs(zn)>1)return [x,z,false];
+ const bound=ring.x+side*(ring.rx+clearance)*Math.sqrt(Math.max(.08,1-zn*zn));
+ if(side*x>=side*bound)return [x,z,false];
+ return [bound,z,true];
+}
+
+export function buildHeroineFantasyLongHair(scalp,{lengthInHeads=3.25,bodyEnvelope=null}={}){
  const source=scalp?.geometry;
  const p=source?.getAttribute('position'),alpha=source?.getAttribute('color');
  if(!p||!alpha||alpha.itemSize<4||p.count<400)
@@ -58,6 +155,7 @@ export function buildHeroineFantasyLongHair(scalp,{lengthInHeads=3.25}={}){
  const positions=new Float32Array(VERTICES*3);
  const colors=new Float32Array(VERTICES*3);
  let lowestY=Infinity,lowestBangY=Infinity,frontEyeZoneVertices=0;
+ let bodyCollisionCorrections=0,sideShoulderCorrections=0,rearBackCorrections=0;
  let vi=0;
  const regions={rear:70000,templeLeft:12000,templeRight:12000,bangs:6000};
  const categories=[
@@ -76,7 +174,7 @@ export function buildHeroineFantasyLongHair(scalp,{lengthInHeads=3.25}={}){
    const rootX=q[0]+(hash(seed*4.1)-.5)*d.x*.003;
    const rootY=q[1],rootZ=q[2];
    const strandLength=bang?
-    Math.min(d.y*(.025+.022*scatter),Math.max(.001,rootY-(b.min.y+d.y*.78))):
+    Math.min(d.y*(.075+.040*scatter),Math.max(.001,rootY-(b.min.y+d.y*.75))):
     d.y*lengthInHeads*(side?.84:1)*(.83+.17*scatter);
    const sway=(hash(seed*11.3)-.5)*d.x*.14;
    const sideDirection=side||Math.sign(rootX-cx)||1;
@@ -88,12 +186,23 @@ export function buildHeroineFantasyLongHair(scalp,{lengthInHeads=3.25}={}){
       Math.sin(Math.PI*t)*d.x*(bang?.010:side?.038:.026);
     // Temple hairs sweep out from the ear, preserving the cheek outline;
     // the back follows the occiput toward the waist with individual waves.
-    const x=bang?rootX+sideDirection*d.x*.075*t+curl:
+    let x=bang?rootX+sideDirection*d.x*.075*t+curl:
      rootX+(side?side*d.x*(.11*t+.07*fall):sway*fall)+curl;
     const y=rootY-strandLength*t;
-    const z=bang?rootZ+d.z*(.075*t+.035*Math.sin(Math.PI*t)):
+    let z=bang?rootZ+d.z*(.17*t+.045*Math.sin(Math.PI*t)):
      side?lerp(rootZ,cz-d.z*.11,clamp(t*1.6,0,1))-d.z*.035*fall:
      Math.min(rootZ,cz-d.z*.11)-d.z*(.055*t+.12*fall);
+    // Screen-space appearance is not a collision check: push EACH REAL
+    // filament vertex outside measured shoulder and back envelopes.
+    if(bodyEnvelope&&!bang){
+     const result=clearBodyForLongStrand(x,y,z,region,bodyEnvelope);
+     x=result[0];z=result[1];
+     if(result[2]){
+      bodyCollisionCorrections++;
+      if(side)sideShoulderCorrections++;
+      else rearBackCorrections++;
+     }
+    }
     if(bang)lowestBangY=Math.min(lowestBangY,y);
     lowestY=Math.min(lowestY,y);
     const current=[x,y,z,t];
@@ -138,7 +247,10 @@ export function buildHeroineFantasyLongHair(scalp,{lengthInHeads=3.25}={}){
   noWidePolygonCards:true,individualFilamentCount:COUNT,
   strandRenderer:'gpu-line-segments',strandSegmentCount:COUNT*SEGMENTS,
   allStrandsRendered:true,previewOnlyLinePrimitive:true,
-  templeClearanceStrategy:'sweep-outward-before-shoulder-drop',
+  templeClearanceStrategy:'actual-body-shoulder-envelope',
+  rearClearanceStrategy:'actual-body-back-envelope',
+  donorScalpOnlyForRoots:true,bodyClearanceMeasured:!!bodyEnvelope,
+  bodyCollisionCorrections,sideShoulderCorrections,rearBackCorrections,
   scalpRegions:Object.freeze(regions),
   rearLocks:regions.rear,faceFramingLocks:regions.templeLeft+regions.templeRight,
   bangLocks:regions.bangs,lockCount:COUNT,

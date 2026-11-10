@@ -29,12 +29,20 @@ fs.mkdirSync(dir,{recursive:true});
      d.longBlondeHeroineHairShown!==true||h?.scalpAnchored!==true||
      h?.individualFilamentCount!==100000||h?.strandSegmentCount!==300000||
      h?.allStrandsRendered!==true||h?.noWidePolygonCards!==true||
+     d.heroineOldScalpHidden!==true||d.heroineBaldHeadSingleWig!==true||
+     d.heroineActualBodyClearance!==true||
+     h?.bodyClearanceMeasured!==true||h?.bodyCollisionCorrections<1||
+     d.appearance?.youthfulness<.68||
      h?.lengthInHeads<3||h?.fringeTipMinYNormalized<.70||
      p?.preEarFullness>=.8||p?.parotidWidth>=.8||
      p?.lowerCheekLateral>=1||p?.cheekRoundness<=1||
      p?.noseTip<.75||p?.mouthCorner<0)
    throw Error('Failed heroine 01 genuine 3D head/scalp/hair/face QA: '+
     JSON.stringify({errors,gender:d.sourceGender,hairError:d.hairError,hair:h,face:p}));
+  const wig=await page.evaluate(()=>window.__heroineWigQA?.());
+  if(wig?.sourceScalpVisible!==false||wig?.donorHairVisible!==false||
+     wig?.oldVikingScalpVisible!==false||wig?.torsoCorrections<1)
+   throw Error('Bald original, only wig, measured shoulder/back clearance must be real '+JSON.stringify(wig));
   const w=await page.evaluate(()=>window.__heroineWireframeQA?.());
   if(w?.strandCount!==100000||w?.strandSegments!==300000||w?.triangles<1000)
    throw Error('Real hair and face/source geometry not present '+JSON.stringify(w));
@@ -55,10 +63,16 @@ fs.mkdirSync(dir,{recursive:true});
   const reset=await page.evaluate(()=>window.__heroineWireframeQA());
   if(reset.mode!=='solid'||reset.strandCount!==100000)
    throw Error('Solid/wire switch lost hair geometry');
+  await page.locator('#back').click();
+  await page.waitForTimeout(200);
+  await page.screenshot({path:path.join(dir,'hero-girl-01-back-shoulder-clearance.png'),
+   clip:await canvas.boundingBox(),timeout:90000,animations:'disabled'});
   console.log('HEROINE01_FACE_WIRE_100K_SUCCESS '+JSON.stringify({
    fibers:h.individualFilamentCount,segments:h.strandSegmentCount,
    cheek:p.cheekRoundness,preEar:p.preEarFullness,parotid:p.parotidWidth,
-   sourceFaceTriangles:w.triangles,images:['hero-girl-01-face-100k.png','hero-girl-01-wire-100k.png']
+   sourceFaceTriangles:w.triangles,wigCollisionCorrections:h.bodyCollisionCorrections,
+   oldScalpHidden:d.heroineOldScalpHidden,
+   images:['hero-girl-01-face-100k.png','hero-girl-01-wire-100k.png','hero-girl-01-back-shoulder-clearance.png']
   }));
  }finally{await browser.close();}
 })().catch(e=>{console.error('HEROINE01_FOCUSED_QA_FAILED',e);process.exitCode=1;});
