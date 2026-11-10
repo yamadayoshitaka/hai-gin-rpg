@@ -57,6 +57,12 @@ const assert=require('node:assert/strict');
    'town movement and population must use peaceful-scene physics');
   assert.equal(stats.solidCitizens,stats.streetCitizens,
    'every loaded town resident needs a physical capsule');
+  assert.ok(stats.npcMotion.procedural>=stats.streetCitizens,
+   'registered villagers without embedded animation clips must have an active full-body procedural gait');
+  assert.equal(stats.npcMotion.tPoses,0,
+   'all actively animated town NPCs must lower their arms rather than marching in T pose');
+  assert.ok(stats.registeredFallbacks>=1,
+   'oversized shopkeepers should still use the repaired catalog model and its idle pose');
   for(const [kind,heights] of [['battle-origin adults',stats.actorHeights],
     ['registered villagers',stats.citizenHeights]]){
    assert.ok(heights.length>0,kind+' must render');
