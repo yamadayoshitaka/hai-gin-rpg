@@ -42,7 +42,26 @@ test('100k long-hair lines remain continuous with no spiky sideward flight',()=>
  assert.equal(report.coherentScalpFlow,true);
  assert.equal(report.templeTipsTurnBehindShoulders,true);
  assert.ok(report.maxSideOutwardDriftMeters<.02);
+ assert.ok(report.neckSideSplitCorrections>1000,'The back hair must part around the neck');
+ assert.equal(report.beardFreeFrontNeck,true);
+ assert.equal(report.neckBeardIntrusionVertices,0);
+ assert.ok(report.minimumNeckSideRadiusNormalized>=.40,
+  'Long hair must not hang from the centre of the front-view chin');
  const p=hair.geometry.getAttribute('position');
+ // Independently inspect the 3D hair vertex positions, not just QA flags:
+ // no rear/side hair may hang under the chin at the neck centre.
+ const bb=scalp.geometry.boundingBox,sz=bb.getSize(new THREE.Vector3());
+ const midX=(bb.min.x+bb.max.x)*.5;
+ let napeVertices=0;
+ for(let i=0;i<p.count;i+=13){
+  const y=p.getY(i);
+  if(y<=bb.min.y+sz.y*.19&&y>=bb.min.y-sz.y*.70){
+   napeVertices++;
+   assert.ok(Math.abs(p.getX(i)-midX)>=sz.x*.40-1e-5,
+    'Pink hair has fallen under the frontal chin like a beard');
+  }
+ }
+ assert.ok(napeVertices>200,'No measurable nape hair found');
  // The 70k rear strands are followed by 12k left and 12k right temple locks.
  const sections=report.strandSegmentCount/report.individualFilamentCount;
  for(const strand of [70000,70111,75999,81999,82000,88111,93999]){
