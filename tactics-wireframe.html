@@ -6289,6 +6289,7 @@ function buildSquadQuickCommands(){
   activeBuffIds:[...activeSquadBuffVfx].filter(([key,v])=>key.startsWith(id+':')&&v.until>elapsed)
    .map(([key])=>key.slice(id.length+1))
  });
+ let quickActionRow=null;
  const heading=value=>{
   const node=document.createElement('div');node.className='quickGroup';node.textContent=value;
   squadQuickList.append(node);
@@ -6300,7 +6301,7 @@ function buildSquadQuickCommands(){
   button.disabled=!enabled||(needsCommander&&(!commander||cooldown>0));
   if(needsCommander&&cooldown)button.title='次の号令まで'+cooldown+'秒';
   button.onclick=()=>{if(!button.disabled)action()};
-  squadQuickList.append(button);return button;
+  (quickActionRow||squadQuickList).append(button);return button;
  };
  if(squadQuickPage==='home'){
   const home=document.createElement('div');home.className='circleHomeButtons';
@@ -6312,13 +6313,13 @@ function buildSquadQuickCommands(){
   squadQuickList.append(home);
   heading('部隊全員に適用・持ち時間内は戦闘停止');
   add('🔎 探索','explore_page',()=>{squadQuickPage='explore';buildSquadQuickCommands()},{needsCommander:false});
-  add('📍 行き先','move_page',()=>beginSquadDestination(id),{needsCommander:true});
+  // No destination in the command HUD.
   add('📊 詳細','details',()=>{closeSquadTactics();openVitals(id)},{needsCommander:false});
   return;
  }
  // Button-based navigation, never scroll-to-find.
  const nav=document.createElement('div');nav.className='quickTabs';
- const choices=[['home','← 戻る'],['orders','📯 号令'],['items','🎒 道具'],['explore','🔎 探索']];
+ const choices=[['orders','📯 号令'],['items','🎒 アイテム'],['explore','🔎 探索']];
  for(const [page,label] of choices){
   const tab=document.createElement('button');tab.type='button';tab.textContent=label;
   tab.className=page===squadQuickPage?'active':'';
@@ -6326,6 +6327,7 @@ function buildSquadQuickCommands(){
   nav.append(tab);
  }
  squadQuickList.append(nav);
+ quickActionRow=document.createElement('div');quickActionRow.className='quickActions';squadQuickList.append(quickActionRow);
  const pager=(length,size=4)=>{
   const max=Math.max(0,Math.ceil(length/size)-1);
   squadQuickPageIndex=Math.max(0,Math.min(max,squadQuickPageIndex));
@@ -6345,7 +6347,7 @@ function buildSquadQuickCommands(){
   heading('号令 · 部隊全員（発令後2分間は変更不可）');
   add('⚔ 突撃 → 敵を選択','charge',()=>beginCircleTargetSelection('attack'));
   add('✚ 回復支援 → 味方を選択','heal_target',()=>beginCircleTargetSelection('support'));
-  add('📍 行き先指定','move',()=>beginSquadDestination(id));
+  // Explicit destination command removed from the visible battle HUD.
   if(massSim)add('✨ 軍師ワープ','warp',()=>beginStrategistWarp(),
    {enabled:general?.rarity==='UR'&&!general.strategistWarpUsed});
   add('🛡 守備','defend',()=>issue('defend'));
@@ -6403,11 +6405,16 @@ function buildSquadQuickCommands(){
   },{needsCommander:false,enabled:Boolean(commander&&stock&&kind)});
   add('🎒 アイテム選択','item_picker',()=>{closeSquadTactics();openBattleItemsForSquad(id)},
    {needsCommander:false,enabled:allyItemStocks().length>0});
-  add('📍 行き先を指定','move',()=>beginSquadDestination(id));
+  // Destination is now AI-owned; no manual destination button in this interface.
   if(massSim)add('✨ 軍師ワープ','warp',()=>beginStrategistWarp(),
    {enabled:general?.rarity==='UR'&&!general.strategistWarpUsed});
   add('📊 部隊HP・MP','hp',()=>{closeSquadTactics();openVitals(id)},
    {needsCommander:false});
+ }
+ if(quickActionRow){
+  const back=document.createElement('button');back.type='button';back.dataset.command='back';
+  back.textContent='↩ 戻る';back.onclick=()=>closeSquadTactics();
+  quickActionRow.append(back);
  }
 }
 function showSquadTacticsPanel(panel='main'){
@@ -6963,7 +6970,7 @@ function makeRibbonSquad(team,id,index){
  button.userDataTarget=target;
  button.userDataDeaths=deaths;
  button.userDataIcon=icon;button.userDataOrder=order;button.userDataCooldown=timer;button.userDataIndex=index;
- button.onclick=()=>{if(team===0){trackedAllySquadId=String(id);openSquadTactics(id)}else showEnemySquadIntel(id)};
+ button.onclick=()=>{if(pendingCircleTarget){chooseCircleActionTarget(id,team);return}if(team===0){trackedAllySquadId=String(id);openSquadTactics(id)}else showEnemySquadIntel(id)};
  button.addEventListener('pointerdown',()=>{ribbonPressing=true});
  const release=()=>{ribbonPressing=false;lastRibbonInteractionAt=performance.now()};
  button.addEventListener('pointerup',release);button.addEventListener('pointercancel',release);
@@ -7028,8 +7035,39 @@ function currentSquadAttackTarget(team,id,sums=lastRibbonSums){
  return nearest==null?null:{id:nearest,mode:'tracking'};
 }
 
+function refreshBattleTargetSummary(sums){
+ const report=document.getElementById('battleDialogue');
+ const measured=report&&!report.hidden?Math.max(0,window.innerHeight-report.getBoundingClientRect().top):80;
+ const reportHeight=Math.ceil(measured)+4+'px';
+ if(document.documentElement.style.getPropertyValue('--battleReportHeight')!==reportHeight)
+  document.documentElement.style.setProperty('--battleReportHeight',reportHeight);
+ const summary=$('battleSelectedTargetBar');
+ const id=trackedAllySquadId;
+ const ally=sums.get(squadKey(0,id));
+ if(id==null||!ally){summary.hidden=true;return}
+ summary.hidden=false;
+ const allyNumber=squadIds.indexOf(String(id))+1;
+ $('battleSelectedAlly').textContent='味方 第'+allyNumber+'隊';
+ $('battleSelectedAllyCount').textContent='残存 '+ally.n+'/'+ally.total;
+ const order=squadIntent(id,0,ally.n===0).order;
+ $('battleSelectedAllyOrder').textContent=order;
+ const lock=currentSquadAttackTarget(0,id,sums);
+ const enemy=lock?.id!=null?sums.get(squadKey(1,lock.id)):null;
+ if(enemy?.n){
+  const number=enemySquadIds.indexOf(String(lock.id))+1;
+  $('battleSelectedEnemy').textContent='敵 第'+number+'隊';
+  $('battleSelectedEnemyCount').textContent='残存 '+enemy.n+'/'+enemy.total;
+  $('battleSelectedTargetMode').textContent=lock.mode==='指定'?'攻撃対象（号令指定）':
+   lock.mode==='交戦'?'攻撃対象（交戦中）':'索敵候補（接敵前）';
+ }else{
+  $('battleSelectedEnemy').textContent='対象なし';
+  $('battleSelectedEnemyCount').textContent='--/--';
+  $('battleSelectedTargetMode').textContent=lock?.mode==='mission'?'別任務中':'索敵中';
+ }
+}
 function renderSquadRibbons(sums){
  lastRibbonSums=sums;
+ refreshBattleTargetSummary(sums);
  // The only live controls are now 3D squad circles; do not reflow invisible sidebars.
  /* Target rosters enabled. */
  // Top telemetry grows or shrinks with DPI, so anchor both side ribbons
