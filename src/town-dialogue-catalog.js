@@ -3,6 +3,7 @@ import {STARTER_TOWN} from './starter-town.js';
 import {continentForChapter} from './continent-campaign.js';
 import {STORY_CHAPTERS} from './story-chapters.js';
 import {CHARACTER_MODEL_REGISTRY} from './character-model-registry.js';
+import {MODEL_FIRST_CATALOG} from './model-first-catalog.js';
 const keepers=Object.freeze({
  weapons:['武具屋の店主','この刃が誰を守るのか、買う前によく考えてくれ。','今は輸送が遅れ、鋼材にも戦の影がある。','weapons','male'],
  items:['道具屋の店主','薬草も一つの命だよ。持っていきな。','村人の願いを聞くなら、毒消しも忘れずにね。','items','female'],
@@ -30,5 +31,5 @@ export function resolveTownConversation({npcId='',name='',role='',panel='',chapt
   '【'+story.title+'】'+continent.conflict,
   story.dialogues[index%story.dialogues.length]?.line||story.narration];
  return {id:npcId||'street-0',name:speaker,role:citizen?.role||role||'civilian',panel:null,
-  modelId:CHARACTER_MODEL_REGISTRY[index%4===0?'female':'male'].id,lines};
+  modelId:MODEL_FIRST_CATALOG[index%4===0||/ミラ|娘|少女|買い物客/.test(citizen?.name||'')?'civilianFemale':'civilianMale'].url,lines};
 }
