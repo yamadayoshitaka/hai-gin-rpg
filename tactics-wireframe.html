@@ -5954,6 +5954,7 @@ function openSquadTactics(id){
   setCameraActive(null);
  }
  enterCommandOverview(); // Wide, static camera wins over the initial squad focus.
+ $('squadInspect').disabled=true;
  closeBattleMenu();
  $('squadDockIdle').hidden=true;
  $('squadTactics').hidden=false;showSquadTacticsPanel('main');
@@ -5965,6 +5966,7 @@ function beginStrategistWarp(){
  const id=orderedSquad(),general=squadStrategist(id);
  if(!general||general.rarity!=='UR'||general.strategistWarpUsed||!canChangeSquadOrder(id))return false;
  pickingStrategistWarp=true;pickingSquadDestination=false;pickingSquadMission=null;
+ enterCommandOverview();
  clearMissionPreview();$('squadTactics').hidden=true;
  $('destinationPrompt').hidden=false;
  $('destinationPrompt').textContent='✨ UR軍師のワープ先を選択：青い味方陣地全域の空きマス（1戦1回）。赤・中立帯は不可';
@@ -6065,6 +6067,7 @@ function closeSquadTactics(){
  const previous=squadSelectionReturn;squadSelectionReturn=null;
  commandOverviewLocked=false;
  controls.enabled=true;
+ $('squadInspect').disabled=false;
  tacticalPlanningActive=false;
  // Restore the caller's pause state only after the order is confirmed/cancelled.
  if(previous&&!finished&&paused!==previous.wasPaused)setBattlePaused(previous.wasPaused);
@@ -6282,6 +6285,7 @@ $('squadMission').onchange=e=>{
  if(!type||!hasSquadCommander(orderedSquad())||!canChangeSquadOrder(orderedSquad()))return;
  if(type==='retreat'||type==='clear'){issueSquadOrder(type);showSquadTacticsPanel('main');return;}
  pickingSquadMission=type;pickingSquadDestination=false;pickingStrategistWarp=false;clearMissionPreview();$('squadTactics').hidden=true;
+ enterCommandOverview();
  $('destinationPrompt').hidden=false;
  $('destinationPrompt').textContent='⚑ '+MISSION_LABELS[type]+'：目標を戦場または全域地図でタップ（ここで取消）';
 };
@@ -6290,6 +6294,7 @@ $('squadTacticsClose').onclick=()=>{
  else closeSquadTactics();
 };
 $('squadInspect').onclick=()=>{
+ if(commandOverviewLocked)return;
  const center=squadCenter(orderedSquad());if(!center)return;
  const x=(center.x-6)*CELL,z=(center.z-6)*CELL;
  setBattleCamera(new THREE.Vector3(x,terrainY(x,z)+1,z),new THREE.Vector3(5,8,12));setCameraActive(null);
@@ -7191,6 +7196,7 @@ for(const [settingId,buttonId] of topButtonPreferences){
  setting.addEventListener('change',apply);apply();
 }
 function setBattlePaused(next){
+ if(commandOverviewLocked&&!next)return; // Selection cannot unfreeze combat.
  paused=Boolean(next);massWorker?.setPaused(paused);
  $('pause').textContent=paused?'再開':'一時停止';updateUI();
 }
@@ -7224,8 +7230,8 @@ function enterCommandOverview(){
 }
 setBattleCamera(cameraHome,cameraCloseOffset);
 $('camOverview').onclick=()=>{focusedHumanUnitId=null;followCamera=false;setBattleCamera(new THREE.Vector3((WORLD_SIZE/2-6)*CELL,0,(WORLD_SIZE/2-6)*CELL),cameraOverviewOffset);setCameraActive('camOverview')};
-$('camFollow').onclick=()=>{focusedHumanUnitId=null;followCamera=true;const p=selected?.root.position||actors[0]?.root.position||cameraHome;setBattleCamera(p,new THREE.Vector3(5,8,12));setCameraActive('camFollow')};
-$('camReset').onclick=()=>{focusedHumanUnitId=null;followCamera=false;setBattleCamera(cameraHome,cameraCloseOffset);setCameraActive(null)};
+$('camFollow').onclick=()=>{if(commandOverviewLocked)return;focusedHumanUnitId=null;followCamera=true;const p=selected?.root.position||actors[0]?.root.position||cameraHome;setBattleCamera(p,new THREE.Vector3(5,8,12));setCameraActive('camFollow')};
+$('camReset').onclick=()=>{if(commandOverviewLocked)return;focusedHumanUnitId=null;followCamera=false;setBattleCamera(cameraHome,cameraCloseOffset);setCameraActive(null)};
 let down=null,touchGestureEngaged=false,lastGroundTap=null;
 let focusedHumanUnitId=null;
 // Screen-space selection works for BOTH the 50v50 detailed meshes and all
@@ -7316,6 +7322,7 @@ renderer.domElement.addEventListener('pointerdown',e=>{
  down={x:e.clientX,y:e.clientY,id:e.pointerId};
 });
 renderer.domElement.addEventListener('pointermove',e=>{
+ if(commandOverviewLocked)return;
  if(e.pointerType!=='touch'||!activeTouchPointers.has(e.pointerId))return;
  activeTouchPointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
  if(activeTouchPointers.size!==2||pinchStartGap<8)return;
@@ -7342,6 +7349,37 @@ renderer.domElement.addEventListener('pointerup',e=>{
  const rect=renderer.domElement.getBoundingClientRect();
  pointer.set((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1);
  raycaster.setFromCamera(pointer,camera);
+ if(pendingCircleTarget){
+  // A real battlefield tap is an alternate selection route if the mobile
+  // HTML circle did not receive the touch. Never zoom instead of targeting.
+  const team=pendingCircleTarget.kind==='attack'?1:0;
+  const ids=team===0?squadIds:enemySquadIds;
+  const eligible=ids.filter(id=>isSquadCircleTargetActionable(id,team,pendingCircleTarget));
+  let closest=null,bestDistance=52;
+  for(const id of eligible){
+   const marker=squadMarkers.get(squadKey(team,id));
+   if(!marker?.visible)continue;
+   const point=marker.position.clone().project(camera);
+   if(point.z>1||point.z< -1)continue;
+   const px=rect.left+(point.x+1)*rect.width*.5;
+   const py=rect.top+(1-point.y)*rect.height*.5;
+   const distance=Math.hypot(px-e.clientX,py-e.clientY);
+   if(distance<bestDistance){bestDistance=distance;closest=id;}
+  }
+  if(closest!==null){chooseCircleActionTarget(closest,team);return;}
+  const groundHit=raycaster.intersectObject(ground,false)[0];
+  if(groundHit){
+   const cell=gridFromWorld(groundHit.point);
+   const candidate=eligible.map(id=>({id,center:squadCenter(id,team)})).filter(row=>row.center)
+    .sort((a,b)=>Math.hypot(a.center.x-cell.x,a.center.z-cell.z)-
+     Math.hypot(b.center.x-cell.x,b.center.z-cell.z))[0];
+   if(candidate&&Math.hypot(candidate.center.x-cell.x,candidate.center.z-cell.z)<14){
+    chooseCircleActionTarget(candidate.id,team);return;
+   }
+  }
+  $('destinationPrompt').textContent='点滅中の'+(team===1?'赤':'青')+'い部隊サークルかレーダー上の部隊をタップ・ここで取消';
+  return;
+ }
  if(!pickingSquadDestination&&!pickingSquadMission&&!pickingStrategistWarp&&focusFlyingCreatureAt(e.clientX,e.clientY))return;
  // Android browsers may swallow the second finger's pinch gesture even with
  // touch-action:none. Two quick taps on the battlefield provide a buttonless
