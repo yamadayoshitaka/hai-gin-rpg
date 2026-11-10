@@ -83,7 +83,7 @@ function buildPreset(row,i){
   }):base.proportions,
   faceWidth,eyeSize:1+(eyeSize-1)*.70,shoulderSize,
   headScale:category==='hero'?(female?1.065:1.075):1,
-  youthfulness:female?.66:category==='hero'?.97:.49+(i-5)*.035,
+  youthfulness:female?.69:category==='hero'?.97:.49+(i-5)*.035,
   skinRoughness:category==='hero'?(female?.58:i===0?.43:.47):.54,
   armorStyle:female?0:category==='hero'?(i===0?1:i%3):1+(i%3),
   build:female?.955:category==='hero'?(i===0?.955:.965+i*.007):.975+(i-5)*.008,
