@@ -375,7 +375,7 @@ test('heroine 01 has real long blonde 3D hair past shoulders, without a floating
  assert.ok(report.faceFramingLocks>=24000);
  assert.ok(report.lengthInHeads>=2.5);
  assert.ok(report.lowestRelativeToScalpBottom<-.8);
- assert.ok(report.triangleCount>1000);
+ assert.ok(report.strandSegmentCount>=300000);
  assert.equal(report.noFloatingBun,true);
  assert.equal(report.sourceHeadUnchanged,true);
  assert.equal(report.staticUnrigged,true);
