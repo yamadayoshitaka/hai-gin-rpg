@@ -142,6 +142,7 @@ footer{max-width:1170px;margin:0 auto 20px;padding:8px 16px;color:#b0c4d6;font-s
 <h2 style="margin-top:14px">衣装・装飾</h2>
 <label><input id="outfitOn" type="checkbox" checked>実OBJ衣装・ブーツを表示</label>
 <label><input id="hairOn" type="checkbox" checked>髪を表示（美少女01は素体を坊主にし、専用ロングウィッグのみ表示）</label>
+<label><input id="makeupOn" type="checkbox" checked>美少女01の化粧を表示（細いアイライン・チーク・ローズ系リップ）</label>
 <label><input id="beardOn" type="checkbox">ヒゲ・口ヒゲを表示</label>
 <label><input id="armorOn" type="checkbox" checked>剣・肩甲・金具（仮の造形装飾）</label>
 <label><input id="autoBlink" type="checkbox" checked>自動瞬き</label>
@@ -595,6 +596,8 @@ async function applySelectedProfile(profile){
  $('skinColor').value=profile.skin;
  $('eyeColor').value=profile.iris;
  $('hairColor').value=profile.hairColor;
+ $('makeupOn').disabled=profile.gender!=='female';
+ $('makeupOn').checked=profile.gender==='female'&&(profile.makeup?.strength||0)>.01;
  $('shoulderSize').value=String(profile.shoulderSize);
  $('hairStyle').value=String(profile.hairStyle);
  const chosenStyle=$('hairStyle').querySelector('option[value="2"]');
@@ -687,7 +690,7 @@ const loader=new GLTFLoader();
   const qs=new URLSearchParams(location.search);
   const id=qs.get('featured');
   await applyFeaturedCharacter(FEATURED_SWORDSMEN.some(p=>p.key===id)?id:'hero-01');
-  if(qs.get('view')==='face')targetView('portrait');
+  if(qs.get('view')==='face'||qs.get('view')==='portrait')targetView('portrait');
   if(qs.get('skin')==='1'){
    $('bodyStudyMode').value='anatomy';
    syncAnatomyPreview();refreshWireDisplay();
@@ -723,6 +726,11 @@ $('hairOn').addEventListener('change',()=>{
  if(importedHair)importedHair.visible=$('hairOn').checked;
  else master?.setPart('scalp',$('hairOn').checked&&$('outfitOn').checked);
  printState();
+});
+$('makeupOn').addEventListener('change',()=>{
+ if(!master||currentAppearance?.gender!=='female')return;
+ const neutral=featuredSwordsmanProfile('hero-girl-01').makeup.strength;
+ applyCustomization({makeup:{strength:$('makeupOn').checked?neutral:0}});
 });
 $('beardOn').addEventListener('change',()=>{
  master?.setPart('beard',$('beardOn').checked&&$('outfitOn').checked);
