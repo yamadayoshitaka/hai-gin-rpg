@@ -34,9 +34,9 @@ test('heroine wig paints every upper-crown vertex and keeps face skin uncovered'
  assert.ok(report.fringeTipMinYNormalized>.64);
  assert.equal(cap.children.length,2,'Cap needs crown-flow and real 3D bangs');
  const fringe=cap.getObjectByName('HEROINE_288_REAL_SCALP_SWEEP_BANG_RIBBONS');
- const crown=cap.getObjectByName('HEROINE_VISIBLE_COMBED_CROWN_HAIR');
+ const crownFlow=cap.getObjectByName('HEROINE_VISIBLE_COMBED_CROWN_HAIR');
  assert.ok(fringe?.isMesh&&fringe.geometry.index?.count>=3000);
- assert.ok(crown?.isLineSegments);
+ assert.ok(crownFlow?.isLineSegments);
  assert.equal(fringe.userData.noEyeOcclusion,true);
  const v=fringe.geometry.getAttribute('position');
  let minX=Infinity,maxX=-Infinity,maxY=-Infinity;
