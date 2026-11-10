@@ -107,6 +107,21 @@ function makeEyeRim(width,height,upper=true){
  }
  return new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),32,.00135,6,false);
 }
+function makeAttachedUpperLashes(width,height){
+ const pts=[];
+ for(let i=0;i<13;i++){
+  const t=i/6-1,arch=(1-t*t)*height*.24;
+  const x=t*width*.46,y=arch,z=.0025+height*.04*(1-t*t);
+  const len=height*(.15+.10*(1-Math.abs(t)));
+  pts.push(x,y,z,x+t*len*.31,y+len,z+len*.34);
+ }
+ const geo=new THREE.BufferGeometry();
+ geo.setAttribute('position',new THREE.Float32BufferAttribute(pts,3));
+ const mat=new THREE.LineBasicMaterial({color:0x594048,depthTest:true,depthWrite:false});
+ const lashes=new THREE.LineSegments(geo,mat);
+ lashes.name='ANATOMICAL_LASHES_FOLLOW_UPPER_LID';
+ lashes.renderOrder=3;return lashes;
+}
 function makeEyeLid(width,height){
  // Anatomical almond-shaped closed-eye mask, feathered into the brow/cheek
  // rather than a flat rectangular or triangular "cardboard eyelid".
@@ -541,7 +556,7 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false,gen
  // Actual sclera surfaces locate real eyelid planes, independent of screen
  // dimensions; no blanket "fake eye blink" on the whole head.
  const lids=[],upperLids=[],irisOverlays=[],actualScleraNames=[],allEyeSourceNames=[];
- const eyeFixtures=[],browMaterials=[],lowerLids=[];
+ const eyeFixtures=[],browMaterials=[],lowerLids=[],upperEyelashes=[];
   let openEyeClearanceRatio=Infinity;
  detailedHead.traverse(o=>{if(o.isMesh&&/iris|sclera|eye/i.test(o.name))allEyeSourceNames.push(o.name)});
  for(const side of ['L','R']){
@@ -615,6 +630,10 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false,gen
    upper.position.set(mid.x,mid.y+size.y*.16,box.max.z+.009);
    upper.position.sub(fit.headShift);
    upper.scale.y=1;upperLids.push(upper);detailedHead.add(upper);
+   // The lashes are children of the very same upper eyelid, so every
+   // slider or blinking transform is inherited rather than guessed.
+   const lashes=makeAttachedUpperLashes(width*.99,height*.9);
+   upper.add(lashes);upperEyelashes.push(lashes);
    const lowerMat=upperMat.clone();ownedMaterials.push(lowerMat);headSkinMaterials.push(lowerMat);
    const lower=new THREE.Mesh(makeEyeRim(width*.99,height*.9,false),lowerMat);
    lower.name='ANATOMICAL_LOWER_EYELID_'+side;
@@ -633,7 +652,7 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false,gen
    brow.castShadow=true;detailedHead.add(brow);
    browMaterials.push(browMat);
    eyeFixtures.push({side:side==='L'?-1:1,sideLabel:side,
-    sclera,irisGroup,pupilLayer,upper,lower,lid:null,brow,
+    sclera,irisGroup,pupilLayer,upper,lower,lashes,lid:null,brow,
     socketReference,socketDelta:new THREE.Vector3()});
     // Upper lids must leave the pupil and lower eye visibly open at rest.
     // This numerical aperture check catches the 'already blinking' regression.
@@ -666,6 +685,7 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false,gen
    fittedNativeOcularMeshes:ocularMeshesReshaped,
    sourceAlignedBrowMeshes:eyeFixtures.length,
    restingLowerEyelidMeshCount:lowerLids.length,
+  upperEyelashMeshCount:upperEyelashes.length,
   heightMeters:round(fit.bodyHeight),neckCutMeters:round(fit.neckY),
   outfitWidthRatio:round(fit.outfitWidthRatio),
   outfitDepthRatio:round(fit.outfitDepthRatio),
@@ -805,16 +825,23 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false,gen
    // Box3 is in WORLD coordinates (the actor may already be scaled).
    // Convert through the actual head transform; subtracting fit.headShift
    // directly caused detached pupils above the native eye sockets.
+   // Keep iris in front of face even after a socket moves forward.
+   const skinEyeZ=sourceSkinDepth(center.x,center.y,box.max.z+.003);
+   const exposedIrisZ=Math.max(box.max.z+.0075,skinEyeZ+.006);
    group.position.copy(detailedHead.worldToLocal(
-    new THREE.Vector3(center.x,center.y,box.max.z+.0015)));
+    new THREE.Vector3(center.x,center.y,exposedIrisZ)));
+   group.visible=true;fixture.sclera.visible=true;
    group.position.x+=fixture.side*proportions.irisOffsetX;
    group.position.y+=proportions.irisOffsetY;
    group.position.z+=proportions.irisOffsetZ;
    fixture.pupilLayer.position.set(
     fixture.side*proportions.pupilOffsetX,
     proportions.pupilOffsetY,proportions.pupilOffsetZ);
-   group.scale.set((profile.eyeSize??1)*proportions.eyeWidth,
-      (profile.eyeSize??1)*proportions.eyeHeight,1);
+   // Native sclera geometry already applied eyeWidth/eyeHeight/tilt.
+   // Do not multiply them AGAIN on the iris overlay.
+   const irisScale=THREE.MathUtils.clamp(profile.eyeSize??1,.92,1.24);
+   group.scale.set(irisScale,irisScale,1);
+   group.rotation.z=proportions.eyeTilt*.15;
    fixture.upper.position.copy(detailedHead.worldToLocal(
     new THREE.Vector3(center.x,center.y+dim.y*.16,box.max.z+.009)));
    fixture.upper.position.add(new THREE.Vector3(
@@ -831,6 +858,11 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false,gen
    fixture.lower.scale.y=proportions.eyeHeight;
    fixture.upper.scale.x=proportions.eyeWidth;
    fixture.lower.scale.x=proportions.eyeWidth;
+   fixture.upper.rotation.z=proportions.eyeTilt*.18;
+   fixture.lower.rotation.z=proportions.eyeTilt*.18;
+   fixture.lashes.visible=true;
+   fixture.lashes.material.color.set(profile.hairColor||'#594048')
+    .lerp(new THREE.Color(0x33242d),.32);
    fixture.lid.scale.x=proportions.eyeWidth;
    // Keep the brow on the supraorbital ridge rather than directly on
    // the upper eyelid: the earlier brow looked like a second lash line.
@@ -964,6 +996,12 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false,gen
    maxPupilIrisOffsetRatio:round(pupilGap),
    leftRightEyeHeightDifference:round(eyeHeightAsymmetry),
    lowerLidMeshCount:lowerLids.length,
+   attachedEyelashMeshCount:upperEyelashes.length,
+   visibleEyelashMeshCount:upperEyelashes.filter(x=>x.visible&&x.parent?.visible).length,
+   lashFollowsUpperLid:eyeFixtures.every(x=>x.lashes.parent===x.upper),
+   visibleNativeEyeballCount:eyeFixtures.filter(x=>x.sclera.visible).length,
+   visibleIrisOverlayCount:eyeFixtures.filter(x=>x.irisGroup.visible).length,
+   eyelashPoseDigest:poseChecksum(upperEyelashes),
    proportions:headReport.proportions,
    sourceUnchanged:headReport.sourceUnchanged,
    artGradeCertified:false
@@ -1061,6 +1099,7 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false,gen
     if(g!==sourceBodyGeometry.get(mesh))g.dispose();
    youthOutfit.dispose();
    for(const lid of [...lids,...upperLids,...lowerLids])lid.geometry.dispose();
+   for(const lash of upperEyelashes){lash.geometry.dispose();lash.material.dispose();}
    for(const b of eyeFixtures){b.brow.geometry.dispose();b.brow.material.dispose();}
    for(const m of ownedMaterials)m.dispose();
    donorBody.traverse(o=>{
