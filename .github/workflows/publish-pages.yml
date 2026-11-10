@@ -51,7 +51,11 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          stale="49de908d6bc6197e8334b9d0ec2dfab8b6c88e18"
+          # Clear known timed-out backend jobs before uploading this release.
+          # These IDs are commit-scoped Pages deployment IDs, not Actions run IDs.
+          for stale in \
+            c094e70554f6e601655657887bef1fcc6b9470d5 \
+            49de908d6bc6197e8334b9d0ec2dfab8b6c88e18; do
           endpoint="repos/${GITHUB_REPOSITORY}/pages/deployments/${stale}"
           echo "Checking previous Pages deployment ${stale}"
           if state=$(gh api "${endpoint}" --jq '.status' 2>/tmp/pages-status-error); then
@@ -76,6 +80,7 @@ jobs:
               echo "::warning::Pages cancellation unavailable (status read/cancel both failed)"
             fi
           fi
+          done
       - uses: actions/configure-pages@v6
       - uses: actions/upload-pages-artifact@v5
         with:
