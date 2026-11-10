@@ -296,14 +296,18 @@ function changed(a,b,threshold=48){
     if((state.referenceHeroineHairReport?.bangLocks||0)<6000||
        state.referenceHeroineHairReport?.individualFilamentCount!==100000||
        state.referenceHeroineHairReport?.noWidePolygonCards!==true||
-       state.referenceHeroineHairReport?.triangleCount!==1200000||
+       state.referenceHeroineHairReport?.strandSegmentCount!==300000||
+       state.referenceHeroineHairReport?.strandRenderer!=='gpu-line-segments'||
+       state.referenceHeroineHairReport?.allStrandsRendered!==true||
        state.appearance.proportions.preEarFullness>=.8||
        state.appearance.proportions.parotidWidth>=.8)
      throw Error('Dense source-rooted long-hair geometry missing');
     const solidMesh=await page.evaluate(()=>window.__heroineWireframeQA?.());
     if(solidMesh?.featuredKey!=='hero-girl-01'||
        solidMesh?.sourceGeometry!==true||
-       solidMesh?.triangles<50000)
+       solidMesh?.strandCount!==100000||
+       solidMesh?.strandSegments!==300000||
+       solidMesh?.triangles<1000)
      throw Error('Expected genuine 3D heroine triangle topology: '+JSON.stringify(solidMesh));
     // Rendered evidence at the actual face zoom and full source wire topology.
     await page.locator('#portrait').click();
