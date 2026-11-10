@@ -10,8 +10,10 @@ const grid=readFileSync(new URL('../src/mass-battle-grid-sim.js',import.meta.url
 assert.match(main,/function requestSquadRecovery\(targetId\)/);
 assert.doesNotMatch(main,/queueMultipleSquadRecovery\(targets\)/,'Only exploration permits multi-target selection');
 assert.match(main,/requestSquadRecovery\(target\.targetId\)/,'A support order targets one squad');
-assert.match(main,/add\('📍 行き先を指定','move',\(\)=>beginSquadDestination\(id\)\)/,
- 'One-tap destination is the only visible squad-level movement control');
+assert.doesNotMatch(main,/add\('📍 行き先を指定','move',\(\)=>beginSquadDestination\(id\)\)/,
+ 'The retired destination action must remain absent from the quick menu');
+assert.match(main,/id="squadDestination" hidden aria-hidden="true"/,
+ 'Legacy destination element must remain inaccessible');
 assert.match(main,/#squadTactics\[data-panel="main"\] \.tacticsActions\{display:none!important\}/,
  'The original hidden destination button must not be duplicated on screen');
 assert.doesNotMatch(main,/add\('🔍 部隊へズーム','inspect'/,'Squad label itself zooms');

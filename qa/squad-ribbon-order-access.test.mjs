@@ -8,8 +8,19 @@ const start=html.indexOf('function openSquadTactics(id){');
 const end=html.indexOf('function beginStrategistWarp(){',start);
 assert.ok(start>0&&end>start,'find squad popup action');
 const open=html.slice(start,end);
-assert.match(html,/button\.onclick=\(\)=>team===0\?openSquadTactics\(id\):showEnemySquadIntel\(id\)/,
- 'left ribbon opens orders; right ribbon remains read only');
+// v4.6.64 retires the ribbons: tapping ally/enemy circles is the new interface.
+const circleStart=html.indexOf('function activateSquadLabel(id,team,');
+const circleEnd=html.indexOf('function showEnemySquadIntel(',circleStart);
+assert.ok(circleStart>=0&&circleEnd>circleStart,'circle controls exist');
+const circle=html.slice(circleStart,circleEnd);
+assert.ok(circle.includes('if(pendingCircleTarget){chooseCircleActionTarget(id,team);return;}'),
+ 'the tapped circle completes valid two-step target selection');
+assert.ok(circle.includes('else openSquadTactics(id);'),
+ 'allied circle opens real squad command menu');
+assert.ok(circle.includes('const row=lastRibbonSums.get(key),intent=squadIntent(id,1,row?.n===0);'),
+ 'enemy circle reveals enemy intent without opening allied controls');
+assert.ok(html.includes('#allySquadRibbon,#enemySquadRibbon,#squadCircleInfo{display:none!important}'),
+ 'retired ribbons stay hidden');
 assert.match(open,/followCamera=false;/,
  'selecting a squad cannot enter character-follow close-up');
 assert.doesNotMatch(open,/followCamera=true;/,
@@ -45,4 +56,4 @@ assert.match(html,/body\.squad-closeup #squadTactics/,'zoom intentionally clears
 const gpu=readFileSync(new URL('../src/mass-battle-real-army.js',import.meta.url),'utf8');
 assert.match(gpu,/applyCapturedRunArmSwing\(THREE,representative\.character\.model/,
  '1000v1000 keeps real RUN skinned poses on GPU without extra CPU rigs');
-console.log('PASS: left squad click opens usable orders in 50/1000, close-up and cooldown remain separate');
+console.log('PASS: squad circles open orders in 50/1000; enemy intel-only; zoom and cooldown separate');

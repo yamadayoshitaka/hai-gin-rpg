@@ -23,8 +23,10 @@ assert.match(html,/requestSquadRecovery\(target\.targetId\)/,'Recovery selects o
 assert.match(html,/add\('↘ 退却','retreat',\(\)=>issue\('retreat'\)\)/);
 assert.doesNotMatch(html,/mission\('🌉 橋を壊す','destroy_bridge'\)/,
  'The manual per-object mission menu is no longer available');
-assert.match(html,/add\('📍 行き先を指定','move',\(\)=>beginSquadDestination\(id\)\)/,
- 'Squad destination remains one tap away');
+assert.doesNotMatch(html,/add\('📍 行き先を指定','move',\(\)=>beginSquadDestination\(id\)\)/,
+ 'The quick command UI must not reintroduce the retired destination action');
+assert.match(html,/id="squadDestination" hidden aria-hidden="true"/,
+ 'Retired squad destination control stays inaccessible');
 assert.match(html,/#squadMissionChoice,#squadTacticsMissions[^\n]*display:none!important/);
 assert.match(html,/const issue=mode=>\{if\(issueSquadOrder\(mode\)\)closeSquadTactics\(\)\}/,
  'One-tap orders are issued to the entire squad without headcount or duration inputs');
