@@ -6,11 +6,22 @@ const dir='qa-screenshots/hero-swordsman';fs.mkdirSync(dir,{recursive:true});
 const read=name=>PNG.sync.read(fs.readFileSync(path.join(dir,name)));
 function changed(a,b,threshold=48){
  const l=read(a),r=read(b);
- if(l.width!==r.width||l.height!==r.height)throw Error('Camera dimensions changed');
+ // Compare differently-sized responsive portraits on normalized coordinates.
+ // The canvas may resize when the character inspector loads the heroine.
+ const width=Math.min(l.width,r.width),height=Math.min(l.height,r.height);
+ if(width<=0||height<=0)throw Error('Empty camera screenshot');
  let n=0;
- for(let i=0;i<l.data.length;i+=4){
-  if(Math.abs(l.data[i]-r.data[i])+Math.abs(l.data[i+1]-r.data[i+1])+
-   Math.abs(l.data[i+2]-r.data[i+2])>threshold)n++;
+ for(let y=0;y<height;y++){
+  const ly=Math.min(l.height-1,Math.floor((y+.5)*l.height/height));
+  const ry=Math.min(r.height-1,Math.floor((y+.5)*r.height/height));
+  for(let x=0;x<width;x++){
+   const lx=Math.min(l.width-1,Math.floor((x+.5)*l.width/width));
+   const rx=Math.min(r.width-1,Math.floor((x+.5)*r.width/width));
+   const li=(ly*l.width+lx)*4,ri=(ry*r.width+rx)*4;
+   if(Math.abs(l.data[li]-r.data[ri])+
+      Math.abs(l.data[li+1]-r.data[ri+1])+
+      Math.abs(l.data[li+2]-r.data[ri+2])>threshold)n++;
+  }
  }
  return n;
 }
