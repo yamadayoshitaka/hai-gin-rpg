@@ -20,7 +20,7 @@ export function drawRecruitGacha(game,random=Math.random){
  if(army.treasury<RECRUIT_GACHA.cost)throw Error('軍資金が不足しています（150G必要）。');
  if(troopCount(army)>=1000)throw Error('全軍1000人の上限に達しています。');
  const prior=game.recruitGacha||{total:0,sinceUR:0,sinceR:0,history:[]};
- const rolled=randomUnit(random());
+ const rolled=randomUnit(random);
  const rarity=prior.sinceUR+1>=RECRUIT_GACHA.guaranteedURAfter?'UR':
   prior.sinceR+1>=RECRUIT_GACHA.guaranteedRAfter?'R':
   rolled<.02?'UR':rolled<.22?'R':'N';
