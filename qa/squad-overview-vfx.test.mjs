@@ -10,10 +10,10 @@ assert.match(game,/function openSquadTactics\(id\)/,'まず部隊の3択を提�
 assert.match(game,/function beginSquadDestination\(id\)/);
 const formationPanel=game.split('function openSquadTactics(id){')[1]?.split('function beginSquadDestination')[0];
 assert.ok(formationPanel,'部隊編成画面を開ける');
-assert.match(formationPanel,/tacticalBankRemaining>0\)\{tacticalPlanningActive=true;setBattlePaused\(true\)/,
-  '5分の指揮時間が残っている間だけ戦闘を停止して号令できる');
-assert.match(game,/if\(tacticalBankRemaining<=0\)\{tacticalPlanningActive=false;setBattlePaused\(false\)/,
-  '5分を使い切ったら移動しながら号令を継続する');
+assert.match(formationPanel,/if\(!paused\)setBattlePaused\(true\)/,
+  '号令の選択中は指揮時間の残量に関係なく戦闘を停止する');
+assert.match(game,/if\(tacticalBankRemaining<=0\)\{tacticalPlanningActive=false;if\(!commandOverviewLocked\)setBattlePaused\(false\)/,
+  '指揮時間切れでも号令の選択中は戦闘の停止を維持する');
 assert.match(game,/positionSquadMenuBelowLabel\(id,true\)/,'隊列ラベルの下に実行可能な号令・行き先・命令一覧を表示する');
 assert.match(game,/raycaster\.intersectObjects\(\[\.\.\.squadMarkers\.values\(\)\]/,
   '部隊ラベル自体をタップできる');
@@ -66,8 +66,8 @@ assert.match(game,/const candidates=massSim\?massSim\.units:actors/,
 assert.match(game,/if\(labelHit\)/,
   '号令・行き先・命令は部隊ラベルから引き続き開ける');
 assert.match(game,/if\(issueSquadOrder\('move',position\)\)finishSquadDestination\(true\)/);
-assert.match(game,/if\(tacticalPlanningActive\)\{tacticalPlanningActive=false;if\(previous&&!previous\.wasPaused&&!finished\)setBattlePaused\(false\)/,
-  '部隊命令を閉じると指揮停止だけ解除し、以前の停止状態を尊重する');
+assert.match(game,/if\(previous&&!finished&&paused!==previous\.wasPaused\)setBattlePaused\(previous\.wasPaused\)/,
+  '選択終了時に号令開始前の停止状態へ正確に戻す');
 assert.match(worker,/setPaused\(value\)\{paused=Boolean\(value\)/,
   '一時停止中はWorkerへ新しいAI tickを積まない');
 
