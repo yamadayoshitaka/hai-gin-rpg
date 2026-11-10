@@ -28,6 +28,15 @@ export function selectedSoldierCount(total,choice='all'){
  * Enemy numbers alone must not force permanent defense: compare local
  * contact, enemy condition and recovered HP before deciding.
  */
+/**
+ * Only clear battlefield superiority may interrupt the ordinary 120-second
+ * command lock. Once the defending army outnumbers the remaining opposition,
+ * let it seize initiative after 20 seconds instead of guarding indefinitely.
+ */
+export function enemyOrderRefreshSeconds(previous,friendlyAlive,opponentAlive){
+ const ratio=Math.max(0,Number(friendlyAlive)||0)/Math.max(1,Number(opponentAlive)||0);
+ return previous==='defend'&&ratio>=1.5?20:120;
+}
 export function chooseEnemyOrder(own=[],opponents=[],previous='charge',context={}){
  const living=own.filter(u=>u.alive!==false&&(u.hp??0)>0&&!u.isStrategist);
  const hostile=opponents.filter(u=>u.alive!==false&&(u.hp??0)>0&&!u.isStrategist);
