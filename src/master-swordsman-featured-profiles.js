@@ -57,7 +57,7 @@ function buildPreset(row,i){
     // or copyrighted texture: slender natural nose, calm almond eyes and
     // focused expression, softer rose-pink skin, fine jaw with full cheeks.
     faceHeight:.982,upperThird:1.015,middleThird:.985,lowerThird:1.005,
-    jawTaper:.91,cheekRoundness:1.062,chinLength:.975,
+    jawTaper:.905,cheekRoundness:1.062,chinLength:.975,
     preEarFullness:.75,lowerCheekLateral:.81,parotidWidth:.73,
     eyeWidth:1.115,eyeHeight:1.015,eyeSpacing:1.012,
     eyeVertical:.002,eyeTilt:.061,
