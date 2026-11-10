@@ -5677,37 +5677,30 @@ const battleDialogue=createBattleStrategistDialogue({
  },
  onFocus:report=>{
   if(!battleReady||finished||commandOverviewLocked||pickingSquadDestination||pickingSquadMission||pickingStrategistWarp)return;
-  if(dialogueCameraReturn&&!report.fromMessageTap)return;
   const roster=massSim?.units??actors;
-  const strategist=roster.find(u=>u.team===0&&u.isStrategist&&
-    String(u.squadId)===String(report.squadId));
-  // Even when the general died, use their last known physical location.
-  // In 50v50 (which has no discrete strategist unit), use the nominated
-  // squad representative instead of zooming to an unrelated soldier.
-  const unit=strategist||
-    roster.find(u=>u.team===0&&String(u.squadId)===String(report.squadId)&&u.hp>0)||
-    roster.find(u=>u.id===report.unitId);
+  const unit=roster.find(u=>u.team===0&&String(u.squadId)===String(report.squadId)&&
+     u.alive!==false&&u.hp>0&&!u.isStrategist)||
+    roster.find(u=>u.team===0&&u.id===report.unitId&&u.alive!==false&&u.hp>0&&!u.isStrategist);
+  // Never zoom to a dead general or a ground position surrounded by trees.
   if(!unit)return;
-  const x=massSim?(unit.x-6)*CELL:unit.root.position.x;
-  const z=massSim?(unit.z-6)*CELL:unit.root.position.z;
-  if(report.fromMessageTap){
-    dialogueCameraReturn=null;
-    focusedHumanUnitId=massSim?unit.id:null;
-    if(!massSim)selected=unit;
-    followCamera=true;
-  }else{
-    dialogueCameraReturn={time:elapsed+3.5,position:camera.position.clone(),
-      target:controls.target.clone(),follow:followCamera};
-    followCamera=false;
+  if(!report.fromMessageTap){
+   beginSquadFocusCinematic(String(unit.squadId),0,'result');
+   return;
   }
-  setBattleCamera(new THREE.Vector3(x,terrainY(x,z)+1,z),new THREE.Vector3(4,5,9));
-  setCameraActive(null);
-  // The spoken report opens the SAME contextual order popup as the blue
-  // squad label; never a second permanent bottom command dock.
-  if(report.fromMessageTap&&report.squadId!=null){
-   openSquadTactics(String(report.squadId));
-   requestAnimationFrame(()=>positionSquadMenuBelowLabel(String(report.squadId)));
-  }
+  const focus=cinematicHumanWorldPoint(unit);
+  if(!focus)return;
+  const nearbyTrees=cameraTreeCandidates.filter(t=>{
+   const b=t.bounds,cx=(b.minX+b.maxX)*.5,cz=(b.minZ+b.maxZ)*.5;
+   return Math.abs(cx-focus.x)<28&&Math.abs(cz-focus.z)<28;
+  });
+  const offset=chooseClearBattleCameraOffset(focus,nearbyTrees,{terrainHeight:terrainY});
+  dialogueCameraReturn=null;focusedHumanUnitId=massSim?unit.id:null;
+  if(!massSim)selected=unit;
+  followCamera=true;
+  setBattleCamera(focus,new THREE.Vector3(offset.x,offset.y,offset.z));
+  updateCameraObstructions();setCameraActive(null);
+  if(report.squadId!=null)openSquadTactics(String(report.squadId));
+
  }
 });
 window.getBattleDialogueQA=()=>battleDialogue.status;
