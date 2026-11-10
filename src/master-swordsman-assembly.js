@@ -193,8 +193,12 @@ export function applyHeroineMakeupToFace(faceMesh,neutralColors,{
   const cheek=front*bell(Math.abs(x),.57,.235)*bell(y,.50,.105)*
    intensity*THREE.MathUtils.clamp(blush,0,1);
   // Actual three-dimensional vermilion surface, including a soft top lip.
-  const lips=front*bell(x,0,.34)*
-   (.71*bell(y,.388,.036)+.46*bell(y,.355,.029))*
+  // Defined but softly feathered rose lipstick on UPPER and LOWER lip
+  // (anatomical lip ridge is near the .40 face-height landmark).
+  const lips=front*bell(x,0,.315)*
+   (.92*bell(y,.416,.023)+.86*bell(y,.375,.025))*
+   intensity*THREE.MathUtils.clamp(lip,0,1);
+  const lipSeam=front*bell(x,0,.29)*bell(y,.395,.009)*
    intensity*THREE.MathUtils.clamp(lip,0,1);
   // Dark-brown upper lash line, located against the SOURCE sclera anchors,
   // not an unrelated eyebrow-height strip. Keeps the eyeballs exposed.
