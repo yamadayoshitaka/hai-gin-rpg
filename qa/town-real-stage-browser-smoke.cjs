@@ -48,10 +48,43 @@ const assert=require('node:assert/strict');
   assert.equal(errors.length,0,'browser errors '+errors.join('; '));
   // The paper-theater opens after the 3D stage finishes, not before.
   if(await opening.isVisible())await page.locator('#skipPaper').click();
+  // Check the 20 visible outdoor inhabitants plus the six fully rigged
+  // player/shopkeepers. Their count must be observable in the actual 3D scene.
+  const stats=await page.evaluate(()=>document.querySelector('#townScene').contentWindow.getTownVisitStats());
+  assert.ok(stats.streetCitizens>=20,'at least 20 outdoor people must exist');
+  assert.ok(stats.people>=26,'the 3D stage must contain townsfolk beyond hidden shopkeepers');
+  const sunBefore=JSON.stringify([stats.shadowLight,stats.shadowTarget]);
+  await page.waitForTimeout(1000);
+  const sunAfter=await page.evaluate(()=>document.querySelector('#townScene').contentWindow.getTownVisitStats());
+  assert.equal(JSON.stringify([sunAfter.shadowLight,sunAfter.shadowTarget]),sunBefore,
+   'the sun/shadow projection must never jump while moving or visiting buildings');
+
+  // Exercise real door proximity via the same button a mobile user taps.
+  // Only the QA browser may position the hero at the shop's authored entrance;
+  // the production build has no teleport/debug entry controls.
+  const positioned=await page.evaluate(()=>
+   document.querySelector('#townScene').contentWindow.__qaPlaceTownAvatarAtEntrance('shop'));
+  assert.ok(positioned,'QA can stand at the existing item shop doorway');
+  await page.locator('#townInteract').click();
+  await page.waitForFunction(()=>
+   document.querySelector('#townScene').contentWindow.getTownVisitStats().indoor==='shop',
+   null,{timeout:12000});
+  assert.equal(await page.locator('#townExitBuilding').isVisible(),true,
+   'entering the actual 3D building displays an exit');
+  await page.locator('#townInteract').click();
+  await page.waitForFunction(()=>!document.querySelector('#panel').hidden,null,{timeout:12000});
+  assert.match(await page.locator('#panelTitle').innerText(),/道具屋/,
+   'talking to the indoor shopkeeper opens the real shop');
+  await page.locator('#panelClose').click();
+  await page.locator('#townExitBuilding').click();
+  await page.waitForFunction(()=>
+   document.querySelector('#townScene').contentWindow.getTownVisitStats().indoor===null,
+   null,{timeout:12000});
+  assert.equal(errors.length,0,'no browser errors after shop enter/exit: '+errors.join('; '));
   await page.locator('#leaveTown').click();
   await page.waitForURL(/world-map\.html/,{timeout:25000});
   assert.equal(await page.locator('#chapterTitle').count(),1,'world map renders');
-  console.log('PASS: original 3D castle, six real clothed characters, peaceful town, map exit');
+  console.log('PASS: original 3D castle, six full rigs + twenty outdoor civilians, stable shadows, actual shop enter/exit');
  }catch(error){
   const frames=page.frames();
   for(const frame of frames){
