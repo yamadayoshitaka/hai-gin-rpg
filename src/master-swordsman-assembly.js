@@ -211,7 +211,7 @@ export function applyHeroineMakeupToFace(faceMesh,neutralColors,{
   const red=Math.min(1.24,neutralColors[n]*
    (1+.15*cheek+.25*lips-.18*lipSeam-.49*liner));
   const green=neutralColors[n+1]*
-   (1-.25*cheek-.57*lips-.48*lipSeam-.56*liner);
+   (1-.25*cheek-.32*lips-.30*lipSeam-.56*liner);
   const blue=neutralColors[n+2]*
    (1-.20*cheek-.38*lips-.32*lipSeam-.52*liner);
   attr.setXYZ(i,red,green,blue);
