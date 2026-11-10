@@ -28,6 +28,10 @@ export function createGamePageAudio({storage=null,initialScene='title',effectsOn
  function changeScene(next){if(!(next in GAME_PAGE_MUSIC))return;scene=next;play();}
  function setEnabled(value){
   enabled=Boolean(value);
+  try{
+   const options=JSON.parse(storage?.getItem(SETTINGS_KEY)||'{}')||{};
+   storage?.setItem(SETTINGS_KEY,JSON.stringify({...options,bgm:enabled}));
+  }catch{}
   if(enabled)play();else element?.pause();
  }
  function effect(name='select'){
