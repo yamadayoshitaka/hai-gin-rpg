@@ -562,6 +562,13 @@ body.compact-command-dock .squadCommandRibbon .ribbonSquad{
  min-height:28px!important;max-height:54px!important;flex:1 1 0!important;padding:1px 0!important;gap:0!important
 }
 body.compact-command-dock .squadCommandRibbon .ribbonTarget{font-size:10px!important}
+body.compact-command-dock.squad-closeup #allySquadRibbon,
+body.compact-command-dock.squad-closeup #enemySquadRibbon{display:none!important}
+/* Exploring needs a contained picker, never the full-screen old popup. */
+body.compact-command-dock.compact-explore-open{--battleCommandHeight:200px}
+body.compact-command-dock.compact-explore-open #squadTactics{height:200px!important;max-height:200px!important}
+body.compact-command-dock.compact-explore-open #squadOneClickOrders .quickActions{flex:0 0 44px!important}
+body.compact-command-dock.compact-explore-open #squadOneClickOrders .explorePickerArea{flex:1!important;min-height:0!important;overflow-y:auto!important}
 @media(max-width:390px){
  :root{--battleCommandHeight:122px;--battleSelectedHeight:60px}
  body.compact-command-dock #squadOneClickOrders .quickActions button{min-width:64px!important;flex-basis:64px!important;font-size:11px!important}
@@ -6207,7 +6214,7 @@ function closeSquadTactics(){
  pickingSquadDestination=false;pickingSquadMission=null;pickingStrategistWarp=false;clearMissionPreview();
  $('squadTactics').hidden=true;$('destinationPrompt').hidden=true;$('squadDockIdle').hidden=true;
  document.body.classList.add('squad-menu-closed');
- document.body.classList.remove('compact-orders-open');
+ document.body.classList.remove('compact-orders-open','compact-explore-open');
  const previous=squadSelectionReturn;squadSelectionReturn=null;
  commandOverviewLocked=false;
  document.body.classList.remove('battle-command-active');
@@ -6280,6 +6287,7 @@ squadQuickList.setAttribute('aria-label','一回のタップで選べる部隊�
 $('squadTactics').insertBefore(squadQuickList,$('squadTacticsOrders'));
 function buildSquadQuickCommands(){
  const id=orderedSquad();squadQuickList.replaceChildren();refreshTacticalBankLabel();
+ document.body.classList.toggle('compact-explore-open',squadQuickPage==='explore');
  if(id==null)return;
  const commander=hasSquadCommander(id);
  const members=squadRoster.filter(u=>u.team===0&&String(u.squadId)===id);
@@ -6387,7 +6395,8 @@ function buildSquadQuickCommands(){
   heading('🔎 建物を複数選択・順番に探索');
   const task=activeBuildingExplorations.get(squadOrderKey(0,id));
   const picker=createExplorationPicker(task?[task.buildingId]:[]);
-  squadQuickList.append(picker.element);
+  const pickerArea=document.createElement('div');pickerArea.className='explorePickerArea';
+  pickerArea.append(picker.element);squadQuickList.append(pickerArea);
   add('✓ 選択した建物を探索開始','explore',()=>{
    if(queueSquadExplorations(0,id,picker.getIds()))closeSquadTactics();
    else{
