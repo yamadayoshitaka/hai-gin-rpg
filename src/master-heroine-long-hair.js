@@ -112,6 +112,159 @@ function clearBodyForLongStrand(x,y,z,region,envelope){
  * crown surface fills ONLY those gaps and stays attached to the real head.
  * The original opaque/donor hair and source scalp remain hidden.
  */
+/**
+ * The wig cap is a dense undercoat, NOT the visible hairstyle. Build actual
+ * front-swept 3D fringe ribbons and small crown hairs from sampled, masked
+ * female-head source topology. Both pieces follow the existing scalp local
+ * coordinate system; no replacement sphere, forehead texture or old donor.
+ * Keep every fringe tip above the eye band to protect blink/eyelash rigs.
+ */
+export function buildHeroineVisibleCrownAndFringe(scalp){
+ const src=scalp?.geometry,p=src?.getAttribute('position');
+ const mask=src?.getAttribute('color'),normals=src?.getAttribute('normal');
+ if(!p||!mask||mask.itemSize!==4)throw Error('Real masked scalp geometry required');
+ src.computeBoundingBox();
+ const b=src.boundingBox,d=b.getSize(new THREE.Vector3());
+ const cx=(b.min.x+b.max.x)*.5,cz=(b.min.z+b.max.z)*.5;
+ const frontal=[],crownSegments=[],crownColors=[];
+ let upperSourceSamples=0;
+ const n=new THREE.Vector3(),root=new THREE.Vector3();
+ const frontPositions=[];
+ for(let i=0;i<p.count;i++){
+  const y=(p.getY(i)-b.min.y)/d.y;
+  const x=(p.getX(i)-cx)/d.x;
+  const z=(p.getZ(i)-b.min.z)/d.z;
+  const alpha=mask.getW(i);
+  if(alpha>.75&&y>.76&&Math.abs(x)<.48&&z>.42)
+   frontal.push({i,x:p.getX(i),y:p.getY(i),z:p.getZ(i),height:y,depth:z});
+  if(y>.84&&alpha>.75)upperSourceSamples++;
+  // Draw combed highlight texture ON the head topology, not a smooth
+  // pink bald skull. All strands use the source vertex normals.
+  if(i%9!==0||alpha<.88||y<.66)continue;
+  root.fromBufferAttribute(p,i);
+  if(normals)n.fromBufferAttribute(normals,i).normalize();
+  else n.set(x,y-.42,z-.5).normalize();
+  const length=d.y*(.045+.038*hash(i*1.51));
+  const sweep=1+hash(i*4.71)*.7;
+  const start=root.clone().addScaledVector(n,.0040);
+  const finish=start.clone().add(new THREE.Vector3(
+   -d.x*(.022+.014*hash(i*3.13))*sweep,
+   -length*.75,
+   -d.z*.018
+  )).addScaledVector(n,.0013);
+  // Avoid turning source-rooted scalp streaks into long spikes.
+  const q=hash(i*2.17),lum=.74+.25*q;
+  crownSegments.push(start.x,start.y,start.z,finish.x,finish.y,finish.z);
+  crownColors.push(lum,lum*.92,lum*.91,lum*.92,lum*.86,lum*.91);
+ }
+ if(upperSourceSamples<35||crownSegments.length<600)
+  throw Error('Not enough genuine source crown follicles for visible wig');
+ const streakGeo=new THREE.BufferGeometry();
+ streakGeo.setAttribute('position',new THREE.Float32BufferAttribute(crownSegments,3));
+ streakGeo.setAttribute('color',new THREE.Float32BufferAttribute(crownColors,3));
+ streakGeo.computeBoundingSphere();
+ const crownStreaks=new THREE.LineSegments(streakGeo,
+  new THREE.LineBasicMaterial({color:0xffffff,vertexColors:true,depthWrite:true}));
+ crownStreaks.name='HEROINE_VISIBLE_COMBED_CROWN_HAIR';
+ crownStreaks.renderOrder=1;
+ // Fallback still uses actual upper source vertices if the segmented donor
+ // has no complete high frontal tessellation.
+ const fallback=frontal.length>=35?frontal:[];
+ if(fallback.length<35){
+  for(let i=0;i<p.count;i++){
+   const y=(p.getY(i)-b.min.y)/d.y,z=(p.getZ(i)-b.min.z)/d.z;
+   if(mask.getW(i)>.8&&y>.82&&z>.30)
+    fallback.push({i,x:p.getX(i),y:p.getY(i),z:p.getZ(i),height:y,depth:z});
+  }
+ }
+ if(fallback.length<35)throw Error('No source-rooted forehead follicles for full 3D bangs');
+ // A forehead limit is based on SOURCE FACE samples rather than the nose
+ // or a guessed world-Z plane; bangs stay close to the real skin surface.
+ let foreheadDepth=-Infinity,foreheadCount=0;
+ for(let i=0;i<p.count;i++){
+  const y=(p.getY(i)-b.min.y)/d.y,x=(p.getX(i)-cx)/d.x;
+  if(y>.66&&y<.82&&Math.abs(x)<.35){
+   foreheadDepth=Math.max(foreheadDepth,p.getZ(i));foreheadCount++;
+  }
+ }
+ if(!foreheadCount)foreheadDepth=cz+d.z*.28;
+ const columns=36,seedRoots=[];
+ for(let c=0;c<columns;c++){
+  const targetX=cx+d.x*((c+.5)/columns-.5)*.82;
+  let chosen=null,best=Infinity;
+  for(const q of fallback){
+   const dx=Math.abs(q.x-targetX)/d.x;
+   // Favor the upper FRONT hairline, never a rear-crown-only tuft.
+   const score=dx*3+Math.abs(q.height-.88)*.62-q.depth*.40;
+   if(score<best){best=score;chosen=q;}
+  }
+  seedRoots.push(chosen);
+ }
+ const verts=[],cols=[],indices=[];
+ let fringeTipY=Infinity,frontalRoots=0,rootErrorMax=0;
+ const locks=288,sections=7;
+ for(let i=0;i<locks;i++){
+  const column=Math.min(columns-1,Math.floor(i/locks*columns));
+  const q=seedRoots[column];
+  const t0=hash(i*11.9),row=(i%3);
+  // Original scalp geometry anchor, with a sub-millimeter comb spread.
+  const rootX=q.x+(t0-.5)*d.x*.005;
+  const rootY=q.y;
+  const rootZ=q.z;
+  rootErrorMax=Math.max(rootErrorMax,Math.hypot(rootX-q.x,rootY-q.y,rootZ-q.z));
+  frontalRoots++;
+  const xNorm=(rootX-cx)/d.x;
+  const tipN=.685+.015*hash(i*3.71)+.023*Math.abs(xNorm);
+  const endY=Math.min(rootY-d.y*.045,b.min.y+d.y*tipN);
+  // Most locks drift diagonally toward the viewer's left; a smaller
+  // secondary sweep gives the pink fringe an identifiable parting.
+  const sideways=row===2?-.08:-.19;
+  const sway=d.x*(sideways+.015*(hash(i*6.3)-.5));
+  const frontLimit=Math.max(rootZ,foreheadDepth+d.z*.025);
+  const width=d.x*(.0065+.003*hash(i*7.17));
+  const base=verts.length/3;
+  for(let j=0;j<=sections;j++){
+   const t=j/sections,ease=t*t*(3-2*t);
+   const x=rootX+sway*ease+d.x*.009*Math.sin(Math.PI*t)*Math.sin(i*.18);
+   const y=lerp(rootY,endY,t);
+   const z=lerp(rootZ,frontLimit,ease)+d.z*(.014*Math.sin(Math.PI*t)+.010);
+   const half=width*(.87-.72*t);
+   fringeTipY=Math.min(fringeTipY,y);
+   for(const side of [-1,1]){
+    verts.push(x+side*half,y,z);
+    const lum=.74+.23*hash(i*5.61)+.025*Math.sin(t*13+i*.23);
+    cols.push(lum,lum*.91,lum*.87);
+   }
+   if(j<sections){
+    const a=base+j*2;
+    indices.push(a,a+1,a+2,a+1,a+3,a+2);
+   }
+  }
+ }
+ const geo=new THREE.BufferGeometry();
+ geo.setAttribute('position',new THREE.Float32BufferAttribute(verts,3));
+ geo.setAttribute('color',new THREE.Float32BufferAttribute(cols,3));
+ geo.setIndex(indices);geo.computeVertexNormals();geo.computeBoundingSphere();
+ const fringe=new THREE.Mesh(geo,new THREE.MeshStandardMaterial({
+  color:0xd6a5ba,vertexColors:true,side:THREE.DoubleSide,
+  metalness:0,roughness:.76,depthWrite:true
+ }));
+ fringe.name='HEROINE_288_REAL_SCALP_SWEEP_BANG_RIBBONS';
+ fringe.castShadow=true;fringe.renderOrder=2;
+ fringe.userData.noEyeOcclusion=true;
+ return {fringe,crownStreaks,report:Object.freeze({
+  sourceHeadTopologicalAnchors:true,
+  frontalAnchorSamples:fallback.length,
+  upperSourceSamples,foreheadSourceSamples:foreheadCount,
+  fringeRibbonCount:locks,fringeTriangles:indices.length/3,
+  crownCombLines:crownSegments.length/6,
+  fringeTipMinYNormalized:Number(((fringeTipY-b.min.y)/d.y).toFixed(3)),
+  maxFringeRootOffsetMeters:Number(rootErrorMax.toFixed(5)),
+  crownOnlyCapNoLongerSmooth:true,
+  fullForeheadFringe:true,sourceFaceUnchanged:true
+ })};
+}
+
 export function buildHeroineWigRootCap(scalp){
  const src=scalp?.geometry,colors=src?.getAttribute('color'),positions=src?.getAttribute('position');
  if(!positions||!colors||colors.itemSize!==4)throw Error('Real 3D source scalp required for wig crown');
@@ -142,7 +295,7 @@ export function buildHeroineWigRootCap(scalp){
  const material=new THREE.MeshStandardMaterial({
   color:0xd6a5ba,vertexColors:true,side:THREE.DoubleSide,
   roughness:.82,metalness:0,transparent:true,alphaTest:.02,depthWrite:true,
-  polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2
+  polygonOffset:true,polygonOffsetFactor:.8,polygonOffsetUnits:1.0
  });
  const mesh=new THREE.Mesh(cap,material);
  mesh.name='HEROINE_WIG_ROOT_CROWN_NOT_DONOR_HAIR';
@@ -150,7 +303,13 @@ export function buildHeroineWigRootCap(scalp){
  mesh.castShadow=true;mesh.renderOrder=0;
  mesh.userData.wigCapFromSourceTopology=true;
  mesh.userData.donorHairMustBeHidden=true;
+ const visible=buildHeroineVisibleCrownAndFringe(scalp);
+ // Children share cap's scalp-local transform; no duplicated head-space
+ // transform and no licensed hair meshes rendered beneath the authored wig.
+ mesh.add(visible.crownStreaks,visible.fringe);
+ mesh.userData.visibleHairDetail=visible.report;
  return {cap:mesh,report:Object.freeze({
+  ...visible.report,
   sourceHeadConforming:true,sourceScalpHidden:true,wigRootFoundationOnly:true,
   crownSamples,coveredCrown,coverageRatio:coveredCrown/crownSamples,
   sourceAnatomyUntouched:true
