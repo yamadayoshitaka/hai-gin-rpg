@@ -26,7 +26,8 @@ export function packMassUnits(units,buffer){
     for(const field of MASS_UNIT_FIELDS){
       result[index++]=field==='action'?(ACTION_INDEX.get(unit.action)??0):
         field==='order'?(ORDER_INDEX.get(unit.order??null)??0):
-        field==='alive'||field==='crossed'||field==='strategistWarpUsed'?Number(unit[field]):(unit[field]??0);
+        field==='alive'||field==='crossed'||field==='strategistWarpUsed'?Number(unit[field]):
+        (unit[field]??(field==='currentTargetSquadId'?-1:0));
     }
   }
   return result;
