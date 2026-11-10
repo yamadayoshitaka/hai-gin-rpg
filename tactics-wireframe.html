@@ -6044,6 +6044,16 @@ function beginCircleTargetSelection(kind,itemId=null){
   return false;
  }
  pendingCircleTarget=candidate;
+ // First charge is automatic: lock the nearest eligible enemy before starting.
+ // Later charges still allow explicit targeting.
+ if(kind==='attack'&&!firstAutoChargeIssued.has(String(source))){
+  const suggested=currentSquadAttackTarget(0,source,lastRibbonSums)?.id;
+  const autoTarget=[suggested,...ids].find(id=>id!=null&&isSquadCircleTargetActionable(id,1,candidate));
+  if(autoTarget!=null){
+   const accepted=chooseCircleActionTarget(autoTarget,1);
+   if(accepted){firstAutoChargeIssued.add(String(source));return true}
+  }
+ }
  enterCommandOverview();
  document.body.dataset.circleTarget=kind==='attack'?'enemy':'ally';
  drawSquadMiniMap();
