@@ -79,6 +79,7 @@ jobs:
           node qa/long-battle-navigation-zoom-riding.test.mjs
           node qa/battle-message-oneclick.test.mjs
           node qa/mobile-camera-zoom-regression.test.mjs
+          node qa/battle-auto-item-countercharge-targets.test.mjs
       - name: Stair and riding contracts
         run: |
           node qa/building-floor-navigation.test.mjs
