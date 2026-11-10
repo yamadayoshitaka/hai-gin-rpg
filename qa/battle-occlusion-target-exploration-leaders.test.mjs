@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {chooseEnemyOrder} from '../src/battle-tactical-policy.js';
+import {chooseEnemyOrder,enemyOrderRefreshSeconds} from '../src/battle-tactical-policy.js';
 import {MassBattleGridSimulation} from '../src/mass-battle-grid-sim.js';
 
 const soldier=(id,team,hp,x,z)=>({id,team,squadId:'0',alive:hp>0,hp,maxHp:100,x,z,jobId:'warrior'});
@@ -9,6 +9,12 @@ const foes=Array.from({length:9},(_,i)=>soldier(100+i,0,90,32+i,30));
 const friendlyArmy=Array.from({length:32},(_,i)=>soldier(200+i,1,65,30+i%8,30+i%4));
 assert.equal(chooseEnemyOrder(tired,foes,'defend').mode,'defend',
  'A tired squad with no evidence of wider strength may defend');
+assert.equal(enemyOrderRefreshSeconds('defend',36,10),20,
+ 'Clearly winning defenders should reassess after 20s');
+assert.equal(enemyOrderRefreshSeconds('defend',12,10),120,
+ 'Ordinary defensive orders retain the full standard cooldown');
+assert.equal(enemyOrderRefreshSeconds('charge',36,10),120,
+ 'Do not override normal offensive order cooldown');
 const advantage=chooseEnemyOrder(tired,foes,'defend',{friendlyArmy,defenseElapsed:125});
 assert.equal(advantage.mode,'charge',
  'A tired enemy squad MUST countercharge when its army is clearly winning');
@@ -46,7 +52,8 @@ for(const token of [
  'const showLeader=Boolean(line)&&(chosen||showAllSquadLeaders)',
  "leader.style.display=showLeader?'':'none';",
  'Math.hypot(nearest.p.x-x,nearest.p.z-z)>32',
- 'const choice=chooseEnemyOrder(own,allies,previous,{friendlyArmy,defenseElapsed});'
+ 'const choice=chooseEnemyOrder(own,allies,previous,{friendlyArmy,defenseElapsed});',
+ 'const secondsUntilReissue=enemyOrderRefreshSeconds(previous,friendlyArmy.length,allies.length)'
 ])assert.ok(battle.includes(token),'Missing connected behavior: '+token);
 assert.match(battle,/\.squadScreenLabel\.eligible-target:not\(\.defeated\)/,
  'Pulse only verified actionable targets, never dead or cooldown units');
