@@ -163,7 +163,9 @@ function makeEyeLid(width,height){
  * Multiplicative vertex colors stay on the actual sculpt, not floating
  * eyeliner/lip cards. Each pass reconstructs from immutable neutral colors.
  */
-export function applyHeroineMakeupToFace(faceMesh,neutralColors,{strength=0}={}){
+export function applyHeroineMakeupToFace(faceMesh,neutralColors,{
+ strength=0,eyeAnchors=null,blush=.85,lip=.95,eyeliner=.94
+}={}){
  const geometry=faceMesh?.geometry,attr=geometry?.getAttribute('color');
  const p=geometry?.getAttribute('position');
  if(!attr||attr.itemSize<3||!p||neutralColors?.length!==attr.array.length)
@@ -173,27 +175,52 @@ export function applyHeroineMakeupToFace(faceMesh,neutralColors,{strength=0}={})
  const cx=(b.min.x+b.max.x)*.5;
  const intensity=THREE.MathUtils.clamp(Number(strength)||0,0,1);
  const bell=(x,c,w)=>Math.exp(-.5*((x-c)/w)**2);
- const smooth=(a,b,x)=>{const t=THREE.MathUtils.clamp((x-a)/(b-a),0,1);return t*t*(3-2*t)};
- let blushVertices=0,lipVertices=0,linerVertices=0;
+ const smooth=(a,c,x)=>{const t=THREE.MathUtils.clamp((x-a)/(c-a),0,1);return t*t*(3-2*t)};
+ const landmarks=Array.isArray(eyeAnchors)&&eyeAnchors.length===2&&
+  eyeAnchors.every(a=>[a?.x,a?.y].every(Number.isFinite))?
+  eyeAnchors:null;
+ const landmarkX=landmarks?
+  THREE.MathUtils.clamp(landmarks.reduce((n,a)=>n+Math.abs((a.x-cx)/(d.x*.5)),0)/2,.27,.70):.45;
+ const landmarkY=landmarks?
+  THREE.MathUtils.clamp(landmarks.reduce((n,a)=>n+(a.y-b.min.y)/d.y,0)/2,.65,.86):.747;
+ let blushVertices=0,lipVertices=0,linerVertices=0,changedVertices=0;
  for(let i=0;i<p.count;i++){
   const x=(p.getX(i)-cx)/Math.max(.001,d.x*.5);
   const y=(p.getY(i)-b.min.y)/Math.max(.001,d.y);
   const z=(p.getZ(i)-b.min.z)/Math.max(.001,d.z);
-  const front=smooth(.61,.82,z);
-  const cheek=front*bell(Math.abs(x),.54,.21)*bell(y,.50,.11)*intensity;
-  const lip=front*bell(x,0,.30)*bell(y,.385,.043)*intensity;
-  const liner=front*bell(Math.abs(x),.45,.21)*bell(y,.752,.025)*intensity;
+  const front=smooth(.52,.78,z);
+  // Slightly raised upper outer cheek instead of two red dots.
+  const cheek=front*bell(Math.abs(x),.57,.235)*bell(y,.50,.105)*
+   intensity*THREE.MathUtils.clamp(blush,0,1);
+  // Actual three-dimensional vermilion surface, including a soft top lip.
+  const lips=front*bell(x,0,.34)*
+   (.71*bell(y,.388,.036)+.46*bell(y,.355,.029))*
+   intensity*THREE.MathUtils.clamp(lip,0,1);
+  // Dark-brown upper lash line, located against the SOURCE sclera anchors,
+  // not an unrelated eyebrow-height strip. Keeps the eyeballs exposed.
+  const liner=front*bell(Math.abs(x),landmarkX,.245)*
+   bell(y,landmarkY+.018,.023)*
+   intensity*THREE.MathUtils.clamp(eyeliner,0,1);
   const n=i*3;
-  attr.setXYZ(i,
-   neutralColors[n]*(1-.085*cheek-.080*lip-.30*liner),
-   neutralColors[n+1]*(1-.19*cheek-.20*lip-.32*liner),
-   neutralColors[n+2]*(1-.12*cheek-.14*lip-.26*liner));
-  if(cheek>.1)blushVertices++;
-  if(lip>.1)lipVertices++;
-  if(liner>.1)linerVertices++;
+  // Linear vertex color multipliers are multiplied by the actual PBR skin
+  // material. Tint rather than merely dimming every RGB channel together.
+  const red=Math.min(1.16,neutralColors[n]*
+   (1+.095*cheek+.17*lips-.52*liner));
+  const green=neutralColors[n+1]*(1-.19*cheek-.27*lips-.60*liner);
+  const blue=neutralColors[n+2]*(1-.14*cheek-.15*lips-.55*liner);
+  attr.setXYZ(i,red,green,blue);
+  if(cheek>.08)blushVertices++;
+  if(lips>.08)lipVertices++;
+  if(liner>.08)linerVertices++;
+  if(Math.abs(red-neutralColors[n])+Math.abs(green-neutralColors[n+1])+
+    Math.abs(blue-neutralColors[n+2])>.003)changedVertices++;
  }
  attr.needsUpdate=true;
+ const mats=Array.isArray(faceMesh.material)?faceMesh.material:[faceMesh.material];
  return {strength:intensity,blushVertices,lipVertices,linerVertices,
+  changedVertices,eyeAnchorNormalized:[Number(landmarkX.toFixed(3)),Number(landmarkY.toFixed(3))],
+  skinShaderUsesVertexColors:mats.some(mat=>mat?.vertexColors===true),
+  cosmeticsHue:'rose-cheek-defined-lip-upper-lash',
   sourceVertexColorsUnchanged:true,faceMeshVertices:p.count};
 }
 
@@ -590,6 +617,13 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false,gen
   o.material=Array.isArray(o.material)?updated:updated[0];
   o.castShadow=true;
  });
+ // Keep source head material maps recoverable when switching female/male.
+ const faceSkinBaseMaterials=new Map();
+ for(const mat of (Array.isArray(faceSource.material)?faceSource.material:[faceSource.material]))
+  if(mat)faceSkinBaseMaterials.set(mat,{
+   map:mat.map||null,normalMap:mat.normalMap||null,
+   roughnessMap:mat.roughnessMap||null,normalScale:mat.normalScale?.clone?.()||null
+  });
  const morphTargets=new Map();
  detailedHead.traverse(o=>{
   if(!o.isMesh||!o.morphTargetDictionary||!o.morphTargetInfluences)return;
@@ -810,10 +844,29 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false,gen
   detailedHead.updateWorldMatrix(true,true);
   const proportions=validateFaceProportions(profile.proportions||{});
   const youthfulReport=youthfulFace.apply(profile.youthfulness??0,proportions);
-  heroineMakeupReport=applyHeroineMakeupToFace(
-   faceSource,faceNeutralColors,{
-    strength:profile.gender==='female'?(profile.makeup?.strength??.66):0
-   });
+  const femalePortrait=profile.gender==='female';
+  // The old skin was a flat solid-color material. Give the actual source
+  // female sculpt a subtle UV-based pore/roughness map, without changing GLB.
+  // Tests in bare Node have no document; this optional GPU finish is browser
+  // only and never substitutes a raster portrait for the geometry.
+  if(femalePortrait&&typeof document!=='undefined'){
+   applyHeroineSkinPBR(faceSource,{face:true});
+   for(const mat of faceSkinBaseMaterials.keys())mat.roughness=profile.skinRoughness??.55;
+  }else{
+   for(const [mat,base] of faceSkinBaseMaterials){
+    mat.map=base.map;mat.normalMap=base.normalMap;
+    mat.roughnessMap=base.roughnessMap;
+    if(mat.normalScale&&base.normalScale)mat.normalScale.copy(base.normalScale);
+    mat.needsUpdate=true;
+   }
+  }
+  heroineMakeupReport=applyHeroineMakeupToFace(faceSource,faceNeutralColors,{
+   strength:femalePortrait?(profile.makeup?.strength??.90):0,
+   eyeAnchors:eyeFixtures.map(f=>f.socketReference),
+   blush:femalePortrait?(profile.makeup?.blush??.90):0,
+   lip:femalePortrait?(profile.makeup?.lip??.94):0,
+   eyeliner:femalePortrait?(profile.makeup?.eyeliner??.96):0
+  });
   // Apply source expression morphs before fitting eye geometry and lids.
   for(const key of HERO_FACE_MORPHS)
    if(profile.face&&profile.face[key]!==undefined)setMorph(key,profile.face[key]);
@@ -944,7 +997,7 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false,gen
    fixture.lashes.visible=true;
    fixture.lashes.material.color.set(
     profile.gender==='female'?'#292027':profile.hairColor||'#594048');
-   fixture.lashes.scale.y=profile.gender==='female'?1.15:1;
+   fixture.lashes.scale.y=profile.gender==='female'?1.26:1;
    fixture.lid.scale.x=proportions.eyeWidth;
    // Keep the brow on the supraorbital ridge rather than directly on
    // the upper eyelid: the earlier brow looked like a second lash line.
