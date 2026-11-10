@@ -33,8 +33,8 @@ const definitions=[
   [.48,.39,.42,.34,.38,.53,.42],'#c59573','#526f73','#332c26','#3f5145','#8d9ba4',1.00,1.00,1.02],
  ['ally-05','軽装の俊敏剣士','ally',7,
   [.19,.22,.39,.17,.26,.22,.33],'#cfa085','#6e8251','#604039','#533c49','#919c9e',.95,1.08,.80],
- ['hero-girl-01','女騎士・採用デザイン準拠の3D試作','hero',2,
-  [.08,.19,.31,.07,.16,.10,.18],'#e8c5b0','#6c94a9','#e6bc71','#353a5c','#b8bcc8',.955,1.145,.67]
+ ['hero-girl-01','ライトニング系女騎士・3D造形試作','hero',2,
+  [.08,.19,.31,.07,.16,.10,.18],'#e8c7b7','#75a6ad','#d6a5ba','#393e53','#bdc5cb',.955,1.12,.67]
 ];
 function buildPreset(row,i){
  const [key,label,category,hairStyle,faceVector,skin,iris,hairColor,clothColor,armorColor,
@@ -49,8 +49,8 @@ function buildPreset(row,i){
     '-'+String(1+(i%5)).padStart(2,'0'),
   category,role:key,label,face,skin,iris,hairStyle,hairColor,clothColor,armorColor,
   gender:female?'female':'male',headSource:female?'realistic-head-sculpt':'realistic-head-animation',
-  referenceDesign:female?'approved-heroine-knight-portrait-20261109':null,
-  coiffureStyle:female?'fantasy-long-blonde':null,
+  referenceDesign:female?'ff13-lightning-inspired-female-knight-20261110':null,
+  coiffureStyle:female?'fantasy-long-blonde':null, // Legacy runtime key; 100k rose-pink asymmetric wig
   proportions:female?validateFaceProportions({
    // Reference-image direction: larger softer eyes and shorter midface,
    // restrained small nose and lips. 3D aesthetic still needs user review.
@@ -67,7 +67,7 @@ function buildPreset(row,i){
    faceHeight:.954,upperThird:1.045,middleThird:.94,lowerThird:.97,
    jawTaper:.93,cheekRoundness:1.115,chinLength:.935,
    preEarFullness:.72,lowerCheekLateral:.82,parotidWidth:.72,
-   eyeWidth:1.15,eyeHeight:1.105,
+   eyeWidth:1.115,eyeHeight:1.07,
    eyeSpacing:.99,eyeVertical:.003,eyeTilt:.018,
    browVertical:.002,browEyeGap:.94,
    browWidth:1.015,browThickness:.81,browAngle:.015,
