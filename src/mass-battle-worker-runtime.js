@@ -1,5 +1,5 @@
-import {MassBattleGridSimulation} from './mass-battle-grid-sim.js?v=4.6.49';
-import {packMassUnits,snapshotMassStats} from './mass-battle-worker-protocol.js';
+import {MassBattleGridSimulation} from './mass-battle-grid-sim.js?v=4.6.64';
+import {packMassUnits,snapshotMassStats} from './mass-battle-worker-protocol.js?v=4.6.64';
 import {WebGpuMassBattleEngine} from './mass-battle-webgpu.js?v=4.4.17';
 
 // Also callable in Node QA without a browser, to test the identical Worker logic.
