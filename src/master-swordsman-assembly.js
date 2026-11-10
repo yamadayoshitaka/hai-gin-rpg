@@ -190,7 +190,7 @@ export function applyHeroineMakeupToFace(faceMesh,neutralColors,{
   const z=(p.getZ(i)-b.min.z)/Math.max(.001,d.z);
   const front=smooth(.52,.78,z);
   // Slightly raised upper outer cheek instead of two red dots.
-  const cheek=front*bell(Math.abs(x),.57,.235)*bell(y,.50,.105)*
+  const cheek=front*bell(Math.abs(x),.58,.175)*bell(y,.565,.065)*
    intensity*THREE.MathUtils.clamp(blush,0,1);
   // Actual three-dimensional vermilion surface, including a soft top lip.
   // Two rose-tinted lips, with the lower lip fuller than the upper.
@@ -199,9 +199,14 @@ export function applyHeroineMakeupToFace(faceMesh,neutralColors,{
   // The previous .353 lower-lip Gaussian landed on the CHIN on the actual
   // Blender sculpt. Hard-gate the lip mask vertically; nothing below .400
   // may receive lipstick, regardless of cheek/nose morphs or deep shadows.
-  const lipBand=smooth(.400,.426,y)*(1-smooth(.508,.537,y));
-  const lips=front*bell(x,0,.300)*lipBand*
-   (.94*bell(y,.453,.026)+.70*bell(y,.425,.021))*
+  // Mouth coordinates are source-dependent: the old face mesh has chin
+  // vertices in the same broad normalized Y range as the mouth. Use the
+  // centre-lip subregion only, with a conservative upper/lower band and
+  // frontal relief gate; never tint a whole horizontal face strip.
+  const lipBand=smooth(.417,.438,y)*(1-smooth(.479,.498,y));
+  const lipRelief=smooth(.63,.87,z);
+  const lips=front*lipRelief*bell(x,0,.205)*lipBand*
+   (.88*bell(y,.463,.018)+.58*bell(y,.440,.016))*
    intensity*THREE.MathUtils.clamp(lip,0,1);
   // Dark-brown upper lash line, located against the SOURCE sclera anchors,
   // not an unrelated eyebrow-height strip. Keeps the eyeballs exposed.
@@ -218,7 +223,7 @@ export function applyHeroineMakeupToFace(faceMesh,neutralColors,{
   attr.setXYZ(i,red,green,blue);
   if(cheek>.08)blushVertices++;
   if(lips>.08)lipVertices++;
-  if(y<.400&&lips>.0000001)chinLipVertices++;
+  if(y<.417&&lips>.0000001)chinLipVertices++;
   if(liner>.08)linerVertices++;
   if(Math.abs(red-neutralColors[n])+Math.abs(green-neutralColors[n+1])+
     Math.abs(blue-neutralColors[n+2])>.003)changedVertices++;
@@ -227,7 +232,7 @@ export function applyHeroineMakeupToFace(faceMesh,neutralColors,{
  const mats=Array.isArray(faceMesh.material)?faceMesh.material:[faceMesh.material];
  return {strength:intensity,blushVertices,lipVertices,linerVertices,
   chinLipVertices,chinLipMaskExcluded:chinLipVertices===0,
-  mouthMaskYNormalized:[.400,.537],
+  mouthMaskYNormalized:[.417,.498],
   changedVertices,eyeAnchorNormalized:[Number(landmarkX.toFixed(3)),Number(landmarkY.toFixed(3))],
   skinShaderUsesVertexColors:mats.some(mat=>mat?.vertexColors===true),
   cosmeticsHue:'rose-cheek-defined-lip-upper-lash',
