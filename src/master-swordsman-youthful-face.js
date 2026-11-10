@@ -74,7 +74,8 @@ export function prepareYouthfulFace(headRoot,{referenceFit=false,referenceGuide=
   const z=(base[i*3+2]-box.min.z)/Math.max(.001,size.z);
   const facing=smooth(.48,.75,z);
   const cheeks=bell(Math.abs(x),.49,.26)*bell(y,.49,.14)*facing;
-  const lips=bell(x,0,.32)*bell(y,.37,.055)*facing;
+  const lips=bell(x,0,referenceGuide?.265:.32)*
+    bell(y,referenceGuide?.445:.37,referenceGuide?.026:.055)*facing;
   const brow=bell(Math.abs(x),.42,.23)*bell(y,.78,.085)*facing;
   // Subtle vertex-level lip and cheek albedo remains tied to the real
   // sculpt, with no fake face plane or overpainted mouth texture.
@@ -111,10 +112,17 @@ export function prepareYouthfulFace(headRoot,{referenceFit=false,referenceGuide=
    // chin by squeezing all lower-face vertices toward the centre. The
    // cheekRoundness slider applies another controlled, reversible layer.
    const lowerCheek=bell(Math.abs(xn),.57,.38)*bell(yn,.43,.21)*front;
-   const juvenileX=x0+(x0-cx)*(.082*cheek+.095*lowerCheek-.105*jaw-.069*nose)*amount;
+   // The generic juvenile morph inflated both cheeks into rounded lateral
+    // bulges on the heroine. Preserve youthful softness without increasing
+    // the head's cheek width; retain the existing male presets unchanged.
+    const cheekWidth=referenceGuide?.020:.082;
+    const lowerCheekWidth=referenceGuide?.012:.095;
+    const juvenileX=x0+(x0-cx)*(
+      cheekWidth*cheek+lowerCheekWidth*lowerCheek-.105*jaw-.069*nose)*amount;
    const juvenileY=y0+size.y*.051*chin*amount;
    const juvenileZ=z0+size.z*
-     (-.061*nose+.010*lips+.052*cheek+.039*lowerCheek-.029*browRidge)*amount;
+     (-.061*nose+.010*lips+(referenceGuide?.020:.052)*cheek+
+       (referenceGuide?.006:.039)*lowerCheek-.029*browRidge)*amount;
    const d=deformFacePoint(juvenileX,juvenileY,juvenileZ,box,control);
    // Follow the independently measured FRONT silhouette of the approved
    // 2D girl image. Only lateral face vertices move; the existing CC0 head
