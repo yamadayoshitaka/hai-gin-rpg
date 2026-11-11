@@ -1,0 +1,48 @@
+name: Independent male and female face-mesh QA
+on:
+  pull_request:
+    paths:
+      - 'src/independent-face-masters.js'
+      - 'face-mesh-studio.html'
+      - 'qa/independent-face-masters.test.mjs'
+      - 'qa/independent-face-masters-browser.cjs'
+      - '.github/workflows/independent-face-masters-qa.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'src/independent-face-masters.js'
+      - 'face-mesh-studio.html'
+      - 'qa/independent-face-masters.test.mjs'
+      - '.github/workflows/independent-face-masters-qa.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  male-female-clay-face:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install local three.js and real Chromium
+        run: |
+          npm install --no-save --package-lock=false playwright@1.56.0 three@0.160.1
+          npx playwright install --with-deps chromium
+      - name: Unit-test distinct real 3D face meshes and source preservation
+        run: node --test qa/independent-face-masters.test.mjs
+      - name: Host original CC0 head models locally
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/face-mesh-qa-http.log 2>&1 &
+          sleep 2
+      - name: Test real WebGL male/female appearance and export both faces as GLB
+        run: node qa/independent-face-masters-browser.cjs
+      - name: Archive both downloadable real 3D face meshes and camera evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: male-female-independent-clay-face-glb
+          path: qa-screenshots/independent-faces/
+          retention-days: 14
+          if-no-files-found: warn
