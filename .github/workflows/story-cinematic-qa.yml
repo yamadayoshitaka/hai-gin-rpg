@@ -7,6 +7,9 @@ on:
       - 'src/story-stage-manga.js'
       - 'src/story-manga-art.js'
       - 'src/story-manga-viewer.js'
+      - 'src/story-cinematic-assets.js'
+      - 'assets/story-cinema/**'
+      - 'qa/story-cinematic-raster.test.mjs'
       - 'src/fantasy-scene-score.js'
       - 'qa/stage-manga-continuity.test.mjs'
       - 'src/game-page-audio.js'
@@ -54,6 +57,8 @@ jobs:
           node --check src/story-stage-manga.js
           node --check src/story-manga-art.js
           node --check src/story-manga-viewer.js
+          node --check src/story-cinematic-assets.js
           node --check src/fantasy-scene-score.js
           node --experimental-vm-modules qa/story-cinematic-audio.test.mjs
           node --experimental-vm-modules qa/stage-manga-continuity.test.mjs
+          node --experimental-vm-modules qa/story-cinematic-raster.test.mjs
