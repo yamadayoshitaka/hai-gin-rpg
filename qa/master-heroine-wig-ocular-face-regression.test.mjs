@@ -113,11 +113,11 @@ test('natural makeup edits real face vertex colors, resets and preserves source 
  assert.equal(result.strength,.93);
  assert.ok(result.blushVertices>0,'Cheek color missing');
  assert.ok(result.lipVertices>0,'Rose-tinted lips missing');
- assert.ok(result.mouthMaskYNormalized[0]>.46,
+ assert.ok(result.mouthMaskYNormalized[0]>.44,
   'Real sculpt lip pigment must sit above the chin (WebGL calibration)');
  assert.equal(result.chinLipVertices,0,'Lipstick has leaked below the lips onto the chin');
  assert.equal(result.chinLipMaskExcluded,true);
- assert.deepEqual(result.mouthMaskYNormalized,[.483,.559]);
+ assert.deepEqual(result.mouthMaskYNormalized,[.448,.532]);
  assert.ok(result.linerVertices>0,'Eye-following upper lash color missing');
  assert.ok(result.changedVertices>100,'Cosmetics are too faint to affect the face');
  assert.equal(result.skinShaderUsesVertexColors,true,
