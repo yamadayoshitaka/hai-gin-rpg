@@ -116,12 +116,15 @@ export function makeIndependentFaceMaster(sourceRoot,gender){
   const local=gender==='female'?femaleInnerFeatureDelta({
    xn,yn,zn,offsetX:x-cx,depth:d.z
   }):{dx:0,dz:0};
-  const nx=gender==='female'?
+  let nx=gender==='female'?
    x+(x-cx)*(cheekSupport-spec.jawNarrow*ovalTransition)
     +local.dx-(x-cx)*.13*chinTip:
    x-(x-cx)*spec.jawNarrow*jaw
       +(x-cx)*(.018*cheek-.012*lowerCheek)
       -(x-cx)*.021*alar;
+  // Store the source X exactly at the preserved outer silhouette:
+  // float math around zero support can otherwise drift by ~1e-9.
+  if(gender==='female'&&Math.abs(xn)>=.86)nx=x;
   const ny=y+d.y*spec.chinLift*chin;
   const nz=gender==='female'?
    z+d.z*(spec.cheekFill*(.74*cheek+.92*lowerCheek)
