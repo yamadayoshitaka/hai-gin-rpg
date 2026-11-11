@@ -1,15 +1,17 @@
 /** Global non-combat page audio. Plays recorded CC0 music; no synthetic character speech.
  * Mobile browsers require the first trusted tap/key before sound can begin.
  */
+import {fantasyTrackUrl} from './fantasy-scene-score.js';
 export const GAME_PAGE_MUSIC=Object.freeze({
- title:'./assets/audio/battle/forest.ogg',
- opening:'./assets/audio/battle/siege.ogg',
- map:'./assets/audio/battle/coast.ogg',
- paper:'./assets/audio/battle/ruins.ogg'
+ title:fantasyTrackUrl('title'),
+ opening:fantasyTrackUrl('opening'),
+ map:fantasyTrackUrl('map'),
+ paper:fantasyTrackUrl('paper'),
+ manga:fantasyTrackUrl('paper')
 });
 const SETTINGS_KEY='hai-gin-core-settings-v1';
 export function createGamePageAudio({storage=null,initialScene='title',effectsOnly=false}={}){
- let enabled=true,scene=initialScene,started=false,disposed=false,element=null,ctx=null,lastSelect=0;
+ let enabled=true,scene=initialScene,trackOverride=null,started=false,disposed=false,element=null,ctx=null,lastSelect=0;
  try{enabled=JSON.parse(storage?.getItem(SETTINGS_KEY)||'null')?.bgm!==false}catch{}
  const ensure=()=>{
   if(element)return element;
@@ -19,13 +21,13 @@ export function createGamePageAudio({storage=null,initialScene='title',effectsOn
  };
  const play=()=>{
   if(!started||!enabled||disposed||effectsOnly)return;
-  const audio=ensure(),next=GAME_PAGE_MUSIC[scene]||GAME_PAGE_MUSIC.title;
+  const audio=ensure(),next=trackOverride||GAME_PAGE_MUSIC[scene]||GAME_PAGE_MUSIC.title;
   if(!audio.src.endsWith(next.replace('./','')))audio.src=next;
-  audio.volume=scene==='opening'?.38:scene==='paper'?.23:.28;
+  audio.volume=scene==='opening'?.38:(scene==='paper'||scene==='manga')?.22:.28;
   void audio.play().catch(()=>{});
  };
  function unlock(){started=true;play();}
- function changeScene(next){if(!(next in GAME_PAGE_MUSIC))return;scene=next;play();}
+ function changeScene(next,cueUrl=null){if(!(next in GAME_PAGE_MUSIC))return;scene=next;trackOverride=typeof cueUrl==='string'&&cueUrl.startsWith('./assets/audio/battle/')?cueUrl:null;play();}
  function setEnabled(value){
   enabled=Boolean(value);
   try{
