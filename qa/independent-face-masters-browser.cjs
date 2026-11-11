@@ -21,7 +21,10 @@ fs.mkdirSync(out,{recursive:true});
      original.female?.sourceVertices<1100||original.male?.sourceVertices<1100||
      original.female?.headOnly!==true||original.male?.headOnly!==true||
      !original.female?.sourceGeometryIndependent||
-     !original.male?.sourceGeometryIndependent)
+     !original.male?.sourceGeometryIndependent||
+     original.female?.facePartMeshCount!==12||
+     original.male?.facePartMeshCount!==12||
+     original.visiblePartMeshes!==12)
    throw Error('Not two independent source-derived face meshes: '+JSON.stringify(original));
   const canvas=page.locator('#faceCanvas');
   for(const g of ['female','male']){
@@ -30,7 +33,7 @@ fs.mkdirSync(out,{recursive:true});
     await page.locator('#'+view).click();
     await page.waitForTimeout(200);
     const report=await page.evaluate(()=>window.__faceMasterQA());
-    if(report.gender!==g||report.view!==view||report.visibleFaceMeshes!==1)
+    if(report.gender!==g||report.view!==view||report.visibleFaceMeshes!==1||report.visiblePartMeshes!==12)
      throw Error('Face viewer controls failed '+JSON.stringify(report));
     await canvas.screenshot({path:path.join(out,g+'-'+view+'.png'),
      timeout:90000,animations:'disabled'});
@@ -50,7 +53,7 @@ fs.mkdirSync(out,{recursive:true});
    const gltf=JSON.parse(buf.subarray(20,20+length).toString('utf8').trim());
    const tri=(gltf.meshes||[]).flatMap(m=>m.primitives||[])
     .filter(p=>p.mode===undefined||p.mode===4);
-   if(tri.length!==1)throw Error('Export contains non-face body/eyes: '+g+' '+tri.length);
+   if(tri.length!==13)throw Error('Export must contain face + 12 real 3D anatomical parts: '+g+' '+tri.length);
    console.log('FACE_CLAY_GLB_EXPORT',JSON.stringify({
     gender:g,bytes:buf.length,trianglePrimitives:tri.length
    }));
@@ -60,10 +63,28 @@ fs.mkdirSync(out,{recursive:true});
   if(Buffer.compare(left,right)===0)
    throw Error('Male and female rendered faces are identical');
   await page.locator('#female').click();
+  await page.locator('#parts').click();
+  if((await page.evaluate(()=>window.__faceMasterQA())).visiblePartMeshes!==0)
+   throw Error('Facial mesh parts cannot be hidden independently');
+  await canvas.screenshot({path:path.join(out,'female-face-only-no-parts.png')});
+  // Face-only export remains available when evaluating the base surface.
+  {
+   const next=page.waitForEvent('download',{timeout:45000});
+   await page.locator('#export').click();
+   const file=path.join(out,'female-structural-face-only.glb');
+   await (await next).saveAs(file);
+   const buf=fs.readFileSync(file),size=buf.readUInt32LE(12);
+   const gltf=JSON.parse(buf.subarray(20,20+size).toString('utf8').trim());
+   if((gltf.meshes||[]).length!==1)
+    throw Error('Face-only mode exported hidden facial parts');
+  }
+  await page.locator('#parts').click();
   await page.locator('#wire').click();
   if((await page.evaluate(()=>window.__faceMasterQA())).wire!==true)
    throw Error('Wireframe is not active');
   await canvas.screenshot({path:path.join(out,'female-wire.png')});
+  if((await page.evaluate(()=>window.__faceMasterQA())).visiblePartMeshes!==12)
+   throw Error('Facial parts did not restore after toggling');
   if(errors.length)throw Error('Browser errors: '+JSON.stringify(errors));
   console.log('INDEPENDENT_MALE_FEMALE_CLAY_FACES_SUCCESS '+
    JSON.stringify({femaleVertices:original.female.sourceVertices,
