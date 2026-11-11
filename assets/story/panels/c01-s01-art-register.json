@@ -10,12 +10,12 @@
     {
       "panelId": "c01-s01-m1",
       "file": "assets/story/panels/c01-s01-m01.webp",
-      "sourceAIArtwork": "黎明の王都レヴナ市場道行き.png",
-      "status": "integrated-provisional-distinct-scene",
+      "sourceAIArtwork": "Original AI painting, male military strategist arriving at Levna, new 2026-11-11",
+      "status": "integrated-new-original-provisional",
       "target": "王都レヴナの朝と市場",
-      "qualityNotes": "後ろ姿の軍師と町並み",
+      "qualityNotes": "王都レヴナの街並みと軍師の横顔を新規描画。後ろ姿指定とは異なるため暫定採用。日本風の王城と既存世界設定の建築統一が必要",
       "resolution": "960x540",
-      "gitBlobSha": "5e9fb251d4f044be13db19a3b4ab4192ef450783"
+      "gitBlobSha": "20897f8653fba5bb7e7b8b04ff0e4efd7264994e"
     },
     {
       "panelId": "c01-s01-m2",
@@ -82,11 +82,24 @@
   "qualityPending": [
     "m03・m04・m05・m07の人物・背景・事実整合の再作画",
     "主人公の外見は別工程で確定",
-    "20章の残りステージは個別原画未配置なら従来の合成画"
+    "20章の残りステージは個別原画未配置なら従来の合成画",
+    "初回到着コマの男女の顔と衣装を3Dモデル確定後に照合。第2章『消えた鐘守』の避難民・帳簿・井戸場面は未制作"
   ],
   "notes": [
     "第1章7コマは別々のAI生成素材を場面ごとに再構成した専用WebP。章背景に人物を重ねた同一絵の使い回しは第1章では行わない。",
     "7枚はゲーム登録済みの暫定素材であり、各コマ独立の新規描き起こし完成原画と同義ではない。",
     "3Dモデル・戦闘制御・既存音声を削除しない。"
+  ],
+  "genderVariants": [
+    {
+      "panelId": "c01-s01-m1",
+      "gender": "female",
+      "file": "assets/story/panels/c01-s01-m01-female.webp",
+      "status": "integrated-new-original-provisional",
+      "sourceAIArtwork": "Original AI painting, blonde female strategist arriving at Levna, new 2026-11-11",
+      "resolution": "960x540",
+      "gitBlobSha": "1dc6c83b0a30ebd473c77a04f921bb30bd211b68",
+      "notes": "女性軍師は銀の装備・濃青の布・金髪。旧女性版を上書きして、男性絵を表示しない。場面の背景建築は世界観への再調整対象"
+    }
   ]
 }

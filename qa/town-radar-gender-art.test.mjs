@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
+import {createHash} from 'node:crypto';
 import {mangaForStage} from '../src/story-stage-manga.js';
 import {individualStoryPanelAsset} from '../src/story-cinematic-assets.js';
 import {storyStageContext} from '../src/story-narrative-flow.js';
@@ -52,4 +53,12 @@ for(const path of ['assets/story/panels/c01-s01-m01-female.webp','assets/story/c
  assert.equal(bytes.toString('ascii',8,12),'WEBP');
  assert.ok(bytes.length>30000,'Female master/art must not be a placeholder');
 }
-console.log('PASS town radar direct-entry and 1400 gender-safe story panel IDs; female art present');
+const maleBytes=await readFile(new URL('../assets/story/panels/c01-s01-m01.webp',import.meta.url));
+const femaleBytes=await readFile(new URL('../assets/story/panels/c01-s01-m01-female.webp',import.meta.url));
+assert.ok(maleBytes.length>=180000&&femaleBytes.length>=180000,'original 960x540 male/female paintings must remain full resolution');
+assert.notEqual(createHash('sha256').update(maleBytes).digest('hex'),
+ createHash('sha256').update(femaleBytes).digest('hex'),
+ 'male and female arrival paintings must be separately illustrated');
+const assetSource=await readFile(new URL('../src/story-cinematic-assets.js',import.meta.url),'utf8');
+assert.match(assetSource,/panelrev=20261111-levna-arrival-v2/,'mobile WebP cache must refresh');
+console.log('PASS town radar direct-entry, 1400 gender-safe IDs, and two distinct original male/female Chapter 1 arrival paintings');
