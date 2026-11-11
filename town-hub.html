@@ -547,7 +547,8 @@ async function speakChapter(number,{autoplay=false}={}){
 // as the other 180 combat/exploration stages.
 const townManga=mangaForStage(game.townStage);
 const eventScenes=(game.storyFlags?.route?.activeCooperation||game.campaign.commander.gender==='female')?
- mangaForStage(game.townStage,storyStageContext(game,game.townStage)).panels:townManga.panels;
+ mangaForStage(game.townStage,storyStageContext(game,game.townStage)).panels.filter(p=>p.phase==='pre'):
+ townManga.panels.filter(p=>p.phase==='pre');
 let eventIndex=0;
 const voiceIsOn=()=>{
  try{return JSON.parse(localStorage.getItem('hai-gin-core-settings-v1')||'{}')?.voice!==false;}
