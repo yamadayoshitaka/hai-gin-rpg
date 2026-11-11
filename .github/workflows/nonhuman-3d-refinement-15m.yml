@@ -126,7 +126,7 @@ jobs:
             qa/canine-fur-face-regression.test.mjs \
             qa/creature-master-quality.test.mjs
           test "$(git diff --name-only)" = 'src/nonhuman-model-quality.js'
-      - name: Commit isolated human-free change; open and merge its PR
+      - name: Publish verified nonhuman change via PR or guarded fast-forward fallback
         if: steps.refine.outputs.changed == 'true'
         shell: bash
         env:
@@ -183,4 +183,4 @@ jobs:
               echo 'Cleanup of temporary quality branch was deferred.' >> "$GITHUB_STEP_SUMMARY"
           fi
           echo 'No paid AI endpoints or human-model modifications.' >> "$GITHUB_STEP_SUMMARY"
-          echo 'Static geometry QA is not proof of photorealism.' >> "$GITHUB_STEP_SUMMARY" >> "$GITHUB_STEP_SUMMARY"
+          echo 'Static geometry QA is not proof of photorealism.' >> "$GITHUB_STEP_SUMMARY"
