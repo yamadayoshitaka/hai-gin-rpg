@@ -34,6 +34,16 @@ function buildGrid(name,columns,rows,point,material){
  mesh.name=name;mesh.renderOrder=2;
  return mesh;
 }
+function sampleGrid(mesh,columns,rows,u,v){
+ const su=clamp(u,0,1)*columns,sv=clamp(v,0,1)*rows;
+ const i=Math.min(columns-1,Math.floor(su)),j=Math.min(rows-1,Math.floor(sv));
+ const a=su-i,b=sv-j,p=mesh.geometry.getAttribute('position');
+ const vertex=(x,y)=>new THREE.Vector3().fromBufferAttribute(p,y*(columns+1)+x);
+ return vertex(i,j).multiplyScalar((1-a)*(1-b))
+  .addScaledVector(vertex(i+1,j),a*(1-b))
+  .addScaledVector(vertex(i,j+1),(1-a)*b)
+  .addScaledVector(vertex(i+1,j+1),a*b);
+}
 export function createAnatomicalFaceParts(face,{gender='female',controls={}}={}){
  if(!face?.isMesh||!['male','female'].includes(gender))
   throw Error('Sculpted face mesh and gender required for 3D facial parts');
@@ -149,6 +159,20 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
    mesh.userData.attachedToFace=true;
    mesh.userData.colorRole='eyelid';
    root.add(mesh);
+   if(female){
+    // Eyeliner shares the eye lid's actual surface and transformation.
+    const linerMat=new THREE.MeshStandardMaterial({
+     color:0x30252b,roughness:.84,metalness:0,side:THREE.DoubleSide,
+     transparent:true,opacity:upper?.86:.42,depthWrite:false
+    });
+    const liner=buildGrid(label+'_EYELINER',28,3,(u,v)=>{
+     const p=sampleGrid(mesh,28,4,u,.04+v*(upper?.15:.10));
+     p.z+=Math.max(.00002,d.z*.00018);
+     return p;
+    },linerMat);
+    liner.userData.colorRole='eyeliner';liner.userData.cosmetic=true;
+    mesh.add(liner);
+   }
   }
   if(female){
    // Two real 3D orbital surfaces per eye: a subtle upper-lid fold
@@ -166,6 +190,18 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
    upperFold.userData.anatomical='upper-lid-crease';
    upperFold.userData.colorRole='eyelid';
    root.add(upperFold);
+   const accentMat=new THREE.MeshStandardMaterial({
+    color:0x765458,roughness:.87,metalness:0,side:THREE.DoubleSide,
+    transparent:true,opacity:.48,depthWrite:false
+   });
+   const accent=buildGrid((side===-1?'LEFT':'RIGHT')+'_EYE_ACCENT_LINE',
+    28,2,(u,v)=>{
+     const p=sampleGrid(upperFold,28,4,u,.19+.26*v);
+     p.z+=Math.max(.00003,d.z*.00024);
+     return p;
+    },accentMat);
+   accent.userData.colorRole='eyeAccent';accent.userData.cosmetic=true;
+   upperFold.add(accent);
    const lowerVolume=buildGrid(
     (side===-1?'LEFT':'RIGHT')+'_LOWER_LID_VOLUME',28,5,(u,v)=>{
      const t=2*u-1,soft=Math.pow(Math.max(0,1-t*t),.80);
@@ -271,6 +307,29 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
    eyeJoint.add(child);
   }
   root.add(eyeJoint);
+ }
+ // Cheek tint stays on the real face, while orbit makeup follows the
+ // eye rotation through the eye's own linked parent pivot.
+ if(female)for(const side of [-1,1]){
+  const blushMat=new THREE.MeshStandardMaterial({
+   color:0xcf8383,roughness:1,metalness:0,side:THREE.DoubleSide,
+   transparent:true,opacity:.48,depthWrite:false,vertexColors:true
+  });
+  const blush=buildGrid((side===-1?'LEFT':'RIGHT')+'_CHEEK_BLUSH',28,8,
+   (u,v)=>{
+    const xx=cx+side*d.x*(.155+.17*u);
+    const yy=box.min.y+d.y*(.492+.082*v);
+    return new THREE.Vector3(xx,yy,
+     surfaceAt(xx,yy)+Math.max(.00004,d.z*.00035));
+   },blushMat);
+  const colors=[];
+  for(let j=0;j<=8;j++)for(let i=0;i<=28;i++){
+   const u=i/28,v=j/8,rr=(2*u-1)**2+(2*v-1)**2;
+   colors.push(1,1,1,Math.max(0,1-rr)**2);
+  }
+  blush.geometry.setAttribute('color',new THREE.Float32BufferAttribute(colors,4));
+  blush.userData.colorRole='blush';blush.userData.cosmetic=true;
+  root.add(blush);
  }
  // Original face remains the structural muzzle/philtrum/chin. Two shallow
  // lip strips follow that actual surface and use real triangle thickness.
