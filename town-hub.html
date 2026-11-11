@@ -86,7 +86,7 @@ body.town-loading #townRadar,body:has(#opening:not([hidden])) #townRadar,body:ha
 body:has(#panel:not([hidden])) #townExplorerControls *,body:has(#opening:not([hidden])) #townExplorerControls *{pointer-events:none!important}
 @media(max-height:620px){#townExplorerActions button{min-height:34px;padding:6px}#townStick{width:102px;height:102px}#townExplorerMessage{bottom:120px}}
 </style>
-<link rel="stylesheet" href="./src/tactical-command-ui.css?v=2.1"></head><body class="town-loading">
+<link rel="stylesheet" href="./src/tactical-command-ui.css?v=2.1"><link rel="stylesheet" href="./src/battle-ui-refinement.css?v=2.2"></head><body class="town-loading">
 <iframe id="townScene" src="about:blank" title="既存の城・町ステージと7頭身人物モデルで探索" allow="autoplay"></iframe><div id="veil"></div>
 <header><div class="label"><strong id="townHeading">レヴナの町</strong><small id="chapterStatus">第1章・町ステージ</small></div>
 <nav aria-label="町の操作"><button type="button" id="showTownGuide">全体マップ</button><button type="button" id="townBgmToggle" aria-label="町BGMのオン・オフ">BGM ♪</button><button type="button" id="showPaperStory">漫画</button><a href="./story-maintenance.html">物語フロー</a><a id="leaveTown" href="./world-map.html?v=town-exit-2">外へ ▶</a></nav></header>
@@ -148,7 +148,7 @@ const townSceneUrl='./tactics-wireframe.html?town=1&stage='+encodeURIComponent(c
  '&gender='+encodeURIComponent(game.campaign.commander.gender||'male')+'&faceId='+encodeURIComponent(game.campaign.commander.faceId||0)+
  '&commanderName='+encodeURIComponent(game.playerName)+'&v=town-visit-20261110';
 if(townFrame.getAttribute('src')!==townSceneUrl)townFrame.src=townSceneUrl;
-let panel='',page=0,shopCategory='道具',armyPriority='均衡',innCommanderId='player',narration=null,selectedSquadId=game.campaign.squads[0]?.id||0;
+let panel='',page=0,shopCategory='道具',armyPriority='均衡',innCommanderId='player',innPage='overview',innSquadPage=0,narration=null,selectedSquadId=game.campaign.squads[0]?.id||0;
 let activeTalk=null,activeTalkIndex=0;
 let currentStoryPanelVoiceId=null;
 const townVoices=createStoryVoiceDirector({onPlaying:value=>townAudio.setNarrationActive(value)});
@@ -285,6 +285,33 @@ $('showPaperStory').onclick=()=>startPaperStory();
 
 function rowsHtml(list,renderer){const p=pages(list);page=Math.min(page,p.pages-1);return p.rows.map(renderer).join('')+
  '<div class="pager"><button type="button" data-page="-1" '+(page===0?'disabled':'')+'>◀</button><span>'+(page+1)+' / '+p.pages+'ページ</span><button type="button" data-page="1" '+(page>=p.pages-1?'disabled':'')+'>▶</button></div>';}
+// Three fixed-width pages avoid scrolling through the inn's entire army.
+function renderInnPages(){
+ const root=$('panelContent'),items=[...root.children];
+ if(items.length<11)return;
+ const [heading,commander,metrics,effects,explanation,gacha,auto,titleSquads,squads,titleRecruit,recruits]=items;
+ const nav=document.createElement('nav');nav.className='innPageNav';
+ const pages={overview:document.createElement('section'),squads:document.createElement('section'),recruit:document.createElement('section')};
+ for(const [key,section] of Object.entries(pages)){section.className='innPage';section.dataset.innPage=key;}
+ pages.overview.append(commander,metrics,effects,explanation,auto);
+ pages.squads.append(titleSquads,squads);
+ pages.recruit.append(gacha,titleRecruit,recruits);
+ const cards=[...squads.children],size=2;
+ const maxSquadPage=Math.max(0,Math.ceil(cards.length/size)-1);
+ innSquadPage=Math.max(0,Math.min(maxSquadPage,innSquadPage));
+ cards.forEach((card,i)=>{card.hidden=i<innSquadPage*size||i>=(innSquadPage+1)*size;});
+ const squadPager=document.createElement('div');squadPager.className='innSubPager';
+ const prev=document.createElement('button');prev.textContent='◀ 前';prev.type='button';prev.dataset.innSquadStep='-1';prev.disabled=innSquadPage<=0;
+ const next=document.createElement('button');next.textContent='次 ▶';next.type='button';next.dataset.innSquadStep='1';next.disabled=innSquadPage>=maxSquadPage;
+ const status=document.createElement('span');status.textContent=(innSquadPage+1)+' / '+(maxSquadPage+1)+'ページ';
+ squadPager.append(prev,status,next);pages.squads.append(squadPager);
+ for(const [key,title] of [['overview','軍議'],['squads','部隊'],['recruit','雇用']]){
+  const button=document.createElement('button');button.type='button';button.dataset.innPage=key;
+  button.textContent=title;button.classList.toggle('active',key===innPage);nav.append(button);
+  pages[key].hidden=key!==innPage;
+ }
+ root.replaceChildren(heading,nav,...Object.values(pages));
+}
 function renderPanel(){
  if(!panel)return;
  $('panel').classList.toggle('formation-command-ui',panel==='formation');
@@ -310,6 +337,12 @@ function renderPanel(){
    '<div class="entries">'+rowsHtml(stock,item=>'<div class="entry"><div><b>'+escapeHtml(item.name)+'</b><small>'+item.price+'G · 所持 '+(game.inventory[item.id]||0)+' · '+escapeHtml(item.description)+'</small></div><div><button type="button" data-buy="'+item.id+'" '+(game.wallet<item.price?'disabled':'')+'>購入</button> '+(armory?'<button type="button" data-equip="'+item.id+'" '+(!(game.inventory[item.id]>0)||!squads.length?'disabled':'')+'>隊列に装備</button>':'')+'</div></div>')+'</div>'+
    '<p>所持金：'+game.wallet+'G'+(armory?'　※同じ装備を複数隊列に使うには人数分ではなく隊列数分の在庫が必要です。':'')+'</p>';
  }else if(panel==='formation'){
+  const nextStage=stagesInChapter(CAMPAIGN_STAGE_BY_ID[game.townStage].chapter)
+    .find(entry=>entry.kind!=='town'&&!game.completedStages.includes(entry.id))||
+    stagesInChapter(CAMPAIGN_STAGE_BY_ID[game.townStage].chapter).find(entry=>entry.kind!=='town');
+  const suggestedStrategy=nextStage?.kind==='defend'?'支援・守備':
+    nextStage?.kind==='capture'?'目的遂行・制圧':
+    nextStage?.kind==='siege'?'目的遂行・攻城':'全滅・掃討';
   const leaders=[{id:'player',...game.campaign.commander},...game.campaign.commanders];
   if(!leaders.some(c=>String(c.id)===String(innCommanderId)))innCommanderId='player';
   const commander=leaders.find(c=>String(c.id)===String(innCommanderId));
@@ -330,7 +363,10 @@ function renderPanel(){
     '<small>常時強化：攻撃+'+Math.round(buff.attack*100)+'%・HP+'+Math.round(buff.defense*100)+'%</small></article>';
   }).join('')||'<p>この軍師には兵士が未配属です。予備兵を雇用し、軍団画面で配属してください。</p>';
   $('panelContent').innerHTML='<div class="innCommandHeading"><span class="eyebrow">INN · TACTICAL FORMATION</span>'+
-   '<strong>⚑ 軍師と隊列の編成</strong><small>出撃前に戦力・号令適性を確認。戦闘中は固定作戦を変更できません。</small></div>'+
+   '<strong>⚑ 軍師と隊列の編成</strong>'+
+    '<small>次の戦場：'+escapeHtml(nextStage?.name||'未決定')+'</small>'+
+    '<small>勝利目的：'+escapeHtml(nextStage?.winCondition||'ステージ選択後に表示')+'</small>'+
+    '<small>推奨作戦：'+escapeHtml(suggestedStrategy)+'（開戦前に確定）</small></div>'+
    '<div class="innCommanderRow"><label for="innCommanderSelect">指揮する軍師<select id="innCommanderSelect">'+leaders.map(c=>
     '<option value="'+escapeHtml(String(c.id))+'" '+(String(c.id)===String(innCommanderId)?'selected':'')+'>'+escapeHtml(c.name)+' Lv.'+Number(c.level||1)+'</option>').join('')+'</select></label>'+
    '<label for="innSpecialtySelect">軍師の得意分野<select id="innSpecialtySelect">'+Object.entries(STRATEGIST_SPECIALTIES).map(([value,label])=>
@@ -348,6 +384,7 @@ function renderPanel(){
    '<div class="controls"><select id="autoPriority" aria-label="オート編成の方針">'+['均衡','攻撃重視','防御重視','機動重視','支援重視'].map(x=>'<option '+(armyPriority===x?'selected':'')+'>'+x+'</option>').join('')+'</select><button type="button" class="primary" data-auto>この軍師の隊をオート編成</button></div>'+
    '<h3>配属中の部隊・レアリティ戦力</h3><div class="entries">'+squadRows+'</div>'+
    '<h3>予備兵の雇用</h3><div class="entries">'+rowsHtml(jobs,entry=>'<div class="entry"><div><b>'+escapeHtml(entry.job)+'</b><small>全保有 '+entry.count+'人 · N傭兵 10G/人</small></div><button type="button" data-recruit="'+escapeHtml(entry.job)+'">＋10人</button></div>')+'</div>';
+  renderInnPages();
  }else if(panel==='tavern'){
   game.acceptedEvents??=[];game.claimedEvents??=[];
   $('panelContent').innerHTML='<p>酒場の依頼掲示板。受注後はワールドマップで指定ステージを攻略し、酒場に戻って報酬を受け取ります。</p>'+
@@ -376,6 +413,12 @@ $('panelContent').addEventListener('change',event=>{if(event.target.id==='equipS
  }});
 $('panelContent').onclick=event=>{
  const target=event.target.closest('button');if(!target)return;
+ if(target.hasAttribute('data-inn-page')){
+  innPage=target.dataset.innPage;renderPanel();return;
+ }
+ if(target.hasAttribute('data-inn-squad-step')){
+  innSquadPage+=Number(target.dataset.innSquadStep);renderPanel();return;
+ }
  try{
   if(target.hasAttribute('data-talk-next')){activeTalkIndex=(activeTalkIndex+1)%activeTalk.lines.length;renderPanel();return;}
   if(target.hasAttribute('data-talk-voice')){speakTownLine(activeTalk.lines[activeTalkIndex]);return;}
