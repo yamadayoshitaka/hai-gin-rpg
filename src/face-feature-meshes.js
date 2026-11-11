@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {normalizeFemaleFaceControls,FACE_V7_PALETTE} from './face-v7-controls.js';
+import {normalizeFemaleFaceControls,FACE_V7_PALETTE,MALE_REFERENCE_DEFAULT,safeContactColor} from './face-v7-controls.js';
 
 /**
  * Actual face-only polygon meshes. No 2D decals, portrait planes or hair.
@@ -83,6 +83,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   return z;
  };
  const female=gender==='female';
+ const eyeScale=female?settings.eyeSize:MALE_REFERENCE_DEFAULT.eyeSize;
  const originalIrisAngle=female?.585:.47;
  const originalPupilAngle=female?.236:.19;
  // A doubled requested projected diameter must remain on a sphere:
@@ -91,12 +92,13 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   Math.sin(originalIrisAngle)*settings.irisDiameter)):originalIrisAngle;
  const pupilAngle=female?Math.asin(Math.min(.75,
   Math.sin(originalPupilAngle)*settings.irisDiameter)):originalPupilAngle;
- const eyeRadius=d.x*(female?.052:.051);
+ const eyeRadius=d.x*(female?.052:.051)*eyeScale;
  const eyeHeight=box.min.y+d.y*(female?.684:.687);
  const eyeSpacing=d.x*(female?.112:.115);
  // Sclera centre is recessed. Upper and lower eyelids cover the spherical
  // edge, rather than drawing detached floating white eye disks.
  for(const side of [-1,1]){
+  const firstChild=root.children.length;
   const x=cx+side*eyeSpacing,y=eyeHeight;
   const faceZ=surfaceAt(x,y);
   // Set globes into the socket but forward enough for the colored iris
@@ -176,6 +178,22 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
    lowerVolume.userData.anatomical='lower-lid-fullness';
    lowerVolume.userData.colorRole='eyelid';
    root.add(lowerVolume);
+   // Subtle actual under-eye cosmetic band; it shares the eye tilt pivot
+   // with the double eyelid, lashes and brows.
+   const shadowMat=new THREE.MeshStandardMaterial({
+    color:0xb99085,transparent:true,opacity:.29,depthWrite:false,
+    roughness:1,side:THREE.DoubleSide
+   });
+   const eyeShadow=buildGrid(
+    (side===-1?'LEFT':'RIGHT')+'_UNDER_EYE_SHADOW',28,5,(u,v)=>{
+     const t=2*u-1,soft=Math.pow(Math.max(0,1-t*t),.82);
+     const xx=x+t*eyeRadius*1.11;
+     const yy=y-eyeRadius*(.70+.13*soft+.29*v);
+     const zz=surfaceAt(xx,yy)+d.z*(.006+.003*Math.sin(Math.PI*v)*soft);
+     return new THREE.Vector3(xx,yy,zz);
+    },shadowMat);
+   eyeShadow.userData.colorRole='underEye';
+   root.add(eyeShadow);
   }
   if(female){
    const eyeLabel=side===-1?'LEFT':'RIGHT';
@@ -216,13 +234,49 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
     lashPivot.add(lash);
    }
    root.add(lashPivot);
+  }else{
+   // The male is generated from the same smooth head, with a naturally
+   // smaller eye and no liner/mascara/under-eye cosmetic layers.
+   const pivot=new THREE.Group();
+   const label=side===-1?'LEFT':'RIGHT';
+   pivot.name=label+'_BROW_ANGLE_CONTROL';
+   const browY=y+eyeRadius*1.56;
+   pivot.position.set(x,browY,surfaceAt(x,browY));
+   const brow=buildGrid(label+'_NATURAL_MALE_BROW',30,4,(u,v)=>{
+    const t=2*u-1,arch=Math.pow(Math.max(0,1-t*t),.72);
+    const xx=x+t*eyeRadius*1.66;
+    const yy=browY+eyeRadius*.035*arch+
+      (v-.5)*eyeRadius*.23*arch;
+    const zz=surfaceAt(xx,yy)+d.z*.010;
+    return new THREE.Vector3(xx-pivot.position.x,
+      yy-pivot.position.y,zz-pivot.position.z);
+   },mat(0xa2a6ac));
+   brow.userData.colorRole='brow';
+   pivot.add(brow);root.add(pivot);
   }
+  // Move all eye-specific components into a joint local pivot. An angle
+  // change now rotates the eyeball, lids, under-eye band, brows and lashes
+  // together, not detached individual painted strips.
+  const eyeJoint=new THREE.Group();
+  eyeJoint.name=(side===-1?'LEFT':'RIGHT')+'_EYE_LINKED_PIVOT';
+  eyeJoint.position.set(x,y,z);
+  const origin=eyeJoint.position.clone();
+  const children=root.children.slice(firstChild);
+  for(const child of children){
+   root.remove(child);
+   if(child.isMesh){
+    if(child.userData.sourceProjected)child.position.sub(origin);
+    else child.geometry.translate(-x,-y,-z);
+   }else child.position.sub(origin);
+   eyeJoint.add(child);
+  }
+  root.add(eyeJoint);
  }
  // Original face remains the structural muzzle/philtrum/chin. Two shallow
  // lip strips follow that actual surface and use real triangle thickness.
  // Avoid a single flat 'mouth plate' or pigment printed on the chin.
- const lipCenter=box.min.y+d.y*(female?.509:.506);
- const halfWidth=d.x*(female?.044:.119);
+ const lipCenter=box.min.y+d.y*(female?.509:.509);
+ const halfWidth=d.x*.044;
  for(const upper of [true,false]){
   const material=lipMat;
   const mesh=buildGrid((upper?'UPPER':'LOWER')+'_3D_VERMILION_LIP',
@@ -239,8 +293,37 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
     return new THREE.Vector3(x,y,z);
    },material);
   mesh.userData.faceSurfaceConforming=true;
-  mesh.userData.colorRole='lips';
+  mesh.userData.colorRole='lipBase';
   root.add(mesh);
+ }
+ // Separate lipstick overlay: this colors only the actual mouth surface,
+ // not the chin, and can move horizontally/vertically or resize without
+ // changing the sculpted lip anatomy. The base projection is IDENTICAL
+ // to the structural lip strips at neutral position and scale.
+ if(female)for(const upper of [true,false]){
+  const pigment=new THREE.MeshStandardMaterial({
+   color:0xc07c82,roughness:.75,metalness:0,side:THREE.DoubleSide,
+   transparent:true,opacity:.91,depthWrite:false
+  });
+  const patch=buildGrid(
+   (upper?'UPPER':'LOWER')+'_LIPSTICK_MAKEUP',32,8,(u,v)=>{
+    const t=u*2-1;
+    const taper=Math.pow(Math.max(0,1-t*t),.70);
+    const cupid=upper?
+      d.y*.0018*(bell(Math.abs(t),.37,.22)-.42*bell(t,0,.23)):0;
+    const cy=lipCenter+(upper?d.y*.009:-d.y*.009)+cupid;
+    const vertical=(v-.5)*d.y*(upper?.012:.015)*taper;
+    const x=cx+settings.lipstickX*d.x+
+      t*halfWidth*settings.lipstickWidth;
+    const y=cy+settings.lipstickY*d.y+
+      vertical*settings.lipstickHeight;
+    const fullness=(1-t*t)*Math.sin(Math.PI*v);
+    const z=surfaceAt(x,y)+d.z*(.0038+.005*fullness*taper);
+    return new THREE.Vector3(x,y,z);
+   },pigment);
+  patch.userData.colorRole='lipstick';
+  patch.userData.cosmetic=true;
+  root.add(patch);
  }
  // The face mesh itself carries the integrated nose, so DO NOT glue a
  // separate nose sphere in front of its nasal bridge.
@@ -253,21 +336,32 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
  const report=Object.freeze({
   gender,partMeshCount:meshList.length,realSurfaceProjectionCount:projected,
   projectionFallbacks,eyeMeshCount:2,irisMeshCount:2,pupilMeshCount:2,
-  eyelidMeshCount:4,lipMeshCount:2,
-  eyebrowMeshCount:female?2:0,eyelashMeshCount:female?4:0,
+  eyelidMeshCount:4,lipMeshCount:2,lipstickMeshCount:female?2:0,
+  lipstickPlacement:female?{
+   x:settings.lipstickX,y:settings.lipstickY,
+   width:settings.lipstickWidth,height:settings.lipstickHeight,
+   anchoredToLipSurface:true
+  }:null,
+  eyebrowMeshCount:2,eyelashMeshCount:female?4:0,
+  underEyeShadowMeshCount:female?2:0,
   doubleLidCreaseMeshCount:female?2:0,
   lowerOrbitalVolumeMeshCount:female?2:0,
   irisPolarAngleRadians:Number(irisAngle.toFixed(4)),
   pupilPolarAngleRadians:Number(pupilAngle.toFixed(4)),
   irisDiameterRequestFactor:gender==='female'?settings.irisDiameter:1,
   actualIrisDiameterFactor:Number((Math.sin(irisAngle)/Math.sin(originalIrisAngle)).toFixed(3)),
-  mouthHalfWidthFraction:female?.044:.119,
+  mouthHalfWidthFraction:.044,
+  eyeScale,contactColorDefault:safeContactColor(settings.contactColor),
+  eyeAngleDefault:gender==='female'?settings.eyeAngle:0,
+  maleCosmeticsDisabled:!female,
   noseSourceIntegrated:true,
   partTriangles,faceOnly:true,bodyIncluded:false,partGeometryReal:true,
   reference:'soft-cheek-small-nose-relaxed-almond-eyes-gentle-lips'
  });
  root.userData.report=report;
- if(female)updateFaceFeatureAngles(root,settings);
+ updateFaceFeatureAngles(root,female?settings:{
+  eyeAngle:0,browAngle:0,lashAngle:0
+ });
  return {root,report};
 }
 
@@ -277,32 +371,49 @@ export function updateFaceFeatureAngles(partsRoot,settings={}){
  const values={};
  for(const side of [-1,1]){
   const lbl=side===-1?'LEFT':'RIGHT';
+  const joint=partsRoot.getObjectByName(lbl+'_EYE_LINKED_PIVOT');
   const brow=partsRoot.getObjectByName(lbl+'_BROW_ANGLE_CONTROL');
   const lashes=partsRoot.getObjectByName(lbl+'_LASH_ANGLE_CONTROL');
+  if(joint)joint.rotation.z=side*THREE.MathUtils.degToRad(v.eyeAngle);
   if(brow)brow.rotation.z=side*THREE.MathUtils.degToRad(v.browAngle);
   if(lashes)lashes.rotation.z=side*THREE.MathUtils.degToRad(v.lashAngle);
  }
- values.browAngle=v.browAngle;values.lashAngle=v.lashAngle;
+ values.eyeAngle=v.eyeAngle;
+ values.browAngle=v.browAngle;
+ values.lashAngle=v.lashAngle;
+ values.linkedEyeBrowLashUnderEye=true;
  partsRoot.userData.featureAngles=values;
  return values;
 }
 
 /** Clay and color mode both keep the exact same geometry. */
-export function applyFaceColorMode(face,mode='clay'){
+export function applyFaceColorMode(face,mode='clay',{contactColor}={}){
  const colored=mode==='color';
+ const male=face.name.startsWith('MALE_');
  const clay={
-  skin:0xbfc3cb,eyelid:0xbcbfc5,lips:0xbfc3cb,
+  skin:0xbfc3cb,eyelid:0xbcbfc5,lipBase:0xbfc3cb,
+  lipstick:0xbfc3cb,underEye:0xbcbfc5,
   sclera:0xd5d8dd,iris:0x747a83,pupil:0x30353b,
   brow:0xa2a6ac,lashes:0x8c929a
+ };
+ const palette={
+  ...FACE_V7_PALETTE,lipBase:male?0xc9998b:0xd9a699,
+  lipstick:0xc07c82,
+  iris:male?0x50413b:parseInt(safeContactColor(contactColor).slice(1),16)
  };
  face.traverse(o=>{
   if(!o.isMesh||!o.material)return;
   const role=o.userData?.colorRole;
+  if(role==='lipstick'||role==='underEye'){
+   o.visible=colored&&!male;
+  }
   if(role&&o.material.color){
-   o.material.color.setHex((colored?FACE_V7_PALETTE:clay)[role]);
+   const hex=(colored?palette:clay)[role];
+   if(hex!==undefined)o.material.color.setHex(hex);
    o.material.needsUpdate=true;
   }
  });
  face.userData.faceColorMode=colored?'color':'clay';
+ face.userData.contactColor=male?null:safeContactColor(contactColor);
  return face.userData.faceColorMode;
 }

@@ -81,13 +81,13 @@ export function femaleCheekJawDelta({xn,yn,zn,offsetX,depth,height}){
 
 export const FACE_MASTER_SPEC=Object.freeze({
  male:Object.freeze({
-  code:'male-face-base-v1',label:'男性・美青年ベース',
-  jawNarrow:.035,cheekFill:.023,chinLift:.006,
+  code:'male-shared-head-natural-eyes-v8',label:'男性・共通顔ベース／自然な目元・化粧なし',
+  jawNarrow:.037,cheekFill:.020,chinLift:.002,
   noseBridge:.008,browRelief:.004,mouthRecess:.006,
   eyeSocketSoftness:.002
  }),
  female:Object.freeze({
-  code:'female-face-adjustable-v7',label:'女性・大きな虹彩、尖った顎、鼻先・眉まつ毛可変＋カラー',
+  code:'female-saved-preset-contact-makeup-v8',label:'女性・写真の標準値／カラコン・目元連動・口紅位置調整',
   jawNarrow:.055,cheekFill:.027,chinLift:.002,
   sourceHead:'realistic-head-animation.glb',
   noseBridge:0,browRelief:.001,mouthRecess:0,
@@ -97,7 +97,10 @@ export const FACE_MASTER_SPEC=Object.freeze({
 
 export function makeIndependentFaceMaster(sourceRoot,gender,{femaleControls={}}={}){
  const spec=FACE_MASTER_SPEC[gender];
- const controls=normalizeFemaleFaceControls(femaleControls);
+ const controls=normalizeFemaleFaceControls(gender==='male'?{
+  irisDiameter:1,eyeSize:.9,jawSharpness:1.15,noseTipLift:0,
+  nostrilCover:1,noseBridgeSharpness:2.5,eyeAngle:0
+ }:femaleControls);
  if(!sourceRoot?.traverse||!spec)
   throw Error('Real CC0 head hierarchy and male/female gender required');
  const root=sourceRoot.clone(true);
@@ -163,32 +166,24 @@ export function makeIndependentFaceMaster(sourceRoot,gender,{femaleControls={}}=
   const ovalTransition=bell(yn,.365,.165)*smooth(.18,.56,Math.abs(xn))
     *front*neckLock*contourGuard;
   const cheekSupport=(.019*cheek+.011*lowerCheek)*contourGuard;
-  const local=gender==='female'?femaleInnerFeatureDelta({
+  const local=femaleInnerFeatureDelta({
    xn,yn,zn,offsetX:x-cx,depth:d.z,height:d.y,controls
-  }):{dx:0,dy:0,dz:0};
-  const surfaceFairing=gender==='female'?femaleCheekJawDelta({
+  });
+  const surfaceFairing=femaleCheekJawDelta({
    xn,yn,zn,offsetX:x-cx,depth:d.z,height:d.y
-  }):{dx:0,dy:0,dz:0,cheekSupport:0,jawBand:0,apex:0};
-  let nx=gender==='female'?
-   x+(x-cx)*(cheekSupport-spec.jawNarrow*ovalTransition)
-    +local.dx+surfaceFairing.dx*controls.jawSharpness:
-   x-(x-cx)*spec.jawNarrow*jaw
-      +(x-cx)*(.018*cheek-.012*lowerCheek)
-      -(x-cx)*.021*alar;
+  });
+  // Shared v8 facial topology and nose/mouth proportions. Masculine
+  // profile retains a broader lower jaw and slightly smaller, flatter eyes.
+  let nx=x+(x-cx)*(cheekSupport-spec.jawNarrow*ovalTransition)
+    +local.dx+surfaceFairing.dx*controls.jawSharpness;
   // Store the source X exactly at the preserved outer silhouette:
   // float math around zero support can otherwise drift by ~1e-9.
-  if(gender==='female'&&Math.abs(xn)>=.86)nx=x;
-  const ny=y+d.y*spec.chinLift*chin+(gender==='female'?surfaceFairing.dy*controls.jawSharpness+local.dy:surfaceFairing.dy);
-  const nz=gender==='female'?
-   z+d.z*(spec.cheekFill*(.74*cheek+.92*lowerCheek)
+  if(Math.abs(xn)>=.86)nx=x;
+  const ny=y+d.y*spec.chinLift*chin+surfaceFairing.dy*controls.jawSharpness+local.dy;
+  const nz=z+d.z*(spec.cheekFill*(.74*cheek+.92*lowerCheek)
     +.016*chinHollow
     +spec.eyeSocketSoftness*bell(Math.abs(xn),.43,.22)
-      *bell(yn,.69,.055)*front)+local.dz+surfaceFairing.dz:
-   z+d.z*(spec.cheekFill*(.76*cheek+.45*lowerCheek)
-    +spec.browRelief*brow+spec.noseBridge*nose
-    -spec.mouthRecess*mouth-.004*alar-.002*tip+.004*chinHollow
-    +spec.eyeSocketSoftness*bell(Math.abs(xn),.43,.22)
-      *bell(yn,.69,.055)*front);
+      *bell(yn,.69,.055)*front)+local.dz+surfaceFairing.dz;
   if(gender==='female'){
    if(Math.abs(xn)>=.86){
     outerContourSamples++;
@@ -250,6 +245,7 @@ export function makeIndependentFaceMaster(sourceRoot,gender,{femaleControls={}}=
   cheekProtectedSamples,maxCheekWidthChange:Number(maxCheekWidthChange.toFixed(7)),
   cheekJawSculpt:'smooth-head-source-feminine-jaw-v6',
   femaleControls:gender==='female'?Object.freeze({...controls}):null,
+  sharedFemaleBase:true,maleNoMakeup:gender==='male',
   innerFeatureHalfWidthLimit:.28,
   femaleJawStyle:gender==='female'?'full-cheek-smooth-oval-point-v6':null,
   sourceUntouched:true,sourceGeometryIndependent:face.geometry!==original,
