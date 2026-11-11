@@ -58,14 +58,14 @@ export function femaleCheekJawDelta({xn,yn,zn,offsetX,depth,height}){
   *(1-smooth(.60,.77,ax))*bell(ax,.275,.17)
   *bell(yn,.427,.075)
   *(1-smooth(.56,.625,yn))*front;
- const dz=depth*(.085*cheekSupport+.021*mouthCornerSupport);
+ const dz=depth*(.010*cheekSupport+.003*mouthCornerSupport);
  // Full support on the actual chin outline, not only at the centreline.
  // Taper smoothly to zero before reaching the cheeks (yn >= .485).
  const jawBand=bell(yn,.30,.105)*(1-smooth(.39,.45,yn))*front;
  const jawEdge=smooth(.10,.23,ax)*(1-smooth(.68,.82,ax));
- const dx=jawBand===0||jawEdge===0?0:-offsetX*.285*jawBand*jawEdge;
+ const dx=jawBand===0||jawEdge===0?0:-offsetX*.12*jawBand*jawEdge;
  const apex=bell(ax,0,.20)*bell(yn,.255,.068)*front;
- const dy=-height*.008*apex;
+ const dy=-height*.003*apex;
  return {dx,dy,dz,cheekSupport,mouthCornerSupport,jawBand,apex};
 }
 
@@ -77,8 +77,9 @@ export const FACE_MASTER_SPEC=Object.freeze({
   eyeSocketSoftness:.002
  }),
  female:Object.freeze({
-  code:'female-face-full-cheeks-tapered-chin-v6',label:'女性・頬のくぼみ補正＋細い卵型顎先',
-  jawNarrow:.012,cheekFill:.095,chinLift:.008,
+  code:'female-face-smooth-source-v6',label:'女性・滑らかな頬＋卵型の顎先（新頭部原型）',
+  jawNarrow:.055,cheekFill:.018,chinLift:.002,
+  sourceHead:'realistic-head-animation.glb',
   noseBridge:0,browRelief:.001,mouthRecess:0,
   eyeSocketSoftness:.004
  })
@@ -217,6 +218,7 @@ export function makeIndependentFaceMaster(sourceRoot,gender){
   geometry.index.count/3:p.count/3;
  const report=Object.freeze({
   code:spec.code,gender,sourceVertices:most,
+  headTemplate:spec.sourceHead||(gender==='male'?'realistic-head-animation.glb':'unknown'),
   triangles:triangleCount,modifiedVertices:changed,
   cheekVolumeMetric:Number((cheekDelta/p.count).toFixed(9)),
   chinSmoothMetric:Number((chinDelta/p.count).toFixed(9)),
@@ -225,7 +227,7 @@ export function makeIndependentFaceMaster(sourceRoot,gender){
   addedCheekDepth:Number(addedCheekDepth.toFixed(7)),
   narrowedJawDistance:Number(narrowedJawDistance.toFixed(7)),
   apexLowering:Number(apexLowering.toFixed(7)),
-  cheekJawSculpt:'midface-fullness-and-lower-jaw-taper-v6',
+  cheekJawSculpt:'smooth-head-source-feminine-jaw-v6',
   innerFeatureHalfWidthLimit:.55,
   femaleJawStyle:gender==='female'?'full-cheek-smooth-oval-point-v6':null,
   sourceUntouched:true,sourceGeometryIndependent:face.geometry!==original,
