@@ -2,7 +2,8 @@
  * Adapter from the 20x10 campaign to the existing 3D 50-person battle.
  * The battle remains authoritative for wins, unit casualties and monster clears.
  */
-import {BUFFS,squadCommanderId,reserveTroops} from './story-campaign.js';
+import {BUFFS,squadCommanderId,reserveTroops,gainExperience} from './story-campaign.js';
+import {coreVictoryReward,verifiedBattleLoot} from './battle-victory-rewards.js';
 import {allocateSortieSlots,STORY_JOB_TO_BATTLE,STORY_SPAWN_LANES} from './story-battle-bridge.js';
 import {CAMPAIGN_STAGE_BY_ID} from './campaign-stage-plan.js';
 import {storyStageContext} from './story-narrative-flow.js';
@@ -20,6 +21,7 @@ export function makeCoreBattleRequest(game,stageId,battleId=String(Date.now())){
  const ids=new Set(allotment.map(a=>String(squadCommanderId(a.squad))));
  const commanders=leaders.filter(c=>ids.has(String(c.id))).map(c=>({
   id:String(c.id),name:c.name,level:c.level,active:c.active!==false,
+  rarity:c.rarity||'R',specialty:c.specialty||'assault',
   gender:c.gender==='female'?'female':'male',faceId:c.faceId||0,
   orders:BUFFS.filter(b=>b.unlock<=c.level).map(b=>({...b}))
  }));
@@ -82,8 +84,15 @@ export function settleCoreBattle(game,request,result){
    if(!game.capturedAreas.includes(stage.id))game.capturedAreas.push(stage.id);
   }
   if(!confirmedMonsterClear)throw Error('討伐結果を確認できませんでした。');
+  const reward=coreVictoryReward(stage);
+  game.wallet=(Number(game.wallet)||0)+reward.gold;
+  gainExperience(game.campaign,reward.xp);
+  const treasure=verifiedBattleLoot(result.loot);
+  game.inventory??={};
+  for(const item of treasure)game.inventory[item.itemId]=(Number(game.inventory[item.itemId])||0)+item.quantity;
+  result.settledRewards={...reward,loot:treasure};
  }
  game.history.unshift(stage.name+'：'+(result.victory?'勝利':'敗北')+'。損害'+casualties+'人。');
  game.history=game.history.slice(0,50);
- return {victory:result.victory,casualties,stage,next};
+ return {victory:result.victory,casualties,stage,next,rewards:result.settledRewards||{gold:0,xp:0,loot:[]}};
 }
