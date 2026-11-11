@@ -725,13 +725,14 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false,gen
   // swapping the whole eye for a flat skin texture. It remains a preview.
   // The prior oversized eye overlay produced a cartoon staring expression.
    // Keep real sclera/iris meshes but match the iris diameter to the socket.
-   const irisRadius=THREE.MathUtils.clamp(Math.min(size.x,size.y)*.34,.0065,.0115);
+   const irisRadius=THREE.MathUtils.clamp(Math.min(size.x,size.y)*.31,.0063,.0108);
   const irisGroup=new THREE.Group();
   irisGroup.name='VisibleRealEyeIris_'+side;
   irisGroup.position.set(mid.x,mid.y,box.max.z+.0015);
-  const rimMat=new THREE.MeshPhysicalMaterial({color:0x243b42,roughness:.32,metalness:0,
+  const rimMat=new THREE.MeshPhysicalMaterial({color:0x364a52,roughness:.38,metalness:0,
    side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-2});
   const tintMat=new THREE.MeshPhysicalMaterial({color:0x517996,roughness:.3,metalness:0,
+   map:getHeroineIrisFiberTexture(),
    side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-3});
   const pupilMat=new THREE.MeshPhysicalMaterial({color:0x11141b,roughness:.12,metalness:0,
    side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-4});
@@ -741,12 +742,12 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false,gen
    mesh.name=name;mesh.position.set(x,y,depth);irisGroup.add(mesh);return mesh;
   };
   addEye('IRIS_LIMBAL_RING',irisRadius,0,rimMat);
-  addEye('IRIS_COLORED',irisRadius*.86,.0008,tintMat);
+  addEye('IRIS_COLORED',irisRadius*.953,.0008,tintMat);
   const pupilLayer=new THREE.Group();pupilLayer.name='INDEPENDENT_PUPIL_XYZ_'+side;
   irisGroup.add(pupilLayer);
-  const pupil=new THREE.Mesh(new THREE.CircleGeometry(irisRadius*.40,36),pupilMat);
+  const pupil=new THREE.Mesh(new THREE.CircleGeometry(irisRadius*.365,48),pupilMat);
   pupil.name='IRIS_TRUE_BLACK_PUPIL';pupil.position.z=.0018;pupilLayer.add(pupil);
-  const light=new THREE.Mesh(new THREE.CircleGeometry(irisRadius*.16,36),shineMat);
+  const light=new THREE.Mesh(new THREE.CircleGeometry(irisRadius*.105,36),shineMat);
   light.name='CORNEAL_CATCHLIGHT';
   light.position.set(-irisRadius*.23,irisRadius*.32,.0024);
   pupilLayer.add(light);
@@ -771,6 +772,13 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false,gen
    });
    ownedMaterials.push(upperMat);headSkinMaterials.push(upperMat);
    const upper=new THREE.Mesh(makeEyeRim(width*.99,height*.9,true),upperMat);
+   const foldMat=upperMat.clone();
+   foldMat.depthWrite=true;foldMat.polygonOffsetFactor=-4;
+   ownedMaterials.push(foldMat);headSkinMaterials.push(foldMat);
+   const upperFold=new THREE.Mesh(makeEyeSkinFold(width*.99,height*.9,true),foldMat);
+   upperFold.name='SOURCE_ALIGNED_MOVING_UPPER_LID_SKIN_'+side;
+   upperFold.visible=false;
+   upper.add(upperFold);
    upper.name='ANATOMICAL_UPPER_EYELID_'+side;
    upper.position.set(mid.x,mid.y+size.y*.16,box.max.z+.009);
    upper.position.sub(fit.headShift);
@@ -781,6 +789,13 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false,gen
    upper.add(lashes);upperEyelashes.push(lashes);
    const lowerMat=upperMat.clone();ownedMaterials.push(lowerMat);headSkinMaterials.push(lowerMat);
    const lower=new THREE.Mesh(makeEyeRim(width*.99,height*.9,false),lowerMat);
+   const underMat=lowerMat.clone();
+   underMat.depthWrite=true;underMat.polygonOffsetFactor=-4;
+   ownedMaterials.push(underMat);headSkinMaterials.push(underMat);
+   const lowerFold=new THREE.Mesh(makeEyeSkinFold(width*.99,height*.9,false),underMat);
+   lowerFold.name='SOURCE_ALIGNED_LOWER_EYE_TEAR_TROUGH_'+side;
+   lowerFold.visible=false;
+   lower.add(lowerFold);
    lower.name='ANATOMICAL_LOWER_EYELID_'+side;
    lower.position.set(mid.x,mid.y-size.y*.15,box.max.z+.009);
    lower.position.sub(fit.headShift);detailedHead.add(lower);
@@ -797,7 +812,7 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false,gen
    brow.castShadow=true;detailedHead.add(brow);
    browMaterials.push(browMat);
    eyeFixtures.push({side:side==='L'?-1:1,sideLabel:side,
-    sclera,irisGroup,pupilLayer,upper,lower,lashes,lid:null,brow,
+    sclera,irisGroup,pupilLayer,upper,lower,upperFold,lowerFold,lashes,lid:null,brow,
     socketReference,socketDelta:new THREE.Vector3()});
     // Upper lids must leave the pupil and lower eye visibly open at rest.
     // This numerical aperture check catches the 'already blinking' regression.
