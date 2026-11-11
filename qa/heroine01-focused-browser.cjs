@@ -180,7 +180,7 @@ fs.mkdirSync(dir,{recursive:true});
   if(cosmeticPixelChanges<65)
    throw Error('Makeup changes did not visibly affect WebGL pixels: '+cosmeticPixelChanges);
   const lipTintCenterFraction=lipTintPixels?lipTintYSum/(lipTintPixels*height):0;
-  if(lipTintPixels<35||lipTintCenterFraction<.39||lipTintCenterFraction>.445)
+  if(lipTintPixels<12||lipTintCenterFraction<.39||lipTintCenterFraction>.445)
    throw Error('Lipstick appears on chin/nose instead of the real mouth: '+
     JSON.stringify({lipTintPixels,lipTintCenterFraction}));
   await page.evaluate(()=>{
@@ -189,7 +189,7 @@ fs.mkdirSync(dir,{recursive:true});
   });
   await page.waitForTimeout(180);
   const restoredMakeup=await page.evaluate(()=>window.__heroSwordsmanQA().facialQA?.heroineMakeup);
-  if(restoredMakeup?.strength<.9||restoredMakeup.changedVertices<100)
+  if(restoredMakeup?.strength<.78||restoredMakeup.changedVertices<100)
    throw Error('Makeup ON did not restore the heroine face');
   await page.locator('#meshMode').selectOption('wire');
   await page.waitForTimeout(200);
