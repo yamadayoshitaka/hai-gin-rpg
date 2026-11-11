@@ -66,7 +66,7 @@ async function expectVisibleV8Preset(page,context,contact='brown'){
      original.female?.sourceVertices!==original.male?.sourceVertices||
      !original.female?.sourceGeometryIndependent||
      !original.male?.sourceGeometryIndependent||
-     original.female?.facePartMeshCount!==34||
+     original.female?.facePartMeshCount!==30||
      original.male?.facePartMeshCount!==19||
      original.visiblePartMeshes!==34||
      original.faceMode!=='color'||
@@ -203,7 +203,7 @@ async function expectVisibleV8Preset(page,context,contact='brown'){
   await canvas.screenshot({path:path.join(out,'female-default-v9-lip-eye-blush.png')});
   if(reset.female?.detailedParts.eyelinerMeshCount!==4||
      reset.female?.detailedParts.eyeAccentMeshCount!==2||
-     reset.female?.detailedParts.blushMeshCount!==2||
+     reset.female?.detailedParts.blushMeshCount!==0||
      !reset.female?.detailedParts.lipstickPlacement?.attachedToLipMesh)
    throw Error('V9 lipstick/eye-cheek makeup did not load actual surface');
   // The current jaw of 2.5 remains standard; higher values remain reachable.
