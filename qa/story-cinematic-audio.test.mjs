@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import './town-radar-gender-art.test.mjs';
 import './story-flow-maintenance.test.mjs';
 import {readFileSync} from 'node:fs';
 import {SourceTextModule} from 'node:vm';
