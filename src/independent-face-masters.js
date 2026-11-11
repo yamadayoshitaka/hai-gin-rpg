@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {createAnatomicalFaceParts} from './face-feature-meshes.js';
-import {normalizeFemaleFaceControls,FEMALE_V7_DEFAULTS} from './face-v7-controls.js';
+import {normalizeFemaleFaceControls,normalizeMaleFaceControls,FEMALE_V7_DEFAULTS} from './face-v7-controls.js';
 
 /**
  * Two independent head-only clay mesh prototypes from the CC0 male and female
@@ -95,12 +95,10 @@ export const FACE_MASTER_SPEC=Object.freeze({
  })
 });
 
-export function makeIndependentFaceMaster(sourceRoot,gender,{femaleControls={}}={}){
+export function makeIndependentFaceMaster(sourceRoot,gender,{femaleControls={},maleControls={}}={}){
  const spec=FACE_MASTER_SPEC[gender];
- const controls=normalizeFemaleFaceControls(gender==='male'?{
-  irisDiameter:1,eyeSize:.9,jawSharpness:1.15,noseTipLift:0,
-  nostrilCover:1,noseBridgeSharpness:2.5,eyeAngle:0
- }:femaleControls);
+ const controls=gender==='male'?normalizeMaleFaceControls(maleControls):
+  normalizeFemaleFaceControls(femaleControls);
  if(!sourceRoot?.traverse||!spec)
   throw Error('Real CC0 head hierarchy and male/female gender required');
  const root=sourceRoot.clone(true);
@@ -245,6 +243,7 @@ export function makeIndependentFaceMaster(sourceRoot,gender,{femaleControls={}}=
   cheekProtectedSamples,maxCheekWidthChange:Number(maxCheekWidthChange.toFixed(7)),
   cheekJawSculpt:'smooth-head-source-feminine-jaw-v6',
   femaleControls:gender==='female'?Object.freeze({...controls}):null,
+  maleControls:gender==='male'?Object.freeze({...controls}):null,
   sharedFemaleBase:true,maleNoMakeup:gender==='male',
   innerFeatureHalfWidthLimit:.28,
   femaleJawStyle:gender==='female'?'full-cheek-smooth-oval-point-v6':null,
