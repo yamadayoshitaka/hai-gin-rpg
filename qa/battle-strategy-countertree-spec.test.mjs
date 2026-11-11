@@ -106,9 +106,9 @@ for(const kind of ['defend','capture','siege','eliminate']){
 
 const doc=readFileSync(new URL('../docs/battle-strategy-response-hierarchy-spec.md',import.meta.url),'utf8');
 for(const token of ['L0','L1','L2','L3','L4','L5',
- '67','12','20','60','90','120','150','180','勝敗','ルート','召喚獣',
+ '67','12','19','60','90','120','150','180','勝敗','ルート','召喚獣',
  '敵の対策','味方の再対策','実装済み','未実装','同時']){
  assert.ok(doc.includes(token),'Required specification topic missing: '+token);
 }
-console.log('PASS 12 tactics, 67 situations, 20 reactions and '+responses+
+console.log('PASS 12 tactics, 67 situations, 19 reactions and '+responses+
  ' L2 / '+enemyReplies+' L3 / '+counterCounters+' L4 branches, route ownership and realtime outcome invariants');
