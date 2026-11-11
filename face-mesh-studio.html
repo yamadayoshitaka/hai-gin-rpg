@@ -245,12 +245,31 @@ const rebuildKeys=['irisDiameter','eyeSize','jawSharpness','noseTipLift',
  'nostrilCover','noseBridgeSharpness',
  'lipstickX','lipstickY','lipstickWidth','lipstickHeight'];
 const angleKeys=['eyeAngle'];
-for(const key of [...rebuildKeys,...angleKeys]){
+const multiplierKeys=['irisDiameter','eyeSize','jawSharpness','lipstickWidth','lipstickHeight'];
+function setFaceControlDisplay(key,value){
  const el=$(key),out=$(key+'Value');
+ // Mobile browsers can restore old range values independently of the JS
+ // model on navigation/reload. The actual model state is authoritative.
+ el.value=String(value);
+ out.value=String(value)+(key==='eyeAngle'?'°':
+  multiplierKeys.includes(key)?'×':'');
+}
+function syncFaceControlDisplays(){
+ for(const key of [...rebuildKeys,...angleKeys])
+  setFaceControlDisplay(key,modelChanges[key]);
+ const preset=Object.keys(CONTACT_COLORS).find(
+  key=>CONTACT_COLORS[key]===contactColor)||'custom';
+ $('contactPreset').value=preset;
+ $('contactColor').value=contactColor;
+}
+// Reconcile values even when the browser restores a prior form snapshot.
+// This must NOT reset user edits: modelChanges/contactColor remain canonical.
+window.addEventListener('pageshow',syncFaceControlDisplays);
+for(const key of [...rebuildKeys,...angleKeys]){
+ const el=$(key);
  el.addEventListener('input',()=>{
   modelChanges[key]=Number(el.value);
-  out.value=el.value+(key==='eyeAngle'?'°':
-   ['irisDiameter','eyeSize','jawSharpness','lipstickWidth','lipstickHeight'].includes(key)?'×':'');
+  setFaceControlDisplay(key,modelChanges[key]);
   if(angleKeys.includes(key)&&models.get('female')){
    updateFaceFeatureAngles(models.get('female').parts,modelChanges);
    $('metrics').textContent=JSON.stringify(metrics(),null,2);
@@ -273,15 +292,8 @@ $('contactColor').addEventListener('input',()=>{
 });
 $('resetPreset').addEventListener('click',()=>{
  modelChanges={...FEMALE_V7_DEFAULTS};
- for(const key of [...rebuildKeys,...angleKeys]){
-  const el=$(key),value=modelChanges[key];
-  el.value=String(value);
-  $(key+'Value').value=String(value)+(key==='eyeAngle'?'°':
-   ['irisDiameter','eyeSize','jawSharpness','lipstickWidth','lipstickHeight'].includes(key)?'×':'');
- }
  contactColor=CONTACT_COLORS.brown;
- $('contactColor').value=contactColor;
- $('contactPreset').value='brown';
+ syncFaceControlDisplays();
  faceMode='color';
  rebuildFemale();repaint();
 });
@@ -307,6 +319,9 @@ $('export').addEventListener('click',async()=>{
  finally{$('export').disabled=false;}
 });
 async function init(){
+ // Set the slider thumbs, labels and contact menu before the remote GLB
+ // finishes loading. HTML defaults alone do not override browser restores.
+ syncFaceControlDisplays();
  try{
   // Pages excludes archived master GLBs: read the same original CC0 assets
   // from the repository on GitHub Pages, locally in development / Actions.
