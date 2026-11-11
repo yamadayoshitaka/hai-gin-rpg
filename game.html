@@ -17,20 +17,35 @@
 @keyframes introImageGlide{to{transform:scale(1.09) translateX(-1.5%)}}#intro #skip{position:absolute;bottom:clamp(35px,7vh,70px);right:clamp(16px,5vw,70px)}@keyframes pulse{to{transform:scale(1.08);opacity:.65}}
 .title-menu{width:min(470px,96%);display:grid;gap:9px;margin:23px auto 0}.title-menu button{border:1px solid #b69a69a9;background:linear-gradient(105deg,#1c2c45ef,#112032ed);border-radius:8px;padding:12px 18px;text-align:center;font-weight:700;color:#fff1d1;letter-spacing:.12em;font-size:clamp(15px,2.5vw,19px);box-shadow:0 5px 17px #0007;min-height:50px}.title-menu button:hover{background:#33516d}.title-menu button:disabled{opacity:.46;cursor:not-allowed}.version{position:fixed;bottom:13px;color:#c2c9d0a0;font-size:10px;left:50%;transform:translateX(-50%);white-space:nowrap}
 .modal{position:fixed;inset:0;z-index:10;background:#040914e8;display:grid;place-items:center;padding:15px}.modal[hidden]{display:none}.panel{width:min(480px,100%);max-height:calc(100dvh - 28px);overflow:hidden;border:1px solid #bfa36e;border-radius:12px;background:linear-gradient(145deg,#20344c,#0b1425);padding:clamp(14px,3vw,22px);box-shadow:0 15px 70px #000}.panel h2{color:#ffe4ab;font-size:23px;margin:0 0 12px}.panel p{line-height:1.7;font-size:13px;color:#c4d2da}.panel input,.panel select{padding:12px;width:100%;color:white;background:#0c1b2c;border:1px solid #7a9bb0;border-radius:6px;margin-bottom:12px}.choice{display:grid;grid-template-columns:1fr 1fr;gap:9px}.panel button{padding:12px;background:#2b4e69;border:1px solid #9bb6c4;color:white;border-radius:7px;min-height:46px}.panel button.primary{background:#85663b;border-color:#e4c78e;color:#fff2cc}.setting{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:13px 0}.setting select{max-width:180px;margin:0}.setting button{min-width:100px}#optVoice{border-color:#627180;background:#243649;color:#ced4da;font-size:13px}#message{font-size:13px;color:#ffe4a6;min-height:18px}
+
+#tutorialModal .panel{width:min(540px,100%);max-height:calc(100dvh - 22px);overflow:auto}
+.guide-top{display:flex;justify-content:space-between;align-items:center;gap:10px;color:#c6ced9;font-size:12px;letter-spacing:.08em}
+.guide-art{margin:14px 0 10px;min-height:155px;border-radius:7px;border:1px solid #bd9f68;background:linear-gradient(180deg,#101b2b44,#080f1ce5),url('./assets/story-world-map-v0.5.webp') center/cover;display:grid;place-items:center;position:relative;overflow:hidden}
+.guide-art:after{content:'';position:absolute;inset:0;box-shadow:inset 0 0 45px #02060c}
+.guide-icon{position:relative;z-index:1;display:grid;place-items:center;width:86px;height:86px;border:2px solid #d5bd86;border-radius:50%;font:54px Georgia,serif;color:#ffe6b4;background:#142333ac;text-shadow:0 3px 13px #05060b}
+#tutorialModal h2{font-size:clamp(20px,5.3vw,26px);margin:0 0 8px}
+#guideBody{white-space:pre-line;font-size:clamp(14px,3.5vw,17px);line-height:1.85;color:#ecede6;min-height:92px}
+#guideTip{color:#c9d5df;border-left:3px solid #c9af7d;padding:7px 10px;background:#142838}
+.guide-dots{display:flex;justify-content:center;gap:8px;margin:10px 0}
+.guide-dots span{width:7px;height:7px;border-radius:100%;background:#556474}.guide-dots span.active{background:#eac987}
+#introNext{position:relative;z-index:2;border:1px solid #d3ba7d;background:#233d55;color:#ffe7b8;border-radius:7px;padding:12px 18px}
+#intro #skip{z-index:3}
 @media(max-height:630px){.crest{font-size:26px}h1{font-size:28px;margin:4px}.ornament{margin:7px auto}.title-menu{margin:10px auto}.title-menu button{padding:6px;min-height:40px}#intro p{font-size:15px;min-height:4.8em}}
 </style></head><body>
 <div id="sky" aria-hidden="true"></div><div id="stars" aria-hidden="true"></div>
-<section id="intro" aria-label="オープニング"><div id="introArt" aria-hidden="true"></div><div class="intro-crest" aria-hidden="true">✧</div><div id="introSpeaker">序章・灰の勅命</div><p id="introLine">千年のあいだ、星鐘は鳴らなかった。</p><div id="introProgress">序幕 · 1 / 6</div><button id="skip" type="button">スキップ ▶</button></section>
+<section id="intro" aria-label="オープニング" hidden><div id="introArt" aria-hidden="true"></div><div class="intro-crest" aria-hidden="true">✧</div><div id="introSpeaker">序章・灰の勅命</div><p id="introLine">千年のあいだ、星鐘は鳴らなかった。</p><div id="introProgress">序幕 · 1 / 6</div><button id="introNext" type="button">次の場面へ ▶</button><button id="skip" type="button">スキップ ▶</button></section>
 <main class="shell"><div class="crest" aria-hidden="true">✦　✧　✦</div><div class="subtitle">CHRONICLES OF THE SILENT STARBELL</div><h1>灰銀戦記<br>― 沈黙の星鐘 ―</h1><div class="ornament"></div><div class="subtitle">千年の記憶が鳴らす、最後の戦争。</div>
 <nav class="title-menu" aria-label="ゲームメニュー">
-<button id="newGame">ニューゲーム</button><button id="continueGame">続きから</button><button id="versus">対戦</button><button id="settings">設定</button></nav>
+<button id="newGame">ニューゲーム</button><button id="replayTutorial">はじめての方・操作ガイド</button><button id="viewPrologue">序章を見る</button><button id="continueGame">続きから</button><button id="versus">対戦</button><button id="settings">設定</button></nav>
 <div class="version">GAME CORE v0.1 · 20章 × 10ステージ = 200</div></main>
+<div id="tutorialModal" class="modal" hidden><section class="panel" aria-label="はじめての方へのチュートリアル"><div class="guide-top"><span id="guideEyebrow">最初の一歩</span><span id="guideCount">1 / 5</span></div><div class="guide-art"><div class="guide-icon" id="guideIcon">✦</div></div><h2 id="guideTitle">この世界について</h2><p id="guideBody"></p><p id="guideTip"></p><div id="guideDots" class="guide-dots" aria-hidden="true"></div><div class="choice"><button id="guideBack" type="button">◀ 前へ</button><button id="guideNext" type="button" class="primary">次へ ▶</button></div><button id="guideSkip" type="button" style="margin-top:9px;width:100%;min-height:35px;background:transparent;border:0;color:#adbcc8;font-size:12px">ガイドを省略する</button></section></div>
 <div id="newModal" class="modal" hidden><section class="panel"><h2>新しい物語</h2><p>あなたは灰銀軍の軍師。名前を決めると、レヴナの町で第一章のオープニングイベントが始まります。</p><form id="newForm"><label for="playerName">軍師の名前</label><input id="playerName" maxlength="24" required autocomplete="off" placeholder="軍師名を入力"><label for="playerGender">主人公の性別</label><select id="playerGender"><option value="male">男性</option><option value="female">女性</option></select><div class="choice"><button type="button" data-close>戻る</button><button type="submit" class="primary">物語を始める ▶</button></div><p id="newMessage"></p></form></section></div>
 <div id="settingsModal" class="modal" hidden><section class="panel"><h2>ゲーム設定</h2><p>基本設定は端末に保存します。町や戦闘の音声・画質には、各画面固有の設定もあります。</p><div class="setting"><span>BGM</span><button id="optBgm" type="button"></button></div><div class="setting"><span>音声</span><button id="optVoice" type="button" aria-label="音声のオン・オフ"></button></div><div class="setting"><label for="optQuality">画質</label><select id="optQuality"><option value="auto">自動</option><option value="high">高</option><option value="low">軽量</option></select></div><div class="choice"><button type="button" data-close>戻る</button><button type="button" class="primary" id="saveSettings">保存</button></div><p><a href="./dev-menu.html" style="color:#badbeb">開発・テスト用メニュー</a></p></section></div>
 <div id="versusModal" class="modal" hidden><section class="panel"><h2>対戦</h2><p>対人ネットワーク対戦は準備中です。現在は既存のリアルタイム軍団戦を使ったCPU戦闘テストを起動できます。</p><div class="choice"><button type="button" data-close>戻る</button><button type="button" class="primary" id="vsCpu">CPU模擬戦 ▶</button></div></section></div>
 <script type="module">
 import {createNewGame,getSavedGame,startNewSession} from './src/game-core-flow.js';
 import {mangaForStage} from './src/story-stage-manga.js';
+import {FIRST_PLAY_GUIDE} from './src/first-play-guide.js';
 import {stageMangaImage} from './src/story-manga-art.js';
 import {fantasyCueForMangaPanel} from './src/fantasy-scene-score.js';
 import {createGamePageAudio} from './src/game-page-audio.js';
@@ -40,7 +55,7 @@ let options={bgm:true,voice:true,quality:'auto'};
 try{const value=JSON.parse(localStorage.getItem(settingsKey)||'null');if(value)options={...options,...value};}catch{}
 const pageAudio=createGamePageAudio({storage:localStorage,initialScene:'opening'});
 const introStory=mangaForStage('c01-s01'),introFrames=introStory.panels.slice(0,6);
-let index=0,interval=null,introClosed=false;
+let index=0,introClosed=true;let guideIndex=0,guideIntoNewGame=true;
 function showIntroFrame(){
  const shot=introFrames[index];
  $('introLine').textContent=shot.text;
@@ -49,7 +64,7 @@ function showIntroFrame(){
  pageAudio.changeScene('opening',fantasyCueForMangaPanel({id:introStory.id,number:introStory.number,kind:'town'},index).url);
  $('introProgress').textContent='序幕 · '+(index+1)+' / '+introFrames.length;
 }
-function closeIntro(){if(introClosed)return;introClosed=true;clearInterval(interval);try{speechSynthesis.cancel();}catch{}pageAudio.changeScene('title');$('intro').style.opacity='0';$('intro').style.pointerEvents='none';setTimeout(()=>$('intro').hidden=true,1000);}
+function closeIntro(){if(introClosed)return;introClosed=true;try{speechSynthesis.cancel();}catch{}pageAudio.changeScene('title');$('intro').style.opacity='0';$('intro').style.pointerEvents='none';setTimeout(()=>$('intro').hidden=true,1000);}
 function speakIntro(){
  if(options.voice===false||!('speechSynthesis' in window)||introClosed)return;
  const line=introFrames[index];
@@ -61,8 +76,9 @@ function speakIntro(){
  }catch{}
 }
 function nextLine(){index++;if(index>=introFrames.length){closeIntro();return;}showIntroFrame();if(pageAudio.started)speakIntro();}
-showIntroFrame();
-interval=setInterval(nextLine,4200);$('skip').onclick=()=>{pageAudio.unlock();pageAudio.effect('confirm');closeIntro();};
+function openIntro(){closeModals();introClosed=false;index=0;$('intro').hidden=false;$('intro').style.opacity='1';$('intro').style.pointerEvents='auto';showIntroFrame();pageAudio.unlock();speakIntro();}
+$('introNext').onclick=nextLine;
+$('skip').onclick=()=>{pageAudio.unlock();pageAudio.effect('confirm');closeIntro();};
 document.addEventListener('pointerdown',()=>{pageAudio.unlock();speakIntro();},{once:true,passive:true});
 document.addEventListener('click',event=>{
  if(event.target.closest('button,a')){pageAudio.unlock();pageAudio.effect('select');}
@@ -70,7 +86,31 @@ document.addEventListener('click',event=>{
 function openModal(id){closeIntro();$(id).hidden=false;}
 function closeModals(){for(const modal of document.querySelectorAll('.modal'))modal.hidden=true;}
 document.querySelectorAll('[data-close]').forEach(b=>b.onclick=closeModals);
-$('newGame').onclick=()=>openModal('newModal');
+
+function renderGuide(){
+ const step=FIRST_PLAY_GUIDE[guideIndex];
+ $('guideEyebrow').textContent=step.eyebrow;$('guideCount').textContent=(guideIndex+1)+' / '+FIRST_PLAY_GUIDE.length;
+ $('guideTitle').textContent=step.title;$('guideIcon').textContent=step.icon;
+ $('guideBody').textContent=step.body;$('guideTip').textContent=step.tip;
+ $('guideBack').disabled=guideIndex===0;
+ $('guideNext').textContent=guideIndex===FIRST_PLAY_GUIDE.length-1?(guideIntoNewGame?'物語を始める ▶':'タイトルへ戻る ▶'):'次へ ▶';
+ $('guideDots').innerHTML=FIRST_PLAY_GUIDE.map((_,i)=>'<span class="'+(i===guideIndex?'active':'')+'"></span>').join('');
+}
+function showTutorial(intoNewGame=true){
+ closeIntro();closeModals();guideIndex=0;guideIntoNewGame=intoNewGame;
+ $('tutorialModal').hidden=false;renderGuide();
+}
+function finishTutorial(){
+ $('tutorialModal').hidden=true;
+ try{localStorage.setItem('hai-gin-tutorial-v2-seen','true');}catch{}
+ if(guideIntoNewGame)openModal('newModal');
+}
+$('guideNext').onclick=()=>{if(guideIndex<FIRST_PLAY_GUIDE.length-1){guideIndex++;renderGuide();}else finishTutorial();};
+$('guideBack').onclick=()=>{if(guideIndex>0){guideIndex--;renderGuide();}};
+$('guideSkip').onclick=finishTutorial;
+$('newGame').onclick=()=>showTutorial(true);
+$('replayTutorial').onclick=()=>showTutorial(false);
+$('viewPrologue').onclick=openIntro;
 const saved=getSavedGame(localStorage);
 $('continueGame').disabled=!saved;
 $('continueGame').textContent=saved?'続きから　—　'+saved.playerName:'続きから（セーブなし）';
