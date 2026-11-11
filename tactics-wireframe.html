@@ -6680,8 +6680,8 @@ function chooseCircleActionTarget(id,team){
  let ok=false;
  if(action.kind==='item')ok=useSquadBattleItem(action.itemId,id,action.source);
  else if(action.kind==='support'){
-  ok=requestSquadRecovery(id);
-  if(ok)markRibbonOrderIssued(action.source);
+  // One healing order, attributed to the issuing commander, not the target.
+  ok=requestSquadRecovery(id,{issuerSquadId:action.source});
  }
  else{
   const center=squadCenter(id,1);
@@ -6729,10 +6729,11 @@ function closeSquadTactics(){
 }
 $('battleCancelCircleTarget').onclick=()=>{if(pendingCircleTarget)closeSquadTactics();};
 function finishSquadDestination(accepted){closeSquadTactics();if(!accepted)log('目的地・命令の指定を取り消しました');}
-function requestSquadRecovery(targetId){
- const id=String(targetId),unavailable=squadCommanderUnavailableReason(id);
+function requestSquadRecovery(targetId,{issuerSquadId=null}={}){
+ const id=String(targetId),source=String(issuerSquadId??targetId);
+ const unavailable=squadCommanderUnavailableReason(source);
  if(unavailable){log(unavailable);return false}
- if(!canChangeSquadOrder(id))return false;
+ if(!canChangeSquadOrder(source))return false;
  const units=massSim?.units||actors;
  const wounded=units.filter(u=>u.team===0&&u.alive!==false&&u.hp>0&&u.hp<u.maxHp&&String(u.squadId)===id);
  if(!wounded.length){log('回復要請：'+squadName(id)+'は負傷者がいません');return false}
@@ -6762,7 +6763,7 @@ function requestSquadRecovery(targetId){
  }
  if(!request){log('回復要請：支援可能な僧侶がいません');return false}
  squadRecoveryRequests.set(id,{supportId:request.supportId,createdAt:elapsed});
- markRibbonOrderIssued(id);
+ markRibbonOrderIssued(source);
  squadOrderRegistry.set(request.supportId,{mode:'heal',...request});
  battleCeremony.showOrder(squadName(id)+'へ回復支援！');
  beginCommanderCinematic(id);
