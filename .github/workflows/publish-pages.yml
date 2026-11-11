@@ -31,6 +31,10 @@ jobs:
         run: node --experimental-vm-modules qa/pages-publication-integrity.cjs
       - name: Verify 20 chapters, story progression and recorded AI voice contract
         run: node qa/story-chronicle.test.mjs
+      - name: Verify all 1400 active story VOICEVOX clips before publishing
+        env:
+          REQUIRE_ALL_STORY_VOICES: '1'
+        run: node qa/story-panel-voice-assets.test.mjs
       - name: Verify new game core, town save, shops and 200-stage transitions
         run: node --experimental-vm-modules qa/game-core-contract.test.mjs
       - name: Verify continents, gacha, NPC models and fences/flowers
