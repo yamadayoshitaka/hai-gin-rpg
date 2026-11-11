@@ -80,7 +80,7 @@ async function expectVisibleLibraryPreset(page,context,contact='brown'){
   // Mobile category tabs must expose the requested controls without
   // forcing the user to scroll past a dozen unrelated sliders.
   const faceTabs=page.locator('#faceGroupTabs button');
-  if(await faceTabs.count()!==5)throw Error('Female category tabs missing');
+  if(await faceTabs.count()!==6)throw Error('Female face + wig category tabs missing');
   await faceTabs.filter({hasText:'カラコン'}).click();
   if(!await page.locator('#contactPreset').isVisible())
    throw Error('Color picker hidden after selecting contact category');
