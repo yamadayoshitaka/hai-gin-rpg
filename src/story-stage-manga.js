@@ -71,7 +71,7 @@ export function mangaForStage(idOrStage='c01-s01',context={}){
    panel(stage,6,{type:'closing',character:lucia,second:garan,text:'町を歩いて準備ができたら、次の舞台「'+(next?.name||'王城')+'」へ。あなたの力を貸してください。',expression:'determined'})
   ];
   return Object.freeze({
-   id:stage.id,chapter:stage.chapter,slot:stage.slot,stageName:stage.name,
+   id:stage.id,chapter:stage.chapter,slot:stage.slot,stageName:stage.name,stageKind:stage.kind,
    chapterTitle:chapter.title,act:chapter.act,location:chapter.location,
    number:stage.number,previousStageId:null,nextStageId:next?.id||null,
    cast:Object.freeze([lucia,garan,iris]),panels:Object.freeze(applyPlayerGender([
@@ -93,7 +93,7 @@ export function mangaForStage(idOrStage='c01-s01',context={}){
    text:'作戦目標：'+stage.winCondition+'。'+last,expression:'hopeful'})
  ];
  return Object.freeze({
-  id:stage.id,chapter:stage.chapter,slot:stage.slot,stageName:stage.name,
+  id:stage.id,chapter:stage.chapter,slot:stage.slot,stageName:stage.name,stageKind:stage.kind,
   chapterTitle:chapter.title,act:chapter.act,location:chapter.location,
   number:stage.number,previousStageId:prev?.id||null,nextStageId:next?.id||null,
   cast:Object.freeze([...new Set(p.flatMap(x=>[x.characterId,x.secondaryId]).filter(Boolean))].map(x=>byId[x])),
