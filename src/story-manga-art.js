@@ -103,7 +103,7 @@ function portraitSvg(character,x,scale,expression='determined',mirror=false){
   '<path d="'+mouth+'" fill="none" stroke="#844e50" stroke-width="5" stroke-linecap="round"/>'+
   '<path d="'+brow+'" stroke="#3c3236" stroke-width="8" fill="none" stroke-linecap="round"/>';
  const hair=hairSides+'<path d="M-95 -119Q-56 -202 20 -184Q97 -183 95 -110L84 -71 52 -107 -18 -123 -73 -66Z" fill="'+p.hair+'" stroke="#131822" stroke-width="8"/>'+
- '<path d="'+bangs.slice(8)+' fill="'+p.hair+'" stroke="#131822" stroke-width="7"/>'; // normalized M path
+ bangs+' fill="'+p.hair+'" stroke="#131822" stroke-width="7"/>';
  const insignia='<path d="M-17 198l17 -34 17 34 -17 20Z" fill="'+(palette[p.faction]||palette['灰銀'])[1]+'" stroke="#22263a" stroke-width="4"/>';
  const marks=p.index===1||p.index===10?
  '<path d="M43 -13l23 33" stroke="#9a5c56" stroke-width="4"/>':
