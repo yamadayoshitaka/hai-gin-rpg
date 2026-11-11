@@ -20,6 +20,9 @@ fs.mkdirSync(out,{recursive:true});
      original.visibleFaceMeshes!==1||original.sourceUntouched!==true||
      original.female?.sourceVertices<1100||original.male?.sourceVertices<1100||
      original.female?.headOnly!==true||original.male?.headOnly!==true||
+     original.female?.code!=='female-face-smooth-source-v6'||
+     original.female?.headTemplate!=='realistic-head-animation.glb'||
+     original.female?.sourceVertices!==original.male?.sourceVertices||
      !original.female?.sourceGeometryIndependent||
      !original.male?.sourceGeometryIndependent||
      original.female?.facePartMeshCount!==16||

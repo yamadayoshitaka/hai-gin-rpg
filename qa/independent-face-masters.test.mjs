@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync,existsSync} from 'node:fs';
 import * as THREE from 'three';
-import {makeIndependentFaceMaster,FACE_MASTER_SPEC,femaleInnerFeatureDelta}
+import {makeIndependentFaceMaster,FACE_MASTER_SPEC,femaleInnerFeatureDelta,femaleCheekJawDelta}
  from '../src/independent-face-masters.js';
 
 function fixture(){
@@ -20,7 +20,7 @@ test('two source-derived clay face meshes have owned independent vertices and pr
  const before=original.getAttribute('position').array.slice();
  const female=makeIndependentFaceMaster(source,'female');
  const male=makeIndependentFaceMaster(source,'male');
- assert.equal(female.report.code,'female-face-half-mouth-sharp-chin-v5');
+ assert.equal(female.report.code,'female-face-smooth-source-v6');
  assert.equal(male.report.code,'male-face-base-v1');
  assert.ok(female.report.sourceVertices>1100);
  assert.ok(male.report.sourceVertices>1100);
@@ -77,8 +77,17 @@ test('two source-derived clay face meshes have owned independent vertices and pr
   'Mouth and nose adjustments must not pull the outer face silhouette');
  assert.ok(female.report.outerContourSamples>100);
  assert.ok(female.report.localizedNoseAndMouthSamples>20);
- assert.equal(female.report.innerFeatureHalfWidthLimit,.55);
- assert.equal(female.report.femaleJawStyle,'unpinched-oval-cheek-to-chin-v4');
+ assert.equal(female.report.innerFeatureHalfWidthLimit,.28);
+ assert.equal(female.report.femaleJawStyle,'full-cheek-smooth-oval-point-v6');
+ assert.equal(female.report.headTemplate,'realistic-head-animation.glb');
+ assert.equal(female.report.cheekJawSculpt,'smooth-head-source-feminine-jaw-v6');
+ assert.ok(female.report.cheekSculptSamples>0);
+ assert.ok(female.report.jawSculptSamples>0);
+ assert.ok(female.report.addedCheekDepth>0);
+ assert.ok(female.report.narrowedJawDistance>0);
+ assert.ok(female.report.apexLowering>0);
+ assert.ok(female.report.maxCheekWidthChange<.005,
+  'Nose/mouth edits may not pull the real upper/lower cheeks inward');
 });
 test('strictly exclude body, wig and makeup from face-only model assembly',()=>{
  const f=fixture();const built=makeIndependentFaceMaster(f.source,'female');
@@ -98,7 +107,7 @@ test('face studio includes stable gender, view and export controls with no body 
   'faceCanvas','export','status','metrics'])
   assert.match(html,new RegExp('id="'+id+'"'));
  assert.match(html,/makeIndependentFaceMaster/);
- assert.match(html,/realistic-head-sculpt.glb/);
+ assert.doesNotMatch(html,/loadAsync\(base\+'realistic-head-sculpt\.glb'\)/,'Old gaunt sculpt must not be loaded as the female face');
  assert.match(html,/realistic-head-animation.glb/);
  assert.doesNotMatch(html,/realistic-body-female.glb/);
  assert.doesNotMatch(html,/realistic-body-male.glb/);
@@ -114,6 +123,11 @@ test('nose and mouth deformation has compact support and never changes cheek/jaw
  const nose=d(.19);
  assert.ok(nose.dx<-.001,'Nasal alar wings must move inwards');
  assert.ok(nose.dz>.001,'Nasal bridge and tip retain positive depth');
+ const preservedCheek=femaleInnerFeatureDelta({
+  xn:.38,yn:.575,zn:.93,offsetX:.05,depth:.3
+ });
+ assert.equal(preservedCheek.dx,0);
+ assert.equal(preservedCheek.dz,0);
  const mouth=femaleInnerFeatureDelta({
   xn:.25,yn:.505,zn:.95,offsetX:.1,depth:.3
  });
@@ -134,5 +148,40 @@ test('nose and mouth deformation has compact support and never changes cheek/jaw
    assert.equal(p.noseSupport,0);
    assert.equal(p.mouthSupport,0);
   }
+ }
+});
+
+test('independent cheek fill and chin contour actually alter different 3D regions',()=>{
+ const sculpt=(x,y,z=.94)=>femaleCheekJawDelta({
+  xn:x,yn:y,zn:z,offsetX:x*.16,depth:.32,height:.39
+ });
+ const hollow=sculpt(.36,.465);
+ const cheekBone=sculpt(.36,.64);
+ assert.ok(hollow.dz>.001&&hollow.dz<.009,'Smooth donor cheeks should receive only gentle support');
+ assert.ok(hollow.dz>cheekBone.dz*15,
+  'Do not exaggerate the cheekbone instead of filling the sunken cheek');
+ assert.equal(hollow.dx,0,'Cheek zone must keep its width');
+ const chin=sculpt(.37,.30);
+ assert.ok(chin.dx<-.004,'Lower jaw edge should taper, not just the centreline');
+ assert.ok(Math.abs(chin.dx)>Math.abs(sculpt(.37,.46).dx)*5,
+  'Taper only the chin, not the jaw-to-cheek contour');
+ const center=sculpt(0,.255);
+ assert.ok(center.dy<0,'Central chin point should form a delicate apex');
+ // Keep mouth and nose geometry independent of cheek/jaw shaping.
+ const mouth=sculpt(.10,.505);
+ assert.equal(mouth.dx,0,'Chin taper cannot change nose or mouth width');
+ assert.ok(mouth.dz<.0003,'Midface filler cannot create a lip protrusion');
+ for(const y of [.24,.32,.45,.59]){
+  for(const x of [-1,-.9,.9,1]){
+   const p=sculpt(x,y);
+   assert.equal(p.dx,0,'No ear or skull silhouette narrowing');
+   assert.ok(p.dz<.000001,'No ear or skull protrusion');
+  }
+ }
+ // Check that the cheek surface is C0-smooth with small neighbouring steps.
+ for(let y=.36;y<.55;y+=.02){
+  const a=sculpt(.35,y),b=sculpt(.35,y+.002);
+  assert.ok(Math.abs(a.dz-b.dz)<.002,
+   'A discontinuous cheek ridge would create a hard shadow');
  }
 });
