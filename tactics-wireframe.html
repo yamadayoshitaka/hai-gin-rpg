@@ -11,7 +11,7 @@ body.town-mode > :not(#stageViewport):not(#battleLoading):not(script):not(style)
 body.town-mode #stageViewport{position:fixed!important;inset:0!important;width:100%!important;height:100dvh!important}
 body.town-mode #stageViewport canvas{width:100%!important;height:100%!important}
 body.town-mode #battleLoading[hidden]{display:none!important}
-</style><link rel="stylesheet" href="./src/tactical-command-ui.css?v=2.1"></head>
+</style><link rel="stylesheet" href="./src/tactical-command-ui.css?v=2.1"><link rel="stylesheet" href="./src/battle-ui-refinement.css?v=2.2"></head>
 <body><div id="hud"><b>灰銀戦記 ― 沈黙の星鐘 — リアルタイム軍団戦 v4.6.69</b><small>自動戦闘・階段移動 / 開戦時固定作戦と部隊号令 / ドラッグで視点回転</small><div id="selected">軍団配置中…</div><div id="log"></div><div id="jobTools" style="display:none"><select id="jobSelect"></select><select id="motionSelect"></select><button id="playMotion">動作再生</button></div><small><a style="color:#9adfff" href="./motion-external-test.html">外部モーション検証</a></small></div><div id="stageViewport"></div><div id="battleStatus" aria-live="polite"><div class="unit" id="allyStats">味方 HP -- / MP --</div><div class="unit enemy" id="enemyStats">敵 HP -- / MP --</div></div><button id="menuToggle" style="position:fixed;top:68px;left:10px;z-index:25;background:#203c55;color:white;padding:9px 15px;border:1px solid #9bb4c7;border-radius:8px">☰ メニュー</button><div id="commands"><label>全軍作戦<select id="strategy"><option value="eliminate">全滅</option><option value="environment_prepare">環境整備</option><option value="recovery">回復</option></select></label><label hidden aria-hidden="true">個別命令<select id="unitOrder" disabled><option value="inherit">全軍に従う</option><option value="charge">突撃</option><option value="defend">防御</option><option value="hold">陣地維持</option><option value="retreat">後退</option></select></label><button id="pause">一時停止</button><button id="igniteBridge" disabled style="position:fixed;right:8px;bottom:157px;z-index:12;background:#9b4026;color:white;border-radius:7px;padding:9px">🔥 木橋を燃やす</button><span id="unitInfo">味方をタップして個別指示</span><a id="specShortcut" href="./battle-specifications.html" target="_blank" rel="noopener" aria-label="ゲーム仕様一覧を別タブで開く">📖 仕様</a></div>
 <style>
 #commands,#menuToggle{display:none!important}#allySquadRibbon[hidden],#enemySquadRibbon[hidden]{display:none!important}
@@ -730,7 +730,7 @@ body.compact-command-dock.compact-explore-open .exploreBuildingList button{
  <div id="squadCircleInfoContent"></div>
  <button id="squadCircleInfoClose" type="button" aria-label="部隊情報を閉じる">✕</button>
 </div>
-<div id="cameraTools"><button id="soundToggle" aria-label="BGMと音声を再生">♪ BGM再生</button><button id="camGesture" aria-pressed="false">操作：回転</button><button id="camOverview">見渡す</button><button id="camFollow">キャラ中心</button><button id="camReset">視点戻す</button></div><div id="endScreen"><h1 id="outcome"></h1><div id="resultDetail"></div><button onclick="location.reload()">もう一度戦う</button></div><div id="battleLoading" role="status" aria-live="polite"><div id="loadingCard"><h1>灰銀戦記 ― 沈黙の星鐘</h1><p>戦場と装備を最適化しています</p><div id="loadingStage">描画エンジンを起動中…</div><div id="loadingBar" role="progressbar" aria-label="ゲーム起動準備" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div id="loadingFill"></div></div><div id="loadingPercent">0%</div><p style="font-size:12px;color:#97b3ca">完了するまで戦闘とキャラの移動は開始しません</p><div id="loadingError" hidden></div><button id="loadingRetry" hidden onclick="location.reload()">再読み込み</button>
+<div id="cameraTools"><button id="soundToggle" aria-label="BGMと音声を再生">♪ BGM再生</button><button id="camGesture" aria-pressed="false">操作：回転</button><button id="camOverview">見渡す</button><button id="camFollow">キャラ中心</button><button id="camReset">視点戻す</button></div><div id="endScreen"><h1 id="outcome"></h1><div id="resultDetail"></div><section id="victoryRewards" hidden aria-label="勝利報酬"><h2>戦闘報酬</h2></section><button onclick="location.reload()">もう一度戦う</button></div><div id="battleLoading" role="status" aria-live="polite"><div id="loadingCard"><h1>灰銀戦記 ― 沈黙の星鐘</h1><p>戦場と装備を最適化しています</p><div id="loadingStage">描画エンジンを起動中…</div><div id="loadingBar" role="progressbar" aria-label="ゲーム起動準備" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div id="loadingFill"></div></div><div id="loadingPercent">0%</div><p style="font-size:12px;color:#97b3ca">完了するまで戦闘とキャラの移動は開始しません</p><div id="loadingError" hidden></div><button id="loadingRetry" hidden onclick="location.reload()">再読み込み</button>
 <button id="loadingStart" type="button" hidden style="font:bold 17px system-ui;padding:13px 17px;border:2px solid #eacb87;background:#245d7a;color:#fff;border-radius:10px;margin:12px auto;min-height:54px">♪ 音楽を有効にして開戦</button>
 <button id="loadingSkipAudio" type="button" hidden style="font:12px system-ui;padding:9px;border:1px solid #92a5bb;background:#132a3b;color:#c9d8e5;border-radius:8px;margin:4px auto">音声なしで開戦</button></div></div><div id="runtimeError" style="display:none;position:fixed;top:65px;left:8px;right:8px;z-index:30;padding:10px;background:#631f28;color:#fff;border:1px solid #ff9d9d;border-radius:8px;font-size:12px;white-space:pre-wrap"></div><script>function showRuntimeError(message){const el=document.getElementById('runtimeError');if(el){el.style.display='block';el.textContent='実行エラー: '+message}const loading=document.getElementById('battleLoading');if(loading&&!loading.hidden){document.getElementById('loadingStage').textContent='ゲームの準備に失敗しました';const detail=document.getElementById('loadingError');detail.hidden=false;detail.textContent=String(message);document.getElementById('loadingRetry').hidden=false}}window.addEventListener('error',e=>showRuntimeError((e.message||'スクリプトの読み込みに失敗')+'\n'+(e.filename||'')+':'+(e.lineno||'')));window.addEventListener('unhandledrejection',e=>showRuntimeError(e.reason?.stack||e.reason?.message||String(e.reason)));</script><script type="module">
 import * as THREE from 'three';
@@ -743,6 +743,9 @@ import {findStableGridPath,stableGridNext,sameNavigationCell} from './src/battle
 import {formatSquadIntent} from './src/battle-squad-intent.js?v=4.6.45';
 import {sortSquadRibbon,squadRibbonStatus,ORDER_COOLDOWN_SECONDS} from './src/battle-command-roster.js?v=4.6.69';
 import {tacticalCooldownSeconds} from './src/tactical-command-evaluation.js?v=2.1';
+import {coreVictoryReward,territoryVictoryReward,verifiedBattleLoot} from './src/battle-victory-rewards.js?v=2.2';
+import {CAMPAIGN_STAGE_BY_ID} from './src/campaign-stage-plan.js';
+import {TERRITORIES} from './src/story-campaign.js';
 import {installBattleTacticalUI,createPreBattleTacticalSummary} from './src/tactical-command-battle-ui.js?v=2.1';
 import {describeSquadOrder,describeCommanderBuff} from './src/battle-order-message.js?v=4.6.40';
 import {recommendBattleTactics} from './src/battle-quick-recommendation.js?v=4.6.43';
@@ -2099,6 +2102,45 @@ const JOBS=[
  {name:'槍兵',role:'front',speed:3.1,jumpY:3,hp:115,range:3.8,damage:16,cooldown:1.4,color:0xb3a27a}
 ];
 let globalOrder='eliminate',selected=null,paused=false,finished=false,elapsed=0,uiTimer=0,simAccumulator=0;
+// Only physically collected treasure enters the battle reward ledger.
+// Consumables spent before victory are removed from the carried amount.
+const battleTreasureLedger=new Map();
+function recordBattleTreasure(actor,loot){
+ if(actor.team!==0)return;
+ const id=String(loot.itemId||'');
+ if(!id)return;
+ battleTreasureLedger.set(id,(battleTreasureLedger.get(id)||0)+Math.max(1,Math.floor(loot.quantity||1)));
+}
+function spendBattleTreasure(itemId){
+ const available=battleTreasureLedger.get(itemId)||0;
+ if(available>0)battleTreasureLedger.set(itemId,available-1);
+}
+function battleTreasureReceipt(){
+ return verifiedBattleLoot([...battleTreasureLedger].filter(([,quantity])=>quantity>0).map(([itemId,quantity])=>({itemId,quantity})));
+}
+function showBattleVictoryRewards(victory){
+ const panel=$('victoryRewards');panel.hidden=!victory;
+ if(!victory)return;
+ const stage=storyRequest?.origin==='game-core'?CAMPAIGN_STAGE_BY_ID[storyRequest.stageId]:null;
+ const territory=storyRequest?.origin!=='game-core'?
+  TERRITORIES.find(item=>item.id===storyRequest?.territoryId):null;
+ const reward=stage?coreVictoryReward(stage):territory?territoryVictoryReward(territory):{gold:0,xp:0};
+ const loot=battleTreasureReceipt();
+ const label=storyRequest?'帰還時に報酬を確定・所持品へ反映':'模擬戦のため所持金と経験値は加算されません';
+ panel.replaceChildren();
+ const h=document.createElement('h2');h.textContent='🏆 勝利報酬・戦利品';
+ const note=document.createElement('small');note.className='rewardSub';note.textContent=label;
+ const numbers=document.createElement('div');numbers.className='rewardNumbers';
+ for(const [name,value] of [['💰 獲得資金',reward.gold+' G'],['✦ 軍師経験値',reward.xp+' EXP']]){
+  const cell=document.createElement('div'),small=document.createElement('small'),bold=document.createElement('b');
+  small.textContent=name;bold.textContent=value;cell.append(small,bold);numbers.append(cell);
+ }
+ const treasure=document.createElement('div');treasure.className='rewardTreasure';
+ const head=document.createElement('strong');head.textContent='🎁 宝箱・持ち帰り戦利品';
+ const text=document.createElement('span');text.textContent=loot.length?
+  loot.map(item=>item.name+' ×'+item.quantity).join('／'):'今回の宝箱獲得なし';
+ treasure.append(head,text);panel.append(h,note,numbers,treasure);
+}
 let tacticalBankRemaining=TACTICAL_TIME_BANK_SECONDS,tacticalPlanningActive=false,tacticalFrameAt=performance.now();
 let squadQuickPage='home',squadQuickPageIndex=0;
 // Manual orders and manual item use share ONE 60 combat-second cooldown per squad.
@@ -2227,10 +2269,12 @@ function completeBattle(victory,{title='',detail=''}={}){
  if(finished)return false;
  if(typeof closeSquadCircleInfo==='function')closeSquadCircleInfo();
  finished=true;paused=true;massWorker?.setPaused(true);
+ document.body.classList.add('battle-finished');
  closeBattleMenu();
  if(squadSelectionReturn)closeSquadTactics();
  if(!$('vitalsPanel').hidden)closeVitals();
  recordStoryBattleOutcome(Boolean(victory));
+ showBattleVictoryRewards(Boolean(victory));
  $('outcome').textContent=title||(victory?'勝利':'敗北');
  $('resultDetail').textContent=detail;
  if(victory)battleVoice.cue('victory',{id:1,team:0,job:{name:'軍師'}});
@@ -3630,7 +3674,8 @@ function recordStoryBattleOutcome(victory){
  const monstersRemaining=storyRequest.enemyMode==='monsters'?actors.filter(a=>a.team===1&&a.hp>0).length:null;
  const result={version:1,battleId:storyRequest.battleId,territoryId:storyRequest.territoryId,victory,
   ...(storyRequest.origin==='game-core'?{stageId:storyRequest.stageId,monstersRemaining,objectiveCompleted:Boolean(victory)}:{}),
-  casualties:[...casualties].map(([squadId,count])=>({squadId,count}))};
+  casualties:[...casualties].map(([squadId,count])=>({squadId,count})),
+  loot:victory?battleTreasureReceipt():[]};
  try{sessionStorage.setItem('hai-gin-story-result-v1',JSON.stringify(result));}
  catch(e){showRuntimeError('戦闘結果を保存できませんでした：'+e.message);}
 }
@@ -4406,6 +4451,7 @@ function updateUnitFloorTravel(a,dt){
     return true;
    }
    if(roomItemRegistry.pickup(loot.id,a.id)){
+    recordBattleTreasure(a,loot);
     a.inventory=roomItemRegistry.owned(a.id).map(stack=>({
      id:stack.itemId,name:stack.name,quantity:stack.quantity
     }));
@@ -4845,6 +4891,7 @@ function collectNearbyRoomItems(){
        lz<bounds.minZ-.08||lz>bounds.maxZ+.08)continue;
    }
    if(!roomItemRegistry.pickup(loot.id,a.id))continue;
+   recordBattleTreasure(a,loot);
    a.inventory=roomItemRegistry.owned(a.id).map(item=>({
     id:item.itemId,name:item.name,quantity:item.quantity
    }));
@@ -5404,6 +5451,7 @@ function performSquadBattleItem(itemId,squadId,{automatic=false,issuerSquadId=nu
  }
  const supply=roomItemRegistry.consumeSquad(stack.ownerId,stack.itemId);
  if(!supply)return false;
+ spendBattleTreasure(stack.itemId);
  let effect='';
  if(supply.kind==='heal'){
   const result=massSim?massSim.healSquadFromItem(id,supply.squadHealHp):
