@@ -51,6 +51,7 @@ import {CAMPAIGN_STAGES,CAMPAIGN_STAGE_BY_ID,STAGE_KINDS,chapterAvailable,stages
 import {loadGame,persistSession,stageAtTown,selectCampaignStage,validGame} from './src/game-core-flow.js';
 import {makeCoreBattleRequest,settleCoreBattle,CORE_BATTLE_PENDING_KEY,CORE_BATTLE_RESULT_KEY} from './src/core-battle-bridge.js';
 import {storyDecisionForStage,setStoryDecision,availableStoryRoutes,selectStoryRoute,currentStoryRoute,storyStageContext,availableStoryEndings,chooseStoryEnding} from './src/story-narrative-flow.js';
+import {storyVoiceText} from './src/story-pronunciations.js';
 const $=id=>document.getElementById(id),escapeHtml=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
 let game=loadGame(localStorage,sessionStorage);
 if(!validGame(game)){location.replace('./game.html');throw Error('No game');}
@@ -79,7 +80,7 @@ function narrateSelection(){
  const stage=CAMPAIGN_STAGE_BY_ID[selected],story=narrativeForStage(stage);
  if(!('speechSynthesis' in window)){message('この端末では日本語読み上げを利用できません。');return;}
  if(speechSynthesis.speaking){speechSynthesis.cancel();$('stageNarration').textContent='▤ ステージの漫画を読む';return;}
- const voice=new SpeechSynthesisUtterance(story.narration);
+ const voice=new SpeechSynthesisUtterance(storyVoiceText(story.narration));
  voice.lang='ja-JP';voice.rate=.88;voice.pitch=.97;
  const voices=speechSynthesis.getVoices().filter(x=>x.lang.toLowerCase().startsWith('ja'));
  if(voices.length)voice.voice=voices.find(x=>x.localService)||voices[0];
