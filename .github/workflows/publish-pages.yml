@@ -53,6 +53,10 @@ jobs:
           cache-dependency-path: scripts/requirements-pages.txt
       - name: Install image optimizer for slim Pages artifact
         run: python -m pip install --disable-pip-version-check -r scripts/requirements-pages.txt
+      - name: Inventory all 1400 real chapter-panel pictures and validate gender-safe fallbacks
+        run: |
+          node scripts/build-story-art-coverage.mjs
+          node qa/story-art-coverage.test.mjs
       - name: Assemble compact game website without master asset archives
         run: python scripts/prepare-pages-site.py --out pages-dist
       # GitHub Pages can leave the deployment lock active even after the

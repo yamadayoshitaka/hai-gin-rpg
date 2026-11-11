@@ -8,6 +8,10 @@ on:
       - 'src/story-manga-art.js'
       - 'src/story-manga-viewer.js'
       - 'src/story-cinematic-assets.js'
+      - 'scripts/build-story-art-coverage.mjs'
+      - 'qa/story-art-coverage.test.mjs'
+      - 'assets/story/panels/**'
+      - 'story-maintenance.html'
       - 'assets/story-cinema/**'
       - 'qa/story-cinematic-raster.test.mjs'
       - 'src/fantasy-scene-score.js'
@@ -28,6 +32,11 @@ on:
       - 'src/story-stage-manga.js'
       - 'src/story-manga-art.js'
       - 'src/story-manga-viewer.js'
+      - 'src/story-cinematic-assets.js'
+      - 'scripts/build-story-art-coverage.mjs'
+      - 'qa/story-art-coverage.test.mjs'
+      - 'assets/story/panels/**'
+      - 'story-maintenance.html'
       - 'src/fantasy-scene-score.js'
       - 'qa/stage-manga-continuity.test.mjs'
       - 'src/game-page-audio.js'
@@ -62,3 +71,5 @@ jobs:
           node --experimental-vm-modules qa/story-cinematic-audio.test.mjs
           node --experimental-vm-modules qa/stage-manga-continuity.test.mjs
           node --experimental-vm-modules qa/story-cinematic-raster.test.mjs
+          node scripts/build-story-art-coverage.mjs
+          node qa/story-art-coverage.test.mjs
