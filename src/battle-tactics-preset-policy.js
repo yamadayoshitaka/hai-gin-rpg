@@ -21,6 +21,7 @@ export const BATTLE_TACTIC_PRESETS=Object.freeze([
 ]);
 export const TACTIC_DEFINITIONS=Object.freeze(BATTLE_TACTIC_PRESETS.map((p,index)=>
  Object.freeze({...p,version:1,priority:index,
+  scope:'army',minSquads:p.id==='balanced'?1:2,
   steps:Object.freeze({
    balanced:['職業判定','号令分配','目標達成または殲滅'],
    fortress_defense:['前衛固定','高火力隊の迎撃','時間まで防衛または敵軍殲滅'],
@@ -84,8 +85,13 @@ export function tacticAvailability({squads=[],objective=null,structures=[],highG
   stage==='siege'&&check.siege_break[0]?'siege_break':
   (stage==='capture_zone'||stage==='siege')&&check.objective_rush[0]?'objective_rush':
   check.highground[0]?'highground':'balanced';
- return TACTIC_DEFINITIONS.map(p=>({...p,enabled:check[p.id][0],
-  reason:check[p.id][0]?'使用可能':check[p.id][1],recommended:p.id===recommended}));
+ return TACTIC_DEFINITIONS.map(p=>{
+  const enoughSquads=jobs.length>=p.minSquads;
+  const enabled=enoughSquads&&check[p.id][0];
+  return {...p,enabled,
+   reason:enabled?'使用可能':!enoughSquads?'この連携戦術には2部隊以上が必要':check[p.id][1],
+   recommended:p.id===recommended&&enabled};
+ });
 }
 function defaultOrder(job,defending=false){
  if(job==='priest')return 'hold';
@@ -136,7 +142,10 @@ export function buildTacticPlan({tacticId='balanced',squads=[],objective=null,st
  const defenders=objective?.defenderTeam===0;
  const base=squads.map((s,index)=>{
   const jobId=normalizeJob(s.jobId||s.job),id=String(s.squadId??s.id);
-  return {id,jobId,index,order:defaultOrder(jobId,defenders),
+  return {id,jobId,index,
+   role:jobId==='priest'?'healer':jobId==='shield'?'guard':
+    rangedJobs.has(jobId)?'fire_support':frontJobs.has(jobId)?'vanguard':'flank',
+   order:defaultOrder(jobId,defenders),
    strategy:jobId==='priest'?'recovery':'eliminate',mission:null,destination:null};
  });
  const centerFor=s=>{
@@ -207,7 +216,10 @@ export function buildTacticPlan({tacticId='balanced',squads=[],objective=null,st
   s.order=s.jobId==='shield'?'hold':s.jobId==='priest'?'hold':
    rangedJobs.has(s.jobId)?'defend':'charge';
  }
- return {id:tacticId,orders:base};
+ return {id:tacticId,scope:'army',
+  participatingSquadIds:base.map(row=>row.id),
+  coordinated:base.length>=2,
+  orders:base};
 }
 export function rotationOrders({tacticId,seconds=0,squads=[]}={}){
  if(tacticId!=='rotation')return [];
