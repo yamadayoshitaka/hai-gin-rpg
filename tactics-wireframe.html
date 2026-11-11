@@ -2109,6 +2109,7 @@ let squadQuickPage='home',squadQuickPageIndex=0;
 const SQUAD_MANUAL_COMMAND_COOLDOWN=ORDER_COOLDOWN_SECONDS;
 const lastSquadOrderAt=new Map();
 let armyManualOrderState={issuedCount:0,globalNextAt:0};
+const manuallyOrderedSquads=new Set();
 function manualCommandStatus(id){
  return commandReadiness({now:elapsed,issuedCount:armyManualOrderState.issuedCount,
   globalNextAt:armyManualOrderState.globalNextAt,
@@ -5853,7 +5854,7 @@ function updateBattleTacticRotation(){
  if(phase===lastTacticRotationPhase)return;
  lastTacticRotationPhase=phase;
  for(const row of rotationOrders({tacticId:activeBattleTacticId,seconds:elapsed,squads:activeBattleTacticSquads})){
-  if(lastSquadOrderAt.has(row.id)||!hasSquadCommander(row.id))continue;
+  if(manuallyOrderedSquads.has(row.id)||!hasSquadCommander(row.id))continue;
   if(startingSquadOrders.get(squadOrderKey(0,row.id))?.mode===row.order)continue;
   setStartingSquadOrder(0,row.id,row.order);
  }
@@ -7554,7 +7555,10 @@ for(const team of [0,1]){
 function markRibbonOrderIssued(id,{countAsOrder=true}={}){
  // A successful manual ITEM retains the original squad-use cooldown, but
  // only a commander order increases the global instruction interval.
- if(countAsOrder)armyManualOrderState=afterManualOrder(armyManualOrderState,elapsed);
+ if(countAsOrder){
+  armyManualOrderState=afterManualOrder(armyManualOrderState,elapsed);
+  manuallyOrderedSquads.add(String(id));
+ }
  lastSquadOrderAt.set(String(id),elapsed);
  lastRibbonOrderAt.set(squadKey(0,String(id)),elapsed*1000);
  if(lastRibbonSums.size)renderSquadRibbons(lastRibbonSums);
