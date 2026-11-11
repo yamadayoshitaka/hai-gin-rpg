@@ -5,6 +5,9 @@ on:
     # GitHub cron is best-effort; delayed or missed starts are possible.
     - cron: '*/15 * * * *'
   workflow_dispatch:
+  pull_request:
+    paths:
+      - '.github/workflows/nonhuman-3d-refinement-15m.yml'
 
 permissions:
   contents: write
