@@ -81,18 +81,18 @@ export function createAnatomicalFaceParts(face,{gender='female'}={}){
   return z;
  };
  const female=gender==='female';
- const eyeRadius=d.x*(female?.072:.067);
- const eyeHeight=box.min.y+d.y*(female?.727:.731);
- const eyeSpacing=d.x*(female?.198:.202);
+ const eyeRadius=d.x*(female?.052:.051);
+ const eyeHeight=box.min.y+d.y*(female?.684:.687);
+ const eyeSpacing=d.x*(female?.112:.115);
  // Sclera centre is recessed. Upper and lower eyelids cover the spherical
  // edge, rather than drawing detached floating white eye disks.
  for(const side of [-1,1]){
   const x=cx+side*eyeSpacing,y=eyeHeight;
   const faceZ=surfaceAt(x,y);
-  const z=faceZ-eyeRadius*.44;
+  const z=faceZ-eyeRadius*.71;
   const globe=new THREE.Mesh(new THREE.SphereGeometry(eyeRadius,36,24),eyeMat);
   globe.name=(side===-1?'LEFT':'RIGHT')+'_ORBITAL_EYEBALL';
-  globe.scale.set(1.16,.79,.91);
+  globe.scale.set(1.18,.77,.89);
   globe.position.set(x,y,z);
   globe.userData.sourceProjected=true;
   root.add(globe);
@@ -106,7 +106,7 @@ export function createAnatomicalFaceParts(face,{gender='female'}={}){
   pupil.scale.set(1,1,.24);
   pupil.position.set(x,y,z+eyeRadius*.915);
   root.add(pupil);
-  const width=eyeRadius*1.17;
+  const width=eyeRadius*1.12;
   for(const upper of [true,false]){
    const label=(side===-1?'LEFT':'RIGHT')+(upper?'_UPPER':'_LOWER');
    const height=eyeRadius*(female?.33:.30);
@@ -127,8 +127,8 @@ export function createAnatomicalFaceParts(face,{gender='female'}={}){
  // Original face remains the structural muzzle/philtrum/chin. Two shallow
  // lip strips follow that actual surface and use real triangle thickness.
  // Avoid a single flat 'mouth plate' or pigment printed on the chin.
- const lipCenter=box.min.y+d.y*(female?.453:.445);
- const halfWidth=d.x*(female?.154:.163);
+ const lipCenter=box.min.y+d.y*(female?.509:.506);
+ const halfWidth=d.x*(female?.105:.119);
  for(const upper of [true,false]){
   const material=lipMat;
   const mesh=buildGrid((upper?'UPPER':'LOWER')+'_3D_VERMILION_LIP',
@@ -136,12 +136,12 @@ export function createAnatomicalFaceParts(face,{gender='female'}={}){
     const t=u*2-1;
     const taper=Math.pow(Math.max(0,1-t*t),.70);
     const cupid=upper?
-      d.y*.0036*(bell(Math.abs(t),.37,.22)-.42*bell(t,0,.23)):0;
-    const cy=lipCenter+(upper?d.y*.014:-d.y*.014)+cupid;
-    const vertical=(v-.5)*d.y*(upper?.025:.031)*taper;
+      d.y*.0018*(bell(Math.abs(t),.37,.22)-.42*bell(t,0,.23)):0;
+    const cy=lipCenter+(upper?d.y*.009:-d.y*.009)+cupid;
+    const vertical=(v-.5)*d.y*(upper?.012:.015)*taper;
     const x=cx+t*halfWidth,y=cy+vertical;
     const fullness=(1-t*t)*Math.sin(Math.PI*v);
-    const z=surfaceAt(x,y)+d.z*(.004+.010*fullness*taper);
+    const z=surfaceAt(x,y)+d.z*(.0015+.005*fullness*taper);
     return new THREE.Vector3(x,y,z);
    },material);
   mesh.userData.faceSurfaceConforming=true;
