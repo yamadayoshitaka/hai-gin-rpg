@@ -10,6 +10,7 @@
  */
 import {validateFaceProportions} from './master-swordsman-face-proportions.js';
 import {FEMALE_COMMANDER_ART_PALETTE,artReferenceForFeatured} from './chapter-one-character-art-references.js';
+import {HEROINE01_MASTER_MODEL_V1} from './heroine01-master-model-v1.js';
 import {createSwordsmanAppearance,SWORDSMAN_FACE_KEYS}
  from './master-swordsman-1000-appearance.js';
 
@@ -58,28 +59,8 @@ function buildPreset(row,i){
   referenceArtStatus:female?'provisional-chapter-one-character-master':null,
   visualDirection:female?'lightning-inspired-chapter1-original-blonde-layered-fringe-blue-eyes-silver-armor':null,
   coiffureStyle:female?'fantasy-long-blonde':null, // Authored 100k preview wig, warm blonde per Chapter 1 art
-  proportions:female?validateFaceProportions({
-    // FF13 Lightning as a *visual direction*, not borrowed Square Enix mesh
-    // or copyrighted texture: slender natural nose, calm almond eyes and
-    // focused expression and natural skin; palette comes from Chapter 1 art.
-    faceHeight:.939,upperThird:1.024,middleThird:.916,lowerThird:.915,
-    jawTaper:.838,cheekRoundness:1.012,chinLength:.893,
-    lowerFaceProjection:.755,
-    preEarFullness:.675,lowerCheekLateral:.710,parotidWidth:.660,
-    eyeWidth:1.038,eyeHeight:.854,eyeSpacing:1.008,
-    eyeVertical:.001,eyeTilt:.048,
-    // Single authoritative ocular parameters: iris != black pupil.
-    // Eye size is the real sclera radius; depth is measured in metres.
-    eyeballScale:.828,eyeSocketDepth:-.0054,
-    irisDiameter:.790,pupilDiameter:.745,
-    upperLidCoverage:.34,underEyeSoftness:.15,
-    browVertical:.004,browEyeGap:1.008,
-    browWidth:1.045,browThickness:.705,browAngle:.021,
-    noseOverall:.802,noseLength:.884,noseWidth:.755,
-    noseBridge:1.018,noseTip:.765,
-    mouthWidth:.870,mouthHeight:.855,mouthVertical:.011,
-    lipFullness:.695,mouthCorner:.008
-   }):i===0?validateFaceProportions({
+  sculptModel:female?HEROINE01_MASTER_MODEL_V1.prototypeVersion:null,
+  proportions:female?validateFaceProportions(HEROINE01_MASTER_MODEL_V1.shape):i===0?validateFaceProportions({
    faceHeight:.947,upperThird:1.07,middleThird:.86,lowerThird:.925,
    jawTaper:.85,chinLength:.87,eyeWidth:1.045,eyeHeight:1.045,
    eyeSpacing:.99,eyeVertical:-.004,browVertical:-.007,browEyeGap:.90,
