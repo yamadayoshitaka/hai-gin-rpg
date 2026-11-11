@@ -20,14 +20,14 @@ fs.mkdirSync(out,{recursive:true});
      original.visibleFaceMeshes!==1||original.sourceUntouched!==true||
      original.female?.sourceVertices<1100||original.male?.sourceVertices<1100||
      original.female?.headOnly!==true||original.male?.headOnly!==true||
-     original.female?.code!=='female-face-smooth-source-v6'||
+     original.female?.code!=='female-face-adjustable-v7'||
      original.female?.headTemplate!=='realistic-head-animation.glb'||
      original.female?.sourceVertices!==original.male?.sourceVertices||
      !original.female?.sourceGeometryIndependent||
      !original.male?.sourceGeometryIndependent||
-     original.female?.facePartMeshCount!==16||
+     original.female?.facePartMeshCount!==22||
      original.male?.facePartMeshCount!==12||
-     original.visiblePartMeshes!==16)
+     original.visiblePartMeshes!==22)
    throw Error('Not two independent source-derived face meshes: '+JSON.stringify(original));
   const canvas=page.locator('#faceCanvas');
   for(const g of ['female','male']){
@@ -36,7 +36,7 @@ fs.mkdirSync(out,{recursive:true});
     await page.locator('#'+view).click();
     await page.waitForTimeout(200);
     const report=await page.evaluate(()=>window.__faceMasterQA());
-    if(report.gender!==g||report.view!==view||report.visibleFaceMeshes!==1||report.visiblePartMeshes!==(g==='female'?16:12))
+    if(report.gender!==g||report.view!==view||report.visibleFaceMeshes!==1||report.visiblePartMeshes!==(g==='female'?22:12))
      throw Error('Face viewer controls failed '+JSON.stringify(report));
     await canvas.screenshot({path:path.join(out,g+'-'+view+'.png'),
      timeout:90000,animations:'disabled'});
@@ -56,7 +56,7 @@ fs.mkdirSync(out,{recursive:true});
    const gltf=JSON.parse(buf.subarray(20,20+length).toString('utf8').trim());
    const tri=(gltf.meshes||[]).flatMap(m=>m.primitives||[])
     .filter(p=>p.mode===undefined||p.mode===4);
-   if(tri.length!==(g==='female'?17:13))throw Error('Exported face + anatomical meshes mismatch: '+g+' '+tri.length);
+   if(tri.length!==(g==='female'?23:13))throw Error('Exported face + anatomical meshes mismatch: '+g+' '+tri.length);
    console.log('FACE_CLAY_GLB_EXPORT',JSON.stringify({
     gender:g,bytes:buf.length,trianglePrimitives:tri.length
    }));
@@ -86,7 +86,48 @@ fs.mkdirSync(out,{recursive:true});
   if((await page.evaluate(()=>window.__faceMasterQA())).wire!==true)
    throw Error('Wireframe is not active');
   await canvas.screenshot({path:path.join(out,'female-wire.png')});
-  if((await page.evaluate(()=>window.__faceMasterQA())).visiblePartMeshes!==16)
+  await page.locator('#wire').click();
+  await page.locator('#color').click();
+  const colorQA=await page.evaluate(()=>window.__faceMasterQA());
+  if(colorQA.faceMode!=='color')throw Error('Color mode was not activated');
+  await page.locator('#front').click();
+  await canvas.screenshot({path:path.join(out,'female-color-v7-front.png')});
+  await page.locator('#threeQuarter').click();
+  await canvas.screenshot({path:path.join(out,'female-color-v7-threeQuarter.png')});
+  // Real eyebrow/lash angle control and front nasal tip sculpt.
+  for(const [control,value] of [['browAngle','-13'],['lashAngle','19'],
+   ['noseTipLift','1.8'],['nostrilCover','1.6'],
+   ['noseBridgeSharpness','1.9']]){
+   await page.locator('#'+control).evaluate((el,v)=>{
+    el.value=v;el.dispatchEvent(new Event('input',{bubbles:true}));
+    el.dispatchEvent(new Event('change',{bubbles:true}));
+   },value);
+  }
+  const changed=await page.evaluate(()=>window.__faceMasterQA());
+  if(changed.femaleControls.noseTipLift!==1.8||
+     changed.femaleControls.nostrilCover!==1.6||
+     changed.currentFeatureAngles?.browAngle!==-13||
+     changed.currentFeatureAngles?.lashAngle!==19||
+     changed.visiblePartMeshes!==22)
+   throw Error('Live nose/eyebrow/lash controls do not affect the displayed 3D: '+JSON.stringify(changed));
+  await page.locator('#front').click();
+  await canvas.screenshot({path:path.join(out,'female-color-nose-brow-adjusted.png')});
+  // The GLB must retain actual v7 colored face, eyebrow and lash geometry.
+  {
+   const next=page.waitForEvent('download',{timeout:45000});
+   await page.locator('#export').click();
+   const file=path.join(out,'female-face-v7-colored.glb');
+   await (await next).saveAs(file);
+   const buf=fs.readFileSync(file),size=buf.readUInt32LE(12);
+   const gltf=JSON.parse(buf.subarray(20,20+size).toString('utf8').trim());
+   const meshes=gltf.meshes||[],materials=gltf.materials||[];
+   if(meshes.length!==23||materials.length<5)
+    throw Error('Colored female GLB did not preserve eyebrow/eyelash meshes and palette');
+   console.log('FACE_V7_COLORED_GLB_EXPORT',JSON.stringify({
+    bytes:buf.length,meshes:meshes.length,materials:materials.length
+   }));
+  }
+  if((await page.evaluate(()=>window.__faceMasterQA())).visiblePartMeshes!==22)
    throw Error('Facial parts did not restore after toggling');
   if(errors.length)throw Error('Browser errors: '+JSON.stringify(errors));
   console.log('INDEPENDENT_MALE_FEMALE_CLAY_FACES_SUCCESS '+
