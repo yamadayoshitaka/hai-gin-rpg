@@ -9276,6 +9276,70 @@ async function finishBattleLoading(){
      orderSelect.value='charge';setStartingSquadOrder(team,id,'charge');
     }
    }
+   // Apply the chosen declarative tactic to REAL job squads after
+   // recomposition. A manual squad order always overrides automatic doctrine.
+   const units=massSim?.units??actors;
+   const positions=team=>units.filter(u=>u.team===team&&!u.isStrategist&&
+     u.hp>0&&u.alive!==false).map(u=>({
+      x:Math.round(massSim?u.x:u.cell.x),z:Math.round(massSim?u.z:u.cell.z),
+      squadId:String(u.squadId)
+     }));
+   const allyPositions=positions(0),enemyPositions=positions(1);
+   const enemyZone=enemyPositions.length?{
+    x:Math.round(enemyPositions.reduce((v,u)=>v+u.x,0)/enemyPositions.length),
+    z:Math.round(enemyPositions.reduce((v,u)=>v+u.z,0)/enemyPositions.length)
+   }:null;
+   const squads=squadIds.map(id=>{
+    const members=units.filter(u=>u.team===0&&!u.isStrategist&&
+     u.hp>0&&u.alive!==false&&String(u.squadId)===id);
+    return {squadId:id,jobId:members[0]?.jobId||'',total:members.length};
+   });
+   activeBattleTacticId=selectedOpeningTactic;
+   activeBattleTacticSquads=squads;
+   lastTacticRotationPhase=-1;
+   const tacticPlan=buildTacticPlan({
+    tacticId:selectedOpeningTactic,squads,objective:stageObjective,
+    structures:massSim?.objects??skirmishActions?.objects??[],
+    allyPositions,enemyPositions,enemyZone,
+    enemyCommanders:units.filter(u=>u.team===1&&u.isStrategist)
+   });
+   for(const task of tacticPlan.orders){
+    const item=initialOrderInputs.find(v=>v.team===0&&v.id===task.id);
+    if(!item||item.orderSelect.dataset.manuallyChanged==='true')continue;
+    squadStrategies.set(task.id,task.strategy);
+    let accepted=false;
+    if(task.order==='mission'&&task.mission){
+     const target=task.mission;
+     if(massSim){
+      accepted=massSim.setSquadMission(task.id,target.type,target);
+      if(accepted)massWorker?.setSquadMission(task.id,target.type,target);
+     }else{
+      accepted=true;
+      squadOrderRegistry.set(task.id,{mode:'mission',...target,autoStrategy:true});
+     }
+     if(accepted)startingSquadOrders.set(squadOrderKey(0,task.id),{mode:'mission'});
+    }else if(task.order==='move'&&task.destination){
+     const point=task.destination;
+     if(massSim){
+      let goal=null;
+      for(let radius=0;radius<=12&&!goal;radius++)
+       for(let dz=-radius;dz<=radius&&!goal;dz++)
+        for(let dx=-radius;dx<=radius&&!goal;dx++){
+         const x=point.x+dx,z=point.z+dz;
+         if(massSim._inside(x,z)&&massSim._walkable(x,z))goal={x,z};
+        }
+      if(goal){
+       accepted=massSim.setSquadDestination(task.id,goal.x,goal.z);
+       if(accepted)massWorker?.setSquadDestination(task.id,goal.x,goal.z);
+      }
+     }else if(traversableCell(point.x,point.z,units.find(u=>u.team===0))){
+      accepted=true;
+      squadOrderRegistry.set(task.id,{mode:'move',...point,autoStrategy:true});
+     }
+     if(accepted)startingSquadOrders.set(squadOrderKey(0,task.id),{mode:'move'});
+    }else accepted=setStartingSquadOrder(0,task.id,task.order);
+    if(!accepted)setStartingSquadOrder(0,task.id,'charge');
+   }
    battleReady=true;loading.hidden=true;
    battleCeremony.startIntro({stageName:selectedStage.name,stageFeature:stageCharacter.feature});
    battleDialogue.push({key:'start',speaker:'軍師',kind:'info',priority:5,
