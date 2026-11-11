@@ -13,7 +13,7 @@ const smooth=(a,b,x)=>{
  return t*t*(3-2*t);
 };
 
-export const HEROINE_FACE_POLISH_VERSION='sculpt-calibrated-lips-and-nose-v6';
+export const HEROINE_FACE_POLISH_VERSION='adult-soft-jaw-muzzle-sculpt-v7';
 
 export function polishHeroineFacePoint(x,y,z,box,{strength=1}={}){
  const sx=box.max.x-box.min.x,sy=box.max.y-box.min.y,sz=box.max.z-box.min.z;
@@ -37,8 +37,15 @@ export function polishHeroineFacePoint(x,y,z,box,{strength=1}={}){
  const midCheek=bell(ax,.51,.26)*bell(yn,.53,.14);
  const noseZone=bell(ax,.22,.16)*bell(yn,.52,.07);
  // Do not sculpt round protruding cheeks on an already youthful head.
- const lateral=sx*(-.020*lowerCheek-.009*jawBlend-.021*cheekSpike)*(1-.91*noseZone);
- const cheekDepth=sz*(-.012*lowerCheek+.009*midCheek-.014*cheekSpike);
+ const lateral=sx*(-.0315*lowerCheek-.016*jawBlend-.028*cheekSpike)*(1-.91*noseZone);
+ const cheekDepth=sz*(-.021*lowerCheek+.005*midCheek-.020*cheekSpike);
+ // Recess the full philtrum / lower-face muzzle as a continuous skin surface,
+ // not a disconnected mouth plate. Fade before the nose and toward the ears.
+ const belowNose=1-smooth(.50,.56,yn);
+ const muzzle=bell(ax,.11,.36)*bell(yn,.445,.12)*belowNose;
+ const chinPad=bell(ax,.09,.40)*bell(yn,.302,.085);
+ const philtrumPlane=bell(ax,.14,.30)*bell(yn,.510,.045)*belowNose;
+ const lowerFaceRecess=sz*(-.047*muzzle-.025*chinPad-.012*philtrumPlane);
 
  // Anatomical nasal subregions have separate subtle offsets: soft bridge,
  // rounded nasal tip and recessed nostril wings rather than a triangular nose.
@@ -54,12 +61,12 @@ export function polishHeroineFacePoint(x,y,z,box,{strength=1}={}){
  const lowerLip=bell(ax,.16,.21)*bell(yn,.467,.027);
  const corner=bell(ax,.39,.10)*bell(yn,.484,.031);
  const philtrum=bell(ax,.06,.09)*bell(yn,.548,.022);
- const lipDepth=sz*(.012*cupid+.012*lowerLip-.004*corner-.003*philtrum);
+ const lipDepth=sz*(.007*cupid+.004*lowerLip-.004*corner-.002*philtrum);
  const mouthCornerLift=sy*.0036*corner;
 
  return {
   x:x+(Math.sign(xn)*lateral+noseWidthShift)*w,
   y:y+mouthCornerLift*w,
-  z:z+(cheekDepth+noseDepth+lipDepth)*w
+  z:z+(cheekDepth+noseDepth+lipDepth+lowerFaceRecess)*w
  };
 }

@@ -49,6 +49,9 @@ fs.mkdirSync(dir,{recursive:true});
      h?.frontEyeZoneVertices>10||
      h?.neckRearClearanceCorrections<1||h?.beardFreeFrontNeck!==true||
      h?.frontNeckIntrusionVertices!==0||h?.rearLayerCount!==3||
+     h?.rearSculptedLockCount!==12||
+     h?.rearEndSampleCount<1000||h?.rearEndTaperRatio<=.57||
+     h?.rearLockConvergence<=.57||
      h?.rearFlow!=='tapered-clumped-swaying-layers-no-flat-hem'||
      h?.separatedHairObjects!==true||
       d.facialQA?.heroineMakeup?.strength<.76||

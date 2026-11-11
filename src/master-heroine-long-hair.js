@@ -217,29 +217,44 @@ export function buildHeroineCrownFlow(scalp,{locks=8000}={}){
  }
  if(roots.length<80)throw Error('Actual crown lacks enough visible hair roots');
  const pts=[],col=[],indices=[],sections=4;
+ let totalCrownChord=0,minCrownTipNormalized=Infinity;
  const radial=new THREE.Vector3(),tangent=new THREE.Vector3(),
   side=new THREE.Vector3(),point=new THREE.Vector3();
  for(let i=0;i<locks;i++){
   const seed=i+1;
   const root=roots[(i*67+Math.floor(hash(seed*3.17)*roots.length))%roots.length];
   radial.set((root[0]-cx)/d.x,(root[1]-cy)/d.y,(root[2]-cz)/d.z).normalize();
-  // Along the scalp, not straight out from the vertex (no upright spikes).
+  // Split the crown flow at the actual source head's front/back plane.
+  // Front roots blend into side-swept bangs; rear roots flow toward the neck.
+  // A circular arc follows head curvature instead of making long straight
+  // spikes or plunging through the mesh like an extended tangent ray.
+  const front=(root[2]-cz)/d.z>0;
   const sweep=(root[0]-cx)/d.x;
-  tangent.set(.35+hash(seed*1.83)*.33,
-   -.22-.26*hash(seed*2.07),
-   -.35-.22*hash(seed*7.7)+sweep*.20);
+  tangent.set(.32+hash(seed*1.83)*.27,
+   -.13-.14*hash(seed*2.07),
+   (front?.46:-.53)+sweep*.13+(hash(seed*7.7)-.5)*.12);
   tangent.addScaledVector(radial,-tangent.dot(radial)).normalize();
   side.crossVectors(tangent,radial).normalize();
-  // Longer scalp-tangent paths overlap the foundation instead of short
-  // stubble stuck into a single-colour helmet surface.
-  const length=d.y*(.065+.076*hash(seed*1.31)),
-   halfWidth=d.x*(.00105+.00072*hash(seed*4.91)),
+  const rootYn=(root[1]-box.min.y)/d.y;
+  const longLength=d.y*(.215+.13*hash(seed*1.31));
+  const fringeSafe=front&&rootYn<.86?
+   Math.max(d.y*.070,d.y*(.07+Math.max(0,rootYn-.735)*.90)):longLength;
+  const length=Math.min(longLength,fringeSafe),
+   halfWidth=d.x*(.00115+.00075*hash(seed*4.91)),
    base=pts.length/3;
+  const arcRadius=d.y*.49;
   for(let j=0;j<=sections;j++){
    const t=j/sections,taper=1-t*.94;
+   const angle=length*t/arcRadius;
    point.set(...root)
-    .addScaledVector(tangent,length*t)
-    .addScaledVector(radial,d.y*(.0024+.001*Math.sin(Math.PI*t)));
+    .addScaledVector(tangent,arcRadius*Math.sin(angle))
+    .addScaledVector(radial,arcRadius*(Math.cos(angle)-1))
+    .addScaledVector(radial,d.y*(.0035+.0020*Math.sin(Math.PI*t)));
+   if(j===sections){
+    totalCrownChord+=point.distanceTo(new THREE.Vector3(...root));
+    minCrownTipNormalized=Math.min(minCrownTipNormalized,
+     (point.y-box.min.y)/d.y);
+   }
    for(const sign of [-1,1]){
     const x=point.x+sign*halfWidth*taper*side.x;
     const y=point.y+sign*halfWidth*taper*side.y;
@@ -271,7 +286,10 @@ export function buildHeroineCrownFlow(scalp,{locks=8000}={}){
  return {hair,report:Object.freeze({
   locks,triangles:indices.length/3,
   sourceScalpRooted:true,rootPool:roots.length,
-  layeredCrownNoBaldDome:true,shortTangentFlow:true
+  layeredCrownNoBaldDome:true,extendedScalpArcFlow:true,
+  frontSweepsIntoBangs:true,rearSweepsTowardNape:true,
+  meanTipChordNormalized:Number((totalCrownChord/locks/d.y).toFixed(3)),
+  minTipYNormalized:Number(minCrownTipNormalized.toFixed(3))
  })};
 }
 
@@ -338,6 +356,9 @@ export function buildHeroineWigRootCap(scalp){
   coveredBySolidSourceTopology:true,foreheadBangsVisible:true,
   crownFlowLocks:crownFlow.report.locks,
   crownFlowTriangles:crownFlow.report.triangles,
+  crownMeanChordNormalized:crownFlow.report.meanTipChordNormalized,
+  crownMinTipYNormalized:crownFlow.report.minTipYNormalized,
+  crownExtendedScalpArcFlow:crownFlow.report.extendedScalpArcFlow,
   crownHasActualTangentFibreGeometry:true,
   fringeLockCount:bangs.report.lockCount,
   fringeTriangleCount:bangs.report.triangleCount,
@@ -415,6 +436,8 @@ export function buildHeroineFantasyLongHair(scalp,{lengthInHeads=3.25,bodyEnvelo
  let maxSideOutwardDrift=0,neckRearClearanceCorrections=0;
  let frontNeckIntrusionVertices=0,bodyCutStrands=0,bodyCutSections=0;
  let minimumRearDepth=Infinity;
+ let rearEndSampleCount=0,rearEndContractedCount=0;
+ const rearSculptedLockCount=12;
  let vi=0;
  const regions={rear:70000,templeLeft:12000,templeRight:12000,bangs:6000};
  const categories=[
@@ -438,17 +461,26 @@ export function buildHeroineFantasyLongHair(scalp,{lengthInHeads=3.25,bodyEnvelo
    // Three independently overlapping rear lengths with a tapered hem.
    const backLayer=region==='rear'?Math.min(2,Math.floor(j*3/count)):0;
    const lateral=clamp(Math.abs(rootX-cx)/(d.x*.5),0,1);
-   const edgeTaper=1-.27*lateral*lateral;
-   const lockLengthVariance=.12*(hash(seed*5.31)-.5);
+   const edgeTaper=1-.34*lateral*lateral;
+   // Blend 70,000 rear scalp-rooted strands into twelve overlapping locks.
+   // Individual follicle origins and the three rear-length layers remain.
+   const rearLock=Math.min(rearSculptedLockCount-1,Math.max(0,
+    Math.floor(((rootX-cx)/d.x+.5)*rearSculptedLockCount)));
+   const rearLockCenter=cx+d.x*((rearLock+.5)/rearSculptedLockCount-.5);
+   const lockLengthVariance=region==='rear'?
+    .075*(hash(seed*5.31)-.5)+.060*Math.sin(rearLock*1.43+backLayer*.87):
+    .12*(hash(seed*5.31)-.5);
    const strandLength=bang?
     Math.min(d.y*(.24+.10*scatter),Math.max(.001,rootY-(b.min.y+d.y*.68))):
     side?d.y*(.97+.55*scatter)*edgeTaper:
     d.y*lengthInHeads*([.41,.55,.70][backLayer]+.13*scatter+
      lockLengthVariance)*edgeTaper;
    const sway=(hash(seed*11.3)-.5)*d.x*.058;
-   const clumpBand=Math.floor((rootX-cx)/d.x*23);
-   const clumpDepth=Math.floor((rootZ-cz)/d.z*8);
-   const clumpPhase=clumpBand*.47+clumpDepth*.89+backLayer*.61;
+   const clumpBand=region==='rear'?rearLock:Math.floor((rootX-cx)/d.x*23);
+   const clumpDepth=Math.floor((rootZ-cz)/d.z*(region==='rear'?5:8));
+   const clumpPhase=region==='rear'?
+    clumpBand*.72+clumpDepth*.38+backLayer*.68:
+    clumpBand*.47+clumpDepth*.89+backLayer*.61;
    const sideDirection=bang?1:(side||Math.sign(rootX-cx)||1);
    // Nearby follicles follow a shared wave phase, not unrelated spikes.
    const flowPhase=(rootX-cx)/d.x*6.1+(rootZ-cz)/d.z*2.8;
@@ -462,11 +494,14 @@ export function buildHeroineFantasyLongHair(scalp,{lengthInHeads=3.25,bodyEnvelo
     const backWave=bang?0:
       Math.sin(t*5.3+clumpPhase)*Math.sin(Math.PI*t*.87)*
       d.x*(side?.024:.074);
-    // Side locks fold behind the shoulders instead of pointing outwards.
+    // Each rear lock converges gradually: root at t=0 stays on scalp.
+    // Do not modify the independent bang / temple path geometry.
+    const rearLockX=rearLockCenter+(rootX-rearLockCenter)*(1-.54*fall);
     let x=bang?rootX+sideDirection*d.x*(.17*t+.035*fall)+curl:
      side?rootX+(cx-rootX)*(.075*t+.10*fall)+curl+backWave:
-     rootX+(rootX-cx)*(.065*t+.105*fall)+
-      (backLayer-1)*d.x*.035*fall+sway*fall+curl+backWave;
+     rearLockX+(rootX-cx)*(-.10*t-.23*fall)+
+      (backLayer-1)*d.x*.020*fall+sway*.34*fall+curl*.55+
+      backWave*.72;
     let y=rootY-strandLength*t;
     const ease=t*t*(3-2*t);
     const sweep=clamp(t*1.18,0,1),sideEase=sweep*sweep*(3-2*sweep);
@@ -502,6 +537,13 @@ export function buildHeroineFantasyLongHair(scalp,{lengthInHeads=3.25,bodyEnvelo
     }
     if(cut&&previous){
      x=previous[0];y=previous[1];z=previous[2];bodyCutSections++;
+    }
+    // Read real post-collision segment endpoints, never claim taper based
+    // only on the requested parameter values.
+    if(region==='rear'&&section===SEGMENTS&&!cut&&
+       Math.abs(rootX-cx)>d.x*.20){
+     rearEndSampleCount++;
+     if(Math.abs(x-cx)<Math.abs(rootX-cx))rearEndContractedCount++;
     }
     if(!bang&&y<=b.min.y+d.y*.19&&y>=b.min.y-d.y*.70){
      minimumRearDepth=Math.min(minimumRearDepth,z);
@@ -569,6 +611,13 @@ export function buildHeroineFantasyLongHair(scalp,{lengthInHeads=3.25,bodyEnvelo
   templeClearanceStrategy:'behind-real-shoulder-no-side-wings',
   rootDistribution:'full-crown-and-occiput-not-rear-strip',
    rearFlow:'tapered-clumped-swaying-layers-no-flat-hem',
+   rearSculptedLockCount,
+   rearEndSampleCount,
+   rearEndTaperRatio:rearEndSampleCount?
+    Number((rearEndContractedCount/rearEndSampleCount).toFixed(3)):0,
+   rearLockConvergence:rearEndSampleCount?
+    Number((rearEndContractedCount/rearEndSampleCount).toFixed(3)):0,
+   rearLockDesign:'12-overlapping-source-rooted-volume-locks',
   sweptAsymmetricBangs:true,shorterSideLocks:true,
   rearClearanceStrategy:'actual-body-back-envelope',
   donorScalpOnlyForRoots:true,bodyClearanceMeasured:!!bodyEnvelope,

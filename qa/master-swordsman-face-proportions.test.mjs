@@ -141,7 +141,7 @@ test('heroine 3D nose and mouth use subtle separate anatomical surface changes',
  const v=(x,y,z)=>polishHeroineFacePoint(x,y,z,box);
  const nose=v(.015,.033,.11),lip=v(.025,.014,.11);
  assert.ok(nose.z>.1104,'Nose tip should be real 3D surface detail');
- assert.ok(lip.z>.1104,'Lips should be real 3D surface detail');
+ assert.ok(lip.z<.1108&&lip.z>.090,'Lower lip should be a subtle continuous surface, not a protruding muzzle');
  assert.ok(nose.z<.12&&lip.z<.12,'No artificial protruding nose/lip plates');
  const noOp=polishHeroineFacePoint(.025,.014,.11,box,{strength:0});
  assert.deepEqual(noOp,{x:.025,y:.014,z:.11},
@@ -165,6 +165,15 @@ test('heroine lower cheek is continuously round, while nostrils and mouth corner
   'Back-of-head geometry must remain identical');
 });
 
+test('heroine lower face recesses the real mouth and chin without flattening the nose',()=>{
+ const box={min:{x:-.16,y:-.18,z:-.12},max:{x:.16,y:.20,z:.13}};
+ const v=(x,y,z)=>polishHeroineFacePoint(x,y,z,box);
+ const mouth=v(.012,-.012,.11),chin=v(.015,-.076,.11),nose=v(.012,.033,.11);
+ assert.ok(mouth.z<.106,'Philtrum and mouth muzzle still protrude');
+ assert.ok(chin.z<.11,'Chin must gradually recede instead of squaring forward');
+ assert.ok(nose.z>.1104,'Human nasal tip should remain distinct after recess');
+ assert.deepEqual(v(.012,-.012,-.12),{x:.012,y:-.012,z:-.12});
+});
 test('slim Pages can display original CC0 heroine masters, not a missing archive URL',async()=>{
  const {readFile}=await import('node:fs/promises');
  const html=await readFile(new URL('../master-swordsman-prototype.html',import.meta.url),'utf8');
@@ -183,10 +192,14 @@ test('boy and girl presets use different measured facial proportions, with origi
  assert.ok(girl.proportions.cheekRoundness>boy.proportions.cheekRoundness);
  assert.ok(girl.proportions.cheekRoundness<=1.25,
   'Girl silhouette is guarded against an oversized cartoon jaw');
- assert.ok(girl.proportions.jawTaper>=.88&&girl.proportions.jawTaper<=1.05,
+ assert.ok(girl.proportions.jawTaper>=.80&&girl.proportions.jawTaper<=.97,
   'Jaw sculpt must stay close to the real source');
- assert.ok(girl.proportions.noseWidth>=.78&&girl.proportions.noseWidth<=.88,
+ assert.ok(girl.proportions.noseWidth>=.73&&girl.proportions.noseWidth<=.88,
   'Nose should remain natural after emergency rollback');
+ assert.ok(girl.proportions.lowerFaceProjection<=.78,'The heroine lower face must be less protrusive');
+ assert.ok(girl.proportions.eyeHeight<=.89,'Prevent fixed wide-open doll eyes');
+ assert.ok(girl.proportions.upperLidCoverage>=.30,'Upper lids must relax the eye aperture');
+ assert.ok(girl.proportions.lipFullness<=.75,'Avoid oversized protruding lower lip');
  assert.notEqual(girl.hairStyle,boy.hairStyle);
  assert.equal(boy.facialArtistApproval,false);
  assert.equal(girl.facialArtistApproval,false);

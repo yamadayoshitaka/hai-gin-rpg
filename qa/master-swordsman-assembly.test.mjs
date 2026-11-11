@@ -489,9 +489,9 @@ test('all boy and girl heroes have age-softened proportions and allies retain th
    // re-enabling extreme 'youth' morphs in the production preview.
    assert.ok(hero.youthfulness>=.4&&hero.youthfulness<=.7);
    assert.ok(hero.proportions.cheekRoundness<=1.25);
-   assert.ok(hero.proportions.middleThird>=.93&&hero.proportions.middleThird<=1.04);
-   assert.ok(hero.proportions.jawTaper>=.88&&hero.proportions.jawTaper<=1.05);
-   assert.ok(hero.proportions.chinLength>=.93);
+   assert.ok(hero.proportions.middleThird>=.90&&hero.proportions.middleThird<=1.04);
+   assert.ok(hero.proportions.jawTaper>=.80&&hero.proportions.jawTaper<=1.05);
+   assert.ok(hero.proportions.chinLength>=.87);
   }else{
    assert.ok(hero.youthfulness>=.95);
    assert.ok(hero.proportions.middleThird<=.92);
@@ -525,11 +525,11 @@ test('young male and female heroes have visibly larger heads and soft facial thi
  for(const key of ['hero-01','hero-02','hero-03','hero-04','hero-05','hero-girl-01']){
   const p=featuredSwordsmanProfile(key);
   const isGirl=key==='hero-girl-01';
-  assert.ok(p.headScale>=(isGirl?1.05:1.07)&&p.headScale<=1.11);
+  assert.ok(p.headScale>=(isGirl?1.04:1.07)&&p.headScale<=1.11);
   if(isGirl){
-   assert.ok(p.proportions.middleThird>=.93);
-   assert.ok(p.proportions.chinLength>=.93);
-   assert.ok(p.proportions.noseLength>=.90);
+   assert.ok(p.proportions.middleThird>=.90);
+   assert.ok(p.proportions.chinLength>=.87);
+   assert.ok(p.proportions.noseLength>=.86);
    assert.ok(p.proportions.cheekRoundness<=1.25,
     'Female jaw distortion protection must remain active');
   }else{
@@ -609,6 +609,8 @@ test('real body-surface tunic follows both shoulders, arms and torso without art
   assert.equal(d.sleeveCuffCount,2);
   assert.equal(d.fittedNecklineTrim,true);
   assert.equal(d.fittedHighCollar,true);
+  assert.ok(d.realUpperShoulderCoverTriangles>5,
+   'Upper clavicles still leak pale source skin around the ragged collar');
   assert.equal(d.centerCrestFitted,true);
   assert.equal(d.slimLeatherBelt,false);
   assert.ok(fitted.object.getObjectByName('KNIGHT_SMALL_BREASTPLATE_CREST')?.isMesh);
