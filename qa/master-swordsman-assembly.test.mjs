@@ -609,6 +609,8 @@ test('real body-surface tunic follows both shoulders, arms and torso without art
   assert.equal(d.sleeveCuffCount,2);
   assert.equal(d.fittedNecklineTrim,true);
   assert.equal(d.fittedHighCollar,true);
+  assert.ok(d.realUpperShoulderCoverTriangles>5,
+   'Upper clavicles still leak pale source skin around the ragged collar');
   assert.equal(d.centerCrestFitted,true);
   assert.equal(d.slimLeatherBelt,false);
   assert.ok(fitted.object.getObjectByName('KNIGHT_SMALL_BREASTPLATE_CREST')?.isMesh);
