@@ -798,12 +798,48 @@ $('referenceContour').addEventListener('click',()=>{
 });
 $('side').addEventListener('click',()=>{targetView(look,'side');printState()});
 $('back').addEventListener('click',()=>{targetView(look,'back');printState()});
-async function exportCurrent3D(){
+// Export binary real source meshes including a bounded strand sample.
+ // The viewer retains all 100,000 rendered hair filaments. GLTFExporter
+ // serializing all 600,000 lines exceeded the CI browser timeout, so the
+ // static portable GLB gets a deterministic 1:16 long-hair LOD. There is no
+ // mutation of source GLBs or preview hairs after export.
+ function useStaticWigExportLOD(root){
+  const touched=[],every=16,verticesPerStrand=12;
+  if(!root?.visible||activeFeaturedKey!=='hero-girl-01')return touched;
+  root.traverse(obj=>{
+   if(!obj.isLineSegments||!obj.name.startsWith('HEROINE_WIG_')||
+      !obj.userData?.strands)return;
+   const geo=obj.geometry,position=geo.getAttribute('position'),
+    color=geo.getAttribute('color');
+   if(!position||!color||position.count%verticesPerStrand||
+      position.count<verticesPerStrand*30)return;
+   const strands=position.count/verticesPerStrand,sampled=Math.ceil(strands/every);
+   const pos=new Float32Array(sampled*verticesPerStrand*3);
+   const col=new Float32Array(pos.length);
+   const srcPos=position.array,srcColor=color.array;
+   let o=0;
+   for(let i=0;i<strands;i+=every){
+    const first=i*verticesPerStrand*3;
+    pos.set(srcPos.subarray(first,first+verticesPerStrand*3),o);
+    col.set(srcColor.subarray(first,first+verticesPerStrand*3),o);
+    o+=verticesPerStrand*3;
+   }
+   const lod=new THREE.BufferGeometry();
+   lod.setAttribute('position',new THREE.BufferAttribute(pos,3));
+   lod.setAttribute('color',new THREE.BufferAttribute(col,3));
+   lod.computeBoundingSphere();
+   touched.push({mesh:obj,source:geo,lod});
+   obj.geometry=lod;
+  });
+  return touched;
+ }
+ async function exportCurrent3D(){
  if(!master||!modelReady)throw Error('3D character not loaded');
  const btn=$('exportCharacterGlb');
  // The exported GLB retains actual PBR materials and geometry; wire overlay
  // is diagnostic only and is omitted from the downloaded model.
  clearWireDisplay();
+ const staticWig=useStaticWigExportLOD(importedHair);
  btn.disabled=true;btn.textContent='実3Dジオメトリを書き出し中…';
  try{
   const exporter=new GLTFExporter();
@@ -823,10 +859,15 @@ async function exportCurrent3D(){
   setTimeout(()=>URL.revokeObjectURL(url),30000);
   return data.byteLength;
  }finally{
+  for(const {mesh,source,lod} of staticWig){
+   mesh.geometry=source;
+   lod.dispose();
+  }
   refreshWireDisplay();
   btn.disabled=false;btn.textContent='試作3DをGLB保存（静止モデル）';
  }
 }
+$('exportCharacterGlb').title='3D保存用には長髪を1/16に軽量化します。確認画面では10万本すべてを表示します。';
 $('exportCharacterGlb').addEventListener('click',()=>{
  exportCurrent3D().catch(e=>{hairError='GLB書き出し失敗: '+String(e);printState();console.error(e)});
 });
