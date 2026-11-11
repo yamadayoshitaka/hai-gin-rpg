@@ -88,3 +88,29 @@ body.command-target-preview #battleTargetConfirm{bottom:calc(90px + env(safe-are
 @media(prefers-reduced-motion:reduce){
  .squadCommandRibbon .ribbonSquad,.tactical-eligible{animation:none!important}
 }
+
+
+/* Story sortie: three squads per page, no vertical scroll on phones. */
+#sortieDialog .sortie-card{display:flex;flex-direction:column;gap:7px;max-height:94dvh;
+ overflow:hidden!important;padding:12px!important}
+#sortieDialog .sortie-card h2{flex:none;margin:0}
+#sortieDialog #sortieSummary{font-size:11px;line-height:1.35;margin:0}
+#sortieDialog #sortieObjectives{font-size:12px;line-height:1.4;padding:8px;
+ background:#172f43;border:1px solid #8eabc0;border-radius:7px;margin:0}
+#sortieDialog #sortieSquads{flex:1 1 auto;min-height:0;overflow:hidden!important;margin:0;align-content:start}
+#sortieDialog #sortieSquads .sortie-squad{min-height:50px;padding:6px;gap:6px}
+#sortieDialog #sortieSquads .sortie-squad[hidden]{display:none!important}
+#sortieDialog #sortiePager{display:grid;grid-template-columns:1fr auto 1fr;gap:6px;align-items:center}
+#sortieDialog #sortiePager button{min-height:42px;padding:5px;font-size:12px}
+#sortieDialog #sortiePager span{font-size:11px;color:#ead09b}
+#sortieDialog .sortie-actions{flex:none;margin:0}
+#sortieDialog .sortie-actions button{min-height:44px;padding:7px;font-size:12px}
+#sortieDialog .innCommandGrid{gap:4px;flex:none}
+#sortieDialog .innMetric{padding:6px 4px}
+#sortieDialog .innMetric b{font-size:16px}
+#squadTactics[data-panel="orders"] #squadTacticalCommand{display:none!important}
+#battleLoading.prebattle-setup #openingLaunchSummary{display:none!important}
+#battleLoading.prebattle-setup #openingTacticalSummary{gap:4px;min-height:0;overflow:hidden!important;
+ margin:0!important;padding:9px!important;flex:1 1 auto}
+#battleLoading.prebattle-setup #openingTacticalSummary .openingSummaryLine{font-size:11px;line-height:1.25;gap:5px}
+#battleLoading.prebattle-setup #openingTacticalSummary .openingSummaryLine b{font-size:11px;text-align:right}
