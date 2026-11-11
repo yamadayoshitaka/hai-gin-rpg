@@ -2,6 +2,38 @@ const {chromium}=require('playwright');
 const fs=require('node:fs'),path=require('node:path');
 const out='qa-screenshots/independent-faces';
 fs.mkdirSync(out,{recursive:true});
+// Verify displayed controls, not only the internally stored 3D parameter
+// object: mobile form restoration can overwrite a slider without an input
+// event, leaving a stale value visible while the actual mesh uses defaults.
+async function expectVisibleV8Preset(page,context,contact='brown'){
+ const expected={
+  irisDiameter:1,eyeSize:1,jawSharpness:2.5,noseTipLift:0,
+  nostrilCover:1,noseBridgeSharpness:2.5,eyeAngle:0,
+  lipstickX:0,lipstickY:0,lipstickWidth:1,lipstickHeight:1
+ };
+ const actual=await page.evaluate(keys=>{
+  const result={};
+  for(const key of keys)result[key]={
+   input:document.getElementById(key).value,
+   output:document.getElementById(key+'Value').value
+  };
+  return {result,contact:document.getElementById('contactPreset').value,
+   color:document.getElementById('contactColor').value,
+   model:window.__faceMasterQA().femaleControls};
+ },Object.keys(expected));
+ for(const [key,value] of Object.entries(expected)){
+  const ui=actual.result[key];
+  const suffix=key==='eyeAngle'?'°':
+   ['irisDiameter','eyeSize','jawSharpness','lipstickWidth','lipstickHeight'].includes(key)?'×':'';
+  if(Number(ui.input)!==value||ui.output!==String(value)+suffix||
+     actual.model[key]!==value)
+   throw Error('Displayed v8 standard mismatch ('+context+': '+key+'): '+
+    JSON.stringify({ui,actualModel:actual.model[key],expected:value}));
+ }
+ const colors={brown:'#514139',green:'#5c886b'};
+ if(actual.contact!==contact||actual.color!==colors[contact])
+  throw Error('Contact lens display mismatch ('+context+'): '+JSON.stringify(actual));
+}
 (async()=>{
  const browser=await chromium.launch({headless:true,args:[
   '--use-gl=angle','--use-angle=swiftshader']});
@@ -15,6 +47,15 @@ fs.mkdirSync(out,{recursive:true});
    {waitUntil:'domcontentloaded',timeout:60000});
   await page.waitForFunction(()=>window.__faceMasterQA?.().loaded===true,
    null,{timeout:100000,polling:250});
+  await expectVisibleV8Preset(page,'fresh-open');
+  // Simulate a mobile browser restoring an outdated range thumb/label
+  // without dispatching input; pageshow must re-align UI with model state.
+  await page.evaluate(()=>{
+   document.getElementById('lipstickX').value='.05';
+   document.getElementById('lipstickXValue').value='0.05';
+   window.dispatchEvent(new Event('pageshow'));
+  });
+  await expectVisibleV8Preset(page,'browser-form-restoration');
   const original=await page.evaluate(()=>window.__faceMasterQA());
   if(original.gender!=='female'||original.bodyMeshes!==0||
      original.visibleFaceMeshes!==1||original.sourceUntouched!==true||
@@ -36,6 +77,12 @@ fs.mkdirSync(out,{recursive:true});
      original.femaleControls.noseBridgeSharpness!==2.5||
      !original.maleWithoutMakeup)
    throw Error('Not two independent source-derived face meshes: '+JSON.stringify(original));
+  // A user who touches ONLY the contact color must not inadvertently
+  // inherit lipstickX=.05 or another visible slider value.
+  await page.locator('#contactPreset').selectOption('green');
+  await expectVisibleV8Preset(page,'change-contact-only','green');
+  await page.locator('#contactPreset').selectOption('brown');
+  await expectVisibleV8Preset(page,'contact-back-to-standard');
   const canvas=page.locator('#faceCanvas');
   for(const g of ['female','male']){
    await page.locator('#'+g).click();
@@ -145,6 +192,7 @@ fs.mkdirSync(out,{recursive:true});
   if((await page.evaluate(()=>window.__faceMasterQA())).visiblePartMeshes!==26)
    throw Error('Facial parts did not restore after toggling');
   await page.locator('#resetPreset').click();
+  await expectVisibleV8Preset(page,'reset-button');
   const reset=await page.evaluate(()=>window.__faceMasterQA());
   if(reset.femaleControls.irisDiameter!==1||
      reset.femaleControls.jawSharpness!==2.5||
