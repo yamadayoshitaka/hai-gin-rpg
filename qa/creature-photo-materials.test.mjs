@@ -53,7 +53,9 @@ if(threeAvailable){
     };
     const browserScene=new THREE.Scene();
     const browserRenderer=createCombatWorldObjectRenderer(browserScene);
-    assert.equal(pending.length,6,'馬・狼・3種共通の竜の色と凹凸を合計6枚だけ読み込む');
+    assert.equal(pending.length,7,'6枚の獣毛・竜鱗PBRに守護天使の翼布地1枚を追加');
+    assert.ok(pending.some(({url})=>url.endsWith('/assets/textures/outfits/linen.jpg')),
+      '守護天使の翼が追加された布地の写真テクスチャを参照する');
     for(const {texture,onLoad} of pending)onLoad(texture);
     for(const type of ['horse','wolf','dragon']){
       const mesh=browserScene.getObjectByName(`CombatWorldObject_${type}_high_core`);
