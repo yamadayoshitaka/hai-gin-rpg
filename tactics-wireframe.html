@@ -322,6 +322,14 @@ body[data-circle-target] #destinationPrompt{border:2px solid #ffed9c;box-shadow:
 <div id="squadTactics" hidden aria-label="部隊の号令・行き先"><div class="tacticsHeading"><strong id="squadTacticsName">部隊を選択</strong><button id="squadInspect">🔍 近景</button><button id="squadTacticsClose">✕ 戻る</button></div><div id="squadTypeStatus">編成タイプは固定</div>
 <div id="squadActiveOrder" style="font-weight:800;color:#8be0ff;margin-top:6px">現在の号令：自動行動</div>
 <small id="squadOrderStatus">現在の目的：自動迎撃</small><div class="tacticsActions"><button id="squadOrderChoice">📯 号令</button><button id="squadDestination" hidden aria-hidden="true" tabindex="-1">📍 行き先</button><button id="squadStrategistWarp" hidden>✨ 軍師ワープ</button><button id="squadMissionChoice" hidden aria-hidden="true" tabindex="-1">⚑ 命令</button><button id="squadDetails">📊 HP</button></div><div id="squadTacticsOrders" hidden><strong>一時的な号令（編成は変更されません）</strong><select id="squadTacticalCommand" aria-label="部隊への号令"><option value="">号令を選択</option><option value="charge">⚔ 突撃</option><option value="defend">🛡 守備</option><option value="hold">⏸ 待機</option><option value="retreat">↘ 退却</option></select><div id="squadTacticsCommanderSlot"></div></div><div id="squadTacticsMissions" hidden aria-hidden="true"><strong>部隊ごとの作戦目標</strong><select id="squadMission" aria-label="作戦命令"><option value="">命令を選択</option><option value="destroy_bridge">🌉 橋を破壊</option><option value="burn_tree">🔥 木を焼き払う</option><option value="burn_building">🔥 建物を焼き払う</option><option value="demolish_structure">🧨 障害物を破壊</option><option value="repair_structure">🛠 建物・橋を修理</option><option value="extinguish_fire">💧 火災を消火</option><option value="eliminate_squad">⚔ 指定敵部隊の全滅</option><option value="eliminate_commander">♟ 敵軍師を打ち取れ</option><option value="retreat">↩ 後退</option><option value="clear">× 命令解除</option></select><small>対象をタップして輪郭を表示し、「確定」を押すと命令します。</small></div></div>
+<section id="battleOrderConfirm" hidden aria-label="号令の最終確認">
+ <strong id="battleOrderConfirmTitle">号令を確定</strong><small>この隊の全員に号令を発行します。</small>
+ <div class="confirmActions"><button type="button" id="battleOrderConfirmBack">← 選び直す</button><button type="button" id="battleOrderConfirmCommit" class="commit">✓ 発令する</button></div>
+</section>
+<section id="battleTargetConfirm" hidden aria-label="対象への号令確認">
+ <strong id="battleTargetConfirmTitle">対象を確認</strong><small id="battleTargetConfirmText">選択した対象をズームしています。</small>
+ <div class="confirmActions"><button type="button" id="battleTargetConfirmBack">← 対象変更</button><button type="button" id="battleTargetConfirmCommit" class="commit">✓ この対象に決定</button></div>
+</section>
 <div id="missionTargetConfirm" hidden aria-label="作戦対象の確認"><strong id="missionTargetName">対象を選択</strong><div><button id="missionTargetAccept">✓ この対象で確定</button><button id="missionTargetBack">↩ 選び直す</button></div></div>
 <div id="squadMiniMap" aria-label="上空から見下ろす戦場全域レーダー"><div class="miniHeading"><span>🛰 上空俯瞰・全域</span><button id="miniMapToggle" aria-label="地図を折りたたむ">−</button></div><canvas id="squadMapCanvas" width="232" height="232" aria-label="上空俯瞰・青い部隊と目的地"></canvas><p id="miniMapCurrent">行き先未設定：自動行動中</p><p>青＝味方陣地（西）　赤＝敵陣地（東）　灰＝中立帯<br>白線＝境界・軍師URは自陣全域へ1回ワープ可能</p></div>
 <button id="destinationPrompt" hidden>行き先を指定してください（ここを押すと取り消し）</button>
@@ -6408,11 +6416,45 @@ const battleTacticalUi=installBattleTacticalUI({
  getCooldown:id=>squadOrderCooldownSeconds(id),
  getSquadCenter:id=>squadCenter(id,0),
  getMarkerLabel:id=>squadMarkers.get(squadKey(0,id))?.userData?.screenLabel,
- issueOrder:(id,mode)=>{selectedSquadId=String(id);return issueSquadOrder(mode);},
+ issueOrder:(id,mode)=>{selectedSquadId=String(id);return queueDirectOrder(mode,id);},
  openSquad:id=>openSquadTactics(id),
  closeSquad:()=>closeSquadTactics(),
  isReady:()=>battleReady&&!finished
 });
+let pendingDirectOrder=null;
+function queueDirectOrder(mode,id=orderedSquad()){
+ if(id==null||!hasSquadCommander(id)||squadOrderCooldownSeconds(id)>0)return false;
+ pendingDirectOrder={mode,id:String(id)};
+ $('battleOrderConfirmTitle').textContent=squadPrimaryJob(id)+'隊に「'+
+  ({charge:'突撃',defend:'守備',hold:'待機',retreat:'退却'}[mode]||mode)+'」を発令しますか？';
+ $('battleOrderConfirm').hidden=false;
+ $('squadTactics').hidden=true;
+ return false; // Selection is not an actual issue until the confirm button.
+}
+$('battleOrderConfirmBack').onclick=()=>{
+ pendingDirectOrder=null;$('battleOrderConfirm').hidden=true;
+ if(selectedSquadId!=null){
+  $('squadTactics').hidden=false;
+  showSquadTacticsPanel('main');
+ }
+};
+$('battleOrderConfirmCommit').onclick=()=>{
+ if(!pendingDirectOrder)return;
+ const {id,mode}=pendingDirectOrder;
+ if(String(orderedSquad())!==String(id))return;
+ if(issueSquadOrder(mode)){
+  pendingDirectOrder=null;$('battleOrderConfirm').hidden=true;
+  closeSquadTactics();
+ }
+};
+$('battleTargetConfirmBack').onclick=()=>{
+ if(!pendingCircleTarget)return;
+ pendingCircleTarget.selectedTargetId=null;
+ $('battleTargetConfirm').hidden=true;
+ document.body.classList.remove('command-target-preview');
+ enterCommandOverview();
+};
+$('battleTargetConfirmCommit').onclick=()=>confirmCircleActionTarget();
 function refreshSquadOrderLabel(){
  const id=orderedSquad();if(id==null)return;
  $('squadTacticsName').textContent=squadName(id);
@@ -6586,7 +6628,12 @@ function openSquadTactics(id){
   setBattleCamera(focus,offset);
   setCameraActive(null);
  }
- enterCommandOverview(); // Wide, static camera wins over the initial squad focus.
+ // Hold the selected squad zoom while the player chooses a command;
+ // never overwrite it with the old top-down overview.
+ commandOverviewLocked=true;
+ document.body.classList.add('battle-command-active');
+ commanderCinematic=null;cinematicFocusQueue.length=0;dialogueCameraReturn=null;
+ followCamera=false;focusedHumanUnitId=null;controls.enabled=false;
  $('squadInspect').disabled=true;
  closeBattleMenu();
  $('squadDockIdle').hidden=true;
@@ -6720,6 +6767,9 @@ function closeSquadTactics(){
  $('squadTactics').hidden=true;$('destinationPrompt').hidden=true;$('squadDockIdle').hidden=true;
  document.body.classList.add('squad-menu-closed');
  document.body.classList.remove('compact-orders-open','compact-explore-open');
+ pendingDirectOrder=null;$('battleOrderConfirm').hidden=true;
+ $('battleTargetConfirm').hidden=true;
+ document.body.classList.remove('command-target-preview');
  const previous=squadSelectionReturn;squadSelectionReturn=null;
  commandOverviewLocked=false;
  document.body.classList.remove('battle-command-active');
@@ -6870,8 +6920,8 @@ function buildSquadQuickCommands(){
  if(squadQuickPage==='orders'){
   const cooldown=squadOrderCooldownSeconds(id);
   heading(cooldown?'再号令まで '+cooldown+'秒':'📯 号令（選択した部隊全員に適用）');
-  const issue=mode=>{if(issueSquadOrder(mode))closeSquadTactics()};
-  heading('号令 · 部隊全員（使用後60秒は号令・アイテム不可）');
+  const issue=mode=>queueDirectOrder(mode);
+  heading('号令 · 対応部隊全員（統率Lvに応じた再発行間隔）');
   add('⚔ 突撃','charge',()=>beginCircleTargetSelection('attack'));
   add('✚ 支援','heal_target',()=>beginCircleTargetSelection('support'));
   add('🛡 防御','defend',()=>issue('defend'));
@@ -6959,8 +7009,8 @@ $('squadDestination').onclick=()=>beginSquadDestination(orderedSquad());
 $('squadOrderChoice').onclick=()=>showSquadTacticsPanel('orders');
 $('squadMissionChoice').onclick=()=>showSquadTacticsPanel('missions');
 $('squadTacticalCommand').onchange=e=>{
- if(e.target.value)issueSquadOrder(e.target.value);
- e.target.value='';showSquadTacticsPanel('main');
+ if(e.target.value)queueDirectOrder(e.target.value);
+ e.target.value='';
 };
 $('squadMission').onchange=e=>{
  const type=e.target.value;e.target.value='';
@@ -7237,6 +7287,12 @@ function closeSquadCircleInfo(){
 // hysteresis prevents rapid show/hide flicker during pinch gestures.
 let squadCloseupLabelsHidden=false;
 function syncSquadCloseupLabels(){
+ // A command transaction owns the near camera until the user confirms/cancels.
+ if(commandOverviewLocked){
+  document.body.classList.remove('squad-closeup');
+  squadCloseupLabelsHidden=false;
+  return;
+ }
  const pageZoomed=(window.visualViewport?.scale??1)>1.08;
  const distance=camera.position.distanceTo(controls.target);
  const massCloseup=MASS_SIZE>=1000&&distance<(squadCloseupLabelsHidden?56:48);
