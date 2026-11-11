@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {createCatalogBuildingStructure,createUpperFloorDecorationPlan,createUpperFloorLootPlan} from '../src/building-structure.js';
+import {openTreasureChestModel,syncTreasureChestState} from '../src/treasure-chest-state.js';
 
 const buildings=[['castle_001',100,100,3],['town_house_001',10,10,2],
  ['stone_hut_001',20,20,2],['manor_noble_001',17,15,2],
@@ -39,7 +40,17 @@ assert.match(catalog,/open_upper_floor_windows/,'Building facades have actual up
 assert.match(catalog,/if\(!window\)mesh\(walls/,'Window apertures must remove masonry, not cover it with stickers');
 assert.match(catalog,/secondStoreyWindow\(/,'Mansions also have real upper storey apertures');
 assert.match(viewer,/furnishings:catalogPreview\.getObjectByName/,'3D object list must show furnished floors');
-assert.match(tactical,/chest\.visible=false/,'Collected chest is removed from scene');
+assert.match(tactical,/if\(marker\)openTreasureChestModel\(marker\)/,
+ 'Collected chest remains open and empty rather than vanishing');
+const lid={rotation:{x:0}};
+const chest={visible:true,userData:{opened:false},
+ getObjectByName(name){return name==='treasure_chest_lid'?lid:null;}};
+assert.equal(syncTreasureChestState(chest,'placed'),false,'Untouched chest stays closed');
+assert.equal(openTreasureChestModel(chest),true,'Pickup opens the lid exactly once');
+assert.equal(chest.userData.empty,true,'Opened chest is explicitly empty');
+assert.equal(chest.visible,true,'Opened chest stays visible as a world object');
+assert.ok(lid.rotation.x< -1,'A real hinge rotation opens the lid');
+assert.equal(openTreasureChestModel(chest),false,'An already opened chest cannot reopen');
 assert.match(tactical,/requestUnitFloor\(a,1,travel\.building\)/,'Castle ascends to 3F after 2F pickup');
 assert.doesNotMatch(tactical,/requestUnitFloor\(a,-1\)/,'The upper-floor attacker does not abandon the window');
 console.log('Window-cut walls, furnished 2F/3F, spiral-safe chests and automatic pickup path');
