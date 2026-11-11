@@ -316,6 +316,17 @@ function insect(g,s,{spider=false}={}){
      g.bridge(abdomen,i%2?'accent':'shadow',
        [-width,.315,z],[width,.315,z],.023,.018);
    }
+   // Paired lateral abdominal scutes overlap the dorsal shield instead of
+   // leaving an unnaturally smooth sphere. Each variant retains its own
+   // contour and the abdomen remains on the original animation pivot.
+   for(const side of [-1,1])for(let i=0;i<3+v%2;i++){
+     const z=-.56+i*.20;
+     const x=side*(.38+.035*Math.sin((i+1)*1.2));
+     g.sphere(abdomen,i%2?'shadow':'accent',
+       [x,.12-i*.028,z],[.075,.15,.135],{metal:.10,rough:.67});
+     g.spike(abdomen,'shadow',[x,.16,z-.04],
+       [x+side*.07,.20,z-.13],.018);
+   }
    for(const side of [-1,1]){
      g.spike(abdomen,'shadow',[side*.115,-.19,-.73],
        [side*.17,-.28,-.93-v*.014],.052);
