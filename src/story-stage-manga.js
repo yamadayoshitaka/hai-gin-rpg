@@ -47,11 +47,31 @@ export function mangaForStage(idOrStage='c01-s01'){
  const specialB=hero(confrontation[1]?.characterId)||c2;
  const prev=CAMPAIGN_STAGES[stage.number-2],next=nextCampaignStage(stage.id);
  const first=stage.slot===1?
-  '新しい章が始まる。'+chapter.synopsis:
-  '前の戦場「'+(prev?.name||'')+'」を越え、軍師たちは「'+stage.name+'」に辿り着いた。';
+  '舞台は「'+chapter.location+'」。この土地で新たな事件が起きている。':
+  '前の舞台を越え、軍師たちは「'+stage.name+'」へ辿り着いた。';
  const last=next?
   'この地の決断を胸に、一行は次の舞台「'+next.name+'」へ進む。':
   '星鐘にまつわる二十章の旅の果てに、未来を決める朝が来た。';
+ // The very first meeting must feel like a scene, not an encyclopaedia.
+ // Introduce the player and characters before the royal seal and the starbell.
+ if(stage.id==='c01-s01'){
+  const lucia=byId.lucia,garan=byId.garan,iris=byId.iris;
+  const intro=[
+   panel(stage,0,{type:'opening',second:lucia,text:'灰銀の王都レヴナ。朝の市場を抜け、ひとりの新任軍師が王城へ招かれた。'}),
+   panel(stage,1,{character:lucia,second:garan,text:'来てくれたのですね。私はリュシア。この国の政を預かっています。',expression:'hopeful'}),
+   panel(stage,2,{character:garan,second:lucia,text:'俺はガラン。老騎士だ。まずは、この町で暮らす者たちを見てほしい。',expression:'thoughtful'}),
+   panel(stage,3,{character:iris,second:lucia,text:'イリスです。昨夜、礼拝堂で不思議なことが起きました。亡くなった人の名前が、帳簿から消えたのです。',expression:'anxious'}),
+   panel(stage,4,{character:lucia,second:iris,text:'先王が遺した命令は「国境を守れ」。でも、この王印は何かがおかしい……。',expression:'sorrowful'}),
+   panel(stage,5,{character:garan,second:lucia,text:'急いで答えを出す必要はない。ここにいる者が何を守りたいのか、まず知ってくれ。',expression:'resolute'}),
+   panel(stage,6,{character:lucia,second:garan,text:'町を歩いて準備ができたら、次の舞台「'+(next?.name||'王城')+'」へ。あなたの力を貸してください。',expression:'determined'})
+  ];
+  return Object.freeze({
+   id:stage.id,chapter:stage.chapter,slot:stage.slot,stageName:stage.name,
+   chapterTitle:chapter.title,act:chapter.act,location:chapter.location,
+   number:stage.number,previousStageId:null,nextStageId:next?.id||null,
+   cast:Object.freeze([lucia,garan,iris]),panels:Object.freeze(intro)
+  });
+ }
  const p=[
   panel(stage,0,{type:'opening',text:'第'+stage.chapter+'章・第'+stage.slot+'ステージ　'+stage.name+'。'+first,second:c1}),
   panel(stage,1,{character:c1,second:c2,text:chapter.dialogues[(stage.slot-1)%3].line,expression:'determined'}),
