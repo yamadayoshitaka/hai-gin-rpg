@@ -22,9 +22,9 @@ fs.mkdirSync(out,{recursive:true});
      original.female?.headOnly!==true||original.male?.headOnly!==true||
      !original.female?.sourceGeometryIndependent||
      !original.male?.sourceGeometryIndependent||
-     original.female?.facePartMeshCount!==12||
+     original.female?.facePartMeshCount!==16||
      original.male?.facePartMeshCount!==12||
-     original.visiblePartMeshes!==12)
+     original.visiblePartMeshes!==16)
    throw Error('Not two independent source-derived face meshes: '+JSON.stringify(original));
   const canvas=page.locator('#faceCanvas');
   for(const g of ['female','male']){
@@ -33,7 +33,7 @@ fs.mkdirSync(out,{recursive:true});
     await page.locator('#'+view).click();
     await page.waitForTimeout(200);
     const report=await page.evaluate(()=>window.__faceMasterQA());
-    if(report.gender!==g||report.view!==view||report.visibleFaceMeshes!==1||report.visiblePartMeshes!==12)
+    if(report.gender!==g||report.view!==view||report.visibleFaceMeshes!==1||report.visiblePartMeshes!==(g==='female'?16:12))
      throw Error('Face viewer controls failed '+JSON.stringify(report));
     await canvas.screenshot({path:path.join(out,g+'-'+view+'.png'),
      timeout:90000,animations:'disabled'});
@@ -53,7 +53,7 @@ fs.mkdirSync(out,{recursive:true});
    const gltf=JSON.parse(buf.subarray(20,20+length).toString('utf8').trim());
    const tri=(gltf.meshes||[]).flatMap(m=>m.primitives||[])
     .filter(p=>p.mode===undefined||p.mode===4);
-   if(tri.length!==13)throw Error('Export must contain face + 12 real 3D anatomical parts: '+g+' '+tri.length);
+   if(tri.length!==(g==='female'?17:13))throw Error('Exported face + anatomical meshes mismatch: '+g+' '+tri.length);
    console.log('FACE_CLAY_GLB_EXPORT',JSON.stringify({
     gender:g,bytes:buf.length,trianglePrimitives:tri.length
    }));
@@ -83,7 +83,7 @@ fs.mkdirSync(out,{recursive:true});
   if((await page.evaluate(()=>window.__faceMasterQA())).wire!==true)
    throw Error('Wireframe is not active');
   await canvas.screenshot({path:path.join(out,'female-wire.png')});
-  if((await page.evaluate(()=>window.__faceMasterQA())).visiblePartMeshes!==12)
+  if((await page.evaluate(()=>window.__faceMasterQA())).visiblePartMeshes!==16)
    throw Error('Facial parts did not restore after toggling');
   if(errors.length)throw Error('Browser errors: '+JSON.stringify(errors));
   console.log('INDEPENDENT_MALE_FEMALE_CLAY_FACES_SUCCESS '+
