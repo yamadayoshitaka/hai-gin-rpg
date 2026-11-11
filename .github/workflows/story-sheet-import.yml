@@ -1,0 +1,69 @@
+name: Import approved story art sheets
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'assets/story/sheets/**/base.png'
+      - 'assets/story/sheets/**/heroine-edit.png'
+      - 'assets/story/sheets/**/hero-mask.png'
+      - 'assets/story/sheets/**/review-approved.json'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: story-sheet-registration
+  cancel-in-progress: false
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install free local image slicing tools
+        run: python -m pip install --disable-pip-version-check Pillow==11.3.0
+      - name: Create deterministic 200-stage storyboard grid
+        run: |
+          node scripts/prepare-story-art-batches.mjs
+          node qa/story-art-batches.test.mjs
+      - name: Validate, cut, and install each approved 2x5 story sheet
+        run: |
+          python scripts/slice-story-art-batch.py --all-ready
+          node scripts/build-story-art-coverage.mjs
+          node qa/story-art-coverage.test.mjs
+          node qa/story-stage-prepost-v2.test.mjs
+      - name: Publish actual approved per-panel artwork
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/story/panels/ assets/story/sheets/processed-batches.json src/story-panel-neutral-ids.js
+          if git diff --cached --quiet; then
+            echo "No newly approved scene sheets available; nothing to publish."
+            exit 0
+          fi
+          git commit -m "assets(story): register reviewed 2x5 stage art sheets"
+          git pull --rebase origin main
+          git push origin HEAD:main
+      - name: Keep auditable stage-to-frame and missing-art evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reviewed-story-sheet-import
+          path: |
+            qa-reports/story-art-batch-plan.json
+            assets/story/panel-art-coverage.json
+            assets/story/sheets/processed-batches.json
+          if-no-files-found: ignore
+          retention-days: 14
