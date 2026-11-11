@@ -61,8 +61,6 @@ export function tacticAvailability({squads=[],objective=null,structures=[],highG
  const lockedDoor=structures.some(o=>validStructure(o)&&o.type==='door'&&o.team===1&&o.locked);
  const building=structures.some(o=>validStructure(o)&&o.team===1&&['building','tree'].includes(o.type));
  const hasBridge=structures.some(bridge);
- const hasFriendlyDoor=structures.some(o=>validStructure(o)&&o.type==='door'&&o.team===0&&o.lockLevel<5);
- const enemyCommanderExists=Boolean(structures._enemyCommanderAvailable); // Optional metadata supplied by callers.
  const stage=objective?.type||'eliminate';
  const check={
   balanced:[true,''],
@@ -134,7 +132,6 @@ function safelyDestroyableBridge(objects,allyPositions=[],enemyPositions=[]){
  */
 export function buildTacticPlan({tacticId='balanced',squads=[],objective=null,structures=[],
  allyPositions=[],enemyPositions=[],enemyZone=null,enemyCommanders=[]}={}){
- const available=tacticAvailability({squads,objective,structures,highGroundRoutes:[]});
  if(!tacticById(tacticId))throw Error('不明な作戦です');
  const defenders=objective?.defenderTeam===0;
  const base=squads.map((s,index)=>{
@@ -191,7 +188,7 @@ export function buildTacticPlan({tacticId='balanced',squads=[],objective=null,st
  }
  if(tacticId==='commander_hunt'){
   const commanders=enemyCommanders.filter(u=>u.alive!==false&&u.hp>0&&u.isStrategist);
-  const hunter=base.find(s=>['ninja','fighter','lancer'].includes(s.jobId));
+  const hunter=base.find(s=>s.jobId==='ninja')||base.find(s=>s.jobId==='fighter')||base.find(s=>s.jobId==='lancer');
   if(hunter&&commanders.length){
    commanders.sort((a,b)=>Number(a.id)-Number(b.id));
    const u=commanders[0];
