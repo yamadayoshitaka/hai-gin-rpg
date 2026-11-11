@@ -44,7 +44,7 @@ export function createAnatomicalFaceParts(face,{gender='female'}={}){
  const mat=color=>new THREE.MeshStandardMaterial({
   color,roughness:.89,metalness:0,side:THREE.DoubleSide
  });
- const lidMat=mat(0xbcbfc5),lipMat=mat(0xb2b4bb);
+ const lidMat=mat(0xbcbfc5),lipMat=mat(0xbfc3cb);
  const eyeMat=new THREE.MeshStandardMaterial({
   color:0xd5d8dd,roughness:.48,metalness:0
  });
@@ -89,22 +89,28 @@ export function createAnatomicalFaceParts(face,{gender='female'}={}){
  for(const side of [-1,1]){
   const x=cx+side*eyeSpacing,y=eyeHeight;
   const faceZ=surfaceAt(x,y);
-  const z=faceZ-eyeRadius*.71;
+  const z=faceZ-eyeRadius*.56;
   const globe=new THREE.Mesh(new THREE.SphereGeometry(eyeRadius,36,24),eyeMat);
   globe.name=(side===-1?'LEFT':'RIGHT')+'_ORBITAL_EYEBALL';
   globe.scale.set(1.18,.77,.89);
   globe.position.set(x,y,z);
   globe.userData.sourceProjected=true;
   root.add(globe);
-  const iris=new THREE.Mesh(new THREE.SphereGeometry(eyeRadius*.39,32,18),irisMat);
+  // Real spherical caps on the globe, not flat disks that disappear
+  // at 45° angles. Default SphereGeometry points +Y; rotate to +Z.
+  const iris=new THREE.Mesh(
+   new THREE.SphereGeometry(eyeRadius*.901,32,12,0,Math.PI*2,0,.47),
+   irisMat);
   iris.name=(side===-1?'LEFT':'RIGHT')+'_CURVED_IRIS';
-  iris.scale.set(1,1,.18);
-  iris.position.set(x,y,z+eyeRadius*.86);
+  iris.rotation.x=Math.PI/2;
+  iris.position.set(x,y,z);
   root.add(iris);
-  const pupil=new THREE.Mesh(new THREE.SphereGeometry(eyeRadius*.185,24,14),pupilMat);
+  const pupil=new THREE.Mesh(
+   new THREE.SphereGeometry(eyeRadius*.908,24,10,0,Math.PI*2,0,.19),
+   pupilMat);
   pupil.name=(side===-1?'LEFT':'RIGHT')+'_CURVED_PUPIL';
-  pupil.scale.set(1,1,.24);
-  pupil.position.set(x,y,z+eyeRadius*.915);
+  pupil.rotation.x=Math.PI/2;
+  pupil.position.set(x,y,z);
   root.add(pupil);
   const width=eyeRadius*1.12;
   for(const upper of [true,false]){
