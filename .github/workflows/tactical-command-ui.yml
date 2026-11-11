@@ -3,6 +3,12 @@ on:
   pull_request:
     paths:
       - 'town-hub.html'
+      - 'world-map.html'
+      - 'src/battle-victory-rewards.js'
+      - 'src/battle-ui-refinement.css'
+      - 'src/core-battle-bridge.js'
+      - 'src/story-campaign.js'
+      - 'qa/battle-ui-objective-rewards.test.mjs'
       - 'story-mode.html'
       - 'tactics-wireframe.html'
       - 'src/tactical-command-*.js'
@@ -14,6 +20,12 @@ on:
     branches: [main]
     paths:
       - 'town-hub.html'
+      - 'world-map.html'
+      - 'src/battle-victory-rewards.js'
+      - 'src/battle-ui-refinement.css'
+      - 'src/core-battle-bridge.js'
+      - 'src/story-campaign.js'
+      - 'qa/battle-ui-objective-rewards.test.mjs'
       - 'story-mode.html'
       - 'tactics-wireframe.html'
       - 'src/tactical-command-*.js'
@@ -34,6 +46,8 @@ jobs:
         run: |
           node --check src/tactical-command-evaluation.js
           node --check src/tactical-command-battle-ui.js
+          node --check src/battle-victory-rewards.js
+          node --experimental-vm-modules qa/battle-ui-objective-rewards.test.mjs
           node qa/tactical-command-ui.test.mjs
           node qa/battle-radar-locked-strategy-and-movement.test.mjs
           node qa/town-facility-squad-gear.test.mjs
