@@ -3,6 +3,7 @@ on:
   pull_request:
     paths:
       - 'src/independent-face-masters.js'
+      - 'src/face-feature-meshes.js'
       - 'face-mesh-studio.html'
       - 'qa/independent-face-masters.test.mjs'
       - 'qa/independent-face-masters-browser.cjs'
@@ -11,6 +12,7 @@ on:
     branches: [main]
     paths:
       - 'src/independent-face-masters.js'
+      - 'src/face-feature-meshes.js'
       - 'face-mesh-studio.html'
       - 'qa/independent-face-masters.test.mjs'
       - '.github/workflows/independent-face-masters-qa.yml'
