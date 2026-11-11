@@ -127,7 +127,7 @@ export function unlockedStoryChapters(state){
  if(!state)return 1;
  let count=1;
  for(const chapter of STORY_CHAPTERS){
-  if(chapter.id===20&&!['flame-fort','green-capital'].every(id=>state.owners?.[id]==='player'))break;
+  if(chapter.id===20&&!state.completedStages?.includes('c19-s10')&&!['flame-fort','green-capital'].every(id=>state.owners?.[id]==='player'))break;
   if(chapter.score>storyProgress(state))break;
   count=chapter.id;
  }
