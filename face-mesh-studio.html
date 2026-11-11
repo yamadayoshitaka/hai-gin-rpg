@@ -42,6 +42,7 @@ background:#15263c;padding:9px;z-index:2;border-radius:8px}
 .faceTabs{display:flex;gap:6px;overflow-x:auto;padding:8px 0}
 .faceTabs button{white-space:nowrap;padding:10px 13px;min-width:70px}
 .faceTabs button[aria-pressed=true]{background:#236c60;border-color:#a6e2c8}
+.adjustGrid.tabbedAdjust{display:block}
 .adjustGroup{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}
 .adjustGroup label{display:grid;gap:5px;font-size:14px;background:#213950;border:1px solid #3b5871;border-radius:9px;padding:10px}
 .adjustGroup label input[type=range]{width:100%;min-height:36px;accent-color:#6ec9b1}
@@ -184,7 +185,8 @@ function setActive(ids,id){
 function metrics(){
  const model=models.get(gender);
  return {loaded:ready,gender,view:angle,wire:wired,partsOn,
-  faceMode,contactColor,femaleControls:{...modelChanges},
+  faceMode,contactColor,cameraDistance:camera.position.distanceTo(orbit.target),
+  cameraTarget:orbit.target.toArray(),femaleControls:{...modelChanges},
   maleControls:{...maleChanges},
   maleWithoutMakeup:models.get('male')?.report?.maleNoMakeup??null,
   currentFeatureAngles:models.get('female')?.parts?.userData?.featureAngles||null,
@@ -381,6 +383,68 @@ $('resetMalePreset').addEventListener('click',()=>{
  syncMaleControlDisplays();
  rebuildMale();
 });
+// On a phone the preview remains visible while only one short category
+// is shown. +/- buttons make exact decimal changes easier than thumb dragging.
+function setupAdjustTabs(containerId,groups){
+ const nav=$(containerId),layout=nav.nextElementSibling;
+ layout.classList.add('tabbedAdjust');
+ const labelById=new Map();
+ for(const label of Array.from(layout.children)){
+  if(label.tagName!=='LABEL')continue;
+  const input=label.querySelector('input,select');
+  if(input?.id)labelById.set(input.id,label);
+  const slider=label.querySelector('input[type=range]');
+  if(slider){
+   const actions=document.createElement('div');
+   actions.className='stepRow';
+   for(const [symbol,up] of [['−',false],['＋',true]]){
+    const btn=document.createElement('button');
+    btn.type='button';btn.textContent=symbol;
+    btn.setAttribute('aria-label',(up?'増やす ':'減らす ')+label.textContent.trim());
+    btn.addEventListener('click',()=>{
+     if(up)slider.stepUp();else slider.stepDown();
+     slider.dispatchEvent(new Event('input',{bubbles:true}));
+     slider.dispatchEvent(new Event('change',{bubbles:true}));
+    });
+    actions.append(btn);
+   }
+   label.append(actions);
+  }
+ }
+ const panels=[];
+ for(const [title,ids] of groups){
+  const area=document.createElement('div');
+  area.className='adjustGroup';area.hidden=true;
+  area.dataset.category=title;
+  for(const id of ids){
+   const label=labelById.get(id);
+   if(label)area.append(label);
+  }
+  layout.append(area);panels.push(area);
+  const btn=document.createElement('button');
+  btn.type='button';btn.textContent=title;btn.setAttribute('aria-pressed','false');
+  btn.addEventListener('click',()=>{
+   for(const child of panels)child.hidden=child!==area;
+   for(const child of nav.children)
+    child.setAttribute('aria-pressed',String(child===btn));
+  });
+  nav.append(btn);
+ }
+ nav.firstElementChild?.click();
+}
+setupAdjustTabs('faceGroupTabs',[
+ ['顎・輪郭',['jawSharpness']],
+ ['目元',['irisDiameter','eyeSize','eyeAngle']],
+ ['鼻',['noseTipLift','nostrilCover','noseBridgeSharpness']],
+ ['口紅',['lipstickX','lipstickY','lipstickWidth','lipstickHeight']],
+ ['カラコン',['contactPreset','contactColor']]
+]);
+setupAdjustTabs('maleGroupTabs',[
+ ['顎・輪郭',['maleJawSharpness']],
+ ['目元',['maleEyeSize','maleIrisDiameter','maleEyeAngle']],
+ ['鼻',['maleNoseTipLift','maleNostrilCover','maleNoseBridgeSharpness']],
+ ['ヒゲ',['maleBeardDensity','maleBeardLength']]
+]);
 $('contactPreset').addEventListener('change',()=>{
  const value=$('contactPreset').value;
  if(value!=='custom'){
