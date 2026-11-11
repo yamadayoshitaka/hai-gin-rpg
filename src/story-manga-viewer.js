@@ -6,6 +6,7 @@
  */
 import {mangaForStage} from './story-stage-manga.js';
 import {stageMangaImage} from './story-manga-art.js';
+import {applyCinematicImage} from './story-cinematic-assets.js';
 import {fantasyCueForMangaPanel} from './fantasy-scene-score.js';
 const CORE_SETTINGS='hai-gin-core-settings-v1';
 const readVoice=storage=>{
@@ -86,6 +87,7 @@ export function createMangaViewer({container=document.body,storage=globalThis.lo
   const shot=story.panels[index];
   $('.manga-stage').textContent='第'+story.chapter+'章 · '+story.stageName;
   $('.manga-art').src=stageMangaImage(shot);
+  applyCinematicImage($('.manga-art'),shot);
   $('.manga-art').alt=shot.speaker+'と'+(shot.secondaryId?'仲間':'物語の風景')+'の連続漫画 '+(index+1)+'コマ目';
   $('.manga-art').style.animation='none';void $('.manga-art').offsetWidth;$('.manga-art').style.animation='';
   $('.manga-speaker').textContent=shot.speaker+(shot.characterId?'　／　'+shot.faction+'・'+shot.role:'　／　ナレーション');
