@@ -12,8 +12,30 @@ export const BATTLE_TACTIC_PRESETS=Object.freeze([
  Object.freeze({id:'siege_break',name:'💣 破城工作',summary:'盗賊の解錠、忍者の建物破壊、魔法使いの焼却を組み合わせる',detail:'障害物を突破して敵陣を制圧'}),
  Object.freeze({id:'bridge_denial',name:'🌉 橋破壊・封鎖',summary:'渡河前の味方位置を確認して橋を落とし、敵の進軍を遮断',detail:'味方が渡河中なら橋は破壊しない'}),
  Object.freeze({id:'objective_rush',name:'🚩 目標強襲',summary:'高速ジョブを敵陣へ直行、護衛と回復は隊の役割に応じ配置',detail:'時間制限のある陣地制圧と攻城戦に有効'}),
- Object.freeze({id:'rotation',name:'🔁 波状攻撃',summary:'複数の前衛隊が突撃→退却→守備を交代、僧侶は支援',detail:'戦闘中は選択作戦を固定し、隊の号令だけ30秒周期で自動変更'})
+ Object.freeze({id:'rotation',name:'🔁 波状攻撃',summary:'複数の前衛隊が突撃→退却→守備を交代、僧侶は支援',detail:'作戦は固定。部隊号令だけ30秒ごとに交代'}),
+ Object.freeze({id:'anti_siege',name:'🏰 城門死守',summary:'盾部隊が入口を守り、盗賊が施錠、僧侶が後方支援',detail:'防衛戦の拠点保持と殲滅を両立'}),
+ Object.freeze({id:'arcane_barrage',name:'🔥 魔法弾幕',summary:'盾隊が敵を引きつけ、魔法隊が遠距離火力を集中',detail:'高低差・射線を使い、敵を殲滅する'}),
+ Object.freeze({id:'commander_hunt',name:'🎯 主将狙撃',summary:'忍者や高速前衛が敵主将を優先追跡',detail:'攻城戦の主将撃破、または敵の号令停止を狙う'}),
+ Object.freeze({id:'infiltration',name:'🗝 侵入・解錠',summary:'盗賊が施錠を解除し、忍者が屋上から侵入',detail:'実在する城門・屋上経路を利用する'}),
+ Object.freeze({id:'rear_guard',name:'🩹 殿軍・支援',summary:'盾隊が守り、後衛を温存しながら前衛が敵の弱点を突く',detail:'損耗を抑えた持久戦・防衛向け'})
 ]);
+export const TACTIC_DEFINITIONS=Object.freeze(BATTLE_TACTIC_PRESETS.map((p,index)=>
+ Object.freeze({...p,version:1,priority:index,
+  steps:Object.freeze({
+   balanced:['職業判定','号令分配','目標達成または殲滅'],
+   fortress_defense:['前衛固定','高火力隊の迎撃','時間まで防衛または敵軍殲滅'],
+   highground:['窓・屋上経路を確認','高所対応隊を配置','射線から集中攻撃'],
+   siege_break:['敵の施錠・障害物を選定','職業ごとに解錠・焼却・解体','突入・制圧'],
+   bridge_denial:['味方の渡河完了を確認','渡河路を破壊','残存渡河路と敵残兵を迎撃'],
+   objective_rush:['高速部隊を前方に配置','敵拠点へ突入','目標確保・敵軍殲滅'],
+   rotation:['前衛を2組に分割','突撃と守備を交代','僧侶が支援'],
+   anti_siege:['盾隊を配置','施錠強化','拠点防衛・敵軍殲滅'],
+   arcane_barrage:['盾隊が防衛','魔法隊が攻撃','敵軍殲滅'],
+   commander_hunt:['敵主将を特定','高速隊が追跡','主将撃破・敵軍殲滅'],
+   infiltration:['施錠扉を特定','盗賊が解錠','忍者が高所から侵入'],
+   rear_guard:['盾隊が防御','前衛が攻勢','僧侶が回復']
+  }[p.id])
+ })));
 const frontJobs=new Set(['sword','shield','fighter','lancer']);
 const fastJobs=new Set(['ninja','fighter','lancer','thief']);
 const rangedJobs=new Set(['archer','mage','summoner']);
@@ -39,6 +61,8 @@ export function tacticAvailability({squads=[],objective=null,structures=[],highG
  const lockedDoor=structures.some(o=>validStructure(o)&&o.type==='door'&&o.team===1&&o.locked);
  const building=structures.some(o=>validStructure(o)&&o.team===1&&['building','tree'].includes(o.type));
  const hasBridge=structures.some(bridge);
+ const hasFriendlyDoor=structures.some(o=>validStructure(o)&&o.type==='door'&&o.team===0&&o.lockLevel<5);
+ const enemyCommanderExists=Boolean(structures._enemyCommanderAvailable); // Optional metadata supplied by callers.
  const stage=objective?.type||'eliminate';
  const check={
   balanced:[true,''],
@@ -50,13 +74,19 @@ export function tacticAvailability({squads=[],objective=null,structures=[],highG
    hasBridge?'忍者または魔法使いが必要':'破壊可能な橋が必要'],
   objective_rush:[(stage==='capture_zone'||stage==='siege')&&attackers>0,
    stage==='capture_zone'||stage==='siege'?'忍者・格闘家・槍兵・盗賊のいずれかが必要':'敵陣制圧・攻城戦で使用可能'],
-  rotation:[frontline>=2&&has('priest'),'前衛2隊以上＋僧侶隊が必要']
+  rotation:[frontline>=2&&has('priest'),'前衛2隊以上＋僧侶隊が必要'],
+  anti_siege:[has('shield')&&(has('thief')||has('priest')),
+   '盾騎士隊＋盗賊隊または僧侶隊が必要'],
+  arcane_barrage:[has('mage')&&(has('shield')||frontline>0),'魔法使い＋前衛の隊が必要'],
+  commander_hunt:[has('ninja')||has('fighter')||has('lancer'),'忍者・格闘家・槍兵のいずれかが必要'],
+  infiltration:[has('thief')&&(lockedDoor||high),'盗賊隊と敵の施錠扉または高所進入路が必要'],
+  rear_guard:[has('shield')&&has('priest'),'盾騎士隊＋僧侶隊が必要']
  };
  const recommended=stage==='defend_timer'?'fortress_defense':
   stage==='siege'&&check.siege_break[0]?'siege_break':
   (stage==='capture_zone'||stage==='siege')&&check.objective_rush[0]?'objective_rush':
   check.highground[0]?'highground':'balanced';
- return BATTLE_TACTIC_PRESETS.map(p=>({...p,enabled:check[p.id][0],
+ return TACTIC_DEFINITIONS.map(p=>({...p,enabled:check[p.id][0],
   reason:check[p.id][0]?'使用可能':check[p.id][1],recommended:p.id===recommended}));
 }
 function defaultOrder(job,defending=false){
@@ -103,7 +133,7 @@ function safelyDestroyableBridge(objects,allyPositions=[],enemyPositions=[]){
  * is present. Never fabricate destructible targets.
  */
 export function buildTacticPlan({tacticId='balanced',squads=[],objective=null,structures=[],
- allyPositions=[],enemyPositions=[],enemyZone=null}={}){
+ allyPositions=[],enemyPositions=[],enemyZone=null,enemyCommanders=[]}={}){
  const available=tacticAvailability({squads,objective,structures,highGroundRoutes:[]});
  if(!tacticById(tacticId))throw Error('不明な作戦です');
  const defenders=objective?.defenderTeam===0;
@@ -144,6 +174,41 @@ export function buildTacticPlan({tacticId='balanced',squads=[],objective=null,st
   const rotating=base.filter(s=>frontJobs.has(s.jobId));
   for(const [i,s] of rotating.entries())s.order=i%2===0?'charge':'defend';
   for(const s of base.filter(s=>s.jobId==='priest'))s.order='hold';
+ }
+ if(tacticId==='anti_siege')for(const s of base){
+  s.order=s.jobId==='priest'?'hold':s.jobId==='shield'?'hold':'defend';
+  if(s.jobId==='thief'){
+   const doors=structures.filter(o=>validStructure(o)&&o.type==='door'&&o.team===0&&o.lockLevel<5);
+   doors.sort((a,b)=>Math.hypot(a.x-centerFor(s).x,a.z-centerFor(s).z)-
+    Math.hypot(b.x-centerFor(s).x,b.z-centerFor(s).z));
+   if(doors[0]){s.order='mission';s.strategy='environment_prepare';
+    s.mission={type:'fortify_lock',targetId:doors[0].id,x:Math.round(doors[0].x),z:Math.round(doors[0].z)};}
+  }
+ }
+ if(tacticId==='arcane_barrage')for(const s of base){
+  s.order=s.jobId==='priest'?'hold':s.jobId==='shield'?'defend':
+   s.jobId==='mage'?'charge':frontJobs.has(s.jobId)?'defend':'charge';
+ }
+ if(tacticId==='commander_hunt'){
+  const commanders=enemyCommanders.filter(u=>u.alive!==false&&u.hp>0&&u.isStrategist);
+  const hunter=base.find(s=>['ninja','fighter','lancer'].includes(s.jobId));
+  if(hunter&&commanders.length){
+   commanders.sort((a,b)=>Number(a.id)-Number(b.id));
+   const u=commanders[0];
+   hunter.order='mission';hunter.mission={type:'eliminate_commander',
+    targetSquadId:String(u.squadId),x:Math.round(u.x??u.cell?.x??0),z:Math.round(u.z??u.cell?.z??0)};
+  }
+ }
+ if(tacticId==='infiltration')for(const s of base){
+  if(s.jobId==='thief'){
+   const mission=appropriateEnemyStructure('thief',structures,centerFor(s));
+   if(mission){s.order='mission';s.mission=mission;s.strategy='environment_prepare';}
+  }else if(s.jobId==='ninja')s.order='charge';
+  else s.order=s.jobId==='priest'?'hold':'defend';
+ }
+ if(tacticId==='rear_guard')for(const s of base){
+  s.order=s.jobId==='shield'?'hold':s.jobId==='priest'?'hold':
+   rangedJobs.has(s.jobId)?'defend':'charge';
  }
  return {id:tacticId,orders:base};
 }
