@@ -366,8 +366,7 @@ test('v9 eyeliner and eye accents follow parent eyelids and orbital angle; blush
  const before=eye.rotation.z;
  updateFaceFeatureAngles(model.parts,{eyeAngle:-12});
  assert.notEqual(eye.rotation.z,before);
- assert.equal(source.getObjectByName('GEO-real-source-head').geometry,
-  source.getObjectByName('GEO-real-source-head').geometry);
+ assert.equal(model.report.sourceUntouched,true);
 });
 test('v9 female jaw max increased without changing 2.5 default; male sliders and beard have independent geometry',()=>{
  const source=fixture().source;
