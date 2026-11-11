@@ -2,7 +2,7 @@
 <html lang="ja"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#14263a">
-<title>灰銀のレゾナンス | 男女・顔メッシュ原型 v1</title>
+<title>灰銀のレゾナンス | 男女・顔と立体パーツ v2</title>
 <style>
 :root{font:15px/1.55 system-ui,-apple-system,"Noto Sans JP",sans-serif;color-scheme:dark}
 *{box-sizing:border-box}
@@ -31,8 +31,8 @@ button{padding:9px 11px}
 </style></head>
 <body>
 <header>
-<h1>男女・顔メッシュ原型 v1</h1>
-<p>髪なし・化粧なし・眼球演出なし。男女それぞれの元3D頭部から顔メッシュを独立生成して比較します。既存の胴体・戦闘モデルは変更しません。</p>
+<h1>男女・顔と立体パーツ v2</h1>
+<p>髪・化粧・胴体なし。顔の頬・顎・鼻を実頂点で造形し、眼球・まぶた・唇を別ポリゴンで作った3D試作です。既存の胴体・戦闘モデルは変更しません。</p>
 </header>
 <main><section class="panel">
 <div id="status" role="status">男女のCC0頭部メッシュを読み込み中…</div>
@@ -47,12 +47,13 @@ button{padding:9px 11px}
 <button id="side" aria-pressed="false" disabled>横顔</button>
 <button id="back" aria-pressed="false" disabled>後頭部</button>
 <button id="wire" aria-pressed="false" disabled>ワイヤー表示</button>
+<button id="parts" aria-pressed="true" disabled>目・まぶた・唇を表示</button>
 </div>
 <div class="controls">
 <button id="export" disabled>表示中の顔メッシュをGLB保存</button>
 <a href="./master-swordsman-prototype.html">全身モデル確認画面</a>
 </div>
-<p>指でドラッグして360°回転、ピンチで拡大。男女のメッシュは独立した頂点データです。髪・眼球・まつ毛・鎧・胴体を隠して形状のみ検査します。</p>
+<p>指でドラッグして360°回転、ピンチで拡大。眼球・まぶた・唇をオン／オフして、顔本体とパーツの立体形状を比較できます。髪・鎧・胴体は含みません。</p>
 <p>これは美形を目標にした<b>初回の造形試作</b>です。実写品質・原画一致・美術承認・ゲーム実装は未達です。顔の凹凸や横顔が自然かを先に評価してください。</p>
 <details><summary>実メッシュ数値と原本保護の確認</summary><div id="metrics"></div></details>
 </section></main>
@@ -82,16 +83,17 @@ const orbit=new OrbitControls(camera,canvas);
 orbit.enableDamping=true;orbit.enablePan=false;
 orbit.minDistance=.1;orbit.maxDistance=6;
 const models=new Map();
-let gender='female',angle='front',wired=false,ready=false;
+let gender='female',angle='front',wired=false,partsOn=true,ready=false;
 function setActive(ids,id){
  for(const x of ids)$(x).setAttribute('aria-pressed',String(x===id));
 }
 function metrics(){
  const model=models.get(gender);
- return {loaded:ready,gender,view:angle,wire:wired,
+ return {loaded:ready,gender,view:angle,wire:wired,partsOn,
   female:models.get('female')?.report||null,
   male:models.get('male')?.report||null,
   visibleFaceMeshes:model?Number(model.face.visible&&model.root.visible):0,
+  visiblePartMeshes:model&&partsOn&&model.root.visible?model.report.facePartMeshCount:0,
   exportedSurface:'face-only',bodyMeshes:0,sourceUntouched:true};
 }
 window.__faceMasterQA=metrics;
@@ -128,10 +130,12 @@ function selectGender(next){
  gender=next;
  for(const [k,m] of models)m.root.visible=k===gender;
  setActive(['female','male'],gender);
+ if(models.get(gender)?.parts)models.get(gender).parts.visible=partsOn;
  setView(angle);
  $('status').textContent=FACE_MASTER_SPEC[gender].label+
   '｜実メッシュ'+models.get(gender).report.sourceVertices+'頂点／'+
-  Math.round(models.get(gender).report.triangles)+'三角形（原本保存）';
+  Math.round(models.get(gender).report.triangles)+'顔三角形＋'+
+  models.get(gender).report.facePartMeshCount+'パーツ（原本保存）';
  $('metrics').textContent=JSON.stringify(metrics(),null,2);
 }
 for(const g of ['female','male'])
@@ -140,7 +144,15 @@ for(const view of ['front','threeQuarter','side','back'])
  $(view).addEventListener('click',()=>setView(view));
 $('wire').addEventListener('click',()=>{
  wired=!wired;$('wire').setAttribute('aria-pressed',String(wired));
- for(const m of models.values())m.face.material.wireframe=wired;
+ for(const m of models.values())m.face.traverse(o=>{
+  if(o.isMesh&&o.material)o.material.wireframe=wired;
+ });
+ $('metrics').textContent=JSON.stringify(metrics(),null,2);
+});
+$('parts').addEventListener('click',()=>{
+ partsOn=!partsOn;
+ $('parts').setAttribute('aria-pressed',String(partsOn));
+ for(const model of models.values())if(model.parts)model.parts.visible=partsOn;
  $('metrics').textContent=JSON.stringify(metrics(),null,2);
 });
 $('export').addEventListener('click',async()=>{
@@ -149,8 +161,8 @@ $('export').addEventListener('click',async()=>{
  $('status').textContent='顔メッシュをGLBに書き出しています…';
  try{
   const model=models.get(gender);
-  // Export only the face, preserving source transforms via hierarchy. The
-  // other donor meshes are invisible and onlyVisible skips them.
+  // Export face and, when enabled, our real 3D anatomical mesh parts.
+  // The other donor meshes, hair, outfit and body are excluded.
   const exporter=new GLTFExporter();
   const bin=await new Promise((resolve,reject)=>
    exporter.parse(model.root,resolve,reject,{binary:true,onlyVisible:true}));
@@ -160,7 +172,7 @@ $('export').addEventListener('click',async()=>{
   a.href=url;a.download=FACE_MASTER_SPEC[gender].code+'.glb';
   document.body.appendChild(a);a.click();a.remove();
   setTimeout(()=>URL.revokeObjectURL(url),1000);
-  $('status').textContent='GLBを書き出しました（髪・胴体なしの顔メッシュ）。';
+  $('status').textContent='GLBを書き出しました（胴体・髪なし／パーツ表示に連動）。';
  }catch(e){$('status').textContent='GLB出力失敗: '+String(e);}
  finally{$('export').disabled=false;}
 });
@@ -182,7 +194,7 @@ async function init(){
    models.set(g,model);scene.add(model.root);
   }
   ready=true;
-  for(const id of ['female','male','front','threeQuarter','side','back','wire','export'])
+  for(const id of ['female','male','front','threeQuarter','side','back','wire','parts','export'])
    $(id).disabled=false;
   const query=new URLSearchParams(location.search);
   selectGender(query.get('gender')==='male'?'male':'female');
