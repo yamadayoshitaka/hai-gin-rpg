@@ -78,7 +78,7 @@ export function createMangaViewer({container=document.body,storage=globalThis.lo
   if(!story||!active)return;
   stopVoice();
   const shot=visiblePanels[index];
-  $('.manga-stage').textContent='第'+story.chapter+'章 · '+story.stageName+' · '+(phase==='post'?'戦闘後':phase==='pre'?'開戦前':'全場面');
+  $('.manga-stage').textContent='第'+story.chapter+'章 · '+story.stageName+' · '+(phase==='post'?(story.stageKind==='town'?'町の後日談':'戦闘後'):phase==='pre'?'開戦前':'全場面');
   $('.manga-art').src=stageMangaImage(shot);
   applyCinematicImage($('.manga-art'),shot);
   $('.manga-art').alt=shot.speaker+'と'+(shot.secondaryId?'仲間':'物語の風景')+'の連続漫画 '+(index+1)+'コマ目';
