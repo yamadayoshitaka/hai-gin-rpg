@@ -3,6 +3,7 @@ import {readFileSync} from 'node:fs';
 import {spawnSync} from 'node:child_process';
 import {CAMPAIGN_STAGES} from '../src/campaign-stage-plan.js';
 import {objectiveForStage,evaluateBattleObjective} from '../src/battle-stage-objective.js';
+import {createStageObjectiveMonitor} from '../src/battle-objective-runtime.js';
 import {uniformJobSquadPlan} from '../src/battle-uniform-job-squads.js';
 import {createSquadFormationPlan} from '../src/mass-battle-formations.js';
 
@@ -31,6 +32,40 @@ assert.equal(tick(cap,{allyInZone:false,enemyInZone:false,captureSeconds:17,delt
 assert.equal(tick(siege,{enemyCommanderDefeated:true}).outcome,'victory');
 assert.equal(tick(siege,{enemyCommanderDefeated:false}).outcome,null);
 assert.equal(tick(cap,{allyAlive:0,enemyAlive:0}).outcome,'defeat','Total allied loss is not victory');
+
+// Runtime adapter must count actual troops, not surviving strategists, and
+// notify the 3D display of a stable objective zone exactly once.
+const previousDocument=globalThis.document;
+globalThis.document={createElement:()=>({style:{},setAttribute(){},textContent:''}),
+ body:{append(){}}};
+try{
+ const zoneEvents=[],completions=[];
+ const monitor=createStageObjectiveMonitor(defend,{
+  cellSize:1,onZone:zone=>zoneEvents.push(zone),
+  onComplete:(victory,reason)=>completions.push({victory,reason})
+ });
+ const soldiers=[
+  {id:0,team:0,isStrategist:false,hp:70,root:{position:{x:0,z:0}}},
+  {id:1,team:0,isStrategist:true,hp:200,root:{position:{x:1,z:1}}},
+  {id:2,team:1,isStrategist:false,hp:80,root:{position:{x:30,z:0}}}
+ ];
+ assert.equal(monitor.update(0,soldiers,{mass:false,sideSize:50}),false);
+ assert.equal(zoneEvents.length,1,'Capture ring anchored once');
+ assert.equal(zoneEvents[0].type,'defend_timer');
+ assert.equal(monitor.update(119,soldiers,{mass:false,sideSize:50}),false);
+ soldiers[0].hp=0; // A strategist alone cannot satisfy timed defense.
+ assert.equal(monitor.update(120,soldiers,{mass:false,sideSize:50}),true);
+ assert.equal(completions[0].victory,false);
+ assert.match(completions[0].reason,/壊滅/);
+ assert.equal(completions.length,1,'Battle resolves once');
+ const waiting=createStageObjectiveMonitor(cap);
+ assert.equal(waiting.update(0,[{team:0,hp:20,x:0,z:0},
+  {team:1,hp:20,x:40,z:0}],{mass:true,sideSize:100}),false);
+ assert.ok(waiting.getState().zone.radius>0);
+}finally{
+ if(previousDocument===undefined)delete globalThis.document;
+ else globalThis.document=previousDocument;
+}
 
 // 1-to-10 squads. Real people retain professions, HP, IDs and costumes.
 const jobs=['sword','shield','fighter','ninja','thief','archer','mage','priest','summoner','lancer'];
@@ -67,6 +102,7 @@ const html=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'ut
 assert.match(html,/uniformJobSquadPlan\(massSim\.units,types,team/);
 assert.match(html,/uniformJobSquadPlan\(actors,types,team/);
 assert.match(html,/const objectiveMonitor=createStageObjectiveMonitor/);
+assert.match(html,/BattleObjectiveCaptureZone/,'Defense/capture objective must be visible in the real 3D scene');
 assert.match(html,/if\(checkStageObjective\(\)\)return;/);
 assert.match(html,/objectiveType:stageObjective\?\.type/);
 const moduleCode=html.match(/<script type="module">([\s\S]*?)<\/script>/)?.[1];
