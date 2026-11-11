@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import {createAnatomicalFaceParts} from './face-feature-meshes.js';
+import {normalizeFemaleFaceControls,FEMALE_V7_DEFAULTS} from './face-v7-controls.js';
 
 /**
  * Two independent head-only clay mesh prototypes from the CC0 male and female
@@ -18,18 +19,27 @@ const smooth=(a,b,v)=>{
  * It cannot change cheek edges, jaw width or the outer silhouette.
  * Exported for regression tests against real head vertices.
  */
-export function femaleInnerFeatureDelta({xn,yn,zn,offsetX,depth}){
+export function femaleInnerFeatureDelta({xn,yn,zn,offsetX,depth,height=0,controls=FEMALE_V7_DEFAULTS}){
  const ax=Math.abs(xn),front=smooth(.30,.68,zn);
  // Exact no-op at and beyond the facial-feature boundary, including
  // signed-zero cases, so downstream strict QA can prove no influence.
- if(ax>=.28)return {dx:0,dz:0,noseSupport:0,mouthSupport:0};
+ if(ax>=.28)return {dx:0,dy:0,dz:0,noseSupport:0,mouthSupport:0};
  const noseSupport=(1-smooth(.14,.27,ax))*bell(yn,.572,.055)*front;
  const bridgeSupport=(1-smooth(.13,.26,ax))*bell(yn,.624,.075)*front;
  const tipSupport=(1-smooth(.13,.26,ax))*bell(yn,.566,.045)*front;
  const mouthSupport=(1-smooth(.13,.28,ax))*bell(yn,.503,.029)*front;
+ // Nasal tip moves up independently; lower alar rim drops subtly
+ // to conceal the nostril from the frontal camera.
+ const central=(1-smooth(.10,.26,ax))*front;
+ const tipLift=central*bell(yn,.566,.036);
+ const rimMask=bell(ax,.18,.068)*bell(yn,.530,.026)*front;
+ const bridgeRidge=bell(ax,0,.092)*bell(yn,.653,.098)*front;
  return {
   dx:-offsetX*(.35*noseSupport+.29*mouthSupport),
-  dz:depth*(.023*bridgeSupport+.014*tipSupport-.016*mouthSupport),
+  dy:height*(.020*controls.noseTipLift*tipLift-.008*controls.nostrilCover*rimMask),
+  dz:depth*(.023*bridgeSupport+.014*tipSupport-.016*mouthSupport
+   +.020*controls.noseBridgeSharpness*bridgeRidge
+   +.004*controls.nostrilCover*rimMask),
   noseSupport,mouthSupport
  };
 }
@@ -77,7 +87,7 @@ export const FACE_MASTER_SPEC=Object.freeze({
   eyeSocketSoftness:.002
  }),
  female:Object.freeze({
-  code:'female-face-smooth-source-v6',label:'女性・滑らかな頬＋卵型の顎先（新頭部原型）',
+  code:'female-face-adjustable-v7',label:'女性・大きな虹彩、尖った顎、鼻先・眉まつ毛可変＋カラー',
   jawNarrow:.055,cheekFill:.027,chinLift:.002,
   sourceHead:'realistic-head-animation.glb',
   noseBridge:0,browRelief:.001,mouthRecess:0,
@@ -85,8 +95,9 @@ export const FACE_MASTER_SPEC=Object.freeze({
  })
 });
 
-export function makeIndependentFaceMaster(sourceRoot,gender){
+export function makeIndependentFaceMaster(sourceRoot,gender,{femaleControls={}}={}){
  const spec=FACE_MASTER_SPEC[gender];
+ const controls=normalizeFemaleFaceControls(femaleControls);
  if(!sourceRoot?.traverse||!spec)
   throw Error('Real CC0 head hierarchy and male/female gender required');
  const root=sourceRoot.clone(true);
@@ -153,21 +164,21 @@ export function makeIndependentFaceMaster(sourceRoot,gender){
     *front*neckLock*contourGuard;
   const cheekSupport=(.019*cheek+.011*lowerCheek)*contourGuard;
   const local=gender==='female'?femaleInnerFeatureDelta({
-   xn,yn,zn,offsetX:x-cx,depth:d.z
-  }):{dx:0,dz:0};
+   xn,yn,zn,offsetX:x-cx,depth:d.z,height:d.y,controls
+  }):{dx:0,dy:0,dz:0};
   const surfaceFairing=gender==='female'?femaleCheekJawDelta({
    xn,yn,zn,offsetX:x-cx,depth:d.z,height:d.y
   }):{dx:0,dy:0,dz:0,cheekSupport:0,jawBand:0,apex:0};
   let nx=gender==='female'?
    x+(x-cx)*(cheekSupport-spec.jawNarrow*ovalTransition)
-    +local.dx+surfaceFairing.dx:
+    +local.dx+surfaceFairing.dx*controls.jawSharpness:
    x-(x-cx)*spec.jawNarrow*jaw
       +(x-cx)*(.018*cheek-.012*lowerCheek)
       -(x-cx)*.021*alar;
   // Store the source X exactly at the preserved outer silhouette:
   // float math around zero support can otherwise drift by ~1e-9.
   if(gender==='female'&&Math.abs(xn)>=.86)nx=x;
-  const ny=y+d.y*spec.chinLift*chin+surfaceFairing.dy;
+  const ny=y+d.y*spec.chinLift*chin+(gender==='female'?surfaceFairing.dy*controls.jawSharpness+local.dy:surfaceFairing.dy);
   const nz=gender==='female'?
    z+d.z*(spec.cheekFill*(.74*cheek+.92*lowerCheek)
     +.016*chinHollow
@@ -216,9 +227,10 @@ export function makeIndependentFaceMaster(sourceRoot,gender){
  });
  face.visible=true;
  face.name=gender.toUpperCase()+'_INDEPENDENT_CLAY_FACE';
+ face.userData.colorRole='skin';
  // Anatomical parts are child meshes of the cloned face. Their vertices
  // follow its original local coordinate frame; there is no face-photo plane.
- const parts=createAnatomicalFaceParts(face,{gender});
+ const parts=createAnatomicalFaceParts(face,{gender,controls});
  face.add(parts.root);
  // Original donor eyes/hair are hidden. Only our explicitly generated
  // eyeball/iris, eyelid and lip triangles can accompany the clay face.
@@ -237,6 +249,7 @@ export function makeIndependentFaceMaster(sourceRoot,gender){
   apexLowering:Number(apexLowering.toFixed(7)),
   cheekProtectedSamples,maxCheekWidthChange:Number(maxCheekWidthChange.toFixed(7)),
   cheekJawSculpt:'smooth-head-source-feminine-jaw-v6',
+  femaleControls:gender==='female'?Object.freeze({...controls}):null,
   innerFeatureHalfWidthLimit:.28,
   femaleJawStyle:gender==='female'?'full-cheek-smooth-oval-point-v6':null,
   sourceUntouched:true,sourceGeometryIndependent:face.geometry!==original,
