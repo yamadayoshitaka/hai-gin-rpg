@@ -217,29 +217,44 @@ export function buildHeroineCrownFlow(scalp,{locks=8000}={}){
  }
  if(roots.length<80)throw Error('Actual crown lacks enough visible hair roots');
  const pts=[],col=[],indices=[],sections=4;
+ let totalCrownChord=0,minCrownTipNormalized=Infinity;
  const radial=new THREE.Vector3(),tangent=new THREE.Vector3(),
   side=new THREE.Vector3(),point=new THREE.Vector3();
  for(let i=0;i<locks;i++){
   const seed=i+1;
   const root=roots[(i*67+Math.floor(hash(seed*3.17)*roots.length))%roots.length];
   radial.set((root[0]-cx)/d.x,(root[1]-cy)/d.y,(root[2]-cz)/d.z).normalize();
-  // Along the scalp, not straight out from the vertex (no upright spikes).
+  // Split the crown flow at the actual source head's front/back plane.
+  // Front roots blend into side-swept bangs; rear roots flow toward the neck.
+  // A circular arc follows head curvature instead of making long straight
+  // spikes or plunging through the mesh like an extended tangent ray.
+  const front=(root[2]-cz)/d.z>0;
   const sweep=(root[0]-cx)/d.x;
-  tangent.set(.35+hash(seed*1.83)*.33,
-   -.22-.26*hash(seed*2.07),
-   -.35-.22*hash(seed*7.7)+sweep*.20);
+  tangent.set(.32+hash(seed*1.83)*.27,
+   -.13-.14*hash(seed*2.07),
+   (front?.46:-.53)+sweep*.13+(hash(seed*7.7)-.5)*.12);
   tangent.addScaledVector(radial,-tangent.dot(radial)).normalize();
   side.crossVectors(tangent,radial).normalize();
-  // Longer scalp-tangent paths overlap the foundation instead of short
-  // stubble stuck into a single-colour helmet surface.
-  const length=d.y*(.065+.076*hash(seed*1.31)),
-   halfWidth=d.x*(.00105+.00072*hash(seed*4.91)),
+  const rootYn=(root[1]-box.min.y)/d.y;
+  const longLength=d.y*(.215+.13*hash(seed*1.31));
+  const fringeSafe=front&&rootYn<.86?
+   Math.max(d.y*.070,d.y*(.07+Math.max(0,rootYn-.735)*.90)):longLength;
+  const length=Math.min(longLength,fringeSafe),
+   halfWidth=d.x*(.00115+.00075*hash(seed*4.91)),
    base=pts.length/3;
+  const arcRadius=d.y*.49;
   for(let j=0;j<=sections;j++){
    const t=j/sections,taper=1-t*.94;
+   const angle=length*t/arcRadius;
    point.set(...root)
-    .addScaledVector(tangent,length*t)
-    .addScaledVector(radial,d.y*(.0024+.001*Math.sin(Math.PI*t)));
+    .addScaledVector(tangent,arcRadius*Math.sin(angle))
+    .addScaledVector(radial,arcRadius*(Math.cos(angle)-1))
+    .addScaledVector(radial,d.y*(.0035+.0020*Math.sin(Math.PI*t)));
+   if(j===sections){
+    totalCrownChord+=point.distanceTo(new THREE.Vector3(...root));
+    minCrownTipNormalized=Math.min(minCrownTipNormalized,
+     (point.y-box.min.y)/d.y);
+   }
    for(const sign of [-1,1]){
     const x=point.x+sign*halfWidth*taper*side.x;
     const y=point.y+sign*halfWidth*taper*side.y;
@@ -271,7 +286,10 @@ export function buildHeroineCrownFlow(scalp,{locks=8000}={}){
  return {hair,report:Object.freeze({
   locks,triangles:indices.length/3,
   sourceScalpRooted:true,rootPool:roots.length,
-  layeredCrownNoBaldDome:true,shortTangentFlow:true
+  layeredCrownNoBaldDome:true,extendedScalpArcFlow:true,
+  frontSweepsIntoBangs:true,rearSweepsTowardNape:true,
+  meanTipChordNormalized:Number((totalCrownChord/locks/d.y).toFixed(3)),
+  minTipYNormalized:Number(minCrownTipNormalized.toFixed(3))
  })};
 }
 
@@ -338,6 +356,9 @@ export function buildHeroineWigRootCap(scalp){
   coveredBySolidSourceTopology:true,foreheadBangsVisible:true,
   crownFlowLocks:crownFlow.report.locks,
   crownFlowTriangles:crownFlow.report.triangles,
+  crownMeanChordNormalized:crownFlow.report.meanTipChordNormalized,
+  crownMinTipYNormalized:crownFlow.report.minTipYNormalized,
+  crownExtendedScalpArcFlow:crownFlow.report.extendedScalpArcFlow,
   crownHasActualTangentFibreGeometry:true,
   fringeLockCount:bangs.report.lockCount,
   fringeTriangleCount:bangs.report.triangleCount,
