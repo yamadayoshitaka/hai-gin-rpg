@@ -200,7 +200,7 @@ export function applyCinematicImage(node,panel,{background=false}={}){
  node.dataset.cinematicKey=key;
  const dedicated=individualStoryPanelAsset(panel);
  void (async()=>{
-  if(dedicated&&await getPicture(dedicated+'?panelrev=gender-v1'))return dedicated+'?panelrev=gender-v1';
+  if(dedicated&&await getPicture(dedicated+'?panelrev=20261111-levna-arrival-v2'))return dedicated+'?panelrev=20261111-levna-arrival-v2';
   // Incomplete heroine or unknown-sex panels still display the SAME
   // established character portraits over a gender-neutral scene, never an
   // unreviewed male-protagonist chapter collage.
