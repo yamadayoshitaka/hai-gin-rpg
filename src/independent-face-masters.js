@@ -161,8 +161,8 @@ export function makeIndependentFaceMaster(sourceRoot,gender,{femaleControls={},m
   // Gaussian mouthCorner that inadvertently collapsed the cheek edges.
   // Beyond 86% of the half-head width, female X stays at the source X.
   const contourGuard=1-smooth(.72,.86,Math.abs(xn));
-  const ovalTransition=bell(yn,.365,.165)*smooth(.18,.56,Math.abs(xn))
-    *front*neckLock*contourGuard;
+  const ovalTransition=bell(yn,.365,.115)*smooth(.18,.56,Math.abs(xn))
+    *front*neckLock*contourGuard*smooth(.235,.29,yn);
   const cheekSupport=(.019*cheek+.011*lowerCheek)*contourGuard;
   const local=femaleInnerFeatureDelta({
    xn,yn,zn,offsetX:x-cx,depth:d.z,height:d.y,controls
@@ -172,16 +172,28 @@ export function makeIndependentFaceMaster(sourceRoot,gender,{femaleControls={},m
   });
   // Shared v8 facial topology and nose/mouth proportions. Masculine
   // profile retains a broader lower jaw and slightly smaller, flatter eyes.
+  // Only taper the anterior chin point. The neck, mandibular angles,
+  // cheeks and mouth stay unchanged as this slider moves.
+  const pointY=smooth(.225,.265,yn)*(1-smooth(.375,.425,yn))
+    *bell(yn,.315,.067)*front;
+  const pointX=smooth(.08,.17,Math.abs(xn))*
+    (1-smooth(.36,.53,Math.abs(xn)));
+  const pointGain=controls.jawSharpness;
+  const pointDx=-(x-cx)*.065*pointGain*pointX*pointY;
   let nx=x+(x-cx)*(cheekSupport-spec.jawNarrow*ovalTransition)
-    +local.dx+surfaceFairing.dx*controls.jawSharpness;
+    +local.dx+surfaceFairing.dx*.9+pointDx;
   // Store the source X exactly at the preserved outer silhouette:
   // float math around zero support can otherwise drift by ~1e-9.
   if(Math.abs(xn)>=.86)nx=x;
-  const ny=y+d.y*spec.chinLift*chin+surfaceFairing.dy*controls.jawSharpness+local.dy;
+  const pointApex=smooth(.225,.265,yn)*(1-smooth(.34,.40,yn))
+    *bell(yn,.282,.045)*bell(xn,0,.16)*front;
+  const ny=y+d.y*spec.chinLift*chin+surfaceFairing.dy*.9
+    +local.dy-d.y*.0025*pointGain*pointApex;
   const nz=z+d.z*(spec.cheekFill*(.74*cheek+.92*lowerCheek)
     +.016*chinHollow
     +spec.eyeSocketSoftness*bell(Math.abs(xn),.43,.22)
-      *bell(yn,.69,.055)*front)+local.dz+surfaceFairing.dz;
+      *bell(yn,.69,.055)*front)+local.dz+surfaceFairing.dz
+    +d.z*.003*pointGain*pointApex;
   if(gender==='female'){
    if(Math.abs(xn)>=.86){
     outerContourSamples++;
