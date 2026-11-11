@@ -63,7 +63,7 @@ button{padding:9px 11px}
 <body>
 <header>
 <h1>男女・顔と立体パーツ v9</h1>
-<p>女性顔の指定値2.5倍を維持し、顎先だけを最大5倍まで調整。口紅とチークは実メッシュの頂点に着色し、浮いた化粧面を排除。スライダー調整時もズームを保持します。</p>
+<p>ライブラリに保存された実GLBの顔設定（顎先5倍・鼻穴隠し2）を男女の新標準に採用。口紅とチークは実メッシュの頂点に着色し、浮いた化粧面を排除。スライダー調整時もズームを保持します。</p>
 </header>
 <main><section class="panel">
 <div id="status" role="status">男女のCC0頭部メッシュを読み込み中…</div>
@@ -90,12 +90,12 @@ button{padding:9px 11px}
 <input type="range" id="irisDiameter" min="1" max="2" step="0.1" value="1"></label>
 <label for="eyeSize">目全体の大きさ <output id="eyeSizeValue">1×</output>
 <input type="range" id="eyeSize" min="0.75" max="1.4" step="0.05" value="1"></label>
-<label for="jawSharpness">顎先のシャープさ <output id="jawSharpnessValue">2.5×</output>
-<input type="range" id="jawSharpness" min="0.7" max="5" step="0.1" value="2.5"></label>
+<label for="jawSharpness">顎先のシャープさ <output id="jawSharpnessValue">5×</output>
+<input type="range" id="jawSharpness" min="0.7" max="5" step="0.1" value="5"></label>
 <label for="noseTipLift">鼻頭の持ち上げ <output id="noseTipLiftValue">0</output>
 <input type="range" id="noseTipLift" min="0" max="2" step="0.1" value="0"></label>
-<label for="nostrilCover">鼻の穴を隠す量 <output id="nostrilCoverValue">1</output>
-<input type="range" id="nostrilCover" min="0" max="2" step="0.1" value="1"></label>
+<label for="nostrilCover">鼻の穴を隠す量 <output id="nostrilCoverValue">2</output>
+<input type="range" id="nostrilCover" min="0" max="2" step="0.1" value="2"></label>
 <label for="noseBridgeSharpness">鼻筋の鋭さ <output id="noseBridgeSharpnessValue">2.5</output>
 <input type="range" id="noseBridgeSharpness" min="0" max="2.5" step="0.1" value="2.5"></label>
 <label for="eyeAngle">目元の角度（眉・まつ毛・下まぶた連動） <output id="eyeAngleValue">0°</output>
@@ -120,16 +120,16 @@ button{padding:9px 11px}
 <summary>男性顔の3D調整・ヒゲ</summary>
 <div class="faceTabs" id="maleGroupTabs" aria-label="男性の調整カテゴリ"></div>
 <div class="adjustGrid">
-<label for="maleJawSharpness">顎先のシャープさ <output id="maleJawSharpnessValue">1.15×</output>
-<input type="range" id="maleJawSharpness" min="0.7" max="5" step="0.05" value="1.15"></label>
-<label for="maleEyeSize">目全体の大きさ <output id="maleEyeSizeValue">0.9×</output>
-<input type="range" id="maleEyeSize" min="0.75" max="1.4" step="0.05" value="0.9"></label>
+<label for="maleJawSharpness">顎先のシャープさ <output id="maleJawSharpnessValue">5×</output>
+<input type="range" id="maleJawSharpness" min="0.7" max="5" step="0.05" value="5"></label>
+<label for="maleEyeSize">目全体の大きさ <output id="maleEyeSizeValue">1×</output>
+<input type="range" id="maleEyeSize" min="0.75" max="1.4" step="0.05" value="1"></label>
 <label for="maleIrisDiameter">黒目の大きさ <output id="maleIrisDiameterValue">1×</output>
 <input type="range" id="maleIrisDiameter" min="1" max="2" step="0.1" value="1"></label>
 <label for="maleNoseTipLift">鼻頭の持ち上げ <output id="maleNoseTipLiftValue">0</output>
 <input type="range" id="maleNoseTipLift" min="0" max="2" step="0.1" value="0"></label>
-<label for="maleNostrilCover">鼻の穴を隠す量 <output id="maleNostrilCoverValue">1</output>
-<input type="range" id="maleNostrilCover" min="0" max="2" step="0.1" value="1"></label>
+<label for="maleNostrilCover">鼻の穴を隠す量 <output id="maleNostrilCoverValue">2</output>
+<input type="range" id="maleNostrilCover" min="0" max="2" step="0.1" value="2"></label>
 <label for="maleNoseBridgeSharpness">鼻筋の鋭さ <output id="maleNoseBridgeSharpnessValue">2.5</output>
 <input type="range" id="maleNoseBridgeSharpness" min="0" max="2.5" step="0.1" value="2.5"></label>
 <label for="maleEyeAngle">目・眉の角度 <output id="maleEyeAngleValue">0°</output>
