@@ -320,9 +320,12 @@ async function expectVisibleLibraryPreset(page,context,contact='brown'){
   if(maleQA.maleWithoutMakeup!==true||
      maleQA.male.detailedParts.lipstickMeshCount!==0||
      maleQA.male.detailedParts.underEyeShadowMeshCount!==0||
-     maleQA.male.detailedParts.eyeScale>=maleQA.female.detailedParts.eyeScale)
-   throw Error('Male must use shared female head with smaller eyes and no makeup');
-  await canvas.screenshot({path:path.join(out,'male-v8-no-makeup.png')});
+     maleQA.male.detailedParts.eyelinerMeshCount!==0||
+     maleQA.male.detailedParts.blushVertexTint!==false||
+     Math.abs(maleQA.male.detailedParts.eyeScale-
+      maleQA.female.detailedParts.eyeScale)>1e-8)
+   throw Error('Male must match the saved female eye scale without any cosmetics');
+  await canvas.screenshot({path:path.join(out,'male-v11-library-no-makeup.png')});
   if(errors.length)throw Error('Browser errors: '+JSON.stringify(errors));
   console.log('INDEPENDENT_MALE_FEMALE_CLAY_FACES_SUCCESS '+
    JSON.stringify({femaleVertices:original.female.sourceVertices,
