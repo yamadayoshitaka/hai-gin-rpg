@@ -67,7 +67,7 @@ let options={bgm:true,voice:true,quality:'auto'};
 try{const value=JSON.parse(localStorage.getItem(settingsKey)||'null');if(value)options={...options,...value};}catch{}
 const pageAudio=createGamePageAudio({storage:localStorage,initialScene:'title'});
 const titleVoices=createStoryVoiceDirector();
-const introStory=mangaForStage('c01-s01'),introFrames=introStory.panels.slice(0,6);
+const introStory=mangaForStage('c01-s01',{protagonistGender:getSavedGame(localStorage)?.campaign?.commander?.gender||'unspecified'}),introFrames=introStory.panels.slice(0,6);
 let index=0,introClosed=true;let guideIndex=0,guideIntoNewGame=true;
 function showIntroFrame(){
  const shot=introFrames[index];
