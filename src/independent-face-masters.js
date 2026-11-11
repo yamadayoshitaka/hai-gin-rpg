@@ -34,6 +34,39 @@ export function femaleInnerFeatureDelta({xn,yn,zn,offsetX,depth}){
  };
 }
 
+
+/**
+ * Independent cheek and lower-jaw fairing. v5 only tapered the x=.15
+ * central chin, while the real chin edge lies farther out. The front of
+ * the lower cheek was also left hollow at x≈.30–.50.
+ *
+ * - z: restore a broad continuous convex cheek to the corner-of-mouth
+ * - x: taper ONLY the lower jaw edge into a small oval/V chin point
+ * - y: drop ONLY the centre of the chin tip slightly to remove a flat end
+ *
+ * Do not change the nose, upper cheeks, eye sockets, back of head, neck
+ * attachment, or either side's ear.
+ */
+export function femaleCheekJawDelta({xn,yn,zn,offsetX,depth,height}){
+ const ax=Math.abs(xn),front=smooth(.25,.56,zn);
+ // Cheek correction occupies the anterior middle/lower cheek surface.
+ // Zero at centre mouth, temples, ears and on the rear skull.
+ const cheekSupport=smooth(.16,.25,ax)*(1-smooth(.65,.79,ax))
+  *bell(ax,.355,.19)*bell(yn,.465,.106)*front;
+ const mouthCornerSupport=smooth(.16,.24,ax)
+  *(1-smooth(.60,.77,ax))*bell(ax,.275,.17)
+  *bell(yn,.427,.075)*front;
+ const dz=depth*(.13*cheekSupport+.055*mouthCornerSupport);
+ // Full support on the actual chin outline, not only at the centreline.
+ // Taper smoothly to zero before reaching the cheeks (yn >= .485).
+ const jawBand=bell(yn,.30,.105)*(1-smooth(.400,.485,yn))*front;
+ const jawEdge=smooth(.10,.23,ax)*(1-smooth(.68,.82,ax));
+ const dx=-offsetX*.285*jawBand*jawEdge;
+ const apex=bell(ax,0,.20)*bell(yn,.255,.068)*front;
+ const dy=-height*.008*apex;
+ return {dx,dy,dz,cheekSupport,mouthCornerSupport,jawBand,apex};
+}
+
 export const FACE_MASTER_SPEC=Object.freeze({
  male:Object.freeze({
   code:'male-face-base-v1',label:'男性・美青年ベース',
@@ -42,7 +75,7 @@ export const FACE_MASTER_SPEC=Object.freeze({
   eyeSocketSoftness:.002
  }),
  female:Object.freeze({
-  code:'female-face-half-mouth-sharp-chin-v5',label:'女性・口幅半減＋鼻局所縮小＋顎先シャープ',
+  code:'female-face-full-cheeks-tapered-chin-v6',label:'女性・頬のくぼみ補正＋細い卵型顎先',
   jawNarrow:.012,cheekFill:.095,chinLift:.008,
   noseBridge:0,browRelief:.001,mouthRecess:0,
   eyeSocketSoftness:.004
@@ -78,6 +111,8 @@ export function makeIndependentFaceMaster(sourceRoot,gender){
  const originalPoints=p.array.slice();
  const cx=(b.min.x+b.max.x)/2;
  let changed=0,cheekDelta=0,chinDelta=0;
+ let addedCheekDepth=0,narrowedJawDistance=0,apexLowering=0;
+ let cheekSculptSamples=0,jawSculptSamples=0;
  let outerContourXError=0,outerContourSamples=0;
  let localizedNoseAndMouthSamples=0;
  // A continuous low-amplitude sculpt, not many stacked portrait morphs.
@@ -116,21 +151,24 @@ export function makeIndependentFaceMaster(sourceRoot,gender){
   const local=gender==='female'?femaleInnerFeatureDelta({
    xn,yn,zn,offsetX:x-cx,depth:d.z
   }):{dx:0,dz:0};
+  const surfaceFairing=gender==='female'?femaleCheekJawDelta({
+   xn,yn,zn,offsetX:x-cx,depth:d.z,height:d.y
+  }):{dx:0,dy:0,dz:0,cheekSupport:0,jawBand:0,apex:0};
   let nx=gender==='female'?
    x+(x-cx)*(cheekSupport-spec.jawNarrow*ovalTransition)
-    +local.dx-(x-cx)*.13*chinTip:
+    +local.dx+surfaceFairing.dx:
    x-(x-cx)*spec.jawNarrow*jaw
       +(x-cx)*(.018*cheek-.012*lowerCheek)
       -(x-cx)*.021*alar;
   // Store the source X exactly at the preserved outer silhouette:
   // float math around zero support can otherwise drift by ~1e-9.
   if(gender==='female'&&Math.abs(xn)>=.86)nx=x;
-  const ny=y+d.y*spec.chinLift*chin;
+  const ny=y+d.y*spec.chinLift*chin+surfaceFairing.dy;
   const nz=gender==='female'?
    z+d.z*(spec.cheekFill*(.74*cheek+.92*lowerCheek)
-    +.016*chinHollow+.010*chinTip
+    +.016*chinHollow
     +spec.eyeSocketSoftness*bell(Math.abs(xn),.43,.22)
-      *bell(yn,.69,.055)*front)+local.dz:
+      *bell(yn,.69,.055)*front)+local.dz+surfaceFairing.dz:
    z+d.z*(spec.cheekFill*(.76*cheek+.45*lowerCheek)
     +spec.browRelief*brow+spec.noseBridge*nose
     -spec.mouthRecess*mouth-.004*alar-.002*tip+.004*chinHollow
@@ -143,6 +181,15 @@ export function makeIndependentFaceMaster(sourceRoot,gender){
    }
    if(local.noseSupport>.01||local.mouthSupport>.01)
     localizedNoseAndMouthSamples++;
+   if(surfaceFairing.cheekSupport>.05){
+    cheekSculptSamples++;
+    addedCheekDepth+=Math.max(0,surfaceFairing.dz);
+   }
+   if(surfaceFairing.jawBand>.05){
+    jawSculptSamples++;
+    narrowedJawDistance+=Math.abs(surfaceFairing.dx);
+   }
+   apexLowering+=Math.abs(surfaceFairing.dy);
   }
   p.setXYZ(i,nx,ny,nz);
   if(Math.abs(nx-x)+Math.abs(ny-y)+Math.abs(nz-z)>1e-6)changed++;
@@ -172,8 +219,13 @@ export function makeIndependentFaceMaster(sourceRoot,gender){
   cheekVolumeMetric:Number((cheekDelta/p.count).toFixed(9)),
   chinSmoothMetric:Number((chinDelta/p.count).toFixed(9)),
   outerContourXError,outerContourSamples,localizedNoseAndMouthSamples,
+  cheekSculptSamples,jawSculptSamples,
+  addedCheekDepth:Number(addedCheekDepth.toFixed(7)),
+  narrowedJawDistance:Number(narrowedJawDistance.toFixed(7)),
+  apexLowering:Number(apexLowering.toFixed(7)),
+  cheekJawSculpt:'midface-fullness-and-lower-jaw-taper-v6',
   innerFeatureHalfWidthLimit:.55,
-  femaleJawStyle:gender==='female'?'unpinched-oval-cheek-to-chin-v4':null,
+  femaleJawStyle:gender==='female'?'full-cheek-smooth-oval-point-v6':null,
   sourceUntouched:true,sourceGeometryIndependent:face.geometry!==original,
   headOnly:true,bodyUnchanged:true,hairVisible:false,makeupVisible:false,
   material:'neutral-gray-clay',artCertified:false,
