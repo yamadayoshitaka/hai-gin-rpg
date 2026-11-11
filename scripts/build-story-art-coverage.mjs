@@ -31,7 +31,7 @@ const contentHashOwner=new Map();
 async function realWebp(p){
  if(!p)return null;
  const relative=p.replace(/^\.\//,'');
- if(!/^assets\/story\/panels\/c\d{2}-s\d{2}-m\d{2}(?:-female)?\.webp$/.test(relative))
+ if(!/^assets\/story\/panels\/c\d{2}-s\d{2}-m(?:0[1-9]|10)(?:-female)?\.webp$/.test(relative))
   throw Error('Unsafe panel art path: '+relative);
  if(fileCache.has(relative))return fileCache.get(relative);
  let data;
@@ -76,7 +76,7 @@ for(const stage of CAMPAIGN_STAGES){
     expression:p.expression,emotion:p.mood,
     characters:npc,
     narration:p.text,
-    outputPath:'assets/story/panels/'+p.id.replace(/-m([1-7])$/,(_,n)=>'-m'+String(n).padStart(2,'0'))+
+    outputPath:'assets/story/panels/'+p.id.replace(/-m(\d{1,2})$/,(_,n)=>'-m'+String(n).padStart(2,'0'))+
       (gender==='female'?'-female':'')+'.webp',
     artDirection:'A SINGLE standalone horizontal 16:9 cinematic fantasy RPG illustration depicting THIS specific scene. Natural dynamic staging and period-consistent costumes. Use the canonical character ID portrait references, the location and actions described in the narration. The protagonist gender is '+gender+'. No text, no UI, no gameplay screenshot, no collage, no repeated chapter backdrop, no splash screen, no invented characters, no copying another franchise character.',
     note:'A shotlist entry is an UNGENERATED instruction; never report it as completed art.'
@@ -104,7 +104,7 @@ const stats={
  femaleMissing:results.filter(p=>!p.female).length,
  pendingArtInstructions:shotlist.length,
 };
-if(stats.totalPanels!==1400||stats.totalChapters!==20||stats.totalStages!==200)throw Error('Story schema unexpectedly changed');
+if(stats.totalPanels!==2000||stats.totalChapters!==20||stats.totalStages!==200)throw Error('Story schema unexpectedly changed');
 if(strongIssues.length)throw Error('Invalid or reused panel artwork: '+JSON.stringify(strongIssues.slice(0,8)));
 await fs.mkdir(path.dirname(output),{recursive:true});
 await fs.mkdir(path.dirname(reviewOutput),{recursive:true});
