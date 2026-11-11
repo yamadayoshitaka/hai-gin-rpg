@@ -43,10 +43,26 @@ test('heroine wig paints every upper-crown vertex and keeps face skin uncovered'
  assert.equal(report.crownFlowLocks,8000);
  assert.equal(report.crownFlowTriangles,64000);
  assert.equal(report.crownHasActualTangentFibreGeometry,true);
+ assert.equal(report.crownExtendedScalpArcFlow,true);
+ assert.ok(report.crownMeanChordNormalized>.125,
+  'Crown still looks like short stubble instead of long side-swept hair');
  const fibers=cap.getObjectByName('HEROINE_CROWN_DENSE_SURFACE_FIBRE_FLOW');
  assert.ok(fibers?.isMesh&&fibers.geometry.index.count===64000*3,
   'The wig cap is still an opaque bald-looking dome without top hair');
  assert.ok(fibers.userData.sourceScalpRoots);
+ const crownPositions=fibers.geometry.getAttribute('position');
+ let measuredChord=0;
+ for(let lock=0;lock<8000;lock++){
+  const first=lock*10,last=first+8;
+  const dx=crownPositions.getX(first)-crownPositions.getX(last);
+  const dy=crownPositions.getY(first)-crownPositions.getY(last);
+  const dz=crownPositions.getZ(first)-crownPositions.getZ(last);
+  measuredChord+=Math.hypot(dx,dy,dz);
+ }
+ const measuredCrownChord=measuredChord/8000/size.y;
+ assert.ok(measuredCrownChord>.125,'Actual crown strand tips must be longer');
+ assert.ok(Math.abs(measuredCrownChord-report.crownMeanChordNormalized)<.005,
+  'Reported crown length must match actual 3D geometry, not a design constant');
  assert.equal(report.fringeLockCount,520);
  assert.equal(report.fringeTriangleCount,520*6*2);
  assert.ok(report.fringeTipMinNormalized>=.69);
