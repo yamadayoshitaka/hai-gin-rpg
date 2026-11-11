@@ -428,7 +428,7 @@ export function buildHeroineFantasyLongHair(scalp,{lengthInHeads=3.25,bodyEnvelo
    // Three independently overlapping rear lengths with a tapered hem.
    const backLayer=region==='rear'?Math.min(2,Math.floor(j*3/count)):0;
    const lateral=clamp(Math.abs(rootX-cx)/(d.x*.5),0,1);
-   const edgeTaper=1-.18*lateral*lateral;
+   const edgeTaper=1-.27*lateral*lateral;
    const lockLengthVariance=.12*(hash(seed*5.31)-.5);
    const strandLength=bang?
     Math.min(d.y*(.24+.10*scatter),Math.max(.001,rootY-(b.min.y+d.y*.68))):
@@ -442,7 +442,8 @@ export function buildHeroineFantasyLongHair(scalp,{lengthInHeads=3.25,bodyEnvelo
    const sideDirection=bang?1:(side||Math.sign(rootX-cx)||1);
    // Nearby follicles follow a shared wave phase, not unrelated spikes.
    const flowPhase=(rootX-cx)/d.x*6.1+(rootZ-cz)/d.z*2.8;
-   const light=.82+.17*hash(seed*7.83);
+   // Slight shared clump shading prevents 70k filaments forming a solid pink wall.
+   const light=.71+.25*hash(seed*7.83)+.035*Math.sin(clumpPhase);
    let previous=null,cut=false;
    for(let section=0;section<=SEGMENTS;section++){
     const t=section/SEGMENTS,fall=Math.pow(t,1.4);
@@ -450,11 +451,12 @@ export function buildHeroineFantasyLongHair(scalp,{lengthInHeads=3.25,bodyEnvelo
       d.x*(bang?.006:side?.016:.022);
     const backWave=bang?0:
       Math.sin(t*5.3+clumpPhase)*Math.sin(Math.PI*t*.87)*
-      d.x*(side?.026:.057);
+      d.x*(side?.032:.112);
     // Side locks fold behind the shoulders instead of pointing outwards.
     let x=bang?rootX+sideDirection*d.x*(.17*t+.035*fall)+curl:
      side?rootX+(cx-rootX)*(.075*t+.10*fall)+curl+backWave:
-     rootX+sway*fall+curl+backWave;
+     rootX+(rootX-cx)*(.065*t+.105*fall)+
+      (backLayer-1)*d.x*.035*fall+sway*fall+curl+backWave;
     let y=rootY-strandLength*t;
     const ease=t*t*(3-2*t);
     const sweep=clamp(t*1.18,0,1),sideEase=sweep*sweep*(3-2*sweep);
