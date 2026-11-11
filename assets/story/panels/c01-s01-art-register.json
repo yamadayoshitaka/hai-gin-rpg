@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "project": "灰銀戦記 ― 沈黙の星鐘 ―",
   "stageId": "c01-s01",
   "sceneCount": 7,
@@ -8,48 +8,85 @@
   },
   "registered": [
     {
+      "panelId": "c01-s01-m1",
+      "file": "assets/story/panels/c01-s01-m01.webp",
+      "sourceAIArtwork": "黎明の王都レヴナ市場道行き.png",
+      "status": "integrated-provisional-distinct-scene",
+      "target": "王都レヴナの朝と市場",
+      "qualityNotes": "後ろ姿の軍師と町並み",
+      "resolution": "960x540",
+      "gitBlobSha": "5e9fb251d4f044be13db19a3b4ab4192ef450783"
+    },
+    {
       "panelId": "c01-s01-m2",
       "file": "assets/story/panels/c01-s01-m02.webp",
-      "source": "dedicated AI-painted source from Chapter 1 draft, cropped to focus on Lucia and Garan",
-      "status": "integrated-provisional",
-      "target": "リュシアの挨拶とガランの立ち会い",
-      "resolution": "960x540"
+      "sourceAIArtwork": "a_highly_detailed_anime_style_fantasy_illustration.png",
+      "status": "integrated-provisional-distinct-scene",
+      "target": "摂政リュシアとの謁見",
+      "qualityNotes": "リュシア、ガラン、軍師の初対面",
+      "resolution": "960x540",
+      "gitBlobSha": "78f5f282c684d11ad71b55bb9c6a81cf5ad8528f"
+    },
+    {
+      "panelId": "c01-s01-m3",
+      "file": "assets/story/panels/c01-s01-m03.webp",
+      "sourceAIArtwork": "a_vertical_smartphone_game_screenshot_ui_visual_n.png",
+      "status": "integrated-provisional-distinct-scene",
+      "target": "ガランと王都の人々",
+      "qualityNotes": "市場の群衆が見える構図。民の日常描写は再調整候補",
+      "resolution": "960x540",
+      "gitBlobSha": "74c902dfaca2afa103a6b5b0afb003b7378a9b68"
+    },
+    {
+      "panelId": "c01-s01-m4",
+      "file": "assets/story/panels/c01-s01-m04.webp",
+      "sourceAIArtwork": "a_cinematic_highly_detailed_anime_style_illustrat.png",
+      "status": "integrated-provisional-distinct-scene",
+      "target": "イリスと消えた名簿",
+      "qualityNotes": "帳簿の描写はあるが礼拝堂の背景は要改善",
+      "resolution": "960x540",
+      "gitBlobSha": "e593021e13d584ffcfb8822b4c6cf17ccd943dd5"
+    },
+    {
+      "panelId": "c01-s01-m5",
+      "file": "assets/story/panels/c01-s01-m05.webp",
+      "sourceAIArtwork": "a_detailed_cinematic_storyboard_comic_style_conce.png",
+      "status": "integrated-provisional-distinct-scene",
+      "target": "偽りの王印の発見",
+      "qualityNotes": "文書と王印を主題。リュシアの手元は要追加",
+      "resolution": "960x540",
+      "gitBlobSha": "1baec9679c2b8b87e0e4c7cce26a398df2be1f3a"
     },
     {
       "panelId": "c01-s01-m6",
       "file": "assets/story/panels/c01-s01-m06.webp",
-      "source": "dedicated AI-painted source from Chapter 1 draft",
-      "status": "integrated-provisional",
-      "target": "ガランが軍師に守るべき人々を教える",
-      "resolution": "960x540"
-    }
-  ],
-  "pending": [
-    {
-      "panelId": "c01-s01-m1",
-      "target": "レヴナの朝・新任軍師の背中と町"
-    },
-    {
-      "panelId": "c01-s01-m3",
-      "target": "ガランが市場の人々を示す"
-    },
-    {
-      "panelId": "c01-s01-m4",
-      "target": "イリスが礼拝堂の消えた名前を示す"
-    },
-    {
-      "panelId": "c01-s01-m5",
-      "target": "リュシアが偽造王印を見つめる"
+      "sourceAIArtwork": "a_highly_detailed_anime_style_cinematic_illustrati.png",
+      "status": "integrated-provisional-distinct-scene",
+      "target": "守るべき民を前にしたガラン",
+      "qualityNotes": "負傷者を守る描写。台詞との整合性は引き続き調整",
+      "resolution": "960x540",
+      "gitBlobSha": "5dfc651dacbcd4866bee33dbf21c638aa5e61e70"
     },
     {
       "panelId": "c01-s01-m7",
-      "target": "三人が町へ送り出す"
+      "file": "assets/story/panels/c01-s01-m07.webp",
+      "sourceAIArtwork": "a_detailed_storyboard_style_game_visual_asset_shee.png",
+      "status": "integrated-provisional-distinct-scene",
+      "target": "出発を決める主人公",
+      "qualityNotes": "遠くの城と出発。ガランの見送り描写は要追加",
+      "resolution": "960x540",
+      "gitBlobSha": "118aed6ad6b832c993710d049bf2fdee0a9f7ace"
     }
   ],
+  "pending": [],
+  "qualityPending": [
+    "m03・m04・m05・m07の人物・背景・事実整合の再作画",
+    "主人公の外見は別工程で確定",
+    "20章の残りステージは個別原画未配置なら従来の合成画"
+  ],
   "notes": [
-    "本登録の2枚は各コマ専用ファイルとしてゲームで表示するが、最終完成画ではない。",
-    "未登録5枚には元画像・章背景と人物合成、SVGによるフォールバックを使う。",
-    "別工程の3Dキャラクターモデルを固定しない。主人公の顔は未確定。",
-    "今後の作画による置換はパネル単位の正確な構図と人物マスター照合を条件とする。"
+    "第1章7コマは別々のAI生成素材を場面ごとに再構成した専用WebP。章背景に人物を重ねた同一絵の使い回しは第1章では行わない。",
+    "7枚はゲーム登録済みの暫定素材であり、各コマ独立の新規描き起こし完成原画と同義ではない。",
+    "3Dモデル・戦闘制御・既存音声を削除しない。"
   ]
 }

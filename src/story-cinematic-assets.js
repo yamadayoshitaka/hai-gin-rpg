@@ -99,7 +99,7 @@ export function applyCinematicImage(node,panel,{background=false}={}){
  node.dataset.cinematicKey=key;
  const dedicated=individualStoryPanelAsset(panel);
  void (async()=>{
-  if(dedicated&&await getPicture(dedicated))return dedicated;
+  if(dedicated&&await getPicture(dedicated+'?panelrev=20261111-7'))return dedicated+'?panelrev=20261111-7';
   return cinematicPanelImage(panel);
  })().then(url=>{
   if(!url||node.dataset.cinematicKey!==key||!node.isConnected)return;

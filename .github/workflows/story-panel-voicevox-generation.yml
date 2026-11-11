@@ -6,6 +6,7 @@ on:
     paths:
       - '.github/workflows/story-panel-voicevox-generation.yml'
       - 'scripts/generate-story-panel-voicevox.mjs'
+      - 'src/story-voice-director.js'
   workflow_dispatch:
     inputs:
       chapter:
@@ -90,7 +91,7 @@ jobs:
             echo "No new clips generated"
             exit 0
           fi
-          git commit -m "assets(story): register synthesized VOICEVOX panel audio [skip ci]"
+          git commit -m "assets(story): register synthesized VOICEVOX panel audio"
           git pull --rebase origin main
           git push origin HEAD:main
       - name: Save actual audio as a QA artifact

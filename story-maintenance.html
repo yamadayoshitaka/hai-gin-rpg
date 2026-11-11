@@ -83,7 +83,7 @@ import {mangaForStage} from './src/story-stage-manga.js';
 import {stageMangaImage} from './src/story-manga-art.js';
 import {applyCinematicImage,CINEMATIC_CAST_ASSETS} from './src/story-cinematic-assets.js';
 import {createMangaViewer} from './src/story-manga-viewer.js';
-import {createStoryVoiceDirector,STORY_VOICE_PROFILES} from './src/story-voice-director.js';
+import {createStoryVoiceDirector,STORY_VOICE_PROFILES,STORY_NARRATOR_PROFILE} from './src/story-voice-director.js';
 const $=id=>document.getElementById(id);
 const escapeHTML=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const active=loadGame(localStorage,sessionStorage);
@@ -159,8 +159,13 @@ $('characterGrid').onclick=event=>{
 void fetch('./audio/voicevox/manifest.json').then(r=>r.ok?r.json():null).then(data=>{
  const keys=Object.keys(data?.clips||{});
  const chapterClips=keys.filter(key=>key.startsWith('story::chapter::')).length;
- const panelClips=keys.filter(key=>key.startsWith('story::panel::')).length;
- $('voiceCoverage').textContent='VOICEVOX収録：章ナレーション '+chapterClips+'/20、各コマ台詞 '+panelClips+'/1400。未収録は端末の日本語ボイスに切り替わります。';
+ let currentPanelClips=0;
+ for(let ch=1;ch<=20;ch++)for(const stage of stagesInChapter(ch))for(const panel of mangaForStage(stage.id).panels){
+  const speaker=STORY_VOICE_PROFILES[panel.characterId]||STORY_NARRATOR_PROFILE;
+  const key='story::panel::'+panel.id+'::'+panel.text.slice(0,380)+'::'+speaker.voicevoxSpeaker;
+  if(data?.clips?.[key])currentPanelClips++;
+ }
+ $('voiceCoverage').textContent='VOICEVOX収録：章ナレーション '+chapterClips+'/20、現在の話者設定に合う各コマ台詞 '+currentPanelClips+'/1400。旧話者のキャッシュは完了数に含めません。';
 }).catch(()=>$('voiceCoverage').textContent='音声収録一覧を取得できません。端末読み上げで確認できます。');
 setChapter(Number(new URLSearchParams(location.search).get('chapter'))||1);
 renderCast();
