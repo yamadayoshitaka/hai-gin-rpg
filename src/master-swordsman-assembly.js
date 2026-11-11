@@ -1200,7 +1200,13 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false,gen
    pupilGap=Math.max(pupilGap,
     Math.hypot(pupilLayer.position.x,pupilLayer.position.y)/Math.max(.001,nominalRadius));
    eyeYs.push(mid.y);
-   const lowerEdge=new THREE.Box3().setFromObject(upper).min.y;
+   // Clearance is measured from the true original eyelid RIM, not the
+   // auxiliary folded skin patch (which may be hidden or cover the top
+   // of the iris intentionally). Box3.setFromObject includes hidden children.
+   upper.updateWorldMatrix(true,false);
+   upper.geometry.computeBoundingBox();
+   const lowerEdge=upper.geometry.boundingBox.clone()
+    .applyMatrix4(upper.matrixWorld).min.y;
    clearance=Math.min(clearance,(lowerEdge-mid.y)/Math.max(.001,size.y));
   }
   if(eyeYs.length===2)eyeHeightAsymmetry=Math.abs(eyeYs[0]-eyeYs[1]);
