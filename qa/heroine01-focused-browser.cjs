@@ -81,9 +81,6 @@ fs.mkdirSync(dir,{recursive:true});
   // visible and lash transforms MUST be attached to the upper eyelids.
   const originalProportions=d.appearance.proportions;
   const baseEye=d.facialQA;
-  if(!document){
-   // Browser-only actual material and full 3D eye measurements follow.
-  }
   if(baseEye?.visibleNativeEyeballCount!==2||baseEye?.visibleIrisOverlayCount!==2||
      baseEye?.visibleEyelashMeshCount!==2||baseEye?.lashFollowsUpperLid!==true)
    throw Error('Original heroine is missing real eyes or eyelash rigs '+JSON.stringify(baseEye));
