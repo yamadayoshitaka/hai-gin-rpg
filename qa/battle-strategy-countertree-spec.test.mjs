@@ -25,7 +25,7 @@ const situationIds=BATTLE_SITUATION_DEFINITIONS.map(x=>x.id).sort();
 const actionIds=BATTLE_COUNTERMEASURE_DEFINITIONS.map(x=>x.id).sort();
 assert.equal(tacticIds.length,12);
 assert.equal(situationIds.length,67);
-assert.equal(actionIds.length,20);
+assert.equal(actionIds.length,19);
 assert.deepEqual(Object.keys(STRATEGY_SCENARIO_LINKS).sort(),tacticIds);
 assert.deepEqual(STRATEGY_RESPONSE_HIERARCHY.map(x=>x.tacticId).sort(),tacticIds);
 assert.deepEqual(HIERARCHY_SCENARIO_COVERAGE,situationIds,
