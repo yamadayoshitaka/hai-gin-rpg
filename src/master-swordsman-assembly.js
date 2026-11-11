@@ -209,7 +209,10 @@ export function applyHeroineMakeupToFace(faceMesh,neutralColors,{
   // two narrow 3D elliptical masks over the protruding centre mouth.
   const lipBand=smooth(.367,.377,y)*(1-smooth(.431,.447,y));
   const lipRelief=smooth(.74,.92,z);
-  const lips=front*lipRelief*bell(x,0,.19)*lipBand*
+  // A Gaussian alone has infinite tails: the pigment was technically
+  // reaching the cheeks even when the vertical lip band was correct.
+  const cornerFade=1-smooth(.33,.45,Math.abs(x));
+  const lips=front*lipRelief*bell(x,0,.19)*cornerFade*lipBand*
    (.90*bell(y,.410,.014)+.72*bell(y,.386,.013))*
    intensity*THREE.MathUtils.clamp(lip,0,1);
   // Dark-brown upper lash line, located against the SOURCE sclera anchors,
