@@ -145,16 +145,16 @@ export function buildHeroineFrontFringe(scalp,{locks=520}={}){
   // A minority of shorter inner locks cross over to hide a visible hairline.
   // Interleaved sweep lengths prevent a straight fringe edge.
   const bank=i%3;
-  const length=d.y*([.13,.17,.205][bank]+.055*hash(seed*2.71));
+  const length=d.y*([.095,.122,.148][bank]+.035*hash(seed*2.71));
   const wave=(hash(seed*5.53)-.5)*d.x*.040;
-  const drift=d.x*(.065+.120*hash(seed*3.43));
+  const drift=d.x*(.048+.079*hash(seed*3.43));
   // Small overlapping fillets: avoid a single opaque horizontal fringe slab.
   const width=d.x*(.00225+.00235*hash(seed*1.69));
   for(let j=0;j<=N;j++){
    const t=j/N,e=t*t*(3-2*t);
    const x=clamp(x0+drift*e+wave*Math.sin(Math.PI*t),
     b.min.x+d.x*.03,b.max.x-d.x*.025);
-   const y=Math.max(b.min.y+d.y*.705,y0-length*t);
+   const y=Math.max(b.min.y+d.y*.755,y0-length*t);
    // Follow the forehead rather than stabbing outward from the hairline:
    // only a small surface stand-off above the actual source frontal Z.
    const z=z0+d.z*(.012+.034*t+.010*Math.sin(Math.PI*t));
@@ -232,14 +232,14 @@ export function buildHeroineCrownFlow(scalp,{locks=8000}={}){
   side.crossVectors(tangent,radial).normalize();
   // Longer scalp-tangent paths overlap the foundation instead of short
   // stubble stuck into a single-colour helmet surface.
-  const length=d.y*(.095+.110*hash(seed*1.31)),
+  const length=d.y*(.065+.076*hash(seed*1.31)),
    halfWidth=d.x*(.00105+.00072*hash(seed*4.91)),
    base=pts.length/3;
   for(let j=0;j<=sections;j++){
    const t=j/sections,taper=1-t*.94;
    point.set(...root)
     .addScaledVector(tangent,length*t)
-    .addScaledVector(radial,d.y*(.006+.002*Math.sin(Math.PI*t)));
+    .addScaledVector(radial,d.y*(.0024+.001*Math.sin(Math.PI*t)));
    for(const sign of [-1,1]){
     const x=point.x+sign*halfWidth*taper*side.x;
     const y=point.y+sign*halfWidth*taper*side.y;
@@ -282,6 +282,9 @@ export function buildHeroineWigRootCap(scalp){
  const bb=src.boundingBox,d=bb.getSize(new THREE.Vector3());
  const cx=(bb.min.x+bb.max.x)*.5;
  const cap=src.clone(),color=new Float32Array(positions.count*4);
+ // Store blend weights so the runtime can match actual face skin and wig
+ // pigment instead of painting a saturated, helmet-like pink scalp.
+ const rootPigment=new Float32Array(positions.count);
  let crownSamples=0,coveredCrown=0;
  for(let i=0;i<positions.count;i++){
   const x=positions.getX(i),y=positions.getY(i),z=positions.getZ(i);
@@ -298,15 +301,20 @@ export function buildHeroineWigRootCap(scalp){
   // The cap is the UNDERCOAT, not the visible finish: broad micro-contrast
    // reads as hair depth when the independent scalp fibers cross it.
    const direction=(x-cx)*93+z*67-y*38;
-   const l=.77+.19*Math.sin(direction)*Math.sin(direction*.41+1.2);
-  color[o]=l;color[o+1]=l*.94;color[o+2]=l*.97;color[o+3]=a;
+   const l=.94+.05*Math.sin(direction)*Math.sin(direction*.41+1.2);
+  const rootWeight=clamp((yn-.69)/.27,0,1)*
+   (.70+.30*(1-front*.45));
+  rootPigment[i]=rootWeight;
+  // Until the authored heroine palette is assigned, use neutral near-skin
+  // vertex color. No solid pink paint is baked into the hair root mesh.
+  color[o]=l;color[o+1]=l;color[o+2]=l;color[o+3]=a;
   if(yn>.87){crownSamples++;if(a>.98)coveredCrown++;}
  }
  if(crownSamples<35||coveredCrown/crownSamples<.95)
   throw Error('Wig crown leaves a bald scalp: '+coveredCrown+'/'+crownSamples);
  cap.setAttribute('color',new THREE.BufferAttribute(color,4));
  const material=new THREE.MeshStandardMaterial({
-  color:0xd6a5ba,vertexColors:true,side:THREE.DoubleSide,
+  color:0xedcbbf,vertexColors:true,side:THREE.DoubleSide,
   roughness:.82,metalness:0,transparent:true,alphaTest:.02,depthWrite:true,
   polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2
  });
@@ -315,6 +323,7 @@ export function buildHeroineWigRootCap(scalp){
  mesh.matrixAutoUpdate=false;mesh.matrix.copy(scalp.matrix);
  mesh.castShadow=true;mesh.renderOrder=0;
  mesh.userData.wigCapFromSourceTopology=true;
+ mesh.userData.skinToHairRootBlend=rootPigment;
  mesh.userData.donorHairMustBeHidden=true;
  // The underlay and fringe are a single independently toggleable wig module.
  // Both inherit the source head's exact transform, with no donor wig visible.
@@ -324,6 +333,7 @@ export function buildHeroineWigRootCap(scalp){
  mesh.add(bangs.fringe);
  return {cap:mesh,report:Object.freeze({
   sourceHeadConforming:true,sourceScalpHidden:true,wigRootFoundationOnly:true,
+  neutralSkinRootBlend:true,noSaturatedScalpPaint:true,
   crownSamples,coveredCrown,coverageRatio:coveredCrown/crownSamples,
   coveredBySolidSourceTopology:true,foreheadBangsVisible:true,
   crownFlowLocks:crownFlow.report.locks,
@@ -435,7 +445,7 @@ export function buildHeroineFantasyLongHair(scalp,{lengthInHeads=3.25,bodyEnvelo
     side?d.y*(.97+.55*scatter)*edgeTaper:
     d.y*lengthInHeads*([.41,.55,.70][backLayer]+.13*scatter+
      lockLengthVariance)*edgeTaper;
-   const sway=(hash(seed*11.3)-.5)*d.x*.095;
+   const sway=(hash(seed*11.3)-.5)*d.x*.058;
    const clumpBand=Math.floor((rootX-cx)/d.x*23);
    const clumpDepth=Math.floor((rootZ-cz)/d.z*8);
    const clumpPhase=clumpBand*.47+clumpDepth*.89+backLayer*.61;
@@ -451,7 +461,7 @@ export function buildHeroineFantasyLongHair(scalp,{lengthInHeads=3.25,bodyEnvelo
       d.x*(bang?.006:side?.016:.022);
     const backWave=bang?0:
       Math.sin(t*5.3+clumpPhase)*Math.sin(Math.PI*t*.87)*
-      d.x*(side?.032:.112);
+      d.x*(side?.024:.074);
     // Side locks fold behind the shoulders instead of pointing outwards.
     let x=bang?rootX+sideDirection*d.x*(.17*t+.035*fall)+curl:
      side?rootX+(cx-rootX)*(.075*t+.10*fall)+curl+backWave:
