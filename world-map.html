@@ -57,6 +57,7 @@ if(!validGame(game)){location.replace('./game.html');throw Error('No game');}
 game.location='map';
 const mapAudio=createGamePageAudio({storage:localStorage,initialScene:'map'});
 // Stage comic is shown before every sortie, independent of the battle runtime.
+const POST_EVENT_PENDING_KEY='hai-gin-story-post-manga-pending-v2';
 const mangaViewer=createMangaViewer({storage:localStorage,
  onCue:cue=>{mapAudio.changeScene('manga',cue.url);mapAudio.unlock();},
  onClose:()=>mapAudio.changeScene('map')
@@ -253,7 +254,7 @@ $('sortie').onclick=()=>{
   game.storyFlags??={};game.storyFlags.stageMangaSeen??={};
   game.storyFlags.stageMangaSeen[stage.id]=true;
   saveSession();launchSelectedStage(stage.id);
- },context:storyStageContext(game,stage.id)});
+ },context:storyStageContext(game,stage.id),phase:'pre'});
 };
 function completeReturnedBattle(){
  try{
@@ -264,6 +265,10 @@ function completeReturnedBattle(){
   sessionStorage.removeItem(CORE_BATTLE_PENDING_KEY);
   sessionStorage.removeItem(CORE_BATTLE_RESULT_KEY);
   sessionStorage.removeItem('hai-gin-story-sortie-v1');
+  sessionStorage.setItem(POST_EVENT_PENDING_KEY,JSON.stringify({
+   stageId:outcome.stage.id,battleId:request.battleId,
+   victory:outcome.victory,casualties:outcome.casualties
+  }));
   saveSession();
   const nextStage=outcome.next||outcome.stage;chapter=nextStage.chapter;selected=nextStage.id;
   message(outcome.stage.name+'：'+(outcome.victory?'勝利！次のステージが解放されました。':'敗北。町で編成を見直してください。')+' 戦死'+outcome.casualties+'人');
@@ -272,5 +277,23 @@ function completeReturnedBattle(){
 const params=new URLSearchParams(location.search);
 if(params.get('chapter')&&Number.isInteger(Number(params.get('chapter'))))chapter=Math.max(1,Math.min(20,Number(params.get('chapter'))));
 selected=stagesInChapter(chapter)[0].id;
+function showPendingPostBattleEvent(){
+ let pending=null;
+ try{pending=JSON.parse(sessionStorage.getItem(POST_EVENT_PENDING_KEY)||'null');}
+ catch{sessionStorage.removeItem(POST_EVENT_PENDING_KEY);return;}
+ if(!pending||!CAMPAIGN_STAGE_BY_ID[pending.stageId]||
+    typeof pending.victory!=='boolean'||!Number.isInteger(pending.casualties))return;
+ const context={...storyStageContext(game,pending.stageId),battleOutcome:{
+  victory:pending.victory,casualties:pending.casualties
+ }};
+ mapAudio.unlock();
+ mangaViewer.open(pending.stageId,{phase:'post',context,onFinish:()=>{
+  game.storyFlags??={};game.storyFlags.stagePostMangaSeen??={};
+  game.storyFlags.stagePostMangaSeen[pending.stageId]=true;
+  sessionStorage.removeItem(POST_EVENT_PENDING_KEY);
+  saveSession();
+ }});
+}
 completeReturnedBattle();render();
+showPendingPostBattleEvent();
 </script></body></html>
