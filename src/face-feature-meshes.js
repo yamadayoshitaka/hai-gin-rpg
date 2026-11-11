@@ -277,6 +277,8 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
  // Avoid a single flat 'mouth plate' or pigment printed on the chin.
  const lipCenter=box.min.y+d.y*(female?.509:.509);
  const halfWidth=d.x*.044;
+ // Bounds measured from real upper/lower lip meshes (float32 vertices).
+ const lipBounds=new Map();
  for(const upper of [true,false]){
   const material=lipMat;
   const mesh=buildGrid((upper?'UPPER':'LOWER')+'_3D_VERMILION_LIP',
@@ -294,6 +296,8 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
    },material);
   mesh.userData.faceSurfaceConforming=true;
   mesh.userData.colorRole='lipBase';
+  lipBounds.set(upper,new THREE.Box3().setFromBufferAttribute(
+   mesh.geometry.getAttribute('position')));
   root.add(mesh);
  }
  // Separate lipstick overlay: this colors only the actual mouth surface,
@@ -321,8 +325,11 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
       d.y*.0018*(bell(Math.abs(t),.37,.22)-.42*bell(t,0,.23)):0;
     const cy=lipCenter+(upper?d.y*.009:-d.y*.009)+cupid;
     const vertical=(lipV-.5)*d.y*(upper?.012:.015)*taper;
-    const x=cx+t*halfWidth;
-    const y=cy+vertical;
+    const anatomicalBounds=lipBounds.get(upper);
+    const x=THREE.MathUtils.clamp(cx+t*halfWidth,
+     anatomicalBounds.min.x,anatomicalBounds.max.x);
+    const y=THREE.MathUtils.clamp(cy+vertical,
+     anatomicalBounds.min.y,anatomicalBounds.max.y);
     const fullness=(1-t*t)*Math.sin(Math.PI*v);
     const z=surfaceAt(x,y)+d.z*(.0038+.005*fullness*taper);
     return new THREE.Vector3(x,y,z);
