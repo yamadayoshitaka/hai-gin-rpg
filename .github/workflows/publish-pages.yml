@@ -101,8 +101,11 @@ jobs:
           fi
           done
       - uses: actions/configure-pages@v6
+      # A re-run must not upload a second artifact with the same name.
+      # Use a different name for each run attempt, not only each run ID.
       - uses: actions/upload-pages-artifact@v5
         with:
+          name: github-pages-${{ github.run_id }}-${{ github.run_attempt }}
           path: pages-dist
           include-hidden-files: true
       # Pages artifact metadata can lag immediately after a successful
@@ -112,11 +115,12 @@ jobs:
       - name: Wait for the Pages upload to become visible in Actions API
         env:
           GH_TOKEN: ${{ github.token }}
+          PAGES_ARTIFACT_NAME: github-pages-${{ github.run_id }}-${{ github.run_attempt }}
         shell: bash
         run: |
           set -euo pipefail
           for attempt in $(seq 1 18); do
-            count=$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}/artifacts" --jq '[.artifacts[] | select(.name == "github-pages")] | length' 2>/dev/null || echo 0)
+            count=$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}/artifacts" --jq "[.artifacts[] | select(.name == \"${PAGES_ARTIFACT_NAME}\")] | length" 2>/dev/null || echo 0)
             echo "Attempt ${attempt}: visible Pages artifacts = ${count}"
             if [[ "${count}" == "1" ]]; then
               sleep 10
@@ -132,3 +136,5 @@ jobs:
           exit 1
       - id: deployment
         uses: actions/deploy-pages@v5
+        with:
+          artifact_name: github-pages-${{ github.run_id }}-${{ github.run_attempt }}
