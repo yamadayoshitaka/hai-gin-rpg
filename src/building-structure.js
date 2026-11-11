@@ -3,6 +3,7 @@ import {roofAccessPlan} from './building-floor-navigation.js';
 import {resolveBuildingEntryDoor} from './building-entry-locks.js';
 import {createCastleUpperRoomPlan} from './castle-upper-rooms.js?v=castle-pillars-45';
 import {createRoomItemPlan} from './room-item-registry.js';
+import {buildingDetailStage} from './nonhuman-model-quality.js';
 // A town may contain hundreds of houses. Identical stairs share two baked meshes.
 const SPIRAL_GEOMETRY_CACHE=new Map();
 
@@ -93,6 +94,7 @@ export function createUpperFloorDecorationPlan(structure){
  const hut=id==='stone_hut_001';
  const theme=castle?'royal':church?'sanctuary':inn?'guest':manor?'estate':hut?'loft':'home';
  const s=structure.stair.stair,plans=[];
+ const detailStage=buildingDetailStage();
  const castleUpperRooms=castle?createCastleUpperRoomPlan(structure):[];
  const lootPlan=createRoomItemPlan(structure,castleUpperRooms);
  for(const floor of (castle?structure.floors:structure.floors.slice(1))){
@@ -108,6 +110,8 @@ export function createUpperFloorDecorationPlan(structure){
    place('bench_seat','wood',2.25*t,.19*t,.67*t,x,y+.65*t,z);
    for(const sx of [-.75,.75])place('bench_leg','timber',.18*t,.64*t,.18*t,x+sx*t,y+.30*t,z);
    place('bench_back','wood',2.24*t,.79*t,.16*t,x,y+1.0*t,z-.32*t);
+   if(detailStage>=6)for(const side of [-1,1])
+    place('bench_carved_arm','wood',.18*t,.19*t,.62*t,x+side*1.04*t,y+.88*t,z);
   };
   const table=(x,z)=>{
    const t=scale;
@@ -115,12 +119,18 @@ export function createUpperFloorDecorationPlan(structure){
    for(const sx of [-1,1])for(const sz of [-1,1])
     place('table_leg','timber',.2*t,1.14*t,.2*t,x+sx*1.06*t,y+.55*t,z+sz*.53*t);
    place('table_inlay','metal',1.85*t,.035*t,.9*t,x,y+1.29*t,z);
+   if(detailStage>=1)
+    place('table_carved_apron','timber',2.30*t,.15*t,1.27*t,x,y+.98*t,z);
   };
   const shelf=(x,z)=>{
    const t=scale;
    for(const level of [0,.9,1.8])place('shelf','wood',2.35*t,.18*t,.62*t,x,y+(.38+level)*t,z);
    for(const side of [-1,1])place('shelf_post','timber',.16*t,2.45*t,.63*t,x+side*1.1*t,y+1.3*t,z);
-   for(let n=0;n<7;n++)place('book','textile',.12*t,.46*t,.42*t,x+(n-3)*.28*t,y+1.15*t,z);
+   for(let n=0;n<7;n++){
+    const px=x+(n-3)*.28*t;
+    place('book','textile',.12*t,.46*t,.42*t,px,y+1.15*t,z);
+    if(detailStage>=3)place('book_gold_spine','gold',.135*t,.035*t,.45*t,px,y+1.31*t,z);
+   }
   };
   const bed=(x,z)=>{
    const t=scale;
@@ -129,12 +139,16 @@ export function createUpperFloorDecorationPlan(structure){
    place('pillow','linen',1.65*t,.23*t,.47*t,x,y+.81*t,z-1.06*t);
    place('blanket','textile',2.18*t,.08*t,1.55*t,x,y+.80*t,z+.52*t);
    place('headboard','wood',2.5*t,1.48*t,.24*t,x,y+.97*t,z-1.57*t);
+   if(detailStage>=2)
+    place('bed_carved_footboard','wood',2.48*t,.66*t,.16*t,x,y+.77*t,z+1.48*t);
   };
   const lantern=(x,z)=>{
    const t=scale;
    place('lamp_pedestal','metal',.19*t,1.25*t,.19*t,x,y+.68*t,z);
    place('lamp_glass','glow',.34*t,.58*t,.34*t,x,y+1.62*t,z);
    place('lamp_cap','metal',.53*t,.13*t,.53*t,x,y+1.98*t,z);
+   if(detailStage>=4)for(const side of [-1,1])
+    place('lamp_glass_brace','gold',.055*t,.66*t,.075*t,x+side*.16*t,y+1.64*t,z);
   };
   // Stairwell rim receives masonry balustrades on three sides. Leave the
   // south landing free; characters can approach the next spiral flight.
@@ -144,6 +158,9 @@ export function createUpperFloorDecorationPlan(structure){
   add('stair_guardrail','metal',.15,.15,r*1.66,s.x+r,railY+.35,s.z-.4);
   for(let n=-3;n<=3;n++)add('stair_baluster','metal',.13,1.03,.13,s.x+r,y+.5,s.z+n*r*.25);
   add('stair_guardrail','metal',r*2.1,.15,.15,s.x,railY+.35,s.z-r);
+  if(detailStage>=5)
+   for(let n=-3;n<=3;n++)add('stair_carved_post_cap','gold',.19,.10,.19,
+     s.x+r,y+1.06,s.z+n*r*.25);
   // Exposed beams and trim add depth to upper-floor ceilings without sealing
   // the actual stair opening or inventing a fourth floor.
   for(const off of [-2.8,2.8]){
