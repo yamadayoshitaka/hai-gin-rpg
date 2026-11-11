@@ -45,6 +45,7 @@ jobs:
         id: buildings
         continue-on-error: true
         run: |
+          set -euo pipefail
           mkdir -p qa-reports/continuous
           node --test \
             qa/building-data-contract.test.mjs \
@@ -60,6 +61,7 @@ jobs:
         id: monsters
         continue-on-error: true
         run: |
+          set -euo pipefail
           node --test \
             qa/monster-bestiary.test.mjs \
             qa/creature-master-quality.test.mjs \
@@ -69,6 +71,7 @@ jobs:
         id: summons
         continue-on-error: true
         run: |
+          set -euo pipefail
           node --test \
             qa/summon-geometry.test.mjs \
             qa/creature-realistic-anatomy.test.mjs \
