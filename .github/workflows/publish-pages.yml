@@ -35,6 +35,8 @@ jobs:
         run: node --experimental-vm-modules qa/game-core-contract.test.mjs
       - name: Verify continents, gacha, NPC models and fences/flowers
         run: node qa/continent-town-gacha-regression.test.mjs
+      - name: Verify registered Chapter 1 character-art references and 3D viewer linkage
+        run: node qa/chapter-one-character-art-bridge.test.mjs
       - name: Verify illustrated dialogue, original opening and scene music
         run: |
           node --experimental-vm-modules qa/story-cinematic-audio.test.mjs
