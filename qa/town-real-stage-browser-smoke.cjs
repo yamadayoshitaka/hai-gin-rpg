@@ -177,16 +177,29 @@ const assert=require('node:assert/strict');
   // Do not regress the distance check just to satisfy a stale test.
   const talkOutcome=await page.waitForFunction(()=>{
    if(!document.querySelector('#panel').hidden)return 'shop-opened';
+   // The current town flow opens an NPC conversation first; the services
+   // button subsequently opens the same physical shop menu.
+   if(!document.querySelector('#townDialogue').hidden)return 'keeper-dialogue';
    if((document.querySelector('#townExplorerMessage')?.textContent||'').includes('店主まで近づく'))return 'approach-keeper';
    return null;
   },null,{timeout:12000});
-  if(await talkOutcome.jsonValue()==='shop-opened'){
+  const talkResult=await talkOutcome.jsonValue();
+  if(talkResult==='keeper-dialogue'){
+   assert.equal(await page.locator('#townDialogueName').isVisible(),true,
+    'the actual shopkeeper must be visible in the town conversation');
+   if(await page.locator('#townDialogueService').isVisible()){
+    await page.locator('#townDialogueService').click();
+   }else{
+    await page.locator('#townDialogueClose').click();
+   }
+  }
+  if(talkResult==='shop-opened'||await page.locator('#panel').isVisible()){
    assert.match(await page.locator('#panelTitle').innerText(),/道具屋/,
-    'talking to the nearby indoor shopkeeper opens the real shop');
+    'the shopkeeper conversation must lead to the real shop menu');
    await page.locator('#panelClose').click();
   }else{
    assert.equal(await page.locator('#panel').isVisible(),false,
-    'shopkeeper outside talk radius should not open a remote service panel');
+    'a distant keeper cannot open the service panel without interaction');
   }
   await page.locator('#townExitBuilding').click();
   await page.waitForFunction(()=>
