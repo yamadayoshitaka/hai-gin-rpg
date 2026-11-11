@@ -11,7 +11,7 @@ body.town-mode > :not(#stageViewport):not(#battleLoading):not(script):not(style)
 body.town-mode #stageViewport{position:fixed!important;inset:0!important;width:100%!important;height:100dvh!important}
 body.town-mode #stageViewport canvas{width:100%!important;height:100%!important}
 body.town-mode #battleLoading[hidden]{display:none!important}
-</style></head>
+</style><link rel="stylesheet" href="./src/tactical-command-ui.css?v=2.1"></head>
 <body><div id="hud"><b>灰銀戦記 ― 沈黙の星鐘 — リアルタイム軍団戦 v4.6.69</b><small>自動戦闘・階段移動 / 開戦時固定作戦と部隊号令 / ドラッグで視点回転</small><div id="selected">軍団配置中…</div><div id="log"></div><div id="jobTools" style="display:none"><select id="jobSelect"></select><select id="motionSelect"></select><button id="playMotion">動作再生</button></div><small><a style="color:#9adfff" href="./motion-external-test.html">外部モーション検証</a></small></div><div id="stageViewport"></div><div id="battleStatus" aria-live="polite"><div class="unit" id="allyStats">味方 HP -- / MP --</div><div class="unit enemy" id="enemyStats">敵 HP -- / MP --</div></div><button id="menuToggle" style="position:fixed;top:68px;left:10px;z-index:25;background:#203c55;color:white;padding:9px 15px;border:1px solid #9bb4c7;border-radius:8px">☰ メニュー</button><div id="commands"><label>全軍作戦<select id="strategy"><option value="eliminate">全滅</option><option value="environment_prepare">環境整備</option><option value="recovery">回復</option></select></label><label hidden aria-hidden="true">個別命令<select id="unitOrder" disabled><option value="inherit">全軍に従う</option><option value="charge">突撃</option><option value="defend">防御</option><option value="hold">陣地維持</option><option value="retreat">後退</option></select></label><button id="pause">一時停止</button><button id="igniteBridge" disabled style="position:fixed;right:8px;bottom:157px;z-index:12;background:#9b4026;color:white;border-radius:7px;padding:9px">🔥 木橋を燃やす</button><span id="unitInfo">味方をタップして個別指示</span><a id="specShortcut" href="./battle-specifications.html" target="_blank" rel="noopener" aria-label="ゲーム仕様一覧を別タブで開く">📖 仕様</a></div>
 <style>
 #commands,#menuToggle{display:none!important}#allySquadRibbon[hidden],#enemySquadRibbon[hidden]{display:none!important}
@@ -742,6 +742,8 @@ import {chooseBlockedMovementDetour} from './src/battle-movement-recovery.js?v=4
 import {findStableGridPath,stableGridNext,sameNavigationCell} from './src/battle-stable-grid-route.js?v=4.6.36';
 import {formatSquadIntent} from './src/battle-squad-intent.js?v=4.6.45';
 import {sortSquadRibbon,squadRibbonStatus,ORDER_COOLDOWN_SECONDS} from './src/battle-command-roster.js?v=4.6.69';
+import {tacticalCooldownSeconds} from './src/tactical-command-evaluation.js?v=2.1';
+import {installBattleTacticalUI,createPreBattleTacticalSummary} from './src/tactical-command-battle-ui.js?v=2.1';
 import {describeSquadOrder,describeCommanderBuff} from './src/battle-order-message.js?v=4.6.40';
 import {recommendBattleTactics} from './src/battle-quick-recommendation.js?v=4.6.43';
 import {chooseAutoSquadItem} from './src/battle-auto-item-policy.js?v=1';
@@ -2102,12 +2104,18 @@ let squadQuickPage='home',squadQuickPageIndex=0;
 // Manual orders and manual item use share ONE 60 combat-second cooldown per squad.
 const SQUAD_MANUAL_COMMAND_COOLDOWN=ORDER_COOLDOWN_SECONDS;
 const lastSquadOrderAt=new Map();
+function commanderOrderInterval(id){
+ const cId=storyRequest?.units?.find(u=>String(u.squadId)===String(id))?.commanderId;
+ const leader=storyRequest?.commanders?.find(c=>String(c.id)===String(cId));
+ const general=massSim?.units?.find(u=>u.team===0&&u.isStrategist&&String(u.squadId)===String(id));
+ return tacticalCooldownSeconds(leader?.level??general?.level??1);
+}
 let lastGlobalOrderAt=null;
 function squadOrderCooldownSeconds(id){
  if(id==null)return 0;
  const usedAt=lastSquadOrderAt.get(String(id));
  return Number.isFinite(usedAt)?Math.max(0,Math.ceil(usedAt+
-  SQUAD_MANUAL_COMMAND_COOLDOWN-elapsed)):0;
+  commanderOrderInterval(id)-elapsed)):0;
 }
 function canChangeSquadOrder(id){
  const remain=squadOrderCooldownSeconds(id);
@@ -6328,6 +6336,22 @@ function battleTerritoryWorld(){
  return massSim?.territoryWorld??{width:WORLD_SIZE,height:WORLD_SIZE,
   riverXAt:z=>stageHasRiver?riverAt(z):WORLD_SIZE/2};
 }
+const battleTacticalUi=installBattleTacticalUI({
+ getUnits:()=>squadRoster,
+ getSquadIds:()=>squadIds,
+ getCommander:id=>storyRequest?.commanders?.find(c=>String(c.id)===String(squadCommanderId(id)))||
+  squadStrategist(id)||null,
+ getSquadName:id=>squadName(id),
+ getCurrentStage:()=>selectedStage,
+ getCommanderReason:id=>squadCommanderUnavailableReason(id),
+ getCooldown:id=>squadOrderCooldownSeconds(id),
+ getSquadCenter:id=>squadCenter(id,0),
+ getMarkerLabel:id=>squadMarkers.get(squadKey(0,id))?.userData?.screenLabel,
+ issueOrder:(id,mode)=>{selectedSquadId=String(id);return issueSquadOrder(mode);},
+ openSquad:id=>openSquadTactics(id),
+ closeSquad:()=>closeSquadTactics(),
+ isReady:()=>battleReady&&!finished
+});
 function refreshSquadOrderLabel(){
  const id=orderedSquad();if(id==null)return;
  $('squadTacticsName').textContent=squadName(id);
@@ -6349,6 +6373,7 @@ function refreshSquadOrderLabel(){
  warpButton.textContent=general?.strategistWarpUsed?'✨ 軍師ワープ（使用済み）':'✨ 軍師ワープ（UR・1回）';
  if(battleCommanderSelect){battleCommanderSelect.value=String(squadCommanderId(id));battleCommanderSelect.disabled=true;refreshCommanderOrderOptions();}
  if(battleOrderSelect)battleOrderSelect.disabled=!hasSquadCommander(id);
+ battleTacticalUi.renderFor(id);
 }
 function updateSquadTarget(id,point){
  const key=String(id),old=squadTargets.get(key);
@@ -7523,6 +7548,7 @@ function refreshBattleTargetSummary(sums){
 }
 function renderSquadRibbons(sums){
  lastRibbonSums=sums;
+ battleTacticalUi.onSquadSums(sums);
  refreshBattleTargetSummary(sums);
  // The only live controls are now 3D squad circles; do not reflow invisible sidebars.
  /* Target rosters enabled. */
@@ -9108,6 +9134,13 @@ async function finishBattleLoading(){
   const intro=document.createElement('div');intro.id='openingLaunchSummary';
   intro.style.cssText='text-align:left;margin:12px 0;padding:12px;color:#e2f2ff;border:1px solid #86a9c3;border-radius:9px;background:#122c43;font:12px/1.7 system-ui';
   intro.textContent='編成・初期号令の確認が済んだら開戦してください。編成は職業数に応じて自動判定されます。';
+  const openingTacticalSummary=createPreBattleTacticalSummary({
+   getStageName:()=>selectedStage.name,
+   getUnits:()=>squadRoster,
+   getOrders:()=>initialOrderInputs.filter(x=>x.team===0).map(x=>
+    squadName(x.id)+'：'+(INITIAL_ORDER_LABELS[x.orderSelect.value]||'自動')),
+   getCommander:()=>storyRequest?.commanders?.[0]||null
+  });
   let wizardPage='formation';
   const wizardButtons=new Map();
   for(const [page,label] of [['formation','① 編成'],['orders','② 初期号令'],['launch','③ 開戦']]){
@@ -9119,12 +9152,16 @@ async function finishBattleLoading(){
    wizardPage=page;
    openingPlan.hidden=page!=='formation';orderPlan.hidden=page!=='orders';intro.hidden=page!=='launch';
    startButton.hidden=page!=='launch';
+   openingTacticalSummary.element.hidden=page!=='launch';
+   if(page==='launch')openingTacticalSummary.refresh();
    for(const [key,button] of wizardButtons)button.classList.toggle('active',key===page);
   }
   $('loadingCard').insertBefore(wizardTabs,openingPlan);
+  $('loadingCard').insertBefore(openingTacticalSummary.element,startButton);
   $('loadingCard').insertBefore(intro,startButton);
   startButton.hidden=false;startButton.disabled=false;
   loading.classList.add('prebattle-setup');
+  $('loadingCard').classList.add('prebattle-command-ui');
    $('loadingStage').textContent='準備完了：隊列編成と初期号令を選択';
    setOpeningWizardPage('formation');
   const launch=()=>{
