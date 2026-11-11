@@ -1,0 +1,33 @@
+name: Data-driven terrain tactics and one-click selection QA
+on:
+  push:
+    branches:
+      - 'feat/victory-aware-terrain-tactics-*'
+  pull_request:
+    paths:
+      - 'src/battle-tactics-preset-policy.js'
+      - 'qa/battle-tactics-preset.test.mjs'
+      - 'tactics-wireframe.html'
+      - '.github/workflows/battle-tactics-preset-qa.yml'
+  workflow_dispatch:
+jobs:
+  battle-tactics:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Job-based tactics and one-click deployment
+        run: node qa/battle-tactics-preset.test.mjs
+      - name: Existing battle victory and squad integration
+        run: |
+          node qa/battle-stage-objective-job-squads.test.mjs
+          node qa/battle-objective-opposed-sides.test.mjs
+          node qa/mass-battle-formations.test.mjs
+          node qa/squad-formation-three-types.test.mjs
+      - name: Story battle integration
+        run: |
+          node --experimental-vm-modules qa/game-core-contract.test.mjs
+          node qa/story-battle-bridge.test.mjs
