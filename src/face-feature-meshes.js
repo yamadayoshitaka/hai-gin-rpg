@@ -371,32 +371,49 @@ export function updateFaceFeatureAngles(partsRoot,settings={}){
  const values={};
  for(const side of [-1,1]){
   const lbl=side===-1?'LEFT':'RIGHT';
+  const joint=partsRoot.getObjectByName(lbl+'_EYE_LINKED_PIVOT');
   const brow=partsRoot.getObjectByName(lbl+'_BROW_ANGLE_CONTROL');
   const lashes=partsRoot.getObjectByName(lbl+'_LASH_ANGLE_CONTROL');
+  if(joint)joint.rotation.z=side*THREE.MathUtils.degToRad(v.eyeAngle);
   if(brow)brow.rotation.z=side*THREE.MathUtils.degToRad(v.browAngle);
   if(lashes)lashes.rotation.z=side*THREE.MathUtils.degToRad(v.lashAngle);
  }
- values.browAngle=v.browAngle;values.lashAngle=v.lashAngle;
+ values.eyeAngle=v.eyeAngle;
+ values.browAngle=v.browAngle;
+ values.lashAngle=v.lashAngle;
+ values.linkedEyeBrowLashUnderEye=true;
  partsRoot.userData.featureAngles=values;
  return values;
 }
 
 /** Clay and color mode both keep the exact same geometry. */
-export function applyFaceColorMode(face,mode='clay'){
+export function applyFaceColorMode(face,mode='clay',{contactColor}={}){
  const colored=mode==='color';
+ const male=face.name.startsWith('MALE_');
  const clay={
-  skin:0xbfc3cb,eyelid:0xbcbfc5,lips:0xbfc3cb,
+  skin:0xbfc3cb,eyelid:0xbcbfc5,lipBase:0xbfc3cb,
+  lipstick:0xbfc3cb,underEye:0xbcbfc5,
   sclera:0xd5d8dd,iris:0x747a83,pupil:0x30353b,
   brow:0xa2a6ac,lashes:0x8c929a
+ };
+ const palette={
+  ...FACE_V7_PALETTE,lipBase:male?0xc9998b:0xd9a699,
+  lipstick:0xc07c82,
+  iris:male?0x50413b:parseInt(safeContactColor(contactColor).slice(1),16)
  };
  face.traverse(o=>{
   if(!o.isMesh||!o.material)return;
   const role=o.userData?.colorRole;
+  if(role==='lipstick'||role==='underEye'){
+   o.visible=colored&&!male;
+  }
   if(role&&o.material.color){
-   o.material.color.setHex((colored?FACE_V7_PALETTE:clay)[role]);
+   const hex=(colored?palette:clay)[role];
+   if(hex!==undefined)o.material.color.setHex(hex);
    o.material.needsUpdate=true;
   }
  });
  face.userData.faceColorMode=colored?'color':'clay';
+ face.userData.contactColor=male?null:safeContactColor(contactColor);
  return face.userData.faceColorMode;
 }
