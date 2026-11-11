@@ -22,7 +22,7 @@ header{display:flex;align-items:center;justify-content:space-between;gap:8px;bac
 #selectedInfo small{display:block;color:#c3d0d5;font-size:11px;line-height:1.35}
 #sortie{border:1px solid #e0c184;background:#795b31;border-radius:7px;min-width:91px;padding:11px 10px;font-weight:800;white-space:nowrap}
 #feedback{min-height:15px;font-size:11px;color:#ffe0aa;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#stageNarration{font-size:12px;min-height:28px;border:1px solid #b9a172;background:#3c3540;border-radius:6px;padding:5px 9px;justify-self:start;color:#ffe7af}
+#stageNarration{font-size:12px;min-height:28px;border:1px solid #526b7a;background:#22384c;border-radius:6px;padding:5px 9px;justify-self:start;color:#d8e4e5}
 #continentLore{color:#eee2c6;font-size:11px;line-height:1.45;background:#122637b8;border-left:3px solid #d8bf87;padding:6px 8px;max-height:57px;overflow:auto}
 .pin.stage-pin{min-width:80px;background:#132637ea;line-height:1.2;font-size:11px}.pin.stage-pin.selected{outline:3px solid #ffe3a2}.pin.stage-pin.locked{opacity:.65}
 @media(max-height:660px){#chapterPanel{gap:5px;padding-top:5px}#stageGrid{grid-template-rows:repeat(2,minmax(37px,1fr))}.stage{min-height:37px;padding:4px}#selectedInfo{min-height:45px;padding:5px 8px}.pin{padding:3px}}
@@ -31,13 +31,14 @@ header{display:flex;align-items:center;justify-content:space-between;gap:8px;bac
 <section id="mapViewport" aria-label="ワールドマップ"><div id="mapBoard" role="group" aria-label="三勢力の領土"></div><div class="map-caption">地図で領地を選択・ステージは下の10枠から</div><div class="pan"><button id="panLeft" type="button">◀ 地図</button><button id="panReset" type="button">中央</button><button id="panRight" type="button">地図 ▶</button></div></section>
 <section id="chapterPanel"><div class="chapter-head"><button id="prevChapter">◀ 前章</button><h2 id="chapterTitle">第1章</h2><button id="nextChapter">次章 ▶</button></div>
 <div class="meta"><span id="chapterSubtitle"></span><span id="clearCount">0 / 200</span></div>
-<div id="continentLore" aria-live="polite"></div><button id="stageNarration" type="button">▶ 選択した場面を聴く</button>
+<div id="continentLore" aria-live="polite"></div><button id="stageNarration" type="button">▤ ステージの漫画を読む</button>
 <div id="stageGrid" role="group" aria-label="選択した章の全10ステージ"></div>
 <div id="selectedInfo"><div><strong id="stageTitle"></strong><small id="stageRequirement"></small></div><button id="sortie" type="button">出撃 ▶</button></div>
 <div id="feedback" role="status" aria-live="polite"></div></section></main>
 <script type="module">
 import {STORY_CHAPTERS} from './src/story-chapters.js';
 import {storyCastForChapter} from './src/story-cinematic.js';
+import {createMangaViewer} from './src/story-manga-viewer.js';
 import {createGamePageAudio} from './src/game-page-audio.js';
 import {continentForChapter,continentMapUrl,continentStagePoints} from './src/continent-campaign.js';
 import {narrativeForStage} from './src/chapter-story-events.js';
@@ -50,6 +51,11 @@ let game=loadGame(localStorage,sessionStorage);
 if(!validGame(game)){location.replace('./game.html');throw Error('No game');}
 game.location='map';
 const mapAudio=createGamePageAudio({storage:localStorage,initialScene:'map'});
+// Stage comic is shown before every sortie, independent of the battle runtime.
+const mangaViewer=createMangaViewer({storage:localStorage,
+ onCue:cue=>{mapAudio.changeScene('manga',cue.url);mapAudio.unlock();},
+ onClose:()=>mapAudio.changeScene('map')
+});
 const musicToggle=$('worldBgm');
 function updateMapMusicButton(){
  musicToggle.textContent=mapAudio.enabled?'♪ ON':'♪ OFF';
@@ -66,17 +72,23 @@ let chapter=1,selected='c01-s02',territory=null,pan=0;
 function narrateSelection(){
  const stage=CAMPAIGN_STAGE_BY_ID[selected],story=narrativeForStage(stage);
  if(!('speechSynthesis' in window)){message('この端末では日本語読み上げを利用できません。');return;}
- if(speechSynthesis.speaking){speechSynthesis.cancel();$('stageNarration').textContent='▶ 選択した場面を聴く';return;}
+ if(speechSynthesis.speaking){speechSynthesis.cancel();$('stageNarration').textContent='▤ ステージの漫画を読む';return;}
  const voice=new SpeechSynthesisUtterance(story.narration);
  voice.lang='ja-JP';voice.rate=.88;voice.pitch=.97;
  const voices=speechSynthesis.getVoices().filter(x=>x.lang.toLowerCase().startsWith('ja'));
  if(voices.length)voice.voice=voices.find(x=>x.localService)||voices[0];
- voice.onend=()=>{$('stageNarration').textContent='▶ 選択した場面を聴く';};
- voice.onerror=()=>{$('stageNarration').textContent='▶ 選択した場面を聴く';};
+ voice.onend=()=>{$('stageNarration').textContent='▤ ステージの漫画を読む';};
+ voice.onerror=()=>{$('stageNarration').textContent='▤ ステージの漫画を読む';};
  $('stageNarration').textContent='■ 読み上げを停止';
  speechSynthesis.speak(voice);
 }
-$('stageNarration').onclick=narrateSelection;
+$('stageNarration').onclick=()=>{
+ const stage=CAMPAIGN_STAGE_BY_ID[selected];
+ if(!stageUnlocked(stage,game.completedStages)){
+  message('前のステージをクリアすると物語が開放されます。');return;
+ }
+ mapAudio.unlock();mangaViewer.open(stage.id);
+};
 const message=m=>$('feedback').textContent=m;
 function saveSession(){persistSession(game,sessionStorage);}
 function returnTown(){
@@ -150,18 +162,20 @@ $('mapBoard').addEventListener('click',event=>{
 });
 $('stageGrid').addEventListener('click',event=>{
  const el=event.target.closest('[data-stage]');if(!el)return;
- selected=el.dataset.stage;window.speechSynthesis?.cancel();$('stageNarration').textContent='▶ 選択した場面を聴く';render();
+ selected=el.dataset.stage;window.speechSynthesis?.cancel();$('stageNarration').textContent='▤ ステージの漫画を読む';render();
 });
 function changeChapter(step){
  chapter=Math.max(1,Math.min(20,chapter+step));
- window.speechSynthesis?.cancel();$('stageNarration').textContent='▶ 選択した場面を聴く';
+ window.speechSynthesis?.cancel();$('stageNarration').textContent='▤ ステージの漫画を読む';
  selected=stagesInChapter(chapter)[0].id;territory=STORY_CHAPTERS[chapter-1].territory;render();
 }
 $('prevChapter').onclick=()=>changeChapter(-1);$('nextChapter').onclick=()=>changeChapter(1);
-$('sortie').onclick=()=>{
+function launchSelectedStage(stageId){
  try{
-  const stage=selectCampaignStage(game,selected);
-  if(stage.kind==='town'){saveSession();location.href='./town-hub.html?opening=1&v=continent-visit-20261110';return;}
+  const stage=selectCampaignStage(game,stageId);
+  if(stage.kind==='town'){
+   saveSession();location.href='./town-hub.html?opening=1&v=stage-manga-20261111';return;
+  }
   const request=makeCoreBattleRequest(game,stage.id,Date.now().toString(36)+'-'+Math.random().toString(36).slice(2));
   sessionStorage.setItem(CORE_BATTLE_PENDING_KEY,JSON.stringify(request));
   sessionStorage.setItem('hai-gin-story-sortie-v1',JSON.stringify(request));
@@ -169,6 +183,18 @@ $('sortie').onclick=()=>{
   saveSession();
   location.href='./tactics-wireframe.html?storyBattle=1&core=1&stage='+encodeURIComponent(stage.scenePreset);
  }catch(error){message(error.message||String(error));}
+}
+$('sortie').onclick=()=>{
+ const stage=CAMPAIGN_STAGE_BY_ID[selected];
+ if(!stageUnlocked(stage,game.completedStages)){
+  message('前のステージをクリアしてください。');return;
+ }
+ mapAudio.unlock();
+ mangaViewer.open(stage.id,{onFinish:()=>{
+  game.storyFlags??={};game.storyFlags.stageMangaSeen??={};
+  game.storyFlags.stageMangaSeen[stage.id]=true;
+  saveSession();launchSelectedStage(stage.id);
+ }});
 };
 function completeReturnedBattle(){
  try{

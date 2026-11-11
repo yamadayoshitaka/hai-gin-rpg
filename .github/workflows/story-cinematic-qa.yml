@@ -4,6 +4,11 @@ on:
     paths:
       - '.github/workflows/story-cinematic-qa.yml'
       - 'src/story-cinematic.js'
+      - 'src/story-stage-manga.js'
+      - 'src/story-manga-art.js'
+      - 'src/story-manga-viewer.js'
+      - 'src/fantasy-scene-score.js'
+      - 'qa/stage-manga-continuity.test.mjs'
       - 'src/game-page-audio.js'
       - 'src/story-chapters.js'
       - 'game.html'
@@ -17,6 +22,11 @@ on:
     paths:
       - '.github/workflows/story-cinematic-qa.yml'
       - 'src/story-cinematic.js'
+      - 'src/story-stage-manga.js'
+      - 'src/story-manga-art.js'
+      - 'src/story-manga-viewer.js'
+      - 'src/fantasy-scene-score.js'
+      - 'qa/stage-manga-continuity.test.mjs'
       - 'src/game-page-audio.js'
       - 'src/story-chapters.js'
       - 'game.html'
@@ -41,4 +51,9 @@ jobs:
         run: |
           node --check src/story-cinematic.js
           node --check src/game-page-audio.js
+          node --check src/story-stage-manga.js
+          node --check src/story-manga-art.js
+          node --check src/story-manga-viewer.js
+          node --check src/fantasy-scene-score.js
           node --experimental-vm-modules qa/story-cinematic-audio.test.mjs
+          node --experimental-vm-modules qa/stage-manga-continuity.test.mjs

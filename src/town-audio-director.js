@@ -1,14 +1,15 @@
 // Town music and original UI effects. No electronic dialogue or generated speech.
 // A browser gesture is required to resume AudioContext on Android/iOS.
+import {fantasyTrackUrl} from './fantasy-scene-score.js';
 const PREF_KEY='hai-gin-town-bgm-enabled-v1';
 const MUSIC={
- town:'./assets/audio/town.mp3',
- shop:'./assets/audio/town.mp3',
- tavern:'./assets/audio/town.mp3',
- inn:'./assets/audio/town.mp3',
- church:'./assets/audio/battle/forest.ogg',
- castle:'./assets/audio/battle/forest.ogg',
- paper:'./assets/audio/battle/ruins.ogg'
+ town:fantasyTrackUrl('town'),
+ shop:fantasyTrackUrl('shop'),
+ tavern:fantasyTrackUrl('tavern'),
+ inn:fantasyTrackUrl('inn'),
+ church:fantasyTrackUrl('church'),
+ castle:fantasyTrackUrl('castle'),
+ paper:fantasyTrackUrl('paper')
 };
 const LEVEL={town:.32,shop:.21,tavern:.34,inn:.24,church:.26,castle:.30,paper:.29};
 const TONES={
@@ -27,7 +28,7 @@ export function createTownAudioDirector({storage=null,onChange=()=>{}}={}){
   const core=JSON.parse(storage?.getItem('hai-gin-core-settings-v1')||'{}')||{};
   enabled=core.bgm!==false&&storage?.getItem(PREF_KEY)!=='false';
  }catch{}
- let scene='town',audio=null,context=null,unlocked=false,narration=false,disposed=false;
+ let scene='town',currentUrl=null,audio=null,context=null,unlocked=false,narration=false,disposed=false;
  let lastToneAt=0;
  const notify=()=>onChange({enabled,scene,unlocked,playing:Boolean(audio&&!audio.paused)});
  function audioContext(){
@@ -44,12 +45,13 @@ export function createTownAudioDirector({storage=null,onChange=()=>{}}={}){
   adjust();
   Promise.resolve(audio.play()).then(notify).catch(()=>notify());
  }
- function setScene(next){
+ function setScene(next,cueUrl=null){
   if(!MUSIC[next])next='town';
-  const previous=MUSIC[scene],url=MUSIC[next];scene=next;
-  if(!audio||previous!==url){
+  const url=typeof cueUrl==='string'&&cueUrl.startsWith('./assets/audio/battle/')?cueUrl:MUSIC[next];
+  scene=next;
+  if(!audio||currentUrl!==url){
    const old=audio;
-   audio=new Audio(url);audio.loop=true;audio.preload='auto';
+   audio=new Audio(url);audio.loop=true;audio.preload='auto';currentUrl=url;
    audio.addEventListener('error',notify);
    if(old){old.pause();old.src='';}
   }

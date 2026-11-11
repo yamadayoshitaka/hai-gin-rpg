@@ -46,19 +46,19 @@ for(const name of htmls){
 const title=file('game.html'),town=file('town-hub.html');
 const map=file('world-map.html'),battle=file('tactics-wireframe.html');
 assert.match(title,/id="introArt"/);
-assert.match(title,/cinematicScenesForChapter\(1\)/);
+assert.match(title,/mangaForStage\('c01-s01'\)/);
 assert.match(title,/pageAudio\.changeScene\('title'\)/);
 assert.match(title,/pageAudio\.effect\('select'\)/);
-assert.match(town,/cinematicScenesForChapter\(townChapter\)/);
+assert.match(town,/mangaForStage\(game\.townStage\)/);
 assert.match(town,/id="eventSceneImage"/);
 assert.match(town,/id="eventSpeaker"/);
 assert.match(town,/speakTownLine\(shot\.text,shot\.characterId\)/);
-assert.match(town,/townAudio\.setScene\('paper'\)/);
+assert.match(town,/townAudio\.setScene\('paper',cue\.url\)/);
 assert.match(map,/storyCastForChapter\(chapter\)/);
 assert.match(map,/id="worldBgm"/);
 assert.match(map,/mapAudio\.effect\('select'\)/);
 assert.match(battle,/frontierLine\.visible=false;scene\.add\(frontierLine\)/,
  'unwanted overhead guide line is removed, without hiding squad command callouts');
 assert.match(battle,/effectsOnly:true/,'battle selects use chime without duplicate page BGM');
-assert.match(file('src/town-audio-director.js'),/paper:'\.\/assets\/audio\/battle\/ruins\.ogg'/);
+assert.match(file('src/town-audio-director.js'),/paper:fantasyTrackUrl\('paper'\)/);
 console.log('PASS 20 key characters, 160 illustrated chapter scenes, music and selection FX');
