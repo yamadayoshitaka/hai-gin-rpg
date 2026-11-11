@@ -20,7 +20,7 @@ test('two source-derived clay face meshes have owned independent vertices and pr
  const before=original.getAttribute('position').array.slice();
  const female=makeIndependentFaceMaster(source,'female');
  const male=makeIndependentFaceMaster(source,'male');
- assert.equal(female.report.code,'female-face-full-cheeks-tapered-chin-v6');
+ assert.equal(female.report.code,'female-face-smooth-source-v6');
  assert.equal(male.report.code,'male-face-base-v1');
  assert.ok(female.report.sourceVertices>1100);
  assert.ok(male.report.sourceVertices>1100);
@@ -79,7 +79,8 @@ test('two source-derived clay face meshes have owned independent vertices and pr
  assert.ok(female.report.localizedNoseAndMouthSamples>20);
  assert.equal(female.report.innerFeatureHalfWidthLimit,.55);
  assert.equal(female.report.femaleJawStyle,'full-cheek-smooth-oval-point-v6');
- assert.equal(female.report.cheekJawSculpt,'midface-fullness-and-lower-jaw-taper-v6');
+ assert.equal(female.report.headTemplate,'realistic-head-animation.glb');
+ assert.equal(female.report.cheekJawSculpt,'smooth-head-source-feminine-jaw-v6');
  assert.ok(female.report.cheekSculptSamples>0);
  assert.ok(female.report.jawSculptSamples>0);
  assert.ok(female.report.addedCheekDepth>0);
@@ -104,7 +105,7 @@ test('face studio includes stable gender, view and export controls with no body 
   'faceCanvas','export','status','metrics'])
   assert.match(html,new RegExp('id="'+id+'"'));
  assert.match(html,/makeIndependentFaceMaster/);
- assert.match(html,/realistic-head-sculpt.glb/);
+ assert.doesNotMatch(html,/loadAsync\(base\+'realistic-head-sculpt\.glb'\)/,'Old gaunt sculpt must not be loaded as the female face');
  assert.match(html,/realistic-head-animation.glb/);
  assert.doesNotMatch(html,/realistic-body-female.glb/);
  assert.doesNotMatch(html,/realistic-body-male.glb/);
@@ -149,12 +150,12 @@ test('independent cheek fill and chin contour actually alter different 3D region
  });
  const hollow=sculpt(.36,.465);
  const cheekBone=sculpt(.36,.64);
- assert.ok(hollow.dz>.02,'Previously hollow mid-cheek receives meaningful 3D volume');
+ assert.ok(hollow.dz>.001&&hollow.dz<.009,'Smooth donor cheeks should receive only gentle support');
  assert.ok(hollow.dz>cheekBone.dz*15,
   'Do not exaggerate the cheekbone instead of filling the sunken cheek');
  assert.equal(hollow.dx,0,'Cheek zone must keep its width');
  const chin=sculpt(.37,.30);
- assert.ok(chin.dx<-.009,'Actual lower jaw edge must be narrowed, not just centreline');
+ assert.ok(chin.dx<-.004,'Lower jaw edge should taper, not just the centreline');
  assert.ok(Math.abs(chin.dx)>Math.abs(sculpt(.37,.46).dx)*5,
   'Taper only the chin, not the jaw-to-cheek contour');
  const center=sculpt(0,.255);
