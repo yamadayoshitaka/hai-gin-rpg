@@ -1,0 +1,106 @@
+{
+  "version": 1,
+  "chapter": 1,
+  "stage": "c01-s01",
+  "aspectRatio": "16:9",
+  "resolution": "1920x1080-master",
+  "characters": [
+    "lucia",
+    "garan",
+    "iris"
+  ],
+  "heroPolicy": "顔・性別は未確定。映す場合は背面またはシルエット",
+  "status": "image-files-not-yet-approved",
+  "scenes": [
+    {
+      "id": "c01-s01-m1",
+      "filename": "c01-s01-m01.webp",
+      "speaker": "narrator",
+      "characters": [
+        "lucia"
+      ],
+      "scene": "朝の王都レヴナ。市場の露店・石造りの白い王城へ向かう新任軍師の後ろ姿。",
+      "camera": "広角の街並み、低い朝日、主人公の顔は非表示",
+      "tone": "冒険の始まり",
+      "noReuse": "別ステージの戦場や星鐘装置を見せない"
+    },
+    {
+      "id": "c01-s01-m2",
+      "filename": "c01-s01-m02.webp",
+      "speaker": "lucia",
+      "characters": [
+        "lucia",
+        "garan"
+      ],
+      "scene": "宮廷で銀髪の摂政リュシアが軍師を迎え、ガランが傍らで静かに見守る。",
+      "camera": "リュシアの挨拶が中心、ガランは奥、主人公は背中側",
+      "tone": "穏やかな初対面",
+      "noReuse": "リュシアの顔・紋章・礼装は人物マスター参照"
+    },
+    {
+      "id": "c01-s01-m3",
+      "filename": "c01-s01-m03.webp",
+      "speaker": "garan",
+      "characters": [
+        "garan",
+        "lucia"
+      ],
+      "scene": "ガランが昼の市場と住民を指し示し、国を守るのは人々の暮らしだと軍師に説く。",
+      "camera": "商店・子供・働く市民と老騎士を同じ画面に",
+      "tone": "温かさと責任感",
+      "noReuse": "城内の軍議室で済ませず町の営みを見せる"
+    },
+    {
+      "id": "c01-s01-m4",
+      "filename": "c01-s01-m04.webp",
+      "speaker": "iris",
+      "characters": [
+        "iris",
+        "lucia"
+      ],
+      "scene": "礼拝堂の死者名簿のページに消えた名前の空白、イリスが驚きながら指差す。",
+      "camera": "名簿の紙面と人物の緊張を同時に見せる",
+      "tone": "初めての不吉な事件",
+      "noReuse": "屋外戦場、兵士治療の絵を代用しない"
+    },
+    {
+      "id": "c01-s01-m5",
+      "filename": "c01-s01-m05.webp",
+      "speaker": "lucia",
+      "characters": [
+        "lucia",
+        "iris"
+      ],
+      "scene": "リュシアとイリスが先王の勅命の印影の不整合を発見。古い封蝋・写し・文書が主題。",
+      "camera": "偽造王印を大写し、背景にリュシアの困惑した表情",
+      "tone": "疑念と悲しみ",
+      "noReuse": "星鐘の真相や記録院長を先出ししない"
+    },
+    {
+      "id": "c01-s01-m6",
+      "filename": "c01-s01-m06.webp",
+      "speaker": "garan",
+      "characters": [
+        "garan",
+        "lucia"
+      ],
+      "scene": "王城門の外、住民と避難者の暮らしを前に、ガランが軍師へ守るべきものを説く。",
+      "camera": "ガランと人々の生活を中景、主人公は後ろ姿",
+      "tone": "静かな決意",
+      "noReuse": "戦闘後の治療場面だけを描いて代用しない"
+    },
+    {
+      "id": "c01-s01-m7",
+      "filename": "c01-s01-m07.webp",
+      "speaker": "lucia",
+      "characters": [
+        "lucia",
+        "garan"
+      ],
+      "scene": "王城から町へ出発する新任軍師。リュシアとガランが見送る。道具屋・市場・石畳の街並み。",
+      "camera": "町探索へ自然につながるカメラ構図、陽光",
+      "tone": "希望と次の一歩",
+      "noReuse": "城の外で別の大陸へ出征する絵を代用しない"
+    }
+  ]
+}
