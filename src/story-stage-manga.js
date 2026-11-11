@@ -156,7 +156,8 @@ function addRouteContext(p,stage,context={}){
  return p.map((shot,index)=>{
   if(index!==0)return shot;
   const chapterPrefix=stage.chapter>=16?'三国が共同戦線を組み、これまでの選択が援軍と作戦に引き継がれる。':note;
-  return Object.freeze({...shot,text:shot.text+' '+chapterPrefix});
+  const text=shot.text+' '+chapterPrefix;
+  return Object.freeze({...shot,text,subtitleText:text,voiceText:storyVoiceText(text)});
  });
 }
 export const mangaForChapter=chapter=>Object.freeze(CAMPAIGN_STAGES.filter(s=>s.chapter===Number(chapter)).map(s=>mangaForStage(s.id)));
