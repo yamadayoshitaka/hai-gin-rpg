@@ -75,11 +75,11 @@ export function safeContactColor(value){
 /** Persisted reference presets do not require browser storage. */
 export const FEMALE_REFERENCE_DEFAULT=FEMALE_V7_DEFAULTS;
 // The male standard must be the SAVED FEMALE FACE without cosmetics.
-// Facial sculpt/eye parameters remain identical at default; beard starts
-// clean-shaven but remains adjustable from the existing male sliders.
+// Facial sculpt/eye parameters remain identical at default; the separate
+// beard control retains its existing default and may be set to zero.
 export const MALE_REFERENCE_DEFAULT=Object.freeze({
  ...FEMALE_V7_DEFAULTS,
- beardDensity:0,beardLength:1,
+ beardDensity:.35,beardLength:1,
  cosmetics:false,sharedHeadSource:'realistic-head-animation.glb'
 });
 /**
