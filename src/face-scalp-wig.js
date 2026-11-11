@@ -233,6 +233,8 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  },getReport(){
   return {...root.userData.wigReport,collisionEvents:collisions,
    faceContactEvents:faceContacts,bodyContactEvents:bodyContacts};
+ },resolvePoint(point){
+  const p=point.clone();resolveCollision(p);return p;
  },getRootSamples(){
   return strands.slice(0,10).map(s=>({vertexIndex:s.seedIndex,point:s.root.toArray()}));
  }};
