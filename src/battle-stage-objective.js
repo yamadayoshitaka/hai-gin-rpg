@@ -23,21 +23,21 @@ export function objectiveForStage(stage){
    return Object.freeze({
     type:BATTLE_OBJECTIVE_TYPES.DEFEND_TIMER,title:'防衛戦・拠点を守り抜け',
     attackerTeam:1,defenderTeam:0,durationSeconds,breachSeconds:12,
-    allyGoal:durationSeconds+'秒間、拠点を防衛する',
-    enemyGoal:durationSeconds+'秒以内に拠点を12秒間占拠する'
+    allyGoal:durationSeconds+'秒間、拠点を防衛する、または敵軍を殲滅する',
+    enemyGoal:durationSeconds+'秒以内に拠点を12秒間占拠する、または味方軍を殲滅する'
    });
   }
   case 'capture':return Object.freeze({
    type:BATTLE_OBJECTIVE_TYPES.CAPTURE_ZONE,title:'陣地制圧・敵陣に旗を掲げろ',
    attackerTeam:0,defenderTeam:1,durationSeconds:180,holdSeconds:18,
-   allyGoal:'180秒以内に敵陣を18秒間確保する',
-   enemyGoal:'180秒間、敵陣の占拠を阻止する'
+   allyGoal:'180秒以内に敵陣を18秒間確保する、または敵軍を殲滅する',
+   enemyGoal:'180秒間、敵陣の占拠を阻止する、または味方軍を殲滅する'
   });
   case 'siege':return Object.freeze({
    type:BATTLE_OBJECTIVE_TYPES.SIEGE,title:'攻城戦・敵陣を突破せよ',
    attackerTeam:0,defenderTeam:1,durationSeconds:240,holdSeconds:24,
-   allyGoal:'240秒以内に城を24秒間確保、または敵主将を撃破する',
-   enemyGoal:'240秒間、城と主将を守り抜く'
+   allyGoal:'240秒以内に城を24秒間確保、敵主将を撃破、または敵軍を殲滅する',
+   enemyGoal:'240秒間、城と主将を守り抜く、または味方軍を殲滅する'
   });
   default:return Object.freeze({
    type:BATTLE_OBJECTIVE_TYPES.ELIMINATE,
@@ -81,12 +81,15 @@ export function evaluateBattleObjective(spec,{
  const defenderWin=(reason,progress=1)=>decide(defenderTeam,reason,progress);
  const running=(reason,progress=0)=>decide(null,reason,progress);
 
+ // Annihilation is a universal alternative win condition, regardless of the
+ // positional mission or elapsed time. When both armies fall on one tick,
+ // the defender wins by the previously specified no-draw tie-break.
  // Both sides annihilated in the same simulation tick: the side charged with
  // taking the objective failed, so the defender wins. There is never a draw.
  if(!attackerAlive&&!defenderAlive)
   return defenderWin('双方壊滅・攻撃側が目的を達成できず防衛側の勝利');
- if(!attackerAlive)return defenderWin('攻撃軍が壊滅した');
- if(!defenderAlive)return attackerWin('防衛軍が壊滅した');
+ if(!attackerAlive)return defenderWin('攻撃軍を殲滅した');
+ if(!defenderAlive)return attackerWin('防衛軍を殲滅した');
 
  if(type===BATTLE_OBJECTIVE_TYPES.DEFEND_TIMER){
   const occupyTime=Math.max(1,finite(spec?.breachSeconds,12));
