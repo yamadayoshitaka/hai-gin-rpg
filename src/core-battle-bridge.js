@@ -5,6 +5,7 @@
 import {BUFFS,squadCommanderId,reserveTroops} from './story-campaign.js';
 import {allocateSortieSlots,STORY_JOB_TO_BATTLE,STORY_SPAWN_LANES} from './story-battle-bridge.js';
 import {CAMPAIGN_STAGE_BY_ID} from './campaign-stage-plan.js';
+import {objectiveForStage} from './battle-stage-objective.js';
 import {storyStageContext} from './story-narrative-flow.js';
 import {markStageVictory,squadEquipmentBonus} from './game-core-flow.js';
 export const CORE_BATTLE_PENDING_KEY='hai-gin-core-battle-pending-v1';
@@ -35,6 +36,7 @@ export function makeCoreBattleRequest(game,stageId,battleId=String(Date.now())){
   version:1,battleId:String(battleId),territoryId:stage.territoryId,
   territoryName:stage.name,terrain:stage.biome,stageId:stage.id,
   stagePreset:stage.scenePreset,origin:'game-core',stageKind:stage.kind,
+  battleObjective:objectiveForStage(stage),
   storyRoute:storyContext?.route||'silver',storyCooperator:storyContext?.routeName||'灰銀軍師',
   storyCoalition:storyContext?.coalition||false,storyDecision:storyContext?.decision||null,
   enemyMode:monsterBattle?'monsters':'army',
@@ -53,6 +55,9 @@ export function settleCoreBattle(game,request,result){
  const allowed=new Map();
  for(const unit of request.units||[])allowed.set(unit.squadId,(allowed.get(unit.squadId)||0)+1);
  const stage=CAMPAIGN_STAGE_BY_ID[request.stageId];
+ if(result.victory&&['defend','capture','siege'].includes(stage.kind)&&
+  (result.objectiveType!==objectiveForStage(stage).type||result.objectiveCompleted!==true))
+  throw Error('ステージの防衛・制圧目標の達成を確認できませんでした。');
  if(result.victory&&(stage.kind==='explore'||stage.kind==='boss')&&result.monstersRemaining!==0)
   throw Error('討伐したモンスター数を確認できませんでした。');
  let casualties=0;
