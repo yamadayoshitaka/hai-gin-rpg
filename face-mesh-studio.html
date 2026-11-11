@@ -284,6 +284,46 @@ function repaint(){
 for(const mode of ['clay','color']){
  $(mode).addEventListener('click',()=>{faceMode=mode;repaint();});
 }
+function rebuildWig(){
+ const previous=wigs.get('female');
+ if(previous){
+  previous.root.removeFromParent();previous.dispose();wigs.delete('female');
+ }
+ if(!ready||!wigOn||!models.get('female'))return;
+ try{
+  const wig=createScalpAnchoredWig(models.get('female').face,{
+   count:wigDensity,lengthScale:wigLength,
+   color:hairPalette[wigColor]||hairPalette.blonde
+  });
+  models.get('female').face.add(wig.root);wigs.set('female',wig);
+ }catch(error){
+  console.error('Scalp hair attachment failed',error);
+  wigOn=false;$('wig').setAttribute('aria-pressed','false');
+  $('wig').textContent='女性の髪を表示';
+  $('status').textContent='髪の生成エラー：'+String(error);
+ }
+}
+$('wig').addEventListener('click',()=>{
+ wigOn=!wigOn;rebuildWig();
+ $('wig').setAttribute('aria-pressed',String(wigOn));
+ $('wig').textContent=wigOn?'女性の髪を隠す':'女性の髪を表示';
+ $('metrics').textContent=JSON.stringify(metrics(),null,2);
+});
+for(const key of ['Density','Length']){
+ const control=$('wig'+key);
+ control.addEventListener('input',()=>{
+  if(key==='Density')wigDensity=Number(control.value);
+  else wigLength=Number(control.value);
+  $('wig'+key+'Value').value=control.value+(key==='Density'?'束':'×');
+ });
+ control.addEventListener('change',()=>{
+  rebuildWig();$('metrics').textContent=JSON.stringify(metrics(),null,2);
+ });
+}
+$('wigColor').addEventListener('change',()=>{
+ wigColor=$('wigColor').value;
+ rebuildWig();$('metrics').textContent=JSON.stringify(metrics(),null,2);
+});
 function rebuildFemale(){
  if(!ready||!femaleSource)return;
  const prev=models.get('female');
@@ -295,6 +335,7 @@ function rebuildFemale(){
  scene.add(next.root);
  models.set('female',next);
  applyFaceColorMode(next.face,faceMode,{contactColor});
+ rebuildWig();
  if(wired)next.face.traverse(o=>{if(o.isMesh)o.material.wireframe=true;});
  if(prev){
   scene.remove(prev.root);
@@ -528,6 +569,7 @@ async function init(){
    models.set(g,model);scene.add(model.root);
   }
   ready=true;
+  rebuildWig();
   for(const id of ['female','male','front','threeQuarter','side','back','wire','parts','wig','clay','color','resetPreset','resetMalePreset','export'])
    $(id).disabled=false;
   const query=new URLSearchParams(location.search);
