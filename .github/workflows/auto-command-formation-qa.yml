@@ -1,0 +1,28 @@
+name: Allied auto command and formation doctrine QA
+on:
+  push:
+    branches:
+      - feat/ally-auto-orders-and-formation-doctrine-20261111
+    paths:
+      - src/battle-auto-command-formation-policy.js
+      - qa/battle-auto-command-formations.test.mjs
+      - .github/workflows/auto-command-formation-qa.yml
+  pull_request:
+    paths:
+      - src/battle-auto-command-formation-policy.js
+      - qa/battle-auto-command-formations.test.mjs
+      - .github/workflows/auto-command-formation-qa.yml
+  workflow_dispatch:
+jobs:
+  unit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Auto order and doctrine rules
+        run: node qa/battle-auto-command-formations.test.mjs
+      - name: Existing formation contracts (50 and 1000)
+        run: node qa/mass-battle-formations.test.mjs && node qa/squad-formation-three-types.test.mjs
