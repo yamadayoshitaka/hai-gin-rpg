@@ -247,10 +247,35 @@ function insect(g,s,{spider=false}={}){
    const leg=g.group(name,[side*.35,1.12,z]);
    const bend=[side*(.45+(i===0?.12:0)),i===3?.02:.22,(i-1)*.16];
    const foot=[side*(.72+i*.05),-.94,(i-1.5)*.23];
-   g.bone(leg,'skin',[0,0,0],bend,.085,{tipRadius:.055,metal:.4});
-   g.sphere(leg,'accent',bend,[.092,.09,.092],{metal:.4});
-   g.bone(leg,'shadow',bend,foot,.070,{tipRadius:.024,metal:.4});
-   g.spike(leg,'bone',foot,[foot[0]+side*.11,foot[1]-.08,foot[2]],.04);
+   if(spider){
+     // Spiders need a raised femur, a distinct patella and a descending
+     // tibia/metatarsus. The former two-stick silhouette looked like a
+     // six-legged beetle and buried the distal joints in the ground.
+     // Keep all segments under the original leg pivot for gait animation.
+     const spread=.56+i*.095+v*.018;
+     const knee=[side*spread,.32+(i%2)*.075,(1.5-i)*.205];
+     const ankle=[side*(.88+i*.065),-.72,(1.5-i)*.255];
+     const toe=[side*(.99+i*.07),-1.095,(1.5-i)*.27+.045];
+     g.bone(leg,'skin',[0,0,0],knee,.077,{tipRadius:.058,metal:.16});
+     g.sphere(leg,'accent',knee,[.093,.092,.093],{metal:.20,rough:.55});
+     g.bone(leg,'skin',knee,ankle,.062,{tipRadius:.037,metal:.16});
+     g.sphere(leg,'shadow',ankle,[.066,.072,.066],{metal:.12,rough:.63});
+     g.bone(leg,'shadow',ankle,toe,.036,{tipRadius:.014,metal:.08});
+     g.spike(leg,'bone',toe,[toe[0]+side*.07,toe[1]-.045,toe[2]+.095],.024);
+     // Sparse tactile spines follow the upper limb, not a floating torso
+     // decoration. Variant spacing keeps the five spider species distinct.
+     for(let j=1;j<=3+v%2;j++){
+       const t=j/(5+v%2);
+       const point=[knee[0]*t,knee[1]*t,knee[2]*t];
+       g.spike(leg,'shadow',point,
+         [point[0]+side*(.07+v*.005),point[1]+.055,point[2]-.035],.013);
+     }
+   }else{
+     g.bone(leg,'skin',[0,0,0],bend,.085,{tipRadius:.055,metal:.4});
+     g.sphere(leg,'accent',bend,[.092,.09,.092],{metal:.4});
+     g.bone(leg,'shadow',bend,foot,.070,{tipRadius:.024,metal:.4});
+     g.spike(leg,'bone',foot,[foot[0]+side*.11,foot[1]-.08,foot[2]],.04);
+   }
  }
  if(!spider){
    const hornCount=v%2?2:1;
