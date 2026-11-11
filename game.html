@@ -53,7 +53,7 @@ const $=id=>document.getElementById(id);
 const settingsKey='hai-gin-core-settings-v1';
 let options={bgm:true,voice:true,quality:'auto'};
 try{const value=JSON.parse(localStorage.getItem(settingsKey)||'null');if(value)options={...options,...value};}catch{}
-const pageAudio=createGamePageAudio({storage:localStorage,initialScene:'opening'});
+const pageAudio=createGamePageAudio({storage:localStorage,initialScene:'title'});
 const introStory=mangaForStage('c01-s01'),introFrames=introStory.panels.slice(0,6);
 let index=0,introClosed=true;let guideIndex=0,guideIntoNewGame=true;
 function showIntroFrame(){
@@ -76,7 +76,7 @@ function speakIntro(){
  }catch{}
 }
 function nextLine(){index++;if(index>=introFrames.length){closeIntro();return;}showIntroFrame();if(pageAudio.started)speakIntro();}
-function openIntro(){closeModals();introClosed=false;index=0;$('intro').hidden=false;$('intro').style.opacity='1';$('intro').style.pointerEvents='auto';showIntroFrame();pageAudio.unlock();speakIntro();}
+function openIntro(){closeModals();introClosed=false;index=0;pageAudio.changeScene('opening');$('intro').hidden=false;$('intro').style.opacity='1';$('intro').style.pointerEvents='auto';showIntroFrame();pageAudio.unlock();speakIntro();}
 $('introNext').onclick=nextLine;
 $('skip').onclick=()=>{pageAudio.unlock();pageAudio.effect('confirm');closeIntro();};
 document.addEventListener('pointerdown',()=>{pageAudio.unlock();speakIntro();},{once:true,passive:true});
