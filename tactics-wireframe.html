@@ -5607,6 +5607,15 @@ $('surrender').onclick=()=>{
 // The commander gives orders to allied squads. Both armies get inexpensive
 // team-coloured squad labels, so the enemy remains identifiable at a glance.
 const squadRoster=massSim?massSim.units:actors;
+const battleJobNameById=new Map(MASS_JOBS.map(job=>[job.id,job.name]));
+function battleUnitJobName(unit){
+ return unit.job?.name||battleJobNameById.get(unit.jobId)||unit.jobId||'兵士';
+}
+function squadPrimaryJob(id,team=0,sums=lastRibbonSums){
+ const jobs=sums?.get(squadKey(team,String(id)))?.jobs;
+ if(!jobs)return '部隊';
+ return Object.entries(jobs).sort((a,b)=>b[1]-a[1])[0]?.[0]||'部隊';
+}
 function currentSkirmishDirective(a){
  const id=String(a.squadId),key=(a.team===0?'0:':'1:')+id;
  const directive=a.team===0?squadOrderRegistry.get(id):startingSquadOrders.get(key);
@@ -5642,7 +5651,11 @@ for(const id of squadIds)if(!squadStrategies.has(id)){
  squadStrategies.set(id,members.some(u=>u.jobId==='priest')?'recovery':
   members.some(u=>['mage','ninja','thief'].includes(u.jobId))?'environment_prepare':'eliminate');
 }
-const STRATEGY_LABELS={eliminate:'⚔ 全滅',environment_prepare:'🛠 環境整備',recovery:'✚ 支援'};
+const STRATEGY_LABELS={eliminate:'全滅',environment_prepare:'環境整備',recovery:'支援',mission:'目的遂行',objective:'目的遂行'};
+function squadFixedStrategyLabel(id,team=0){
+ if(team===1)return '敵AI・全滅';
+ return STRATEGY_LABELS[squadStrategies.get(String(id))]||'全滅';
+}
 const INITIAL_ORDER_LABELS={charge:'⚔ 突撃',defend:'🛡 守備',hold:'⏸ 待機',retreat:'↘ 退却',explore:'🔎 探索'};
 const startingSquadOrders=new Map(),activeBuildingExplorations=new Map(),explorationQueues=new Map();
 const exploreRangeBySquad=new Map(); // 0 means unrestricted, measured in map cells.
@@ -6405,7 +6418,7 @@ function refreshSquadOrderLabel(){
  $('squadTacticsName').textContent=squadName(id);
  const commanderReason=squadCommanderUnavailableReason(id);
  $('squadTypeStatus').dataset.commandReason=commanderReason;
- $('squadTypeStatus').textContent='編成：'+FORMATION_NAMES[selectedSquadType(id)]+'（開戦後変更不可）｜'+
+ $('squadTypeStatus').textContent='編成：'+FORMATION_NAMES[selectedSquadType(id)]+'／作戦：'+squadFixedStrategyLabel(id)+'（固定）｜'+
   (commanderReason||'軍師：指揮可能');
  $('squadTypeStatus').style.color=commanderReason?'#ffd0a0':'';
  const currentIntent=squadIntent(id,0,false,commanderReason);
@@ -7480,7 +7493,7 @@ function makeRibbonSquad(team,id,index){
  button.dataset.squadId=String(id);
  const icon=document.createElement('span');icon.className='ribbonIcon';
  icon.textContent=ribbonIconForType(selectedSquadType(id,team));
- const title=document.createElement('span');title.textContent='第'+(index+1)+'隊';
+ const title=document.createElement('span');title.textContent='部隊';
  const count=document.createElement('span');count.className='ribbonCount';count.textContent='0/0';
  const header=document.createElement('span');header.className='ribbonTop';header.append(title,count);
  const order=document.createElement('span');order.className='ribbonOrder';
@@ -7489,7 +7502,7 @@ function makeRibbonSquad(team,id,index){
  order.textContent='自動';
  const target=document.createElement('span');target.className='ribbonTarget none';target.textContent='索敵中';
  button.append(icon,header,target,deaths,order,timer);
- button.userDataCount=count;button.userDataTarget=target;
+ button.userDataTitle=title;button.userDataCount=count;button.userDataTarget=target;
  button.userDataDeaths=deaths;
  button.userDataIcon=icon;button.userDataOrder=order;button.userDataCooldown=timer;button.userDataIndex=index;
  button.onclick=()=>{if(pendingCircleTarget){chooseCircleActionTarget(id,team);return}if(team===0){trackedAllySquadId=String(id);openSquadTactics(id)}else showEnemySquadIntel(id)};
@@ -7569,15 +7582,15 @@ function refreshBattleTargetSummary(sums){
  if(id==null||!ally){summary.hidden=true;return}
  summary.hidden=false;
  const allyNumber=squadIds.indexOf(String(id))+1;
- $('battleSelectedAlly').textContent='味方 第'+allyNumber+'隊';
+ $('battleSelectedAlly').textContent='味方 '+squadPrimaryJob(id,0,sums)+'隊（第'+allyNumber+'隊）';
  $('battleSelectedAllyCount').textContent='残存 '+ally.n+'/'+ally.total;
  const order=squadIntent(id,0,ally.n===0).order;
- $('battleSelectedAllyOrder').textContent=order;
+ $('battleSelectedAllyOrder').textContent='作戦：'+squadFixedStrategyLabel(id)+'／'+order;
  const lock=currentSquadAttackTarget(0,id,sums);
  const enemy=lock?.id!=null?sums.get(squadKey(1,lock.id)):null;
  if(enemy?.n){
   const number=enemySquadIds.indexOf(String(lock.id))+1;
-  $('battleSelectedEnemy').textContent='敵 第'+number+'隊';
+  $('battleSelectedEnemy').textContent='敵 '+squadPrimaryJob(lock.id,1,sums)+'隊（第'+number+'隊）';
   $('battleSelectedEnemyCount').textContent='残存 '+enemy.n+'/'+enemy.total;
   $('battleSelectedTargetMode').textContent=lock.mode==='指定'?'攻撃対象（号令指定）':
    lock.mode==='交戦'?'攻撃対象（交戦中）':'索敵候補（接敵前）';
@@ -7623,7 +7636,9 @@ function renderSquadRibbons(sums){
     changedAt:lastRibbonOrderAt.get(squadKey(team,id))??-Infinity};
   });
   const sorted=entries; // Stable 1-10 squad order; never jump during combat.
-  const visibleRibbonPageSize=Math.max(1,sorted.length);
+  // One page fits the actual phone height; change pages with ▲/▼, never scroll.
+  const available=Math.max(220,innerHeight-dockBottom-208);
+  const visibleRibbonPageSize=Math.max(3,Math.min(8,Math.floor(available/64)));
   const pageCount=Math.max(1,Math.ceil(sorted.length/visibleRibbonPageSize));
   ribbonPages[team]=Math.min(ribbonPages[team],pageCount-1);
   const navigator=ribbonPageNodes.get(team);
@@ -7648,7 +7663,11 @@ function renderSquadRibbons(sums){
    const remaining=team===0?squadOrderCooldownSeconds(row.id):0;
    button.classList.toggle('cooldown-locked',Boolean(team===0&&remaining));
    const label=intent.order.replace(/^号令：/,'').replace(/（.*$/,'');
-   if(button.userDataOrder.textContent!==label)button.userDataOrder.textContent=label;
+   const job=squadPrimaryJob(row.id,team,sums);
+   const jobTitle=job+'隊';
+   if(button.userDataTitle.textContent!==jobTitle)button.userDataTitle.textContent=jobTitle;
+   const strategy='作戦：'+squadFixedStrategyLabel(row.id,team)+'／'+label;
+   if(button.userDataOrder.textContent!==strategy)button.userDataOrder.textContent=strategy;
    button.userDataCooldown.hidden=!remaining;
    if(remaining)button.userDataCooldown.textContent='⏳'+remaining+'秒';
    const lock=currentSquadAttackTarget(team,row.id,sums);
@@ -7705,6 +7724,11 @@ function updateSquadMarkerPositions(dt){
    const id=squadKey(u.team,String(u.squadId)),sumsRow=sums.get(id)||
     {x:0,z:0,n:0,total:0,hp:0,maxHp:0,deadX:0,deadZ:0,deadN:0};
    sumsRow.total++;
+   if(!u.isStrategist&&u.hp>0&&u.alive!==false){
+    const jobs=sumsRow.jobs??={};
+    const name=battleUnitJobName(u);
+    jobs[name]=(jobs[name]||0)+1;
+   }
    const ux=massSim?u.x:u.root.position.x/CELL+6;
    const uz=massSim?u.z:u.root.position.z/CELL+6;
    if(u.hp>0&&u.alive!==false){
@@ -8042,7 +8066,8 @@ const centralAlly=actors.filter(a=>a.team===0).sort((a,b)=>
  Math.abs(a.cell.z-116)-Math.abs(b.cell.z-116)||Math.abs(a.cell.x-111)-Math.abs(b.cell.x-111))[0];
 const cameraHome=(centralAlly?.root.position||openingFocus).clone();
 const cameraCloseOffset=new THREE.Vector3(5,8,12);
-const cameraOverviewOffset=new THREE.Vector3(.02,Math.ceil(WORLD_SIZE*CELL*1.36),.02);
+// Three-quarter overview: keep horizon and upper floors visible, unlike true bird's-eye.
+const cameraOverviewOffset=new THREE.Vector3(105,215,205);
 controls.maxDistance=620;
 function setBattleCamera(focus,offset){
  controls.target.copy(focus);
@@ -9187,7 +9212,10 @@ async function finishBattleLoading(){
    getUnits:()=>squadRoster,
    getOrders:()=>initialOrderInputs.filter(x=>x.team===0).map(x=>
     squadName(x.id)+'：'+(INITIAL_ORDER_LABELS[x.orderSelect.value]||'自動')),
-   getCommander:()=>storyRequest?.commanders?.[0]||null
+   getCommander:()=>storyRequest?.commanders?.[0]||null,
+   getObjective:()=>CAMPAIGN_STAGE_BY_ID[storyRequest?.stageId]?.winCondition||
+    (storyRequest?.territoryName?'敵領地を制圧':'敵部隊を撃破・勝利条件を達成'),
+   getStrategies:()=>squadIds.slice(0,3).map(id=>squadPrimaryJob(id,0)+'：'+squadFixedStrategyLabel(id))
   });
   let wizardPage='formation';
   const wizardButtons=new Map();
