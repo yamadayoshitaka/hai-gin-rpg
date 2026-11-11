@@ -59,7 +59,8 @@ const rendererSource=readFileSync(new URL('../src/combat-world-object-renderer.j
 assert.match(rendererSource,/advanceCreatureLocomotion\(/,'GPUインスタンスにも速度の連続補間を使う');
 assert.match(rendererSource,/motion\.gaitPhase\*2/,'歩行時の身体上下動を足運びと同期する');
 const battleSource=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
-assert.match(battleSource,/creatureVisualTime\+=dt/,'AI tickとは独立して描画フレーム毎に更新する');
+assert.match(battleSource,/if\(!paused\)creatureVisualTime\+=worldDt/,
+ 'AI tickとは独立して描画フレームごとに進め、停止中は時間を進めない');
 assert.match(battleSource,/creatureVisualTime,massSim\?\.units\|\|actors,elapsed/,
   '歩行の描画時計と攻撃判定時計を分離する');
 
