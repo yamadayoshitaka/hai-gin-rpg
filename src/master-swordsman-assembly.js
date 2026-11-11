@@ -1019,6 +1019,8 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false,gen
    // The original +8 mm iris cards were hovering in front of the human
    // face. Follow the native globe and visible skin with a 1.2 mm offset.
    const exposedIrisZ=Math.max(box.max.z+.0012,skinEyeZ+.0012);
+   fixture.irisGroup.userData.eyeSurfaceStandoffMeters=
+    exposedIrisZ-box.max.z;
    group.position.copy(detailedHead.worldToLocal(
     new THREE.Vector3(center.x,center.y,exposedIrisZ)));
    group.visible=true;fixture.sclera.visible=true;
@@ -1181,7 +1183,8 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false,gen
       side*headReport.proportions.eyeOffsetX,
      headReport.proportions.eyeVertical*faceSource.geometry.boundingBox.getSize(new THREE.Vector3()).y+
       headReport.proportions.eyeOffsetY,
-     headReport.proportions.eyeOffsetZ);
+     headReport.proportions.eyeOffsetZ+(gender==='female'?
+      headReport.proportions.eyeSocketDepth:0));
     const origin=p.localToWorld(new THREE.Vector3());
     const translated=p.localToWorld(explicitOffset);
     expected.add(translated.sub(origin));
@@ -1224,6 +1227,14 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false,gen
    maxPupilIrisOffsetRatio:round(pupilGap),
    leftRightEyeHeightDifference:round(eyeHeightAsymmetry),
    lowerLidMeshCount:lowerLids.length,
+   movingUpperLidSkinCount:eyeFixtures.filter(x=>x.upperFold.visible).length,
+   restingLowerTearTroughMeshCount:eyeFixtures.filter(x=>x.lowerFold.visible).length,
+   pupilDiameterRatio:headReport.proportions.pupilDiameter,
+   irisDiameterRatio:headReport.proportions.irisDiameter,
+   eyeballScaleRatio:headReport.proportions.eyeballScale,
+   eyeSocketDepthMeters:headReport.proportions.eyeSocketDepth,
+   fittedOcularSurfaceStandoffMeters:round(Math.max(0,
+    ...eyeFixtures.map(x=>x.irisGroup.userData.eyeSurfaceStandoffMeters||0))),
    attachedEyelashMeshCount:upperEyelashes.length,
    visibleEyelashMeshCount:upperEyelashes.filter(x=>x.visible&&x.parent?.visible).length,
    lashFollowsUpperLid:eyeFixtures.every(x=>x.lashes.parent===x.upper),
