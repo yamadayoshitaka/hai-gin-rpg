@@ -91,7 +91,7 @@ export function createMangaViewer({container=document.body,storage=globalThis.lo
   $('.manga-next').textContent=index===visiblePanels.length-1?
    (phase==='pre'?'ステージへ進む ▶':phase==='post'?'結果を閉じる ▶':'確認を終える ▶'):'次のコマ ▶';
   $('.manga-voice').textContent=voiceOn?'音声 ON':'音声 OFF';
-  const cue=fantasyCueForMangaPanel({id:story.id,number:story.number,kind:shot.scenery},index);
+  const cue=fantasyCueForMangaPanel({id:story.id,number:story.number,kind:shot.scenery},shot.index);
   onCue(cue,shot,story);
   narrate();
  }
