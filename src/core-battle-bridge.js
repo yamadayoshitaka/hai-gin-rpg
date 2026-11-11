@@ -55,9 +55,16 @@ export function settleCoreBattle(game,request,result){
  const allowed=new Map();
  for(const unit of request.units||[])allowed.set(unit.squadId,(allowed.get(unit.squadId)||0)+1);
  const stage=CAMPAIGN_STAGE_BY_ID[request.stageId];
- if(result.victory&&['defend','capture','siege'].includes(stage.kind)&&
-  (result.objectiveType!==objectiveForStage(stage).type||result.objectiveCompleted!==true))
-  throw Error('ステージの防衛・制圧目標の達成を確認できませんでした。');
+ if(['defend','capture','siege'].includes(stage.kind)){
+  // Both sides must have a single verifiable outcome, not two independent
+  // victory flags. Reject inconsistent results before modifying any troops.
+  const winner=result.victory?0:1;
+  if(result.winnerTeam!==winner||result.loserTeam!==1-winner)
+   throw Error('攻撃側と防衛側の勝敗が一致しません。');
+  if(result.objectiveType!==objectiveForStage(stage).type||
+    (result.victory&&result.objectiveCompleted!==true))
+   throw Error('ステージの防衛・制圧目標の達成を確認できませんでした。');
+ }
  if(result.victory&&(stage.kind==='explore'||stage.kind==='boss')&&result.monstersRemaining!==0)
   throw Error('討伐したモンスター数を確認できませんでした。');
  let casualties=0;
