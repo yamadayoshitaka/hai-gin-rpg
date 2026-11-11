@@ -123,7 +123,7 @@ footer{max-width:1170px;margin:0 auto 20px;padding:8px 16px;color:#b0c4d6;font-s
 <div id="faceSliders"><label>顎の幅<input id="face-JawWidth" type="range" min="0" max="1" step=".01" value=".5"></label><label>頬骨<input id="face-CheekVolume" type="range" min="0" max="1" step=".01" value=".5"></label><label>鼻の高さ<input id="face-NoseProjection" type="range" min="0" max="1" step=".01" value=".5"></label><label>鼻の幅<input id="face-NoseWidth" type="range" min="0" max="1" step=".01" value=".5"></label><label>口の幅<input id="face-MouthWidth" type="range" min="0" max="1" step=".01" value=".5"></label><label>顎先<input id="face-ChinLength" type="range" min="0" max="1" step=".01" value=".5"></label><label>眉骨<input id="face-BrowArc" type="range" min="0" max="1" step=".01" value=".5"></label></div>
 <label>若々しい顔の形（顎・鼻・口）<input id="youthfulness" type="range" min="0" max="1" step=".01" value=".7"></label>
 <label>顔の横幅 <input id="faceWidth" type="range" min=".90" max="1.04" step=".005" value=".96"></label>
-<label>虹彩の大きさ <input id="eyeSize" type="range" min=".85" max="1.24" step=".01" value="1.07"></label>
+<label id="legacyEyeSizeLabel">旧方式・虹彩の大きさ（量産兵用） <input id="eyeSize" type="range" min=".85" max="1.24" step=".01" value="1.07"></label>
 </details>
 <h2>顔の3等分・目・眉・鼻・口を調整</h2>
 <p style="font-size:12px;color:#bdd4e7">実3Dメッシュを直接変形します。元モデルは保持し、同じ顔で再調整できます。</p>
@@ -378,7 +378,7 @@ function createFaceSliderGroups(){
   if(!section){
    section=document.createElement('details');
    section.className='facial-proportion-group';
-   section.open=['顔・3等分','鼻','口'].includes(groupName);
+   section.open=['顔・3等分','眼球・虹彩','まぶた・目の下','鼻','口'].includes(groupName);
    section.style.cssText='border:1px solid #45617d;border-radius:9px;padding:8px 10px;margin:8px 0';
    const summary=document.createElement('summary');
    summary.textContent=groupName;
@@ -461,6 +461,8 @@ function diagnostics(){
   armorOrnamentsOnly:!!ornaments?.visible,
   actualSourceAssetCount:3,animationStage:'preview-blink-not-rigged',
   jawSpeechArtApproved:false,photoSkinArtApproved:false,
+   beautyParameterSource:'proportions-single-source-v2',
+   irisAndPupilControlsIndependent:true,
   materialPhotoAtlasesFromViking:d.nativeGarmentMaps,
   realCCBYHairVertices:hairReport?.vertices||0,ccbyHairLicense:hairReport?.sourceAttribution||null,
   hairError,characterId:selectedId,featuredKey:activeFeaturedKey,
@@ -549,7 +551,7 @@ async function changeHairstyle(profile){
   master.actor.add(importedHair);
   importedHair.visible=$('hairOn').checked;
   master.setPart('scalp',false);
-  tintFittedHair(importedHair,profile.hairColor);
+  tintFittedHair(importedHair,profile.hairColor,profile.skin);
   refreshWireDisplay();
   hairError=null;printState();
  }catch(err){
@@ -558,12 +560,30 @@ async function changeHairstyle(profile){
   printState();
  }
 }
-function tintFittedHair(root,hex){
+function tintFittedHair(root,hex,skinHex=currentAppearance.skin){
  if(!root)return;
  const base=new THREE.Color(hex);
  const warm=new THREE.Color('#997b69');
+ const skin=new THREE.Color(skinHex);
  root.traverse(o=>{
   if(!o.isMesh&&!o.isLineSegments)return;
+  // A real source-topology scalp must show neutral SKIN between the
+  // follicles and progressively darken into hair pigment in the crown.
+  // Coloring this entire cap pink produced a fake bald plastic helmet.
+  const blend=o.userData?.skinToHairRootBlend;
+  const attribute=o.geometry?.getAttribute('color');
+  if(blend&&attribute&&attribute.itemSize===4&&blend.length===attribute.count){
+   for(let i=0;i<attribute.count;i++){
+    const hairWeight=blend[i]*.64;
+    const c=skin.clone().lerp(base,hairWeight);
+    attribute.setXYZ(i,c.r,c.g,c.b);
+   }
+   attribute.needsUpdate=true;
+   for(const m of Array.isArray(o.material)?o.material:[o.material]){
+    if(m?.color){m.color.setRGB(1,1,1);m.needsUpdate=true;}
+   }
+   return;
+  }
   const authored=o.name==='FEMALE_REAL_HEAD_SWEPT_STRAND_GEOMETRY';
   const bun=o.name==='REFERENCE_LOW_GATHERED_BUN_CORE';
   const coils=o.name.startsWith('BUN_COILED_HAIR_');
@@ -582,7 +602,7 @@ function paintCharacter(profile){
  tintOriginalCloth(master.outfit,profile.clothColor);
  fittedArmor?.changeAppearance(profile);
  master.actor.scale.setScalar(profile.build);
- tintFittedHair(importedHair,profile.hairColor);
+ tintFittedHair(importedHair,profile.hairColor,profile.skin);
  syncAnatomyPreview();
  refreshWireDisplay();
 }
@@ -628,6 +648,8 @@ async function applySelectedProfile(profile){
  $('youthfulness').value=String(profile.youthfulness??0);
  $('faceWidth').value=String(profile.faceWidth??1);
  $('eyeSize').value=String(profile.eyeSize??1);
+  $('legacyEyeSizeLabel').style.display=
+   profile.gender==='female'?'none':'';
  for(const key of SWORDSMAN_FACE_KEYS)
   $('face-'+key).value=String(profile.face[key]);
   syncFaceSliders(profile);
@@ -661,7 +683,13 @@ function applyCustomization(overrides){
  const profileKey=activeFeaturedKey||'soldier-'+selectedId;
  editedProfiles.set(profileKey,currentAppearance);
  paintCharacter(currentAppearance);printState();
- if(overrides.proportions&&$('hairOn').checked){
+ // Iris, pupil, orbital depth and eyelid edits do not move follicles:
+ // never rebuild 100,000 strands on every slider drag or blink update.
+ const scalpChangingKeys=new Set(['faceHeight','upperThird','middleThird',
+  'lowerThird','jawTaper','cheekRoundness','chinLength','faceHeight',
+  'preEarFullness','lowerCheekLateral','parotidWidth','lowerFaceProjection']);
+ if(overrides.proportions&&$('hairOn').checked&&
+   Object.keys(overrides.proportions).some(k=>scalpChangingKeys.has(k))){
   if(refreshHairTimer!==null)clearTimeout(refreshHairTimer);
   refreshHairTimer=setTimeout(()=>{
    refreshHairTimer=null;
@@ -770,35 +798,130 @@ $('referenceContour').addEventListener('click',()=>{
 });
 $('side').addEventListener('click',()=>{targetView(look,'side');printState()});
 $('back').addEventListener('click',()=>{targetView(look,'back');printState()});
+// Export binary real source meshes including a bounded strand sample.
+ // The viewer retains all 100,000 rendered hair filaments. GLTFExporter
+ // serializing all 600,000 lines exceeded the CI browser timeout, so the
+ // static portable GLB gets a deterministic 1:16 long-hair LOD. There is no
+ // mutation of source GLBs or preview hairs after export.
+/**
+ * Portable static inspection GLB. The *viewer* keeps the 100,000-strand
+ * original mesh. Only an export-only group is generated here, flattening
+ * world transforms from the genuine 3D model and sampling ~1,500 real hair
+ * curves. Heavy browser-only PBR image atlases are converted to flat,
+ * vertex-colored MeshStandardMaterial for reliable offline GLB export.
+ * The preview materials and geometry are never mutated.
+ */
+function buildPortableStaticExport(){
+ master.actor.updateWorldMatrix(true,true);
+ const exportRoot=new THREE.Group();
+ exportRoot.name='HEROINE_SOURCE_3D_PORTABLE_STATIC_GLTF';
+ const sourceInverse=master.actor.matrixWorld.clone().invert();
+ let triangles=0,hairSegments=0,meshes=0;
+ const geometryCopies=[],materialCopies=[];
+ function isActuallyVisible(node){
+  let n=node;
+  while(n&&n!==master.actor){if(n.visible===false)return false;n=n.parent;}
+  return true;
+ }
+ function sampledStrands(source){
+  const p=source.geometry?.getAttribute('position');
+  const c=source.geometry?.getAttribute('color');
+  if(!p||!c)return null;
+  const stride=12,skip=64;
+  if(p.count%stride)return null;
+  const count=Math.ceil(p.count/(stride*skip));
+  const outP=new Float32Array(count*stride*3);
+  const outC=new Float32Array(count*stride*3);
+  let o=0;
+  for(let i=0;i<p.count/stride;i+=skip){
+   const from=i*stride*3;
+   outP.set(p.array.subarray(from,from+stride*3),o);
+   outC.set(c.array.subarray(from,from+stride*3),o);
+   o+=stride*3;
+  }
+  const g=new THREE.BufferGeometry();
+  g.setAttribute('position',new THREE.BufferAttribute(outP,3));
+  g.setAttribute('color',new THREE.BufferAttribute(outC,3));
+  geometryCopies.push(g);
+  hairSegments+=o/6;
+  return g;
+ }
+ master.actor.traverse(node=>{
+  if(!isActuallyVisible(node)||node.userData.previewWireOverlay)return;
+  const isWigLine=node.isLineSegments&&node.name.startsWith('HEROINE_WIG_')&&node.userData?.strands;
+  if(!node.isMesh&&!isWigLine)return;
+  const geometry=isWigLine?sampledStrands(node):node.geometry;
+  if(!geometry?.getAttribute('position'))return;
+  const hasColors=!!geometry.getAttribute('color');
+  const makeMat=m=>{
+   const color=m?.color?.clone?.()||new THREE.Color(0xe0cbba);
+   const out=new THREE.MeshStandardMaterial({
+    name:'PORTABLE_INSPECTION_PBR',
+    color,roughness:THREE.MathUtils.clamp(m?.roughness??.76,.08,1),
+    metalness:THREE.MathUtils.clamp(m?.metalness??0,0,1),
+    side:m?.side??THREE.FrontSide,
+    vertexColors:hasColors&&!!m?.vertexColors,
+    transparent:!!m?.transparent,opacity:m?.opacity??1,
+    alphaTest:m?.alphaTest??0
+   });
+   materialCopies.push(out);
+   return out;
+  };
+  const material=isWigLine?
+   new THREE.LineBasicMaterial({vertexColors:true,color:0xffffff}):
+   Array.isArray(node.material)?node.material.map(makeMat):makeMat(node.material);
+  if(isWigLine)materialCopies.push(material);
+  const clone=isWigLine?new THREE.LineSegments(geometry,material):
+   new THREE.Mesh(geometry,material);
+  clone.name=node.name;
+  clone.matrixAutoUpdate=false;
+  clone.matrix.copy(sourceInverse.clone().multiply(node.matrixWorld));
+  clone.matrixWorldNeedsUpdate=true;
+  exportRoot.add(clone);
+  if(node.isMesh){
+   triangles+=Math.floor((geometry.index?.count||
+    geometry.getAttribute('position').count)/3);
+   meshes++;
+  }
+ });
+ return {root:exportRoot,triangles,hairSegments,meshes,
+  dispose(){geometryCopies.forEach(g=>g.dispose());
+   materialCopies.forEach(m=>m.dispose());}};
+}
 async function exportCurrent3D(){
  if(!master||!modelReady)throw Error('3D character not loaded');
  const btn=$('exportCharacterGlb');
- // The exported GLB retains actual PBR materials and geometry; wire overlay
- // is diagnostic only and is omitted from the downloaded model.
+ const wasWire=meshMode;
  clearWireDisplay();
- btn.disabled=true;btn.textContent='実3Dジオメトリを書き出し中…';
+ btn.disabled=true;btn.textContent='静止3DをGLB保存中…';
+ const exported=buildPortableStaticExport();
  try{
-  const exporter=new GLTFExporter();
-  // Export exactly the visible actual meshes; it is NOT a rigged battle
-  // character and cannot preserve WebGL-only clipping-plane semantics.
-  master.actor.updateWorldMatrix(true,true);
-  const data=await exporter.parseAsync(master.actor,{
-   binary:true,onlyVisible:true,embedImages:true,trs:false,animations:[]
+  if(exported.meshes<5||exported.triangles<5000)
+   throw Error('Portable export lost the original 3D face/body geometry');
+  const t=performance.now();
+  const data=await new GLTFExporter().parseAsync(exported.root,{
+   binary:true,onlyVisible:true,embedImages:false,trs:false,animations:[]
   });
-  if(!(data instanceof ArrayBuffer)||data.byteLength<30000)
-   throw Error('GLB export returned an invalid or empty model');
-  const blob=new Blob([data],{type:'model/gltf-binary'});
-  const url=URL.createObjectURL(blob),anchor=document.createElement('a');
-  anchor.href=url;
+  if(!(data instanceof ArrayBuffer)||data.byteLength<50000)
+   throw Error('Portable export returned an empty binary 3D model');
+  console.info('HEROINE_GLTF_PORTABLE_EXPORT_READY',JSON.stringify({
+   bytes:data.byteLength,triangles:exported.triangles,
+   hairSegments:exported.hairSegments,meshes:exported.meshes,
+   ms:Math.round(performance.now()-t)
+  }));
+  const url=URL.createObjectURL(new Blob([data],{type:'model/gltf-binary'}));
+  const anchor=document.createElement('a');
   anchor.download=(activeFeaturedKey||'soldier-'+selectedId)+'-static-preview.glb';
-  document.body.append(anchor);anchor.click();anchor.remove();
+  anchor.href=url;document.body.append(anchor);anchor.click();anchor.remove();
   setTimeout(()=>URL.revokeObjectURL(url),30000);
   return data.byteLength;
  }finally{
-  refreshWireDisplay();
+  exported.dispose();
+  if(meshMode===wasWire)refreshWireDisplay();
   btn.disabled=false;btn.textContent='試作3DをGLB保存（静止モデル）';
  }
 }
+$('exportCharacterGlb').title='画面は10万本の髪を表示。静止GLBは実3D形状のまま髪を低密度化し、ポータブルな単色PBR材質で保存します。';
 $('exportCharacterGlb').addEventListener('click',()=>{
  exportCurrent3D().catch(e=>{hairError='GLB書き出し失敗: '+String(e);printState();console.error(e)});
 });

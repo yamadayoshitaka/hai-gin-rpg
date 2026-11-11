@@ -56,17 +56,23 @@ function buildPreset(row,i){
     // FF13 Lightning as a *visual direction*, not borrowed Square Enix mesh
     // or copyrighted texture: slender natural nose, calm almond eyes and
     // focused expression, softer rose-pink skin, fine jaw with full cheeks.
-    faceHeight:.958,upperThird:1.025,middleThird:.930,lowerThird:.980,
-    jawTaper:.922,cheekRoundness:1.024,chinLength:.947,
+    faceHeight:.954,upperThird:1.025,middleThird:.942,lowerThird:.951,
+    jawTaper:.926,cheekRoundness:1.021,chinLength:.941,
+    lowerFaceProjection:.87,
     preEarFullness:.70,lowerCheekLateral:.75,parotidWidth:.68,
-    eyeWidth:1.112,eyeHeight:.968,eyeSpacing:1.008,
-    eyeVertical:.002,eyeTilt:.051,
+    eyeWidth:1.067,eyeHeight:.970,eyeSpacing:1.008,
+    eyeVertical:.002,eyeTilt:.036,
+    // Single authoritative ocular parameters: iris != black pupil.
+    // Eye size is the real sclera radius; depth is measured in metres.
+    eyeballScale:.865,eyeSocketDepth:-.0042,
+    irisDiameter:.80,pupilDiameter:.79,
+    upperLidCoverage:.25,underEyeSoftness:.23,
     browVertical:.004,browEyeGap:1.008,
     browWidth:1.065,browThickness:.745,browAngle:.025,
     noseOverall:.815,noseLength:.907,noseWidth:.79,
     noseBridge:1.028,noseTip:.755,
-    mouthWidth:.915,mouthHeight:.985,mouthVertical:.011,
-    lipFullness:1.075,mouthCorner:.009
+    mouthWidth:.915,mouthHeight:.950,mouthVertical:.006,
+    lipFullness:.865,mouthCorner:.007
    }):i===0?validateFaceProportions({
    faceHeight:.947,upperThird:1.07,middleThird:.86,lowerThird:.925,
    jawTaper:.85,chinLength:.87,eyeWidth:1.045,eyeHeight:1.045,
@@ -87,7 +93,7 @@ function buildPreset(row,i){
   youthfulness:female?.69:category==='hero'?.97:.49+(i-5)*.035,
   skinRoughness:category==='hero'?(female?.55:i===0?.43:.47):.54,
   makeup:female?Object.freeze({
-   strength:.93,blush:.91,lip:.95,eyeliner:.96,
+   strength:.83,blush:.68,lip:.57,eyeliner:.72,
    style:'light-natural-rose',eyeLiner:'defined upper lash',
    lips:'soft-rose',sourceFaceOnly:true
   }):null,

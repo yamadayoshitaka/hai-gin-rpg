@@ -14,6 +14,7 @@ import {prepareYouthfulFace} from './master-swordsman-youthful-face.js';
 import {createFittedFantasyHeroGarment} from './master-hero-fitted-garment.js';
 import {buildReferenceHeroineHair} from './master-heroine-coiffure.js';
 import {buildHeroineFantasyLongHair,buildHeroineWigRootCap,measureHeroineTorsoEnvelope} from './master-heroine-long-hair.js';
+import {getHeroineIrisFiberTexture} from './master-heroine-iris-fibers.js';
 import {applyHeroineSkinPBR,HEROINE_SKIN_TEXTURE_INFO} from './master-heroine-skin-pbr.js';
 import {validateFaceProportions} from './master-swordsman-face-proportions.js';
 
@@ -107,7 +108,29 @@ function makeEyeRim(width,height,upper=true){
  }
  return new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),32,.00135,6,false);
 }
-function makeAttachedUpperLashes(width,height){
+// Skin-backed eyelid folds occlude part of the actual globe at rest,
+ // and remain children of the upper/lower moving eyelid root.
+ // A single tube outline alone creates the floating cartoon-white-eye look.
+ function makeEyeSkinFold(width,height,upper=true){
+  const verts=[],indices=[],columns=36,rows=3;
+  for(let row=0;row<rows;row++)for(let i=0;i<=columns;i++){
+   const t=i/columns*2-1,fade=1-Math.pow(Math.abs(t),5);
+   const base=(1-t*t)*height*(upper?.20:-.10);
+   const edge=upper?-height*.13:height*.07;
+   const y=base+edge+row*height*(upper?.10:-.065);
+   const z=.0020+height*(.045+.025*fade)+row*.00015;
+   verts.push(t*width*.49,y,z);
+   if(row<rows-1&&i<columns){
+    const a=row*(columns+1)+i;
+    indices.push(a,a+1,a+columns+1,a+1,a+columns+2,a+columns+1);
+   }
+  }
+  const g=new THREE.BufferGeometry();
+  g.setAttribute('position',new THREE.Float32BufferAttribute(verts,3));
+  g.setIndex(indices);g.computeVertexNormals();g.computeBoundingSphere();
+  return g;
+ }
+ function makeAttachedUpperLashes(width,height){
  const pts=[];
  for(let i=0;i<13;i++){
   const t=i/6-1,arch=(1-t*t)*height*.24;
@@ -164,7 +187,7 @@ function makeEyeLid(width,height){
  * eyeliner/lip cards. Each pass reconstructs from immutable neutral colors.
  */
 export function applyHeroineMakeupToFace(faceMesh,neutralColors,{
- strength=0,eyeAnchors=null,blush=.85,lip=.95,eyeliner=.94
+ strength=0,eyeAnchors=null,blush=.85,lip=.95,eyeliner=.94,underEye=0
 }={}){
  const geometry=faceMesh?.geometry,attr=geometry?.getAttribute('color');
  const p=geometry?.getAttribute('position');
@@ -183,7 +206,7 @@ export function applyHeroineMakeupToFace(faceMesh,neutralColors,{
   THREE.MathUtils.clamp(landmarks.reduce((n,a)=>n+Math.abs((a.x-cx)/(d.x*.5)),0)/2,.27,.70):.45;
  const landmarkY=landmarks?
   THREE.MathUtils.clamp(landmarks.reduce((n,a)=>n+(a.y-b.min.y)/d.y,0)/2,.65,.86):.747;
- let blushVertices=0,lipVertices=0,linerVertices=0,changedVertices=0,chinLipVertices=0;
+ let blushVertices=0,lipVertices=0,linerVertices=0,underEyeVertices=0,changedVertices=0,chinLipVertices=0;
  for(let i=0;i<p.count;i++){
   const x=(p.getX(i)-cx)/Math.max(.001,d.x*.5);
   const y=(p.getY(i)-b.min.y)/Math.max(.001,d.y);
@@ -219,6 +242,8 @@ export function applyHeroineMakeupToFace(faceMesh,neutralColors,{
    intensity*THREE.MathUtils.clamp(lip,0,1);
   // Dark-brown upper lash line, located against the SOURCE sclera anchors,
   // not an unrelated eyebrow-height strip. Keeps the eyeballs exposed.
+  const tear=front*bell(Math.abs(x),landmarkX,.21)*
+   bell(y,landmarkY-.085,.034)*intensity*THREE.MathUtils.clamp(underEye,0,1);
   const liner=front*bell(Math.abs(x),landmarkX,.245)*
    bell(y,landmarkY+.018,.023)*
    intensity*THREE.MathUtils.clamp(eyeliner,0,1);
@@ -226,11 +251,12 @@ export function applyHeroineMakeupToFace(faceMesh,neutralColors,{
   // Linear vertex color multipliers are multiplied by the actual PBR skin
   // material. Tint rather than merely dimming every RGB channel together.
   const red=Math.min(1.25,neutralColors[n]*
-   (1+.15*cheek+.49*lips-.49*liner));
-  const green=neutralColors[n+1]*(1-.25*cheek-.61*lips-.56*liner);
-  const blue=neutralColors[n+2]*(1-.20*cheek-.41*lips-.52*liner);
+   (1+.15*cheek+.34*lips-.49*liner+.025*tear));
+  const green=neutralColors[n+1]*(1-.25*cheek-.40*lips-.56*liner-.087*tear);
+  const blue=neutralColors[n+2]*(1-.20*cheek-.27*lips-.52*liner-.097*tear);
   attr.setXYZ(i,red,green,blue);
   if(cheek>.08)blushVertices++;
+  if(tear>.035)underEyeVertices++;
   if(lips>.08)lipVertices++;
   if((y<.448||y>.532||Math.abs(x)>.46)&&lips>.0000001)chinLipVertices++;
   if(liner>.08)linerVertices++;
@@ -239,7 +265,7 @@ export function applyHeroineMakeupToFace(faceMesh,neutralColors,{
  }
  attr.needsUpdate=true;
  const mats=Array.isArray(faceMesh.material)?faceMesh.material:[faceMesh.material];
- return {strength:intensity,blushVertices,lipVertices,linerVertices,
+ return {strength:intensity,blushVertices,lipVertices,linerVertices,underEyeVertices,
   chinLipVertices,chinLipMaskExcluded:chinLipVertices===0,
   mouthMaskYNormalized:[.448,.532],
   changedVertices,eyeAnchorNormalized:[Number(landmarkX.toFixed(3)),Number(landmarkY.toFixed(3))],
@@ -700,13 +726,14 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false,gen
   // swapping the whole eye for a flat skin texture. It remains a preview.
   // The prior oversized eye overlay produced a cartoon staring expression.
    // Keep real sclera/iris meshes but match the iris diameter to the socket.
-   const irisRadius=THREE.MathUtils.clamp(Math.min(size.x,size.y)*.34,.0065,.0115);
+   const irisRadius=THREE.MathUtils.clamp(Math.min(size.x,size.y)*.31,.0063,.0108);
   const irisGroup=new THREE.Group();
   irisGroup.name='VisibleRealEyeIris_'+side;
   irisGroup.position.set(mid.x,mid.y,box.max.z+.0015);
-  const rimMat=new THREE.MeshPhysicalMaterial({color:0x243b42,roughness:.32,metalness:0,
+  const rimMat=new THREE.MeshPhysicalMaterial({color:0x364a52,roughness:.38,metalness:0,
    side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-2});
   const tintMat=new THREE.MeshPhysicalMaterial({color:0x517996,roughness:.3,metalness:0,
+   map:getHeroineIrisFiberTexture(),
    side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-3});
   const pupilMat=new THREE.MeshPhysicalMaterial({color:0x11141b,roughness:.12,metalness:0,
    side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-4});
@@ -716,12 +743,12 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false,gen
    mesh.name=name;mesh.position.set(x,y,depth);irisGroup.add(mesh);return mesh;
   };
   addEye('IRIS_LIMBAL_RING',irisRadius,0,rimMat);
-  addEye('IRIS_COLORED',irisRadius*.86,.0008,tintMat);
+  addEye('IRIS_COLORED',irisRadius*.953,.0008,tintMat);
   const pupilLayer=new THREE.Group();pupilLayer.name='INDEPENDENT_PUPIL_XYZ_'+side;
   irisGroup.add(pupilLayer);
-  const pupil=new THREE.Mesh(new THREE.CircleGeometry(irisRadius*.40,36),pupilMat);
+  const pupil=new THREE.Mesh(new THREE.CircleGeometry(irisRadius*.365,48),pupilMat);
   pupil.name='IRIS_TRUE_BLACK_PUPIL';pupil.position.z=.0018;pupilLayer.add(pupil);
-  const light=new THREE.Mesh(new THREE.CircleGeometry(irisRadius*.16,36),shineMat);
+  const light=new THREE.Mesh(new THREE.CircleGeometry(irisRadius*.105,36),shineMat);
   light.name='CORNEAL_CATCHLIGHT';
   light.position.set(-irisRadius*.23,irisRadius*.32,.0024);
   pupilLayer.add(light);
@@ -746,6 +773,13 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false,gen
    });
    ownedMaterials.push(upperMat);headSkinMaterials.push(upperMat);
    const upper=new THREE.Mesh(makeEyeRim(width*.99,height*.9,true),upperMat);
+   const foldMat=upperMat.clone();
+   foldMat.depthWrite=true;foldMat.polygonOffsetFactor=-4;
+   ownedMaterials.push(foldMat);headSkinMaterials.push(foldMat);
+   const upperFold=new THREE.Mesh(makeEyeSkinFold(width*.99,height*.9,true),foldMat);
+   upperFold.name='SOURCE_ALIGNED_MOVING_UPPER_LID_SKIN_'+side;
+   upperFold.visible=false;
+   upper.add(upperFold);
    upper.name='ANATOMICAL_UPPER_EYELID_'+side;
    upper.position.set(mid.x,mid.y+size.y*.16,box.max.z+.009);
    upper.position.sub(fit.headShift);
@@ -756,6 +790,13 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false,gen
    upper.add(lashes);upperEyelashes.push(lashes);
    const lowerMat=upperMat.clone();ownedMaterials.push(lowerMat);headSkinMaterials.push(lowerMat);
    const lower=new THREE.Mesh(makeEyeRim(width*.99,height*.9,false),lowerMat);
+   const underMat=lowerMat.clone();
+   underMat.depthWrite=true;underMat.polygonOffsetFactor=-4;
+   ownedMaterials.push(underMat);headSkinMaterials.push(underMat);
+   const lowerFold=new THREE.Mesh(makeEyeSkinFold(width*.99,height*.9,false),underMat);
+   lowerFold.name='SOURCE_ALIGNED_LOWER_EYE_TEAR_TROUGH_'+side;
+   lowerFold.visible=false;
+   lower.add(lowerFold);
    lower.name='ANATOMICAL_LOWER_EYELID_'+side;
    lower.position.set(mid.x,mid.y-size.y*.15,box.max.z+.009);
    lower.position.sub(fit.headShift);detailedHead.add(lower);
@@ -772,7 +813,7 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false,gen
    brow.castShadow=true;detailedHead.add(brow);
    browMaterials.push(browMat);
    eyeFixtures.push({side:side==='L'?-1:1,sideLabel:side,
-    sclera,irisGroup,pupilLayer,upper,lower,lashes,lid:null,brow,
+    sclera,irisGroup,pupilLayer,upper,lower,upperFold,lowerFold,lashes,lid:null,brow,
     socketReference,socketDelta:new THREE.Vector3()});
     // Upper lids must leave the pupil and lower eye visibly open at rest.
     // This numerical aperture check catches the 'already blinking' regression.
@@ -889,7 +930,8 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false,gen
    eyeAnchors:eyeFixtures.map(f=>f.socketReference),
    blush:femalePortrait?(profile.makeup?.blush??.90):0,
    lip:femalePortrait?(profile.makeup?.lip??.94):0,
-   eyeliner:femalePortrait?(profile.makeup?.eyeliner??.96):0
+   eyeliner:femalePortrait?(profile.makeup?.eyeliner??.96):0,
+   underEye:femalePortrait?proportions.underEyeSoftness:0
   });
   // Apply source expression morphs before fitting eye geometry and lids.
   for(const key of HERO_FACE_MORPHS)
@@ -910,12 +952,13 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false,gen
   }
   for(const eye of ocularSources){
    const geom=eye.mesh.geometry,attr=geom.getAttribute('position');
-   const {x:cx,y:cy}=eye.center;
+   const {x:cx,y:cy,z:cz}=eye.center;
+   const globeScale=femalePortrait?proportions.eyeballScale:1;
    for(let i=0;i<attr.count;i++){
     const x0=eye.base[3*i],y0=eye.base[3*i+1],z0=eye.base[3*i+2];
-    const dx=(x0-cx)*proportions.eyeWidth;
-    attr.setXYZ(i,cx+dx,cy+(y0-cy)*proportions.eyeHeight+
-      dx*proportions.eyeTilt*.30,z0);
+    const dx=(x0-cx)*proportions.eyeWidth*globeScale;
+    attr.setXYZ(i,cx+dx,cy+(y0-cy)*proportions.eyeHeight*globeScale+
+      dx*proportions.eyeTilt*.30,cz+(z0-cz)*globeScale);
    }
    attr.needsUpdate=true;geom.computeVertexNormals();geom.computeBoundingBox();
    geom.computeBoundingSphere();
@@ -935,7 +978,8 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false,gen
    eye.mesh.position.y+=proportions.eyeVertical*headDim.y;
    eye.mesh.position.x+=eye.side*proportions.eyeOffsetX;
    eye.mesh.position.y+=proportions.eyeOffsetY;
-   eye.mesh.position.z+=proportions.eyeOffsetZ;
+   eye.mesh.position.z+=proportions.eyeOffsetZ+
+    (femalePortrait?proportions.eyeSocketDepth:0);
   }
   detailedHead.updateWorldMatrix(true,true);
   // Stable brow projection: sample the real (cloned) face vertices once
@@ -973,7 +1017,11 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false,gen
    // directly caused detached pupils above the native eye sockets.
    // Keep iris in front of face even after a socket moves forward.
    const skinEyeZ=sourceSkinDepth(center.x,center.y,box.max.z+.003);
-   const exposedIrisZ=Math.max(box.max.z+.008,skinEyeZ+.0075);
+   // The original +8 mm iris cards were hovering in front of the human
+   // face. Follow the native globe and visible skin with a 1.2 mm offset.
+   const exposedIrisZ=Math.max(box.max.z+.0012,skinEyeZ+.0012);
+   fixture.irisGroup.userData.eyeSurfaceStandoffMeters=
+    exposedIrisZ-box.max.z;
    group.position.copy(detailedHead.worldToLocal(
     new THREE.Vector3(center.x,center.y,exposedIrisZ)));
    group.visible=true;fixture.sclera.visible=true;
@@ -985,23 +1033,32 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false,gen
     proportions.pupilOffsetY,proportions.pupilOffsetZ);
    // Native sclera geometry already applied eyeWidth/eyeHeight/tilt.
    // Do not multiply them AGAIN on the iris overlay.
-   const irisScale=THREE.MathUtils.clamp(profile.eyeSize??1,.92,1.24);
+   const irisScale=femalePortrait?proportions.irisDiameter:
+    THREE.MathUtils.clamp(profile.eyeSize??1,.92,1.24);
+   const coupledGlobe=femalePortrait?proportions.eyeballScale:1;
    group.scale.set(
-    irisScale*Math.sqrt(proportions.eyeWidth),
-    irisScale*Math.sqrt(proportions.eyeHeight),1);
+    irisScale*coupledGlobe*(femalePortrait?1:Math.sqrt(proportions.eyeWidth)),
+    irisScale*coupledGlobe*(femalePortrait?1:Math.sqrt(proportions.eyeHeight)),1);
+   fixture.pupilLayer.scale.setScalar(femalePortrait?
+    proportions.pupilDiameter:1);
    group.rotation.z=proportions.eyeTilt*.15;
    fixture.upper.position.copy(detailedHead.worldToLocal(
-    new THREE.Vector3(center.x,center.y+dim.y*.16,box.max.z+.009)));
+    new THREE.Vector3(center.x,center.y+dim.y*.16,exposedIrisZ+.0004)));
    fixture.upper.position.add(new THREE.Vector3(
     fixture.side*proportions.upperLidOffsetX,proportions.upperLidOffsetY,
     proportions.upperLidOffsetZ));
    fixture.lower.position.copy(detailedHead.worldToLocal(
-    new THREE.Vector3(center.x,center.y-dim.y*.15,box.max.z+.009)));
+    new THREE.Vector3(center.x,center.y-dim.y*.15,exposedIrisZ+.0004)));
    fixture.lower.position.add(new THREE.Vector3(
     fixture.side*proportions.lowerLidOffsetX,proportions.lowerLidOffsetY,
     proportions.lowerLidOffsetZ));
    fixture.lid.position.copy(detailedHead.worldToLocal(
     center.clone().add(new THREE.Vector3(0,0,dim.z*.56+.004))));
+   fixture.upperFold.visible=femalePortrait&&proportions.upperLidCoverage>0;
+   fixture.lowerFold.visible=femalePortrait;
+   fixture.upperFold.position.y=-dim.y*proportions.upperLidCoverage*.28;
+   fixture.upperFold.scale.y=1+proportions.upperLidCoverage*.25;
+   fixture.lowerFold.position.y=-dim.y*.055;
    fixture.upper.scale.y=proportions.eyeHeight;
    fixture.lower.scale.y=proportions.eyeHeight;
    // Capture the latest transformed socket position and blinking travel.
@@ -1009,7 +1066,7 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false,gen
    fixture.upper.userData.openScaleY=fixture.upper.scale.y;
    fixture.lower.userData.openLocalY=fixture.lower.position.y;
    const blinkTarget=detailedHead.worldToLocal(
-    new THREE.Vector3(center.x,center.y-dim.y*.36,box.max.z+.009));
+    new THREE.Vector3(center.x,center.y-dim.y*.36,exposedIrisZ+.0004));
    fixture.upper.userData.blinkTravelLocal=Math.max(
     0,fixture.upper.position.y-blinkTarget.y);
    fixture.lower.userData.blinkTravelLocal=
@@ -1020,8 +1077,13 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false,gen
    fixture.lower.rotation.z=proportions.eyeTilt*.18;
    fixture.lashes.visible=true;
    fixture.lashes.material.color.set(
-    profile.gender==='female'?'#292027':profile.hairColor||'#594048');
-   fixture.lashes.scale.y=profile.gender==='female'?1.26:1;
+    profile.gender==='female'?'#4b373a':profile.hairColor||'#594048');
+   if(femalePortrait){
+    for(const mat of Array.isArray(fixture.sclera.material)?
+     fixture.sclera.material:[fixture.sclera.material])
+     if(mat?.color)mat.color.set('#eee6e1');
+   }
+   fixture.lashes.scale.y=profile.gender==='female'?.74:1;
    fixture.lid.scale.x=proportions.eyeWidth;
    // Keep the brow on the supraorbital ridge rather than directly on
    // the upper eyelid: the earlier brow looked like a second lash line.
@@ -1058,9 +1120,19 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false,gen
   syncBlinkPose();
   // Shape the ACTUAL face mesh, not merely the accompanying preview portrait.
   // Target of .93..1.02 makes youthful candidates subtly narrower at the jaw.
-  const eyeScale=THREE.MathUtils.clamp(Number(profile.eyeSize)||1,.92,1.24);
+  const eyeScale=femalePortrait?proportions.irisDiameter:
+   THREE.MathUtils.clamp(Number(profile.eyeSize)||1,.92,1.24);
   return {skin:profile.skin,iris:profile.iris,faceWidth,headScale,eyeScale,
    facialProportions:proportions,faceGeometryDigest:youthfulReport.geometryDigest,
+   fittedHumanEyes:femalePortrait?{
+    globeScale:proportions.eyeballScale,
+    socketDepthMeters:proportions.eyeSocketDepth,
+    irisDiameter:proportions.irisDiameter,pupilDiameter:proportions.pupilDiameter,
+    lidCoverage:proportions.upperLidCoverage,
+    underEyeSoftness:proportions.underEyeSoftness,
+    irisSurfaceOffsetMeters:.0012,
+    movingLidFolds:eyeFixtures.filter(f=>f.upperFold.visible).length
+   }:null,
    youthfulModifiedVertices:youthfulReport.modifiedVertices,
    appliedUserPortraitSilhouette:null,
    referenceSilhouetteComparisonOnly:youthfulReport.referenceSilhouette?.source||null,
@@ -1112,7 +1184,8 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false,gen
       side*headReport.proportions.eyeOffsetX,
      headReport.proportions.eyeVertical*faceSource.geometry.boundingBox.getSize(new THREE.Vector3()).y+
       headReport.proportions.eyeOffsetY,
-     headReport.proportions.eyeOffsetZ);
+     headReport.proportions.eyeOffsetZ+(gender==='female'?
+      headReport.proportions.eyeSocketDepth:0));
     const origin=p.localToWorld(new THREE.Vector3());
     const translated=p.localToWorld(explicitOffset);
     expected.add(translated.sub(origin));
@@ -1127,7 +1200,13 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false,gen
    pupilGap=Math.max(pupilGap,
     Math.hypot(pupilLayer.position.x,pupilLayer.position.y)/Math.max(.001,nominalRadius));
    eyeYs.push(mid.y);
-   const lowerEdge=new THREE.Box3().setFromObject(upper).min.y;
+   // Clearance is measured from the true original eyelid RIM, not the
+   // auxiliary folded skin patch (which may be hidden or cover the top
+   // of the iris intentionally). Box3.setFromObject includes hidden children.
+   upper.updateWorldMatrix(true,false);
+   upper.geometry.computeBoundingBox();
+   const lowerEdge=upper.geometry.boundingBox.clone()
+    .applyMatrix4(upper.matrixWorld).min.y;
    clearance=Math.min(clearance,(lowerEdge-mid.y)/Math.max(.001,size.y));
   }
   if(eyeYs.length===2)eyeHeightAsymmetry=Math.abs(eyeYs[0]-eyeYs[1]);
@@ -1139,6 +1218,7 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false,gen
    pupilPoseDigest:poseChecksum(eyeFixtures.map(x=>x.pupilLayer)),
    upperLidPoseDigest:poseChecksum(eyeFixtures.map(x=>x.upper)),
    lowerLidPoseDigest:poseChecksum(eyeFixtures.map(x=>x.lower)),
+   upperLidFoldPoseDigest:poseChecksum(eyeFixtures.map(x=>x.upperFold)),
    sourceBrowMeshes:eyeFixtures.length,
     heroineMakeup:heroineMakeupReport,
    realEyebrowVisibleCount:eyeFixtures.filter(e=>e.brow.visible&&
@@ -1155,6 +1235,14 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false,gen
    maxPupilIrisOffsetRatio:round(pupilGap),
    leftRightEyeHeightDifference:round(eyeHeightAsymmetry),
    lowerLidMeshCount:lowerLids.length,
+   movingUpperLidSkinCount:eyeFixtures.filter(x=>x.upperFold.visible).length,
+   restingLowerTearTroughMeshCount:eyeFixtures.filter(x=>x.lowerFold.visible).length,
+   pupilDiameterRatio:headReport.proportions.pupilDiameter,
+   irisDiameterRatio:headReport.proportions.irisDiameter,
+   eyeballScaleRatio:headReport.proportions.eyeballScale,
+   eyeSocketDepthMeters:headReport.proportions.eyeSocketDepth,
+   fittedOcularSurfaceStandoffMeters:round(Math.max(0,
+    ...eyeFixtures.map(x=>x.irisGroup.userData.eyeSurfaceStandoffMeters||0))),
    attachedEyelashMeshCount:upperEyelashes.length,
    visibleEyelashMeshCount:upperEyelashes.filter(x=>x.visible&&x.parent?.visible).length,
    lashFollowsUpperLid:eyeFixtures.every(x=>x.lashes.parent===x.upper),

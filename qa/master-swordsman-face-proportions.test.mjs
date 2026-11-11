@@ -10,12 +10,12 @@ import {featuredSwordsmanProfile} from '../src/master-swordsman-featured-profile
 import {createSwordsmanAppearance,validateAppearanceOverrides}
  from '../src/master-swordsman-1000-appearance.js';
 
-test('all 48 facial and XYZ sliders have distinct bounded names and stable neutral defaults',()=>{
- assert.equal(FACE_PROPORTION_FIELDS.length,48);
+test('all 55 facial and XYZ sliders have distinct bounded names and stable neutral defaults',()=>{
+ assert.equal(FACE_PROPORTION_FIELDS.length,55);
  assert.equal(FACE_XYZ_FIELDS.length,18);
- assert.equal(new Set(FACE_PROPORTION_FIELDS.map(f=>f[0])).size,48);
+ assert.equal(new Set(FACE_PROPORTION_FIELDS.map(f=>f[0])).size,55);
  const grouped=new Set(FACE_PROPORTION_FIELDS.map(f=>f[5]));
- assert.deepEqual([...grouped],['顔・3等分','目','眉','鼻','口','位置XYZ']);
+ assert.deepEqual([...grouped],['顔・3等分','目','眼球・虹彩','まぶた・目の下','眉','鼻','口','位置XYZ']);
  const defaults=validateFaceProportions({});
  assert.equal(Object.isFrozen(defaults),true);
  for(const [key,,min,max,neutral] of FACE_PROPORTION_FIELDS){
@@ -198,7 +198,7 @@ test('boy and girl presets use different measured facial proportions, with origi
  assert.equal(girl.proportions.irisOffsetY,0,'Featured preset was mutated');
  const bare=validateAppearanceOverrides(girl,{makeup:{strength:0}});
  assert.equal(bare.makeup.strength,0);
- assert.equal(girl.makeup.strength,.93,'Makeup toggle must not mutate authored default');
+ assert.equal(girl.makeup.strength,.83,'Makeup toggle must not mutate authored default');
  const on=validateAppearanceOverrides(bare,{makeup:{strength:.93}});
  assert.equal(on.makeup.strength,.93);
  assert.throws(()=>validateAppearanceOverrides(boy,{makeup:{strength:1}}),/only available/);

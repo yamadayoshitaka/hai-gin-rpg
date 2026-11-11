@@ -34,6 +34,8 @@ fs.mkdirSync(dir,{recursive:true});
      d.heroineActualBodyClearance!==true||
      d.heroineWigCrownVisible!==true||
      d.heroineWigCrown?.coverageRatio<.95||
+     d.heroineWigCrown?.neutralSkinRootBlend!==true||
+     d.heroineWigCrown?.noSaturatedScalpPaint!==true||
      d.heroineWigCrown?.crownFlowLocks!==8000||
      d.heroineWigCrown?.crownFlowTriangles!==64000||
      d.heroineWigCrown?.crownHasActualTangentFibreGeometry!==true||
@@ -49,7 +51,14 @@ fs.mkdirSync(dir,{recursive:true});
      h?.frontNeckIntrusionVertices!==0||h?.rearLayerCount!==3||
      h?.rearFlow!=='tapered-clumped-swaying-layers-no-flat-hem'||
      h?.separatedHairObjects!==true||
-      d.facialQA?.heroineMakeup?.strength<.9||
+      d.facialQA?.heroineMakeup?.strength<.76||
+      d.facialQA?.heroineMakeup?.underEyeVertices<1||
+      d.facialQA?.movingUpperLidSkinCount!==2||
+      d.facialQA?.restingLowerTearTroughMeshCount!==2||
+      d.facialQA?.eyeballScaleRatio>.91||
+      d.facialQA?.eyeSocketDepthMeters>-.003||
+      d.facialQA?.irisDiameterRatio>.86||
+      d.facialQA?.pupilDiameterRatio>.91||
       d.facialQA?.heroineMakeup?.changedVertices<100||
       d.facialQA?.heroineMakeup?.blushVertices<1||
       d.facialQA?.heroineMakeup?.lipVertices<1||
@@ -75,7 +84,25 @@ fs.mkdirSync(dir,{recursive:true});
   if(baseEye?.visibleNativeEyeballCount!==2||baseEye?.visibleIrisOverlayCount!==2||
      baseEye?.visibleEyelashMeshCount!==2||baseEye?.lashFollowsUpperLid!==true)
    throw Error('Original heroine is missing real eyes or eyelash rigs '+JSON.stringify(baseEye));
+  // Verify independence, not just the existence of controls: the pupil
+  // should scale without moving the sclera, the iris should not replace the
+  // native eye, and the eyelid fold should really move on its own geometry.
+  for(const {edit,metric} of [
+   {edit:{pupilDiameter:1.11},metric:'pupilPoseDigest'},
+   {edit:{irisDiameter:1.03},metric:'irisPoseDigest'},
+   {edit:{eyeballScale:.79},metric:'ocularGeometryDigest'},
+   {edit:{eyeSocketDepth:-.007},metric:'ocularGeometryDigest'},
+   {edit:{upperLidCoverage:.33},metric:'upperLidFoldPoseDigest'}
+  ]){
+   const state=await page.evaluate(p=>window.__heroSwordsmanUpdate({proportions:p}),edit);
+   if(state?.facialQA?.[metric]===baseEye?.[metric])
+    throw Error('Independent anatomy parameter did not alter real eye 3D: '+
+     JSON.stringify({edit,metric}));
+   await page.evaluate(p=>window.__heroSwordsmanUpdate({proportions:p}),originalProportions);
+  }
   for(const change of [
+    {eyeballScale:.79},{eyeSocketDepth:-.008},
+    {irisDiameter:.96},{pupilDiameter:.72},{upperLidCoverage:.32},
     {eyeWidth:1.26},{eyeHeight:1.20},{eyeSpacing:1.09},
     {eyeVertical:.015},{eyeTilt:.085}]){
    const state=await page.evaluate(p=>window.__heroSwordsmanUpdate({proportions:p}),change);
@@ -145,15 +172,18 @@ fs.mkdirSync(dir,{recursive:true});
    // A source-geometry assertion alone cannot find a wrong MOUTH location.
    // Compare real rendered lipstick pixels against the stable face portrait:
    // previous masks painted chin at y≈.48 H and philtrum at y≈.38 H.
-   if(y>height*.32&&y<height*.55&&Math.abs(x-width*.5)<width*.115&&
-      r-.5*g-.5*blue>22&&delta>25){
+   // Calibrated from actual full-WebGL ON/OFF PNGs: subtle rose lips
+   // yield red-vs-green/blue contrast about 8-22, not the former >22.
+   // Keep an anatomical mouth-centred ROI and position centroid guard.
+   if(y>height*.38&&y<height*.49&&Math.abs(x-width*.5)<width*.115&&
+      r-.5*g-.5*blue>8&&delta>14){
     lipTintPixels++;lipTintYSum+=y;
    }
   }
   if(cosmeticPixelChanges<65)
    throw Error('Makeup changes did not visibly affect WebGL pixels: '+cosmeticPixelChanges);
   const lipTintCenterFraction=lipTintPixels?lipTintYSum/(lipTintPixels*height):0;
-  if(lipTintPixels<35||lipTintCenterFraction<.39||lipTintCenterFraction>.445)
+  if(lipTintPixels<12||lipTintCenterFraction<.39||lipTintCenterFraction>.445)
    throw Error('Lipstick appears on chin/nose instead of the real mouth: '+
     JSON.stringify({lipTintPixels,lipTintCenterFraction}));
   await page.evaluate(()=>{
@@ -162,7 +192,7 @@ fs.mkdirSync(dir,{recursive:true});
   });
   await page.waitForTimeout(180);
   const restoredMakeup=await page.evaluate(()=>window.__heroSwordsmanQA().facialQA?.heroineMakeup);
-  if(restoredMakeup?.strength<.9||restoredMakeup.changedVertices<100)
+  if(restoredMakeup?.strength<.78||restoredMakeup.changedVertices<100)
    throw Error('Makeup ON did not restore the heroine face');
   await page.locator('#meshMode').selectOption('wire');
   await page.waitForTimeout(200);
