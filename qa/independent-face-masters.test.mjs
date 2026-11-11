@@ -315,3 +315,38 @@ test('v8 lipstick stays projected on the 3D lips and follows XY and size sliders
  assert.equal(male.root.getObjectByName('LEFT_UPPER_LASH_MESH'),undefined);
  assert.ok(male.root.getObjectByName('LEFT_NATURAL_MALE_BROW')?.isMesh);
 });
+
+
+test('lipstick sliders cannot paint the chin or cheeks at their extreme settings',()=>{
+ const {source}=fixture();
+ const cases=[
+  {lipstickX:.12,lipstickY:.12,lipstickWidth:1.8,lipstickHeight:1.8},
+  {lipstickX:-.12,lipstickY:-.12,lipstickWidth:1.8,lipstickHeight:1.8},
+  {lipstickX:.08,lipstickY:-.07,lipstickWidth:.5,lipstickHeight:.5}
+ ];
+ for(const femaleControls of cases){
+  const model=makeIndependentFaceMaster(source,'female',{femaleControls});
+  for(const upper of ['UPPER','LOWER']){
+   const lip=model.parts.getObjectByName(upper+'_3D_VERMILION_LIP');
+   const pigment=model.parts.getObjectByName(upper+'_LIPSTICK_MAKEUP');
+   assert.ok(lip?.isMesh&&pigment?.isMesh);
+   const lipBox=new THREE.Box3().setFromBufferAttribute(
+    lip.geometry.getAttribute('position'));
+   const paintBox=new THREE.Box3().setFromBufferAttribute(
+    pigment.geometry.getAttribute('position'));
+   for(const axis of ['x','y']){
+    assert.ok(paintBox.min[axis]>=lipBox.min[axis]-1e-6,
+     upper+' lipstick left the anatomical lip at minimum '+axis);
+    assert.ok(paintBox.max[axis]<=lipBox.max[axis]+1e-6,
+     upper+' lipstick left the anatomical lip at maximum '+axis);
+    assert.ok(paintBox.max[axis]-paintBox.min[axis]>1e-6,
+     upper+' lipstick collapsed along '+axis);
+   }
+  }
+  assert.equal(model.report.detailedParts.lipstickPlacement.boundedWithinLipArea,true);
+  assert.equal(model.report.sourceUntouched,true);
+  assert.equal(model.report.bodyUnchanged,true);
+ }
+ const male=makeIndependentFaceMaster(source,'male');
+ assert.equal(male.parts.getObjectByName('UPPER_LIPSTICK_MAKEUP'),undefined);
+});
