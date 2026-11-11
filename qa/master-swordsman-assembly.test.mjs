@@ -415,7 +415,8 @@ test('adopted knight heroine gets a low swept 3D bun without moving original fem
 
 test('heroine 01 has real long blonde 3D hair past shoulders, without a floating bun',()=>{
  const profile=featuredSwordsmanProfile('hero-girl-01');
- assert.equal(profile.hairColor,'#d6a5ba');
+ assert.equal(profile.hairColor,'#d7b58b',
+  'The 3D blonde color must follow the registered Chapter 1 heroine art');
  assert.equal(profile.coiffureStyle,'fantasy-long-blonde');
  const head=new THREE.Group();
  const original=new THREE.SphereGeometry(.19,64,48);
