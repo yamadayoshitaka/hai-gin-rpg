@@ -12,10 +12,10 @@ assert.equal(all.length,new Set(all).size,'clips with separate keys should have 
 const panelKeys=Object.keys(clips).filter(k=>k.startsWith('story::panel::'));
 let validated=0;
 for(const stage of CAMPAIGN_STAGES){
- const panels=mangaForStage(stage.id).panels;
+ const panels=mangaForStage(stage.id,{battleOutcome:{victory:true}}).panels;
  for(const panel of panels){
   const profile=STORY_VOICE_PROFILES[panel.characterId]||STORY_NARRATOR_PROFILE;
-  const key='story::panel::'+panel.id+'::'+panel.text.slice(0,380)+'::'+profile.voicevoxSpeaker;
+  const key='story::panel::'+panel.id+'::'+panel.voiceText.slice(0,380)+'::'+profile.voicevoxSpeaker;
   if(!clips[key])continue;
   const file=clips[key];
   assert.match(file,/^audio\/voicevox\/clips\/[a-f0-9]{16}\.(mp3|wav)$/);
@@ -30,9 +30,23 @@ for(const stage of CAMPAIGN_STAGES){
   validated++;
  }
 }
-const expected=CAMPAIGN_STAGES.length*7;
+const expected=CAMPAIGN_STAGES.length*10;
 assert.ok(validated<=expected,'more than one active clip found for a panel');
 if(process.env.REQUIRE_ALL_STORY_VOICES==='1')assert.equal(validated,expected,'all current voice profiles must have a recorded clip');
 const older=panelKeys.length-validated;
 assert.ok(older>=0,'active keys must be a subset of the manifest');
-console.log('PASS current per-panel VOICEVOX audio: '+validated+' / '+expected+'; historical speaker entries preserved: '+older);
+let defeatValid=0;
+for(const stage of CAMPAIGN_STAGES.filter(s=>s.kind!=='town')){
+ const defeated=mangaForStage(stage.id,{battleOutcome:{victory:false}}).panels.filter(p=>p.phase==='post');
+ for(const panel of defeated){
+  const voice=STORY_VOICE_PROFILES[panel.characterId]||STORY_NARRATOR_PROFILE;
+  const key='story::panel::'+panel.id+'::'+panel.voiceText.slice(0,380)+'::'+voice.voicevoxSpeaker;
+  if(clips[key])defeatValid++;
+ }
+}
+if(process.env.REQUIRE_ALL_STORY_VOICES==='1')
+ assert.equal(defeatValid,CAMPAIGN_STAGES.filter(s=>s.kind!=='town').length*5,
+ 'each defeat ending needs a pre-recorded pronunciation-correct voice (shared clips count)');
+console.log('PASS current 10-panel VOICEVOX audio: '+validated+' / '+expected+
+ '; defeated epilogue voices: '+defeatValid+
+ '; historical speaker entries retained: '+older);
