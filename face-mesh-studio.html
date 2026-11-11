@@ -36,11 +36,24 @@ background:#203951;min-height:94px;touch-action:pan-y}
 #faceAdjustments summary,#maleAdjustments summary{position:sticky;top:0;
 background:#15263c;padding:9px;z-index:2;border-radius:8px}
 .adjustGrid output{color:#dfefed;font-variant-numeric:tabular-nums}
-#faceAdjustments[hidden],#maleAdjustments[hidden]{display:none}
+#faceAdjustments[hidden],#maleAdjustments[hidden],.adjustGroup[hidden]{display:none!important}
+.previewStage{position:sticky;top:0;z-index:5;padding:8px;background:#1b3048;border:1px solid #46657f;border-radius:12px}
+.previewStage .controls{margin:6px 0}
+.faceTabs{display:flex;gap:6px;overflow-x:auto;padding:8px 0}
+.faceTabs button{white-space:nowrap;padding:10px 13px;min-width:70px}
+.faceTabs button[aria-pressed=true]{background:#236c60;border-color:#a6e2c8}
+.adjustGroup{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}
+.adjustGroup label{display:grid;gap:5px;font-size:14px;background:#213950;border:1px solid #3b5871;border-radius:9px;padding:10px}
+.adjustGroup label input[type=range]{width:100%;min-height:36px;accent-color:#6ec9b1}
+.stepRow{display:flex;gap:8px;justify-content:flex-end}
+.stepRow button{padding:5px 15px;min-width:50px;font-size:19px}
+@media(max-width:670px){.previewStage{margin:0 -4px;padding:5px}
+.previewStage .controls{gap:4px}.previewStage button{padding:7px 8px;font-size:12px}
+.faceTabs button{font-size:14px}.adjustGroup{grid-template-columns:1fr}}
 a{color:#b6e2ff}
 @media(max-width:670px){
 main{padding:8px}
-#faceCanvas{height:49dvh;min-height:320px}
+#faceCanvas{height:35dvh;min-height:220px}
 .adjustGrid{grid-template-columns:1fr;gap:8px}
 .adjustGrid label{min-height:85px}
 button{padding:9px 11px}
@@ -57,7 +70,7 @@ button{padding:9px 11px}
 <button id="female" aria-pressed="true" disabled>女性・美人ベース</button>
 <button id="male" aria-pressed="false" disabled>男性・美青年ベース</button>
 </div>
-<canvas id="faceCanvas" aria-label="髪とメイクを取り除いた、灰色の独立した顔3Dメッシュ"></canvas>
+<div class="previewStage" id="previewStage"><canvas id="faceCanvas" aria-label="髪とメイクを取り除いた、灰色の独立した顔3Dメッシュ"></canvas>
 <div class="controls" aria-label="視点切替">
 <button id="front" aria-pressed="true" disabled>正面</button>
 <button id="threeQuarter" aria-pressed="false" disabled>斜め45°</button>
@@ -67,9 +80,10 @@ button{padding:9px 11px}
 <button id="parts" aria-pressed="true" disabled>目・眉・まつ毛・唇を表示</button>
 <button id="clay" aria-pressed="false" disabled>灰色メッシュ</button>
 <button id="color" aria-pressed="true" disabled>カラー表示</button>
-</div>
+</div></div>
 <details id="faceAdjustments" open>
 <summary>女性顔の3Dパーツ調整</summary>
+<div class="faceTabs" id="faceGroupTabs" aria-label="女性の調整カテゴリ"></div>
 <div class="adjustGrid">
 <label for="irisDiameter">黒目の拡大倍率 <output id="irisDiameterValue">1×</output>
 <input type="range" id="irisDiameter" min="1" max="2" step="0.1" value="1"></label>
@@ -103,6 +117,7 @@ button{padding:9px 11px}
 </div><div class="controls"><button id="resetPreset" disabled>画像の標準値に戻す</button></div></details>
 <details id="maleAdjustments" hidden open>
 <summary>男性顔の3D調整・ヒゲ</summary>
+<div class="faceTabs" id="maleGroupTabs" aria-label="男性の調整カテゴリ"></div>
 <div class="adjustGrid">
 <label for="maleJawSharpness">顎先のシャープさ <output id="maleJawSharpnessValue">1.15×</output>
 <input type="range" id="maleJawSharpness" min="0.7" max="5" step="0.05" value="1.15"></label>
