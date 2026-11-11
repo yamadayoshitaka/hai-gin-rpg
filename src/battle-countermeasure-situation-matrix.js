@@ -143,7 +143,7 @@ export function scanBattleSignals({enemySquads=[],allies=[],enemies=[],structure
  if(enemiesAlive.length&&alliesAlive.length>=enemiesAlive.length*1.7)values.add('superiority');
  if(alliesAlive.length&&alliesAlive.reduce((s,u)=>s+pct(u),0)/alliesAlive.length<.3)
   values.add('ally_critical');
- if(!enemiesAlive.length&&enemies.length)values.add('enemy_destroyed');
+ if(!enemiesAlive.length&&enemies.some(u=>u.team===1&&!u.isStrategist))values.add('enemy_destroyed');
  if(allies.some(u=>u.team===0&&u.isStrategist&&!live(u)))values.add('commander_dead');
  if(enemies.some(u=>u.team===1&&u.isStrategist&&live(u)))values.add('enemy_commander');
  if(allies.some(u=>u.team===0&&live(u)&&!u.isStrategist&&pct(u)<.75)&&
@@ -241,7 +241,8 @@ export function getCountermeasureOptions(context={}){
     !hasHealer?'僧侶がいません':!engineSupports?'この戦闘規模では未対応':
     context.commanderAlive===false?'軍師が戦死したため発令不可':'使用可能';
   const prior=options.get(id);
-  const score=weight+(enabled?20:0);
+  const score=weight+(enabled?20:0)+(definition.requiredJobs.length?25:0)+
+   (definition.channel==='support'?10:0);
   if(!prior||score>prior.score)options.set(id,{...definition,enabled,reason,target,
    scenarioId:scenario.id,scenarioTitle:scenario.title,score});
  };
