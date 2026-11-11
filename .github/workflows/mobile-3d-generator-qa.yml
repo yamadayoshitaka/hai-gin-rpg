@@ -1,0 +1,29 @@
+name: Mobile free 3D generator contract QA
+on:
+  pull_request:
+    paths:
+      - 'mobile-3d-generator.html'
+      - 'dev-menu.html'
+      - 'ai-model-studio.html'
+      - 'qa/mobile-free-3d-generator.test.mjs'
+      - '.github/workflows/mobile-3d-generator-qa.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'mobile-3d-generator.html'
+      - 'dev-menu.html'
+      - 'ai-model-studio.html'
+      - 'qa/mobile-free-3d-generator.test.mjs'
+      - '.github/workflows/mobile-3d-generator-qa.yml'
+permissions:
+  contents: read
+jobs:
+  qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test qa/mobile-free-3d-generator.test.mjs qa/ai-3d-import.test.mjs
