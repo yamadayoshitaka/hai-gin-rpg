@@ -196,8 +196,9 @@ def process(batch: dict, state: dict, neutrals: set[str]) -> dict:
             raise ValueError(f"{ident}: hero mask must cover one character only (got {coverage:.1%})")
         edit = frame(heroine, pos, cellw, cellh).convert("RGB")
         result = Image.composite(edit, male, alpha)
-        outside = ImageChops.multiply(ImageChops.difference(male, result),
-                                      ImageOps.invert(alpha))
+        difference = ImageChops.difference(male, result)
+        outside = Image.composite(difference, Image.new("RGB", FINAL_SIZE),
+                                  ImageOps.invert(alpha))
         if outside.getbbox() is not None:
             raise ValueError(f"{ident}: other characters/background changed outside hero mask")
         new_assets[female_output] = encode_webp(result)
