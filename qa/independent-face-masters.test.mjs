@@ -41,12 +41,12 @@ test('two source-derived clay face meshes have owned independent vertices and pr
  assert.notEqual(female.face.geometry,male.face.geometry);
  assert.deepEqual(original.getAttribute('position').array,before);
  assert.equal(face.geometry,original);
- assert.equal(female.face.material.vertexColors,false);
+ assert.equal(female.face.material.vertexColors,true);
  assert.equal(female.face.material.map,null);
  assert.equal(female.face.material.wireframe,false);
  assert.ok(female.face.material.color.getHexString().startsWith('bfc3'));
  assert.equal(female.root.getObjectByName('GEO_sclera_l').visible,false);
- assert.equal(female.report.facePartMeshCount,34);
+ assert.equal(female.report.facePartMeshCount,30);
  assert.equal(male.report.facePartMeshCount,19);
  assert.ok(female.report.facePartTriangles>1000);
  assert.equal(female.report.detailedParts.eyelidMeshCount,4);
@@ -117,7 +117,7 @@ test('strictly exclude body, wig and makeup from face-only model assembly',()=>{
  const f=fixture();const built=makeIndependentFaceMaster(f.source,'female');
  const visible=[];
  built.root.traverse(o=>{if(o.isMesh&&o.visible)visible.push(o)});
- assert.equal(visible.length,35,'Face plus 34 eye/lip/cosmetic meshes');
+ assert.equal(visible.length,31,'Face plus 30 anatomical eye/lip meshes');
  assert.ok(visible.includes(built.face));
  assert.ok(visible.every(o=>o===built.face||built.parts.getObjectById(o.id)));
  assert.ok(visible.every(o=>!/hair|armour|body|garment/i.test(o.name)));
@@ -369,4 +369,55 @@ test('v9 female jaw max increased without changing 2.5 default; male sliders and
  assert.equal(beardy.parts.getObjectByName('LEFT_UPPER_EYELINER'),undefined);
  assert.equal(beardy.parts.getObjectByName('LEFT_CHEEK_BLUSH'),undefined);
  assert.equal(beardy.report.maleNoMakeup,true);
+});
+
+test('v10 high jaw settings alter chin point without contracting the neck or cheeks',()=>{
+ const source=fixture().source;
+ const normal=makeIndependentFaceMaster(source,'female',{femaleControls:{jawSharpness:2.5}});
+ const sharp=makeIndependentFaceMaster(source,'female',{femaleControls:{jawSharpness:5}});
+ const p=normal.face.geometry.getAttribute('position'),q=sharp.face.geometry.getAttribute('position');
+ const b=normal.face.geometry.boundingBox;
+ const bottom=b.min.y,height=b.max.y-b.min.y;
+ let neckVertices=0,neckError=0,tipChanged=0,upperCheekError=0;
+ for(let i=0;i<p.count;i++){
+  const yn=(p.getY(i)-bottom)/height;
+  const diff=Math.abs(p.getX(i)-q.getX(i))+
+   Math.abs(p.getY(i)-q.getY(i))+Math.abs(p.getZ(i)-q.getZ(i));
+  if(yn<.20){neckVertices++;neckError=Math.max(neckError,diff);}
+  if(yn>.48&&yn<.63)upperCheekError=Math.max(upperCheekError,diff);
+  if(yn>.27&&yn<.38&&diff>1e-6)tipChanged++;
+ }
+ assert.ok(neckVertices>100,'Need actual neck/back-of-head sampled vertices');
+ assert.ok(neckError<1e-6,'High jaw cannot squeeze neck or throat');
+ assert.ok(upperCheekError<1e-6,'High jaw cannot narrow cheeks');
+ assert.ok(tipChanged>8,'Jaw slider must visibly sharpen the chin tip');
+});
+test('v10 child eyeliner and crease pigment share the exact eye-local coordinate frame',()=>{
+ const f=fixture(),m=makeIndependentFaceMaster(f.source,'female');
+ for(const side of ['LEFT','RIGHT']){
+  const eyelid=m.parts.getObjectByName(side+'_UPPER_ANATOMICAL_EYELID');
+  const liner=m.parts.getObjectByName(side+'_UPPER_EYELINER');
+  const crease=m.parts.getObjectByName(side+'_DOUBLE_EYELID_FOLD');
+  const accent=m.parts.getObjectByName(side+'_EYE_ACCENT_LINE');
+  assert.equal(liner.parent,eyelid);
+  assert.equal(accent.parent,crease);
+  const lid=eyelid.geometry.getAttribute('position');
+  const line=liner.geometry.getAttribute('position');
+  // Both meshes must use the same shifted joint-local coordinates.
+  assert.ok(Math.abs(lid.getX(0)-line.getX(0))<1e-4);
+  assert.ok(Math.abs(lid.getY(0)-line.getY(0))<.003);
+  const fold=crease.geometry.getAttribute('position');
+  const mark=accent.geometry.getAttribute('position');
+  assert.ok(Math.abs(fold.getX(0)-mark.getX(0))<1e-4);
+  assert.ok(Math.abs(fold.getY(0)-mark.getY(0))<.003);
+ }
+ updateFaceFeatureAngles(m.parts,{eyeAngle:20});
+ for(const side of ['LEFT','RIGHT']){
+  const brow=m.parts.getObjectByName(side+'_SCULPTED_EYEBROW');
+  const p=brow.geometry.getAttribute('position');
+  for(let i=0;i<p.count;i++){
+   assert.ok(Number.isFinite(p.getX(i)+p.getY(i)+p.getZ(i)));
+  }
+ }
+ assert.equal(m.report.sourceUntouched,true);
 });
