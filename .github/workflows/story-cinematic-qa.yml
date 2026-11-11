@@ -73,3 +73,13 @@ jobs:
           node --experimental-vm-modules qa/story-cinematic-raster.test.mjs
           node scripts/build-story-art-coverage.mjs
           node qa/story-art-coverage.test.mjs
+      - name: Preserve 20-chapter missing-scene briefs for art production
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: story-art-shotlist-20chapters
+          path: |
+            qa-reports/story-art-shotlist.json
+            assets/story/panel-art-coverage.json
+          if-no-files-found: ignore
+          retention-days: 14
