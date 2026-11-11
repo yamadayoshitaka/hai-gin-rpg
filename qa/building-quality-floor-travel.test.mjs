@@ -16,7 +16,8 @@ assert.match(catalog,/Layered 2F facade/);
 assert.match(catalog,/const level of \[1,2\]/,'Three-storey castle has distinct stone cornices');
 assert.doesNotMatch(battle,/id="floorUp"|id="floorDown"/,'Floors must not require tap controls');
 assert.match(battle,/function startAutomaticFloorTour\(/,'A soldier chooses a stair route without player input');
-assert.match(battle,/automaticFloorGuide=pick\.actor/,'The automatic scout receives a floor route');
+assert.match(battle,/if\(option\.actor\.team===0&&!automaticFloorGuide\)automaticFloorGuide=option\.actor/,
+ 'An allied scout receives the automatic floor-follow route');
 assert.match(battle,/startAutomaticFloorTour\(\);/,'The automatic floor tour runs from the AI loop');
 assert.match(battle,/travel\.phase==='upstairs'.*|travel\.arrivedAt=elapsed/,'The camera must remain on the occupied floor');
 assert.match(battle,/setBattleCamera\(a\.root\.position,new THREE\.Vector3\(8,14,15\)\)/,'Camera automatically follows a stair climb');
