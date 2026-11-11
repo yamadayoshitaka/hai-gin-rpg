@@ -4,6 +4,10 @@ import {readFileSync,existsSync} from 'node:fs';
 import * as THREE from 'three';
 import {makeIndependentFaceMaster,FACE_MASTER_SPEC,femaleInnerFeatureDelta,femaleCheekJawDelta}
  from '../src/independent-face-masters.js';
+import {updateFaceFeatureAngles,applyFaceColorMode}
+ from '../src/face-feature-meshes.js';
+import {normalizeFemaleFaceControls,FEMALE_V7_DEFAULTS,FACE_V7_PALETTE}
+ from '../src/face-v7-controls.js';
 
 function fixture(){
  const original=new THREE.SphereGeometry(.19,64,48);
@@ -20,7 +24,7 @@ test('two source-derived clay face meshes have owned independent vertices and pr
  const before=original.getAttribute('position').array.slice();
  const female=makeIndependentFaceMaster(source,'female');
  const male=makeIndependentFaceMaster(source,'male');
- assert.equal(female.report.code,'female-face-smooth-source-v6');
+ assert.equal(female.report.code,'female-face-adjustable-v7');
  assert.equal(male.report.code,'male-face-base-v1');
  assert.ok(female.report.sourceVertices>1100);
  assert.ok(male.report.sourceVertices>1100);
@@ -42,12 +46,20 @@ test('two source-derived clay face meshes have owned independent vertices and pr
  assert.equal(female.face.material.wireframe,false);
  assert.ok(female.face.material.color.getHexString().startsWith('bfc3'));
  assert.equal(female.root.getObjectByName('GEO_sclera_l').visible,false);
- assert.equal(female.report.facePartMeshCount,16);
+ assert.equal(female.report.facePartMeshCount,22);
  assert.equal(male.report.facePartMeshCount,12);
  assert.ok(female.report.facePartTriangles>1000);
  assert.equal(female.report.detailedParts.eyelidMeshCount,4);
  assert.equal(female.report.detailedParts.eyeMeshCount,2);
  assert.equal(female.report.detailedParts.lipMeshCount,2);
+ assert.equal(female.report.detailedParts.eyebrowMeshCount,2);
+ assert.equal(female.report.detailedParts.eyelashMeshCount,4);
+ assert.equal(female.report.detailedParts.irisDiameterRequestFactor,2);
+ assert.ok(female.report.detailedParts.actualIrisDiameterFactor>=1.6,
+  'Iris should be noticeably larger but fit within the eyeball sphere');
+ assert.ok(female.report.detailedParts.pupilPolarAngleRadians>.4);
+ assert.equal(female.report.femaleControls.jawSharpness,2);
+ assert.equal(female.report.femaleControls.noseTipLift,1);
  assert.equal(female.report.detailedParts.noseSourceIntegrated,true);
  assert.equal(female.report.detailedParts.doubleLidCreaseMeshCount,2);
  assert.equal(female.report.detailedParts.lowerOrbitalVolumeMeshCount,2);
@@ -81,6 +93,12 @@ test('two source-derived clay face meshes have owned independent vertices and pr
  assert.equal(female.report.femaleJawStyle,'full-cheek-smooth-oval-point-v6');
  assert.equal(female.report.headTemplate,'realistic-head-animation.glb');
  assert.equal(female.report.cheekJawSculpt,'smooth-head-source-feminine-jaw-v6');
+ for(const name of ['LEFT_SCULPTED_EYEBROW','RIGHT_SCULPTED_EYEBROW',
+  'LEFT_UPPER_LASH_MESH','LEFT_LOWER_LASH_MESH',
+  'RIGHT_UPPER_LASH_MESH','RIGHT_LOWER_LASH_MESH']){
+  assert.ok(female.root.getObjectByName(name)?.isMesh,
+   'Missing real eyebrow/eyelash mesh '+name);
+ }
  assert.ok(female.report.cheekSculptSamples>0);
  assert.ok(female.report.jawSculptSamples>0);
  assert.ok(female.report.addedCheekDepth>0);
@@ -93,9 +111,9 @@ test('strictly exclude body, wig and makeup from face-only model assembly',()=>{
  const f=fixture();const built=makeIndependentFaceMaster(f.source,'female');
  const visible=[];
  built.root.traverse(o=>{if(o.isMesh&&o.visible)visible.push(o)});
- assert.equal(visible.length,17,'Face plus sixteen real 3D feature meshes');
+ assert.equal(visible.length,23,'Face plus 22 real 3D facial and brow/lash meshes');
  assert.ok(visible.includes(built.face));
- assert.ok(visible.every(o=>o===built.face||o.parent===built.parts));
+ assert.ok(visible.every(o=>o===built.face||built.parts.getObjectById(o.id)));
  assert.ok(visible.every(o=>!/hair|armour|body|garment/i.test(o.name)));
  assert.equal(built.report.headOnly,true);
  assert.throws(()=>makeIndependentFaceMaster(new THREE.Group(),'female'),/high-resolution/);
@@ -104,7 +122,8 @@ test('strictly exclude body, wig and makeup from face-only model assembly',()=>{
 test('face studio includes stable gender, view and export controls with no body dependency',()=>{
  const html=readFileSync('face-mesh-studio.html','utf8');
  for(const id of ['female','male','front','side','threeQuarter','back','wire',
-  'faceCanvas','export','status','metrics'])
+  'faceCanvas','export','status','metrics','clay','color','irisDiameter',
+  'noseTipLift','nostrilCover','noseBridgeSharpness','jawSharpness','browAngle','lashAngle'])
   assert.match(html,new RegExp('id="'+id+'"'));
  assert.match(html,/makeIndependentFaceMaster/);
  assert.doesNotMatch(html,/loadAsync\(base\+'realistic-head-sculpt\.glb'\)/,'Old gaunt sculpt must not be loaded as the female face');
@@ -184,4 +203,47 @@ test('independent cheek fill and chin contour actually alter different 3D region
   assert.ok(Math.abs(a.dz-b.dz)<.002,
    'A discontinuous cheek ridge would create a hard shadow');
  }
+});
+
+test('v7 nose tip and bridge adjustable within central nose; chin 2x, cheek untouched',()=>{
+ const source=fixture().source;
+ const before=makeIndependentFaceMaster(source,'female',{femaleControls:{
+  noseTipLift:0,nostrilCover:0,noseBridgeSharpness:0,jawSharpness:1
+ }});
+ const after=makeIndependentFaceMaster(source,'female',{femaleControls:{
+  noseTipLift:2,nostrilCover:2,noseBridgeSharpness:2.2,jawSharpness:2
+ }});
+ assert.notEqual(before.face.geometry,after.face.geometry);
+ assert.equal(after.report.outerContourXError,0);
+ assert.ok(after.report.maxCheekWidthChange<.005);
+ const a=before.face.geometry.getAttribute('position');
+ const z=after.face.geometry.getAttribute('position');
+ let modified=0;
+ for(let i=0;i<a.count;i++)if(Math.abs(a.getY(i)-z.getY(i))+
+   Math.abs(a.getZ(i)-z.getZ(i))+Math.abs(a.getX(i)-z.getX(i))>1e-6)
+   modified++;
+ assert.ok(modified>10,'Nose and chin sliders must alter actual vertices');
+ const at=(x,y)=>femaleInnerFeatureDelta({xn:x,yn:y,zn:.97,offsetX:x*.1,depth:.3,height:.4,
+  controls:normalizeFemaleFaceControls({noseTipLift:2,nostrilCover:2,noseBridgeSharpness:2})});
+ assert.ok(at(0,.566).dy>0,'Nasal tip rises');
+ assert.ok(at(.18,.53).dy<0,'Lower nasal rim drops to conceal nostril opening');
+ assert.ok(at(0,.65).dz>.001,'Nose bridge has enhanced central depth');
+ assert.deepEqual(at(.36,.56),{dx:0,dy:0,dz:0,noseSupport:0,mouthSupport:0});
+});
+test('color-only mode and brow/lash tilt do not change vertices or source donor',()=>{
+ const f=fixture(),built=makeIndependentFaceMaster(f.source,'female');
+ const vertices=built.face.geometry.getAttribute('position').array.slice();
+ const before=built.parts.getObjectByName('LEFT_BROW_ANGLE_CONTROL').rotation.z;
+ const newAngles=updateFaceFeatureAngles(built.parts,{browAngle:-17,lashAngle:20});
+ assert.equal(newAngles.browAngle,-17);
+ assert.notEqual(before,built.parts.getObjectByName('LEFT_BROW_ANGLE_CONTROL').rotation.z);
+ assert.notEqual(built.parts.getObjectByName('LEFT_LASH_ANGLE_CONTROL').rotation.z,0);
+ assert.equal(applyFaceColorMode(built.face,'color'),'color');
+ assert.equal(built.face.material.color.getHex(),FACE_V7_PALETTE.skin);
+ assert.equal(built.parts.getObjectByName('LEFT_CURVED_IRIS').material.color.getHex(),FACE_V7_PALETTE.iris);
+ assert.equal(applyFaceColorMode(built.face,'clay'),'clay');
+ assert.deepEqual(built.face.geometry.getAttribute('position').array,vertices);
+ assert.equal(f.face.geometry,f.original,'Original donor must be unchanged');
+ assert.equal(normalizeFemaleFaceControls({jawSharpness:999}).jawSharpness,2.5);
+ assert.equal(FEMALE_V7_DEFAULTS.irisDiameter,2);
 });
