@@ -61,9 +61,9 @@ export function mangaForStage(idOrStage='c01-s01'){
    panel(stage,1,{character:lucia,second:garan,text:'来てくれたのですね。私はリュシア。この国の政を預かっています。',expression:'hopeful'}),
    panel(stage,2,{character:garan,second:lucia,text:'俺はガラン。老騎士だ。まずは、この町で暮らす者たちを見てほしい。',expression:'thoughtful'}),
    panel(stage,3,{character:iris,second:lucia,text:'イリスです。昨夜、礼拝堂で不思議なことが起きました。亡くなった人の名前が、帳簿から消えたのです。',expression:'anxious'}),
-   panel(stage,4,{character:lucia,second:iris,text:'先王が遺した命令は「国境を守れ」。でも、この王印は何かがおかしい……。',expression:'sorrowful'}),
-   panel(stage,5,{character:garan,second:lucia,text:'急いで答えを出す必要はない。ここにいる者が何を守りたいのか、まず知ってくれ。',expression:'resolute'}),
-   panel(stage,6,{character:lucia,second:garan,text:'町を歩いて準備ができたら、次の舞台「'+(next?.name||'王城')+'」へ。あなたの力を貸してください。',expression:'determined'})
+   panel(stage,4,{type:'confrontation',character:lucia,second:iris,text:'先王が遺した命令は「国境を守れ」。でも、この王印は何かがおかしい……。',expression:'sorrowful'}),
+   panel(stage,5,{type:'choice',character:garan,second:lucia,text:'急いで答えを出す必要はない。ここにいる者が何を守りたいのか、まず知ってくれ。',expression:'resolute'}),
+   panel(stage,6,{type:'closing',character:lucia,second:garan,text:'町を歩いて準備ができたら、次の舞台「'+(next?.name||'王城')+'」へ。あなたの力を貸してください。',expression:'determined'})
   ];
   return Object.freeze({
    id:stage.id,chapter:stage.chapter,slot:stage.slot,stageName:stage.name,
