@@ -307,18 +307,20 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   });
   const patch=buildGrid(
    (upper?'UPPER':'LOWER')+'_LIPSTICK_MAKEUP',32,8,(u,v)=>{
-    const t=u*2-1;
-    const taper=Math.pow(Math.max(0,1-t*t),.70);
-    const cupid=upper?
-      d.y*.0018*(bell(Math.abs(t),.37,.22)-.42*bell(t,0,.23)):0;
-    const cy=lipCenter+(upper?d.y*.009:-d.y*.009)+cupid;
-    const vertical=(v-.5)*d.y*(upper?.012:.015)*taper;
-    const x=cx+settings.lipstickX*d.x+
-      t*halfWidth*settings.lipstickWidth;
-    const y=cy+settings.lipstickY*d.y+
-      vertical*settings.lipstickHeight;
-    const fullness=(1-t*t)*Math.sin(Math.PI*v);
-    const z=surfaceAt(x,y)+d.z*(.0038+.005*fullness*taper);
+     // Constrain cosmetic controls to the anatomical lip UV domain.
+     // Head-wide offsets previously allowed lipstick to reach the chin.
+     const t=clamp((u*2-1)*settings.lipstickWidth+
+       settings.lipstickX*2,-1,1);
+     const lipV=clamp((v-.5)*settings.lipstickHeight+
+       settings.lipstickY*2+.5,0,1);
+     const taper=Math.pow(Math.max(0,1-t*t),.70);
+     const cupid=upper?
+       d.y*.0018*(bell(Math.abs(t),.37,.22)-.42*bell(t,0,.23)):0;
+     const cy=lipCenter+(upper?d.y*.009:-d.y*.009)+cupid;
+     const vertical=(lipV-.5)*d.y*(upper?.012:.015)*taper;
+     const x=cx+t*halfWidth,y=cy+vertical;
+     const fullness=(1-t*t)*Math.sin(Math.PI*lipV);
+     const z=surfaceAt(x,y)+d.z*(.0038+.005*fullness*taper);
     return new THREE.Vector3(x,y,z);
    },pigment);
   patch.userData.colorRole='lipstick';

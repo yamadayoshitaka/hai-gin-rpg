@@ -315,3 +315,28 @@ test('v8 lipstick stays projected on the 3D lips and follows XY and size sliders
  assert.equal(male.root.getObjectByName('LEFT_UPPER_LASH_MESH'),undefined);
  assert.ok(male.root.getObjectByName('LEFT_NATURAL_MALE_BROW')?.isMesh);
 });
+
+test('v8 lipstick slider extremes stay on the real vermilion lip footprint',()=>{
+ const {source}=fixture();
+ const model=makeIndependentFaceMaster(source,'female',{
+  femaleControls:{lipstickX:.12,lipstickY:-.12,lipstickWidth:1.8,lipstickHeight:1.8}
+ });
+ const face=model.face;
+ face.geometry.computeBoundingBox();
+ const box=face.geometry.boundingBox;
+ const width=box.max.x-box.min.x,height=box.max.y-box.min.y;
+ const cx=(box.max.x+box.min.x)/2;
+ for(const name of ['UPPER_LIPSTICK_MAKEUP','LOWER_LIPSTICK_MAKEUP']){
+  const mesh=model.parts.getObjectByName(name);
+  assert.ok(mesh?.isMesh,name+' exists');
+  const pos=mesh.geometry.getAttribute('position');
+  const upper=name.startsWith('UPPER');
+  const cy=box.min.y+height*.509+(upper?height*.009:-height*.009);
+  for(let i=0;i<pos.count;i++){
+   assert.ok(Math.abs(pos.getX(i)-cx)<=width*.044+1e-5,
+    name+' stays within lip corners');
+   assert.ok(Math.abs(pos.getY(i)-cy)<=height*.019+1e-5,
+    name+' stays within the lip vertical envelope');
+  }
+ }
+});
