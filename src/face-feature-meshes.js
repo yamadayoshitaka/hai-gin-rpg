@@ -296,6 +296,35 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   mesh.userData.colorRole='lipBase';
   root.add(mesh);
  }
+ // Separate lipstick overlay: this colors only the actual mouth surface,
+ // not the chin, and can move horizontally/vertically or resize without
+ // changing the sculpted lip anatomy. The base projection is IDENTICAL
+ // to the structural lip strips at neutral position and scale.
+ if(female)for(const upper of [true,false]){
+  const pigment=new THREE.MeshStandardMaterial({
+   color:0xc07c82,roughness:.75,metalness:0,side:THREE.DoubleSide,
+   transparent:true,opacity:.91,depthWrite:false
+  });
+  const patch=buildGrid(
+   (upper?'UPPER':'LOWER')+'_LIPSTICK_MAKEUP',32,8,(u,v)=>{
+    const t=u*2-1;
+    const taper=Math.pow(Math.max(0,1-t*t),.70);
+    const cupid=upper?
+      d.y*.0018*(bell(Math.abs(t),.37,.22)-.42*bell(t,0,.23)):0;
+    const cy=lipCenter+(upper?d.y*.009:-d.y*.009)+cupid;
+    const vertical=(v-.5)*d.y*(upper?.012:.015)*taper;
+    const x=cx+settings.lipstickX*d.x+
+      t*halfWidth*settings.lipstickWidth;
+    const y=cy+settings.lipstickY*d.y+
+      vertical*settings.lipstickHeight;
+    const fullness=(1-t*t)*Math.sin(Math.PI*v);
+    const z=surfaceAt(x,y)+d.z*(.0038+.005*fullness*taper);
+    return new THREE.Vector3(x,y,z);
+   },pigment);
+  patch.userData.colorRole='lipstick';
+  patch.userData.cosmetic=true;
+  root.add(patch);
+ }
  // The face mesh itself carries the integrated nose, so DO NOT glue a
  // separate nose sphere in front of its nasal bridge.
  surface.geometry=null;surface.material.dispose();
@@ -307,7 +336,12 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
  const report=Object.freeze({
   gender,partMeshCount:meshList.length,realSurfaceProjectionCount:projected,
   projectionFallbacks,eyeMeshCount:2,irisMeshCount:2,pupilMeshCount:2,
-  eyelidMeshCount:4,lipMeshCount:2,
+  eyelidMeshCount:4,lipMeshCount:2,lipstickMeshCount:female?2:0,
+  lipstickPlacement:female?{
+   x:settings.lipstickX,y:settings.lipstickY,
+   width:settings.lipstickWidth,height:settings.lipstickHeight,
+   anchoredToLipSurface:true
+  }:null,
   eyebrowMeshCount:2,eyelashMeshCount:female?4:0,
   underEyeShadowMeshCount:female?2:0,
   doubleLidCreaseMeshCount:female?2:0,
@@ -325,7 +359,9 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   reference:'soft-cheek-small-nose-relaxed-almond-eyes-gentle-lips'
  });
  root.userData.report=report;
- if(female)updateFaceFeatureAngles(root,settings);
+ updateFaceFeatureAngles(root,female?settings:{
+  eyeAngle:0,browAngle:0,lashAngle:0
+ });
  return {root,report};
 }
 
