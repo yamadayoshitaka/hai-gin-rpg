@@ -4,9 +4,13 @@
  * blending, individual mesh per strand, or per-frame CPU work.
  */
 import * as THREE from 'three';
+import {canineCoatStage} from './nonhuman-model-quality.js';
 export function buildCanineFurRibbonGeometry(guides){
  if(!Array.isArray(guides))throw Error('Canine fur guides must be an array');
  const pos=[],uv=[],indices=[];
+ // Gradually sculpt a more pronounced physical hair-fibre ridge.
+ // Strand count/UV layout/triangle count remain constant for GPU instancing.
+ const furRidge=.13+canineCoatStage()*.007;
  for(const guide of guides){
   if(!guide||!Array.isArray(guide.root)||!Array.isArray(guide.mid)||
     !Array.isArray(guide.tip)||!Array.isArray(guide.normal)||
@@ -26,7 +30,7 @@ export function buildCanineFurRibbonGeometry(guides){
   // The midpoint is slightly elevated so each hair casts a real contour.
   const x=a.clone().addScaledVector(tangent,-guide.width*.5);
   const y=a.clone().addScaledVector(tangent,guide.width*.5);
-  const m=b.clone().addScaledVector(normal,guide.width*.13);
+  const m=b.clone().addScaledVector(normal,guide.width*furRidge);
   const x2=m.clone().addScaledVector(tangent,-guide.width*.31);
   const y2=m.clone().addScaledVector(tangent,guide.width*.31);
   const points=[x,y,x2,y2,c];
