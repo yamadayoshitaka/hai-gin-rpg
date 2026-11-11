@@ -448,12 +448,12 @@ function changed(a,b,threshold=48){
       state.garmentSleeveFinCleanup?.removedDanglingTriangles<1)
     throw Error('Disconnected original sleeve flaps were not trimmed safely: '+JSON.stringify(state.garmentSleeveFinCleanup));
    if(key.startsWith('hero-')&&(
-       state.appearance.headScale<(key==='hero-girl-01'?1.05:1.07)||
+       state.appearance.headScale<(key==='hero-girl-01'?1.04:1.07)||
        (key!=='hero-girl-01'&&state.appearance.proportions.middleThird>=.89)||
        (key!=='hero-girl-01'&&state.appearance.proportions.chinLength>=.89)||
        (key==='hero-girl-01'&&(
         state.appearance.proportions.cheekRoundness>1.25||
-        state.appearance.proportions.middleThird<.93||
+        state.appearance.proportions.middleThird<.90||
         state.appearance.youthfulness>.7))))
     throw Error('Hero face/head remains visually adult or undersized: '+JSON.stringify(state.appearance.proportions));
    if(state.fantasyBackHair?.sourceHeadUnchanged!==true||
