@@ -52,6 +52,9 @@ assert.equal(storyVoiceText('灰銀の王都レヴナ。星鐘を守ろう。'),
 assert.equal(STORY_READINGS['ガラン'],'がらん');
 assert.equal(storyRubyTokens('灰銀・レヴナ')[0].ruby,'はいぎん');
 
+const town=await readFile(new URL('../town-hub.html',import.meta.url),'utf8');
+assert.ok(town.includes("startPaperStory('post')"),'town must show a five-shot epilogue before returning to map');
+assert.ok(town.includes('stagePostMangaSeen'),'town post event must be remembered');
 const map=await readFile(new URL('../world-map.html',import.meta.url),'utf8');
 const viewer=await readFile(new URL('../src/story-manga-viewer.js',import.meta.url),'utf8');
 const voice=await readFile(new URL('../scripts/generate-story-panel-voicevox.mjs',import.meta.url),'utf8');
