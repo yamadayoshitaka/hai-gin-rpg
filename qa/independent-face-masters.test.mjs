@@ -6,6 +6,7 @@ import {makeIndependentFaceMaster,FACE_MASTER_SPEC,femaleInnerFeatureDelta,femal
  from '../src/independent-face-masters.js';
 import {updateFaceFeatureAngles,applyFaceColorMode}
  from '../src/face-feature-meshes.js';
+import {createScalpAnchoredWig} from '../src/face-scalp-wig.js';
 import {normalizeFemaleFaceControls,FEMALE_V7_DEFAULTS,FACE_V7_PALETTE,CONTACT_COLORS,safeContactColor,LIBRARY_FACE_PRESET,MALE_REFERENCE_DEFAULT}
  from '../src/face-v7-controls.js';
 
@@ -457,4 +458,79 @@ test('user Library GLB face preset is canonical and male derives cosmetic-free',
  assert.equal(m.parts.getObjectByName('LOWER_LIPSTICK_MAKEUP'),undefined);
  assert.equal(m.parts.getObjectByName('LEFT_UNDER_EYE_SHADOW'),undefined);
  assert.ok(m.parts.getObjectByName('LEFT_NATURAL_MALE_BROW')?.isMesh);
+});
+
+test('v12 closed liner corners and dark softly feathered lower-eye makeup stay attached',()=>{
+ const m=makeIndependentFaceMaster(fixture().source,'female');
+ assert.equal(m.report.detailedParts.eyelinerCornersClosed,true);
+ assert.ok(m.report.detailedParts.lipCenterNormalized>=.498);
+ assert.ok(m.report.detailedParts.lipCenterNormalized<=.520);
+ assert.equal(m.report.detailedParts.blushOpacityFactor,.43);
+ for(const side of ['LEFT','RIGHT']){
+  const upper=m.parts.getObjectByName(side+'_UPPER_EYELINER');
+  const lower=m.parts.getObjectByName(side+'_LOWER_EYELINER');
+  assert.equal(upper.userData.eyelinerCornersClosed,true);
+  assert.equal(upper.parent.name,side+'_UPPER_ANATOMICAL_EYELID');
+  assert.equal(lower.parent.name,side+'_LOWER_ANATOMICAL_EYELID');
+  assert.ok(upper.geometry.getAttribute('position').count>116);
+  assert.ok(lower.material.opacity>.4);
+  const shadow=m.parts.getObjectByName(side+'_UNDER_EYE_SHADOW');
+  assert.equal(shadow.userData.feathered,true);
+  assert.equal(shadow.geometry.getAttribute('color').itemSize,4);
+  assert.ok(shadow.material.opacity>.5);
+ }
+});
+test('v12 eye tilt cannot merge eyebrow meshes across the nose at both extremes',()=>{
+ const m=makeIndependentFaceMaster(fixture().source,'female');
+ const box=m.face.geometry.boundingBox;
+ const width=box.max.x-box.min.x,cx=(box.max.x+box.min.x)/2;
+ for(const angle of [-20,0,20]){
+  updateFaceFeatureAngles(m.parts,{...FEMALE_V7_DEFAULTS,eyeAngle:angle});
+  m.parts.updateMatrixWorld(true);
+  for(const side of ['LEFT','RIGHT']){
+   const eyebrow=m.parts.getObjectByName(side+'_SCULPTED_EYEBROW');
+   const attr=eyebrow.geometry.getAttribute('position');
+   for(let i=0;i<attr.count;i++){
+    const pos=new THREE.Vector3(attr.getX(i),attr.getY(i),attr.getZ(i));
+    eyebrow.localToWorld(pos);m.parts.worldToLocal(pos);
+    assert.ok(side==='LEFT'?pos.x<=cx-width*.0229:
+     pos.x>=cx+width*.0229,'Brow crossed nasal midline on angle '+angle);
+   }
+  }
+ }
+ assert.equal(m.report.femaleControls.jawSharpness,5);
+ assert.equal(m.report.femaleControls.nostrilCover,2);
+});
+test('v12 rooted 3D wig uses real scalp vertices and projects facial/torso contacts',()=>{
+ const m=makeIndependentFaceMaster(fixture().source,'female');
+ const w=createScalpAnchoredWig(m.face,{count:96,lengthScale:1.2});
+ m.face.add(w.root);
+ assert.equal(w.root.name,'FEMALE_SCALP_ANCHORED_LONG_WIG');
+ const r=w.getReport();
+ assert.equal(r.rootCount,96);
+ assert.ok(r.realScalpCandidateCount>=12);
+ assert.equal(r.meshCount,2);
+ assert.ok(r.collisionTypes.includes('face'));
+ assert.ok(r.collisionTypes.includes('left-shoulder')===false);
+ const hair=w.root.getObjectByName('REAL_ROOTED_SWEPT_HAIR_LOCKS');
+ const scalp=w.root.getObjectByName('REAL_SCALP_TRIANGLE_HAIR_CAP');
+ assert.ok(hair.isMesh);
+ assert.ok(scalp.isMesh);
+ assert.ok(hair.geometry.getAttribute('position').count>=96*12*4);
+ const head=m.face.geometry.getAttribute('position');
+ for(const sample of w.getRootSamples()){
+  const original=new THREE.Vector3().fromBufferAttribute(head,sample.vertexIndex);
+  const delta=original.distanceTo(new THREE.Vector3(...sample.point));
+  assert.ok(delta<.01,'Hair roots must remain attached to real scalp vertices');
+ }
+ const bb=m.face.geometry.boundingBox,center=bb.getCenter(new THREE.Vector3());
+ const before=center.clone();const after=w.resolvePoint(before);
+ assert.ok(after.distanceTo(before)>.001,'Head collision should push hair outward');
+ for(let i=0;i<5;i++)w.update(.034);
+ assert.ok(w.getReport().collisionEvents>0);
+ const vertices=hair.geometry.getAttribute('position');
+ for(let i=0;i<vertices.count;i+=23){
+  assert.ok(Number.isFinite(vertices.getX(i)+vertices.getY(i)+vertices.getZ(i)));
+ }
+ w.dispose();
 });
