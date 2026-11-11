@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>灰銀戦記 | ストーリーフロー・メンテナンス</title>
+<style>
+:root{color-scheme:dark;--gold:#e6c78a;--line:#6f7f91;--bg:#081321;--panel:#182a3e}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:radial-gradient(ellipse at top,#2b4560,#081321 74%);color:#f5eddf;font:14px/1.6 system-ui,'Noto Sans JP',sans-serif}
+a{color:#f4d497}button,select{font:inherit}button{cursor:pointer}
+header{position:sticky;top:0;z-index:20;background:#0b1728f5;border-bottom:1px solid #c3a575;padding:10px max(12px,env(safe-area-inset-left));display:flex;justify-content:space-between;align-items:center;gap:12px}
+header strong{color:var(--gold);font-size:16px}header nav{display:flex;gap:8px;flex-wrap:wrap}
+header nav a{font-size:12px;border:1px solid var(--line);padding:6px 10px;text-decoration:none;border-radius:6px}
+main{width:min(1100px,96vw);margin:auto;padding:16px 0 46px}h1{font-size:clamp(21px,5vw,34px);color:#f5d99f;margin:8px 0}h2{font-size:19px;color:var(--gold);margin:0 0 10px}h3{font-size:15px;margin:4px 0;color:#f3dfa8}
+p{margin:7px 0}.muted,small{color:#afc4d1}.info{border-left:3px solid var(--gold);padding:8px 12px;background:#15283c}
+section{border:1px solid #677f91;background:linear-gradient(130deg,#1b2c40ed,#0d1b2eef);padding:15px;margin:14px 0;border-radius:11px}
+.chips{display:flex;gap:8px;flex-wrap:wrap}.chip{border:1px solid #657b8b;background:#14273a;color:#f0e2bd;border-radius:7px;padding:6px 11px}
+.chip.active{background:#664c2d;border-color:#e4c18b}.chip:disabled{opacity:.33;cursor:default}
+.toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.toolbar select{background:#112437;color:white;border:1px solid #9ba9ba;padding:9px;border-radius:8px;min-width:115px}
+.btn{border:1px solid #d3ad76;border-radius:7px;padding:9px 12px;background:#6d5231;color:#fff1d2;text-decoration:none}
+.panels{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px}
+.card{background:#102235;padding:12px;border:1px solid #586b7e;border-radius:8px}
+.cast{display:grid;grid-template-columns:82px 1fr;gap:10px;align-items:start}
+.cast img{width:82px;height:108px;object-fit:cover;border-radius:5px;background:#223549}
+.cast strong{color:#ffe0a3}.cast small{display:block;line-height:1.45}
+.stories{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px}
+.story img{width:100%;aspect-ratio:16/9;object-fit:contain;background:#080f1b;border:1px solid #a68d6a}
+.story p{font-size:12px;max-height:6em;overflow:auto}
+.flow-track{border-left:3px solid #bd976a;margin-left:9px;padding-left:14px}
+.links{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px}
+.links a{display:block;text-decoration:none;background:#132b40;border:1px solid #628199;border-radius:9px;padding:13px}
+.links a strong{display:block}.links small{display:block}
+table{width:100%;border-collapse:collapse}th,td{border-bottom:1px solid #43586c;padding:7px;text-align:left;vertical-align:top}th{color:#d8caaf;font-weight:600}
+#status{min-height:21px;color:#f4cb86}
+@media(max-width:600px){header{align-items:flex-start;flex-direction:column}.cast{grid-template-columns:70px 1fr}.cast img{width:70px;height:90px}}
+</style></head>
+<body>
+<header><strong>灰銀戦記 ／ 物語メンテナンス</strong><nav><a href="./game.html">タイトル</a><a href="./town-hub.html">町</a><a href="./world-map.html">世界地図</a><a href="./dev-menu.html">開発メニュー</a></nav></header>
+<main>
+<h1>ストーリーフローと画面一覧</h1>
+<p class="info">このページは<strong>確認・プレビュー専用</strong>です。ロックされた章の内容も確認できますが、ゲームの進行、分岐、セーブは変更しません。人物の3Dモデルは別工程です。</p>
+<div class="chips" id="nav">
+<a class="chip" href="#flow">20章フロー</a><a class="chip" href="#panels">7コマ確認</a><a class="chip" href="#cast">人物・国</a><a class="chip" href="#screens">現行画面リンク</a><a class="chip" href="#voice">音声・原画</a>
+</div>
+<section><h2>ゲーム進行状況</h2><div id="saveSummary" class="panels"></div></section>
+<section id="flow"><h2>物語の全体像</h2>
+<p class="flow-track">第1〜12章：灰銀王国の軍師 → 第13章：灰銀継続／紅炎協力／翠嵐協力／独立調停 → 第14〜15章：勢力別協力 → 第16〜19章：三国共同戦線 → 第20章：解放／封印／忘却</p>
+<div id="chapterButtons" class="chips" aria-label="20章選択"></div>
+<div class="toolbar" style="margin-top:12px"><label for="chapterSelect">章</label><select id="chapterSelect"></select><label for="stageSelect">ステージ</label><select id="stageSelect"></select><button class="btn" id="readPanel">この場面の7コマを再生</button></div>
+<div id="flowDetails" class="card" style="margin-top:10px"></div>
+<div id="routeDetails"></div></section>
+<section id="panels"><h2>ステージ別・独立7コマの照合</h2><p class="muted">各コマは固有IDに紐づきます。専用画像が存在する場合はそれを優先し、未制作のものは既存画像へフォールバックします。</p><div id="sceneGrid" class="stories"></div></section>
+<section id="cast"><h2>主要キャラクター20人・所属国</h2><p class="muted">登場人物のID・国・役職・音声話者を管理します。3Dモデルや衣装データを編集しません。</p><div class="toolbar" id="factionFilter"></div><div id="characterGrid" class="panels" style="margin-top:10px"></div></section>
+<section id="screens"><h2>現在のゲームに使われる画面リンク</h2><p class="muted">ストーリー本線とテスト用画面を分けました。出撃本線はワールドマップから選択してください。</p>
+<h3>本線の導線</h3>
+<div class="links">
+<a href="./game.html"><strong>タイトル／新規ゲーム</strong><small>game.html：序章、チュートリアル、名前の設定</small></a>
+<a href="./town-hub.html"><strong>町／酒場／編成／教会</strong><small>town-hub.html：セーブと町探索、章イベント</small></a>
+<a href="./world-map.html"><strong>ワールドマップ</strong><small>world-map.html：20章×10ステージの選択・物語・出撃</small></a>
+<a href="./story-maintenance.html"><strong>物語メンテナンス</strong><small>現在地：進行確認、全章プレビュー、人物と声の定義</small></a>
+</div>
+<h3 style="margin-top:16px">戦闘・開発向け（単独テスト）</h3>
+<div class="links">
+<a href="./tactics-wireframe.html?army=50&amp;mode=cpu"><strong>50対50戦闘テスト</strong><small>本線ではワールドマップの出撃要求で起動する</small></a>
+<a href="./tactics-wireframe.html?army=1000&amp;mode=cpu"><strong>1000対1000戦闘テスト</strong><small>大規模性能・戦闘アニメ確認</small></a>
+<a href="./battle-voice-test.html"><strong>戦闘ボイス確認</strong><small>収録済みボイス・音量・状況別発話</small></a>
+<a href="./dev-menu.html"><strong>開発・モデル検証一覧</strong><small>衣装・人物モデル・ステージ・オブジェクトの保守</small></a>
+</div>
+<h3 style="margin-top:16px">設計書</h3><div class="links">
+<a href="https://github.com/yamadayoshitaka/hai-gin-rpg/blob/main/docs/story-branch-flow-v1.md"><strong>ストーリー構成</strong><small>20章の国家間分岐・主人公の立場</small></a>
+<a href="https://github.com/yamadayoshitaka/hai-gin-rpg/blob/main/docs/story-art-handoff-v1.md"><strong>イラスト制作引継ぎ</strong><small>人物マスターと場面の制作仕様</small></a>
+</div></section>
+<section id="voice"><h2>音声・原画の実装状態</h2>
+<p>物語音声：既存のVOICEVOX収録済み台詞がある場合は優先再生、未収録の台詞は端末の日本語読み上げを使用します。人物ごとの話者・速度・高さは固定です。追加の有料API呼び出しはありません。</p>
+<p>原画：20人の人物IDと既存の章画を基準にし、専用の1コマ画像を制作できたら、その1枚を優先表示します。画像がない場合に限り既存の合成画・SVGを使います。</p>
+<div class="toolbar"><button class="btn" id="voiceTest">選択中コマの声を試聴</button><button class="chip" id="voiceStop">読み上げ停止</button></div>
+<p id="status" role="status"></p>
+</section>
+</main>
+<script type="module">
+import {STORY_FLOW,STORY_CHARACTERS,FACTION_GUIDE,ROUTES,ENDING_GUIDE,availableStoryRoutes,currentStoryRoute,storyAllianceScores,storyDecisionForStage,storyStageContext} from './src/story-narrative-flow.js';
+import {STORY_ACTS} from './src/story-chapters.js';
+import {CAMPAIGN_STAGE_BY_ID,stagesInChapter} from './src/campaign-stage-plan.js';
+import {loadGame,validGame} from './src/game-core-flow.js';
+import {mangaForStage} from './src/story-stage-manga.js';
+import {stageMangaImage} from './src/story-manga-art.js';
+import {applyCinematicImage,CINEMATIC_CAST_ASSETS} from './src/story-cinematic-assets.js';
+import {createMangaViewer} from './src/story-manga-viewer.js';
+import {createStoryVoiceDirector,STORY_VOICE_PROFILES} from './src/story-voice-director.js';
+const $=id=>document.getElementById(id);
+const escapeHTML=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const active=loadGame(localStorage,sessionStorage);
+const game=validGame(active)?active:null;
+const voice=createStoryVoiceDirector();
+const viewer=createMangaViewer({storage:localStorage});
+let chapter=1,stageId='c01-s01',filter='all';
+const completed=new Set(game?.completedStages||[]);
+$('saveSummary').innerHTML='<div class="card"><h3>主人公</h3>'+escapeHTML(game?.playerName||'セーブなし（全章プレビューは可能）')+'</div>'+
+ '<div class="card"><h3>クリア済み</h3>'+completed.size+' / 200ステージ</div>'+
+ '<div class="card"><h3>所属・協力</h3>灰銀出身・'+escapeHTML(currentStoryRoute(game)?.name||'灰銀所属（未選択）')+'</div>';
+$('chapterSelect').innerHTML=STORY_FLOW.map(ch=>'<option value="'+ch.chapter+'">第'+ch.chapter+'章　'+escapeHTML(ch.title)+'</option>').join('');
+$('chapterButtons').innerHTML=STORY_FLOW.map(ch=>'<button type="button" class="chip" data-chapter="'+ch.chapter+'">'+ch.chapter+'章</button>').join('');
+function setChapter(n){chapter=Math.max(1,Math.min(20,Number(n)||1));const list=stagesInChapter(chapter);stageId=list[0].id;$('chapterSelect').value=String(chapter);$('stageSelect').innerHTML=list.map(stage=>'<option value="'+stage.id+'">'+String(stage.slot).padStart(2,'0')+' '+escapeHTML(stage.name)+'</option>').join('');$('chapterButtons').querySelectorAll('button').forEach(button=>button.classList.toggle('active',Number(button.dataset.chapter)===chapter));render();}
+function render(){
+ const detail=STORY_FLOW[chapter-1],stage=CAMPAIGN_STAGE_BY_ID[stageId];
+ $('stageSelect').value=stageId;
+ $('flowDetails').innerHTML='<h3>第'+detail.chapter+'章 '+escapeHTML(detail.title)+'</h3>'+
+ '<p class="muted">'+escapeHTML(detail.act)+' ／ '+escapeHTML(detail.location)+' ／ '+escapeHTML(detail.cooperator)+'</p>'+
+ '<p>'+escapeHTML(detail.synopsis)+'</p><p><strong>任務：</strong>'+escapeHTML(detail.objective)+'</p>'+
+ '<p><strong>選択ステージ：</strong>'+escapeHTML(stageId)+' ／ '+escapeHTML(stage.name)+' ／ '+(completed.has(stageId)?'クリア済み':'未クリア')+'</p>'+
+ '<p><strong>物語の扱い：</strong>'+escapeHTML({linear:'章本線',policy:'作戦方針の選択', 'four-route':'協力ルート4分岐','three-ending':'エンディング3分岐'}[detail.branchType])+'</p>';
+ const trust=storyAllianceScores(game),routes=availableStoryRoutes(game);
+ $('routeDetails').innerHTML='<div class="card" style="margin-top:10px"><h3>協力先と分岐条件</h3><p class="muted">紅炎との関係 '+trust.crimson+' ／ 翠嵐との関係 '+trust.verdant+' ／ 証拠 '+trust.evidence+' （実際の救出人数ではなく方針の達成記録）</p>'+
+ routes.map(r=>'<div>'+escapeHTML(r.name)+'：'+(currentStoryRoute(game)?.id===r.id?'選択済み':r.unlocked?'選択可能':'未解放')+' <small>'+escapeHTML(r.description)+'</small></div>').join('')+
+ '<p>最終章：'+ENDING_GUIDE.map(e=>escapeHTML(e.name)).join(' ／ ')+'</p></div>';
+ const story=mangaForStage(stageId,game?storyStageContext(game,stageId):{});
+ $('sceneGrid').innerHTML=story.panels.map((p,i)=>'<div class="card story"><strong>コマ '+(i+1)+' · '+escapeHTML(p.id)+'</strong>'+
+ '<img id="shot-'+i+'" alt="'+escapeHTML(p.speaker)+'の第'+chapter+'章場面絵"><p><b>'+escapeHTML(p.speaker)+'</b> · '+escapeHTML(p.text)+'</p></div>').join('');
+ story.panels.forEach((p,i)=>{const image=$('shot-'+i);image.src=stageMangaImage(p);applyCinematicImage(image,p);});
+}
+$('chapterSelect').onchange=e=>setChapter(e.target.value);
+$('stageSelect').onchange=e=>{stageId=e.target.value;render();};
+$('chapterButtons').onclick=e=>{const b=e.target.closest('[data-chapter]');if(b)setChapter(b.dataset.chapter);};
+$('readPanel').onclick=()=>viewer.open(stageId,{context:game?storyStageContext(game,stageId):{}});
+$('voiceTest').onclick=async()=>{const panel=mangaForStage(stageId,game?storyStageContext(game,stageId):{}).panels[0];$('status').textContent='コマ '+panel.id+' ／ '+panel.speaker+' を再生';await voice.speak(panel);};
+$('voiceStop').onclick=()=>{voice.stop();$('status').textContent='読み上げを停止しました。';};
+$('factionFilter').innerHTML='<button class="chip active" data-faction="all">全員</button>'+
+ FACTION_GUIDE.map(f=>'<button class="chip" data-faction="'+f.id+'">'+escapeHTML(f.name)+'</button>').join('');
+function renderCast(){
+ const list=STORY_CHARACTERS.filter(c=>filter==='all'||c.storyFaction===filter);
+ $('characterGrid').innerHTML=list.map(c=>'<div class="card cast"><img src="'+CINEMATIC_CAST_ASSETS[c.id]+'" alt="'+escapeHTML(c.name)+'の現在の基準絵" loading="lazy">'+
+ '<div><strong>'+escapeHTML(c.name)+'</strong><small>'+escapeHTML(c.storyFactionName)+' ／ '+escapeHTML(c.role)+'</small>'+
+ '<small>ID: '+c.id+'</small><small>VOICEVOX: '+escapeHTML(STORY_VOICE_PROFILES[c.id]?.voicevoxSpeaker)+'</small>'+
+ '<small>3Dモデル：別工程。ゲーム内では定義・画像の照合のみ</small></div></div>').join('');
+}
+$('factionFilter').onclick=e=>{const b=e.target.closest('[data-faction]');if(!b)return;filter=b.dataset.faction;$('factionFilter').querySelectorAll('button').forEach(x=>x.classList.toggle('active',x===b));renderCast();};
+setChapter(Number(new URLSearchParams(location.search).get('chapter'))||1);
+renderCast();
+</script>
+</body></html>
