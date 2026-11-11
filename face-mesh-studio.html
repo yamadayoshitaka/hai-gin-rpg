@@ -2,7 +2,7 @@
 <html lang="ja"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#14263a">
-<title>灰銀のレゾナンス | 顔v11・ライブラリ保存プリセット</title>
+<title>灰銀のレゾナンス | 顔v12・保存標準と髪束・顔メイク</title>
 <style>
 :root{font:15px/1.55 system-ui,-apple-system,"Noto Sans JP",sans-serif;color-scheme:dark}
 *{box-sizing:border-box}
@@ -62,8 +62,8 @@ button{padding:9px 11px}
 </style></head>
 <body>
 <header>
-<h1>男女・顔と立体パーツ v11</h1>
-<p>ライブラリに保存された実GLBの顔設定（顎先5倍・鼻穴隠し2）を男女の新標準に採用。口紅とチークは実メッシュの頂点に着色し、浮いた化粧面を排除。スライダー調整時もズームを保持します。</p>
+<h1>男女・顔と立体パーツ v12</h1>
+<p>ライブラリに保存された実GLBの顔設定（顎先5倍・鼻穴隠し2）を男女の新標準に採用。口紅とチークを実メッシュの頂点に着色。上下アイライン・眉・眼球を調整し、女性用の金髪ロング（頭皮から髪束を生成・顔と肩への衝突対応）を追加。保存値とズームを維持します。</p>
 </header>
 <main><section class="panel">
 <div id="status" role="status">男女のCC0頭部メッシュを読み込み中…</div>
@@ -79,6 +79,7 @@ button{padding:9px 11px}
 <button id="back" aria-pressed="false" disabled>後頭部</button>
 <button id="wire" aria-pressed="false" disabled>ワイヤー表示</button>
 <button id="parts" aria-pressed="true" disabled>目・眉・まつ毛・唇を表示</button>
+<button id="wig" aria-pressed="true" disabled>金髪ロング ON</button>
 <button id="clay" aria-pressed="false" disabled>灰色メッシュ</button>
 <button id="color" aria-pressed="true" disabled>カラー表示</button>
 </div></div>
@@ -115,6 +116,14 @@ button{padding:9px 11px}
 <option value="violet">バイオレット</option><option value="custom">自由色</option>
 </select></label>
 <label for="contactColor">カラコンの自由な色<input type="color" id="contactColor" value="#514139"></label>
+<label for="wigDensity">髪束の密度 <output id="wigDensityValue">240束</output>
+<input type="range" id="wigDensity" min="96" max="320" step="16" value="240"></label>
+<label for="wigLength">女性の髪の長さ <output id="wigLengthValue">1×</output>
+<input type="range" id="wigLength" min="0.6" max="1.5" step="0.05" value="1"></label>
+<label for="wigColor">髪色<select id="wigColor">
+<option value="blonde" selected>ゴールド・ブロンド</option>
+<option value="ash">アッシュブロンド</option><option value="brown">ブラウン</option>
+<option value="black">黒髪</option></select></label>
 </div><div class="controls"><button id="resetPreset" disabled>ライブラリ保存の標準値に戻す</button></div></details>
 <details id="maleAdjustments" hidden open>
 <summary>男性顔の3D調整・ヒゲ</summary>
@@ -143,7 +152,7 @@ button{padding:9px 11px}
 <button id="export" disabled>表示中の顔メッシュをGLB保存</button>
 <a href="./master-swordsman-prototype.html">全身モデル確認画面</a>
 </div>
-<p>指で360°回転・ピンチで拡大。女性の口紅は上唇・下唇の実3D形状に接続。アイライン・強調線・下まぶた・眉・まつ毛は目の角度と連動。頬のチークは頬に固定。男性は顎・鼻・目の角度と3Dヒゲの濃さ・長さを調整できます。</p>
+<p>指で360°回転・ピンチで拡大。女性の口紅は上唇・下唇の実3D形状に接続。上下アイラインの目尻を接続。暗いクマを自然にフェードさせ、眉の間隔を維持。頭皮からの金髪ロングは顔・首・肩・胸への簡易衝突を計算。男性は顎・鼻・目の角度と3Dヒゲの濃さ・長さを調整できます。</p>
 <p>これは美形を目標にした<b>初回の造形試作</b>です。実写品質・原画一致・美術承認・ゲーム実装は未達です。顔の凹凸や横顔が自然かを先に評価してください。</p>
 <details><summary>実メッシュ数値と原本保護の確認</summary><div id="metrics"></div></details>
 </section></main>
@@ -155,6 +164,7 @@ import {GLTFExporter} from 'three/addons/exporters/GLTFExporter.js';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {makeIndependentFaceMaster,FACE_MASTER_SPEC} from './src/independent-face-masters.js';
 import {updateFaceFeatureAngles,applyFaceColorMode} from './src/face-feature-meshes.js';
+import {createScalpAnchoredWig} from './src/face-scalp-wig.js';
 import {FEMALE_V7_DEFAULTS,MALE_REFERENCE_DEFAULT,CONTACT_COLORS,safeContactColor} from './src/face-v7-controls.js';
 const $=id=>document.getElementById(id);
 const canvas=$('faceCanvas');
@@ -174,11 +184,14 @@ const camera=new THREE.PerspectiveCamera(34,1,.005,100);
 const orbit=new OrbitControls(camera,canvas);
 orbit.enableDamping=true;orbit.enablePan=false;
 orbit.minDistance=.1;orbit.maxDistance=6;
-const models=new Map();
+const models=new Map(),wigs=new Map();
+const hairPalette={blonde:0xc8a36a,ash:0xc1ae8f,brown:0x705443,black:0x292830};
+const faceClock=new THREE.Clock();
 let gender='female',angle='front',wired=false,partsOn=true,ready=false;
 let faceMode='color',femaleSource=null,modelChanges={...FEMALE_V7_DEFAULTS};
 let maleChanges={...MALE_REFERENCE_DEFAULT};
 let contactColor=CONTACT_COLORS.brown;
+let wigOn=true,wigDensity=240,wigLength=1,wigColor='blonde';
 function setActive(ids,id){
  for(const x of ids)$(x).setAttribute('aria-pressed',String(x===id));
 }
@@ -188,6 +201,7 @@ function metrics(){
   faceMode,contactColor,cameraDistance:camera.position.distanceTo(orbit.target),
   cameraTarget:orbit.target.toArray(),femaleControls:{...modelChanges},
   maleControls:{...maleChanges},
+  wigVisible:wigOn&&gender==='female',wigReport:wigs.get('female')?.getReport()||null,
   maleWithoutMakeup:models.get('male')?.report?.maleNoMakeup??null,
   currentFeatureAngles:models.get('female')?.parts?.userData?.featureAngles||null,
   female:models.get('female')?.report||null,
@@ -230,6 +244,7 @@ function selectGender(next){
  if(!models.has(next))return;
  gender=next;
  for(const [k,m] of models)m.root.visible=k===gender;
+ $('wig').hidden=gender!=='female';
  setActive(['female','male'],gender);
  $('faceAdjustments').hidden=gender!=='female';
  $('maleAdjustments').hidden=gender!=='male';
@@ -437,7 +452,8 @@ setupAdjustTabs('faceGroupTabs',[
  ['目元',['irisDiameter','eyeSize','eyeAngle']],
  ['鼻',['noseTipLift','nostrilCover','noseBridgeSharpness']],
  ['口紅',['lipstickX','lipstickY','lipstickWidth','lipstickHeight']],
- ['カラコン',['contactPreset','contactColor']]
+ ['カラコン',['contactPreset','contactColor']],
+ ['髪',['wigDensity','wigLength','wigColor']]
 ]);
 setupAdjustTabs('maleGroupTabs',[
  ['顎・輪郭',['maleJawSharpness']],
@@ -482,7 +498,7 @@ $('export').addEventListener('click',async()=>{
   a.href=url;a.download=FACE_MASTER_SPEC[gender].code+'.glb';
   document.body.appendChild(a);a.click();a.remove();
   setTimeout(()=>URL.revokeObjectURL(url),1000);
-  $('status').textContent='GLBを書き出しました（胴体・髪なし／パーツ表示に連動）。';
+  $('status').textContent='GLBを書き出しました（胴体なし・髪表示と顔パーツ表示に連動）。';
  }catch(e){$('status').textContent='GLB出力失敗: '+String(e);}
  finally{$('export').disabled=false;}
 });
@@ -512,7 +528,7 @@ async function init(){
    models.set(g,model);scene.add(model.root);
   }
   ready=true;
-  for(const id of ['female','male','front','threeQuarter','side','back','wire','parts','clay','color','resetPreset','resetMalePreset','export'])
+  for(const id of ['female','male','front','threeQuarter','side','back','wire','parts','wig','clay','color','resetPreset','resetMalePreset','export'])
    $(id).disabled=false;
   const query=new URLSearchParams(location.search);
   selectGender(query.get('gender')==='male'?'male':'female');
@@ -526,6 +542,8 @@ async function init(){
  }
 }
 function frame(){
+ const dt=faceClock.getDelta();
+ if(wigOn&&models.get('female')?.root.visible)wigs.get('female')?.update(dt);
  resize();orbit.update();renderer.render(scene,camera);
  requestAnimationFrame(frame);
 }
