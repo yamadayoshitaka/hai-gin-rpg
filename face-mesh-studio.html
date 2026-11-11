@@ -2,7 +2,7 @@
 <html lang="ja"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#14263a">
-<title>灰銀のレゾナンス | 顔v9・追従メイク＆男性ヒゲ</title>
+<title>灰銀のレゾナンス | 顔v11・ライブラリ保存プリセット</title>
 <style>
 :root{font:15px/1.55 system-ui,-apple-system,"Noto Sans JP",sans-serif;color-scheme:dark}
 *{box-sizing:border-box}
@@ -62,7 +62,7 @@ button{padding:9px 11px}
 </style></head>
 <body>
 <header>
-<h1>男女・顔と立体パーツ v9</h1>
+<h1>男女・顔と立体パーツ v11</h1>
 <p>ライブラリに保存された実GLBの顔設定（顎先5倍・鼻穴隠し2）を男女の新標準に採用。口紅とチークは実メッシュの頂点に着色し、浮いた化粧面を排除。スライダー調整時もズームを保持します。</p>
 </header>
 <main><section class="panel">
@@ -115,7 +115,7 @@ button{padding:9px 11px}
 <option value="violet">バイオレット</option><option value="custom">自由色</option>
 </select></label>
 <label for="contactColor">カラコンの自由な色<input type="color" id="contactColor" value="#514139"></label>
-</div><div class="controls"><button id="resetPreset" disabled>画像の標準値に戻す</button></div></details>
+</div><div class="controls"><button id="resetPreset" disabled>ライブラリ保存の標準値に戻す</button></div></details>
 <details id="maleAdjustments" hidden open>
 <summary>男性顔の3D調整・ヒゲ</summary>
 <div class="faceTabs" id="maleGroupTabs" aria-label="男性の調整カテゴリ"></div>
@@ -138,7 +138,7 @@ button{padding:9px 11px}
 <input type="range" id="maleBeardDensity" min="0" max="1" step="0.05" value="0.35"></label>
 <label for="maleBeardLength">ヒゲの長さ <output id="maleBeardLengthValue">1×</output>
 <input type="range" id="maleBeardLength" min="0.3" max="2.5" step="0.1" value="1"></label>
-</div><div class="controls"><button id="resetMalePreset" disabled>男性の標準値に戻す</button></div></details>
+</div><div class="controls"><button id="resetMalePreset" disabled>男性・同じ顔立ちの標準に戻す</button></div></details>
 <div class="controls">
 <button id="export" disabled>表示中の顔メッシュをGLB保存</button>
 <a href="./master-swordsman-prototype.html">全身モデル確認画面</a>
