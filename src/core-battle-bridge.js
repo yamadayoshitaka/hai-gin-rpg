@@ -5,6 +5,7 @@
 import {BUFFS,squadCommanderId,reserveTroops} from './story-campaign.js';
 import {allocateSortieSlots,STORY_JOB_TO_BATTLE,STORY_SPAWN_LANES} from './story-battle-bridge.js';
 import {CAMPAIGN_STAGE_BY_ID} from './campaign-stage-plan.js';
+import {storyStageContext} from './story-narrative-flow.js';
 import {markStageVictory,squadEquipmentBonus} from './game-core-flow.js';
 export const CORE_BATTLE_PENDING_KEY='hai-gin-core-battle-pending-v1';
 export const CORE_BATTLE_RESULT_KEY='hai-gin-story-result-v1';
@@ -29,13 +30,16 @@ export function makeCoreBattleRequest(game,stageId,battleId=String(Date.now())){
   spawnLane:STORY_SPAWN_LANES[i%STORY_SPAWN_LANES.length]
  })));
  const monsterBattle=stage.kind==='explore'||stage.kind==='boss';
+ const storyContext=storyStageContext(game,stage.id);
  return {
   version:1,battleId:String(battleId),territoryId:stage.territoryId,
   territoryName:stage.name,terrain:stage.biome,stageId:stage.id,
   stagePreset:stage.scenePreset,origin:'game-core',stageKind:stage.kind,
+  storyRoute:storyContext?.route||'silver',storyCooperator:storyContext?.routeName||'灰銀軍師',
+  storyCoalition:storyContext?.coalition||false,storyDecision:storyContext?.decision||null,
   enemyMode:monsterBattle?'monsters':'army',
   enemyMonsterIds:monsterBattle?[...stage.monsters]:[],
-  enemyName:monsterBattle?'魔物群':stage.enemyFaction==='verdant'?'翠嵐軍':'紅炎軍',
+  enemyName:monsterBattle?'魔物群':storyContext?.enemy||'紅炎軍',
   enemyCount:monsterBattle?Math.min(20,Math.max(4,stage.monsters.length*3)):Math.min(50,12+stage.difficulty),
   units,commanders,totalReserves:reserveTroops(game.campaign)
  };
