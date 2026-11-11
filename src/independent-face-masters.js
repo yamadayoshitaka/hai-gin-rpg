@@ -78,7 +78,7 @@ export const FACE_MASTER_SPEC=Object.freeze({
  }),
  female:Object.freeze({
   code:'female-face-smooth-source-v6',label:'女性・滑らかな頬＋卵型の顎先（新頭部原型）',
-  jawNarrow:.055,cheekFill:.018,chinLift:.002,
+  jawNarrow:.055,cheekFill:.027,chinLift:.002,
   sourceHead:'realistic-head-animation.glb',
   noseBridge:0,browRelief:.001,mouthRecess:0,
   eyeSocketSoftness:.004
