@@ -5,10 +5,10 @@ fs.mkdirSync(out,{recursive:true});
 // Verify displayed controls, not only the internally stored 3D parameter
 // object: mobile form restoration can overwrite a slider without an input
 // event, leaving a stale value visible while the actual mesh uses defaults.
-async function expectVisibleV8Preset(page,context,contact='brown'){
+async function expectVisibleLibraryPreset(page,context,contact='brown'){
  const expected={
-  irisDiameter:1,eyeSize:1,jawSharpness:2.5,noseTipLift:0,
-  nostrilCover:1,noseBridgeSharpness:2.5,eyeAngle:0,
+  irisDiameter:1,eyeSize:1,jawSharpness:5,noseTipLift:0,
+  nostrilCover:2,noseBridgeSharpness:2.5,eyeAngle:0,
   lipstickX:0,lipstickY:0,lipstickWidth:1,lipstickHeight:1
  };
  const actual=await page.evaluate(keys=>{
@@ -27,7 +27,7 @@ async function expectVisibleV8Preset(page,context,contact='brown'){
    ['irisDiameter','eyeSize','jawSharpness','lipstickWidth','lipstickHeight'].includes(key)?'×':'';
   if(Number(ui.input)!==value||ui.output!==String(value)+suffix||
      actual.model[key]!==value)
-   throw Error('Displayed v8 standard mismatch ('+context+': '+key+'): '+
+   throw Error('Displayed Library-saved preset mismatch ('+context+': '+key+'): '+
     JSON.stringify({ui,actualModel:actual.model[key],expected:value}));
  }
  const colors={brown:'#514139',green:'#5c886b'};
@@ -47,7 +47,7 @@ async function expectVisibleV8Preset(page,context,contact='brown'){
    {waitUntil:'domcontentloaded',timeout:60000});
   await page.waitForFunction(()=>window.__faceMasterQA?.().loaded===true,
    null,{timeout:100000,polling:250});
-  await expectVisibleV8Preset(page,'fresh-open');
+  await expectVisibleLibraryPreset(page,'fresh-open');
   // Simulate a mobile browser restoring an outdated range thumb/label
   // without dispatching input; pageshow must re-align UI with model state.
   await page.evaluate(()=>{
@@ -55,7 +55,7 @@ async function expectVisibleV8Preset(page,context,contact='brown'){
    document.getElementById('lipstickXValue').value='0.05';
    window.dispatchEvent(new Event('pageshow'));
   });
-  await expectVisibleV8Preset(page,'browser-form-restoration');
+  await expectVisibleLibraryPreset(page,'browser-form-restoration');
   const original=await page.evaluate(()=>window.__faceMasterQA());
   if(original.gender!=='female'||original.bodyMeshes!==0||
      original.visibleFaceMeshes!==1||original.sourceUntouched!==true||
@@ -71,9 +71,9 @@ async function expectVisibleV8Preset(page,context,contact='brown'){
      original.visiblePartMeshes!==30||
      original.faceMode!=='color'||
      original.femaleControls.irisDiameter!==1||
-     original.femaleControls.jawSharpness!==2.5||
+     original.femaleControls.jawSharpness!==5||
      original.femaleControls.noseTipLift!==0||
-     original.femaleControls.nostrilCover!==1||
+     original.femaleControls.nostrilCover!==2||
      original.femaleControls.noseBridgeSharpness!==2.5||
      !original.maleWithoutMakeup)
    throw Error('Not two independent source-derived face meshes: '+JSON.stringify(original));
@@ -87,9 +87,9 @@ async function expectVisibleV8Preset(page,context,contact='brown'){
   // A user who touches ONLY the contact color must not inadvertently
   // inherit lipstickX=.05 or another visible slider value.
   await page.locator('#contactPreset').selectOption('green');
-  await expectVisibleV8Preset(page,'change-contact-only','green');
+  await expectVisibleLibraryPreset(page,'change-contact-only','green');
   await page.locator('#contactPreset').selectOption('brown');
-  await expectVisibleV8Preset(page,'contact-back-to-standard');
+  await expectVisibleLibraryPreset(page,'contact-back-to-standard');
   const canvas=page.locator('#faceCanvas');
   for(const g of ['female','male']){
    await page.locator('#'+g).click();
@@ -118,6 +118,14 @@ async function expectVisibleV8Preset(page,context,contact='brown'){
    const tri=(gltf.meshes||[]).flatMap(m=>m.primitives||[])
     .filter(p=>p.mode===undefined||p.mode===4);
    if(tri.length!==(g==='female'?31:20))throw Error('Exported face + anatomical meshes mismatch: '+g+' '+tri.length);
+   const master=(gltf.nodes||[]).find(n=>n.name===g.toUpperCase()+'_FACE_MASTER_SOURCE_CLONE');
+   const saved=master?.extras?.faceMasterReport;
+   const controls=g==='female'?saved?.femaleControls:saved?.maleControls;
+   if(controls?.jawSharpness!==5||controls?.nostrilCover!==2||
+      controls?.eyeSize!==1||controls?.irisDiameter!==1)
+    throw Error('Exported '+g+' GLB lost Library defaults '+JSON.stringify(controls));
+   if(g==='male'&&(!saved?.maleNoMakeup||saved?.femaleControls!==null))
+    throw Error('Male GLB contains female cosmetic settings');
    console.log('FACE_CLAY_GLB_EXPORT',JSON.stringify({
     gender:g,bytes:buf.length,trianglePrimitives:tri.length
    }));
@@ -199,10 +207,10 @@ async function expectVisibleV8Preset(page,context,contact='brown'){
   if((await page.evaluate(()=>window.__faceMasterQA())).visiblePartMeshes!==30)
    throw Error('Facial parts did not restore after toggling');
   await page.locator('#resetPreset').click();
-  await expectVisibleV8Preset(page,'reset-button');
+  await expectVisibleLibraryPreset(page,'reset-button');
   const reset=await page.evaluate(()=>window.__faceMasterQA());
   if(reset.femaleControls.irisDiameter!==1||
-     reset.femaleControls.jawSharpness!==2.5||
+     reset.femaleControls.jawSharpness!==5||
      reset.femaleControls.noseTipLift!==0||
      reset.femaleControls.noseBridgeSharpness!==2.5||
      reset.contactColor!=='#514139'||reset.faceMode!=='color')
@@ -213,7 +221,7 @@ async function expectVisibleV8Preset(page,context,contact='brown'){
      reset.female?.detailedParts.blushMeshCount!==0||
      !reset.female?.detailedParts.lipstickPlacement?.attachedToLipMesh)
    throw Error('V9 lipstick/eye-cheek makeup did not load actual surface');
-  // The current jaw of 2.5 remains standard; higher values remain reachable.
+  // The saved Library jaw value 5 is the standard; users can still reduce it.
   await page.locator('#jawSharpness').evaluate(el=>{
    el.value='4.5';el.dispatchEvent(new Event('input',{bubbles:true}));
    el.dispatchEvent(new Event('change',{bubbles:true}));
@@ -233,11 +241,15 @@ async function expectVisibleV8Preset(page,context,contact='brown'){
   await page.locator('#faceGroupTabs button').filter({hasText:'顎・輪郭'}).click();
   if(!await page.locator('#jawSharpness').isVisible())
    throw Error('Jaw slider not visible in face category');
+  await page.locator('#jawSharpness').evaluate(el=>{
+   el.value='4.5';el.dispatchEvent(new Event('input',{bubbles:true}));
+   el.dispatchEvent(new Event('change',{bubbles:true}));
+  });
   const plus=page.locator('label[for="jawSharpness"] .stepRow button').last();
   if(!await plus.isVisible())throw Error('Precise + jaw stepper missing');
   await plus.click();
   const stepJaw=await page.evaluate(()=>window.__faceMasterQA());
-  if(Math.abs(stepJaw.femaleControls.jawSharpness-2.6)>1e-6)
+  if(Math.abs(stepJaw.femaleControls.jawSharpness-4.6)>1e-6)
    throw Error('Fine adjustment step failed');
   if(Math.abs(stepJaw.cameraDistance-zoomBefore)>1e-4)
    throw Error('Rebuilding after slider step reset zoom '+stepJaw.cameraDistance+' / '+zoomBefore);
@@ -251,12 +263,21 @@ async function expectVisibleV8Preset(page,context,contact='brown'){
   });
   await canvas.screenshot({path:path.join(out,'female-eye-angle-minus20-brows.png')});
   await page.locator('#resetPreset').click();
+  // Browser state must initialize BOTH genders from the exported GLB
+  // settings, not merely display the old hard-coded slider defaults.
   await page.locator('#male').click();
   const neutralMale=await page.evaluate(()=>window.__faceMasterQA());
-  if(neutralMale.maleControls.jawSharpness!==1.15||
+  for(const [key,value] of Object.entries({
+   jawSharpness:5,nostrilCover:2,irisDiameter:1,eyeSize:1,
+   noseTipLift:0,noseBridgeSharpness:2.5,eyeAngle:0
+  })){
+   if(neutralMale.maleControls[key]!==value)
+    throw Error('Saved Library male default '+key+' drifted: '+neutralMale.maleControls[key]);
+  }
+  if(neutralMale.maleControls.jawSharpness!==5||
      neutralMale.maleControls.beardDensity!==.35||
      neutralMale.male.detailedParts.beardMeshCount!==5||
-     (await page.locator('#maleJawSharpness').inputValue())!=='1.15'||
+     (await page.locator('#maleJawSharpness').inputValue())!=='5'||
      (await page.locator('#maleBeardDensity').inputValue())!=='0.35')
    throw Error('Male face/beard controls did not restore canonical defaults');
   await page.locator('#maleJawSharpness').evaluate(el=>{
@@ -299,9 +320,12 @@ async function expectVisibleV8Preset(page,context,contact='brown'){
   if(maleQA.maleWithoutMakeup!==true||
      maleQA.male.detailedParts.lipstickMeshCount!==0||
      maleQA.male.detailedParts.underEyeShadowMeshCount!==0||
-     maleQA.male.detailedParts.eyeScale>=maleQA.female.detailedParts.eyeScale)
-   throw Error('Male must use shared female head with smaller eyes and no makeup');
-  await canvas.screenshot({path:path.join(out,'male-v8-no-makeup.png')});
+     maleQA.male.detailedParts.eyelinerMeshCount!==0||
+     maleQA.male.detailedParts.blushVertexTint!==false||
+     Math.abs(maleQA.male.detailedParts.eyeScale-
+      maleQA.female.detailedParts.eyeScale)>1e-8)
+   throw Error('Male must match the saved female eye scale without any cosmetics');
+  await canvas.screenshot({path:path.join(out,'male-v11-library-no-makeup.png')});
   if(errors.length)throw Error('Browser errors: '+JSON.stringify(errors));
   console.log('INDEPENDENT_MALE_FEMALE_CLAY_FACES_SUCCESS '+
    JSON.stringify({femaleVertices:original.female.sourceVertices,

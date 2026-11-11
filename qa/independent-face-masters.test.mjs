@@ -6,7 +6,7 @@ import {makeIndependentFaceMaster,FACE_MASTER_SPEC,femaleInnerFeatureDelta,femal
  from '../src/independent-face-masters.js';
 import {updateFaceFeatureAngles,applyFaceColorMode}
  from '../src/face-feature-meshes.js';
-import {normalizeFemaleFaceControls,FEMALE_V7_DEFAULTS,FACE_V7_PALETTE,CONTACT_COLORS,safeContactColor}
+import {normalizeFemaleFaceControls,FEMALE_V7_DEFAULTS,FACE_V7_PALETTE,CONTACT_COLORS,safeContactColor,LIBRARY_FACE_PRESET,MALE_REFERENCE_DEFAULT}
  from '../src/face-v7-controls.js';
 
 function fixture(){
@@ -64,7 +64,7 @@ test('two source-derived clay face meshes have owned independent vertices and pr
  assert.equal(female.report.detailedParts.irisDiameterRequestFactor,1);
  assert.equal(female.report.detailedParts.actualIrisDiameterFactor,1);
  assert.ok(female.report.detailedParts.pupilPolarAngleRadians>.22);
- assert.equal(female.report.femaleControls.jawSharpness,2.5);
+ assert.equal(female.report.femaleControls.jawSharpness,5);
  assert.equal(female.report.femaleControls.noseTipLift,0);
  assert.equal(female.report.detailedParts.noseSourceIntegrated,true);
  assert.equal(female.report.detailedParts.doubleLidCreaseMeshCount,2);
@@ -88,9 +88,10 @@ test('two source-derived clay face meshes have owned independent vertices and pr
  for(let i=0;i<a.count;i++)if(Math.abs(a.getX(i)-b.getX(i))+
   Math.abs(a.getY(i)-b.getY(i))+Math.abs(a.getZ(i)-b.getZ(i))>.00001)
   changedBetweenSexes++;
- assert.ok(changedBetweenSexes>400,'Two genders must contain actually different geometry');
- assert.ok(female.report.cheekVolumeMetric>male.report.cheekVolumeMetric,
-  'Female healthy cheek volume should exceed male face');
+ assert.equal(changedBetweenSexes,0,
+  'Male must share saved female base head geometry; only makeup and face parts differ');
+ assert.equal(female.report.cheekVolumeMetric,male.report.cheekVolumeMetric,
+  'Both saved default heads must preserve identical cheeks');
  assert.equal(female.report.outerContourXError,0,
   'Mouth and nose adjustments must not pull the outer face silhouette');
  assert.ok(female.report.outerContourSamples>100);
@@ -257,7 +258,7 @@ test('color-only mode and brow/lash tilt do not change vertices or source donor'
  assert.equal(f.face.geometry,f.original,'Original donor must be unchanged');
  assert.equal(normalizeFemaleFaceControls({jawSharpness:999}).jawSharpness,5);
  assert.equal(FEMALE_V7_DEFAULTS.irisDiameter,1);
- assert.equal(FEMALE_V7_DEFAULTS.jawSharpness,2.5);
+ assert.equal(FEMALE_V7_DEFAULTS.jawSharpness,5);
  assert.equal(FEMALE_V7_DEFAULTS.noseTipLift,0);
  assert.equal(FEMALE_V7_DEFAULTS.noseBridgeSharpness,2.5);
 });
@@ -341,11 +342,11 @@ test('v10 orbital eyeliner follows eyes and blush stays on head geometry',()=>{
  assert.notEqual(eye.rotation.z,before);
  assert.equal(model.report.sourceUntouched,true);
 });
-test('v9 female jaw max increased without changing 2.5 default; male sliders and beard have independent geometry',()=>{
+test('library-saved default jaw=5 with independent male face and beard controls',()=>{
  const source=fixture().source;
  const original=makeIndependentFaceMaster(source,'female');
  const strong=makeIndependentFaceMaster(source,'female',{femaleControls:{jawSharpness:4.8}});
- assert.equal(original.report.femaleControls.jawSharpness,2.5);
+ assert.equal(original.report.femaleControls.jawSharpness,5);
  assert.equal(strong.report.femaleControls.jawSharpness,4.8);
  const a=original.face.geometry.getAttribute('position');
  const b=strong.face.geometry.getAttribute('position');
@@ -357,7 +358,7 @@ test('v9 female jaw max increased without changing 2.5 default; male sliders and
  const beardy=makeIndependentFaceMaster(source,'male',{maleControls:{
   jawSharpness:3.9,eyeSize:1.2,eyeAngle:15,beardDensity:.8,beardLength:2
  }});
- assert.equal(male.report.maleControls.jawSharpness,1.15);
+ assert.equal(male.report.maleControls.jawSharpness,5);
  assert.equal(beardy.report.maleControls.jawSharpness,3.9);
  assert.equal(beardy.report.detailedParts.beardMeshCount,5);
  const hair=name=>name+'_3D_HAIR';
@@ -420,4 +421,40 @@ test('v10 child eyeliner and crease pigment share the exact eye-local coordinate
   }
  }
  assert.equal(m.report.sourceUntouched,true);
+});
+
+test('user Library GLB face preset is canonical and male derives cosmetic-free',()=>{
+ const saved={
+  irisDiameter:1,jawSharpness:5,noseTipLift:0,nostrilCover:2,
+  noseBridgeSharpness:2.5,browAngle:6,lashAngle:7,eyeAngle:0,
+  eyeSize:1,lipstickX:0,lipstickY:0,lipstickWidth:1,lipstickHeight:1
+ };
+ assert.equal(LIBRARY_FACE_PRESET.sourceFile,'female-saved-preset-contact-makeup-v8.glb');
+ assert.equal(LIBRARY_FACE_PRESET.sha256,
+  'aecac5a923a1f56a6c53eeaebbe5c987cb5685144058054391a92d479dc21060');
+ assert.equal(LIBRARY_FACE_PRESET.contactColor,CONTACT_COLORS.brown);
+ assert.deepEqual(FEMALE_V7_DEFAULTS,saved);
+ for(const [key,value] of Object.entries(saved))
+  assert.equal(MALE_REFERENCE_DEFAULT[key],value,'male saved geometry '+key);
+ assert.equal(MALE_REFERENCE_DEFAULT.cosmetics,false);
+ const source=fixture().source;
+ const f=makeIndependentFaceMaster(source,'female');
+ const m=makeIndependentFaceMaster(source,'male');
+ assert.deepEqual(f.report.femaleControls,saved);
+ for(const [key,value] of Object.entries(saved))
+  assert.equal(m.report.maleControls[key],value,'male GLB-derived value '+key);
+ const pf=f.face.geometry.getAttribute('position');
+ const pm=m.face.geometry.getAttribute('position');
+ assert.equal(pf.count,pm.count);
+ for(let i=0;i<pf.count;i++){
+  assert.equal(pf.getX(i),pm.getX(i));
+  assert.equal(pf.getY(i),pm.getY(i));
+  assert.equal(pf.getZ(i),pm.getZ(i));
+ }
+ assert.notEqual(f.face.geometry,m.face.geometry);
+ assert.equal(m.face.material.vertexColors,false,'male face has no blush');
+ assert.equal(m.parts.getObjectByName('LEFT_UPPER_EYELINER'),undefined);
+ assert.equal(m.parts.getObjectByName('LOWER_LIPSTICK_MAKEUP'),undefined);
+ assert.equal(m.parts.getObjectByName('LEFT_UNDER_EYE_SHADOW'),undefined);
+ assert.ok(m.parts.getObjectByName('LEFT_NATURAL_MALE_BROW')?.isMesh);
 });

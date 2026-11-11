@@ -112,18 +112,18 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   return z;
  };
  const female=gender==='female';
- const eyeScale=female?settings.eyeSize:MALE_REFERENCE_DEFAULT.eyeSize;
- const originalIrisAngle=female?.585:.47;
- const originalPupilAngle=female?.236:.19;
+ const eyeScale=settings.eyeSize;
+ const originalIrisAngle=.585;
+ const originalPupilAngle=.236;
  // A doubled requested projected diameter must remain on a sphere:
  // physical iris diameter is limited to 95.5% of the eye's diameter.
  const irisAngle=Math.asin(Math.min(.955,
   Math.sin(originalIrisAngle)*settings.irisDiameter));
  const pupilAngle=Math.asin(Math.min(.75,
   Math.sin(originalPupilAngle)*settings.irisDiameter));
- const eyeRadius=d.x*(female?.052:.051)*eyeScale;
- const eyeHeight=box.min.y+d.y*(female?.684:.687);
- const eyeSpacing=d.x*(female?.112:.115);
+ const eyeRadius=d.x*.052*eyeScale;
+ const eyeHeight=box.min.y+d.y*.684;
+ const eyeSpacing=d.x*.112;
  // Sclera centre is recessed. Upper and lower eyelids cover the spherical
  // edge, rather than drawing detached floating white eye disks.
  for(const side of [-1,1]){
@@ -164,7 +164,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   const width=eyeRadius*1.12;
   for(const upper of [true,false]){
    const label=(side===-1?'LEFT':'RIGHT')+(upper?'_UPPER':'_LOWER');
-   const height=eyeRadius*(female?.33:.30);
+   const height=eyeRadius*.33;
    const mesh=buildGrid(label+'_ANATOMICAL_EYELID',28,4,(u,v)=>{
     const t=u*2-1,arch=Math.pow(Math.max(0,1-t*t),.73);
     const cornerTilt=(t+1)*eyeRadius*.045;
@@ -463,11 +463,11 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   lowerOrbitalVolumeMeshCount:female?2:0,
   irisPolarAngleRadians:Number(irisAngle.toFixed(4)),
   pupilPolarAngleRadians:Number(pupilAngle.toFixed(4)),
-  irisDiameterRequestFactor:gender==='female'?settings.irisDiameter:1,
+  irisDiameterRequestFactor:settings.irisDiameter,
   actualIrisDiameterFactor:Number((Math.sin(irisAngle)/Math.sin(originalIrisAngle)).toFixed(3)),
   mouthHalfWidthFraction:.044,
   eyeScale,contactColorDefault:safeContactColor(settings.contactColor),
-  eyeAngleDefault:gender==='female'?settings.eyeAngle:0,
+  eyeAngleDefault:settings.eyeAngle,
   maleCosmeticsDisabled:!female,
   noseSourceIntegrated:true,
   partTriangles,faceOnly:true,bodyIncluded:false,partGeometryReal:true,
@@ -502,9 +502,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
    mesh.geometry.computeBoundingSphere();
   });
  };
- updateFaceFeatureAngles(root,female?settings:{
-  eyeAngle:0,browAngle:0,lashAngle:0
- });
+ updateFaceFeatureAngles(root,settings);
  return {root,report};
 }
 

@@ -82,9 +82,11 @@ export function femaleCheekJawDelta({xn,yn,zn,offsetX,depth,height}){
 export const FACE_MASTER_SPEC=Object.freeze({
  male:Object.freeze({
   code:'male-shared-head-natural-eyes-v8',label:'男性・共通顔ベース／自然な目元・化粧なし',
-  jawNarrow:.037,cheekFill:.020,chinLift:.002,
-  noseBridge:.008,browRelief:.004,mouthRecess:.006,
-  eyeSocketSoftness:.002
+  // Match the exact saved female base geometry; only face parts and
+  // cosmetics differ for the clean-shaven male derivative.
+  jawNarrow:.055,cheekFill:.027,chinLift:.002,
+  noseBridge:0,browRelief:.001,mouthRecess:0,
+  eyeSocketSoftness:.004
  }),
  female:Object.freeze({
   code:'female-saved-preset-contact-makeup-v8',label:'女性・写真の標準値／カラコン・目元連動・口紅位置調整',
