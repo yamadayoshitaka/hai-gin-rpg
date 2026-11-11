@@ -206,7 +206,7 @@ export function applyHeroineMakeupToFace(faceMesh,neutralColors,{
   THREE.MathUtils.clamp(landmarks.reduce((n,a)=>n+Math.abs((a.x-cx)/(d.x*.5)),0)/2,.27,.70):.45;
  const landmarkY=landmarks?
   THREE.MathUtils.clamp(landmarks.reduce((n,a)=>n+(a.y-b.min.y)/d.y,0)/2,.65,.86):.747;
- let blushVertices=0,lipVertices=0,linerVertices=0,changedVertices=0,chinLipVertices=0;
+ let blushVertices=0,lipVertices=0,linerVertices=0,underEyeVertices=0,changedVertices=0,chinLipVertices=0;
  for(let i=0;i<p.count;i++){
   const x=(p.getX(i)-cx)/Math.max(.001,d.x*.5);
   const y=(p.getY(i)-b.min.y)/Math.max(.001,d.y);
@@ -256,6 +256,7 @@ export function applyHeroineMakeupToFace(faceMesh,neutralColors,{
   const blue=neutralColors[n+2]*(1-.20*cheek-.27*lips-.52*liner-.097*tear);
   attr.setXYZ(i,red,green,blue);
   if(cheek>.08)blushVertices++;
+  if(tear>.035)underEyeVertices++;
   if(lips>.08)lipVertices++;
   if((y<.448||y>.532||Math.abs(x)>.46)&&lips>.0000001)chinLipVertices++;
   if(liner>.08)linerVertices++;
@@ -264,7 +265,7 @@ export function applyHeroineMakeupToFace(faceMesh,neutralColors,{
  }
  attr.needsUpdate=true;
  const mats=Array.isArray(faceMesh.material)?faceMesh.material:[faceMesh.material];
- return {strength:intensity,blushVertices,lipVertices,linerVertices,
+ return {strength:intensity,blushVertices,lipVertices,linerVertices,underEyeVertices,
   chinLipVertices,chinLipMaskExcluded:chinLipVertices===0,
   mouthMaskYNormalized:[.448,.532],
   changedVertices,eyeAnchorNormalized:[Number(landmarkX.toFixed(3)),Number(landmarkY.toFixed(3))],
@@ -1211,6 +1212,7 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false,gen
    pupilPoseDigest:poseChecksum(eyeFixtures.map(x=>x.pupilLayer)),
    upperLidPoseDigest:poseChecksum(eyeFixtures.map(x=>x.upper)),
    lowerLidPoseDigest:poseChecksum(eyeFixtures.map(x=>x.lower)),
+   upperLidFoldPoseDigest:poseChecksum(eyeFixtures.map(x=>x.upperFold)),
    sourceBrowMeshes:eyeFixtures.length,
     heroineMakeup:heroineMakeupReport,
    realEyebrowVisibleCount:eyeFixtures.filter(e=>e.brow.visible&&
