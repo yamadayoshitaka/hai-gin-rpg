@@ -172,8 +172,11 @@ fs.mkdirSync(dir,{recursive:true});
    // A source-geometry assertion alone cannot find a wrong MOUTH location.
    // Compare real rendered lipstick pixels against the stable face portrait:
    // previous masks painted chin at y≈.48 H and philtrum at y≈.38 H.
-   if(y>height*.32&&y<height*.55&&Math.abs(x-width*.5)<width*.115&&
-      r-.5*g-.5*blue>22&&delta>25){
+   // Calibrated from actual full-WebGL ON/OFF PNGs: subtle rose lips
+   // yield red-vs-green/blue contrast about 8-22, not the former >22.
+   // Keep an anatomical mouth-centred ROI and position centroid guard.
+   if(y>height*.38&&y<height*.49&&Math.abs(x-width*.5)<width*.115&&
+      r-.5*g-.5*blue>8&&delta>14){
     lipTintPixels++;lipTintYSum+=y;
    }
   }
