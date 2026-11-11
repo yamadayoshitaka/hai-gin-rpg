@@ -478,7 +478,7 @@ export function buildHeroineFantasyLongHair(scalp,{lengthInHeads=3.25,bodyEnvelo
     const rearLockX=rearLockCenter+(rootX-rearLockCenter)*(1-.54*fall);
     let x=bang?rootX+sideDirection*d.x*(.17*t+.035*fall)+curl:
      side?rootX+(cx-rootX)*(.075*t+.10*fall)+curl+backWave:
-     rearLockX+(rootX-cx)*(.045*t+.055*fall)+
+     rearLockX+(rootX-cx)*(-.10*t-.23*fall)+
       (backLayer-1)*d.x*.020*fall+sway*.34*fall+curl*.55+
       backWave*.72;
     let y=rootY-strandLength*t;
