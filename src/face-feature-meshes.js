@@ -561,7 +561,10 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
 
 /** Change eyebrow and lash tilts without rebuilding or changing the face mesh. */
 export function updateFaceFeatureAngles(partsRoot,settings={}){
- const v=normalizeFemaleFaceControls(settings);
+ // Keep the male rig on its own normalization path: female cosmetic
+ // defaults must never leak into male eye-angle updates.
+ const male=partsRoot.userData.report?.gender==='male';
+ const v=male?normalizeMaleFaceControls(settings):normalizeFemaleFaceControls(settings);
  const values={};
  for(const side of [-1,1]){
   const lbl=side===-1?'LEFT':'RIGHT';
