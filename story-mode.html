@@ -415,7 +415,9 @@ function returnFromStoryBattle(){
   const newChapter=unlockedStoryChapters(state);
   save();sessionStorage.removeItem(STORY_BATTLE_RESULT_KEY);sessionStorage.removeItem(STORY_BATTLE_REQUEST_KEY);
   selected=req.territoryId;
-  return (summary.victory?'勝利！':'敗北…')+' '+req.territoryName+' / 出撃'+summary.participants+'人 / 戦死'+summary.losses+'人。'+(newChapter>previousChapter?' 📖 第'+newChapter+'章「'+STORY_CHAPTERS[newChapter-1].title+'」解放。':'');
+  const rewards=summary.rewards||{};
+  const earned=summary.victory?' / 戦利品：'+(rewards.gold||0)+'G・'+(rewards.xp||0)+'EXP / 宝：'+(rewards.loot?.map(item=>item.name+'×'+item.quantity).join('・')||'なし'):'';
+  return (summary.victory?'勝利！':'敗北…')+' '+req.territoryName+' / 出撃'+summary.participants+'人 / 戦死'+summary.losses+'人'+earned+'。'+(newChapter>previousChapter?' 📖 第'+newChapter+'章「'+STORY_CHAPTERS[newChapter-1].title+'」解放。':'');
  }catch(error){return '戦闘結果を反映できませんでした：'+error.message;}
 }
 function renderArmy(){
