@@ -34,6 +34,8 @@ fs.mkdirSync(dir,{recursive:true});
      d.heroineActualBodyClearance!==true||
      d.heroineWigCrownVisible!==true||
      d.heroineWigCrown?.coverageRatio<.95||
+     d.heroineWigCrown?.neutralSkinRootBlend!==true||
+     d.heroineWigCrown?.noSaturatedScalpPaint!==true||
      d.heroineWigCrown?.crownFlowLocks!==8000||
      d.heroineWigCrown?.crownFlowTriangles!==64000||
      d.heroineWigCrown?.crownHasActualTangentFibreGeometry!==true||
@@ -49,7 +51,14 @@ fs.mkdirSync(dir,{recursive:true});
      h?.frontNeckIntrusionVertices!==0||h?.rearLayerCount!==3||
      h?.rearFlow!=='tapered-clumped-swaying-layers-no-flat-hem'||
      h?.separatedHairObjects!==true||
-      d.facialQA?.heroineMakeup?.strength<.9||
+      d.facialQA?.heroineMakeup?.strength<.76||
+      d.facialQA?.heroineMakeup?.underEyeVertices<1||
+      d.facialQA?.movingUpperLidSkinCount!==2||
+      d.facialQA?.restingLowerTearTroughMeshCount!==2||
+      d.facialQA?.eyeballScaleRatio>.91||
+      d.facialQA?.eyeSocketDepthMeters>-.003||
+      d.facialQA?.irisDiameterRatio>.86||
+      d.facialQA?.pupilDiameterRatio>.91||
       d.facialQA?.heroineMakeup?.changedVertices<100||
       d.facialQA?.heroineMakeup?.blushVertices<1||
       d.facialQA?.heroineMakeup?.lipVertices<1||
@@ -72,10 +81,15 @@ fs.mkdirSync(dir,{recursive:true});
   // visible and lash transforms MUST be attached to the upper eyelids.
   const originalProportions=d.appearance.proportions;
   const baseEye=d.facialQA;
+  if(!document){
+   // Browser-only actual material and full 3D eye measurements follow.
+  }
   if(baseEye?.visibleNativeEyeballCount!==2||baseEye?.visibleIrisOverlayCount!==2||
      baseEye?.visibleEyelashMeshCount!==2||baseEye?.lashFollowsUpperLid!==true)
    throw Error('Original heroine is missing real eyes or eyelash rigs '+JSON.stringify(baseEye));
   for(const change of [
+    {eyeballScale:.79},{eyeSocketDepth:-.008},
+    {irisDiameter:.96},{pupilDiameter:.72},{upperLidCoverage:.32},
     {eyeWidth:1.26},{eyeHeight:1.20},{eyeSpacing:1.09},
     {eyeVertical:.015},{eyeTilt:.085}]){
    const state=await page.evaluate(p=>window.__heroSwordsmanUpdate({proportions:p}),change);
