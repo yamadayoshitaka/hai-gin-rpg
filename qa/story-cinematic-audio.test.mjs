@@ -46,14 +46,14 @@ for(const name of htmls){
 const title=file('game.html'),town=file('town-hub.html');
 const map=file('world-map.html'),battle=file('tactics-wireframe.html');
 assert.match(title,/id="introArt"/);
-assert.match(title,/cinematicScenesForChapter\(1\)/);
+assert.match(title,/mangaForStage\('c01-s01'\)/);
 assert.match(title,/pageAudio\.changeScene\('title'\)/);
 assert.match(title,/pageAudio\.effect\('select'\)/);
-assert.match(town,/cinematicScenesForChapter\(townChapter\)/);
+assert.match(town,/mangaForStage\(game\.townStage\)/);
 assert.match(town,/id="eventSceneImage"/);
 assert.match(town,/id="eventSpeaker"/);
 assert.match(town,/speakTownLine\(shot\.text,shot\.characterId\)/);
-assert.match(town,/townAudio\.setScene\('paper'\)/);
+assert.match(town,/townAudio\.setScene\('paper',cue\.url\)/);
 assert.match(map,/storyCastForChapter\(chapter\)/);
 assert.match(map,/id="worldBgm"/);
 assert.match(map,/mapAudio\.effect\('select'\)/);
