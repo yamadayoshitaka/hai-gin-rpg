@@ -74,15 +74,15 @@ export function prepareYouthfulFace(headRoot,{referenceFit=false,referenceGuide=
   const z=(base[i*3+2]-box.min.z)/Math.max(.001,size.z);
   const facing=smooth(.48,.75,z);
   const cheeks=bell(Math.abs(x),.49,.26)*bell(y,.49,.14)*facing;
-  const lips=bell(x,0,referenceGuide?.265:.32)*
-    bell(y,referenceGuide?.445:.37,referenceGuide?.026:.055)*facing;
+  const lips=bell(x,0,referenceGuide?.225:.32)*
+    bell(y,referenceGuide?.482:.37,referenceGuide?.026:.055)*facing;
   const brow=bell(Math.abs(x),.42,.23)*bell(y,.78,.085)*facing;
   // Subtle vertex-level lip and cheek albedo remains tied to the real
   // sculpt, with no fake face plane or overpainted mouth texture.
   const adultFace=referenceGuide?1:0;
-  skinTones[i*3]=1+.020*cheeks-.014*brow+.020*lips*adultFace+.012*lips*(1-adultFace);
-  skinTones[i*3+1]=1-.033*cheeks-.015*brow-.045*lips*adultFace-.010*lips*(1-adultFace);
-  skinTones[i*3+2]=1-.051*cheeks-.011*brow-.066*lips*adultFace-.020*lips*(1-adultFace);
+  skinTones[i*3]=1+.020*cheeks-.014*brow+.012*lips*adultFace+.012*lips*(1-adultFace);
+  skinTones[i*3+1]=1-.033*cheeks-.015*brow-.025*lips*adultFace-.010*lips*(1-adultFace);
+  skinTones[i*3+2]=1-.051*cheeks-.011*brow-.038*lips*adultFace-.020*lips*(1-adultFace);
  }
  preview.setAttribute('color',new THREE.Float32BufferAttribute(skinTones,3));
  let modified=0, last=0, lastProportions=FACE_PROPORTION_DEFAULTS, geometryDigest=0;
@@ -100,7 +100,8 @@ export function prepareYouthfulFace(headRoot,{referenceFit=false,referenceGuide=
    const chin=smooth(.33,.12,yn)*bell(xn,0,.68);
    const front=smooth(.49,.77,zn);
    const nose=bell(xn,0,.24)*bell(yn,.61,.13)*front;
-   const lips=bell(xn,0,.38)*bell(yn,.40,.07)*front;
+   const lips=bell(xn,0,referenceGuide?.34:.38)*
+      bell(yn,referenceGuide?.485:.40,.052)*front;
    // Youthful fantasy face: smaller jaw and nose, fuller upper cheeks,
    // and less protruding eyebrow ridge. Preserve the original facial
    // topology and let the socket-attachment regression follow this morph.
@@ -123,7 +124,8 @@ export function prepareYouthfulFace(headRoot,{referenceFit=false,referenceGuide=
    const juvenileZ=z0+size.z*
      (-.061*nose+.010*lips+(referenceGuide?.020:.052)*cheek+
        (referenceGuide?.006:.039)*lowerCheek-.029*browRidge)*amount;
-   const d=deformFacePoint(juvenileX,juvenileY,juvenileZ,box,control);
+   const d=deformFacePoint(juvenileX,juvenileY,juvenileZ,box,control,
+     {mouthCenter:referenceGuide?.51:.40});
    // Follow the independently measured FRONT silhouette of the approved
    // 2D girl image. Only lateral face vertices move; the existing CC0 head
    // still supplies real 3D depths for cheek/nose/side/back.

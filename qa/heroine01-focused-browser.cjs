@@ -38,7 +38,7 @@ fs.mkdirSync(dir,{recursive:true});
      d.heroineWigCrown?.crownFlowTriangles!==64000||
      d.heroineWigCrown?.crownHasActualTangentFibreGeometry!==true||
      d.facialQA?.heroineMakeup?.chinLipVertices!==0||
-     d.facialQA?.heroineMakeup?.mouthMaskYNormalized?.[0]!==.417||
+     d.facialQA?.heroineMakeup?.mouthMaskYNormalized?.[0]!==.448||
      p?.cheekRoundness>1.035||p?.preEarFullness>.70||
      d.heroineWigCrown?.fringeLockCount!==520||
      d.heroineWigCrown?.fringeTriangleCount!==6240||
@@ -47,6 +47,7 @@ fs.mkdirSync(dir,{recursive:true});
      h?.frontEyeZoneVertices>10||
      h?.neckRearClearanceCorrections<1||h?.beardFreeFrontNeck!==true||
      h?.frontNeckIntrusionVertices!==0||h?.rearLayerCount!==3||
+     h?.rearFlow!=='tapered-clumped-swaying-layers-no-flat-hem'||
      h?.separatedHairObjects!==true||
       d.facialQA?.heroineMakeup?.strength<.9||
       d.facialQA?.heroineMakeup?.changedVertices<100||
@@ -131,18 +132,30 @@ fs.mkdirSync(dir,{recursive:true});
   const makeupOff=PNG.sync.read(await page.screenshot({
    path:path.join(dir,'hero-girl-01-no-makeup.png'),
    clip:await canvas.boundingBox(),timeout:90000,animations:'disabled'}));
-  let cosmeticPixelChanges=0;
+  let cosmeticPixelChanges=0,lipTintPixels=0,lipTintYSum=0;
   const width=Math.min(makeupOn.width,makeupOff.width);
   const height=Math.min(makeupOn.height,makeupOff.height);
   for(let y=0;y<height;y+=2)for(let x=0;x<width;x+=2){
    const a=(y*makeupOn.width+x)*4,b=(y*makeupOff.width+x)*4;
-   const delta=Math.abs(makeupOn.data[a]-makeupOff.data[b])+
-    Math.abs(makeupOn.data[a+1]-makeupOff.data[b+1])+
-    Math.abs(makeupOn.data[a+2]-makeupOff.data[b+2]);
+   const r=makeupOn.data[a]-makeupOff.data[b];
+   const g=makeupOn.data[a+1]-makeupOff.data[b+1];
+   const blue=makeupOn.data[a+2]-makeupOff.data[b+2];
+   const delta=Math.abs(r)+Math.abs(g)+Math.abs(blue);
    if(delta>18)cosmeticPixelChanges++;
+   // A source-geometry assertion alone cannot find a wrong MOUTH location.
+   // Compare real rendered lipstick pixels against the stable face portrait:
+   // previous masks painted chin at y≈.48 H and philtrum at y≈.38 H.
+   if(y>height*.32&&y<height*.55&&Math.abs(x-width*.5)<width*.115&&
+      r-.5*g-.5*blue>22&&delta>25){
+    lipTintPixels++;lipTintYSum+=y;
+   }
   }
   if(cosmeticPixelChanges<65)
    throw Error('Makeup changes did not visibly affect WebGL pixels: '+cosmeticPixelChanges);
+  const lipTintCenterFraction=lipTintPixels?lipTintYSum/(lipTintPixels*height):0;
+  if(lipTintPixels<35||lipTintCenterFraction<.39||lipTintCenterFraction>.445)
+   throw Error('Lipstick appears on chin/nose instead of the real mouth: '+
+    JSON.stringify({lipTintPixels,lipTintCenterFraction}));
   await page.evaluate(()=>{
    const c=document.querySelector('#makeupOn');c.checked=true;
    c.dispatchEvent(new Event('change',{bubbles:true}));
@@ -172,6 +185,7 @@ fs.mkdirSync(dir,{recursive:true});
    cheek:p.cheekRoundness,preEar:p.preEarFullness,parotid:p.parotidWidth,
    sourceFaceTriangles:w.triangles,wigCollisionCorrections:h.bodyCollisionCorrections,
    oldScalpHidden:d.heroineOldScalpHidden,makeupVisiblePixels:cosmeticPixelChanges,
+   lipTintPixels,lipTintCenterFraction:Number(lipTintCenterFraction.toFixed(4)),
    wigCrownCoverage:wig.crownCoverage,eyelashCount:wig.eyelashCount,
    eyeMorphRestores:restoredEye.ocularGeometryDigest===baseEye.ocularGeometryDigest,
    images:['hero-girl-01-face-100k.png','hero-girl-01-eye-morph-lashes.png','hero-girl-01-wire-100k.png','hero-girl-01-back-shoulder-clearance.png']

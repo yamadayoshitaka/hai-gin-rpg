@@ -101,7 +101,7 @@ export function warpFaceThirds(y,p=FACE_PROPORTION_DEFAULTS){
  return mapped+(mapped-.52)*((p.faceHeight??1)-1)*fade;
 }
 /** Pure deformation used by runtime and geometry regression tests. */
-export function deformFacePoint(x,y,z,box,p=FACE_PROPORTION_DEFAULTS){
+export function deformFacePoint(x,y,z,box,p=FACE_PROPORTION_DEFAULTS,{mouthCenter=.40}={}){
  const width=Math.max(.001,box.max.x-box.min.x);
  const height=Math.max(.001,box.max.y-box.min.y);
  const depth=Math.max(.001,box.max.z-box.min.z);
@@ -111,7 +111,8 @@ export function deformFacePoint(x,y,z,box,p=FACE_PROPORTION_DEFAULTS){
  const zn=(z-box.min.z)/depth;
  const front=smooth(.42,.74,zn);
  const low=smooth(.60,.20,yn);
- const mouth=bell(xn,0,.43)*bell(yn,.40,.070)*front;
+ // Real heroine lips sit above the older neutral-male .40 mask.
+ const mouth=bell(xn,0,.38)*bell(yn,mouthCenter,.052)*front;
  const nose=bell(xn,0,.29)*bell(yn,.58,.14)*front;
  const noseTip=bell(xn,0,.24)*bell(yn,.52,.072)*front;
  const eye=bell(Math.abs(xn),.40,.30)*bell(yn,.745,.090)*front;
@@ -146,7 +147,7 @@ export function deformFacePoint(x,y,z,box,p=FACE_PROPORTION_DEFAULTS){
  xx+=eyeX*eye;
  let yy=box.min.y+warpFaceThirds(yn,p)*height;
  yy+=height*mouth*(p.mouthVertical??0);
- yy+=(y-(box.min.y+height*.40))*mouth*((p.mouthHeight??1)-1)*.72;
+ yy+=(y-(box.min.y+height*mouthCenter))*mouth*((p.mouthHeight??1)-1)*.72;
  yy+=(y-(box.min.y+height*.58))*nose*((p.noseOverall??1)-1)*.38;
  yy+=height*noseTip*(p.noseLength-1)*-.055;
  yy+=height*low*bell(xn,0,.5)*(p.chinLength-1)*-.037;

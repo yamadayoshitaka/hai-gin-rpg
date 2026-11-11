@@ -56,17 +56,17 @@ function buildPreset(row,i){
     // FF13 Lightning as a *visual direction*, not borrowed Square Enix mesh
     // or copyrighted texture: slender natural nose, calm almond eyes and
     // focused expression, softer rose-pink skin, fine jaw with full cheeks.
-    faceHeight:.982,upperThird:1.015,middleThird:.985,lowerThird:1.005,
-    jawTaper:.915,cheekRoundness:1.018,chinLength:.968,
+    faceHeight:.958,upperThird:1.025,middleThird:.930,lowerThird:.980,
+    jawTaper:.922,cheekRoundness:1.024,chinLength:.947,
     preEarFullness:.70,lowerCheekLateral:.75,parotidWidth:.68,
-    eyeWidth:1.107,eyeHeight:.985,eyeSpacing:1.012,
+    eyeWidth:1.112,eyeHeight:.968,eyeSpacing:1.008,
     eyeVertical:.002,eyeTilt:.051,
     browVertical:.004,browEyeGap:1.008,
     browWidth:1.065,browThickness:.745,browAngle:.025,
-    noseOverall:.84,noseLength:.975,noseWidth:.79,
-    noseBridge:1.072,noseTip:.79,
-    mouthWidth:.925,mouthHeight:1.027,mouthVertical:.004,
-    lipFullness:1.15,mouthCorner:.008
+    noseOverall:.815,noseLength:.907,noseWidth:.79,
+    noseBridge:1.028,noseTip:.755,
+    mouthWidth:.915,mouthHeight:.985,mouthVertical:.011,
+    lipFullness:1.075,mouthCorner:.009
    }):i===0?validateFaceProportions({
    faceHeight:.947,upperThird:1.07,middleThird:.86,lowerThird:.925,
    jawTaper:.85,chinLength:.87,eyeWidth:1.045,eyeHeight:1.045,

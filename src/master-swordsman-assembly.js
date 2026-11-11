@@ -203,10 +203,19 @@ export function applyHeroineMakeupToFace(faceMesh,neutralColors,{
   // vertices in the same broad normalized Y range as the mouth. Use the
   // centre-lip subregion only, with a conservative upper/lower band and
   // frontal relief gate; never tint a whole horizontal face strip.
-  const lipBand=smooth(.417,.438,y)*(1-smooth(.479,.498,y));
-  const lipRelief=smooth(.63,.87,z);
-  const lips=front*lipRelief*bell(x,0,.205)*lipBand*
-   (.88*bell(y,.463,.018)+.58*bell(y,.440,.016))*
+  // The head's sculpted mouth ridge is centred around y≈.40, whereas
+  // the old .44-.50 cosmetic strip also covered the PHILTRUM and CHIN
+  // in a deformed portrait. Confine both upper and lower vermilion to
+  // two narrow 3D elliptical masks over the protruding centre mouth.
+  // Calibrated against WebGL makeup ON/OFF: the old .37-.44 band tinted
+  // the chin ~25px below the actual lips. Shift to real vermilion.
+  const lipBand=smooth(.448,.461,y)*(1-smooth(.517,.532,y));
+  const lipRelief=smooth(.74,.92,z);
+  // A Gaussian alone has infinite tails: the pigment was technically
+  // reaching the cheeks even when the vertical lip band was correct.
+  const cornerFade=1-smooth(.33,.45,Math.abs(x));
+  const lips=front*lipRelief*bell(x,0,.19)*cornerFade*lipBand*
+   (.90*bell(y,.496,.014)+.72*bell(y,.469,.013))*
    intensity*THREE.MathUtils.clamp(lip,0,1);
   // Dark-brown upper lash line, located against the SOURCE sclera anchors,
   // not an unrelated eyebrow-height strip. Keeps the eyeballs exposed.
@@ -223,7 +232,7 @@ export function applyHeroineMakeupToFace(faceMesh,neutralColors,{
   attr.setXYZ(i,red,green,blue);
   if(cheek>.08)blushVertices++;
   if(lips>.08)lipVertices++;
-  if(y<.417&&lips>.0000001)chinLipVertices++;
+  if((y<.448||y>.532||Math.abs(x)>.46)&&lips>.0000001)chinLipVertices++;
   if(liner>.08)linerVertices++;
   if(Math.abs(red-neutralColors[n])+Math.abs(green-neutralColors[n+1])+
     Math.abs(blue-neutralColors[n+2])>.003)changedVertices++;
@@ -232,10 +241,10 @@ export function applyHeroineMakeupToFace(faceMesh,neutralColors,{
  const mats=Array.isArray(faceMesh.material)?faceMesh.material:[faceMesh.material];
  return {strength:intensity,blushVertices,lipVertices,linerVertices,
   chinLipVertices,chinLipMaskExcluded:chinLipVertices===0,
-  mouthMaskYNormalized:[.417,.498],
+  mouthMaskYNormalized:[.448,.532],
   changedVertices,eyeAnchorNormalized:[Number(landmarkX.toFixed(3)),Number(landmarkY.toFixed(3))],
   skinShaderUsesVertexColors:mats.some(mat=>mat?.vertexColors===true),
-  cosmeticsHue:'rose-cheek-defined-lip-upper-lash',
+  cosmeticsHue:'sculpt-vermilion-only-rose-upper-lower-lip',
   sourceVertexColorsUnchanged:true,faceMeshVertices:p.count};
 }
 

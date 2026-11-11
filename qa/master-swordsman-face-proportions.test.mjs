@@ -139,12 +139,12 @@ test('heroine 3D cheek sculpt gently narrows lower cheeks without tapering chin 
 test('heroine 3D nose and mouth use subtle separate anatomical surface changes',()=>{
  const box={min:{x:-.16,y:-.18,z:-.12},max:{x:.16,y:.20,z:.13}};
  const v=(x,y,z)=>polishHeroineFacePoint(x,y,z,box);
- const nose=v(.015,.033,.11),lip=v(.025,-.030,.11);
+ const nose=v(.015,.033,.11),lip=v(.025,.014,.11);
  assert.ok(nose.z>.1104,'Nose tip should be real 3D surface detail');
  assert.ok(lip.z>.1104,'Lips should be real 3D surface detail');
  assert.ok(nose.z<.12&&lip.z<.12,'No artificial protruding nose/lip plates');
- const noOp=polishHeroineFacePoint(.025,-.030,.11,box,{strength:0});
- assert.deepEqual(noOp,{x:.025,y:-.03,z:.11},
+ const noOp=polishHeroineFacePoint(.025,.014,.11,box,{strength:0});
+ assert.deepEqual(noOp,{x:.025,y:.014,z:.11},
   'Refinement must support exact restoration');
 });
 
@@ -157,8 +157,8 @@ test('heroine lower cheek is continuously round, while nostrils and mouth corner
  assert.ok(upper.x>.087&&lower.x>.085,'Narrow cheeks must retain a smooth natural contour');
  const noseWing=fit(.037,.016);
  assert.ok(noseWing.x<.037,'Nose wing must be slightly narrower, not widened by cheek shaping');
- const mouthCorner=fit(.062,-.030);
- assert.ok(mouthCorner.y>-.030,'Mouth corner is lifted on the true face mesh');
+ const mouthCorner=fit(.062,.013);
+ assert.ok(mouthCorner.y>.013,'Mouth corner is lifted on the actual lip region');
  const reverse=fit(-.104,-.055);
  assert.ok(Math.abs(reverse.x+lower.x)<1e-10,'Left and right cheeks mirror exactly');
  assert.deepEqual(fit(.104,-.055,-.12),{x:.104,y:-.055,z:-.12},

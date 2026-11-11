@@ -143,11 +143,13 @@ export function buildHeroineFrontFringe(scalp,{locks=520}={}){
   const x0=q[0],y0=q[1],z0=q[2],base=positions.length/3;
   // A layered sweep moves from the upper-left crown toward the right temple.
   // A minority of shorter inner locks cross over to hide a visible hairline.
-  const length=d.y*(.11+.14*hash(seed*2.71));
+  // Interleaved sweep lengths prevent a straight fringe edge.
+  const bank=i%3;
+  const length=d.y*([.13,.17,.205][bank]+.055*hash(seed*2.71));
   const wave=(hash(seed*5.53)-.5)*d.x*.040;
-  const drift=d.x*(.048+.135*hash(seed*3.43));
+  const drift=d.x*(.065+.120*hash(seed*3.43));
   // Small overlapping fillets: avoid a single opaque horizontal fringe slab.
-  const width=d.x*(.0027+.0026*hash(seed*1.69));
+  const width=d.x*(.00225+.00235*hash(seed*1.69));
   for(let j=0;j<=N;j++){
    const t=j/N,e=t*t*(3-2*t);
    const x=clamp(x0+drift*e+wave*Math.sin(Math.PI*t),
@@ -155,9 +157,9 @@ export function buildHeroineFrontFringe(scalp,{locks=520}={}){
    const y=Math.max(b.min.y+d.y*.705,y0-length*t);
    // Follow the forehead rather than stabbing outward from the hairline:
    // only a small surface stand-off above the actual source frontal Z.
-   const z=z0+d.z*(.008+.028*t+.012*Math.sin(Math.PI*t));
+   const z=z0+d.z*(.012+.034*t+.010*Math.sin(Math.PI*t));
    if(j===N){minTipY=Math.min(minTipY,y);maxTipY=Math.max(maxTipY,y);}
-   const taper=(.80-.74*e)*width;
+   const taper=(.78-.73*e)*width;
    for(const sign of [-1,1]){
     positions.push(x+sign*taper,y,z);
     const v=.88+.11*hash(seed*.75),shine=.94+.06*Math.sin(t*4+seed*.13);
@@ -223,14 +225,14 @@ export function buildHeroineCrownFlow(scalp,{locks=8000}={}){
   radial.set((root[0]-cx)/d.x,(root[1]-cy)/d.y,(root[2]-cz)/d.z).normalize();
   // Along the scalp, not straight out from the vertex (no upright spikes).
   const sweep=(root[0]-cx)/d.x;
-  tangent.set(.50+hash(seed*1.83)*.28,
-   -.32-.19*hash(seed*2.07),
-   -.22-.30*hash(seed*7.7)+sweep*.24);
+  tangent.set(.35+hash(seed*1.83)*.33,
+   -.22-.26*hash(seed*2.07),
+   -.35-.22*hash(seed*7.7)+sweep*.20);
   tangent.addScaledVector(radial,-tangent.dot(radial)).normalize();
   side.crossVectors(tangent,radial).normalize();
   // Longer scalp-tangent paths overlap the foundation instead of short
   // stubble stuck into a single-colour helmet surface.
-  const length=d.y*(.078+.097*hash(seed*1.31)),
+  const length=d.y*(.095+.110*hash(seed*1.31)),
    halfWidth=d.x*(.00105+.00072*hash(seed*4.91)),
    base=pts.length/3;
   for(let j=0;j<=sections;j++){
@@ -423,33 +425,46 @@ export function buildHeroineFantasyLongHair(scalp,{lengthInHeads=3.25,bodyEnvelo
    const seed=global+1,scatter=hash(seed*1.19);
    const rootX=q[0]+(hash(seed*4.1)-.5)*d.x*.003;
    const rootY=q[1],rootZ=q[2];
-   // Three distinct rear layers with overlapping ends, not two long sheets.
+   // Three independently overlapping rear lengths with a tapered hem.
    const backLayer=region==='rear'?Math.min(2,Math.floor(j*3/count)):0;
+   const lateral=clamp(Math.abs(rootX-cx)/(d.x*.5),0,1);
+   const edgeTaper=1-.27*lateral*lateral;
+   const lockLengthVariance=.12*(hash(seed*5.31)-.5);
    const strandLength=bang?
     Math.min(d.y*(.24+.10*scatter),Math.max(.001,rootY-(b.min.y+d.y*.68))):
-    side?d.y*(1.02+.54*scatter):
-    d.y*lengthInHeads*([.40,.54,.66][backLayer]+.06*scatter);
-   const sway=(hash(seed*11.3)-.5)*d.x*.055;
+    side?d.y*(.97+.55*scatter)*edgeTaper:
+    d.y*lengthInHeads*([.41,.55,.70][backLayer]+.13*scatter+
+     lockLengthVariance)*edgeTaper;
+   const sway=(hash(seed*11.3)-.5)*d.x*.095;
+   const clumpBand=Math.floor((rootX-cx)/d.x*23);
+   const clumpDepth=Math.floor((rootZ-cz)/d.z*8);
+   const clumpPhase=clumpBand*.47+clumpDepth*.89+backLayer*.61;
    const sideDirection=bang?1:(side||Math.sign(rootX-cx)||1);
    // Nearby follicles follow a shared wave phase, not unrelated spikes.
    const flowPhase=(rootX-cx)/d.x*6.1+(rootZ-cz)/d.z*2.8;
-   const light=.82+.17*hash(seed*7.83);
+   // Slight shared clump shading prevents 70k filaments forming a solid pink wall.
+   const light=.71+.25*hash(seed*7.83)+.035*Math.sin(clumpPhase);
    let previous=null,cut=false;
    for(let section=0;section<=SEGMENTS;section++){
     const t=section/SEGMENTS,fall=Math.pow(t,1.4);
     const curl=Math.sin(t*4.2+flowPhase)*Math.sin(Math.PI*t)*
-      d.x*(bang?.006:side?.012:.018);
+      d.x*(bang?.006:side?.016:.022);
+    const backWave=bang?0:
+      Math.sin(t*5.3+clumpPhase)*Math.sin(Math.PI*t*.87)*
+      d.x*(side?.032:.112);
     // Side locks fold behind the shoulders instead of pointing outwards.
     let x=bang?rootX+sideDirection*d.x*(.17*t+.035*fall)+curl:
-     side?rootX+(cx-rootX)*(.075*t+.10*fall)+curl:
-     rootX+sway*fall+curl;
+     side?rootX+(cx-rootX)*(.075*t+.10*fall)+curl+backWave:
+     rootX+(rootX-cx)*(.065*t+.105*fall)+
+      (backLayer-1)*d.x*.035*fall+sway*fall+curl+backWave;
     let y=rootY-strandLength*t;
     const ease=t*t*(3-2*t);
     const sweep=clamp(t*1.18,0,1),sideEase=sweep*sweep*(3-2*sweep);
     let z=bang?rootZ+d.z*(.085*t+.012*Math.sin(Math.PI*t)):
      side?lerp(rootZ,Math.min(rootZ,cz-d.z*.28),sideEase)-d.z*(.06*t+.06*fall):
      lerp(rootZ,Math.min(rootZ,cz-d.z*.18),ease)-
-      d.z*(.05*t+.08*fall+.035*backLayer*ease);
+      d.z*(.05*t+.08*fall+.035*backLayer*ease+
+       .015*Math.sin(t*5.5+clumpPhase)*Math.sin(Math.PI*t));
     if(side)maxSideOutwardDrift=Math.max(maxSideOutwardDrift,side*(x-rootX));
     // Behind-neck routing replaces the hard side split that created a V
     // shaped hole. Middle rear locks retain the centre-back silhouette.
@@ -543,7 +558,7 @@ export function buildHeroineFantasyLongHair(scalp,{lengthInHeads=3.25,bodyEnvelo
   allStrandsRendered:true,previewOnlyLinePrimitive:true,
   templeClearanceStrategy:'behind-real-shoulder-no-side-wings',
   rootDistribution:'full-crown-and-occiput-not-rear-strip',
-   rearFlow:'overlapping-layers-not-forced-neck-v',
+   rearFlow:'tapered-clumped-swaying-layers-no-flat-hem',
   sweptAsymmetricBangs:true,shorterSideLocks:true,
   rearClearanceStrategy:'actual-body-back-envelope',
   donorScalpOnlyForRoots:true,bodyClearanceMeasured:!!bodyEnvelope,
