@@ -1,0 +1,55 @@
+{
+  "version": 1,
+  "project": "灰銀戦記 ― 沈黙の星鐘 ―",
+  "stageId": "c01-s01",
+  "sceneCount": 7,
+  "characterMaster": {
+    "lucia": "assets/story/characters/lucia/master.webp"
+  },
+  "registered": [
+    {
+      "panelId": "c01-s01-m2",
+      "file": "assets/story/panels/c01-s01-m02.webp",
+      "source": "dedicated AI-painted source from Chapter 1 draft, cropped to focus on Lucia and Garan",
+      "status": "integrated-provisional",
+      "target": "リュシアの挨拶とガランの立ち会い",
+      "resolution": "960x540"
+    },
+    {
+      "panelId": "c01-s01-m6",
+      "file": "assets/story/panels/c01-s01-m06.webp",
+      "source": "dedicated AI-painted source from Chapter 1 draft",
+      "status": "integrated-provisional",
+      "target": "ガランが軍師に守るべき人々を教える",
+      "resolution": "960x540"
+    }
+  ],
+  "pending": [
+    {
+      "panelId": "c01-s01-m1",
+      "target": "レヴナの朝・新任軍師の背中と町"
+    },
+    {
+      "panelId": "c01-s01-m3",
+      "target": "ガランが市場の人々を示す"
+    },
+    {
+      "panelId": "c01-s01-m4",
+      "target": "イリスが礼拝堂の消えた名前を示す"
+    },
+    {
+      "panelId": "c01-s01-m5",
+      "target": "リュシアが偽造王印を見つめる"
+    },
+    {
+      "panelId": "c01-s01-m7",
+      "target": "三人が町へ送り出す"
+    }
+  ],
+  "notes": [
+    "本登録の2枚は各コマ専用ファイルとしてゲームで表示するが、最終完成画ではない。",
+    "未登録5枚には元画像・章背景と人物合成、SVGによるフォールバックを使う。",
+    "別工程の3Dキャラクターモデルを固定しない。主人公の顔は未確定。",
+    "今後の作画による置換はパネル単位の正確な構図と人物マスター照合を条件とする。"
+  ]
+}
