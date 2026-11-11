@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {normalizeFemaleFaceControls,FACE_V7_PALETTE} from './face-v7-controls.js';
 
 /**
  * Actual face-only polygon meshes. No 2D decals, portrait planes or hair.
@@ -33,9 +34,10 @@ function buildGrid(name,columns,rows,point,material){
  mesh.name=name;mesh.renderOrder=2;
  return mesh;
 }
-export function createAnatomicalFaceParts(face,{gender='female'}={}){
+export function createAnatomicalFaceParts(face,{gender='female',controls={}}={}){
  if(!face?.isMesh||!['male','female'].includes(gender))
   throw Error('Sculpted face mesh and gender required for 3D facial parts');
+ const settings=normalizeFemaleFaceControls(controls);
  const geometry=face.geometry;
  geometry.computeBoundingBox();
  const box=geometry.boundingBox.clone(),d=box.getSize(new THREE.Vector3());
@@ -81,6 +83,14 @@ export function createAnatomicalFaceParts(face,{gender='female'}={}){
   return z;
  };
  const female=gender==='female';
+ const originalIrisAngle=female?.585:.47;
+ const originalPupilAngle=female?.236:.19;
+ // A doubled requested projected diameter must remain on a sphere:
+ // physical iris diameter is limited to 95.5% of the eye's diameter.
+ const irisAngle=female?Math.asin(Math.min(.955,
+  Math.sin(originalIrisAngle)*settings.irisDiameter)):originalIrisAngle;
+ const pupilAngle=female?Math.asin(Math.min(.75,
+  Math.sin(originalPupilAngle)*settings.irisDiameter)):originalPupilAngle;
  const eyeRadius=d.x*(female?.052:.051);
  const eyeHeight=box.min.y+d.y*(female?.684:.687);
  const eyeSpacing=d.x*(female?.112:.115);
@@ -95,20 +105,23 @@ export function createAnatomicalFaceParts(face,{gender='female'}={}){
   globe.scale.set(1.18,.77,.89);
   globe.position.set(x,y,z);
   globe.userData.sourceProjected=true;
+  globe.userData.colorRole='sclera';
   root.add(globe);
   // Real spherical caps on the globe, not flat disks that disappear
   // at 45° angles. Default SphereGeometry points +Y; rotate to +Z.
   const iris=new THREE.Mesh(
-   new THREE.SphereGeometry(eyeRadius*.901,32,16,0,Math.PI*2,0,female?.585:.47),
+   new THREE.SphereGeometry(eyeRadius*.901,48,20,0,Math.PI*2,0,irisAngle),
    irisMat);
   iris.name=(side===-1?'LEFT':'RIGHT')+'_CURVED_IRIS';
+  iris.userData.colorRole='iris';
   iris.rotation.x=Math.PI/2;
   iris.position.set(x,y,z);
   root.add(iris);
   const pupil=new THREE.Mesh(
-   new THREE.SphereGeometry(eyeRadius*.908,24,12,0,Math.PI*2,0,female?.236:.19),
+   new THREE.SphereGeometry(eyeRadius*.908,32,16,0,Math.PI*2,0,pupilAngle),
    pupilMat);
   pupil.name=(side===-1?'LEFT':'RIGHT')+'_CURVED_PUPIL';
+  pupil.userData.colorRole='pupil';
   pupil.rotation.x=Math.PI/2;
   pupil.position.set(x,y,z);
   root.add(pupil);
@@ -127,6 +140,7 @@ export function createAnatomicalFaceParts(face,{gender='female'}={}){
     return new THREE.Vector3(x+t*width,farY,zz);
    },lidMat);
    mesh.userData.attachedToFace=true;
+   mesh.userData.colorRole='eyelid';
    root.add(mesh);
   }
   if(female){
@@ -143,6 +157,7 @@ export function createAnatomicalFaceParts(face,{gender='female'}={}){
      return new THREE.Vector3(xx,yy,z);
     },lidMat);
    upperFold.userData.anatomical='upper-lid-crease';
+   upperFold.userData.colorRole='eyelid';
    root.add(upperFold);
    const lowerVolume=buildGrid(
     (side===-1?'LEFT':'RIGHT')+'_LOWER_LID_VOLUME',28,5,(u,v)=>{
@@ -154,7 +169,48 @@ export function createAnatomicalFaceParts(face,{gender='female'}={}){
      return new THREE.Vector3(xx,yy,z);
     },lidMat);
    lowerVolume.userData.anatomical='lower-lid-fullness';
+   lowerVolume.userData.colorRole='eyelid';
    root.add(lowerVolume);
+  }
+  if(female){
+   const eyeLabel=side===-1?'LEFT':'RIGHT';
+   const pivot=new THREE.Group();
+   pivot.name=eyeLabel+'_BROW_ANGLE_CONTROL';
+   const browY=y+eyeRadius*1.47;
+   pivot.position.set(x,browY,surfaceAt(x,browY));
+   pivot.userData.control='brow';
+   pivot.userData.side=side;
+   const eyebrow=buildGrid(eyeLabel+'_SCULPTED_EYEBROW',34,4,(u,v)=>{
+    const t=2*u-1,arch=Math.pow(Math.max(0,1-t*t),.65);
+    const xx=x+t*eyeRadius*1.64;
+    const yy=browY+eyeRadius*.10*arch+(v-.5)*eyeRadius*.17*arch;
+    const zz=surfaceAt(xx,yy)+d.z*(.011+.002*arch);
+    return new THREE.Vector3(xx-pivot.position.x,yy-pivot.position.y,
+     zz-pivot.position.z);
+   },mat(0xa2a6ac));
+   eyebrow.userData.colorRole='brow';
+   pivot.add(eyebrow);root.add(pivot);
+
+   const lashPivot=new THREE.Group();
+   lashPivot.name=eyeLabel+'_LASH_ANGLE_CONTROL';
+   lashPivot.position.set(x,y,z);
+   lashPivot.userData.control='lashes';
+   lashPivot.userData.side=side;
+   for(const upper of [true,false]){
+    const lash=buildGrid(eyeLabel+(upper?'_UPPER':'_LOWER')+'_LASH_MESH',
+     34,3,(u,v)=>{
+      const t=2*u-1,arch=Math.pow(Math.max(0,1-t*t),.76);
+      const xx=x+t*width;
+      const lidY=y+(upper?1:-1)*eyeRadius*(upper?.33:.29)*arch;
+      const yy=lidY+(upper?1:-1)*v*eyeRadius*(upper?.20:.085)*arch;
+      const zz=surfaceAt(xx,lidY)+d.z*(.010+.010*v*arch);
+      return new THREE.Vector3(xx-lashPivot.position.x,
+       yy-lashPivot.position.y,zz-lashPivot.position.z);
+     },mat(0x8c929a));
+    lash.userData.colorRole='lashes';
+    lashPivot.add(lash);
+   }
+   root.add(lashPivot);
   }
  }
  // Original face remains the structural muzzle/philtrum/chin. Two shallow
@@ -178,6 +234,7 @@ export function createAnatomicalFaceParts(face,{gender='female'}={}){
     return new THREE.Vector3(x,y,z);
    },material);
   mesh.userData.faceSurfaceConforming=true;
+  mesh.userData.colorRole='lips';
   root.add(mesh);
  }
  // The face mesh itself carries the integrated nose, so DO NOT glue a
@@ -192,15 +249,55 @@ export function createAnatomicalFaceParts(face,{gender='female'}={}){
   gender,partMeshCount:meshList.length,realSurfaceProjectionCount:projected,
   projectionFallbacks,eyeMeshCount:2,irisMeshCount:2,pupilMeshCount:2,
   eyelidMeshCount:4,lipMeshCount:2,
+  eyebrowMeshCount:female?2:0,eyelashMeshCount:female?4:0,
   doubleLidCreaseMeshCount:female?2:0,
   lowerOrbitalVolumeMeshCount:female?2:0,
-  irisPolarAngleRadians:female?.585:.47,
-  pupilPolarAngleRadians:female?.236:.19,
+  irisPolarAngleRadians:Number(irisAngle.toFixed(4)),
+  pupilPolarAngleRadians:Number(pupilAngle.toFixed(4)),
+  irisDiameterRequestFactor:gender==='female'?settings.irisDiameter:1,
+  actualIrisDiameterFactor:Number((Math.sin(irisAngle)/Math.sin(originalIrisAngle)).toFixed(3)),
   mouthHalfWidthFraction:female?.044:.119,
   noseSourceIntegrated:true,
   partTriangles,faceOnly:true,bodyIncluded:false,partGeometryReal:true,
   reference:'soft-cheek-small-nose-relaxed-almond-eyes-gentle-lips'
  });
  root.userData.report=report;
+ if(female)updateFaceFeatureAngles(root,settings);
  return {root,report};
+}
+
+/** Change eyebrow and lash tilts without rebuilding or changing the face mesh. */
+export function updateFaceFeatureAngles(partsRoot,settings={}){
+ const v=normalizeFemaleFaceControls(settings);
+ const values={};
+ for(const side of [-1,1]){
+  const lbl=side===-1?'LEFT':'RIGHT';
+  const brow=partsRoot.getObjectByName(lbl+'_BROW_ANGLE_CONTROL');
+  const lashes=partsRoot.getObjectByName(lbl+'_LASH_ANGLE_CONTROL');
+  if(brow)brow.rotation.z=side*THREE.MathUtils.degToRad(v.browAngle);
+  if(lashes)lashes.rotation.z=side*THREE.MathUtils.degToRad(v.lashAngle);
+ }
+ values.browAngle=v.browAngle;values.lashAngle=v.lashAngle;
+ partsRoot.userData.featureAngles=values;
+ return values;
+}
+
+/** Clay and color mode both keep the exact same geometry. */
+export function applyFaceColorMode(face,mode='clay'){
+ const colored=mode==='color';
+ const clay={
+  skin:0xbfc3cb,eyelid:0xbcbfc5,lips:0xbfc3cb,
+  sclera:0xd5d8dd,iris:0x747a83,pupil:0x30353b,
+  brow:0xa2a6ac,lashes:0x8c929a
+ };
+ face.traverse(o=>{
+  if(!o.isMesh||!o.material)return;
+  const role=o.userData?.colorRole;
+  if(role&&o.material.color){
+   o.material.color.setHex((colored?FACE_V7_PALETTE:clay)[role]);
+   o.material.needsUpdate=true;
+  }
+ });
+ face.userData.faceColorMode=colored?'color':'clay';
+ return face.userData.faceColorMode;
 }
