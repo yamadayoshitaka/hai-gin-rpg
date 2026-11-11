@@ -189,6 +189,9 @@ $('parts').addEventListener('click',()=>{
  $('metrics').textContent=JSON.stringify(metrics(),null,2);
 });
 function repaint(){
+ // The clay look is intentionally bright to show topology; color mode uses
+ // softer exposure so the natural skin tone is not washed out to white.
+ renderer.toneMappingExposure=faceMode==='color'?.95:1.25;
  for(const m of models.values())applyFaceColorMode(m.face,faceMode);
  setActive(['clay','color'],faceMode);
  $('metrics').textContent=JSON.stringify(metrics(),null,2);
