@@ -84,7 +84,7 @@ assert.match(html,/massSim\.setSquadMission\(task\.id,target\.type,target\)/);
 assert.match(html,/massWorker\?\.setSquadMission\(task\.id,target\.type,target\)/);
 assert.match(html,/updateBattleTacticRotation\(\)/);
 assert.match(html,/orderSelect\.dataset\.manuallyChanged='true'/);
-assert.match(html,/lastSquadOrderAt\.has\(row\.id\)/);
+assert.match(html,/manuallyOrderedSquads\.has\(row\.id\)/);
 const script=html.match(/<script type="module">([\s\S]*?)<\/script>/)?.[1];
 assert.ok(script);
 const syntax=spawnSync(process.execPath,['--check','--input-type=module'],{input:script,encoding:'utf8',timeout:20000});
