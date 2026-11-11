@@ -52,14 +52,16 @@ export function femaleCheekJawDelta({xn,yn,zn,offsetX,depth,height}){
  // Cheek correction occupies the anterior middle/lower cheek surface.
  // Zero at centre mouth, temples, ears and on the rear skull.
  const cheekSupport=smooth(.16,.25,ax)*(1-smooth(.65,.79,ax))
-  *bell(ax,.355,.19)*bell(yn,.465,.106)*front;
+  *bell(ax,.39,.19)*bell(yn,.465,.106)
+  *(1-smooth(.56,.625,yn))*front;
  const mouthCornerSupport=smooth(.16,.24,ax)
   *(1-smooth(.60,.77,ax))*bell(ax,.275,.17)
-  *bell(yn,.427,.075)*front;
- const dz=depth*(.13*cheekSupport+.055*mouthCornerSupport);
+  *bell(yn,.427,.075)
+  *(1-smooth(.56,.625,yn))*front;
+ const dz=depth*(.085*cheekSupport+.021*mouthCornerSupport);
  // Full support on the actual chin outline, not only at the centreline.
  // Taper smoothly to zero before reaching the cheeks (yn >= .485).
- const jawBand=bell(yn,.30,.105)*(1-smooth(.400,.485,yn))*front;
+ const jawBand=bell(yn,.30,.105)*(1-smooth(.39,.45,yn))*front;
  const jawEdge=smooth(.10,.23,ax)*(1-smooth(.68,.82,ax));
  const dx=-offsetX*.285*jawBand*jawEdge;
  const apex=bell(ax,0,.20)*bell(yn,.255,.068)*front;
