@@ -55,7 +55,7 @@ const shotlist=[];
 for(const stage of CAMPAIGN_STAGES){
  const chapter=STORY_CHAPTERS[stage.chapter-1];
  const shots=mangaForStage(stage.id,{protagonistGender:'unspecified'}).panels;
- if(shots.length!==7)throw Error('Wrong panel count: '+stage.id);
+ if(shots.length!==10)throw Error('Wrong panel count: '+stage.id);
  for(const p of shots){
   const male=await realWebp(individualStoryPanelAsset({...p,protagonistGender:'male'}));
   const female=await realWebp(individualStoryPanelAsset({...p,protagonistGender:'female'}));
