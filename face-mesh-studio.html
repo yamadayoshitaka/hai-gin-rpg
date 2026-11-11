@@ -2,7 +2,7 @@
 <html lang="ja"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#14263a">
-<title>灰銀のレゾナンス | 男女・顔と立体パーツ v7</title>
+<title>灰銀のレゾナンス | 男女・顔と立体パーツ v8</title>
 <style>
 :root{font:15px/1.55 system-ui,-apple-system,"Noto Sans JP",sans-serif;color-scheme:dark}
 *{box-sizing:border-box}
@@ -38,8 +38,8 @@ button{padding:9px 11px}
 </style></head>
 <body>
 <header>
-<h1>男女・顔と立体パーツ v7</h1>
-<p>女性顔v7：黒目・顎先・鼻頭・鼻孔・鼻筋の立体調整、眉とまつ毛の角度、自然な簡易カラー。顔メッシュを直接再生成します。男性・胴体・戦闘モデルは維持します。</p>
+<h1>男女・顔と立体パーツ v8</h1>
+<p>女性顔v8：写真で指定された値を標準に。カラコン・目のサイズ・目元連動・口紅の位置を調整できます。男性は同じ滑らかな顔ベースから小さめの目・化粧なしで生成。胴体・戦闘モデルは変更しません。</p>
 </header>
 <main><section class="panel">
 <div id="status" role="status">男女のCC0頭部メッシュを読み込み中…</div>
@@ -55,32 +55,47 @@ button{padding:9px 11px}
 <button id="back" aria-pressed="false" disabled>後頭部</button>
 <button id="wire" aria-pressed="false" disabled>ワイヤー表示</button>
 <button id="parts" aria-pressed="true" disabled>目・眉・まつ毛・唇を表示</button>
-<button id="clay" aria-pressed="true" disabled>灰色メッシュ</button>
-<button id="color" aria-pressed="false" disabled>カラー表示</button>
+<button id="clay" aria-pressed="false" disabled>灰色メッシュ</button>
+<button id="color" aria-pressed="true" disabled>カラー表示</button>
 </div>
 <details id="faceAdjustments" open>
 <summary>女性顔の3Dパーツ調整</summary>
 <div class="adjustGrid">
-<label for="irisDiameter">黒目の拡大倍率 <output id="irisDiameterValue">2.0×</output>
-<input type="range" id="irisDiameter" min="1" max="2" step="0.1" value="2"></label>
-<label for="jawSharpness">顎先のシャープさ <output id="jawSharpnessValue">2.0×</output>
-<input type="range" id="jawSharpness" min="0.7" max="2.5" step="0.1" value="2"></label>
-<label for="noseTipLift">鼻頭の持ち上げ <output id="noseTipLiftValue">1.0</output>
-<input type="range" id="noseTipLift" min="0" max="2" step="0.1" value="1"></label>
-<label for="nostrilCover">鼻の穴を隠す量 <output id="nostrilCoverValue">1.0</output>
+<label for="irisDiameter">黒目の拡大倍率 <output id="irisDiameterValue">1×</output>
+<input type="range" id="irisDiameter" min="1" max="2" step="0.1" value="1"></label>
+<label for="eyeSize">目全体の大きさ <output id="eyeSizeValue">1×</output>
+<input type="range" id="eyeSize" min="0.75" max="1.4" step="0.05" value="1"></label>
+<label for="jawSharpness">顎先のシャープさ <output id="jawSharpnessValue">2.5×</output>
+<input type="range" id="jawSharpness" min="0.7" max="2.5" step="0.1" value="2.5"></label>
+<label for="noseTipLift">鼻頭の持ち上げ <output id="noseTipLiftValue">0</output>
+<input type="range" id="noseTipLift" min="0" max="2" step="0.1" value="0"></label>
+<label for="nostrilCover">鼻の穴を隠す量 <output id="nostrilCoverValue">1</output>
 <input type="range" id="nostrilCover" min="0" max="2" step="0.1" value="1"></label>
-<label for="noseBridgeSharpness">鼻筋の鋭さ <output id="noseBridgeSharpnessValue">1.4</output>
-<input type="range" id="noseBridgeSharpness" min="0" max="2.5" step="0.1" value="1.4"></label>
-<label for="browAngle">眉毛の角度 <output id="browAngleValue">6°</output>
-<input type="range" id="browAngle" min="-25" max="25" step="1" value="6"></label>
-<label for="lashAngle">まつ毛の角度 <output id="lashAngleValue">7°</output>
-<input type="range" id="lashAngle" min="-25" max="25" step="1" value="7"></label>
-</div></details>
+<label for="noseBridgeSharpness">鼻筋の鋭さ <output id="noseBridgeSharpnessValue">2.5</output>
+<input type="range" id="noseBridgeSharpness" min="0" max="2.5" step="0.1" value="2.5"></label>
+<label for="eyeAngle">目元の角度（眉・まつ毛・クマも連動） <output id="eyeAngleValue">0°</output>
+<input type="range" id="eyeAngle" min="-20" max="20" step="1" value="0"></label>
+<label for="lipstickX">口紅の横位置 <output id="lipstickXValue">0</output>
+<input type="range" id="lipstickX" min="-0.12" max="0.12" step="0.005" value="0"></label>
+<label for="lipstickY">口紅の縦位置 <output id="lipstickYValue">0</output>
+<input type="range" id="lipstickY" min="-0.12" max="0.12" step="0.005" value="0"></label>
+<label for="lipstickWidth">口紅の横幅 <output id="lipstickWidthValue">1×</output>
+<input type="range" id="lipstickWidth" min="0.5" max="1.8" step="0.05" value="1"></label>
+<label for="lipstickHeight">口紅の縦幅 <output id="lipstickHeightValue">1×</output>
+<input type="range" id="lipstickHeight" min="0.5" max="1.8" step="0.05" value="1"></label>
+<label for="contactPreset">カラコンの色<select id="contactPreset">
+<option value="brown" selected>ダークブラウン（標準）</option>
+<option value="blue">ブルー</option><option value="green">グリーン</option>
+<option value="hazel">ヘーゼル</option><option value="gray">グレー</option>
+<option value="violet">バイオレット</option><option value="custom">自由色</option>
+</select></label>
+<label for="contactColor">カラコンの自由な色<input type="color" id="contactColor" value="#514139"></label>
+</div><div class="controls"><button id="resetPreset" disabled>画像の標準値に戻す</button></div></details>
 <div class="controls">
 <button id="export" disabled>表示中の顔メッシュをGLB保存</button>
 <a href="./master-swordsman-prototype.html">全身モデル確認画面</a>
 </div>
-<p>指で360°回転・ピンチで拡大。カラー／灰色とワイヤー表示を切り替えられます。鼻・顎・黒目のスライダーを放すと3Dメッシュを再生成し、眉毛・まつ毛の角度はその場で更新します。表示中の色とパーツをGLBへ保存できます。</p>
+<p>指で360°回転・ピンチで拡大。カラコンの色は即時反映。目元角度は眼球・まぶた・眉・まつ毛・目の下の影も連動。口紅は上下の唇の曲面に沿わせ、横位置・縦位置・横幅・縦幅を調整できます。</p>
 <p>これは美形を目標にした<b>初回の造形試作</b>です。実写品質・原画一致・美術承認・ゲーム実装は未達です。顔の凹凸や横顔が自然かを先に評価してください。</p>
 <details><summary>実メッシュ数値と原本保護の確認</summary><div id="metrics"></div></details>
 </section></main>
