@@ -60,5 +60,5 @@ assert.match(map,/mapAudio\.effect\('select'\)/);
 assert.match(battle,/frontierLine\.visible=false;scene\.add\(frontierLine\)/,
  'unwanted overhead guide line is removed, without hiding squad command callouts');
 assert.match(battle,/effectsOnly:true/,'battle selects use chime without duplicate page BGM');
-assert.match(file('src/town-audio-director.js'),/paper:'\.\/assets\/audio\/battle\/ruins\.ogg'/);
+assert.match(file('src/town-audio-director.js'),/paper:fantasyTrackUrl\('paper'\)/);
 console.log('PASS 20 key characters, 160 illustrated chapter scenes, music and selection FX');
