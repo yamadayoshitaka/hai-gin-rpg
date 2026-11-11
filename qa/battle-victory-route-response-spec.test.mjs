@@ -8,7 +8,7 @@ import {waitAfterManualOrder} from '../src/battle-reactive-command-policy.js';
 import {
  VICTORY_ROUTE_SPEC_VERSION,VICTORY_ROUTE_LAYERS,VICTORY_ROUTE_RULES,JOB_DISPLAY_NAMES,
  COUNTER_JOBS,ROUTE_BLUEPRINTS,VICTORY_ROUTE_GOALS,VICTORY_ROUTE_RESPONSE_TREE,
- JOB_COUNT,ROUTE_COUNT,COVERAGE,findVictoryRouteResponsePath,lookupUnexpectedVictoryRouteEvent
+ JOB_COUNT,ROUTE_COUNT,COVERAGE,findVictoryRouteResponsePath,lookupUnexpectedVictoryRouteEvent,resolveEligibleJobSquads
 } from '../src/battle-victory-route-response-spec.js';
 
 assert.equal(VICTORY_ROUTE_SPEC_VERSION,'2.0.0');
@@ -155,6 +155,40 @@ for(const obj of ['eliminate','defend','capture','siege']){
  assert.equal(evaluateBattleObjective(spec,{allyAlive:12,enemyAlive:0,elapsedSeconds:10}).winnerTeam,0);
  assert.equal(evaluateBattleObjective(spec,{allyAlive:0,enemyAlive:12,elapsedSeconds:10}).winnerTeam,1);
 }
+const concrete=[
+ {id:11,team:0,jobId:'mage',squadId:'3',isStrategist:false,alive:true,hp:55},
+ {id:12,team:0,jobId:'mage',squadId:'3',isStrategist:false,alive:true,hp:55},
+ {id:13,team:0,jobId:'thief',squadId:'4',isStrategist:false,alive:true,hp:55},
+ {id:20,team:0,jobId:'summoner',squadId:'5',isStrategist:false,alive:true,hp:75},
+ {id:91,team:0,squadId:'3',isStrategist:true,alive:true,hp:100},
+ {id:92,team:0,squadId:'4',isStrategist:true,alive:false,hp:0},
+ {id:93,team:0,squadId:'5',isStrategist:true,alive:true,hp:100},
+ {id:14,team:1,jobId:'mage',squadId:'2',isStrategist:false,alive:true,hp:70},
+ {id:94,team:1,squadId:'2',isStrategist:true,alive:true,hp:90}
+];
+const mages=resolveEligibleJobSquads({actionId:'burn_building',team:0,units:concrete});
+assert.equal(mages.length,1);
+assert.equal(mages[0].display,'第3隊（魔法使い）');
+assert.equal(mages[0].soldierCount,2);
+assert.equal(mages[0].commandableByPolicy,true);
+assert.equal(mages[0].requiresRuntimeTargetMpAndRouteCheck,true);
+assert.equal(resolveEligibleJobSquads({actionId:'burn_building',team:1,units:concrete})[0].display,
+ '第2隊（魔法使い）');
+assert.equal(resolveEligibleJobSquads({actionId:'unlock_door',team:0,units:concrete})[0].commandableByPolicy,false,
+ 'A squad whose strategist died cannot issue a manual response');
+const plannedSummoner=resolveEligibleJobSquads({actionId:'summon_rescue',team:0,units:concrete})[0];
+assert.equal(plannedSummoner.display,'第5隊（召喚士）');
+assert.equal(plannedSummoner.abilityImplemented,false);
+assert.equal(plannedSummoner.commandableByPolicy,false);
+assert.equal(resolveEligibleJobSquads({actionId:'heal',team:0,units:concrete}).length,0);
+assert.equal(resolveEligibleJobSquads({actionId:'missing',team:0,units:concrete}).length,0);
+assert.ok(VICTORY_ROUTE_RESPONSE_TREE.find(g=>g.id==='defend_enemy_attack')
+ .routes.find(r=>r.id==='zone_dash').expectedSituations.some(x=>x.id==='defense_breach'),
+ 'The same route adapts expected situation triggers to the win objective');
+assert.ok(!VICTORY_ROUTE_RESPONSE_TREE.find(g=>g.id==='defend_enemy_attack')
+ .routes.find(r=>r.id==='zone_dash').expectedSituations.some(x=>x.id==='capture_clock'),
+ 'A timed-defense attack is not incorrectly given capture-mode clock events');
+
 assert.deepEqual(COUNTER_JOBS.summon_rescue,['summoner']);
 assert.deepEqual(COUNTER_JOBS.burn_building,['mage']);
 assert.deepEqual(COUNTER_JOBS.unlock_door,['thief']);
