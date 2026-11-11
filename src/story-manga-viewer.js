@@ -37,7 +37,7 @@ export function createMangaViewer({container=document.body,storage=globalThis.lo
    padding:max(12px,env(safe-area-inset-top)) 12px max(12px,env(safe-area-inset-bottom))}
  #stageMangaViewer[hidden]{display:none!important}
  #stageMangaViewer .manga-board{margin:0 auto;width:min(840px,100%);min-height:100%;display:flex;flex-direction:column;
-   gap:10px;background:#172536;border:1px solid #9b815c;box-shadow:0 15px 40px #000c;padding:12px}
+   gap:10px;background:linear-gradient(160deg,#111d2c,#050b15);border:1px solid #836f54;box-shadow:0 15px 40px #000c;padding:12px}
  #stageMangaViewer .manga-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
  #stageMangaViewer .manga-heading{min-width:0;display:grid;gap:5px}
  #stageMangaViewer .manga-heading strong{font-size:clamp(13px,3.5vw,18px);color:#f4dca6}
@@ -47,12 +47,12 @@ export function createMangaViewer({container=document.body,storage=globalThis.lo
    min-height:32px;padding:4px 8px;flex-shrink:0}
  #stageMangaViewer .manga-figure{margin:0;display:grid;gap:5px;min-height:0}
  #stageMangaViewer .manga-art{display:block;width:100%;aspect-ratio:16/9;object-fit:contain;
-   border:5px solid #dfd1bc;background:#262839;box-shadow:0 9px 23px #0008}
+   border:1px solid #bd9d70;background:#111825;box-shadow:0 9px 30px #000b}
  #stageMangaViewer .manga-shot{font:10px system-ui;text-align:right;color:#bfc8c8}
- #stageMangaViewer .manga-dialogue{padding:12px 14px;background:#f0e6d3;color:#24242c;border:2px solid #2e2830;
-   box-shadow:5px 5px 0 #0b1119;min-height:106px;border-radius:18px 18px 18px 4px}
- #stageMangaViewer .manga-speaker{font:bold 13px system-ui;color:#5e3841;border-bottom:1px solid #b9a798;padding-bottom:4px}
- #stageMangaViewer .manga-line{font:clamp(13px,3.4vw,18px)/1.6 Georgia,'Noto Serif JP',serif;
+ #stageMangaViewer .manga-dialogue{padding:12px 14px;background:linear-gradient(120deg,#0b1629f5,#172c3de9);color:#f4e9d7;border:1px solid #a88d62;
+   box-shadow:0 10px 25px #0008;min-height:95px;border-radius:4px}
+ #stageMangaViewer .manga-speaker{font:bold 13px system-ui;color:#f0d7a6;border-bottom:1px solid #56647a;padding-bottom:4px}
+ #stageMangaViewer .manga-line{font:clamp(13px,3.4vw,17px)/1.7 Georgia,'Noto Serif JP',serif;
    margin:6px 0 0;white-space:pre-wrap;max-height:28dvh;overflow-y:auto}
  #stageMangaViewer .manga-bottom{display:grid;gap:10px;margin-top:auto}
  #stageMangaViewer .manga-progress{text-align:center;color:#d7c8a9;font:11px system-ui;letter-spacing:.2em}
