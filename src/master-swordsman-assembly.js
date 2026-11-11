@@ -203,10 +203,14 @@ export function applyHeroineMakeupToFace(faceMesh,neutralColors,{
   // vertices in the same broad normalized Y range as the mouth. Use the
   // centre-lip subregion only, with a conservative upper/lower band and
   // frontal relief gate; never tint a whole horizontal face strip.
-  const lipBand=smooth(.417,.438,y)*(1-smooth(.479,.498,y));
-  const lipRelief=smooth(.63,.87,z);
-  const lips=front*lipRelief*bell(x,0,.205)*lipBand*
-   (.88*bell(y,.463,.018)+.58*bell(y,.440,.016))*
+  // The head's sculpted mouth ridge is centred around y≈.40, whereas
+  // the old .44-.50 cosmetic strip also covered the PHILTRUM and CHIN
+  // in a deformed portrait. Confine both upper and lower vermilion to
+  // two narrow 3D elliptical masks over the protruding centre mouth.
+  const lipBand=smooth(.367,.377,y)*(1-smooth(.431,.447,y));
+  const lipRelief=smooth(.74,.92,z);
+  const lips=front*lipRelief*bell(x,0,.19)*lipBand*
+   (.90*bell(y,.410,.014)+.72*bell(y,.386,.013))*
    intensity*THREE.MathUtils.clamp(lip,0,1);
   // Dark-brown upper lash line, located against the SOURCE sclera anchors,
   // not an unrelated eyebrow-height strip. Keeps the eyeballs exposed.
@@ -223,7 +227,7 @@ export function applyHeroineMakeupToFace(faceMesh,neutralColors,{
   attr.setXYZ(i,red,green,blue);
   if(cheek>.08)blushVertices++;
   if(lips>.08)lipVertices++;
-  if(y<.417&&lips>.0000001)chinLipVertices++;
+  if((y<.367||y>.447||Math.abs(x)>.46)&&lips>.0000001)chinLipVertices++;
   if(liner>.08)linerVertices++;
   if(Math.abs(red-neutralColors[n])+Math.abs(green-neutralColors[n+1])+
     Math.abs(blue-neutralColors[n+2])>.003)changedVertices++;
@@ -232,10 +236,10 @@ export function applyHeroineMakeupToFace(faceMesh,neutralColors,{
  const mats=Array.isArray(faceMesh.material)?faceMesh.material:[faceMesh.material];
  return {strength:intensity,blushVertices,lipVertices,linerVertices,
   chinLipVertices,chinLipMaskExcluded:chinLipVertices===0,
-  mouthMaskYNormalized:[.417,.498],
+  mouthMaskYNormalized:[.367,.447],
   changedVertices,eyeAnchorNormalized:[Number(landmarkX.toFixed(3)),Number(landmarkY.toFixed(3))],
   skinShaderUsesVertexColors:mats.some(mat=>mat?.vertexColors===true),
-  cosmeticsHue:'rose-cheek-defined-lip-upper-lash',
+  cosmeticsHue:'sculpt-vermilion-only-rose-upper-lower-lip',
   sourceVertexColorsUnchanged:true,faceMeshVertices:p.count};
 }
 
