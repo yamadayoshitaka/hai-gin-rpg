@@ -1,0 +1,45 @@
+name: Heroine 01 portable GLB export smoke
+on:
+  pull_request:
+    paths:
+      - 'master-swordsman-prototype.html'
+      - 'qa/heroine01-static-glb-smoke.cjs'
+      - '.github/workflows/heroine01-static-glb-smoke.yml'
+      - 'src/master-heroine-long-hair.js'
+      - 'src/master-swordsman-assembly.js'
+  push:
+    branches: [main]
+    paths:
+      - 'master-swordsman-prototype.html'
+      - 'qa/heroine01-static-glb-smoke.cjs'
+      - '.github/workflows/heroine01-static-glb-smoke.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  portable-glb-download:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install and launch real Chromium
+        run: |
+          npm install --no-save --package-lock=false playwright@1.56.0 three@0.160.1
+          npx playwright install --with-deps chromium
+      - name: Host genuine CC0 master geometry
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/heroine-glb-smoke-http.log 2>&1 &
+          sleep 2
+      - name: Export portable true-3D GLB and check binary meshes
+        run: node qa/heroine01-static-glb-smoke.cjs
+      - name: Preserve exported actual static model
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: heroine01-portable-static-glb-smoke
+          path: qa-screenshots/heroine01-export-smoke/
+          retention-days: 14
+          if-no-files-found: warn
