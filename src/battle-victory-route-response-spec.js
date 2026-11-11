@@ -153,6 +153,23 @@ const kindForType=type=>({
  eliminate:'eliminate',defend_timer:'defend',
  capture_zone:'capture',siege:'siege'
 })[type];
+const MODE_EVENTS=freeze({
+ defend_timer:freeze(['defense_clock','defense_breach']),
+ capture_zone:freeze(['capture_clock','capture_contested','capture_near']),
+ siege:freeze(['siege_commander','siege_holding'])
+});
+function relevantSituations(objectiveType,routeId,original){
+ // A route blueprint is reusable across objectives, but a capture deadline
+ // must not be displayed in a timed-defense or elimination battle.
+ const restricted=new Set(Object.values(MODE_EVENTS).flat());
+ const compatible=new Set(MODE_EVENTS[objectiveType]||[]);
+ const filtered=original.filter(id=>!restricted.has(id)||compatible.has(id));
+ // A zone-rush used by an attacker in a timed-defense stage is a BREACH,
+ // not the separate capture-mode clock objective.
+ if(objectiveType==='defend_timer'&&routeId==='zone_dash')
+  filtered.unshift('defense_breach','defense_clock');
+ return [...new Set(filtered)];
+}
 const actionById=new Map(BATTLE_COUNTERMEASURE_DEFINITIONS.map(a=>[a.id,a]));
 const situationById=new Map(BATTLE_SITUATION_DEFINITIONS.map(s=>[s.id,s]));
 const COOLDOWN_SIDE=0;
@@ -228,7 +245,8 @@ export const VICTORY_ROUTE_RESPONSE_TREE=freeze(VICTORY_ROUTE_GOALS.map(def=>{
     featureRequirements:freeze(r.features),
     steps:freeze(r.steps),
     participatingSquadRoles:blueprintJobRequirements(r.teams),
-    expectedSituations:freeze(r.encounters.map(id=>situationTree(id))),
+    expectedSituations:freeze(relevantSituations(def.objective,routeId,r.encounters)
+     .map(id=>situationTree(id))),
     unanticipatedEvents:'global_67_situation_catalog_after_telemetry_verification',
     pathCoordinates:'never_invented'
    });
@@ -268,6 +286,40 @@ export function findVictoryRouteResponsePath({goalId,routeId,situationId,
   next:'L5: adjudicate or observe new situation',
   changesRoute:false
  });
+}
+/** List specific numbered one-job squads for the three response levels.
+ * Job/commander eligibility is a PRECHECK, not proof that range, MP, target,
+ * route or command cooldown allow immediate issue. */
+export function resolveEligibleJobSquads({actionId,team=0,units=[]}={}){
+ const candidates=new Map();
+ const allowed=new Set(COUNTER_JOBS[actionId]||[]);
+ const action=actionById.get(actionId);
+ if(!action||!allowed.size)return [];
+ for(const soldier of units){
+  if(soldier.team!==team||soldier.isStrategist||soldier.alive===false||!(soldier.hp>0))continue;
+  const key=String(soldier.squadId);
+  if(!candidates.has(key))candidates.set(key,new Map());
+  const found=candidates.get(key);
+  found.set(soldier.jobId,(found.get(soldier.jobId)||0)+1);
+ }
+ return [...candidates].flatMap(([squadId,jobs])=>{
+  // A mixed squad is excluded until prebattle recomposition makes it uniform.
+  if(jobs.size!==1)return [];
+  const [jobId,count]=jobs.entries().next().value;
+  if(!allowed.has(jobId))return [];
+  const commanders=units.filter(u=>u.team===team&&u.isStrategist&&
+   String(u.squadId)===squadId);
+  const commanderPresent=commanders.some(u=>u.alive!==false&&u.hp>0);
+  return [freeze({
+   squadId,jobId,jobName:nameJob(jobId),soldierCount:count,
+   display:'第'+squadId+'隊（'+nameJob(jobId)+'）',
+   jobEligible:true,
+   commanderPresent,
+   abilityImplemented:action.status==='supported',
+   requiresRuntimeTargetMpAndRouteCheck:true,
+   commandableByPolicy:commanderPresent&&action.status==='supported'
+  })];
+ }).sort((a,b)=>Number(a.squadId)-Number(b.squadId)||a.squadId.localeCompare(b.squadId));
 }
 /** Search the full global scenario catalog for contingencies that were NOT
  * anticipated by a route. They remain inactive until actually observed. */
