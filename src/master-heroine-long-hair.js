@@ -405,6 +405,7 @@ export function buildHeroineFantasyLongHair(scalp,{lengthInHeads=3.25,bodyEnvelo
  let maxSideOutwardDrift=0,neckRearClearanceCorrections=0;
  let frontNeckIntrusionVertices=0,bodyCutStrands=0,bodyCutSections=0;
  let minimumRearDepth=Infinity;
+ let rearEndSampleCount=0,rearEndContractedCount=0;
  let vi=0;
  const regions={rear:70000,templeLeft:12000,templeRight:12000,bangs:6000};
  const categories=[
@@ -428,7 +429,9 @@ export function buildHeroineFantasyLongHair(scalp,{lengthInHeads=3.25,bodyEnvelo
    // Three independently overlapping rear lengths with a tapered hem.
    const backLayer=region==='rear'?Math.min(2,Math.floor(j*3/count)):0;
    const lateral=clamp(Math.abs(rootX-cx)/(d.x*.5),0,1);
-   const edgeTaper=1-.27*lateral*lateral;
+   // Shorter outer strands and inward lower silhouettes prevent a growing
+   // triangular sheet at the back (real WebGL lower edges widened by 34%).
+   const edgeTaper=1-.34*lateral*lateral;
    const lockLengthVariance=.12*(hash(seed*5.31)-.5);
    const strandLength=bang?
     Math.min(d.y*(.24+.10*scatter),Math.max(.001,rootY-(b.min.y+d.y*.68))):
@@ -455,7 +458,7 @@ export function buildHeroineFantasyLongHair(scalp,{lengthInHeads=3.25,bodyEnvelo
     // Side locks fold behind the shoulders instead of pointing outwards.
     let x=bang?rootX+sideDirection*d.x*(.17*t+.035*fall)+curl:
      side?rootX+(cx-rootX)*(.075*t+.10*fall)+curl+backWave:
-     rootX+(rootX-cx)*(.065*t+.105*fall)+
+     rootX+(rootX-cx)*(-.075*t-.16*fall)+
       (backLayer-1)*d.x*.035*fall+sway*fall+curl+backWave;
     let y=rootY-strandLength*t;
     const ease=t*t*(3-2*t);
@@ -463,8 +466,13 @@ export function buildHeroineFantasyLongHair(scalp,{lengthInHeads=3.25,bodyEnvelo
     let z=bang?rootZ+d.z*(.085*t+.012*Math.sin(Math.PI*t)):
      side?lerp(rootZ,Math.min(rootZ,cz-d.z*.28),sideEase)-d.z*(.06*t+.06*fall):
      lerp(rootZ,Math.min(rootZ,cz-d.z*.18),ease)-
-      d.z*(.05*t+.08*fall+.035*backLayer*ease+
+      d.z*(.05*t+.08*fall+.075*backLayer*ease+
        .015*Math.sin(t*5.5+clumpPhase)*Math.sin(Math.PI*t));
+    if(region==='rear'&&section===SEGMENTS&&
+       Math.abs(rootX-cx)>d.x*.20&&!cut){
+      rearEndSampleCount++;
+      if(Math.abs(x-cx)<Math.abs(rootX-cx))rearEndContractedCount++;
+    }
     if(side)maxSideOutwardDrift=Math.max(maxSideOutwardDrift,side*(x-rootX));
     // Behind-neck routing replaces the hard side split that created a V
     // shaped hole. Middle rear locks retain the centre-back silhouette.
@@ -572,6 +580,9 @@ export function buildHeroineFantasyLongHair(scalp,{lengthInHeads=3.25,bodyEnvelo
    separatedHairObjects:true,
    hairPartNames:Object.freeze(zones.map(([name])=>name)),
    rearLayerCount:3,wigPartCount:hair.children.length,
+   rearEndSampleCount,rearEndContractedCount,
+   rearEndTaperRatio:Number((rearEndContractedCount/
+      Math.max(1,rearEndSampleCount)).toFixed(4)),
    rearMaxLengthInHeads:Number((lengthInHeads*.72).toFixed(2)),
    rearLayersCutBeforeAnkles:true,
   scalpRegions:Object.freeze(regions),scalpCrownRootPool:crown.length,
