@@ -60,6 +60,9 @@ test('100k strand wig has separate fringe, temple and layered back objects',()=>
  assert.equal(report.strandSegmentCount,600000);
  assert.equal(report.separatedHairObjects,true);
  assert.equal(report.rearLayerCount,3);
+ assert.equal(report.rearSculptedLockCount,12,
+  'A single dense pink hair curtain must be separated into real rear locks');
+ assert.ok(report.rearLockConvergence>=.5);
  assert.equal(report.wigPartCount,6);
  assert.equal(hair.children.length,6);
  assert.ok(hair.children.every(p=>p.isLineSegments&&p.userData.bodyClipped));
