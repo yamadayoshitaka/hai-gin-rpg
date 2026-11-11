@@ -31,7 +31,7 @@ jobs:
         run: node qa/squad-formation-three-types.test.mjs
       - name: Story/game-core battles
         run: |
-          node qa/game-core-contract.test.mjs
+          node --experimental-vm-modules qa/game-core-contract.test.mjs
           node qa/story-battle-bridge.test.mjs
       - name: Battle UI contract
         run: node qa/battle-squad-ribbons-and-loading.test.mjs
