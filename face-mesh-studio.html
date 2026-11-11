@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#14263a">
+<title>灰銀のレゾナンス | 男女・顔メッシュ原型 v1</title>
+<style>
+:root{font:15px/1.55 system-ui,-apple-system,"Noto Sans JP",sans-serif;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:#0b1524;color:#e7f1fb}
+header{padding:13px 16px;background:#172c42}
+h1{font-size:20px;margin:0}
+p{font-size:13px;color:#bed0e2;margin:7px 0}
+main{max-width:1060px;margin:auto;padding:12px}
+.panel{background:#1b3048;border:1px solid #46657f;border-radius:12px;padding:12px}
+.controls{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+button{border:1px solid #6388a8;border-radius:9px;background:#284a67;color:#eef9ff;padding:11px 13px;font:inherit;cursor:pointer}
+button[aria-pressed=true]{background:#236c60;border-color:#a6e2c8}
+button:disabled{opacity:.45;cursor:not-allowed}
+button:focus-visible{outline:2px solid white}
+#faceCanvas{width:100%;height:min(69vh,610px);min-height:335px;border-radius:12px;
+display:block;background:#203348;touch-action:none}
+#status{padding:8px;color:#d7e9f7;font-size:13px;min-height:33px}
+#metrics{white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px;line-height:1.6;
+padding:10px;background:#12263a;border-radius:8px}
+a{color:#b6e2ff}
+@media(max-width:670px){
+main{padding:8px}
+#faceCanvas{height:49dvh;min-height:320px}
+button{padding:9px 11px}
+}
+</style></head>
+<body>
+<header>
+<h1>男女・顔メッシュ原型 v1</h1>
+<p>髪なし・化粧なし・眼球演出なし。男女それぞれの元3D頭部から顔メッシュを独立生成して比較します。既存の胴体・戦闘モデルは変更しません。</p>
+</header>
+<main><section class="panel">
+<div id="status" role="status">男女のCC0頭部メッシュを読み込み中…</div>
+<div class="controls" aria-label="性別切替">
+<button id="female" aria-pressed="true" disabled>女性・美人ベース</button>
+<button id="male" aria-pressed="false" disabled>男性・美青年ベース</button>
+</div>
+<canvas id="faceCanvas" aria-label="髪とメイクを取り除いた、灰色の独立した顔3Dメッシュ"></canvas>
+<div class="controls" aria-label="視点切替">
+<button id="front" aria-pressed="true" disabled>正面</button>
+<button id="threeQuarter" aria-pressed="false" disabled>斜め45°</button>
+<button id="side" aria-pressed="false" disabled>横顔</button>
+<button id="back" aria-pressed="false" disabled>後頭部</button>
+<button id="wire" aria-pressed="false" disabled>ワイヤー表示</button>
+</div>
+<div class="controls">
+<button id="export" disabled>表示中の顔メッシュをGLB保存</button>
+<a href="./master-swordsman-prototype.html">全身モデル確認画面</a>
+</div>
+<p>指でドラッグして360°回転、ピンチで拡大。男女のメッシュは独立した頂点データです。髪・眼球・まつ毛・鎧・胴体を隠して形状のみ検査します。</p>
+<p>これは美形を目標にした<b>初回の造形試作</b>です。実写品質・原画一致・美術承認・ゲーム実装は未達です。顔の凹凸や横顔が自然かを先に評価してください。</p>
+<details><summary>実メッシュ数値と原本保護の確認</summary><div id="metrics"></div></details>
+</section></main>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
+<script type="module">
+import * as THREE from 'three';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {GLTFExporter} from 'three/addons/exporters/GLTFExporter.js';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+import {makeIndependentFaceMaster,FACE_MASTER_SPEC} from './src/independent-face-masters.js';
+const $=id=>document.getElementById(id);
+const canvas=$('faceCanvas');
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true,powerPreference:'high-performance'});
+renderer.outputColorSpace=THREE.SRGBColorSpace;
+renderer.toneMapping=THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure=1.25;
+renderer.setPixelRatio(Math.min(2,devicePixelRatio||1));
+const scene=new THREE.Scene();
+scene.background=new THREE.Color('#203348');
+scene.add(new THREE.HemisphereLight(0xf1f7ff,0x62738b,2.2));
+const mainLight=new THREE.DirectionalLight(0xffffff,2.5);
+mainLight.position.set(2,3,4);scene.add(mainLight);
+const fill=new THREE.DirectionalLight(0xaecce8,1.5);
+fill.position.set(-3,1,-1);scene.add(fill);
+const camera=new THREE.PerspectiveCamera(34,1,.005,100);
+const orbit=new OrbitControls(camera,canvas);
+orbit.enableDamping=true;orbit.enablePan=false;
+orbit.minDistance=.1;orbit.maxDistance=6;
+const models=new Map();
+let gender='female',angle='front',wired=false,ready=false;
+function setActive(ids,id){
+ for(const x of ids)$(x).setAttribute('aria-pressed',String(x===id));
+}
+function metrics(){
+ const model=models.get(gender);
+ return {loaded:ready,gender,view:angle,wire:wired,
+  female:models.get('female')?.report||null,
+  male:models.get('male')?.report||null,
+  visibleFaceMeshes:model?Number(model.face.visible&&model.root.visible):0,
+  exportedSurface:'face-only',bodyMeshes:0,sourceUntouched:true};
+}
+window.__faceMasterQA=metrics;
+function resize(){
+ const rect=canvas.getBoundingClientRect();
+ if(rect.width<10||rect.height<10)return;
+ renderer.setSize(rect.width,rect.height,false);
+ camera.aspect=rect.width/rect.height;camera.updateProjectionMatrix();
+}
+function faceBox(){
+ const model=models.get(gender);
+ model.root.updateMatrixWorld(true);
+ return new THREE.Box3().setFromObject(model.face);
+}
+function setView(view){
+ if(!ready)return;
+ angle=view;
+ const box=faceBox(),size=box.getSize(new THREE.Vector3());
+ const c=box.getCenter(new THREE.Vector3());
+ const distance=Math.max(size.x,size.y,size.z)*2.55;
+ const dir=view==='side'?new THREE.Vector3(1,0,0):
+  view==='back'?new THREE.Vector3(0,0,-1):
+  view==='threeQuarter'?new THREE.Vector3(.65,.06,.76).normalize():
+  new THREE.Vector3(0,0,1);
+ camera.position.copy(c).addScaledVector(dir,distance);
+ camera.near=Math.max(.001,distance/1000);
+ camera.far=Math.max(20,distance*20);
+ camera.updateProjectionMatrix();
+ orbit.target.copy(c);orbit.update();
+ setActive(['front','threeQuarter','side','back'],view);
+}
+function selectGender(next){
+ if(!models.has(next))return;
+ gender=next;
+ for(const [k,m] of models)m.root.visible=k===gender;
+ setActive(['female','male'],gender);
+ setView(angle);
+ $('status').textContent=FACE_MASTER_SPEC[gender].label+
+  '｜実メッシュ'+models.get(gender).report.sourceVertices+'頂点／'+
+  Math.round(models.get(gender).report.triangles)+'三角形（原本保存）';
+ $('metrics').textContent=JSON.stringify(metrics(),null,2);
+}
+for(const g of ['female','male'])
+ $(g).addEventListener('click',()=>selectGender(g));
+for(const view of ['front','threeQuarter','side','back'])
+ $(view).addEventListener('click',()=>setView(view));
+$('wire').addEventListener('click',()=>{
+ wired=!wired;$('wire').setAttribute('aria-pressed',String(wired));
+ for(const m of models.values())m.face.material.wireframe=wired;
+ $('metrics').textContent=JSON.stringify(metrics(),null,2);
+});
+$('export').addEventListener('click',async()=>{
+ if(!ready)return;
+ $('export').disabled=true;
+ $('status').textContent='顔メッシュをGLBに書き出しています…';
+ try{
+  const model=models.get(gender);
+  // Export only the face, preserving source transforms via hierarchy. The
+  // other donor meshes are invisible and onlyVisible skips them.
+  const exporter=new GLTFExporter();
+  const bin=await new Promise((resolve,reject)=>
+   exporter.parse(model.root,resolve,reject,{binary:true,onlyVisible:true}));
+  const file=new Blob([bin],{type:'model/gltf-binary'});
+  const url=URL.createObjectURL(file);
+  const a=document.createElement('a');
+  a.href=url;a.download=FACE_MASTER_SPEC[gender].code+'.glb';
+  document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+  $('status').textContent='GLBを書き出しました（髪・胴体なしの顔メッシュ）。';
+ }catch(e){$('status').textContent='GLB出力失敗: '+String(e);}
+ finally{$('export').disabled=false;}
+});
+async function init(){
+ try{
+  // Pages excludes archived master GLBs: read the same original CC0 assets
+  // from the repository on GitHub Pages, locally in development / Actions.
+  const base=location.hostname.endsWith('.github.io')?
+   'https://raw.githubusercontent.com/yamadayoshitaka/hai-gin-rpg/main/assets/master-sources/blender/':
+   './assets/master-sources/blender/';
+  const loader=new GLTFLoader();
+  const [female,male]=await Promise.all([
+   loader.loadAsync(base+'realistic-head-sculpt.glb'),
+   loader.loadAsync(base+'realistic-head-animation.glb')
+  ]);
+  for(const [g,source] of [['female',female],['male',male]]){
+   const model=makeIndependentFaceMaster(source.scene,g);
+   model.root.visible=false;
+   models.set(g,model);scene.add(model.root);
+  }
+  ready=true;
+  for(const id of ['female','male','front','threeQuarter','side','back','wire','export'])
+   $(id).disabled=false;
+  const query=new URLSearchParams(location.search);
+  selectGender(query.get('gender')==='male'?'male':'female');
+  setView(['front','side','back','threeQuarter'].includes(query.get('view'))?
+   query.get('view'):'front');
+  resize();
+ }catch(e){
+  $('status').textContent='元の頭部メッシュを読み込めません: '+String(e);
+  console.error(e);
+ }
+}
+function frame(){
+ resize();orbit.update();renderer.render(scene,camera);
+ requestAnimationFrame(frame);
+}
+init();frame();
+</script></body></html>
