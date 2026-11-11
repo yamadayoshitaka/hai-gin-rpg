@@ -71,7 +71,7 @@ table{width:100%;border-collapse:collapse}th,td{border-bottom:1px solid #43586c;
 <p>物語音声：既存のVOICEVOX収録済み台詞がある場合は優先再生、未収録の台詞は端末の日本語読み上げを使用します。人物ごとの話者・速度・高さは固定です。追加の有料API呼び出しはありません。</p>
 <p>原画：20人の人物IDと既存の章画を基準にし、専用の1コマ画像を制作できたら、その1枚を優先表示します。画像がない場合に限り既存の合成画・SVGを使います。</p>
 <div class="toolbar"><button class="btn" id="voiceTest">選択中コマの声を試聴</button><button class="chip" id="voiceStop">読み上げ停止</button></div>
-<p id="status" role="status"></p>
+<p id="voiceCoverage" class="muted">音声ファイルの収録状況を確認中…</p><p id="status" role="status"></p>
 </section>
 </main>
 <script type="module">
@@ -128,9 +128,21 @@ function renderCast(){
  $('characterGrid').innerHTML=list.map(c=>'<div class="card cast"><img src="'+CINEMATIC_CAST_ASSETS[c.id]+'" alt="'+escapeHTML(c.name)+'の現在の基準絵" loading="lazy">'+
  '<div><strong>'+escapeHTML(c.name)+'</strong><small>'+escapeHTML(c.storyFactionName)+' ／ '+escapeHTML(c.role)+'</small>'+
  '<small>ID: '+c.id+'</small><small>VOICEVOX: '+escapeHTML(STORY_VOICE_PROFILES[c.id]?.voicevoxSpeaker)+'</small>'+
- '<small>3Dモデル：別工程。ゲーム内では定義・画像の照合のみ</small></div></div>').join('');
+ '<small>3Dモデル：別工程。ゲーム内では定義・画像の照合のみ</small><button type="button" class="chip" data-voice-character="'+c.id+'">人物ボイス試聴</button></div></div>').join('');
 }
 $('factionFilter').onclick=e=>{const b=e.target.closest('[data-faction]');if(!b)return;filter=b.dataset.faction;$('factionFilter').querySelectorAll('button').forEach(x=>x.classList.toggle('active',x===b));renderCast();};
+$('characterGrid').onclick=event=>{
+ const button=event.target.closest('[data-voice-character]');if(!button)return;
+ const c=STORY_CHARACTERS.find(x=>x.id===button.dataset.voiceCharacter);if(!c)return;
+ $('status').textContent=c.name+'の声を試聴（収録がなければ端末読み上げ）';
+ void voice.speak({id:'character-preview-'+c.id,characterId:c.id,text:'私は'+c.name+'。あなたの判断を聞かせてください。'});
+};
+void fetch('./audio/voicevox/manifest.json').then(r=>r.ok?r.json():null).then(data=>{
+ const keys=Object.keys(data?.clips||{});
+ const chapterClips=keys.filter(key=>key.startsWith('story::chapter::')).length;
+ const panelClips=keys.filter(key=>key.startsWith('story::panel::')).length;
+ $('voiceCoverage').textContent='VOICEVOX収録：章ナレーション '+chapterClips+'/20、各コマ台詞 '+panelClips+'/1400。未収録は端末の日本語ボイスに切り替わります。';
+}).catch(()=>$('voiceCoverage').textContent='音声収録一覧を取得できません。端末読み上げで確認できます。');
 setChapter(Number(new URLSearchParams(location.search).get('chapter'))||1);
 renderCast();
 </script>
