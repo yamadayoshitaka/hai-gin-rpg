@@ -159,7 +159,7 @@ function renderStoryBranchControls(stage,unlocked){
   choiceBar.innerHTML='<strong>物語方針：'+escapeHtml(decision.title)+'</strong><div class="story-branch-buttons">'+
    decision.choices.map(([id,label])=>'<button type="button" data-story-choice="'+escapeHtml(id)+'" class="'+(id===chosen?'selected':'')+'">'+escapeHtml(label)+'</button>').join('')+'</div>';
  }else{choiceBar.hidden=true;choiceBar.innerHTML='';}
- const ready=game.completedStages.includes('c12-s10');
+ const ready=game.completedStages.includes('c13-s01');
  if(stage.chapter>=13&&ready){
   routeBar.hidden=false;
   const current=currentStoryRoute(game);
@@ -245,7 +245,7 @@ $('sortie').onclick=()=>{
  if(!stageUnlocked(stage,game.completedStages)){
   message('前のステージをクリアしてください。');return;
  }
- if(stage.chapter>=13&&!currentStoryRoute(game)){
+ if(stage.chapter>=13&&stage.kind!=='town'&&!currentStoryRoute(game)){
   message('第13章の協力先を選択してから進んでください。');return;
  }
  mapAudio.unlock();
