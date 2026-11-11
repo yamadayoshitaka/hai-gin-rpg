@@ -27,19 +27,29 @@ padding:10px;background:#12263a;border-radius:8px}
 .adjustGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin-top:13px}
 .adjustGrid label{display:grid;gap:4px;font-size:13px}
 .adjustGrid input{width:100%;accent-color:#6ec9b1}
+.adjustGrid label{padding:12px;border:1px solid #405d77;border-radius:12px;
+background:#203951;min-height:94px;touch-action:pan-y}
+.adjustGrid input[type=range]{height:38px;cursor:ew-resize;touch-action:pan-y}
+.adjustGrid output{float:right;font-weight:700;color:#a5f1da}
+.adjustGrid input[type=range]::-webkit-slider-thumb{width:26px;height:26px}
+.adjustGrid select,.adjustGrid input[type=color]{min-height:42px}
+#faceAdjustments summary,#maleAdjustments summary{position:sticky;top:0;
+background:#15263c;padding:9px;z-index:2;border-radius:8px}
 .adjustGrid output{color:#dfefed;font-variant-numeric:tabular-nums}
 #faceAdjustments[hidden],#maleAdjustments[hidden]{display:none}
 a{color:#b6e2ff}
 @media(max-width:670px){
 main{padding:8px}
 #faceCanvas{height:49dvh;min-height:320px}
+.adjustGrid{grid-template-columns:1fr;gap:8px}
+.adjustGrid label{min-height:85px}
 button{padding:9px 11px}
 }
 </style></head>
 <body>
 <header>
 <h1>男女・顔と立体パーツ v9</h1>
-<p>女性顔は指定された2.5倍の顎を標準として、さらに5倍まで調整可能。口紅は本物の唇に密着し、アイライン・目元強調線・チークを追加。男性は顔の調整と3Dヒゲが可能。</p>
+<p>女性顔の指定値2.5倍を維持し、顎先だけを最大5倍まで調整。口紅とチークは実メッシュの頂点に着色し、浮いた化粧面を排除。スライダー調整時もズームを保持します。</p>
 </header>
 <main><section class="panel">
 <div id="status" role="status">男女のCC0頭部メッシュを読み込み中…</div>
@@ -73,7 +83,7 @@ button{padding:9px 11px}
 <input type="range" id="nostrilCover" min="0" max="2" step="0.1" value="1"></label>
 <label for="noseBridgeSharpness">鼻筋の鋭さ <output id="noseBridgeSharpnessValue">2.5</output>
 <input type="range" id="noseBridgeSharpness" min="0" max="2.5" step="0.1" value="2.5"></label>
-<label for="eyeAngle">目元の角度（眉・まつ毛・クマも連動） <output id="eyeAngleValue">0°</output>
+<label for="eyeAngle">目元の角度（眉・まつ毛・下まぶた連動） <output id="eyeAngleValue">0°</output>
 <input type="range" id="eyeAngle" min="-20" max="20" step="1" value="0"></label>
 <label for="lipstickX">口紅の横位置 <output id="lipstickXValue">0</output>
 <input type="range" id="lipstickX" min="-0.12" max="0.12" step="0.005" value="0"></label>
@@ -263,7 +273,7 @@ function rebuildFemale(){
    o.material?.dispose();
   });
  }
- if(gender==='female')selectGender('female');
+ if(gender==='female')$('status').textContent='女性顔更新（ズーム・視点保持）';
  $('metrics').textContent=JSON.stringify(metrics(),null,2);
 }
 function rebuildMale(){
@@ -286,7 +296,7 @@ function rebuildMale(){
    o.material?.dispose();
   });
  }
- if(gender==='male')selectGender('male');
+ if(gender==='male')$('status').textContent='男性顔更新（ズーム・視点保持）';
  $('metrics').textContent=JSON.stringify(metrics(),null,2);
 }
 const rebuildKeys=['irisDiameter','eyeSize','jawSharpness','noseTipLift',
