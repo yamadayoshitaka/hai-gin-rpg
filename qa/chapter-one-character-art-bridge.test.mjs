@@ -46,6 +46,8 @@ test('viewer compares Chapter 1 visual masters with no false NPC-to-3D linkage',
   'chapterOneArtStatus'])assert.match(html,new RegExp('id="'+id+'"'));
  assert.match(html,/CHAPTER_ONE_ART_REFERENCES/);
  assert.match(html,/isSameCharacter/);
+ assert.ok(html.indexOf('id="chapterOneArtComparison"')>html.indexOf('id="portrait"'),
+  'Do not insert the art panel between WebGL canvas and camera controls: Chromium screenshot scrolls it offscreen');
  assert.match(html,/現在表示している3Dはこの人物のモデルではありません/);
  assert.match(html,/第2〜20章の場面原画は完成扱いにしません/);
  assert.doesNotMatch(html,/10万本ローズピンク/);
