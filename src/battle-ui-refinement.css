@@ -1,0 +1,90 @@
+/* UI v2.2: end-of-battle focus, job-based squads, zero-scroll pages. */
+body.battle-finished #battleTopDock,
+body.battle-finished #battleDock,
+body.battle-finished #allySquadRibbon,
+body.battle-finished #enemySquadRibbon,
+body.battle-finished #squadCircleInfo,
+body.battle-finished #squadScreenLabels,
+body.battle-finished #battleStatus,
+body.battle-finished #battleDialogue,
+body.battle-finished #battleTacticalSituation,
+body.battle-finished #squadTactics,
+body.battle-finished #battleItemManagement,
+body.battle-finished #destinationPrompt,
+body.battle-finished #cameraTools,
+body.battle-finished #menuToggle,
+body.battle-finished #battleMenu,
+body.battle-finished #commands{display:none!important}
+body.battle-finished #endScreen{
+ z-index:100!important;display:flex;gap:9px;padding:max(15px,env(safe-area-inset-top)) 15px max(15px,env(safe-area-inset-bottom));
+ background:linear-gradient(155deg,#071524f5,#192d41ee);overflow:hidden!important;
+}
+#endScreen h1{font-size:clamp(28px,6vw,40px);margin:0;color:#ffe2a4}
+#endScreen #resultDetail{max-width:min(92vw,460px);font-size:12px;color:#c7d7e3;line-height:1.35}
+#endScreen>button{min-height:44px;max-width:min(90vw,460px);width:100%;font-size:15px}
+#victoryRewards{width:min(94vw,460px);display:grid;gap:8px;border:1px solid #bf9c64;
+ border-radius:13px;background:linear-gradient(145deg,#1d3144,#102538);padding:12px;text-align:left}
+#victoryRewards[hidden]{display:none!important}
+#victoryRewards h2{margin:0;color:#f3d396;font-size:17px}
+#victoryRewards .rewardSub{color:#c4d9ea;font-size:11px;line-height:1.4}
+#victoryRewards .rewardNumbers{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+#victoryRewards .rewardNumbers div{padding:9px 5px;border:1px solid #627f98;border-radius:9px;background:#102337;text-align:center}
+#victoryRewards .rewardNumbers small{font-size:11px;color:#c7daec}
+#victoryRewards .rewardNumbers b{display:block;margin-top:3px;font-size:23px;color:#ffe1a3}
+#victoryRewards .rewardTreasure{border:1px solid #526d88;border-radius:8px;padding:8px;display:grid;gap:4px}
+#victoryRewards .rewardTreasure strong{color:#f2dcaf;font-size:12px}
+#victoryRewards .rewardTreasure span{font-size:12px;color:#e0eaf2;overflow-wrap:anywhere}
+.squadCommandRibbon .ribbonList{overflow:hidden!important}
+.squadCommandRibbon .ribbonSquad .ribbonOrder{
+ white-space:normal!important;overflow:hidden!important;text-overflow:clip!important;
+ font-size:9px!important;line-height:1.2!important;max-width:100%;overflow-wrap:anywhere}
+.squadCommandRibbon .ribbonSquad .ribbonTop{display:grid!important;gap:2px;text-align:center}
+.squadCommandRibbon .ribbonSquad .ribbonTop>span:first-child{font-size:11px!important;line-height:1.15;color:#ffe8b9}
+.squadCommandRibbon .ribbonSquad .ribbonTarget{font-size:9px!important;line-height:1.12}
+.squadCommandRibbon .ribbonSquad .ribbonDeaths{display:none!important}
+.squadCommandRibbon .ribbonSquad{min-height:59px!important;max-height:78px!important;flex:1 1 auto!important}
+.squadCommandRibbon .ribbonPager{flex:none!important}
+#battleOrderConfirm,#battleTargetConfirm{
+ position:fixed;left:50%;bottom:calc(88px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);
+ z-index:48;width:min(94vw,425px);background:linear-gradient(145deg,#203c55,#0e2539);
+ border:2px solid #e3bd81;border-radius:13px;padding:12px;box-shadow:0 12px 28px #000b;display:grid;gap:8px;
+ text-align:center}
+#battleOrderConfirm[hidden],#battleTargetConfirm[hidden]{display:none!important}
+#battleOrderConfirm strong,#battleTargetConfirm strong{font-size:15px;color:#ffe4ae}
+#battleOrderConfirm small,#battleTargetConfirm small{font-size:12px;color:#d3e6ee}
+#battleOrderConfirm .confirmActions,#battleTargetConfirm .confirmActions{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+#battleOrderConfirm button,#battleTargetConfirm button{min-height:43px;padding:8px;font-size:13px}
+#battleOrderConfirm .commit,#battleTargetConfirm .commit{background:#396c58;border-color:#f0d19b}
+body.command-target-preview #battleTargetConfirm{bottom:calc(90px + env(safe-area-inset-bottom,0px))}
+#squadTactics[data-panel="main"] #tacticalCommandPreview{display:none!important}
+#squadTactics[data-panel="orders"] #tacticalCommandPreview{display:grid!important}
+#squadTactics #tacticalCommandPreview{max-height:none!important;overflow:hidden!important}
+#squadTactics #squadOneClickOrders{overflow:hidden!important}
+#panel.formation-command-ui #panelContent{
+ overflow:hidden!important;display:flex;flex-direction:column;min-height:0;gap:7px}
+#panel.formation-command-ui{height:min(94dvh,700px);max-height:94dvh!important}
+#panel.formation-command-ui #panelContent .innPage{display:grid;gap:8px;min-height:0;flex:1;align-content:start}
+#panel.formation-command-ui #panelContent .innPage[hidden]{display:none!important}
+#panel.formation-command-ui #panelContent .innPage .entries{min-height:0;gap:7px}
+#panel.formation-command-ui #panelContent .innPage .innSquadCard{min-height:72px}
+#panel.formation-command-ui .innPageNav{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;flex:none}
+#panel.formation-command-ui .innPageNav button{font-size:12px;min-width:0;padding:8px 3px!important;min-height:39px!important}
+#panel.formation-command-ui .innPageNav button.active{background:#6a563c!important;border-color:#f5dc9e!important}
+#panel.formation-command-ui .innSubPager{margin-top:auto;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:7px;font-size:12px}
+#panel.formation-command-ui .innSubPager button{min-height:39px}
+#panel.formation-command-ui .innCommandHeading{padding:9px;flex:none}
+#panel.formation-command-ui #panelContent h3{font-size:13px;margin:1px 0 0;color:#ebd09a}
+#panel.formation-command-ui .innMetric b{font-size:17px}
+#panel.formation-command-ui .innCommanderRow{padding:8px;gap:5px}
+#panel.formation-command-ui .innCommanderRow select{min-height:34px;padding:5px}
+#panel.formation-command-ui #panelContent>.innPageNav{order:0}
+@media(max-height:760px){
+ body.battle-finished #victoryRewards{padding:8px;gap:5px}
+ body.battle-finished #victoryRewards .rewardNumbers div{padding:6px 4px}
+ body.battle-finished #victoryRewards .rewardNumbers b{font-size:19px}
+ #panel.formation-command-ui .innPage .innCommandGrid .innMetric{padding:6px 3px}
+ #panel.formation-command-ui .innSquadCard{padding:6px}
+}
+@media(prefers-reduced-motion:reduce){
+ .squadCommandRibbon .ribbonSquad,.tactical-eligible{animation:none!important}
+}
