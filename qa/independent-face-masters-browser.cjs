@@ -117,13 +117,19 @@ async function expectVisibleLibraryPreset(page,context,contact='brown'){
    const gltf=JSON.parse(buf.subarray(20,20+length).toString('utf8').trim());
    const tri=(gltf.meshes||[]).flatMap(m=>m.primitives||[])
     .filter(p=>p.mode===undefined||p.mode===4);
-   if(tri.length!==(g==='female'?31:20))throw Error('Exported face + anatomical meshes mismatch: '+g+' '+tri.length);
+   if(tri.length!==(g==='female'?33:20))throw Error('Exported face + anatomical meshes mismatch: '+g+' '+tri.length);
    const master=(gltf.nodes||[]).find(n=>n.name===g.toUpperCase()+'_FACE_MASTER_SOURCE_CLONE');
    const saved=master?.extras?.faceMasterReport;
    const controls=g==='female'?saved?.femaleControls:saved?.maleControls;
    if(controls?.jawSharpness!==5||controls?.nostrilCover!==2||
       controls?.eyeSize!==1||controls?.irisDiameter!==1)
     throw Error('Exported '+g+' GLB lost Library defaults '+JSON.stringify(controls));
+   if(g==='female'){
+    const nodes=(gltf.nodes||[]).map(n=>n.name);
+    if(!nodes.includes('REAL_ROOTED_SWEPT_HAIR_LOCKS')||
+       !nodes.includes('REAL_SCALP_TRIANGLE_HAIR_CAP'))
+     throw Error('Female GLB did not include scalp-rooted wig');
+   }
    if(g==='male'&&(!saved?.maleNoMakeup||saved?.femaleControls!==null))
     throw Error('Male GLB contains female cosmetic settings');
    console.log('FACE_CLAY_GLB_EXPORT',JSON.stringify({
@@ -135,7 +141,16 @@ async function expectVisibleLibraryPreset(page,context,contact='brown'){
   if(Buffer.compare(left,right)===0)
    throw Error('Male and female rendered faces are identical');
   await page.locator('#female').click();
+  const wigQA=await page.evaluate(()=>window.__faceMasterQA());
+  if(!wigQA.wigVisible||wigQA.wigReport?.rootCount!==240||
+     !wigQA.wigReport?.collisionTypes.includes('face')||
+     !wigQA.wigReport?.collisionTypes.includes('chest'))
+   throw Error('Scalp wig and collision proxy not initialized '+JSON.stringify(wigQA.wigReport));
+  await canvas.screenshot({path:path.join(out,'female-v12-saved-face-blonde-long-wig.png')});
   await page.locator('#parts').click();
+  await page.locator('#wig').click();
+  if((await page.evaluate(()=>window.__faceMasterQA())).wigVisible)
+   throw Error('Wig toggle did not hide wig');
   if((await page.evaluate(()=>window.__faceMasterQA())).visiblePartMeshes!==0)
    throw Error('Facial mesh parts cannot be hidden independently');
   await canvas.screenshot({path:path.join(out,'female-face-only-no-parts.png')});
@@ -151,6 +166,9 @@ async function expectVisibleLibraryPreset(page,context,contact='brown'){
     throw Error('Face-only mode exported hidden facial parts');
   }
   await page.locator('#parts').click();
+  await page.locator('#wig').click();
+  if(!(await page.evaluate(()=>window.__faceMasterQA())).wigVisible)
+   throw Error('Wig toggle did not restore wig');
   await page.locator('#wire').click();
   if((await page.evaluate(()=>window.__faceMasterQA())).wire!==true)
    throw Error('Wireframe is not active');
@@ -160,7 +178,7 @@ async function expectVisibleLibraryPreset(page,context,contact='brown'){
   const colorQA=await page.evaluate(()=>window.__faceMasterQA());
   if(colorQA.faceMode!=='color')throw Error('Color mode was not activated');
   await page.locator('#front').click();
-  await canvas.screenshot({path:path.join(out,'female-color-v7-front.png')});
+  await canvas.screenshot({path:path.join(out,'female-color-v12-hair-front.png')});
   await page.locator('#threeQuarter').click();
   await canvas.screenshot({path:path.join(out,'female-color-v7-threeQuarter.png')});
   // Real eyebrow/lash angle control and front nasal tip sculpt.
@@ -198,7 +216,7 @@ async function expectVisibleLibraryPreset(page,context,contact='brown'){
    const buf=fs.readFileSync(file),size=buf.readUInt32LE(12);
    const gltf=JSON.parse(buf.subarray(20,20+size).toString('utf8').trim());
    const meshes=gltf.meshes||[],materials=gltf.materials||[];
-   if(meshes.length!==31||materials.length<5)
+   if(meshes.length!==33||materials.length<5)
     throw Error('Colored female GLB did not preserve eyebrow/eyelash meshes and palette');
    console.log('FACE_V7_COLORED_GLB_EXPORT',JSON.stringify({
     bytes:buf.length,meshes:meshes.length,materials:materials.length
@@ -217,6 +235,8 @@ async function expectVisibleLibraryPreset(page,context,contact='brown'){
     throw Error('Screenshot standard preset was not restored '+JSON.stringify(reset));
   await canvas.screenshot({path:path.join(out,'female-default-v9-lip-eye-blush.png')});
   if(reset.female?.detailedParts.eyelinerMeshCount!==4||
+     reset.female?.detailedParts.eyelinerCornersClosed!==true||
+     reset.female?.detailedParts.blushOpacityFactor!==.43||
      reset.female?.detailedParts.eyeAccentMeshCount!==2||
      reset.female?.detailedParts.blushMeshCount!==0||
      !reset.female?.detailedParts.lipstickPlacement?.attachedToLipMesh)
@@ -258,6 +278,26 @@ async function expectVisibleLibraryPreset(page,context,contact='brown'){
    el.value='20';el.dispatchEvent(new Event('input',{bubbles:true}));
   });
   await canvas.screenshot({path:path.join(out,'female-eye-angle-plus20-brows.png')});
+  const beforeHairControls=await page.evaluate(()=>window.__faceMasterQA().femaleControls);
+  await page.locator('#faceGroupTabs button').filter({hasText:'髪'}).click();
+  for(const [id,value] of [['wigDensity','96'],['wigLength','1.5']]){
+   await page.locator('#'+id).evaluate((el,v)=>{
+    el.value=v;el.dispatchEvent(new Event('input',{bubbles:true}));
+    el.dispatchEvent(new Event('change',{bubbles:true}));
+   },value);
+  }
+  const hairAdjusted=await page.evaluate(()=>window.__faceMasterQA());
+  if(hairAdjusted.wigReport?.rootCount!==96||
+     hairAdjusted.wigReport?.lengthScale!==1.5||
+     JSON.stringify(hairAdjusted.femaleControls)!==JSON.stringify(beforeHairControls))
+   throw Error('Hair sliders affected face settings or wig '+JSON.stringify(hairAdjusted.wigReport));
+  await canvas.screenshot({path:path.join(out,'female-v12-wig-long-96.png')});
+  for(const [id,value] of [['wigDensity','240'],['wigLength','1']]){
+   await page.locator('#'+id).evaluate((el,v)=>{
+    el.value=v;el.dispatchEvent(new Event('input',{bubbles:true}));
+    el.dispatchEvent(new Event('change',{bubbles:true}));
+   },value);
+  }
   await page.locator('#eyeAngle').evaluate(el=>{
    el.value='-20';el.dispatchEvent(new Event('input',{bubbles:true}));
   });
