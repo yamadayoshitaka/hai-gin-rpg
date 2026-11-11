@@ -74,7 +74,7 @@ function scalpShell(geo,box,color){
  * @param {THREE.Mesh} head  owned sculpted female head
  * @param {{count?:number,color?:number,externalColliders?:Array}} options
  */
-export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalColliders=[]}={}){
+export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalColliders=[],lengthScale=1}={}){
  if(!head?.isMesh||!head.geometry?.getAttribute('position'))
   throw Error('Real sculpted 3D head required for scalp-rooted wig');
  head.geometry.computeBoundingBox();head.geometry.computeVertexNormals();
@@ -112,7 +112,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   const fore=wigRoot.z>center.z+d.z*.13;
   const side=Math.sign(wigRoot.x-center.x)||1;
   const fringe=fore&&wigRoot.y>box.min.y+d.y*.875&&i%4<2;
-  const length=d.y*(fringe?.18:.48+fract(i*.381966)*.23);
+  const length=d.y*(fringe?.18:.48+fract(i*.381966)*.23)*clamp(lengthScale,.55,1.5);
   const rest=[],points=[],vel=[];
   const tangent=seed.n.clone().multiplyScalar(fringe?.05:.095);
   const out=fringe?d.z*.085:d.z*.07;
@@ -226,7 +226,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   style:'long-golden-layered-fringe',rooted:true,rootCount:lockCount,
   pointCount:lockCount*(segments+1),realScalpCandidateCount:candidates.length,
   collisionTypes:['head','face','neck','shoulder','chest',...externalColliders.map(c=>c.name||'body')],
-  meshCount:2,physicsHz:30
+  meshCount:2,physicsHz:30,lengthScale:clamp(lengthScale,.55,1.5)
  };
  return {root,update,dispose(){
   root.traverse(o=>{if(o.isMesh){o.geometry.dispose();o.material.dispose();}});
