@@ -2218,15 +2218,29 @@ if(storyRequest){
 const teamCounts=()=>massSim?massSim.live.slice():[0,1].map(team=>actors.filter(a=>a.team===team&&a.hp>0).length);
 const log=message=>{$('log').textContent=message};
 const stageObjective=storyRequest?.origin==='game-core'?storyRequest.battleObjective:null;
+let stageObjectiveMarker=null;
 const objectiveMonitor=createStageObjectiveMonitor(stageObjective,{
  cellSize:CELL,
+ onZone:({center,radius,mass,type})=>{
+  if(type==='eliminate'||stageObjectiveMarker)return;
+  const x=mass?(center.x-6)*CELL:center.x;
+  const z=mass?(center.z-6)*CELL:center.z;
+  const worldRadius=mass?radius*CELL:radius;
+  const ring=new THREE.Mesh(
+   new THREE.RingGeometry(Math.max(.1,worldRadius*.94),worldRadius,64),
+   new THREE.MeshBasicMaterial({color:type==='defend_timer'?0x52d6d0:0xf8d779,
+    transparent:true,opacity:.72,side:THREE.DoubleSide,depthWrite:false}));
+  ring.rotation.x=-Math.PI/2;ring.position.set(x,terrainY(x,z)+.22,z);
+  ring.renderOrder=3;ring.name='BattleObjectiveCaptureZone';
+  ring.userData.nonColliding=true;scene.add(ring);stageObjectiveMarker=ring;
+ },
  onComplete:(victory,reason)=>completeBattle(victory,{
   title:victory?'任務成功':'任務失敗',detail:reason+' · 経過'+Math.floor(elapsed)+'秒'
  })
 });
 function checkStageObjective(){
  return objectiveMonitor?.update(elapsed,massSim?.units??actors,{
-  mass:Boolean(massSim),sideSize:MASS_SIZE||50,teamCounts:teamCounts()
+  mass:Boolean(massSim),sideSize:MASS_SIZE||50
  })??false;
 }
 function completeBattle(victory,{title='',detail=''}={}){
