@@ -107,7 +107,7 @@ import {GLTFExporter} from 'three/addons/exporters/GLTFExporter.js';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {makeIndependentFaceMaster,FACE_MASTER_SPEC} from './src/independent-face-masters.js';
 import {updateFaceFeatureAngles,applyFaceColorMode} from './src/face-feature-meshes.js';
-import {FEMALE_V7_DEFAULTS,normalizeFemaleFaceControls} from './src/face-v7-controls.js';
+import {FEMALE_V7_DEFAULTS,CONTACT_COLORS,safeContactColor} from './src/face-v7-controls.js';
 const $=id=>document.getElementById(id);
 const canvas=$('faceCanvas');
 const renderer=new THREE.WebGLRenderer({canvas,antialias:true,powerPreference:'high-performance'});
@@ -128,19 +128,22 @@ orbit.enableDamping=true;orbit.enablePan=false;
 orbit.minDistance=.1;orbit.maxDistance=6;
 const models=new Map();
 let gender='female',angle='front',wired=false,partsOn=true,ready=false;
-let faceMode='clay',femaleSource=null,modelChanges={...FEMALE_V7_DEFAULTS};
+let faceMode='color',femaleSource=null,modelChanges={...FEMALE_V7_DEFAULTS};
+let contactColor=CONTACT_COLORS.brown;
 function setActive(ids,id){
  for(const x of ids)$(x).setAttribute('aria-pressed',String(x===id));
 }
 function metrics(){
  const model=models.get(gender);
  return {loaded:ready,gender,view:angle,wire:wired,partsOn,
-  faceMode,femaleControls:{...modelChanges},
+  faceMode,contactColor,femaleControls:{...modelChanges},
+  maleWithoutMakeup:models.get('male')?.report?.maleNoMakeup??null,
   currentFeatureAngles:models.get('female')?.parts?.userData?.featureAngles||null,
   female:models.get('female')?.report||null,
   male:models.get('male')?.report||null,
   visibleFaceMeshes:model?Number(model.face.visible&&model.root.visible):0,
-  visiblePartMeshes:model&&partsOn&&model.root.visible?model.report.facePartMeshCount:0,
+  visiblePartMeshes:model&&partsOn&&model.root.visible?
+   (()=>{let n=0;model.parts.traverse(o=>{if(o.isMesh&&o.visible)n++});return n})():0,
   exportedSurface:'face-only',bodyMeshes:0,sourceUntouched:true};
 }
 window.__faceMasterQA=metrics;
@@ -207,7 +210,7 @@ function repaint(){
  // The clay look is intentionally bright to show topology; color mode uses
  // softer exposure so the natural skin tone is not washed out to white.
  renderer.toneMappingExposure=faceMode==='color'?.95:1.25;
- for(const m of models.values())applyFaceColorMode(m.face,faceMode);
+ for(const m of models.values())applyFaceColorMode(m.face,faceMode,{contactColor});
  setActive(['clay','color'],faceMode);
  $('metrics').textContent=JSON.stringify(metrics(),null,2);
 }
@@ -224,7 +227,7 @@ function rebuildFemale(){
  next.parts.visible=partsOn;
  scene.add(next.root);
  models.set('female',next);
- applyFaceColorMode(next.face,faceMode);
+ applyFaceColorMode(next.face,faceMode,{contactColor});
  if(wired)next.face.traverse(o=>{if(o.isMesh)o.material.wireframe=true;});
  if(prev){
   scene.remove(prev.root);
@@ -238,15 +241,16 @@ function rebuildFemale(){
  if(gender==='female')selectGender('female');
  $('metrics').textContent=JSON.stringify(metrics(),null,2);
 }
-const rebuildKeys=['irisDiameter','jawSharpness','noseTipLift',
- 'nostrilCover','noseBridgeSharpness'];
-const angleKeys=['browAngle','lashAngle'];
+const rebuildKeys=['irisDiameter','eyeSize','jawSharpness','noseTipLift',
+ 'nostrilCover','noseBridgeSharpness',
+ 'lipstickX','lipstickY','lipstickWidth','lipstickHeight'];
+const angleKeys=['eyeAngle'];
 for(const key of [...rebuildKeys,...angleKeys]){
  const el=$(key),out=$(key+'Value');
  el.addEventListener('input',()=>{
   modelChanges[key]=Number(el.value);
-  out.value=el.value+(key==='browAngle'||key==='lashAngle'?'°':
-   key==='irisDiameter'||key==='jawSharpness'?'×':'');
+  out.value=el.value+(key==='eyeAngle'?'°':
+   ['irisDiameter','eyeSize','jawSharpness','lipstickWidth','lipstickHeight'].includes(key)?'×':'');
   if(angleKeys.includes(key)&&models.get('female')){
    updateFaceFeatureAngles(models.get('female').parts,modelChanges);
    $('metrics').textContent=JSON.stringify(metrics(),null,2);
@@ -254,6 +258,33 @@ for(const key of [...rebuildKeys,...angleKeys]){
  });
  if(rebuildKeys.includes(key))el.addEventListener('change',rebuildFemale);
 }
+$('contactPreset').addEventListener('change',()=>{
+ const value=$('contactPreset').value;
+ if(value!=='custom'){
+  contactColor=CONTACT_COLORS[value]||CONTACT_COLORS.brown;
+  $('contactColor').value=contactColor;
+  repaint();
+ }
+});
+$('contactColor').addEventListener('input',()=>{
+ contactColor=safeContactColor($('contactColor').value);
+ $('contactPreset').value='custom';
+ repaint();
+});
+$('resetPreset').addEventListener('click',()=>{
+ modelChanges={...FEMALE_V7_DEFAULTS};
+ for(const key of [...rebuildKeys,...angleKeys]){
+  const el=$(key),value=modelChanges[key];
+  el.value=String(value);
+  $(key+'Value').value=String(value)+(key==='eyeAngle'?'°':
+   ['irisDiameter','eyeSize','jawSharpness','lipstickWidth','lipstickHeight'].includes(key)?'×':'');
+ }
+ contactColor=CONTACT_COLORS.brown;
+ $('contactColor').value=contactColor;
+ $('contactPreset').value='brown';
+ faceMode='color';
+ rebuildFemale();repaint();
+});
 $('export').addEventListener('click',async()=>{
  if(!ready)return;
  $('export').disabled=true;
@@ -297,7 +328,7 @@ async function init(){
    models.set(g,model);scene.add(model.root);
   }
   ready=true;
-  for(const id of ['female','male','front','threeQuarter','side','back','wire','parts','clay','color','export'])
+  for(const id of ['female','male','front','threeQuarter','side','back','wire','parts','clay','color','resetPreset','export'])
    $(id).disabled=false;
   const query=new URLSearchParams(location.search);
   selectGender(query.get('gender')==='male'?'male':'female');
