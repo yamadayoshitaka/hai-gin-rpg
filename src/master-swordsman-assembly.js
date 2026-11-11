@@ -929,7 +929,8 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false,gen
    eyeAnchors:eyeFixtures.map(f=>f.socketReference),
    blush:femalePortrait?(profile.makeup?.blush??.90):0,
    lip:femalePortrait?(profile.makeup?.lip??.94):0,
-   eyeliner:femalePortrait?(profile.makeup?.eyeliner??.96):0
+   eyeliner:femalePortrait?(profile.makeup?.eyeliner??.96):0,
+   underEye:femalePortrait?proportions.underEyeSoftness:0
   });
   // Apply source expression morphs before fitting eye geometry and lids.
   for(const key of HERO_FACE_MORPHS)
@@ -950,12 +951,13 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false,gen
   }
   for(const eye of ocularSources){
    const geom=eye.mesh.geometry,attr=geom.getAttribute('position');
-   const {x:cx,y:cy}=eye.center;
+   const {x:cx,y:cy,z:cz}=eye.center;
+   const globeScale=femalePortrait?proportions.eyeballScale:1;
    for(let i=0;i<attr.count;i++){
     const x0=eye.base[3*i],y0=eye.base[3*i+1],z0=eye.base[3*i+2];
-    const dx=(x0-cx)*proportions.eyeWidth;
-    attr.setXYZ(i,cx+dx,cy+(y0-cy)*proportions.eyeHeight+
-      dx*proportions.eyeTilt*.30,z0);
+    const dx=(x0-cx)*proportions.eyeWidth*globeScale;
+    attr.setXYZ(i,cx+dx,cy+(y0-cy)*proportions.eyeHeight*globeScale+
+      dx*proportions.eyeTilt*.30,cz+(z0-cz)*globeScale);
    }
    attr.needsUpdate=true;geom.computeVertexNormals();geom.computeBoundingBox();
    geom.computeBoundingSphere();
@@ -975,7 +977,8 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false,gen
    eye.mesh.position.y+=proportions.eyeVertical*headDim.y;
    eye.mesh.position.x+=eye.side*proportions.eyeOffsetX;
    eye.mesh.position.y+=proportions.eyeOffsetY;
-   eye.mesh.position.z+=proportions.eyeOffsetZ;
+   eye.mesh.position.z+=proportions.eyeOffsetZ+
+    (femalePortrait?proportions.eyeSocketDepth:0);
   }
   detailedHead.updateWorldMatrix(true,true);
   // Stable brow projection: sample the real (cloned) face vertices once
@@ -1013,7 +1016,9 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false,gen
    // directly caused detached pupils above the native eye sockets.
    // Keep iris in front of face even after a socket moves forward.
    const skinEyeZ=sourceSkinDepth(center.x,center.y,box.max.z+.003);
-   const exposedIrisZ=Math.max(box.max.z+.008,skinEyeZ+.0075);
+   // The original +8 mm iris cards were hovering in front of the human
+   // face. Follow the native globe and visible skin with a 1.2 mm offset.
+   const exposedIrisZ=Math.max(box.max.z+.0012,skinEyeZ+.0012);
    group.position.copy(detailedHead.worldToLocal(
     new THREE.Vector3(center.x,center.y,exposedIrisZ)));
    group.visible=true;fixture.sclera.visible=true;
@@ -1025,23 +1030,32 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false,gen
     proportions.pupilOffsetY,proportions.pupilOffsetZ);
    // Native sclera geometry already applied eyeWidth/eyeHeight/tilt.
    // Do not multiply them AGAIN on the iris overlay.
-   const irisScale=THREE.MathUtils.clamp(profile.eyeSize??1,.92,1.24);
+   const irisScale=femalePortrait?proportions.irisDiameter:
+    THREE.MathUtils.clamp(profile.eyeSize??1,.92,1.24);
+   const coupledGlobe=femalePortrait?proportions.eyeballScale:1;
    group.scale.set(
-    irisScale*Math.sqrt(proportions.eyeWidth),
-    irisScale*Math.sqrt(proportions.eyeHeight),1);
+    irisScale*coupledGlobe*(femalePortrait?1:Math.sqrt(proportions.eyeWidth)),
+    irisScale*coupledGlobe*(femalePortrait?1:Math.sqrt(proportions.eyeHeight)),1);
+   fixture.pupilLayer.scale.setScalar(femalePortrait?
+    proportions.pupilDiameter:1);
    group.rotation.z=proportions.eyeTilt*.15;
    fixture.upper.position.copy(detailedHead.worldToLocal(
-    new THREE.Vector3(center.x,center.y+dim.y*.16,box.max.z+.009)));
+    new THREE.Vector3(center.x,center.y+dim.y*.16,exposedIrisZ+.0004)));
    fixture.upper.position.add(new THREE.Vector3(
     fixture.side*proportions.upperLidOffsetX,proportions.upperLidOffsetY,
     proportions.upperLidOffsetZ));
    fixture.lower.position.copy(detailedHead.worldToLocal(
-    new THREE.Vector3(center.x,center.y-dim.y*.15,box.max.z+.009)));
+    new THREE.Vector3(center.x,center.y-dim.y*.15,exposedIrisZ+.0004)));
    fixture.lower.position.add(new THREE.Vector3(
     fixture.side*proportions.lowerLidOffsetX,proportions.lowerLidOffsetY,
     proportions.lowerLidOffsetZ));
    fixture.lid.position.copy(detailedHead.worldToLocal(
     center.clone().add(new THREE.Vector3(0,0,dim.z*.56+.004))));
+   fixture.upperFold.visible=femalePortrait&&proportions.upperLidCoverage>0;
+   fixture.lowerFold.visible=femalePortrait;
+   fixture.upperFold.position.y=-dim.y*proportions.upperLidCoverage*.28;
+   fixture.upperFold.scale.y=1+proportions.upperLidCoverage*.25;
+   fixture.lowerFold.position.y=-dim.y*.055;
    fixture.upper.scale.y=proportions.eyeHeight;
    fixture.lower.scale.y=proportions.eyeHeight;
    // Capture the latest transformed socket position and blinking travel.
@@ -1049,7 +1063,7 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false,gen
    fixture.upper.userData.openScaleY=fixture.upper.scale.y;
    fixture.lower.userData.openLocalY=fixture.lower.position.y;
    const blinkTarget=detailedHead.worldToLocal(
-    new THREE.Vector3(center.x,center.y-dim.y*.36,box.max.z+.009));
+    new THREE.Vector3(center.x,center.y-dim.y*.36,exposedIrisZ+.0004));
    fixture.upper.userData.blinkTravelLocal=Math.max(
     0,fixture.upper.position.y-blinkTarget.y);
    fixture.lower.userData.blinkTravelLocal=
@@ -1060,8 +1074,13 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false,gen
    fixture.lower.rotation.z=proportions.eyeTilt*.18;
    fixture.lashes.visible=true;
    fixture.lashes.material.color.set(
-    profile.gender==='female'?'#292027':profile.hairColor||'#594048');
-   fixture.lashes.scale.y=profile.gender==='female'?1.26:1;
+    profile.gender==='female'?'#4b373a':profile.hairColor||'#594048');
+   if(femalePortrait){
+    for(const mat of Array.isArray(fixture.sclera.material)?
+     fixture.sclera.material:[fixture.sclera.material])
+     if(mat?.color)mat.color.set('#eee6e1');
+   }
+   fixture.lashes.scale.y=profile.gender==='female'?.74:1;
    fixture.lid.scale.x=proportions.eyeWidth;
    // Keep the brow on the supraorbital ridge rather than directly on
    // the upper eyelid: the earlier brow looked like a second lash line.
@@ -1098,9 +1117,19 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false,gen
   syncBlinkPose();
   // Shape the ACTUAL face mesh, not merely the accompanying preview portrait.
   // Target of .93..1.02 makes youthful candidates subtly narrower at the jaw.
-  const eyeScale=THREE.MathUtils.clamp(Number(profile.eyeSize)||1,.92,1.24);
+  const eyeScale=femalePortrait?proportions.irisDiameter:
+   THREE.MathUtils.clamp(Number(profile.eyeSize)||1,.92,1.24);
   return {skin:profile.skin,iris:profile.iris,faceWidth,headScale,eyeScale,
    facialProportions:proportions,faceGeometryDigest:youthfulReport.geometryDigest,
+   fittedHumanEyes:femalePortrait?{
+    globeScale:proportions.eyeballScale,
+    socketDepthMeters:proportions.eyeSocketDepth,
+    irisDiameter:proportions.irisDiameter,pupilDiameter:proportions.pupilDiameter,
+    lidCoverage:proportions.upperLidCoverage,
+    underEyeSoftness:proportions.underEyeSoftness,
+    irisSurfaceOffsetMeters:.0012,
+    movingLidFolds:eyeFixtures.filter(f=>f.upperFold.visible).length
+   }:null,
    youthfulModifiedVertices:youthfulReport.modifiedVertices,
    appliedUserPortraitSilhouette:null,
    referenceSilhouetteComparisonOnly:youthfulReport.referenceSilhouette?.source||null,
