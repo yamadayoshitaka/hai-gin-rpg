@@ -916,6 +916,7 @@ import {territoryAt,NEUTRAL_HALF_WIDTH} from './src/battle-territory.js?v=4.6.15
 import {squadTypeOf,SQUAD_TYPE_NAMES} from './src/mass-battle-formations.js?v=4.6.45';
 import {recomposeSquadAssignments,applySquadRecomposition,FORMATION_TYPES,FORMATION_NAMES,FORMATION_ICONS,normalizeFormationType} from './src/battle-squad-recomposition.js?v=4.6.49';
 import {squadJobComposition,chooseEnemyOrder,enemyOrderRefreshSeconds,TACTICAL_TIME_BANK_SECONDS} from './src/battle-tactical-policy.js?v=4.6.69';
+import {createStageObjectiveMonitor} from './src/battle-objective-runtime.js?v=1';
 import {createMassBattleRealArmy} from './src/mass-battle-real-army.js?v=4.6.39';
 import {BattleCorpsePolicy,corpseOpacity} from './src/battle-corpse-policy.js?v=4.4.35';
 import {CrowdPerformanceBudget} from './src/crowd-performance-budget.js?v=4.6.36';
@@ -2215,6 +2216,18 @@ if(storyRequest){
 }
 const teamCounts=()=>massSim?massSim.live.slice():[0,1].map(team=>actors.filter(a=>a.team===team&&a.hp>0).length);
 const log=message=>{$('log').textContent=message};
+const stageObjective=storyRequest?.origin==='game-core'?storyRequest.battleObjective:null;
+const objectiveMonitor=createStageObjectiveMonitor(stageObjective,{
+ cellSize:CELL,
+ onComplete:(victory,reason)=>completeBattle(victory,{
+  title:victory?'任務成功':'任務失敗',detail:reason+' · 経過'+Math.floor(elapsed)+'秒'
+ })
+});
+function checkStageObjective(){
+ return objectiveMonitor?.update(elapsed,massSim?.units??actors,{
+  mass:Boolean(massSim),sideSize:MASS_SIZE||50,teamCounts:teamCounts()
+ })??false;
+}
 function completeBattle(victory,{title='',detail=''}={}){
  if(finished)return false;
  if(typeof closeSquadCircleInfo==='function')closeSquadCircleInfo();
@@ -3621,7 +3634,8 @@ function recordStoryBattleOutcome(victory){
  for(const a of actors){if(a.team===0&&a.squadId!=null&&a.hp<=0)casualties.set(a.squadId,(casualties.get(a.squadId)||0)+1);}
  const monstersRemaining=storyRequest.enemyMode==='monsters'?actors.filter(a=>a.team===1&&a.hp>0).length:null;
  const result={version:1,battleId:storyRequest.battleId,territoryId:storyRequest.territoryId,victory,
-  ...(storyRequest.origin==='game-core'?{stageId:storyRequest.stageId,monstersRemaining,objectiveCompleted:Boolean(victory)}:{}),
+  ...(storyRequest.origin==='game-core'?{stageId:storyRequest.stageId,monstersRemaining,
+    objectiveType:stageObjective?.type||'eliminate',objectiveCompleted:Boolean(victory)}:{}),
   casualties:[...casualties].map(([squadId,count])=>({squadId,count}))};
  try{sessionStorage.setItem('hai-gin-story-result-v1',JSON.stringify(result));}
  catch(e){showRuntimeError('戦闘結果を保存できませんでした：'+e.message);}
@@ -4764,7 +4778,8 @@ function syncMassBattleSnapshot(){
   }
  }
  const [ally,foe]=massSim.live;
- if(!ally||!foe)completeBattle(Boolean(ally),{detail:'大規模戦闘 '+Math.floor(elapsed)+'秒'});
+ if(checkStageObjective())return;
+ if(!stageObjective&&(!ally||!foe))completeBattle(Boolean(ally),{detail:'大規模戦闘 '+Math.floor(elapsed)+'秒'});
 }
 // Runtime pickup is distinct from the upper-floor pathfinding pickup.
 // Checking the ACTUAL room/position prevents items from being collected
@@ -5120,7 +5135,8 @@ function tickAI(dt){
  }
  }
  if(skirmishActions)emitCombatEvents(skirmishActions.events);
- const [ally,foe]=teamCounts();if(!ally||!foe)completeBattle(Boolean(ally),{
+ const [ally,foe]=teamCounts();if(checkStageObjective())return;
+ if(!stageObjective&&(!ally||!foe))completeBattle(Boolean(ally),{
  detail:(storyRequest?storyRequest.territoryName+' 攻略戦 · ':'戦闘時間 ')+Math.floor(elapsed)+'秒'});
 }
 // A 2000-unit battle cannot label every head without hiding the battle.
