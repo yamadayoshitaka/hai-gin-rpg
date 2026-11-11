@@ -803,71 +803,125 @@ $('back').addEventListener('click',()=>{targetView(look,'back');printState()});
  // serializing all 600,000 lines exceeded the CI browser timeout, so the
  // static portable GLB gets a deterministic 1:16 long-hair LOD. There is no
  // mutation of source GLBs or preview hairs after export.
- function useStaticWigExportLOD(root){
-  const touched=[],every=16,verticesPerStrand=12;
-  if(!root?.visible||activeFeaturedKey!=='hero-girl-01')return touched;
-  root.traverse(obj=>{
-   if(!obj.isLineSegments||!obj.name.startsWith('HEROINE_WIG_')||
-      !obj.userData?.strands)return;
-   const geo=obj.geometry,position=geo.getAttribute('position'),
-    color=geo.getAttribute('color');
-   if(!position||!color||position.count%verticesPerStrand||
-      position.count<verticesPerStrand*30)return;
-   const strands=position.count/verticesPerStrand,sampled=Math.ceil(strands/every);
-   const pos=new Float32Array(sampled*verticesPerStrand*3);
-   const col=new Float32Array(pos.length);
-   const srcPos=position.array,srcColor=color.array;
-   let o=0;
-   for(let i=0;i<strands;i+=every){
-    const first=i*verticesPerStrand*3;
-    pos.set(srcPos.subarray(first,first+verticesPerStrand*3),o);
-    col.set(srcColor.subarray(first,first+verticesPerStrand*3),o);
-    o+=verticesPerStrand*3;
-   }
-   const lod=new THREE.BufferGeometry();
-   lod.setAttribute('position',new THREE.BufferAttribute(pos,3));
-   lod.setAttribute('color',new THREE.BufferAttribute(col,3));
-   lod.computeBoundingSphere();
-   touched.push({mesh:obj,source:geo,lod});
-   obj.geometry=lod;
-  });
-  return touched;
+/**
+ * Portable static inspection GLB. The *viewer* keeps the 100,000-strand
+ * original mesh. Only an export-only group is generated here, flattening
+ * world transforms from the genuine 3D model and sampling ~1,500 real hair
+ * curves. Heavy browser-only PBR image atlases are converted to flat,
+ * vertex-colored MeshStandardMaterial for reliable offline GLB export.
+ * The preview materials and geometry are never mutated.
+ */
+function buildPortableStaticExport(){
+ master.actor.updateWorldMatrix(true,true);
+ const exportRoot=new THREE.Group();
+ exportRoot.name='HEROINE_SOURCE_3D_PORTABLE_STATIC_GLTF';
+ const sourceInverse=master.actor.matrixWorld.clone().invert();
+ let triangles=0,hairSegments=0,meshes=0;
+ const geometryCopies=[],materialCopies=[];
+ function isActuallyVisible(node){
+  let n=node;
+  while(n&&n!==master.actor){if(n.visible===false)return false;n=n.parent;}
+  return true;
  }
- async function exportCurrent3D(){
+ function sampledStrands(source){
+  const p=source.geometry?.getAttribute('position');
+  const c=source.geometry?.getAttribute('color');
+  if(!p||!c)return null;
+  const stride=12,skip=64;
+  if(p.count%stride)return null;
+  const count=Math.ceil(p.count/(stride*skip));
+  const outP=new Float32Array(count*stride*3);
+  const outC=new Float32Array(count*stride*3);
+  let o=0;
+  for(let i=0;i<p.count/stride;i+=skip){
+   const from=i*stride*3;
+   outP.set(p.array.subarray(from,from+stride*3),o);
+   outC.set(c.array.subarray(from,from+stride*3),o);
+   o+=stride*3;
+  }
+  const g=new THREE.BufferGeometry();
+  g.setAttribute('position',new THREE.BufferAttribute(outP,3));
+  g.setAttribute('color',new THREE.BufferAttribute(outC,3));
+  geometryCopies.push(g);
+  hairSegments+=o/6;
+  return g;
+ }
+ master.actor.traverse(node=>{
+  if(!isActuallyVisible(node)||node.userData.previewWireOverlay)return;
+  const isWigLine=node.isLineSegments&&node.name.startsWith('HEROINE_WIG_')&&node.userData?.strands;
+  if(!node.isMesh&&!isWigLine)return;
+  const geometry=isWigLine?sampledStrands(node):node.geometry;
+  if(!geometry?.getAttribute('position'))return;
+  const hasColors=!!geometry.getAttribute('color');
+  const makeMat=m=>{
+   const color=m?.color?.clone?.()||new THREE.Color(0xe0cbba);
+   const out=new THREE.MeshStandardMaterial({
+    name:'PORTABLE_INSPECTION_PBR',
+    color,roughness:THREE.MathUtils.clamp(m?.roughness??.76,.08,1),
+    metalness:THREE.MathUtils.clamp(m?.metalness??0,0,1),
+    side:m?.side??THREE.FrontSide,
+    vertexColors:hasColors&&!!m?.vertexColors,
+    transparent:!!m?.transparent,opacity:m?.opacity??1,
+    alphaTest:m?.alphaTest??0
+   });
+   materialCopies.push(out);
+   return out;
+  };
+  const material=isWigLine?
+   new THREE.LineBasicMaterial({vertexColors:true,color:0xffffff}):
+   Array.isArray(node.material)?node.material.map(makeMat):makeMat(node.material);
+  if(isWigLine)materialCopies.push(material);
+  const clone=isWigLine?new THREE.LineSegments(geometry,material):
+   new THREE.Mesh(geometry,material);
+  clone.name=node.name;
+  clone.matrixAutoUpdate=false;
+  clone.matrix.copy(sourceInverse.clone().multiply(node.matrixWorld));
+  clone.matrixWorldNeedsUpdate=true;
+  exportRoot.add(clone);
+  if(node.isMesh){
+   triangles+=Math.floor((geometry.index?.count||
+    geometry.getAttribute('position').count)/3);
+   meshes++;
+  }
+ });
+ return {root:exportRoot,triangles,hairSegments,meshes,
+  dispose(){geometryCopies.forEach(g=>g.dispose());
+   materialCopies.forEach(m=>m.dispose());}};
+}
+async function exportCurrent3D(){
  if(!master||!modelReady)throw Error('3D character not loaded');
  const btn=$('exportCharacterGlb');
- // The exported GLB retains actual PBR materials and geometry; wire overlay
- // is diagnostic only and is omitted from the downloaded model.
+ const wasWire=meshMode;
  clearWireDisplay();
- const staticWig=useStaticWigExportLOD(importedHair);
- btn.disabled=true;btn.textContent='実3Dジオメトリを書き出し中…';
+ btn.disabled=true;btn.textContent='静止3DをGLB保存中…';
+ const exported=buildPortableStaticExport();
  try{
-  const exporter=new GLTFExporter();
-  // Export exactly the visible actual meshes; it is NOT a rigged battle
-  // character and cannot preserve WebGL-only clipping-plane semantics.
-  master.actor.updateWorldMatrix(true,true);
-  const data=await exporter.parseAsync(master.actor,{
-   binary:true,onlyVisible:true,embedImages:true,trs:false,animations:[]
+  if(exported.meshes<5||exported.triangles<5000)
+   throw Error('Portable export lost the original 3D face/body geometry');
+  const t=performance.now();
+  const data=await new GLTFExporter().parseAsync(exported.root,{
+   binary:true,onlyVisible:true,embedImages:false,trs:false,animations:[]
   });
-  if(!(data instanceof ArrayBuffer)||data.byteLength<30000)
-   throw Error('GLB export returned an invalid or empty model');
-  const blob=new Blob([data],{type:'model/gltf-binary'});
-  const url=URL.createObjectURL(blob),anchor=document.createElement('a');
-  anchor.href=url;
+  if(!(data instanceof ArrayBuffer)||data.byteLength<50000)
+   throw Error('Portable export returned an empty binary 3D model');
+  console.info('HEROINE_GLTF_PORTABLE_EXPORT_READY',JSON.stringify({
+   bytes:data.byteLength,triangles:exported.triangles,
+   hairSegments:exported.hairSegments,meshes:exported.meshes,
+   ms:Math.round(performance.now()-t)
+  }));
+  const url=URL.createObjectURL(new Blob([data],{type:'model/gltf-binary'}));
+  const anchor=document.createElement('a');
   anchor.download=(activeFeaturedKey||'soldier-'+selectedId)+'-static-preview.glb';
-  document.body.append(anchor);anchor.click();anchor.remove();
+  anchor.href=url;document.body.append(anchor);anchor.click();anchor.remove();
   setTimeout(()=>URL.revokeObjectURL(url),30000);
   return data.byteLength;
  }finally{
-  for(const {mesh,source,lod} of staticWig){
-   mesh.geometry=source;
-   lod.dispose();
-  }
-  refreshWireDisplay();
+  exported.dispose();
+  if(meshMode===wasWire)refreshWireDisplay();
   btn.disabled=false;btn.textContent='試作3DをGLB保存（静止モデル）';
  }
 }
-$('exportCharacterGlb').title='3D保存用には長髪を1/16に軽量化します。確認画面では10万本すべてを表示します。';
+$('exportCharacterGlb').title='画面は10万本の髪を表示。静止GLBは実3D形状のまま髪を低密度化し、ポータブルな単色PBR材質で保存します。';
 $('exportCharacterGlb').addEventListener('click',()=>{
  exportCurrent3D().catch(e=>{hairError='GLB書き出し失敗: '+String(e);printState();console.error(e)});
 });
