@@ -77,7 +77,7 @@ test('two source-derived clay face meshes have owned independent vertices and pr
   'Mouth and nose adjustments must not pull the outer face silhouette');
  assert.ok(female.report.outerContourSamples>100);
  assert.ok(female.report.localizedNoseAndMouthSamples>20);
- assert.equal(female.report.innerFeatureHalfWidthLimit,.55);
+ assert.equal(female.report.innerFeatureHalfWidthLimit,.28);
  assert.equal(female.report.femaleJawStyle,'full-cheek-smooth-oval-point-v6');
  assert.equal(female.report.headTemplate,'realistic-head-animation.glb');
  assert.equal(female.report.cheekJawSculpt,'smooth-head-source-feminine-jaw-v6');
@@ -86,6 +86,8 @@ test('two source-derived clay face meshes have owned independent vertices and pr
  assert.ok(female.report.addedCheekDepth>0);
  assert.ok(female.report.narrowedJawDistance>0);
  assert.ok(female.report.apexLowering>0);
+ assert.ok(female.report.maxCheekWidthChange<.005,
+  'Nose/mouth edits may not pull the real upper/lower cheeks inward');
 });
 test('strictly exclude body, wig and makeup from face-only model assembly',()=>{
  const f=fixture();const built=makeIndependentFaceMaster(f.source,'female');
@@ -121,6 +123,11 @@ test('nose and mouth deformation has compact support and never changes cheek/jaw
  const nose=d(.19);
  assert.ok(nose.dx<-.001,'Nasal alar wings must move inwards');
  assert.ok(nose.dz>.001,'Nasal bridge and tip retain positive depth');
+ const preservedCheek=femaleInnerFeatureDelta({
+  xn:.38,yn:.575,zn:.93,offsetX:.05,depth:.3
+ });
+ assert.equal(preservedCheek.dx,0);
+ assert.equal(preservedCheek.dz,0);
  const mouth=femaleInnerFeatureDelta({
   xn:.25,yn:.505,zn:.95,offsetX:.1,depth:.3
  });
