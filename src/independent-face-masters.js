@@ -63,7 +63,7 @@ export function femaleCheekJawDelta({xn,yn,zn,offsetX,depth,height}){
  // Taper smoothly to zero before reaching the cheeks (yn >= .485).
  const jawBand=bell(yn,.30,.105)*(1-smooth(.39,.45,yn))*front;
  const jawEdge=smooth(.10,.23,ax)*(1-smooth(.68,.82,ax));
- const dx=-offsetX*.285*jawBand*jawEdge;
+ const dx=jawBand===0||jawEdge===0?0:-offsetX*.285*jawBand*jawEdge;
  const apex=bell(ax,0,.20)*bell(yn,.255,.068)*front;
  const dy=-height*.008*apex;
  return {dx,dy,dz,cheekSupport,mouthCornerSupport,jawBand,apex};
