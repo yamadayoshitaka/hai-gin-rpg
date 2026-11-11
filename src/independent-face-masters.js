@@ -14,7 +14,7 @@ const smooth=(a,b,v)=>{
 
 /**
  * Compact-support nose and mouth sculpt.
- * This function is EXACTLY zero outside the inner 55% half-face width.
+ * This function is EXACTLY zero outside the inner 28% half-face width.
  * It cannot change cheek edges, jaw width or the outer silhouette.
  * Exported for regression tests against real head vertices.
  */
@@ -22,11 +22,11 @@ export function femaleInnerFeatureDelta({xn,yn,zn,offsetX,depth}){
  const ax=Math.abs(xn),front=smooth(.30,.68,zn);
  // Exact no-op at and beyond the facial-feature boundary, including
  // signed-zero cases, so downstream strict QA can prove no influence.
- if(ax>=.55)return {dx:0,dz:0,noseSupport:0,mouthSupport:0};
- const noseSupport=(1-smooth(.30,.53,ax))*bell(yn,.572,.078)*front;
- const bridgeSupport=(1-smooth(.29,.53,ax))*bell(yn,.624,.082)*front;
- const tipSupport=(1-smooth(.28,.52,ax))*bell(yn,.566,.045)*front;
- const mouthSupport=(1-smooth(.30,.55,ax))*bell(yn,.503,.044)*front;
+ if(ax>=.28)return {dx:0,dz:0,noseSupport:0,mouthSupport:0};
+ const noseSupport=(1-smooth(.14,.27,ax))*bell(yn,.572,.055)*front;
+ const bridgeSupport=(1-smooth(.13,.26,ax))*bell(yn,.624,.075)*front;
+ const tipSupport=(1-smooth(.13,.26,ax))*bell(yn,.566,.045)*front;
+ const mouthSupport=(1-smooth(.13,.28,ax))*bell(yn,.503,.029)*front;
  return {
   dx:-offsetX*(.35*noseSupport+.29*mouthSupport),
   dz:depth*(.023*bridgeSupport+.014*tipSupport-.016*mouthSupport),
@@ -228,7 +228,7 @@ export function makeIndependentFaceMaster(sourceRoot,gender){
   narrowedJawDistance:Number(narrowedJawDistance.toFixed(7)),
   apexLowering:Number(apexLowering.toFixed(7)),
   cheekJawSculpt:'smooth-head-source-feminine-jaw-v6',
-  innerFeatureHalfWidthLimit:.55,
+  innerFeatureHalfWidthLimit:.28,
   femaleJawStyle:gender==='female'?'full-cheek-smooth-oval-point-v6':null,
   sourceUntouched:true,sourceGeometryIndependent:face.geometry!==original,
   headOnly:true,bodyUnchanged:true,hairVisible:false,makeupVisible:false,
