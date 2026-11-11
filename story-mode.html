@@ -203,7 +203,7 @@ body.formation-active .command-menu{bottom:calc(10px + env(safe-area-inset-botto
 @media(max-width:650px){.story-act-nav{grid-template-columns:repeat(2,minmax(0,1fr))}.story-chapter-buttons{grid-template-columns:repeat(3,minmax(0,1fr))}.story-dialogue strong{display:block}}
 
 </style>
-<link rel="stylesheet" href="./src/tactical-command-ui.css?v=2.1">
+<link rel="stylesheet" href="./src/tactical-command-ui.css?v=2.1"><link rel="stylesheet" href="./src/battle-ui-refinement.css?v=2.2">
 </head>
 <body>
 <div class="shell">
@@ -268,7 +268,7 @@ body.formation-active .command-menu{bottom:calc(10px + env(safe-area-inset-botto
 <nav id="gameMenu" class="menu-bar" aria-label="ストーリーモード操作" hidden>
   <button data-tab="map" class="active" aria-pressed="true"><strong>🗺</strong>全体地図</button><button id="menuToggle" type="button" aria-expanded="false" aria-controls="commandMenu"><strong>☰</strong>作戦メニュー</button>
  </nav>
-<section id="sortieDialog" class="sortie-dialog" role="dialog" aria-modal="true" aria-label="出撃位置の選択" hidden><div class="sortie-card"><h2>⚔ 出撃準備</h2><p id="sortieSummary" class="hint"></p><div id="storySortieTactical" class="innCommandGrid" aria-label="出撃戦力と戦術評価"></div><div id="sortieSquads" class="sortie-list"></div><p class="hint">部隊ごとに北・中央・南の橋を指定します。3D戦闘画面で軍師の号令を発令できます。</p><div class="sortie-actions"><button type="button" id="sortieCancel">戻る</button><button type="button" class="primary" id="sortieConfirm">3D戦闘へ出撃 ▶</button></div></div></section>
+<section id="sortieDialog" class="sortie-dialog" role="dialog" aria-modal="true" aria-label="出撃位置の選択" hidden><div class="sortie-card"><h2>⚔ 出撃準備</h2><p id="sortieSummary" class="hint"></p><div id="storySortieTactical" class="innCommandGrid" aria-label="出撃戦力と戦術評価"></div><p id="sortieObjectives" class="hint">勝利目的と作戦を確認</p><div id="sortieSquads" class="sortie-list"></div><div id="sortiePager" class="innSubPager"><button id="sortiePrev" type="button">◀ 前の隊</button><span id="sortiePageLabel">1 / 1</span><button id="sortieNext" type="button">次の隊 ▶</button></div><p class="hint">部隊ごとに北・中央・南の橋を指定します。3D戦闘画面で軍師の号令を発令できます。</p><div class="sortie-actions"><button type="button" id="sortieCancel">戻る</button><button type="button" class="primary" id="sortieConfirm">3D戦闘へ出撃 ▶</button></div></div></section>
  <div id="commandMenu" class="command-menu frame" aria-label="作戦メニュー" hidden><div class="menu-heading"><strong>作戦メニュー</strong><button id="menuClose" type="button" aria-label="作戦メニューを閉じる">✕</button></div><div class="menu-grid">
    <button data-tab="army"><strong>♟</strong><span>軍師・軍団</span><small>自動編成・部隊能力・兵士編成へ</small></button>
    <button data-tab="leaders"><strong>♟</strong><span>軍師雇用</span><small>雇用・育成・領地配置</small></button>
@@ -391,6 +391,17 @@ function renderMap(){
  }
 }
 function renderTerritory(){$('territoryDrawer').hidden=!territoryOpen;const t=territoryOf(selected);if(!t)return;const owner=state.owners[t.id];$('territoryDetail').innerHTML='<h3>'+escapeHtml(t.name)+(t.base?' ★':'')+'</h3><p>勢力：<strong>'+escapeHtml(FACTIONS[owner].name)+'</strong></p><p>地形：'+escapeHtml(t.terrain)+'</p><p>出撃上限：'+t.capacity+'人</p><p>月間収入：'+money(t.income)+'</p>'+(owner==='player'?'<p class="hint">所有中。毎月の財政収入に加わります。</p>':owner==='neutral'?'<p class="hint">開拓費用は300Gです。</p>':'<p class="hint">敵の守備兵：推定'+(state.garrisons[t.id]||0)+'人</p>');const commands=[];if(accessible(state,t.id)&&owner==='neutral')commands.push('<button class="primary" data-command="colonize" '+(state.gameOver?'disabled':'')+'>⛏ この地を開拓（300G）</button>');if(accessible(state,t.id)&&(owner==='crimson'||owner==='verdant'))commands.push('<button class="danger" data-command="attack" '+(state.gameOver?'disabled':'')+'>⚔ 部隊を配置して3D攻略戦へ</button>');if(!commands.length)commands.push('<p class="small">隣接する未開拓地や敵領地を選ぶと行動できます。</p>');const storyHere=STORY_CHAPTERS.filter(c=>c.territory===t.id&&c.id<=unlockedStoryChapters(state)).at(-1);if(storyHere)commands.push('<button type="button" data-command="story">📖 第'+storyHere.id+'章「'+escapeHtml(storyHere.title)+'」を読む・聴く</button>');$('territoryActions').innerHTML=commands.join('');}
+let sortiePage=0;
+function setSortiePage(nextPage){
+ const squads=[...$('sortieSquads').children],size=3,total=Math.max(1,Math.ceil(squads.length/size));
+ sortiePage=Math.max(0,Math.min(total-1,nextPage));
+ squads.forEach((squad,index)=>{squad.hidden=index<size*sortiePage||index>=size*(sortiePage+1);});
+ $('sortiePrev').disabled=sortiePage<=0;
+ $('sortieNext').disabled=sortiePage>=total-1;
+ $('sortiePageLabel').textContent=(sortiePage+1)+' / '+total;
+}
+$('sortiePrev').onclick=()=>setSortiePage(sortiePage-1);
+$('sortieNext').onclick=()=>setSortiePage(sortiePage+1);
 function openSortie(){
  const request=createStoryBattleRequest(state,selected,{battleId:'preview'});
  const groups=new Map();for(const unit of request.units){const entry=groups.get(unit.squadId)||{...unit,count:0};entry.count++;groups.set(unit.squadId,entry);}
@@ -403,6 +414,8 @@ function openSortie(){
  $('storySortieTactical').innerHTML='<div class="innMetric"><small>出撃戦力</small><b>'+ownPower.toFixed(1)+'</b></div>'+
   '<div class="innMetric"><small>突撃効果</small><b>'+estimate.effect+'/100</b></div>'+
   '<div class="innMetric"><small>号令間隔</small><b>'+tacticalCooldownSeconds(commander.level)+'秒</b></div>';
+ $('sortieObjectives').textContent='勝利目的：敵部隊を撃破して領地を制圧 ／ 固定作戦：全滅（進軍方面は出撃時に選択）';
+ setSortiePage(0);
  $('sortieDialog').querySelector('.sortie-card h2').textContent='⚔ 開戦前 · 出撃布陣';
  $('sortieDialog').hidden=false;
 }
