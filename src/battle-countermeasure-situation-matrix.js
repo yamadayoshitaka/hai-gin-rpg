@@ -19,7 +19,7 @@ capture_near|objective|敵拠点の制圧が間近|capture_near|hold,defend
 siege_commander|objective|攻城対象の敵主将を確認|enemy_commander|focus_commander,charge
 siege_holding|objective|攻城戦で敵が立てこもる|siege_blocked|burn_building,unlock_door,demolish,charge
 attacker_defeated|objective|攻撃側が壊滅|attacker_destroyed|hold
-rushing|enemy|敵の全軍突撃・進軍|rush|defend,hold,focus_squad,fire_building
+rushing|enemy|敵の全軍突撃・進軍|rush|defend,hold,focus_squad,burn_building
 fortified|enemy|敵軍が守備・待機|fortified|charge,burn_building,unlock_door
 fallback|enemy|敵軍が後退|fallback|charge,focus_squad,hold
 encircled|enemy|味方が包囲された|encircled|retreat,defend,summon_rescue
@@ -230,10 +230,15 @@ export function getCountermeasureOptions(context={}){
    definition.requiredJobs.some(job=>jobs.has(job));
   const target=candidateTarget(definition,context);
   const targetOk=!definition.target||Boolean(target);
-  const enabled=definition.status==='supported'&&hasJob&&targetOk&&context.commanderAlive!==false;
+  const hasHealer=definition.channel!=='support'||allUnits.some(u=>u.team===(context.team??0)&&
+   u.jobId==='priest'&&live(u));
+  const engineSupports=!(definition.type==='eliminate_commander'&&!context.massBattle);
+  const enabled=definition.status==='supported'&&hasJob&&targetOk&&hasHealer&&
+   engineSupports&&context.commanderAlive!==false;
   const reason=definition.status==='planned'?'未実装：専用AI・救助/輸送判定が必要':
     !hasJob?'この部隊に必要ジョブがいません':
     !targetOk?'有効な対象がいません':
+    !hasHealer?'僧侶がいません':!engineSupports?'この戦闘規模では未対応':
     context.commanderAlive===false?'軍師が戦死したため発令不可':'使用可能';
   const prior=options.get(id);
   const score=weight+(enabled?20:0);
