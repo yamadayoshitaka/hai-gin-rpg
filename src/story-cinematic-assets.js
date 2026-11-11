@@ -5,6 +5,7 @@
  * impact on live 3D actors. Preserve the SVG as an offline/error fallback.
  */
 import {STORY_KEY_PEOPLE} from './story-cinematic.js';
+import {STORY_NEUTRAL_PANEL_IDS} from './story-panel-neutral-ids.js';
 const assetRoot='./assets/story-cinema/';
 export const CINEMATIC_CAST_ASSETS=Object.freeze(Object.fromEntries(
  STORY_KEY_PEOPLE.map(person=>[person.id,assetRoot+'cast/'+person.id+'.webp'])
@@ -18,7 +19,7 @@ export const CINEMATIC_TITLE_ASSET=assetRoot+'title.webp';
 // as lossless compatibility fallbacks until the individual art is delivered.
 // Scenes depicting a player-controlled strategist are gender-sensitive.
 // A female player must never be shown the male protagonist's panel art.
-const GENDER_NEUTRAL_PANELS=new Set(['c01-s01-m5']); // seal/document, no visible hero
+const GENDER_NEUTRAL_PANELS=new Set(STORY_NEUTRAL_PANEL_IDS); // reviewed hero-free panels only
 export function individualStoryPanelAsset(panel){
  const id=String(panel?.id||'');
  if(!/^c\d{2}-s\d{2}-m[1-7]$/.test(id))return null;
