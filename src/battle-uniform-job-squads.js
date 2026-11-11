@@ -20,12 +20,21 @@ export function uniformJobSquadPlan(units,types={},team=0,chosenJobs={}){
  })).sort((a,b)=>Number(a.id)-Number(b.id)||a.id.localeCompare(b.id));
  if(squads.length>10)return null;
  // Refuse invalid explicit choices instead of creating mixed or duplicate soldiers.
- const chosen=new Map();
+ const chosen=new Map(),displaced=[];
  for(const squad of squads.filter(s=>s.requested)){
   const available=pool.get(squad.requested);
   if(!available||available.length<squad.slots.length)return null;
   chosen.set(squad.id,squad.requested);
   pool.set(squad.requested,available.slice(squad.slots.length));
+  // When a player claims another squad's job, the vacated job should
+  // naturally be recycled into that displaced squad (stable job swap).
+  const counts=new Map();
+  for(const unit of squad.slots){
+   const id=String(unit.jobId||unit.job?.id||'');
+   counts.set(id,(counts.get(id)||0)+1);
+  }
+  const original=[...counts].sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0]))[0]?.[0];
+  if(original&&original!==squad.requested)displaced.push(original);
  }
  const role=job=>['priest','healer'].includes(job)?'heal':
   ['archer','mage','summoner'].includes(job)?'range':'front';
@@ -36,12 +45,18 @@ export function uniformJobSquadPlan(units,types={},team=0,chosenJobs={}){
   const pref=types[squad.id]??types.get?.(squad.id)??'balanced';
   const compatible=job=>pref==='support'?Number(job==='priest')*2+Number(role(job)==='range'):
    pref==='attack'?Number(role(job)==='front')*2:0;
-  const options=[...pool].filter(([_,list])=>list.length>=count).sort((a,b)=>
-   ((own.get(b[0])||0)*10+compatible(b[0]))-((own.get(a[0])||0)*10+compatible(a[0]))||
-   a[0].localeCompare(b[0]));
+  const options=[...pool].filter(([_,list])=>list.length>=count).sort((a,b)=>{
+   const score=job=>(own.get(job)||0)*100+
+    // Displaced classes take priority over unrelated replacements if a
+    // previously uniform squad lost its own profession to a manual choice.
+    (displaced.includes(job)?30:0)+compatible(job);
+   return score(b[0])-score(a[0])||a[0].localeCompare(b[0]);
+  });
   if(!options.length)return null;
   const job=options[0][0];chosen.set(squad.id,job);
   pool.set(job,pool.get(job).slice(count));
+  const consumed=displaced.indexOf(job);
+  if(consumed>=0)displaced.splice(consumed,1);
  }
  // Reserve first in the same order as selection. Rebuild working pools to
  // avoid losing the identity of explicit reservations before emitting slots.
