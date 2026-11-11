@@ -32,7 +32,9 @@ const clipUrl=clip=>{
   ?'https://raw.githubusercontent.com/yamadayoshitaka/hai-gin-rpg/main/'+clip:'./'+clip;
 };
 export function createStoryVoiceDirector({onPlaying=()=>{}}={}){
- let token=0,audio=null;
+ let token=0,audio=null,loadedManifest=null;
+ // Preload once so first-touch speech is not blocked by an asynchronous fetch.
+ void manifest().then(data=>{loadedManifest=data;});
  function stop(){
   ++token;
   if(audio){audio.pause();audio.removeAttribute('src');audio.load();audio=null;}
@@ -63,9 +65,7 @@ export function createStoryVoiceDirector({onPlaying=()=>{}}={}){
   const profile=STORY_VOICE_PROFILES[id]||STORY_NARRATOR_PROFILE;
   const text=String(panel.text).slice(0,380);
   const key='story::panel::'+panel.id+'::'+text+'::'+profile.voicevoxSpeaker;
-  const data=await manifest();
-  if(seq!==token)return false;
-  const clip=data?.clips?.[key];
+  const clip=loadedManifest?.clips?.[key];
   if(safeClip(clip)&&'Audio' in globalThis){
    try{
     const sound=new Audio(clipUrl(clip));audio=sound;sound.volume=.88;
