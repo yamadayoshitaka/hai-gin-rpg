@@ -233,12 +233,15 @@ export function applyHeroineMakeupToFace(faceMesh,neutralColors,{
   // Calibrated against WebGL makeup ON/OFF: the old .37-.44 band tinted
   // the chin ~25px below the actual lips. Shift to real vermilion.
   const lipBand=smooth(.448,.461,y)*(1-smooth(.517,.532,y));
-  const lipRelief=smooth(.74,.92,z);
+  // The lower face is now recessed. The old forward-depth threshold
+  // selected only the protruding philtrum and missed most lip vertices.
+  // Keep the strict Y/corner band, but let actual vermilion relief be tinted.
+  const lipRelief=smooth(.64,.82,z);
   // A Gaussian alone has infinite tails: the pigment was technically
   // reaching the cheeks even when the vertical lip band was correct.
   const cornerFade=1-smooth(.33,.45,Math.abs(x));
   const lips=front*lipRelief*bell(x,0,.19)*cornerFade*lipBand*
-   (.90*bell(y,.496,.014)+.72*bell(y,.469,.013))*
+   (.90*bell(y,.484,.014)+.72*bell(y,.457,.013))*
    intensity*THREE.MathUtils.clamp(lip,0,1);
   // Dark-brown upper lash line, located against the SOURCE sclera anchors,
   // not an unrelated eyebrow-height strip. Keeps the eyeballs exposed.
