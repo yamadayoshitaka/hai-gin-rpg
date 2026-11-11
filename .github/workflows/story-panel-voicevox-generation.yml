@@ -9,11 +9,11 @@ on:
   workflow_dispatch:
     inputs:
       chapter:
-        description: 'Chapter 1-20 (use 0 for a specific stage)'
+        description: 'Use all to generate all 1400 panels, 1-20 for a chapter, or 0 for one stage'
         required: true
-        default: '1'
+        default: 'all'
         type: choice
-        options: ['0','1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20']
+        options: ['all','0','1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20']
       stage:
         description: 'When chapter=0, stage ID e.g. c01-s01'
         required: false
@@ -30,7 +30,7 @@ concurrency:
 jobs:
   synthesize:
     runs-on: ubuntu-latest
-    timeout-minutes: 65
+    timeout-minutes: 360
     steps:
       - uses: actions/checkout@v4
         with:
@@ -68,10 +68,12 @@ jobs:
           PY
       - name: Synthesize the chosen chapter or stage
         env:
-          CHAPTER: ${{ github.event.inputs.chapter || '1' }}
+          CHAPTER: ${{ github.event.inputs.chapter || 'all' }}
           STAGE: ${{ github.event.inputs.stage || 'c01-s01' }}
         run: |
-          if [ "$CHAPTER" = "0" ]; then
+          if [ "$CHAPTER" = "all" ]; then
+            node scripts/generate-story-panel-voicevox.mjs --all --format mp3
+          elif [ "$CHAPTER" = "0" ]; then
             node scripts/generate-story-panel-voicevox.mjs --stage "$STAGE" --format mp3
           else
             node scripts/generate-story-panel-voicevox.mjs --chapter "$CHAPTER" --format mp3
