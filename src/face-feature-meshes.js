@@ -15,6 +15,7 @@ const bell=(x,c,w)=>Math.exp(-.5*((x-c)/w)**2);
 const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
 const smoothstep=t=>{const q=clamp(t,0,1);return q*q*(3-2*q)};
 const vertexMakeup=new WeakMap();
+const orbitalRestPositions=new WeakMap();
 function setVertexMakeup(mesh,rgb){
  mesh.geometry.setAttribute('color',new THREE.Float32BufferAttribute(rgb,3));
  mesh.material.vertexColors=true;mesh.material.needsUpdate=true;
@@ -470,6 +471,34 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   reference:'soft-cheek-small-nose-relaxed-almond-eyes-gentle-lips'
  });
  root.userData.report=report;
+ // Rotate the orbital system together, then push brows back to the
+ // head's real surface. Without reprojection a slanted brow sinks into
+ // the skull and seems to disappear at +/- eye angles.
+ root.reprojectBrows=()=>{
+  root.updateMatrixWorld(true);
+  root.traverse(mesh=>{
+   if(!mesh.isMesh||mesh.userData?.colorRole!=='brow')return;
+   const attr=mesh.geometry.getAttribute('position');
+   if(!attr)return;
+   if(!orbitalRestPositions.has(mesh.geometry))
+    orbitalRestPositions.set(mesh.geometry,attr.array.slice());
+   const original=orbitalRestPositions.get(mesh.geometry);
+   for(let i=0;i<attr.count;i++)
+    attr.setXYZ(i,original[i*3],original[i*3+1],original[i*3+2]);
+   mesh.updateWorldMatrix(true,false);
+   for(let i=0;i<attr.count;i++){
+    const p=new THREE.Vector3(attr.getX(i),attr.getY(i),attr.getZ(i));
+    mesh.localToWorld(p);root.worldToLocal(p);
+    const skin=surfaceAt(p.x,p.y);
+    p.z=skin+d.z*.008;
+    root.localToWorld(p);mesh.worldToLocal(p);
+    attr.setXYZ(i,p.x,p.y,p.z);
+   }
+   attr.needsUpdate=true;
+   mesh.geometry.computeVertexNormals();
+   mesh.geometry.computeBoundingSphere();
+  });
+ };
  updateFaceFeatureAngles(root,female?settings:{
   eyeAngle:0,browAngle:0,lashAngle:0
  });
@@ -494,6 +523,7 @@ export function updateFaceFeatureAngles(partsRoot,settings={}){
  values.lashAngle=v.lashAngle;
  values.linkedEyeBrowLashUnderEye=true;
  partsRoot.userData.featureAngles=values;
+ partsRoot.reprojectBrows?.();
  return values;
 }
 
