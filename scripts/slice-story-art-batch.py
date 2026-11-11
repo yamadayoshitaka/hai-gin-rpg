@@ -23,8 +23,8 @@ ROOT = Path(__file__).resolve().parents[1]
 PLAN_FILE = ROOT / "qa-reports/story-art-batch-plan.json"
 STATUS_FILE = ROOT / "assets/story/sheets/processed-batches.json"
 REGISTRY_FILE = ROOT / "src/story-panel-neutral-ids.js"
-ID_RE = re.compile(r"^c\d{2}-s\d{2}-m[1-7]$")
-OUTPUT_RE = re.compile(r"^assets/story/panels/c\d{2}-s\d{2}-m0[1-7](?:-female)?\.webp$")
+ID_RE = re.compile(r"^c\d{2}-s\d{2}-m(?:[1-9]|10)$")
+OUTPUT_RE = re.compile(r"^assets/story/panels/c\d{2}-s\d{2}-m(?:0[1-9]|10)(?:-female)?\.webp$")
 GRID_COLUMNS, GRID_ROWS = 2, 5
 FINAL_SIZE = (960, 540)
 
@@ -110,7 +110,7 @@ def approve(path: Path, base_hash: str, batch: dict) -> dict:
 def read_registry() -> set[str]:
     if not REGISTRY_FILE.exists():
         return {"c01-s01-m5"}
-    return set(re.findall(r"c\d{2}-s\d{2}-m[1-7]",
+    return set(re.findall(r"c\d{2}-s\d{2}-m(?:[1-9]|10)",
                           REGISTRY_FILE.read_text(encoding="utf-8")))
 
 
