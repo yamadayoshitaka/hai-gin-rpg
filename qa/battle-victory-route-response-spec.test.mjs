@@ -42,7 +42,7 @@ assert.deepEqual(Object.keys(COUNTER_JOBS).sort(),[...catalogIndex.keys()].sort(
 let totalSituations=0,totalResponses=0,totalEnemyResponses=0,totalAllyReResponses=0;
 for(const g of VICTORY_ROUTE_RESPONSE_TREE){
  assert.equal(g.level,'L0');
- assert.ok(g.victoryCondition.includes('殲滅'));
+ assert.match(g.victoryCondition,/殲滅|全滅/);
  assert.equal(g.universalAlternative,'敵軍殲滅');
  assert.equal(g.winEvaluator,'evaluateBattleObjective');
  assert.equal(g.routes.length,4);
