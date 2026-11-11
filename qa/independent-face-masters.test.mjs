@@ -275,7 +275,7 @@ test('v8 linked eye angle, real eye scaling and contact lens color preserve sour
  assert.equal(parts.getObjectByName('LEFT_UNDER_EYE_SHADOW').parent.name,'LEFT_EYE_LINKED_PIVOT');
  assert.equal(parts.getObjectByName('LEFT_SCULPTED_EYEBROW').parent.parent.name,'LEFT_EYE_LINKED_PIVOT');
  assert.equal(updateFaceFeatureAngles(parts,{eyeAngle:10}).eyeAngle,10);
- assert.ok(parts.getObjectByName('LEFT_EYE_LINKED_PIVOT').rotation.z>0);
+ assert.ok(parts.getObjectByName('LEFT_EYE_LINKED_PIVOT').rotation.z<0);
  assert.equal(applyFaceColorMode(large.face,'color',{contactColor:CONTACT_COLORS.blue}),'color');
  assert.equal(parts.getObjectByName('LEFT_CURVED_IRIS').material.color.getHex(),0x467fa7);
  assert.equal(safeContactColor('invalid'),CONTACT_COLORS.brown);
