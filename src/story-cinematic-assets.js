@@ -13,6 +13,14 @@ export const CINEMATIC_CHAPTER_ASSETS=Object.freeze(Array.from(
  {length:20},(_,i)=>assetRoot+'chapters/'+String(i+1).padStart(2,'0')+'.webp'
 ));
 export const CINEMATIC_TITLE_ASSET=assetRoot+'title.webp';
+// Optional full-bleed, one-piece illustration for EACH story panel.
+// A scene-specific picture takes precedence; cast/chapter composites remain
+// as lossless compatibility fallbacks until the individual art is delivered.
+export function individualStoryPanelAsset(panel){
+ const id=String(panel?.id||'');
+ if(!/^c\\d{2}-s\\d{2}-m[1-7]$/.test(id))return null;
+ return './assets/story/panels/'+id.replace(/-m([1-7])$/,(_,n)=>'-m'+String(n).padStart(2,'0'))+'.webp';
+}
 const cache=new Map();
 function getPicture(url){
  if(!url)return Promise.resolve(null);
@@ -89,9 +97,13 @@ export function applyCinematicImage(node,panel,{background=false}={}){
  if(!node||!panel)return;
  const key=panel.id||panel.stageId+'-'+panel.index;
  node.dataset.cinematicKey=key;
- void cinematicPanelImage(panel).then(url=>{
+ const dedicated=individualStoryPanelAsset(panel);
+ void (async()=>{
+  if(dedicated&&await getPicture(dedicated))return dedicated;
+  return cinematicPanelImage(panel);
+ })().then(url=>{
   if(!url||node.dataset.cinematicKey!==key||!node.isConnected)return;
   if(background)node.style.backgroundImage='url("'+url+'")';
   else node.src=url;
- }).catch(()=>{}); // Existing SVG remains visible when a device lacks canvas support.
+ }).catch(()=>{}); // Original chapter/cast art and SVG remain visible as fallbacks.
 }
