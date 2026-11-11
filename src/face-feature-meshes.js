@@ -435,7 +435,10 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
  }
  // The face mesh itself carries the integrated nose, so DO NOT glue a
  // separate nose sphere in front of its nasal bridge.
- surface.geometry=null;surface.material.dispose();
+ // The lightweight raycast proxy is still used by reprojectBrows when
+ // the eye angle changes. Never detach its shared sculpted geometry.
+ // It is not part of the scene and its only geometry is the owned face
+ // geometry which is disposed together with the actual face mesh.
  const meshList=[];
  root.traverse(o=>{if(o.isMesh)meshList.push(o);});
  const partTriangles=meshList.reduce((n,m)=>n+
