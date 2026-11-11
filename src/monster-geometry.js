@@ -294,8 +294,25 @@ function insect(g,s,{spider=false}={}){
    const abdomen=g.group('abdomen',[0,1.25,-.57]);
    g.sphere(abdomen,'skin',[0,0,-.25],[.54,.47,.60],{metal:.12,rough:.56});
    g.sphere(abdomen,'light',[0,.28,-.24],[.40,.11,.44]);
-   for(const side of [-1,1])for(let i=0;i<4;i++)
-     g.sphere(head,'eye',[side*(.07+i*.072),.12+(i%2)*.06,.30],[.025,.028,.012],{glow:true});
+   // Articulated dorsal plate ridges and paired spinnerets are actual
+   // geometry, not a painted decal; the abdomen pivot remains animatable.
+   for(let i=0;i<4+v%2;i++){
+     const z=-.55+i*.145;
+     const width=.24+.075*Math.sin((i+1)*Math.PI/6);
+     g.bridge(abdomen,i%2?'accent':'shadow',
+       [-width,.315,z],[width,.315,z],.023,.018);
+   }
+   for(const side of [-1,1]){
+     g.spike(abdomen,'shadow',[side*.115,-.19,-.73],
+       [side*.17,-.28,-.93-v*.014],.052);
+   }
+   // Each of the four eye pairs sits in a raised socket, reducing the
+   // floating-neon-dot appearance without modifying shared face assets.
+   for(const side of [-1,1])for(let i=0;i<4;i++){
+     const x=side*(.07+i*.072),y=.12+(i%2)*.06;
+     g.sphere(head,'shadow',[x,y,.281],[.035,.038,.020],{rough:.75});
+     g.sphere(head,'eye',[x,y,.301],[.022,.025,.011],{glow:true});
+   }
    if(v>=2)for(let i=0;i<6;i++)g.spike(abdomen,'accent',[(i%2?1:-1)*.28,.28,-.42+(i/6)*.60],
      [(i%2?1:-1)*.35,.50+(i%3)*.07,-.42+(i/6)*.60],.05);
  }
