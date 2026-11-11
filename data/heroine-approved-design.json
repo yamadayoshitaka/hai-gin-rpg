@@ -1,13 +1,13 @@
 {
   "key": "hero-girl-01",
-  "referenceDesign": "approved-heroine-knight-portrait-20261109",
-  "approvalScope": "FF13 Lightning-inspired art direction; implementation and 3D beauty approval pending",
+  "referenceDesign": "original-chapter1-female-commander-art-master-20261111",
+  "approvalScope": "Chapter 1 female commander concept art is provisional; 3D face, hair, outfit and beauty approval pending",
   "visualTargets": {
-    "genderPresentation": "lean young-adult female knight; Lightning-class facial and material design target, source geometry original",
-    "hair": "Single rose-pink asymmetric wig (100,000 authored 3D centreline filaments) on source-conforming pink crown; no bald patches, no old donor hair, swept fringe, shoulder-length side layers, long rear layers safely clearing body",
-    "eyes": "Blue-green sclera/iris/pupil remain visible across width/height/spacing/tilt/vertical edits; attached eyelashes follow upper eyelids and blink",
-    "face": "FF13-style attractive but anatomically natural face; soft cheek-to-jawline, restrained almond eyes and realistic nose/lips; no 2D warp",
-    "costume": "Pale fitted standing collar, silver armour plates and dark knight bodysuit; original source meshes, no extracted Lightning assets"
+    "genderPresentation": "young adult female commander/knight, based on registered Chapter 1 character portrait (not a copied external character)",
+    "hair": "warm golden-blonde layers, soft swept fringe and full top with narrow parting per Chapter 1 image; long back locks, no exposed scalp or block-like cap; 100,000 preview filaments remain a technical count only",
+    "eyes": "blue with calm, anatomically anchored almond lids and visible iris; eye and blink QA are not beauty approval",
+    "face": "soft healthy cheeks and rounded feminine jaw; natural nose, lips and human eyes; compare Chapter 1 concept art with real 3D front and side before approving",
+    "costume": "silver armour, deep navy fabric and gold detailing as in the registered Chapter 1 portrait; no unrelated proprietary model or texture import"
   },
   "viewsRequired": [
     "front",
@@ -28,7 +28,7 @@
   "skinned": false,
   "artGradeCertified": false,
   "previewOnlyHairFilaments": 100000,
-  "artReference": "Lightning (Final Fantasy XIII) is a visual goal only; no third-party original character model or texture is imported",
+  "artReference": "assets/story/characters/commander/female-master.webp",
   "qaRequired": [
     "crownCoverage",
     "sideBackClearance",
@@ -39,5 +39,16 @@
     "eyelashLidTracking",
     "wireframe",
     "blink"
-  ]
+  ],
+  "artMaster": {
+    "chapter": 1,
+    "characterId": "commander-female",
+    "image": "assets/story/characters/commander/female-master.webp",
+    "status": "provisional-character-master",
+    "priority": "character-master-before-scene-illustration",
+    "otherChaptersArtworkCertified": false
+  },
+  "artReferenceStatus": "provisional chapter-one female commander master; no final front/side orthographic turnaround yet",
+  "artDirectionStatus": "new reference baseline adopted for comparison only; 3D image matching unfinished",
+  "notes": "Story characters in Chapters 2-20 have definitions but their chapter scene art is not certified as completed."
 }

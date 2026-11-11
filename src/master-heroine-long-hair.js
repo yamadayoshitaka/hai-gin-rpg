@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {HEROINE01_MASTER_MODEL_V1} from './heroine01-master-model-v1.js';
 
 /**
  * Heroine 01's INSPECTION-ONLY wig: 100,000 genuine 3D curved filaments,
@@ -7,7 +8,7 @@ import * as THREE from 'three';
  * Roots are sampled from the source CC0 scalp's alpha-masked vertices.
  * The battle model and archived GLBs remain untouched.
  */
-const COUNT=100000,SEGMENTS=6; // Six curved sections prevent angular temple tips.
+const COUNT=HEROINE01_MASTER_MODEL_V1.hair.totalStrands,SEGMENTS=6; // Six curved sections prevent angular temple tips.
 const fract=x=>x-Math.floor(x);
 const hash=x=>fract(Math.sin(x*127.1+17.79)*43758.5453123);
 const lerp=(a,b,t)=>a+(b-a)*t;
@@ -118,7 +119,7 @@ function clearBodyForLongStrand(x,y,z,region,envelope){
  * conceal the forehead scalp on mobile. These narrow, continuous 3D ribbons
  * are hair roots/flow, NOT a second helmet-shaped wig or a face texture.
  */
-export function buildHeroineFrontFringe(scalp,{locks=520}={}){
+export function buildHeroineFrontFringe(scalp,{locks=HEROINE01_MASTER_MODEL_V1.hair.fringeLocks}={}){
  const g=scalp?.geometry,p=g?.getAttribute('position'),a=g?.getAttribute('color');
  if(!p||!a||a.itemSize!==4)throw Error('A real head-conforming scalp is required for front fringe');
  g.computeBoundingBox();
@@ -201,7 +202,7 @@ export function buildHeroineFrontFringe(scalp,{locks=520}={}){
  * is a scalp mask, never intended to look like a bare plastic helmet.
  * This crown-only ribbon layer is independent of the 100k long filaments.
  */
-export function buildHeroineCrownFlow(scalp,{locks=8000}={}){
+export function buildHeroineCrownFlow(scalp,{locks=HEROINE01_MASTER_MODEL_V1.hair.crownMicroLocks}={}){
  const source=scalp?.geometry,p=source?.getAttribute('position'),
   mask=source?.getAttribute('color');
  if(!p||!mask||mask.itemSize!==4)throw Error('A source head scalp is required for crown flow');
@@ -224,20 +225,23 @@ export function buildHeroineCrownFlow(scalp,{locks=8000}={}){
   const seed=i+1;
   const root=roots[(i*67+Math.floor(hash(seed*3.17)*roots.length))%roots.length];
   radial.set((root[0]-cx)/d.x,(root[1]-cy)/d.y,(root[2]-cz)/d.z).normalize();
-  // Split the crown flow at the actual source head's front/back plane.
-  // Front roots blend into side-swept bangs; rear roots flow toward the neck.
-  // A circular arc follows head curvature instead of making long straight
-  // spikes or plunging through the mesh like an extended tangent ray.
-  const front=(root[2]-cz)/d.z>0;
+  // One continuous off-centre crown guide follows the Chapter 1 blonde
+  // design. Previous strong front/back split exposed a V-shaped bare cap
+  // from above; soften the transition and side-sweep both populations.
+  // Keep all 8000 roots on the unmodified real source scalp.
+  const frontNormalized=(root[2]-cz)/d.z;
   const sweep=(root[0]-cx)/d.x;
-  tangent.set(.32+hash(seed*1.83)*.27,
+  const forwardWeight=clamp((frontNormalized+.16)/.36,0,1);
+  const guide=HEROINE01_MASTER_MODEL_V1.hair;
+  const flowZ=lerp(guide.crownBackwardFlow,guide.crownForwardFlow,forwardWeight);
+  tangent.set(.40+hash(seed*1.83)*.16,
    -.13-.14*hash(seed*2.07),
-   (front?.46:-.53)+sweep*.13+(hash(seed*7.7)-.5)*.12);
+   flowZ+sweep*.055+(hash(seed*7.7)-.5)*.035);
   tangent.addScaledVector(radial,-tangent.dot(radial)).normalize();
   side.crossVectors(tangent,radial).normalize();
   const rootYn=(root[1]-box.min.y)/d.y;
-  const longLength=d.y*(.215+.13*hash(seed*1.31));
-  const fringeSafe=front&&rootYn<.86?
+  const longLength=d.y*(.232+.125*hash(seed*1.31));
+  const fringeSafe=forwardWeight>.70&&rootYn<.86?
    Math.max(d.y*.070,d.y*(.07+Math.max(0,rootYn-.735)*.90)):longLength;
   const length=Math.min(longLength,fringeSafe),
    halfWidth=d.x*(.00115+.00075*hash(seed*4.91)),
@@ -289,7 +293,9 @@ export function buildHeroineCrownFlow(scalp,{locks=8000}={}){
   layeredCrownNoBaldDome:true,extendedScalpArcFlow:true,
   frontSweepsIntoBangs:true,rearSweepsTowardNape:true,
   meanTipChordNormalized:Number((totalCrownChord/locks/d.y).toFixed(3)),
-  minTipYNormalized:Number(minCrownTipNormalized.toFixed(3))
+  minTipYNormalized:Number(minCrownTipNormalized.toFixed(3)),
+  rootGuide:'chapter1-continuous-offcentre-sidesweep-v1',
+  sourceReferenceId:HEROINE01_MASTER_MODEL_V1.id
  })};
 }
 
@@ -437,7 +443,7 @@ export function buildHeroineFantasyLongHair(scalp,{lengthInHeads=3.25,bodyEnvelo
  let frontNeckIntrusionVertices=0,bodyCutStrands=0,bodyCutSections=0;
  let minimumRearDepth=Infinity;
  let rearEndSampleCount=0,rearEndContractedCount=0;
- const rearSculptedLockCount=12;
+ const rearSculptedLockCount=HEROINE01_MASTER_MODEL_V1.hair.rearGuideLocks;
  let vi=0;
  const regions={rear:70000,templeLeft:12000,templeRight:12000,bangs:6000};
  const categories=[

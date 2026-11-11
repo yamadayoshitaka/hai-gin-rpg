@@ -9,6 +9,8 @@
  * independently sculpted FF13-class faces or finished facial animation rigs.
  */
 import {validateFaceProportions} from './master-swordsman-face-proportions.js';
+import {FEMALE_COMMANDER_ART_PALETTE,artReferenceForFeatured} from './chapter-one-character-art-references.js';
+import {HEROINE01_MASTER_MODEL_V1} from './heroine01-master-model-v1.js';
 import {createSwordsmanAppearance,SWORDSMAN_FACE_KEYS}
  from './master-swordsman-1000-appearance.js';
 
@@ -33,8 +35,11 @@ const definitions=[
   [.48,.39,.42,.34,.38,.53,.42],'#c59573','#526f73','#332c26','#3f5145','#8d9ba4',1.00,1.00,1.02],
  ['ally-05','軽装の俊敏剣士','ally',7,
   [.19,.22,.39,.17,.26,.22,.33],'#cfa085','#6e8251','#604039','#533c49','#919c9e',.95,1.08,.80],
- ['hero-girl-01','美少女01・ピンク髪の女騎士（顔・化粧調整中）','hero',2,
-  [.12,.16,.28,.18,.18,.24,.23],'#edcbbf','#75a6ad','#d6a5ba','#393e53','#bdc5cb',.935,1.030,.70]
+ ['hero-girl-01','女性主人公・第1章人物原画参照（3D未承認）','hero',2,
+  [.12,.16,.28,.18,.18,.24,.23],
+  FEMALE_COMMANDER_ART_PALETTE.skin,FEMALE_COMMANDER_ART_PALETTE.iris,
+  FEMALE_COMMANDER_ART_PALETTE.hair,FEMALE_COMMANDER_ART_PALETTE.cloth,
+  FEMALE_COMMANDER_ART_PALETTE.armor,.935,1.030,.70]
 ];
 function buildPreset(row,i){
  const [key,label,category,hairStyle,faceVector,skin,iris,hairColor,clothColor,armorColor,
@@ -49,31 +54,13 @@ function buildPreset(row,i){
     '-'+String(1+(i%5)).padStart(2,'0'),
   category,role:key,label,face,skin,iris,hairStyle,hairColor,clothColor,armorColor,
   gender:female?'female':'male',headSource:female?'realistic-head-sculpt':'realistic-head-animation',
-  referenceDesign:female?'original-rose-hair-fantasy-knight-20261110':null,
-  visualDirection:female?'lightning-inspired-pink-side-sweep-almond-eyes-subtle-cosmetics':null,
-  coiffureStyle:female?'fantasy-long-blonde':null, // Legacy runtime key; 100k rose-pink asymmetric wig
-  proportions:female?validateFaceProportions({
-    // FF13 Lightning as a *visual direction*, not borrowed Square Enix mesh
-    // or copyrighted texture: slender natural nose, calm almond eyes and
-    // focused expression, softer rose-pink skin, fine jaw with full cheeks.
-    faceHeight:.939,upperThird:1.024,middleThird:.916,lowerThird:.915,
-    jawTaper:.838,cheekRoundness:1.012,chinLength:.893,
-    lowerFaceProjection:.755,
-    preEarFullness:.675,lowerCheekLateral:.710,parotidWidth:.660,
-    eyeWidth:1.038,eyeHeight:.854,eyeSpacing:1.008,
-    eyeVertical:.001,eyeTilt:.048,
-    // Single authoritative ocular parameters: iris != black pupil.
-    // Eye size is the real sclera radius; depth is measured in metres.
-    eyeballScale:.828,eyeSocketDepth:-.0054,
-    irisDiameter:.790,pupilDiameter:.745,
-    upperLidCoverage:.34,underEyeSoftness:.15,
-    browVertical:.004,browEyeGap:1.008,
-    browWidth:1.045,browThickness:.705,browAngle:.021,
-    noseOverall:.802,noseLength:.884,noseWidth:.755,
-    noseBridge:1.018,noseTip:.765,
-    mouthWidth:.870,mouthHeight:.855,mouthVertical:.011,
-    lipFullness:.695,mouthCorner:.008
-   }):i===0?validateFaceProportions({
+  referenceDesign:female?'original-chapter1-female-commander-master-lightning-inspired-20261111':null,
+  referenceArt:female?artReferenceForFeatured(key)?.image:null,
+  referenceArtStatus:female?'provisional-chapter-one-character-master':null,
+  visualDirection:female?'lightning-inspired-chapter1-original-blonde-layered-fringe-blue-eyes-silver-armor':null,
+  coiffureStyle:female?'fantasy-long-blonde':null, // Authored 100k preview wig, warm blonde per Chapter 1 art
+  sculptModel:female?HEROINE01_MASTER_MODEL_V1.prototypeVersion:null,
+  proportions:female?validateFaceProportions(HEROINE01_MASTER_MODEL_V1.shape):i===0?validateFaceProportions({
    faceHeight:.947,upperThird:1.07,middleThird:.86,lowerThird:.925,
    jawTaper:.85,chinLength:.87,eyeWidth:1.045,eyeHeight:1.045,
    eyeSpacing:.99,eyeVertical:-.004,browVertical:-.007,browEyeGap:.90,

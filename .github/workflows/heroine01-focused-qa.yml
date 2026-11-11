@@ -7,6 +7,9 @@ on:
       - 'qa/master-swordsman-assembly.test.mjs'
       - 'src/master-swordsman-face-proportions.js'
       - 'src/master-swordsman-featured-profiles.js'
+      - 'src/chapter-one-character-art-references.js'
+      - 'qa/chapter-one-character-art-bridge.test.mjs'
+      - 'data/heroine-approved-design.json'
       - 'master-swordsman-prototype.html'
       - 'qa/heroine01-focused-browser.cjs'
       - '.github/workflows/heroine01-focused-qa.yml'
@@ -16,6 +19,9 @@ on:
       - 'src/master-heroine-long-hair.js'
       - 'src/master-swordsman-face-proportions.js'
       - 'src/master-swordsman-featured-profiles.js'
+      - 'src/chapter-one-character-art-references.js'
+      - 'qa/chapter-one-character-art-bridge.test.mjs'
+      - 'data/heroine-approved-design.json'
       - 'master-swordsman-prototype.html'
       - 'qa/heroine01-focused-browser.cjs'
       - '.github/workflows/heroine01-focused-qa.yml'
@@ -35,6 +41,8 @@ jobs:
         run: |
           npm install --no-save --package-lock=false playwright@1.56.0 pngjs@7.0.0 three@0.160.1
           npx playwright install --with-deps chromium
+      - name: Verify Chapter 1 identity art against preview and no invented finished chapters
+        run: node qa/chapter-one-character-art-bridge.test.mjs
       - name: Verify scalp, real-body clearance and face geometry without browser
         run: node --test qa/master-swordsman-assembly.test.mjs qa/master-swordsman-face-proportions.test.mjs qa/master-heroine-wig-ocular-face-regression.test.mjs
       - name: Host genuine CC0 3D masters

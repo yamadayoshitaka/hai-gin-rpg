@@ -302,7 +302,7 @@ function changed(a,b,threshold=48){
        state.referenceHeroineHairReport?.lowestRelativeToScalpBottom>-.8||
        state.referenceHeroineHairReport?.noFloatingBun!==true||
        state.referenceHeroineHairReport?.originalSourceGeometryIntact!==true||
-       state.appearance.hairColor?.toLowerCase()!=='#d6a5ba')
+       state.appearance.hairColor?.toLowerCase()!=='#d7b58b')
      throw Error('Heroine must show actual source-fitted blonde LONG 3D hair: '+
        JSON.stringify({hairReport:state.referenceHeroineHairReport,
         hairError:state.hairError,visible:state.longBlondeHeroineHairShown,

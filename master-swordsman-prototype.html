@@ -40,6 +40,13 @@ a{color:#b7e0fa}
 .stats{white-space:pre-wrap;overflow-wrap:anywhere;font:12px/1.6 ui-monospace,monospace;padding:11px;background:#101f32;border-radius:8px}
 .notice{border:1px solid #886f4c;border-radius:8px;background:#342c25;padding:10px;font-size:12px;line-height:1.6}
 #loadBanner{padding:9px;background:#1b3950;border-radius:8px;color:#d4e8f5;font-size:13px;margin-bottom:8px}
+#chapterOneArtComparison{border:1px solid #50728c;background:#15283d;border-radius:9px;padding:9px;margin:12px 0}
+.chapterOneArtLayout{display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap}
+#chapterOneArtImage{width:min(100%,190px);aspect-ratio:3/4;object-fit:contain;background:#0d1727;border-radius:6px}
+.chapterOneArtDetails{min-width:190px;flex:1}
+.chapterOneArtDetails label{display:block}
+.chapterOneArtDetails select{display:block;width:100%;margin-top:4px}
+#chapterOneArtStatus{color:#d6dfeb}
 footer{max-width:1170px;margin:0 auto 20px;padding:8px 16px;color:#b0c4d6;font-size:12px}
 </style></head>
 <body><header>
@@ -60,7 +67,7 @@ footer{max-width:1170px;margin:0 auto 20px;padding:8px 16px;color:#b0c4d6;font-s
 <option value="hero-04">主人公04・熱血系イケメン</option>
 <option value="hero-05">主人公05・王子・貴族系</option>
 </optgroup>
-<optgroup label="美少女候補（女性3D人体）"><option value="hero-girl-01">美少女01・採用した女騎士の3D版</option></optgroup>
+<optgroup label="美少女候補（女性3D人体）"><option value="hero-girl-01">女性主人公・第1章の人物原画を参照中（3D未承認）</option></optgroup>
 <optgroup label="仲間候補（5体）">
 <option value="ally-01">仲間01・親友剣士</option>
 <option value="ally-02">仲間02・寡黙な剣士</option>
@@ -107,6 +114,15 @@ footer{max-width:1170px;margin:0 auto 20px;padding:8px 16px;color:#b0c4d6;font-s
 <button id="blinkOnce" type="button">瞬き</button>
 </div>
 <p>ドラッグで360°回転、ホイール・ピンチでズーム。目と顔の接触は自動検証中のため、特に顔アップで確認してください。</p>
+<details id="chapterOneArtComparison" open><summary>第1章・登録人物原画との比較（2D参照資料）</summary>
+<div class="chapterOneArtLayout">
+<img id="chapterOneArtImage" src="./assets/story/characters/commander/female-master.webp" alt="第1章の女性主人公・暫定人物マスター">
+<div class="chapterOneArtDetails">
+<label for="chapterOneArtSelect">参考にする人物原画
+<select id="chapterOneArtSelect" aria-label="第1章人物の原画を表示する"></select></label>
+<p id="chapterOneArtStatus" aria-live="polite">第1章の暫定原画を確認中です。</p>
+<p>女性主人公のみ現在の美少女01・3D試作と対応。リュシア／ガラン／イリスの画像は人物識別用で、まだ同一の3Dモデルを作成したという意味ではありません。第2〜20章の場面原画は完成扱いにしません。</p>
+</div></div></details>
 </section>
 <section class="panel">
 <h2>目・肌・髪・肩の調整</h2>
@@ -164,8 +180,30 @@ import {createIntegratedSwordsman,fitCCBYHairToHead} from './src/master-swordsma
 import {createFittedSwordsmanArmor} from './src/master-swordsman-fitted-shoulders.js';
 import {createSwordsmanAppearance,validateAppearanceOverrides,SWORDSMAN_FACE_KEYS} from './src/master-swordsman-1000-appearance.js';
 import {FEATURED_SWORDSMEN,featuredSwordsmanProfile} from './src/master-swordsman-featured-profiles.js';
+import {CHAPTER_ONE_ART_REFERENCES,CHAPTER_ONE_ART_BY_KEY,FEMALE_COMMANDER_REFERENCE_KEY}
+ from './src/chapter-one-character-art-references.js';
 import {FACE_PROPORTION_FIELDS,FACE_PROPORTION_DEFAULTS} from './src/master-swordsman-face-proportions.js';
 const $=id=>document.getElementById(id);
+const artSelect=$('chapterOneArtSelect');
+for(const item of CHAPTER_ONE_ART_REFERENCES){
+ const option=document.createElement('option');
+ option.value=item.key;option.textContent=item.label;artSelect.appendChild(option);
+}
+function showChapterOneArt(key){
+ const record=CHAPTER_ONE_ART_BY_KEY[key]||CHAPTER_ONE_ART_BY_KEY[FEMALE_COMMANDER_REFERENCE_KEY];
+ artSelect.value=record.key;
+ const img=$('chapterOneArtImage');
+ img.src='./'+record.image;
+ img.alt=record.label;
+ const isSameCharacter=record.characterId===activeFeaturedKey;
+ $('chapterOneArtStatus').textContent=record.notes+'｜'+
+  (isSameCharacter?'現在の3D試作の参照原画です。顔・髪・衣装はまだ合格していません。':
+   '現在表示している3Dはこの人物のモデルではありません。原画のみ表示しています。');
+}
+artSelect.addEventListener('change',()=>showChapterOneArt(artSelect.value));
+$('chapterOneArtImage').addEventListener('error',()=>{
+ $('chapterOneArtStatus').textContent='人物原画の取得に失敗しました。3Dの一致判定は行いません。';
+});
 const canvas=$('canvas');
 const renderer=new THREE.WebGLRenderer({canvas,antialias:true,powerPreference:'high-performance'});
 renderer.setPixelRatio(Math.min(2,window.devicePixelRatio||1));
@@ -193,6 +231,12 @@ let selectedId=0,activeFeaturedKey='hero-01',currentAppearance=featuredSwordsman
 const hairSources=new Map();
 let modelSources=null,activeModelGender='male';
 const editedProfiles=new Map();
+showChapterOneArt(FEMALE_COMMANDER_REFERENCE_KEY);
+window.__chapterOneArtReferenceQA=()=>({
+ selected:artSelect.value,source:$('chapterOneArtImage').getAttribute('src'),
+ chapter:1,available:CHAPTER_ONE_ART_REFERENCES.map(x=>({key:x.key,source:x.source,status:x.status,image:x.image})),
+ threeDLinked:CHAPTER_ONE_ART_BY_KEY[artSelect.value]?.characterId===activeFeaturedKey
+});
 let skinPreviewState={active:false};
 function syncAnatomyPreview(){
  if(!master)return;
@@ -642,7 +686,7 @@ async function applySelectedProfile(profile){
  $('hairStyle').value=String(profile.hairStyle);
  const chosenStyle=$('hairStyle').querySelector('option[value="2"]');
  if(chosenStyle)chosenStyle.textContent=profile.gender==='female'?
-  '髪型 02（ライトニング系・10万本ローズピンク）':'髪型 02';
+  '髪型 02（第1章原画参照・10万本ブロンド）':'髪型 02';
  $('clothingColor').value=profile.clothColor;
  $('metalColor').value=profile.armorColor;
  $('youthfulness').value=String(profile.youthfulness??0);
@@ -663,6 +707,7 @@ async function applyCharacterId(id){
  const n=Number(id);
  if(!Number.isInteger(n)||n<0||n>999)throw Error('人物IDは0〜999の整数');
  selectedId=n;activeFeaturedKey=null;
+ showChapterOneArt(artSelect.value);
  $('characterId').value=String(n);
  $('featuredCharacter').value='soldier';
  $('featuredInfo').textContent='量産兵'+String(n).padStart(4,'0')+'：自動生成された外見です';
@@ -672,6 +717,8 @@ async function applyFeaturedCharacter(key){
  if(!master)return;
  const profile=featuredSwordsmanProfile(key);
  activeFeaturedKey=key;
+ if(key==='hero-girl-01')showChapterOneArt(FEMALE_COMMANDER_REFERENCE_KEY);
+ else showChapterOneArt(artSelect.value);
  $('featuredCharacter').value=key;
  $('featuredInfo').textContent=profile.displayCode+'・'+profile.label+
   '｜固定3D造形プリセット。美術品質は引き続き調整中';
