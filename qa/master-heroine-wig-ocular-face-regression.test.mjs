@@ -75,7 +75,7 @@ test('100k strand wig has separate fringe, temple and layered back objects',()=>
  assert.equal(report.rearSculptedLockCount,12);
  assert.ok(report.rearEndSampleCount>1000,'Actual rear strand ends were not sampled');
  assert.ok(report.rearEndTaperRatio>.57,
-  'Measured rear tips still fan out like a solid curtain');
+  'Measured rear tips still fan out like a solid curtain: '+report.rearEndTaperRatio);
  assert.equal(report.rearEndTaperRatio,report.rearLockConvergence);
  assert.equal(report.wigPartCount,6);
  assert.equal(hair.children.length,6);
