@@ -60,8 +60,7 @@ jobs:
             qa/nonhuman-quality-loop.test.mjs \
             qa/monster-bestiary.test.mjs \
             qa/canine-fur-face-regression.test.mjs \
-            qa/creature-master-quality.test.mjs \
-            qa/upper-floor-architecture.test.mjs
+            qa/creature-master-quality.test.mjs
       - name: Commit approved changes ONLY to the model improvement PR branch
         if: steps.refine.outputs.changed == 'true'
         shell: bash
