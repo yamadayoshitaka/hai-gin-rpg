@@ -534,3 +534,25 @@ test('v12 rooted 3D wig uses real scalp vertices and projects facial/torso conta
  }
  w.dispose();
 });
+
+test('male eye-angle updates preserve independent male controls and never add cosmetics',()=>{
+ const m=makeIndependentFaceMaster(fixture().source,'male');
+ const requested={...MALE_REFERENCE_DEFAULT,eyeAngle:-8,browAngle:12,lashAngle:3};
+ const result=updateFaceFeatureAngles(m.parts,requested);
+ assert.equal(result.eyeAngle,-8);
+ assert.equal(result.browAngle,12);
+ assert.equal(result.lashAngle,3);
+ for(const side of ['LEFT','RIGHT']){
+  const sign=side==='LEFT'?-1:1;
+  for(const [name,angle] of [
+   ['_EYE_LINKED_PIVOT',-8],['_BROW_ANGLE_CONTROL',12],
+   ['_LASH_ANGLE_CONTROL',3]
+  ]){
+   const pivot=m.parts.getObjectByName(side+name);
+   if(pivot)assert.ok(Math.abs(pivot.rotation.z-sign*THREE.MathUtils.degToRad(angle))<1e-9);
+  }
+ }
+ assert.equal(m.parts.getObjectByName('LEFT_UPPER_EYELINER'),undefined);
+ assert.equal(m.parts.getObjectByName('LOWER_LIPSTICK_MAKEUP'),undefined);
+ assert.equal(m.face.material.vertexColors,false);
+});
