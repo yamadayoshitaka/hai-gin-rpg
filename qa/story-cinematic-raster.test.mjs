@@ -28,7 +28,7 @@ verifyWebP(CINEMATIC_TITLE_ASSET);
 assert.equal(CAMPAIGN_STAGES.length,200);
 for(const stage of CAMPAIGN_STAGES){
  const story=mangaForStage(stage.id);
- assert.equal(story.panels.length,7);
+ assert.equal(story.panels.length,10);
  for(const p of story.panels){
   for(const id of [p.characterId,p.secondaryId]){
    if(id)assert.ok(CINEMATIC_CAST_ASSETS[id],stage.id+' unknown character '+id);
@@ -47,6 +47,8 @@ assert.match(town,/stageMangaSeen\?\.\[game\.townStage\]/);
 assert.doesNotMatch(town,/get\('paper'\)==='1'/,'town must not replay on re-entry');
 assert.doesNotMatch(town,/openPanel\('dialogue'\)/,'NPC dialogue must not open the big modal');
 assert.match(town,/id="townDialogue"/);
-assert.match(town,/paperPending=false;\s*game\.storyFlags\.stageMangaSeen/);
+assert.match(town,/paperPending=false;paperPhase=phase/);
+assert.match(town,/game\.storyFlags\.stageMangaSeen/);
+assert.match(town,/game\.storyFlags\.stagePostMangaSeen/);
 assert.match(viewer,/stageMangaImage\(shot\)/,'keep safe SVG fallback when a raster cannot load');
-console.log('PASS cinematic raster: 20 persistent cast portraits, 20 chapter backdrops, title cover, 200×7 panels, one-time town intro and inline NPC speech');
+console.log('PASS cinematic raster: 20 persistent cast portraits, 20 chapter backdrops, title cover, 200×10 panels (5+5), one-time town intro and inline NPC speech');

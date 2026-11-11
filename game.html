@@ -69,7 +69,7 @@ const pageAudio=createGamePageAudio({storage:localStorage,initialScene:'title'})
 const titleVoices=createStoryVoiceDirector();
 const introStory=mangaForStage('c01-s01');
 const selectedIntroStory=mangaForStage('c01-s01',{protagonistGender:getSavedGame(localStorage)?.campaign?.commander?.gender||'unspecified'});
-const introFrames=selectedIntroStory.panels.slice(0,6);
+const introFrames=selectedIntroStory.panels.filter(p=>p.phase==='pre');
 let index=0,introClosed=true;let guideIndex=0,guideIntoNewGame=true;
 function showIntroFrame(){
  const shot=introFrames[index];

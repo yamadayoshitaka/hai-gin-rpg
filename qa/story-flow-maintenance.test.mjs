@@ -25,13 +25,13 @@ assert.equal(CHARACTER_FACTION_BY_ID.vess,'archive');
 
 for(const stage of CAMPAIGN_STAGES){
  const story=mangaForStage(stage.id,{protagonistGender:'male'});
- assert.equal(story.panels.length,7,stage.id);
+ assert.equal(story.panels.length,10,stage.id);
  assert.equal(story.id,stage.id);
- for(let i=0;i<7;i++){
+ for(let i=0;i<10;i++){
   const p=story.panels[i];
   assert.equal(p.id,stage.id+'-m'+(i+1));
   if(p.characterId)assert.ok(STORY_VOICE_PROFILES[p.characterId],p.id);
-  assert.ok(individualStoryPanelAsset(p)?.endsWith('-m0'+(i+1)+'.webp'));
+  assert.ok(individualStoryPanelAsset(p)?.endsWith('-m'+String(i+1).padStart(2,'0')+'.webp'));
  }
 }
 const chapter1=mangaForStage('c01-s01');
@@ -82,4 +82,4 @@ for(let i=1;i<=7;i++){
 }
 assert.equal(new Set(artSha).size,7,'Chapter 1 panels must use seven different image files');
 assert.equal(STORY_VOICE_PROFILES.garan.voicevoxSpeaker,'剣崎雌雄','Garan must not use the frail elder voice');
-console.log('Story flow regression: 20 chapters, 200 stages, 1400 panels, 20 characters, 4 routes, 3 endings, 7 distinct paintings and Garan voice PASS');
+console.log('Story flow regression: 20 chapters, 200 stages, 2000 panels (5 pre + 5 post), 20 characters, 4 routes, 3 endings, 7 original WebPs and Garan voice PASS');

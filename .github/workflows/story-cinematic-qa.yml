@@ -5,6 +5,12 @@ on:
       - '.github/workflows/story-cinematic-qa.yml'
       - 'src/story-cinematic.js'
       - 'src/story-stage-manga.js'
+      - 'src/story-pronunciations.js'
+      - 'src/story-panel-neutral-ids.js'
+      - 'scripts/prepare-story-art-batches.mjs'
+      - 'scripts/slice-story-art-batch.py'
+      - 'qa/story-stage-prepost-v2.test.mjs'
+      - 'qa/story-art-batches.test.mjs'
       - 'src/story-manga-art.js'
       - 'src/story-manga-viewer.js'
       - 'src/story-cinematic-assets.js'
@@ -30,6 +36,12 @@ on:
       - '.github/workflows/story-cinematic-qa.yml'
       - 'src/story-cinematic.js'
       - 'src/story-stage-manga.js'
+      - 'src/story-pronunciations.js'
+      - 'src/story-panel-neutral-ids.js'
+      - 'scripts/prepare-story-art-batches.mjs'
+      - 'scripts/slice-story-art-batch.py'
+      - 'qa/story-stage-prepost-v2.test.mjs'
+      - 'qa/story-art-batches.test.mjs'
       - 'src/story-manga-art.js'
       - 'src/story-manga-viewer.js'
       - 'src/story-cinematic-assets.js'
@@ -64,12 +76,18 @@ jobs:
           node --check src/story-cinematic.js
           node --check src/game-page-audio.js
           node --check src/story-stage-manga.js
+          node --check src/story-pronunciations.js
+          node --check scripts/prepare-story-art-batches.mjs
+          python3 -m py_compile scripts/slice-story-art-batch.py
           node --check src/story-manga-art.js
           node --check src/story-manga-viewer.js
           node --check src/story-cinematic-assets.js
           node --check src/fantasy-scene-score.js
           node --experimental-vm-modules qa/story-cinematic-audio.test.mjs
           node --experimental-vm-modules qa/stage-manga-continuity.test.mjs
+          node qa/story-stage-prepost-v2.test.mjs
+          node scripts/prepare-story-art-batches.mjs
+          node qa/story-art-batches.test.mjs
           node --experimental-vm-modules qa/story-cinematic-raster.test.mjs
           node scripts/build-story-art-coverage.mjs
           node qa/story-art-coverage.test.mjs
@@ -80,6 +98,7 @@ jobs:
           name: story-art-shotlist-20chapters
           path: |
             qa-reports/story-art-shotlist.json
+            qa-reports/story-art-batch-plan.json
             assets/story/panel-art-coverage.json
           if-no-files-found: ignore
           retention-days: 14

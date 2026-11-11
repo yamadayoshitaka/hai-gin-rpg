@@ -7,7 +7,7 @@
  *   node scripts/generate-story-panel-voicevox.mjs --all
  * Optional --format wav (default compressed MP3 to keep mobile/GitHub lean).
  *
- * Safe to rerun: uses text+speaker content hashes, retains existing 1428 clips,
+ * Safe to rerun: uses text+speaker content hashes, retains existing prerecorded clips,
  * emits a JSON report, and never deletes a previous file.
  */
 import fs from 'node:fs/promises';
@@ -38,12 +38,24 @@ manifest.clips??={};
 if(format==='mp3'&&!dryRun&&spawnSync('ffmpeg',['-version'],{encoding:'utf8'}).status!==0)
  throw Error('ffmpeg is required to compress voices (or use --format wav)');
 
-const tasks=stages.flatMap(stage=>mangaForStage(stage.id).panels.map(panel=>{
+const tasks=stages.flatMap(stage=>{
+ const standard=mangaForStage(stage.id,{battleOutcome:{victory:true}}).panels;
+ const defeat=stage.kind==='town'?[]:mangaForStage(stage.id,{battleOutcome:{victory:false}})
+  .panels.filter(p=>p.phase==='post');
+ const different=[...standard,...defeat];
+ const seen=new Set();
+ return different.filter(panel=>{
+  const voice=STORY_VOICE_PROFILES[panel.characterId]||STORY_NARRATOR_PROFILE;
+  const key='story::panel::'+panel.id+'::'+panel.voiceText.slice(0,380)+'::'+voice.voicevoxSpeaker;
+  if(seen.has(key))return false;
+  seen.add(key);return true;
+ }).map(panel=>{
  const voice=STORY_VOICE_PROFILES[panel.characterId]||STORY_NARRATOR_PROFILE;
- const text=panel.text.slice(0,380);
+ const text=panel.voiceText.slice(0,380);
  const key='story::panel::'+panel.id+'::'+text+'::'+voice.voicevoxSpeaker;
  return {panel,voice,text,key,filename:crypto.createHash('sha256').update(key).digest('hex').slice(0,16)+'.'+format};
-}));
+ });
+});
 const preexisting=tasks.filter(t=>manifest.clips[t.key]).length;
 if(dryRun){
  console.log(JSON.stringify({dryRun:true,stages:stages.length,panels:tasks.length,alreadyRegistered:preexisting,required:tasks.length-preexisting,format},null,2));
@@ -61,6 +73,7 @@ if(!Number.isInteger(fallback))throw Error('VOICEVOX has no available voice styl
 let created=0,reused=0,bytes=0;const missingSpeakers=new Set();
 await fs.mkdir(path.join(base,'clips'),{recursive:true});
 const output={engine:root,chapter:chapter??null,stage:stageValue??null,stages:stages.length,panels:tasks.length,
+ canonicalStagePanels:stages.length*10,includesDefeatVariants:true,
  format,created:0,reused:0,missingSpeakers:[],files:[]};
 for(const [index,t] of tasks.entries()){
  if(manifest.clips[t.key]){

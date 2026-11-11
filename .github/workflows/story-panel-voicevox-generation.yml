@@ -7,11 +7,13 @@ on:
       - '.github/workflows/story-panel-voicevox-generation.yml'
       - 'scripts/generate-story-panel-voicevox.mjs'
       - 'src/story-voice-director.js'
+      - 'src/story-stage-manga.js'
+      - 'src/story-pronunciations.js'
       - 'qa/story-panel-voice-assets.test.mjs'
   workflow_dispatch:
     inputs:
       chapter:
-        description: 'Use all to generate all 1400 panels, 1-20 for a chapter, or 0 for one stage'
+        description: 'Generate all 2000 core panels + defeat variants, or select one chapter/stage'
         required: true
         default: 'all'
         type: choice
@@ -74,7 +76,22 @@ jobs:
           STAGE: ${{ github.event.inputs.stage || 'c01-s01' }}
         run: |
           if [ "$CHAPTER" = "all" ]; then
-            node scripts/generate-story-panel-voicevox.mjs --all --format mp3
+            # Commit progress every four chapters. A runner interruption
+            # must NOT throw away hours of previously synthesized speech.
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            for chapter in $(seq 1 20); do
+              echo "VOICEVOX chapter $chapter / 20"
+              node scripts/generate-story-panel-voicevox.mjs --chapter "$chapter" --format mp3
+              if [ $((chapter % 4)) -eq 0 ]; then
+                git add audio/voicevox/manifest.json audio/voicevox/clips/ qa-reports/story-voicevox-generation.json
+                if ! git diff --cached --quiet; then
+                  git commit -m "assets(story): chapter $chapter pronunciation-correct VOICEVOX checkpoint"
+                  git pull --rebase origin main
+                  git push origin HEAD:main
+                fi
+              fi
+            done
           elif [ "$CHAPTER" = "0" ]; then
             node scripts/generate-story-panel-voicevox.mjs --stage "$STAGE" --format mp3
           else

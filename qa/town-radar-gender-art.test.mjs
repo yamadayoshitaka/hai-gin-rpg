@@ -29,7 +29,7 @@ const femaleContext={protagonistGender:'female'};
 const maleContext={protagonistGender:'male'};
 const introFemale=mangaForStage('c01-s01',femaleContext).panels;
 const introMale=mangaForStage('c01-s01',maleContext).panels;
-assert.equal(introFemale.length,7);
+assert.equal(introFemale.length,10);
 assert.equal(introFemale[0].protagonistGender,'female');
 assert.equal(individualStoryPanelAsset(introFemale[0]),'./assets/story/panels/c01-s01-m01-female.webp');
 assert.equal(individualStoryPanelAsset(introMale[0]),'./assets/story/panels/c01-s01-m01.webp');
@@ -61,4 +61,4 @@ assert.notEqual(createHash('sha256').update(maleBytes).digest('hex'),
  'male and female arrival paintings must be separately illustrated');
 const assetSource=await readFile(new URL('../src/story-cinematic-assets.js',import.meta.url),'utf8');
 assert.match(assetSource,/panelrev=20261111-levna-arrival-v2/,'mobile WebP cache must refresh');
-console.log('PASS town radar direct-entry, 1400 gender-safe IDs, and two distinct original male/female Chapter 1 arrival paintings');
+console.log('PASS town radar direct-entry, 2000 gender-safe IDs, and two distinct original male/female Chapter 1 arrival paintings');

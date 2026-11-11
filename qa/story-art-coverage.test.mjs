@@ -5,12 +5,12 @@ import {CAMPAIGN_STAGES} from '../src/campaign-stage-plan.js';
 import {storyBackdropPolicy,individualStoryPanelAsset} from '../src/story-cinematic-assets.js';
 const report=JSON.parse(await fs.readFile(new URL('../assets/story/panel-art-coverage.json',import.meta.url),'utf8'));
 const list=JSON.parse(await fs.readFile(new URL('../qa-reports/story-art-shotlist.json',import.meta.url),'utf8'));
-assert.equal(report.stats.totalPanels,1400);
+assert.equal(report.stats.totalPanels,2000);
 assert.equal(report.stats.totalStages,200);
 assert.equal(report.byChapter.length,20);
-assert.equal(report.byChapter.reduce((n,c)=>n+c.total,0),1400);
-assert.equal(report.stats.maleDedicated+report.stats.maleMissing,1400);
-assert.equal(report.stats.femaleUsable+report.stats.femaleMissing,1400);
+assert.equal(report.byChapter.reduce((n,c)=>n+c.total,0),2000);
+assert.equal(report.stats.maleDedicated+report.stats.maleMissing,2000);
+assert.equal(report.stats.femaleUsable+report.stats.femaleMissing,2000);
 assert.equal(report.stats.femaleUsable,report.stats.femaleSpecific+report.stats.genderNeutralShared);
 assert.equal(list.pending.length,report.stats.maleMissing+report.stats.femaleMissing);
 assert.equal(storyBackdropPolicy({protagonistGender:'male'}),'chapter-composite');
@@ -25,7 +25,7 @@ for(const stage of CAMPAIGN_STAGES){
   assert.ok(path.endsWith('-female.webp')||path.endsWith('c01-s01-m05.webp'));
  }
 }
-assert.equal(ids.size,1400);
+assert.equal(ids.size,2000);
 for(const p of report.present){
  for(const file of [p.male,p.female]){
   if(!file)continue;

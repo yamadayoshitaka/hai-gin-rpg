@@ -70,27 +70,28 @@ export function createMangaViewer({container=document.body,storage=globalThis.lo
  `;
  container.append(root);document.head.append(style);
  const $=selector=>root.querySelector(selector);
- let story=null,index=0,finish=null,voiceOn=readVoice(storage),active=false;
+ let story=null,visiblePanels=[],phase='pre',index=0,finish=null,voiceOn=readVoice(storage),active=false;
  const voiceDirector=createStoryVoiceDirector();
  function stopVoice(){voiceDirector.stop();}
- function narrate(){if(active&&story&&voiceOn)void voiceDirector.speak(story.panels[index]);}
+ function narrate(){if(active&&story&&voiceOn)void voiceDirector.speak(visiblePanels[index]);}
  function frame(){
   if(!story||!active)return;
   stopVoice();
-  const shot=story.panels[index];
-  $('.manga-stage').textContent='第'+story.chapter+'章 · '+story.stageName;
+  const shot=visiblePanels[index];
+  $('.manga-stage').textContent='第'+story.chapter+'章 · '+story.stageName+' · '+(phase==='post'?(story.stageKind==='town'?'町の後日談':'戦闘後'):phase==='pre'?'開戦前':'全場面');
   $('.manga-art').src=stageMangaImage(shot);
   applyCinematicImage($('.manga-art'),shot);
   $('.manga-art').alt=shot.speaker+'と'+(shot.secondaryId?'仲間':'物語の風景')+'の連続漫画 '+(index+1)+'コマ目';
   $('.manga-art').style.animation='none';void $('.manga-art').offsetWidth;$('.manga-art').style.animation='';
   $('.manga-speaker').textContent=shot.speaker+(shot.characterId?'　／　'+shot.faction+'・'+shot.role:'　／　ナレーション');
-  $('.manga-line').textContent=shot.text;
-  $('.manga-shot').textContent=story.id.toUpperCase()+' · '+(index+1)+'/'+story.panels.length;
-  $('.manga-progress').textContent=story.panels.map((_,i)=>i===index?'●':'○').join(' ');
+  $('.manga-line').textContent=shot.subtitleText||shot.text;
+  $('.manga-shot').textContent=story.id.toUpperCase()+' · '+(index+1)+'/'+visiblePanels.length;
+  $('.manga-progress').textContent=visiblePanels.map((_,i)=>i===index?'●':'○').join(' ');
   $('.manga-previous').disabled=index===0;
-  $('.manga-next').textContent=index===story.panels.length-1?'ステージへ進む ▶':'次のコマ ▶';
+  $('.manga-next').textContent=index===visiblePanels.length-1?
+   (phase==='pre'?'ステージへ進む ▶':phase==='post'?'結果を閉じる ▶':'確認を終える ▶'):'次のコマ ▶';
   $('.manga-voice').textContent=voiceOn?'音声 ON':'音声 OFF';
-  const cue=fantasyCueForMangaPanel({id:story.id,number:story.number,kind:shot.scenery},index);
+  const cue=fantasyCueForMangaPanel({id:story.id,number:story.number,kind:shot.scenery},shot.index);
   onCue(cue,shot,story);
   narrate();
  }
@@ -101,14 +102,20 @@ export function createMangaViewer({container=document.body,storage=globalThis.lo
   onClose(story,completed);
   if(completed)done?.();
  }
- function open(id,{onFinish=null,at=0,context=null}={}){
-  story=mangaForStage(id,context||{});index=Math.max(0,Math.min(story.panels.length-1,at|0));
+ function open(id,{onFinish=null,at=0,context=null,phase:which='pre'}={}){
+  if(!['pre','post','all'].includes(which))throw Error('Unknown manga phase: '+which);
+  if(active)close({completed:false});
+  story=mangaForStage(id,context||{});
+  phase=which;
+  visiblePanels=which==='all'?story.panels:story.panels.filter(p=>p.phase===which);
+  if(!visiblePanels.length)throw Error('No manga panels for '+id+' '+which);
+  index=Math.max(0,Math.min(visiblePanels.length-1,at|0));
   finish=onFinish;voiceOn=readVoice(storage);active=true;root.hidden=false;
   frame();return story;
  }
  $('.manga-previous').onclick=()=>{if(index>0){index--;frame();}};
  $('.manga-next').onclick=()=>{
-  if(index>=story.panels.length-1)close({completed:true});
+  if(index>=visiblePanels.length-1)close({completed:true});
   else{index++;frame();}
  };
  $('.manga-skip').onclick=()=>close({completed:true});
@@ -121,5 +128,5 @@ export function createMangaViewer({container=document.body,storage=globalThis.lo
   if(event.key==='ArrowLeft'){event.preventDefault();$('.manga-previous').click();}
  });
  return {open,close,get active(){return active},get stageId(){return story?.id||null},
-  get panelIndex(){return index},get voiceEnabled(){return voiceOn}};
+  get panelIndex(){return index},get phase(){return phase},get voiceEnabled(){return voiceOn}};
 }

@@ -37,21 +37,21 @@ table{width:100%;border-collapse:collapse}th,td{border-bottom:1px solid #43586c;
 <h1>ストーリーフローと画面一覧</h1>
 <p class="info">このページは<strong>確認・プレビュー専用</strong>です。ロックされた章の内容も確認できますが、ゲームの進行、分岐、セーブは変更しません。人物の3Dモデルは別工程です。</p>
 <div class="chips" id="nav">
-<a class="chip" href="#flow">20章フロー</a><a class="chip" href="#artInventory">原画の制作数</a><a class="chip" href="#panels">7コマ確認</a><a class="chip" href="#cast">人物・国</a><a class="chip" href="#screens">現行画面リンク</a><a class="chip" href="#voice">音声・原画</a>
+<a class="chip" href="#flow">20章フロー</a><a class="chip" href="#artInventory">原画の制作数</a><a class="chip" href="#panels">前後10コマ確認</a><a class="chip" href="#cast">人物・国</a><a class="chip" href="#screens">現行画面リンク</a><a class="chip" href="#voice">音声・原画</a>
 </div>
 <section><h2>ゲーム進行状況</h2><div id="saveSummary" class="panels"></div></section>
 <section id="flow"><h2>物語の全体像</h2>
 <p class="flow-track">第1〜12章：灰銀王国の軍師 → 第13章：灰銀継続／紅炎協力／翠嵐協力／独立調停 → 第14〜15章：勢力別協力 → 第16〜19章：三国共同戦線 → 第20章：解放／封印／忘却</p>
 <div id="chapterButtons" class="chips" aria-label="20章選択"></div>
-<div class="toolbar" style="margin-top:12px"><label for="chapterSelect">章</label><select id="chapterSelect"></select><label for="stageSelect">ステージ</label><select id="stageSelect"></select><button class="btn" id="readPanel">この場面の7コマを再生</button></div>
+<div class="toolbar" style="margin-top:12px"><label for="chapterSelect">章</label><select id="chapterSelect"></select><label for="stageSelect">ステージ</label><select id="stageSelect"></select><button class="btn" id="readPanel">戦闘前後10コマを再生</button></div>
 <div id="flowDetails" class="card" style="margin-top:10px"></div>
 <div id="routeDetails"></div></section>
 <section id="artInventory"><h2>全20章の専用原画登録状況</h2>
-<p class="muted">1章70コマ、合計1,400コマを男女別に集計しています。実ファイルの存在とWebP形式を確認したものだけが登録数に入ります。章背景の使い回し・合成画・SVGは専用原画に数えません。</p>
+<p class="muted">1章100コマ、合計2,000コマを男女別に集計しています。実ファイルの存在とWebP形式を確認したものだけが登録数に入ります。章背景の使い回し・合成画・SVGは専用原画に数えません。</p>
 <div id="artStats" class="panels"><div class="card">実ファイルの集計を読み込み中…</div></div>
 <div style="overflow-x:auto;margin-top:12px"><table aria-label="20章・男女別の原画登録数"><thead><tr><th>章</th><th>男性版</th><th>女性版</th><th>男女共通</th><th>未制作（男性／女性）</th></tr></thead><tbody id="artChapterTable"><tr><td colspan="5">登録状況を読み込み中</td></tr></tbody></table></div>
 <p id="artCoverageNote" class="muted"></p></section>
-<section id="panels"><h2>ステージ別・独立7コマの照合</h2><div class="toolbar"><label for="previewGender">主人公の原画</label><select id="previewGender" aria-label="男性と女性の原画を比較"><option value="saved">セーブ設定に合わせる</option><option value="male">男性版</option><option value="female">女性版</option></select></div><p class="muted">各コマは固有IDに紐づきます。専用画像が存在する場合はそれを優先し、未制作のものは既存画像へフォールバックします。</p><p id="artCoverage" class="muted" role="status">選択ステージの専用原画を確認中…</p><div id="sceneGrid" class="stories"></div></section>
+<section id="panels"><h2>ステージ別・開戦前5コマ＋終了後5コマの照合</h2><div class="toolbar"><label for="previewGender">主人公の原画</label><select id="previewGender" aria-label="男性と女性の原画を比較"><option value="saved">セーブ設定に合わせる</option><option value="male">男性版</option><option value="female">女性版</option></select></div><p class="muted">各コマは固有IDに紐づきます。専用画像が存在する場合はそれを優先し、未制作のものは既存画像へフォールバックします。</p><p id="artCoverage" class="muted" role="status">選択ステージの専用原画を確認中…</p><div id="sceneGrid" class="stories"></div></section>
 <section id="cast"><h2>主要キャラクター20人・所属国</h2><p class="muted">登場人物のID・国・役職・音声話者を管理します。3Dモデルや衣装データを編集しません。</p><div class="card" style="display:flex;align-items:center;gap:14px"><img src="./assets/story/characters/commander/female-master.webp" alt="女性主人公の暫定基準画像" style="width:86px;height:102px;object-fit:cover;border-radius:8px"><div><strong>女性軍師の基準絵（暫定）</strong><p class="muted">女性を選ぶと女性専用の場面原画を優先。未制作コマでは男性軍師の原画を表示せず、男女共通の物語絵を使用します。</p></div></div><div class="toolbar" id="factionFilter"></div><div id="characterGrid" class="panels" style="margin-top:10px"></div></section>
 <section id="screens"><h2>現在のゲームに使われる画面リンク</h2><p class="muted">ストーリー本線とテスト用画面を分けました。出撃本線はワールドマップから選択してください。</p>
 <h3>本線の導線</h3>
@@ -113,7 +113,7 @@ async function inspectDedicatedArt(story){
   catch{return false;}
  }));
  if(scan!==artScanSeq)return;
- $('artCoverage').textContent='専用の一枚絵 '+present.filter(Boolean).length+' / 7コマ。専用原画未登録・代替表示 '+present.filter(x=>!x).length+' / 7コマ。';
+ $('artCoverage').textContent='専用の一枚絵 '+present.filter(Boolean).length+' / 10コマ。専用原画未登録・代替表示 '+present.filter(x=>!x).length+' / 10コマ。';
  present.forEach((ok,i)=>{
   const card=$('shot-'+i)?.closest('.story');
   if(!card)return;
@@ -135,7 +135,7 @@ function render(){
  routes.map(r=>'<div>'+escapeHTML(r.name)+'：'+(currentStoryRoute(game)?.id===r.id?'選択済み':r.unlocked?'選択可能':'未解放')+' <small>'+escapeHTML(r.description)+'</small></div>').join('')+
  '<p>最終章：'+ENDING_GUIDE.map(e=>escapeHTML(e.name)).join(' ／ ')+'</p></div>';
  const story=mangaForStage(stageId,previewContext(stageId));
- $('sceneGrid').innerHTML=story.panels.map((p,i)=>'<div class="card story"><strong>コマ '+(i+1)+' · '+escapeHTML(p.id)+'</strong>'+
+ $('sceneGrid').innerHTML=story.panels.map((p,i)=>'<div class="card story"><strong>'+(p.phase==='pre'?'開戦前':'戦闘後')+' · コマ '+(i+1)+' · '+escapeHTML(p.id)+'</strong>'+
  '<img id="shot-'+i+'" alt="'+escapeHTML(p.speaker)+'の第'+chapter+'章場面絵"><p><b>'+escapeHTML(p.speaker)+'</b> · '+escapeHTML(p.text)+'</p></div>').join('');
  story.panels.forEach((p,i)=>{const image=$('shot-'+i);image.src=stageMangaImage(p);applyCinematicImage(image,p);});
  void inspectDedicatedArt(story);
@@ -144,7 +144,7 @@ $('chapterSelect').onchange=e=>setChapter(e.target.value);
 $('stageSelect').onchange=e=>{stageId=e.target.value;render();};
 $('previewGender').onchange=()=>render();
 $('chapterButtons').onclick=e=>{const b=e.target.closest('[data-chapter]');if(b)setChapter(b.dataset.chapter);};
-$('readPanel').onclick=()=>viewer.open(stageId,{context:previewContext(stageId)});
+$('readPanel').onclick=()=>viewer.open(stageId,{phase:'all',context:previewContext(stageId)});
 $('voiceTest').onclick=async()=>{const panel=mangaForStage(stageId,previewContext(stageId)).panels[0];$('status').textContent='コマ '+panel.id+' ／ '+panel.speaker+' を再生';await voice.speak(panel);};
 $('voiceStop').onclick=()=>{voice.stop();$('status').textContent='読み上げを停止しました。';};
 $('factionFilter').innerHTML='<button class="chip active" data-faction="all">全員</button>'+
@@ -167,24 +167,24 @@ void fetch('./audio/voicevox/manifest.json').then(r=>r.ok?r.json():null).then(da
  const keys=Object.keys(data?.clips||{});
  const chapterClips=keys.filter(key=>key.startsWith('story::chapter::')).length;
  let currentPanelClips=0;
- for(let ch=1;ch<=20;ch++)for(const stage of stagesInChapter(ch))for(const panel of mangaForStage(stage.id).panels){
+ for(let ch=1;ch<=20;ch++)for(const stage of stagesInChapter(ch))for(const panel of mangaForStage(stage.id,{battleOutcome:{victory:true}}).panels){
   const speaker=STORY_VOICE_PROFILES[panel.characterId]||STORY_NARRATOR_PROFILE;
-  const key='story::panel::'+panel.id+'::'+panel.text.slice(0,380)+'::'+speaker.voicevoxSpeaker;
+  const key='story::panel::'+panel.id+'::'+panel.voiceText.slice(0,380)+'::'+speaker.voicevoxSpeaker;
   if(data?.clips?.[key])currentPanelClips++;
  }
- $('voiceCoverage').textContent='VOICEVOX収録：章ナレーション '+chapterClips+'/20、現在の話者設定に合う各コマ台詞 '+currentPanelClips+'/1400。旧話者のキャッシュは完了数に含めません。';
+ $('voiceCoverage').textContent='VOICEVOX収録：章ナレーション '+chapterClips+'/20、現在の話者設定に合う各コマ台詞 '+currentPanelClips+'/2000（戦闘前＋勝利後）。旧話者のキャッシュは完了数に含めません。';
 }).catch(()=>$('voiceCoverage').textContent='音声収録一覧を取得できません。端末読み上げで確認できます。');
 async function renderArtInventory(){
  try{
   const response=await fetch('./assets/story/panel-art-coverage.json',{cache:'no-store'});
   if(!response.ok)throw Error('HTTP '+response.status);
   const data=await response.json();
-  if(data?.schemaVersion!==1||data?.stats?.totalPanels!==1400||data?.byChapter?.length!==20)
+  if(data?.schemaVersion!==1||data?.stats?.totalPanels!==2000||data?.byChapter?.length!==20)
    throw Error('原画集計ファイルの形式が一致しません');
   const st=data.stats;
   $('artStats').innerHTML=[
-   ['男性専用・共通',st.maleDedicated+' / 1400'],['女性専用',st.femaleSpecific+' / 1400'],
-   ['男女共通',st.genderNeutralShared+' コマ'],['女性が利用可能',st.femaleUsable+' / 1400']
+   ['男性専用・共通',st.maleDedicated+' / 2000'],['女性専用',st.femaleSpecific+' / 2000'],
+   ['男女共通',st.genderNeutralShared+' コマ'],['女性が利用可能',st.femaleUsable+' / 2000']
   ].map(([title,count])=>'<div class="card"><h3>'+escapeHTML(title)+'</h3><p>'+escapeHTML(count)+'</p></div>').join('');
   $('artChapterTable').innerHTML=data.byChapter.map(ch=>
    '<tr><td><button type="button" class="chip" data-art-chapter="'+ch.chapter+'">第'+ch.chapter+'章 '+escapeHTML(ch.title)+'</button></td>'+
@@ -193,7 +193,7 @@ async function renderArtInventory(){
   ).join('');
   $('artCoverageNote').textContent='未制作の原画指示：'+st.pendingArtInstructions+'件。これらの指示は画像ファイルではありません。';
  }catch(e){
-  $('artStats').innerHTML='<div class="card">原画集計を取得できません。章ごとの7コマは引き続き確認できます。</div>';
+  $('artStats').innerHTML='<div class="card">原画集計を取得できません。章ごとの10コマは引き続き確認できます。</div>';
   $('artChapterTable').innerHTML='<tr><td colspan="5">集計データの取得に失敗しました</td></tr>';
   $('artCoverageNote').textContent=String(e.message||e);
  }

@@ -3,6 +3,7 @@
  * stable device Japanese synthesis. This module NEVER calls a paid AI API.
  */
 import {STORY_KEY_PEOPLE} from './story-cinematic.js';
+import {storyVoiceText} from './story-pronunciations.js';
 const characters={
  lucia:['四国めたん',.95,1.1],garan:['剣崎雌雄',1.02,.95],iris:['雨晴はう',.92,1.16],
  shion:['玄野武宏',.94,.88],kai:['白上虎太郎',1.07,1.03],leon:['剣崎雌雄',.87,.80],
@@ -63,7 +64,7 @@ export function createStoryVoiceDirector({onPlaying=()=>{}}={}){
   if(!panel?.text)return false;
   const id=panel.characterId;
   const profile=STORY_VOICE_PROFILES[id]||STORY_NARRATOR_PROFILE;
-  const text=String(panel.text).slice(0,380);
+  const text=String(panel.voiceText||storyVoiceText(panel.text)).slice(0,380);
   const key='story::panel::'+panel.id+'::'+text+'::'+profile.voicevoxSpeaker;
   const clip=loadedManifest?.clips?.[key];
   if(safeClip(clip)&&'Audio' in globalThis){
