@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import {readFile,stat} from 'node:fs/promises';
+import {createHash} from 'node:crypto';
 import {STORY_CHAPTERS} from '../src/story-chapters.js';
 import {STORY_KEY_PEOPLE} from '../src/story-cinematic.js';
 import {CAMPAIGN_STAGES} from '../src/campaign-stage-plan.js';
@@ -70,4 +71,15 @@ for(const p of ['game.html','town-hub.html','world-map.html','dev-menu.html']){
  const html=await readFile(new URL('../'+p,import.meta.url),'utf8');
  assert.ok(html.includes('story-maintenance.html'),p+' lacks maintenance link');
 }
-console.log('Story flow regression: 20 chapters, 200 stages, 1400 panels, 20 characters, 4 routes, 3 endings, screen links PASS');
+const artSha=[];
+for(let i=1;i<=7;i++){
+ const panelPath='assets/story/panels/c01-s01-m'+String(i).padStart(2,'0')+'.webp';
+ const bytes=await readFile(new URL('../'+panelPath,import.meta.url));
+ assert.equal(bytes.toString('ascii',0,4),'RIFF',panelPath);
+ assert.equal(bytes.toString('ascii',8,12),'WEBP',panelPath);
+ assert.ok(bytes.length>25000,'Too small: '+panelPath);
+ artSha.push(createHash('sha256').update(bytes).digest('hex'));
+}
+assert.equal(new Set(artSha).size,7,'Chapter 1 panels must use seven different image files');
+assert.equal(STORY_VOICE_PROFILES.garan.voicevoxSpeaker,'剣崎雌雄','Garan must not use the frail elder voice');
+console.log('Story flow regression: 20 chapters, 200 stages, 1400 panels, 20 characters, 4 routes, 3 endings, 7 distinct paintings and Garan voice PASS');
