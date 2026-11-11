@@ -72,13 +72,13 @@ let chapter=1,selected='c01-s02',territory=null,pan=0;
 function narrateSelection(){
  const stage=CAMPAIGN_STAGE_BY_ID[selected],story=narrativeForStage(stage);
  if(!('speechSynthesis' in window)){message('この端末では日本語読み上げを利用できません。');return;}
- if(speechSynthesis.speaking){speechSynthesis.cancel();$('stageNarration').textContent='▶ 選択した場面を聴く';return;}
+ if(speechSynthesis.speaking){speechSynthesis.cancel();$('stageNarration').textContent='▤ ステージの漫画を読む';return;}
  const voice=new SpeechSynthesisUtterance(story.narration);
  voice.lang='ja-JP';voice.rate=.88;voice.pitch=.97;
  const voices=speechSynthesis.getVoices().filter(x=>x.lang.toLowerCase().startsWith('ja'));
  if(voices.length)voice.voice=voices.find(x=>x.localService)||voices[0];
- voice.onend=()=>{$('stageNarration').textContent='▶ 選択した場面を聴く';};
- voice.onerror=()=>{$('stageNarration').textContent='▶ 選択した場面を聴く';};
+ voice.onend=()=>{$('stageNarration').textContent='▤ ステージの漫画を読む';};
+ voice.onerror=()=>{$('stageNarration').textContent='▤ ステージの漫画を読む';};
  $('stageNarration').textContent='■ 読み上げを停止';
  speechSynthesis.speak(voice);
 }
@@ -162,11 +162,11 @@ $('mapBoard').addEventListener('click',event=>{
 });
 $('stageGrid').addEventListener('click',event=>{
  const el=event.target.closest('[data-stage]');if(!el)return;
- selected=el.dataset.stage;window.speechSynthesis?.cancel();$('stageNarration').textContent='▶ 選択した場面を聴く';render();
+ selected=el.dataset.stage;window.speechSynthesis?.cancel();$('stageNarration').textContent='▤ ステージの漫画を読む';render();
 });
 function changeChapter(step){
  chapter=Math.max(1,Math.min(20,chapter+step));
- window.speechSynthesis?.cancel();$('stageNarration').textContent='▶ 選択した場面を聴く';
+ window.speechSynthesis?.cancel();$('stageNarration').textContent='▤ ステージの漫画を読む';
  selected=stagesInChapter(chapter)[0].id;territory=STORY_CHAPTERS[chapter-1].territory;render();
 }
 $('prevChapter').onclick=()=>changeChapter(-1);$('nextChapter').onclick=()=>changeChapter(1);
