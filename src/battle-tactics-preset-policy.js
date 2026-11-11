@@ -22,6 +22,10 @@ export const BATTLE_TACTIC_PRESETS=Object.freeze([
 export const TACTIC_DEFINITIONS=Object.freeze(BATTLE_TACTIC_PRESETS.map((p,index)=>
  Object.freeze({...p,version:1,priority:index,
   scope:'army',minSquads:p.id==='balanced'?1:2,
+  routeAuthority:'prebattle_strategy',
+  // Routes are picked with the army plan. Live counter-orders cannot override
+  // stairs, river crossing, 2F windows or flying-mount landing destinations.
+  changesRouteDuringCombat:false,
   steps:Object.freeze({
    balanced:['職業判定','号令分配','目標達成または殲滅'],
    fortress_defense:['前衛固定','高火力隊の迎撃','時間まで防衛または敵軍殲滅'],
