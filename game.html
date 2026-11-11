@@ -46,7 +46,7 @@
 <section id="intro" aria-label="オープニング" hidden><div id="introArt" aria-hidden="true"></div><div class="intro-crest" aria-hidden="true">✧</div><div id="introSpeaker">序章・灰の勅命</div><p id="introLine">千年のあいだ、星鐘は鳴らなかった。</p><div id="introProgress">序幕 · 1 / 6</div><button id="introNext" type="button">次の場面へ ▶</button><button id="skip" type="button">スキップ ▶</button></section>
 <main class="shell"><div class="crest" aria-hidden="true">✦　✧　✦</div><div class="subtitle">CHRONICLES OF THE SILENT STARBELL</div><h1>灰銀のレゾナンス</h1><div class="ornament"></div><div class="subtitle">沈黙の星鐘 — 千年の記憶が鳴らす、最後の戦争。</div>
 <nav class="title-menu" aria-label="ゲームメニュー">
-<button id="newGame">ニューゲーム</button><button id="replayTutorial">はじめての方・操作ガイド</button><button id="viewPrologue">序章を見る</button><button id="continueGame">続きから</button><button id="versus">対戦</button><button id="settings">設定</button></nav>
+<button id="newGame">ニューゲーム</button><button id="replayTutorial">はじめての方・操作ガイド</button><button id="viewPrologue">序章を見る</button><button id="continueGame">続きから</button><button id="versus">対戦</button><button id="settings">設定</button><button id="storyMaintenance" type="button">物語フロー・保守</button></nav>
 <div class="version">GAME CORE v0.1 · 20章 × 10ステージ = 200</div></main>
 <div id="tutorialModal" class="modal" hidden><section class="panel" aria-label="はじめての方へのチュートリアル"><div class="guide-top"><span id="guideEyebrow">最初の一歩</span><span id="guideCount">1 / 5</span></div><div class="guide-art"><div class="guide-icon" id="guideIcon">✦</div></div><h2 id="guideTitle">この世界について</h2><p id="guideBody"></p><p id="guideTip"></p><div id="guideDots" class="guide-dots" aria-hidden="true"></div><div class="choice"><button id="guideBack" type="button">◀ 前へ</button><button id="guideNext" type="button" class="primary">次へ ▶</button></div><button id="guideSkip" type="button" style="margin-top:9px;width:100%;min-height:35px;background:transparent;border:0;color:#adbcc8;font-size:12px">ガイドを省略する</button></section></div>
 <div id="newModal" class="modal" hidden><section class="panel"><h2>新しい物語</h2><p>あなたは灰銀軍の軍師。名前を決めると、レヴナの町で第一章のオープニングイベントが始まります。</p><form id="newForm"><label for="playerName">軍師の名前</label><input id="playerName" maxlength="24" required autocomplete="off" placeholder="軍師名を入力"><label for="playerGender">主人公の性別</label><select id="playerGender"><option value="male">男性</option><option value="female">女性</option></select><div class="choice"><button type="button" data-close>戻る</button><button type="submit" class="primary">物語を始める ▶</button></div><p id="newMessage"></p></form></section></div>
@@ -60,11 +60,13 @@ import {stageMangaImage} from './src/story-manga-art.js';
 import {applyCinematicImage} from './src/story-cinematic-assets.js';
 import {fantasyCueForMangaPanel} from './src/fantasy-scene-score.js';
 import {createGamePageAudio} from './src/game-page-audio.js';
+import {createStoryVoiceDirector} from './src/story-voice-director.js';
 const $=id=>document.getElementById(id);
 const settingsKey='hai-gin-core-settings-v1';
 let options={bgm:true,voice:true,quality:'auto'};
 try{const value=JSON.parse(localStorage.getItem(settingsKey)||'null');if(value)options={...options,...value};}catch{}
 const pageAudio=createGamePageAudio({storage:localStorage,initialScene:'title'});
+const titleVoices=createStoryVoiceDirector();
 const introStory=mangaForStage('c01-s01'),introFrames=introStory.panels.slice(0,6);
 let index=0,introClosed=true;let guideIndex=0,guideIntoNewGame=true;
 function showIntroFrame(){
@@ -76,16 +78,10 @@ function showIntroFrame(){
  pageAudio.changeScene('opening',fantasyCueForMangaPanel({id:introStory.id,number:introStory.number,kind:'town'},index).url);
  $('introProgress').textContent='序幕 · '+(index+1)+' / '+introFrames.length;
 }
-function closeIntro(){if(introClosed)return;introClosed=true;try{speechSynthesis.cancel();}catch{}pageAudio.changeScene('title');$('intro').style.opacity='0';$('intro').style.pointerEvents='none';setTimeout(()=>$('intro').hidden=true,1000);}
+function closeIntro(){if(introClosed)return;introClosed=true;titleVoices.stop();pageAudio.changeScene('title');$('intro').style.opacity='0';$('intro').style.pointerEvents='none';setTimeout(()=>$('intro').hidden=true,1000);}
 function speakIntro(){
- if(options.voice===false||!('speechSynthesis' in window)||introClosed)return;
- const line=introFrames[index];
- try{
-  speechSynthesis.cancel();
-  const utter=new SpeechSynthesisUtterance(line.text.slice(0,350));
-  utter.lang='ja-JP';utter.rate=.9;utter.pitch=line.characterId?.92:1;
-  speechSynthesis.speak(utter);
- }catch{}
+ if(options.voice===false||introClosed)return;
+ void titleVoices.speak(introFrames[index]);
 }
 function nextLine(){index++;if(index>=introFrames.length){closeIntro();return;}showIntroFrame();if(pageAudio.started)speakIntro();}
 function openIntro(){closeModals();introClosed=false;index=0;pageAudio.changeScene('opening');$('intro').hidden=false;$('intro').style.opacity='1';$('intro').style.pointerEvents='auto';showIntroFrame();pageAudio.unlock();speakIntro();}
@@ -130,6 +126,7 @@ $('continueGame').onclick=()=>{if(!saved)return;sessionStorage.setItem('hai-gin-
 $('versus').onclick=()=>openModal('versusModal');
 $('vsCpu').onclick=()=>location.href='./tactics-wireframe.html?army=50&mode=cpu&v=4.6.69';
 $('settings').onclick=()=>{renderSettings();openModal('settingsModal')};
+$('storyMaintenance').onclick=()=>location.href='./story-maintenance.html';
 function renderSettings(){$('optBgm').textContent=options.bgm?'ON':'OFF';$('optVoice').textContent=options.voice?'ON':'OFF';$('optQuality').value=options.quality;}
 $('optBgm').onclick=()=>{options.bgm=!options.bgm;pageAudio.setEnabled(options.bgm);renderSettings()};
 $('optVoice').onclick=()=>{options.voice=!options.voice;renderSettings()};

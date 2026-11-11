@@ -8,6 +8,7 @@ import {mangaForStage} from './story-stage-manga.js';
 import {stageMangaImage} from './story-manga-art.js';
 import {applyCinematicImage} from './story-cinematic-assets.js';
 import {fantasyCueForMangaPanel} from './fantasy-scene-score.js';
+import {createStoryVoiceDirector} from './story-voice-director.js';
 const CORE_SETTINGS='hai-gin-core-settings-v1';
 const readVoice=storage=>{
  try{return JSON.parse(storage?.getItem(CORE_SETTINGS)||'{}')?.voice!==false;}catch{return true;}
@@ -70,17 +71,9 @@ export function createMangaViewer({container=document.body,storage=globalThis.lo
  container.append(root);document.head.append(style);
  const $=selector=>root.querySelector(selector);
  let story=null,index=0,finish=null,voiceOn=readVoice(storage),active=false;
- const sound=()=>voiceOn&&'speechSynthesis' in window;
- function stopVoice(){try{globalThis.speechSynthesis?.cancel();}catch{}}
- function narrate(){
-  if(!active||!story||!sound())return;
-  const shot=story.panels[index],utter=new SpeechSynthesisUtterance(shot.text.slice(0,380));
-  const voices=speechSynthesis.getVoices().filter(v=>v.lang?.toLowerCase().startsWith('ja'));
-  utter.lang='ja-JP';utter.rate=.90;utter.pitch=shot.characterId?.91:1;
-  utter.volume=.96;
-  if(voices.length)utter.voice=voices[(story.number+index)%voices.length];
-  try{speechSynthesis.speak(utter);}catch{}
- }
+ const voiceDirector=createStoryVoiceDirector();
+ function stopVoice(){voiceDirector.stop();}
+ function narrate(){if(active&&story&&voiceOn)void voiceDirector.speak(story.panels[index]);}
  function frame(){
   if(!story||!active)return;
   stopVoice();
@@ -108,8 +101,8 @@ export function createMangaViewer({container=document.body,storage=globalThis.lo
   onClose(story,completed);
   if(completed)done?.();
  }
- function open(id,{onFinish=null,at=0}={}){
-  story=mangaForStage(id);index=Math.max(0,Math.min(story.panels.length-1,at|0));
+ function open(id,{onFinish=null,at=0,context=null}={}){
+  story=mangaForStage(id,context||{});index=Math.max(0,Math.min(story.panels.length-1,at|0));
   finish=onFinish;voiceOn=readVoice(storage);active=true;root.hidden=false;
   frame();return story;
  }

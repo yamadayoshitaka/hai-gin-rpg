@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import './story-flow-maintenance.test.mjs';
 import {readFileSync} from 'node:fs';
 import {SourceTextModule} from 'node:vm';
 import {STORY_KEY_PEOPLE,STORY_KEY_PERSON_BY_NAME,cinematicScenesForChapter,

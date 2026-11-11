@@ -38,7 +38,7 @@ const xml=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 const palette={
  '灰銀':['#345d79','#e6cf9e'],'紅炎':['#823e44','#deb889'],
  '翠嵐':['#3a7356','#b7d5aa'],'鐘守':['#7063a1','#d5cdf0'],
- '記録院':['#51516a','#c8b9a1'],'星鐘':['#7063a1','#d5cdf0']
+ '記録院':['#51516a','#c8b9a1'],'星鐘':['#7063a1','#d5cdf0'],'中立':['#547d5b','#dbd5ab']
 };
 function scenerySvg(scene){
  const style=scene.scenery||'wilds',seed=scene.artSeed||4,night=scene.mood==='mystery';
