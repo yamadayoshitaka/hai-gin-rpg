@@ -66,9 +66,9 @@ async function expectVisibleV8Preset(page,context,contact='brown'){
      original.female?.sourceVertices!==original.male?.sourceVertices||
      !original.female?.sourceGeometryIndependent||
      !original.male?.sourceGeometryIndependent||
-     original.female?.facePartMeshCount!==34||
+     original.female?.facePartMeshCount!==30||
      original.male?.facePartMeshCount!==19||
-     original.visiblePartMeshes!==34||
+     original.visiblePartMeshes!==30||
      original.faceMode!=='color'||
      original.femaleControls.irisDiameter!==1||
      original.femaleControls.jawSharpness!==2.5||
@@ -77,6 +77,13 @@ async function expectVisibleV8Preset(page,context,contact='brown'){
      original.femaleControls.noseBridgeSharpness!==2.5||
      !original.maleWithoutMakeup)
    throw Error('Not two independent source-derived face meshes: '+JSON.stringify(original));
+  // Mobile category tabs must expose the requested controls without
+  // forcing the user to scroll past a dozen unrelated sliders.
+  const faceTabs=page.locator('#faceGroupTabs button');
+  if(await faceTabs.count()!==5)throw Error('Female category tabs missing');
+  await faceTabs.filter({hasText:'カラコン'}).click();
+  if(!await page.locator('#contactPreset').isVisible())
+   throw Error('Color picker hidden after selecting contact category');
   // A user who touches ONLY the contact color must not inadvertently
   // inherit lipstickX=.05 or another visible slider value.
   await page.locator('#contactPreset').selectOption('green');
@@ -90,7 +97,7 @@ async function expectVisibleV8Preset(page,context,contact='brown'){
     await page.locator('#'+view).click();
     await page.waitForTimeout(200);
     const report=await page.evaluate(()=>window.__faceMasterQA());
-    if(report.gender!==g||report.view!==view||report.visibleFaceMeshes!==1||report.visiblePartMeshes!==(g==='female'?34:19))
+    if(report.gender!==g||report.view!==view||report.visibleFaceMeshes!==1||report.visiblePartMeshes!==(g==='female'?30:19))
      throw Error('Face viewer controls failed '+JSON.stringify(report));
     await canvas.screenshot({path:path.join(out,g+'-'+view+'.png'),
      timeout:90000,animations:'disabled'});
@@ -110,7 +117,7 @@ async function expectVisibleV8Preset(page,context,contact='brown'){
    const gltf=JSON.parse(buf.subarray(20,20+length).toString('utf8').trim());
    const tri=(gltf.meshes||[]).flatMap(m=>m.primitives||[])
     .filter(p=>p.mode===undefined||p.mode===4);
-   if(tri.length!==(g==='female'?35:20))throw Error('Exported face + anatomical meshes mismatch: '+g+' '+tri.length);
+   if(tri.length!==(g==='female'?31:20))throw Error('Exported face + anatomical meshes mismatch: '+g+' '+tri.length);
    console.log('FACE_CLAY_GLB_EXPORT',JSON.stringify({
     gender:g,bytes:buf.length,trianglePrimitives:tri.length
    }));
@@ -170,7 +177,7 @@ async function expectVisibleV8Preset(page,context,contact='brown'){
      changed.currentFeatureAngles?.browAngle!==6||
      changed.currentFeatureAngles?.lashAngle!==7||
      changed.contactColor!=='#467fa7'||
-     changed.visiblePartMeshes!==34)
+     changed.visiblePartMeshes!==30)
    throw Error('Live nose/eyebrow/lash controls do not affect the displayed 3D: '+JSON.stringify(changed));
   await page.locator('#front').click();
   await canvas.screenshot({path:path.join(out,'female-color-nose-brow-adjusted.png')});
@@ -183,13 +190,13 @@ async function expectVisibleV8Preset(page,context,contact='brown'){
    const buf=fs.readFileSync(file),size=buf.readUInt32LE(12);
    const gltf=JSON.parse(buf.subarray(20,20+size).toString('utf8').trim());
    const meshes=gltf.meshes||[],materials=gltf.materials||[];
-   if(meshes.length!==35||materials.length<5)
+   if(meshes.length!==31||materials.length<5)
     throw Error('Colored female GLB did not preserve eyebrow/eyelash meshes and palette');
    console.log('FACE_V7_COLORED_GLB_EXPORT',JSON.stringify({
     bytes:buf.length,meshes:meshes.length,materials:materials.length
    }));
   }
-  if((await page.evaluate(()=>window.__faceMasterQA())).visiblePartMeshes!==34)
+  if((await page.evaluate(()=>window.__faceMasterQA())).visiblePartMeshes!==30)
    throw Error('Facial parts did not restore after toggling');
   await page.locator('#resetPreset').click();
   await expectVisibleV8Preset(page,'reset-button');
@@ -203,7 +210,7 @@ async function expectVisibleV8Preset(page,context,contact='brown'){
   await canvas.screenshot({path:path.join(out,'female-default-v9-lip-eye-blush.png')});
   if(reset.female?.detailedParts.eyelinerMeshCount!==4||
      reset.female?.detailedParts.eyeAccentMeshCount!==2||
-     reset.female?.detailedParts.blushMeshCount!==2||
+     reset.female?.detailedParts.blushMeshCount!==0||
      !reset.female?.detailedParts.lipstickPlacement?.attachedToLipMesh)
    throw Error('V9 lipstick/eye-cheek makeup did not load actual surface');
   // The current jaw of 2.5 remains standard; higher values remain reachable.
@@ -215,6 +222,34 @@ async function expectVisibleV8Preset(page,context,contact='brown'){
   if(strongerJaw.femaleControls.jawSharpness!==4.5)
    throw Error('Female jaw extension above 2.5 is not operational');
   await canvas.screenshot({path:path.join(out,'female-v9-jaw-4-5.png')});
+  await page.locator('#resetPreset').click();
+  // Simulate a real pinch/zoom before changing a sculpt slider.
+  // The rebuilt face mesh must not reset OrbitControls.
+  await page.locator('#front').click();
+  await canvas.hover();
+  await page.mouse.wheel(0,-620);
+  await page.waitForTimeout(450);
+  const zoomBefore=await page.evaluate(()=>window.__faceMasterQA().cameraDistance);
+  await page.locator('#faceGroupTabs button').filter({hasText:'顎・輪郭'}).click();
+  if(!await page.locator('#jawSharpness').isVisible())
+   throw Error('Jaw slider not visible in face category');
+  const plus=page.locator('label[for="jawSharpness"] .stepRow button').last();
+  if(!await plus.isVisible())throw Error('Precise + jaw stepper missing');
+  await plus.click();
+  const stepJaw=await page.evaluate(()=>window.__faceMasterQA());
+  if(Math.abs(stepJaw.femaleControls.jawSharpness-2.6)>1e-6)
+   throw Error('Fine adjustment step failed');
+  if(Math.abs(stepJaw.cameraDistance-zoomBefore)>1e-4)
+   throw Error('Rebuilding after slider step reset zoom '+stepJaw.cameraDistance+' / '+zoomBefore);
+  await page.locator('#resetPreset').click();
+  await page.locator('#eyeAngle').evaluate(el=>{
+   el.value='20';el.dispatchEvent(new Event('input',{bubbles:true}));
+  });
+  await canvas.screenshot({path:path.join(out,'female-eye-angle-plus20-brows.png')});
+  await page.locator('#eyeAngle').evaluate(el=>{
+   el.value='-20';el.dispatchEvent(new Event('input',{bubbles:true}));
+  });
+  await canvas.screenshot({path:path.join(out,'female-eye-angle-minus20-brows.png')});
   await page.locator('#resetPreset').click();
   await page.locator('#male').click();
   const neutralMale=await page.evaluate(()=>window.__faceMasterQA());
