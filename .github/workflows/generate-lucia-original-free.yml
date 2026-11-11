@@ -1,0 +1,52 @@
+name: Generate Lucia original 3D candidate (free only)
+on:
+  push:
+    branches: [feat/lucia-ai-3d-from-original-20261111]
+    paths:
+      - '.github/workflows/generate-lucia-original-free.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: lucia-free-original-3d
+  cancel-in-progress: false
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install open source Gradio client for this single run
+        run: npm install --no-save --package-lock=false --ignore-scripts @gradio/client@2.7.2
+      - name: Upload first-chapter Lucia original and try free ZeroGPU 3D inference
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: node scripts/generate-lucia-original-trellis2.mjs
+      - name: Save trial report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lucia-3d-original-generation-report
+          path: qa-reports/lucia-original-ai-generation.json
+          if-no-files-found: warn
+      - name: Save generated candidate
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lucia-original-3d-candidate
+          path: assets/ai-generated/human/lucia_ch01_trellis2_trial_01
+          if-no-files-found: error
+      - name: Commit successful candidate only to PR branch (not main)
+        if: success()
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add assets/ai-generated/human/lucia_ch01_trellis2_trial_01 data/ai-model-registry.json
+          if ! git diff --cached --quiet; then
+            git commit -m "Add Lucia 3D generated candidate for visual QA [skip ci]"
+            git pull --rebase origin feat/lucia-ai-3d-from-original-20261111
+            git push origin HEAD:feat/lucia-ai-3d-from-original-20261111
+          fi
