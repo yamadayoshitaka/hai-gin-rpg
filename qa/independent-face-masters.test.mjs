@@ -20,7 +20,7 @@ test('two source-derived clay face meshes have owned independent vertices and pr
  const before=original.getAttribute('position').array.slice();
  const female=makeIndependentFaceMaster(source,'female');
  const male=makeIndependentFaceMaster(source,'male');
- assert.equal(female.report.code,'female-face-anatomical-v2');
+ assert.equal(female.report.code,'female-face-oval-v3');
  assert.equal(male.report.code,'male-face-base-v1');
  assert.ok(female.report.sourceVertices>1100);
  assert.ok(male.report.sourceVertices>1100);
@@ -42,13 +42,20 @@ test('two source-derived clay face meshes have owned independent vertices and pr
  assert.equal(female.face.material.wireframe,false);
  assert.ok(female.face.material.color.getHexString().startsWith('bfc3'));
  assert.equal(female.root.getObjectByName('GEO_sclera_l').visible,false);
- assert.equal(female.report.facePartMeshCount,12);
+ assert.equal(female.report.facePartMeshCount,16);
  assert.equal(male.report.facePartMeshCount,12);
  assert.ok(female.report.facePartTriangles>1000);
  assert.equal(female.report.detailedParts.eyelidMeshCount,4);
  assert.equal(female.report.detailedParts.eyeMeshCount,2);
  assert.equal(female.report.detailedParts.lipMeshCount,2);
  assert.equal(female.report.detailedParts.noseSourceIntegrated,true);
+ assert.equal(female.report.detailedParts.doubleLidCreaseMeshCount,2);
+ assert.equal(female.report.detailedParts.lowerOrbitalVolumeMeshCount,2);
+ assert.ok(female.report.detailedParts.irisPolarAngleRadians>.55);
+ assert.ok(female.report.detailedParts.pupilPolarAngleRadians>.22);
+ assert.ok(female.report.detailedParts.mouthHalfWidthFraction<.09);
+ assert.ok(female.root.getObjectByName('LEFT_DOUBLE_EYELID_FOLD')?.isMesh);
+ assert.ok(female.root.getObjectByName('RIGHT_LOWER_LID_VOLUME')?.isMesh);
  assert.ok(female.report.detailedParts.realSurfaceProjectionCount>100,
   'Eyes and lips must project onto real 3D head, not a flat card');
  assert.ok(female.root.getObjectByName('UPPER_3D_VERMILION_LIP')?.isMesh);
@@ -68,7 +75,7 @@ test('strictly exclude body, wig and makeup from face-only model assembly',()=>{
  const f=fixture();const built=makeIndependentFaceMaster(f.source,'female');
  const visible=[];
  built.root.traverse(o=>{if(o.isMesh&&o.visible)visible.push(o)});
- assert.equal(visible.length,13,'Face plus twelve genuine 3D eye/eyelid/lip meshes');
+ assert.equal(visible.length,17,'Face plus sixteen real 3D feature meshes');
  assert.ok(visible.includes(built.face));
  assert.ok(visible.every(o=>o===built.face||o.parent===built.parts));
  assert.ok(visible.every(o=>!/hair|armour|body|garment/i.test(o.name)));
