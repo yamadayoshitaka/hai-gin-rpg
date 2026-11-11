@@ -512,9 +512,9 @@ async function speakChapter(number,{autoplay=false}={}){
 }
 // Every town stop uses the exact same serial-manga identity and panel order
 // as the other 180 combat/exploration stages.
-let townManga=mangaForStage(game.townStage);
-if(game.storyFlags?.route?.activeCooperation)townManga=mangaForStage(game.townStage,storyStageContext(game,game.townStage));
-const eventScenes=townManga.panels;
+const townManga=mangaForStage(game.townStage);
+const eventScenes=game.storyFlags?.route?.activeCooperation?
+ mangaForStage(game.townStage,storyStageContext(game,game.townStage)).panels:townManga.panels;
 let eventIndex=0;
 const voiceIsOn=()=>{
  try{return JSON.parse(localStorage.getItem('hai-gin-core-settings-v1')||'{}')?.voice!==false;}
@@ -561,6 +561,7 @@ $('eventVoice').onclick=()=>{
 };
 function closePaperStory(){
  $('opening').hidden=true;paperPending=false;
+ game.storyFlags.stageMangaSeen??={};
  game.storyFlags.chapterOpenings??={};
  game.storyFlags.chapterOpenings[townChapter]=true;
  game.storyFlags.stageMangaSeen??={};game.storyFlags.stageMangaSeen[game.townStage]=true;
