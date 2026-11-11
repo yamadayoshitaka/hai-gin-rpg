@@ -3,6 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "test:story-flow": "node qa/story-flow-maintenance.test.mjs",
     "test:domain": "npm run test:legacy",
     "test:comprehensive": "node qa/comprehensive-regression.test.mjs",
     "test:full-replacement": "node qa/full-replacement-contract.test.mjs && node qa/skin-geometry.test.mjs",
