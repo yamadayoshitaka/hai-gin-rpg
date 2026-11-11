@@ -12,6 +12,8 @@ for(const stage of CAMPAIGN_STAGES.filter(stage=>types.includes(stage.kind))){
  assert.deepEqual([spec.attackerTeam,spec.defenderTeam].sort(),[0,1],stage.id);
  assert.ok(spec.allyGoal&&spec.enemyGoal,stage.id);
  assert.notEqual(spec.allyGoal,spec.enemyGoal,stage.id);
+ assert.match(spec.allyGoal,/または敵軍を殲滅/,stage.id+' player can win by annihilation');
+ assert.match(spec.enemyGoal,/または味方軍を殲滅/,stage.id+' enemy can win by annihilation');
  const base={allyAlive:5,enemyAlive:5};
  const resolve=extra=>evaluateBattleObjective(spec,{...base,...extra});
  const awaiting=resolve({elapsedSeconds:spec.durationSeconds-1});
@@ -20,6 +22,22 @@ for(const stage of CAMPAIGN_STAGES.filter(stage=>types.includes(stage.kind))){
  const timeout=resolve({elapsedSeconds:spec.durationSeconds});
  assert.equal(timeout.winnerTeam,spec.defenderTeam,stage.id+' defender always wins at timeout');
  assert.equal(timeout.loserTeam,spec.attackerTeam);
+ // Annihilation works even when no zone is occupied, before the deadline
+ // and at the deadline. This is independent of the stage-specific objective.
+ const playerEliminatesEnemy=resolve({allyAlive:7,enemyAlive:0,
+  elapsedSeconds:15,allyInZone:false,enemyInZone:false});
+ assert.equal(playerEliminatesEnemy.winnerTeam,0,stage.id+' ally elimination victory');
+ assert.match(playerEliminatesEnemy.reason,/殲滅/);
+ const enemyEliminatesPlayer=resolve({allyAlive:0,enemyAlive:7,
+  elapsedSeconds:15,allyInZone:false,enemyInZone:false});
+ assert.equal(enemyEliminatesPlayer.winnerTeam,1,stage.id+' enemy elimination victory');
+ assert.match(enemyEliminatesPlayer.reason,/殲滅/);
+ const playerKillsAtDeadline=resolve({allyAlive:2,enemyAlive:0,
+  elapsedSeconds:spec.durationSeconds});
+ assert.equal(playerKillsAtDeadline.winnerTeam,0,stage.id+' elimination resolves before time expiry');
+ const enemyKillsAtDeadline=resolve({allyAlive:0,enemyAlive:2,
+  elapsedSeconds:spec.durationSeconds});
+ assert.equal(enemyKillsAtDeadline.winnerTeam,1,stage.id+' enemy elimination resolves before time expiry');
  const winOnSoldierLoss=resolve({allyAlive:spec.defenderTeam===0?0:5,
   enemyAlive:spec.defenderTeam===1?0:5});
  assert.equal(winOnSoldierLoss.winnerTeam,spec.attackerTeam);
@@ -124,4 +142,4 @@ for(const kind of types){
  assert.throws(()=>settleCoreBattle(game,request,result),/勝敗が一致しません/);
  assert.equal(game.lastCoreBattleId,undefined,'Invalid result must not mutate campaign progress');
 }
-console.log('PASS opposing attacker/defender goals, timers, tie precedence and winner/loser story validation');
+console.log('PASS all mission types: opposing goals OR universal annihilation, timer precedence, and decisive winner/loser results');
