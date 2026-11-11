@@ -14,6 +14,23 @@ import {normalizeFemaleFaceControls,normalizeMaleFaceControls,FACE_V7_PALETTE,MA
 const bell=(x,c,w)=>Math.exp(-.5*((x-c)/w)**2);
 const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
 const smoothstep=t=>{const q=clamp(t,0,1);return q*q*(3-2*q)};
+const vertexMakeup=new WeakMap();
+function setVertexMakeup(mesh,rgb){
+ mesh.geometry.setAttribute('color',new THREE.Float32BufferAttribute(rgb,3));
+ mesh.material.vertexColors=true;mesh.material.needsUpdate=true;
+ vertexMakeup.set(mesh.geometry,new Float32Array(rgb));
+}
+function colorizedMakeup(mesh,colored){
+ const saved=vertexMakeup.get(mesh.geometry);
+ if(!saved)return;
+ const attribute=mesh.geometry.getAttribute('color');
+ for(let i=0;i<saved.length;i++)attribute.array[i]=colored?saved[i]:1;
+ attribute.needsUpdate=true;
+}
+function pigmentFactor(base,tint,opacity){
+ return new THREE.Vector3(1+(tint.r/base.r-1)*opacity,
+  1+(tint.g/base.g-1)*opacity,1+(tint.b/base.b-1)*opacity);
+}
 function buildGrid(name,columns,rows,point,material){
  const vertices=[],uv=[],indices=[];
  for(let j=0;j<=rows;j++){
@@ -309,28 +326,21 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   }
   root.add(eyeJoint);
  }
- // Cheek tint stays on the real face, while orbit makeup follows the
- // eye rotation through the eye's own linked parent pivot.
- if(female)for(const side of [-1,1]){
-  const blushMat=new THREE.MeshStandardMaterial({
-   color:0xcf8383,roughness:1,metalness:0,side:THREE.DoubleSide,
-   transparent:true,opacity:.48,depthWrite:false,vertexColors:true
-  });
-  const blush=buildGrid((side===-1?'LEFT':'RIGHT')+'_CHEEK_BLUSH',28,8,
-   (u,v)=>{
-    const xx=cx+side*d.x*(.155+.17*u);
-    const yy=box.min.y+d.y*(.492+.082*v);
-    return new THREE.Vector3(xx,yy,
-     surfaceAt(xx,yy)+Math.max(.00004,d.z*.00035));
-   },blushMat);
-  const colors=[];
-  for(let j=0;j<=8;j++)for(let i=0;i<=28;i++){
-   const u=i/28,v=j/8,rr=(2*u-1)**2+(2*v-1)**2;
-   colors.push(1,1,1,Math.max(0,1-rr)**2);
+ // Pigment on the source-derived head vertices, not hovering face quads.
+ if(female){
+  const skin=new THREE.Color(FACE_V7_PALETTE.skin);
+  const tint=new THREE.Color(FACE_V7_PALETTE.blush);
+  const colors=[],positions=face.geometry.getAttribute('position');
+  for(let i=0;i<positions.count;i++){
+   const x=Math.abs((positions.getX(i)-cx)/d.x);
+   const y=(positions.getY(i)-box.min.y)/d.y;
+   const z=(positions.getZ(i)-box.min.z)/d.z;
+   const front=smoothstep((z-.57)/.20);
+   const strength=.22*bell(x,.24,.085)*bell(y,.535,.043)*front;
+   const rgb=pigmentFactor(skin,tint,strength);
+   colors.push(rgb.x,rgb.y,rgb.z);
   }
-  blush.geometry.setAttribute('color',new THREE.Float32BufferAttribute(colors,4));
-  blush.userData.colorRole='blush';blush.userData.cosmetic=true;
-  root.add(blush);
+  setVertexMakeup(face,colors);
  }
  // Original face remains the structural muzzle/philtrum/chin. Two shallow
  // lip strips follow that actual surface and use real triangle thickness.
@@ -339,7 +349,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
  const halfWidth=d.x*.044;
  const actualLips=new Map();
  for(const upper of [true,false]){
-  const material=lipMat;
+  const material=female?lipMat.clone():lipMat;
   const mesh=buildGrid((upper?'UPPER':'LOWER')+'_3D_VERMILION_LIP',
    32,8,(u,v)=>{
     const t=u*2-1;
@@ -350,7 +360,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
     const vertical=(v-.5)*d.y*(upper?.012:.015)*taper;
     const x=cx+t*halfWidth,y=cy+vertical;
     const fullness=(1-t*t)*Math.sin(Math.PI*v);
-    const z=surfaceAt(x,y)+d.z*(.0015+.005*fullness*taper);
+    const z=surfaceAt(x,y)+d.z*(.0009+.002*fullness*taper);
     return new THREE.Vector3(x,y,z);
    },material);
   mesh.userData.faceSurfaceConforming=true;
@@ -358,32 +368,29 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   actualLips.set(upper,mesh);
   root.add(mesh);
  }
- // Lip pigment derives from the existing anatomical lip grid, never a
- // separate ray cast onto the cheek/chin. Its child-parent link also means
- // later mouth transforms carry it without independent position updates.
+ // Lip color is vertex pigment on the SAME triangles as each actual lip.
+ // There is no separate lipstick geometry that can slide onto the jaw.
  if(female)for(const upper of [true,false]){
   const lip=actualLips.get(upper);
-  const pigment=new THREE.MeshStandardMaterial({
-   color:0xc07c82,roughness:.75,metalness:0,side:THREE.DoubleSide,
-   transparent:true,opacity:.91,depthWrite:false
-  });
-  const patch=buildGrid(
-   (upper?'UPPER':'LOWER')+'_LIPSTICK_MAKEUP',32,8,(u,v)=>{
-    const shiftU=clamp(settings.lipstickX/.12,-1,1)*.30;
-    const shiftV=clamp(settings.lipstickY/.12,-1,1)*.30;
-    const fitU=Math.max(1,settings.lipstickWidth+2*Math.abs(shiftU));
-    const fitV=Math.max(1,settings.lipstickHeight+2*Math.abs(shiftV));
-    const lipU=clamp(.5+((u-.5)*settings.lipstickWidth+shiftU)/fitU,0,1);
-    const lipV=clamp(.5+((v-.5)*settings.lipstickHeight+shiftV)/fitV,0,1);
-    const point=sampleGrid(lip,32,8,lipU,lipV);
-    // Tiny forward offset only to avoid z-fighting, not floating pigment.
-    point.z+=Math.max(.000025,d.z*.00015);
-    return point;
-   },pigment);
-  patch.userData.colorRole='lipstick';
-  patch.userData.cosmetic=true;
-  patch.userData.anatomyParent=lip.name;
-  lip.add(patch);
+  const natural=new THREE.Color(0xd9a699);
+  const makeup=new THREE.Color(FACE_V7_PALETTE.lipstick);
+  const shiftU=clamp(settings.lipstickX/.12,-1,1)*.23;
+  const shiftV=clamp(settings.lipstickY/.12,-1,1)*.23;
+  const extentU=settings.lipstickWidth*.50,extentV=settings.lipstickHeight*.50;
+  const colors=[];
+  for(let j=0;j<=8;j++)for(let i=0;i<=32;i++){
+   const u=i/32,v=j/8;
+   const fadeU=smoothstep((u-(.5+shiftU-extentU))/.09)*
+    smoothstep(((.5+shiftU+extentU)-u)/.09);
+   const fadeV=smoothstep((v-(.5+shiftV-extentV))/.12)*
+    smoothstep(((.5+shiftV+extentV)-v)/.12);
+   const rgb=pigmentFactor(natural,makeup,.83*fadeU*fadeV);
+   colors.push(rgb.x,rgb.y,rgb.z);
+  }
+  setVertexMakeup(lip,colors);
+  lip.userData.lipstickOnSameTriangles=true;
+  lip.userData.lipstickCoverage={x:settings.lipstickX,y:settings.lipstickY,
+   width:settings.lipstickWidth,height:settings.lipstickHeight};
  }
  // Male-only real 3D filaments, rooted in the same head surface and
  // re-generated if facial proportions or beard sliders change.
@@ -433,15 +440,15 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
  const report=Object.freeze({
   gender,partMeshCount:meshList.length,realSurfaceProjectionCount:projected,
   projectionFallbacks,eyeMeshCount:2,irisMeshCount:2,pupilMeshCount:2,
-  eyelidMeshCount:4,lipMeshCount:2,lipstickMeshCount:female?2:0,
+  eyelidMeshCount:4,lipMeshCount:2,lipstickMeshCount:0,
   lipstickPlacement:female?{
    x:settings.lipstickX,y:settings.lipstickY,
    width:settings.lipstickWidth,height:settings.lipstickHeight,
    anchoredToLipSurface:true,boundedWithinLipArea:true,
-   attachedToLipMesh:true
+   attachedToLipMesh:true,paintAsVertexColor:true
   }:null,
   eyelinerMeshCount:female?4:0,eyeAccentMeshCount:female?2:0,
-  blushMeshCount:female?2:0,beardMeshCount:female?0:5,
+  blushMeshCount:0,blushVertexTint:female,beardMeshCount:female?0:5,
   beardDensity:gender==='male'?settings.beardDensity:0,
   eyebrowMeshCount:2,eyelashMeshCount:female?4:0,
   underEyeShadowMeshCount:female?2:0,
@@ -512,6 +519,7 @@ export function applyFaceColorMode(face,mode='clay',{contactColor}={}){
   if(role&&o.material.color){
    const hex=(colored?palette:clay)[role];
    if(hex!==undefined)o.material.color.setHex(hex);
+   colorizedMakeup(o,colored);
    o.material.needsUpdate=true;
   }
  });
