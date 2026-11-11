@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0c1727">
+<title>灰銀のレゾナンス｜20章シネマティック紙芝居</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#070e1b;color:#e9e2d0;font:15px system-ui,'Noto Sans JP',sans-serif;min-height:100dvh}
+header{padding:12px clamp(12px,3vw,35px);display:flex;justify-content:space-between;align-items:center;gap:12px;background:#101d2f;border-bottom:1px solid #ad966b}
+h1{font-size:clamp(17px,4vw,24px);margin:0;color:#f9ddb0;font-family:Georgia,serif}header a{font-size:12px;color:#e9cf9a}
+main{width:min(980px,100%);margin:auto;padding:14px;display:grid;gap:11px}
+.controls{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+label{font-size:11px;color:#adbdd3;display:grid;gap:4px}
+select{width:100%;background:#172b43;border:1px solid #8d9ba4;border-radius:7px;color:#f6e3bf;padding:9px;font-size:13px;min-height:43px}
+.scene{background:linear-gradient(140deg,#192e40,#080f1d);border:1px solid #c3a477;border-radius:8px;overflow:hidden;box-shadow:0 12px 40px #0009}
+.scene img{display:block;width:100%;aspect-ratio:16/9;object-fit:cover;background:#101725}
+.dialogue{padding:12px 17px 14px}.speaker{font-weight:700;color:#ffdca5;font-size:14px}.line{line-height:1.75;min-height:3em;white-space:pre-wrap;margin:8px 0}
+.bar{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:center;padding:0 3px}
+button{background:#28455c;color:#f6e9ce;border:1px solid #bea57b;border-radius:6px;min-height:42px;padding:9px;font:inherit}
+#next{background:#785d38;font-weight:700}#counter{font-size:12px;color:#d2c8b5;white-space:nowrap}
+.caption{font-size:11px;color:#aebdca;line-height:1.5;margin:0}
+#castGrid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+.actor{background:#101d2d;border:1px solid #455a70;border-radius:6px;overflow:hidden;text-align:center}
+.actor img{display:block;width:100%;height:95px;object-fit:cover;object-position:center 22%}
+.actor div{font-size:10px;padding:5px 2px;color:#e9d9bc;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+h2{font-size:15px;margin:5px 0;color:#d9bf90}
+@media(min-width:670px){#castGrid{grid-template-columns:repeat(10,1fr)}.actor img{height:115px}}
+</style></head><body>
+<header><h1>灰銀のレゾナンス — 全20章 漫画確認</h1><a href="./game.html">ゲームへ</a></header>
+<main>
+ <div class="controls"><label>章を選択<select id="chapter"></select></label><label>ステージを選択<select id="stage"></select></label></div>
+ <section class="scene" aria-label="高精細漫画のコマ"><img id="art" alt="ゲームの物語画像"><div class="dialogue"><div class="speaker" id="speaker"></div><p class="line" id="line"></p></div></section>
+ <div class="bar"><button id="previous" type="button">◀ 前のコマ</button><button id="next" type="button">次のコマ ▶</button><span id="counter">1 / 7</span></div>
+ <p class="caption">原画41枚（タイトル1・主要人物20・章背景20）から、章・話者・コマに応じた高精細画像を組み合わせます。ゲーム本編の戦闘モデルやセーブ状態には影響しません。</p>
+ <h2>主要人物・固定ビジュアル</h2><div id="castGrid"></div>
+</main>
+<script type="module">
+import {STORY_CHAPTERS} from './src/story-chapters.js';
+import {STORY_KEY_PEOPLE} from './src/story-cinematic.js';
+import {stagesInChapter} from './src/campaign-stage-plan.js';
+import {mangaForStage} from './src/story-stage-manga.js';
+import {stageMangaImage} from './src/story-manga-art.js';
+import {applyCinematicImage,CINEMATIC_CAST_ASSETS} from './src/story-cinematic-assets.js';
+const $=id=>document.getElementById(id);
+$('chapter').innerHTML=STORY_CHAPTERS.map(c=>'<option value="'+c.id+'">第'+c.id+'章・'+c.title+'</option>').join('');
+$('castGrid').replaceChildren(...STORY_KEY_PEOPLE.map(p=>{
+ const tile=document.createElement('div');tile.className='actor';
+ const img=document.createElement('img');img.loading='lazy';img.src=CINEMATIC_CAST_ASSETS[p.id];img.alt=p.name;
+ const label=document.createElement('div');label.textContent=p.name;tile.append(img,label);return tile;
+}));
+let story=null,index=0;
+function refreshStages(){
+ const stages=stagesInChapter(Number($('chapter').value));
+ $('stage').replaceChildren(...stages.map(s=>{
+ const opt=document.createElement('option');opt.value=s.id;opt.textContent=s.slot+' / 10 · '+s.name;return opt;
+ }));
+ refreshStory();
+}
+function refreshStory(){story=mangaForStage($('stage').value);index=0;show();}
+function show(){
+ const panel=story.panels[index];$('art').src=stageMangaImage(panel);
+ $('art').alt=story.stageName+' '+panel.speaker+'の'+(index+1)+'コマ目';
+ applyCinematicImage($('art'),panel);
+ $('speaker').textContent=panel.speaker+' · '+panel.role+' · '+story.stageName;
+ $('line').textContent=panel.text;$('counter').textContent=(index+1)+' / '+story.panels.length;
+ $('previous').disabled=index===0;
+ $('next').textContent=index===story.panels.length-1?'最初のコマへ ▶':'次のコマ ▶';
+}
+$('chapter').onchange=refreshStages;$('stage').onchange=refreshStory;
+$('previous').onclick=()=>{index=Math.max(0,index-1);show();};
+$('next').onclick=()=>{index=(index+1)%story.panels.length;show();};
+const params=new URLSearchParams(location.search);
+$('chapter').value=String(Math.max(1,Math.min(20,Number(params.get('chapter'))||1)));
+refreshStages();
+if(params.get('stage')&&stagesInChapter(Number($('chapter').value)).some(s=>s.id===params.get('stage'))){
+ $('stage').value=params.get('stage');refreshStory();
+}
+</script></body></html>
