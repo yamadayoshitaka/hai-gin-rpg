@@ -99,14 +99,14 @@ export function createAnatomicalFaceParts(face,{gender='female'}={}){
   // Real spherical caps on the globe, not flat disks that disappear
   // at 45° angles. Default SphereGeometry points +Y; rotate to +Z.
   const iris=new THREE.Mesh(
-   new THREE.SphereGeometry(eyeRadius*.901,32,12,0,Math.PI*2,0,.47),
+   new THREE.SphereGeometry(eyeRadius*.901,32,16,0,Math.PI*2,0,female?.585:.47),
    irisMat);
   iris.name=(side===-1?'LEFT':'RIGHT')+'_CURVED_IRIS';
   iris.rotation.x=Math.PI/2;
   iris.position.set(x,y,z);
   root.add(iris);
   const pupil=new THREE.Mesh(
-   new THREE.SphereGeometry(eyeRadius*.908,24,10,0,Math.PI*2,0,.19),
+   new THREE.SphereGeometry(eyeRadius*.908,24,12,0,Math.PI*2,0,female?.236:.19),
    pupilMat);
   pupil.name=(side===-1?'LEFT':'RIGHT')+'_CURVED_PUPIL';
   pupil.rotation.x=Math.PI/2;
@@ -129,12 +129,39 @@ export function createAnatomicalFaceParts(face,{gender='female'}={}){
    mesh.userData.attachedToFace=true;
    root.add(mesh);
   }
+  if(female){
+   // Two real 3D orbital surfaces per eye: a subtle upper-lid fold
+   // (double eyelid) and a volume band directly under the lower lid.
+   // Neither is a painted dark 'bag'; geometry supplies its own soft
+   // highlight/occlusion when the head is rotated.
+   const upperFold=buildGrid(
+    (side===-1?'LEFT':'RIGHT')+'_DOUBLE_EYELID_FOLD',28,4,(u,v)=>{
+     const t=2*u-1,soft=Math.pow(Math.max(0,1-t*t),.72);
+     const yy=y+eyeRadius*(.58+.14*soft+.11*v);
+     const xx=x+t*eyeRadius*1.15;
+     const z=surfaceAt(xx,yy)+d.z*(.004+.0035*Math.sin(Math.PI*v)*soft);
+     return new THREE.Vector3(xx,yy,z);
+    },lidMat);
+   upperFold.userData.anatomical='upper-lid-crease';
+   root.add(upperFold);
+   const lowerVolume=buildGrid(
+    (side===-1?'LEFT':'RIGHT')+'_LOWER_LID_VOLUME',28,5,(u,v)=>{
+     const t=2*u-1,soft=Math.pow(Math.max(0,1-t*t),.80);
+     const xx=x+t*eyeRadius*1.16;
+     const yy=y-eyeRadius*(.50+.12*soft+.19*v);
+     const z=surfaceAt(xx,yy)+d.z*(.003+
+      .011*soft*Math.sin(Math.PI*v));
+     return new THREE.Vector3(xx,yy,z);
+    },lidMat);
+   lowerVolume.userData.anatomical='lower-lid-fullness';
+   root.add(lowerVolume);
+  }
  }
  // Original face remains the structural muzzle/philtrum/chin. Two shallow
  // lip strips follow that actual surface and use real triangle thickness.
  // Avoid a single flat 'mouth plate' or pigment printed on the chin.
  const lipCenter=box.min.y+d.y*(female?.509:.506);
- const halfWidth=d.x*(female?.105:.119);
+ const halfWidth=d.x*(female?.087:.119);
  for(const upper of [true,false]){
   const material=lipMat;
   const mesh=buildGrid((upper?'UPPER':'LOWER')+'_3D_VERMILION_LIP',
@@ -164,7 +191,13 @@ export function createAnatomicalFaceParts(face,{gender='female'}={}){
  const report=Object.freeze({
   gender,partMeshCount:meshList.length,realSurfaceProjectionCount:projected,
   projectionFallbacks,eyeMeshCount:2,irisMeshCount:2,pupilMeshCount:2,
-  eyelidMeshCount:4,lipMeshCount:2,noseSourceIntegrated:true,
+  eyelidMeshCount:4,lipMeshCount:2,
+  doubleLidCreaseMeshCount:female?2:0,
+  lowerOrbitalVolumeMeshCount:female?2:0,
+  irisPolarAngleRadians:female?.585:.47,
+  pupilPolarAngleRadians:female?.236:.19,
+  mouthHalfWidthFraction:female?.087:.119,
+  noseSourceIntegrated:true,
   partTriangles,faceOnly:true,bodyIncluded:false,partGeometryReal:true,
   reference:'soft-cheek-small-nose-relaxed-almond-eyes-gentle-lips'
  });

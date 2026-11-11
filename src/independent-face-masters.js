@@ -20,9 +20,9 @@ export const FACE_MASTER_SPEC=Object.freeze({
   eyeSocketSoftness:.002
  }),
  female:Object.freeze({
-  code:'female-face-anatomical-v2',label:'女性・見本参考の立体造形ベース',
-  jawNarrow:.066,cheekFill:.074,chinLift:.016,
-  noseBridge:.003,browRelief:.001,mouthRecess:.013,
+  code:'female-face-oval-v3',label:'女性・卵型輪郭＋細い高鼻＋二重',
+  jawNarrow:.104,cheekFill:.084,chinLift:.014,
+  noseBridge:.021,browRelief:.001,mouthRecess:.014,
   eyeSocketSoftness:.004
  })
 });
@@ -78,17 +78,25 @@ export function makeIndependentFaceMaster(sourceRoot,gender){
   const tip=bell(xn,0,.19)*bell(yn,.565,.052)*front;
   const chinHollow=bell(Math.abs(xn),.32,.30)*bell(yn,.355,.080)
     *front*neckLock;
+  // Blend the mandible into an oval contour, and narrow the corners of
+  // the actual mouth (not only the separate vermilion surface).
+  const lowerJaw=bell(yn,.333,.150)*smooth(.16,.66,Math.abs(xn))
+    *front*neckLock;
+  const mouthCorner=bell(Math.abs(xn),.36,.31)*
+    bell(yn,.505,.073)*front;
   // All distances scale with the source head. Values are fractions of
   // head width / height / depth, not extra meshes glued onto the surface.
   const nx=x-(x-cx)*spec.jawNarrow*jaw
     +(x-cx)*(.018*cheek-.012*lowerCheek)
-    -(x-cx)*(gender==='female'?.074:.021)*alar;
+    -(x-cx)*(gender==='female'?.155:.021)*alar
+    -(x-cx)*(gender==='female'?.095:0)*lowerJaw
+    -(x-cx)*(gender==='female'?.155:0)*mouthCorner;
   const ny=y+d.y*spec.chinLift*chin;
   const nz=z+d.z*(spec.cheekFill*(.76*cheek+.45*lowerCheek)
     +spec.browRelief*brow+spec.noseBridge*nose
     -spec.mouthRecess*mouth
     -(gender==='female'?.012:.004)*alar
-    -(gender==='female'?.006:.002)*tip
+    +(gender==='female'?.016:-.002)*tip
     +(gender==='female'?.014:.004)*chinHollow
     +spec.eyeSocketSoftness*bell(Math.abs(xn),.43,.22)
       *bell(yn,.69,.055)*front);

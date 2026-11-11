@@ -31,7 +31,9 @@ jobs:
       - name: Install local three.js and real Chromium
         run: |
           npm install --no-save --package-lock=false playwright@1.56.0 three@0.160.1
-          npx playwright install --with-deps chromium
+          # Hosted Ubuntu already includes the desktop runtime libraries.
+          # Installing apt dependencies on every PR can hang for minutes.
+          npx playwright install chromium
       - name: Unit-test distinct real 3D face meshes and source preservation
         run: node --test qa/independent-face-masters.test.mjs
       - name: Host original CC0 head models locally
