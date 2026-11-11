@@ -20,6 +20,9 @@ const smooth=(a,b,v)=>{
  */
 export function femaleInnerFeatureDelta({xn,yn,zn,offsetX,depth}){
  const ax=Math.abs(xn),front=smooth(.30,.68,zn);
+ // Exact no-op at and beyond the facial-feature boundary, including
+ // signed-zero cases, so downstream strict QA can prove no influence.
+ if(ax>=.55)return {dx:0,dz:0,noseSupport:0,mouthSupport:0};
  const noseSupport=(1-smooth(.30,.53,ax))*bell(yn,.572,.078)*front;
  const bridgeSupport=(1-smooth(.29,.53,ax))*bell(yn,.624,.082)*front;
  const tipSupport=(1-smooth(.28,.52,ax))*bell(yn,.566,.045)*front;
