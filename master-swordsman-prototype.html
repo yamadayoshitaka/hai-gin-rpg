@@ -707,6 +707,7 @@ async function applyCharacterId(id){
  const n=Number(id);
  if(!Number.isInteger(n)||n<0||n>999)throw Error('人物IDは0〜999の整数');
  selectedId=n;activeFeaturedKey=null;
+ showChapterOneArt(artSelect.value);
  $('characterId').value=String(n);
  $('featuredCharacter').value='soldier';
  $('featuredInfo').textContent='量産兵'+String(n).padStart(4,'0')+'：自動生成された外見です';
