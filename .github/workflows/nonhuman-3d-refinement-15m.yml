@@ -1,0 +1,76 @@
+name: Nonhuman 3D model sculpt refinement every 15 minutes
+
+on:
+  schedule:
+    # GitHub cron is best-effort; delayed or missed starts are possible.
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: nonhuman-quality-refinement-model-branch
+  cancel-in-progress: false
+
+jobs:
+  refine-one-curated-stage:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Check out isolated nonhuman model improvement PR branch
+        uses: actions/checkout@v4
+        with:
+          ref: quality/nonhuman-model-refinement-15m
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Safely advance exactly one reviewed animal or building model stage
+        id: refine
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/advance-nonhuman-quality.mjs --check
+          node scripts/advance-nonhuman-quality.mjs --apply
+          CHANGED="$(git diff --name-only)"
+          if [[ -z "$CHANGED" ]]; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "All reviewed stages exhausted: no artificial model-quality claims." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          if [[ "$CHANGED" != 'src/nonhuman-model-quality.js' ]]; then
+            echo "Unapproved file change: $CHANGED" >&2
+            exit 1
+          fi
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+      - name: Install pinned geometry test toolchain only when a change exists
+        if: steps.refine.outputs.changed == 'true'
+        run: npm install --no-save --package-lock=false three@0.180.0
+      - name: Require real 3D model integrity, item placement and human exclusion
+        if: steps.refine.outputs.changed == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/advance-nonhuman-quality.mjs --check
+          node --test \
+            qa/nonhuman-quality-loop.test.mjs \
+            qa/monster-bestiary.test.mjs \
+            qa/canine-fur-face-regression.test.mjs \
+            qa/creature-master-quality.test.mjs \
+            qa/upper-floor-architecture.test.mjs
+      - name: Commit approved changes ONLY to the model improvement PR branch
+        if: steps.refine.outputs.changed == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git diff --name-only)" = 'src/nonhuman-model-quality.js'
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- src/nonhuman-model-quality.js
+          git diff --cached --check
+          git commit -m "quality(models): advance one bounded nonhuman sculpt detail stage"
+          git push origin HEAD:refs/heads/quality/nonhuman-model-refinement-15m
+          echo "Applied one geometry stage to the nonhuman model quality PR branch." >> "$GITHUB_STEP_SUMMARY"
+          echo "Human characters are strictly excluded; no main merge or release." >> "$GITHUB_STEP_SUMMARY"
+          echo "Geometry regression is not a visual proof of photorealism." >> "$GITHUB_STEP_SUMMARY"
