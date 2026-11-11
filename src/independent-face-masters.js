@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {createAnatomicalFaceParts} from './face-feature-meshes.js';
 
 /**
  * Two independent head-only clay mesh prototypes from the CC0 male and female
@@ -19,10 +20,10 @@ export const FACE_MASTER_SPEC=Object.freeze({
   eyeSocketSoftness:.002
  }),
  female:Object.freeze({
-  code:'female-face-base-v1',label:'女性・美人ベース',
-  jawNarrow:.077,cheekFill:.053,chinLift:.019,
-  noseBridge:.005,browRelief:.001,mouthRecess:.010,
-  eyeSocketSoftness:.003
+  code:'female-face-anatomical-v2',label:'女性・見本参考の立体造形ベース',
+  jawNarrow:.066,cheekFill:.074,chinLift:.016,
+  noseBridge:.003,browRelief:.001,mouthRecess:.013,
+  eyeSocketSoftness:.004
  })
 });
 
@@ -70,14 +71,25 @@ export function makeIndependentFaceMaster(sourceRoot,gender){
   const brow=bell(Math.abs(xn),.43,.23)*bell(yn,.755,.07)*front;
   const nose=bell(xn,0,.23)*bell(yn,.605,.10)*front;
   const mouth=bell(xn,0,.35)*bell(yn,.445,.055)*front;
+  // The reference has petite alar wings and an understated round tip.
+  // Shape the existing facial topology rather than gluing a nose blob
+  // onto the skin surface. Leave the true bridge and rear skull unchanged.
+  const alar=bell(Math.abs(xn),.23,.17)*bell(yn,.55,.060)*front;
+  const tip=bell(xn,0,.19)*bell(yn,.565,.052)*front;
+  const chinHollow=bell(Math.abs(xn),.32,.30)*bell(yn,.355,.080)
+    *front*neckLock;
   // All distances scale with the source head. Values are fractions of
   // head width / height / depth, not extra meshes glued onto the surface.
   const nx=x-(x-cx)*spec.jawNarrow*jaw
-    +(x-cx)*(.018*cheek-.012*lowerCheek);
+    +(x-cx)*(.018*cheek-.012*lowerCheek)
+    -(x-cx)*(gender==='female'?.074:.021)*alar;
   const ny=y+d.y*spec.chinLift*chin;
-  const nz=z+d.z*(spec.cheekFill*(.75*cheek+.45*lowerCheek)
+  const nz=z+d.z*(spec.cheekFill*(.76*cheek+.45*lowerCheek)
     +spec.browRelief*brow+spec.noseBridge*nose
     -spec.mouthRecess*mouth
+    -(gender==='female'?.012:.004)*alar
+    -(gender==='female'?.006:.002)*tip
+    +(gender==='female'?.014:.004)*chinHollow
     +spec.eyeSocketSoftness*bell(Math.abs(xn),.43,.22)
       *bell(yn,.69,.055)*front);
   p.setXYZ(i,nx,ny,nz);
@@ -94,8 +106,12 @@ export function makeIndependentFaceMaster(sourceRoot,gender){
  });
  face.visible=true;
  face.name=gender.toUpperCase()+'_INDEPENDENT_CLAY_FACE';
- // Other donor eye or hair meshes stay invisible: only the face topology
- // is being judged. No detached eyes, eyelashes, mouth decals or wigs.
+ // Anatomical parts are child meshes of the cloned face. Their vertices
+ // follow its original local coordinate frame; there is no face-photo plane.
+ const parts=createAnatomicalFaceParts(face,{gender});
+ face.add(parts.root);
+ // Original donor eyes/hair are hidden. Only our explicitly generated
+ // eyeball/iris, eyelid and lip triangles can accompany the clay face.
  const triangleCount=geometry.index?
   geometry.index.count/3:p.count/3;
  const report=Object.freeze({
@@ -105,9 +121,12 @@ export function makeIndependentFaceMaster(sourceRoot,gender){
   chinSmoothMetric:Number((chinDelta/p.count).toFixed(9)),
   sourceUntouched:true,sourceGeometryIndependent:face.geometry!==original,
   headOnly:true,bodyUnchanged:true,hairVisible:false,makeupVisible:false,
-  material:'neutral-gray-clay',artCertified:false
+  material:'neutral-gray-clay',artCertified:false,
+  sourceNoseMeshIntegrated:true,facePartMeshCount:parts.report.partMeshCount,
+  facePartTriangles:parts.report.partTriangles,
+  detailedParts:parts.report
  });
  root.userData.faceMasterReport=report;
  root.updateMatrixWorld(true);
- return {root,face,report};
+ return {root,face,parts:parts.root,report};
 }
