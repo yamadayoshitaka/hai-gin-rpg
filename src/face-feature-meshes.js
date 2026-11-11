@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {normalizeFemaleFaceControls,FACE_V7_PALETTE,MALE_REFERENCE_DEFAULT,safeContactColor} from './face-v7-controls.js';
+import {normalizeFemaleFaceControls,normalizeMaleFaceControls,FACE_V7_PALETTE,MALE_REFERENCE_DEFAULT,safeContactColor} from './face-v7-controls.js';
 
 /**
  * Actual face-only polygon meshes. No 2D decals, portrait planes or hair.
@@ -47,7 +47,8 @@ function sampleGrid(mesh,columns,rows,u,v){
 export function createAnatomicalFaceParts(face,{gender='female',controls={}}={}){
  if(!face?.isMesh||!['male','female'].includes(gender))
   throw Error('Sculpted face mesh and gender required for 3D facial parts');
- const settings=normalizeFemaleFaceControls(controls);
+ const settings=gender==='male'?normalizeMaleFaceControls(controls):
+  normalizeFemaleFaceControls(controls);
  const geometry=face.geometry;
  geometry.computeBoundingBox();
  const box=geometry.boundingBox.clone(),d=box.getSize(new THREE.Vector3());
