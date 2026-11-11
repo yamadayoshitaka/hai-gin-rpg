@@ -27,6 +27,7 @@ const panelTypes=['wide environmental establishing shot','dramatic character int
  'close-up of the chapter-specific clue','dynamic confrontation','silent character decision','transition toward the next stage'];
 const strongIssues=[];
 const fileCache=new Map();
+const contentHashOwner=new Map();
 async function realWebp(p){
  if(!p)return null;
  const relative=p.replace(/^\.\//,'');
@@ -40,7 +41,13 @@ async function realWebp(p){
   strongIssues.push({path:relative,error:'Not an actual, nonempty WebP image'});
   fileCache.set(relative,null);return null;
  }
- const result={path:relative,bytes:data.length,sha256:crypto.createHash('sha256').update(data).digest('hex')};
+ const sha256=crypto.createHash('sha256').update(data).digest('hex');
+ const original=contentHashOwner.get(sha256);
+ if(original&&original!==relative)strongIssues.push({
+  path:relative,error:'Exact image reused under a different panel filename',firstUsedAt:original
+ });
+ else contentHashOwner.set(sha256,relative);
+ const result={path:relative,bytes:data.length,sha256};
  fileCache.set(relative,result);return result;
 }
 const results=[];
@@ -98,7 +105,7 @@ const stats={
  pendingArtInstructions:shotlist.length,
 };
 if(stats.totalPanels!==1400||stats.totalChapters!==20||stats.totalStages!==200)throw Error('Story schema unexpectedly changed');
-if(strongIssues.length)throw Error('Corrupt panel files: '+JSON.stringify(strongIssues.slice(0,5)));
+if(strongIssues.length)throw Error('Invalid or reused panel artwork: '+JSON.stringify(strongIssues.slice(0,8)));
 await fs.mkdir(path.dirname(output),{recursive:true});
 await fs.mkdir(path.dirname(reviewOutput),{recursive:true});
 await fs.writeFile(output,JSON.stringify({schemaVersion:1,note:'Only real, verified scene-specific files count; conceptual chapter/composite images and SVG do not count.',stats,byChapter,present:results.filter(p=>p.male||p.female)},null,2)+'\n');
