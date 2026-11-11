@@ -33,11 +33,20 @@ function portraitOverlay(ctx,image,x,y,width,height,opacity){
  const g=temp.getContext('2d');if(!g)return;
  g.drawImage(image,0,0,temp.width,temp.height);
  g.globalCompositeOperation='destination-in';
- const radial=g.createRadialGradient(temp.width*.48,temp.height*.44,temp.width*.09,
-   temp.width*.5,temp.height*.49,temp.width*.71);
- radial.addColorStop(0,'#000');radial.addColorStop(.63,'#000');
- radial.addColorStop(1,'#0000');
- g.fillStyle=radial;g.fillRect(0,0,temp.width,temp.height);
+ // Fade ALL four edges: a broad radial vignette alone left visible
+ // rectangular joins when two stills were put side by side.
+ const horizontal=g.createLinearGradient(0,0,temp.width,0);
+ horizontal.addColorStop(0,'rgba(0,0,0,0)');
+ horizontal.addColorStop(.19,'rgba(0,0,0,1)');
+ horizontal.addColorStop(.78,'rgba(0,0,0,1)');
+ horizontal.addColorStop(1,'rgba(0,0,0,0)');
+ g.fillStyle=horizontal;g.fillRect(0,0,temp.width,temp.height);
+ const vertical=g.createLinearGradient(0,0,0,temp.height);
+ vertical.addColorStop(0,'rgba(0,0,0,0)');
+ vertical.addColorStop(.12,'rgba(0,0,0,1)');
+ vertical.addColorStop(.72,'rgba(0,0,0,1)');
+ vertical.addColorStop(1,'rgba(0,0,0,0)');
+ g.fillStyle=vertical;g.fillRect(0,0,temp.width,temp.height);
  ctx.globalAlpha=opacity;
  ctx.drawImage(temp,x,y,width,height);
  ctx.globalAlpha=1;
@@ -46,7 +55,12 @@ function paintScene(ctx,background,panel){
  const W=960,H=540,i=panel.index|0,seed=(panel.number||1)*17+i*29;
  const zoom=1.05+(seed%4)*.018,cropW=W/zoom,cropH=H/zoom;
  const left=(W-cropW)*(seed%9)/8,top=(H-cropH)*(seed%7)/6;
- ctx.drawImage(background,left,top,cropW,cropH,0,0,W,H);
+ // The original chapter matte paintings contain reference figures;
+ // soften the deep background so a foreground character never looks doubled.
+ ctx.save();
+ ctx.filter='blur(9px)';
+ ctx.drawImage(background,left,top,cropW,cropH,-16,-10,W+32,H+20);
+ ctx.restore();
  // Atmospheric cinematic shading, not picture-book framing.
  const shade=ctx.createLinearGradient(0,0,960,0);
  shade.addColorStop(0,i%2?'#061021ad':'#060d1999');
