@@ -66,9 +66,9 @@ async function expectVisibleV8Preset(page,context,contact='brown'){
      original.female?.sourceVertices!==original.male?.sourceVertices||
      !original.female?.sourceGeometryIndependent||
      !original.male?.sourceGeometryIndependent||
-     original.female?.facePartMeshCount!==26||
-     original.male?.facePartMeshCount!==14||
-     original.visiblePartMeshes!==26||
+     original.female?.facePartMeshCount!==34||
+     original.male?.facePartMeshCount!==19||
+     original.visiblePartMeshes!==34||
      original.faceMode!=='color'||
      original.femaleControls.irisDiameter!==1||
      original.femaleControls.jawSharpness!==2.5||
@@ -90,7 +90,7 @@ async function expectVisibleV8Preset(page,context,contact='brown'){
     await page.locator('#'+view).click();
     await page.waitForTimeout(200);
     const report=await page.evaluate(()=>window.__faceMasterQA());
-    if(report.gender!==g||report.view!==view||report.visibleFaceMeshes!==1||report.visiblePartMeshes!==(g==='female'?26:14))
+    if(report.gender!==g||report.view!==view||report.visibleFaceMeshes!==1||report.visiblePartMeshes!==(g==='female'?34:19))
      throw Error('Face viewer controls failed '+JSON.stringify(report));
     await canvas.screenshot({path:path.join(out,g+'-'+view+'.png'),
      timeout:90000,animations:'disabled'});
@@ -110,7 +110,7 @@ async function expectVisibleV8Preset(page,context,contact='brown'){
    const gltf=JSON.parse(buf.subarray(20,20+length).toString('utf8').trim());
    const tri=(gltf.meshes||[]).flatMap(m=>m.primitives||[])
     .filter(p=>p.mode===undefined||p.mode===4);
-   if(tri.length!==(g==='female'?27:15))throw Error('Exported face + anatomical meshes mismatch: '+g+' '+tri.length);
+   if(tri.length!==(g==='female'?35:20))throw Error('Exported face + anatomical meshes mismatch: '+g+' '+tri.length);
    console.log('FACE_CLAY_GLB_EXPORT',JSON.stringify({
     gender:g,bytes:buf.length,trianglePrimitives:tri.length
    }));
@@ -170,7 +170,7 @@ async function expectVisibleV8Preset(page,context,contact='brown'){
      changed.currentFeatureAngles?.browAngle!==6||
      changed.currentFeatureAngles?.lashAngle!==7||
      changed.contactColor!=='#467fa7'||
-     changed.visiblePartMeshes!==26)
+     changed.visiblePartMeshes!==34)
    throw Error('Live nose/eyebrow/lash controls do not affect the displayed 3D: '+JSON.stringify(changed));
   await page.locator('#front').click();
   await canvas.screenshot({path:path.join(out,'female-color-nose-brow-adjusted.png')});
@@ -183,13 +183,13 @@ async function expectVisibleV8Preset(page,context,contact='brown'){
    const buf=fs.readFileSync(file),size=buf.readUInt32LE(12);
    const gltf=JSON.parse(buf.subarray(20,20+size).toString('utf8').trim());
    const meshes=gltf.meshes||[],materials=gltf.materials||[];
-   if(meshes.length!==27||materials.length<5)
+   if(meshes.length!==35||materials.length<5)
     throw Error('Colored female GLB did not preserve eyebrow/eyelash meshes and palette');
    console.log('FACE_V7_COLORED_GLB_EXPORT',JSON.stringify({
     bytes:buf.length,meshes:meshes.length,materials:materials.length
    }));
   }
-  if((await page.evaluate(()=>window.__faceMasterQA())).visiblePartMeshes!==26)
+  if((await page.evaluate(()=>window.__faceMasterQA())).visiblePartMeshes!==34)
    throw Error('Facial parts did not restore after toggling');
   await page.locator('#resetPreset').click();
   await expectVisibleV8Preset(page,'reset-button');
@@ -200,8 +200,66 @@ async function expectVisibleV8Preset(page,context,contact='brown'){
      reset.femaleControls.noseBridgeSharpness!==2.5||
      reset.contactColor!=='#514139'||reset.faceMode!=='color')
     throw Error('Screenshot standard preset was not restored '+JSON.stringify(reset));
-  await canvas.screenshot({path:path.join(out,'female-default-v8-color.png')});
+  await canvas.screenshot({path:path.join(out,'female-default-v9-lip-eye-blush.png')});
+  if(reset.female?.detailedParts.eyelinerMeshCount!==4||
+     reset.female?.detailedParts.eyeAccentMeshCount!==2||
+     reset.female?.detailedParts.blushMeshCount!==2||
+     !reset.female?.detailedParts.lipstickPlacement?.attachedToLipMesh)
+   throw Error('V9 lipstick/eye-cheek makeup did not load actual surface');
+  // The current jaw of 2.5 remains standard; higher values remain reachable.
+  await page.locator('#jawSharpness').evaluate(el=>{
+   el.value='4.5';el.dispatchEvent(new Event('input',{bubbles:true}));
+   el.dispatchEvent(new Event('change',{bubbles:true}));
+  });
+  const strongerJaw=await page.evaluate(()=>window.__faceMasterQA());
+  if(strongerJaw.femaleControls.jawSharpness!==4.5)
+   throw Error('Female jaw extension above 2.5 is not operational');
+  await canvas.screenshot({path:path.join(out,'female-v9-jaw-4-5.png')});
+  await page.locator('#resetPreset').click();
   await page.locator('#male').click();
+  const neutralMale=await page.evaluate(()=>window.__faceMasterQA());
+  if(neutralMale.maleControls.jawSharpness!==1.15||
+     neutralMale.maleControls.beardDensity!==.35||
+     neutralMale.male.detailedParts.beardMeshCount!==5||
+     (await page.locator('#maleJawSharpness').inputValue())!=='1.15'||
+     (await page.locator('#maleBeardDensity').inputValue())!=='0.35')
+   throw Error('Male face/beard controls did not restore canonical defaults');
+  await page.locator('#maleJawSharpness').evaluate(el=>{
+   el.value='4.5';el.dispatchEvent(new Event('input',{bubbles:true}));
+   el.dispatchEvent(new Event('change',{bubbles:true}));
+  });
+  await page.locator('#maleBeardDensity').evaluate(el=>{
+   el.value='.85';el.dispatchEvent(new Event('input',{bubbles:true}));
+   el.dispatchEvent(new Event('change',{bubbles:true}));
+  });
+  await page.locator('#maleBeardLength').evaluate(el=>{
+   el.value='2';el.dispatchEvent(new Event('input',{bubbles:true}));
+   el.dispatchEvent(new Event('change',{bubbles:true}));
+  });
+  await page.locator('#maleEyeAngle').evaluate(el=>{
+   el.value='16';el.dispatchEvent(new Event('input',{bubbles:true}));
+  });
+  const adjustedMale=await page.evaluate(()=>window.__faceMasterQA());
+  if(adjustedMale.maleControls.jawSharpness!==4.5||
+     adjustedMale.maleControls.beardDensity!==.85||
+     adjustedMale.maleControls.beardLength!==2||
+     adjustedMale.maleControls.eyeAngle!==16||
+     adjustedMale.male.detailedParts.beardDensity!==.85||
+     adjustedMale.visiblePartMeshes!==19)
+   throw Error('Male jaw/eye/beard sliders do not change actual 3D '+JSON.stringify(adjustedMale));
+  await page.locator('#front').click();
+  await canvas.screenshot({path:path.join(out,'male-v9-beard-high-jaw.png')});
+  // The modified male 3D beard/jaw must survive independent GLB export.
+  {
+   const next=page.waitForEvent('download',{timeout:45000});
+   await page.locator('#export').click();
+   const file=path.join(out,'male-v9-beard.glb');
+   await (await next).saveAs(file);
+   const buf=fs.readFileSync(file),len=buf.readUInt32LE(12);
+   const gltf=JSON.parse(buf.subarray(20,20+len).toString('utf8').trim());
+   if((gltf.meshes||[]).length!==20)throw Error('Male beard GLB geometry missing');
+  }
+  await page.locator('#resetMalePreset').click();
   const maleQA=await page.evaluate(()=>window.__faceMasterQA());
   if(maleQA.maleWithoutMakeup!==true||
      maleQA.male.detailedParts.lipstickMeshCount!==0||

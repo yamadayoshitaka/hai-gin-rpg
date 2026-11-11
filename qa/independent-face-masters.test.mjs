@@ -46,8 +46,8 @@ test('two source-derived clay face meshes have owned independent vertices and pr
  assert.equal(female.face.material.wireframe,false);
  assert.ok(female.face.material.color.getHexString().startsWith('bfc3'));
  assert.equal(female.root.getObjectByName('GEO_sclera_l').visible,false);
- assert.equal(female.report.facePartMeshCount,26);
- assert.equal(male.report.facePartMeshCount,14);
+ assert.equal(female.report.facePartMeshCount,34);
+ assert.equal(male.report.facePartMeshCount,19);
  assert.ok(female.report.facePartTriangles>1000);
  assert.equal(female.report.detailedParts.eyelidMeshCount,4);
  assert.equal(female.report.detailedParts.eyeMeshCount,2);
@@ -117,7 +117,7 @@ test('strictly exclude body, wig and makeup from face-only model assembly',()=>{
  const f=fixture();const built=makeIndependentFaceMaster(f.source,'female');
  const visible=[];
  built.root.traverse(o=>{if(o.isMesh&&o.visible)visible.push(o)});
- assert.equal(visible.length,27,'Face plus 26 eye/lip/cosmetic meshes');
+ assert.equal(visible.length,35,'Face plus 34 eye/lip/cosmetic meshes');
  assert.ok(visible.includes(built.face));
  assert.ok(visible.every(o=>o===built.face||built.parts.getObjectById(o.id)));
  assert.ok(visible.every(o=>!/hair|armour|body|garment/i.test(o.name)));
@@ -131,7 +131,10 @@ test('face studio includes stable gender, view and export controls with no body 
   'faceCanvas','export','status','metrics','clay','color','irisDiameter',
   'noseTipLift','nostrilCover','noseBridgeSharpness','jawSharpness','eyeAngle',
   'eyeSize','lipstickX','lipstickY','lipstickWidth','lipstickHeight',
-  'contactPreset','contactColor','resetPreset'])
+  'contactPreset','contactColor','resetPreset',
+  'maleAdjustments','maleJawSharpness','maleEyeSize','maleIrisDiameter',
+  'maleNoseTipLift','maleNostrilCover','maleNoseBridgeSharpness',
+  'maleEyeAngle','maleBeardDensity','maleBeardLength','resetMalePreset'])
   assert.match(html,new RegExp('id="'+id+'"'));
  assert.match(html,/makeIndependentFaceMaster/);
  assert.doesNotMatch(html,/loadAsync\(base\+'realistic-head-sculpt\.glb'\)/,'Old gaunt sculpt must not be loaded as the female face');
@@ -252,7 +255,7 @@ test('color-only mode and brow/lash tilt do not change vertices or source donor'
  assert.equal(applyFaceColorMode(built.face,'clay'),'clay');
  assert.deepEqual(built.face.geometry.getAttribute('position').array,vertices);
  assert.equal(f.face.geometry,f.original,'Original donor must be unchanged');
- assert.equal(normalizeFemaleFaceControls({jawSharpness:999}).jawSharpness,2.5);
+ assert.equal(normalizeFemaleFaceControls({jawSharpness:999}).jawSharpness,5);
  assert.equal(FEMALE_V7_DEFAULTS.irisDiameter,1);
  assert.equal(FEMALE_V7_DEFAULTS.jawSharpness,2.5);
  assert.equal(FEMALE_V7_DEFAULTS.noseTipLift,0);
@@ -314,4 +317,83 @@ test('v8 lipstick stays projected on the 3D lips and follows XY and size sliders
  assert.equal(male.root.getObjectByName('LEFT_UNDER_EYE_SHADOW'),undefined);
  assert.equal(male.root.getObjectByName('LEFT_UPPER_LASH_MESH'),undefined);
  assert.ok(male.root.getObjectByName('LEFT_NATURAL_MALE_BROW')?.isMesh);
+});
+
+test('v9 lipstick inherits actual lip geometry, stays attached and cannot paint cheek or chin',()=>{
+ const source=fixture().source;
+ for(const values of [
+  {lipstickX:0,lipstickY:0,lipstickWidth:1,lipstickHeight:1},
+  {lipstickX:.12,lipstickY:.12,lipstickWidth:1.8,lipstickHeight:1.8},
+  {lipstickX:-.12,lipstickY:-.12,lipstickWidth:1.8,lipstickHeight:1.8},
+  {lipstickX:.05,lipstickY:-.06,lipstickWidth:.5,lipstickHeight:.5}
+ ]){
+  const m=makeIndependentFaceMaster(source,'female',{femaleControls:values});
+  for(const part of ['UPPER','LOWER']){
+   const lip=m.parts.getObjectByName(part+'_3D_VERMILION_LIP');
+   const paint=m.parts.getObjectByName(part+'_LIPSTICK_MAKEUP');
+   assert.equal(paint.parent,lip,'Lipstick should follow true lip transform');
+   const lb=new THREE.Box3().setFromBufferAttribute(lip.geometry.getAttribute('position'));
+   const pb=new THREE.Box3().setFromBufferAttribute(paint.geometry.getAttribute('position'));
+   for(const a of ['x','y']){
+    assert.ok(pb.min[a]>=lb.min[a]-1e-6,part+' paint outside min '+a);
+    assert.ok(pb.max[a]<=lb.max[a]+1e-6,part+' paint outside max '+a);
+   }
+   assert.ok(pb.min.z>=lb.min.z-.00001);
+   assert.ok(pb.max.z<=lb.max.z+.0002);
+   assert.equal(paint.userData.anatomyParent,lip.name);
+  }
+  assert.equal(m.report.detailedParts.lipstickPlacement.attachedToLipMesh,true);
+ }
+});
+test('v9 eyeliner and eye accents follow parent eyelids and orbital angle; blush stays on cheeks',()=>{
+ const source=fixture().source;
+ const model=makeIndependentFaceMaster(source,'female',{femaleControls:{eyeAngle:14,eyeSize:1.2}});
+ assert.equal(model.report.facePartMeshCount,34);
+ assert.equal(model.report.detailedParts.eyelinerMeshCount,4);
+ assert.equal(model.report.detailedParts.eyeAccentMeshCount,2);
+ assert.equal(model.report.detailedParts.blushMeshCount,2);
+ for(const side of ['LEFT','RIGHT']){
+  const lid=model.parts.getObjectByName(side+'_UPPER_ANATOMICAL_EYELID');
+  assert.equal(model.parts.getObjectByName(side+'_UPPER_EYELINER').parent,lid);
+  assert.equal(model.parts.getObjectByName(side+'_EYE_ACCENT_LINE').parent.name,
+   side+'_DOUBLE_EYELID_FOLD');
+  assert.equal(lid.parent.name,side+'_EYE_LINKED_PIVOT');
+  const blush=model.parts.getObjectByName(side+'_CHEEK_BLUSH');
+  assert.equal(blush.parent,model.parts,'Cheek makeup must not rotate with eyes');
+  assert.equal(blush.geometry.getAttribute('color').itemSize,4);
+ }
+ const eye=model.parts.getObjectByName('LEFT_EYE_LINKED_PIVOT');
+ const before=eye.rotation.z;
+ updateFaceFeatureAngles(model.parts,{eyeAngle:-12});
+ assert.notEqual(eye.rotation.z,before);
+ assert.equal(model.report.sourceUntouched,true);
+});
+test('v9 female jaw max increased without changing 2.5 default; male sliders and beard have independent geometry',()=>{
+ const source=fixture().source;
+ const original=makeIndependentFaceMaster(source,'female');
+ const strong=makeIndependentFaceMaster(source,'female',{femaleControls:{jawSharpness:4.8}});
+ assert.equal(original.report.femaleControls.jawSharpness,2.5);
+ assert.equal(strong.report.femaleControls.jawSharpness,4.8);
+ const a=original.face.geometry.getAttribute('position');
+ const b=strong.face.geometry.getAttribute('position');
+ let moved=0;
+ for(let i=0;i<a.count;i++)if(Math.abs(a.getX(i)-b.getX(i))>1e-6)moved++;
+ assert.ok(moved>10,'Female high-range jaw slider must change real geometry');
+ assert.equal(strong.report.outerContourXError,0);
+ const male=makeIndependentFaceMaster(source,'male');
+ const beardy=makeIndependentFaceMaster(source,'male',{maleControls:{
+  jawSharpness:3.9,eyeSize:1.2,eyeAngle:15,beardDensity:.8,beardLength:2
+ }});
+ assert.equal(male.report.maleControls.jawSharpness,1.15);
+ assert.equal(beardy.report.maleControls.jawSharpness,3.9);
+ assert.equal(beardy.report.detailedParts.beardMeshCount,5);
+ const hair=name=>name+'_3D_HAIR';
+ assert.ok(beardy.parts.getObjectByName(hair('CHIN_BEARD')).isMesh);
+ assert.ok(beardy.parts.getObjectByName(hair('CHIN_BEARD')).userData.filamentCount>
+  male.parts.getObjectByName(hair('CHIN_BEARD')).userData.filamentCount);
+ assert.ok(beardy.parts.getObjectByName(hair('CHIN_BEARD')).geometry.getAttribute('position').count>100);
+ assert.equal(beardy.parts.getObjectByName('UPPER_LIPSTICK_MAKEUP'),undefined);
+ assert.equal(beardy.parts.getObjectByName('LEFT_UPPER_EYELINER'),undefined);
+ assert.equal(beardy.parts.getObjectByName('LEFT_CHEEK_BLUSH'),undefined);
+ assert.equal(beardy.report.maleNoMakeup,true);
 });

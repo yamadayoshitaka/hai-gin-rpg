@@ -30,10 +30,14 @@ export const FACE_V7_PALETTE=Object.freeze({
  underEye:0xb99085,
  lipstick:0xc07c82,
  brow:0x594638,
- lashes:0x292126
+ lashes:0x292126,
+ eyeliner:0x30252b,
+ eyeAccent:0x765458,
+ blush:0xcf8383,
+ beard:0x56443a
 });
 const ranges=Object.freeze({
- irisDiameter:[1,2],jawSharpness:[.7,2.5],
+ irisDiameter:[1,2],jawSharpness:[.7,5],
  noseTipLift:[0,2],nostrilCover:[0,2],
  noseBridgeSharpness:[0,2.5],
  browAngle:[-25,25],lashAngle:[-25,25],
@@ -62,6 +66,25 @@ export function safeContactColor(value){
 /** Persisted reference presets do not require browser storage. */
 export const FEMALE_REFERENCE_DEFAULT=FEMALE_V7_DEFAULTS;
 export const MALE_REFERENCE_DEFAULT=Object.freeze({
- eyeSize:.9,irisDiameter:1,eyeAngle:0,
+ eyeSize:.9,irisDiameter:1,eyeAngle:0,browAngle:0,lashAngle:0,
+ jawSharpness:1.15,noseTipLift:0,nostrilCover:1,noseBridgeSharpness:2.5,
+ beardDensity:.35,beardLength:1,
  cosmetics:false,sharedHeadSource:'realistic-head-animation.glb'
 });
+/**
+ * Male sliders use the same dimensional controls as the female mesh, but
+ * have a separate natural-male default preset and configurable real beard.
+ * The female's screenshot-approved 2.5 jaw default stays unchanged.
+ */
+export function normalizeMaleFaceControls(settings={}){
+ const core=normalizeFemaleFaceControls({
+  ...MALE_REFERENCE_DEFAULT,...settings
+ });
+ const beardValue=(key,range)=>{
+  const raw=Number(settings[key]??MALE_REFERENCE_DEFAULT[key]);
+  return Number.isFinite(raw)?Math.max(range[0],Math.min(range[1],raw)):
+   MALE_REFERENCE_DEFAULT[key];
+ };
+ return {...core,beardDensity:beardValue('beardDensity',[0,1]),
+  beardLength:beardValue('beardLength',[.3,2.5])};
+}
