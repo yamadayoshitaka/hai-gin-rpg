@@ -27,7 +27,7 @@ header{display:flex;align-items:center;justify-content:space-between;gap:8px;bac
 .pin.stage-pin{min-width:80px;background:#132637ea;line-height:1.2;font-size:11px}.pin.stage-pin.selected{outline:3px solid #ffe3a2}.pin.stage-pin.locked{opacity:.65}
 @media(max-height:660px){#chapterPanel{gap:5px;padding-top:5px}#stageGrid{grid-template-rows:repeat(2,minmax(37px,1fr))}.stage{min-height:37px;padding:4px}#selectedInfo{min-height:45px;padding:5px 8px}.pin{padding:3px}}
 
-#storyDecisionBar:not([hidden]),#storyRouteBar:not([hidden]){display:grid;gap:5px;background:#10293bc9;border-left:3px solid #c5a773;padding:7px 9px;max-height:105px;overflow:auto}
+#storyDecisionBar:not([hidden]),#storyRouteBar:not([hidden]),#storyEndingBar:not([hidden]){display:grid;gap:5px;background:#10293bc9;border-left:3px solid #c5a773;padding:7px 9px;max-height:105px;overflow:auto}
 .story-branch-buttons{display:flex;flex-wrap:wrap;gap:6px}.story-branch-buttons button{padding:7px 10px;background:#1c374a;color:#f5e4c7;border:1px solid #718ea1;border-radius:6px;font-size:12px;min-height:35px}
 .story-branch-buttons button.selected{background:#78572e;border-color:#f0d3a3}.story-branch-buttons button:disabled{opacity:.42;cursor:default}
 </style></head><body>
@@ -35,7 +35,7 @@ header{display:flex;align-items:center;justify-content:space-between;gap:8px;bac
 <section id="mapViewport" aria-label="ワールドマップ"><div id="mapBoard" role="group" aria-label="三勢力の領土"></div><div class="map-caption">地図で領地を選択・ステージは下の10枠から</div><div class="pan"><button id="panLeft" type="button">◀ 地図</button><button id="panReset" type="button">中央</button><button id="panRight" type="button">地図 ▶</button></div></section>
 <section id="chapterPanel"><div class="chapter-head"><button id="prevChapter">◀ 前章</button><h2 id="chapterTitle">第1章</h2><button id="nextChapter">次章 ▶</button></div>
 <div class="meta"><span id="chapterSubtitle"></span><span id="clearCount">0 / 200</span></div>
-<div id="continentLore" aria-live="polite"></div><div id="storyDecisionBar" aria-label="出撃前の物語方針" hidden></div><div id="storyRouteBar" aria-label="三国協力ルート" hidden></div><button id="stageNarration" type="button">▤ ステージの漫画を読む</button>
+<div id="continentLore" aria-live="polite"></div><div id="storyDecisionBar" aria-label="出撃前の物語方針" hidden></div><div id="storyRouteBar" aria-label="三国協力ルート" hidden></div><div id="storyEndingBar" aria-label="星鐘の結末" hidden></div><button id="stageNarration" type="button">▤ ステージの漫画を読む</button>
 <div id="stageGrid" role="group" aria-label="選択した章の全10ステージ"></div>
 <div id="selectedInfo"><div><strong id="stageTitle"></strong><small id="stageRequirement"></small></div><button id="sortie" type="button">出撃 ▶</button></div>
 <div id="feedback" role="status" aria-live="polite"></div></section></main>
@@ -50,7 +50,7 @@ import {TERRITORIES,FACTIONS} from './src/story-campaign.js';
 import {CAMPAIGN_STAGES,CAMPAIGN_STAGE_BY_ID,STAGE_KINDS,chapterAvailable,stagesInChapter,stageUnlocked} from './src/campaign-stage-plan.js';
 import {loadGame,persistSession,stageAtTown,selectCampaignStage,validGame} from './src/game-core-flow.js';
 import {makeCoreBattleRequest,settleCoreBattle,CORE_BATTLE_PENDING_KEY,CORE_BATTLE_RESULT_KEY} from './src/core-battle-bridge.js';
-import {storyDecisionForStage,setStoryDecision,availableStoryRoutes,selectStoryRoute,currentStoryRoute,storyStageContext} from './src/story-narrative-flow.js';
+import {storyDecisionForStage,setStoryDecision,availableStoryRoutes,selectStoryRoute,currentStoryRoute,storyStageContext,availableStoryEndings,chooseStoryEnding} from './src/story-narrative-flow.js';
 const $=id=>document.getElementById(id),escapeHtml=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
 let game=loadGame(localStorage,sessionStorage);
 if(!validGame(game)){location.replace('./game.html');throw Error('No game');}
@@ -131,6 +131,25 @@ function renderPins(){
  }).join('');
 }
 
+
+function renderStoryEndingControls(){
+ const bar=$('storyEndingBar');
+ if(!game.completedStages.includes('c20-s10')){bar.hidden=true;bar.innerHTML='';return;}
+ bar.hidden=false;
+ const final=availableStoryEndings(game);
+ const chosen=game.narrativeEnding;
+ bar.innerHTML='<strong>星鐘の最終決断：'+escapeHtml(final.find(x=>x.id===chosen)?.name||'未選択')+'</strong>'+
+ (chosen?'<small>結末を記録しました。町の教会でセーブしてください。</small>':
+ '<div class="story-branch-buttons">'+final.map(e=>
+  '<button type="button" data-story-ending="'+e.id+'" '+(e.unlocked?'':'disabled')+' title="'+escapeHtml(e.unlocked?e.summary:e.reason)+'">'+escapeHtml(e.name)+(e.unlocked?'':' 🔒')+'</button>').join('')+'</div>');
+}
+$('storyEndingBar').addEventListener('click',event=>{
+ const b=event.target.closest('[data-story-ending]');if(!b)return;
+ try{
+  const ending=chooseStoryEnding(game,b.dataset.storyEnding);
+  saveSession();render();message('結末「'+ending.name+'」を記録しました。町の教会でセーブしてください。');
+ }catch(error){message(error.message||String(error));}
+});
 function renderStoryBranchControls(stage,unlocked){
  const choiceBar=$('storyDecisionBar'),routeBar=$('storyRouteBar');
  const decision=storyDecisionForStage(stage.id);
@@ -181,6 +200,7 @@ function render(){
  $('sortie').textContent=stage.kind==='town'?'町に入る ▶':game.completedStages.includes(stage.id)?'再出撃 ▶':'出撃 ▶';
  $('sortie').disabled=!unlocked;
  renderStoryBranchControls(stage,unlocked);
+ renderStoryEndingControls();
  renderPins();
 }
 $('mapBoard').addEventListener('click',event=>{
