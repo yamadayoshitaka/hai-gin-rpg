@@ -1,16 +1,15 @@
 // A small, serializable formation plan shared by the main thread and Worker.
-// The three selectable squad types determine jobs and marching depth, without
-// changing individual soldiers into proxy meshes or adding per-soldier paths.
+// Each squad holds one fixed profession; the three role types only determine
+// marching depth and strategic posture, without proxy meshes or new paths.
 export const SQUAD_TYPES=Object.freeze(['attack','balanced','support']);
 export const SQUAD_TYPE_NAMES=Object.freeze({
   attack:'攻撃',balanced:'バランス',support:'支援'
 });
 
-const JOB_POOLS=Object.freeze({
-  attack:[0,1,2,3,4,9],
-  balanced:[0,1,2,3,4,5,6,7,8,9],
-  support:[7,7,8,6,5,1]
-});
+// Index maps to the authentic JOBS registry: sword, shield, fighter,
+// ninja, thief, archer, mage, priest, summoner, lancer.
+// Ten squads cover all professions once; smaller battles use a prefix.
+const JOB_BY_SQUAD=Object.freeze([0,1,7,2,5,6,3,4,8,9]);
 const JOB_FRONT_RANK=Object.freeze({
   shield:0,sword:1,lancer:1,fighter:1,thief:2,ninja:2,
   archer:3,mage:3,summoner:3,priest:4
@@ -32,10 +31,8 @@ export function createSquadFormationPlan(sideCount,bridgeCount,team=0){
     const type=squadTypeOf(squadId);
     const bridgeIndex=(squadId+Math.floor(squadId/SQUAD_TYPES.length))%bridgeCount;
     const start=squadId*squadSize,count=Math.min(squadSize,sideCount-start);
-    const pool=JOB_POOLS[type];
-    const members=Array.from({length:count},(_,localIndex)=>({
-      localIndex,jobIndex:pool[(localIndex*7+team*3)%pool.length]
-    }));
+    const jobIndex=JOB_BY_SQUAD[(squadId+team*3)%JOB_BY_SQUAD.length];
+    const members=Array.from({length:count},(_,localIndex)=>({localIndex,jobIndex}));
     members.sort((a,b)=>{
       const aJob=['sword','shield','fighter','ninja','thief','archer','mage','priest','summoner','lancer'][a.jobIndex];
       const bJob=['sword','shield','fighter','ninja','thief','archer','mage','priest','summoner','lancer'][b.jobIndex];

@@ -916,6 +916,8 @@ import {territoryAt,NEUTRAL_HALF_WIDTH} from './src/battle-territory.js?v=4.6.15
 import {squadTypeOf,SQUAD_TYPE_NAMES} from './src/mass-battle-formations.js?v=4.6.45';
 import {recomposeSquadAssignments,applySquadRecomposition,FORMATION_TYPES,FORMATION_NAMES,FORMATION_ICONS,normalizeFormationType} from './src/battle-squad-recomposition.js?v=4.6.49';
 import {squadJobComposition,chooseEnemyOrder,enemyOrderRefreshSeconds,TACTICAL_TIME_BANK_SECONDS} from './src/battle-tactical-policy.js?v=4.6.69';
+import {createStageObjectiveMonitor} from './src/battle-objective-runtime.js?v=1';
+import {uniformJobSquadPlan} from './src/battle-uniform-job-squads.js?v=1';
 import {createMassBattleRealArmy} from './src/mass-battle-real-army.js?v=4.6.39';
 import {BattleCorpsePolicy,corpseOpacity} from './src/battle-corpse-policy.js?v=4.4.35';
 import {CrowdPerformanceBudget} from './src/crowd-performance-budget.js?v=4.6.36';
@@ -2215,6 +2217,34 @@ if(storyRequest){
 }
 const teamCounts=()=>massSim?massSim.live.slice():[0,1].map(team=>actors.filter(a=>a.team===team&&a.hp>0).length);
 const log=message=>{$('log').textContent=message};
+const stageObjective=storyRequest?.origin==='game-core'?storyRequest.battleObjective:null;
+let stageObjectiveMarker=null;
+const objectiveMonitor=createStageObjectiveMonitor(stageObjective,{
+ cellSize:CELL,
+ onZone:({center,radius,mass,type})=>{
+  if(type==='eliminate'||stageObjectiveMarker)return;
+  const x=mass?(center.x-6)*CELL:center.x;
+  const z=mass?(center.z-6)*CELL:center.z;
+  const worldRadius=mass?radius*CELL:radius;
+  const ring=new THREE.Mesh(
+   new THREE.RingGeometry(Math.max(.1,worldRadius*.94),worldRadius,64),
+   new THREE.MeshBasicMaterial({color:type==='defend_timer'?0x52d6d0:0xf8d779,
+    transparent:true,opacity:.72,side:THREE.DoubleSide,depthWrite:false}));
+  ring.rotation.x=-Math.PI/2;ring.position.set(x,terrainY(x,z)+.22,z);
+  ring.renderOrder=3;ring.name='BattleObjectiveCaptureZone';
+  ring.userData.nonColliding=true;scene.add(ring);stageObjectiveMarker=ring;
+ },
+ onComplete:(victory,reason,result)=>completeBattle(victory,{
+  title:victory?'味方軍の勝利':'敵軍の勝利',
+  detail:(result.winnerTeam===0?'味方軍が勝利・敵軍が敗北':'敵軍が勝利・味方軍が敗北')+
+   '｜'+reason+' · 経過'+Math.floor(elapsed)+'秒'
+ })
+});
+function checkStageObjective(){
+ return objectiveMonitor?.update(elapsed,massSim?.units??actors,{
+  mass:Boolean(massSim),sideSize:MASS_SIZE||50
+ })??false;
+}
 function completeBattle(victory,{title='',detail=''}={}){
  if(finished)return false;
  if(typeof closeSquadCircleInfo==='function')closeSquadCircleInfo();
@@ -2228,7 +2258,9 @@ function completeBattle(victory,{title='',detail=''}={}){
  if(victory)battleVoice.cue('victory',{id:1,team:0,job:{name:'軍師'}});
  // Keep the victory/defeat screen inaccessible until the cinematic ends.
  $('endScreen').style.display='none';
- battleCeremony.finish(Boolean(victory),victory?'戦場を制圧した！':'戦線が崩壊した…');
+ battleCeremony.finish(Boolean(victory),stageObjective?
+  (objectiveMonitor?.getState().lastResult?.reason||(victory?'任務達成！':'作戦失敗…')):
+  victory?'戦場を制圧した！':'戦線が崩壊した…');
  return true;
 }
 const skinMat=new THREE.MeshStandardMaterial({color:0xc89a79,roughness:.9});
@@ -2920,7 +2952,8 @@ const spawnOutside=(x,z,team)=>{
  return freeCellNear(base.x,base.z,null);
 };
 // Each side gets five of every job, shuffled independently on every new game.
-const randomRosters=[randomJobRoster(JOBS,TEAM_SIZE),randomJobRoster(JOBS,TEAM_SIZE)];
+const randomRosters=[0,1].map(team=>Array.from({length:TEAM_SIZE},(_,i)=>
+  JOBS[(Math.floor(i/Math.ceil(TEAM_SIZE/10))+team*3)%JOBS.length]));
 // Shopkeepers and townsfolk stand at authored positions beside functional facilities.
 const townNpcSites=[
  [166,117,'剣士','軍師'],
@@ -2947,7 +2980,10 @@ const townNpcSites=[
 for(let team=0;team<2;team++)for(let i=0;i<TEAM_SIZE;i++){
  const storyUnit=storyRequest&&team===0?storyRequest.units[i]:null;
  if((TOWN_MODE&&team===1)||(TOWN_MODE&&i>=townNpcSites.length)||(storyRequest&&(team===0&&!storyUnit||team===1&&i>=storyRequest.enemyCount)))continue;
- const baseJob=TOWN_MODE?(JOBS.find(j=>j.name===townNpcSites[i][2])||JOBS[0]):storyUnit?JOBS.find(j=>j.name===storyUnit.job)||randomRosters[team][i]:randomRosters[team][i];
+ const baseJob=TOWN_MODE?(JOBS.find(j=>j.name===townNpcSites[i][2])||JOBS[0]):storyUnit?
+  JOBS.find(j=>j.name===storyUnit.job)||randomRosters[team][i]:massSim?
+  JOBS.find(j=>j.name===MASS_JOBS[massSim.units[team*MASS_SIZE+i]?.jobIndex]?.name)||randomRosters[team][i]:
+  storyRequest&&team===1?JOBS[Math.floor(i/Math.max(1,Math.ceil(TEAM_SIZE/10)))%JOBS.length]:randomRosters[team][i];
  // Squad gear is a passive applied before the first combat frame; unlike an
  // order buff, it has no timer and does not require the strategist to survive.
  const passive=storyUnit?.equipmentBuff||{};
@@ -2968,7 +3004,7 @@ for(let team=0;team<2;team++)for(let i=0;i<TEAM_SIZE;i++){
  if(TOWN_MODE&&root.userData.ring)root.userData.ring.visible=false;
  root.position.set(pos.x,terrainY(pos.x,pos.z),pos.z);root.rotation.y=team===0?Math.PI/2:-Math.PI/2;scene.add(root);
  const actor={id:team*TEAM_SIZE+i,team,job,monsterSpec,jobId:combatJobId(job.name),rarity:storyUnit?.rarity||(i%13===0?'UR':i%3===0?'R':'N'),root,cell,nextCell:null,defeated:false,hp:job.hp,maxHp:job.hp,mp:COMBAT_RULES.maxMp,maxMp:COMBAT_RULES.maxMp,speed:job.speed,jumpY:job.jumpY,jumping:false,attackTimer:Math.random()*2,thinkTimer:Math.random()*.4,order:null,targetId:null,home:pos.clone(),velocity:new THREE.Vector3(),walkPhase:0,
-  squadId:storyUnit?.squadId??Math.floor(i/Math.max(10,Math.ceil(TEAM_SIZE/5))),commanderId:storyUnit?.commanderId??'provisional'};
+  squadId:storyUnit?.squadId??Math.floor(i/Math.max(1,Math.ceil(TEAM_SIZE/10))),commanderId:storyUnit?.commanderId??'provisional'};
  if(TOWN_MODE){
   actor.townRole=townNpcSites[i][3];
   actor.displayName=i===0?battleParams.get('commanderName')||'軍師':townNpcSites[i][3];
@@ -3620,8 +3656,12 @@ function recordStoryBattleOutcome(victory){
  const casualties=new Map();
  for(const a of actors){if(a.team===0&&a.squadId!=null&&a.hp<=0)casualties.set(a.squadId,(casualties.get(a.squadId)||0)+1);}
  const monstersRemaining=storyRequest.enemyMode==='monsters'?actors.filter(a=>a.team===1&&a.hp>0).length:null;
+ const outcome=objectiveMonitor?.getState().lastResult;
+ const winnerTeam=outcome?.winnerTeam??(victory?0:1);
  const result={version:1,battleId:storyRequest.battleId,territoryId:storyRequest.territoryId,victory,
-  ...(storyRequest.origin==='game-core'?{stageId:storyRequest.stageId,monstersRemaining,objectiveCompleted:Boolean(victory)}:{}),
+  ...(storyRequest.origin==='game-core'?{stageId:storyRequest.stageId,monstersRemaining,
+    objectiveType:stageObjective?.type||'eliminate',objectiveCompleted:Boolean(victory),
+    winnerTeam,loserTeam:1-winnerTeam}:{}),
   casualties:[...casualties].map(([squadId,count])=>({squadId,count}))};
  try{sessionStorage.setItem('hai-gin-story-result-v1',JSON.stringify(result));}
  catch(e){showRuntimeError('戦闘結果を保存できませんでした：'+e.message);}
@@ -4764,7 +4804,8 @@ function syncMassBattleSnapshot(){
   }
  }
  const [ally,foe]=massSim.live;
- if(!ally||!foe)completeBattle(Boolean(ally),{detail:'大規模戦闘 '+Math.floor(elapsed)+'秒'});
+ if(checkStageObjective())return;
+ if(!stageObjective&&(!ally||!foe))completeBattle(Boolean(ally),{detail:'大規模戦闘 '+Math.floor(elapsed)+'秒'});
 }
 // Runtime pickup is distinct from the upper-floor pathfinding pickup.
 // Checking the ACTUAL room/position prevents items from being collected
@@ -5120,7 +5161,8 @@ function tickAI(dt){
  }
  }
  if(skirmishActions)emitCombatEvents(skirmishActions.events);
- const [ally,foe]=teamCounts();if(!ally||!foe)completeBattle(Boolean(ally),{
+ const [ally,foe]=teamCounts();if(checkStageObjective())return;
+ if(!stageObjective&&(!ally||!foe))completeBattle(Boolean(ally),{
  detail:(storyRequest?storyRequest.territoryName+' 攻略戦 · ':'戦闘時間 ')+Math.floor(elapsed)+'秒'});
 }
 // A 2000-unit battle cannot label every head without hiding the battle.
@@ -5803,7 +5845,13 @@ function updateEnemyTacticalDecisions(){
   const defenseElapsed=elapsed-(lastEnemyTacticalOrderAt.get(id)??elapsed);
   const choice=chooseEnemyOrder(own,allies,previous,{friendlyArmy,defenseElapsed});
   let mode=choice.mode,buildingId=null;
-  if(mode==='charge'&&previous!=='explore'&&elapsed>12){
+  // Story missions are asymmetric: the attacker must advance; the defender
+  // must guard its zone. Existing retreat on critical losses remains valid.
+  if(stageObjective&&stageObjective.type!=='eliminate'){
+   if(stageObjective.defenderTeam===1&&mode==='charge')mode='defend';
+   else if(stageObjective.attackerTeam===1&&mode==='hold')mode='charge';
+  }
+  if(!stageObjective&&mode==='charge'&&previous!=='explore'&&elapsed>12){
    const px=living.reduce((v,u)=>v+(u.x??u.cell?.x??0),0)/living.length;
    const pz=living.reduce((v,u)=>v+(u.z??u.cell?.z??0),0)/living.length;
    const nearEnemy=allies.some(u=>Math.hypot((u.x??u.cell?.x??0)-px,(u.z??u.cell?.z??0)-pz)<38);
@@ -8901,25 +8949,30 @@ async function finishBattleLoading(){
   const planHeading=document.createElement('strong');
   planHeading.textContent='⚑ 開戦前の隊列編成';
   const planHint=document.createElement('p');
-  planHint.textContent='3ボタンは自動編成。職業は手動指定もできます。アイテムは部隊ごとに自動／手動を設定（初期値は手動）。実際の職業構成から部隊タイプを判定します。';
+  planHint.textContent='1隊＝1ジョブ。最大10隊をジョブ単位で編成。アイテムは隊ごとに自動／手動を選択できます。';
   planHint.style.cssText='font:11px/1.55 system-ui;color:#c3dcea;margin:5px 0 8px';
   const planList=document.createElement('div');planList.id='openingPlanList';
   planList.style.cssText='overflow:hidden;display:grid;gap:6px';
   const formationRows=new Map(),initialOrderInputs=[],manualJobs={},formationPlanTypes=new Map(squadIds.map(id=>[id,selectedSquadType(id)]));
   const formationTypes=()=>Object.fromEntries(squadIds.map(id=>[id,formationPlanTypes.get(id)||'balanced']));
+  const selectedJobChoices=()=>Object.fromEntries(Object.entries(manualJobs)
+   .filter(([,jobs])=>Object.keys(jobs).length===1)
+   .map(([id,jobs])=>[id,Object.keys(jobs)[0]]));
   const classifySquad=detail=>detail.heal/Math.max(1,detail.total)>=.30?'support':
    detail.front/Math.max(1,detail.total)>=.55?'attack':'balanced';
-  const previewFormationPlan=()=>recomposeSquadAssignments(squadRoster,formationTypes(),0,{},manualJobs);
+  const previewFormationPlan=()=>uniformJobSquadPlan(squadRoster,formationTypes(),0,selectedJobChoices());
   const refreshFormationPreview=()=>{
    const plan=previewFormationPlan();
+   if(!plan){planHint.textContent='⚠ ジョブの兵士が不足しています。別のジョブを選択してください。';return;}
+   planHint.textContent='1隊＝1ジョブ。最大10隊をジョブ単位で編成します。アイテムも隊別に設定できます。';
    for(const detail of plan.summaries){
     const refs=formationRows.get(detail.squadId);if(!refs)continue;
     const actualType=classifySquad(detail);
     selectedSquadFormations.set('0:'+detail.squadId,actualType);
     refs.name.textContent=squadName(detail.squadId)+'（'+detail.total+'人）';
     const assigned=Object.values(manualJobs[detail.squadId]||{}).reduce((n,v)=>n+v,0);
-    refs.preview.textContent='職業構成：前衛'+detail.front+'／遠距離'+detail.range+'／回復'+detail.heal+
-     ' · '+FORMATION_NAMES[actualType]+(assigned?'（手動'+assigned+'人・残り自動）':'（自動編成）');
+    refs.preview.textContent='ジョブ：'+(MASS_JOBS.find(job=>job.id===detail.jobId)?.name||detail.jobId)+
+     '（'+detail.total+'人） · '+FORMATION_NAMES[actualType]+(assigned?'（ジョブ指定）':'（自動割当）');
     for(const btn of refs.buttons.querySelectorAll('button')){
      const active=btn.dataset.type===selectedSquadType(detail.squadId);
      btn.style.background=active?'#4386a4':'#1d3951';
@@ -8940,7 +8993,7 @@ async function finishBattleLoading(){
    const preview=document.createElement('small');
    preview.style.cssText='grid-column:1/-1;color:#b8d7e8;font:10px/1.4 system-ui';
    const buttons=document.createElement('div');
-   buttons.style.cssText='display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:3px;min-width:0';
+   buttons.style.cssText='display:none;grid-template-columns:repeat(3,minmax(0,1fr));gap:3px;min-width:0';
    for(const type of FORMATION_TYPES){
     const button=document.createElement('button');button.type='button';button.dataset.type=type;
     button.textContent=FORMATION_ICONS[type]+FORMATION_NAMES[type];
@@ -8949,7 +9002,7 @@ async function finishBattleLoading(){
     buttons.append(button);
    }
    const manual=document.createElement('button');manual.type='button';
-   manual.textContent='✎ 職業を選んで手動編成';
+   manual.textContent='✎ この隊のジョブを選ぶ';
    manual.style.cssText='grid-column:1/-1;min-height:38px;color:#fff;background:#30577b;border:1px solid #94b5d1;border-radius:7px';
    manual.onclick=()=>openManualJobEditor(id);
    const itemModeLine=document.createElement('label');
@@ -8965,7 +9018,7 @@ async function finishBattleLoading(){
    itemMode.onchange=()=>{if(!battleReady)squadItemPolicies.set(id,itemMode.value);};
    itemModeLine.append(itemModeText,itemMode);
    formationRows.set(id,{name,preview,buttons,manual,itemMode});
-   row.append(name,buttons,preview,manual,itemModeLine);planList.append(row);
+   row.append(name,preview,manual,itemModeLine);planList.append(row);
   }
   // Full-screen profession editor: one tap reserves actual soldiers of that
   // class (10 for large squads, one for small squads). Counts, not percentages.
@@ -9007,10 +9060,10 @@ async function finishBattleLoading(){
    const id=editingSquadId;
    const total=squadRoster.filter(u=>u.team===0&&!u.isStrategist&&String(u.squadId)===id).length;
    const chosen=manualJobs[id]||{};
-   const assigned=Object.values(chosen).reduce((n,v)=>n+v,0);
-   const increment=total>=50?10:1;
-   manualTitle.textContent='第'+(squadIds.indexOf(id)+1)+'隊 · 職業を選択';
-   manualStats.textContent='指定 '+assigned+'/'+total+'人・残り'+(total-assigned)+'人は自動配分。職業ボタン1回で'+increment+'人追加';
+   const current=Object.keys(chosen)[0];
+   manualTitle.textContent='第'+(squadIds.indexOf(id)+1)+'隊 · 1ジョブを選択';
+   manualStats.textContent='1隊＝1ジョブ・'+total+'人（兵士と3D衣装はそのままで、隊単位に再配置）'+
+    (current?' · '+(MASS_JOBS.find(j=>j.id===current)?.name||current):' · 自動編成');
    manualGrid.replaceChildren();
    const manualPageSize=4,manualPages=Math.max(1,Math.ceil(MASS_JOBS.length/manualPageSize));
    manualPage=Math.max(0,Math.min(manualPage,manualPages-1));
@@ -9018,29 +9071,22 @@ async function finishBattleLoading(){
    manualPageText.textContent=(manualPage+1)+' / '+manualPages;
    for(const job of MASS_JOBS.slice(manualPage*manualPageSize,(manualPage+1)*manualPageSize)){
     const available=squadRoster.filter(u=>u.team===0&&!u.isStrategist&&u.jobId===job.id).length;
-    const usedElsewhere=Object.entries(manualJobs).filter(([other])=>other!==id)
-      .reduce((sum,[,counts])=>sum+(counts[job.id]||0),0);
-    const used=chosen[job.id]||0;
+    const reserved=Object.entries(manualJobs).filter(([other])=>other!==id)
+     .reduce((sum,[,counts])=>sum+(counts[job.id]||0),0);
     const cell=document.createElement('div');
     cell.style.cssText='display:grid;grid-template-columns:minmax(0,1fr) 33px;gap:3px;min-height:47px';
     const plus=document.createElement('button');plus.type='button';
-    plus.textContent=job.name+' '+used+'人 ＋';
+    plus.textContent=job.name+(current===job.id?' ✓':'');
     plus.style.cssText='min-width:0;color:white;background:#254e70;border:1px solid #75accb;border-radius:6px;padding:5px 2px;font:11px system-ui';
-    plus.disabled=assigned>=total||available-usedElsewhere-used<=0;
+    plus.disabled=available-reserved<total;
     plus.onclick=()=>{
-     const count=Math.min(increment,total-assigned,available-usedElsewhere-used);
-     if(count<=0)return;
-     const entry=manualJobs[id]||={};entry[job.id]=(entry[job.id]||0)+count;
+     manualJobs[id]={[job.id]:total};
      updateManualJobEditor();refreshFormationPreview();
     };
     const minus=document.createElement('button');minus.type='button';
-    minus.textContent='−';minus.disabled=!used;
+    minus.textContent='×';minus.disabled=current!==job.id;
     minus.style.cssText='color:white;background:#553d47;border:1px solid #b28b9a;border-radius:6px';
-    minus.onclick=()=>{
-     const entry=manualJobs[id];entry[job.id]=Math.max(0,(entry[job.id]||0)-increment);
-     if(!entry[job.id])delete entry[job.id];if(!Object.keys(entry).length)delete manualJobs[id];
-     updateManualJobEditor();refreshFormationPreview();
-    };
+    minus.onclick=()=>{delete manualJobs[id];updateManualJobEditor();refreshFormationPreview()};
     cell.append(plus,minus);manualGrid.append(cell);
    }
   }
@@ -9107,7 +9153,7 @@ async function finishBattleLoading(){
   const wizardTabs=document.createElement('div');wizardTabs.className='openingWizardTabs';
   const intro=document.createElement('div');intro.id='openingLaunchSummary';
   intro.style.cssText='text-align:left;margin:12px 0;padding:12px;color:#e2f2ff;border:1px solid #86a9c3;border-radius:9px;background:#122c43;font:12px/1.7 system-ui';
-  intro.textContent='編成・初期号令の確認が済んだら開戦してください。編成は職業数に応じて自動判定されます。';
+  intro.textContent='各隊のジョブ（1隊1ジョブ）と初期号令を確認して開戦してください。';
   let wizardPage='formation';
   const wizardButtons=new Map();
   for(const [page,label] of [['formation','① 編成'],['orders','② 初期号令'],['launch','③ 開戦']]){
@@ -9134,7 +9180,8 @@ async function finishBattleLoading(){
     const ids=team===0?squadIds:enemySquadIds;
     const types=Object.fromEntries(ids.map(id=>[id,selectedSquadType(id,team)]));
     if(massSim){
-     const preferred=recomposeSquadAssignments(massSim.units,types,team,{},team===0?manualJobs:{});
+     const preferred=uniformJobSquadPlan(massSim.units,types,team,team===0?selectedJobChoices():{});
+     if(!preferred)throw new Error('ジョブ別の編成人数が不足しています');
      const plan=massSim.setSquadFormationTypes(types,team,preferred.assignments);
      if(!plan)throw new Error('部隊編成に失敗しました（陣営'+team+'）');
      const jobs=massSim.units.filter(u=>u.team===team&&!u.isStrategist).map(u=>({
@@ -9142,7 +9189,8 @@ async function finishBattleLoading(){
      }));
      massWorker?.setSquadFormationTypes(types,team,plan.assignments,jobs);
     }else{
-     const plan=recomposeSquadAssignments(actors,types,team,{},team===0?manualJobs:{});
+     const plan=uniformJobSquadPlan(actors,types,team,team===0?selectedJobChoices():{});
+     if(!plan)throw new Error('ジョブ別の編成人数が不足しています');
      if(!applySquadRecomposition(actors,plan,{team}))
       throw new Error('部隊編成に失敗しました（陣営'+team+'）');
     }
