@@ -86,7 +86,9 @@ stageAtTown(game,'c01-s01');assert.equal(game.location,'town');
 saveAtTown(game,local,session);
 assert.ok(local.getItem(GAME_SAVE_KEY),'only town save writes persistent record');
 assert.equal(loadGame(local,storage()).playerName,'零章軍師');
-assert.equal(getSavedGame(local).wallet,150);
+assert.equal(getSavedGame(local).wallet,150+outcome.rewards.gold,
+ 'Winning the chapter battle credits the deterministic gold reward after return to town');
+assert.ok(outcome.rewards.xp>0,'A real victory credits commander experience');
 const legacy=createCampaign('旧軍師');
 assert.ok(validateSavedCampaign(legacy));assert.equal(migrateLegacy(legacy).playerName,'旧軍師');
 const oldOnly=storage();oldOnly.setItem('hai-gin-story-campaign-v1',JSON.stringify(legacy));
