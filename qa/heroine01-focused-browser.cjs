@@ -84,6 +84,22 @@ fs.mkdirSync(dir,{recursive:true});
   if(baseEye?.visibleNativeEyeballCount!==2||baseEye?.visibleIrisOverlayCount!==2||
      baseEye?.visibleEyelashMeshCount!==2||baseEye?.lashFollowsUpperLid!==true)
    throw Error('Original heroine is missing real eyes or eyelash rigs '+JSON.stringify(baseEye));
+  // Verify independence, not just the existence of controls: the pupil
+  // should scale without moving the sclera, the iris should not replace the
+  // native eye, and the eyelid fold should really move on its own geometry.
+  for(const {edit,metric} of [
+   {edit:{pupilDiameter:1.11},metric:'pupilPoseDigest'},
+   {edit:{irisDiameter:1.03},metric:'irisPoseDigest'},
+   {edit:{eyeballScale:.79},metric:'ocularGeometryDigest'},
+   {edit:{eyeSocketDepth:-.007},metric:'ocularGeometryDigest'},
+   {edit:{upperLidCoverage:.33},metric:'upperLidFoldPoseDigest'}
+  ]){
+   const state=await page.evaluate(p=>window.__heroSwordsmanUpdate({proportions:p}),edit);
+   if(state?.facialQA?.[metric]===baseEye?.[metric])
+    throw Error('Independent anatomy parameter did not alter real eye 3D: '+
+     JSON.stringify({edit,metric}));
+   await page.evaluate(p=>window.__heroSwordsmanUpdate({proportions:p}),originalProportions);
+  }
   for(const change of [
     {eyeballScale:.79},{eyeSocketDepth:-.008},
     {irisDiameter:.96},{pupilDiameter:.72},{upperLidCoverage:.32},
