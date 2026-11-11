@@ -47,11 +47,12 @@ const assert=require('node:assert/strict');
   assert.equal(await page.locator('body').evaluate(el=>el.classList.contains('town-loading')),false,
    'parent received stage-ready and unlocked controls');
   assert.equal(await page.locator('#showTownGuide').count(),1,'facility guide rendered');
-  assert.equal(await page.locator('#townRadar').isVisible(),true,'battle-style town radar becomes visible once the map is ready');
-  assert.ok(await page.locator('#townRadarPins button').count()>=6,'all civic buildings have mini-radar pins');
+
   assert.equal(errors.length,0,'browser errors '+errors.join('; '));
   // The paper-theater opens after the 3D stage finishes, not before.
   if(await opening.isVisible())await page.locator('#skipPaper').click();
+  assert.equal(await page.locator('#townRadar').isVisible(),true,'battle-style town radar becomes visible once the map is ready');
+  assert.ok(await page.locator('#townRadarPins button').count()>=6,'all civic buildings have mini-radar pins');
   // Check the 20 visible outdoor inhabitants plus the six fully rigged
   // player/shopkeepers. Their count must be observable in the actual 3D scene.
   const stats=await page.evaluate(()=>document.querySelector('#townScene').contentWindow.getTownVisitStats());
