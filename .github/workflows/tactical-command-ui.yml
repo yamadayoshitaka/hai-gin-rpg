@@ -1,0 +1,39 @@
+name: Tactical command UI calculation and integration
+on:
+  pull_request:
+    paths:
+      - 'town-hub.html'
+      - 'story-mode.html'
+      - 'tactics-wireframe.html'
+      - 'src/tactical-command-*.js'
+      - 'src/tactical-command-ui.css'
+      - 'src/story-battle-bridge.js'
+      - 'qa/tactical-command-ui.test.mjs'
+      - '.github/workflows/tactical-command-ui.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'town-hub.html'
+      - 'story-mode.html'
+      - 'tactics-wireframe.html'
+      - 'src/tactical-command-*.js'
+      - 'qa/tactical-command-ui.test.mjs'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  tactical-ui:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Tactical logic and page wiring
+        run: |
+          node --check src/tactical-command-evaluation.js
+          node --check src/tactical-command-battle-ui.js
+          node qa/tactical-command-ui.test.mjs
+          node qa/battle-radar-locked-strategy-and-movement.test.mjs
+          node qa/town-facility-squad-gear.test.mjs

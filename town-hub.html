@@ -85,7 +85,8 @@ body.town-loading #townRadar,body:has(#opening:not([hidden])) #townRadar,body:ha
 
 body:has(#panel:not([hidden])) #townExplorerControls *,body:has(#opening:not([hidden])) #townExplorerControls *{pointer-events:none!important}
 @media(max-height:620px){#townExplorerActions button{min-height:34px;padding:6px}#townStick{width:102px;height:102px}#townExplorerMessage{bottom:120px}}
-</style></head><body class="town-loading">
+</style>
+<link rel="stylesheet" href="./src/tactical-command-ui.css?v=2.1"></head><body class="town-loading">
 <iframe id="townScene" src="about:blank" title="既存の城・町ステージと7頭身人物モデルで探索" allow="autoplay"></iframe><div id="veil"></div>
 <header><div class="label"><strong id="townHeading">レヴナの町</strong><small id="chapterStatus">第1章・町ステージ</small></div>
 <nav aria-label="町の操作"><button type="button" id="showTownGuide">全体マップ</button><button type="button" id="townBgmToggle" aria-label="町BGMのオン・オフ">BGM ♪</button><button type="button" id="showPaperStory">漫画</button><a href="./story-maintenance.html">物語フロー</a><a id="leaveTown" href="./world-map.html?v=town-exit-2">外へ ▶</a></nav></header>
@@ -125,6 +126,7 @@ import {TOWN_SHOP,TOWN_EVENTS,loadGame,persistSession,saveAtTown,buyTownItem,equ
 import {CAMPAIGN_STAGE_BY_ID,stagesInChapter} from './src/campaign-stage-plan.js';
 import {STAGE_PRESETS} from './src/stage-library.js';
 import {RARITIES,JOBS,recruit,autoFormArmy,trainCommander,armyTroops,reserveTroops,troopCount} from './src/story-campaign.js';
+import {squadPower,tacticalCooldownSeconds,STRATEGIST_SPECIALTIES,evaluateTacticalOrder} from './src/tactical-command-evaluation.js?v=2.1';
 const $=id=>document.getElementById(id),escapeHtml=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const townAudio=createTownAudioDirector({storage:localStorage,onChange:state=>{
  const toggle=$('townBgmToggle');
@@ -146,7 +148,7 @@ const townSceneUrl='./tactics-wireframe.html?town=1&stage='+encodeURIComponent(c
  '&gender='+encodeURIComponent(game.campaign.commander.gender||'male')+'&faceId='+encodeURIComponent(game.campaign.commander.faceId||0)+
  '&commanderName='+encodeURIComponent(game.playerName)+'&v=town-visit-20261110';
 if(townFrame.getAttribute('src')!==townSceneUrl)townFrame.src=townSceneUrl;
-let panel='',page=0,shopCategory='道具',armyPriority='均衡',narration=null,selectedSquadId=game.campaign.squads[0]?.id||0;
+let panel='',page=0,shopCategory='道具',armyPriority='均衡',innCommanderId='player',narration=null,selectedSquadId=game.campaign.squads[0]?.id||0;
 let activeTalk=null,activeTalkIndex=0;
 let currentStoryPanelVoiceId=null;
 const townVoices=createStoryVoiceDirector({onPlaying:value=>townAudio.setNarrationActive(value)});
@@ -285,6 +287,7 @@ function rowsHtml(list,renderer){const p=pages(list);page=Math.min(page,p.pages-
  '<div class="pager"><button type="button" data-page="-1" '+(page===0?'disabled':'')+'>◀</button><span>'+(page+1)+' / '+p.pages+'ページ</span><button type="button" data-page="1" '+(page>=p.pages-1?'disabled':'')+'>▶</button></div>';}
 function renderPanel(){
  if(!panel)return;
+ $('panel').classList.toggle('formation-command-ui',panel==='formation');
  $('panelTitle').textContent=({weapons:'武具屋・隊列装備',items:'道具屋・消耗品',formation:'宿屋・隊列設定',tavern:'酒場・イベント請負',save:'教会・旅の記録',story:'王城・物語',dialogue:activeTalk?.name||'町人との会話'})[panel]||'町の施設';
  $('panelSummary').innerHTML='<div class="stat">軍師：<strong>'+escapeHtml(game.playerName)+'</strong></div><div class="stat">現在：<strong>第'+CAMPAIGN_STAGE_BY_ID[game.townStage].chapter+'章・町</strong></div>';
  if(panel==='dialogue'){
@@ -307,19 +310,44 @@ function renderPanel(){
    '<div class="entries">'+rowsHtml(stock,item=>'<div class="entry"><div><b>'+escapeHtml(item.name)+'</b><small>'+item.price+'G · 所持 '+(game.inventory[item.id]||0)+' · '+escapeHtml(item.description)+'</small></div><div><button type="button" data-buy="'+item.id+'" '+(game.wallet<item.price?'disabled':'')+'>購入</button> '+(armory?'<button type="button" data-equip="'+item.id+'" '+(!(game.inventory[item.id]>0)||!squads.length?'disabled':'')+'>隊列に装備</button>':'')+'</div></div>')+'</div>'+
    '<p>所持金：'+game.wallet+'G'+(armory?'　※同じ装備を複数隊列に使うには人数分ではなく隊列数分の在庫が必要です。':'')+'</p>';
  }else if(panel==='formation'){
+  const leaders=[{id:'player',...game.campaign.commander},...game.campaign.commanders];
+  if(!leaders.some(c=>String(c.id)===String(innCommanderId)))innCommanderId='player';
+  const commander=leaders.find(c=>String(c.id)===String(innCommanderId));
+  const owned=game.campaign.squads.filter(s=>String(s.commanderId??'player')===String(innCommanderId)&&s.count>0);
+  const members=owned.reduce((n,s)=>n+s.count,0);
+  const totalPower=squadPower(owned);
   const jobs=JOBS.map(job=>({job,count:game.campaign.squads.filter(x=>x.job===job).reduce((n,x)=>n+x.count,0)}));
-  const squadRows=game.campaign.squads.filter(s=>s.count>0).map(s=>{
+  const commanderSpecialty=commander.specialty||'assault';
+  const advisory=owned.flatMap(s=>Array.from({length:Math.min(100,s.count)},()=>({job:s.job,rarity:s.rarity,hp:1})));
+  const charge=evaluateTacticalOrder({units:advisory,mode:'charge',commander:{specialty:commanderSpecialty,alive:commander.active!==false}});
+  const defend=evaluateTacticalOrder({units:advisory,mode:'defend',commander:{specialty:commanderSpecialty,alive:commander.active!==false}});
+  const squadRows=owned.map(s=>{
    const buff=squadEquipmentBonus(s);
    const weapon=TOWN_SHOP.find(i=>i.id===buff.weapon)?.name||'なし',armor=TOWN_SHOP.find(i=>i.id===buff.armor)?.name||'なし';
-   return '<div class="entry"><div><b>隊列 #'+s.id+' '+escapeHtml(s.job)+' '+s.count+'人</b><small>武器 '+escapeHtml(weapon)+' / 防具 '+escapeHtml(armor)+' · 常時：攻撃+'+Math.round(buff.attack*100)+'%、HP+'+Math.round(buff.defense*100)+'%</small></div></div>';
-  }).join('');
-  $('panelContent').innerHTML='<p>宿屋では隊列を編成・雇用します。軍師1人あたり100人、全軍1000人まで。購入済みの武具のバフは出撃直後から適用されます。</p>'+
+   return '<article class="innSquadCard"><header><strong>⚔ '+escapeHtml(s.job)+'</strong><span class="rank">'+escapeHtml(s.rarity)+'・'+s.count+'人</span></header>'+
+    '<div class="innTacticalScore"><span>基礎戦力</span><b>'+squadPower([s]).toFixed(1)+'</b></div>'+
+    '<small>武器：'+escapeHtml(weapon)+'／防具：'+escapeHtml(armor)+'</small>'+
+    '<small>常時強化：攻撃+'+Math.round(buff.attack*100)+'%・HP+'+Math.round(buff.defense*100)+'%</small></article>';
+  }).join('')||'<p>この軍師には兵士が未配属です。予備兵を雇用し、軍団画面で配属してください。</p>';
+  $('panelContent').innerHTML='<div class="innCommandHeading"><span class="eyebrow">INN · TACTICAL FORMATION</span>'+
+   '<strong>⚑ 軍師と隊列の編成</strong><small>出撃前に戦力・号令適性を確認。戦闘中は固定作戦を変更できません。</small></div>'+
+   '<div class="innCommanderRow"><label for="innCommanderSelect">指揮する軍師<select id="innCommanderSelect">'+leaders.map(c=>
+    '<option value="'+escapeHtml(String(c.id))+'" '+(String(c.id)===String(innCommanderId)?'selected':'')+'>'+escapeHtml(c.name)+' Lv.'+Number(c.level||1)+'</option>').join('')+'</select></label>'+
+   '<label for="innSpecialtySelect">軍師の得意分野<select id="innSpecialtySelect">'+Object.entries(STRATEGIST_SPECIALTIES).map(([value,label])=>
+    '<option value="'+value+'" '+(commanderSpecialty===value?'selected':'')+'>'+escapeHtml(label)+'</option>').join('')+'</select></label>'+
+   '<small>軍師：'+escapeHtml(commander.rarity||'R')+' / 統率Lv.'+Number(commander.level||1)+
+   ' · 号令間隔 '+tacticalCooldownSeconds(commander.level)+'秒（設計値）</small></div>'+
+   '<div class="innCommandGrid"><div class="innMetric"><small>配属人数</small><b>'+members+'/100</b></div>'+
+    '<div class="innMetric"><small>基礎戦力</small><b>'+totalPower.toFixed(1)+'</b></div>'+
+    '<div class="innMetric"><small>予備兵</small><b>'+reserveTroops(game.campaign)+'</b></div></div>'+
+   '<div class="innCommandGrid"><div class="innMetric"><small>突撃・効果</small><b>'+charge.effect+'/100</b></div>'+
+    '<div class="innMetric"><small>守備・効果</small><b>'+defend.effect+'/100</b></div>'+
+    '<div class="innMetric"><small>軍資金</small><b>'+game.campaign.treasury+'G</b></div></div>'+
+   '<small>号令の効果は無抵抗時の戦術評価値です。実戦の成功見込みは敵抵抗や地形を含めて再計算します。</small>'+
    '<div class="entry"><div><b>✦ 星鐘の召喚・仲間ガチャ</b><small>1回 '+RECRUIT_GACHA.cost+'G ／ N 78%・R 20%・UR 2% ／ 10回以内R以上・40回以内UR保証。獲得兵は予備隊へ。</small><small>累計 '+(game.recruitGacha?.total||0)+'回'+(game.recruitGacha?.last?' · 前回：'+escapeHtml(game.recruitGacha.last.job)+'（'+game.recruitGacha.last.rarity+'）':'')+'</small></div><button type="button" class="primary" data-gacha-draw>召喚</button></div>'+
-   '<div class="stats"><div class="stat">軍資金 <strong>'+game.campaign.treasury+'G</strong></div><div class="stat">予備兵 <strong>'+reserveTroops(game.campaign)+'人</strong></div></div>'+
-   '<div class="entries">'+rowsHtml(jobs,entry=>'<div class="entry"><div><b>'+escapeHtml(entry.job)+'</b><small>保有兵 '+entry.count+'人 · N傭兵 10G/人</small></div><button type="button" data-recruit="'+escapeHtml(entry.job)+'">＋10人雇う</button></div>')+'</div>'+
-   '<div class="controls"><select id="autoPriority">'+['均衡','攻撃重視','防御重視','機動重視','支援重視'].map(x=>'<option '+(armyPriority===x?'selected':'')+'>'+x+'</option>').join('')+'</select><button type="button" class="primary" data-auto>オート編成</button></div>'+
-   '<p>隊列装備（武具屋で変更可能）</p><div class="entries">'+squadRows+'</div>'+
-   '<p>主人公の軍団 '+armyTroops(game.campaign,'player')+'/100人。</p>';
+   '<div class="controls"><select id="autoPriority" aria-label="オート編成の方針">'+['均衡','攻撃重視','防御重視','機動重視','支援重視'].map(x=>'<option '+(armyPriority===x?'selected':'')+'>'+x+'</option>').join('')+'</select><button type="button" class="primary" data-auto>この軍師の隊をオート編成</button></div>'+
+   '<h3>配属中の部隊・レアリティ戦力</h3><div class="entries">'+squadRows+'</div>'+
+   '<h3>予備兵の雇用</h3><div class="entries">'+rowsHtml(jobs,entry=>'<div class="entry"><div><b>'+escapeHtml(entry.job)+'</b><small>全保有 '+entry.count+'人 · N傭兵 10G/人</small></div><button type="button" data-recruit="'+escapeHtml(entry.job)+'">＋10人</button></div>')+'</div>';
  }else if(panel==='tavern'){
   game.acceptedEvents??=[];game.claimedEvents??=[];
   $('panelContent').innerHTML='<p>酒場の依頼掲示板。受注後はワールドマップで指定ステージを攻略し、酒場に戻って報酬を受け取ります。</p>'+
@@ -338,7 +366,14 @@ function renderPanel(){
    '<div class="controls"><button type="button" id="readNarration">▶ ナレーション（エコー付き）</button><button type="button" id="openMap">地図へ進む</button></div>';
  }
 }
-$('panelContent').addEventListener('change',event=>{if(event.target.id==='equipSquadSelect')selectedSquadId=Number(event.target.value)||0;});
+$('panelContent').addEventListener('change',event=>{if(event.target.id==='equipSquadSelect')selectedSquadId=Number(event.target.value)||0;
+ if(event.target.id==='innCommanderSelect'){innCommanderId=event.target.value;page=0;renderPanel();}
+ if(event.target.id==='innSpecialtySelect'){
+  const key=event.target.value;
+  if(!Object.hasOwn(STRATEGIST_SPECIALTIES,key))return;
+  const leader=String(innCommanderId)==='player'?game.campaign.commander:game.campaign.commanders.find(c=>String(c.id)===String(innCommanderId));
+  if(leader){leader.specialty=key;persist();renderPanel();}
+ }});
 $('panelContent').onclick=event=>{
  const target=event.target.closest('button');if(!target)return;
  try{
@@ -369,7 +404,7 @@ $('panelContent').onclick=event=>{
   }
   if(target.hasAttribute('data-auto')){
    armyPriority=$('autoPriority').value;
-   autoFormArmy(game.campaign,'player',armyPriority);
+   autoFormArmy(game.campaign,innCommanderId,armyPriority);
    persist();renderPanel();notice('選択した方針で自動編成しました。');return;
   }
   if(target.id==='confirmSave'){saveAtTown(game,localStorage,sessionStorage);renderPanel();townAudio.effect('save');notice('町のセーブスロットに保存しました。');return;}

@@ -1,0 +1,46 @@
+/* Tactical design v2.1: responsive, display-only skin over existing controls. */
+#panel.formation-command-ui{width:min(96vw,710px);border-color:#e1c187}
+#panel.formation-command-ui #panelContent{gap:12px}
+.innCommandHeading{display:grid;gap:5px;padding:12px;border:1px solid #c5a16d;border-radius:10px;background:linear-gradient(135deg,#33354a,#142b42)}
+.innCommandHeading .eyebrow,.tacticalEyebrow{color:#e7c98e;font-size:11px;font-weight:800;letter-spacing:.1em}
+.innCommandHeading strong{font-size:17px;color:#ffe7ae}
+.innCommandGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+.innCommandGrid .innMetric{padding:9px 5px;border:1px solid #5b7892;border-radius:9px;text-align:center;background:#0c2337}
+.innMetric small{display:block;font-size:10px;color:#b9d6e8}.innMetric b{display:block;font-size:18px;color:#ffe3a4;margin-top:3px}
+.innCommanderRow{display:grid;gap:8px;padding:11px;border:1px solid #6b8299;border-radius:10px;background:#0e2237}
+.innCommanderRow label{display:grid;gap:4px;color:#dfedf7;font-size:12px}
+.innSquadCard{display:grid;gap:5px;border:1px solid #5c7894;border-radius:9px;background:#142b40;padding:10px}
+.innSquadCard header{position:static!important;display:flex;justify-content:space-between;background:transparent!important;border:0!important;padding:0!important}
+.innSquadCard strong{font-size:13px;color:#f7e3b5}
+.innSquadCard .rank{font-size:12px;color:#a9dffa;font-weight:800}
+.innSquadCard small{color:#bcd3e1;font-size:11px}
+.innTacticalScore{display:flex;gap:10px;align-items:center;justify-content:space-between;color:#c4e5f6;font-size:12px}
+.innTacticalScore b{color:#f5dfa4;font-size:14px}
+#openingTacticalSummary,#openingLaunchSummary{border:1px solid #d9b77d!important;background:linear-gradient(135deg,#23354b,#10283d)!important;border-radius:12px!important}
+#openingTacticalSummary{display:grid;gap:7px;margin:9px 0;padding:11px;text-align:left}
+#openingTacticalSummary strong{color:#ffe2aa;font-size:14px}
+#openingTacticalSummary .openingSummaryLine{display:flex;justify-content:space-between;gap:7px;font-size:12px;color:#d6e8f3}
+#openingTacticalSummary .openingSummaryLine b{color:#99e3fa}
+#loadingCard.prebattle-command-ui{width:min(520px,100%);padding:16px}
+#loadingCard .openingWizardTabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}
+#loadingCard .openingWizardTabs button{min-height:44px;white-space:normal;font-size:12px}
+#loadingCard .openingWizardTabs button.active{border-color:#ffdb92;color:#ffe2a4;background:#2a5979}
+#squadTactics #tacticalCommandPreview{display:grid;gap:7px;margin-top:8px;padding:9px;background:#132c43;border:1px solid #769eb8;border-radius:10px}
+#tacticalCommandPreview[hidden]{display:none!important}
+#tacticalCommandPreview .tacticalPreviewHeading{display:flex;justify-content:space-between;align-items:center;gap:8px;color:#ffdfaa;font-size:12px}
+#tacticalCommandPreview .tacticalPreviewCards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}
+#tacticalCommandPreview .tacticalPreviewCards button{display:grid;gap:2px;text-align:left;background:#1c4059;border:1px solid #648faf;color:#f2f7fa;padding:9px 7px;min-height:58px;font-size:11px}
+#tacticalCommandPreview .tacticalPreviewCards button strong{font-size:12px}
+#tacticalCommandPreview .tacticalPreviewCards button small{font-size:10px;color:#d0e5ee}
+#tacticalCommandPreview .tacticalPreviewCards button.best{border:2px solid #ecd28b;background:#325776}
+#tacticalCommandPreview .tacticalPreviewCards button:disabled{opacity:.45}
+#tacticalCommandPreview .tacticalDisclaimer{color:#c0cfdd;font-size:10px;line-height:1.4}
+#battleTacticalSituation{position:fixed;z-index:30;left:50%;top:calc(var(--battleTopBottom,155px) + 9px);transform:translateX(-50%);width:min(90vw,430px);background:linear-gradient(135deg,#543c32,#182e47);border:2px solid #e4b783;border-radius:12px;padding:9px 12px;box-shadow:0 10px 30px #000b;text-align:center;display:grid;gap:5px}
+#battleTacticalSituation[hidden]{display:none!important}
+#battleTacticalSituation strong{font-size:14px;color:#ffe1ab}
+#battleTacticalSituation small{color:#e2eff8;font-size:11px}
+#battleTacticalSituation button{background:#26597c;border:1px solid #d3c191;padding:10px;min-height:40px}
+.tactical-eligible{outline:3px solid #f8dc95!important;outline-offset:2px;animation:tacticalEligiblePulse .7s ease-in-out infinite alternate}
+@keyframes tacticalEligiblePulse{from{box-shadow:0 0 2px #fbd99b}to{box-shadow:0 0 16px #ffd385}}
+@media(prefers-reduced-motion:reduce){.tactical-eligible{animation:none!important}}
+@media(max-width:390px){.innCommandGrid{gap:4px}.innMetric b{font-size:15px}#squadTactics #tacticalCommandPreview{padding:6px}#tacticalCommandPreview .tacticalPreviewCards button{padding:6px 4px}}

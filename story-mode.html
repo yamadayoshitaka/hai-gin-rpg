@@ -203,6 +203,7 @@ body.formation-active .command-menu{bottom:calc(10px + env(safe-area-inset-botto
 @media(max-width:650px){.story-act-nav{grid-template-columns:repeat(2,minmax(0,1fr))}.story-chapter-buttons{grid-template-columns:repeat(3,minmax(0,1fr))}.story-dialogue strong{display:block}}
 
 </style>
+<link rel="stylesheet" href="./src/tactical-command-ui.css?v=2.1">
 </head>
 <body>
 <div class="shell">
@@ -267,7 +268,7 @@ body.formation-active .command-menu{bottom:calc(10px + env(safe-area-inset-botto
 <nav id="gameMenu" class="menu-bar" aria-label="ストーリーモード操作" hidden>
   <button data-tab="map" class="active" aria-pressed="true"><strong>🗺</strong>全体地図</button><button id="menuToggle" type="button" aria-expanded="false" aria-controls="commandMenu"><strong>☰</strong>作戦メニュー</button>
  </nav>
-<section id="sortieDialog" class="sortie-dialog" role="dialog" aria-modal="true" aria-label="出撃位置の選択" hidden><div class="sortie-card"><h2>⚔ 出撃準備</h2><p id="sortieSummary" class="hint"></p><div id="sortieSquads" class="sortie-list"></div><p class="hint">部隊ごとに北・中央・南の橋を指定します。3D戦闘画面で軍師の号令を発令できます。</p><div class="sortie-actions"><button type="button" id="sortieCancel">戻る</button><button type="button" class="primary" id="sortieConfirm">3D戦闘へ出撃 ▶</button></div></div></section>
+<section id="sortieDialog" class="sortie-dialog" role="dialog" aria-modal="true" aria-label="出撃位置の選択" hidden><div class="sortie-card"><h2>⚔ 出撃準備</h2><p id="sortieSummary" class="hint"></p><div id="storySortieTactical" class="innCommandGrid" aria-label="出撃戦力と戦術評価"></div><div id="sortieSquads" class="sortie-list"></div><p class="hint">部隊ごとに北・中央・南の橋を指定します。3D戦闘画面で軍師の号令を発令できます。</p><div class="sortie-actions"><button type="button" id="sortieCancel">戻る</button><button type="button" class="primary" id="sortieConfirm">3D戦闘へ出撃 ▶</button></div></div></section>
  <div id="commandMenu" class="command-menu frame" aria-label="作戦メニュー" hidden><div class="menu-heading"><strong>作戦メニュー</strong><button id="menuClose" type="button" aria-label="作戦メニューを閉じる">✕</button></div><div class="menu-grid">
    <button data-tab="army"><strong>♟</strong><span>軍師・軍団</span><small>自動編成・部隊能力・兵士編成へ</small></button>
    <button data-tab="leaders"><strong>♟</strong><span>軍師雇用</span><small>雇用・育成・領地配置</small></button>
@@ -279,6 +280,7 @@ body.formation-active .command-menu{bottom:calc(10px + env(safe-area-inset-botto
 <script type="module">
  import { STORY_ACTS,STORY_CHAPTERS,STORY_ENDINGS,storyProgress,unlockedStoryChapters,storyVoiceKey } from './src/story-chapters.js';
 import { FACTIONS,TERRITORIES,JOBS,PURPOSES,RARITIES,BUFFS,AUTO_FORMATIONS,COMMANDER_FACE_VARIANTS,JOB_FACE_VARIANTS,commanderAppearance,squadFaceVariant,createCampaign,troopCount,reserveTroops,deployedTroopCount,monthlyIncome,monthlyWages,maxSquads,armyTroops,formationCapabilities,autoFormArmy,territoryOf,accessible,recruit,setFormationPurpose,trainCommander,assignCommander,transferTroops,squadCommanderId,colonize,settleStoryBattle,nextMonth,validateSavedCampaign } from './src/story-campaign.js';
+import {squadPower,evaluateTacticalOrder,tacticalCooldownSeconds} from './src/tactical-command-evaluation.js?v=2.1';
 import { STORY_BATTLE_REQUEST_KEY, STORY_BATTLE_RESULT_KEY, STORY_SPAWN_LANES, STORY_SPAWN_LABELS, createStoryBattleRequest } from './src/story-battle-bridge.js';
 const $=id=>document.getElementById(id);const saveKey='hai-gin-story-campaign-v1';
 const terrainIcon={'丘陵':'⚑','森林':'♣','城塞':'♜','山岳':'▲','平地':'✦','市街':'⌂','河川':'⚓','湿地':'❀'};
@@ -394,6 +396,14 @@ function openSortie(){
  const groups=new Map();for(const unit of request.units){const entry=groups.get(unit.squadId)||{...unit,count:0};entry.count++;groups.set(unit.squadId,entry);}
  $('sortieSummary').textContent=request.territoryName+'へ進軍 · '+request.units.length+'人（最大50人）／敵推定'+request.enemyCount+'人';const scene=STORY_CHAPTERS.filter(c=>c.territory===selected&&c.id<=unlockedStoryChapters(state)).at(-1);if(scene)$('sortieSummary').textContent+=' · 関連：第'+scene.id+'章「'+scene.title+'」';
  $('sortieSquads').innerHTML=[...groups.values()].map((unit,i)=>'<div class="sortie-squad">'+jobFace(state.squads.find(s=>s.id===unit.squadId)?.job||'騎士',squadFaceVariant(state.squads.find(s=>s.id===unit.squadId)),'tiny')+'<strong>'+escapeHtml(state.squads.find(s=>s.id===unit.squadId)?.job||unit.job)+' '+unit.count+'人</strong><select data-sortie-lane="'+unit.squadId+'" aria-label="'+escapeHtml(unit.job)+'の出撃方面">'+STORY_SPAWN_LANES.map((lane,index)=>'<option value="'+lane+'" '+(index===i%3?'selected':'')+'>'+STORY_SPAWN_LABELS[lane]+'</option>').join('')+'</select></div>').join('');
+ const units=request.units.map(u=>({...u,hp:1}));
+ const ownPower=squadPower(units);
+ const commander=request.commanders[0]||{};
+ const estimate=evaluateTacticalOrder({units,mode:'charge',commander,difficulty:50});
+ $('storySortieTactical').innerHTML='<div class="innMetric"><small>出撃戦力</small><b>'+ownPower.toFixed(1)+'</b></div>'+
+  '<div class="innMetric"><small>突撃効果</small><b>'+estimate.effect+'/100</b></div>'+
+  '<div class="innMetric"><small>号令間隔</small><b>'+tacticalCooldownSeconds(commander.level)+'秒</b></div>';
+ $('sortieDialog').querySelector('.sortie-card h2').textContent='⚔ 開戦前 · 出撃布陣';
  $('sortieDialog').hidden=false;
 }
 function returnFromStoryBattle(){
