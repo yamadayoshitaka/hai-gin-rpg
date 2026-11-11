@@ -74,15 +74,15 @@ export function prepareYouthfulFace(headRoot,{referenceFit=false,referenceGuide=
   const z=(base[i*3+2]-box.min.z)/Math.max(.001,size.z);
   const facing=smooth(.48,.75,z);
   const cheeks=bell(Math.abs(x),.49,.26)*bell(y,.49,.14)*facing;
-  const lips=bell(x,0,referenceGuide?.265:.32)*
-    bell(y,referenceGuide?.445:.37,referenceGuide?.026:.055)*facing;
+  const lips=bell(x,0,referenceGuide?.225:.32)*
+    bell(y,referenceGuide?.400:.37,referenceGuide?.024:.055)*facing;
   const brow=bell(Math.abs(x),.42,.23)*bell(y,.78,.085)*facing;
   // Subtle vertex-level lip and cheek albedo remains tied to the real
   // sculpt, with no fake face plane or overpainted mouth texture.
   const adultFace=referenceGuide?1:0;
-  skinTones[i*3]=1+.020*cheeks-.014*brow+.020*lips*adultFace+.012*lips*(1-adultFace);
-  skinTones[i*3+1]=1-.033*cheeks-.015*brow-.045*lips*adultFace-.010*lips*(1-adultFace);
-  skinTones[i*3+2]=1-.051*cheeks-.011*brow-.066*lips*adultFace-.020*lips*(1-adultFace);
+  skinTones[i*3]=1+.020*cheeks-.014*brow+.012*lips*adultFace+.012*lips*(1-adultFace);
+  skinTones[i*3+1]=1-.033*cheeks-.015*brow-.025*lips*adultFace-.010*lips*(1-adultFace);
+  skinTones[i*3+2]=1-.051*cheeks-.011*brow-.038*lips*adultFace-.020*lips*(1-adultFace);
  }
  preview.setAttribute('color',new THREE.Float32BufferAttribute(skinTones,3));
  let modified=0, last=0, lastProportions=FACE_PROPORTION_DEFAULTS, geometryDigest=0;
