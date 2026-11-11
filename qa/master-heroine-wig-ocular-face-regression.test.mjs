@@ -67,7 +67,7 @@ test('100k strand wig has separate fringe, temple and layered back objects',()=>
  assert.equal(report.beardFreeFrontNeck,true);
  assert.equal(report.frontNeckIntrusionVertices,0);
  assert.ok(report.neckRearClearanceCorrections>0);
- assert.equal(report.rearFlow,'overlapping-layers-not-forced-neck-v');
+ assert.equal(report.rearFlow,'tapered-clumped-swaying-layers-no-flat-hem');
  const bb=scalp.geometry.boundingBox,d=bb.getSize(new THREE.Vector3());
  const cx=(bb.min.x+bb.max.x)*.5,cz=(bb.min.z+bb.max.z)*.5;
  let napeVertices=0,segments=0;
@@ -115,7 +115,7 @@ test('natural makeup edits real face vertex colors, resets and preserves source 
  assert.ok(result.lipVertices>0,'Rose-tinted lips missing');
  assert.equal(result.chinLipVertices,0,'Lipstick has leaked below the lips onto the chin');
  assert.equal(result.chinLipMaskExcluded,true);
- assert.deepEqual(result.mouthMaskYNormalized,[.417,.498]);
+ assert.deepEqual(result.mouthMaskYNormalized,[.367,.447]);
  assert.ok(result.linerVertices>0,'Eye-following upper lash color missing');
  assert.ok(result.changedVertices>100,'Cosmetics are too faint to affect the face');
  assert.equal(result.skinShaderUsesVertexColors,true,
@@ -164,14 +164,17 @@ test('heroine face has balanced original eye nose mouth and chin ratios',()=>{
  assert.ok(girl.proportions.eyeHeight>.96&&girl.proportions.eyeHeight<1.03);
  assert.ok(girl.proportions.noseWidth>=.78&&girl.proportions.noseWidth<.88);
  assert.ok(girl.proportions.mouthWidth>=.90&&girl.proportions.mouthWidth<1);
- assert.ok(girl.proportions.chinLength>=.95&&girl.proportions.chinLength<1.02);
+ assert.ok(girl.proportions.chinLength>=.94&&girl.proportions.chinLength<.98);
  assert.ok(girl.proportions.cheekRoundness>=1&&girl.proportions.cheekRoundness<1.035);
  assert.ok(girl.proportions.preEarFullness<=.70&&girl.proportions.lowerCheekLateral<=.75);
  assert.ok(girl.makeup.strength>.9);
  assert.ok(girl.makeup.lip>.9&&girl.makeup.eyeliner>.9);
  assert.ok(girl.proportions.eyeTilt>.04);
- assert.ok(girl.proportions.noseBridge>=1.05&&girl.proportions.noseBridge<=1.11);
+ assert.ok(girl.proportions.noseBridge>=1&&girl.proportions.noseBridge<=1.08);
  assert.ok(girl.proportions.jawTaper<.94);
+ assert.ok(girl.proportions.middleThird>=.93&&girl.proportions.middleThird<.96);
+ assert.ok(girl.proportions.noseLength<.94);
+ assert.ok(girl.proportions.mouthVertical>.008);
  assert.match(girl.visualDirection,/lightning-inspired/);
  assert.equal(girl.makeup.sourceFaceOnly,true);
  assert.equal(girl.facialArtistApproval,false);
