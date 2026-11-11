@@ -1,3 +1,4 @@
+import {territoryVictoryReward,verifiedBattleLoot} from './battle-victory-rewards.js';
 // Story campaign rules, intentionally independent of the 3D battle renderer.
 // The temporary territory-battle resolver can later be replaced by real battle results.
 export const CAMPAIGN_VERSION = 1;
@@ -337,7 +338,7 @@ export function assignCommander(state, id, territoryId) {
   record(state, leader.name + 'を' + provinceById[territoryId].name + 'に配置しました。');
 }
 
-function gainExperience(state, value) {
+export function gainExperience(state, value) {
   state.commander.xp += value;
   while (state.commander.xp >= state.commander.level * 100 && state.commander.level < 10) {
     state.commander.xp -= state.commander.level * 100;
@@ -435,7 +436,13 @@ export function attackTerritory(state, territoryId, rng = Math.random) {
   if (victory) {
     state.owners[territoryId] = 'player';
     state.garrisons[territoryId] = 90;
-    gainExperience(state, target.base ? 200 : 110);
+    const rewards=territoryVictoryReward(target);
+    gainExperience(state,rewards.xp);
+    state.treasury+=rewards.gold;
+    const loot=verifiedBattleLoot(result.loot);
+    state.wonTreasure??={};
+    for(const item of loot)state.wonTreasure[item.itemId]=(state.wonTreasure[item.itemId]||0)+item.quantity;
+    result.settledRewards={...rewards,loot};
     record(state, target.name + 'に勝利！損失' + losses + '人。');
   } else {
     state.garrisons[territoryId] = Math.max(40, Math.round((state.garrisons[territoryId] || 150) * 0.85));
@@ -490,7 +497,7 @@ export function settleStoryBattle(state, request, result) {
   }
   state.lastStoryBattleId = result.battleId;
   checkOutcome(state);
-  return { victory: result.victory, losses, participants: request.units.length };
+  return { victory: result.victory, losses, participants: request.units.length, rewards: result.settledRewards||{gold:0,xp:0,loot:[]} };
 }
 
 function enemyPhase(state, rng) {
