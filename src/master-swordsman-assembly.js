@@ -14,6 +14,7 @@ import {prepareYouthfulFace} from './master-swordsman-youthful-face.js';
 import {createFittedFantasyHeroGarment} from './master-hero-fitted-garment.js';
 import {buildReferenceHeroineHair} from './master-heroine-coiffure.js';
 import {buildHeroineFantasyLongHair,buildHeroineWigRootCap,measureHeroineTorsoEnvelope} from './master-heroine-long-hair.js';
+import {getHeroineIrisFiberTexture} from './master-heroine-iris-fibers.js';
 import {applyHeroineSkinPBR,HEROINE_SKIN_TEXTURE_INFO} from './master-heroine-skin-pbr.js';
 import {validateFaceProportions} from './master-swordsman-face-proportions.js';
 
@@ -107,7 +108,29 @@ function makeEyeRim(width,height,upper=true){
  }
  return new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),32,.00135,6,false);
 }
-function makeAttachedUpperLashes(width,height){
+// Skin-backed eyelid folds occlude part of the actual globe at rest,
+ // and remain children of the upper/lower moving eyelid root.
+ // A single tube outline alone creates the floating cartoon-white-eye look.
+ function makeEyeSkinFold(width,height,upper=true){
+  const verts=[],indices=[],columns=36,rows=3;
+  for(let row=0;row<rows;row++)for(let i=0;i<=columns;i++){
+   const t=i/columns*2-1,fade=1-Math.pow(Math.abs(t),5);
+   const base=(1-t*t)*height*(upper?.20:-.10);
+   const edge=upper?-height*.13:height*.07;
+   const y=base+edge+row*height*(upper?.10:-.065);
+   const z=.0020+height*(.045+.025*fade)+row*.00015;
+   verts.push(t*width*.49,y,z);
+   if(row<rows-1&&i<columns){
+    const a=row*(columns+1)+i;
+    indices.push(a,a+1,a+columns+1,a+1,a+columns+2,a+columns+1);
+   }
+  }
+  const g=new THREE.BufferGeometry();
+  g.setAttribute('position',new THREE.Float32BufferAttribute(verts,3));
+  g.setIndex(indices);g.computeVertexNormals();g.computeBoundingSphere();
+  return g;
+ }
+ function makeAttachedUpperLashes(width,height){
  const pts=[];
  for(let i=0;i<13;i++){
   const t=i/6-1,arch=(1-t*t)*height*.24;
@@ -164,7 +187,7 @@ function makeEyeLid(width,height){
  * eyeliner/lip cards. Each pass reconstructs from immutable neutral colors.
  */
 export function applyHeroineMakeupToFace(faceMesh,neutralColors,{
- strength=0,eyeAnchors=null,blush=.85,lip=.95,eyeliner=.94
+ strength=0,eyeAnchors=null,blush=.85,lip=.95,eyeliner=.94,underEye=0
 }={}){
  const geometry=faceMesh?.geometry,attr=geometry?.getAttribute('color');
  const p=geometry?.getAttribute('position');
@@ -219,6 +242,8 @@ export function applyHeroineMakeupToFace(faceMesh,neutralColors,{
    intensity*THREE.MathUtils.clamp(lip,0,1);
   // Dark-brown upper lash line, located against the SOURCE sclera anchors,
   // not an unrelated eyebrow-height strip. Keeps the eyeballs exposed.
+  const tear=front*bell(Math.abs(x),landmarkX,.21)*
+   bell(y,landmarkY-.085,.034)*intensity*THREE.MathUtils.clamp(underEye,0,1);
   const liner=front*bell(Math.abs(x),landmarkX,.245)*
    bell(y,landmarkY+.018,.023)*
    intensity*THREE.MathUtils.clamp(eyeliner,0,1);
@@ -226,9 +251,9 @@ export function applyHeroineMakeupToFace(faceMesh,neutralColors,{
   // Linear vertex color multipliers are multiplied by the actual PBR skin
   // material. Tint rather than merely dimming every RGB channel together.
   const red=Math.min(1.25,neutralColors[n]*
-   (1+.15*cheek+.49*lips-.49*liner));
-  const green=neutralColors[n+1]*(1-.25*cheek-.61*lips-.56*liner);
-  const blue=neutralColors[n+2]*(1-.20*cheek-.41*lips-.52*liner);
+   (1+.15*cheek+.34*lips-.49*liner+.025*tear));
+  const green=neutralColors[n+1]*(1-.25*cheek-.40*lips-.56*liner-.087*tear);
+  const blue=neutralColors[n+2]*(1-.20*cheek-.27*lips-.52*liner-.097*tear);
   attr.setXYZ(i,red,green,blue);
   if(cheek>.08)blushVertices++;
   if(lips>.08)lipVertices++;
