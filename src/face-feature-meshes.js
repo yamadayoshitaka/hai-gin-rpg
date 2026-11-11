@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {normalizeFemaleFaceControls,FACE_V7_PALETTE} from './face-v7-controls.js';
+import {normalizeFemaleFaceControls,FACE_V7_PALETTE,MALE_REFERENCE_DEFAULT,safeContactColor} from './face-v7-controls.js';
 
 /**
  * Actual face-only polygon meshes. No 2D decals, portrait planes or hair.
@@ -83,6 +83,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   return z;
  };
  const female=gender==='female';
+ const eyeScale=female?settings.eyeSize:MALE_REFERENCE_DEFAULT.eyeSize;
  const originalIrisAngle=female?.585:.47;
  const originalPupilAngle=female?.236:.19;
  // A doubled requested projected diameter must remain on a sphere:
@@ -91,12 +92,13 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   Math.sin(originalIrisAngle)*settings.irisDiameter)):originalIrisAngle;
  const pupilAngle=female?Math.asin(Math.min(.75,
   Math.sin(originalPupilAngle)*settings.irisDiameter)):originalPupilAngle;
- const eyeRadius=d.x*(female?.052:.051);
+ const eyeRadius=d.x*(female?.052:.051)*eyeScale;
  const eyeHeight=box.min.y+d.y*(female?.684:.687);
  const eyeSpacing=d.x*(female?.112:.115);
  // Sclera centre is recessed. Upper and lower eyelids cover the spherical
  // edge, rather than drawing detached floating white eye disks.
  for(const side of [-1,1]){
+  const firstChild=root.children.length;
   const x=cx+side*eyeSpacing,y=eyeHeight;
   const faceZ=surfaceAt(x,y);
   // Set globes into the socket but forward enough for the colored iris
@@ -221,8 +223,8 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
  // Original face remains the structural muzzle/philtrum/chin. Two shallow
  // lip strips follow that actual surface and use real triangle thickness.
  // Avoid a single flat 'mouth plate' or pigment printed on the chin.
- const lipCenter=box.min.y+d.y*(female?.509:.506);
- const halfWidth=d.x*(female?.044:.119);
+ const lipCenter=box.min.y+d.y*(female?.509:.509);
+ const halfWidth=d.x*.044;
  for(const upper of [true,false]){
   const material=lipMat;
   const mesh=buildGrid((upper?'UPPER':'LOWER')+'_3D_VERMILION_LIP',
@@ -239,7 +241,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
     return new THREE.Vector3(x,y,z);
    },material);
   mesh.userData.faceSurfaceConforming=true;
-  mesh.userData.colorRole='lips';
+  mesh.userData.colorRole='lipBase';
   root.add(mesh);
  }
  // The face mesh itself carries the integrated nose, so DO NOT glue a
@@ -261,7 +263,10 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   pupilPolarAngleRadians:Number(pupilAngle.toFixed(4)),
   irisDiameterRequestFactor:gender==='female'?settings.irisDiameter:1,
   actualIrisDiameterFactor:Number((Math.sin(irisAngle)/Math.sin(originalIrisAngle)).toFixed(3)),
-  mouthHalfWidthFraction:female?.044:.119,
+  mouthHalfWidthFraction:.044,
+  eyeScale,contactColorDefault:safeContactColor(settings.contactColor),
+  eyeAngleDefault:gender==='female'?settings.eyeAngle:0,
+  maleCosmeticsDisabled:!female,
   noseSourceIntegrated:true,
   partTriangles,faceOnly:true,bodyIncluded:false,partGeometryReal:true,
   reference:'soft-cheek-small-nose-relaxed-almond-eyes-gentle-lips'
