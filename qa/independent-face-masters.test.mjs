@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync,existsSync} from 'node:fs';
 import * as THREE from 'three';
-import {makeIndependentFaceMaster,FACE_MASTER_SPEC}
+import {makeIndependentFaceMaster,FACE_MASTER_SPEC,femaleInnerFeatureDelta}
  from '../src/independent-face-masters.js';
 
 function fixture(){
@@ -20,7 +20,7 @@ test('two source-derived clay face meshes have owned independent vertices and pr
  const before=original.getAttribute('position').array.slice();
  const female=makeIndependentFaceMaster(source,'female');
  const male=makeIndependentFaceMaster(source,'male');
- assert.equal(female.report.code,'female-face-oval-v3');
+ assert.equal(female.report.code,'female-face-natural-contour-v4');
  assert.equal(male.report.code,'male-face-base-v1');
  assert.ok(female.report.sourceVertices>1100);
  assert.ok(male.report.sourceVertices>1100);
@@ -70,6 +70,12 @@ test('two source-derived clay face meshes have owned independent vertices and pr
  assert.ok(changedBetweenSexes>400,'Two genders must contain actually different geometry');
  assert.ok(female.report.cheekVolumeMetric>male.report.cheekVolumeMetric,
   'Female healthy cheek volume should exceed male face');
+ assert.equal(female.report.outerContourXError,0,
+  'Mouth and nose adjustments must not pull the outer face silhouette');
+ assert.ok(female.report.outerContourSamples>100);
+ assert.ok(female.report.localizedNoseAndMouthSamples>20);
+ assert.equal(female.report.innerFeatureHalfWidthLimit,.55);
+ assert.equal(female.report.femaleJawStyle,'unpinched-oval-cheek-to-chin-v4');
 });
 test('strictly exclude body, wig and makeup from face-only model assembly',()=>{
  const f=fixture();const built=makeIndependentFaceMaster(f.source,'female');
@@ -98,4 +104,26 @@ test('face studio includes stable gender, view and export controls with no body 
  assert.ok(existsSync('src/face-feature-meshes.js'));
  assert.match(html,/id="parts"/);
  assert.equal(Object.keys(FACE_MASTER_SPEC).length,2);
+});
+
+test('nose and mouth deformation has compact support and never changes cheek/jaw outline',()=>{
+ const d=v=>femaleInnerFeatureDelta({xn:v,yn:.57,zn:.98,offsetX:.12,depth:.30});
+ const nose=d(.19);
+ assert.ok(nose.dx<-.001,'Nasal alar wings must move inwards');
+ assert.ok(nose.dz>.001,'Nasal bridge and tip retain positive depth');
+ const mouth=femaleInnerFeatureDelta({
+  xn:.25,yn:.505,zn:.95,offsetX:.1,depth:.3
+ });
+ assert.ok(mouth.dx<-.0005,'Only the lips and mouth area narrow');
+ for(const x of [-1,-.9,-.70,-.55,.55,.70,.9,1]){
+  for(const y of [.35,.50,.57,.65]){
+   const p=femaleInnerFeatureDelta({
+    xn:x,yn:y,zn:.97,offsetX:x*.15,depth:.31
+   });
+   assert.equal(p.dx,0,'Outer contour unexpectedly narrowed at '+x);
+   assert.equal(p.dz,0,'Outer contour unexpectedly protruded at '+x);
+   assert.equal(p.noseSupport,0);
+   assert.equal(p.mouthSupport,0);
+  }
+ }
 });
