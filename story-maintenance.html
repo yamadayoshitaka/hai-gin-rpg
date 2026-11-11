@@ -46,7 +46,7 @@ table{width:100%;border-collapse:collapse}th,td{border-bottom:1px solid #43586c;
 <div class="toolbar" style="margin-top:12px"><label for="chapterSelect">章</label><select id="chapterSelect"></select><label for="stageSelect">ステージ</label><select id="stageSelect"></select><button class="btn" id="readPanel">この場面の7コマを再生</button></div>
 <div id="flowDetails" class="card" style="margin-top:10px"></div>
 <div id="routeDetails"></div></section>
-<section id="panels"><h2>ステージ別・独立7コマの照合</h2><p class="muted">各コマは固有IDに紐づきます。専用画像が存在する場合はそれを優先し、未制作のものは既存画像へフォールバックします。</p><div id="sceneGrid" class="stories"></div></section>
+<section id="panels"><h2>ステージ別・独立7コマの照合</h2><p class="muted">各コマは固有IDに紐づきます。専用画像が存在する場合はそれを優先し、未制作のものは既存画像へフォールバックします。</p><p id="artCoverage" class="muted" role="status">選択ステージの専用原画を確認中…</p><div id="sceneGrid" class="stories"></div></section>
 <section id="cast"><h2>主要キャラクター20人・所属国</h2><p class="muted">登場人物のID・国・役職・音声話者を管理します。3Dモデルや衣装データを編集しません。</p><div class="toolbar" id="factionFilter"></div><div id="characterGrid" class="panels" style="margin-top:10px"></div></section>
 <section id="screens"><h2>現在のゲームに使われる画面リンク</h2><p class="muted">ストーリー本線とテスト用画面を分けました。出撃本線はワールドマップから選択してください。</p>
 <h3>本線の導線</h3>
@@ -90,7 +90,7 @@ const active=loadGame(localStorage,sessionStorage);
 const game=validGame(active)?active:null;
 const voice=createStoryVoiceDirector();
 const viewer=createMangaViewer({storage:localStorage});
-let chapter=1,stageId='c01-s01',filter='all';
+let chapter=1,stageId='c01-s01',filter='all',artScanSeq=0;
 const completed=new Set(game?.completedStages||[]);
 $('saveSummary').innerHTML='<div class="card"><h3>主人公</h3>'+escapeHTML(game?.playerName||'セーブなし（全章プレビューは可能）')+'</div>'+
  '<div class="card"><h3>クリア済み</h3>'+completed.size+' / 200ステージ</div>'+
@@ -98,6 +98,24 @@ $('saveSummary').innerHTML='<div class="card"><h3>主人公</h3>'+escapeHTML(gam
 $('chapterSelect').innerHTML=STORY_FLOW.map(ch=>'<option value="'+ch.chapter+'">第'+ch.chapter+'章　'+escapeHTML(ch.title)+'</option>').join('');
 $('chapterButtons').innerHTML=STORY_FLOW.map(ch=>'<button type="button" class="chip" data-chapter="'+ch.chapter+'">'+ch.chapter+'章</button>').join('');
 function setChapter(n){chapter=Math.max(1,Math.min(20,Number(n)||1));const list=stagesInChapter(chapter);stageId=list[0].id;$('chapterSelect').value=String(chapter);$('stageSelect').innerHTML=list.map(stage=>'<option value="'+stage.id+'">'+String(stage.slot).padStart(2,'0')+' '+escapeHTML(stage.name)+'</option>').join('');$('chapterButtons').querySelectorAll('button').forEach(button=>button.classList.toggle('active',Number(button.dataset.chapter)===chapter));render();}
+
+async function inspectDedicatedArt(story){
+ const scan=++artScanSeq;
+ const files=story.panels.map(p=>'./assets/story/panels/'+p.id.replace(/-m([1-7])$/,(_,digit)=>'-m'+digit.padStart(2,'0'))+'.webp');
+ const present=await Promise.all(files.map(async url=>{
+  try{const r=await fetch(url,{method:'HEAD',cache:'no-store'});return r.ok&&(r.headers.get('content-type')||'').startsWith('image/');}
+  catch{return false;}
+ }));
+ if(scan!==artScanSeq)return;
+ $('artCoverage').textContent='専用の一枚絵 '+present.filter(Boolean).length+' / 7コマ。本編使用中の代替合成画 '+present.filter(x=>!x).length+' / 7コマ。';
+ present.forEach((ok,i)=>{
+  const card=$('shot-'+i)?.closest('.story');
+  if(!card)return;
+  const label=document.createElement('small');label.textContent=ok?'専用原画あり':'専用原画未登録・既存画で表示';
+  label.style.color=ok?'#b8efd1':'#f0c99a';card.prepend(label);
+ });
+}
+
 function render(){
  const detail=STORY_FLOW[chapter-1],stage=CAMPAIGN_STAGE_BY_ID[stageId];
  $('stageSelect').value=stageId;
@@ -114,6 +132,7 @@ function render(){
  $('sceneGrid').innerHTML=story.panels.map((p,i)=>'<div class="card story"><strong>コマ '+(i+1)+' · '+escapeHTML(p.id)+'</strong>'+
  '<img id="shot-'+i+'" alt="'+escapeHTML(p.speaker)+'の第'+chapter+'章場面絵"><p><b>'+escapeHTML(p.speaker)+'</b> · '+escapeHTML(p.text)+'</p></div>').join('');
  story.panels.forEach((p,i)=>{const image=$('shot-'+i);image.src=stageMangaImage(p);applyCinematicImage(image,p);});
+ void inspectDedicatedArt(story);
 }
 $('chapterSelect').onchange=e=>setChapter(e.target.value);
 $('stageSelect').onchange=e=>{stageId=e.target.value;render();};
