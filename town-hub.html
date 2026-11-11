@@ -101,6 +101,7 @@ import {STORY_CHAPTERS,storyVoiceKey} from './src/story-chapters.js';
 import {STORY_KEY_PEOPLE} from './src/story-cinematic.js';
 import {mangaForStage} from './src/story-stage-manga.js';
 import {stageMangaImage} from './src/story-manga-art.js';
+import {applyCinematicImage} from './src/story-cinematic-assets.js';
 import {fantasyCueForMangaPanel} from './src/fantasy-scene-score.js';
 import {continentForChapter} from './src/continent-campaign.js';
 import {drawRecruitGacha,RECRUIT_GACHA} from './src/town-recruit-gacha.js';
@@ -532,6 +533,7 @@ function eventRender(){
  const shot=eventScenes[eventIndex];
  $('eventText').textContent=shot.text;
  $('eventSceneImage').src=stageMangaImage(shot);
+  applyCinematicImage($('eventSceneImage'),shot);
  $('eventSceneImage').alt='第'+townChapter+'章　'+townManga.stageName+'　'+shot.speaker+'が登場する漫画の'+(eventIndex+1)+'コマ目';
  $('eventSpeaker').textContent=shot.characterId?
   shot.speaker+'　／　'+shot.faction+'・'+shot.role:'語り手　／　'+townManga.chapterTitle;
