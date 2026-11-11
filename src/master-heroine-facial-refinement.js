@@ -50,10 +50,10 @@ export function polishHeroineFacePoint(x,y,z,box,{strength=1}={}){
 
  // Upper and lower vermilion get individual small three-dimensional ridges.
  // This enhances the real lip mesh without pasting fake mouth cards.
- const cupid=bell(ax,.16,.14)*bell(yn,.525,.023);
- const lowerLip=bell(ax,.16,.21)*bell(yn,.490,.027);
- const corner=bell(ax,.39,.10)*bell(yn,.508,.031);
- const philtrum=bell(ax,.06,.09)*bell(yn,.570,.022);
+ const cupid=bell(ax,.16,.14)*bell(yn,.495,.023);
+ const lowerLip=bell(ax,.16,.21)*bell(yn,.467,.027);
+ const corner=bell(ax,.39,.10)*bell(yn,.484,.031);
+ const philtrum=bell(ax,.06,.09)*bell(yn,.548,.022);
  const lipDepth=sz*(.012*cupid+.012*lowerLip-.004*corner-.003*philtrum);
  const mouthCornerLift=sy*.0036*corner;
 
