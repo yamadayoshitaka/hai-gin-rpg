@@ -6,6 +6,10 @@ import {buildHeroineWigRootCap,buildHeroineFantasyLongHair}
  from '../src/master-heroine-long-hair.js';
 import {applyEyeFixtureBlink,applyHeroineMakeupToFace} from '../src/master-swordsman-assembly.js';
 import {featuredSwordsmanProfile} from '../src/master-swordsman-featured-profiles.js';
+import {FACE_PROPORTION_DEFAULTS,validateFaceProportions,deformFacePoint}
+ from '../src/master-swordsman-face-proportions.js';
+import {getHeroineIrisFiberTexture,HEROINE_OCULAR_MATERIAL_GUIDE}
+ from '../src/master-heroine-iris-fibers.js';
 
 test('heroine wig paints every upper-crown vertex and keeps face skin uncovered',()=>{
  const head=new THREE.Group();
@@ -27,6 +31,14 @@ test('heroine wig paints every upper-crown vertex and keeps face skin uncovered'
  assert.ok(crown>40&&frontalFace>20);
  assert.ok(report.coverageRatio>.95);
  assert.equal(report.coveredBySolidSourceTopology,true);
+ assert.equal(report.noSaturatedScalpPaint,true);
+ assert.equal(report.neutralSkinRootBlend,true);
+ const blend=cap.userData.skinToHairRootBlend;
+ assert.equal(blend.length,rgba.count);
+ assert.ok(blend.some(v=>v<.25)&&blend.some(v=>v>.60),
+  'Head skin and pigmented follicles must use a smooth source-root gradient');
+ assert.equal(cap.material.color.getHexString(),'edcbbf',
+  'Scalp must be an anatomical skin-toned foundation, not saturated pink');
  assert.equal(report.foreheadBangsVisible,true);
  assert.equal(report.crownFlowLocks,8000);
  assert.equal(report.crownFlowTriangles,64000);
@@ -169,15 +181,47 @@ test('heroine face has balanced original eye nose mouth and chin ratios',()=>{
  assert.ok(girl.proportions.chinLength>=.94&&girl.proportions.chinLength<.98);
  assert.ok(girl.proportions.cheekRoundness>=1&&girl.proportions.cheekRoundness<1.035);
  assert.ok(girl.proportions.preEarFullness<=.70&&girl.proportions.lowerCheekLateral<=.75);
- assert.ok(girl.makeup.strength>.9);
- assert.ok(girl.makeup.lip>.9&&girl.makeup.eyeliner>.9);
- assert.ok(girl.proportions.eyeTilt>.04);
+ assert.ok(girl.makeup.strength>=.75&&girl.makeup.strength<.9);
+ assert.ok(girl.makeup.lip<.7&&girl.makeup.eyeliner<.8);
+ assert.ok(girl.proportions.eyeTilt>.03);
  assert.ok(girl.proportions.noseBridge>=1&&girl.proportions.noseBridge<=1.08);
  assert.ok(girl.proportions.jawTaper<.94);
  assert.ok(girl.proportions.middleThird>=.93&&girl.proportions.middleThird<.96);
  assert.ok(girl.proportions.noseLength<.94);
- assert.ok(girl.proportions.mouthVertical>.008);
+ assert.ok(girl.proportions.mouthVertical>=0&&girl.proportions.mouthVertical<.008);
+ assert.ok(girl.proportions.lipFullness<.90&&girl.proportions.lowerFaceProjection<.90,
+  'Protruding primitive lower lip and chin must be softened');
  assert.match(girl.visualDirection,/lightning-inspired/);
  assert.equal(girl.makeup.sourceFaceOnly,true);
  assert.equal(girl.facialArtistApproval,false);
+ assert.equal(girl.proportions.eyeballScale,.865);
+ assert.ok(girl.proportions.eyeSocketDepth<-.003);
+ assert.ok(girl.proportions.irisDiameter<.86);
+ assert.ok(girl.proportions.pupilDiameter<.90);
+ assert.ok(girl.proportions.upperLidCoverage>.20);
+ assert.ok(girl.proportions.underEyeSoftness>.15);
 });
+
+test('single anatomy schema validates independent globe, socket, colored iris, black pupil and lid size',()=>{
+ const keys=['eyeballScale','eyeSocketDepth','irisDiameter','pupilDiameter',
+  'upperLidCoverage','underEyeSoftness','lowerFaceProjection'];
+ const girl=featuredSwordsmanProfile('hero-girl-01');
+ for(const key of keys){
+  assert.ok(Object.hasOwn(girl.proportions,key));
+  const variation=validateFaceProportions({[key]:FACE_PROPORTION_DEFAULTS[key]});
+  assert.equal(variation[key],FACE_PROPORTION_DEFAULTS[key]);
+ }
+ assert.equal(FACE_PROPORTION_DEFAULTS.eyeSocketDepth,0);
+ assert.equal(FACE_PROPORTION_DEFAULTS.irisDiameter,1);
+ assert.equal(FACE_PROPORTION_DEFAULTS.pupilDiameter,1);
+ assert.throws(()=>validateFaceProportions({eyeballScale:1.5}),RangeError);
+ assert.throws(()=>validateFaceProportions({pupilDiameter:.1}),RangeError);
+ assert.equal(getHeroineIrisFiberTexture(),null,'Headless unit QA cannot fake an iris photo');
+ assert.equal(HEROINE_OCULAR_MATERIAL_GUIDE.blackPupilSeparate,true);
+ const bbox={min:{x:-.16,y:-.18,z:-.12},max:{x:.16,y:.20,z:.13}};
+ const normal=deformFacePoint(.031,-.057,.115,bbox,FACE_PROPORTION_DEFAULTS);
+ const reduced=deformFacePoint(.031,-.057,.115,bbox,
+  validateFaceProportions({lowerFaceProjection:.83}));
+ assert.ok(reduced.z<normal.z,'Mouth-to-chin projection must reduce without flattening entire face');
+});
+
