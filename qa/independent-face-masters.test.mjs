@@ -20,7 +20,7 @@ test('two source-derived clay face meshes have owned independent vertices and pr
  const before=original.getAttribute('position').array.slice();
  const female=makeIndependentFaceMaster(source,'female');
  const male=makeIndependentFaceMaster(source,'male');
- assert.equal(female.report.code,'female-face-natural-contour-v4');
+ assert.equal(female.report.code,'female-face-half-mouth-sharp-chin-v5');
  assert.equal(male.report.code,'male-face-base-v1');
  assert.ok(female.report.sourceVertices>1100);
  assert.ok(male.report.sourceVertices>1100);
@@ -53,7 +53,10 @@ test('two source-derived clay face meshes have owned independent vertices and pr
  assert.equal(female.report.detailedParts.lowerOrbitalVolumeMeshCount,2);
  assert.ok(female.report.detailedParts.irisPolarAngleRadians>.55);
  assert.ok(female.report.detailedParts.pupilPolarAngleRadians>.22);
- assert.ok(female.report.detailedParts.mouthHalfWidthFraction<.09);
+ assert.equal(female.report.detailedParts.mouthHalfWidthFraction,.044,
+  'Female upper and lower lips must use the selected half-width option');
+ assert.equal(male.report.detailedParts.mouthHalfWidthFraction,.119,
+  'Male mouth must remain unchanged');
  assert.ok(female.root.getObjectByName('LEFT_DOUBLE_EYELID_FOLD')?.isMesh);
  assert.ok(female.root.getObjectByName('RIGHT_LOWER_LID_VOLUME')?.isMesh);
  assert.ok(female.report.detailedParts.realSurfaceProjectionCount>100,
@@ -114,7 +117,13 @@ test('nose and mouth deformation has compact support and never changes cheek/jaw
  const mouth=femaleInnerFeatureDelta({
   xn:.25,yn:.505,zn:.95,offsetX:.1,depth:.3
  });
- assert.ok(mouth.dx<-.0005,'Only the lips and mouth area narrow');
+ assert.ok(mouth.dx<-.001,'Localized narrowing of female mouth increased');
+ // The new sculpt must roughly double the previous local inward shift,
+ // while keeping the cheeks and perimeter strictly untouched.
+ const earlierNoseDx=-.12*(.175*nose.noseSupport+.145*nose.mouthSupport);
+ const earlierMouthDx=-.1*(.175*mouth.noseSupport+.145*mouth.mouthSupport);
+ assert.ok(Math.abs(nose.dx/earlierNoseDx-2)<1e-9);
+ assert.ok(Math.abs(mouth.dx/earlierMouthDx-2)<1e-9);
  for(const x of [-1,-.9,-.70,-.55,.55,.70,.9,1]){
   for(const y of [.35,.50,.57,.65]){
    const p=femaleInnerFeatureDelta({

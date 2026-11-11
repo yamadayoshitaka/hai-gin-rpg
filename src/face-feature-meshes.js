@@ -161,7 +161,7 @@ export function createAnatomicalFaceParts(face,{gender='female'}={}){
  // lip strips follow that actual surface and use real triangle thickness.
  // Avoid a single flat 'mouth plate' or pigment printed on the chin.
  const lipCenter=box.min.y+d.y*(female?.509:.506);
- const halfWidth=d.x*(female?.087:.119);
+ const halfWidth=d.x*(female?.044:.119);
  for(const upper of [true,false]){
   const material=lipMat;
   const mesh=buildGrid((upper?'UPPER':'LOWER')+'_3D_VERMILION_LIP',
@@ -196,7 +196,7 @@ export function createAnatomicalFaceParts(face,{gender='female'}={}){
   lowerOrbitalVolumeMeshCount:female?2:0,
   irisPolarAngleRadians:female?.585:.47,
   pupilPolarAngleRadians:female?.236:.19,
-  mouthHalfWidthFraction:female?.087:.119,
+  mouthHalfWidthFraction:female?.044:.119,
   noseSourceIntegrated:true,
   partTriangles,faceOnly:true,bodyIncluded:false,partGeometryReal:true,
   reference:'soft-cheek-small-nose-relaxed-almond-eyes-gentle-lips'

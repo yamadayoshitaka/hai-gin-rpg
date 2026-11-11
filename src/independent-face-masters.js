@@ -28,8 +28,8 @@ export function femaleInnerFeatureDelta({xn,yn,zn,offsetX,depth}){
  const tipSupport=(1-smooth(.28,.52,ax))*bell(yn,.566,.045)*front;
  const mouthSupport=(1-smooth(.30,.55,ax))*bell(yn,.503,.044)*front;
  return {
-  dx:-offsetX*(.175*noseSupport+.145*mouthSupport),
-  dz:depth*(.023*bridgeSupport+.014*tipSupport-.010*mouthSupport),
+  dx:-offsetX*(.35*noseSupport+.29*mouthSupport),
+  dz:depth*(.023*bridgeSupport+.014*tipSupport-.016*mouthSupport),
   noseSupport,mouthSupport
  };
 }
@@ -42,7 +42,7 @@ export const FACE_MASTER_SPEC=Object.freeze({
   eyeSocketSoftness:.002
  }),
  female:Object.freeze({
-  code:'female-face-natural-contour-v4',label:'女性・頬の丸みを残し鼻口のみ局所調整',
+  code:'female-face-half-mouth-sharp-chin-v5',label:'女性・口幅半減＋鼻局所縮小＋顎先シャープ',
   jawNarrow:.012,cheekFill:.095,chinLift:.008,
   noseBridge:0,browRelief:.001,mouthRecess:0,
   eyeSocketSoftness:.004
@@ -102,6 +102,9 @@ export function makeIndependentFaceMaster(sourceRoot,gender){
   const tip=bell(xn,0,.19)*bell(yn,.565,.052)*front;
   const chinHollow=bell(Math.abs(xn),.32,.30)*bell(yn,.355,.080)
     *front*neckLock;
+  // Localized chin-tip refinement: mid/lower cheeks and jaw angles retain
+  // their width, while only the central chin point is made a bit sharper.
+  const chinTip=bell(xn,0,.15)*bell(yn,.235,.055)*front*neckLock;
   // Female jaw: preserve the cheek-to-chin convex curve. Do NOT apply
   // the old v3 dual narrowing (jawNarrow plus lowerJaw), or the wide
   // Gaussian mouthCorner that inadvertently collapsed the cheek edges.
@@ -113,15 +116,19 @@ export function makeIndependentFaceMaster(sourceRoot,gender){
   const local=gender==='female'?femaleInnerFeatureDelta({
    xn,yn,zn,offsetX:x-cx,depth:d.z
   }):{dx:0,dz:0};
-  const nx=gender==='female'?
-   x+(x-cx)*(cheekSupport-spec.jawNarrow*ovalTransition)+local.dx:
+  let nx=gender==='female'?
+   x+(x-cx)*(cheekSupport-spec.jawNarrow*ovalTransition)
+    +local.dx-(x-cx)*.13*chinTip:
    x-(x-cx)*spec.jawNarrow*jaw
       +(x-cx)*(.018*cheek-.012*lowerCheek)
       -(x-cx)*.021*alar;
+  // Store the source X exactly at the preserved outer silhouette:
+  // float math around zero support can otherwise drift by ~1e-9.
+  if(gender==='female'&&Math.abs(xn)>=.86)nx=x;
   const ny=y+d.y*spec.chinLift*chin;
   const nz=gender==='female'?
    z+d.z*(spec.cheekFill*(.74*cheek+.92*lowerCheek)
-    +.016*chinHollow
+    +.016*chinHollow+.010*chinTip
     +spec.eyeSocketSoftness*bell(Math.abs(xn),.43,.22)
       *bell(yn,.69,.055)*front)+local.dz:
    z+d.z*(spec.cheekFill*(.76*cheek+.45*lowerCheek)
