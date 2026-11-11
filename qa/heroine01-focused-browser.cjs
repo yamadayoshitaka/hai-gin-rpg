@@ -38,7 +38,7 @@ fs.mkdirSync(dir,{recursive:true});
      d.heroineWigCrown?.crownFlowTriangles!==64000||
      d.heroineWigCrown?.crownHasActualTangentFibreGeometry!==true||
      d.facialQA?.heroineMakeup?.chinLipVertices!==0||
-     d.facialQA?.heroineMakeup?.mouthMaskYNormalized?.[0]!==.417||
+     d.facialQA?.heroineMakeup?.mouthMaskYNormalized?.[0]!==.367||
      p?.cheekRoundness>1.035||p?.preEarFullness>.70||
      d.heroineWigCrown?.fringeLockCount!==520||
      d.heroineWigCrown?.fringeTriangleCount!==6240||
@@ -47,6 +47,7 @@ fs.mkdirSync(dir,{recursive:true});
      h?.frontEyeZoneVertices>10||
      h?.neckRearClearanceCorrections<1||h?.beardFreeFrontNeck!==true||
      h?.frontNeckIntrusionVertices!==0||h?.rearLayerCount!==3||
+     h?.rearFlow!=='tapered-clumped-swaying-layers-no-flat-hem'||
      h?.separatedHairObjects!==true||
       d.facialQA?.heroineMakeup?.strength<.9||
       d.facialQA?.heroineMakeup?.changedVertices<100||
