@@ -20,7 +20,7 @@ test('two source-derived clay face meshes have owned independent vertices and pr
  const before=original.getAttribute('position').array.slice();
  const female=makeIndependentFaceMaster(source,'female');
  const male=makeIndependentFaceMaster(source,'male');
- assert.equal(female.report.code,'female-face-base-v1');
+ assert.equal(female.report.code,'female-face-anatomical-v2');
  assert.equal(male.report.code,'male-face-base-v1');
  assert.ok(female.report.sourceVertices>1100);
  assert.ok(male.report.sourceVertices>1100);
@@ -42,6 +42,18 @@ test('two source-derived clay face meshes have owned independent vertices and pr
  assert.equal(female.face.material.wireframe,false);
  assert.ok(female.face.material.color.getHexString().startsWith('bfc3'));
  assert.equal(female.root.getObjectByName('GEO_sclera_l').visible,false);
+ assert.equal(female.report.facePartMeshCount,12);
+ assert.equal(male.report.facePartMeshCount,12);
+ assert.ok(female.report.facePartTriangles>1000);
+ assert.equal(female.report.detailedParts.eyelidMeshCount,4);
+ assert.equal(female.report.detailedParts.eyeMeshCount,2);
+ assert.equal(female.report.detailedParts.lipMeshCount,2);
+ assert.equal(female.report.detailedParts.noseSourceIntegrated,true);
+ assert.ok(female.report.detailedParts.realSurfaceProjectionCount>100,
+  'Eyes and lips must project onto real 3D head, not a flat card');
+ assert.ok(female.root.getObjectByName('UPPER_3D_VERMILION_LIP')?.isMesh);
+ assert.ok(female.root.getObjectByName('LOWER_3D_VERMILION_LIP')?.isMesh);
+ assert.ok(female.root.getObjectByName('LEFT_UPPER_ANATOMICAL_EYELID')?.isMesh);
  let changedBetweenSexes=0;
  const a=female.face.geometry.getAttribute('position');
  const b=male.face.geometry.getAttribute('position');
@@ -56,7 +68,10 @@ test('strictly exclude body, wig and makeup from face-only model assembly',()=>{
  const f=fixture();const built=makeIndependentFaceMaster(f.source,'female');
  const visible=[];
  built.root.traverse(o=>{if(o.isMesh&&o.visible)visible.push(o)});
- assert.deepEqual(visible,[built.face]);
+ assert.equal(visible.length,13,'Face plus twelve genuine 3D eye/eyelid/lip meshes');
+ assert.ok(visible.includes(built.face));
+ assert.ok(visible.every(o=>o===built.face||o.parent===built.parts));
+ assert.ok(visible.every(o=>!/hair|armour|body|garment/i.test(o.name)));
  assert.equal(built.report.headOnly,true);
  assert.throws(()=>makeIndependentFaceMaster(new THREE.Group(),'female'),/high-resolution/);
  assert.throws(()=>makeIndependentFaceMaster(f.source,'other'),/male\/female/);
@@ -73,5 +88,7 @@ test('face studio includes stable gender, view and export controls with no body 
  assert.doesNotMatch(html,/realistic-body-male.glb/);
  assert.match(html,/binary:true,onlyVisible:true/);
  assert.ok(existsSync('src/independent-face-masters.js'));
+ assert.ok(existsSync('src/face-feature-meshes.js'));
+ assert.match(html,/id="parts"/);
  assert.equal(Object.keys(FACE_MASTER_SPEC).length,2);
 });
