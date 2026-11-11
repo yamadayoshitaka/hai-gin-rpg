@@ -99,7 +99,9 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
  for(const side of [-1,1]){
   const x=cx+side*eyeSpacing,y=eyeHeight;
   const faceZ=surfaceAt(x,y);
-  const z=faceZ-eyeRadius*.56;
+  // Set globes into the socket but forward enough for the colored iris
+  // to stay visible at oblique camera angles; not floating over the lids.
+  const z=faceZ-eyeRadius*.30;
   const globe=new THREE.Mesh(new THREE.SphereGeometry(eyeRadius,36,24),eyeMat);
   globe.name=(side===-1?'LEFT':'RIGHT')+'_ORBITAL_EYEBALL';
   globe.scale.set(1.18,.77,.89);
