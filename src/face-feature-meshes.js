@@ -107,24 +107,27 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   globe.userData.sourceProjected=true;
   globe.userData.colorRole='sclera';
   root.add(globe);
-  // Real spherical caps on the globe, not flat disks that disappear
-  // at 45° angles. Default SphereGeometry points +Y; rotate to +Z.
-  const iris=new THREE.Mesh(
-   new THREE.SphereGeometry(eyeRadius*.901,48,20,0,Math.PI*2,0,irisAngle),
-   irisMat);
-  iris.name=(side===-1?'LEFT':'RIGHT')+'_CURVED_IRIS';
-  iris.userData.colorRole='iris';
-  iris.rotation.x=Math.PI/2;
-  iris.position.set(x,y,z);
-  root.add(iris);
-  const pupil=new THREE.Mesh(
-   new THREE.SphereGeometry(eyeRadius*.908,32,16,0,Math.PI*2,0,pupilAngle),
-   pupilMat);
-  pupil.name=(side===-1?'LEFT':'RIGHT')+'_CURVED_PUPIL';
-  pupil.userData.colorRole='pupil';
-  pupil.rotation.x=Math.PI/2;
-  pupil.position.set(x,y,z);
-  root.add(pupil);
+  // Colored caps conform exactly to the SCULPTED ELLIPSOIDAL globe.
+  // Previous undersized independent spheres were hidden behind the larger
+  // white eyeball at a 45-degree camera angle.
+  const makeCap=(label,angularRadius,material,raise)=>buildGrid(
+   (side===-1?'LEFT':'RIGHT')+'_'+label,
+   48,18,(u,v)=>{
+    const az=u*Math.PI*2,theta=v*angularRadius;
+    const sx=Math.sin(theta)*Math.cos(az);
+    const sy=Math.sin(theta)*Math.sin(az);
+    const sz=Math.cos(theta);
+    return new THREE.Vector3(
+     x+eyeRadius*1.18*sx,
+     y+eyeRadius*.77*sy,
+     z+eyeRadius*.89*sz+eyeRadius*raise
+    );
+   },material);
+  irisMat.side=THREE.DoubleSide;pupilMat.side=THREE.DoubleSide;
+  const iris=makeCap('CURVED_IRIS',irisAngle,irisMat,.018);
+  iris.userData.colorRole='iris';root.add(iris);
+  const pupil=makeCap('CURVED_PUPIL',pupilAngle,pupilMat,.024);
+  pupil.userData.colorRole='pupil';root.add(pupil);
   const width=eyeRadius*1.12;
   for(const upper of [true,false]){
    const label=(side===-1?'LEFT':'RIGHT')+(upper?'_UPPER':'_LOWER');
