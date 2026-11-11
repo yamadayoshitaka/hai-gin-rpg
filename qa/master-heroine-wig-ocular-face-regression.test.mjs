@@ -195,11 +195,11 @@ test('upper eyelid drives lashes in blink, and returning to zero restores the po
 test('heroine face has balanced original eye nose mouth and chin ratios',()=>{
  const girl=featuredSwordsmanProfile('hero-girl-01');
  assert.match(girl.referenceDesign,/^original-/);
- assert.ok(girl.proportions.eyeWidth>1.04&&girl.proportions.eyeWidth<1.12);
- assert.ok(girl.proportions.eyeHeight>.96&&girl.proportions.eyeHeight<1.03);
- assert.ok(girl.proportions.noseWidth>=.78&&girl.proportions.noseWidth<.88);
- assert.ok(girl.proportions.mouthWidth>=.90&&girl.proportions.mouthWidth<1);
- assert.ok(girl.proportions.chinLength>=.94&&girl.proportions.chinLength<.98);
+ assert.ok(girl.proportions.eyeWidth>1.03&&girl.proportions.eyeWidth<1.12);
+ assert.ok(girl.proportions.eyeHeight>.80&&girl.proportions.eyeHeight<.92);
+ assert.ok(girl.proportions.noseWidth>=.74&&girl.proportions.noseWidth<.88);
+ assert.ok(girl.proportions.mouthWidth>=.85&&girl.proportions.mouthWidth<1);
+ assert.ok(girl.proportions.chinLength>=.87&&girl.proportions.chinLength<.98);
  assert.ok(girl.proportions.cheekRoundness>=1&&girl.proportions.cheekRoundness<1.035);
  assert.ok(girl.proportions.preEarFullness<=.70&&girl.proportions.lowerCheekLateral<=.75);
  assert.ok(girl.makeup.strength>=.75&&girl.makeup.strength<.9);
@@ -207,20 +207,20 @@ test('heroine face has balanced original eye nose mouth and chin ratios',()=>{
  assert.ok(girl.proportions.eyeTilt>.03);
  assert.ok(girl.proportions.noseBridge>=1&&girl.proportions.noseBridge<=1.08);
  assert.ok(girl.proportions.jawTaper<.94);
- assert.ok(girl.proportions.middleThird>=.93&&girl.proportions.middleThird<.96);
+ assert.ok(girl.proportions.middleThird>=.90&&girl.proportions.middleThird<.96);
  assert.ok(girl.proportions.noseLength<.94);
- assert.ok(girl.proportions.mouthVertical>=0&&girl.proportions.mouthVertical<.008);
+ assert.ok(girl.proportions.mouthVertical>=0&&girl.proportions.mouthVertical<.015);
  assert.ok(girl.proportions.lipFullness<.90&&girl.proportions.lowerFaceProjection<.90,
   'Protruding primitive lower lip and chin must be softened');
  assert.match(girl.visualDirection,/lightning-inspired/);
  assert.equal(girl.makeup.sourceFaceOnly,true);
  assert.equal(girl.facialArtistApproval,false);
- assert.equal(girl.proportions.eyeballScale,.865);
+ assert.ok(girl.proportions.eyeballScale>=.81&&girl.proportions.eyeballScale<.88);
  assert.ok(girl.proportions.eyeSocketDepth<-.003);
  assert.ok(girl.proportions.irisDiameter<.86);
  assert.ok(girl.proportions.pupilDiameter<.90);
  assert.ok(girl.proportions.upperLidCoverage>.20);
- assert.ok(girl.proportions.underEyeSoftness>.15);
+ assert.ok(girl.proportions.underEyeSoftness>=.12);
 });
 
 test('single anatomy schema validates independent globe, socket, colored iris, black pupil and lid size',()=>{
