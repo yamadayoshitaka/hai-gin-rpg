@@ -13,7 +13,7 @@ const smooth=(a,b,x)=>{
  return t*t*(3-2*t);
 };
 
-export const HEROINE_FACE_POLISH_VERSION='compact-midface-refined-nose-lips-v5';
+export const HEROINE_FACE_POLISH_VERSION='sculpt-calibrated-lips-and-nose-v6';
 
 export function polishHeroineFacePoint(x,y,z,box,{strength=1}={}){
  const sx=box.max.x-box.min.x,sy=box.max.y-box.min.y,sz=box.max.z-box.min.z;
@@ -43,17 +43,17 @@ export function polishHeroineFacePoint(x,y,z,box,{strength=1}={}){
  // Anatomical nasal subregions have separate subtle offsets: soft bridge,
  // rounded nasal tip and recessed nostril wings rather than a triangular nose.
  const bridge=bell(ax,.10,.17)*bell(yn,.66,.115);
- const tip=bell(ax,.08,.175)*bell(yn,.536,.056);
- const wing=bell(ax,.23,.11)*bell(yn,.515,.040);
+ const tip=bell(ax,.08,.175)*bell(yn,.575,.056);
+ const wing=bell(ax,.23,.11)*bell(yn,.555,.040);
  const noseDepth=sz*(.006*bridge+.007*tip-.011*wing);
  const noseWidthShift=-Math.sign(xn)*sx*.004*wing;
 
  // Upper and lower vermilion get individual small three-dimensional ridges.
  // This enhances the real lip mesh without pasting fake mouth cards.
- const cupid=bell(ax,.16,.14)*bell(yn,.405,.023);
- const lowerLip=bell(ax,.16,.21)*bell(yn,.363,.028);
- const corner=bell(ax,.39,.10)*bell(yn,.392,.034);
- const philtrum=bell(ax,.06,.09)*bell(yn,.458,.022);
+ const cupid=bell(ax,.16,.14)*bell(yn,.525,.023);
+ const lowerLip=bell(ax,.16,.21)*bell(yn,.490,.027);
+ const corner=bell(ax,.39,.10)*bell(yn,.508,.031);
+ const philtrum=bell(ax,.06,.09)*bell(yn,.570,.022);
  const lipDepth=sz*(.012*cupid+.012*lowerLip-.004*corner-.003*philtrum);
  const mouthCornerLift=sy*.0036*corner;
 
