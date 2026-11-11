@@ -12,8 +12,10 @@ const assert=require('node:assert/strict');
  try{
   let r=await page.goto('http://127.0.0.1:8765/game.html?qa=real-stage-town',{waitUntil:'domcontentloaded',timeout:35000});
   assert.ok(r?.ok(),'Title returned HTTP error');
-  await page.locator('#skip').click();
+  if(await page.locator('#skip').isVisible())await page.locator('#skip').click();
   await page.locator('#newGame').click();
+  // Recent builds intentionally show the first-play tutorial before the name form.
+  if(await page.locator('#tutorialModal').isVisible())await page.locator('#guideSkip').click();
   await page.locator('#playerName').fill('町テスト軍師');
   await page.locator('#playerGender').selectOption('female');
   await page.locator('#newForm button[type=submit]').click();
@@ -45,6 +47,8 @@ const assert=require('node:assert/strict');
   assert.equal(await page.locator('body').evaluate(el=>el.classList.contains('town-loading')),false,
    'parent received stage-ready and unlocked controls');
   assert.equal(await page.locator('#showTownGuide').count(),1,'facility guide rendered');
+  assert.equal(await page.locator('#townRadar').isVisible(),true,'battle-style town radar becomes visible once the map is ready');
+  assert.ok(await page.locator('#townRadarPins button').count()>=6,'all civic buildings have mini-radar pins');
   assert.equal(errors.length,0,'browser errors '+errors.join('; '));
   // The paper-theater opens after the 3D stage finishes, not before.
   if(await opening.isVisible())await page.locator('#skipPaper').click();
@@ -83,6 +87,19 @@ const assert=require('node:assert/strict');
   assert.equal(JSON.stringify([sunAfter.shadowLight,sunAfter.shadowTarget]),sunBefore,
    'the sun/shadow projection must never jump while moving or visiting buildings');
 
+  // The actual 3D interior must be reached by tapping the mini radar, not
+  // by merely moving the camera to a building or showing a detached menu.
+  await page.locator('#townRadarPins button[aria-label="教会に入る"]').click();
+  await page.waitForFunction(()=>
+   document.querySelector('#townScene').contentWindow.getTownVisitStats().indoor==='church',
+   null,{timeout:18000});
+  assert.equal(await page.locator('#townExitBuilding').isVisible(),true,
+   'radar directly enters the real church interior');
+  await page.locator('#townExitBuilding').click();
+  await page.waitForFunction(()=>
+   document.querySelector('#townScene').contentWindow.getTownVisitStats().indoor===null,
+   null,{timeout:12000});
+
   // Full town map must represent actual terrain and rooftops, not a decorative
   // unchanging background. Its canvas pixels must be populated by the scene.
   await page.locator('#showTownGuide').click();
@@ -93,6 +110,17 @@ const assert=require('node:assert/strict');
   },null,{timeout:16000});
   assert.ok(await page.locator('#townGuideBoard button').count()>=6,
    'all six civic building markers must be on the map');
+  await page.locator('#townGuideBoard button').first().click();
+  await page.waitForFunction(()=>
+   document.querySelector('#townScene').contentWindow.getTownVisitStats().indoor!==null,
+   null,{timeout:18000});
+  assert.equal(await page.locator('#townGuide').isVisible(),false,
+   'whole-town map closes only after the actual building entry acknowledgement');
+  await page.locator('#townExitBuilding').click();
+  await page.waitForFunction(()=>
+   document.querySelector('#townScene').contentWindow.getTownVisitStats().indoor===null,
+   null,{timeout:12000});
+  await page.locator('#showTownGuide').click();
   await page.locator('#townOverhead').click();
   await page.waitForFunction(()=>
    document.querySelector('#townScene').contentWindow.getTownVisitStats().overview,
