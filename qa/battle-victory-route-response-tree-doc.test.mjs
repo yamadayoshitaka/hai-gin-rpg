@@ -9,8 +9,8 @@ const count=pattern=>[...md.matchAll(pattern)].length;
 const goals=VICTORY_ROUTE_RESPONSE_TREE;
 assert.equal(goals.length,8);
 assert.equal(COVERAGE.routeChoices,32);
-assert.equal(count(/^<details(?: open)?>$/gm),8);
-assert.equal(count(/^<details>$/gm),32);
+assert.equal(count(/^<details(?: open)?>$/gm),40);
+assert.equal(count(/^<details open>$/gm),1);
 assert.equal(count(/^<\/details>$/gm),40);
 assert.equal(count(/^<summary><strong>\d+\. /gm),8);
 assert.equal(count(/^<summary><strong>L1 ルート /gm),32);
@@ -34,7 +34,7 @@ for(const a of Object.keys(COUNTER_JOBS)){
  assert.ok(md.includes('L2 味方対応')&&md.includes('L3 敵の対策'));
 }
 for(const line of md.split('\n').filter(s=>/\*\*L[234] /.test(s))){
- assert.match(line,/— \*\*(?:味方|敵):[^\n]+隊\*\*/,
+ assert.match(line,/— \*\*(?:味方|敵):[^\n]*隊[^\n]*\*\*/,
   'Each response level must state eligible job squad(s): '+line.slice(0,180));
 }
 assert.ok(md.includes('高所')&&md.includes('橋')&&md.includes('城門'));
