@@ -129,7 +129,7 @@ import {GLTFExporter} from 'three/addons/exporters/GLTFExporter.js';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {makeIndependentFaceMaster,FACE_MASTER_SPEC} from './src/independent-face-masters.js';
 import {updateFaceFeatureAngles,applyFaceColorMode} from './src/face-feature-meshes.js';
-import {FEMALE_V7_DEFAULTS,CONTACT_COLORS,safeContactColor} from './src/face-v7-controls.js';
+import {FEMALE_V7_DEFAULTS,MALE_REFERENCE_DEFAULT,CONTACT_COLORS,safeContactColor} from './src/face-v7-controls.js';
 const $=id=>document.getElementById(id);
 const canvas=$('faceCanvas');
 const renderer=new THREE.WebGLRenderer({canvas,antialias:true,powerPreference:'high-performance'});
@@ -151,6 +151,7 @@ orbit.minDistance=.1;orbit.maxDistance=6;
 const models=new Map();
 let gender='female',angle='front',wired=false,partsOn=true,ready=false;
 let faceMode='color',femaleSource=null,modelChanges={...FEMALE_V7_DEFAULTS};
+let maleChanges={...MALE_REFERENCE_DEFAULT};
 let contactColor=CONTACT_COLORS.brown;
 function setActive(ids,id){
  for(const x of ids)$(x).setAttribute('aria-pressed',String(x===id));
@@ -159,6 +160,7 @@ function metrics(){
  const model=models.get(gender);
  return {loaded:ready,gender,view:angle,wire:wired,partsOn,
   faceMode,contactColor,femaleControls:{...modelChanges},
+  maleControls:{...maleChanges},
   maleWithoutMakeup:models.get('male')?.report?.maleNoMakeup??null,
   currentFeatureAngles:models.get('female')?.parts?.userData?.featureAngles||null,
   female:models.get('female')?.report||null,
@@ -203,6 +205,7 @@ function selectGender(next){
  for(const [k,m] of models)m.root.visible=k===gender;
  setActive(['female','male'],gender);
  $('faceAdjustments').hidden=gender!=='female';
+ $('maleAdjustments').hidden=gender!=='male';
  if(models.get(gender)?.parts)models.get(gender).parts.visible=partsOn;
  setView(angle);
  $('status').textContent=FACE_MASTER_SPEC[gender].label+
@@ -263,6 +266,29 @@ function rebuildFemale(){
  if(gender==='female')selectGender('female');
  $('metrics').textContent=JSON.stringify(metrics(),null,2);
 }
+function rebuildMale(){
+ if(!ready||!femaleSource)return;
+ const prev=models.get('male');
+ const next=makeIndependentFaceMaster(femaleSource.scene,'male',{
+  maleControls:maleChanges
+ });
+ next.root.visible=gender==='male';
+ next.parts.visible=partsOn;
+ scene.add(next.root);models.set('male',next);
+ applyFaceColorMode(next.face,faceMode,{contactColor});
+ if(wired)next.face.traverse(o=>{if(o.isMesh)o.material.wireframe=true;});
+ if(prev){
+  scene.remove(prev.root);
+  prev.face.traverse(o=>{
+   if(!o.isMesh)return;
+   o.geometry?.dispose();
+   // Male beard filaments share one material across their 5 groups.
+   o.material?.dispose();
+  });
+ }
+ if(gender==='male')selectGender('male');
+ $('metrics').textContent=JSON.stringify(metrics(),null,2);
+}
 const rebuildKeys=['irisDiameter','eyeSize','jawSharpness','noseTipLift',
  'nostrilCover','noseBridgeSharpness',
  'lipstickX','lipstickY','lipstickWidth','lipstickHeight'];
@@ -283,6 +309,7 @@ function syncFaceControlDisplays(){
   key=>CONTACT_COLORS[key]===contactColor)||'custom';
  $('contactPreset').value=preset;
  $('contactColor').value=contactColor;
+ syncMaleControlDisplays();
 }
 // Reconcile values even when the browser restores a prior form snapshot.
 // This must NOT reset user edits: modelChanges/contactColor remain canonical.
@@ -299,6 +326,36 @@ for(const key of [...rebuildKeys,...angleKeys]){
  });
  if(rebuildKeys.includes(key))el.addEventListener('change',rebuildFemale);
 }
+const maleRebuildKeys=['jawSharpness','eyeSize','irisDiameter','noseTipLift',
+ 'nostrilCover','noseBridgeSharpness','beardDensity','beardLength'];
+const maleAngleKeys=['eyeAngle'];
+function setMaleControlDisplay(key,value){
+ const id='male'+key[0].toUpperCase()+key.slice(1);
+ $(id).value=String(value);
+ $(id+'Value').value=String(value)+(key==='eyeAngle'?'°':
+  ['jawSharpness','eyeSize','irisDiameter','beardLength'].includes(key)?'×':'');
+}
+function syncMaleControlDisplays(){
+ for(const key of [...maleRebuildKeys,...maleAngleKeys])
+  setMaleControlDisplay(key,maleChanges[key]);
+}
+for(const key of [...maleRebuildKeys,...maleAngleKeys]){
+ const id='male'+key[0].toUpperCase()+key.slice(1);
+ $(id).addEventListener('input',()=>{
+  maleChanges[key]=Number($(id).value);
+  setMaleControlDisplay(key,maleChanges[key]);
+  if(key==='eyeAngle'&&models.get('male')){
+   updateFaceFeatureAngles(models.get('male').parts,maleChanges);
+   $('metrics').textContent=JSON.stringify(metrics(),null,2);
+  }
+ });
+ if(maleRebuildKeys.includes(key))$(id).addEventListener('change',rebuildMale);
+}
+$('resetMalePreset').addEventListener('click',()=>{
+ maleChanges={...MALE_REFERENCE_DEFAULT};
+ syncMaleControlDisplays();
+ rebuildMale();
+});
 $('contactPreset').addEventListener('change',()=>{
  const value=$('contactPreset').value;
  if(value!=='custom'){
@@ -359,13 +416,14 @@ async function init(){
   femaleSource=smoothHead;
   for(const g of ['female','male']){
    const model=makeIndependentFaceMaster(smoothHead.scene,g,{
-    femaleControls: g==='female'?modelChanges:{}
+    femaleControls:g==='female'?modelChanges:{},
+    maleControls:g==='male'?maleChanges:{}
    });
    model.root.visible=false;
    models.set(g,model);scene.add(model.root);
   }
   ready=true;
-  for(const id of ['female','male','front','threeQuarter','side','back','wire','parts','clay','color','resetPreset','export'])
+  for(const id of ['female','male','front','threeQuarter','side','back','wire','parts','clay','color','resetPreset','resetMalePreset','export'])
    $(id).disabled=false;
   const query=new URLSearchParams(location.search);
   selectGender(query.get('gender')==='male'?'male':'female');
