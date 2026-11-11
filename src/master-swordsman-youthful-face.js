@@ -75,7 +75,7 @@ export function prepareYouthfulFace(headRoot,{referenceFit=false,referenceGuide=
   const facing=smooth(.48,.75,z);
   const cheeks=bell(Math.abs(x),.49,.26)*bell(y,.49,.14)*facing;
   const lips=bell(x,0,referenceGuide?.225:.32)*
-    bell(y,referenceGuide?.510:.37,referenceGuide?.026:.055)*facing;
+    bell(y,referenceGuide?.482:.37,referenceGuide?.026:.055)*facing;
   const brow=bell(Math.abs(x),.42,.23)*bell(y,.78,.085)*facing;
   // Subtle vertex-level lip and cheek albedo remains tied to the real
   // sculpt, with no fake face plane or overpainted mouth texture.
@@ -101,7 +101,7 @@ export function prepareYouthfulFace(headRoot,{referenceFit=false,referenceGuide=
    const front=smooth(.49,.77,zn);
    const nose=bell(xn,0,.24)*bell(yn,.61,.13)*front;
    const lips=bell(xn,0,referenceGuide?.34:.38)*
-      bell(yn,referenceGuide?.51:.40,.052)*front;
+      bell(yn,referenceGuide?.485:.40,.052)*front;
    // Youthful fantasy face: smaller jaw and nose, fuller upper cheeks,
    // and less protruding eyebrow ridge. Preserve the original facial
    // topology and let the socket-attachment regression follow this morph.
