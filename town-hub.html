@@ -136,6 +136,7 @@ const townSceneUrl='./tactics-wireframe.html?town=1&stage='+encodeURIComponent(c
 if(townFrame.getAttribute('src')!==townSceneUrl)townFrame.src=townSceneUrl;
 let panel='',page=0,shopCategory='道具',armyPriority='均衡',narration=null,selectedSquadId=game.campaign.squads[0]?.id||0;
 let activeTalk=null,activeTalkIndex=0;
+let currentStoryPanelVoiceId=null;
 const townVoices=createStoryVoiceDirector({onPlaying:value=>townAudio.setNarrationActive(value)});
 function speakTownLine(line,characterId=null,panelId=null){
  let enabled=true;
@@ -144,7 +145,7 @@ function speakTownLine(line,characterId=null,panelId=null){
  if(!enabled)return;
  // Stable speaker identity for every scripted event; keep townsfolk as narrator
  // until the NPC character catalog has an explicit cast-ID mapping.
- void townVoices.speak({id:panelId||'town-'+(characterId||'narrator'),characterId,text:String(line||'').slice(0,320)});
+ void townVoices.speak({id:panelId||currentStoryPanelVoiceId||'town-'+(characterId||'narrator'),characterId,text:String(line||'').slice(0,320)});
 }
 function openTownDialogue(data){
  const chapter=CAMPAIGN_STAGE_BY_ID[game.townStage]?.chapter||1;
@@ -543,7 +544,9 @@ function eventRender(){
 function speakCurrentScene(){
  const shot=eventScenes[eventIndex];
  stopNarration();
- if(voiceIsOn())speakTownLine(shot.text,shot.characterId,shot.id);
+ currentStoryPanelVoiceId=shot.id;
+ if(voiceIsOn())speakTownLine(shot.text,shot.characterId);
+ currentStoryPanelVoiceId=null;
 }
 $('eventNext').onclick=()=>{
  townAudio.effect('paper');
