@@ -16,10 +16,16 @@ export const CINEMATIC_TITLE_ASSET=assetRoot+'title.webp';
 // Optional full-bleed, one-piece illustration for EACH story panel.
 // A scene-specific picture takes precedence; cast/chapter composites remain
 // as lossless compatibility fallbacks until the individual art is delivered.
+// Scenes depicting a player-controlled strategist are gender-sensitive.
+// A female player must never be shown the male protagonist's panel art.
+const GENDER_NEUTRAL_PANELS=new Set(['c01-s01-m5']); // seal/document, no visible hero
 export function individualStoryPanelAsset(panel){
  const id=String(panel?.id||'');
  if(!/^c\d{2}-s\d{2}-m[1-7]$/.test(id))return null;
- return './assets/story/panels/'+id.replace(/-m([1-7])$/,(_,n)=>'-m'+String(n).padStart(2,'0'))+'.webp';
+ const base='./assets/story/panels/'+id.replace(/-m([1-7])$/,(_,n)=>'-m'+String(n).padStart(2,'0'));
+ if(panel?.protagonistGender==='female'&&!GENDER_NEUTRAL_PANELS.has(id))return base+'-female.webp';
+ if(panel?.protagonistGender==='unspecified'&&!GENDER_NEUTRAL_PANELS.has(id))return null;
+ return base+'.webp';
 }
 const cache=new Map();
 function getPicture(url){
@@ -95,11 +101,15 @@ export async function cinematicPanelImage(panel){
 }
 export function applyCinematicImage(node,panel,{background=false}={}){
  if(!node||!panel)return;
- const key=panel.id||panel.stageId+'-'+panel.index;
+ const key=(panel.id||panel.stageId+'-'+panel.index)+':'+(panel.protagonistGender||'unspecified');
  node.dataset.cinematicKey=key;
  const dedicated=individualStoryPanelAsset(panel);
  void (async()=>{
-  if(dedicated&&await getPicture(dedicated+'?panelrev=20261111-7'))return dedicated+'?panelrev=20261111-7';
+  if(dedicated&&await getPicture(dedicated+'?panelrev=gender-v1'))return dedicated+'?panelrev=gender-v1';
+  // Keep the pre-rendered canonical character-only SVG already displayed
+  // until a real female-specific illustration exists for this panel.
+  // The male panel and male-biased chapter composite must not bleed through.
+  if(panel.protagonistGender==='female'||panel.protagonistGender==='unspecified')return null;
   return cinematicPanelImage(panel);
  })().then(url=>{
   if(!url||node.dataset.cinematicKey!==key||!node.isConnected)return;

@@ -69,7 +69,7 @@ export function mangaForStage(idOrStage='c01-s01',context={}){
    id:stage.id,chapter:stage.chapter,slot:stage.slot,stageName:stage.name,
    chapterTitle:chapter.title,act:chapter.act,location:chapter.location,
    number:stage.number,previousStageId:null,nextStageId:next?.id||null,
-   cast:Object.freeze([lucia,garan,iris]),panels:Object.freeze(intro)
+   cast:Object.freeze([lucia,garan,iris]),panels:Object.freeze(applyPlayerGender(intro,context))
   });
  }
  const p=[
@@ -90,10 +90,14 @@ export function mangaForStage(idOrStage='c01-s01',context={}){
   chapterTitle:chapter.title,act:chapter.act,location:chapter.location,
   number:stage.number,previousStageId:prev?.id||null,nextStageId:next?.id||null,
   cast:Object.freeze([...new Set(p.flatMap(x=>[x.characterId,x.secondaryId]).filter(Boolean))].map(x=>byId[x])),
-  panels:Object.freeze(addRouteContext(p,stage,context))
+  panels:Object.freeze(applyPlayerGender(addRouteContext(p,stage,context),context))
  });
 }
 
+function applyPlayerGender(panels,context={}){
+ const protagonistGender=context?.protagonistGender==='female'?'female':context?.protagonistGender==='male'?'male':'unspecified';
+ return panels.map(panel=>Object.freeze({...panel,protagonistGender}));
+}
 const routeMessages=Object.freeze({
  silver:'灰銀の軍師として、リュシアと王国の内部を立て直す道を選んだ。',
  crimson:'紅炎のライゼンと共同して、帝国内の強硬派と向き合う道を選んだ。',

@@ -24,7 +24,7 @@ assert.equal(CHARACTER_FACTION_BY_ID.orphe,'verdant');
 assert.equal(CHARACTER_FACTION_BY_ID.vess,'archive');
 
 for(const stage of CAMPAIGN_STAGES){
- const story=mangaForStage(stage.id);
+ const story=mangaForStage(stage.id,{protagonistGender:'male'});
  assert.equal(story.panels.length,7,stage.id);
  assert.equal(story.id,stage.id);
  for(let i=0;i<7;i++){

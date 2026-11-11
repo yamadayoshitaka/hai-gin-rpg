@@ -3354,6 +3354,19 @@ window.addEventListener('message',event=>{
   townInput.y=Number.isFinite(y)?Math.max(-1,Math.min(1,y)):0;
  }else if(data.type==='hai-gin-town-interact')townFacility();
  else if(data.type==='hai-gin-town-leave-building')townLeaveBuilding();
+ else if(data.type==='hai-gin-town-enter-facility'){
+  const facilityId=typeof data.facilityId==='string'?data.facilityId:'';
+  const building=townInstances.find(item=>townServices[item.data.kind]&&item.data.kind===facilityId);
+  // Reuse the existing 3D entry flow; never create substitute interiors.
+  if(!battleReady||!townAvatar()||!building){
+   townPost('hai-gin-town-notice',{text:'その施設には現在入れません。'});
+  }else if(townIndoor?.building===building){
+   townPost('hai-gin-town-entered',{panel:townServices[building.data.kind],name:({weapon:'武具屋',shop:'道具屋',inn:'宿屋',tavern:'酒場',church:'教会',castle:'王城'})[building.data.kind]});
+  }else{
+   if(townIndoor)townLeaveBuilding();
+   townEnterBuilding(building);
+  }
+ }
  else if(data.type==='hai-gin-town-guide'){
   const b=townInstances.find(item=>item.data.kind===data.facilityId);
   if(b&&!townIndoor){

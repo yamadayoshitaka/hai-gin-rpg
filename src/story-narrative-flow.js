@@ -113,6 +113,7 @@ export function storyStageContext(game,id){
  const route=currentStoryRoute(game);
  return {
   stageId:id,chapter:stage.chapter,kind:stage.kind,
+  protagonistGender:game?.campaign?.commander?.gender==='female'?'female':'male',
   origin:'silver',route:route?.id||'silver',routeName:route?.name||'灰銀軍師',
   coalition:stage.chapter>=16,
   decision:flags(game).storyDecisions?.[id]||null,

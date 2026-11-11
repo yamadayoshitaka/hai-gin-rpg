@@ -52,6 +52,17 @@ body:has(#opening:not([hidden])) #townExplorerControls,body:has(#townGuide:not([
 #townGuideList button,#closeTownGuide{padding:8px;background:#294762;color:white;border:1px solid #9abcce;border-radius:7px}
 #townGuideCard small{color:#c6d9e5;display:block;margin:8px 0}
 #townExplorerActions button[hidden]{display:none!important}
+#townRadar{position:fixed;z-index:6;top:calc(107px + env(safe-area-inset-top));left:9px;width:clamp(128px,32vw,165px);padding:5px;background:#102437e8;border:1px solid #c3aa7b;border-radius:10px;box-shadow:0 8px 18px #0009;backdrop-filter:blur(4px)}
+#townRadarHeader{width:100%;color:#f9e5b7;background:#183349;border:0;text-align:left;font:bold 11px system-ui;padding:4px;min-height:26px}
+#townRadarBoard{position:relative;aspect-ratio:1;background:#27453d;overflow:hidden;border:1px solid #637e77;border-radius:6px}
+#townRadarCanvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+#townRadarPins button{position:absolute;z-index:3;transform:translate(-50%,-50%);border:1px solid #f1dcac;background:#13293edc;color:#ffdfa5;border-radius:50%;width:23px;height:23px;padding:0;font-size:12px;line-height:1;touch-action:manipulation}
+#townRadarPins button:focus-visible,#townRadarPins button:hover{background:#725128;outline:2px solid #fff1cd}
+#townRadarPlayer{position:absolute;z-index:4;transform:translate(-50%,-50%);pointer-events:none;border:2px solid white;border-radius:50%;background:#05a9e8;width:12px;height:12px;box-shadow:0 0 5px #00d2f5}
+body.town-loading #townRadar,body:has(#opening:not([hidden])) #townRadar,body:has(#panel:not([hidden])) #townRadar,body:has(#townGuide:not([hidden])) #townRadar{display:none!important}
+@media(max-height:560px){#townRadar{width:105px;top:calc(97px + env(safe-area-inset-top))}}
+#townRadar.is-inside{border-color:#82d6ad}
+
 #opening{background:linear-gradient(0deg,#091020dc,#06121cd9),url('./assets/story-world-map-v0.5.webp') center/cover!important}
 .sceneCard{position:relative;min-height:48dvh;display:flex;flex-direction:column;justify-content:flex-end;gap:12px;background:linear-gradient(180deg,#162638d2,#091622f9)!important;box-shadow:0 12px 70px #000e}
 #eventSceneArt{position:relative;overflow:hidden;border:1px solid #ba9968;box-shadow:0 12px 33px #030916db;aspect-ratio:16/9;max-height:43dvh;width:100%;animation:paperTextFade .7s ease;background:#152740}
@@ -84,6 +95,7 @@ body:has(#panel:not([hidden])) #townExplorerControls *,body:has(#opening:not([hi
  <div id="townStick" aria-label="移動スティック"><div id="townStickKnob"></div></div>
 </div>
 <div id="townExplorerMessage" role="status" aria-live="polite"></div>
+<section id="townRadar" aria-label="施設に直接入れる町レーダー"><button id="townRadarHeader" type="button" aria-label="全体マップを開く">⌖ 町レーダー · 拡大</button><div id="townRadarBoard"><canvas id="townRadarCanvas" width="232" height="232" aria-label="町の俯瞰レーダー"></canvas><div id="townRadarPins" aria-label="建物を選択"></div><div id="townRadarPlayer" title="軍師の現在位置"></div></div></section>
 <section id="townDialogue" role="group" aria-label="町人との会話" hidden>
  <div id="townDialogueName"></div><div id="townDialogueLine" aria-live="polite"></div>
  <div id="townDialogueActions"><span class="town-dialogue-hint">会話はここで進みます</span><button id="townDialogueService" type="button" hidden>施設を利用</button><button id="townDialogueNext" type="button">次へ ▶</button><button id="townDialogueClose" type="button" aria-label="会話を閉じる">✕</button></div>
@@ -94,7 +106,7 @@ body:has(#panel:not([hidden])) #townExplorerControls *,body:has(#opening:not([hi
  <div id="panelContent"></div><div id="toast" role="status" aria-live="polite"></div>
 </section>
 <section id="townGuide" aria-label="町の施設案内地図" hidden><div id="townGuideCard"><div class="toprow"><h2>レヴナ施設案内</h2><button id="closeTownGuide" type="button">閉じる ✕</button></div>
-<small>町全域の真上からの地図です。青い印が軍師、施設名をタップすると建物を見渡せます。</small><div id="townGuideBoard"><canvas id="townGuideCanvas" width="464" height="464" aria-label="町の地形・川・道路・屋根の俯瞰マップ"></canvas><div id="townPlayerPin">軍師</div></div><div id="townGuideActions"><button id="townOverhead" type="button">3Dで町全体を俯瞰</button><button id="townReturnCamera" type="button">軍師視点に戻る</button></div><div id="townGuideList"></div></div></section>
+<small id="townGuideHint">町全域の真上からの地図です。青い印が軍師です。施設名をタップすると選択した建物の室内へ直接入れます。</small><div id="townGuideBoard"><canvas id="townGuideCanvas" width="464" height="464" aria-label="町の地形・川・道路・屋根の俯瞰マップ"></canvas><div id="townPlayerPin">軍師</div></div><div id="townGuideActions"><button id="townOverhead" type="button">3Dで町全体を俯瞰</button><button id="townReturnCamera" type="button">軍師視点に戻る</button></div><div id="townGuideList"></div></div></section>
 <section id="opening" aria-label="紙芝居・オープニング" hidden><div class="sceneCard"><div class="eyebrow">第1章・紙芝居　灰の勅命</div><div id="eventSceneArt"><img id="eventSceneImage" src="" alt="戦場と城郭を描いた物語イラスト"></div><h1>レヴナの町</h1><div id="eventSpeaker" aria-live="polite">語り手</div><p id="eventText">星鐘が鳴った。</p><div class="controls"><button id="eventVoice" type="button" aria-label="漫画の音声のオン・オフ">音声 ON</button><button id="eventNext">次へ ▶</button></div><button id="skipPaper" type="button">物語を閉じて町へ進む</button></div></section>
 <script type="module">
 import {STORY_CHAPTERS,storyVoiceKey} from './src/story-chapters.js';
@@ -200,18 +212,35 @@ $('panelClose').onclick=closePanel;$('panelBackdrop').onclick=closePanel;
 function facilityLabel(kind){return ({weapon:'武具屋',shop:'道具屋',inn:'宿屋',tavern:'酒場',church:'教会',castle:'王城'})[kind]||kind;}
 function mapCoord(value){return Math.max(3,Math.min(97,(Number(value)||0)/232*100));}
 function drawTownMap(){
- const canvas=$('townGuideCanvas'),ctx=canvas.getContext('2d');
- ctx.clearRect(0,0,canvas.width,canvas.height);
+ const canvases=[$('townGuideCanvas'),$('townRadarCanvas')];
+ for(const canvas of canvases){const ctx=canvas.getContext('2d');ctx.clearRect(0,0,canvas.width,canvas.height);}
  if(!townMapImage)return;
  const image=new Image();
- image.onload=()=>{
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  ctx.imageSmoothingEnabled=true;
-  ctx.drawImage(image,0,0,canvas.width,canvas.height);
- };
+ image.onload=()=>{for(const canvas of canvases){const ctx=canvas.getContext('2d');ctx.clearRect(0,0,canvas.width,canvas.height);ctx.imageSmoothingEnabled=true;ctx.drawImage(image,0,0,canvas.width,canvas.height);}};
  image.src=townMapImage;
 }
+const radarSymbols={weapon:'⚔',shop:'▣',inn:'⌂',tavern:'♜',church:'✚',castle:'♛'};
+function requestTownBuilding(facilityId){
+ if(!townReady)return;
+ const facility=townFacilities.find(f=>f.id===facilityId);
+ if(!facility)return;
+ resetTownMovement();
+ sendTown('hai-gin-town-enter-facility',{facilityId});
+ // Close the map only after the 3D engine confirms real entry.
+ $('townGuideCard').querySelector('small').textContent='「'+facilityLabel(facility.kind)+'」へ入室しています…';
+}
+function renderTownRadar(){
+ const root=$('townRadarPins');root.replaceChildren();
+ for(const facility of townFacilities){
+  const pin=document.createElement('button');pin.type='button';pin.textContent=radarSymbols[facility.kind]||'•';
+  pin.setAttribute('aria-label',facilityLabel(facility.kind)+'に入る');pin.title=facilityLabel(facility.kind)+'に入る';
+  pin.style.left=mapCoord(facility.x)+'%';pin.style.top=mapCoord(facility.z)+'%';
+  pin.onclick=()=>requestTownBuilding(facility.id);root.appendChild(pin);
+ }
+ updateTownPlayerPin();drawTownMap();
+}
 function renderTownGuide(){
+ $('townGuideHint').textContent='青い点が軍師。建物をタップすると直接入室します。';
  drawTownMap();
  const board=$('townGuideBoard');
  board.querySelectorAll('button').forEach(x=>x.remove());
@@ -221,10 +250,10 @@ function renderTownGuide(){
   button.type='button';button.textContent=facilityLabel(facility.kind);
   button.title=facilityLabel(facility.kind)+'の位置';
   button.style.left=mapCoord(facility.x)+'%';button.style.top=mapCoord(facility.z)+'%';
-  button.onclick=()=>{sendTown('hai-gin-town-guide',{facilityId:facility.id});$('townGuide').hidden=true;};
+  button.onclick=()=>requestTownBuilding(facility.id);
   board.appendChild(button);
   const item=button.cloneNode(true);item.style.cssText='';
-  item.textContent='⌖ '+facilityLabel(facility.kind);
+  item.textContent='入る ▶ '+facilityLabel(facility.kind);
   item.onclick=button.onclick;list.appendChild(item);
  }
  updateTownPlayerPin();
@@ -233,9 +262,12 @@ function updateTownPlayerPin(){
  if(!townPlayerPosition)return;
  $('townPlayerPin').style.left=mapCoord(townPlayerPosition.x)+'%';
  $('townPlayerPin').style.top=mapCoord(townPlayerPosition.z)+'%';
+ $('townRadarPlayer').style.left=mapCoord(townPlayerPosition.x)+'%';
+ $('townRadarPlayer').style.top=mapCoord(townPlayerPosition.z)+'%';
 }
 function openTownGuide(){if(!townReady)return;resetTownMovement();$('townGuide').hidden=false;renderTownGuide();}
 $('showTownGuide').onclick=()=>{townAudio.effect('open');openTownGuide();};
+$('townRadarHeader').onclick=()=>{townAudio.effect('open');openTownGuide();};
 $('townOverhead').onclick=()=>{
  $('townGuide').hidden=true;
  sendTown('hai-gin-town-overhead');
@@ -364,7 +396,8 @@ window.addEventListener('message',event=>{
  if(data.type==='hai-gin-town-facility'&&['weapons','items','formation','tavern','save','story'].includes(data.panel))openTownDialogue({panel:data.panel});
  if(data.type==='hai-gin-town-npc')openTownDialogue({npcId:data.npcId,name:data.name,role:data.role,panel:data.panel});
  if(data.type==='hai-gin-town-entered'){
-  insideFacility=data.panel;resetTownMovement();
+  $('townGuide').hidden=true;$('townRadar').classList.add('is-inside');
+   insideFacility=data.panel;resetTownMovement();
   townAudio.effect('enter');
   townAudio.setScene(data.panel==='story'?'castle':data.panel==='save'?'church':data.panel==='formation'?'inn':data.panel==='tavern'?'tavern':'shop');
   $('townInteract').textContent='店主と話す・'+data.name;
@@ -372,7 +405,7 @@ window.addEventListener('message',event=>{
   $('townStatus').textContent=data.name+'に入店中 · 店主と話すと施設を利用できます';
  }
  if(data.type==='hai-gin-town-left'){
-  insideFacility=null;resetTownMovement();
+  insideFacility=null;resetTownMovement();$('townRadar').classList.remove('is-inside');
   townAudio.effect('cancel');townAudio.setScene('town');
   $('townInteract').textContent='話す・施設';
   $('townExitBuilding').hidden=true;renderState();
@@ -383,13 +416,13 @@ window.addEventListener('message',event=>{
  if(data.type==='hai-gin-town-player'){townPlayerPosition={x:data.x,z:data.z};updateTownPlayerPin();}
  if(data.type==='hai-gin-town-overview'&&typeof data.image==='string'&&data.image.startsWith('data:image/png;base64,')){
   townMapImage=data.image;
-  if(!$('townGuide').hidden)drawTownMap();
+  drawTownMap();
  }
  if(data.type==='hai-gin-town-stage-ready'){
   townReady=true;
   document.body.classList.remove('town-loading');
   townFacilities=Array.isArray(data.facilities)?data.facilities:[];
-  townPlayerPosition=data.player||null;updateTownPlayerPin();
+  townPlayerPosition=data.player||null;renderTownRadar();
   renderState();townAudio.setScene('town');if(paperPending)startPaperStory();
  }
  if(data.type==='hai-gin-town-notice'){const node=$('townExplorerMessage');node.textContent=String(data.text||'');node.style.display='block';setTimeout(()=>node.style.display='none',2700);}
@@ -513,7 +546,7 @@ async function speakChapter(number,{autoplay=false}={}){
 // Every town stop uses the exact same serial-manga identity and panel order
 // as the other 180 combat/exploration stages.
 const townManga=mangaForStage(game.townStage);
-const eventScenes=game.storyFlags?.route?.activeCooperation?
+const eventScenes=(game.storyFlags?.route?.activeCooperation||game.campaign.commander.gender==='female')?
  mangaForStage(game.townStage,storyStageContext(game,game.townStage)).panels:townManga.panels;
 let eventIndex=0;
 const voiceIsOn=()=>{
