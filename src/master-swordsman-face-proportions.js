@@ -15,11 +15,20 @@ export const FACE_PROPORTION_FIELDS=Object.freeze([
  ['lowerCheekLateral','下頬の外側の張り',.70,1.25,1,'顔・3等分'],
  ['parotidWidth','耳下腺付近の横幅',.65,1.25,1,'顔・3等分'],
  ['chinLength','顎先の長さ',.65,1.35,1,'顔・3等分'],
+ // These controls have ONE owner: the canonical validated proportions.
+ // Global eyeSize remains legacy-only for troop models; heroine uses these.
+ ['lowerFaceProjection','口元〜顎の前方突出',.75,1.15,1,'顔・3等分'],
  ['eyeWidth','目の横幅',.65,1.55,1,'目'],
  ['eyeHeight','目の縦幅',.60,1.50,1,'目'],
  ['eyeSpacing','左右の目の間隔',.78,1.25,1,'目'],
  ['eyeVertical','目の上下位置',-.045,.045,0,'目'],
  ['eyeTilt','目尻の角度',-.22,.22,0,'目'],
+ ['eyeballScale','眼球の大きさ',.76,1.14,1,'眼球・虹彩'],
+ ['eyeSocketDepth','眼球の奥行き(m)',-.014,.006,0,'眼球・虹彩'],
+ ['irisDiameter','虹彩（黒目全体）の直径',.58,1.30,1,'眼球・虹彩'],
+ ['pupilDiameter','瞳孔（中央の黒）の直径',.52,1.40,1,'眼球・虹彩'],
+ ['upperLidCoverage','上まぶたの覆う量',0,.40,0,'まぶた・目の下'],
+ ['underEyeSoftness','涙袋・クマの濃淡',0,1,0,'まぶた・目の下'],
  ['browVertical','眉の上下位置',-.04,.04,0,'眉'],
  ['browEyeGap','眉と目の距離',.70,1.35,1,'眉'],
  ['browAngle','眉の角度',-.20,.20,0,'眉'],
@@ -154,7 +163,11 @@ export function deformFacePoint(x,y,z,box,p=FACE_PROPORTION_DEFAULTS,{mouthCente
  yy+=height*eye*(p.eyeVertical??0)*.7;
  yy+=height*brow*((p.browVertical??0)+(p.browEyeGap-1)*.015);
  yy+=height*mouth*(p.mouthCorner??0)*Math.abs(xn)*.9;
- const zz=z+depth*((cheek*.14+lowerCheek*.042)*((p.cheekRoundness??1)-1)+
+ // Reduce a protruding philtrum/lower lip and the forward chin smoothly,
+ // without moving the true nasal bridge or modifying the back of the skull.
+ const lowerFace=bell(xn,0,.62)*bell(yn,.29,.19)*front;
+ const zz=z+depth*(.19*lowerFace*((p.lowerFaceProjection??1)-1)+
+  (cheek*.14+lowerCheek*.042)*((p.cheekRoundness??1)-1)+
   nose*(p.noseBridge-1)*.046+
   nose*((p.noseOverall??1)-1)*.055+
   noseTip*(p.noseTip-1)*.025+
