@@ -7,8 +7,8 @@ fs.mkdirSync(out,{recursive:true});
 // event, leaving a stale value visible while the actual mesh uses defaults.
 async function expectVisibleV8Preset(page,context,contact='brown'){
  const expected={
-  irisDiameter:1,eyeSize:1,jawSharpness:2.5,noseTipLift:0,
-  nostrilCover:1,noseBridgeSharpness:2.5,eyeAngle:0,
+  irisDiameter:1,eyeSize:1,jawSharpness:5,noseTipLift:0,
+  nostrilCover:2,noseBridgeSharpness:2.5,eyeAngle:0,
   lipstickX:0,lipstickY:0,lipstickWidth:1,lipstickHeight:1
  };
  const actual=await page.evaluate(keys=>{
@@ -71,9 +71,9 @@ async function expectVisibleV8Preset(page,context,contact='brown'){
      original.visiblePartMeshes!==30||
      original.faceMode!=='color'||
      original.femaleControls.irisDiameter!==1||
-     original.femaleControls.jawSharpness!==2.5||
+     original.femaleControls.jawSharpness!==5||
      original.femaleControls.noseTipLift!==0||
-     original.femaleControls.nostrilCover!==1||
+     original.femaleControls.nostrilCover!==2||
      original.femaleControls.noseBridgeSharpness!==2.5||
      !original.maleWithoutMakeup)
    throw Error('Not two independent source-derived face meshes: '+JSON.stringify(original));
@@ -202,7 +202,7 @@ async function expectVisibleV8Preset(page,context,contact='brown'){
   await expectVisibleV8Preset(page,'reset-button');
   const reset=await page.evaluate(()=>window.__faceMasterQA());
   if(reset.femaleControls.irisDiameter!==1||
-     reset.femaleControls.jawSharpness!==2.5||
+     reset.femaleControls.jawSharpness!==5||
      reset.femaleControls.noseTipLift!==0||
      reset.femaleControls.noseBridgeSharpness!==2.5||
      reset.contactColor!=='#514139'||reset.faceMode!=='color')
@@ -213,7 +213,7 @@ async function expectVisibleV8Preset(page,context,contact='brown'){
      reset.female?.detailedParts.blushMeshCount!==0||
      !reset.female?.detailedParts.lipstickPlacement?.attachedToLipMesh)
    throw Error('V9 lipstick/eye-cheek makeup did not load actual surface');
-  // The current jaw of 2.5 remains standard; higher values remain reachable.
+  // The saved Library jaw value 5 is the standard; users can still reduce it.
   await page.locator('#jawSharpness').evaluate(el=>{
    el.value='4.5';el.dispatchEvent(new Event('input',{bubbles:true}));
    el.dispatchEvent(new Event('change',{bubbles:true}));
@@ -233,11 +233,15 @@ async function expectVisibleV8Preset(page,context,contact='brown'){
   await page.locator('#faceGroupTabs button').filter({hasText:'顎・輪郭'}).click();
   if(!await page.locator('#jawSharpness').isVisible())
    throw Error('Jaw slider not visible in face category');
+  await page.locator('#jawSharpness').evaluate(el=>{
+   el.value='4.5';el.dispatchEvent(new Event('input',{bubbles:true}));
+   el.dispatchEvent(new Event('change',{bubbles:true}));
+  });
   const plus=page.locator('label[for="jawSharpness"] .stepRow button').last();
   if(!await plus.isVisible())throw Error('Precise + jaw stepper missing');
   await plus.click();
   const stepJaw=await page.evaluate(()=>window.__faceMasterQA());
-  if(Math.abs(stepJaw.femaleControls.jawSharpness-2.6)>1e-6)
+  if(Math.abs(stepJaw.femaleControls.jawSharpness-4.6)>1e-6)
    throw Error('Fine adjustment step failed');
   if(Math.abs(stepJaw.cameraDistance-zoomBefore)>1e-4)
    throw Error('Rebuilding after slider step reset zoom '+stepJaw.cameraDistance+' / '+zoomBefore);
@@ -251,12 +255,21 @@ async function expectVisibleV8Preset(page,context,contact='brown'){
   });
   await canvas.screenshot({path:path.join(out,'female-eye-angle-minus20-brows.png')});
   await page.locator('#resetPreset').click();
+  // Browser state must initialize BOTH genders from the exported GLB
+  // settings, not merely display the old hard-coded slider defaults.
   await page.locator('#male').click();
   const neutralMale=await page.evaluate(()=>window.__faceMasterQA());
-  if(neutralMale.maleControls.jawSharpness!==1.15||
+  for(const [key,value] of Object.entries({
+   jawSharpness:5,nostrilCover:2,irisDiameter:1,eyeSize:1,
+   noseTipLift:0,noseBridgeSharpness:2.5,eyeAngle:0
+  })){
+   if(neutralMale.maleControls[key]!==value)
+    throw Error('Saved Library male default '+key+' drifted: '+neutralMale.maleControls[key]);
+  }
+  if(neutralMale.maleControls.jawSharpness!==5||
      neutralMale.maleControls.beardDensity!==.35||
      neutralMale.male.detailedParts.beardMeshCount!==5||
-     (await page.locator('#maleJawSharpness').inputValue())!=='1.15'||
+     (await page.locator('#maleJawSharpness').inputValue())!=='5'||
      (await page.locator('#maleBeardDensity').inputValue())!=='0.35')
    throw Error('Male face/beard controls did not restore canonical defaults');
   await page.locator('#maleJawSharpness').evaluate(el=>{
