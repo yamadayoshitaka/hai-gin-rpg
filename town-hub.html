@@ -511,7 +511,8 @@ async function speakChapter(number,{autoplay=false}={}){
 }
 // Every town stop uses the exact same serial-manga identity and panel order
 // as the other 180 combat/exploration stages.
-const townManga=mangaForStage(game.townStage,storyStageContext(game,game.townStage));
+let townManga=mangaForStage(game.townStage);
+if(game.storyFlags?.route?.activeCooperation)townManga=mangaForStage(game.townStage,storyStageContext(game,game.townStage));
 const eventScenes=townManga.panels;
 let eventIndex=0;
 const voiceIsOn=()=>{
