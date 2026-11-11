@@ -8922,25 +8922,30 @@ async function finishBattleLoading(){
   const planHeading=document.createElement('strong');
   planHeading.textContent='⚑ 開戦前の隊列編成';
   const planHint=document.createElement('p');
-  planHint.textContent='3ボタンは自動編成。職業は手動指定もできます。アイテムは部隊ごとに自動／手動を設定（初期値は手動）。実際の職業構成から部隊タイプを判定します。';
+  planHint.textContent='1隊＝1ジョブ。最大10隊をジョブ単位で編成。アイテムは隊ごとに自動／手動を選択できます。';
   planHint.style.cssText='font:11px/1.55 system-ui;color:#c3dcea;margin:5px 0 8px';
   const planList=document.createElement('div');planList.id='openingPlanList';
   planList.style.cssText='overflow:hidden;display:grid;gap:6px';
   const formationRows=new Map(),initialOrderInputs=[],manualJobs={},formationPlanTypes=new Map(squadIds.map(id=>[id,selectedSquadType(id)]));
   const formationTypes=()=>Object.fromEntries(squadIds.map(id=>[id,formationPlanTypes.get(id)||'balanced']));
+  const selectedJobChoices=()=>Object.fromEntries(Object.entries(manualJobs)
+   .filter(([,jobs])=>Object.keys(jobs).length===1)
+   .map(([id,jobs])=>[id,Object.keys(jobs)[0]]));
   const classifySquad=detail=>detail.heal/Math.max(1,detail.total)>=.30?'support':
    detail.front/Math.max(1,detail.total)>=.55?'attack':'balanced';
-  const previewFormationPlan=()=>recomposeSquadAssignments(squadRoster,formationTypes(),0,{},manualJobs);
+  const previewFormationPlan=()=>uniformJobSquadPlan(squadRoster,formationTypes(),0,selectedJobChoices());
   const refreshFormationPreview=()=>{
    const plan=previewFormationPlan();
+   if(!plan){planHint.textContent='⚠ ジョブの兵士が不足しています。別のジョブを選択してください。';return;}
+   planHint.textContent='1隊＝1ジョブ。最大10隊をジョブ単位で編成します。アイテムも隊別に設定できます。';
    for(const detail of plan.summaries){
     const refs=formationRows.get(detail.squadId);if(!refs)continue;
     const actualType=classifySquad(detail);
     selectedSquadFormations.set('0:'+detail.squadId,actualType);
     refs.name.textContent=squadName(detail.squadId)+'（'+detail.total+'人）';
     const assigned=Object.values(manualJobs[detail.squadId]||{}).reduce((n,v)=>n+v,0);
-    refs.preview.textContent='職業構成：前衛'+detail.front+'／遠距離'+detail.range+'／回復'+detail.heal+
-     ' · '+FORMATION_NAMES[actualType]+(assigned?'（手動'+assigned+'人・残り自動）':'（自動編成）');
+    refs.preview.textContent='ジョブ：'+(MASS_JOBS.find(job=>job.id===detail.jobId)?.name||detail.jobId)+
+     '（'+detail.total+'人） · '+FORMATION_NAMES[actualType]+(assigned?'（ジョブ指定）':'（自動割当）');
     for(const btn of refs.buttons.querySelectorAll('button')){
      const active=btn.dataset.type===selectedSquadType(detail.squadId);
      btn.style.background=active?'#4386a4':'#1d3951';
@@ -8961,7 +8966,7 @@ async function finishBattleLoading(){
    const preview=document.createElement('small');
    preview.style.cssText='grid-column:1/-1;color:#b8d7e8;font:10px/1.4 system-ui';
    const buttons=document.createElement('div');
-   buttons.style.cssText='display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:3px;min-width:0';
+   buttons.style.cssText='display:none;grid-template-columns:repeat(3,minmax(0,1fr));gap:3px;min-width:0';
    for(const type of FORMATION_TYPES){
     const button=document.createElement('button');button.type='button';button.dataset.type=type;
     button.textContent=FORMATION_ICONS[type]+FORMATION_NAMES[type];
@@ -8970,7 +8975,7 @@ async function finishBattleLoading(){
     buttons.append(button);
    }
    const manual=document.createElement('button');manual.type='button';
-   manual.textContent='✎ 職業を選んで手動編成';
+   manual.textContent='✎ この隊のジョブを選ぶ';
    manual.style.cssText='grid-column:1/-1;min-height:38px;color:#fff;background:#30577b;border:1px solid #94b5d1;border-radius:7px';
    manual.onclick=()=>openManualJobEditor(id);
    const itemModeLine=document.createElement('label');
@@ -8986,7 +8991,7 @@ async function finishBattleLoading(){
    itemMode.onchange=()=>{if(!battleReady)squadItemPolicies.set(id,itemMode.value);};
    itemModeLine.append(itemModeText,itemMode);
    formationRows.set(id,{name,preview,buttons,manual,itemMode});
-   row.append(name,buttons,preview,manual,itemModeLine);planList.append(row);
+   row.append(name,preview,manual,itemModeLine);planList.append(row);
   }
   // Full-screen profession editor: one tap reserves actual soldiers of that
   // class (10 for large squads, one for small squads). Counts, not percentages.
@@ -9128,7 +9133,7 @@ async function finishBattleLoading(){
   const wizardTabs=document.createElement('div');wizardTabs.className='openingWizardTabs';
   const intro=document.createElement('div');intro.id='openingLaunchSummary';
   intro.style.cssText='text-align:left;margin:12px 0;padding:12px;color:#e2f2ff;border:1px solid #86a9c3;border-radius:9px;background:#122c43;font:12px/1.7 system-ui';
-  intro.textContent='編成・初期号令の確認が済んだら開戦してください。編成は職業数に応じて自動判定されます。';
+  intro.textContent='各隊のジョブ（1隊1ジョブ）と初期号令を確認して開戦してください。';
   let wizardPage='formation';
   const wizardButtons=new Map();
   for(const [page,label] of [['formation','① 編成'],['orders','② 初期号令'],['launch','③ 開戦']]){
@@ -9155,7 +9160,8 @@ async function finishBattleLoading(){
     const ids=team===0?squadIds:enemySquadIds;
     const types=Object.fromEntries(ids.map(id=>[id,selectedSquadType(id,team)]));
     if(massSim){
-     const preferred=recomposeSquadAssignments(massSim.units,types,team,{},team===0?manualJobs:{});
+     const preferred=uniformJobSquadPlan(massSim.units,types,team,team===0?selectedJobChoices():{});
+     if(!preferred)throw new Error('ジョブ別の編成人数が不足しています');
      const plan=massSim.setSquadFormationTypes(types,team,preferred.assignments);
      if(!plan)throw new Error('部隊編成に失敗しました（陣営'+team+'）');
      const jobs=massSim.units.filter(u=>u.team===team&&!u.isStrategist).map(u=>({
@@ -9163,7 +9169,8 @@ async function finishBattleLoading(){
      }));
      massWorker?.setSquadFormationTypes(types,team,plan.assignments,jobs);
     }else{
-     const plan=recomposeSquadAssignments(actors,types,team,{},team===0?manualJobs:{});
+     const plan=uniformJobSquadPlan(actors,types,team,team===0?selectedJobChoices():{});
+     if(!plan)throw new Error('ジョブ別の編成人数が不足しています');
      if(!applySquadRecomposition(actors,plan,{team}))
       throw new Error('部隊編成に失敗しました（陣営'+team+'）');
     }
