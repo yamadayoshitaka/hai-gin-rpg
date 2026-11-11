@@ -207,13 +207,15 @@ export function applyHeroineMakeupToFace(faceMesh,neutralColors,{
   // the old .44-.50 cosmetic strip also covered the PHILTRUM and CHIN
   // in a deformed portrait. Confine both upper and lower vermilion to
   // two narrow 3D elliptical masks over the protruding centre mouth.
-  const lipBand=smooth(.367,.377,y)*(1-smooth(.431,.447,y));
+  // Calibrated against WebGL makeup ON/OFF: the old .37-.44 band tinted
+  // the chin ~25px below the actual lips. Shift to real vermilion.
+  const lipBand=smooth(.483,.494,y)*(1-smooth(.545,.559,y));
   const lipRelief=smooth(.74,.92,z);
   // A Gaussian alone has infinite tails: the pigment was technically
   // reaching the cheeks even when the vertical lip band was correct.
   const cornerFade=1-smooth(.33,.45,Math.abs(x));
   const lips=front*lipRelief*bell(x,0,.19)*cornerFade*lipBand*
-   (.90*bell(y,.410,.014)+.72*bell(y,.386,.013))*
+   (.90*bell(y,.528,.014)+.72*bell(y,.502,.013))*
    intensity*THREE.MathUtils.clamp(lip,0,1);
   // Dark-brown upper lash line, located against the SOURCE sclera anchors,
   // not an unrelated eyebrow-height strip. Keeps the eyeballs exposed.
@@ -230,7 +232,7 @@ export function applyHeroineMakeupToFace(faceMesh,neutralColors,{
   attr.setXYZ(i,red,green,blue);
   if(cheek>.08)blushVertices++;
   if(lips>.08)lipVertices++;
-  if((y<.367||y>.447||Math.abs(x)>.46)&&lips>.0000001)chinLipVertices++;
+  if((y<.483||y>.559||Math.abs(x)>.46)&&lips>.0000001)chinLipVertices++;
   if(liner>.08)linerVertices++;
   if(Math.abs(red-neutralColors[n])+Math.abs(green-neutralColors[n+1])+
     Math.abs(blue-neutralColors[n+2])>.003)changedVertices++;
@@ -239,7 +241,7 @@ export function applyHeroineMakeupToFace(faceMesh,neutralColors,{
  const mats=Array.isArray(faceMesh.material)?faceMesh.material:[faceMesh.material];
  return {strength:intensity,blushVertices,lipVertices,linerVertices,
   chinLipVertices,chinLipMaskExcluded:chinLipVertices===0,
-  mouthMaskYNormalized:[.367,.447],
+  mouthMaskYNormalized:[.483,.559],
   changedVertices,eyeAnchorNormalized:[Number(landmarkX.toFixed(3)),Number(landmarkY.toFixed(3))],
   skinShaderUsesVertexColors:mats.some(mat=>mat?.vertexColors===true),
   cosmeticsHue:'sculpt-vermilion-only-rose-upper-lower-lip',
