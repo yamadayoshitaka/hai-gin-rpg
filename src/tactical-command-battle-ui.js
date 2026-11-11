@@ -115,7 +115,7 @@ export function installBattleTacticalUI({
 }
 
 /** Opening wizard, attached to the actual stage and current squad orders. */
-export function createPreBattleTacticalSummary({getStageName,getUnits,getOrders,getCommander}){
+export function createPreBattleTacticalSummary({getStageName,getUnits,getOrders,getCommander,getObjective=()=>'',getStrategies=()=>[]}){
  const element=fragment('section','','');element.id='openingTacticalSummary';
  function refresh(){
   const friendly=getUnits().filter(u=>u.team===0&&!u.isStrategist&&u.alive!==false&&(u.hp??1)>0);
@@ -124,6 +124,8 @@ export function createPreBattleTacticalSummary({getStageName,getUnits,getOrders,
   element.replaceChildren(fragment('strong','','⚑ 開戦前・戦術の最終確認'));
   for(const [name,value] of [
    ['戦場',getStageName()],
+   ['勝利目的',getObjective()||'敵を制圧'],
+   ['固定作戦',getStrategies().join('／')||'全滅（初期）'],
    ['出撃戦力',squadPower(friendly).toFixed(1)+'／'+friendly.length+'名'],
    ['無抵抗時の最大効果',COMMAND_LABELS[best.mode]+' '+best.effect+'/100'],
    ['統率による号令間隔',tacticalCooldownSeconds(leader?.level||1)+'秒'],
