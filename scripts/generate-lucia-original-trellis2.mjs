@@ -30,6 +30,7 @@ try{
  const data=await readFile(source);
  if(data.length>10*1024*1024||data.length<100)throw Error('Invalid source art');
  const auth=process.env.HF_TOKEN?.trim();
+ if(!auth) throw Error('HF_TOKEN_REQUIRED: Anonymous ZeroGPU trial was rejected. Add a FREE Hugging Face access token as GitHub Actions secret HF_TOKEN. See https://huggingface.co/settings/tokens and the repo Actions secrets settings. Never paste tokens in source code or chat.');
  console.log('Source image:',source,data.length,'bytes');
  console.log('Hugging Face authentication:',auth?'user token from GitHub secret':'anonymous shared quota');
  const options=auth?{token:auth}:{};
@@ -90,9 +91,11 @@ try{
  await saveReport();
  console.log('Generated candidate successfully:',meta.model,bin.length,'bytes');
 }catch(error){
- result.status=result.status==='original-uploaded'?'original-uploaded-generation-blocked':'failed';
+ result.status=/HF_TOKEN_REQUIRED/.test(String(error?.message||''))?'blocked-missing-free-auth':result.status==='original-uploaded'?'original-uploaded-generation-blocked':'failed';
  result.error=String(error?.message||error);
  await saveReport();
  console.error('3D generation trial failed:',result.error);
- process.exitCode=1;
+ // @gradio/client may retain a live queue/socket after an API error.
+ // Terminate immediately so GitHub does not incorrectly time out or cancel the run.
+ process.exit(1);
 }
