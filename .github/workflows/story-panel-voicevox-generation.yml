@@ -43,6 +43,13 @@ jobs:
         run: |
           node --check scripts/generate-story-panel-voicevox.mjs
           node scripts/generate-story-panel-voicevox.mjs --chapter 1 --dry-run
+      - name: Ensure audio encoding is available
+        run: |
+          if ! command -v ffmpeg >/dev/null 2>&1; then
+            sudo apt-get update -qq
+            sudo apt-get install -y ffmpeg
+          fi
+          ffmpeg -version | head -n 1
       - name: Run free CPU VOICEVOX engine
         run: |
           docker run --rm -d --name story-voicevox -p 127.0.0.1:50021:50021 voicevox/voicevox_engine:cpu-latest
