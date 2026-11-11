@@ -917,6 +917,7 @@ import {squadTypeOf,SQUAD_TYPE_NAMES} from './src/mass-battle-formations.js?v=4.
 import {recomposeSquadAssignments,applySquadRecomposition,FORMATION_TYPES,FORMATION_NAMES,FORMATION_ICONS,normalizeFormationType} from './src/battle-squad-recomposition.js?v=4.6.49';
 import {squadJobComposition,chooseEnemyOrder,enemyOrderRefreshSeconds,TACTICAL_TIME_BANK_SECONDS} from './src/battle-tactical-policy.js?v=4.6.69';
 import {createStageObjectiveMonitor} from './src/battle-objective-runtime.js?v=1';
+import {uniformJobSquadPlan} from './src/battle-uniform-job-squads.js?v=1';
 import {createMassBattleRealArmy} from './src/mass-battle-real-army.js?v=4.6.39';
 import {BattleCorpsePolicy,corpseOpacity} from './src/battle-corpse-policy.js?v=4.4.35';
 import {CrowdPerformanceBudget} from './src/crowd-performance-budget.js?v=4.6.36';
@@ -2933,7 +2934,8 @@ const spawnOutside=(x,z,team)=>{
  return freeCellNear(base.x,base.z,null);
 };
 // Each side gets five of every job, shuffled independently on every new game.
-const randomRosters=[randomJobRoster(JOBS,TEAM_SIZE),randomJobRoster(JOBS,TEAM_SIZE)];
+const randomRosters=[0,1].map(team=>Array.from({length:TEAM_SIZE},(_,i)=>
+  JOBS[(Math.floor(i/Math.ceil(TEAM_SIZE/10))+team*3)%JOBS.length]));
 // Shopkeepers and townsfolk stand at authored positions beside functional facilities.
 const townNpcSites=[
  [166,117,'剣士','軍師'],
@@ -2960,7 +2962,10 @@ const townNpcSites=[
 for(let team=0;team<2;team++)for(let i=0;i<TEAM_SIZE;i++){
  const storyUnit=storyRequest&&team===0?storyRequest.units[i]:null;
  if((TOWN_MODE&&team===1)||(TOWN_MODE&&i>=townNpcSites.length)||(storyRequest&&(team===0&&!storyUnit||team===1&&i>=storyRequest.enemyCount)))continue;
- const baseJob=TOWN_MODE?(JOBS.find(j=>j.name===townNpcSites[i][2])||JOBS[0]):storyUnit?JOBS.find(j=>j.name===storyUnit.job)||randomRosters[team][i]:randomRosters[team][i];
+ const baseJob=TOWN_MODE?(JOBS.find(j=>j.name===townNpcSites[i][2])||JOBS[0]):storyUnit?
+  JOBS.find(j=>j.name===storyUnit.job)||randomRosters[team][i]:massSim?
+  JOBS.find(j=>j.name===MASS_JOBS[massSim.units[team*MASS_SIZE+i]?.jobIndex]?.name)||randomRosters[team][i]:
+  randomRosters[team][i];
  // Squad gear is a passive applied before the first combat frame; unlike an
  // order buff, it has no timer and does not require the strategist to survive.
  const passive=storyUnit?.equipmentBuff||{};
@@ -2981,7 +2986,7 @@ for(let team=0;team<2;team++)for(let i=0;i<TEAM_SIZE;i++){
  if(TOWN_MODE&&root.userData.ring)root.userData.ring.visible=false;
  root.position.set(pos.x,terrainY(pos.x,pos.z),pos.z);root.rotation.y=team===0?Math.PI/2:-Math.PI/2;scene.add(root);
  const actor={id:team*TEAM_SIZE+i,team,job,monsterSpec,jobId:combatJobId(job.name),rarity:storyUnit?.rarity||(i%13===0?'UR':i%3===0?'R':'N'),root,cell,nextCell:null,defeated:false,hp:job.hp,maxHp:job.hp,mp:COMBAT_RULES.maxMp,maxMp:COMBAT_RULES.maxMp,speed:job.speed,jumpY:job.jumpY,jumping:false,attackTimer:Math.random()*2,thinkTimer:Math.random()*.4,order:null,targetId:null,home:pos.clone(),velocity:new THREE.Vector3(),walkPhase:0,
-  squadId:storyUnit?.squadId??Math.floor(i/Math.max(10,Math.ceil(TEAM_SIZE/5))),commanderId:storyUnit?.commanderId??'provisional'};
+  squadId:storyUnit?.squadId??Math.floor(i/Math.max(1,Math.ceil(TEAM_SIZE/10))),commanderId:storyUnit?.commanderId??'provisional'};
  if(TOWN_MODE){
   actor.townRole=townNpcSites[i][3];
   actor.displayName=i===0?battleParams.get('commanderName')||'軍師':townNpcSites[i][3];
