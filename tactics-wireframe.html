@@ -4931,6 +4931,7 @@ function tickAI(dt){
  updateEnemyItemDecisions();
  updateAllyAutoItemDecisions();
  updateEnemyTacticalDecisions();
+ updateBattleTacticRotation();
  refreshLockedSquadStrategyList();
  if(!massSim)collectNearbyRoomItems();
  if(structureHealth.style.display!=='none'&&elapsed>structureHealthUntil)structureHealth.style.display='none';
@@ -5604,6 +5605,8 @@ function currentSkirmishDirective(a){
  return directive;
 }
 const squadStrategies=massSim?.squadStrategies??new Map();
+// Opening doctrine is locked, only automated orders may cycle. Manual orders win.
+let activeBattleTacticId='balanced',activeBattleTacticSquads=[],lastTacticRotationPhase=-1;
 const selectedSquadFormations=new Map();
 const selectedSquadType=(id,team=0)=>selectedSquadFormations.get(team+':'+String(id))||normalizeFormationType(squadTypeOf(id));
 const squadIds=[...new Set(squadRoster.filter(u=>u.team===0).map(u=>String(u.squadId)))];
@@ -5827,6 +5830,17 @@ function setStartingSquadOrder(team,squadId,mode,buildingId=null){
  * Enemy strategists issue adaptive orders on the exact same squad command
  * channel as the player. They cannot re-issue until 120 combat seconds pass.
  */
+function updateBattleTacticRotation(){
+ if(activeBattleTacticId!=='rotation'||!battleReady||finished)return;
+ const phase=Math.floor(elapsed/30);
+ if(phase===lastTacticRotationPhase)return;
+ lastTacticRotationPhase=phase;
+ for(const row of rotationOrders({tacticId:activeBattleTacticId,seconds:elapsed,squads:activeBattleTacticSquads})){
+  if(lastSquadOrderAt.has(row.id)||!hasSquadCommander(row.id))continue;
+  if(startingSquadOrders.get(squadOrderKey(0,row.id))?.mode===row.order)continue;
+  setStartingSquadOrder(0,row.id,row.order);
+ }
+}
 function updateEnemyTacticalDecisions(){
  if(!battleReady||finished||elapsed-lastEnemyTacticalDecisionAt<6)return;
  lastEnemyTacticalDecisionAt=elapsed;
