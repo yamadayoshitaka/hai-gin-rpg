@@ -683,7 +683,13 @@ function applyCustomization(overrides){
  const profileKey=activeFeaturedKey||'soldier-'+selectedId;
  editedProfiles.set(profileKey,currentAppearance);
  paintCharacter(currentAppearance);printState();
- if(overrides.proportions&&$('hairOn').checked){
+ // Iris, pupil, orbital depth and eyelid edits do not move follicles:
+ // never rebuild 100,000 strands on every slider drag or blink update.
+ const scalpChangingKeys=new Set(['faceHeight','upperThird','middleThird',
+  'lowerThird','jawTaper','cheekRoundness','chinLength','faceHeight',
+  'preEarFullness','lowerCheekLateral','parotidWidth','lowerFaceProjection']);
+ if(overrides.proportions&&$('hairOn').checked&&
+   Object.keys(overrides.proportions).some(k=>scalpChangingKeys.has(k))){
   if(refreshHairTimer!==null)clearTimeout(refreshHairTimer);
   refreshHairTimer=setTimeout(()=>{
    refreshHairTimer=null;
