@@ -109,7 +109,7 @@ flowchart TD
 
 ## 4. 状況の全件統合
 
-登録済みの **12軍団作戦 → 67状況 → 20種類の号令候補 → 敵の応答 → 味方の再対応** を `src/battle-strategy-countertree-spec.js` で関連付ける。
+登録済みの **12軍団作戦 → 67状況 → 19種類の号令候補 → 敵の応答 → 味方の再対応** を `src/battle-strategy-countertree-spec.js` で関連付ける。
 
 8カテゴリの内訳：勝利条件10／敵行動16／地形11／オブジェクト8／戦力12／視界4／状態異常4／終戦2。全67状況は最低1つ以上の軍団作戦に紐付け、複数の作戦で共通して発生する状況（軍師戦死・落下・負傷・敵突撃など）は参照共有とする。詳細な67状況の個別定義は `docs/battle-situation-countermeasure-matrix.md` を参照する。
 
@@ -190,7 +190,7 @@ TacticRoot {
 
 - `battle-stage-objective.js`：勝敗決定。作戦ツリーがこの結果を上書きすることは絶対にない。
 - `battle-tactics-preset-policy.js`：L0 作戦・ジョブ・進軍ルート。開戦後の再編集禁止。
-- `battle-countermeasure-situation-matrix.js`：67状況／20対応策／ジョブと有効標的の判定。実戦画面に接続済みの部分を利用。
+- `battle-countermeasure-situation-matrix.js`：67状況／19対応策／ジョブと有効標的の判定。実戦画面に接続済みの部分を利用。
 - `battle-reactive-command-policy.js`：号令待機60→90→120→150→180秒と戦況観測。
 - `battle-strategy-countertree-spec.js`：L0→L5の**仕様参照グラフ**。敵AIの全分岐自動制御・経路補正・同時状況最適化を新規実装したものではない。
 
