@@ -249,11 +249,11 @@ $('sortie').onclick=()=>{
   message('第13章の協力先を選択してから進んでください。');return;
  }
  mapAudio.unlock();
- mangaViewer.open(stage.id,{context:storyStageContext(game,stage.id),onFinish:()=>{
+ mangaViewer.open(stage.id,{onFinish:()=>{
   game.storyFlags??={};game.storyFlags.stageMangaSeen??={};
   game.storyFlags.stageMangaSeen[stage.id]=true;
   saveSession();launchSelectedStage(stage.id);
- }});
+ },context:storyStageContext(game,stage.id)});
 };
 function completeReturnedBattle(){
  try{
