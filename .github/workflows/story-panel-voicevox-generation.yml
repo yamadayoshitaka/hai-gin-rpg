@@ -7,11 +7,13 @@ on:
       - '.github/workflows/story-panel-voicevox-generation.yml'
       - 'scripts/generate-story-panel-voicevox.mjs'
       - 'src/story-voice-director.js'
+      - 'src/story-stage-manga.js'
+      - 'src/story-pronunciations.js'
       - 'qa/story-panel-voice-assets.test.mjs'
   workflow_dispatch:
     inputs:
       chapter:
-        description: 'Use all to generate all 1400 panels, 1-20 for a chapter, or 0 for one stage'
+        description: 'Generate all 2000 core panels + defeat variants, or select one chapter/stage'
         required: true
         default: 'all'
         type: choice
