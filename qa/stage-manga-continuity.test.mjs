@@ -17,6 +17,13 @@ assert.equal(new Set(Object.values(MANGA_VISUAL_CHARACTERS).map(x=>x.hair+'-'+x.
  'each key character must have persistent distinct visual identity');
 const links=mangaStoryChain();
 assert.equal(links.length,200);
+assert.equal(fantasyCueForLocation('opening').id,'heartfelt','avoid arcade-like fairy cue at opening');
+assert.equal(fantasyCueForLocation('title').id,'whispers','title should be fantasy mystery');
+const first=mangaForStage('c01-s01');
+assert.match(first.panels[1].text,/リュシア/,'the heroine must introduce herself');
+assert.match(first.panels[2].text,/ガラン/,'first-time players meet the knight gradually');
+assert.ok(first.panels[0].text.length<100,'do not start with an encyclopaedia');
+assert.ok(first.panels.every(p=>p.text.length<115),'use short scenes at first stage');
 let artworkSamples=new Set(),characterPanels=0;
 for(let i=0;i<CAMPAIGN_STAGES.length;i++){
  const stage=CAMPAIGN_STAGES[i],story=mangaForStage(stage);
@@ -39,8 +46,11 @@ for(let i=0;i<CAMPAIGN_STAGES.length;i++){
   if(panel.characterId)characterPanels++;
   const cue=fantasyCueForMangaPanel(stage,n);
   assert.ok(FANTASY_SCORE_LIBRARY.some(track=>track.id===cue.id));
-  if(n>0)assert.notEqual(cue.id,fantasyCueForMangaPanel(stage,n-1).id,
-   'music must change at every adjacent manga frame');
+  // Hold the BGM through a dialogue scene; change for revelation/transition.
+  if(n===1||n===2||n===3||n===5)assert.equal(cue.id,fantasyCueForMangaPanel(stage,n-1).id,
+   'dialogue must not switch to a jarring new song at every page');
+  if(n===4||n===6)assert.notEqual(cue.id,fantasyCueForMangaPanel(stage,n-1).id,
+   'a genuine story beat must change the orchestral mood');
   if((i+n)%11===0){
    const art=stageMangaSvg(panel);
    assert.match(art,/<svg[^>]+viewBox="0 0 960 540"/);
@@ -62,6 +72,11 @@ for(const location of ['town','shop','inn','tavern','church','castle','paper','b
  assert.ok(fantasyCueForLocation(location)?.url,location+' lacks a music cue');
 }
 const map=read('world-map.html'),town=read('town-hub.html'),title=read('game.html');
+const guide=read('src/first-play-guide.js');
+assert.match(guide,/export const FIRST_PLAY_GUIDE/);
+assert.match(title,/showTutorial\(true\)/,'new game must start with a tutorial');
+assert.match(title,/id="tutorialModal"/);
+assert.doesNotMatch(title,/setInterval\(nextLine/,'do not automatically rush through a long introduction');
 assert.match(map,/mangaViewer\.open\(stage\.id,\{onFinish:/,'sortie must show manga before launching');
 assert.match(map,/launchSelectedStage\(stage\.id\)/);
 assert.match(map,/mapAudio\.changeScene\('manga',cue\.url\)/);
