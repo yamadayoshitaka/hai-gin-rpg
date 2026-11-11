@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#101c2f">
+<title>灰銀のレゾナンス | スマホ無料3Dジェネレーター</title>
+<style>
+:root{color-scheme:dark;font-family:system-ui,-apple-system,"Noto Sans JP",sans-serif}
+*{box-sizing:border-box}
+body{margin:0;color:#f0f6ff;background:#0b1421;line-height:1.55}
+header{position:sticky;top:0;z-index:2;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 16px;background:#17283d;border-bottom:1px solid #46617b}
+h1{font-size:18px;margin:0;color:#ffdf9a}
+h2{font-size:17px;margin:0 0 12px}
+a{color:#a9dcff}
+main{max-width:1080px;margin:auto;padding:14px;display:grid;gap:13px}
+section{padding:15px;border:1px solid #435f76;border-radius:13px;background:#15283d}
+p{margin:8px 0 12px}small,.muted{color:#b3c7d9}
+label{display:block;font-weight:600;margin:10px 0 6px}
+input,select,button,textarea{font:inherit;color:#f3f7ff;border:1px solid #7292a7;border-radius:9px;background:#27425b;padding:11px;max-width:100%}
+input,select,textarea{width:100%}
+textarea{min-height:75px}
+button{cursor:pointer}
+button:disabled{opacity:.5;cursor:not-allowed}
+button.primary,.action{background:#456a85;border:1px solid #a8cbe5;border-radius:9px;padding:11px 15px;display:inline-block;text-decoration:none;color:white}
+.actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.note{border-left:3px solid #deb86d;padding-left:12px}
+.step{display:inline-flex;align-items:center;justify-content:center;background:#a89b72;color:#101827;width:28px;height:28px;border-radius:50%;font-weight:700;margin-right:8px}
+#generator{width:100%;height:min(80vh,850px);min-height:540px;border:1px solid #48647e;border-radius:12px;background:#eef1f5}
+#preview{display:none;width:100%;height:450px;max-height:65vh;background:#25394d;border:1px solid #4c6882;border-radius:12px}
+#preview[data-ready="true"]{display:block}
+#report{white-space:pre-wrap;overflow-wrap:anywhere;color:#e7dbb8}
+.warning{color:#f6d3a3}
+@media(max-width:650px){h1{font-size:16px}section{padding:12px}#generator{height:72vh;min-height:460px}#preview{height:350px}}
+</style>
+<script type="module" src="https://cdn.jsdelivr.net/npm/@google/model-viewer@3.5.0/dist/model-viewer.min.js"></script>
+</head>
+<body>
+<header><h1>灰銀のレゾナンス | 無料3Dジェネレーター</h1><a href="./ai-model-studio.html">既存AIモデルスタジオ</a></header>
+<main>
+<section>
+  <h2><span class="step">1</span>原画からAIで3Dを生成</h2>
+  <p>Microsoft公式のTRELLIS.2 ZeroGPU画面を表示しています。スマホの写真・キャラクター原画を選んで生成し、完成したGLBを端末へ保存してください。</p>
+  <p class="note">生成処理はHugging Face側で行われます。このサイト自身がGPUを提供するわけではありません。無料枠は1日あたりの時間制限や待ち行列があります。使用前に利用規約を確認してください。私的な写真・非公開素材は送信しないでください。</p>
+  <div class="actions">
+    <a class="action" href="https://huggingface.co/spaces/microsoft/TRELLIS.2" target="_blank" rel="noopener noreferrer">TRELLIS.2を別画面で開く</a>
+    <a href="https://huggingface.co/spaces/tencent/Hunyuan3D-2.1" target="_blank" rel="noopener noreferrer">別候補：Hunyuan3D-2.1</a>
+  </div>
+  <p class="muted">埋め込み画面が表示されない場合は「別画面で開く」から操作してください。画像1枚からの推定なので、背面・髪・人体の関節は追加修正が必要なことがあります。</p>
+  <iframe id="generator" title="Microsoft TRELLIS.2 ZeroGPU画像から3Dモデル生成" src="https://microsoft-trellis-2.hf.space/" loading="lazy" referrerpolicy="no-referrer" allow="clipboard-read; clipboard-write"></iframe>
+</section>
+<section>
+  <h2><span class="step">2</span>GLBをスマホで確認</h2>
+  <label for="modelFile">生成したGLBファイルを選択（最大75MiB、外部送信なし）</label>
+  <input id="modelFile" type="file" accept=".glb,model/gltf-binary">
+  <model-viewer id="preview" camera-controls auto-rotate shadow-intensity="1" exposure="1" environment-image="neutral" interaction-prompt="none" alt="選択した3Dモデルの回転プレビュー"></model-viewer>
+  <p id="report" role="status">GLBを選択すると、形状・材質・骨格・アニメーションの構造を確認します。ゲーム本体は変更しません。</p>
+</section>
+<section>
+  <h2><span class="step">3</span>生成モデルを候補登録</h2>
+  <label for="modelId">モデルID（英小文字で開始）</label>
+  <input id="modelId" value="heroine_ch1_01" maxlength="41" spellcheck="false">
+  <label for="category">種類</label>
+  <select id="category">
+    <option value="human">人物</option><option value="monster">モンスター</option>
+    <option value="summon">召喚獣</option><option value="animal">動物・騎乗</option>
+    <option value="armor">衣装・鎧</option><option value="weapon">武器</option>
+  </select>
+  <label for="prompt">原画の設定・生成時の指示（記録用）</label>
+  <textarea id="prompt" placeholder="例：第一章の金髪女性騎士。長い前髪、自然な目・鼻・口、独立した鎧。"></textarea>
+  <label for="license">商用利用の権利確認</label>
+  <select id="license"><option value="unknown">未確認（正式ゲーム採用不可）</option><option value="reviewed">確認済み（詳細は別途記録）</option></select>
+  <div class="actions">
+    <button class="primary" id="copy" type="button" disabled>登録用JSONをコピー</button>
+    <a class="action" href="https://github.com/yamadayoshitaka/hai-gin-rpg/upload/main/assets/ai-model-inbox" target="_blank" rel="noopener noreferrer">GLBをGitHubへアップロード</a>
+    <a href="https://github.com/yamadayoshitaka/hai-gin-rpg/edit/main/assets/ai-model-inbox/manifest.json" target="_blank" rel="noopener noreferrer">登録manifestを編集</a>
+  </div>
+  <p id="registrationStatus" role="status" class="muted">GLBを確認した後で登録JSONを作成できます。</p>
+  <p class="note">候補への自動登録は既存の「Free AI site GLB import and validation」ワークフローが行います。GLBと登録JSONのアップロードは現段階では手動です。登録しても骨格付け・アニメーション対応・本編への反映は実施されません。公開GitHubには著作権上問題のない素材のみ登録してください。</p>
+</section>
+</main>
+<script type="module">
+const $=id=>document.getElementById(id);
+const MAX_BYTES=75*1024*1024;
+let current=null,previewUrl=null;
+function ensureId(id){if(!/^[a-z][a-z0-9_-]{1,40}$/.test(id))throw Error("IDは英小文字開始、2〜41文字の英小文字・数字・_・-のみです")}
+function inspectGLB(bytes){
+ const v=new DataView(bytes);
+ if(bytes.byteLength<28||v.getUint32(0,true)!==0x46546c67||v.getUint32(4,true)!==2||v.getUint32(8,true)!==bytes.byteLength)throw Error("GLB 2.0形式ではありません");
+ const chunkLength=v.getUint32(12,true),chunkType=v.getUint32(16,true);
+ if(chunkType!==0x4e4f534a||chunkLength<2||20+chunkLength>bytes.byteLength)throw Error("GLB内のJSON情報を取得できません");
+ const document=JSON.parse(new TextDecoder().decode(bytes.slice(20,20+chunkLength)));
+ if(!Array.isArray(document.meshes)||!document.meshes.length)throw Error("メッシュがありません");
+ const materialCount=(document.materials||[]).length;
+ const textured=(document.textures||[]).length;
+ const rigged=(document.skins||[]).length;
+ const animation=(document.animations||[]).length;
+ const triangles=document.meshes.flatMap(m=>m.primitives||[]).reduce((n,p)=>{
+   if(p.mode!=null&&p.mode!==4)return n;
+   const accessor=document.accessors?.[p.indices??p.attributes?.POSITION];
+   return n+(accessor?.count?Math.floor(accessor.count/3):0);
+ },0);
+ const pbr=(document.materials||[]).some(m=>!!m.pbrMetallicRoughness);
+ return {meshes:document.meshes.length,materials:materialCount,textures:textured,skins:rigged,animations:animation,triangles,pbr};
+}
+$('modelFile').addEventListener('change',async event=>{
+ const f=event.target.files?.[0];current=null;$('copy').disabled=true;
+ if(previewUrl){URL.revokeObjectURL(previewUrl);previewUrl=null}
+ $('preview').removeAttribute('src');$('preview').dataset.ready='false';
+ if(!f)return;
+ try{
+   if(!/^[a-z][a-z0-9_-]{1,70}\.glb$/.test(f.name))throw Error("ファイル名は英小文字開始で、英小文字・数字・_・-と.glbだけ使用できます。端末で名前を変更してください");
+   if(f.size<28||f.size>MAX_BYTES)throw Error("ファイルサイズが不正、または75MiBを超えています");
+   const summary=inspectGLB(await f.arrayBuffer());
+   previewUrl=URL.createObjectURL(f);
+   $('preview').src=previewUrl;$('preview').dataset.ready='true';
+   current={filename:f.name,summary};$('copy').disabled=false;
+   $('report').textContent="読み込み成功："+f.name+"\nメッシュ："+summary.meshes+" / 三角形（概算）："+summary.triangles+
+    "\n材質："+summary.materials+" / テクスチャ："+summary.textures+" / PBR："+(summary.pbr?"あり":"未確認")+
+    "\nスキン："+summary.skins+" / アニメーション："+summary.animations+
+    "\n※これは構造チェックであり、顔・髪・衣装の品質保証ではありません。";
+ }catch(e){$('report').textContent="GLB確認失敗："+e.message}
+});
+$('preview').addEventListener('error',()=>{$('report').textContent+="\n※3D表示に失敗しました。GLBのデータ・サイズ・端末対応を確認してください。"});
+$('copy').addEventListener('click',async()=>{
+ try{
+   if(!current)throw Error("先にGLBを選択してください");
+   const id=$('modelId').value.trim();ensureId(id);
+   const category=$('category').value;
+   if(!['human','monster','summon','animal','armor','weapon'].includes(category))throw Error("カテゴリが無効です");
+   const license=$('license').value==='reviewed'?'reviewed-by-user':'unknown';
+   const payload={schema:'hai-gin/ai-3d-inbox/v1',entries:[{id,category,filename:current.filename,provider:'Microsoft TRELLIS.2 ZeroGPU',sourceUrl:'https://huggingface.co/spaces/microsoft/TRELLIS.2',license,prompt:$('prompt').value.trim().slice(0,2000)}]};
+   await navigator.clipboard.writeText(JSON.stringify(payload,null,2));
+   $('registrationStatus').textContent="登録JSONをコピーしました。GLBをGitHubへアップロードし、manifest.jsonのentriesに貼り付けて保存してください。";
+ }catch(e){$('registrationStatus').textContent="登録情報の作成に失敗："+e.message}
+});
+window.addEventListener('pagehide',()=>{if(previewUrl)URL.revokeObjectURL(previewUrl)});
+</script>
+</body>
+</html>
