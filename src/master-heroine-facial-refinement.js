@@ -37,7 +37,7 @@ export function polishHeroineFacePoint(x,y,z,box,{strength=1}={}){
  const midCheek=bell(ax,.51,.26)*bell(yn,.53,.14);
  const noseZone=bell(ax,.22,.16)*bell(yn,.52,.07);
  // Do not sculpt round protruding cheeks on an already youthful head.
- const lateral=sx*(-.034*lowerCheek-.018*jawBlend-.031*cheekSpike)*(1-.91*noseZone);
+ const lateral=sx*(-.0315*lowerCheek-.016*jawBlend-.028*cheekSpike)*(1-.91*noseZone);
  const cheekDepth=sz*(-.021*lowerCheek+.005*midCheek-.020*cheekSpike);
  // Recess the full philtrum / lower-face muzzle as a continuous skin surface,
  // not a disconnected mouth plate. Fade before the nose and toward the ears.
@@ -61,7 +61,7 @@ export function polishHeroineFacePoint(x,y,z,box,{strength=1}={}){
  const lowerLip=bell(ax,.16,.21)*bell(yn,.467,.027);
  const corner=bell(ax,.39,.10)*bell(yn,.484,.031);
  const philtrum=bell(ax,.06,.09)*bell(yn,.548,.022);
- const lipDepth=sz*(.007*cupid+.004*lowerLip-.004*corner-.006*philtrum);
+ const lipDepth=sz*(.007*cupid+.004*lowerLip-.004*corner-.002*philtrum);
  const mouthCornerLift=sy*.0036*corner;
 
  return {
