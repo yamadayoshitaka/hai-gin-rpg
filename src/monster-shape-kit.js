@@ -4,6 +4,7 @@
  * Meshes are cached only where geometry parameters are genuinely reusable.
  */
 import * as THREE from 'three';
+import {nonhumanMonsterStage} from './nonhuman-model-quality.js';
 import {buildCanineFurRibbonGeometry} from './canine-fur-ribbons.js?v=4.4.89';
 import {decorateMonsterPhotoMaterial,detachMonsterPhotoMaterial} from './monster-photo-pbr.js?v=4.4.81';
 
@@ -12,6 +13,22 @@ export const MONSTER_DETAIL_LEVELS=Object.freeze({
   high:Object.freeze({sphere:[38,26],rock:2,rod:12,tube:[22,8],torus:[9,32]}),
   low:Object.freeze({sphere:[14,10],rock:0,rod:7,tube:[10,5],torus:[6,16]}),
 });
+/** Per-family sculpt quality: human-like monster families are intentionally frozen. */
+export function monsterResolutionFor(spec,detail='high'){
+ const base=MONSTER_DETAIL_LEVELS[detail];
+ if(!base)throw Error('Unknown sculpture resolution: '+detail);
+ const stage=detail==='low'?0:nonhumanMonsterStage(spec);
+ if(!stage)return base;
+ return {
+   sphere:[base.sphere[0]+stage*(detail==='source'?2:1),
+     base.sphere[1]+stage*(detail==='source'?2:1)],
+   rock:base.rock,
+   rod:base.rod+Math.ceil(stage/2),
+   tube:[base.tube[0]+stage*(detail==='source'?2:1),
+     base.tube[1]+Math.ceil(stage/3)],
+   torus:[base.torus[0]+Math.ceil(stage/3),base.torus[1]+stage],
+ };
+}
 const geometryCache=new Map(),materialCache=new Map();
 function cachedGeometry(key,make){
  if(!geometryCache.has(key))geometryCache.set(key,make());
@@ -59,7 +76,8 @@ export function monsterSculptCacheStats(){
  return {geometries:geometryCache.size,activeMaterials:materialCache.size};
 }
 export function createSculpture(spec,detail='high'){
- const resolution=MONSTER_DETAIL_LEVELS[detail];
+ const resolution=monsterResolutionFor(spec,detail);
+ const nonhumanStage=detail==='low'?0:nonhumanMonsterStage(spec);
  if(!resolution)throw Error('Unknown sculpture resolution: '+detail);
  const fine=detail!=='low',pivots={},root=new THREE.Group();root.name=spec.id+'-'+spec.name;
  const colors=spec.colors;
@@ -80,11 +98,12 @@ export function createSculpture(spec,detail='high'){
  };
  const sphere=(parent,shade,position,scale,options={})=>{
    const [w,h]=resolution.sphere;
-   const geo=cachedGeometry('sphere:'+detail,()=>new THREE.SphereGeometry(1,w,h));
+   const geo=cachedGeometry('sphere:'+detail+':'+w+':'+h,
+     ()=>new THREE.SphereGeometry(1,w,h));
    const m=attach(parent,geo,shade,options);m.position.set(...position);m.scale.set(...scale);return m;
  };
  const rock=(parent,shade,position,scale,options={})=>{
-   const geo=cachedGeometry('rock:'+detail,
+   const geo=cachedGeometry('rock:'+detail+':'+resolution.rock,
      ()=>new THREE.DodecahedronGeometry(1,resolution.rock));
    const m=attach(parent,geo,shade,{rough:.88,metal:.07,...options});
    m.position.set(...position);m.scale.set(...scale);return m;
@@ -162,8 +181,8 @@ export function createSculpture(spec,detail='high'){
    }
    side.normalize();
    const normal=new THREE.Vector3().crossVectors(direction,side).normalize();
-   const rows=detail==='source'?20:detail==='high'?9:2;
-   const cols=detail==='source'?8:detail==='high'?4:2;
+   const rows=detail==='source'?20+nonhumanStage:detail==='high'?9+Math.floor(nonhumanStage/2):2;
+   const cols=detail==='source'?8+Math.floor(nonhumanStage/2):detail==='high'?4+Math.floor(nonhumanStage/4):2;
    const vertices=[],uv=[],indices=[];
    for(let i=0;i<=rows;i++){
      const t=i/rows,center=a.clone().lerp(b,t);
@@ -172,7 +191,7 @@ export function createSculpture(spec,detail='high'){
        const u=j/cols*2-1;
        const point=center.clone()
          .addScaledVector(side,width*u)
-         .addScaledVector(normal,(1-u*u)*Math.sin(Math.PI*t)*span*.085);
+         .addScaledVector(normal,(1-u*u)*Math.sin(Math.PI*t)*span*(.085+.002*nonhumanStage));
        vertices.push(point.x,point.y,point.z);
        uv.push(j/cols,t);
      }
@@ -207,7 +226,7 @@ export function createSculpture(spec,detail='high'){
  };
  const ring=(parent,shade,position,radius=.25,tubeRadius=.03)=>{
    const [tube,segments]=resolution.torus;
-   const geo=cachedGeometry('torus:'+detail+':'+radius.toFixed(3)+':'+tubeRadius.toFixed(3),
+   const geo=cachedGeometry('torus:'+detail+':'+resolution.torus.join('x')+':'+radius.toFixed(3)+':'+tubeRadius.toFixed(3),
      ()=>new THREE.TorusGeometry(radius,tubeRadius,tube,segments));
    const m=attach(parent,geo,shade,{metal:.32});m.position.set(...position);return m;
  };
