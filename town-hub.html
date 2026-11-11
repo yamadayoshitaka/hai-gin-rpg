@@ -240,6 +240,7 @@ function renderTownRadar(){
  updateTownPlayerPin();drawTownMap();
 }
 function renderTownGuide(){
+ $('townGuideHint').textContent='青い点が軍師。建物をタップすると直接入室します。';
  drawTownMap();
  const board=$('townGuideBoard');
  board.querySelectorAll('button').forEach(x=>x.remove());
