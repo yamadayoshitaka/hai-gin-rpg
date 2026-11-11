@@ -34,7 +34,7 @@ const definitions=[
  ['ally-05','軽装の俊敏剣士','ally',7,
   [.19,.22,.39,.17,.26,.22,.33],'#cfa085','#6e8251','#604039','#533c49','#919c9e',.95,1.08,.80],
  ['hero-girl-01','美少女01・ピンク髪の女騎士（顔・化粧調整中）','hero',2,
-  [.20,.24,.29,.20,.21,.26,.27],'#edcbbf','#75a6ad','#d6a5ba','#393e53','#bdc5cb',.958,1.046,.70]
+  [.12,.16,.28,.18,.18,.24,.23],'#edcbbf','#75a6ad','#d6a5ba','#393e53','#bdc5cb',.935,1.030,.70]
 ];
 function buildPreset(row,i){
  const [key,label,category,hairStyle,faceVector,skin,iris,hairColor,clothColor,armorColor,
@@ -56,23 +56,23 @@ function buildPreset(row,i){
     // FF13 Lightning as a *visual direction*, not borrowed Square Enix mesh
     // or copyrighted texture: slender natural nose, calm almond eyes and
     // focused expression, softer rose-pink skin, fine jaw with full cheeks.
-    faceHeight:.954,upperThird:1.025,middleThird:.942,lowerThird:.951,
-    jawTaper:.926,cheekRoundness:1.021,chinLength:.941,
-    lowerFaceProjection:.87,
-    preEarFullness:.70,lowerCheekLateral:.75,parotidWidth:.68,
-    eyeWidth:1.067,eyeHeight:.970,eyeSpacing:1.008,
-    eyeVertical:.002,eyeTilt:.036,
+    faceHeight:.939,upperThird:1.024,middleThird:.916,lowerThird:.915,
+    jawTaper:.838,cheekRoundness:1.012,chinLength:.893,
+    lowerFaceProjection:.755,
+    preEarFullness:.675,lowerCheekLateral:.710,parotidWidth:.660,
+    eyeWidth:1.038,eyeHeight:.854,eyeSpacing:1.008,
+    eyeVertical:.001,eyeTilt:.048,
     // Single authoritative ocular parameters: iris != black pupil.
     // Eye size is the real sclera radius; depth is measured in metres.
-    eyeballScale:.865,eyeSocketDepth:-.0042,
-    irisDiameter:.80,pupilDiameter:.79,
-    upperLidCoverage:.25,underEyeSoftness:.23,
+    eyeballScale:.828,eyeSocketDepth:-.0054,
+    irisDiameter:.790,pupilDiameter:.745,
+    upperLidCoverage:.34,underEyeSoftness:.15,
     browVertical:.004,browEyeGap:1.008,
-    browWidth:1.065,browThickness:.745,browAngle:.025,
-    noseOverall:.815,noseLength:.907,noseWidth:.79,
-    noseBridge:1.028,noseTip:.755,
-    mouthWidth:.915,mouthHeight:.950,mouthVertical:.006,
-    lipFullness:.865,mouthCorner:.007
+    browWidth:1.045,browThickness:.705,browAngle:.021,
+    noseOverall:.802,noseLength:.884,noseWidth:.755,
+    noseBridge:1.018,noseTip:.765,
+    mouthWidth:.870,mouthHeight:.855,mouthVertical:.011,
+    lipFullness:.695,mouthCorner:.008
    }):i===0?validateFaceProportions({
    faceHeight:.947,upperThird:1.07,middleThird:.86,lowerThird:.925,
    jawTaper:.85,chinLength:.87,eyeWidth:1.045,eyeHeight:1.045,
@@ -89,7 +89,7 @@ function buildPreset(row,i){
    mouthWidth:.87,lipFullness:1.015
   }):base.proportions,
   faceWidth,eyeSize:1+(eyeSize-1)*.70,shoulderSize,
-  headScale:category==='hero'?(female?1.065:1.075):1,
+  headScale:category==='hero'?(female?1.045:1.075):1,
   youthfulness:female?.69:category==='hero'?.97:.49+(i-5)*.035,
   skinRoughness:category==='hero'?(female?.55:i===0?.43:.47):.54,
   makeup:female?Object.freeze({
