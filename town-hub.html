@@ -379,13 +379,21 @@ $('panelContent').onclick=event=>{
   if(target.id==='openMap'){goMap();return;}
  }catch(error){notice(error.message||String(error));}
 };
-function goMap(event){
- if(event?.preventDefault)event.preventDefault();
+function finishMapTransition(){
  resetTownMovement();
  try{leaveTown(game);persistSession(game,sessionStorage);}
  catch(error){console.warn('[Town] Session persistence failed, using map navigation fallback:',error);}
- // Navigation remains possible if storage fails or the 3D iframe is still loading.
  window.location.assign('./world-map.html?v=town-exit-2');
+}
+function goMap(event){
+ if(event?.preventDefault)event.preventDefault();
+ const alreadySeen=Boolean(game.storyFlags?.stagePostMangaSeen?.[game.townStage]);
+ if(townReady&&!alreadySeen){
+  leaveAfterPaper=true;
+  startPaperStory('post');
+  return;
+ }
+ finishMapTransition();
 }
 $('leaveTown').addEventListener('click',goMap);
 window.addEventListener('message',event=>{
@@ -546,10 +554,8 @@ async function speakChapter(number,{autoplay=false}={}){
 // Every town stop uses the exact same serial-manga identity and panel order
 // as the other 180 combat/exploration stages.
 const townManga=mangaForStage(game.townStage);
-const eventScenes=(game.storyFlags?.route?.activeCooperation||game.campaign.commander.gender==='female')?
- mangaForStage(game.townStage,storyStageContext(game,game.townStage)).panels.filter(p=>p.phase==='pre'):
- townManga.panels.filter(p=>p.phase==='pre');
-let eventIndex=0;
+let eventScenes=mangaForStage(game.townStage,storyStageContext(game,game.townStage)).panels.filter(p=>p.phase==='pre');
+let eventIndex=0,paperPhase='pre',leaveAfterPaper=false;
 const voiceIsOn=()=>{
  try{return JSON.parse(localStorage.getItem('hai-gin-core-settings-v1')||'{}')?.voice!==false;}
  catch{return true;}
@@ -570,7 +576,7 @@ function eventRender(){
  $('eventSpeaker').textContent=shot.characterId?
   shot.speaker+'　／　'+shot.faction+'・'+shot.role:'語り手　／　'+townManga.chapterTitle;
  $('eventText').style.animation='none';void $('eventText').offsetWidth;$('eventText').style.animation='';
- $('eventNext').textContent=eventIndex===eventScenes.length-1?'町へ進む ▶':'次のコマ ▶';
+ $('eventNext').textContent=eventIndex===eventScenes.length-1?(paperPhase==='post'?'地図へ進む ▶':'町へ進む ▶'):'次のコマ ▶';
  setVoiceEnabled(voiceIsOn());
  const cue=fantasyCueForMangaPanel({id:townManga.id,number:townManga.number,kind:'town'},eventIndex);
  townAudio.setScene('paper',cue.url);
@@ -595,23 +601,37 @@ $('eventVoice').onclick=()=>{
 };
 function closePaperStory(){
  $('opening').hidden=true;paperPending=false;
- game.storyFlags.stageMangaSeen??={};
- game.storyFlags.chapterOpenings??={};
- game.storyFlags.chapterOpenings[townChapter]=true;
- game.storyFlags.stageMangaSeen??={};game.storyFlags.stageMangaSeen[game.townStage]=true;
- if(townChapter===1)game.storyFlags.openingEventCompleted=true;
+ game.storyFlags??={};
+ if(paperPhase==='post'){
+  game.storyFlags.stagePostMangaSeen??={};
+  game.storyFlags.stagePostMangaSeen[game.townStage]=true;
+ }else{
+  game.storyFlags.chapterOpenings??={};
+  game.storyFlags.chapterOpenings[townChapter]=true;
+  game.storyFlags.stageMangaSeen??={};
+  game.storyFlags.stageMangaSeen[game.townStage]=true;
+  if(townChapter===1)game.storyFlags.openingEventCompleted=true;
+ }
  persist();stopNarration();townAudio.setScene(insideFacility?'shop':'town');
+ if(paperPhase==='post'&&leaveAfterPaper){
+  leaveAfterPaper=false;finishMapTransition();
+ }
 }
-function startPaperStory(){
+function startPaperStory(phase='pre'){
  if(!townReady){paperPending=true;return;}
- paperPending=false;
- game.storyFlags.stageMangaSeen??={};game.storyFlags.stageMangaSeen[game.townStage]=true;
- persistSession(game,sessionStorage);
+ paperPending=false;paperPhase=phase;
+ if(phase==='pre'){
+  game.storyFlags.stageMangaSeen??={};
+  game.storyFlags.stageMangaSeen[game.townStage]=true;
+  persistSession(game,sessionStorage);
+ }
+ eventScenes=mangaForStage(game.townStage,storyStageContext(game,game.townStage))
+  .panels.filter(p=>p.phase===phase);
  hideTownDialogue();
  townAudio.effect('paper');townAudio.setScene('paper');
  resetTownMovement();$('townGuide').hidden=true;closePanel();
- const chapterData=STORY_CHAPTERS[townChapter-1],continent=continentForChapter(townChapter);
- document.querySelector('#opening .eyebrow').textContent='第'+townChapter+'章・連続漫画　'+chapterData.title;
+ const chapterData=STORY_CHAPTERS[townChapter-1];
+ document.querySelector('#opening .eyebrow').textContent='第'+townChapter+'章・'+(phase==='post'?'町の後日談':'連続漫画')+'　'+chapterData.title;
  document.querySelector('#opening .sceneCard h1').textContent=townManga.stageName;
  eventIndex=0;eventRender();$('opening').hidden=false;
  speakCurrentScene();
