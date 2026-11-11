@@ -2234,8 +2234,10 @@ const objectiveMonitor=createStageObjectiveMonitor(stageObjective,{
   ring.renderOrder=3;ring.name='BattleObjectiveCaptureZone';
   ring.userData.nonColliding=true;scene.add(ring);stageObjectiveMarker=ring;
  },
- onComplete:(victory,reason)=>completeBattle(victory,{
-  title:victory?'任務成功':'任務失敗',detail:reason+' · 経過'+Math.floor(elapsed)+'秒'
+ onComplete:(victory,reason,result)=>completeBattle(victory,{
+  title:victory?'味方軍の勝利':'敵軍の勝利',
+  detail:(result.winnerTeam===0?'味方軍が勝利・敵軍が敗北':'敵軍が勝利・味方軍が敗北')+
+   '｜'+reason+' · 経過'+Math.floor(elapsed)+'秒'
  })
 });
 function checkStageObjective(){
@@ -2256,7 +2258,9 @@ function completeBattle(victory,{title='',detail=''}={}){
  if(victory)battleVoice.cue('victory',{id:1,team:0,job:{name:'軍師'}});
  // Keep the victory/defeat screen inaccessible until the cinematic ends.
  $('endScreen').style.display='none';
- battleCeremony.finish(Boolean(victory),victory?'戦場を制圧した！':'戦線が崩壊した…');
+ battleCeremony.finish(Boolean(victory),stageObjective?
+  (objectiveMonitor?.getState().lastResult?.reason||(victory?'任務達成！':'作戦失敗…')):
+  victory?'戦場を制圧した！':'戦線が崩壊した…');
  return true;
 }
 const skinMat=new THREE.MeshStandardMaterial({color:0xc89a79,roughness:.9});
@@ -3652,9 +3656,12 @@ function recordStoryBattleOutcome(victory){
  const casualties=new Map();
  for(const a of actors){if(a.team===0&&a.squadId!=null&&a.hp<=0)casualties.set(a.squadId,(casualties.get(a.squadId)||0)+1);}
  const monstersRemaining=storyRequest.enemyMode==='monsters'?actors.filter(a=>a.team===1&&a.hp>0).length:null;
+ const outcome=objectiveMonitor?.getState().lastResult;
+ const winnerTeam=outcome?.winnerTeam??(victory?0:1);
  const result={version:1,battleId:storyRequest.battleId,territoryId:storyRequest.territoryId,victory,
   ...(storyRequest.origin==='game-core'?{stageId:storyRequest.stageId,monstersRemaining,
-    objectiveType:stageObjective?.type||'eliminate',objectiveCompleted:Boolean(victory)}:{}),
+    objectiveType:stageObjective?.type||'eliminate',objectiveCompleted:Boolean(victory),
+    winnerTeam,loserTeam:1-winnerTeam}:{}),
   casualties:[...casualties].map(([squadId,count])=>({squadId,count}))};
  try{sessionStorage.setItem('hai-gin-story-result-v1',JSON.stringify(result));}
  catch(e){showRuntimeError('戦闘結果を保存できませんでした：'+e.message);}
@@ -5838,7 +5845,13 @@ function updateEnemyTacticalDecisions(){
   const defenseElapsed=elapsed-(lastEnemyTacticalOrderAt.get(id)??elapsed);
   const choice=chooseEnemyOrder(own,allies,previous,{friendlyArmy,defenseElapsed});
   let mode=choice.mode,buildingId=null;
-  if(mode==='charge'&&previous!=='explore'&&elapsed>12){
+  // Story missions are asymmetric: the attacker must advance; the defender
+  // must guard its zone. Existing retreat on critical losses remains valid.
+  if(stageObjective&&stageObjective.type!=='eliminate'){
+   if(stageObjective.defenderTeam===1&&mode==='charge')mode='defend';
+   else if(stageObjective.attackerTeam===1&&mode==='hold')mode='charge';
+  }
+  if(!stageObjective&&mode==='charge'&&previous!=='explore'&&elapsed>12){
    const px=living.reduce((v,u)=>v+(u.x??u.cell?.x??0),0)/living.length;
    const pz=living.reduce((v,u)=>v+(u.z??u.cell?.z??0),0)/living.length;
    const nearEnemy=allies.some(u=>Math.hypot((u.x??u.cell?.x??0)-px,(u.z??u.cell?.z??0)-pz)<38);
