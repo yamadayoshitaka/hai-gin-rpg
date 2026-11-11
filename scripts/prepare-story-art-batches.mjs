@@ -64,8 +64,8 @@ for(let i=0;i<all.length;i+=10){
  const index=i/10+1,id='batch-'+String(index).padStart(4,'0');
  const steps=shots.map((p,n)=>({...p,frame:n+1,
   row:Math.floor(n/2)+1,column:n%2+1,
-  maleOutput:'assets/story/panels/'+p.id.replace(/-m(\\d{1,2})$/,(_,v)=>'-m'+v.padStart(2,'0'))+'.webp',
-  femaleOutput:'assets/story/panels/'+p.id.replace(/-m(\\d{1,2})$/,(_,v)=>'-m'+v.padStart(2,'0'))+'-female.webp'
+  maleOutput:'assets/story/panels/'+p.id.replace(/-m(\d{1,2})$/,(_,v)=>'-m'+v.padStart(2,'0'))+'.webp',
+  femaleOutput:'assets/story/panels/'+p.id.replace(/-m(\d{1,2})$/,(_,v)=>'-m'+v.padStart(2,'0'))+'-female.webp'
  }));
  batches.push({id,index,chapters:[...new Set(shots.map(p=>p.chapter))],
    stages:[shots[0].stageId],
