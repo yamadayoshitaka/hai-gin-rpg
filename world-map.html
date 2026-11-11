@@ -272,7 +272,9 @@ function completeReturnedBattle(){
   }));
   saveSession();
   const nextStage=outcome.next||outcome.stage;chapter=nextStage.chapter;selected=nextStage.id;
-  message(outcome.stage.name+'：'+(outcome.victory?'勝利！次のステージが解放されました。':'敗北。町で編成を見直してください。')+' 戦死'+outcome.casualties+'人');
+  const rewards=outcome.rewards||{};
+  const earned=outcome.victory?' 💰'+(rewards.gold||0)+'G / ✦'+(rewards.xp||0)+'EXP / 宝：'+(rewards.loot?.map(item=>item.name+'×'+item.quantity).join('・')||'なし'):'';
+  message(outcome.stage.name+'：'+(outcome.victory?'勝利！次のステージが解放されました。':'敗北。町で編成を見直してください。')+' 戦死'+outcome.casualties+'人'+earned);
  }catch(error){message('戦闘結果の確認に失敗：'+(error.message||String(error)));}
 }
 const params=new URLSearchParams(location.search);
