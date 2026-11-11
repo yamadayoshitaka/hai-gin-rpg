@@ -98,10 +98,10 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
  const originalPupilAngle=female?.236:.19;
  // A doubled requested projected diameter must remain on a sphere:
  // physical iris diameter is limited to 95.5% of the eye's diameter.
- const irisAngle=female?Math.asin(Math.min(.955,
-  Math.sin(originalIrisAngle)*settings.irisDiameter)):originalIrisAngle;
- const pupilAngle=female?Math.asin(Math.min(.75,
-  Math.sin(originalPupilAngle)*settings.irisDiameter)):originalPupilAngle;
+ const irisAngle=Math.asin(Math.min(.955,
+  Math.sin(originalIrisAngle)*settings.irisDiameter));
+ const pupilAngle=Math.asin(Math.min(.75,
+  Math.sin(originalPupilAngle)*settings.irisDiameter));
  const eyeRadius=d.x*(female?.052:.051)*eyeScale;
  const eyeHeight=box.min.y+d.y*(female?.684:.687);
  const eyeSpacing=d.x*(female?.112:.115);
