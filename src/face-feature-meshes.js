@@ -62,6 +62,28 @@ function sampleGrid(mesh,columns,rows,u,v){
   .addScaledVector(vertex(i,j+1),(1-a)*b)
   .addScaledVector(vertex(i+1,j+1),a*b);
 }
+/** Stitch the two cosmetic eyelid bands at both eye corners in the
+ * exact same mesh coordinate space, without detached makeup cards. */
+function stitchLinerCorners(upper,lower,faceWidth,depth){
+ const g=upper.geometry,vertices=Array.from(g.getAttribute('position').array);
+ const uv=Array.from(g.getAttribute('uv').array);
+ const index=Array.from(g.getIndex().array);
+ for(const u of [0,1]){
+  const a=sampleGrid(upper,28,3,u,0),b=sampleGrid(lower,28,3,u,0);
+  const dx=(u===0?-1:1)*faceWidth*.0025;
+  const dz=depth*.00024;
+  const begin=vertices.length/3;
+  for(const p of [a,b]){
+   vertices.push(p.x,p.y,p.z+dz,p.x+dx,p.y,p.z+dz);
+   uv.push(u,0,u,1);
+  }
+  index.push(begin,begin+1,begin+2,begin+2,begin+1,begin+3);
+ }
+ g.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));
+ g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
+ g.setIndex(index);g.computeVertexNormals();g.computeBoundingSphere();
+ upper.userData.eyelinerCornersClosed=true;
+}
 export function createAnatomicalFaceParts(face,{gender='female',controls={}}={}){
  if(!face?.isMesh||!['male','female'].includes(gender))
   throw Error('Sculpted face mesh and gender required for 3D facial parts');
@@ -132,7 +154,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   const faceZ=surfaceAt(x,y);
   // Set globes into the socket but forward enough for the colored iris
   // to stay visible at oblique camera angles; not floating over the lids.
-  const z=faceZ-eyeRadius*.30;
+  const z=faceZ-eyeRadius*.12;
   const globe=new THREE.Mesh(new THREE.SphereGeometry(eyeRadius,36,24),eyeMat);
   globe.name=(side===-1?'LEFT':'RIGHT')+'_ORBITAL_EYEBALL';
   globe.scale.set(1.18,.77,.89);
@@ -162,6 +184,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   const pupil=makeCap('CURVED_PUPIL',pupilAngle,pupilMat,.024);
   pupil.userData.colorRole='pupil';root.add(pupil);
   const width=eyeRadius*1.12;
+  let upperEyeliner=null,lowerEyeliner=null;
   for(const upper of [true,false]){
    const label=(side===-1?'LEFT':'RIGHT')+(upper?'_UPPER':'_LOWER');
    const height=eyeRadius*.33;
@@ -182,17 +205,19 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
     // Eyeliner shares the eye lid's actual surface and transformation.
     const linerMat=new THREE.MeshStandardMaterial({
      color:0x30252b,roughness:.84,metalness:0,side:THREE.DoubleSide,
-     transparent:true,opacity:upper?.48:.13,depthWrite:false
+     transparent:true,opacity:upper?.64:.53,depthWrite:false
     });
     const liner=buildGrid(label+'_EYELINER',28,3,(u,v)=>{
-     const p=sampleGrid(mesh,28,4,u,.025+v*(upper?.075:.035));
+     const p=sampleGrid(mesh,28,4,u,.018+v*(upper?.064:.056));
      p.z+=Math.max(.00002,d.z*.00018);
      return p;
     },linerMat);
     liner.userData.colorRole='eyeliner';liner.userData.cosmetic=true;
     mesh.add(liner);
+    if(upper)upperEyeliner=liner;else lowerEyeliner=liner;
    }
   }
+  if(female)stitchLinerCorners(upperEyeliner,lowerEyeliner,d.x,d.z);
   if(female){
    // Two real 3D orbital surfaces per eye: a subtle upper-lid fold
    // (double eyelid) and a volume band directly under the lower lid.
@@ -236,8 +261,8 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
    // Subtle actual under-eye cosmetic band; it shares the eye tilt pivot
    // with the double eyelid, lashes and brows.
    const shadowMat=new THREE.MeshStandardMaterial({
-    color:0xb99085,transparent:true,opacity:.075,depthWrite:false,
-    roughness:1,side:THREE.DoubleSide
+    color:0x60444e,transparent:true,opacity:.72,depthWrite:false,
+    roughness:1,side:THREE.DoubleSide,vertexColors:true
    });
    const eyeShadow=buildGrid(
     (side===-1?'LEFT':'RIGHT')+'_UNDER_EYE_SHADOW',28,5,(u,v)=>{
@@ -247,7 +272,18 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
      const zz=surfaceAt(xx,yy)+Math.max(.000025,d.z*.00025);
      return new THREE.Vector3(xx,yy,zz);
     },shadowMat);
+   // Dark-but-feathered under-eye tone with transparent soft edges.
+   const pigments=[];
+   for(let j=0;j<=5;j++)for(let i=0;i<=28;i++){
+    const u=i/28,v=j/5;
+    const fade=Math.pow(Math.sin(Math.PI*u),.8)*
+     Math.pow(Math.sin(Math.PI*v),.9);
+    pigments.push(1,1,1,.66*fade);
+   }
+   eyeShadow.geometry.setAttribute('color',
+    new THREE.Float32BufferAttribute(pigments,4));
    eyeShadow.userData.colorRole='underEye';
+   eyeShadow.userData.feathered=true;
    root.add(eyeShadow);
   }
   if(female){
@@ -260,7 +296,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
    pivot.userData.side=side;
    const eyebrow=buildGrid(eyeLabel+'_SCULPTED_EYEBROW',34,4,(u,v)=>{
     const t=2*u-1,arch=Math.pow(Math.max(0,1-t*t),.65);
-    const xx=x+t*eyeRadius*1.64;
+    const xx=x+t*eyeRadius*1.37;
     const yy=browY+eyeRadius*.10*arch+(v-.5)*eyeRadius*.17*arch;
     const zz=surfaceAt(xx,yy)+d.z*(.011+.002*arch);
     return new THREE.Vector3(xx-pivot.position.x,yy-pivot.position.y,
@@ -299,7 +335,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
    pivot.position.set(x,browY,surfaceAt(x,browY));
    const brow=buildGrid(label+'_NATURAL_MALE_BROW',30,4,(u,v)=>{
     const t=2*u-1,arch=Math.pow(Math.max(0,1-t*t),.72);
-    const xx=x+t*eyeRadius*1.66;
+    const xx=x+t*eyeRadius*1.37;
     const yy=browY+eyeRadius*.035*arch+
       (v-.5)*eyeRadius*.23*arch;
     const zz=surfaceAt(xx,yy)+d.z*.010;
@@ -340,7 +376,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
    const y=(positions.getY(i)-box.min.y)/d.y;
    const z=(positions.getZ(i)-box.min.z)/d.z;
    const front=smoothstep((z-.57)/.20);
-   const strength=.22*bell(x,.24,.085)*bell(y,.535,.043)*front;
+   const strength=.43*bell(x,.265,.105)*bell(y,.535,.056)*front;
    const rgb=pigmentFactor(skin,tint,strength);
    colors.push(rgb.x,rgb.y,rgb.z);
   }
@@ -349,7 +385,16 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
  // Original face remains the structural muzzle/philtrum/chin. Two shallow
  // lip strips follow that actual surface and use real triangle thickness.
  // Avoid a single flat 'mouth plate' or pigment printed on the chin.
- const lipCenter=box.min.y+d.y*(female?.509:.509);
+ // Re-anchor the upper and lower vermilion to the source head's real
+ // central mouth groove, within a narrow safe window around the source.
+ const nominalMouthY=box.min.y+d.y*.509;
+ let lipCenter=nominalMouthY,bestCrease=.0015*d.z;
+ for(let k=-11;k<=11;k++){
+  const y=nominalMouthY+d.y*k*.001;
+  const crease=(surfaceAt(cx,y-d.y*.003)+surfaceAt(cx,y+d.y*.003))/2-
+   surfaceAt(cx,y);
+  if(crease>bestCrease){bestCrease=crease;lipCenter=y;}
+ }
  const halfWidth=d.x*.044;
  const actualLips=new Map();
  for(const upper of [true,false]){
@@ -454,8 +499,10 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
    anchoredToLipSurface:true,boundedWithinLipArea:true,
    attachedToLipMesh:true,paintAsVertexColor:true
   }:null,
-  eyelinerMeshCount:female?4:0,eyeAccentMeshCount:female?2:0,
-  blushMeshCount:0,blushVertexTint:female,beardMeshCount:female?0:5,
+  eyelinerMeshCount:female?4:0,eyelinerCornersClosed:female,
+  eyeAccentMeshCount:female?2:0,
+  blushMeshCount:0,blushVertexTint:female,
+  blushOpacityFactor:female?.43:0,beardMeshCount:female?0:5,
   beardDensity:gender==='male'?settings.beardDensity:0,
   eyebrowMeshCount:2,eyelashMeshCount:female?4:0,
   underEyeShadowMeshCount:female?2:0,
@@ -466,6 +513,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   irisDiameterRequestFactor:settings.irisDiameter,
   actualIrisDiameterFactor:Number((Math.sin(irisAngle)/Math.sin(originalIrisAngle)).toFixed(3)),
   mouthHalfWidthFraction:.044,
+  lipCenterNormalized:Number(((lipCenter-box.min.y)/d.y).toFixed(4)),
   eyeScale,contactColorDefault:safeContactColor(settings.contactColor),
   eyeAngleDefault:settings.eyeAngle,
   maleCosmeticsDisabled:!female,
@@ -492,6 +540,11 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
    for(let i=0;i<attr.count;i++){
     const p=new THREE.Vector3(attr.getX(i),attr.getY(i),attr.getZ(i));
     mesh.localToWorld(p);root.worldToLocal(p);
+    // A bounded inner endpoint guarantees an inter-brow gap even when
+    // both eye rigs rotate to their +/-20 degree extremes.
+    const gap=d.x*.023;
+    if(mesh.name.startsWith('LEFT_'))p.x=Math.min(p.x,cx-gap);
+    else p.x=Math.max(p.x,cx+gap);
     const skin=surfaceAt(p.x,p.y);
     p.z=skin+d.z*.008;
     root.localToWorld(p);mesh.worldToLocal(p);
