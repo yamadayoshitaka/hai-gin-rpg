@@ -5620,8 +5620,14 @@ function battleUnitJobName(unit){
  return unit.job?.name||battleJobNameById.get(unit.jobId)||unit.jobId||'兵士';
 }
 function squadPrimaryJob(id,team=0,sums=lastRibbonSums){
- const jobs=sums?.get(squadKey(team,String(id)))?.jobs;
- if(!jobs)return '部隊';
+ const liveJobs=sums?.get(squadKey(team,String(id)))?.jobs;
+ const jobs=liveJobs&&Object.keys(liveJobs).length?liveJobs:{};
+ if(!Object.keys(jobs).length)for(const unit of squadRoster){
+  if(unit.team!==team||String(unit.squadId)!==String(id)||
+    unit.isStrategist||!(unit.hp>0)||unit.alive===false)continue;
+  const job=battleUnitJobName(unit);
+  jobs[job]=(jobs[job]||0)+1;
+ }
  return Object.entries(jobs).sort((a,b)=>b[1]-a[1])[0]?.[0]||'部隊';
 }
 function currentSkirmishDirective(a){
