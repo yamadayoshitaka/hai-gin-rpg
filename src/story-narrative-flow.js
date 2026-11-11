@@ -87,7 +87,7 @@ export function storyAllianceScores(game){
  return {crimson:red,verdant:green,evidence:testimony};
 }
 export function availableStoryRoutes(game){
- const trust=storyAllianceScores(game),allowed=Boolean(game?.completedStages?.includes('c12-s10'));
+ const trust=storyAllianceScores(game),allowed=Boolean(game?.completedStages?.includes('c13-s01'));
  return ROUTES.map(route=>({
   ...route,
   unlocked:allowed&&(route.id==='silver'||route.id==='crimson'&&trust.crimson>=1
