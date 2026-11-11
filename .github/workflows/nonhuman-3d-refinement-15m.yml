@@ -2,32 +2,53 @@ name: Nonhuman 3D model sculpt refinement every 15 minutes
 
 on:
   schedule:
-    # GitHub cron is best-effort; delayed or missed starts are possible.
+    # Best effort: GitHub may delay or skip cron starts.
     - cron: '*/15 * * * *'
   workflow_dispatch:
 
+# Only this workflow may write its reviewed, nonhuman refinement PR.
+# Never push human assets or touch another workstream.
 permissions:
   contents: write
+  pull-requests: write
 
 concurrency:
-  group: nonhuman-quality-refinement-model-branch
+  group: nonhuman-quality-refinement-main
   cancel-in-progress: false
 
 jobs:
   refine-one-curated-stage:
+    if: github.repository == 'yamadayoshitaka/hai-gin-rpg'
     runs-on: ubuntu-24.04
     timeout-minutes: 12
     steps:
-      - name: Check out isolated nonhuman model improvement PR branch
+      - name: Check out fresh main (prevents reusing an already merged PR branch)
         uses: actions/checkout@v4
         with:
-          ref: quality/nonhuman-model-refinement-15m
+          ref: main
           persist-credentials: true
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Safely advance exactly one reviewed animal or building model stage
+      - name: Keep one open quality PR at a time; halt on orphaned auto branches
+        id: pending
+        shell: bash
+        env:
+          GH_TOKEN: '${{ github.token }}'
+        run: |
+          set -euo pipefail
+          # A failed PR creation/merge must not create unlimited orphan branches.
+          PENDING="$(gh api "repos/$GITHUB_REPOSITORY/branches?per_page=100" \
+            --jq '[.[] | select(.name | startswith("quality/nonhuman-auto-"))] | length')"
+          if (( PENDING > 0 )); then
+            echo 'skip=true' >> "$GITHUB_OUTPUT"
+            echo "There are $PENDING unfinished auto-quality branches. Repair or merge the existing PR before another run." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo 'skip=false' >> "$GITHUB_OUTPUT"
+          fi
+      - name: Advance exactly one human-excluded geometric quality stage
         id: refine
+        if: steps.pending.outputs.skip == 'false'
         shell: bash
         run: |
           set -euo pipefail
@@ -35,19 +56,16 @@ jobs:
           node scripts/advance-nonhuman-quality.mjs --apply
           CHANGED="$(git diff --name-only)"
           if [[ -z "$CHANGED" ]]; then
-            echo "changed=false" >> "$GITHUB_OUTPUT"
-            echo "All reviewed stages exhausted: no artificial model-quality claims." >> "$GITHUB_STEP_SUMMARY"
+            echo 'changed=false' >> "$GITHUB_OUTPUT"
+            echo 'All pre-reviewed stages are complete; no artificial quality claims.' >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
-          if [[ "$CHANGED" != 'src/nonhuman-model-quality.js' ]]; then
-            echo "Unapproved file change: $CHANGED" >&2
-            exit 1
-          fi
-          echo "changed=true" >> "$GITHUB_OUTPUT"
-      - name: Install pinned geometry test toolchain only when a change exists
+          test "$CHANGED" = 'src/nonhuman-model-quality.js'
+          echo 'changed=true' >> "$GITHUB_OUTPUT"
+      - name: Install pinned geometry checker
         if: steps.refine.outputs.changed == 'true'
         run: npm install --no-save --package-lock=false three@0.180.0
-      - name: Require real 3D model integrity, item placement and human exclusion
+      - name: Validate 3D meshes, UVs, LODs, and human exclusion
         if: steps.refine.outputs.changed == 'true'
         shell: bash
         run: |
@@ -58,18 +76,37 @@ jobs:
             qa/monster-bestiary.test.mjs \
             qa/canine-fur-face-regression.test.mjs \
             qa/creature-master-quality.test.mjs
-      - name: Commit approved changes ONLY to the model improvement PR branch
+          test "$(git diff --name-only)" = 'src/nonhuman-model-quality.js'
+      - name: Commit isolated human-free change; open and merge its PR
         if: steps.refine.outputs.changed == 'true'
         shell: bash
+        env:
+          GH_TOKEN: '${{ github.token }}'
         run: |
           set -euo pipefail
           test "$(git diff --name-only)" = 'src/nonhuman-model-quality.js'
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          BRANCH="quality/nonhuman-auto-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git checkout -b "$BRANCH"
           git add -- src/nonhuman-model-quality.js
           git diff --cached --check
-          git commit -m "quality(models): advance one bounded nonhuman sculpt detail stage"
-          git push origin HEAD:refs/heads/quality/nonhuman-model-refinement-15m
-          echo "Applied one geometry stage to the nonhuman model quality PR branch." >> "$GITHUB_STEP_SUMMARY"
-          echo "Human characters are strictly excluded; no main merge or release." >> "$GITHUB_STEP_SUMMARY"
-          echo "Geometry regression is not a visual proof of photorealism." >> "$GITHUB_STEP_SUMMARY"
+          git commit -m 'quality(models): advance one bounded nonhuman detail stage'
+          HEAD_SHA="$(git rev-parse HEAD)"
+          # No --force: if another development task moved main, leave PR for review.
+          git push origin "HEAD:refs/heads/$BRANCH"
+          echo "Quality branch: $BRANCH" >> "$GITHUB_STEP_SUMMARY"
+          # If repository policy disallows GITHUB_TOKEN-created PRs, the branch is
+          # left for the hourly ChatGPT task to process; the next run will halt.
+          PR_URL="$(gh pr create --repo "$GITHUB_REPOSITORY" \
+            --base main --head "$BRANCH" \
+            --title 'quality(models): reviewed nonhuman 3D sculpt stage' \
+            --body 'Automated, bounded geometry refinement. Only src/nonhuman-model-quality.js is changed. Human characters, NPCs, human-like summons and human-shared assets are excluded. Four geometry regression suites passed in the producing workflow. Visual appearance and device FPS remain unverified.')"
+          echo "Created improvement PR: $PR_URL" >> "$GITHUB_STEP_SUMMARY"
+          # Merge only this exact tested HEAD, never unrelated PRs. If repository
+          # protection requires more checks, leave it open for the hourly task.
+          gh pr merge "$PR_URL" --squash --delete-branch \
+            --match-head-commit "$HEAD_SHA"
+          echo 'Merged reviewed, nonhuman geometry changes into main.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'No paid AI endpoints or human-model modifications.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Static geometry QA is not proof of photorealism.' >> "$GITHUB_STEP_SUMMARY"
