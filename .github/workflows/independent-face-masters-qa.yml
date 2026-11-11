@@ -4,6 +4,7 @@ on:
     paths:
       - 'src/independent-face-masters.js'
       - 'src/face-feature-meshes.js'
+      - 'src/face-scalp-wig.js'
       - 'src/face-v7-controls.js'
       - 'face-mesh-studio.html'
       - 'qa/independent-face-masters.test.mjs'
@@ -14,6 +15,7 @@ on:
     paths:
       - 'src/independent-face-masters.js'
       - 'src/face-feature-meshes.js'
+      - 'src/face-scalp-wig.js'
       - 'src/face-v7-controls.js'
       - 'face-mesh-studio.html'
       - 'qa/independent-face-masters.test.mjs'
