@@ -178,6 +178,22 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
    lowerVolume.userData.anatomical='lower-lid-fullness';
    lowerVolume.userData.colorRole='eyelid';
    root.add(lowerVolume);
+   // Subtle actual under-eye cosmetic band; it shares the eye tilt pivot
+   // with the double eyelid, lashes and brows.
+   const shadowMat=new THREE.MeshStandardMaterial({
+    color:0xb99085,transparent:true,opacity:.29,depthWrite:false,
+    roughness:1,side:THREE.DoubleSide
+   });
+   const eyeShadow=buildGrid(
+    (side===-1?'LEFT':'RIGHT')+'_UNDER_EYE_SHADOW',28,5,(u,v)=>{
+     const t=2*u-1,soft=Math.pow(Math.max(0,1-t*t),.82);
+     const xx=x+t*eyeRadius*1.11;
+     const yy=y-eyeRadius*(.70+.13*soft+.29*v);
+     const zz=surfaceAt(xx,yy)+d.z*(.006+.003*Math.sin(Math.PI*v)*soft);
+     return new THREE.Vector3(xx,yy,zz);
+    },shadowMat);
+   eyeShadow.userData.colorRole='underEye';
+   root.add(eyeShadow);
   }
   if(female){
    const eyeLabel=side===-1?'LEFT':'RIGHT';
@@ -218,7 +234,43 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
     lashPivot.add(lash);
    }
    root.add(lashPivot);
+  }else{
+   // The male is generated from the same smooth head, with a naturally
+   // smaller eye and no liner/mascara/under-eye cosmetic layers.
+   const pivot=new THREE.Group();
+   const label=side===-1?'LEFT':'RIGHT';
+   pivot.name=label+'_BROW_ANGLE_CONTROL';
+   const browY=y+eyeRadius*1.56;
+   pivot.position.set(x,browY,surfaceAt(x,browY));
+   const brow=buildGrid(label+'_NATURAL_MALE_BROW',30,4,(u,v)=>{
+    const t=2*u-1,arch=Math.pow(Math.max(0,1-t*t),.72);
+    const xx=x+t*eyeRadius*1.66;
+    const yy=browY+eyeRadius*.035*arch+
+      (v-.5)*eyeRadius*.23*arch;
+    const zz=surfaceAt(xx,yy)+d.z*.010;
+    return new THREE.Vector3(xx-pivot.position.x,
+      yy-pivot.position.y,zz-pivot.position.z);
+   },mat(0xa2a6ac));
+   brow.userData.colorRole='brow';
+   pivot.add(brow);root.add(pivot);
   }
+  // Move all eye-specific components into a joint local pivot. An angle
+  // change now rotates the eyeball, lids, under-eye band, brows and lashes
+  // together, not detached individual painted strips.
+  const eyeJoint=new THREE.Group();
+  eyeJoint.name=(side===-1?'LEFT':'RIGHT')+'_EYE_LINKED_PIVOT';
+  eyeJoint.position.set(x,y,z);
+  const origin=eyeJoint.position.clone();
+  const children=root.children.slice(firstChild);
+  for(const child of children){
+   root.remove(child);
+   if(child.isMesh){
+    if(child.userData.sourceProjected)child.position.sub(origin);
+    else child.geometry.translate(-x,-y,-z);
+   }else child.position.sub(origin);
+   eyeJoint.add(child);
+  }
+  root.add(eyeJoint);
  }
  // Original face remains the structural muzzle/philtrum/chin. Two shallow
  // lip strips follow that actual surface and use real triangle thickness.
@@ -256,7 +308,8 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   gender,partMeshCount:meshList.length,realSurfaceProjectionCount:projected,
   projectionFallbacks,eyeMeshCount:2,irisMeshCount:2,pupilMeshCount:2,
   eyelidMeshCount:4,lipMeshCount:2,
-  eyebrowMeshCount:female?2:0,eyelashMeshCount:female?4:0,
+  eyebrowMeshCount:2,eyelashMeshCount:female?4:0,
+  underEyeShadowMeshCount:female?2:0,
   doubleLidCreaseMeshCount:female?2:0,
   lowerOrbitalVolumeMeshCount:female?2:0,
   irisPolarAngleRadians:Number(irisAngle.toFixed(4)),
