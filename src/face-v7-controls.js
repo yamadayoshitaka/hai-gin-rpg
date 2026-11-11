@@ -1,25 +1,34 @@
 /**
- * Female face v7 adjustable sculpt controls.
- *
- * Defaults represent the user-requested stronger chin, refined nose,
- * larger iris, raised nasal tip / less visible nostril rim.
- * The male master remains unchanged.
+ * Canonical face preset recovered from the user's Library export.
+ * Library: female-saved-preset-contact-makeup-v8.glb (2026-11-12 JST)
+ * Source of truth: GLB node FEMALE_FACE_MASTER_SOURCE_CLONE
+ *   extras.faceMasterReport.femaleControls.
+ * The GLB file is a reference, not a new donor head or outfit.
+ * Do not infer the preset from an image or from earlier v8 defaults.
  */
-export const FEMALE_V7_DEFAULTS=Object.freeze({
- irisDiameter:1,
- jawSharpness:2.5,
- noseTipLift:0,
- nostrilCover:1,
- noseBridgeSharpness:2.5,
- browAngle:6,
- lashAngle:7,
- eyeAngle:0,
- eyeSize:1,
- lipstickX:0,
- lipstickY:0,
- lipstickWidth:1,
- lipstickHeight:1
+export const LIBRARY_FACE_PRESET=Object.freeze({
+ sourceFile:'female-saved-preset-contact-makeup-v8.glb',
+ sha256:'aecac5a923a1f56a6c53eeaebbe5c987cb5685144058054391a92d479dc21060',
+ contactColor:'#514139',
+ femaleControls:Object.freeze({
+  irisDiameter:1,
+  jawSharpness:5,
+  noseTipLift:0,
+  nostrilCover:2,
+  noseBridgeSharpness:2.5,
+  browAngle:6,
+  lashAngle:7,
+  eyeAngle:0,
+  eyeSize:1,
+  lipstickX:0,
+  lipstickY:0,
+  lipstickWidth:1,
+  lipstickHeight:1
+ })
 });
+// Preserve the legacy export name so all game/QA consumers use this
+// saved preset without a second incompatible settings API.
+export const FEMALE_V7_DEFAULTS=LIBRARY_FACE_PRESET.femaleControls;
 export const FACE_V7_PALETTE=Object.freeze({
  skin:0xebc5b7,
  eyelid:0xebc5b7,
@@ -65,16 +74,17 @@ export function safeContactColor(value){
 }
 /** Persisted reference presets do not require browser storage. */
 export const FEMALE_REFERENCE_DEFAULT=FEMALE_V7_DEFAULTS;
+// The male standard must be the SAVED FEMALE FACE without cosmetics.
+// Facial sculpt/eye parameters remain identical at default; beard starts
+// clean-shaven but remains adjustable from the existing male sliders.
 export const MALE_REFERENCE_DEFAULT=Object.freeze({
- eyeSize:.9,irisDiameter:1,eyeAngle:0,browAngle:0,lashAngle:0,
- jawSharpness:1.15,noseTipLift:0,nostrilCover:1,noseBridgeSharpness:2.5,
- beardDensity:.35,beardLength:1,
+ ...FEMALE_V7_DEFAULTS,
+ beardDensity:0,beardLength:1,
  cosmetics:false,sharedHeadSource:'realistic-head-animation.glb'
 });
 /**
- * Male sliders use the same dimensional controls as the female mesh, but
- * have a separate natural-male default preset and configurable real beard.
- * The female's screenshot-approved 2.5 jaw default stays unchanged.
+ * Male sliders share the saved face anatomy and neutral iris configuration,
+ * while lip/cheek/eye cosmetics are disabled by the male mesh layer.
  */
 export function normalizeMaleFaceControls(settings={}){
  const core=normalizeFemaleFaceControls({
