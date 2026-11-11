@@ -68,6 +68,9 @@ test('100k strand wig has separate fringe, temple and layered back objects',()=>
  assert.equal(report.frontNeckIntrusionVertices,0);
  assert.ok(report.neckRearClearanceCorrections>0);
  assert.equal(report.rearFlow,'tapered-clumped-swaying-layers-no-flat-hem');
+ assert.ok(report.rearEndSampleCount>1000,'Rear filament measurements missing');
+ assert.ok(report.rearEndTaperRatio>.57,
+  'Rear hair still widens into a solid triangular curtain: '+report.rearEndTaperRatio);
  const bb=scalp.geometry.boundingBox,d=bb.getSize(new THREE.Vector3());
  const cx=(bb.min.x+bb.max.x)*.5,cz=(bb.min.z+bb.max.z)*.5;
  let napeVertices=0,segments=0;
