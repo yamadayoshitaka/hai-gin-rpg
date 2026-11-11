@@ -120,8 +120,8 @@ export function makeIndependentFaceMaster(sourceRoot,gender){
       -(x-cx)*.021*alar;
   const ny=y+d.y*spec.chinLift*chin;
   const nz=gender==='female'?
-   z+d.z*(spec.cheekFill*(.72*cheek+.52*lowerCheek)
-    +.012*chinHollow
+   z+d.z*(spec.cheekFill*(.74*cheek+.92*lowerCheek)
+    +.016*chinHollow
     +spec.eyeSocketSoftness*bell(Math.abs(xn),.43,.22)
       *bell(yn,.69,.055)*front)+local.dz:
    z+d.z*(spec.cheekFill*(.76*cheek+.45*lowerCheek)
