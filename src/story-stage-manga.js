@@ -33,7 +33,7 @@ function panel(stage,index,{character=null,second=null,text='',type='dialogue',v
   hasVoice:voice,artSeed:stage.number*23+index*19
  });
 }
-export function mangaForStage(idOrStage='c01-s01'){
+export function mangaForStage(idOrStage='c01-s01',context={}){
  const stage=typeof idOrStage==='string'?CAMPAIGN_STAGE_BY_ID[idOrStage]:idOrStage;
  if(!stage||!CAMPAIGN_STAGE_BY_ID[stage.id])throw Error('Unknown manga stage: '+String(idOrStage));
  const chapter=STORY_CHAPTERS[stage.chapter-1],narrative=narrativeForStage(stage);
@@ -90,7 +90,23 @@ export function mangaForStage(idOrStage='c01-s01'){
   chapterTitle:chapter.title,act:chapter.act,location:chapter.location,
   number:stage.number,previousStageId:prev?.id||null,nextStageId:next?.id||null,
   cast:Object.freeze([...new Set(p.flatMap(x=>[x.characterId,x.secondaryId]).filter(Boolean))].map(x=>byId[x])),
-  panels:Object.freeze(p)
+  panels:Object.freeze(addRouteContext(p,stage,context))
+ });
+}
+
+const routeMessages=Object.freeze({
+ silver:'灰銀の軍師として、リュシアと王国の内部を立て直す道を選んだ。',
+ crimson:'紅炎のライゼンと共同して、帝国内の強硬派と向き合う道を選んだ。',
+ verdant:'翠嵐のアルテアと協力し、森と記憶の両方を守る道を選んだ。',
+ independent:'三国のどこにも指揮権を預けず、調停のために戦う道を選んだ。'
+});
+function addRouteContext(p,stage,context={}){
+ if(stage.chapter<13||stage.chapter>20||!context?.route)return p;
+ const note=routeMessages[context.route]||routeMessages.silver;
+ return p.map((shot,index)=>{
+  if(index!==0)return shot;
+  const chapterPrefix=stage.chapter>=16?'三国が共同戦線を組み、これまでの選択が援軍と作戦に引き継がれる。':note;
+  return Object.freeze({...shot,text:shot.text+' '+chapterPrefix});
  });
 }
 export const mangaForChapter=chapter=>Object.freeze(CAMPAIGN_STAGES.filter(s=>s.chapter===Number(chapter)).map(s=>mangaForStage(s.id)));
