@@ -82,6 +82,7 @@ function sourceContour(src,bb,{female=false}={}){
  const innerSleeve=height*(female?.10:.115);
  const outerSleeve=height*(female?.295:.302);
  const torso=[],breastplate=[],armSegments={left:0,right:0};
+ let upperShoulderCoverTriangles=0;
  const validSourceTriangle=t=>{
   const centroid=t.points.reduce((a,p)=>a.add(p),new THREE.Vector3()).multiplyScalar(1/3);
   const x=Math.abs(centroid.x-center.x),y=centroid.y;
@@ -92,7 +93,13 @@ function sourceContour(src,bb,{female=false}={}){
     Math.abs(centroid.z-center.z)<height*.050;
   const torsoZone=y>=hem&&y<=neck&&x<=torsoHalf;
   const sleeveZone=y>=sleeveHem&&y<=neck&&x>=innerSleeve&&x<outerSleeve;
-  const selected=(torsoZone||sleeveZone)&&!isNeck;
+  // Source-body shoulder triangles previously stopped at a hard horizontal
+  // neckline: jagged exposed white patches extended around both clavicles.
+  // Cover the real upper shoulder surface, but keep the center neck bare.
+  const shoulderRise=y>neck&&y<=neck+height*.052&&
+   x>height*.048&&x<torsoHalf;
+  const selected=(torsoZone||sleeveZone||shoulderRise)&&!isNeck;
+  if(selected&&shoulderRise)upperShoulderCoverTriangles++;
   if(selected&&sleeveZone&&x>torsoHalf){
    if(centroid.x<center.x)armSegments.left++;
    else armSegments.right++;
@@ -123,7 +130,7 @@ function sourceContour(src,bb,{female=false}={}){
   throw Error('Source skin contour cannot produce full torso, breastplate and both sleeves '+
     JSON.stringify({torso:torso.length,plate:breastplate.length,arms:armSegments}));
  return {torso,breastplate,armSegments,sourceHeight:height,shoulderY:shoulder,
-  necklineY:neck,hemY:hem,armHemY:sleeveHem,center};
+  necklineY:neck,hemY:hem,armHemY:sleeveHem,center,upperShoulderCoverTriangles};
 }
 function makePiping(points,material,name,r=.0035,closed=false){
  const curve=new THREE.CatmullRomCurve3(points,closed,'centripetal');
@@ -429,6 +436,7 @@ export function createFittedFantasyHeroGarment(body,{female=false}={}){
   hipTassetPanels:0,shortTabardPanels:0,sleeveCuffCount:2,
   anatomyFittedLowerClothes:lower.report,
   fittedHighCollar:true,fittedNecklineTrim:true,centerCrestFitted:true,
+  realUpperShoulderCoverTriangles:data.upperShoulderCoverTriangles,
   slimLeatherBelt:false,
   noProceduralCylinderSleeves:true,combatRigCertified:false,artGradeCertified:false
  });
