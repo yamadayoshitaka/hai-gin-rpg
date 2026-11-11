@@ -27,6 +27,14 @@ jobs:
           for f in src/game-runtime.js src/modular-character-runtime.js src/universal-animation-runtime.js src/visual-asset-catalog.js src/kenney-vfx-runtime.js src/cc0-town-npc-visuals.js; do
             node --input-type=module --check < "$f"
           done
+      - name: Verify monster anatomy and all 50 nonhuman/human-exclusion contracts
+        run: |
+          npm install --no-save --package-lock=false three@0.180.0
+          node --input-type=module --check < src/monster-geometry.js
+          node qa/monster-bestiary.test.mjs
+          node qa/creature-realistic-anatomy.test.mjs
+          node qa/creature-master-quality.test.mjs
+          node qa/nonhuman-quality-loop.test.mjs
       - name: Check required imported assets and glTF buffer/image dependencies
         shell: bash
         run: |
