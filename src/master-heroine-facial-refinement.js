@@ -41,9 +41,10 @@ export function polishHeroineFacePoint(x,y,z,box,{strength=1}={}){
  const cheekDepth=sz*(-.021*lowerCheek+.005*midCheek-.020*cheekSpike);
  // Recess the full philtrum / lower-face muzzle as a continuous skin surface,
  // not a disconnected mouth plate. Fade before the nose and toward the ears.
- const muzzle=bell(ax,.11,.36)*bell(yn,.427,.102);
+ const belowNose=1-smooth(.50,.56,yn);
+ const muzzle=bell(ax,.11,.36)*bell(yn,.445,.12)*belowNose;
  const chinPad=bell(ax,.09,.40)*bell(yn,.302,.085);
- const philtrumPlane=bell(ax,.14,.30)*bell(yn,.515,.045);
+ const philtrumPlane=bell(ax,.14,.30)*bell(yn,.510,.045)*belowNose;
  const lowerFaceRecess=sz*(-.047*muzzle-.025*chinPad-.012*philtrumPlane);
 
  // Anatomical nasal subregions have separate subtle offsets: soft bridge,
