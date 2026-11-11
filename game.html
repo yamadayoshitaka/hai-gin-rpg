@@ -3,7 +3,7 @@
 <meta name="theme-color" content="#050b18"><title>灰銀戦記 ― 沈黙の星鐘 | オープニング</title>
 <style>
 *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden}body{background:#060a17;color:#f5eacf;font-family:system-ui,'Noto Sans JP',sans-serif}button,input{font:inherit}button{cursor:pointer;touch-action:manipulation}button:focus-visible,input:focus-visible{outline:3px solid #ffe2a0;outline-offset:3px}
-#sky{position:fixed;inset:-4%;background:radial-gradient(ellipse at 51% 26%,#48647e88,transparent 52%),linear-gradient(180deg,#051026bd,#090c1b86 62%,#030712),url('./assets/story-world-map-v0.5.webp') center/cover;filter:saturate(.7) brightness(.62);animation:cloud 24s ease-in-out infinite alternate}#sky:after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 43%,transparent 18%,#020713c9 80%)}
+#sky{position:fixed;inset:-4%;background:radial-gradient(ellipse at 51% 26%,#48647e88,transparent 52%),linear-gradient(180deg,#051026bd,#090c1b86 62%,#030712),url('./assets/story-cinema/title.webp') center/cover;filter:saturate(.96) brightness(.86);animation:cloud 24s ease-in-out infinite alternate}#sky:after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 43%,transparent 18%,#020713c9 80%)}
 #stars{position:fixed;inset:0;background-image:radial-gradient(circle,#fff9dfcf 1px,transparent 2px),radial-gradient(circle,#b7dcef90 1px,transparent 2px);background-position:17px 25px,100px 67px;background-size:149px 127px,191px 173px;opacity:.48;animation:twinkle 7s ease-in-out infinite alternate}
 @keyframes cloud{to{transform:scale(1.11) translateX(2%)}}@keyframes twinkle{to{opacity:.76}}
 .shell{position:relative;z-index:1;height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:clamp(12px,3vh,28px)}
@@ -30,11 +30,21 @@
 .guide-dots span{width:7px;height:7px;border-radius:100%;background:#556474}.guide-dots span.active{background:#eac987}
 #introNext{position:relative;z-index:2;border:1px solid #d3ba7d;background:#233d55;color:#ffe7b8;border-radius:7px;padding:12px 18px}
 #intro #skip{z-index:3}
+@media(max-width:640px){
+ #sky{inset:0;background:linear-gradient(180deg,#05102619 0%,#080e1c9d 44%,#040915 76%),url('./assets/story-cinema/title.webp') center top/100% auto no-repeat;background-color:#080f1d;animation:none}
+ #stars{opacity:.24}
+ .shell{justify-content:flex-end;padding-bottom:calc(23px + env(safe-area-inset-bottom))}
+ .shell .crest,.shell .ornament{display:none}
+ .shell h1{font-size:clamp(22px,5.3vw,28px);margin:6px 0;text-shadow:0 4px 14px #000}
+ .title-menu{margin-top:12px;gap:6px}
+ .title-menu button{min-height:43px;padding:8px 13px}
+ .shell .subtitle{font-size:11px;letter-spacing:.08em}
+}
 @media(max-height:630px){.crest{font-size:26px}h1{font-size:28px;margin:4px}.ornament{margin:7px auto}.title-menu{margin:10px auto}.title-menu button{padding:6px;min-height:40px}#intro p{font-size:15px;min-height:4.8em}}
 </style></head><body>
 <div id="sky" aria-hidden="true"></div><div id="stars" aria-hidden="true"></div>
 <section id="intro" aria-label="オープニング" hidden><div id="introArt" aria-hidden="true"></div><div class="intro-crest" aria-hidden="true">✧</div><div id="introSpeaker">序章・灰の勅命</div><p id="introLine">千年のあいだ、星鐘は鳴らなかった。</p><div id="introProgress">序幕 · 1 / 6</div><button id="introNext" type="button">次の場面へ ▶</button><button id="skip" type="button">スキップ ▶</button></section>
-<main class="shell"><div class="crest" aria-hidden="true">✦　✧　✦</div><div class="subtitle">CHRONICLES OF THE SILENT STARBELL</div><h1>灰銀戦記<br>― 沈黙の星鐘 ―</h1><div class="ornament"></div><div class="subtitle">千年の記憶が鳴らす、最後の戦争。</div>
+<main class="shell"><div class="crest" aria-hidden="true">✦　✧　✦</div><div class="subtitle">CHRONICLES OF THE SILENT STARBELL</div><h1>灰銀のレゾナンス</h1><div class="ornament"></div><div class="subtitle">沈黙の星鐘 — 千年の記憶が鳴らす、最後の戦争。</div>
 <nav class="title-menu" aria-label="ゲームメニュー">
 <button id="newGame">ニューゲーム</button><button id="replayTutorial">はじめての方・操作ガイド</button><button id="viewPrologue">序章を見る</button><button id="continueGame">続きから</button><button id="versus">対戦</button><button id="settings">設定</button></nav>
 <div class="version">GAME CORE v0.1 · 20章 × 10ステージ = 200</div></main>
@@ -47,6 +57,7 @@ import {createNewGame,getSavedGame,startNewSession} from './src/game-core-flow.j
 import {mangaForStage} from './src/story-stage-manga.js';
 import {FIRST_PLAY_GUIDE} from './src/first-play-guide.js';
 import {stageMangaImage} from './src/story-manga-art.js';
+import {applyCinematicImage} from './src/story-cinematic-assets.js';
 import {fantasyCueForMangaPanel} from './src/fantasy-scene-score.js';
 import {createGamePageAudio} from './src/game-page-audio.js';
 const $=id=>document.getElementById(id);
@@ -61,6 +72,7 @@ function showIntroFrame(){
  $('introLine').textContent=shot.text;
  $('introSpeaker').textContent=shot.speaker==='語り手'?'第一章・灰の勅命':shot.speaker+' ／ '+shot.role;
  $('introArt').style.backgroundImage='url("'+stageMangaImage(shot)+'")';
+  applyCinematicImage($('introArt'),shot,{background:true});
  pageAudio.changeScene('opening',fantasyCueForMangaPanel({id:introStory.id,number:introStory.number,kind:'town'},index).url);
  $('introProgress').textContent='序幕 · '+(index+1)+' / '+introFrames.length;
 }

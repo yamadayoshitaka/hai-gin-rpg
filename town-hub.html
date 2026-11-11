@@ -62,6 +62,14 @@ body:has(#opening:not([hidden])) #townExplorerControls,body:has(#townGuide:not([
 .sceneCard{max-height:96dvh;overflow:auto}
 .sceneCard p#eventText{min-height:0;margin:0;text-align:left;line-height:1.7;font-size:clamp(14px,3.5vw,17px);padding:7px 4px}
 @media(max-height:680px){#eventSceneArt{max-height:25dvh}.sceneCard{gap:6px!important;padding:12px!important}}
+#townDialogue[hidden]{display:none!important}
+#townDialogue{position:fixed;z-index:18;left:50%;bottom:calc(184px + env(safe-area-inset-bottom));transform:translateX(-50%);width:min(92vw,620px);max-height:36dvh;overflow:auto;background:linear-gradient(135deg,#11253aef,#0b1627f6);border:1px solid #cbb28a;box-shadow:0 11px 35px #000b;border-radius:9px;color:#f8eacc;padding:12px 14px;backdrop-filter:blur(8px)}
+#townDialogueName{font-weight:700;color:#ffe0ad;font-size:13px;margin-bottom:5px}
+#townDialogueLine{font-size:clamp(13px,3.5vw,16px);line-height:1.65;min-height:2em}
+#townDialogueActions{display:flex;justify-content:flex-end;align-items:center;gap:7px;margin-top:8px}
+#townDialogueActions button{min-height:34px;padding:5px 10px;background:#263f56;border:1px solid #b5a181;color:#fbe9c9;border-radius:5px;font-size:12px}
+#townDialogue .town-dialogue-hint{font-size:10px;color:#b9c9d2}
+@media(max-height:680px){#townDialogue{bottom:calc(118px + env(safe-area-inset-bottom));max-height:42dvh}}
 #skipPaper{border:1px solid #ad9b75;background:#23384a;color:#e6d5ad;border-radius:7px;padding:9px}
 
 body:has(#panel:not([hidden])) #townExplorerControls *,body:has(#opening:not([hidden])) #townExplorerControls *{pointer-events:none!important}
@@ -76,6 +84,10 @@ body:has(#panel:not([hidden])) #townExplorerControls *,body:has(#opening:not([hi
  <div id="townStick" aria-label="移動スティック"><div id="townStickKnob"></div></div>
 </div>
 <div id="townExplorerMessage" role="status" aria-live="polite"></div>
+<section id="townDialogue" role="group" aria-label="町人との会話" hidden>
+ <div id="townDialogueName"></div><div id="townDialogueLine" aria-live="polite"></div>
+ <div id="townDialogueActions"><span class="town-dialogue-hint">会話はここで進みます</span><button id="townDialogueService" type="button" hidden>施設を利用</button><button id="townDialogueNext" type="button">次へ ▶</button><button id="townDialogueClose" type="button" aria-label="会話を閉じる">✕</button></div>
+</section>
 <div id="panelBackdrop" hidden></div><section id="panel" role="dialog" aria-modal="true" aria-label="町のメニュー" hidden>
  <div class="toprow"><h2 id="panelTitle">町の施設</h2><button id="panelClose" type="button">閉じる ✕</button></div>
  <div id="panelSummary" class="stats"></div>
@@ -89,6 +101,7 @@ import {STORY_CHAPTERS,storyVoiceKey} from './src/story-chapters.js';
 import {STORY_KEY_PEOPLE} from './src/story-cinematic.js';
 import {mangaForStage} from './src/story-stage-manga.js';
 import {stageMangaImage} from './src/story-manga-art.js';
+import {applyCinematicImage} from './src/story-cinematic-assets.js';
 import {fantasyCueForMangaPanel} from './src/fantasy-scene-score.js';
 import {continentForChapter} from './src/continent-campaign.js';
 import {drawRecruitGacha,RECRUIT_GACHA} from './src/town-recruit-gacha.js';
@@ -144,16 +157,17 @@ function openTownDialogue(data){
  activeTalkIndex=0;
  game.npcTalked??={};game.npcTalked[activeTalk.id]=(game.npcTalked[activeTalk.id]||0)+1;
  persistSession(game,sessionStorage);
- openPanel('dialogue');
+ if(!townReady)return;
+ showTownDialogue();
 }
 let townReady=false,insideFacility=null,townFacilities=[],townPlayerPosition=null,townMapImage=null;
 game.storyFlags??={};
 const townChapter=CAMPAIGN_STAGE_BY_ID[game.townStage]?.chapter||1;
 const chapterOpeningCompleted=Boolean(game.storyFlags.chapterOpenings?.[townChapter]||
  (townChapter===1&&game.storyFlags.openingEventCompleted));
-let paperPending=(new URLSearchParams(location.search).get('opening')==='1'&&!chapterOpeningCompleted
- &&!game.storyFlags.stageMangaSeen?.[game.townStage])
- ||new URLSearchParams(location.search).get('paper')==='1';
+// Re-entered towns stay explorable. Query parameters cannot force a replay.
+let paperPending=new URLSearchParams(location.search).get('opening')==='1'
+ &&!chapterOpeningCompleted&&!game.storyFlags.stageMangaSeen?.[game.townStage];
 const pages=(rows,size=3)=>({rows:rows.slice(page*size,(page+1)*size),pages:Math.max(1,Math.ceil(rows.length/size))});
 const notice=message=>$('toast').textContent=message;
 function renderState(){
@@ -164,7 +178,25 @@ function renderState(){
  $('townStatus').textContent='所持金 '+game.wallet+'G · 軍資金 '+game.campaign.treasury+'G · 兵士 '+troopCount(game.campaign)+'人 · 教会でセーブ可能 · 版 '+(new URLSearchParams(location.search).get('v')||'dev').slice(0,12);
 }
 function persist(){persistSession(game,sessionStorage);renderState();}
-function openPanel(which){if(!townReady)return;resetTownMovement();panel=which;
+function hideTownDialogue(){ $('townDialogue').hidden=true; }
+function showTownDialogue(){
+ if(!activeTalk)return;
+ resetTownMovement();
+ $('townDialogue').hidden=false;
+ $('townDialogueName').textContent=activeTalk.name||'町の人';
+ $('townDialogueLine').textContent=activeTalk.lines?.[activeTalkIndex]||'……';
+ $('townDialogueService').hidden=!activeTalk.panel;
+ $('townDialogueNext').textContent=activeTalkIndex>=activeTalk.lines.length-1?'会話を終える':'次へ ▶';
+ if(voiceIsOn())speakTownLine(activeTalk.lines[activeTalkIndex]);
+}
+$('townDialogueNext').onclick=()=>{
+ if(!activeTalk)return;
+ if(activeTalkIndex+1>=activeTalk.lines.length){hideTownDialogue();return;}
+ activeTalkIndex++;showTownDialogue();
+};
+$('townDialogueService').onclick=()=>{if(!activeTalk?.panel)return;const service=activeTalk.panel;hideTownDialogue();openPanel(service);};
+$('townDialogueClose').onclick=()=>{hideTownDialogue();stopNarration();};
+function openPanel(which){if(!townReady)return;hideTownDialogue();resetTownMovement();panel=which;
  townAudio.effect('open');page=0;shopCategory=which==='weapons'?'武器':'道具';notice('');$('panel').hidden=false;$('panelBackdrop').hidden=false;renderPanel();}
 function closePanel(){$('panel').hidden=true;$('panelBackdrop').hidden=true;panel='';townAudio.effect('cancel');}
 $('panelClose').onclick=closePanel;$('panelBackdrop').onclick=closePanel;
@@ -501,6 +533,7 @@ function eventRender(){
  const shot=eventScenes[eventIndex];
  $('eventText').textContent=shot.text;
  $('eventSceneImage').src=stageMangaImage(shot);
+  applyCinematicImage($('eventSceneImage'),shot);
  $('eventSceneImage').alt='第'+townChapter+'章　'+townManga.stageName+'　'+shot.speaker+'が登場する漫画の'+(eventIndex+1)+'コマ目';
  $('eventSpeaker').textContent=shot.characterId?
   shot.speaker+'　／　'+shot.faction+'・'+shot.role:'語り手　／　'+townManga.chapterTitle;
@@ -536,6 +569,10 @@ function closePaperStory(){
 }
 function startPaperStory(){
  if(!townReady){paperPending=true;return;}
+ paperPending=false;
+ game.storyFlags.stageMangaSeen??={};game.storyFlags.stageMangaSeen[game.townStage]=true;
+ persistSession(game,sessionStorage);
+ hideTownDialogue();
  townAudio.effect('paper');townAudio.setScene('paper');
  resetTownMovement();$('townGuide').hidden=true;closePanel();
  const chapterData=STORY_CHAPTERS[townChapter-1],continent=continentForChapter(townChapter);
