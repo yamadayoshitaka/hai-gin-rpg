@@ -181,10 +181,10 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
     // Eyeliner shares the eye lid's actual surface and transformation.
     const linerMat=new THREE.MeshStandardMaterial({
      color:0x30252b,roughness:.84,metalness:0,side:THREE.DoubleSide,
-     transparent:true,opacity:upper?.86:.42,depthWrite:false
+     transparent:true,opacity:upper?.48:.13,depthWrite:false
     });
     const liner=buildGrid(label+'_EYELINER',28,3,(u,v)=>{
-     const p=sampleGrid(mesh,28,4,u,.04+v*(upper?.15:.10));
+     const p=sampleGrid(mesh,28,4,u,.025+v*(upper?.075:.035));
      p.z+=Math.max(.00002,d.z*.00018);
      return p;
     },linerMat);
@@ -210,7 +210,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
    root.add(upperFold);
    const accentMat=new THREE.MeshStandardMaterial({
     color:0x765458,roughness:.87,metalness:0,side:THREE.DoubleSide,
-    transparent:true,opacity:.48,depthWrite:false
+    transparent:true,opacity:.19,depthWrite:false
    });
    const accent=buildGrid((side===-1?'LEFT':'RIGHT')+'_EYE_ACCENT_LINE',
     28,2,(u,v)=>{
@@ -235,15 +235,15 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
    // Subtle actual under-eye cosmetic band; it shares the eye tilt pivot
    // with the double eyelid, lashes and brows.
    const shadowMat=new THREE.MeshStandardMaterial({
-    color:0xb99085,transparent:true,opacity:.29,depthWrite:false,
+    color:0xb99085,transparent:true,opacity:.075,depthWrite:false,
     roughness:1,side:THREE.DoubleSide
    });
    const eyeShadow=buildGrid(
     (side===-1?'LEFT':'RIGHT')+'_UNDER_EYE_SHADOW',28,5,(u,v)=>{
      const t=2*u-1,soft=Math.pow(Math.max(0,1-t*t),.82);
-     const xx=x+t*eyeRadius*1.11;
-     const yy=y-eyeRadius*(.70+.13*soft+.29*v);
-     const zz=surfaceAt(xx,yy)+d.z*(.006+.003*Math.sin(Math.PI*v)*soft);
+     const xx=x+t*eyeRadius*.83;
+     const yy=y-eyeRadius*(.65+.06*soft+.12*v);
+     const zz=surfaceAt(xx,yy)+Math.max(.000025,d.z*.00025);
      return new THREE.Vector3(xx,yy,zz);
     },shadowMat);
    eyeShadow.userData.colorRole='underEye';
@@ -320,7 +320,10 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
    root.remove(child);
    if(child.isMesh){
     if(child.userData.sourceProjected)child.position.sub(origin);
-    else child.geometry.translate(-x,-y,-z);
+    else child.traverse(o=>{
+     // Nested eyeliner/accent child geometry must be moved with the lid.
+     if(o.isMesh)o.geometry.translate(-x,-y,-z);
+    });
    }else child.position.sub(origin);
    eyeJoint.add(child);
   }
