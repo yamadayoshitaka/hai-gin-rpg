@@ -6723,6 +6723,32 @@ function chooseCircleActionTarget(id,team){
   $('destinationPrompt').textContent='有効な'+(expected===0?'味方（青）':'敵（赤）')+
    'の部隊サークルを選択してください・ここで取消';return false;
  }
+ // Selection only zooms to the target; explicit confirmation issues the order.
+ action.selectedTargetId=String(id);
+ action.selectedTargetTeam=team;
+ const target=squadCenter(id,team);
+ if(target){
+  const x=(target.x-6)*CELL,z=(target.z-6)*CELL;
+  const focus=new THREE.Vector3(x,terrainY(x,z)+1.5,z);
+  const distance=MASS_SIZE>=1000?49:29;
+  setBattleCamera(focus,new THREE.Vector3(distance*.45,distance*.55,distance*.68));
+  setCameraActive(null);
+ }
+ const actionLabel=action.kind==='attack'?'突撃':action.kind==='support'?'回復支援':'道具使用';
+ $('battleTargetConfirmTitle').textContent=actionLabel+'：'+squadPrimaryJob(id,team)+'隊';
+ $('battleTargetConfirmText').textContent=squadName(action.source)+
+  ' → '+(team===1?'敵':'味方')+squadName(id,team)+'。対象をズームして確認してください。';
+ $('battleTargetConfirm').hidden=false;
+ document.body.classList.add('command-target-preview');
+ return true;
+}
+function confirmCircleActionTarget(){
+ const action=pendingCircleTarget;
+ const id=action?.selectedTargetId,team=action?.selectedTargetTeam;
+ if(id==null||!isSquadCircleTargetActionable(id,team,action)){
+  $('battleTargetConfirmText').textContent='対象が無効になりました。選び直してください。';
+  return false;
+ }
  if(!hasSquadCommander(action.source)){
   battleDialogue.push({key:'general-lost:'+action.source+':'+Math.floor(elapsed*10),
    speaker:'伝令',kind:'warning',forceDisplay:true,priority:97,
@@ -7099,6 +7125,12 @@ function handleTacticalMapTap(position){
   const mission=resolveMissionTarget(pickingSquadMission,position.x,position.z);
   if(!mission){$('destinationPrompt').textContent='指定した種類の目標が近くにありません。対象をタップしてください（ここで取消）';return;}
   showMissionPreview(mission);
+  // Inspect the chosen building/door at an oblique tactical zoom.
+  if(Number.isFinite(mission.x)&&Number.isFinite(mission.z)){
+   const x=(mission.x-6)*CELL,z=(mission.z-6)*CELL;
+   setBattleCamera(new THREE.Vector3(x,terrainY(x,z)+1.7,z),new THREE.Vector3(14,18,23));
+   setCameraActive(null);
+  }
   return;
  }
  if(pickingStrategistWarp){
