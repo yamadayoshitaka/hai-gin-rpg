@@ -20,14 +20,21 @@ fs.mkdirSync(out,{recursive:true});
      original.visibleFaceMeshes!==1||original.sourceUntouched!==true||
      original.female?.sourceVertices<1100||original.male?.sourceVertices<1100||
      original.female?.headOnly!==true||original.male?.headOnly!==true||
-     original.female?.code!=='female-face-adjustable-v7'||
+     original.female?.code!=='female-saved-preset-contact-makeup-v8'||
      original.female?.headTemplate!=='realistic-head-animation.glb'||
      original.female?.sourceVertices!==original.male?.sourceVertices||
      !original.female?.sourceGeometryIndependent||
      !original.male?.sourceGeometryIndependent||
-     original.female?.facePartMeshCount!==22||
-     original.male?.facePartMeshCount!==12||
-     original.visiblePartMeshes!==22)
+     original.female?.facePartMeshCount!==26||
+     original.male?.facePartMeshCount!==14||
+     original.visiblePartMeshes!==26||
+     original.faceMode!=='color'||
+     original.femaleControls.irisDiameter!==1||
+     original.femaleControls.jawSharpness!==2.5||
+     original.femaleControls.noseTipLift!==0||
+     original.femaleControls.nostrilCover!==1||
+     original.femaleControls.noseBridgeSharpness!==2.5||
+     !original.maleWithoutMakeup)
    throw Error('Not two independent source-derived face meshes: '+JSON.stringify(original));
   const canvas=page.locator('#faceCanvas');
   for(const g of ['female','male']){
@@ -36,7 +43,7 @@ fs.mkdirSync(out,{recursive:true});
     await page.locator('#'+view).click();
     await page.waitForTimeout(200);
     const report=await page.evaluate(()=>window.__faceMasterQA());
-    if(report.gender!==g||report.view!==view||report.visibleFaceMeshes!==1||report.visiblePartMeshes!==(g==='female'?22:12))
+    if(report.gender!==g||report.view!==view||report.visibleFaceMeshes!==1||report.visiblePartMeshes!==(g==='female'?26:14))
      throw Error('Face viewer controls failed '+JSON.stringify(report));
     await canvas.screenshot({path:path.join(out,g+'-'+view+'.png'),
      timeout:90000,animations:'disabled'});
@@ -56,7 +63,7 @@ fs.mkdirSync(out,{recursive:true});
    const gltf=JSON.parse(buf.subarray(20,20+length).toString('utf8').trim());
    const tri=(gltf.meshes||[]).flatMap(m=>m.primitives||[])
     .filter(p=>p.mode===undefined||p.mode===4);
-   if(tri.length!==(g==='female'?23:13))throw Error('Exported face + anatomical meshes mismatch: '+g+' '+tri.length);
+   if(tri.length!==(g==='female'?27:15))throw Error('Exported face + anatomical meshes mismatch: '+g+' '+tri.length);
    console.log('FACE_CLAY_GLB_EXPORT',JSON.stringify({
     gender:g,bytes:buf.length,trianglePrimitives:tri.length
    }));
@@ -95,7 +102,10 @@ fs.mkdirSync(out,{recursive:true});
   await page.locator('#threeQuarter').click();
   await canvas.screenshot({path:path.join(out,'female-color-v7-threeQuarter.png')});
   // Real eyebrow/lash angle control and front nasal tip sculpt.
-  for(const [control,value] of [['browAngle','-13'],['lashAngle','19'],
+  await page.locator('#contactPreset').selectOption('blue');
+  for(const [control,value] of [['eyeAngle','12'],['eyeSize','1.2'],
+   ['lipstickX','.04'],['lipstickY','-.025'],
+   ['lipstickWidth','1.2'],['lipstickHeight','.8'],
    ['noseTipLift','1.8'],['nostrilCover','1.6'],
    ['noseBridgeSharpness','1.9']]){
    await page.locator('#'+control).evaluate((el,v)=>{
@@ -106,9 +116,14 @@ fs.mkdirSync(out,{recursive:true});
   const changed=await page.evaluate(()=>window.__faceMasterQA());
   if(changed.femaleControls.noseTipLift!==1.8||
      changed.femaleControls.nostrilCover!==1.6||
-     changed.currentFeatureAngles?.browAngle!==-13||
-     changed.currentFeatureAngles?.lashAngle!==19||
-     changed.visiblePartMeshes!==22)
+     changed.femaleControls.eyeSize!==1.2||
+     changed.femaleControls.lipstickX!==.04||
+     changed.femaleControls.lipstickY!==-.025||
+     changed.currentFeatureAngles?.eyeAngle!==12||
+     changed.currentFeatureAngles?.browAngle!==6||
+     changed.currentFeatureAngles?.lashAngle!==7||
+     changed.contactColor!=='#467fa7'||
+     changed.visiblePartMeshes!==26)
    throw Error('Live nose/eyebrow/lash controls do not affect the displayed 3D: '+JSON.stringify(changed));
   await page.locator('#front').click();
   await canvas.screenshot({path:path.join(out,'female-color-nose-brow-adjusted.png')});
@@ -121,14 +136,31 @@ fs.mkdirSync(out,{recursive:true});
    const buf=fs.readFileSync(file),size=buf.readUInt32LE(12);
    const gltf=JSON.parse(buf.subarray(20,20+size).toString('utf8').trim());
    const meshes=gltf.meshes||[],materials=gltf.materials||[];
-   if(meshes.length!==23||materials.length<5)
+   if(meshes.length!==27||materials.length<5)
     throw Error('Colored female GLB did not preserve eyebrow/eyelash meshes and palette');
    console.log('FACE_V7_COLORED_GLB_EXPORT',JSON.stringify({
     bytes:buf.length,meshes:meshes.length,materials:materials.length
    }));
   }
-  if((await page.evaluate(()=>window.__faceMasterQA())).visiblePartMeshes!==22)
+  if((await page.evaluate(()=>window.__faceMasterQA())).visiblePartMeshes!==26)
    throw Error('Facial parts did not restore after toggling');
+  await page.locator('#resetPreset').click();
+  const reset=await page.evaluate(()=>window.__faceMasterQA());
+  if(reset.femaleControls.irisDiameter!==1||
+     reset.femaleControls.jawSharpness!==2.5||
+     reset.femaleControls.noseTipLift!==0||
+     reset.femaleControls.noseBridgeSharpness!==2.5||
+     reset.contactColor!=='#514139'||reset.faceMode!=='color')
+    throw Error('Screenshot standard preset was not restored '+JSON.stringify(reset));
+  await canvas.screenshot({path:path.join(out,'female-default-v8-color.png')});
+  await page.locator('#male').click();
+  const maleQA=await page.evaluate(()=>window.__faceMasterQA());
+  if(maleQA.maleWithoutMakeup!==true||
+     maleQA.male.detailedParts.lipstickMeshCount!==0||
+     maleQA.male.detailedParts.underEyeShadowMeshCount!==0||
+     maleQA.male.detailedParts.eyeScale>=maleQA.female.detailedParts.eyeScale)
+   throw Error('Male must use shared female head with smaller eyes and no makeup');
+  await canvas.screenshot({path:path.join(out,'male-v8-no-makeup.png')});
   if(errors.length)throw Error('Browser errors: '+JSON.stringify(errors));
   console.log('INDEPENDENT_MALE_FEMALE_CLAY_FACES_SUCCESS '+
    JSON.stringify({femaleVertices:original.female.sourceVertices,
