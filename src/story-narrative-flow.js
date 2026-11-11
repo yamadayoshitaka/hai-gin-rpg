@@ -120,6 +120,31 @@ export function storyStageContext(game,id){
     stage.chapter>=13?'記録院の妨害部隊':stage.enemyFaction==='verdant'?'翠嵐軍':'紅炎軍'
  };
 }
+
+export function availableStoryEndings(game){
+ const done=Boolean(game?.completedStages?.includes('c20-s10'));
+ const d=flags(game).storyDecisions||{};
+ const score=storyAllianceScores(game);
+ return ENDING_GUIDE.map(e=>({
+  ...e,unlocked:done&&(e.id==='seal'||
+   e.id==='release'&&(score.evidence>=1||d['c18-s05']==='control')||
+   e.id==='inherit'&&d['c15-s05']==='investigate'&&d['c19-s05']==='inherit'),
+  reason:!done?'第20章の決戦が未完了':
+   e.id==='release'?'記録の調査または星鐘の制御が必要':
+   e.id==='inherit'?'第15章の記憶継承調査と第19章の準備が必要':''
+ }));
+}
+export function chooseStoryEnding(game,id){
+ const entry=availableStoryEndings(game).find(e=>e.id===id);
+ if(!entry?.unlocked)throw Error('この結末を選ぶための条件が整っていません。');
+ if(game.narrativeEnding&&game.narrativeEnding!==id)throw Error('決定した結末は変更できません。');
+ game.narrativeEnding=id;
+ game.storyFlags??={};game.storyFlags.storyEnding=id;
+ game.history??=[];game.history.unshift('星鐘の結末「'+entry.name+'」を選んだ。');
+ game.history=game.history.slice(0,50);
+ return entry;
+}
+
 export const STORY_FLOW=Object.freeze(STORY_CHAPTERS.map(ch=>{
  const participants=ch.dialogues.map(v=>v.speaker);
  return Object.freeze({
