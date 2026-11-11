@@ -116,6 +116,7 @@ export function makeIndependentFaceMaster(sourceRoot,gender){
  let changed=0,cheekDelta=0,chinDelta=0;
  let addedCheekDepth=0,narrowedJawDistance=0,apexLowering=0;
  let cheekSculptSamples=0,jawSculptSamples=0;
+ let cheekProtectedSamples=0,maxCheekWidthChange=0;
  let outerContourXError=0,outerContourSamples=0;
  let localizedNoseAndMouthSamples=0;
  // A continuous low-amplitude sculpt, not many stacked portrait morphs.
@@ -193,6 +194,13 @@ export function makeIndependentFaceMaster(sourceRoot,gender){
     narrowedJawDistance+=Math.abs(surfaceFairing.dx);
    }
    apexLowering+=Math.abs(surfaceFairing.dy);
+   // Source-derived cheek sidewall must not be dragged inward by nose
+   // or mouth morphs. Real 3D guard, not a parameter-only assertion.
+   if(Math.abs(xn)>=.30&&Math.abs(xn)<=.58
+      &&yn>=.46&&yn<=.62&&zn>.58){
+    cheekProtectedSamples++;
+    maxCheekWidthChange=Math.max(maxCheekWidthChange,Math.abs(nx-x));
+   }
   }
   p.setXYZ(i,nx,ny,nz);
   if(Math.abs(nx-x)+Math.abs(ny-y)+Math.abs(nz-z)>1e-6)changed++;
@@ -227,6 +235,7 @@ export function makeIndependentFaceMaster(sourceRoot,gender){
   addedCheekDepth:Number(addedCheekDepth.toFixed(7)),
   narrowedJawDistance:Number(narrowedJawDistance.toFixed(7)),
   apexLowering:Number(apexLowering.toFixed(7)),
+  cheekProtectedSamples,maxCheekWidthChange:Number(maxCheekWidthChange.toFixed(7)),
   cheekJawSculpt:'smooth-head-source-feminine-jaw-v6',
   innerFeatureHalfWidthLimit:.28,
   femaleJawStyle:gender==='female'?'full-cheek-smooth-oval-point-v6':null,
