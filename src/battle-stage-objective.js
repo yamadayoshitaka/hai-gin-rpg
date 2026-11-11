@@ -88,8 +88,8 @@ export function evaluateBattleObjective(spec,{
  // taking the objective failed, so the defender wins. There is never a draw.
  if(!attackerAlive&&!defenderAlive)
   return defenderWin('双方壊滅・攻撃側が目的を達成できず防衛側の勝利');
- if(!attackerAlive)return defenderWin('攻撃軍を殲滅した');
- if(!defenderAlive)return attackerWin('防衛軍を殲滅した');
+ if(!attackerAlive)return defenderWin('攻撃軍を殲滅した（攻撃軍壊滅）');
+ if(!defenderAlive)return attackerWin('防衛軍を殲滅した（防衛軍壊滅）');
 
  if(type===BATTLE_OBJECTIVE_TYPES.DEFEND_TIMER){
   const occupyTime=Math.max(1,finite(spec?.breachSeconds,12));
