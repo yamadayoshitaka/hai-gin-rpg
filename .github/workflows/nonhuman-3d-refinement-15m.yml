@@ -2,9 +2,14 @@ name: Nonhuman 3D model sculpt refinement every 15 minutes
 
 on:
   schedule:
-    # Best effort: GitHub may delay or skip cron starts.
-    - cron: '*/15 * * * *'
+    # Offset from busy quarter-hour boundaries; GitHub cron is best effort.
+    # Four UTC starts per hour = nominal 15-minute cadence.
+    - cron: '7,22,37,52 * * * *'
   workflow_dispatch:
+  push:
+    # Fallback if GitHub's schedule trigger is delayed or dropped.
+    # The age gate and concurrency lock prevent runaway refinement.
+    branches: [main]
 
 # Only this workflow may write its reviewed, nonhuman refinement PR.
 # Never push human assets or touch another workstream.
@@ -30,8 +35,39 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Enforce at least 15 minutes between approved model revisions
+        id: cadence
+        shell: bash
+        env:
+          GH_TOKEN: '${{ github.token }}'
+          EVENT_NAME: '${{ github.event_name }}'
+        run: |
+          set -euo pipefail
+          if [[ "$EVENT_NAME" == 'workflow_dispatch' ]]; then
+            echo 'skip=false' >> "$GITHUB_OUTPUT"
+            echo 'Manual diagnostic run bypasses the time gate.' >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          # Use the main branch's latest actual model-quality commit, not
+          # the latest unrelated NPC/story/tactics commit.
+          LAST="$(gh api "repos/$GITHUB_REPOSITORY/commits?path=src/nonhuman-model-quality.js&per_page=1" --jq '.[0].commit.committer.date')"
+          if [[ ! "$LAST" =~ ^[0-9]{4}- ]]; then
+            echo "Cannot verify previous quality commit; fail closed." >&2
+            exit 1
+          fi
+          LAST_EPOCH="$(date -u -d "$LAST" +%s)"
+          NOW_EPOCH="$(date -u +%s)"
+          ELAPSED="$((NOW_EPOCH-LAST_EPOCH))"
+          if (( ELAPSED < 900 )); then
+            echo 'skip=true' >> "$GITHUB_OUTPUT"
+            echo "Skipping duplicate refinement: ${ELAPSED}s since last model-quality commit." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo 'skip=false' >> "$GITHUB_OUTPUT"
+            echo "Refinement eligible: ${ELAPSED}s since last model-quality commit." >> "$GITHUB_STEP_SUMMARY"
+          fi
       - name: Keep one open quality PR at a time; halt on orphaned auto branches
         id: pending
+        if: steps.cadence.outputs.skip == 'false'
         shell: bash
         env:
           GH_TOKEN: '${{ github.token }}'
