@@ -5,7 +5,7 @@ fs.mkdirSync(out,{recursive:true});
 // Verify displayed controls, not only the internally stored 3D parameter
 // object: mobile form restoration can overwrite a slider without an input
 // event, leaving a stale value visible while the actual mesh uses defaults.
-async function expectVisibleV8Preset(page,context,contact='brown'){
+async function expectVisibleLibraryPreset(page,context,contact='brown'){
  const expected={
   irisDiameter:1,eyeSize:1,jawSharpness:5,noseTipLift:0,
   nostrilCover:2,noseBridgeSharpness:2.5,eyeAngle:0,
@@ -27,7 +27,7 @@ async function expectVisibleV8Preset(page,context,contact='brown'){
    ['irisDiameter','eyeSize','jawSharpness','lipstickWidth','lipstickHeight'].includes(key)?'×':'';
   if(Number(ui.input)!==value||ui.output!==String(value)+suffix||
      actual.model[key]!==value)
-   throw Error('Displayed v8 standard mismatch ('+context+': '+key+'): '+
+   throw Error('Displayed Library-saved preset mismatch ('+context+': '+key+'): '+
     JSON.stringify({ui,actualModel:actual.model[key],expected:value}));
  }
  const colors={brown:'#514139',green:'#5c886b'};
@@ -47,7 +47,7 @@ async function expectVisibleV8Preset(page,context,contact='brown'){
    {waitUntil:'domcontentloaded',timeout:60000});
   await page.waitForFunction(()=>window.__faceMasterQA?.().loaded===true,
    null,{timeout:100000,polling:250});
-  await expectVisibleV8Preset(page,'fresh-open');
+  await expectVisibleLibraryPreset(page,'fresh-open');
   // Simulate a mobile browser restoring an outdated range thumb/label
   // without dispatching input; pageshow must re-align UI with model state.
   await page.evaluate(()=>{
@@ -55,7 +55,7 @@ async function expectVisibleV8Preset(page,context,contact='brown'){
    document.getElementById('lipstickXValue').value='0.05';
    window.dispatchEvent(new Event('pageshow'));
   });
-  await expectVisibleV8Preset(page,'browser-form-restoration');
+  await expectVisibleLibraryPreset(page,'browser-form-restoration');
   const original=await page.evaluate(()=>window.__faceMasterQA());
   if(original.gender!=='female'||original.bodyMeshes!==0||
      original.visibleFaceMeshes!==1||original.sourceUntouched!==true||
@@ -87,9 +87,9 @@ async function expectVisibleV8Preset(page,context,contact='brown'){
   // A user who touches ONLY the contact color must not inadvertently
   // inherit lipstickX=.05 or another visible slider value.
   await page.locator('#contactPreset').selectOption('green');
-  await expectVisibleV8Preset(page,'change-contact-only','green');
+  await expectVisibleLibraryPreset(page,'change-contact-only','green');
   await page.locator('#contactPreset').selectOption('brown');
-  await expectVisibleV8Preset(page,'contact-back-to-standard');
+  await expectVisibleLibraryPreset(page,'contact-back-to-standard');
   const canvas=page.locator('#faceCanvas');
   for(const g of ['female','male']){
    await page.locator('#'+g).click();
@@ -118,6 +118,14 @@ async function expectVisibleV8Preset(page,context,contact='brown'){
    const tri=(gltf.meshes||[]).flatMap(m=>m.primitives||[])
     .filter(p=>p.mode===undefined||p.mode===4);
    if(tri.length!==(g==='female'?31:20))throw Error('Exported face + anatomical meshes mismatch: '+g+' '+tri.length);
+   const master=(gltf.nodes||[]).find(n=>n.name===g.toUpperCase()+'_FACE_MASTER_SOURCE_CLONE');
+   const saved=master?.extras?.faceMasterReport;
+   const controls=g==='female'?saved?.femaleControls:saved?.maleControls;
+   if(controls?.jawSharpness!==5||controls?.nostrilCover!==2||
+      controls?.eyeSize!==1||controls?.irisDiameter!==1)
+    throw Error('Exported '+g+' GLB lost Library defaults '+JSON.stringify(controls));
+   if(g==='male'&&(!saved?.maleNoMakeup||saved?.femaleControls!==null))
+    throw Error('Male GLB contains female cosmetic settings');
    console.log('FACE_CLAY_GLB_EXPORT',JSON.stringify({
     gender:g,bytes:buf.length,trianglePrimitives:tri.length
    }));
@@ -199,7 +207,7 @@ async function expectVisibleV8Preset(page,context,contact='brown'){
   if((await page.evaluate(()=>window.__faceMasterQA())).visiblePartMeshes!==30)
    throw Error('Facial parts did not restore after toggling');
   await page.locator('#resetPreset').click();
-  await expectVisibleV8Preset(page,'reset-button');
+  await expectVisibleLibraryPreset(page,'reset-button');
   const reset=await page.evaluate(()=>window.__faceMasterQA());
   if(reset.femaleControls.irisDiameter!==1||
      reset.femaleControls.jawSharpness!==5||
