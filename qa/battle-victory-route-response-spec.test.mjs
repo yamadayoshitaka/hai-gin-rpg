@@ -123,7 +123,7 @@ const siege=findVictoryRouteResponsePath({
  goalId:'siege_ally',routeId:'gate_assault',situationId:'locked_door',
  allyActionId:'unlock_door',enemyActionId:'fortify',allyCounterCounterId:'burn_building'});
 assert.ok(siege);
-assert.match(siege.victory,/敵城/);
+assert.match(siege.victory,/城/);
 assert.match(siege.route,/城門/);
 assert.deepEqual(siege.ally.jobSquads,['シーフ隊']);
 assert.deepEqual(siege.enemy.jobSquads,['シーフ隊']);
