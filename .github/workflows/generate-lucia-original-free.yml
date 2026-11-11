@@ -13,12 +13,20 @@ concurrency:
 jobs:
   generate:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Verify free Hugging Face account token is configured (never bill)
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          if [ -z "$HF_TOKEN" ]; then
+            echo "::error::Missing HF_TOKEN in GitHub Actions Secrets. Anonymous ZeroGPU failed. Add a free token from huggingface.co/settings/tokens. Do not paste it into the repository."
+            exit 1
+          fi
       - name: Install open source Gradio client for this single run
         run: npm install --no-save --package-lock=false --ignore-scripts @gradio/client@2.7.2
       - name: Upload first-chapter Lucia original and try free ZeroGPU 3D inference
