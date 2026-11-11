@@ -7,6 +7,7 @@ on:
       - '.github/workflows/story-panel-voicevox-generation.yml'
       - 'scripts/generate-story-panel-voicevox.mjs'
       - 'src/story-voice-director.js'
+      - 'qa/story-panel-voice-assets.test.mjs'
   workflow_dispatch:
     inputs:
       chapter:
@@ -80,6 +81,8 @@ jobs:
             node scripts/generate-story-panel-voicevox.mjs --chapter "$CHAPTER" --format mp3
           fi
       - name: Validate all generated sound clips
+        env:
+          REQUIRE_ALL_STORY_VOICES: ${{ (github.event_name == 'push' || github.event.inputs.chapter == 'all') && '1' || '0' }}
         run: |
           node qa/story-panel-voice-assets.test.mjs
       - name: Store audio and manifest on main
