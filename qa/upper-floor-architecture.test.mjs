@@ -11,7 +11,13 @@ for(const [id,widthCells,depthCells,count] of buildings){
  const details=createUpperFloorDecorationPlan(structure);
  const loot=createUpperFloorLootPlan(structure);
  assert.equal(details.length,count-1+(id==='castle_001'?1:0),id+' castle ground floor plus occupied upper floors');
- assert.equal(loot.length,count-1,id+' every upper floor has a collectible chest');
+ assert.ok(loot.length >= (count-1)*2,id+' upper floors must retain multiple collectible room items');
+ assert.equal(new Set(loot.map(item=>item.id)).size,loot.length,id+' item IDs must remain unique');
+ for(const floor of structure.floors.slice(1)){
+  const floorItems=loot.filter(item=>item.floor===floor.index);
+  assert.ok(floorItems.length>=2,id+' floor '+floor.index+' must have genuine item pickups');
+  assert.ok(floorItems.some(item=>item.itemId==='healing_potion'),id+' floor '+floor.index+' keeps a healing item');
+ }
  for(const [i,floor] of details.entries()){
   assert.equal(floor.floor,i+(id==='castle_001'?1:2));
   assert.ok(floor.parts.length>=40,id+' contains substantive upper-floor furnishings');
