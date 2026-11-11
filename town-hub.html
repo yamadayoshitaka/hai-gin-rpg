@@ -100,6 +100,7 @@ body:has(#panel:not([hidden])) #townExplorerControls *,body:has(#opening:not([hi
 import {STORY_CHAPTERS,storyVoiceKey} from './src/story-chapters.js';
 import {STORY_KEY_PEOPLE} from './src/story-cinematic.js';
 import {mangaForStage} from './src/story-stage-manga.js';
+import {storyStageContext} from './src/story-narrative-flow.js';
 import {stageMangaImage} from './src/story-manga-art.js';
 import {applyCinematicImage} from './src/story-cinematic-assets.js';
 import {fantasyCueForMangaPanel} from './src/fantasy-scene-score.js';
@@ -510,7 +511,7 @@ async function speakChapter(number,{autoplay=false}={}){
 }
 // Every town stop uses the exact same serial-manga identity and panel order
 // as the other 180 combat/exploration stages.
-const townManga=mangaForStage(game.townStage);
+const townManga=mangaForStage(game.townStage,storyStageContext(game,game.townStage));
 const eventScenes=townManga.panels;
 let eventIndex=0;
 const voiceIsOn=()=>{
