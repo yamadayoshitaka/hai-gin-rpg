@@ -2965,7 +2965,7 @@ for(let team=0;team<2;team++)for(let i=0;i<TEAM_SIZE;i++){
  const baseJob=TOWN_MODE?(JOBS.find(j=>j.name===townNpcSites[i][2])||JOBS[0]):storyUnit?
   JOBS.find(j=>j.name===storyUnit.job)||randomRosters[team][i]:massSim?
   JOBS.find(j=>j.name===MASS_JOBS[massSim.units[team*MASS_SIZE+i]?.jobIndex]?.name)||randomRosters[team][i]:
-  randomRosters[team][i];
+  storyRequest&&team===1?JOBS[Math.floor(i/Math.max(1,Math.ceil(TEAM_SIZE/10)))%JOBS.length]:randomRosters[team][i];
  // Squad gear is a passive applied before the first combat frame; unlike an
  // order buff, it has no timer and does not require the strategist to survive.
  const passive=storyUnit?.equipmentBuff||{};
