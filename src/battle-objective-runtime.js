@@ -3,7 +3,7 @@ import {evaluateBattleObjective} from './battle-stage-objective.js';
  * Browser adapter for campaign objectives. Physics stays in existing simulation;
  * only the live, authoritative unit positions and simulation clock are sampled.
  */
-export function createStageObjectiveMonitor(spec,{cellSize=1,onComplete}={}){
+export function createStageObjectiveMonitor(spec,{cellSize=1,onComplete,onZone}={}){
  if(!spec)return null;
  const hud=document.createElement('div');
  hud.id='battleObjectiveHud';
@@ -13,7 +13,7 @@ export function createStageObjectiveMonitor(spec,{cellSize=1,onComplete}={}){
  hud.textContent='⚑ '+spec.title;
  document.body.append(hud);
  let zone=null,lastElapsed=0,captureSeconds=0,breachSeconds=0,done=false;
- function update(elapsed,units,{mass=false,sideSize=50,teamCounts}={}){
+ function update(elapsed,units,{mass=false,sideSize=50}={}){
   if(done)return true;
   const pos=u=>mass?{x:u.x,z:u.z}:
    {x:u.root?.position.x??u.x??0,z:u.root?.position.z??u.z??0};
@@ -25,26 +25,29 @@ export function createStageObjectiveMonitor(spec,{cellSize=1,onComplete}={}){
    };
    zone={ally:center(0),enemy:center(1),
     radius:mass?Math.max(7,Math.round(Math.sqrt(sideSize)*.7)):cellSize*5};
+   onZone?.({center:spec.type==='defend_timer'?zone.ally:zone.enemy,
+    radius:zone.radius,mass,type:spec.type});
   }
   const target=spec.type==='defend_timer'?zone.ally:zone.enemy;
   const radiusSquared=zone.radius**2;
-  let allyInZone=false,enemyInZone=false,enemyCommanderExists=false,enemyCommanderDefeated=false;
+  let allyInZone=false,enemyInZone=false,allyAlive=0,enemyAlive=0,mainEnemyCommander=null;
   for(const u of units){
-   if(u.team===1&&u.isStrategist){
-    enemyCommanderExists=true;
-    if(u.hp<=0||u.alive===false||u.defeated)enemyCommanderDefeated=true;
-   }
+   if(u.team===1&&u.isStrategist&&
+    (mainEnemyCommander===null||Number(u.id)<Number(mainEnemyCommander.id)))mainEnemyCommander=u;
    if(u.hp<=0||u.alive===false||u.defeated||u.isStrategist)continue;
+   if(u.team===0)allyAlive++;
+   if(u.team===1)enemyAlive++;
    const p=pos(u);
    if((p.x-target.x)**2+(p.z-target.z)**2>radiusSquared)continue;
    if(u.team===0)allyInZone=true;
    if(u.team===1)enemyInZone=true;
   }
-  const [allyAlive,enemyAlive]=teamCounts;
+  const mainEnemyCommanderDefeated=mainEnemyCommander!=null&&
+   (mainEnemyCommander.hp<=0||mainEnemyCommander.alive===false||mainEnemyCommander.defeated);
   const result=evaluateBattleObjective(spec,{
    elapsedSeconds:elapsed,deltaSeconds:Math.max(0,Math.min(1,elapsed-lastElapsed)),
    allyAlive,enemyAlive,allyInZone,enemyInZone,captureSeconds,breachSeconds,
-   enemyCommanderDefeated:enemyCommanderExists&&enemyCommanderDefeated
+   enemyCommanderDefeated:mainEnemyCommanderDefeated
   });
   captureSeconds=result.captureSeconds;
   breachSeconds=result.breachSeconds;
