@@ -919,6 +919,7 @@ import {squadJobComposition,chooseEnemyOrder,enemyOrderRefreshSeconds,TACTICAL_T
 import {createStageObjectiveMonitor} from './src/battle-objective-runtime.js?v=1';
 import {TACTIC_DEFINITIONS,tacticAvailability,buildTacticPlan,rotationOrders} from './src/battle-tactics-preset-policy.js?v=1';
 import {commandReadiness,afterManualOrder,observeEnemyTactic,recommendCounterOrder} from './src/battle-reactive-command-policy.js?v=1';
+import {getCountermeasureOptions,validateResponseIsNotRoute,BATTLE_SITUATION_DEFINITIONS} from './src/battle-countermeasure-situation-matrix.js?v=1';
 import {uniformJobSquadPlan} from './src/battle-uniform-job-squads.js?v=1';
 import {createMassBattleRealArmy} from './src/mass-battle-real-army.js?v=4.6.39';
 import {BattleCorpsePolicy,corpseOpacity} from './src/battle-corpse-policy.js?v=4.4.35';
@@ -6823,6 +6824,22 @@ function buildSquadQuickCommands(){
   objective:stageObjective,allyHpRatio:hpRatio,enemyNearOurZone});
  const counter=recommendCounterOrder({observation,jobId:survivors[0]?.jobId,
   objective:stageObjective,allyHpRatio:hpRatio});
+ const situationResponses=getCountermeasureOptions({
+  enemySquads:observedSquads,units:squadRoster,members:survivors,
+  structures:massSim?.objects??skirmishActions?.objects??[],objective:stageObjective,
+  massBattle:Boolean(massSim),commanderAlive:commander,elapsedSeconds:elapsed,
+  allyInZone:false,enemyInZone:Boolean(enemyNearOurZone&&stageObjective?.defenderTeam===0),
+  remainingSeconds:stageObjective?.durationSeconds!=null?
+   Math.max(0,stageObjective.durationSeconds-elapsed):null,
+  signals:observation.kind==='highground'?['highground']:
+   observation.kind==='breach'?['enemy_in_zone']:[],
+  squadCenter:squadCenter(id)
+ });
+ window.getBattleSituationSummaryQA=()=>({
+  total:BATTLE_SITUATION_DEFINITIONS.length,active:situationResponses.activeSituations.map(x=>x.id),
+  countermeasures:situationResponses.options.map(x=>({id:x.id,enabled:x.enabled,
+   status:x.status,reason:x.reason}))
+ });
  let quickActionRow=null;
  const heading=value=>{
   const node=document.createElement('div');node.className='quickGroup';node.textContent=value;
@@ -6897,8 +6914,38 @@ function buildSquadQuickCommands(){
   heading('号令による対応：'+counter.reason);
   heading('発令済み'+armyManualOrderState.issuedCount+'回・次の指示後は'+
    manualCommandStatus(id).nextWaitSeconds+'秒待ち（最大180秒）');
-  add('★ 対抗号令：'+counter.label,'counter_'+counter.order,()=>
-   counter.order==='charge'?beginCircleTargetSelection('attack'):issue(counter.order));
+  // The same observed situation may yield different answers for a mage,
+  // thief, ninja, healer or summoner. Routes stay in the opening strategy.
+  heading('🎯 状況別の複数対抗号令（移動ルートは開戦前の作戦で決定）');
+  const valid=situationResponses.options.filter(option=>option.enabled);
+  const upcoming=situationResponses.options.filter(option=>option.status==='planned').slice(0,2);
+  const shown=valid.slice(0,5);
+  for(const option of shown){
+   if(!validateResponseIsNotRoute(option))continue;
+   const perform=()=>{
+    if(option.channel==='order'){
+     return option.type==='charge'?beginCircleTargetSelection('attack'):
+      issue(option.type);
+    }
+    if(option.channel==='support')
+     return beginCircleTargetSelection('support');
+    if(option.channel==='mission'){
+     const point=option.target;
+     if(!point)return false;
+     const accepted=issueSquadOrder('mission',{...point,type:option.type});
+     if(accepted)closeSquadTactics();
+     return accepted;
+    }
+    return false;
+   };
+   add('★ '+option.label+'｜'+option.scenarioTitle,
+    'counter_'+option.id,perform);
+  }
+  for(const option of upcoming)
+   heading('🔒 '+option.label+'（高所救助等は専用AI実装後に解放）');
+  if(!shown.length)
+   add('★ 対抗号令：'+counter.label,'counter_'+counter.order,()=>
+    counter.order==='charge'?beginCircleTargetSelection('attack'):issue(counter.order));
   add('⚔ 突撃','charge',()=>beginCircleTargetSelection('attack'));
   add('✚ 支援','heal_target',()=>beginCircleTargetSelection('support'));
   add('🛡 防御','defend',()=>issue('defend'));
