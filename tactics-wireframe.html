@@ -9033,10 +9033,10 @@ async function finishBattleLoading(){
    const id=editingSquadId;
    const total=squadRoster.filter(u=>u.team===0&&!u.isStrategist&&String(u.squadId)===id).length;
    const chosen=manualJobs[id]||{};
-   const assigned=Object.values(chosen).reduce((n,v)=>n+v,0);
-   const increment=total>=50?10:1;
-   manualTitle.textContent='第'+(squadIds.indexOf(id)+1)+'隊 · 職業を選択';
-   manualStats.textContent='指定 '+assigned+'/'+total+'人・残り'+(total-assigned)+'人は自動配分。職業ボタン1回で'+increment+'人追加';
+   const current=Object.keys(chosen)[0];
+   manualTitle.textContent='第'+(squadIds.indexOf(id)+1)+'隊 · 1ジョブを選択';
+   manualStats.textContent='1隊＝1ジョブ・'+total+'人（兵士と3D衣装はそのままで、隊単位に再配置）'+
+    (current?' · '+(MASS_JOBS.find(j=>j.id===current)?.name||current):' · 自動編成');
    manualGrid.replaceChildren();
    const manualPageSize=4,manualPages=Math.max(1,Math.ceil(MASS_JOBS.length/manualPageSize));
    manualPage=Math.max(0,Math.min(manualPage,manualPages-1));
@@ -9044,29 +9044,22 @@ async function finishBattleLoading(){
    manualPageText.textContent=(manualPage+1)+' / '+manualPages;
    for(const job of MASS_JOBS.slice(manualPage*manualPageSize,(manualPage+1)*manualPageSize)){
     const available=squadRoster.filter(u=>u.team===0&&!u.isStrategist&&u.jobId===job.id).length;
-    const usedElsewhere=Object.entries(manualJobs).filter(([other])=>other!==id)
-      .reduce((sum,[,counts])=>sum+(counts[job.id]||0),0);
-    const used=chosen[job.id]||0;
+    const reserved=Object.entries(manualJobs).filter(([other])=>other!==id)
+     .reduce((sum,[,counts])=>sum+(counts[job.id]||0),0);
     const cell=document.createElement('div');
     cell.style.cssText='display:grid;grid-template-columns:minmax(0,1fr) 33px;gap:3px;min-height:47px';
     const plus=document.createElement('button');plus.type='button';
-    plus.textContent=job.name+' '+used+'人 ＋';
+    plus.textContent=job.name+(current===job.id?' ✓':'');
     plus.style.cssText='min-width:0;color:white;background:#254e70;border:1px solid #75accb;border-radius:6px;padding:5px 2px;font:11px system-ui';
-    plus.disabled=assigned>=total||available-usedElsewhere-used<=0;
+    plus.disabled=available-reserved<total;
     plus.onclick=()=>{
-     const count=Math.min(increment,total-assigned,available-usedElsewhere-used);
-     if(count<=0)return;
-     const entry=manualJobs[id]||={};entry[job.id]=(entry[job.id]||0)+count;
+     manualJobs[id]={[job.id]:total};
      updateManualJobEditor();refreshFormationPreview();
     };
     const minus=document.createElement('button');minus.type='button';
-    minus.textContent='−';minus.disabled=!used;
+    minus.textContent='×';minus.disabled=current!==job.id;
     minus.style.cssText='color:white;background:#553d47;border:1px solid #b28b9a;border-radius:6px';
-    minus.onclick=()=>{
-     const entry=manualJobs[id];entry[job.id]=Math.max(0,(entry[job.id]||0)-increment);
-     if(!entry[job.id])delete entry[job.id];if(!Object.keys(entry).length)delete manualJobs[id];
-     updateManualJobEditor();refreshFormationPreview();
-    };
+    minus.onclick=()=>{delete manualJobs[id];updateManualJobEditor();refreshFormationPreview()};
     cell.append(plus,minus);manualGrid.append(cell);
    }
   }
