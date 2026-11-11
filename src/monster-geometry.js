@@ -234,13 +234,27 @@ function insect(g,s,{spider=false}={}){
  const head=g.group('head',[0,1.31,.64]);
  g.sphere(head,'skin',[0,0,0],[.35,.30,.35],{metal:.32});
  g.bridge(torso,'skin',[0,1.23,.39],[0,1.30,.67],.28,.21);
- g.eyes(head,.28,.09,.20,.06);
+ if(!spider)g.eyes(head,.28,.09,.20,.06);
  for(const side of [-1,1]){
-   g.tube(head,'accent',[[side*.13,.20,.16],[side*.25,.53,.33],[side*.37,.61,.38]],.025);
-   g.spike(head,'bone',[side*.16,-.13,.31],[side*.27,-.30,.60],.09);
+   if(!spider){
+     g.tube(head,'accent',[[side*.13,.20,.16],[side*.25,.53,.33],[side*.37,.61,.38]],.025);
+     g.spike(head,'bone',[side*.16,-.13,.31],[side*.27,-.30,.60],.09);
+   }else{
+     // Spider pedipalps are short paired sensory appendages, not the
+     // long beetle antennae used by the six-legged insect family.
+     g.tube(head,'accent',[[side*.17,-.04,.18],[side*.31,-.15,.34],[side*.29,-.20,.48]],.034);
+     g.sphere(head,'skin',[side*.29,-.20,.48],[.052,.047,.067],{rough:.68});
+   }
  }
  const jaws=g.group('jaw',[0,1.20,.82]);
- for(const side of [-1,1])g.spike(jaws,'bone',[side*.16,0,0],[side*.11,-.10,.35],.075);
+ for(const side of [-1,1]){
+   if(spider){
+     // Bulbous chelicerae and downward-curving fangs read as arachnid
+     // anatomy even when the camera is low or the face is in shadow.
+     g.sphere(jaws,'skin',[side*.135,-.035,.15],[.13,.15,.18],{rough:.61});
+     g.tube(jaws,'bone',[[side*.135,-.10,.24],[side*.11,-.24,.36],[side*.045,-.30,.39]],.048);
+   }else g.spike(jaws,'bone',[side*.16,0,0],[side*.11,-.10,.35],.075);
+ }
  const count=spider?4:3;
  for(const side of [-1,1])for(let i=0;i<count;i++){
    const z=.46-i*.36;const name='leg'+(side<0?'L':'R')+i;
