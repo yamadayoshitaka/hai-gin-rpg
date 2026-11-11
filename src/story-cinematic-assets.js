@@ -101,7 +101,7 @@ export async function cinematicPanelImage(panel){
 }
 export function applyCinematicImage(node,panel,{background=false}={}){
  if(!node||!panel)return;
- const key=panel.id||panel.stageId+'-'+panel.index;
+ const key=(panel.id||panel.stageId+'-'+panel.index)+':'+(panel.protagonistGender||'unspecified');
  node.dataset.cinematicKey=key;
  const dedicated=individualStoryPanelAsset(panel);
  void (async()=>{
