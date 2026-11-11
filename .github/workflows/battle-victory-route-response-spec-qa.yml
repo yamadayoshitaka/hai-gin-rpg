@@ -7,7 +7,9 @@ on:
     paths:
       - 'src/battle-victory-route-response-spec.js'
       - 'docs/battle-victory-route-response-spec.md'
+      - 'docs/battle-victory-route-response-tree.md'
       - 'qa/battle-victory-route-response-spec.test.mjs'
+      - 'qa/battle-victory-route-response-tree-doc.test.mjs'
       - '.github/workflows/battle-victory-route-response-spec-qa.yml'
   workflow_dispatch:
 jobs:
@@ -21,6 +23,8 @@ jobs:
           node-version: '22'
       - name: Victory condition to route to three job-labeled response layers
         run: node qa/battle-victory-route-response-spec.test.mjs
+      - name: Expanded clickable hierarchy document completeness
+        run: node qa/battle-victory-route-response-tree-doc.test.mjs
       - name: Existing strategy and scenario hierarchy contracts
         run: |
           node qa/battle-strategy-countertree-spec.test.mjs
