@@ -306,6 +306,23 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  }
  const root=new THREE.Group();root.name='FEMALE_SCALP_ANCHORED_LONG_WIG';
  root.userData.hairOnRealHead=true;
+ // v26: fitted detachable wig foundation is an exact copy of the
+ // SCULPTED head surface. It is totally transparent, writes no depth
+ // or color, and stays inside the separate wig GLB. It must NOT replace
+ // or modify the character's face.
+ const wigBaseGeometry=head.geometry.clone();
+ const wigBaseMaterial=new THREE.MeshBasicMaterial({
+  color:0xffffff,transparent:true,opacity:0,
+  depthWrite:false,side:THREE.DoubleSide
+ });
+ wigBaseMaterial.colorWrite=false;
+ const wigBase=new THREE.Mesh(wigBaseGeometry,wigBaseMaterial);
+ wigBase.name='DETACHABLE_WIG_TRANSPARENT_HEAD_BASE';
+ wigBase.userData.exactCopyOfSculptedHead=true;
+ wigBase.userData.invisibleWigFoundation=true;
+ wigBase.userData.sharesHeadLocalCoordinates=true;
+ wigBase.userData.neverCollidesWithCharacterBody=true;
+ root.add(wigBase);
  root.userData.assetType='independent-wig';
  root.userData.hairStyleId=style.id;
  root.userData.hairStyleName=style.label;
@@ -358,7 +375,11 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  };
  const strands=[];
  let faceTrimmedStrands=0;
- const rootLift=d.x*.0025;
+ // Previously .0025 of head width placed most thick ribbons UNDER the
+ // scalp. Lift root centre along the true face normal by roughly one
+ // ribbon half-width; the following per-vertex projection keeps its
+ // visible outer edge clear without creating a balloon helmet.
+ const rootLift=d.x*.0155;
  // Shoulder/chest proxy geometry is in the SAME coordinates as the head.
  // Future full-body rigs can supply exact external capsules.
  const colliders=[
@@ -385,7 +406,12 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   const zoneIndex=zoneCap.findIndex(cap=>i<cap);
   const zone=zoneNames[Math.max(0,zoneIndex)];
   const seed=sampleRoot(zone,zoneCounts[zone]++);
-  const wigRoot=seed.p.clone().addScaledVector(seed.n,rootLift);
+  const outward=seed.n.clone().normalize();
+  // Donor meshes can contain reversed scalp normals. The cap is an exact
+  // cloned head surface, so always move away from its actual centre.
+  const away=seed.p.clone().sub(center);
+  if(outward.dot(away)<0)outward.negate();
+  const wigRoot=seed.p.clone().addScaledVector(outward,rootLift);
   const side=zone.endsWith('Left')?-1:zone.endsWith('Right')?1:
    Math.sign(wigRoot.x-center.x)||1;
   const partSide=Math.sign(wigRoot.x-whorl.x)||side;
@@ -523,7 +549,9 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  root.add(locks);
  // Fuller salon silhouette: broaden body/crown locks; preserve feather-fine
  // forehead strips so additional volume does not turn bangs into boards.
- const half=d.x*.0121;
+ // Slightly broader surface-hugging strips, not another 10x increase in
+ // underlying guides. Fine front fringe keeps its own small width factor.
+ const half=d.x*.0142;
  // The visible mesh retains all 1440+ locks, but only ~320 master locks
  // require full constraint and capsule solving on Android.
  const guideStride=Math.max(1,Math.ceil(lockCount/320));
@@ -535,6 +563,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  const renderBodyCollider=bodyCollisionResolver?.resolve?bodyCollisionResolver:null;
  const ribbonCollisionPoint=new THREE.Vector3();
  let ribbonBodyContacts=0,drapeContactEvents=0,glabellaClearanceEvents=0;
+ let scalpVertexCorrections=0;
  // Real head-surface collision. The original giant ellipsoid forced
  // every strand out to an artificial spherical helmet around the ears.
  // Only points INSIDE the actual head silhouette are nudged outward.
@@ -660,6 +689,37 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
      let vx=p.x+sway+scale*(secondary?sx:wx);
      let vy=p.y+scale*(secondary?sy:wy);
      let vz=p.z+scale*(secondary?sz:wz);
+     // Hair must clear the TRUE copied skull even when the guide centre
+     // is legal. Broad vertices used to disappear under the visible
+     // scalp because only shoulder/clothing collisions were checked.
+     // Keep high crown roots free to spread upward rather than making
+     // an artificial radial ring at the whorl.
+     if(vy>box.min.y+d.y*.55&&
+       vy<box.min.y+d.y*.945&&
+       !(strand.fringe||strand.overFace)&&
+       vz<center.z+d.z*.040){
+      const dx=vx-radialScalp.radialCenter.x,
+       dz=vz-radialScalp.radialCenter.z;
+      const radius=Math.hypot(dx,dz);
+      if(radius>d.x*.035){
+       const safe=radialScalp.radius(vy,new THREE.Vector3(dx,0,dz))+
+        d.x*.011;
+       if(radius<safe){
+        const nudge=Math.min(safe-radius,d.x*.033);
+        vx+=dx/radius*nudge;
+        vz+=dz/radius*nudge;
+        scalpVertexCorrections++;
+       }
+      }
+     }
+     if(vy>box.min.y+d.y*.65&&
+        (strand.fringe||strand.overFace)&&vz>center.z+d.z*.020){
+      const frontSkin=surfaceSampler.query(vx,vy);
+      if(frontSkin!==null&&vz<frontSkin+d.x*.009){
+       vz=frontSkin+d.x*.009;
+       scalpVertexCorrections++;
+      }
+     }
      // The rendered edge, not only its centre guide, must clear the brow/
      // glabella central part. Root vertices j=0 remain on true scalp.
      if(j>0&&(strand.fringe||strand.overFace)&&
@@ -827,7 +887,10 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    p.y<box.min.y+d.y*.56&&
    Math.abs(p.x-center.x)<d.x*.145&&
    p.z>center.z+d.z*.045)).length,
-  hairStrandWidthFraction:.0121,fullerCrownBackVolume:true,
+  hairStrandWidthFraction:.0142,fullerCrownBackVolume:true,
+  transparentExactHeadWigBase:true,wigBaseMaterialOpacity:0,
+  wigBaseNeverWritesDepth:true,rootScalpLiftFraction:.0155,
+  trueScalpRibbonVertexCollision:true,
   fullBodyTriangleContactBeforeProxy:true,neckAndShoulderDrape:true,
   fullBodyShoulderExtension:!!bodyCollisionResolver,
   shoulderDrapeInitializedOnce:true,
@@ -847,7 +910,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   zoneCandidateCounts:Object.fromEntries(Object.entries(pools).map(([key,list])=>[key,list.length])),
   collisionTypes:['head','face','neck','shoulder','chest',...externalColliders.map(c=>c.name||'body')],
   usesRealBodyTriangleContacts:!!bodyCollisionResolver,
-  meshCount:2,physicsHz:20,normalUpdateDivisor:3,
+  meshCount:2+(fiberMultiplier>1?1:0),physicsHz:20,normalUpdateDivisor:3,
   physicsGuideCount:guideCount,
   analyticSwayOtherLocks:true,lengthScale:clamp(lengthScale,.55,1.5),
   hairColor:'#'+rootColor.getHexString(),
@@ -861,7 +924,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    realBodyContactEvents:realBodyContacts,
    ribbonBodyContactEvents:ribbonBodyContacts,
    shoulderDrapeContactEvents:drapeContactEvents,
-   glabellaClearanceEvents};
+   glabellaClearanceEvents,scalpVertexCorrections};
  },resolvePoint(point){
   const p=point.clone();resolveCollision(p);return p;
  },getCutSamples(){
