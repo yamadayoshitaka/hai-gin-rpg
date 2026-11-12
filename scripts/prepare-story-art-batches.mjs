@@ -3,7 +3,7 @@
  *
  * One batch = one complete phase: ten opening OR ten post-event frames.
  * Each of 200 stages has TWO approved ten-panel art batches.
- * This produces PRODUCTION BRIEFS, NOT generated image files.
+ * These 2x5 FULL-PAGE sheets are the game-facing art, not panel-sized gallery pictures.\n * This produces PRODUCTION BRIEFS, NOT generated image files.
  *
  * node scripts/prepare-story-art-batches.mjs [--batch 1]
  */
@@ -67,7 +67,10 @@ for(let i=0;i<all.length;i+=10){
   maleOutput:'assets/story/panels/'+p.id.replace(/-m(\d{1,2})$/,(_,v)=>'-m'+v.padStart(2,'0'))+'.webp',
   femaleOutput:'assets/story/panels/'+p.id.replace(/-m(\d{1,2})$/,(_,v)=>'-m'+v.padStart(2,'0'))+'-female.webp'
  }));
- batches.push({id,index,phase,chapters:[...new Set(shots.map(p=>p.chapter))],
+ batches.push({id,index,phase,
+  malePageOutput:'assets/story/pages/'+shots[0].stageId+'-'+phase+'-male.webp',
+  femalePageOutput:'assets/story/pages/'+shots[0].stageId+'-'+phase+'-female.webp',
+  chapters:[...new Set(shots.map(p=>p.chapter))],
    stages:[shots[0].stageId],
    layout:{columns:2,rows:5,order:'row-major',panels:10,aspect:'16:9',
      preferredSheetPixels:[1536,2160],minimumCellPixels:[768,432],
