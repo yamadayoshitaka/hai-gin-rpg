@@ -1,7 +1,7 @@
 import {
  PART_CATALOG,PART_GROUPS,PART_GROUP_LABELS,OFFSET_CHOICES,ANGLE_CHOICES,
  normalizePartSelection,HAIR_COLORS
-} from './face-part-catalog-v32.js';
+} from './face-part-catalog-v32.js?v=33';
 
 /** v32: select ten real 3D geometric presets, not independent morph sliders. */
 export function createPartSelectorUI(target,gender,current,onChange){
