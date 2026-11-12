@@ -1,6 +1,6 @@
 /**
  * Touch-first continuous manga viewer used at every world-map sortie.
- * Approved chapter/branch/gender manga sheets; scene counts are variable,
+ * Individually registered cuts or exactly matched chapter/branch/gender sheets,
  * accessible speech text, optional Japanese reading and matching fantasy BGM.
  * The UI never touches combat actors, town 3D models or player stats.
  */

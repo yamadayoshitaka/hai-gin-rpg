@@ -37,8 +37,9 @@ for(const stage of CAMPAIGN_STAGES){
 const viewer=await readFile(new URL('../src/story-manga-viewer.js',import.meta.url),'utf8');
 const importer=await readFile(new URL('../scripts/slice-story-art-batch.py',import.meta.url),'utf8');
 const workflow=await readFile(new URL('../.github/workflows/story-sheet-import.yml',import.meta.url),'utf8');
-assert.match(viewer,/loadApprovedPage\(shot\)/);
-assert.match(viewer,/manga-hotspots/);
+assert.match(viewer,/loadPanelArt\(shot,pagePanels\)/);
+assert.match(viewer,/storySheetCrop\(shot,pagePanels.length\)/);
+assert.doesNotMatch(viewer,/manga-hotspots/);
 assert.match(viewer,/原画未登録/);
 assert.doesNotMatch(viewer,/stageMangaImage\(shot\)/);
 assert.doesNotMatch(viewer,/applyCinematicImage\(/);
@@ -46,4 +47,4 @@ assert.match(importer,/female_complete = \(patch_count \+ neutral_count == 10\)/
 assert.match(importer,/new_assets\[male_page\] = encode_webp\(base_sheet\)/);
 assert.match(importer,/new_assets\[female_page\] = encode_webp\(female_sheet\)/);
 assert.match(workflow,/git add assets\/story\/panels\/ assets\/story\/pages\//);
-console.log('PASS all 200 stages: one reviewed 2x5 page before and after events, gender-separated 400 male/female image routes, no illustration substitution');
+console.log('PASS all 200 stages: canonical 2x5 sources, single-cell presentation, gender-safe routes and no substitutes');
