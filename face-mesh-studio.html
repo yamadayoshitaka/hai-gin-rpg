@@ -570,6 +570,8 @@ for(const key of [...maleRebuildKeys,...maleAngleKeys]){
  const id='male'+key[0].toUpperCase()+key.slice(1);
  $(id).addEventListener('input',()=>{
   maleChanges[key]=Number($(id).value);
+  if(key==='eyeWidth'||key==='eyeHeight')
+   maleChanges.eyeSize=Math.sqrt(maleChanges.eyeWidth*maleChanges.eyeHeight);
   setMaleControlDisplay(key,maleChanges[key]);
   if(maleAngleKeys.includes(key)&&models.get('male')){
    updateFaceFeatureAngles(models.get('male').parts,maleChanges);
