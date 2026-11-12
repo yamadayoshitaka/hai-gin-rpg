@@ -330,6 +330,33 @@ export function createSealedNeckBridge(face,attachment,{headCutY,bodyCutY}={}){
  attachment.report.neckBridgeBodyCutY=bodyCutY;
  return seal;
 }
+// The bounds centroid includes nose, chest and hips and is NOT the neck
+// centre. Top-down previews need the two actual neck cross-sections aligned.
+function measuredNeckCenter(root,planeY,halfWindow,maxSideDistance,baseline){
+ const points=[],world=V();
+ root.updateWorldMatrix(true,true);
+ root.traverse(mesh=>{
+  if(!mesh.isMesh||!mesh.geometry?.getAttribute('position'))return;
+  const position=mesh.geometry.getAttribute('position');
+  for(let i=0;i<position.count;i++){
+   world.fromBufferAttribute(position,i).applyMatrix4(mesh.matrixWorld);
+   if(Math.abs(world.y-planeY)>halfWindow||
+      Math.abs(world.x-baseline.x)>maxSideDistance)continue;
+   points.push([world.x,world.z]);
+  }
+ });
+ if(points.length<18)return null;
+ const percentile=(values,p)=>{
+  values.sort((a,b)=>a-b);
+  return values[Math.max(0,Math.min(values.length-1,
+   Math.floor(p*(values.length-1))))];
+ };
+ // The mid-extent of the collar ring, not a nose-biased arithmetic mean.
+ const xs=points.map(v=>v[0]),zs=points.map(v=>v[1]);
+ return {x:(percentile(xs,.10)+percentile(xs,.90))*.5,
+  z:(percentile(zs,.10)+percentile(zs,.90))*.5,
+  samples:points.length};
+}
 export function attachIndependentHeadToBody(headModel,bodySource,{
  outfitSource=null,characterId='hero-girl-01',armor='#c9cbd3',cloth='#263958'
 }={}){
@@ -344,10 +371,14 @@ export function attachIndependentHeadToBody(headModel,bodySource,{
  if(sourceSize.y<1||sourceSize.y>2.5)
   throw Error('Body source must be a real human-scale GLB');
  const bodyCenter=bodyBox.getCenter(V()),headCenter=headBox.getCenter(V());
+ const headNeck=measuredNeckCenter(head,headBox.max.y-height*.76,
+  height*.060,height*.36,headCenter);
+ const bodyNeck=measuredNeckCenter(bodySource,bodyBox.max.y-height*.76,
+  height*.060,height*.36,bodyCenter);
  const shift=new THREE.Vector3(
-  headCenter.x-bodyCenter.x,
+  (headNeck?.x??headCenter.x)-(bodyNeck?.x??bodyCenter.x),
   headBox.max.y-bodyBox.max.y,
-  headCenter.z-bodyCenter.z
+  (headNeck?.z??headCenter.z)-(bodyNeck?.z??bodyCenter.z)
  );
  const attachment=new THREE.Group();
  attachment.name='HEROINE_REAL_BODY_ATTACHMENT';
@@ -424,6 +455,10 @@ export function attachIndependentHeadToBody(headModel,bodySource,{
   sourceBodyHeight:sourceSize.y,
   neckSeamY:cutY,
   neckOverlap:headBox.max.y-height-cutY,
+  alignmentMode:headNeck&&bodyNeck?'real-neck-cross-sections':'fallback-bounds',
+  neckAxisDelta:{x:shift.x,z:shift.z},
+  neckAxisHeadSamples:headNeck?.samples||0,
+  neckAxisBodySamples:bodyNeck?.samples||0,
   donorHeadTrianglesRemoved:clipped.removedTriangles,
   donorBodyTrianglesRetained:clipped.keptTriangles,
   hasRealBody:true,
