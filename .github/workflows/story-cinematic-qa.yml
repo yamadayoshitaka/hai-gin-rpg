@@ -6,6 +6,7 @@ on:
       - 'src/story-cinematic.js'
       - 'src/story-stage-manga.js'
       - 'src/story-chapter-comic.js'
+      - 'src/story-chapter-scene-selection.js'
       - 'scripts/prepare-story-chapter.mjs'
       - 'scripts/publish-story-chapter.py'
       - 'qa/story-chapter-pipeline.test.mjs'
@@ -46,6 +47,7 @@ on:
       - 'src/story-cinematic.js'
       - 'src/story-stage-manga.js'
       - 'src/story-chapter-comic.js'
+      - 'src/story-chapter-scene-selection.js'
       - 'scripts/prepare-story-chapter.mjs'
       - 'scripts/publish-story-chapter.py'
       - 'qa/story-chapter-pipeline.test.mjs'
@@ -110,6 +112,7 @@ jobs:
           node qa/story-art-canonical-references.test.mjs
           node qa/story-full-page-layout.test.mjs
           node --check src/story-chapter-comic.js
+          node --check src/story-chapter-scene-selection.js
           node --check scripts/prepare-story-chapter.mjs
           python3 -m py_compile scripts/publish-story-chapter.py
           node qa/story-chapter-pipeline.test.mjs
