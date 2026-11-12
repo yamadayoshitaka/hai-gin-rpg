@@ -309,7 +309,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  const style=getWigStyle(styleId);
  // v25: a detachable wig keeps its current physically simulated guides;
  // micro-fibres are a single static extra mesh in the SAME removable asset.
- const fiberMultiplier=[1,3,10].includes(Number(visualFiberMultiplier))?
+ const fiberMultiplier=[1,3,5,10].includes(Number(visualFiberMultiplier))?
   Number(visualFiberMultiplier):1;
  if(!head?.isMesh||!head.geometry?.getAttribute('position'))
   throw Error('Real sculpted 3D head required for scalp-rooted wig');
