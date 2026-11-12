@@ -8,7 +8,8 @@ const gpu=readFileSync(new URL('../src/mass-battle-real-army.js',import.meta.url
 assert.match(game,/aria-label="上空から見下ろす戦場全域レーダー"/);
 assert.match(game,/const elevation=terrainY\(wx,wz\),north=terrainY\(wx,wz-CELL\)/);
 assert.match(game,/for\(const building of townInstances\)/);
-assert.match(game,/const anchor=squadCenter\(id\)/);
+assert.match(game,/const anchor=tracked\?\.alive&&\(tracked\._visualMotion\?/,
+ 'Camera follows the actual living soldier and their animated position, not the squad centroid');
 assert.match(game,/const soldiers=alive\.filter\(u=>!u\.isStrategist\)/);
 assert.match(game,/focusedHumanUnitId=null;\s*followCamera=false;/,
  'Left squad ribbon selects commands instead of enabling character follow mode');
