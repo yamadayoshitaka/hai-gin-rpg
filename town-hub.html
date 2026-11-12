@@ -127,6 +127,8 @@ import {CAMPAIGN_STAGE_BY_ID,stagesInChapter} from './src/campaign-stage-plan.js
 import {STAGE_PRESETS} from './src/stage-library.js';
 import {RARITIES,JOBS,recruit,autoFormArmy,trainCommander,armyTroops,reserveTroops,troopCount} from './src/story-campaign.js';
 import {squadPower,tacticalCooldownSeconds,STRATEGIST_SPECIALTIES,evaluateTacticalOrder} from './src/tactical-command-evaluation.js?v=2.1';
+import {DEPLOYMENT_CAPACITY,DEPLOYMENT_RANK_LABELS,resolvedSquadDeployment,moveSquadDeployment} from './src/inn-deployment.js?v=1';
+import {TACTICAL_STRATEGIES} from './src/tactical-command-descriptions.js?v=1';
 const $=id=>document.getElementById(id),escapeHtml=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const townAudio=createTownAudioDirector({storage:localStorage,onChange:state=>{
  const toggle=$('townBgmToggle');
@@ -148,7 +150,7 @@ const townSceneUrl='./tactics-wireframe.html?town=1&stage='+encodeURIComponent(c
  '&gender='+encodeURIComponent(game.campaign.commander.gender||'male')+'&faceId='+encodeURIComponent(game.campaign.commander.faceId||0)+
  '&commanderName='+encodeURIComponent(game.playerName)+'&v=town-visit-20261110';
 if(townFrame.getAttribute('src')!==townSceneUrl)townFrame.src=townSceneUrl;
-let panel='',page=0,shopCategory='道具',armyPriority='均衡',innCommanderId='player',innPage='overview',innSquadPage=0,narration=null,selectedSquadId=game.campaign.squads[0]?.id||0;
+let panel='',page=0,shopCategory='道具',armyPriority='均衡',innCommanderId='player',innPage='overview',innSquadPage=0,innDeploymentSelected=null,narration=null,selectedSquadId=game.campaign.squads[0]?.id||0;
 let activeTalk=null,activeTalkIndex=0;
 let currentStoryPanelVoiceId=null;
 const townVoices=createStoryVoiceDirector({onPlaying:value=>townAudio.setNarrationActive(value)});
@@ -285,15 +287,50 @@ $('showPaperStory').onclick=()=>startPaperStory();
 
 function rowsHtml(list,renderer){const p=pages(list);page=Math.min(page,p.pages-1);return p.rows.map(renderer).join('')+
  '<div class="pager"><button type="button" data-page="-1" '+(page===0?'disabled':'')+'>◀</button><span>'+(page+1)+' / '+p.pages+'ページ</span><button type="button" data-page="1" '+(page>=p.pages-1?'disabled':'')+'>▶</button></div>';}
-// Three fixed-width pages avoid scrolling through the inn's entire army.
+function renderInnDeploymentBoard(){
+ const squads=game.campaign.squads.filter(s=>String(s.commanderId??'player')===String(innCommanderId)&&s.count>0);
+ const slots=resolvedSquadDeployment(squads);
+ const occupants=new Map(squads.filter(s=>slots.has(String(s.id))).map(s=>[slots.get(String(s.id)),s]));
+ const source=squads.find(s=>String(s.id)===String(innDeploymentSelected));
+ const heading=source?escapeHtml(source.job)+'隊を選択中。移動先を押すと配置交換します。':
+  '配置を変える隊を押してから、移動先のマスを押してください。';
+ let html='<div class="innDeploymentGuide"><strong>⚑ 部隊配置・全軍俯瞰</strong>'+
+  '<small>敵陣 ↑ ／ 味方本陣 ↓ ・青＝味方 ・選択中は金色</small>'+
+  '<small id="innDeploymentStatus">'+heading+'</small></div>';
+ html+='<div class="innDeploymentBoard" role="group" aria-label="前衛から本陣までの部隊配置">';
+ for(let row=0;row<4;row++){
+  html+='<div class="innDeploymentRowName">'+DEPLOYMENT_RANK_LABELS[row]+'</div>';
+  for(let col=0;col<3;col++){
+   const slot=row*3+col,squad=occupants.get(slot),selected=squad&&String(squad.id)===String(innDeploymentSelected);
+   const name=squad?escapeHtml(squad.job):'空き';
+   const info=squad?escapeHtml(squad.rarity)+'・'+squad.count+'人':'ここへ移動';
+   html+='<button type="button" class="innDeploymentCell'+(selected?' selected':'')+'" data-inn-slot="'+slot+'" aria-pressed="'+Boolean(selected)+'" aria-label="'+DEPLOYMENT_RANK_LABELS[row]+'の'+['西','中央','東'][col]+'：'+name+' '+info+'">'+
+    '<strong>'+name+'</strong><small>'+info+'</small></button>';
+  }
+ }
+ html+='</div><div class="innDeploymentFoot">西の橋　　中央の橋　　東の橋'+
+  '<small>配置は出撃時の進軍レーンと前後位置に反映します。戦闘中は変更できません。</small></div>';
+ return html;
+}
+function renderInnStrategies(){
+ return '<div class="innStrategyGuide"><strong>📜 開戦前に選ぶ固定作戦の効果</strong>'+
+ '<small>作戦は部隊AIの優先目的です。号令と異なり開戦後の変更は不可。</small></div>'+
+ '<div class="innStrategyList">'+Object.values(TACTICAL_STRATEGIES).map(s=>
+  '<article><strong>'+escapeHtml(s.name)+'</strong><small>'+escapeHtml(s.effect)+'</small></article>').join('')+'</div>'+
+ '<small class="innStrategyFoot">ジョブや戦況によって使用できる手段が変わります。</small>';
+}
+// Fixed pages avoid scrolling through the inn's entire army.
 function renderInnPages(){
  const root=$('panelContent'),items=[...root.children];
  if(items.length<11)return;
  const [heading,commander,metrics,effects,explanation,gacha,auto,titleSquads,squads,titleRecruit,recruits]=items;
  const nav=document.createElement('nav');nav.className='innPageNav';
- const pages={overview:document.createElement('section'),squads:document.createElement('section'),recruit:document.createElement('section')};
+ const pages={overview:document.createElement('section'),deployment:document.createElement('section'),
+  strategies:document.createElement('section'),squads:document.createElement('section'),recruit:document.createElement('section')};
  for(const [key,section] of Object.entries(pages)){section.className='innPage';section.dataset.innPage=key;}
  pages.overview.append(commander,metrics,effects,explanation,auto);
+ pages.deployment.innerHTML=renderInnDeploymentBoard();
+ pages.strategies.innerHTML=renderInnStrategies();
  pages.squads.append(titleSquads,squads);
  pages.recruit.append(gacha,titleRecruit,recruits);
  const cards=[...squads.children],size=2;
@@ -305,7 +342,7 @@ function renderInnPages(){
  const next=document.createElement('button');next.textContent='次 ▶';next.type='button';next.dataset.innSquadStep='1';next.disabled=innSquadPage>=maxSquadPage;
  const status=document.createElement('span');status.textContent=(innSquadPage+1)+' / '+(maxSquadPage+1)+'ページ';
  squadPager.append(prev,status,next);pages.squads.append(squadPager);
- for(const [key,title] of [['overview','軍議'],['squads','部隊'],['recruit','雇用']]){
+ for(const [key,title] of [['overview','軍議'],['deployment','配置'],['strategies','作戦'],['squads','部隊'],['recruit','雇用']]){
   const button=document.createElement('button');button.type='button';button.dataset.innPage=key;
   button.textContent=title;button.classList.toggle('active',key===innPage);nav.append(button);
   pages[key].hidden=key!==innPage;
@@ -404,7 +441,7 @@ function renderPanel(){
  }
 }
 $('panelContent').addEventListener('change',event=>{if(event.target.id==='equipSquadSelect')selectedSquadId=Number(event.target.value)||0;
- if(event.target.id==='innCommanderSelect'){innCommanderId=event.target.value;page=0;renderPanel();}
+ if(event.target.id==='innCommanderSelect'){innCommanderId=event.target.value;page=0;innDeploymentSelected=null;renderPanel();}
  if(event.target.id==='innSpecialtySelect'){
   const key=event.target.value;
   if(!Object.hasOwn(STRATEGIST_SPECIALTIES,key))return;
@@ -418,6 +455,25 @@ $('panelContent').onclick=event=>{
  }
  if(target.hasAttribute('data-inn-squad-step')){
   innSquadPage+=Number(target.dataset.innSquadStep);renderPanel();return;
+ }
+ if(target.hasAttribute('data-inn-slot')){
+  const slot=Number(target.dataset.innSlot);
+  const owned=game.campaign.squads.filter(s=>String(s.commanderId??'player')===String(innCommanderId)&&s.count>0);
+  const slots=resolvedSquadDeployment(owned);
+  const occupant=owned.find(s=>slots.get(String(s.id))===slot);
+  if(innDeploymentSelected==null){
+   if(!occupant){notice('先に移動する部隊を選んでください。');return;}
+   innDeploymentSelected=String(occupant.id);
+  }else if(occupant&&String(occupant.id)===String(innDeploymentSelected)){
+   innDeploymentSelected=null;
+  }else{
+   if(moveSquadDeployment(owned,innDeploymentSelected,slot)){
+    persist();
+    notice('部隊配置を更新しました。出撃時の配置に反映されます。');
+   }
+   innDeploymentSelected=null;
+  }
+  renderPanel();return;
  }
  try{
   if(target.hasAttribute('data-talk-next')){activeTalkIndex=(activeTalkIndex+1)%activeTalk.lines.length;renderPanel();return;}
@@ -448,6 +504,7 @@ $('panelContent').onclick=event=>{
   if(target.hasAttribute('data-auto')){
    armyPriority=$('autoPriority').value;
    autoFormArmy(game.campaign,innCommanderId,armyPriority);
+   innDeploymentSelected=null;
    persist();renderPanel();notice('選択した方針で自動編成しました。');return;
   }
   if(target.id==='confirmSave'){saveAtTown(game,localStorage,sessionStorage);renderPanel();townAudio.effect('save');notice('町のセーブスロットに保存しました。');return;}
