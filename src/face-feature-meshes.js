@@ -400,7 +400,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   pupil.userData.colorRole='pupil';root.add(pupil);
   // The profile protrusion is now only a slim sculpted patch above skin.
   lateralEyeMargins.push(eyeSurfaceLift);
-  const width=eyeRadius*1.12*eyeWidth;
+
   let upperEyeliner=null,lowerEyeliner=null;
   for(const upper of [true,false]){
    const label=(side===-1?'LEFT':'RIGHT')+(upper?'_UPPER':'_LOWER');
