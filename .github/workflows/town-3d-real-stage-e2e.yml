@@ -15,6 +15,12 @@ on:
       - 'qa/town-complete-scene-regression.test.mjs'
       - 'src/campaign-stage-plan.js'
       - 'qa/town-real-stage-browser-smoke.cjs'
+  pull_request:
+    paths:
+      - '.github/workflows/town-3d-real-stage-e2e.yml'
+      - 'qa/town-real-stage-browser-smoke.cjs'
+      - 'town-hub.html'
+      - 'tactics-wireframe.html'
   workflow_dispatch:
 permissions:
   contents: read
