@@ -179,7 +179,7 @@ import {updateFaceFeatureAngles,applyFaceColorMode,updateRealFacePigment} from '
 import {createScalpAnchoredWig} from './src/face-scalp-wig.js?v=33';
 import {createPartSelectorUI} from './src/face-part-selector-ui-v32.js?v=33';
 import {defaultPartSelection,resolvePartSelection,PART_CATALOG,HAIR_COLORS} from './src/face-part-catalog-v32.js?v=33';
-import {listWigStyles,DEFAULT_WIG_STYLE_ID} from './src/face-wig-styles.js';
+import {listWigStyles,DEFAULT_WIG_STYLE_ID} from './src/face-wig-styles.js?v=33';
 import {FEMALE_V7_DEFAULTS,MALE_REFERENCE_DEFAULT,FACE_SLIDER_RANGES,FACE_EYE_SPACING_DEFAULT,FACE_EYE_SPACING_RANGE,CONTACT_COLORS,CONTACT_COLOR_LABELS,safeContactColor,normalizeFemaleFaceControls,normalizeMaleFaceControls} from './src/face-v7-controls.js';
 const $=id=>document.getElementById(id);
 // Bind slider DOM bounds to the same canonical interval used by 3D mesh
@@ -428,7 +428,7 @@ function rebuildMaleHair(){
  if(previous){previous.root.removeFromParent();previous.dispose();wigs.delete('male');}
  if(!v32PartMode||!ready||!wigOn||!models.get('male'))return;
  const chosen=resolvePartSelection('male',v32Parts.male,MALE_REFERENCE_DEFAULT);
- const lengths=[.60,.37,.41,.40,.55,.63,.36,.50,.60,.84];
+ const lengths=[.60,.37,.41,.40,.55,.63,.36,.50,.60,.84,.35,.18,.12];
  const hair=createScalpAnchoredWig(models.get('male').face,{
   count:680,lengthScale:lengths[v32Parts.male.hair],fineFringeMultiplier:2,
   visualFiberMultiplier:1,staticGroom:true,
