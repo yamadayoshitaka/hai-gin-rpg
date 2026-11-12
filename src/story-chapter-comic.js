@@ -6,6 +6,7 @@
 import {CAMPAIGN_STAGE_BY_ID,CAMPAIGN_STAGES} from './campaign-stage-plan.js';
 import {mangaForStage} from './story-stage-manga.js';
 import {storyVoiceText} from './story-pronunciations.js';
+import {selectComicBasePanels} from './story-chapter-scene-selection.js';
 import {storyDecisionForStage,ROUTES,ENDING_GUIDE} from './story-narrative-flow.js';
 
 export const STORY_MAX_CELLS_PER_SHEET=10; // production sheet size, NOT a story-panel quota
@@ -57,7 +58,7 @@ export function comicForStage(stageId,phase,context={}){
  const safeContext=phase==='post'&&context?.battleOutcome?.playerCommanderDead===true
   ?{...context,battleOutcome:{...context.battleOutcome,victory:false}}:context;
  const original=mangaForStage(stageId,safeContext);
- const source=original.panels.filter(p=>p.phase===phase);
+ const source=selectComicBasePanels(original,phase);
  if(!source.length)throw Error('Empty comic phase '+stageId+' '+phase);
  const scenes=[...source];
  const decision=storyDecisionForStage(stageId);
