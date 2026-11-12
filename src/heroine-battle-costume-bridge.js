@@ -90,6 +90,82 @@ export function enhanceStudioCombatMaterials(wardrobeRoot){
  return {armorMaterials,fabricMaterials,preservedTextures,sourceAssetsPreserved:true};
 }
 
+
+/**
+ * Costume-only fitting pass. The source GLTFs remain intact:
+ * the studio narrows overly massive female plate limbs, and removes
+ * disconnected *spherical* rivet objects that look like floating marbles.
+ */
+export function refineHeroineCostumeSilhouette(wardrobeRoot){
+ if(!wardrobeRoot?.traverse)throw Error('Outfit root required');
+ let taperedLegPieces=0,narrowedCuirass=0,hiddenLooseStuds=0,
+   loweredTassets=0,skinnedTrousers=0;
+ wardrobeRoot.updateWorldMatrix(true,true);
+ wardrobeRoot.traverse(mesh=>{
+  if(!mesh.isMesh)return;
+  if(mesh.visible&&mesh.isSkinnedMesh&&/_(?:ranger|peasant)_legs/i.test(mesh.name))
+   skinnedTrousers++;
+  const slot=mesh.userData?.equipmentSlot||'';
+  if(mesh.userData?.equipmentClass==='armor'){
+   const factor=slot==='chest'?.93:slot==='shoulder'?.91:
+    ['thigh','knee','shin','boot-upper'].includes(slot)?.87:
+    slot==='boot-foot'?.95:1;
+   if(factor!==1){
+    mesh.scale.x*=factor;
+    mesh.scale.z*=factor;
+    if(slot==='chest'||slot==='shoulder')narrowedCuirass++;
+    else taperedLegPieces++;
+   }
+  }
+  if(/cuirass-thigh-tasset/i.test(mesh.name)){
+   // Half-width leather/steel panels instead of boxy vertical drainpipes.
+   mesh.scale.x*=.82;mesh.scale.z*=.87;
+   mesh.scale.y*=.86;loweredTassets++;
+  }
+  if(/(?:cuirass-fastener|armor-rivet|harness-pin|hand-sewn-hem-stud|mantle-clasp|cuirass-suspension-bead)/i.test(mesh.name)){
+   mesh.visible=false;hiddenLooseStuds++;
+   return;
+  }
+  // Imported plates may have unlabeled, isolated ball-shaped submeshes.
+  // Avoid disabling complex plate shells or the sword's guard by checking
+  // both near-spherical proportions and their actual armor slot.
+  if(!['chest','shoulder'].includes(slot)||!mesh.geometry?.getAttribute('position')||
+     /helmet|shield|weapon/i.test(mesh.name))return;
+  mesh.geometry.computeBoundingBox();
+  const b=mesh.geometry.boundingBox,local=b.getSize(new THREE.Vector3());
+  const world=mesh.getWorldScale(new THREE.Vector3());
+  const size=new THREE.Vector3(local.x*Math.abs(world.x),
+   local.y*Math.abs(world.y),local.z*Math.abs(world.z));
+  const min=Math.min(size.x,size.y,size.z),max=Math.max(size.x,size.y,size.z);
+  if(min>.0015&&max<.048&&max/min<1.55){
+   mesh.visible=false;hiddenLooseStuds++;
+  }
+ });
+ return {taperedLegPieces,narrowedCuirass,hiddenLooseStuds,
+  loweredTassets,skinnedTrousers,onlyStudioPreview:true,
+  sourceGeometryUnmodified:true};
+}
+
+/** Face reference remains the artist's blonde/blue heroine, not a donor head. */
+export function enhanceHeroineFaceSurface(face){
+ if(!face?.isMesh||!face.material)return {applied:false};
+ const source=face.material;
+ if(face.userData.studioHeroineFaceSurface)return {applied:true,reused:true};
+ const material=new THREE.MeshPhysicalMaterial({
+  color:source.color?.clone()||new THREE.Color(0xf0d9cb),
+  map:source.map||null,vertexColors:!!source.vertexColors,
+  side:source.side,transparent:source.transparent,opacity:source.opacity,
+  roughness:.72,metalness:0,clearcoat:.085,clearcoatRoughness:.55,
+  sheen:.13,sheenRoughness:.85,sheenColor:new THREE.Color(0xc98978)
+ });
+ material.name='studio-heroine-natural-skin';
+ face.material=material;
+ face.userData.studioHeroineFaceSurface=true;
+ return {applied:true,roughness:material.roughness,
+  clearcoat:material.clearcoat,sheen:material.sheen,vertexColors:material.vertexColors};
+}
+
+
 export const REAL_BATTLE_WARDROBE=Object.freeze([
  {id:'job01',name:'剣士',label:'剣士・銀鋼鎧',heroJob:'swordsman'},
  {id:'job02',name:'格闘家',label:'格闘家・拳帯と稽古着',heroJob:'fighter'},
@@ -234,12 +310,14 @@ export async function createRealBattleOutfitStudio({scene,faceModel,getFaceModel
   try{
    clothing=await buildRiggedJobOutfit({characterModel:fresh.model,
     parent:fresh.object3D,job:chosen.name,sex:'female',quality:'preview',
-    preserveBody:false,rarity:'N'});
+    preserveBody:false,rarity:'N',studioPreferSkinnedLegs:true});
    if(serial!==request||disposed){
     clothing.dispose();fresh.dispose();return;
    }
    clothing.setHairVisible(false);clothing.setHelmetVisible(false);
    finishReport=enhanceStudioCombatMaterials(clothing.root);
+   const silhouetteReport=refineHeroineCostumeSilhouette(clothing.root);
+   finishReport={...finishReport,...silhouetteReport};
    const cut=hideBattleDonorFace(fresh.model);
    // Only the independent artist face owns eye and lid rendering.
    fresh.face?.setAutoBlink?.(false);
@@ -254,6 +332,7 @@ export async function createRealBattleOutfitStudio({scene,faceModel,getFaceModel
    // Always graft the newest live face, never an already-disposed preview.
    const latestFace=getFaceModel?.()||faceModel;
    headRoot=latestFace.root;face=latestFace.face;
+   enhanceHeroineFaceSurface(face);
    scene.add(actor.object3D);
    headFit=attachIndependentFaceToBattleHead({faceRoot:headRoot,
     faceMesh:face,characterModel:actor.model,
@@ -298,6 +377,7 @@ export async function createRealBattleOutfitStudio({scene,faceModel,getFaceModel
  function attachFace(next){
   if(!next?.root||!next.face)throw Error('Updated face required');
   headRoot=next.root;face=next.face;
+  enhanceHeroineFaceSurface(face);
   if(actor){
    headFit=attachIndependentFaceToBattleHead({
     faceRoot:headRoot,faceMesh:face,characterModel:actor.model,
@@ -321,6 +401,7 @@ export async function createRealBattleOutfitStudio({scene,faceModel,getFaceModel
   jobId:currentJob,outfitId:currentOutfit,actionId:currentAction,
   garment:chosenOutfit().label,
   headReport,headFit,proportions,finishReport,
+  sourceTrousers:outfit?.presentation?.().useSourceSkinnedLegs||false,
   realOutfit:!!outfit,hasMotion:!!actor?.diagnostics()?.playing
  };}
  function dispose(){
