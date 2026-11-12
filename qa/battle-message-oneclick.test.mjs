@@ -16,11 +16,11 @@ assert.match(dialogue,/box\.getBoundingClientRect\(\)\.height/,
 assert.match(html,/const squadQuickList=document\.createElement\('div'\)/);
 assert.match(html,/function buildSquadQuickCommands\(\)/);
 assert.match(html,/const cooldown=squadOrderCooldownSeconds\(id\)/,'Orders respect the live two-minute lock');
-assert.match(html,/add\('⚔ 突撃 → 敵を選択','charge',\(\)=>beginCircleTargetSelection\('attack'\)\)/,
+assert.match(html,/add\('⚔ 突撃','charge',\(\)=>beginCircleTargetSelection\('attack'\),\{effect:orderEffect\('charge'\)\}\)/,
  'Charge now explicitly selects an enemy circle before issuing a squad-wide mission');
-assert.match(html,/add\('🛡 守備','defend',\(\)=>issue\('defend'\)\)/);
+assert.match(html,/add\('🛡 守備','defend',\(\)=>issue\('defend'\),\{effect:orderEffect\('defend'\)\}\)/);
 assert.match(html,/requestSquadRecovery\(target\.targetId\)/,'Recovery selects one target squad per order');
-assert.match(html,/add\('↘ 退却','retreat',\(\)=>issue\('retreat'\)\)/);
+assert.match(html,/add\('↘ 退却','retreat',\(\)=>issue\('retreat'\),\{effect:orderEffect\('retreat'\)\}\)/);
 assert.doesNotMatch(html,/mission\('🌉 橋を壊す','destroy_bridge'\)/,
  'The manual per-object mission menu is no longer available');
 assert.doesNotMatch(html,/add\('📍 行き先を指定','move',\(\)=>beginSquadDestination\(id\)\)/,
@@ -28,12 +28,14 @@ assert.doesNotMatch(html,/add\('📍 行き先を指定','move',\(\)=>beginSquad
 assert.match(html,/id="squadDestination" hidden aria-hidden="true"/,
  'Retired squad destination control stays inaccessible');
 assert.match(html,/#squadMissionChoice,#squadTacticsMissions[^\n]*display:none!important/);
-assert.match(html,/const issue=mode=>\{if\(issueSquadOrder\(mode\)\)closeSquadTactics\(\)\}/,
- 'One-tap orders are issued to the entire squad without headcount or duration inputs');
+assert.match(html,/const issue=mode=>queueDirectOrder\(mode\)/,
+ 'Squad orders must use the shared confirmation flow without headcount or duration inputs');
+assert.match(html,/\$\('battleOrderConfirmCommit'\)\.onclick=\(\)=>\{[\s\S]*?if\(issueSquadOrder\(mode\)\)/,
+ 'Only explicit confirmation can issue a full-squad order');
 assert.doesNotMatch(html,/select\.dispatchEvent\(new Event\('change',\{bubbles:true\}\)\)/,
  'Do not present the obsolete individual mission picker');
-assert.match(html,/button\.disabled=!enabled\|\|\(needsCommander&&\(!commander\|\|cooldown>0\)\)/,
- 'Unavailable orders and orders still under cooldown must be disabled');
+assert.match(html,/const locked=isCommand&&cooldown>0;\s*button\.disabled=!enabled\|\|\(needsCommander&&!commander\)\|\|locked/,
+ 'Unavailable commander orders and actions on cooldown must be disabled');
 assert.match(html,/lastSquadMenuPlacementAt<110/,
  'Avoid position and layout measurement on every rendered frame');
 assert.match(html,/const bottomLimit=report&&!report\.hidden\?report\.getBoundingClientRect\(\)\.top-7/,
