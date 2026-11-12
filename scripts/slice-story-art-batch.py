@@ -23,8 +23,8 @@ ROOT = Path(__file__).resolve().parents[1]
 PLAN_FILE = ROOT / "qa-reports/story-art-batch-plan.json"
 STATUS_FILE = ROOT / "assets/story/sheets/processed-batches.json"
 REGISTRY_FILE = ROOT / "src/story-panel-neutral-ids.js"
-ID_RE = re.compile(r"^c\d{2}-s\d{2}-m(?:[1-9]|10)$")
-OUTPUT_RE = re.compile(r"^assets/story/panels/c\d{2}-s\d{2}-m(?:0[1-9]|10)(?:-female)?\.webp$")
+ID_RE = re.compile(r"^c\d{2}-s\d{2}-m(?:[1-9]|1[0-9]|20)$")
+OUTPUT_RE = re.compile(r"^assets/story/panels/c\d{2}-s\d{2}-m(?:0[1-9]|1[0-9]|20)(?:-female)?\.webp$")
 GRID_COLUMNS, GRID_ROWS = 2, 5
 FINAL_SIZE = (960, 540)
 
@@ -35,7 +35,7 @@ def sha(data: bytes) -> str:
 
 def get_plan() -> dict:
     data = json.loads(PLAN_FILE.read_text(encoding="utf-8"))
-    if data.get("totalBatches") != 200 or data.get("totalPanels") != 2000:
+    if data.get("totalBatches") != 400 or data.get("totalPanels") != 4000:
         raise ValueError("The canonical 20-chapter batch plan is incomplete")
     return data
 
@@ -110,7 +110,7 @@ def approve(path: Path, base_hash: str, batch: dict) -> dict:
 def read_registry() -> set[str]:
     if not REGISTRY_FILE.exists():
         return {"c01-s01-m5"}
-    return set(re.findall(r"c\d{2}-s\d{2}-m(?:[1-9]|10)",
+    return set(re.findall(r"c\d{2}-s\d{2}-m(?:[1-9]|1[0-9]|20)",
                           REGISTRY_FILE.read_text(encoding="utf-8")))
 
 
@@ -230,8 +230,8 @@ def main() -> None:
     selected.add_argument("--all-ready", action="store_true")
     args = parser.parse_args()
     data = get_plan()
-    if args.batch is not None and not 1 <= args.batch <= 200:
-        parser.error("--batch must be 1..200")
+    if args.batch is not None and not 1 <= args.batch <= 400:
+        parser.error("--batch must be 1..400")
     chosen = data["batches"] if args.all_ready else [data["batches"][args.batch-1]]
     state, neutrals = status(), read_registry()
     results = []
@@ -254,7 +254,7 @@ def main() -> None:
     registered = [r for r in results if r["status"]=="registered"]
     print(json.dumps({"processed":len(registered),"readyOrPreviouslyCompleted":
          sum(1 for r in results if r["status"]!="not-ready"),
-         "totalBatches":200, "statusFile":str(STATUS_FILE)},ensure_ascii=False))
+         "totalBatches":400, "statusFile":str(STATUS_FILE)},ensure_ascii=False))
 
 
 if __name__ == "__main__":
