@@ -310,6 +310,8 @@ for(const [key,title,step,group] of faceControlDefinitions){
  input.addEventListener('input',()=>{out.value=input.value;});
  input.addEventListener('change',()=>{
   faceControls[key]=Number(input.value);
+  if(key==='eyeWidth'||key==='eyeHeight')
+   faceControls.eyeSize=Math.sqrt(faceControls.eyeWidth*faceControls.eyeHeight);
   rebuildFaceOnBody();
  });
 }
