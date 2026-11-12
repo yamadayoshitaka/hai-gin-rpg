@@ -185,11 +185,23 @@ export function makeIndependentFaceMaster(sourceRoot,gender,{femaleControls={},m
   // Eye-distance edits must also reposition the ANATOMICAL orbital
   // socket in the source head. Previously only the synthetic eye assembly
   // moved, making sclera/irises float outside the original eye openings.
-  const orbitalWeight=bell(Math.abs(xn),.246,.14)*
-   bell(yn,.684,.092)*front*
-   smooth(.10,.20,Math.abs(xn))*(1-smooth(.66,.83,Math.abs(xn)));
+  // Move the FACE'S actual orbital opening with the eye rig.
+  // A soft Gaussian displaced only the middle of the socket and left the
+  // inner/outer eyelid edge at its old location when the eye moved.
+  const apertureLateral=smooth(.085,.17,Math.abs(xn))*
+   (1-smooth(.48,.67,Math.abs(xn)));
+  const apertureVertical=smooth(.55,.64,yn)*
+   (1-smooth(.77,.86,yn));
+  const orbitalWeight=apertureLateral*apertureVertical*
+   smooth(.34,.56,zn);
   const eyeSocketDx=Math.sign(xn)*d.x*.123*
    (controls.eyeSpacing-1)*orbitalWeight;
+  // Eye angle rotates the whole eye group, but the underlying skin opening
+  // also needs to change: tilt the opening's outer corner with the eyeliner.
+  const socketCenterX=cx+Math.sign(xn)*d.x*.123*controls.eyeSpacing;
+  const eyeAngleRadians=(controls.eyeAngle||0)*Math.PI/180;
+  const eyeSocketDy=Math.tan(eyeAngleRadians)*
+   (x-socketCenterX)*orbitalWeight*.8;
   let nx=x+(x-cx)*(cheekSupport-spec.jawNarrow*ovalTransition)
     +local.dx+surfaceFairing.dx*.9+pointDx+eyeSocketDx;
   // Store the source X exactly at the preserved outer silhouette:
@@ -198,7 +210,7 @@ export function makeIndependentFaceMaster(sourceRoot,gender,{femaleControls={},m
   const pointApex=smooth(.225,.265,yn)*(1-smooth(.34,.40,yn))
     *bell(yn,.282,.045)*bell(xn,0,.16)*front;
   const ny=y+d.y*spec.chinLift*chin+surfaceFairing.dy*.9
-    +local.dy-d.y*.0025*pointGain*pointApex;
+    +local.dy-d.y*.0025*pointGain*pointApex+eyeSocketDy;
   const nz=z+d.z*(spec.cheekFill*(.74*cheek+.92*lowerCheek)
     +.016*chinHollow
     +spec.eyeSocketSoftness*bell(Math.abs(xn),.43,.22)
