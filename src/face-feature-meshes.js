@@ -304,7 +304,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
  const pupilAngle=Math.asin(Math.min(.75,
   Math.sin(originalPupilAngle)*settings.irisDiameter));
  const eyeRadius=d.x*.052*eyeScale;
- const eyeHeight=box.min.y+d.y*.684;
+ const eyeCenterHeight=box.min.y+d.y*.684;
  // Preserve the saved eye size, but move the sockets slightly toward
  // the true lateral face rather than burying the globe in the midface.
  const eyeSpacing=d.x*.123*settings.eyeSpacing;
@@ -314,7 +314,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
  for(const side of [-1,1]){
   const firstChild=root.children.length;
   const eyeLabel=side===-1?'LEFT':'RIGHT';
-  const x=cx+side*eyeSpacing,y=eyeHeight;
+  const x=cx+side*eyeSpacing,y=eyeCenterHeight;
   // Fit from actual orbital boundary points on the sculpted face.
   const rimWidth=eyeRadius*1.12*eyeWidth,rimHeight=eyeRadius*.33*eyeHeight;
   const landmarks={
