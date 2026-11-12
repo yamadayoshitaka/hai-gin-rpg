@@ -5,6 +5,9 @@ on:
     branches: [main]
     paths:
       - 'scripts/prepare-story-stage-posters.mjs'
+      - 'scripts/ingest-story-stage-posters.py'
+      - 'qa/story-stage-poster-ingestion.test.py'
+      - 'assets/story/chapter-drafts/**/posters/*.webp'
       - 'qa/story-stage-poster-production.test.mjs'
       - 'docs/story-stage-poster-production-manifest-v2.md'
       - '.github/workflows/story-stage-poster-batch.yml'
@@ -33,7 +36,7 @@ jobs:
   free-preflight:
     name: Prepare script, reference-image and reuse review queue (no paid API)
     runs-on: ubuntu-latest
-    timeout-minutes: 6
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -53,6 +56,8 @@ jobs:
           python-version: '3.12'
       - name: Install free on-runner crop validator
         run: python -m pip install --disable-pip-version-check Pillow==11.3.0
+      - name: Validate native-resolution cropping and no-false-approval rule
+        run: python qa/story-stage-poster-ingestion.test.py
       - name: Crop any supplied high-resolution poster sources into isolated per-image review packs
         run: python scripts/ingest-story-stage-posters.py
       - uses: actions/upload-artifact@v4
