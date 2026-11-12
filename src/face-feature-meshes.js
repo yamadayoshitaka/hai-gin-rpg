@@ -89,6 +89,30 @@ function stitchLinerCorners(upper,lower,faceWidth,depth){
  * No raycasts, no GLB clone, no 1440-strand wig rebuild required for a
  * lipstick slider drag. Both cheek and lip masks are local to the head.
  */
+/** Color is embedded in each actual surface-conforming lip mesh itself.
+ * This is not a separate plane: the 3D vermilion vertices move with the
+ * user-edited head, and only their existing triangle colors are changed. */
+function tintRealLipSurface(lip,settings,mode='color'){
+ const natural=new THREE.Color(0xd9a699);
+ const tint=new THREE.Color(FACE_V7_PALETTE.lipstick);
+ const shiftU=clamp(settings.lipstickX/.12,-1,1)*.23;
+ const shiftV=clamp(settings.lipstickY/.12,-1,1)*.23;
+ const width=settings.lipstickWidth*.5,height=settings.lipstickHeight*.5;
+ const colors=[];
+ for(let j=0;j<=8;j++)for(let i=0;i<=32;i++){
+  const u=i/32,v=j/8;
+  const fadeU=smoothstep((u-(.5+shiftU-width))/.085)*
+   smoothstep(((.5+shiftU+width)-u)/.085);
+  const fadeV=smoothstep((v-(.5+shiftV-height))/.11)*
+   smoothstep(((.5+shiftV+height)-v)/.11);
+  const rgb=pigmentFactor(natural,tint,.88*fadeU*fadeV);
+  colors.push(rgb.x,rgb.y,rgb.z);
+ }
+ setVertexMakeup(lip,colors);
+ colorizedMakeup(lip,mode==='color');
+ lip.userData.lipstickOnSameTriangles=true;
+ lip.userData.lipstickOnSourceHead=true;
+}
 export function updateRealFacePigment(face,controls={},mode='color'){
  if(!face?.isMesh)throw Error('Sculpted head required for cosmetics');
  const settings=normalizeFemaleFaceControls(controls);
@@ -124,6 +148,10 @@ export function updateRealFacePigment(face,controls={},mode='color'){
  face.userData.mouthPigmentSource='sculpted-head-vertices';
  face.userData.lipTintVertexCount=actualLipTintVertices;
  face.userData.cheekTintVertexCount=actualCheekTintVertices;
+ for(const name of ['UPPER','LOWER']){
+  const lip=face.getObjectByName(name+'_3D_VERMILION_LIP');
+  if(lip)tintRealLipSurface(lip,settings,mode);
+ }
  return {lip:actualLipTintVertices,cheek:actualCheekTintVertices};
 }
 export function createAnatomicalFaceParts(face,{gender='female',controls={}}={}){
@@ -508,7 +536,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
  // Lip strips are naturally tinted anatomical volumes, not cosmetics.
  for(const upper of [true,false]){
   const lip=actualLips.get(upper);
-  lip.userData.lipstickOnSameTriangles=false;
+  tintRealLipSurface(lip,settings);
   lip.userData.lipstickOnSourceHead=true;
   lip.userData.lipstickCoverage={x:settings.lipstickX,y:settings.lipstickY,
    width:settings.lipstickWidth,height:settings.lipstickHeight};
@@ -569,7 +597,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
    x:settings.lipstickX,y:settings.lipstickY,
    width:settings.lipstickWidth,height:settings.lipstickHeight,
    anchoredToLipSurface:true,boundedWithinLipArea:true,
-   attachedToLipMesh:false,paintAsVertexColor:true,
+   attachedToLipMesh:true,paintAsVertexColor:true,
    appliedToSourceHead:true,lipTintVertexCount:actualLipTintVertices
   }:null,
   eyelinerMeshCount:female?4:0,eyelinerCornersClosed:female,
