@@ -16,8 +16,8 @@ import {createHeroineBattleActionVfx} from './heroine-battle-action-vfx.js?v=40'
  * the independently authored face. This is NEVER applied in battle.
  */
 export const HEROINE_STUDIO_BODY_SCALE=.84;
-export const HEROINE_STUDIO_HEAD_LIFT=.30;
-export const HEROINE_STUDIO_HEAD_FORWARD=.13;
+export const HEROINE_STUDIO_HEAD_LIFT=.44;
+export const HEROINE_STUDIO_HEAD_FORWARD=.16;
 
 export function fitStudioFaceAboveArmor({actorRoot,faceRoot,faceFit,bodyScale=HEROINE_STUDIO_BODY_SCALE}){
  if(!actorRoot?.isObject3D||!faceRoot?.isObject3D||!faceFit?.targetSize)
@@ -100,7 +100,7 @@ export function enhanceStudioCombatMaterials(wardrobeRoot){
 export function refineHeroineCostumeSilhouette(wardrobeRoot){
  if(!wardrobeRoot?.traverse)throw Error('Outfit root required');
  let taperedLegPieces=0,narrowedCuirass=0,hiddenLooseStuds=0,
-   loweredTassets=0,skinnedTrousers=0;
+   loweredTassets=0,skinnedTrousers=0,collarClearancePieces=0;
  wardrobeRoot.updateWorldMatrix(true,true);
  wardrobeRoot.traverse(mesh=>{
   if(!mesh.isMesh)return;
@@ -114,9 +114,17 @@ export function refineHeroineCostumeSilhouette(wardrobeRoot){
    if(factor!==1){
     mesh.scale.x*=factor;
     mesh.scale.z*=factor;
+    if(slot==='chest'){
+     // Stop a large breastplate's high neck rim swallowing the face.
+     mesh.scale.y*=.94;mesh.position.y-=.012;collarClearancePieces++;
+    }
     if(slot==='chest'||slot==='shoulder')narrowedCuirass++;
     else taperedLegPieces++;
    }
+  }
+  if(/(?:neckguard|neck-plate|standing-collar|cuirass-collar)/i.test(mesh.name)
+    &&!mesh.isSkinnedMesh){
+   mesh.scale.y*=.81;mesh.position.y-=.014;collarClearancePieces++;
   }
   if(/cuirass-thigh-tasset/i.test(mesh.name)){
    // Half-width leather/steel panels instead of boxy vertical drainpipes.
@@ -138,12 +146,12 @@ export function refineHeroineCostumeSilhouette(wardrobeRoot){
   const size=new THREE.Vector3(local.x*Math.abs(world.x),
    local.y*Math.abs(world.y),local.z*Math.abs(world.z));
   const min=Math.min(size.x,size.y,size.z),max=Math.max(size.x,size.y,size.z);
-  if(min>.0015&&max<.048&&max/min<1.55){
+  if(min>.0015&&max<.064&&max/min<1.55){
    mesh.visible=false;hiddenLooseStuds++;
   }
  });
  return {taperedLegPieces,narrowedCuirass,hiddenLooseStuds,
-  loweredTassets,skinnedTrousers,onlyStudioPreview:true,
+  loweredTassets,skinnedTrousers,collarClearancePieces,onlyStudioPreview:true,
   sourceGeometryUnmodified:true};
 }
 
