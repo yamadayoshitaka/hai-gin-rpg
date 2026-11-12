@@ -48,9 +48,6 @@ def process_variant(variant, parent, poster_root, output_root):
         if width%columns or height%rows:
             raise ValueError('Poster dimensions not divisible by grid: '+str(source))
         cell_w,cell_h=width//columns,height//rows
-        if (cell_w,cell_h)<(1536,864):
-            # Python tuple comparison alone is lexicographic. Check each axis.
-            pass
         if cell_w<1536 or cell_h<864 or abs(cell_w/cell_h-16/9)>0.002:
             raise ValueError('REJECTED LOW-RES/ASPECT poster: '+str(source)+
                              f' each cell {cell_w}x{cell_h} (needs >=1536x864 at 16:9)')
