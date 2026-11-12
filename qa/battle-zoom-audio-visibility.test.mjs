@@ -46,7 +46,8 @@ for(const token of [
  'shouldShowOverheadSquadCallouts(zoomDistance',
  'if(!showCallouts){',
  'marker.userData.screenLabel.hidden=true',
- 'closestAliveBattleFocus(massSim?.units??actors,x,z',
+ 'const roster=massSim?.units??actors;',
+ 'const nearby=closestAliveBattleFocus(roster,x,z,{',
  "battleVoice.cue(unit.action==='skill'?'magic':unit.action,a)",
  "id=\"battleVoiceHealth\"",
  'refreshBattleVoiceHealth();'
