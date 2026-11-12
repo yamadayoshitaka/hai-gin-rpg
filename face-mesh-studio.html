@@ -2,7 +2,7 @@
 <html lang="ja"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#14263a">
-<title>灰銀のレゾナンス | 顔v24・鼻／目元／髪と拡大維持</title>
+<title>灰銀のレゾナンス | 顔v25・眼球位置とカラコン、独立ウィッグ</title>
 <style>
 :root{font:15px/1.55 system-ui,-apple-system,"Noto Sans JP",sans-serif;color-scheme:dark}
 *{box-sizing:border-box}
@@ -62,7 +62,7 @@ button{padding:9px 11px}
 </style></head>
 <body>
 <header>
-<h1>男女・顔と立体パーツ v24</h1>
+<h1>男女・顔と立体パーツ v25</h1>
 <p>ライブラリに保存された実GLBの顔設定（顎先5倍・鼻穴隠し2・鼻筋2.5）を男女の実メッシュ標準に固定。口紅とチークを実メッシュの頂点に着色。上下アイライン・眉・眼球を調整し、女性用の高密度ロング（後頭部・両側頭部・襟足まで髪束生成・顔と肩への衝突対応）を追加。保存値とズームを維持します。</p>
 </header>
 <main><section class="panel">
@@ -94,7 +94,7 @@ button{padding:9px 11px}
 <label for="eyeSize">目全体の大きさ <output id="eyeSizeValue">1×</output>
 <input type="range" id="eyeSize" min="0.5" max="1.5" step="0.05" value="1"></label>
 <label for="eyeSpacing">目元一式の間隔（眉・クマ含む） <output id="eyeSpacingValue">1.1×</output>
-<input type="range" id="eyeSpacing" min="0.85" max="1.35" step="0.01" value="1.1"></label>
+<input type="range" id="eyeSpacing" min="0.65" max="1.35" step="0.01" value="1.1"></label>
 <label for="jawSharpness">顎先のシャープさ <output id="jawSharpnessValue">5×</output>
 <input type="range" id="jawSharpness" min="0" max="10" step="0.1" value="5"></label>
 <label for="noseTipLift">鼻頭の持ち上げ <output id="noseTipLiftValue">0</output>
@@ -141,7 +141,7 @@ button{padding:9px 11px}
 <label for="maleEyeSize">目全体の大きさ <output id="maleEyeSizeValue">1×</output>
 <input type="range" id="maleEyeSize" min="0.5" max="1.5" step="0.05" value="1"></label>
 <label for="maleEyeSpacing">目と目の間隔 <output id="maleEyeSpacingValue">1.1×</output>
-<input type="range" id="maleEyeSpacing" min="0.85" max="1.35" step="0.01" value="1.1"></label>
+<input type="range" id="maleEyeSpacing" min="0.65" max="1.35" step="0.01" value="1.1"></label>
 <label for="maleIrisDiameter">黒目の大きさ <output id="maleIrisDiameterValue">1×</output>
 <input type="range" id="maleIrisDiameter" min="0" max="2" step="0.1" value="1"></label>
 <label for="maleNoseTipLift">鼻頭の持ち上げ <output id="maleNoseTipLiftValue">0</output>
@@ -160,13 +160,13 @@ button{padding:9px 11px}
 <div class="controls">
 <button id="export" disabled>表示中の顔メッシュをGLB保存</button>
 <button id="exportWig" disabled>ヅラ単体をGLB保存</button>
-<a href="./face-body-studio.html">女性主人公・顔＋胴体・毛束v24の3D確認画面</a>　<a href="./master-swordsman-prototype.html">従来の全身モデル</a>
+<a href="./face-body-studio.html">女性主人公・着脱ウィッグv25の全身3D確認画面</a>　<a href="./master-swordsman-prototype.html">従来の全身モデル</a>
 </div>
 <p>指で360°回転・ピンチで拡大。女性の口紅は上唇・下唇の実3D形状に接続。上下アイラインの目尻を接続。暗いクマを自然にフェードさせ、眉の間隔を維持。頭皮からの金髪ロングは顔・首・肩・胸への簡易衝突を計算。男性は顎・鼻・目の角度と3Dヒゲの濃さ・長さを調整できます。</p>
 <p>これは美形を目標にした<b>初回の造形試作</b>です。実写品質・原画一致・美術承認・ゲーム実装は未達です。顔の凹凸や横顔が自然かを先に評価してください。</p>
 <details><summary>実メッシュ数値と原本保護の確認</summary><div id="metrics"></div></details>
 </section></main>
-<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/","./src/independent-face-masters.js":"./src/independent-face-masters.js?v=24","./src/face-feature-meshes.js":"./src/face-feature-meshes.js?v=24","./src/face-v7-controls.js":"./src/face-v7-controls.js?v=24","./src/face-body-assembly.js":"./src/face-body-assembly.js?v=24"}}</script>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/","./src/independent-face-masters.js":"./src/independent-face-masters.js?v=25","./src/face-feature-meshes.js":"./src/face-feature-meshes.js?v=25","./src/face-v7-controls.js":"./src/face-v7-controls.js?v=25","./src/face-body-assembly.js":"./src/face-body-assembly.js?v=25"}}</script>
 <script type="module">
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
@@ -174,7 +174,7 @@ import {GLTFExporter} from 'three/addons/exporters/GLTFExporter.js';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {makeIndependentFaceMaster,FACE_MASTER_SPEC} from './src/independent-face-masters.js';
 import {updateFaceFeatureAngles,applyFaceColorMode,updateRealFacePigment} from './src/face-feature-meshes.js';
-import {createScalpAnchoredWig} from './src/face-scalp-wig.js?v=24';
+import {createScalpAnchoredWig} from './src/face-scalp-wig.js?v=25';
 import {listWigStyles,DEFAULT_WIG_STYLE_ID} from './src/face-wig-styles.js';
 import {FEMALE_V7_DEFAULTS,MALE_REFERENCE_DEFAULT,FACE_SLIDER_RANGES,FACE_EYE_SPACING_DEFAULT,FACE_EYE_SPACING_RANGE,CONTACT_COLORS,safeContactColor} from './src/face-v7-controls.js';
 const $=id=>document.getElementById(id);
@@ -204,7 +204,8 @@ for(const id of ['eyeSpacing','maleEyeSpacing']){
  control.max=String(FACE_EYE_SPACING_RANGE[1]);
  control.value=String(FACE_EYE_SPACING_DEFAULT);
  control.dataset.savedValue=String(FACE_EYE_SPACING_DEFAULT);
- control.dataset.savedPosition='0.5';
+ control.dataset.savedPosition=String((FACE_EYE_SPACING_DEFAULT-FACE_EYE_SPACING_RANGE[0])/
+  (FACE_EYE_SPACING_RANGE[1]-FACE_EYE_SPACING_RANGE[0]));
 }
 const canvas=$('faceCanvas');
 const renderer=new THREE.WebGLRenderer({canvas,antialias:true,powerPreference:'high-performance'});
