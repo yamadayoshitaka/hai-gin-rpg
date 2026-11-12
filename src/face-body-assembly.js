@@ -284,13 +284,13 @@ export function createSealedNeckBridge(face,attachment,{headCutY,bodyCutY}={}){
  const xs=near.map(p=>p[0]),zs=near.map(p=>p[1]);
  const cx=(extent(xs,.10)+extent(xs,.90))*.5,
   cz=(extent(zs,.10)+extent(zs,.90))*.5;
- const rx=clamp((extent(xs,.90)-extent(xs,.10))*.55,h*.065,h*.25);
- const rz=clamp((extent(zs,.90)-extent(zs,.10))*.55,h*.055,h*.22);
+ const rx=clamp((extent(xs,.90)-extent(xs,.10))*.49,h*.058,h*.19);
+ const rz=clamp((extent(zs,.90)-extent(zs,.10))*.49,h*.048,h*.16);
  const segments=48,levels=5,verts=[],uv=[],indices=[];
  for(let j=0;j<=levels;j++){
   const t=j/levels,fade=t*t*(3-2*t);
   const y=topY+(bottomY-topY)*t;
-  const scale=1+.09*fade;
+  const scale=1+.028*fade;
   for(let i=0;i<=segments;i++){
    const angle=i/segments*Math.PI*2;
    verts.push(cx+rx*scale*Math.cos(angle),y,
@@ -315,7 +315,7 @@ export function createSealedNeckBridge(face,attachment,{headCutY,bodyCutY}={}){
  neckGeo.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
  neckGeo.setIndex(indices);neckGeo.computeVertexNormals();
  const skin=new THREE.MeshStandardMaterial({
-  color:0xedcbbf,roughness:.82,metalness:0,side:THREE.DoubleSide
+  color:0xebc5b7,roughness:.82,metalness:0,side:THREE.DoubleSide
  });
  const seal=new THREE.Mesh(neckGeo,skin);
  seal.name='REAL_HEAD_BODY_CLOSED_NECK_SEAL';
