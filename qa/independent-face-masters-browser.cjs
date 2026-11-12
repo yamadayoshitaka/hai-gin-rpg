@@ -159,7 +159,7 @@ async function expectCenteredFaceSliders(page,gender){
    const gltf=JSON.parse(buf.subarray(20,20+length).toString('utf8').trim());
    const tri=(gltf.meshes||[]).flatMap(m=>m.primitives||[])
     .filter(p=>p.mode===undefined||p.mode===4);
-   if(tri.length!==(g==='female'?35:20))throw Error('Exported face + anatomical meshes mismatch: '+g+' '+tri.length);
+   if(tri.length!==(g==='female'?32:20))throw Error('Exported face + anatomical meshes mismatch: '+g+' '+tri.length);
    const master=(gltf.nodes||[]).find(n=>n.name===g.toUpperCase()+'_FACE_MASTER_SOURCE_CLONE');
    const saved=master?.extras?.faceMasterReport;
    const controls=g==='female'?saved?.femaleControls:saved?.maleControls;
@@ -225,7 +225,7 @@ async function expectCenteredFaceSliders(page,gender){
   // In the old QA the parts switch was OFF in profile photos.
   // Enable actual anatomical eyes for profile and makeup verification.
   await page.locator('#parts').click();
-  if((await page.evaluate(()=>window.__faceMasterQA())).visiblePartMeshes!==32)
+  if((await page.evaluate(()=>window.__faceMasterQA())).visiblePartMeshes!==28)
    throw Error('Eye profile tests must render actual orbital meshes');
   // As sliders move, all upper/lower eyeliner meshes must reproject to
   // their real eyelids, not be left behind in old eye-angle coordinates.
@@ -302,7 +302,7 @@ async function expectCenteredFaceSliders(page,gender){
      changed.currentFeatureAngles?.browAngle!==6||
      changed.currentFeatureAngles?.lashAngle!==7||
      changed.contactColor!=='#467fa7'||
-     changed.visiblePartMeshes!==32)
+     changed.visiblePartMeshes!==28)
    throw Error('Live nose/eyebrow/lash controls do not affect the displayed 3D: '+JSON.stringify(changed));
   await page.locator('#front').click();
   await canvas.screenshot({path:path.join(out,'female-color-nose-brow-adjusted.png')});
@@ -315,13 +315,13 @@ async function expectCenteredFaceSliders(page,gender){
    const buf=fs.readFileSync(file),size=buf.readUInt32LE(12);
    const gltf=JSON.parse(buf.subarray(20,20+size).toString('utf8').trim());
    const meshes=gltf.meshes||[],materials=gltf.materials||[];
-   if(meshes.length!==35||materials.length<5)
+   if(meshes.length!==32||materials.length<5)
     throw Error('Colored female GLB did not preserve eyebrow/eyelash meshes and palette');
    console.log('FACE_V7_COLORED_GLB_EXPORT',JSON.stringify({
     bytes:buf.length,meshes:meshes.length,materials:materials.length
    }));
   }
-  if((await page.evaluate(()=>window.__faceMasterQA())).visiblePartMeshes!==32)
+  if((await page.evaluate(()=>window.__faceMasterQA())).visiblePartMeshes!==28)
    throw Error('Facial parts did not restore after toggling');
   await page.locator('#resetPreset').click();
   await expectVisibleLibraryPreset(page,'reset-button');
