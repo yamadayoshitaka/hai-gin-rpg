@@ -694,6 +694,11 @@ test('v15 real scalp growth follows shell and respects final haircut',()=>{
  const model=makeIndependentFaceMaster(fixture().source,'female');
  const wig=createScalpAnchoredWig(model.face,{count:144,lengthScale:1});
  assert.deepEqual(wig.getReport().growthStages,['grow','relax','collide','trim']);
+ assert.equal(wig.getReport().smoothScalpNormals,true);
+ assert.equal(wig.getReport().verticalForeheadDrape,true);
+ const scalp=wig.root.getObjectByName('REAL_SCALP_TRIANGLE_HAIR_CAP');
+ assert.equal(scalp.geometry.getAttribute('normal').count,
+  scalp.geometry.getAttribute('position').count);
  assert.equal(wig.getReport().scalpCoverage,
   'continuous-colored-triangle-cap-plus-locks');
  for(const s of wig.getCutSamples()){
