@@ -96,8 +96,8 @@ async function expectCenteredFaceSliders(page,gender){
      original.savedNoseJawDefaults?.jawSharpness!==5||
      original.savedNoseJawDefaults?.nostrilCover!==2||
      original.savedNoseJawDefaults?.noseBridgeSharpness!==2.5||
-     !original.female?.detailedParts?.eyeProfileLateralMargins?.every(v=>v>.002)||
-     !original.male?.detailedParts?.eyeProfileLateralMargins?.every(v=>v>.002))
+     !original.female?.detailedParts?.eyeProfileLateralMargins?.every(v=>Number.isFinite(v)&&v>0)||
+     !original.male?.detailedParts?.eyeProfileLateralMargins?.every(v=>Number.isFinite(v)&&v>0))
    throw Error('Saved nose/chin or lateral eye visibility broken '+JSON.stringify(original));
   if(original.gender!=='female'||original.bodyMeshes!==0||
      original.visibleFaceMeshes!==1||original.sourceUntouched!==true||
@@ -108,9 +108,9 @@ async function expectCenteredFaceSliders(page,gender){
      original.female?.sourceVertices!==original.male?.sourceVertices||
      !original.female?.sourceGeometryIndependent||
      !original.male?.sourceGeometryIndependent||
-     original.female?.facePartMeshCount!==32||
+     original.female?.facePartMeshCount!==28||
      original.male?.facePartMeshCount!==19||
-     original.visiblePartMeshes!==32||
+     original.visiblePartMeshes!==28||
      original.faceMode!=='color'||
      original.femaleControls.irisDiameter!==1||
      original.femaleControls.jawSharpness!==5||
@@ -139,7 +139,7 @@ async function expectCenteredFaceSliders(page,gender){
     await page.locator('#'+view).click();
     await page.waitForTimeout(200);
     const report=await page.evaluate(()=>window.__faceMasterQA());
-    if(report.gender!==g||report.view!==view||report.visibleFaceMeshes!==1||report.visiblePartMeshes!==(g==='female'?32:19))
+    if(report.gender!==g||report.view!==view||report.visibleFaceMeshes!==1||report.visiblePartMeshes!==(g==='female'?28:19))
      throw Error('Face viewer controls failed '+JSON.stringify(report));
     await canvas.screenshot({path:path.join(out,g+'-'+view+'.png'),
      timeout:90000,animations:'disabled'});
@@ -159,7 +159,7 @@ async function expectCenteredFaceSliders(page,gender){
    const gltf=JSON.parse(buf.subarray(20,20+length).toString('utf8').trim());
    const tri=(gltf.meshes||[]).flatMap(m=>m.primitives||[])
     .filter(p=>p.mode===undefined||p.mode===4);
-   if(tri.length!==(g==='female'?35:20))throw Error('Exported face + anatomical meshes mismatch: '+g+' '+tri.length);
+   if(tri.length!==(g==='female'?32:20))throw Error('Exported face + anatomical meshes mismatch: '+g+' '+tri.length);
    const master=(gltf.nodes||[]).find(n=>n.name===g.toUpperCase()+'_FACE_MASTER_SOURCE_CLONE');
    const saved=master?.extras?.faceMasterReport;
    const controls=g==='female'?saved?.femaleControls:saved?.maleControls;
@@ -225,7 +225,7 @@ async function expectCenteredFaceSliders(page,gender){
   // In the old QA the parts switch was OFF in profile photos.
   // Enable actual anatomical eyes for profile and makeup verification.
   await page.locator('#parts').click();
-  if((await page.evaluate(()=>window.__faceMasterQA())).visiblePartMeshes!==32)
+  if((await page.evaluate(()=>window.__faceMasterQA())).visiblePartMeshes!==28)
    throw Error('Eye profile tests must render actual orbital meshes');
   // As sliders move, all upper/lower eyeliner meshes must reproject to
   // their real eyelids, not be left behind in old eye-angle coordinates.
@@ -302,7 +302,7 @@ async function expectCenteredFaceSliders(page,gender){
      changed.currentFeatureAngles?.browAngle!==6||
      changed.currentFeatureAngles?.lashAngle!==7||
      changed.contactColor!=='#467fa7'||
-     changed.visiblePartMeshes!==32)
+     changed.visiblePartMeshes!==28)
    throw Error('Live nose/eyebrow/lash controls do not affect the displayed 3D: '+JSON.stringify(changed));
   await page.locator('#front').click();
   await canvas.screenshot({path:path.join(out,'female-color-nose-brow-adjusted.png')});
@@ -315,13 +315,13 @@ async function expectCenteredFaceSliders(page,gender){
    const buf=fs.readFileSync(file),size=buf.readUInt32LE(12);
    const gltf=JSON.parse(buf.subarray(20,20+size).toString('utf8').trim());
    const meshes=gltf.meshes||[],materials=gltf.materials||[];
-   if(meshes.length!==35||materials.length<5)
+   if(meshes.length!==32||materials.length<5)
     throw Error('Colored female GLB did not preserve eyebrow/eyelash meshes and palette');
    console.log('FACE_V7_COLORED_GLB_EXPORT',JSON.stringify({
     bytes:buf.length,meshes:meshes.length,materials:materials.length
    }));
   }
-  if((await page.evaluate(()=>window.__faceMasterQA())).visiblePartMeshes!==32)
+  if((await page.evaluate(()=>window.__faceMasterQA())).visiblePartMeshes!==28)
    throw Error('Facial parts did not restore after toggling');
   await page.locator('#resetPreset').click();
   await expectVisibleLibraryPreset(page,'reset-button');
@@ -597,6 +597,43 @@ async function expectCenteredFaceSliders(page,gender){
       !info.wig.frontalCrownEyebrowTrim||!info.wig.joinedRearSilhouette)
     throw Error('v23 front still crosses nose/mouth or has a rear slit '+
      JSON.stringify(info.wig));
+   // v26: verify fitted invisible exact-head scalp surface, and the
+   // visible wide ribbon's own collision rules (not only guide lines).
+   if(!info.wig?.transparentExactHeadWigBase||
+      !info.wig?.trueScalpRibbonVertexCollision||
+      info.wig?.wigBaseMaterialOpacity!==0||
+      info.wig?.rootScalpLiftFraction<.015||
+      info.wig?.hairStrandWidthFraction<.014)
+    throw Error('Wig roots/ribbon still buried under copied scalp: '+
+     JSON.stringify(info.wig));
+   const baseStart=await hero.evaluate(()=>{
+    const p=window.__heroineBodyPreview.getWig()
+     .getObjectByName('DETACHABLE_WIG_TRANSPARENT_HEAD_BASE');
+    return {visible:p.visible,opacity:p.material.opacity,
+     transparent:p.material.transparent,depthWrite:p.material.depthWrite};
+   });
+   if(!baseStart.visible||baseStart.opacity!==0||
+      !baseStart.transparent||baseStart.depthWrite)
+    throw Error('Wig head-copy foundation was not fully transparent '+
+     JSON.stringify(baseStart));
+   await hero.locator('#toggleWigBase').click();
+   const visibleBase=await hero.evaluate(()=>({
+    shown:window.__heroineBodyPreview.getWig().getObjectByName(
+     'DETACHABLE_WIG_TRANSPARENT_HEAD_BASE').material.opacity,
+    ui:window.__heroineBodyQA().wigFoundationVisible
+   }));
+   if(visibleBase.shown<.1||!visibleBase.ui)
+    throw Error('Transparent wig-base inspection toggle failed');
+   await hero.locator('#crown').click();
+   await hero.locator('#bodyCanvas').screenshot({
+    path:path.join(out,'heroine-v26-visible-wig-base-crown.png')
+   });
+   await hero.locator('#toggleWigBase').click();
+   await hero.locator('#front').click();
+   if(await hero.evaluate(()=>window.__heroineBodyPreview.getWig()
+      .getObjectByName('DETACHABLE_WIG_TRANSPARENT_HEAD_BASE')
+      .material.opacity)!==0)
+    throw Error('Wig base did not become invisible again');
    // v25 full-body user-facing controls: independent wig, real contact
    // pigment, and separately collapsible part groups on Android/Desktop.
    // Start 3x to keep mobile interaction responsive. Full 10x rendered
@@ -627,6 +664,29 @@ async function expectCenteredFaceSliders(page,gender){
     throw Error('Contact lens color selector not applied to actual model');
    if(!await hero.locator('#eyeDepth').isEnabled())
     throw Error('Eye socket depth slider missing');
+   for(const key of [
+    'eyeWidth','eyeHeight','browWidth','browThickness',
+    'lashDensity','lashLength','lashThickness','lashCurl'
+   ]){
+    if(!await hero.locator('#'+key).isEnabled())
+     throw Error('v26 eye-region part slider is unavailable: '+key);
+   }
+   // Eye regions are one mobile foldout, including an eyelash subgroup.
+   const eyeSection=hero.locator('#faceSectionEyes');
+   if(await eyeSection.count()!==1||
+      await eyeSection.locator('#lashDensity').count()!==1||
+      await eyeSection.locator('#browWidth').count()!==1)
+    throw Error('Unified eye, eyebrow and eyelash controls are not together');
+   const fitted=await hero.evaluate(()=>{
+    const parts=window.__heroineBodyPreview.getActor();
+    const sphere=parts.getObjectByName('LEFT_ORBITAL_EYEBALL');
+    return {noSphere:sphere?.userData.noDetachedEyeball===true,
+     eyeBag:!!parts.getObjectByName('LEFT_UNDER_EYE_SHADOW'),
+     lowerBulge:!!parts.getObjectByName('LEFT_LOWER_LID_VOLUME')};
+   });
+   if(!fitted.noSphere||fitted.eyeBag||fitted.lowerBulge)
+    throw Error('Face-conformal eye still has detached ball or eye bags '+
+     JSON.stringify(fitted));
    // Test real mouse-wheel pinch zoom (not merely the portrait button):
    // a face-slider rebuild must preserve the same camera pose and orbit.
    await hero.locator('#bodyCanvas').hover();

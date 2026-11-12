@@ -55,24 +55,25 @@ function buildGrid(name,columns,rows,point,material){
 /** Fine tapered eyelashes rooted on the ACTUAL cosmetic eyeliner contour.
  * Keep the legacy upper/lower mesh identities, so eye-angle joints and GLB
  * export still contain just four lash meshes rather than floating cards. */
-function makeFineEyelashMesh(name,liner,x,y,z,eyeRadius,side,upper){
- const count=upper?84:42,vertices=[],indices=[];
+function makeFineEyelashMesh(name,liner,x,y,z,eyeRadius,side,upper,settings){
+ const count=Math.max(12,Math.round((upper?84:42)*settings.lashDensity)),
+  vertices=[],indices=[];
  const reference=(u)=>sampleGrid(liner,28,3,u,.24);
  for(let i=0;i<count;i++){
   const u=.055+.89*(i+.5)/count;
   const p=reference(u),edge=Math.pow(Math.sin(Math.PI*u),.58);
-  const step=.89/count*.16;
+  const step=.89/count*.16*settings.lashThickness;
   const left=reference(Math.max(0,u-step));
   const right=reference(Math.min(1,u+step));
   const a=new THREE.Vector3().lerpVectors(p,left,.62);
   const b=new THREE.Vector3().lerpVectors(p,right,.62);
   const spread=Math.abs(u-.5)*2;
-  const length=eyeRadius*(upper?.16:.065)*(.50+.50*edge)*
+  const length=eyeRadius*(upper?.16:.065)*settings.lashLength*(.50+.50*edge)*
    (.88+.12*Math.sin((i+1)*2.39996323));
   const tip=p.clone().add(new THREE.Vector3(
    side*spread*eyeRadius*.055,
    (upper?1:-1)*length,
-   eyeRadius*(upper?.11:.055)*(.65+.35*edge)));
+   eyeRadius*(upper?.11:.055)*(1+.8*settings.lashCurl)*(.65+.35*edge)));
   const start=vertices.length/3;
   for(const point of [a,b,tip]){
    vertices.push(point.x-x,point.y-y,point.z-z+eyeRadius*.018);
@@ -90,6 +91,9 @@ function makeFineEyelashMesh(name,liner,x,y,z,eyeRadius,side,upper){
  lash.name=name;lash.renderOrder=7;
  lash.userData.colorRole='lashes';
  lash.userData.filamentCount=count;
+ lash.userData.lashLength=settings.lashLength;
+ lash.userData.lashThickness=settings.lashThickness;
+ lash.userData.lashCurl=settings.lashCurl;
  lash.userData.rootedOnEyeliner=true;
  lash.userData.taperedGeometry=true;
  return lash;
@@ -290,6 +294,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
  };
  const female=gender==='female';
  const eyeScale=settings.eyeSize;
+ const eyeWidth=settings.eyeWidth,eyeHeight=settings.eyeHeight;
  const originalIrisAngle=.585;
  const originalPupilAngle=.236;
  // A doubled requested projected diameter must remain on a sphere:
@@ -299,7 +304,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
  const pupilAngle=Math.asin(Math.min(.75,
   Math.sin(originalPupilAngle)*settings.irisDiameter));
  const eyeRadius=d.x*.052*eyeScale;
- const eyeHeight=box.min.y+d.y*.684;
+ const eyeCenterHeight=box.min.y+d.y*.684;
  // Preserve the saved eye size, but move the sockets slightly toward
  // the true lateral face rather than burying the globe in the midface.
  const eyeSpacing=d.x*.123*settings.eyeSpacing;
@@ -309,9 +314,9 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
  for(const side of [-1,1]){
   const firstChild=root.children.length;
   const eyeLabel=side===-1?'LEFT':'RIGHT';
-  const x=cx+side*eyeSpacing,y=eyeHeight;
+  const x=cx+side*eyeSpacing,y=eyeCenterHeight;
   // Fit from actual orbital boundary points on the sculpted face.
-  const rimWidth=eyeRadius*1.12,rimHeight=eyeRadius*.33;
+  const rimWidth=eyeRadius*1.12*eyeWidth,rimHeight=eyeRadius*.33*eyeHeight;
   const landmarks={
    inner:new THREE.Vector3(x-side*rimWidth,y,surfaceAt(x-side*rimWidth,y)),
    outer:new THREE.Vector3(x+side*rimWidth,y,surfaceAt(x+side*rimWidth,y)),
@@ -324,7 +329,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   // The source head has a deep orbital side-wall. A constant offset
   // can still leave the whole sclera hidden from a profile camera.
   // Solve the eye centre from the actual LATERAL facial skin surface.
-  const profileProbeX=x+side*eyeRadius*1.18*.86;
+  const profileProbeX=x+side*eyeRadius*1.18*.86*eyeWidth;
   const localSkinAtProfile=surfaceAt(profileProbeX,y);
   const cornealAtProfile=eyeRadius*.97*Math.sqrt(1-.86*.86);
   const desiredProfileGap=Math.max(d.z*.012,eyeRadius*.115);
@@ -333,44 +338,48 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   // Keep the whole ellipsoid seated against the actual sculpted orbit
   // instead of projecting the white globe far in front of its liner.
   // Extra depth remains user-adjustable on the full-body editor.
-  const z=Math.max(Math.min(faceZ+eyeRadius*.035,
-    orbitalDepth+eyeRadius*.085),
-   localSkinAtProfile+desiredProfileGap-cornealAtProfile)
-   -eyeRadius*(.09-settings.eyeDepth);
-  const globe=new THREE.Mesh(new THREE.SphereGeometry(eyeRadius,36,24),eyeMat);
-  globe.name=(side===-1?'LEFT':'RIGHT')+'_ORBITAL_EYEBALL';
-  globe.scale.set(1.18,.79,.97);
-  globe.userData.profileExposed=true;
-  globe.position.set(x,y,z);
-  globe.userData.sourceProjected=true;
-  globe.userData.colorRole='sclera';
-  root.add(globe);
-  // Colored caps conform exactly to the SCULPTED ELLIPSOIDAL globe.
-  // Previous undersized independent spheres were hidden behind the larger
-  // white eyeball at a 45-degree camera angle.
-  // The eyeball is an elliptical sclera, but the colored iris/pupil
-  // are CIRCULAR in frontal projection. The old makeCap multiplied X by
-  // 1.18 and Y by .77, stretching the black pupil into an obvious oval.
-  // Solve Z against the true ellipsoid, instead of flattening the caps.
+  // The original protruding 3D sphere is deliberately removed. The eye
+  // white is an almond surface projected onto this EXACT sculpted face.
+  // Its iris/pupil are thin patches conforming to the same face, so the
+  // eye can no longer float outside the opening when viewed from the side.
+  const eyeSurfaceLift=Math.max(d.z*.0025,eyeRadius*.055)+
+   eyeRadius*settings.eyeDepth*.14;
+  const insetZ=(px,py)=>surfaceAt(px,py)+eyeSurfaceLift;
+  const z=insetZ(x,y);
+  const width=eyeRadius*1.12*eyeWidth;
+  const eyePatch=buildGrid(eyeLabel+'_ORBITAL_EYEBALL',48,18,(u,v)=>{
+   const t=u*2-1,arch=Math.pow(Math.max(0,1-t*t),.70);
+   const xx=x+t*width;
+   const yy=y+(v*2-1)*eyeRadius*.33*eyeHeight*arch;
+   return new THREE.Vector3(xx,yy,insetZ(xx,yy));
+  },eyeMat);
+  eyePatch.renderOrder=4;
+  eyePatch.userData.sourceProjected=true;
+  eyePatch.userData.profileExposed=true; // legacy inspection contract
+  eyePatch.userData.noDetachedEyeball=true;
+  eyePatch.userData.geometryType='face-conforming-almond-eye';
+  eyePatch.userData.colorRole='sclera';
+  root.add(eyePatch);
+  // Both pupils and colored contacts are sections of the same real skin-
+  // fitting eye opening. Their radius and colors remain slider-controlled.
   const makeCap=(label,angularRadius,material,raise)=>{
-   const physicalRadius=eyeRadius*.77*Math.sin(angularRadius);
+   const physicalRadius=eyeRadius*.60*Math.sin(angularRadius);
    const cap=buildGrid(eyeLabel+'_'+label,48,18,(u,v)=>{
     const az=u*Math.PI*2,rr=physicalRadius*v;
     const xx=rr*Math.cos(az),yy=rr*Math.sin(az);
-    const ax=xx/(eyeRadius*1.18),ay=yy/(eyeRadius*.79);
-    const surface=Math.sqrt(Math.max(.0001,1-ax*ax-ay*ay));
-    return new THREE.Vector3(
-     x+xx,y+yy,z+eyeRadius*.97*surface+eyeRadius*raise
-    );
+    const arch=Math.pow(Math.max(0,1-(xx/width)**2),.70);
+    const maxY=eyeRadius*.33*eyeHeight*arch*.96;
+    const fittedY=clamp(yy,-maxY,maxY);
+    return new THREE.Vector3(x+xx,y+fittedY,
+     insetZ(x+xx,y+fittedY)+eyeRadius*raise);
    },material);
    cap.userData.circularProjectedRadius=physicalRadius;
-   cap.userData.followsEllipsoid=true;
+   cap.userData.followsFaceSurface=true;
+   cap.userData.noDetachedEyeball=true;
    return cap;
   };
   irisMat.side=THREE.DoubleSide;pupilMat.side=THREE.DoubleSide;
-  const iris=makeCap('CURVED_IRIS',irisAngle,irisMat,.024);
-  // Fine limbal ring and radial fibers create natural depth without
-  // another floating cosmetic mesh or a network texture dependency.
+  const iris=makeCap('CURVED_IRIS',irisAngle,irisMat,.020);
   const fiberColors=[];
   for(let j=0;j<=18;j++)for(let i=0;i<=48;i++){
    const r=j/18,angle=i/48*Math.PI*2;
@@ -386,29 +395,24 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   iris.userData.circularProjected=true;
   iris.userData.radialFibers=true;
   iris.userData.colorRole='iris';root.add(iris);
-  const pupil=makeCap('CURVED_PUPIL',pupilAngle,pupilMat,.031);
+  const pupil=makeCap('CURVED_PUPIL',pupilAngle,pupilMat,.027);
   pupil.userData.circularProjected=true;
   pupil.userData.colorRole='pupil';root.add(pupil);
-  // Profile ray margin: near-lateral cornea vs. actual sclera-skull
-  // surface in the same head-local coordinates.
-  const lateralX=profileProbeX;
-  const cornealZ=z+cornealAtProfile;
-  lateralEyeMargins.push(cornealZ-localSkinAtProfile);
-  const width=eyeRadius*1.12;
+  // The profile protrusion is now only a slim sculpted patch above skin.
+  lateralEyeMargins.push(eyeSurfaceLift);
+
   let upperEyeliner=null,lowerEyeliner=null;
   for(const upper of [true,false]){
    const label=(side===-1?'LEFT':'RIGHT')+(upper?'_UPPER':'_LOWER');
-   const height=eyeRadius*.33;
+   const height=eyeRadius*.33*eyeHeight;
    const mesh=buildGrid(label+'_ANATOMICAL_EYELID',28,4,(u,v)=>{
     const t=u*2-1,arch=Math.pow(Math.max(0,1-t*t),.73);
-    const cornerTilt=(t+1)*eyeRadius*.045;
+    const cornerTilt=(t+1)*eyeRadius*.045*eyeWidth;
     const nearY=y+(upper?1:-1)*height*arch+cornerTilt;
     const farY=nearY+(upper?1:-1)*eyeRadius*(upper?.28:.19)*v;
-    const px=t*width/(1.18*eyeRadius),py=(nearY-y)/(.79*eyeRadius);
-    const globeZ=z+eyeRadius*.97*Math.sqrt(Math.max(.01,1-px*px-py*py))+
-     d.z*.0012;
-    const skinZ=surfaceAt(x+t*width,farY)+d.z*.0018;
-    const zz=globeZ*(1-smoothstep(v))+skinZ*smoothstep(v);
+    const eyeZ=insetZ(x+t*width,nearY)+eyeRadius*.034;
+    const skinZ=surfaceAt(x+t*width,farY)+d.z*.0033;
+    const zz=eyeZ*(1-smoothstep(v))+skinZ*smoothstep(v);
     return new THREE.Vector3(x+t*width,farY,zz);
    },lidMat);
    mesh.userData.attachedToFace=true;
@@ -442,8 +446,8 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
    const upperFold=buildGrid(
     (side===-1?'LEFT':'RIGHT')+'_DOUBLE_EYELID_FOLD',28,4,(u,v)=>{
      const t=2*u-1,soft=Math.pow(Math.max(0,1-t*t),.72);
-     const yy=y+eyeRadius*(.58+.14*soft+.11*v);
-     const xx=x+t*eyeRadius*1.15;
+     const yy=y+eyeRadius*(.58+.14*soft+.11*v)*eyeHeight;
+     const xx=x+t*eyeRadius*1.15*eyeWidth;
      const z=surfaceAt(xx,yy)+d.z*(.004+.0035*Math.sin(Math.PI*v)*soft);
      return new THREE.Vector3(xx,yy,z);
     },lidMat);
@@ -486,57 +490,20 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
     },accentMat);
    accent.userData.colorRole='eyeAccent';accent.userData.cosmetic=true;
    upperFold.add(accent);
-   const lowerVolume=buildGrid(
-    (side===-1?'LEFT':'RIGHT')+'_LOWER_LID_VOLUME',28,5,(u,v)=>{
-     const t=2*u-1,soft=Math.pow(Math.max(0,1-t*t),.80);
-     const xx=x+t*eyeRadius*1.16;
-     const yy=y-eyeRadius*(.50+.12*soft+.19*v);
-     const z=surfaceAt(xx,yy)+d.z*(.003+
-      .011*soft*Math.sin(Math.PI*v));
-     return new THREE.Vector3(xx,yy,z);
-    },lidMat);
-   lowerVolume.userData.anatomical='lower-lid-fullness';
-   lowerVolume.userData.colorRole='eyelid';
-   root.add(lowerVolume);
-   // Subtle actual under-eye cosmetic band; it shares the eye tilt pivot
-   // with the double eyelid, lashes and brows.
-   const shadowMat=new THREE.MeshStandardMaterial({
-    color:0x60444e,transparent:true,opacity:.72,depthWrite:false,
-    roughness:1,side:THREE.DoubleSide,vertexColors:true
-   });
-   const eyeShadow=buildGrid(
-    (side===-1?'LEFT':'RIGHT')+'_UNDER_EYE_SHADOW',28,5,(u,v)=>{
-     const t=2*u-1,soft=Math.pow(Math.max(0,1-t*t),.82);
-     const xx=x+t*eyeRadius*.83;
-     const yy=y-eyeRadius*(.65+.06*soft+.12*v);
-     const zz=surfaceAt(xx,yy)+Math.max(.000025,d.z*.00025);
-     return new THREE.Vector3(xx,yy,zz);
-    },shadowMat);
-   // Dark-but-feathered under-eye tone with transparent soft edges.
-   const pigments=[];
-   for(let j=0;j<=5;j++)for(let i=0;i<=28;i++){
-    const u=i/28,v=j/5;
-    const fade=Math.pow(Math.sin(Math.PI*u),.8)*
-     Math.pow(Math.sin(Math.PI*v),.9);
-    pigments.push(1,1,1,.66*fade);
-   }
-   eyeShadow.geometry.setAttribute('color',
-    new THREE.Float32BufferAttribute(pigments,4));
-   eyeShadow.userData.colorRole='underEye';
-   eyeShadow.userData.feathered=true;
-   root.add(eyeShadow);
+   // No lower-eye bag or dark under-eye strip: the original face mesh
+   // supplies natural skin shading beneath the fitted lower eyelid.
   }
   if(female){
    const pivot=new THREE.Group();
    pivot.name=eyeLabel+'_BROW_ANGLE_CONTROL';
-   const browY=y+eyeRadius*1.47;
+   const browY=y+eyeRadius*(1.15+.32*eyeHeight);
    pivot.position.set(x,browY,surfaceAt(x,browY));
    pivot.userData.control='brow';
    pivot.userData.side=side;
    const eyebrow=buildGrid(eyeLabel+'_SCULPTED_EYEBROW',34,4,(u,v)=>{
     const t=2*u-1,arch=Math.pow(Math.max(0,1-t*t),.65);
-    const xx=x+t*eyeRadius*1.37;
-    const yy=browY+eyeRadius*.10*arch+(v-.5)*eyeRadius*.17*arch;
+    const xx=x+t*eyeRadius*1.37*settings.browWidth;
+    const yy=browY+eyeRadius*.10*arch+(v-.5)*eyeRadius*.17*arch*settings.browThickness;
     const zz=surfaceAt(xx,yy)+d.z*(.011+.002*arch);
     return new THREE.Vector3(xx-pivot.position.x,yy-pivot.position.y,
      zz-pivot.position.z);
@@ -552,7 +519,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
    for(const upper of [true,false]){
     const lash=makeFineEyelashMesh(
      eyeLabel+(upper?'_UPPER':'_LOWER')+'_LASH_MESH',
-     upper?upperEyeliner:lowerEyeliner,x,y,z,eyeRadius,side,upper);
+     upper?upperEyeliner:lowerEyeliner,x,y,z,eyeRadius,side,upper,settings);
     lashPivot.add(lash);
    }
    root.add(lashPivot);
@@ -562,13 +529,13 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
    const pivot=new THREE.Group();
    const label=side===-1?'LEFT':'RIGHT';
    pivot.name=label+'_BROW_ANGLE_CONTROL';
-   const browY=y+eyeRadius*1.56;
+   const browY=y+eyeRadius*(1.24+.32*eyeHeight);
    pivot.position.set(x,browY,surfaceAt(x,browY));
    const brow=buildGrid(label+'_NATURAL_MALE_BROW',30,4,(u,v)=>{
     const t=2*u-1,arch=Math.pow(Math.max(0,1-t*t),.72);
-    const xx=x+t*eyeRadius*1.37;
+    const xx=x+t*eyeRadius*1.37*settings.browWidth;
     const yy=browY+eyeRadius*.035*arch+
-      (v-.5)*eyeRadius*.23*arch;
+      (v-.5)*eyeRadius*.23*arch*settings.browThickness;
     const zz=surfaceAt(xx,yy)+d.z*.010;
     return new THREE.Vector3(xx-pivot.position.x,
       yy-pivot.position.y,zz-pivot.position.z);
@@ -723,10 +690,16 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   beardMeshCount:female?0:5,
   beardDensity:gender==='male'?settings.beardDensity:0,
   eyebrowMeshCount:2,eyelashMeshCount:female?4:0,
-  eyelashFilamentCount:female?252:0,eyelashesRootedOnLiner:female,
-  underEyeShadowMeshCount:female?2:0,
+  eyelashFilamentCount:female?Math.round((84+42)*2*settings.lashDensity):0,
+  eyelashesRootedOnLiner:female,
+  eyeWidthFactor:settings.eyeWidth,eyeHeightFactor:settings.eyeHeight,
+  browWidthFactor:settings.browWidth,browThicknessFactor:settings.browThickness,
+  lashDensityFactor:settings.lashDensity,lashLengthFactor:settings.lashLength,
+  lashThicknessFactor:settings.lashThickness,lashCurlFactor:settings.lashCurl,
+  noStandaloneEyeSphere:true,noUnderEyeBags:true,
+  underEyeShadowMeshCount:0,
   doubleLidCreaseMeshCount:female?2:0,
-  lowerOrbitalVolumeMeshCount:female?2:0,
+  lowerOrbitalVolumeMeshCount:0,
   irisPolarAngleRadians:Number(irisAngle.toFixed(4)),
   pupilPolarAngleRadians:Number(pupilAngle.toFixed(4)),
   irisDiameterRequestFactor:settings.irisDiameter,
@@ -735,8 +708,8 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   lipCreaseCurvature:Number(bestCrease.toFixed(7)),
   lipCenterNormalized:Number(((lipCenter-box.min.y)/d.y).toFixed(4)),
   eyeScale,eyeProfileLateralMargins:lateralEyeMargins.map(v=>Number(v.toFixed(6))),
-  eyeballProjection:'orbital-four-landmark-fitted-ellipsoid',
-  irisPupilProjection:'circular-on-ellipsoid',irisRadialFibers:true,
+  eyeballProjection:'sculpted-face-conforming-almond-no-sphere',
+  irisPupilProjection:'circular-face-conformal-inset',irisRadialFibers:true,
   contactColorDefault:safeContactColor(settings.contactColor),
   eyeAngleDefault:settings.eyeAngle,
   eyeSpacingFactor:settings.eyeSpacing,
