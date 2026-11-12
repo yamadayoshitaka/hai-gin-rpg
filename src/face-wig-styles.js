@@ -10,6 +10,12 @@ const deepFreeze=value=>{
  }
  return value;
 };
+// Static scalp foundation volume. This is geometry, not a shader or physics.
+export const WIG_BASE_VOLUME_PROFILES=deepFreeze({
+ natural:{label:'自然な頭皮ライン',crown:.0,side:.0},
+ airy:{label:'ふんわりした根元',crown:.034,side:.019},
+ lifted:{label:'トップにボリューム',crown:.069,side:.013}
+});
 export const DEFAULT_WIG_STYLE_ID='center-part-gravity-long';
 export const WIG_STYLES=deepFreeze({
  'center-part-gravity-long':{
@@ -119,6 +125,36 @@ export const WIG_STYLES=deepFreeze({
    restFallExponent:1.12,cut:'soft-u-layered',longLayers:true,
    styleLength:1.16,templeVolume:0.029,strandWave:0.07,
    wigType:'independent-3d-asset',collisions:['scalp','face','neck','shoulder','chest']
+  },
+  'natural-short':{
+   id:'natural-short',label:'ナチュラルショート',part:'side',
+   whorl:{x:-.03,y:.965,z:-.08},partWidth:.003,fringeSweep:.014,
+   gravityMps2:9.81,gravityScale:1,scalpClearance:.002,
+   faceClearance:.007,faceAvoidanceX:.025,backSweep:.010,
+   restFallExponent:1.05,cut:'textured-short',longLayers:false,
+   styleLength:.26,templeVolume:.009,strandWave:.018,
+   shortCutKind:'short',wigType:'independent-3d-asset',
+   collisions:['scalp','face','neck','shoulder','chest']
+  },
+  'very-short':{
+   id:'very-short',label:'ベリーショート',part:'side',
+   whorl:{x:-.03,y:.965,z:-.08},partWidth:.002,fringeSweep:.008,
+   gravityMps2:9.81,gravityScale:1,scalpClearance:.002,
+   faceClearance:.007,faceAvoidanceX:.018,backSweep:.005,
+   restFallExponent:1.05,cut:'very-short-cropped',longLayers:false,
+   styleLength:.12,templeVolume:.003,strandWave:.009,
+   shortCutKind:'very-short',wigType:'independent-3d-asset',
+   collisions:['scalp','face','neck','shoulder','chest']
+  },
+  'buzz-cut':{
+   id:'buzz-cut',label:'バズカット（頭皮に沿う極短毛）',part:'center',
+   whorl:{x:0,y:.965,z:-.08},partWidth:.0,fringeSweep:.0,
+   gravityMps2:9.81,gravityScale:1,scalpClearance:.001,
+   faceClearance:.003,faceAvoidanceX:.010,backSweep:0,
+   restFallExponent:1,cut:'buzz-scalp-close',longLayers:false,
+   styleLength:.025,templeVolume:0,strandWave:.004,
+   shortCutKind:'buzz',wigType:'independent-3d-asset',
+   collisions:['scalp','face','neck']
   },
   'rounded-bob':{
    id:'rounded-bob',label:'丸みのあるボブ',part:'center',

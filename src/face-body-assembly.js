@@ -253,12 +253,13 @@ export function removeHeadBustBelowNeck(face,cutY){
  * down camera shots revealed two open sleeve/shoulder sockets, which the
  * earlier single neck loft did not close.
  */
-export function createClosedShoulderCaps(face,attachment,{cutY,color=0xb8c1d2}={}){
+export function createClosedShoulderCaps(face,attachment,{cutY,color=0xedcbbf}={}){
  if(!face?.isMesh||!attachment?.root||!Number.isFinite(cutY))
   throw Error('Actual head, body and shoulder cut required');
  face.geometry.computeBoundingBox();
  const box=face.geometry.boundingBox,w=box.max.x-box.min.x;
  const cx=(box.min.x+box.max.x)*.5,groups=[[],[]];
+ const skinFallback=new THREE.Color(color);
  face.updateWorldMatrix(true,false);
  attachment.root.updateWorldMatrix(true,true);
  const inv=face.matrixWorld.clone().invert(),p=new THREE.Vector3();
@@ -266,12 +267,16 @@ export function createClosedShoulderCaps(face,attachment,{cutY,color=0xb8c1d2}={
  attachment.root.traverse(mesh=>{
   if(!mesh.isMesh||!mesh.visible||!mesh.geometry?.getAttribute('position'))return;
   const attr=mesh.geometry.getAttribute('position');
+  const vertexColors=mesh.geometry.getAttribute('color');
   for(let i=0;i<attr.count;i++){
    p.fromBufferAttribute(attr,i).applyMatrix4(mesh.matrixWorld);
-   if(Math.abs(p.y-cutY)>w*.006)continue;
+   if(Math.abs(p.y-cutY)>w*.014)continue;
    p.applyMatrix4(inv);
    if(Math.abs(p.x-cx)<w*.44)continue;
-   groups[p.x<cx?0:1].push([p.x,p.z]);samples++;
+   groups[p.x<cx?0:1].push([p.x,p.z,
+    vertexColors?.getX(i)??skinFallback.r,
+    vertexColors?.getY(i)??skinFallback.g,
+    vertexColors?.getZ(i)??skinFallback.b]);samples++;
   }
  });
  const hull=raw=>{
@@ -294,29 +299,40 @@ export function createClosedShoulderCaps(face,attachment,{cutY,color=0xb8c1d2}={
   }
   lower.pop();upper.pop();return [...lower,...upper];
  };
- const y=new THREE.Vector3(0,cutY,0).applyMatrix4(inv).y-w*.009;
+ // The previous cap was an opaque pale flat plate beneath the cut.
+ // Use the physical body surface palette and a raised rounded inner cap.
+ const y=new THREE.Vector3(0,cutY,0).applyMatrix4(inv).y+w*.003;
  let count=0,triangles=0;
  for(let side=0;side<2;side++){
   const ring=hull(groups[side]);
   if(ring.length<3)continue;
   const mx=ring.reduce((v,p)=>v+p[0],0)/ring.length;
   const mz=ring.reduce((v,p)=>v+p[1],0)/ring.length;
-  const vertices=[mx,y,mz],indices=[];
-  for(const point of ring)
+  const centerColor=[0,0,0];
+  for(const point of ring)for(let c=0;c<3;c++)centerColor[c]+=point[2+c]/ring.length;
+  const vertices=[mx,y+w*.015,mz],indices=[],rgb=[...centerColor];
+  for(const point of ring){
    vertices.push(mx+(point[0]-mx)*1.015,y,
     mz+(point[1]-mz)*1.015);
+   rgb.push(point[2],point[3],point[4]);
+  }
   for(let i=0;i<ring.length;i++)
    indices.push(0,i+1,(i+1)%ring.length+1);
   const geo=new THREE.BufferGeometry();
   geo.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));
-  geo.setIndex(indices);geo.computeVertexNormals();
+  geo.setIndex(indices);
+  geo.setAttribute('color',new THREE.Float32BufferAttribute(rgb,3));
+  geo.computeVertexNormals();
   const patch=new THREE.Mesh(geo,new THREE.MeshStandardMaterial({
-   color,side:THREE.DoubleSide,roughness:.80,metalness:0
+   color:0xffffff,vertexColors:true,side:THREE.DoubleSide,
+   roughness:.80,metalness:0
   }));
   patch.name=side===0?'LEFT_SHOULDER_CUT_SURFACE_CAP':
    'RIGHT_SHOULDER_CUT_SURFACE_CAP';
   patch.userData.shoulderCap=true;
   patch.userData.derivedFromActualBodyCut=true;
+  patch.userData.v33SkinContinuity=true;
+  patch.userData.v33DomeNotFlat=true;
   face.add(patch);
   count++;triangles+=ring.length;
  }
@@ -324,6 +340,8 @@ export function createClosedShoulderCaps(face,attachment,{cutY,color=0xb8c1d2}={
  attachment.report.shoulderCapTriangles=triangles;
  attachment.report.shoulderCapSourceSamples=samples;
  attachment.report.shoulderTopHolesClosed=count===2;
+ attachment.report.shoulderCapsColorMatchedToBody=count===2;
+ attachment.report.shoulderCapsRaisedAboveCut=true;
  return {count,triangles,samples};
 }
 export function createSealedNeckBridge(face,attachment,{headCutY,bodyCutY}={}){

@@ -1,7 +1,8 @@
 import {
  PART_CATALOG,PART_GROUPS,PART_GROUP_LABELS,OFFSET_CHOICES,ANGLE_CHOICES,
- normalizePartSelection
-} from './face-part-catalog-v32.js';
+ normalizePartSelection,HAIR_COLORS
+} from './face-part-catalog-v32.js?v=33';
+import {WIG_BASE_VOLUME_PROFILES} from './face-wig-styles.js?v=33';
 
 /** v32: select ten real 3D geometric presets, not independent morph sliders. */
 export function createPartSelectorUI(target,gender,current,onChange){
@@ -40,7 +41,7 @@ export function createPartSelectorUI(target,gender,current,onChange){
   panel.className='v32-part-group';
   if(group==='eye'||group==='hair')panel.open=true;
   const summary=document.createElement('summary');
-  summary.textContent=PART_GROUP_LABELS[group]+'（10種類）';
+  summary.textContent=PART_GROUP_LABELS[group]+'（'+PART_CATALOG[gender][group].length+'種類）';
   panel.append(summary);
   const label=document.createElement('label');
   label.textContent=PART_GROUP_LABELS[group]+'の3Dタイプ';
@@ -50,6 +51,34 @@ export function createPartSelectorUI(target,gender,current,onChange){
    choices.map((item,i)=>[i, String(i+1).padStart(2,'0')+' '+item.label]),
    state[group],v=>{state[group]=v;announce();}));
   panel.append(label);
+  if(group==='hair'){
+   const colorLabel=document.createElement('label');
+   colorLabel.textContent='髪色（16色プリセット）';
+   const colorSelect=document.createElement('select');
+   colorSelect.id='v33'+(gender==='female'?'Female':'Male')+'HairColor';
+   for(const [key,choice] of Object.entries(HAIR_COLORS)){
+    const opt=document.createElement('option');opt.value=key;
+    opt.textContent=choice.label;colorSelect.append(opt);
+   }
+   colorSelect.value=state.hairColor;
+   colorSelect.addEventListener('change',()=>{
+    state.hairColor=colorSelect.value;announce();
+   });
+   colorLabel.append(colorSelect);panel.append(colorLabel);
+   const baseLabel=document.createElement('label');
+   baseLabel.textContent='ウィッグの土台（根元の盛り上がり）';
+   const baseSelect=document.createElement('select');
+   baseSelect.id='v33'+(gender==='female'?'Female':'Male')+'WigVolume';
+   for(const [key,profile] of Object.entries(WIG_BASE_VOLUME_PROFILES)){
+    const opt=document.createElement('option');opt.value=key;
+    opt.textContent=profile.label;baseSelect.append(opt);
+   }
+   baseSelect.value=state.hairVolume;
+   baseSelect.addEventListener('change',()=>{
+    state.hairVolume=baseSelect.value;announce();
+   });
+   baseLabel.append(baseSelect);panel.append(baseLabel);
+  }
   if(ids[group].length){
    const grid=document.createElement('div');grid.className='v32-pose-grid';
    for(const key of ids[group]){
@@ -69,7 +98,7 @@ export function createPartSelectorUI(target,gender,current,onChange){
  }
  const tip=document.createElement('p');
  tip.className='v32-tip';
- tip.textContent='髪は物理演算なしの厚み付き4層ヘアカード。パーツ変更時に3Dメッシュを再生成します。';
+ tip.textContent='髪は物理演算なしの厚み付き4層ヘアカード。土台の盛り上がりに合わせて毛束の根元も動きます。';
  target.append(tip);
  return {getSelection:()=>({...state})};
 }

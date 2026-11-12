@@ -319,6 +319,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
  const anteriorGlobeRatio=female?.58:.49;
  const eyeAnteriorClearances=[];
  const originalIrisAngle=.585;
+ // v33 enlarges the real circular IRIS without squashing its rim.
  const originalPupilAngle=.236;
  // A doubled requested projected diameter must remain on a sphere:
  // physical iris diameter is limited to 95.5% of the eye's diameter.
@@ -365,10 +366,14 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   const width=eyeRadius*1.12*eyeWidth;
   // Sample the orbit with a fixed physical baseline: width/height changes
   // may reshape the eye but NEVER move its cornea backward into the face.
-  const orbitFrontZ=Math.max(faceZ,surfaceAt(x-baseEyeRadius*.38,y),
-   surfaceAt(x+baseEyeRadius*.38,y));
-  const eyeSurfaceLift=Math.max(baseEyeRadius*.14,
-   Math.max(d.z*.005,baseEyeRadius*.15)+baseEyeRadius*settings.eyeDepth*.24);
+  // Face/eye templates reshape the eye socket: protect the entire cornea,
+  // not only a central skin sample, from overlapping skin triangles.
+  const orbitSamples=[];
+  for(const ax of [-.62,0,.62])for(const ay of [-.45,0,.45])
+   orbitSamples.push(surfaceAt(x+ax*width,y+ay*rimHeight));
+  const orbitFrontZ=Math.max(faceZ,...orbitSamples);
+  const eyeSurfaceLift=Math.max(baseEyeRadius*.19,
+   Math.max(d.z*.007,baseEyeRadius*.19)+baseEyeRadius*settings.eyeDepth*.24);
   const eyeDomeHeight=baseEyeRadius*anteriorGlobeRatio;
   const insetZ=(px,py)=>{
    const tx=clamp((px-x)/width,-1,1);
@@ -404,6 +409,8 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   eyePatch.userData.geometryType='face-conforming-almond-eye';
   eyePatch.userData.anteriorGlobeReconstruction=true;
   eyePatch.userData.smoothCornealCore=true;
+  eyePatch.userData.v33OrbitSampleCount=orbitSamples.length;
+  eyePatch.userData.v33OrbitalSkinFrontEnvelope=orbitFrontZ;
   eyePatch.userData.skinBlendRestrictedToEyelidRim=true;
   eyePatch.userData.anteriorClearanceRatio=(z-faceZ)/eyeRadius;
   eyePatch.userData.eyelinerToCenterBulge=true;
@@ -418,9 +425,13 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
    // Clamping every circular iris vertex to the eyelid produced doubled
    // blue horizontal folds / stripes. A genuine round iris must fit the
    // actual opening instead, and no vertex may be clipped into a flat row.
-   const requested=eyeRadius*.60*Math.sin(angularRadius);
+   const isIris=label==='CURVED_IRIS';
+   const irisDisplayScale=isIris?(female?.72:.67):.60;
+   const requested=eyeRadius*irisDisplayScale*Math.sin(angularRadius);
    const opening=eyeRadius*eyeApertureRatio*eyeHeight;
-   const physicalRadius=Math.min(requested,opening*.82);
+   // Keep a real circle and a thin white sclera ring; never clip the
+   // actual iris geometry into an ugly horizontal stripe.
+   const physicalRadius=Math.min(requested,opening*(isIris?.90:.68));
    const cap=buildGrid(eyeLabel+'_'+label,64,20,(u,v)=>{
     const az=u*Math.PI*2,rr=physicalRadius*v;
     const xx=rr*Math.cos(az),yy=rr*Math.sin(az);
@@ -428,6 +439,8 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
      insetZ(x+xx,y+yy)+eyeRadius*raise);
    },material);
    cap.userData.circularProjectedRadius=physicalRadius;
+   cap.userData.v33IrisScale=isIris?irisDisplayScale:undefined;
+   cap.userData.v33IrisOpeningFraction=physicalRadius/opening;
    cap.userData.unclippedTrueCircle=true;
    cap.userData.apertureFitted=true;
    cap.userData.roundVertexCount=(65*21);

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>灰銀のレゾナンス｜女性主人公・全身＋顔・厚み付き4層髪束・10種パーツv32</title>
+<title>灰銀のレゾナンス｜女性主人公・全身＋顔・目・肩修正／髪13種・16色v33</title>
 <style>
 *{box-sizing:border-box}body{margin:0;background:#101c2e;color:#eaf3ff;font-family:system-ui,"Noto Sans JP",sans-serif}
 header{background:#183049;padding:17px 18px;border-bottom:1px solid #466780}
@@ -26,7 +26,7 @@ label{display:block;margin:10px 0}select{width:100%}
 </head>
 <body>
 <header>
-<h1>女性主人公・顔＋胴体・厚み4層髪束・顔パーツ選択v32</h1>
+<h1>女性主人公・顔＋胴体・厚み4層髪束・髪色選択v33</h1>
 <p>第1章「女性主人公 hero-girl-01」の登録原画を参照。元の女性胴体GLBと独立した顔メッシュを接続し、頭皮と実際の胴体への髪の接触判定を確認します。v27では本体を透明にして独立ウィッグだけを表示できます。v30では目の奥まりと虹彩の帯状表示を改善。眼球中央を滑らかな曲面にし、まぶたの縁だけ実顔メッシュに接続。まつ毛・調整スライダーを維持。首の継ぎ目も修正しました。</p>
 </header>
 <main>
@@ -76,7 +76,7 @@ alt="第1章女性主人公（暫定人物マスターの登録原画）">
 <label for="style">固有のヅラ（別アセット）
 <select id="style" disabled></select></label>
 <p class="note">v31：目のサイズは縦横から自動決定。目の前後位置と分離し、カラコンは17色＋自由色に対応。真円の黒目・瞳孔を維持。髪は実顔面と女性胴体の三角形表面との接触を判定し、肩・胸の簡易判定も併用します。</p>
-<a href="./face-mesh-studio.html?gender=female&v=32">顔単体の詳細編集画面へ</a>
+<a href="./face-mesh-studio.html?gender=female&v=33">顔単体の詳細編集画面へ</a>
 <details><summary>実メッシュ・接触検査</summary><pre id="metrics"></pre></details>
 </section>
 </main><style>
@@ -88,7 +88,7 @@ body.v32-legacy #v32BodyPartStudio{display:none!important}
 .v32-part-group select,#v32HairDensity{display:block;width:100%;min-height:41px;margin:5px 0;padding:7px;background:#213d55;color:#fff;border:1px solid #7893a5;border-radius:8px}
 .v32-pose-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
 .v32-tip{color:#b8d5e8;font-size:12px}
-</style><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/","./src/independent-face-masters.js":"./src/independent-face-masters.js?v=32","./src/face-feature-meshes.js":"./src/face-feature-meshes.js?v=32","./src/face-v7-controls.js":"./src/face-v7-controls.js?v=32","./src/face-body-assembly.js":"./src/face-body-assembly.js?v=32"}}</script>
+</style><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/","./src/independent-face-masters.js":"./src/independent-face-masters.js?v=33","./src/face-feature-meshes.js":"./src/face-feature-meshes.js?v=33","./src/face-v7-controls.js":"./src/face-v7-controls.js?v=33","./src/face-body-assembly.js":"./src/face-body-assembly.js?v=33"}}</script>
 <script type="module">
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
@@ -97,11 +97,11 @@ import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {makeIndependentFaceMaster} from './src/independent-face-masters.js';
 import {FEMALE_V7_DEFAULTS,FACE_EYE_SPACING_DEFAULT,FACE_EYE_SPACING_RANGE,FACE_SLIDER_RANGES,CONTACT_COLORS,CONTACT_COLOR_LABELS,safeContactColor,normalizeFemaleFaceControls} from './src/face-v7-controls.js';
 import {applyFaceColorMode} from './src/face-feature-meshes.js';
-import {createScalpAnchoredWig} from './src/face-scalp-wig.js?v=32';
-import {createPartSelectorUI} from './src/face-part-selector-ui-v32.js?v=32';
-import {defaultPartSelection,resolvePartSelection,PART_CATALOG} from './src/face-part-catalog-v32.js?v=32';
+import {createScalpAnchoredWig} from './src/face-scalp-wig.js?v=33';
+import {createPartSelectorUI} from './src/face-part-selector-ui-v32.js?v=33';
+import {defaultPartSelection,resolvePartSelection,PART_CATALOG} from './src/face-part-catalog-v32.js?v=33';
 import {attachIndependentHeadToBody,removeHeadBustBelowNeck,createSealedNeckBridge} from './src/face-body-assembly.js';
-import {listWigStyles,DEFAULT_WIG_STYLE_ID} from './src/face-wig-styles.js';
+import {listWigStyles,DEFAULT_WIG_STYLE_ID} from './src/face-wig-styles.js?v=33';
 import {FEMALE_COMMANDER_ART_PALETTE,CHAPTER_ONE_ART_BY_KEY} from './src/chapter-one-character-art-references.js';
 
 const $=id=>document.getElementById(id);
@@ -172,6 +172,7 @@ function metrics(){
   sourceHeadUnchanged:true,sourceBodyUnchanged:true,
   editableFaceControls:{...faceControls},
   v32PartSelection:{...v32BodyPart},
+  v33HairColor:v32BodyPart.hairColor,
   v32CatalogCounts:Object.fromEntries(Object.entries(PART_CATALOG.female).map(([k,a])=>[k,a.length])),
   detailedFrontHair:true,contactColor,
   wigDensity:Number($('wigDensity').value),
@@ -221,7 +222,9 @@ function rebuildWig(){
   count:1440,lengthScale:1.0,styleId:$('style').value,
   fineFringeMultiplier:3,visualFiberMultiplier:Number($('wigDensity').value),
   staticGroom:true,
-  color:Number('0x'+palette.hair.slice(1)),
+  volumeProfile:v32PartMode?v32BodyPart.hairVolume:'natural',
+  color:Number('0x'+(v32PartMode?
+   resolvePartSelection('female',v32BodyPart).hairHex:palette.hair).slice(1)),
   bodyCollisionResolver:bodyAttachment.bodyCollider
  });
  model.face.add(wig.root);wig.root.visible=wigVisible;
