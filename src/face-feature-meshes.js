@@ -300,7 +300,7 @@ export function sculptEyeSocketsInFaceGeometry(geometry,settings,gender='female'
    if(q>=1.12)continue;
    // The outer ring remains attached to the cheeks and forehead.
    // Deeper recessed vertices stay behind the eye display surface.
-   const inset=radius*.32*(1-THREE.MathUtils.smoothstep(q,.58,1.12))*front;
+   const inset=radius*.55*(1-THREE.MathUtils.smoothstep(q,.58,1.12))*front;
    if(inset<=.0000005)continue;
    p.setZ(i,z-inset);
    vertices++;depthSum+=inset;maxInset=Math.max(maxInset,inset);
@@ -432,8 +432,13 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
    orbitSamples.push(surfaceAt(x+ax*width,y+ay*rimHeight));
   // Do not push the entire cornea to the MOST protruding brow/cheek
   // triangle. Keep the centre local to its actual eye socket instead.
-  const orbitFrontZ=faceZ+Math.min(baseEyeRadius*.035,
-   Math.max(0,Math.max(...orbitSamples)-faceZ));
+  // Align the OPTICAL surface to the shallowest real eyelid rim, not
+  // the forehead/cheek front or the center of a closed donor skin patch.
+  // The unmodified upper rim often slopes backward substantially.
+  const upperLipSkin=surfaceAt(x,y+rimHeight+eyeRadius*.045*eyeWidth);
+  const lowerLipSkin=surfaceAt(x,y-rimHeight+eyeRadius*.045*eyeWidth);
+  const orbitFrontZ=Math.min(upperLipSkin,lowerLipSkin,
+   landmarks.inner.z,landmarks.outer.z);
   // Negative relative to the UNCARVED skin: the eye is now seated inside
   // the socket, not floating over it. Depth control adjusts the socket view
   // gently instead of pushing the whole globe outside the eyeliner.
