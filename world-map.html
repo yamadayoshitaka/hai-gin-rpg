@@ -292,7 +292,9 @@ function showPendingPostBattleEvent(){
  try{pending=JSON.parse(sessionStorage.getItem(POST_EVENT_PENDING_KEY)||'null');}
  catch{sessionStorage.removeItem(POST_EVENT_PENDING_KEY);return;}
  if(!pending||!CAMPAIGN_STAGE_BY_ID[pending.stageId]||
-    typeof pending.victory!=='boolean'||!Number.isInteger(pending.casualties))return;
+    typeof pending.victory!=='boolean'||!Number.isInteger(pending.casualties)){
+  sessionStorage.removeItem(POST_EVENT_PENDING_KEY);return;
+ }
  const context={...storyStageContext(game,pending.stageId),battleOutcome:{
   victory:pending.victory,casualties:pending.casualties,
   playerCommanderDead:pending.playerCommanderDead===true
