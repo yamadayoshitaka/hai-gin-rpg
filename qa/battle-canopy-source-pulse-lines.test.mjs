@@ -23,8 +23,9 @@ assert.deepEqual(selectCanopiesAroundCamera({x:45,y:6,z:45},[far]),[far],
 
 const html=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
 for(const token of [
- "const cameraTreeCandidates=stageBatchStats.occlusionCandidates.filter(item=>item.id==='tree_deciduous_001'||item.id==='flower_tree_001')",
- "selectCanopiesAroundCamera(camera.position,cameraTreeCandidates)",
+ "const cameraTreeCandidates=townCameraOccluders(stageBatchStats.occlusionCandidates,TOWN_MODE)",
+ "cameraTreeCandidates.filter(item=>item.id==='tree_deciduous_001'||item.id==='flower_tree_001')",
+ "selectCanopiesAroundCamera(camera.position,defaultCandidates)",
  "for(const [sx,sy] of [[-.65,-.5],[.65,-.5],[-.65,.5],[.65,.5]])",
  'if(TOWN_MODE)setBattleCamera(cameraHome,cameraCloseOffset);',
  'else setBattleCamera(new THREE.Vector3(openingOverviewCenter',
