@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import {createFastFaceSurfaceSampler} from './face-feature-meshes.js';
+import {getWigStyle,DEFAULT_WIG_STYLE_ID} from './face-wig-styles.js';
 
 /**
  * Mobile-preview wig made of real scalp-rooted 3D lock ribbons.
@@ -260,13 +262,21 @@ function scalpShell(geo,box,color){
  * @param {THREE.Mesh} head  owned sculpted female head
  * @param {{count?:number,color?:number,externalColliders?:Array}} options
  */
-export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalColliders=[],lengthScale=1}={}){
+export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalColliders=[],lengthScale=1,styleId=DEFAULT_WIG_STYLE_ID}={}){
+ const style=getWigStyle(styleId);
  if(!head?.isMesh||!head.geometry?.getAttribute('position'))
   throw Error('Real sculpted 3D head required for scalp-rooted wig');
  head.geometry.computeBoundingBox();head.geometry.computeVertexNormals();
  const box=head.geometry.boundingBox.clone(),d=box.getSize(new THREE.Vector3());
  const center=box.getCenter(new THREE.Vector3());
  const {pools,all:scalpCandidates}=actualScalpCandidates(head.geometry,box);
+ const surfaceSampler=createFastFaceSurfaceSampler(head.geometry);
+ // Crown whorl uses an ACTUAL real-head scalp vertex, not a free cap.
+ const whorlTarget=f3(center.x+style.whorl.x*d.x,
+  box.min.y+style.whorl.y*d.y,center.z+style.whorl.z*d.z);
+ const whorlCandidate=scalpCandidates.filter(p=>p.p.y>box.min.y+d.y*.84)
+  .sort((a,b)=>a.p.distanceToSquared(whorlTarget)-b.p.distanceToSquared(whorlTarget))[0];
+ const whorl=whorlCandidate?.p.clone()||whorlTarget;
  let radialScalp=envelopeCache.get(head.geometry);
  if(!radialScalp){
   radialScalp=createHeadEnvelope(head.geometry,box);
@@ -274,6 +284,11 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  }
  const root=new THREE.Group();root.name='FEMALE_SCALP_ANCHORED_LONG_WIG';
  root.userData.hairOnRealHead=true;
+ root.userData.assetType='independent-wig';
+ root.userData.hairStyleId=style.id;
+ root.userData.hairStyleName=style.label;
+ root.userData.part=style.part;
+ root.userData.whorlPosition=whorl.toArray();
  const cap=scalpShell(head.geometry,box,color);root.add(cap);
  const lockCount=clamp(Math.round(count),48,2400),segments=11;
  const zoneCounts=Object.fromEntries(WIG_ZONE_WEIGHTS.map(([zone])=>[zone,0]));
@@ -334,6 +349,10 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   const wigRoot=seed.p.clone().addScaledVector(seed.n,rootLift);
   const side=zone.endsWith('Left')?-1:zone.endsWith('Right')?1:
    Math.sign(wigRoot.x-center.x)||1;
+  const partSide=Math.sign(wigRoot.x-whorl.x)||side;
+  const partInfluence=(style.part==='center'&&
+   (zone==='crown'||zone.startsWith('fringe')))?
+   Math.max(0,1-Math.abs(wigRoot.x-whorl.x)/(d.x*.27)):0;
   const fringe=zone.startsWith('fringe');
   const back=zone.startsWith('back')||zone.startsWith('nape');
   const frontRoot=(wigRoot.z-center.z)/d.z>.07;
@@ -371,18 +390,23 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   const closeToFace=fringe||overFace;
   // Posterior layers drift gently toward the center of the back,
   // closing the exposed rear part without piling into a single spike.
-  const targetX=back?
+  const targetX=(back?
    center.x+(wigRoot.x-center.x)*.68:
-   wigRoot.x+side*d.x*(closeToFace?.035:.015);
-  const targetZ=closeToFace?wigRoot.z+d.z*.006:
+   wigRoot.x+side*d.x*(closeToFace?style.fringeSweep:.015))+
+   partSide*d.x*style.partWidth*partInfluence;
+  const targetZ=closeToFace?wigRoot.z+d.z*style.scalpClearance:
    // Go BEHIND the neck rather than being occluded by the rear bust skin.
    back?Math.min(wigRoot.z-d.z*.070,center.z-d.z*.19):
    zone.startsWith('temple')?wigRoot.z-d.z*.035:
    Math.min(wigRoot.z-d.z*.075,center.z-d.z*.035);
   const strandWave=(fract(i*.75487766)-.5)*d.x*.004;
+  // Gravity rest shape: initial down-velocity + gravitational acceleration.
+  const g=style.gravityMps2*(d.y/2)*style.gravityScale;
+  const fallTime=Math.sqrt(Math.max(1e-8,length/g));
   for(let j=0;j<=segments;j++){
    const t=j/segments,fall=t*t*(3-2*t);
-   const y=Math.max(trimY,wigRoot.y-length*t);
+   const drop=.5*length*t+.5*g*(t*fallTime)**2;
+   const y=Math.max(trimY,wigRoot.y-drop);
    const curl=Math.sin(t*5.2+i*2.39996323)*d.x*.0025*t*t;
    const p=j===0?wigRoot.clone():f3(
     THREE.MathUtils.lerp(wigRoot.x,targetX,fall)+strandWave*t+curl,
