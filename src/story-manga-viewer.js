@@ -27,7 +27,7 @@ export function createMangaViewer({container=document.body,storage=globalThis.lo
  root.innerHTML='<div class="manga-board">'+
   '<div class="manga-top"><div class="manga-heading"><span class="manga-kicker">HAIGIN · ILLUSTRATED CHRONICLE</span><strong class="manga-stage"></strong></div>'+
   '<button class="manga-voice" aria-label="物語の音声オン・オフ" type="button">音声 ON</button></div>'+
-  '<figure class="manga-figure"><div class="manga-page-area"><img class="manga-art" alt="10コマが1枚になった原画" hidden/><div class="manga-missing" role="status">10コマ原画を制作・確認中です。完成した男女別の漫画ページだけをここに表示します。</div><div class="manga-hotspots" hidden></div></div><figcaption class="manga-shot"></figcaption></figure>'+
+  '<figure class="manga-figure"><div class="manga-page-area"><img class="manga-art" alt="10コマが1枚になった原画" hidden/><div class="manga-missing" role="status">漫画原画を制作・確認中です。完成した分岐別・男女別のページだけを表示します。</div><div class="manga-hotspots" hidden></div></div><figcaption class="manga-shot"></figcaption></figure>'+
   '<div class="manga-dialogue" aria-live="polite"><div class="manga-speaker"></div><p class="manga-line"></p></div>'+
   '<div class="manga-bottom"><span class="manga-progress" aria-label="漫画のページ位置"></span>'+
   '<div class="manga-controls"><button type="button" class="manga-previous">◀ 前</button>'+
@@ -103,13 +103,13 @@ export function createMangaViewer({container=document.body,storage=globalThis.lo
   currentPagePath=asset;
   const request=++pageRequest,img=$('.manga-art'),missing=$('.manga-missing');
   img.hidden=true;hotspots.hidden=true;missing.hidden=false;
-  missing.textContent=asset?'10コマ原画を確認しています…':
+  missing.textContent=asset?'分岐別の漫画原画を確認しています…':
    '主人公の性別が未確定のため、男女の漫画原画を選択できません。';
   if(!asset)return;
   img.onload=()=>{if(request!==pageRequest)return;img.hidden=false;hotspots.hidden=false;missing.hidden=true;};
   img.onerror=()=>{if(request!==pageRequest)return;img.hidden=true;hotspots.hidden=true;
    missing.hidden=false;missing.textContent='このステージの'+(pagePhase==='pre'?'イベント前':'イベント後')+
-    '10コマ漫画（'+(shot.protagonistGender==='female'?'女性版':'男性版')+'）は原画未登録です。';};
+    '分岐別漫画（'+(shot.protagonistGender==='female'?'女性版':'男性版')+'）は原画未登録です。';};
   img.src=asset;
  }
 
