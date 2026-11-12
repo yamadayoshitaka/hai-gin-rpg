@@ -660,9 +660,10 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
     const taper=Math.pow(Math.max(0,1-t*t),.70);
     const cupid=upper?
       d.y*.0018*(bell(Math.abs(t),.37,.22)-.42*bell(t,0,.23)):0;
-    const cy=lipCenter+(upper?d.y*.006:-d.y*.007)+cupid;
+    const cy=lipCenter+(upper?d.y*.006:-d.y*.007)+cupid+
+     d.y*.006*(settings.mouthAngle/12)*t;
     const vertical=(v-.5)*d.y*(upper?.011:.013)*taper;
-    const x=cx+t*halfWidth,y=cy+vertical;
+    const x=cx+d.x*.004*settings.mouthPositionX+t*halfWidth,y=cy+vertical;
     const fullness=(1-t*t)*Math.sin(Math.PI*v);
     const z=surfaceAt(x,y)+d.z*(.00022+.00065*fullness*taper);
     return new THREE.Vector3(x,y,z);
@@ -923,7 +924,8 @@ export function applyFaceColorMode(face,mode='clay',{contactColor,makeupType=0}=
  ];
  const makeup=makeupChoices[Math.min(9,Math.max(0,Math.round(makeupType)))];
  const palette={
-  ...FACE_V7_PALETTE,lipBase:male?0xc9998b:(makeupType===0?0xd9a699:makeup[0]),
+  ...FACE_V7_PALETTE,lipBase:male?(makeupType===0?0xc9998b:makeup[0]):
+   (makeupType===0?0xd9a699:makeup[0]),
   upperShadow:makeup[1],blush:makeup[2],eyeliner:makeup[3],
   lipstick:makeup[0],
   iris:male?0x50413b:parseInt(safeContactColor(contactColor).slice(1),16)
