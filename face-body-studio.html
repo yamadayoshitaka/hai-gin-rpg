@@ -189,7 +189,7 @@ let view='front',zoomMode='full',wigVisible=true,outfitVisible=true;
 let wigBaseVisible=false,hairOnly=false;
 let contactColor=savedHeroinePreset?.contactColor||palette.iris;
 const counter={wigBuilds:0,glbExports:0};
-const selectedStudio={jobId:'knight',outfitId:'job',actionId:'idle',nativeCommand:null};
+const selectedStudio={jobId:'swordsman',outfitId:'job',actionId:'idle',nativeCommand:null};
 let battleRequest=0;
 const tellBattleStatus=message=>{
  $('realBattleCostumeState').textContent=message;
@@ -209,7 +209,9 @@ const fillSelect=(id,items)=>{
  for(const item of items){const option=document.createElement('option');
   option.value=item.id;option.textContent=item.label;select.append(option);}
 };
-fillSelect('heroJob',HERO_JOBS);
+// The real ten occupations (including farmer) own their own animation map.
+fillSelect('heroJob',REAL_BATTLE_WARDROBE.map(item=>({id:item.heroJob,label:item.name})));
+$('heroJob').value=selectedStudio.jobId;
 fillSelect('heroOutfit',[{id:'job',label:'職業の標準衣装'},...REAL_BATTLE_WARDROBE]);
 fillSelect('heroAction',HERO_ACTIONS);
 function renderNativeActionButtons(){
