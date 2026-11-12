@@ -347,7 +347,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  const rootColor=new THREE.Color(color);
  // Color variation follows the selected palette; previous hard-coded
  // golden tips incorrectly turned brown/black hair into bright blonde.
- const tips=rootColor.clone().multiplyScalar(1.13);
+ const tips=rootColor.clone().multiplyScalar(1.055);
  for(let i=0;i<lockCount;i++){
   const zoneIndex=zoneCap.findIndex(cap=>i<cap);
   const zone=zoneNames[Math.max(0,zoneIndex)];
@@ -447,7 +447,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   const base=i*(segments+1)*4;
   for(let j=0;j<=segments;j++){
    const t=j/segments,shaded=rootColor.clone().lerp(tips,.3+.48*t)
-    .multiplyScalar(.89+.18*fract(i*.3719));
+    .multiplyScalar(.96+.075*fract(i*.3719));
    for(let k=0;k<4;k++){
     const at=(base+j*4+k)*3;
     colors[at]=shaded.r;colors[at+1]=shaded.g;colors[at+2]=shaded.b;
@@ -475,7 +475,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  locks.userData.rootedOnRealScalp=true;
  locks.userData.lockCount=lockCount;
  root.add(locks);
- const half=d.x*.0080;
+ const half=d.x*.0085;
  // The visible mesh retains all 1440+ locks, but only ~320 master locks
  // require full constraint and capsule solving on Android.
  const guideStride=Math.max(1,Math.ceil(lockCount/320));
@@ -534,7 +534,8 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
     // Full thick clumps near scalp and mid-length; point-cut taper only
    // in the last 15% instead of uniformly thinning into wire-like ends.
    const tip=1-.90*Math.pow(t,8);
-   const width=half*tip*(.78+.34*fract(i*.35));
+   const width=half*tip*(.90+.15*fract(i*.35))*
+    (strand.zone==='crown'||strand.zone.startsWith('back')?1.14:1);
     for(let k=0;k<4;k++){
      const at=(i*(segments+1)*4+j*4+k)*3;
      // Two crossed hair ribbons: visible at frontal and side angles.
@@ -601,6 +602,9 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   scalpCrownCoverage:'extended-to-rear-top',
   rearScalpCoverage:'nape-and-occipital-head-triangles',
   groomingSmoothingPasses:3,frizzAmplitudeFactor:.10,
+  crownRootRatio:.20,posteriorRootRatio:.51,
+  undercoatLockCount:undercoatStrips,
+  hairStrandWidthFraction:.0085,
   downwardGuidedLocks:true,realScalpEnvelopeCollision:true,
   longSalonLayers:true,centerBackCoverage:true,uShapedRearCut:true,
   centralRearNeckOcclusionAvoided:true,diagonalFeatheredFringe:true,
@@ -642,6 +646,15 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    .slice(0,12).map(s=>({zone,root:s.root.toArray(),
     firstStep:s.rest[1].toArray(),tip:s.rest.at(-1).toArray(),
     trimY:s.trimY,overFace:s.overFace}))).flat();
+ },getCoverageSamples(){
+  // Sample real crown/rear roots and root-to-tip curvature in QA.
+  return WIG_ZONE_WEIGHTS.flatMap(([zone])=>strands
+   .filter(s=>s.zone===zone).slice(0,32)
+   .map(s=>({zone,root:s.root.toArray(),vertexIndex:s.seedIndex,
+    guideDeviation:s.rest.slice(1,-1).reduce((max,p,j)=>{
+     const mid=s.rest[j].clone().add(s.rest[j+2]).multiplyScalar(.5);
+     return Math.max(max,mid.distanceTo(p));
+    },0)})));
  },getRootSamples(){
   // Return a representative root from every scalp region for QA,
   // including the nape/back/temples that were previously completely bald.
