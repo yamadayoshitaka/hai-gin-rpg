@@ -280,8 +280,12 @@ function scalpShell(geo,box,color,{fullBody=false}={}){
  * @param {THREE.Mesh} head  owned sculpted female head
  * @param {{count?:number,color?:number,externalColliders?:Array}} options
  */
-export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalColliders=[],bodyCollisionResolver=null,lengthScale=1,styleId=DEFAULT_WIG_STYLE_ID,fineFringeMultiplier=1}={}){
+export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalColliders=[],bodyCollisionResolver=null,lengthScale=1,styleId=DEFAULT_WIG_STYLE_ID,fineFringeMultiplier=1,visualFiberMultiplier=1}={}){
  const style=getWigStyle(styleId);
+ // v25: a detachable wig keeps its current physically simulated guides;
+ // micro-fibres are a single static extra mesh in the SAME removable asset.
+ const fiberMultiplier=[1,3,10].includes(Number(visualFiberMultiplier))?
+  Number(visualFiberMultiplier):1;
  if(!head?.isMesh||!head.geometry?.getAttribute('position'))
   throw Error('Real sculpted 3D head required for scalp-rooted wig');
  head.geometry.computeBoundingBox();head.geometry.computeVertexNormals();
@@ -726,10 +730,73 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   s.rest[j].copy(s.points[j]);
  }
  writeGeometry();
+ // Fine fibres sit in the wig asset's own local coordinates, so both
+ // exported GLBs and the 3D editor can remove them without touching skin.
+ // Physical guide strands are NOT simulated 10x (mobile-safe distinction).
+ let microFibreCount=0,microFibreTriangles=0;
+ if(fiberMultiplier>1){
+  const extra=fiberMultiplier-1,coords=[],shades=[],tris=[];
+  const colorSeed=rootColor.clone();
+  for(let i=0;i<strands.length;i++){
+   const strand=strands[i],first=strand.points[0];
+   const fine= strand.fringe?.48:
+    strand.zone.startsWith('temple')?.75:1.05;
+   const radius=(half*fine)*1.5;
+   for(let lane=0;lane<extra;lane++){
+    const laneAt=(lane+.5)/extra-.5;
+    const base=coords.length/3;
+    for(let j=0;j<=segments;j++){
+     const p=strand.points[j],prev=strand.points[Math.max(0,j-1)],
+      next=strand.points[Math.min(segments,j+1)];
+     const tangent=next.clone().sub(prev).normalize();
+     const normal=new THREE.Vector3(p.x-center.x,0,p.z-center.z).normalize();
+     let across=new THREE.Vector3().crossVectors(tangent,normal);
+     if(across.lengthSq()<1e-9)across.set(1,0,0);
+     across.normalize();
+     const t=j/segments;
+     const rootFade=Math.min(1,t*7);
+     const shell=Math.sin((lane+1)*2.39996323+i*.277)*d.x*.0012*rootFade;
+     const offset=radius*(2*laneAt)*rootFade;
+     const width=Math.max(d.x*.00012,
+      half*.12/fiberMultiplier)*(1-.72*Math.pow(t,8));
+     for(const sign of [-1,1]){
+      const q=p.clone().addScaledVector(across,offset+sign*width)
+       .addScaledVector(normal,shell);
+      coords.push(q.x,q.y,q.z);
+      const c=(.86+.16*((lane+i)%9)/9)*(1-.12*t);
+      shades.push(colorSeed.r*c,colorSeed.g*c,colorSeed.b*c);
+     }
+    }
+    for(let j=0;j<segments;j++){
+     const a=base+j*2,b=a+2;
+     tris.push(a,a+1,b,b,a+1,b+1);
+    }
+    microFibreCount++;
+   }
+  }
+  const fineGeo=new THREE.BufferGeometry();
+  fineGeo.setAttribute('position',new THREE.Float32BufferAttribute(coords,3));
+  fineGeo.setAttribute('color',new THREE.Float32BufferAttribute(shades,3));
+  fineGeo.setIndex(tris);
+  fineGeo.computeVertexNormals();fineGeo.computeBoundingSphere();
+  const fineMat=new THREE.MeshStandardMaterial({
+   color:0xffffff,vertexColors:true,roughness:.73,metalness:0,
+   side:THREE.DoubleSide
+  });
+  const fineMesh=new THREE.Mesh(fineGeo,fineMat);
+  fineMesh.name='DETACHABLE_WIG_FINE_FIBRES';
+  fineMesh.userData.staticPreviewDetail=true;
+  fineMesh.userData.fiberMultiplier=fiberMultiplier;
+  root.add(fineMesh);
+  microFibreTriangles=tris.length/3;
+ }
  root.userData.wigReport={
   style:'real-scalp-shell-growing-then-trimmed',rooted:true,rootCount:lockCount,
   hairstyleId:style.id,styleLabel:style.label,
   wigAssetType:'independent-wig',centerPart:style.part==='center',
+  visualFiberMultiplier:fiberMultiplier,visualFiberCount:lockCount*fiberMultiplier,
+  staticMicroFibreCount:microFibreCount,microFibreTriangles,
+  microFibresAnimated:false,
   crownWhorl:whorl.toArray(),gravityMps2:style.gravityMps2,
   gravityRestShape:true,exactFaceSurfaceCollision:true,
   faceClearance:style.faceClearance,
