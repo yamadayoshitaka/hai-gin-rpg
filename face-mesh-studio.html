@@ -2,7 +2,7 @@
 <html lang="ja"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#14263a">
-<title>灰銀のレゾナンス | 顔v13・鼻顎の保存標準と高密度の女性髪</title>
+<title>灰銀のレゾナンス | 顔v14・保存顔がスライダー中央</title>
 <style>
 :root{font:15px/1.55 system-ui,-apple-system,"Noto Sans JP",sans-serif;color-scheme:dark}
 *{box-sizing:border-box}
@@ -62,7 +62,7 @@ button{padding:9px 11px}
 </style></head>
 <body>
 <header>
-<h1>男女・顔と立体パーツ v13</h1>
+<h1>男女・顔と立体パーツ v14</h1>
 <p>ライブラリに保存された実GLBの顔設定（顎先5倍・鼻穴隠し2・鼻筋2.5）を男女の実メッシュ標準に固定。口紅とチークを実メッシュの頂点に着色。上下アイライン・眉・眼球を調整し、女性用の高密度ロング（後頭部・両側頭部・襟足まで髪束生成・顔と肩への衝突対応）を追加。保存値とズームを維持します。</p>
 </header>
 <main><section class="panel">
@@ -85,20 +85,21 @@ button{padding:9px 11px}
 </div></div>
 <details id="faceAdjustments" open>
 <summary>女性顔の3Dパーツ調整</summary>
+<p class="slider-midpoint-note">保存した顔が中央（50%）です。右に動かすと保存時より強く調整できます。</p>
 <div class="faceTabs" id="faceGroupTabs" aria-label="女性の調整カテゴリ"></div>
 <div class="adjustGrid">
 <label for="irisDiameter">黒目の拡大倍率 <output id="irisDiameterValue">1×</output>
-<input type="range" id="irisDiameter" min="1" max="2" step="0.1" value="1"></label>
+<input type="range" id="irisDiameter" min="0" max="2" step="0.1" value="1"></label>
 <label for="eyeSize">目全体の大きさ <output id="eyeSizeValue">1×</output>
-<input type="range" id="eyeSize" min="0.75" max="1.4" step="0.05" value="1"></label>
+<input type="range" id="eyeSize" min="0.5" max="1.5" step="0.05" value="1"></label>
 <label for="jawSharpness">顎先のシャープさ <output id="jawSharpnessValue">5×</output>
-<input type="range" id="jawSharpness" min="0.7" max="5" step="0.1" value="5"></label>
+<input type="range" id="jawSharpness" min="0" max="10" step="0.1" value="5"></label>
 <label for="noseTipLift">鼻頭の持ち上げ <output id="noseTipLiftValue">0</output>
-<input type="range" id="noseTipLift" min="0" max="2" step="0.1" value="0"></label>
+<input type="range" id="noseTipLift" min="-2" max="2" step="0.1" value="0"></label>
 <label for="nostrilCover">鼻の穴を隠す量 <output id="nostrilCoverValue">2</output>
-<input type="range" id="nostrilCover" min="0" max="2" step="0.1" value="2"></label>
+<input type="range" id="nostrilCover" min="0" max="4" step="0.1" value="2"></label>
 <label for="noseBridgeSharpness">鼻筋の鋭さ <output id="noseBridgeSharpnessValue">2.5</output>
-<input type="range" id="noseBridgeSharpness" min="0" max="2.5" step="0.1" value="2.5"></label>
+<input type="range" id="noseBridgeSharpness" min="0" max="5" step="0.1" value="2.5"></label>
 <label for="eyeAngle">目元の角度（眉・まつ毛・下まぶた連動） <output id="eyeAngleValue">0°</output>
 <input type="range" id="eyeAngle" min="-20" max="20" step="1" value="0"></label>
 <label for="lipstickX">口紅の横位置 <output id="lipstickXValue">0</output>
@@ -106,9 +107,9 @@ button{padding:9px 11px}
 <label for="lipstickY">口紅の縦位置 <output id="lipstickYValue">0</output>
 <input type="range" id="lipstickY" min="-0.12" max="0.12" step="0.005" value="0"></label>
 <label for="lipstickWidth">口紅の横幅 <output id="lipstickWidthValue">1×</output>
-<input type="range" id="lipstickWidth" min="0.5" max="1.8" step="0.05" value="1"></label>
+<input type="range" id="lipstickWidth" min="0.2" max="1.8" step="0.05" value="1"></label>
 <label for="lipstickHeight">口紅の縦幅 <output id="lipstickHeightValue">1×</output>
-<input type="range" id="lipstickHeight" min="0.5" max="1.8" step="0.05" value="1"></label>
+<input type="range" id="lipstickHeight" min="0.2" max="1.8" step="0.05" value="1"></label>
 <label for="contactPreset">カラコンの色<select id="contactPreset">
 <option value="brown" selected>ダークブラウン（標準）</option>
 <option value="blue">ブルー</option><option value="green">グリーン</option>
@@ -127,20 +128,21 @@ button{padding:9px 11px}
 </div><div class="controls"><button id="resetPreset" disabled>ライブラリ保存の標準値に戻す</button></div></details>
 <details id="maleAdjustments" hidden open>
 <summary>男性顔の3D調整・ヒゲ</summary>
+<p class="slider-midpoint-note">男女共通の保存顔が中央（50%）。右側で鼻・顎をさらに強く調整できます。</p>
 <div class="faceTabs" id="maleGroupTabs" aria-label="男性の調整カテゴリ"></div>
 <div class="adjustGrid">
 <label for="maleJawSharpness">顎先のシャープさ <output id="maleJawSharpnessValue">5×</output>
-<input type="range" id="maleJawSharpness" min="0.7" max="5" step="0.05" value="5"></label>
+<input type="range" id="maleJawSharpness" min="0" max="10" step="0.05" value="5"></label>
 <label for="maleEyeSize">目全体の大きさ <output id="maleEyeSizeValue">1×</output>
-<input type="range" id="maleEyeSize" min="0.75" max="1.4" step="0.05" value="1"></label>
+<input type="range" id="maleEyeSize" min="0.5" max="1.5" step="0.05" value="1"></label>
 <label for="maleIrisDiameter">黒目の大きさ <output id="maleIrisDiameterValue">1×</output>
-<input type="range" id="maleIrisDiameter" min="1" max="2" step="0.1" value="1"></label>
+<input type="range" id="maleIrisDiameter" min="0" max="2" step="0.1" value="1"></label>
 <label for="maleNoseTipLift">鼻頭の持ち上げ <output id="maleNoseTipLiftValue">0</output>
-<input type="range" id="maleNoseTipLift" min="0" max="2" step="0.1" value="0"></label>
+<input type="range" id="maleNoseTipLift" min="-2" max="2" step="0.1" value="0"></label>
 <label for="maleNostrilCover">鼻の穴を隠す量 <output id="maleNostrilCoverValue">2</output>
-<input type="range" id="maleNostrilCover" min="0" max="2" step="0.1" value="2"></label>
+<input type="range" id="maleNostrilCover" min="0" max="4" step="0.1" value="2"></label>
 <label for="maleNoseBridgeSharpness">鼻筋の鋭さ <output id="maleNoseBridgeSharpnessValue">2.5</output>
-<input type="range" id="maleNoseBridgeSharpness" min="0" max="2.5" step="0.1" value="2.5"></label>
+<input type="range" id="maleNoseBridgeSharpness" min="0" max="5" step="0.1" value="2.5"></label>
 <label for="maleEyeAngle">目・眉の角度 <output id="maleEyeAngleValue">0°</output>
 <input type="range" id="maleEyeAngle" min="-20" max="20" step="1" value="0"></label>
 <label for="maleBeardDensity">ヒゲの濃さ <output id="maleBeardDensityValue">0.35</output>
@@ -165,8 +167,26 @@ import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {makeIndependentFaceMaster,FACE_MASTER_SPEC} from './src/independent-face-masters.js';
 import {updateFaceFeatureAngles,applyFaceColorMode} from './src/face-feature-meshes.js';
 import {createScalpAnchoredWig} from './src/face-scalp-wig.js';
-import {FEMALE_V7_DEFAULTS,MALE_REFERENCE_DEFAULT,CONTACT_COLORS,safeContactColor} from './src/face-v7-controls.js';
+import {FEMALE_V7_DEFAULTS,MALE_REFERENCE_DEFAULT,FACE_SLIDER_RANGES,CONTACT_COLORS,safeContactColor} from './src/face-v7-controls.js';
 const $=id=>document.getElementById(id);
+// Bind slider DOM bounds to the same canonical interval used by 3D mesh
+// normalization. The saved GLB must be the midpoint, not the right limit.
+function applyCenteredFaceRanges(){
+ for(const [key,[min,max]] of Object.entries(FACE_SLIDER_RANGES)){
+  const saved=FEMALE_V7_DEFAULTS[key];
+  if(Math.abs((min+max)/2-saved)>1e-8)
+   throw Error('Library GLB preset must be the slider midpoint: '+key);
+  for(const id of [key,'male'+key[0].toUpperCase()+key.slice(1)]){
+   const control=$(id);
+   if(!control)continue; // male has no lipstick controls
+   control.min=String(min);control.max=String(max);
+   control.value=String(saved);
+   control.dataset.savedValue=String(saved);
+   control.dataset.savedPosition='0.5';
+  }
+ }
+}
+applyCenteredFaceRanges();
 const canvas=$('faceCanvas');
 const renderer=new THREE.WebGLRenderer({canvas,antialias:true,powerPreference:'high-performance'});
 renderer.outputColorSpace=THREE.SRGBColorSpace;
