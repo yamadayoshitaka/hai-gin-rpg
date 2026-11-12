@@ -78,7 +78,7 @@ import {makeIndependentFaceMaster} from './src/independent-face-masters.js';
 import {FEMALE_V7_DEFAULTS,FACE_EYE_SPACING_DEFAULT} from './src/face-v7-controls.js';
 import {applyFaceColorMode} from './src/face-feature-meshes.js';
 import {createScalpAnchoredWig} from './src/face-scalp-wig.js?v=23';
-import {attachIndependentHeadToBody,removeHeadBustBelowNeck} from './src/face-body-assembly.js';
+import {attachIndependentHeadToBody,removeHeadBustBelowNeck,createSealedNeckBridge} from './src/face-body-assembly.js';
 import {listWigStyles,DEFAULT_WIG_STYLE_ID} from './src/face-wig-styles.js';
 import {FEMALE_COMMANDER_ART_PALETTE,CHAPTER_ONE_ART_BY_KEY} from './src/chapter-one-character-art-references.js';
 
@@ -127,6 +127,8 @@ function metrics(){
   attachedBody:!!bodyAttachment,donorHeadRemoved:
    bodyAttachment?.report?.donorHeadTrianglesRemoved||0,
   headBustRemoved:neckCrop?.removedTriangles||0,
+  sealedNeck:!!bodyAttachment?.report?.neckSealed,
+  neckBridgeTriangles:bodyAttachment?.report?.neckBridgeTriangles||0,
   bodySource:bodyAttachment?.report?.bodySource,
   bodyCollision:bodyAttachment?.bodyCollider.getReport()||null,
   wig:wig?.getReport()||null,
@@ -190,7 +192,11 @@ function rebuildFaceOnBody(){
  if(wig){wig.root.removeFromParent();next.face.add(wig.root);}
  const height=next.face.geometry.boundingBox.getSize(new THREE.Vector3()).y;
  const cropped=removeHeadBustBelowNeck(next.face,
-  bodyAttachment.report.neckSeamY-height*.030);
+  bodyAttachment.report.neckSeamY+height*.075);
+ createSealedNeckBridge(next.face,bodyAttachment,{
+  headCutY:bodyAttachment.report.neckSeamY+height*.075,
+  bodyCutY:bodyAttachment.report.neckSeamY
+ });
  scene.add(next.root);scene.remove(previous.root);
  previous.root.traverse(obj=>{
   if(!obj.isMesh)return;
@@ -298,7 +304,11 @@ frame();
   scene.add(model.root);rebuildWig();
   const originalHeight=model.face.geometry.boundingBox.getSize(new THREE.Vector3()).y;
   neckCrop=removeHeadBustBelowNeck(model.face,
-   bodyAttachment.report.neckSeamY-originalHeight*.030);
+   bodyAttachment.report.neckSeamY+originalHeight*.075);
+  createSealedNeckBridge(model.face,bodyAttachment,{
+   headCutY:bodyAttachment.report.neckSeamY+originalHeight*.075,
+   bodyCutY:bodyAttachment.report.neckSeamY
+  });
   ready=true;
   for(const id of ['full','portrait','front','side','back','crown','toggleWig','toggleOutfit','style','saveGlb','eyeSpacing','lipstickWidth','resetFaceControls'])
    $(id).disabled=false;
