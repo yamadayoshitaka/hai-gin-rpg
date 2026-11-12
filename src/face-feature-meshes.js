@@ -84,6 +84,48 @@ function stitchLinerCorners(upper,lower,faceWidth,depth){
  g.setIndex(index);g.computeVertexNormals();g.computeBoundingSphere();
  upper.userData.eyelinerCornersClosed=true;
 }
+/**
+ * Fast cosmetic-only redraw on ORIGINAL sculpted face triangles.
+ * No raycasts, no GLB clone, no 1440-strand wig rebuild required for a
+ * lipstick slider drag. Both cheek and lip masks are local to the head.
+ */
+export function updateRealFacePigment(face,controls={},mode='color'){
+ if(!face?.isMesh)throw Error('Sculpted head required for cosmetics');
+ const settings=normalizeFemaleFaceControls(controls);
+ const geometry=face.geometry;
+ geometry.computeBoundingBox();
+ const box=geometry.boundingBox,d=box.getSize(new THREE.Vector3());
+ const cx=(box.min.x+box.max.x)*.5;
+ const lipCenter=face.userData.actualMouthCreaseY??box.min.y+d.y*.509;
+ const skin=new THREE.Color(FACE_V7_PALETTE.skin);
+ const blush=new THREE.Color(FACE_V7_PALETTE.blush);
+ const lipstick=new THREE.Color(FACE_V7_PALETTE.lipstick);
+ const positions=geometry.getAttribute('position'),colors=[];
+ let actualLipTintVertices=0,actualCheekTintVertices=0;
+ for(let i=0;i<positions.count;i++){
+  const px=positions.getX(i),py=positions.getY(i),pz=positions.getZ(i);
+  const nx=Math.abs((px-cx)/d.x),ny=(py-box.min.y)/d.y;
+  const front=smoothstep(((pz-box.min.z)/d.z-.52)/.22);
+  const cheek=.78*bell(nx,.247,.10)*bell(ny,.551,.063)*front;
+  const mouthX=(px-cx)/Math.max(.00001,d.x*.047*settings.lipstickWidth);
+  const mouthY=(py-lipCenter-d.y*settings.lipstickY*.08)/
+   Math.max(.00001,d.y*.018*settings.lipstickHeight);
+  const lipX=smoothstep((1-Math.abs(mouthX-settings.lipstickX/.12*.15))/.20);
+  const lipY=smoothstep((1-Math.abs(mouthY))/.25);
+  const lipMask=lipX*lipY*front;
+  if(cheek>.12)actualCheekTintVertices++;
+  if(lipMask>.12)actualLipTintVertices++;
+  const rgb=pigmentFactor(skin,blush,cheek)
+   .multiply(pigmentFactor(skin,lipstick,.90*lipMask));
+  colors.push(rgb.x,rgb.y,rgb.z);
+ }
+ setVertexMakeup(face,colors);
+ colorizedMakeup(face,mode==='color');
+ face.userData.mouthPigmentSource='sculpted-head-vertices';
+ face.userData.lipTintVertexCount=actualLipTintVertices;
+ face.userData.cheekTintVertexCount=actualCheekTintVertices;
+ return {lip:actualLipTintVertices,cheek:actualCheekTintVertices};
+}
 export function createAnatomicalFaceParts(face,{gender='female',controls={}}={}){
  if(!face?.isMesh||!['male','female'].includes(gender))
   throw Error('Sculpted face mesh and gender required for 3D facial parts');
@@ -434,34 +476,11 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
  }
  // Both cheek and lip pigments live on OWNED real head mesh vertices.
  // No separate lipstick sticker can drift over the skin/chin.
- let actualLipTintVertices=0,actualCheekTintVertices=0;
- if(female){
-  const skin=new THREE.Color(FACE_V7_PALETTE.skin);
-  const blush=new THREE.Color(FACE_V7_PALETTE.blush);
-  const lipstick=new THREE.Color(FACE_V7_PALETTE.lipstick);
-  const colors=[],positions=face.geometry.getAttribute('position');
-  for(let i=0;i<positions.count;i++){
-   const px=positions.getX(i),py=positions.getY(i),pz=positions.getZ(i);
-   const nx=Math.abs((px-cx)/d.x),ny=(py-box.min.y)/d.y;
-   const front=smoothstep(((pz-box.min.z)/d.z-.52)/.22);
-   const cheek=.78*bell(nx,.247,.10)*bell(ny,.551,.063)*front;
-   const mouthX=(px-cx)/Math.max(.00001,d.x*.047*settings.lipstickWidth);
-   const mouthY=(py-lipCenter-d.y*settings.lipstickY*.08)/
-    Math.max(.00001,d.y*.018*settings.lipstickHeight);
-   const lipX=smoothstep((1-Math.abs(mouthX-settings.lipstickX/.12*.15))/.20);
-   const lipY=smoothstep((1-Math.abs(mouthY))/.25);
-   const lipMask=lipX*lipY*front;
-   if(cheek>.12)actualCheekTintVertices++;
-   if(lipMask>.12)actualLipTintVertices++;
-   const rgb=pigmentFactor(skin,blush,cheek)
-    .multiply(pigmentFactor(skin,lipstick,.90*lipMask));
-   colors.push(rgb.x,rgb.y,rgb.z);
-  }
-  setVertexMakeup(face,colors);
-  face.userData.mouthPigmentSource='sculpted-head-vertices';
-  face.userData.lipTintVertexCount=actualLipTintVertices;
-  face.userData.cheekTintVertexCount=actualCheekTintVertices;
- }
+ face.userData.actualMouthCreaseY=lipCenter;
+ const pigmentCount=female?
+  updateRealFacePigment(face,settings):{lip:0,cheek:0};
+ const actualLipTintVertices=pigmentCount.lip;
+ const actualCheekTintVertices=pigmentCount.cheek;
  // Two subtle natural vermilion volumes still follow the real face
  // surface, but lipstick is painted ONLY on the original head triangles.
  const halfWidth=d.x*.044;
