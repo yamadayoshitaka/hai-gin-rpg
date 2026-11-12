@@ -2962,6 +2962,9 @@ function defeatActor(a){if(a.defeated)return;battleAudio.cue('dead',a);a.defeate
  // Keep gravity active until the corpse reaches terrain, even for airborne creatures.
  if(a.character)requestMotion(a,'dead');
  if(selected===a)selected=null;
+ if(a.isPlayerHero&&storyRequest&&!finished){
+  completeBattle(false,{title:'GAME OVER',detail:'主人公が戦死しました。軍師の生存が必須です。'});
+ }
 }
 function placeFormation(team,idx,job){
  // Distribute each army across three bridges to keep 100 actors from queuing
@@ -3050,7 +3053,13 @@ for(let team=0;team<2;team++)for(let i=0;i<TEAM_SIZE;i++){
  if(TOWN_MODE&&root.userData.ring)root.userData.ring.visible=false;
  root.position.set(pos.x,terrainY(pos.x,pos.z),pos.z);root.rotation.y=team===0?Math.PI/2:-Math.PI/2;scene.add(root);
  const actor={id:team*TEAM_SIZE+i,team,job,monsterSpec,jobId:combatJobId(job.name),rarity:storyUnit?.rarity||(i%13===0?'UR':i%3===0?'R':'N'),root,cell,nextCell:null,defeated:false,hp:job.hp,maxHp:job.hp,mp:COMBAT_RULES.maxMp,maxMp:COMBAT_RULES.maxMp,speed:job.speed,jumpY:job.jumpY,jumping:false,attackTimer:Math.random()*2,thinkTimer:Math.random()*.4,order:null,targetId:null,home:pos.clone(),velocity:new THREE.Vector3(),walkPhase:0,
-  squadId:storyUnit?.squadId??Math.floor(i/Math.max(10,Math.ceil(TEAM_SIZE/5))),commanderId:storyUnit?.commanderId??'provisional'};
+  squadId:storyUnit?.squadId??Math.floor(i/Math.max(10,Math.ceil(TEAM_SIZE/5))),sourceSquadId:storyUnit?.sourceSquadId??storyUnit?.squadId,
+  commanderId:storyUnit?.commanderId??'provisional',isStrategist:Boolean(storyUnit?.isStrategist),isPlayerHero:Boolean(storyUnit?.isPlayerHero)};
+ if(storyUnit?.isStrategist){
+  actor.displayName=storyRequest?.commanders?.find(c=>String(c.id)===String(actor.commanderId))?.name||'軍師';
+  actor.job={...job,name:'軍師',role:'support',damage:0};
+  actor.jobId='strategist';
+ }
  if(TOWN_MODE){
   actor.townRole=townNpcSites[i][3];
   actor.displayName=i===0?battleParams.get('commanderName')||'軍師':townNpcSites[i][3];
@@ -3700,9 +3709,15 @@ function desiredOrder(a){return a.team===0?(a.order||'balanced'):'balanced'}
 function recordStoryBattleOutcome(victory){
  if(!storyRequest)return;
  const casualties=new Map();
- for(const a of actors){if(a.team===0&&a.squadId!=null&&a.hp<=0)casualties.set(a.squadId,(casualties.get(a.squadId)||0)+1);}
+ for(const a of actors){
+  if(a.team===0&&a.squadId!=null&&a.hp<=0){
+   const source=a.sourceSquadId??a.squadId;
+   casualties.set(source,(casualties.get(source)||0)+1);
+  }
+ }
  const monstersRemaining=storyRequest.enemyMode==='monsters'?actors.filter(a=>a.team===1&&a.hp>0).length:null;
- const result={version:1,battleId:storyRequest.battleId,territoryId:storyRequest.territoryId,victory,
+ const playerCommanderDead=actors.some(a=>a.team===0&&a.isPlayerHero&&(a.hp<=0||a.defeated));
+ const result={version:1,battleId:storyRequest.battleId,territoryId:storyRequest.territoryId,victory:Boolean(victory&&!playerCommanderDead),playerCommanderDead,
   ...(storyRequest.origin==='game-core'?{stageId:storyRequest.stageId,monstersRemaining,objectiveCompleted:Boolean(victory)}:{}),
   casualties:[...casualties].map(([squadId,count])=>({squadId,count})),
   loot:victory?battleTreasureReceipt():[]};
