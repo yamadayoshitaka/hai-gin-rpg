@@ -7,7 +7,7 @@ import {makeIndependentFaceMaster,FACE_MASTER_SPEC,femaleInnerFeatureDelta,femal
 import {updateFaceFeatureAngles,applyFaceColorMode}
  from '../src/face-feature-meshes.js';
 import {createScalpAnchoredWig} from '../src/face-scalp-wig.js';
-import {normalizeFemaleFaceControls,FEMALE_V7_DEFAULTS,FACE_V7_PALETTE,CONTACT_COLORS,safeContactColor,LIBRARY_FACE_PRESET,MALE_REFERENCE_DEFAULT}
+import {normalizeFemaleFaceControls,FEMALE_V7_DEFAULTS,FACE_V7_PALETTE,CONTACT_COLORS,safeContactColor,LIBRARY_FACE_PRESET,MALE_REFERENCE_DEFAULT,FACE_SLIDER_RANGES}
  from '../src/face-v7-controls.js';
 
 function fixture(){
@@ -257,7 +257,7 @@ test('color-only mode and brow/lash tilt do not change vertices or source donor'
  assert.equal(applyFaceColorMode(built.face,'clay'),'clay');
  assert.deepEqual(built.face.geometry.getAttribute('position').array,vertices);
  assert.equal(f.face.geometry,f.original,'Original donor must be unchanged');
- assert.equal(normalizeFemaleFaceControls({jawSharpness:999}).jawSharpness,5);
+ assert.equal(normalizeFemaleFaceControls({jawSharpness:999}).jawSharpness,10);
  assert.equal(FEMALE_V7_DEFAULTS.irisDiameter,1);
  assert.equal(FEMALE_V7_DEFAULTS.jawSharpness,5);
  assert.equal(FEMALE_V7_DEFAULTS.noseTipLift,0);
@@ -597,4 +597,63 @@ test('v13 full scalp coverage allocates real roots to back, nape and both temple
    'Hair gradient must stay in brown chroma');
  }
  w.dispose();
+});
+
+test('v14 saved Library GLB equals exact midpoint of every female/male face slider',()=>{
+ const expected={
+  jawSharpness:[0,10,5],
+  nostrilCover:[0,4,2],
+  noseBridgeSharpness:[0,5,2.5],
+  noseTipLift:[-2,2,0],
+  eyeSize:[.5,1.5,1],
+  irisDiameter:[0,2,1],
+  lipstickWidth:[.2,1.8,1],
+  lipstickHeight:[.2,1.8,1]
+ };
+ for(const [key,[min,max,original]] of Object.entries(expected)){
+  assert.deepEqual(FACE_SLIDER_RANGES[key],[min,max],key+' range');
+  assert.equal(FEMALE_V7_DEFAULTS[key],original,key+' original saved value');
+ }
+ for(const [key,[low,high]] of Object.entries(FACE_SLIDER_RANGES)){
+  const midpoint=(low+high)/2;
+  assert.ok(Math.abs(midpoint-FEMALE_V7_DEFAULTS[key])<1e-9,
+   'Saved GLB not centered: '+key);
+  assert.equal(MALE_REFERENCE_DEFAULT[key],FEMALE_V7_DEFAULTS[key],
+   'Male must share saved female face baseline: '+key);
+  assert.equal(normalizeFemaleFaceControls({[key]:low})[key],low);
+  assert.equal(normalizeFemaleFaceControls({[key]:high})[key],high);
+ }
+ assert.deepEqual(normalizeFemaleFaceControls({}),FEMALE_V7_DEFAULTS);
+});
+test('v14 sculpt stronger than saved standard remains functional on real face vertices',()=>{
+ const src=fixture().source;
+ const base=makeIndependentFaceMaster(src,'female');
+ const stronger=makeIndependentFaceMaster(src,'female',{femaleControls:{
+  jawSharpness:9,nostrilCover:3.6,noseBridgeSharpness:4.5
+ }});
+ assert.equal(stronger.report.femaleControls.jawSharpness,9);
+ assert.equal(stronger.report.femaleControls.nostrilCover,3.6);
+ assert.equal(stronger.report.femaleControls.noseBridgeSharpness,4.5);
+ const p=base.face.geometry.getAttribute('position');
+ const q=stronger.face.geometry.getAttribute('position');
+ let moved=0;let maxDelta=0;
+ const bounds=base.face.geometry.boundingBox;
+ const dy=bounds.max.y-bounds.min.y;
+ for(let i=0;i<p.count;i++){
+  const delta=Math.abs(p.getX(i)-q.getX(i))+
+   Math.abs(p.getY(i)-q.getY(i))+
+   Math.abs(p.getZ(i)-q.getZ(i));
+  if(delta>1e-7)moved++;
+  if(delta>maxDelta)maxDelta=delta;
+  const yn=(p.getY(i)-bounds.min.y)/dy;
+  if(yn<.19)assert.ok(delta<1e-7,'Neck must not deform above saved chin value');
+ }
+ assert.ok(moved>40,'Upper half of slider must sculpt real geometry');
+ assert.ok(maxDelta>.00001);
+ const male=makeIndependentFaceMaster(src,'male',{maleControls:{
+  jawSharpness:8,nostrilCover:3,noseBridgeSharpness:4
+ }});
+ assert.equal(male.report.maleControls.jawSharpness,8);
+ assert.equal(male.report.maleControls.nostrilCover,3);
+ assert.equal(male.report.maleControls.noseBridgeSharpness,4);
 });

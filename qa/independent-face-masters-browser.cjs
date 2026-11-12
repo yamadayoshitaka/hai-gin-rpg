@@ -34,6 +34,38 @@ async function expectVisibleLibraryPreset(page,context,contact='brown'){
  if(actual.contact!==contact||actual.color!==colors[contact])
   throw Error('Contact lens display mismatch ('+context+'): '+JSON.stringify(actual));
 }
+async function expectCenteredFaceSliders(page,gender){
+ const snapshot=await page.evaluate(sex=>{
+  const keys=sex==='female'?
+   ['irisDiameter','eyeSize','jawSharpness','noseTipLift','nostrilCover',
+    'noseBridgeSharpness','eyeAngle','lipstickX','lipstickY',
+    'lipstickWidth','lipstickHeight']:
+   ['jawSharpness','eyeSize','irisDiameter','noseTipLift',
+    'nostrilCover','noseBridgeSharpness','eyeAngle'];
+  const model=window.__faceMasterQA();
+  const selected=sex==='female'?model.femaleControls:model.maleControls;
+  return keys.map(key=>{
+   const id=sex==='male'?'male'+key[0].toUpperCase()+key.slice(1):key;
+   const el=document.getElementById(id);
+   return {key,value:+el.value,min:+el.min,max:+el.max,
+    saved:+el.dataset.savedValue,model:selected[key],
+    center:+el.dataset.savedPosition};
+  });
+ },gender);
+ for(const p of snapshot){
+  const mid=(p.min+p.max)/2;
+  if(Math.abs(mid-p.value)>1e-8||
+     Math.abs(p.value-p.saved)>1e-8||
+     Math.abs(p.model-p.saved)>1e-8||
+     p.center!==.5)
+   throw Error('Saved GLB is not centered at 50%: '+gender+' '+JSON.stringify(p));
+ }
+ const exact=Object.fromEntries(snapshot.map(x=>[x.key,[x.min,x.max,x.value]]));
+ if(JSON.stringify(exact.jawSharpness)!==JSON.stringify([0,10,5])||
+    JSON.stringify(exact.nostrilCover)!==JSON.stringify([0,4,2])||
+    JSON.stringify(exact.noseBridgeSharpness)!==JSON.stringify([0,5,2.5]))
+  throw Error('Face center/upper sculpt ranges differ from request: '+JSON.stringify(exact));
+}
 (async()=>{
  const browser=await chromium.launch({headless:true,args:[
   '--use-gl=angle','--use-angle=swiftshader']});
@@ -48,6 +80,7 @@ async function expectVisibleLibraryPreset(page,context,contact='brown'){
   await page.waitForFunction(()=>window.__faceMasterQA?.().loaded===true,
    null,{timeout:100000,polling:250});
   await expectVisibleLibraryPreset(page,'fresh-open');
+  await expectCenteredFaceSliders(page,'female');
   // Simulate a mobile browser restoring an outdated range thumb/label
   // without dispatching input; pageshow must re-align UI with model state.
   await page.evaluate(()=>{
@@ -56,6 +89,7 @@ async function expectVisibleLibraryPreset(page,context,contact='brown'){
    window.dispatchEvent(new Event('pageshow'));
   });
   await expectVisibleLibraryPreset(page,'browser-form-restoration');
+  await expectCenteredFaceSliders(page,'female');
   const original=await page.evaluate(()=>window.__faceMasterQA());
   if(!original.savedNoseJawApplied||
      original.savedNoseJawDefaults?.jawSharpness!==5||
@@ -328,6 +362,7 @@ async function expectVisibleLibraryPreset(page,context,contact='brown'){
   // settings, not merely display the old hard-coded slider defaults.
   await page.locator('#male').click();
   const neutralMale=await page.evaluate(()=>window.__faceMasterQA());
+  await expectCenteredFaceSliders(page,'male');
   for(const [key,value] of Object.entries({
    jawSharpness:5,nostrilCover:2,irisDiameter:1,eyeSize:1,
    noseTipLift:0,noseBridgeSharpness:2.5,eyeAngle:0
@@ -378,6 +413,7 @@ async function expectVisibleLibraryPreset(page,context,contact='brown'){
   }
   await page.locator('#resetMalePreset').click();
   const maleQA=await page.evaluate(()=>window.__faceMasterQA());
+  await expectCenteredFaceSliders(page,'male');
   if(maleQA.maleWithoutMakeup!==true||
      maleQA.male.detailedParts.lipstickMeshCount!==0||
      maleQA.male.detailedParts.underEyeShadowMeshCount!==0||
@@ -387,6 +423,29 @@ async function expectVisibleLibraryPreset(page,context,contact='brown'){
       maleQA.female.detailedParts.eyeScale)>1e-8)
    throw Error('Male must match the saved female eye scale without any cosmetics');
   await canvas.screenshot({path:path.join(out,'male-v11-library-no-makeup.png')});
+  // The NEW right half of the female and male nose/chin sliders must
+  // rebuild real geometry, then reset to exactly the saved center.
+  await page.locator('#maleJawSharpness').evaluate(el=>{
+   el.value='9';el.dispatchEvent(new Event('input',{bubbles:true}));
+   el.dispatchEvent(new Event('change',{bubbles:true}));
+  });
+  await page.locator('#maleNostrilCover').evaluate(el=>{
+   el.value='3.6';el.dispatchEvent(new Event('input',{bubbles:true}));
+   el.dispatchEvent(new Event('change',{bubbles:true}));
+  });
+  await page.locator('#maleNoseBridgeSharpness').evaluate(el=>{
+   el.value='4.5';el.dispatchEvent(new Event('input',{bubbles:true}));
+   el.dispatchEvent(new Event('change',{bubbles:true}));
+  });
+  const high=await page.evaluate(()=>window.__faceMasterQA());
+  if(high.maleControls.jawSharpness!==9||
+     high.maleControls.nostrilCover!==3.6||
+     high.maleControls.noseBridgeSharpness!==4.5||
+     high.male.sourceGeometryIndependent!==true)
+   throw Error('Extended right half did not modify independent male mesh');
+  await canvas.screenshot({path:path.join(out,'male-v14-beyond-saved-standard.png')});
+  await page.locator('#resetMalePreset').click();
+  await expectCenteredFaceSliders(page,'male');
   if(errors.length)throw Error('Browser errors: '+JSON.stringify(errors));
   console.log('INDEPENDENT_MALE_FEMALE_CLAY_FACES_SUCCESS '+
    JSON.stringify({femaleVertices:original.female.sourceVertices,

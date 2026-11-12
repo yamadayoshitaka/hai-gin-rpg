@@ -45,20 +45,26 @@ export const FACE_V7_PALETTE=Object.freeze({
  blush:0xcf8383,
  beard:0x56443a
 });
-const ranges=Object.freeze({
- irisDiameter:[1,2],jawSharpness:[.7,5],
- noseTipLift:[0,2],nostrilCover:[0,2],
- noseBridgeSharpness:[0,2.5],
- browAngle:[-25,25],lashAngle:[-25,25],
- eyeAngle:[-20,20],eyeSize:[.75,1.4],
+/**
+ * v14 UI + sculpt contract. The Library's numeric GLB settings remain
+ * IDENTICAL; the saved value is positioned at the exact 50% thumb position.
+ * Higher strength is available on the right, notably chin / nostril / bridge.
+ * This table is consumed by BOTH JavaScript normalization and HTML controls.
+ */
+export const FACE_SLIDER_RANGES=Object.freeze({
+ irisDiameter:[0,2],jawSharpness:[0,10],
+ noseTipLift:[-2,2],nostrilCover:[0,4],
+ noseBridgeSharpness:[0,5],
+ browAngle:[-19,31],lashAngle:[-18,32],
+ eyeAngle:[-20,20],eyeSize:[.5,1.5],
  lipstickX:[-.12,.12],lipstickY:[-.12,.12],
- lipstickWidth:[.5,1.8],lipstickHeight:[.5,1.8]
+ lipstickWidth:[.2,1.8],lipstickHeight:[.2,1.8]
 });
 export function normalizeFemaleFaceControls(settings={}){
  const out={};
  for(const [k,v] of Object.entries(FEMALE_V7_DEFAULTS)){
   const raw=Number(settings?.[k]);
-  out[k]=Number.isFinite(raw)?Math.max(ranges[k][0],Math.min(ranges[k][1],raw)):v;
+  out[k]=Number.isFinite(raw)?Math.max(FACE_SLIDER_RANGES[k][0],Math.min(FACE_SLIDER_RANGES[k][1],raw)):v;
  }
  return out;
 }
