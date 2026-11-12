@@ -81,8 +81,8 @@ assert.doesNotMatch(simulation,/options\.count/,'The simulation no longer allows
 assert.match(simulation,/this\.squadCommands\.set\(id,command\)/,'Orders are stored for the whole squad');
 assert.match(html,/button\.userDataDeaths\.textContent/);
 assert.match(html,/ribbonPageSize=5/);
-assert.match(html,/const visibleRibbonPageSize=Math\.max\(1/,
- 'Side squad icons adapt to screen height without scroll');
+assert.match(html,/const visibleRibbonPageSize=Math\.max\(3,Math\.min\(8,Math\.floor\(available\/64\)\)\)/,
+ 'Side squad icons size pages by actual available screen height without scroll');
 assert.match(html,/setOpeningWizardPage\('formation'\)/);
 assert.match(html,/vitalsPageSize=5/);
 console.log('PASS sustained casts, stronger broad magic, precise job buttons, non-scrolling pages and mirrored death counters');
