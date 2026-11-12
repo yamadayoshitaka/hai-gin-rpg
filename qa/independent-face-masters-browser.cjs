@@ -410,7 +410,7 @@ async function expectCenteredFaceSliders(page,gender){
    },value);
   }
   const hairAdjusted=await page.evaluate(()=>window.__faceMasterQA());
-  if(hairAdjusted.wigReport?.rootCount!==480||
+  if(hairAdjusted.wigReport?.rootCount-hairAdjusted.wigReport?.frontFineLockExtra!==480||
      hairAdjusted.wigReport?.lengthScale!==1.5||
      JSON.stringify(hairAdjusted.femaleControls)!==JSON.stringify(beforeHairControls))
    throw Error('Hair sliders affected face settings or wig '+JSON.stringify(hairAdjusted.wigReport));
