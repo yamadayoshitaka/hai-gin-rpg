@@ -666,7 +666,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    // in the last 15% instead of uniformly thinning into wire-like ends.
    // Smooth feathered taper starts before the last segment; previous
    // nearly square hair cards all stopped at the same blunt edge.
-   const tip=Math.max(.035,1-(strand.fringe||strand.overFace?.965:.89)*
+   const tip=Math.max(.035,1-((strand.fringe||strand.overFace)? .965 : .89)*
     Math.pow(t,3.2));
    // Blender/Unity-inspired groomed hair-card profile: narrow root,
    // broad clean midsection and softly tapered point-cut tip. Keeping
