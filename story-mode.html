@@ -203,7 +203,7 @@ body.formation-active .command-menu{bottom:calc(10px + env(safe-area-inset-botto
 @media(max-width:650px){.story-act-nav{grid-template-columns:repeat(2,minmax(0,1fr))}.story-chapter-buttons{grid-template-columns:repeat(3,minmax(0,1fr))}.story-dialogue strong{display:block}}
 
 </style>
-<link rel="stylesheet" href="./src/tactical-command-ui.css?v=2.1"><link rel="stylesheet" href="./src/battle-ui-refinement.css?v=2.2">
+<link rel="stylesheet" href="./src/tactical-command-ui.css?v=2.1"><link rel="stylesheet" href="./src/battle-ui-refinement.css?v=2.3">
 </head>
 <body>
 <div class="shell">
@@ -281,7 +281,7 @@ body.formation-active .command-menu{bottom:calc(10px + env(safe-area-inset-botto
  import { STORY_ACTS,STORY_CHAPTERS,STORY_ENDINGS,storyProgress,unlockedStoryChapters,storyVoiceKey } from './src/story-chapters.js';
 import { FACTIONS,TERRITORIES,JOBS,PURPOSES,RARITIES,BUFFS,AUTO_FORMATIONS,COMMANDER_FACE_VARIANTS,JOB_FACE_VARIANTS,commanderAppearance,squadFaceVariant,createCampaign,troopCount,reserveTroops,deployedTroopCount,monthlyIncome,monthlyWages,maxSquads,armyTroops,formationCapabilities,autoFormArmy,territoryOf,accessible,recruit,setFormationPurpose,trainCommander,assignCommander,transferTroops,squadCommanderId,colonize,settleStoryBattle,nextMonth,validateSavedCampaign } from './src/story-campaign.js';
 import {squadPower,evaluateTacticalOrder,tacticalCooldownSeconds} from './src/tactical-command-evaluation.js?v=2.1';
-import { STORY_BATTLE_REQUEST_KEY, STORY_BATTLE_RESULT_KEY, STORY_SPAWN_LANES, STORY_SPAWN_LABELS, createStoryBattleRequest } from './src/story-battle-bridge.js';
+import { STORY_BATTLE_REQUEST_KEY, STORY_BATTLE_RESULT_KEY, STORY_SPAWN_LANES, STORY_SPAWN_LABELS, createStoryBattleRequest } from './src/story-battle-bridge.js?v=2.3';
 const $=id=>document.getElementById(id);const saveKey='hai-gin-story-campaign-v1';
 const terrainIcon={'丘陵':'⚑','森林':'♣','城塞':'♜','山岳':'▲','平地':'✦','市街':'⌂','河川':'⚓','湿地':'❀'};
 let state=null,selected='central-plains',activeTab='map',mapInitialized=false,territoryOpen=false,selectedArmyId='player',selectedAutoPriority='均衡';
