@@ -185,7 +185,9 @@ export function clipBodyToGarment(characterModel,coverage,{surfaceCheck=false,pr
   if(!variants){variants=new Map();maskCache.set(original,variants)}
   // The actual garment surface is instance-specific: avoid reusing a
   // front-only plate mask for another outfit with the same slot names.
-  const cacheKey=surfaceCheck?coverage:coverage.signature+'|preserve:'+([...preserved].sort().join(','));
+  const cacheKey=surfaceCheck?
+   (preserved.size?{coverage,preserved:[...preserved]}:coverage):
+   coverage.signature+'|preserve:'+([...preserved].sort().join(','));
   let record=variants.get(cacheKey);
   if(!record){
    const cut=new Uint8Array(positions.count);
