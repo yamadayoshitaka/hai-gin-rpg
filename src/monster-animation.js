@@ -1,3 +1,4 @@
+import {applyMonsterBiologicalMotion} from './monster-joint-motion.js';
 /** Per-species, per-part procedural animation for bestiary inspection.
  * Separate head, jaws, limbs, wings and tentacles keep animation readable.
  */
@@ -66,6 +67,12 @@ export function animateMonsterModel(model,time=0){
      part.rotation.z=sway+hit*.16;
    }
  }
+ // Preserve the existing action contracts, then use real extra joint pivots
+ // for nonhumanoid anatomy. Human and humanlike rigs are excluded.
+ applyMonsterBiologicalMotion(model,{
+   time,phase:gait,action,pulse:Math.max(strike,special,leaping),
+   locomotion,run:action==='run'
+ });
  // Existing jaw pivot continues its action animation; speech adds a
  // bounded jaw opening after the usual pose (no bones duplicated).
  model.userData.facialControls?.update?.(Math.max(0,Math.min(.1,time-(model.userData.facialLastTime??time-.075))));
