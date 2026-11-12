@@ -13,6 +13,8 @@ on:
       - 'qa/story-art-batches.test.mjs'
       - 'src/story-manga-art.js'
       - 'src/story-manga-viewer.js'
+      - 'src/story-manga-page.js'
+      - 'qa/story-full-page-layout.test.mjs'
       - 'src/story-cinematic-assets.js'
       - 'scripts/build-story-art-coverage.mjs'
       - 'qa/story-art-coverage.test.mjs'
@@ -44,6 +46,8 @@ on:
       - 'qa/story-art-batches.test.mjs'
       - 'src/story-manga-art.js'
       - 'src/story-manga-viewer.js'
+      - 'src/story-manga-page.js'
+      - 'qa/story-full-page-layout.test.mjs'
       - 'src/story-cinematic-assets.js'
       - 'scripts/build-story-art-coverage.mjs'
       - 'qa/story-art-coverage.test.mjs'
@@ -81,6 +85,7 @@ jobs:
           python3 -m py_compile scripts/slice-story-art-batch.py
           node --check src/story-manga-art.js
           node --check src/story-manga-viewer.js
+          node --check src/story-manga-page.js
           node --check src/story-cinematic-assets.js
           node --check src/fantasy-scene-score.js
           node --experimental-vm-modules qa/story-cinematic-audio.test.mjs
@@ -88,6 +93,7 @@ jobs:
           node qa/story-stage-prepost-v2.test.mjs
           node scripts/prepare-story-art-batches.mjs
           node qa/story-art-batches.test.mjs
+          node qa/story-full-page-layout.test.mjs
           node --experimental-vm-modules qa/story-cinematic-raster.test.mjs
           node scripts/build-story-art-coverage.mjs
           node qa/story-art-coverage.test.mjs
