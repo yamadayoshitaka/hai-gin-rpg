@@ -36,8 +36,8 @@ assert.doesNotMatch(game,/if\(occupied\.some\(/,
   '重なった部隊を消す旧方式を復活させない');
 assert.match(game,/label\.style\.pointerEvents=selecting\?'none':'auto'/,
   '行き先・作戦指定中はラベルが目標タップを妨げない');
-assert.match(game,/updateSquadScreenLabels\(dt\);/,
-  '描画フレームの移動に合わせて部隊名の表示位置を更新する');
+assert.match(game,/if\(markerInterval===0\|\|battleLabelsSinceLastUpdate>=markerInterval\)\{\s*updateSquadScreenLabels\(battleLabelsSinceLastUpdate\|\|dt\);\s*battleLabelsSinceLastUpdate=0;/,
+  '大軍戦では更新を間引き、選択中は毎フレーム部隊ラベルを追従させる');
 assert.match(game,/#destinationPrompt\{[^}]*font-size:15px/,
   '目的地の操作案内もモバイルで読める大きさにする');
 assert.match(game,/#battleDock\{display:none!important\}/,'常時表示の下部命令欄は廃止する');
@@ -86,8 +86,8 @@ assert.match(game,/if\(unavailable\)\{log\(unavailable\);return false;\}/,
   '軍師が戦死した場合は理由を報告して号令を拒否する');
 assert.match(game,/for\(const name of \['squadOrderChoice','squadDestination','squadMissionChoice'\]\)/,
   '三つの選択操作を一括で利用不可にする');
-assert.match(game,/FORMATION_NAMES\[selectedSquadType\(id\)\].*変更不可/,
-  '戦闘中の部隊タイプを固定する');
+assert.match(game,/\$\('squadTypeStatus'\)\.textContent='編成：'\+FORMATION_NAMES\[selectedSquadType\(id\)\]\+'／作戦：'\+squadFixedStrategyLabel\(id\)\+'（固定）'/,
+  '戦闘中の部隊タイプ・作戦を固定した読み取り専用ラベルとして表示する');
 assert.match(game,/actionVfx\.emitAccents\(kind,p,\{scale:/,
   '詳細モデルだけでなく実GPU人物の戦闘にも光粒を配る');
 assert.match(vfx,/this\.maxAccents=this\.maxEffects\*\(this\.accentMultiplier-1\)/);
