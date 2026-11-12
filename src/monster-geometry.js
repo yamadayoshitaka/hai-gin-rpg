@@ -330,9 +330,22 @@ function insect(g,s,{spider=false}={}){
      g.spike(abdomen,'shadow',[x,.16,z-.04],
        [x+side*.07,.20,z-.13],.018);
    }
+   // Paired spinnerets emerge from articulated basal sockets, tapering
+   // backwards in two sections instead of looking like rigid thorns.
+   // Their independent groups preserve the existing abdomen gait pivot.
    for(const side of [-1,1]){
-     g.spike(abdomen,'shadow',[side*.115,-.19,-.73],
-       [side*.17,-.28,-.93-v*.014],.052);
+     const spinneret=g.group('spinneret'+(side<0?'L':'R'),
+       [side*.115,-.19,-.73]);
+     const elbow=[side*.035,-.055,-.115-v*.006];
+     const tip=[side*.065,-.09,-.21-v*.014];
+     g.sphere(spinneret,'skin',[0,0,0],[.067,.054,.075],
+       {metal:.06,rough:.76});
+     g.bone(spinneret,'shadow',[0,0,0],elbow,.043,
+       {tipRadius:.030,metal:.04});
+     g.sphere(spinneret,'accent',elbow,[.037,.036,.038],
+       {metal:.06,rough:.75});
+     g.bone(spinneret,'shadow',elbow,tip,.029,
+       {tipRadius:.012,metal:.04});
    }
    // Each of the four eye pairs sits in a raised socket, reducing the
    // floating-neon-dot appearance without modifying shared face assets.
