@@ -8,6 +8,7 @@ import {allocateSortieSlots,STORY_JOB_TO_BATTLE,STORY_SPAWN_LANES} from './story
 import {CAMPAIGN_STAGE_BY_ID} from './campaign-stage-plan.js';
 import {deploymentForSquad,slotLane,slotRank} from './inn-deployment.js';
 import {activeInnStrategyTemplate,innSquadInitialOrder} from './inn-strategy-templates.js';
+import {commandSquadIds,resolvedCommanderDeployment} from './inn-commander-formation.js';
 import {storyStageContext} from './story-narrative-flow.js';
 import {markStageVictory,squadEquipmentBonus} from './game-core-flow.js';
 export const CORE_BATTLE_PENDING_KEY='hai-gin-core-battle-pending-v1';
@@ -18,6 +19,9 @@ export function makeCoreBattleRequest(game,stageId,battleId=String(Date.now())){
  if(!stage||stage.kind==='town'||game?.location!=='map')throw Error('地図上の出撃ステージを選んでください。');
  const squads=game.campaign.squads.filter(s=>s.count>0&&String(squadCommanderId(s))!=='reserve');
  const allotment=allocateSortieSlots(squads);
+ if(!squads.some(s=>String(squadCommanderId(s))==='player')||
+    !allotment.some(a=>String(squadCommanderId(a.squad))==='player'))
+  throw Error('主人公の軍師部隊を編成してから出撃してください。');
  if(!allotment.length)throw Error('編成された兵士がいません。町で軍団を編成してください。');
  const leaders=[{id:'player',...game.campaign.commander},...game.campaign.commanders];
  const ids=new Set(allotment.map(a=>String(squadCommanderId(a.squad))));
@@ -28,18 +32,28 @@ export function makeCoreBattleRequest(game,stageId,battleId=String(Date.now())){
   orders:BUFFS.filter(b=>b.unlock<=c.level).map(b=>({...b}))
  }));
  const deploymentSquads=allotment.map(item=>item.squad);
+ const commandIds=commandSquadIds(squads);
+ const commanderPositions=resolvedCommanderDeployment(game.campaign);
+ const strategistIncluded=new Set();
  const initialSquadOrders=Object.fromEntries(allotment.map(({squad})=>
-  [String(squad.id),innSquadInitialOrder(game,squadCommanderId(squad))]));
+  [String(commandIds.get(String(squadCommanderId(squad)))),innSquadInitialOrder(game,squadCommanderId(squad))]));
  const activePlan=activeInnStrategyTemplate(game);
  const tacticalTemplate=activePlan?{...activePlan}:null;
  const units=allotment.flatMap(({squad,count},i)=>{
-  const slot=deploymentForSquad(squad,i,deploymentSquads);
-  return Array.from({length:count},()=>({
-   squadId:squad.id,commanderId:String(squadCommanderId(squad)),
-   job:STORY_JOB_TO_BATTLE[squad.job]||'剣士',rarity:squad.rarity,
-   equipmentBuff:squadEquipmentBonus(squad),
-   spawnLane:slotLane(slot),spawnRank:slotRank(slot),deploymentSlot:slot
-  }));
+  const commanderId=String(squadCommanderId(squad));
+  const slot=commanderPositions.get(commanderId)??deploymentForSquad(squad,i,deploymentSquads);
+  const commandSquadId=commandIds.get(commanderId);
+  return Array.from({length:count},()=>{
+   const isStrategist=!strategistIncluded.has(commanderId);
+   strategistIncluded.add(commanderId);
+   return {
+    squadId:commandSquadId,sourceSquadId:squad.id,commanderId,
+    isStrategist,isPlayerHero:isStrategist&&commanderId==='player',
+    job:STORY_JOB_TO_BATTLE[squad.job]||'剣士',rarity:squad.rarity,
+    equipmentBuff:squadEquipmentBonus(squad),
+    spawnLane:slotLane(slot),spawnRank:slotRank(slot),deploymentSlot:slot
+   };
+  });
  });
  const monsterBattle=stage.kind==='explore'||stage.kind==='boss';
  const storyContext=storyStageContext(game,stage.id);
@@ -63,7 +77,10 @@ export function settleCoreBattle(game,request,result){
   throw Error('出撃結果に不正があります。');
  if(game.lastCoreBattleId===request.battleId)throw Error('同じ戦闘結果を二重に反映できません。');
  const allowed=new Map();
- for(const unit of request.units||[])allowed.set(unit.squadId,(allowed.get(unit.squadId)||0)+1);
+ for(const unit of request.units||[]){
+  const source=unit.sourceSquadId??unit.squadId;
+  allowed.set(source,(allowed.get(source)||0)+1);
+ }
  const stage=CAMPAIGN_STAGE_BY_ID[request.stageId];
  if(result.victory&&(stage.kind==='explore'||stage.kind==='boss')&&result.monstersRemaining!==0)
   throw Error('討伐したモンスター数を確認できませんでした。');
@@ -77,9 +94,16 @@ export function settleCoreBattle(game,request,result){
  for(const [squad,n] of changes)squad.count-=n;
  game.campaign.squads=game.campaign.squads.filter(x=>x.count>0);
 
+ const protagonistDead=result.playerCommanderDead===true;
+ const victory=Boolean(result.victory&&!protagonistDead);
+ if(protagonistDead){
+  game.campaign.commander.active=false;
+  game.campaign.gameOver='主人公が戦死しました。GAME OVER';
+  game.location='gameover';
+ }
  game.lastCoreBattleId=request.battleId;
  let next=null;
- if(result.victory){
+ if(victory){
   const isMonster=stage.kind==='explore'||stage.kind==='boss';
   const confirmedMonsterClear=isMonster?result.monstersRemaining===0:true;
   const objectiveCompleted=result.objectiveCompleted===true||
@@ -102,7 +126,7 @@ export function settleCoreBattle(game,request,result){
   for(const item of treasure)game.inventory[item.itemId]=(Number(game.inventory[item.itemId])||0)+item.quantity;
   result.settledRewards={...reward,loot:treasure};
  }
- game.history.unshift(stage.name+'：'+(result.victory?'勝利':'敗北')+'。損害'+casualties+'人。');
+ game.history.unshift(stage.name+'：'+(protagonistDead?'主人公戦死・GAME OVER':victory?'勝利':'敗北')+'。損害'+casualties+'人。');
  game.history=game.history.slice(0,50);
- return {victory:result.victory,casualties,stage,next,rewards:result.settledRewards||{gold:0,xp:0,loot:[]}};
+ return {victory,playerCommanderDead:protagonistDead,gameOver:game.campaign.gameOver||null,casualties,stage,next,rewards:result.settledRewards||{gold:0,xp:0,loot:[]}};
 }
