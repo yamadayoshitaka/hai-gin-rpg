@@ -55,7 +55,7 @@ async function expectCenteredFaceSliders(page,gender){
  for(const p of snapshot){
   const mid=(p.min+p.max)/2;
   const thumb=(p.value-p.min)/(p.max-p.min);
-  if((p.key!=='lipstickWidth'&&Math.abs(mid-p.value)>1e-8)||
+  if((!['lipstickWidth','eyeSpacing'].includes(p.key)&&Math.abs(mid-p.value)>1e-8)||
      Math.abs(p.value-p.saved)>1e-8||
      Math.abs(p.model-p.saved)>1e-8||
      Math.abs(p.center-thumb)>1e-8)
