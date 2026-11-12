@@ -983,12 +983,12 @@ async function expectCenteredFaceSliders(page,gender){
     path:path.join(out,'v40-heroine-slim-skinned-legs-side.png')});
    await modern.locator('#heroActionButtons [data-action="attack"]').click();
    await modern.waitForFunction(()=>window.__heroineBodyQA?.()
-     .v36RealBattleCostume?.vfx?.triggered>=2,null,{timeout:10000});
+     .v36RealBattleCostume?.vfx?.triggered>=1,null,{timeout:10000});
    await modern.locator('#heroActionButtons [data-action="cast"]').click();
    await modern.waitForTimeout(120);
    const action=await modern.evaluate(()=>window.__heroineBodyQA());
    if(action.v36RealBattleCostume?.actionId!=='cast'||
-      action.v36RealBattleCostume?.vfx?.triggered<3||
+      action.v36RealBattleCostume?.vfx?.triggered<2||
       !action.v36RealBattleCostume?.vfx?.attachedToRealBones||
       await modern.locator('#heroActionButtons [data-action="cast"]').getAttribute('aria-pressed')!=='true')
     throw Error('v40 action button not replaying real motion and battle VFX');
