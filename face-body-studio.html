@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>灰銀のレゾナンス｜戦闘の実衣装＋独立顔 v36</title>
+<title>灰銀のレゾナンス｜戦闘衣装＋眼窩メッシュ補正 v37</title>
 <style>
 *{box-sizing:border-box}body{margin:0;background:#101c2e;color:#eaf3ff;font-family:system-ui,"Noto Sans JP",sans-serif}
 header{background:#183049;padding:17px 18px;border-bottom:1px solid #466780}
@@ -32,7 +32,7 @@ label{display:block;margin:10px 0}select{width:100%}
 </head>
 <body>
 <header>
-<h1>女性主人公・独立した顔＋実際の戦闘衣装 v36</h1>
+<h1>女性主人公・眼窩メッシュ補正＋実戦闘衣装 v37</h1>
 <p>第1章「女性主人公 hero-girl-01」の独立3D顔・髪を、戦闘で使用中の女性65関節モデルと職業別の実衣装に接続します。衣装・装備・走行・攻撃などは戦闘と同じ資産を使用し、元の顔は非表示にして二重顔を防ぎます。</p>
 </header>
 <main>
@@ -93,7 +93,7 @@ alt="第1章女性主人公（暫定人物マスターの登録原画）">
 <label for="style">固有のヅラ（別アセット）
 <select id="style" disabled></select></label>
 <p class="note">v31：目のサイズは縦横から自動決定。目の前後位置と分離し、カラコンは17色＋自由色に対応。真円の黒目・瞳孔を維持。髪は実顔面と女性胴体の三角形表面との接触を判定し、肩・胸の簡易判定も併用します。</p>
-<a href="./face-mesh-studio.html?gender=female&v=36">顔単体の詳細編集画面へ</a>
+<a href="./face-mesh-studio.html?gender=female&v=37">顔単体の詳細編集画面へ</a>
 <details><summary>実メッシュ・接触検査</summary><pre id="metrics"></pre></details>
 </section>
 </main><style>
@@ -105,7 +105,7 @@ body.v32-legacy #v32BodyPartStudio{display:none!important}
 .v32-part-group select,#v32HairDensity{display:block;width:100%;min-height:41px;margin:5px 0;padding:7px;background:#213d55;color:#fff;border:1px solid #7893a5;border-radius:8px}
 .v32-pose-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
 .v32-tip{color:#b8d5e8;font-size:12px}
-</style><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/","./src/independent-face-masters.js":"./src/independent-face-masters.js?v=36","./src/face-feature-meshes.js":"./src/face-feature-meshes.js?v=36","./src/face-v7-controls.js":"./src/face-v7-controls.js?v=36","./src/face-body-assembly.js":"./src/face-body-assembly.js?v=36"}}</script>
+</style><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/","./src/independent-face-masters.js":"./src/independent-face-masters.js?v=37","./src/face-feature-meshes.js":"./src/face-feature-meshes.js?v=37","./src/face-v7-controls.js":"./src/face-v7-controls.js?v=37","./src/face-body-assembly.js":"./src/face-body-assembly.js?v=37"}}</script>
 <script type="module">
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
@@ -114,13 +114,13 @@ import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {makeIndependentFaceMaster} from './src/independent-face-masters.js';
 import {FEMALE_V7_DEFAULTS,FACE_EYE_SPACING_DEFAULT,FACE_EYE_SPACING_RANGE,FACE_SLIDER_RANGES,CONTACT_COLORS,CONTACT_COLOR_LABELS,safeContactColor,normalizeFemaleFaceControls} from './src/face-v7-controls.js';
 import {applyFaceColorMode} from './src/face-feature-meshes.js';
-import {createScalpAnchoredWig} from './src/face-scalp-wig.js?v=36';
-import {createPartSelectorUI} from './src/face-part-selector-ui-v32.js?v=36';
-import {defaultPartSelection,resolvePartSelection,PART_CATALOG} from './src/face-part-catalog-v32.js?v=36';
+import {createScalpAnchoredWig} from './src/face-scalp-wig.js?v=37';
+import {createPartSelectorUI} from './src/face-part-selector-ui-v32.js?v=37';
+import {defaultPartSelection,resolvePartSelection,PART_CATALOG} from './src/face-part-catalog-v32.js?v=37';
 import {attachIndependentHeadToBody,removeHeadBustBelowNeck,createSealedNeckBridge} from './src/face-body-assembly.js';
-import {listWigStyles,DEFAULT_WIG_STYLE_ID,WIG_BASE_VOLUME_PROFILES} from './src/face-wig-styles.js?v=36';
-import {HERO_JOBS,HERO_ACTIONS,createHeroineStudioWardrobe} from './src/heroine-studio-wardrobe.js?v=36';
-import {REAL_BATTLE_WARDROBE,createRealBattleOutfitStudio} from './src/heroine-battle-costume-bridge.js?v=36';
+import {listWigStyles,DEFAULT_WIG_STYLE_ID,WIG_BASE_VOLUME_PROFILES} from './src/face-wig-styles.js?v=37';
+import {HERO_JOBS,HERO_ACTIONS,createHeroineStudioWardrobe} from './src/heroine-studio-wardrobe.js?v=37';
+import {REAL_BATTLE_WARDROBE,createRealBattleOutfitStudio} from './src/heroine-battle-costume-bridge.js?v=37';
 import {FEMALE_COMMANDER_ART_PALETTE,CHAPTER_ONE_ART_BY_KEY} from './src/chapter-one-character-art-references.js';
 
 const $=id=>document.getElementById(id);
@@ -362,7 +362,7 @@ const faceControlDefinitions=[
  ['eyeHeight','目の縦幅・開き具合',.01,'目元'],
  ['eyeSpacing','目と目の間隔（眉・アイラインも連動）',.01,'目元'],
  ['eyeAngle','目全体の目尻角度',1,'目元'],
- ['eyeDepth','眼球の前後位置（奥まった目を前へ）',.01,'目元'],
+ ['eyeDepth','眼窩の深さ（まぶたの内側で微調整）',.01,'目元'],
  ['irisDiameter','カラコン・黒目の大きさ',.01,'目元'],
  ['browWidth','眉毛の横幅',.01,'目元'],
  ['browThickness','眉毛の太さ',.01,'目元'],
