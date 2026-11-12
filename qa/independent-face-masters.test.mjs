@@ -699,6 +699,16 @@ test('v15 real scalp growth follows shell and respects final haircut',()=>{
  const scalp=wig.root.getObjectByName('REAL_SCALP_TRIANGLE_HAIR_CAP');
  assert.equal(scalp.userData.rearUndercoatAnchoredToRealScalp,true);
  assert.ok(scalp.userData.rearUndercoatTriangleCount>=400);
+ assert.equal(scalp.userData.rearUndercoatStripCount,52,
+  'Rear hair should be individual overlapping narrow strands, not one slab');
+ assert.equal(scalp.userData.rearUndercoatStyle,
+  'overlapping-real-scalp-rooted-tapered-ribbons');
+ assert.ok(scalp.userData.rearUndercoatMaxStripWidth<
+  (model.face.geometry.boundingBox.max.x-model.face.geometry.boundingBox.min.x)*.035,
+  'The back hair contains a single broad rectangular sheet');
+ assert.ok(scalp.userData.rearUndercoatTipHeightRange>
+  (model.face.geometry.boundingBox.max.y-model.face.geometry.boundingBox.min.y)*.02,
+  'Hairtips must be layered, not a straight blunt line');
  assert.equal(wig.getReport().realScalpPosteriorUndercoat,true);
  assert.equal(scalp.geometry.getAttribute('normal').count,
   scalp.geometry.getAttribute('position').count);
