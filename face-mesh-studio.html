@@ -385,6 +385,7 @@ function repaint(){
  renderer.toneMappingExposure=faceMode==='color'?.95:1.25;
  for(const [sex,m] of models)applyFaceColorMode(m.face,faceMode,{contactColor,makeupType:v32Makeup[sex]});
  setActive(['clay','color'],faceMode);
+ persistHeroineFace();
  $('metrics').textContent=JSON.stringify(metrics(),null,2);
 }
 for(const mode of ['clay','color']){
