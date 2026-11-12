@@ -1022,7 +1022,7 @@ test('v20 body collision protects visible hair-ribbon edges and clumped sway avo
   const positions=hair.geometry.getAttribute('position');
   let checked=0;
   for(let i=0;i<positions.count;i++){
-   const section=Math.floor(i/4)%pointsPerLock;
+   const section=Math.floor(i/report.ribbonVerticesPerStation)%pointsPerLock;
    if(section===0||positions.getY(i)>=threshold-1e-5)continue;
    checked++;
    assert.ok(positions.getZ(i)>=surfaceZ-1e-5,
@@ -1136,7 +1136,7 @@ test('v22 salon body locks gain real width without making the fringe thick',()=>
  assert.equal(report.fullBodyShoulderExtension,false);
  const geo=hair.root.getObjectByName('REAL_ROOTED_SWEPT_HAIR_LOCKS').geometry;
  const attr=geo.getAttribute('position');
- assert.equal(attr.count,report.rootCount*12*4);
+ assert.equal(attr.count,report.rootCount*12*8);
  assert.ok([...attr.array].every(Number.isFinite),'Thickened ribbons must stay finite');
  const box=face.face.geometry.boundingBox;
  const body={query(){return {front:box.max.z+.03,rear:box.min.z-.03}},
@@ -1418,7 +1418,7 @@ test('v28 static detachable hair cards never change vertices with elapsed time',
  assert.equal(report.constructionCollisionOnly,true);
  assert.equal(report.simulationEnabled,false);
  assert.equal(report.runtimePhysicsCallsPerFrame,0);
- assert.match(report.hairCardStyle,/root-narrow/);
+ assert.match(report.hairCardStyle,/four-stacked-thick-ribbon/);
  assert.ok(wig.root.getObjectByName('DETACHABLE_WIG_TRANSPARENT_HEAD_BASE'));
  assert.ok(wig.root.getObjectByName('DETACHABLE_WIG_FINE_FIBRES'));
  wig.dispose();
