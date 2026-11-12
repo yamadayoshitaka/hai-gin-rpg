@@ -241,13 +241,22 @@ export function attachIndependentHeadToBody(headModel,bodySource,{
    vertex.fromBufferAttribute(positions,i).applyMatrix4(mesh.matrixWorld);
    const ny=(vertex.y-bodyMinY)/size.y;
    const nx=Math.abs((vertex.x-worldX)/(size.x*.5));
-   let tone=skinColor;
-   if(ny<.23)tone=bootsColor;
-   else if(ny<.49)tone=pantsColor;
-   else if(ny<.825&&nx<.67)
-    tone=ny>.66&&ny<.77&&nx<.53?armourColor:clothColor;
-   else if(ny>.73&&ny<.84&&nx>=.48&&nx<.84)
-    tone=armourColor;
+   // Smooth PBR colour transitions across source mesh triangles.
+   // The old boolean thresholds created a zigzag, white-to-blue sawtooth
+   // neckline on the coarse donor torso polygon topology.
+   const sm=THREE.MathUtils.smoothstep;
+   const pants=sm(ny,.13,.22)*(1-sm(ny,.45,.55));
+   const boots=1-sm(ny,.16,.25);
+   const torso=sm(ny,.47,.57)*(1-sm(ny,.815,.89))*
+    (1-sm(nx,.60,.78));
+   const chest=sm(ny,.65,.70)*(1-sm(ny,.765,.835))*
+    (1-sm(nx,.43,.63));
+   const shoulder=sm(ny,.70,.78)*(1-sm(ny,.82,.87))*
+    sm(nx,.47,.59)*(1-sm(nx,.82,.96));
+   const tone=skinColor.clone().lerp(pantsColor,pants)
+    .lerp(clothColor,torso)
+    .lerp(armourColor,Math.max(chest,shoulder))
+    .lerp(bootsColor,boots);
    colors.push(tone.r,tone.g,tone.b);
   }
   // The body mesh is a clone. Its original geometry and UV source survive.
