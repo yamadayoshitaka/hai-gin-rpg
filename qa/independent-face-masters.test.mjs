@@ -1365,7 +1365,7 @@ test('v27 face-conforming eye bulges smoothly from eyeliner and default lashes c
   assert.ok(eye?.isMesh&&liner?.isMesh&&lash?.isMesh);
   assert.equal(eye.userData.noDetachedEyeball,true);
   assert.equal(eye.userData.eyelinerToCenterBulge,true);
-  assert.equal(eye.userData.eyelinerToCenterBulgeFraction,.23);
+  assert.equal(eye.userData.eyelinerToCenterBulgeFraction,.58);
   assert.equal(lash.userData.curvedRibbonStations,5);
   assert.equal(lash.userData.tipCurlsUpFromEyeliner,true);
   assert.equal(lash.userData.lashLength,1.4);
@@ -1375,7 +1375,7 @@ test('v27 face-conforming eye bulges smoothly from eyeliner and default lashes c
   assert.ok(lastZ>secondZ&&secondZ>firstZ,
    'Lashes must bend forward in 3D at the curled tip');
   assert.equal(m.report.detailedParts.eyeBulgeStartsAtEyeliner,true);
-  assert.equal(m.report.detailedParts.eyeBulgeFraction,.23);
+  assert.equal(m.report.detailedParts.eyeBulgeFraction,.58);
  }
  assert.equal(m.report.detailedParts.eyeWidthFactor,1);
  assert.equal(m.report.detailedParts.eyeHeightFactor,1);
@@ -1463,4 +1463,38 @@ test('v28 real shoulder rim caps fill both separately detected cut-plane holes',
   assert.ok(patch?.isMesh);
   assert.ok(patch.geometry.getAttribute('position').count>=4);
  }
+});
+
+test('v29 female eyes project forward of skin with convex globe, connected lids and round iris',()=>{
+ const model=makeIndependentFaceMaster(fixture().source,'female');
+ const report=model.report.detailedParts;
+ assert.equal(report.anteriorEyeGlobeReconstructed,true);
+ assert.equal(report.eyeApertureHeightFraction,.40);
+ assert.equal(report.eyeAnteriorClearanceRatios.length,2);
+ for(const clearance of report.eyeAnteriorClearanceRatios)
+  assert.ok(clearance>.6,'Anterior cornea must rise above actual skin: '+clearance);
+ for(const side of ['LEFT','RIGHT']){
+  const eye=model.parts.getObjectByName(side+'_ORBITAL_EYEBALL');
+  const iris=model.parts.getObjectByName(side+'_CURVED_IRIS');
+  const upper=model.parts.getObjectByName(side+'_UPPER_ANATOMICAL_EYELID');
+  const lower=model.parts.getObjectByName(side+'_LOWER_ANATOMICAL_EYELID');
+  assert.ok(eye?.userData.anteriorGlobeReconstruction);
+  assert.ok(iris?.userData.unclippedTrueCircle&&upper?.isMesh&&lower?.isMesh);
+  assert.equal(eye.userData.eyelinerToCenterBulgeFraction,.58);
+  const p=eye.geometry.getAttribute('position');
+  const eyeCenter=p.getZ(9*(48+1)+24);
+  const upperRim=p.getZ(18*(48+1)+24);
+  assert.ok(eyeCenter>upperRim,'Corneal face should stand forward of eyelid rim');
+  assert.ok(eye.userData.anteriorClearanceRatio>.6);
+ }
+ const shallow=makeIndependentFaceMaster(fixture().source,'female',{
+  femaleControls:{eyeDepth:-.3}
+ });
+ const forward=makeIndependentFaceMaster(fixture().source,'female',{
+  femaleControls:{eyeDepth:.85}
+ });
+ assert.ok(forward.report.detailedParts.eyeAnteriorClearanceRatios[0]>
+  shallow.report.detailedParts.eyeAnteriorClearanceRatios[0]+.20,
+  'Eye depth slider must move the anterior cornea, not cosmetic paint');
+ assert.equal(FACE_SLIDER_RANGES.eyeDepth[1],.85);
 });

@@ -59,7 +59,7 @@ export const FACE_SLIDER_RANGES=Object.freeze({
  noseTipLift:[-2,2],nostrilCover:[0,4],
  noseBridgeSharpness:[0,5],
  browAngle:[-19,31],lashAngle:[-18,32],
- eyeAngle:[-20,20],eyeSize:[.5,1.5],eyeDepth:[-.3,.18],
+ eyeAngle:[-20,20],eyeSize:[.5,1.5],eyeDepth:[-.3,.85],
  eyeWidth:[.70,1.45],eyeHeight:[.65,1.45],
  browWidth:[.70,1.50],browThickness:[.45,1.85],
  lashDensity:[.5,2.2],lashLength:[.5,2.1],
