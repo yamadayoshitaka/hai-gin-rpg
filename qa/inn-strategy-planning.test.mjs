@@ -55,7 +55,7 @@ const inn=readFileSync(new URL('../town-hub.html',import.meta.url),'utf8');
 const battle=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
 assert.match(inn,/innPage='strategies'/);
 assert.match(inn,/\[\['strategies','作戦'\],\['deployment','配置'\],\['overview','号令'\]/);
-assert.match(inn,/pages\.deployment\.append\(commander\)/);
+assert.match(inn,/pages\.deployment\.append\(commander,auto\)/);
 assert.match(inn,/data-inn-template-save/);
 assert.match(inn,/registerInnStrategyTemplate\(game/);
 assert.match(inn,/setInnCommanderInitialOrder\(game/);
