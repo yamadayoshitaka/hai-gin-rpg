@@ -2028,4 +2028,10 @@ test('v39 facial finish has larger pupil, integrated subtle iris highlights and 
  const wig=createScalpAnchoredWig(model.face,{count:96,staticGroom:true,visualFiberMultiplier:3});
  assert.equal(wig.getReport().satinHairFiberSurface,true);
  wig.dispose();
+ const five=createScalpAnchoredWig(model.face,{count:96,staticGroom:true,visualFiberMultiplier:5});
+ assert.equal(five.getReport().visualFiberMultiplier,5,
+  'Selecting 5x must generate actual extra fibres, not silently fall back to 1x');
+ assert.equal(five.getReport().staticMicroFibreCount,96*4);
+ assert.ok(five.getReport().microFibreTriangles>0);
+ five.dispose();
 });
