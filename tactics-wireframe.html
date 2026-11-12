@@ -5542,7 +5542,14 @@ function performSquadBattleItem(itemId,squadId,{automatic=false,issuerSquadId=nu
  log(squadName(id)+'：'+supply.name+'／'+effect);updateUI();
  return true;
 }
-function useSquadBattleItem(itemId,squadId,issuerSquadId=null){
+// Public/manual two-argument contract: inventory and recommended-item actions
+// consume from the selected target squad without borrowing another squad's turn.
+function useSquadBattleItem(itemId,squadId){
+ return performSquadBattleItem(itemId,squadId);
+}
+// Circle-to-circle commands retain their issuing squad separately: its
+// commander permission and cooldown are enforced by performSquadBattleItem.
+function useSquadBattleItemForSource(itemId,squadId,issuerSquadId){
  return performSquadBattleItem(itemId,squadId,{issuerSquadId});
 }
 function openBattleItemsForSquad(id){
@@ -6814,7 +6821,7 @@ function confirmCircleActionTarget(){
   closeSquadTactics();return false;
  }
  let ok=false;
- if(action.kind==='item')ok=useSquadBattleItem(action.itemId,id,action.source);
+ if(action.kind==='item')ok=useSquadBattleItemForSource(action.itemId,id,action.source);
  else if(action.kind==='support'){
   ok=requestSquadRecovery(id);
   if(ok)markRibbonOrderIssued(action.source);
