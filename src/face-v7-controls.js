@@ -60,6 +60,10 @@ export const FACE_SLIDER_RANGES=Object.freeze({
  noseBridgeSharpness:[0,5],
  browAngle:[-19,31],lashAngle:[-18,32],
  eyeAngle:[-20,20],eyeSize:[.5,1.5],eyeDepth:[-.3,.18],
+ eyeWidth:[.70,1.45],eyeHeight:[.65,1.45],
+ browWidth:[.70,1.50],browThickness:[.45,1.85],
+ lashDensity:[.5,2.2],lashLength:[.5,2.1],
+ lashThickness:[.4,1.9],lashCurl:[-.5,1.5],
  lipstickX:[-.12,.12],lipstickY:[-.12,.12],
  lipstickWidth:[.2,2.8],lipstickHeight:[.2,1.8]
 });
@@ -76,6 +80,15 @@ export function normalizeFemaleFaceControls(settings={}){
  const depth=Number(settings?.eyeDepth);
  out.eyeDepth=Number.isFinite(depth)?
   Math.max(FACE_SLIDER_RANGES.eyeDepth[0],Math.min(FACE_SLIDER_RANGES.eyeDepth[1],depth)):0;
+ // Modern sculpt controls are additive: preserve every original Library
+ // face slider value and provide stable neutral defaults for new features.
+ const extras={eyeWidth:1,eyeHeight:1,browWidth:1,browThickness:1,
+  lashDensity:1,lashLength:1,lashThickness:1,lashCurl:.4};
+ for(const [key,fallback] of Object.entries(extras)){
+  const value=Number(settings?.[key]);
+  const [low,high]=FACE_SLIDER_RANGES[key];
+  out[key]=Number.isFinite(value)?Math.max(low,Math.min(high,value)):fallback;
+ }
  return out;
 }
 
