@@ -603,7 +603,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   rearScalpCoverage:'nape-and-occipital-head-triangles',
   groomingSmoothingPasses:3,frizzAmplitudeFactor:.10,
   crownRootRatio:.20,posteriorRootRatio:.51,
-  undercoatLockCount:undercoatStrips,
+  undercoatLockCount:cap.userData.rearUndercoatStripCount,
   hairStrandWidthFraction:.0085,
   downwardGuidedLocks:true,realScalpEnvelopeCollision:true,
   longSalonLayers:true,centerBackCoverage:true,uShapedRearCut:true,
