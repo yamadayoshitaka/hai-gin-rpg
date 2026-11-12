@@ -8,6 +8,8 @@ on:
       - 'src/monster-geometry.js'
       - 'src/monster-shape-kit.js'
       - 'qa/monster-anatomy-motion.test.mjs'
+      - 'qa/monster-m002-flame-wolf-rig.test.mjs'
+      - 'docs/monster-research/**'
       - 'data/monster-realism-progress.json'
       - 'qa/monster-realism-progress.test.mjs'
       - '.github/workflows/monster-anatomy-qa.yml'
@@ -37,7 +39,7 @@ jobs:
         run: npm install --no-save --package-lock=false three@0.180.0
       - name: Run every-monster anatomy / action / reference test and baseline mesh contracts
         run: |
-          node --test qa/monster-anatomy-motion.test.mjs qa/monster-bestiary.test.mjs qa/monster-realism-progress.test.mjs
+          node --test qa/monster-anatomy-motion.test.mjs qa/monster-bestiary.test.mjs qa/monster-realism-progress.test.mjs qa/monster-m002-flame-wolf-rig.test.mjs
       - name: Assert no human-character assets entered patch
         env:
           GH_BASE: '${{ github.event.pull_request.base.sha }}'

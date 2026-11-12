@@ -125,6 +125,25 @@ export function applyMonsterBiologicalMotion(model,{time=0,phase=0,action='idle'
     model.scale.z*=1+compression*.5;
    }
  }
+ if(study.id==='m002'){
+   // Wolf pinnae are muscular, not welded to the skull. During a bite lunge
+   // both ears flatten; outside combat they track slightly different bearings.
+   // Scapular relief advances/retreats with the front limb stride, and the
+   // jaw opens on its own pivot before the muzzle lunges forward.
+   const bite=(action==='attack'||action==='special')?pulse:0;
+   const gait=locomotion?(run?.22:.13):0;
+   for(const side of [-1,1]){
+     const suffix=side<0?'L':'R',phaseOffset=side<0?0:Math.PI;
+     const anticipation=.06*Math.sin(time*1.3+phaseOffset);
+     apply(p,'ear'+suffix,'x',.07+.46*bite+anticipation);
+     apply(p,'ear'+suffix,'y',side*(.05+.10*Math.sin(time*.8+phaseOffset)));
+     apply(p,'ear'+suffix,'z',side*(.10+.15*Math.sin(time*.9+phaseOffset)-.16*bite));
+     apply(p,'scapula'+suffix,'x',gait*Math.sin(phase+phaseOffset)+.19*bite);
+     apply(p,'scapula'+suffix,'z',side*(.04*Math.cos(phase+phaseOffset)+.07*bite));
+   }
+   if(p.jaw)p.jaw.rotation.x+=.24*bite;
+   if(p.head)p.head.rotation.x-=.10*bite;
+ }
  if(study.id==='m001'){
    // Canid ears swivel asymmetrically toward sound. Both have individual
    // physical pivot Groups and their skin/inner-ear geometry follows them.

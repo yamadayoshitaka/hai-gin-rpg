@@ -4,7 +4,7 @@
   "strategy": "review one monster specimen against primary biomechanics sources, change its real mesh and joints, test and merge, then advance",
   "legacy15MinuteBatch": "paused-pr-215",
   "protectedRule": "human models, NPC, soldiers, humanoid summon assets, humanoid-looking monsters cannot be modified without separate explicit review",
-  "lastSuccessfulSpecimen": "m001",
+  "lastSuccessfulSpecimen": "m002",
   "priorityOrder": [
     "m001",
     "m002",
@@ -58,13 +58,14 @@
       "id": "m002",
       "name": "紅蓮の獄狼",
       "family": "beast",
-      "status": "queued-for-individual-reference-review",
+      "status": "first-pass-mesh-reviewed",
       "evidenceFile": "src/monster-anatomy-reference.js",
       "qaFile": "qa/monster-anatomy-motion.test.mjs",
-      "latestIndividualPr": null,
+      "latestIndividualPr": 220,
       "closeupVisualVerified": false,
       "mobileFpsVerified": false,
-      "fullyPhotorealistic": false
+      "fullyPhotorealistic": false,
+      "researchNote": "docs/monster-research/m002-flame-wolf-20261112.md"
     },
     {
       "id": "m003",

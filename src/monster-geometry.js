@@ -25,6 +25,18 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    }
  };
  const torso=g.group('torso');
+ if(s.id==='m002'){
+   // Flame wolf: the shoulder blade bulge rides a real separate pivot with
+   // the proximal forelimb, rather than a stationary textured oval.
+   for(const side of [-1,1]){
+     const scapula=g.group('scapula'+(side<0?'L':'R'),
+       [side*.335,1.43,.25],torso);
+     g.bridge(scapula,'skin',[0,-.14,-.13],
+       [side*.027,.155,.19],.126,.075);
+     g.sphere(scapula,'light',[side*.018,.066,-.010],
+       [.072,.145,.165],{name:'m002-scapular-muscle'});
+   }
+ }
  g.sphere(torso,'skin',[0,1.30,0],[.43+(v%2)*.06,.43,.72+v*.06]);
  g.sphere(torso,'light',[0,1.48,.22],[.31,.25,.45]);
  // Continuous neck transitions from the shoulder mass into the skull,
@@ -60,7 +72,20 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
  for(const side of [-1,1]){
    const horn=v===2||reptile? .28:.12;
    if(canine){
-     if(s.id==='m001'){
+     if(s.id==='m002'){
+       // Independent, cartilage-supported ears: paired pinnae now follow
+       // sound, lunge anticipation and rearward flattening independently.
+       const ear=g.group('ear'+(side<0?'L':'R'),
+         [side*.218,.213,-.076],head);
+       g.spike(ear,'skin',[0,0,0],
+         [side*.079,.359,-.025],.100);
+       g.spike(ear,'shadow',[side*.018,.052,.056],
+         [side*.069,.310,.014],.054);
+       g.tube(ear,'light',[[side*.022,.018,.062],
+         [side*.055,.147,.058],[side*.067,.262,.025]],.015);
+       g.sphere(ear,'skin',[0,.023,.014],[.105,.065,.087],
+         {name:'m002-ear-cartilage-base'});
+     }else if(s.id==='m001'){
        // Real pinna is not rigidly welded to the skull.
        const ear=g.group('ear'+(side<0?'L':'R'),[side*.22,.21,-.075],head);
        g.spike(ear,'skin',[0,0,0],[side*.085,.36,-.020],.10);
@@ -79,6 +104,35 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    }else g.sphere(head,'skin',[side*.24,.24,-.09],[.10,.19,.07]);
    g.spike(head,'bone',[side*.13,-.20,muzzle+.08],[side*.13,-.31,muzzle+.22],.046);
  }
+ if(s.id==='m002'){
+   // Cranial surface references: wolf sagittal crest, zygomatic arch and
+   // molar/masseter space. Shape stays in head-local coordinates, so the
+   // whole snout remains attached during head turns and attack lunges.
+   g.bridge(head,'skin',[0,.083,-.18],[0,-.051,.446],.187,.113);
+   g.tube(head,'light',[[0,.267,-.20],[0,.292,.01],
+     [0,.212,.19]],.034);
+   for(const side of [-1,1]){
+     // Masseter cheek volume and the bone arch are three-dimensional.
+     g.bridge(head,'skin',[side*.216,-.048,-.043],
+       [side*.281,-.102,.226],.132,.088);
+     g.tube(head,'light',[[side*.185,.104,-.102],
+       [side*.322,.064,.070],[side*.325,-.015,.267]],.030);
+     g.sphere(head,'skin',[side*.236,-.096,.080],
+       [.123,.135,.194],{name:'m002-masseter'});
+     g.sphere(head,'shadow',[side*.085,-.169,muzzle+.288],
+       [.027,.014,.013],{name:'m002-nostril'});
+     // Under-eye tissue overlaps the orbital socket without bulging eyes.
+     g.tube(head,'skin',[[side*.262,.104,.158],
+       [side*.306,.117,.255],[side*.273,.099,.342]],.028);
+     for(let i=0;i<4;i++){
+       const z=muzzle+.09+i*.036;
+       g.sphere(head,'shadow',[side*(.137+i*.010),-.195,z],
+         [.006,.006,.007],{rough:.85,name:'m002-vibrissa-root'});
+     }
+   }
+   g.sphere(head,'shadow',[0,-.164,muzzle+.294],
+     [.145,.045,.088],{name:'m002-rhinarium'});
+ }
  if(s.id==='m001'){
    // Species m001 cranial remesh: cheek musculature, brow, nasal cartilage.
    // These intersect the existing skull to avoid disconnected sphere seams.
@@ -96,6 +150,17 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
      {name:'wolf-nasal-cartilage'});
  }
  const jaw=g.group('jaw',[0,1.42,.96]);
+ if(s.id==='m002'){
+   // An independently opening lower mandible, with the canine teeth
+   // mounted on the same jaw pivot (not left floating in the skull).
+   g.bridge(jaw,'skin',[0,-.023,.008],[0,-.065,.367],.173,.100);
+   for(const side of [-1,1]){
+     g.tube(jaw,'light',[[side*.155,-.014,.006],
+       [side*.149,-.068,.18],[side*.118,-.082,.355]],.029);
+     g.spike(jaw,'bone',[side*.133,-.035,.309],
+       [side*.127,.094,.347],.041);
+   }
+ }
  g.sphere(jaw,'shadow',[0,-.03,.12],[.24,.045,.29]);
  if(canine)g.sphere(jaw,'skin',[0,-.054,.155],[.22,.060,.27]);
  for(let i=0;i<4;i++)g.spike(jaw,'bone',[(i-1.5)*.12,.01,.27],[(i-1.5)*.12,-.10,.29],.025);
