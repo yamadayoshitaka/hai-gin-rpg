@@ -50,6 +50,14 @@ for(let chapter=1;chapter<=20;chapter++){
  }
 }
 const first=comicChapterPlan(1);
+const firstTownPre=comicForStage('c01-s01','pre',{protagonistGender:'male'});
+const firstTownPost=comicForStage('c01-s01','post',{protagonistGender:'male'});
+assert.equal(firstTownPre.panels.length,9,'the capital introduction is authored, not a fixed ten scenes');
+assert.equal(firstTownPost.panels.length,7,'the town epilogue may be shorter');
+assert.equal(firstTownPre.pages[0].rows,5);
+assert.equal(firstTownPost.pages[0].rows,4);
+assert.equal(firstTownPre.pages.reduce((n,p)=>n+p.cellCount,0),9);
+assert.equal(firstTownPost.pages.reduce((n,p)=>n+p.cellCount,0),7);
 assert.equal(first.editions.filter(e=>e.phase==='pre').length,10);
 assert.equal(first.editions.filter(e=>e.phase==='post'&&e.edition==='post-victory').length,9);
 assert.equal(first.editions.filter(e=>e.phase==='post'&&e.edition==='post-defeat').length,9);
