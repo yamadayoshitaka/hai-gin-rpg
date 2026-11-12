@@ -88,7 +88,7 @@ export function createMangaViewer({container=document.body,storage=globalThis.lo
   currentArtKey=key;
   const request=++pageRequest,img=$('.manga-art'),missing=$('.manga-missing');
   img.hidden=true;missing.hidden=false;
-  missing.textContent='このコマの原画を確認しています…';
+  missing.textContent='原画未登録の場合は、別の絵で代用しません。画像を確認しています…';
   const unavailable=()=>{if(request!==pageRequest)return;
    img.hidden=true;missing.hidden=false;
    missing.textContent='このコマの'+(shot.phase==='pre'?'イベント前':'イベント後')+
