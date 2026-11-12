@@ -240,6 +240,82 @@ export function removeHeadBustBelowNeck(face,cutY){
   cutY,intersectionVertices:clip.intersectionVertices,
   clipMethod:'interpolated-plane-triangles'};
 }
+/**
+ * Seal the two open cut rings of the *displayed* real head and body.
+ * The donor bust must be cropped above shoulder flaps; otherwise the
+ * leftover head skin appears as white, disconnected collar triangles.
+ * A short skin-coloured, double-sided, capped neck volume overlaps both
+ * real mesh cuts. It is owned by the face and survives GLB export.
+ * This does not pretend to retopologize the source body.
+ */
+export function createSealedNeckBridge(face,attachment,{headCutY,bodyCutY}={}){
+ if(!face?.isMesh||!attachment?.root||
+  !Number.isFinite(headCutY)||!Number.isFinite(bodyCutY))
+  throw Error('Cropped head, real torso and neck-cut heights required');
+ const geo=face.geometry,pos=geo.getAttribute('position');
+ geo.computeBoundingBox();
+ const box=geo.boundingBox,h=box.max.y-box.min.y;
+ const topY=headCutY+h*.015,bottomY=bodyCutY-h*.025;
+ if(topY<=bottomY)throw Error('Seam must overlap upper and lower neck cuts');
+ const near=[];
+ for(let i=0;i<pos.count;i++){
+  const y=pos.getY(i);
+  if(Math.abs(y-topY)<=h*.034)near.push([pos.getX(i),pos.getZ(i)]);
+ }
+ if(near.length<12)throw Error('Head neck-contour sample is too sparse');
+ const extent=(values,q)=>{
+  const sorted=values.slice().sort((a,b)=>a-b);
+  return sorted[Math.min(sorted.length-1,Math.floor(q*(sorted.length-1)))];
+ };
+ const xs=near.map(p=>p[0]),zs=near.map(p=>p[1]);
+ const cx=(extent(xs,.10)+extent(xs,.90))*.5,
+  cz=(extent(zs,.10)+extent(zs,.90))*.5;
+ const rx=clamp((extent(xs,.90)-extent(xs,.10))*.55,h*.065,h*.25);
+ const rz=clamp((extent(zs,.90)-extent(zs,.10))*.55,h*.055,h*.22);
+ const segments=48,levels=5,verts=[],uv=[],indices=[];
+ for(let j=0;j<=levels;j++){
+  const t=j/levels,fade=t*t*(3-2*t);
+  const y=topY+(bottomY-topY)*t;
+  const scale=1+.09*fade;
+  for(let i=0;i<=segments;i++){
+   const angle=i/segments*Math.PI*2;
+   verts.push(cx+rx*scale*Math.cos(angle),y,
+    cz-rz*.06*fade+rz*scale*Math.sin(angle));
+   uv.push(i/segments,t);
+  }
+ }
+ for(let j=0;j<levels;j++)for(let i=0;i<segments;i++){
+  const a=j*(segments+1)+i,b=a+segments+1;
+  indices.push(a,b,a+1,a+1,b,b+1);
+ }
+ // The caps remove the open, visible hole when looking down from the top.
+ for(const [ring,capY,flip] of [[0,topY,false],[levels,bottomY,true]]){
+  const center=verts.length/3;verts.push(cx,capY,cz);uv.push(.5,.5);
+  for(let i=0;i<segments;i++){
+   const a=ring*(segments+1)+i,b=a+1;
+   if(flip)indices.push(center,b,a);else indices.push(center,a,b);
+  }
+ }
+ const neckGeo=new THREE.BufferGeometry();
+ neckGeo.setAttribute('position',new THREE.Float32BufferAttribute(verts,3));
+ neckGeo.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
+ neckGeo.setIndex(indices);neckGeo.computeVertexNormals();
+ const skin=new THREE.MeshStandardMaterial({
+  color:0xedcbbf,roughness:.82,metalness:0,side:THREE.DoubleSide
+ });
+ const seal=new THREE.Mesh(neckGeo,skin);
+ seal.name='REAL_HEAD_BODY_CLOSED_NECK_SEAL';
+ seal.userData.neckBridge=true;
+ seal.userData.fromOriginalHeadContour=true;
+ seal.userData.realBodyConnection=true;
+ seal.userData.capEnds=true;
+ face.add(seal);
+ attachment.report.neckSealed=true;
+ attachment.report.neckBridgeTriangles=indices.length/3;
+ attachment.report.neckBridgeHeadCutY=headCutY;
+ attachment.report.neckBridgeBodyCutY=bodyCutY;
+ return seal;
+}
 export function attachIndependentHeadToBody(headModel,bodySource,{
  outfitSource=null,characterId='hero-girl-01',armor='#c9cbd3',cloth='#263958'
 }={}){
