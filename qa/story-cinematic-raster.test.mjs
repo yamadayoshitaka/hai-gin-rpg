@@ -41,7 +41,7 @@ new SourceTextModule(art,{identifier:'src/story-cinematic-assets.js'});
 assert.match(art,/getPicture\(CINEMATIC_CHAPTER_ASSETS\[panel\.chapter-1\]\)/);
 assert.match(art,/getPicture\(primary\),getPicture\(secondary\)/);
 assert.match(title,/assets\/story-cinema\/title\.webp/);
-for(const entry of [title,town,viewer])assert.match(entry,/storyPageAsset\(/);
+for(const entry of [title,town,viewer])assert.match(entry,/comicPageAsset\(/);
 for(const entry of [title,town,viewer])assert.doesNotMatch(entry,/applyCinematicImage\(/,'no slideshow/collage art may stand in for manga');
 assert.match(map,/mangaViewer\.open\(stage\.id,\{onFinish:/);
 assert.match(town,/stageMangaSeen\?\.\[game\.townStage\]/);
