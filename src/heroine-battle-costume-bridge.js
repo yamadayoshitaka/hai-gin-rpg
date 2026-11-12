@@ -9,6 +9,45 @@ import {measureHeadLocalBounds} from './character-system/hair-attachment-runtime
  * per-job armor/cloth/gear and the 65-bone Quaternius motion rig.
  * The authoring studio supplies ONLY the independent face and wig.
  */
+/**
+ * Studio-only proportion correction. Scale the complete combat actor
+ * (body, armor, cloth and hand-held gear) as one unit, then counter-scale
+ * the independently authored face. This is NEVER applied in battle.
+ */
+export const HEROINE_STUDIO_BODY_SCALE=.84;
+export const HEROINE_STUDIO_HEAD_LIFT=.30;
+export const HEROINE_STUDIO_HEAD_FORWARD=.13;
+
+export function fitStudioFaceAboveArmor({actorRoot,faceRoot,faceFit,bodyScale=HEROINE_STUDIO_BODY_SCALE}){
+ if(!actorRoot?.isObject3D||!faceRoot?.isObject3D||!faceFit?.targetSize)
+  throw Error('Real actor, independent face and measured head required');
+ if(!Number.isFinite(bodyScale)||bodyScale<=.5||bodyScale>1)
+  throw Error('Invalid preview body scale');
+ // Store the initial scale so a new job never accumulates scale factors.
+ const original=actorRoot.userData.originalStudioActorScale||
+  actorRoot.scale.toArray();
+ actorRoot.userData.originalStudioActorScale=[...original];
+ actorRoot.scale.set(original[0]*bodyScale,original[1]*bodyScale,original[2]*bodyScale);
+ // The face should not shrink along with the breastplate and shoulder armor.
+ faceRoot.scale.setScalar(faceFit.scale/bodyScale);
+ const headHeight=faceFit.targetSize[1],headDepth=faceFit.targetSize[2];
+ const lift=headHeight*HEROINE_STUDIO_HEAD_LIFT/bodyScale;
+ const forward=headDepth*HEROINE_STUDIO_HEAD_FORWARD/bodyScale;
+ // Re-derive the aligned face position rather than adding offsets on
+ // repeated face rebuilds, which previously pushed the head into the collar.
+ faceRoot.position.set(
+  faceFit.targetCenter[0]-faceFit.sourceCenter[0]*faceRoot.scale.x,
+  faceFit.targetCenter[1]-faceFit.sourceCenter[1]*faceRoot.scale.y+lift,
+  faceFit.targetCenter[2]-faceFit.sourceCenter[2]*faceRoot.scale.z+forward
+ );
+ faceRoot.userData.studioBodyScale=bodyScale;
+ faceRoot.userData.studioHeadLift=lift;
+ faceRoot.userData.studioHeadForward=forward;
+ return {bodyScale,faceCompensation:1/bodyScale,
+  lift,forward,relativeFaceHeight:faceRoot.scale.y/(faceFit.scale||1),
+  appliedToAllCombatJobs:true,previewOnly:true};
+}
+
 export const REAL_BATTLE_WARDROBE=Object.freeze([
  {id:'job01',name:'剣士',label:'剣士・銀鋼鎧',heroJob:'swordsman'},
  {id:'job02',name:'格闘家',label:'格闘家・拳帯と稽古着',heroJob:'fighter'},
@@ -119,10 +158,11 @@ export function attachIndependentFaceToBattleHead({faceRoot,faceMesh,characterMo
  bone.add(faceRoot);
  faceRoot.rotation.set(0,0,0);
  faceRoot.scale.setScalar(scale);
- faceRoot.position.copy(dstCenter).sub(srcCenter.multiplyScalar(scale));
+ faceRoot.position.copy(dstCenter).sub(srcCenter.clone().multiplyScalar(scale));
  faceRoot.userData.attachedToRealBattleHeadBone=true;
  faceRoot.userData.battleHeadScale=scale;
  return {bone:bone.name,scale,widthFit,heightFit,depthFit,
+  sourceCenter:srcCenter.toArray(),targetCenter:dstCenter.toArray(),
   sourceSize:a.toArray(),targetSize:b.toArray(),
   attachedToRealHeadBone:true};
 }
@@ -139,7 +179,7 @@ export async function createRealBattleOutfitStudio({scene,faceModel,getFaceModel
  const jobs=await loadJobMotionMap();
  let actor=null,outfit=null,headRoot=faceModel.root,face=faceModel.face;
  let currentJob=jobId,currentOutfit=outfitId,currentAction=actionId;
- let hiddenBody=false,outfitShown=true,disposed=false,request=0,headReport=null,headFit=null;
+ let hiddenBody=false,outfitShown=true,disposed=false,request=0,headReport=null,headFit=null,proportions=null;
  const chosenOutfit=()=>currentOutfit==='job'?
   realBattleJob(currentJob):realBattleJob(currentOutfit);
  async function install(){
@@ -175,6 +215,8 @@ export async function createRealBattleOutfitStudio({scene,faceModel,getFaceModel
    headFit=attachIndependentFaceToBattleHead({faceRoot:headRoot,
     faceMesh:face,characterModel:actor.model,
     headBounds:headReport.headBounds});
+   proportions=fitStudioFaceAboveArmor({actorRoot:actor.object3D,
+    faceRoot:headRoot,faceFit:headFit});
    setBodyVisible(!hiddenBody);
    outfit.root.visible=!hiddenBody&&outfitShown;
    await playAction(currentAction);
@@ -213,9 +255,13 @@ export async function createRealBattleOutfitStudio({scene,faceModel,getFaceModel
  function attachFace(next){
   if(!next?.root||!next.face)throw Error('Updated face required');
   headRoot=next.root;face=next.face;
-  if(actor)headFit=attachIndependentFaceToBattleHead({
-   faceRoot:headRoot,faceMesh:face,characterModel:actor.model,
+  if(actor){
+   headFit=attachIndependentFaceToBattleHead({
+    faceRoot:headRoot,faceMesh:face,characterModel:actor.model,
     headBounds:headReport.headBounds});
+   proportions=fitStudioFaceAboveArmor({actorRoot:actor.object3D,
+    faceRoot:headRoot,faceFit:headFit});
+  }
   return headFit;
  }
  async function setSelection({jobId:nextJob,outfitId:nextOutfit}={}){
@@ -231,7 +277,7 @@ export async function createRealBattleOutfitStudio({scene,faceModel,getFaceModel
   active:!!actor,rigSource:'battle-character-and-real-65-bone-job-outfit',
   jobId:currentJob,outfitId:currentOutfit,actionId:currentAction,
   garment:chosenOutfit().label,
-  headReport,headFit,realOutfit:!!outfit,hasMotion:!!actor?.diagnostics()?.playing
+  headReport,headFit,proportions,realOutfit:!!outfit,hasMotion:!!actor?.diagnostics()?.playing
  };}
  function dispose(){
   disposed=true;++request;
