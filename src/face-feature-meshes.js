@@ -157,9 +157,15 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   const faceZ=surfaceAt(x,y);
   // Set globes into the socket but forward enough for the colored iris
   // to stay visible at oblique camera angles; not floating over the lids.
-  // Real orbital geometry must remain in FRONT of the local head surface
-  // at an oblique/profile camera angle, not only when viewed frontally.
-  const z=faceZ+eyeRadius*.35;
+  // The source head has a deep orbital side-wall. A constant offset
+  // can still leave the whole sclera hidden from a profile camera.
+  // Solve the eye centre from the actual LATERAL facial skin surface.
+  const profileProbeX=x+side*eyeRadius*1.18*.86;
+  const localSkinAtProfile=surfaceAt(profileProbeX,y);
+  const cornealAtProfile=eyeRadius*.97*Math.sqrt(1-.86*.86);
+  const desiredProfileGap=Math.max(d.z*.018,eyeRadius*.18);
+  const z=Math.max(faceZ+eyeRadius*.35,
+   localSkinAtProfile+desiredProfileGap-cornealAtProfile);
   const globe=new THREE.Mesh(new THREE.SphereGeometry(eyeRadius,36,24),eyeMat);
   globe.name=(side===-1?'LEFT':'RIGHT')+'_ORBITAL_EYEBALL';
   globe.scale.set(1.18,.79,.97);
@@ -191,9 +197,9 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   pupil.userData.colorRole='pupil';root.add(pupil);
   // Profile ray margin: near-lateral cornea vs. actual sclera-skull
   // surface in the same head-local coordinates.
-  const lateralX=x+side*eyeRadius*1.18*.86;
-  const cornealZ=z+eyeRadius*.97*Math.sqrt(1-.86*.86);
-  lateralEyeMargins.push(cornealZ-surfaceAt(lateralX,y));
+  const lateralX=profileProbeX;
+  const cornealZ=z+cornealAtProfile;
+  lateralEyeMargins.push(cornealZ-localSkinAtProfile);
   const width=eyeRadius*1.12;
   let upperEyeliner=null,lowerEyeliner=null;
   for(const upper of [true,false]){
