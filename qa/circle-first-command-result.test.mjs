@@ -44,7 +44,7 @@ assert.match(html,/if\(action\.kind==='item'\)ok=useSquadBattleItem\(action\.ite
  'Targeted item use must charge the issuing squad rather than the target');
 assert.match(html,/else if\(action\.kind==='support'\)\{/);
 assert.match(html,/if\(ok\)markRibbonOrderIssued\(action\.source\)/,
- 'Recovery order consumes the commanding squads own 120s interval');
+ 'Recovery order consumes the commanding squads own 60s interval');
 assert.match(html,/targetSquadId:String\(id\),x:Math\.round\(center\.x\)/);
 assert.match(html,/if\(ok\)\{[\s\S]*?closeSquadTactics\(true\);\s*return true;\s*\}/,
  'Successful circle target selection must close the picker and restore overview');
@@ -64,8 +64,8 @@ assert.match(html,/if\(tacticalBankRemaining<=0\)\{tacticalPlanningActive=false;
  'Reaching zero time must not resume combat while choosing targets');
 assert.match(html,/if\(previous&&!finished&&paused!==previous\.wasPaused\)setBattlePaused\(previous\.wasPaused\)/,
  'Command completion restores the pause state from before selection');
-assert.equal(ORDER_COOLDOWN_SECONDS,120);
-assert.equal(secondsUntilNextOrder(10,50),80);
+assert.equal(ORDER_COOLDOWN_SECONDS,60);
+assert.equal(secondsUntilNextOrder(10,50),20);
 assert.equal(secondsUntilNextOrder(10,130),0);
 
 // Reports carry REAL post-action state, and appear only after result cut-ins.
@@ -86,4 +86,4 @@ const syntax=spawnSync(process.execPath,['--check','--input-type=module'],{
  input:match[1],encoding:'utf8',timeout:15000
 });
 assert.equal(syntax.status,0,syntax.stderr||'Battle module syntax');
-console.log('PASS circle-only squad command UX, target choice, always-frozen overview, 120s lock and post-cutin reports');
+console.log('PASS circle-only squad command UX, target choice, always-frozen overview, 60s lock and post-cutin reports');
