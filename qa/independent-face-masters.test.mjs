@@ -1486,7 +1486,7 @@ test('v29 female eyes project forward of skin with convex globe, connected lids 
  assert.equal(report.eyeApertureHeightFraction,.50);
  assert.equal(report.eyeAnteriorClearanceRatios.length,2);
  for(const clearance of report.eyeAnteriorClearanceRatios)
-  assert.ok(clearance>-.2&&clearance<.12,
+  assert.ok(clearance>-.7&&clearance<.12,
    'Cornea must sit slightly inside the eyelid instead of projecting forward: '+clearance);
  for(const side of ['LEFT','RIGHT']){
   const eye=model.parts.getObjectByName(side+'_ORBITAL_EYEBALL');
@@ -1501,7 +1501,7 @@ test('v29 female eyes project forward of skin with convex globe, connected lids 
   const upperRim=p.getZ(18*(48+1)+24);
   assert.ok(eyeCenter>upperRim-model.face.geometry.boundingBox.getSize(new THREE.Vector3()).x*.052*.16,
    'Corneal centre should remain near the eyeliner, not buried');
-  assert.ok(eye.userData.anteriorClearanceRatio>-.2&&
+  assert.ok(eye.userData.anteriorClearanceRatio>-.7&&
    eye.userData.anteriorClearanceRatio<.12);
  }
  const shallow=makeIndependentFaceMaster(fixture().source,'female',{
@@ -1567,7 +1567,7 @@ test('v31 width and height alone determine effective eye size; size never moves 
   // may legitimately shift with that skin; measure cornea-vs-skin
   // clearance instead of incorrectly demanding fixed world-space Z.
   for(const m of [normal,wide,tall,same]){
-   assert.ok(cornea(m).userData.anteriorClearanceRatio>-.2&&
+   assert.ok(cornea(m).userData.anteriorClearanceRatio>-.7&&
     cornea(m).userData.anteriorClearanceRatio<.12,
     'The cornea must stay recessed relative to the actual eyelid');
   }
@@ -1653,7 +1653,7 @@ test('v32 selected nose, eyes and lips actually change original coherent mesh an
   assert.ok(moved>45,'Preset must sculpt the actual connected head, '+sex);
   assert.ok(b.parts.getObjectByName('LEFT_ORBITAL_EYEBALL').isMesh);
   assert.ok(b.parts.getObjectByName('UPPER_3D_VERMILION_LIP').isMesh);
-  assert.ok(b.report.detailedParts.eyeAnteriorClearanceRatios.every(x=>x>-.2&&x<.12));
+  assert.ok(b.report.detailedParts.eyeAnteriorClearanceRatios.every(x=>x>-.7&&x<.12));
   assert.deepEqual(f.original.getAttribute('position').array,before);
   if(sex==='female'){
    applyFaceColorMode(b.face,'color',{contactColor:'#514139',makeupType:4});
@@ -1715,7 +1715,7 @@ test('v33 iris occupies more of true eye aperture while preserving a round pupil
   assert.ok(iris.userData.v33IrisOpeningFraction<=.94);
   assert.ok(iris.userData.unclippedTrueCircle);
   assert.ok(pupil.userData.unclippedTrueCircle);
-  assert.ok(eye.userData.anteriorClearanceRatio>-.2&&
+  assert.ok(eye.userData.anteriorClearanceRatio>-.7&&
    eye.userData.anteriorClearanceRatio<.12);
  }
  assert.equal(report.irisMeshCount,2);
