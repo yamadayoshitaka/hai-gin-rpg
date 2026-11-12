@@ -738,7 +738,9 @@ test('v15 real scalp growth follows shell and respects final haircut',()=>{
   assert.ok(s.minY>=s.trimY-1e-5,'Hair passed cut plane '+s.zone);
  }
  wig.update(.04);
- assert.ok(wig.getReport().normalUpdateDivisor===3);
+ assert.equal(wig.getReport().normalUpdateDivisor,0);
+ assert.equal(wig.getReport().physicsHz,0);
+ assert.equal(wig.getReport().simulationEnabled,false);
  wig.dispose();
 });
 
@@ -1394,4 +1396,71 @@ test('v27 filled neck seam loft overlaps both clipped rings and closes collar',(
  assert.equal(attachment.report.neckBridgeUpperInsideActualHead,true);
  assert.equal(attachment.report.neckBridgeLowerInsideActualBody,true);
  assert.ok([...p.array].every(Number.isFinite));
+});
+
+test('v28 static detachable hair cards never change vertices with elapsed time',()=>{
+ const head=makeIndependentFaceMaster(fixture().source,'female');
+ const wig=createScalpAnchoredWig(head.face,{
+  count:96,visualFiberMultiplier:3,staticGroom:true
+ });
+ const report=wig.getReport();
+ const geometry=wig.root.getObjectByName('REAL_ROOTED_SWEPT_HAIR_LOCKS').geometry;
+ const before=geometry.getAttribute('position').array.slice();
+ wig.update(20);wig.update(.05);wig.update(10000);
+ assert.deepEqual([...geometry.getAttribute('position').array],[...before],
+  'Static hair shape must never drift after the first groom');
+ assert.equal(report.physicsHz,0);
+ assert.equal(report.physicsGuideCount,0);
+ assert.equal(report.staticGroom,true);
+ assert.equal(report.constructionCollisionOnly,true);
+ assert.equal(report.simulationEnabled,false);
+ assert.equal(report.runtimePhysicsCallsPerFrame,0);
+ assert.match(report.hairCardStyle,/root-narrow/);
+ assert.ok(wig.root.getObjectByName('DETACHABLE_WIG_TRANSPARENT_HEAD_BASE'));
+ assert.ok(wig.root.getObjectByName('DETACHABLE_WIG_FINE_FIBRES'));
+ wig.dispose();
+});
+test('v28 iris retains a true round 3D mesh disk inside each almond eye opening',()=>{
+ const face=makeIndependentFaceMaster(fixture().source,'female',{
+  femaleControls:{eyeWidth:1.2,eyeHeight:.65,irisDiameter:2}
+ });
+ for(const side of ['LEFT','RIGHT']){
+  const iris=face.parts.getObjectByName(side+'_CURVED_IRIS');
+  const pupil=face.parts.getObjectByName(side+'_CURVED_PUPIL');
+  for(const part of [iris,pupil]){
+   assert.ok(part?.userData?.unclippedTrueCircle);
+   assert.equal(part.userData.apertureFitted,true);
+   assert.equal(part.userData.roundVertexCount,65*21);
+   part.geometry.computeBoundingBox();
+   const size=part.geometry.boundingBox.getSize(new THREE.Vector3());
+   assert.ok(Math.abs(size.x/size.y-1)<.01,
+    'Projected color lens must be round, not flattened into stripes');
+  }
+ }
+ assert.equal(face.report.detailedParts.irisNotSquashedAtLids,true);
+});
+test('v28 real shoulder rim caps fill both separately detected cut-plane holes',()=>{
+ const head=makeIndependentFaceMaster(fixture().source,'female');
+ const bounds=head.face.geometry.boundingBox;
+ const width=bounds.max.x-bounds.min.x,cx=(bounds.min.x+bounds.max.x)*.5;
+ const torso=new THREE.Group();
+ head.face.add(torso);
+ for(const side of [-1,1]){
+  const mesh=new THREE.Mesh(new THREE.CylinderGeometry(width*.23,width*.23,
+   width*.20,24,2),new THREE.MeshStandardMaterial());
+  mesh.position.x=cx+side*width*.93;
+  torso.add(mesh);
+ }
+ head.face.updateWorldMatrix(true,true);
+ const cutY=head.face.localToWorld(new THREE.Vector3(0,0,0)).y;
+ const attachment={root:torso,report:{}};
+ const result=createClosedShoulderCaps(head.face,attachment,{cutY});
+ assert.equal(result.count,2);
+ assert.ok(result.triangles>=12);
+ assert.equal(attachment.report.shoulderTopHolesClosed,true);
+ for(const side of ['LEFT','RIGHT']){
+  const patch=head.face.getObjectByName(side+'_SHOULDER_CUT_SURFACE_CAP');
+  assert.ok(patch?.isMesh);
+  assert.ok(patch.geometry.getAttribute('position').count>=4);
+ }
 });
