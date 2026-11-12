@@ -48,6 +48,48 @@ export function fitStudioFaceAboveArmor({actorRoot,faceRoot,faceFit,bodyScale=HE
   appliedToAllCombatJobs:true,previewOnly:true};
 }
 
+/**
+ * Upgrade materials only for the studio preview. No battle-wide material,
+ * shared GLTF, UV, normal map or texture is modified.
+ */
+export function enhanceStudioCombatMaterials(wardrobeRoot){
+ if(!wardrobeRoot?.traverse)throw Error('Real outfit root required');
+ let armorMaterials=0,fabricMaterials=0,preservedTextures=0;
+ wardrobeRoot.traverse(mesh=>{
+  if(!mesh.isMesh||!mesh.material)return;
+  const source=Array.isArray(mesh.material)?mesh.material:[mesh.material];
+  const mapped=source.map(material=>{
+   if(!material?.isMeshStandardMaterial)return material;
+   const name=(mesh.name+' '+(material.name||'')).toLowerCase();
+   if(/(^|[^a-z])(skin|face|head|eye|hand)([^a-z]|$)/.test(name))
+    return material;
+   const metallic=/armor|armour|plate|mail|steel|metal|shield|helm|pauldron|sword|blade|brass|silver/.test(name)||
+    Number(material.metalness)>.24;
+   const fabric=/fabric|cloth|robe|gambeson|leather|linen|cotton|tunic|cape|skirt|sleeve/.test(name);
+   if(!metallic&&!fabric)return material;
+   const upgraded=material.clone();
+   if(upgraded.map||upgraded.normalMap||upgraded.roughnessMap)
+    preservedTextures++;
+   if(metallic){
+    upgraded.roughness=THREE.MathUtils.clamp(upgraded.roughness*.83,.25,.48);
+    upgraded.metalness=THREE.MathUtils.clamp(Math.max(upgraded.metalness,.35),.35,.72);
+    if(upgraded.isMeshPhysicalMaterial){
+     upgraded.clearcoat=Math.max(upgraded.clearcoat||0,.16);
+     upgraded.clearcoatRoughness=.29;
+    }
+    armorMaterials++;
+   }else{
+    upgraded.roughness=THREE.MathUtils.clamp(upgraded.roughness,.69,.91);
+    fabricMaterials++;
+   }
+   upgraded.needsUpdate=true;
+   return upgraded;
+  });
+  mesh.material=Array.isArray(mesh.material)?mapped:mapped[0];
+ });
+ return {armorMaterials,fabricMaterials,preservedTextures,sourceAssetsPreserved:true};
+}
+
 export const REAL_BATTLE_WARDROBE=Object.freeze([
  {id:'job01',name:'剣士',label:'剣士・銀鋼鎧',heroJob:'swordsman'},
  {id:'job02',name:'格闘家',label:'格闘家・拳帯と稽古着',heroJob:'fighter'},
@@ -179,7 +221,7 @@ export async function createRealBattleOutfitStudio({scene,faceModel,getFaceModel
  const jobs=await loadJobMotionMap();
  let actor=null,outfit=null,headRoot=faceModel.root,face=faceModel.face;
  let currentJob=jobId,currentOutfit=outfitId,currentAction=actionId;
- let hiddenBody=false,outfitShown=true,disposed=false,request=0,headReport=null,headFit=null,proportions=null;
+ let hiddenBody=false,outfitShown=true,disposed=false,request=0,headReport=null,headFit=null,proportions=null,finishReport=null;
  const chosenOutfit=()=>currentOutfit==='job'?
   realBattleJob(currentJob):realBattleJob(currentOutfit);
  async function install(){
@@ -197,6 +239,7 @@ export async function createRealBattleOutfitStudio({scene,faceModel,getFaceModel
     clothing.dispose();fresh.dispose();return;
    }
    clothing.setHairVisible(false);clothing.setHelmetVisible(false);
+   finishReport=enhanceStudioCombatMaterials(clothing.root);
    const cut=hideBattleDonorFace(fresh.model);
    // Only the independent artist face owns eye and lid rendering.
    fresh.face?.setAutoBlink?.(false);
@@ -277,7 +320,8 @@ export async function createRealBattleOutfitStudio({scene,faceModel,getFaceModel
   active:!!actor,rigSource:'battle-character-and-real-65-bone-job-outfit',
   jobId:currentJob,outfitId:currentOutfit,actionId:currentAction,
   garment:chosenOutfit().label,
-  headReport,headFit,proportions,realOutfit:!!outfit,hasMotion:!!actor?.diagnostics()?.playing
+  headReport,headFit,proportions,finishReport,
+  realOutfit:!!outfit,hasMotion:!!actor?.diagnostics()?.playing
  };}
  function dispose(){
   disposed=true;++request;
