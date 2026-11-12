@@ -597,6 +597,43 @@ async function expectCenteredFaceSliders(page,gender){
       !info.wig.frontalCrownEyebrowTrim||!info.wig.joinedRearSilhouette)
     throw Error('v23 front still crosses nose/mouth or has a rear slit '+
      JSON.stringify(info.wig));
+   // v26: verify fitted invisible exact-head scalp surface, and the
+   // visible wide ribbon's own collision rules (not only guide lines).
+   if(!info.wig?.transparentExactHeadWigBase||
+      !info.wig?.trueScalpRibbonVertexCollision||
+      info.wig?.wigBaseMaterialOpacity!==0||
+      info.wig?.rootScalpLiftFraction<.015||
+      info.wig?.hairStrandWidthFraction<.014)
+    throw Error('Wig roots/ribbon still buried under copied scalp: '+
+     JSON.stringify(info.wig));
+   const baseStart=await hero.evaluate(()=>{
+    const p=window.__heroineBodyPreview.getWig()
+     .getObjectByName('DETACHABLE_WIG_TRANSPARENT_HEAD_BASE');
+    return {visible:p.visible,opacity:p.material.opacity,
+     transparent:p.material.transparent,depthWrite:p.material.depthWrite};
+   });
+   if(!baseStart.visible||baseStart.opacity!==0||
+      !baseStart.transparent||baseStart.depthWrite)
+    throw Error('Wig head-copy foundation was not fully transparent '+
+     JSON.stringify(baseStart));
+   await hero.locator('#toggleWigBase').click();
+   const visibleBase=await hero.evaluate(()=>({
+    shown:window.__heroineBodyPreview.getWig().getObjectByName(
+     'DETACHABLE_WIG_TRANSPARENT_HEAD_BASE').material.opacity,
+    ui:window.__heroineBodyQA().wigFoundationVisible
+   }));
+   if(visibleBase.shown<.1||!visibleBase.ui)
+    throw Error('Transparent wig-base inspection toggle failed');
+   await hero.locator('#crown').click();
+   await hero.locator('#bodyCanvas').screenshot({
+    path:path.join(out,'heroine-v26-visible-wig-base-crown.png')
+   });
+   await hero.locator('#toggleWigBase').click();
+   await hero.locator('#front').click();
+   if(await hero.evaluate(()=>window.__heroineBodyPreview.getWig()
+      .getObjectByName('DETACHABLE_WIG_TRANSPARENT_HEAD_BASE')
+      .material.opacity)!==0)
+    throw Error('Wig base did not become invisible again');
    // v25 full-body user-facing controls: independent wig, real contact
    // pigment, and separately collapsible part groups on Android/Desktop.
    // Start 3x to keep mobile interaction responsive. Full 10x rendered
