@@ -53,7 +53,7 @@
     "test:canine-quality": "node qa/canine-fur-face-regression.test.mjs",
     "test:master-face": "node --test qa/master-swordsman-assembly.test.mjs qa/master-swordsman-face-proportions.test.mjs qa/master-heroine-wig-ocular-face-regression.test.mjs",
     "test:face-analysis": "node qa/facial-feature-analysis.test.mjs",
-    "test:town-services": "node qa/town-facility-squad-gear.test.mjs",
+    "test:town-services": "node qa/town-facility-squad-gear.test.mjs && node --experimental-vm-modules qa/inn-strategy-planning.test.mjs",
     "test:town-visit": "node qa/town-visit-experience.test.mjs && node qa/town-audio-director.test.mjs"
   }
 }

@@ -7,6 +7,7 @@ import {coreVictoryReward,verifiedBattleLoot} from './battle-victory-rewards.js'
 import {allocateSortieSlots,STORY_JOB_TO_BATTLE,STORY_SPAWN_LANES} from './story-battle-bridge.js';
 import {CAMPAIGN_STAGE_BY_ID} from './campaign-stage-plan.js';
 import {deploymentForSquad,slotLane,slotRank} from './inn-deployment.js';
+import {activeInnStrategyTemplate,innSquadInitialOrder} from './inn-strategy-templates.js';
 import {storyStageContext} from './story-narrative-flow.js';
 import {markStageVictory,squadEquipmentBonus} from './game-core-flow.js';
 export const CORE_BATTLE_PENDING_KEY='hai-gin-core-battle-pending-v1';
@@ -27,6 +28,10 @@ export function makeCoreBattleRequest(game,stageId,battleId=String(Date.now())){
   orders:BUFFS.filter(b=>b.unlock<=c.level).map(b=>({...b}))
  }));
  const deploymentSquads=allotment.map(item=>item.squad);
+ const initialSquadOrders=Object.fromEntries(allotment.map(({squad})=>
+  [String(squad.id),innSquadInitialOrder(game,squadCommanderId(squad))]));
+ const activePlan=activeInnStrategyTemplate(game);
+ const tacticalTemplate=activePlan?{...activePlan}:null;
  const units=allotment.flatMap(({squad,count},i)=>{
   const slot=deploymentForSquad(squad,i,deploymentSquads);
   return Array.from({length:count},()=>({
@@ -48,7 +53,7 @@ export function makeCoreBattleRequest(game,stageId,battleId=String(Date.now())){
   enemyMonsterIds:monsterBattle?[...stage.monsters]:[],
   enemyName:monsterBattle?'魔物群':storyContext?.enemy||'紅炎軍',
   enemyCount:monsterBattle?Math.min(20,Math.max(4,stage.monsters.length*3)):Math.min(50,12+stage.difficulty),
-  units,commanders,totalReserves:reserveTroops(game.campaign)
+  units,commanders,initialSquadOrders,tacticalTemplate,totalReserves:reserveTroops(game.campaign)
  };
 }
 export function settleCoreBattle(game,request,result){
