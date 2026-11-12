@@ -13,6 +13,8 @@ for(let i=0;i<400;i++){
  assert.equal(b.panels.length,10);
  assert.equal(b.stages.length,1);
  assert.equal(b.phase,i%2===0?'pre':'post');
+ assert.equal(b.malePageOutput,'assets/story/pages/'+b.stages[0]+'-'+b.phase+'-male.webp');
+ assert.equal(b.femalePageOutput,'assets/story/pages/'+b.stages[0]+'-'+b.phase+'-female.webp');
  assert.equal(b.layout.columns,2);
  assert.equal(b.layout.rows,5);
  assert.match(b.sheetPrompt,/no gutters|no page border/i);
