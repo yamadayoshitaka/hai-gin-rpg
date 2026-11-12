@@ -536,12 +536,34 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    const tip=1-.90*Math.pow(t,8);
    const width=half*tip*(.90+.15*fract(i*.35))*
     (strand.zone==='crown'||strand.zone.startsWith('back')?1.14:1);
+    // Groom BOTH ribbon planes along the actual hair-guide tangent.
+    // The old world-X/world-Z crosses stuck through crown triangles like
+    // needles; a tangent-plane ribbon lays on the rounded scalp instead.
+    const previous=strand.points[Math.max(0,j-1)];
+    const following=strand.points[Math.min(segments,j+1)];
+    let tx=following.x-previous.x,ty=following.y-previous.y,
+     tz=following.z-previous.z;
+    const tangentLength=Math.hypot(tx,ty,tz)||1;
+    tx/=tangentLength;ty/=tangentLength;tz/=tangentLength;
+    const normalLen=Math.hypot(p.x-center.x,p.z-center.z)||1;
+    const nx=(p.x-center.x)/normalLen,nz=(p.z-center.z)/normalLen;
+    // hair-axis cross head-normal = local azimuthal width direction
+    let wx=ty*nz,wy=tz*nx-tx*nz,wz=-ty*nx;
+    const wideLength=Math.hypot(wx,wy,wz);
+    if(wideLength<1e-6){wx=1;wy=0;wz=0;}
+    else{wx/=wideLength;wy/=wideLength;wz/=wideLength;}
+    // Second, narrower ribbon bends 35 degrees outward, never straight
+    // through the skull and no orthogonal world-space 'wire' strands.
+    let sx=wx*.82+nx*.40,sy=wy*.82,sz=wz*.82+nz*.40;
+    const thinLength=Math.hypot(sx,sy,sz)||1;
+    sx/=thinLength;sy/=thinLength;sz/=thinLength;
     for(let k=0;k<4;k++){
      const at=(i*(segments+1)*4+j*4+k)*3;
-     // Two crossed hair ribbons: visible at frontal and side angles.
-     vertices[at]=p.x+sway+width*(k===0?-1:k===1?1:0);
-     vertices[at+1]=p.y;
-     vertices[at+2]=p.z+width*(k===2?-1:k===3?1:0);
+     const sign=k%2===0?-1:1,secondary=k>=2;
+     const scale=sign*width*(secondary?.68:1);
+     vertices[at]=p.x+sway+scale*(secondary?sx:wx);
+     vertices[at+1]=p.y+scale*(secondary?sy:wy);
+     vertices[at+2]=p.z+scale*(secondary?sz:wz);
     }
    }
   }
@@ -602,6 +624,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   scalpCrownCoverage:'extended-to-rear-top',
   rearScalpCoverage:'nape-and-occipital-head-triangles',
   groomingSmoothingPasses:3,frizzAmplitudeFactor:.10,
+  strandRibbonOrientation:'guide-tangent-on-scalp',
   crownRootRatio:.20,posteriorRootRatio:.51,
   undercoatLockCount:cap.userData.rearUndercoatStripCount,
   hairStrandWidthFraction:.0085,
