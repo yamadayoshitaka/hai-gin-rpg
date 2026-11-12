@@ -301,23 +301,46 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   // Colored caps conform exactly to the SCULPTED ELLIPSOIDAL globe.
   // Previous undersized independent spheres were hidden behind the larger
   // white eyeball at a 45-degree camera angle.
-  const makeCap=(label,angularRadius,material,raise)=>buildGrid(
-   (side===-1?'LEFT':'RIGHT')+'_'+label,
-   48,18,(u,v)=>{
-    const az=u*Math.PI*2,theta=v*angularRadius;
-    const sx=Math.sin(theta)*Math.cos(az);
-    const sy=Math.sin(theta)*Math.sin(az);
-    const sz=Math.cos(theta);
+  // The eyeball is an elliptical sclera, but the colored iris/pupil
+  // are CIRCULAR in frontal projection. The old makeCap multiplied X by
+  // 1.18 and Y by .77, stretching the black pupil into an obvious oval.
+  // Solve Z against the true ellipsoid, instead of flattening the caps.
+  const makeCap=(label,angularRadius,material,raise)=>{
+   const physicalRadius=eyeRadius*.77*Math.sin(angularRadius);
+   const cap=buildGrid(eyeLabel+'_'+label,48,18,(u,v)=>{
+    const az=u*Math.PI*2,rr=physicalRadius*v;
+    const xx=rr*Math.cos(az),yy=rr*Math.sin(az);
+    const ax=xx/(eyeRadius*1.18),ay=yy/(eyeRadius*.79);
+    const surface=Math.sqrt(Math.max(.0001,1-ax*ax-ay*ay));
     return new THREE.Vector3(
-     x+eyeRadius*1.18*sx,
-     y+eyeRadius*.77*sy,
-     z+eyeRadius*.97*sz+eyeRadius*raise
+     x+xx,y+yy,z+eyeRadius*.97*surface+eyeRadius*raise
     );
    },material);
+   cap.userData.circularProjectedRadius=physicalRadius;
+   cap.userData.followsEllipsoid=true;
+   return cap;
+  };
   irisMat.side=THREE.DoubleSide;pupilMat.side=THREE.DoubleSide;
   const iris=makeCap('CURVED_IRIS',irisAngle,irisMat,.024);
+  // Fine limbal ring and radial fibers create natural depth without
+  // another floating cosmetic mesh or a network texture dependency.
+  const fiberColors=[];
+  for(let j=0;j<=18;j++)for(let i=0;i<=48;i++){
+   const r=j/18,angle=i/48*Math.PI*2;
+   const fiber=.94+.06*Math.sin(angle*38+r*23)*Math.sin(angle*23-r*11);
+   const limbal=1-.26*Math.pow(THREE.MathUtils.smoothstep(r,.82,1),2);
+   const collarette=.92+.08*Math.exp(-Math.pow((r-.39)/.12,2));
+   const c=fiber*limbal*collarette;
+   fiberColors.push(c,c*.98,c*.96);
+  }
+  iris.geometry.setAttribute('color',
+   new THREE.Float32BufferAttribute(fiberColors,3));
+  irisMat.vertexColors=true;
+  iris.userData.circularProjected=true;
+  iris.userData.radialFibers=true;
   iris.userData.colorRole='iris';root.add(iris);
   const pupil=makeCap('CURVED_PUPIL',pupilAngle,pupilMat,.031);
+  pupil.userData.circularProjected=true;
   pupil.userData.colorRole='pupil';root.add(pupil);
   // Profile ray margin: near-lateral cornea vs. actual sclera-skull
   // surface in the same head-local coordinates.
@@ -666,6 +689,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   lipCenterNormalized:Number(((lipCenter-box.min.y)/d.y).toFixed(4)),
   eyeScale,eyeProfileLateralMargins:lateralEyeMargins.map(v=>Number(v.toFixed(6))),
   eyeballProjection:'orbital-four-landmark-fitted-ellipsoid',
+  irisPupilProjection:'circular-on-ellipsoid',irisRadialFibers:true,
   contactColorDefault:safeContactColor(settings.contactColor),
   eyeAngleDefault:settings.eyeAngle,
   maleCosmeticsDisabled:!female,
