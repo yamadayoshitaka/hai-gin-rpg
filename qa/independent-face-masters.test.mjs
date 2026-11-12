@@ -1902,6 +1902,11 @@ test('v36 reuse registered skinned battle outfits instead of synthesizing a seco
  assert.match(bridge,/loadJobMotionMap/);
  assert.match(bridge,/hideBattleDonorFace\(fresh\.model\)/);
  assert.match(bridge,/bone\.add\(faceRoot\)/);
+ assert.match(bridge,/const trimY=region\.bounds\.min\.y-size\.y\*\.025/,
+  'Original lips and chin must be removed, not left as a beard-shaped band');
+ assert.match(bridge,/const scale=Math\.min\(widthFit\*1\.04,heightFit\*1\.06\)/,
+  'Head size follows anatomical width/height, never thin donor depth');
+ assert.doesNotMatch(bridge,/const scale=Math\.min\(b\.x\/a\.x\*\.98,b\.y\/a\.y\*1\.03,b\.z\/a\.z\*\.99\)/);
  assert.match(bridge,/setHairVisible\(false\)/);
  assert.match(registry,/Superhero_Female_FullBody\.gltf/);
  assert.match(outfit,/quaternius-outfits/);
