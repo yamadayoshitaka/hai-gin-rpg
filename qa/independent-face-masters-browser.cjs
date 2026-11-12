@@ -573,6 +573,12 @@ async function expectCenteredFaceSliders(page,gender){
    await c.screenshot({path:path.join(out,'heroine-v19-front-body.png')});
    await hero.locator('#portrait').click();
    await c.screenshot({path:path.join(out,'heroine-v19-round-eyes-closeup.png')});
+   // Isolate eye geometry from wig strands and verify the actual face
+   // remains visible when the head decoration is hidden.
+   await hero.locator('#toggleWig').click();
+   await c.screenshot({path:path.join(out,'heroine-v19-eyes-no-hair.png')});
+   await hero.locator('#toggleWig').click();
+   await hero.screenshot({path:path.join(out,'heroine-v19-art-versus-3d.png')});
    await hero.locator('#side').click();
    await c.screenshot({path:path.join(out,'heroine-v19-hair-body-side.png')});
    await hero.locator('#back').click();
