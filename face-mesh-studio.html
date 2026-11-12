@@ -487,6 +487,9 @@ for(const key of [...rebuildKeys,...cosmeticKeys,...angleKeys]){
  // Sculpt geometry changes only on finger release; lipstick responds live.
  if(rebuildKeys.includes(key))el.addEventListener('change',rebuildFemale);
  if(cosmeticKeys.includes(key))el.addEventListener('change',()=>{
+  // Only lipstick width changes actual vermilion polygon geometry.
+  // Rebuild once on touch-release, never on each mobile input frame.
+  if(key==='lipstickWidth')rebuildFemale();
   $('metrics').textContent=JSON.stringify(metrics(),null,2);
  });
 }
