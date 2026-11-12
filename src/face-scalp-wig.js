@@ -602,9 +602,9 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  geo.setAttribute('position',attr);
  geo.setAttribute('color',new THREE.BufferAttribute(colors,3));
  geo.setIndex(indices);
- const mat=new THREE.MeshStandardMaterial({
-  color:0xffffff,vertexColors:true,roughness:.49,metalness:0,
-  side:THREE.DoubleSide
+ const mat=new THREE.MeshPhysicalMaterial({
+  color:0xffffff,vertexColors:true,roughness:.42,metalness:0,
+  clearcoat:.10,clearcoatRoughness:.34,side:THREE.DoubleSide
  });
  const locks=new THREE.Mesh(geo,mat);
  locks.name='REAL_ROOTED_SWEPT_HAIR_LOCKS';
@@ -733,7 +733,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    const width=half*tip*rootProfile*(.90+.15*fract(i*.35))*
     (strand.zone.startsWith('fringe')?.17:
      strand.zone.startsWith('temple')?.58:
-     strand.zone==='crown'?.49:
+     strand.zone==='crown'?.56:
      strand.zone.startsWith('back')?.88:
      strand.zone.startsWith('nape')?.82:.86);
     // Groom BOTH ribbon planes along the actual hair-guide tangent.
@@ -923,9 +923,9 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   fineGeo.setAttribute('color',new THREE.Float32BufferAttribute(shades,3));
   fineGeo.setIndex(tris);
   fineGeo.computeVertexNormals();fineGeo.computeBoundingSphere();
-  const fineMat=new THREE.MeshStandardMaterial({
-   color:0xffffff,vertexColors:true,roughness:.56,metalness:0,
-   side:THREE.DoubleSide
+  const fineMat=new THREE.MeshPhysicalMaterial({
+   color:0xffffff,vertexColors:true,roughness:.47,metalness:0,
+   clearcoat:.07,clearcoatRoughness:.40,side:THREE.DoubleSide
   });
   const fineMesh=new THREE.Mesh(fineGeo,fineMat);
   fineMesh.name='DETACHABLE_WIG_FINE_FIBRES';
@@ -969,6 +969,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   rearScalpCoverage:'nape-and-occipital-head-triangles',
   groomingSmoothingPasses:3,frizzAmplitudeFactor:.025,
   hairClumpSwayGroupSize:12,
+  satinHairFiberSurface:true,
   fineFringeMultiplier:fringeMultiplier,frontFineLockExtra:fringeExtra,
   rearBodyVolumeExtra,
   renderedRibbonBodyCollision:!!renderBodyCollider,
