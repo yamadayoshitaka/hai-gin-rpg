@@ -227,7 +227,11 @@ function resize(){
 function faceBox(){
  const model=models.get(gender);
  model.root.updateMatrixWorld(true);
- return new THREE.Box3().setFromObject(model.face);
+ // Camera framing must track the source-derived HEAD alone, not hair.
+ // Otherwise increasing wig density/length changes all preset zooms.
+ const face=model.face;
+ face.geometry.computeBoundingBox();
+ return face.geometry.boundingBox.clone().applyMatrix4(face.matrixWorld);
 }
 function setView(view){
  if(!ready)return;
