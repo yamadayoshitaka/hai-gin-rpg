@@ -105,11 +105,26 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  head.geometry.computeBoundingBox();head.geometry.computeVertexNormals();
  const box=head.geometry.boundingBox.clone(),d=box.getSize(new THREE.Vector3());
  const center=box.getCenter(new THREE.Vector3());
- const candidates=actualScalpCandidates(head.geometry,box);
+ const {pools,all:scalpCandidates}=actualScalpCandidates(head.geometry,box);
  const root=new THREE.Group();root.name='FEMALE_SCALP_ANCHORED_LONG_WIG';
  root.userData.hairOnRealHead=true;
  const cap=scalpShell(head.geometry,box,color);root.add(cap);
- const lockCount=clamp(Math.round(count),48,320),segments=11;
+ const lockCount=clamp(Math.round(count),48,2400),segments=11;
+ const zoneCounts=Object.fromEntries(WIG_ZONE_WEIGHTS.map(([zone])=>[zone,0]));
+ const zoneCap=[],zoneNames=[];
+ let total=0;
+ for(const [name,weight] of WIG_ZONE_WEIGHTS){
+  total+=weight;
+  zoneCap.push(Math.round(total*lockCount));zoneNames.push(name);
+ }
+ const sampleRoot=(zone,index)=>{
+  const pool=pools[zone];
+  // Golden-ratio low-discrepancy sequence. Every zone is allocated
+  // explicitly, regardless of donor topology vertex-order bias.
+  const u=fract((index+1)*.61803398875+
+   (zoneNames.indexOf(zone)+1)*.27639320225);
+  return pool[Math.min(pool.length-1,Math.floor(u*pool.length))];
+ };
  const strands=[];
  const rootLift=d.x*.0045;
  // Shoulder/chest proxy geometry is in the SAME coordinates as the head.
@@ -130,26 +145,41 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  const vertexCount=lockCount*(segments+1)*4;
  const vertices=new Float32Array(vertexCount*3),colors=new Float32Array(vertexCount*3);
  const indices=[];
- const rootColor=new THREE.Color(color),tips=new THREE.Color(0xe0bc83);
+ const rootColor=new THREE.Color(color);
+ // Color variation follows the selected palette; previous hard-coded
+ // golden tips incorrectly turned brown/black hair into bright blonde.
+ const tips=rootColor.clone().multiplyScalar(1.13);
  for(let i=0;i<lockCount;i++){
-  const seed=candidates[Math.floor(fract(i*.61803398875+.37)*candidates.length)];
+  const zoneIndex=zoneCap.findIndex(cap=>i<cap);
+  const zone=zoneNames[Math.max(0,zoneIndex)];
+  const seed=sampleRoot(zone,zoneCounts[zone]++);
   const wigRoot=seed.p.clone().addScaledVector(seed.n,rootLift);
-  const fore=wigRoot.z>center.z+d.z*.13;
-  const side=Math.sign(wigRoot.x-center.x)||1;
-  const fringe=fore&&wigRoot.y>box.min.y+d.y*.875&&i%4<2;
-  const length=d.y*(fringe?.18:.48+fract(i*.381966)*.23)*clamp(lengthScale,.55,1.5);
+  const side=zone.endsWith('Left')?-1:zone.endsWith('Right')?1:
+   Math.sign(wigRoot.x-center.x)||1;
+  const fringe=zone.startsWith('fringe');
+  const back=zone.startsWith('back')||zone.startsWith('nape');
+  const longFactor=zone.startsWith('nape')?.43:
+   zone.startsWith('temple')?.54:back?.63:.59;
+  // Fringe must terminate above the eyebrows, never obscure the eyes,
+  // nose or mouth, even at the maximum hair-length slider value.
+  const browLimit=box.min.y+d.y*.758;
+  const bangLength=d.y*(.09+fract(i*.381966)*.045)*clamp(lengthScale,.55,1.5);
+  const length=fringe?Math.max(d.y*.008,Math.min(bangLength,wigRoot.y-browLimit)):
+   d.y*(longFactor+fract(i*.381966)*.13)*clamp(lengthScale,.55,1.5);
   const rest=[],points=[],vel=[];
-  const tangent=seed.n.clone().multiplyScalar(fringe?.05:.095);
-  const out=fringe?d.z*.085:d.z*.07;
+  const tangent=seed.n.clone().multiplyScalar(fringe?.02:.05);
+  const out=d.z*(back?.09:fringe?.075:.12);
   for(let j=0;j<=segments;j++){
    const t=j/segments;
+   const sideways=side*d.x*(fringe?.105:.041)*t*t;
    const p=wigRoot.clone()
     .addScaledVector(tangent,t)
-    .add(f3(side*d.x*.035*t*t,-length*t,
-     (fore?1:-1)*out*t*(.5+t)));
+    .add(f3(sideways,-length*t,
+     (back?-1:1)*out*t*(.4+.6*t)));
    rest.push(p);points.push(p.clone());vel.push(new THREE.Vector3());
   }
-  strands.push({root:wigRoot,rest,points,vel,fringe,side,seedIndex:seed.index});
+  strands.push({root:wigRoot,rest,points,vel,fringe,side,
+   zone,seedIndex:seed.index});
   const base=i*(segments+1)*4;
   for(let j=0;j<=segments;j++){
    const t=j/segments,shaded=rootColor.clone().lerp(tips,.3+.48*t)
@@ -181,7 +211,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  locks.userData.rootedOnRealScalp=true;
  locks.userData.lockCount=lockCount;
  root.add(locks);
- const half=d.x*.008;
+ const half=d.x*.0066;
  let collisions=0,faceContacts=0,bodyContacts=0,accumulator=0,elapsed=0;
  // Conservative, real-head-derived frontal collider. In addition to
  // an ellipsoid it uses the actual sculpted vertices for the scalp roots.
@@ -248,8 +278,10 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  }
  writeGeometry();
  root.userData.wigReport={
-  style:'long-golden-layered-fringe',rooted:true,rootCount:lockCount,
-  pointCount:lockCount*(segments+1),realScalpCandidateCount:candidates.length,
+  style:'dense-side-back-layered-fringe',rooted:true,rootCount:lockCount,
+  pointCount:lockCount*(segments+1),realScalpCandidateCount:scalpCandidates.length,
+  rootDistribution:{...zoneCounts},
+  zoneCandidateCounts:Object.fromEntries(Object.entries(pools).map(([key,list])=>[key,list.length])),
   collisionTypes:['head','face','neck','shoulder','chest',...externalColliders.map(c=>c.name||'body')],
   meshCount:2,physicsHz:30,lengthScale:clamp(lengthScale,.55,1.5)
  };
@@ -261,6 +293,10 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  },resolvePoint(point){
   const p=point.clone();resolveCollision(p);return p;
  },getRootSamples(){
-  return strands.slice(0,10).map(s=>({vertexIndex:s.seedIndex,point:s.root.toArray()}));
+  // Return a representative root from every scalp region for QA,
+  // including the nape/back/temples that were previously completely bald.
+  return WIG_ZONE_WEIGHTS.map(([zone])=>strands.find(s=>s.zone===zone))
+   .filter(Boolean).map(s=>({zone:s.zone,vertexIndex:s.seedIndex,
+    point:s.root.toArray()}));
  }};
 }
