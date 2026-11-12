@@ -7,7 +7,7 @@ fs.mkdirSync(out,{recursive:true});
 // event, leaving a stale value visible while the actual mesh uses defaults.
 async function expectVisibleLibraryPreset(page,context,contact='brown'){
  const expected={
-  irisDiameter:1,eyeSize:1,jawSharpness:5,noseTipLift:0,
+  irisDiameter:1,eyeSize:1,eyeSpacing:1.1,jawSharpness:5,noseTipLift:0,
   nostrilCover:2,noseBridgeSharpness:2.5,eyeAngle:0,
   lipstickX:0,lipstickY:0,lipstickWidth:1,lipstickHeight:1
  };
@@ -24,7 +24,7 @@ async function expectVisibleLibraryPreset(page,context,contact='brown'){
  for(const [key,value] of Object.entries(expected)){
   const ui=actual.result[key];
   const suffix=key==='eyeAngle'?'°':
-   ['irisDiameter','eyeSize','jawSharpness','lipstickWidth','lipstickHeight'].includes(key)?'×':'';
+   ['irisDiameter','eyeSize','eyeSpacing','jawSharpness','lipstickWidth','lipstickHeight'].includes(key)?'×':'';
   if(Number(ui.input)!==value||ui.output!==String(value)+suffix||
      actual.model[key]!==value)
    throw Error('Displayed Library-saved preset mismatch ('+context+': '+key+'): '+
@@ -37,10 +37,10 @@ async function expectVisibleLibraryPreset(page,context,contact='brown'){
 async function expectCenteredFaceSliders(page,gender){
  const snapshot=await page.evaluate(sex=>{
   const keys=sex==='female'?
-   ['irisDiameter','eyeSize','jawSharpness','noseTipLift','nostrilCover',
+   ['irisDiameter','eyeSize','eyeSpacing','jawSharpness','noseTipLift','nostrilCover',
     'noseBridgeSharpness','eyeAngle','lipstickX','lipstickY',
     'lipstickWidth','lipstickHeight']:
-   ['jawSharpness','eyeSize','irisDiameter','noseTipLift',
+   ['jawSharpness','eyeSize','eyeSpacing','irisDiameter','noseTipLift',
     'nostrilCover','noseBridgeSharpness','eyeAngle'];
   const model=window.__faceMasterQA();
   const selected=sex==='female'?model.femaleControls:model.maleControls;
@@ -54,10 +54,11 @@ async function expectCenteredFaceSliders(page,gender){
  },gender);
  for(const p of snapshot){
   const mid=(p.min+p.max)/2;
-  if(Math.abs(mid-p.value)>1e-8||
+  const thumb=(p.value-p.min)/(p.max-p.min);
+  if((p.key!=='lipstickWidth'&&Math.abs(mid-p.value)>1e-8)||
      Math.abs(p.value-p.saved)>1e-8||
      Math.abs(p.model-p.saved)>1e-8||
-     p.center!==.5)
+     Math.abs(p.center-thumb)>1e-8)
    throw Error('Saved GLB is not centered at 50%: '+gender+' '+JSON.stringify(p));
  }
  const exact=Object.fromEntries(snapshot.map(x=>[x.key,[x.min,x.max,x.value]]));
@@ -183,7 +184,9 @@ async function expectCenteredFaceSliders(page,gender){
    throw Error('Male and female rendered faces are identical');
   await page.locator('#female').click();
   const wigQA=await page.evaluate(()=>window.__faceMasterQA());
-  if(!wigQA.wigVisible||wigQA.wigReport?.rootCount!==1440||
+  if(!wigQA.wigVisible||wigQA.wigReport?.rootCount<1440||
+      wigQA.wigReport?.fineFringeMultiplier!==3||
+      wigQA.wigReport?.frontFineLockExtra<200||
      wigQA.wigStyleId!=='center-part-gravity-long'||
      !wigQA.wigIsSeparateAsset||
      wigQA.wigReport?.hairstyleId!=='center-part-gravity-long'||
@@ -407,7 +410,7 @@ async function expectCenteredFaceSliders(page,gender){
    },value);
   }
   const hairAdjusted=await page.evaluate(()=>window.__faceMasterQA());
-  if(hairAdjusted.wigReport?.rootCount!==480||
+  if(hairAdjusted.wigReport?.rootCount-hairAdjusted.wigReport?.frontFineLockExtra!==480||
      hairAdjusted.wigReport?.lengthScale!==1.5||
      JSON.stringify(hairAdjusted.femaleControls)!==JSON.stringify(beforeHairControls))
    throw Error('Hair sliders affected face settings or wig '+JSON.stringify(hairAdjusted.wigReport));
@@ -570,6 +573,30 @@ async function expectCenteredFaceSliders(page,gender){
    if(!info.wig?.usesRealBodyTriangleContacts||
       info.bodyCollision?.collisionTriangleCount<1)
     throw Error('Real female body mesh is not used for hair collision');
+   // The integrated Android page now edits the SAME real face mesh as the
+   // standalone studio while retaining its fitted body and collider.
+   const eyeSlider=hero.locator('#eyeSpacing');
+   const lipSlider=hero.locator('#lipstickWidth');
+   if(!await eyeSlider.isEnabled()||!await lipSlider.isEnabled())
+    throw Error('Integrated full-body eye-gap/lip controls disabled');
+   await hero.evaluate(()=>{
+    const eye=document.getElementById('eyeSpacing');
+    eye.value='1.2';eye.dispatchEvent(new Event('input',{bubbles:true}));
+    eye.dispatchEvent(new Event('change',{bubbles:true}));
+    const lip=document.getElementById('lipstickWidth');
+    lip.value='2.8';lip.dispatchEvent(new Event('input',{bubbles:true}));
+    lip.dispatchEvent(new Event('change',{bubbles:true}));
+   });
+   const edited=await hero.evaluate(()=>window.__heroineBodyQA());
+   if(edited.editableFaceControls.eyeSpacing!==1.2||
+      edited.editableFaceControls.lipstickWidth!==2.8||
+      !edited.attachedBody||!edited.wig?.renderedRibbonBodyCollision)
+    throw Error('Integrated body UI lost geometry or collision '+JSON.stringify(edited));
+   await hero.locator('#resetFaceControls').click();
+   const reset=await hero.evaluate(()=>window.__heroineBodyQA());
+   if(reset.editableFaceControls.eyeSpacing!==1.1||
+      reset.editableFaceControls.lipstickWidth!==1)
+    throw Error('Integrated face sliders did not reset '+JSON.stringify(reset));
    const c=hero.locator('#bodyCanvas');
    await c.screenshot({path:path.join(out,'heroine-v19-front-body.png')});
    await hero.locator('#portrait').click();

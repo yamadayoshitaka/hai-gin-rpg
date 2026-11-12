@@ -10,7 +10,7 @@ import {createScalpAnchoredWig} from '../src/face-scalp-wig.js';
 import {attachIndependentHeadToBody,buildBodyDepthCollision,removeHeadBustBelowNeck} from '../src/face-body-assembly.js';
 import {CHAPTER_ONE_ART_BY_KEY,FEMALE_COMMANDER_ART_PALETTE} from '../src/chapter-one-character-art-references.js';
 import {DEFAULT_WIG_STYLE_ID,getWigStyle,listWigStyles} from '../src/face-wig-styles.js';
-import {normalizeFemaleFaceControls,FEMALE_V7_DEFAULTS,FACE_V7_PALETTE,CONTACT_COLORS,safeContactColor,LIBRARY_FACE_PRESET,MALE_REFERENCE_DEFAULT,FACE_SLIDER_RANGES}
+import {normalizeFemaleFaceControls,normalizeMaleFaceControls,FEMALE_V7_DEFAULTS,FACE_V7_PALETTE,CONTACT_COLORS,safeContactColor,LIBRARY_FACE_PRESET,MALE_REFERENCE_DEFAULT,FACE_SLIDER_RANGES,FACE_EYE_SPACING_DEFAULT,FACE_EYE_SPACING_RANGE}
  from '../src/face-v7-controls.js';
 
 function fixture(){
@@ -135,9 +135,9 @@ test('face studio includes stable gender, view and export controls with no body 
  for(const id of ['female','male','front','side','threeQuarter','back','wire',
   'faceCanvas','export','status','metrics','clay','color','irisDiameter',
   'noseTipLift','nostrilCover','noseBridgeSharpness','jawSharpness','eyeAngle',
-  'eyeSize','lipstickX','lipstickY','lipstickWidth','lipstickHeight',
+  'eyeSize','eyeSpacing','lipstickX','lipstickY','lipstickWidth','lipstickHeight',
   'contactPreset','contactColor','resetPreset',
-  'maleAdjustments','maleJawSharpness','maleEyeSize','maleIrisDiameter',
+  'maleAdjustments','maleJawSharpness','maleEyeSize','maleEyeSpacing','maleIrisDiameter',
   'maleNoseTipLift','maleNostrilCover','maleNoseBridgeSharpness',
   'maleEyeAngle','maleBeardDensity','maleBeardLength','resetMalePreset'])
   assert.match(html,new RegExp('id="'+id+'"'));
@@ -451,7 +451,10 @@ test('user Library GLB face preset is canonical and male derives cosmetic-free',
  const source=fixture().source;
  const f=makeIndependentFaceMaster(source,'female');
  const m=makeIndependentFaceMaster(source,'male');
- assert.deepEqual(f.report.femaleControls,saved);
+ assert.deepEqual(Object.fromEntries(Object.keys(saved).map(
+  key=>[key,f.report.femaleControls[key]])),saved);
+ assert.equal(f.report.femaleControls.eyeSpacing,FACE_EYE_SPACING_DEFAULT,
+  'Eye separation is an additive v21 control, not an altered Library GLB value');
  for(const [key,value] of Object.entries(saved))
   assert.equal(m.report.maleControls[key],value,'male GLB-derived value '+key);
  const pf=f.face.geometry.getAttribute('position');
@@ -617,7 +620,7 @@ test('v14 saved Library GLB equals exact midpoint of every female/male face slid
   noseTipLift:[-2,2,0],
   eyeSize:[.5,1.5,1],
   irisDiameter:[0,2,1],
-  lipstickWidth:[.2,1.8,1],
+  lipstickWidth:[.2,2.8,1],
   lipstickHeight:[.2,1.8,1]
  };
  for(const [key,[min,max,original]] of Object.entries(expected)){
@@ -626,14 +629,18 @@ test('v14 saved Library GLB equals exact midpoint of every female/male face slid
  }
  for(const [key,[low,high]] of Object.entries(FACE_SLIDER_RANGES)){
   const midpoint=(low+high)/2;
-  assert.ok(Math.abs(midpoint-FEMALE_V7_DEFAULTS[key])<1e-9,
+  assert.ok(key==='lipstickWidth'||Math.abs(midpoint-FEMALE_V7_DEFAULTS[key])<1e-9,
    'Saved GLB not centered: '+key);
   assert.equal(MALE_REFERENCE_DEFAULT[key],FEMALE_V7_DEFAULTS[key],
    'Male must share saved female face baseline: '+key);
   assert.equal(normalizeFemaleFaceControls({[key]:low})[key],low);
   assert.equal(normalizeFemaleFaceControls({[key]:high})[key],high);
  }
- assert.deepEqual(normalizeFemaleFaceControls({}),FEMALE_V7_DEFAULTS);
+ const empty=normalizeFemaleFaceControls({});
+ assert.equal(empty.eyeSpacing,FACE_EYE_SPACING_DEFAULT);
+ assert.deepEqual(Object.fromEntries(Object.keys(FEMALE_V7_DEFAULTS)
+  .map(key=>[key,empty[key]])),FEMALE_V7_DEFAULTS);
+ assert.deepEqual(FACE_EYE_SPACING_RANGE,[.85,1.35]);
 });
 test('v14 sculpt stronger than saved standard remains functional on real face vertices',()=>{
  const src=fixture().source;
@@ -1015,4 +1022,57 @@ test('v20 body collision protects visible hair-ribbon edges and clumped sway avo
  assert.ok(wig.getReport().ribbonBodyContactEvents>0,
   'Record visible-ribbon corrections separately from guide contacts');
  wig.dispose();
+});
+
+test('v21 real eye gap, fine lash triangles and expanded lip geometry',()=>{
+ const source=fixture().source;
+ const narrow=makeIndependentFaceMaster(source,'female',{femaleControls:{
+  eyeSpacing:.85,lipstickWidth:1
+ }});
+ const wide=makeIndependentFaceMaster(source,'female',{femaleControls:{
+  eyeSpacing:1.35,lipstickWidth:2.8
+ }});
+ const gap=model=>{
+  const l=model.parts.getObjectByName('LEFT_EYE_LINKED_PIVOT');
+  const r=model.parts.getObjectByName('RIGHT_EYE_LINKED_PIVOT');
+  return r.position.x-l.position.x;
+ };
+ assert.ok(gap(wide)>gap(narrow)*1.5,'Eyes must separate without changing eye size');
+ assert.equal(wide.report.detailedParts.eyeSpacingFactor,1.35);
+ assert.equal(wide.report.detailedParts.eyelashFilamentCount,156);
+ for(const eye of ['LEFT','RIGHT'])for(const upper of [true,false]){
+  const lashes=wide.parts.getObjectByName(
+   eye+(upper?'_UPPER':'_LOWER')+'_LASH_MESH');
+  assert.equal(lashes.userData.rootedOnEyeliner,true);
+  assert.equal(lashes.userData.filamentCount,upper?52:26);
+  assert.equal(lashes.geometry.getAttribute('position').count,
+   (upper?52:26)*3);
+  assert.equal(lashes.parent.name,eye+'_LASH_ANGLE_CONTROL');
+ }
+ const lipWidth=model=>{
+  const mesh=model.parts.getObjectByName('UPPER_3D_VERMILION_LIP');
+  mesh.geometry.computeBoundingBox();
+  return mesh.geometry.boundingBox.max.x-mesh.geometry.boundingBox.min.x;
+ };
+ assert.ok(lipWidth(wide)>lipWidth(narrow)*1.5,
+  '2.8x lipstick width must actually widen real vermilion polygons');
+ assert.equal(wide.report.detailedParts.lipstickPlacement.width,2.8);
+ assert.equal(normalizeFemaleFaceControls({lipstickWidth:9}).lipstickWidth,2.8);
+ assert.equal(normalizeFemaleFaceControls({eyeSpacing:9}).eyeSpacing,1.35);
+ assert.equal(normalizeMaleFaceControls({eyeSpacing:9}).eyeSpacing,1.35);
+});
+test('v21 fine fringe adds detail only to the front and preserves rear roots',()=>{
+ const face=makeIndependentFaceMaster(fixture().source,'female');
+ const normal=createScalpAnchoredWig(face.face,{count:96});
+ const fine=createScalpAnchoredWig(face.face,{count:96,fineFringeMultiplier:3});
+ const a=normal.getReport(),b=fine.getReport();
+ assert.equal(a.rootCount,96);
+ assert.ok(b.rootCount>a.rootCount);
+ assert.equal(b.fineFringeMultiplier,3);
+ for(const zone of ['fringeLeft','fringeRight'])
+  assert.ok(b.rootDistribution[zone]>=a.rootDistribution[zone]*2.5);
+ for(const zone of ['backLeft','backRight','napeLeft','napeRight'])
+  assert.ok(b.rootDistribution[zone]>=a.rootDistribution[zone]-1,
+   'Existing rear/neck strands must not be sacrificed for bangs');
+ normal.dispose();fine.dispose();
 });

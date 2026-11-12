@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>灰銀のレゾナンス｜女性主人公・全身＋顔・毛束v20</title>
+<title>灰銀のレゾナンス｜女性主人公・全身＋顔・毛束v21</title>
 <style>
 *{box-sizing:border-box}body{margin:0;background:#101c2e;color:#eaf3ff;font-family:system-ui,"Noto Sans JP",sans-serif}
 header{background:#183049;padding:17px 18px;border-bottom:1px solid #466780}
@@ -17,6 +17,7 @@ button[aria-pressed=true]{background:#236959;border-color:#b8e8d8}
 button:disabled{opacity:.48;cursor:not-allowed}
 #artImage{width:100%;height:auto;max-height:320px;object-fit:contain;background:#0e2035;border-radius:10px;display:block}
 .note{font-size:13px;color:#bdd2e4;line-height:1.6}a{color:#b1e7ff}
+.controls label{flex:1 1 175px;font-size:13px;margin:0;padding:7px;min-width:145px}.controls label output{float:right}.controls label input{width:100%;height:28px;accent-color:#56c7a5}
 #status{font-size:13px;color:#cce1ee;min-height:20px}
 #metrics{font-size:11px;overflow:auto;white-space:pre-wrap;max-height:330px}
 label{display:block;margin:10px 0}select{width:100%}
@@ -25,8 +26,8 @@ label{display:block;margin:10px 0}select{width:100%}
 </head>
 <body>
 <header>
-<h1>女性主人公・顔＋胴体・毛束v20</h1>
-<p>第1章「女性主人公 hero-girl-01」の登録原画を参照。元の女性胴体GLBと独立した顔メッシュを接続し、頭皮と実際の胴体への髪の接触判定を確認します。v20では表示毛束の端の貫通を抑え、毛束ごとの縮れ揺れを軽減しました。</p>
+<h1>女性主人公・顔＋胴体・毛束v21</h1>
+<p>第1章「女性主人公 hero-girl-01」の登録原画を参照。元の女性胴体GLBと独立した顔メッシュを接続し、頭皮と実際の胴体への髪の接触判定を確認します。v21では髪の前後別の接触、細い前髪、目の間隔、唇の幅、細密まつ毛を調整できます。</p>
 </header>
 <main>
 <section>
@@ -44,8 +45,15 @@ label{display:block;margin:10px 0}select{width:100%}
 <button id="toggleOutfit" aria-pressed="true" disabled>衣装を隠す</button>
 <button id="saveGlb" disabled>顔＋胴体＋髪をGLB保存</button>
 </div>
+<div class="controls" aria-label="顔の詳細調整">
+<label for="eyeSpacing">目と目の間隔 <output id="eyeSpacingValue">1.1×</output>
+<input type="range" id="eyeSpacing" min="0.85" max="1.35" step="0.01" value="1.1" disabled></label>
+<label for="lipstickWidth">口紅・唇の幅 <output id="lipstickWidthValue">1×</output>
+<input type="range" id="lipstickWidth" min="0.2" max="2.8" step="0.05" value="1" disabled></label>
+<button id="resetFaceControls" disabled>顔の調整を元に戻す</button>
+</div>
 <p id="status">3D元モデルを読み込んでいます…</p>
-<p class="note">指で回転・ピンチでズームできます。目・頭部・ヅラは既存v18の独立3Dパーツです。既存の顔スライダーと保存顔の標準値は変更していません。</p>
+<p class="note">指で回転・ピンチでズームできます。目幅と口紅幅は下のスライダーで変更できます。元の保存済み顔の他の値はそのまま維持します。</p>
 </section>
 <section>
 <h2 style="font-size:18px;margin-top:0">登録人物原画</h2>
@@ -56,7 +64,7 @@ alt="第1章女性主人公（暫定人物マスターの登録原画）">
 <label for="style">固有のヅラ（別アセット）
 <select id="style" disabled></select></label>
 <p class="note">眼球と黒目の正面投影を円形に修正。髪は実顔面と女性胴体の三角形表面との接触を判定し、肩・胸の簡易判定も併用します。</p>
-<a href="./face-mesh-studio.html?gender=female">顔の詳細スライダーへ戻る</a>
+<a href="./face-mesh-studio.html?gender=female&v=21">顔の詳細スライダーへ戻る</a>
 <details><summary>実メッシュ・接触検査</summary><pre id="metrics"></pre></details>
 </section>
 </main>
@@ -67,9 +75,9 @@ import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {GLTFExporter} from 'three/addons/exporters/GLTFExporter.js';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {makeIndependentFaceMaster} from './src/independent-face-masters.js';
-import {FEMALE_V7_DEFAULTS} from './src/face-v7-controls.js';
+import {FEMALE_V7_DEFAULTS,FACE_EYE_SPACING_DEFAULT} from './src/face-v7-controls.js';
 import {applyFaceColorMode} from './src/face-feature-meshes.js';
-import {createScalpAnchoredWig} from './src/face-scalp-wig.js?v=20';
+import {createScalpAnchoredWig} from './src/face-scalp-wig.js?v=21';
 import {attachIndependentHeadToBody,removeHeadBustBelowNeck} from './src/face-body-assembly.js';
 import {listWigStyles,DEFAULT_WIG_STYLE_ID} from './src/face-wig-styles.js';
 import {FEMALE_COMMANDER_ART_PALETTE,CHAPTER_ONE_ART_BY_KEY} from './src/chapter-one-character-art-references.js';
@@ -100,7 +108,7 @@ const camera=new THREE.PerspectiveCamera(38,1,.01,60);
 const orbit=new OrbitControls(camera,canvas);
 orbit.enableDamping=true;orbit.dampingFactor=.10;orbit.minDistance=.17;orbit.maxDistance=12;
 let model=null,bodyAttachment=null,wig=null,ready=false;
-let uncutScalpSource=null,neckCrop=null;
+let uncutScalpSource=null,neckCrop=null,sourceHead=null;const faceControls={...FEMALE_V7_DEFAULTS,eyeSpacing:FACE_EYE_SPACING_DEFAULT};
 let view='front',zoomMode='full',wigVisible=true,outfitVisible=true;
 const counter={wigBuilds:0,glbExports:0};
 const status=(s)=>{$('status').textContent=s;};
@@ -126,6 +134,8 @@ function metrics(){
   styleId:wig?.root?.userData.hairStyleId,
   roundPupilAspectRatio:pupilShape,
   sourceHeadUnchanged:true,sourceBodyUnchanged:true,
+  editableFaceControls:{...faceControls},
+  detailedFrontHair:true,
   savedFaceControlDefaults:{...FEMALE_V7_DEFAULTS},
   outfitSource:bodyAttachment?.report?.outfitSource,
   bodyMeshes:bodyAttachment?.report?.donorBodyTrianglesRetained,
@@ -160,12 +170,56 @@ function rebuildWig(){
  if(wig){wig.root.removeFromParent();wig.dispose();wig=null;}
  wig=createScalpAnchoredWig(uncutScalpSource||model.face,{
   count:1440,lengthScale:1.0,styleId:$('style').value,
+  fineFringeMultiplier:3,
   color:Number('0x'+palette.hair.slice(1)),
   bodyCollisionResolver:bodyAttachment.bodyCollider
  });
  model.face.add(wig.root);wig.root.visible=wigVisible;
  counter.wigBuilds++;$('metrics').textContent=JSON.stringify(metrics(),null,2);
 }
+// Eye and lip controls rebuild ONLY the independent face. The imported body,
+// its triangle collider and the saved full-scalp wig remain attached in place.
+function rebuildFaceOnBody(){
+ if(!ready||!sourceHead||!model||!bodyAttachment)return;
+ const previous=model;
+ const next=makeIndependentFaceMaster(sourceHead,'female',{femaleControls:faceControls});
+ applyFaceColorMode(next.face,'color',{contactColor:palette.iris});
+ next.root.add(bodyAttachment.root); // Reparent existing fitted body; no new GLB.
+ if(wig){wig.root.removeFromParent();next.face.add(wig.root);}
+ const height=next.face.geometry.boundingBox.getSize(new THREE.Vector3()).y;
+ const cropped=removeHeadBustBelowNeck(next.face,
+  bodyAttachment.report.neckSeamY-height*.030);
+ scene.add(next.root);scene.remove(previous.root);
+ previous.root.traverse(obj=>{
+  if(!obj.isMesh)return;
+  obj.geometry?.dispose();
+  for(const material of Array.isArray(obj.material)?obj.material:[obj.material])
+   material?.dispose?.();
+ });
+ model=next;neckCrop=cropped;
+ fitCamera();
+ $('metrics').textContent=JSON.stringify(metrics(),null,2);
+ status('目幅・唇の造形を更新しました。髪と胴体の接触判定は維持しています。');
+}
+for(const key of ['eyeSpacing','lipstickWidth']){
+ const slider=$(key),display=$(key+'Value');
+ slider.addEventListener('input',()=>{
+  display.value=slider.value+'×';
+ });
+ slider.addEventListener('change',()=>{
+  faceControls[key]=Number(slider.value);
+  rebuildFaceOnBody();
+ });
+}
+$('resetFaceControls').addEventListener('click',()=>{
+ faceControls.eyeSpacing=FACE_EYE_SPACING_DEFAULT;
+ faceControls.lipstickWidth=FEMALE_V7_DEFAULTS.lipstickWidth;
+ for(const key of ['eyeSpacing','lipstickWidth']){
+  $(key).value=String(faceControls[key]);
+  $(key+'Value').value=String(faceControls[key])+'×';
+ }
+ rebuildFaceOnBody();
+});
 for(const id of ['front','side','back','crown'])$(id).addEventListener('click',()=>{
  view=id;fitCamera();
 });
@@ -194,7 +248,7 @@ $('saveGlb').addEventListener('click',async()=>{
    exporter.parse(model.root,resolve,reject,{binary:true,onlyVisible:true}));
   const url=URL.createObjectURL(new Blob([result],{type:'model/gltf-binary'}));
   const a=document.createElement('a');a.href=url;
-  a.download='hai-gin-hero-girl-01-face-body-v19.glb';
+  a.download='hai-gin-hero-girl-01-face-body-v21.glb';
   document.body.appendChild(a);a.click();a.remove();
   setTimeout(()=>URL.revokeObjectURL(url),1000);
   counter.glbExports++;
@@ -226,7 +280,8 @@ frame();
    loader.loadAsync(base+'realistic-head-animation.glb'),
    loader.loadAsync(base+'realistic-body-female.glb')
   ]);
-  model=makeIndependentFaceMaster(head.scene,'female',{femaleControls:FEMALE_V7_DEFAULTS});
+  sourceHead=head.scene;
+  model=makeIndependentFaceMaster(sourceHead,'female',{femaleControls:faceControls});
   applyFaceColorMode(model.face,'color',{contactColor:palette.iris});
   bodyAttachment=attachIndependentHeadToBody(model,body.scene,{
    outfitSource:null,characterId:art.characterId,
@@ -241,7 +296,7 @@ frame();
   neckCrop=removeHeadBustBelowNeck(model.face,
    bodyAttachment.report.neckSeamY-originalHeight*.030);
   ready=true;
-  for(const id of ['full','portrait','front','side','back','crown','toggleWig','toggleOutfit','style','saveGlb'])
+  for(const id of ['full','portrait','front','side','back','crown','toggleWig','toggleOutfit','style','saveGlb','eyeSpacing','lipstickWidth','resetFaceControls'])
    $(id).disabled=false;
   fitCamera();$('metrics').textContent=JSON.stringify(metrics(),null,2);
   status('女性主人公の顔と実GLB胴体を接続しました。顔・胴体・髪を3Dで確認できます。');

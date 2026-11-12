@@ -28,6 +28,9 @@ export const LIBRARY_FACE_PRESET=Object.freeze({
 });
 // Preserve the legacy export name so all game/QA consumers use this
 // saved preset without a second incompatible settings API.
+// v21 adds a NEW control without falsifying the original saved GLB values.
+export const FACE_EYE_SPACING_DEFAULT=1.10;
+export const FACE_EYE_SPACING_RANGE=Object.freeze([.85,1.35]);
 export const FEMALE_V7_DEFAULTS=LIBRARY_FACE_PRESET.femaleControls;
 export const FACE_V7_PALETTE=Object.freeze({
  skin:0xebc5b7,
@@ -58,7 +61,7 @@ export const FACE_SLIDER_RANGES=Object.freeze({
  browAngle:[-19,31],lashAngle:[-18,32],
  eyeAngle:[-20,20],eyeSize:[.5,1.5],
  lipstickX:[-.12,.12],lipstickY:[-.12,.12],
- lipstickWidth:[.2,1.8],lipstickHeight:[.2,1.8]
+ lipstickWidth:[.2,2.8],lipstickHeight:[.2,1.8]
 });
 export function normalizeFemaleFaceControls(settings={}){
  const out={};
@@ -66,6 +69,10 @@ export function normalizeFemaleFaceControls(settings={}){
   const raw=Number(settings?.[k]);
   out[k]=Number.isFinite(raw)?Math.max(FACE_SLIDER_RANGES[k][0],Math.min(FACE_SLIDER_RANGES[k][1],raw)):v;
  }
+ const spacing=Number(settings?.eyeSpacing);
+ out.eyeSpacing=Number.isFinite(spacing)?
+  Math.max(FACE_EYE_SPACING_RANGE[0],Math.min(FACE_EYE_SPACING_RANGE[1],spacing)):
+  FACE_EYE_SPACING_DEFAULT;
  return out;
 }
 
