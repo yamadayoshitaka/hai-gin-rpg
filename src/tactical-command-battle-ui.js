@@ -19,9 +19,8 @@ export function installBattleTacticalUI({
  preview.id='tacticalCommandPreview';
  preview.hidden=true;
  document.getElementById('squadOrderStatus')?.insertAdjacentElement('afterend',preview);
- // Existing compact dock applies overflow:hidden!important; let the actionable
- // four-order cards scroll on narrow phones instead of being clipped.
- preview.closest('#squadTactics')?.style.setProperty('overflow','hidden','important');
+ // The command dock controls overflow responsively. Never force an inline
+ // !important hidden overflow: it clipped unclickable orders on Android.
  const banner=fragment('aside','','');
  banner.id='battleTacticalSituation';
  banner.hidden=true;
