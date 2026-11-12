@@ -577,6 +577,26 @@ async function expectCenteredFaceSliders(page,gender){
       info.bodyMeshes<1||!info.sealedNeck||info.neckBridgeTriangles<200||
       !info.sourceHeadUnchanged||!info.sourceBodyUnchanged)
     throw Error('Body/head integration failed '+JSON.stringify(info));
+   // v28: shoulder holes are separate from the central neck seal.
+   // A cap is constructed per real donor-body cut rim, left and right.
+   if(info.shoulderCaps!==2||!info.shoulderHolesClosed||
+      info.shoulderCapTriangles<6)
+    throw Error('Both open shoulders must be capped independently '+
+     JSON.stringify({count:info.shoulderCaps,triangles:info.shoulderCapTriangles}));
+   if(info.wigPhysicsDisabled!==true)
+    throw Error('Static-groomed hair still has per-frame physics enabled');
+   const staticWig=await hero.evaluate(()=>{
+    const wig=window.__heroineBodyPreview.getWig();
+    return {mode:wig.userData.staticGroom,
+     style:wig.userData.wigRig,
+     left:!!window.__heroineBodyPreview.getFace().getObjectByName(
+      'LEFT_SHOULDER_CUT_SURFACE_CAP'),
+     right:!!window.__heroineBodyPreview.getFace().getObjectByName(
+      'RIGHT_SHOULDER_CUT_SURFACE_CAP')};
+   });
+   if(!staticWig.mode||!staticWig.style?.includes('static')||
+      !staticWig.left||!staticWig.right)
+    throw Error('Static wig or physical shoulder caps absent '+JSON.stringify(staticWig));
    // Hair-only inspection must make head, eyelids and torso disappear,
    // WITHOUT hiding the wig (a child of the head mesh). Restoring the
    // normal 3D view must bring every original part back.
@@ -622,6 +642,19 @@ async function expectCenteredFaceSliders(page,gender){
      curl:lashes?.userData?.lashCurl,
      length:lashes?.userData?.lashLength};
    });
+   const irises=await hero.evaluate(()=>{
+    const root=window.__heroineBodyPreview.getActor();
+    return ['LEFT','RIGHT'].map(s=>{
+     const iris=root.getObjectByName(s+'_CURVED_IRIS');
+     const geo=iris?.geometry;
+     geo?.computeBoundingBox();
+     const b=geo?.boundingBox;
+     return {unclipped:iris?.userData?.unclippedTrueCircle,
+      ratio:b?(b.max.x-b.min.x)/(b.max.y-b.min.y):0};
+    });
+   });
+   if(irises.some(x=>!x.unclipped||Math.abs(x.ratio-1)>.02))
+    throw Error('Irises still collapse into horizontal strips '+JSON.stringify(irises));
    if(!eyeShape.dome||eyeShape.domeRatio<.2||
       eyeShape.stations!==5||eyeShape.curl<.8||eyeShape.length<1.3)
     throw Error('New eye bulge / eyelash curl was not rendered '+JSON.stringify(eyeShape));
