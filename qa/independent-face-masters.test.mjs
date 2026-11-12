@@ -7,6 +7,8 @@ import {makeIndependentFaceMaster,FACE_MASTER_SPEC,femaleInnerFeatureDelta,femal
 import {updateFaceFeatureAngles,applyFaceColorMode,createFastFaceSurfaceSampler}
  from '../src/face-feature-meshes.js';
 import {createScalpAnchoredWig} from '../src/face-scalp-wig.js';
+import {attachIndependentHeadToBody,buildBodyDepthCollision} from '../src/face-body-assembly.js';
+import {CHAPTER_ONE_ART_BY_KEY,FEMALE_COMMANDER_ART_PALETTE} from '../src/chapter-one-character-art-references.js';
 import {DEFAULT_WIG_STYLE_ID,getWigStyle,listWigStyles} from '../src/face-wig-styles.js';
 import {normalizeFemaleFaceControls,FEMALE_V7_DEFAULTS,FACE_V7_PALETTE,CONTACT_COLORS,safeContactColor,LIBRARY_FACE_PRESET,MALE_REFERENCE_DEFAULT,FACE_SLIDER_RANGES}
  from '../src/face-v7-controls.js';
@@ -892,4 +894,65 @@ test('v18 full crown/rear rooted hair and straight gravity-groomed long locks',(
   assert.ok(cut.minY>=cut.trimY-1e-5);
  wig.update(.05);
  wig.dispose();
+});
+
+test('v19 pupils and irises are ROUND in frontal projection on curved 3D globes',()=>{
+ for(const gender of ['female','male']){
+  const m=makeIndependentFaceMaster(fixture().source,gender);
+  for(const side of ['LEFT','RIGHT']){
+   for(const name of ['CURVED_IRIS','CURVED_PUPIL']){
+    const mesh=m.parts.getObjectByName(side+'_'+name);
+    assert.ok(mesh?.isMesh);
+    mesh.geometry.computeBoundingBox();
+    const bb=mesh.geometry.boundingBox;
+    const spanX=bb.max.x-bb.min.x,spanY=bb.max.y-bb.min.y;
+    assert.ok(Math.abs(spanX/spanY-1)<.015,
+     'Oval black eye still visible '+gender+' '+side+' '+name+' '+spanX/spanY);
+    assert.equal(mesh.userData.circularProjected,true);
+    assert.equal(mesh.userData.followsEllipsoid,true);
+   }
+   const iris=m.parts.getObjectByName(side+'_CURVED_IRIS');
+   assert.equal(iris.geometry.getAttribute('color').itemSize,3);
+   assert.equal(iris.userData.radialFibers,true);
+  }
+  assert.equal(m.report.detailedParts.irisPupilProjection,'circular-on-ellipsoid');
+ }
+});
+test('v19 independent heroine face is attached to REAL female body without duplicate donor head',()=>{
+ const head=makeIndependentFaceMaster(fixture().source,'female');
+ const source=new THREE.Group();
+ const bodyGeometry=new THREE.CylinderGeometry(.19,.20,1.7,20,24);
+ const body=new THREE.Mesh(bodyGeometry,new THREE.MeshStandardMaterial({color:0xc6a9a2}));
+ body.name='real CC0 body test fixture';
+ source.add(body);
+ const oldPositions=bodyGeometry.getAttribute('position').array.slice();
+ const art=CHAPTER_ONE_ART_BY_KEY['commander-female'];
+ assert.equal(art.characterId,'hero-girl-01');
+ assert.ok(FEMALE_COMMANDER_ART_PALETTE.iris.startsWith('#'));
+ const attached=attachIndependentHeadToBody(head,source,{characterId:art.characterId});
+ assert.equal(attached.report.connectedCharacterId,'hero-girl-01');
+ assert.equal(attached.report.hasRealBody,true);
+ assert.ok(attached.report.donorHeadTrianglesRemoved>0);
+ assert.ok(attached.report.donorBodyTrianglesRetained>0);
+ assert.equal(attached.body.name,'CC0_CLIPPED_FEMALE_BODY');
+ assert.deepEqual(bodyGeometry.getAttribute('position').array,oldPositions,
+  'Original body GLB must never be modified');
+ const clipped=attached.body.getObjectByName('real CC0 body test fixture');
+ assert.notEqual(clipped.geometry,body.geometry);
+ assert.ok(clipped.geometry.getIndex().count<body.geometry.getIndex().count);
+ const hair=createScalpAnchoredWig(head.face,{count:96,
+  bodyCollisionResolver:attached.bodyCollider});
+ assert.equal(hair.getReport().usesRealBodyTriangleContacts,true);
+ assert.equal(hair.root.userData.assetType,'independent-wig');
+ assert.ok(attached.bodyCollider.getReport().collisionTriangleCount>0);
+ const faceBox=head.face.geometry.boundingBox;
+ const guessY=faceBox.min.y-.04;
+ const guessX=(faceBox.min.x+faceBox.max.x)*.5;
+ const limits=attached.bodyCollider.query(guessX,guessY);
+ assert.ok(limits,'Imported torso surface must support actual triangle contacts');
+ const point=new THREE.Vector3(guessX,guessY,(limits.front+limits.rear)*.5);
+ assert.equal(attached.bodyCollider.resolve(point),true);
+ assert.ok(point.z>limits.front||point.z<limits.rear);
+ assert.ok(attached.bodyCollider.getReport().contactCorrections>0);
+ hair.dispose();attached.dispose();
 });
