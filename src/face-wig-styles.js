@@ -13,8 +13,10 @@ const deepFreeze=value=>{
 // Static scalp foundation volume. This is geometry, not a shader or physics.
 export const WIG_BASE_VOLUME_PROFILES=deepFreeze({
  natural:{label:'トップ最小（頭皮に沿う）',crown:.0,side:.0},
- airy:{label:'ふんわりした根元',crown:.034,side:.019},
- lifted:{label:'トップにボリューム',crown:.069,side:.013}
+ soft:{label:'やや少なめ（自然な丸み）',crown:.016,side:.008},
+ airy:{label:'標準（ふんわりした根元）',crown:.034,side:.019},
+ lifted:{label:'多め（トップにボリューム）',crown:.069,side:.013},
+ full:{label:'最大（全体に厚み）',crown:.086,side:.048}
 });
 export const DEFAULT_WIG_STYLE_ID='center-part-gravity-long';
 export const WIG_STYLES=deepFreeze({
@@ -155,6 +157,33 @@ export const WIG_STYLES=deepFreeze({
    styleLength:.025,templeVolume:0,strandWave:.004,
    shortCutKind:'buzz',wigType:'independent-3d-asset',
    collisions:['scalp','face','neck']
+  },
+  'soft-wave-long':{
+   id:'soft-wave-long',label:'ゆるウェーブ・ロング',part:'side',
+   whorl:{x:-.052,y:.965,z:-.08},partWidth:.008,fringeSweep:.045,
+   gravityMps2:9.81,gravityScale:.90,scalpClearance:.003,
+   faceClearance:.008,faceAvoidanceX:.035,backSweep:.045,
+   restFallExponent:1.14,cut:'soft-u-layered',longLayers:true,
+   styleLength:1.08,templeVolume:.037,strandWave:.24,
+   wigType:'independent-3d-asset',collisions:['scalp','face','neck','shoulder','chest']
+  },
+  'full-fringe-straight':{
+   id:'full-fringe-straight',label:'厚め前髪・艶ストレート',part:'center',
+   whorl:{x:0,y:.965,z:-.08},partWidth:.003,fringeSweep:.014,
+   gravityMps2:9.81,gravityScale:1.04,scalpClearance:.002,
+   faceClearance:.007,faceAvoidanceX:.026,backSweep:.02,
+   restFallExponent:1.08,cut:'soft-u-layered',longLayers:true,
+   styleLength:1.08,templeVolume:.018,strandWave:.012,
+   wigType:'independent-3d-asset',collisions:['scalp','face','neck','shoulder','chest']
+  },
+  'airy-shoulder-layers':{
+   id:'airy-shoulder-layers',label:'肩丈エアリーレイヤー',part:'side',
+   whorl:{x:-.06,y:.965,z:-.08},partWidth:.008,fringeSweep:.046,
+   gravityMps2:9.81,gravityScale:.97,scalpClearance:.003,
+   faceClearance:.008,faceAvoidanceX:.032,backSweep:.034,
+   restFallExponent:1.13,cut:'soft-u-layered',longLayers:true,
+   styleLength:.71,templeVolume:.031,strandWave:.12,
+   wigType:'independent-3d-asset',collisions:['scalp','face','neck','shoulder','chest']
   },
   'rounded-bob':{
    id:'rounded-bob',label:'丸みのあるボブ',part:'center',

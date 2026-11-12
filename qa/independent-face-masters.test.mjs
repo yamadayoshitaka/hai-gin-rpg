@@ -15,6 +15,8 @@ import {normalizeFemaleFaceControls,normalizeMaleFaceControls,FEMALE_V7_DEFAULTS
 
 import {PART_CATALOG,PART_GROUPS,HAIR_COLORS,resolvePartSelection,defaultPartSelection,normalizePartSelection}
  from '../src/face-part-catalog-v32.js';
+import {HERO_JOBS,HERO_OUTFITS,HERO_ACTIONS,createHeroineStudioWardrobe}
+ from '../src/heroine-studio-wardrobe.js';
 
 function fixture(){
  const original=new THREE.SphereGeometry(.19,64,48);
@@ -1481,7 +1483,7 @@ test('v29 female eyes project forward of skin with convex globe, connected lids 
  const model=makeIndependentFaceMaster(fixture().source,'female');
  const report=model.report.detailedParts;
  assert.equal(report.anteriorEyeGlobeReconstructed,true);
- assert.equal(report.eyeApertureHeightFraction,.46);
+ assert.equal(report.eyeApertureHeightFraction,.50);
  assert.equal(report.eyeAnteriorClearanceRatios.length,2);
  for(const clearance of report.eyeAnteriorClearanceRatios)
   assert.ok(clearance>.22&&clearance<.48,
@@ -1617,9 +1619,9 @@ test('v32 catalogs contain 10 independently selectable 3D profiles per gender an
  for(const sex of ['female','male']){
   for(const group of PART_GROUPS){
    const candidates=PART_CATALOG[sex][group];
-   assert.equal(candidates.length,group==='hair'?13:10,sex+' '+group);
-   assert.equal(new Set(candidates.map(x=>x.id)).size,group==='hair'?13:10);
-   assert.equal(new Set(candidates.map(x=>JSON.stringify(x.values))).size,group==='hair'?13:10,
+   assert.equal(candidates.length,group==='hair'?16:10,sex+' '+group);
+   assert.equal(new Set(candidates.map(x=>x.id)).size,group==='hair'?16:10);
+   assert.equal(new Set(candidates.map(x=>JSON.stringify(x.values))).size,group==='hair'?16:10,
     sex+' '+group+' requires ten distinct geometry or material specifications');
   }
  }
@@ -1659,7 +1661,7 @@ test('v32 selected nose, eyes and lips actually change original coherent mesh an
  }
 });
 test('v32 volumetric hair uses 4 offset stacked ribbon layers and 10 registered geometries',()=>{
- assert.equal(listWigStyles().length,13);
+ assert.equal(listWigStyles().length,16);
  const face=makeIndependentFaceMaster(fixture().source,'female');
  const one=createScalpAnchoredWig(face.face,{count:96,staticGroom:true,
   styleId:'center-part-gravity-long'});
@@ -1752,7 +1754,7 @@ test('v33 shoulder seals match real donor vertex colors, have 3D dome shape and 
  }
 });
 test('v33 hairstyle selections include short, very short and scalp-hugging buzz for both genders',()=>{
- assert.equal(listWigStyles().length,13);
+ assert.equal(listWigStyles().length,16);
  for(const gender of ['female','male']){
   const chosen=PART_CATALOG[gender].hair;
   for(const [idx,kind] of [[10,'short'],[11,'very-short'],[12,'buzz']])
@@ -1781,17 +1783,17 @@ test('v33 hairstyle selections include short, very short and scalp-hugging buzz 
 });
 
 test('v33 raised wig base uses three selectable real scalp geometries with matching lifted roots',()=>{
- assert.deepEqual(Object.keys(WIG_BASE_VOLUME_PROFILES),['natural','airy','lifted']);
+ assert.deepEqual(Object.keys(WIG_BASE_VOLUME_PROFILES),['natural','soft','airy','lifted','full']);
  const face=makeIndependentFaceMaster(fixture().source,'female');
  const original=face.face.geometry.getAttribute('position').array.slice();
  const box=face.face.geometry.boundingBox;
  const d=box.getSize(new THREE.Vector3()),c=box.getCenter(new THREE.Vector3());
  const at=new THREE.Vector3(c.x,box.min.y+d.y*.935,c.z);
- const lift=['natural','airy','lifted'].map(profile=>wigVolumeLiftAt(at,box,profile));
+ const lift=['natural','soft','airy','lifted','full'].map(profile=>wigVolumeLiftAt(at,box,profile));
  assert.equal(lift[0],0);
- assert.ok(lift[2]>lift[1]&&lift[1]>d.x*.001,'physical volume rises above scalp');
+ assert.ok(lift[4]>lift[3]&&lift[3]>lift[2]&&lift[2]>lift[1]&&lift[1]>0,'physical volume rises above scalp');
  const results=[];
- for(const mode of ['natural','airy','lifted']){
+ for(const mode of ['natural','soft','airy','lifted','full']){
   const wig=createScalpAnchoredWig(face.face,{count:96,staticGroom:true,volumeProfile:mode});
   const cap=wig.root.getObjectByName('REAL_SCALP_TRIANGLE_HAIR_CAP');
   assert.ok(cap?.isMesh);
@@ -1803,10 +1805,10 @@ test('v33 raised wig base uses three selectable real scalp geometries with match
    roots:wig.getStyleSamples().map(x=>x.root)});
   wig.dispose();
  }
- assert.deepEqual(results[0].cap.length,results[2].cap.length);
- const changed=results[0].cap.filter((v,i)=>Math.abs(v-results[2].cap[i])>d.x*.002).length;
+ assert.deepEqual(results[0].cap.length,results[3].cap.length);
+ const changed=results[0].cap.filter((v,i)=>Math.abs(v-results[3].cap[i])>d.x*.002).length;
  assert.ok(changed>30,'selected lifted profile changes many actual scalp cap vertices');
- assert.notDeepEqual(results[0].roots,results[2].roots);
+ assert.notDeepEqual(results[0].roots,results[3].roots);
  assert.deepEqual(face.face.geometry.getAttribute('position').array,original,
   'raising removable wig base must never deform the original skin');
  for(const sex of ['female','male']){
@@ -1815,4 +1817,73 @@ test('v33 raised wig base uses three selectable real scalp geometries with match
   assert.equal(resolved.selection.hairVolume,'lifted');
   assert.equal(normalizePartSelection({hairVolume:'bogus'}).hairVolume,'natural');
  }
+});
+
+test('v35: heroine job and clothing selectors recolor real body and animate preview equipment',()=>{
+ const actor=new THREE.Group();
+ const attachment=new THREE.Group();actor.add(attachment);
+ const body=new THREE.Group();attachment.add(body);
+ const geometry=new THREE.BoxGeometry(.45,1.65,.25,8,24,4);
+ const c=new Float32Array(geometry.getAttribute('position').count*3).fill(.75);
+ geometry.setAttribute('color',new THREE.Float32BufferAttribute(c,3));
+ const mesh=new THREE.Mesh(geometry,new THREE.MeshStandardMaterial({
+  vertexColors:true,side:THREE.DoubleSide
+ }));
+ body.add(mesh);actor.updateWorldMatrix(true,true);
+ const wardrobe=createHeroineStudioWardrobe({root:attachment,body},actor);
+ assert.equal(HERO_JOBS.length,10);
+ assert.ok(HERO_OUTFITS.length>=5&&HERO_ACTIONS.length>=6);
+ assert.equal(wardrobe.getState().jobId,'knight');
+ assert.ok(wardrobe.getState().bodyMeshCount>0);
+ const base=geometry.getAttribute('color').array.slice();
+ wardrobe.setSelection({jobId:'mage',outfitId:'robe'});
+ assert.equal(wardrobe.getState().jobId,'mage');
+ assert.ok(wardrobe.getState().equipmentCount>0);
+ assert.notDeepEqual(geometry.getAttribute('color').array,base,
+  'Outfit selection must change actual mesh vertex colors');
+ wardrobe.setAction('run');wardrobe.update(.04);
+ assert.equal(wardrobe.getState().actionId,'run');
+ assert.ok(Math.abs(actor.position.y)>0||Math.abs(actor.rotation.z)>0,
+  'Selected action must visibly update an actor transform');
+ wardrobe.setVisible(false);wardrobe.dispose();
+});
+test('v35: mobile body studio exposes all selectors linked to live 3D model',()=>{
+ const html=readFileSync('face-body-studio.html','utf8');
+ for(const id of ['heroJob','heroOutfit','heroAction','heroHairStyle',
+  'heroHairVolume','heroHairDensity']){
+  assert.match(html,new RegExp('id="'+id+'"'));
+ }
+ assert.match(html,/createHeroineStudioWardrobe/);
+ assert.match(html,/wardrobe\?\.update\(dt\)/);
+ assert.match(html,/wardrobe\?\.attachActor\(next\.root\)/);
+ assert.match(html,/wardrobe\.setSelection\(selectedStudio\)/);
+});
+
+test('v35 cornea and iris are never hidden behind the original skin at any eye vertex',()=>{
+ const model=makeIndependentFaceMaster(fixture().source,'female',{femaleControls:{
+  eyeWidth:1.17,eyeHeight:1.12,irisDiameter:1.15,eyeDepth:-.12
+ }});
+ const sampler=createFastFaceSurfaceSampler(model.face.geometry);
+ const radius=model.face.geometry.boundingBox.getSize(new THREE.Vector3()).x*.052;
+ for(const side of ['LEFT','RIGHT']){
+  const eye=model.parts.getObjectByName(side+'_ORBITAL_EYEBALL');
+  const iris=model.parts.getObjectByName(side+'_CURVED_IRIS');
+  const pupil=model.parts.getObjectByName(side+'_CURVED_PUPIL');
+  model.root.updateMatrixWorld(true);
+  for(const part of [eye,iris,pupil]){
+   const positions=part.geometry.getAttribute('position');
+   const vertex=new THREE.Vector3();
+   for(let i=0;i<positions.count;i+=13){
+    vertex.fromBufferAttribute(positions,i);
+    part.localToWorld(vertex);model.face.worldToLocal(vertex);
+    const skin=sampler.query(vertex.x,vertex.y);
+    if(skin===null)continue;
+    assert.ok(vertex.z>skin+radius*.017,
+     part.name+' must sit in front of closed donor socket skin');
+   }
+  }
+  assert.ok(pupil.userData.circularProjectedRadius>radius*.18,
+   'Black pupil must be noticeably larger without clipping');
+ }
+ assert.equal(model.face.userData.softNaturalLipTint,true);
 });

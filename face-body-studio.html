@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>灰銀のレゾナンス｜女性主人公・全身＋顔・目・肩修正／髪13種・16色v33</title>
+<title>灰銀のレゾナンス｜女性主人公3Dスタジオ v35｜眼球・髪・職業・衣装・動作</title>
 <style>
 *{box-sizing:border-box}body{margin:0;background:#101c2e;color:#eaf3ff;font-family:system-ui,"Noto Sans JP",sans-serif}
 header{background:#183049;padding:17px 18px;border-bottom:1px solid #466780}
@@ -19,6 +19,12 @@ button:disabled{opacity:.48;cursor:not-allowed}
 .note{font-size:13px;color:#bdd2e4;line-height:1.6}a{color:#b1e7ff}
 .controls label{flex:1 1 175px;font-size:13px;margin:0;padding:7px;min-width:145px}.face-groups>details{border:1px solid #3a5a72;border-radius:9px;margin:10px 0;padding:7px 12px}.face-groups>details>summary{font-size:16px;font-weight:600;padding:10px 0;cursor:pointer}.face-groups>details>.controls{display:flex;flex-wrap:wrap;gap:8px}#contactColor{width:100%;min-height:37px;background:#27425e;border-radius:8px;border:1px solid #669eb8}.wig-density-control{border:1px solid #315b6e;border-radius:8px;padding:8px;margin:6px 0}#allFaceControls{padding:10px 4px;border-top:1px solid #385870;margin-top:10px}#allFaceControls summary{font-size:16px;font-weight:bold;cursor:pointer;padding:12px 4px}#allFaceSliderGrid{gap:10px}.controls label output{float:right}.controls label input{width:100%;height:28px;accent-color:#56c7a5}
 #status{font-size:13px;color:#cce1ee;min-height:20px}
+#heroStudioSelectors{margin-top:12px;background:#17314b;border-color:#6389a4}
+#heroStudioSelectors h2{font-size:18px;margin:0 0 8px}
+.heroSelectGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:8px}
+.heroSelectGrid label{font-size:13px;font-weight:600;margin:0}
+.heroSelectGrid select{font-size:14px;min-height:43px;margin-top:5px;width:100%;background:#213f58;border-color:#78a5b4}
+#heroStudioSelectors .note{margin-bottom:0}
 #metrics{font-size:11px;overflow:auto;white-space:pre-wrap;max-height:330px}
 label{display:block;margin:10px 0}select{width:100%}
 @media(max-width:730px){main{display:block}section{margin-bottom:12px}#bodyCanvas{height:56dvh;min-height:340px}}
@@ -26,7 +32,7 @@ label{display:block;margin:10px 0}select{width:100%}
 </head>
 <body>
 <header>
-<h1>女性主人公・顔＋胴体・厚み4層髪束・髪色選択v33</h1>
+<h1>女性主人公・顔・職業・衣装・アクション・髪型 v35</h1>
 <p>第1章「女性主人公 hero-girl-01」の登録原画を参照。元の女性胴体GLBと独立した顔メッシュを接続し、頭皮と実際の胴体への髪の接触判定を確認します。v27では本体を透明にして独立ウィッグだけを表示できます。v30では目の奥まりと虹彩の帯状表示を改善。眼球中央を滑らかな曲面にし、まぶたの縁だけ実顔メッシュに接続。まつ毛・調整スライダーを維持。首の継ぎ目も修正しました。</p>
 </header>
 <main>
@@ -48,15 +54,25 @@ label{display:block;margin:10px 0}select{width:100%}
 <button id="saveGlb" disabled>顔＋胴体＋髪をGLB保存</button>
 <button id="saveWig" disabled>ウィッグ単体をGLB保存</button>
 </div>
-<section id="v32BodyPartStudio"><h2>美少女3Dパーツを選択（各10種）</h2><div id="v32BodyChoices"></div>
-<label for="v32HairDensity">髪の描画密度<select id="v32HairDensity"><option value="1">軽量 1倍</option><option value="3" selected>標準 3倍</option><option value="10">高密度 10倍</option></select></label></section>
+<section id="heroStudioSelectors"><h2>職業・衣装・アクション・髪型を選択</h2>
+<div class="heroSelectGrid">
+<label for="heroJob">職業<select id="heroJob" aria-label="職業を選択"></select></label>
+<label for="heroOutfit">衣装<select id="heroOutfit" aria-label="衣装を選択"></select></label>
+<label for="heroAction">アクション<select id="heroAction" aria-label="アクションを選択"></select></label>
+<label for="heroHairStyle">髪型パターン<select id="heroHairStyle" aria-label="髪型パターンを選択"></select></label>
+<label for="heroHairVolume">髪ボリューム<select id="heroHairVolume" aria-label="髪ボリュームを選択"></select></label>
+<label for="heroHairDensity">髪の密度<select id="heroHairDensity" aria-label="髪の描画密度を選択"><option value="1">軽量1倍</option><option value="3" selected>標準3倍</option><option value="5">高画質5倍</option><option value="10">最高画質10倍</option></select></label>
+</div><p class="note">職業を変えると衣装と推奨アクションを更新。動きは3Dプレビュー用の簡易動作です。GLB書き出し時には装備・衣装・髪型を反映します。</p>
+</section>
+<section id="v32BodyPartStudio"><h2>美少女3Dパーツを選択（各10種以上）</h2><div id="v32BodyChoices"></div>
+<label for="v32HairDensity">髪の描画密度<select id="v32HairDensity"><option value="1">軽量 1倍</option><option value="3" selected>標準 3倍</option><option value="5">高画質 5倍</option><option value="10">高密度 10倍</option></select></label></section>
 <details id="allFaceControls" open>
 <summary>顔のスライダー：鼻・目元・口・顎</summary>
 <div class="controls wig-density-control" aria-label="独立ウィッグの毛量">
 <label for="wigDensity">独立ウィッグの表示毛量
 <select id="wigDensity" disabled>
 <option value="1">1倍（軽量）</option><option value="3" selected>3倍（標準・起動時）</option>
-<option value="10">10倍（高密度・目視確認用）</option>
+<option value="5">5倍（高品質）</option><option value="10">10倍（高密度・目視確認用）</option>
 </select></label></div>
 <p class="note">「髪だけ表示（本体透明）」で顔・目元・首・胴体を隠して、着脱ウィッグの毛根と密度だけを確認できます。戻すと顔と全身を表示します。</p>
 <p class="note">v28では髪の毎フレームの物理演算を停止。頭皮に固定した静的ヘアカードで根元を細く、毛先へ自然にテーパーします。</p>
@@ -76,7 +92,7 @@ alt="第1章女性主人公（暫定人物マスターの登録原画）">
 <label for="style">固有のヅラ（別アセット）
 <select id="style" disabled></select></label>
 <p class="note">v31：目のサイズは縦横から自動決定。目の前後位置と分離し、カラコンは17色＋自由色に対応。真円の黒目・瞳孔を維持。髪は実顔面と女性胴体の三角形表面との接触を判定し、肩・胸の簡易判定も併用します。</p>
-<a href="./face-mesh-studio.html?gender=female&v=33">顔単体の詳細編集画面へ</a>
+<a href="./face-mesh-studio.html?gender=female&v=35">顔単体の詳細編集画面へ</a>
 <details><summary>実メッシュ・接触検査</summary><pre id="metrics"></pre></details>
 </section>
 </main><style>
@@ -88,7 +104,7 @@ body.v32-legacy #v32BodyPartStudio{display:none!important}
 .v32-part-group select,#v32HairDensity{display:block;width:100%;min-height:41px;margin:5px 0;padding:7px;background:#213d55;color:#fff;border:1px solid #7893a5;border-radius:8px}
 .v32-pose-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
 .v32-tip{color:#b8d5e8;font-size:12px}
-</style><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/","./src/independent-face-masters.js":"./src/independent-face-masters.js?v=34","./src/face-feature-meshes.js":"./src/face-feature-meshes.js?v=34","./src/face-v7-controls.js":"./src/face-v7-controls.js?v=34","./src/face-body-assembly.js":"./src/face-body-assembly.js?v=34"}}</script>
+</style><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/","./src/independent-face-masters.js":"./src/independent-face-masters.js?v=35","./src/face-feature-meshes.js":"./src/face-feature-meshes.js?v=35","./src/face-v7-controls.js":"./src/face-v7-controls.js?v=35","./src/face-body-assembly.js":"./src/face-body-assembly.js?v=35"}}</script>
 <script type="module">
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
@@ -97,11 +113,12 @@ import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {makeIndependentFaceMaster} from './src/independent-face-masters.js';
 import {FEMALE_V7_DEFAULTS,FACE_EYE_SPACING_DEFAULT,FACE_EYE_SPACING_RANGE,FACE_SLIDER_RANGES,CONTACT_COLORS,CONTACT_COLOR_LABELS,safeContactColor,normalizeFemaleFaceControls} from './src/face-v7-controls.js';
 import {applyFaceColorMode} from './src/face-feature-meshes.js';
-import {createScalpAnchoredWig} from './src/face-scalp-wig.js?v=34';
-import {createPartSelectorUI} from './src/face-part-selector-ui-v32.js?v=34';
-import {defaultPartSelection,resolvePartSelection,PART_CATALOG} from './src/face-part-catalog-v32.js?v=34';
+import {createScalpAnchoredWig} from './src/face-scalp-wig.js?v=35';
+import {createPartSelectorUI} from './src/face-part-selector-ui-v32.js?v=35';
+import {defaultPartSelection,resolvePartSelection,PART_CATALOG} from './src/face-part-catalog-v32.js?v=35';
 import {attachIndependentHeadToBody,removeHeadBustBelowNeck,createSealedNeckBridge} from './src/face-body-assembly.js';
-import {listWigStyles,DEFAULT_WIG_STYLE_ID} from './src/face-wig-styles.js?v=34';
+import {listWigStyles,DEFAULT_WIG_STYLE_ID,WIG_BASE_VOLUME_PROFILES} from './src/face-wig-styles.js?v=35';
+import {HERO_JOBS,HERO_OUTFITS,HERO_ACTIONS,createHeroineStudioWardrobe} from './src/heroine-studio-wardrobe.js?v=35';
 import {FEMALE_COMMANDER_ART_PALETTE,CHAPTER_ONE_ART_BY_KEY} from './src/chapter-one-character-art-references.js';
 
 const $=id=>document.getElementById(id);
@@ -129,7 +146,7 @@ rim.position.set(-3,2,-3);scene.add(rim);
 const camera=new THREE.PerspectiveCamera(38,1,.01,60);
 const orbit=new OrbitControls(camera,canvas);
 orbit.enableDamping=true;orbit.dampingFactor=.10;orbit.minDistance=.17;orbit.maxDistance=12;
-let model=null,bodyAttachment=null,wig=null,ready=false;
+let model=null,bodyAttachment=null,wig=null,wardrobe=null,ready=false;
 let uncutScalpSource=null,neckCrop=null,sourceHead=null;
 const faceControls=normalizeFemaleFaceControls({...FEMALE_V7_DEFAULTS,eyeSpacing:FACE_EYE_SPACING_DEFAULT});
 const v32PartMode=new URLSearchParams(location.search).get('qa')!=='legacy';
@@ -141,6 +158,20 @@ let view='front',zoomMode='full',wigVisible=true,outfitVisible=true;
 let wigBaseVisible=false,hairOnly=false;
 let contactColor=palette.iris;
 const counter={wigBuilds:0,glbExports:0};
+const selectedStudio={jobId:'knight',outfitId:'job',actionId:'idle'};
+const fillSelect=(id,items)=>{
+ const select=$(id);
+ for(const item of items){const option=document.createElement('option');
+  option.value=item.id;option.textContent=item.label;select.append(option);}
+};
+fillSelect('heroJob',HERO_JOBS);
+fillSelect('heroOutfit',HERO_OUTFITS);
+fillSelect('heroAction',HERO_ACTIONS);
+fillSelect('heroHairStyle',listWigStyles());
+fillSelect('heroHairVolume',Object.entries(WIG_BASE_VOLUME_PROFILES).map(
+ ([id,profile])=>({id,label:profile.label})));
+$('heroHairStyle').value=DEFAULT_WIG_STYLE_ID;
+$('heroHairVolume').value=v32BodyPart.hairVolume;
 const status=(s)=>{$('status').textContent=s;};
 const setActive=(buttons,id)=>{
  for(const btn of buttons)$(btn).setAttribute('aria-pressed',String(btn===id));
@@ -173,6 +204,9 @@ function metrics(){
   editableFaceControls:{...faceControls},
   v32PartSelection:{...v32BodyPart},
   v33HairColor:v32BodyPart.hairColor,
+  v35Wardrobe:wardrobe?.getState()||{...selectedStudio},
+  v35HairStyle:$('heroHairStyle').value,
+  v35HairVolume:$('heroHairVolume').value,
   v32CatalogCounts:Object.fromEntries(Object.entries(PART_CATALOG.female).map(([k,a])=>[k,a.length])),
   detailedFrontHair:true,contactColor,
   wigDensity:Number($('wigDensity').value),
@@ -189,6 +223,7 @@ window.__heroineBodyPreview={
  getActor:()=>model?.root||null,getWig:()=>wig?.root||null,
  getFace:()=>model?.face||null,getEyeParts:()=>model?.parts||null,
  getBody:()=>bodyAttachment?.root||null,
+ getWardrobe:()=>wardrobe?.getState()||null,
  getCameraState:()=>({position:camera.position.toArray(),target:orbit.target.toArray(),
   up:camera.up.toArray(),zoom:camera.zoom,mode:zoomMode,view}),
  sampleTorso:(x,y)=>bodyAttachment?.bodyCollider.query(x,y)||null
@@ -277,6 +312,7 @@ function rebuildFaceOnBody(){
  // Rebuild the geometry in-place. The user may be pinching to inspect eyes
  // or nose: no fitCamera(), zoom mode, orbit target or orientation reset.
  model=next;neckCrop=cropped;
+ wardrobe?.attachActor(next.root);
  applyHairOnlyView();
  camera.position.copy(savedCameraPosition);
  camera.up.copy(savedCameraUp);
@@ -386,19 +422,63 @@ eyeColorInput.addEventListener('input',()=>{
  syncLensPreset();paintLens();
 });
 syncLensPreset();
+function applyPartSelection(picked){
+ v32BodyPart=picked;
+ const chosen=resolvePartSelection('female',picked,FEMALE_V7_DEFAULTS);
+ Object.assign(faceControls,normalizeFemaleFaceControls(chosen.controls));
+ $('style').value=chosen.hairStyleId;
+ $('heroHairStyle').value=chosen.hairStyleId;
+ $('heroHairVolume').value=picked.hairVolume;
+ if(ready){rebuildFaceOnBody();rebuildWig();}
+}
+const mountPartPicker=()=>createPartSelectorUI(
+ $('v32BodyChoices'),'female',v32BodyPart,applyPartSelection);
 if(v32PartMode){
- createPartSelectorUI($('v32BodyChoices'),'female',v32BodyPart,picked=>{
-  v32BodyPart=picked;
-  const chosen=resolvePartSelection('female',picked,FEMALE_V7_DEFAULTS);
-  Object.assign(faceControls,normalizeFemaleFaceControls(chosen.controls));
-  $('style').value=chosen.hairStyleId;
-  if(ready){rebuildFaceOnBody();rebuildWig();}
- });
+ mountPartPicker();
  $('v32HairDensity').addEventListener('change',()=>{
   $('wigDensity').value=$('v32HairDensity').value;
+  $('heroHairDensity').value=$('v32HairDensity').value;
   if(ready)rebuildWig();
  });
 }
+$('heroHairStyle').addEventListener('change',()=>{
+ $('style').value=$('heroHairStyle').value;
+ const index=PART_CATALOG.female.hair.findIndex(p=>
+  p.values.styleId===$('heroHairStyle').value);
+ if(index>=0){
+  v32BodyPart={...v32BodyPart,hair:index};
+  if(v32PartMode)mountPartPicker();
+ }
+ if(ready)rebuildWig();
+});
+$('heroHairVolume').addEventListener('change',()=>{
+ v32BodyPart={...v32BodyPart,hairVolume:$('heroHairVolume').value};
+ if(v32PartMode)mountPartPicker();
+ if(ready)rebuildWig();
+});
+$('heroHairDensity').addEventListener('change',()=>{
+ $('v32HairDensity').value=$('heroHairDensity').value;
+ $('wigDensity').value=$('heroHairDensity').value;
+ if(ready)rebuildWig();
+});
+$('heroJob').addEventListener('change',()=>{
+ selectedStudio.jobId=$('heroJob').value;
+ selectedStudio.outfitId='job';
+ selectedStudio.actionId=['mage','cleric','summoner'].includes(selectedStudio.jobId)?
+  'cast':selectedStudio.jobId==='shield'?'guard':'attack';
+ $('heroOutfit').value=selectedStudio.outfitId;
+ $('heroAction').value=selectedStudio.actionId;
+ wardrobe?.setSelection(selectedStudio);
+ wardrobe?.setAction(selectedStudio.actionId);
+});
+$('heroOutfit').addEventListener('change',()=>{
+ selectedStudio.outfitId=$('heroOutfit').value;
+ wardrobe?.setSelection(selectedStudio);
+});
+$('heroAction').addEventListener('change',()=>{
+ selectedStudio.actionId=$('heroAction').value;
+ wardrobe?.setAction(selectedStudio.actionId);
+});
 function syncFaceControls(){
  for(const [key,{input,out}] of faceInputs){
   input.value=String(faceControls[key]);
@@ -498,6 +578,7 @@ $('toggleWig').addEventListener('click',()=>{
 $('toggleOutfit').addEventListener('click',()=>{
  outfitVisible=!outfitVisible;
  bodyAttachment?.setOutfitVisible(outfitVisible);
+ wardrobe?.setVisible(outfitVisible);
  $('toggleOutfit').setAttribute('aria-pressed',String(outfitVisible));
  $('toggleOutfit').textContent=outfitVisible?'衣装を隠す':'衣装を表示';
 });
@@ -546,6 +627,7 @@ function frame(){
  requestAnimationFrame(frame);
  const dt=clock.getDelta();
  // Static groom: baked mesh and no per-frame hair physics.
+ wardrobe?.update(dt);
  resize();orbit.update();renderer.render(scene,camera);
 }
 frame();
@@ -567,6 +649,9 @@ frame();
    outfitSource:null,characterId:art.characterId,
    armor:palette.armor,cloth:palette.cloth
   });
+  wardrobe=createHeroineStudioWardrobe(bodyAttachment,model.root);
+  wardrobe.setSelection(selectedStudio);
+  wardrobe.setAction(selectedStudio.actionId);
   // Build wig from ORIGINAL full-scalp clone. The displayed face alone
   // is cropped at the body seam; changing hairstyles still uses full roots.
   uncutScalpSource=new THREE.Mesh(model.face.geometry.clone(),

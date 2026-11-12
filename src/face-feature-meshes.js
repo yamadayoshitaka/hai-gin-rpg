@@ -166,7 +166,7 @@ function tintRealLipSurface(lip,settings,mode='color'){
    smoothstep(((.5+shiftU+width)-u)/.085);
   const fadeV=smoothstep((v-(.5+shiftV-height))/.11)*
    smoothstep(((.5+shiftV+height)-v)/.11);
-  const rgb=pigmentFactor(natural,tint,.88*fadeU*fadeV);
+  const rgb=pigmentFactor(natural,tint,.40*fadeU*fadeV);
   colors.push(rgb.x,rgb.y,rgb.z);
  }
  setVertexMakeup(lip,colors);
@@ -194,12 +194,12 @@ export function updateRealFacePigment(face,controls={},mode='color'){
   const cheek=.78*bell(nx,.247,.10)*bell(ny,.551,.063)*front;
   const mouthX=(px-cx)/Math.max(.00001,d.x*.047*settings.lipstickWidth);
   const mouthY=(py-lipCenter-d.y*settings.lipstickY*.08)/
-   Math.max(.00001,d.y*.018*settings.lipstickHeight);
+   Math.max(.00001,d.y*.012*settings.lipstickHeight);
   const lipX=smoothstep((1-Math.abs(mouthX-settings.lipstickX/.12*.15))/.20);
   const lipY=smoothstep((1-Math.abs(mouthY))/.25);
   // Cosmetic controls may move the color within the lips, but cannot
   // push the pigment onto the chin or philtrum outside the oral region.
-  const anatomicalLipY=(py-lipCenter)/(d.y*.025);
+  const anatomicalLipY=(py-lipCenter)/(d.y*.013);
   const anatomicalLipX=(px-cx)/(d.x*.055*
    Math.min(1.62,Math.pow(settings.lipstickWidth,.46)));
   const bound=smoothstep((1-Math.abs(anatomicalLipY))/.25)*
@@ -208,12 +208,13 @@ export function updateRealFacePigment(face,controls={},mode='color'){
   if(cheek>.12)actualCheekTintVertices++;
   if(lipMask>.12)actualLipTintVertices++;
   const rgb=pigmentFactor(skin,blush,cheek)
-   .multiply(pigmentFactor(skin,lipstick,.90*lipMask));
+   .multiply(pigmentFactor(skin,lipstick,.40*lipMask));
   colors.push(rgb.x,rgb.y,rgb.z);
  }
  setVertexMakeup(face,colors);
  colorizedMakeup(face,mode==='color');
  face.userData.mouthPigmentSource='sculpted-head-vertices';
+ face.userData.softNaturalLipTint=true;
  face.userData.lipTintVertexCount=actualLipTintVertices;
  face.userData.cheekTintVertexCount=actualCheekTintVertices;
  for(const name of ['UPPER','LOWER']){
@@ -315,7 +316,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
  const baseEyeRadius=d.x*.052;
  // Blender Studio: expose convex corneal volume above the real socket and
  // wrap the lids back onto the facial skin. Do not simply translate the eyes.
- const eyeApertureRatio=female?.46:.34;
+ const eyeApertureRatio=female?.50:.34;
  // A low, lid-seated corneal dome: the former 0.58R projection looked like
  // detached snail eyes in the mobile side view. Preserve slight curvature.
  const anteriorGlobeRatio=female?.245:.27;
@@ -377,8 +378,8 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   // triangle. Keep the centre local to its actual eye socket instead.
   const orbitFrontZ=faceZ+Math.min(baseEyeRadius*.035,
    Math.max(0,Math.max(...orbitSamples)-faceZ));
-  const eyeSurfaceLift=Math.max(baseEyeRadius*.020,
-   baseEyeRadius*(.045+settings.eyeDepth*.18));
+  const eyeSurfaceLift=Math.max(baseEyeRadius*.045,
+   baseEyeRadius*(.065+settings.eyeDepth*.18));
   const eyeDomeHeight=baseEyeRadius*anteriorGlobeRatio;
   const insetZ=(px,py)=>{
    const tx=clamp((px-x)/width,-1,1);
@@ -397,7 +398,11 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
    // meets the actual face at the upper/lower eyelid and both canthi.
    const skinBlend=Math.pow(1-curved,4);
    const rimZ=surfaceAt(px,py)+eyeSurfaceLift;
-   return eyeFrontZ*(1-skinBlend)+rimZ*skinBlend;
+   // A closed source socket remains behind our eye patch. Keep every
+   // corneal and iris-edge vertex in front without a detached globe.
+   const sculptedSkinZ=surfaceAt(px,py);
+   const smoothCornea=eyeFrontZ*(1-skinBlend)+rimZ*skinBlend;
+   return Math.max(smoothCornea,sculptedSkinZ+baseEyeRadius*.032);
   };
   const z=insetZ(x,y);
   eyeAnteriorClearances.push((z-faceZ)/eyeRadius);
@@ -431,7 +436,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
    // blue horizontal folds / stripes. A genuine round iris must fit the
    // actual opening instead, and no vertex may be clipped into a flat row.
    const isIris=label==='CURVED_IRIS';
-   const irisDisplayScale=isIris?(female?.88:.67):.68;
+   const irisDisplayScale=isIris?(female?.88:.67):.82;
    const requested=eyeRadius*irisDisplayScale*Math.sin(angularRadius);
    const opening=eyeRadius*eyeApertureRatio*eyeHeight;
    // Keep a real circle and a thin white sclera ring; never clip the

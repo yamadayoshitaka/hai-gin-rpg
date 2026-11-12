@@ -895,7 +895,7 @@ async function expectCenteredFaceSliders(page,gender){
   {
    const modern=await browser.newPage({viewport:{width:412,height:844}});
    const modernErrors=[];modern.on('pageerror',e=>modernErrors.push(e.message));
-   await modern.goto('http://127.0.0.1:8765/face-mesh-studio.html?gender=female&v=34',
+   await modern.goto('http://127.0.0.1:8765/face-mesh-studio.html?gender=female&v=35',
     {waitUntil:'domcontentloaded',timeout:65000});
    await modern.waitForFunction(()=>window.__faceMasterQA?.().loaded===true,
     null,{timeout:100000});
@@ -903,7 +903,7 @@ async function expectCenteredFaceSliders(page,gender){
       await modern.locator('input[type="range"]:visible').count()!==0)
     throw Error('v32 user-facing face editor must not show sliders');
    for(const group of ['Face','Eye','Nose','Mouth','Hair','Makeup']){
-    if(await modern.locator('#v32Female'+group+' option').count()!==(group==='Hair'?13:10))
+    if(await modern.locator('#v32Female'+group+' option').count()!==(group==='Hair'?16:10))
      throw Error('v32 female ten-option mesh category missing: '+group);
    }
    await modern.locator('#v32FemaleEye').selectOption('4');
@@ -923,7 +923,7 @@ async function expectCenteredFaceSliders(page,gender){
     throw Error('v32 four-layer hair volume missing from real 3D');
    await modern.locator('#male').click();
    for(const group of ['Face','Eye','Nose','Mouth','Hair','Makeup'])
-    if(await modern.locator('#v32Male'+group+' option').count()!==(group==='Hair'?13:10))
+    if(await modern.locator('#v32Male'+group+' option').count()!==(group==='Hair'?16:10))
      throw Error('v32 male ten-option mesh category missing: '+group);
    await selectPartOption(modern,'#v32MaleFace','5');
    await modern.locator('#v32MaleHair').selectOption('11');
@@ -942,7 +942,7 @@ async function expectCenteredFaceSliders(page,gender){
   }
   {
    const modern=await browser.newPage({viewport:{width:412,height:844}});
-   await modern.goto('http://127.0.0.1:8765/face-body-studio.html?v=34',
+   await modern.goto('http://127.0.0.1:8765/face-body-studio.html?v=35',
     {waitUntil:'domcontentloaded',timeout:65000});
    await modern.waitForFunction(()=>window.__heroineBodyQA?.().loaded===true,
     null,{timeout:100000});
@@ -950,7 +950,7 @@ async function expectCenteredFaceSliders(page,gender){
       await modern.locator('input[type="range"]:visible').count()!==0)
     throw Error('v32 integrated model must not expose old sliders');
    for(const group of ['Face','Eye','Nose','Mouth','Hair','Makeup'])
-    if(await modern.locator('#v32Female'+group+' option').count()!==(group==='Hair'?13:10))
+    if(await modern.locator('#v32Female'+group+' option').count()!==(group==='Hair'?16:10))
      throw Error('v32 body selector does not have 10 '+group+' parts');
    await selectPartOption(modern,'#v32FemaleFace','6');
    await selectPartOption(modern,'#v32FemaleMakeup','8');
@@ -967,9 +967,27 @@ async function expectCenteredFaceSliders(page,gender){
       !report.shoulderHolesClosed||
       !report.sealedNeck)
     throw Error('v32 combined face/body/4-layer hair fitting failed '+JSON.stringify(report.v32PartSelection));
+   // v35 public mobile selectors must change the actual 3D wardrobe,
+   // action state, hairstyle and scalp volume (not only menu labels).
+   await modern.locator('#heroJob').selectOption('mage');
+   await modern.locator('#heroOutfit').selectOption('robe');
+   await modern.locator('#heroAction').selectOption('run');
+   await modern.locator('#heroHairStyle').selectOption('soft-wave-long');
+   await modern.locator('#heroHairVolume').selectOption('full');
+   await modern.locator('#heroHairDensity').selectOption('5');
+   const studio=await modern.evaluate(()=>window.__heroineBodyQA());
+   if(studio.v35Wardrobe?.jobId!=='mage'||
+      studio.v35Wardrobe?.outfitId!=='robe'||
+      studio.v35Wardrobe?.actionId!=='run'||
+      studio.v35Wardrobe?.equipmentCount<1||
+      studio.v35HairStyle!=='soft-wave-long'||
+      studio.v35HairVolume!=='full'||
+      studio.wig?.v33WigVolumeProfile!=='full'||
+      studio.wigDensity!==5)
+    throw Error('v35 studio selections not applied to real 3D '+JSON.stringify(studio.v35Wardrobe));
    await modern.locator('#portrait').click();
    await modern.locator('#bodyCanvas').screenshot({
-    path:path.join(out,'v32-female-chosen-makeup-4layer-wig.png')});
+    path:path.join(out,'v35-heroine-eye-job-hair-selectors.png')});
    await modern.close();
   }
   if(errors.length)throw Error('Browser errors: '+JSON.stringify(errors));
