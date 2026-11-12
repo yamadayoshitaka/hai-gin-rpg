@@ -628,6 +628,14 @@ test('v14 saved Library GLB equals exact midpoint of every female/male face slid
   assert.equal(FEMALE_V7_DEFAULTS[key],original,key+' original saved value');
  }
  for(const [key,[low,high]] of Object.entries(FACE_SLIDER_RANGES)){
+  // Eye depth is a NEW v25 control; it never existed in the Library v8
+  // preset, so it cannot be asserted equal to an invented saved value.
+  if(key==='eyeDepth'){
+   assert.equal(normalizeFemaleFaceControls({eyeDepth:low}).eyeDepth,low);
+   assert.equal(normalizeFemaleFaceControls({eyeDepth:high}).eyeDepth,high);
+   assert.equal(normalizeFemaleFaceControls({}).eyeDepth,0);
+   continue;
+  }
   const midpoint=(low+high)/2;
   assert.ok(key==='lipstickWidth'||Math.abs(midpoint-FEMALE_V7_DEFAULTS[key])<1e-9,
    'Saved GLB not centered: '+key);
