@@ -126,7 +126,7 @@ const motionByAction=Object.freeze({
  guard:'guard',cast:'skill',victory:'idle'
 });
 
-export async function createRealBattleOutfitStudio({scene,faceModel,onStatus=()=>{},
+export async function createRealBattleOutfitStudio({scene,faceModel,getFaceModel=null,onStatus=()=>{},
  jobId='knight',outfitId='job',actionId='idle'}={}){
  if(!scene?.add||!faceModel?.root||!faceModel.face)
   throw Error('Real scene and independent face are required');
@@ -161,6 +161,10 @@ export async function createRealBattleOutfitStudio({scene,faceModel,onStatus=()=
     outfit?.dispose();actor.dispose();actor.object3D.removeFromParent();
    }
    actor=fresh;outfit=clothing;headReport=cut;
+   // The operator may have changed nose/eye/hair during garment loading.
+   // Always graft the newest live face, never an already-disposed preview.
+   const latestFace=getFaceModel?.()||faceModel;
+   headRoot=latestFace.root;face=latestFace.face;
    scene.add(actor.object3D);
    headFit=attachIndependentFaceToBattleHead({faceRoot:headRoot,
     faceMesh:face,characterModel:actor.model,
