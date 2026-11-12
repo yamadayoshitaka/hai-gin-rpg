@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>灰銀のレゾナンス｜女性主人公・全身＋顔・透明土台ウィッグv26</title>
+<title>灰銀のレゾナンス｜女性主人公・全身＋顔・髪だけ表示v27</title>
 <style>
 *{box-sizing:border-box}body{margin:0;background:#101c2e;color:#eaf3ff;font-family:system-ui,"Noto Sans JP",sans-serif}
 header{background:#183049;padding:17px 18px;border-bottom:1px solid #466780}
@@ -26,8 +26,8 @@ label{display:block;margin:10px 0}select{width:100%}
 </head>
 <body>
 <header>
-<h1>女性主人公・顔＋胴体・透明土台ウィッグv26</h1>
-<p>第1章「女性主人公 hero-girl-01」の登録原画を参照。元の女性胴体GLBと独立した顔メッシュを接続し、頭皮と実際の胴体への髪の接触判定を確認します。v26ではモデル頭部と同形の透明ウィッグ土台を追加。毛根と毛束の描画頂点を頭皮の外側へ補正し、埋まり込みを減らします。土台は確認時だけ可視化できます。</p>
+<h1>女性主人公・顔＋胴体・ウィッグ専用表示v27</h1>
+<p>第1章「女性主人公 hero-girl-01」の登録原画を参照。元の女性胴体GLBと独立した顔メッシュを接続し、頭皮と実際の胴体への髪の接触判定を確認します。v27では本体を透明にして独立ウィッグだけを表示できます。目はアイラインから立体的に膨らむ形に調整し、長く上向きにカールするまつ毛を追加。首の継ぎ目も修正しました。</p>
 </header>
 <main>
 <section>
@@ -42,6 +42,7 @@ label{display:block;margin:10px 0}select{width:100%}
 </div>
 <div class="controls">
 <button id="toggleWig" aria-pressed="true" disabled>髪を隠す</button>
+<button id="hairOnly" aria-pressed="false" disabled>髪だけ表示（本体透明）</button>
 <button id="toggleWigBase" aria-pressed="false" disabled>透明土台を可視化（検証）</button>
 <button id="toggleOutfit" aria-pressed="true" disabled>衣装を隠す</button>
 <button id="saveGlb" disabled>顔＋胴体＋髪をGLB保存</button>
@@ -55,7 +56,8 @@ label{display:block;margin:10px 0}select{width:100%}
 <option value="1">1倍（軽量）</option><option value="3" selected>3倍（標準・起動時）</option>
 <option value="10">10倍（高密度・目視確認用）</option>
 </select></label></div>
-<p class="note">頭部と同形の透明ウィッグ土台を使用。毛根と描画面を頭皮の外側へ補正します。毛量は1・3・10倍から選択可能で、10倍はスマホで重くなる場合があります。「透明土台を可視化」で位置を確認できます。</p>
+<p class="note">「髪だけ表示（本体透明）」で顔・目元・首・胴体を隠して、着脱ウィッグの毛根と密度だけを確認できます。戻すと顔と全身を表示します。</p>
+<p class="note">頭部と同形の透明ウィッグ土台を使用.毛根と描画面を頭皮の外側へ補正します。毛量は1・3・10倍から選択可能で、10倍はスマホで重くなる場合があります。「透明土台を可視化」で位置を確認できます。</p>
 <div class="face-groups" aria-label="女性主人公の部位ごとの顔調整" id="allFaceSliderGrid"></div>
 <button id="resetFaceControls" disabled>顔の全スライダーを元に戻す</button>
 </details>
@@ -75,7 +77,7 @@ alt="第1章女性主人公（暫定人物マスターの登録原画）">
 <details><summary>実メッシュ・接触検査</summary><pre id="metrics"></pre></details>
 </section>
 </main>
-<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/","./src/independent-face-masters.js":"./src/independent-face-masters.js?v=26","./src/face-feature-meshes.js":"./src/face-feature-meshes.js?v=26","./src/face-v7-controls.js":"./src/face-v7-controls.js?v=26","./src/face-body-assembly.js":"./src/face-body-assembly.js?v=26"}}</script>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/","./src/independent-face-masters.js":"./src/independent-face-masters.js?v=27","./src/face-feature-meshes.js":"./src/face-feature-meshes.js?v=27","./src/face-v7-controls.js":"./src/face-v7-controls.js?v=27","./src/face-body-assembly.js":"./src/face-body-assembly.js?v=27"}}</script>
 <script type="module">
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
@@ -84,7 +86,7 @@ import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {makeIndependentFaceMaster} from './src/independent-face-masters.js';
 import {FEMALE_V7_DEFAULTS,FACE_EYE_SPACING_DEFAULT,FACE_EYE_SPACING_RANGE,FACE_SLIDER_RANGES,normalizeFemaleFaceControls} from './src/face-v7-controls.js';
 import {applyFaceColorMode} from './src/face-feature-meshes.js';
-import {createScalpAnchoredWig} from './src/face-scalp-wig.js?v=26';
+import {createScalpAnchoredWig} from './src/face-scalp-wig.js?v=27';
 import {attachIndependentHeadToBody,removeHeadBustBelowNeck,createSealedNeckBridge} from './src/face-body-assembly.js';
 import {listWigStyles,DEFAULT_WIG_STYLE_ID} from './src/face-wig-styles.js';
 import {FEMALE_COMMANDER_ART_PALETTE,CHAPTER_ONE_ART_BY_KEY} from './src/chapter-one-character-art-references.js';
@@ -117,7 +119,7 @@ orbit.enableDamping=true;orbit.dampingFactor=.10;orbit.minDistance=.17;orbit.max
 let model=null,bodyAttachment=null,wig=null,ready=false;
 let uncutScalpSource=null,neckCrop=null,sourceHead=null;const faceControls=normalizeFemaleFaceControls({...FEMALE_V7_DEFAULTS,eyeSpacing:FACE_EYE_SPACING_DEFAULT});
 let view='front',zoomMode='full',wigVisible=true,outfitVisible=true;
-let wigBaseVisible=false;
+let wigBaseVisible=false,hairOnly=false;
 let contactColor=palette.iris;
 const counter={wigBuilds:0,glbExports:0};
 const status=(s)=>{$('status').textContent=s;};
@@ -149,6 +151,7 @@ function metrics(){
   detailedFrontHair:true,contactColor,
   wigDensity:Number($('wigDensity').value),
   wigFoundationVisible:wigBaseVisible,
+  hairOnly,bodyTransparent:hairOnly,wigStandaloneVisible:hairOnly&&!!wig?.root?.visible,
   savedFaceControlDefaults:{...FEMALE_V7_DEFAULTS},
   outfitSource:bodyAttachment?.report?.outfitSource,
   bodyMeshes:bodyAttachment?.report?.donorBodyTrianglesRetained,
@@ -158,6 +161,8 @@ function metrics(){
 window.__heroineBodyQA=metrics;
 window.__heroineBodyPreview={
  getActor:()=>model?.root||null,getWig:()=>wig?.root||null,
+ getFace:()=>model?.face||null,getEyeParts:()=>model?.parts||null,
+ getBody:()=>bodyAttachment?.root||null,
  getCameraState:()=>({position:camera.position.toArray(),target:orbit.target.toArray(),
   up:camera.up.toArray(),zoom:camera.zoom,mode:zoomMode,view}),
  sampleTorso:(x,y)=>bodyAttachment?.bodyCollider.query(x,y)||null
@@ -194,7 +199,7 @@ function rebuildWig(){
   bodyCollisionResolver:bodyAttachment.bodyCollider
  });
  model.face.add(wig.root);wig.root.visible=wigVisible;
- refreshWigBase();
+ refreshWigBase();applyHairOnlyView();
  counter.wigBuilds++;$('metrics').textContent=JSON.stringify(metrics(),null,2);
 }
 // Eye and lip controls rebuild ONLY the independent face. The imported body,
@@ -206,6 +211,7 @@ function rebuildFaceOnBody(){
  const savedCameraUp=camera.up.clone();
  const savedCameraZoom=camera.zoom;
  const previous=model;
+ if(hairOnly)applyFullModelVisibilityForExport();
  const next=makeIndependentFaceMaster(sourceHead,'female',{femaleControls:faceControls});
  applyFaceColorMode(next.face,'color',{contactColor});
  next.root.add(bodyAttachment.root); // Reparent existing fitted body; no new GLB.
@@ -233,6 +239,7 @@ function rebuildFaceOnBody(){
  // Rebuild the geometry in-place. The user may be pinching to inspect eyes
  // or nose: no fitCamera(), zoom mode, orbit target or orientation reset.
  model=next;neckCrop=cropped;
+ applyHairOnlyView();
  camera.position.copy(savedCameraPosition);
  camera.up.copy(savedCameraUp);
  camera.zoom=savedCameraZoom;
@@ -333,6 +340,48 @@ for(const id of ['front','side','back','crown'])$(id).addEventListener('click',(
 for(const id of ['portrait','full'])$(id).addEventListener('click',()=>{
  zoomMode=id;fitCamera();
 });
+// Three.js hides every descendant of face.visible=false, including its
+// detachable wig. Hide face MATERIALS instead so the child wig stays visible.
+function applyHairOnlyView(){
+ if(!model)return;
+ const skin=model.face,neck=skin.getObjectByName('REAL_HEAD_BODY_CLOSED_NECK_SEAL');
+ const setVisible=(mesh,visible)=>{
+  if(!mesh)return;
+  const materials=Array.isArray(mesh.material)?mesh.material:[mesh.material];
+  for(const m of materials)if(m)m.visible=visible;
+ };
+ setVisible(skin,!hairOnly);
+ setVisible(neck,!hairOnly);
+ if(model.parts)model.parts.visible=!hairOnly;
+ if(bodyAttachment?.root)bodyAttachment.root.visible=!hairOnly;
+ if(wig?.root)wig.root.visible=hairOnly||wigVisible;
+ $('hairOnly').textContent=hairOnly?'本体を表示（通常表示へ）':
+  '髪だけ表示（本体透明）';
+ $('hairOnly').setAttribute('aria-pressed',String(hairOnly));
+ $('toggleWig').disabled=hairOnly;
+}
+$('hairOnly').addEventListener('click',()=>{
+ hairOnly=!hairOnly;
+ applyHairOnlyView();
+ status(hairOnly?'顔・目元・首・胴体を透明化し、独立ウィッグのみ表示しています。':
+  '顔・胴体・ウィッグを通常表示に戻しました。');
+ $('metrics').textContent=JSON.stringify(metrics(),null,2);
+});
+// Visibility reset for geometry/GLB work: keep hairOnly intent unchanged,
+// but temporarily show the real face, fitted neck, orbit and torso.
+function applyFullModelVisibilityForExport(){
+ if(!model)return;
+ const set=(mesh)=>{
+  if(!mesh)return;
+  for(const m of Array.isArray(mesh.material)?mesh.material:[mesh.material])
+   if(m)m.visible=true;
+ };
+ set(model.face);
+ set(model.face.getObjectByName('REAL_HEAD_BODY_CLOSED_NECK_SEAL'));
+ if(model.parts)model.parts.visible=true;
+ if(bodyAttachment?.root)bodyAttachment.root.visible=true;
+ if(wig?.root)wig.root.visible=wigVisible;
+}
 function refreshWigBase(){
  const foundation=wig?.root?.getObjectByName(
   'DETACHABLE_WIG_TRANSPARENT_HEAD_BASE');
@@ -361,7 +410,7 @@ $('wigDensity').addEventListener('change',()=>{
 });
 $('toggleWig').addEventListener('click',()=>{
  wigVisible=!wigVisible;
- if(wig)wig.root.visible=wigVisible;
+ if(wig)wig.root.visible=hairOnly||wigVisible;
  $('toggleWig').setAttribute('aria-pressed',String(wigVisible));
  $('toggleWig').textContent=wigVisible?'髪を隠す':'髪を表示';
 });
@@ -373,6 +422,7 @@ $('toggleOutfit').addEventListener('click',()=>{
 });
 $('saveGlb').addEventListener('click',async()=>{
  if(!ready)return;
+ if(hairOnly)applyFullModelVisibilityForExport();
  $('saveGlb').disabled=true;status('全身GLBを書き出しています…');
  try{
   const exporter=new GLTFExporter();
@@ -380,13 +430,13 @@ $('saveGlb').addEventListener('click',async()=>{
    exporter.parse(model.root,resolve,reject,{binary:true,onlyVisible:true}));
   const url=URL.createObjectURL(new Blob([result],{type:'model/gltf-binary'}));
   const a=document.createElement('a');a.href=url;
-  a.download='hai-gin-hero-girl-01-face-body-v26.glb';
+  a.download='hai-gin-hero-girl-01-face-body-v27.glb';
   document.body.appendChild(a);a.click();a.remove();
   setTimeout(()=>URL.revokeObjectURL(url),1000);
   counter.glbExports++;
   status('実際の顔＋胴体＋独立ヅラをGLBに保存しました。');
  }catch(error){status('全身GLB出力エラー：'+String(error));}
- finally{$('saveGlb').disabled=false;}
+ finally{$('saveGlb').disabled=false;if(hairOnly)applyHairOnlyView();}
 });
 $('saveWig').addEventListener('click',async()=>{
  if(!ready||!wig)return;
@@ -397,7 +447,7 @@ $('saveWig').addEventListener('click',async()=>{
    exporter.parse(wig.root,ok,fail,{binary:true,onlyVisible:false}));
   const url=URL.createObjectURL(new Blob([data],{type:'model/gltf-binary'}));
   const a=document.createElement('a');a.href=url;
-  a.download='hai-gin-wig-v26-'+$('wigDensity').value+'x.glb';
+  a.download='hai-gin-wig-v27-'+$('wigDensity').value+'x.glb';
   document.body.append(a);a.click();a.remove();
   setTimeout(()=>URL.revokeObjectURL(url),2000);
   status('顔・胴体とは別の着脱ウィッグGLBを保存しました。');
@@ -448,7 +498,7 @@ frame();
    bodyCutY:bodyAttachment.report.neckSeamY
   });
   ready=true;
-  for(const id of ['full','portrait','front','side','back','crown','toggleWig','toggleWigBase','toggleOutfit','style','wigDensity','saveGlb','saveWig','resetFaceControls'])
+  for(const id of ['full','portrait','front','side','back','crown','toggleWig','hairOnly','toggleWigBase','toggleOutfit','style','wigDensity','saveGlb','saveWig','resetFaceControls'])
    $(id).disabled=false;
   for(const {input} of faceInputs.values())input.disabled=false;
   eyeColorInput.disabled=false;

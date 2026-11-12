@@ -68,17 +68,30 @@ function makeFineEyelashMesh(name,liner,x,y,z,eyeRadius,side,upper,settings){
   const a=new THREE.Vector3().lerpVectors(p,left,.62);
   const b=new THREE.Vector3().lerpVectors(p,right,.62);
   const spread=Math.abs(u-.5)*2;
-  const length=eyeRadius*(upper?.16:.065)*settings.lashLength*(.50+.50*edge)*
+  const length=eyeRadius*(upper?.29:.080)*settings.lashLength*(.58+.42*edge)*
    (.88+.12*Math.sin((i+1)*2.39996323));
-  const tip=p.clone().add(new THREE.Vector3(
-   side*spread*eyeRadius*.055,
-   (upper?1:-1)*length,
-   eyeRadius*(upper?.11:.055)*(1+.8*settings.lashCurl)*(.65+.35*edge)));
-  const start=vertices.length/3;
-  for(const point of [a,b,tip]){
-   vertices.push(point.x-x,point.y-y,point.z-z+eyeRadius*.018);
+  const baseWidth=Math.max(.000015,a.distanceTo(b)*.46);
+  const baseCentre=new THREE.Vector3().addVectors(a,b).multiplyScalar(.5);
+  const across=new THREE.Vector3().subVectors(b,a).normalize();
+  const start=vertices.length/3,stations=5;
+  for(let j=0;j<stations;j++){
+   const t=j/(stations-1),curl=Math.max(0,settings.lashCurl);
+   const lift=(upper?1:-1)*length*(.43*t+.57*t*t);
+   const forward=eyeRadius*(upper?.09:.035)*t+
+    eyeRadius*.23*curl*Math.pow(t,2.25);
+   const swing=side*spread*eyeRadius*.065*Math.pow(t,1.3);
+   const center=baseCentre.clone().add(new THREE.Vector3(
+    swing,lift,forward+eyeRadius*.018));
+   const width=baseWidth*Math.pow(1-t,1.45)+eyeRadius*.00022;
+   for(const dir of [-1,1]){
+    const point=center.clone().addScaledVector(across,dir*width);
+    vertices.push(point.x-x,point.y-y,point.z-z);
+   }
   }
-  indices.push(start,start+1,start+2);
+  for(let j=0;j<stations-1;j++){
+   const base=start+j*2,next=base+2;
+   indices.push(base,base+1,next,next,base+1,next+1);
+  }
  }
  const geo=new THREE.BufferGeometry();
  geo.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));
@@ -96,6 +109,8 @@ function makeFineEyelashMesh(name,liner,x,y,z,eyeRadius,side,upper,settings){
  lash.userData.lashCurl=settings.lashCurl;
  lash.userData.rootedOnEyeliner=true;
  lash.userData.taperedGeometry=true;
+ lash.userData.curvedRibbonStations=5;
+ lash.userData.tipCurlsUpFromEyeliner=true;
  return lash;
 }
 function sampleGrid(mesh,columns,rows,u,v){
@@ -342,11 +357,24 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   // white is an almond surface projected onto this EXACT sculpted face.
   // Its iris/pupil are thin patches conforming to the same face, so the
   // eye can no longer float outside the opening when viewed from the side.
-  const eyeSurfaceLift=Math.max(d.z*.0025,eyeRadius*.055)+
-   eyeRadius*settings.eyeDepth*.14;
-  const insetZ=(px,py)=>surfaceAt(px,py)+eyeSurfaceLift;
-  const z=insetZ(x,y);
+  // A continuous bulge begins at the actual eyeliner edge and rises
+  // smoothly toward the centre of the almond opening. It is sculpted
+  // from the same FACE surface; it is not a separate sphere or eyeball.
+  const eyeSurfaceLift=Math.max(d.z*.0018,eyeRadius*.025)+
+   eyeRadius*settings.eyeDepth*.11;
   const width=eyeRadius*1.12*eyeWidth;
+  const eyeDomeHeight=eyeRadius*.23;
+  const insetZ=(px,py)=>{
+   const tx=clamp((px-x)/width,-1,1);
+   const arch=Math.pow(Math.max(0,1-tx*tx),.70);
+   const apertureY=eyeRadius*.33*eyeHeight*arch;
+   const ty=apertureY>.000001?
+    clamp((py-y)/apertureY,-1,1):1;
+   const curved=Math.pow(Math.max(0,1-tx*tx),.68)*
+    Math.pow(Math.max(0,1-ty*ty),.68);
+   return surfaceAt(px,py)+eyeSurfaceLift+eyeDomeHeight*curved;
+  };
+  const z=insetZ(x,y);
   const eyePatch=buildGrid(eyeLabel+'_ORBITAL_EYEBALL',48,18,(u,v)=>{
    const t=u*2-1,arch=Math.pow(Math.max(0,1-t*t),.70);
    const xx=x+t*width;
@@ -358,6 +386,8 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   eyePatch.userData.profileExposed=true; // legacy inspection contract
   eyePatch.userData.noDetachedEyeball=true;
   eyePatch.userData.geometryType='face-conforming-almond-eye';
+  eyePatch.userData.eyelinerToCenterBulge=true;
+  eyePatch.userData.eyelinerToCenterBulgeFraction=.23;
   eyePatch.userData.colorRole='sclera';
   root.add(eyePatch);
   // Both pupils and colored contacts are sections of the same real skin-
@@ -379,7 +409,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
    return cap;
   };
   irisMat.side=THREE.DoubleSide;pupilMat.side=THREE.DoubleSide;
-  const iris=makeCap('CURVED_IRIS',irisAngle,irisMat,.020);
+  const iris=makeCap('CURVED_IRIS',irisAngle,irisMat,.024);
   const fiberColors=[];
   for(let j=0;j<=18;j++)for(let i=0;i<=48;i++){
    const r=j/18,angle=i/48*Math.PI*2;
@@ -395,7 +425,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   iris.userData.circularProjected=true;
   iris.userData.radialFibers=true;
   iris.userData.colorRole='iris';root.add(iris);
-  const pupil=makeCap('CURVED_PUPIL',pupilAngle,pupilMat,.027);
+  const pupil=makeCap('CURVED_PUPIL',pupilAngle,pupilMat,.034);
   pupil.userData.circularProjected=true;
   pupil.userData.colorRole='pupil';root.add(pupil);
   // The profile protrusion is now only a slim sculpted patch above skin.
@@ -410,7 +440,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
     const cornerTilt=(t+1)*eyeRadius*.045*eyeWidth;
     const nearY=y+(upper?1:-1)*height*arch+cornerTilt;
     const farY=nearY+(upper?1:-1)*eyeRadius*(upper?.28:.19)*v;
-    const eyeZ=insetZ(x+t*width,nearY)+eyeRadius*.034;
+    const eyeZ=insetZ(x+t*width,nearY)+eyeRadius*.020;
     const skinZ=surfaceAt(x+t*width,farY)+d.z*.0033;
     const zz=eyeZ*(1-smoothstep(v))+skinZ*smoothstep(v);
     return new THREE.Vector3(x+t*width,farY,zz);
@@ -697,6 +727,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   lashDensityFactor:settings.lashDensity,lashLengthFactor:settings.lashLength,
   lashThicknessFactor:settings.lashThickness,lashCurlFactor:settings.lashCurl,
   noStandaloneEyeSphere:true,noUnderEyeBags:true,
+  eyeBulgeStartsAtEyeliner:true,eyeBulgeFraction:.23,
   underEyeShadowMeshCount:0,
   doubleLidCreaseMeshCount:female?2:0,
   lowerOrbitalVolumeMeshCount:0,

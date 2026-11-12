@@ -1056,7 +1056,10 @@ test('v21 real eye gap, fine lash triangles and expanded lip geometry',()=>{
   assert.equal(lashes.userData.rootedOnEyeliner,true);
   assert.equal(lashes.userData.filamentCount,upper?84:42);
   assert.equal(lashes.geometry.getAttribute('position').count,
-   (upper?84:42)*3);
+   (upper?84:42)*10);
+  assert.equal(lashes.userData.curvedRibbonStations,5);
+  assert.equal(lashes.userData.tipCurlsUpFromEyeliner,true);
+  assert.equal(lashes.geometry.getIndex().count,(upper?84:42)*24);
   assert.equal(lashes.parent.name,eye+'_LASH_ANGLE_CONTROL');
  }
  const lipWidth=model=>{
@@ -1348,4 +1351,47 @@ test('v26 complete eye-region sliders change real facial meshes and preserve lin
  assert.equal(full.report.detailedParts.lashDensityFactor,2.2);
  assert.equal(full.report.detailedParts.eyeWidthFactor,1.45);
  assert.equal(full.report.detailedParts.eyeHeightFactor,1.45);
+});
+
+test('v27 face-conforming eye bulges smoothly from eyeliner and default lashes curl',()=>{
+ const source=fixture().source;
+ const m=makeIndependentFaceMaster(source,'female');
+ for(const side of ['LEFT','RIGHT']){
+  const eye=m.parts.getObjectByName(side+'_ORBITAL_EYEBALL');
+  const liner=m.parts.getObjectByName(side+'_UPPER_EYELINER');
+  const lash=m.parts.getObjectByName(side+'_UPPER_LASH_MESH');
+  assert.ok(eye?.isMesh&&liner?.isMesh&&lash?.isMesh);
+  assert.equal(eye.userData.noDetachedEyeball,true);
+  assert.equal(eye.userData.eyelinerToCenterBulge,true);
+  assert.equal(eye.userData.eyelinerToCenterBulgeFraction,.23);
+  assert.equal(lash.userData.curvedRibbonStations,5);
+  assert.equal(lash.userData.tipCurlsUpFromEyeliner,true);
+  assert.equal(lash.userData.lashLength,1.4);
+  assert.equal(lash.userData.lashCurl,.85);
+  const pos=lash.geometry.getAttribute('position');
+  const firstZ=pos.getZ(0),secondZ=pos.getZ(2),lastZ=pos.getZ(8);
+  assert.ok(lastZ>secondZ&&secondZ>firstZ,
+   'Lashes must bend forward in 3D at the curled tip');
+  assert.equal(m.report.detailedParts.eyeBulgeStartsAtEyeliner,true);
+  assert.equal(m.report.detailedParts.eyeBulgeFraction,.23);
+ }
+ assert.equal(m.report.detailedParts.eyeWidthFactor,1);
+ assert.equal(m.report.detailedParts.eyeHeightFactor,1);
+});
+test('v27 filled neck seam loft overlaps both clipped rings and closes collar',()=>{
+ const head=makeIndependentFaceMaster(fixture().source,'female');
+ const box=head.face.geometry.boundingBox,h=box.max.y-box.min.y;
+ const bottom=box.min.y+h*.29,top=bottom+h*.065;
+ removeHeadBustBelowNeck(head.face,top);
+ const attachment={root:new THREE.Group(),report:{}};
+ const neck=createSealedNeckBridge(head.face,attachment,{
+  headCutY:top,bodyCutY:bottom});
+ const p=neck.geometry.getAttribute('position');
+ assert.ok(p.count>=6*49);
+ assert.equal(attachment.report.neckBridgeUsesExactHeadCut,true);
+ assert.ok(attachment.report.neckBridgeHeadCutSamples>=12);
+ assert.equal(attachment.report.neckBridgeRingOverlap,1.075);
+ assert.equal(attachment.report.neckBridgeUpperInsideActualHead,true);
+ assert.equal(attachment.report.neckBridgeLowerInsideActualBody,true);
+ assert.ok([...p.array].every(Number.isFinite));
 });
