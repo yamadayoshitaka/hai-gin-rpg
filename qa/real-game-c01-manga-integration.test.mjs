@@ -11,7 +11,7 @@ for(const [name,source] of [['title',title],['town',town]]){
  assert.match(source,/registeredStoryPanelAsset\(shot\)/,name+' must prioritize single-cut WebP');
  assert.match(source,/storySheetCrop\(shot,cells\)/,name+' must crop correct cell as fallback');
  assert.match(source,/style\.aspectRatio='16 \/ 9'/,name+' must show 16:9 panel only');
- assert.match(source,/import \{registeredStoryPanelAsset,storySheetCrop\} from '\.\/src\/story-panel-registered-art\.js'/);
+ assert.match(source,/import \{registeredStoryPanelAsset,storySheetCrop(?:,storyArtDisplayUrl)?\} from '\.\/src\/story-panel-registered-art\.js'/);
  assert.doesNotMatch(source,/10コマを1ページにした漫画|2列5行の10コマ漫画/);
  const script=source.match(/<script type="module">([\s\S]*?)<\/script>/)?.[1];
  assert(script,name+' must contain module script');
