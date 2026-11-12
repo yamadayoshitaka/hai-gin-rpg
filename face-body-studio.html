@@ -70,7 +70,7 @@ import {makeIndependentFaceMaster} from './src/independent-face-masters.js';
 import {FEMALE_V7_DEFAULTS} from './src/face-v7-controls.js';
 import {applyFaceColorMode} from './src/face-feature-meshes.js';
 import {createScalpAnchoredWig} from './src/face-scalp-wig.js';
-import {attachIndependentHeadToBody} from './src/face-body-assembly.js';
+import {attachIndependentHeadToBody,removeHeadBustBelowNeck} from './src/face-body-assembly.js';
 import {listWigStyles,DEFAULT_WIG_STYLE_ID} from './src/face-wig-styles.js';
 import {FEMALE_COMMANDER_ART_PALETTE,CHAPTER_ONE_ART_BY_KEY} from './src/chapter-one-character-art-references.js';
 
@@ -100,6 +100,7 @@ const camera=new THREE.PerspectiveCamera(38,1,.01,60);
 const orbit=new OrbitControls(camera,canvas);
 orbit.enableDamping=true;orbit.dampingFactor=.10;orbit.minDistance=.17;orbit.maxDistance=12;
 let model=null,bodyAttachment=null,wig=null,ready=false;
+let uncutScalpSource=null,neckCrop=null;
 let view='front',zoomMode='full',wigVisible=true,outfitVisible=true;
 const counter={wigBuilds:0,glbExports:0};
 const status=(s)=>{$('status').textContent=s;};
@@ -117,6 +118,7 @@ function metrics(){
   artStatus:art.status,artMatched:false,gender:'female',
   attachedBody:!!bodyAttachment,donorHeadRemoved:
    bodyAttachment?.report?.donorHeadTrianglesRemoved||0,
+  headBustRemoved:neckCrop?.removedTriangles||0,
   bodySource:bodyAttachment?.report?.bodySource,
   bodyCollision:bodyAttachment?.bodyCollider.getReport()||null,
   wig:wig?.getReport()||null,
@@ -156,7 +158,7 @@ function fitCamera(){
 function rebuildWig(){
  if(!model||!bodyAttachment)return;
  if(wig){wig.root.removeFromParent();wig.dispose();wig=null;}
- wig=createScalpAnchoredWig(model.face,{
+ wig=createScalpAnchoredWig(uncutScalpSource||model.face,{
   count:1440,lengthScale:1.0,styleId:$('style').value,
   color:Number('0x'+palette.hair.slice(1)),
   bodyCollisionResolver:bodyAttachment.bodyCollider
@@ -230,7 +232,15 @@ frame();
    outfitSource:null,characterId:art.characterId,
    armor:palette.armor,cloth:palette.cloth
   });
-  scene.add(model.root);rebuildWig();ready=true;
+  // Build wig from ORIGINAL full-scalp clone. The displayed face alone
+  // is cropped at the body seam; changing hairstyles still uses full roots.
+  uncutScalpSource=new THREE.Mesh(model.face.geometry.clone(),
+   new THREE.MeshBasicMaterial());
+  scene.add(model.root);rebuildWig();
+  const originalHeight=model.face.geometry.boundingBox.getSize(new THREE.Vector3()).y;
+  neckCrop=removeHeadBustBelowNeck(model.face,
+   bodyAttachment.report.neckSeamY-originalHeight*.030);
+  ready=true;
   for(const id of ['full','portrait','front','side','back','crown','toggleWig','toggleOutfit','style','saveGlb'])
    $(id).disabled=false;
   fitCamera();$('metrics').textContent=JSON.stringify(metrics(),null,2);
