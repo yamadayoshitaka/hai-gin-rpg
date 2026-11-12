@@ -1,0 +1,145 @@
+name: World, monster and summon round-the-clock regression
+
+on:
+  schedule:
+    # Fast structural checks every hour; visual checks additionally every six hours.
+    - cron: '21 * * * *'
+    - cron: '41 2,8,14,20 * * *'
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - '.github/workflows/world-creature-hourly-regression.yml'
+      - 'qa/**'
+      - 'src/building-**'
+      - 'src/interior-**'
+      - 'src/exterior-**'
+      - 'src/stage-building-**'
+      - 'src/monster-**'
+      - 'src/combat-creature-**'
+      - 'src/combat-world-object-renderer.js'
+      - 'src/combat-humanoid-summons.js'
+      - 'src/combat-summon-face-library.js'
+      - 'assets/creatures/**'
+      - 'assets/textures/**'
+      - 'tactics-wireframe.html'
+      - 'monster-manager.html'
+      - 'summon-showcase.html'
+permissions:
+  contents: read
+concurrency:
+  group: world-creature-quality-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  geometry-and-architecture:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install local Three.js for real mesh assertions (no paid APIs)
+        run: npm install --no-save --package-lock=false three@0.180.0
+      - name: Building exterior, floors, stair navigation, and cutaways
+        id: buildings
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          mkdir -p qa-reports/continuous
+          node --test \
+            qa/building-data-contract.test.mjs \
+            qa/building-quality-floor-travel.test.mjs \
+            qa/building-floor-navigation.test.mjs \
+            qa/building-preview-tour.test.mjs \
+            qa/upper-floor-architecture.test.mjs \
+            qa/upper-floor-window-roof.test.mjs \
+            qa/stage-building-cutaway.test.mjs \
+            qa/exterior-bom.test.mjs \
+            qa/spiral-building-structure.test.mjs 2>&1 | tee qa-reports/continuous/buildings.log
+      - name: Fifty monsters, PBR, silhouette, animation and LOD integrity
+        id: monsters
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          node --test \
+            qa/monster-bestiary.test.mjs \
+            qa/creature-master-quality.test.mjs \
+            qa/creature-import-pipeline.test.mjs \
+            qa/creature-photo-materials.test.mjs 2>&1 | tee qa-reports/continuous/monsters.log
+      - name: Summon anatomy, ground locomotion, mounts, materials and memory
+        id: summons
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          node --test \
+            qa/summon-geometry.test.mjs \
+            qa/creature-realistic-anatomy.test.mjs \
+            qa/creature-ground-locomotion.test.mjs \
+            qa/creature-performance.test.mjs \
+            qa/canine-fur-face-regression.test.mjs \
+            qa/humanoid-summons.test.mjs \
+            qa/creature-library-quality.test.mjs 2>&1 | tee qa-reports/continuous/summons.log
+      - name: Upload all three logs even when a category fails
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: world-creature-contracts-${{ github.run_id }}
+          path: qa-reports/continuous/
+          if-no-files-found: warn
+          retention-days: 7
+      - name: Block quality regressions in any category
+        if: always()
+        run: |
+          echo 'Buildings: ${{ steps.buildings.outcome }}' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Monsters: ${{ steps.monsters.outcome }}' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Summons: ${{ steps.summons.outcome }}' >> "$GITHUB_STEP_SUMMARY"
+          test '${{ steps.buildings.outcome }}' = success
+          test '${{ steps.monsters.outcome }}' = success
+          test '${{ steps.summons.outcome }}' = success
+
+  browser-visual-evidence:
+    # Expensive real WebGL captures run every six hours or for manual/PR validation.
+    if: github.event_name != 'schedule' || github.event.schedule == '41 2,8,14,20 * * *'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Chromium and QA utilities
+        run: |
+          npm install --no-save --package-lock=false @playwright/test@1.56.0 playwright@1.56.0 pngjs@7.0.0
+          npx playwright install --with-deps chromium
+      - name: Inspect rendered monster mesh/LOD and summon mobile close-up
+        id: creature_browser
+        continue-on-error: true
+        run: |
+          npx playwright test qa/monster-manager.spec.mjs qa/summon-gallery-mobile.spec.mjs \
+            --grep '50-monster quality inspector|mobile summon gallery'
+      - name: Capture ten consistent exterior/interior views
+        id: building_browser
+        continue-on-error: true
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/world-creature-building-server.log 2>&1 &
+          sleep 2
+          node qa/capture.cjs
+      - name: Archive screenshot evidence and browser results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: world-creature-browser-${{ github.run_id }}
+          path: |
+            test-results/
+            qa-screenshots/
+          if-no-files-found: warn
+          retention-days: 7
+      - name: Require both creature and building visual smoke checks
+        if: always()
+        run: |
+          echo 'Creature browser: ${{ steps.creature_browser.outcome }}' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Building browser: ${{ steps.building_browser.outcome }}' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Screenshots are evidence for human review, not proof of photorealism.' >> "$GITHUB_STEP_SUMMARY"
+          test '${{ steps.creature_browser.outcome }}' = success
+          test '${{ steps.building_browser.outcome }}' = success

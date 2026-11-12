@@ -16,13 +16,17 @@ assert.match(catalog,/Layered 2F facade/);
 assert.match(catalog,/const level of \[1,2\]/,'Three-storey castle has distinct stone cornices');
 assert.doesNotMatch(battle,/id="floorUp"|id="floorDown"/,'Floors must not require tap controls');
 assert.match(battle,/function startAutomaticFloorTour\(/,'A soldier chooses a stair route without player input');
-assert.match(battle,/automaticFloorGuide=pick\.actor/,'The automatic scout receives a floor route');
+assert.match(battle,/if\(option\.actor\.team===0&&!automaticFloorGuide\)automaticFloorGuide=option\.actor/,
+ 'An allied scout receives the automatic floor-follow route');
 assert.match(battle,/startAutomaticFloorTour\(\);/,'The automatic floor tour runs from the AI loop');
 assert.match(battle,/travel\.phase==='upstairs'.*|travel\.arrivedAt=elapsed/,'The camera must remain on the occupied floor');
 assert.match(battle,/setBattleCamera\(a\.root\.position,new THREE\.Vector3\(8,14,15\)\)/,'Camera automatically follows a stair climb');
 assert.match(battle,/automaticFloorGuide\?\.root\.position\|\|selected/,'The automatic camera keeps the upper-floor soldier in frame');
 assert.match(battle,/requestUnitFloor\(a,1,travel\.building\)/,'The scout advances to the third floor after collecting loot');
-assert.match(battle,/a\.inventory\.push\(/,'The scout physically collects an upstairs item');
+assert.match(battle,/roomItemRegistry\.pickup\(loot\.id,a\.id\)/,
+ 'The scout must physically collect its upstairs loot through the registry');
+assert.match(battle,/a\.inventory=roomItemRegistry\.owned\(a\.id\)/,
+ 'Only a successfully collected reward enters the scout inventory');
 assert.match(battle,/updateUpperFloorRangedCombat\(a,dt\)/,'The scout attacks from the top floor');
 assert.match(battle,/evaluateBuildingEntry\(/,'Entry lock level must be evaluated');
 assert.match(battle,/buildFloorTravelRoute\(/,'Actors ascend authored 3D stairs');

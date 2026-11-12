@@ -12,7 +12,7 @@ assert.doesNotMatch(source,/sphere\('core',s\.eyes/,'目を丸い球体に戻さ
 assert.match(source,/Muscle sockets overlap the torso/,'筋肉の重なりで軍馬の脚付け根を隠す');
 assert.match(source,/Buried upper tendons plus overlapping shoulder/,'狼の脚は胴体の奥から伸ばす');
 const irisHexes=[...source.matchAll(/eyes:0x([0-9a-f]{6})/g)].map(([,hex])=>parseInt(hex,16));
-assert.equal(irisHexes.length,6,'狼・竜4種・軍馬の虹彩色を明示する');
+assert.equal(irisHexes.length,8,'狼・竜4種・軍馬・人型召喚獣2種にそれぞれ虹彩色を定義する');
 for(const pigment of irisHexes.slice(0,5)){
   const red=(pigment>>16)&255,green=(pigment>>8)&255,blue=pigment&255;
   assert.ok(red>green*2&&red>blue*1.7,'狼・竜の虹彩は不自然な蛍光色でない暗赤色');
