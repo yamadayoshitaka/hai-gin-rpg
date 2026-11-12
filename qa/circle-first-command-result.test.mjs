@@ -40,7 +40,8 @@ assert.match(html,/squadQuickPage==='home'/);
 assert.match(html,/\['📯 号令','orders'\],\['🎒 アイテム','items'\]/);
 assert.match(html,/function beginCircleTargetSelection\(kind,itemId=null\)/);
 assert.match(html,/function chooseCircleActionTarget\(id,team\)/);
-assert.match(html,/if\(action\.kind==='item'\)ok=useSquadBattleItem\(action\.itemId,id\)/);
+assert.match(html,/if\(action\.kind==='item'\)ok=useSquadBattleItem\(action\.itemId,id,action\.source\)/,
+ 'Targeted item use must charge the issuing squad rather than the target');
 assert.match(html,/else if\(action\.kind==='support'\)\{/);
 assert.match(html,/if\(ok\)markRibbonOrderIssued\(action\.source\)/,
  'Recovery order consumes the commanding squads own 120s interval');
