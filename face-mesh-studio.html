@@ -443,7 +443,8 @@ function rebuildFemale(){
   up:camera.up.clone(),zoom:camera.zoom};
  const prev=models.get('female');
  const next=makeIndependentFaceMaster(femaleSource.scene,'female',{
-  femaleControls:modelChanges
+  femaleControls:modelChanges,
+  partSelection:v32PartMode?resolvePartSelection('female',v32Parts.female).ids:null
  });
  next.root.visible=gender==='female';
  next.parts.visible=partsOn;
@@ -484,7 +485,8 @@ function rebuildMale(){
   up:camera.up.clone(),zoom:camera.zoom};
  const prev=models.get('male');
  const next=makeIndependentFaceMaster(femaleSource.scene,'male',{
-  maleControls:maleChanges
+  maleControls:maleChanges,
+  partSelection:v32PartMode?resolvePartSelection('male',v32Parts.male).ids:null
  });
  next.root.visible=gender==='male';
  next.parts.visible=partsOn;
@@ -797,7 +799,8 @@ async function init(){
   for(const g of ['female','male']){
    const model=makeIndependentFaceMaster(smoothHead.scene,g,{
     femaleControls:g==='female'?modelChanges:{},
-    maleControls:g==='male'?maleChanges:{}
+    maleControls:g==='male'?maleChanges:{},
+    partSelection:v32PartMode?resolvePartSelection(g,v32Parts[g]).ids:null
    });
    model.root.visible=false;
    models.set(g,model);scene.add(model.root);
