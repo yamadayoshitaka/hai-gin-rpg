@@ -2,7 +2,7 @@
 <html lang="ja"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#14263a">
-<title>灰銀のレゾナンス | 顔v28・真円カラコンと静的ヘアカード</title>
+<title>灰銀のレゾナンス | 顔v29・眼球の奥まり補正と静的ヘアカード</title>
 <style>
 :root{font:15px/1.55 system-ui,-apple-system,"Noto Sans JP",sans-serif;color-scheme:dark}
 *{box-sizing:border-box}
@@ -62,7 +62,7 @@ button{padding:9px 11px}
 </style></head>
 <body>
 <header>
-<h1>男女・顔と立体パーツ v28</h1>
+<h1>男女・顔と立体パーツ v29</h1>
 <p>ライブラリに保存された実GLBの顔設定（顎先5倍・鼻穴隠し2・鼻筋2.5）を男女の実メッシュ標準に固定。口紅とチークを実メッシュの頂点に着色。上下アイライン・眉・眼球を調整し、女性用の高密度ロング（後頭部・両側頭部・襟足まで髪束生成・顔と肩への衝突対応）を追加。保存値とズームを維持します。</p>
 </header>
 <main><section class="panel">
@@ -160,13 +160,13 @@ button{padding:9px 11px}
 <div class="controls">
 <button id="export" disabled>表示中の顔メッシュをGLB保存</button>
 <button id="exportWig" disabled>ヅラ単体をGLB保存</button>
-<a href="./face-body-studio.html">女性主人公・静的ウィッグv28の全身3D確認画面</a>　<a href="./master-swordsman-prototype.html">従来の全身モデル</a>
+<a href="./face-body-studio.html">女性主人公・立体眼球v29の全身3D確認画面</a>　<a href="./master-swordsman-prototype.html">従来の全身モデル</a>
 </div>
 <p>指で360°回転・ピンチで拡大。女性の口紅は上唇・下唇の実3D形状に接続。上下アイラインの目尻を接続。暗いクマを自然にフェードさせ、眉の間隔を維持。頭皮からの金髪ロングは顔・首・肩・胸への簡易衝突を計算。男性は顎・鼻・目の角度と3Dヒゲの濃さ・長さを調整できます。</p>
 <p>これは美形を目標にした<b>初回の造形試作</b>です。実写品質・原画一致・美術承認・ゲーム実装は未達です。顔の凹凸や横顔が自然かを先に評価してください。</p>
 <details><summary>実メッシュ数値と原本保護の確認</summary><div id="metrics"></div></details>
 </section></main>
-<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/","./src/independent-face-masters.js":"./src/independent-face-masters.js?v=28","./src/face-feature-meshes.js":"./src/face-feature-meshes.js?v=28","./src/face-v7-controls.js":"./src/face-v7-controls.js?v=28","./src/face-body-assembly.js":"./src/face-body-assembly.js?v=28"}}</script>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/","./src/independent-face-masters.js":"./src/independent-face-masters.js?v=29","./src/face-feature-meshes.js":"./src/face-feature-meshes.js?v=29","./src/face-v7-controls.js":"./src/face-v7-controls.js?v=29","./src/face-body-assembly.js":"./src/face-body-assembly.js?v=29"}}</script>
 <script type="module">
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
@@ -174,7 +174,7 @@ import {GLTFExporter} from 'three/addons/exporters/GLTFExporter.js';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {makeIndependentFaceMaster,FACE_MASTER_SPEC} from './src/independent-face-masters.js';
 import {updateFaceFeatureAngles,applyFaceColorMode,updateRealFacePigment} from './src/face-feature-meshes.js';
-import {createScalpAnchoredWig} from './src/face-scalp-wig.js?v=28';
+import {createScalpAnchoredWig} from './src/face-scalp-wig.js?v=29';
 import {listWigStyles,DEFAULT_WIG_STYLE_ID} from './src/face-wig-styles.js';
 import {FEMALE_V7_DEFAULTS,MALE_REFERENCE_DEFAULT,FACE_SLIDER_RANGES,FACE_EYE_SPACING_DEFAULT,FACE_EYE_SPACING_RANGE,CONTACT_COLORS,safeContactColor,normalizeFemaleFaceControls,normalizeMaleFaceControls} from './src/face-v7-controls.js';
 const $=id=>document.getElementById(id);
@@ -469,7 +469,7 @@ function rebuildMale(){
 // used by the whole-body editor, before the existing tab sorter runs.
 const eyeExtras=[
  ['eyeWidth','目の横幅'],['eyeHeight','目の縦幅・開き'],
- ['eyeDepth','目の面の奥行き'],['browAngle','眉毛の角度'],
+ ['eyeDepth','眼球の前後位置（奥まり補正）'],['browAngle','眉毛の角度'],
  ['lashAngle','まつ毛全体の角度'],
  ['browWidth','眉毛の幅'],['browThickness','眉毛の太さ'],
  ['lashDensity','まつ毛の本数・密度'],
