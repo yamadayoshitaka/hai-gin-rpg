@@ -7,6 +7,7 @@ import {makeIndependentFaceMaster,FACE_MASTER_SPEC,femaleInnerFeatureDelta,femal
 import {updateFaceFeatureAngles,applyFaceColorMode,createFastFaceSurfaceSampler}
  from '../src/face-feature-meshes.js';
 import {createScalpAnchoredWig} from '../src/face-scalp-wig.js';
+import {DEFAULT_WIG_STYLE_ID,getWigStyle,listWigStyles} from '../src/face-wig-styles.js';
 import {normalizeFemaleFaceControls,FEMALE_V7_DEFAULTS,FACE_V7_PALETTE,CONTACT_COLORS,safeContactColor,LIBRARY_FACE_PRESET,MALE_REFERENCE_DEFAULT,FACE_SLIDER_RANGES}
  from '../src/face-v7-controls.js';
 
@@ -812,4 +813,45 @@ test('v16 eyeliner reprojects onto same eyelid at -20, 0, +20 degrees',()=>{
    }
   }
  }
+});
+
+test('v17 wigs are independently registered assets with crown center part and physical gravity',()=>{
+ const styles=listWigStyles();
+ assert.equal(DEFAULT_WIG_STYLE_ID,'center-part-gravity-long');
+ assert.ok(styles.some(x=>x.id==='center-part-gravity-long'));
+ assert.ok(styles.some(x=>x.id==='salon-layered-long'));
+ assert.ok(Object.isFrozen(getWigStyle(DEFAULT_WIG_STYLE_ID)));
+ assert.equal(getWigStyle(DEFAULT_WIG_STYLE_ID).gravityMps2,9.81);
+ assert.throws(()=>getWigStyle('missing-wig'),/Unknown registered/);
+ const face=makeIndependentFaceMaster(fixture().source,'female');
+ const wig=createScalpAnchoredWig(face.face,{count:240});
+ const report=wig.getReport();
+ assert.equal(report.hairstyleId,DEFAULT_WIG_STYLE_ID);
+ assert.equal(report.wigAssetType,'independent-wig');
+ assert.equal(report.centerPart,true);
+ assert.equal(report.gravityRestShape,true);
+ assert.equal(report.gravityMps2,9.81);
+ assert.equal(report.exactFaceSurfaceCollision,true);
+ assert.ok(report.crownWhorl.length===3&&report.crownWhorl.every(Number.isFinite));
+ assert.equal(wig.root.userData.assetType,'independent-wig');
+ assert.equal(wig.root.userData.hairStyleId,DEFAULT_WIG_STYLE_ID);
+ const part=wig.getPartSamples();
+ assert.ok(part.length>=20,'Whorl center split should include crown roots');
+ assert.ok(part.some(p=>p.side===-1)&&part.some(p=>p.side===1),
+  'The center part must send crown locks to BOTH sides of the head');
+ assert.ok(part.every(p=>p.gravityRestShape));
+ const bb=face.face.geometry.boundingBox,d=bb.getSize(new THREE.Vector3());
+ const cx=(bb.min.x+bb.max.x)/2,cz=(bb.min.z+bb.max.z)/2;
+ const original=new THREE.Vector3(cx,bb.min.y+d.y*.62,cz+d.z*.10);
+ const before=wig.getReport().faceContactEvents;
+ const corrected=wig.resolvePoint(original);
+ assert.ok(wig.getReport().faceContactEvents>before,'Hair must contact actual face');
+ assert.ok(corrected.distanceTo(original)>1e-6,'Collision must displace a strand');
+ wig.update(.05);
+ assert.ok(wig.getReport().collisionEvents>=0);
+ const other=createScalpAnchoredWig(face.face,{count:96,styleId:'salon-layered-long'});
+ assert.equal(other.root.userData.hairStyleId,'salon-layered-long');
+ assert.equal(other.getReport().centerPart,false);
+ assert.notEqual(wig.root,other.root,'Each wig must be a separate 3D instance');
+ wig.dispose();other.dispose();
 });
