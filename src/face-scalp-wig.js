@@ -9,6 +9,7 @@ import * as THREE from 'three';
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const fract=x=>x-Math.floor(x);
 const f3=(x,y,z)=>new THREE.Vector3(x,y,z);
+const envelopeCache=new WeakMap();
 const projectCapsule=(p,a,b,r)=>{
  const along=b.clone().sub(a),den=along.lengthSq();
  const t=den?clamp(p.clone().sub(a).dot(along)/den,0,1):0;
@@ -59,10 +60,62 @@ function actualScalpCandidates(geo,box){
  }
  return {pools,all};
 }
+/**
+ * Real head envelope for growth->relax. Density is supplied by the continuous
+ * scalp shell, not by artificially multiplying strand count to 100,000.
+ * The radial field is sourced from actual head vertices in axial slices.
+ */
+function createHeadEnvelope(geometry,box){
+ const pos=geometry.getAttribute('position'),center=box.getCenter(new THREE.Vector3());
+ const d=box.getSize(new THREE.Vector3()),axial=36,angular=64;
+ const values=new Float32Array(axial*angular);
+ const radiusAt=(x,z)=>Math.hypot(x-center.x,z-center.z);
+ const index=(y,a)=>y*angular+((a%angular)+angular)%angular;
+ for(let i=0;i<pos.count;i++){
+  const x=pos.getX(i),y=pos.getY(i),z=pos.getZ(i);
+  if(y<box.min.y+d.y*.53)continue;
+  const yi=clamp(Math.round((y-box.min.y)/d.y*(axial-1)),0,axial-1);
+  const ai=Math.round((Math.atan2(x-center.x,z-center.z)+Math.PI)/(2*Math.PI)*angular)%angular;
+  values[index(yi,ai)]=Math.max(values[index(yi,ai)],radiusAt(x,z));
+ }
+ const populated=values.slice();
+ // Fill angular/topology gaps by finding the closest known real vertex
+ // within the neighboring 3 vertical bands and 16 angular cells.
+ for(let y=0;y<axial;y++)for(let a=0;a<angular;a++){
+  if(values[index(y,a)]>0)continue;
+  let best=Infinity,value=d.x*.25;
+  for(let yy=Math.max(0,y-5);yy<=Math.min(axial-1,y+5);yy++)
+   for(let da=-16;da<=16;da++){
+    const r=populated[index(yy,a+da)];
+    if(!r)continue;
+    const score=Math.abs(yy-y)*1.7+Math.abs(da);
+    if(score<best){best=score;value=r;}
+   }
+  values[index(y,a)]=value;
+ }
+ return (height,direction)=>{
+  const yy=clamp((height-box.min.y)/d.y*(axial-1),0,axial-1);
+  const az=(Math.atan2(direction.x,direction.z)+Math.PI)/(2*Math.PI)*angular;
+  const y0=Math.floor(yy),y1=Math.min(axial-1,y0+1);
+  const a0=Math.floor(az)%angular,a1=(a0+1)%angular;
+  const fy=yy-y0,fa=az-Math.floor(az);
+  const r0=THREE.MathUtils.lerp(values[index(y0,a0)],values[index(y0,a1)],fa);
+  const r1=THREE.MathUtils.lerp(values[index(y1,a0)],values[index(y1,a1)],fa);
+  return THREE.MathUtils.lerp(r0,r1,fy);
+ };
+}
+function hairCutY(zone,box,lengthScale,seed){
+ const d=box.getSize(new THREE.Vector3()),scale=clamp(lengthScale,.55,1.5);
+ const level=zone.startsWith('fringe')?.765:
+  zone.startsWith('nape')?.23:
+  zone.startsWith('temple')?.14:
+  zone.startsWith('back')?.10:.22;
+ return box.min.y+d.y*(level+(.015*fract(seed*1.618)))/scale;
+}
 function scalpShell(geo,box,color){
  const src=geo.getAttribute('position'),idx=geo.index;
  const n=idx?idx.count:src.count,d=box.getSize(new THREE.Vector3());
- const normals=geo.getAttribute('normal'),verts=[];
+ const normals=geo.getAttribute('normal'),verts=[],smoothNormals=[];
  const center=box.getCenter(new THREE.Vector3());
  const sample=i=>f3(src.getX(i),src.getY(i),src.getZ(i));
  for(let i=0;i+2<n;i+=3){
@@ -82,6 +135,8 @@ function scalpShell(geo,box,color){
     v.clone().sub(mid).normalize();
    v.addScaledVector(normal,d.x*.0015);
    verts.push(v.x,v.y,v.z);
+   // Preserve smooth source-head normals; nonindexed compute would make a flat helmet.
+   smoothNormals.push(normal.x,normal.y,normal.z);
   }
  }
  const material=new THREE.MeshStandardMaterial({
@@ -89,7 +144,8 @@ function scalpShell(geo,box,color){
  });
  const buffer=new THREE.BufferGeometry();
  buffer.setAttribute('position',new THREE.Float32BufferAttribute(verts,3));
- if(verts.length)buffer.computeVertexNormals();
+ if(smoothNormals.length)buffer.setAttribute('normal',
+  new THREE.Float32BufferAttribute(smoothNormals,3));
  const mesh=new THREE.Mesh(buffer,material);
  mesh.name='REAL_SCALP_TRIANGLE_HAIR_CAP';
  mesh.userData.scalpSource='sculpted-real-head-triangles';
@@ -106,6 +162,11 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  const box=head.geometry.boundingBox.clone(),d=box.getSize(new THREE.Vector3());
  const center=box.getCenter(new THREE.Vector3());
  const {pools,all:scalpCandidates}=actualScalpCandidates(head.geometry,box);
+ let radialScalp=envelopeCache.get(head.geometry);
+ if(!radialScalp){
+  radialScalp=createHeadEnvelope(head.geometry,box);
+  envelopeCache.set(head.geometry,radialScalp);
+ }
  const root=new THREE.Group();root.name='FEMALE_SCALP_ANCHORED_LONG_WIG';
  root.userData.hairOnRealHead=true;
  const cap=scalpShell(head.geometry,box,color);root.add(cap);
@@ -126,6 +187,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   return pool[Math.min(pool.length-1,Math.floor(u*pool.length))];
  };
  const strands=[];
+ let faceTrimmedStrands=0;
  const rootLift=d.x*.0045;
  // Shoulder/chest proxy geometry is in the SAME coordinates as the head.
  // Future full-body rigs can supply exact external capsules.
@@ -158,28 +220,50 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    Math.sign(wigRoot.x-center.x)||1;
   const fringe=zone.startsWith('fringe');
   const back=zone.startsWith('back')||zone.startsWith('nape');
+  const frontRoot=(wigRoot.z-center.z)/d.z>.07;
+  const midFace=Math.abs(wigRoot.x-center.x)/d.x<.225;
+  // Even non-fringe CROWN roots must be cut above the eyebrows if they
+  // face forward. Otherwise they form a long curtain across both eyes.
+  const overFace=!back&&frontRoot&&midFace;
+  if(overFace)faceTrimmedStrands++;
   const longFactor=zone.startsWith('nape')?.43:
    zone.startsWith('temple')?.54:back?.63:.59;
   // Fringe must terminate above the eyebrows, never obscure the eyes,
   // nose or mouth, even at the maximum hair-length slider value.
   const browLimit=box.min.y+d.y*.758;
   const bangLength=d.y*(.09+fract(i*.381966)*.045)*clamp(lengthScale,.55,1.5);
-  const length=fringe?Math.max(d.y*.008,Math.min(bangLength,wigRoot.y-browLimit)):
+  const length=(fringe||overFace)?
+   Math.max(d.y*.008,Math.min(bangLength,wigRoot.y-browLimit)):
    d.y*(longFactor+fract(i*.381966)*.13)*clamp(lengthScale,.55,1.5);
   const rest=[],points=[],vel=[];
-  const tangent=seed.n.clone().multiplyScalar(fringe?.02:.05);
-  const out=d.z*(back?.09:fringe?.075:.12);
+  const trimY=Math.min(wigRoot.y-d.y*.012,
+   (fringe||overFace)?browLimit:hairCutY(zone,box,lengthScale,i));
+  const guide=(fringe||overFace)?f3(side*.08,0,1):
+   back?f3(side*.18,0,-1):
+   f3(side,0,zone.startsWith('temple')?-.18:-.2);
+  guide.normalize();
+  const origin=f3(wigRoot.x-center.x,0,wigRoot.z-center.z);
+  if(origin.lengthSq()<d.x*d.x*.0009)origin.copy(guide);
+  else origin.normalize();
+  // Pipeline: GROW radially from actual root normals, RELAX each segment
+  // against the source head envelope, COLLIDE later, TRIM at hairline.
   for(let j=0;j<=segments;j++){
    const t=j/segments;
-   const sideways=side*d.x*(fringe?.105:.041)*t*t;
-   const p=wigRoot.clone()
-    .addScaledVector(tangent,t)
-    .add(f3(sideways,-length*t,
-     (back?-1:1)*out*t*(.4+.6*t)));
+   // Forehead fringe falls vertically, without horizontal root-to-tip spikes.
+   const direction=origin.clone().lerp(guide,
+    (fringe||overFace?.16:.78)*t*t).normalize();
+   const y=Math.max(trimY,wigRoot.y-length*t);
+   const shell=radialScalp(y,direction);
+   const gap=d.x*(.007+.015*t);
+   const targetRadius=shell+gap+d.x*.014*t*t;
+   const p=j===0?wigRoot.clone():f3(
+    center.x+direction.x*targetRadius,y,
+    center.z+direction.z*targetRadius);
    rest.push(p);points.push(p.clone());vel.push(new THREE.Vector3());
   }
   strands.push({root:wigRoot,rest,points,vel,fringe,side,
-   zone,seedIndex:seed.index});
+   zone,seedIndex:seed.index,trimY,overFace,
+   growthLogic:'grow-relax-collide-trim'});
   const base=i*(segments+1)*4;
   for(let j=0;j<=segments;j++){
    const t=j/segments,shaded=rootColor.clone().lerp(tips,.3+.48*t)
@@ -217,6 +301,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  const guideStride=Math.max(1,Math.ceil(lockCount/320));
  const guideCount=Math.ceil(lockCount/guideStride);
  let collisions=0,faceContacts=0,bodyContacts=0,accumulator=0,elapsed=0;
+ let meshUpdates=0;
  // Conservative, real-head-derived frontal collider. In addition to
  // an ellipsoid it uses the actual sculpted vertices for the scalp roots.
  const headCenter=f3(center.x,box.min.y+d.y*.635,center.z);
@@ -257,7 +342,12 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    }
   }
   attr.needsUpdate=true;
-  geo.computeVertexNormals();geo.computeBoundingSphere();
+  // Mobile optimization: 1440 ribbons do not need a full normal/tangent
+  // rebuild on EVERY physics tick. Their shaded normals are stable enough
+  // to refresh at ~7Hz while positions sway at 20Hz.
+  meshUpdates++;
+  if(meshUpdates===1||meshUpdates%3===0)geo.computeVertexNormals();
+  if(meshUpdates===1||meshUpdates%6===0)geo.computeBoundingSphere();
  }
  function update(dt=.016){
   accumulator+=Math.min(Math.max(0,dt),.05);
@@ -293,12 +383,17 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  }
  writeGeometry();
  root.userData.wigReport={
-  style:'dense-side-back-layered-fringe',rooted:true,rootCount:lockCount,
+  style:'real-scalp-shell-growing-then-trimmed',rooted:true,rootCount:lockCount,
+  growthStages:['grow','relax','collide','trim'],
+  faceTrimmedStrands,faceCurtainPrevention:true,
+  smoothScalpNormals:true,verticalForeheadDrape:true,
+  scalpCoverage:'continuous-colored-triangle-cap-plus-locks',
   pointCount:lockCount*(segments+1),realScalpCandidateCount:scalpCandidates.length,
   rootDistribution:{...zoneCounts},
   zoneCandidateCounts:Object.fromEntries(Object.entries(pools).map(([key,list])=>[key,list.length])),
   collisionTypes:['head','face','neck','shoulder','chest',...externalColliders.map(c=>c.name||'body')],
-  meshCount:2,physicsHz:20,physicsGuideCount:guideCount,
+  meshCount:2,physicsHz:20,normalUpdateDivisor:3,
+  physicsGuideCount:guideCount,
   analyticSwayOtherLocks:true,lengthScale:clamp(lengthScale,.55,1.5),
   hairColor:'#'+rootColor.getHexString(),
   tipColor:'#'+tips.getHexString()
@@ -310,6 +405,10 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    faceContactEvents:faceContacts,bodyContactEvents:bodyContacts};
  },resolvePoint(point){
   const p=point.clone();resolveCollision(p);return p;
+ },getCutSamples(){
+  return WIG_ZONE_WEIGHTS.map(([zone])=>strands.find(s=>s.zone===zone))
+   .filter(Boolean).map(s=>({zone:s.zone,trimY:s.trimY,
+    minY:Math.min(...s.rest.map(p=>p.y))}));
  },getRootSamples(){
   // Return a representative root from every scalp region for QA,
   // including the nape/back/temples that were previously completely bald.

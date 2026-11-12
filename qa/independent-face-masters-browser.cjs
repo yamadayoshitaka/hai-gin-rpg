@@ -107,9 +107,9 @@ async function expectCenteredFaceSliders(page,gender){
      original.female?.sourceVertices!==original.male?.sourceVertices||
      !original.female?.sourceGeometryIndependent||
      !original.male?.sourceGeometryIndependent||
-     original.female?.facePartMeshCount!==30||
+     original.female?.facePartMeshCount!==32||
      original.male?.facePartMeshCount!==19||
-     original.visiblePartMeshes!==30||
+     original.visiblePartMeshes!==32||
      original.faceMode!=='color'||
      original.femaleControls.irisDiameter!==1||
      original.femaleControls.jawSharpness!==5||
@@ -138,7 +138,7 @@ async function expectCenteredFaceSliders(page,gender){
     await page.locator('#'+view).click();
     await page.waitForTimeout(200);
     const report=await page.evaluate(()=>window.__faceMasterQA());
-    if(report.gender!==g||report.view!==view||report.visibleFaceMeshes!==1||report.visiblePartMeshes!==(g==='female'?30:19))
+    if(report.gender!==g||report.view!==view||report.visibleFaceMeshes!==1||report.visiblePartMeshes!==(g==='female'?32:19))
      throw Error('Face viewer controls failed '+JSON.stringify(report));
     await canvas.screenshot({path:path.join(out,g+'-'+view+'.png'),
      timeout:90000,animations:'disabled'});
@@ -158,7 +158,7 @@ async function expectCenteredFaceSliders(page,gender){
    const gltf=JSON.parse(buf.subarray(20,20+length).toString('utf8').trim());
    const tri=(gltf.meshes||[]).flatMap(m=>m.primitives||[])
     .filter(p=>p.mode===undefined||p.mode===4);
-   if(tri.length!==(g==='female'?33:20))throw Error('Exported face + anatomical meshes mismatch: '+g+' '+tri.length);
+   if(tri.length!==(g==='female'?35:20))throw Error('Exported face + anatomical meshes mismatch: '+g+' '+tri.length);
    const master=(gltf.nodes||[]).find(n=>n.name===g.toUpperCase()+'_FACE_MASTER_SOURCE_CLONE');
    const saved=master?.extras?.faceMasterReport;
    const controls=g==='female'?saved?.femaleControls:saved?.maleControls;
@@ -184,6 +184,8 @@ async function expectCenteredFaceSliders(page,gender){
   await page.locator('#female').click();
   const wigQA=await page.evaluate(()=>window.__faceMasterQA());
   if(!wigQA.wigVisible||wigQA.wigReport?.rootCount!==1440||
+     !wigQA.wigReport?.faceCurtainPrevention||
+     wigQA.wigReport?.faceTrimmedStrands<10||
      !['templeLeft','templeRight','backLeft','backRight','napeLeft','napeRight'].every(
        zone=>wigQA.wigReport.rootDistribution?.[zone]>=64)||
      !wigQA.wigReport?.collisionTypes.includes('face')||
@@ -200,11 +202,18 @@ async function expectCenteredFaceSliders(page,gender){
    throw Error('Wig changed face camera zoom '+distanceWithHair+'/'+distanceWithoutHair);
   if((await page.evaluate(()=>window.__faceMasterQA())).wigVisible)
    throw Error('Wig toggle did not hide wig');
+  // In the old QA the parts switch was OFF in profile photos.
+  // Enable actual anatomical eyes for profile and makeup verification.
+  await page.locator('#parts').click();
+  if((await page.evaluate(()=>window.__faceMasterQA())).visiblePartMeshes!==32)
+   throw Error('Eye profile tests must render actual orbital meshes');
   await page.locator('#side').click();
-  await canvas.screenshot({path:path.join(out,'female-v13-profile-visible-eyeballs.png')});
+  await canvas.screenshot({path:path.join(out,'female-v15-actual-eyes-side.png')});
   await page.locator('#threeQuarter').click();
-  await canvas.screenshot({path:path.join(out,'female-v13-3-4-visible-cornea.png')});
+  await canvas.screenshot({path:path.join(out,'female-v15-actual-eyes-45deg.png')});
   await page.locator('#front').click();
+  await canvas.screenshot({path:path.join(out,'female-v15-makeup-no-wig-front.png')});
+  await page.locator('#parts').click();
   if((await page.evaluate(()=>window.__faceMasterQA())).visiblePartMeshes!==0)
    throw Error('Facial mesh parts cannot be hidden independently');
   await canvas.screenshot({path:path.join(out,'female-face-only-no-parts.png')});
@@ -257,7 +266,7 @@ async function expectCenteredFaceSliders(page,gender){
      changed.currentFeatureAngles?.browAngle!==6||
      changed.currentFeatureAngles?.lashAngle!==7||
      changed.contactColor!=='#467fa7'||
-     changed.visiblePartMeshes!==30)
+     changed.visiblePartMeshes!==32)
    throw Error('Live nose/eyebrow/lash controls do not affect the displayed 3D: '+JSON.stringify(changed));
   await page.locator('#front').click();
   await canvas.screenshot({path:path.join(out,'female-color-nose-brow-adjusted.png')});
@@ -270,13 +279,13 @@ async function expectCenteredFaceSliders(page,gender){
    const buf=fs.readFileSync(file),size=buf.readUInt32LE(12);
    const gltf=JSON.parse(buf.subarray(20,20+size).toString('utf8').trim());
    const meshes=gltf.meshes||[],materials=gltf.materials||[];
-   if(meshes.length!==33||materials.length<5)
+   if(meshes.length!==35||materials.length<5)
     throw Error('Colored female GLB did not preserve eyebrow/eyelash meshes and palette');
    console.log('FACE_V7_COLORED_GLB_EXPORT',JSON.stringify({
     bytes:buf.length,meshes:meshes.length,materials:materials.length
    }));
   }
-  if((await page.evaluate(()=>window.__faceMasterQA())).visiblePartMeshes!==30)
+  if((await page.evaluate(()=>window.__faceMasterQA())).visiblePartMeshes!==32)
    throw Error('Facial parts did not restore after toggling');
   await page.locator('#resetPreset').click();
   await expectVisibleLibraryPreset(page,'reset-button');
@@ -288,13 +297,34 @@ async function expectCenteredFaceSliders(page,gender){
      reset.contactColor!=='#514139'||reset.faceMode!=='color')
     throw Error('Screenshot standard preset was not restored '+JSON.stringify(reset));
   await canvas.screenshot({path:path.join(out,'female-default-v9-lip-eye-blush.png')});
+  const makeupQA=await page.evaluate(()=>window.__faceMasterQA());
+  if(makeupQA.female.detailedParts.upperEyeshadowMeshCount!==2||
+     !makeupQA.female.detailedParts.shadowOnRealEyelids||
+     !makeupQA.female.detailedParts.lipstickPlacement.appliedToSourceHead)
+   throw Error('V15 makeup must attach to sculpted head and real eyelids');
+  // Four fast lipstick inputs should immediately recolor actual head
+  // vertices without any expensive head or 1440-strand wig rebuild.
+  const beforePerf=makeupQA.performanceMetrics;
+  await page.locator('#faceGroupTabs button').filter({hasText:'口紅'}).click();
+  for(const value of ['.01','.02','.03','.04']){
+   await page.locator('#lipstickX').evaluate((el,v)=>{
+    el.value=v;el.dispatchEvent(new Event('input',{bubbles:true}));
+   },value);
+  }
+  const afterPaint=await page.evaluate(()=>window.__faceMasterQA());
+  if(afterPaint.performanceMetrics.headRebuilds!==beforePerf.headRebuilds||
+     afterPaint.performanceMetrics.wigRebuilds!==beforePerf.wigRebuilds||
+     afterPaint.performanceMetrics.fastLipstickRepaints-beforePerf.fastLipstickRepaints!==4)
+   throw Error('Dragging lipstick rebuilt heavy face/wig '+JSON.stringify(afterPaint.performanceMetrics));
+  await canvas.screenshot({path:path.join(out,'female-v15-real-lipstick-and-eyeshadow.png')});
+  await page.locator('#resetPreset').click();
   if(!reset.savedNoseJawApplied||
      reset.female?.detailedParts.eyelinerMeshCount!==4||
      reset.female?.detailedParts.eyelinerCornersClosed!==true||
-     reset.female?.detailedParts.blushOpacityFactor!==.43||
+     reset.female?.detailedParts.blushOpacityFactor!==.78||
      reset.female?.detailedParts.eyeAccentMeshCount!==2||
      reset.female?.detailedParts.blushMeshCount!==0||
-     !reset.female?.detailedParts.lipstickPlacement?.attachedToLipMesh)
+     !reset.female?.detailedParts.lipstickPlacement?.appliedToSourceHead)
    throw Error('V9 lipstick/eye-cheek makeup did not load actual surface');
   // The saved Library jaw value 5 is the standard; users can still reduce it.
   await page.locator('#jawSharpness').evaluate(el=>{
@@ -302,6 +332,8 @@ async function expectCenteredFaceSliders(page,gender){
    el.dispatchEvent(new Event('change',{bubbles:true}));
   });
   const strongerJaw=await page.evaluate(()=>window.__faceMasterQA());
+  if(strongerJaw.performanceMetrics.wigRebuilds!==afterPaint.performanceMetrics.wigRebuilds)
+   throw Error('Jaw control incorrectly regenerated 1440-strand wig');
   if(strongerJaw.femaleControls.jawSharpness!==4.5)
    throw Error('Female jaw extension above 2.5 is not operational');
   await canvas.screenshot({path:path.join(out,'female-v9-jaw-4-5.png')});
