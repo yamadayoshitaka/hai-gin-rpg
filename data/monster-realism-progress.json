@@ -4,7 +4,7 @@
   "strategy": "review one monster specimen against primary biomechanics sources, change its real mesh and joints, test and merge, then advance",
   "legacy15MinuteBatch": "paused-pr-215",
   "protectedRule": "human models, NPC, soldiers, humanoid summon assets, humanoid-looking monsters cannot be modified without separate explicit review",
-  "lastSuccessfulSpecimen": "m003",
+  "lastSuccessfulSpecimen": "m004",
   "priorityOrder": [
     "m001",
     "m002",
@@ -84,13 +84,14 @@
       "id": "m004",
       "name": "雷迅の魔狼",
       "family": "beast",
-      "status": "queued-for-individual-reference-review",
+      "status": "first-pass-mesh-reviewed",
       "evidenceFile": "src/monster-anatomy-reference.js",
       "qaFile": "qa/monster-anatomy-motion.test.mjs",
-      "latestIndividualPr": null,
+      "latestIndividualPr": 227,
       "closeupVisualVerified": false,
       "mobileFpsVerified": false,
-      "fullyPhotorealistic": false
+      "fullyPhotorealistic": false,
+      "researchNote": "docs/monster-research/m004-thunderwolf-spine-20261112.md"
     },
     {
       "id": "m005",
