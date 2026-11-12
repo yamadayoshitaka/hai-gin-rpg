@@ -65,14 +65,15 @@ body.town-loading #townRadar,body:has(#opening:not([hidden])) #townRadar,body:ha
 
 #opening{background:linear-gradient(0deg,#091020dc,#06121cd9),url('./assets/story-world-map-v0.5.webp') center/cover!important}
 .sceneCard{position:relative;min-height:48dvh;display:flex;flex-direction:column;justify-content:flex-end;gap:12px;background:linear-gradient(180deg,#162638d2,#091622f9)!important;box-shadow:0 12px 70px #000e}
-#eventSceneArt{position:relative;overflow:hidden;border:1px solid #ba9968;box-shadow:0 12px 33px #030916db;aspect-ratio:16/9;max-height:43dvh;width:100%;animation:paperTextFade .7s ease;background:#152740}
-#eventSceneImage{width:100%;height:100%;object-fit:cover;display:block;filter:saturate(1.14)}
+#eventSceneArt{position:relative;overflow:hidden;border:1px solid #ba9968;box-shadow:0 12px 33px #030916db;aspect-ratio:32/45;max-height:56dvh;width:min(100%,420px);margin:0 auto;background:#152740}
+#eventSceneImage{width:100%;height:100%;object-fit:contain;display:block}#eventSceneImage[hidden]{display:none!important}
+#eventSheetMissing{position:absolute;inset:0;display:grid;place-items:center;padding:14px;color:#decfa9;font:13px/1.7 system-ui;text-align:center}#eventSheetMissing[hidden]{display:none!important}
 #eventSceneArt:after{content:'';position:absolute;inset:0;border:6px solid #e8d4a021;pointer-events:none;box-shadow:inset 0 0 35px #081021}
 #eventVoice{border:1px solid #526477!important;background:#243648!important;color:#c7d4db!important;font:11px system-ui!important;min-height:30px!important;padding:5px 9px!important}#eventSpeaker{font:700 clamp(13px,3vw,17px) Georgia,'Noto Serif JP',serif;text-align:left;color:#ffe2ac;letter-spacing:.05em;border-left:3px solid #cdb17a;padding:5px 11px;background:#0c2033c9}
 #eventSpeaker small{display:block;font:10px system-ui;color:#c0d6e4}
 .sceneCard{max-height:96dvh;overflow:auto}
 .sceneCard p#eventText{min-height:0;margin:0;text-align:left;line-height:1.7;font-size:clamp(14px,3.5vw,17px);padding:7px 4px}
-@media(max-height:680px){#eventSceneArt{max-height:25dvh}.sceneCard{gap:6px!important;padding:12px!important}}
+@media(max-height:680px){#eventSceneArt{max-height:45dvh}.sceneCard{gap:6px!important;padding:12px!important}}
 #townDialogue[hidden]{display:none!important}
 #townDialogue{position:fixed;z-index:18;left:50%;bottom:calc(184px + env(safe-area-inset-bottom));transform:translateX(-50%);width:min(92vw,620px);max-height:36dvh;overflow:auto;background:linear-gradient(135deg,#11253aef,#0b1627f6);border:1px solid #cbb28a;box-shadow:0 11px 35px #000b;border-radius:9px;color:#f8eacc;padding:12px 14px;backdrop-filter:blur(8px)}
 #townDialogueName{font-weight:700;color:#ffe0ad;font-size:13px;margin-bottom:5px}
@@ -108,14 +109,14 @@ body:has(#panel:not([hidden])) #townExplorerControls *,body:has(#opening:not([hi
 </section>
 <section id="townGuide" aria-label="町の施設案内地図" hidden><div id="townGuideCard"><div class="toprow"><h2>レヴナ施設案内</h2><button id="closeTownGuide" type="button">閉じる ✕</button></div>
 <small id="townGuideHint">町全域の真上からの地図です。青い印が軍師です。施設名をタップすると選択した建物の室内へ直接入れます。</small><div id="townGuideBoard"><canvas id="townGuideCanvas" width="464" height="464" aria-label="町の地形・川・道路・屋根の俯瞰マップ"></canvas><div id="townPlayerPin">軍師</div></div><div id="townGuideActions"><button id="townOverhead" type="button">3Dで町全体を俯瞰</button><button id="townReturnCamera" type="button">軍師視点に戻る</button></div><div id="townGuideList"></div></div></section>
-<section id="opening" aria-label="紙芝居・オープニング" hidden><div class="sceneCard"><div class="eyebrow">第1章・紙芝居　灰の勅命</div><div id="eventSceneArt"><img id="eventSceneImage" src="" alt="戦場と城郭を描いた物語イラスト"></div><h1>レヴナの町</h1><div id="eventSpeaker" aria-live="polite">語り手</div><p id="eventText">星鐘が鳴った。</p><div class="controls"><button id="eventVoice" type="button" aria-label="漫画の音声のオン・オフ">音声 ON</button><button id="eventNext">次へ ▶</button></div><button id="skipPaper" type="button">物語を閉じて町へ進む</button></div></section>
+<section id="opening" aria-label="紙芝居・オープニング" hidden><div class="sceneCard"><div class="eyebrow">第1章・紙芝居　灰の勅命</div><div id="eventSceneArt"><img id="eventSceneImage" alt="2列5行の10コマ漫画" hidden><div id="eventSheetMissing" role="status">漫画原画を制作・確認中</div></div><h1>レヴナの町</h1><div id="eventSpeaker" aria-live="polite">語り手</div><p id="eventText">星鐘が鳴った。</p><div class="controls"><button id="eventVoice" type="button" aria-label="漫画の音声のオン・オフ">音声 ON</button><button id="eventNext">次へ ▶</button></div><button id="skipPaper" type="button">物語を閉じて町へ進む</button></div></section>
 <script type="module">
 import {STORY_CHAPTERS,storyVoiceKey} from './src/story-chapters.js';
 import {STORY_KEY_PEOPLE} from './src/story-cinematic.js';
 import {mangaForStage} from './src/story-stage-manga.js';
 import {storyStageContext} from './src/story-narrative-flow.js';
-import {stageMangaImage} from './src/story-manga-art.js';
-import {applyCinematicImage} from './src/story-cinematic-assets.js';
+import {storyPageAsset} from './src/story-manga-page.js';
+
 import {fantasyCueForMangaPanel} from './src/fantasy-scene-score.js';
 import {continentForChapter} from './src/continent-campaign.js';
 import {drawRecruitGacha,RECRUIT_GACHA} from './src/town-recruit-gacha.js';
@@ -841,7 +842,7 @@ async function speakChapter(number,{autoplay=false}={}){
 // as the other 180 combat/exploration stages.
 const townManga=mangaForStage(game.townStage);
 let eventScenes=mangaForStage(game.townStage,storyStageContext(game,game.townStage)).panels.filter(p=>p.phase==='pre');
-let eventIndex=0,paperPhase='pre',leaveAfterPaper=false;
+let eventIndex=0,paperPhase='pre',leaveAfterPaper=false,renderedTownPage=null;
 const voiceIsOn=()=>{
  try{return JSON.parse(localStorage.getItem('hai-gin-core-settings-v1')||'{}')?.voice!==false;}
  catch{return true;}
@@ -856,13 +857,27 @@ function setVoiceEnabled(value){
 function eventRender(){
  const shot=eventScenes[eventIndex];
  $('eventText').textContent=shot.text;
- $('eventSceneImage').src=stageMangaImage(shot);
-  applyCinematicImage($('eventSceneImage'),shot);
- $('eventSceneImage').alt='第'+townChapter+'章　'+townManga.stageName+'　'+shot.speaker+'が登場する漫画の'+(eventIndex+1)+'コマ目';
+ const asset=storyPageAsset(game.townStage,paperPhase,shot.protagonistGender);
+ if(renderedTownPage!==asset){
+  renderedTownPage=asset;
+  const img=$('eventSceneImage'),missing=$('eventSheetMissing');
+  img.hidden=true;missing.hidden=false;
+  if(!asset){missing.textContent='主人公の性別が確定していないため漫画原画を選べません。';}
+  else{
+   missing.textContent='10コマ漫画の原画を確認しています…';
+   img.onload=()=>{if(renderedTownPage!==asset)return;img.hidden=false;missing.hidden=true;};
+   img.onerror=()=>{if(renderedTownPage!==asset)return;img.hidden=true;missing.hidden=false;
+    missing.textContent='10コマ漫画の'+(paperPhase==='pre'?'イベント前':'イベント後')+
+     '（'+(shot.protagonistGender==='female'?'女性版':'男性版')+'）の原画は未登録です。';};
+   img.src=asset;
+  }
+ }
+ $('eventSceneImage').alt='第'+townChapter+'章 '+townManga.stageName+' の'+
+  (paperPhase==='pre'?'イベント前':'イベント後')+'10コマを1ページにした漫画';
  $('eventSpeaker').textContent=shot.characterId?
   shot.speaker+'　／　'+shot.faction+'・'+shot.role:'語り手　／　'+townManga.chapterTitle;
  $('eventText').style.animation='none';void $('eventText').offsetWidth;$('eventText').style.animation='';
- $('eventNext').textContent=eventIndex===eventScenes.length-1?(paperPhase==='post'?'地図へ進む ▶':'町へ進む ▶'):'次のコマ ▶';
+ $('eventNext').textContent=eventIndex===eventScenes.length-1?(paperPhase==='post'?'地図へ進む ▶':'町へ進む ▶'):'次のセリフ ▶';
  setVoiceEnabled(voiceIsOn());
  const cue=fantasyCueForMangaPanel({id:townManga.id,number:townManga.number,kind:'town'},eventIndex);
  townAudio.setScene('paper',cue.url);
@@ -919,7 +934,7 @@ function startPaperStory(phase='pre'){
  const chapterData=STORY_CHAPTERS[townChapter-1];
  document.querySelector('#opening .eyebrow').textContent='第'+townChapter+'章・'+(phase==='post'?'町の後日談':'連続漫画')+'　'+chapterData.title;
  document.querySelector('#opening .sceneCard h1').textContent=townManga.stageName;
- eventIndex=0;eventRender();$('opening').hidden=false;
+ eventIndex=0;renderedTownPage=null;eventRender();$('opening').hidden=false;
  speakCurrentScene();
 }
 $('skipPaper').onclick=closePaperStory;
