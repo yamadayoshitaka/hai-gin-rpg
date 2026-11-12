@@ -279,10 +279,10 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
  });
  const lidMat=mat(0xbcbfc5),lipMat=mat(0xbfc3cb);
  const eyeMat=new THREE.MeshStandardMaterial({
-  color:0xd5d8dd,roughness:.48,metalness:0
+  color:0xd5d8dd,roughness:.30,metalness:0
  });
  const irisMat=new THREE.MeshStandardMaterial({
-  color:0x747a83,roughness:.55,metalness:0
+  color:0x747a83,roughness:.36,metalness:0
  });
  const pupilMat=new THREE.MeshStandardMaterial({
   color:0x30353b,roughness:.43,metalness:0
@@ -310,6 +310,11 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
  const female=gender==='female';
  const eyeScale=settings.eyeSize;
  const eyeWidth=settings.eyeWidth,eyeHeight=settings.eyeHeight;
+ // Blender Studio: expose convex corneal volume above the real socket and
+ // wrap the lids back onto the facial skin. Do not simply translate the eyes.
+ const eyeApertureRatio=female?.40:.34;
+ const anteriorGlobeRatio=female?.58:.49;
+ const eyeAnteriorClearances=[];
  const originalIrisAngle=.585;
  const originalPupilAngle=.236;
  // A doubled requested projected diameter must remain on a sphere:
@@ -331,7 +336,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   const eyeLabel=side===-1?'LEFT':'RIGHT';
   const x=cx+side*eyeSpacing,y=eyeCenterHeight;
   // Fit from actual orbital boundary points on the sculpted face.
-  const rimWidth=eyeRadius*1.12*eyeWidth,rimHeight=eyeRadius*.33*eyeHeight;
+  const rimWidth=eyeRadius*1.12*eyeWidth,rimHeight=eyeRadius*eyeApertureRatio*eyeHeight;
   const landmarks={
    inner:new THREE.Vector3(x-side*rimWidth,y,surfaceAt(x-side*rimWidth,y)),
    outer:new THREE.Vector3(x+side*rimWidth,y,surfaceAt(x+side*rimWidth,y)),
@@ -350,35 +355,34 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   const desiredProfileGap=Math.max(d.z*.012,eyeRadius*.115);
   const orbitalDepth=(landmarks.inner.z+landmarks.outer.z+
    landmarks.upper.z+landmarks.lower.z)*.25;
-  // Keep the whole ellipsoid seated against the actual sculpted orbit
-  // instead of projecting the white globe far in front of its liner.
-  // Extra depth remains user-adjustable on the full-body editor.
-  // The original protruding 3D sphere is deliberately removed. The eye
-  // white is an almond surface projected onto this EXACT sculpted face.
-  // Its iris/pupil are thin patches conforming to the same face, so the
-  // eye can no longer float outside the opening when viewed from the side.
-  // A continuous bulge begins at the actual eyeliner edge and rises
-  // smoothly toward the centre of the almond opening. It is sculpted
-  // from the same FACE surface; it is not a separate sphere or eyeball.
-  const eyeSurfaceLift=Math.max(d.z*.0018,eyeRadius*.025)+
-   eyeRadius*settings.eyeDepth*.11;
+  // v29: old sclera started only .025 eye-radii above skin, with .23
+  // radii of central curvature; it looked sunk into the socket.
+  // Fit a convex anterior globe using the real face as its edge. A local
+  // front envelope ensures the iris is never buried by the source head.
   const width=eyeRadius*1.12*eyeWidth;
-  const eyeDomeHeight=eyeRadius*.23;
+  const orbitFrontZ=Math.max(faceZ,surfaceAt(x-width*.38,y),
+   surfaceAt(x+width*.38,y));
+  const eyeSurfaceLift=Math.max(d.z*.005,eyeRadius*.15)+
+   eyeRadius*settings.eyeDepth*.24;
+  const eyeDomeHeight=eyeRadius*anteriorGlobeRatio;
   const insetZ=(px,py)=>{
    const tx=clamp((px-x)/width,-1,1);
    const arch=Math.pow(Math.max(0,1-tx*tx),.70);
-   const apertureY=eyeRadius*.33*eyeHeight*arch;
+   const apertureY=eyeRadius*eyeApertureRatio*eyeHeight*arch;
    const ty=apertureY>.000001?
     clamp((py-y)/apertureY,-1,1):1;
    const curved=Math.pow(Math.max(0,1-tx*tx),.68)*
     Math.pow(Math.max(0,1-ty*ty),.68);
-   return surfaceAt(px,py)+eyeSurfaceLift+eyeDomeHeight*curved;
+   const skinZ=surfaceAt(px,py);
+   const orbitalFill=Math.max(0,orbitFrontZ-skinZ)*curved*.80;
+   return skinZ+eyeSurfaceLift+eyeDomeHeight*curved+orbitalFill;
   };
   const z=insetZ(x,y);
+  eyeAnteriorClearances.push((z-faceZ)/eyeRadius);
   const eyePatch=buildGrid(eyeLabel+'_ORBITAL_EYEBALL',48,18,(u,v)=>{
    const t=u*2-1,arch=Math.pow(Math.max(0,1-t*t),.70);
    const xx=x+t*width;
-   const yy=y+(v*2-1)*eyeRadius*.33*eyeHeight*arch;
+   const yy=y+(v*2-1)*eyeRadius*eyeApertureRatio*eyeHeight*arch;
    return new THREE.Vector3(xx,yy,insetZ(xx,yy));
   },eyeMat);
   eyePatch.renderOrder=4;
@@ -386,9 +390,11 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   eyePatch.userData.profileExposed=true; // legacy inspection contract
   eyePatch.userData.noDetachedEyeball=true;
   eyePatch.userData.geometryType='face-conforming-almond-eye';
+  eyePatch.userData.anteriorGlobeReconstruction=true;
+  eyePatch.userData.anteriorClearanceRatio=(z-faceZ)/eyeRadius;
   eyePatch.userData.eyelinerToCenterBulge=true;
   eyePatch.userData.irisFitsApertureWithoutClamp=true;
-  eyePatch.userData.eyelinerToCenterBulgeFraction=.23;
+  eyePatch.userData.eyelinerToCenterBulgeFraction=anteriorGlobeRatio;
   eyePatch.userData.colorRole='sclera';
   root.add(eyePatch);
   // Both pupils and colored contacts are sections of the same real skin-
@@ -399,7 +405,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
    // blue horizontal folds / stripes. A genuine round iris must fit the
    // actual opening instead, and no vertex may be clipped into a flat row.
    const requested=eyeRadius*.60*Math.sin(angularRadius);
-   const opening=eyeRadius*.33*eyeHeight;
+   const opening=eyeRadius*eyeApertureRatio*eyeHeight;
    const physicalRadius=Math.min(requested,opening*.82);
    const cap=buildGrid(eyeLabel+'_'+label,64,20,(u,v)=>{
     const az=u*Math.PI*2,rr=physicalRadius*v;
@@ -436,12 +442,12 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   pupil.userData.circularProjected=true;
   pupil.userData.colorRole='pupil';root.add(pupil);
   // The profile protrusion is now only a slim sculpted patch above skin.
-  lateralEyeMargins.push(eyeSurfaceLift);
+  lateralEyeMargins.push(eyeSurfaceLift+eyeDomeHeight);
 
   let upperEyeliner=null,lowerEyeliner=null;
   for(const upper of [true,false]){
    const label=(side===-1?'LEFT':'RIGHT')+(upper?'_UPPER':'_LOWER');
-   const height=eyeRadius*.33*eyeHeight;
+   const height=eyeRadius*eyeApertureRatio*eyeHeight;
    const mesh=buildGrid(label+'_ANATOMICAL_EYELID',28,4,(u,v)=>{
     const t=u*2-1,arch=Math.pow(Math.max(0,1-t*t),.73);
     const cornerTilt=(t+1)*eyeRadius*.045*eyeWidth;
@@ -736,7 +742,10 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   noStandaloneEyeSphere:true,noUnderEyeBags:true,
   irisNotSquashedAtLids:true,
   irisGeometry:'true-round-circular-disk-fitted-inside-almond-opening',
-  eyeBulgeStartsAtEyeliner:true,eyeBulgeFraction:.23,
+  eyeBulgeStartsAtEyeliner:true,eyeBulgeFraction:anteriorGlobeRatio,
+  anteriorEyeGlobeReconstructed:true,
+  eyeApertureHeightFraction:eyeApertureRatio,
+  eyeAnteriorClearanceRatios:eyeAnteriorClearances.map(n=>Number(n.toFixed(3))),
   underEyeShadowMeshCount:0,
   doubleLidCreaseMeshCount:female?2:0,
   lowerOrbitalVolumeMeshCount:0,
