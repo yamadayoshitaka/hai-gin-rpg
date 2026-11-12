@@ -248,6 +248,84 @@ export function removeHeadBustBelowNeck(face,cutY){
  * real mesh cuts. It is owned by the face and survives GLB export.
  * This does not pretend to retopologize the source body.
  */
+/**
+ * Cap clipped donor shoulder rims separately from the center neck. Top-
+ * down camera shots revealed two open sleeve/shoulder sockets, which the
+ * earlier single neck loft did not close.
+ */
+export function createClosedShoulderCaps(face,attachment,{cutY,color=0xb8c1d2}={}){
+ if(!face?.isMesh||!attachment?.root||!Number.isFinite(cutY))
+  throw Error('Actual head, body and shoulder cut required');
+ face.geometry.computeBoundingBox();
+ const box=face.geometry.boundingBox,w=box.max.x-box.min.x;
+ const cx=(box.min.x+box.max.x)*.5,groups=[[],[]];
+ face.updateWorldMatrix(true,false);
+ attachment.root.updateWorldMatrix(true,true);
+ const inv=face.matrixWorld.clone().invert(),p=new THREE.Vector3();
+ let samples=0;
+ attachment.root.traverse(mesh=>{
+  if(!mesh.isMesh||!mesh.visible||!mesh.geometry?.getAttribute('position'))return;
+  const attr=mesh.geometry.getAttribute('position');
+  for(let i=0;i<attr.count;i++){
+   p.fromBufferAttribute(attr,i).applyMatrix4(mesh.matrixWorld);
+   if(Math.abs(p.y-cutY)>w*.006)continue;
+   p.applyMatrix4(inv);
+   if(Math.abs(p.x-cx)<w*.44)continue;
+   groups[p.x<cx?0:1].push([p.x,p.z]);samples++;
+  }
+ });
+ const hull=raw=>{
+  const uniq=new Map();
+  for(const p of raw)
+   uniq.set(Math.round(p[0]/w*200)+':'+Math.round(p[1]/w*200),p);
+  const arr=[...uniq.values()].sort((a,b)=>a[0]-b[0]||a[1]-b[1]);
+  if(arr.length<3)return [];
+  const cross=(a,b,c)=>
+   (b[0]-a[0])*(c[1]-a[1])-(b[1]-a[1])*(c[0]-a[0]);
+  const lower=[],upper=[];
+  for(const a of arr){
+   while(lower.length>1&&cross(lower.at(-2),lower.at(-1),a)<=0)lower.pop();
+   lower.push(a);
+  }
+  for(let i=arr.length-1;i>=0;i--){
+   const a=arr[i];
+   while(upper.length>1&&cross(upper.at(-2),upper.at(-1),a)<=0)upper.pop();
+   upper.push(a);
+  }
+  lower.pop();upper.pop();return [...lower,...upper];
+ };
+ const y=new THREE.Vector3(0,cutY,0).applyMatrix4(inv).y-w*.009;
+ let count=0,triangles=0;
+ for(let side=0;side<2;side++){
+  const ring=hull(groups[side]);
+  if(ring.length<3)continue;
+  const mx=ring.reduce((v,p)=>v+p[0],0)/ring.length;
+  const mz=ring.reduce((v,p)=>v+p[1],0)/ring.length;
+  const vertices=[mx,y,mz],indices=[];
+  for(const point of ring)
+   vertices.push(mx+(point[0]-mx)*1.015,y,
+    mz+(point[1]-mz)*1.015);
+  for(let i=0;i<ring.length;i++)
+   indices.push(0,i+1,(i+1)%ring.length+1);
+  const geo=new THREE.BufferGeometry();
+  geo.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));
+  geo.setIndex(indices);geo.computeVertexNormals();
+  const patch=new THREE.Mesh(geo,new THREE.MeshStandardMaterial({
+   color,side:THREE.DoubleSide,roughness:.80,metalness:0
+  }));
+  patch.name=side===0?'LEFT_SHOULDER_CUT_SURFACE_CAP':
+   'RIGHT_SHOULDER_CUT_SURFACE_CAP';
+  patch.userData.shoulderCap=true;
+  patch.userData.derivedFromActualBodyCut=true;
+  face.add(patch);
+  count++;triangles+=ring.length;
+ }
+ attachment.report.shoulderCapCount=count;
+ attachment.report.shoulderCapTriangles=triangles;
+ attachment.report.shoulderCapSourceSamples=samples;
+ attachment.report.shoulderTopHolesClosed=count===2;
+ return {count,triangles,samples};
+}
 export function createSealedNeckBridge(face,attachment,{headCutY,bodyCutY}={}){
  if(!face?.isMesh||!attachment?.root||
   !Number.isFinite(headCutY)||!Number.isFinite(bodyCutY))
@@ -386,6 +464,7 @@ export function createSealedNeckBridge(face,attachment,{headCutY,bodyCutY}={}){
  attachment.report.neckBridgeLowerInsideActualBody=true;
  attachment.report.neckBridgeHeadCutY=headCutY;
  attachment.report.neckBridgeBodyCutY=bodyCutY;
+ createClosedShoulderCaps(face,attachment,{cutY:bodyCutY});
  return seal;
 }
 // The bounds centroid includes nose, chest and hips and is NOT the neck

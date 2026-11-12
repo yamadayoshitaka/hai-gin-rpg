@@ -387,23 +387,30 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   eyePatch.userData.noDetachedEyeball=true;
   eyePatch.userData.geometryType='face-conforming-almond-eye';
   eyePatch.userData.eyelinerToCenterBulge=true;
+  eyePatch.userData.irisFitsApertureWithoutClamp=true;
   eyePatch.userData.eyelinerToCenterBulgeFraction=.23;
   eyePatch.userData.colorRole='sclera';
   root.add(eyePatch);
   // Both pupils and colored contacts are sections of the same real skin-
   // fitting eye opening. Their radius and colors remain slider-controlled.
   const makeCap=(label,angularRadius,material,raise)=>{
-   const physicalRadius=eyeRadius*.60*Math.sin(angularRadius);
-   const cap=buildGrid(eyeLabel+'_'+label,48,18,(u,v)=>{
+   // Earlier v26/v27 irises were BIGGER than the almond opening.
+   // Clamping every circular iris vertex to the eyelid produced doubled
+   // blue horizontal folds / stripes. A genuine round iris must fit the
+   // actual opening instead, and no vertex may be clipped into a flat row.
+   const requested=eyeRadius*.60*Math.sin(angularRadius);
+   const opening=eyeRadius*.33*eyeHeight;
+   const physicalRadius=Math.min(requested,opening*.82);
+   const cap=buildGrid(eyeLabel+'_'+label,64,20,(u,v)=>{
     const az=u*Math.PI*2,rr=physicalRadius*v;
     const xx=rr*Math.cos(az),yy=rr*Math.sin(az);
-    const arch=Math.pow(Math.max(0,1-(xx/width)**2),.70);
-    const maxY=eyeRadius*.33*eyeHeight*arch*.96;
-    const fittedY=clamp(yy,-maxY,maxY);
-    return new THREE.Vector3(x+xx,y+fittedY,
-     insetZ(x+xx,y+fittedY)+eyeRadius*raise);
+    return new THREE.Vector3(x+xx,y+yy,
+     insetZ(x+xx,y+yy)+eyeRadius*raise);
    },material);
    cap.userData.circularProjectedRadius=physicalRadius;
+   cap.userData.unclippedTrueCircle=true;
+   cap.userData.apertureFitted=true;
+   cap.userData.roundVertexCount=(65*21);
    cap.userData.followsFaceSurface=true;
    cap.userData.noDetachedEyeball=true;
    return cap;
@@ -411,8 +418,8 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   irisMat.side=THREE.DoubleSide;pupilMat.side=THREE.DoubleSide;
   const iris=makeCap('CURVED_IRIS',irisAngle,irisMat,.024);
   const fiberColors=[];
-  for(let j=0;j<=18;j++)for(let i=0;i<=48;i++){
-   const r=j/18,angle=i/48*Math.PI*2;
+  for(let j=0;j<=20;j++)for(let i=0;i<=64;i++){
+   const r=j/20,angle=i/64*Math.PI*2;
    const fiber=.94+.06*Math.sin(angle*38+r*23)*Math.sin(angle*23-r*11);
    const limbal=1-.26*Math.pow(THREE.MathUtils.smoothstep(r,.82,1),2);
    const collarette=.92+.08*Math.exp(-Math.pow((r-.39)/.12,2));
@@ -727,6 +734,8 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   lashDensityFactor:settings.lashDensity,lashLengthFactor:settings.lashLength,
   lashThicknessFactor:settings.lashThickness,lashCurlFactor:settings.lashCurl,
   noStandaloneEyeSphere:true,noUnderEyeBags:true,
+  irisNotSquashedAtLids:true,
+  irisGeometry:'true-round-circular-disk-fitted-inside-almond-opening',
   eyeBulgeStartsAtEyeliner:true,eyeBulgeFraction:.23,
   underEyeShadowMeshCount:0,
   doubleLidCreaseMeshCount:female?2:0,
