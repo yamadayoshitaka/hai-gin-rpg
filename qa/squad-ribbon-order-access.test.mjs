@@ -39,8 +39,10 @@ assert.match(html,/add\('⏸ 待機','hold',\(\)=>issue\('hold'\)\)/);
 assert.match(html,/add\('↘ 退却','retreat',\(\)=>issue\('retreat'\)\)/);
 assert.match(html,/button\.onclick=\(\)=>\{if\(!button\.disabled\)action\(\)\}/,
  'order buttons execute on the first click');
-assert.match(html,/const issue=mode=>\{if\(issueSquadOrder\(mode\)\)closeSquadTactics\(\)\}/,
- 'issue order before dismissing the popup');
+assert.match(html,/const issue=mode=>queueDirectOrder\(mode\)/,
+ 'Direct squad orders open the confirmation step');
+assert.match(html,/if\(issueSquadOrder\(mode\)\)\{[\s\S]*?closeSquadTactics\(true\)/,
+ 'Confirmed squad orders must issue before dismissing the popup');
 assert.match(html,/const remaining=team===0\?squadOrderCooldownSeconds\(row\.id\):0;/,
  'cooldown is displayed without disabling squad inspection');
 assert.equal(secondsUntilNextOrder(15,20),55);
