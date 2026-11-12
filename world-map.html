@@ -268,12 +268,15 @@ function completeReturnedBattle(){
   sessionStorage.removeItem(CORE_BATTLE_PENDING_KEY);
   sessionStorage.removeItem(CORE_BATTLE_RESULT_KEY);
   sessionStorage.removeItem('hai-gin-story-sortie-v1');
-  if(!outcome.gameOver)sessionStorage.setItem(POST_EVENT_PENDING_KEY,JSON.stringify({
+  // Do not skip the dedicated post-event comic when the protagonist dies.
+  // This receipt is created only AFTER settleCoreBattle verifies the result.
+  sessionStorage.setItem(POST_EVENT_PENDING_KEY,JSON.stringify({
    stageId:outcome.stage.id,battleId:request.battleId,
-   victory:outcome.victory,casualties:outcome.casualties
+   victory:outcome.victory,casualties:outcome.casualties,
+   playerCommanderDead:outcome.playerCommanderDead===true
   }));
   saveSession();
-  if(outcome.gameOver){sessionStorage.removeItem(POST_EVENT_PENDING_KEY);showCampaignGameOver();return;}
+  if(outcome.gameOver){message('主人公戦死：後日談の後、ゲームオーバーになります。');return;}
   const nextStage=outcome.next||outcome.stage;chapter=nextStage.chapter;selected=nextStage.id;
   const rewards=outcome.rewards||{};
   const earned=outcome.victory?' 💰'+(rewards.gold||0)+'G / ✦'+(rewards.xp||0)+'EXP / 宝：'+(rewards.loot?.map(item=>item.name+'×'+item.quantity).join('・')||'なし'):'';
@@ -284,14 +287,15 @@ const params=new URLSearchParams(location.search);
 if(params.get('chapter')&&Number.isInteger(Number(params.get('chapter'))))chapter=Math.max(1,Math.min(20,Number(params.get('chapter'))));
 selected=stagesInChapter(chapter)[0].id;
 function showPendingPostBattleEvent(){
- if(game.campaign.gameOver)return;
+ // A verified commander-death event must be shown BEFORE its GAME OVER screen.
  let pending=null;
  try{pending=JSON.parse(sessionStorage.getItem(POST_EVENT_PENDING_KEY)||'null');}
  catch{sessionStorage.removeItem(POST_EVENT_PENDING_KEY);return;}
  if(!pending||!CAMPAIGN_STAGE_BY_ID[pending.stageId]||
     typeof pending.victory!=='boolean'||!Number.isInteger(pending.casualties))return;
  const context={...storyStageContext(game,pending.stageId),battleOutcome:{
-  victory:pending.victory,casualties:pending.casualties
+  victory:pending.victory,casualties:pending.casualties,
+  playerCommanderDead:pending.playerCommanderDead===true
  }};
  mapAudio.unlock();
  mangaViewer.open(pending.stageId,{phase:'post',context,onFinish:()=>{
@@ -299,6 +303,7 @@ function showPendingPostBattleEvent(){
   game.storyFlags.stagePostMangaSeen[pending.stageId]=true;
   sessionStorage.removeItem(POST_EVENT_PENDING_KEY);
   saveSession();
+  if(game.campaign.gameOver)showCampaignGameOver();
  }});
 }
 function showCampaignGameOver(){
@@ -316,6 +321,6 @@ function showCampaignGameOver(){
  }
  layer.querySelector('#campaignGameOverReason').textContent=reason;
 }
-completeReturnedBattle();render();showCampaignGameOver();
-showPendingPostBattleEvent();
+completeReturnedBattle();render();showPendingPostBattleEvent();
+if(game.campaign.gameOver&&!sessionStorage.getItem(POST_EVENT_PENDING_KEY))showCampaignGameOver();
 </script></body></html>
