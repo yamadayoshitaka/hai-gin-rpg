@@ -336,6 +336,62 @@ export function sculptEyeSocketsInFaceGeometry(geometry,settings,gender='female'
  return {vertices,maxInset,meanInset:vertices?depthSum/vertices:0,
   continuousSourceMesh:true,eyeballTranslated:false};
 }
+/**
+ * The imported donor head is closed under its original eyes. Recessing
+ * vertices alone cannot expose a full circular iris on coarse triangulation.
+ * Open the anatomical almond in the SAME source mesh, preserving the
+ * surrounding brow, cheek and eyelid topology; the fitted sclera is placed
+ * behind the real eyelid rim and will be depth-tested normally.
+ */
+export function carveAnatomicalEyeOpenings(geometry,settings){
+ geometry.computeBoundingBox();
+ const box=geometry.boundingBox,d=box.getSize(new THREE.Vector3()),
+  cx=box.getCenter(new THREE.Vector3()).x;
+ const p=geometry.getAttribute('position'),indices=geometry.getIndex();
+ const radius=d.x*.052*Math.sqrt(settings.eyeWidth*settings.eyeHeight);
+ const width=d.x*.052*1.12*settings.eyeWidth;
+ const height=d.x*.052*.50*settings.eyeHeight;
+ const eyeY=box.min.y+d.y*(.684+.006*settings.eyePositionY);
+ const frontThreshold=box.min.z+d.z*.55;
+ const retained=[];
+ let removed=0;
+ const inOpening=(x,y,side)=>{
+  const tx=(x-(cx+side*d.x*.123*settings.eyeSpacing))/width;
+  if(Math.abs(tx)>=1.04)return false;
+  const arch=Math.pow(Math.max(0,1-tx*tx),.70);
+  const ty=(y-eyeY)/Math.max(radius*.010,height*arch);
+  return Math.max(Math.abs(tx),Math.abs(ty))<1.04;
+ };
+ const triCount=(indices?indices.count:p.count)/3;
+ for(let tri=0;tri<triCount;tri++){
+  const ids=[0,1,2].map(k=>indices?indices.getX(tri*3+k):tri*3+k);
+  const xyz=ids.map(i=>new THREE.Vector3(p.getX(i),p.getY(i),p.getZ(i)));
+  const zMax=Math.max(...xyz.map(v=>v.z));
+  if(zMax<frontThreshold){retained.push(...ids);continue;}
+  const centroid=new THREE.Vector3().addVectors(xyz[0],xyz[1])
+   .add(xyz[2]).multiplyScalar(1/3);
+  const probes=[...xyz,centroid,
+   xyz[0].clone().add(xyz[1]).multiplyScalar(.5),
+   xyz[1].clone().add(xyz[2]).multiplyScalar(.5),
+   xyz[2].clone().add(xyz[0]).multiplyScalar(.5)];
+  let intersects=false;
+  for(const side of [-1,1]){
+   if(probes.some(v=>inOpening(v.x,v.y,side))){
+    intersects=true;break;
+   }
+  }
+  if(intersects){removed++;continue;}
+  retained.push(...ids);
+ }
+ if(removed){
+  geometry.setIndex(retained);
+  geometry.computeBoundingSphere();
+ }
+ geometry.userData.anatomicalEyeOpenings=true;
+ geometry.userData.anatomicalEyeOpenTriangles=removed;
+ return {removed,retained:retained.length/3,openingCount:2,
+  originalHeadPreserved:true,skinnedFaceSphereAvoided:true};
+}
 export function createAnatomicalFaceParts(face,{gender='female',controls={}}={}){
  if(!face?.isMesh||!['male','female'].includes(gender))
   throw Error('Sculpted face mesh and gender required for 3D facial parts');
@@ -367,6 +423,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
  const referenceGeometry=geometry.clone();
  const sampler=createFastFaceSurfaceSampler(referenceGeometry);
  const socketSculpt=sculptEyeSocketsInFaceGeometry(geometry,settings,gender);
+ const opening=carveAnatomicalEyeOpenings(geometry,settings);
  const localVertices=referenceGeometry.getAttribute('position');
  let projected=0,projectionFallbacks=0;
  const surfaceAt=(x,y)=>{
@@ -877,7 +934,8 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   eyeCoreSkinBlendPower:4,
   eyeApertureHeightFraction:eyeApertureRatio,
   eyeAnteriorClearanceRatios:eyeAnteriorClearances.map(n=>Number(n.toFixed(3))),
-  eyeSocketGeometry:'continuous-original-head-mesh-recessed-under-lid',
+  eyeSocketGeometry:'original-head-socket-with-open-almond-apertures',
+  eyeOpeningsCutFromHeadTriangles:opening.removed,
   eyeSocketSculptedVertices:socketSculpt.vertices,
   eyeSocketMaxInset:socketSculpt.maxInset,
   eyeSkinDepthClampRemoved:true,
