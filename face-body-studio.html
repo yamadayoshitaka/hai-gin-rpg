@@ -222,6 +222,7 @@ function rebuildWig(){
   count:1440,lengthScale:1.0,styleId:$('style').value,
   fineFringeMultiplier:3,visualFiberMultiplier:Number($('wigDensity').value),
   staticGroom:true,
+  volumeProfile:v32PartMode?v32BodyPart.hairVolume:'natural',
   color:Number('0x'+(v32PartMode?
    resolvePartSelection('female',v32BodyPart).hairHex:palette.hair).slice(1)),
   bodyCollisionResolver:bodyAttachment.bodyCollider
