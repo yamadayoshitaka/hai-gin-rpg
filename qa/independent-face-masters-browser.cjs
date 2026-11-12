@@ -204,7 +204,11 @@ async function expectCenteredFaceSliders(page,gender){
   await page.locator('#back').click();
   await canvas.screenshot({path:path.join(out,'female-v16-real-rear-scalp-hair.png')});
   await page.locator('#side').click();
-  await canvas.screenshot({path:path.join(out,'female-v16-scalp-follow-side.png')});
+  await canvas.screenshot({path:path.join(out,'female-v18-scalp-follow-side.png')});
+  await page.locator('#crown').click();
+  await canvas.screenshot({path:path.join(out,'female-v18-true-crown-and-hair-roots.png')});
+  if((await page.locator('#crown').getAttribute('aria-pressed'))!=='true')
+   throw Error('Crown inspection mode is not active');
   await page.locator('#front').click();
   const distanceWithHair=await page.evaluate(()=>window.__faceMasterQA().cameraDistance);
   await page.locator('#parts').click();
