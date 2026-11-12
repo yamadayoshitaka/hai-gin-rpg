@@ -375,7 +375,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
  const eyeApertureRatio=female?.50:.34;
  // A low, lid-seated corneal dome: the former 0.58R projection looked like
  // detached snail eyes in the mobile side view. Preserve slight curvature.
- const anteriorGlobeRatio=female?.080:.095;
+ const anteriorGlobeRatio=female?.120:.130;
  const eyeAnteriorClearances=[];
  const originalIrisAngle=.585;
  // v33 enlarges the real circular IRIS without squashing its rim.
@@ -437,7 +437,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   // Negative relative to the UNCARVED skin: the eye is now seated inside
   // the socket, not floating over it. Depth control adjusts the socket view
   // gently instead of pushing the whole globe outside the eyeliner.
-  const eyeSurfaceLift=baseEyeRadius*(-.135+settings.eyeDepth*.045);
+  const eyeSurfaceLift=baseEyeRadius*(-.20+settings.eyeDepth*.045);
   const eyeDomeHeight=baseEyeRadius*anteriorGlobeRatio;
   const insetZ=(px,py)=>{
    const tx=clamp((px-x)/width,-1,1);
@@ -451,7 +451,8 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
    // Only the narrow eyelid-contact zone blends back to the source skin.
    const curved=Math.sqrt(Math.max(0,1-tx*tx))*
     Math.sqrt(Math.max(0,1-ty*ty));
-   const eyeFrontZ=orbitFrontZ+eyeSurfaceLift+eyeDomeHeight*curved;
+   const eyeFrontZ=orbitFrontZ+eyeSurfaceLift+
+    eyeDomeHeight*Math.pow(curved,3.2);
    // The power-of-four transition leaves the core spheroid clean, but
    // meets the actual face at the upper/lower eyelid and both canthi.
    const skinBlend=Math.pow(1-curved,4);
