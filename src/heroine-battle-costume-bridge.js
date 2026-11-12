@@ -89,14 +89,18 @@ export function hideBattleDonorFace(model){
  // The existing battle facial accessories are not needed when the independent
  // artist face replaces their original eyes and lids.
  return {removedTriangles,retainedTriangles,hiddenEyeMeshes,changedMeshes,
-  preservedRig:true,regionSamples:region.samples,trimY};
+  preservedRig:true,regionSamples:region.samples,trimY,
+  headBounds:{min:region.bounds.min.toArray(),max:region.bounds.max.toArray()}};
 }
 
-export function attachIndependentFaceToBattleHead({faceRoot,faceMesh,characterModel}){
+export function attachIndependentFaceToBattleHead({faceRoot,faceMesh,characterModel,headBounds=null}){
  if(!faceRoot||!faceMesh?.geometry||!characterModel)
   throw Error('Face root, actual face mesh and rigged character are required');
  const bone=findHead(characterModel);
- const target=measureHeadLocalBounds(characterModel,bone).bounds;
+ const target=headBounds?
+  new THREE.Box3(new THREE.Vector3(...headBounds.min),
+   new THREE.Vector3(...headBounds.max)):
+  measureHeadLocalBounds(characterModel,bone).bounds;
  faceMesh.geometry.computeBoundingBox();
  const source=faceMesh.geometry.boundingBox;
  const a=source.getSize(new THREE.Vector3()),b=target.getSize(new THREE.Vector3());
@@ -148,6 +152,10 @@ export async function createRealBattleOutfitStudio({scene,faceModel,onStatus=()=
    }
    clothing.setHairVisible(false);clothing.setHelmetVisible(false);
    const cut=hideBattleDonorFace(fresh.model);
+   // Only the independent artist face owns eye and lid rendering.
+   fresh.face?.setAutoBlink?.(false);
+   fresh.face?.holdBlink?.(0);
+   for(const lid of fresh.face?.lids||[])lid.visible=false;
    if(actor){
     headRoot.removeFromParent();
     outfit?.dispose();actor.dispose();actor.object3D.removeFromParent();
@@ -155,7 +163,8 @@ export async function createRealBattleOutfitStudio({scene,faceModel,onStatus=()=
    actor=fresh;outfit=clothing;headReport=cut;
    scene.add(actor.object3D);
    headFit=attachIndependentFaceToBattleHead({faceRoot:headRoot,
-    faceMesh:face,characterModel:actor.model});
+    faceMesh:face,characterModel:actor.model,
+    headBounds:headReport.headBounds});
    setBodyVisible(!hiddenBody);
    outfit.root.visible=!hiddenBody&&outfitShown;
    await playAction(currentAction);
@@ -195,7 +204,8 @@ export async function createRealBattleOutfitStudio({scene,faceModel,onStatus=()=
   if(!next?.root||!next.face)throw Error('Updated face required');
   headRoot=next.root;face=next.face;
   if(actor)headFit=attachIndependentFaceToBattleHead({
-   faceRoot:headRoot,faceMesh:face,characterModel:actor.model});
+   faceRoot:headRoot,faceMesh:face,characterModel:actor.model,
+    headBounds:headReport.headBounds});
   return headFit;
  }
  async function setSelection({jobId:nextJob,outfitId:nextOutfit}={}){
