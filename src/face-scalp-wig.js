@@ -166,8 +166,9 @@ function hairCutY(zone,box,lengthScale,seed,normalizedX=0){
   zone.startsWith('back')?.085:.16;
  const rear=zone.startsWith('back')||zone.startsWith('nape');
  const uCut=rear?.050*Math.pow(clamp(normalizedX,0,1),1.4):0;
- const scatter=.006*fract(seed*.75487766)+
-  .007*Math.sin(seed*2.39996323);
+ // Long hair has naturally staggered point-cut ends, not a flat edge.
+ const scatter=.022*(fract(seed*.75487766)-.5)+
+  .014*Math.sin(seed*2.39996323)+.008*Math.sin(seed*.79);
  return box.min.y+d.y*(level+uCut+scatter)/scale;
 }
 function scalpShell(geo,box,color,{fullBody=false}={}){
@@ -429,7 +430,8 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   const midFace=Math.abs(wigRoot.x-center.x)/d.x<.315;
   // Even non-fringe CROWN roots must be cut above the eyebrows if they
   // face forward. Otherwise they form a long curtain across both eyes.
-  const overFace=!back&&frontRoot&&midFace;
+  // Temple hair is a long face-framing layer, NEVER a short eyebrow bang.
+  const overFace=!back&&!zone.startsWith('temple')&&frontRoot&&midFace;
   if(overFace)faceTrimmedStrands++;
   // Real full-body preview: extend posterior/temple locks below the cropped
   // head into the shoulder area. A head-only wig keeps its old cut lengths.
@@ -439,15 +441,17 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    zone.startsWith('temple')?.72:back?.80:.76)+torsoExtension;
   // Fringe must terminate above the eyebrows, never obscure the eyes,
   // nose or mouth, even at the maximum hair-length slider value.
-  // Salon-cut contour: varying length, split-fringe silhouette and shorter
-  // face frame with no harsh line across the forehead.
+  // Salon curtain bangs: a high central part, softly descending along
+  // either cheek and with individually staggered point-cut lengths.
   const cutPhase=fract(i*.61803398875);
   const wave=Math.sin(i*2.39996323);
-  // Side-swept diagonal bangs with irregular feathered ends, instead
-  // of a flat horizontal 'home haircut' line above both eyebrows.
+  const centerDist=clamp(Math.abs(wigRoot.x-whorl.x)/(d.x*.40),0,1);
   const partSlope=(wigRoot.x-center.x)/d.x;
+  const featherVariation=(cutPhase-.5)*.035+.014*wave+
+   .011*Math.sin(i*.79);
   const browLimit=box.min.y+d.y*
-   (.700+.026*partSlope+.017*cutPhase+.004*wave);
+   (.685+.090*Math.pow(1-centerDist,1.5)+
+    .014*partSlope+featherVariation);
   // Long feathered bangs from the real high hairline to the eyebrow level.
   // The old 0.09-head-height cap ended halfway down the forehead.
   const bangLength=d.y*(.185+.035*cutPhase)*clamp(lengthScale,.55,1.5);
@@ -469,10 +473,13 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   // closing the exposed rear part without piling into a single spike.
   // Bangs grow DOWN over the forehead. Center-part only controls their
   // root division; it must not sweep the tips sideways into cheek whiskers.
+  // Blow-dried curtain guide: the fringe softly sweeps away from the
+  // part rather than falling as an identical vertical row above the eyes.
+  const curtainSweep=partSide*d.x*(.016+.049*Math.pow(1-centerDist,1.3));
   const targetX=(back?
    center.x+(wigRoot.x-center.x)*.57:
-   fringe?wigRoot.x+side*d.x*.0015:
-   wigRoot.x+side*d.x*(closeToFace?style.fringeSweep*.16:.015))+
+   fringe?wigRoot.x+curtainSweep:
+   wigRoot.x+(closeToFace?curtainSweep*.76:side*d.x*.015))+
    partSide*d.x*style.partWidth*partInfluence*(fringe?.08:1);
   const targetZ=closeToFace?wigRoot.z+d.z*style.scalpClearance:
    // Go BEHIND the neck rather than being occluded by the rear bust skin.
@@ -657,17 +664,20 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
      Math.sin(elapsed*.55+clumpPhase+j*.045)*d.x*.000018*t*t:0;
     // Full thick clumps near scalp and mid-length; point-cut taper only
    // in the last 15% instead of uniformly thinning into wire-like ends.
-   const tip=1-(strand.fringe?.84:.66)*Math.pow(t,8);
+   // Smooth feathered taper starts before the last segment; previous
+   // nearly square hair cards all stopped at the same blunt edge.
+   const tip=Math.max(.035,1-(strand.fringe||strand.overFace?.965:.89)*
+    Math.pow(t,3.2));
    // Blender/Unity-inspired groomed hair-card profile: narrow root,
    // broad clean midsection and softly tapered point-cut tip. Keeping
    // crown cards narrow prevents the interlocking square tiles visible
    // in the previous overhead screenshots.
    const rootProfile=.31+.69*THREE.MathUtils.smoothstep(t,0,.18);
    const width=half*tip*rootProfile*(.90+.15*fract(i*.35))*
-    (strand.zone.startsWith('fringe')?.21:
-     strand.zone.startsWith('temple')?.68:
-     strand.zone==='crown'?.66:
-     strand.zone.startsWith('back')?.94:
+    (strand.zone.startsWith('fringe')?.17:
+     strand.zone.startsWith('temple')?.58:
+     strand.zone==='crown'?.53:
+     strand.zone.startsWith('back')?.88:
      strand.zone.startsWith('nape')?.82:.86);
     // Groom BOTH ribbon planes along the actual hair-guide tangent.
     // The old world-X/world-Z crosses stuck through crown triangles like
@@ -832,8 +842,8 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
      const rootFade=Math.min(1,t*7);
      const shell=Math.sin((lane+1)*2.39996323+i*.277)*d.x*.0012*rootFade;
      const offset=radius*(2*laneAt)*rootFade;
-     const width=Math.max(d.x*.00012,
-      half*.12/fiberMultiplier)*(1-.72*Math.pow(t,8));
+     const width=Math.max(d.x*.00008,
+      half*.12/fiberMultiplier)*(1-.94*Math.pow(t,3));
      for(const sign of [-1,1]){
       const q=p.clone().addScaledVector(across,offset+sign*width)
        .addScaledVector(normal,shell);
@@ -876,6 +886,10 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   runtimePhysicsCallsPerFrame:staticGroom?0:1,
   constructionCollisionOnly:!!staticGroom,
   hairCardStyle:'layered-root-narrow-mid-full-tip-tapered',
+  salonStaticLongLayers:true,
+  helmetSilhouetteFix:'staggered-curtain-fringe-long-temples-feathered-tips',
+  templeLongLayerCount:strands.filter(s=>s.zone.startsWith('temple')&&!s.overFace).length,
+  fringeCutVariation:'center-shorter-sides-longer-with-deterministic-pointcut',
   groomReference:'Blender Generate/Interpolate Hair Curves and Unity Hair Cards',
   crownWhorl:whorl.toArray(),gravityMps2:style.gravityMps2,
   gravityRestShape:true,exactFaceSurfaceCollision:true,
