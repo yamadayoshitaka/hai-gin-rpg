@@ -39,11 +39,12 @@ game.location='map';
 game.campaign.squads[0].deploymentSlot=8; // south, rear-middle
 game.campaign.squads[1].deploymentSlot=9; // north, command position
 const request=makeCoreBattleRequest(game,'c01-s02','deployment-test-20261112');
-const knight=request.units.filter(u=>u.squadId===1),priest=request.units.filter(u=>u.squadId===2);
+const knight=request.units.filter(u=>u.sourceSquadId===1),priest=request.units.filter(u=>u.sourceSquadId===2);
 assert.equal(knight.length,30);assert.equal(priest.length,10);
 assert.ok(knight.every(u=>u.spawnLane==='south'&&u.spawnRank===2));
-assert.ok(priest.every(u=>u.spawnLane==='north'&&u.spawnRank===3));
-assert.deepEqual(new Set(request.units.map(u=>u.deploymentSlot)),new Set([8,9]));
+assert.ok(priest.every(u=>u.spawnLane==='south'&&u.spawnRank===2));
+assert.deepEqual(new Set(request.units.map(u=>u.deploymentSlot)),new Set([8]));
+assert.equal(new Set(request.units.map(u=>u.squadId)).size,1,'one strategist controls mixed-job subgroups');
 
 assert.match(strategyEffect('recovery'),/僧侶/);
 assert.match(strategyEffect('environment_prepare'),/消火/);
@@ -65,7 +66,7 @@ assert.match(battle,/closeSquadTactics\(true\)/);
 assert.match(battle,/closeSquadTactics\(Boolean\(accepted\)\)/);
 assert.match(battle,/const stageRank=Math.max\(0,Math.min\(3,/);
 assert.match(battle,/effectLabel.textContent=orderEffect\(orderSelect.value\)/);
-assert.match(inn,/moveSquadDeployment\(owned,innDeploymentSelected,slot\)/);
+assert.match(inn,/placeCommander\(game.campaign,innDeploymentSelected,slot\)/);
 assert.match(inn,/renderInnDeploymentBoard\(\)/);
 assert.match(inn,/renderInnStrategies\(\)/);
 assert.match(style,/\.innDeploymentBoard/);

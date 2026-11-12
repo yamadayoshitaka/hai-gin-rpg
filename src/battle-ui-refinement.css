@@ -269,3 +269,21 @@ body.compact-command-dock.compact-orders-open .squadCommandRibbon .ribbonSquad.c
  #panel.formation-command-ui .innPageNav button{padding:6px 1px!important;font-size:10px!important}
  .innTemplateEditor{padding:7px}
 }
+
+
+/* Inn v2.6: all primary formation/template choices are tap buttons. */
+.innTapOptions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;min-width:0}
+.innTapOptions button{min-width:0;min-height:43px!important;font-size:12px!important;white-space:normal!important;overflow-wrap:anywhere}
+.innTapOptions button.selected{background:#755c33!important;border:2px solid #ffdda0!important;color:#fff7dc!important;font-weight:800}
+.innAutoControls{display:grid;gap:7px;border:1px solid #547994;background:#122d41;border-radius:9px;padding:9px}
+.innAutoControls>strong{color:#f8dca9;font-size:13px}
+.innAutoControls>small{color:#c5d8e5;font-size:11px;line-height:1.4}
+.innAutoControls>.primary{min-height:48px!important}
+.innTemplateEditor[hidden]{display:none!important}
+#panel.formation-command-ui .innCommanderRow{display:grid;grid-template-columns:1fr;gap:7px}
+#panel.formation-command-ui .innCommanderRow>strong{font-size:12px;color:#f5d39a}
+#panel.formation-command-ui .innCommanderRow>.innTapOptions{width:100%}
+#panel.formation-command-ui .innDeploymentCell strong{font-size:11px;max-width:100%}
+#panel.formation-command-ui .innDeploymentCell small{max-width:100%;overflow:hidden;text-overflow:ellipsis}
+#panel.formation-command-ui .innPage[data-inn-page="strategies"]>.innTapOptions{grid-template-columns:1fr 1fr}
+#panel.formation-command-ui .innTemplateEditor .innTapOptions{grid-template-columns:repeat(2,minmax(0,1fr))}
