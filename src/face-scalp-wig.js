@@ -287,39 +287,34 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   const rest=[],points=[],vel=[];
   const trimY=Math.min(wigRoot.y-d.y*.012,
    (fringe||overFace)?browLimit:hairCutY(zone,box,lengthScale,i));
-  // A side-part and long, face-framing layers instead of radial spikes.
-  // Rear locks stay on the posterior hemisphere for their full length.
-  const guide=(fringe||overFace)?f3(side*.24,0,1):
-   back?f3(side*.12,0,-1):
-   f3(side,0,zone.startsWith('temple')?-.22:-.30);
-  guide.normalize();
+  // Salon-guided locks: the real scalp root stays fixed. After a brief
+  // head-conforming section, each lock DROPS DOWN, not out in a radial
+  // fan. This removes the puffy helmet and spiked cheek-side fan.
   const scalpCenter=radialScalp.radialCenter;
-  const origin=f3(wigRoot.x-scalpCenter.x,0,wigRoot.z-scalpCenter.z);
-  const rootRadius=origin.length();
-  if(origin.lengthSq()<d.x*d.x*.0009)origin.copy(guide);
-  else origin.normalize();
-  // Pipeline: GROW radially from actual root normals, RELAX each segment
-  // against the source head envelope, COLLIDE later, TRIM at hairline.
+  const closeToFace=fringe||overFace;
+  const targetX=wigRoot.x+side*d.x*(closeToFace?.035:back?.010:.018);
+  const targetZ=closeToFace?wigRoot.z+d.z*.006:
+   back?Math.min(wigRoot.z-d.z*.021,center.z-d.z*.10):
+   zone.startsWith('temple')?wigRoot.z-d.z*.035:
+   Math.min(wigRoot.z-d.z*.075,center.z-d.z*.035);
+  const strandWave=(fract(i*.75487766)-.5)*d.x*.004;
   for(let j=0;j<=segments;j++){
-   const t=j/segments;
-   // Forehead fringe falls vertically, without horizontal root-to-tip spikes.
-   const direction=origin.clone().lerp(guide,
-    (fringe||overFace?.22:.38)*t*t).normalize();
+   const t=j/segments,fall=t*t*(3-2*t);
    const y=Math.max(trimY,wigRoot.y-length*t);
-   const shell=radialScalp.radius(y,direction);
-   // Hair lies at the actual cranial surface (thin covering), then moves
-   // outward only enough to retain volume. The prior formula added up to
-   // 3.6% of face width, creating the helmet/side-bulge in the screenshot.
-   const gap=d.x*(.002+.003*t);
-   const desiredRadius=shell+gap;
-   // Root-to-first-segment interpolation avoids radial jumps/spikes on
-   // sparse head geometry, particularly around the rear crown.
-   const growEase=Math.min(1,t*3);
-   const targetRadius=THREE.MathUtils.lerp(rootRadius,desiredRadius,
-    growEase*growEase*(3-2*growEase));
+   const curl=Math.sin(t*5.2+i*2.39996323)*d.x*.0025*t*t;
    const p=j===0?wigRoot.clone():f3(
-    scalpCenter.x+direction.x*targetRadius,y,
-    scalpCenter.z+direction.z*targetRadius);
+    THREE.MathUtils.lerp(wigRoot.x,targetX,fall)+strandWave*t+curl,
+    y,THREE.MathUtils.lerp(wigRoot.z,targetZ,fall)+curl*.35);
+   if(j>0&&t<.65&&y>box.min.y+d.y*.60){
+    const direction=f3(p.x-scalpCenter.x,0,p.z-scalpCenter.z);
+    const radius=direction.length();
+    if(radius>d.x*.008){
+     const surfaceRadius=radialScalp.radius(y,direction);
+     const gap=surfaceRadius+d.x*.0015-radius;
+     if(gap>0)p.addScaledVector(direction.multiplyScalar(1/radius),
+      Math.min(gap,d.x*.015));
+    }
+   }
    rest.push(p);points.push(p.clone());vel.push(new THREE.Vector3());
   }
   strands.push({root:wigRoot,rest,points,vel,fringe,side,
@@ -363,20 +358,25 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  const guideCount=Math.ceil(lockCount/guideStride);
  let collisions=0,faceContacts=0,bodyContacts=0,accumulator=0,elapsed=0;
  let meshUpdates=0;
- // Conservative, real-head-derived frontal collider. In addition to
- // an ellipsoid it uses the actual sculpted vertices for the scalp roots.
- const headCenter=f3(center.x,box.min.y+d.y*.635,center.z);
- const rx=d.x*.455,ry=d.y*.322,rz=d.z*.46;
+ // Real head-surface collision. The original giant ellipsoid forced
+ // every strand out to an artificial spherical helmet around the ears.
+ // Only points INSIDE the actual head silhouette are nudged outward.
  function resolveCollision(p){
-  const q=f3((p.x-headCenter.x)/rx,(p.y-headCenter.y)/ry,
-   (p.z-headCenter.z)/rz);
-  const len=q.length();
-  if(len<1&&p.y>box.min.y+d.y*.36){
-   const normal=q.lengthSq()>1e-8?q.normalize():f3(0,0,1);
-   p.set(headCenter.x+normal.x*rx*1.015,
-    headCenter.y+normal.y*ry*1.015,
-    headCenter.z+normal.z*rz*1.015);
-   collisions++;faceContacts++;
+  if(p.y>box.min.y+d.y*.38){
+   const origin=radialScalp.radialCenter;
+   const direction=f3(p.x-origin.x,0,p.z-origin.z);
+   const len=direction.length();
+   if(len>d.x*.0001){
+    const surfaceRadius=radialScalp.radius(p.y,direction);
+    const gap=surfaceRadius+d.x*.001-len;
+    if(gap>d.x*.002){
+     p.addScaledVector(direction.multiplyScalar(1/len),
+      Math.min(gap,d.x*.035));
+     collisions++;faceContacts++;
+    }
+   }else{
+    p.z+=d.x*.035;collisions++;faceContacts++;
+   }
   }
   for(const c of colliders){
    if(projectCapsule(p,c.a,c.b,c.r+d.x*.006)){
@@ -452,6 +452,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   faceTrimmedStrands,faceCurtainPrevention:true,
   smoothScalpNormals:true,verticalForeheadDrape:true,
   hairShape:'head-hugging-salon-layered-pointcut',
+  downwardGuidedLocks:true,realScalpEnvelopeCollision:true,
   rearRootPolicy:'actual-posterior-scalp-only',
   scalpRadialProfile:'smoothed-72pct-multi-vertex-envelope',
   belowNapeDrape:'preserve-last-valid-scalp-radius',
