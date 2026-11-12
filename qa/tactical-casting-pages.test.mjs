@@ -71,7 +71,11 @@ assert.match(html,/requestSquadRecovery\(target\.targetId\)/);
 assert.doesNotMatch(html,/queueMultipleSquadRecovery/,'Support cannot multi-select');
 assert.doesNotMatch(html,/commandDurationSeconds/,'No order-duration chooser');
 assert.doesNotMatch(html,/commandSoldierAmount|chosenCount|countValues|quickCountChoices'/,'No soldier-count selector');
-assert.match(html,/const issue=mode=>\{if\(issueSquadOrder\(mode\)\)closeSquadTactics\(\)\}/,'Every order applies to an entire squad');
+assert.match(html,/const issue=mode=>queueDirectOrder\(mode\)/,'Squad-wide direct orders must first go to confirmation');
+assert.match(html,/if\(issueSquadOrder\(mode\)\)\{[\s\S]*?closeSquadTactics\(true\)/,
+ 'Confirming a direct order must issue to the selected whole squad');
+assert.match(html,/if\(u\.team===0&&String\(u\.squadId\)===id\)\{u\.tacticalOrder=null/,
+ 'Skirmish orders must reset every member of the same squad');
 const simulation=readFileSync(new URL('../src/mass-battle-grid-sim.js',import.meta.url),'utf8');
 assert.doesNotMatch(simulation,/options\.count/,'The simulation no longer allows per-soldier command amounts');
 assert.match(simulation,/this\.squadCommands\.set\(id,command\)/,'Orders are stored for the whole squad');
