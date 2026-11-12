@@ -184,6 +184,12 @@ async function expectCenteredFaceSliders(page,gender){
   await page.locator('#female').click();
   const wigQA=await page.evaluate(()=>window.__faceMasterQA());
   if(!wigQA.wigVisible||wigQA.wigReport?.rootCount!==1440||
+     wigQA.wigStyleId!=='center-part-gravity-long'||
+     !wigQA.wigIsSeparateAsset||
+     wigQA.wigReport?.hairstyleId!=='center-part-gravity-long'||
+     !wigQA.wigReport?.gravityRestShape||
+     !wigQA.wigReport?.centerPart||
+     !wigQA.wigReport?.exactFaceSurfaceCollision||
      wigQA.wigReport?.hairShape!=='head-hugging-salon-layered-pointcut'||
      wigQA.wigReport?.rearRootPolicy!=='actual-posterior-scalp-only'||
      !wigQA.wigReport?.faceCurtainPrevention||
@@ -401,6 +407,40 @@ async function expectCenteredFaceSliders(page,gender){
      hairAdjusted.wigReport?.lengthScale!==1.5||
      JSON.stringify(hairAdjusted.femaleControls)!==JSON.stringify(beforeHairControls))
    throw Error('Hair sliders affected face settings or wig '+JSON.stringify(hairAdjusted.wigReport));
+  // Independent wigs may be selected and exported without changing any
+  // anatomical face slider or forcing the user to export the full head.
+  {
+   const styleBefore=await page.evaluate(()=>window.__faceMasterQA());
+   if(styleBefore.wigStyles.length<2||styleBefore.wigStyleId!=='center-part-gravity-long')
+    throw Error('Independent wig catalog not present');
+   const started=page.waitForEvent('download',{timeout:60000});
+   await page.locator('#exportWig').click();
+   const download=await started;
+   if(!download.suggestedFilename().includes('center-part-gravity-long'))
+    throw Error('Independent wig GLB lacks hairstyle ID');
+   const file=path.join(out,'standalone-center-part-gravity-wig.glb');
+   await download.saveAs(file);
+   const buf=fs.readFileSync(file);
+   if(buf.toString('ascii',0,4)!=='glTF')throw Error('Wig-only GLB magic mismatch');
+   const gltf=JSON.parse(buf.subarray(20,20+buf.readUInt32LE(12)).toString('utf8').trim());
+   const styleNode=(gltf.nodes||[]).find(n=>n.name==='FEMALE_SCALP_ANCHORED_LONG_WIG');
+   if(styleNode?.extras?.hairStyleId!=='center-part-gravity-long')
+    throw Error('Independent wig GLB lost own registry ID '+JSON.stringify(styleNode));
+   if((gltf.nodes||[]).some(n=>(n.name||'').includes('FACE_MASTER')))
+    throw Error('Standalone wig exported the facial head too');
+   console.log('FACE_V17_STANDALONE_WIG_GLB_EXPORT',JSON.stringify({
+    bytes:buf.length,hairstyleId:styleNode.extras.hairStyleId
+   }));
+   await page.locator('#wigStyle').selectOption('salon-layered-long');
+   const alternate=await page.evaluate(()=>window.__faceMasterQA());
+   if(alternate.wigReport?.hairstyleId!=='salon-layered-long'||
+      alternate.wigIsSeparateAsset!==true||
+      JSON.stringify(alternate.femaleControls)!==JSON.stringify(beforeHairControls))
+    throw Error('Changing wig ID affected face settings or style registration');
+   await page.locator('#wigStyle').selectOption('center-part-gravity-long');
+   if((await page.evaluate(()=>window.__faceMasterQA())).wigReport?.centerPart!==true)
+    throw Error('Restoring crown center-part wig failed');
+  }
   await canvas.screenshot({path:path.join(out,'female-v13-wig-480-long.png')});
   for(const [id,value] of [['wigDensity','1440'],['wigLength','1']]){
    await page.locator('#'+id).evaluate((el,v)=>{
