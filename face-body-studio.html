@@ -161,6 +161,8 @@ function metrics(){
 window.__heroineBodyQA=metrics;
 window.__heroineBodyPreview={
  getActor:()=>model?.root||null,getWig:()=>wig?.root||null,
+ getFace:()=>model?.face||null,getEyeParts:()=>model?.parts||null,
+ getBody:()=>bodyAttachment?.root||null,
  getCameraState:()=>({position:camera.position.toArray(),target:orbit.target.toArray(),
   up:camera.up.toArray(),zoom:camera.zoom,mode:zoomMode,view}),
  sampleTorso:(x,y)=>bodyAttachment?.bodyCollider.query(x,y)||null
