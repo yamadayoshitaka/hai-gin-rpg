@@ -1,18 +1,10 @@
 name: Nonhuman 3D model sculpt refinement every 15 minutes
 
+# PAUSED: creature-by-creature anatomy research and mesh/rig redesign.
+# Do not re-enable scheduled or push triggers without user approval.
 on:
-  schedule:
-    # Offset from busy quarter-hour boundaries; GitHub cron is best effort.
-    # Four UTC starts per hour = nominal 15-minute cadence.
-    - cron: '7,22,37,52 * * * *'
   workflow_dispatch:
-  push:
-    # Fallback if GitHub's schedule trigger is delayed or dropped.
-    # The age gate and concurrency lock prevent runaway refinement.
-    branches: [main]
 
-# Only this workflow may write its reviewed, nonhuman refinement PR.
-# Never push human assets or touch another workstream.
 permissions:
   contents: write
   pull-requests: write
@@ -24,7 +16,7 @@ concurrency:
 
 jobs:
   refine-one-curated-stage:
-    if: github.repository == 'yamadayoshitaka/hai-gin-rpg'
+    if: false # user requested stopping all automated geometry-stage batches
     runs-on: ubuntu-24.04
     timeout-minutes: 12
     steps:
