@@ -60,18 +60,40 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
  for(const side of [-1,1]){
    const horn=v===2||reptile? .28:.12;
    if(canine){
-     // Wolf ears grow from the back of the skull. Distinct inner ear makes
-     // their silhouette legible at gameplay zoom, not just from the side.
-     g.spike(head,'skin',[side*.22,.21,-.075],
-       [side*(.29+v*.01),.57+v*.025,-.095],.105);
-     g.spike(head,'shadow',[side*.241,.27,-.018],
-       [side*(.295+v*.008),.52+v*.025,-.055],.059);
-     g.sphere(head,'light',[side*.217,.228,-.015],[.071,.045,.052]);
+     if(s.id==='m001'){
+       // Real pinna is not rigidly welded to the skull.
+       const ear=g.group('ear'+(side<0?'L':'R'),[side*.22,.21,-.075],head);
+       g.spike(ear,'skin',[0,0,0],[side*.085,.36,-.020],.10);
+       g.spike(ear,'shadow',[side*.019,.058,.061],[side*.079,.30,.021],.056);
+       g.sphere(ear,'light',[0,.028,.058],[.069,.045,.054]);
+     }else{
+       g.spike(head,'skin',[side*.22,.21,-.075],
+         [side*(.29+v*.01),.57+v*.025,-.095],.105);
+       g.spike(head,'shadow',[side*.241,.27,-.018],
+         [side*(.295+v*.008),.52+v*.025,-.055],.059);
+       g.sphere(head,'light',[side*.217,.228,-.015],[.071,.045,.052]);
+     }
    }else if(reptile||v>=2){
      g.spike(head,v===2?'accent':'bone',[side*.21,.24,.0],
        [side*(.38+v*.045),.47+horn,-.13],.085);
    }else g.sphere(head,'skin',[side*.24,.24,-.09],[.10,.19,.07]);
    g.spike(head,'bone',[side*.13,-.20,muzzle+.08],[side*.13,-.31,muzzle+.22],.046);
+ }
+ if(s.id==='m001'){
+   // Species m001 cranial remesh: cheek musculature, brow, nasal cartilage.
+   // These intersect the existing skull to avoid disconnected sphere seams.
+   g.bridge(head,'skin',[0,.062,-.18],[0,-.03,.38],.188,.113);
+   for(const side of [-1,1]){
+     g.sphere(head,'skin',[side*.220,-.065,.111],[.125,.135,.207]);
+     g.sphere(head,'shadow',[side*.308,.092,.277],[.023,.017,.090],{rough:.78});
+     g.tube(head,'skin',[[side*.23,.12,-.055],[side*.30,.13,.105],
+        [side*.325,.099,.205]],.029);
+     for(let j=0;j<3;j++)
+       g.sphere(head,'shadow',[side*(.149+j*.025),-.191,muzzle+.12+j*.035],
+         [.006,.006,.008],{rough:.82});
+   }
+   g.sphere(head,'shadow',[0,-.171,muzzle+.295],[.155,.048,.09],
+     {name:'wolf-nasal-cartilage'});
  }
  const jaw=g.group('jaw',[0,1.42,.96]);
  g.sphere(jaw,'shadow',[0,-.03,.12],[.24,.045,.29]);
