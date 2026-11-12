@@ -64,6 +64,6 @@ assert.ok(map.includes("phase:'post'"));
 assert.ok(map.includes("phase:'pre'"));
 assert.ok(map.includes("stagePostMangaSeen"));
 assert.ok(map.includes("settleCoreBattle(game,request,result)"));
-assert.ok(viewer.includes("storyPagePanels(story,which)"),'viewer must show the approved phase page');
+assert.ok(viewer.includes("comicForStage(id,which,storyContext)"),'viewer must show the selected outcome-specific chapter edition');
 assert.ok(voice.includes("panel.voiceText.slice(0,380)"));
 console.log('PASS: all 200 stages, 4000 canonical panels, 10+10, verified result epilogues and proper-noun voice readings');

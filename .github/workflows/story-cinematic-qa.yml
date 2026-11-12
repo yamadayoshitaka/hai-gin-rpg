@@ -5,6 +5,12 @@ on:
       - '.github/workflows/story-cinematic-qa.yml'
       - 'src/story-cinematic.js'
       - 'src/story-stage-manga.js'
+      - 'src/story-chapter-comic.js'
+      - 'src/story-chapter-scene-selection.js'
+      - 'scripts/prepare-story-chapter.mjs'
+      - 'scripts/publish-story-chapter.py'
+      - 'qa/story-chapter-pipeline.test.mjs'
+      - '.github/workflows/story-chapter-release.yml'
       - 'src/story-pronunciations.js'
       - 'src/story-panel-neutral-ids.js'
       - 'scripts/prepare-story-art-batches.mjs'
@@ -40,6 +46,12 @@ on:
       - '.github/workflows/story-cinematic-qa.yml'
       - 'src/story-cinematic.js'
       - 'src/story-stage-manga.js'
+      - 'src/story-chapter-comic.js'
+      - 'src/story-chapter-scene-selection.js'
+      - 'scripts/prepare-story-chapter.mjs'
+      - 'scripts/publish-story-chapter.py'
+      - 'qa/story-chapter-pipeline.test.mjs'
+      - '.github/workflows/story-chapter-release.yml'
       - 'src/story-pronunciations.js'
       - 'src/story-panel-neutral-ids.js'
       - 'scripts/prepare-story-art-batches.mjs'
@@ -99,6 +111,12 @@ jobs:
           node qa/story-art-batches.test.mjs
           node qa/story-art-canonical-references.test.mjs
           node qa/story-full-page-layout.test.mjs
+          node --check src/story-chapter-comic.js
+          node --check src/story-chapter-scene-selection.js
+          node --check scripts/prepare-story-chapter.mjs
+          python3 -m py_compile scripts/publish-story-chapter.py
+          node qa/story-chapter-pipeline.test.mjs
+          node scripts/prepare-story-chapter.mjs --chapter 1
           node --experimental-vm-modules qa/story-cinematic-raster.test.mjs
           node scripts/build-story-art-coverage.mjs
           node qa/story-art-coverage.test.mjs
@@ -110,6 +128,7 @@ jobs:
           path: |
             qa-reports/story-art-shotlist.json
             qa-reports/story-art-batch-plan.json
+            qa-reports/story-chapters/c01-production.json
             assets/story/panel-art-coverage.json
           if-no-files-found: ignore
           retention-days: 14

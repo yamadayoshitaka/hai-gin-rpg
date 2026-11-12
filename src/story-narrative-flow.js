@@ -117,6 +117,8 @@ export function storyStageContext(game,id){
   origin:'silver',route:route?.id||'silver',routeName:route?.name||'灰銀軍師',
   coalition:stage.chapter>=16,
   decision:flags(game).storyDecisions?.[id]||null,
+  // Only a saved, explicitly selected ending can choose an ending illustration.
+  storyEnding:stage.id==='c20-s10'?(game?.narrativeEnding||flags(game).storyEnding||null):null,
   enemy:stage.chapter>=16?'記録院・星鐘の防衛勢力':
     stage.chapter>=13?'記録院の妨害部隊':stage.enemyFaction==='verdant'?'翠嵐軍':'紅炎軍'
  };
