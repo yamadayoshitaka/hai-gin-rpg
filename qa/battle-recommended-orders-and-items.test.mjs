@@ -35,7 +35,8 @@ assert.match(battle,/function openBattleItemsForSquad\(id\)/);
 assert.match(battle,/id='battleItemsChoice'/);
 assert.match(battle,/id='battleItemsSquad'/);
 assert.match(battle,/id='battleItemsUseSquad'/);
-assert.match(battle,/add\('★ 推奨：'/,'Recommended order is on the command page');
+assert.match(battle,/add\('★ 推奨号令','recommend_order',\(\)=>advice\.order==='charge'\?beginCircleTargetSelection\('attack'\):issue\(advice\.order\)/,
+ 'Recommended order is on the command page and charges still select enemy circles');
 assert.match(battle,/add\(kind\?'★ 推奨アイテム：'/,'Recommended item is on the separate items page');
 assert.match(battle,/useSquadBattleItem\(advice\.itemId,id\)/);
 assert.match(battle,/openBattleItemsForSquad\(id\)/);
