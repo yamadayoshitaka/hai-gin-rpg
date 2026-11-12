@@ -371,11 +371,18 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
    const apertureY=eyeRadius*eyeApertureRatio*eyeHeight*arch;
    const ty=apertureY>.000001?
     clamp((py-y)/apertureY,-1,1):1;
-   const curved=Math.pow(Math.max(0,1-tx*tx),.68)*
-    Math.pow(Math.max(0,1-ty*ty),.68);
-   const skinZ=surfaceAt(px,py);
-   const orbitalFill=Math.max(0,orbitFrontZ-skinZ)*curved*.80;
-   return skinZ+eyeSurfaceLift+eyeDomeHeight*curved+orbitalFill;
+   // Anatomically smooth sclera/cornea: the central eye MUST NOT inherit
+   // triangulation noise from the original closed skin surface. The former
+   // skin-projected patch caused broken reflective bands across the iris.
+   // Only the narrow eyelid-contact zone blends back to the source skin.
+   const curved=Math.sqrt(Math.max(0,1-tx*tx))*
+    Math.sqrt(Math.max(0,1-ty*ty));
+   const eyeFrontZ=orbitFrontZ+eyeSurfaceLift+eyeDomeHeight*curved;
+   // The power-of-four transition leaves the core spheroid clean, but
+   // meets the actual face at the upper/lower eyelid and both canthi.
+   const skinBlend=Math.pow(1-curved,4);
+   const rimZ=surfaceAt(px,py)+eyeSurfaceLift;
+   return eyeFrontZ*(1-skinBlend)+rimZ*skinBlend;
   };
   const z=insetZ(x,y);
   eyeAnteriorClearances.push((z-faceZ)/eyeRadius);
@@ -391,6 +398,8 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   eyePatch.userData.noDetachedEyeball=true;
   eyePatch.userData.geometryType='face-conforming-almond-eye';
   eyePatch.userData.anteriorGlobeReconstruction=true;
+  eyePatch.userData.smoothCornealCore=true;
+  eyePatch.userData.skinBlendRestrictedToEyelidRim=true;
   eyePatch.userData.anteriorClearanceRatio=(z-faceZ)/eyeRadius;
   eyePatch.userData.eyelinerToCenterBulge=true;
   eyePatch.userData.irisFitsApertureWithoutClamp=true;
@@ -437,6 +446,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   irisMat.vertexColors=true;
   iris.userData.circularProjected=true;
   iris.userData.radialFibers=true;
+  iris.userData.sharedSmoothCornealSurface=true;
   iris.userData.colorRole='iris';root.add(iris);
   const pupil=makeCap('CURVED_PUPIL',pupilAngle,pupilMat,.034);
   pupil.userData.circularProjected=true;
@@ -744,6 +754,8 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   irisGeometry:'true-round-circular-disk-fitted-inside-almond-opening',
   eyeBulgeStartsAtEyeliner:true,eyeBulgeFraction:anteriorGlobeRatio,
   anteriorEyeGlobeReconstructed:true,
+  smoothCornealCore:true,
+  eyeCoreSkinBlendPower:4,
   eyeApertureHeightFraction:eyeApertureRatio,
   eyeAnteriorClearanceRatios:eyeAnteriorClearances.map(n=>Number(n.toFixed(3))),
   underEyeShadowMeshCount:0,
