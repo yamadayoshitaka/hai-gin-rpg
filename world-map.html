@@ -200,7 +200,7 @@ function render(){
  $('stageTitle').textContent=stage.id.toUpperCase()+' '+stage.name;
  $('stageRequirement').textContent=STAGE_KINDS[stage.kind]+' · '+stage.winCondition+(unlocked?'':' · 前のステージをクリアすると解放');
  $('sortie').textContent=stage.kind==='town'?'町に入る ▶':game.completedStages.includes(stage.id)?'再出撃 ▶':'出撃 ▶';
- $('sortie').disabled=!unlocked;
+ $('sortie').disabled=!unlocked||Boolean(game.campaign.gameOver);
  renderStoryBranchControls(stage,unlocked);
  renderStoryEndingControls();
  renderPins();
@@ -230,6 +230,7 @@ function changeChapter(step){
 $('prevChapter').onclick=()=>changeChapter(-1);$('nextChapter').onclick=()=>changeChapter(1);
 function launchSelectedStage(stageId){
  try{
+  if(game.campaign.gameOver)throw Error(game.campaign.gameOver);
   const stage=selectCampaignStage(game,stageId);
   if(stage.kind==='town'){
    saveSession();location.href='./town-hub.html?opening=1&v=stage-manga-20261111';return;
@@ -243,6 +244,7 @@ function launchSelectedStage(stageId){
  }catch(error){message(error.message||String(error));}
 }
 $('sortie').onclick=()=>{
+ if(game.campaign.gameOver){showCampaignGameOver();return;}
  const stage=CAMPAIGN_STAGE_BY_ID[selected];
  if(!stageUnlocked(stage,game.completedStages)){
   message('前のステージをクリアしてください。');return;
@@ -266,11 +268,12 @@ function completeReturnedBattle(){
   sessionStorage.removeItem(CORE_BATTLE_PENDING_KEY);
   sessionStorage.removeItem(CORE_BATTLE_RESULT_KEY);
   sessionStorage.removeItem('hai-gin-story-sortie-v1');
-  sessionStorage.setItem(POST_EVENT_PENDING_KEY,JSON.stringify({
+  if(!outcome.gameOver)sessionStorage.setItem(POST_EVENT_PENDING_KEY,JSON.stringify({
    stageId:outcome.stage.id,battleId:request.battleId,
    victory:outcome.victory,casualties:outcome.casualties
   }));
   saveSession();
+  if(outcome.gameOver){showCampaignGameOver();return;}
   const nextStage=outcome.next||outcome.stage;chapter=nextStage.chapter;selected=nextStage.id;
   const rewards=outcome.rewards||{};
   const earned=outcome.victory?' 💰'+(rewards.gold||0)+'G / ✦'+(rewards.xp||0)+'EXP / 宝：'+(rewards.loot?.map(item=>item.name+'×'+item.quantity).join('・')||'なし'):'';
@@ -297,6 +300,21 @@ function showPendingPostBattleEvent(){
   saveSession();
  }});
 }
-completeReturnedBattle();render();
+function showCampaignGameOver(){
+ const reason=game.campaign.gameOver;if(!reason)return;
+ let layer=document.getElementById('campaignGameOver');
+ if(!layer){
+  layer=document.createElement('section');layer.id='campaignGameOver';
+  layer.setAttribute('role','alertdialog');layer.setAttribute('aria-modal','true');
+  layer.style.cssText='position:fixed;inset:0;z-index:200;background:#050a17ed;display:grid;place-items:center;padding:16px';
+  layer.innerHTML='<div style="width:min(94vw,420px);padding:24px;text-align:center;border:2px solid #d4a47a;border-radius:14px;background:#172338">'+
+   '<h1 style="color:#ffd5a0;margin:6px">GAME OVER</h1>'+
+   '<p id="campaignGameOverReason" style="color:#fff1dc;line-height:1.8"></p>'+
+   '<a href="./game.html" style="display:block;margin-top:18px;padding:13px;border-radius:8px;background:#755738;color:white;text-decoration:none">タイトルへ戻る</a></div>';
+  document.body.append(layer);
+ }
+ layer.querySelector('#campaignGameOverReason').textContent=reason;
+}
+completeReturnedBattle();render();showCampaignGameOver();
 showPendingPostBattleEvent();
 </script></body></html>
