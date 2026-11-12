@@ -24,10 +24,10 @@ const projectCapsule=(p,a,b,r)=>{
 // No random global sampling: the sparse rear and side scalp would otherwise
 // lose almost all roots to the much denser triangles on the frontal head.
 const WIG_ZONE_WEIGHTS=Object.freeze([
- ['crown',.15],['fringeLeft',.065],['fringeRight',.065],
- ['templeLeft',.15],['templeRight',.15],
- ['backLeft',.165],['backRight',.165],
- ['napeLeft',.045],['napeRight',.045]
+ ['crown',.12],['fringeLeft',.04],['fringeRight',.04],
+ ['templeLeft',.13],['templeRight',.13],
+ ['backLeft',.21],['backRight',.21],
+ ['napeLeft',.06],['napeRight',.06]
 ]);
 function actualScalpCandidates(geo,box){
  const pos=geo.getAttribute('position'),normals=geo.getAttribute('normal');
@@ -37,7 +37,7 @@ function actualScalpCandidates(geo,box){
  for(let i=0;i<pos.count;i++){
   const p=f3(pos.getX(i),pos.getY(i),pos.getZ(i));
   const yn=(p.y-box.min.y)/d.y;
-  if(yn<.58||yn>.998)continue;
+  if(yn<.54||yn>.998)continue;
   const nx=(p.x-center.x)/d.x,nz=(p.z-center.z)/d.z;
   const side=nx<0?'Left':'Right';
   const n=normals?f3(normals.getX(i),normals.getY(i),normals.getZ(i)).normalize():
@@ -47,16 +47,27 @@ function actualScalpCandidates(geo,box){
   if(yn>.83)pools.crown.push(sample);
   if(yn>.76&&nz>.10)pools['fringe'+side].push(sample);
   if(Math.abs(nx)>.18&&yn<.87&&nz>-.12)pools['temple'+side].push(sample);
-  if(nz<-.04&&yn>.60)pools['back'+side].push(sample);
-  if(nz<-.04&&yn>=.58&&yn<.76)pools['nape'+side].push(sample);
+  // Rear/nape roots must originate in the posterior hemisphere.
+  // Never fill a sparse rear zone with front scalp vertices.
+  if(nz<-.06&&yn>.64)pools['back'+side].push(sample);
+  if(nz<-.06&&yn>=.54&&yn<.76)pools['nape'+side].push(sample);
  }
  if(all.length<12)throw Error('Scalp has too few real head vertices');
  // A donor mesh with sparse topology still receives every hair zone.
  for(const [zone,pool] of Object.entries(pools)){
   if(pool.length>3)continue;
-  const candidates=all.filter(q=>
-   zone.endsWith('Left')?q.p.x<center.x:q.p.x>=center.x);
-  pools[zone]=candidates.length?candidates:all;
+  const onSide=q=>zone.endsWith('Left')?q.p.x<center.x:q.p.x>=center.x;
+  const rear=zone.startsWith('back')||zone.startsWith('nape');
+  const candidates=all.filter(q=>onSide(q)&&
+   (!rear||q.p.z<center.z-d.z*.04));
+  if(candidates.length) pools[zone]=candidates;
+  else{
+   // Keep explicit QA failure instead of silently growing "rear" locks
+   // out of the forehead on unusual incoming face topologies.
+   if(rear)throw Error('Missing posterior scalp: '+zone);
+   const sameSide=all.filter(onSide);
+   pools[zone]=sameSide.length?sameSide:all;
+  }
  }
  return {pools,all};
 }
@@ -67,42 +78,68 @@ function actualScalpCandidates(geo,box){
  */
 function createHeadEnvelope(geometry,box){
  const pos=geometry.getAttribute('position'),center=box.getCenter(new THREE.Vector3());
- const d=box.getSize(new THREE.Vector3()),axial=36,angular=64;
- const values=new Float32Array(axial*angular);
- const radiusAt=(x,z)=>Math.hypot(x-center.x,z-center.z);
+ // The middle of the 3D head (excluding the protruding nose) is used as
+ // a radial field origin. Front of face should NEVER inflate back hair.
+ center.z=box.min.z+(box.max.z-box.min.z)*.43;
+ const d=box.getSize(new THREE.Vector3()),axial=40,angular=80;
+ const bins=Array.from({length:axial*angular},()=>[]);
  const index=(y,a)=>y*angular+((a%angular)+angular)%angular;
  for(let i=0;i<pos.count;i++){
   const x=pos.getX(i),y=pos.getY(i),z=pos.getZ(i);
   if(y<box.min.y+d.y*.53)continue;
   const yi=clamp(Math.round((y-box.min.y)/d.y*(axial-1)),0,axial-1);
-  const ai=Math.round((Math.atan2(x-center.x,z-center.z)+Math.PI)/(2*Math.PI)*angular)%angular;
-  values[index(yi,ai)]=Math.max(values[index(yi,ai)],radiusAt(x,z));
+  const ai=Math.round((Math.atan2(x-center.x,z-center.z)+Math.PI)/
+   (2*Math.PI)*angular)%angular;
+  bins[index(yi,ai)].push(Math.hypot(x-center.x,z-center.z));
  }
- const populated=values.slice();
- // Fill angular/topology gaps by finding the closest known real vertex
- // within the neighboring 3 vertical bands and 16 angular cells.
+ const data=new Float32Array(axial*angular);
+ const valid=new Uint8Array(axial*angular);
+ for(let k=0;k<bins.length;k++)if(bins[k].length){
+  bins[k].sort((a,b)=>a-b);
+  data[k]=bins[k][Math.floor((bins[k].length-1)*.72)];
+  valid[k]=1;
+ }
+ // Sample a WEIGHTED ensemble of neighbors rather than the old nearest
+ // single maximum-radius vertex (which caused a puffy spiked helmet).
+ const completed=data.slice();
  for(let y=0;y<axial;y++)for(let a=0;a<angular;a++){
-  if(values[index(y,a)]>0)continue;
-  let best=Infinity,value=d.x*.25;
-  for(let yy=Math.max(0,y-5);yy<=Math.min(axial-1,y+5);yy++)
-   for(let da=-16;da<=16;da++){
-    const r=populated[index(yy,a+da)];
-    if(!r)continue;
-    const score=Math.abs(yy-y)*1.7+Math.abs(da);
-    if(score<best){best=score;value=r;}
+  const k=index(y,a);
+  if(valid[k])continue;
+  let sum=0,weight=0;
+  for(let yy=Math.max(0,y-6);yy<=Math.min(axial-1,y+6);yy++)
+   for(let da=-12;da<=12;da++){
+    const other=index(yy,a+da);if(!valid[other])continue;
+    const dist=Math.hypot((yy-y)*1.5,da);
+    const w=1/(.75+dist*dist);
+    sum+=data[other]*w;weight+=w;
    }
-  values[index(y,a)]=value;
+  completed[k]=weight?sum/weight:d.x*.30;
  }
- return (height,direction)=>{
+ // Filter vertical/azimuth discontinuities while preserving the original
+ // head silhouette. The resulting field is smooth under adjacent locks.
+ let smooth=completed;
+ for(let pass=0;pass<3;pass++){
+  const next=smooth.slice();
+  for(let y=0;y<axial;y++)for(let a=0;a<angular;a++){
+   const k=index(y,a),mean=(
+    smooth[index(y,a-1)]+smooth[index(y,a+1)]+
+    smooth[index(Math.max(0,y-1),a)]+
+    smooth[index(Math.min(axial-1,y+1),a)])/4;
+   next[k]=smooth[k]*.54+mean*.46;
+  }
+  smooth=next;
+ }
+ const radius=(height,direction)=>{
   const yy=clamp((height-box.min.y)/d.y*(axial-1),0,axial-1);
   const az=(Math.atan2(direction.x,direction.z)+Math.PI)/(2*Math.PI)*angular;
   const y0=Math.floor(yy),y1=Math.min(axial-1,y0+1);
   const a0=Math.floor(az)%angular,a1=(a0+1)%angular;
   const fy=yy-y0,fa=az-Math.floor(az);
-  const r0=THREE.MathUtils.lerp(values[index(y0,a0)],values[index(y0,a1)],fa);
-  const r1=THREE.MathUtils.lerp(values[index(y1,a0)],values[index(y1,a1)],fa);
+  const r0=THREE.MathUtils.lerp(smooth[index(y0,a0)],smooth[index(y0,a1)],fa);
+  const r1=THREE.MathUtils.lerp(smooth[index(y1,a0)],smooth[index(y1,a1)],fa);
   return THREE.MathUtils.lerp(r0,r1,fy);
  };
+ return {radius,radialCenter:center,angularCells:angular,axialCells:axial};
 }
 function hairCutY(zone,box,lengthScale,seed){
  const d=box.getSize(new THREE.Vector3()),scale=clamp(lengthScale,.55,1.5);
