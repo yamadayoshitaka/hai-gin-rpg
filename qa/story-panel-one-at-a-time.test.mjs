@@ -16,7 +16,9 @@ for(const [stage,gender,outcome,expected] of [
  ['c01-s02','male','victory',7],
  ['c01-s02','male','defeat',0],
  ['c01-s02','male','gameover',0],
- ['c01-s01','female','pre',0],
+ ['c01-s01','female','pre',10],
+ ['c01-s01','male','town',5],
+ ['c01-s01','female','town',5],
  ['c01-s02','female','victory',0],
  ['c01-s03','male','pre',0],
  ['c01-s03','female','pre',0]
@@ -38,5 +40,5 @@ for(const [stage,gender,outcome,expected] of [
   assert.equal(c.topPercent,-Math.floor(p.comicCell/2)*100);
  }
 }
-assert.equal(found,25);
-console.log('PASS: one manga cell per panel; 25 registered male cut panels; no outcome/gender reuse.');
+assert.equal(found,45);
+console.log('PASS: one manga cell per panel; 45 registered Chapter 1 cut panels; no outcome/gender reuse.');

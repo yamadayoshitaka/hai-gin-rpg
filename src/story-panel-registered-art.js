@@ -5,6 +5,9 @@
  */
 const REGISTERED=Object.freeze({
  'c01-s01|pre|male':Object.freeze([1,2,3,4,5,11,12,13,14,15]),
+ 'c01-s01|pre|female':Object.freeze([1,2,3,4,5,11,12,13,14,15]),
+ 'c01-s01|post-town|male':Object.freeze([6,7,8,9,10]),
+ 'c01-s01|post-town|female':Object.freeze([6,7,8,9,10]),
  'c01-s02|pre|male':Object.freeze([1,2,3,4,5,11,13,15]),
  'c01-s02|post-victory|male':Object.freeze([6,7,8,9,16,19,10])
 });
