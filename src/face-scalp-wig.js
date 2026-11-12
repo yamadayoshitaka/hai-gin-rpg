@@ -628,6 +628,14 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
      let vx=p.x+sway+scale*(secondary?sx:wx);
      let vy=p.y+scale*(secondary?sy:wy);
      let vz=p.z+scale*(secondary?sz:wz);
+     // The rendered edge, not only its centre guide, must clear the brow/
+     // glabella central part. Root vertices j=0 remain on true scalp.
+     if(j>0&&(strand.fringe||strand.overFace)&&
+       vy>box.min.y+d.y*.66&&vy<box.min.y+d.y*.86&&
+       vz>center.z+d.z*.025&&Math.abs(vx-center.x)<d.x*.123){
+      vx=center.x+(strand.partSide||strand.side||1)*d.x*.123;
+      glabellaClearanceEvents++;
+     }
      // The guide centre may be legal while the wide ribbon edge penetrates
      // clothing. Resolve actual rendered corners, without unrooting j=0.
      if(renderBodyCollider&&j>0&&vy<box.min.y+d.y*.72){
