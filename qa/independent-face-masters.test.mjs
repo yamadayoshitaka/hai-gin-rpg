@@ -629,10 +629,13 @@ test('v14 saved Library GLB equals exact midpoint of every female/male face slid
  for(const [key,[low,high]] of Object.entries(FACE_SLIDER_RANGES)){
   // Eye depth is a NEW v25 control; it never existed in the Library v8
   // preset, so it cannot be asserted equal to an invented saved value.
-  if(key==='eyeDepth'){
-   assert.equal(normalizeFemaleFaceControls({eyeDepth:low}).eyeDepth,low);
-   assert.equal(normalizeFemaleFaceControls({eyeDepth:high}).eyeDepth,high);
-   assert.equal(normalizeFemaleFaceControls({}).eyeDepth,0);
+  if(FEMALE_V7_DEFAULTS[key]===undefined){
+   // Added eye-region sliders are additive and never rewrite the original
+   // Library GLB preset's frozen 13 saved parameters.
+   assert.equal(normalizeFemaleFaceControls({[key]:low})[key],low);
+   assert.equal(normalizeFemaleFaceControls({[key]:high})[key],high);
+   assert.equal(normalizeMaleFaceControls({[key]:high})[key],high);
+   if(key==='eyeDepth')assert.equal(normalizeFemaleFaceControls({}).eyeDepth,0);
    continue;
   }
   const midpoint=(low+high)/2;
@@ -1288,4 +1291,61 @@ test('v26 wig foundation is a transparent unchanged copy of the actual head and 
  const report=wig.getReport();
  assert.ok(report.scalpVertexCorrections>=0);
  wig.dispose();
+});
+
+test('v26 complete eye-region sliders change real facial meshes and preserve linked liner/brows',()=>{
+ const source=fixture().source;
+ const compact=makeIndependentFaceMaster(source,'female',{femaleControls:{
+  eyeSize:.8,eyeWidth:.70,eyeHeight:.65,eyeSpacing:.65,
+  browWidth:.7,browThickness:.45,lashDensity:.5,lashLength:.5,
+  lashThickness:.4,lashCurl:-.5
+ }});
+ const full=makeIndependentFaceMaster(source,'female',{femaleControls:{
+  eyeSize:1.3,eyeWidth:1.45,eyeHeight:1.45,eyeSpacing:1.35,
+  browWidth:1.5,browThickness:1.85,lashDensity:2.2,lashLength:2.1,
+  lashThickness:1.9,lashCurl:1.5
+ }});
+ const dims=(m,name)=>{
+  const o=m.parts.getObjectByName('LEFT_'+name);
+  assert.ok(o?.isMesh,name+' must be an actual mesh');
+  o.geometry.computeBoundingBox();
+  const d=o.geometry.boundingBox.getSize(new THREE.Vector3());
+  return {x:d.x,y:d.y,z:d.z};
+ };
+ for(const [mesh,axis,ratio] of [
+  ['ORBITAL_EYEBALL','x',1.8],['ORBITAL_EYEBALL','y',1.8],
+  ['SCULPTED_EYEBROW','x',1.8],['SCULPTED_EYEBROW','y',1.7]
+ ]){
+  const short=dims(compact,mesh)[axis],long=dims(full,mesh)[axis];
+  assert.ok(long>short*ratio,
+   'Eye-region slider must reshape '+mesh+' '+axis+' '+short+' vs '+long);
+ }
+ const a=compact.parts.getObjectByName('LEFT_EYE_LINKED_PIVOT');
+ const b=full.parts.getObjectByName('LEFT_EYE_LINKED_PIVOT');
+ assert.notEqual(a.position.x,b.position.x);
+ for(const id of ['LEFT_UPPER_EYELINER','LEFT_LOWER_EYELINER',
+  'LEFT_SCULPTED_EYEBROW','LEFT_UPPER_LASH_MESH']){
+  const part=full.parts.getObjectByName(id);
+  assert.ok(part,'Missing linked mesh '+id);
+  let p=part;while(p.parent&&p!==b)p=p.parent;
+  assert.equal(p,b,id+' must follow the entire eye-region pivot');
+ }
+ for(const side of ['LEFT','RIGHT']){
+  const thin=compact.parts.getObjectByName(side+'_UPPER_LASH_MESH');
+  const thick=full.parts.getObjectByName(side+'_UPPER_LASH_MESH');
+  assert.ok(thick.userData.filamentCount>thin.userData.filamentCount*3,
+   'Real individual lash counts must respond to density slider');
+  assert.equal(thick.userData.lashLength,2.1);
+  assert.equal(thick.userData.lashThickness,1.9);
+  assert.equal(thick.userData.lashCurl,1.5);
+  assert.equal(full.parts.getObjectByName(side+'_UNDER_EYE_SHADOW'),undefined);
+  assert.equal(full.parts.getObjectByName(side+'_LOWER_LID_VOLUME'),undefined);
+  assert.equal(full.parts.getObjectByName(side+'_ORBITAL_EYEBALL')
+   .userData.noDetachedEyeball,true);
+ }
+ assert.equal(full.report.detailedParts.noStandaloneEyeSphere,true);
+ assert.equal(full.report.detailedParts.noUnderEyeBags,true);
+ assert.equal(full.report.detailedParts.lashDensityFactor,2.2);
+ assert.equal(full.report.detailedParts.eyeWidthFactor,1.45);
+ assert.equal(full.report.detailedParts.eyeHeightFactor,1.45);
 });
