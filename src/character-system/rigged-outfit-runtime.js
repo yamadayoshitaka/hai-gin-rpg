@@ -19,7 +19,7 @@ import {attachRealisticFace} from './facial-blink-runtime.js?v=1';
 import {sourceGripFromBounds} from './equipment-grip-policy.js?v=4.4.41';
 import {normalizeOutfitRarity,outfitRarityFinish} from './outfit-rarity-policy.js?v=4.4.47';
 import {protectFaceSkin} from './skin-face-protection.js?v=4.4.89';
-import {deriveGarmentCoverage,clipBodyToGarment,originalSkinGeometry} from './garment-coverage-runtime.js?v=4.5.2';
+import {deriveGarmentCoverage,clipBodyToGarment,originalSkinGeometry} from './garment-coverage-runtime.js?v=41';
 
 const loader=new GLTFLoader(),sourceCache=new Map();
 let materialPromise;
