@@ -173,40 +173,58 @@ export function attachIndependentHeadToBody(headModel,bodySource,{
  const actualBody=bodySource.clone(true);
  actualBody.name='CC0_CLIPPED_FEMALE_BODY';
  attachment.add(actualBody);
- // Outfit is optional; missing textures never imply an invented GLB.
- if(outfitSource?.traverse){
-  outfitSource.updateWorldMatrix(true,true);
-  const box=bounds(outfitSource),center=box.getCenter(V());
-  const garment=outfitSource.clone(true);
-  garment.name='REFERENCE_PALETTE_OUTFIT';
-  garment.position.add(new THREE.Vector3(
-   bodyCenter.x-center.x,bodyBox.min.y-box.min.y,bodyCenter.z-center.z
-  ));
-  garment.traverse(mesh=>{
-   if(!mesh.isMesh)return;
-   if(/helmet|scalp|beard|hair|head/i.test(mesh.name)){mesh.visible=false;return;}
-   const mats=Array.isArray(mesh.material)?mesh.material:[mesh.material];
-   const recolor=mats.map(material=>{
-    if(!material)return material;
-    const copy=material.clone();
-    if(/tunic|shirt|robe|cloth|fabric|dress/i.test(mesh.name))
-     copy.color?.set(cloth);
-    else if(/metal|armor|pauldron|chest|plate|shoulder/i.test(mesh.name)){
-     copy.color?.set(armor);if('metalness' in copy)copy.metalness=.45;
-    }
-    copy.side=THREE.DoubleSide;
-    return copy;
-   });
-   mesh.material=Array.isArray(mesh.material)?recolor:recolor[0];
-  });
-  attachment.add(garment);
- }
+ // Avoid overlaying the unfitted Viking donor outfit: its duplicate
+ // arms and floating sleeves expose the naked source torso. Instead apply
+ // cloth/metal colors to the *same physical body surface* (reversible).
+ // True armour remeshing remains a separate art-production task.
  attachment.position.copy(shift);
  headRoot.add(attachment);
  headRoot.updateWorldMatrix(true,true);
  const cutY=headBox.max.y-height*.76;
  const clipped=keepBodyBelowNeck(actualBody,cutY);
  attachment.userData.attachmentBodyBounds=bodyBox.clone();
+ const bodyMinY=bodyBox.min.y+shift.y,size=bodyBox.getSize(V());
+ const worldX=bodyCenter.x+shift.x;
+ const originalMaterials=new Map(),outfitMaterials=new Map();
+ const clothColor=new THREE.Color(cloth),armourColor=new THREE.Color(armor);
+ const skinColor=new THREE.Color('#edcbbf');
+ const pantsColor=new THREE.Color('#202f4b');
+ const bootsColor=new THREE.Color('#564736');
+ actualBody.updateWorldMatrix(true,true);
+ actualBody.traverse(mesh=>{
+  if(!mesh.isMesh||!mesh.visible)return;
+  const geo=mesh.geometry,positions=geo.getAttribute('position');
+  const colors=[],vertex=V();
+  for(let i=0;i<positions.count;i++){
+   vertex.fromBufferAttribute(positions,i).applyMatrix4(mesh.matrixWorld);
+   const ny=(vertex.y-bodyMinY)/size.y;
+   const nx=Math.abs((vertex.x-worldX)/(size.x*.5));
+   let tone=skinColor;
+   if(ny<.23)tone=bootsColor;
+   else if(ny<.49)tone=pantsColor;
+   else if(ny<.825&&nx<.67)
+    tone=ny>.66&&ny<.77&&nx<.53?armourColor:clothColor;
+   else if(ny>.73&&ny<.84&&nx>=.48&&nx<.84)
+    tone=armourColor;
+   colors.push(tone.r,tone.g,tone.b);
+  }
+  // The body mesh is a clone. Its original geometry and UV source survive.
+  geo.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));
+  originalMaterials.set(mesh,mesh.material);
+  const colored=Array.isArray(mesh.material)?
+   mesh.material.map(m=>m?.clone()||m):mesh.material?.clone();
+  for(const mat of Array.isArray(colored)?colored:[colored]){
+   if(!mat)continue;
+   mat.color?.set(0xffffff);mat.map=null;
+   mat.vertexColors=true;mat.roughness=.70;mat.needsUpdate=true;
+  }
+  outfitMaterials.set(mesh,colored);
+ });
+ const setOutfitVisible=enabled=>{
+  for(const [mesh,material] of originalMaterials)
+   mesh.material=enabled?outfitMaterials.get(mesh):material;
+ };
+ setOutfitVisible(true);
  const bodySampler=buildBodyDepthCollision(attachment,head,{clearance:height*.009});
  const report={
   connectedCharacterId:characterId,
@@ -217,11 +235,13 @@ export function attachIndependentHeadToBody(headModel,bodySource,{
   donorHeadTrianglesRemoved:clipped.removedTriangles,
   donorBodyTrianglesRetained:clipped.keptTriangles,
   hasRealBody:true,
-  outfitSource:outfitSource?'viking-outfit-source.glb (recolored preview)':'none',
+  outfitSource:'provisional fitted navy/silver body-surface palette',
+  noDuplicateOutfitLimbs:true,
   bodyCollider:bodySampler.getReport()
  };
  attachment.userData.report=report;
  return {root:attachment,body:actualBody,report,bodyCollider:bodySampler,
+  setOutfitVisible,
   dispose(){
    attachment.removeFromParent();
    attachment.traverse(mesh=>{
