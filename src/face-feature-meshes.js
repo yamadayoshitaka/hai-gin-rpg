@@ -145,7 +145,10 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   Math.sin(originalPupilAngle)*settings.irisDiameter));
  const eyeRadius=d.x*.052*eyeScale;
  const eyeHeight=box.min.y+d.y*.684;
- const eyeSpacing=d.x*.112;
+ // Preserve the saved eye size, but move the sockets slightly toward
+ // the true lateral face rather than burying the globe in the midface.
+ const eyeSpacing=d.x*.123;
+ const lateralEyeMargins=[];
  // Sclera centre is recessed. Upper and lower eyelids cover the spherical
  // edge, rather than drawing detached floating white eye disks.
  for(const side of [-1,1]){
@@ -154,10 +157,19 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   const faceZ=surfaceAt(x,y);
   // Set globes into the socket but forward enough for the colored iris
   // to stay visible at oblique camera angles; not floating over the lids.
-  const z=faceZ-eyeRadius*.12;
+  // The source head has a deep orbital side-wall. A constant offset
+  // can still leave the whole sclera hidden from a profile camera.
+  // Solve the eye centre from the actual LATERAL facial skin surface.
+  const profileProbeX=x+side*eyeRadius*1.18*.86;
+  const localSkinAtProfile=surfaceAt(profileProbeX,y);
+  const cornealAtProfile=eyeRadius*.97*Math.sqrt(1-.86*.86);
+  const desiredProfileGap=Math.max(d.z*.018,eyeRadius*.18);
+  const z=Math.max(faceZ+eyeRadius*.35,
+   localSkinAtProfile+desiredProfileGap-cornealAtProfile);
   const globe=new THREE.Mesh(new THREE.SphereGeometry(eyeRadius,36,24),eyeMat);
   globe.name=(side===-1?'LEFT':'RIGHT')+'_ORBITAL_EYEBALL';
-  globe.scale.set(1.18,.77,.89);
+  globe.scale.set(1.18,.79,.97);
+  globe.userData.profileExposed=true;
   globe.position.set(x,y,z);
   globe.userData.sourceProjected=true;
   globe.userData.colorRole='sclera';
@@ -175,14 +187,19 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
     return new THREE.Vector3(
      x+eyeRadius*1.18*sx,
      y+eyeRadius*.77*sy,
-     z+eyeRadius*.89*sz+eyeRadius*raise
+     z+eyeRadius*.97*sz+eyeRadius*raise
     );
    },material);
   irisMat.side=THREE.DoubleSide;pupilMat.side=THREE.DoubleSide;
-  const iris=makeCap('CURVED_IRIS',irisAngle,irisMat,.018);
+  const iris=makeCap('CURVED_IRIS',irisAngle,irisMat,.024);
   iris.userData.colorRole='iris';root.add(iris);
-  const pupil=makeCap('CURVED_PUPIL',pupilAngle,pupilMat,.024);
+  const pupil=makeCap('CURVED_PUPIL',pupilAngle,pupilMat,.031);
   pupil.userData.colorRole='pupil';root.add(pupil);
+  // Profile ray margin: near-lateral cornea vs. actual sclera-skull
+  // surface in the same head-local coordinates.
+  const lateralX=profileProbeX;
+  const cornealZ=z+cornealAtProfile;
+  lateralEyeMargins.push(cornealZ-localSkinAtProfile);
   const width=eyeRadius*1.12;
   let upperEyeliner=null,lowerEyeliner=null;
   for(const upper of [true,false]){
@@ -514,7 +531,9 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   actualIrisDiameterFactor:Number((Math.sin(irisAngle)/Math.sin(originalIrisAngle)).toFixed(3)),
   mouthHalfWidthFraction:.044,
   lipCenterNormalized:Number(((lipCenter-box.min.y)/d.y).toFixed(4)),
-  eyeScale,contactColorDefault:safeContactColor(settings.contactColor),
+  eyeScale,eyeProfileLateralMargins:lateralEyeMargins.map(v=>Number(v.toFixed(6))),
+  eyeballProjection:'true-3d-profile-exposed',
+  contactColorDefault:safeContactColor(settings.contactColor),
   eyeAngleDefault:settings.eyeAngle,
   maleCosmeticsDisabled:!female,
   noseSourceIntegrated:true,

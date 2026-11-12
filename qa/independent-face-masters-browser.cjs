@@ -57,6 +57,13 @@ async function expectVisibleLibraryPreset(page,context,contact='brown'){
   });
   await expectVisibleLibraryPreset(page,'browser-form-restoration');
   const original=await page.evaluate(()=>window.__faceMasterQA());
+  if(!original.savedNoseJawApplied||
+     original.savedNoseJawDefaults?.jawSharpness!==5||
+     original.savedNoseJawDefaults?.nostrilCover!==2||
+     original.savedNoseJawDefaults?.noseBridgeSharpness!==2.5||
+     !original.female?.detailedParts?.eyeProfileLateralMargins?.every(v=>v>.002)||
+     !original.male?.detailedParts?.eyeProfileLateralMargins?.every(v=>v>.002))
+   throw Error('Saved nose/chin or lateral eye visibility broken '+JSON.stringify(original));
   if(original.gender!=='female'||original.bodyMeshes!==0||
      original.visibleFaceMeshes!==1||original.sourceUntouched!==true||
      original.female?.sourceVertices<1100||original.male?.sourceVertices<1100||
@@ -142,15 +149,28 @@ async function expectVisibleLibraryPreset(page,context,contact='brown'){
    throw Error('Male and female rendered faces are identical');
   await page.locator('#female').click();
   const wigQA=await page.evaluate(()=>window.__faceMasterQA());
-  if(!wigQA.wigVisible||wigQA.wigReport?.rootCount!==240||
+  if(!wigQA.wigVisible||wigQA.wigReport?.rootCount!==1440||
+     !['templeLeft','templeRight','backLeft','backRight','napeLeft','napeRight'].every(
+       zone=>wigQA.wigReport.rootDistribution?.[zone]>=64)||
      !wigQA.wigReport?.collisionTypes.includes('face')||
      !wigQA.wigReport?.collisionTypes.includes('chest'))
    throw Error('Scalp wig and collision proxy not initialized '+JSON.stringify(wigQA.wigReport));
   await canvas.screenshot({path:path.join(out,'female-v12-saved-face-blonde-long-wig.png')});
+  await page.locator('#front').click();
+  const distanceWithHair=await page.evaluate(()=>window.__faceMasterQA().cameraDistance);
   await page.locator('#parts').click();
   await page.locator('#wig').click();
+  await page.locator('#front').click();
+  const distanceWithoutHair=await page.evaluate(()=>window.__faceMasterQA().cameraDistance);
+  if(Math.abs(distanceWithHair-distanceWithoutHair)>1e-6)
+   throw Error('Wig changed face camera zoom '+distanceWithHair+'/'+distanceWithoutHair);
   if((await page.evaluate(()=>window.__faceMasterQA())).wigVisible)
    throw Error('Wig toggle did not hide wig');
+  await page.locator('#side').click();
+  await canvas.screenshot({path:path.join(out,'female-v13-profile-visible-eyeballs.png')});
+  await page.locator('#threeQuarter').click();
+  await canvas.screenshot({path:path.join(out,'female-v13-3-4-visible-cornea.png')});
+  await page.locator('#front').click();
   if((await page.evaluate(()=>window.__faceMasterQA())).visiblePartMeshes!==0)
    throw Error('Facial mesh parts cannot be hidden independently');
   await canvas.screenshot({path:path.join(out,'female-face-only-no-parts.png')});
@@ -234,7 +254,8 @@ async function expectVisibleLibraryPreset(page,context,contact='brown'){
      reset.contactColor!=='#514139'||reset.faceMode!=='color')
     throw Error('Screenshot standard preset was not restored '+JSON.stringify(reset));
   await canvas.screenshot({path:path.join(out,'female-default-v9-lip-eye-blush.png')});
-  if(reset.female?.detailedParts.eyelinerMeshCount!==4||
+  if(!reset.savedNoseJawApplied||
+     reset.female?.detailedParts.eyelinerMeshCount!==4||
      reset.female?.detailedParts.eyelinerCornersClosed!==true||
      reset.female?.detailedParts.blushOpacityFactor!==.43||
      reset.female?.detailedParts.eyeAccentMeshCount!==2||
@@ -280,19 +301,19 @@ async function expectVisibleLibraryPreset(page,context,contact='brown'){
   await canvas.screenshot({path:path.join(out,'female-eye-angle-plus20-brows.png')});
   const beforeHairControls=await page.evaluate(()=>window.__faceMasterQA().femaleControls);
   await page.locator('#faceGroupTabs button').filter({hasText:'髪'}).click();
-  for(const [id,value] of [['wigDensity','96'],['wigLength','1.5']]){
+  for(const [id,value] of [['wigDensity','480'],['wigLength','1.5']]){
    await page.locator('#'+id).evaluate((el,v)=>{
     el.value=v;el.dispatchEvent(new Event('input',{bubbles:true}));
     el.dispatchEvent(new Event('change',{bubbles:true}));
    },value);
   }
   const hairAdjusted=await page.evaluate(()=>window.__faceMasterQA());
-  if(hairAdjusted.wigReport?.rootCount!==96||
+  if(hairAdjusted.wigReport?.rootCount!==480||
      hairAdjusted.wigReport?.lengthScale!==1.5||
      JSON.stringify(hairAdjusted.femaleControls)!==JSON.stringify(beforeHairControls))
    throw Error('Hair sliders affected face settings or wig '+JSON.stringify(hairAdjusted.wigReport));
-  await canvas.screenshot({path:path.join(out,'female-v12-wig-long-96.png')});
-  for(const [id,value] of [['wigDensity','240'],['wigLength','1']]){
+  await canvas.screenshot({path:path.join(out,'female-v13-wig-480-long.png')});
+  for(const [id,value] of [['wigDensity','1440'],['wigLength','1']]){
    await page.locator('#'+id).evaluate((el,v)=>{
     el.value=v;el.dispatchEvent(new Event('input',{bubbles:true}));
     el.dispatchEvent(new Event('change',{bubbles:true}));
