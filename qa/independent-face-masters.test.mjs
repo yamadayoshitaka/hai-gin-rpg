@@ -4,7 +4,7 @@ import {readFileSync,existsSync} from 'node:fs';
 import * as THREE from 'three';
 import {makeIndependentFaceMaster,FACE_MASTER_SPEC,femaleInnerFeatureDelta,femaleCheekJawDelta}
  from '../src/independent-face-masters.js';
-import {updateFaceFeatureAngles,applyFaceColorMode}
+import {updateFaceFeatureAngles,applyFaceColorMode,createFastFaceSurfaceSampler}
  from '../src/face-feature-meshes.js';
 import {createScalpAnchoredWig} from '../src/face-scalp-wig.js';
 import {normalizeFemaleFaceControls,FEMALE_V7_DEFAULTS,FACE_V7_PALETTE,CONTACT_COLORS,safeContactColor,LIBRARY_FACE_PRESET,MALE_REFERENCE_DEFAULT,FACE_SLIDER_RANGES}
@@ -702,4 +702,23 @@ test('v15 real scalp growth follows shell and respects final haircut',()=>{
  wig.update(.04);
  assert.ok(wig.getReport().normalUpdateDivisor===3);
  wig.dispose();
+});
+
+test('v15 indexed surface sampler matches exact raycast on real triangle geometry',()=>{
+ const geom=new THREE.SphereGeometry(.19,64,48);
+ const accel=createFastFaceSurfaceSampler(geom);
+ assert.equal(accel.cellCount,1280);
+ assert.ok(accel.triangleCount>5000);
+ const mesh=new THREE.Mesh(geom,new THREE.MeshBasicMaterial({
+  side:THREE.DoubleSide}));
+ const ray=new THREE.Raycaster();
+ for(const [x,y] of [[0,0],[.02,.02],[-.06,.03],[.08,-.07],[-.11,.09]]){
+  ray.set(new THREE.Vector3(x,y,.5),new THREE.Vector3(0,0,-1));
+  const hit=ray.intersectObject(mesh,false)[0];
+  assert.ok(hit);
+  const sample=accel.query(x,y);
+  assert.ok(sample!==null,'Indexed sampler did not find front triangle');
+  assert.ok(Math.abs(sample-hit.point.z)<1e-5,
+   'Indexed surface diverges from real raycast '+x+','+y);
+ }
 });
