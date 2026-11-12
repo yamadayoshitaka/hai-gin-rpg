@@ -522,7 +522,7 @@ test('v12 rooted 3D wig uses real scalp vertices and projects facial/torso conta
  const r=w.getReport();
  assert.equal(r.rootCount,96);
  assert.ok(r.realScalpCandidateCount>=12);
- assert.equal(r.meshCount,2);
+ assert.equal(r.meshCount,3);
  assert.ok(r.collisionTypes.includes('face'));
  assert.ok(r.collisionTypes.includes('left-shoulder')===false);
  const hair=w.root.getObjectByName('REAL_ROOTED_SWEPT_HAIR_LOCKS');
@@ -1246,4 +1246,47 @@ test('v25 actual contact lens pigment and liner remain visible on linked eyelids
  assert.ok(face.report.detailedParts.eyeDepthFactor<=-.1);
  assert.equal(face.report.detailedParts.eyeSpacingFactor,.65);
  assert.ok(normalizeFemaleFaceControls({eyeDepth:-9}).eyeDepth>=-.3);
+});
+
+test('v26 wig foundation is a transparent unchanged copy of the actual head and exported with the wig',()=>{
+ const face=makeIndependentFaceMaster(fixture().source,'female');
+ const original=face.face.geometry.getAttribute('position').array.slice();
+ const wig=createScalpAnchoredWig(face.face,{
+  count:96,visualFiberMultiplier:3
+ });
+ const foundation=wig.root.getObjectByName('DETACHABLE_WIG_TRANSPARENT_HEAD_BASE');
+ assert.ok(foundation?.isMesh);
+ assert.notEqual(foundation.geometry,face.face.geometry,
+  'Wig foundation must never mutate or share the character head geometry');
+ assert.equal(foundation.geometry.getAttribute('position').count,
+  face.face.geometry.getAttribute('position').count);
+ const cloned=foundation.geometry.getAttribute('position').array;
+ assert.deepEqual(Array.from(cloned.slice(0,45)),Array.from(original.slice(0,45)));
+ assert.deepEqual(Array.from(face.face.geometry.getAttribute('position').array),Array.from(original));
+ assert.equal(foundation.visible,true);
+ assert.equal(foundation.material.transparent,true);
+ assert.equal(foundation.material.opacity,0);
+ assert.equal(foundation.material.depthWrite,false);
+ assert.equal(foundation.material.colorWrite,false);
+ assert.equal(foundation.userData.exactCopyOfSculptedHead,true);
+ assert.equal(wig.getReport().transparentExactHeadWigBase,true);
+ assert.equal(wig.getReport().rootScalpLiftFraction,.0155);
+ assert.equal(wig.getReport().trueScalpRibbonVertexCollision,true);
+ assert.equal(wig.getReport().hairStrandWidthFraction,.0142);
+ // All original zone roots are now displaced slightly OUTWARD from the
+ // copied head, rather than being planted inside its surface.
+ const pos=face.face.geometry.getAttribute('position');
+ const box=face.face.geometry.boundingBox;
+ const center=box.getCenter(new THREE.Vector3());
+ const d=box.getSize(new THREE.Vector3());
+ for(const entry of wig.getRootSamples()){
+  const source=new THREE.Vector3().fromBufferAttribute(pos,entry.vertexIndex);
+  const lifted=new THREE.Vector3(...entry.point).sub(source);
+  const outside=source.clone().sub(center).normalize();
+  assert.ok(lifted.dot(outside)>=0,'Root cannot be buried beneath head');
+  assert.ok(lifted.length()>d.x*.010,'Outward lift must exceed original buried margin');
+ }
+ const report=wig.getReport();
+ assert.ok(report.scalpVertexCorrections>=0);
+ wig.dispose();
 });
