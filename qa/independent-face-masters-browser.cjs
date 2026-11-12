@@ -184,6 +184,8 @@ async function expectCenteredFaceSliders(page,gender){
   await page.locator('#female').click();
   const wigQA=await page.evaluate(()=>window.__faceMasterQA());
   if(!wigQA.wigVisible||wigQA.wigReport?.rootCount!==1440||
+     wigQA.wigReport?.hairShape!=='head-hugging-salon-layered-pointcut'||
+     wigQA.wigReport?.rearRootPolicy!=='actual-posterior-scalp-only'||
      !wigQA.wigReport?.faceCurtainPrevention||
      wigQA.wigReport?.faceTrimmedStrands<10||
      !['templeLeft','templeRight','backLeft','backRight','napeLeft','napeRight'].every(
@@ -191,7 +193,11 @@ async function expectCenteredFaceSliders(page,gender){
      !wigQA.wigReport?.collisionTypes.includes('face')||
      !wigQA.wigReport?.collisionTypes.includes('chest'))
    throw Error('Scalp wig and collision proxy not initialized '+JSON.stringify(wigQA.wigReport));
-  await canvas.screenshot({path:path.join(out,'female-v12-saved-face-blonde-long-wig.png')});
+  await canvas.screenshot({path:path.join(out,'female-v16-salon-hair-front.png')});
+  await page.locator('#back').click();
+  await canvas.screenshot({path:path.join(out,'female-v16-real-rear-scalp-hair.png')});
+  await page.locator('#side').click();
+  await canvas.screenshot({path:path.join(out,'female-v16-scalp-follow-side.png')});
   await page.locator('#front').click();
   const distanceWithHair=await page.evaluate(()=>window.__faceMasterQA().cameraDistance);
   await page.locator('#parts').click();
@@ -207,6 +213,22 @@ async function expectCenteredFaceSliders(page,gender){
   await page.locator('#parts').click();
   if((await page.evaluate(()=>window.__faceMasterQA())).visiblePartMeshes!==32)
    throw Error('Eye profile tests must render actual orbital meshes');
+  // As sliders move, all upper/lower eyeliner meshes must reproject to
+  // their real eyelids, not be left behind in old eye-angle coordinates.
+  for(const value of ['-20','0','20']){
+   await page.locator('#eyeAngle').evaluate((el,v)=>{
+    el.value=v;el.dispatchEvent(new Event('input',{bubbles:true}));
+   },value);
+   const angles=await page.evaluate(()=>window.__faceMasterQA().currentFeatureAngles);
+   if(angles?.eyeAngle!==Number(value)||angles?.eyelinerMeshesRefitted!==4)
+    throw Error('Eye tilt did not refit eyeliner to both eyelids '+JSON.stringify(angles));
+   await page.locator('#front').click();
+   await canvas.screenshot({path:path.join(out,
+    'female-v16-eyeliner-angle-'+value.replace('-','minus')+'.png')});
+  }
+  await page.locator('#eyeAngle').evaluate(el=>{
+   el.value='0';el.dispatchEvent(new Event('input',{bubbles:true}));
+  });
   await page.locator('#side').click();
   await canvas.screenshot({path:path.join(out,'female-v15-actual-eyes-side.png')});
   await page.locator('#threeQuarter').click();
