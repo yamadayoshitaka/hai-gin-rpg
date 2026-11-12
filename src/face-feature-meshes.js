@@ -446,8 +446,8 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
    const upperFold=buildGrid(
     (side===-1?'LEFT':'RIGHT')+'_DOUBLE_EYELID_FOLD',28,4,(u,v)=>{
      const t=2*u-1,soft=Math.pow(Math.max(0,1-t*t),.72);
-     const yy=y+eyeRadius*(.58+.14*soft+.11*v);
-     const xx=x+t*eyeRadius*1.15;
+     const yy=y+eyeRadius*(.58+.14*soft+.11*v)*eyeHeight;
+     const xx=x+t*eyeRadius*1.15*eyeWidth;
      const z=surfaceAt(xx,yy)+d.z*(.004+.0035*Math.sin(Math.PI*v)*soft);
      return new THREE.Vector3(xx,yy,z);
     },lidMat);
@@ -496,7 +496,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   if(female){
    const pivot=new THREE.Group();
    pivot.name=eyeLabel+'_BROW_ANGLE_CONTROL';
-   const browY=y+eyeRadius*1.47;
+   const browY=y+eyeRadius*(1.15+.32*eyeHeight);
    pivot.position.set(x,browY,surfaceAt(x,browY));
    pivot.userData.control='brow';
    pivot.userData.side=side;
@@ -529,7 +529,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
    const pivot=new THREE.Group();
    const label=side===-1?'LEFT':'RIGHT';
    pivot.name=label+'_BROW_ANGLE_CONTROL';
-   const browY=y+eyeRadius*1.56;
+   const browY=y+eyeRadius*(1.24+.32*eyeHeight);
    pivot.position.set(x,browY,surfaceAt(x,browY));
    const brow=buildGrid(label+'_NATURAL_MALE_BROW',30,4,(u,v)=>{
     const t=2*u-1,arch=Math.pow(Math.max(0,1-t*t),.72);
