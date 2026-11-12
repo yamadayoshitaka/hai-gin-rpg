@@ -697,6 +697,9 @@ test('v15 real scalp growth follows shell and respects final haircut',()=>{
  assert.equal(wig.getReport().smoothScalpNormals,true);
  assert.equal(wig.getReport().verticalForeheadDrape,true);
  const scalp=wig.root.getObjectByName('REAL_SCALP_TRIANGLE_HAIR_CAP');
+ assert.equal(scalp.userData.rearUndercoatAnchoredToRealScalp,true);
+ assert.ok(scalp.userData.rearUndercoatTriangleCount>=400);
+ assert.equal(wig.getReport().realScalpPosteriorUndercoat,true);
  assert.equal(scalp.geometry.getAttribute('normal').count,
   scalp.geometry.getAttribute('position').count);
  assert.equal(wig.getReport().scalpCoverage,
