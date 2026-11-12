@@ -56,7 +56,21 @@ const tasks=stages.flatMap(stage=>{
  return {panel,voice,text,key,filename:crypto.createHash('sha256').update(key).digest('hex').slice(0,16)+'.'+format};
  });
 });
-const preexisting=tasks.filter(t=>manifest.clips[t.key]).length;
+// A manifest entry is not proof that the audio asset was actually generated.
+// Keep the same clip key but regenerate missing/truncated files safely.
+async function registeredClipExists(task){
+ const rel=manifest.clips[task.key];
+ if(!rel)return false;
+ const expected='audio/voicevox/clips/'+task.filename;
+ if(rel!==expected)return false;
+ try{
+  const info=await fs.stat(path.resolve(rel));
+  return info.isFile()&&info.size>2000;
+ }catch(error){if(error.code==='ENOENT')return false;throw error;}
+}
+const existingKeys=new Set();
+for(const task of tasks)if(await registeredClipExists(task))existingKeys.add(task.key);
+const preexisting=existingKeys.size;
 if(dryRun){
  console.log(JSON.stringify({dryRun:true,stages:stages.length,panels:tasks.length,alreadyRegistered:preexisting,required:tasks.length-preexisting,format},null,2));
  process.exit(0);
