@@ -953,7 +953,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   layeredRibbonCount:hairLayers,ribbonVerticesPerStation:ribbonStride,
   strandThicknessFraction:half*.47/d.x,
   salonStaticLongLayers:true,
-  helmetSilhouetteFix:'low-crown-dense-rooted-fine-feathered-overlapping-fibres',
+  helmetSilhouetteFix:'low-crown-dense-roots-curtain-fringe-long-temples-feathered-tips',
   templeLongLayerCount:strands.filter(s=>s.zone.startsWith('temple')&&!s.overFace).length,
   fringeCutVariation:'center-shorter-sides-longer-with-deterministic-pointcut',
   narrowNaturalPart:true,templeCheekVolumeRestShape:true,
