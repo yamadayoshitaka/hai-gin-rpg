@@ -700,7 +700,7 @@ test('v15 real scalp growth follows shell and respects final haircut',()=>{
  const scalp=wig.root.getObjectByName('REAL_SCALP_TRIANGLE_HAIR_CAP');
  assert.equal(scalp.userData.rearUndercoatAnchoredToRealScalp,true);
  assert.ok(scalp.userData.rearUndercoatTriangleCount>=400);
- assert.equal(scalp.userData.rearUndercoatStripCount,52,
+ assert.equal(scalp.userData.rearUndercoatStripCount,88,
   'Rear hair should be individual overlapping narrow strands, not one slab');
  assert.equal(scalp.userData.rearUndercoatStyle,
   'overlapping-real-scalp-rooted-tapered-ribbons');
@@ -854,4 +854,40 @@ test('v17 wigs are independently registered assets with crown center part and ph
  assert.equal(other.getReport().centerPart,false);
  assert.notEqual(wig.root,other.root,'Each wig must be a separate 3D instance');
  wig.dispose();other.dispose();
+});
+
+test('v18 full crown/rear rooted hair and straight gravity-groomed long locks',()=>{
+ const m=makeIndependentFaceMaster(fixture().source,'female');
+ const wig=createScalpAnchoredWig(m.face,{count:480,lengthScale:1.25});
+ const report=wig.getReport();
+ assert.equal(report.rootCount,480);
+ assert.equal(report.crownRootRatio,.20);
+ assert.equal(report.posteriorRootRatio,.51);
+ assert.equal(report.undercoatLockCount,88);
+ assert.equal(report.groomingSmoothingPasses,3);
+ assert.ok(report.frizzAmplitudeFactor<=.1);
+ assert.equal(report.scalpCrownCoverage,'extended-to-rear-top');
+ assert.equal(report.rearScalpCoverage,'nape-and-occipital-head-triangles');
+ assert.ok(report.rootDistribution.crown>=90,'Crown does not have enough roots');
+ for(const key of ['backLeft','backRight'])
+  assert.ok(report.rootDistribution[key]>=90,'Back scalp roots missing '+key);
+ const g=m.face.geometry;
+ const box=g.boundingBox,d=box.getSize(new THREE.Vector3());
+ const midZ=(box.min.z+box.max.z)*.5;
+ const samples=wig.getCoverageSamples();
+ const crowns=samples.filter(x=>x.zone==='crown');
+ const rear=samples.filter(x=>x.zone.startsWith('back')||x.zone.startsWith('nape'));
+ assert.ok(crowns.length>=24&&rear.length>=70);
+ assert.ok(crowns.some(x=>x.root[2]<midZ),
+  'New crown hair does not extend to back half of head');
+ assert.ok(rear.every(x=>x.root[2]<midZ-d.z*.035),
+  'Back hair is still being generated on the face');
+ assert.ok(samples.every(x=>Number.isFinite(x.guideDeviation)));
+ const cap=wig.root.getObjectByName('REAL_SCALP_TRIANGLE_HAIR_CAP');
+ assert.equal(cap.userData.rearUndercoatStripCount,88);
+ assert.ok(cap.userData.rearUndercoatMaxStripWidth<d.x*.025);
+ for(const cut of wig.getCutSamples())
+  assert.ok(cut.minY>=cut.trimY-1e-5);
+ wig.update(.05);
+ wig.dispose();
 });
