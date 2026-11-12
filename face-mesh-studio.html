@@ -2,7 +2,7 @@
 <html lang="ja"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#14263a">
-<title>灰銀のレゾナンス | 顔v14・保存顔がスライダー中央</title>
+<title>灰銀のレゾナンス | 顔v15・頭皮に沿う髪／追従メイク／高速スライダー</title>
 <style>
 :root{font:15px/1.55 system-ui,-apple-system,"Noto Sans JP",sans-serif;color-scheme:dark}
 *{box-sizing:border-box}
@@ -62,7 +62,7 @@ button{padding:9px 11px}
 </style></head>
 <body>
 <header>
-<h1>男女・顔と立体パーツ v14</h1>
+<h1>男女・顔と立体パーツ v15</h1>
 <p>ライブラリに保存された実GLBの顔設定（顎先5倍・鼻穴隠し2・鼻筋2.5）を男女の実メッシュ標準に固定。口紅とチークを実メッシュの頂点に着色。上下アイライン・眉・眼球を調整し、女性用の高密度ロング（後頭部・両側頭部・襟足まで髪束生成・顔と肩への衝突対応）を追加。保存値とズームを維持します。</p>
 </header>
 <main><section class="panel">
@@ -165,7 +165,7 @@ import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {GLTFExporter} from 'three/addons/exporters/GLTFExporter.js';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {makeIndependentFaceMaster,FACE_MASTER_SPEC} from './src/independent-face-masters.js';
-import {updateFaceFeatureAngles,applyFaceColorMode} from './src/face-feature-meshes.js';
+import {updateFaceFeatureAngles,applyFaceColorMode,updateRealFacePigment} from './src/face-feature-meshes.js';
 import {createScalpAnchoredWig} from './src/face-scalp-wig.js';
 import {FEMALE_V7_DEFAULTS,MALE_REFERENCE_DEFAULT,FACE_SLIDER_RANGES,CONTACT_COLORS,safeContactColor} from './src/face-v7-controls.js';
 const $=id=>document.getElementById(id);
@@ -212,13 +212,15 @@ let faceMode='color',femaleSource=null,modelChanges={...FEMALE_V7_DEFAULTS};
 let maleChanges={...MALE_REFERENCE_DEFAULT};
 let contactColor=CONTACT_COLORS.brown;
 let wigOn=true,wigDensity=1440,wigLength=1,wigColor='blonde';
+const performanceMetrics={headRebuilds:0,wigRebuilds:0,fastLipstickRepaints:0};
 function setActive(ids,id){
  for(const x of ids)$(x).setAttribute('aria-pressed',String(x===id));
 }
 function metrics(){
  const model=models.get(gender);
  return {loaded:ready,gender,view:angle,wire:wired,partsOn,
-  faceMode,contactColor,cameraDistance:camera.position.distanceTo(orbit.target),
+  faceMode,contactColor,performanceMetrics:{...performanceMetrics},
+  cameraDistance:camera.position.distanceTo(orbit.target),
   cameraTarget:orbit.target.toArray(),femaleControls:{...modelChanges},
   maleControls:{...maleChanges},
   wigVisible:wigOn&&gender==='female',wigReport:wigs.get('female')?.getReport()||null,
@@ -315,6 +317,7 @@ for(const mode of ['clay','color']){
  $(mode).addEventListener('click',()=>{faceMode=mode;repaint();});
 }
 function rebuildWig(){
+ performanceMetrics.wigRebuilds++;
  const previous=wigs.get('female');
  if(previous){
   previous.root.removeFromParent();previous.dispose();wigs.delete('female');
@@ -365,7 +368,12 @@ function rebuildFemale(){
  scene.add(next.root);
  models.set('female',next);
  applyFaceColorMode(next.face,faceMode,{contactColor});
- rebuildWig();
+ // Nose, chin and lipstick do not change the rear/crown hair follicles.
+ // Reparent existing 1440-strand wig instead of rebuilding its geometry.
+ const oldWig=wigs.get('female');
+ if(oldWig&&wigOn)next.face.add(oldWig.root);
+ else if(wigOn)rebuildWig();
+ performanceMetrics.headRebuilds++;
  if(wired)next.face.traverse(o=>{if(o.isMesh)o.material.wireframe=true;});
  if(prev){
   scene.remove(prev.root);
@@ -389,6 +397,7 @@ function rebuildMale(){
  next.parts.visible=partsOn;
  scene.add(next.root);models.set('male',next);
  applyFaceColorMode(next.face,faceMode,{contactColor});
+ performanceMetrics.headRebuilds++;
  if(wired)next.face.traverse(o=>{if(o.isMesh)o.material.wireframe=true;});
  if(prev){
   scene.remove(prev.root);
@@ -403,8 +412,8 @@ function rebuildMale(){
  $('metrics').textContent=JSON.stringify(metrics(),null,2);
 }
 const rebuildKeys=['irisDiameter','eyeSize','jawSharpness','noseTipLift',
- 'nostrilCover','noseBridgeSharpness',
- 'lipstickX','lipstickY','lipstickWidth','lipstickHeight'];
+ 'nostrilCover','noseBridgeSharpness'];
+const cosmeticKeys=['lipstickX','lipstickY','lipstickWidth','lipstickHeight'];
 const angleKeys=['eyeAngle'];
 const multiplierKeys=['irisDiameter','eyeSize','jawSharpness','lipstickWidth','lipstickHeight'];
 function setFaceControlDisplay(key,value){
@@ -416,7 +425,7 @@ function setFaceControlDisplay(key,value){
   multiplierKeys.includes(key)?'×':'');
 }
 function syncFaceControlDisplays(){
- for(const key of [...rebuildKeys,...angleKeys])
+ for(const key of [...rebuildKeys,...cosmeticKeys,...angleKeys])
   setFaceControlDisplay(key,modelChanges[key]);
  const preset=Object.keys(CONTACT_COLORS).find(
   key=>CONTACT_COLORS[key]===contactColor)||'custom';
@@ -427,17 +436,25 @@ function syncFaceControlDisplays(){
 // Reconcile values even when the browser restores a prior form snapshot.
 // This must NOT reset user edits: modelChanges/contactColor remain canonical.
 window.addEventListener('pageshow',syncFaceControlDisplays);
-for(const key of [...rebuildKeys,...angleKeys]){
+for(const key of [...rebuildKeys,...cosmeticKeys,...angleKeys]){
  const el=$(key);
  el.addEventListener('input',()=>{
   modelChanges[key]=Number(el.value);
   setFaceControlDisplay(key,modelChanges[key]);
   if(angleKeys.includes(key)&&models.get('female')){
    updateFaceFeatureAngles(models.get('female').parts,modelChanges);
-   $('metrics').textContent=JSON.stringify(metrics(),null,2);
+  }
+  if(cosmeticKeys.includes(key)&&models.get('female')){
+   // No raycasting or mesh rebuild for cosmetic-only input.
+   updateRealFacePigment(models.get('female').face,modelChanges,faceMode);
+   performanceMetrics.fastLipstickRepaints++;
   }
  });
+ // Sculpt geometry changes only on finger release; lipstick responds live.
  if(rebuildKeys.includes(key))el.addEventListener('change',rebuildFemale);
+ if(cosmeticKeys.includes(key))el.addEventListener('change',()=>{
+  $('metrics').textContent=JSON.stringify(metrics(),null,2);
+ });
 }
 const maleRebuildKeys=['jawSharpness','eyeSize','irisDiameter','noseTipLift',
  'nostrilCover','noseBridgeSharpness','beardDensity','beardLength'];
