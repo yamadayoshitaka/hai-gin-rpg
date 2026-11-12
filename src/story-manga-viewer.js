@@ -5,7 +5,7 @@
  * The UI never touches combat actors, town 3D models or player stats.
  */
 import {mangaForStage} from './story-stage-manga.js';
-import {registeredStoryPanelAsset,storySheetCrop} from './story-panel-registered-art.js';
+import {registeredStoryPanelAsset,storySheetCrop,storyArtDisplayUrl} from './story-panel-registered-art.js';
 import {comicForStage,comicPageAsset} from './story-chapter-comic.js';
 import {renderStoryRubyText} from './story-ruby-display.js';
 import {fantasyCueForMangaPanel} from './fantasy-scene-score.js';
@@ -110,7 +110,7 @@ export function createMangaViewer({container=document.body,storage=globalThis.lo
    };
    img.onerror=()=>{if(request!==pageRequest)return;
      if(kind==='cut')attempt(sheet,'sheet');else unavailable();};
-   img.src=url;
+   img.src=storyArtDisplayUrl(url);
    if(img.complete&&img.naturalWidth>0)img.onload();
   };
   attempt(cut||sheet,cut?'cut':'sheet');

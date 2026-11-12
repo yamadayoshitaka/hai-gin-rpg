@@ -44,6 +44,7 @@ footer{padding:22px 0;color:#b3c1ce}
 </main>
 <script type="module">
 import {comicForStage,comicPageAsset} from "./src/story-chapter-comic.js";
+import {storyArtDisplayUrl} from "./src/story-panel-registered-art.js";
 import {CAMPAIGN_STAGE_BY_ID} from "./src/campaign-stage-plan.js";
 const $=id=>document.getElementById(id);
 const stageIds=["c01-s01","c01-s02","c01-s03"];
@@ -74,7 +75,7 @@ const stat=()=>{let yes=records.filter(x=>x.checked&&x.loaded).length;
 };
 const inspect=rec=>new Promise(resolve=>{
  const img=new Image();img.onload=()=>{rec.loaded=true;rec.checked=true;resolve();render()};
- img.onerror=()=>{rec.checked=true;resolve();render()};img.src=rec.url;
+ img.onerror=()=>{rec.checked=true;resolve();render()};img.src=storyArtDisplayUrl(rec.url);
 });
 function render(){
  stat();const list=records.filter(r=>($('gender').value==="all"||r.gender===$('gender').value)&&
@@ -84,7 +85,7 @@ function render(){
  for(const rec of list){
   const article=document.createElement('article');article.className='card';article.dataset.asset=rec.url;
   const fig=document.createElement('figure');
-  if(rec.loaded){const im=document.createElement('img');im.loading='lazy';im.src=rec.url;im.alt=rec.stageName+"／"+labels[rec.status]+"／"+(rec.gender==="female"?"女性":"男性")+"の漫画原画";fig.append(im);}
+  if(rec.loaded){const im=document.createElement('img');im.loading='lazy';im.src=storyArtDisplayUrl(rec.url);im.alt=rec.stageName+"／"+labels[rec.status]+"／"+(rec.gender==="female"?"女性":"男性")+"の漫画原画";fig.append(im);}
   else {const empty=document.createElement('div');empty.className='missing-art';empty.textContent=rec.checked?"原画未登録：別の性別・結果の絵は表示しません":"原画の存在を確認中";fig.append(empty);}
   const body=document.createElement('div');body.className='body';
   const name=document.createElement('h3');name.textContent=rec.stageId+" "+rec.stageName;

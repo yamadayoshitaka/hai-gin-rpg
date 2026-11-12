@@ -31,3 +31,10 @@ export function storySheetCrop(shot,pageCellCount){
   widthPercent:200,heightPercent:rows*100,
   leftPercent:-(cell%2)*100,topPercent:-Math.floor(cell/2)*100});
 }
+
+/** Version specific C01-S01 artwork URLs keep mobile browsers from showing older cached image bytes. */
+export function storyArtDisplayUrl(url){
+ if(typeof url!=='string'||!url)return url;
+ if(!/\/assets\/story\/chapters\/c01\/(?:panels\/)?c01-s01-/.test(url))return url;
+ return url+(url.includes('?')?'&':'?')+'artrev=c01s01-20261113-hires';
+}
