@@ -147,6 +147,48 @@ export function buildBodyDepthCollision(bodyRoot,headMesh,{clearance=.006}={}){
  };
 }
 
+/** Keep actual head/neck, but remove the donor head GLB's SHOULDER BUST.
+ * Rendering that bust alongside the real body caused a broad skin-coloured
+ * cape/second torso. The uncropped scalp source must be cloned BEFORE this
+ * operation so independent wigs remain rooted on the same real head.
+ */
+export function removeHeadBustBelowNeck(face,cutY){
+ if(!face?.isMesh||!Number.isFinite(cutY))
+  throw Error('Real head and neck-cut plane required');
+ face.updateWorldMatrix(true,false);
+ const geo=face.geometry,p=geo.getAttribute('position'),idx=geo.getIndex();
+ const count=idx?idx.count:p.count,groups=geo.groups?.length?geo.groups:
+  [{start:0,count,materialIndex:0}];
+ const heights=new Float64Array(p.count),v=V();
+ for(let i=0;i<p.count;i++)
+  heights[i]=v.fromBufferAttribute(p,i).applyMatrix4(face.matrixWorld).y;
+ const triangles=[],newGroups=[];
+ let removed=0;
+ for(const group of groups){
+  const start=triangles.length;
+  for(let j=group.start;j+2<Math.min(group.start+group.count,count);j+=3){
+   const a=idx?idx.getX(j):j,b=idx?idx.getX(j+1):j+1,
+    c=idx?idx.getX(j+2):j+2;
+   if(Math.min(heights[a],heights[b],heights[c])<cutY){
+    removed++;continue;
+   }
+   triangles.push(a,b,c);
+  }
+  if(triangles.length>start)newGroups.push({
+   start,count:triangles.length-start,materialIndex:group.materialIndex||0
+  });
+ }
+ if(removed===0||triangles.length<30)
+  throw Error('Head bust could not be cropped without damaging the face');
+ const copy=geo.clone();copy.setIndex(triangles);copy.clearGroups();
+ for(const g of newGroups)copy.addGroup(g.start,g.count,g.materialIndex);
+ copy.computeBoundingBox();copy.computeBoundingSphere();
+ face.geometry=copy;
+ face.userData.bustRemovedAtNeck=true;
+ face.userData.bustTrianglesRemoved=removed;
+ return {removedTriangles:removed,remainingTriangles:triangles.length/3,
+  cutY};
+}
 export function attachIndependentHeadToBody(headModel,bodySource,{
  outfitSource=null,characterId='hero-girl-01',armor='#c9cbd3',cloth='#263958'
 }={}){
