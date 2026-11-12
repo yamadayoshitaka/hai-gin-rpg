@@ -216,6 +216,23 @@ function bird(g,s){
  }
  for(const side of [-1,1]){
    const wing=g.group(side<0?'wingL':'wingR',[side*.30,1.77,-.06]);
+   if(s.id==='m015'){
+     // Humanoid tengu uses shared humanoid assets: preserve the exact
+     // pre-refactor wing/leg geometry and animation contracts.
+     g.tube(wing,'skin',[[0,0,0],[side*.55,.25,-.05],[side*1.18,.36,-.29],[side*1.56,.18,-.53]],.085);
+     for(let i=0;i<15+v*4;i++){
+       const t=i/(14+v*4),x=side*(.22+1.31*t);
+       g.fin(wing,i%3?'light':'accent',[x,.12,-.10-t*.32],
+         [x+side*(.20+.35*t),-.40-t*.47,-.20-t*.34],.07+Math.sin(t*Math.PI)*.09);
+       g.fin(wing,'skin',[x,.17,-.08-t*.23],
+         [x+side*(.14+.18*t),-.13-t*.18,-.17-t*.26],.058);
+     }
+     const leg=g.group('leg'+(side<0?'L':'R'),[side*.17,1.09,.10]);
+     g.bone(leg,'skin',[0,0,0],[0,-.93,.12],.075);
+     g.sphere(leg,'shadow',[0,-.93,.16],[.10,.08,.16]);
+     g.claws(leg,[0,-.95,.24],1,3,1.3);
+     continue;
+   }
    // Shoulder -> elbow -> wrist: distinct physically movable local joints.
    g.tube(wing,'skin',[[0,0,0],[side*.28,.16,-.04],[side*.55,.25,-.05]],.082);
    const elbow=g.group('wingElbow'+(side<0?'L':'R'),[side*.55,.25,-.05],wing);
