@@ -482,6 +482,11 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  const guideCount=Math.ceil(lockCount/guideStride);
  let collisions=0,faceContacts=0,bodyContacts=0,realBodyContacts=0,accumulator=0,elapsed=0;
  let meshUpdates=0;
+ // Vertex edges as well as centre guides must respect imported torso triangles.
+ // Only the single-character face/body preview supplies this optional solver.
+ const renderBodyCollider=bodyCollisionResolver?.resolve?bodyCollisionResolver:null;
+ const ribbonCollisionPoint=new THREE.Vector3();
+ let ribbonBodyContacts=0;
  // Real head-surface collision. The original giant ellipsoid forced
  // every strand out to an artificial spherical helmet around the ears.
  // Only points INSIDE the actual head silhouette are nudged outward.
@@ -537,8 +542,10 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    for(let j=0;j<=segments;j++){
     const p=strand.points[j],t=j/segments;
     // Fine ambient sway for strands not simulated with a dynamic guide.
+    // Adjacent locks move as soft clumps, not independent high-frequency wires.
+    const clumpPhase=Math.floor(i/12)*.12;
     const sway=i%guideStride?
-     Math.sin(elapsed*.8+i*.37+j*.15)*d.x*.00010*t*t:0;
+     Math.sin(elapsed*.55+clumpPhase+j*.045)*d.x*.000018*t*t:0;
     // Full thick clumps near scalp and mid-length; point-cut taper only
    // in the last 15% instead of uniformly thinning into wire-like ends.
    const tip=1-.90*Math.pow(t,8);
@@ -569,9 +576,21 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
      const at=(i*(segments+1)*4+j*4+k)*3;
      const sign=k%2===0?-1:1,secondary=k>=2;
      const scale=sign*width*(secondary?.68:1);
-     vertices[at]=p.x+sway+scale*(secondary?sx:wx);
-     vertices[at+1]=p.y+scale*(secondary?sy:wy);
-     vertices[at+2]=p.z+scale*(secondary?sz:wz);
+     let vx=p.x+sway+scale*(secondary?sx:wx);
+     let vy=p.y+scale*(secondary?sy:wy);
+     let vz=p.z+scale*(secondary?sz:wz);
+     // The guide centre may be legal while the wide ribbon edge penetrates
+     // clothing. Resolve actual rendered corners, without unrooting j=0.
+     if(renderBodyCollider&&j>0&&vy<box.min.y+d.y*.72){
+      ribbonCollisionPoint.set(vx,vy,vz);
+      if(renderBodyCollider.resolve(ribbonCollisionPoint)){
+       vx=ribbonCollisionPoint.x;vy=ribbonCollisionPoint.y;
+       vz=ribbonCollisionPoint.z;ribbonBodyContacts++;
+      }
+     }
+     vertices[at]=vx;
+     vertices[at+1]=vy;
+     vertices[at+2]=vz;
     }
    }
   }
@@ -593,7 +612,8 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    s.points[0].copy(s.root);
    for(let j=1;j<=segments;j++){
     const p=s.points[j],v=s.vel[j],goal=s.rest[j];
-    const wind=Math.sin(elapsed*.9+i*.37+j*.16)*d.x*.00016*(j/segments);
+    const wind=Math.sin(elapsed*.65+Math.floor(i/12)*.12+j*.045)*
+     d.x*.000035*(j/segments);
     v.multiplyScalar(.82).addScaledVector(goal.clone().sub(p),step*13);
     v.y-=step*d.y*.55*style.gravityScale;
     p.addScaledVector(v,step);
@@ -631,7 +651,9 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   hairShape:'head-hugging-salon-layered-pointcut',
   scalpCrownCoverage:'extended-to-rear-top',
   rearScalpCoverage:'nape-and-occipital-head-triangles',
-  groomingSmoothingPasses:3,frizzAmplitudeFactor:.10,
+  groomingSmoothingPasses:3,frizzAmplitudeFactor:.025,
+  hairClumpSwayGroupSize:12,
+  renderedRibbonBodyCollision:!!renderBodyCollider,
   strandRibbonOrientation:'guide-tangent-on-scalp',
   crownRootRatio:.20,posteriorRootRatio:.51,
   undercoatLockCount:cap.userData.rearUndercoatStripCount,
@@ -662,7 +684,8 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  },getReport(){
   return {...root.userData.wigReport,collisionEvents:collisions,
    faceContactEvents:faceContacts,bodyContactEvents:bodyContacts,
-   realBodyContactEvents:realBodyContacts};
+   realBodyContactEvents:realBodyContacts,
+   ribbonBodyContactEvents:ribbonBodyContacts};
  },resolvePoint(point){
   const p=point.clone();resolveCollision(p);return p;
  },getCutSamples(){
