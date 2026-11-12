@@ -8,6 +8,8 @@ on:
       - 'src/battle-ui-refinement.css'
       - 'src/core-battle-bridge.js'
       - 'src/inn-deployment.js'
+      - 'src/adaptive-battle-resolution.js'
+      - 'qa/command-touch-camera-performance.test.mjs'
       - 'src/tactical-command-descriptions.js'
       - 'qa/inn-deployment-command-effects.test.mjs'
       - 'src/story-campaign.js'
@@ -28,6 +30,8 @@ on:
       - 'src/battle-ui-refinement.css'
       - 'src/core-battle-bridge.js'
       - 'src/inn-deployment.js'
+      - 'src/adaptive-battle-resolution.js'
+      - 'qa/command-touch-camera-performance.test.mjs'
       - 'src/tactical-command-descriptions.js'
       - 'qa/inn-deployment-command-effects.test.mjs'
       - 'src/story-campaign.js'
@@ -52,11 +56,13 @@ jobs:
         run: |
           node --check src/tactical-command-evaluation.js
           node --check src/inn-deployment.js
+          node --check src/adaptive-battle-resolution.js
           node --check src/tactical-command-descriptions.js
           node --check src/tactical-command-battle-ui.js
           node --check src/battle-victory-rewards.js
           node --experimental-vm-modules qa/battle-ui-objective-rewards.test.mjs
           node qa/tactical-command-ui.test.mjs
           node --experimental-vm-modules qa/inn-deployment-command-effects.test.mjs
+          node --experimental-vm-modules qa/command-touch-camera-performance.test.mjs
           node qa/battle-radar-locked-strategy-and-movement.test.mjs
           node qa/town-facility-squad-gear.test.mjs
