@@ -23,7 +23,8 @@ assert.match(html,/kind==='ultimate'\|\|kind==='result'/);
 assert.match(html,/stamp-lastAutomaticFocusAt<6500/);
 assert.match(html,/cinematicFocusQueue\.push\(entry\)/);
 assert.match(html,/overPosition:overTarget\.clone\(\)\.add\(cameraOverviewOffset\)/);
-assert.match(html,/commanderCinematic=null;setCameraActive\('camOverview'\)/);
+assert.match(html,/commanderCinematic=null;\s*setBattleCamera\(shot\.overTarget,cameraOverviewOffset\);\s*setCameraActive\('camOverview'\)/,
+ 'Cinematic completion must restore the full overview camera position and mode');
 assert.match(html,/if\(next\.squadId!=null&&/);
 assert.match(html,/beginSquadFocusCinematic\(next\.squadId,next\.cameraTeam\?\?0,'result'\)/);
 assert.match(html,/queueBattleFocusCinematic\(\(target\.x-6\)\*CELL,\(target\.z-6\)\*CELL/);
