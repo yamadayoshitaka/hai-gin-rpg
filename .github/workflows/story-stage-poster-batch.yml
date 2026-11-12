@@ -48,6 +48,13 @@ jobs:
           STAGE_START: ${{ github.event.inputs.start || 'c01-s02' }}
           STAGE_COUNT: ${{ github.event.inputs.count || '2' }}
         run: node scripts/prepare-story-stage-posters.mjs --start "$STAGE_START" --count "$STAGE_COUNT"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install free on-runner crop validator
+        run: python -m pip install --disable-pip-version-check Pillow==11.3.0
+      - name: Crop any supplied high-resolution poster sources into isolated per-image review packs
+        run: python scripts/ingest-story-stage-posters.py
       - uses: actions/upload-artifact@v4
         with:
           name: story-poster-free-preflight-${{ github.run_id }}
