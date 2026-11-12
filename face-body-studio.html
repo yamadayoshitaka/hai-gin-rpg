@@ -32,6 +32,7 @@ label{display:block;margin:10px 0}select{width:100%}
 .actionButtonGrid button{min-height:49px;font-weight:600;background:#29465d;border-color:#6c91a4}
 .actionButtonGrid button[aria-pressed=true]{background:#277b69;border-color:#a7e6d6}
 #actionStatus{margin-top:7px;font-size:12px;color:#c6e4e8;min-height:18px}
+#heroActionButtons{max-height:250px;overflow-y:auto;overscroll-behavior:contain;padding:2px}
 body.costume-only #v32BodyPartStudio,
 body.costume-only #allFaceControls,
 body.costume-only label[for="heroHairStyle"],
@@ -52,8 +53,8 @@ body.costume-only .faceStudioOnly{display:none!important}
 </head>
 <body>
 <header>
-<h1>女性主人公・衣装／戦闘アクション v40</h1>
-<p>女主人公の衣装と戦闘動作を確認する画面です。職業と装備を選び、ボタンで攻撃・防御・魔法とエフェクトを再生できます。顔と髪は専用画面で編集します。</p>
+<h1>女性主人公・全職業の衣装／登録済みアクション v41</h1>
+<p>女主人公の衣装を全職業で確認する画面です。脚の人体メッシュを保持し、職業で登録されている実際のモーションをボタンから再生します。顔と髪は専用画面で編集します。</p>
 </header>
 <main>
 <section>
@@ -66,7 +67,7 @@ body.costume-only .faceStudioOnly{display:none!important}
 <button id="back" aria-pressed="false" disabled>後頭部</button>
 <button id="crown" aria-pressed="false" disabled>頭頂部</button>
 </div>
-<div class="controls"><a href="./face-mesh-studio.html?gender=female&hero=1&v=40" class="buttonLink" id="faceEditorLink">顔・髪を編集する</a></div>
+<div class="controls"><a href="./face-mesh-studio.html?gender=female&hero=1&v=41" class="buttonLink" id="faceEditorLink">顔・髪を編集する</a></div>
 <div id="heroActionButtons" class="actionButtonGrid" role="group" aria-label="実戦闘アクションを再生"></div>
 <p id="actionStatus" role="status">アクションを選んで再生してください。</p>
 <div class="controls">
@@ -86,7 +87,7 @@ body.costume-only .faceStudioOnly{display:none!important}
 <label for="heroHairStyle">髪型パターン<select id="heroHairStyle" aria-label="髪型パターンを選択"></select></label>
 <label for="heroHairVolume">髪ボリューム<select id="heroHairVolume" aria-label="髪ボリュームを選択"></select></label>
 <label for="heroHairDensity">髪の密度<select id="heroHairDensity" aria-label="髪の描画密度を選択"><option value="1">軽量1倍</option><option value="3">軽量3倍</option><option value="5" selected>高画質5倍</option><option value="10">最高画質10倍</option></select></label>
-</div><p class="note">職業別のスキン付き脚衣装、女性の体型に沿う鎧と既存モーションを使用します。戦闘本体は変更しません。</p>
+</div><p class="note">全10職業で衣装の下の実人体（太腿・すね・足）を保持します。ボタンは登録済みの実モーションのみ表示し、未登録の勝利ポーズ等は作りません。戦闘本体は変更しません。</p>
 </section>
 <section id="v32BodyPartStudio"><h2>美少女3Dパーツを選択（各10種以上）</h2><div id="v32BodyChoices"></div>
 <label for="v32HairDensity">髪の描画密度<select id="v32HairDensity"><option value="1">軽量 1倍</option><option value="3">標準 3倍</option><option value="5" selected>高画質 5倍</option><option value="10">高密度 10倍</option></select></label></section>
@@ -116,7 +117,7 @@ alt="第1章女性主人公（暫定人物マスターの登録原画）">
 <label for="style">固有のヅラ（別アセット）
 <select id="style" disabled></select></label>
 <p class="note">v31：目のサイズは縦横から自動決定。目の前後位置と分離し、カラコンは17色＋自由色に対応。真円の黒目・瞳孔を維持。髪は実顔面と女性胴体の三角形表面との接触を判定し、肩・胸の簡易判定も併用します。</p>
-<a href="./face-mesh-studio.html?gender=female&hero=1&v=40" class="buttonLink" id="faceEditorSideLink">顔・髪の編集画面へ</a>
+<a href="./face-mesh-studio.html?gender=female&hero=1&v=41" class="buttonLink" id="faceEditorSideLink">顔・髪の編集画面へ</a>
 <details><summary>実メッシュ・接触検査</summary><pre id="metrics"></pre></details>
 </section>
 </main><style>
@@ -128,7 +129,7 @@ body.v32-legacy #v32BodyPartStudio{display:none!important}
 .v32-part-group select,#v32HairDensity{display:block;width:100%;min-height:41px;margin:5px 0;padding:7px;background:#213d55;color:#fff;border:1px solid #7893a5;border-radius:8px}
 .v32-pose-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
 .v32-tip{color:#b8d5e8;font-size:12px}
-</style><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/","./src/independent-face-masters.js":"./src/independent-face-masters.js?v=40","./src/face-feature-meshes.js":"./src/face-feature-meshes.js?v=40","./src/face-v7-controls.js":"./src/face-v7-controls.js?v=40","./src/face-body-assembly.js":"./src/face-body-assembly.js?v=40"}}</script>
+</style><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/","./src/independent-face-masters.js":"./src/independent-face-masters.js?v=41","./src/face-feature-meshes.js":"./src/face-feature-meshes.js?v=41","./src/face-v7-controls.js":"./src/face-v7-controls.js?v=41","./src/face-body-assembly.js":"./src/face-body-assembly.js?v=41"}}</script>
 <script type="module">
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
@@ -137,15 +138,14 @@ import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {makeIndependentFaceMaster} from './src/independent-face-masters.js';
 import {FEMALE_V7_DEFAULTS,FACE_EYE_SPACING_DEFAULT,FACE_EYE_SPACING_RANGE,FACE_SLIDER_RANGES,CONTACT_COLORS,CONTACT_COLOR_LABELS,safeContactColor,normalizeFemaleFaceControls} from './src/face-v7-controls.js';
 import {applyFaceColorMode} from './src/face-feature-meshes.js';
-import {createScalpAnchoredWig} from './src/face-scalp-wig.js?v=40';
-import {createPartSelectorUI} from './src/face-part-selector-ui-v32.js?v=40';
-import {defaultPartSelection,resolvePartSelection,PART_CATALOG} from './src/face-part-catalog-v32.js?v=40';
+import {createScalpAnchoredWig} from './src/face-scalp-wig.js?v=41';
+import {createPartSelectorUI} from './src/face-part-selector-ui-v32.js?v=41';
+import {defaultPartSelection,resolvePartSelection,PART_CATALOG} from './src/face-part-catalog-v32.js?v=41';
 import {attachIndependentHeadToBody,removeHeadBustBelowNeck,createSealedNeckBridge} from './src/face-body-assembly.js';
-import {listWigStyles,DEFAULT_WIG_STYLE_ID,WIG_BASE_VOLUME_PROFILES} from './src/face-wig-styles.js?v=40';
-import {HERO_JOBS,HERO_ACTIONS,createHeroineStudioWardrobe} from './src/heroine-studio-wardrobe.js?v=40';
-import {REAL_BATTLE_WARDROBE,createRealBattleOutfitStudio} from './src/heroine-battle-costume-bridge.js?v=40';
-import {STUDIO_BATTLE_ACTIONS} from './src/heroine-battle-action-vfx.js?v=40';
-import {loadHeroineFacePreset} from './src/heroine-face-preset-store.js?v=40';
+import {listWigStyles,DEFAULT_WIG_STYLE_ID,WIG_BASE_VOLUME_PROFILES} from './src/face-wig-styles.js?v=41';
+import {HERO_JOBS,HERO_ACTIONS,createHeroineStudioWardrobe} from './src/heroine-studio-wardrobe.js?v=41';
+import {REAL_BATTLE_WARDROBE,createRealBattleOutfitStudio} from './src/heroine-battle-costume-bridge.js?v=41';
+import {loadHeroineFacePreset} from './src/heroine-face-preset-store.js?v=41';
 import {FEMALE_COMMANDER_ART_PALETTE,CHAPTER_ONE_ART_BY_KEY} from './src/chapter-one-character-art-references.js';
 
 const $=id=>document.getElementById(id);
@@ -189,7 +189,7 @@ let view='front',zoomMode='full',wigVisible=true,outfitVisible=true;
 let wigBaseVisible=false,hairOnly=false;
 let contactColor=savedHeroinePreset?.contactColor||palette.iris;
 const counter={wigBuilds:0,glbExports:0};
-const selectedStudio={jobId:'knight',outfitId:'job',actionId:'idle'};
+const selectedStudio={jobId:'swordsman',outfitId:'job',actionId:'idle',nativeCommand:null};
 let battleRequest=0;
 const tellBattleStatus=message=>{
  $('realBattleCostumeState').textContent=message;
@@ -199,6 +199,8 @@ const applyBattleSelection=()=>{
  const request=++battleRequest;
  battleCostume.setSelection(selectedStudio).then(()=>{
   if(request!==battleRequest)return;
+  selectedStudio.nativeCommand=null;
+  renderNativeActionButtons();
   fitCamera();$('metrics').textContent=JSON.stringify(metrics(),null,2);
  }).catch(error=>tellBattleStatus('戦闘衣装の切替に失敗：'+String(error)));
 };
@@ -207,19 +209,42 @@ const fillSelect=(id,items)=>{
  for(const item of items){const option=document.createElement('option');
   option.value=item.id;option.textContent=item.label;select.append(option);}
 };
-fillSelect('heroJob',HERO_JOBS);
+// The real ten occupations (including farmer) own their own animation map.
+fillSelect('heroJob',REAL_BATTLE_WARDROBE.map(item=>({id:item.heroJob,label:item.name})));
+$('heroJob').value=selectedStudio.jobId;
 fillSelect('heroOutfit',[{id:'job',label:'職業の標準衣装'},...REAL_BATTLE_WARDROBE]);
 fillSelect('heroAction',HERO_ACTIONS);
-for(const action of STUDIO_BATTLE_ACTIONS){
- const btn=document.createElement('button');btn.type='button';
- btn.dataset.action=action.id;btn.textContent=action.label;
- btn.setAttribute('aria-pressed',String(action.id==='idle'));
- btn.addEventListener('click',()=>{
-  $('heroAction').value=action.id;
-  $('heroAction').dispatchEvent(new Event('change',{bubbles:true}));
- });
- $('heroActionButtons').appendChild(btn);
+function renderNativeActionButtons(){
+ const host=$('heroActionButtons');host.replaceChildren();
+ const actions=battleCostume?.getAvailableActions?.()||[];
+ if(!actions.length){
+  $('actionStatus').textContent='実際の戦闘アニメーションを読み込んでいます。';
+  return;
+ }
+ for(const action of actions){
+  const btn=document.createElement('button');
+  btn.type='button';btn.dataset.command=action.id;
+  btn.textContent=action.label;btn.title='登録済み：'+action.clip;
+  btn.setAttribute('aria-pressed',String(selectedStudio.nativeCommand===action.id));
+  btn.addEventListener('click',async()=>{
+   if(!battleCostume)return;
+   const played=await battleCostume.playRegisteredCommand(action.id);
+   if(!played){
+    $('actionStatus').textContent='このモーションは再生できません：'+action.id;
+    return;
+   }
+   selectedStudio.nativeCommand=action.id;
+   const state=battleCostume.getState();
+   for(const item of host.children)
+    item.setAttribute('aria-pressed',String(item.dataset.command===action.id));
+   $('actionStatus').textContent='戦闘登録アクション：'+action.label+
+    '／クリップ：'+(state.nativeClip||action.clip);
+  });
+  host.append(btn);
+ }
+ $('actionStatus').textContent='職業別の登録済みモーション '+actions.length+'種類';
 }
+renderNativeActionButtons();
 fillSelect('heroHairStyle',listWigStyles());
 fillSelect('heroHairVolume',Object.entries(WIG_BASE_VOLUME_PROFILES).map(
  ([id,profile])=>({id,label:profile.label})));
@@ -538,12 +563,13 @@ $('heroHairDensity').addEventListener('change',()=>{
 $('heroJob').addEventListener('change',()=>{
  selectedStudio.jobId=$('heroJob').value;
  selectedStudio.outfitId='job';
+ selectedStudio.nativeCommand=null;
  selectedStudio.actionId=['mage','cleric','summoner'].includes(selectedStudio.jobId)?
   'cast':selectedStudio.jobId==='shield'?'guard':'attack';
  $('heroOutfit').value=selectedStudio.outfitId;
  $('heroAction').value=selectedStudio.actionId;
  for(const btn of $('heroActionButtons').children){
-  btn.setAttribute('aria-pressed',String(btn.dataset.action===selectedStudio.actionId));
+  btn.setAttribute('aria-pressed',String(btn.dataset.command===selectedStudio.nativeCommand));
  }
  wardrobe?.setSelection(selectedStudio);
  wardrobe?.setAction(selectedStudio.actionId);
@@ -557,7 +583,7 @@ $('heroOutfit').addEventListener('change',()=>{
 $('heroAction').addEventListener('change',()=>{
  selectedStudio.actionId=$('heroAction').value;
  for(const btn of $('heroActionButtons').children){
-  btn.setAttribute('aria-pressed',String(btn.dataset.action===selectedStudio.actionId));
+  btn.setAttribute('aria-pressed',String(btn.dataset.command===selectedStudio.nativeCommand));
  }
  $('actionStatus').textContent='戦闘アクション：'+(STUDIO_BATTLE_ACTIONS.find(a=>a.id===selectedStudio.actionId)?.label||selectedStudio.actionId)+'／エフェクト付きで再生';
  wardrobe?.setAction(selectedStudio.actionId);
@@ -766,6 +792,7 @@ frame();
     actionId:selectedStudio.actionId,onStatus:tellBattleStatus
    }).then(bridge=>{
     battleCostume=bridge;
+    renderNativeActionButtons();
     bodyAttachment.root.visible=false;
     wardrobe?.setVisible(false);
     applyHairOnlyView();fitCamera();

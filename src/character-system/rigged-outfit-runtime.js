@@ -19,7 +19,7 @@ import {attachRealisticFace} from './facial-blink-runtime.js?v=1';
 import {sourceGripFromBounds} from './equipment-grip-policy.js?v=4.4.41';
 import {normalizeOutfitRarity,outfitRarityFinish} from './outfit-rarity-policy.js?v=4.4.47';
 import {protectFaceSkin} from './skin-face-protection.js?v=4.4.89';
-import {deriveGarmentCoverage,clipBodyToGarment,originalSkinGeometry} from './garment-coverage-runtime.js?v=4.5.2';
+import {deriveGarmentCoverage,clipBodyToGarment,originalSkinGeometry} from './garment-coverage-runtime.js?v=41';
 
 const loader=new GLTFLoader(),sourceCache=new Map();
 let materialPromise;
@@ -419,7 +419,7 @@ async function attachGear(dressed,outfitBones,profile,textures,quality){
   return items;
 }
 
-export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male',quality='preview',rarity='N',weaponOverride=null,preserveBody=false,hairStyle=null,hairColor=null,studioPreferSkinnedLegs=false}={}){
+export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male',quality='preview',rarity='N',weaponOverride=null,preserveBody=false,hairStyle=null,hairColor=null,studioPreferSkinnedLegs=false,studioPreserveLegAnatomy=false}={}){
   if(!characterModel||!parent)throw Error('人物モデルと配置先が必要です');
   // Different preview and battle entry points share the same head-surface
   // correction. The calibrated mesh is cached for all copies of each sex.
@@ -587,11 +587,13 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
   const bodyMeshStats=[];
   const bodyFitBox=lowDetail?null:skinnedBounds(characterModel,bodyMeshStats);
   const bodyBindBox=lowDetail?null:bindGeometryBounds(characterModel);
-  let coverageHandle=preserveBody?null:clipBodyToGarment(characterModel,garmentCoverage,{surfaceCheck:true});
+  let coverageHandle=preserveBody?null:clipBodyToGarment(characterModel,garmentCoverage,{surfaceCheck:true,
+    preserveRegions:studioPreserveLegAnatomy?['thigh','calf','foot']:[]});
   let bodyMasked=!preserveBody;
   function setBodyOcclusion(enabled){
     if(preserveBody)return;
-    if(enabled&&!bodyMasked){coverageHandle=clipBodyToGarment(characterModel,garmentCoverage,{surfaceCheck:true});bodyMasked=true}
+    if(enabled&&!bodyMasked){coverageHandle=clipBodyToGarment(characterModel,garmentCoverage,{surfaceCheck:true,
+    preserveRegions:studioPreserveLegAnatomy?['thigh','calf','foot']:[]});bodyMasked=true}
     else if(!enabled&&bodyMasked){coverageHandle?.restore();coverageHandle=null;bodyMasked=false}
   }
   let disposed=false;
@@ -932,6 +934,8 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
     garmentCoverage:garmentCoverage.regions,coverageSources:garmentCoverage.sources,
     coveredFoot:garmentCoverage.footCovered,
     clippedSkinTriangles:coverageHandle?.diagnostics.removedTriangles||0,
+    studioPreserveLegAnatomy,
+    preservedUnderGarmentLegRegions:coverageHandle?.diagnostics.preservedRegions||[],
     garmentSurfaceSamples:coverageHandle?.diagnostics.garmentSurfaceSamples||0,
     compactedSkinVertices:Math.max(0,(coverageHandle?.diagnostics.sourceVertices||0)-(coverageHandle?.diagnostics.keptVertices||0)),
     armorPieces:armor?.objects.length||0,sourceBootShaftsSkipped:armor?.diagnostics.sourceBootShaftsSkipped||0,

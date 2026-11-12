@@ -17,10 +17,12 @@ import {PART_CATALOG,PART_GROUPS,HAIR_COLORS,resolvePartSelection,defaultPartSel
  from '../src/face-part-catalog-v32.js';
 import {HERO_JOBS,HERO_OUTFITS,HERO_ACTIONS,createHeroineStudioWardrobe}
  from '../src/heroine-studio-wardrobe.js';
-import {REAL_BATTLE_WARDROBE,HEROINE_STUDIO_BODY_SCALE,fitStudioFaceAboveArmor,enhanceStudioCombatMaterials,refineHeroineCostumeSilhouette,enhanceHeroineFaceSurface}
+import {REAL_BATTLE_WARDROBE,HEROINE_STUDIO_BODY_SCALE,fitStudioFaceAboveArmor,enhanceStudioCombatMaterials,refineHeroineCostumeSilhouette,enhanceHeroineFaceSurface,existingJobActions,effectCategoryForRegisteredMotion}
  from '../src/heroine-battle-costume-bridge.js';
 import {STUDIO_BATTLE_ACTIONS,effectRecipeForHeroineAction,createHeroineBattleActionVfx}
  from '../src/heroine-battle-action-vfx.js';
+import {clipBodyToGarment} from '../src/character-system/garment-coverage-runtime.js';
+import {applyHeroineSkinMaterial} from '../src/heroine-skin-material.js';
 import {HEROINE_FACE_STUDIO_KEY,loadHeroineFacePreset,saveHeroineFacePreset}
  from '../src/heroine-face-preset-store.js';
 
@@ -2131,13 +2133,98 @@ test('v40 outfit page exposes real action buttons and separate face page navigat
  const outfit=readFileSync('face-body-studio.html','utf8');
  const face=readFileSync('face-mesh-studio.html','utf8');
  assert.match(outfit,/id="heroActionButtons"/);
- assert.match(outfit,/STUDIO_BATTLE_ACTIONS/);
- assert.match(outfit,/btn\.dataset\.action=action\.id/);
- assert.match(outfit,/battleCostume\?\.playAction/);
+ assert.match(outfit,/renderNativeActionButtons/);
+ assert.match(outfit,/btn\.dataset\.command=action\.id/);
+ assert.match(outfit,/battleCostume\.playRegisteredCommand\(action\.id\)/);
  assert.match(outfit,/id="faceEditorLink"/);
  assert.match(outfit,/body\.costume-only #v32BodyPartStudio/);
  assert.match(outfit,/studioPreviewCamera=camera/);
  assert.match(face,/id="returnToCostume"/);
  assert.match(face,/persistHeroineFace/);
  assert.match(outfit,/loadHeroineFacePreset/);
+});
+
+test('v41 all ten professions have real available named clips; no invented victory or generic substitute',()=>{
+ const motion=JSON.parse(readFileSync('job-command-motion-map.json','utf8')).jobs;
+ assert.equal(REAL_BATTLE_WARDROBE.length,10);
+ const studioHtml=readFileSync('face-body-studio.html','utf8');
+ assert.match(studioHtml,/fillSelect\('heroJob',REAL_BATTLE_WARDROBE\.map\(/,
+  'Every real job, including farmer, must be available from the wardrobe');
+ for(const job of REAL_BATTLE_WARDROBE){
+  const available=existingJobActions(motion,job.heroJob);
+  assert.ok(available.length>=8,job.name+' needs real playable action rows');
+  for(const action of available){
+   const row=motion[job.name].find(row=>row.command===action.id);
+   assert.equal(row.available,true);
+   assert.equal(row.clip,action.clip);
+   assert.ok(row.asset.endsWith('.glb'));
+  }
+  assert.ok(!available.some(a=>a.id==='勝利'),
+   job.name+' must not pretend to have a nonexisting victory clip');
+ }
+ assert.ok(existingJobActions(motion,'swordsman').some(a=>
+  a.id==='通常斬り'&&a.clip==='Melee_1H_Attack_Slice_Horizontal'));
+ assert.ok(existingJobActions(motion,'mage').some(a=>
+  a.id==='魔法発射'&&a.clip==='Ranged_Magic_Shoot'));
+ assert.ok(existingJobActions(motion,'cleric').some(a=>
+  a.id==='回復魔法発動'&&a.clip==='Ranged_Magic_Raise'));
+ assert.equal(effectCategoryForRegisteredMotion('通常斬り'),'attack');
+ assert.equal(effectCategoryForRegisteredMotion('祈り・回復詠唱'),'cast');
+ assert.equal(effectCategoryForRegisteredMotion('盾構え'),'guard');
+ assert.equal(effectCategoryForRegisteredMotion('歩行'),'walk');
+});
+test('v41 real female anatomical legs remain after studio armor coverage across thigh calf foot',()=>{
+ const source=readFileSync('src/character-system/rigged-outfit-runtime.js','utf8');
+ const coverage=readFileSync('src/character-system/garment-coverage-runtime.js','utf8');
+ const bridge=readFileSync('src/heroine-battle-costume-bridge.js','utf8');
+ assert.match(source,/studioPreserveLegAnatomy=false/);
+ assert.match(source,/preserveRegions:studioPreserveLegAnatomy\?\['thigh','calf','foot'\]:\[\]/);
+ assert.match(coverage,/const preserved=new Set\(preserveRegions\)/);
+ assert.match(bridge,/studioPreserveLegAnatomy:true/);
+ const actor=new THREE.Group();
+ const skeleton=new THREE.Skeleton(['head','spine_01','thigh_l','calf_l','foot_l']
+  .map(name=>{const bone=new THREE.Bone();bone.name=name;return bone}));
+ const body=new THREE.SkinnedMesh(new THREE.SphereGeometry(.4,70,70),
+  new THREE.MeshStandardMaterial());
+ const count=body.geometry.getAttribute('position').count;
+ const skinIndices=new Uint16Array(count*4);
+ const skinWeights=new Float32Array(count*4);
+ for(let i=0;i<count;i++){
+  const y=body.geometry.getAttribute('position').getY(i);
+  const slot=y>.25?0:y>.10?1:y>-.1?2:y>-.27?3:4;
+  skinIndices[i*4]=slot;skinWeights[i*4]=1;
+ }
+ body.geometry.setAttribute('skinIndex',new THREE.Uint16BufferAttribute(skinIndices,4));
+ body.geometry.setAttribute('skinWeight',new THREE.Float32BufferAttribute(skinWeights,4));
+ body.add(skeleton.bones[0]);body.bind(skeleton);
+ actor.add(body);
+ const geometryBefore=body.geometry;
+ const covered={regions:['torso','thigh','calf','foot'],
+  enclosedRegions:['thigh','calf','foot'],signature:'all-four',surfaceMeshes:[]};
+ const handle=clipBodyToGarment(actor,covered,{surfaceCheck:false,
+  preserveRegions:['thigh','calf','foot']});
+ assert.deepEqual(handle.diagnostics.preservedRegions,['thigh','calf','foot']);
+ assert.deepEqual(handle.diagnostics.regions,['torso']);
+ assert.ok(handle.diagnostics.removedTriangles>0,'shirt region must remain maskable');
+ assert.ok(body.geometry.index.count>0);
+ handle.restore();
+ assert.equal(body.geometry,geometryBefore,'original anatomical limb geometry is recoverable');
+});
+test('v41 realistic face micro-skin relief shared between editor and costume does not alter face geometry',()=>{
+ const geo=new THREE.SphereGeometry(.20,24,20);
+ const face=new THREE.Mesh(geo,new THREE.MeshStandardMaterial({
+  color:0xf0c5b4,vertexColors:true,roughness:.94
+ }));
+ const original=geo.getAttribute('position').array.slice();
+ const report=applyHeroineSkinMaterial(face);
+ assert.ok(report.applied&&report.skinMicroRelief);
+ assert.equal(face.material.bumpScale,.00010);
+ assert.equal(face.material.metalness,0);
+ assert.ok(face.material.roughness>.7);
+ assert.equal(face.material.vertexColors,true);
+ assert.equal(applyHeroineSkinMaterial(face).reused,true);
+ assert.deepEqual(geo.getAttribute('position').array,original);
+ const html=readFileSync('face-mesh-studio.html','utf8');
+ assert.match(html,/applyHeroineSkinMaterial\(next\.face\)/);
+ assert.match(html,/if\(g==='female'\)applyHeroineSkinMaterial\(model\.face\)/);
 });

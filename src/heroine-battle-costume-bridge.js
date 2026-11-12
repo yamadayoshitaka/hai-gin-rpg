@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {createCharacter} from './character-system/shared-character-runtime.js?v=4.6.36';
-import {buildRiggedJobOutfit} from './character-system/rigged-outfit-runtime.js?v=4.6.15';
+import {buildRiggedJobOutfit} from './character-system/rigged-outfit-runtime.js?v=41';
 import {loadJobMotionMap} from './character-system/job-motion-source.js?v=4.6.36';
 import {measureHeadLocalBounds} from './character-system/hair-attachment-runtime.js?v=4.4.89';
 import {createHeroineBattleActionVfx} from './heroine-battle-action-vfx.js?v=40';
@@ -16,8 +16,8 @@ import {createHeroineBattleActionVfx} from './heroine-battle-action-vfx.js?v=40'
  * the independently authored face. This is NEVER applied in battle.
  */
 export const HEROINE_STUDIO_BODY_SCALE=.84;
-export const HEROINE_STUDIO_HEAD_LIFT=.30;
-export const HEROINE_STUDIO_HEAD_FORWARD=.13;
+export const HEROINE_STUDIO_HEAD_LIFT=.44;
+export const HEROINE_STUDIO_HEAD_FORWARD=.16;
 
 export function fitStudioFaceAboveArmor({actorRoot,faceRoot,faceFit,bodyScale=HEROINE_STUDIO_BODY_SCALE}){
  if(!actorRoot?.isObject3D||!faceRoot?.isObject3D||!faceFit?.targetSize)
@@ -100,7 +100,7 @@ export function enhanceStudioCombatMaterials(wardrobeRoot){
 export function refineHeroineCostumeSilhouette(wardrobeRoot){
  if(!wardrobeRoot?.traverse)throw Error('Outfit root required');
  let taperedLegPieces=0,narrowedCuirass=0,hiddenLooseStuds=0,
-   loweredTassets=0,skinnedTrousers=0;
+   loweredTassets=0,skinnedTrousers=0,collarClearancePieces=0;
  wardrobeRoot.updateWorldMatrix(true,true);
  wardrobeRoot.traverse(mesh=>{
   if(!mesh.isMesh)return;
@@ -114,9 +114,17 @@ export function refineHeroineCostumeSilhouette(wardrobeRoot){
    if(factor!==1){
     mesh.scale.x*=factor;
     mesh.scale.z*=factor;
+    if(slot==='chest'){
+     // Stop a large breastplate's high neck rim swallowing the face.
+     mesh.scale.y*=.94;mesh.position.y-=.012;collarClearancePieces++;
+    }
     if(slot==='chest'||slot==='shoulder')narrowedCuirass++;
     else taperedLegPieces++;
    }
+  }
+  if(/(?:neckguard|neck-plate|standing-collar|cuirass-collar)/i.test(mesh.name)
+    &&!mesh.isSkinnedMesh){
+   mesh.scale.y*=.81;mesh.position.y-=.014;collarClearancePieces++;
   }
   if(/cuirass-thigh-tasset/i.test(mesh.name)){
    // Half-width leather/steel panels instead of boxy vertical drainpipes.
@@ -138,34 +146,19 @@ export function refineHeroineCostumeSilhouette(wardrobeRoot){
   const size=new THREE.Vector3(local.x*Math.abs(world.x),
    local.y*Math.abs(world.y),local.z*Math.abs(world.z));
   const min=Math.min(size.x,size.y,size.z),max=Math.max(size.x,size.y,size.z);
-  if(min>.0015&&max<.048&&max/min<1.55){
+  if(min>.0015&&max<.064&&max/min<1.55){
    mesh.visible=false;hiddenLooseStuds++;
   }
  });
  return {taperedLegPieces,narrowedCuirass,hiddenLooseStuds,
-  loweredTassets,skinnedTrousers,onlyStudioPreview:true,
+  loweredTassets,skinnedTrousers,collarClearancePieces,onlyStudioPreview:true,
   sourceGeometryUnmodified:true};
 }
 
-/** Face reference remains the artist's blonde/blue heroine, not a donor head. */
+import {applyHeroineSkinMaterial} from './heroine-skin-material.js?v=41';
 export function enhanceHeroineFaceSurface(face){
- if(!face?.isMesh||!face.material)return {applied:false};
- const source=face.material;
- if(face.userData.studioHeroineFaceSurface)return {applied:true,reused:true};
- const material=new THREE.MeshPhysicalMaterial({
-  color:source.color?.clone()||new THREE.Color(0xf0d9cb),
-  map:source.map||null,vertexColors:!!source.vertexColors,
-  side:source.side,transparent:source.transparent,opacity:source.opacity,
-  roughness:.72,metalness:0,clearcoat:.085,clearcoatRoughness:.55,
-  sheen:.13,sheenRoughness:.85,sheenColor:new THREE.Color(0xc98978)
- });
- material.name='studio-heroine-natural-skin';
- face.material=material;
- face.userData.studioHeroineFaceSurface=true;
- return {applied:true,roughness:material.roughness,
-  clearcoat:material.clearcoat,sheen:material.sheen,vertexColors:material.vertexColors};
+ return applyHeroineSkinMaterial(face);
 }
-
 
 export const REAL_BATTLE_WARDROBE=Object.freeze([
  {id:'job01',name:'剣士',label:'剣士・銀鋼鎧',heroJob:'swordsman'},
@@ -179,6 +172,21 @@ export const REAL_BATTLE_WARDROBE=Object.freeze([
  {id:'job09',name:'僧侶',label:'僧侶・修道服と杖',heroJob:'cleric'},
  {id:'job10',name:'召喚士',label:'召喚士・儀式服と杖',heroJob:'summoner'}
 ]);
+/** Only actual, available job clips generate playable studio buttons. */
+export function existingJobActions(jobs,selection='knight'){
+ const job=realBattleJob(selection);
+ return (jobs?.[job.name]||[]).filter(row=>
+  row.available===true&&row.command&&row.asset&&row.clip)
+  .map(row=>({id:row.command,label:row.command,clip:row.clip,asset:row.asset}));
+}
+export function effectCategoryForRegisteredMotion(command){
+ if(/(?:魔法|詠唱|祈り|回復|召喚|スキル)/.test(command))return 'cast';
+ if(/(?:斬|突き|射撃|正拳|蹴り|攻撃|連撃|二刀|ダイナマイト)/.test(command))return 'attack';
+ if(/(?:防御|ガード|盾構え)/.test(command))return 'guard';
+ if(/(?:ダッシュ|走行|走る)/.test(command))return 'run';
+ if(/(?:歩行|忍び歩き|歩く)/.test(command))return 'walk';
+ return 'idle';
+}
 export function realBattleJob(selection='knight'){
  return REAL_BATTLE_WARDROBE.find(j=>j.heroJob===selection)||
   REAL_BATTLE_WARDROBE.find(j=>j.id===selection)||
@@ -298,6 +306,7 @@ export async function createRealBattleOutfitStudio({scene,faceModel,getFaceModel
  const jobs=await loadJobMotionMap();
  let actor=null,outfit=null,vfx=null,headRoot=faceModel.root,face=faceModel.face;
  let currentJob=jobId,currentOutfit=outfitId,currentAction=actionId;
+ let nativeCommand=null,nativeClip=null;
  let hiddenBody=false,outfitShown=true,disposed=false,request=0,headReport=null,headFit=null,proportions=null,finishReport=null;
  const chosenOutfit=()=>currentOutfit==='job'?
   realBattleJob(currentJob):realBattleJob(currentOutfit);
@@ -311,7 +320,8 @@ export async function createRealBattleOutfitStudio({scene,faceModel,getFaceModel
   try{
    clothing=await buildRiggedJobOutfit({characterModel:fresh.model,
     parent:fresh.object3D,job:chosen.name,sex:'female',quality:'preview',
-    preserveBody:false,rarity:'N',studioPreferSkinnedLegs:true});
+    preserveBody:false,rarity:'N',studioPreferSkinnedLegs:true,
+    studioPreserveLegAnatomy:true});
    if(serial!==request||disposed){
     clothing.dispose();fresh.dispose();return;
    }
@@ -345,6 +355,7 @@ export async function createRealBattleOutfitStudio({scene,faceModel,getFaceModel
    outfit.root.visible=!hiddenBody&&outfitShown;
    vfx=createHeroineBattleActionVfx({THREE,actorRoot:actor.object3D,
     camera:scene.userData.studioPreviewCamera});
+   nativeCommand=null;nativeClip=null;
    await playAction(currentAction);
    onStatus('戦闘の既存衣装を反映：'+chosen.label+'。顔と髪は独立メッシュです。');
   }catch(error){
@@ -352,14 +363,37 @@ export async function createRealBattleOutfitStudio({scene,faceModel,getFaceModel
    throw error;
   }
  }
+ function availableActions(){return existingJobActions(jobs,currentJob)}
+ async function playRegisteredCommand(command){
+  const candidate=availableActions().find(row=>row.id===command);
+  if(!actor||!candidate){
+   onStatus('この職業には登録済みモーションがありません：'+command);
+   return false;
+  }
+  try{
+   const played=await actor.playCommand(candidate.id);
+   if(!played)return false;
+   nativeCommand=candidate.id;nativeClip=actor.diagnostics()?.clip||candidate.clip;
+   currentAction=effectCategoryForRegisteredMotion(candidate.id);
+   vfx?.trigger(currentAction,realBattleJob(currentJob).heroJob);
+   onStatus('実モーション '+candidate.id+'（'+nativeClip+'）を再生しました');
+   return true;
+  }catch(error){
+   onStatus('登録済みアクション再生エラー：'+String(error));
+   return false;
+  }
+ }
  async function playAction(id){
   currentAction=motionByAction[id]?id:'idle';
   if(!actor)return false;
   try{
    const state=motionByAction[currentAction];
-   vfx?.trigger(currentAction,realBattleJob(currentJob).heroJob);
    const played=await actor.play(state);
-   if(!played&&state!=='idle')await actor.play('idle');
+   if(played){
+    nativeCommand=null;nativeClip=actor.diagnostics()?.clip||null;
+    vfx?.trigger(currentAction,realBattleJob(currentJob).heroJob);
+   }
+   if(!played&&state!=='idle')return actor.play('idle');
    return played;
   }catch(error){
    onStatus('モーション適用エラー：'+String(error));return false;
@@ -393,7 +427,10 @@ export async function createRealBattleOutfitStudio({scene,faceModel,getFaceModel
   return headFit;
  }
  async function setSelection({jobId:nextJob,outfitId:nextOutfit}={}){
-  if(nextJob)currentJob=nextJob;
+  if(nextJob){
+   if(currentJob!==nextJob){currentAction='idle';nativeCommand=null;nativeClip=null;}
+   currentJob=nextJob;
+  }
   if(nextOutfit)currentOutfit=nextOutfit;
   await install();
  }
@@ -404,9 +441,12 @@ export async function createRealBattleOutfitStudio({scene,faceModel,getFaceModel
  function getState(){return {
   active:!!actor,rigSource:'battle-character-and-real-65-bone-job-outfit',
   jobId:currentJob,outfitId:currentOutfit,actionId:currentAction,
+  nativeCommand,nativeClip,availableActionCount:availableActions().length,
   garment:chosenOutfit().label,
   headReport,headFit,proportions,finishReport,
   sourceTrousers:outfit?.presentation?.().useSourceSkinnedLegs||false,
+  retainedLegAnatomy:outfit?.diagnostics?.studioPreserveLegAnatomy||false,
+  preservedLegRegions:outfit?.diagnostics?.preservedUnderGarmentLegRegions||[],
   vfx:vfx?.getState()||null,
   realOutfit:!!outfit,hasMotion:!!actor?.diagnostics()?.playing
  };}
@@ -418,5 +458,6 @@ export async function createRealBattleOutfitStudio({scene,faceModel,getFaceModel
  await install();
  return {getState,getActor:()=>actor?.object3D||null,
   getOutfit:()=>outfit?.root||null,update,attachFace,setBodyVisible,
-  setOutfitVisible,playAction,setSelection,dispose};
+  setOutfitVisible,playAction,playRegisteredCommand,getAvailableActions:availableActions,
+  setSelection,dispose};
 }
