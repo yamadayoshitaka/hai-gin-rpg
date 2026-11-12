@@ -122,7 +122,7 @@ test('strictly exclude body, wig and makeup from face-only model assembly',()=>{
  const f=fixture();const built=makeIndependentFaceMaster(f.source,'female');
  const visible=[];
  built.root.traverse(o=>{if(o.isMesh&&o.visible)visible.push(o)});
- assert.equal(visible.length,33,'Face plus 32 anatomical/eye/eyeshadow meshes');
+ assert.equal(visible.length,29,'Face plus 28 fitted eye/brow/lash meshes without bags');
  assert.ok(visible.includes(built.face));
  assert.ok(visible.every(o=>o===built.face||built.parts.getObjectById(o.id)));
  assert.ok(visible.every(o=>!/hair|armour|body|garment/i.test(o.name)));
