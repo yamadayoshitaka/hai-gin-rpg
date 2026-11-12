@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>灰銀戦記 | 第一章 第1〜3ステージ・男女原画登録状況</title>
+<style>
+:root{color-scheme:dark;--bg:#09111f;--panel:#16263a;--line:#49617a;--gold:#efd6a4;--ok:#99edc7;--missing:#ffb7a2}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 50% 0%,#203955,#09111f 68%);color:#f0e9dc;font:14px/1.6 system-ui,"Noto Sans JP",sans-serif}
+header{background:#091421ed;border-bottom:1px solid #7b8798;padding:15px max(15px,env(safe-area-inset-left));display:flex;gap:12px;align-items:center;justify-content:space-between}
+h1{font-size:clamp(18px,4.5vw,27px);margin:0;color:var(--gold)}header a{color:#e6d2af}
+main{width:min(1110px,95vw);margin:0 auto;padding:16px 0 38px}
+.note{padding:10px 14px;border-left:3px solid #d6b77d;background:#1a2b41;margin:10px 0 16px}
+.summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.summary div,.panel{background:linear-gradient(150deg,#1b3048,#0e1d31);border:1px solid var(--line);border-radius:9px;padding:12px}
+.summary strong{font-size:25px;display:block;color:var(--gold)}.summary span{font-size:12px;color:#c7d2dd}
+.toolbar{display:flex;gap:9px;flex-wrap:wrap;align-items:center;padding:12px 0}
+label{font-weight:600;color:var(--gold)}
+select{background:#18324c;color:white;padding:9px 12px;border:1px solid #849eb5;border-radius:7px;min-height:40px}
+#grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,320px),1fr));gap:12px}
+.card{background:#15263b;border:1px solid #4f657a;border-radius:10px;overflow:hidden;display:flex;flex-direction:column}
+.card figure{margin:0;position:relative;background:#091422}
+.card img{display:block;width:100%;height:auto;min-height:160px;object-fit:contain}
+.card .missing-art{display:grid;place-items:center;text-align:center;min-height:160px;padding:15px;color:#ffd2bf;font-size:13px}
+.card .body{padding:12px;display:grid;gap:5px;flex:1}
+.card h3{font-size:15px;color:var(--gold);margin:0}.card .meta{color:#bbc8d3;font-size:12px}
+.state{font-weight:700}.state.yes{color:var(--ok)}.state.no{color:var(--missing)}
+details{font-size:12px;color:#becddd}details summary{cursor:pointer;color:#e9d19c}details ol{margin:4px 0 0;padding-left:24px}
+small{color:#b3c1ce}
+footer{padding:22px 0;color:#b3c1ce}
+@media(max-width:550px){.summary strong{font-size:20px}.summary span{font-size:10px}}
+</style></head>
+<body>
+<header><h1>第一章・第1〜3ステージ 漫画原画検品</h1><a href="./story-maintenance.html">物語メンテナンスへ</a></header>
+<main>
+<p class="note">男性・女性を<strong>別々の原画</strong>として検品します。登録ありは「画像ファイルが取得できる」という意味で、絵の内容・人物一致・人間の承認まで完了した意味ではありません。未登録時は別の性別や勝敗の絵で代用しません。</p>
+<div class="summary"><div><strong id="registered">確認中</strong><span>取得可能な原画シート</span></div><div><strong id="required">20</strong><span>必要な男女別・結果別シート</span></div><div><strong id="missing">確認中</strong><span>未登録（または読み込み失敗）</span></div></div>
+<div class="toolbar">
+<label for="gender">主人公</label><select id="gender"><option value="all">男女すべて</option><option value="male">男性のみ</option><option value="female">女性のみ</option></select>
+<label for="stage">ステージ</label><select id="stage"><option value="all">1〜3すべて</option><option value="c01-s01">第1ステージ</option><option value="c01-s02">第2ステージ</option><option value="c01-s03">第3ステージ</option></select>
+<label for="outcome">原画の種類</label><select id="outcome"><option value="all">すべて</option><option value="pre">戦闘前</option><option value="town">町イベント後</option><option value="victory">勝利後</option><option value="defeat">敗北後</option><option value="gameover">主人公戦死後</option></select>
+</div>
+<p role="status" id="live">実ファイルを確認しています…</p>
+<div id="grid" aria-live="polite"></div>
+<footer>この画面は閲覧専用です。ゲームのセーブ・戦闘結果・分岐・人物3Dには変更を加えません。表示テキスト・ふりがな・音声は原画ファイルとは独立して管理します。</footer>
+</main>
+<script type="module">
+import {comicForStage,comicPageAsset} from "./src/story-chapter-comic.js";
+import {CAMPAIGN_STAGE_BY_ID} from "./src/campaign-stage-plan.js";
+const $=id=>document.getElementById(id);
+const stageIds=["c01-s01","c01-s02","c01-s03"];
+const genders=["male","female"];
+const statuses=["pre","victory","defeat","gameover"];
+const labels={pre:"戦闘前",town:"町イベント後",victory:"勝利後",defeat:"敗北後",gameover:"主人公戦死後"};
+const records=[];
+const outcomeContext=(status,gender)=>({protagonistGender:gender,...(status==="victory"?{battleOutcome:{victory:true}}:status==="defeat"?{battleOutcome:{victory:false}}:status==="gameover"?{battleOutcome:{victory:false,playerCommanderDead:true}}:{})});
+for(const stageId of stageIds){
+ const stage=CAMPAIGN_STAGE_BY_ID[stageId];
+ for(const gender of genders){
+  const phases=stage.kind==="town"?["pre","town"]:statuses;
+  for(const status of phases){
+   const phase=status==="pre"?"pre":"post",context=outcomeContext(status,gender);
+   const comic=comicForStage(stageId,phase,context);
+   for(const page of comic.pages){
+    records.push({stageId,stageName:stage.name,gender,status,phase,page:page.number,
+     panelCount:page.cellCount,panels:comic.panels.filter(p=>p.comicPage===page.number),
+     url:comicPageAsset(stageId,phase,context,page.number,gender),loaded:false,checked:false});
+   }
+  }
+ }
+}
+const stat=()=>{let yes=records.filter(x=>x.checked&&x.loaded).length;
+ $('registered').textContent=String(yes);$('required').textContent=String(records.length);
+ $('missing').textContent=records.every(x=>x.checked)?String(records.length-yes):String(records.filter(x=>x.checked&&!x.loaded).length)+" 以上";
+ $('live').textContent=records.every(x=>x.checked)?"読込結果："+yes+" / "+records.length+"シート登録あり（承認済みとは限りません）":"画像の読み込みを検証中…";
+};
+const inspect=rec=>new Promise(resolve=>{
+ const img=new Image();img.onload=()=>{rec.loaded=true;rec.checked=true;resolve();render()};
+ img.onerror=()=>{rec.checked=true;resolve();render()};img.src=rec.url;
+});
+function render(){
+ stat();const list=records.filter(r=>($('gender').value==="all"||r.gender===$('gender').value)&&
+ ($('stage').value==="all"||r.stageId===$('stage').value)&&
+ ($('outcome').value==="all"||r.status===$('outcome').value));
+ const wrap=document.createDocumentFragment();
+ for(const rec of list){
+  const article=document.createElement('article');article.className='card';article.dataset.asset=rec.url;
+  const fig=document.createElement('figure');
+  if(rec.loaded){const im=document.createElement('img');im.loading='lazy';im.src=rec.url;im.alt=rec.stageName+"／"+labels[rec.status]+"／"+(rec.gender==="female"?"女性":"男性")+"の漫画原画";fig.append(im);}
+  else {const empty=document.createElement('div');empty.className='missing-art';empty.textContent=rec.checked?"原画未登録：別の性別・結果の絵は表示しません":"原画の存在を確認中";fig.append(empty);}
+  const body=document.createElement('div');body.className='body';
+  const name=document.createElement('h3');name.textContent=rec.stageId+" "+rec.stageName;
+  const meta=document.createElement('div');meta.className='meta';meta.textContent=(rec.gender==="female"?"女性":"男性")+"／"+labels[rec.status]+"／"+rec.panelCount+"コマ／"+rec.page+"ページ目";
+  const status=document.createElement('div');status.className='state '+(rec.loaded?"yes":"no");status.textContent=rec.loaded?"画像ファイル登録あり（品質・承認は別）":rec.checked?"未登録":"確認中";
+  const details=document.createElement('details');const summary=document.createElement('summary');summary.textContent="台本・音声に紐づくコマを確認";details.append(summary);
+  const ol=document.createElement('ol');
+  for(const p of rec.panels){const li=document.createElement('li');li.textContent=(p.speaker||"語り手")+"："+(p.text||"");ol.append(li);}
+  details.append(ol);body.append(name,meta,status,details);article.append(fig,body);wrap.append(article);
+ }
+ $('grid').replaceChildren(wrap);
+}
+for(const id of ["gender","stage","outcome"])$(id).addEventListener('change',render);
+render();void Promise.all(records.map(inspect));
+</script></body></html>
