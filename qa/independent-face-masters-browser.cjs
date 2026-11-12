@@ -577,8 +577,14 @@ async function expectCenteredFaceSliders(page,gender){
    const lipSlider=hero.locator('#lipstickWidth');
    if(!await eyeSlider.isEnabled()||!await lipSlider.isEnabled())
     throw Error('Integrated full-body eye-gap/lip controls disabled');
-   await eyeSlider.fill('1.2');await eyeSlider.dispatchEvent('change');
-   await lipSlider.fill('2.8');await lipSlider.dispatchEvent('change');
+   await hero.evaluate(()=>{
+    const eye=document.getElementById('eyeSpacing');
+    eye.value='1.2';eye.dispatchEvent(new Event('input',{bubbles:true}));
+    eye.dispatchEvent(new Event('change',{bubbles:true}));
+    const lip=document.getElementById('lipstickWidth');
+    lip.value='2.8';lip.dispatchEvent(new Event('input',{bubbles:true}));
+    lip.dispatchEvent(new Event('change',{bubbles:true}));
+   });
    const edited=await hero.evaluate(()=>window.__heroineBodyQA());
    if(edited.editableFaceControls.eyeSpacing!==1.2||
       edited.editableFaceControls.lipstickWidth!==2.8||
