@@ -31,7 +31,7 @@ const shotKinds=[
  'Closing beat leading to the next stage or a retreat'
 ];
 const all=CAMPAIGN_STAGES.flatMap(stage=>{
- const story=mangaForStage(stage.id,{protagonistGender:'male',battleOutcome:{victory:true}});
+ const story=mangaForStage(stage.id,{protagonistGender:'male'});
  return story.panels.map(p=>{
   const actors=[p.characterId,p.secondaryId].filter(Boolean).map(id=>{
    const c=people.get(id);
@@ -46,10 +46,10 @@ const all=CAMPAIGN_STAGES.flatMap(stage=>{
    speaker:p.speaker,characters:actors,subtitleText:p.subtitleText,voiceText:p.voiceText,spokenText:p.text,
    shot:shotKinds[p.index%shotKinds.length],
    instruction:'An ORIGINAL, self-contained, full-bleed, 16:9 cinematic fantasy RPG scene; depicts ONLY this specific stage moment: '+p.text+
-    '. Location: '+STORY_CHAPTERS[p.chapter-1].location+'. Camera: '+shotKinds[p.index]+
+    '. Location: '+STORY_CHAPTERS[p.chapter-1].location+'. Camera: '+shotKinds[p.index%shotKinds.length]+
     '. Keep named character faces, clothing and faction heraldry consistent with the provided cast-master portraits. '+
     'If the player strategist appears, depict a MALE version in the base sheet. '+
-    'Do not copy art from a different stage or panel. No words, lettering, subtitles, narration boxes, '+
+    'Post-event artwork must be outcome-neutral, safe for victory and defeat; the verified outcome is shown in game text. Do not copy art from a different stage or panel. No words, lettering, subtitles, narration boxes, '+
     'speech bubbles, numbered panels, logos, watermarks, user interface, infographics or collage.'
   };
  });
