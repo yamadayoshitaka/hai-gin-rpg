@@ -212,6 +212,10 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  locks.userData.lockCount=lockCount;
  root.add(locks);
  const half=d.x*.0066;
+ // The visible mesh retains all 1440+ locks, but only ~320 master locks
+ // require full constraint and capsule solving on Android.
+ const guideStride=Math.max(1,Math.ceil(lockCount/320));
+ const guideCount=Math.ceil(lockCount/guideStride);
  let collisions=0,faceContacts=0,bodyContacts=0,accumulator=0,elapsed=0;
  // Conservative, real-head-derived frontal collider. In addition to
  // an ellipsoid it uses the actual sculpted vertices for the scalp roots.
@@ -239,11 +243,14 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    const strand=strands[i];
    for(let j=0;j<=segments;j++){
     const p=strand.points[j],t=j/segments;
+    // Fine ambient sway for strands not simulated with a dynamic guide.
+    const sway=i%guideStride?
+     Math.sin(elapsed*1.2+i*.37+j*.23)*d.x*.0008*t*t:0;
     const width=half*(1-.86*t)*(.78+.34*fract(i*.35));
     for(let k=0;k<4;k++){
      const at=(i*(segments+1)*4+j*4+k)*3;
      // Two crossed hair ribbons: visible at frontal and side angles.
-     vertices[at]=p.x+width*(k===0?-1:k===1?1:0);
+     vertices[at]=p.x+sway+width*(k===0?-1:k===1?1:0);
      vertices[at+1]=p.y;
      vertices[at+2]=p.z+width*(k===2?-1:k===3?1:0);
     }
@@ -254,9 +261,10 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  }
  function update(dt=.016){
   accumulator+=Math.min(Math.max(0,dt),.05);
-  if(accumulator<1/30)return;
+  if(accumulator<1/20)return;
   const step=Math.min(accumulator,.05);accumulator=0;elapsed+=step;
   for(let i=0;i<strands.length;i++){
+   if(i%guideStride)continue;
    const s=strands[i];
    s.points[0].copy(s.root);
    for(let j=1;j<=segments;j++){
@@ -276,6 +284,13 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   }
   writeGeometry();
  }
+ // Non-guide strands are resolved against face/body once at creation.
+ // They remain rigid to the head, so collision does not drift during
+ // camera rotation. Their displayed fine sway is sub-millimeter.
+ for(let i=0;i<strands.length;i++)if(i%guideStride){
+  const s=strands[i];
+  for(let j=1;j<=segments;j++)resolveCollision(s.points[j]);
+ }
  writeGeometry();
  root.userData.wigReport={
   style:'dense-side-back-layered-fringe',rooted:true,rootCount:lockCount,
@@ -283,7 +298,8 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   rootDistribution:{...zoneCounts},
   zoneCandidateCounts:Object.fromEntries(Object.entries(pools).map(([key,list])=>[key,list.length])),
   collisionTypes:['head','face','neck','shoulder','chest',...externalColliders.map(c=>c.name||'body')],
-  meshCount:2,physicsHz:30,lengthScale:clamp(lengthScale,.55,1.5),
+  meshCount:2,physicsHz:20,physicsGuideCount:guideCount,
+  analyticSwayOtherLocks:true,lengthScale:clamp(lengthScale,.55,1.5),
   hairColor:'#'+rootColor.getHexString(),
   tipColor:'#'+tips.getHexString()
  };
