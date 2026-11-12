@@ -20,76 +20,116 @@
         {
           "id": "c01-s01-m01",
           "path": "assets/story/chapters/c01/panels/c01-s01-m01-female.webp",
-          "label": "王都レヴナの夜明け",
-          "bytes": 33716,
-          "sha256": "7e5b72c110da7db1ec649eb1615a9ffc460a55e8ca73f139a3500364684f2495"
+          "bytes": 564854,
+          "sha256": "cac86db7635838d0223accf886f94062070b7c0e3ceb7bfdb87bb698fa2ba134",
+          "sourceResolution": [
+            1672,
+            941
+          ],
+          "qualityStatus": "source-high-resolution"
         },
         {
           "id": "c01-s01-m02",
           "path": "assets/story/chapters/c01/panels/c01-s01-m02-female.webp",
-          "label": "女性軍師と摂政の謁見",
-          "bytes": 26184,
-          "sha256": "5c57e5ffba6c96ab561b81d63e262c15f7e0727d1dec6decddee841a6abf2ff7"
+          "bytes": 435342,
+          "sha256": "e16731b753237f0aa88e2c906d7ff46a929df1300728292d878eb1a27272ec6f",
+          "sourceResolution": [
+            1672,
+            941
+          ],
+          "qualityStatus": "source-high-resolution"
         },
         {
           "id": "c01-s01-m03",
           "path": "assets/story/chapters/c01/panels/c01-s01-m03-female.webp",
-          "label": "ガランの紹介",
-          "bytes": 36812,
-          "sha256": "169e9b7ebf05df36ba8823c83f6c33835f334f2686a8d8a7713c554ebcba1184"
+          "bytes": 190988,
+          "sha256": "5631c41fad6df85d6641405615596064f2bd074069bbf8b5d46f46d331258a38",
+          "sourceResolution": [
+            768,
+            432
+          ],
+          "qualityStatus": "upscaled-from-768-source-needs-repaint"
         },
         {
           "id": "c01-s01-m04",
           "path": "assets/story/chapters/c01/panels/c01-s01-m04-female.webp",
-          "label": "治癒師イリスの証言",
-          "bytes": 38052,
-          "sha256": "004128b283bf365108e128314b7d03f5a2b0048300e6883f6a8997f3c2df5b6e"
+          "bytes": 509894,
+          "sha256": "a7efa303497a9c8d18a0353fcb38547437824eb1eb477b2d36c93ced950d5f8c",
+          "sourceResolution": [
+            1672,
+            941
+          ],
+          "qualityStatus": "source-high-resolution"
         },
         {
           "id": "c01-s01-m05",
           "path": "assets/story/chapters/c01/panels/c01-s01-m05-female.webp",
-          "label": "王印の矛盾に気づく軍議",
-          "bytes": 32026,
-          "sha256": "26a23ade2080053fe3ff568c1c9f109ffb6130b6dfd970568367116538ceb6fb"
+          "bytes": 369698,
+          "sha256": "fd5eb95ab31a6386868cad41d6e403b840f7b050334d38c485ff8c8a278a3bf9",
+          "sourceResolution": [
+            1672,
+            941
+          ],
+          "qualityStatus": "source-high-resolution"
         },
         {
           "id": "c01-s01-m11",
           "path": "assets/story/chapters/c01/panels/c01-s01-m11-female.webp",
-          "label": "消えた死者名簿を調べる",
-          "bytes": 33270,
-          "sha256": "b9522c2704fdaaaf5dd17287fa420b96e1bb8700aeddcfad6e6df59bf5da513b"
+          "bytes": 178280,
+          "sha256": "819bd37462322cb1af46e63f80f71753e99f2eb14b0cd45cd4fd16e924cd8b1e",
+          "sourceResolution": [
+            768,
+            432
+          ],
+          "qualityStatus": "upscaled-from-768-source-needs-repaint"
         },
         {
           "id": "c01-s01-m12",
           "path": "assets/story/chapters/c01/panels/c01-s01-m12-female.webp",
-          "label": "千年の星鐘",
-          "bytes": 41262,
-          "sha256": "7b0ed62255864819caf14964b7dd88de5e5405d3a045b7ee63379b2ad1854156"
+          "bytes": 204886,
+          "sha256": "37dde9d4579ffbee11d6bb6c00fe625a3d77002c3a9f883d8bf5221be5357f43",
+          "sourceResolution": [
+            768,
+            432
+          ],
+          "qualityStatus": "upscaled-from-768-source-needs-repaint"
         },
         {
           "id": "c01-s01-m13",
           "path": "assets/story/chapters/c01/panels/c01-s01-m13-female.webp",
-          "label": "不審な封蝋・王印",
-          "bytes": 54202,
-          "sha256": "5d394a1abd4652569d6eacf8d6d45cf01bd1bd271036793ea0dd9b93fbdcdbf3"
+          "bytes": 648136,
+          "sha256": "a9cef032436851aaf30bfe8dac15c139545474d95c653380a2d82266b3928e82",
+          "sourceResolution": [
+            1672,
+            941
+          ],
+          "qualityStatus": "source-high-resolution"
         },
         {
           "id": "c01-s01-m14",
           "path": "assets/story/chapters/c01/panels/c01-s01-m14-female.webp",
-          "label": "女性軍師が記録を照合",
-          "bytes": 28228,
-          "sha256": "8104bab852fe85f4d5a5b5a8745e5931c2529b12b7c62de765f281ac1dbcbaa2"
+          "bytes": 401690,
+          "sha256": "09d3f337fe8cd4638d658c9e7855799d17fd21c126f093cd195d053f3bf0d802",
+          "sourceResolution": [
+            1672,
+            941
+          ],
+          "qualityStatus": "source-high-resolution"
         },
         {
           "id": "c01-s01-m15",
           "path": "assets/story/chapters/c01/panels/c01-s01-m15-female.webp",
-          "label": "女性軍師が調査に出発",
-          "bytes": 130664,
-          "sha256": "4eafa98f610b075f157fca4c62dd9d18d56fe20a180dee92440265f31064ca3c"
+          "bytes": 703014,
+          "sha256": "118065285202109664e02925cf551c87f1c649c79367461c26fbbd18ac91aa71",
+          "sourceResolution": [
+            1672,
+            941
+          ],
+          "qualityStatus": "source-high-resolution"
         }
       ],
-      "bytes": 446874,
-      "sha256": "32f9b5c44dfbd5cfcca0d7ea2078e7f183e1cbcdfc3b6e28e11d6f47510343a4"
+      "bytes": 623252,
+      "sha256": "52718c2c964c6ec6b09e2ab6a653eac72812df0abc4d0209db05547f85be052b"
     },
     {
       "edition": "post-town",
@@ -226,5 +266,29 @@
     "c01-s01-m09-female",
     "c01-s01-m10-female"
   ],
-  "reviewSummary": "Female event-after numeric badges removed by replacing the five offending cropped panels with clean standalone illustrations. The male event-after scenes 6-9 have also been reauthored; the male sunset departure is retained and re-encoded. Male and female pre-event scenes remain the existing independent assets."
+  "reviewSummary": "AI DRAFT: female pre 7 high-resolution artworks improved, 3 retained as enhanced source requiring repaint; gender/outcome isolation verified, human QA pending.",
+  "qualityPass": {
+    "date": "2026-11-13",
+    "target": "c01-s01-pre-female",
+    "pixelDimensionsOfIndividualArt": [
+      1536,
+      864
+    ],
+    "genuinelyNewHighResolutionScenes": [
+      "c01-s01-m01",
+      "c01-s01-m02",
+      "c01-s01-m04",
+      "c01-s01-m05",
+      "c01-s01-m13",
+      "c01-s01-m14",
+      "c01-s01-m15"
+    ],
+    "legacyUpscaleNeedsRepaint": [
+      "c01-s01-m03",
+      "c01-s01-m11",
+      "c01-s01-m12"
+    ],
+    "humanApproved": false,
+    "notes": "Seven source-resolution scene artworks updated; three scenes from prior low-detail assets are still upscales, not falsely approved high-resolution originals."
+  }
 }

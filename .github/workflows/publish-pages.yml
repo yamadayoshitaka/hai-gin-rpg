@@ -50,6 +50,7 @@ jobs:
           node qa/story-panel-one-at-a-time.test.mjs
           node qa/story-c01-s01-artwork-bytes.test.mjs
           node qa/story-stage-one-full-batch.test.mjs
+          node qa/story-stage-one-resolution.test.mjs
           node qa/real-game-c01-manga-integration.test.mjs
           node --experimental-vm-modules qa/story-cinematic-raster.test.mjs
       - uses: actions/setup-python@v6
