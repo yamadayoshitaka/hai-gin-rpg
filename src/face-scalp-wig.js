@@ -51,8 +51,8 @@ function actualScalpCandidates(geo,box){
   if(yn>.825&&nz<.21)pools.crown.push(sample);
   // True forehead hairline grows from the top cap, never from between the
   // eyebrows or the cheeks (these generated the disconnected tiny spikes).
-  if(yn>.845&&nz>.105&&yn<.985)pools['fringe'+side].push(sample);
-  if(Math.abs(nx)>.185&&yn>.765&&yn<.92&&nz>-.075)
+  if(yn>.895&&nz>.025&&yn<.992)pools['fringe'+side].push(sample);
+  if(Math.abs(nx)>.185&&yn>.81&&yn<.94&&nz>-.075)
    pools['temple'+side].push(sample);
   // Rear/nape roots must originate in the posterior hemisphere.
   // Never fill a sparse rear zone with front scalp vertices.
@@ -69,8 +69,8 @@ function actualScalpCandidates(geo,box){
   const temple=zone.startsWith('temple');
   const candidates=all.filter(q=>onSide(q)&&
    (!rear||q.p.z<center.z-d.z*.04)&&
-   (!frontal||(q.p.y-box.min.y)/d.y>.83)&&
-   (!temple||(q.p.y-box.min.y)/d.y>.76));
+   (!frontal||(q.p.y-box.min.y)/d.y>.895)&&
+   (!temple||(q.p.y-box.min.y)/d.y>.81));
   if(candidates.length) pools[zone]=candidates;
   else{
    // Keep explicit QA failure instead of silently growing "rear" locks
@@ -187,7 +187,7 @@ function scalpShell(geo,box,color,{fullBody=false}={}){
   // the rear nape; no floating rectangle across the rear neck.
   // The front cap is ONLY a scalp covering, never a second set of little
   // triangles growing from the forehead, eyebrow or glabella.
-  const yCut=box.min.y+d.y*(zNorm>.10?.865:
+  const yCut=box.min.y+d.y*(zNorm>.10?.915:
    zNorm<-.035?.58:
    Math.abs((mid.x-center.x)/d.x)>.19?.68:.71);
   if(p.some(vertex=>vertex.y<yCut))continue;
@@ -435,10 +435,13 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   const closeToFace=fringe||overFace;
   // Posterior layers drift gently toward the center of the back,
   // closing the exposed rear part without piling into a single spike.
+  // Bangs grow DOWN over the forehead. Center-part only controls their
+  // root division; it must not sweep the tips sideways into cheek whiskers.
   const targetX=(back?
    center.x+(wigRoot.x-center.x)*.57:
-   wigRoot.x+side*d.x*(closeToFace?style.fringeSweep:.015))+
-   partSide*d.x*style.partWidth*partInfluence;
+   fringe?wigRoot.x+side*d.x*.0015:
+   wigRoot.x+side*d.x*(closeToFace?style.fringeSweep*.16:.015))+
+   partSide*d.x*style.partWidth*partInfluence*(fringe?.08:1);
   const targetZ=closeToFace?wigRoot.z+d.z*style.scalpClearance:
    // Go BEHIND the neck rather than being occluded by the rear bust skin.
    back?Math.min(wigRoot.z-d.z*.035,center.z-d.z*.13):
