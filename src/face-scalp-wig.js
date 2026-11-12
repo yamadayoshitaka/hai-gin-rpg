@@ -736,6 +736,10 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  let microFibreCount=0,microFibreTriangles=0;
  if(fiberMultiplier>1){
   const extra=fiberMultiplier-1,coords=[],shades=[],tris=[];
+  // 7 interpolation stations are enough for thin static filaments; the
+  // original moving guide still uses all 12 points. This nearly halves
+  // the render geometry cost on mobile at 10x density.
+  const fineSteps=[0,2,4,6,8,10,segments];
   const colorSeed=rootColor.clone();
   for(let i=0;i<strands.length;i++){
    const strand=strands[i],first=strand.points[0];
@@ -745,7 +749,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    for(let lane=0;lane<extra;lane++){
     const laneAt=(lane+.5)/extra-.5;
     const base=coords.length/3;
-    for(let j=0;j<=segments;j++){
+    for(const j of fineSteps){
      const p=strand.points[j],prev=strand.points[Math.max(0,j-1)],
       next=strand.points[Math.min(segments,j+1)];
      const tangent=next.clone().sub(prev).normalize();
@@ -767,8 +771,8 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
       shades.push(colorSeed.r*c,colorSeed.g*c,colorSeed.b*c);
      }
     }
-    for(let j=0;j<segments;j++){
-     const a=base+j*2,b=a+2;
+    for(let m=0;m<fineSteps.length-1;m++){
+     const a=base+m*2,b=a+2;
      tris.push(a,a+1,b,b,a+1,b+1);
     }
     microFibreCount++;
