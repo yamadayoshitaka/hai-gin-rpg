@@ -50,7 +50,7 @@ export function femaleInnerFeatureDelta({xn,yn,zn,offsetX,depth,height=0,control
  * central chin, while the real chin edge lies farther out. The front of
  * the lower cheek was also left hollow at x≈.30–.50.
  *
- * - z: restore a broad continuous convex cheek to the corner-of-mouth
+ * - z: restore soft volume BELOW the cheekbone, smoothing the hollow toward the corner-of-mouth
  * - x: taper ONLY the lower jaw edge into a small oval/V chin point
  * - y: drop ONLY the centre of the chin tip slightly to remove a flat end
  *
@@ -62,13 +62,16 @@ export function femaleCheekJawDelta({xn,yn,zn,offsetX,depth,height}){
  // Cheek correction occupies the anterior middle/lower cheek surface.
  // Zero at centre mouth, temples, ears and on the rear skull.
  const cheekSupport=smooth(.16,.25,ax)*(1-smooth(.65,.79,ax))
-  *bell(ax,.39,.19)*bell(yn,.465,.106)
+  *bell(ax,.42,.205)*bell(yn,.455,.125)
   *(1-smooth(.56,.625,yn))*front;
  const mouthCornerSupport=smooth(.16,.24,ax)
   *(1-smooth(.60,.77,ax))*bell(ax,.275,.17)
   *bell(yn,.427,.075)
   *(1-smooth(.56,.625,yn))*front;
- const dz=depth*(.010*cheekSupport+.003*mouthCornerSupport);
+ // Refill gaunt mid/lower cheeks in depth rather than ballooning the
+ // cheekbone or moving the eye sockets. The masks vanish near ears,
+ // lips, jaw apex and the rear of the head.
+ const dz=depth*(.022*cheekSupport+.006*mouthCornerSupport);
  // Full support on the actual chin outline, not only at the centreline.
  // Taper smoothly to zero before reaching the cheeks (yn >= .485).
  const jawBand=bell(yn,.30,.105)*(1-smooth(.39,.45,yn))*front;
@@ -231,7 +234,7 @@ export function makeIndependentFaceMaster(sourceRoot,gender,{femaleControls={},m
   const ny=y+d.y*spec.chinLift*chin+surfaceFairing.dy*.9
     +local.dy-d.y*.0025*pointGain*pointApex+eyeSocketDy+
     browFitY+noseFitY+mouthFitY;
-  const nz=z+d.z*(spec.cheekFill*(.74*cheek+.92*lowerCheek)
+  const nz=z+d.z*(spec.cheekFill*(.74*cheek+1.11*lowerCheek)
     +.016*chinHollow
     +spec.eyeSocketSoftness*bell(Math.abs(xn),.43,.22)
       *bell(yn,.69,.055)*front)+local.dz+surfaceFairing.dz
