@@ -154,6 +154,14 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
  for(const side of [-1,1]){
   const firstChild=root.children.length;
   const x=cx+side*eyeSpacing,y=eyeHeight;
+  // Fit from actual orbital boundary points on the sculpted face.
+  const rimWidth=eyeRadius*1.12,rimHeight=eyeRadius*.33;
+  const landmarks={
+   inner:new THREE.Vector3(x-side*rimWidth,y,surfaceAt(x-side*rimWidth,y)),
+   outer:new THREE.Vector3(x+side*rimWidth,y,surfaceAt(x+side*rimWidth,y)),
+   upper:new THREE.Vector3(x,y+rimHeight,surfaceAt(x,y+rimHeight)),
+   lower:new THREE.Vector3(x,y-rimHeight,surfaceAt(x,y-rimHeight))
+  };
   const faceZ=surfaceAt(x,y);
   // Set globes into the socket but forward enough for the colored iris
   // to stay visible at oblique camera angles; not floating over the lids.
@@ -164,7 +172,10 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   const localSkinAtProfile=surfaceAt(profileProbeX,y);
   const cornealAtProfile=eyeRadius*.97*Math.sqrt(1-.86*.86);
   const desiredProfileGap=Math.max(d.z*.018,eyeRadius*.18);
-  const z=Math.max(faceZ+eyeRadius*.35,
+  const orbitalDepth=(landmarks.inner.z+landmarks.outer.z+
+   landmarks.upper.z+landmarks.lower.z)*.25;
+  const z=Math.max(Math.min(faceZ+eyeRadius*.035,
+    orbitalDepth+eyeRadius*.085),
    localSkinAtProfile+desiredProfileGap-cornealAtProfile);
   const globe=new THREE.Mesh(new THREE.SphereGeometry(eyeRadius,36,24),eyeMat);
   globe.name=(side===-1?'LEFT':'RIGHT')+'_ORBITAL_EYEBALL';
@@ -210,8 +221,10 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
     const cornerTilt=(t+1)*eyeRadius*.045;
     const nearY=y+(upper?1:-1)*height*arch+cornerTilt;
     const farY=nearY+(upper?1:-1)*eyeRadius*(upper?.28:.19)*v;
-    const globeZ=z+eyeRadius*(.71*Math.sqrt(Math.max(0,1-t*t))+.14);
-    const skinZ=surfaceAt(x+t*width,farY)+d.z*.005;
+    const px=t*width/(1.18*eyeRadius),py=(nearY-y)/(.79*eyeRadius);
+    const globeZ=z+eyeRadius*.97*Math.sqrt(Math.max(.01,1-px*px-py*py))+
+     d.z*.0012;
+    const skinZ=surfaceAt(x+t*width,farY)+d.z*.0018;
     const zz=globeZ*(1-smoothstep(v))+skinZ*smoothstep(v);
     return new THREE.Vector3(x+t*width,farY,zz);
    },lidMat);
@@ -251,6 +264,31 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
    upperFold.userData.anatomical='upper-lid-crease';
    upperFold.userData.colorRole='eyelid';
    root.add(upperFold);
+   // Upper-lid eyeshadow shares the upper eyelid's actual joint and surface.
+   // RGBA mesh vertices feather at the edges; no floating decal card.
+   const eyeLabel=side===-1?'LEFT':'RIGHT';
+   const upperEyelid=root.getObjectByName(eyeLabel+'_UPPER_ANATOMICAL_EYELID');
+   const shadowMaterial=new THREE.MeshBasicMaterial({
+    color:0x865b7d,transparent:true,opacity:.79,
+    side:THREE.DoubleSide,depthWrite:false,vertexColors:true
+   });
+   const upperShadow=buildGrid(eyeLabel+'_UPPER_EYESHADOW',28,6,(u,v)=>{
+    const p=sampleGrid(upperEyelid,28,4,u,.12+v*.78);
+    p.z+=Math.max(.00005,d.z*.0018);
+    return p;
+   },shadowMaterial);
+   const pigment=[];
+   for(let j=0;j<=6;j++)for(let i=0;i<=28;i++){
+    const u=i/28,v=j/6,outer=side===-1?1-u:u;
+    pigment.push(1,1,1,.81*Math.pow(Math.sin(Math.PI*u),.6)*
+     Math.pow(Math.sin(Math.PI*v),.72)*(.70+.30*outer));
+   }
+   upperShadow.geometry.setAttribute('color',
+    new THREE.Float32BufferAttribute(pigment,4));
+   upperShadow.userData.colorRole='upperShadow';
+   upperShadow.userData.cosmetic=true;
+   upperShadow.userData.onRealEyelid=true;
+   upperEyelid.add(upperShadow);
    const accentMat=new THREE.MeshStandardMaterial({
     color:0x765458,roughness:.87,metalness:0,side:THREE.DoubleSide,
     transparent:true,opacity:.19,depthWrite:false
@@ -304,7 +342,6 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
    root.add(eyeShadow);
   }
   if(female){
-   const eyeLabel=side===-1?'LEFT':'RIGHT';
    const pivot=new THREE.Group();
    pivot.name=eyeLabel+'_BROW_ANGLE_CONTROL';
    const browY=y+eyeRadius*1.47;
@@ -517,6 +554,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
    attachedToLipMesh:true,paintAsVertexColor:true
   }:null,
   eyelinerMeshCount:female?4:0,eyelinerCornersClosed:female,
+  upperEyeshadowMeshCount:female?2:0,shadowOnRealEyelids:female,
   eyeAccentMeshCount:female?2:0,
   blushMeshCount:0,blushVertexTint:female,
   blushOpacityFactor:female?.43:0,beardMeshCount:female?0:5,
@@ -532,7 +570,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   mouthHalfWidthFraction:.044,
   lipCenterNormalized:Number(((lipCenter-box.min.y)/d.y).toFixed(4)),
   eyeScale,eyeProfileLateralMargins:lateralEyeMargins.map(v=>Number(v.toFixed(6))),
-  eyeballProjection:'true-3d-profile-exposed',
+  eyeballProjection:'orbital-four-landmark-fitted-ellipsoid',
   contactColorDefault:safeContactColor(settings.contactColor),
   eyeAngleDefault:settings.eyeAngle,
   maleCosmeticsDisabled:!female,
@@ -607,19 +645,21 @@ export function applyFaceColorMode(face,mode='clay',{contactColor}={}){
  const clay={
   skin:0xbfc3cb,eyelid:0xbcbfc5,lipBase:0xbfc3cb,
   lipstick:0xbfc3cb,underEye:0xbcbfc5,
-  eyeliner:0xbcbfc5,eyeAccent:0xbcbfc5,blush:0xbfc3cb,beard:0x8c929a,
+  eyeliner:0xbcbfc5,eyeAccent:0xbcbfc5,upperShadow:0xbcbfc5,
+  blush:0xbfc3cb,beard:0x8c929a,
   sclera:0xd5d8dd,iris:0x747a83,pupil:0x30353b,
   brow:0xa2a6ac,lashes:0x8c929a
  };
  const palette={
   ...FACE_V7_PALETTE,lipBase:male?0xc9998b:0xd9a699,
+  upperShadow:0x865b7d,
   lipstick:0xc07c82,
   iris:male?0x50413b:parseInt(safeContactColor(contactColor).slice(1),16)
  };
  face.traverse(o=>{
   if(!o.isMesh||!o.material)return;
   const role=o.userData?.colorRole;
-  if(['lipstick','underEye','eyeliner','eyeAccent','blush'].includes(role)){
+  if(['lipstick','upperShadow','underEye','eyeliner','eyeAccent','blush'].includes(role)){
    o.visible=colored&&!male;
   }
   if(role&&o.material.color){
