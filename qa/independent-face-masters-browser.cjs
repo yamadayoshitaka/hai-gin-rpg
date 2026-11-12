@@ -108,9 +108,9 @@ async function expectCenteredFaceSliders(page,gender){
      original.female?.sourceVertices!==original.male?.sourceVertices||
      !original.female?.sourceGeometryIndependent||
      !original.male?.sourceGeometryIndependent||
-     original.female?.facePartMeshCount!==32||
+     original.female?.facePartMeshCount!==28||
      original.male?.facePartMeshCount!==19||
-     original.visiblePartMeshes!==32||
+     original.visiblePartMeshes!==28||
      original.faceMode!=='color'||
      original.femaleControls.irisDiameter!==1||
      original.femaleControls.jawSharpness!==5||
@@ -664,6 +664,29 @@ async function expectCenteredFaceSliders(page,gender){
     throw Error('Contact lens color selector not applied to actual model');
    if(!await hero.locator('#eyeDepth').isEnabled())
     throw Error('Eye socket depth slider missing');
+   for(const key of [
+    'eyeWidth','eyeHeight','browWidth','browThickness',
+    'lashDensity','lashLength','lashThickness','lashCurl'
+   ]){
+    if(!await hero.locator('#'+key).isEnabled())
+     throw Error('v26 eye-region part slider is unavailable: '+key);
+   }
+   // Eye regions are one mobile foldout, including an eyelash subgroup.
+   const eyeSection=hero.locator('#faceSectionEyes');
+   if(await eyeSection.count()!==1||
+      await eyeSection.locator('#lashDensity').count()!==1||
+      await eyeSection.locator('#browWidth').count()!==1)
+    throw Error('Unified eye, eyebrow and eyelash controls are not together');
+   const fitted=await hero.evaluate(()=>{
+    const parts=window.__heroineBodyPreview.getActor();
+    const sphere=parts.getObjectByName('LEFT_ORBITAL_EYEBALL');
+    return {noSphere:sphere?.userData.noDetachedEyeball===true,
+     eyeBag:!!parts.getObjectByName('LEFT_UNDER_EYE_SHADOW'),
+     lowerBulge:!!parts.getObjectByName('LEFT_LOWER_LID_VOLUME')};
+   });
+   if(!fitted.noSphere||fitted.eyeBag||fitted.lowerBulge)
+    throw Error('Face-conformal eye still has detached ball or eye bags '+
+     JSON.stringify(fitted));
    // Test real mouse-wheel pinch zoom (not merely the portrait button):
    // a face-slider rebuild must preserve the same camera pose and orbit.
    await hero.locator('#bodyCanvas').hover();
