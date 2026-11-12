@@ -7,6 +7,7 @@
 import {mangaForStage} from './story-stage-manga.js';
 import {storyPagePosition} from './story-manga-page.js';
 import {comicForStage,comicPageAsset} from './story-chapter-comic.js';
+import {renderStoryRubyText} from './story-ruby-display.js';
 import {fantasyCueForMangaPanel} from './fantasy-scene-score.js';
 import {createStoryVoiceDirector} from './story-voice-director.js';
 const CORE_SETTINGS='hai-gin-core-settings-v1';
@@ -66,6 +67,8 @@ export function createMangaViewer({container=document.body,storage=globalThis.lo
  #stageMangaViewer .manga-speaker{font:bold 13px system-ui;color:#f0d7a6;border-bottom:1px solid #56647a;padding-bottom:4px}
  #stageMangaViewer .manga-line{font:clamp(13px,3.4vw,17px)/1.7 Georgia,'Noto Serif JP',serif;
    margin:6px 0 0;white-space:pre-wrap;max-height:28dvh;overflow-y:auto}
+ #stageMangaViewer .manga-line ruby{ruby-position:over;text-decoration:none}
+ #stageMangaViewer .manga-line rt{font:600 0.57em/1.3 system-ui;color:#e9c997}
  #stageMangaViewer .manga-bottom{display:grid;gap:10px;margin-top:auto}
  #stageMangaViewer .manga-progress{text-align:center;color:#d7c8a9;font:11px system-ui;letter-spacing:.2em}
  #stageMangaViewer .manga-controls{display:grid;grid-template-columns:1fr 1.65fr 1fr;gap:6px}
@@ -131,7 +134,7 @@ export function createMangaViewer({container=document.body,storage=globalThis.lo
   $('.manga-art').alt=story.stageName+'の'+(shot.phase==='pre'?'イベント前':'イベント後')+
    '（'+shot.comicEdition+'）'+(shot.protagonistGender==='female'?'女性版':'男性版');
   $('.manga-speaker').textContent=shot.speaker+(shot.characterId?'　／　'+shot.faction+'・'+shot.role:'　／　ナレーション');
-  $('.manga-line').textContent=shot.subtitleText||shot.text;
+  renderStoryRubyText($('.manga-line'),shot);
   $('.manga-shot').textContent=story.id.toUpperCase()+' · '+shot.comicEdition+' · ページ'+shot.comicPage;
   $('.manga-progress').textContent='セリフ '+(index+1)+' / '+visiblePanels.length+'　（このページ '+(shot.comicCell+1)+' / '+pagePanels.length+'コマ）';
   $('.manga-previous').disabled=index===0;
