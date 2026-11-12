@@ -329,7 +329,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
    const r=j/18,angle=i/48*Math.PI*2;
    const fiber=.94+.06*Math.sin(angle*38+r*23)*Math.sin(angle*23-r*11);
    const limbal=1-.26*Math.pow(THREE.MathUtils.smoothstep(r,.82,1),2);
-   const collarette=.92+.08*Math.exp(-((r-.39)/.12)**2);
+   const collarette=.92+.08*Math.exp(-Math.pow((r-.39)/.12,2));
    const c=fiber*limbal*collarette;
    fiberColors.push(c,c*.98,c*.96);
   }
