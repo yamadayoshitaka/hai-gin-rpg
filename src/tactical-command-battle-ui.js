@@ -1,6 +1,7 @@
 import {
  squadPower,rankTacticalOrders,tacticalCooldownSeconds,COMMAND_LABELS,healthSituation
 } from './tactical-command-evaluation.js';
+import {orderEffect} from './tactical-command-descriptions.js';
 
 const fragment=(tag,cls,text)=>{
  const el=document.createElement(tag);
@@ -57,7 +58,8 @@ export function installBattleTacticalUI({
    button.append(fragment('strong','',(index===0?'★ ':'')+COMMAND_LABELS[option.mode]),
     fragment('small','','無抵抗効果 '+option.effect+'/100'),
     fragment('small','','成功見込み '+option.success+'%'+
-     (option.commanderBonus?'・軍師+'+option.commanderBonus+'pt':'')));
+     (option.commanderBonus?'・軍師+'+option.commanderBonus+'pt':'')),
+    fragment('small','tacticalOrderEffect',orderEffect(option.mode)));
    button.onclick=()=>{
     if(issueOrder(id,option.mode)){closeSquad();preview.hidden=true;}
    };

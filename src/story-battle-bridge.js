@@ -1,5 +1,6 @@
 import { BUFFS, TERRITORIES, accessible, squadCommanderId, reserveTroops } from './story-campaign.js';
 
+import {deploymentForSquad,slotLane,slotRank} from './inn-deployment.js';
 export const STORY_BATTLE_REQUEST_KEY = 'hai-gin-story-sortie-v1';
 export const STORY_BATTLE_RESULT_KEY = 'hai-gin-story-result-v1';
 export const STORY_BATTLE_MAX_UNITS = 50;
@@ -47,12 +48,15 @@ export function createStoryBattleRequest(state, territoryId, { battleId = String
     faceId: Number.isInteger(c.faceId) ? Math.max(0,Math.min(7,c.faceId)) : 0,
     orders: BUFFS.filter(b => b.unlock <= c.level).map(b => ({ ...b })),
   }));
+  const deploymentSquads=allotment.map(item=>item.squad);
   const units = allotment.flatMap(({ squad, count }, i) => {
+    const slot=deploymentForSquad(squad,i,deploymentSquads);
     const selectedLane = lanes[squad.id];
-    const lane = STORY_SPAWN_LANES.includes(selectedLane) ? selectedLane : STORY_SPAWN_LANES[i % STORY_SPAWN_LANES.length];
+    const lane = STORY_SPAWN_LANES.includes(selectedLane) ? selectedLane : slotLane(slot);
     return Array.from({ length: count }, () => ({
       squadId: squad.id, commanderId: String(squadCommanderId(squad)),
-      job: STORY_JOB_TO_BATTLE[squad.job] || '剣士', rarity: squad.rarity, spawnLane: lane,
+      job: STORY_JOB_TO_BATTLE[squad.job] || '剣士', rarity: squad.rarity,
+      spawnLane: lane, spawnRank: slotRank(slot), deploymentSlot: slot
     }));
   });
   return { version: 1, battleId: String(battleId), territoryId,

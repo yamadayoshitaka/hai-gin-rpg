@@ -6,6 +6,7 @@ import {BUFFS,squadCommanderId,reserveTroops,gainExperience} from './story-campa
 import {coreVictoryReward,verifiedBattleLoot} from './battle-victory-rewards.js';
 import {allocateSortieSlots,STORY_JOB_TO_BATTLE,STORY_SPAWN_LANES} from './story-battle-bridge.js';
 import {CAMPAIGN_STAGE_BY_ID} from './campaign-stage-plan.js';
+import {deploymentForSquad,slotLane,slotRank} from './inn-deployment.js';
 import {storyStageContext} from './story-narrative-flow.js';
 import {markStageVictory,squadEquipmentBonus} from './game-core-flow.js';
 export const CORE_BATTLE_PENDING_KEY='hai-gin-core-battle-pending-v1';
@@ -25,12 +26,16 @@ export function makeCoreBattleRequest(game,stageId,battleId=String(Date.now())){
   gender:c.gender==='female'?'female':'male',faceId:c.faceId||0,
   orders:BUFFS.filter(b=>b.unlock<=c.level).map(b=>({...b}))
  }));
- const units=allotment.flatMap(({squad,count},i)=>Array.from({length:count},()=>({
-  squadId:squad.id,commanderId:String(squadCommanderId(squad)),
-  job:STORY_JOB_TO_BATTLE[squad.job]||'剣士',rarity:squad.rarity,
-  equipmentBuff:squadEquipmentBonus(squad),
-  spawnLane:STORY_SPAWN_LANES[i%STORY_SPAWN_LANES.length]
- })));
+ const deploymentSquads=allotment.map(item=>item.squad);
+ const units=allotment.flatMap(({squad,count},i)=>{
+  const slot=deploymentForSquad(squad,i,deploymentSquads);
+  return Array.from({length:count},()=>({
+   squadId:squad.id,commanderId:String(squadCommanderId(squad)),
+   job:STORY_JOB_TO_BATTLE[squad.job]||'剣士',rarity:squad.rarity,
+   equipmentBuff:squadEquipmentBonus(squad),
+   spawnLane:slotLane(slot),spawnRank:slotRank(slot),deploymentSlot:slot
+  }));
+ });
  const monsterBattle=stage.kind==='explore'||stage.kind==='boss';
  const storyContext=storyStageContext(game,stage.id);
  return {

@@ -751,6 +751,7 @@ import {findStableGridPath,stableGridNext,sameNavigationCell} from './src/battle
 import {formatSquadIntent} from './src/battle-squad-intent.js?v=4.6.45';
 import {sortSquadRibbon,squadRibbonStatus,ORDER_COOLDOWN_SECONDS} from './src/battle-command-roster.js?v=4.6.69';
 import {tacticalCooldownSeconds} from './src/tactical-command-evaluation.js?v=2.1';
+import {TACTICAL_STRATEGIES,TACTICAL_ORDERS,orderEffect,strategyEffect} from './src/tactical-command-descriptions.js?v=1';
 import {coreVictoryReward,territoryVictoryReward,verifiedBattleLoot} from './src/battle-victory-rewards.js?v=2.2';
 import {CAMPAIGN_STAGE_BY_ID} from './src/campaign-stage-plan.js';
 import {TERRITORIES} from './src/story-campaign.js';
@@ -2957,12 +2958,19 @@ function placeFormation(team,idx,job){
  const z=bridgeRows[bridgeIndex]+(column-2)*3.25;
  return new THREE.Vector3((x-6)*CELL,0,(z-6)*CELL)
 }
-const storyLaneCounters={north:0,center:0,south:0};
+const storyLaneCounters=new Map();
 function placeStoryFormation(team,unit){
  const lane=['north','center','south'].includes(unit.spawnLane)?unit.spawnLane:'center';
+ const stageRank=Math.max(0,Math.min(3,Math.floor(Number(unit.spawnRank)||0)));
  const rowByLane={north:55,center:116,south:177};
- const idx=storyLaneCounters[lane]++,column=idx%5,row=Math.floor(idx/5);
- const x=team===0?109-row*2.6:126+row*2.6,z=rowByLane[lane]+(column-2)*3.25;
+ const key=lane+':'+stageRank;
+ const idx=storyLaneCounters.get(key)||0;
+ storyLaneCounters.set(key,idx+1);
+ const column=idx%5,row=Math.floor(idx/5);
+ // Inn deployment row controls real battle depth, not just a decorative map.
+ const depth=stageRank*5.5+row*2.6;
+ const x=team===0?109-depth:126+depth;
+ const z=rowByLane[lane]+(column-2)*3.25;
  return new THREE.Vector3((x-6)*CELL,0,(z-6)*CELL);
 }
 const spawnOutside=(x,z,team)=>{
@@ -6246,7 +6254,20 @@ function squadObjectiveShort(id,team=0){
 }
 function squadOrderText(id){return squadIntent(id).purpose;}
 function squadStrategist(id,team=0){
- return massSim?.units.find(u=>u.isStrategist&&u.team===team&&u.alive&&u.hp>0&&String(u.squadId)===String(id))??null;
+ return (massSim?.units??actors).find(u=>u.isStrategist&&u.team===team&&
+  u.alive!==false&&u.hp>0&&String(u.squadId)===String(id))??null;
+}
+/** The actual commanding unit is the preferred focus. Legacy 50-person story
+ * missions without a separate strategist rig fall back to the living squad. */
+function squadCommandFocus(id,team=0){
+ const general=squadStrategist(id,team);
+ if(general){
+  const p=cinematicHumanWorldPoint(general);
+  if(p)return {point:p,unit:general,isCommander:true};
+ }
+ const first=(massSim?.units??actors).find(u=>u.team===team&&
+  String(u.squadId)===String(id)&&u.hp>0&&u.alive!==false&&!u.isStrategist);
+ return first?{point:cinematicHumanWorldPoint(first),unit:first,isCommander:false}:null;
 }
 /**
  * Camera animation shared by orders, exploration, result reports and UR skills.
@@ -6290,7 +6311,7 @@ function startBattleFocusCinematic({x,z,priority=90,kind='order',team=0,focusUni
  // Target the real soldier, not an unrelated opponent or empty foliage.
  const roster=massSim?.units??actors;
  let focusUnit=focusUnitId==null?null:roster.find(u=>u.id===focusUnitId&&u.team===team&&
-  u.hp>0&&u.alive!==false&&!u.isStrategist);
+  u.hp>0&&u.alive!==false&&(kind==='order'||!u.isStrategist));
  if(!focusUnit&&kind!=='explore'){
   const nearby=closestAliveBattleFocus(roster,x,z,{
    team,gridOffset:massSim?6:0,cellSize:massSim?CELL:1,maxDistance:20*CELL
@@ -6316,14 +6337,15 @@ function startBattleFocusCinematic({x,z,priority=90,kind='order',team=0,focusUni
  return true;
 }
 function beginSquadFocusCinematic(squadId,team=0,kind='order'){
+ const target=kind==='order'?squadCommandFocus(squadId,team):null;
  const members=(massSim?.units??actors).filter(u=>
   u.team===team&&String(u.squadId)===String(squadId)&&
   u.hp>0&&u.alive!==false&&!u.isStrategist);
  const detailed=members.find(u=>massSim?actors.some(a=>a.massUnitId===u.id&&a.root.visible):
   u.root?.visible);
- const unit=detailed||members[0];
+ const unit=target?.unit||detailed||members[0];
  if(!unit)return false;
- const point=cinematicHumanWorldPoint(unit);
+ const point=target?.point||cinematicHumanWorldPoint(unit);
  return point?queueBattleFocusCinematic(point.x,point.z,{
   kind,team,focusUnitId:unit.id,focusY:point.y,priority:kind==='order'?110:100
  }):false;
@@ -6358,7 +6380,9 @@ function updateCommanderCinematic(){
   controls.target.lerpVectors(shot.closeTarget,shot.overTarget,a);
  }else{
   camera.position.copy(shot.overPosition);controls.target.copy(shot.overTarget);
-  commanderCinematic=null;setCameraActive('camOverview');
+  commanderCinematic=null;
+  setBattleCamera(shot.overTarget,cameraOverviewOffset);
+  setCameraActive('camOverview');
  }
 }
 window.getBattleCinematicQA=()=>({
@@ -6431,6 +6455,7 @@ let pendingDirectOrder=null;
 function queueDirectOrder(mode,id=orderedSquad()){
  if(id==null||!hasSquadCommander(id)||squadOrderCooldownSeconds(id)>0)return false;
  pendingDirectOrder={mode,id:String(id)};
+ $('battleOrderConfirm').querySelector('small').textContent=orderEffect(mode);
  $('battleOrderConfirmTitle').textContent=squadPrimaryJob(id)+'隊に「'+
   ({charge:'突撃',defend:'守備',hold:'待機',retreat:'退却'}[mode]||mode)+'」を発令しますか？';
  $('battleOrderConfirm').hidden=false;
@@ -6450,7 +6475,7 @@ $('battleOrderConfirmCommit').onclick=()=>{
  if(String(orderedSquad())!==String(id))return;
  if(issueSquadOrder(mode)){
   pendingDirectOrder=null;$('battleOrderConfirm').hidden=true;
-  closeSquadTactics();
+  closeSquadTactics(true);
  }
 };
 $('battleTargetConfirmBack').onclick=()=>{
@@ -6606,34 +6631,19 @@ function openSquadTactics(id){
  if(tacticalBankRemaining>0)tacticalPlanningActive=true;
  selectedSquadId=String(id);trackedAllySquadId=String(id);squadQuickPage='orders';squadQuickPageIndex=0;document.body.classList.add('compact-orders-open');$('dockSquadSelect').value=String(id);
  pickingSquadDestination=false;pickingSquadMission=null;pickingStrategistWarp=false;clearMissionPreview();
- // Focus the ACTUAL surviving squad, not a distant or fallen strategist.
- // Keep one confirmed survivor tracked so moving troops remain visible.
- const anchor=squadCenter(id);
- if(anchor){
-  const representative=members.reduce((best,u)=>{
-   const x=massSim?u.x:u.cell.x,z=massSim?u.z:u.cell.z;
-   const d=(x-anchor.x)**2+(z-anchor.z)**2;
-   return !best||d<best.distance?{unit:u,distance:d}:best;
-  },null)?.unit;
-  const x=(anchor.x-6)*CELL,z=(anchor.z-6)*CELL;
-  const spread=Math.sqrt(Math.max(0,...members.map(u=>{
-   const px=massSim?u.x:u.cell.x,pz=massSim?u.z:u.cell.z;
-   return (px-anchor.x)**2+(pz-anchor.z)**2;
-  })));
-  // Selecting a squad from the left ribbon opens orders, NOT character
-  // close-up tracking. Follow-mode silently closed the popup next frame.
-  // Keep the command view beyond auto-hide thresholds in both army sizes.
-  const distance=MASS_SIZE>=1000?
-    Math.min(88,Math.max(62,12+spread*CELL)):
-    Math.min(28,Math.max(17,12+spread*CELL));
-  const focus=new THREE.Vector3(x,terrainY(x,z)+1.3,z);
-  const offset=new THREE.Vector3(distance*.68,distance*.72,distance*.72);
-  if(!massSim&&representative)selected=representative;
-  focusedHumanUnitId=null;
-  followCamera=false;
+ // The commander, when actually modelled in this battle, owns the tactical
+ // zoom. For older story encounters without a strategist rig use a living unit.
+ const commandFocus=squadCommandFocus(id);
+ if(commandFocus?.point){
+  const distance=MASS_SIZE>=1000?32:19;
+  const focus=commandFocus.point.clone();
+  const offset=new THREE.Vector3(distance*.5,distance*.7,distance*.5);
+  if(!massSim)selected=commandFocus.unit;
+  focusedHumanUnitId=null;followCamera=false;
   setBattleCamera(focus,offset);
   setCameraActive(null);
  }
+
  // Hold the selected squad zoom while the player chooses a command;
  // never overwrite it with the old top-down overview.
  commandOverviewLocked=true;
@@ -6732,18 +6742,18 @@ function chooseCircleActionTarget(id,team){
  // Selection only zooms to the target; explicit confirmation issues the order.
  action.selectedTargetId=String(id);
  action.selectedTargetTeam=team;
- const target=squadCenter(id,team);
+ const commandTarget=squadCommandFocus(id,team);
+ const target=commandTarget?.point;
  if(target){
-  const x=(target.x-6)*CELL,z=(target.z-6)*CELL;
-  const focus=new THREE.Vector3(x,terrainY(x,z)+1.5,z);
-  const distance=MASS_SIZE>=1000?49:29;
-  setBattleCamera(focus,new THREE.Vector3(distance*.45,distance*.55,distance*.68));
+  const distance=MASS_SIZE>=1000?36:22;
+  setBattleCamera(target,new THREE.Vector3(distance*.5,distance*.7,distance*.5));
   setCameraActive(null);
  }
  const actionLabel=action.kind==='attack'?'突撃':action.kind==='support'?'回復支援':'道具使用';
  $('battleTargetConfirmTitle').textContent=actionLabel+'：'+squadPrimaryJob(id,team)+'隊';
  $('battleTargetConfirmText').textContent=squadName(action.source)+
-  ' → '+(team===1?'敵':'味方')+squadName(id,team)+'。対象をズームして確認してください。';
+  ' → '+(team===1?'敵':'味方')+squadName(id,team)+'。'+
+  orderEffect(action.kind==='attack'?'charge':action.kind==='support'?'support':'explore');
  $('battleTargetConfirm').hidden=false;
  document.body.classList.add('command-target-preview');
  return true;
@@ -6777,7 +6787,7 @@ function confirmCircleActionTarget(){
   lastCircleTargetResolvedAt=performance.now();
   cancelPendingSquadCircleInfo();
   $('enemySquadIntel').hidden=true;selectedEnemySquadId=null;
-  closeSquadTactics();
+  closeSquadTactics(true);
   return true;
  }
  $('destinationPrompt').textContent='実行できません。別の部隊を選ぶかここで取消';
@@ -6792,7 +6802,7 @@ function beginSquadDestination(id){
  $('destinationPrompt').textContent='📍 '+squadName(id)+'：戦場または全域地図で目的地をタップ（ここで取消）';
  return true;
 }
-function closeSquadTactics(){
+function closeSquadTactics(returnToOverview=false){
  pendingCircleTarget=null;
  delete document.body.dataset.circleTarget;
  pickingSquadDestination=false;pickingSquadMission=null;pickingStrategistWarp=false;clearMissionPreview();
@@ -6813,9 +6823,10 @@ function closeSquadTactics(){
  // Restore the previous pause state; only the five-minute tactical budget pauses on entry.
  selectedSquadId=null;
  drawSquadMiniMap();
+ if(returnToOverview)returnToWholeBattlefield();
 }
 $('battleCancelCircleTarget').onclick=()=>{if(pendingCircleTarget)closeSquadTactics();};
-function finishSquadDestination(accepted){closeSquadTactics();if(!accepted)log('目的地・命令の指定を取り消しました');}
+function finishSquadDestination(accepted){closeSquadTactics(Boolean(accepted));if(!accepted)log('目的地・命令の指定を取り消しました');}
 function requestSquadRecovery(targetId){
  const id=String(targetId),unavailable=squadCommanderUnavailableReason(id);
  if(unavailable){log(unavailable);return false}
@@ -6890,7 +6901,7 @@ function buildSquadQuickCommands(){
   const node=document.createElement('div');node.className='quickGroup';node.textContent=value;
   squadQuickList.append(node);
  };
- const add=(label,key,action,{needsCommander=true,enabled=true}={})=>{
+ const add=(label,key,action,{needsCommander=true,enabled=true,effect=''}={})=>{
   const button=document.createElement('button');button.type='button';button.textContent=label;
   button.dataset.command=key;
   const cooldown=squadOrderCooldownSeconds(id);
@@ -6901,6 +6912,12 @@ function buildSquadQuickCommands(){
   if(locked){
    button.textContent=label+' ⏳'+cooldown+'秒';
    button.title='命令・アイテム再使用まで'+cooldown+'秒';
+  }
+  if(effect){
+   button.classList.add('quickDescribedOrder');
+   const caption=document.createElement('small');caption.className='quickCommandEffect';
+   caption.textContent=effect;button.append(caption);
+   button.title=label+'：'+effect;
   }
   button.onclick=()=>{if(!button.disabled)action()};
   (quickActionRow||squadQuickList).append(button);return button;
@@ -6954,14 +6971,14 @@ function buildSquadQuickCommands(){
   heading(cooldown?'再号令まで '+cooldown+'秒':'📯 号令（選択した部隊全員に適用）');
   const issue=mode=>queueDirectOrder(mode);
   heading('号令 · 対応部隊全員（統率Lvに応じた再発行間隔）');
-  add('⚔ 突撃','charge',()=>beginCircleTargetSelection('attack'));
-  add('✚ 支援','heal_target',()=>beginCircleTargetSelection('support'));
-  add('🛡 防御','defend',()=>issue('defend'));
-  add('⏸ 待機','hold',()=>issue('hold'));
-  add('↘ 退却','retreat',()=>issue('retreat'));
-  add('★ 推奨号令','recommend_order',()=>advice.order==='charge'?beginCircleTargetSelection('attack'):issue(advice.order));
+  add('⚔ 突撃','charge',()=>beginCircleTargetSelection('attack'),{effect:orderEffect('charge')});
+  add('✚ 支援','heal_target',()=>beginCircleTargetSelection('support'),{effect:orderEffect('support')});
+  add('🛡 防御','defend',()=>issue('defend'),{effect:orderEffect('defend')});
+  add('⏸ 待機','hold',()=>issue('hold'),{effect:orderEffect('hold')});
+  add('↘ 退却','retreat',()=>issue('retreat'),{effect:orderEffect('retreat')});
+  add('★ 推奨号令','recommend_order',()=>advice.order==='charge'?beginCircleTargetSelection('attack'):issue(advice.order),{effect:orderEffect(advice.order)});
   if(massSim)add('✨ 軍師ワープ','warp',()=>beginStrategistWarp(),
-   {enabled:general?.rarity==='UR'&&!general.strategistWarpUsed});
+   {enabled:general?.rarity==='UR'&&!general.strategistWarpUsed,effect:orderEffect('warp')});
  }else if(squadQuickPage==='items'){
   const owned=new Map();
   for(const stock of allyItemStocks()){
@@ -8161,12 +8178,27 @@ const centralAlly=actors.filter(a=>a.team===0).sort((a,b)=>
 const cameraHome=(centralAlly?.root.position||openingFocus).clone();
 const cameraCloseOffset=new THREE.Vector3(5,8,12);
 // Three-quarter overview: keep horizon and upper floors visible, unlike true bird's-eye.
-const cameraOverviewOffset=new THREE.Vector3(105,215,205);
-controls.maxDistance=620;
+// Approximately 45 degrees above the horizon while retaining a full
+// battlefield view on narrow portrait phones (avoid the former top-down map).
+const cameraOverviewOffset=new THREE.Vector3(310,Math.sqrt(2)*310,310);
+controls.maxDistance=850;
 function setBattleCamera(focus,offset){
+ if(!TOWN_MODE){
+  const fov=offset===cameraOverviewOffset?56:48;
+  if(camera.fov!==fov){camera.fov=fov;camera.updateProjectionMatrix();}
+ }
  controls.target.copy(focus);
  camera.position.copy(focus).add(offset);
  controls.update();
+}
+function returnToWholeBattlefield(){
+ if(TOWN_MODE||finished)return;
+ commandOverviewLocked=false;controls.enabled=true;
+ commanderCinematic=null;cinematicFocusQueue.length=0;dialogueCameraReturn=null;
+ focusedHumanUnitId=null;followCamera=false;
+ const center=(WORLD_SIZE/2-6)*CELL;
+ setBattleCamera(new THREE.Vector3(center,terrainY(center,center),center),cameraOverviewOffset);
+ setCameraActive('camOverview');
 }
 function setCameraActive(id){for(const name of ['camOverview','camFollow'])$(name).classList.toggle('active',id===name)}
 function enterCommandOverview(){
@@ -9094,7 +9126,7 @@ async function finishBattleLoading(){
   const planHeading=document.createElement('strong');
   planHeading.textContent='⚑ 開戦前の隊列編成';
   const planHint=document.createElement('p');
-  planHint.textContent='3ボタンは自動編成。職業は手動指定もできます。アイテムは部隊ごとに自動／手動を設定（初期値は手動）。実際の職業構成から部隊タイプを判定します。';
+  planHint.textContent='3ボタンは自動編成。職業は手動指定もできます。アイテムは部隊ごとに自動／手動を設定（初期値は手動）。実際の職業構成から部隊タイプを判定します。固定作戦の効果は各隊に表示します。';
   planHint.style.cssText='font:11px/1.55 system-ui;color:#c3dcea;margin:5px 0 8px';
   const planList=document.createElement('div');planList.id='openingPlanList';
   planList.style.cssText='overflow:hidden;display:grid;gap:6px';
@@ -9111,7 +9143,10 @@ async function finishBattleLoading(){
     selectedSquadFormations.set('0:'+detail.squadId,actualType);
     refs.name.textContent=squadName(detail.squadId)+'（'+detail.total+'人）';
     const assigned=Object.values(manualJobs[detail.squadId]||{}).reduce((n,v)=>n+v,0);
-    refs.preview.textContent='職業構成：前衛'+detail.front+'／遠距離'+detail.range+'／回復'+detail.heal+
+    const strategy=squadStrategies.get(String(detail.squadId))||'eliminate';
+    refs.preview.textContent='固定作戦：'+(TACTICAL_STRATEGIES[strategy]?.name||'全滅')+
+     ' ／効果：'+strategyEffect(strategy)+'\n'+
+     '職業：前衛'+detail.front+'／遠距離'+detail.range+'／回復'+detail.heal+
      ' · '+FORMATION_NAMES[actualType]+(assigned?'（手動'+assigned+'人・残り自動）':'（自動編成）');
     for(const btn of refs.buttons.querySelectorAll('button')){
      const active=btn.dataset.type===selectedSquadType(detail.squadId);
@@ -9264,12 +9299,17 @@ async function finishBattleLoading(){
      const option=document.createElement('option');option.value=value;option.textContent=label;orderSelect.append(option);
     }
     orderSelect.value='charge'; // Explicit opening command; never implicit auto/defend for mixed squads.
+    const effectLabel=document.createElement('small');
+    effectLabel.className='openingCommandEffect';effectLabel.textContent=orderEffect(orderSelect.value);
     const buildingPicker=createExplorationPicker();
     buildingPicker.element.hidden=true;
     buildingPicker.element.style.maxHeight='none';buildingPicker.element.style.overflow='hidden';
     if(!availableBuildings.length)orderSelect.querySelector('option[value="explore"]').disabled=true;
-    orderSelect.onchange=()=>buildingPicker.element.hidden=orderSelect.value!=='explore';
-    row.append(name,orderSelect,buildingPicker.element);orderList.append(row);
+    orderSelect.onchange=()=>{
+     buildingPicker.element.hidden=orderSelect.value!=='explore';
+     effectLabel.textContent=orderEffect(orderSelect.value);
+    };
+    row.append(name,orderSelect,effectLabel,buildingPicker.element);orderList.append(row);
     initialOrderInputs.push({team,id,orderSelect,buildingPicker,name});
    }
   }
