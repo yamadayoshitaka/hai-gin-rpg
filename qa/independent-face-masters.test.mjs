@@ -534,3 +534,67 @@ test('v12 rooted 3D wig uses real scalp vertices and projects facial/torso conta
  }
  w.dispose();
 });
+
+test('v13 saved nose and chin defaults affect both real head meshes and survive reset',()=>{
+ const original=makeIndependentFaceMaster(fixture().source,'female');
+ const altered=makeIndependentFaceMaster(fixture().source,'female',{femaleControls:{
+  jawSharpness:2.5,nostrilCover:0,noseBridgeSharpness:0
+ }});
+ assert.equal(original.report.femaleControls.jawSharpness,5);
+ assert.equal(original.report.femaleControls.nostrilCover,2);
+ assert.equal(original.report.femaleControls.noseBridgeSharpness,2.5);
+ const a=original.face.geometry.getAttribute('position');
+ const b=altered.face.geometry.getAttribute('position');
+ let changed=0;
+ for(let i=0;i<a.count;i++)
+  if(Math.abs(a.getX(i)-b.getX(i))+
+   Math.abs(a.getY(i)-b.getY(i))+
+   Math.abs(a.getZ(i)-b.getZ(i))>1e-7)changed++;
+ assert.ok(changed>40,'Saved chin and nasal values must sculpt real vertices');
+ const male=makeIndependentFaceMaster(fixture().source,'male');
+ assert.equal(male.report.maleControls.jawSharpness,5);
+ assert.equal(male.report.maleControls.nostrilCover,2);
+ assert.equal(male.report.maleControls.noseBridgeSharpness,2.5);
+});
+test('v13 eyes expose actual 3D sclera and cornea beyond the lateral head surface',()=>{
+ for(const gender of ['female','male']){
+  const model=makeIndependentFaceMaster(fixture().source,gender);
+  const eye=model.report.detailedParts;
+  assert.equal(eye.eyeballProjection,'true-3d-profile-exposed');
+  assert.equal(eye.eyeProfileLateralMargins.length,2);
+  for(const margin of eye.eyeProfileLateralMargins)
+   assert.ok(Number.isFinite(margin)&&margin>.002,
+    'Profile eye still buried under facial skin: '+gender+' '+margin);
+  for(const side of ['LEFT','RIGHT']){
+   const globe=model.parts.getObjectByName(side+'_ORBITAL_EYEBALL');
+   assert.ok(globe.isMesh&&globe.userData.profileExposed);
+   assert.ok(globe.scale.z>.95);
+   assert.ok(model.parts.getObjectByName(side+'_CURVED_IRIS')?.isMesh);
+  }
+ }
+});
+test('v13 full scalp coverage allocates real roots to back, nape and both temples',()=>{
+ const model=makeIndependentFaceMaster(fixture().source,'female');
+ const w=createScalpAnchoredWig(model.face,{count:480,color:0x705443});
+ const report=w.getReport(),zones=report.rootDistribution;
+ assert.equal(report.rootCount,480);
+ assert.equal(Object.values(zones).reduce((n,k)=>n+k,0),480);
+ for(const zone of ['crown','fringeLeft','fringeRight','templeLeft',
+   'templeRight','backLeft','backRight','napeLeft','napeRight']){
+  assert.ok(zones[zone]>=17,'Missing hair follicles in '+zone);
+  assert.ok(report.zoneCandidateCounts[zone]>=4,'No true scalp '+zone);
+ }
+ const rootSamples=w.getRootSamples();
+ assert.equal(rootSamples.length,9);
+ for(const zone of ['backLeft','backRight','templeLeft','templeRight','napeLeft','napeRight'])
+  assert.ok(rootSamples.some(root=>root.zone===zone),'No sampled root for '+zone);
+ assert.equal(report.hairColor,'#705443');
+ assert.notEqual(report.tipColor,'#e0bc83','Brown hair must not be golden at ends');
+ const g=w.root.getObjectByName('REAL_ROOTED_SWEPT_HAIR_LOCKS').geometry;
+ const color=g.getAttribute('color');
+ for(let i=0;i<color.count;i+=31){
+  assert.ok(color.getR(i)>color.getG(i)&&color.getG(i)>color.getB(i),
+   'Hair gradient must stay in brown chroma');
+ }
+ w.dispose();
+});
