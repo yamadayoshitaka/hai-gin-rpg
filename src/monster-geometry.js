@@ -6,6 +6,7 @@
 import {createSculpture,disposeMonsterSculpture} from './monster-shape-kit.js?v=4.4.92';
 import {attachMonsterFaceControls} from './facial-feature-runtime.js?v=1';
 import {generateCanineFurGuides} from './canine-fur-guides.js?v=4.4.92';
+import {monsterEvidenceFor} from './monster-anatomy-reference.js';
 function feet(g,pivot,x,y,z,clawed=true,scale=1){
  g.sphere(pivot,'skin',[0,-.28,0],[.14*scale,.30*scale,.15*scale]);
  g.sphere(pivot,'shadow',[0,-.53,.13],[.13*scale,.08*scale,.22*scale]);
@@ -81,9 +82,15 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    // Former limb pivot at y=1.13 kept all four feet half a metre above
    // terrain. Plant the soles near ground zero and embed hips in the torso.
    const leg=g.group('leg'+name,[side*.29,.67,fore*.49]);
+   // Distal motion is independent from shoulder/hip rotation, retaining
+   // the original limb and ground-contact positions.
    g.sphere(leg,'skin',[0,.17,0],
      [reptile?.18:.21,.40,reptile?.18:.21]);
-   feet(g,leg,0,0,0,true,reptile?.75:1);
+   const distal=g.group('lower'+name,[0,-.065,.015],leg);
+   g.sphere(distal,'skin',[0,-.16,0],[reptile?.13:.15,.27,reptile?.13:.15]);
+   g.sphere(distal,'shadow',[0,0,0],[.144,.125,.14],{name:'joint-'+name});
+   feet(g,distal,0,0,0,true,reptile?.75:1);
+   g.sphere(leg,'skin',[0,-.04,.015],[.18,.18,.18]);
    if(canine&&coatDetail!=='low'){
      // Attach to the leg pivot so the coat swings with every footstep.
      // The upper shank, lower forearm/hock, and paw use shorter strands
@@ -158,7 +165,11 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    addFur(head,faceGuides);
  }
  const tail=g.group('tail',[0,1.35,-.55]);
- g.tube(tail,'skin',[[0,0,.05],[0,.17,-.34],[0,.08,-.76-v*.1],[.09,-.03,-.98-v*.1]],reptile?.14:.085);
+ g.tube(tail,'skin',[[0,0,.05],[0,.17,-.34],[0,.08,-.50]],reptile?.14:.085);
+ const tailMid=g.group('tailMid',[0,.08,-.50],tail);
+ g.tube(tailMid,'skin',[[0,0,0],[0,.01,-.25-v*.05],[.09,-.11,-.49-v*.10]],reptile?.13:.078);
+ const tailTip=g.group('tailTip',[.09,-.11,-.49-v*.10],tailMid);
+ g.sphere(tailTip,'skin',[0,0,-.025],[.044,.047,.085]);
  if(canine&&coatDetail!=='low')addFur(tail,generateCanineFurGuides({
    center:[.015,.065,-.55-v*.055],radii:[.108,.124,.38+v*.04],
    rows:coatDetail==='source'?15:9,
@@ -205,20 +216,31 @@ function bird(g,s){
  }
  for(const side of [-1,1]){
    const wing=g.group(side<0?'wingL':'wingR',[side*.30,1.77,-.06]);
-   g.tube(wing,'skin',[[0,0,0],[side*.55,.25,-.05],[side*1.18,.36,-.29],[side*1.56,.18,-.53]],.085);
+   // Shoulder -> elbow -> wrist: distinct physically movable local joints.
+   g.tube(wing,'skin',[[0,0,0],[side*.28,.16,-.04],[side*.55,.25,-.05]],.082);
+   const elbow=g.group('wingElbow'+(side<0?'L':'R'),[side*.55,.25,-.05],wing);
+   g.tube(elbow,'skin',[[0,0,0],[side*.31,.055,-.11],[side*.63,.11,-.24]],.067);
+   const wrist=g.group('wingWrist'+(side<0?'L':'R'),[side*.63,.11,-.24],elbow);
+   g.tube(wrist,'skin',[[0,0,0],[side*.18,-.055,-.10],[side*.38,-.18,-.24]],.043);
    for(let i=0;i<15+v*4;i++){
      const t=i/(14+v*4);
      const x=side*(.22+1.31*t);
-     g.fin(wing,i%3?'light':'accent',[x,.12,-.10-t*.32],[x+side*(.20+.35*t),-.40-t*.47,-.20-t*.34],.07+Math.sin(t*Math.PI)*.09);
-     // Overlapping secondary coverts hide the skeletal spar and create a
-     // continuous plumage transition rather than exposed triangular slits.
-     g.fin(wing,'skin',[x,.17,-.08-t*.23],
-       [x+side*(.14+.18*t),-.13-t*.18,-.17-t*.26],.058);
+     const distal=t>.54,feather=distal?wrist:wing;
+     const dx=distal?side*1.18:0,dy=distal?.36:0,dz=distal?-.29:0;
+     g.fin(feather,i%3?'light':'accent',
+       [x-dx,.12-dy,-.10-t*.32-dz],
+       [x+side*(.20+.35*t)-dx,-.40-t*.47-dy,-.20-t*.34-dz],
+       .07+Math.sin(t*Math.PI)*.09);
+     // The secondary coverts follow the same hinged feather segment.
+     g.fin(feather,'skin',[x-dx,.17-dy,-.08-t*.23-dz],
+       [x+side*(.14+.18*t)-dx,-.13-t*.18-dy,-.17-t*.26-dz],.058);
    }
    const leg=g.group('leg'+(side<0?'L':'R'),[side*.17,1.09,.10]);
-   g.bone(leg,'skin',[0,0,0],[0,-.93,.12],.075);
-   g.sphere(leg,'shadow',[0,-.93,.16],[.10,.08,.16]);
-   g.claws(leg,[0,-.95,.24],1,3,1.3);
+   g.bone(leg,'skin',[0,0,0],[0,-.47,.10],.082);
+   const ankle=g.group('birdAnkle'+(side<0?'L':'R'),[0,-.47,.10],leg);
+   g.bone(ankle,'skin',[0,0,0],[0,-.46,.02],.063);
+   g.sphere(ankle,'shadow',[0,-.46,.06],[.10,.08,.16]);
+   g.claws(ankle,[0,-.48,.14],1,3,1.3);
  }
  const tail=g.group('tail',[0,1.25,-.40]);
  for(let i=-3;i<=3;i++)g.fin(tail,i%2?'accent':'light',[i*.055,0,0],[i*.12,-.18,-.84-v*.10],.10);
@@ -400,6 +422,7 @@ export function createMonsterModel(spec,{detail='high'}={}){
  g.root.userData.pivots=g.pivots;
  g.root.userData.homeScale=g.root.scale.x;
  g.root.userData.surfaceFamily=spec.family;
+ g.root.userData.anatomyEvidence=monsterEvidenceFor(spec);
  attachMonsterFaceControls(g.root,{id:spec.id});
  return g.root;
 }
