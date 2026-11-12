@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>灰銀のレゾナンス｜女性主人公・全身＋顔 v19</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#101c2e;color:#eaf3ff;font-family:system-ui,"Noto Sans JP",sans-serif}
+header{background:#183049;padding:17px 18px;border-bottom:1px solid #466780}
+h1{font-size:clamp(20px,5vw,26px);margin:0 0 8px}header p{margin:0;color:#bcd2e7;line-height:1.65}
+main{max-width:1100px;margin:auto;padding:14px;display:grid;grid-template-columns:minmax(0,2fr) minmax(225px,1fr);gap:14px}
+section{border:1px solid #456882;background:#192c43;border-radius:14px;padding:13px;min-width:0}
+#bodyCanvas{width:100%;height:min(70dvh,700px);min-height:400px;display:block;border-radius:12px;background:#1c3449;touch-action:none}
+.controls{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}
+button,select{font:inherit;color:#fff;background:#284a65;border:1px solid #6d90a9;border-radius:10px;padding:10px 13px;cursor:pointer}
+button[aria-pressed=true]{background:#236959;border-color:#b8e8d8}
+button:disabled{opacity:.48;cursor:not-allowed}
+#artImage{width:100%;height:auto;max-height:320px;object-fit:contain;background:#0e2035;border-radius:10px;display:block}
+.note{font-size:13px;color:#bdd2e4;line-height:1.6}a{color:#b1e7ff}
+#status{font-size:13px;color:#cce1ee;min-height:20px}
+#metrics{font-size:11px;overflow:auto;white-space:pre-wrap;max-height:330px}
+label{display:block;margin:10px 0}select{width:100%}
+@media(max-width:730px){main{display:block}section{margin-bottom:12px}#bodyCanvas{height:56dvh;min-height:340px}}
+</style>
+</head>
+<body>
+<header>
+<h1>女性主人公・顔＋胴体・原画合わせ v19</h1>
+<p>第1章「女性主人公 hero-girl-01」の登録原画を参照。元の女性胴体GLBと独立した顔メッシュを接続し、頭皮と実際の胴体への髪の接触判定を確認します。</p>
+</header>
+<main>
+<section>
+<canvas id="bodyCanvas" aria-label="女性主人公の頭部・髪・胴体を接続した3Dモデル"></canvas>
+<div class="controls" aria-label="3Dの視点">
+<button id="full" aria-pressed="true" disabled>全身</button>
+<button id="portrait" aria-pressed="false" disabled>顔アップ</button>
+<button id="front" aria-pressed="true" disabled>正面</button>
+<button id="side" aria-pressed="false" disabled>横顔</button>
+<button id="back" aria-pressed="false" disabled>後頭部</button>
+<button id="crown" aria-pressed="false" disabled>頭頂部</button>
+</div>
+<div class="controls">
+<button id="toggleWig" aria-pressed="true" disabled>髪を隠す</button>
+<button id="toggleOutfit" aria-pressed="true" disabled>衣装を隠す</button>
+<button id="saveGlb" disabled>顔＋胴体＋髪をGLB保存</button>
+</div>
+<p id="status">3D元モデルを読み込んでいます…</p>
+<p class="note">指で回転・ピンチでズームできます。目・頭部・ヅラは既存v18の独立3Dパーツです。既存の顔スライダーと保存顔の標準値は変更していません。</p>
+</section>
+<section>
+<h2 style="font-size:18px;margin-top:0">登録人物原画</h2>
+<img id="artImage" src="./assets/story/characters/commander/female-master.webp"
+alt="第1章女性主人公（暫定人物マスターの登録原画）">
+<p><strong>女性主人公・第1章（仮合わせ）</strong></p>
+<p class="note">参照：金髪ロング、青い瞳、銀色の鎧、濃青の布。現在の顔は既存の保存顔をベースとした初回3D比較で、原画と完全一致したものではありません。</p>
+<label for="style">固有のヅラ（別アセット）
+<select id="style" disabled></select></label>
+<p class="note">眼球と黒目の正面投影を円形に修正。髪は実顔面と女性胴体の三角形表面との接触を判定し、肩・胸の簡易判定も併用します。</p>
+<a href="./face-mesh-studio.html?gender=female">顔の詳細スライダーへ戻る</a>
+<details><summary>実メッシュ・接触検査</summary><pre id="metrics"></pre></details>
+</section>
+</main>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
+<script type="module">
+import * as THREE from 'three';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {GLTFExporter} from 'three/addons/exporters/GLTFExporter.js';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+import {makeIndependentFaceMaster} from './src/independent-face-masters.js';
+import {FEMALE_V7_DEFAULTS} from './src/face-v7-controls.js';
+import {applyFaceColorMode} from './src/face-feature-meshes.js';
+import {createScalpAnchoredWig} from './src/face-scalp-wig.js';
+import {attachIndependentHeadToBody} from './src/face-body-assembly.js';
+import {listWigStyles,DEFAULT_WIG_STYLE_ID} from './src/face-wig-styles.js';
+import {FEMALE_COMMANDER_ART_PALETTE,CHAPTER_ONE_ART_BY_KEY} from './src/chapter-one-character-art-references.js';
+
+const $=id=>document.getElementById(id);
+const art=CHAPTER_ONE_ART_BY_KEY['commander-female'];
+const palette=FEMALE_COMMANDER_ART_PALETTE;
+$('artImage').src='./'+art.image;
+for(const item of listWigStyles()){
+ const option=document.createElement('option');
+ option.value=item.id;option.textContent=item.label;
+ $('style').appendChild(option);
+}
+$('style').value=DEFAULT_WIG_STYLE_ID;
+const canvas=$('bodyCanvas');
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true,powerPreference:'high-performance'});
+renderer.outputColorSpace=THREE.SRGBColorSpace;
+renderer.toneMapping=THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure=1.05;
+renderer.setPixelRatio(Math.min(2,devicePixelRatio||1));
+const scene=new THREE.Scene();scene.background=new THREE.Color('#1c3449');
+scene.add(new THREE.HemisphereLight(0xf3f6ff,0x6d8291,2.25));
+const key=new THREE.DirectionalLight(0xffffff,2.45);
+key.position.set(2.5,4,4);scene.add(key);
+const rim=new THREE.DirectionalLight(0x96bcfa,1.3);
+rim.position.set(-3,2,-3);scene.add(rim);
+const camera=new THREE.PerspectiveCamera(38,1,.01,60);
+const orbit=new OrbitControls(camera,canvas);
+orbit.enableDamping=true;orbit.dampingFactor=.10;orbit.minDistance=.17;orbit.maxDistance=12;
+let model=null,bodyAttachment=null,wig=null,ready=false;
+let view='front',zoomMode='full',wigVisible=true,outfitVisible=true;
+const counter={wigBuilds:0,glbExports:0};
+const status=(s)=>{$('status').textContent=s;};
+const setActive=(buttons,id)=>{
+ for(const btn of buttons)$(btn).setAttribute('aria-pressed',String(btn===id));
+};
+function metrics(){
+ const eye=model?.parts?.getObjectByName('LEFT_CURVED_PUPIL');
+ const pupilBox=eye?.geometry?.boundingBox||
+  (eye?.geometry?.computeBoundingBox(),eye?.geometry?.boundingBox);
+ const pupilShape=pupilBox?
+  (pupilBox.max.x-pupilBox.min.x)/(pupilBox.max.y-pupilBox.min.y):null;
+ return {
+  loaded:ready,characterId:art.characterId,artReference:art.image,
+  artStatus:art.status,artMatched:false,gender:'female',
+  attachedBody:!!bodyAttachment,donorHeadRemoved:
+   bodyAttachment?.report?.donorHeadTrianglesRemoved||0,
+  bodySource:bodyAttachment?.report?.bodySource,
+  bodyCollision:bodyAttachment?.bodyCollider.getReport()||null,
+  wig:wig?.getReport()||null,
+  wigAssetType:wig?.root?.userData.assetType,
+  styleId:wig?.root?.userData.hairStyleId,
+  roundPupilAspectRatio:pupilShape,
+  sourceHeadUnchanged:true,sourceBodyUnchanged:true,
+  savedFaceControlDefaults:{...FEMALE_V7_DEFAULTS},
+  outfitSource:bodyAttachment?.report?.outfitSource,
+  bodyMeshes:bodyAttachment?.report?.donorBodyTrianglesRetained,
+  glbExports:counter.glbExports,wigBuilds:counter.wigBuilds
+ };
+}
+window.__heroineBodyQA=metrics;
+window.__heroineBodyPreview={
+ getActor:()=>model?.root||null,getWig:()=>wig?.root||null,
+ sampleTorso:(x,y)=>bodyAttachment?.bodyCollider.query(x,y)||null
+};
+function fitCamera(){
+ if(!ready||!model)return;
+ const b=new THREE.Box3().setFromObject(zoomMode==='portrait'?model.face:model.root);
+ const center=b.getCenter(new THREE.Vector3());
+ const h=b.getSize(new THREE.Vector3());
+ const radius=Math.max(h.x,h.y,h.z)*.5;
+ const dir=view==='back'?new THREE.Vector3(0,0,-1):
+  view==='side'?new THREE.Vector3(1,0,0):
+  view==='crown'?new THREE.Vector3(0,1,0):
+  new THREE.Vector3(0,0,1);
+ const distance=Math.max(.23,radius/Math.tan(THREE.MathUtils.degToRad(camera.fov*.5))*1.30);
+ camera.up.set(0,view==='crown'?0:1,view==='crown'?-1:0);
+ camera.position.copy(center).addScaledVector(dir,distance);
+ camera.near=.01;camera.far=80;camera.updateProjectionMatrix();
+ orbit.target.copy(center);orbit.update();
+ setActive(['full','portrait'],zoomMode);
+ setActive(['front','side','back','crown'],view);
+}
+function rebuildWig(){
+ if(!model||!bodyAttachment)return;
+ if(wig){wig.root.removeFromParent();wig.dispose();wig=null;}
+ wig=createScalpAnchoredWig(model.face,{
+  count:1440,lengthScale:1.0,styleId:$('style').value,
+  color:Number('0x'+palette.hair.slice(1)),
+  bodyCollisionResolver:bodyAttachment.bodyCollider
+ });
+ model.face.add(wig.root);wig.root.visible=wigVisible;
+ counter.wigBuilds++;$('metrics').textContent=JSON.stringify(metrics(),null,2);
+}
+for(const id of ['front','side','back','crown'])$(id).addEventListener('click',()=>{
+ view=id;fitCamera();
+});
+for(const id of ['portrait','full'])$(id).addEventListener('click',()=>{
+ zoomMode=id;fitCamera();
+});
+$('style').addEventListener('change',()=>{rebuildWig();});
+$('toggleWig').addEventListener('click',()=>{
+ wigVisible=!wigVisible;
+ if(wig)wig.root.visible=wigVisible;
+ $('toggleWig').setAttribute('aria-pressed',String(wigVisible));
+ $('toggleWig').textContent=wigVisible?'髪を隠す':'髪を表示';
+});
+$('toggleOutfit').addEventListener('click',()=>{
+ outfitVisible=!outfitVisible;
+ const garment=bodyAttachment?.root.getObjectByName('REFERENCE_PALETTE_OUTFIT');
+ if(garment)garment.visible=outfitVisible;
+ $('toggleOutfit').setAttribute('aria-pressed',String(outfitVisible));
+ $('toggleOutfit').textContent=outfitVisible?'衣装を隠す':'衣装を表示';
+});
+$('saveGlb').addEventListener('click',async()=>{
+ if(!ready)return;
+ $('saveGlb').disabled=true;status('全身GLBを書き出しています…');
+ try{
+  const exporter=new GLTFExporter();
+  const result=await new Promise((resolve,reject)=>
+   exporter.parse(model.root,resolve,reject,{binary:true,onlyVisible:true}));
+  const url=URL.createObjectURL(new Blob([result],{type:'model/gltf-binary'}));
+  const a=document.createElement('a');a.href=url;
+  a.download='hai-gin-hero-girl-01-face-body-v19.glb';
+  document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+  counter.glbExports++;
+  status('実際の顔＋胴体＋独立ヅラをGLBに保存しました。');
+ }catch(error){status('全身GLB出力エラー：'+String(error));}
+ finally{$('saveGlb').disabled=false;}
+});
+function resize(){
+ const rect=canvas.getBoundingClientRect();
+ renderer.setSize(Math.max(1,rect.width),Math.max(1,rect.height),false);
+ camera.aspect=Math.max(.1,rect.width/Math.max(1,rect.height));
+ camera.updateProjectionMatrix();
+}
+const clock=new THREE.Clock();
+function frame(){
+ requestAnimationFrame(frame);
+ const dt=clock.getDelta();
+ if(ready&&wigVisible)wig?.update(dt);
+ resize();orbit.update();renderer.render(scene,camera);
+}
+frame();
+(async()=>{
+ try{
+  const base=location.hostname.endsWith('.github.io')?
+   'https://raw.githubusercontent.com/yamadayoshitaka/hai-gin-rpg/main/assets/master-sources/blender/':
+   './assets/master-sources/blender/';
+  const loader=new GLTFLoader();
+  const [head,body,outfit]=await Promise.all([
+   loader.loadAsync(base+'realistic-head-animation.glb'),
+   loader.loadAsync(base+'realistic-body-female.glb'),
+   loader.loadAsync(base+'viking-outfit-source.glb').catch(()=>null)
+  ]);
+  model=makeIndependentFaceMaster(head.scene,'female',{femaleControls:FEMALE_V7_DEFAULTS});
+  applyFaceColorMode(model.face,'color',{contactColor:palette.iris});
+  bodyAttachment=attachIndependentHeadToBody(model,body.scene,{
+   outfitSource:outfit?.scene,characterId:art.characterId,
+   armor:palette.armor,cloth:palette.cloth
+  });
+  scene.add(model.root);rebuildWig();ready=true;
+  for(const id of ['full','portrait','front','side','back','crown','toggleWig','toggleOutfit','style','saveGlb'])
+   $(id).disabled=false;
+  fitCamera();$('metrics').textContent=JSON.stringify(metrics(),null,2);
+  status('女性主人公の顔と実GLB胴体を接続しました。顔・胴体・髪を3Dで確認できます。');
+ }catch(error){status('3Dモデルの読み込み／接続に失敗：'+String(error));console.error(error);}
+})();
+</script>
+</body>
+</html>
