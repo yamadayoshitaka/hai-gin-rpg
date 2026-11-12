@@ -46,7 +46,8 @@ assert.match(html,/else if\(action\.kind==='support'\)\{/);
 assert.match(html,/if\(ok\)markRibbonOrderIssued\(action\.source\)/,
  'Recovery order consumes the commanding squads own 120s interval');
 assert.match(html,/targetSquadId:String\(id\),x:Math\.round\(center\.x\)/);
-assert.match(html,/if\(ok\)\{closeSquadTactics\(\);return true;\}/);
+assert.match(html,/if\(ok\)\{[\s\S]*?closeSquadTactics\(true\);\s*return true;\s*\}/,
+ 'Successful circle target selection must close the picker and restore overview');
 
 // Player command selection ALWAYS pauses the battle in a locked far overview.
 // The existing 5-minute tactical bank still counts down but cannot resume combat mid-selection.
