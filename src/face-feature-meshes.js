@@ -136,7 +136,13 @@ export function updateRealFacePigment(face,controls={},mode='color'){
    Math.max(.00001,d.y*.018*settings.lipstickHeight);
   const lipX=smoothstep((1-Math.abs(mouthX-settings.lipstickX/.12*.15))/.20);
   const lipY=smoothstep((1-Math.abs(mouthY))/.25);
-  const lipMask=lipX*lipY*front;
+  // Cosmetic controls may move the color within the lips, but cannot
+  // push the pigment onto the chin or philtrum outside the oral region.
+  const anatomicalLipY=(py-lipCenter)/(d.y*.025);
+  const anatomicalLipX=(px-cx)/(d.x*.055);
+  const bound=smoothstep((1-Math.abs(anatomicalLipY))/.25)*
+   smoothstep((1-Math.abs(anatomicalLipX))/.25);
+  const lipMask=lipX*lipY*front*bound;
   if(cheek>.12)actualCheekTintVertices++;
   if(lipMask>.12)actualLipTintVertices++;
   const rgb=pigmentFactor(skin,blush,cheek)
