@@ -56,23 +56,23 @@ function buildGrid(name,columns,rows,point,material){
  * Keep the legacy upper/lower mesh identities, so eye-angle joints and GLB
  * export still contain just four lash meshes rather than floating cards. */
 function makeFineEyelashMesh(name,liner,x,y,z,eyeRadius,side,upper){
- const count=upper?52:26,vertices=[],indices=[];
+ const count=upper?84:42,vertices=[],indices=[];
  const reference=(u)=>sampleGrid(liner,28,3,u,.24);
  for(let i=0;i<count;i++){
   const u=.055+.89*(i+.5)/count;
   const p=reference(u),edge=Math.pow(Math.sin(Math.PI*u),.58);
-  const step=.89/count*.22;
+  const step=.89/count*.16;
   const left=reference(Math.max(0,u-step));
   const right=reference(Math.min(1,u+step));
   const a=new THREE.Vector3().lerpVectors(p,left,.62);
   const b=new THREE.Vector3().lerpVectors(p,right,.62);
   const spread=Math.abs(u-.5)*2;
-  const length=eyeRadius*(upper?.19:.075)*(.50+.50*edge)*
+  const length=eyeRadius*(upper?.16:.065)*(.50+.50*edge)*
    (.88+.12*Math.sin((i+1)*2.39996323));
   const tip=p.clone().add(new THREE.Vector3(
    side*spread*eyeRadius*.055,
    (upper?1:-1)*length,
-   eyeRadius*(upper?.14:.075)*(.65+.35*edge)));
+   eyeRadius*(upper?.11:.055)*(.65+.35*edge)));
   const start=vertices.length/3;
   for(const point of [a,b,tip]){
    vertices.push(point.x-x,point.y-y,point.z-z+eyeRadius*.018);
@@ -578,6 +578,11 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   const eyeJoint=new THREE.Group();
   eyeJoint.name=(side===-1?'LEFT':'RIGHT')+'_EYE_LINKED_PIVOT';
   eyeJoint.position.set(x,y,z);
+  // The ONE linked local-space joint owns the eye globe, lids,
+  // under-eye shadows, eyeliner, lashes and brow. No independent orbital
+  // piece can retain the old eye-gap when the control changes.
+  eyeJoint.userData.eyeSpacingFactor=settings.eyeSpacing;
+  eyeJoint.userData.linkedEyeGroups=true;
   const origin=eyeJoint.position.clone();
   const children=root.children.slice(firstChild);
   for(const child of children){
@@ -714,7 +719,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   beardMeshCount:female?0:5,
   beardDensity:gender==='male'?settings.beardDensity:0,
   eyebrowMeshCount:2,eyelashMeshCount:female?4:0,
-  eyelashFilamentCount:female?156:0,eyelashesRootedOnLiner:female,
+  eyelashFilamentCount:female?252:0,eyelashesRootedOnLiner:female,
   underEyeShadowMeshCount:female?2:0,
   doubleLidCreaseMeshCount:female?2:0,
   lowerOrbitalVolumeMeshCount:female?2:0,
