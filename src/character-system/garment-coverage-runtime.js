@@ -158,13 +158,18 @@ function compactMaskedGeometry(original,kept){
  geometry.setIndex(indices);
  return {geometry,vertices:used.length};
 }
-export function clipBodyToGarment(characterModel,coverage,{surfaceCheck=false}={}){
- const hidden=new Set(coverage?.regions||[]);
- const enclosed=new Set(coverage?.enclosedRegions||[]);
+export function clipBodyToGarment(characterModel,coverage,{surfaceCheck=false,preserveRegions=[]}={}){
+ // Studio previews must preserve a REAL skinned anatomical leg below pants,
+ // boots and metal, even if the garment hides all its pixels. Otherwise
+ // removing leg plates can reveal an empty hollow or missing flesh.
+ const preserved=new Set(preserveRegions);
+ const hidden=new Set((coverage?.regions||[]).filter(zone=>!preserved.has(zone)));
+ const enclosed=new Set((coverage?.enclosedRegions||[]).filter(zone=>!preserved.has(zone)));
  const sampler=surfaceCheck?buildGarmentSurfaceCoverage(coverage?.surfaceMeshes):null;
  const entries=[],measure={sourceTriangles:0,keptTriangles:0,removedTriangles:0,
   surfaceChecked:surfaceCheck,garmentSurfaceSamples:sampler?.samples||0,
-  skinnedMeshes:0,regions:[...hidden],footCovered:hidden.has('foot'),sourceVertices:0,keptVertices:0};
+  skinnedMeshes:0,regions:[...hidden],preservedRegions:[...preserved],
+  footCovered:hidden.has('foot'),sourceVertices:0,keptVertices:0};
  if(!hidden.size)return {restore(){},diagnostics:measure};
  characterModel.traverse(mesh=>{
   // Face, eyes, lashes and hair are separate, small skinned meshes and must
@@ -180,7 +185,7 @@ export function clipBodyToGarment(characterModel,coverage,{surfaceCheck=false}={
   if(!variants){variants=new Map();maskCache.set(original,variants)}
   // The actual garment surface is instance-specific: avoid reusing a
   // front-only plate mask for another outfit with the same slot names.
-  const cacheKey=surfaceCheck?coverage:coverage.signature;
+  const cacheKey=surfaceCheck?coverage:coverage.signature+'|preserve:'+([...preserved].sort().join(','));
   let record=variants.get(cacheKey);
   if(!record){
    const cut=new Uint8Array(positions.count);
