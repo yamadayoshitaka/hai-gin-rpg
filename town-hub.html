@@ -304,7 +304,7 @@ function renderInnDeploymentBoard(){
    const slot=row*3+col,squad=occupants.get(slot),selected=squad&&String(squad.id)===String(innDeploymentSelected);
    const name=squad?escapeHtml(squad.job):'空き';
    const info=squad?escapeHtml(squad.rarity)+'・'+squad.count+'人':'ここへ移動';
-   html+='<button type="button" class="innDeploymentCell'+(selected?' selected':'')+'" data-inn-slot="'+slot+'" aria-pressed="'+Boolean(selected)+'" aria-label="'+DEPLOYMENT_RANK_LABELS[row]+'の'+['西','中央','東'][col]+'：'+name+' '+info+'">'+
+   html+='<button type="button" class="innDeploymentCell'+(selected?' selected':'')+'" data-inn-slot="'+slot+'" aria-pressed="'+Boolean(selected)+'" aria-label="'+DEPLOYMENT_RANK_LABELS[row]+'の'+['北','中央','南'][col]+'：'+name+' '+info+'">'+
     '<strong>'+name+'</strong><small>'+info+'</small></button>';
   }
  }
