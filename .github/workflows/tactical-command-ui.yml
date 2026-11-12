@@ -9,6 +9,8 @@ on:
       - 'src/core-battle-bridge.js'
       - 'src/inn-deployment.js'
       - 'src/inn-strategy-templates.js'
+      - 'src/inn-commander-formation.js'
+      - 'qa/inn-commander-autoplace-gameover.test.mjs'
       - 'qa/inn-strategy-planning.test.mjs'
       - 'src/adaptive-battle-resolution.js'
       - 'qa/command-touch-camera-performance.test.mjs'
@@ -34,6 +36,8 @@ on:
       - 'src/core-battle-bridge.js'
       - 'src/inn-deployment.js'
       - 'src/inn-strategy-templates.js'
+      - 'src/inn-commander-formation.js'
+      - 'qa/inn-commander-autoplace-gameover.test.mjs'
       - 'qa/inn-strategy-planning.test.mjs'
       - 'src/adaptive-battle-resolution.js'
       - 'qa/command-touch-camera-performance.test.mjs'
@@ -69,6 +73,8 @@ jobs:
           node --experimental-vm-modules qa/battle-ui-objective-rewards.test.mjs
           node qa/tactical-command-ui.test.mjs
           node --check src/inn-strategy-templates.js
+          node --check src/inn-commander-formation.js
+          node --experimental-vm-modules qa/inn-commander-autoplace-gameover.test.mjs
           node --experimental-vm-modules qa/inn-deployment-command-effects.test.mjs
           node --experimental-vm-modules qa/inn-strategy-planning.test.mjs
           node --experimental-vm-modules qa/command-touch-camera-performance.test.mjs
