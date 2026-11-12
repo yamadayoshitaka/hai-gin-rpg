@@ -346,16 +346,19 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
    root.add(mesh);
    if(female){
     // Eyeliner shares the eye lid's actual surface and transformation.
-    const linerMat=new THREE.MeshStandardMaterial({
-     color:0x30252b,roughness:.84,metalness:0,side:THREE.DoubleSide,
-     transparent:true,opacity:upper?.64:.53,depthWrite:false
+    const linerMat=new THREE.MeshBasicMaterial({
+     color:0x30252b,side:THREE.DoubleSide,transparent:true,
+     opacity:upper?.90:.77,depthWrite:false,depthTest:true,
+     polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2
     });
     const liner=buildGrid(label+'_EYELINER',28,3,(u,v)=>{
      const p=sampleGrid(mesh,28,4,u,.018+v*(upper?.064:.056));
-     p.z+=Math.max(.00002,d.z*.00018);
+     p.z+=Math.max(.00006,d.z*.0018);
      return p;
     },linerMat);
     liner.userData.colorRole='eyeliner';liner.userData.cosmetic=true;
+    liner.userData.conformsTo='real-eyelid-mesh';
+    liner.renderOrder=6;
     mesh.add(liner);
     if(upper)upperEyeliner=liner;else lowerEyeliner=liner;
    }
@@ -671,6 +674,8 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   reference:'soft-cheek-small-nose-relaxed-almond-eyes-gentle-lips'
  });
  root.userData.report=report;
+ root.userData.faceDepthForLiner=d.z;
+ root.userData.eyelinerSurfaceSyncCount=0;
  // Rotate the orbital system together, then push brows back to the
  // head's real surface. Without reprojection a slanted brow sinks into
  // the skull and seems to disappear at +/- eye angles.
@@ -708,6 +713,51 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
  return {root,report};
 }
 
+/**
+ * Retessellate only four tiny eyeliner grids from their anatomical eyelid
+ * vertices after an angle change. All coordinates live in the same 3D
+ * eye-joint space. Corner bridges follow the updated upper/lower strips.
+ */
+function refitEyelinerToLids(partsRoot){
+ const depth=partsRoot.userData.faceDepthForLiner||.2;
+ let count=0;
+ for(const side of ['LEFT','RIGHT']){
+  const upper=partsRoot.getObjectByName(side+'_UPPER_EYELINER');
+  const lower=partsRoot.getObjectByName(side+'_LOWER_EYELINER');
+  if(!upper||!lower)continue;
+  for(const [liner,isUpper] of [[upper,true],[lower,false]]){
+   const eyelid=liner.parent;
+   const attr=liner.geometry.getAttribute('position');
+   for(let j=0;j<=3;j++)for(let i=0;i<=28;i++){
+    const u=i/28,v=j/3;
+    const p=sampleGrid(eyelid,28,4,u,.018+v*(isUpper?.064:.056));
+    p.z+=Math.max(.00006,depth*.0018);
+    attr.setXYZ(j*29+i,p.x,p.y,p.z);
+   }
+   attr.needsUpdate=true;
+   liner.geometry.computeBoundingSphere();
+   count++;
+  }
+  const attr=upper.geometry.getAttribute('position');
+  if(attr.count>=124){
+   let cursor=116;
+   for(const u of [0,1]){
+    const a=sampleGrid(upper,28,3,u,0);
+    const b=sampleGrid(lower,28,3,u,0);
+    const dx=(u===0?-1:1)*depth*.0025;
+    for(const p of [a,b]){
+     attr.setXYZ(cursor++,p.x,p.y,p.z+depth*.00024);
+     attr.setXYZ(cursor++,p.x+dx,p.y,p.z+depth*.00024);
+    }
+   }
+   attr.needsUpdate=true;
+   upper.geometry.computeBoundingSphere();
+  }
+ }
+ partsRoot.userData.eyelinerSurfaceSyncCount=
+  (partsRoot.userData.eyelinerSurfaceSyncCount||0)+1;
+ return count;
+}
 /** Change eyebrow and lash tilts without rebuilding or changing the face mesh. */
 export function updateFaceFeatureAngles(partsRoot,settings={}){
  const v=normalizeFemaleFaceControls(settings);
@@ -725,6 +775,7 @@ export function updateFaceFeatureAngles(partsRoot,settings={}){
  values.browAngle=v.browAngle;
  values.lashAngle=v.lashAngle;
  values.linkedEyeBrowLashUnderEye=true;
+ values.eyelinerMeshesRefitted=refitEyelinerToLids(partsRoot);
  partsRoot.userData.featureAngles=values;
  partsRoot.reprojectBrows?.();
  return values;
