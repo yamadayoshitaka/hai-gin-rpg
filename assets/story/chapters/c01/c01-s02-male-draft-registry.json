@@ -184,5 +184,45 @@
     "表示用のセリフとふりがなは画像の外で表示",
     "人物マスターとの差分および全分岐の人間レビューは未完了",
     "女性版・敗北版・主人公死亡版は未作成"
-  ]
+  ],
+  "stageProductionV2": {
+    "procedure": "docs/story-stage-poster-production-manifest-v2.md",
+    "order": [
+      "canon-script",
+      "full-sequence-poster",
+      "male-high-resolution-individual-images",
+      "reuse-candidate-visual-review",
+      "render-missing",
+      "female-independent-version",
+      "reference-image-comparison-and-human-QA",
+      "publish"
+    ],
+    "posterFirst": true,
+    "oneImagePerPanel": true,
+    "allGenderAndOutcomeRequired": true,
+    "qualityReferenceImage": "assets/story/chapters/c01/panels/c01-s01-m02-male.webp",
+    "qualityReferenceStatus": "PROVISIONAL_NOT_HUMAN_APPROVED",
+    "existingIndividualPixels": [
+      768,
+      432
+    ],
+    "newMinimumIndividualPixels": [
+      1536,
+      864
+    ],
+    "qualityGate": "EXISTING_15_IMAGES_NOT_APPROVED_LOW_RES_NEED_RERENDER_OR_NATIVE_HIRES_SOURCE",
+    "posterSequenceCanBeShownBeforePanelReview": true,
+    "noTextOrNumbersInArt": true,
+    "prohibitCrossOutcomeOrVisibleProtagonistReuse": true,
+    "noPaidAPI": true,
+    "missingGenderOutcomeVersions": [
+      "pre/female",
+      "post-victory/female",
+      "post-defeat/male",
+      "post-defeat/female",
+      "post-gameover/male",
+      "post-gameover/female"
+    ],
+    "stage2RemainingUnregisteredFrames": 33
+  }
 }
