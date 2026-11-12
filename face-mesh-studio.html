@@ -417,7 +417,7 @@ $('wigStyle').addEventListener('change',()=>{
 function rebuildMaleHair(){
  const previous=wigs.get('male');
  if(previous){previous.root.removeFromParent();previous.dispose();wigs.delete('male');}
- if(!ready||!wigOn||!models.get('male'))return;
+ if(!v32PartMode||!ready||!wigOn||!models.get('male'))return;
  const chosen=resolvePartSelection('male',v32Parts.male,MALE_REFERENCE_DEFAULT);
  const lengths=[.60,.37,.41,.40,.55,.63,.36,.50,.60,.84];
  const hair=createScalpAnchoredWig(models.get('male').face,{
