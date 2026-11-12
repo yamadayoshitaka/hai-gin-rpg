@@ -128,7 +128,8 @@ import {STAGE_PRESETS} from './src/stage-library.js';
 import {RARITIES,JOBS,recruit,autoFormArmy,trainCommander,armyTroops,reserveTroops,troopCount} from './src/story-campaign.js';
 import {squadPower,tacticalCooldownSeconds,STRATEGIST_SPECIALTIES,evaluateTacticalOrder} from './src/tactical-command-evaluation.js?v=2.1';
 import {DEPLOYMENT_CAPACITY,DEPLOYMENT_RANK_LABELS,resolvedSquadDeployment,moveSquadDeployment} from './src/inn-deployment.js?v=1';
-import {TACTICAL_STRATEGIES} from './src/tactical-command-descriptions.js?v=1';
+import {TACTICAL_STRATEGIES,TACTICAL_ORDERS} from './src/tactical-command-descriptions.js?v=1';
+import {INN_START_ORDERS,innSquadInitialOrder,innStrategyTemplates,activeInnStrategyTemplate,registerInnStrategyTemplate,selectInnStrategyTemplate,deleteInnStrategyTemplate,setInnCommanderInitialOrder} from './src/inn-strategy-templates.js?v=1';
 const $=id=>document.getElementById(id),escapeHtml=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const townAudio=createTownAudioDirector({storage:localStorage,onChange:state=>{
  const toggle=$('townBgmToggle');
@@ -150,7 +151,7 @@ const townSceneUrl='./tactics-wireframe.html?town=1&stage='+encodeURIComponent(c
  '&gender='+encodeURIComponent(game.campaign.commander.gender||'male')+'&faceId='+encodeURIComponent(game.campaign.commander.faceId||0)+
  '&commanderName='+encodeURIComponent(game.playerName)+'&v=town-visit-20261110';
 if(townFrame.getAttribute('src')!==townSceneUrl)townFrame.src=townSceneUrl;
-let panel='',page=0,shopCategory='道具',armyPriority='均衡',innCommanderId='player',innPage='overview',innSquadPage=0,innDeploymentSelected=null,narration=null,selectedSquadId=game.campaign.squads[0]?.id||0;
+let panel='',page=0,shopCategory='道具',armyPriority='均衡',innCommanderId='player',innPage='strategies',innSquadPage=0,innDeploymentSelected=null,narration=null,selectedSquadId=game.campaign.squads[0]?.id||0;
 let activeTalk=null,activeTalkIndex=0;
 let currentStoryPanelVoiceId=null;
 const townVoices=createStoryVoiceDirector({onPlaying:value=>townAudio.setNarrationActive(value)});
@@ -208,7 +209,7 @@ $('townDialogueNext').onclick=()=>{
 };
 $('townDialogueService').onclick=()=>{if(!activeTalk?.panel)return;const service=activeTalk.panel;hideTownDialogue();openPanel(service);};
 $('townDialogueClose').onclick=()=>{hideTownDialogue();stopNarration();};
-function openPanel(which){if(!townReady)return;hideTownDialogue();resetTownMovement();panel=which;
+function openPanel(which){if(!townReady)return;hideTownDialogue();resetTownMovement();panel=which;if(which==='formation')innPage='strategies';
  townAudio.effect('open');page=0;shopCategory=which==='weapons'?'武器':'道具';notice('');$('panel').hidden=false;$('panelBackdrop').hidden=false;renderPanel();}
 function closePanel(){$('panel').hidden=true;$('panelBackdrop').hidden=true;panel='';townAudio.effect('cancel');}
 $('panelClose').onclick=closePanel;$('panelBackdrop').onclick=closePanel;
@@ -312,12 +313,57 @@ function renderInnDeploymentBoard(){
   '<small>配置は出撃時の進軍レーンと前後位置に反映します。戦闘中は変更できません。</small></div>';
  return html;
 }
+function renderInnCommanderOrder(){
+ const initial=innSquadInitialOrder(game,innCommanderId);
+ const commander=String(innCommanderId)==='player'?game.campaign.commander:
+  game.campaign.commanders.find(c=>String(c.id)===String(innCommanderId));
+ return '<div class="innStrategyGuide"><strong>📯 '+escapeHtml(commander?.name||'軍師')+' の初期号令</strong>'+
+  '<small>配置で軍師を選択すると、この設定対象も切り替わります。開戦前に再調整可能。戦闘中の号令は通常のクールダウンに従います。</small></div>'+
+  '<label class="innOrderSelector" for="innInitialOrderSelect">出撃時の初期号令'+
+  '<select id="innInitialOrderSelect">'+INN_START_ORDERS.map(id=>
+   '<option value="'+id+'" '+(id===initial?'selected':'')+'>'+escapeHtml(TACTICAL_ORDERS[id].name)+'</option>').join('')+'</select></label>'+
+  '<small class="innStrategyFoot">'+escapeHtml(TACTICAL_ORDERS[initial].effect)+'</small>';
+}
 function renderInnStrategies(){
- return '<div class="innStrategyGuide"><strong>📜 開戦前に選ぶ固定作戦の効果</strong>'+
- '<small>作戦は部隊AIの優先目的です。号令と異なり開戦後の変更は不可。</small></div>'+
- '<div class="innStrategyList">'+Object.values(TACTICAL_STRATEGIES).map(s=>
-  '<article><strong>'+escapeHtml(s.name)+'</strong><small>'+escapeHtml(s.effect)+'</small></article>').join('')+'</div>'+
- '<small class="innStrategyFoot">ジョブや戦況によって使用できる手段が変わります。</small>';
+ const nextStage=stagesInChapter(CAMPAIGN_STAGE_BY_ID[game.townStage].chapter)
+  .find(s=>s.kind!=='town'&&!game.completedStages.includes(s.id))||
+  stagesInChapter(CAMPAIGN_STAGE_BY_ID[game.townStage].chapter).find(s=>s.kind!=='town');
+ const active=activeInnStrategyTemplate(game),templates=innStrategyTemplates(game);
+ const selectedStrategy=active?.strategy|| (nextStage?.kind==='defend'?'recovery':
+  ['siege','capture'].includes(nextStage?.kind)?'objective':'eliminate');
+ const field=(id,label,value,placeholder='')=>'<label for="'+id+'">'+label+
+  '<input id="'+id+'" type="text" maxlength="160" value="'+escapeHtml(value||'')+
+  '" placeholder="'+escapeHtml(placeholder)+'"></label>';
+ const strategyOptions=Object.entries(TACTICAL_STRATEGIES).map(([id,s])=>
+  '<option value="'+id+'" '+(id===selectedStrategy?'selected':'')+'>'+escapeHtml(s.name)+'</option>').join('');
+ return '<div class="innStrategyGuide"><strong>📜 作戦・テンプレート登録</strong>'+
+  '<small>① 勝利条件 → ② 進軍・防衛ルート → ③ 戦況と対応策を登録。開戦前に呼び出し、開戦後は変更不可。</small>'+
+  '<small>次の戦場：'+escapeHtml(nextStage?.name||'未決定')+'</small></div>'+
+  '<div class="innTemplateEditor" role="group" aria-label="作戦テンプレート編集">'+
+  field('innTemplateName','テンプレート名',active?.name||'','例：橋を守る防衛戦')+
+  '<label for="innTemplateStrategy">固定作戦<select id="innTemplateStrategy">'+strategyOptions+'</select></label>'+
+  field('innTemplateVictory','勝利条件',active?.victoryCondition||nextStage?.winCondition||'')+
+  field('innTemplateRoute','進軍・防衛ルート',active?.route||'','例：中央の橋を確保')+
+  field('innTemplateSituation','発生する戦況',active?.situation||'','例：敵騎兵が橋へ突撃')+
+  field('innTemplateResponse','味方の対応策',active?.allyResponse||'','例：盾騎士で防ぎ僧侶が支援')+
+  '<label for="innTemplateJob">担当ジョブ<select id="innTemplateJob"><option value="">全ジョブ</option>'+
+   JOBS.map(job=>'<option value="'+escapeHtml(job)+'" '+(active?.allyJob===job?'selected':'')+'>'+escapeHtml(job)+'</option>').join('')+
+  '</select></label>'+
+  field('innTemplateCounter','敵の再対応策',active?.enemyCounter||'','例：魔法使いが橋を攻撃')+
+  field('innTemplateReResponse','味方の再対応策',active?.allyReResponse||'','例：忍者が敵魔法使いを妨害')+
+  '<button type="button" class="primary" data-inn-template-save>＋ 作戦テンプレートを登録</button>'+
+  '<small>登録済み：'+templates.length+'/20件。登録時に次の出撃で使う作戦として選択されます。</small></div>'+
+  '<div class="innStrategyGuide"><strong>登録したテンプレート</strong><small>選択したテンプレートを次の出撃に適用できます。</small></div>'+
+  '<div class="innSavedPlans">'+(templates.length?templates.map(t=>
+   '<article class="innSavedPlan"><strong>'+escapeHtml(t.name)+(active?.id===t.id?' · 適用中':'')+'</strong>'+
+   '<small>'+escapeHtml(TACTICAL_STRATEGIES[t.strategy]?.name||'全滅')+' ／ '+escapeHtml(t.route)+'</small>'+
+   '<small>勝利条件：'+escapeHtml(t.victoryCondition)+'</small>'+
+   '<div class="controls"><button type="button" data-inn-template-apply="'+escapeHtml(t.id)+'" '+
+    (active?.id===t.id?'disabled':'')+'>この作戦を適用</button>'+
+    '<button type="button" data-inn-template-delete="'+escapeHtml(t.id)+'">削除</button></div></article>'
+  ).join(''):'<small class="innStrategyFoot">テンプレートはまだありません。</small>')+'</div>'+
+  '<div class="innStrategyList">'+Object.values(TACTICAL_STRATEGIES).map(s=>
+  '<article><strong>'+escapeHtml(s.name)+'</strong><small>'+escapeHtml(s.effect)+'</small></article>').join('')+'</div>';
 }
 // Fixed pages avoid scrolling through the inn's entire army.
 function renderInnPages(){
@@ -328,8 +374,10 @@ function renderInnPages(){
  const pages={overview:document.createElement('section'),deployment:document.createElement('section'),
   strategies:document.createElement('section'),squads:document.createElement('section'),recruit:document.createElement('section')};
  for(const [key,section] of Object.entries(pages)){section.className='innPage';section.dataset.innPage=key;}
- pages.overview.append(commander,metrics,effects,explanation,auto);
- pages.deployment.innerHTML=renderInnDeploymentBoard();
+ pages.overview.insertAdjacentHTML('beforeend',renderInnCommanderOrder());
+ pages.overview.append(metrics,effects,explanation,auto);
+ pages.deployment.append(commander);
+ pages.deployment.insertAdjacentHTML('beforeend',renderInnDeploymentBoard());
  pages.strategies.innerHTML=renderInnStrategies();
  pages.squads.append(titleSquads,squads);
  pages.recruit.append(gacha,titleRecruit,recruits);
@@ -342,12 +390,12 @@ function renderInnPages(){
  const next=document.createElement('button');next.textContent='次 ▶';next.type='button';next.dataset.innSquadStep='1';next.disabled=innSquadPage>=maxSquadPage;
  const status=document.createElement('span');status.textContent=(innSquadPage+1)+' / '+(maxSquadPage+1)+'ページ';
  squadPager.append(prev,status,next);pages.squads.append(squadPager);
- for(const [key,title] of [['overview','軍議'],['deployment','配置'],['strategies','作戦'],['squads','部隊'],['recruit','雇用']]){
+ for(const [key,title] of [['strategies','作戦'],['deployment','配置'],['overview','号令'],['squads','部隊'],['recruit','雇用']]){
   const button=document.createElement('button');button.type='button';button.dataset.innPage=key;
   button.textContent=title;button.classList.toggle('active',key===innPage);nav.append(button);
   pages[key].hidden=key!==innPage;
  }
- root.replaceChildren(heading,nav,...Object.values(pages));
+ root.replaceChildren(heading,nav,pages.strategies,pages.deployment,pages.overview,pages.squads,pages.recruit);
 }
 function renderPanel(){
  if(!panel)return;
@@ -442,6 +490,9 @@ function renderPanel(){
 }
 $('panelContent').addEventListener('change',event=>{if(event.target.id==='equipSquadSelect')selectedSquadId=Number(event.target.value)||0;
  if(event.target.id==='innCommanderSelect'){innCommanderId=event.target.value;page=0;innDeploymentSelected=null;renderPanel();}
+ if(event.target.id==='innInitialOrderSelect'){
+  setInnCommanderInitialOrder(game,innCommanderId,event.target.value);persist();renderPanel();
+ }
  if(event.target.id==='innSpecialtySelect'){
   const key=event.target.value;
   if(!Object.hasOwn(STRATEGIST_SPECIALTIES,key))return;
@@ -476,6 +527,24 @@ $('panelContent').onclick=event=>{
   renderPanel();return;
  }
  try{
+  if(target.hasAttribute('data-inn-template-save')){
+   registerInnStrategyTemplate(game,{
+    name:$('innTemplateName').value,strategy:$('innTemplateStrategy').value,
+    victoryCondition:$('innTemplateVictory').value,route:$('innTemplateRoute').value,
+    situation:$('innTemplateSituation').value,allyResponse:$('innTemplateResponse').value,
+    allyJob:$('innTemplateJob').value,enemyCounter:$('innTemplateCounter').value,
+    allyReResponse:$('innTemplateReResponse').value
+   });
+   persist();renderPanel();notice('作戦テンプレートを登録し、次の出撃へ適用しました。');return;
+  }
+  if(target.hasAttribute('data-inn-template-apply')){
+   selectInnStrategyTemplate(game,target.dataset.innTemplateApply);
+   persist();renderPanel();notice('選択した作戦テンプレートを次の出撃へ適用しました。');return;
+  }
+  if(target.hasAttribute('data-inn-template-delete')){
+   deleteInnStrategyTemplate(game,target.dataset.innTemplateDelete);
+   persist();renderPanel();notice('作戦テンプレートを削除しました。');return;
+  }
   if(target.hasAttribute('data-talk-next')){activeTalkIndex=(activeTalkIndex+1)%activeTalk.lines.length;renderPanel();return;}
   if(target.hasAttribute('data-talk-voice')){speakTownLine(activeTalk.lines[activeTalkIndex]);return;}
   if(target.hasAttribute('data-talk-service')){openPanel(target.dataset.talkService);return;}
