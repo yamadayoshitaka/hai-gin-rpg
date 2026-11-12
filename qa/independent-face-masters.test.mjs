@@ -1879,14 +1879,15 @@ test('v37 recessed eyes are clearly visible above sculpted socket skin, not floa
   };
   const cornea=visibleCenter(eye),irisCenter=visibleCenter(iris),
    black=visibleCenter(pupil);
-  assert.ok(irisCenter.skin!==null&&irisCenter.z>irisCenter.skin,
-   'Colored iris must be visible above the recessed original mesh');
+  assert.ok(irisCenter.skin===null||irisCenter.z>irisCenter.skin,
+   'No original head triangles may cover the circular iris aperture');
   assert.ok(black.z>irisCenter.z,
    'Black pupil must be slightly nearer than the colored iris');
   assert.ok(eye.userData.recessedBehindLid&&
    eye.userData.socketDepressionInOriginalMesh);
   assert.ok(iris.userData.circularProjectedRadius>radius*.20);
-  assert.ok(cornea.skin!==null);
+  assert.ok(cornea.skin===null||cornea.z>cornea.skin,
+   'The face-conformal optical surface must not be buried by donor skin');
  }
  assert.equal(model.face.userData.softNaturalLipTint,true);
 });
@@ -1921,11 +1922,13 @@ test('v37 eye socket is sculpted into the contiguous original face mesh and iris
  const pos=model.face.geometry.getAttribute('position');
  assert.equal(pos.count,original.length/3,'No replacement face card or point loss');
  assert.equal(model.report.detailedParts.eyeSocketGeometry,
-  'continuous-original-head-mesh-recessed-under-lid');
+  'original-head-socket-with-open-almond-apertures');
  assert.equal(model.report.detailedParts.eyeSkinDepthClampRemoved,true);
  assert.ok(model.report.detailedParts.eyeSocketSculptedVertices>0,
   'The donor face triangles must be physically indented below eyelids');
  assert.ok(model.report.detailedParts.eyeSocketMaxInset>0);
+ assert.ok(model.report.detailedParts.eyeOpeningsCutFromHeadTriangles>0,
+  'Original closed eye triangles must be removed to reveal iris under eyelid');
  assert.equal(model.face.geometry.userData.anatomicalEyeSocketSculpt,true);
  assert.deepEqual(donor.geometry.getAttribute('position').array,original,
   'Original imported head remains immutable');
