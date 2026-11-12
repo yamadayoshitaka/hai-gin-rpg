@@ -561,7 +561,8 @@ async function expectCenteredFaceSliders(page,gender){
    if(info.characterId!=='hero-girl-01'||info.artMatched!==false||
       !info.artReference.includes('commander/female-master.webp'))
     throw Error('Unregistered or falsely approved art character '+JSON.stringify(info));
-   if(!info.attachedBody||info.donorHeadRemoved<1||info.bodyMeshes<1||
+   if(!info.attachedBody||info.donorHeadRemoved<1||info.headBustRemoved<1||
+      info.bodyMeshes<1||
       !info.sourceHeadUnchanged||!info.sourceBodyUnchanged)
     throw Error('Body/head integration failed '+JSON.stringify(info));
    if(Math.abs(info.roundPupilAspectRatio-1)>.016)
