@@ -26,21 +26,23 @@ assert.match(open,/followCamera=false;/,
 assert.doesNotMatch(open,/followCamera=true;/,
  'zoom-follow automatically hides the command panel in the next render frame');
 assert.match(open,/focusedHumanUnitId=null;/);
-assert.match(open,/MASS_SIZE>=1000\?[\s\S]*?Math\.min\(88,Math\.max\(62,/,
- '1000v1000 order view must be farther than 56m auto-hide hysteresis');
-assert.match(open,/Math\.min\(28,Math\.max\(17,/,
- '50v50 stays above the 16m re-show threshold while issuing orders');
+assert.match(open,/const distance=commandFocus\.isCommander\?8\.6:9\.5;/,
+ 'Open the selected strategist or a living squad representative in close-up during command choice');
+assert.match(open,/setBattleCamera\(focus,offset\);\s*setCameraActive\(null\)/,
+ 'Command opening uses an actual troop focus; target choice later switches to overhead');
 assert.match(open,/\$\('squadTactics'\)\.hidden=false;showSquadTacticsPanel\('main'\)/,
  'one tap opens the quick-order list, not the read-only circle inspector');
-assert.match(html,/add\('⚔ 突撃 → 敵を選択','charge',\(\)=>beginCircleTargetSelection\('attack'\)\)/,
- 'Charge now explicitly selects an enemy circle before issuing a squad-wide mission');
-assert.match(html,/add\('🛡 守備','defend',\(\)=>issue\('defend'\)\)/);
-assert.match(html,/add\('⏸ 待機','hold',\(\)=>issue\('hold'\)\)/);
-assert.match(html,/add\('↘ 退却','retreat',\(\)=>issue\('retreat'\)\)/);
+assert.match(html,/add\('⚔ 突撃','charge',\(\)=>beginCircleTargetSelection\('attack'\),\{effect:orderEffect\('charge'\)\}\)/,
+ 'Charge requires enemy circle selection, not an automatic target');
+assert.match(html,/add\('🛡 守備','defend',\(\)=>issue\('defend'\),\{effect:orderEffect\('defend'\)\}\)/);
+assert.match(html,/add\('⏸ 待機','hold',\(\)=>issue\('hold'\),\{effect:orderEffect\('hold'\)\}\)/);
+assert.match(html,/add\('↘ 退却','retreat',\(\)=>issue\('retreat'\),\{effect:orderEffect\('retreat'\)\}\)/);
 assert.match(html,/button\.onclick=\(\)=>\{if\(!button\.disabled\)action\(\)\}/,
  'order buttons execute on the first click');
-assert.match(html,/const issue=mode=>\{if\(issueSquadOrder\(mode\)\)closeSquadTactics\(\)\}/,
- 'issue order before dismissing the popup');
+assert.match(html,/const issue=mode=>queueDirectOrder\(mode\)/,
+ 'Selecting an order must request confirmation rather than issue before dismissal');
+assert.match(html,/if\(issueSquadOrder\(mode\)\)\{\s*pendingDirectOrder=null;\$\('battleOrderConfirm'\)\.hidden=true;/,
+ 'Confirmed orders commit before dismissing the popup');
 assert.match(html,/const remaining=team===0\?squadOrderCooldownSeconds\(row\.id\):0;/,
  'cooldown is displayed without disabling squad inspection');
 assert.equal(secondsUntilNextOrder(15,20),115);
