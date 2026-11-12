@@ -10,6 +10,12 @@ const deepFreeze=value=>{
  }
  return value;
 };
+// Static scalp foundation volume. This is geometry, not a shader or physics.
+export const WIG_BASE_VOLUME_PROFILES=deepFreeze({
+ natural:{label:'自然な頭皮ライン',crown:.0,side:.0},
+ airy:{label:'ふんわりした根元',crown:.034,side:.019},
+ lifted:{label:'トップにボリューム',crown:.069,side:.013}
+});
 export const DEFAULT_WIG_STYLE_ID='center-part-gravity-long';
 export const WIG_STYLES=deepFreeze({
  'center-part-gravity-long':{
