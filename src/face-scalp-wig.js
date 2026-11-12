@@ -555,6 +555,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
     if(length>target*1.055&&length>0)
      p.copy(prev).addScaledVector(gap,target*1.055/length);
     resolveCollision(p);
+    if(p.y<s.trimY){p.y=s.trimY;v.y=Math.max(0,v.y);}
    }
   }
   writeGeometry();
@@ -564,6 +565,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  // as the spring rest shape, rather than pulling hair through the face.
  for(const s of strands)for(let j=1;j<=segments;j++){
   resolveCollision(s.points[j]);
+  s.points[j].y=Math.max(s.points[j].y,s.trimY);
   s.rest[j].copy(s.points[j]);
  }
  writeGeometry();
