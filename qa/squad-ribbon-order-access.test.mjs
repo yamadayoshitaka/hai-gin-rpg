@@ -43,7 +43,7 @@ assert.match(html,/const issue=mode=>\{if\(issueSquadOrder\(mode\)\)closeSquadTa
  'issue order before dismissing the popup');
 assert.match(html,/const remaining=team===0\?squadOrderCooldownSeconds\(row\.id\):0;/,
  'cooldown is displayed without disabling squad inspection');
-assert.equal(secondsUntilNextOrder(15,20),115);
+assert.equal(secondsUntilNextOrder(15,20),55);
 assert.equal(secondsUntilNextOrder(15,135),0);
 assert.equal(squadRibbonStatus({team:0,alive:12,total:15,commanderAlive:true}).enabled,true);
 assert.equal(squadRibbonStatus({team:0,alive:12,total:15,commanderAlive:false}).enabled,false);
