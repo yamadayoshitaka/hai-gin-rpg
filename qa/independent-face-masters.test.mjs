@@ -932,6 +932,9 @@ test('v19 independent heroine face is attached to REAL female body without dupli
  const attached=attachIndependentHeadToBody(head,source,{characterId:art.characterId});
  assert.equal(attached.report.connectedCharacterId,'hero-girl-01');
  assert.equal(attached.report.hasRealBody,true);
+ assert.equal(attached.report.noDuplicateOutfitLimbs,true);
+ assert.equal(attached.root.getObjectByName('REFERENCE_PALETTE_OUTFIT'),undefined);
+ assert.equal(typeof attached.setOutfitVisible,'function');
  assert.ok(attached.report.donorHeadTrianglesRemoved>0);
  assert.ok(attached.report.donorBodyTrianglesRetained>0);
  assert.equal(attached.body.name,'CC0_CLIPPED_FEMALE_BODY');
@@ -939,6 +942,12 @@ test('v19 independent heroine face is attached to REAL female body without dupli
   'Original body GLB must never be modified');
  const clipped=attached.body.getObjectByName('real CC0 body test fixture');
  assert.notEqual(clipped.geometry,body.geometry);
+ assert.ok(clipped.geometry.getAttribute('color')?.count>0);
+ const dressed=clipped.material;
+ attached.setOutfitVisible(false);
+ assert.notEqual(clipped.material,dressed,'Clothing should be reversible');
+ attached.setOutfitVisible(true);
+ assert.equal(clipped.material,dressed,'Clothing should fit original body triangles');
  assert.ok(clipped.geometry.getIndex().count<body.geometry.getIndex().count);
  const hair=createScalpAnchoredWig(head.face,{count:96,
   bodyCollisionResolver:attached.bodyCollider});
