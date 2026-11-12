@@ -2,7 +2,7 @@
 <html lang="ja"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#14263a">
-<title>灰銀のレゾナンス | 顔v30・滑らかな立体眼球と静的ヘアカード</title>
+<title>灰銀のレゾナンス | 顔v31・縦横連動の眼球と自然な静的ロングヘア</title>
 <style>
 :root{font:15px/1.55 system-ui,-apple-system,"Noto Sans JP",sans-serif;color-scheme:dark}
 *{box-sizing:border-box}
@@ -62,7 +62,7 @@ button{padding:9px 11px}
 </style></head>
 <body>
 <header>
-<h1>男女・顔と立体パーツ v30</h1>
+<h1>男女・顔と立体パーツ v31</h1>
 <p>ライブラリに保存された実GLBの顔設定（顎先5倍・鼻穴隠し2・鼻筋2.5）を男女の実メッシュ標準に固定。口紅とチークを実メッシュの頂点に着色。上下アイライン・眉・眼球を調整し、女性用の高密度ロング（後頭部・両側頭部・襟足まで髪束生成・顔と肩への衝突対応）を追加。保存値とズームを維持します。</p>
 </header>
 <main><section class="panel">
@@ -91,8 +91,6 @@ button{padding:9px 11px}
 <div class="adjustGrid">
 <label for="irisDiameter">黒目の拡大倍率 <output id="irisDiameterValue">1×</output>
 <input type="range" id="irisDiameter" min="0" max="2" step="0.1" value="1"></label>
-<label for="eyeSize">目全体の大きさ <output id="eyeSizeValue">1×</output>
-<input type="range" id="eyeSize" min="0.5" max="1.5" step="0.05" value="1"></label>
 <label for="eyeSpacing">目元一式の間隔（眉・クマ含む） <output id="eyeSpacingValue">1.1×</output>
 <input type="range" id="eyeSpacing" min="0.65" max="1.35" step="0.01" value="1.1"></label>
 <label for="jawSharpness">顎先のシャープさ <output id="jawSharpnessValue">5×</output>
@@ -114,10 +112,7 @@ button{padding:9px 11px}
 <label for="lipstickHeight">口紅の縦幅 <output id="lipstickHeightValue">1×</output>
 <input type="range" id="lipstickHeight" min="0.2" max="1.8" step="0.05" value="1"></label>
 <label for="contactPreset">カラコンの色<select id="contactPreset">
-<option value="brown" selected>ダークブラウン（標準）</option>
-<option value="blue">ブルー</option><option value="green">グリーン</option>
-<option value="hazel">ヘーゼル</option><option value="gray">グレー</option>
-<option value="violet">バイオレット</option><option value="custom">自由色</option>
+<option value="custom">自由色</option>
 </select></label>
 <label for="contactColor">カラコンの自由な色<input type="color" id="contactColor" value="#514139"></label>
 <label for="wigDensity">髪束の密度 <output id="wigDensityValue">1440束</output>
@@ -138,8 +133,6 @@ button{padding:9px 11px}
 <div class="adjustGrid">
 <label for="maleJawSharpness">顎先のシャープさ <output id="maleJawSharpnessValue">5×</output>
 <input type="range" id="maleJawSharpness" min="0" max="10" step="0.05" value="5"></label>
-<label for="maleEyeSize">目全体の大きさ <output id="maleEyeSizeValue">1×</output>
-<input type="range" id="maleEyeSize" min="0.5" max="1.5" step="0.05" value="1"></label>
 <label for="maleEyeSpacing">目と目の間隔 <output id="maleEyeSpacingValue">1.1×</output>
 <input type="range" id="maleEyeSpacing" min="0.65" max="1.35" step="0.01" value="1.1"></label>
 <label for="maleIrisDiameter">黒目の大きさ <output id="maleIrisDiameterValue">1×</output>
@@ -160,13 +153,13 @@ button{padding:9px 11px}
 <div class="controls">
 <button id="export" disabled>表示中の顔メッシュをGLB保存</button>
 <button id="exportWig" disabled>ヅラ単体をGLB保存</button>
-<a href="./face-body-studio.html">女性主人公・眼球v30の全身3D確認画面</a>　<a href="./master-swordsman-prototype.html">従来の全身モデル</a>
+<a href="./face-body-studio.html">女性主人公・眼球／髪v31の全身3D確認画面</a>　<a href="./master-swordsman-prototype.html">従来の全身モデル</a>
 </div>
 <p>指で360°回転・ピンチで拡大。女性の口紅は上唇・下唇の実3D形状に接続。上下アイラインの目尻を接続。暗いクマを自然にフェードさせ、眉の間隔を維持。頭皮からの金髪ロングは顔・首・肩・胸への簡易衝突を計算。男性は顎・鼻・目の角度と3Dヒゲの濃さ・長さを調整できます。</p>
 <p>これは美形を目標にした<b>初回の造形試作</b>です。実写品質・原画一致・美術承認・ゲーム実装は未達です。顔の凹凸や横顔が自然かを先に評価してください。</p>
 <details><summary>実メッシュ数値と原本保護の確認</summary><div id="metrics"></div></details>
 </section></main>
-<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/","./src/independent-face-masters.js":"./src/independent-face-masters.js?v=30","./src/face-feature-meshes.js":"./src/face-feature-meshes.js?v=30","./src/face-v7-controls.js":"./src/face-v7-controls.js?v=30","./src/face-body-assembly.js":"./src/face-body-assembly.js?v=30"}}</script>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/","./src/independent-face-masters.js":"./src/independent-face-masters.js?v=31","./src/face-feature-meshes.js":"./src/face-feature-meshes.js?v=31","./src/face-v7-controls.js":"./src/face-v7-controls.js?v=31","./src/face-body-assembly.js":"./src/face-body-assembly.js?v=31"}}</script>
 <script type="module">
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
@@ -174,9 +167,9 @@ import {GLTFExporter} from 'three/addons/exporters/GLTFExporter.js';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {makeIndependentFaceMaster,FACE_MASTER_SPEC} from './src/independent-face-masters.js';
 import {updateFaceFeatureAngles,applyFaceColorMode,updateRealFacePigment} from './src/face-feature-meshes.js';
-import {createScalpAnchoredWig} from './src/face-scalp-wig.js?v=30';
+import {createScalpAnchoredWig} from './src/face-scalp-wig.js?v=31';
 import {listWigStyles,DEFAULT_WIG_STYLE_ID} from './src/face-wig-styles.js';
-import {FEMALE_V7_DEFAULTS,MALE_REFERENCE_DEFAULT,FACE_SLIDER_RANGES,FACE_EYE_SPACING_DEFAULT,FACE_EYE_SPACING_RANGE,CONTACT_COLORS,safeContactColor,normalizeFemaleFaceControls,normalizeMaleFaceControls} from './src/face-v7-controls.js';
+import {FEMALE_V7_DEFAULTS,MALE_REFERENCE_DEFAULT,FACE_SLIDER_RANGES,FACE_EYE_SPACING_DEFAULT,FACE_EYE_SPACING_RANGE,CONTACT_COLORS,CONTACT_COLOR_LABELS,safeContactColor,normalizeFemaleFaceControls,normalizeMaleFaceControls} from './src/face-v7-controls.js';
 const $=id=>document.getElementById(id);
 // Bind slider DOM bounds to the same canonical interval used by 3D mesh
 // normalization. The saved GLB must be the midpoint, not the right limit.
@@ -232,6 +225,11 @@ let gender='female',angle='front',wired=false,partsOn=true,ready=false;
 let faceMode='color',femaleSource=null,modelChanges=normalizeFemaleFaceControls({...FEMALE_V7_DEFAULTS,eyeSpacing:FACE_EYE_SPACING_DEFAULT});
 let maleChanges=normalizeMaleFaceControls({...MALE_REFERENCE_DEFAULT,eyeSpacing:FACE_EYE_SPACING_DEFAULT});
 let contactColor=CONTACT_COLORS.brown;
+for(const [key,label] of Object.entries(CONTACT_COLOR_LABELS)){
+ const option=document.createElement('option');
+ option.value=key;option.textContent=label;
+ $('contactPreset').insertBefore(option,$('contactPreset').querySelector('[value="custom"]'));
+}
 let wigOn=true,wigDensity=1440,wigLength=1,wigColor='blonde';
 let wigStyleId=DEFAULT_WIG_STYLE_ID;
 for(const style of listWigStyles()){
@@ -498,14 +496,14 @@ function addEyeExtras(male=false){
  }
 }
 addEyeExtras(false);addEyeExtras(true);
-const rebuildKeys=['irisDiameter','eyeSize','eyeSpacing','eyeWidth','eyeHeight',
+const rebuildKeys=['irisDiameter','eyeSpacing','eyeWidth','eyeHeight',
  'browWidth','browThickness','eyeDepth',
  'lashDensity','lashLength','lashThickness','lashCurl',
  'jawSharpness','noseTipLift',
  'nostrilCover','noseBridgeSharpness'];
 const cosmeticKeys=['lipstickX','lipstickY','lipstickWidth','lipstickHeight'];
 const angleKeys=['eyeAngle','browAngle','lashAngle'];
-const multiplierKeys=['irisDiameter','eyeSize','eyeSpacing','eyeWidth','eyeHeight',
+const multiplierKeys=['irisDiameter','eyeSpacing','eyeWidth','eyeHeight',
  'browWidth','browThickness','lashDensity','lashLength','lashThickness','lashCurl',
  'jawSharpness','lipstickWidth','lipstickHeight'];
 function setFaceControlDisplay(key,value){
@@ -532,6 +530,8 @@ for(const key of [...rebuildKeys,...cosmeticKeys,...angleKeys]){
  const el=$(key);
  el.addEventListener('input',()=>{
   modelChanges[key]=Number(el.value);
+  if(key==='eyeWidth'||key==='eyeHeight')
+   modelChanges.eyeSize=Math.sqrt(modelChanges.eyeWidth*modelChanges.eyeHeight);
   setFaceControlDisplay(key,modelChanges[key]);
   if(angleKeys.includes(key)&&models.get('female')){
    updateFaceFeatureAngles(models.get('female').parts,modelChanges);
@@ -551,7 +551,7 @@ for(const key of [...rebuildKeys,...cosmeticKeys,...angleKeys]){
   $('metrics').textContent=JSON.stringify(metrics(),null,2);
  });
 }
-const maleRebuildKeys=['jawSharpness','eyeSize','eyeSpacing','eyeWidth','eyeHeight','eyeDepth',
+const maleRebuildKeys=['jawSharpness','eyeSpacing','eyeWidth','eyeHeight','eyeDepth',
  'browWidth','browThickness','irisDiameter','noseTipLift',
  'nostrilCover','noseBridgeSharpness','beardDensity','beardLength'];
 const maleAngleKeys=['eyeAngle','browAngle'];
@@ -559,7 +559,7 @@ function setMaleControlDisplay(key,value){
  const id='male'+key[0].toUpperCase()+key.slice(1);
  $(id).value=String(value);
  $(id+'Value').value=String(value)+(maleAngleKeys.includes(key)?'°':
-  ['jawSharpness','eyeSize','eyeSpacing','eyeWidth','eyeHeight',
+  ['jawSharpness','eyeSpacing','eyeWidth','eyeHeight',
   'browWidth','browThickness','irisDiameter','beardLength'].includes(key)?'×':'');
 }
 function syncMaleControlDisplays(){
@@ -570,6 +570,8 @@ for(const key of [...maleRebuildKeys,...maleAngleKeys]){
  const id='male'+key[0].toUpperCase()+key.slice(1);
  $(id).addEventListener('input',()=>{
   maleChanges[key]=Number($(id).value);
+  if(key==='eyeWidth'||key==='eyeHeight')
+   maleChanges.eyeSize=Math.sqrt(maleChanges.eyeWidth*maleChanges.eyeHeight);
   setMaleControlDisplay(key,maleChanges[key]);
   if(maleAngleKeys.includes(key)&&models.get('male')){
    updateFaceFeatureAngles(models.get('male').parts,maleChanges);
@@ -634,7 +636,7 @@ function setupAdjustTabs(containerId,groups){
 }
 setupAdjustTabs('faceGroupTabs',[
  ['顎・輪郭',['jawSharpness']],
- ['目元',['irisDiameter','eyeSize','eyeWidth','eyeHeight','eyeDepth','eyeSpacing',
+ ['目元',['irisDiameter','eyeWidth','eyeHeight','eyeDepth','eyeSpacing',
   'browWidth','browThickness','browAngle','lashDensity','lashLength',
   'lashThickness','lashCurl','lashAngle','eyeAngle']],
  ['鼻',['noseTipLift','nostrilCover','noseBridgeSharpness']],
@@ -644,7 +646,7 @@ setupAdjustTabs('faceGroupTabs',[
 ]);
 setupAdjustTabs('maleGroupTabs',[
  ['顎・輪郭',['maleJawSharpness']],
- ['目元',['maleEyeSize','maleEyeWidth','maleEyeHeight','maleEyeSpacing',
+ ['目元',['maleEyeWidth','maleEyeHeight','maleEyeSpacing',
   'maleBrowWidth','maleBrowThickness','maleBrowAngle',
   'maleEyeDepth','maleIrisDiameter','maleEyeAngle']],
  ['鼻',['maleNoseTipLift','maleNostrilCover','maleNoseBridgeSharpness']],

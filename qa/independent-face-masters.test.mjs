@@ -135,12 +135,13 @@ test('face studio includes stable gender, view and export controls with no body 
  for(const id of ['female','male','front','side','threeQuarter','back','wire',
   'faceCanvas','export','status','metrics','clay','color','irisDiameter',
   'noseTipLift','nostrilCover','noseBridgeSharpness','jawSharpness','eyeAngle',
-  'eyeSize','eyeSpacing','lipstickX','lipstickY','lipstickWidth','lipstickHeight',
+  'eyeSpacing','lipstickX','lipstickY','lipstickWidth','lipstickHeight',
   'contactPreset','contactColor','resetPreset',
-  'maleAdjustments','maleJawSharpness','maleEyeSize','maleEyeSpacing','maleIrisDiameter',
+  'maleAdjustments','maleJawSharpness','maleEyeSpacing','maleIrisDiameter',
   'maleNoseTipLift','maleNostrilCover','maleNoseBridgeSharpness',
   'maleEyeAngle','maleBeardDensity','maleBeardLength','resetMalePreset'])
   assert.match(html,new RegExp('id="'+id+'"'));
+ assert.doesNotMatch(html,/id="eyeSize"|id="maleEyeSize"/);
  assert.match(html,/makeIndependentFaceMaster/);
  assert.doesNotMatch(html,/loadAsync\(base\+'realistic-head-sculpt\.glb'\)/,'Old gaunt sculpt must not be loaded as the female face');
  assert.match(html,/realistic-head-animation.glb/);
@@ -269,9 +270,9 @@ test('color-only mode and brow/lash tilt do not change vertices or source donor'
 
 test('v8 linked eye angle, real eye scaling and contact lens color preserve source',()=>{
  const f=fixture(),small=makeIndependentFaceMaster(f.source,'female',{femaleControls:{
-  eyeSize:.8,eyeAngle:-12
+  eyeWidth:.8,eyeHeight:.8,eyeAngle:-12
  }}),large=makeIndependentFaceMaster(f.source,'female',{femaleControls:{
-  eyeSize:1.25,eyeAngle:15
+  eyeWidth:1.25,eyeHeight:1.25,eyeAngle:15
  }});
  const eyes=(model)=>model.parts.getObjectByName('LEFT_ORBITAL_EYEBALL');
  assert.ok(eyes(large).geometry.boundingSphere===null||
@@ -332,7 +333,7 @@ test('v15 lipstick is painted only on REAL source-head triangles, no sliding lip
 });
 test('v10 orbital eyeliner follows eyes and blush stays on head geometry',()=>{
  const source=fixture().source;
- const model=makeIndependentFaceMaster(source,'female',{femaleControls:{eyeAngle:14,eyeSize:1.2}});
+ const model=makeIndependentFaceMaster(source,'female',{femaleControls:{eyeAngle:14,eyeWidth:1.2,eyeHeight:1.2}});
  assert.equal(model.report.detailedParts.eyelinerMeshCount,4);
  assert.equal(model.report.detailedParts.eyeAccentMeshCount,2);
  assert.equal(model.report.detailedParts.blushMeshCount,0);
@@ -367,7 +368,7 @@ test('library-saved default jaw=5 with independent male face and beard controls'
  assert.equal(strong.report.outerContourXError,0);
  const male=makeIndependentFaceMaster(source,'male');
  const beardy=makeIndependentFaceMaster(source,'male',{maleControls:{
-  jawSharpness:3.9,eyeSize:1.2,eyeAngle:15,beardDensity:.8,beardLength:2
+  jawSharpness:3.9,eyeWidth:1.2,eyeHeight:1.2,eyeAngle:15,beardDensity:.8,beardLength:2
  }});
  assert.equal(male.report.maleControls.jawSharpness,5);
  assert.equal(beardy.report.maleControls.jawSharpness,3.9);
@@ -617,7 +618,6 @@ test('v14 saved Library GLB equals exact midpoint of every female/male face slid
   nostrilCover:[0,4,2],
   noseBridgeSharpness:[0,5,2.5],
   noseTipLift:[-2,2,0],
-  eyeSize:[.5,1.5,1],
   irisDiameter:[0,2,1],
   lipstickWidth:[.2,2.8,1],
   lipstickHeight:[.2,1.8,1]
@@ -1301,12 +1301,12 @@ test('v26 wig foundation is a transparent unchanged copy of the actual head and 
 test('v26 complete eye-region sliders change real facial meshes and preserve linked liner/brows',()=>{
  const source=fixture().source;
  const compact=makeIndependentFaceMaster(source,'female',{femaleControls:{
-  eyeSize:.8,eyeWidth:.70,eyeHeight:.65,eyeSpacing:.65,
+  eyeWidth:.70,eyeHeight:.65,eyeSpacing:.65,
   browWidth:.7,browThickness:.45,lashDensity:.5,lashLength:.5,
   lashThickness:.4,lashCurl:-.5
  }});
  const full=makeIndependentFaceMaster(source,'female',{femaleControls:{
-  eyeSize:1.3,eyeWidth:1.45,eyeHeight:1.45,eyeSpacing:1.35,
+  eyeWidth:1.45,eyeHeight:1.45,eyeSpacing:1.35,
   browWidth:1.5,browThickness:1.85,lashDensity:2.2,lashLength:2.1,
   lashThickness:1.9,lashCurl:1.5
  }});
@@ -1524,4 +1524,75 @@ test('v30 corneal centre stays smooth and symmetrical instead of following sourc
    (v-line[i])*(v-line[i+2])>0).length;
   assert.ok(peaks<=1,'The cornea should have one convex peak, not jagged bands');
  }
+});
+
+test('v31 width and height alone determine effective eye size; size never moves cornea into socket',()=>{
+ const source=fixture().source;
+ const normal=makeIndependentFaceMaster(source,'female');
+ const wide=makeIndependentFaceMaster(source,'female',{
+  femaleControls:{eyeSize:.5,eyeWidth:1.45,eyeHeight:.65}
+ });
+ const tall=makeIndependentFaceMaster(source,'female',{
+  femaleControls:{eyeSize:1.5,eyeWidth:.70,eyeHeight:1.45}
+ });
+ const same=makeIndependentFaceMaster(source,'female',{
+  femaleControls:{eyeSize:999,eyeWidth:1.45,eyeHeight:.65}
+ });
+ assert.equal(wide.report.detailedParts.eyeScale,Math.sqrt(1.45*.65));
+ assert.equal(tall.report.detailedParts.eyeScale,Math.sqrt(.70*1.45));
+ assert.equal(wide.report.detailedParts.eyeSizeDerivedFromWidthHeight,true);
+ assert.equal(wide.report.detailedParts.anteriorDepthIndependentOfSize,true);
+ assert.equal(wide.report.detailedParts.eyeDepthFactor,0);
+ for(const side of ['LEFT','RIGHT']){
+  const cornea=face=>face.parts.getObjectByName(side+'_ORBITAL_EYEBALL');
+  const centerZ=face=>cornea(face).geometry.getAttribute('position').getZ(9*49+24);
+  // Width/height also reshape the SOURCE eye socket skin. Absolute Z
+  // may legitimately shift with that skin; measure cornea-vs-skin
+  // clearance instead of incorrectly demanding fixed world-space Z.
+  for(const m of [normal,wide,tall,same]){
+   assert.ok(cornea(m).userData.anteriorClearanceRatio>.40,
+    'The cornea must stay in front of its locally reshaped eye socket');
+  }
+  assert.ok(Math.abs(centerZ(same)-centerZ(wide))<1e-6,
+   'Legacy eyeSize input must be ignored');
+ }
+ assert.equal(normalizeFemaleFaceControls({eyeSize:.5,eyeWidth:1.4,eyeHeight:.9})
+  .eyeSize,Math.sqrt(1.4*.9));
+ assert.equal(normalizeMaleFaceControls({eyeSize:1.5,eyeWidth:.7,eyeHeight:1.4})
+  .eyeSize,Math.sqrt(.7*1.4));
+ assert.equal(FACE_SLIDER_RANGES.eyeSize,undefined);
+});
+test('v31 contact lenses provide warm natural brown choices plus fantasy and custom tones',()=>{
+ for(const key of ['brown','darkBrown','chocolate','honeyBrown','hazel',
+  'amber','green','olive','emerald','blue','lightBlue','iceBlue','gray',
+  'silver','violet','pink','red'])assert.match(CONTACT_COLORS[key],/^#[0-9a-f]{6}$/);
+ assert.equal(Object.keys(CONTACT_COLORS).length,17);
+ const face=makeIndependentFaceMaster(fixture().source,'female');
+ for(const key of ['darkBrown','amber','olive','lightBlue','pink','red']){
+  applyFaceColorMode(face.face,'color',{contactColor:CONTACT_COLORS[key]});
+  assert.equal(face.parts.getObjectByName('LEFT_CURVED_IRIS').material.color.getHex(),
+   Number('0x'+CONTACT_COLORS[key].slice(1)));
+ }
+ assert.equal(safeContactColor('#ae684c'),'#ae684c');
+});
+test('v31 static salon wig has staggered curtain fringe, long temples, feathered tips',()=>{
+ const face=makeIndependentFaceMaster(fixture().source,'female');
+ const wig=createScalpAnchoredWig(face.face,{
+  count:480,visualFiberMultiplier:3,fineFringeMultiplier:3,staticGroom:true
+ });
+ const r=wig.getReport();
+ assert.equal(r.runtimePhysicsCallsPerFrame,0);
+ assert.equal(r.salonStaticLongLayers,true);
+ assert.match(r.helmetSilhouetteFix,/curtain-fringe-long-temples/);
+ assert.ok(r.templeLongLayerCount>20);
+ const samples=wig.getStyleSamples();
+ const fringe=samples.filter(x=>x.zone.startsWith('fringe'));
+ const temples=samples.filter(x=>x.zone.startsWith('temple'));
+ assert.ok(fringe.length>3&&temples.length>3);
+ const minFringe=Math.min(...fringe.map(x=>x.tip[1]));
+ const maxFringe=Math.max(...fringe.map(x=>x.tip[1]));
+ assert.ok(maxFringe-minFringe>0.003,'Bangs must not end in a straight cut');
+ const lowTemple=Math.min(...temples.map(x=>x.tip[1]));
+ assert.ok(lowTemple<minFringe*.95,'Temple layer must extend below short bangs');
+ wig.dispose();
 });
