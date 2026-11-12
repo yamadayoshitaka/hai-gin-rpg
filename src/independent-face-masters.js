@@ -182,8 +182,16 @@ export function makeIndependentFaceMaster(sourceRoot,gender,{femaleControls={},m
     (1-smooth(.36,.53,Math.abs(xn)));
   const pointGain=controls.jawSharpness;
   const pointDx=-(x-cx)*.065*pointGain*pointX*pointY;
+  // Eye-distance edits must also reposition the ANATOMICAL orbital
+  // socket in the source head. Previously only the synthetic eye assembly
+  // moved, making sclera/irises float outside the original eye openings.
+  const orbitalWeight=bell(Math.abs(xn),.246,.14)*
+   bell(yn,.684,.092)*front*
+   smooth(.10,.20,Math.abs(xn))*(1-smooth(.66,.83,Math.abs(xn)));
+  const eyeSocketDx=Math.sign(xn)*d.x*.123*
+   (controls.eyeSpacing-1)*orbitalWeight;
   let nx=x+(x-cx)*(cheekSupport-spec.jawNarrow*ovalTransition)
-    +local.dx+surfaceFairing.dx*.9+pointDx;
+    +local.dx+surfaceFairing.dx*.9+pointDx+eyeSocketDx;
   // Store the source X exactly at the preserved outer silhouette:
   // float math around zero support can otherwise drift by ~1e-9.
   if(Math.abs(xn)>=.86)nx=x;
@@ -258,6 +266,7 @@ export function makeIndependentFaceMaster(sourceRoot,gender,{femaleControls={},m
   cheekJawSculpt:'smooth-head-source-feminine-jaw-v6',
   femaleControls:gender==='female'?Object.freeze({...controls}):null,
   maleControls:gender==='male'?Object.freeze({...controls}):null,
+  orbitalSocketShiftEnabled:true,orbitalSocketSpacing:controls.eyeSpacing,
   sharedFemaleBase:true,maleNoMakeup:gender==='male',
   innerFeatureHalfWidthLimit:.28,
   femaleJawStyle:gender==='female'?'full-cheek-smooth-oval-point-v6':null,
