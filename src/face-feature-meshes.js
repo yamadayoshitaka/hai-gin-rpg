@@ -52,6 +52,48 @@ function buildGrid(name,columns,rows,point,material){
  mesh.name=name;mesh.renderOrder=2;
  return mesh;
 }
+/** Fine tapered eyelashes rooted on the ACTUAL cosmetic eyeliner contour.
+ * Keep the legacy upper/lower mesh identities, so eye-angle joints and GLB
+ * export still contain just four lash meshes rather than floating cards. */
+function makeFineEyelashMesh(name,liner,x,y,z,eyeRadius,side,upper){
+ const count=upper?52:26,vertices=[],indices=[];
+ const reference=(u)=>sampleGrid(liner,28,3,u,.24);
+ for(let i=0;i<count;i++){
+  const u=.055+.89*(i+.5)/count;
+  const p=reference(u),edge=Math.pow(Math.sin(Math.PI*u),.58);
+  const step=.89/count*.22;
+  const left=reference(Math.max(0,u-step));
+  const right=reference(Math.min(1,u+step));
+  const a=new THREE.Vector3().lerpVectors(p,left,.62);
+  const b=new THREE.Vector3().lerpVectors(p,right,.62);
+  const spread=Math.abs(u-.5)*2;
+  const length=eyeRadius*(upper?.19:.075)*(.50+.50*edge)*
+   (.88+.12*Math.sin((i+1)*2.39996323));
+  const tip=p.clone().add(new THREE.Vector3(
+   side*spread*eyeRadius*.055,
+   (upper?1:-1)*length,
+   eyeRadius*(upper?.14:.075)*(.65+.35*edge)));
+  const start=vertices.length/3;
+  for(const point of [a,b,tip]){
+   vertices.push(point.x-x,point.y-y,point.z-z+eyeRadius*.018);
+  }
+  indices.push(start,start+1,start+2);
+ }
+ const geo=new THREE.BufferGeometry();
+ geo.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));
+ geo.setIndex(indices);geo.computeVertexNormals();geo.computeBoundingSphere();
+ const material=new THREE.MeshBasicMaterial({
+  color:FACE_V7_PALETTE.lashes,side:THREE.DoubleSide,
+  transparent:true,opacity:upper?.95:.76,depthWrite:false
+ });
+ const lash=new THREE.Mesh(geo,material);
+ lash.name=name;lash.renderOrder=7;
+ lash.userData.colorRole='lashes';
+ lash.userData.filamentCount=count;
+ lash.userData.rootedOnEyeliner=true;
+ lash.userData.taperedGeometry=true;
+ return lash;
+}
 function sampleGrid(mesh,columns,rows,u,v){
  const su=clamp(u,0,1)*columns,sv=clamp(v,0,1)*rows;
  const i=Math.min(columns-1,Math.floor(su)),j=Math.min(rows-1,Math.floor(sv));
@@ -139,7 +181,8 @@ export function updateRealFacePigment(face,controls={},mode='color'){
   // Cosmetic controls may move the color within the lips, but cannot
   // push the pigment onto the chin or philtrum outside the oral region.
   const anatomicalLipY=(py-lipCenter)/(d.y*.025);
-  const anatomicalLipX=(px-cx)/(d.x*.055);
+  const anatomicalLipX=(px-cx)/(d.x*.055*
+   Math.min(1.62,Math.pow(settings.lipstickWidth,.46)));
   const bound=smoothstep((1-Math.abs(anatomicalLipY))/.25)*
    smoothstep((1-Math.abs(anatomicalLipX))/.25);
   const lipMask=lipX*lipY*front*bound;
@@ -259,7 +302,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
  const eyeHeight=box.min.y+d.y*.684;
  // Preserve the saved eye size, but move the sockets slightly toward
  // the true lateral face rather than burying the globe in the midface.
- const eyeSpacing=d.x*.123;
+ const eyeSpacing=d.x*.123*settings.eyeSpacing;
  const lateralEyeMargins=[];
  // Sclera centre is recessed. Upper and lower eyelids cover the spherical
  // edge, rather than drawing detached floating white eye disks.
@@ -503,17 +546,9 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
    lashPivot.userData.control='lashes';
    lashPivot.userData.side=side;
    for(const upper of [true,false]){
-    const lash=buildGrid(eyeLabel+(upper?'_UPPER':'_LOWER')+'_LASH_MESH',
-     34,3,(u,v)=>{
-      const t=2*u-1,arch=Math.pow(Math.max(0,1-t*t),.76);
-      const xx=x+t*width;
-      const lidY=y+(upper?1:-1)*eyeRadius*(upper?.33:.29)*arch;
-      const yy=lidY+(upper?1:-1)*v*eyeRadius*(upper?.20:.085)*arch;
-      const zz=surfaceAt(xx,lidY)+d.z*(.010+.010*v*arch);
-      return new THREE.Vector3(xx-lashPivot.position.x,
-       yy-lashPivot.position.y,zz-lashPivot.position.z);
-     },mat(0x8c929a));
-    lash.userData.colorRole='lashes';
+    const lash=makeFineEyelashMesh(
+     eyeLabel+(upper?'_UPPER':'_LOWER')+'_LASH_MESH',
+     upper?upperEyeliner:lowerEyeliner,x,y,z,eyeRadius,side,upper);
     lashPivot.add(lash);
    }
    root.add(lashPivot);
@@ -579,7 +614,9 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
  const actualCheekTintVertices=pigmentCount.cheek;
  // Two subtle natural vermilion volumes still follow the real face
  // surface, but lipstick is painted ONLY on the original head triangles.
- const halfWidth=d.x*.044;
+ // Widen the actual vermilion surface only when requested; the v8 saved
+ // preset (1x) retains identical 3D lip topology and pigmentation.
+ const halfWidth=d.x*.044*Math.min(1.62,Math.pow(settings.lipstickWidth,.46));
  const actualLips=new Map();
  for(const upper of [true,false]){
   const material=female?lipMat.clone():lipMat;
@@ -677,6 +714,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   beardMeshCount:female?0:5,
   beardDensity:gender==='male'?settings.beardDensity:0,
   eyebrowMeshCount:2,eyelashMeshCount:female?4:0,
+  eyelashFilamentCount:female?156:0,eyelashesRootedOnLiner:female,
   underEyeShadowMeshCount:female?2:0,
   doubleLidCreaseMeshCount:female?2:0,
   lowerOrbitalVolumeMeshCount:female?2:0,
@@ -692,6 +730,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   irisPupilProjection:'circular-on-ellipsoid',irisRadialFibers:true,
   contactColorDefault:safeContactColor(settings.contactColor),
   eyeAngleDefault:settings.eyeAngle,
+  eyeSpacingFactor:settings.eyeSpacing,
   maleCosmeticsDisabled:!female,
   noseSourceIntegrated:true,
   partTriangles,faceOnly:true,bodyIncluded:false,partGeometryReal:true,
