@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>灰銀のレゾナンス | 漫画原画のコマ別照合</title>
+<style>
+:root{color-scheme:dark;--line:#647a92;--gold:#f1d8aa;--muted:#bacbdb}
+*{box-sizing:border-box}body{margin:0;color:#f5eee1;background:radial-gradient(ellipse at 50% 0,#1e3854,#091320 72%);font:14px/1.6 system-ui,'Noto Sans JP',sans-serif}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid #988368;padding:12px 15px;background:#0b1729}
+header strong{font-size:clamp(16px,4vw,22px);color:var(--gold)}a{color:#ecd09c}
+main{width:min(1060px,95vw);margin:auto;padding:15px 0 35px}
+.note{background:#1a2c40;border-left:3px solid #dbc28e;padding:11px 13px}
+.toolbar{display:flex;flex-wrap:wrap;gap:10px;padding:12px 0}
+label{font-size:12px;color:var(--gold);display:grid;gap:4px}
+select,button{font:inherit;min-height:43px;background:#203850;color:#f5ebdb;border:1px solid #839db7;border-radius:7px;padding:7px 12px}
+button{cursor:pointer}button:disabled{opacity:.35}
+section{background:linear-gradient(145deg,#182d43,#091725);border:1px solid #67798b;border-radius:10px;padding:12px}
+h1{font-size:18px;color:var(--gold);margin:2px 0 7px}
+h2{font-size:15px;color:var(--gold);margin:8px 0}
+#imageBox{width:100%;max-width:850px;aspect-ratio:16/9;margin:0 auto;position:relative;overflow:hidden;background:#081422;border:1px solid #af9d7e}
+#art{position:absolute;display:block;max-width:none;object-fit:fill}
+#art[hidden],#empty[hidden]{display:none!important}
+#empty{height:100%;display:grid;place-items:center;padding:15px;text-align:center;color:#f5c4b1}
+#artStatus{font-size:12px;color:var(--muted);padding:6px 0}
+#speaker{margin:8px 0 5px;font-weight:bold;color:#f3cf9f}
+#script{background:#172b41;border-left:3px solid #c8a26a;padding:10px 13px;min-height:60px;line-height:1.8;white-space:pre-wrap;font-size:15px}
+#spoken{font-size:12px;color:var(--muted);white-space:pre-wrap;padding:8px 0}
+.controls{display:flex;gap:7px;align-items:center;justify-content:space-between;margin:9px 0}
+#count{font-weight:700;color:var(--gold)}
+#panelButtons{display:grid;grid-template-columns:repeat(auto-fill,minmax(105px,1fr));gap:6px;margin:12px 0}
+#panelButtons button{min-height:65px;font-size:12px;text-align:left}
+#panelButtons button[aria-current]{border:2px solid #f3c67b;background:#58462e}
+#panelButtons .registered:after{content:'切出済';display:block;color:#aaf0c5;font-size:10px}
+.note small{color:#ddd3c5}
+</style></head><body>
+<header><strong>第一章・漫画原画を1コマずつ確認</strong><a href="./story-maintenance.html">物語メンテナンス</a></header>
+<main>
+<p class="note">1コマごとに原画・表示セリフ・音声用の読みを照合します。登録済みの切り出し画像を優先し、原画シートのみ存在する場合も1コマに切り抜き表示します。未登録は未登録と表示し、**男性と女性・勝利と敗北を使い回しません**。<small>原画登録＝人間による完成承認ではありません。</small></p>
+<div class="toolbar">
+<label>ステージ<select id="stage"><option value="c01-s01">第1：黎明の王都レヴナ</option><option value="c01-s02">第2：礼拝堂への街道</option><option value="c01-s03">第3：外郭陣地の確保</option></select></label>
+<label>主人公<select id="gender"><option value="male">男性</option><option value="female">女性</option></select></label>
+<label>シーン・結末<select id="outcome"></select></label>
+</div>
+<section>
+<h1 id="sceneTitle"></h1>
+<div id="imageBox"><img id="art" alt="現在の1コマの原画" hidden><div id="empty">原画を確認しています…</div></div>
+<div id="artStatus" role="status"></div>
+<div class="controls"><button id="prev" type="button">◀ 前のコマ</button><span id="count"></span><button id="next" type="button">次のコマ ▶</button></div>
+<div id="speaker"></div><div id="script"></div>
+<details><summary>音声用読みを確認</summary><div id="spoken"></div></details>
+</section>
+<h2>原画の各コマを選ぶ</h2>
+<div id="panelButtons"></div>
+<p>他のステージ・結果・性別の原画は表示しません。画像が正しい登場人物・内容を描いているか、ここで目視確認できます。</p>
+</main>
+<script type="module">
+import {comicForStage,comicPageAsset} from './src/story-chapter-comic.js';
+import {registeredStoryPanelAsset,storySheetCrop} from './src/story-panel-registered-art.js';
+import {CAMPAIGN_STAGE_BY_ID} from './src/campaign-stage-plan.js';
+const $=id=>document.getElementById(id);
+const labels={pre:'イベント前',town:'町イベント後',victory:'勝利後',defeat:'敗北後',gameover:'軍師戦死後'};
+let comic=null,context=null,outcome='pre',phase='pre',index=0,serial=0;
+function makeContext(outcome,gender){
+ return {protagonistGender:gender,...(outcome==='victory'?{battleOutcome:{victory:true}}:
+  outcome==='defeat'?{battleOutcome:{victory:false}}:
+  outcome==='gameover'?{battleOutcome:{victory:false,playerCommanderDead:true}}:{})};
+}
+function changeStage(){
+ const s=CAMPAIGN_STAGE_BY_ID[$('stage').value];
+ const choices=s.kind==='town'?['pre','town']:['pre','victory','defeat','gameover'];
+ const previous=$('outcome').value;
+ $('outcome').replaceChildren(...choices.map(t=>{const o=document.createElement('option');o.value=t;o.textContent=labels[t];return o;}));
+ if(choices.includes(previous))$('outcome').value=previous;
+ update();
+}
+function update(){
+ outcome=$('outcome').value;phase=outcome==='pre'?'pre':'post';
+ context=makeContext(outcome,$('gender').value);
+ comic=comicForStage($('stage').value,phase,context);index=0;frame();
+}
+function frame(){
+ const shot=comic.panels[index];
+ const count=comic.pages.find(p=>p.number===shot.comicPage).cellCount;
+ const single=registeredStoryPanelAsset(shot);
+ const sheet=comicPageAsset(comic.stageId,phase,context,shot.comicPage,context.protagonistGender);
+ const img=$('art'),empty=$('empty'),ticket=++serial;
+ img.hidden=true;empty.hidden=false;empty.textContent='この場面の画像を確認しています…';
+ const fail=()=>{if(ticket!==serial)return;img.hidden=true;empty.hidden=false;
+  empty.textContent='この'+(context.protagonistGender==='female'?'女性':'男性')+'版・'+labels[outcome]+'は原画未登録です';
+  $('artStatus').textContent='未登録 — 他の性別や勝敗の画像には置き換えません';
+ };
+ const load=(url,kind)=>{
+  if(!url){fail();return;}
+  img.onload=()=>{if(ticket!==serial)return;
+   if(kind==='single'){
+    Object.assign(img.style,{width:'100%',height:'100%',left:'0%',top:'0%',objectFit:'contain'});
+   }else{
+    const c=storySheetCrop(shot,count);
+    Object.assign(img.style,{width:c.widthPercent+'%',height:c.heightPercent+'%',left:c.leftPercent+'%',top:c.topPercent+'%',objectFit:'fill'});
+   }
+   img.hidden=false;empty.hidden=true;
+   $('artStatus').textContent=(kind==='single'?'登録済み・切り出し済みの原画':'登録済み原画シートから、この1コマを表示')+'（人間の承認は別）';
+  };
+  img.onerror=()=>{if(ticket!==serial)return;if(kind==='single')load(sheet,'sheet');else fail();};
+  img.src=url;
+  if(img.complete&&img.naturalWidth>0)img.onload();
+ };
+ load(single||sheet,single?'single':'sheet');
+ $('sceneTitle').textContent=CAMPAIGN_STAGE_BY_ID[comic.stageId].name+' · '+labels[outcome];
+ $('speaker').textContent=shot.speaker||'語り手';
+ $('script').textContent=shot.text||'';
+ $('spoken').textContent=shot.voiceText||'';
+ $('count').textContent=(index+1)+' / '+comic.panels.length+' コマ';
+ $('prev').disabled=index===0;$('next').disabled=index>=comic.panels.length-1;
+ const buttons=document.createDocumentFragment();
+ comic.panels.forEach((p,i)=>{
+  const b=document.createElement('button');b.type='button';
+  b.textContent='コマ '+(i+1)+'　'+(p.speaker||'語り手');
+  if(registeredStoryPanelAsset(p))b.classList.add('registered');
+  if(i===index)b.setAttribute('aria-current','true');
+  b.onclick=()=>{index=i;frame()};buttons.append(b);
+ });
+ $('panelButtons').replaceChildren(buttons);
+}
+$('stage').onchange=changeStage;$('gender').onchange=update;$('outcome').onchange=update;
+$('prev').onclick=()=>{if(index>0){index--;frame();}};
+$('next').onclick=()=>{if(index<comic.panels.length-1){index++;frame();}};
+changeStage();
+</script></body></html>

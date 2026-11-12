@@ -91,7 +91,7 @@ assert.match(town,/id="eventVoice"[^>]*>音声 ON<\/button>/);
 assert.match(title,/const introStory=mangaForStage\('c01-s01'\)/);
 assert.match(title,/comicPageAsset\(/);
 assert.match(read('src/story-manga-viewer.js'),/voiceOn=readVoice\(storage\)/);
-assert.match(read('src/story-manga-viewer.js'),/loadApprovedPage\(shot\)/);
+assert.match(read('src/story-manga-viewer.js'),/loadPanelArt\(shot,pagePanels\)/);
 for(const [name,html] of [['world-map.html',map],['town-hub.html',town],['game.html',title]]){
  const scripts=[...html.matchAll(/<script type="module">([\s\S]*?)<\/script>/g)];
  assert.ok(scripts.length,name+' must contain ES module');
