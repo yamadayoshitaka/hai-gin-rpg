@@ -370,6 +370,10 @@ $('wigColor').addEventListener('change',()=>{
  wigColor=$('wigColor').value;
  rebuildWig();$('metrics').textContent=JSON.stringify(metrics(),null,2);
 });
+$('wigStyle').addEventListener('change',()=>{
+ wigStyleId=$('wigStyle').value;
+ rebuildWig();$('metrics').textContent=JSON.stringify(metrics(),null,2);
+});
 function rebuildFemale(){
  if(!ready||!femaleSource)return;
  const prev=models.get('female');
@@ -554,7 +558,7 @@ setupAdjustTabs('faceGroupTabs',[
  ['鼻',['noseTipLift','nostrilCover','noseBridgeSharpness']],
  ['口紅',['lipstickX','lipstickY','lipstickWidth','lipstickHeight']],
  ['カラコン',['contactPreset','contactColor']],
- ['髪',['wigDensity','wigLength','wigColor']]
+ ['髪',['wigStyle','wigDensity','wigLength','wigColor']]
 ]);
 setupAdjustTabs('maleGroupTabs',[
  ['顎・輪郭',['maleJawSharpness']],
@@ -589,7 +593,8 @@ $('export').addEventListener('click',async()=>{
  try{
   const model=models.get(gender);
   // Export face and, when enabled, our real 3D anatomical mesh parts.
-  // The other donor meshes, hair, outfit and body are excluded.
+  // The donor body and outfit remain excluded. The independent wig is
+  // included in face exports only if it is currently attached and visible.
   const exporter=new GLTFExporter();
   const bin=await new Promise((resolve,reject)=>
    exporter.parse(model.root,resolve,reject,{binary:true,onlyVisible:true}));
@@ -602,6 +607,24 @@ $('export').addEventListener('click',async()=>{
   $('status').textContent='GLBを書き出しました（胴体なし・髪表示と顔パーツ表示に連動）。';
  }catch(e){$('status').textContent='GLB出力失敗: '+String(e);}
  finally{$('export').disabled=false;}
+});
+$('exportWig').addEventListener('click',async()=>{
+ const wig=wigs.get('female');
+ if(!ready||!wig||!wigOn)return;
+ $('exportWig').disabled=true;
+ $('status').textContent='独立ヅラのGLBを書き出しています…';
+ try{
+  const exporter=new GLTFExporter();
+  const bin=await new Promise((resolve,reject)=>
+   exporter.parse(wig.root,resolve,reject,{binary:true,onlyVisible:true}));
+  const url=URL.createObjectURL(new Blob([bin],{type:'model/gltf-binary'}));
+  const a=document.createElement('a');
+  a.href=url;a.download='hai-gin-wig-'+wigStyleId+'.glb';
+  document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+  $('status').textContent='独立ヅラ '+wigStyleId+' のGLBを書き出しました。';
+ }catch(e){$('status').textContent='ヅラGLB出力失敗: '+String(e);}
+ finally{$('exportWig').disabled=false;}
 });
 async function init(){
  // Set the slider thumbs, labels and contact menu before the remote GLB
@@ -630,7 +653,7 @@ async function init(){
   }
   ready=true;
   rebuildWig();
-  for(const id of ['female','male','front','threeQuarter','side','back','wire','parts','wig','clay','color','resetPreset','resetMalePreset','export'])
+  for(const id of ['female','male','front','threeQuarter','side','back','wire','parts','wig','clay','color','resetPreset','resetMalePreset','export','exportWig'])
    $(id).disabled=false;
   const query=new URLSearchParams(location.search);
   selectGender(query.get('gender')==='male'?'male':'female');
