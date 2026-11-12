@@ -2488,14 +2488,16 @@ async function installBattleModels(){
      installed++;dressed++;animated++;
      return;
     }
-    const sex=TOWN_MODE&&a.id===0?(battleParams.get('gender')==='female'?'female':'male'):a.id%5===0?'female':'male';a.sex=sex;
-     const appearanceJob=TOWN_MODE&&a.id===0?'軍師':a.job.name==='槍兵'?'剣士':a.job.name;
+    const storyLeader=a.isStrategist?storyRequest?.commanders?.find(x=>String(x.id)===String(a.commanderId)):null;
+    const sex=storyLeader?(storyLeader.gender==='female'?'female':'male'):
+     TOWN_MODE&&a.id===0?(battleParams.get('gender')==='female'?'female':'male'):a.id%5===0?'female':'male';a.sex=sex;
+     const appearanceJob=(TOWN_MODE&&a.id===0||a.isStrategist)?'軍師':a.job.name==='槍兵'?'剣士':a.job.name;
      // The strategist has a dedicated outfit; existing swordsman clips supply
      // the motion-compatible body instead of attempting an unmapped job clip.
-     const motionJob=TOWN_MODE&&a.id===0?'剣士':appearanceJob;
+     const motionJob=(TOWN_MODE&&a.id===0||a.isStrategist)?'剣士':appearanceJob;
      // A human-sized map cell is one normal step, not one whole body height.
      // Adults remain anatomically scaled; all outfits use this same skeleton.
-     const townFace=TOWN_MODE&&a.id===0?Number(battleParams.get('faceId')):null;
+     const townFace=storyLeader?Number(storyLeader.faceId):TOWN_MODE&&a.id===0?Number(battleParams.get('faceId')):null;
      const character=await createCharacter({job:motionJob,sex,height:sex==='female'?1.68:1.78,jobs,faceId:Number.isInteger(townFace)?townFace:a.id});
     for(const child of [...a.root.children])if(child!==a.root.userData.ring)a.root.remove(child);
     a.root.add(character.object3D);character.object3D.traverse(part=>{if(part.isMesh||part.isSkinnedMesh){part.castShadow=true;part.receiveShadow=true;part.frustumCulled=false;}});a.character=character;a.model=character.object3D;character.object3D.visible=false;
