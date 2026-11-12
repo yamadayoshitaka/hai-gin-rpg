@@ -573,6 +573,13 @@ async function expectCenteredFaceSliders(page,gender){
    if(!info.wig?.usesRealBodyTriangleContacts||
       info.bodyCollision?.collisionTriangleCount<1)
     throw Error('Real female body mesh is not used for hair collision');
+   if(info.wig?.hairStrandWidthFraction<.012||
+      !info.wig?.fullerCrownBackVolume||
+      !info.wig?.fullBodyShoulderExtension||
+      !info.wig?.neckAndShoulderDrape||
+      !info.wig?.glabellaPartClearance)
+    throw Error('v22 thick hair, nape drape or center-part protection missing '+
+     JSON.stringify(info.wig));
    // The integrated Android page now edits the SAME real face mesh as the
    // standalone studio while retaining its fitted body and collider.
    const eyeSlider=hero.locator('#eyeSpacing');
@@ -609,6 +616,9 @@ async function expectCenteredFaceSliders(page,gender){
    await hero.screenshot({path:path.join(out,'heroine-v19-art-versus-3d.png')});
    await hero.locator('#side').click();
    await c.screenshot({path:path.join(out,'heroine-v19-hair-body-side.png')});
+   await c.screenshot({path:path.join(out,'heroine-v22-thicker-shoulder-hair-side.png')});
+   await hero.locator('#crown').click();
+   await c.screenshot({path:path.join(out,'heroine-v22-hair-crown-body-contact.png')});
    await hero.locator('#back').click();
    await c.screenshot({path:path.join(out,'heroine-v19-hair-body-back.png')});
    await hero.locator('#front').click();
