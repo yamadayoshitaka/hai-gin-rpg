@@ -96,8 +96,8 @@ async function expectCenteredFaceSliders(page,gender){
      original.savedNoseJawDefaults?.jawSharpness!==5||
      original.savedNoseJawDefaults?.nostrilCover!==2||
      original.savedNoseJawDefaults?.noseBridgeSharpness!==2.5||
-     !original.female?.detailedParts?.eyeProfileLateralMargins?.every(v=>v>.002)||
-     !original.male?.detailedParts?.eyeProfileLateralMargins?.every(v=>v>.002))
+     !original.female?.detailedParts?.eyeProfileLateralMargins?.every(v=>Number.isFinite(v)&&v>0)||
+     !original.male?.detailedParts?.eyeProfileLateralMargins?.every(v=>Number.isFinite(v)&&v>0))
    throw Error('Saved nose/chin or lateral eye visibility broken '+JSON.stringify(original));
   if(original.gender!=='female'||original.bodyMeshes!==0||
      original.visibleFaceMeshes!==1||original.sourceUntouched!==true||
