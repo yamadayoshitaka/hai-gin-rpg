@@ -56,9 +56,29 @@ const tasks=stages.flatMap(stage=>{
  return {panel,voice,text,key,filename:crypto.createHash('sha256').update(key).digest('hex').slice(0,16)+'.'+format};
  });
 });
-const preexisting=tasks.filter(t=>manifest.clips[t.key]).length;
+async function validRegisteredClip(task){
+ const registered=manifest.clips[task.key];
+ if(typeof registered!=='string'||!registered.startsWith('audio/voicevox/clips/'))return false;
+ if(!registered.endsWith('.'+format))return false;
+ try{
+  const file=await fs.open(path.resolve(registered),'r');
+  try{
+   const stat=await file.stat();
+   if(!stat.isFile()||stat.size<200)return false;
+   const header=Buffer.alloc(12);
+   await file.read(header,0,12,0);
+   return format==='wav'
+    ? header.toString('ascii',0,4)==='RIFF'&&header.toString('ascii',8,12)==='WAVE'
+    : header.toString('ascii',0,3)==='ID3'||header[0]===0xff&&(header[1]&0xe0)===0xe0;
+  }finally{await file.close();}
+ }catch(error){if(error.code==='ENOENT')return false;throw error;}
+}
+const validKeys=new Set();
+for(const task of tasks)if(await validRegisteredClip(task))validKeys.add(task.key);
+const preexisting=validKeys.size;
+const invalidRegistered=tasks.filter(t=>manifest.clips[t.key]&&!validKeys.has(t.key)).length;
 if(dryRun){
- console.log(JSON.stringify({dryRun:true,stages:stages.length,panels:tasks.length,alreadyRegistered:preexisting,required:tasks.length-preexisting,format},null,2));
+ console.log(JSON.stringify({dryRun:true,stages:stages.length,panels:tasks.length,alreadyRegistered:preexisting,invalidRegistered,required:tasks.length-preexisting,format},null,2));
  process.exit(0);
 }
 async function ensureResponse(route,init={}){
@@ -76,7 +96,7 @@ const output={engine:root,chapter:chapter??null,stage:stageValue??null,stages:st
  canonicalStagePanels:stages.length*10,includesDefeatVariants:true,
  format,created:0,reused:0,missingSpeakers:[],files:[]};
 for(const [index,t] of tasks.entries()){
- if(manifest.clips[t.key]){
+ if(validKeys.has(t.key)){
   reused++;continue;
  }
  let voiceId=styles.get(t.voice.voicevoxSpeaker);
@@ -97,11 +117,16 @@ for(const [index,t] of tasks.entries()){
   buffer=encoded.stdout;
  }
  const filePath=path.join(base,'clips',t.filename);
- await fs.writeFile(filePath,buffer,{flag:'wx'}).catch(async error=>{
-  if(error.code!=='EEXIST')throw error;
-  const old=await fs.readFile(filePath);
-  if(!old.equals(buffer))throw Error('Content hash collision: '+t.filename);
- });
+ // Interrupted runs can leave a truncated clip; replace only invalid bytes.
+ let existing=null;
+ try{existing=await fs.readFile(filePath);}catch(error){if(error.code!=='ENOENT')throw error;}
+ if(existing){
+  const valid=existing.length>=200&&(format==='wav'
+   ? existing.toString('ascii',0,4)==='RIFF'&&existing.toString('ascii',8,12)==='WAVE'
+   : existing.toString('ascii',0,3)==='ID3'||existing[0]===0xff&&(existing[1]&0xe0)===0xe0);
+  if(valid&&!existing.equals(buffer))throw Error('Content hash collision: '+t.filename);
+  if(!valid)await fs.writeFile(filePath,buffer);
+ }else await fs.writeFile(filePath,buffer,{flag:'wx'});
  const rel='audio/voicevox/clips/'+t.filename;
  manifest.clips[t.key]=rel;
  // Write progress after every clip, so an interrupted run can resume.
