@@ -115,7 +115,7 @@ function hairCutY(zone,box,lengthScale,seed){
 function scalpShell(geo,box,color){
  const src=geo.getAttribute('position'),idx=geo.index;
  const n=idx?idx.count:src.count,d=box.getSize(new THREE.Vector3());
- const normals=geo.getAttribute('normal'),verts=[];
+ const normals=geo.getAttribute('normal'),verts=[],smoothNormals=[];
  const center=box.getCenter(new THREE.Vector3());
  const sample=i=>f3(src.getX(i),src.getY(i),src.getZ(i));
  for(let i=0;i+2<n;i+=3){
@@ -135,6 +135,8 @@ function scalpShell(geo,box,color){
     v.clone().sub(mid).normalize();
    v.addScaledVector(normal,d.x*.0015);
    verts.push(v.x,v.y,v.z);
+   // Preserve smooth source-head normals; nonindexed compute would make a flat helmet.
+   smoothNormals.push(normal.x,normal.y,normal.z);
   }
  }
  const material=new THREE.MeshStandardMaterial({
@@ -142,7 +144,8 @@ function scalpShell(geo,box,color){
  });
  const buffer=new THREE.BufferGeometry();
  buffer.setAttribute('position',new THREE.Float32BufferAttribute(verts,3));
- if(verts.length)buffer.computeVertexNormals();
+ if(smoothNormals.length)buffer.setAttribute('normal',
+  new THREE.Float32BufferAttribute(smoothNormals,3));
  const mesh=new THREE.Mesh(buffer,material);
  mesh.name='REAL_SCALP_TRIANGLE_HAIR_CAP';
  mesh.userData.scalpSource='sculpted-real-head-triangles';
@@ -235,7 +238,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   const rest=[],points=[],vel=[];
   const trimY=Math.min(wigRoot.y-d.y*.012,
    (fringe||overFace)?browLimit:hairCutY(zone,box,lengthScale,i));
-  const guide=(fringe||overFace)?f3(side*.76,0,.68):
+  const guide=(fringe||overFace)?f3(side*.08,0,1):
    back?f3(side*.18,0,-1):
    f3(side,0,zone.startsWith('temple')?-.18:-.2);
   guide.normalize();
@@ -246,7 +249,9 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   // against the source head envelope, COLLIDE later, TRIM at hairline.
   for(let j=0;j<=segments;j++){
    const t=j/segments;
-   const direction=origin.clone().lerp(guide,(fringe||overFace?.88:.78)*t*t).normalize();
+   // Forehead fringe falls vertically, without horizontal root-to-tip spikes.
+   const direction=origin.clone().lerp(guide,
+    (fringe||overFace?.16:.78)*t*t).normalize();
    const y=Math.max(trimY,wigRoot.y-length*t);
    const shell=radialScalp(y,direction);
    const gap=d.x*(.007+.015*t);
@@ -381,6 +386,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   style:'real-scalp-shell-growing-then-trimmed',rooted:true,rootCount:lockCount,
   growthStages:['grow','relax','collide','trim'],
   faceTrimmedStrands,faceCurtainPrevention:true,
+  smoothScalpNormals:true,verticalForeheadDrape:true,
   scalpCoverage:'continuous-colored-triangle-cap-plus-locks',
   pointCount:lockCount*(segments+1),realScalpCandidateCount:scalpCandidates.length,
   rootDistribution:{...zoneCounts},
