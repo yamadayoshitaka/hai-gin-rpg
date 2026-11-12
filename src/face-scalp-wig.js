@@ -376,8 +376,12 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   // face forward. Otherwise they form a long curtain across both eyes.
   const overFace=!back&&frontRoot&&midFace;
   if(overFace)faceTrimmedStrands++;
-  const longFactor=zone.startsWith('nape')?.68:
-   zone.startsWith('temple')?.72:back?.80:.76;
+  // Real full-body preview: extend posterior/temple locks below the cropped
+  // head into the shoulder area. A head-only wig keeps its old cut lengths.
+  const torsoExtension=bodyCollisionResolver&&
+   (back||zone.startsWith('temple'))?.30:0;
+  const longFactor=(zone.startsWith('nape')?.68:
+   zone.startsWith('temple')?.72:back?.80:.76)+torsoExtension;
   // Fringe must terminate above the eyebrows, never obscure the eyes,
   // nose or mouth, even at the maximum hair-length slider value.
   // Salon-cut contour: varying length, split-fringe silhouette and shorter
@@ -397,7 +401,8 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   const lateral=2*Math.abs(wigRoot.x-center.x)/d.x;
   const trimY=Math.min(wigRoot.y-d.y*.012,
    (fringe||overFace)?browLimit:
-    hairCutY(zone,box,lengthScale,i,lateral));
+    hairCutY(zone,box,lengthScale,i,lateral)-
+     (bodyCollisionResolver&&(back||zone.startsWith('temple'))?d.y*.26:0));
   // Salon-guided locks: the real scalp root stays fixed. After a brief
   // head-conforming section, each lock DROPS DOWN, not out in a radial
   // fan. This removes the puffy helmet and spiked cheek-side fan.
