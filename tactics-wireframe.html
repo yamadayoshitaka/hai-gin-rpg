@@ -5682,10 +5682,15 @@ enemySquadIds.sort((a,b)=>Number(a)-Number(b)||a.localeCompare(b,'ja'));
 for(const team of [0,1])for(const id of team===0?squadIds:enemySquadIds)
  selectedSquadFormations.set(team+':'+id,squadJobComposition(squadRoster.filter(u=>u.team===team&&String(u.squadId)===id)).type);
 // Opening-screen defaults use the SAME capabilities as the Worker simulation.
-for(const id of squadIds)if(!squadStrategies.has(id)){
- const members=squadRoster.filter(u=>u.team===0&&String(u.squadId)===id&&u.hp>0);
- squadStrategies.set(id,members.some(u=>u.jobId==='priest')?'recovery':
-  members.some(u=>['mage','ninja','thief'].includes(u.jobId))?'environment_prepare':'eliminate');
+const innStoryStrategy=storyRequest?.tacticalTemplate?.strategy;
+for(const id of squadIds){
+ if(innStoryStrategy&&TACTICAL_STRATEGIES[innStoryStrategy]){
+  squadStrategies.set(id,innStoryStrategy);
+ }else if(!squadStrategies.has(id)){
+  const members=squadRoster.filter(u=>u.team===0&&String(u.squadId)===id&&u.hp>0);
+  squadStrategies.set(id,members.some(u=>u.jobId==='priest')?'recovery':
+   members.some(u=>['mage','ninja','thief'].includes(u.jobId))?'environment_prepare':'eliminate');
+ }
 }
 const STRATEGY_LABELS={eliminate:'全滅',environment_prepare:'環境整備',recovery:'支援',mission:'目的遂行',objective:'目的遂行'};
 function squadFixedStrategyLabel(id,team=0){
@@ -9208,7 +9213,7 @@ async function finishBattleLoading(){
   const planHeading=document.createElement('strong');
   planHeading.textContent='⚑ 開戦前の隊列編成';
   const planHint=document.createElement('p');
-  planHint.textContent='3ボタンは自動編成。職業は手動指定もできます。アイテムは部隊ごとに自動／手動を設定（初期値は手動）。実際の職業構成から部隊タイプを判定します。固定作戦の効果は各隊に表示します。';
+  planHint.textContent=(storyRequest?.tacticalTemplate?'宿屋の登録作戦「'+storyRequest.tacticalTemplate.name+'」を適用中。ルート：'+storyRequest.tacticalTemplate.route+'。':'')+'3ボタンは自動編成。職業は手動指定もできます。アイテムは部隊ごとに自動／手動を設定（初期値は手動）。実際の職業構成から部隊タイプを判定します。固定作戦の効果は各隊に表示します。';
   planHint.style.cssText='font:11px/1.55 system-ui;color:#c3dcea;margin:5px 0 8px';
   const planList=document.createElement('div');planList.id='openingPlanList';
   planList.style.cssText='overflow:hidden;display:grid;gap:6px';
@@ -9380,7 +9385,8 @@ async function finishBattleLoading(){
     for(const [value,label] of Object.entries(INITIAL_ORDER_LABELS)){
      const option=document.createElement('option');option.value=value;option.textContent=label;orderSelect.append(option);
     }
-    orderSelect.value='charge'; // Explicit opening command; never implicit auto/defend for mixed squads.
+    const innOrder=team===0?storyRequest?.initialSquadOrders?.[String(id)]:null;
+     orderSelect.value=innOrder&&Object.hasOwn(INITIAL_ORDER_LABELS,innOrder)&&innOrder!=='explore'?innOrder:'charge';
     const effectLabel=document.createElement('small');
     effectLabel.className='openingCommandEffect';effectLabel.textContent=orderEffect(orderSelect.value);
     const buildingPicker=createExplorationPicker();
@@ -9482,7 +9488,8 @@ async function finishBattleLoading(){
      if(soldier.cell)occupiedCells.set(cellKey(soldier.cell.x,soldier.cell.z),soldier);
     }
     for(const id of squadIds){
-     squadStrategies.set(id,selectedSquadType(id)==='support'?'recovery':'eliminate');
+     squadStrategies.set(id,innStoryStrategy&&TACTICAL_STRATEGIES[innStoryStrategy]?innStoryStrategy:
+      selectedSquadType(id)==='support'?'recovery':'eliminate');
     }
    }
    for(const {team,id,orderSelect,buildingPicker} of initialOrderInputs){
