@@ -275,7 +275,10 @@ function insect(g,s,{spider=false}={}){
      g.bone(leg,'skin',knee,ankle,.062,{tipRadius:.037,metal:.16});
      g.sphere(leg,'shadow',ankle,[.066,.072,.066],{metal:.12,rough:.63});
      g.bone(leg,'shadow',ankle,toe,.036,{tipRadius:.014,metal:.08});
-     g.spike(leg,'bone',toe,[toe[0]+side*.07,toe[1]-.045,toe[2]+.095],.024);
+     // Paired, slightly splayed tarsal claws remain above the floor and
+     // make the terminal foot visibly grasp rather than end in one spike.
+     for(const clawSide of [-1,1])g.spike(leg,'bone',toe,
+       [toe[0]+side*.065,toe[1]-.024,toe[2]+clawSide*.065],.018);
      // Sparse tactile spines follow the upper limb, not a floating torso
      // decoration. Variant spacing keeps the five spider species distinct.
      for(let j=1;j<=3+v%2;j++){
@@ -335,8 +338,11 @@ function insect(g,s,{spider=false}={}){
    // floating-neon-dot appearance without modifying shared face assets.
    for(const side of [-1,1])for(let i=0;i<4;i++){
      const x=side*(.07+i*.072),y=.12+(i%2)*.06;
-     g.sphere(head,'shadow',[x,y,.281],[.035,.038,.020],{rough:.75});
-     g.sphere(head,'eye',[x,y,.301],[.022,.025,.011],{glow:true});
+     // Project each socket onto the ellipsoid face rather than burying
+     // the eyes inside its surface (head radii .35/.30/.35).
+     const faceZ=.35*Math.sqrt(Math.max(.08,1-(x/.35)**2-(y/.30)**2));
+     g.sphere(head,'shadow',[x,y,faceZ+.008],[.036,.039,.024],{rough:.75});
+     g.sphere(head,'eye',[x,y,faceZ+.030],[.023,.026,.014],{glow:true});
    }
    if(v>=2)for(let i=0;i<6;i++)g.spike(abdomen,'accent',[(i%2?1:-1)*.28,.28,-.42+(i/6)*.60],
      [(i%2?1:-1)*.35,.50+(i%3)*.07,-.42+(i/6)*.60],.05);
