@@ -23,8 +23,8 @@ assert.match(game,/const centralAlly=actors\.filter\(a=>a\.team===0\)\.sort\(/);
 assert.match(game,/Math\.abs\(a\.cell\.z-116\)-Math\.abs\(b\.cell\.z-116\)/);
 assert.match(game,/const cameraHome=\(centralAlly\?\.root\.position\|\|openingFocus\)\.clone\(\)/);
 assert.match(game,/const cameraCloseOffset=new THREE\.Vector3\(5,8,12\)/);
-assert.match(game,/const cameraOverviewOffset=new THREE\.Vector3\(\.02,Math\.ceil\(WORLD_SIZE\*CELL\*1\.36\),\.02\)/,
-  '見渡すは地図全域が縦方向に入る上空視点');
+assert.match(game,/const cameraOverviewOffset=new THREE\.Vector3\(310,Math\.sqrt\(2\)\*310,310\)/,
+  '戦場全域を見渡す45度の斜め俯瞰を維持する');
 assert.match(game,/setBattleCamera\(new THREE\.Vector3\(\(WORLD_SIZE\/2-6\)\*CELL,0,\(WORLD_SIZE\/2-6\)\*CELL\),cameraOverviewOffset\)/);
 assert.equal((game.match(/\$\('camOverview'\)\.onclick=/g)||[]).length,1);
 assert.equal((game.match(/\$\('camFollow'\)\.onclick=/g)||[]).length,1);

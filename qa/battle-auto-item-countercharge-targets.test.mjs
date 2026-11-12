@@ -58,4 +58,12 @@ assert.doesNotMatch(html,/body\[data-circle-target="ally"\] \.squadScreenLabel\.
 assert.match(html,/lastAllyItemDecisionAt<10/,'Auto item decisions are globally rate-limited');
 assert.match(html,/function useSquadBattleItem\(itemId,squadId\)/,
  'Legacy manual item use interface stays unchanged');
+assert.match(html,/function useSquadBattleItem\(itemId,squadId\)\s*\{\s*return performSquadBattleItem\(itemId,squadId\);/,
+ 'Manual inventory and recommended item use must keep the original two-argument API');
+assert.match(html,/function useSquadBattleItemForSource\(itemId,squadId,issuerSquadId\)/,
+ 'Circle target orders must retain their distinct issuing squad');
+assert.match(html,/if\(action\.kind==='item'\)ok=useSquadBattleItemForSource\(action\.itemId,id,action\.source\)/,
+ 'Circle item targeting must validate the initiating commander and cooldown');
+assert.doesNotMatch(html,/useSquadBattleItem\(action\.itemId,id,action\.source\)/,
+ 'Do not reintroduce the incompatible third argument on the manual API');
 console.log('PASS target-pulse, defensive countercharge, auto/manual finite items and combat UI wiring');

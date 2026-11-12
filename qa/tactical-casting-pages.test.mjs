@@ -71,14 +71,17 @@ assert.match(html,/requestSquadRecovery\(target\.targetId\)/);
 assert.doesNotMatch(html,/queueMultipleSquadRecovery/,'Support cannot multi-select');
 assert.doesNotMatch(html,/commandDurationSeconds/,'No order-duration chooser');
 assert.doesNotMatch(html,/commandSoldierAmount|chosenCount|countValues|quickCountChoices'/,'No soldier-count selector');
-assert.match(html,/const issue=mode=>\{if\(issueSquadOrder\(mode\)\)closeSquadTactics\(\)\}/,'Every order applies to an entire squad');
+assert.match(html,/const issue=mode=>queueDirectOrder\(mode\)/,
+ 'Every order enters a single squad-wide confirmation flow without soldier counts');
+assert.match(html,/if\(issueSquadOrder\(mode\)\)\{\s*pendingDirectOrder=null/,
+ 'Only the confirmed order should be issued to the selected squad');
 const simulation=readFileSync(new URL('../src/mass-battle-grid-sim.js',import.meta.url),'utf8');
 assert.doesNotMatch(simulation,/options\.count/,'The simulation no longer allows per-soldier command amounts');
 assert.match(simulation,/this\.squadCommands\.set\(id,command\)/,'Orders are stored for the whole squad');
 assert.match(html,/button\.userDataDeaths\.textContent/);
 assert.match(html,/ribbonPageSize=5/);
-assert.match(html,/const visibleRibbonPageSize=Math\.max\(1/,
- 'Side squad icons adapt to screen height without scroll');
+assert.match(html,/const visibleRibbonPageSize=Math\.max\(3,Math\.min\(8,Math\.floor\(available\/64\)\)\)/,
+ 'Side squad icons adapt to screen height and show at least three teams without scrolling');
 assert.match(html,/setOpeningWizardPage\('formation'\)/);
 assert.match(html,/vitalsPageSize=5/);
 console.log('PASS sustained casts, stronger broad magic, precise job buttons, non-scrolling pages and mirrored death counters');

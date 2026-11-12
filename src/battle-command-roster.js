@@ -39,7 +39,7 @@ export function squadRibbonStatus({
 }
 
 /** Unified manual order/item cooldown in combat seconds; pause freezes it. */
-export const ORDER_COOLDOWN_SECONDS=60;
+export const ORDER_COOLDOWN_SECONDS=120;
 export function secondsUntilNextOrder(lastIssuedAt, combatSeconds, cooldown=ORDER_COOLDOWN_SECONDS){
  if(lastIssuedAt===undefined||lastIssuedAt===null)return 0;
  const remaining=lastIssuedAt+cooldown-combatSeconds;

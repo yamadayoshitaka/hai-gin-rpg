@@ -10,8 +10,10 @@ for(const id of ['allySquadRibbon','allySquadRibbonList','enemySquadRibbon','ene
  assert.ok(html.includes('id="'+id+'"'),'Missing interactive UI '+id);
 }
 assert.match(html,/squadRibbonStatus\(row\)/);
-assert.match(html,/button\.disabled=!state\.enabled/);
-assert.match(html,/if\(!battleReady\|\|finished\|\|battleCeremony\.locked\)return;/);
+assert.match(html,/button\.disabled=pendingCircleTarget\?!selectable:!state\.enabled\|\|/,
+ 'Squad ribbon state remains gated by target selection and commander availability');
+assert.match(html,/if\(!battleReady\|\|finished\|\|battleCeremony\.locked\|\|pendingCircleTarget\|\|/,
+ 'Enemy squad inspection is blocked during current command target selection');
 assert.match(html,/if\(pendingCircleTarget\)\{chooseCircleActionTarget\(id,team\);return;\}/,
  'the actual circular squad markers must support two-step target selection');
 assert.ok(html.includes('else openSquadTactics(id);'),
@@ -30,7 +32,8 @@ assert.match(html,/\$\('strategy'\)\.disabled=true/,'Strategy display stays read
 assert.doesNotMatch(html,/const remaining=secondsUntilNextOrder\(lastGlobalOrderAt,elapsed\)/,'Global strategy hot-swap was removed');
 assert.match(html,/button\.userDataCooldown\.textContent='⏳'\+remaining\+'秒'/);
 assert.match(html,/width:clamp\(48px,12\.5vw,62px\)/);
-assert.match(html,/const anchor=squadCenter\(id\)/);
+assert.match(html,/const anchor=tracked\?\.alive&&\(tracked\._visualMotion\?/,
+ 'Follow camera anchor is computed from a living tracked soldier at animated position');
 assert.match(html,/const soldiers=alive\.filter\(u=>!u\.isStrategist\)/);
 assert.match(html,/focusedHumanUnitId=null;\s*followCamera=false;/,
  'Squad ribbon opens commands without enabling follow-camera close-up');

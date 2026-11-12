@@ -5542,7 +5542,14 @@ function performSquadBattleItem(itemId,squadId,{automatic=false,issuerSquadId=nu
  log(squadName(id)+'：'+supply.name+'／'+effect);updateUI();
  return true;
 }
-function useSquadBattleItem(itemId,squadId,issuerSquadId=null){
+// Public/manual two-argument contract: inventory and recommended-item actions
+// consume from the selected target squad without borrowing another squad's turn.
+function useSquadBattleItem(itemId,squadId){
+ return performSquadBattleItem(itemId,squadId);
+}
+// Circle-to-circle commands retain their issuing squad separately: its
+// commander permission and cooldown are enforced by performSquadBattleItem.
+function useSquadBattleItemForSource(itemId,squadId,issuerSquadId){
  return performSquadBattleItem(itemId,squadId,{issuerSquadId});
 }
 function openBattleItemsForSquad(id){
@@ -6814,7 +6821,7 @@ function confirmCircleActionTarget(){
   closeSquadTactics();return false;
  }
  let ok=false;
- if(action.kind==='item')ok=useSquadBattleItem(action.itemId,id,action.source);
+ if(action.kind==='item')ok=useSquadBattleItemForSource(action.itemId,id,action.source);
  else if(action.kind==='support'){
   ok=requestSquadRecovery(id);
   if(ok)markRibbonOrderIssued(action.source);
@@ -7025,7 +7032,7 @@ function buildSquadQuickCommands(){
   heading('号令 · 対応部隊全員（統率Lvに応じた再発行間隔）');
   add('⚔ 突撃','charge',()=>beginCircleTargetSelection('attack'),{effect:orderEffect('charge')});
   add('✚ 支援','heal_target',()=>beginCircleTargetSelection('support'),{effect:orderEffect('support')});
-  add('🛡 防御','defend',()=>issue('defend'),{effect:orderEffect('defend')});
+  add('🛡 守備','defend',()=>issue('defend'),{effect:orderEffect('defend')});
   add('⏸ 待機','hold',()=>issue('hold'),{effect:orderEffect('hold')});
   add('↘ 退却','retreat',()=>issue('retreat'),{effect:orderEffect('retreat')});
   add('★ 推奨号令','recommend_order',()=>advice.order==='charge'?beginCircleTargetSelection('attack'):issue(advice.order),{effect:orderEffect(advice.order)});
@@ -8562,7 +8569,7 @@ function updateCameraObstructions(){
  const focuses=TOWN_MODE?[controls.target]:cameraGoalFocuses();
  // Close-range combat needs a clear view across the frustum, not just six
  // translucent canopies intersecting the centre ray.
- const defaultCandidates=closeup?cameraTreeCandidates:cameraTreeCandidates.filter(item=>item.id==='tree_deciduous_001');
+ const defaultCandidates=closeup?cameraTreeCandidates:cameraTreeCandidates.filter(item=>item.id==='tree_deciduous_001'||item.id==='flower_tree_001');
  const newTrees=new Set(selectCameraOccluders(camera.position,controls.target,defaultCandidates,
   {limit:closeup?48:6,padding:closeup?6:.5}).map(tree=>tree.key));
  if(closeup)for(const target of focuses.slice(1)){

@@ -40,19 +40,23 @@ assert.match(html,/squadQuickPage==='home'/);
 assert.match(html,/\['📯 号令','orders'\],\['🎒 アイテム','items'\]/);
 assert.match(html,/function beginCircleTargetSelection\(kind,itemId=null\)/);
 assert.match(html,/function chooseCircleActionTarget\(id,team\)/);
-assert.match(html,/if\(action\.kind==='item'\)ok=useSquadBattleItem\(action\.itemId,id\)/);
+assert.match(html,/if\(action\.kind==='item'\)ok=useSquadBattleItemForSource\(action\.itemId,id,action\.source\)/,
+ 'Targeted item use must apply the source commanders permissions and cooldown');
 assert.match(html,/else if\(action\.kind==='support'\)\{/);
 assert.match(html,/if\(ok\)markRibbonOrderIssued\(action\.source\)/,
  'Recovery order consumes the commanding squads own 120s interval');
 assert.match(html,/targetSquadId:String\(id\),x:Math\.round\(center\.x\)/);
-assert.match(html,/if\(ok\)\{closeSquadTactics\(\);return true;\}/);
+assert.match(html,/if\(ok\)\{[\s\S]*?closeSquadTactics\(true\);\s*return true;/,
+ 'Successful target confirmation must clear preview and return to command overview');
 
 // Player command selection ALWAYS pauses the battle in a locked far overview.
 // The existing 5-minute tactical bank still counts down but cannot resume combat mid-selection.
 assert.match(html,/if\(!paused\)setBattlePaused\(true\)/,
  'Opening the command selector pauses even after the tactical bank expires');
-assert.match(html,/enterCommandOverview\(\); \/\/ Wide, static camera wins/,
- 'Opening a squad order forces the full-map overview');
+assert.match(html,/setBattleCamera\(focus,offset\);\s*setCameraActive\(null\)/,
+ 'Selected commander stays in view while choosing a command');
+assert.match(html,/enterCommandOverview\(\);\s*document\.body\.dataset\.circleTarget=/,
+ 'Selecting a target switches to the static wide battlefield overview');
 assert.match(html,/commandOverviewLocked=true/);
 assert.match(html,/controls\.enabled=false/);
 assert.match(html,/tacticalBankRemaining=Math\.max\(0,tacticalBankRemaining-bankDelta\)/);
@@ -73,7 +77,8 @@ assert.match(html,/reportAfterBattleCutin\(next\.text,next\)/);
 assert.match(html,/queueBattleResultCutin\('🎁 アイテム入手'/);
 assert.match(html,/queueBattleResultCutin\('✚ 回復報告'/);
 assert.match(html,/queueBattleResultCutin\(defeatedEnemy\?'⚔ 敵部隊撃破':'☠ 味方部隊壊滅'/);
-assert.match(html,/battleCeremony\.update\(\);\s*updateBattleResultCutins\(\)/);
+assert.match(html,/battleCeremony\.update\(\);[\s\S]{0,650}?updateBattleResultCutins\(\)/,
+ 'Completed ceremony must advance result cutins after optional initial commander camera focus');
 
 const match=html.match(/<script type="module">([\s\S]*?)<\/script>/);
 assert.ok(match,'Battle module exists');

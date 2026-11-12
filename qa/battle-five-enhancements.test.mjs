@@ -57,10 +57,13 @@ assert.match(game,/function openSquadTactics\(id\)/);
 // 4: The text panel itself locates the reporting squad's strategist.
 assert.match(commentary,/onFocus\(\{\.\.\.currentEvent,fromMessageTap:true\}\)/);
 assert.match(commentary,/if\(!event\.target\.closest\('button'\)\)followReport\(\)/);
-assert.match(game,/roster\.find\(u=>u\.team===0&&u\.isStrategist/);
+assert.match(game,/roster\.find\(u=>u\.team===0&&String\(u\.squadId\)===String\(report\.squadId\)&&/,
+ 'Message focus selects a living soldier in the reporting squad');
 assert.match(game,/focusedHumanUnitId=massSim\?unit\.id:null/);
-assert.match(game,/if\(report\.fromMessageTap&&report\.squadId!=null\)/,
- 'Tapping a message opens the same squad command popup');
+assert.match(game,/if\(!report\.fromMessageTap\)\{[\s\S]{0,200}?beginSquadFocusCinematic\(/,
+ 'Automatic report focus uses a cinematic rather than changing a command');
+assert.match(game,/if\(report\.squadId!=null\)openSquadTactics\(String\(report\.squadId\)\)/,
+ 'Tapping a report opens its source squad commands');
 
 // 5: Elevation AI must be local, legal and usable in both battle modes.
 for(const job of ['archer','ninja','thief']){

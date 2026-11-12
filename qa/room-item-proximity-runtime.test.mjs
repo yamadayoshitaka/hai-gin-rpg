@@ -9,6 +9,14 @@ const start=html.indexOf('let lastNearbyRoomItemScanAt=-Infinity;');
 const end=html.indexOf('function tickAI(dt){',start);
 assert.ok(start>0&&end>start,'Room pickup function must be defined before the AI tick');
 const section=html.slice(start,end);
+// Execute the real reward-ledger code too. A partial function extraction that
+// omitted recordBattleTreasure produced a false ReferenceError although the
+// live game declares the function before the item collector.
+const ledgerStart=html.indexOf('const battleTreasureLedger=new Map();');
+const ledgerEnd=html.indexOf('function battleTreasureReceipt()',ledgerStart);
+assert.ok(ledgerStart>0&&ledgerEnd>ledgerStart,'Battle treasure ledger is defined');
+const ledgerSection=html.slice(ledgerStart,ledgerEnd);
+assert.match(ledgerSection,/function recordBattleTreasure\(actor,loot\)/);
 assert.match(section,/function collectNearbyRoomItems\s*\(/);
 assert.match(html.slice(end,end+400),/collectNearbyRoomItems\(\)/);
 const reg=new RoomItemRegistry();
@@ -40,8 +48,9 @@ const makeRunner=new Function('townInstances','roomItemRegistry','actors',
  'renderBattleItemManagement','updateUI','log','openTreasureChestModel','checkCompletedExplorations',`
  let elapsed=0;
  const queueBattleResultCutin=()=>{},squadName=id=>'第'+id+'隊';
+ ${ledgerSection}
  ${section}
- return {collectNearbyRoomItems,advance:seconds=>elapsed+=seconds};
+ return {collectNearbyRoomItems,battleTreasureLedger,advance:seconds=>elapsed+=seconds};
 `);
 const runner=makeRunner([building],reg,[actor],null,new Set(),gateRegistry,2.2,
  {hidden:false},()=>{itemUiUpdates++;},()=>{gameUiUpdates++;},()=>{},chest=>{chest.userData={opened:true};chest.visible=true;},()=>{});
@@ -55,6 +64,8 @@ gate.locked=false;
 runner.advance(.4);runner.collectNearbyRoomItems();
 assert.equal(reg.get(floor1.id).state,'collected','Ground-floor potion is collected at the room position');
 assert.equal(reg.owned(actor.id)[0].quantity,1);
+assert.equal(runner.battleTreasureLedger.get('healing_potion'),1,
+ 'Collected floor loot must enter the real reward ledger exactly once');
 assert.equal(marker.visible,true,'Opened treasure chest remains in the room');
 assert.equal(marker.userData.opened,true,'Collected treasure chest lid stays open');
 assert.ok(itemUiUpdates>=1&&gameUiUpdates>=1,'Inventory changes refresh the HUD');
@@ -67,4 +78,6 @@ actor.floorTravel={phase:'upstairs',building};
 runner.advance(.4);runner.collectNearbyRoomItems();
 assert.equal(reg.get(floor2.id).state,'collected');
 assert.equal(reg.owned(actor.id)[0].quantity,2);
-console.log('PASS: callable AI room-loot handler, walls, locked door, floor access, single pickup and UI refresh');
+assert.equal(runner.battleTreasureLedger.get('healing_potion'),2,
+ 'Distinct upstairs loot must enter the real reward ledger exactly once');
+console.log('PASS: callable AI room-loot handler, reward ledger, walls, locked door, floor access, single pickup and UI refresh');
