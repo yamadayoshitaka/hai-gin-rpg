@@ -223,6 +223,21 @@ const assert=require('node:assert/strict');
    null,{timeout:12000});
   assert.equal(errors.length,0,'no browser errors after shop and castle: '+errors.join('; '));
   await page.locator('#leaveTown').click();
+  // Town exit now includes the required post-stage manga. The old smoke
+  // expected immediate navigation and timed out while the story was open.
+  // Exercise every post panel instead of skipping or weakening the exit flow.
+  if(await page.locator('#opening').isVisible()){
+    assert.match(await page.locator('#opening .eyebrow').innerText(),/町の後日談/,
+      'Leaving town must present the stage post-manga before world-map navigation');
+    let finishedPostManga=false;
+    for(let panel=0;panel<30;panel++){
+      const next=page.locator('#eventNext');
+      const last=(await next.innerText()).includes('地図へ進む');
+      await next.click();
+      if(last){finishedPostManga=true;break;}
+    }
+    assert.ok(finishedPostManga,'The post-stage manga must reach its last panel');
+  }
   await page.waitForURL(/world-map\.html/,{timeout:25000});
   assert.equal(await page.locator('#chapterTitle').count(),1,'world map renders');
   console.log('PASS: original 3D castle, whole-town map, walk/run, live shadow, decorated shop and occupied castle');
