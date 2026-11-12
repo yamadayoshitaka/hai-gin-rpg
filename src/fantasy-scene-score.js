@@ -27,12 +27,12 @@ export function fantasyCueForLocation(location='town'){
 export function fantasyCueForMangaPanel(stage,index=0){
  if(!stage?.id||!Number.isInteger(stage.number)||!Number.isInteger(index)||index<0)
   throw Error('Unknown manga music cue');
- // Pre-battle exposition (0-3) is atmospheric; confrontation (4) and
- // first aftermath (5) are orchestral. The survivor conversation (6-7)
- // returns to mystery, final decision (8) swells, closing (9) resolves.
- // Boss battles use the grand orchestral battle track for confrontation.
+ // The story is displayed in two ten-panel acts. Change at narrative beats,
+ // never on every page. The final event follows verified victory/retreat.
  const boss=stage.kind==='boss';
- const id=(index>=4&&index<=5||index===8)?(boss?'battle':'heartfelt'):'whispers';
+ const orchestral=(index>=4&&index<=5)||(index>=8&&index<=11)||
+   index===15||index>=18;
+ const id=orchestral?(boss?'battle':'heartfelt'):'whispers';
  return {...lookup[id],stageId:stage.id,panel:index,scene:stage.kind};
 }
 export function fantasyCueForChapterScene(chapter=1,index=0){
