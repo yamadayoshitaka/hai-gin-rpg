@@ -9,7 +9,8 @@
 .shell{position:relative;z-index:1;height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:clamp(12px,3vh,28px)}
 .crest{font-family:serif;color:#eed6a2;font-size:clamp(30px,7vw,58px);letter-spacing:.23em;text-shadow:0 0 33px #9cb6d8b8}h1{font:700 clamp(28px,6vw,58px)/1.3 Georgia,'Noto Serif JP',serif;margin:12px 0;text-align:center;letter-spacing:.09em;color:#ffebc1;text-shadow:0 3px 23px #000} .subtitle{font-size:clamp(12px,2vw,16px);letter-spacing:.19em;color:#cad8df;text-align:center}.ornament{height:1px;width:min(66vw,480px);margin:17px auto;background:linear-gradient(90deg,transparent,#d8c38b,transparent)}
 #intro{position:fixed;inset:0;z-index:5;overflow:auto;background:radial-gradient(ellipse at 50% 32%,#1c345b,#030713 72%);display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:12px;gap:8px;text-align:center;transition:opacity 1s ease}#intro[hidden]{display:none}#intro .intro-crest{font-size:20px;color:#d7c4aa;filter:drop-shadow(0 0 20px #c8e8ff);animation:pulse 4s ease-in-out infinite alternate}#intro p{position:relative;z-index:2;font:clamp(13px,3.2vw,16px)/1.5 Georgia,'Noto Serif JP',serif;max-width:420px;min-height:0;text-shadow:0 3px 12px #000;white-space:pre-line}
-#introArt{position:relative;width:min(90vw,420px);aspect-ratio:32/45;max-height:56dvh;flex-shrink:0;background-position:center;background-size:100% 100%;background-repeat:no-repeat;border:1px solid #c5a878;background-color:#17293d}
+#introArt{position:relative;width:min(94vw,700px);aspect-ratio:16/9;max-height:56dvh;flex-shrink:0;overflow:hidden;border:1px solid #c5a878;background-color:#17293d}
+#introPanelImage{position:absolute;display:block;max-width:none;object-fit:fill}#introPanelImage[hidden]{display:none!important}
 #introArtMissing{height:100%;display:grid;place-items:center;padding:14px;font:13px/1.6 system-ui;color:#decba9}#introArtMissing[hidden]{display:none!important}
 #introSpeaker{position:relative;z-index:2;min-width:150px;padding:8px 18px;border:1px solid #c9b081;background:#132b43df;color:#ffe3a5;font:700 15px 'Noto Serif JP',serif;letter-spacing:.14em;box-shadow:0 4px 15px #0008}
 #introProgress{position:relative;z-index:2;font:12px Georgia,serif;color:#e7d7ac;letter-spacing:.28em}
@@ -43,7 +44,7 @@
 @media(max-height:630px){.crest{font-size:26px}h1{font-size:28px;margin:4px}.ornament{margin:7px auto}.title-menu{margin:10px auto}.title-menu button{padding:6px;min-height:40px}#intro p{font-size:15px;min-height:4.8em}}
 </style></head><body>
 <div id="sky" aria-hidden="true"></div><div id="stars" aria-hidden="true"></div>
-<section id="intro" aria-label="オープニング" hidden><div id="introArt" role="img" aria-label="序幕・男女別の分岐対応漫画"><div id="introArtMissing" role="status">原画確認中</div></div><div class="intro-crest" aria-hidden="true">✧</div><div id="introSpeaker">序章・灰の勅命</div><p id="introLine">千年のあいだ、星鐘は鳴らなかった。</p><div id="introProgress">序幕 · 1 / 6</div><button id="introNext" type="button">次の場面へ ▶</button><button id="skip" type="button">スキップ ▶</button></section>
+<section id="intro" aria-label="オープニング" hidden><div id="introArt" role="img" aria-label="序幕・男女別の分岐対応漫画"><img id="introPanelImage" alt="オープニングの現在の1コマ" hidden><div id="introArtMissing" role="status">原画確認中</div></div><div class="intro-crest" aria-hidden="true">✧</div><div id="introSpeaker">序章・灰の勅命</div><p id="introLine">千年のあいだ、星鐘は鳴らなかった。</p><div id="introProgress">序幕 · 1 / 6</div><button id="introNext" type="button">次の場面へ ▶</button><button id="skip" type="button">スキップ ▶</button></section>
 <main class="shell"><div class="crest" aria-hidden="true">✦　✧　✦</div><div class="subtitle">CHRONICLES OF THE SILENT STARBELL</div><h1>灰銀のレゾナンス</h1><div class="ornament"></div><div class="subtitle">沈黙の星鐘 — 千年の記憶が鳴らす、最後の戦争。</div>
 <nav class="title-menu" aria-label="ゲームメニュー">
 <button id="newGame">ニューゲーム</button><button id="replayTutorial">はじめての方・操作ガイド</button><button id="viewPrologue">序章を見る</button><button id="continueGame">続きから</button><button id="versus">対戦</button><button id="settings">設定</button><button id="storyMaintenance" type="button">物語フロー・保守</button></nav>
@@ -57,6 +58,7 @@ import {createNewGame,getSavedGame,startNewSession} from './src/game-core-flow.j
 import {mangaForStage} from './src/story-stage-manga.js';
 import {FIRST_PLAY_GUIDE} from './src/first-play-guide.js';
 import {comicForStage,comicPageAsset} from './src/story-chapter-comic.js';
+import {registeredStoryPanelAsset,storySheetCrop} from './src/story-panel-registered-art.js';
 
 import {fantasyCueForMangaPanel} from './src/fantasy-scene-score.js';
 import {createGamePageAudio} from './src/game-page-audio.js';
@@ -68,40 +70,66 @@ try{const value=JSON.parse(localStorage.getItem(settingsKey)||'null');if(value)o
 const pageAudio=createGamePageAudio({storage:localStorage,initialScene:'title'});
 const titleVoices=createStoryVoiceDirector();
 const introStory=mangaForStage('c01-s01');
-const introContext={protagonistGender:getSavedGame(localStorage)?.campaign?.commander?.gender||'unspecified'};
-const selectedIntroStory=comicForStage('c01-s01','pre',introContext);
-const introFrames=selectedIntroStory.panels;
-let index=0,introClosed=true;let guideIndex=0,guideIntoNewGame=true;
+function introGender(){
+ const gender=getSavedGame(localStorage)?.campaign?.commander?.gender;
+ return gender==='male'||gender==='female'?gender:($('playerGender')?.value==='female'?'female':'male');
+}
+let introContext={protagonistGender:introGender()};
+let introFrames=comicForStage('c01-s01','pre',introContext).panels;
+let index=0,introClosed=true,guideIndex=0,guideIntoNewGame=true,introImageRequest=0;
 function showIntroFrame(){
  const shot=introFrames[index];
  $('introLine').textContent=shot.text;
  $('introSpeaker').textContent=shot.speaker==='語り手'?'第一章・灰の勅命':shot.speaker+' ／ '+shot.role;
- // The approved full-page image stays visible while ten spoken lines advance.
  pageAudio.changeScene('opening',fantasyCueForMangaPanel({id:introStory.id,number:introStory.number,kind:'town'},index).url);
  $('introProgress').textContent='序幕漫画 · セリフ '+(index+1)+' / '+introFrames.length;
 }
-function closeIntro(){if(introClosed)return;introClosed=true;titleVoices.stop();pageAudio.changeScene('title');$('intro').style.opacity='0';$('intro').style.pointerEvents='none';setTimeout(()=>$('intro').hidden=true,1000);}
+function closeIntro(){
+ if(introClosed)return;introClosed=true;introImageRequest++;titleVoices.stop();pageAudio.changeScene('title');
+ $('intro').style.opacity='0';$('intro').style.pointerEvents='none';
+ setTimeout(()=>$('intro').hidden=true,1000);
+}
 function speakIntro(){
  if(options.voice===false||introClosed)return;
  void titleVoices.speak(introFrames[index]);
 }
-function nextLine(){index++;if(index>=introFrames.length){closeIntro();return;}showIntroPage();showIntroFrame();if(pageAudio.started)speakIntro();}
-function showIntroPage(){
- const shot=introFrames[index];
- const path=comicPageAsset(introStory.id,'pre',introContext,shot.comicPage,shot.protagonistGender);
- const display=$('introArt'),notice=$('introArtMissing');
- display.style.backgroundImage='none';notice.hidden=false;
- if(!path){notice.textContent='主人公の性別が未設定のため原画を選択できません。';return;}
- const cells=introFrames.filter(p=>p.comicPage===shot.comicPage).length;
- display.style.aspectRatio='1536 / '+(432*Math.ceil(cells/2));
- notice.textContent='男女別・分岐別の漫画原画を確認しています…';
- const image=new Image();
- image.onload=()=>{display.style.backgroundImage='url("'+path+'")';notice.hidden=true;};
- image.onerror=()=>{notice.textContent='このステージの漫画（'+
-  (shot.protagonistGender==='female'?'女性版':'男性版')+'）は原画未登録です。';};
- image.src=path;
+function nextLine(){
+ index++;if(index>=introFrames.length){closeIntro();return;}
+ showIntroPage();showIntroFrame();if(pageAudio.started)speakIntro();
 }
-function openIntro(){closeModals();introClosed=false;index=0;showIntroPage();pageAudio.changeScene('opening');$('intro').hidden=false;$('intro').style.opacity='1';$('intro').style.pointerEvents='auto';showIntroFrame();pageAudio.unlock();speakIntro();}
+function showIntroPage(){
+ const shot=introFrames[index],cut=registeredStoryPanelAsset(shot);
+ const sheet=comicPageAsset(introStory.id,'pre',introContext,shot.comicPage,shot.protagonistGender);
+ const cells=introFrames.filter(p=>p.comicPage===shot.comicPage).length;
+ const display=$('introArt'),img=$('introPanelImage'),notice=$('introArtMissing'),ticket=++introImageRequest;
+ display.style.aspectRatio='16 / 9';
+ img.hidden=true;notice.hidden=false;notice.textContent='現在の1コマの原画を確認しています…';
+ const missing=()=>{if(ticket!==introImageRequest)return;
+  img.hidden=true;notice.hidden=false;
+  notice.textContent='この性別のオープニング原画は未登録です。別の絵は使いません。';
+ };
+ const load=(asset,type)=>{
+  if(!asset){missing();return;}
+  img.onload=()=>{if(ticket!==introImageRequest)return;
+   if(type==='single'){
+    Object.assign(img.style,{width:'100%',height:'100%',left:'0%',top:'0%',objectFit:'contain'});
+   }else{
+    const crop=storySheetCrop(shot,cells);
+    Object.assign(img.style,{width:crop.widthPercent+'%',height:crop.heightPercent+'%',
+     left:crop.leftPercent+'%',top:crop.topPercent+'%',objectFit:'fill'});
+   }
+   img.hidden=false;notice.hidden=true;
+  };
+  img.onerror=()=>{if(ticket!==introImageRequest)return;
+   if(type==='single')load(sheet,'sheet');else missing();
+  };
+  img.alt='第1章イベント前 '+(shot.protagonistGender==='female'?'女性':'男性')+'の第'+(index+1)+'コマ';
+  img.src=asset;
+  if(img.complete&&img.naturalWidth>0)img.onload();
+ };
+ load(cut||sheet,cut?'single':'sheet');
+}
+function openIntro(){closeModals();introClosed=false;introContext={protagonistGender:introGender()};introFrames=comicForStage('c01-s01','pre',introContext).panels;index=0;showIntroPage();pageAudio.changeScene('opening');$('intro').hidden=false;$('intro').style.opacity='1';$('intro').style.pointerEvents='auto';showIntroFrame();pageAudio.unlock();speakIntro();}
 $('introNext').onclick=nextLine;
 $('skip').onclick=()=>{pageAudio.unlock();pageAudio.effect('confirm');closeIntro();};
 document.addEventListener('pointerdown',()=>{pageAudio.unlock();speakIntro();},{once:true,passive:true});
