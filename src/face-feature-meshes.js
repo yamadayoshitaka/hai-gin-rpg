@@ -327,12 +327,16 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   const profileProbeX=x+side*eyeRadius*1.18*.86;
   const localSkinAtProfile=surfaceAt(profileProbeX,y);
   const cornealAtProfile=eyeRadius*.97*Math.sqrt(1-.86*.86);
-  const desiredProfileGap=Math.max(d.z*.018,eyeRadius*.18);
+  const desiredProfileGap=Math.max(d.z*.012,eyeRadius*.115);
   const orbitalDepth=(landmarks.inner.z+landmarks.outer.z+
    landmarks.upper.z+landmarks.lower.z)*.25;
+  // Keep the whole ellipsoid seated against the actual sculpted orbit
+  // instead of projecting the white globe far in front of its liner.
+  // Extra depth remains user-adjustable on the full-body editor.
   const z=Math.max(Math.min(faceZ+eyeRadius*.035,
     orbitalDepth+eyeRadius*.085),
-   localSkinAtProfile+desiredProfileGap-cornealAtProfile);
+   localSkinAtProfile+desiredProfileGap-cornealAtProfile)
+   -eyeRadius*(.09-settings.eyeDepth);
   const globe=new THREE.Mesh(new THREE.SphereGeometry(eyeRadius,36,24),eyeMat);
   globe.name=(side===-1?'LEFT':'RIGHT')+'_ORBITAL_EYEBALL';
   globe.scale.set(1.18,.79,.97);
@@ -413,18 +417,18 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
    if(female){
     // Eyeliner shares the eye lid's actual surface and transformation.
     const linerMat=new THREE.MeshBasicMaterial({
-     color:0x30252b,side:THREE.DoubleSide,transparent:true,
-     opacity:upper?.90:.77,depthWrite:false,depthTest:true,
-     polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2
+     color:0x251a24,side:THREE.DoubleSide,transparent:true,
+     opacity:upper?1:.92,depthWrite:false,depthTest:true,
+     polygonOffset:true,polygonOffsetFactor:-5,polygonOffsetUnits:-5
     });
     const liner=buildGrid(label+'_EYELINER',28,3,(u,v)=>{
      const p=sampleGrid(mesh,28,4,u,.018+v*(upper?.064:.056));
-     p.z+=Math.max(.00006,d.z*.0018);
+     p.z+=Math.max(.00012,d.z*.004);
      return p;
     },linerMat);
     liner.userData.colorRole='eyeliner';liner.userData.cosmetic=true;
     liner.userData.conformsTo='real-eyelid-mesh';
-    liner.renderOrder=6;
+    liner.renderOrder=9;
     mesh.add(liner);
     if(upper)upperEyeliner=liner;else lowerEyeliner=liner;
    }
@@ -736,6 +740,8 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   contactColorDefault:safeContactColor(settings.contactColor),
   eyeAngleDefault:settings.eyeAngle,
   eyeSpacingFactor:settings.eyeSpacing,
+  eyeDepthFactor:settings.eyeDepth,
+  eyelinerVisibilityPolicy:'opaque-lid-edge-above-eye',
   maleCosmeticsDisabled:!female,
   noseSourceIntegrated:true,
   partTriangles,faceOnly:true,bodyIncluded:false,partGeometryReal:true,
