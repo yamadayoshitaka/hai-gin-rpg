@@ -1080,6 +1080,7 @@ window.getBattleResourceHistory=()=>resourceSamples.slice();
 window.getSkirmishPerformanceStats=()=>({
  version:'4.6.69',...framePerformance.getStats(),
  drawCalls:renderer.info.render.calls,
+ adaptiveRenderQuality:adaptiveBattleResolution.getStats(),
  totalActors:actors.length,
  visibility:actorVisibility.stats,
  distantSoldiers:skirmishDistanceLod?.stats??null,
@@ -8847,6 +8848,15 @@ function animate(){
   if(tacticalBankRemaining<=0){tacticalPlanningActive=false;if(!commandOverviewLocked)setBattlePaused(false);}
  }
  battleCeremony.update();
+ // The opening order previously ran silently under the intro overlay.
+ // Once the intro completes, bring the commander into view before returning
+ // to the 45-degree full-field camera.
+ if(initialCommanderCinematicPending!=null&&battleReady&&!finished&&!paused&&
+  !commandOverviewLocked&&battleCeremony.state!=='intro'&&battleCeremony.state!=='outro'){
+  const first=initialCommanderCinematicPending;
+  initialCommanderCinematicPending=null;
+  beginCommanderCinematic(first);
+ }
  updateBattleResultCutins();
  // Real-time camera and UI stay responsive; only battle simulation/rigs slow.
  // Preserve the authoritative mass Worker tick duration; space ticks farther apart.
@@ -9041,7 +9051,15 @@ function animate(){
  const minCameraY=Math.max(groundCameraY,controls.target.y+Math.max(1.8,Math.hypot(camera.position.x-controls.target.x,camera.position.z-controls.target.z)*.18));
  if(camera.position.y<minCameraY){camera.position.y=minCameraY;controls.update()}
  syncSquadCloseupLabels();
- updateSquadScreenLabels(dt);
+ // The 1000-on-1000 DOM squad indicators do not need a full 60Hz
+ // layout/reflow cycle. Keep touch selection at full frequency.
+ battleLabelsSinceLastUpdate+=dt;
+ const markerInterval=MASS_SIZE>=500&&!commandOverviewLocked&&!pendingCircleTarget?.kind?.length?.0
+  ?1/18:0;
+ if(markerInterval===0||battleLabelsSinceLastUpdate>=markerInterval){
+  updateSquadScreenLabels(battleLabelsSinceLastUpdate||dt);
+  battleLabelsSinceLastUpdate=0;
+ }
  // Preserve physical building shadows without redrawing static geometry on
  // every display frame. The focus tracks significant camera movement.
  shadowRefreshTimer+=dt;
@@ -9056,6 +9074,18 @@ function animate(){
  renderBattleFrame();
  confirmedHitOverlay.render(dt,{paused});
  framePerformance.end();
+ // GPU fill-rate adapts slowly to sustained frame-time pressure. Do not
+ // change CPU simulation cadence, actor models, textures, or screen hitboxes.
+ const adaptiveAt=performance.now();
+ if(adaptiveAt-lastAdaptiveQualityAt>=1000&&!TOWN_MODE){
+  lastAdaptiveQualityAt=adaptiveAt;
+  const perf=framePerformance.getStats();
+  const nextRatio=adaptiveBattleResolution.sample({
+   fps:perf.fps,p95Ms:perf.frameP95Ms,nowMs:adaptiveAt,
+   paused:paused||finished||commandOverviewLocked||battleCeremony.state==='intro'
+  });
+  if(nextRatio!==null)setAdaptiveBattlePixelRatio(nextRatio);
+ }
  if(!massSim){
   fpsFrames++;const now=performance.now();
   if(now-fpsStart>=1000){
@@ -9068,6 +9098,7 @@ function animate(){
    }
    if(skirmishPerformancePanel)skirmishPerformancePanel.textContent=
     'FPS '+perf.fps+'｜P95 '+perf.frameP95Ms+'ms｜描画 '+report.drawCalls+
+    '｜画質 '+renderer.getPixelRatio().toFixed(2)+'x'+
     '｜衣装 '+report.dressed+'/'+report.totalActors+
     '｜鎧 '+report.armorOriginalPieces+'→'+report.armorDrawPieces+
     '｜遠景 '+(report.distantSoldiers?.visible??0)+'｜死体 '+report.visibleCorpses+
@@ -9085,7 +9116,7 @@ function animate(){
    // Keep the first measurement as a baseline even after hours of play.
    resourceSamples.push(resources);if(resourceSamples.length>36)resourceSamples.splice(1,1);
   }
-  $('massGamePerf').textContent=massRenderer?'FPS '+fps+'｜視点 '+camera.position.distanceTo(controls.target).toFixed(1)+'m｜P95 '+perf.frameP95Ms+'ms｜描画 '+renderer.info.render.calls+
+  $('massGamePerf').textContent=massRenderer?'FPS '+fps+'｜視点 '+camera.position.distanceTo(controls.target).toFixed(1)+'m｜画質 '+renderer.getPixelRatio().toFixed(2)+'x｜P95 '+perf.frameP95Ms+'ms｜描画 '+renderer.info.render.calls+
    '｜実体 '+massRenderer.fullMeshVisibleSoldiers+' 写真 '+massRenderer.impostorVisibleSoldiers+
    '｜GPU形状 '+resources.gpuGeometries+' 画像 '+resources.gpuTextures+
    '｜JS '+(resources.jsHeapMB??'--')+'MB｜FX '+fx.activeEffects+'/'+actionVfx.maxEffects+
@@ -9096,7 +9127,8 @@ function animate(){
    '実物衣装ロード中｜'+actors.filter(a=>a.outfit).length+'/'+actors.length+'種類の元モデル';}}
 }
 window.getBattleStartupStats=()=>({ready:battleReady,error:loadingFailure?String(loadingFailure):null,
- resolutionScale:BATTLE_RESOLUTION_SCALE,pixelRatio:renderer.getPixelRatio(),antiAliasing:fxaaComposer?'GPU FXAA':'WebGL MSAA',bufferWidth:renderer.domElement.width,bufferHeight:renderer.domElement.height,
+ resolutionScale:BATTLE_RESOLUTION_SCALE,adaptiveQuality:adaptiveBattleResolution.getStats(),
+ pixelRatio:renderer.getPixelRatio(),antiAliasing:fxaaComposer?'GPU FXAA':'WebGL MSAA',bufferWidth:renderer.domElement.width,bufferHeight:renderer.domElement.height,
  actors:actors.length,dressed:actors.filter(a=>a.outfit||a.townRegisteredModel).length,buildingBatchStats,stageBatchStats,
  massModelBatches:massRenderer?.drawMeshes??0,bodyDrawLayers:massRenderer?.bodyDrawLayers??0,visibility:actorVisibility.stats,elapsed});
 async function finishBattleLoading(){
@@ -9462,6 +9494,7 @@ async function finishBattleLoading(){
     }
    }
    battleReady=true;loading.hidden=true;
+   initialCommanderCinematicPending=squadIds.find(id=>hasSquadCommander(id))??null;
    battleCeremony.startIntro({stageName:selectedStage.name,stageFeature:stageCharacter.feature});
    battleDialogue.push({key:'start',speaker:'軍師',kind:'info',priority:5,
     text:'戦闘開始！ 各隊の消耗・敵の接近・任務完遂を監視して報告します。'});
