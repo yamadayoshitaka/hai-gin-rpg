@@ -422,19 +422,63 @@ eyeColorInput.addEventListener('input',()=>{
  syncLensPreset();paintLens();
 });
 syncLensPreset();
+function applyPartSelection(picked){
+ v32BodyPart=picked;
+ const chosen=resolvePartSelection('female',picked,FEMALE_V7_DEFAULTS);
+ Object.assign(faceControls,normalizeFemaleFaceControls(chosen.controls));
+ $('style').value=chosen.hairStyleId;
+ $('heroHairStyle').value=chosen.hairStyleId;
+ $('heroHairVolume').value=picked.hairVolume;
+ if(ready){rebuildFaceOnBody();rebuildWig();}
+}
+const mountPartPicker=()=>createPartSelectorUI(
+ $('v32BodyChoices'),'female',v32BodyPart,applyPartSelection);
 if(v32PartMode){
- createPartSelectorUI($('v32BodyChoices'),'female',v32BodyPart,picked=>{
-  v32BodyPart=picked;
-  const chosen=resolvePartSelection('female',picked,FEMALE_V7_DEFAULTS);
-  Object.assign(faceControls,normalizeFemaleFaceControls(chosen.controls));
-  $('style').value=chosen.hairStyleId;
-  if(ready){rebuildFaceOnBody();rebuildWig();}
- });
+ mountPartPicker();
  $('v32HairDensity').addEventListener('change',()=>{
   $('wigDensity').value=$('v32HairDensity').value;
+  $('heroHairDensity').value=$('v32HairDensity').value;
   if(ready)rebuildWig();
  });
 }
+$('heroHairStyle').addEventListener('change',()=>{
+ $('style').value=$('heroHairStyle').value;
+ const index=PART_CATALOG.female.hair.findIndex(p=>
+  p.values.styleId===$('heroHairStyle').value);
+ if(index>=0){
+  v32BodyPart={...v32BodyPart,hair:index};
+  if(v32PartMode)mountPartPicker();
+ }
+ if(ready)rebuildWig();
+});
+$('heroHairVolume').addEventListener('change',()=>{
+ v32BodyPart={...v32BodyPart,hairVolume:$('heroHairVolume').value};
+ if(v32PartMode)mountPartPicker();
+ if(ready)rebuildWig();
+});
+$('heroHairDensity').addEventListener('change',()=>{
+ $('v32HairDensity').value=$('heroHairDensity').value;
+ $('wigDensity').value=$('heroHairDensity').value;
+ if(ready)rebuildWig();
+});
+$('heroJob').addEventListener('change',()=>{
+ selectedStudio.jobId=$('heroJob').value;
+ selectedStudio.outfitId='job';
+ selectedStudio.actionId=['mage','cleric','summoner'].includes(selectedStudio.jobId)?
+  'cast':selectedStudio.jobId==='shield'?'guard':'attack';
+ $('heroOutfit').value=selectedStudio.outfitId;
+ $('heroAction').value=selectedStudio.actionId;
+ wardrobe?.setSelection(selectedStudio);
+ wardrobe?.setAction(selectedStudio.actionId);
+});
+$('heroOutfit').addEventListener('change',()=>{
+ selectedStudio.outfitId=$('heroOutfit').value;
+ wardrobe?.setSelection(selectedStudio);
+});
+$('heroAction').addEventListener('change',()=>{
+ selectedStudio.actionId=$('heroAction').value;
+ wardrobe?.setAction(selectedStudio.actionId);
+});
 function syncFaceControls(){
  for(const [key,{input,out}] of faceInputs){
   input.value=String(faceControls[key]);
