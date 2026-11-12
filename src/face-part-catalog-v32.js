@@ -5,6 +5,7 @@
  * Selections build actual eye/eyelid/face/lip GLB triangles through v31 mesh
  * construction and the hair styles build volumetric layered hair-card meshes.
  */
+import {WIG_BASE_VOLUME_PROFILES} from './face-wig-styles.js?v=33';
 export const PART_GROUPS=Object.freeze(['face','eye','nose','mouth','hair','makeup']);
 export const PART_GROUP_LABELS=Object.freeze({
  face:'顔立ち',eye:'目',nose:'鼻',mouth:'口',
@@ -36,7 +37,7 @@ export const OFFSET_CHOICES=Object.freeze([
 ]);
 export const ANGLE_CHOICES=Object.freeze([-12,-6,0,6,12]);
 export function defaultPartSelection(){
- return {face:0,eye:0,nose:0,mouth:0,hair:0,makeup:0,hairColor:'blonde',
+ return {face:0,eye:0,nose:0,mouth:0,hair:0,makeup:0,hairColor:'blonde',hairVolume:'natural',
   eyeX:0,eyeY:0,eyeZ:0,eyeAngle:0,
   noseX:0,noseY:0,noseZ:0,noseAngle:0,
   mouthX:0,mouthY:0,mouthZ:0,mouthAngle:0,
@@ -48,7 +49,8 @@ export function normalizePartSelection(input={}){
  for(const group of PART_GROUPS)out[group]=clamp(
   Math.round(Number(input[group])||0),0,group==='hair'?12:9);
  out.hairColor=HAIR_COLORS[input.hairColor]?input.hairColor:'blonde';
- for(const key of Object.keys(out).filter(k=>!PART_GROUPS.includes(k)&&k!=='hairColor')){
+ out.hairVolume=WIG_BASE_VOLUME_PROFILES[input.hairVolume]?input.hairVolume:'natural';
+ for(const key of Object.keys(out).filter(k=>!PART_GROUPS.includes(k)&&k!=='hairColor'&&k!=='hairVolume')){
   const n=Number(input[key]);
   out[key]=Number.isFinite(n)?clamp(Math.round(n),
    key.toLowerCase().includes('angle')?-12:-2,
@@ -81,6 +83,7 @@ export function resolvePartSelection(gender,raw={},legacy={}){
  };
  return {selection,controls,hairStyleId:hair.styleId,
   hairColor:selection.hairColor,hairHex:HAIR_COLORS[selection.hairColor].hex,
+  hairVolume:selection.hairVolume,
   makeup,meshBlend:'real-source-vertex-gaussian-landmark-falloff',
   ids:Object.fromEntries(PART_GROUPS.map(group=>[
    group,catalog[group][selection[group]].id]))};
