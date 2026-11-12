@@ -53,7 +53,7 @@ h2{font-size:15px;color:var(--gold);margin:8px 0}
 </main>
 <script type="module">
 import {comicForStage,comicPageAsset} from './src/story-chapter-comic.js';
-import {registeredStoryPanelAsset,storySheetCrop} from './src/story-panel-registered-art.js';
+import {registeredStoryPanelAsset,storySheetCrop,storyArtDisplayUrl} from './src/story-panel-registered-art.js';
 import {CAMPAIGN_STAGE_BY_ID} from './src/campaign-stage-plan.js';
 const $=id=>document.getElementById(id);
 const labels={pre:'イベント前',town:'町イベント後',victory:'勝利後',defeat:'敗北後',gameover:'軍師戦死後'};
@@ -100,7 +100,7 @@ function frame(){
    $('artStatus').textContent=(kind==='single'?'登録済み・切り出し済みの原画':'登録済み原画シートから、この1コマを表示')+'（人間の承認は別）';
   };
   img.onerror=()=>{if(ticket!==serial)return;if(kind==='single')load(sheet,'sheet');else fail();};
-  img.src=url;
+  img.src=storyArtDisplayUrl(url);
   if(img.complete&&img.naturalWidth>0)img.onload();
  };
  load(single||sheet,single?'single':'sheet');

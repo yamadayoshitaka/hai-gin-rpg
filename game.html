@@ -58,7 +58,7 @@ import {createNewGame,getSavedGame,startNewSession} from './src/game-core-flow.j
 import {mangaForStage} from './src/story-stage-manga.js';
 import {FIRST_PLAY_GUIDE} from './src/first-play-guide.js';
 import {comicForStage,comicPageAsset} from './src/story-chapter-comic.js';
-import {registeredStoryPanelAsset,storySheetCrop} from './src/story-panel-registered-art.js';
+import {registeredStoryPanelAsset,storySheetCrop,storyArtDisplayUrl} from './src/story-panel-registered-art.js';
 
 import {fantasyCueForMangaPanel} from './src/fantasy-scene-score.js';
 import {createGamePageAudio} from './src/game-page-audio.js';
@@ -124,7 +124,7 @@ function showIntroPage(){
    if(type==='single')load(sheet,'sheet');else missing();
   };
   img.alt='第1章イベント前 '+(shot.protagonistGender==='female'?'女性':'男性')+'の第'+(index+1)+'コマ';
-  img.src=asset;
+  img.src=storyArtDisplayUrl(asset);
   if(img.complete&&img.naturalWidth>0)img.onload();
  };
  load(cut||sheet,cut?'single':'sheet');

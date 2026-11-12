@@ -20,3 +20,7 @@ for(const a of e.panels){
  assert(['source-high-resolution','upscaled-from-768-source-needs-repaint'].includes(a.qualityStatus));
 }
 console.log('PASS: 10 female stage-1 panels at 1536x864; seven high-res sources; three flagged for repaint, no human approval.');
+
+import {storyArtDisplayUrl} from '../src/story-panel-registered-art.js';
+assert.equal(storyArtDisplayUrl('./assets/story/chapters/c01/panels/c01-s01-m01-female.webp').includes('?artrev=c01s01-20261113-hires'),true);
+assert.equal(storyArtDisplayUrl('./assets/story/chapters/c01/panels/c01-s02-m01-female.webp').includes('?'),false);

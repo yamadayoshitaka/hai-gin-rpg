@@ -116,7 +116,7 @@ import {STORY_KEY_PEOPLE} from './src/story-cinematic.js';
 import {mangaForStage} from './src/story-stage-manga.js';
 import {storyStageContext} from './src/story-narrative-flow.js';
 import {comicForStage,comicPageAsset} from './src/story-chapter-comic.js';
-import {registeredStoryPanelAsset,storySheetCrop} from './src/story-panel-registered-art.js';
+import {registeredStoryPanelAsset,storySheetCrop,storyArtDisplayUrl} from './src/story-panel-registered-art.js';
 
 import {fantasyCueForMangaPanel} from './src/fantasy-scene-score.js';
 import {continentForChapter} from './src/continent-campaign.js';
@@ -890,7 +890,7 @@ function eventRender(){
    img.onerror=()=>{if(ticket!==eventArtRequest)return;
     if(type==='single')load(sheet,'sheet');else unavailable();
    };
-   img.src=asset;
+   img.src=storyArtDisplayUrl(asset);
    if(img.complete&&img.naturalWidth>0)img.onload();
   };
   load(cut||sheet,cut?'single':'sheet');
