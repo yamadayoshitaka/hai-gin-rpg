@@ -406,12 +406,12 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   // Posterior layers drift gently toward the center of the back,
   // closing the exposed rear part without piling into a single spike.
   const targetX=(back?
-   center.x+(wigRoot.x-center.x)*.68:
+   center.x+(wigRoot.x-center.x)*.78:
    wigRoot.x+side*d.x*(closeToFace?style.fringeSweep:.015))+
    partSide*d.x*style.partWidth*partInfluence;
   const targetZ=closeToFace?wigRoot.z+d.z*style.scalpClearance:
    // Go BEHIND the neck rather than being occluded by the rear bust skin.
-   back?Math.min(wigRoot.z-d.z*.070,center.z-d.z*.19):
+   back?Math.min(wigRoot.z-d.z*.035,center.z-d.z*.13):
    zone.startsWith('temple')?wigRoot.z-d.z*.035:
    Math.min(wigRoot.z-d.z*.075,center.z-d.z*.035);
   // No high-frequency radial scattering that makes fine hair frizzy.
@@ -484,7 +484,9 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  locks.userData.rootedOnRealScalp=true;
  locks.userData.lockCount=lockCount;
  root.add(locks);
- const half=d.x*.0085;
+ // Fuller salon silhouette: broaden body/crown locks; preserve feather-fine
+ // forehead strips so additional volume does not turn bangs into boards.
+ const half=d.x*.0121;
  // The visible mesh retains all 1440+ locks, but only ~320 master locks
  // require full constraint and capsule solving on Android.
  const guideStride=Math.max(1,Math.ceil(lockCount/320));
@@ -495,7 +497,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  // Only the single-character face/body preview supplies this optional solver.
  const renderBodyCollider=bodyCollisionResolver?.resolve?bodyCollisionResolver:null;
  const ribbonCollisionPoint=new THREE.Vector3();
- let ribbonBodyContacts=0;
+ let ribbonBodyContacts=0,drapeContactEvents=0,glabellaClearanceEvents=0;
  // Real head-surface collision. The original giant ellipsoid forced
  // every strand out to an artificial spherical helmet around the ears.
  // Only points INSIDE the actual head silhouette are nudged outward.
@@ -503,11 +505,13 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   // Explicit contact with the ACTUAL front facial triangles. For hair
   // falling over the central eye/cheek region, first part it outwards.
   const yNorm=(p.y-box.min.y)/d.y;
-  if(p.z>center.z+d.z*.025&&yNorm>.40&&yNorm<.85){
+  if(p.z>center.z+d.z*.025&&yNorm>.40&&yNorm<.87){
    const contactSide=Math.sign(p.x-whorl.x)||1;
-   if(yNorm<.78&&Math.abs(p.x-center.x)<d.x*.15){
+   if(yNorm<.84&&Math.abs(p.x-center.x)<d.x*.15){
     p.x=center.x+contactSide*d.x*.15;
     faceContacts++;collisions++;
+    if((zone.startsWith('fringe')||overFace)&&yNorm>.68)
+     glabellaClearanceEvents++;
    }
    const faceSurface=surfaceSampler.query(p.x,p.y);
    if(faceSurface!==null&&p.z<faceSurface+d.x*style.faceClearance){
@@ -534,7 +538,10 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   // In the complete heroine model, use the real imported body's
   // front/rear TRIANGLE depth before the fallback preview capsules.
   // The head-only studio intentionally keeps its old proxy behaviour.
-  for(const c of colliders){
+  // Head-only editing still uses proxy shoulders. In the actual full-body
+  // preview those oversized proxies displaced the drape AWAY from the real
+  // shoulder. Prefer the imported triangle-depth solver exclusively.
+  if(!bodyCollisionResolver)for(const c of colliders){
    if(projectCapsule(p,c.a,c.b,c.r+d.x*.006)){
     collisions++;bodyContacts++;
    }
@@ -546,6 +553,28 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    'front':'nearest';
   if(bodyCollisionResolver?.resolve?.(p,{side:contactSide})){
    collisions++;bodyContacts++;realBodyContacts++;
+  }
+  // Gentle drape attraction around lower neck and shoulders: keep a small
+  // silhouette gap from the ACTUAL imported torso, never cross the surface.
+  // This corrects the floating shell visible from top/side without letting
+  // thicker ribbons stab the chest. Head-only rigs have no real query.
+  if(bodyCollisionResolver?.query&&
+     (contactSide==='rear'||contactSide==='front')&&
+     p.y<box.min.y+d.y*.47){
+   const torso=bodyCollisionResolver.query(p.x,p.y);
+   if(torso){
+    const clearance=d.x*.027;
+    const target=contactSide==='rear'?torso.rear-clearance:
+     torso.front+clearance;
+    const gap=Math.abs(target-p.z);
+    if(gap>d.x*.008&&gap<d.x*.40){
+     // Do not push through the body: explicit real-triangle collision is
+     // resolved once more after the gentle surface-following attraction.
+     p.z=THREE.MathUtils.lerp(p.z,target,.36);
+     bodyCollisionResolver.resolve(p,{side:contactSide});
+     drapeContactEvents++;
+    }
+   }
   }
  }
  function writeGeometry(){
@@ -562,9 +591,10 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    // in the last 15% instead of uniformly thinning into wire-like ends.
    const tip=1-.90*Math.pow(t,8);
    const width=half*tip*(.90+.15*fract(i*.35))*
-    (strand.zone.startsWith('fringe')?.34:
-     strand.zone.startsWith('temple')?.74:
-     strand.zone==='crown'||strand.zone.startsWith('back')?1.14:1);
+    (strand.zone.startsWith('fringe')?.235:
+     strand.zone.startsWith('temple')?.95:
+     strand.zone==='crown'||strand.zone.startsWith('back')?1.28:
+     strand.zone.startsWith('nape')?1.13:1);
     // Groom BOTH ribbon planes along the actual hair-guide tangent.
     // The old world-X/world-Z crosses stuck through crown triangles like
     // needles; a tangent-plane ribbon lays on the rounded scalp instead.
@@ -675,7 +705,9 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   strandRibbonOrientation:'guide-tangent-on-scalp',
   crownRootRatio:.20,posteriorRootRatio:.51,
   undercoatLockCount:cap.userData.rearUndercoatStripCount,
-  hairStrandWidthFraction:.0085,
+  hairStrandWidthFraction:.0121,fullerCrownBackVolume:true,
+  fullBodyTriangleContactBeforeProxy:true,neckAndShoulderDrape:true,
+  glabellaPartClearance:true,
   downwardGuidedLocks:true,realScalpEnvelopeCollision:true,
   longSalonLayers:true,centerBackCoverage:true,uShapedRearCut:true,
   centralRearNeckOcclusionAvoided:true,diagonalFeatheredFringe:true,
@@ -703,7 +735,9 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   return {...root.userData.wigReport,collisionEvents:collisions,
    faceContactEvents:faceContacts,bodyContactEvents:bodyContacts,
    realBodyContactEvents:realBodyContacts,
-   ribbonBodyContactEvents:ribbonBodyContacts};
+   ribbonBodyContactEvents:ribbonBodyContacts,
+   shoulderDrapeContactEvents:drapeContactEvents,
+   glabellaClearanceEvents};
  },resolvePoint(point){
   const p=point.clone();resolveCollision(p);return p;
  },getCutSamples(){
