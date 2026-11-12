@@ -737,10 +737,18 @@ test('v16 rear hair roots are posterior and salon cut has actual staggered lengt
  assert.equal(r.hairShape,'head-hugging-salon-layered-pointcut');
  assert.equal(r.rearRootPolicy,'actual-posterior-scalp-only');
  assert.equal(r.pointCutEnds,true);
+ assert.equal(r.centerBackCoverage,true);
+ assert.equal(r.uShapedRearCut,true);
+ assert.equal(r.longSalonLayers,true);
  assert.ok(r.rootDistribution.backLeft>=90&&r.rootDistribution.backRight>=90);
  const samples=w.getStyleSamples();
  const rear=samples.filter(s=>s.zone.startsWith('back')||s.zone.startsWith('nape'));
  assert.ok(rear.length>=40);
+ // At least one real back scalp root near the head midline must appear
+ // in the representative guide locks, not only at the outer temples.
+ const nearMidline=rear.filter(s=>Math.abs(s.root[0]-
+   (box.min.x+box.max.x)*.5)<d.x*.16);
+ assert.ok(nearMidline.length>=4,'Center-back remained bald');
  for(const sample of rear){
   assert.ok(sample.root[2]<cz-d.z*.04,
    'A rear/nape hair lock was actually grown from the face');
