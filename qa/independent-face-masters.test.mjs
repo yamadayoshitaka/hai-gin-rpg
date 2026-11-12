@@ -6,10 +6,10 @@ import {makeIndependentFaceMaster,FACE_MASTER_SPEC,femaleInnerFeatureDelta,femal
  from '../src/independent-face-masters.js';
 import {updateFaceFeatureAngles,applyFaceColorMode,createFastFaceSurfaceSampler}
  from '../src/face-feature-meshes.js';
-import {createScalpAnchoredWig} from '../src/face-scalp-wig.js';
+import {createScalpAnchoredWig,wigVolumeLiftAt} from '../src/face-scalp-wig.js';
 import {attachIndependentHeadToBody,buildBodyDepthCollision,removeHeadBustBelowNeck,createSealedNeckBridge,createClosedShoulderCaps} from '../src/face-body-assembly.js';
 import {CHAPTER_ONE_ART_BY_KEY,FEMALE_COMMANDER_ART_PALETTE} from '../src/chapter-one-character-art-references.js';
-import {DEFAULT_WIG_STYLE_ID,getWigStyle,listWigStyles} from '../src/face-wig-styles.js';
+import {DEFAULT_WIG_STYLE_ID,getWigStyle,listWigStyles,WIG_BASE_VOLUME_PROFILES} from '../src/face-wig-styles.js';
 import {normalizeFemaleFaceControls,normalizeMaleFaceControls,FEMALE_V7_DEFAULTS,FACE_V7_PALETTE,CONTACT_COLORS,safeContactColor,LIBRARY_FACE_PRESET,MALE_REFERENCE_DEFAULT,FACE_SLIDER_RANGES,FACE_EYE_SPACING_DEFAULT,FACE_EYE_SPACING_RANGE}
  from '../src/face-v7-controls.js';
 
@@ -1755,4 +1755,41 @@ test('v33 hairstyle selections include short, very short and scalp-hugging buzz 
  assert.equal(normalizePartSelection({hair:12,hairColor:'blue'}).hairColor,'blue');
  assert.equal(resolvePartSelection('female',{hair:12,hairColor:'blue'}).hairHex,'#415c99');
  assert.equal(resolvePartSelection('male',{hair:11,hairColor:'red'}).hairStyleId,'very-short');
+});
+
+test('v33 raised wig base uses three selectable real scalp geometries with matching lifted roots',()=>{
+ assert.deepEqual(Object.keys(WIG_BASE_VOLUME_PROFILES),['natural','airy','lifted']);
+ const face=makeIndependentFaceMaster(fixture().source,'female');
+ const original=face.face.geometry.getAttribute('position').array.slice();
+ const box=face.face.geometry.boundingBox;
+ const d=box.getSize(new THREE.Vector3()),c=box.getCenter(new THREE.Vector3());
+ const at=new THREE.Vector3(c.x,box.min.y+d.y*.935,c.z);
+ const lift=['natural','airy','lifted'].map(profile=>wigVolumeLiftAt(at,box,profile));
+ assert.equal(lift[0],0);
+ assert.ok(lift[2]>lift[1]&&lift[1]>d.x*.001,'physical volume rises above scalp');
+ const results=[];
+ for(const mode of ['natural','airy','lifted']){
+  const wig=createScalpAnchoredWig(face.face,{count:96,staticGroom:true,volumeProfile:mode});
+  const cap=wig.root.getObjectByName('REAL_SCALP_TRIANGLE_HAIR_CAP');
+  assert.ok(cap?.isMesh);
+  assert.equal(cap.userData.v33WigVolumeProfile,mode);
+  assert.equal(wig.getReport().v33WigVolumeProfile,mode);
+  assert.equal(wig.getReport().runtimePhysicsCallsPerFrame,0);
+  assert.equal(wig.getReport().layeredRibbonCount,4);
+  results.push({cap:[...cap.geometry.getAttribute('position').array],
+   roots:wig.getStyleSamples().map(x=>x.root)});
+  wig.dispose();
+ }
+ assert.deepEqual(results[0].cap.length,results[2].cap.length);
+ const changed=results[0].cap.filter((v,i)=>Math.abs(v-results[2].cap[i])>d.x*.002).length;
+ assert.ok(changed>30,'selected lifted profile changes many actual scalp cap vertices');
+ assert.notDeepEqual(results[0].roots,results[2].roots);
+ assert.deepEqual(face.face.geometry.getAttribute('position').array,original,
+  'raising removable wig base must never deform the original skin');
+ for(const sex of ['female','male']){
+  const resolved=resolvePartSelection(sex,{hairVolume:'lifted',hairColor:'brown'});
+  assert.equal(resolved.hairVolume,'lifted');
+  assert.equal(resolved.selection.hairVolume,'lifted');
+  assert.equal(normalizePartSelection({hairVolume:'bogus'}).hairVolume,'natural');
+ }
 });
