@@ -1,69 +1,103 @@
 {
-  "schemaVersion": 1,
-  "chapter": 1,
+  "schemaVersion": 2,
   "stageId": "c01-s01",
+  "chapter": 1,
   "phase": "pre",
   "edition": "pre",
-  "protagonistGender": "male",
-  "sourceSheet": "hai_gin_c01_s01_male_pre_textless_v2.webp",
-  "format": "2 columns × 5 rows",
+  "gender": "male",
+  "status": "AI_DRAFT_UNAPPROVED",
   "approved": false,
-  "reviewedBy": "ChatGPT preliminary visual inspection",
-  "reviewStatus": "AI_DRAFT_UNAPPROVED",
-  "noTextInsideImage": true,
-  "panelCount": 10,
-  "sha256": "64bf7dbc72d08fcd2c0ad2071209a1666c869a3e0c598ef9c02f0dd6138d733c",
-  "sheetPath": "assets/story/chapters/c01/c01-s01-pre-male-p01.webp",
+  "noTextInArt": true,
+  "sheet": "assets/story/chapters/c01/c01-s01-pre-male-p01.webp",
+  "sheetSha": "e02996d4346bf5222068a3e1695949983179a50e",
+  "layout": {
+    "columns": 2,
+    "rows": 5,
+    "panelPx": [
+      768,
+      432
+    ],
+    "sheetPx": [
+      1536,
+      2160
+    ]
+  },
   "panels": [
     {
-      "id": "c01-s01-m1",
-      "path": "assets/story/chapters/c01/panels/c01-s01-m01-male.webp",
-      "sha256": "8e056377c887d242a0a662bc8c41e884cc905964cc9f56e9f15b7feba10ac40f"
+      "id": "c01-s01-m01",
+      "image": "assets/story/chapters/c01/panels/c01-s01-m01-male.webp",
+      "gitBlobSha": "89342fb2bded392867ebcfdc843c831bb739dce3",
+      "position": 0,
+      "description": "王都の夜明け"
     },
     {
-      "id": "c01-s01-m2",
-      "path": "assets/story/chapters/c01/panels/c01-s01-m02-male.webp",
-      "sha256": "e178549de2c9fbc48d9f5a2bdca47582920d81eea6d2835f46c8bc5a200c7f46"
+      "id": "c01-s01-m02",
+      "image": "assets/story/chapters/c01/panels/c01-s01-m02-male.webp",
+      "gitBlobSha": "1cf0e04f36843d88a020b02f8b6de5de43b3e39a",
+      "position": 1,
+      "description": "摂政リュシアとの面会"
     },
     {
-      "id": "c01-s01-m3",
-      "path": "assets/story/chapters/c01/panels/c01-s01-m03-male.webp",
-      "sha256": "e70901415a751b576a00dcac34f93065051b3513b875f58546533f59ccfee71d"
+      "id": "c01-s01-m03",
+      "image": "assets/story/chapters/c01/panels/c01-s01-m03-male.webp",
+      "gitBlobSha": "948774501b5dd89e9227ada28807a3a97c6b031a",
+      "position": 2,
+      "description": "老騎士ガランの紹介"
     },
     {
-      "id": "c01-s01-m4",
-      "path": "assets/story/chapters/c01/panels/c01-s01-m04-male.webp",
-      "sha256": "65917dd96ee3979ae88a4aa0c359368ae93f1cd334dc881938612cf062716afb"
+      "id": "c01-s01-m04",
+      "image": "assets/story/chapters/c01/panels/c01-s01-m04-male.webp",
+      "gitBlobSha": "010f653147304bb946557e3ba916793543102a84",
+      "position": 3,
+      "description": "イリスの消えた死者名簿の証言"
     },
     {
-      "id": "c01-s01-m5",
-      "path": "assets/story/chapters/c01/panels/c01-s01-m05-male.webp",
-      "sha256": "36e99fed1d8a54c555492f177a3ef341e3608b03f66cfe295cb30bd6fc11a6e9"
+      "id": "c01-s01-m05",
+      "image": "assets/story/chapters/c01/panels/c01-s01-m05-male.webp",
+      "gitBlobSha": "58b8999c2ab2d6d55c3b215b7fcd784acd162e4e",
+      "position": 4,
+      "description": "四人で勅命と封蝋を調査"
     },
     {
       "id": "c01-s01-m11",
-      "path": "assets/story/chapters/c01/panels/c01-s01-m11-male.webp",
-      "sha256": "4518859ea0b8093c612b3470d9d88472f48e87621d04c6f64a446d931a8dfbb7"
+      "image": "assets/story/chapters/c01/panels/c01-s01-m11-male.webp",
+      "gitBlobSha": "4d9cf0cce0a4f38863b7c1c7ee633c396e26b1d2",
+      "position": 5,
+      "description": "消された死者名簿を調べる"
     },
     {
       "id": "c01-s01-m12",
-      "path": "assets/story/chapters/c01/panels/c01-s01-m12-male.webp",
-      "sha256": "ac14f8cb318e97fe862ed979d146f1cc4483fa6c4d86e90ef7dc1d7673bb5da9"
+      "image": "assets/story/chapters/c01/panels/c01-s01-m12-male.webp",
+      "gitBlobSha": "a9383279b82929921083ad5a58cc8dbb239978b6",
+      "position": 6,
+      "description": "千年の星鐘の残響を聞く"
     },
     {
       "id": "c01-s01-m13",
-      "path": "assets/story/chapters/c01/panels/c01-s01-m13-male.webp",
-      "sha256": "a0f3de9f04a3c9b7e51dc47c3f17f0366ebded95be5bcd38ada511dddc5b3d96"
+      "image": "assets/story/chapters/c01/panels/c01-s01-m13-male.webp",
+      "gitBlobSha": "ae2d52eb4d6149caefc2baa05472b4b26a3b296f",
+      "position": 7,
+      "description": "紋章付き王印の矛盾を発見"
     },
     {
       "id": "c01-s01-m14",
-      "path": "assets/story/chapters/c01/panels/c01-s01-m14-male.webp",
-      "sha256": "f73140bb4c77bfa393bfbcaa6c328cdd885f35804d1124608e1e3c3d4a3a3ecf"
+      "image": "assets/story/chapters/c01/panels/c01-s01-m14-male.webp",
+      "gitBlobSha": "0a3bb078518d1d683e8f7d857d5c1191ea543aa6",
+      "position": 8,
+      "description": "軍師とリュシアが命令書を再検証"
     },
     {
       "id": "c01-s01-m15",
-      "path": "assets/story/chapters/c01/panels/c01-s01-m15-male.webp",
-      "sha256": "b66273f74254361a55c60a91260144c33bbbaaf2809b832570d1ee8cfab6a451"
+      "image": "assets/story/chapters/c01/panels/c01-s01-m15-male.webp",
+      "gitBlobSha": "83b2b2bd9756988f925893d354ae6ce3cb0aa8d6",
+      "position": 9,
+      "description": "軍師が決意して王都の調査に出発"
     }
-  ]
+  ],
+  "review": {
+    "humanApproval": false,
+    "continuityReviewPending": true,
+    "voiceScriptLinkedByExistingPanelIds": true,
+    "unregisteredGenderAndOutcomeVariants": true
+  }
 }
