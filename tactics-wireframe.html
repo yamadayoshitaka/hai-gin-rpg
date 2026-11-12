@@ -11,7 +11,7 @@ body.town-mode > :not(#stageViewport):not(#battleLoading):not(script):not(style)
 body.town-mode #stageViewport{position:fixed!important;inset:0!important;width:100%!important;height:100dvh!important}
 body.town-mode #stageViewport canvas{width:100%!important;height:100%!important}
 body.town-mode #battleLoading[hidden]{display:none!important}
-</style><link rel="stylesheet" href="./src/tactical-command-ui.css?v=2.1"><link rel="stylesheet" href="./src/battle-ui-refinement.css?v=2.3"></head>
+</style><link rel="stylesheet" href="./src/tactical-command-ui.css?v=2.1"><link rel="stylesheet" href="./src/battle-ui-refinement.css?v=2.4"></head>
 <body><div id="hud"><b>灰銀戦記 ― 沈黙の星鐘 — リアルタイム軍団戦 v4.6.69</b><small>自動戦闘・階段移動 / 開戦時固定作戦と部隊号令 / ドラッグで視点回転</small><div id="selected">軍団配置中…</div><div id="log"></div><div id="jobTools" style="display:none"><select id="jobSelect"></select><select id="motionSelect"></select><button id="playMotion">動作再生</button></div><small><a style="color:#9adfff" href="./motion-external-test.html">外部モーション検証</a></small></div><div id="stageViewport"></div><div id="battleStatus" aria-live="polite"><div class="unit" id="allyStats">味方 HP -- / MP --</div><div class="unit enemy" id="enemyStats">敵 HP -- / MP --</div></div><button id="menuToggle" style="position:fixed;top:68px;left:10px;z-index:25;background:#203c55;color:white;padding:9px 15px;border:1px solid #9bb4c7;border-radius:8px">☰ メニュー</button><div id="commands"><label>全軍作戦<select id="strategy"><option value="eliminate">全滅</option><option value="environment_prepare">環境整備</option><option value="recovery">回復</option></select></label><label hidden aria-hidden="true">個別命令<select id="unitOrder" disabled><option value="inherit">全軍に従う</option><option value="charge">突撃</option><option value="defend">防御</option><option value="hold">陣地維持</option><option value="retreat">後退</option></select></label><button id="pause">一時停止</button><button id="igniteBridge" disabled style="position:fixed;right:8px;bottom:157px;z-index:12;background:#9b4026;color:white;border-radius:7px;padding:9px">🔥 木橋を燃やす</button><span id="unitInfo">味方をタップして個別指示</span><a id="specShortcut" href="./battle-specifications.html" target="_blank" rel="noopener" aria-label="ゲーム仕様一覧を別タブで開く">📖 仕様</a></div>
 <style>
 #commands,#menuToggle{display:none!important}#allySquadRibbon[hidden],#enemySquadRibbon[hidden]{display:none!important}
@@ -751,11 +751,12 @@ import {findStableGridPath,stableGridNext,sameNavigationCell} from './src/battle
 import {formatSquadIntent} from './src/battle-squad-intent.js?v=4.6.45';
 import {sortSquadRibbon,squadRibbonStatus,ORDER_COOLDOWN_SECONDS} from './src/battle-command-roster.js?v=4.6.69';
 import {tacticalCooldownSeconds} from './src/tactical-command-evaluation.js?v=2.1';
+import {AdaptiveBattleResolution} from './src/adaptive-battle-resolution.js?v=2.4';
 import {TACTICAL_STRATEGIES,TACTICAL_ORDERS,orderEffect,strategyEffect} from './src/tactical-command-descriptions.js?v=1';
 import {coreVictoryReward,territoryVictoryReward,verifiedBattleLoot} from './src/battle-victory-rewards.js?v=2.2';
 import {CAMPAIGN_STAGE_BY_ID} from './src/campaign-stage-plan.js';
 import {TERRITORIES} from './src/story-campaign.js';
-import {installBattleTacticalUI,createPreBattleTacticalSummary} from './src/tactical-command-battle-ui.js?v=2.3';
+import {installBattleTacticalUI,createPreBattleTacticalSummary} from './src/tactical-command-battle-ui.js?v=2.4';
 import {describeSquadOrder,describeCommanderBuff} from './src/battle-order-message.js?v=4.6.40';
 import {recommendBattleTactics} from './src/battle-quick-recommendation.js?v=4.6.43';
 import {chooseAutoSquadItem} from './src/battle-auto-item-policy.js?v=1';
@@ -1059,7 +1060,11 @@ window.getActionEffectsStats=()=>actionVfx.stats;
 const BATTLE_RESOLUTION_SCALE=.92;
 const battleViewportSize=()=>({width:Math.max(1,$('stageViewport').clientWidth||innerWidth),height:Math.max(200,$('stageViewport').clientHeight||innerHeight-196)});
 const initialView=battleViewportSize();
-const renderer=new THREE.WebGLRenderer({antialias:!MASS_SIZE});renderer.setPixelRatio(Math.min(devicePixelRatio,MASS_SIZE?1.1:1.5)*BATTLE_RESOLUTION_SCALE);renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.05;renderer.setSize(initialView.width,initialView.height);$('stageViewport').append(renderer.domElement);
+const nativeBattlePixelRatio=Math.min(devicePixelRatio,MASS_SIZE?1.1:1.5)*BATTLE_RESOLUTION_SCALE;
+const adaptiveBattleResolution=new AdaptiveBattleResolution({
+ maxRatio:nativeBattlePixelRatio,minRatio:Math.max(.72,nativeBattlePixelRatio*.65),targetFps:45
+});
+const renderer=new THREE.WebGLRenderer({antialias:!MASS_SIZE});renderer.setPixelRatio(nativeBattlePixelRatio);renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.05;renderer.setSize(initialView.width,initialView.height);$('stageViewport').append(renderer.domElement);
 // Composer has multiple render passes. Count the complete scene rather than
 // reporting only the last output pass as "描画 1" in the performance HUD.
 renderer.info.autoReset=false;
@@ -1075,6 +1080,7 @@ window.getBattleResourceHistory=()=>resourceSamples.slice();
 window.getSkirmishPerformanceStats=()=>({
  version:'4.6.69',...framePerformance.getStats(),
  drawCalls:renderer.info.render.calls,
+ adaptiveRenderQuality:adaptiveBattleResolution.getStats(),
  totalActors:actors.length,
  visibility:actorVisibility.stats,
  distantSoldiers:skirmishDistanceLod?.stats??null,
@@ -1126,6 +1132,14 @@ function resizeBattleRenderer(width,height){
  }
 }
 function renderBattleFrame(){renderer.info.reset();if(fxaaComposer)fxaaComposer.render();else renderer.render(scene,camera)}
+function setAdaptiveBattlePixelRatio(ratio){
+ if(Math.abs(renderer.getPixelRatio()-ratio)<.005)return;
+ renderer.setPixelRatio(ratio);
+ if(fxaaComposer)fxaaComposer.setPixelRatio(ratio);
+ const {width,height}=battleViewportSize();
+ resizeBattleRenderer(width,height);
+}
+let lastAdaptiveQualityAt=0;
 if(fxaaComposer)resizeBattleRenderer(initialView.width,initialView.height);
 const creatureAudio=createCreatureSoundRuntime({enabled:()=>battleAudio.enabled,maxVoices:14});
 document.addEventListener('pointerdown',()=>creatureAudio.unlock(),{passive:true});
@@ -6176,6 +6190,7 @@ const squadCommanderAliveHistory=new Map();
 let pickingSquadDestination=false,pickingSquadMission=null,pickingStrategistWarp=false,squadMarkerClock=0,squadSelectionReturn=null,selectedSquadId=null;
 // An issued command is selected from a stable full-field tactical overview.
 let commandOverviewLocked=false;
+let initialCommanderCinematicPending=null,battleLabelsSinceLastUpdate=0;
 let pendingSquadMission=null,missionPreviewBox=null,pendingCircleTarget=null;
 let lastCircleTargetResolvedAt=-Infinity;
 const orderedSquad=()=>selectedSquadId;
@@ -6328,7 +6343,9 @@ function startBattleFocusCinematic({x,z,priority=90,kind='order',team=0,focusUni
   return Math.abs(cx-closeTarget.x)<28&&Math.abs(cz-closeTarget.z)<28;
  });
  const offset=chooseClearBattleCameraOffset(closeTarget,nearbyTrees,{terrainHeight:terrainY});
+ // Let the first order show the actual commander model at human scale.
  const closeOffset=new THREE.Vector3(offset.x,offset.y,offset.z);
+ if(kind==='order')closeOffset.normalize().multiplyScalar(8.6);
  commanderCinematic={priority,kind,team,focusUnitId:focusUnit?.id??null,closeOffset,
   start:performance.now(),fromPosition:camera.position.clone(),fromTarget:controls.target.clone(),
   closePosition:closeTarget.clone().add(closeOffset),closeTarget,
@@ -6372,10 +6389,12 @@ function updateCommanderCinematic(){
   const a=ease(ms/850);
   camera.position.lerpVectors(shot.fromPosition,shot.closePosition,a);
   controls.target.lerpVectors(shot.fromTarget,shot.closeTarget,a);
- }else if(ms<5050){
+ }else if(ms<(shot.kind==='order'?2650:5050)){
   camera.position.copy(shot.closePosition);controls.target.copy(shot.closeTarget);
- }else if(ms<6750){
-  const a=ease((ms-5050)/1700);
+ }else if(ms<(shot.kind==='order'?3950:6750)){
+  const start=shot.kind==='order'?2650:5050;
+  const duration=shot.kind==='order'?1300:1700;
+  const a=ease((ms-start)/duration);
   camera.position.lerpVectors(shot.closePosition,shot.overPosition,a);
   controls.target.lerpVectors(shot.closeTarget,shot.overTarget,a);
  }else{
@@ -6618,6 +6637,7 @@ function openSquadTactics(id){
   $('enemySquadIntel').hidden=true;selectedEnemySquadId=null;
  }
  if(squadSelectionReturn)closeSquadTactics();
+ initialCommanderCinematicPending=null;
  if(!$('vitalsPanel').hidden)closeVitals();
  const members=squadRoster.filter(u=>u.team===0&&String(u.squadId)===String(id)&&u.hp>0&&u.alive!==false);
  if(!members.length){
@@ -6635,9 +6655,9 @@ function openSquadTactics(id){
  // zoom. For older story encounters without a strategist rig use a living unit.
  const commandFocus=squadCommandFocus(id);
  if(commandFocus?.point){
-  const distance=MASS_SIZE>=1000?32:19;
+  const distance=commandFocus.isCommander?8.6:9.5;
   const focus=commandFocus.point.clone();
-  const offset=new THREE.Vector3(distance*.5,distance*.7,distance*.5);
+  const offset=new THREE.Vector3(4,5.3,7).normalize().multiplyScalar(distance);
   if(!massSim)selected=commandFocus.unit;
   focusedHumanUnitId=null;followCamera=false;
   setBattleCamera(focus,offset);
@@ -6889,6 +6909,16 @@ function buildSquadQuickCommands(){
  document.body.classList.toggle('compact-explore-open',squadQuickPage==='explore');
  if(id==null)return;
  const commander=hasSquadCommander(id);
+ const selectedIndex=squadIds.indexOf(String(id))+1;
+ const active=squadRoster.filter(u=>u.team===0&&String(u.squadId)===String(id)&&
+  u.hp>0&&u.alive!==false&&!u.isStrategist);
+ const sourceTag=document.createElement('div');sourceTag.className='quickSelectionHeader';
+ sourceTag.setAttribute('role','status');
+ const who=document.createElement('b');
+ who.textContent='🔵 指揮中：'+squadPrimaryJob(id)+'隊（第'+selectedIndex+'隊）';
+ const detail=document.createElement('small');
+ detail.textContent=active.length+'人｜作戦：'+squadFixedStrategyLabel(id);
+ sourceTag.append(who,detail);squadQuickList.append(sourceTag);
  const members=squadRoster.filter(u=>u.team===0&&String(u.squadId)===id);
  const survivors=members.filter(u=>u.hp>0&&u.alive!==false&&!u.isStrategist);
  const general=squadStrategist(id);
@@ -6989,12 +7019,11 @@ function buildSquadQuickCommands(){
   const items=[...owned];
   heading(items.length?'🎒 道具を選択 → 青いサークルで使用先を決定':
    '使えるアイテムを持っていません');
-  for(const [itemId,count] of items.slice(squadQuickPageIndex*4,(squadQuickPageIndex+1)*4)){
+  for(const [itemId,count] of items){
    add(ROOM_ITEM_TYPES[itemId].name+' ×'+count,'item_'+itemId,
     ()=>beginCircleTargetSelection('item',itemId),{needsCommander:false});
   }
   add('🔎 探索','explore_page',()=>{squadQuickPage='explore';buildSquadQuickCommands()},{needsCommander:false});
-  pager(items.length);
  }else if(squadQuickPage==='support'){
   heading('✚ 支援先は1部隊のみ選択');
   const targets=squadIds.map(targetId=>{
@@ -7003,13 +7032,12 @@ function buildSquadQuickCommands(){
    return {targetId,count:wounded.length};
   }).filter(x=>x.count>0);
   if(!targets.length)heading('負傷した部隊はありません');
-  for(const target of targets.slice(squadQuickPageIndex*4,(squadQuickPageIndex+1)*4)){
+  for(const target of targets){
    const number=squadIds.indexOf(target.targetId)+1;
    add('✚ 第'+number+'隊（負傷'+target.count+'人）','heal_'+target.targetId,()=>{
     if(requestSquadRecovery(target.targetId))closeSquadTactics();
    });
   }
-  pager(targets.length);
  }else if(squadQuickPage==='explore'){
   heading('🔎 建物を複数選択・順番に探索');
   const task=activeBuildingExplorations.get(squadOrderKey(0,id));
@@ -7043,6 +7071,27 @@ function buildSquadQuickCommands(){
   const back=document.createElement('button');back.type='button';back.dataset.command='back';
   back.textContent='↩ 戻る';back.onclick=()=>closeSquadTactics();
   quickActionRow.append(back);
+  // Four visible choices per page. Never put unclickable choices outside
+  // the fixed mobile command dock or require horizontal scrolling.
+  if(squadQuickPage!=='explore'){
+   const commands=[...quickActionRow.querySelectorAll('button')];
+   const perPage=4,count=Math.max(1,Math.ceil(commands.length/perPage));
+   squadQuickPageIndex=Math.max(0,Math.min(count-1,squadQuickPageIndex));
+   commands.forEach((button,index)=>{
+    button.hidden=Math.floor(index/perPage)!==squadQuickPageIndex;
+   });
+   if(count>1){
+    const bar=document.createElement('div');bar.className='quickPager';
+    const previous=document.createElement('button');previous.type='button';previous.textContent='◀ 前';
+    previous.disabled=squadQuickPageIndex===0;
+    previous.onclick=()=>{squadQuickPageIndex--;buildSquadQuickCommands();};
+    const status=document.createElement('span');status.textContent=(squadQuickPageIndex+1)+' / '+count;
+    const next=document.createElement('button');next.type='button';next.textContent='次 ▶';
+    next.disabled=squadQuickPageIndex===count-1;
+    next.onclick=()=>{squadQuickPageIndex++;buildSquadQuickCommands();};
+    bar.append(previous,status,next);squadQuickList.append(bar);
+   }
+  }
  }
 }
 function showSquadTacticsPanel(panel='main'){
@@ -7773,6 +7822,8 @@ function renderSquadRibbons(sums){
    if(button.userDataIcon.textContent!==marker)button.userDataIcon.textContent=marker;
    const remaining=team===0?squadOrderCooldownSeconds(row.id):0;
    button.classList.toggle('cooldown-locked',Boolean(team===0&&remaining));
+  button.classList.toggle('current-order-source',team===0&&
+   String(selectedSquadId)===String(row.id)&&!$('squadTactics').hidden);
    const label=intent.order.replace(/^号令：/,'').replace(/（.*$/,'');
    const job=squadPrimaryJob(row.id,team,sums);
    const jobTitle=job+'隊';
@@ -8797,6 +8848,15 @@ function animate(){
   if(tacticalBankRemaining<=0){tacticalPlanningActive=false;if(!commandOverviewLocked)setBattlePaused(false);}
  }
  battleCeremony.update();
+ // The opening order previously ran silently under the intro overlay.
+ // Once the intro completes, bring the commander into view before returning
+ // to the 45-degree full-field camera.
+ if(initialCommanderCinematicPending!=null&&battleReady&&!finished&&!paused&&
+  !commandOverviewLocked&&battleCeremony.state!=='intro'&&battleCeremony.state!=='outro'){
+  const first=initialCommanderCinematicPending;
+  initialCommanderCinematicPending=null;
+  beginCommanderCinematic(first);
+ }
  updateBattleResultCutins();
  // Real-time camera and UI stay responsive; only battle simulation/rigs slow.
  // Preserve the authoritative mass Worker tick duration; space ticks farther apart.
@@ -8991,7 +9051,15 @@ function animate(){
  const minCameraY=Math.max(groundCameraY,controls.target.y+Math.max(1.8,Math.hypot(camera.position.x-controls.target.x,camera.position.z-controls.target.z)*.18));
  if(camera.position.y<minCameraY){camera.position.y=minCameraY;controls.update()}
  syncSquadCloseupLabels();
- updateSquadScreenLabels(dt);
+ // The 1000-on-1000 DOM squad indicators do not need a full 60Hz
+ // layout/reflow cycle. Keep touch selection at full frequency.
+ battleLabelsSinceLastUpdate+=dt;
+ const markerInterval=MASS_SIZE>=500&&!commandOverviewLocked&&!pendingCircleTarget
+  ?1/18:0;
+ if(markerInterval===0||battleLabelsSinceLastUpdate>=markerInterval){
+  updateSquadScreenLabels(battleLabelsSinceLastUpdate||dt);
+  battleLabelsSinceLastUpdate=0;
+ }
  // Preserve physical building shadows without redrawing static geometry on
  // every display frame. The focus tracks significant camera movement.
  shadowRefreshTimer+=dt;
@@ -9006,6 +9074,18 @@ function animate(){
  renderBattleFrame();
  confirmedHitOverlay.render(dt,{paused});
  framePerformance.end();
+ // GPU fill-rate adapts slowly to sustained frame-time pressure. Do not
+ // change CPU simulation cadence, actor models, textures, or screen hitboxes.
+ const adaptiveAt=performance.now();
+ if(adaptiveAt-lastAdaptiveQualityAt>=1000&&!TOWN_MODE){
+  lastAdaptiveQualityAt=adaptiveAt;
+  const perf=framePerformance.getStats();
+  const nextRatio=adaptiveBattleResolution.sample({
+   fps:perf.fps,p95Ms:perf.frameP95Ms,nowMs:adaptiveAt,
+   paused:paused||finished||commandOverviewLocked||battleCeremony.state==='intro'
+  });
+  if(nextRatio!==null)setAdaptiveBattlePixelRatio(nextRatio);
+ }
  if(!massSim){
   fpsFrames++;const now=performance.now();
   if(now-fpsStart>=1000){
@@ -9018,6 +9098,7 @@ function animate(){
    }
    if(skirmishPerformancePanel)skirmishPerformancePanel.textContent=
     'FPS '+perf.fps+'｜P95 '+perf.frameP95Ms+'ms｜描画 '+report.drawCalls+
+    '｜画質 '+renderer.getPixelRatio().toFixed(2)+'x'+
     '｜衣装 '+report.dressed+'/'+report.totalActors+
     '｜鎧 '+report.armorOriginalPieces+'→'+report.armorDrawPieces+
     '｜遠景 '+(report.distantSoldiers?.visible??0)+'｜死体 '+report.visibleCorpses+
@@ -9035,7 +9116,7 @@ function animate(){
    // Keep the first measurement as a baseline even after hours of play.
    resourceSamples.push(resources);if(resourceSamples.length>36)resourceSamples.splice(1,1);
   }
-  $('massGamePerf').textContent=massRenderer?'FPS '+fps+'｜視点 '+camera.position.distanceTo(controls.target).toFixed(1)+'m｜P95 '+perf.frameP95Ms+'ms｜描画 '+renderer.info.render.calls+
+  $('massGamePerf').textContent=massRenderer?'FPS '+fps+'｜視点 '+camera.position.distanceTo(controls.target).toFixed(1)+'m｜画質 '+renderer.getPixelRatio().toFixed(2)+'x｜P95 '+perf.frameP95Ms+'ms｜描画 '+renderer.info.render.calls+
    '｜実体 '+massRenderer.fullMeshVisibleSoldiers+' 写真 '+massRenderer.impostorVisibleSoldiers+
    '｜GPU形状 '+resources.gpuGeometries+' 画像 '+resources.gpuTextures+
    '｜JS '+(resources.jsHeapMB??'--')+'MB｜FX '+fx.activeEffects+'/'+actionVfx.maxEffects+
@@ -9046,7 +9127,8 @@ function animate(){
    '実物衣装ロード中｜'+actors.filter(a=>a.outfit).length+'/'+actors.length+'種類の元モデル';}}
 }
 window.getBattleStartupStats=()=>({ready:battleReady,error:loadingFailure?String(loadingFailure):null,
- resolutionScale:BATTLE_RESOLUTION_SCALE,pixelRatio:renderer.getPixelRatio(),antiAliasing:fxaaComposer?'GPU FXAA':'WebGL MSAA',bufferWidth:renderer.domElement.width,bufferHeight:renderer.domElement.height,
+ resolutionScale:BATTLE_RESOLUTION_SCALE,adaptiveQuality:adaptiveBattleResolution.getStats(),
+ pixelRatio:renderer.getPixelRatio(),antiAliasing:fxaaComposer?'GPU FXAA':'WebGL MSAA',bufferWidth:renderer.domElement.width,bufferHeight:renderer.domElement.height,
  actors:actors.length,dressed:actors.filter(a=>a.outfit||a.townRegisteredModel).length,buildingBatchStats,stageBatchStats,
  massModelBatches:massRenderer?.drawMeshes??0,bodyDrawLayers:massRenderer?.bodyDrawLayers??0,visibility:actorVisibility.stats,elapsed});
 async function finishBattleLoading(){
@@ -9412,6 +9494,7 @@ async function finishBattleLoading(){
     }
    }
    battleReady=true;loading.hidden=true;
+   initialCommanderCinematicPending=squadIds.find(id=>hasSquadCommander(id))??null;
    battleCeremony.startIntro({stageName:selectedStage.name,stageFeature:stageCharacter.feature});
    battleDialogue.push({key:'start',speaker:'軍師',kind:'info',priority:5,
     text:'戦闘開始！ 各隊の消耗・敵の接近・任務完遂を監視して報告します。'});
