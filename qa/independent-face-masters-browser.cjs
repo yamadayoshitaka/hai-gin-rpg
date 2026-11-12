@@ -944,7 +944,7 @@ async function expectCenteredFaceSliders(page,gender){
   }
   {
    const modern=await browser.newPage({viewport:{width:412,height:844}});
-   await modern.goto('http://127.0.0.1:8765/face-body-studio.html?v=40',
+   await modern.goto('http://127.0.0.1:8765/face-body-studio.html?v=41',
     {waitUntil:'domcontentloaded',timeout:65000});
    await modern.waitForFunction(()=>window.__heroineBodyQA?.().loaded===true,
     null,{timeout:100000});
@@ -960,14 +960,22 @@ async function expectCenteredFaceSliders(page,gender){
    const faceHref=await modern.locator('#faceEditorLink').getAttribute('href');
    if(!faceHref?.includes('face-mesh-studio.html?gender=female'))
     throw Error('Costume studio must link to dedicated female face editor');
-   if(await modern.locator('#heroActionButtons button').count()!==7)
-    throw Error('Expected seven combat action buttons, not a select menu');
    await modern.waitForFunction(()=>window.__heroineBodyQA?.()
      .v36RealBattleCostume?.active===true,null,{timeout:120000});
+   await modern.waitForFunction(()=>document.querySelectorAll(
+     '#heroActionButtons [data-command]').length>=8,null,{timeout:15000});
+   if(!await modern.locator('#heroActionButtons [data-command="通常斬り"]').isVisible()||
+      await modern.locator('#heroActionButtons [data-command="勝利"]').count()!==0)
+    throw Error('Action buttons must be from available real profession clips');
    const outfit=await modern.evaluate(()=>window.__heroineBodyQA());
    if(outfit.v36RealBattleCostume?.proportions?.bodyScale!==.84||
       outfit.v36RealBattleCostume?.finishReport?.sourceAssetsPreserved!==true||
       !outfit.v36RealBattleCostume?.sourceTrousers||
+      !outfit.v36RealBattleCostume?.retainedLegAnatomy||
+      !['thigh','calf','foot'].every(zone=>
+       outfit.v36RealBattleCostume?.preservedLegRegions?.includes(zone))||
+      outfit.v36RealBattleCostume?.availableActionCount<8||
+      outfit.v36RealBattleCostume?.finishReport?.collarClearancePieces<1||
       outfit.v36RealBattleCostume?.finishReport?.taperedLegPieces<1||
       outfit.v36RealBattleCostume?.finishReport?.hiddenLooseStuds<1||
       outfit.v36RealBattleCostume?.headFit?.bone!=='Head'||
@@ -977,23 +985,28 @@ async function expectCenteredFaceSliders(page,gender){
    await modern.locator('#full').click();
    await modern.locator('#front').click();
    await modern.locator('#bodyCanvas').screenshot({
-    path:path.join(out,'v40-heroine-slim-skinned-legs-front.png')});
+    path:path.join(out,'v41-heroine-anatomical-legs-front.png')});
    await modern.locator('#side').click();
    await modern.locator('#bodyCanvas').screenshot({
-    path:path.join(out,'v40-heroine-slim-skinned-legs-side.png')});
-   await modern.locator('#heroActionButtons [data-action="attack"]').click();
+    path:path.join(out,'v41-heroine-anatomical-legs-side.png')});
+   await modern.locator('#heroActionButtons [data-command="通常斬り"]').click();
+   await modern.waitForFunction(()=>window.__heroineBodyQA?.()
+     .v36RealBattleCostume?.nativeClip==='Melee_1H_Attack_Slice_Horizontal',
+     null,{timeout:30000});
    await modern.waitForFunction(()=>window.__heroineBodyQA?.()
      .v36RealBattleCostume?.vfx?.triggered>=1,null,{timeout:10000});
-   await modern.locator('#heroActionButtons [data-action="cast"]').click();
-   await modern.waitForTimeout(120);
+   await modern.locator('#bodyCanvas').screenshot({
+    path:path.join(out,'v41-heroine-sword-actual-slice-vfx.png')});
+   await modern.locator('#heroActionButtons [data-command="防御"]').click();
+   await modern.waitForFunction(()=>window.__heroineBodyQA?.()
+     .v36RealBattleCostume?.nativeClip==='Melee_Blocking',
+     null,{timeout:30000});
    const action=await modern.evaluate(()=>window.__heroineBodyQA());
-   if(action.v36RealBattleCostume?.actionId!=='cast'||
+   if(action.v36RealBattleCostume?.nativeCommand!=='防御'||
       action.v36RealBattleCostume?.vfx?.triggered<2||
       !action.v36RealBattleCostume?.vfx?.attachedToRealBones||
-      await modern.locator('#heroActionButtons [data-action="cast"]').getAttribute('aria-pressed')!=='true')
-    throw Error('v40 action button not replaying real motion and battle VFX');
-   await modern.locator('#bodyCanvas').screenshot({
-    path:path.join(out,'v40-heroine-battle-cast-kenney-vfx.png')});
+      await modern.locator('#heroActionButtons [data-command="防御"]').getAttribute('aria-pressed')!=='true')
+    throw Error('v41 command buttons did not play actual registered swordfighter clips');
    await modern.locator('#faceEditorLink').click();
    await modern.waitForURL(/face-mesh-studio\.html/,{timeout:15000});
    if(!await modern.locator('#returnToCostume').isVisible())
