@@ -145,17 +145,19 @@ function createHeadEnvelope(geometry,box){
  };
  return {radius,radialCenter:center,angularCells:angular,axialCells:axial};
 }
-function hairCutY(zone,box,lengthScale,seed){
+function hairCutY(zone,box,lengthScale,seed,normalizedX=0){
  const d=box.getSize(new THREE.Vector3()),scale=clamp(lengthScale,.55,1.5);
- // Natural point-cut ends: alternate long/short locks and add small,
- // deterministic length offsets; no 9-region flat straight shelf.
+ // A salon U-shaped long layer: center-back hangs longest, sides end a
+ // little higher; subtle point-cut variation instead of rigid saw teeth.
  const level=zone.startsWith('fringe')?.77:
-  zone.startsWith('nape')?.17:
-  zone.startsWith('temple')?.32:
-  zone.startsWith('back')?.16:.27;
- const scatter=(fract(seed*.75487766)*.022+
-  .018*Math.sin(seed*2.39996323));
- return box.min.y+d.y*(level+scatter)/scale;
+  zone.startsWith('nape')?.075:
+  zone.startsWith('temple')?.16:
+  zone.startsWith('back')?.085:.16;
+ const rear=zone.startsWith('back')||zone.startsWith('nape');
+ const uCut=rear?.050*Math.pow(clamp(normalizedX,0,1),1.4):0;
+ const scatter=.006*fract(seed*.75487766)+
+  .007*Math.sin(seed*2.39996323);
+ return box.min.y+d.y*(level+uCut+scatter)/scale;
 }
 function scalpShell(geo,box,color){
  const src=geo.getAttribute('position'),idx=geo.index;
@@ -223,8 +225,19 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   total+=weight;
   zoneCap.push(Math.round(total*lockCount));zoneNames.push(name);
  }
+ // Central posterior locks bridge the two halves at the nape: the
+ // previous uniform root selection left a conspicuous exposed vertical
+ // strip of neck, despite having plenty of hair on both outer sides.
+ const backCenterPools=Object.fromEntries(WIG_ZONE_WEIGHTS
+  .filter(([name])=>name.startsWith('back')||name.startsWith('nape'))
+  .map(([name])=>{
+   const near=pools[name].slice().sort((a,b)=>
+    Math.abs(a.p.x-center.x)-Math.abs(b.p.x-center.x));
+   return [name,near.slice(0,Math.max(4,Math.ceil(near.length*.28)))];
+  }));
  const sampleRoot=(zone,index)=>{
-  const pool=pools[zone];
+  const rear=zone.startsWith('back')||zone.startsWith('nape');
+  const pool=rear&&index%3===0?backCenterPools[zone]:pools[zone];
   // Golden-ratio low-discrepancy sequence. Every zone is allocated
   // explicitly, regardless of donor topology vertex-order bias.
   const u=fract((index+1)*.61803398875+
@@ -271,8 +284,8 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   // face forward. Otherwise they form a long curtain across both eyes.
   const overFace=!back&&frontRoot&&midFace;
   if(overFace)faceTrimmedStrands++;
-  const longFactor=zone.startsWith('nape')?.43:
-   zone.startsWith('temple')?.54:back?.63:.59;
+  const longFactor=zone.startsWith('nape')?.68:
+   zone.startsWith('temple')?.72:back?.80:.76;
   // Fringe must terminate above the eyebrows, never obscure the eyes,
   // nose or mouth, even at the maximum hair-length slider value.
   // Salon-cut contour: varying length, split-fringe silhouette and shorter
@@ -285,14 +298,18 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    Math.max(d.y*.008,Math.min(bangLength,wigRoot.y-browLimit)):
    d.y*(longFactor+fract(i*.381966)*.13)*clamp(lengthScale,.55,1.5);
   const rest=[],points=[],vel=[];
+  const lateral=2*Math.abs(wigRoot.x-center.x)/d.x;
   const trimY=Math.min(wigRoot.y-d.y*.012,
-   (fringe||overFace)?browLimit:hairCutY(zone,box,lengthScale,i));
+   (fringe||overFace)?browLimit:
+    hairCutY(zone,box,lengthScale,i,lateral));
   // Salon-guided locks: the real scalp root stays fixed. After a brief
   // head-conforming section, each lock DROPS DOWN, not out in a radial
   // fan. This removes the puffy helmet and spiked cheek-side fan.
   const scalpCenter=radialScalp.radialCenter;
   const closeToFace=fringe||overFace;
-  const targetX=wigRoot.x+side*d.x*(closeToFace?.035:back?.010:.018);
+  // Posterior layers drift gently toward the center of the back,
+  // closing the exposed rear part without piling into a single spike.
+  const targetX=wigRoot.x+side*d.x*(closeToFace?.035:back?-.027:.015);
   const targetZ=closeToFace?wigRoot.z+d.z*.006:
    back?Math.min(wigRoot.z-d.z*.021,center.z-d.z*.10):
    zone.startsWith('temple')?wigRoot.z-d.z*.035:
@@ -453,6 +470,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   smoothScalpNormals:true,verticalForeheadDrape:true,
   hairShape:'head-hugging-salon-layered-pointcut',
   downwardGuidedLocks:true,realScalpEnvelopeCollision:true,
+  longSalonLayers:true,centerBackCoverage:true,uShapedRearCut:true,
   rearRootPolicy:'actual-posterior-scalp-only',
   scalpRadialProfile:'smoothed-72pct-multi-vertex-envelope',
   belowNapeDrape:'preserve-last-valid-scalp-radius',
