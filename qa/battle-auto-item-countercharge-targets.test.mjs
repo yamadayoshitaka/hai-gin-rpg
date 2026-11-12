@@ -56,6 +56,16 @@ assert.match(html,/body\[data-circle-target\] \.squadScreenLabel\.eligible-targe
 assert.doesNotMatch(html,/body\[data-circle-target="ally"\] \.squadScreenLabel\.ally/,
  'Unselectable friendly squads must not blink');
 assert.match(html,/lastAllyItemDecisionAt<10/,'Auto item decisions are globally rate-limited');
-assert.match(html,/function useSquadBattleItem\(itemId,squadId\)/,
- 'Legacy manual item use interface stays unchanged');
+// The public two-argument manual call remains supported; an optional third
+// issuer squad was added for cross-squad targeting and cooldown ownership.
+// Check both backward compatibility and forwarding rather than freezing the
+// implementation's parameter count.
+assert.match(html,/function useSquadBattleItem\(itemId,squadId(?:,issuerSquadId=null)?\)/,
+ 'Legacy two-argument manual item calls must remain supported');
+assert.match(html,/return performSquadBattleItem\(itemId,squadId,\{issuerSquadId\}\)/,
+ 'Manual item use must forward the optional issuing squad');
+assert.match(html,/function performSquadBattleItem\(itemId,squadId,\{automatic=false,issuerSquadId=null\}=\{\}\)/,
+ 'Automatic item use must retain its own explicit options');
+assert.match(html,/const id=String\(squadId\),commandSquad=String\(issuerSquadId\?\?squadId\)/,
+ 'Two-argument manual calls must default issuer to target squad');
 console.log('PASS target-pulse, defensive countercharge, auto/manual finite items and combat UI wiring');
