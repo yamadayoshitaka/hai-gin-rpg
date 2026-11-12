@@ -19,6 +19,21 @@ export function makeCoreBattleRequest(game,stageId,battleId=String(Date.now())){
  if(!stage||stage.kind==='town'||game?.location!=='map')throw Error('地図上の出撃ステージを選んでください。');
  const squads=game.campaign.squads.filter(s=>s.count>0&&String(squadCommanderId(s))!=='reserve');
  const allotment=allocateSortieSlots(squads);
+ // When more than 50 soldiers exist, proportional selection can omit a
+ // small strategist formation. Reserve one participant per commander so the
+ // protagonist and every represented strategist are physically present.
+ const represented=new Set(allotment.map(a=>String(squadCommanderId(a.squad))));
+ for(const squad of squads){
+  const id=String(squadCommanderId(squad));
+  if(represented.has(id))continue;
+  const donor=[...allotment].filter(a=>a.count>1)
+   .sort((a,b)=>b.count-a.count)[0];
+  if(!donor)throw Error('軍師が多すぎて出撃枠に収まりません。');
+  donor.count--;
+  allotment.push({squad,count:1});
+  represented.add(id);
+ }
+ allotment.sort((a,b)=>squads.indexOf(a.squad)-squads.indexOf(b.squad));
  if(!squads.some(s=>String(squadCommanderId(s))==='player')||
     !allotment.some(a=>String(squadCommanderId(a.squad))==='player'))
   throw Error('主人公の軍師部隊を編成してから出撃してください。');
