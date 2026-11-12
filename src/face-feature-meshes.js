@@ -160,6 +160,48 @@ export function updateRealFacePigment(face,controls={},mode='color'){
  }
  return {lip:actualLipTintVertices,cheek:actualCheekTintVertices};
 }
+/** Fast, exact XY-indexed frontmost triangle interpolation.
+ * Replaces expensive repeated Raycaster scans during face rebuilding. */
+export function createFastFaceSurfaceSampler(geometry){
+ geometry.computeBoundingBox();
+ const b=geometry.boundingBox,attr=geometry.getAttribute('position');
+ const index=geometry.index,n=index?index.count/3:attr.count/3;
+ const cols=32,rows=40,dx=Math.max(1e-8,b.max.x-b.min.x);
+ const dy=Math.max(1e-8,b.max.y-b.min.y);
+ const buckets=Array.from({length:cols*rows},()=>[]);
+ const cell=(x,y)=>clamp(Math.floor((x-b.min.x)/dx*cols),0,cols-1)+
+  cols*clamp(Math.floor((y-b.min.y)/dy*rows),0,rows-1);
+ for(let t=0;t<n;t++){
+  const a=index?index.getX(3*t):3*t;
+  const b1=index?index.getX(3*t+1):3*t+1;
+  const c=index?index.getX(3*t+2):3*t+2;
+  const x0=attr.getX(a),x1=attr.getX(b1),x2=attr.getX(c);
+  const y0=attr.getY(a),y1=attr.getY(b1),y2=attr.getY(c);
+  const denom=(y1-y2)*(x0-x2)+(x2-x1)*(y0-y2);
+  if(Math.abs(denom)<1e-14)continue;
+  const minX=clamp(Math.floor((Math.min(x0,x1,x2)-b.min.x)/dx*cols),0,cols-1);
+  const maxX=clamp(Math.floor((Math.max(x0,x1,x2)-b.min.x)/dx*cols),0,cols-1);
+  const minY=clamp(Math.floor((Math.min(y0,y1,y2)-b.min.y)/dy*rows),0,rows-1);
+  const maxY=clamp(Math.floor((Math.max(y0,y1,y2)-b.min.y)/dy*rows),0,rows-1);
+  for(let y=minY;y<=maxY;y++)for(let x=minX;x<=maxX;x++)
+   buckets[x+y*cols].push([a,b1,c,denom]);
+ }
+ const query=(x,y)=>{
+  let farthest=-Infinity;
+  for(const [a,b1,c,denom] of buckets[cell(x,y)]){
+   const x0=attr.getX(a),x1=attr.getX(b1),x2=attr.getX(c);
+   const y0=attr.getY(a),y1=attr.getY(b1),y2=attr.getY(c);
+   const u=((y1-y2)*(x-x2)+(x2-x1)*(y-y2))/denom;
+   const v=((y2-y0)*(x-x2)+(x0-x2)*(y-y2))/denom;
+   const w=1-u-v;
+   if(u<-.000003||v<-.000003||w<-.000003)continue;
+   const z=u*attr.getZ(a)+v*attr.getZ(b1)+w*attr.getZ(c);
+   if(z>farthest)farthest=z;
+  }
+  return Number.isFinite(farthest)?farthest:null;
+ };
+ return {query,cellCount:cols*rows,triangleCount:n};
+}
 export function createAnatomicalFaceParts(face,{gender='female',controls={}}={}){
  if(!face?.isMesh||!['male','female'].includes(gender))
   throw Error('Sculpted face mesh and gender required for 3D facial parts');
@@ -186,18 +228,12 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
  const root=new THREE.Group();
  root.name=gender.toUpperCase()+'_ANATOMICAL_CLAY_FACE_PARTS';
  root.userData.headOnly=true;
- const surface=new THREE.Mesh(geometry,
-  new THREE.MeshBasicMaterial({side:THREE.DoubleSide}));
- surface.updateMatrixWorld(true);
- const ray=new THREE.Raycaster();
- const down=new THREE.Vector3(0,0,-1);
+ const sampler=createFastFaceSurfaceSampler(geometry);
  const localVertices=geometry.getAttribute('position');
  let projected=0,projectionFallbacks=0;
  const surfaceAt=(x,y)=>{
-  ray.set(new THREE.Vector3(x,y,box.max.z+d.z),down);
-  ray.near=0;ray.far=d.z*4;
-  const hits=ray.intersectObject(surface,false);
-  if(hits.length){projected++;return hits[0].point.z;}
+  const nearestFront=sampler.query(x,y);
+  if(nearestFront!==null){projected++;return nearestFront;}
   // The surface is sparse around an open eye or mouth: only interpolate
   // inside the local face, never insert an arbitrary billboard plane.
   projectionFallbacks++;
@@ -597,7 +633,8 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
    m.geometry.getAttribute('position').count/3),0);
  const report=Object.freeze({
   gender,partMeshCount:meshList.length,realSurfaceProjectionCount:projected,
-  projectionFallbacks,eyeMeshCount:2,irisMeshCount:2,pupilMeshCount:2,
+  projectionFallbacks,surfaceSampler:'xy-triangle-spatial-index',
+  samplerCells:sampler.cellCount,eyeMeshCount:2,irisMeshCount:2,pupilMeshCount:2,
   eyelidMeshCount:4,lipMeshCount:2,lipstickMeshCount:0,
   lipstickPlacement:female?{
    x:settings.lipstickX,y:settings.lipstickY,
