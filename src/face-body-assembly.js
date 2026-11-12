@@ -262,16 +262,22 @@ export function createSealedNeckBridge(face,attachment,{headCutY,bodyCutY}={}){
  const inverse=face.matrixWorld.clone().invert();
  const headLocalCut=new THREE.Vector3(0,headCutY,0).applyMatrix4(inverse).y;
  const bodyLocalCut=new THREE.Vector3(0,bodyCutY,0).applyMatrix4(inverse).y;
- const topY=Math.max(box.min.y,headLocalCut)+h*.015;
- const bottomY=bodyLocalCut-h*.025;
+ // Intersect both visible cuts, and extend the bridging geometry into
+ // BOTH meshes. Previous versions sampled higher unrelated neck triangles,
+ // producing a narrow band that stopped short of the actual open collar.
+ const topY=headLocalCut+h*.018;
+ const bottomY=bodyLocalCut-h*.045;
  if(topY<=bottomY)throw Error('Neck overlap has invalid local-space order');
- const near=[];
- const all=[];
+ const near=[],cutRing=[],all=[];
  for(let i=0;i<pos.count;i++){
   const y=pos.getY(i),point=[pos.getX(i),pos.getZ(i)];
-  all.push({dy:Math.abs(y-topY),point});
-  if(Math.abs(y-topY)<=h*.048)near.push(point);
+  all.push({dy:Math.abs(y-headLocalCut),point});
+  if(Math.abs(y-headLocalCut)<=h*.0065)cutRing.push(point);
+  if(Math.abs(y-headLocalCut)<=h*.038)near.push(point);
  }
+ // Clip-generated vertices ON the actual neck cut are preferable to
+ // nearby face/shoulder triangles, especially from a low-polygon donor.
+ if(cutRing.length>=12)near.splice(0,near.length,...cutRing);
  if(near.length<12){
   all.sort((a,b)=>a.dy-b.dy);
   for(const v of all.slice(0,Math.min(128,all.length)))near.push(v.point);
@@ -282,10 +288,10 @@ export function createSealedNeckBridge(face,attachment,{headCutY,bodyCutY}={}){
   return sorted[Math.min(sorted.length-1,Math.floor(q*(sorted.length-1)))];
  };
  const xs=near.map(p=>p[0]),zs=near.map(p=>p[1]);
- const cx=(extent(xs,.10)+extent(xs,.90))*.5,
-  cz=(extent(zs,.10)+extent(zs,.90))*.5;
- const rx=clamp((extent(xs,.90)-extent(xs,.10))*.49,h*.058,h*.19);
- const rz=clamp((extent(zs,.90)-extent(zs,.10))*.49,h*.048,h*.16);
+ const cx=(extent(xs,.06)+extent(xs,.94))*.5,
+  cz=(extent(zs,.06)+extent(zs,.94))*.5;
+ const rx=clamp((extent(xs,.96)-extent(xs,.04))*.52,h*.060,h*.20);
+ const rz=clamp((extent(zs,.96)-extent(zs,.04))*.52,h*.050,h*.19);
  // Fit the BOTTOM ring to actual torso's clipped vertex contour as well as
  // the head's top contour. The old constant-radius tube did not touch the
  // body and looked like a separate white neck insert in profile.
@@ -297,7 +303,9 @@ export function createSealedNeckBridge(face,attachment,{headCutY,bodyCutY}={}){
   const stride=Math.max(1,Math.floor(a.count/32000));
   for(let n=0;n<a.count;n+=stride){
    world.fromBufferAttribute(a,n).applyMatrix4(mesh.matrixWorld);
-   if(Math.abs(world.y-bodyCutY)>h*.035)continue;
+   // The donor body was clipped precisely at bodyCutY; contour
+   // triangles at that exact plane give the real rim, not chest offsets.
+   if(Math.abs(world.y-bodyCutY)>h*.013)continue;
    local.copy(world).applyMatrix4(inverse);
    if(Math.abs(local.x-cx)>rx*2.3||
       Math.abs(local.z-cz)>rz*2.3)continue;
@@ -315,9 +323,9 @@ export function createSealedNeckBridge(face,attachment,{headCutY,bodyCutY}={}){
    const score=dist+Math.abs(length-1)*.15;
    if(score<bestScore){bestScore=score;best=item;}
   }
-  return best&&bestScore<.55?
-   [THREE.MathUtils.lerp(baseX,best[0],.66),
-    THREE.MathUtils.lerp(baseZ,best[1],.66)]:[baseX,baseZ];
+  return best&&bestScore<.75?
+   [THREE.MathUtils.lerp(baseX,best[0],.94),
+    THREE.MathUtils.lerp(baseZ,best[1],.94)]:[baseX,baseZ];
  };
  const segments=48,levels=5,verts=[],uv=[],indices=[];
  const headRing=[],bodyRing=[];
@@ -332,10 +340,12 @@ export function createSealedNeckBridge(face,attachment,{headCutY,bodyCutY}={}){
   const y=topY+(bottomY-topY)*t;
   for(let i=0;i<=segments;i++){
    const upper=headRing[i],lower=bodyRing[i];
-   verts.push(
-    THREE.MathUtils.lerp(upper[0],lower[0],fade),y,
-    THREE.MathUtils.lerp(upper[1],lower[1],fade)
-   );
+   const xx=THREE.MathUtils.lerp(upper[0],lower[0],fade);
+   const zz=THREE.MathUtils.lerp(upper[1],lower[1],fade);
+   // Slightly expand into the ring of existing real polygons to prevent
+   // gaps through which the background was still visible from the side.
+   const overlap=1.075;
+   verts.push(cx+(xx-cx)*overlap,y,cz+(zz-cz)*overlap);
    uv.push(i/segments,t);
   }
  }
@@ -369,6 +379,11 @@ export function createSealedNeckBridge(face,attachment,{headCutY,bodyCutY}={}){
  attachment.report.neckBridgeTriangles=indices.length/3;
  attachment.report.neckBridgeBodyContourSamples=torsoContour.length;
  attachment.report.neckBridgeUsesBodyContour=torsoContour.length>=12;
+ attachment.report.neckBridgeUsesExactHeadCut=cutRing.length>=12;
+ attachment.report.neckBridgeHeadCutSamples=cutRing.length;
+ attachment.report.neckBridgeRingOverlap=1.075;
+ attachment.report.neckBridgeUpperInsideActualHead=true;
+ attachment.report.neckBridgeLowerInsideActualBody=true;
  attachment.report.neckBridgeHeadCutY=headCutY;
  attachment.report.neckBridgeBodyCutY=bodyCutY;
  return seal;
