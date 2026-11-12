@@ -204,7 +204,7 @@ export function makeIndependentFaceMaster(sourceRoot,gender,{femaleControls={},m
   const eyeAngleRadians=(controls.eyeAngle||0)*Math.PI/180;
   const eyeSocketDy=(Math.tan(eyeAngleRadians)*
    (x-socketCenterX)*.8+
-   (y-(box.min.y+d.y*.684))*(controls.eyeHeight-1)*.68
+   (y-(b.min.y+d.y*.684))*(controls.eyeHeight-1)*.68
   )*orbitalWeight;
   let nx=x+(x-cx)*(cheekSupport-spec.jawNarrow*ovalTransition)
     +local.dx+surfaceFairing.dx*.9+pointDx+eyeSocketDx;
