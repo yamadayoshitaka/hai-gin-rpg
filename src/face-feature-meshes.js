@@ -265,6 +265,56 @@ export function createFastFaceSurfaceSampler(geometry){
  };
  return {query,cellCount:cols*rows,triangleCount:n};
 }
+/**
+ * Sculpt the ORIGINAL face topology into two shallow eye sockets.
+ * The sclera then sits just behind the anatomical eyelid rim; no globe
+ * translation or skin-front max() hack is needed. The mesh stays continuous.
+ * This works on a cloned source-head only and never modifies the donor GLB.
+ */
+export function sculptEyeSocketsInFaceGeometry(geometry,settings,gender='female'){
+ if(!geometry?.getAttribute?.('position'))throw Error('Face mesh required');
+ geometry.computeBoundingBox();
+ const box=geometry.boundingBox,d=box.getSize(new THREE.Vector3());
+ const p=geometry.getAttribute('position'),cx=box.getCenter(new THREE.Vector3()).x;
+ const eyeScale=Math.sqrt(settings.eyeWidth*settings.eyeHeight);
+ const eyeWidth=settings.eyeWidth/eyeScale,eyeHeight=settings.eyeHeight/eyeScale;
+ const radius=d.x*.052*eyeScale;
+ const width=radius*1.12*eyeWidth;
+ const eyeY=box.min.y+d.y*(.684+.006*settings.eyePositionY);
+ const halfHeight=radius*(gender==='female'?.50:.34)*eyeHeight;
+ let vertices=0,maxInset=0,depthSum=0;
+ for(let i=0;i<p.count;i++){
+  const x=p.getX(i),y=p.getY(i),z=p.getZ(i);
+  const front=THREE.MathUtils.smoothstep((z-box.min.z)/d.z,.46,.68);
+  if(front<.001)continue;
+  for(const side of [-1,1]){
+   const centerX=cx+side*d.x*.123*settings.eyeSpacing;
+   const tx=(x-centerX)/width;
+   if(Math.abs(tx)>=1.13)continue;
+   const arch=Math.pow(Math.max(0,1-tx*tx),.70);
+   const vHeight=Math.max(radius*.012,halfHeight*arch);
+   const ty=(y-eyeY)/vHeight;
+   const q=Math.max(Math.abs(tx),Math.abs(ty));
+   if(q>=1.12)continue;
+   // The outer ring remains attached to the cheeks and forehead.
+   // Deeper recessed vertices stay behind the eye display surface.
+   const inset=radius*.32*(1-THREE.MathUtils.smoothstep(q,.58,1.12))*front;
+   if(inset<=.0000005)continue;
+   p.setZ(i,z-inset);
+   vertices++;depthSum+=inset;maxInset=Math.max(maxInset,inset);
+   break;
+  }
+ }
+ if(vertices){
+  p.needsUpdate=true;geometry.computeVertexNormals();
+  geometry.computeBoundingSphere();
+ }
+ geometry.userData.anatomicalEyeSocketSculpt=true;
+ geometry.userData.eyeSocketSculptedVertices=vertices;
+ geometry.userData.eyeSocketDepthMax=maxInset;
+ return {vertices,maxInset,meanInset:vertices?depthSum/vertices:0,
+  continuousSourceMesh:true,eyeballTranslated:false};
+}
 export function createAnatomicalFaceParts(face,{gender='female',controls={}}={}){
  if(!face?.isMesh||!['male','female'].includes(gender))
   throw Error('Sculpted face mesh and gender required for 3D facial parts');
@@ -291,8 +341,12 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
  const root=new THREE.Group();
  root.name=gender.toUpperCase()+'_ANATOMICAL_CLAY_FACE_PARTS';
  root.userData.headOnly=true;
- const sampler=createFastFaceSurfaceSampler(geometry);
- const localVertices=geometry.getAttribute('position');
+ // Preserve the unmodified skin measurements so eyelids are fitted to the
+ // actual source landmarks, while the displayed skin is recessed as ONE mesh.
+ const referenceGeometry=geometry.clone();
+ const sampler=createFastFaceSurfaceSampler(referenceGeometry);
+ const socketSculpt=sculptEyeSocketsInFaceGeometry(geometry,settings,gender);
+ const localVertices=referenceGeometry.getAttribute('position');
  let projected=0,projectionFallbacks=0;
  const surfaceAt=(x,y)=>{
   const nearestFront=sampler.query(x,y);
@@ -319,7 +373,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
  const eyeApertureRatio=female?.50:.34;
  // A low, lid-seated corneal dome: the former 0.58R projection looked like
  // detached snail eyes in the mobile side view. Preserve slight curvature.
- const anteriorGlobeRatio=female?.245:.27;
+ const anteriorGlobeRatio=female?.080:.095;
  const eyeAnteriorClearances=[];
  const originalIrisAngle=.585;
  // v33 enlarges the real circular IRIS without squashing its rim.
@@ -378,8 +432,10 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   // triangle. Keep the centre local to its actual eye socket instead.
   const orbitFrontZ=faceZ+Math.min(baseEyeRadius*.035,
    Math.max(0,Math.max(...orbitSamples)-faceZ));
-  const eyeSurfaceLift=Math.max(baseEyeRadius*.045,
-   baseEyeRadius*(.065+settings.eyeDepth*.18));
+  // Negative relative to the UNCARVED skin: the eye is now seated inside
+  // the socket, not floating over it. Depth control adjusts the socket view
+  // gently instead of pushing the whole globe outside the eyeliner.
+  const eyeSurfaceLift=baseEyeRadius*(-.135+settings.eyeDepth*.045);
   const eyeDomeHeight=baseEyeRadius*anteriorGlobeRatio;
   const insetZ=(px,py)=>{
    const tx=clamp((px-x)/width,-1,1);
@@ -397,12 +453,10 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
    // The power-of-four transition leaves the core spheroid clean, but
    // meets the actual face at the upper/lower eyelid and both canthi.
    const skinBlend=Math.pow(1-curved,4);
-   const rimZ=surfaceAt(px,py)+eyeSurfaceLift;
-   // A closed source socket remains behind our eye patch. Keep every
-   // corneal and iris-edge vertex in front without a detached globe.
-   const sculptedSkinZ=surfaceAt(px,py);
-   const smoothCornea=eyeFrontZ*(1-skinBlend)+rimZ*skinBlend;
-   return Math.max(smoothCornea,sculptedSkinZ+baseEyeRadius*.032);
+   const rimZ=surfaceAt(px,py)-baseEyeRadius*.095;
+   // Single smooth optical surface: unlike the previous skin-depth max(),
+   // this does not produce triangular kinks or protruding iris stripes.
+   return eyeFrontZ*(1-skinBlend)+rimZ*skinBlend;
   };
   const z=insetZ(x,y);
   eyeAnteriorClearances.push((z-faceZ)/eyeRadius);
@@ -418,6 +472,8 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   eyePatch.userData.noDetachedEyeball=true;
   eyePatch.userData.geometryType='face-conforming-almond-eye';
   eyePatch.userData.anteriorGlobeReconstruction=true;
+  eyePatch.userData.socketDepressionInOriginalMesh=true;
+  eyePatch.userData.recessedBehindLid=true;
   eyePatch.userData.smoothCornealCore=true;
   eyePatch.userData.v33OrbitSampleCount=orbitSamples.length;
   eyePatch.userData.v33OrbitalSkinFrontEnvelope=orbitFrontZ;
@@ -464,7 +520,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
    return cap;
   };
   irisMat.side=THREE.DoubleSide;pupilMat.side=THREE.DoubleSide;
-  const iris=makeCap('CURVED_IRIS',irisAngle,irisMat,.024);
+  const iris=makeCap('CURVED_IRIS',irisAngle,irisMat,.010);
   const fiberColors=[];
   for(let j=0;j<=20;j++)for(let i=0;i<=64;i++){
    const r=j/20,angle=i/64*Math.PI*2;
@@ -483,7 +539,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   iris.userData.radialFibers=true;
   iris.userData.sharedSmoothCornealSurface=true;
   iris.userData.colorRole='iris';root.add(iris);
-  const pupil=makeCap('CURVED_PUPIL',pupilAngle,pupilMat,.034);
+  const pupil=makeCap('CURVED_PUPIL',pupilAngle,pupilMat,.017);
   pupil.userData.circularProjected=true;
   pupil.userData.colorRole='pupil';root.add(pupil);
   // The profile protrusion is now only a slim sculpted patch above skin.
@@ -498,7 +554,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
     const cornerTilt=(t+1)*eyeRadius*.045*eyeWidth;
     const nearY=y+(upper?1:-1)*height*arch+cornerTilt;
     const farY=nearY+(upper?1:-1)*eyeRadius*(upper?.28:.19)*v;
-    const eyeZ=insetZ(x+t*width,nearY)+eyeRadius*.020;
+    const eyeZ=insetZ(x+t*width,nearY)+eyeRadius*.075;
     const skinZ=surfaceAt(x+t*width,farY)+d.z*.0033;
     const zz=eyeZ*(1-smoothstep(v))+skinZ*smoothstep(v);
     return new THREE.Vector3(x+t*width,farY,zz);
@@ -794,6 +850,10 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   eyeCoreSkinBlendPower:4,
   eyeApertureHeightFraction:eyeApertureRatio,
   eyeAnteriorClearanceRatios:eyeAnteriorClearances.map(n=>Number(n.toFixed(3))),
+  eyeSocketGeometry:'continuous-original-head-mesh-recessed-under-lid',
+  eyeSocketSculptedVertices:socketSculpt.vertices,
+  eyeSocketMaxInset:socketSculpt.maxInset,
+  eyeSkinDepthClampRemoved:true,
   underEyeShadowMeshCount:0,
   doubleLidCreaseMeshCount:female?2:0,
   lowerOrbitalVolumeMeshCount:0,
