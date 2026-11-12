@@ -206,20 +206,38 @@ export function makeIndependentFaceMaster(sourceRoot,gender,{femaleControls={},m
    (x-socketCenterX)*.8+
    (y-(b.min.y+d.y*.684))*(controls.eyeHeight-1)*.68
   )*orbitalWeight;
+  // v32 landmark-weighted mesh blending; modify contiguous original skin.
+  const noseMask=bell(xn,0,.21)*bell(yn,.58,.084)*front;
+  const mouthMask=bell(xn,0,.35)*bell(yn,.50,.052)*front;
+  const smileMask=bell(Math.abs(xn),.25,.20)*bell(yn,.50,.034)*front;
+  const noseOffsetX=d.x*.004*controls.nosePositionX*noseMask+
+   d.x*.010*(controls.noseAngle*Math.PI/180)*(yn-.62)*noseMask;
+  const mouthOffsetX=d.x*.004*controls.mouthPositionX*mouthMask;
+  const faceMorphX=-(x-cx)*.022*controls.faceMorph*lowerCheek*contourGuard;
+  const faceMorphZ=d.z*.018*controls.faceMorph*cheek*contourGuard;
+  const browFitY=d.y*.006*controls.eyePositionY*orbitalWeight;
+  const noseFitY=d.y*.006*controls.nosePositionY*noseMask;
+  const mouthFitY=d.y*(.006*controls.mouthPositionY*mouthMask+
+   .009*controls.mouthSmile*smileMask+
+   .015*(controls.mouthAngle*Math.PI/180)*xn*mouthMask);
   let nx=x+(x-cx)*(cheekSupport-spec.jawNarrow*ovalTransition)
-    +local.dx+surfaceFairing.dx*.9+pointDx+eyeSocketDx;
+    +local.dx+surfaceFairing.dx*.9+pointDx+eyeSocketDx+
+    noseOffsetX+mouthOffsetX+faceMorphX;
   // Store the source X exactly at the preserved outer silhouette:
   // float math around zero support can otherwise drift by ~1e-9.
   if(Math.abs(xn)>=.86)nx=x;
   const pointApex=smooth(.225,.265,yn)*(1-smooth(.34,.40,yn))
     *bell(yn,.282,.045)*bell(xn,0,.16)*front;
   const ny=y+d.y*spec.chinLift*chin+surfaceFairing.dy*.9
-    +local.dy-d.y*.0025*pointGain*pointApex+eyeSocketDy;
+    +local.dy-d.y*.0025*pointGain*pointApex+eyeSocketDy+
+    browFitY+noseFitY+mouthFitY;
   const nz=z+d.z*(spec.cheekFill*(.74*cheek+.92*lowerCheek)
     +.016*chinHollow
     +spec.eyeSocketSoftness*bell(Math.abs(xn),.43,.22)
       *bell(yn,.69,.055)*front)+local.dz+surfaceFairing.dz
-    +d.z*.003*pointGain*pointApex;
+    +d.z*.003*pointGain*pointApex+faceMorphZ+
+    d.z*(.006*controls.nosePositionZ*noseMask+
+     .005*controls.mouthPositionZ*mouthMask);
   if(gender==='female'){
    if(Math.abs(xn)>=.86){
     outerContourSamples++;
