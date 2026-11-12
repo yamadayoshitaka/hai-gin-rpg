@@ -51,5 +51,6 @@ assert.match(town,/id="townDialogue"/);
 assert.match(town,/paperPending=false;paperPhase=phase/);
 assert.match(town,/game\.storyFlags\.stageMangaSeen/);
 assert.match(town,/game\.storyFlags\.stagePostMangaSeen/);
-assert.match(viewer,/loadApprovedPage\(shot\)/,'only approved 2x5 manga sheets may be displayed');\nassert.doesNotMatch(viewer,/applyCinematicImage\(/,'do not substitute portraits for an unfinished page');
+assert.match(viewer,/loadApprovedPage\(shot\)/,'only approved 2x5 manga sheets may be displayed');
+assert.doesNotMatch(viewer,/applyCinematicImage\(/,'do not substitute portraits for an unfinished page');
 console.log('PASS cinematic raster: 20 persistent cast portraits, 20 chapter backdrops, title cover, 200×20 panels (10+10), one-time town intro and inline NPC speech');
