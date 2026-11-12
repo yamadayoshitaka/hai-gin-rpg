@@ -56,7 +56,7 @@ const won=comicForStage('c01-s02','post',{battleOutcome:{victory:true},protagoni
 assert.notEqual(defeated.edition,won.edition);
 assert.notEqual(defeated.panels[0].text,won.panels[0].text);
 assert.ok(defeated.panels.every(p=>p.protagonistGender==='female'));
-assert.match(defeated.panels.at(-1).text,/町へ/);
+assert.match(defeated.panels.at(-1).text,/町で編成/);
 const decision='c02-s05';
 const neutral=comicForStage(decision,'pre',{});
 const chosen=comicForStage(decision,'pre',{decision:'rescue'});
