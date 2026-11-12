@@ -31,7 +31,7 @@ const existingMaleS02=Object.freeze({
 });
 function artPath(stageId,edition,gender,panelId){
  const suffix=panelId.slice(stageId.length+1);
- const numeric=/^m(\\d{1,2})$/.exec(suffix);
+ const numeric=/^m([0-9]{1,2})$/.exec(suffix);
  const normalizedId=numeric?stageId+'-m'+String(Number(numeric[1])).padStart(2,'0'):panelId;
  const normalizedSuffix=normalizedId.slice(stageId.length+1);
  const legacy=stageId==='c01-s02'&&gender==='male'&&existingMaleS02[edition]?.includes(normalizedSuffix);
