@@ -79,8 +79,10 @@ for(const id of ['allySquadRibbon','enemySquadRibbon','squadScreenLabels','squad
   id+' must be hidden together during close-up');
 assert.match(html,/document\.body\.classList\.toggle\('squad-closeup',hide\)/,
  'camera sync controls all squad label visibility');
-assert.match(html,/syncSquadCloseupLabels\(\);\s*updateSquadScreenLabels\(dt\)/,
- 'manual pinch zoom also synchronizes close-up labels');
+assert.match(html,/syncSquadCloseupLabels\(\);\s*\/\/ The 1000-on-1000 DOM squad indicators/,
+ 'Manual pinch zoom synchronizes close-up labels before the throttled overlay refresh');
+assert.match(html,/if\(markerInterval===0\|\|battleLabelsSinceLastUpdate>=markerInterval\)\{\s*updateSquadScreenLabels\(battleLabelsSinceLastUpdate\|\|dt\)/,
+ 'Dense-battle DOM labels may update below 60Hz without missing visibility synchronization');
 const firstTap=registerSquadCircleTap(null,{key:'0:3',x:120,y:220,at:1000});
 assert.equal(firstTap.doubleTap,false);
 assert.equal(registerSquadCircleTap(firstTap.pending,{key:'0:3',x:122,y:222,at:1175}).doubleTap,true);
