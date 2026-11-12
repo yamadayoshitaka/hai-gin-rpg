@@ -37,7 +37,7 @@ table{width:100%;border-collapse:collapse}th,td{border-bottom:1px solid #43586c;
 <h1>ストーリーフローと画面一覧</h1>
 <p class="info">このページは<strong>確認・プレビュー専用</strong>です。ロックされた章の内容も確認できますが、ゲームの進行、分岐、セーブは変更しません。人物の3Dモデルは別工程です。</p>
 <div class="chips" id="nav">
-<a class="chip" href="#flow">20章フロー</a><a class="chip" href="#artInventory">原画の制作数</a><a class="chip" href="#panels">前後10コマ確認</a><a class="chip" href="#cast">人物・国</a><a class="chip" href="#screens">現行画面リンク</a><a class="chip" href="#voice">音声・原画</a>
+<a class="chip" href="#flow">20章フロー</a><a class="chip" href="#artInventory">原画の制作数</a><a class="chip" href="#panels">分岐別の場面確認</a><a class="chip" href="#chapterProduction">章ごと一括処理</a><a class="chip" href="#cast">人物・国</a><a class="chip" href="#screens">現行画面リンク</a><a class="chip" href="#voice">音声・原画</a>
 </div>
 <section><h2>ゲーム進行状況</h2><div id="saveSummary" class="panels"></div></section>
 <section id="flow"><h2>物語の全体像</h2>
@@ -46,12 +46,18 @@ table{width:100%;border-collapse:collapse}th,td{border-bottom:1px solid #43586c;
 <div class="toolbar" style="margin-top:12px"><label for="chapterSelect">章</label><select id="chapterSelect"></select><label for="stageSelect">ステージ</label><select id="stageSelect"></select><button class="btn" id="readPanel">戦闘前後10コマを再生</button></div>
 <div id="flowDetails" class="card" style="margin-top:10px"></div>
 <div id="routeDetails"></div></section>
-<section id="artInventory"><h2>全20章の専用原画登録状況</h2>
-<p class="muted">1章100コマ、合計2,000コマを男女別に集計しています。実ファイルの存在とWebP形式を確認したものだけが登録数に入ります。章背景の使い回し・合成画・SVGは専用原画に数えません。</p>
+<section id="chapterProduction"><h2>漫画を1章単位で一括準備・公開</h2>
+<p>今の物語のあらすじ、全10ステージ、勝敗・作戦方針・協力ルート・エンディング・男女差分を一括で扱います。コマ数を固定せず、必要に応じて原稿を改ページします。</p>
+<p class="muted">GitHub Actionsで章番号を入力して「prepare」を選ぶと、画像制作指示と必要原画一覧を作成します。全分岐の実WebPと人手レビューが揃った章のみ「publish」で公開できます。生成を開始する有料サービスは自動では呼び出しません。</p>
+<a class="btn" id="chapterBatchAction" href="https://github.com/yamadayoshitaka/hai-gin-rpg/actions/workflows/story-chapter-release.yml" target="_blank" rel="noopener noreferrer">選択章をまとめて準備・登録（GitHub Actions）</a>
+<p><small id="chapterBatchHint">GitHubで章番号を指定してください。現在の選択章：第1章</small></p>
+</section>
+<section id="artInventory"><h2>全20章の専用原画登録状況（旧コマ単位の参考情報）</h2>
+<p class="muted">この一覧は従来の固定コマ単位の集計であり、章単位の勝敗・分岐・男女別原稿の完成数ではありません。新しい制作・登録数は上の章一括処理から取得する制作計画JSONと登録台帳を正本とします。</p>
 <div id="artStats" class="panels"><div class="card">実ファイルの集計を読み込み中…</div></div>
 <div style="overflow-x:auto;margin-top:12px"><table aria-label="20章・男女別の原画登録数"><thead><tr><th>章</th><th>男性版</th><th>女性版</th><th>男女共通</th><th>未制作（男性／女性）</th></tr></thead><tbody id="artChapterTable"><tr><td colspan="5">登録状況を読み込み中</td></tr></tbody></table></div>
 <p id="artCoverageNote" class="muted"></p></section>
-<section id="panels"><h2>ステージ別・開戦前5コマ＋終了後5コマの照合</h2><div class="toolbar"><label for="previewGender">主人公の原画</label><select id="previewGender" aria-label="男性と女性の原画を比較"><option value="saved">セーブ設定に合わせる</option><option value="male">男性版</option><option value="female">女性版</option></select></div><p class="muted">各コマは固有IDに紐づきます。専用画像が存在する場合はそれを優先し、未制作のものは既存画像へフォールバックします。</p><p id="artCoverage" class="muted" role="status">選択ステージの専用原画を確認中…</p><div id="sceneGrid" class="stories"></div></section>
+<section id="panels"><h2>ステージ別・勝敗／選択で変わる場面構成の確認</h2><div class="toolbar"><label for="previewGender">主人公の原画</label><select id="previewGender" aria-label="男性と女性の原画を比較"><option value="saved">セーブ設定に合わせる</option><option value="male">男性版</option><option value="female">女性版</option></select></div><p class="muted">この欄は原画ではなく台本の確認です。勝敗や方針で場面が変わり、未承認の絵・別の性別や別の結末の絵を完成画像として代用しません。</p><p id="artCoverage" class="muted" role="status">選択ステージの専用原画を確認中…</p><div id="sceneGrid" class="stories"></div></section>
 <section id="cast"><h2>主要キャラクター20人・所属国</h2><p class="muted">登場人物のID・国・役職・音声話者を管理します。3Dモデルや衣装データを編集しません。</p><div class="card" style="display:flex;align-items:center;gap:14px"><img src="./assets/story/characters/commander/female-master.webp" alt="女性主人公の暫定基準画像" style="width:86px;height:102px;object-fit:cover;border-radius:8px"><div><strong>女性軍師の基準絵（暫定）</strong><p class="muted">女性を選ぶと女性専用の場面原画を優先。未制作コマでは男性軍師の原画を表示せず、男女共通の物語絵を使用します。</p></div></div><div class="toolbar" id="factionFilter"></div><div id="characterGrid" class="panels" style="margin-top:10px"></div></section>
 <section id="screens"><h2>現在のゲームに使われる画面リンク</h2><p class="muted">ストーリー本線とテスト用画面を分けました。出撃本線はワールドマップから選択してください。</p>
 <h3>本線の導線</h3>
@@ -85,6 +91,7 @@ import {STORY_ACTS} from './src/story-chapters.js';
 import {CAMPAIGN_STAGE_BY_ID,stagesInChapter} from './src/campaign-stage-plan.js';
 import {loadGame,validGame} from './src/game-core-flow.js';
 import {mangaForStage} from './src/story-stage-manga.js';
+import {comicForStage} from './src/story-chapter-comic.js';
 import {stageMangaImage} from './src/story-manga-art.js';
 import {applyCinematicImage,individualStoryPanelAsset,CINEMATIC_CAST_ASSETS} from './src/story-cinematic-assets.js';
 import {createMangaViewer} from './src/story-manga-viewer.js';
@@ -103,7 +110,7 @@ $('saveSummary').innerHTML='<div class="card"><h3>主人公</h3>'+escapeHTML(gam
  '<div class="card"><h3>所属・協力</h3>灰銀出身・'+escapeHTML(currentStoryRoute(game)?.name||'灰銀所属（未選択）')+'</div>';
 $('chapterSelect').innerHTML=STORY_FLOW.map(ch=>'<option value="'+ch.chapter+'">第'+ch.chapter+'章　'+escapeHTML(ch.title)+'</option>').join('');
 $('chapterButtons').innerHTML=STORY_FLOW.map(ch=>'<button type="button" class="chip" data-chapter="'+ch.chapter+'">'+ch.chapter+'章</button>').join('');
-function setChapter(n){chapter=Math.max(1,Math.min(20,Number(n)||1));const list=stagesInChapter(chapter);stageId=list[0].id;$('chapterSelect').value=String(chapter);$('stageSelect').innerHTML=list.map(stage=>'<option value="'+stage.id+'">'+String(stage.slot).padStart(2,'0')+' '+escapeHTML(stage.name)+'</option>').join('');$('chapterButtons').querySelectorAll('button').forEach(button=>button.classList.toggle('active',Number(button.dataset.chapter)===chapter));render();}
+function setChapter(n){chapter=Math.max(1,Math.min(20,Number(n)||1));$('chapterBatchHint').textContent='GitHubで章番号を指定してください。現在の選択章：第'+chapter+'章';const list=stagesInChapter(chapter);stageId=list[0].id;$('chapterSelect').value=String(chapter);$('stageSelect').innerHTML=list.map(stage=>'<option value="'+stage.id+'">'+String(stage.slot).padStart(2,'0')+' '+escapeHTML(stage.name)+'</option>').join('');$('chapterButtons').querySelectorAll('button').forEach(button=>button.classList.toggle('active',Number(button.dataset.chapter)===chapter));render();}
 
 async function inspectDedicatedArt(story){
  const scan=++artScanSeq;
@@ -134,11 +141,13 @@ function render(){
  $('routeDetails').innerHTML='<div class="card" style="margin-top:10px"><h3>協力先と分岐条件</h3><p class="muted">紅炎との関係 '+trust.crimson+' ／ 翠嵐との関係 '+trust.verdant+' ／ 証拠 '+trust.evidence+' （実際の救出人数ではなく方針の達成記録）</p>'+
  routes.map(r=>'<div>'+escapeHTML(r.name)+'：'+(currentStoryRoute(game)?.id===r.id?'選択済み':r.unlocked?'選択可能':'未解放')+' <small>'+escapeHTML(r.description)+'</small></div>').join('')+
  '<p>最終章：'+ENDING_GUIDE.map(e=>escapeHTML(e.name)).join(' ／ ')+'</p></div>';
- const story=mangaForStage(stageId,previewContext(stageId));
- $('sceneGrid').innerHTML=story.panels.map((p,i)=>'<div class="card story"><strong>'+(p.phase==='pre'?'開戦前':'戦闘後')+' · コマ '+(i+1)+' · '+escapeHTML(p.id)+'</strong>'+
- '<img id="shot-'+i+'" alt="'+escapeHTML(p.speaker)+'の第'+chapter+'章場面絵"><p><b>'+escapeHTML(p.speaker)+'</b> · '+escapeHTML(p.text)+'</p></div>').join('');
- story.panels.forEach((p,i)=>{const image=$('shot-'+i);image.src=stageMangaImage(p);applyCinematicImage(image,p);});
- void inspectDedicatedArt(story);
+ const context=previewContext(stageId);
+ const editions=[comicForStage(stageId,'pre',context),comicForStage(stageId,'post',context)];
+ $('sceneGrid').innerHTML=editions.map(e=>'<div class="card"><h3>'+escapeHTML(e.edition)+' ／ '+e.panels.length+'場面・'+e.pages.length+'ページ</h3>'+
+ e.panels.map((p,i)=>'<p><strong>場面'+(i+1)+' ／ '+escapeHTML(p.id)+'</strong> · '+escapeHTML(p.speaker)+'：'+escapeHTML(p.text)+'</p>').join('')+
+ '</div>').join('');
+ $('artCoverage').textContent='選択した条件の台本：'+editions.reduce((n,e)=>n+e.panels.length,0)+
+ '場面（勝敗未確定の場合は勝利の絵を表示しません）。実原画の公開状況は章一括処理で確認してください。';
 }
 $('chapterSelect').onchange=e=>setChapter(e.target.value);
 $('stageSelect').onchange=e=>{stageId=e.target.value;render();};
