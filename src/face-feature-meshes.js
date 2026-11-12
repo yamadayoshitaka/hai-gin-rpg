@@ -308,8 +308,11 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   return z;
  };
  const female=gender==='female';
- const eyeScale=settings.eyeSize;
- const eyeWidth=settings.eyeWidth,eyeHeight=settings.eyeHeight;
+ // Scale is determined exclusively by width and height. Normalize the
+ // aspect factors so the aperture doesn't accidentally scale twice.
+ const eyeScale=Math.sqrt(settings.eyeWidth*settings.eyeHeight);
+ const eyeWidth=settings.eyeWidth/eyeScale,eyeHeight=settings.eyeHeight/eyeScale;
+ const baseEyeRadius=d.x*.052;
  // Blender Studio: expose convex corneal volume above the real socket and
  // wrap the lids back onto the facial skin. Do not simply translate the eyes.
  const eyeApertureRatio=female?.40:.34;
@@ -323,7 +326,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   Math.sin(originalIrisAngle)*settings.irisDiameter));
  const pupilAngle=Math.asin(Math.min(.75,
   Math.sin(originalPupilAngle)*settings.irisDiameter));
- const eyeRadius=d.x*.052*eyeScale;
+ const eyeRadius=baseEyeRadius*eyeScale;
  const eyeCenterHeight=box.min.y+d.y*.684;
  // Preserve the saved eye size, but move the sockets slightly toward
  // the true lateral face rather than burying the globe in the midface.
@@ -360,11 +363,13 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   // Fit a convex anterior globe using the real face as its edge. A local
   // front envelope ensures the iris is never buried by the source head.
   const width=eyeRadius*1.12*eyeWidth;
-  const orbitFrontZ=Math.max(faceZ,surfaceAt(x-width*.38,y),
-   surfaceAt(x+width*.38,y));
-  const eyeSurfaceLift=Math.max(d.z*.005,eyeRadius*.15)+
-   eyeRadius*settings.eyeDepth*.24;
-  const eyeDomeHeight=eyeRadius*anteriorGlobeRatio;
+  // Sample the orbit with a fixed physical baseline: width/height changes
+  // may reshape the eye but NEVER move its cornea backward into the face.
+  const orbitFrontZ=Math.max(faceZ,surfaceAt(x-baseEyeRadius*.38,y),
+   surfaceAt(x+baseEyeRadius*.38,y));
+  const eyeSurfaceLift=Math.max(baseEyeRadius*.14,
+   Math.max(d.z*.005,baseEyeRadius*.15)+baseEyeRadius*settings.eyeDepth*.24);
+  const eyeDomeHeight=baseEyeRadius*anteriorGlobeRatio;
   const insetZ=(px,py)=>{
    const tx=clamp((px-x)/width,-1,1);
    const arch=Math.pow(Math.max(0,1-tx*tx),.70);
@@ -768,7 +773,9 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   mouthHalfWidthFraction:.044,
   lipCreaseCurvature:Number(bestCrease.toFixed(7)),
   lipCenterNormalized:Number(((lipCenter-box.min.y)/d.y).toFixed(4)),
-  eyeScale,eyeProfileLateralMargins:lateralEyeMargins.map(v=>Number(v.toFixed(6))),
+  eyeScale,eyeSizeDerivedFromWidthHeight:true,
+  anteriorDepthIndependentOfSize:true,
+  eyeProfileLateralMargins:lateralEyeMargins.map(v=>Number(v.toFixed(6))),
   eyeballProjection:'sculpted-face-conforming-almond-no-sphere',
   irisPupilProjection:'circular-face-conformal-inset',irisRadialFibers:true,
   contactColorDefault:safeContactColor(settings.contactColor),
