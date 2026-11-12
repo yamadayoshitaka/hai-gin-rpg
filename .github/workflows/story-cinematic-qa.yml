@@ -8,6 +8,8 @@ on:
       - 'src/story-pronunciations.js'
       - 'src/story-panel-neutral-ids.js'
       - 'scripts/prepare-story-art-batches.mjs'
+      - 'assets/story/characters/c01-s01-visual-contract.json'
+      - 'qa/story-art-canonical-references.test.mjs'
       - 'scripts/slice-story-art-batch.py'
       - 'qa/story-stage-prepost-v2.test.mjs'
       - 'qa/story-art-batches.test.mjs'
@@ -41,6 +43,8 @@ on:
       - 'src/story-pronunciations.js'
       - 'src/story-panel-neutral-ids.js'
       - 'scripts/prepare-story-art-batches.mjs'
+      - 'assets/story/characters/c01-s01-visual-contract.json'
+      - 'qa/story-art-canonical-references.test.mjs'
       - 'scripts/slice-story-art-batch.py'
       - 'qa/story-stage-prepost-v2.test.mjs'
       - 'qa/story-art-batches.test.mjs'
@@ -93,6 +97,7 @@ jobs:
           node qa/story-stage-prepost-v2.test.mjs
           node scripts/prepare-story-art-batches.mjs
           node qa/story-art-batches.test.mjs
+          node qa/story-art-canonical-references.test.mjs
           node qa/story-full-page-layout.test.mjs
           node --experimental-vm-modules qa/story-cinematic-raster.test.mjs
           node scripts/build-story-art-coverage.mjs
