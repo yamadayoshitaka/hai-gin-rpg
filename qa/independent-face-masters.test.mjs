@@ -47,7 +47,7 @@ test('two source-derived clay face meshes have owned independent vertices and pr
  assert.equal(female.face.material.wireframe,false);
  assert.ok(female.face.material.color.getHexString().startsWith('bfc3'));
  assert.equal(female.root.getObjectByName('GEO_sclera_l').visible,false);
- assert.equal(female.report.facePartMeshCount,30);
+ assert.equal(female.report.facePartMeshCount,32);
  assert.equal(male.report.facePartMeshCount,19);
  assert.ok(female.report.facePartTriangles>1000);
  assert.equal(female.report.detailedParts.eyelidMeshCount,4);
@@ -119,7 +119,7 @@ test('strictly exclude body, wig and makeup from face-only model assembly',()=>{
  const f=fixture();const built=makeIndependentFaceMaster(f.source,'female');
  const visible=[];
  built.root.traverse(o=>{if(o.isMesh&&o.visible)visible.push(o)});
- assert.equal(visible.length,31,'Face plus 30 anatomical eye/lip meshes');
+ assert.equal(visible.length,33,'Face plus 32 anatomical/eye/eyeshadow meshes');
  assert.ok(visible.includes(built.face));
  assert.ok(visible.every(o=>o===built.face||built.parts.getObjectById(o.id)));
  assert.ok(visible.every(o=>!/hair|armour|body|garment/i.test(o.name)));
@@ -289,33 +289,39 @@ test('v8 linked eye angle, real eye scaling and contact lens color preserve sour
  assert.equal(parts.getObjectByName('UPPER_LIPSTICK_MAKEUP'),undefined);
  assert.equal(f.face.geometry,f.original);
 });
-test('v10 lipstick stays on the actual lip triangles and sliders affect pigment only',()=>{
+test('v15 lipstick is painted only on REAL source-head triangles, no sliding lip cards',()=>{
  const source=fixture().source;
  const base=makeIndependentFaceMaster(source,'female');
  const moved=makeIndependentFaceMaster(source,'female',{femaleControls:{
   lipstickX:.05,lipstickY:-.025,lipstickWidth:1.25,lipstickHeight:.75
  }});
+ const p=base.face.geometry.getAttribute('position');
+ const q=moved.face.geometry.getAttribute('position');
+ const c=base.face.geometry.getAttribute('color');
+ const d=moved.face.geometry.getAttribute('color');
+ assert.equal(c.itemSize,3);
+ let changed=0;
+ for(let i=0;i<p.count;i++){
+  assert.equal(p.getX(i),q.getX(i));
+  assert.equal(p.getY(i),q.getY(i));
+  assert.equal(p.getZ(i),q.getZ(i));
+  if(Math.abs(c.getX(i)-d.getX(i))>1e-7||
+     Math.abs(c.getY(i)-d.getY(i))>1e-7)changed++;
+ }
+ assert.ok(changed>0,'Lipstick parameters must recolor real face vertices');
  for(const part of ['UPPER','LOWER']){
   const lip=base.parts.getObjectByName(part+'_3D_VERMILION_LIP');
   const altered=moved.parts.getObjectByName(part+'_3D_VERMILION_LIP');
-  assert.ok(lip?.isMesh&&altered?.isMesh);
+  assert.ok(lip.isMesh&&altered.isMesh);
+  assert.equal(lip.geometry.getAttribute('color'),undefined,
+   'Anatomical lip mesh must not carry floating cosmetic paint');
+  assert.equal(altered.userData.lipstickOnSourceHead,true);
   assert.equal(base.parts.getObjectByName(part+'_LIPSTICK_MAKEUP'),undefined);
-  const p=lip.geometry.getAttribute('position');
-  const q=altered.geometry.getAttribute('position');
-  const c=lip.geometry.getAttribute('color');
-  const d=altered.geometry.getAttribute('color');
-  assert.equal(c.itemSize,3);
-  let changed=0;
-  for(let i=0;i<p.count;i++){
-   assert.equal(p.getX(i),q.getX(i));
-   assert.equal(p.getY(i),q.getY(i));
-   if(Math.abs(c.getX(i)-d.getX(i))>1e-5)changed++;
-  }
-  assert.ok(changed>0,'Lipstick sliders should change color without moving mesh');
-  assert.equal(altered.userData.lipstickOnSameTriangles,true);
  }
  assert.equal(moved.report.detailedParts.lipstickPlacement.paintAsVertexColor,true);
+ assert.equal(moved.report.detailedParts.lipstickPlacement.appliedToSourceHead,true);
  const male=makeIndependentFaceMaster(source,'male');
+ assert.equal(male.face.material.vertexColors,false);
  assert.equal(male.root.getObjectByName('UPPER_LIPSTICK_MAKEUP'),undefined);
  assert.equal(male.root.getObjectByName('LEFT_UNDER_EYE_SHADOW'),undefined);
  assert.ok(male.root.getObjectByName('LEFT_NATURAL_MALE_BROW')?.isMesh);
@@ -465,7 +471,7 @@ test('v12 closed liner corners and dark softly feathered lower-eye makeup stay a
  assert.equal(m.report.detailedParts.eyelinerCornersClosed,true);
  assert.ok(m.report.detailedParts.lipCenterNormalized>=.498);
  assert.ok(m.report.detailedParts.lipCenterNormalized<=.520);
- assert.equal(m.report.detailedParts.blushOpacityFactor,.43);
+ assert.equal(m.report.detailedParts.blushOpacityFactor,.78);
  for(const side of ['LEFT','RIGHT']){
   const upper=m.parts.getObjectByName(side+'_UPPER_EYELINER');
   const lower=m.parts.getObjectByName(side+'_LOWER_EYELINER');
@@ -560,7 +566,7 @@ test('v13 eyes expose actual 3D sclera and cornea beyond the lateral head surfac
  for(const gender of ['female','male']){
   const model=makeIndependentFaceMaster(fixture().source,gender);
   const eye=model.report.detailedParts;
-  assert.equal(eye.eyeballProjection,'true-3d-profile-exposed');
+  assert.equal(eye.eyeballProjection,'orbital-four-landmark-fitted-ellipsoid');
   assert.equal(eye.eyeProfileLateralMargins.length,2);
   for(const margin of eye.eyeProfileLateralMargins)
    assert.ok(Number.isFinite(margin)&&margin>.002,
@@ -656,4 +662,42 @@ test('v14 sculpt stronger than saved standard remains functional on real face ve
  assert.equal(male.report.maleControls.jawSharpness,8);
  assert.equal(male.report.maleControls.nostrilCover,3);
  assert.equal(male.report.maleControls.noseBridgeSharpness,4);
+});
+
+test('v15 eyeshadow is a real eyelid child, lipstick fast updates without shape motion',async()=>{
+ const m=makeIndependentFaceMaster(fixture().source,'female');
+ assert.equal(m.report.detailedParts.upperEyeshadowMeshCount,2);
+ assert.equal(m.report.detailedParts.shadowOnRealEyelids,true);
+ for(const side of ['LEFT','RIGHT']){
+  const shadow=m.parts.getObjectByName(side+'_UPPER_EYESHADOW');
+  assert.ok(shadow?.isMesh);
+  assert.equal(shadow.parent.name,side+'_UPPER_ANATOMICAL_EYELID');
+  assert.equal(shadow.geometry.getAttribute('color').itemSize,4);
+  assert.ok(shadow.material.opacity>.75);
+ }
+ const before=m.face.geometry.getAttribute('position').array.slice();
+ const prev=m.face.geometry.getAttribute('color').array.slice();
+ const {updateRealFacePigment}=await import('../src/face-feature-meshes.js');
+ const result=updateRealFacePigment(m.face,{...FEMALE_V7_DEFAULTS,
+  lipstickX:.09,lipstickWidth:.6},'color');
+ assert.equal(m.face.userData.mouthPigmentSource,'sculpted-head-vertices');
+ assert.ok(result.lip>=0&&result.cheek>=0);
+ assert.deepEqual(m.face.geometry.getAttribute('position').array,before);
+ const now=m.face.geometry.getAttribute('color').array;
+ assert.ok(now.some((value,i)=>Math.abs(value-prev[i])>1e-6));
+ const male=makeIndependentFaceMaster(fixture().source,'male');
+ assert.equal(male.parts.getObjectByName('LEFT_UPPER_EYESHADOW'),undefined);
+});
+test('v15 real scalp growth follows shell and respects final haircut',()=>{
+ const model=makeIndependentFaceMaster(fixture().source,'female');
+ const wig=createScalpAnchoredWig(model.face,{count:144,lengthScale:1});
+ assert.deepEqual(wig.getReport().growthStages,['grow','relax','collide','trim']);
+ assert.equal(wig.getReport().scalpCoverage,
+  'continuous-colored-triangle-cap-plus-locks');
+ for(const s of wig.getCutSamples()){
+  assert.ok(s.minY>=s.trimY-1e-5,'Hair passed cut plane '+s.zone);
+ }
+ wig.update(.04);
+ assert.ok(wig.getReport().normalUpdateDivisor===3);
+ wig.dispose();
 });
