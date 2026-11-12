@@ -6,6 +6,7 @@
 import {createSculpture,disposeMonsterSculpture} from './monster-shape-kit.js?v=4.4.92';
 import {attachMonsterFaceControls} from './facial-feature-runtime.js?v=1';
 import {generateCanineFurGuides} from './canine-fur-guides.js?v=4.4.92';
+import {monsterEvidenceFor} from './monster-anatomy-reference.js';
 function feet(g,pivot,x,y,z,clawed=true,scale=1){
  g.sphere(pivot,'skin',[0,-.28,0],[.14*scale,.30*scale,.15*scale]);
  g.sphere(pivot,'shadow',[0,-.53,.13],[.13*scale,.08*scale,.22*scale]);
@@ -81,9 +82,15 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    // Former limb pivot at y=1.13 kept all four feet half a metre above
    // terrain. Plant the soles near ground zero and embed hips in the torso.
    const leg=g.group('leg'+name,[side*.29,.67,fore*.49]);
+   // Distal motion is independent from shoulder/hip rotation, retaining
+   // the original limb and ground-contact positions.
    g.sphere(leg,'skin',[0,.17,0],
      [reptile?.18:.21,.40,reptile?.18:.21]);
-   feet(g,leg,0,0,0,true,reptile?.75:1);
+   const distal=g.group('lower'+name,[0,-.065,.015],leg);
+   g.sphere(distal,'skin',[0,-.16,0],[reptile?.13:.15,.27,reptile?.13:.15]);
+   g.sphere(distal,'shadow',[0,0,0],[.144,.125,.14],{name:'joint-'+name});
+   feet(g,distal,0,0,0,true,reptile?.75:1);
+   g.sphere(leg,'skin',[0,-.04,.015],[.18,.18,.18]);
    if(canine&&coatDetail!=='low'){
      // Attach to the leg pivot so the coat swings with every footstep.
      // The upper shank, lower forearm/hock, and paw use shorter strands
@@ -158,7 +165,11 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    addFur(head,faceGuides);
  }
  const tail=g.group('tail',[0,1.35,-.55]);
- g.tube(tail,'skin',[[0,0,.05],[0,.17,-.34],[0,.08,-.76-v*.1],[.09,-.03,-.98-v*.1]],reptile?.14:.085);
+ g.tube(tail,'skin',[[0,0,.05],[0,.17,-.34],[0,.08,-.50]],reptile?.14:.085);
+ const tailMid=g.group('tailMid',[0,.08,-.50],tail);
+ g.tube(tailMid,'skin',[[0,0,0],[0,.01,-.25-v*.05],[.09,-.11,-.49-v*.10]],reptile?.13:.078);
+ const tailTip=g.group('tailTip',[.09,-.11,-.49-v*.10],tailMid);
+ g.sphere(tailTip,'skin',[0,0,-.025],[.044,.047,.085]);
  if(canine&&coatDetail!=='low')addFur(tail,generateCanineFurGuides({
    center:[.015,.065,-.55-v*.055],radii:[.108,.124,.38+v*.04],
    rows:coatDetail==='source'?15:9,
@@ -205,20 +216,48 @@ function bird(g,s){
  }
  for(const side of [-1,1]){
    const wing=g.group(side<0?'wingL':'wingR',[side*.30,1.77,-.06]);
-   g.tube(wing,'skin',[[0,0,0],[side*.55,.25,-.05],[side*1.18,.36,-.29],[side*1.56,.18,-.53]],.085);
+   if(s.id==='m015'){
+     // Humanoid tengu uses shared humanoid assets: preserve the exact
+     // pre-refactor wing/leg geometry and animation contracts.
+     g.tube(wing,'skin',[[0,0,0],[side*.55,.25,-.05],[side*1.18,.36,-.29],[side*1.56,.18,-.53]],.085);
+     for(let i=0;i<15+v*4;i++){
+       const t=i/(14+v*4),x=side*(.22+1.31*t);
+       g.fin(wing,i%3?'light':'accent',[x,.12,-.10-t*.32],
+         [x+side*(.20+.35*t),-.40-t*.47,-.20-t*.34],.07+Math.sin(t*Math.PI)*.09);
+       g.fin(wing,'skin',[x,.17,-.08-t*.23],
+         [x+side*(.14+.18*t),-.13-t*.18,-.17-t*.26],.058);
+     }
+     const leg=g.group('leg'+(side<0?'L':'R'),[side*.17,1.09,.10]);
+     g.bone(leg,'skin',[0,0,0],[0,-.93,.12],.075);
+     g.sphere(leg,'shadow',[0,-.93,.16],[.10,.08,.16]);
+     g.claws(leg,[0,-.95,.24],1,3,1.3);
+     continue;
+   }
+   // Shoulder -> elbow -> wrist: distinct physically movable local joints.
+   g.tube(wing,'skin',[[0,0,0],[side*.28,.16,-.04],[side*.55,.25,-.05]],.082);
+   const elbow=g.group('wingElbow'+(side<0?'L':'R'),[side*.55,.25,-.05],wing);
+   g.tube(elbow,'skin',[[0,0,0],[side*.31,.055,-.11],[side*.63,.11,-.24]],.067);
+   const wrist=g.group('wingWrist'+(side<0?'L':'R'),[side*.63,.11,-.24],elbow);
+   g.tube(wrist,'skin',[[0,0,0],[side*.18,-.055,-.10],[side*.38,-.18,-.24]],.043);
    for(let i=0;i<15+v*4;i++){
      const t=i/(14+v*4);
      const x=side*(.22+1.31*t);
-     g.fin(wing,i%3?'light':'accent',[x,.12,-.10-t*.32],[x+side*(.20+.35*t),-.40-t*.47,-.20-t*.34],.07+Math.sin(t*Math.PI)*.09);
-     // Overlapping secondary coverts hide the skeletal spar and create a
-     // continuous plumage transition rather than exposed triangular slits.
-     g.fin(wing,'skin',[x,.17,-.08-t*.23],
-       [x+side*(.14+.18*t),-.13-t*.18,-.17-t*.26],.058);
+     const distal=t>.54,feather=distal?wrist:wing;
+     const dx=distal?side*1.18:0,dy=distal?.36:0,dz=distal?-.29:0;
+     g.fin(feather,i%3?'light':'accent',
+       [x-dx,.12-dy,-.10-t*.32-dz],
+       [x+side*(.20+.35*t)-dx,-.40-t*.47-dy,-.20-t*.34-dz],
+       .07+Math.sin(t*Math.PI)*.09);
+     // The secondary coverts follow the same hinged feather segment.
+     g.fin(feather,'skin',[x-dx,.17-dy,-.08-t*.23-dz],
+       [x+side*(.14+.18*t)-dx,-.13-t*.18-dy,-.17-t*.26-dz],.058);
    }
    const leg=g.group('leg'+(side<0?'L':'R'),[side*.17,1.09,.10]);
-   g.bone(leg,'skin',[0,0,0],[0,-.93,.12],.075);
-   g.sphere(leg,'shadow',[0,-.93,.16],[.10,.08,.16]);
-   g.claws(leg,[0,-.95,.24],1,3,1.3);
+   g.bone(leg,'skin',[0,0,0],[0,-.47,.10],.082);
+   const ankle=g.group('birdAnkle'+(side<0?'L':'R'),[0,-.47,.10],leg);
+   g.bone(ankle,'skin',[0,0,0],[0,-.46,.02],.063);
+   g.sphere(ankle,'shadow',[0,-.46,.06],[.10,.08,.16]);
+   g.claws(ankle,[0,-.48,.14],1,3,1.3);
  }
  const tail=g.group('tail',[0,1.25,-.40]);
  for(let i=-3;i<=3;i++)g.fin(tail,i%2?'accent':'light',[i*.055,0,0],[i*.12,-.18,-.84-v*.10],.10);
@@ -253,6 +292,18 @@ function insect(g,s,{spider=false}={}){
    g.spike(leg,'bone',foot,[foot[0]+side*.11,foot[1]-.08,foot[2]],.04);
  }
  if(!spider){
+   if(s.id==='m023'){
+     // Praying mantis: enlarged, folding raptorial forelegs, not a beetle horn.
+     for(const side of [-1,1]){
+       const claw=g.group('raptorial'+(side<0?'L':'R'),[side*.37,1.32,.52],torso);
+       g.bone(claw,'skin',[0,0,0],[side*.25,-.19,.26],.11,{tipRadius:.08});
+       const elbow=g.group('raptorialElbow'+(side<0?'L':'R'),[side*.25,-.19,.26],claw);
+       g.bone(elbow,'skin',[0,0,0],[side*.17,-.22,.31],.085,{tipRadius:.024});
+       for(let j=0;j<5;j++)
+         g.spike(elbow,'bone',[side*.11,-.1-j*.023,.13+j*.04],
+           [side*.06,-.19-j*.024,.18+j*.04],.019);
+     }
+   }
    const hornCount=v%2?2:1;
    for(let i=0;i<hornCount;i++)g.spike(head,'accent',[(i-(hornCount-1)/2)*.13,.20,.06],
      [(i-(hornCount-1)/2)*.22,.73+v*.07,.20],.105);
@@ -341,8 +392,45 @@ function upright(g,s,{rock=false,undead=false,demon=false}={}){
  const jaw=g.group('jaw',[0,1.99,.18]);g.sphere(jaw,rock?'shadow':'skin',[0,-.02,.02],[.20,.09,.20]);
  g.root.scale.setScalar(s.size*(rock?.85:.87));
 }
+/** Marine serpent anatomy: axial undulation rather than decorative tiny
+ * walking legs. The old quadruped stand-in was misleading for these IDs.
+ * Segment joints and dorsal scutes are visible 3D meshes, not a billboard.
+ */
+function seaSerpent(g,s){
+ const v=s.variant,torso=g.group('torso');
+ g.sphere(torso,'skin',[0,1.0,.35],[.39,.36,.77],{rough:.48});
+ g.bridge(torso,'skin',[0,1.05,-.12],[0,1.0,.63],.37,.25);
+ const spine=g.group('spineRear',[0,1.02,-.28],torso);
+ g.tube(spine,'skin',[[0,0,0],[0,.07,-.32],[0,-.06,-.75]],.27);
+ const tail=g.group('tail',[0,-.06,-.73],spine);
+ g.tube(tail,'skin',[[0,0,0],[0,.04,-.28],[0,-.08,-.63]],.195);
+ const mid=g.group('tailMid',[0,-.08,-.63],tail);
+ g.tube(mid,'skin',[[0,0,0],[0,.04,-.25],[0,-.10,-.52]],.125);
+ const tip=g.group('tailTip',[0,-.10,-.52],mid);
+ g.fin(tip,'accent',[0,0,0],[0,.42,-.35],.18);
+ const head=g.group('head',[0,1.11,.78]);
+ g.sphere(head,'skin',[0,.03,.13],[.32,.26,.48]);
+ g.bridge(head,'skin',[0,-.02,.22],[0,-.11,.67],.25,.13);
+ g.sphere(head,'light',[0,-.13,.59],[.205,.105,.25]);
+ g.eyes(head,.32,.09,.25,.042);
+ for(const side of [-1,1]){
+   g.sphere(head,'shadow',[side*.145,-.09,.80],[.030,.020,.025],{rough:.65});
+   g.spike(head,'accent',[side*.23,.16,-.09],[side*.34,.34,-.12],.073);
+ }
+ const jaw=g.group('jaw',[0,1.03,.89]);
+ g.sphere(jaw,'shadow',[0,-.07,.35],[.21,.07,.40]);
+ for(let i=0;i<7+v*2;i++){
+   const z=.43-i*.18,attach=i<5?torso:spine;
+   const localZ=i<5?z:z+.30;
+   const height=.16+.08*Math.sin(i*.6);
+   g.fin(attach,i%3?'light':'accent',[0,1.30-(i<5?0:1.02),localZ],
+     [0,1.30-(i<5?0:1.02)+height,localZ-.085],.11);
+ }
+ g.root.scale.setScalar(s.size*.87);
+}
 function aquatic(g,s){
  const v=s.variant;
+ if(s.id==='m048'){seaSerpent(g,s);return;}
  if(v===0){
    const torso=g.group('torso');
    g.sphere(torso,'skin',[0,.70,0],[.55,.62,.53],{rough:.19,translucent:true});
@@ -364,10 +452,27 @@ function aquatic(g,s){
      const angle=i/8*Math.PI*2;
      const tentacle=g.group('tentacle'+i,[Math.cos(angle)*.3,1.16,Math.sin(angle)*.28]);
      const x=Math.cos(angle),z=Math.sin(angle);
-     g.tube(tentacle,i%2?'light':'skin',[[0,0,0],[x*.32,-.31,z*.25],[x*.64,-.60,z*.51],
-       [x*(.85+v*.05),-.52+(i%3)*.11,z*(.81+v*.04)]],.085+(v===3?.038:0));
-     for(let j=0;j<5;j++)g.sphere(tentacle,'accent',[x*(.15+j*.09),-.22-j*.067,z*(.12+j*.08)],
-       [.04,.025,.04]);
+     const mid=g.group('tentacle'+i+'Mid',[x*.32,-.31,z*.25],tentacle);
+     const tip=g.group('tentacle'+i+'Tip',[x*.32,-.29,z*.26],mid);
+     const radius=.085+(v===3?.038:0);
+     // Soft hydrostat: three tapering muscular sections bend independently,
+     // unlike a rigid one-piece arm rotating from the mantle only.
+     g.tube(tentacle,i%2?'light':'skin',[[0,0,0],[x*.15,-.15,z*.12],[x*.32,-.31,z*.25]],radius);
+     g.sphere(tentacle,'skin',[x*.32,-.31,z*.25],[radius*1.03,radius*1.05,radius*1.02]);
+     g.tube(mid,i%2?'light':'skin',[[0,0,0],[x*.16,-.18,z*.15],[x*.32,-.29,z*.26]],radius*.78);
+     g.sphere(mid,'skin',[x*.32,-.29,z*.26],[radius*.84,radius*.83,radius*.86]);
+     g.tube(tip,i%2?'light':'skin',
+       [[0,0,0],[x*.16,.03,z*.17],[x*(.53+v*.05),.08+(i%3)*.11,z*(.55+v*.04)]],
+       radius*.54);
+     // Raised cup-like suckers remain grouped to the moving arm section.
+     for(let j=0;j<6;j++){
+       const segment=j<2?tentacle:j<4?mid:tip;
+       const local=j%2+1,scale=j<2?1:j<4?.8:.57;
+       g.sphere(segment,'accent',[x*.075*local,-.11*local,z*.064*local],
+         [.05*scale,.018*scale,.045*scale],{rough:.56});
+       g.sphere(segment,'shadow',[x*.075*local,-.11*local+.002,z*.064*local],
+         [.020*scale,.011*scale,.021*scale],{rough:.59});
+     }
    }
    for(let i=0;i<7;i++)g.spike(head,'accent',[(i-3)*.10,.40,.0],[(i-3)*.13,.62+(i%3)*.10,-.06],.045);
  }else{
@@ -386,7 +491,7 @@ export function createMonsterModel(spec,{detail='high'}={}){
  switch(spec.family){
    case 'beast':quadruped(g,spec);break;
    case 'feline':quadruped(g,spec,{feline:true});break;
-   case 'reptile':quadruped(g,spec,{reptile:true});break;
+   case 'reptile':spec.id==='m020'?seaSerpent(g,spec):quadruped(g,spec,{reptile:true});break;
    case 'avian':bird(g,spec);break;
    case 'insect':insect(g,spec);break;
    case 'arachnid':insect(g,spec,{spider:true});break;
@@ -400,6 +505,7 @@ export function createMonsterModel(spec,{detail='high'}={}){
  g.root.userData.pivots=g.pivots;
  g.root.userData.homeScale=g.root.scale.x;
  g.root.userData.surfaceFamily=spec.family;
+ g.root.userData.anatomyEvidence=monsterEvidenceFor(spec);
  attachMonsterFaceControls(g.root,{id:spec.id});
  return g.root;
 }
