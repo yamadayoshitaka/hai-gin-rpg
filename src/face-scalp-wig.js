@@ -910,7 +910,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   zoneCandidateCounts:Object.fromEntries(Object.entries(pools).map(([key,list])=>[key,list.length])),
   collisionTypes:['head','face','neck','shoulder','chest',...externalColliders.map(c=>c.name||'body')],
   usesRealBodyTriangleContacts:!!bodyCollisionResolver,
-  meshCount:2+(fiberMultiplier>1?1:0),physicsHz:20,normalUpdateDivisor:3,
+  meshCount:3+(fiberMultiplier>1?1:0),physicsHz:20,normalUpdateDivisor:3,
   physicsGuideCount:guideCount,
   analyticSwayOtherLocks:true,lengthScale:clamp(lengthScale,.55,1.5),
   hairColor:'#'+rootColor.getHexString(),
