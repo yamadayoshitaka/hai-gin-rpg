@@ -9054,7 +9054,7 @@ function animate(){
  // The 1000-on-1000 DOM squad indicators do not need a full 60Hz
  // layout/reflow cycle. Keep touch selection at full frequency.
  battleLabelsSinceLastUpdate+=dt;
- const markerInterval=MASS_SIZE>=500&&!commandOverviewLocked&&!pendingCircleTarget?.kind?.length?.0
+ const markerInterval=MASS_SIZE>=500&&!commandOverviewLocked&&!pendingCircleTarget
   ?1/18:0;
  if(markerInterval===0||battleLabelsSinceLastUpdate>=markerInterval){
   updateSquadScreenLabels(battleLabelsSinceLastUpdate||dt);
