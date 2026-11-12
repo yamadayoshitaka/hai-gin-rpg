@@ -30,7 +30,8 @@ assert.equal(recommendBattleTactics([],available).itemId,null,'No item without s
 const battle=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
 assert.match(battle,/function allyItemStocks\(\)/);
 assert.match(battle,/roomItemRegistry\.owned\(\)\.filter\(stack=>stack\.quantity>0/);
-assert.match(battle,/function useSquadBattleItem\(itemId,squadId\)/);
+assert.match(battle,/function useSquadBattleItem\(itemId,squadId(?:,issuerSquadId=null)?\)/,
+ 'The legacy two-argument item call remains valid with optional issuer override');
 assert.match(battle,/function openBattleItemsForSquad\(id\)/);
 assert.match(battle,/id='battleItemsChoice'/);
 assert.match(battle,/id='battleItemsSquad'/);
