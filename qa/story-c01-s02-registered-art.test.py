@@ -32,7 +32,9 @@ for phase,ids in expected.items():
   assert im.size==(1536,1728)
   if phase=='post-victory':
    # Odd seventh panel must not be misreported as an eighth scene.
-   assert ImageStat.Stat(im.crop((768,1296,1536,1728)).convert('RGB')).stddev[0]<0.1
+   blank=ImageStat.Stat(im.crop((808,1336,1496,1688)).convert('RGB'))
+   # Lossy WebP introduces ~0.5-level chroma noise in a flat panel.
+   assert max(blank.stddev)<2.0 and blank.mean[0]<22 and blank.mean[1]<28
  for i,id in enumerate(ids):
   frame=next(x for x in registry['panels'] if x['panelId']=='c01-s02-'+id)
   assert frame['phase']==phase
