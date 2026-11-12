@@ -2,7 +2,7 @@
 <html lang="ja"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#14263a">
-<title>灰銀のレゾナンス | 顔v37・眼窩メッシュ整形</title>
+<title>灰銀のレゾナンス | 女性主人公の顔編集 v40</title>
 <style>
 :root{font:15px/1.55 system-ui,-apple-system,"Noto Sans JP",sans-serif;color-scheme:dark}
 *{box-sizing:border-box}
@@ -51,7 +51,7 @@ background:#15263c;padding:9px;z-index:2;border-radius:8px}
 @media(max-width:670px){.previewStage{margin:0 -4px;padding:5px}
 .previewStage .controls{gap:4px}.previewStage button{padding:7px 8px;font-size:12px}
 .faceTabs button{font-size:14px}.adjustGroup{grid-template-columns:1fr}}
-a{color:#b6e2ff}
+a{color:#b6e2ff}.studioNav{display:inline-flex;padding:10px 15px;margin:12px 0;border:1px solid #8db9ba;border-radius:10px;background:#27645d;color:#fff;text-decoration:none;font-weight:700}
 @media(max-width:670px){
 main{padding:8px}
 #faceCanvas{height:35dvh;min-height:220px}
@@ -62,7 +62,8 @@ button{padding:9px 11px}
 </style></head>
 <body>
 <header>
-<h1>男女・顔と立体パーツ v33</h1>
+<h1>顔・髪の編集 v40</h1>
+<a class="studioNav" href="./face-body-studio.html?v=40" id="returnToCostume">衣装確認画面に戻る</a>
 <p>ライブラリに保存された実GLBの顔設定（顎先5倍・鼻穴隠し2・鼻筋2.5）を男女の実メッシュ標準に固定。口紅とチークを実メッシュの頂点に着色。上下アイライン・眉・眼球を調整し、女性用の高密度ロング（後頭部・両側頭部・襟足まで髪束生成・顔と肩への衝突対応）を追加。保存値とズームを維持します。</p>
 </header>
 <main><section class="panel">
@@ -168,7 +169,7 @@ body.v32-legacy #v32PartsStudio{display:none!important}
 .v32-part-group select{display:block;width:100%;min-height:41px;margin:5px 0;padding:7px;background:#213d55;color:#fff;border:1px solid #7893a5;border-radius:8px}
 .v32-pose-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
 .v32-tip{color:#b8d5e8;font-size:12px}
-</style><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/","./src/independent-face-masters.js":"./src/independent-face-masters.js?v=37","./src/face-feature-meshes.js":"./src/face-feature-meshes.js?v=37","./src/face-v7-controls.js":"./src/face-v7-controls.js?v=37","./src/face-body-assembly.js":"./src/face-body-assembly.js?v=37"}}</script>
+</style><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/","./src/independent-face-masters.js":"./src/independent-face-masters.js?v=40","./src/face-feature-meshes.js":"./src/face-feature-meshes.js?v=40","./src/face-v7-controls.js":"./src/face-v7-controls.js?v=40","./src/face-body-assembly.js":"./src/face-body-assembly.js?v=40"}}</script>
 <script type="module">
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
@@ -176,10 +177,11 @@ import {GLTFExporter} from 'three/addons/exporters/GLTFExporter.js';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {makeIndependentFaceMaster,FACE_MASTER_SPEC} from './src/independent-face-masters.js';
 import {updateFaceFeatureAngles,applyFaceColorMode,updateRealFacePigment} from './src/face-feature-meshes.js';
-import {createScalpAnchoredWig} from './src/face-scalp-wig.js?v=37';
-import {createPartSelectorUI} from './src/face-part-selector-ui-v32.js?v=37';
-import {defaultPartSelection,resolvePartSelection,PART_CATALOG,HAIR_COLORS} from './src/face-part-catalog-v32.js?v=37';
-import {listWigStyles,DEFAULT_WIG_STYLE_ID} from './src/face-wig-styles.js?v=37';
+import {createScalpAnchoredWig} from './src/face-scalp-wig.js?v=40';
+import {createPartSelectorUI} from './src/face-part-selector-ui-v32.js?v=40';
+import {defaultPartSelection,resolvePartSelection,PART_CATALOG,HAIR_COLORS} from './src/face-part-catalog-v32.js?v=40';
+import {listWigStyles,DEFAULT_WIG_STYLE_ID} from './src/face-wig-styles.js?v=40';
+import {loadHeroineFacePreset,saveHeroineFacePreset} from './src/heroine-face-preset-store.js?v=40';
 import {FEMALE_V7_DEFAULTS,MALE_REFERENCE_DEFAULT,FACE_SLIDER_RANGES,FACE_EYE_SPACING_DEFAULT,FACE_EYE_SPACING_RANGE,CONTACT_COLORS,CONTACT_COLOR_LABELS,safeContactColor,normalizeFemaleFaceControls,normalizeMaleFaceControls} from './src/face-v7-controls.js';
 const $=id=>document.getElementById(id);
 // Bind slider DOM bounds to the same canonical interval used by 3D mesh
@@ -248,8 +250,18 @@ const v32PartMode=new URLSearchParams(location.search).get('qa')!=='legacy';
 if(!v32PartMode)document.body.classList.add('v32-legacy');
 const v32Parts={female:defaultPartSelection(),male:defaultPartSelection()};
 const v32Makeup={female:0,male:0};
+const savedHeroinePreset=v32PartMode?loadHeroineFacePreset():null;
+if(savedHeroinePreset?.parts){
+ Object.assign(v32Parts.female,savedHeroinePreset.parts);
+ v32Makeup.female=Number(savedHeroinePreset.makeupType??v32Parts.female.makeup)||0;
+ wigStyleId=savedHeroinePreset.hairStyleId||wigStyleId;
+ wigColor=savedHeroinePreset.hairColor||wigColor;
+ wigDensity=Math.max(300,Math.min(3200,Number(savedHeroinePreset.hairDensity)||wigDensity));
+ contactColor=savedHeroinePreset.contactColor||contactColor;
+}
 if(v32PartMode){
- modelChanges=normalizeFemaleFaceControls(resolvePartSelection('female',v32Parts.female,FEMALE_V7_DEFAULTS).controls);
+ modelChanges=normalizeFemaleFaceControls(savedHeroinePreset?.controls||
+  resolvePartSelection('female',v32Parts.female,FEMALE_V7_DEFAULTS).controls);
  maleChanges=normalizeMaleFaceControls(resolvePartSelection('male',v32Parts.male,MALE_REFERENCE_DEFAULT).controls);
 }
 for(const style of listWigStyles()){
@@ -259,6 +271,12 @@ for(const style of listWigStyles()){
 }
 $('wigStyle').value=wigStyleId;
 const performanceMetrics={headRebuilds:0,wigRebuilds:0,fastLipstickRepaints:0};
+function persistHeroineFace(){
+ if(!ready||!v32PartMode)return;
+ saveHeroineFacePreset({parts:{...v32Parts.female},controls:{...modelChanges},
+  hairStyleId:wigStyleId,hairColor:wigColor,hairDensity:wigDensity,
+  makeupType:v32Makeup.female,contactColor});
+}
 function setActive(ids,id){
  for(const x of ids)$(x).setAttribute('aria-pressed',String(x===id));
 }
@@ -386,6 +404,7 @@ function rebuildWig(){
    color:hairPalette[v32PartMode?v32Parts.female.hairColor:wigColor]||hairPalette.blonde
   });
   models.get('female').face.add(wig.root);wigs.set('female',wig);
+  persistHeroineFace();
   if(v32PartMode){
    const size=models.get('female').face.geometry.boundingBox.getSize(new THREE.Vector3());
    wig.root.position.set(size.x*.008*v32Parts.female.hairX,
@@ -467,6 +486,7 @@ function rebuildFemale(){
  }
  else if(wigOn)rebuildWig();
  performanceMetrics.headRebuilds++;
+ persistHeroineFace();
  if(wired)next.face.traverse(o=>{if(o.isMesh)o.material.wireframe=true;});
  if(prev){
   scene.remove(prev.root);
@@ -781,7 +801,7 @@ if(v32PartMode){
      maleChanges=normalizeMaleFaceControls(selected.controls);
      if(ready){rebuildMale();rebuildMaleHair();}
     }
-    if(ready)repaint();
+    if(ready){repaint();if(sex==='female')persistHeroineFace();}
    });
  }
 }
@@ -812,6 +832,8 @@ async function init(){
    models.set(g,model);scene.add(model.root);
   }
   ready=true;
+  if(savedHeroinePreset?.hairDensity){$('wigDensity').value=String(wigDensity);
+   $('wigDensityValue').value=String(wigDensity)+'束';}
   rebuildWig();rebuildMaleHair();
   for(const id of ['female','male','front','threeQuarter','side','back','crown','wire','parts','wig','clay','color','resetPreset','resetMalePreset','export','exportWig'])
    $(id).disabled=false;
