@@ -184,6 +184,8 @@ async function expectCenteredFaceSliders(page,gender){
   await page.locator('#female').click();
   const wigQA=await page.evaluate(()=>window.__faceMasterQA());
   if(!wigQA.wigVisible||wigQA.wigReport?.rootCount!==1440||
+     !wigQA.wigReport?.faceCurtainPrevention||
+     wigQA.wigReport?.faceTrimmedStrands<10||
      !['templeLeft','templeRight','backLeft','backRight','napeLeft','napeRight'].every(
        zone=>wigQA.wigReport.rootDistribution?.[zone]>=64)||
      !wigQA.wigReport?.collisionTypes.includes('face')||
@@ -200,11 +202,18 @@ async function expectCenteredFaceSliders(page,gender){
    throw Error('Wig changed face camera zoom '+distanceWithHair+'/'+distanceWithoutHair);
   if((await page.evaluate(()=>window.__faceMasterQA())).wigVisible)
    throw Error('Wig toggle did not hide wig');
+  // In the old QA the parts switch was OFF in profile photos.
+  // Enable actual anatomical eyes for profile and makeup verification.
+  await page.locator('#parts').click();
+  if((await page.evaluate(()=>window.__faceMasterQA())).visiblePartMeshes!==32)
+   throw Error('Eye profile tests must render actual orbital meshes');
   await page.locator('#side').click();
-  await canvas.screenshot({path:path.join(out,'female-v13-profile-visible-eyeballs.png')});
+  await canvas.screenshot({path:path.join(out,'female-v15-actual-eyes-side.png')});
   await page.locator('#threeQuarter').click();
-  await canvas.screenshot({path:path.join(out,'female-v13-3-4-visible-cornea.png')});
+  await canvas.screenshot({path:path.join(out,'female-v15-actual-eyes-45deg.png')});
   await page.locator('#front').click();
+  await canvas.screenshot({path:path.join(out,'female-v15-makeup-no-wig-front.png')});
+  await page.locator('#parts').click();
   if((await page.evaluate(()=>window.__faceMasterQA())).visiblePartMeshes!==0)
    throw Error('Facial mesh parts cannot be hidden independently');
   await canvas.screenshot({path:path.join(out,'female-face-only-no-parts.png')});
