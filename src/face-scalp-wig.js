@@ -186,6 +186,42 @@ function scalpShell(geo,box,color){
    smoothNormals.push(normal.x,normal.y,normal.z);
   }
  }
+ // Rear undercoat: a continuous, thin hair-colored surface, rooted
+ // at REAL posterior head vertices and draped BEHIND the neck. Without it,
+ // two thick fields of locks leave a skin-colored vertical stripe through
+ // the centre of the rear hairstyle.
+ const rearValues=[];
+ for(let i=0;i<src.count;i++){
+  const x=src.getX(i),y=src.getY(i),z=src.getZ(i);
+  if(Math.abs(x-center.x)<d.x*.20 &&
+     y>box.min.y+d.y*.67&&y<box.min.y+d.y*.85&&
+     z<center.z-d.z*.04)rearValues.push(z);
+ }
+ rearValues.sort((a,b)=>a-b);
+ const posteriorZ=rearValues.length?
+  rearValues[Math.floor(rearValues.length*.22)]-d.z*.014:
+  box.min.z-d.z*.012;
+ // Divide the sheet into small bands so its surface is gently curved,
+ // following the skull at the root and neck/shoulders underneath.
+ const columns=18,rows=16;
+ const pAt=(u,v)=>{
+  const shape=Math.sin(Math.PI*u);
+  const width=d.x*(.27-.06*v);
+  const x=center.x+(u-.5)*2*width;
+  const y=box.min.y+d.y*(.80-.72*v);
+  // Gentle curvature towards the back along the midline; stay behind
+  // the neck and avoid an opaque plane appearing in front of the face.
+  const z=posteriorZ-d.z*(.008+.013*shape+.012*v);
+  return f3(x,y,z);
+ };
+ for(let j=0;j<rows;j++)for(let i=0;i<columns;i++){
+  const u=i/columns,v=j/rows,u1=(i+1)/columns,v1=(j+1)/rows;
+  const a=pAt(u,v),b=pAt(u1,v),c=pAt(u,v1),d1=pAt(u1,v1);
+  for(const p of [a,c,b,b,c,d1]){
+   verts.push(p.x,p.y,p.z);
+   smoothNormals.push(0,0,-1);
+  }
+ }
  const material=new THREE.MeshStandardMaterial({
   color,roughness:.84,metalness:0,side:THREE.DoubleSide
  });
@@ -196,6 +232,8 @@ function scalpShell(geo,box,color){
  const mesh=new THREE.Mesh(buffer,material);
  mesh.name='REAL_SCALP_TRIANGLE_HAIR_CAP';
  mesh.userData.scalpSource='sculpted-real-head-triangles';
+ mesh.userData.rearUndercoatAnchoredToRealScalp=rearValues.length>0;
+ mesh.userData.rearUndercoatTriangleCount=columns*rows*2;
  return mesh;
 }
 /**
@@ -484,6 +522,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   belowNapeDrape:'preserve-last-valid-scalp-radius',
   pointCutEnds:true,
   scalpCoverage:'continuous-colored-triangle-cap-plus-locks',
+  realScalpPosteriorUndercoat:true,
   pointCount:lockCount*(segments+1),realScalpCandidateCount:scalpCandidates.length,
   rootDistribution:{...zoneCounts},
   zoneCandidateCounts:Object.fromEntries(Object.entries(pools).map(([key,list])=>[key,list.length])),
