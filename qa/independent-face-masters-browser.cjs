@@ -558,14 +558,23 @@ async function expectCenteredFaceSliders(page,gender){
    const errorsHero=[];hero.on('pageerror',e=>errorsHero.push(e.message));
    await hero.goto('http://127.0.0.1:8765/face-body-studio.html',
     {waitUntil:'domcontentloaded',timeout:60000});
-   await hero.waitForFunction(()=>window.__heroineBodyQA?.().loaded===true,
-    null,{timeout:120000,polling:250});
+   await hero.waitForFunction(()=>{
+    const loaded=window.__heroineBodyQA?.().loaded===true;
+    const status=document.getElementById('status')?.textContent||'';
+    return loaded||status.includes('3Dモデルの読み込み／接続に失敗');
+   },null,{timeout:120000,polling:250});
+   const loaded=await hero.evaluate(()=>window.__heroineBodyQA?.().loaded===true);
+   if(!loaded){
+    const status=await hero.locator('#status').textContent();
+    throw Error('Full-body preview setup failed: '+status+
+      '; browser errors: '+JSON.stringify(errorsHero));
+   }
    const info=await hero.evaluate(()=>window.__heroineBodyQA());
    if(info.characterId!=='hero-girl-01'||info.artMatched!==false||
       !info.artReference.includes('commander/female-master.webp'))
     throw Error('Unregistered or falsely approved art character '+JSON.stringify(info));
    if(!info.attachedBody||info.donorHeadRemoved<1||info.headBustRemoved<1||
-      info.bodyMeshes<1||
+      info.bodyMeshes<1||!info.sealedNeck||info.neckBridgeTriangles<200||
       !info.sourceHeadUnchanged||!info.sourceBodyUnchanged)
     throw Error('Body/head integration failed '+JSON.stringify(info));
    if(Math.abs(info.roundPupilAspectRatio-1)>.016)
@@ -580,6 +589,21 @@ async function expectCenteredFaceSliders(page,gender){
       !info.wig?.glabellaPartClearance)
     throw Error('v22 thick hair, nape drape or center-part protection missing '+
      JSON.stringify(info.wig));
+   if(!info.wig.singleRearLayer||info.wig.undercoatLockCount!==0||
+      !info.wig.fringeRootAboveHairline||!info.wig.fullLengthEyebrowFringe)
+    throw Error('v23 hair still has duplicate rear sheets or eyebrow hair roots '+
+     JSON.stringify(info.wig));
+   if(info.wig.frontalFaceCrossingLocks!==0||
+      !info.wig.frontalCrownEyebrowTrim||!info.wig.joinedRearSilhouette)
+    throw Error('v23 front still crosses nose/mouth or has a rear slit '+
+     JSON.stringify(info.wig));
+   // Test real mouse-wheel pinch zoom (not merely the portrait button):
+   // a face-slider rebuild must preserve the same camera pose and orbit.
+   await hero.locator('#bodyCanvas').hover();
+   await hero.mouse.wheel(0,-680);
+   await hero.waitForTimeout(1600);
+   const zoomBefore=await hero.evaluate(
+    ()=>window.__heroineBodyPreview.getCameraState());
    // The integrated Android page now edits the SAME real face mesh as the
    // standalone studio while retaining its fitted body and collider.
    const eyeSlider=hero.locator('#eyeSpacing');
@@ -604,6 +628,21 @@ async function expectCenteredFaceSliders(page,gender){
    if(reset.editableFaceControls.eyeSpacing!==1.1||
       reset.editableFaceControls.lipstickWidth!==1)
     throw Error('Integrated face sliders did not reset '+JSON.stringify(reset));
+   await hero.waitForTimeout(250);
+   const zoomAfter=await hero.evaluate(
+    ()=>window.__heroineBodyPreview.getCameraState());
+   for(const key of ['position','target','up']){
+    for(let i=0;i<3;i++)
+     if(Math.abs(zoomBefore[key][i]-zoomAfter[key][i])>1e-4)
+      throw Error('Face slider reset camera '+key+' on axis '+i+
+       ': '+JSON.stringify({zoomBefore,zoomAfter}));
+   }
+   if(zoomBefore.view!==zoomAfter.view||
+      zoomBefore.mode!==zoomAfter.mode||
+      zoomBefore.zoom!==zoomAfter.zoom)
+    throw Error('Face slider changed view or zoom '+JSON.stringify(zoomAfter));
+   await hero.locator('#bodyCanvas').screenshot({
+    path:path.join(out,'heroine-v23-preserved-slider-zoom.png')});
    const c=hero.locator('#bodyCanvas');
    await c.screenshot({path:path.join(out,'heroine-v19-front-body.png')});
    await hero.locator('#portrait').click();

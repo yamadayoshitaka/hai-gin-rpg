@@ -7,7 +7,7 @@ import {makeIndependentFaceMaster,FACE_MASTER_SPEC,femaleInnerFeatureDelta,femal
 import {updateFaceFeatureAngles,applyFaceColorMode,createFastFaceSurfaceSampler}
  from '../src/face-feature-meshes.js';
 import {createScalpAnchoredWig} from '../src/face-scalp-wig.js';
-import {attachIndependentHeadToBody,buildBodyDepthCollision,removeHeadBustBelowNeck} from '../src/face-body-assembly.js';
+import {attachIndependentHeadToBody,buildBodyDepthCollision,removeHeadBustBelowNeck,createSealedNeckBridge} from '../src/face-body-assembly.js';
 import {CHAPTER_ONE_ART_BY_KEY,FEMALE_COMMANDER_ART_PALETTE} from '../src/chapter-one-character-art-references.js';
 import {DEFAULT_WIG_STYLE_ID,getWigStyle,listWigStyles} from '../src/face-wig-styles.js';
 import {normalizeFemaleFaceControls,normalizeMaleFaceControls,FEMALE_V7_DEFAULTS,FACE_V7_PALETTE,CONTACT_COLORS,safeContactColor,LIBRARY_FACE_PRESET,MALE_REFERENCE_DEFAULT,FACE_SLIDER_RANGES,FACE_EYE_SPACING_DEFAULT,FACE_EYE_SPACING_RANGE}
@@ -1131,4 +1131,72 @@ test('v22 salon body locks gain real width without making the fringe thick',()=>
   'Full-body hair must drape below the head cut line toward shoulder');
  torsoHair.update(.05);
  hair.dispose();torsoHair.dispose();
+});
+
+test('v23 front roots originate above forehead and real full body has a single rear layer',()=>{
+ const face=makeIndependentFaceMaster(fixture().source,'female');
+ const box=face.face.geometry.boundingBox,d=box.getSize(new THREE.Vector3());
+ const collider={query:()=>null,resolve:()=>false};
+ const full=createScalpAnchoredWig(face.face,{count:480,
+  bodyCollisionResolver:collider,fineFringeMultiplier:3});
+ const cap=full.root.getObjectByName('REAL_SCALP_TRIANGLE_HAIR_CAP');
+ const wig=full.getReport();
+ assert.equal(cap.userData.rearUndercoatStripCount,0,
+  'Full body must never render short extra rear ribbons over the long drape');
+ assert.equal(wig.singleRearLayer,true);
+ assert.ok(wig.rearBodyVolumeExtra>0,'Additional volume must use the one real rear-hair layer');
+ assert.equal(wig.fullLengthEyebrowFringe,true);
+ assert.equal(wig.fringeRootAboveHairline,true);
+ assert.ok(wig.rootDistribution.fringeLeft>0&&wig.rootDistribution.fringeRight>0);
+ for(const sample of full.getCoverageSamples().filter(
+  x=>x.zone.startsWith('fringe'))){
+  const yn=(sample.root[1]-box.min.y)/d.y;
+  assert.ok(yn>.825,
+   'Fringe follicle must not originate from eyebrow/forehead: '+yn);
+ }
+ const head=createScalpAnchoredWig(face.face,{count:96});
+ assert.ok(head.getReport().undercoatLockCount>0,
+  'Head-only sculptor may keep undercoat when no long body drape exists');
+ head.dispose();full.dispose();
+});
+test('v23 real orbital skin shifts with iris and eyelids instead of leaving eye holes behind',()=>{
+ const source=fixture().source;
+ const a=makeIndependentFaceMaster(source,'female',{femaleControls:{eyeSpacing:.85}});
+ const b=makeIndependentFaceMaster(source,'female',{femaleControls:{eyeSpacing:1.35}});
+ assert.equal(b.report.orbitalSocketShiftEnabled,true);
+ assert.equal(b.report.orbitalSocketSpacing,1.35);
+ const pa=a.face.geometry.getAttribute('position'),
+  pb=b.face.geometry.getAttribute('position');
+ const box=a.face.geometry.boundingBox,d=box.getSize(new THREE.Vector3()),
+  cx=box.getCenter(new THREE.Vector3()).x;
+ let moved=0,outerStill=0;
+ for(let i=0;i<pa.count;i++){
+  const x=pa.getX(i),y=pa.getY(i),z=pa.getZ(i);
+  const xn=(x-cx)/d.x,yn=(y-box.min.y)/d.y,
+   zn=(z-box.min.z)/d.z;
+  if(xn>.095&&xn<.155&&yn>.65&&yn<.74&&zn>.55){
+   if(pb.getX(i)-x>d.x*.006)moved++;
+  }
+  if(Math.abs(xn)>.46&&Math.abs(pb.getX(i)-x)<d.x*.000001)
+   outerStill++;
+ }
+ assert.ok(moved>0,'Underlying socket surface must accompany whole eye assembly');
+ assert.ok(outerStill>30,'Remote outer face contour must stay fixed');
+});
+test('v23 cropped head attaches a filled, GLB-exportable physical neck seam',()=>{
+ const head=makeIndependentFaceMaster(fixture().source,'female');
+ const box=head.face.geometry.boundingBox,h=box.max.y-box.min.y;
+ const bottom=box.min.y+h*.29,top=bottom+h*.065;
+ const cut=removeHeadBustBelowNeck(head.face,top);
+ assert.ok(cut.removedTriangles>0);
+ const attachment={root:new THREE.Group(),report:{}};
+ const neck=createSealedNeckBridge(head.face,attachment,{
+  headCutY:top,bodyCutY:bottom});
+ assert.equal(neck.name,'REAL_HEAD_BODY_CLOSED_NECK_SEAL');
+ assert.equal(attachment.report.neckSealed,true);
+ assert.ok(attachment.report.neckBridgeTriangles>200);
+ assert.ok(neck.geometry.index.count>=600);
+ assert.ok([...neck.geometry.getAttribute('position').array].every(Number.isFinite));
+ assert.equal(neck.userData.capEnds,true);
+ assert.equal(head.face.getObjectByName(neck.name),neck);
 });

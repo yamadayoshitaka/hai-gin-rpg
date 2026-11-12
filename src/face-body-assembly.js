@@ -240,6 +240,123 @@ export function removeHeadBustBelowNeck(face,cutY){
   cutY,intersectionVertices:clip.intersectionVertices,
   clipMethod:'interpolated-plane-triangles'};
 }
+/**
+ * Seal the two open cut rings of the *displayed* real head and body.
+ * The donor bust must be cropped above shoulder flaps; otherwise the
+ * leftover head skin appears as white, disconnected collar triangles.
+ * A short skin-coloured, double-sided, capped neck volume overlaps both
+ * real mesh cuts. It is owned by the face and survives GLB export.
+ * This does not pretend to retopologize the source body.
+ */
+export function createSealedNeckBridge(face,attachment,{headCutY,bodyCutY}={}){
+ if(!face?.isMesh||!attachment?.root||
+  !Number.isFinite(headCutY)||!Number.isFinite(bodyCutY))
+  throw Error('Cropped head, real torso and neck-cut heights required');
+ const geo=face.geometry,pos=geo.getAttribute('position');
+ geo.computeBoundingBox();
+ const box=geo.boundingBox,h=box.max.y-box.min.y;
+ // clipMeshGeometryAtWorldNeck cuts against WORLD Y. The actual imported
+ // Blender mesh may have a nonidentity node transform: never compare its
+ // local vertex Y to a world Y, which produced an empty neck-ring sample.
+ face.updateWorldMatrix(true,false);
+ const inverse=face.matrixWorld.clone().invert();
+ const headLocalCut=new THREE.Vector3(0,headCutY,0).applyMatrix4(inverse).y;
+ const bodyLocalCut=new THREE.Vector3(0,bodyCutY,0).applyMatrix4(inverse).y;
+ const topY=Math.max(box.min.y,headLocalCut)+h*.015;
+ const bottomY=bodyLocalCut-h*.025;
+ if(topY<=bottomY)throw Error('Neck overlap has invalid local-space order');
+ const near=[];
+ const all=[];
+ for(let i=0;i<pos.count;i++){
+  const y=pos.getY(i),point=[pos.getX(i),pos.getZ(i)];
+  all.push({dy:Math.abs(y-topY),point});
+  if(Math.abs(y-topY)<=h*.048)near.push(point);
+ }
+ if(near.length<12){
+  all.sort((a,b)=>a.dy-b.dy);
+  for(const v of all.slice(0,Math.min(128,all.length)))near.push(v.point);
+ }
+ if(near.length<12)throw Error('Real neck mesh missing enough vertices');
+ const extent=(values,q)=>{
+  const sorted=values.slice().sort((a,b)=>a-b);
+  return sorted[Math.min(sorted.length-1,Math.floor(q*(sorted.length-1)))];
+ };
+ const xs=near.map(p=>p[0]),zs=near.map(p=>p[1]);
+ const cx=(extent(xs,.10)+extent(xs,.90))*.5,
+  cz=(extent(zs,.10)+extent(zs,.90))*.5;
+ const rx=clamp((extent(xs,.90)-extent(xs,.10))*.49,h*.058,h*.19);
+ const rz=clamp((extent(zs,.90)-extent(zs,.10))*.49,h*.048,h*.16);
+ const segments=48,levels=5,verts=[],uv=[],indices=[];
+ for(let j=0;j<=levels;j++){
+  const t=j/levels,fade=t*t*(3-2*t);
+  const y=topY+(bottomY-topY)*t;
+  const scale=1+.028*fade;
+  for(let i=0;i<=segments;i++){
+   const angle=i/segments*Math.PI*2;
+   verts.push(cx+rx*scale*Math.cos(angle),y,
+    cz-rz*.06*fade+rz*scale*Math.sin(angle));
+   uv.push(i/segments,t);
+  }
+ }
+ for(let j=0;j<levels;j++)for(let i=0;i<segments;i++){
+  const a=j*(segments+1)+i,b=a+segments+1;
+  indices.push(a,b,a+1,a+1,b,b+1);
+ }
+ // The caps remove the open, visible hole when looking down from the top.
+ for(const [ring,capY,flip] of [[0,topY,false],[levels,bottomY,true]]){
+  const center=verts.length/3;verts.push(cx,capY,cz);uv.push(.5,.5);
+  for(let i=0;i<segments;i++){
+   const a=ring*(segments+1)+i,b=a+1;
+   if(flip)indices.push(center,b,a);else indices.push(center,a,b);
+  }
+ }
+ const neckGeo=new THREE.BufferGeometry();
+ neckGeo.setAttribute('position',new THREE.Float32BufferAttribute(verts,3));
+ neckGeo.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
+ neckGeo.setIndex(indices);neckGeo.computeVertexNormals();
+ const skin=new THREE.MeshStandardMaterial({
+  color:0xebc5b7,roughness:.82,metalness:0,side:THREE.DoubleSide
+ });
+ const seal=new THREE.Mesh(neckGeo,skin);
+ seal.name='REAL_HEAD_BODY_CLOSED_NECK_SEAL';
+ seal.userData.neckBridge=true;
+ seal.userData.fromOriginalHeadContour=true;
+ seal.userData.realBodyConnection=true;
+ seal.userData.capEnds=true;
+ face.add(seal);
+ attachment.report.neckSealed=true;
+ attachment.report.neckBridgeTriangles=indices.length/3;
+ attachment.report.neckBridgeHeadCutY=headCutY;
+ attachment.report.neckBridgeBodyCutY=bodyCutY;
+ return seal;
+}
+// The bounds centroid includes nose, chest and hips and is NOT the neck
+// centre. Top-down previews need the two actual neck cross-sections aligned.
+function measuredNeckCenter(root,planeY,halfWindow,maxSideDistance,baseline){
+ const points=[],world=V();
+ root.updateWorldMatrix(true,true);
+ root.traverse(mesh=>{
+  if(!mesh.isMesh||!mesh.geometry?.getAttribute('position'))return;
+  const position=mesh.geometry.getAttribute('position');
+  for(let i=0;i<position.count;i++){
+   world.fromBufferAttribute(position,i).applyMatrix4(mesh.matrixWorld);
+   if(Math.abs(world.y-planeY)>halfWindow||
+      Math.abs(world.x-baseline.x)>maxSideDistance)continue;
+   points.push([world.x,world.z]);
+  }
+ });
+ if(points.length<18)return null;
+ const percentile=(values,p)=>{
+  values.sort((a,b)=>a-b);
+  return values[Math.max(0,Math.min(values.length-1,
+   Math.floor(p*(values.length-1))))];
+ };
+ // The mid-extent of the collar ring, not a nose-biased arithmetic mean.
+ const xs=points.map(v=>v[0]),zs=points.map(v=>v[1]);
+ return {x:(percentile(xs,.10)+percentile(xs,.90))*.5,
+  z:(percentile(zs,.10)+percentile(zs,.90))*.5,
+  samples:points.length};
+}
 export function attachIndependentHeadToBody(headModel,bodySource,{
  outfitSource=null,characterId='hero-girl-01',armor='#c9cbd3',cloth='#263958'
 }={}){
@@ -254,10 +371,14 @@ export function attachIndependentHeadToBody(headModel,bodySource,{
  if(sourceSize.y<1||sourceSize.y>2.5)
   throw Error('Body source must be a real human-scale GLB');
  const bodyCenter=bodyBox.getCenter(V()),headCenter=headBox.getCenter(V());
+ const headNeck=measuredNeckCenter(head,headBox.max.y-height*.76,
+  height*.060,height*.36,headCenter);
+ const bodyNeck=measuredNeckCenter(bodySource,bodyBox.max.y-height*.76,
+  height*.060,height*.36,bodyCenter);
  const shift=new THREE.Vector3(
-  headCenter.x-bodyCenter.x,
+  (headNeck?.x??headCenter.x)-(bodyNeck?.x??bodyCenter.x),
   headBox.max.y-bodyBox.max.y,
-  headCenter.z-bodyCenter.z
+  (headNeck?.z??headCenter.z)-(bodyNeck?.z??bodyCenter.z)
  );
  const attachment=new THREE.Group();
  attachment.name='HEROINE_REAL_BODY_ATTACHMENT';
@@ -334,6 +455,10 @@ export function attachIndependentHeadToBody(headModel,bodySource,{
   sourceBodyHeight:sourceSize.y,
   neckSeamY:cutY,
   neckOverlap:headBox.max.y-height-cutY,
+  alignmentMode:headNeck&&bodyNeck?'real-neck-cross-sections':'fallback-bounds',
+  neckAxisDelta:{x:shift.x,z:shift.z},
+  neckAxisHeadSamples:headNeck?.samples||0,
+  neckAxisBodySamples:bodyNeck?.samples||0,
   donorHeadTrianglesRemoved:clipped.removedTriangles,
   donorBodyTrianglesRetained:clipped.keptTriangles,
   hasRealBody:true,
