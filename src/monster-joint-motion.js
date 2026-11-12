@@ -125,6 +125,14 @@ export function applyMonsterBiologicalMotion(model,{time=0,phase=0,action='idle'
     model.scale.z*=1+compression*.5;
    }
  }
+ if(study.id==='m001'){
+   // Canid ears swivel asymmetrically toward sound. Both have individual
+   // physical pivot Groups and their skin/inner-ear geometry follows them.
+   apply(p,'earL','z',-.04+.14*Math.sin(time*.94));
+   apply(p,'earR','z',.04-.13*Math.sin(time*.94+.65));
+   apply(p,'earL','x',.12+.09*Math.sin(time*1.37));
+   apply(p,'earR','x',.12+.09*Math.sin(time*1.37+.45));
+ }
  // Stable gaze under galloping, with a small counter pitch at the neck.
  if(p.head&&(study.source==='canine'||study.source==='feline')){
    p.head.rotation.x+=-p.torso?.rotation.x*.35||0;
