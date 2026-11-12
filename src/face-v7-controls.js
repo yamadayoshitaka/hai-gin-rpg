@@ -65,7 +65,11 @@ export const FACE_SLIDER_RANGES=Object.freeze({
  lashDensity:[.5,2.2],lashLength:[.5,2.1],
  lashThickness:[.4,1.9],lashCurl:[-.5,1.5],
  lipstickX:[-.12,.12],lipstickY:[-.12,.12],
- lipstickWidth:[.2,2.8],lipstickHeight:[.2,1.8]
+ lipstickWidth:[.2,2.8],lipstickHeight:[.2,1.8],
+ faceMorph:[-.6,.6],mouthSmile:[-1,1],eyePositionY:[-2,2],
+ nosePositionX:[-2,2],nosePositionY:[-2,2],nosePositionZ:[-2,2],
+ noseAngle:[-12,12],mouthPositionX:[-2,2],mouthPositionY:[-2,2],
+ mouthPositionZ:[-2,2],mouthAngle:[-12,12]
 });
 export function normalizeFemaleFaceControls(settings={}){
  const out={};
@@ -85,7 +89,10 @@ export function normalizeFemaleFaceControls(settings={}){
  // Modern sculpt controls are additive: preserve every original Library
  // face slider value and provide stable neutral defaults for new features.
  const extras={eyeWidth:1,eyeHeight:1,browWidth:1,browThickness:1,
-  lashDensity:1,lashLength:1.4,lashThickness:1,lashCurl:.85};
+  lashDensity:1,lashLength:1.4,lashThickness:1,lashCurl:.85,
+  faceMorph:0,mouthSmile:0,eyePositionY:0,
+  nosePositionX:0,nosePositionY:0,nosePositionZ:0,noseAngle:0,
+  mouthPositionX:0,mouthPositionY:0,mouthPositionZ:0,mouthAngle:0};
  for(const [key,fallback] of Object.entries(extras)){
   const value=Number(settings?.[key]);
   const [low,high]=FACE_SLIDER_RANGES[key];
