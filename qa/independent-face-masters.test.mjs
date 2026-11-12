@@ -1039,14 +1039,14 @@ test('v21 real eye gap, fine lash triangles and expanded lip geometry',()=>{
  };
  assert.ok(gap(wide)>gap(narrow)*1.5,'Eyes must separate without changing eye size');
  assert.equal(wide.report.detailedParts.eyeSpacingFactor,1.35);
- assert.equal(wide.report.detailedParts.eyelashFilamentCount,156);
+ assert.equal(wide.report.detailedParts.eyelashFilamentCount,252);
  for(const eye of ['LEFT','RIGHT'])for(const upper of [true,false]){
   const lashes=wide.parts.getObjectByName(
    eye+(upper?'_UPPER':'_LOWER')+'_LASH_MESH');
   assert.equal(lashes.userData.rootedOnEyeliner,true);
-  assert.equal(lashes.userData.filamentCount,upper?52:26);
+  assert.equal(lashes.userData.filamentCount,upper?84:42);
   assert.equal(lashes.geometry.getAttribute('position').count,
-   (upper?52:26)*3);
+   (upper?84:42)*3);
   assert.equal(lashes.parent.name,eye+'_LASH_ANGLE_CONTROL');
  }
  const lipWidth=model=>{
@@ -1075,4 +1075,60 @@ test('v21 fine fringe adds detail only to the front and preserves rear roots',()
   assert.ok(b.rootDistribution[zone]>=a.rootDistribution[zone]-1,
    'Existing rear/neck strands must not be sacrificed for bangs');
  normal.dispose();fine.dispose();
+});
+
+test('v22 complete eye assembly moves together: brows, eyelids, eye bags, liner and lashes',()=>{
+ const source=fixture().source;
+ const a=makeIndependentFaceMaster(source,'female',{femaleControls:{eyeSpacing:.85}});
+ const b=makeIndependentFaceMaster(source,'female',{femaleControls:{eyeSpacing:1.35}});
+ const labels=[
+  'ORBITAL_EYEBALL','UPPER_ANATOMICAL_EYELID','LOWER_LID_VOLUME',
+  'UNDER_EYE_SHADOW','UPPER_EYELINER','SCULPTED_EYEBROW','UPPER_LASH_MESH'
+ ];
+ for(const side of ['LEFT','RIGHT']){
+  const pivotA=a.parts.getObjectByName(side+'_EYE_LINKED_PIVOT');
+  const pivotB=b.parts.getObjectByName(side+'_EYE_LINKED_PIVOT');
+  assert.equal(pivotB.userData.linkedEyeGroups,true);
+  const expected= pivotB.position.x-pivotA.position.x;
+  assert.ok(Math.abs(expected)>.005,'Entire orbital assembly must change x');
+  for(const key of labels){
+   const name=side+'_'+key;
+   const x=model=>{
+    model.parts.updateMatrixWorld(true);
+    const component=model.parts.getObjectByName(name);
+    assert.ok(component,'Missing linked eye component '+name);
+    return new THREE.Box3().setFromObject(component)
+     .getCenter(new THREE.Vector3()).x;
+   };
+   const actual=x(b)-x(a);
+   assert.ok(Math.abs(actual-expected)<.008,
+    'Eye spacing must carry '+name+' without leaving it behind: '+actual+' versus '+expected);
+  }
+ }
+});
+test('v22 salon body locks gain real width without making the fringe thick',()=>{
+ const source=fixture().source;
+ const face=makeIndependentFaceMaster(source,'female');
+ const hair=createScalpAnchoredWig(face.face,{count:96,fineFringeMultiplier:3});
+ const report=hair.getReport();
+ assert.ok(report.hairStrandWidthFraction>=.012);
+ assert.equal(report.fullerCrownBackVolume,true);
+ assert.equal(report.glabellaPartClearance,true);
+ assert.equal(report.fullBodyTriangleContactBeforeProxy,true);
+ assert.equal(report.fullBodyShoulderExtension,false);
+ const geo=hair.root.getObjectByName('REAL_ROOTED_SWEPT_HAIR_LOCKS').geometry;
+ const attr=geo.getAttribute('position');
+ assert.equal(attr.count,report.rootCount*12*4);
+ assert.ok([...attr.array].every(Number.isFinite),'Thickened ribbons must stay finite');
+ const box=face.face.geometry.boundingBox;
+ const body={query(){return {front:box.max.z+.03,rear:box.min.z-.03}},
+  resolve(){return false}};
+ const torsoHair=createScalpAnchoredWig(face.face,{count:96,
+  bodyCollisionResolver:body,fineFringeMultiplier:3});
+ assert.equal(torsoHair.getReport().fullBodyShoulderExtension,true);
+ const nape=wig=>wig.getCutSamples().find(x=>x.zone==='napeLeft');
+ assert.ok(nape(torsoHair).trimY<nape(hair).trimY,
+  'Full-body hair must drape below the head cut line toward shoulder');
+ torsoHair.update(.05);
+ hair.dispose();torsoHair.dispose();
 });
