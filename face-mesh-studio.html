@@ -382,6 +382,12 @@ function rebuildWig(){
    styleId:wigStyleId,color:hairPalette[wigColor]||hairPalette.blonde
   });
   models.get('female').face.add(wig.root);wigs.set('female',wig);
+  if(v32PartMode){
+   const size=models.get('female').face.geometry.boundingBox.getSize(new THREE.Vector3());
+   wig.root.position.set(size.x*.008*v32Parts.female.hairX,
+    size.y*.007*v32Parts.female.hairY,0);
+   wig.root.rotation.z=THREE.MathUtils.degToRad(v32Parts.female.hairAngle);
+  }
  }catch(error){
   console.error('Scalp hair attachment failed',error);
   wigOn=false;$('wig').setAttribute('aria-pressed','false');
@@ -426,6 +432,10 @@ function rebuildMaleHair(){
   styleId:chosen.hairStyleId,color:hairPalette[wigColor]||hairPalette.blonde
  });
  models.get('male').face.add(hair.root);wigs.set('male',hair);
+ const size=models.get('male').face.geometry.boundingBox.getSize(new THREE.Vector3());
+ hair.root.position.set(size.x*.008*v32Parts.male.hairX,
+  size.y*.007*v32Parts.male.hairY,0);
+ hair.root.rotation.z=THREE.MathUtils.degToRad(v32Parts.male.hairAngle);
 }
 function rebuildFemale(){
  if(!ready||!femaleSource)return;
@@ -731,7 +741,7 @@ $('export').addEventListener('click',async()=>{
  finally{$('export').disabled=false;}
 });
 $('exportWig').addEventListener('click',async()=>{
- const wig=wigs.get('female');
+ const wig=wigs.get(gender);
  if(!ready||!wig||!wigOn)return;
  $('exportWig').disabled=true;
  $('status').textContent='独立ヅラのGLBを書き出しています…';
