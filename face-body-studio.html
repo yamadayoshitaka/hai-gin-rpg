@@ -82,7 +82,7 @@ import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {GLTFExporter} from 'three/addons/exporters/GLTFExporter.js';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {makeIndependentFaceMaster} from './src/independent-face-masters.js';
-import {FEMALE_V7_DEFAULTS,FACE_EYE_SPACING_DEFAULT,FACE_EYE_SPACING_RANGE,FACE_SLIDER_RANGES} from './src/face-v7-controls.js';
+import {FEMALE_V7_DEFAULTS,FACE_EYE_SPACING_DEFAULT,FACE_EYE_SPACING_RANGE,FACE_SLIDER_RANGES,normalizeFemaleFaceControls} from './src/face-v7-controls.js';
 import {applyFaceColorMode} from './src/face-feature-meshes.js';
 import {createScalpAnchoredWig} from './src/face-scalp-wig.js?v=26';
 import {attachIndependentHeadToBody,removeHeadBustBelowNeck,createSealedNeckBridge} from './src/face-body-assembly.js';
@@ -115,7 +115,7 @@ const camera=new THREE.PerspectiveCamera(38,1,.01,60);
 const orbit=new OrbitControls(camera,canvas);
 orbit.enableDamping=true;orbit.dampingFactor=.10;orbit.minDistance=.17;orbit.maxDistance=12;
 let model=null,bodyAttachment=null,wig=null,ready=false;
-let uncutScalpSource=null,neckCrop=null,sourceHead=null;const faceControls={...FEMALE_V7_DEFAULTS,eyeSpacing:FACE_EYE_SPACING_DEFAULT,eyeDepth:0};
+let uncutScalpSource=null,neckCrop=null,sourceHead=null;const faceControls=normalizeFemaleFaceControls({...FEMALE_V7_DEFAULTS,eyeSpacing:FACE_EYE_SPACING_DEFAULT});
 let view='front',zoomMode='full',wigVisible=true,outfitVisible=true;
 let wigBaseVisible=false;
 let contactColor=palette.iris;
@@ -241,13 +241,21 @@ const faceControlDefinitions=[
  ['nostrilCover','鼻孔を目立たなくする',.1,'鼻'],
  ['noseBridgeSharpness','鼻筋の鋭さ',.1,'鼻'],
  ['jawSharpness','顎先の鋭さ',.1,'輪郭'],
- ['eyeSize','目の開口部の大きさ',.01,'目元'],
- ['eyeDepth','眼球を眼窩にはめる奥行き',.01,'目元'],
- ['irisDiameter','黒目の大きさ',.01,'目元'],
- ['eyeSpacing','目元一式の左右間隔（眼球・眼窩・まぶた・クマ・眉・アイライン）',.01,'目元'],
- ['eyeAngle','目の角度',1,'目元'],
+ ['eyeSize','目全体の大きさ',.01,'目元'],
+ ['eyeWidth','目の横幅（左右の目それぞれ）',.01,'目元'],
+ ['eyeHeight','目の縦幅・開き具合',.01,'目元'],
+ ['eyeSpacing','目と目の間隔（眉・アイラインも連動）',.01,'目元'],
+ ['eyeAngle','目全体の目尻角度',1,'目元'],
+ ['eyeDepth','顔メッシュに沿う目の浮き量',.01,'目元'],
+ ['irisDiameter','カラコン・黒目の大きさ',.01,'目元'],
+ ['browWidth','眉毛の横幅',.01,'目元'],
+ ['browThickness','眉毛の太さ',.01,'目元'],
  ['browAngle','眉毛の角度',1,'目元'],
- ['lashAngle','まつ毛の角度',1,'目元'],
+ ['lashDensity','まつ毛の本数・密度',.05,'目元'],
+ ['lashLength','まつ毛の長さ',.05,'目元'],
+ ['lashThickness','まつ毛の細さ・太さ',.05,'目元'],
+ ['lashCurl','まつ毛のカール・上向き',.05,'目元'],
+ ['lashAngle','まつ毛全体の角度',1,'目元'],
  ['lipstickX','口紅の横位置',.005,'唇'],
  ['lipstickY','口紅の縦位置',.005,'唇'],
  ['lipstickWidth','唇・口紅の幅',.05,'唇'],
@@ -256,7 +264,7 @@ const faceControlDefinitions=[
 const faceInputs=new Map();
 const extra=$('allFaceSliderGrid');
 const containers=new Map();
-const sectionNames={'鼻':'鼻','目元':'目・まぶた・カラコン・眉','唇':'唇・口紅','輪郭':'顎・輪郭'};
+const sectionNames={'鼻':'鼻','目元':'目元一式（目・眉・まつ毛・アイライン・カラコン）','唇':'唇・口紅','輪郭':'顎・輪郭'};
 function sectionFor(group){
  if(containers.has(group))return containers.get(group);
  const details=document.createElement('details');
@@ -308,9 +316,9 @@ function syncFaceControls(){
  }
 }
 $('resetFaceControls').addEventListener('click',()=>{
- Object.assign(faceControls,FEMALE_V7_DEFAULTS,{
-  eyeSpacing:FACE_EYE_SPACING_DEFAULT,eyeDepth:0
- });
+ Object.assign(faceControls,normalizeFemaleFaceControls({
+  ...FEMALE_V7_DEFAULTS,eyeSpacing:FACE_EYE_SPACING_DEFAULT
+ }));
  syncFaceControls();rebuildFaceOnBody();
 });
 for(const id of ['front','side','back','crown'])$(id).addEventListener('click',()=>{
