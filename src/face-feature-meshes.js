@@ -166,12 +166,13 @@ function tintRealLipSurface(lip,settings,mode='color'){
    smoothstep(((.5+shiftU+width)-u)/.085);
   const fadeV=smoothstep((v-(.5+shiftV-height))/.11)*
    smoothstep(((.5+shiftV+height)-v)/.11);
-  const rgb=pigmentFactor(natural,tint,.40*fadeU*fadeV);
+  const rgb=pigmentFactor(natural,tint,.32*fadeU*fadeV);
   colors.push(rgb.x,rgb.y,rgb.z);
  }
  setVertexMakeup(lip,colors);
  colorizedMakeup(lip,mode==='color');
  lip.userData.lipstickOnSameTriangles=true;
+ lip.userData.softSatinFinish=true;
  lip.userData.lipstickOnSourceHead=true;
 }
 export function updateRealFacePigment(face,controls={},mode='color'){
@@ -208,7 +209,7 @@ export function updateRealFacePigment(face,controls={},mode='color'){
   if(cheek>.12)actualCheekTintVertices++;
   if(lipMask>.12)actualLipTintVertices++;
   const rgb=pigmentFactor(skin,blush,cheek)
-   .multiply(pigmentFactor(skin,lipstick,.40*lipMask));
+   .multiply(pigmentFactor(skin,lipstick,.30*lipMask));
   colors.push(rgb.x,rgb.y,rgb.z);
  }
  setVertexMakeup(face,colors);
@@ -405,15 +406,19 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
  const mat=color=>new THREE.MeshStandardMaterial({
   color,roughness:.89,metalness:0,side:THREE.DoubleSide
  });
- const lidMat=mat(0xbcbfc5),lipMat=mat(0xbfc3cb);
+ const lidMat=mat(0xbcbfc5);
+ const lipMat=new THREE.MeshPhysicalMaterial({
+  color:0xbfc3cb,roughness:.54,metalness:0,
+  clearcoat:.13,clearcoatRoughness:.39,side:THREE.DoubleSide
+ });
  const eyeMat=new THREE.MeshStandardMaterial({
-  color:0xd5d8dd,roughness:.30,metalness:0
+  color:0xd5d8dd,roughness:.26,metalness:0
  });
  const irisMat=new THREE.MeshStandardMaterial({
-  color:0x747a83,roughness:.36,metalness:0
+  color:0x747a83,roughness:.26,metalness:0
  });
  const pupilMat=new THREE.MeshStandardMaterial({
-  color:0x30353b,roughness:.43,metalness:0
+  color:0x30353b,roughness:.24,metalness:0
  });
  const root=new THREE.Group();
  root.name=gender.toUpperCase()+'_ANATOMICAL_CLAY_FACE_PARTS';
@@ -456,7 +461,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
  const irisUpperLidRecessRatios=[];
  const originalIrisAngle=.585;
  // v33 enlarges the real circular IRIS without squashing its rim.
- const originalPupilAngle=.236;
+ const originalPupilAngle=.271;
  // A doubled requested projected diameter must remain on a sphere:
  // physical iris diameter is limited to 95.5% of the eye's diameter.
  const irisAngle=Math.asin(Math.min(.955,
@@ -620,14 +625,19 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
    const fiber=.935+.043*radialStreak+.022*fineStreak;
    const limbal=1-.30*Math.pow(THREE.MathUtils.smoothstep(r,.82,1),2);
    const collarette=.90+.10*Math.exp(-Math.pow((r-.43)/.13,2));
-   const c=fiber*limbal*collarette;
-   fiberColors.push(c,c*.98,c*.96);
+   // Microfibres, a darker limbal ring and soft upper catchlight are
+   // encoded directly in the iris geometry (no floating eye decals).
+   const highlight=Math.exp(-Math.pow((angle-2.24)/.25,2))*
+    Math.exp(-Math.pow((r-.73)/.16,2));
+   const c=fiber*limbal*collarette+.080*highlight;
+   fiberColors.push(c,c*.975,c*.955);
   }
   iris.geometry.setAttribute('color',
    new THREE.Float32BufferAttribute(fiberColors,3));
   irisMat.vertexColors=true;
   iris.userData.circularProjected=true;
   iris.userData.radialFibers=true;
+  iris.userData.subtleIrisCatchlight=true;
   iris.userData.sharedSmoothCornealSurface=true;
   iris.userData.colorRole='iris';root.add(iris);
   const pupil=makeCap('CURVED_PUPIL',pupilAngle,pupilMat,.017);
@@ -842,7 +852,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
     const vertical=(v-.5)*d.y*(upper?.011:.013)*taper;
     const x=cx+d.x*.004*settings.mouthPositionX+t*halfWidth,y=cy+vertical;
     const fullness=(1-t*t)*Math.sin(Math.PI*v);
-    const z=surfaceAt(x,y)+d.z*(.00022+.00065*fullness*taper);
+    const z=surfaceAt(x,y)+d.z*(.00026+.00155*fullness*taper);
     return new THREE.Vector3(x,y,z);
    },material);
   mesh.userData.faceSurfaceConforming=true;

@@ -733,13 +733,13 @@ async function expectCenteredFaceSliders(page,gender){
     throw Error('Wig base did not become invisible again');
    // v25 full-body user-facing controls: independent wig, real contact
    // pigment, and separately collapsible part groups on Android/Desktop.
-   // Start 3x to keep mobile interaction responsive. Full 10x rendered
-   // fibre geometry is independently tested at the wig-module unit level
-   // and remains user-selectable after the 3D view has loaded.
-   if(info.wig.visualFiberMultiplier!==3||
-      info.wig.visualFiberCount<info.wig.rootCount*3||
-      info.wig.staticMicroFibreCount<info.wig.rootCount*2)
-    throw Error('Detachable 3x default wig not ready '+JSON.stringify(info.wig));
+   // v39: five-times finer static hair fibres are reserved for the
+   // single-character studio, not the tactical crowd runtime.
+   if(info.wig.visualFiberMultiplier!==5||
+      info.wig.visualFiberCount<info.wig.rootCount*5||
+      info.wig.staticMicroFibreCount<info.wig.rootCount*4||
+      !info.wig.satinHairFiberSurface)
+    throw Error('Detachable v39 5x hairstyle not ready '+JSON.stringify(info.wig));
    const densityOptions=await hero.locator('#wigDensity option').evaluateAll(
     nodes=>nodes.map(n=>n.value));
    if(!densityOptions.includes('10'))
@@ -990,6 +990,11 @@ async function expectCenteredFaceSliders(page,gender){
       studio.v36RealBattleCostume?.outfitId!=='job05'||
       studio.v36RealBattleCostume?.headReport?.removedTriangles<1||
       studio.v36RealBattleCostume?.headFit?.bone!=='Head'||
+      studio.v36RealBattleCostume?.proportions?.bodyScale!==.84||
+      studio.v36RealBattleCostume?.proportions?.relativeFaceHeight<1.18||
+      studio.v36RealBattleCostume?.proportions?.lift<=0||
+      studio.v36RealBattleCostume?.proportions?.forward<=0||
+      !studio.v36RealBattleCostume?.finishReport?.sourceAssetsPreserved||
       !studio.v36RealBattleCostume?.headFit?.attachedToRealHeadBone||
       studio.v35HairStyle!=='soft-wave-long'||
       studio.v35HairVolume!=='full'||
@@ -998,7 +1003,14 @@ async function expectCenteredFaceSliders(page,gender){
     throw Error('v36 real battle-clothing plus separate face fitting failed '+JSON.stringify(studio.v36RealBattleCostume));
    await modern.locator('#portrait').click();
    await modern.locator('#bodyCanvas').screenshot({
-    path:path.join(out,'v36-heroine-existing-battle-armor-real-face.png')});
+    path:path.join(out,'v39-heroine-eye-face-recessed-with-battle-outfit.png')});
+   await modern.locator('#full').click();
+   await modern.locator('#front').click();
+   await modern.locator('#bodyCanvas').screenshot({
+    path:path.join(out,'v39-heroine-smaller-job-body-front.png')});
+   await modern.locator('#side').click();
+   await modern.locator('#bodyCanvas').screenshot({
+    path:path.join(out,'v39-heroine-smaller-job-body-side.png')});
    await modern.close();
   }
   if(errors.length)throw Error('Browser errors: '+JSON.stringify(errors));

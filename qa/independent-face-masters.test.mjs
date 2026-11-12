@@ -17,6 +17,8 @@ import {PART_CATALOG,PART_GROUPS,HAIR_COLORS,resolvePartSelection,defaultPartSel
  from '../src/face-part-catalog-v32.js';
 import {HERO_JOBS,HERO_OUTFITS,HERO_ACTIONS,createHeroineStudioWardrobe}
  from '../src/heroine-studio-wardrobe.js';
+import {REAL_BATTLE_WARDROBE,HEROINE_STUDIO_BODY_SCALE,fitStudioFaceAboveArmor,enhanceStudioCombatMaterials}
+ from '../src/heroine-battle-costume-bridge.js';
 
 function fixture(){
  const original=new THREE.SphereGeometry(.19,64,48);
@@ -1969,4 +1971,67 @@ test('v37 eye socket is sculpted into the contiguous original face mesh and iris
   assert.equal(eye.userData.socketDepressionInOriginalMesh,true);
   assert.equal(eye.userData.recessedBehindLid,true);
  }
+});
+
+test('v39 every profession has the same smaller rig and armor scale while independent face stays large and above collar',()=>{
+ assert.equal(REAL_BATTLE_WARDROBE.length,10);
+ assert.equal(HEROINE_STUDIO_BODY_SCALE,.84);
+ for(const job of REAL_BATTLE_WARDROBE){
+  const actorRoot=new THREE.Group(),faceRoot=new THREE.Group();
+  const faceFit={scale:.91,targetSize:[.28,.30,.19],
+   sourceCenter:[.003,.015,0],targetCenter:[0,.025,.017]};
+  actorRoot.scale.set(1.06,1.06,1.06);
+  const result=fitStudioFaceAboveArmor({actorRoot,faceRoot,faceFit});
+  assert.equal(result.bodyScale,.84,job.id);
+  assert.ok(Math.abs(actorRoot.scale.x-1.06*.84)<1e-6);
+  assert.ok(Math.abs(faceRoot.scale.x-.91/.84)<1e-6,
+   job.id+' must keep adult face size when its armor is reduced');
+  assert.ok(result.lift>0&&result.forward>0,job.id+' head must clear neckline');
+  assert.ok(result.relativeFaceHeight>1.18);
+  const before=faceRoot.position.clone();
+  fitStudioFaceAboveArmor({actorRoot,faceRoot,faceFit});
+  assert.ok(faceRoot.position.distanceTo(before)<1e-10,'Rebuilding face must not accumulate offsets');
+  assert.ok(Math.abs(actorRoot.scale.x-1.06*.84)<1e-6,'Rebuilding face must not shrink body twice');
+ }
+});
+test('v39 armor and cloth finish preserve GLTF source UVs and textures while improving material response',()=>{
+ const outfit=new THREE.Group();
+ const sourceTexture=new THREE.DataTexture(new Uint8Array([120,120,120,255]),1,1);
+ const steel=new THREE.MeshStandardMaterial({map:sourceTexture,roughness:.78,metalness:.42});
+ const linen=new THREE.MeshStandardMaterial({map:sourceTexture,roughness:.54,metalness:0});
+ const armorMesh=new THREE.Mesh(new THREE.BoxGeometry(1,1,1),steel);
+ armorMesh.name='silver-armor-plate';
+ const robeMesh=new THREE.Mesh(new THREE.BoxGeometry(1,1,1),linen);
+ robeMesh.name='cloth-robe';
+ outfit.add(armorMesh,robeMesh);
+ const report=enhanceStudioCombatMaterials(outfit);
+ assert.ok(report.armorMaterials>=1&&report.fabricMaterials>=1);
+ assert.ok(report.preservedTextures>=2);
+ assert.equal(report.sourceAssetsPreserved,true);
+ assert.equal(armorMesh.material.map,sourceTexture);
+ assert.equal(robeMesh.material.map,sourceTexture);
+ assert.ok(armorMesh.material.roughness<steel.roughness);
+ assert.ok(armorMesh.material.metalness>=steel.metalness);
+ assert.ok(robeMesh.material.roughness>=.69);
+ assert.equal(steel.roughness,.78);
+ assert.equal(linen.roughness,.54);
+});
+test('v39 facial finish has larger pupil, integrated subtle iris highlights and non-clownish satin lip pigment',()=>{
+ const model=makeIndependentFaceMaster(fixture().source,'female');
+ const iris=model.parts.getObjectByName('LEFT_CURVED_IRIS');
+ const lip=model.parts.getObjectByName('UPPER_3D_VERMILION_LIP');
+ assert.ok(model.report.detailedParts.pupilPolarAngleRadians>.26);
+ assert.equal(iris.userData.subtleIrisCatchlight,true);
+ assert.ok(lip.material.isMeshPhysicalMaterial);
+ assert.ok(lip.material.roughness>=.5&&lip.material.roughness<.7);
+ assert.equal(lip.userData.softSatinFinish,true);
+ const wig=createScalpAnchoredWig(model.face,{count:96,staticGroom:true,visualFiberMultiplier:3});
+ assert.equal(wig.getReport().satinHairFiberSurface,true);
+ wig.dispose();
+ const five=createScalpAnchoredWig(model.face,{count:96,staticGroom:true,visualFiberMultiplier:5});
+ assert.equal(five.getReport().visualFiberMultiplier,5,
+  'Selecting 5x must generate actual extra fibres, not silently fall back to 1x');
+ assert.equal(five.getReport().staticMicroFibreCount,96*4);
+ assert.ok(five.getReport().microFibreTriangles>0);
+ five.dispose();
 });

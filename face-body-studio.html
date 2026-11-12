@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>灰銀のレゾナンス｜戦闘衣装＋眼窩メッシュ補正 v37</title>
+<title>灰銀のレゾナンス｜全職業体格・高品質顔髪・衣装 v39</title>
 <style>
 *{box-sizing:border-box}body{margin:0;background:#101c2e;color:#eaf3ff;font-family:system-ui,"Noto Sans JP",sans-serif}
 header{background:#183049;padding:17px 18px;border-bottom:1px solid #466780}
@@ -32,8 +32,8 @@ label{display:block;margin:10px 0}select{width:100%}
 </head>
 <body>
 <header>
-<h1>女性主人公・眼窩メッシュ補正＋実戦闘衣装 v37</h1>
-<p>第1章「女性主人公 hero-girl-01」の独立3D顔・髪を、戦闘で使用中の女性65関節モデルと職業別の実衣装に接続します。衣装・装備・走行・攻撃などは戦闘と同じ資産を使用し、元の顔は非表示にして二重顔を防ぎます。</p>
+<h1>女性主人公・全職業バランス・顔髪・衣装 v39</h1>
+<p>第1章「女性主人公 hero-girl-01」の独立3D顔・髪を、戦闘で使用中の女性65関節モデルと職業別の実衣装に接続します。衣装・装備・走行・攻撃などは戦闘と同じ資産を使用します。全職業の体と鎧を同じ倍率で小さくし、独立顔の大きさは維持して衿への埋まりを防止します。</p>
 </header>
 <main>
 <section>
@@ -62,18 +62,18 @@ label{display:block;margin:10px 0}select{width:100%}
 <label for="heroAction">アクション<select id="heroAction" aria-label="アクションを選択"></select></label>
 <label for="heroHairStyle">髪型パターン<select id="heroHairStyle" aria-label="髪型パターンを選択"></select></label>
 <label for="heroHairVolume">髪ボリューム<select id="heroHairVolume" aria-label="髪ボリュームを選択"></select></label>
-<label for="heroHairDensity">髪の密度<select id="heroHairDensity" aria-label="髪の描画密度を選択"><option value="1">軽量1倍</option><option value="3" selected>標準3倍</option><option value="5">高画質5倍</option><option value="10">最高画質10倍</option></select></label>
-</div><p class="note">職業と衣装は別々に選択可能です。実衣装は戦闘ゲームの Quaternius 65関節リグ＋職業別装備を再利用し、顔と髪だけを Head 関節に追従させます。モーションは戦闘用の実クリップを使用します。</p>
+<label for="heroHairDensity">髪の密度<select id="heroHairDensity" aria-label="髪の描画密度を選択"><option value="1">軽量1倍</option><option value="3">軽量3倍</option><option value="5" selected>高画質5倍</option><option value="10">最高画質10倍</option></select></label>
+</div><p class="note">職業と衣装は別々に選択可能です。すべての職業に共通の小柄な体格補正（84%）を適用。顔は縮小せず、頭部接続を上・前へ補正します。戦闘中のモデルとアクションは変更しません。</p>
 </section>
 <section id="v32BodyPartStudio"><h2>美少女3Dパーツを選択（各10種以上）</h2><div id="v32BodyChoices"></div>
-<label for="v32HairDensity">髪の描画密度<select id="v32HairDensity"><option value="1">軽量 1倍</option><option value="3" selected>標準 3倍</option><option value="5">高画質 5倍</option><option value="10">高密度 10倍</option></select></label></section>
+<label for="v32HairDensity">髪の描画密度<select id="v32HairDensity"><option value="1">軽量 1倍</option><option value="3">標準 3倍</option><option value="5" selected>高画質 5倍</option><option value="10">高密度 10倍</option></select></label></section>
 <details id="allFaceControls" open>
 <summary>顔のスライダー：鼻・目元・口・顎</summary>
 <div class="controls wig-density-control" aria-label="独立ウィッグの毛量">
 <label for="wigDensity">独立ウィッグの表示毛量
 <select id="wigDensity" disabled>
-<option value="1">1倍（軽量）</option><option value="3" selected>3倍（標準・起動時）</option>
-<option value="5">5倍（高品質）</option><option value="10">10倍（高密度・目視確認用）</option>
+<option value="1">1倍（軽量）</option><option value="3">3倍（軽量）</option>
+<option value="5" selected>5倍（高品質・起動時）</option><option value="10">10倍（高密度・目視確認用）</option>
 </select></label></div>
 <p class="note">「髪だけ表示（本体透明）」で顔・目元・首・胴体を隠して、着脱ウィッグの毛根と密度だけを確認できます。戻すと顔と全身を表示します。</p>
 <p class="note">v28では髪の毎フレームの物理演算を停止。頭皮に固定した静的ヘアカードで根元を細く、毛先へ自然にテーパーします。</p>
@@ -93,7 +93,7 @@ alt="第1章女性主人公（暫定人物マスターの登録原画）">
 <label for="style">固有のヅラ（別アセット）
 <select id="style" disabled></select></label>
 <p class="note">v31：目のサイズは縦横から自動決定。目の前後位置と分離し、カラコンは17色＋自由色に対応。真円の黒目・瞳孔を維持。髪は実顔面と女性胴体の三角形表面との接触を判定し、肩・胸の簡易判定も併用します。</p>
-<a href="./face-mesh-studio.html?gender=female&v=37">顔単体の詳細編集画面へ</a>
+<a href="./face-mesh-studio.html?gender=female&v=39">顔単体の詳細編集画面へ</a>
 <details><summary>実メッシュ・接触検査</summary><pre id="metrics"></pre></details>
 </section>
 </main><style>
@@ -105,7 +105,7 @@ body.v32-legacy #v32BodyPartStudio{display:none!important}
 .v32-part-group select,#v32HairDensity{display:block;width:100%;min-height:41px;margin:5px 0;padding:7px;background:#213d55;color:#fff;border:1px solid #7893a5;border-radius:8px}
 .v32-pose-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
 .v32-tip{color:#b8d5e8;font-size:12px}
-</style><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/","./src/independent-face-masters.js":"./src/independent-face-masters.js?v=37","./src/face-feature-meshes.js":"./src/face-feature-meshes.js?v=37","./src/face-v7-controls.js":"./src/face-v7-controls.js?v=37","./src/face-body-assembly.js":"./src/face-body-assembly.js?v=37"}}</script>
+</style><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/","./src/independent-face-masters.js":"./src/independent-face-masters.js?v=39","./src/face-feature-meshes.js":"./src/face-feature-meshes.js?v=39","./src/face-v7-controls.js":"./src/face-v7-controls.js?v=39","./src/face-body-assembly.js":"./src/face-body-assembly.js?v=39"}}</script>
 <script type="module">
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
@@ -114,13 +114,13 @@ import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {makeIndependentFaceMaster} from './src/independent-face-masters.js';
 import {FEMALE_V7_DEFAULTS,FACE_EYE_SPACING_DEFAULT,FACE_EYE_SPACING_RANGE,FACE_SLIDER_RANGES,CONTACT_COLORS,CONTACT_COLOR_LABELS,safeContactColor,normalizeFemaleFaceControls} from './src/face-v7-controls.js';
 import {applyFaceColorMode} from './src/face-feature-meshes.js';
-import {createScalpAnchoredWig} from './src/face-scalp-wig.js?v=37';
-import {createPartSelectorUI} from './src/face-part-selector-ui-v32.js?v=37';
-import {defaultPartSelection,resolvePartSelection,PART_CATALOG} from './src/face-part-catalog-v32.js?v=37';
+import {createScalpAnchoredWig} from './src/face-scalp-wig.js?v=39';
+import {createPartSelectorUI} from './src/face-part-selector-ui-v32.js?v=39';
+import {defaultPartSelection,resolvePartSelection,PART_CATALOG} from './src/face-part-catalog-v32.js?v=39';
 import {attachIndependentHeadToBody,removeHeadBustBelowNeck,createSealedNeckBridge} from './src/face-body-assembly.js';
-import {listWigStyles,DEFAULT_WIG_STYLE_ID,WIG_BASE_VOLUME_PROFILES} from './src/face-wig-styles.js?v=37';
-import {HERO_JOBS,HERO_ACTIONS,createHeroineStudioWardrobe} from './src/heroine-studio-wardrobe.js?v=37';
-import {REAL_BATTLE_WARDROBE,createRealBattleOutfitStudio} from './src/heroine-battle-costume-bridge.js?v=37';
+import {listWigStyles,DEFAULT_WIG_STYLE_ID,WIG_BASE_VOLUME_PROFILES} from './src/face-wig-styles.js?v=39';
+import {HERO_JOBS,HERO_ACTIONS,createHeroineStudioWardrobe} from './src/heroine-studio-wardrobe.js?v=39';
+import {REAL_BATTLE_WARDROBE,createRealBattleOutfitStudio} from './src/heroine-battle-costume-bridge.js?v=39';
 import {FEMALE_COMMANDER_ART_PALETTE,CHAPTER_ONE_ART_BY_KEY} from './src/chapter-one-character-art-references.js';
 
 const $=id=>document.getElementById(id);
@@ -220,6 +220,9 @@ function metrics(){
   v33HairColor:v32BodyPart.hairColor,
   v35Wardrobe:wardrobe?.getState()||{...selectedStudio},
   v36RealBattleCostume:battleCostume?.getState()||null,
+  v39Quality:{bodyScale:battleCostume?.getState()?.proportions?.bodyScale||null,
+   headLift:battleCostume?.getState()?.proportions?.lift||null,
+   hairFiberQuality:Number($('wigDensity').value)},
   v35HairStyle:$('heroHairStyle').value,
   v35HairVolume:$('heroHairVolume').value,
   v32CatalogCounts:Object.fromEntries(Object.entries(PART_CATALOG.female).map(([k,a])=>[k,a.length])),
@@ -283,7 +286,7 @@ function rebuildWig(){
  if(!model||!bodyAttachment)return;
  if(wig){wig.root.removeFromParent();wig.dispose();wig=null;}
  wig=createScalpAnchoredWig(uncutScalpSource||model.face,{
-  count:1800,lengthScale:1.0,styleId:$('style').value,
+  count:2000,lengthScale:1.0,styleId:$('style').value,
   fineFringeMultiplier:3,visualFiberMultiplier:Number($('wigDensity').value),
   staticGroom:true,
   volumeProfile:v32PartMode?v32BodyPart.hairVolume:'natural',
@@ -628,7 +631,7 @@ $('saveGlb').addEventListener('click',async()=>{
    exporter.parse(battleCostume?.getActor()||model.root,resolve,reject,{binary:true,onlyVisible:true}));
   const url=URL.createObjectURL(new Blob([result],{type:'model/gltf-binary'}));
   const a=document.createElement('a');a.href=url;
-  a.download='hai-gin-hero-girl-01-battle-outfit-v36.glb';
+  a.download='hai-gin-hero-girl-01-battle-outfit-v39.glb';
   document.body.appendChild(a);a.click();a.remove();
   setTimeout(()=>URL.revokeObjectURL(url),1000);
   counter.glbExports++;
