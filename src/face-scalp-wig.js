@@ -424,8 +424,8 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    rest.push(p);points.push(p.clone());vel.push(new THREE.Vector3());
   }
   strands.push({root:wigRoot,rest,points,vel,fringe,side,
-   zone,seedIndex:seed.index,trimY,overFace,
-   growthLogic:'grow-relax-collide-trim'});
+   zone,seedIndex:seed.index,trimY,overFace,partSide,
+   gravityRestShape:true,growthLogic:'grow-relax-collide-trim'});
   const base=i*(segments+1)*4;
   for(let j=0;j<=segments;j++){
    const t=j/segments,shaded=rootColor.clone().lerp(tips,.3+.48*t)
@@ -468,6 +468,21 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  // every strand out to an artificial spherical helmet around the ears.
  // Only points INSIDE the actual head silhouette are nudged outward.
  function resolveCollision(p){
+  // Explicit contact with the ACTUAL front facial triangles. For hair
+  // falling over the central eye/cheek region, first part it outwards.
+  const yNorm=(p.y-box.min.y)/d.y;
+  if(p.z>center.z+d.z*.025&&yNorm>.40&&yNorm<.85){
+   const contactSide=Math.sign(p.x-whorl.x)||1;
+   if(yNorm<.78&&Math.abs(p.x-center.x)<d.x*.15){
+    p.x=center.x+contactSide*d.x*.15;
+    faceContacts++;collisions++;
+   }
+   const faceSurface=surfaceSampler.query(p.x,p.y);
+   if(faceSurface!==null&&p.z<faceSurface+d.x*style.faceClearance){
+    p.z=faceSurface+d.x*style.faceClearance;
+    faceContacts++;collisions++;
+   }
+  }
   if(p.y>box.min.y+d.y*.38){
    const origin=radialScalp.radialCenter;
    const direction=f3(p.x-origin.x,0,p.z-origin.z);
@@ -531,7 +546,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
     const p=s.points[j],v=s.vel[j],goal=s.rest[j];
     const wind=Math.sin(elapsed*1.45+i*.37+j*.20)*d.x*.0012*(j/segments);
     v.multiplyScalar(.82).addScaledVector(goal.clone().sub(p),step*13);
-    v.y-=step*d.y*.07;
+    v.y-=step*d.y*.55*style.gravityScale;
     p.addScaledVector(v,step);
     p.x+=wind;
     resolveCollision(p);
@@ -544,16 +559,21 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   }
   writeGeometry();
  }
- // Non-guide strands are resolved against face/body once at creation.
- // They remain rigid to the head, so collision does not drift during
- // camera rotation. Their displayed fine sway is sub-millimeter.
- for(let i=0;i<strands.length;i++)if(i%guideStride){
-  const s=strands[i];
-  for(let j=1;j<=segments;j++)resolveCollision(s.points[j]);
+ // All strands, including the 320 dynamic guides, must begin outside
+ // the real cheek, forehead and shoulder surfaces. Use resolved contacts
+ // as the spring rest shape, rather than pulling hair through the face.
+ for(const s of strands)for(let j=1;j<=segments;j++){
+  resolveCollision(s.points[j]);
+  s.rest[j].copy(s.points[j]);
  }
  writeGeometry();
  root.userData.wigReport={
   style:'real-scalp-shell-growing-then-trimmed',rooted:true,rootCount:lockCount,
+  hairstyleId:style.id,styleLabel:style.label,
+  wigAssetType:'independent-wig',centerPart:style.part==='center',
+  crownWhorl:whorl.toArray(),gravityMps2:style.gravityMps2,
+  gravityRestShape:true,exactFaceSurfaceCollision:true,
+  faceClearance:style.faceClearance,
   growthStages:['grow','relax','collide','trim'],
   faceTrimmedStrands,faceCurtainPrevention:true,
   smoothScalpNormals:true,verticalForeheadDrape:true,
@@ -589,6 +609,11 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   return WIG_ZONE_WEIGHTS.map(([zone])=>strands.find(s=>s.zone===zone))
    .filter(Boolean).map(s=>({zone:s.zone,trimY:s.trimY,
     minY:Math.min(...s.rest.map(p=>p.y))}));
+ },getPartSamples(){
+  return strands.filter(s=>s.zone==='crown'||s.zone.startsWith('fringe'))
+   .slice(0,36).map(s=>({zone:s.zone,side:s.partSide,
+    root:s.root.toArray(),tip:s.rest.at(-1).toArray(),
+    gravityRestShape:s.gravityRestShape}));
  },getStyleSamples(){
   return WIG_ZONE_WEIGHTS.map(([zone])=>strands.filter(s=>s.zone===zone)
    .slice(0,12).map(s=>({zone,root:s.root.toArray(),
