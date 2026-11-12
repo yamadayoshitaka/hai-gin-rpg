@@ -77,7 +77,8 @@ assert.match(html,/reportAfterBattleCutin\(next\.text,next\)/);
 assert.match(html,/queueBattleResultCutin\('🎁 アイテム入手'/);
 assert.match(html,/queueBattleResultCutin\('✚ 回復報告'/);
 assert.match(html,/queueBattleResultCutin\(defeatedEnemy\?'⚔ 敵部隊撃破':'☠ 味方部隊壊滅'/);
-assert.match(html,/battleCeremony\.update\(\);\s*updateBattleResultCutins\(\)/);
+assert.match(html,/function animate\(\)\{[\s\S]*?battleCeremony\.update\(\);[\s\S]*?updateBattleResultCutins\(\)/,
+ 'The frame must update the ceremony before presenting queued result cut-ins');
 
 const match=html.match(/<script type="module">([\s\S]*?)<\/script>/);
 assert.ok(match,'Battle module exists');
