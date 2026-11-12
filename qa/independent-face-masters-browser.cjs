@@ -92,7 +92,11 @@ async function expectCenteredFaceSliders(page,gender){
   await expectVisibleLibraryPreset(page,'browser-form-restoration');
   await expectCenteredFaceSliders(page,'female');
   const original=await page.evaluate(()=>window.__faceMasterQA());
-  if(!original.savedNoseJawApplied||
+  if(!original.female?.detailedParts?.smoothCornealCore||
+      original.female?.detailedParts?.eyeCoreSkinBlendPower!==4||
+      !original.female?.detailedParts?.eyeAnteriorClearanceRatios?.every(v=>v>.60))
+    throw Error('v30 smooth corneal core or anterior eye relief absent: '+JSON.stringify(original.female?.detailedParts));
+   if(!original.savedNoseJawApplied||
      original.savedNoseJawDefaults?.jawSharpness!==5||
      original.savedNoseJawDefaults?.nostrilCover!==2||
      original.savedNoseJawDefaults?.noseBridgeSharpness!==2.5||
