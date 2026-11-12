@@ -475,11 +475,12 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   // root division; it must not sweep the tips sideways into cheek whiskers.
   // Blow-dried curtain guide: the fringe softly sweeps away from the
   // part rather than falling as an identical vertical row above the eyes.
-  const curtainSweep=partSide*d.x*(.016+.049*Math.pow(1-centerDist,1.3));
+  const curtainSweep=partSide*d.x*(.004+.019*Math.pow(1-centerDist,1.3));
   const targetX=(back?
    center.x+(wigRoot.x-center.x)*.57:
    fringe?wigRoot.x+curtainSweep:
-   wigRoot.x+(closeToFace?curtainSweep*.76:side*d.x*.015))+
+   wigRoot.x+(closeToFace?curtainSweep*.76:
+    zone.startsWith('temple')?side*d.x*.048:side*d.x*.015))+
    partSide*d.x*style.partWidth*partInfluence*(fringe?.08:1);
   const targetZ=closeToFace?wigRoot.z+d.z*style.scalpClearance:
    // Go BEHIND the neck rather than being occluded by the rear bust skin.
@@ -496,8 +497,12 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    const drop=.5*length*t+.5*g*(t*fallTime)**2;
    const y=Math.max(trimY,wigRoot.y-drop);
    const curl=Math.sin(t*2.5+Math.floor(i/12)*.35)*d.x*.000045*t*t;
+   // A gently rounded face-frame at cheek level prevents stiff curtain
+   // rods. This is a fixed rest pose, not real-time hair physics.
+   const templeVolume=zone.startsWith('temple')?
+    side*d.x*.026*Math.sin(Math.PI*t):0;
    const p=j===0?wigRoot.clone():f3(
-    THREE.MathUtils.lerp(wigRoot.x,targetX,fall)+strandWave*t+curl,
+    THREE.MathUtils.lerp(wigRoot.x,targetX,fall)+templeVolume+strandWave*t+curl,
     y,THREE.MathUtils.lerp(wigRoot.z,targetZ,fall)+curl*.35);
    if(j>0&&t<.65&&y>box.min.y+d.y*.60){
     const direction=f3(p.x-scalpCenter.x,0,p.z-scalpCenter.z);
@@ -890,6 +895,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   helmetSilhouetteFix:'staggered-curtain-fringe-long-temples-feathered-tips',
   templeLongLayerCount:strands.filter(s=>s.zone.startsWith('temple')&&!s.overFace).length,
   fringeCutVariation:'center-shorter-sides-longer-with-deterministic-pointcut',
+  narrowNaturalPart:true,templeCheekVolumeRestShape:true,
   groomReference:'Blender Generate/Interpolate Hair Curves and Unity Hair Cards',
   crownWhorl:whorl.toArray(),gravityMps2:style.gravityMps2,
   gravityRestShape:true,exactFaceSurfaceCollision:true,
