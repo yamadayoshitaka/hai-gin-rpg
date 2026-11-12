@@ -1,0 +1,69 @@
+{
+  "schemaVersion": 1,
+  "chapter": 1,
+  "stageId": "c01-s01",
+  "phase": "pre",
+  "edition": "pre",
+  "protagonistGender": "male",
+  "sourceSheet": "hai_gin_c01_s01_male_pre_textless_v2.webp",
+  "format": "2 columns × 5 rows",
+  "approved": false,
+  "reviewedBy": "ChatGPT preliminary visual inspection",
+  "reviewStatus": "AI_DRAFT_UNAPPROVED",
+  "noTextInsideImage": true,
+  "panelCount": 10,
+  "sha256": "64bf7dbc72d08fcd2c0ad2071209a1666c869a3e0c598ef9c02f0dd6138d733c",
+  "sheetPath": "assets/story/chapters/c01/c01-s01-pre-male-p01.webp",
+  "panels": [
+    {
+      "id": "c01-s01-m1",
+      "path": "assets/story/chapters/c01/panels/c01-s01-m01-male.webp",
+      "sha256": "8e056377c887d242a0a662bc8c41e884cc905964cc9f56e9f15b7feba10ac40f"
+    },
+    {
+      "id": "c01-s01-m2",
+      "path": "assets/story/chapters/c01/panels/c01-s01-m02-male.webp",
+      "sha256": "e178549de2c9fbc48d9f5a2bdca47582920d81eea6d2835f46c8bc5a200c7f46"
+    },
+    {
+      "id": "c01-s01-m3",
+      "path": "assets/story/chapters/c01/panels/c01-s01-m03-male.webp",
+      "sha256": "e70901415a751b576a00dcac34f93065051b3513b875f58546533f59ccfee71d"
+    },
+    {
+      "id": "c01-s01-m4",
+      "path": "assets/story/chapters/c01/panels/c01-s01-m04-male.webp",
+      "sha256": "65917dd96ee3979ae88a4aa0c359368ae93f1cd334dc881938612cf062716afb"
+    },
+    {
+      "id": "c01-s01-m5",
+      "path": "assets/story/chapters/c01/panels/c01-s01-m05-male.webp",
+      "sha256": "36e99fed1d8a54c555492f177a3ef341e3608b03f66cfe295cb30bd6fc11a6e9"
+    },
+    {
+      "id": "c01-s01-m11",
+      "path": "assets/story/chapters/c01/panels/c01-s01-m11-male.webp",
+      "sha256": "4518859ea0b8093c612b3470d9d88472f48e87621d04c6f64a446d931a8dfbb7"
+    },
+    {
+      "id": "c01-s01-m12",
+      "path": "assets/story/chapters/c01/panels/c01-s01-m12-male.webp",
+      "sha256": "ac14f8cb318e97fe862ed979d146f1cc4483fa6c4d86e90ef7dc1d7673bb5da9"
+    },
+    {
+      "id": "c01-s01-m13",
+      "path": "assets/story/chapters/c01/panels/c01-s01-m13-male.webp",
+      "sha256": "a0f3de9f04a3c9b7e51dc47c3f17f0366ebded95be5bcd38ada511dddc5b3d96"
+    },
+    {
+      "id": "c01-s01-m14",
+      "path": "assets/story/chapters/c01/panels/c01-s01-m14-male.webp",
+      "sha256": "f73140bb4c77bfa393bfbcaa6c328cdd885f35804d1124608e1e3c3d4a3a3ecf"
+    },
+    {
+      "id": "c01-s01-m15",
+      "path": "assets/story/chapters/c01/panels/c01-s01-m15-male.webp",
+      "sha256": "b66273f74254361a55c60a91260144c33bbbaaf2809b832570d1ee8cfab6a451"
+    }
+  ]
+}
