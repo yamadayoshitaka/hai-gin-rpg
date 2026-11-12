@@ -1,0 +1,249 @@
+{
+  "schemaVersion": 2,
+  "kind": "stage-poster-production-queue",
+  "createdDate": "2026-11-13",
+  "canonicalScript": "src/story-chapter-comic.js",
+  "manifestContract": "docs/story-stage-poster-production-manifest-v2.md",
+  "productionOrder": [
+    "screenplay-all-branches",
+    "sequence-posters-every-gender-and-outcome",
+    "independent-male-scenes",
+    "reuse-proposal-with-strict-provenance",
+    "new-scene-creation",
+    "independent-female-scenes",
+    "human-quality-image-comparison",
+    "byte-and-story-QA",
+    "main-merge",
+    "Pages-and-live-game-check"
+  ],
+  "status": "IN_PROGRESS_NOT_QUALITY_APPROVED",
+  "rules": {
+    "posterMaxCells": 10,
+    "posterColumns": 2,
+    "minimumPanelPixels": [
+      1536,
+      864
+    ],
+    "minimumPosterWidth": 3072,
+    "benchmarkStatus": "PROVISIONAL_STAGE1_REFERENCE_NOT_APPROVED",
+    "benchmarkImages": {
+      "male": "assets/story/chapters/c01/panels/c01-s01-m02-male.webp",
+      "female": "assets/story/chapters/c01/panels/c01-s01-m02-female.webp"
+    },
+    "noImageText": true,
+    "noNumerals": true,
+    "noUI": true,
+    "preventCrossGenderHeroReuse": true,
+    "preventCrossOutcomeReuse": true,
+    "requireActualBinary": true,
+    "requireHumanAcceptance": true,
+    "noPaidGenerationAPI": true,
+    "oneStageBeforeNext": true
+  },
+  "stages": [
+    {
+      "stageId": "c01-s02",
+      "scriptSynopsis": "礼拝堂の死者名簿が消えた夜、郊外の魔物が街道を塞ぐ。",
+      "status": "NOT_APPROVED",
+      "totalPanels": 48,
+      "recordedDraftPanels": 15,
+      "missingPanels": 33,
+      "editions": [
+        {
+          "edition": "pre",
+          "gender": "male",
+          "individualRequired": 8,
+          "posterRequired": 1,
+          "registeredDraft": 8,
+          "status": "NOT_APPROVED",
+          "posterFile": "assets/story/chapters/c01/c01-s02-pre-male-p01.webp",
+          "individualFormat": "assets/story/chapters/c01/panels/c01-s02-mNN-pre-male.webp",
+          "individualLegacyException": "already registered as c01-s02-mNN-male.webp"
+        },
+        {
+          "edition": "pre",
+          "gender": "female",
+          "individualRequired": 8,
+          "posterRequired": 1,
+          "registeredDraft": 0,
+          "status": "NOT_APPROVED",
+          "posterFile": "assets/story/chapters/c01/c01-s02-pre-female-p01.webp",
+          "individualFormat": "assets/story/chapters/c01/panels/c01-s02-mNN-pre-female.webp",
+          "individualLegacyException": null
+        },
+        {
+          "edition": "post-victory",
+          "gender": "male",
+          "individualRequired": 7,
+          "posterRequired": 1,
+          "registeredDraft": 7,
+          "status": "NOT_APPROVED",
+          "posterFile": "assets/story/chapters/c01/c01-s02-post-victory-male-p01.webp",
+          "individualFormat": "assets/story/chapters/c01/panels/c01-s02-mNN-post-victory-male.webp",
+          "individualLegacyException": "already registered as c01-s02-mNN-male.webp"
+        },
+        {
+          "edition": "post-victory",
+          "gender": "female",
+          "individualRequired": 7,
+          "posterRequired": 1,
+          "registeredDraft": 0,
+          "status": "NOT_APPROVED",
+          "posterFile": "assets/story/chapters/c01/c01-s02-post-victory-female-p01.webp",
+          "individualFormat": "assets/story/chapters/c01/panels/c01-s02-mNN-post-victory-female.webp",
+          "individualLegacyException": null
+        },
+        {
+          "edition": "post-defeat",
+          "gender": "male",
+          "individualRequired": 7,
+          "posterRequired": 1,
+          "registeredDraft": 0,
+          "status": "NOT_APPROVED",
+          "posterFile": "assets/story/chapters/c01/c01-s02-post-defeat-male-p01.webp",
+          "individualFormat": "assets/story/chapters/c01/panels/c01-s02-mNN-post-defeat-male.webp",
+          "individualLegacyException": null
+        },
+        {
+          "edition": "post-defeat",
+          "gender": "female",
+          "individualRequired": 7,
+          "posterRequired": 1,
+          "registeredDraft": 0,
+          "status": "NOT_APPROVED",
+          "posterFile": "assets/story/chapters/c01/c01-s02-post-defeat-female-p01.webp",
+          "individualFormat": "assets/story/chapters/c01/panels/c01-s02-mNN-post-defeat-female.webp",
+          "individualLegacyException": null
+        },
+        {
+          "edition": "post-gameover",
+          "gender": "male",
+          "individualRequired": 2,
+          "posterRequired": 1,
+          "registeredDraft": 0,
+          "status": "NOT_APPROVED",
+          "posterFile": "assets/story/chapters/c01/c01-s02-post-gameover-male-p01.webp",
+          "individualFormat": "assets/story/chapters/c01/panels/c01-s02-mNN-post-gameover-male.webp",
+          "individualLegacyException": null
+        },
+        {
+          "edition": "post-gameover",
+          "gender": "female",
+          "individualRequired": 2,
+          "posterRequired": 1,
+          "registeredDraft": 0,
+          "status": "NOT_APPROVED",
+          "posterFile": "assets/story/chapters/c01/c01-s02-post-gameover-female-p01.webp",
+          "individualFormat": "assets/story/chapters/c01/panels/c01-s02-mNN-post-gameover-female.webp",
+          "individualLegacyException": null
+        }
+      ]
+    },
+    {
+      "stageId": "c01-s03",
+      "scriptSynopsis": "王城へ戻る補給路が不審な使者に押さえられる。",
+      "status": "NOT_APPROVED",
+      "totalPanels": 48,
+      "recordedDraftPanels": 0,
+      "missingPanels": 48,
+      "editions": [
+        {
+          "edition": "pre",
+          "gender": "male",
+          "individualRequired": 8,
+          "posterRequired": 1,
+          "registeredDraft": 0,
+          "status": "NOT_APPROVED",
+          "posterFile": "assets/story/chapters/c01/c01-s03-pre-male-p01.webp",
+          "individualFormat": "assets/story/chapters/c01/panels/c01-s03-mNN-pre-male.webp",
+          "individualLegacyException": null
+        },
+        {
+          "edition": "pre",
+          "gender": "female",
+          "individualRequired": 8,
+          "posterRequired": 1,
+          "registeredDraft": 0,
+          "status": "NOT_APPROVED",
+          "posterFile": "assets/story/chapters/c01/c01-s03-pre-female-p01.webp",
+          "individualFormat": "assets/story/chapters/c01/panels/c01-s03-mNN-pre-female.webp",
+          "individualLegacyException": null
+        },
+        {
+          "edition": "post-victory",
+          "gender": "male",
+          "individualRequired": 7,
+          "posterRequired": 1,
+          "registeredDraft": 0,
+          "status": "NOT_APPROVED",
+          "posterFile": "assets/story/chapters/c01/c01-s03-post-victory-male-p01.webp",
+          "individualFormat": "assets/story/chapters/c01/panels/c01-s03-mNN-post-victory-male.webp",
+          "individualLegacyException": null
+        },
+        {
+          "edition": "post-victory",
+          "gender": "female",
+          "individualRequired": 7,
+          "posterRequired": 1,
+          "registeredDraft": 0,
+          "status": "NOT_APPROVED",
+          "posterFile": "assets/story/chapters/c01/c01-s03-post-victory-female-p01.webp",
+          "individualFormat": "assets/story/chapters/c01/panels/c01-s03-mNN-post-victory-female.webp",
+          "individualLegacyException": null
+        },
+        {
+          "edition": "post-defeat",
+          "gender": "male",
+          "individualRequired": 7,
+          "posterRequired": 1,
+          "registeredDraft": 0,
+          "status": "NOT_APPROVED",
+          "posterFile": "assets/story/chapters/c01/c01-s03-post-defeat-male-p01.webp",
+          "individualFormat": "assets/story/chapters/c01/panels/c01-s03-mNN-post-defeat-male.webp",
+          "individualLegacyException": null
+        },
+        {
+          "edition": "post-defeat",
+          "gender": "female",
+          "individualRequired": 7,
+          "posterRequired": 1,
+          "registeredDraft": 0,
+          "status": "NOT_APPROVED",
+          "posterFile": "assets/story/chapters/c01/c01-s03-post-defeat-female-p01.webp",
+          "individualFormat": "assets/story/chapters/c01/panels/c01-s03-mNN-post-defeat-female.webp",
+          "individualLegacyException": null
+        },
+        {
+          "edition": "post-gameover",
+          "gender": "male",
+          "individualRequired": 2,
+          "posterRequired": 1,
+          "registeredDraft": 0,
+          "status": "NOT_APPROVED",
+          "posterFile": "assets/story/chapters/c01/c01-s03-post-gameover-male-p01.webp",
+          "individualFormat": "assets/story/chapters/c01/panels/c01-s03-mNN-post-gameover-male.webp",
+          "individualLegacyException": null
+        },
+        {
+          "edition": "post-gameover",
+          "gender": "female",
+          "individualRequired": 2,
+          "posterRequired": 1,
+          "registeredDraft": 0,
+          "status": "NOT_APPROVED",
+          "posterFile": "assets/story/chapters/c01/c01-s03-post-gameover-female-p01.webp",
+          "individualFormat": "assets/story/chapters/c01/panels/c01-s03-mNN-post-gameover-female.webp",
+          "individualLegacyException": null
+        }
+      ]
+    }
+  ],
+  "totals": {
+    "stageCount": 2,
+    "variantPosterCount": 16,
+    "individualRequired": 96,
+    "registeredDraftPanels": 15,
+    "missingPanels": 81,
+    "qualityApprovedPanels": 0
+  }
+}

@@ -1,0 +1,56 @@
+name: Story stage poster batch (free preflight)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/prepare-story-stage-posters.mjs'
+      - 'qa/story-stage-poster-production.test.mjs'
+      - 'docs/story-stage-poster-production-manifest-v2.md'
+      - '.github/workflows/story-stage-poster-batch.yml'
+      - 'assets/story/chapters/c01/stage2-stage3-production-queue.json'
+  workflow_dispatch:
+    inputs:
+      start:
+        description: 'First stage, e.g. c01-s02'
+        type: string
+        required: true
+        default: c01-s02
+      count:
+        description: 'Consecutive stages, 1 to 10; does not generate or approve missing images'
+        type: number
+        required: true
+        default: 2
+
+permissions:
+  contents: read
+
+concurrency:
+  group: story-poster-preflight-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  free-preflight:
+    name: Prepare script, reference-image and reuse review queue (no paid API)
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify all stage 2 and 3 versions have unique assets and truthfully report missing art
+        run: |
+          node --check scripts/prepare-story-stage-posters.mjs
+          node qa/story-stage-poster-production.test.mjs
+      - name: Generate batch poster and individual-frame briefs
+        env:
+          STAGE_START: ${{ github.event.inputs.start || 'c01-s02' }}
+          STAGE_COUNT: ${{ github.event.inputs.count || '2' }}
+        run: node scripts/prepare-story-stage-posters.mjs --start "$STAGE_START" --count "$STAGE_COUNT"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: story-poster-free-preflight-${{ github.run_id }}
+          path: qa-reports/story-stage-production/
+          if-no-files-found: error
+          retention-days: 30
