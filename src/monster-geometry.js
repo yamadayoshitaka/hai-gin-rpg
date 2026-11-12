@@ -25,6 +25,32 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    }
  };
  const torso=g.group('torso');
+ if(s.id==='m003'){
+   // Ice Fenrir: independently moving shoulder mantle; thick winter neck
+   // guard hair is a solid layered silhouette even at distant LOD.
+   for(const side of [-1,1]){
+     const scapula=g.group('scapula'+(side<0?'L':'R'),
+       [side*.332,1.46,.30],torso);
+     g.bridge(scapula,'skin',[0,-.12,-.17],
+       [side*.045,.17,.13],.145,.098);
+     g.sphere(scapula,'light',[side*.023,.055,-.015],
+       [.103,.177,.191],{name:'m003-scapular-mantle'});
+     for(let i=0;i<4;i++)
+       g.spike(scapula,i%2?'light':'skin',
+         [side*(.065+i*.016),.106-i*.065,-.11],
+         [side*(.13+i*.018),.07-i*.088,-.25],.047);
+   }
+   for(const side of [-1,1]){
+     const ruff=g.group('ruff'+(side<0?'L':'R'),
+       [side*.21,1.55,.50],torso);
+     g.bridge(ruff,'skin',[0,-.05,-.10],
+       [side*.05,-.19,.26],.145,.105);
+     for(let i=0;i<7;i++)
+       g.spike(ruff,i%2?'light':'skin',
+         [side*(.07+i*.007),.07-i*.035,-.10+i*.045],
+         [side*(.12+i*.014),-.12-i*.046,-.17+i*.040],.035);
+   }
+ }
  if(s.id==='m002'){
    // Flame wolf: the shoulder blade bulge rides a real separate pivot with
    // the proximal forelimb, rather than a stationary textured oval.
@@ -72,7 +98,16 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
  for(const side of [-1,1]){
    const horn=v===2||reptile? .28:.12;
    if(canine){
-     if(s.id==='m002'){
+     if(s.id==='m003'){
+       const ear=g.group('ear'+(side<0?'L':'R'),
+         [side*.22,.21,-.075],head);
+       g.spike(ear,'skin',[0,0,0],
+         [side*.095,.405,-.034],.107);
+       g.spike(ear,'shadow',[side*.019,.046,.061],
+         [side*.082,.35,.027],.063);
+       g.sphere(ear,'light',[0,.018,.037],[.080,.053,.066],
+         {name:'m003-pinna-cartilage'});
+     }else if(s.id==='m002'){
        // Independent, cartilage-supported ears: paired pinnae now follow
        // sound, lunge anticipation and rearward flattening independently.
        const ear=g.group('ear'+(side<0?'L':'R'),
@@ -103,6 +138,23 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
        [side*(.38+v*.045),.47+horn,-.13],.085);
    }else g.sphere(head,'skin',[side*.24,.24,-.09],[.10,.19,.07]);
    g.spike(head,'bone',[side*.13,-.20,muzzle+.08],[side*.13,-.31,muzzle+.22],.046);
+ }
+ if(s.id==='m003'){
+   // Broad wolf temporalis bundles are volumetric, not face paint.
+   // Cheek fur and nasal cartilage preserve the sharp lupine silhouette.
+   g.bridge(head,'skin',[0,.075,-.16],[0,-.066,.455],.192,.109);
+   for(const side of [-1,1]){
+     g.sphere(head,'skin',[side*.227,.037,-.028],
+       [.127,.196,.209],{name:'m003-temporalis'});
+     g.bridge(head,'skin',[side*.226,-.077,.010],
+       [side*.241,-.141,.255],.125,.075);
+     g.sphere(head,'shadow',[side*.084,-.166,muzzle+.29],
+       [.027,.016,.013],{name:'m003-nostril'});
+     for(let i=0;i<5;i++)
+       g.spike(head,i%2?'light':'skin',
+         [side*.235,-.095-i*.027,.010+i*.034],
+         [side*(.33+i*.011),-.16-i*.041,-.10+i*.042],.025);
+   }
  }
  if(s.id==='m002'){
    // Cranial surface references: wolf sagittal crest, zygomatic arch and
@@ -177,6 +229,20 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    g.sphere(distal,'skin',[0,-.16,0],[reptile?.13:.15,.27,reptile?.13:.15]);
    g.sphere(distal,'shadow',[0,0,0],[.144,.125,.14],{name:'joint-'+name});
    feet(g,distal,0,0,0,true,reptile?.75:1);
+   if(s.id==='m003'){
+     // Four articulated digit pads and their curved keratin claws follow
+     // an independent metacarpophalangeal/toe flexion group on each paw.
+     const toe=g.group('toe'+name,[0,-.49,.16],distal);
+     g.sphere(toe,'shadow',[0,-.046,.040],
+       [.151,.066,.142],{name:'m003-metapodial-pad'});
+     for(let digit=0;digit<4;digit++){
+       const x=(digit-1.5)*.067;
+       g.sphere(toe,'skin',[x,-.037,.112],
+         [.043,.046,.092],{name:'m003-digit-pad'});
+       g.spike(toe,'bone',[x,-.025,.177],
+         [x,-.073,.262],.024);
+     }
+   }
    g.sphere(leg,'skin',[0,-.04,.015],[.18,.18,.18]);
    if(canine&&coatDetail!=='low'){
      // Attach to the leg pivot so the coat swings with every footstep.
