@@ -419,7 +419,7 @@ async function attachGear(dressed,outfitBones,profile,textures,quality){
   return items;
 }
 
-export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male',quality='preview',rarity='N',weaponOverride=null,preserveBody=false,hairStyle=null,hairColor=null}={}){
+export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male',quality='preview',rarity='N',weaponOverride=null,preserveBody=false,hairStyle=null,hairColor=null,studioPreferSkinnedLegs=false}={}){
   if(!characterModel||!parent)throw Error('人物モデルと配置先が必要です');
   // Different preview and battle entry points share the same head-surface
   // correction. The calibrated mesh is cached for all copies of each sex.
@@ -454,7 +454,9 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
   dressed.traverse(part=>{
     if(part.isSkinnedMesh&&/^(?:male|female)_(?:ranger|peasant)_legs(?:_|$)/i.test(part.name))sourceTrouserMeshCount++;
   });
-  const useSourceSkinnedLegs=lowDetail&&profile.armor==='plate'&&sourceTrouserMeshCount>0;
+  // The face/outfit studio uses the same naturally deforming source pants
+  // as the tactical battle, not preview-only pipe-shaped cylinder leggings.
+  const useSourceSkinnedLegs=(lowDetail||studioPreferSkinnedLegs)&&sourceTrouserMeshCount>0;
   dressed.traverse(o=>{if(!o.isMesh)return;
     // Combined Ranger GLTF contains the hood and pauldron for every Ranger.
     // Their visibility must follow the selected occupation, not the base mesh.
@@ -899,7 +901,7 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
       helmetPieces:helm.length,shieldFrontDot,bodyMasked,
       armorDepthOffsets:armor?.depthOffsets||{helmet:0,chest:0},
       armorPartAxes:armor?.diagnostics.partAxes||{},
-      suppressedBaseLegMeshes,retainedSkinnedLegMeshes,useSourceSkinnedLegs,
+      suppressedBaseLegMeshes,retainedSkinnedLegMeshes,useSourceSkinnedLegs,studioPreferSkinnedLegs,
       sourceTrouserLegMeshesSkipped:armor?.diagnostics.sourceTrouserLegMeshesSkipped||0,
       sourceBootShaftsSkipped:armor?.diagnostics.sourceBootShaftsSkipped||0,
       consolidatedArmorPieces:armor?.diagnostics.consolidatedArmorPieces||0,
@@ -924,7 +926,7 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
     commanderPieces:jobId==='strategist'?detail.children.filter(o=>
       /^(command-|military-standing-collar|strategist-seal)/.test(o.name)).length:0,
     tunicPanels:detail.userData.tunicPanels,gambesonMeshes,commanderUniformMeshes,thiefSourceBeltsHidden,
-    correctedLimbMeshes,preservedSkinMaterials,suppressedBaseLegMeshes,retainedSkinnedLegMeshes,useSourceSkinnedLegs,
+    correctedLimbMeshes,preservedSkinMaterials,suppressedBaseLegMeshes,retainedSkinnedLegMeshes,useSourceSkinnedLegs,studioPreferSkinnedLegs,
     gear:gear.length,weaponKinds:gear.map(g=>g.userData.equipmentKind),
     clothPieces:cloth.objects.length,clothFit:cloth.diagnostics.fittedRadii,
     garmentCoverage:garmentCoverage.regions,coverageSources:garmentCoverage.sources,

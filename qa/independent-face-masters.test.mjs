@@ -17,8 +17,12 @@ import {PART_CATALOG,PART_GROUPS,HAIR_COLORS,resolvePartSelection,defaultPartSel
  from '../src/face-part-catalog-v32.js';
 import {HERO_JOBS,HERO_OUTFITS,HERO_ACTIONS,createHeroineStudioWardrobe}
  from '../src/heroine-studio-wardrobe.js';
-import {REAL_BATTLE_WARDROBE,HEROINE_STUDIO_BODY_SCALE,fitStudioFaceAboveArmor,enhanceStudioCombatMaterials}
+import {REAL_BATTLE_WARDROBE,HEROINE_STUDIO_BODY_SCALE,fitStudioFaceAboveArmor,enhanceStudioCombatMaterials,refineHeroineCostumeSilhouette,enhanceHeroineFaceSurface}
  from '../src/heroine-battle-costume-bridge.js';
+import {STUDIO_BATTLE_ACTIONS,effectRecipeForHeroineAction,createHeroineBattleActionVfx}
+ from '../src/heroine-battle-action-vfx.js';
+import {HEROINE_FACE_STUDIO_KEY,loadHeroineFacePreset,saveHeroineFacePreset}
+ from '../src/heroine-face-preset-store.js';
 
 function fixture(){
  const original=new THREE.SphereGeometry(.19,64,48);
@@ -2034,4 +2038,106 @@ test('v39 facial finish has larger pupil, integrated subtle iris highlights and 
  assert.equal(five.getReport().staticMicroFibreCount,96*4);
  assert.ok(five.getReport().microFibreTriangles>0);
  five.dispose();
+});
+
+test('v40 costume preview uses real skinned leg cloth with no pipe cylinders for all 10 jobs',()=>{
+ const outfitSource=readFileSync('src/character-system/rigged-outfit-runtime.js','utf8');
+ const bridge=readFileSync('src/heroine-battle-costume-bridge.js','utf8');
+ assert.match(outfitSource,/studioPreferSkinnedLegs=false/);
+ assert.match(outfitSource,/\(lowDetail\|\|studioPreferSkinnedLegs\)&&sourceTrouserMeshCount>0/);
+ assert.match(outfitSource,/omitLegSegments:useSourceSkinnedLegs/);
+ assert.match(bridge,/studioPreferSkinnedLegs:true/);
+ assert.equal(REAL_BATTLE_WARDROBE.length,10);
+});
+test('v40 adjust heroine plate silhouette and hide disconnected decorative rivets without deleting GLB source geometry',()=>{
+ const group=new THREE.Group();
+ const material=new THREE.MeshStandardMaterial({color:'#cbd8e4'});
+ const chest=new THREE.Mesh(new THREE.BoxGeometry(.3,.43,.16),material);
+ chest.name='armor-chest-fitted-cuirass';chest.userData={equipmentClass:'armor',equipmentSlot:'chest'};
+ const shin=new THREE.Mesh(new THREE.CylinderGeometry(.06,.065,.3,16),material);
+ shin.name='armor-shin-greave';shin.userData={equipmentClass:'armor',equipmentSlot:'shin'};
+ const bead=new THREE.Mesh(new THREE.SphereGeometry(.01,12,8),material);
+ bead.name='l-cuirass-fastener';
+ const importedOrb=new THREE.Mesh(new THREE.SphereGeometry(.01,12,8),material);
+ importedOrb.name='armor-chest-plate-round-attachment';importedOrb.userData={equipmentClass:'armor',equipmentSlot:'chest'};
+ const pants=new THREE.SkinnedMesh(new THREE.BoxGeometry(.4,.6,.16),material);
+ pants.name='Female_Ranger_Legs';
+ group.add(chest,shin,bead,importedOrb,pants);
+ const chestPosition=chest.geometry.getAttribute('position').array.slice();
+ const r=refineHeroineCostumeSilhouette(group);
+ assert.equal(r.skinnedTrousers,1);
+ assert.ok(r.taperedLegPieces>0&&r.narrowedCuirass>0);
+ assert.ok(r.hiddenLooseStuds>=2);
+ assert.equal(bead.visible,false);
+ assert.equal(importedOrb.visible,false);
+ assert.ok(chest.scale.x<1&&shin.scale.z<1);
+ assert.deepEqual(chest.geometry.getAttribute('position').array,chestPosition);
+ assert.equal(r.sourceGeometryUnmodified,true);
+});
+test('v40 skin shader keeps heroine vertex pigment and makes face more lifelike',()=>{
+ const mesh=new THREE.Mesh(new THREE.SphereGeometry(.22,16,12),new THREE.MeshStandardMaterial({
+  color:0xf4d5c4,vertexColors:true,roughness:.90
+ }));
+ const r=enhanceHeroineFaceSurface(mesh);
+ assert.ok(r.applied);
+ assert.ok(mesh.material.isMeshPhysicalMaterial);
+ assert.equal(mesh.material.vertexColors,true);
+ assert.ok(mesh.material.roughness>.65);
+ assert.ok(mesh.material.sheen>0);
+ assert.equal(enhanceHeroineFaceSurface(mesh).reused,true);
+});
+test('v40 seven action buttons resolve actual battle effect recipes with Kenney sprites and battle directives',()=>{
+ assert.deepEqual(STUDIO_BATTLE_ACTIONS.map(a=>a.id),
+  ['idle','walk','run','attack','guard','cast','victory']);
+ assert.equal(effectRecipeForHeroineAction('mage','cast').texture,'magic_04');
+ assert.equal(effectRecipeForHeroineAction('cleric','cast').texture,'magic_01');
+ assert.equal(effectRecipeForHeroineAction('swordsman','attack').texture,'slash_02');
+ assert.equal(effectRecipeForHeroineAction('swordsman','run').texture,'smoke_03');
+ assert.equal(effectRecipeForHeroineAction('swordsman','idle'),null);
+ const actor=new THREE.Group(),camera=new THREE.PerspectiveCamera();
+ for(const name of ['spine_03','hand_l','hand_r','foot_l','foot_r']){
+  const bone=new THREE.Bone();bone.name=name;actor.add(bone);
+ }
+ const effects=createHeroineBattleActionVfx({THREE,actorRoot:actor,camera,
+  loadTexture:()=>Promise.resolve(new THREE.Texture())});
+ assert.equal(effects.getState().spriteCount,5);
+ const recipe=effects.trigger('attack','swordsman');
+ effects.update(.045);
+ assert.equal(recipe.texture,'slash_02');
+ assert.equal(effects.getState().triggered,1);
+ assert.ok(actor.getObjectByName('KENNEY_SHARED_BATTLE_VFX'));
+ effects.trigger('cast','cleric');effects.update(.10);
+ assert.equal(effects.getState().triggered,2);
+ assert.equal(effects.getState().action,'healArea');
+ effects.dispose();
+ assert.equal(actor.getObjectByName('KENNEY_SHARED_BATTLE_VFX'),undefined);
+});
+test('v40 female face edits survive navigation between face and costume pages',()=>{
+ const saved=new Map();
+ const storage={getItem:key=>saved.get(key)||null,setItem:(k,v)=>saved.set(k,v)};
+ const data={parts:{face:3,hair:14,makeup:6},controls:{irisDiameter:1.23},
+  hairStyleId:'soft-wave-long',hairColor:'blonde',hairDensity:1900,
+  contactColor:'#3698df',makeupType:6};
+ assert.ok(saveHeroineFacePreset(data,storage));
+ assert.ok(saved.has(HEROINE_FACE_STUDIO_KEY));
+ const loaded=loadHeroineFacePreset(storage);
+ assert.deepEqual(loaded.parts,data.parts);
+ assert.equal(loaded.controls.irisDiameter,1.23);
+ assert.equal(loaded.hairStyleId,'soft-wave-long');
+ assert.equal(loaded.version,40);
+ assert.equal(loadHeroineFacePreset({getItem:()=>'{bad'}),null);
+});
+test('v40 outfit page exposes real action buttons and separate face page navigation',()=>{
+ const outfit=readFileSync('face-body-studio.html','utf8');
+ const face=readFileSync('face-mesh-studio.html','utf8');
+ assert.match(outfit,/id="heroActionButtons"/);
+ assert.match(outfit,/STUDIO_BATTLE_ACTIONS/);
+ assert.match(outfit,/btn\.dataset\.action=action\.id/);
+ assert.match(outfit,/battleCostume\?\.playAction/);
+ assert.match(outfit,/id="faceEditorLink"/);
+ assert.match(outfit,/body\.costume-only #v32BodyPartStudio/);
+ assert.match(outfit,/studioPreviewCamera=camera/);
+ assert.match(face,/id="returnToCostume"/);
+ assert.match(face,/persistHeroineFace/);
+ assert.match(outfit,/loadHeroineFacePreset/);
 });
