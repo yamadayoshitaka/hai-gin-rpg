@@ -50,6 +50,14 @@
 ```bash
 node scripts/prepare-story-stage-posters.mjs --start c01-s02 --count 2
 node qa/story-stage-poster-production.test.mjs
+# 実画像ポスターは assets/story/chapter-drafts/c01/posters/
+# (例: c01-s02-pre-male-p01.webp) に入れる
+# 分割先は qa-reports/story-stage-production/review-packs/。この時点では未承認
+python scripts/ingest-story-stage-posters.py
 ```
 
 制作手順の更新だけでは画像生成・公開完了にはならない。現在の実登録状況は `src/story-panel-registered-art.js` および実WebPとGitHub Pagesで確認する。
+
+### 無償バッチ実体化の仕様
+
+高解像度WebPポスターの元ファイルが投入されると、Actionsが **2列×全行を1コマずつ正確に切り出し**、実WebP、SHA256、台本ID、暫定合格基準画像との左右比較用HTML、手動審査待ちJSONを成果物へ保存する。画像が無ければ `MISSING_SOURCE_POSTER` で終了し、架空の画像を作らない。低解像度のシート（1コマ1536×864未満）を切り出して合格扱いにすることは禁止。レビュー用成果物から実ゲームへの自動コピーはしない。人間の画質合格、各分岐の最終QAが完了したファイルだけ、既存の公開工程で昇格させる。
