@@ -747,6 +747,12 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   singleRearLayer:!!bodyCollisionResolver,
   fringeRootAboveHairline:true,fullLengthEyebrowFringe:true,
   frontalCrownEyebrowTrim:true,joinedRearSilhouette:true,
+  // Geometric guard against the obvious two locks hanging in front of the
+  // nose/mouth seen in the first v23 screenshot, not only a style label.
+  frontalFaceCrossingLocks:strands.filter(lock=>lock.rest.some(p=>
+   p.y<box.min.y+d.y*.56&&
+   Math.abs(p.x-center.x)<d.x*.145&&
+   p.z>center.z+d.z*.045)).length,
   hairStrandWidthFraction:.0121,fullerCrownBackVolume:true,
   fullBodyTriangleContactBeforeProxy:true,neckAndShoulderDrape:true,
   fullBodyShoulderExtension:!!bodyCollisionResolver,
