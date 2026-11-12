@@ -195,6 +195,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
  // edge, rather than drawing detached floating white eye disks.
  for(const side of [-1,1]){
   const firstChild=root.children.length;
+  const eyeLabel=side===-1?'LEFT':'RIGHT';
   const x=cx+side*eyeSpacing,y=eyeHeight;
   // Fit from actual orbital boundary points on the sculpted face.
   const rimWidth=eyeRadius*1.12,rimHeight=eyeRadius*.33;
@@ -308,7 +309,6 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
    root.add(upperFold);
    // Upper-lid eyeshadow shares the upper eyelid's actual joint and surface.
    // RGBA mesh vertices feather at the edges; no floating decal card.
-   const eyeLabel=side===-1?'LEFT':'RIGHT';
    const upperEyelid=root.getObjectByName(eyeLabel+'_UPPER_ANATOMICAL_EYELID');
    const shadowMaterial=new THREE.MeshBasicMaterial({
     color:0x865b7d,transparent:true,opacity:.79,
