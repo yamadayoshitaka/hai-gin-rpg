@@ -1869,12 +1869,16 @@ test('v35 cornea and iris are never hidden behind the original skin at any eye v
   const eye=model.parts.getObjectByName(side+'_ORBITAL_EYEBALL');
   const iris=model.parts.getObjectByName(side+'_CURVED_IRIS');
   const pupil=model.parts.getObjectByName(side+'_CURVED_PUPIL');
+  model.root.updateMatrixWorld(true);
   for(const part of [eye,iris,pupil]){
    const positions=part.geometry.getAttribute('position');
+   const vertex=new THREE.Vector3();
    for(let i=0;i<positions.count;i+=13){
-    const skin=sampler.query(positions.getX(i),positions.getY(i));
+    vertex.fromBufferAttribute(positions,i);
+    part.localToWorld(vertex);model.face.worldToLocal(vertex);
+    const skin=sampler.query(vertex.x,vertex.y);
     if(skin===null)continue;
-    assert.ok(positions.getZ(i)>skin+radius*.017,
+    assert.ok(vertex.z>skin+radius*.017,
      part.name+' must sit in front of closed donor socket skin');
    }
   }
