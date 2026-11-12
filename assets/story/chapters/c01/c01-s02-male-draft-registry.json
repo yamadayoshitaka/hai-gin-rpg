@@ -1,0 +1,188 @@
+{
+  "schemaVersion": 1,
+  "stageId": "c01-s02",
+  "chapter": 1,
+  "protagonistGender": "male",
+  "stageKind": "explore",
+  "victoryCondition": "出現した全モンスターを討伐",
+  "sourceStorySetup": "礼拝堂の死者名簿が消えた夜、郊外の魔物が街道を塞ぐ。",
+  "sourceVictoryBeat": "礼拝堂へ通じる道を取り戻し、イリスの証言を調べる余地が生まれる。",
+  "status": "AI_DRAFT_UNAPPROVED",
+  "approved": false,
+  "textAddedToImage": false,
+  "sourceSheets": [
+    "星鐘の謎と騎士団の出撃.png",
+    "勝利の余韻_聖堂への行進.png"
+  ],
+  "pageCount": 2,
+  "panelCount": 15,
+  "panels": [
+    {
+      "phase": "pre",
+      "panelId": "c01-s02-m01",
+      "description": "イリスは消えた死者名簿を確認する",
+      "path": "assets/story/chapters/c01/panels/c01-s02-m01-male.webp",
+      "sha256": "820033384736c7c9e8dbfef2f95bb32b9bbf97007bec67ff170d7745db96d483",
+      "bytes": 99274
+    },
+    {
+      "phase": "pre",
+      "panelId": "c01-s02-m02",
+      "description": "軍師はイリスから報告を受ける",
+      "path": "assets/story/chapters/c01/panels/c01-s02-m02-male.webp",
+      "sha256": "113fe68a7555b44d25d88b2b8d5b3e0e72c78f430a4acac918b421d2df46d7be",
+      "bytes": 89958
+    },
+    {
+      "phase": "pre",
+      "panelId": "c01-s02-m03",
+      "description": "鳴るはずのない星鐘に不穏な残響が現れる",
+      "path": "assets/story/chapters/c01/panels/c01-s02-m03-male.webp",
+      "sha256": "4ad5b8c4cd6e06c62a29869015b70c8a907439a666ce07430d8f234bfff8c6a8",
+      "bytes": 88928
+    },
+    {
+      "phase": "pre",
+      "panelId": "c01-s02-m04",
+      "description": "リュシア、ガラン、イリスと軍議を行う",
+      "path": "assets/story/chapters/c01/panels/c01-s02-m04-male.webp",
+      "sha256": "93804d27b2058b772cdb3a74f71bf1aba52cd80a2cace3fcb35f1833427ff8fb",
+      "bytes": 106542
+    },
+    {
+      "phase": "pre",
+      "panelId": "c01-s02-m05",
+      "description": "魔物が礼拝堂への街道を塞ぐ",
+      "path": "assets/story/chapters/c01/panels/c01-s02-m05-male.webp",
+      "sha256": "ba141e9fb4e6efbd43adc48eeaa69c86a55201ce7b3d6a4b6d06e4eb4c9dbe17",
+      "bytes": 93584
+    },
+    {
+      "phase": "pre",
+      "panelId": "c01-s02-m11",
+      "description": "軍師は街道と礼拝堂の位置を確かめる",
+      "path": "assets/story/chapters/c01/panels/c01-s02-m11-male.webp",
+      "sha256": "b298cc813b2f8b2e5b0c4e83bde419ceb6cfa9311bab8580f63e5b0195abf5c6",
+      "bytes": 93618
+    },
+    {
+      "phase": "pre",
+      "panelId": "c01-s02-m13",
+      "description": "四人は街道を取り戻すと決める",
+      "path": "assets/story/chapters/c01/panels/c01-s02-m13-male.webp",
+      "sha256": "bcec953b48e5d9f89106576fc23a538b824eb279e226350d6902f48da3e91cc6",
+      "bytes": 92878
+    },
+    {
+      "phase": "pre",
+      "panelId": "c01-s02-m15",
+      "description": "軍師と騎士団が街道へ進軍する",
+      "path": "assets/story/chapters/c01/panels/c01-s02-m15-male.webp",
+      "sha256": "9e51d78eec4314fac0aa6cf905b0fb6458a5136e4f3bb0eddc1ce9437b92d662",
+      "bytes": 108366
+    },
+    {
+      "phase": "post-victory",
+      "panelId": "c01-s02-m06",
+      "description": "魔物が討伐され、軍師が戦場を確認する",
+      "path": "assets/story/chapters/c01/panels/c01-s02-m06-male.webp",
+      "sha256": "2a210a3377ea5bbd86b11f4838cad52f7cc7f1a45dd9ac709a66cd1f32a165ca",
+      "bytes": 102376
+    },
+    {
+      "phase": "post-victory",
+      "panelId": "c01-s02-m07",
+      "description": "ガランが生存者と兵の状況を確認する",
+      "path": "assets/story/chapters/c01/panels/c01-s02-m07-male.webp",
+      "sha256": "5d4318fb28cb633537cb54501da495f3f01170fd25bda90bb1e799bf85b7a090",
+      "bytes": 103894
+    },
+    {
+      "phase": "post-victory",
+      "panelId": "c01-s02-m08",
+      "description": "礼拝堂へ通じる街道が通行可能になる",
+      "path": "assets/story/chapters/c01/panels/c01-s02-m08-male.webp",
+      "sha256": "f99ff70e19aae29440386f055cc78dbb113dee6292bce7738a7fd6a73dba3fd7",
+      "bytes": 117140
+    },
+    {
+      "phase": "post-victory",
+      "panelId": "c01-s02-m09",
+      "description": "イリスが残された紙片を調べる",
+      "path": "assets/story/chapters/c01/panels/c01-s02-m09-male.webp",
+      "sha256": "c91cd1b6256a338c8b07b21ecf02419709f1b22530c00d26e60e85bc9fb590cd",
+      "bytes": 99212
+    },
+    {
+      "phase": "post-victory",
+      "panelId": "c01-s02-m16",
+      "description": "軍師とリュシアが王印の記録を照合する",
+      "path": "assets/story/chapters/c01/panels/c01-s02-m16-male.webp",
+      "sha256": "ca5b851456c7c76806d35136d0dd9c2929c6a95e5d7ee99e3af54fc43b96099b",
+      "bytes": 93742
+    },
+    {
+      "phase": "post-victory",
+      "panelId": "c01-s02-m19",
+      "description": "リュシア、ガラン、イリスと調査再開を相談する",
+      "path": "assets/story/chapters/c01/panels/c01-s02-m19-male.webp",
+      "sha256": "f851de8b67881182ebc0f933d1bdc3ceeae3b97b2b4fe4730ba65712b902be67",
+      "bytes": 99530
+    },
+    {
+      "phase": "post-victory",
+      "panelId": "c01-s02-m10",
+      "description": "四人は次の手掛かりへ進む",
+      "path": "assets/story/chapters/c01/panels/c01-s02-m10-male.webp",
+      "sha256": "4fe4a2673c2a78da4fb20eff12157b0209a50f8ed936079444b67ef270ffa682",
+      "bytes": 100528
+    }
+  ],
+  "pages": [
+    {
+      "phase": "pre",
+      "path": "assets/story/chapters/c01/c01-s02-pre-male-p01.webp",
+      "pixelSize": [
+        1536,
+        1728
+      ],
+      "panels": [
+        "c01-s02-m01",
+        "c01-s02-m02",
+        "c01-s02-m03",
+        "c01-s02-m04",
+        "c01-s02-m05",
+        "c01-s02-m11",
+        "c01-s02-m13",
+        "c01-s02-m15"
+      ],
+      "sha256": "9fed6f738ed6351ac2ec7a81edc9ac2a3625c8c3ceac33be0e65929175e0994f",
+      "bytes": 857458
+    },
+    {
+      "phase": "post-victory",
+      "path": "assets/story/chapters/c01/c01-s02-post-victory-male-p01.webp",
+      "pixelSize": [
+        1536,
+        1728
+      ],
+      "panels": [
+        "c01-s02-m06",
+        "c01-s02-m07",
+        "c01-s02-m08",
+        "c01-s02-m09",
+        "c01-s02-m16",
+        "c01-s02-m19",
+        "c01-s02-m10"
+      ],
+      "sha256": "3dbd47f05c464e773f5786dbe1c2a0d07fb4e833bec3b4ef617d0cc05a6c0e24",
+      "bytes": 778388
+    }
+  ],
+  "qualityNotes": [
+    "台本どおり前8コマ・勝利後7コマ、別原画から切り出し",
+    "表示用のセリフとふりがなは画像の外で表示",
+    "人物マスターとの差分および全分岐の人間レビューは未完了",
+    "女性版・敗北版・主人公死亡版は未作成"
+  ]
+}
