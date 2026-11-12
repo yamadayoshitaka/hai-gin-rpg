@@ -16,7 +16,10 @@ export function registeredStoryPanelAsset(shot){
  const allowed=REGISTERED[shot.stageId+'|'+shot.comicEdition+'|'+shot.protagonistGender];
  const id=/^c\d{2}-s\d{2}-m(\d{1,2})$/.exec(shot.id);
  if(!allowed||!id||!allowed.includes(Number(id[1])))return null;
- return './assets/story/chapters/'+shot.stageId.slice(0,3)+'/panels/'+shot.id+'-'+shot.protagonistGender+'.webp';
+ // Scene IDs use m1..m9, but the on-disk WebP files use m01..m09.
+ // Normalize only the asset filename; keep the original scene/voice ID stable.
+ const assetId=shot.stageId+'-m'+String(Number(id[1])).padStart(2,'0');
+ return './assets/story/chapters/'+shot.stageId.slice(0,3)+'/panels/'+assetId+'-'+shot.protagonistGender+'.webp';
 }
 /** Geometry for a 2-column composite; only the selected 16:9 cell is visible. */
 export function storySheetCrop(shot,pageCellCount){
