@@ -958,7 +958,7 @@ test('v19 independent heroine face is attached to REAL female body without dupli
  attached.setOutfitVisible(true);
  assert.equal(clipped.material,dressed,'Clothing should fit original body triangles');
  assert.ok(clipped.geometry.getIndex().count<body.geometry.getIndex().count);
- const hair=createScalpAnchoredWig(head.face,{count:96,
+ const hair=createScalpAnchoredWig(scalpCopy,{count:96,
   bodyCollisionResolver:attached.bodyCollider});
  assert.equal(hair.getReport().usesRealBodyTriangleContacts,true);
  assert.equal(hair.root.userData.assetType,'independent-wig');
