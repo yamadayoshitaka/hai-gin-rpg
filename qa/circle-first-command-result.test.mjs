@@ -64,9 +64,9 @@ assert.match(html,/if\(tacticalBankRemaining<=0\)\{tacticalPlanningActive=false;
  'Reaching zero time must not resume combat while choosing targets');
 assert.match(html,/if\(previous&&!finished&&paused!==previous\.wasPaused\)setBattlePaused\(previous\.wasPaused\)/,
  'Command completion restores the pause state from before selection');
-assert.equal(ORDER_COOLDOWN_SECONDS,120);
-assert.equal(secondsUntilNextOrder(10,50),80);
-assert.equal(secondsUntilNextOrder(10,130),0);
+assert.equal(ORDER_COOLDOWN_SECONDS,60);
+assert.equal(secondsUntilNextOrder(10,50),20);
+assert.equal(secondsUntilNextOrder(10,70),0);
 
 // Reports carry REAL post-action state, and appear only after result cut-ins.
 assert.match(ceremony,/showResult:detail=>\{if\(!locked\)begin\('result',detail\);\}/);
