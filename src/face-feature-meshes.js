@@ -315,8 +315,10 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
  const baseEyeRadius=d.x*.052;
  // Blender Studio: expose convex corneal volume above the real socket and
  // wrap the lids back onto the facial skin. Do not simply translate the eyes.
- const eyeApertureRatio=female?.40:.34;
- const anteriorGlobeRatio=female?.58:.49;
+ const eyeApertureRatio=female?.46:.34;
+ // A low, lid-seated corneal dome: the former 0.58R projection looked like
+ // detached snail eyes in the mobile side view. Preserve slight curvature.
+ const anteriorGlobeRatio=female?.245:.27;
  const eyeAnteriorClearances=[];
  const originalIrisAngle=.585;
  // v33 enlarges the real circular IRIS without squashing its rim.
@@ -371,9 +373,12 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   const orbitSamples=[];
   for(const ax of [-.62,0,.62])for(const ay of [-.45,0,.45])
    orbitSamples.push(surfaceAt(x+ax*width,y+ay*rimHeight));
-  const orbitFrontZ=Math.max(faceZ,...orbitSamples);
-  const eyeSurfaceLift=Math.max(baseEyeRadius*.19,
-   Math.max(d.z*.007,baseEyeRadius*.19)+baseEyeRadius*settings.eyeDepth*.24);
+  // Do not push the entire cornea to the MOST protruding brow/cheek
+  // triangle. Keep the centre local to its actual eye socket instead.
+  const orbitFrontZ=faceZ+Math.min(baseEyeRadius*.035,
+   Math.max(0,Math.max(...orbitSamples)-faceZ));
+  const eyeSurfaceLift=Math.max(baseEyeRadius*.020,
+   baseEyeRadius*(.045+settings.eyeDepth*.18));
   const eyeDomeHeight=baseEyeRadius*anteriorGlobeRatio;
   const insetZ=(px,py)=>{
    const tx=clamp((px-x)/width,-1,1);
@@ -426,19 +431,24 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
    // blue horizontal folds / stripes. A genuine round iris must fit the
    // actual opening instead, and no vertex may be clipped into a flat row.
    const isIris=label==='CURVED_IRIS';
-   const irisDisplayScale=isIris?(female?.72:.67):.60;
+   const irisDisplayScale=isIris?(female?.88:.67):.68;
    const requested=eyeRadius*irisDisplayScale*Math.sin(angularRadius);
    const opening=eyeRadius*eyeApertureRatio*eyeHeight;
    // Keep a real circle and a thin white sclera ring; never clip the
    // actual iris geometry into an ugly horizontal stripe.
-   const physicalRadius=Math.min(requested,opening*(isIris?.90:.68));
+   const physicalRadius=Math.min(requested,opening*(isIris?(female?.94:.90):.73));
+   // The pupil and colored iris share one gentle nasal gaze shift, not
+   // independent offsets that could create strabismus in oblique views.
+   const gazeX=x-side*eyeRadius*.055*eyeWidth;
    const cap=buildGrid(eyeLabel+'_'+label,64,20,(u,v)=>{
     const az=u*Math.PI*2,rr=physicalRadius*v;
     const xx=rr*Math.cos(az),yy=rr*Math.sin(az);
-    return new THREE.Vector3(x+xx,y+yy,
-     insetZ(x+xx,y+yy)+eyeRadius*raise);
+    return new THREE.Vector3(gazeX+xx,y+yy,
+     insetZ(gazeX+xx,y+yy)+eyeRadius*raise);
    },material);
    cap.userData.circularProjectedRadius=physicalRadius;
+   cap.userData.gazeInwardOffsetRatio=.055;
+   cap.userData.nasalGazeCentered=true;
    cap.userData.v33IrisScale=isIris?irisDisplayScale:undefined;
    cap.userData.v33IrisOpeningFraction=physicalRadius/opening;
    cap.userData.unclippedTrueCircle=true;
@@ -453,9 +463,11 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   const fiberColors=[];
   for(let j=0;j<=20;j++)for(let i=0;i<=64;i++){
    const r=j/20,angle=i/64*Math.PI*2;
-   const fiber=.94+.06*Math.sin(angle*38+r*23)*Math.sin(angle*23-r*11);
-   const limbal=1-.26*Math.pow(THREE.MathUtils.smoothstep(r,.82,1),2);
-   const collarette=.92+.08*Math.exp(-Math.pow((r-.39)/.12,2));
+   const radialStreak=Math.sin(angle*23+r*18)*Math.cos(angle*13-r*12);
+   const fineStreak=Math.sin(angle*27-r*26)*Math.sin(angle*17+r*11);
+   const fiber=.935+.043*radialStreak+.022*fineStreak;
+   const limbal=1-.30*Math.pow(THREE.MathUtils.smoothstep(r,.82,1),2);
+   const collarette=.90+.10*Math.exp(-Math.pow((r-.43)/.13,2));
    const c=fiber*limbal*collarette;
    fiberColors.push(c,c*.98,c*.96);
   }
@@ -792,6 +804,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   eyeProfileLateralMargins:lateralEyeMargins.map(v=>Number(v.toFixed(6))),
   eyeballProjection:'sculpted-face-conforming-almond-no-sphere',
   irisPupilProjection:'circular-face-conformal-inset',irisRadialFibers:true,
+  irisNasalGazeOffsetRatio:.055,cornealProfile:'lid-seated-subtle-convex',
   contactColorDefault:safeContactColor(settings.contactColor),
   eyeAngleDefault:settings.eyeAngle,
   eyeSpacingFactor:settings.eyeSpacing,
