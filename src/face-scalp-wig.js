@@ -268,7 +268,7 @@ function scalpShell(geo,box,color){
  * @param {THREE.Mesh} head  owned sculpted female head
  * @param {{count?:number,color?:number,externalColliders?:Array}} options
  */
-export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalColliders=[],bodyCollisionResolver=null,lengthScale=1,styleId=DEFAULT_WIG_STYLE_ID}={}){
+export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalColliders=[],bodyCollisionResolver=null,lengthScale=1,styleId=DEFAULT_WIG_STYLE_ID,fineFringeMultiplier=1}={}){
  const style=getWigStyle(styleId);
  if(!head?.isMesh||!head.geometry?.getAttribute('position'))
   throw Error('Real sculpted 3D head required for scalp-rooted wig');
@@ -296,12 +296,21 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  root.userData.part=style.part;
  root.userData.whorlPosition=whorl.toArray();
  const cap=scalpShell(head.geometry,box,color);root.add(cap);
- const lockCount=clamp(Math.round(count),48,2400),segments=11;
+ const baseCount=clamp(Math.round(count),48,2400),segments=11;
+ // Allocate EXTRA fine roots at the forehead without removing the existing
+ // crown, rear and nape locks. Legacy face-test count stays unchanged at 1x.
+ const fringeMultiplier=clamp(Number(fineFringeMultiplier)||1,1,4);
+ const fringeExtra=Math.min(2400-baseCount,
+  Math.round(baseCount*.08*(fringeMultiplier-1)));
+ const lockCount=baseCount+fringeExtra;
+ const weightedZones=WIG_ZONE_WEIGHTS.map(([name,weight])=>
+  [name,weight*(name.startsWith('fringe')?fringeMultiplier:1)]);
+ const totalZoneWeight=weightedZones.reduce((sum,[,weight])=>sum+weight,0);
  const zoneCounts=Object.fromEntries(WIG_ZONE_WEIGHTS.map(([zone])=>[zone,0]));
  const zoneCap=[],zoneNames=[];
  let total=0;
- for(const [name,weight] of WIG_ZONE_WEIGHTS){
-  total+=weight;
+ for(const [name,weight] of weightedZones){
+  total+=weight/totalZoneWeight;
   zoneCap.push(Math.round(total*lockCount));zoneNames.push(name);
  }
  // Central posterior locks bridge the two halves at the nape: the
@@ -379,7 +388,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   // of a flat horizontal 'home haircut' line above both eyebrows.
   const partSlope=(wigRoot.x-center.x)/d.x;
   const browLimit=box.min.y+d.y*
-   (.747+.060*partSlope+.025*cutPhase+.012*wave);
+   (.711+.035*partSlope+.019*cutPhase+.006*wave);
   const bangLength=d.y*(.09+.034*cutPhase)*clamp(lengthScale,.55,1.5);
   const length=(fringe||overFace)?
    Math.max(d.y*.008,Math.min(bangLength,wigRoot.y-browLimit)):
@@ -406,7 +415,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    zone.startsWith('temple')?wigRoot.z-d.z*.035:
    Math.min(wigRoot.z-d.z*.075,center.z-d.z*.035);
   // No high-frequency radial scattering that makes fine hair frizzy.
-  const strandWave=(fract(i*.75487766)-.5)*d.x*.00032;
+  const strandWave=(fract(i*.75487766)-.5)*d.x*.00012;
   // Gravity rest shape: initial down-velocity + gravitational acceleration.
   const g=style.gravityMps2*(d.y/2)*style.gravityScale;
   const fallTime=Math.sqrt(Math.max(1e-8,length/g));
@@ -414,7 +423,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    const t=j/segments,fall=t*t*(3-2*t);
    const drop=.5*length*t+.5*g*(t*fallTime)**2;
    const y=Math.max(trimY,wigRoot.y-drop);
-   const curl=Math.sin(t*2.5+i*2.39996323)*d.x*.00024*t*t;
+   const curl=Math.sin(t*2.5+Math.floor(i/12)*.35)*d.x*.000045*t*t;
    const p=j===0?wigRoot.clone():f3(
     THREE.MathUtils.lerp(wigRoot.x,targetX,fall)+strandWave*t+curl,
     y,THREE.MathUtils.lerp(wigRoot.z,targetZ,fall)+curl*.35);
@@ -490,7 +499,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  // Real head-surface collision. The original giant ellipsoid forced
  // every strand out to an artificial spherical helmet around the ears.
  // Only points INSIDE the actual head silhouette are nudged outward.
- function resolveCollision(p){
+ function resolveCollision(p,zone='crown',overFace=false){
   // Explicit contact with the ACTUAL front facial triangles. For hair
   // falling over the central eye/cheek region, first part it outwards.
   const yNorm=(p.y-box.min.y)/d.y;
@@ -532,7 +541,10 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   }
   // This must be LAST: proxy shoulder capsules must not push a corrected
   // strand back inside the real female body geometry.
-  if(bodyCollisionResolver?.resolve?.(p)){
+  const contactSide=(zone.startsWith('back')||zone.startsWith('nape'))?
+   'rear':(zone.startsWith('fringe')||zone.startsWith('temple')||overFace)?
+   'front':'nearest';
+  if(bodyCollisionResolver?.resolve?.(p,{side:contactSide})){
    collisions++;bodyContacts++;realBodyContacts++;
   }
  }
@@ -550,7 +562,9 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    // in the last 15% instead of uniformly thinning into wire-like ends.
    const tip=1-.90*Math.pow(t,8);
    const width=half*tip*(.90+.15*fract(i*.35))*
-    (strand.zone==='crown'||strand.zone.startsWith('back')?1.14:1);
+    (strand.zone.startsWith('fringe')?.34:
+     strand.zone.startsWith('temple')?.74:
+     strand.zone==='crown'||strand.zone.startsWith('back')?1.14:1);
     // Groom BOTH ribbon planes along the actual hair-guide tangent.
     // The old world-X/world-Z crosses stuck through crown triangles like
     // needles; a tangent-plane ribbon lays on the rounded scalp instead.
@@ -583,7 +597,10 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
      // clothing. Resolve actual rendered corners, without unrooting j=0.
      if(renderBodyCollider&&j>0&&vy<box.min.y+d.y*.72){
       ribbonCollisionPoint.set(vx,vy,vz);
-      if(renderBodyCollider.resolve(ribbonCollisionPoint)){
+      const side=(strand.zone.startsWith('back')||strand.zone.startsWith('nape'))?
+       'rear':(strand.fringe||strand.zone.startsWith('temple')||strand.overFace)?
+       'front':'nearest';
+      if(renderBodyCollider.resolve(ribbonCollisionPoint,{side})){
        vx=ribbonCollisionPoint.x;vy=ribbonCollisionPoint.y;
        vz=ribbonCollisionPoint.z;ribbonBodyContacts++;
       }
@@ -618,12 +635,12 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
     v.y-=step*d.y*.55*style.gravityScale;
     p.addScaledVector(v,step);
     p.x+=wind;
-    resolveCollision(p);
+    resolveCollision(p,s.zone,s.overFace);
     const prev=s.points[j-1],target=s.rest[j].distanceTo(s.rest[j-1]);
     const gap=p.clone().sub(prev),length=gap.length();
     if(length>target*1.055&&length>0)
      p.copy(prev).addScaledVector(gap,target*1.055/length);
-    resolveCollision(p);
+    resolveCollision(p,s.zone,s.overFace);
     if(p.y<s.trimY){p.y=s.trimY;v.y=Math.max(0,v.y);}
    }
   }
@@ -633,7 +650,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  // the real cheek, forehead and shoulder surfaces. Use resolved contacts
  // as the spring rest shape, rather than pulling hair through the face.
  for(const s of strands)for(let j=1;j<=segments;j++){
-  resolveCollision(s.points[j]);
+  resolveCollision(s.points[j],s.zone,s.overFace);
   s.points[j].y=Math.max(s.points[j].y,s.trimY);
   s.rest[j].copy(s.points[j]);
  }
@@ -653,6 +670,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   rearScalpCoverage:'nape-and-occipital-head-triangles',
   groomingSmoothingPasses:3,frizzAmplitudeFactor:.025,
   hairClumpSwayGroupSize:12,
+  fineFringeMultiplier:fringeMultiplier,frontFineLockExtra:fringeExtra,
   renderedRibbonBodyCollision:!!renderBodyCollider,
   strandRibbonOrientation:'guide-tangent-on-scalp',
   crownRootRatio:.20,posteriorRootRatio:.51,
