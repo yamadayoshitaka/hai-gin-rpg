@@ -286,15 +286,56 @@ export function createSealedNeckBridge(face,attachment,{headCutY,bodyCutY}={}){
   cz=(extent(zs,.10)+extent(zs,.90))*.5;
  const rx=clamp((extent(xs,.90)-extent(xs,.10))*.49,h*.058,h*.19);
  const rz=clamp((extent(zs,.90)-extent(zs,.10))*.49,h*.048,h*.16);
+ // Fit the BOTTOM ring to actual torso's clipped vertex contour as well as
+ // the head's top contour. The old constant-radius tube did not touch the
+ // body and looked like a separate white neck insert in profile.
+ const torsoContour=[],world=new THREE.Vector3(),local=new THREE.Vector3();
+ attachment.root.updateWorldMatrix(true,true);
+ attachment.root.traverse(mesh=>{
+  if(!mesh.isMesh||!mesh.visible||!mesh.geometry?.getAttribute('position'))return;
+  const a=mesh.geometry.getAttribute('position');
+  const stride=Math.max(1,Math.floor(a.count/32000));
+  for(let n=0;n<a.count;n+=stride){
+   world.fromBufferAttribute(a,n).applyMatrix4(mesh.matrixWorld);
+   if(Math.abs(world.y-bodyCutY)>h*.035)continue;
+   local.copy(world).applyMatrix4(inverse);
+   if(Math.abs(local.x-cx)>rx*2.3||
+      Math.abs(local.z-cz)>rz*2.3)continue;
+   torsoContour.push([local.x,local.z]);
+  }
+ });
+ const ringFor=(points,angle,baseX,baseZ)=>{
+  let best=null,bestScore=Infinity;
+  for(const item of points){
+   const dx=(item[0]-cx)/(rx||1),dz=(item[1]-cz)/(rz||1);
+   const length=Math.hypot(dx,dz);
+   if(length<.42||length>2.1)continue;
+   const a=Math.atan2(dz,dx),dist=Math.abs(Math.atan2(
+    Math.sin(a-angle),Math.cos(a-angle)));
+   const score=dist+Math.abs(length-1)*.15;
+   if(score<bestScore){bestScore=score;best=item;}
+  }
+  return best&&bestScore<.55?
+   [THREE.MathUtils.lerp(baseX,best[0],.66),
+    THREE.MathUtils.lerp(baseZ,best[1],.66)]:[baseX,baseZ];
+ };
  const segments=48,levels=5,verts=[],uv=[],indices=[];
+ const headRing=[],bodyRing=[];
+ for(let i=0;i<=segments;i++){
+  const angle=i/segments*Math.PI*2;
+  const x=cx+rx*Math.cos(angle),z=cz+rz*Math.sin(angle);
+  headRing.push(ringFor(near,angle,x,z));
+  bodyRing.push(ringFor(torsoContour,angle,x,z));
+ }
  for(let j=0;j<=levels;j++){
   const t=j/levels,fade=t*t*(3-2*t);
   const y=topY+(bottomY-topY)*t;
-  const scale=1+.028*fade;
   for(let i=0;i<=segments;i++){
-   const angle=i/segments*Math.PI*2;
-   verts.push(cx+rx*scale*Math.cos(angle),y,
-    cz-rz*.06*fade+rz*scale*Math.sin(angle));
+   const upper=headRing[i],lower=bodyRing[i];
+   verts.push(
+    THREE.MathUtils.lerp(upper[0],lower[0],fade),y,
+    THREE.MathUtils.lerp(upper[1],lower[1],fade)
+   );
    uv.push(i/segments,t);
   }
  }
@@ -326,6 +367,8 @@ export function createSealedNeckBridge(face,attachment,{headCutY,bodyCutY}={}){
  face.add(seal);
  attachment.report.neckSealed=true;
  attachment.report.neckBridgeTriangles=indices.length/3;
+ attachment.report.neckBridgeBodyContourSamples=torsoContour.length;
+ attachment.report.neckBridgeUsesBodyContour=torsoContour.length>=12;
  attachment.report.neckBridgeHeadCutY=headCutY;
  attachment.report.neckBridgeBodyCutY=bodyCutY;
  return seal;

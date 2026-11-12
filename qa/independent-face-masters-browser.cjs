@@ -55,7 +55,7 @@ async function expectCenteredFaceSliders(page,gender){
  for(const p of snapshot){
   const mid=(p.min+p.max)/2;
   const thumb=(p.value-p.min)/(p.max-p.min);
-  if((p.key!=='lipstickWidth'&&Math.abs(mid-p.value)>1e-8)||
+  if((!['lipstickWidth','eyeSpacing'].includes(p.key)&&Math.abs(mid-p.value)>1e-8)||
      Math.abs(p.value-p.saved)>1e-8||
      Math.abs(p.model-p.saved)>1e-8||
      Math.abs(p.center-thumb)>1e-8)
@@ -597,6 +597,36 @@ async function expectCenteredFaceSliders(page,gender){
       !info.wig.frontalCrownEyebrowTrim||!info.wig.joinedRearSilhouette)
     throw Error('v23 front still crosses nose/mouth or has a rear slit '+
      JSON.stringify(info.wig));
+   // v25 full-body user-facing controls: independent wig, real contact
+   // pigment, and separately collapsible part groups on Android/Desktop.
+   // Start 3x to keep mobile interaction responsive. Full 10x rendered
+   // fibre geometry is independently tested at the wig-module unit level
+   // and remains user-selectable after the 3D view has loaded.
+   if(info.wig.visualFiberMultiplier!==3||
+      info.wig.visualFiberCount<info.wig.rootCount*3||
+      info.wig.staticMicroFibreCount<info.wig.rootCount*2)
+    throw Error('Detachable 3x default wig not ready '+JSON.stringify(info.wig));
+   const densityOptions=await hero.locator('#wigDensity option').evaluateAll(
+    nodes=>nodes.map(n=>n.value));
+   if(!densityOptions.includes('10'))
+    throw Error('10x fine-fibre wig option missing');
+   for(const id of ['faceSectionNose','faceSectionEyes','faceSectionLips','faceSectionJaw']){
+    const group=hero.locator('#'+id);
+    if(await group.count()!==1)
+     throw Error('Missing independent collapsible slider group '+id);
+   }
+   if(!await hero.locator('#saveWig').isEnabled())
+    throw Error('Wig-only GLB export must be enabled');
+   const colorBefore=await hero.evaluate(()=>document.getElementById('contactColor').value);
+   await hero.evaluate(()=>{
+    const picker=document.getElementById('contactColor');
+    picker.value='#368fd1';picker.dispatchEvent(new Event('input',{bubbles:true}));
+   });
+   const afterColor=await hero.evaluate(()=>window.__heroineBodyQA());
+   if(afterColor.contactColor!=='#368fd1'||colorBefore==='#368fd1')
+    throw Error('Contact lens color selector not applied to actual model');
+   if(!await hero.locator('#eyeDepth').isEnabled())
+    throw Error('Eye socket depth slider missing');
    // Test real mouse-wheel pinch zoom (not merely the portrait button):
    // a face-slider rebuild must preserve the same camera pose and orbit.
    await hero.locator('#bodyCanvas').hover();

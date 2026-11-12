@@ -628,6 +628,14 @@ test('v14 saved Library GLB equals exact midpoint of every female/male face slid
   assert.equal(FEMALE_V7_DEFAULTS[key],original,key+' original saved value');
  }
  for(const [key,[low,high]] of Object.entries(FACE_SLIDER_RANGES)){
+  // Eye depth is a NEW v25 control; it never existed in the Library v8
+  // preset, so it cannot be asserted equal to an invented saved value.
+  if(key==='eyeDepth'){
+   assert.equal(normalizeFemaleFaceControls({eyeDepth:low}).eyeDepth,low);
+   assert.equal(normalizeFemaleFaceControls({eyeDepth:high}).eyeDepth,high);
+   assert.equal(normalizeFemaleFaceControls({}).eyeDepth,0);
+   continue;
+  }
   const midpoint=(low+high)/2;
   assert.ok(key==='lipstickWidth'||Math.abs(midpoint-FEMALE_V7_DEFAULTS[key])<1e-9,
    'Saved GLB not centered: '+key);
@@ -640,7 +648,7 @@ test('v14 saved Library GLB equals exact midpoint of every female/male face slid
  assert.equal(empty.eyeSpacing,FACE_EYE_SPACING_DEFAULT);
  assert.deepEqual(Object.fromEntries(Object.keys(FEMALE_V7_DEFAULTS)
   .map(key=>[key,empty[key]])),FEMALE_V7_DEFAULTS);
- assert.deepEqual(FACE_EYE_SPACING_RANGE,[.85,1.35]);
+ assert.deepEqual(FACE_EYE_SPACING_RANGE,[.65,1.35]);
 });
 test('v14 sculpt stronger than saved standard remains functional on real face vertices',()=>{
  const src=fixture().source;
@@ -1199,4 +1207,43 @@ test('v23 cropped head attaches a filled, GLB-exportable physical neck seam',()=
  assert.ok([...neck.geometry.getAttribute('position').array].every(Number.isFinite));
  assert.equal(neck.userData.capEnds,true);
  assert.equal(head.face.getObjectByName(neck.name),neck);
+});
+
+test('v25 tenfold detachable wig adds real fine fibre triangles without tenfold simulation cost',()=>{
+ const face=makeIndependentFaceMaster(fixture().source,'female');
+ const wig=createScalpAnchoredWig(face.face,{
+  count:96,visualFiberMultiplier:10
+ });
+ const report=wig.getReport();
+ const fine=wig.root.getObjectByName('DETACHABLE_WIG_FINE_FIBRES');
+ assert.ok(fine?.isMesh,'Tenfold hair must exist as real GLB-exportable triangles');
+ assert.equal(report.wigAssetType,'independent-wig');
+ assert.equal(report.visualFiberMultiplier,10);
+ assert.equal(report.visualFiberCount,report.rootCount*10);
+ assert.equal(report.staticMicroFibreCount,report.rootCount*9);
+ assert.ok(report.microFibreTriangles>report.rootCount*9*10);
+ assert.ok(report.physicsGuideCount<=320,'Keep the physical guides mobile-safe');
+ assert.equal(report.microFibresAnimated,false);
+ const arr=fine.geometry.getAttribute('position').array;
+ assert.ok([...arr].every(Number.isFinite),'No NaN micro-fibre vertices');
+ assert.equal(wig.root.getObjectByName('DETACHABLE_WIG_FINE_FIBRES'),fine);
+ wig.dispose();
+});
+test('v25 actual contact lens pigment and liner remain visible on linked eyelids',()=>{
+ const face=makeIndependentFaceMaster(fixture().source,'female',{
+  femaleControls:{eyeSpacing:.65,eyeDepth:-.1}
+ });
+ const iris=face.parts.getObjectByName('LEFT_CURVED_IRIS');
+ const upper=face.parts.getObjectByName('LEFT_UPPER_EYELINER');
+ const lower=face.parts.getObjectByName('LEFT_LOWER_EYELINER');
+ assert.ok(iris?.isMesh&&upper?.isMesh&&lower?.isMesh);
+ applyFaceColorMode(face.face,'color',{contactColor:'#2b8ac8'});
+ assert.equal(iris.material.color.getHexString(),'2b8ac8');
+ assert.ok(upper.visible&&lower.visible);
+ assert.equal(upper.renderOrder,9);
+ assert.equal(upper.material.depthTest,true);
+ assert.ok(upper.material.opacity>=.99);
+ assert.ok(face.report.detailedParts.eyeDepthFactor<=-.1);
+ assert.equal(face.report.detailedParts.eyeSpacingFactor,.65);
+ assert.ok(normalizeFemaleFaceControls({eyeDepth:-9}).eyeDepth>=-.3);
 });
