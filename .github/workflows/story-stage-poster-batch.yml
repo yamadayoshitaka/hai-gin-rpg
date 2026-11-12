@@ -6,6 +6,9 @@ on:
     paths:
       - 'scripts/prepare-story-stage-posters.mjs'
       - 'scripts/ingest-story-stage-posters.py'
+      - 'scripts/build-story-character-reference-pack.py'
+      - 'qa/story-character-reference-pack.test.py'
+      - 'assets/story/characters/c01-s02-reference-bible.json'
       - 'qa/story-stage-poster-ingestion.test.py'
       - 'assets/story/chapter-drafts/**/posters/*.webp'
       - 'qa/story-stage-poster-production.test.mjs'
@@ -56,6 +59,10 @@ jobs:
           python-version: '3.12'
       - name: Install free on-runner crop validator
         run: python -m pip install --disable-pip-version-check Pillow==11.3.0
+      - name: Build actual reference-image attachment bundle for stage2
+        run: |
+          python scripts/build-story-character-reference-pack.py --stage c01-s02
+          python qa/story-character-reference-pack.test.py
       - name: Validate native-resolution cropping and no-false-approval rule
         run: python qa/story-stage-poster-ingestion.test.py
       - name: Crop any supplied high-resolution poster sources into isolated per-image review packs
