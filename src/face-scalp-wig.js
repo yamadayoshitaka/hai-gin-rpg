@@ -292,7 +292,11 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   // face frame with no harsh line across the forehead.
   const cutPhase=fract(i*.61803398875);
   const wave=Math.sin(i*2.39996323);
-  const browLimit=box.min.y+d.y*(.750+.043*cutPhase+.009*wave);
+  // Side-swept diagonal bangs with irregular feathered ends, instead
+  // of a flat horizontal 'home haircut' line above both eyebrows.
+  const partSlope=(wigRoot.x-center.x)/d.x;
+  const browLimit=box.min.y+d.y*
+   (.747+.060*partSlope+.025*cutPhase+.012*wave);
   const bangLength=d.y*(.09+.034*cutPhase)*clamp(lengthScale,.55,1.5);
   const length=(fringe||overFace)?
    Math.max(d.y*.008,Math.min(bangLength,wigRoot.y-browLimit)):
@@ -309,9 +313,12 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   const closeToFace=fringe||overFace;
   // Posterior layers drift gently toward the center of the back,
   // closing the exposed rear part without piling into a single spike.
-  const targetX=wigRoot.x+side*d.x*(closeToFace?.035:back?-.027:.015);
+  const targetX=back?
+   center.x+(wigRoot.x-center.x)*.68:
+   wigRoot.x+side*d.x*(closeToFace?.035:.015);
   const targetZ=closeToFace?wigRoot.z+d.z*.006:
-   back?Math.min(wigRoot.z-d.z*.021,center.z-d.z*.10):
+   // Go BEHIND the neck rather than being occluded by the rear bust skin.
+   back?Math.min(wigRoot.z-d.z*.070,center.z-d.z*.19):
    zone.startsWith('temple')?wigRoot.z-d.z*.035:
    Math.min(wigRoot.z-d.z*.075,center.z-d.z*.035);
   const strandWave=(fract(i*.75487766)-.5)*d.x*.004;
@@ -471,6 +478,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   hairShape:'head-hugging-salon-layered-pointcut',
   downwardGuidedLocks:true,realScalpEnvelopeCollision:true,
   longSalonLayers:true,centerBackCoverage:true,uShapedRearCut:true,
+  centralRearNeckOcclusionAvoided:true,diagonalFeatheredFringe:true,
   rearRootPolicy:'actual-posterior-scalp-only',
   scalpRadialProfile:'smoothed-72pct-multi-vertex-envelope',
   belowNapeDrape:'preserve-last-valid-scalp-radius',
