@@ -238,7 +238,7 @@ const faceClock=new THREE.Clock();
 let gender='female',angle='front',wired=false,partsOn=true,ready=false;
 let faceMode='color',femaleSource=null,modelChanges=normalizeFemaleFaceControls({...FEMALE_V7_DEFAULTS,eyeSpacing:FACE_EYE_SPACING_DEFAULT});
 let maleChanges=normalizeMaleFaceControls({...MALE_REFERENCE_DEFAULT,eyeSpacing:FACE_EYE_SPACING_DEFAULT});
-let contactColor=CONTACT_COLORS.brown;
+let contactColor=CONTACT_COLORS.lightBlue; // Female chapter-one hero art: blue eyes
 for(const [key,label] of Object.entries(CONTACT_COLOR_LABELS)){
  const option=document.createElement('option');
  option.value=key;option.textContent=label;
