@@ -186,40 +186,55 @@ function scalpShell(geo,box,color){
    smoothNormals.push(normal.x,normal.y,normal.z);
   }
  }
- // Rear undercoat: a continuous, thin hair-colored surface, rooted
- // at REAL posterior head vertices and draped BEHIND the neck. Without it,
- // two thick fields of locks leave a skin-colored vertical stripe through
- // the centre of the rear hairstyle.
- const rearValues=[];
+ // 52 independent tapered underlocks: rooted on actual posterior head
+ // vertices, rather than a rectangular curtain hanging across the neck.
+ const rearCandidates=[];
  for(let i=0;i<src.count;i++){
   const x=src.getX(i),y=src.getY(i),z=src.getZ(i);
-  if(Math.abs(x-center.x)<d.x*.20 &&
-     y>box.min.y+d.y*.67&&y<box.min.y+d.y*.85&&
-     z<center.z-d.z*.04)rearValues.push(z);
+  if(Math.abs(x-center.x)<d.x*.325 &&
+     y>box.min.y+d.y*.65&&y<box.min.y+d.y*.94&&
+     z<center.z-d.z*.035)rearCandidates.push(f3(x,y,z));
  }
- rearValues.sort((a,b)=>a-b);
- const posteriorZ=rearValues.length?
-  rearValues[Math.floor(rearValues.length*.22)]-d.z*.014:
-  box.min.z-d.z*.012;
- // Divide the sheet into small bands so its surface is gently curved,
- // following the skull at the root and neck/shoulders underneath.
- const columns=18,rows=16;
- const pAt=(u,v)=>{
-  const shape=Math.sin(Math.PI*u);
-  const width=d.x*(.27-.06*v);
-  const x=center.x+(u-.5)*2*width;
-  const y=box.min.y+d.y*(.80-.72*v);
-  // Gentle curvature towards the back along the midline; stay behind
-  // the neck and avoid an opaque plane appearing in front of the face.
-  const z=posteriorZ-d.z*(.008+.013*shape+.012*v);
-  return f3(x,y,z);
- };
- for(let j=0;j<rows;j++)for(let i=0;i<columns;i++){
-  const u=i/columns,v=j/rows,u1=(i+1)/columns,v1=(j+1)/rows;
-  const a=pAt(u,v),b=pAt(u1,v),c=pAt(u,v1),d1=pAt(u1,v1);
-  for(const p of [a,c,b,b,c,d1]){
-   verts.push(p.x,p.y,p.z);
-   smoothNormals.push(0,0,-1);
+ const undercoatStrips=rearCandidates.length?52:0;
+ const stripSegments=12,stripWidths=[],tipHeights=[];
+ for(let k=0;k<undercoatStrips;k++){
+  const u=(k+.5)/undercoatStrips,side=u<.5?-1:1;
+  const idealX=center.x+(2*u-1)*d.x*.267;
+  const preferredY=box.min.y+d.y*(.805+.025*Math.sin(k*2.39996323));
+  let scalpRoot=null,best=Infinity;
+  for(const v of rearCandidates){
+   const score=Math.abs(v.x-idealX)/d.x+
+    Math.abs(v.y-preferredY)/d.y*.72;
+   if(score<best){best=score;scalpRoot=v;}
+  }
+  const tipY=box.min.y+d.y*(.095+
+   .064*Math.pow(Math.abs(2*u-1),1.3)+
+   .012*Math.sin(k*2.39996323)+
+   .009*fract(k*.61803398875));
+  const width=d.x*(.0124+.002*fract(k*.75487766));
+  const targetX=idealX+side*d.x*.008;
+  const targetZ=Math.min(scalpRoot.z-d.z*.018,
+   center.z-d.z*(.14+.035*(1-Math.abs(2*u-1))));
+  stripWidths.push(width*2);tipHeights.push(tipY);
+  const vtx=(t,edge)=>{
+   const eased=t*t*(3-2*t);
+   const x=THREE.MathUtils.lerp(scalpRoot.x,targetX,eased)+
+    Math.sin(k*.85+t*5)*d.x*.0013*t;
+   const y=THREE.MathUtils.lerp(scalpRoot.y,tipY,t);
+   const z=THREE.MathUtils.lerp(scalpRoot.z-d.z*.003,targetZ,eased)+
+    d.z*.006*Math.sin(Math.PI*t);
+   const taper=1-.72*Math.pow(t,8);
+   return f3(x+edge*width*taper,y,z+
+    Math.abs(edge)*d.z*.0012);
+  };
+  for(let j=0;j<stripSegments;j++){
+   const t0=j/stripSegments,t1=(j+1)/stripSegments;
+   const p0=vtx(t0,-1),p1=vtx(t0,1);
+   const q0=vtx(t1,-1),q1=vtx(t1,1);
+   for(const p of [p0,q0,p1,p1,q0,q1]){
+    verts.push(p.x,p.y,p.z);
+    smoothNormals.push(0,0,-1);
+   }
   }
  }
  const material=new THREE.MeshStandardMaterial({
@@ -232,8 +247,13 @@ function scalpShell(geo,box,color){
  const mesh=new THREE.Mesh(buffer,material);
  mesh.name='REAL_SCALP_TRIANGLE_HAIR_CAP';
  mesh.userData.scalpSource='sculpted-real-head-triangles';
- mesh.userData.rearUndercoatAnchoredToRealScalp=rearValues.length>0;
- mesh.userData.rearUndercoatTriangleCount=columns*rows*2;
+ mesh.userData.rearUndercoatAnchoredToRealScalp=rearCandidates.length>0;
+ mesh.userData.rearUndercoatTriangleCount=undercoatStrips*stripSegments*2;
+ mesh.userData.rearUndercoatStripCount=undercoatStrips;
+ mesh.userData.rearUndercoatMaxStripWidth=stripWidths.length?Math.max(...stripWidths):0;
+ mesh.userData.rearUndercoatTipHeightRange=tipHeights.length?
+  Math.max(...tipHeights)-Math.min(...tipHeights):0;
+ mesh.userData.rearUndercoatStyle='overlapping-real-scalp-rooted-tapered-ribbons';
  return mesh;
 }
 /**
@@ -523,6 +543,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   pointCutEnds:true,
   scalpCoverage:'continuous-colored-triangle-cap-plus-locks',
   realScalpPosteriorUndercoat:true,
+  noRectangularRearHairSheet:true,
   pointCount:lockCount*(segments+1),realScalpCandidateCount:scalpCandidates.length,
   rootDistribution:{...zoneCounts},
   zoneCandidateCounts:Object.fromEntries(Object.entries(pools).map(([key,list])=>[key,list.length])),
