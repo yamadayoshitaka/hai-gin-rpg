@@ -897,7 +897,7 @@ async function expectCenteredFaceSliders(page,gender){
   {
    const modern=await browser.newPage({viewport:{width:412,height:844}});
    const modernErrors=[];modern.on('pageerror',e=>modernErrors.push(e.message));
-   await modern.goto('http://127.0.0.1:8765/face-mesh-studio.html?gender=female&v=37',
+   await modern.goto('http://127.0.0.1:8765/face-mesh-studio.html?gender=female&v=40',
     {waitUntil:'domcontentloaded',timeout:65000});
    await modern.waitForFunction(()=>window.__faceMasterQA?.().loaded===true,
     null,{timeout:100000});
@@ -944,73 +944,60 @@ async function expectCenteredFaceSliders(page,gender){
   }
   {
    const modern=await browser.newPage({viewport:{width:412,height:844}});
-   await modern.goto('http://127.0.0.1:8765/face-body-studio.html?v=37',
+   await modern.goto('http://127.0.0.1:8765/face-body-studio.html?v=40',
     {waitUntil:'domcontentloaded',timeout:65000});
    await modern.waitForFunction(()=>window.__heroineBodyQA?.().loaded===true,
     null,{timeout:100000});
    if(await modern.locator('#allFaceControls').isVisible()||
       await modern.locator('input[type="range"]:visible').count()!==0)
     throw Error('v32 integrated model must not expose old sliders');
-   for(const group of ['Face','Eye','Nose','Mouth','Hair','Makeup'])
-    if(await modern.locator('#v32Female'+group+' option').count()!==(group==='Hair'?16:10))
-     throw Error('v32 body selector does not have 10 '+group+' parts');
-   await selectPartOption(modern,'#v32FemaleFace','6');
-   await selectPartOption(modern,'#v32FemaleMakeup','8');
-   await modern.locator('#v32FemaleHair').selectOption('10');
-   await modern.locator('#v33FemaleHairColor').selectOption('silver');
-   await modern.locator('#v33FemaleWigVolume').selectOption('lifted');
-   const report=await modern.evaluate(()=>window.__heroineBodyQA());
-   if(report.v32PartSelection.face!==6||
-      report.v32PartSelection.makeup!==8||
-      report.wig?.layeredRibbonCount!==4||
-      report.wig?.v33ShortCutKind!=='short'||
-      report.v33HairColor!=='silver'||
-      report.wig?.v33WigVolumeProfile!=='lifted'||
-      !report.shoulderHolesClosed||
-      !report.sealedNeck)
-    throw Error('v32 combined face/body/4-layer hair fitting failed '+JSON.stringify(report.v32PartSelection));
-   // v35 public mobile selectors must change the actual 3D wardrobe,
-   // action state, hairstyle and scalp volume (not only menu labels).
+   // v40 is an OUTFIT studio only. Face/hair pickers are now reached from
+   // a dedicated linked page; old controls remain present but not visible.
+   if(await modern.locator('#v32BodyPartStudio').isVisible()||
+      await modern.locator('#heroAction').isVisible()||
+      !await modern.locator('#faceEditorLink').isVisible())
+    throw Error('Costume screen still exposes the old face editor or action select');
+   const faceHref=await modern.locator('#faceEditorLink').getAttribute('href');
+   if(!faceHref?.includes('face-mesh-studio.html?gender=female'))
+    throw Error('Costume studio must link to dedicated female face editor');
+   if(await modern.locator('#heroActionButtons button').count()!==7)
+    throw Error('Expected seven combat action buttons, not a select menu');
    await modern.waitForFunction(()=>window.__heroineBodyQA?.()
      .v36RealBattleCostume?.active===true,null,{timeout:120000});
-   // Costume and face are genuinely separate assets. Changing job, cloth,
-   // hair and action must keep the imported skinned 65-joint game body.
-   await modern.locator('#heroJob').selectOption('mage');
-   await modern.locator('#heroOutfit').selectOption('job05');
-   await modern.locator('#heroAction').selectOption('run');
-   await modern.locator('#heroHairStyle').selectOption('soft-wave-long');
-   await modern.locator('#heroHairVolume').selectOption('full');
-   await modern.locator('#heroHairDensity').selectOption('5');
-   await modern.waitForFunction(()=>window.__heroineBodyQA?.()
-     .v36RealBattleCostume?.outfitId==='job05'&&
-     window.__heroineBodyQA?.().v36RealBattleCostume?.realOutfit===true,
-     null,{timeout:120000});
-   const studio=await modern.evaluate(()=>window.__heroineBodyQA());
-   if(studio.v36RealBattleCostume?.jobId!=='mage'||
-      studio.v36RealBattleCostume?.outfitId!=='job05'||
-      studio.v36RealBattleCostume?.headReport?.removedTriangles<1||
-      studio.v36RealBattleCostume?.headFit?.bone!=='Head'||
-      studio.v36RealBattleCostume?.proportions?.bodyScale!==.84||
-      studio.v36RealBattleCostume?.proportions?.relativeFaceHeight<1.18||
-      studio.v36RealBattleCostume?.proportions?.lift<=0||
-      studio.v36RealBattleCostume?.proportions?.forward<=0||
-      !studio.v36RealBattleCostume?.finishReport?.sourceAssetsPreserved||
-      !studio.v36RealBattleCostume?.headFit?.attachedToRealHeadBone||
-      studio.v35HairStyle!=='soft-wave-long'||
-      studio.v35HairVolume!=='full'||
-      studio.wig?.v33WigVolumeProfile!=='full'||
-      studio.wigDensity!==5)
-    throw Error('v36 real battle-clothing plus separate face fitting failed '+JSON.stringify(studio.v36RealBattleCostume));
-   await modern.locator('#portrait').click();
-   await modern.locator('#bodyCanvas').screenshot({
-    path:path.join(out,'v39-heroine-eye-face-recessed-with-battle-outfit.png')});
+   const outfit=await modern.evaluate(()=>window.__heroineBodyQA());
+   if(outfit.v36RealBattleCostume?.proportions?.bodyScale!==.84||
+      outfit.v36RealBattleCostume?.finishReport?.sourceAssetsPreserved!==true||
+      !outfit.v36RealBattleCostume?.sourceTrousers||
+      outfit.v36RealBattleCostume?.finishReport?.taperedLegPieces<1||
+      outfit.v36RealBattleCostume?.finishReport?.hiddenLooseStuds<1||
+      outfit.v36RealBattleCostume?.headFit?.bone!=='Head'||
+      !outfit.v36RealBattleCostume?.vfx?.usesExistingBattleRecipes)
+    throw Error('v40 skinned female legs/armor/VFX or bone fit failed '+
+     JSON.stringify(outfit.v36RealBattleCostume));
    await modern.locator('#full').click();
    await modern.locator('#front').click();
    await modern.locator('#bodyCanvas').screenshot({
-    path:path.join(out,'v39-heroine-smaller-job-body-front.png')});
+    path:path.join(out,'v40-heroine-slim-skinned-legs-front.png')});
    await modern.locator('#side').click();
    await modern.locator('#bodyCanvas').screenshot({
-    path:path.join(out,'v39-heroine-smaller-job-body-side.png')});
+    path:path.join(out,'v40-heroine-slim-skinned-legs-side.png')});
+   await modern.locator('#heroActionButtons [data-action="attack"]').click();
+   await modern.waitForFunction(()=>window.__heroineBodyQA?.()
+     .v36RealBattleCostume?.vfx?.triggered>=2,null,{timeout:10000});
+   await modern.locator('#heroActionButtons [data-action="cast"]').click();
+   await modern.waitForTimeout(120);
+   const action=await modern.evaluate(()=>window.__heroineBodyQA());
+   if(action.v36RealBattleCostume?.actionId!=='cast'||
+      action.v36RealBattleCostume?.vfx?.triggered<3||
+      !action.v36RealBattleCostume?.vfx?.attachedToRealBones||
+      await modern.locator('#heroActionButtons [data-action="cast"]').getAttribute('aria-pressed')!=='true')
+    throw Error('v40 action button not replaying real motion and battle VFX');
+   await modern.locator('#bodyCanvas').screenshot({
+    path:path.join(out,'v40-heroine-battle-cast-kenney-vfx.png')});
+   await modern.locator('#faceEditorLink').click();
+   await modern.waitForURL(/face-mesh-studio\.html/,{timeout:15000});
+   if(!await modern.locator('#returnToCostume').isVisible())
+    throw Error('Dedicated face editor lost the return-to-costume button');
    await modern.close();
   }
   if(errors.length)throw Error('Browser errors: '+JSON.stringify(errors));
