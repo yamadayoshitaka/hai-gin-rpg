@@ -47,6 +47,7 @@ jobs:
           CHAPTER: ${{ inputs.chapter }}
         run: |
           node --check src/story-chapter-comic.js
+          node --check src/story-chapter-scene-selection.js
           node --check scripts/prepare-story-chapter.mjs
           python -m py_compile scripts/publish-story-chapter.py
           node qa/story-chapter-pipeline.test.mjs
