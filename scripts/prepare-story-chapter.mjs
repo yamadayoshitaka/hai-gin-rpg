@@ -27,7 +27,8 @@ export function produceChapterPlan(chapter){
     const relative=comicPageAsset(edition.stageId,edition.phase,
      {decision:edition.edition.match(/choice-([a-z]+)/)?.[1]||null,
       route:edition.edition.match(/route-([a-z]+)/)?.[1]||null,
-      battleOutcome:edition.edition.includes('victory')?{victory:true}:
+      battleOutcome:edition.edition.includes('gameover')?{victory:false,playerCommanderDead:true}:
+       edition.edition.includes('victory')?{victory:true}:
        edition.edition.includes('defeat')?{victory:false}:null,
       storyEnding:edition.edition.match(/ending-([a-z]+)/)?.[1]||null},
      page.number,gender).replace(/^\.\//,'');
