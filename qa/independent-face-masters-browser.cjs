@@ -7,7 +7,7 @@ fs.mkdirSync(out,{recursive:true});
 // event, leaving a stale value visible while the actual mesh uses defaults.
 async function expectVisibleLibraryPreset(page,context,contact='brown'){
  const expected={
-  irisDiameter:1,eyeSize:1,eyeSpacing:1.1,jawSharpness:5,noseTipLift:0,
+  irisDiameter:1,eyeSpacing:1.1,jawSharpness:5,noseTipLift:0,
   nostrilCover:2,noseBridgeSharpness:2.5,eyeAngle:0,
   lipstickX:0,lipstickY:0,lipstickWidth:1,lipstickHeight:1
  };
@@ -24,7 +24,7 @@ async function expectVisibleLibraryPreset(page,context,contact='brown'){
  for(const [key,value] of Object.entries(expected)){
   const ui=actual.result[key];
   const suffix=key==='eyeAngle'?'°':
-   ['irisDiameter','eyeSize','eyeSpacing','jawSharpness','lipstickWidth','lipstickHeight'].includes(key)?'×':'';
+   ['irisDiameter','eyeSpacing','jawSharpness','lipstickWidth','lipstickHeight'].includes(key)?'×':'';
   if(Number(ui.input)!==value||ui.output!==String(value)+suffix||
      actual.model[key]!==value)
    throw Error('Displayed Library-saved preset mismatch ('+context+': '+key+'): '+
@@ -37,10 +37,10 @@ async function expectVisibleLibraryPreset(page,context,contact='brown'){
 async function expectCenteredFaceSliders(page,gender){
  const snapshot=await page.evaluate(sex=>{
   const keys=sex==='female'?
-   ['irisDiameter','eyeSize','eyeSpacing','jawSharpness','noseTipLift','nostrilCover',
+   ['irisDiameter','eyeSpacing','jawSharpness','noseTipLift','nostrilCover',
     'noseBridgeSharpness','eyeAngle','lipstickX','lipstickY',
     'lipstickWidth','lipstickHeight']:
-   ['jawSharpness','eyeSize','eyeSpacing','irisDiameter','noseTipLift',
+   ['jawSharpness','eyeSpacing','irisDiameter','noseTipLift',
     'nostrilCover','noseBridgeSharpness','eyeAngle'];
   const model=window.__faceMasterQA();
   const selected=sex==='female'?model.femaleControls:model.maleControls;
@@ -81,6 +81,10 @@ async function expectCenteredFaceSliders(page,gender){
   await page.waitForFunction(()=>window.__faceMasterQA?.().loaded===true,
    null,{timeout:100000,polling:250});
   await expectVisibleLibraryPreset(page,'fresh-open');
+  if(await page.locator('#eyeSize, #maleEyeSize').count()!==0)
+   throw Error('Redundant standalone eye-size sliders still present');
+  const paletteSize=await page.locator('#contactPreset option').count();
+  if(paletteSize!==18)throw Error('17 lens presets plus custom required: '+paletteSize);
   await expectCenteredFaceSliders(page,'female');
   // Simulate a mobile browser restoring an outdated range thumb/label
   // without dispatching input; pageshow must re-align UI with model state.
@@ -132,6 +136,9 @@ async function expectCenteredFaceSliders(page,gender){
    throw Error('Color picker hidden after selecting contact category');
   // A user who touches ONLY the contact color must not inadvertently
   // inherit lipstickX=.05 or another visible slider value.
+  await page.locator('#contactPreset').selectOption('darkBrown');
+  if((await page.evaluate(()=>window.__faceMasterQA())).contactColor!=='#30231d')
+   throw Error('New dark-brown contact not applied');
   await page.locator('#contactPreset').selectOption('green');
   await expectVisibleLibraryPreset(page,'change-contact-only','green');
   await page.locator('#contactPreset').selectOption('brown');
@@ -286,7 +293,7 @@ async function expectCenteredFaceSliders(page,gender){
   await canvas.screenshot({path:path.join(out,'female-color-v7-threeQuarter.png')});
   // Real eyebrow/lash angle control and front nasal tip sculpt.
   await page.locator('#contactPreset').selectOption('blue');
-  for(const [control,value] of [['eyeAngle','12'],['eyeSize','1.2'],
+  for(const [control,value] of [['eyeAngle','12'],['eyeWidth','1.2'],['eyeHeight','1.2'],
    ['lipstickX','.04'],['lipstickY','-.025'],
    ['lipstickWidth','1.2'],['lipstickHeight','.8'],
    ['noseTipLift','1.8'],['nostrilCover','1.6'],
@@ -300,6 +307,8 @@ async function expectCenteredFaceSliders(page,gender){
   if(changed.femaleControls.noseTipLift!==1.8||
      changed.femaleControls.nostrilCover!==1.6||
      changed.femaleControls.eyeSize!==1.2||
+     changed.femaleControls.eyeWidth!==1.2||
+     changed.femaleControls.eyeHeight!==1.2||
      changed.femaleControls.lipstickX!==.04||
      changed.femaleControls.lipstickY!==-.025||
      changed.currentFeatureAngles?.eyeAngle!==12||
@@ -470,7 +479,7 @@ async function expectCenteredFaceSliders(page,gender){
   const neutralMale=await page.evaluate(()=>window.__faceMasterQA());
   await expectCenteredFaceSliders(page,'male');
   for(const [key,value] of Object.entries({
-   jawSharpness:5,nostrilCover:2,irisDiameter:1,eyeSize:1,
+   jawSharpness:5,nostrilCover:2,irisDiameter:1,
    noseTipLift:0,noseBridgeSharpness:2.5,eyeAngle:0
   })){
    if(neutralMale.maleControls[key]!==value)
@@ -748,6 +757,13 @@ async function expectCenteredFaceSliders(page,gender){
    const afterColor=await hero.evaluate(()=>window.__heroineBodyQA());
    if(afterColor.contactColor!=='#368fd1'||colorBefore==='#368fd1')
     throw Error('Contact lens color selector not applied to actual model');
+   if(await hero.locator('#eyeSize').count()!==0)
+    throw Error('Integrated editor still exposes redundant eye size');
+   if(await hero.locator('#contactPreset option').count()!==18)
+    throw Error('Integrated contact palette missing 17 tones');
+   await hero.locator('#contactPreset').selectOption('amber');
+   if((await hero.evaluate(()=>window.__heroineBodyQA())).contactColor!=='#bc863f')
+    throw Error('Amber color did not update 3D iris');
    if(!await hero.locator('#eyeDepth').isEnabled())
     throw Error('Eye socket depth slider missing');
    for(const key of [
