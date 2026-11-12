@@ -193,6 +193,7 @@ async function expectCenteredFaceSliders(page,gender){
      !wigQA.wigReport?.collisionTypes.includes('face')||
      !wigQA.wigReport?.collisionTypes.includes('chest'))
    throw Error('Scalp wig and collision proxy not initialized '+JSON.stringify(wigQA.wigReport));
+  await page.locator('#front').click();
   await canvas.screenshot({path:path.join(out,'female-v16-salon-hair-front.png')});
   await page.locator('#back').click();
   await canvas.screenshot({path:path.join(out,'female-v16-real-rear-scalp-hair.png')});
