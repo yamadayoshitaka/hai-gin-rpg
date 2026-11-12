@@ -1887,3 +1887,25 @@ test('v35 cornea and iris are never hidden behind the original skin at any eye v
  }
  assert.equal(model.face.userData.softNaturalLipTint,true);
 });
+
+test('v36 reuse registered skinned battle outfits instead of synthesizing a second costume',()=>{
+ const studio=readFileSync('face-body-studio.html','utf8');
+ const bridge=readFileSync('src/heroine-battle-costume-bridge.js','utf8');
+ const outfit=readFileSync('src/character-system/rigged-outfit-runtime.js','utf8');
+ const registry=readFileSync('src/character-model-registry.js','utf8');
+ assert.match(studio,/createRealBattleOutfitStudio/);
+ assert.match(studio,/getFaceModel:\(\)=>model/);
+ assert.match(studio,/v36RealBattleCostume/);
+ assert.match(studio,/battleCostume\?\.attachFace\(next\)/);
+ assert.match(bridge,/buildRiggedJobOutfit/);
+ assert.match(bridge,/createCharacter/);
+ assert.match(bridge,/loadJobMotionMap/);
+ assert.match(bridge,/hideBattleDonorFace\(fresh\.model\)/);
+ assert.match(bridge,/bone\.add\(faceRoot\)/);
+ assert.match(bridge,/setHairVisible\(false\)/);
+ assert.match(registry,/Superhero_Female_FullBody\.gltf/);
+ assert.match(outfit,/quaternius-outfits/);
+ assert.doesNotMatch(studio,/fillSelect\('heroOutfit',HERO_OUTFITS\)/);
+ for(const id of ['job01','job02','job03','job04','job05','job06','job07','job08','job09','job10'])
+  assert.match(bridge,new RegExp("id:'"+id+"'"),'Every real combat job outfit must be selectable');
+});
