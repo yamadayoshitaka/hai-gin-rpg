@@ -545,6 +545,68 @@ async function expectCenteredFaceSliders(page,gender){
   await canvas.screenshot({path:path.join(out,'male-v14-beyond-saved-standard.png')});
   await page.locator('#resetMalePreset').click();
   await expectCenteredFaceSliders(page,'male');
+
+  // v19 integrated heroine: true source torso, separate sculpted face,
+  // matching Chapter One reference portrait and actual body-triangle contacts.
+  {
+   const hero=await browser.newPage({
+    viewport:{width:1000,height:880},deviceScaleFactor:1,acceptDownloads:true
+   });
+   const errorsHero=[];hero.on('pageerror',e=>errorsHero.push(e.message));
+   await hero.goto('http://127.0.0.1:8765/face-body-studio.html',
+    {waitUntil:'domcontentloaded',timeout:60000});
+   await hero.waitForFunction(()=>window.__heroineBodyQA?.().loaded===true,
+    null,{timeout:120000,polling:250});
+   const info=await hero.evaluate(()=>window.__heroineBodyQA());
+   if(info.characterId!=='hero-girl-01'||info.artMatched!==false||
+      !info.artReference.includes('commander/female-master.webp'))
+    throw Error('Unregistered or falsely approved art character '+JSON.stringify(info));
+   if(!info.attachedBody||info.donorHeadRemoved<1||info.bodyMeshes<1||
+      !info.sourceHeadUnchanged||!info.sourceBodyUnchanged)
+    throw Error('Body/head integration failed '+JSON.stringify(info));
+   if(Math.abs(info.roundPupilAspectRatio-1)>.016)
+    throw Error('Black pupil is not round: '+info.roundPupilAspectRatio);
+   if(!info.wig?.usesRealBodyTriangleContacts||
+      info.bodyCollision?.collisionTriangleCount<1)
+    throw Error('Real female body mesh is not used for hair collision');
+   const c=hero.locator('#bodyCanvas');
+   await c.screenshot({path:path.join(out,'heroine-v19-front-body.png')});
+   await hero.locator('#portrait').click();
+   await c.screenshot({path:path.join(out,'heroine-v19-round-eyes-closeup.png')});
+   await hero.locator('#side').click();
+   await c.screenshot({path:path.join(out,'heroine-v19-hair-body-side.png')});
+   await hero.locator('#back').click();
+   await c.screenshot({path:path.join(out,'heroine-v19-hair-body-back.png')});
+   await hero.locator('#front').click();
+   await hero.locator('#full').click();
+   const artOk=await hero.locator('#artImage').evaluate(el=>
+    el.complete&&el.naturalWidth>0);
+   if(!artOk)throw Error('Actual registered heroine illustration did not load');
+   const before=hero.waitForEvent('download',{timeout:100000});
+   await hero.locator('#saveGlb').click();
+   const dl=await before;
+   if(!dl.suggestedFilename().includes('hero-girl-01'))
+    throw Error('GLB filename lost character identity');
+   const file=path.join(out,'heroine-v19-connected-full-model.glb');
+   await dl.saveAs(file);
+   const buf=fs.readFileSync(file);
+   if(buf.toString('ascii',0,4)!=='glTF')throw Error('Not GLB');
+   const gltf=JSON.parse(buf.subarray(20,
+    20+buf.readUInt32LE(12)).toString('utf8').trim());
+   const names=(gltf.nodes||[]).map(n=>n.name||'');
+   if(!names.includes('HEROINE_REAL_BODY_ATTACHMENT')||
+      !names.some(n=>n.includes('FEMALE_INDEPENDENT_CLAY_FACE'))||
+      !names.includes('CC0_CLIPPED_FEMALE_BODY')||
+      !names.includes('FEMALE_SCALP_ANCHORED_LONG_WIG'))
+    throw Error('Integrated GLB missing face/body/wig meshes '+JSON.stringify(names.slice(0,40)));
+   if(errorsHero.length)throw Error('Connected heroine JS errors '+JSON.stringify(errorsHero));
+   console.log('FACE_V19_CONNECTED_HEROINE_GLB_EXPORT',JSON.stringify({
+    bodyTriangles:info.bodyMeshes,trimmedHeadTriangles:info.donorHeadRemoved,
+    pupilAspect:info.roundPupilAspectRatio,wigStyle:info.styleId,
+    bytes:buf.length
+   }));
+   await hero.close();
+  }
   if(errors.length)throw Error('Browser errors: '+JSON.stringify(errors));
   console.log('INDEPENDENT_MALE_FEMALE_CLAY_FACES_SUCCESS '+
    JSON.stringify({femaleVertices:original.female.sourceVertices,
