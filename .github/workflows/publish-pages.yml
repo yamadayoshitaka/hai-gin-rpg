@@ -49,6 +49,7 @@ jobs:
           node qa/story-chapter-one-three-art-status.test.mjs
           node qa/story-panel-one-at-a-time.test.mjs
           node qa/story-c01-s01-artwork-bytes.test.mjs
+          node qa/real-game-c01-manga-integration.test.mjs
           node --experimental-vm-modules qa/story-cinematic-raster.test.mjs
       - uses: actions/setup-python@v6
         with:
