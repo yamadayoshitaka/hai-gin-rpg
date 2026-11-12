@@ -1606,7 +1606,7 @@ test('v32 catalogs contain 10 independently selectable 3D profiles per gender an
   for(const group of PART_GROUPS){
    const candidates=PART_CATALOG[sex][group];
    assert.equal(candidates.length,group==='hair'?13:10,sex+' '+group);
-   assert.equal(new Set(candidates.map(x=>x.id)).size,10);
+   assert.equal(new Set(candidates.map(x=>x.id)).size,group==='hair'?13:10);
    assert.equal(new Set(candidates.map(x=>JSON.stringify(x.values))).size,group==='hair'?13:10,
     sex+' '+group+' requires ten distinct geometry or material specifications');
   }
