@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {createFastFaceSurfaceSampler} from './face-feature-meshes.js';
-import {getWigStyle,DEFAULT_WIG_STYLE_ID} from './face-wig-styles.js?v=33';
+import {getWigStyle,DEFAULT_WIG_STYLE_ID,WIG_BASE_VOLUME_PROFILES} from './face-wig-styles.js?v=33';
 
 /**
  * Mobile-preview wig made of real scalp-rooted 3D lock ribbons.
@@ -171,7 +171,25 @@ function hairCutY(zone,box,lengthScale,seed,normalizedX=0){
   .014*Math.sin(seed*2.39996323)+.008*Math.sin(seed*.79);
  return box.min.y+d.y*(level+uCut+scatter)/scale;
 }
-function scalpShell(geo,box,color,{fullBody=false,shortHair=false}={}){
+// Signed outward displacement is strongest across the crown and is
+// smoothly tapered around the hairline. Never lift naked facial skin.
+export function wigVolumeLiftAt(point,box,profileId='natural'){
+ const profile=WIG_BASE_VOLUME_PROFILES[profileId];
+ if(!profile)throw Error('Unknown wig volume profile: '+profileId);
+ if(profile.crown===0&&profile.side===0)return 0;
+ const d=box.getSize(new THREE.Vector3()),c=box.getCenter(new THREE.Vector3());
+ const y=(point.y-box.min.y)/d.y,x=Math.abs(point.x-c.x)/d.x;
+ const z=(point.z-c.z)/d.z;
+ const crown=THREE.MathUtils.smoothstep(y,.72,.91)*
+  (1-.38*THREE.MathUtils.smoothstep(x,.16,.45));
+ const side=THREE.MathUtils.smoothstep(y,.49,.68)*
+  (1-THREE.MathUtils.smoothstep(y,.85,1.0))*
+  THREE.MathUtils.smoothstep(x,.14,.32);
+ const faceGuard=1-.80*THREE.MathUtils.smoothstep(z,.15,.32)*
+  (1-THREE.MathUtils.smoothstep(y,.86,.95));
+ return d.x*(profile.crown*crown+profile.side*side)*faceGuard;
+}
+function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile='natural'}={}){
  const src=geo.getAttribute('position'),idx=geo.index;
  const n=idx?idx.count:src.count,d=box.getSize(new THREE.Vector3());
  const normals=geo.getAttribute('normal'),verts=[],smoothNormals=[];
@@ -197,7 +215,9 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false}={}){
    const v=p[j].clone(),ii=ids[j];
    const normal=normals?f3(normals.getX(ii),normals.getY(ii),normals.getZ(ii)):
     v.clone().sub(mid).normalize();
-   v.addScaledVector(normal,d.x*.0015);
+   if(normal.dot(v.clone().sub(center))<0)normal.negate();
+   v.addScaledVector(normal,d.x*.0015+
+    wigVolumeLiftAt(v,box,volumeProfile));
    verts.push(v.x,v.y,v.z);
    // Preserve smooth source-head normals; nonindexed compute would make a flat helmet.
    smoothNormals.push(normal.x,normal.y,normal.z);
@@ -268,6 +288,8 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false}={}){
  const mesh=new THREE.Mesh(buffer,material);
  mesh.name='REAL_SCALP_TRIANGLE_HAIR_CAP';
  mesh.userData.scalpSource='sculpted-real-head-triangles';
+ mesh.userData.v33RaisedWigBase=true;
+ mesh.userData.v33WigVolumeProfile=volumeProfile;
  mesh.userData.rearUndercoatAnchoredToRealScalp=rearCandidates.length>0;
  mesh.userData.rearUndercoatTriangleCount=undercoatStrips*stripSegments*2;
  mesh.userData.rearUndercoatStripCount=undercoatStrips;
@@ -281,7 +303,9 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false}={}){
  * @param {THREE.Mesh} head  owned sculpted female head
  * @param {{count?:number,color?:number,externalColliders?:Array}} options
  */
-export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalColliders=[],bodyCollisionResolver=null,lengthScale=1,styleId=DEFAULT_WIG_STYLE_ID,fineFringeMultiplier=1,visualFiberMultiplier=1,staticGroom=true}={}){
+export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalColliders=[],bodyCollisionResolver=null,lengthScale=1,styleId=DEFAULT_WIG_STYLE_ID,fineFringeMultiplier=1,visualFiberMultiplier=1,staticGroom=true,volumeProfile='natural'}={}){
+ if(!WIG_BASE_VOLUME_PROFILES[volumeProfile])
+  throw Error('Unknown wig volume profile: '+volumeProfile);
  const style=getWigStyle(styleId);
  // v25: a detachable wig keeps its current physically simulated guides;
  // micro-fibres are a single static extra mesh in the SAME removable asset.
@@ -309,6 +333,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  root.userData.hairOnRealHead=true;
  root.userData.staticGroom=!!staticGroom;
  root.userData.wigRig='surface-guided-static-layered-hair-cards';
+ root.userData.v33WigVolumeProfile=volumeProfile;
  // v26: fitted detachable wig foundation is an exact copy of the
  // SCULPTED head surface. It is totally transparent, writes no depth
  // or color, and stays inside the separate wig GLB. It must NOT replace
@@ -332,7 +357,8 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  root.userData.part=style.part;
  root.userData.whorlPosition=whorl.toArray();
  const cap=scalpShell(head.geometry,box,color,{
-  fullBody:!!bodyCollisionResolver,shortHair:!!style.shortCutKind});root.add(cap);
+  fullBody:!!bodyCollisionResolver,shortHair:!!style.shortCutKind,
+  volumeProfile});root.add(cap);
  const baseCount=clamp(Math.round(count),48,2400),segments=11;
  // Allocate EXTRA fine roots at the forehead without removing the existing
  // crown, rear and nape locks. Legacy face-test count stays unchanged at 1x.
@@ -417,7 +443,10 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   // cloned head surface, so always move away from its actual centre.
   const away=seed.p.clone().sub(center);
   if(outward.dot(away)<0)outward.negate();
-  const wigRoot=seed.p.clone().addScaledVector(outward,rootLift);
+  // Root guide is lifted by exactly the same profile as the visible
+  // scalp shell; otherwise hair would sink into the raised wig base.
+  const wigRoot=seed.p.clone().addScaledVector(outward,rootLift+
+   wigVolumeLiftAt(seed.p,box,volumeProfile));
   const side=zone.endsWith('Left')?-1:zone.endsWith('Right')?1:
    Math.sign(wigRoot.x-center.x)||1;
   const partSide=Math.sign(wigRoot.x-whorl.x)||side;
@@ -913,6 +942,9 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   constructionCollisionOnly:!!staticGroom,
   hairCardStyle:'four-stacked-thick-ribbon-layers-with-real-depth',
   v33ShortCutKind:style.shortCutKind||'long',
+  v33WigVolumeProfile:volumeProfile,
+  v33RaisedBaseMaxLiftFraction:WIG_BASE_VOLUME_PROFILES[volumeProfile].crown,
+  v33RaisedBaseMesh:cap.name,
   v33ScalpHuggingBuzz:style.shortCutKind==='buzz',
   layeredRibbonCount:hairLayers,ribbonVerticesPerStation:ribbonStride,
   strandThicknessFraction:half*.47/d.x,
