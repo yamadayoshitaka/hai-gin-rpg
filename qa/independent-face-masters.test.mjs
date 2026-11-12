@@ -865,6 +865,8 @@ test('v18 full crown/rear rooted hair and straight gravity-groomed long locks',(
  assert.equal(report.posteriorRootRatio,.51);
  assert.equal(report.undercoatLockCount,88);
  assert.equal(report.groomingSmoothingPasses,3);
+ assert.equal(report.strandRibbonOrientation,'guide-tangent-on-scalp',
+  'Hair ribbon must follow real scalp, not fixed horizontal spike axes');
  assert.ok(report.frizzAmplitudeFactor<=.1);
  assert.equal(report.scalpCrownCoverage,'extended-to-rear-top');
  assert.equal(report.rearScalpCoverage,'nape-and-occipital-head-triangles');
