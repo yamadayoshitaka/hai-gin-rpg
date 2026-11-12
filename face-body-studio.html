@@ -161,7 +161,11 @@ function fitCamera(){
   view==='side'?new THREE.Vector3(1,0,0):
   view==='crown'?new THREE.Vector3(0,1,0):
   new THREE.Vector3(0,0,1);
- const distance=Math.max(.23,radius/Math.tan(THREE.MathUtils.degToRad(camera.fov*.5))*1.30);
+ // The old 1.30 framing cropped the model's forehead and feet at the
+ // canvas edges on Android. Full-body fit must include the whole silhouette.
+ // Face sliders never invoke this fitter (they preserve the user's zoom).
+ const fitMargin=zoomMode==='full'?1.78:1.29;
+ const distance=Math.max(.23,radius/Math.tan(THREE.MathUtils.degToRad(camera.fov*.5))*fitMargin);
  camera.up.set(0,view==='crown'?0:1,view==='crown'?-1:0);
  camera.position.copy(center).addScaledVector(dir,distance);
  camera.near=.01;camera.far=80;camera.updateProjectionMatrix();
