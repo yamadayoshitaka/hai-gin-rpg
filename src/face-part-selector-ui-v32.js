@@ -2,6 +2,7 @@ import {
  PART_CATALOG,PART_GROUPS,PART_GROUP_LABELS,OFFSET_CHOICES,ANGLE_CHOICES,
  normalizePartSelection,HAIR_COLORS
 } from './face-part-catalog-v32.js?v=33';
+import {WIG_BASE_VOLUME_PROFILES} from './face-wig-styles.js?v=33';
 
 /** v32: select ten real 3D geometric presets, not independent morph sliders. */
 export function createPartSelectorUI(target,gender,current,onChange){
@@ -64,6 +65,19 @@ export function createPartSelectorUI(target,gender,current,onChange){
     state.hairColor=colorSelect.value;announce();
    });
    colorLabel.append(colorSelect);panel.append(colorLabel);
+   const baseLabel=document.createElement('label');
+   baseLabel.textContent='ウィッグの土台（根元の盛り上がり）';
+   const baseSelect=document.createElement('select');
+   baseSelect.id='v33'+(gender==='female'?'Female':'Male')+'WigVolume';
+   for(const [key,profile] of Object.entries(WIG_BASE_VOLUME_PROFILES)){
+    const opt=document.createElement('option');opt.value=key;
+    opt.textContent=profile.label;baseSelect.append(opt);
+   }
+   baseSelect.value=state.hairVolume;
+   baseSelect.addEventListener('change',()=>{
+    state.hairVolume=baseSelect.value;announce();
+   });
+   baseLabel.append(baseSelect);panel.append(baseLabel);
   }
   if(ids[group].length){
    const grid=document.createElement('div');grid.className='v32-pose-grid';
@@ -84,7 +98,7 @@ export function createPartSelectorUI(target,gender,current,onChange){
  }
  const tip=document.createElement('p');
  tip.className='v32-tip';
- tip.textContent='髪は物理演算なしの厚み付き4層ヘアカード。パーツ変更時に3Dメッシュを再生成します。';
+ tip.textContent='髪は物理演算なしの厚み付き4層ヘアカード。土台の盛り上がりに合わせて毛束の根元も動きます。';
  target.append(tip);
  return {getSelection:()=>({...state})};
 }
