@@ -268,7 +268,7 @@ function scalpShell(geo,box,color){
  * @param {THREE.Mesh} head  owned sculpted female head
  * @param {{count?:number,color?:number,externalColliders?:Array}} options
  */
-export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalColliders=[],lengthScale=1,styleId=DEFAULT_WIG_STYLE_ID}={}){
+export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalColliders=[],bodyCollisionResolver=null,lengthScale=1,styleId=DEFAULT_WIG_STYLE_ID}={}){
  const style=getWigStyle(styleId);
  if(!head?.isMesh||!head.geometry?.getAttribute('position'))
   throw Error('Real sculpted 3D head required for scalp-rooted wig');
@@ -480,7 +480,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  // require full constraint and capsule solving on Android.
  const guideStride=Math.max(1,Math.ceil(lockCount/320));
  const guideCount=Math.ceil(lockCount/guideStride);
- let collisions=0,faceContacts=0,bodyContacts=0,accumulator=0,elapsed=0;
+ let collisions=0,faceContacts=0,bodyContacts=0,realBodyContacts=0,accumulator=0,elapsed=0;
  let meshUpdates=0;
  // Real head-surface collision. The original giant ellipsoid forced
  // every strand out to an artificial spherical helmet around the ears.
@@ -516,6 +516,12 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    }else{
     p.z+=d.x*.035;collisions++;faceContacts++;
    }
+  }
+  // In the complete heroine model, use the real imported body's
+  // front/rear TRIANGLE depth before the fallback preview capsules.
+  // The head-only studio intentionally keeps its old proxy behaviour.
+  if(bodyCollisionResolver?.resolve?.(p)){
+   collisions++;bodyContacts++;realBodyContacts++;
   }
   for(const c of colliders){
    if(projectCapsule(p,c.a,c.b,c.r+d.x*.006)){
@@ -642,6 +648,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   rootDistribution:{...zoneCounts},
   zoneCandidateCounts:Object.fromEntries(Object.entries(pools).map(([key,list])=>[key,list.length])),
   collisionTypes:['head','face','neck','shoulder','chest',...externalColliders.map(c=>c.name||'body')],
+  usesRealBodyTriangleContacts:!!bodyCollisionResolver,
   meshCount:2,physicsHz:20,normalUpdateDivisor:3,
   physicsGuideCount:guideCount,
   analyticSwayOtherLocks:true,lengthScale:clamp(lengthScale,.55,1.5),
@@ -652,7 +659,8 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   root.traverse(o=>{if(o.isMesh){o.geometry.dispose();o.material.dispose();}});
  },getReport(){
   return {...root.userData.wigReport,collisionEvents:collisions,
-   faceContactEvents:faceContacts,bodyContactEvents:bodyContacts};
+   faceContactEvents:faceContacts,bodyContactEvents:bodyContacts,
+   realBodyContactEvents:realBodyContacts};
  },resolvePoint(point){
   const p=point.clone();resolveCollision(p);return p;
  },getCutSamples(){
