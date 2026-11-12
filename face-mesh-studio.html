@@ -2,7 +2,7 @@
 <html lang="ja"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#14263a">
-<title>灰銀のレゾナンス | 顔v32・美少女／美少年10種パーツ選択</title>
+<title>灰銀のレゾナンス | 顔v33・目と肩修正／髪13種／カラー16色</title>
 <style>
 :root{font:15px/1.55 system-ui,-apple-system,"Noto Sans JP",sans-serif;color-scheme:dark}
 *{box-sizing:border-box}
@@ -62,7 +62,7 @@ button{padding:9px 11px}
 </style></head>
 <body>
 <header>
-<h1>男女・顔と立体パーツ v32</h1>
+<h1>男女・顔と立体パーツ v33</h1>
 <p>ライブラリに保存された実GLBの顔設定（顎先5倍・鼻穴隠し2・鼻筋2.5）を男女の実メッシュ標準に固定。口紅とチークを実メッシュの頂点に着色。上下アイライン・眉・眼球を調整し、女性用の高密度ロング（後頭部・両側頭部・襟足まで髪束生成・顔と肩への衝突対応）を追加。保存値とズームを維持します。</p>
 </header>
 <main><section class="panel">
@@ -154,7 +154,7 @@ button{padding:9px 11px}
 <div class="controls">
 <button id="export" disabled>表示中の顔メッシュをGLB保存</button>
 <button id="exportWig" disabled>ヅラ単体をGLB保存</button>
-<a href="./face-body-studio.html">女性主人公・選択パーツv32の全身3D確認画面</a>　<a href="./master-swordsman-prototype.html">従来の全身モデル</a>
+<a href="./face-body-studio.html">女性主人公・選択パーツv33の全身3D確認画面</a>　<a href="./master-swordsman-prototype.html">従来の全身モデル</a>
 </div>
 <p>指で360°回転・ピンチで拡大。女性の口紅は上唇・下唇の実3D形状に接続。上下アイラインの目尻を接続。暗いクマを自然にフェードさせ、眉の間隔を維持。頭皮からの金髪ロングは顔・首・肩・胸への簡易衝突を計算。男性は顎・鼻・目の角度と3Dヒゲの濃さ・長さを調整できます。</p>
 <p>これは美形を目標にした<b>初回の造形試作</b>です。実写品質・原画一致・美術承認・ゲーム実装は未達です。顔の凹凸や横顔が自然かを先に評価してください。</p>
@@ -168,7 +168,7 @@ body.v32-legacy #v32PartsStudio{display:none!important}
 .v32-part-group select{display:block;width:100%;min-height:41px;margin:5px 0;padding:7px;background:#213d55;color:#fff;border:1px solid #7893a5;border-radius:8px}
 .v32-pose-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
 .v32-tip{color:#b8d5e8;font-size:12px}
-</style><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/","./src/independent-face-masters.js":"./src/independent-face-masters.js?v=32","./src/face-feature-meshes.js":"./src/face-feature-meshes.js?v=32","./src/face-v7-controls.js":"./src/face-v7-controls.js?v=32","./src/face-body-assembly.js":"./src/face-body-assembly.js?v=32"}}</script>
+</style><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/","./src/independent-face-masters.js":"./src/independent-face-masters.js?v=33","./src/face-feature-meshes.js":"./src/face-feature-meshes.js?v=33","./src/face-v7-controls.js":"./src/face-v7-controls.js?v=33","./src/face-body-assembly.js":"./src/face-body-assembly.js?v=33"}}</script>
 <script type="module">
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
@@ -176,9 +176,9 @@ import {GLTFExporter} from 'three/addons/exporters/GLTFExporter.js';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {makeIndependentFaceMaster,FACE_MASTER_SPEC} from './src/independent-face-masters.js';
 import {updateFaceFeatureAngles,applyFaceColorMode,updateRealFacePigment} from './src/face-feature-meshes.js';
-import {createScalpAnchoredWig} from './src/face-scalp-wig.js?v=32';
-import {createPartSelectorUI} from './src/face-part-selector-ui-v32.js?v=32';
-import {defaultPartSelection,resolvePartSelection,PART_CATALOG} from './src/face-part-catalog-v32.js?v=32';
+import {createScalpAnchoredWig} from './src/face-scalp-wig.js?v=33';
+import {createPartSelectorUI} from './src/face-part-selector-ui-v32.js?v=33';
+import {defaultPartSelection,resolvePartSelection,PART_CATALOG,HAIR_COLORS} from './src/face-part-catalog-v32.js?v=33';
 import {listWigStyles,DEFAULT_WIG_STYLE_ID} from './src/face-wig-styles.js';
 import {FEMALE_V7_DEFAULTS,MALE_REFERENCE_DEFAULT,FACE_SLIDER_RANGES,FACE_EYE_SPACING_DEFAULT,FACE_EYE_SPACING_RANGE,CONTACT_COLORS,CONTACT_COLOR_LABELS,safeContactColor,normalizeFemaleFaceControls,normalizeMaleFaceControls} from './src/face-v7-controls.js';
 const $=id=>document.getElementById(id);
@@ -230,7 +230,8 @@ const orbit=new OrbitControls(camera,canvas);
 orbit.enableDamping=true;orbit.enablePan=false;
 orbit.minDistance=.1;orbit.maxDistance=6;
 const models=new Map(),wigs=new Map();
-const hairPalette={blonde:0xc8a36a,ash:0xc1ae8f,brown:0x705443,black:0x292830};
+const hairPalette=Object.fromEntries(Object.entries(HAIR_COLORS).map(([key,item])=>
+ [key,parseInt(item.hex.slice(1),16)]));
 const faceClock=new THREE.Clock();
 let gender='female',angle='front',wired=false,partsOn=true,ready=false;
 let faceMode='color',femaleSource=null,modelChanges=normalizeFemaleFaceControls({...FEMALE_V7_DEFAULTS,eyeSpacing:FACE_EYE_SPACING_DEFAULT});
@@ -272,6 +273,7 @@ function metrics(){
   maleControls:{...maleChanges},
   wigVisible:wigOn,wigReport:wigs.get(gender)?.getReport()||null,
   wigStyleId,wigStyles:listWigStyles(),
+  v33HairColor:v32PartMode?v32Parts[gender].hairColor:wigColor,
   wigIsSeparateAsset:wigs.get('female')?.root?.userData?.assetType==='independent-wig',
   savedNoseJawDefaults:{jawSharpness:FEMALE_V7_DEFAULTS.jawSharpness,
    nostrilCover:FEMALE_V7_DEFAULTS.nostrilCover,
@@ -379,7 +381,8 @@ function rebuildWig(){
  try{
   const wig=createScalpAnchoredWig(models.get('female').face,{
    count:wigDensity,lengthScale:wigLength,fineFringeMultiplier:3,
-   styleId:wigStyleId,color:hairPalette[wigColor]||hairPalette.blonde
+   styleId:wigStyleId,
+   color:hairPalette[v32PartMode?v32Parts.female.hairColor:wigColor]||hairPalette.blonde
   });
   models.get('female').face.add(wig.root);wigs.set('female',wig);
   if(v32PartMode){
@@ -429,7 +432,8 @@ function rebuildMaleHair(){
  const hair=createScalpAnchoredWig(models.get('male').face,{
   count:680,lengthScale:lengths[v32Parts.male.hair],fineFringeMultiplier:2,
   visualFiberMultiplier:1,staticGroom:true,
-  styleId:chosen.hairStyleId,color:hairPalette[wigColor]||hairPalette.blonde
+  styleId:chosen.hairStyleId,
+  color:hairPalette[v32Parts.male.hairColor]||hairPalette.blonde
  });
  models.get('male').face.add(hair.root);wigs.set('male',hair);
  const size=models.get('male').face.geometry.boundingBox.getSize(new THREE.Vector3());
