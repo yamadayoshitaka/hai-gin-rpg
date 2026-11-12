@@ -599,10 +599,17 @@ async function expectCenteredFaceSliders(page,gender){
      JSON.stringify(info.wig));
    // v25 full-body user-facing controls: independent wig, real contact
    // pigment, and separately collapsible part groups on Android/Desktop.
-   if(info.wig.visualFiberMultiplier!==10||
-      info.wig.visualFiberCount<info.wig.rootCount*10||
-      info.wig.staticMicroFibreCount<info.wig.rootCount*9)
-    throw Error('10x detachable wig fine fibres are missing '+JSON.stringify(info.wig));
+   // Start 3x to keep mobile interaction responsive. Full 10x rendered
+   // fibre geometry is independently tested at the wig-module unit level
+   // and remains user-selectable after the 3D view has loaded.
+   if(info.wig.visualFiberMultiplier!==3||
+      info.wig.visualFiberCount<info.wig.rootCount*3||
+      info.wig.staticMicroFibreCount<info.wig.rootCount*2)
+    throw Error('Detachable 3x default wig not ready '+JSON.stringify(info.wig));
+   const densityOptions=await hero.locator('#wigDensity option').evaluateAll(
+    nodes=>nodes.map(n=>n.value));
+   if(!densityOptions.includes('10'))
+    throw Error('10x fine-fibre wig option missing');
    for(const id of ['faceSectionNose','faceSectionEyes','faceSectionLips','faceSectionJaw']){
     const group=hero.locator('#'+id);
     if(await group.count()!==1)
