@@ -18,9 +18,13 @@ export function resolvedSquadDeployment(squads=[]){
   const id=String(squad.id);if(positions.has(id))continue;
   positions.set(id,squad.deploymentSlot);occupied.add(squad.deploymentSlot);
  }
- for(const squad of squads){
+ for(const [index,squad] of squads.entries()){
   if(!squad||squad.count<=0||positions.has(String(squad.id)))continue;
-  const open=Array.from({length:DEPLOYMENT_CAPACITY},(_,i)=>i).find(slot=>!occupied.has(slot));
+  // Preserve the implicit position of every unedited squad when another
+  // squad is moved to an empty cell. Do NOT compact the whole army.
+  const preferred=index<DEPLOYMENT_CAPACITY?index:null;
+  const open=preferred!==null&&!occupied.has(preferred)?preferred:
+   Array.from({length:DEPLOYMENT_CAPACITY},(_,i)=>i).find(slot=>!occupied.has(slot));
   if(open===undefined)break;
   positions.set(String(squad.id),open);occupied.add(open);
  }
