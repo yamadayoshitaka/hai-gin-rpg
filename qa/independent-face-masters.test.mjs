@@ -2147,6 +2147,9 @@ test('v40 outfit page exposes real action buttons and separate face page navigat
 test('v41 all ten professions have real available named clips; no invented victory or generic substitute',()=>{
  const motion=JSON.parse(readFileSync('job-command-motion-map.json','utf8')).jobs;
  assert.equal(REAL_BATTLE_WARDROBE.length,10);
+ const studioHtml=readFileSync('face-body-studio.html','utf8');
+ assert.match(studioHtml,/fillSelect\('heroJob',REAL_BATTLE_WARDROBE\.map\(/,
+  'Every real job, including farmer, must be available from the wardrobe');
  for(const job of REAL_BATTLE_WARDROBE){
   const available=existingJobActions(motion,job.heroJob);
   assert.ok(available.length>=8,job.name+' needs real playable action rows');
