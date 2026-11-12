@@ -184,7 +184,9 @@ async function expectCenteredFaceSliders(page,gender){
    throw Error('Male and female rendered faces are identical');
   await page.locator('#female').click();
   const wigQA=await page.evaluate(()=>window.__faceMasterQA());
-  if(!wigQA.wigVisible||wigQA.wigReport?.rootCount!==1440||
+  if(!wigQA.wigVisible||wigQA.wigReport?.rootCount<1440||
+      wigQA.wigReport?.fineFringeMultiplier!==3||
+      wigQA.wigReport?.frontFineLockExtra<200||
      wigQA.wigStyleId!=='center-part-gravity-long'||
      !wigQA.wigIsSeparateAsset||
      wigQA.wigReport?.hairstyleId!=='center-part-gravity-long'||
