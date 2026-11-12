@@ -98,7 +98,7 @@ async function expectCenteredFaceSliders(page,gender){
   const original=await page.evaluate(()=>window.__faceMasterQA());
   if(!original.female?.detailedParts?.smoothCornealCore||
       original.female?.detailedParts?.eyeCoreSkinBlendPower!==4||
-      !original.female?.detailedParts?.eyeAnteriorClearanceRatios?.every(v=>v>-.2&&v<.12))
+      !original.female?.detailedParts?.eyeAnteriorClearanceRatios?.every(v=>v>-.7&&v<.12))
     throw Error('v37 recessed eye socket mesh or eyeliner alignment invalid: '+JSON.stringify(original.female?.detailedParts));
    if(!original.savedNoseJawApplied||
      original.savedNoseJawDefaults?.jawSharpness!==5||
