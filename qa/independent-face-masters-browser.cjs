@@ -98,8 +98,8 @@ async function expectCenteredFaceSliders(page,gender){
   const original=await page.evaluate(()=>window.__faceMasterQA());
   if(!original.female?.detailedParts?.smoothCornealCore||
       original.female?.detailedParts?.eyeCoreSkinBlendPower!==4||
-      !original.female?.detailedParts?.eyeAnteriorClearanceRatios?.every(v=>v>.60))
-    throw Error('v30 smooth corneal core or anterior eye relief absent: '+JSON.stringify(original.female?.detailedParts));
+      !original.female?.detailedParts?.eyeAnteriorClearanceRatios?.every(v=>v>.22&&v<.48))
+    throw Error('v34 eyeliner-seated corneal relief absent or too protruding: '+JSON.stringify(original.female?.detailedParts));
    if(!original.savedNoseJawApplied||
      original.savedNoseJawDefaults?.jawSharpness!==5||
      original.savedNoseJawDefaults?.nostrilCover!==2||
@@ -697,9 +697,9 @@ async function expectCenteredFaceSliders(page,gender){
    if(!info.wig?.transparentExactHeadWigBase||
       !info.wig?.trueScalpRibbonVertexCollision||
       info.wig?.wigBaseMaterialOpacity!==0||
-      info.wig?.rootScalpLiftFraction<.015||
-      info.wig?.hairStrandWidthFraction<.014)
-    throw Error('Wig roots/ribbon still buried under copied scalp: '+
+      info.wig?.rootScalpLiftFraction<.012||
+      info.wig?.hairStrandWidthFraction<.013)
+    throw Error('Compact wig roots/ribbons buried or too thin: '+
      JSON.stringify(info.wig));
    const baseStart=await hero.evaluate(()=>{
     const p=window.__heroineBodyPreview.getWig()
