@@ -1144,6 +1144,7 @@ test('v23 front roots originate above forehead and real full body has a single r
  assert.equal(cap.userData.rearUndercoatStripCount,0,
   'Full body must never render short extra rear ribbons over the long drape');
  assert.equal(wig.singleRearLayer,true);
+ assert.ok(wig.rearBodyVolumeExtra>0,'Additional volume must use the one real rear-hair layer');
  assert.equal(wig.fullLengthEyebrowFringe,true);
  assert.equal(wig.fringeRootAboveHairline,true);
  assert.ok(wig.rootDistribution.fringeLeft>0&&wig.rootDistribution.fringeRight>0);
