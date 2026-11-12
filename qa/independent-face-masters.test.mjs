@@ -13,7 +13,7 @@ import {DEFAULT_WIG_STYLE_ID,getWigStyle,listWigStyles} from '../src/face-wig-st
 import {normalizeFemaleFaceControls,normalizeMaleFaceControls,FEMALE_V7_DEFAULTS,FACE_V7_PALETTE,CONTACT_COLORS,safeContactColor,LIBRARY_FACE_PRESET,MALE_REFERENCE_DEFAULT,FACE_SLIDER_RANGES,FACE_EYE_SPACING_DEFAULT,FACE_EYE_SPACING_RANGE}
  from '../src/face-v7-controls.js';
 
-import {PART_CATALOG,PART_GROUPS,resolvePartSelection,defaultPartSelection,normalizePartSelection}
+import {PART_CATALOG,PART_GROUPS,HAIR_COLORS,resolvePartSelection,defaultPartSelection,normalizePartSelection}
  from '../src/face-part-catalog-v32.js';
 
 function fixture(){
@@ -1605,9 +1605,9 @@ test('v32 catalogs contain 10 independently selectable 3D profiles per gender an
  for(const sex of ['female','male']){
   for(const group of PART_GROUPS){
    const candidates=PART_CATALOG[sex][group];
-   assert.equal(candidates.length,10,sex+' '+group);
+   assert.equal(candidates.length,group==='hair'?13:10,sex+' '+group);
    assert.equal(new Set(candidates.map(x=>x.id)).size,10);
-   assert.equal(new Set(candidates.map(x=>JSON.stringify(x.values))).size,10,
+   assert.equal(new Set(candidates.map(x=>JSON.stringify(x.values))).size,group==='hair'?13:10,
     sex+' '+group+' requires ten distinct geometry or material specifications');
   }
  }
@@ -1647,7 +1647,7 @@ test('v32 selected nose, eyes and lips actually change original coherent mesh an
  }
 });
 test('v32 volumetric hair uses 4 offset stacked ribbon layers and 10 registered geometries',()=>{
- assert.equal(listWigStyles().length,10);
+ assert.equal(listWigStyles().length,13);
  const face=makeIndependentFaceMaster(fixture().source,'female');
  const one=createScalpAnchoredWig(face.face,{count:96,staticGroom:true,
   styleId:'center-part-gravity-long'});
@@ -1672,4 +1672,87 @@ test('v32 public studios visibly remove sliders and use ten-choice menus',()=>{
   assert.match(html,/v32-legacy/);
   assert.match(html,/v32.*Choices/);
  }
+});
+
+test('v33 iris occupies more of true eye aperture while preserving a round pupil and raised convex cornea',()=>{
+ const baseline=makeIndependentFaceMaster(fixture().source,'female',{
+  femaleControls:{eyeWidth:1.12,eyeHeight:1.28,irisDiameter:1.12}
+ });
+ const report=baseline.report.detailedParts;
+ for(const side of ['LEFT','RIGHT']){
+  const iris=baseline.parts.getObjectByName(side+'_CURVED_IRIS');
+  const eye=baseline.parts.getObjectByName(side+'_ORBITAL_EYEBALL');
+  const pupil=baseline.parts.getObjectByName(side+'_CURVED_PUPIL');
+  assert.equal(eye.userData.v33OrbitSampleCount,9);
+  assert.equal(eye.userData.smoothCornealCore,true);
+  assert.equal(iris.userData.v33IrisScale,.72);
+  assert.ok(iris.userData.v33IrisOpeningFraction>=.8);
+  assert.ok(iris.userData.v33IrisOpeningFraction<=.90);
+  assert.ok(iris.userData.unclippedTrueCircle);
+  assert.ok(pupil.userData.unclippedTrueCircle);
+  assert.ok(eye.userData.anteriorClearanceRatio>.6);
+ }
+ assert.equal(report.irisMeshCount,2);
+});
+test('v33 shoulder seals match real donor vertex colors, have 3D dome shape and cover both holes',()=>{
+ const head=makeIndependentFaceMaster(fixture().source,'female');
+ const w=head.face.geometry.boundingBox.getSize(new THREE.Vector3()).x;
+ const cx=head.face.geometry.boundingBox.getCenter(new THREE.Vector3()).x;
+ const torso=new THREE.Group();head.face.add(torso);
+ for(const side of [-1,1]){
+  const mesh=new THREE.Mesh(new THREE.CylinderGeometry(w*.23,w*.23,
+   w*.20,24,2),new THREE.MeshStandardMaterial());
+  mesh.position.x=cx+side*w*.93;
+  const col=new THREE.Color(side<0?'#cf8d79':'#617b9c');
+  const colors=[];
+  for(let i=0;i<mesh.geometry.getAttribute('position').count;i++)
+   colors.push(col.r,col.g,col.b);
+  mesh.geometry.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));
+  torso.add(mesh);
+ }
+ head.face.updateWorldMatrix(true,true);
+ const cutY=head.face.localToWorld(new THREE.Vector3(0,0,0)).y;
+ const attachment={root:torso,report:{}};
+ const cap=createClosedShoulderCaps(head.face,attachment,{cutY});
+ assert.equal(cap.count,2);
+ assert.equal(attachment.report.shoulderCapsColorMatchedToBody,true);
+ for(const side of ['LEFT','RIGHT']){
+  const mesh=head.face.getObjectByName(side+'_SHOULDER_CUT_SURFACE_CAP');
+  assert.equal(mesh.userData.v33SkinContinuity,true);
+  assert.equal(mesh.userData.v33DomeNotFlat,true);
+  assert.equal(mesh.material.vertexColors,true);
+  const p=mesh.geometry.getAttribute('position');
+  const c=mesh.geometry.getAttribute('color');
+  assert.ok(p.getY(0)>p.getY(1));
+  assert.ok(c.count===p.count);
+  assert.ok([...c.array].every(Number.isFinite));
+ }
+});
+test('v33 hairstyle selections include short, very short and scalp-hugging buzz for both genders',()=>{
+ assert.equal(listWigStyles().length,13);
+ for(const gender of ['female','male']){
+  const chosen=PART_CATALOG[gender].hair;
+  for(const [idx,kind] of [[10,'short'],[11,'very-short'],[12,'buzz']])
+   assert.equal(getWigStyle(chosen[idx].values.styleId).shortCutKind,kind);
+ }
+ for(const style of ['natural-short','very-short','buzz-cut']){
+  const face=makeIndependentFaceMaster(fixture().source,'female');
+  const wig=createScalpAnchoredWig(face.face,{count:120,styleId:style,staticGroom:true});
+  const report=wig.getReport();
+  assert.equal(report.v33ShortCutKind,getWigStyle(style).shortCutKind);
+  assert.equal(report.physicsHz,0);
+  assert.equal(report.undercoatLockCount,0);
+  assert.equal(report.layeredRibbonCount,4);
+  const styleSamples=wig.getStyleSamples(),box=face.face.geometry.boundingBox;
+  const dy=box.getSize(new THREE.Vector3()).y;
+  const maxStrand=Math.max(...styleSamples.map(sample=>
+   Math.abs(sample.root[1]-sample.tip[1])));
+  assert.ok(maxStrand<dy*(style==='buzz-cut'?.04:style==='very-short'?.11:.24),
+   'Short hairstyle must be a short scalp-bound real mesh');
+  wig.dispose();
+ }
+ assert.equal(Object.keys(HAIR_COLORS).length,16);
+ assert.equal(normalizePartSelection({hair:12,hairColor:'blue'}).hairColor,'blue');
+ assert.equal(resolvePartSelection('female',{hair:12,hairColor:'blue'}).hairHex,'#415c99');
+ assert.equal(resolvePartSelection('male',{hair:11,hairColor:'red'}).hairStyleId,'very-short');
 });
