@@ -283,7 +283,9 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   rootDistribution:{...zoneCounts},
   zoneCandidateCounts:Object.fromEntries(Object.entries(pools).map(([key,list])=>[key,list.length])),
   collisionTypes:['head','face','neck','shoulder','chest',...externalColliders.map(c=>c.name||'body')],
-  meshCount:2,physicsHz:30,lengthScale:clamp(lengthScale,.55,1.5)
+  meshCount:2,physicsHz:30,lengthScale:clamp(lengthScale,.55,1.5),
+  hairColor:'#'+rootColor.getHexString(),
+  tipColor:'#'+tips.getHexString()
  };
  return {root,update,dispose(){
   root.traverse(o=>{if(o.isMesh){o.geometry.dispose();o.material.dispose();}});
