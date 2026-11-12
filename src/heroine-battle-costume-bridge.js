@@ -3,6 +3,7 @@ import {createCharacter} from './character-system/shared-character-runtime.js?v=
 import {buildRiggedJobOutfit} from './character-system/rigged-outfit-runtime.js?v=4.6.15';
 import {loadJobMotionMap} from './character-system/job-motion-source.js?v=4.6.36';
 import {measureHeadLocalBounds} from './character-system/hair-attachment-runtime.js?v=4.4.89';
+import {createHeroineBattleActionVfx} from './heroine-battle-action-vfx.js?v=40';
 
 /**
  * Reuse EXACT game battle clothing: Female_Ranger / Female_Peasant skinned GLTF,
@@ -295,7 +296,7 @@ export async function createRealBattleOutfitStudio({scene,faceModel,getFaceModel
  if(!scene?.add||!faceModel?.root||!faceModel.face)
   throw Error('Real scene and independent face are required');
  const jobs=await loadJobMotionMap();
- let actor=null,outfit=null,headRoot=faceModel.root,face=faceModel.face;
+ let actor=null,outfit=null,vfx=null,headRoot=faceModel.root,face=faceModel.face;
  let currentJob=jobId,currentOutfit=outfitId,currentAction=actionId;
  let hiddenBody=false,outfitShown=true,disposed=false,request=0,headReport=null,headFit=null,proportions=null,finishReport=null;
  const chosenOutfit=()=>currentOutfit==='job'?
@@ -324,6 +325,7 @@ export async function createRealBattleOutfitStudio({scene,faceModel,getFaceModel
    fresh.face?.holdBlink?.(0);
    for(const lid of fresh.face?.lids||[])lid.visible=false;
    if(actor){
+    vfx?.dispose();vfx=null;
     headRoot.removeFromParent();
     outfit?.dispose();actor.dispose();actor.object3D.removeFromParent();
    }
@@ -341,6 +343,8 @@ export async function createRealBattleOutfitStudio({scene,faceModel,getFaceModel
     faceRoot:headRoot,faceFit:headFit});
    setBodyVisible(!hiddenBody);
    outfit.root.visible=!hiddenBody&&outfitShown;
+   vfx=createHeroineBattleActionVfx({THREE,actorRoot:actor.object3D,
+    camera:scene.userData.studioPreviewCamera});
    await playAction(currentAction);
    onStatus('戦闘の既存衣装を反映：'+chosen.label+'。顔と髪は独立メッシュです。');
   }catch(error){
@@ -353,6 +357,7 @@ export async function createRealBattleOutfitStudio({scene,faceModel,getFaceModel
   if(!actor)return false;
   try{
    const state=motionByAction[currentAction];
+   vfx?.trigger(currentAction,realBattleJob(currentJob).heroJob);
    const played=await actor.play(state);
    if(!played&&state!=='idle')await actor.play('idle');
    return played;
@@ -394,7 +399,7 @@ export async function createRealBattleOutfitStudio({scene,faceModel,getFaceModel
  }
  function update(dt){
   if(disposed||!actor)return;
-  actor.update(dt);outfit?.sync();
+  actor.update(dt);outfit?.sync();vfx?.update(dt);
  }
  function getState(){return {
   active:!!actor,rigSource:'battle-character-and-real-65-bone-job-outfit',
@@ -402,12 +407,13 @@ export async function createRealBattleOutfitStudio({scene,faceModel,getFaceModel
   garment:chosenOutfit().label,
   headReport,headFit,proportions,finishReport,
   sourceTrousers:outfit?.presentation?.().useSourceSkinnedLegs||false,
+  vfx:vfx?.getState()||null,
   realOutfit:!!outfit,hasMotion:!!actor?.diagnostics()?.playing
  };}
  function dispose(){
   disposed=true;++request;
   headRoot.removeFromParent();
-  outfit?.dispose();actor?.dispose();actor?.object3D?.removeFromParent();
+  vfx?.dispose();outfit?.dispose();actor?.dispose();actor?.object3D?.removeFromParent();
  }
  await install();
  return {getState,getActor:()=>actor?.object3D||null,
