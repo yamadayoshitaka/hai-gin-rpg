@@ -22,6 +22,7 @@ from PIL import Image, ImageChops, ImageOps, ImageStat
 ROOT = Path(__file__).resolve().parents[1]
 PLAN_FILE = ROOT / "qa-reports/story-art-batch-plan.json"
 STATUS_FILE = ROOT / "assets/story/sheets/processed-batches.json"
+PAGE_FOLDER = ROOT / "assets/story/pages"
 REGISTRY_FILE = ROOT / "src/story-panel-neutral-ids.js"
 ID_RE = re.compile(r"^c\d{2}-s\d{2}-m(?:[1-9]|1[0-9]|20)$")
 OUTPUT_RE = re.compile(r"^assets/story/panels/c\d{2}-s\d{2}-m(?:0[1-9]|1[0-9]|20)(?:-female)?\.webp$")
@@ -127,9 +128,17 @@ def process(batch: dict, state: dict, neutrals: set[str]) -> dict:
         return {"id": batch["id"], "status": "not-ready"}
     base_bytes = sheet_file.read_bytes()
     base_hash = sha(base_bytes)
+    if batch["phase"] not in {"pre", "post"} or len(batch["stages"]) != 1:
+        raise ValueError("A sheet must belong to exactly one phase and stage")
+    prefix = batch["stages"][0] + "-" + batch["phase"]
+    male_page = PAGE_FOLDER / (prefix + "-male.webp")
+    female_page = PAGE_FOLDER / (prefix + "-female.webp")
     prior = state["batches"].get(batch["id"])
-    if prior and prior.get("baseSha256") == base_hash:
-        return {"id": batch["id"], "status": "already-processed"}
+    # Earlier importer revisions produced only individual panels. Rebuild
+    # the full page even for an unchanged approved source image.
+    if prior and prior.get("baseSha256") == base_hash and male_page.is_file():
+        if prior.get("femaleHeroReplacements", 0) + prior.get("genderNeutralFrames", 0) < 10 or female_page.is_file():
+            return {"id": batch["id"], "status": "already-processed"}
     approval = approve(folder / "review-approved.json", base_hash, batch)
     base_sheet = image_at(sheet_file).convert("RGB")
     cellw, cellh = verify_sheet(base_sheet, str(sheet_file))
@@ -204,6 +213,25 @@ def process(batch: dict, state: dict, neutrals: set[str]) -> dict:
         new_assets[female_output] = encode_webp(result)
         patch_count += 1
 
+    # The sheet is the AUTHORITATIVE published asset, not a collage of
+    # unrelated per-panel fallback pictures. Never publish a female manga page
+    # until all ten cells are either reviewed hero-free or correctly edited.
+    new_assets[male_page] = encode_webp(base_sheet)
+    female_complete = (patch_count + neutral_count == 10)
+    if female_complete:
+        if heroine is None:
+            # Legitimate only when the protagonist appears in none of 10 cells.
+            if neutral_count != 10:
+                raise ValueError("Missing heroine sheet for an illustrated male protagonist")
+            female_sheet = base_sheet
+        else:
+            binary_mask = mask_sheet.point(lambda x: 255 if x >= 128 else 0)
+            female_sheet = Image.composite(heroine, base_sheet, binary_mask)
+        new_assets[female_page] = encode_webp(female_sheet)
+    else:
+        # Never keep a stale female page after a source change.
+        if female_page.exists():
+            raise ValueError("A previously published female page has missing replacement cells")
     # Commit on disk only after ALL scenes of this batch pass quality gates.
     for dest, content in new_assets.items():
         dest.parent.mkdir(parents=True, exist_ok=True)
@@ -215,11 +243,14 @@ def process(batch: dict, state: dict, neutrals: set[str]) -> dict:
         "stageIds": batch["stages"],
         "panelIds": [p["id"] for p in cells],
         "maleFrames": 10,
+        "malePage": str(male_page.relative_to(ROOT)),
+        "femalePage": str(female_page.relative_to(ROOT)) if female_complete else None,
         "femaleHeroReplacements": patch_count,
         "genderNeutralFrames": neutral_count,
         "reviewer": approval["approvedBy"],
     }
     return {"id": batch["id"], "status": "registered", "male": 10,
+            "malePage": True, "femalePage": female_complete,
             "heroineEdited": patch_count, "heroFree": neutral_count}
 
 
