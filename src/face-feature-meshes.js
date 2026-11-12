@@ -910,7 +910,7 @@ export function applyFaceColorMode(face,mode='clay',{contactColor,makeupType=0}=
  };
  // Selected makeup recolors actual 3D lip and lid geometry; no decals.
  const makeupChoices=[
-  [0xba8b88,0xb98e91,0xbb9892,0x584548],
+  [0xc07c82,0x865b7d,0xcf8383,0x30252b],
   [0xc28289,0xaa828e,0xcd9290,0x403037],
   [0xda93a4,0xb38b9e,0xe59ba7,0x403039],
   [0xb37b70,0x947565,0xbd8b7f,0x332b28],
