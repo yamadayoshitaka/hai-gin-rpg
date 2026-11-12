@@ -425,7 +425,7 @@ function renderPanel(){
   const armory=panel==='weapons',stock=TOWN_SHOP.filter(item=>armory?item.category===shopCategory:item.category==='道具');
   const squads=game.campaign.squads.filter(s=>s.count>0);
   if(!squads.some(s=>s.id===selectedSquadId))selectedSquadId=squads[0]?.id||0;
-  const selector=armory?'<label for="equipSquadSelect">装備対象の隊列</label><select id="equipSquadSelect">'+squads.map(s=>'<option value="'+s.id+'" '+(s.id===selectedSquadId?'selected':'')+'>#'+s.id+' '+escapeHtml(s.job)+' '+s.count+'人</option>').join('')+'</select>':'';
+  const selector=armory?'<strong>装備対象の隊列</strong><div class="innTapOptions">'+squads.map(s=>'<button type="button" data-equip-squad="'+s.id+'" class="'+(s.id===selectedSquadId?'selected':'')+'">#'+s.id+' '+escapeHtml(s.job)+' '+s.count+'人</button>').join('')+'</div>':'';
   $('panelContent').innerHTML=
    '<p>'+(armory?'武器と防具は隊列単位で購入・装備します。バフは出撃開始時から常時有効（有効期限なし）。':'消耗品を購入します。武器・防具の購入は武具屋で行います。')+'</p>'+
    (armory?'<div class="controls">'+['武器','防具'].map(x=>'<button type="button" data-shop-category="'+x+'" '+(shopCategory===x?'class="primary"':'')+'>'+x+'</button>').join('')+'</div>'+selector:'')+
@@ -519,26 +519,90 @@ $('panelContent').onclick=event=>{
  if(target.hasAttribute('data-inn-squad-step')){
   innSquadPage+=Number(target.dataset.innSquadStep);renderPanel();return;
  }
+ if(target.hasAttribute('data-inn-commander')){
+  innCommanderId=target.dataset.innCommander;
+  innDeploymentSelected=null;renderPanel();return;
+ }
+ if(target.hasAttribute('data-inn-specialty')){
+  const leader=String(innCommanderId)==='player'?game.campaign.commander:
+   game.campaign.commanders.find(c=>String(c.id)===String(innCommanderId));
+  if(leader&&Object.hasOwn(STRATEGIST_SPECIALTIES,target.dataset.innSpecialty)){
+   leader.specialty=target.dataset.innSpecialty;persist();renderPanel();
+  }
+  return;
+ }
+ if(target.hasAttribute('data-inn-initial-order')){
+  setInnCommanderInitialOrder(game,innCommanderId,target.dataset.innInitialOrder);
+  persist();renderPanel();return;
+ }
+ if(target.hasAttribute('data-inn-priority')){
+  armyPriority=target.dataset.innPriority;renderPanel();return;
+ }
+ if(target.hasAttribute('data-inn-auto-place')){
+  try{
+   const result=autoDeployCommanders(game.campaign,{priority:armyPriority});
+   innDeploymentSelected=null;persist();renderPanel();
+   notice('全軍をオート配置。新規軍師'+result.hired+'人、予備兵からの配属'+result.assigned+
+    '部隊。未使用枠'+result.unfilled+'（レベル・資金の制限あり）。');
+  }catch(error){notice(error.message||String(error));}
+  return;
+ }
  if(target.hasAttribute('data-inn-slot')){
   const slot=Number(target.dataset.innSlot);
-  const owned=game.campaign.squads.filter(s=>String(s.commanderId??'player')===String(innCommanderId)&&s.count>0);
-  const slots=resolvedSquadDeployment(owned);
-  const occupant=owned.find(s=>slots.get(String(s.id))===slot);
+  const leaders=commanderList(game.campaign),positions=resolvedCommanderDeployment(game.campaign);
+  const occupant=leaders.find(c=>positions.get(String(c.id))===slot);
   if(innDeploymentSelected==null){
-   if(!occupant){notice('先に移動する部隊を選んでください。');return;}
-   innDeploymentSelected=String(occupant.id);
-  }else if(occupant&&String(occupant.id)===String(innDeploymentSelected)){
-   innDeploymentSelected=null;
-  }else{
-   if(moveSquadDeployment(owned,innDeploymentSelected,slot)){
-    persist();
-    notice('部隊配置を更新しました。出撃時の配置に反映されます。');
-   }
-   innDeploymentSelected=null;
+   if(occupant){innDeploymentSelected=String(occupant.id);innCommanderId=innDeploymentSelected;renderPanel();return;}
+   try{
+    const result=autoDeployCommanders(game.campaign,{
+     priority:armyPriority,maxNewHires:1,preferredSlot:slot
+    });
+    if(result.hiredIds.length){
+     innCommanderId=result.hiredIds[0];innDeploymentSelected=null;
+     persist();renderPanel();notice('軍師を雇用して空き枠へ配置しました。');
+    }else notice('この枠にはまだ軍師を雇用できません（レベル・資金・兵士上限を確認）。');
+   }catch(error){notice(error.message||String(error));}
+   return;
   }
-  renderPanel();return;
+  if(occupant&&String(occupant.id)===String(innDeploymentSelected)){
+   innDeploymentSelected=null;renderPanel();return;
+  }
+  if(placeCommander(game.campaign,innDeploymentSelected,slot)){
+   persist();notice('軍師の部隊配置を更新しました。');
+  }
+  innDeploymentSelected=null;renderPanel();return;
  }
  try{
+  if(target.hasAttribute('data-inn-template-auto')){
+   const stage=stagesInChapter(CAMPAIGN_STAGE_BY_ID[game.townStage].chapter)
+    .find(s=>s.kind!=='town'&&!game.completedStages.includes(s.id))||
+    stagesInChapter(CAMPAIGN_STAGE_BY_ID[game.townStage].chapter).find(s=>s.kind!=='town');
+   if(!stage)throw Error('次の戦闘ステージが見つかりません。');
+   const defend=stage.kind==='defend',capture=['capture','siege'].includes(stage.kind);
+   registerInnStrategyTemplate(game,{
+    name:stage.name+'・標準作戦',
+    strategy:defend||capture?'objective':stage.kind==='explore'?'environment_prepare':'eliminate',
+    victoryCondition:stage.winCondition||'敵部隊の撃破',
+    route:defend?'防衛拠点と進入路を保持':capture?'中央進軍路を確保し勝利目標へ向かう':
+     stage.kind==='explore'?'建物と地形を探索する':'安全な前線から敵主力に接近する',
+    situation:defend?'敵部隊が拠点へ接近':capture?'進軍路を敵が遮断':'敵が前線を突破しようとする',
+    allyResponse:defend?'盾騎士が防衛し僧侶が支援':capture?'騎士が突破し忍者が側面へ回る':'騎士が突撃し僧侶が支援',
+    allyJob:defend?'盾騎士':capture?'騎士':'騎士',
+    enemyCounter:'敵が別経路から攻撃・魔法や遠距離攻撃を行う',
+    allyReResponse:'忍者が側面を警戒し僧侶が被害を回復'
+   });
+   persist();renderPanel();notice('次の戦場の作戦テンプレートを自動登録しました。');return;
+  }
+  if(target.hasAttribute('data-inn-template-toggle')){
+   innTemplateEditorOpen=!innTemplateEditorOpen;renderPanel();return;
+  }
+  if(target.hasAttribute('data-inn-strategy-choice')||target.hasAttribute('data-inn-job-choice')){
+   const kind=target.hasAttribute('data-inn-strategy-choice')?'strategy':'job';
+   $(kind==='strategy'?'innTemplateStrategy':'innTemplateJob').value=
+    kind==='strategy'?target.dataset.innStrategyChoice:target.dataset.innJobChoice;
+   for(const node of target.parentElement.querySelectorAll('button'))node.classList.toggle('selected',node===target);
+   return;
+  }
   if(target.hasAttribute('data-inn-template-save')){
    registerInnStrategyTemplate(game,{
     name:$('innTemplateName').value,strategy:$('innTemplateStrategy').value,
@@ -572,6 +636,7 @@ $('panelContent').onclick=event=>{
    const purchase=buyTownItem(game,target.dataset.buy,1);
    persist();renderPanel();townAudio.effect('buy');notice(purchase.item.name+'を購入しました（-'+purchase.price+'G）。');return;
   }
+  if(target.hasAttribute('data-equip-squad')){selectedSquadId=Number(target.dataset.equipSquad);renderPanel();return;}
   if(target.hasAttribute('data-equip')){
    const gear=equipSquadItem(game,selectedSquadId,target.dataset.equip,shopCategory);
    persist();renderPanel();notice('隊列 #'+gear.squad.id+' に'+gear.item.name+'を装備。常時バフ：攻撃+'+Math.round(gear.bonus.attack*100)+'%、HP+'+Math.round(gear.bonus.defense*100)+'%');return;
@@ -583,7 +648,6 @@ $('panelContent').onclick=event=>{
    persist();renderPanel();notice('予備兵に10人追加しました。');return;
   }
   if(target.hasAttribute('data-auto')){
-   armyPriority=$('autoPriority').value;
    autoFormArmy(game.campaign,innCommanderId,armyPriority);
    innDeploymentSelected=null;
    persist();renderPanel();notice('選択した方針で自動編成しました。');return;
