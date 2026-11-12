@@ -2,7 +2,7 @@
 <html lang="ja"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#14263a">
-<title>灰銀のレゾナンス | 顔v26・顔沿いの目とまつ毛調整</title>
+<title>灰銀のレゾナンス | 顔v26・一体型目元と細密まつ毛調整</title>
 <style>
 :root{font:15px/1.55 system-ui,-apple-system,"Noto Sans JP",sans-serif;color-scheme:dark}
 *{box-sizing:border-box}
@@ -465,6 +465,8 @@ function rebuildMale(){
 // used by the whole-body editor, before the existing tab sorter runs.
 const eyeExtras=[
  ['eyeWidth','目の横幅'],['eyeHeight','目の縦幅・開き'],
+ ['eyeDepth','目の面の奥行き'],['browAngle','眉毛の角度'],
+ ['lashAngle','まつ毛全体の角度'],
  ['browWidth','眉毛の幅'],['browThickness','眉毛の太さ'],
  ['lashDensity','まつ毛の本数・密度'],
  ['lashLength','まつ毛の長さ'],
@@ -484,7 +486,7 @@ function addEyeExtras(male=false){
   const range=document.createElement('input');
   const [min,max]=FACE_SLIDER_RANGES[key];
   range.type='range';range.id=id;range.min=String(min);range.max=String(max);
-  range.step=key.startsWith('lash')?.05:.01;
+  range.step=key.endsWith('Angle')?'1':key.startsWith('lash')?'.05':'.01';
   range.value=String((male?maleChanges:modelChanges)[key]);
   output.value=range.value;
   row.append(text,output,range);
@@ -493,11 +495,12 @@ function addEyeExtras(male=false){
 }
 addEyeExtras(false);addEyeExtras(true);
 const rebuildKeys=['irisDiameter','eyeSize','eyeSpacing','eyeWidth','eyeHeight',
- 'browWidth','browThickness','lashDensity','lashLength','lashThickness','lashCurl',
+ 'browWidth','browThickness','eyeDepth',
+ 'lashDensity','lashLength','lashThickness','lashCurl',
  'jawSharpness','noseTipLift',
  'nostrilCover','noseBridgeSharpness'];
 const cosmeticKeys=['lipstickX','lipstickY','lipstickWidth','lipstickHeight'];
-const angleKeys=['eyeAngle'];
+const angleKeys=['eyeAngle','browAngle','lashAngle'];
 const multiplierKeys=['irisDiameter','eyeSize','eyeSpacing','eyeWidth','eyeHeight',
  'browWidth','browThickness','lashDensity','lashLength','lashThickness','lashCurl',
  'jawSharpness','lipstickWidth','lipstickHeight'];
@@ -506,7 +509,7 @@ function setFaceControlDisplay(key,value){
  // Mobile browsers can restore old range values independently of the JS
  // model on navigation/reload. The actual model state is authoritative.
  el.value=String(value);
- out.value=String(value)+(key==='eyeAngle'?'°':
+ out.value=String(value)+(angleKeys.includes(key)?'°':
   multiplierKeys.includes(key)?'×':'');
 }
 function syncFaceControlDisplays(){
@@ -536,7 +539,7 @@ for(const key of [...rebuildKeys,...cosmeticKeys,...angleKeys]){
   }
  });
  // Sculpt geometry changes only on finger release; lipstick responds live.
- if(rebuildKeys.includes(key))el.addEventListener('change',rebuildFemale);
+ if(rebuildKeys.includes(key)||key==='eyeAngle')el.addEventListener('change',rebuildFemale);
  if(cosmeticKeys.includes(key))el.addEventListener('change',()=>{
   // Only lipstick width changes actual vermilion polygon geometry.
   // Rebuild once on touch-release, never on each mobile input frame.
@@ -544,14 +547,14 @@ for(const key of [...rebuildKeys,...cosmeticKeys,...angleKeys]){
   $('metrics').textContent=JSON.stringify(metrics(),null,2);
  });
 }
-const maleRebuildKeys=['jawSharpness','eyeSize','eyeSpacing','eyeWidth','eyeHeight',
+const maleRebuildKeys=['jawSharpness','eyeSize','eyeSpacing','eyeWidth','eyeHeight','eyeDepth',
  'browWidth','browThickness','irisDiameter','noseTipLift',
  'nostrilCover','noseBridgeSharpness','beardDensity','beardLength'];
-const maleAngleKeys=['eyeAngle'];
+const maleAngleKeys=['eyeAngle','browAngle'];
 function setMaleControlDisplay(key,value){
  const id='male'+key[0].toUpperCase()+key.slice(1);
  $(id).value=String(value);
- $(id+'Value').value=String(value)+(key==='eyeAngle'?'°':
+ $(id+'Value').value=String(value)+(maleAngleKeys.includes(key)?'°':
   ['jawSharpness','eyeSize','eyeSpacing','eyeWidth','eyeHeight',
   'browWidth','browThickness','irisDiameter','beardLength'].includes(key)?'×':'');
 }
@@ -564,12 +567,12 @@ for(const key of [...maleRebuildKeys,...maleAngleKeys]){
  $(id).addEventListener('input',()=>{
   maleChanges[key]=Number($(id).value);
   setMaleControlDisplay(key,maleChanges[key]);
-  if(key==='eyeAngle'&&models.get('male')){
+  if(maleAngleKeys.includes(key)&&models.get('male')){
    updateFaceFeatureAngles(models.get('male').parts,maleChanges);
    $('metrics').textContent=JSON.stringify(metrics(),null,2);
   }
  });
- if(maleRebuildKeys.includes(key))$(id).addEventListener('change',rebuildMale);
+ if(maleRebuildKeys.includes(key)||key==='eyeAngle')$(id).addEventListener('change',rebuildMale);
 }
 $('resetMalePreset').addEventListener('click',()=>{
  maleChanges=normalizeMaleFaceControls({...MALE_REFERENCE_DEFAULT,eyeSpacing:FACE_EYE_SPACING_DEFAULT});
@@ -627,9 +630,9 @@ function setupAdjustTabs(containerId,groups){
 }
 setupAdjustTabs('faceGroupTabs',[
  ['顎・輪郭',['jawSharpness']],
- ['目元',['irisDiameter','eyeSize','eyeWidth','eyeHeight','eyeSpacing',
-  'browWidth','browThickness','lashDensity','lashLength','lashThickness',
-  'lashCurl','eyeAngle']],
+ ['目元',['irisDiameter','eyeSize','eyeWidth','eyeHeight','eyeDepth','eyeSpacing',
+  'browWidth','browThickness','browAngle','lashDensity','lashLength',
+  'lashThickness','lashCurl','lashAngle','eyeAngle']],
  ['鼻',['noseTipLift','nostrilCover','noseBridgeSharpness']],
  ['口紅',['lipstickX','lipstickY','lipstickWidth','lipstickHeight']],
  ['カラコン',['contactPreset','contactColor']],
@@ -638,7 +641,8 @@ setupAdjustTabs('faceGroupTabs',[
 setupAdjustTabs('maleGroupTabs',[
  ['顎・輪郭',['maleJawSharpness']],
  ['目元',['maleEyeSize','maleEyeWidth','maleEyeHeight','maleEyeSpacing',
-  'maleBrowWidth','maleBrowThickness','maleIrisDiameter','maleEyeAngle']],
+  'maleBrowWidth','maleBrowThickness','maleBrowAngle',
+  'maleEyeDepth','maleIrisDiameter','maleEyeAngle']],
  ['鼻',['maleNoseTipLift','maleNostrilCover','maleNoseBridgeSharpness']],
  ['ヒゲ',['maleBeardDensity','maleBeardLength']]
 ]);
