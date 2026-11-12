@@ -47,7 +47,8 @@ const clamp=(v,lo,hi)=>Math.min(hi,Math.max(lo,v));
 export function normalizePartSelection(input={}){
  const out=defaultPartSelection();
  for(const group of PART_GROUPS)out[group]=clamp(
-  Math.round(Number(input[group])||0),0,group==='hair'?12:9);
+  Math.round(Number(input[group])||0),0,
+  Math.max(0,PART_CATALOG.female[group].length-1));
  out.hairColor=HAIR_COLORS[input.hairColor]?input.hairColor:'blonde';
  out.hairVolume=WIG_BASE_VOLUME_PROFILES[input.hairVolume]?input.hairVolume:'natural';
  for(const key of Object.keys(out).filter(k=>!PART_GROUPS.includes(k)&&k!=='hairColor'&&k!=='hairVolume')){
