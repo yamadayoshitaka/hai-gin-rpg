@@ -13,6 +13,9 @@ import {DEFAULT_WIG_STYLE_ID,getWigStyle,listWigStyles} from '../src/face-wig-st
 import {normalizeFemaleFaceControls,normalizeMaleFaceControls,FEMALE_V7_DEFAULTS,FACE_V7_PALETTE,CONTACT_COLORS,safeContactColor,LIBRARY_FACE_PRESET,MALE_REFERENCE_DEFAULT,FACE_SLIDER_RANGES,FACE_EYE_SPACING_DEFAULT,FACE_EYE_SPACING_RANGE}
  from '../src/face-v7-controls.js';
 
+import {PART_CATALOG,PART_GROUPS,resolvePartSelection,defaultPartSelection,normalizePartSelection}
+ from '../src/face-part-catalog-v32.js';
+
 function fixture(){
  const original=new THREE.SphereGeometry(.19,64,48);
  const source=new THREE.Group();
@@ -1595,4 +1598,78 @@ test('v31 static salon wig has staggered curtain fringe, long temples, feathered
  const lowTemple=Math.min(...temples.map(x=>x.tip[1]));
  assert.ok(lowTemple<minFringe*.95,'Temple layer must extend below short bangs');
  wig.dispose();
+});
+
+test('v32 catalogs contain 10 independently selectable 3D profiles per gender and group',()=>{
+ assert.equal(PART_GROUPS.length,6);
+ for(const sex of ['female','male']){
+  for(const group of PART_GROUPS){
+   const candidates=PART_CATALOG[sex][group];
+   assert.equal(candidates.length,10,sex+' '+group);
+   assert.equal(new Set(candidates.map(x=>x.id)).size,10);
+   assert.equal(new Set(candidates.map(x=>JSON.stringify(x.values))).size,10,
+    sex+' '+group+' requires ten distinct geometry or material specifications');
+  }
+ }
+ assert.equal(normalizePartSelection({eye:99,nose:-4}).eye,9);
+ assert.equal(normalizePartSelection({eye:99,nose:-4}).nose,0);
+});
+test('v32 selected nose, eyes and lips actually change original coherent mesh and parts',()=>{
+ for(const sex of ['female','male']){
+  const f=fixture(),before=f.original.getAttribute('position').array.slice();
+  const basic=resolvePartSelection(sex,defaultPartSelection());
+  const changed=resolvePartSelection(sex,{
+   face:7,eye:6,nose:4,mouth:8,makeup:4,
+   eyeX:2,eyeY:2,eyeZ:1,eyeAngle:6,
+   noseX:1,noseY:-1,noseZ:2,noseAngle:6,
+   mouthX:1,mouthY:2,mouthZ:1,mouthAngle:-6
+  });
+  const a=makeIndependentFaceMaster(f.source,sex,{
+   [sex==='female'?'femaleControls':'maleControls']:basic.controls});
+  const b=makeIndependentFaceMaster(f.source,sex,{
+   [sex==='female'?'femaleControls':'maleControls']:changed.controls});
+  const at=a.face.geometry.getAttribute('position');
+  const bt=b.face.geometry.getAttribute('position');
+  let moved=0;
+  for(let i=0;i<at.count;i++)
+   if(Math.abs(at.getX(i)-bt.getX(i))+
+     Math.abs(at.getY(i)-bt.getY(i))+
+     Math.abs(at.getZ(i)-bt.getZ(i))>1e-6)moved++;
+  assert.ok(moved>45,'Preset must sculpt the actual connected head, '+sex);
+  assert.ok(b.parts.getObjectByName('LEFT_ORBITAL_EYEBALL').isMesh);
+  assert.ok(b.parts.getObjectByName('UPPER_3D_VERMILION_LIP').isMesh);
+  assert.ok(b.report.detailedParts.eyeAnteriorClearanceRatios.every(x=>x>.35));
+  assert.deepEqual(f.original.getAttribute('position').array,before);
+  if(sex==='female'){
+   applyFaceColorMode(b.face,'color',{contactColor:'#514139',makeupType:4});
+   assert.equal(b.parts.getObjectByName('UPPER_3D_VERMILION_LIP').material.color.getHex(),0xd09ca8);
+  }
+ }
+});
+test('v32 volumetric hair uses 4 offset stacked ribbon layers and 10 registered geometries',()=>{
+ assert.equal(listWigStyles().length,10);
+ const face=makeIndependentFaceMaster(fixture().source,'female');
+ const one=createScalpAnchoredWig(face.face,{count:96,staticGroom:true,
+  styleId:'center-part-gravity-long'});
+ const short=createScalpAnchoredWig(face.face,{count:96,staticGroom:true,
+  styleId:'rounded-bob'});
+ assert.equal(one.getReport().layeredRibbonCount,4);
+ assert.equal(one.getReport().ribbonVerticesPerStation,8);
+ assert.equal(one.getReport().physicsHz,0);
+ const locks=one.root.getObjectByName('REAL_ROOTED_SWEPT_HAIR_LOCKS');
+ assert.equal(locks.geometry.getAttribute('position').count,
+  one.getReport().rootCount*12*8);
+ assert.ok(locks.geometry.getIndex().count>one.getReport().rootCount*11*4*6-1);
+ const a=one.getStyleSamples(),b=short.getStyleSamples();
+ assert.notDeepEqual(a.map(x=>x.tip),b.map(x=>x.tip));
+ one.dispose();short.dispose();
+});
+test('v32 public studios visibly remove sliders and use ten-choice menus',()=>{
+ for(const file of ['face-mesh-studio.html','face-body-studio.html']){
+  const html=readFileSync(file,'utf8');
+  assert.match(html,/v32PartMode/);
+  assert.match(html,/createPartSelectorUI/);
+  assert.match(html,/v32-legacy/);
+  assert.match(html,/v32.*Choices/);
+ }
 });
