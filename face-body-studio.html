@@ -196,9 +196,9 @@ function rebuildFaceOnBody(){
  if(wig){wig.root.removeFromParent();next.face.add(wig.root);}
  const height=next.face.geometry.boundingBox.getSize(new THREE.Vector3()).y;
  const cropped=removeHeadBustBelowNeck(next.face,
-  bodyAttachment.report.neckSeamY+height*.075);
+  bodyAttachment.report.neckSeamY+height*.028);
  createSealedNeckBridge(next.face,bodyAttachment,{
-  headCutY:bodyAttachment.report.neckSeamY+height*.075,
+  headCutY:bodyAttachment.report.neckSeamY+height*.028,
   bodyCutY:bodyAttachment.report.neckSeamY
  });
  scene.add(next.root);scene.remove(previous.root);
@@ -308,9 +308,9 @@ frame();
   scene.add(model.root);rebuildWig();
   const originalHeight=model.face.geometry.boundingBox.getSize(new THREE.Vector3()).y;
   neckCrop=removeHeadBustBelowNeck(model.face,
-   bodyAttachment.report.neckSeamY+originalHeight*.075);
+   bodyAttachment.report.neckSeamY+originalHeight*.028);
   createSealedNeckBridge(model.face,bodyAttachment,{
-   headCutY:bodyAttachment.report.neckSeamY+originalHeight*.075,
+   headCutY:bodyAttachment.report.neckSeamY+originalHeight*.028,
    bodyCutY:bodyAttachment.report.neckSeamY
   });
   ready=true;
