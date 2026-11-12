@@ -284,6 +284,20 @@ export function sculptEyeSocketsInFaceGeometry(geometry,settings,gender='female'
  // Both sexes share the identical source-head geometry; eyelid aperture
  // differences are applied only to the optical lid meshes, not the skull.
  const halfHeight=radius*.50*eyeHeight;
+ // Resolve BOTH the socket carve and the eye patch from the same original
+ // anatomical eyelid landmarks, not from two unrelated depth estimates.
+ const originalSkin=createFastFaceSurfaceSampler(geometry);
+ const eyelidDepth=new Map();
+ for(const side of [-1,1]){
+  const x=cx+side*d.x*.123*settings.eyeSpacing;
+  const lipShift=radius*.045*eyeWidth;
+  const probes=[
+   originalSkin.query(x,eyeY+halfHeight+lipShift),
+   originalSkin.query(x,eyeY-halfHeight+lipShift),
+   originalSkin.query(x-width,eyeY),originalSkin.query(x+width,eyeY)
+  ].filter(Number.isFinite);
+  eyelidDepth.set(side,probes.length?Math.min(...probes):box.max.z-radius);
+ }
  let vertices=0,maxInset=0,depthSum=0;
  for(let i=0;i<p.count;i++){
   const x=p.getX(i),y=p.getY(i),z=p.getZ(i);
@@ -300,7 +314,12 @@ export function sculptEyeSocketsInFaceGeometry(geometry,settings,gender='female'
    if(q>=1.12)continue;
    // The outer ring remains attached to the cheeks and forehead.
    // Deeper recessed vertices stay behind the eye display surface.
-   const inset=radius*.55*(1-THREE.MathUtils.smoothstep(q,.58,1.12))*front;
+   const lidReference=eyelidDepth.get(side);
+   // Ensure the entire interior of the closed donor skin is behind the
+   // future iris. A fixed 0.3R indentation failed on slanted real faces.
+   const targetSkinZ=lidReference-radius*.35;
+   const inset=Math.max(0,z-targetSkinZ)*
+    (1-THREE.MathUtils.smoothstep(q,.58,1.12))*front;
    if(inset<=.0000005)continue;
    p.setZ(i,z-inset);
    vertices++;depthSum+=inset;maxInset=Math.max(maxInset,inset);
