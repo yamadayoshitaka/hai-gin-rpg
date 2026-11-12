@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>灰銀のレゾナンス｜女性主人公・全身＋顔・髪だけ表示v27</title>
+<title>灰銀のレゾナンス｜女性主人公・全身＋顔・静的ウィッグv28</title>
 <style>
 *{box-sizing:border-box}body{margin:0;background:#101c2e;color:#eaf3ff;font-family:system-ui,"Noto Sans JP",sans-serif}
 header{background:#183049;padding:17px 18px;border-bottom:1px solid #466780}
@@ -26,7 +26,7 @@ label{display:block;margin:10px 0}select{width:100%}
 </head>
 <body>
 <header>
-<h1>女性主人公・顔＋胴体・ウィッグ専用表示v27</h1>
+<h1>女性主人公・顔＋胴体・静的ヘアカードv28</h1>
 <p>第1章「女性主人公 hero-girl-01」の登録原画を参照。元の女性胴体GLBと独立した顔メッシュを接続し、頭皮と実際の胴体への髪の接触判定を確認します。v27では本体を透明にして独立ウィッグだけを表示できます。目はアイラインから立体的に膨らむ形に調整し、長く上向きにカールするまつ毛を追加。首の継ぎ目も修正しました。</p>
 </header>
 <main>
@@ -57,6 +57,7 @@ label{display:block;margin:10px 0}select{width:100%}
 <option value="10">10倍（高密度・目視確認用）</option>
 </select></label></div>
 <p class="note">「髪だけ表示（本体透明）」で顔・目元・首・胴体を隠して、着脱ウィッグの毛根と密度だけを確認できます。戻すと顔と全身を表示します。</p>
+<p class="note">v28では髪の毎フレームの物理演算を停止。頭皮に固定した静的ヘアカードで根元を細く、毛先へ自然にテーパーします。</p>
 <p class="note">頭部と同形の透明ウィッグ土台を使用.毛根と描画面を頭皮の外側へ補正します。毛量は1・3・10倍から選択可能で、10倍はスマホで重くなる場合があります。「透明土台を可視化」で位置を確認できます。</p>
 <div class="face-groups" aria-label="女性主人公の部位ごとの顔調整" id="allFaceSliderGrid"></div>
 <button id="resetFaceControls" disabled>顔の全スライダーを元に戻す</button>
@@ -77,7 +78,7 @@ alt="第1章女性主人公（暫定人物マスターの登録原画）">
 <details><summary>実メッシュ・接触検査</summary><pre id="metrics"></pre></details>
 </section>
 </main>
-<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/","./src/independent-face-masters.js":"./src/independent-face-masters.js?v=27","./src/face-feature-meshes.js":"./src/face-feature-meshes.js?v=27","./src/face-v7-controls.js":"./src/face-v7-controls.js?v=27","./src/face-body-assembly.js":"./src/face-body-assembly.js?v=27"}}</script>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/","./src/independent-face-masters.js":"./src/independent-face-masters.js?v=28","./src/face-feature-meshes.js":"./src/face-feature-meshes.js?v=28","./src/face-v7-controls.js":"./src/face-v7-controls.js?v=28","./src/face-body-assembly.js":"./src/face-body-assembly.js?v=28"}}</script>
 <script type="module">
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
@@ -86,7 +87,7 @@ import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {makeIndependentFaceMaster} from './src/independent-face-masters.js';
 import {FEMALE_V7_DEFAULTS,FACE_EYE_SPACING_DEFAULT,FACE_EYE_SPACING_RANGE,FACE_SLIDER_RANGES,normalizeFemaleFaceControls} from './src/face-v7-controls.js';
 import {applyFaceColorMode} from './src/face-feature-meshes.js';
-import {createScalpAnchoredWig} from './src/face-scalp-wig.js?v=27';
+import {createScalpAnchoredWig} from './src/face-scalp-wig.js?v=28';
 import {attachIndependentHeadToBody,removeHeadBustBelowNeck,createSealedNeckBridge} from './src/face-body-assembly.js';
 import {listWigStyles,DEFAULT_WIG_STYLE_ID} from './src/face-wig-styles.js';
 import {FEMALE_COMMANDER_ART_PALETTE,CHAPTER_ONE_ART_BY_KEY} from './src/chapter-one-character-art-references.js';
@@ -140,6 +141,10 @@ function metrics(){
   headBustRemoved:neckCrop?.removedTriangles||0,
   sealedNeck:!!bodyAttachment?.report?.neckSealed,
   neckBridgeTriangles:bodyAttachment?.report?.neckBridgeTriangles||0,
+  shoulderCaps:bodyAttachment?.report?.shoulderCapCount||0,
+  shoulderCapTriangles:bodyAttachment?.report?.shoulderCapTriangles||0,
+  shoulderHolesClosed:!!bodyAttachment?.report?.shoulderTopHolesClosed,
+  wigPhysicsDisabled:wig?.getReport()?.physicsHz===0,
   bodySource:bodyAttachment?.report?.bodySource,
   bodyCollision:bodyAttachment?.bodyCollider.getReport()||null,
   wig:wig?.getReport()||null,
@@ -195,6 +200,7 @@ function rebuildWig(){
  wig=createScalpAnchoredWig(uncutScalpSource||model.face,{
   count:1440,lengthScale:1.0,styleId:$('style').value,
   fineFringeMultiplier:3,visualFiberMultiplier:Number($('wigDensity').value),
+  staticGroom:true,
   color:Number('0x'+palette.hair.slice(1)),
   bodyCollisionResolver:bodyAttachment.bodyCollider
  });
@@ -352,6 +358,8 @@ function applyHairOnlyView(){
  };
  setVisible(skin,!hairOnly);
  setVisible(neck,!hairOnly);
+ for(const side of ['LEFT','RIGHT'])
+  setVisible(skin.getObjectByName(side+'_SHOULDER_CUT_SURFACE_CAP'),!hairOnly);
  if(model.parts)model.parts.visible=!hairOnly;
  if(bodyAttachment?.root)bodyAttachment.root.visible=!hairOnly;
  if(wig?.root)wig.root.visible=hairOnly||wigVisible;
@@ -378,6 +386,8 @@ function applyFullModelVisibilityForExport(){
  };
  set(model.face);
  set(model.face.getObjectByName('REAL_HEAD_BODY_CLOSED_NECK_SEAL'));
+ for(const side of ['LEFT','RIGHT'])
+  set(model.face.getObjectByName(side+'_SHOULDER_CUT_SURFACE_CAP'));
  if(model.parts)model.parts.visible=true;
  if(bodyAttachment?.root)bodyAttachment.root.visible=true;
  if(wig?.root)wig.root.visible=wigVisible;
@@ -430,7 +440,7 @@ $('saveGlb').addEventListener('click',async()=>{
    exporter.parse(model.root,resolve,reject,{binary:true,onlyVisible:true}));
   const url=URL.createObjectURL(new Blob([result],{type:'model/gltf-binary'}));
   const a=document.createElement('a');a.href=url;
-  a.download='hai-gin-hero-girl-01-face-body-v27.glb';
+  a.download='hai-gin-hero-girl-01-face-body-v28.glb';
   document.body.appendChild(a);a.click();a.remove();
   setTimeout(()=>URL.revokeObjectURL(url),1000);
   counter.glbExports++;
@@ -447,7 +457,7 @@ $('saveWig').addEventListener('click',async()=>{
    exporter.parse(wig.root,ok,fail,{binary:true,onlyVisible:false}));
   const url=URL.createObjectURL(new Blob([data],{type:'model/gltf-binary'}));
   const a=document.createElement('a');a.href=url;
-  a.download='hai-gin-wig-v27-'+$('wigDensity').value+'x.glb';
+  a.download='hai-gin-wig-v28-'+$('wigDensity').value+'x.glb';
   document.body.append(a);a.click();a.remove();
   setTimeout(()=>URL.revokeObjectURL(url),2000);
   status('顔・胴体とは別の着脱ウィッグGLBを保存しました。');
@@ -464,7 +474,7 @@ const clock=new THREE.Clock();
 function frame(){
  requestAnimationFrame(frame);
  const dt=clock.getDelta();
- if(ready&&wigVisible)wig?.update(dt);
+ // Static groom: baked mesh and no per-frame hair physics.
  resize();orbit.update();renderer.render(scene,camera);
 }
 frame();
