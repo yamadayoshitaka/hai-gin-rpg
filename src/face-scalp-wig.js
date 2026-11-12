@@ -130,7 +130,11 @@ function createHeadEnvelope(geometry,box){
   smooth=next;
  }
  const radius=(height,direction)=>{
-  const yy=clamp((height-box.min.y)/d.y*(axial-1),0,axial-1);
+  // Below the nape there is no scalp geometry. Preserve the hair's
+  // radius at the last valid rear-head band; using empty low bands would
+  // collapse long strands inward into a narrow vertical spike.
+  const neckSafeHeight=Math.max(height,box.min.y+d.y*.625);
+  const yy=clamp((neckSafeHeight-box.min.y)/d.y*(axial-1),0,axial-1);
   const az=(Math.atan2(direction.x,direction.z)+Math.PI)/(2*Math.PI)*angular;
   const y0=Math.floor(yy),y1=Math.min(axial-1,y0+1);
   const a0=Math.floor(az)%angular,a1=(a0+1)%angular;
@@ -450,6 +454,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   hairShape:'head-hugging-salon-layered-pointcut',
   rearRootPolicy:'actual-posterior-scalp-only',
   scalpRadialProfile:'smoothed-72pct-multi-vertex-envelope',
+  belowNapeDrape:'preserve-last-valid-scalp-radius',
   pointCutEnds:true,
   scalpCoverage:'continuous-colored-triangle-cap-plus-locks',
   pointCount:lockCount*(segments+1),realScalpCandidateCount:scalpCandidates.length,
