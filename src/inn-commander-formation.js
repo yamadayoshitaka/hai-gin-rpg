@@ -48,9 +48,36 @@ export function syncCommanderSquadSlots(state){
  }
  return positions;
 }
+/** Auto-arrange only when explicitly requested; manual single-slot hire never
+ * reshuffles previously placed commanders. The protagonist guards the base. */
+export function arrangeCommanderPositions(state,priority='均衡'){
+ if(!AUTO_FORMATIONS.includes(priority))throw Error('自動配置の方針を選んでください。');
+ const leaders=commanderList(state);
+ const order=priority==='支援重視'?[7,9,8,4,3,5,1,0,2,6,11]:
+  priority==='防御重視'?[1,0,2,4,3,5,7,8,6,9,11]:
+  priority==='機動重視'?[0,2,3,5,1,4,6,7,8,9,11]:
+  priority==='攻撃重視'?[0,2,1,3,5,4,6,7,8,9,11]:
+  [1,4,7,0,2,3,5,6,8,9,11];
+ state.commander.deploymentSlot=10;
+ const nonPlayer=leaders.filter(x=>String(x.id)!=='player');
+ nonPlayer.sort((a,b)=>{
+  const score=leader=>{
+   const squads=commanderGroup(state,leader.id);
+   const front=squads.filter(s=>['騎士','盾騎士','格闘家'].includes(s.job)).reduce((n,s)=>n+s.count,0);
+   const support=squads.filter(s=>['僧侶','魔法使い','召喚士'].includes(s.job)).reduce((n,s)=>n+s.count,0);
+   return priority==='支援重視'?support-front:front-support;
+  };
+  return score(b)-score(a)||Number(a.id)-Number(b.id);
+ });
+ nonPlayer.forEach((leader,index)=>{
+  const current=state.commanders.find(c=>String(c.id)===String(leader.id));
+  if(current)current.deploymentSlot=order[index]??SLOTS_BY_PRIORITY[index+1];
+ });
+ return syncCommanderSquadSlots(state);
+}
 /** Autohire only affordable and currently unlocked commander slots; no free
  * commanders or soldiers, no over-spending and no infinite empty hiring. */
-export function autoDeployCommanders(state,{priority='均衡',fillOpenSlots=true,maxNewHires=10,preferredSlot=null}={}){
+export function autoDeployCommanders(state,{priority='均衡',fillOpenSlots=true,maxNewHires=10,preferredSlot=null,rearrange=false}={}){
  if(state.gameOver)throw Error('ゲームオーバー後は編成できません。');
  if(!AUTO_FORMATIONS.includes(priority))throw Error('自動配置の方針を選んでください。');
  const max=Math.min(10,DEPLOYMENT_CAPACITY,maxSquads(state));
@@ -78,7 +105,7 @@ export function autoDeployCommanders(state,{priority='均衡',fillOpenSlots=true
    autoFormArmy(state,String(leader.id),priority);assigned++;
   }
  }
- const positions=syncCommanderSquadSlots(state);
+ const positions=rearrange?arrangeCommanderPositions(state,priority):syncCommanderSquadSlots(state);
  return {hired,hiredIds,assigned,positions,leaders:commanderList(state).length,capacity:max,
   unfilled:Math.max(0,DEPLOYMENT_CAPACITY-positions.size),treasury:state.treasury};
 }
