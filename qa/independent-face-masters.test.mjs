@@ -7,6 +7,7 @@ import {makeIndependentFaceMaster,FACE_MASTER_SPEC,femaleInnerFeatureDelta,femal
 import {updateFaceFeatureAngles,applyFaceColorMode,createFastFaceSurfaceSampler}
  from '../src/face-feature-meshes.js';
 import {createScalpAnchoredWig} from '../src/face-scalp-wig.js';
+import {DEFAULT_WIG_STYLE_ID,getWigStyle,listWigStyles} from '../src/face-wig-styles.js';
 import {normalizeFemaleFaceControls,FEMALE_V7_DEFAULTS,FACE_V7_PALETTE,CONTACT_COLORS,safeContactColor,LIBRARY_FACE_PRESET,MALE_REFERENCE_DEFAULT,FACE_SLIDER_RANGES}
  from '../src/face-v7-controls.js';
 
@@ -697,6 +698,19 @@ test('v15 real scalp growth follows shell and respects final haircut',()=>{
  assert.equal(wig.getReport().smoothScalpNormals,true);
  assert.equal(wig.getReport().verticalForeheadDrape,true);
  const scalp=wig.root.getObjectByName('REAL_SCALP_TRIANGLE_HAIR_CAP');
+ assert.equal(scalp.userData.rearUndercoatAnchoredToRealScalp,true);
+ assert.ok(scalp.userData.rearUndercoatTriangleCount>=400);
+ assert.equal(scalp.userData.rearUndercoatStripCount,52,
+  'Rear hair should be individual overlapping narrow strands, not one slab');
+ assert.equal(scalp.userData.rearUndercoatStyle,
+  'overlapping-real-scalp-rooted-tapered-ribbons');
+ assert.ok(scalp.userData.rearUndercoatMaxStripWidth<
+  (model.face.geometry.boundingBox.max.x-model.face.geometry.boundingBox.min.x)*.035,
+  'The back hair contains a single broad rectangular sheet');
+ assert.ok(scalp.userData.rearUndercoatTipHeightRange>
+  (model.face.geometry.boundingBox.max.y-model.face.geometry.boundingBox.min.y)*.02,
+  'Hairtips must be layered, not a straight blunt line');
+ assert.equal(wig.getReport().realScalpPosteriorUndercoat,true);
  assert.equal(scalp.geometry.getAttribute('normal').count,
   scalp.geometry.getAttribute('position').count);
  assert.equal(wig.getReport().scalpCoverage,
@@ -726,4 +740,118 @@ test('v15 indexed surface sampler matches exact raycast on real triangle geometr
   assert.ok(Math.abs(sample-hit.point.z)<1e-5,
    'Indexed surface diverges from real raycast '+x+','+y);
  }
+});
+
+test('v16 rear hair roots are posterior and salon cut has actual staggered lengths',()=>{
+ const model=makeIndependentFaceMaster(fixture().source,'female');
+ const w=createScalpAnchoredWig(model.face,{count:480,lengthScale:1.1});
+ const r=w.getReport(),box=model.face.geometry.boundingBox;
+ const d=box.getSize(new THREE.Vector3()),cz=(box.min.z+box.max.z)*.5;
+ assert.equal(r.rootCount,480);
+ assert.equal(r.hairShape,'head-hugging-salon-layered-pointcut');
+ assert.equal(r.rearRootPolicy,'actual-posterior-scalp-only');
+ assert.equal(r.pointCutEnds,true);
+ assert.equal(r.centerBackCoverage,true);
+ assert.equal(r.uShapedRearCut,true);
+ assert.equal(r.longSalonLayers,true);
+ assert.equal(r.centralRearNeckOcclusionAvoided,true);
+ assert.equal(r.diagonalFeatheredFringe,true);
+ assert.ok(r.rootDistribution.backLeft>=90&&r.rootDistribution.backRight>=90);
+ const samples=w.getStyleSamples();
+ const rear=samples.filter(s=>s.zone.startsWith('back')||s.zone.startsWith('nape'));
+ assert.ok(rear.length>=40);
+ // At least one real back scalp root near the head midline must appear
+ // in the representative guide locks, not only at the outer temples.
+ const nearMidline=rear.filter(s=>Math.abs(s.root[0]-
+   (box.min.x+box.max.x)*.5)<d.x*.16);
+ assert.ok(nearMidline.length>=4,'Center-back remained bald');
+ for(const sample of rear){
+  assert.ok(sample.root[2]<cz-d.z*.04,
+   'A rear/nape hair lock was actually grown from the face');
+  assert.ok(sample.tip[2]<cz,
+   'Rear lock must continue behind the skull, not point toward face');
+  assert.ok(Number.isFinite(sample.firstStep[0]+sample.firstStep[1]+sample.firstStep[2]));
+ }
+ const backTips=samples.filter(s=>s.zone.startsWith('back')).map(s=>s.tip[1]);
+ assert.ok(Math.max(...backTips)-Math.min(...backTips)>d.y*.012,
+  'Back haircut still has an unnatural ruler-straight cut line');
+ for(const s of w.getCutSamples())
+  assert.ok(s.minY>=s.trimY-1e-5);
+ w.dispose();
+});
+test('v16 eyeliner reprojects onto same eyelid at -20, 0, +20 degrees',()=>{
+ const m=makeIndependentFaceMaster(fixture().source,'female');
+ let previous=m.parts.userData.eyelinerSurfaceSyncCount;
+ for(const angle of [-20,0,20]){
+  const sync=updateFaceFeatureAngles(m.parts,{...FEMALE_V7_DEFAULTS,
+   eyeAngle:angle});
+  assert.equal(sync.eyelinerMeshesRefitted,4);
+  assert.ok(m.parts.userData.eyelinerSurfaceSyncCount>previous);
+  previous=m.parts.userData.eyelinerSurfaceSyncCount;
+  m.parts.updateMatrixWorld(true);
+  for(const side of ['LEFT','RIGHT']){
+   for(const height of ['UPPER','LOWER']){
+    const liner=m.parts.getObjectByName(side+'_'+height+'_EYELINER');
+    const lid=m.parts.getObjectByName(side+'_'+height+'_ANATOMICAL_EYELID');
+    assert.equal(liner.parent,lid);
+    assert.equal(liner.userData.conformsTo,'real-eyelid-mesh');
+    assert.equal(liner.material.polygonOffset,true);
+    const lp=liner.geometry.getAttribute('position');
+    const ep=lid.geometry.getAttribute('position');
+    // Line start is at 0.018*4 = 0.072 of the first eyelid band.
+    for(const i of [0,7,14,21,28]){
+     const world=new THREE.Vector3(lp.getX(i),lp.getY(i),lp.getZ(i));
+     liner.localToWorld(world);
+     const target=new THREE.Vector3(
+      THREE.MathUtils.lerp(ep.getX(i),ep.getX(29+i),.072),
+      THREE.MathUtils.lerp(ep.getY(i),ep.getY(29+i),.072),
+      THREE.MathUtils.lerp(ep.getZ(i),ep.getZ(29+i),.072));
+     lid.localToWorld(target);
+     assert.ok(world.distanceTo(target)<.005,
+      'Eye-liner detached from lid at angle '+angle+' ('+side+' '+height+')');
+    }
+   }
+  }
+ }
+});
+
+test('v17 wigs are independently registered assets with crown center part and physical gravity',()=>{
+ const styles=listWigStyles();
+ assert.equal(DEFAULT_WIG_STYLE_ID,'center-part-gravity-long');
+ assert.ok(styles.some(x=>x.id==='center-part-gravity-long'));
+ assert.ok(styles.some(x=>x.id==='salon-layered-long'));
+ assert.ok(Object.isFrozen(getWigStyle(DEFAULT_WIG_STYLE_ID)));
+ assert.equal(getWigStyle(DEFAULT_WIG_STYLE_ID).gravityMps2,9.81);
+ assert.throws(()=>getWigStyle('missing-wig'),/Unknown registered/);
+ const face=makeIndependentFaceMaster(fixture().source,'female');
+ const wig=createScalpAnchoredWig(face.face,{count:240});
+ const report=wig.getReport();
+ assert.equal(report.hairstyleId,DEFAULT_WIG_STYLE_ID);
+ assert.equal(report.wigAssetType,'independent-wig');
+ assert.equal(report.centerPart,true);
+ assert.equal(report.gravityRestShape,true);
+ assert.equal(report.gravityMps2,9.81);
+ assert.equal(report.exactFaceSurfaceCollision,true);
+ assert.ok(report.crownWhorl.length===3&&report.crownWhorl.every(Number.isFinite));
+ assert.equal(wig.root.userData.assetType,'independent-wig');
+ assert.equal(wig.root.userData.hairStyleId,DEFAULT_WIG_STYLE_ID);
+ const part=wig.getPartSamples();
+ assert.ok(part.length>=20,'Whorl center split should include crown roots');
+ assert.ok(part.some(p=>p.side===-1)&&part.some(p=>p.side===1),
+  'The center part must send crown locks to BOTH sides of the head');
+ assert.ok(part.every(p=>p.gravityRestShape));
+ const bb=face.face.geometry.boundingBox,d=bb.getSize(new THREE.Vector3());
+ const cx=(bb.min.x+bb.max.x)/2,cz=(bb.min.z+bb.max.z)/2;
+ const original=new THREE.Vector3(cx,bb.min.y+d.y*.62,cz+d.z*.10);
+ const before=wig.getReport().faceContactEvents;
+ const corrected=wig.resolvePoint(original);
+ assert.ok(wig.getReport().faceContactEvents>before,'Hair must contact actual face');
+ assert.ok(corrected.distanceTo(original)>1e-6,'Collision must displace a strand');
+ wig.update(.05);
+ assert.ok(wig.getReport().collisionEvents>=0);
+ const other=createScalpAnchoredWig(face.face,{count:96,styleId:'salon-layered-long'});
+ assert.equal(other.root.userData.hairStyleId,'salon-layered-long');
+ assert.equal(other.getReport().centerPart,false);
+ assert.notEqual(wig.root,other.root,'Each wig must be a separate 3D instance');
+ wig.dispose();other.dispose();
 });

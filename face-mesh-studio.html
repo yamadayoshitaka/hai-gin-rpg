@@ -62,7 +62,7 @@ button{padding:9px 11px}
 </style></head>
 <body>
 <header>
-<h1>男女・顔と立体パーツ v15</h1>
+<h1>男女・顔と立体パーツ v17</h1>
 <p>ライブラリに保存された実GLBの顔設定（顎先5倍・鼻穴隠し2・鼻筋2.5）を男女の実メッシュ標準に固定。口紅とチークを実メッシュの頂点に着色。上下アイライン・眉・眼球を調整し、女性用の高密度ロング（後頭部・両側頭部・襟足まで髪束生成・顔と肩への衝突対応）を追加。保存値とズームを維持します。</p>
 </header>
 <main><section class="panel">
@@ -125,6 +125,8 @@ button{padding:9px 11px}
 <option value="blonde" selected>ゴールド・ブロンド</option>
 <option value="ash">アッシュブロンド</option><option value="brown">ブラウン</option>
 <option value="black">黒髪</option></select></label>
+<label for="wigStyle">固有の髪型（取り外し可能なヅラ）
+<select id="wigStyle" aria-label="ヅラの髪型を選択"></select></label>
 </div><div class="controls"><button id="resetPreset" disabled>ライブラリ保存の標準値に戻す</button></div></details>
 <details id="maleAdjustments" hidden open>
 <summary>男性顔の3D調整・ヒゲ</summary>
@@ -152,6 +154,7 @@ button{padding:9px 11px}
 </div><div class="controls"><button id="resetMalePreset" disabled>男性・同じ顔立ちの標準に戻す</button></div></details>
 <div class="controls">
 <button id="export" disabled>表示中の顔メッシュをGLB保存</button>
+<button id="exportWig" disabled>ヅラ単体をGLB保存</button>
 <a href="./master-swordsman-prototype.html">全身モデル確認画面</a>
 </div>
 <p>指で360°回転・ピンチで拡大。女性の口紅は上唇・下唇の実3D形状に接続。上下アイラインの目尻を接続。暗いクマを自然にフェードさせ、眉の間隔を維持。頭皮からの金髪ロングは顔・首・肩・胸への簡易衝突を計算。男性は顎・鼻・目の角度と3Dヒゲの濃さ・長さを調整できます。</p>
@@ -167,6 +170,7 @@ import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {makeIndependentFaceMaster,FACE_MASTER_SPEC} from './src/independent-face-masters.js';
 import {updateFaceFeatureAngles,applyFaceColorMode,updateRealFacePigment} from './src/face-feature-meshes.js';
 import {createScalpAnchoredWig} from './src/face-scalp-wig.js';
+import {listWigStyles,DEFAULT_WIG_STYLE_ID} from './src/face-wig-styles.js';
 import {FEMALE_V7_DEFAULTS,MALE_REFERENCE_DEFAULT,FACE_SLIDER_RANGES,CONTACT_COLORS,safeContactColor} from './src/face-v7-controls.js';
 const $=id=>document.getElementById(id);
 // Bind slider DOM bounds to the same canonical interval used by 3D mesh
@@ -212,6 +216,13 @@ let faceMode='color',femaleSource=null,modelChanges={...FEMALE_V7_DEFAULTS};
 let maleChanges={...MALE_REFERENCE_DEFAULT};
 let contactColor=CONTACT_COLORS.brown;
 let wigOn=true,wigDensity=1440,wigLength=1,wigColor='blonde';
+let wigStyleId=DEFAULT_WIG_STYLE_ID;
+for(const style of listWigStyles()){
+ const option=document.createElement('option');
+ option.value=style.id;option.textContent=style.label;
+ $('wigStyle').appendChild(option);
+}
+$('wigStyle').value=wigStyleId;
 const performanceMetrics={headRebuilds:0,wigRebuilds:0,fastLipstickRepaints:0};
 function setActive(ids,id){
  for(const x of ids)$(x).setAttribute('aria-pressed',String(x===id));
@@ -224,6 +235,8 @@ function metrics(){
   cameraTarget:orbit.target.toArray(),femaleControls:{...modelChanges},
   maleControls:{...maleChanges},
   wigVisible:wigOn&&gender==='female',wigReport:wigs.get('female')?.getReport()||null,
+  wigStyleId,wigStyles:listWigStyles(),
+  wigIsSeparateAsset:wigs.get('female')?.root?.userData?.assetType==='independent-wig',
   savedNoseJawDefaults:{jawSharpness:FEMALE_V7_DEFAULTS.jawSharpness,
    nostrilCover:FEMALE_V7_DEFAULTS.nostrilCover,
    noseBridgeSharpness:FEMALE_V7_DEFAULTS.noseBridgeSharpness},
@@ -326,7 +339,7 @@ function rebuildWig(){
  try{
   const wig=createScalpAnchoredWig(models.get('female').face,{
    count:wigDensity,lengthScale:wigLength,
-   color:hairPalette[wigColor]||hairPalette.blonde
+   styleId:wigStyleId,color:hairPalette[wigColor]||hairPalette.blonde
   });
   models.get('female').face.add(wig.root);wigs.set('female',wig);
  }catch(error){
@@ -355,6 +368,10 @@ for(const key of ['Density','Length']){
 }
 $('wigColor').addEventListener('change',()=>{
  wigColor=$('wigColor').value;
+ rebuildWig();$('metrics').textContent=JSON.stringify(metrics(),null,2);
+});
+$('wigStyle').addEventListener('change',()=>{
+ wigStyleId=$('wigStyle').value;
  rebuildWig();$('metrics').textContent=JSON.stringify(metrics(),null,2);
 });
 function rebuildFemale(){
@@ -541,7 +558,7 @@ setupAdjustTabs('faceGroupTabs',[
  ['鼻',['noseTipLift','nostrilCover','noseBridgeSharpness']],
  ['口紅',['lipstickX','lipstickY','lipstickWidth','lipstickHeight']],
  ['カラコン',['contactPreset','contactColor']],
- ['髪',['wigDensity','wigLength','wigColor']]
+ ['髪',['wigStyle','wigDensity','wigLength','wigColor']]
 ]);
 setupAdjustTabs('maleGroupTabs',[
  ['顎・輪郭',['maleJawSharpness']],
@@ -576,7 +593,8 @@ $('export').addEventListener('click',async()=>{
  try{
   const model=models.get(gender);
   // Export face and, when enabled, our real 3D anatomical mesh parts.
-  // The other donor meshes, hair, outfit and body are excluded.
+  // The donor body and outfit remain excluded. The independent wig is
+  // included in face exports only if it is currently attached and visible.
   const exporter=new GLTFExporter();
   const bin=await new Promise((resolve,reject)=>
    exporter.parse(model.root,resolve,reject,{binary:true,onlyVisible:true}));
@@ -589,6 +607,24 @@ $('export').addEventListener('click',async()=>{
   $('status').textContent='GLBを書き出しました（胴体なし・髪表示と顔パーツ表示に連動）。';
  }catch(e){$('status').textContent='GLB出力失敗: '+String(e);}
  finally{$('export').disabled=false;}
+});
+$('exportWig').addEventListener('click',async()=>{
+ const wig=wigs.get('female');
+ if(!ready||!wig||!wigOn)return;
+ $('exportWig').disabled=true;
+ $('status').textContent='独立ヅラのGLBを書き出しています…';
+ try{
+  const exporter=new GLTFExporter();
+  const bin=await new Promise((resolve,reject)=>
+   exporter.parse(wig.root,resolve,reject,{binary:true,onlyVisible:true}));
+  const url=URL.createObjectURL(new Blob([bin],{type:'model/gltf-binary'}));
+  const a=document.createElement('a');
+  a.href=url;a.download='hai-gin-wig-'+wigStyleId+'.glb';
+  document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+  $('status').textContent='独立ヅラ '+wigStyleId+' のGLBを書き出しました。';
+ }catch(e){$('status').textContent='ヅラGLB出力失敗: '+String(e);}
+ finally{$('exportWig').disabled=false;}
 });
 async function init(){
  // Set the slider thumbs, labels and contact menu before the remote GLB
@@ -617,7 +653,7 @@ async function init(){
   }
   ready=true;
   rebuildWig();
-  for(const id of ['female','male','front','threeQuarter','side','back','wire','parts','wig','clay','color','resetPreset','resetMalePreset','export'])
+  for(const id of ['female','male','front','threeQuarter','side','back','wire','parts','wig','clay','color','resetPreset','resetMalePreset','export','exportWig'])
    $(id).disabled=false;
   const query=new URLSearchParams(location.search);
   selectGender(query.get('gender')==='male'?'male':'female');

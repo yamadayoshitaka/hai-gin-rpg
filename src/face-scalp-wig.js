@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import {createFastFaceSurfaceSampler} from './face-feature-meshes.js';
+import {getWigStyle,DEFAULT_WIG_STYLE_ID} from './face-wig-styles.js';
 
 /**
  * Mobile-preview wig made of real scalp-rooted 3D lock ribbons.
@@ -24,10 +26,10 @@ const projectCapsule=(p,a,b,r)=>{
 // No random global sampling: the sparse rear and side scalp would otherwise
 // lose almost all roots to the much denser triangles on the frontal head.
 const WIG_ZONE_WEIGHTS=Object.freeze([
- ['crown',.15],['fringeLeft',.065],['fringeRight',.065],
- ['templeLeft',.15],['templeRight',.15],
- ['backLeft',.165],['backRight',.165],
- ['napeLeft',.045],['napeRight',.045]
+ ['crown',.12],['fringeLeft',.04],['fringeRight',.04],
+ ['templeLeft',.13],['templeRight',.13],
+ ['backLeft',.21],['backRight',.21],
+ ['napeLeft',.06],['napeRight',.06]
 ]);
 function actualScalpCandidates(geo,box){
  const pos=geo.getAttribute('position'),normals=geo.getAttribute('normal');
@@ -37,7 +39,7 @@ function actualScalpCandidates(geo,box){
  for(let i=0;i<pos.count;i++){
   const p=f3(pos.getX(i),pos.getY(i),pos.getZ(i));
   const yn=(p.y-box.min.y)/d.y;
-  if(yn<.58||yn>.998)continue;
+  if(yn<.54||yn>.998)continue;
   const nx=(p.x-center.x)/d.x,nz=(p.z-center.z)/d.z;
   const side=nx<0?'Left':'Right';
   const n=normals?f3(normals.getX(i),normals.getY(i),normals.getZ(i)).normalize():
@@ -47,16 +49,27 @@ function actualScalpCandidates(geo,box){
   if(yn>.83)pools.crown.push(sample);
   if(yn>.76&&nz>.10)pools['fringe'+side].push(sample);
   if(Math.abs(nx)>.18&&yn<.87&&nz>-.12)pools['temple'+side].push(sample);
-  if(nz<-.04&&yn>.60)pools['back'+side].push(sample);
-  if(nz<-.04&&yn>=.58&&yn<.76)pools['nape'+side].push(sample);
+  // Rear/nape roots must originate in the posterior hemisphere.
+  // Never fill a sparse rear zone with front scalp vertices.
+  if(nz<-.06&&yn>.64)pools['back'+side].push(sample);
+  if(nz<-.06&&yn>=.54&&yn<.76)pools['nape'+side].push(sample);
  }
  if(all.length<12)throw Error('Scalp has too few real head vertices');
  // A donor mesh with sparse topology still receives every hair zone.
  for(const [zone,pool] of Object.entries(pools)){
   if(pool.length>3)continue;
-  const candidates=all.filter(q=>
-   zone.endsWith('Left')?q.p.x<center.x:q.p.x>=center.x);
-  pools[zone]=candidates.length?candidates:all;
+  const onSide=q=>zone.endsWith('Left')?q.p.x<center.x:q.p.x>=center.x;
+  const rear=zone.startsWith('back')||zone.startsWith('nape');
+  const candidates=all.filter(q=>onSide(q)&&
+   (!rear||q.p.z<center.z-d.z*.04));
+  if(candidates.length) pools[zone]=candidates;
+  else{
+   // Keep explicit QA failure instead of silently growing "rear" locks
+   // out of the forehead on unusual incoming face topologies.
+   if(rear)throw Error('Missing posterior scalp: '+zone);
+   const sameSide=all.filter(onSide);
+   pools[zone]=sameSide.length?sameSide:all;
+  }
  }
  return {pools,all};
 }
@@ -67,50 +80,86 @@ function actualScalpCandidates(geo,box){
  */
 function createHeadEnvelope(geometry,box){
  const pos=geometry.getAttribute('position'),center=box.getCenter(new THREE.Vector3());
- const d=box.getSize(new THREE.Vector3()),axial=36,angular=64;
- const values=new Float32Array(axial*angular);
- const radiusAt=(x,z)=>Math.hypot(x-center.x,z-center.z);
+ // The middle of the 3D head (excluding the protruding nose) is used as
+ // a radial field origin. Front of face should NEVER inflate back hair.
+ center.z=box.min.z+(box.max.z-box.min.z)*.43;
+ const d=box.getSize(new THREE.Vector3()),axial=40,angular=80;
+ const bins=Array.from({length:axial*angular},()=>[]);
  const index=(y,a)=>y*angular+((a%angular)+angular)%angular;
  for(let i=0;i<pos.count;i++){
   const x=pos.getX(i),y=pos.getY(i),z=pos.getZ(i);
   if(y<box.min.y+d.y*.53)continue;
   const yi=clamp(Math.round((y-box.min.y)/d.y*(axial-1)),0,axial-1);
-  const ai=Math.round((Math.atan2(x-center.x,z-center.z)+Math.PI)/(2*Math.PI)*angular)%angular;
-  values[index(yi,ai)]=Math.max(values[index(yi,ai)],radiusAt(x,z));
+  const ai=Math.round((Math.atan2(x-center.x,z-center.z)+Math.PI)/
+   (2*Math.PI)*angular)%angular;
+  bins[index(yi,ai)].push(Math.hypot(x-center.x,z-center.z));
  }
- const populated=values.slice();
- // Fill angular/topology gaps by finding the closest known real vertex
- // within the neighboring 3 vertical bands and 16 angular cells.
+ const data=new Float32Array(axial*angular);
+ const valid=new Uint8Array(axial*angular);
+ for(let k=0;k<bins.length;k++)if(bins[k].length){
+  bins[k].sort((a,b)=>a-b);
+  data[k]=bins[k][Math.floor((bins[k].length-1)*.72)];
+  valid[k]=1;
+ }
+ // Sample a WEIGHTED ensemble of neighbors rather than the old nearest
+ // single maximum-radius vertex (which caused a puffy spiked helmet).
+ const completed=data.slice();
  for(let y=0;y<axial;y++)for(let a=0;a<angular;a++){
-  if(values[index(y,a)]>0)continue;
-  let best=Infinity,value=d.x*.25;
-  for(let yy=Math.max(0,y-5);yy<=Math.min(axial-1,y+5);yy++)
-   for(let da=-16;da<=16;da++){
-    const r=populated[index(yy,a+da)];
-    if(!r)continue;
-    const score=Math.abs(yy-y)*1.7+Math.abs(da);
-    if(score<best){best=score;value=r;}
+  const k=index(y,a);
+  if(valid[k])continue;
+  let sum=0,weight=0;
+  for(let yy=Math.max(0,y-6);yy<=Math.min(axial-1,y+6);yy++)
+   for(let da=-12;da<=12;da++){
+    const other=index(yy,a+da);if(!valid[other])continue;
+    const dist=Math.hypot((yy-y)*1.5,da);
+    const w=1/(.75+dist*dist);
+    sum+=data[other]*w;weight+=w;
    }
-  values[index(y,a)]=value;
+  completed[k]=weight?sum/weight:d.x*.30;
  }
- return (height,direction)=>{
-  const yy=clamp((height-box.min.y)/d.y*(axial-1),0,axial-1);
+ // Filter vertical/azimuth discontinuities while preserving the original
+ // head silhouette. The resulting field is smooth under adjacent locks.
+ let smooth=completed;
+ for(let pass=0;pass<3;pass++){
+  const next=smooth.slice();
+  for(let y=0;y<axial;y++)for(let a=0;a<angular;a++){
+   const k=index(y,a),mean=(
+    smooth[index(y,a-1)]+smooth[index(y,a+1)]+
+    smooth[index(Math.max(0,y-1),a)]+
+    smooth[index(Math.min(axial-1,y+1),a)])/4;
+   next[k]=smooth[k]*.54+mean*.46;
+  }
+  smooth=next;
+ }
+ const radius=(height,direction)=>{
+  // Below the nape there is no scalp geometry. Preserve the hair's
+  // radius at the last valid rear-head band; using empty low bands would
+  // collapse long strands inward into a narrow vertical spike.
+  const neckSafeHeight=Math.max(height,box.min.y+d.y*.625);
+  const yy=clamp((neckSafeHeight-box.min.y)/d.y*(axial-1),0,axial-1);
   const az=(Math.atan2(direction.x,direction.z)+Math.PI)/(2*Math.PI)*angular;
   const y0=Math.floor(yy),y1=Math.min(axial-1,y0+1);
   const a0=Math.floor(az)%angular,a1=(a0+1)%angular;
   const fy=yy-y0,fa=az-Math.floor(az);
-  const r0=THREE.MathUtils.lerp(values[index(y0,a0)],values[index(y0,a1)],fa);
-  const r1=THREE.MathUtils.lerp(values[index(y1,a0)],values[index(y1,a1)],fa);
+  const r0=THREE.MathUtils.lerp(smooth[index(y0,a0)],smooth[index(y0,a1)],fa);
+  const r1=THREE.MathUtils.lerp(smooth[index(y1,a0)],smooth[index(y1,a1)],fa);
   return THREE.MathUtils.lerp(r0,r1,fy);
  };
+ return {radius,radialCenter:center,angularCells:angular,axialCells:axial};
 }
-function hairCutY(zone,box,lengthScale,seed){
+function hairCutY(zone,box,lengthScale,seed,normalizedX=0){
  const d=box.getSize(new THREE.Vector3()),scale=clamp(lengthScale,.55,1.5);
- const level=zone.startsWith('fringe')?.765:
-  zone.startsWith('nape')?.23:
-  zone.startsWith('temple')?.14:
-  zone.startsWith('back')?.10:.22;
- return box.min.y+d.y*(level+(.015*fract(seed*1.618)))/scale;
+ // A salon U-shaped long layer: center-back hangs longest, sides end a
+ // little higher; subtle point-cut variation instead of rigid saw teeth.
+ const level=zone.startsWith('fringe')?.77:
+  zone.startsWith('nape')?.075:
+  zone.startsWith('temple')?.16:
+  zone.startsWith('back')?.085:.16;
+ const rear=zone.startsWith('back')||zone.startsWith('nape');
+ const uCut=rear?.050*Math.pow(clamp(normalizedX,0,1),1.4):0;
+ const scatter=.006*fract(seed*.75487766)+
+  .007*Math.sin(seed*2.39996323);
+ return box.min.y+d.y*(level+uCut+scatter)/scale;
 }
 function scalpShell(geo,box,color){
  const src=geo.getAttribute('position'),idx=geo.index;
@@ -139,6 +188,57 @@ function scalpShell(geo,box,color){
    smoothNormals.push(normal.x,normal.y,normal.z);
   }
  }
+ // 52 independent tapered underlocks: rooted on actual posterior head
+ // vertices, rather than a rectangular curtain hanging across the neck.
+ const rearCandidates=[];
+ for(let i=0;i<src.count;i++){
+  const x=src.getX(i),y=src.getY(i),z=src.getZ(i);
+  if(Math.abs(x-center.x)<d.x*.325 &&
+     y>box.min.y+d.y*.65&&y<box.min.y+d.y*.94&&
+     z<center.z-d.z*.035)rearCandidates.push(f3(x,y,z));
+ }
+ const undercoatStrips=rearCandidates.length?52:0;
+ const stripSegments=12,stripWidths=[],tipHeights=[];
+ for(let k=0;k<undercoatStrips;k++){
+  const u=(k+.5)/undercoatStrips,side=u<.5?-1:1;
+  const idealX=center.x+(2*u-1)*d.x*.267;
+  const preferredY=box.min.y+d.y*(.805+.025*Math.sin(k*2.39996323));
+  let scalpRoot=null,best=Infinity;
+  for(const v of rearCandidates){
+   const score=Math.abs(v.x-idealX)/d.x+
+    Math.abs(v.y-preferredY)/d.y*.72;
+   if(score<best){best=score;scalpRoot=v;}
+  }
+  const tipY=box.min.y+d.y*(.095+
+   .064*Math.pow(Math.abs(2*u-1),1.3)+
+   .012*Math.sin(k*2.39996323)+
+   .009*fract(k*.61803398875));
+  const width=d.x*(.0124+.002*fract(k*.75487766));
+  const targetX=idealX+side*d.x*.008;
+  const targetZ=Math.min(scalpRoot.z-d.z*.018,
+   center.z-d.z*(.14+.035*(1-Math.abs(2*u-1))));
+  stripWidths.push(width*2);tipHeights.push(tipY);
+  const vtx=(t,edge)=>{
+   const eased=t*t*(3-2*t);
+   const x=THREE.MathUtils.lerp(scalpRoot.x,targetX,eased)+
+    Math.sin(k*.85+t*5)*d.x*.0013*t;
+   const y=THREE.MathUtils.lerp(scalpRoot.y,tipY,t);
+   const z=THREE.MathUtils.lerp(scalpRoot.z-d.z*.003,targetZ,eased)+
+    d.z*.006*Math.sin(Math.PI*t);
+   const taper=1-.72*Math.pow(t,8);
+   return f3(x+edge*width*taper,y,z+
+    Math.abs(edge)*d.z*.0012);
+  };
+  for(let j=0;j<stripSegments;j++){
+   const t0=j/stripSegments,t1=(j+1)/stripSegments;
+   const p0=vtx(t0,-1),p1=vtx(t0,1);
+   const q0=vtx(t1,-1),q1=vtx(t1,1);
+   for(const p of [p0,q0,p1,p1,q0,q1]){
+    verts.push(p.x,p.y,p.z);
+    smoothNormals.push(0,0,-1);
+   }
+  }
+ }
  const material=new THREE.MeshStandardMaterial({
   color,roughness:.84,metalness:0,side:THREE.DoubleSide
  });
@@ -149,19 +249,34 @@ function scalpShell(geo,box,color){
  const mesh=new THREE.Mesh(buffer,material);
  mesh.name='REAL_SCALP_TRIANGLE_HAIR_CAP';
  mesh.userData.scalpSource='sculpted-real-head-triangles';
+ mesh.userData.rearUndercoatAnchoredToRealScalp=rearCandidates.length>0;
+ mesh.userData.rearUndercoatTriangleCount=undercoatStrips*stripSegments*2;
+ mesh.userData.rearUndercoatStripCount=undercoatStrips;
+ mesh.userData.rearUndercoatMaxStripWidth=stripWidths.length?Math.max(...stripWidths):0;
+ mesh.userData.rearUndercoatTipHeightRange=tipHeights.length?
+  Math.max(...tipHeights)-Math.min(...tipHeights):0;
+ mesh.userData.rearUndercoatStyle='overlapping-real-scalp-rooted-tapered-ribbons';
  return mesh;
 }
 /**
  * @param {THREE.Mesh} head  owned sculpted female head
  * @param {{count?:number,color?:number,externalColliders?:Array}} options
  */
-export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalColliders=[],lengthScale=1}={}){
+export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalColliders=[],lengthScale=1,styleId=DEFAULT_WIG_STYLE_ID}={}){
+ const style=getWigStyle(styleId);
  if(!head?.isMesh||!head.geometry?.getAttribute('position'))
   throw Error('Real sculpted 3D head required for scalp-rooted wig');
  head.geometry.computeBoundingBox();head.geometry.computeVertexNormals();
  const box=head.geometry.boundingBox.clone(),d=box.getSize(new THREE.Vector3());
  const center=box.getCenter(new THREE.Vector3());
  const {pools,all:scalpCandidates}=actualScalpCandidates(head.geometry,box);
+ const surfaceSampler=createFastFaceSurfaceSampler(head.geometry);
+ // Crown whorl uses an ACTUAL real-head scalp vertex, not a free cap.
+ const whorlTarget=f3(center.x+style.whorl.x*d.x,
+  box.min.y+style.whorl.y*d.y,center.z+style.whorl.z*d.z);
+ const whorlCandidate=scalpCandidates.filter(p=>p.p.y>box.min.y+d.y*.84)
+  .sort((a,b)=>a.p.distanceToSquared(whorlTarget)-b.p.distanceToSquared(whorlTarget))[0];
+ const whorl=whorlCandidate?.p.clone()||whorlTarget;
  let radialScalp=envelopeCache.get(head.geometry);
  if(!radialScalp){
   radialScalp=createHeadEnvelope(head.geometry,box);
@@ -169,6 +284,11 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  }
  const root=new THREE.Group();root.name='FEMALE_SCALP_ANCHORED_LONG_WIG';
  root.userData.hairOnRealHead=true;
+ root.userData.assetType='independent-wig';
+ root.userData.hairStyleId=style.id;
+ root.userData.hairStyleName=style.label;
+ root.userData.part=style.part;
+ root.userData.whorlPosition=whorl.toArray();
  const cap=scalpShell(head.geometry,box,color);root.add(cap);
  const lockCount=clamp(Math.round(count),48,2400),segments=11;
  const zoneCounts=Object.fromEntries(WIG_ZONE_WEIGHTS.map(([zone])=>[zone,0]));
@@ -178,8 +298,19 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   total+=weight;
   zoneCap.push(Math.round(total*lockCount));zoneNames.push(name);
  }
+ // Central posterior locks bridge the two halves at the nape: the
+ // previous uniform root selection left a conspicuous exposed vertical
+ // strip of neck, despite having plenty of hair on both outer sides.
+ const backCenterPools=Object.fromEntries(WIG_ZONE_WEIGHTS
+  .filter(([name])=>name.startsWith('back')||name.startsWith('nape'))
+  .map(([name])=>{
+   const near=pools[name].slice().sort((a,b)=>
+    Math.abs(a.p.x-center.x)-Math.abs(b.p.x-center.x));
+   return [name,near.slice(0,Math.max(4,Math.ceil(near.length*.28)))];
+  }));
  const sampleRoot=(zone,index)=>{
-  const pool=pools[zone];
+  const rear=zone.startsWith('back')||zone.startsWith('nape');
+  const pool=rear&&index%3===0?backCenterPools[zone]:pools[zone];
   // Golden-ratio low-discrepancy sequence. Every zone is allocated
   // explicitly, regardless of donor topology vertex-order bias.
   const u=fract((index+1)*.61803398875+
@@ -218,6 +349,10 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   const wigRoot=seed.p.clone().addScaledVector(seed.n,rootLift);
   const side=zone.endsWith('Left')?-1:zone.endsWith('Right')?1:
    Math.sign(wigRoot.x-center.x)||1;
+  const partSide=Math.sign(wigRoot.x-whorl.x)||side;
+  const partInfluence=(style.part==='center'&&
+   (zone==='crown'||zone.startsWith('fringe')))?
+   Math.max(0,1-Math.abs(wigRoot.x-whorl.x)/(d.x*.27)):0;
   const fringe=zone.startsWith('fringe');
   const back=zone.startsWith('back')||zone.startsWith('nape');
   const frontRoot=(wigRoot.z-center.z)/d.z>.07;
@@ -226,44 +361,71 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   // face forward. Otherwise they form a long curtain across both eyes.
   const overFace=!back&&frontRoot&&midFace;
   if(overFace)faceTrimmedStrands++;
-  const longFactor=zone.startsWith('nape')?.43:
-   zone.startsWith('temple')?.54:back?.63:.59;
+  const longFactor=zone.startsWith('nape')?.68:
+   zone.startsWith('temple')?.72:back?.80:.76;
   // Fringe must terminate above the eyebrows, never obscure the eyes,
   // nose or mouth, even at the maximum hair-length slider value.
-  const browLimit=box.min.y+d.y*.758;
-  const bangLength=d.y*(.09+fract(i*.381966)*.045)*clamp(lengthScale,.55,1.5);
+  // Salon-cut contour: varying length, split-fringe silhouette and shorter
+  // face frame with no harsh line across the forehead.
+  const cutPhase=fract(i*.61803398875);
+  const wave=Math.sin(i*2.39996323);
+  // Side-swept diagonal bangs with irregular feathered ends, instead
+  // of a flat horizontal 'home haircut' line above both eyebrows.
+  const partSlope=(wigRoot.x-center.x)/d.x;
+  const browLimit=box.min.y+d.y*
+   (.747+.060*partSlope+.025*cutPhase+.012*wave);
+  const bangLength=d.y*(.09+.034*cutPhase)*clamp(lengthScale,.55,1.5);
   const length=(fringe||overFace)?
    Math.max(d.y*.008,Math.min(bangLength,wigRoot.y-browLimit)):
    d.y*(longFactor+fract(i*.381966)*.13)*clamp(lengthScale,.55,1.5);
   const rest=[],points=[],vel=[];
+  const lateral=2*Math.abs(wigRoot.x-center.x)/d.x;
   const trimY=Math.min(wigRoot.y-d.y*.012,
-   (fringe||overFace)?browLimit:hairCutY(zone,box,lengthScale,i));
-  const guide=(fringe||overFace)?f3(side*.08,0,1):
-   back?f3(side*.18,0,-1):
-   f3(side,0,zone.startsWith('temple')?-.18:-.2);
-  guide.normalize();
-  const origin=f3(wigRoot.x-center.x,0,wigRoot.z-center.z);
-  if(origin.lengthSq()<d.x*d.x*.0009)origin.copy(guide);
-  else origin.normalize();
-  // Pipeline: GROW radially from actual root normals, RELAX each segment
-  // against the source head envelope, COLLIDE later, TRIM at hairline.
+   (fringe||overFace)?browLimit:
+    hairCutY(zone,box,lengthScale,i,lateral));
+  // Salon-guided locks: the real scalp root stays fixed. After a brief
+  // head-conforming section, each lock DROPS DOWN, not out in a radial
+  // fan. This removes the puffy helmet and spiked cheek-side fan.
+  const scalpCenter=radialScalp.radialCenter;
+  const closeToFace=fringe||overFace;
+  // Posterior layers drift gently toward the center of the back,
+  // closing the exposed rear part without piling into a single spike.
+  const targetX=(back?
+   center.x+(wigRoot.x-center.x)*.68:
+   wigRoot.x+side*d.x*(closeToFace?style.fringeSweep:.015))+
+   partSide*d.x*style.partWidth*partInfluence;
+  const targetZ=closeToFace?wigRoot.z+d.z*style.scalpClearance:
+   // Go BEHIND the neck rather than being occluded by the rear bust skin.
+   back?Math.min(wigRoot.z-d.z*.070,center.z-d.z*.19):
+   zone.startsWith('temple')?wigRoot.z-d.z*.035:
+   Math.min(wigRoot.z-d.z*.075,center.z-d.z*.035);
+  const strandWave=(fract(i*.75487766)-.5)*d.x*.004;
+  // Gravity rest shape: initial down-velocity + gravitational acceleration.
+  const g=style.gravityMps2*(d.y/2)*style.gravityScale;
+  const fallTime=Math.sqrt(Math.max(1e-8,length/g));
   for(let j=0;j<=segments;j++){
-   const t=j/segments;
-   // Forehead fringe falls vertically, without horizontal root-to-tip spikes.
-   const direction=origin.clone().lerp(guide,
-    (fringe||overFace?.16:.78)*t*t).normalize();
-   const y=Math.max(trimY,wigRoot.y-length*t);
-   const shell=radialScalp(y,direction);
-   const gap=d.x*(.007+.015*t);
-   const targetRadius=shell+gap+d.x*.014*t*t;
+   const t=j/segments,fall=t*t*(3-2*t);
+   const drop=.5*length*t+.5*g*(t*fallTime)**2;
+   const y=Math.max(trimY,wigRoot.y-drop);
+   const curl=Math.sin(t*5.2+i*2.39996323)*d.x*.0025*t*t;
    const p=j===0?wigRoot.clone():f3(
-    center.x+direction.x*targetRadius,y,
-    center.z+direction.z*targetRadius);
+    THREE.MathUtils.lerp(wigRoot.x,targetX,fall)+strandWave*t+curl,
+    y,THREE.MathUtils.lerp(wigRoot.z,targetZ,fall)+curl*.35);
+   if(j>0&&t<.65&&y>box.min.y+d.y*.60){
+    const direction=f3(p.x-scalpCenter.x,0,p.z-scalpCenter.z);
+    const radius=direction.length();
+    if(radius>d.x*.008){
+     const surfaceRadius=radialScalp.radius(y,direction);
+     const gap=surfaceRadius+d.x*.0015-radius;
+     if(gap>0)p.addScaledVector(direction.multiplyScalar(1/radius),
+      Math.min(gap,d.x*.015));
+    }
+   }
    rest.push(p);points.push(p.clone());vel.push(new THREE.Vector3());
   }
   strands.push({root:wigRoot,rest,points,vel,fringe,side,
-   zone,seedIndex:seed.index,trimY,overFace,
-   growthLogic:'grow-relax-collide-trim'});
+   zone,seedIndex:seed.index,trimY,overFace,partSide,
+   gravityRestShape:true,growthLogic:'grow-relax-collide-trim'});
   const base=i*(segments+1)*4;
   for(let j=0;j<=segments;j++){
    const t=j/segments,shaded=rootColor.clone().lerp(tips,.3+.48*t)
@@ -295,27 +457,47 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  locks.userData.rootedOnRealScalp=true;
  locks.userData.lockCount=lockCount;
  root.add(locks);
- const half=d.x*.0066;
+ const half=d.x*.0080;
  // The visible mesh retains all 1440+ locks, but only ~320 master locks
  // require full constraint and capsule solving on Android.
  const guideStride=Math.max(1,Math.ceil(lockCount/320));
  const guideCount=Math.ceil(lockCount/guideStride);
  let collisions=0,faceContacts=0,bodyContacts=0,accumulator=0,elapsed=0;
  let meshUpdates=0;
- // Conservative, real-head-derived frontal collider. In addition to
- // an ellipsoid it uses the actual sculpted vertices for the scalp roots.
- const headCenter=f3(center.x,box.min.y+d.y*.635,center.z);
- const rx=d.x*.455,ry=d.y*.322,rz=d.z*.46;
+ // Real head-surface collision. The original giant ellipsoid forced
+ // every strand out to an artificial spherical helmet around the ears.
+ // Only points INSIDE the actual head silhouette are nudged outward.
  function resolveCollision(p){
-  const q=f3((p.x-headCenter.x)/rx,(p.y-headCenter.y)/ry,
-   (p.z-headCenter.z)/rz);
-  const len=q.length();
-  if(len<1&&p.y>box.min.y+d.y*.36){
-   const normal=q.lengthSq()>1e-8?q.normalize():f3(0,0,1);
-   p.set(headCenter.x+normal.x*rx*1.015,
-    headCenter.y+normal.y*ry*1.015,
-    headCenter.z+normal.z*rz*1.015);
-   collisions++;faceContacts++;
+  // Explicit contact with the ACTUAL front facial triangles. For hair
+  // falling over the central eye/cheek region, first part it outwards.
+  const yNorm=(p.y-box.min.y)/d.y;
+  if(p.z>center.z+d.z*.025&&yNorm>.40&&yNorm<.85){
+   const contactSide=Math.sign(p.x-whorl.x)||1;
+   if(yNorm<.78&&Math.abs(p.x-center.x)<d.x*.15){
+    p.x=center.x+contactSide*d.x*.15;
+    faceContacts++;collisions++;
+   }
+   const faceSurface=surfaceSampler.query(p.x,p.y);
+   if(faceSurface!==null&&p.z<faceSurface+d.x*style.faceClearance){
+    p.z=faceSurface+d.x*style.faceClearance;
+    faceContacts++;collisions++;
+   }
+  }
+  if(p.y>box.min.y+d.y*.38){
+   const origin=radialScalp.radialCenter;
+   const direction=f3(p.x-origin.x,0,p.z-origin.z);
+   const len=direction.length();
+   if(len>d.x*.0001){
+    const surfaceRadius=radialScalp.radius(p.y,direction);
+    const gap=surfaceRadius+d.x*.001-len;
+    if(gap>d.x*.002){
+     p.addScaledVector(direction.multiplyScalar(1/len),
+      Math.min(gap,d.x*.035));
+     collisions++;faceContacts++;
+    }
+   }else{
+    p.z+=d.x*.035;collisions++;faceContacts++;
+   }
   }
   for(const c of colliders){
    if(projectCapsule(p,c.a,c.b,c.r+d.x*.006)){
@@ -331,7 +513,10 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
     // Fine ambient sway for strands not simulated with a dynamic guide.
     const sway=i%guideStride?
      Math.sin(elapsed*1.2+i*.37+j*.23)*d.x*.0008*t*t:0;
-    const width=half*(1-.86*t)*(.78+.34*fract(i*.35));
+    // Full thick clumps near scalp and mid-length; point-cut taper only
+   // in the last 15% instead of uniformly thinning into wire-like ends.
+   const tip=1-.90*Math.pow(t,8);
+   const width=half*tip*(.78+.34*fract(i*.35));
     for(let k=0;k<4;k++){
      const at=(i*(segments+1)*4+j*4+k)*3;
      // Two crossed hair ribbons: visible at frontal and side angles.
@@ -361,7 +546,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
     const p=s.points[j],v=s.vel[j],goal=s.rest[j];
     const wind=Math.sin(elapsed*1.45+i*.37+j*.20)*d.x*.0012*(j/segments);
     v.multiplyScalar(.82).addScaledVector(goal.clone().sub(p),step*13);
-    v.y-=step*d.y*.07;
+    v.y-=step*d.y*.55*style.gravityScale;
     p.addScaledVector(v,step);
     p.x+=wind;
     resolveCollision(p);
@@ -370,24 +555,41 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
     if(length>target*1.055&&length>0)
      p.copy(prev).addScaledVector(gap,target*1.055/length);
     resolveCollision(p);
+    if(p.y<s.trimY){p.y=s.trimY;v.y=Math.max(0,v.y);}
    }
   }
   writeGeometry();
  }
- // Non-guide strands are resolved against face/body once at creation.
- // They remain rigid to the head, so collision does not drift during
- // camera rotation. Their displayed fine sway is sub-millimeter.
- for(let i=0;i<strands.length;i++)if(i%guideStride){
-  const s=strands[i];
-  for(let j=1;j<=segments;j++)resolveCollision(s.points[j]);
+ // All strands, including the 320 dynamic guides, must begin outside
+ // the real cheek, forehead and shoulder surfaces. Use resolved contacts
+ // as the spring rest shape, rather than pulling hair through the face.
+ for(const s of strands)for(let j=1;j<=segments;j++){
+  resolveCollision(s.points[j]);
+  s.points[j].y=Math.max(s.points[j].y,s.trimY);
+  s.rest[j].copy(s.points[j]);
  }
  writeGeometry();
  root.userData.wigReport={
   style:'real-scalp-shell-growing-then-trimmed',rooted:true,rootCount:lockCount,
+  hairstyleId:style.id,styleLabel:style.label,
+  wigAssetType:'independent-wig',centerPart:style.part==='center',
+  crownWhorl:whorl.toArray(),gravityMps2:style.gravityMps2,
+  gravityRestShape:true,exactFaceSurfaceCollision:true,
+  faceClearance:style.faceClearance,
   growthStages:['grow','relax','collide','trim'],
   faceTrimmedStrands,faceCurtainPrevention:true,
   smoothScalpNormals:true,verticalForeheadDrape:true,
+  hairShape:'head-hugging-salon-layered-pointcut',
+  downwardGuidedLocks:true,realScalpEnvelopeCollision:true,
+  longSalonLayers:true,centerBackCoverage:true,uShapedRearCut:true,
+  centralRearNeckOcclusionAvoided:true,diagonalFeatheredFringe:true,
+  rearRootPolicy:'actual-posterior-scalp-only',
+  scalpRadialProfile:'smoothed-72pct-multi-vertex-envelope',
+  belowNapeDrape:'preserve-last-valid-scalp-radius',
+  pointCutEnds:true,
   scalpCoverage:'continuous-colored-triangle-cap-plus-locks',
+  realScalpPosteriorUndercoat:true,
+  noRectangularRearHairSheet:true,
   pointCount:lockCount*(segments+1),realScalpCandidateCount:scalpCandidates.length,
   rootDistribution:{...zoneCounts},
   zoneCandidateCounts:Object.fromEntries(Object.entries(pools).map(([key,list])=>[key,list.length])),
@@ -409,6 +611,16 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   return WIG_ZONE_WEIGHTS.map(([zone])=>strands.find(s=>s.zone===zone))
    .filter(Boolean).map(s=>({zone:s.zone,trimY:s.trimY,
     minY:Math.min(...s.rest.map(p=>p.y))}));
+ },getPartSamples(){
+  return strands.filter(s=>s.zone==='crown'||s.zone.startsWith('fringe'))
+   .slice(0,36).map(s=>({zone:s.zone,side:s.partSide,
+    root:s.root.toArray(),tip:s.rest.at(-1).toArray(),
+    gravityRestShape:s.gravityRestShape}));
+ },getStyleSamples(){
+  return WIG_ZONE_WEIGHTS.map(([zone])=>strands.filter(s=>s.zone===zone)
+   .slice(0,12).map(s=>({zone,root:s.root.toArray(),
+    firstStep:s.rest[1].toArray(),tip:s.rest.at(-1).toArray(),
+    trimY:s.trimY,overFace:s.overFace}))).flat();
  },getRootSamples(){
   // Return a representative root from every scalp region for QA,
   // including the nape/back/temples that were previously completely bald.
