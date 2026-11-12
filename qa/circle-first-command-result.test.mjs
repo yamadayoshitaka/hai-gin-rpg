@@ -49,12 +49,14 @@ assert.match(html,/targetSquadId:String\(id\),x:Math\.round\(center\.x\)/);
 assert.match(html,/if\(ok\)\{[\s\S]*?closeSquadTactics\(true\);[\s\S]*?return true;\s*\}/, 
  'Confirmed target closes the tactical selector only after a successful action');
 
-// Player command selection ALWAYS pauses the battle in a locked far overview.
+// Player command selection pauses the battle and locks the commander-focused camera.
 // The existing 5-minute tactical bank still counts down but cannot resume combat mid-selection.
 assert.match(html,/if\(!paused\)setBattlePaused\(true\)/,
  'Opening the command selector pauses even after the tactical bank expires');
-assert.match(html,/enterCommandOverview\(\);/,
- 'Opening a squad order forces the full-map overview');
+assert.match(html,/const commandFocus=squadCommandFocus\(id\)/,
+ 'Opening a squad order selects the commander camera focus');
+assert.match(html,/setBattleCamera\(focus,offset\)/,
+ 'Opening a squad order zooms to the commander instead of forcing an overview');
 assert.match(html,/commandOverviewLocked=true/);
 assert.match(html,/controls\.enabled=false/);
 assert.match(html,/tacticalBankRemaining=Math\.max\(0,tacticalBankRemaining-bankDelta\)/);
