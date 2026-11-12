@@ -31,7 +31,7 @@ const contentHashOwner=new Map();
 async function realWebp(p){
  if(!p)return null;
  const relative=p.replace(/^\.\//,'');
- if(!/^assets\/story\/panels\/c\d{2}-s\d{2}-m(?:0[1-9]|10)(?:-female)?\.webp$/.test(relative))
+ if(!/^assets\/story\/panels\/c\d{2}-s\d{2}-m(?:0[1-9]|1[0-9]|20)(?:-female)?\.webp$/.test(relative))
   throw Error('Unsafe panel art path: '+relative);
  if(fileCache.has(relative))return fileCache.get(relative);
  let data;
@@ -55,7 +55,7 @@ const shotlist=[];
 for(const stage of CAMPAIGN_STAGES){
  const chapter=STORY_CHAPTERS[stage.chapter-1];
  const shots=mangaForStage(stage.id,{protagonistGender:'unspecified'}).panels;
- if(shots.length!==10)throw Error('Wrong panel count: '+stage.id);
+ if(shots.length!==20)throw Error('Wrong panel count: '+stage.id);
  for(const p of shots){
   const male=await realWebp(individualStoryPanelAsset({...p,protagonistGender:'male'}));
   const female=await realWebp(individualStoryPanelAsset({...p,protagonistGender:'female'}));
@@ -104,7 +104,7 @@ const stats={
  femaleMissing:results.filter(p=>!p.female).length,
  pendingArtInstructions:shotlist.length,
 };
-if(stats.totalPanels!==2000||stats.totalChapters!==20||stats.totalStages!==200)throw Error('Story schema unexpectedly changed');
+if(stats.totalPanels!==4000||stats.totalChapters!==20||stats.totalStages!==200)throw Error('Story schema unexpectedly changed');
 if(strongIssues.length)throw Error('Invalid or reused panel artwork: '+JSON.stringify(strongIssues.slice(0,8)));
 await fs.mkdir(path.dirname(output),{recursive:true});
 await fs.mkdir(path.dirname(reviewOutput),{recursive:true});
