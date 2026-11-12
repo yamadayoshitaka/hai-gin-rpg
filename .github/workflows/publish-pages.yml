@@ -46,6 +46,7 @@ jobs:
         run: |
           node --experimental-vm-modules qa/story-cinematic-audio.test.mjs
           node --experimental-vm-modules qa/stage-manga-continuity.test.mjs
+          node qa/story-chapter-one-three-art-status.test.mjs
           node --experimental-vm-modules qa/story-cinematic-raster.test.mjs
       - uses: actions/setup-python@v6
         with:
