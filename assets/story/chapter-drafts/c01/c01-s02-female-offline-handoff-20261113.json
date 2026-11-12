@@ -1,0 +1,219 @@
+{
+  "schemaVersion": 4,
+  "stageId": "c01-s02",
+  "createdDate": "2026-11-13",
+  "kind": "OFFLINE_REVIEW_ASSETS_HANDOFF_NOT_REGISTERED",
+  "storySource": "src/story-chapter-comic.js",
+  "gender": "female",
+  "newCandidateFiles": [
+    {
+      "shotId": "c01-s02-m01",
+      "edition": "pre",
+      "gender": "female",
+      "description": "イリスが死者名簿の欠落を確認",
+      "assetName": "c01-s02-m01-pre-female.webp",
+      "expectedWebPSize": [
+        1536,
+        864
+      ],
+      "sha256": "b7ab0ad273bf62017625eb6995357b335b510f715e6cda2e416189b619aeb0be",
+      "bytes": 530658,
+      "availability": "AVAILABLE_IN_CONVERSATION_EXPORT_ONLY",
+      "registeredInGitHub": false,
+      "visibleInGame": false,
+      "quality": "AI_DRAFT_UNAPPROVED",
+      "approval": false
+    },
+    {
+      "shotId": "c01-s02-m02",
+      "edition": "pre",
+      "gender": "female",
+      "description": "女性軍師がイリスの証言を受ける",
+      "assetName": "c01-s02-m02-pre-female.webp",
+      "expectedWebPSize": [
+        1536,
+        864
+      ],
+      "sha256": "a404838bd1f9899630da90c20eb36d7a2fe38178d3c2e9182af1f34454562909",
+      "bytes": 639674,
+      "availability": "AVAILABLE_IN_CONVERSATION_EXPORT_ONLY",
+      "registeredInGitHub": false,
+      "visibleInGame": false,
+      "quality": "AI_DRAFT_UNAPPROVED",
+      "approval": false
+    },
+    {
+      "shotId": "c01-s02-m03",
+      "edition": "pre",
+      "gender": "female",
+      "description": "星鐘の不気味な残響",
+      "assetName": "c01-s02-m03-pre-female.webp",
+      "expectedWebPSize": [
+        1536,
+        864
+      ],
+      "sha256": "1d83114ef54f5b00bf1521291e277125b0a9559438ecb63091154c41d4e3e261",
+      "bytes": 631122,
+      "availability": "AVAILABLE_IN_CONVERSATION_EXPORT_ONLY",
+      "registeredInGitHub": false,
+      "visibleInGame": false,
+      "quality": "AI_DRAFT_UNAPPROVED",
+      "approval": false
+    },
+    {
+      "shotId": "c01-s02-m04",
+      "edition": "pre",
+      "gender": "female",
+      "description": "リュシア・ガラン・イリスとの軍議",
+      "assetName": "c01-s02-m04-pre-female.webp",
+      "expectedWebPSize": [
+        1536,
+        864
+      ],
+      "sha256": "ba5643ec326d764052a387f74206faf4e9b6bc0659fd85653ff0f6cb2ab1f7a2",
+      "bytes": 680088,
+      "availability": "AVAILABLE_IN_CONVERSATION_EXPORT_ONLY",
+      "registeredInGitHub": false,
+      "visibleInGame": false,
+      "quality": "AI_DRAFT_UNAPPROVED",
+      "approval": false
+    },
+    {
+      "shotId": "c01-s02-m05",
+      "edition": "pre",
+      "gender": "female",
+      "description": "魔物が礼拝堂の街道を封鎖",
+      "assetName": "c01-s02-m05-pre-female.webp",
+      "expectedWebPSize": [
+        1536,
+        864
+      ],
+      "sha256": "0e63f683b8bf1524fcfc5268a80849a12a8dd7c6e09cf0ad7cd480267a8c91c8",
+      "bytes": 659844,
+      "availability": "AVAILABLE_IN_CONVERSATION_EXPORT_ONLY",
+      "registeredInGitHub": false,
+      "visibleInGame": false,
+      "quality": "AI_DRAFT_UNAPPROVED",
+      "approval": false
+    },
+    {
+      "shotId": "c01-s02-m11",
+      "edition": "pre",
+      "gender": "female",
+      "description": "軍師が礼拝堂と街道の位置を確認",
+      "assetName": "c01-s02-m11-pre-female.webp",
+      "expectedWebPSize": [
+        1536,
+        864
+      ],
+      "sha256": "a0607366b0b8f1d15526b43cb15d8f4765453f147cd38a2b747d8b25d6f308be",
+      "bytes": 683046,
+      "availability": "AVAILABLE_IN_CONVERSATION_EXPORT_ONLY",
+      "registeredInGitHub": false,
+      "visibleInGame": false,
+      "quality": "AI_DRAFT_UNAPPROVED",
+      "approval": false
+    },
+    {
+      "shotId": "c01-s02-m13",
+      "edition": "pre",
+      "gender": "female",
+      "description": "街道奪還への決意",
+      "assetName": "c01-s02-m13-pre-female.webp",
+      "expectedWebPSize": [
+        1536,
+        864
+      ],
+      "sha256": "619ead2801a4e01b518276b0336912a9b7eb1b36bd185d499e48397fcc221137",
+      "bytes": 684656,
+      "availability": "AVAILABLE_IN_CONVERSATION_EXPORT_ONLY",
+      "registeredInGitHub": false,
+      "visibleInGame": false,
+      "quality": "AI_DRAFT_UNAPPROVED",
+      "approval": false
+    },
+    {
+      "shotId": "c01-s02-m15",
+      "edition": "pre",
+      "gender": "female",
+      "description": "討伐隊の出撃",
+      "assetName": "c01-s02-m15-pre-female.webp",
+      "expectedWebPSize": [
+        1536,
+        864
+      ],
+      "sha256": "4df7b96ae042332554e3d52b5fa5d90c65622a44cb1b17e4f3aa57929231aef0",
+      "bytes": 681636,
+      "availability": "AVAILABLE_IN_CONVERSATION_EXPORT_ONLY",
+      "registeredInGitHub": false,
+      "visibleInGame": false,
+      "quality": "AI_DRAFT_UNAPPROVED",
+      "approval": false
+    },
+    {
+      "shotId": "c01-s02-m06",
+      "edition": "post-victory",
+      "gender": "female",
+      "description": "目標達成後の街道開通を確認",
+      "assetName": "c01-s02-m06-post-victory-female.webp",
+      "expectedWebPSize": [
+        1536,
+        864
+      ],
+      "sha256": "629a9e28f1fc00aaa82b02d1520eb60d4bdeb5fda193f7cdfa0899dc0ca8ad69",
+      "bytes": 667786,
+      "availability": "AVAILABLE_IN_CONVERSATION_EXPORT_ONLY",
+      "registeredInGitHub": false,
+      "visibleInGame": false,
+      "quality": "AI_DRAFT_UNAPPROVED",
+      "approval": false
+    },
+    {
+      "shotId": "c01-s02-m07",
+      "edition": "post-victory",
+      "gender": "female",
+      "description": "勝利後の負傷者への治療",
+      "assetName": "c01-s02-m07-post-victory-female.webp",
+      "expectedWebPSize": [
+        1536,
+        864
+      ],
+      "sha256": "0bd4c03feb1aaee5c5b97e4063915d1a3310414c47602751095c949c50961544",
+      "bytes": 729316,
+      "availability": "AVAILABLE_IN_CONVERSATION_EXPORT_ONLY",
+      "registeredInGitHub": false,
+      "visibleInGame": false,
+      "quality": "AI_DRAFT_UNAPPROVED",
+      "approval": false
+    }
+  ],
+  "posters": [
+    {
+      "edition": "pre",
+      "fileName": "c01-s02-pre-female-p01.webp",
+      "sha256": "5f3382598d9d1d093c2c12452102dd3206ca078ec0cb618f8250c95eec67fe73",
+      "status": "AVAILABLE_IN_CONVERSATION_EXPORT_ONLY"
+    },
+    {
+      "edition": "post-victory",
+      "fileName": "c01-s02-post-victory-female-p01.webp",
+      "sha256": "f792f382bdae8270b8091b0d2c47eb69d8f2e8070a86ee6a78440da58aec2b2a",
+      "status": "AVAILABLE_IN_CONVERSATION_EXPORT_ONLY"
+    }
+  ],
+  "oldAlternativeImages": 10,
+  "previousCandidatesPolicy": "The previous 10 image drafts are also included in the conversation ZIP, as unapproved visual comparison files.",
+  "packName": "hai_gin_c01s02_female_10shots_with_old_drafts_20261113.zip",
+  "qualityReference": "assets/story/chapters/c01/panels/c01-s01-m02-female.webp",
+  "qualityReferenceIsHumanApproved": false,
+  "hero": "gold-blonde long hair, blue eyes, silver armor",
+  "storyOutcomesSeparate": true,
+  "newNativeDetail": true,
+  "allNoTextRequiresManualReview": true,
+  "publishBlockedUntilAllReviews": true,
+  "mainRepositoryBinaryAssetsUploaded": false,
+  "registeredStage2ImagesRemain": 15,
+  "notYetGeneratedStage2": 23,
+  "notYetGeneratedStage3": 48,
+  "unmadeTotal": 71
+}
