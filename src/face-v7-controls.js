@@ -30,7 +30,7 @@ export const LIBRARY_FACE_PRESET=Object.freeze({
 // saved preset without a second incompatible settings API.
 // v21 adds a NEW control without falsifying the original saved GLB values.
 export const FACE_EYE_SPACING_DEFAULT=1.10;
-export const FACE_EYE_SPACING_RANGE=Object.freeze([.85,1.35]);
+export const FACE_EYE_SPACING_RANGE=Object.freeze([.65,1.35]);
 export const FEMALE_V7_DEFAULTS=LIBRARY_FACE_PRESET.femaleControls;
 export const FACE_V7_PALETTE=Object.freeze({
  skin:0xebc5b7,
@@ -59,7 +59,7 @@ export const FACE_SLIDER_RANGES=Object.freeze({
  noseTipLift:[-2,2],nostrilCover:[0,4],
  noseBridgeSharpness:[0,5],
  browAngle:[-19,31],lashAngle:[-18,32],
- eyeAngle:[-20,20],eyeSize:[.5,1.5],
+ eyeAngle:[-20,20],eyeSize:[.5,1.5],eyeDepth:[-.3,.18],
  lipstickX:[-.12,.12],lipstickY:[-.12,.12],
  lipstickWidth:[.2,2.8],lipstickHeight:[.2,1.8]
 });
@@ -73,6 +73,9 @@ export function normalizeFemaleFaceControls(settings={}){
  out.eyeSpacing=Number.isFinite(spacing)?
   Math.max(FACE_EYE_SPACING_RANGE[0],Math.min(FACE_EYE_SPACING_RANGE[1],spacing)):
   FACE_EYE_SPACING_DEFAULT;
+ const depth=Number(settings?.eyeDepth);
+ out.eyeDepth=Number.isFinite(depth)?
+  Math.max(FACE_SLIDER_RANGES.eyeDepth[0],Math.min(FACE_SLIDER_RANGES.eyeDepth[1],depth)):0;
  return out;
 }
 
