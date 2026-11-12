@@ -50,13 +50,13 @@ export function syncCommanderSquadSlots(state){
 }
 /** Autohire only affordable and currently unlocked commander slots; no free
  * commanders or soldiers, no over-spending and no infinite empty hiring. */
-export function autoDeployCommanders(state,{priority='均衡',fillOpenSlots=true}={}){
+export function autoDeployCommanders(state,{priority='均衡',fillOpenSlots=true,maxNewHires=10,preferredSlot=null}={}){
  if(state.gameOver)throw Error('ゲームオーバー後は編成できません。');
  if(!AUTO_FORMATIONS.includes(priority))throw Error('自動配置の方針を選んでください。');
  const max=Math.min(10,DEPLOYMENT_CAPACITY,maxSquads(state));
- let hired=0,assigned=0;
+ let hired=0,assigned=0;const hiredIds=[];
  if(fillOpenSlots){
-  while(commanderList(state).length<max){
+  while(commanderList(state).length<max&&hired<maxNewHires){
    const hasReserve=reserveTroops(state)>0;
    // Hire + at least ten N soldiers when there are no reserves. No empty
    // command-only units are silently paid for.
@@ -65,6 +65,8 @@ export function autoDeployCommanders(state,{priority='均衡',fillOpenSlots=true
    const seq=state.commanders.length+1;
    trainCommander(state,'軍師'+String(seq).padStart(2,'0'),{gender:seq%2===0?'female':'male',faceId:seq%8});
    const leader=state.commanders.at(-1);
+   if(preferredSlot!=null&&isDeploymentSlot(preferredSlot))leader.deploymentSlot=preferredSlot;
+   hiredIds.push(String(leader.id));
    if(needsRecruit)recruit(state,{job:JOB_BY_PRIORITY[priority],rarity:'N',count:10,purpose:'前線',commanderId:String(leader.id),faceId:0});
    else autoFormArmy(state,String(leader.id),priority);
    hired++;
@@ -77,7 +79,7 @@ export function autoDeployCommanders(state,{priority='均衡',fillOpenSlots=true
   }
  }
  const positions=syncCommanderSquadSlots(state);
- return {hired,assigned,positions,leaders:commanderList(state).length,capacity:max,
+ return {hired,hiredIds,assigned,positions,leaders:commanderList(state).length,capacity:max,
   unfilled:Math.max(0,DEPLOYMENT_CAPACITY-positions.size),treasury:state.treasury};
 }
 /** One battle command squad ID shared by all job subgroups of a strategist. */
