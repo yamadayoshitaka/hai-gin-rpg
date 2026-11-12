@@ -59,7 +59,7 @@ export const FACE_SLIDER_RANGES=Object.freeze({
  noseTipLift:[-2,2],nostrilCover:[0,4],
  noseBridgeSharpness:[0,5],
  browAngle:[-19,31],lashAngle:[-18,32],
- eyeAngle:[-20,20],eyeSize:[.5,1.5],eyeDepth:[-.3,.85],
+ eyeAngle:[-20,20],eyeDepth:[-.3,.85],
  eyeWidth:[.70,1.45],eyeHeight:[.65,1.45],
  browWidth:[.70,1.50],browThickness:[.45,1.85],
  lashDensity:[.5,2.2],lashLength:[.5,2.1],
@@ -70,6 +70,8 @@ export const FACE_SLIDER_RANGES=Object.freeze({
 export function normalizeFemaleFaceControls(settings={}){
  const out={};
  for(const [k,v] of Object.entries(FEMALE_V7_DEFAULTS)){
+  // v8's saved eyeSize is archival only. Width and height own the scale.
+  if(k==='eyeSize')continue;
   const raw=Number(settings?.[k]);
   out[k]=Number.isFinite(raw)?Math.max(FACE_SLIDER_RANGES[k][0],Math.min(FACE_SLIDER_RANGES[k][1],raw)):v;
  }
@@ -89,13 +91,27 @@ export function normalizeFemaleFaceControls(settings={}){
   const [low,high]=FACE_SLIDER_RANGES[key];
   out[key]=Number.isFinite(value)?Math.max(low,Math.min(high,value)):fallback;
  }
+ // Calculated compatibility field; legacy eyeSize inputs are ignored.
+ out.eyeSize=Math.sqrt(out.eyeWidth*out.eyeHeight);
  return out;
 }
 
 /** A selectable cosmetic colored-contact palette. The default is natural brown. */
 export const CONTACT_COLORS=Object.freeze({
- brown:'#514139',blue:'#467fa7',green:'#5c886b',
- hazel:'#927953',gray:'#7e858d',violet:'#8b74a8'
+ brown:'#514139',darkBrown:'#30231d',chocolate:'#684838',
+ honeyBrown:'#936747',hazel:'#927953',amber:'#bc863f',
+ green:'#5c886b',olive:'#64744d',emerald:'#34816a',
+ blue:'#467fa7',lightBlue:'#78b8d9',iceBlue:'#a9d6e5',
+ gray:'#7e858d',silver:'#b4bcc4',violet:'#8b74a8',
+ pink:'#c487a8',red:'#a64045'
+});
+export const CONTACT_COLOR_LABELS=Object.freeze({
+ brown:'ブラウン（標準）',darkBrown:'ダークブラウン',chocolate:'チョコレート',
+ honeyBrown:'ハニーブラウン',hazel:'ヘーゼル',amber:'琥珀',
+ green:'グリーン',olive:'オリーブ',emerald:'エメラルド',
+ blue:'ブルー',lightBlue:'ライトブルー',iceBlue:'アイスブルー',
+ gray:'グレー',silver:'シルバー',violet:'バイオレット',
+ pink:'ピンク',red:'レッド'
 });
 export function safeContactColor(value){
  const input=String(value??CONTACT_COLORS.brown).trim().toLowerCase();
