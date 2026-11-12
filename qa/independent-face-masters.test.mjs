@@ -451,7 +451,10 @@ test('user Library GLB face preset is canonical and male derives cosmetic-free',
  const source=fixture().source;
  const f=makeIndependentFaceMaster(source,'female');
  const m=makeIndependentFaceMaster(source,'male');
- assert.deepEqual(f.report.femaleControls,saved);
+ assert.deepEqual(Object.fromEntries(Object.keys(saved).map(
+  key=>[key,f.report.femaleControls[key]])),saved);
+ assert.equal(f.report.femaleControls.eyeSpacing,FACE_EYE_SPACING_DEFAULT,
+  'Eye separation is an additive v21 control, not an altered Library GLB value');
  for(const [key,value] of Object.entries(saved))
   assert.equal(m.report.maleControls[key],value,'male GLB-derived value '+key);
  const pf=f.face.geometry.getAttribute('position');
