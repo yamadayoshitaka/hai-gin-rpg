@@ -1,0 +1,103 @@
+{
+  "schemaVersion": 2,
+  "stageId": "c01-s01",
+  "chapter": 1,
+  "phase": "pre",
+  "edition": "pre",
+  "gender": "male",
+  "status": "AI_DRAFT_UNAPPROVED",
+  "approved": false,
+  "noTextInArt": true,
+  "sheet": "assets/story/chapters/c01/c01-s01-pre-male-p01.webp",
+  "sheetSha": "e02996d4346bf5222068a3e1695949983179a50e",
+  "layout": {
+    "columns": 2,
+    "rows": 5,
+    "panelPx": [
+      768,
+      432
+    ],
+    "sheetPx": [
+      1536,
+      2160
+    ]
+  },
+  "panels": [
+    {
+      "id": "c01-s01-m01",
+      "image": "assets/story/chapters/c01/panels/c01-s01-m01-male.webp",
+      "gitBlobSha": "89342fb2bded392867ebcfdc843c831bb739dce3",
+      "position": 0,
+      "description": "王都の夜明け"
+    },
+    {
+      "id": "c01-s01-m02",
+      "image": "assets/story/chapters/c01/panels/c01-s01-m02-male.webp",
+      "gitBlobSha": "1cf0e04f36843d88a020b02f8b6de5de43b3e39a",
+      "position": 1,
+      "description": "摂政リュシアとの面会"
+    },
+    {
+      "id": "c01-s01-m03",
+      "image": "assets/story/chapters/c01/panels/c01-s01-m03-male.webp",
+      "gitBlobSha": "948774501b5dd89e9227ada28807a3a97c6b031a",
+      "position": 2,
+      "description": "老騎士ガランの紹介"
+    },
+    {
+      "id": "c01-s01-m04",
+      "image": "assets/story/chapters/c01/panels/c01-s01-m04-male.webp",
+      "gitBlobSha": "010f653147304bb946557e3ba916793543102a84",
+      "position": 3,
+      "description": "イリスの消えた死者名簿の証言"
+    },
+    {
+      "id": "c01-s01-m05",
+      "image": "assets/story/chapters/c01/panels/c01-s01-m05-male.webp",
+      "gitBlobSha": "58b8999c2ab2d6d55c3b215b7fcd784acd162e4e",
+      "position": 4,
+      "description": "四人で勅命と封蝋を調査"
+    },
+    {
+      "id": "c01-s01-m11",
+      "image": "assets/story/chapters/c01/panels/c01-s01-m11-male.webp",
+      "gitBlobSha": "4d9cf0cce0a4f38863b7c1c7ee633c396e26b1d2",
+      "position": 5,
+      "description": "消された死者名簿を調べる"
+    },
+    {
+      "id": "c01-s01-m12",
+      "image": "assets/story/chapters/c01/panels/c01-s01-m12-male.webp",
+      "gitBlobSha": "a9383279b82929921083ad5a58cc8dbb239978b6",
+      "position": 6,
+      "description": "千年の星鐘の残響を聞く"
+    },
+    {
+      "id": "c01-s01-m13",
+      "image": "assets/story/chapters/c01/panels/c01-s01-m13-male.webp",
+      "gitBlobSha": "ae2d52eb4d6149caefc2baa05472b4b26a3b296f",
+      "position": 7,
+      "description": "紋章付き王印の矛盾を発見"
+    },
+    {
+      "id": "c01-s01-m14",
+      "image": "assets/story/chapters/c01/panels/c01-s01-m14-male.webp",
+      "gitBlobSha": "0a3bb078518d1d683e8f7d857d5c1191ea543aa6",
+      "position": 8,
+      "description": "軍師とリュシアが命令書を再検証"
+    },
+    {
+      "id": "c01-s01-m15",
+      "image": "assets/story/chapters/c01/panels/c01-s01-m15-male.webp",
+      "gitBlobSha": "83b2b2bd9756988f925893d354ae6ce3cb0aa8d6",
+      "position": 9,
+      "description": "軍師が決意して王都の調査に出発"
+    }
+  ],
+  "review": {
+    "humanApproval": false,
+    "continuityReviewPending": true,
+    "voiceScriptLinkedByExistingPanelIds": true,
+    "unregisteredGenderAndOutcomeVariants": true
+  }
+}

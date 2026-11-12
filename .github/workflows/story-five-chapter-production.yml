@@ -8,6 +8,13 @@ on:
       - 'scripts/prepare-story-chapter.mjs'
       - 'scripts/prepare-story-five-chapters.mjs'
       - 'scripts/compile-story-art-briefs.mjs'
+      - 'scripts/compile-story-chapter-atlas.mjs'
+      - 'scripts/ingest-story-chapter-atlas.py'
+      - 'scripts/assemble-story-chapter-atlas.py'
+      - 'scripts/run-story-chapter-pipeline.py'
+      - 'qa/story-150-panel-atlas.test.mjs'
+      - 'qa/story-150-atlas-ingest-smoke.py'
+      - 'assets/story/chapters/c0[1-5]/**'
       - 'src/story-ruby-display.js'
       - 'qa/story-ruby-display.test.mjs'
       - 'qa/story-art-briefs.test.mjs'
@@ -49,10 +56,19 @@ jobs:
           node qa/story-chapter-pipeline.test.mjs
           node qa/story-ruby-display.test.mjs
           node qa/story-art-briefs.test.mjs
+          node qa/story-150-panel-atlas.test.mjs
+          python3 -m py_compile scripts/ingest-story-chapter-atlas.py
+          python3 -m py_compile scripts/assemble-story-chapter-atlas.py
+          python3 -m py_compile scripts/run-story-chapter-pipeline.py
+      - name: Exercise full-size 150-cell cutter with CI-only synthetic stripes
+        run: |
+          python3 -m pip install --quiet Pillow
+          python3 qa/story-150-atlas-ingest-smoke.py
       - name: Prepare first five chapters together (no fake art)
         run: |
           node scripts/prepare-story-five-chapters.mjs
           node scripts/compile-story-art-briefs.mjs
+          node scripts/compile-story-chapter-atlas.mjs --all
       - name: Verify legacy VOICEVOX references after deduplication
         run: node qa/story-panel-voice-assets.test.mjs
       - name: Archive all 50 stage / 5 chapter production worklists
