@@ -15,6 +15,7 @@ import crypto from 'node:crypto';
 import path from 'node:path';
 import {spawnSync} from 'node:child_process';
 import {mangaForStage} from '../src/story-stage-manga.js';
+import {comicEditionsForStage} from '../src/story-chapter-comic.js';
 import {CAMPAIGN_STAGES} from '../src/campaign-stage-plan.js';
 import {STORY_VOICE_PROFILES,STORY_NARRATOR_PROFILE} from '../src/story-voice-director.js';
 
@@ -39,10 +40,14 @@ if(format==='mp3'&&!dryRun&&spawnSync('ffmpeg',['-version'],{encoding:'utf8'}).s
  throw Error('ffmpeg is required to compress voices (or use --format wav)');
 
 const tasks=stages.flatMap(stage=>{
- const standard=mangaForStage(stage.id,{battleOutcome:{victory:true}}).panels;
- const defeat=stage.kind==='town'?[]:mangaForStage(stage.id,{battleOutcome:{victory:false}})
-  .panels.filter(p=>p.phase==='post');
- const different=[...standard,...defeat];
+ // Production chapters 1-5: synthesize ALL actual comic editions, including
+ // decision, victory, loss and fatal protagonist endings, not just legacy
+ // fixed-panel winning and retreat script. IDs/text/speaker remain cache keys.
+ const different=stage.chapter<=5
+  ?comicEditionsForStage(stage.id).flatMap(edition=>edition.panels)
+  :[...mangaForStage(stage.id,{battleOutcome:{victory:true}}).panels,
+    ...(stage.kind==='town'?[]:mangaForStage(stage.id,{battleOutcome:{victory:false}})
+      .panels.filter(panel=>panel.phase==='post'))];
  const seen=new Set();
  return different.filter(panel=>{
   const voice=STORY_VOICE_PROFILES[panel.characterId]||STORY_NARRATOR_PROFILE;
@@ -73,7 +78,7 @@ if(!Number.isInteger(fallback))throw Error('VOICEVOX has no available voice styl
 let created=0,reused=0,bytes=0;const missingSpeakers=new Set();
 await fs.mkdir(path.join(base,'clips'),{recursive:true});
 const output={engine:root,chapter:chapter??null,stage:stageValue??null,stages:stages.length,panels:tasks.length,
- canonicalStagePanels:stages.length*20,includesDefeatVariants:true,
+ canonicalStagePanels:stages.length*20,includesDefeatVariants:true,includesComicChoicesAndGameover:true,
  format,created:0,reused:0,missingSpeakers:[],files:[]};
 for(const [index,t] of tasks.entries()){
  if(manifest.clips[t.key]){

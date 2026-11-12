@@ -52,11 +52,11 @@ for(let chapter=1;chapter<=20;chapter++){
 const first=comicChapterPlan(1);
 const firstTownPre=comicForStage('c01-s01','pre',{protagonistGender:'male'});
 const firstTownPost=comicForStage('c01-s01','post',{protagonistGender:'male'});
-assert.equal(firstTownPre.panels.length,9,'the capital introduction is authored, not a fixed ten scenes');
+assert.equal(firstTownPre.panels.length,10,'capital introduction uses all ten meaningful authored beats');
 assert.equal(firstTownPost.panels.length,7,'the town epilogue may be shorter');
 assert.equal(firstTownPre.pages[0].rows,5);
 assert.equal(firstTownPost.pages[0].rows,4);
-assert.equal(firstTownPre.pages.reduce((n,p)=>n+p.cellCount,0),9);
+assert.equal(firstTownPre.pages.reduce((n,p)=>n+p.cellCount,0),10);
 assert.equal(firstTownPost.pages.reduce((n,p)=>n+p.cellCount,0),7);
 assert.equal(first.editions.filter(e=>e.phase==='pre').length,10);
 assert.equal(first.editions.filter(e=>e.phase==='post'&&e.edition==='post-victory').length,9);
@@ -85,9 +85,26 @@ assert.ok(ending.edition.includes('ending-release'));
 assert.match(ending.panels.at(-1).text,/解放の朝/);
 const died=comicForStage('c01-s02','post',{battleOutcome:{victory:false,playerCommanderDead:true}});
 assert.notEqual(died.edition,defeated.edition);
-assert.match(died.panels.at(-1).text,/ゲームオーバー/);
-assert.match(died.panels[0].text,/撤退/);
+assert.match(died.panels.at(-1).text,/次へ進まない/);
+assert.match(died.panels[0].text,/戦死/);
+assert.ok(died.panels.every(p=>!p.text.includes('町で編成')),'death is never a town retreat');
 const beforeOutcome=comicForStage('c01-s02','pre',{battleOutcome:{victory:false}});
 assert.ok(beforeOutcome.panels.every((p,i)=>p.text===comicForStage('c01-s02','pre',{}).panels[i].text));
 assert.equal(comicPageAsset('c01-s01','pre',{},1,'unspecified'),null);
 console.log('PASS all 20 chapter plans: ten stages each, dynamic counts, separate victory/defeat/choice/route/ending variants and male/female page paths');
+
+for(let chapter=1;chapter<=5;chapter++){
+ const plan=comicChapterPlan(chapter);
+ for(const edition of plan.editions){
+  assert.equal(edition.pages.length,1,
+   'chapters 1-5 should fit all material of each phase/outcome on one page: '+edition.stageId+' '+edition.edition);
+  assert.ok(edition.pages[0].cellCount<=10);
+ }
+}
+const firstBattle=comicForStage('c01-s02','pre',{protagonistGender:'male'});
+assert.match(firstBattle.panels[0].text,/礼拝堂|魔物/);
+const firstVictory=comicForStage('c01-s02','post',{battleOutcome:{victory:true}});
+assert.match(firstVictory.panels[0].text,/勝利が確認された/);
+const firstDefeat=comicForStage('c01-s02','post',{battleOutcome:{victory:false}});
+assert.ok(!firstDefeat.panels.some(p=>p.text.includes('勝利が確認された')));
+console.log('PASS first five chapters: 10-panel dense sheet packing, canonical plot beats, true endings');

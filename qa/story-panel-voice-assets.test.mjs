@@ -8,7 +8,13 @@ const manifest=JSON.parse(fs.readFileSync(new URL('../audio/voicevox/manifest.js
 assert.equal(manifest.format,2,'preserve the existing voice clip manifest format');
 const clips=manifest.clips;
 const all=Object.values(clips);
-assert.equal(all.length,new Set(all).size,'clips with separate keys should have distinct content hashes');
+// Several panel IDs deliberately speak the same words with the same VOICEVOX
+// speaker. Their manifest keys remain distinct, but sharing ONE byte-identical
+// file is required to avoid filling Git with duplicated audio.
+const uniqueFiles=new Set(all);
+assert.ok(uniqueFiles.size<=all.length);
+assert.ok([...uniqueFiles].every(p=>/^audio\/voicevox\/clips\/[a-f0-9]{16}\.(mp3|wav)$/.test(p)));
+console.log('VOICEVOX manifest clips: '+all.length+' keys → '+uniqueFiles.size+' unique sound files');
 const panelKeys=Object.keys(clips).filter(k=>k.startsWith('story::panel::'));
 let validated=0;
 for(const stage of CAMPAIGN_STAGES){
