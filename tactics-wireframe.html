@@ -8569,7 +8569,7 @@ function updateCameraObstructions(){
  const focuses=TOWN_MODE?[controls.target]:cameraGoalFocuses();
  // Close-range combat needs a clear view across the frustum, not just six
  // translucent canopies intersecting the centre ray.
- const defaultCandidates=closeup?cameraTreeCandidates:cameraTreeCandidates.filter(item=>item.id==='tree_deciduous_001');
+ const defaultCandidates=closeup?cameraTreeCandidates:cameraTreeCandidates.filter(item=>item.id==='tree_deciduous_001'||item.id==='flower_tree_001');
  const newTrees=new Set(selectCameraOccluders(camera.position,controls.target,defaultCandidates,
   {limit:closeup?48:6,padding:closeup?6:.5}).map(tree=>tree.key));
  if(closeup)for(const target of focuses.slice(1)){
