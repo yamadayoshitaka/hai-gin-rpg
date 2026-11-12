@@ -530,6 +530,8 @@ for(const key of [...rebuildKeys,...cosmeticKeys,...angleKeys]){
  const el=$(key);
  el.addEventListener('input',()=>{
   modelChanges[key]=Number(el.value);
+  if(key==='eyeWidth'||key==='eyeHeight')
+   modelChanges.eyeSize=Math.sqrt(modelChanges.eyeWidth*modelChanges.eyeHeight);
   setFaceControlDisplay(key,modelChanges[key]);
   if(angleKeys.includes(key)&&models.get('female')){
    updateFaceFeatureAngles(models.get('female').parts,modelChanges);
