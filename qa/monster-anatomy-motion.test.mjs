@@ -76,6 +76,19 @@ for(const spec of MONSTER_CATALOG){
    animateMonsterModel(model,.31);
    assert.notEqual(p.wingWristL.rotation.y,a,'Wing wrist did not fold '+spec.id);
  }
+ if(spec.id==='m001'){
+   testAngles(p,['earL','earR']);
+   const noseMeshes=[];
+   model.traverse(node=>{if(node.isMesh&&node.name==='wolf-nasal-cartilage')
+     noseMeshes.push(node)});
+   assert.equal(noseMeshes.length,1,'Wolf needs an independent nasal cartilage mesh');
+   startMonsterAction(model,'idle',0);
+   animateMonsterModel(model,.18);
+   const a=p.earL.rotation.z,b=p.earR.rotation.z;
+   assert.notEqual(a,b,'Wolf pinnae must not be rigid copies');
+   animateMonsterModel(model,.54);
+   assert.notEqual(p.earL.rotation.z,a,'Wolf ear pivot must physically animate');
+ }
  if(spec.id==='m015'){
    assert.equal(p.wingElbowL,undefined,'Do not alter humanoid tengu wing rig');
    assert.equal(p.birdAnkleL,undefined,'Do not alter humanoid tengu leg rig');
