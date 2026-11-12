@@ -48,9 +48,12 @@ function actualScalpCandidates(geo,box){
   const sample={p,n,index:i};
   all.push(sample);
   // Extend crown follicle range across the upper back of the head.
-  if(yn>.805&&nz<.26)pools.crown.push(sample);
-  if(yn>.76&&nz>.10)pools['fringe'+side].push(sample);
-  if(Math.abs(nx)>.18&&yn<.87&&nz>-.12)pools['temple'+side].push(sample);
+  if(yn>.825&&nz<.21)pools.crown.push(sample);
+  // True forehead hairline grows from the top cap, never from between the
+  // eyebrows or the cheeks (these generated the disconnected tiny spikes).
+  if(yn>.845&&nz>.105&&yn<.985)pools['fringe'+side].push(sample);
+  if(Math.abs(nx)>.185&&yn>.765&&yn<.92&&nz>-.075)
+   pools['temple'+side].push(sample);
   // Rear/nape roots must originate in the posterior hemisphere.
   // Never fill a sparse rear zone with front scalp vertices.
   if(nz<-.055&&yn>.61)pools['back'+side].push(sample);
@@ -62,8 +65,12 @@ function actualScalpCandidates(geo,box){
   if(pool.length>3)continue;
   const onSide=q=>zone.endsWith('Left')?q.p.x<center.x:q.p.x>=center.x;
   const rear=zone.startsWith('back')||zone.startsWith('nape');
+  const frontal=zone.startsWith('fringe');
+  const temple=zone.startsWith('temple');
   const candidates=all.filter(q=>onSide(q)&&
-   (!rear||q.p.z<center.z-d.z*.04));
+   (!rear||q.p.z<center.z-d.z*.04)&&
+   (!frontal||(q.p.y-box.min.y)/d.y>.83)&&
+   (!temple||(q.p.y-box.min.y)/d.y>.76));
   if(candidates.length) pools[zone]=candidates;
   else{
    // Keep explicit QA failure instead of silently growing "rear" locks
@@ -163,7 +170,7 @@ function hairCutY(zone,box,lengthScale,seed,normalizedX=0){
   .007*Math.sin(seed*2.39996323);
  return box.min.y+d.y*(level+uCut+scatter)/scale;
 }
-function scalpShell(geo,box,color){
+function scalpShell(geo,box,color,{fullBody=false}={}){
  const src=geo.getAttribute('position'),idx=geo.index;
  const n=idx?idx.count:src.count,d=box.getSize(new THREE.Vector3());
  const normals=geo.getAttribute('normal'),verts=[],smoothNormals=[];
@@ -178,9 +185,11 @@ function scalpShell(geo,box,color){
   // real triangles to hide bald skull regions and sparse hair roots.
   // Hair-colored cap covers actual skull triangles right down to
   // the rear nape; no floating rectangle across the rear neck.
-  const yCut=box.min.y+d.y*(zNorm>.10?.795:
-   zNorm<-.035?.535:
-   Math.abs((mid.x-center.x)/d.x)>.19?.565:.605);
+  // The front cap is ONLY a scalp covering, never a second set of little
+  // triangles growing from the forehead, eyebrow or glabella.
+  const yCut=box.min.y+d.y*(zNorm>.10?.865:
+   zNorm<-.035?.58:
+   Math.abs((mid.x-center.x)/d.x)>.19?.68:.71);
   if(p.some(vertex=>vertex.y<yCut))continue;
   // The scalp shell uses the donor topology, with a tiny offset only.
   for(let j=0;j<3;j++){
@@ -203,7 +212,10 @@ function scalpShell(geo,box,color){
      z<center.z-d.z*.035)rearCandidates.push(f3(x,y,z));
  }
  // Overlap fine rear underlocks, rather than 52 coarse strips.
- const undercoatStrips=rearCandidates.length?88:0;
+ // The 88 old rear strips ended at HEAD length while the v22 long back
+ // drape reached the shoulders: their overlapping cuts made two obvious
+ // layers and a stair-step fringe on the back. One system owns the hair.
+ const undercoatStrips=!fullBody&&rearCandidates.length?88:0;
  const stripSegments=12,stripWidths=[],tipHeights=[];
  for(let k=0;k<undercoatStrips;k++){
   const u=(k+.5)/undercoatStrips,side=u<.5?-1:1;
@@ -295,7 +307,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  root.userData.hairStyleName=style.label;
  root.userData.part=style.part;
  root.userData.whorlPosition=whorl.toArray();
- const cap=scalpShell(head.geometry,box,color);root.add(cap);
+ const cap=scalpShell(head.geometry,box,color,{fullBody:!!bodyCollisionResolver});root.add(cap);
  const baseCount=clamp(Math.round(count),48,2400),segments=11;
  // Allocate EXTRA fine roots at the forehead without removing the existing
  // crown, rear and nape locks. Legacy face-test count stays unchanged at 1x.
@@ -392,8 +404,10 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   // of a flat horizontal 'home haircut' line above both eyebrows.
   const partSlope=(wigRoot.x-center.x)/d.x;
   const browLimit=box.min.y+d.y*
-   (.711+.035*partSlope+.019*cutPhase+.006*wave);
-  const bangLength=d.y*(.09+.034*cutPhase)*clamp(lengthScale,.55,1.5);
+   (.700+.026*partSlope+.017*cutPhase+.004*wave);
+  // Long feathered bangs from the real high hairline to the eyebrow level.
+  // The old 0.09-head-height cap ended halfway down the forehead.
+  const bangLength=d.y*(.185+.035*cutPhase)*clamp(lengthScale,.55,1.5);
   const length=(fringe||overFace)?
    Math.max(d.y*.008,Math.min(bangLength,wigRoot.y-browLimit)):
    d.y*(longFactor+fract(i*.381966)*.13)*clamp(lengthScale,.55,1.5);
@@ -510,10 +524,10 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   // Explicit contact with the ACTUAL front facial triangles. For hair
   // falling over the central eye/cheek region, first part it outwards.
   const yNorm=(p.y-box.min.y)/d.y;
-  if(p.z>center.z+d.z*.025&&yNorm>.40&&yNorm<.87){
+  if(p.z>center.z+d.z*.025&&yNorm>.40&&yNorm<.82){
    const contactSide=Math.sign(p.x-whorl.x)||1;
-   if(yNorm<.84&&Math.abs(p.x-center.x)<d.x*.15){
-    p.x=center.x+contactSide*d.x*.15;
+   if(yNorm<.75&&Math.abs(p.x-center.x)<d.x*.055){
+    p.x=center.x+contactSide*d.x*.055;
     faceContacts++;collisions++;
     if((zone.startsWith('fringe')||overFace)&&yNorm>.68)
      glabellaClearanceEvents++;
@@ -631,9 +645,9 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
      // The rendered edge, not only its centre guide, must clear the brow/
      // glabella central part. Root vertices j=0 remain on true scalp.
      if(j>0&&(strand.fringe||strand.overFace)&&
-       vy>box.min.y+d.y*.66&&vy<box.min.y+d.y*.86&&
-       vz>center.z+d.z*.025&&Math.abs(vx-center.x)<d.x*.123){
-      vx=center.x+(strand.partSide||strand.side||1)*d.x*.123;
+       vy>box.min.y+d.y*.66&&vy<box.min.y+d.y*.75&&
+       vz>center.z+d.z*.025&&Math.abs(vx-center.x)<d.x*.055){
+      vx=center.x+(strand.partSide||strand.side||1)*d.x*.055;
       glabellaClearanceEvents++;
      }
      // The guide centre may be legal while the wide ribbon edge penetrates
@@ -718,6 +732,8 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   strandRibbonOrientation:'guide-tangent-on-scalp',
   crownRootRatio:.20,posteriorRootRatio:.51,
   undercoatLockCount:cap.userData.rearUndercoatStripCount,
+  singleRearLayer:!!bodyCollisionResolver,
+  fringeRootAboveHairline:true,fullLengthEyebrowFringe:true,
   hairStrandWidthFraction:.0121,fullerCrownBackVolume:true,
   fullBodyTriangleContactBeforeProxy:true,neckAndShoulderDrape:true,
   fullBodyShoulderExtension:!!bodyCollisionResolver,
