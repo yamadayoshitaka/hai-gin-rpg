@@ -35,7 +35,7 @@ for(const e of inventory.editions){
  assert.equal(createHash('sha256').update(sheet).digest('hex'),e.sha256);
  for(let i=0;i<e.panelCount;i++){
   const p=e.panels[i],scene=comic.panels[i];
-  assert.equal(scene.id,p.id,'Wrong scene order '+e.edition);
+  assert.equal(scene.id,'c01-s01-m'+Number(p.id.match(/-m(\d+)$/)?.[1]),'Wrong canonical scene order '+e.edition);
   assert.equal('./'+p.path,registeredStoryPanelAsset(scene),'Wrong gender/outcome art path');
   assert(!usedPaths.has(p.path),'Same image path assigned to two cuts');
   usedPaths.add(p.path);
