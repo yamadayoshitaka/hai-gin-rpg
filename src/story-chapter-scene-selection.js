@@ -15,28 +15,28 @@ export const STORY_COMIC_SCENE_SELECTION=Object.freeze({
   post:Object.freeze([6,7,8,9,10])
  }),
  'c02-s05':Object.freeze({
-  // The alternate decision adds one panel. Keep the entire edition on ONE
-  // 2x5 sheet: nine essential beats + one branch-specific beat.
-  pre:Object.freeze([1,2,3,4,5,11,12,13,14]),
-  post:Object.freeze([6,7,8,9,16,17,18,19,10])
+  // Compact base story: eight pre/seven post beats, with one additional
+  // authored choice scene when the player selects a branch.
+  pre:Object.freeze([1,2,3,4,5,11,13,15]),
+  post:Object.freeze([6,7,8,9,16,19,10])
  }),
  'c03-s05':Object.freeze({
   // The alternate decision adds one panel. Keep the entire edition on ONE
   // 2x5 sheet: nine essential beats + one branch-specific beat.
-  pre:Object.freeze([1,2,3,4,5,11,12,13,14]),
-  post:Object.freeze([6,7,8,9,16,17,18,19,10])
+  pre:Object.freeze([1,2,3,4,5,11,13,15]),
+  post:Object.freeze([6,7,8,9,16,19,10])
  }),
  'c04-s05':Object.freeze({
   // The alternate decision adds one panel. Keep the entire edition on ONE
   // 2x5 sheet: nine essential beats + one branch-specific beat.
-  pre:Object.freeze([1,2,3,4,5,11,12,13,14]),
-  post:Object.freeze([6,7,8,9,16,17,18,19,10])
+  pre:Object.freeze([1,2,3,4,5,11,13,15]),
+  post:Object.freeze([6,7,8,9,16,19,10])
  }),
  'c05-s05':Object.freeze({
   // The alternate decision adds one panel. Keep the entire edition on ONE
   // 2x5 sheet: nine essential beats + one branch-specific beat.
-  pre:Object.freeze([1,2,3,4,5,11,12,13,14]),
-  post:Object.freeze([6,7,8,9,16,17,18,19,10])
+  pre:Object.freeze([1,2,3,4,5,11,13,15]),
+  post:Object.freeze([6,7,8,9,16,19,10])
  })
 });
 
@@ -45,10 +45,14 @@ export const STORY_COMIC_SCENE_SELECTION=Object.freeze({
 // each of the following nine stages = 8 pre + 7 verified outcome.
 // This ONLY changes comic pacing. Victory, defeat and commander death
 // still have distinct post-event editions and must NOT reuse one another's art.
-const CHAPTER_ONE_150_SCENE_SELECTION=Object.freeze(
- Object.fromEntries(Array.from({length:9},(_,i)=>{
-  const id='c01-s'+String(i+2).padStart(2,'0');
-  return [id,Object.freeze({
+const FIVE_CHAPTER_150_SCENE_SELECTION=Object.freeze(
+ Object.fromEntries(Array.from({length:50},(_,i)=>{
+  const chapter=Math.floor(i/10)+1,slot=i%10+1;
+  const id='c'+String(chapter).padStart(2,'0')+'-s'+String(slot).padStart(2,'0');
+  return [id,Object.freeze(slot===1?{
+   pre:Object.freeze([1,2,3,4,5,11,12,13,14,15]),
+   post:Object.freeze([6,7,8,9,10])
+  }:{
    pre:Object.freeze([1,2,3,4,5,11,13,15]),
    post:Object.freeze([6,7,8,9,16,19,10])
   })];
@@ -58,7 +62,7 @@ const CHAPTER_ONE_150_SCENE_SELECTION=Object.freeze(
 export function selectComicBasePanels(story,phase){
  if(phase!=='pre'&&phase!=='post')throw Error('Invalid comic phase');
  const candidates=story.panels.filter(p=>p.phase===phase);
- const ids=(STORY_COMIC_SCENE_SELECTION[story.id]||CHAPTER_ONE_150_SCENE_SELECTION[story.id])?.[phase];
+ const ids=(STORY_COMIC_SCENE_SELECTION[story.id]||FIVE_CHAPTER_150_SCENE_SELECTION[story.id])?.[phase];
  if(ids===undefined)return candidates;
  if(!Array.isArray(ids)||ids.length<1||new Set(ids).size!==ids.length)
   throw Error('Invalid authored manga scene selection for '+story.id+' '+phase);
