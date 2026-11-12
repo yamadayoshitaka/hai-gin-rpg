@@ -71,7 +71,10 @@ assert.match(html,/requestSquadRecovery\(target\.targetId\)/);
 assert.doesNotMatch(html,/queueMultipleSquadRecovery/,'Support cannot multi-select');
 assert.doesNotMatch(html,/commandDurationSeconds/,'No order-duration chooser');
 assert.doesNotMatch(html,/commandSoldierAmount|chosenCount|countValues|quickCountChoices'/,'No soldier-count selector');
-assert.match(html,/const issue=mode=>\{if\(issueSquadOrder\(mode\)\)closeSquadTactics\(\)\}/,'Every order applies to an entire squad');
+assert.match(html,/const issue=mode=>queueDirectOrder\(mode\)/,
+ 'Every order enters a single squad-wide confirmation flow without soldier counts');
+assert.match(html,/if\(issueSquadOrder\(mode\)\)\{\s*pendingDirectOrder=null/,
+ 'Only the confirmed order should be issued to the selected squad');
 const simulation=readFileSync(new URL('../src/mass-battle-grid-sim.js',import.meta.url),'utf8');
 assert.doesNotMatch(simulation,/options\.count/,'The simulation no longer allows per-soldier command amounts');
 assert.match(simulation,/this\.squadCommands\.set\(id,command\)/,'Orders are stored for the whole squad');
