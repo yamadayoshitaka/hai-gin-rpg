@@ -53,7 +53,7 @@ assert.match(html,/if\(ok\)\{[\s\S]*?closeSquadTactics\(true\);[\s\S]*?return tr
 // The existing 5-minute tactical bank still counts down but cannot resume combat mid-selection.
 assert.match(html,/if\(!paused\)setBattlePaused\(true\)/,
  'Opening the command selector pauses even after the tactical bank expires');
-assert.match(html,/enterCommandOverview\(\); \/\/ Wide, static camera wins/,
+assert.match(html,/enterCommandOverview\(\);/,
  'Opening a squad order forces the full-map overview');
 assert.match(html,/commandOverviewLocked=true/);
 assert.match(html,/controls\.enabled=false/);
