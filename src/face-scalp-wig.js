@@ -143,11 +143,15 @@ function createHeadEnvelope(geometry,box){
 }
 function hairCutY(zone,box,lengthScale,seed){
  const d=box.getSize(new THREE.Vector3()),scale=clamp(lengthScale,.55,1.5);
- const level=zone.startsWith('fringe')?.765:
-  zone.startsWith('nape')?.23:
-  zone.startsWith('temple')?.14:
-  zone.startsWith('back')?.10:.22;
- return box.min.y+d.y*(level+(.015*fract(seed*1.618)))/scale;
+ // Natural point-cut ends: alternate long/short locks and add small,
+ // deterministic length offsets; no 9-region flat straight shelf.
+ const level=zone.startsWith('fringe')?.77:
+  zone.startsWith('nape')?.17:
+  zone.startsWith('temple')?.32:
+  zone.startsWith('back')?.16:.27;
+ const scatter=(fract(seed*.75487766)*.022+
+  .018*Math.sin(seed*2.39996323));
+ return box.min.y+d.y*(level+scatter)/scale;
 }
 function scalpShell(geo,box,color){
  const src=geo.getAttribute('position'),idx=geo.index;
@@ -267,19 +271,27 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    zone.startsWith('temple')?.54:back?.63:.59;
   // Fringe must terminate above the eyebrows, never obscure the eyes,
   // nose or mouth, even at the maximum hair-length slider value.
-  const browLimit=box.min.y+d.y*.758;
-  const bangLength=d.y*(.09+fract(i*.381966)*.045)*clamp(lengthScale,.55,1.5);
+  // Salon-cut contour: varying length, split-fringe silhouette and shorter
+  // face frame with no harsh line across the forehead.
+  const cutPhase=fract(i*.61803398875);
+  const wave=Math.sin(i*2.39996323);
+  const browLimit=box.min.y+d.y*(.750+.043*cutPhase+.009*wave);
+  const bangLength=d.y*(.09+.034*cutPhase)*clamp(lengthScale,.55,1.5);
   const length=(fringe||overFace)?
    Math.max(d.y*.008,Math.min(bangLength,wigRoot.y-browLimit)):
    d.y*(longFactor+fract(i*.381966)*.13)*clamp(lengthScale,.55,1.5);
   const rest=[],points=[],vel=[];
   const trimY=Math.min(wigRoot.y-d.y*.012,
    (fringe||overFace)?browLimit:hairCutY(zone,box,lengthScale,i));
-  const guide=(fringe||overFace)?f3(side*.08,0,1):
-   back?f3(side*.18,0,-1):
-   f3(side,0,zone.startsWith('temple')?-.18:-.2);
+  // A side-part and long, face-framing layers instead of radial spikes.
+  // Rear locks stay on the posterior hemisphere for their full length.
+  const guide=(fringe||overFace)?f3(side*.24,0,1):
+   back?f3(side*.12,0,-1):
+   f3(side,0,zone.startsWith('temple')?-.22:-.30);
   guide.normalize();
-  const origin=f3(wigRoot.x-center.x,0,wigRoot.z-center.z);
+  const scalpCenter=radialScalp.radialCenter;
+  const origin=f3(wigRoot.x-scalpCenter.x,0,wigRoot.z-scalpCenter.z);
+  const rootRadius=origin.length();
   if(origin.lengthSq()<d.x*d.x*.0009)origin.copy(guide);
   else origin.normalize();
   // Pipeline: GROW radially from actual root normals, RELAX each segment
@@ -288,14 +300,22 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    const t=j/segments;
    // Forehead fringe falls vertically, without horizontal root-to-tip spikes.
    const direction=origin.clone().lerp(guide,
-    (fringe||overFace?.16:.78)*t*t).normalize();
+    (fringe||overFace?.22:.38)*t*t).normalize();
    const y=Math.max(trimY,wigRoot.y-length*t);
-   const shell=radialScalp(y,direction);
-   const gap=d.x*(.007+.015*t);
-   const targetRadius=shell+gap+d.x*.014*t*t;
+   const shell=radialScalp.radius(y,direction);
+   // Hair lies at the actual cranial surface (thin covering), then moves
+   // outward only enough to retain volume. The prior formula added up to
+   // 3.6% of face width, creating the helmet/side-bulge in the screenshot.
+   const gap=d.x*(.002+.003*t);
+   const desiredRadius=shell+gap;
+   // Root-to-first-segment interpolation avoids radial jumps/spikes on
+   // sparse head geometry, particularly around the rear crown.
+   const growEase=Math.min(1,t*3);
+   const targetRadius=THREE.MathUtils.lerp(rootRadius,desiredRadius,
+    growEase*growEase*(3-2*growEase));
    const p=j===0?wigRoot.clone():f3(
-    center.x+direction.x*targetRadius,y,
-    center.z+direction.z*targetRadius);
+    scalpCenter.x+direction.x*targetRadius,y,
+    scalpCenter.z+direction.z*targetRadius);
    rest.push(p);points.push(p.clone());vel.push(new THREE.Vector3());
   }
   strands.push({root:wigRoot,rest,points,vel,fringe,side,
@@ -332,7 +352,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  locks.userData.rootedOnRealScalp=true;
  locks.userData.lockCount=lockCount;
  root.add(locks);
- const half=d.x*.0066;
+ const half=d.x*.0080;
  // The visible mesh retains all 1440+ locks, but only ~320 master locks
  // require full constraint and capsule solving on Android.
  const guideStride=Math.max(1,Math.ceil(lockCount/320));
@@ -368,7 +388,10 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
     // Fine ambient sway for strands not simulated with a dynamic guide.
     const sway=i%guideStride?
      Math.sin(elapsed*1.2+i*.37+j*.23)*d.x*.0008*t*t:0;
-    const width=half*(1-.86*t)*(.78+.34*fract(i*.35));
+    // Full thick clumps near scalp and mid-length; point-cut taper only
+   // in the last 15% instead of uniformly thinning into wire-like ends.
+   const tip=1-.90*Math.pow(t,8);
+   const width=half*tip*(.78+.34*fract(i*.35));
     for(let k=0;k<4;k++){
      const at=(i*(segments+1)*4+j*4+k)*3;
      // Two crossed hair ribbons: visible at frontal and side angles.
@@ -424,6 +447,10 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   growthStages:['grow','relax','collide','trim'],
   faceTrimmedStrands,faceCurtainPrevention:true,
   smoothScalpNormals:true,verticalForeheadDrape:true,
+  hairShape:'head-hugging-salon-layered-pointcut',
+  rearRootPolicy:'actual-posterior-scalp-only',
+  scalpRadialProfile:'smoothed-72pct-multi-vertex-envelope',
+  pointCutEnds:true,
   scalpCoverage:'continuous-colored-triangle-cap-plus-locks',
   pointCount:lockCount*(segments+1),realScalpCandidateCount:scalpCandidates.length,
   rootDistribution:{...zoneCounts},
@@ -446,6 +473,11 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   return WIG_ZONE_WEIGHTS.map(([zone])=>strands.find(s=>s.zone===zone))
    .filter(Boolean).map(s=>({zone:s.zone,trimY:s.trimY,
     minY:Math.min(...s.rest.map(p=>p.y))}));
+ },getStyleSamples(){
+  return WIG_ZONE_WEIGHTS.map(([zone])=>strands.filter(s=>s.zone===zone)
+   .slice(0,12).map(s=>({zone,root:s.root.toArray(),
+    firstStep:s.rest[1].toArray(),tip:s.rest.at(-1).toArray(),
+    trimY:s.trimY,overFace:s.overFace}))).flat();
  },getRootSamples(){
   // Return a representative root from every scalp region for QA,
   // including the nape/back/temples that were previously completely bald.
