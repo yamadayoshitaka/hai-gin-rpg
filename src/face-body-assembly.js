@@ -11,56 +11,118 @@ const finite=x=>Number.isFinite(x);
 const bounds=root=>new THREE.Box3().setFromObject(root);
 const clamp=(x,a,b)=>Math.min(b,Math.max(a,x));
 
+/**
+ * Clip REAL mesh triangles at a neck plane, interpolating every PBR vertex
+ * attribute at the intersection. Deleting any intersecting polygon in full
+ * produced the severe zigzag collar seen in Chromium screenshots.
+ *
+ * Vertices are unshared on this export-only cloned geometry. Each face
+ * retains its material group and all UV / normal / vertex-colour data.
+ */
+export function clipMeshGeometryAtWorldNeck(mesh,cutY,{keepBelow=true}={}){
+ if(!mesh?.isMesh||!mesh.geometry?.getAttribute('position'))
+  throw Error('Real triangle mesh required for neck cut');
+ mesh.updateWorldMatrix(true,false);
+ const geo=mesh.geometry,attrNames=Object.keys(geo.attributes);
+ const originalIndex=geo.getIndex(),pos=geo.getAttribute('position');
+ const triCount=originalIndex?originalIndex.count:pos.count;
+ if(triCount%3!==0)throw Error('Triangle-only donor geometry required');
+ const groups=geo.groups?.length?geo.groups:
+  [{start:0,count:triCount,materialIndex:0}];
+ const transformed=new Float64Array(pos.count),world=V();
+ for(let i=0;i<pos.count;i++)
+  transformed[i]=world.fromBufferAttribute(pos,i).applyMatrix4(mesh.matrixWorld).y;
+ const attrs=Object.fromEntries(attrNames.map(name=>[name,geo.getAttribute(name)]));
+ const output=Object.fromEntries(attrNames.map(name=>[name,[]]));
+ const groupRanges=[],indexOut=[];
+ let removed=0,kept=0,intersections=0,created=0;
+ const readVertex=i=>{
+  const values={};
+  for(const [name,attr] of Object.entries(attrs)){
+   const vals=[];
+   for(let j=0;j<attr.itemSize;j++)vals.push(attr.getComponent(i,j));
+   values[name]=vals;
+  }
+  return {y:transformed[i],values};
+ };
+ const inside=p=>keepBelow?p.y<=cutY+1e-8:p.y>=cutY-1e-8;
+ const intersect=(left,right)=>{
+  const t=Math.max(0,Math.min(1,(cutY-left.y)/(right.y-left.y)));
+  const values={};
+  for(const name of attrNames){
+   const a=left.values[name],b=right.values[name];
+   values[name]=a.map((v,j)=>v+(b[j]-v)*t);
+  }
+  intersections++;
+  return {y:cutY,values};
+ };
+ const emit=point=>{
+  for(const name of attrNames)output[name].push(...point.values[name]);
+  indexOut.push(indexOut.length);
+ };
+ for(const group of groups){
+  const begin=indexOut.length;
+  for(let i=group.start;i+2<Math.min(triCount,group.start+group.count);i+=3){
+   const triangle=[0,1,2].map(j=>readVertex(
+    originalIndex?originalIndex.getX(i+j):i+j));
+   let polygon=[];
+   for(let j=0;j<3;j++){
+    const from=triangle[j],to=triangle[(j+1)%3];
+    const fromIn=inside(from),toIn=inside(to);
+    if(fromIn&&toIn)polygon.push(to);
+    else if(fromIn&&!toIn)polygon.push(intersect(from,to));
+    else if(!fromIn&&toIn)polygon.push(intersect(from,to),to);
+   }
+   if(polygon.length<3){removed++;continue;}
+   if(polygon.length!==3||triangle.some(v=>!inside(v)))removed++;
+   for(let j=1;j+1<polygon.length;j++){
+    emit(polygon[0]);emit(polygon[j]);emit(polygon[j+1]);
+    kept++;created++;
+   }
+  }
+  if(indexOut.length>begin)groupRanges.push({
+   start:begin,count:indexOut.length-begin,
+   materialIndex:group.materialIndex||0
+  });
+ }
+ const clipped=new THREE.BufferGeometry();
+ for(const name of attrNames){
+  const original=attrs[name],numbers=output[name];
+  // Vertex colors and UVs require interpolation, so use Float32Arrays.
+  const buffer=new THREE.Float32BufferAttribute(numbers,original.itemSize);
+  clipped.setAttribute(name,buffer);
+ }
+ clipped.setIndex(indexOut);clipped.clearGroups();
+ for(const g of groupRanges)clipped.addGroup(g.start,g.count,g.materialIndex);
+ clipped.computeBoundingBox();clipped.computeBoundingSphere();
+ return {geometry:clipped,removedTriangles:removed,
+  keptTriangles:kept,intersectionVertices:intersections,
+  createdTriangles:created};
+}
 function keepBodyBelowNeck(root,cutY){
  root.updateWorldMatrix(true,true);
  let originalTriangles=0,keptTriangles=0,removedTriangles=0;
- let keptMeshes=0;
- const origin=V();
+ let intersectionVertices=0,keptMeshes=0;
  root.traverse(mesh=>{
   if(!mesh.isMesh||!mesh.geometry?.getAttribute('position'))return;
-  const geometry=mesh.geometry;
-  const pos=geometry.getAttribute('position'),index=geometry.getIndex();
-  const originalCount=index?index.count:pos.count;
-  if(originalCount%3)throw Error('Triangle body geometry required');
-  originalTriangles+=originalCount/3;
-  const heights=new Float64Array(pos.count);
-  for(let i=0;i<pos.count;i++)
-   heights[i]=origin.fromBufferAttribute(pos,i).applyMatrix4(mesh.matrixWorld).y;
-  const groups=geometry.groups?.length?geometry.groups:
-   [{start:0,count:originalCount,materialIndex:0}];
-  const kept=[],newGroups=[];
-  for(const group of groups){
-   const start=kept.length;
-   const end=Math.min(originalCount,group.start+group.count);
-   for(let i=group.start;i+2<end;i+=3){
-    const i0=index?index.getX(i):i;
-    const i1=index?index.getX(i+1):i+1;
-    const i2=index?index.getX(i+2):i+2;
-    // The independent head overlaps the seam and masks crossing triangles.
-    if(Math.max(heights[i0],heights[i1],heights[i2])>cutY){
-     removedTriangles++;continue;
-    }
-    kept.push(i0,i1,i2);keptTriangles++;
-   }
-   if(kept.length>start)newGroups.push({start,count:kept.length-start,
-    materialIndex:group.materialIndex||0});
-  }
-  const changed=geometry.clone();
-  changed.setIndex(kept);
-  changed.clearGroups();
-  for(const group of newGroups)changed.addGroup(group.start,group.count,group.materialIndex);
-  changed.computeBoundingBox();changed.computeBoundingSphere();
-  mesh.geometry=changed;
+  const pos=mesh.geometry.getAttribute('position');
+  const idx=mesh.geometry.getIndex();
+  originalTriangles+=(idx?idx.count:pos.count)/3;
+  const cut=clipMeshGeometryAtWorldNeck(mesh,cutY,{keepBelow:true});
+  mesh.geometry=cut.geometry;
   mesh.material=Array.isArray(mesh.material)?
    mesh.material.map(m=>m?.clone()||m):mesh.material?.clone();
-  mesh.visible=kept.length>0;
+  mesh.visible=cut.keptTriangles>0;
   if(mesh.visible)keptMeshes++;
+  keptTriangles+=cut.keptTriangles;removedTriangles+=cut.removedTriangles;
+  intersectionVertices+=cut.intersectionVertices;
   mesh.userData.clippedDonorHead=true;
  });
- if(!keptMeshes||!removedTriangles)throw Error('Actual body head could not be trimmed');
- return {originalTriangles,keptTriangles,removedTriangles,keptMeshes};
+ if(!keptMeshes||!removedTriangles)
+  throw Error('Actual body head could not be trimmed');
+ return {originalTriangles,keptTriangles,removedTriangles,keptMeshes,
+  intersectionVertices,clipMethod:'interpolated-plane-triangles'};
 }
-
 /**
  * Head-local body surface: front+rear z at the actual imported body mesh.
  * Rows/columns are an acceleration index, not an ellipsoid approximation.
@@ -155,39 +217,17 @@ export function buildBodyDepthCollision(bodyRoot,headMesh,{clearance=.006}={}){
 export function removeHeadBustBelowNeck(face,cutY){
  if(!face?.isMesh||!Number.isFinite(cutY))
   throw Error('Real head and neck-cut plane required');
- face.updateWorldMatrix(true,false);
- const geo=face.geometry,p=geo.getAttribute('position'),idx=geo.getIndex();
- const count=idx?idx.count:p.count,groups=geo.groups?.length?geo.groups:
-  [{start:0,count,materialIndex:0}];
- const heights=new Float64Array(p.count),v=V();
- for(let i=0;i<p.count;i++)
-  heights[i]=v.fromBufferAttribute(p,i).applyMatrix4(face.matrixWorld).y;
- const triangles=[],newGroups=[];
- let removed=0;
- for(const group of groups){
-  const start=triangles.length;
-  for(let j=group.start;j+2<Math.min(group.start+group.count,count);j+=3){
-   const a=idx?idx.getX(j):j,b=idx?idx.getX(j+1):j+1,
-    c=idx?idx.getX(j+2):j+2;
-   if(Math.min(heights[a],heights[b],heights[c])<cutY){
-    removed++;continue;
-   }
-   triangles.push(a,b,c);
-  }
-  if(triangles.length>start)newGroups.push({
-   start,count:triangles.length-start,materialIndex:group.materialIndex||0
-  });
- }
- if(removed===0||triangles.length<30)
+ const clip=clipMeshGeometryAtWorldNeck(face,cutY,{keepBelow:false});
+ if(clip.removedTriangles===0||clip.keptTriangles<10)
   throw Error('Head bust could not be cropped without damaging the face');
- const copy=geo.clone();copy.setIndex(triangles);copy.clearGroups();
- for(const g of newGroups)copy.addGroup(g.start,g.count,g.materialIndex);
- copy.computeBoundingBox();copy.computeBoundingSphere();
- face.geometry=copy;
+ face.geometry=clip.geometry;
  face.userData.bustRemovedAtNeck=true;
- face.userData.bustTrianglesRemoved=removed;
- return {removedTriangles:removed,remainingTriangles:triangles.length/3,
-  cutY};
+ face.userData.bustTrianglesRemoved=clip.removedTriangles;
+ face.userData.neckIntersectionVertices=clip.intersectionVertices;
+ return {removedTriangles:clip.removedTriangles,
+  remainingTriangles:clip.keptTriangles,
+  cutY,intersectionVertices:clip.intersectionVertices,
+  clipMethod:'interpolated-plane-triangles'};
 }
 export function attachIndependentHeadToBody(headModel,bodySource,{
  outfitSource=null,characterId='hero-girl-01',armor='#c9cbd3',cloth='#263958'
