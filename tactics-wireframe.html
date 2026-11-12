@@ -7032,7 +7032,7 @@ function buildSquadQuickCommands(){
   heading('号令 · 対応部隊全員（統率Lvに応じた再発行間隔）');
   add('⚔ 突撃','charge',()=>beginCircleTargetSelection('attack'),{effect:orderEffect('charge')});
   add('✚ 支援','heal_target',()=>beginCircleTargetSelection('support'),{effect:orderEffect('support')});
-  add('🛡 防御','defend',()=>issue('defend'),{effect:orderEffect('defend')});
+  add('🛡 守備','defend',()=>issue('defend'),{effect:orderEffect('defend')});
   add('⏸ 待機','hold',()=>issue('hold'),{effect:orderEffect('hold')});
   add('↘ 退却','retreat',()=>issue('retreat'),{effect:orderEffect('retreat')});
   add('★ 推奨号令','recommend_order',()=>advice.order==='charge'?beginCircleTargetSelection('attack'):issue(advice.order),{effect:orderEffect(advice.order)});
