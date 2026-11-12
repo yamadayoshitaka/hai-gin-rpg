@@ -1858,3 +1858,28 @@ test('v35: mobile body studio exposes all selectors linked to live 3D model',()=
  assert.match(html,/wardrobe\?\.attachActor\(next\.root\)/);
  assert.match(html,/wardrobe\.setSelection\(selectedStudio\)/);
 });
+
+test('v35 cornea and iris are never hidden behind the original skin at any eye vertex',()=>{
+ const model=makeIndependentFaceMaster(fixture().source,'female',{femaleControls:{
+  eyeWidth:1.17,eyeHeight:1.12,irisDiameter:1.15,eyeDepth:-.12
+ }});
+ const sampler=createFastFaceSurfaceSampler(model.face.geometry);
+ const radius=model.face.geometry.boundingBox.getSize(new THREE.Vector3()).x*.052;
+ for(const side of ['LEFT','RIGHT']){
+  const eye=model.parts.getObjectByName(side+'_ORBITAL_EYEBALL');
+  const iris=model.parts.getObjectByName(side+'_CURVED_IRIS');
+  const pupil=model.parts.getObjectByName(side+'_CURVED_PUPIL');
+  for(const part of [eye,iris,pupil]){
+   const positions=part.geometry.getAttribute('position');
+   for(let i=0;i<positions.count;i+=13){
+    const skin=sampler.query(positions.getX(i),positions.getY(i));
+    if(skin===null)continue;
+    assert.ok(positions.getZ(i)>skin+radius*.017,
+     part.name+' must sit in front of closed donor socket skin');
+   }
+  }
+  assert.ok(pupil.userData.circularProjectedRadius>radius*.18,
+   'Black pupil must be noticeably larger without clipping');
+ }
+ assert.equal(model.face.userData.softNaturalLipTint,true);
+});
