@@ -98,8 +98,8 @@ async function expectCenteredFaceSliders(page,gender){
   const original=await page.evaluate(()=>window.__faceMasterQA());
   if(!original.female?.detailedParts?.smoothCornealCore||
       original.female?.detailedParts?.eyeCoreSkinBlendPower!==4||
-      !original.female?.detailedParts?.eyeAnteriorClearanceRatios?.every(v=>v>.60))
-    throw Error('v30 smooth corneal core or anterior eye relief absent: '+JSON.stringify(original.female?.detailedParts));
+      !original.female?.detailedParts?.eyeAnteriorClearanceRatios?.every(v=>v>.22&&v<.48))
+    throw Error('v34 eyeliner-seated corneal relief absent or too protruding: '+JSON.stringify(original.female?.detailedParts));
    if(!original.savedNoseJawApplied||
      original.savedNoseJawDefaults?.jawSharpness!==5||
      original.savedNoseJawDefaults?.nostrilCover!==2||
@@ -697,9 +697,9 @@ async function expectCenteredFaceSliders(page,gender){
    if(!info.wig?.transparentExactHeadWigBase||
       !info.wig?.trueScalpRibbonVertexCollision||
       info.wig?.wigBaseMaterialOpacity!==0||
-      info.wig?.rootScalpLiftFraction<.015||
-      info.wig?.hairStrandWidthFraction<.014)
-    throw Error('Wig roots/ribbon still buried under copied scalp: '+
+      info.wig?.rootScalpLiftFraction<.012||
+      info.wig?.hairStrandWidthFraction<.013)
+    throw Error('Compact wig roots/ribbons buried or too thin: '+
      JSON.stringify(info.wig));
    const baseStart=await hero.evaluate(()=>{
     const p=window.__heroineBodyPreview.getWig()
@@ -882,12 +882,20 @@ async function expectCenteredFaceSliders(page,gender){
    }));
    await hero.close();
   }
+  // A selector inside a collapsed <details> is correctly invisible on
+  // mobile. Open the category as a user would before choosing its preset.
+  async function selectPartOption(page,id,value){
+   const field=page.locator(id);
+   const panel=field.locator('xpath=ancestor::details[1]');
+   if(!await panel.evaluate(el=>el.open))await panel.locator('summary').click();
+   await field.selectOption(value);
+  }
   // v32 public UI is selection-only; legacy sliders are intentionally
   // confined to ?qa=legacy for regression compatibility.
   {
    const modern=await browser.newPage({viewport:{width:412,height:844}});
    const modernErrors=[];modern.on('pageerror',e=>modernErrors.push(e.message));
-   await modern.goto('http://127.0.0.1:8765/face-mesh-studio.html?gender=female&v=33',
+   await modern.goto('http://127.0.0.1:8765/face-mesh-studio.html?gender=female&v=34',
     {waitUntil:'domcontentloaded',timeout:65000});
    await modern.waitForFunction(()=>window.__faceMasterQA?.().loaded===true,
     null,{timeout:100000});
@@ -917,7 +925,7 @@ async function expectCenteredFaceSliders(page,gender){
    for(const group of ['Face','Eye','Nose','Mouth','Hair','Makeup'])
     if(await modern.locator('#v32Male'+group+' option').count()!==(group==='Hair'?13:10))
      throw Error('v32 male ten-option mesh category missing: '+group);
-   await modern.locator('#v32MaleFace').selectOption('5');
+   await selectPartOption(modern,'#v32MaleFace','5');
    await modern.locator('#v32MaleHair').selectOption('11');
    await modern.locator('#v33MaleHairColor').selectOption('red');
    await modern.locator('#v33MaleWigVolume').selectOption('lifted');
@@ -934,7 +942,7 @@ async function expectCenteredFaceSliders(page,gender){
   }
   {
    const modern=await browser.newPage({viewport:{width:412,height:844}});
-   await modern.goto('http://127.0.0.1:8765/face-body-studio.html?v=33',
+   await modern.goto('http://127.0.0.1:8765/face-body-studio.html?v=34',
     {waitUntil:'domcontentloaded',timeout:65000});
    await modern.waitForFunction(()=>window.__heroineBodyQA?.().loaded===true,
     null,{timeout:100000});
@@ -944,8 +952,8 @@ async function expectCenteredFaceSliders(page,gender){
    for(const group of ['Face','Eye','Nose','Mouth','Hair','Makeup'])
     if(await modern.locator('#v32Female'+group+' option').count()!==(group==='Hair'?13:10))
      throw Error('v32 body selector does not have 10 '+group+' parts');
-   await modern.locator('#v32FemaleFace').selectOption('6');
-   await modern.locator('#v32FemaleMakeup').selectOption('8');
+   await selectPartOption(modern,'#v32FemaleFace','6');
+   await selectPartOption(modern,'#v32FemaleMakeup','8');
    await modern.locator('#v32FemaleHair').selectOption('10');
    await modern.locator('#v33FemaleHairColor').selectOption('silver');
    await modern.locator('#v33FemaleWigVolume').selectOption('lifted');

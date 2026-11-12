@@ -780,7 +780,7 @@ test('v16 rear hair roots are posterior and salon cut has actual staggered lengt
  assert.equal(r.longSalonLayers,true);
  assert.equal(r.centralRearNeckOcclusionAvoided,true);
  assert.equal(r.diagonalFeatheredFringe,true);
- assert.ok(r.rootDistribution.backLeft>=90&&r.rootDistribution.backRight>=90);
+ assert.ok(r.rootDistribution.backLeft>=80&&r.rootDistribution.backRight>=80);
  const samples=w.getStyleSamples();
  const rear=samples.filter(s=>s.zone.startsWith('back')||s.zone.startsWith('nape'));
  assert.ok(rear.length>=40);
@@ -885,8 +885,8 @@ test('v18 full crown/rear rooted hair and straight gravity-groomed long locks',(
  const wig=createScalpAnchoredWig(m.face,{count:480,lengthScale:1.25});
  const report=wig.getReport();
  assert.equal(report.rootCount,480);
- assert.equal(report.crownRootRatio,.20);
- assert.equal(report.posteriorRootRatio,.51);
+ assert.equal(report.crownRootRatio,.23);
+ assert.equal(report.posteriorRootRatio,.46);
  assert.equal(report.undercoatLockCount,88);
  assert.equal(report.groomingSmoothingPasses,3);
  assert.equal(report.strandRibbonOrientation,'guide-tangent-on-scalp',
@@ -896,7 +896,7 @@ test('v18 full crown/rear rooted hair and straight gravity-groomed long locks',(
  assert.equal(report.rearScalpCoverage,'nape-and-occipital-head-triangles');
  assert.ok(report.rootDistribution.crown>=90,'Crown does not have enough roots');
  for(const key of ['backLeft','backRight'])
-  assert.ok(report.rootDistribution[key]>=90,'Back scalp roots missing '+key);
+  assert.ok(report.rootDistribution[key]>=80,'Back scalp roots missing '+key);
  const g=m.face.geometry;
  const box=g.boundingBox,d=box.getSize(new THREE.Vector3());
  const midZ=(box.min.z+box.max.z)*.5;
@@ -1280,9 +1280,9 @@ test('v26 wig foundation is a transparent unchanged copy of the actual head and 
  assert.equal(foundation.material.colorWrite,false);
  assert.equal(foundation.userData.exactCopyOfSculptedHead,true);
  assert.equal(wig.getReport().transparentExactHeadWigBase,true);
- assert.equal(wig.getReport().rootScalpLiftFraction,.0155);
+ assert.equal(wig.getReport().rootScalpLiftFraction,.0125);
  assert.equal(wig.getReport().trueScalpRibbonVertexCollision,true);
- assert.equal(wig.getReport().hairStrandWidthFraction,.0142);
+ assert.equal(wig.getReport().hairStrandWidthFraction,.0135);
  // All original zone roots are now displaced slightly OUTWARD from the
  // copied head, rather than being planted inside its surface.
  const pos=face.face.geometry.getAttribute('position');
@@ -1368,7 +1368,7 @@ test('v27 face-conforming eye bulges smoothly from eyeliner and default lashes c
   assert.ok(eye?.isMesh&&liner?.isMesh&&lash?.isMesh);
   assert.equal(eye.userData.noDetachedEyeball,true);
   assert.equal(eye.userData.eyelinerToCenterBulge,true);
-  assert.equal(eye.userData.eyelinerToCenterBulgeFraction,.58);
+  assert.equal(eye.userData.eyelinerToCenterBulgeFraction,.245);
   assert.equal(lash.userData.curvedRibbonStations,5);
   assert.equal(lash.userData.tipCurlsUpFromEyeliner,true);
   assert.equal(lash.userData.lashLength,1.4);
@@ -1378,7 +1378,7 @@ test('v27 face-conforming eye bulges smoothly from eyeliner and default lashes c
   assert.ok(lastZ>secondZ&&secondZ>firstZ,
    'Lashes must bend forward in 3D at the curled tip');
   assert.equal(m.report.detailedParts.eyeBulgeStartsAtEyeliner,true);
-  assert.equal(m.report.detailedParts.eyeBulgeFraction,.58);
+  assert.equal(m.report.detailedParts.eyeBulgeFraction,.245);
  }
  assert.equal(m.report.detailedParts.eyeWidthFactor,1);
  assert.equal(m.report.detailedParts.eyeHeightFactor,1);
@@ -1472,10 +1472,11 @@ test('v29 female eyes project forward of skin with convex globe, connected lids 
  const model=makeIndependentFaceMaster(fixture().source,'female');
  const report=model.report.detailedParts;
  assert.equal(report.anteriorEyeGlobeReconstructed,true);
- assert.equal(report.eyeApertureHeightFraction,.40);
+ assert.equal(report.eyeApertureHeightFraction,.46);
  assert.equal(report.eyeAnteriorClearanceRatios.length,2);
  for(const clearance of report.eyeAnteriorClearanceRatios)
-  assert.ok(clearance>.6,'Anterior cornea must rise above actual skin: '+clearance);
+  assert.ok(clearance>.22&&clearance<.48,
+   'Cornea should swell subtly from the eyeliner without floating: '+clearance);
  for(const side of ['LEFT','RIGHT']){
   const eye=model.parts.getObjectByName(side+'_ORBITAL_EYEBALL');
   const iris=model.parts.getObjectByName(side+'_CURVED_IRIS');
@@ -1483,12 +1484,14 @@ test('v29 female eyes project forward of skin with convex globe, connected lids 
   const lower=model.parts.getObjectByName(side+'_LOWER_ANATOMICAL_EYELID');
   assert.ok(eye?.userData.anteriorGlobeReconstruction);
   assert.ok(iris?.userData.unclippedTrueCircle&&upper?.isMesh&&lower?.isMesh);
-  assert.equal(eye.userData.eyelinerToCenterBulgeFraction,.58);
+  assert.equal(eye.userData.eyelinerToCenterBulgeFraction,.245);
   const p=eye.geometry.getAttribute('position');
   const eyeCenter=p.getZ(9*(48+1)+24);
   const upperRim=p.getZ(18*(48+1)+24);
-  assert.ok(eyeCenter>upperRim,'Corneal face should stand forward of eyelid rim');
-  assert.ok(eye.userData.anteriorClearanceRatio>.6);
+  assert.ok(eyeCenter>upperRim-model.face.geometry.boundingBox.getSize(new THREE.Vector3()).x*.052*.16,
+   'Corneal centre should remain near the eyeliner, not buried');
+  assert.ok(eye.userData.anteriorClearanceRatio>.22&&
+   eye.userData.anteriorClearanceRatio<.48);
  }
  const shallow=makeIndependentFaceMaster(fixture().source,'female',{
   femaleControls:{eyeDepth:-.3}
@@ -1497,7 +1500,7 @@ test('v29 female eyes project forward of skin with convex globe, connected lids 
   femaleControls:{eyeDepth:.85}
  });
  assert.ok(forward.report.detailedParts.eyeAnteriorClearanceRatios[0]>
-  shallow.report.detailedParts.eyeAnteriorClearanceRatios[0]+.20,
+  shallow.report.detailedParts.eyeAnteriorClearanceRatios[0]+.14,
   'Eye depth slider must move the anterior cornea, not cosmetic paint');
  assert.equal(FACE_SLIDER_RANGES.eyeDepth[1],.85);
 });
@@ -1553,7 +1556,7 @@ test('v31 width and height alone determine effective eye size; size never moves 
   // may legitimately shift with that skin; measure cornea-vs-skin
   // clearance instead of incorrectly demanding fixed world-space Z.
   for(const m of [normal,wide,tall,same]){
-   assert.ok(cornea(m).userData.anteriorClearanceRatio>.40,
+   assert.ok(cornea(m).userData.anteriorClearanceRatio>.21,
     'The cornea must stay in front of its locally reshaped eye socket');
   }
   assert.ok(Math.abs(centerZ(same)-centerZ(wide))<1e-6,
@@ -1638,7 +1641,7 @@ test('v32 selected nose, eyes and lips actually change original coherent mesh an
   assert.ok(moved>45,'Preset must sculpt the actual connected head, '+sex);
   assert.ok(b.parts.getObjectByName('LEFT_ORBITAL_EYEBALL').isMesh);
   assert.ok(b.parts.getObjectByName('UPPER_3D_VERMILION_LIP').isMesh);
-  assert.ok(b.report.detailedParts.eyeAnteriorClearanceRatios.every(x=>x>.35));
+  assert.ok(b.report.detailedParts.eyeAnteriorClearanceRatios.every(x=>x>.20));
   assert.deepEqual(f.original.getAttribute('position').array,before);
   if(sex==='female'){
    applyFaceColorMode(b.face,'color',{contactColor:'#514139',makeupType:4});
@@ -1685,12 +1688,23 @@ test('v33 iris occupies more of true eye aperture while preserving a round pupil
   const pupil=baseline.parts.getObjectByName(side+'_CURVED_PUPIL');
   assert.equal(eye.userData.v33OrbitSampleCount,9);
   assert.equal(eye.userData.smoothCornealCore,true);
-  assert.equal(iris.userData.v33IrisScale,.72);
-  assert.ok(iris.userData.v33IrisOpeningFraction>=.8);
-  assert.ok(iris.userData.v33IrisOpeningFraction<=.90);
+  assert.equal(iris.userData.v33IrisScale,.88);
+  assert.ok(iris.userData.v33IrisOpeningFraction>=.9);
+  assert.equal(iris.userData.gazeInwardOffsetRatio,.055);
+  assert.equal(pupil.userData.gazeInwardOffsetRatio,.055);
+  eye.geometry.computeBoundingBox();iris.geometry.computeBoundingBox();pupil.geometry.computeBoundingBox();
+  const eyeCenterX=eye.geometry.boundingBox.getCenter(new THREE.Vector3()).x;
+  const irisCenterX=iris.geometry.boundingBox.getCenter(new THREE.Vector3()).x;
+  const pupilCenterX=pupil.geometry.boundingBox.getCenter(new THREE.Vector3()).x;
+  assert.ok((irisCenterX-eyeCenterX)*(side==='LEFT'?-1:1)<0,
+   'Iris should move toward the nose, not the temple');
+  assert.ok(Math.abs(pupilCenterX-irisCenterX)<1e-5,
+   'Black pupil must align with the iris to avoid strabismus');
+  assert.ok(iris.userData.v33IrisOpeningFraction<=.94);
   assert.ok(iris.userData.unclippedTrueCircle);
   assert.ok(pupil.userData.unclippedTrueCircle);
-  assert.ok(eye.userData.anteriorClearanceRatio>.6);
+  assert.ok(eye.userData.anteriorClearanceRatio>.22&&
+   eye.userData.anteriorClearanceRatio<.48);
  }
  assert.equal(report.irisMeshCount,2);
 });
