@@ -280,7 +280,7 @@ function scalpShell(geo,box,color,{fullBody=false}={}){
  * @param {THREE.Mesh} head  owned sculpted female head
  * @param {{count?:number,color?:number,externalColliders?:Array}} options
  */
-export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalColliders=[],bodyCollisionResolver=null,lengthScale=1,styleId=DEFAULT_WIG_STYLE_ID,fineFringeMultiplier=1,visualFiberMultiplier=1}={}){
+export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalColliders=[],bodyCollisionResolver=null,lengthScale=1,styleId=DEFAULT_WIG_STYLE_ID,fineFringeMultiplier=1,visualFiberMultiplier=1,staticGroom=true}={}){
  const style=getWigStyle(styleId);
  // v25: a detachable wig keeps its current physically simulated guides;
  // micro-fibres are a single static extra mesh in the SAME removable asset.
@@ -306,6 +306,8 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  }
  const root=new THREE.Group();root.name='FEMALE_SCALP_ANCHORED_LONG_WIG';
  root.userData.hairOnRealHead=true;
+ root.userData.staticGroom=!!staticGroom;
+ root.userData.wigRig='surface-guided-static-layered-hair-cards';
  // v26: fitted detachable wig foundation is an exact copy of the
  // SCULPTED head surface. It is totally transparent, writes no depth
  // or color, and stays inside the separate wig GLB. It must NOT replace
@@ -534,7 +536,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  }
  const geo=new THREE.BufferGeometry();
  const attr=new THREE.BufferAttribute(vertices,3);
- attr.setUsage(THREE.DynamicDrawUsage);
+ attr.setUsage(staticGroom?THREE.StaticDrawUsage:THREE.DynamicDrawUsage);
  geo.setAttribute('position',attr);
  geo.setAttribute('color',new THREE.BufferAttribute(colors,3));
  geo.setIndex(indices);
@@ -656,11 +658,17 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
     // Full thick clumps near scalp and mid-length; point-cut taper only
    // in the last 15% instead of uniformly thinning into wire-like ends.
    const tip=1-(strand.fringe?.84:.66)*Math.pow(t,8);
-   const width=half*tip*(.90+.15*fract(i*.35))*
-    (strand.zone.startsWith('fringe')?.235:
-     strand.zone.startsWith('temple')?.95:
-     strand.zone==='crown'||strand.zone.startsWith('back')?1.28:
-     strand.zone.startsWith('nape')?1.13:1);
+   // Blender/Unity-inspired groomed hair-card profile: narrow root,
+   // broad clean midsection and softly tapered point-cut tip. Keeping
+   // crown cards narrow prevents the interlocking square tiles visible
+   // in the previous overhead screenshots.
+   const rootProfile=.31+.69*THREE.MathUtils.smoothstep(t,0,.18);
+   const width=half*tip*rootProfile*(.90+.15*fract(i*.35))*
+    (strand.zone.startsWith('fringe')?.21:
+     strand.zone.startsWith('temple')?.68:
+     strand.zone==='crown'?.66:
+     strand.zone.startsWith('back')?.94:
+     strand.zone.startsWith('nape')?.82:.86);
     // Groom BOTH ribbon planes along the actual hair-guide tangent.
     // The old world-X/world-Z crosses stuck through crown triangles like
     // needles; a tangent-plane ribbon lays on the rounded scalp instead.
@@ -755,6 +763,9 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   if(meshUpdates===1||meshUpdates%6===0)geo.computeBoundingSphere();
  }
  function update(dt=.016){
+  // v28 uses baked groomed ribbons. No spring, gravity or wind simulation
+  // runs per frame. All collisions are solved ONCE at construction.
+  if(staticGroom)return;
   accumulator+=Math.min(Math.max(0,dt),.05);
   if(accumulator<1/20)return;
   const step=Math.min(accumulator,.05);accumulator=0;elapsed+=step;
@@ -861,6 +872,11 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   visualFiberMultiplier:fiberMultiplier,visualFiberCount:lockCount*fiberMultiplier,
   staticMicroFibreCount:microFibreCount,microFibreTriangles,
   microFibresAnimated:false,
+  staticGroom:!!staticGroom,simulationEnabled:!staticGroom,
+  runtimePhysicsCallsPerFrame:staticGroom?0:1,
+  constructionCollisionOnly:!!staticGroom,
+  hairCardStyle:'layered-root-narrow-mid-full-tip-tapered',
+  groomReference:'Blender Generate/Interpolate Hair Curves and Unity Hair Cards',
   crownWhorl:whorl.toArray(),gravityMps2:style.gravityMps2,
   gravityRestShape:true,exactFaceSurfaceCollision:true,
   faceClearance:style.faceClearance,
@@ -910,9 +926,10 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   zoneCandidateCounts:Object.fromEntries(Object.entries(pools).map(([key,list])=>[key,list.length])),
   collisionTypes:['head','face','neck','shoulder','chest',...externalColliders.map(c=>c.name||'body')],
   usesRealBodyTriangleContacts:!!bodyCollisionResolver,
-  meshCount:3+(fiberMultiplier>1?1:0),physicsHz:20,normalUpdateDivisor:3,
-  physicsGuideCount:guideCount,
-  analyticSwayOtherLocks:true,lengthScale:clamp(lengthScale,.55,1.5),
+  meshCount:3+(fiberMultiplier>1?1:0),physicsHz:staticGroom?0:20,
+  normalUpdateDivisor:staticGroom?0:3,
+  physicsGuideCount:staticGroom?0:guideCount,
+  analyticSwayOtherLocks:!staticGroom,lengthScale:clamp(lengthScale,.55,1.5),
   hairColor:'#'+rootColor.getHexString(),
   tipColor:'#'+tips.getHexString()
  };
