@@ -43,7 +43,9 @@ export function hideBattleDonorFace(model){
  model.updateMatrixWorld(true);
  const head=findHead(model),region=measureHeadLocalBounds(model,head);
  const size=region.bounds.getSize(new THREE.Vector3());
- const trimY=region.bounds.min.y+size.y*.18;
+ // Include the chin / under-lip perimeter. The previous +18% cut left
+ // a brown jaw and moustache-shaped strip over the new heroine face.
+ const trimY=region.bounds.min.y-size.y*.025;
  let removedTriangles=0,retainedTriangles=0,hiddenEyeMeshes=0,changedMeshes=0;
  const point=new THREE.Vector3(),sample=new THREE.Vector3();
  model.traverse(mesh=>{
@@ -64,7 +66,7 @@ export function hideBattleDonorFace(model){
    let influence=0;
    for(let k=0;k<4;k++)if(joints.getComponent(i,k)===index)
     influence+=weights.getComponent(i,k);
-   if(influence<.20){pointCache.set(i,false);return false;}
+   if(influence<.10){pointCache.set(i,false);return false;}
    mesh.getVertexPosition(i,point);
    sample.copy(point).applyMatrix4(mesh.matrixWorld);
    head.worldToLocal(sample);
@@ -108,7 +110,11 @@ export function attachIndependentFaceToBattleHead({faceRoot,faceMesh,characterMo
  const dstCenter=target.getCenter(new THREE.Vector3());
  if(Math.min(a.x,a.y,a.z)<.01||Math.min(b.x,b.y,b.z)<.01)
   throw Error('Head fitting bounds invalid');
- const scale=Math.min(b.x/a.x*.98,b.y/a.y*1.03,b.z/a.z*.99);
+ // A shallow donor head DEEPTH should not shrink its entire skull and
+ // leave a tiny face below the armor collar. Fit by brow/temple width and
+ // brow-to-chin height; keep depth as a separate post-fit diagnostic.
+ const widthFit=b.x/a.x,heightFit=b.y/a.y,depthFit=b.z/a.z;
+ const scale=Math.min(widthFit*1.04,heightFit*1.06);
  faceRoot.removeFromParent();
  bone.add(faceRoot);
  faceRoot.rotation.set(0,0,0);
@@ -116,7 +122,7 @@ export function attachIndependentFaceToBattleHead({faceRoot,faceMesh,characterMo
  faceRoot.position.copy(dstCenter).sub(srcCenter.multiplyScalar(scale));
  faceRoot.userData.attachedToRealBattleHeadBone=true;
  faceRoot.userData.battleHeadScale=scale;
- return {bone:bone.name,scale,
+ return {bone:bone.name,scale,widthFit,heightFit,depthFit,
   sourceSize:a.toArray(),targetSize:b.toArray(),
   attachedToRealHeadBone:true};
 }
