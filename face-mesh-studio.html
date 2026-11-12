@@ -2,7 +2,7 @@
 <html lang="ja"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#14263a">
-<title>灰銀のレゾナンス | 顔v12・保存標準と髪束・顔メイク</title>
+<title>灰銀のレゾナンス | 顔v13・鼻顎の保存標準と高密度の女性髪</title>
 <style>
 :root{font:15px/1.55 system-ui,-apple-system,"Noto Sans JP",sans-serif;color-scheme:dark}
 *{box-sizing:border-box}
@@ -62,8 +62,8 @@ button{padding:9px 11px}
 </style></head>
 <body>
 <header>
-<h1>男女・顔と立体パーツ v12</h1>
-<p>ライブラリに保存された実GLBの顔設定（顎先5倍・鼻穴隠し2）を男女の新標準に採用。口紅とチークを実メッシュの頂点に着色。上下アイライン・眉・眼球を調整し、女性用の金髪ロング（頭皮から髪束を生成・顔と肩への衝突対応）を追加。保存値とズームを維持します。</p>
+<h1>男女・顔と立体パーツ v13</h1>
+<p>ライブラリに保存された実GLBの顔設定（顎先5倍・鼻穴隠し2・鼻筋2.5）を男女の実メッシュ標準に固定。口紅とチークを実メッシュの頂点に着色。上下アイライン・眉・眼球を調整し、女性用の高密度ロング（後頭部・両側頭部・襟足まで髪束生成・顔と肩への衝突対応）を追加。保存値とズームを維持します。</p>
 </header>
 <main><section class="panel">
 <div id="status" role="status">男女のCC0頭部メッシュを読み込み中…</div>
@@ -116,8 +116,8 @@ button{padding:9px 11px}
 <option value="violet">バイオレット</option><option value="custom">自由色</option>
 </select></label>
 <label for="contactColor">カラコンの自由な色<input type="color" id="contactColor" value="#514139"></label>
-<label for="wigDensity">髪束の密度 <output id="wigDensityValue">240束</output>
-<input type="range" id="wigDensity" min="96" max="320" step="16" value="240"></label>
+<label for="wigDensity">髪束の密度 <output id="wigDensityValue">1440束</output>
+<input type="range" id="wigDensity" min="480" max="2400" step="120" value="1440"></label>
 <label for="wigLength">女性の髪の長さ <output id="wigLengthValue">1×</output>
 <input type="range" id="wigLength" min="0.6" max="1.5" step="0.05" value="1"></label>
 <label for="wigColor">髪色<select id="wigColor">
@@ -191,7 +191,7 @@ let gender='female',angle='front',wired=false,partsOn=true,ready=false;
 let faceMode='color',femaleSource=null,modelChanges={...FEMALE_V7_DEFAULTS};
 let maleChanges={...MALE_REFERENCE_DEFAULT};
 let contactColor=CONTACT_COLORS.brown;
-let wigOn=true,wigDensity=240,wigLength=1,wigColor='blonde';
+let wigOn=true,wigDensity=1440,wigLength=1,wigColor='blonde';
 function setActive(ids,id){
  for(const x of ids)$(x).setAttribute('aria-pressed',String(x===id));
 }
@@ -202,6 +202,12 @@ function metrics(){
   cameraTarget:orbit.target.toArray(),femaleControls:{...modelChanges},
   maleControls:{...maleChanges},
   wigVisible:wigOn&&gender==='female',wigReport:wigs.get('female')?.getReport()||null,
+  savedNoseJawDefaults:{jawSharpness:FEMALE_V7_DEFAULTS.jawSharpness,
+   nostrilCover:FEMALE_V7_DEFAULTS.nostrilCover,
+   noseBridgeSharpness:FEMALE_V7_DEFAULTS.noseBridgeSharpness},
+  savedNoseJawApplied: modelChanges.jawSharpness===FEMALE_V7_DEFAULTS.jawSharpness&&
+   modelChanges.nostrilCover===FEMALE_V7_DEFAULTS.nostrilCover&&
+   modelChanges.noseBridgeSharpness===FEMALE_V7_DEFAULTS.noseBridgeSharpness,
   maleWithoutMakeup:models.get('male')?.report?.maleNoMakeup??null,
   currentFeatureAngles:models.get('female')?.parts?.userData?.featureAngles||null,
   female:models.get('female')?.report||null,
