@@ -8,6 +8,8 @@ on:
       - 'src/battle-ui-refinement.css'
       - 'src/core-battle-bridge.js'
       - 'src/inn-deployment.js'
+      - 'src/inn-strategy-templates.js'
+      - 'qa/inn-strategy-planning.test.mjs'
       - 'src/adaptive-battle-resolution.js'
       - 'qa/command-touch-camera-performance.test.mjs'
       - 'qa/mobile-command-hitbox-smoke.mjs'
@@ -31,6 +33,8 @@ on:
       - 'src/battle-ui-refinement.css'
       - 'src/core-battle-bridge.js'
       - 'src/inn-deployment.js'
+      - 'src/inn-strategy-templates.js'
+      - 'qa/inn-strategy-planning.test.mjs'
       - 'src/adaptive-battle-resolution.js'
       - 'qa/command-touch-camera-performance.test.mjs'
       - 'qa/mobile-command-hitbox-smoke.mjs'
@@ -64,7 +68,9 @@ jobs:
           node --check src/battle-victory-rewards.js
           node --experimental-vm-modules qa/battle-ui-objective-rewards.test.mjs
           node qa/tactical-command-ui.test.mjs
+          node --check src/inn-strategy-templates.js
           node --experimental-vm-modules qa/inn-deployment-command-effects.test.mjs
+          node --experimental-vm-modules qa/inn-strategy-planning.test.mjs
           node --experimental-vm-modules qa/command-touch-camera-performance.test.mjs
           node qa/battle-radar-locked-strategy-and-movement.test.mjs
           node qa/town-facility-squad-gear.test.mjs
