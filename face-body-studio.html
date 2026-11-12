@@ -204,6 +204,9 @@ function metrics(){
   editableFaceControls:{...faceControls},
   v32PartSelection:{...v32BodyPart},
   v33HairColor:v32BodyPart.hairColor,
+  v35Wardrobe:wardrobe?.getState()||{...selectedStudio},
+  v35HairStyle:$('heroHairStyle').value,
+  v35HairVolume:$('heroHairVolume').value,
   v32CatalogCounts:Object.fromEntries(Object.entries(PART_CATALOG.female).map(([k,a])=>[k,a.length])),
   detailedFrontHair:true,contactColor,
   wigDensity:Number($('wigDensity').value),
@@ -220,6 +223,7 @@ window.__heroineBodyPreview={
  getActor:()=>model?.root||null,getWig:()=>wig?.root||null,
  getFace:()=>model?.face||null,getEyeParts:()=>model?.parts||null,
  getBody:()=>bodyAttachment?.root||null,
+ getWardrobe:()=>wardrobe?.getState()||null,
  getCameraState:()=>({position:camera.position.toArray(),target:orbit.target.toArray(),
   up:camera.up.toArray(),zoom:camera.zoom,mode:zoomMode,view}),
  sampleTorso:(x,y)=>bodyAttachment?.bodyCollider.query(x,y)||null
@@ -308,6 +312,7 @@ function rebuildFaceOnBody(){
  // Rebuild the geometry in-place. The user may be pinching to inspect eyes
  // or nose: no fitCamera(), zoom mode, orbit target or orientation reset.
  model=next;neckCrop=cropped;
+ wardrobe?.attachActor(next.root);
  applyHairOnlyView();
  camera.position.copy(savedCameraPosition);
  camera.up.copy(savedCameraUp);
@@ -529,6 +534,7 @@ $('toggleWig').addEventListener('click',()=>{
 $('toggleOutfit').addEventListener('click',()=>{
  outfitVisible=!outfitVisible;
  bodyAttachment?.setOutfitVisible(outfitVisible);
+ wardrobe?.setVisible(outfitVisible);
  $('toggleOutfit').setAttribute('aria-pressed',String(outfitVisible));
  $('toggleOutfit').textContent=outfitVisible?'衣装を隠す':'衣装を表示';
 });
@@ -577,6 +583,7 @@ function frame(){
  requestAnimationFrame(frame);
  const dt=clock.getDelta();
  // Static groom: baked mesh and no per-frame hair physics.
+ wardrobe?.update(dt);
  resize();orbit.update();renderer.render(scene,camera);
 }
 frame();
@@ -598,6 +605,9 @@ frame();
    outfitSource:null,characterId:art.characterId,
    armor:palette.armor,cloth:palette.cloth
   });
+  wardrobe=createHeroineStudioWardrobe(bodyAttachment,model.root);
+  wardrobe.setSelection(selectedStudio);
+  wardrobe.setAction(selectedStudio.actionId);
   // Build wig from ORIGINAL full-scalp clone. The displayed face alone
   // is cropped at the body seam; changing hairstyles still uses full roots.
   uncutScalpSource=new THREE.Mesh(model.face.geometry.clone(),
