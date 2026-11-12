@@ -106,40 +106,40 @@
           "id": "c01-s01-m06",
           "path": "assets/story/chapters/c01/panels/c01-s01-m06-male.webp",
           "label": "城内での調査の報告",
-          "bytes": 43462,
-          "sha256": "2b6fc388ecd1c2af3513b123a48eb970aab3a8fe10b9a90b26d0fdd6fe3bb533"
+          "bytes": 91398,
+          "sha256": "21e868ec9531a6260887f3c41055835d3a18102f07fd92a79589b85975297c08"
         },
         {
           "id": "c01-s01-m07",
           "path": "assets/story/chapters/c01/panels/c01-s01-m07-male.webp",
           "label": "ガランが次の調査を提案",
-          "bytes": 36812,
-          "sha256": "169e9b7ebf05df36ba8823c83f6c33835f334f2686a8d8a7713c554ebcba1184"
+          "bytes": 109886,
+          "sha256": "efd7adab772e380dc6a0f5d27bffa74329e35f6883b07c8f45c58eba5d660f25"
         },
         {
           "id": "c01-s01-m08",
           "path": "assets/story/chapters/c01/panels/c01-s01-m08-male.webp",
           "label": "記録を照合し真相に迫る",
-          "bytes": 33270,
-          "sha256": "b9522c2704fdaaaf5dd17287fa420b96e1bb8700aeddcfad6e6df59bf5da513b"
+          "bytes": 145336,
+          "sha256": "0e3dc0bd78062d06dc27c7a661c6233a7d133732ef14f10fd261081edecca5e2"
         },
         {
           "id": "c01-s01-m09",
           "path": "assets/story/chapters/c01/panels/c01-s01-m09-male.webp",
           "label": "男性軍師が方針を決める",
-          "bytes": 36604,
-          "sha256": "129559eb8db29699487d843b81eff6186017d1111cf8b5d28ce998e141299a2c"
+          "bytes": 92004,
+          "sha256": "0333fe2eb278a408f27cab73db8167e087ab01428f1a3714f1d17d0fe2aeaaeb"
         },
         {
           "id": "c01-s01-m10",
           "path": "assets/story/chapters/c01/panels/c01-s01-m10-male.webp",
           "label": "王都から次の街道へ",
-          "bytes": 23156,
-          "sha256": "08a27842f7b5967b60126d8dbff31e07ed535366567ce3b72045a82bf9d076e6"
+          "bytes": 29330,
+          "sha256": "8c8744ea40599f917f1b4d0a56a4f4c865a69a7dda08ebfcc44cfb35567ec828"
         }
       ],
-      "bytes": 162910,
-      "sha256": "de302cb9d489a0b5fa049432195a8297151bf855187d2cf35f58fa10337b7f9c"
+      "bytes": 412806,
+      "sha256": "7c257dfd1145ef16750af80395c41cd9456c07f8a323d60309aa6bc2e0ea5456"
     },
     {
       "edition": "post-town",
@@ -156,40 +156,75 @@
           "id": "c01-s01-m06",
           "path": "assets/story/chapters/c01/panels/c01-s01-m06-female.webp",
           "label": "女性軍師と仲間たちが調査結果を確認",
-          "bytes": 21860,
-          "sha256": "5e5f6f5e4bff68fe8c82e942cae5f81961b1bb36662f32124dab9ae7505c79b2"
+          "bytes": 100134,
+          "sha256": "25985007b8c1143f011a9cf93d0f682c0f686c718f8ff7afce297693323a9b23"
         },
         {
           "id": "c01-s01-m07",
           "path": "assets/story/chapters/c01/panels/c01-s01-m07-female.webp",
           "label": "イリスとガランが情報を整理",
-          "bytes": 41344,
-          "sha256": "cdb7e9754b59b5007b785f9c2b40b85b52e7099d728719989befb39f0c1d5619"
+          "bytes": 117610,
+          "sha256": "81b4ee5a55939c8a33be945697053260dfc3b361959a8bd964bd6ada943453e6"
         },
         {
           "id": "c01-s01-m08",
           "path": "assets/story/chapters/c01/panels/c01-s01-m08-female.webp",
           "label": "王印と記録の矛盾に気づく",
-          "bytes": 53402,
-          "sha256": "febf45c0e2d902e5b4a640a113bfb9519d8eaa32628d9a60e173f2cf8af47c13"
+          "bytes": 153544,
+          "sha256": "832643b315ba4a623fa50f9db26a0cb6b4cc8dad40caa67b08a7e164d3f914ab"
         },
         {
           "id": "c01-s01-m09",
           "path": "assets/story/chapters/c01/panels/c01-s01-m09-female.webp",
           "label": "女性軍師が決意を固める",
-          "bytes": 17164,
-          "sha256": "18b9f33b4e3e0a340385c9cb8da0c0e9c0d6f8562ef74cd22d09e8050ba817f7"
+          "bytes": 93428,
+          "sha256": "5218298d8ad6d8c1aca65b43be9a1b2a76be4a64e032038b127bfdf2e953f617"
         },
         {
           "id": "c01-s01-m10",
           "path": "assets/story/chapters/c01/panels/c01-s01-m10-female.webp",
           "label": "女性軍師が仲間と進路を決める",
-          "bytes": 143896,
-          "sha256": "1157c48ca882eb16940262bfc3360e21af4534b2d5c5cb216fe8d759b52edda1"
+          "bytes": 167600,
+          "sha256": "fe4bbf64428afec193d970573d7a3cacbd7bf089257f961b3bfe0c5b75fd3909"
         }
       ],
-      "bytes": 266880,
-      "sha256": "b79ce1255f2689026e2a02f1ae0e485e23285ecb9d71f153b2ba5734f04fc923"
+      "bytes": 541572,
+      "sha256": "4e7ce21b3b0bd7f1dc457632047aab1c4e428dd859919be2c6bb062deeb9e070"
     }
-  ]
+  ],
+  "productionRules": {
+    "version": 2,
+    "unit": "standalone scene art, 16:9, one scene per WebP",
+    "characters": "male and female player commanders remain gender-specific; Iris, Garan and Lucia retain canonical identities",
+    "prohibited": [
+      "visible digits",
+      "panel counters",
+      "lettering",
+      "dialogue text",
+      "caption boxes",
+      "UI screenshots",
+      "watermarks",
+      "speech balloons",
+      "collage borders",
+      "subtitles burned into art",
+      "wrong-gender protagonist",
+      "unrelated outcome",
+      "reuse male protagonist artwork as female"
+    ],
+    "dialogueStorage": "narration and pronunciations remain separate from artwork",
+    "masterApproval": "visual quality requires human sign-off; registration alone is not approval"
+  },
+  "correctedScenes": [
+    "c01-s01-m06-male",
+    "c01-s01-m07-male",
+    "c01-s01-m08-male",
+    "c01-s01-m09-male",
+    "c01-s01-m10-male",
+    "c01-s01-m06-female",
+    "c01-s01-m07-female",
+    "c01-s01-m08-female",
+    "c01-s01-m09-female",
+    "c01-s01-m10-female"
+  ],
+  "reviewSummary": "Female event-after numeric badges removed by replacing the five offending cropped panels with clean standalone illustrations. The male event-after scenes 6-9 have also been reauthored; the male sunset departure is retained and re-encoded. Male and female pre-event scenes remain the existing independent assets."
 }
