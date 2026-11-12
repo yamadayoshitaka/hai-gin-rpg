@@ -8,8 +8,8 @@ import {MANGA_VISUAL_CHARACTERS,stageMangaSvg,stageMangaImage} from '../src/stor
 import {FANTASY_SCORE_LIBRARY,fantasyCueForLocation,fantasyCueForMangaPanel} from '../src/fantasy-scene-score.js';
 const read=p=>fs.readFileSync(new URL('../'+p,import.meta.url),'utf8');
 assert.equal(MANGA_STAGE_COUNT,200);
-assert.equal(MANGA_PANELS_PER_STAGE,10);
-assert.equal(MANGA_TOTAL_PANELS,2000);
+assert.equal(MANGA_PANELS_PER_STAGE,20);
+assert.equal(MANGA_TOTAL_PANELS,4000);
 assert.equal(CAMPAIGN_STAGES.length,200);
 assert.equal(STORY_KEY_PEOPLE.length,20);
 assert.equal(Object.keys(MANGA_VISUAL_CHARACTERS).length,20);
@@ -28,20 +28,20 @@ let artworkSamples=new Set(),characterPanels=0;
 for(let i=0;i<CAMPAIGN_STAGES.length;i++){
  const stage=CAMPAIGN_STAGES[i],story=mangaForStage(stage);
  assert.equal(story.id,stage.id);
- assert.equal(story.panels.length,10,'every stage contains five pre and five post scenes');
- assert.equal(story.panels.filter(p=>p.phase==='pre').length,5);
- assert.equal(story.panels.filter(p=>p.phase==='post').length,5);
+ assert.equal(story.panels.length,20,'every stage contains ten pre and ten post scenes');
+ assert.equal(story.panels.filter(p=>p.phase==='pre').length,10);
+ assert.equal(story.panels.filter(p=>p.phase==='post').length,10);
  assert.equal(story.previousStageId,CAMPAIGN_STAGES[i-1]?.id||null);
  assert.equal(story.nextStageId,CAMPAIGN_STAGES[i+1]?.id||null);
  assert.ok(story.cast.length>=3,'each stage must include several distinct characters');
- assert.ok(story.panels.every((p,k)=>p.id===stage.id+'-m'+(k+1)));
+ assert.deepEqual(story.panels.map(p=>p.id),[1,2,3,4,5,11,12,13,14,15,6,7,8,9,16,17,18,19,20,10].map(n=>stage.id+'-m'+n));
  assert.ok(story.panels.every(p=>p.text.length>=16),'manga must tell a complete story');
  assert.ok(story.panels.some(p=>p.kind==='confrontation'));
  assert.ok(story.panels.some(p=>p.kind==='choice'));
  assert.ok(story.panels.some(p=>p.kind==='closing'));
  assert.ok(story.panels.some(p=>p.secondaryId),'actors must share a frame');
  assert.ok(story.panels.some(p=>p.speaker!=='語り手'));
- assert.ok(story.panels[9].text.includes(CAMPAIGN_STAGES[i+1]?.name||'未来'),
+ assert.ok(story.panels[19].text.includes(CAMPAIGN_STAGES[i+1]?.name||'未来'),
   'closing frame should physically connect to the next stage');
  for(let n=0;n<story.panels.length;n++){
   const panel=story.panels[n];
@@ -49,9 +49,9 @@ for(let i=0;i<CAMPAIGN_STAGES.length;i++){
   const cue=fantasyCueForMangaPanel(stage,n);
   assert.ok(FANTASY_SCORE_LIBRARY.some(track=>track.id===cue.id));
   // Hold the BGM through a dialogue scene; change for revelation/transition.
-  if(n===1||n===2||n===3||n===5||n===7)assert.equal(cue.id,fantasyCueForMangaPanel(stage,n-1).id,
+  if([1,2,3,5,7,9,10,11,13,14,17,19].includes(n))assert.equal(cue.id,fantasyCueForMangaPanel(stage,n-1).id,
    'dialogue must not switch to a jarring new song at every page');
-  if(n===4||n===6||n===8||n===9)assert.notEqual(cue.id,fantasyCueForMangaPanel(stage,n-1).id,
+  if([4,6,8,12,15,16,18].includes(n))assert.notEqual(cue.id,fantasyCueForMangaPanel(stage,n-1).id,
    'a genuine story beat must change the orchestral mood');
   if((i+n)%11===0){
    const art=stageMangaSvg(panel);
@@ -96,4 +96,4 @@ for(const [name,html] of [['world-map.html',map],['town-hub.html',town],['game.h
  assert.ok(scripts.length,name+' must contain ES module');
  for(const match of scripts)new SourceTextModule(match[1],{identifier:name});
 }
-console.log('PASS 200 stages / 2000 manga frames (5 pre+5 post), continuity, identity, artwork, fantasy tracks and default voice');
+console.log('PASS 200 stages / 4000 manga frames (10 pre+10 post), continuity, identity, artwork, fantasy tracks and default voice');

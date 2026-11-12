@@ -22,7 +22,7 @@ export const CINEMATIC_TITLE_ASSET=assetRoot+'title.webp';
 const GENDER_NEUTRAL_PANELS=new Set(STORY_NEUTRAL_PANEL_IDS); // reviewed hero-free scenes only
 export function individualStoryPanelAsset(panel){
  const id=String(panel?.id||'');
- if(!/^c\d{2}-s\d{2}-m(?:[1-9]|10)$/.test(id))return null;
+ if(!/^c\d{2}-s\d{2}-m(?:[1-9]|1[0-9]|20)$/.test(id))return null;
  const base='./assets/story/panels/'+id.replace(/-m(\d{1,2})$/,(_,n)=>'-m'+String(n).padStart(2,'0'));
  if(panel?.protagonistGender==='female'&&!GENDER_NEUTRAL_PANELS.has(id))return base+'-female.webp';
  if(panel?.protagonistGender==='unspecified'&&!GENDER_NEUTRAL_PANELS.has(id))return null;

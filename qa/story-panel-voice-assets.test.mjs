@@ -30,7 +30,7 @@ for(const stage of CAMPAIGN_STAGES){
   validated++;
  }
 }
-const expected=CAMPAIGN_STAGES.length*10;
+const expected=CAMPAIGN_STAGES.length*20;
 assert.ok(validated<=expected,'more than one active clip found for a panel');
 if(process.env.REQUIRE_ALL_STORY_VOICES==='1')assert.equal(validated,expected,'all current voice profiles must have a recorded clip');
 const older=panelKeys.length-validated;
@@ -45,8 +45,8 @@ for(const stage of CAMPAIGN_STAGES.filter(s=>s.kind!=='town')){
  }
 }
 if(process.env.REQUIRE_ALL_STORY_VOICES==='1')
- assert.equal(defeatValid,CAMPAIGN_STAGES.filter(s=>s.kind!=='town').length*5,
+ assert.equal(defeatValid,CAMPAIGN_STAGES.filter(s=>s.kind!=='town').length*10,
  'each defeat ending needs a pre-recorded pronunciation-correct voice (shared clips count)');
-console.log('PASS current 10-panel VOICEVOX audio: '+validated+' / '+expected+
+console.log('PASS current 20-panel VOICEVOX audio: '+validated+' / '+expected+
  '; defeated epilogue voices: '+defeatValid+
  '; historical speaker entries retained: '+older);

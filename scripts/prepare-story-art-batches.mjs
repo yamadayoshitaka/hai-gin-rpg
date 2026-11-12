@@ -1,8 +1,8 @@
 /**
- * Deterministic shot-to-sheet plan for all 2,000 canonical story manga panels.
+ * Deterministic shot-to-sheet plan for all 4,000 canonical story manga panels.
  *
- * One batch = one complete stage (opening 5 + post-battle 5).
- * Each batch is exactly one campaign stage: five opening frames plus five aftermath frames.
+ * One batch = one complete phase: ten opening OR ten post-event frames.
+ * Each of 200 stages has TWO approved ten-panel art batches.
  * This produces PRODUCTION BRIEFS, NOT generated image files.
  *
  * node scripts/prepare-story-art-batches.mjs [--batch 1]
@@ -31,7 +31,7 @@ const shotKinds=[
  'Closing beat leading to the next stage or a retreat'
 ];
 const all=CAMPAIGN_STAGES.flatMap(stage=>{
- const story=mangaForStage(stage.id,{protagonistGender:'male',battleOutcome:{victory:true}});
+ const story=mangaForStage(stage.id,{protagonistGender:'male'});
  return story.panels.map(p=>{
   const actors=[p.characterId,p.secondaryId].filter(Boolean).map(id=>{
    const c=people.get(id);
@@ -44,30 +44,30 @@ const all=CAMPAIGN_STAGES.flatMap(stage=>{
    stageName:stage.name,stageKind:stage.kind,phase:p.phase,location:STORY_CHAPTERS[p.chapter-1].location,
    index:p.index,scenery:p.scenery,expression:p.expression,mood:p.mood,
    speaker:p.speaker,characters:actors,subtitleText:p.subtitleText,voiceText:p.voiceText,spokenText:p.text,
-   shot:shotKinds[p.index],
+   shot:shotKinds[p.index%shotKinds.length],
    instruction:'An ORIGINAL, self-contained, full-bleed, 16:9 cinematic fantasy RPG scene; depicts ONLY this specific stage moment: '+p.text+
-    '. Location: '+STORY_CHAPTERS[p.chapter-1].location+'. Camera: '+shotKinds[p.index]+
+    '. Location: '+STORY_CHAPTERS[p.chapter-1].location+'. Camera: '+shotKinds[p.index%shotKinds.length]+
     '. Keep named character faces, clothing and faction heraldry consistent with the provided cast-master portraits. '+
     'If the player strategist appears, depict a MALE version in the base sheet. '+
-    'Do not copy art from a different stage or panel. No words, lettering, subtitles, narration boxes, '+
+    'Post-event artwork must be outcome-neutral, safe for victory and defeat; the verified outcome is shown in game text. Do not copy art from a different stage or panel. No words, lettering, subtitles, narration boxes, '+
     'speech bubbles, numbered panels, logos, watermarks, user interface, infographics or collage.'
   };
  });
 });
-if(all.length!==2000)throw Error('Expected 2,000 canonical frames, found '+all.length);
+if(all.length!==4000)throw Error('Expected 4,000 canonical frames, found '+all.length);
 const seen=new Set();
 for(const p of all){if(seen.has(p.id))throw Error('Duplicate panel ID '+p.id);seen.add(p.id);}
 const batches=[];
 for(let i=0;i<all.length;i+=10){
  const shots=all.slice(i,i+10);
- if(shots.length!==10||new Set(shots.map(p=>p.stageId)).size!==1)throw Error('10 frames must belong to one stage: '+i);
- const index=i/10+1,id='batch-'+String(index).padStart(4,'0');
+ if(shots.length!==10||new Set(shots.map(p=>p.stageId)).size!==1||new Set(shots.map(p=>p.phase)).size!==1)throw Error('10 frames must belong to one stage AND one phase: '+i);
+ const index=i/10+1,id='batch-'+String(index).padStart(4,'0'),phase=shots[0].phase;
  const steps=shots.map((p,n)=>({...p,frame:n+1,
   row:Math.floor(n/2)+1,column:n%2+1,
   maleOutput:'assets/story/panels/'+p.id.replace(/-m(\d{1,2})$/,(_,v)=>'-m'+v.padStart(2,'0'))+'.webp',
   femaleOutput:'assets/story/panels/'+p.id.replace(/-m(\d{1,2})$/,(_,v)=>'-m'+v.padStart(2,'0'))+'-female.webp'
  }));
- batches.push({id,index,chapters:[...new Set(shots.map(p=>p.chapter))],
+ batches.push({id,index,phase,chapters:[...new Set(shots.map(p=>p.chapter))],
    stages:[shots[0].stageId],
    layout:{columns:2,rows:5,order:'row-major',panels:10,aspect:'16:9',
      preferredSheetPixels:[1536,2160],minimumCellPixels:[768,432],
@@ -89,14 +89,14 @@ for(let i=0;i<all.length;i+=10){
    panels:steps
  });
 }
-const result={schemaVersion:2,totalChapters:20,totalStages:200,totalPanels:2000,totalBatches:200,
+const result={schemaVersion:3,totalChapters:20,totalStages:200,totalPanels:4000,totalBatches:400,
  status:'image-generation-briefs-only',note:'A brief is not a rendered image; only approved real cropped files count as complete.',batches};
 await fs.mkdir(path.dirname(target),{recursive:true});
 await fs.writeFile(target,JSON.stringify(result,null,2)+'\n');
 const arg=process.argv.indexOf('--batch');
 if(arg!==-1){
  const n=Number(process.argv[arg+1]);
- if(!Number.isInteger(n)||n<1||n>200)throw Error('Batch must be 1..200');
+ if(!Number.isInteger(n)||n<1||n>400)throw Error('Batch must be 1..400');
  const batch=batches[n-1];
  const outfile=path.join(root,'qa-reports','story-art-'+batch.id+'.json');
  await fs.writeFile(outfile,JSON.stringify(batch,null,2)+'\n');

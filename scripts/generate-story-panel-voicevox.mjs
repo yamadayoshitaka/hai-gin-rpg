@@ -73,7 +73,7 @@ if(!Number.isInteger(fallback))throw Error('VOICEVOX has no available voice styl
 let created=0,reused=0,bytes=0;const missingSpeakers=new Set();
 await fs.mkdir(path.join(base,'clips'),{recursive:true});
 const output={engine:root,chapter:chapter??null,stage:stageValue??null,stages:stages.length,panels:tasks.length,
- canonicalStagePanels:stages.length*10,includesDefeatVariants:true,
+ canonicalStagePanels:stages.length*20,includesDefeatVariants:true,
  format,created:0,reused:0,missingSpeakers:[],files:[]};
 for(const [index,t] of tasks.entries()){
  if(manifest.clips[t.key]){
