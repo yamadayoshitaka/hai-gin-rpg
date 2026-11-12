@@ -76,7 +76,7 @@ async function expectCenteredFaceSliders(page,gender){
   });
   const errors=[];
   page.on('pageerror',e=>errors.push(e.message));
-  await page.goto('http://127.0.0.1:8765/face-mesh-studio.html?gender=female&view=front',
+  await page.goto('http://127.0.0.1:8765/face-mesh-studio.html?gender=female&view=front&qa=legacy',
    {waitUntil:'domcontentloaded',timeout:60000});
   await page.waitForFunction(()=>window.__faceMasterQA?.().loaded===true,
    null,{timeout:100000,polling:250});
@@ -569,7 +569,7 @@ async function expectCenteredFaceSliders(page,gender){
     viewport:{width:1000,height:880},deviceScaleFactor:1,acceptDownloads:true
    });
    const errorsHero=[];hero.on('pageerror',e=>errorsHero.push(e.message));
-   await hero.goto('http://127.0.0.1:8765/face-body-studio.html',
+   await hero.goto('http://127.0.0.1:8765/face-body-studio.html?qa=legacy',
     {waitUntil:'domcontentloaded',timeout:60000});
    await hero.waitForFunction(()=>{
     const loaded=window.__heroineBodyQA?.().loaded===true;
