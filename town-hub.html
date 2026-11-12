@@ -115,7 +115,7 @@ import {STORY_CHAPTERS,storyVoiceKey} from './src/story-chapters.js';
 import {STORY_KEY_PEOPLE} from './src/story-cinematic.js';
 import {mangaForStage} from './src/story-stage-manga.js';
 import {storyStageContext} from './src/story-narrative-flow.js';
-import {storyPageAsset} from './src/story-manga-page.js';
+import {comicForStage,comicPageAsset} from './src/story-chapter-comic.js';
 
 import {fantasyCueForMangaPanel} from './src/fantasy-scene-score.js';
 import {continentForChapter} from './src/continent-campaign.js';
@@ -841,7 +841,8 @@ async function speakChapter(number,{autoplay=false}={}){
 // Every town stop uses the exact same serial-manga identity and panel order
 // as the other 180 combat/exploration stages.
 const townManga=mangaForStage(game.townStage);
-let eventScenes=mangaForStage(game.townStage,storyStageContext(game,game.townStage)).panels.filter(p=>p.phase==='pre');
+let eventComic=comicForStage(game.townStage,'pre',storyStageContext(game,game.townStage));
+let eventScenes=eventComic.panels;
 let eventIndex=0,paperPhase='pre',leaveAfterPaper=false,renderedTownPage=null;
 const voiceIsOn=()=>{
  try{return JSON.parse(localStorage.getItem('hai-gin-core-settings-v1')||'{}')?.voice!==false;}
@@ -857,14 +858,17 @@ function setVoiceEnabled(value){
 function eventRender(){
  const shot=eventScenes[eventIndex];
  $('eventText').textContent=shot.text;
- const asset=storyPageAsset(game.townStage,paperPhase,shot.protagonistGender);
+ const asset=comicPageAsset(game.townStage,paperPhase,
+  storyStageContext(game,game.townStage),shot.comicPage,shot.protagonistGender);
+ const cells=eventScenes.filter(p=>p.comicPage===shot.comicPage).length;
+ $('eventSceneArt').style.aspectRatio='1536 / '+(432*Math.ceil(cells/2));
  if(renderedTownPage!==asset){
   renderedTownPage=asset;
   const img=$('eventSceneImage'),missing=$('eventSheetMissing');
   img.hidden=true;missing.hidden=false;
   if(!asset){missing.textContent='主人公の性別が確定していないため漫画原画を選べません。';}
   else{
-   missing.textContent='10コマ漫画の原画を確認しています…';
+   missing.textContent='分岐別の漫画原画を確認しています…';
    img.onload=()=>{if(renderedTownPage!==asset)return;img.hidden=false;missing.hidden=true;};
    img.onerror=()=>{if(renderedTownPage!==asset)return;img.hidden=true;missing.hidden=false;
     missing.textContent='10コマ漫画の'+(paperPhase==='pre'?'イベント前':'イベント後')+
@@ -926,8 +930,8 @@ function startPaperStory(phase='pre'){
   game.storyFlags.stageMangaSeen[game.townStage]=true;
   persistSession(game,sessionStorage);
  }
- eventScenes=mangaForStage(game.townStage,storyStageContext(game,game.townStage))
-  .panels.filter(p=>p.phase===phase);
+ eventComic=comicForStage(game.townStage,phase,storyStageContext(game,game.townStage));
+ eventScenes=eventComic.panels;
  hideTownDialogue();
  townAudio.effect('paper');townAudio.setScene('paper');
  resetTownMovement();$('townGuide').hidden=true;closePanel();
