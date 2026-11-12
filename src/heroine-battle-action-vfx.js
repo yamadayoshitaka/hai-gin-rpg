@@ -116,7 +116,12 @@ export function createHeroineBattleActionVfx({
  function update(dt){
   if(disposed||!recipe)return;
   time+=Math.max(0,Math.min(.07,dt||0));
-  if(time>=recipe.life){hideAll();recipe=null;return}
+  if(time>=recipe.life){
+   // Locomotion and raised-guard clips loop, so their dust/shield glow
+   // must not disappear forever after the first half-second.
+   if(['run','walk','guard'].includes(recipe.kind))time%=recipe.life;
+   else{hideAll();recipe=null;return}
+  }
   const p=Math.min(1,time/recipe.life),fade=Math.sin(Math.PI*p);
   const w=recipe.width;
   for(let i=0;i<sprites.length;i++){
