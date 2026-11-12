@@ -187,24 +187,35 @@ export function buildBodyDepthCollision(bodyRoot,headMesh,{clearance=.006}={}){
   }
   return finite(front)&&finite(rear)?{front,rear}:null;
  };
- let contacts=0;
- const resolve=point=>{
+ let contacts=0,frontContacts=0,rearContacts=0;
+ // A strand from the FRONT temple must never escape through the rear torso:
+ // the old nearest-depth projection put visible locks inside the shoulder.
+ // The caller supplies its scalp-origin side; omitted side is legacy nearest.
+ const resolve=(point,{side='nearest',surfaceOffset=0}={})=>{
   const depth=query(point.x,point.y);
-  if(!depth||point.z>=depth.front+clearance||
-    point.z<=depth.rear-clearance)return false;
-  // A naturally falling lock must escape to whichever side of the real
-  // torso it is closest to, rather than passing through the chest.
+  if(!depth)return false;
+  const margin=clearance+clamp(Number(surfaceOffset)||0,0,clearance*3);
+  if(side==='front'){
+   if(point.z>=depth.front+margin)return false;
+   point.z=depth.front+margin;contacts++;frontContacts++;return true;
+  }
+  if(side==='rear'){
+   if(point.z<=depth.rear-margin)return false;
+   point.z=depth.rear-margin;contacts++;rearContacts++;return true;
+  }
+  if(point.z>=depth.front+margin||point.z<=depth.rear-margin)return false;
   const frontDistance=Math.abs(depth.front-point.z);
   const rearDistance=Math.abs(point.z-depth.rear);
-  point.z=frontDistance<rearDistance?
-   depth.front+clearance:depth.rear-clearance;
+  point.z=frontDistance<=rearDistance?
+   depth.front+margin:depth.rear-margin;
   contacts++;return true;
  };
  return {
   query,resolve,
   getReport:()=>({kind:'actual-imported-body-triangle-depth',
    collisionTriangleCount:raw.length/9,gridCells:grid.length,
-   contactCorrections:contacts,skinOverlapRepair:clearance,
+   contactCorrections:contacts,frontSideCorrections:frontContacts,
+   rearSideCorrections:rearContacts,skinOverlapRepair:clearance,
    underlyingBodyBounds:!!b})
  };
 }
