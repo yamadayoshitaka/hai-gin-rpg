@@ -2132,7 +2132,7 @@ test('v40 outfit page exposes real action buttons and separate face page navigat
  const face=readFileSync('face-mesh-studio.html','utf8');
  assert.match(outfit,/id="heroActionButtons"/);
  assert.match(outfit,/STUDIO_BATTLE_ACTIONS/);
- assert.match(outfit,/data\.action=action\.id/);
+ assert.match(outfit,/btn\.dataset\.action=action\.id/);
  assert.match(outfit,/battleCostume\?\.playAction/);
  assert.match(outfit,/id="faceEditorLink"/);
  assert.match(outfit,/body\.costume-only #v32BodyPartStudio/);
