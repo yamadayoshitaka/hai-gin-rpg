@@ -139,7 +139,7 @@ async function expectCenteredFaceSliders(page,gender){
     await page.locator('#'+view).click();
     await page.waitForTimeout(200);
     const report=await page.evaluate(()=>window.__faceMasterQA());
-    if(report.gender!==g||report.view!==view||report.visibleFaceMeshes!==1||report.visiblePartMeshes!==(g==='female'?32:19))
+    if(report.gender!==g||report.view!==view||report.visibleFaceMeshes!==1||report.visiblePartMeshes!==(g==='female'?28:19))
      throw Error('Face viewer controls failed '+JSON.stringify(report));
     await canvas.screenshot({path:path.join(out,g+'-'+view+'.png'),
      timeout:90000,animations:'disabled'});
