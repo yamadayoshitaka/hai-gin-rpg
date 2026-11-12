@@ -147,6 +147,28 @@ export function refineHeroineCostumeSilhouette(wardrobeRoot){
   sourceGeometryUnmodified:true};
 }
 
+// Deterministic pores add submillimetre surface response to the ACTUAL
+// high-resolution face without overlay makeup cards or changing its topology.
+// Shared texture is reused across the editor's rebuilds to avoid VRAM leaks.
+let microSkinTexture=null;
+export function getHeroineMicroSkinTexture(){
+ if(microSkinTexture)return microSkinTexture;
+ const w=96,rgba=new Uint8Array(w*w*4);
+ for(let y=0;y<w;y++)for(let x=0;x<w;x++){
+  const n=((x*374761393+y*668265263)^(x*y*1597334677))>>>0;
+  const grain=((n^(n>>>13))*1274126177)>>>0;
+  const pore=Math.max(0,Math.min(255,142+((grain>>>16)%37)-18));
+  const i=(y*w+x)*4;
+  rgba[i]=rgba[i+1]=rgba[i+2]=pore;rgba[i+3]=255;
+ }
+ const tex=new THREE.DataTexture(rgba,w,w,THREE.RGBAFormat);
+ tex.wrapS=tex.wrapT=THREE.RepeatWrapping;
+ tex.magFilter=THREE.LinearFilter;
+ tex.minFilter=THREE.LinearMipmapLinearFilter;
+ tex.generateMipmaps=true;
+ tex.repeat.set(6,7);tex.needsUpdate=true;
+ microSkinTexture=tex;return tex;
+}
 /** Face reference remains the artist's blonde/blue heroine, not a donor head. */
 export function enhanceHeroineFaceSurface(face){
  if(!face?.isMesh||!face.material)return {applied:false};
@@ -156,14 +178,17 @@ export function enhanceHeroineFaceSurface(face){
   color:source.color?.clone()||new THREE.Color(0xf0d9cb),
   map:source.map||null,vertexColors:!!source.vertexColors,
   side:source.side,transparent:source.transparent,opacity:source.opacity,
-  roughness:.72,metalness:0,clearcoat:.085,clearcoatRoughness:.55,
-  sheen:.13,sheenRoughness:.85,sheenColor:new THREE.Color(0xc98978)
+  roughness:.77,metalness:0,clearcoat:.045,clearcoatRoughness:.69,
+  sheen:.10,sheenRoughness:.85,sheenColor:new THREE.Color(0xc98978),
+  bumpMap:face.geometry?.getAttribute('uv')?getHeroineMicroSkinTexture():null,
+  bumpScale:.00010
  });
  material.name='studio-heroine-natural-skin';
  face.material=material;
  face.userData.studioHeroineFaceSurface=true;
  return {applied:true,roughness:material.roughness,
-  clearcoat:material.clearcoat,sheen:material.sheen,vertexColors:material.vertexColors};
+  clearcoat:material.clearcoat,sheen:material.sheen,vertexColors:material.vertexColors,
+  skinMicroRelief:!!material.bumpMap,poreBumpScale:material.bumpScale};
 }
 
 
