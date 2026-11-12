@@ -905,10 +905,12 @@ async function expectCenteredFaceSliders(page,gender){
     throw Error('v32 selected eye did not regenerate real 3D mesh');
    await modern.locator('#v32FemaleHair').selectOption('12');
    await modern.locator('#v33FemaleHairColor').selectOption('blue');
+   await modern.locator('#v33FemaleWigVolume').selectOption('airy');
    const selectedHair=await modern.evaluate(()=>window.__faceMasterQA());
    if(selectedHair.wigReport?.layeredRibbonCount!==4||
       selectedHair.v32PartSelection.hair!==12||
       selectedHair.v33HairColor!=='blue'||
+      selectedHair.wigReport?.v33WigVolumeProfile!=='airy'||
       selectedHair.wigReport?.v33ScalpHuggingBuzz!==true)
     throw Error('v32 four-layer hair volume missing from real 3D');
    await modern.locator('#male').click();
@@ -918,11 +920,13 @@ async function expectCenteredFaceSliders(page,gender){
    await modern.locator('#v32MaleFace').selectOption('5');
    await modern.locator('#v32MaleHair').selectOption('11');
    await modern.locator('#v33MaleHairColor').selectOption('red');
+   await modern.locator('#v33MaleWigVolume').selectOption('lifted');
    const selectedMale=await modern.evaluate(()=>window.__faceMasterQA());
    if(selectedMale.v32PartSelection.face!==5||
       selectedMale.wigReport?.layeredRibbonCount!==4||
       selectedMale.wigReport?.v33ShortCutKind!=='very-short'||
-      selectedMale.v33HairColor!=='red')
+      selectedMale.v33HairColor!=='red'||
+      selectedMale.wigReport?.v33WigVolumeProfile!=='lifted')
     throw Error('v32 male selected face or static 4-layer wig missing');
    if(modernErrors.length)throw Error('v32 face browser exceptions '+modernErrors.join(';'));
    await modern.screenshot({path:path.join(out,'v32-male-ten-parts.png')});
@@ -944,12 +948,14 @@ async function expectCenteredFaceSliders(page,gender){
    await modern.locator('#v32FemaleMakeup').selectOption('8');
    await modern.locator('#v32FemaleHair').selectOption('10');
    await modern.locator('#v33FemaleHairColor').selectOption('silver');
+   await modern.locator('#v33FemaleWigVolume').selectOption('lifted');
    const report=await modern.evaluate(()=>window.__heroineBodyQA());
    if(report.v32PartSelection.face!==6||
       report.v32PartSelection.makeup!==8||
       report.wig?.layeredRibbonCount!==4||
       report.wig?.v33ShortCutKind!=='short'||
       report.v33HairColor!=='silver'||
+      report.wig?.v33WigVolumeProfile!=='lifted'||
       !report.shoulderHolesClosed||
       !report.sealedNeck)
     throw Error('v32 combined face/body/4-layer hair fitting failed '+JSON.stringify(report.v32PartSelection));
