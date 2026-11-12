@@ -84,13 +84,13 @@ assert.match(map,/launchSelectedStage\(stage\.id\)/);
 assert.match(map,/mapAudio\.changeScene\('manga',cue\.url\)/);
 assert.match(map,/stageMangaSeen\[stage\.id\]=true/);
 assert.match(town,/const townManga=mangaForStage\(game\.townStage\)/);
-assert.match(town,/stageMangaImage\(shot\)/);
+assert.match(town,/storyPageAsset\(/);
 assert.match(town,/townAudio\.setScene\('paper',cue\.url\)/);
 assert.match(town,/speakCurrentScene\(\);/);
 assert.match(town,/id="eventVoice"[^>]*>音声 ON<\/button>/);
 assert.match(title,/const introStory=mangaForStage\('c01-s01'\)/);
-assert.match(title,/stageMangaImage\(shot\)/);
-assert.match(read('src/story-manga-viewer.js'),/voiceOn=readVoice\(storage\)/);
+assert.match(title,/storyPageAsset\(/);
+assert.match(read('src/story-manga-viewer.js'),/voiceOn=readVoice\(storage\)/);\nassert.match(read('src/story-manga-viewer.js'),/loadApprovedPage\(shot\)/);
 for(const [name,html] of [['world-map.html',map],['town-hub.html',town],['game.html',title]]){
  const scripts=[...html.matchAll(/<script type="module">([\s\S]*?)<\/script>/g)];
  assert.ok(scripts.length,name+' must contain ES module');
