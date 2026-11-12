@@ -11,7 +11,7 @@ body.town-mode > :not(#stageViewport):not(#battleLoading):not(script):not(style)
 body.town-mode #stageViewport{position:fixed!important;inset:0!important;width:100%!important;height:100dvh!important}
 body.town-mode #stageViewport canvas{width:100%!important;height:100%!important}
 body.town-mode #battleLoading[hidden]{display:none!important}
-</style><link rel="stylesheet" href="./src/tactical-command-ui.css?v=2.1"><link rel="stylesheet" href="./src/battle-ui-refinement.css?v=2.3"></head>
+</style><link rel="stylesheet" href="./src/tactical-command-ui.css?v=2.1"><link rel="stylesheet" href="./src/battle-ui-refinement.css?v=2.4"></head>
 <body><div id="hud"><b>灰銀戦記 ― 沈黙の星鐘 — リアルタイム軍団戦 v4.6.69</b><small>自動戦闘・階段移動 / 開戦時固定作戦と部隊号令 / ドラッグで視点回転</small><div id="selected">軍団配置中…</div><div id="log"></div><div id="jobTools" style="display:none"><select id="jobSelect"></select><select id="motionSelect"></select><button id="playMotion">動作再生</button></div><small><a style="color:#9adfff" href="./motion-external-test.html">外部モーション検証</a></small></div><div id="stageViewport"></div><div id="battleStatus" aria-live="polite"><div class="unit" id="allyStats">味方 HP -- / MP --</div><div class="unit enemy" id="enemyStats">敵 HP -- / MP --</div></div><button id="menuToggle" style="position:fixed;top:68px;left:10px;z-index:25;background:#203c55;color:white;padding:9px 15px;border:1px solid #9bb4c7;border-radius:8px">☰ メニュー</button><div id="commands"><label>全軍作戦<select id="strategy"><option value="eliminate">全滅</option><option value="environment_prepare">環境整備</option><option value="recovery">回復</option></select></label><label hidden aria-hidden="true">個別命令<select id="unitOrder" disabled><option value="inherit">全軍に従う</option><option value="charge">突撃</option><option value="defend">防御</option><option value="hold">陣地維持</option><option value="retreat">後退</option></select></label><button id="pause">一時停止</button><button id="igniteBridge" disabled style="position:fixed;right:8px;bottom:157px;z-index:12;background:#9b4026;color:white;border-radius:7px;padding:9px">🔥 木橋を燃やす</button><span id="unitInfo">味方をタップして個別指示</span><a id="specShortcut" href="./battle-specifications.html" target="_blank" rel="noopener" aria-label="ゲーム仕様一覧を別タブで開く">📖 仕様</a></div>
 <style>
 #commands,#menuToggle{display:none!important}#allySquadRibbon[hidden],#enemySquadRibbon[hidden]{display:none!important}
@@ -756,7 +756,7 @@ import {TACTICAL_STRATEGIES,TACTICAL_ORDERS,orderEffect,strategyEffect} from './
 import {coreVictoryReward,territoryVictoryReward,verifiedBattleLoot} from './src/battle-victory-rewards.js?v=2.2';
 import {CAMPAIGN_STAGE_BY_ID} from './src/campaign-stage-plan.js';
 import {TERRITORIES} from './src/story-campaign.js';
-import {installBattleTacticalUI,createPreBattleTacticalSummary} from './src/tactical-command-battle-ui.js?v=2.3';
+import {installBattleTacticalUI,createPreBattleTacticalSummary} from './src/tactical-command-battle-ui.js?v=2.4';
 import {describeSquadOrder,describeCommanderBuff} from './src/battle-order-message.js?v=4.6.40';
 import {recommendBattleTactics} from './src/battle-quick-recommendation.js?v=4.6.43';
 import {chooseAutoSquadItem} from './src/battle-auto-item-policy.js?v=1';
