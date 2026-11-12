@@ -156,8 +156,14 @@ async function expectVisibleLibraryPreset(page,context,contact='brown'){
      !wigQA.wigReport?.collisionTypes.includes('chest'))
    throw Error('Scalp wig and collision proxy not initialized '+JSON.stringify(wigQA.wigReport));
   await canvas.screenshot({path:path.join(out,'female-v12-saved-face-blonde-long-wig.png')});
+  await page.locator('#front').click();
+  const distanceWithHair=await page.evaluate(()=>window.__faceMasterQA().cameraDistance);
   await page.locator('#parts').click();
   await page.locator('#wig').click();
+  await page.locator('#front').click();
+  const distanceWithoutHair=await page.evaluate(()=>window.__faceMasterQA().cameraDistance);
+  if(Math.abs(distanceWithHair-distanceWithoutHair)>1e-6)
+   throw Error('Wig changed face camera zoom '+distanceWithHair+'/'+distanceWithoutHair);
   if((await page.evaluate(()=>window.__faceMasterQA())).wigVisible)
    throw Error('Wig toggle did not hide wig');
   await page.locator('#side').click();
