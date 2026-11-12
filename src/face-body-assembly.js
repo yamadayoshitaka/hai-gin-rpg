@@ -255,14 +255,28 @@ export function createSealedNeckBridge(face,attachment,{headCutY,bodyCutY}={}){
  const geo=face.geometry,pos=geo.getAttribute('position');
  geo.computeBoundingBox();
  const box=geo.boundingBox,h=box.max.y-box.min.y;
- const topY=headCutY+h*.015,bottomY=bodyCutY-h*.025;
- if(topY<=bottomY)throw Error('Seam must overlap upper and lower neck cuts');
+ // clipMeshGeometryAtWorldNeck cuts against WORLD Y. The actual imported
+ // Blender mesh may have a nonidentity node transform: never compare its
+ // local vertex Y to a world Y, which produced an empty neck-ring sample.
+ face.updateWorldMatrix(true,false);
+ const inverse=face.matrixWorld.clone().invert();
+ const headLocalCut=new THREE.Vector3(0,headCutY,0).applyMatrix4(inverse).y;
+ const bodyLocalCut=new THREE.Vector3(0,bodyCutY,0).applyMatrix4(inverse).y;
+ const topY=Math.max(box.min.y,headLocalCut)+h*.015;
+ const bottomY=bodyLocalCut-h*.025;
+ if(topY<=bottomY)throw Error('Neck overlap has invalid local-space order');
  const near=[];
+ const all=[];
  for(let i=0;i<pos.count;i++){
-  const y=pos.getY(i);
-  if(Math.abs(y-topY)<=h*.034)near.push([pos.getX(i),pos.getZ(i)]);
+  const y=pos.getY(i),point=[pos.getX(i),pos.getZ(i)];
+  all.push({dy:Math.abs(y-topY),point});
+  if(Math.abs(y-topY)<=h*.048)near.push(point);
  }
- if(near.length<12)throw Error('Head neck-contour sample is too sparse');
+ if(near.length<12){
+  all.sort((a,b)=>a.dy-b.dy);
+  for(const v of all.slice(0,Math.min(128,all.length)))near.push(v.point);
+ }
+ if(near.length<12)throw Error('Real neck mesh missing enough vertices');
  const extent=(values,q)=>{
   const sorted=values.slice().sort((a,b)=>a-b);
   return sorted[Math.min(sorted.length-1,Math.floor(q*(sorted.length-1)))];
