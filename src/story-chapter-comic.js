@@ -18,6 +18,7 @@ export function comicEditionKey(stageId,phase,context={}){
  const parts=[phase];
  if(phase==='post'){
   const status=stage.kind==='town'?'town':
+   context?.battleOutcome?.playerCommanderDead===true?'gameover':
    context?.battleOutcome?.victory===true?'victory':
    context?.battleOutcome?.victory===false?'defeat':'preview';
   parts.push(status);
@@ -33,7 +34,12 @@ export function comicEditionKey(stageId,phase,context={}){
   if(!ROUTES.some(r=>r.id===route))throw Error('Invalid story cooperation '+route);
   parts.push('route-'+route);
  }
- if(stageId==='c20-s10'&&phase==='post'&&context?.battleOutcome?.victory===true&&context?.storyEnding){
+ if(phase==='post'&&context?.battleOutcome?.playerCommanderDead===true){
+  scenes.push(branchShot(source,stageId,phase,'gameover',
+   '軍師の戦死が確認された。指揮を失った軍は戦いを終えた。この物語はゲームオーバーとして記録される。'));
+ }
+ if(stageId==='c20-s10'&&phase==='post'&&context?.battleOutcome?.victory===true&&
+    context?.battleOutcome?.playerCommanderDead!==true&&context?.storyEnding){
   if(!ENDING_GUIDE.some(e=>e.id===context.storyEnding))throw Error('Invalid story ending');
   parts.push('ending-'+context.storyEnding);
  }
@@ -52,7 +58,9 @@ function branchShot(base,stageId,phase,slug,text){
 export function comicForStage(stageId,phase,context={}){
  const stage=CAMPAIGN_STAGE_BY_ID[stageId];
  const edition=comicEditionKey(stageId,phase,context);
- const original=mangaForStage(stageId,context);
+ const safeContext=phase==='post'&&context?.battleOutcome?.playerCommanderDead===true
+  ?{...context,battleOutcome:{...context.battleOutcome,victory:false}}:context;
+ const original=mangaForStage(stageId,safeContext);
  const source=original.panels.filter(p=>p.phase===phase);
  if(!source.length)throw Error('Empty comic phase '+stageId+' '+phase);
  const scenes=[...source];
@@ -98,14 +106,15 @@ export function comicEditionsForStage(stageId){
  const choices=storyDecisionForStage(stageId)?.choices.map(([id])=>id)||[];
  const decisions=[null,...choices];
  const routes=stage.chapter>=13?ROUTES.map(r=>r.id):[null];
- const outputs=stage.kind==='town'?[null]:[true,false];
+ const outputs=stage.kind==='town'?[null]:[true,false,'gameover'];
  const editions=new Map();
  for(const decision of decisions)for(const route of routes){
   const shared={decision,route,protagonistGender:'male'};
   const pre=comicForStage(stageId,'pre',shared);
   editions.set(pre.edition,pre);
   for(const victory of outputs){
-   const context=victory===null?shared:{...shared,battleOutcome:{victory}};
+   const context=victory===null?shared:{...shared,battleOutcome:victory==='gameover'
+    ?{victory:false,playerCommanderDead:true}:{victory}};
    const post=comicForStage(stageId,'post',context);
    editions.set(post.edition,post);
    if(stageId==='c20-s10'&&victory===true)for(const ending of ENDING_GUIDE){
