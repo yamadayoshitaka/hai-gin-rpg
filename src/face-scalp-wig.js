@@ -520,13 +520,15 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   // In the complete heroine model, use the real imported body's
   // front/rear TRIANGLE depth before the fallback preview capsules.
   // The head-only studio intentionally keeps its old proxy behaviour.
-  if(bodyCollisionResolver?.resolve?.(p)){
-   collisions++;bodyContacts++;realBodyContacts++;
-  }
   for(const c of colliders){
    if(projectCapsule(p,c.a,c.b,c.r+d.x*.006)){
     collisions++;bodyContacts++;
    }
+  }
+  // This must be LAST: proxy shoulder capsules must not push a corrected
+  // strand back inside the real female body geometry.
+  if(bodyCollisionResolver?.resolve?.(p)){
+   collisions++;bodyContacts++;realBodyContacts++;
   }
  }
  function writeGeometry(){
