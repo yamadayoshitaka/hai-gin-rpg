@@ -125,6 +125,47 @@ export function applyMonsterBiologicalMotion(model,{time=0,phase=0,action='idle'
     model.scale.z*=1+compression*.5;
    }
  }
+ if(study.id==='m004'){
+   // Wolf studies distinguish relatively stiff endurance pursuit from the
+   // stronger sagittal flexion used when accelerating for a final strike.
+   // The posterior trunk and pelvis use real nested Three.js joints.
+   const strike=(action==='attack'||action==='special')?pulse:0;
+   const takeoff=action==='leap'?pulse:0;
+   const gallop=locomotion?Math.sin(phase-.35):0;
+   const lumbarBend=clamp((run?.145:.060)*gallop-.115*strike+
+     .16*takeoff,-.31,.31);
+   apply(p,'lumbar','x',lumbarBend);
+   apply(p,'pelvis','x',clamp(-lumbarBend*.60+
+     (locomotion?.043*Math.sin(phase+.7):0),-.26,.26));
+   apply(p,'pelvis','y',(locomotion?.042:0)*Math.sin(phase*.53));
+   apply(p,'neckCollar','x',-.36*lumbarBend-.07*strike);
+   if(p.head)p.head.rotation.x-=.20*lumbarBend+.11*strike;
+   // Foot contact timing differs for the leading and trailing limb;
+   // a flexed hock lifts the toe in swing, then extends for the push.
+   for(const side of [-1,1]){
+     const suffix=side<0?'L':'R',offset=side<0?0:PI;
+     const step=phase+offset;
+     apply(p,'scapula'+suffix,'x',
+       (locomotion?(run?.23:.12):0)*Math.sin(step-.25)+.16*strike);
+     apply(p,'scapula'+suffix,'z',
+       side*(.05*Math.cos(step)+.05*strike));
+     apply(p,'ear'+suffix,'x',
+       .11+.18*strike+.045*Math.sin(time*1.29+offset));
+     apply(p,'ear'+suffix,'z',
+       side*(.08+.055*Math.sin(time*.88+offset)-.06*strike));
+     for(const fore of ['front','rear']){
+       const name=fore+suffix,q=step+(fore==='rear'?PI*.63:0);
+       const swing=locomotion?Math.max(0,Math.cos(q)):0;
+       const push=locomotion?Math.max(0,-Math.cos(q)):0;
+       apply(p,'hock'+name,'x',
+         clamp(-.08+.31*swing-.12*push+.13*takeoff,-.30,.40));
+       apply(p,'toe'+name,'x',
+         clamp(-.035+.29*swing-.16*push-.12*strike,-.29,.37));
+     }
+   }
+   // The tail base follows the pelvic group instead of a fixed root point.
+   apply(p,'tail','x',-.13*lumbarBend+.16*takeoff);
+ }
  if(study.id==='m003'){
    // Fenrir's winter mantle lags the scapula and head during stride,
    // and digitigrade toe joints flex in swing, extend at ground contact.

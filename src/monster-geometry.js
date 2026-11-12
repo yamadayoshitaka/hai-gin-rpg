@@ -25,6 +25,39 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    }
  };
  const torso=g.group('torso');
+ if(s.id==='m004'){
+   // Grey wolf gallop: independent lumbar and pelvic segments allow hind
+   // limbs and tail to flex with the axial spine. Keep only this animal's
+   // hind limbs parented to the pelvis; all other species retain old rigs.
+   const lumbar=g.group('lumbar',[0,1.30,-.36],torso);
+   g.bridge(lumbar,'skin',[0,.020,.30],[0,-.020,-.29],.295,.245);
+   for(const side of [-1,1]){
+     g.sphere(lumbar,'skin',[side*.235,.038,-.03],
+       [.088,.155,.271],{name:'m004-erector-spinae'});
+     g.tube(lumbar,'light',[[side*.14,.172,.22],
+       [side*.18,.183,-.05],[side*.14,.115,-.25]],.023);
+   }
+   const pelvis=g.group('pelvis',[0,-.06,-.16],lumbar);
+   g.sphere(pelvis,'skin',[0,0,-.005],[.31,.285,.318],
+     {name:'m004-pelvis-croup'});
+   // Forequarter fascia moves independently of the spine as the leading
+   // forelimb braces and the neck counterbalances the moving hips.
+   for(const side of [-1,1]){
+     const shoulder=g.group('scapula'+(side<0?'L':'R'),
+       [side*.33,1.42,.36],torso);
+     g.bridge(shoulder,'skin',[0,-.165,-.13],
+       [side*.035,.160,.10],.144,.079);
+     g.sphere(shoulder,'light',[0,.025,-.025],
+       [.113,.184,.173],{name:'m004-scapular-shoulder'});
+   }
+   const neck=g.group('neckCollar',[0,1.43,.49],torso);
+   for(const side of [-1,1]){
+     g.bridge(neck,'skin',[side*.197,-.075,-.11],
+       [side*.165,.125,.24],.099,.065);
+     g.sphere(neck,'light',[side*.181,.019,.092],
+       [.090,.137,.222],{name:'m004-cervical-muscle'});
+   }
+ }
  if(s.id==='m003'){
    // Ice Fenrir: independently moving shoulder mantle; thick winter neck
    // guard hair is a solid layered silhouette even at distant LOD.
@@ -98,7 +131,16 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
  for(const side of [-1,1]){
    const horn=v===2||reptile? .28:.12;
    if(canine){
-     if(s.id==='m003'){
+     if(s.id==='m004'){
+       const ear=g.group('ear'+(side<0?'L':'R'),
+         [side*.215,.208,-.075],head);
+       g.spike(ear,'skin',[0,0,0],
+         [side*.082,.36,-.035],.095);
+       g.spike(ear,'shadow',[side*.018,.054,.064],
+         [side*.064,.294,.032],.053);
+       g.sphere(ear,'light',[0,.025,.050],[.074,.053,.060],
+         {name:'m004-ear-cartilage'});
+     }else if(s.id==='m003'){
        const ear=g.group('ear'+(side<0?'L':'R'),
          [side*.22,.21,-.075],head);
        g.spike(ear,'skin',[0,0,0],
@@ -138,6 +180,26 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
        [side*(.38+v*.045),.47+horn,-.13],.085);
    }else g.sphere(head,'skin',[side*.24,.24,-.09],[.10,.19,.07]);
    g.spike(head,'bone',[side*.13,-.20,muzzle+.08],[side*.13,-.31,muzzle+.22],.046);
+ }
+ if(s.id==='m004'){
+   // Enlarged temporalis and tear-duct ridges give the fast hunter a
+   // lean canid skull rather than relying on a differently tinted sphere.
+   g.bridge(head,'skin',[0,.063,-.13],[0,-.055,.445],.171,.118);
+   for(const side of [-1,1]){
+     g.bridge(head,'skin',[side*.220,-.032,-.105],
+       [side*.268,-.096,.232],.121,.077);
+     g.sphere(head,'skin',[side*.222,.038,.013],
+       [.107,.142,.178],{name:'m004-temporalis'});
+     g.tube(head,'light',[[side*.195,.14,-.09],
+       [side*.285,.146,.062],[side*.305,.096,.220]],.027);
+     g.sphere(head,'shadow',[side*.085,-.16,muzzle+.282],
+       [.025,.017,.012],{name:'m004-nostril'});
+     for(let n=0;n<4;n++){
+       g.sphere(head,'shadow',
+         [side*(.145+n*.017),-.202,muzzle+.055+n*.043],
+         [.005,.006,.009],{name:'m004-vibrissa-follicle'});
+     }
+   }
  }
  if(s.id==='m003'){
    // Broad wolf temporalis bundles are volumetric, not face paint.
@@ -220,7 +282,12 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    const name=(fore===1?'front':'rear')+(side<0?'L':'R');
    // Former limb pivot at y=1.13 kept all four feet half a metre above
    // terrain. Plant the soles near ground zero and embed hips in the torso.
-   const leg=g.group('leg'+name,[side*.29,.67,fore*.49]);
+   // Only the thunder wolf's rear legs follow the lumbar/pelvic hinge.
+   // Local coordinates preserve the original hip world-space placement.
+   const pelvisMounted=s.id==='m004'&&fore<0;
+   const leg=g.group('leg'+name,
+     pelvisMounted?[side*.29,-.57,.03]:[side*.29,.67,fore*.49],
+     pelvisMounted?g.pivots.pelvis:g.root);
    // Distal motion is independent from shoulder/hip rotation, retaining
    // the original limb and ground-contact positions.
    g.sphere(leg,'skin',[0,.17,0],
@@ -228,7 +295,25 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    const distal=g.group('lower'+name,[0,-.065,.015],leg);
    g.sphere(distal,'skin',[0,-.16,0],[reptile?.13:.15,.27,reptile?.13:.15]);
    g.sphere(distal,'shadow',[0,0,0],[.144,.125,.14],{name:'joint-'+name});
-   feet(g,distal,0,0,0,true,reptile?.75:1);
+   if(s.id==='m004'){
+     // The wolf's digitigrade tarsus and four toes are geometry attached
+     // to two separate rotating joints, not duplicate static feet.
+     const hock=g.group('hock'+name,[0,-.19,.017],distal);
+     g.bridge(hock,'skin',[0,.052,-.03],[0,-.24,.07],.106,.080);
+     g.sphere(hock,'shadow',[0,0,0],[.108,.095,.117],
+       {name:'m004-tarsal-joint'});
+     const toe=g.group('toe'+name,[0,-.29,.14],hock);
+     g.sphere(toe,'skin',[0,-.039,.035],[.153,.075,.167],
+       {name:'m004-metacarpal-pad'});
+     for(let digit=0;digit<4;digit++){
+       const x=(digit-1.5)*.072;
+       g.sphere(toe,'skin',[x,-.085,.137],[.040,.046,.078],
+         {name:'m004-digit'});
+       g.spike(toe,'bone',[x,-.054,.192],[x,-.090,.262],.021);
+     }
+   }else{
+     feet(g,distal,0,0,0,true,reptile?.75:1);
+   }
    if(s.id==='m003'){
      // Four articulated digit pads and their curved keratin claws follow
      // an independent metacarpophalangeal/toe flexion group on each paw.
@@ -317,7 +402,11 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    ];
    addFur(head,faceGuides);
  }
- const tail=g.group('tail',[0,1.35,-.55]);
+ // Drive the thunder wolf tail from its living pelvis; for other species
+ // preserve the original root-space animation and coordinates exactly.
+ const tail=g.group('tail',
+   s.id==='m004'?[0,.11,-.03]:[0,1.35,-.55],
+   s.id==='m004'?g.pivots.pelvis:g.root);
  g.tube(tail,'skin',[[0,0,.05],[0,.17,-.34],[0,.08,-.50]],reptile?.14:.085);
  const tailMid=g.group('tailMid',[0,.08,-.50],tail);
  g.tube(tailMid,'skin',[[0,0,0],[0,.01,-.25-v*.05],[.09,-.11,-.49-v*.10]],reptile?.13:.078);
