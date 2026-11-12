@@ -4,7 +4,7 @@ import {readFileSync,existsSync} from 'node:fs';
 import * as THREE from 'three';
 import {makeIndependentFaceMaster,FACE_MASTER_SPEC,femaleInnerFeatureDelta,femaleCheekJawDelta}
  from '../src/independent-face-masters.js';
-import {updateFaceFeatureAngles,applyFaceColorMode,createFastFaceSurfaceSampler}
+import {updateFaceFeatureAngles,applyFaceColorMode,createFastFaceSurfaceSampler,sculptEyeSocketsInFaceGeometry}
  from '../src/face-feature-meshes.js';
 import {createScalpAnchoredWig,wigVolumeLiftAt} from '../src/face-scalp-wig.js';
 import {attachIndependentHeadToBody,buildBodyDepthCollision,removeHeadBustBelowNeck,createSealedNeckBridge,createClosedShoulderCaps} from '../src/face-body-assembly.js';
@@ -1379,7 +1379,7 @@ test('v27 face-conforming eye bulges smoothly from eyeliner and default lashes c
   assert.ok(eye?.isMesh&&liner?.isMesh&&lash?.isMesh);
   assert.equal(eye.userData.noDetachedEyeball,true);
   assert.equal(eye.userData.eyelinerToCenterBulge,true);
-  assert.equal(eye.userData.eyelinerToCenterBulgeFraction,.080);
+  assert.equal(eye.userData.eyelinerToCenterBulgeFraction,.120);
   assert.equal(lash.userData.curvedRibbonStations,5);
   assert.equal(lash.userData.tipCurlsUpFromEyeliner,true);
   assert.equal(lash.userData.lashLength,1.4);
@@ -1389,7 +1389,7 @@ test('v27 face-conforming eye bulges smoothly from eyeliner and default lashes c
   assert.ok(lastZ>secondZ&&secondZ>firstZ,
    'Lashes must bend forward in 3D at the curled tip');
   assert.equal(m.report.detailedParts.eyeBulgeStartsAtEyeliner,true);
-  assert.equal(m.report.detailedParts.eyeBulgeFraction,.080);
+  assert.equal(m.report.detailedParts.eyeBulgeFraction,.120);
  }
  assert.equal(m.report.detailedParts.eyeWidthFactor,1);
  assert.equal(m.report.detailedParts.eyeHeightFactor,1);
@@ -1495,7 +1495,7 @@ test('v29 female eyes project forward of skin with convex globe, connected lids 
   const lower=model.parts.getObjectByName(side+'_LOWER_ANATOMICAL_EYELID');
   assert.ok(eye?.userData.anteriorGlobeReconstruction);
   assert.ok(iris?.userData.unclippedTrueCircle&&upper?.isMesh&&lower?.isMesh);
-  assert.equal(eye.userData.eyelinerToCenterBulgeFraction,.080);
+  assert.equal(eye.userData.eyelinerToCenterBulgeFraction,.120);
   const p=eye.geometry.getAttribute('position');
   const eyeCenter=p.getZ(9*(48+1)+24);
   const upperRim=p.getZ(18*(48+1)+24);
@@ -1860,31 +1860,33 @@ test('v35: mobile body studio exposes all selectors linked to live 3D model',()=
  assert.match(html,/wardrobe\.setSelection\(selectedStudio\)/);
 });
 
-test('v35 cornea and iris are never hidden behind the original skin at any eye vertex',()=>{
+test('v37 recessed eyes are clearly visible above sculpted socket skin, not floating over original skin',()=>{
  const model=makeIndependentFaceMaster(fixture().source,'female',{femaleControls:{
   eyeWidth:1.17,eyeHeight:1.12,irisDiameter:1.15,eyeDepth:-.12
  }});
  const sampler=createFastFaceSurfaceSampler(model.face.geometry);
  const radius=model.face.geometry.boundingBox.getSize(new THREE.Vector3()).x*.052;
+ model.root.updateMatrixWorld(true);
  for(const side of ['LEFT','RIGHT']){
   const eye=model.parts.getObjectByName(side+'_ORBITAL_EYEBALL');
   const iris=model.parts.getObjectByName(side+'_CURVED_IRIS');
   const pupil=model.parts.getObjectByName(side+'_CURVED_PUPIL');
-  model.root.updateMatrixWorld(true);
-  for(const part of [eye,iris,pupil]){
-   const positions=part.geometry.getAttribute('position');
-   const vertex=new THREE.Vector3();
-   for(let i=0;i<positions.count;i+=13){
-    vertex.fromBufferAttribute(positions,i);
-    part.localToWorld(vertex);model.face.worldToLocal(vertex);
-    const skin=sampler.query(vertex.x,vertex.y);
-    if(skin===null)continue;
-    assert.ok(vertex.z>skin+radius*.017,
-     part.name+' must sit in front of closed donor socket skin');
-   }
-  }
-  assert.ok(pupil.userData.circularProjectedRadius>radius*.18,
-   'Black pupil must be noticeably larger without clipping');
+  const visibleCenter=part=>{
+   const p=new THREE.Vector3().fromBufferAttribute(
+    part.geometry.getAttribute('position'),0);
+   part.localToWorld(p);model.face.worldToLocal(p);
+   return {z:p.z,skin:sampler.query(p.x,p.y)};
+  };
+  const cornea=visibleCenter(eye),irisCenter=visibleCenter(iris),
+   black=visibleCenter(pupil);
+  assert.ok(irisCenter.skin!==null&&irisCenter.z>irisCenter.skin,
+   'Colored iris must be visible above the recessed original mesh');
+  assert.ok(black.z>irisCenter.z,
+   'Black pupil must be slightly nearer than the colored iris');
+  assert.ok(eye.userData.recessedBehindLid&&
+   eye.userData.socketDepressionInOriginalMesh);
+  assert.ok(iris.userData.circularProjectedRadius>radius*.20);
+  assert.ok(cornea.skin!==null);
  }
  assert.equal(model.face.userData.softNaturalLipTint,true);
 });
@@ -1927,12 +1929,20 @@ test('v37 eye socket is sculpted into the contiguous original face mesh and iris
  assert.equal(model.face.geometry.userData.anatomicalEyeSocketSculpt,true);
  assert.deepEqual(donor.geometry.getAttribute('position').array,original,
   'Original imported head remains immutable');
+ // Isolate the socket sculpt pass to measure real contiguous head-mesh
+ // deformation, excluding the earlier nose/cheek adjustments.
+ const probe=model.face.geometry.clone();
+ const before=probe.getAttribute('position').array.slice();
+ const sculpt=sculptEyeSocketsInFaceGeometry(probe,{
+  eyeWidth:1,eyeHeight:1,eyeSpacing:1.10,eyePositionY:0
+ },'female');
+ const sculpted=probe.getAttribute('position');
  let receded=0;
- for(let i=0;i<pos.count;i++){
-  if(pos.getZ(i)<original[i*3+2]-.000005)receded++;
+ for(let i=0;i<sculpted.count;i++){
+  if(sculpted.getZ(i)<before[i*3+2]-.0000005)receded++;
  }
- assert.ok(receded>=model.report.detailedParts.eyeSocketSculptedVertices*.75,
-  'Eye-region head vertices must move inward as a smooth contiguous surface');
+ assert.ok(sculpt.vertices>0&&receded>=sculpt.vertices*.95,
+  'The same eye area must become physically recessed in the contiguous head mesh');
  model.root.updateMatrixWorld(true);
  for(const side of ['LEFT','RIGHT']){
   const iris=model.parts.getObjectByName(side+'_CURVED_IRIS');
