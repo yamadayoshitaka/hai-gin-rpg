@@ -281,7 +281,9 @@ export function sculptEyeSocketsInFaceGeometry(geometry,settings,gender='female'
  const radius=d.x*.052*eyeScale;
  const width=radius*1.12*eyeWidth;
  const eyeY=box.min.y+d.y*(.684+.006*settings.eyePositionY);
- const halfHeight=radius*(gender==='female'?.50:.34)*eyeHeight;
+ // Both sexes share the identical source-head geometry; eyelid aperture
+ // differences are applied only to the optical lid meshes, not the skull.
+ const halfHeight=radius*.50*eyeHeight;
  let vertices=0,maxInset=0,depthSum=0;
  for(let i=0;i<p.count;i++){
   const x=p.getX(i),y=p.getY(i),z=p.getZ(i);
