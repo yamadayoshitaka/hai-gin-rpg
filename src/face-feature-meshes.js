@@ -327,7 +327,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
  const pupilAngle=Math.asin(Math.min(.75,
   Math.sin(originalPupilAngle)*settings.irisDiameter));
  const eyeRadius=baseEyeRadius*eyeScale;
- const eyeCenterHeight=box.min.y+d.y*.684;
+ const eyeCenterHeight=box.min.y+d.y*(.684+.006*settings.eyePositionY);
  // Preserve the saved eye size, but move the sockets slightly toward
  // the true lateral face rather than burying the globe in the midface.
  const eyeSpacing=d.x*.123*settings.eyeSpacing;
@@ -660,9 +660,10 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
     const taper=Math.pow(Math.max(0,1-t*t),.70);
     const cupid=upper?
       d.y*.0018*(bell(Math.abs(t),.37,.22)-.42*bell(t,0,.23)):0;
-    const cy=lipCenter+(upper?d.y*.006:-d.y*.007)+cupid;
+    const cy=lipCenter+(upper?d.y*.006:-d.y*.007)+cupid+
+     d.y*.006*(settings.mouthAngle/12)*t;
     const vertical=(v-.5)*d.y*(upper?.011:.013)*taper;
-    const x=cx+t*halfWidth,y=cy+vertical;
+    const x=cx+d.x*.004*settings.mouthPositionX+t*halfWidth,y=cy+vertical;
     const fullness=(1-t*t)*Math.sin(Math.PI*v);
     const z=surfaceAt(x,y)+d.z*(.00022+.00065*fullness*taper);
     return new THREE.Vector3(x,y,z);
@@ -897,7 +898,7 @@ export function updateFaceFeatureAngles(partsRoot,settings={}){
 }
 
 /** Clay and color mode both keep the exact same geometry. */
-export function applyFaceColorMode(face,mode='clay',{contactColor}={}){
+export function applyFaceColorMode(face,mode='clay',{contactColor,makeupType=0}={}){
  const colored=mode==='color';
  const male=face.name.startsWith('MALE_');
  const clay={
@@ -908,10 +909,25 @@ export function applyFaceColorMode(face,mode='clay',{contactColor}={}){
   sclera:0xd5d8dd,iris:0x747a83,pupil:0x30353b,
   brow:0xa2a6ac,lashes:0x8c929a
  };
+ // Selected makeup recolors actual 3D lip and lid geometry; no decals.
+ const makeupChoices=[
+  [0xc07c82,0x865b7d,0xcf8383,0x30252b],
+  [0xc28289,0xaa828e,0xcd9290,0x403037],
+  [0xda93a4,0xb38b9e,0xe59ba7,0x403039],
+  [0xb37b70,0x947565,0xbd8b7f,0x332b28],
+  [0xd09ca8,0xb5a4b6,0xc8abb3,0x514451],
+  [0xdf8698,0xc18d9f,0xda8d9d,0x352633],
+  [0xa56c7b,0x776b93,0xaf8890,0x252334],
+  [0xd55c86,0xaa6388,0xcf819e,0x271e30],
+  [0xb54b67,0x8b5168,0xb47c80,0x24212a],
+  [0x9f4e66,0x6c4c76,0xb16a83,0x281b32]
+ ];
+ const makeup=makeupChoices[Math.min(9,Math.max(0,Math.round(makeupType)))];
  const palette={
-  ...FACE_V7_PALETTE,lipBase:male?0xc9998b:0xd9a699,
-  upperShadow:0x865b7d,
-  lipstick:0xc07c82,
+  ...FACE_V7_PALETTE,lipBase:male?(makeupType===0?0xc9998b:makeup[0]):
+   (makeupType===0?0xd9a699:makeup[0]),
+  upperShadow:makeup[1],blush:makeup[2],eyeliner:makeup[3],
+  lipstick:makeup[0],
   iris:male?0x50413b:parseInt(safeContactColor(contactColor).slice(1),16)
  };
  face.traverse(o=>{

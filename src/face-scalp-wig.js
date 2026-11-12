@@ -398,7 +398,9 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    colliders.push({name:extra.name||'external-body',
     a:new THREE.Vector3(...extra.a),b:new THREE.Vector3(...extra.b),r:extra.r});
  }
- const vertexCount=lockCount*(segments+1)*4;
+ const hairLayers=4;
+ const ribbonStride=hairLayers*2;
+ const vertexCount=lockCount*(segments+1)*ribbonStride;
  const vertices=new Float32Array(vertexCount*3),colors=new Float32Array(vertexCount*3);
  const indices=[];
  const rootColor=new THREE.Color(color);
@@ -457,7 +459,8 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   const bangLength=d.y*(.185+.035*cutPhase)*clamp(lengthScale,.55,1.5);
   const length=(fringe||overFace)?
    Math.max(d.y*.008,Math.min(bangLength,wigRoot.y-browLimit)):
-   d.y*(longFactor+fract(i*.381966)*.13)*clamp(lengthScale,.55,1.5);
+   d.y*(longFactor+fract(i*.381966)*.13)*clamp(lengthScale,.55,1.5)*
+    (style.styleLength||1);
   const rest=[],points=[],vel=[];
   const lateral=2*Math.abs(wigRoot.x-center.x)/d.x;
   const trimY=Math.min(wigRoot.y-d.y*.012,
@@ -475,7 +478,8 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   // root division; it must not sweep the tips sideways into cheek whiskers.
   // Blow-dried curtain guide: the fringe softly sweeps away from the
   // part rather than falling as an identical vertical row above the eyes.
-  const curtainSweep=partSide*d.x*(.004+.019*Math.pow(1-centerDist,1.3));
+  const curtainSweep=partSide*d.x*(.004+
+   (style.fringeSweep||.025)*.7*Math.pow(1-centerDist,1.3));
   const targetX=(back?
    center.x+(wigRoot.x-center.x)*.57:
    fringe?wigRoot.x+curtainSweep:
@@ -496,11 +500,12 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    const t=j/segments,fall=t*t*(3-2*t);
    const drop=.5*length*t+.5*g*(t*fallTime)**2;
    const y=Math.max(trimY,wigRoot.y-drop);
-   const curl=Math.sin(t*2.5+Math.floor(i/12)*.35)*d.x*.000045*t*t;
+   const curl=Math.sin(t*2.5+Math.floor(i/12)*.35)*d.x*
+    (style.strandWave??.045)*.001*t*t;
    // A gently rounded face-frame at cheek level prevents stiff curtain
    // rods. This is a fixed rest pose, not real-time hair physics.
    const templeVolume=zone.startsWith('temple')?
-    side*d.x*.026*Math.sin(Math.PI*t):0;
+    side*d.x*(style.templeVolume??.026)*Math.sin(Math.PI*t):0;
    const p=j===0?wigRoot.clone():f3(
     THREE.MathUtils.lerp(wigRoot.x,targetX,fall)+templeVolume+strandWave*t+curl,
     y,THREE.MathUtils.lerp(wigRoot.z,targetZ,fall)+curl*.35);
@@ -530,18 +535,20 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   strands.push({root:wigRoot,rest,points,vel,fringe,side,
    zone,seedIndex:seed.index,trimY,overFace,partSide,
    gravityRestShape:true,growthLogic:'grow-relax-collide-trim'});
-  const base=i*(segments+1)*4;
+  const base=i*(segments+1)*ribbonStride;
   for(let j=0;j<=segments;j++){
    const t=j/segments,shaded=rootColor.clone().lerp(tips,.3+.48*t)
     .multiplyScalar(.96+.075*fract(i*.3719));
-   for(let k=0;k<4;k++){
-    const at=(base+j*4+k)*3;
-    colors[at]=shaded.r;colors[at+1]=shaded.g;colors[at+2]=shaded.b;
+   for(let k=0;k<ribbonStride;k++){
+    const at=(base+j*ribbonStride+k)*3;
+    const layer=Math.floor(k/2),tone=1-layer*.045;
+    colors[at]=shaded.r*tone;colors[at+1]=shaded.g*tone;
+    colors[at+2]=shaded.b*tone;
    }
   }
   for(let j=0;j<segments;j++){
-   const a=base+j*4,b=base+(j+1)*4;
-   for(const off of [0,2]){
+   const a=base+j*ribbonStride,b=base+(j+1)*ribbonStride;
+   for(const off of [0,2,4,6]){
     indices.push(a+off,a+off+1,b+off,b+off,a+off+1,b+off+1);
    }
   }
@@ -705,13 +712,15 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
     let sx=wx*.82+nx*.40,sy=wy*.82,sz=wz*.82+nz*.40;
     const thinLength=Math.hypot(sx,sy,sz)||1;
     sx/=thinLength;sy/=thinLength;sz/=thinLength;
-    for(let k=0;k<4;k++){
-     const at=(i*(segments+1)*4+j*4+k)*3;
-     const sign=k%2===0?-1:1,secondary=k>=2;
-     const scale=sign*width*(secondary?.68:1);
-     let vx=p.x+sway+scale*(secondary?sx:wx);
-     let vy=p.y+scale*(secondary?sy:wy);
-     let vz=p.z+scale*(secondary?sz:wz);
+    for(let k=0;k<ribbonStride;k++){
+     const at=(i*(segments+1)*ribbonStride+j*ribbonStride+k)*3;
+     const layer=Math.floor(k/2),sign=k%2===0?-1:1;
+     const thickness=half*(.14+layer*.11)*Math.sin(Math.PI*Math.min(.99,t));
+     const layerWidth=[1,.84,.63,.43][layer];
+     const scale=sign*width*layerWidth,blend=layer/3;
+     let vx=p.x+sway+scale*(wx*(1-blend)+sx*blend)+nx*thickness;
+     let vy=p.y+scale*(wy*(1-blend)+sy*blend);
+     let vz=p.z+scale*(wz*(1-blend)+sz*blend)+nz*thickness;
      // Hair must clear the TRUE copied skull even when the guide centre
      // is legal. Broad vertices used to disappear under the visible
      // scalp because only shoulder/clothing collisions were checked.
@@ -890,7 +899,9 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   staticGroom:!!staticGroom,simulationEnabled:!staticGroom,
   runtimePhysicsCallsPerFrame:staticGroom?0:1,
   constructionCollisionOnly:!!staticGroom,
-  hairCardStyle:'layered-root-narrow-mid-full-tip-tapered',
+  hairCardStyle:'four-stacked-thick-ribbon-layers-with-real-depth',
+  layeredRibbonCount:hairLayers,ribbonVerticesPerStation:ribbonStride,
+  strandThicknessFraction:half*.47/d.x,
   salonStaticLongLayers:true,
   helmetSilhouetteFix:'staggered-curtain-fringe-long-temples-feathered-tips',
   templeLongLayerCount:strands.filter(s=>s.zone.startsWith('temple')&&!s.overFace).length,

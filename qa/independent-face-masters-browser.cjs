@@ -76,7 +76,7 @@ async function expectCenteredFaceSliders(page,gender){
   });
   const errors=[];
   page.on('pageerror',e=>errors.push(e.message));
-  await page.goto('http://127.0.0.1:8765/face-mesh-studio.html?gender=female&view=front',
+  await page.goto('http://127.0.0.1:8765/face-mesh-studio.html?gender=female&view=front&qa=legacy',
    {waitUntil:'domcontentloaded',timeout:60000});
   await page.waitForFunction(()=>window.__faceMasterQA?.().loaded===true,
    null,{timeout:100000,polling:250});
@@ -569,7 +569,7 @@ async function expectCenteredFaceSliders(page,gender){
     viewport:{width:1000,height:880},deviceScaleFactor:1,acceptDownloads:true
    });
    const errorsHero=[];hero.on('pageerror',e=>errorsHero.push(e.message));
-   await hero.goto('http://127.0.0.1:8765/face-body-studio.html',
+   await hero.goto('http://127.0.0.1:8765/face-body-studio.html?qa=legacy',
     {waitUntil:'domcontentloaded',timeout:60000});
    await hero.waitForFunction(()=>{
     const loaded=window.__heroineBodyQA?.().loaded===true;
@@ -881,6 +881,70 @@ async function expectCenteredFaceSliders(page,gender){
     bytes:buf.length
    }));
    await hero.close();
+  }
+  // v32 public UI is selection-only; legacy sliders are intentionally
+  // confined to ?qa=legacy for regression compatibility.
+  {
+   const modern=await browser.newPage({viewport:{width:412,height:844}});
+   const modernErrors=[];modern.on('pageerror',e=>modernErrors.push(e.message));
+   await modern.goto('http://127.0.0.1:8765/face-mesh-studio.html?gender=female&v=32',
+    {waitUntil:'domcontentloaded',timeout:65000});
+   await modern.waitForFunction(()=>window.__faceMasterQA?.().loaded===true,
+    null,{timeout:100000});
+   if(await modern.locator('#faceAdjustments').isVisible()||
+      await modern.locator('input[type="range"]:visible').count()!==0)
+    throw Error('v32 user-facing face editor must not show sliders');
+   for(const group of ['Face','Eye','Nose','Mouth','Hair','Makeup']){
+    if(await modern.locator('#v32Female'+group+' option').count()!==10)
+     throw Error('v32 female ten-option mesh category missing: '+group);
+   }
+   await modern.locator('#v32FemaleEye').selectOption('4');
+   const changedEye=await modern.evaluate(()=>window.__faceMasterQA());
+   if(changedEye.v32PartSelection.eye!==4||
+      changedEye.femaleControls.eyeWidth!==1.28)
+    throw Error('v32 selected eye did not regenerate real 3D mesh');
+   await modern.locator('#v32FemaleHair').selectOption('3');
+   const selectedHair=await modern.evaluate(()=>window.__faceMasterQA());
+   if(selectedHair.wigReport?.layeredRibbonCount!==4||
+      selectedHair.v32PartSelection.hair!==3)
+    throw Error('v32 four-layer hair volume missing from real 3D');
+   await modern.locator('#male').click();
+   for(const group of ['Face','Eye','Nose','Mouth','Hair','Makeup'])
+    if(await modern.locator('#v32Male'+group+' option').count()!==10)
+     throw Error('v32 male ten-option mesh category missing: '+group);
+   await modern.locator('#v32MaleFace').selectOption('5');
+   const selectedMale=await modern.evaluate(()=>window.__faceMasterQA());
+   if(selectedMale.v32PartSelection.face!==5||
+      selectedMale.wigReport?.layeredRibbonCount!==4)
+    throw Error('v32 male selected face or static 4-layer wig missing');
+   if(modernErrors.length)throw Error('v32 face browser exceptions '+modernErrors.join(';'));
+   await modern.screenshot({path:path.join(out,'v32-male-ten-parts.png')});
+   await modern.close();
+  }
+  {
+   const modern=await browser.newPage({viewport:{width:412,height:844}});
+   await modern.goto('http://127.0.0.1:8765/face-body-studio.html?v=32',
+    {waitUntil:'domcontentloaded',timeout:65000});
+   await modern.waitForFunction(()=>window.__heroineBodyQA?.().loaded===true,
+    null,{timeout:100000});
+   if(await modern.locator('#allFaceControls').isVisible()||
+      await modern.locator('input[type="range"]:visible').count()!==0)
+    throw Error('v32 integrated model must not expose old sliders');
+   for(const group of ['Face','Eye','Nose','Mouth','Hair','Makeup'])
+    if(await modern.locator('#v32Female'+group+' option').count()!==10)
+     throw Error('v32 body selector does not have 10 '+group+' parts');
+   await modern.locator('#v32FemaleFace').selectOption('6');
+   await modern.locator('#v32FemaleMakeup').selectOption('8');
+   const report=await modern.evaluate(()=>window.__heroineBodyQA());
+   if(report.v32PartSelection.face!==6||
+      report.v32PartSelection.makeup!==8||
+      report.wig?.layeredRibbonCount!==4||
+      !report.sealedNeck)
+    throw Error('v32 combined face/body/4-layer hair fitting failed '+JSON.stringify(report.v32PartSelection));
+   await modern.locator('#portrait').click();
+   await modern.locator('#bodyCanvas').screenshot({
+    path:path.join(out,'v32-female-chosen-makeup-4layer-wig.png')});
+   await modern.close();
   }
   if(errors.length)throw Error('Browser errors: '+JSON.stringify(errors));
   console.log('INDEPENDENT_MALE_FEMALE_CLAY_FACES_SUCCESS '+
