@@ -313,8 +313,9 @@ test('v15 lipstick is painted only on REAL source-head triangles, no sliding lip
   const lip=base.parts.getObjectByName(part+'_3D_VERMILION_LIP');
   const altered=moved.parts.getObjectByName(part+'_3D_VERMILION_LIP');
   assert.ok(lip.isMesh&&altered.isMesh);
-  assert.equal(lip.geometry.getAttribute('color'),undefined,
-   'Anatomical lip mesh must not carry floating cosmetic paint');
+  assert.equal(lip.geometry.getAttribute('color').itemSize,3,
+   'Real vermilion mesh itself carries the lipstick tint');
+  assert.equal(altered.userData.lipstickOnSameTriangles,true);
   assert.equal(altered.userData.lipstickOnSourceHead,true);
   assert.equal(base.parts.getObjectByName(part+'_LIPSTICK_MAKEUP'),undefined);
  }
@@ -685,6 +686,7 @@ test('v15 eyeshadow is a real eyelid child, lipstick fast updates without shape 
  assert.deepEqual(m.face.geometry.getAttribute('position').array,before);
  const now=m.face.geometry.getAttribute('color').array;
  assert.ok(now.some((value,i)=>Math.abs(value-prev[i])>1e-6));
+ assert.equal(m.parts.getObjectByName('UPPER_3D_VERMILION_LIP').userData.lipstickOnSameTriangles,true);
  const male=makeIndependentFaceMaster(fixture().source,'male');
  assert.equal(male.parts.getObjectByName('LEFT_UPPER_EYESHADOW'),undefined);
 });
