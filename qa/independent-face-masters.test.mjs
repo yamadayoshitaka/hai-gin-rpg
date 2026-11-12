@@ -727,3 +727,66 @@ test('v15 indexed surface sampler matches exact raycast on real triangle geometr
    'Indexed surface diverges from real raycast '+x+','+y);
  }
 });
+
+test('v16 rear hair roots are posterior and salon cut has actual staggered lengths',()=>{
+ const model=makeIndependentFaceMaster(fixture().source,'female');
+ const w=createScalpAnchoredWig(model.face,{count:480,lengthScale:1.1});
+ const r=w.getReport(),box=model.face.geometry.boundingBox;
+ const d=box.getSize(new THREE.Vector3()),cz=(box.min.z+box.max.z)*.5;
+ assert.equal(r.rootCount,480);
+ assert.equal(r.hairShape,'head-hugging-salon-layered-pointcut');
+ assert.equal(r.rearRootPolicy,'actual-posterior-scalp-only');
+ assert.equal(r.pointCutEnds,true);
+ assert.ok(r.rootDistribution.backLeft>=90&&r.rootDistribution.backRight>=90);
+ const samples=w.getStyleSamples();
+ const rear=samples.filter(s=>s.zone.startsWith('back')||s.zone.startsWith('nape'));
+ assert.ok(rear.length>=40);
+ for(const sample of rear){
+  assert.ok(sample.root[2]<cz-d.z*.04,
+   'A rear/nape hair lock was actually grown from the face');
+  assert.ok(sample.tip[2]<cz,
+   'Rear lock must continue behind the skull, not point toward face');
+  assert.ok(Number.isFinite(sample.firstStep[0]+sample.firstStep[1]+sample.firstStep[2]));
+ }
+ const backTips=samples.filter(s=>s.zone.startsWith('back')).map(s=>s.tip[1]);
+ assert.ok(Math.max(...backTips)-Math.min(...backTips)>d.y*.012,
+  'Back haircut still has an unnatural ruler-straight cut line');
+ for(const s of w.getCutSamples())
+  assert.ok(s.minY>=s.trimY-1e-5);
+ w.dispose();
+});
+test('v16 eyeliner reprojects onto same eyelid at -20, 0, +20 degrees',()=>{
+ const m=makeIndependentFaceMaster(fixture().source,'female');
+ let previous=m.parts.userData.eyelinerSurfaceSyncCount;
+ for(const angle of [-20,0,20]){
+  const sync=updateFaceFeatureAngles(m.parts,{...FEMALE_V7_DEFAULTS,
+   eyeAngle:angle});
+  assert.equal(sync.eyelinerMeshesRefitted,4);
+  assert.ok(m.parts.userData.eyelinerSurfaceSyncCount>previous);
+  previous=m.parts.userData.eyelinerSurfaceSyncCount;
+  m.parts.updateMatrixWorld(true);
+  for(const side of ['LEFT','RIGHT']){
+   for(const height of ['UPPER','LOWER']){
+    const liner=m.parts.getObjectByName(side+'_'+height+'_EYELINER');
+    const lid=m.parts.getObjectByName(side+'_'+height+'_ANATOMICAL_EYELID');
+    assert.equal(liner.parent,lid);
+    assert.equal(liner.userData.conformsTo,'real-eyelid-mesh');
+    assert.equal(liner.material.polygonOffset,true);
+    const lp=liner.geometry.getAttribute('position');
+    const ep=lid.geometry.getAttribute('position');
+    // Line start is at 0.018*4 = 0.072 of the first eyelid band.
+    for(const i of [0,7,14,21,28]){
+     const world=new THREE.Vector3(lp.getX(i),lp.getY(i),lp.getZ(i));
+     liner.localToWorld(world);
+     const target=new THREE.Vector3(
+      THREE.MathUtils.lerp(ep.getX(i),ep.getX(29+i),.072),
+      THREE.MathUtils.lerp(ep.getY(i),ep.getY(29+i),.072),
+      THREE.MathUtils.lerp(ep.getZ(i),ep.getZ(29+i),.072));
+     lid.localToWorld(target);
+     assert.ok(world.distanceTo(target)<.005,
+      'Eye-liner detached from lid at angle '+angle+' ('+side+' '+height+')');
+    }
+   }
+  }
+ }
+});
