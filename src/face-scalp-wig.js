@@ -314,9 +314,17 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  const fringeMultiplier=clamp(Number(fineFringeMultiplier)||1,1,4);
  const fringeExtra=Math.min(2400-baseCount,
   Math.round(baseCount*.08*(fringeMultiplier-1)));
- const lockCount=baseCount+fringeExtra;
+ // Full-body preview needs 3D volume across the shoulders after the
+ // obsolete SECOND rear curtain is removed. Fill it with roots belonging
+ // to the SAME living hair layer, not another short sheet underneath.
+ const rearBodyVolumeExtra=bodyCollisionResolver?
+  Math.min(2400-baseCount-fringeExtra,Math.round(baseCount*.17)):0;
+ const lockCount=baseCount+fringeExtra+rearBodyVolumeExtra;
  const weightedZones=WIG_ZONE_WEIGHTS.map(([name,weight])=>
-  [name,weight*(name.startsWith('fringe')?fringeMultiplier:1)]);
+  [name,weight*(name.startsWith('fringe')?fringeMultiplier:
+    bodyCollisionResolver&&(name.startsWith('back')||
+     name.startsWith('nape'))?1.35:
+    bodyCollisionResolver&&name.startsWith('temple')?1.20:1)]);
  const totalZoneWeight=weightedZones.reduce((sum,[,weight])=>sum+weight,0);
  const zoneCounts=Object.fromEntries(WIG_ZONE_WEIGHTS.map(([zone])=>[zone,0]));
  const zoneCap=[],zoneNames=[];
@@ -728,6 +736,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   groomingSmoothingPasses:3,frizzAmplitudeFactor:.025,
   hairClumpSwayGroupSize:12,
   fineFringeMultiplier:fringeMultiplier,frontFineLockExtra:fringeExtra,
+  rearBodyVolumeExtra,
   renderedRibbonBodyCollision:!!renderBodyCollider,
   strandRibbonOrientation:'guide-tangent-on-scalp',
   crownRootRatio:.20,posteriorRootRatio:.51,
