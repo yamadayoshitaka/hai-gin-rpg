@@ -98,14 +98,16 @@ async function expectCenteredFaceSliders(page,gender){
   const original=await page.evaluate(()=>window.__faceMasterQA());
   if(!original.female?.detailedParts?.smoothCornealCore||
       original.female?.detailedParts?.eyeCoreSkinBlendPower!==4||
-      !original.female?.detailedParts?.eyeAnteriorClearanceRatios?.every(v=>v>.22&&v<.48))
-    throw Error('v34 eyeliner-seated corneal relief absent or too protruding: '+JSON.stringify(original.female?.detailedParts));
+      original.female?.detailedParts?.eyeSocketGeometry!=='original-head-socket-with-open-almond-apertures'||
+      !original.female?.detailedParts?.irisUpperLidRecessRatios?.every(v=>v>.01&&v<2)||
+      original.female?.detailedParts?.eyeOpeningsCutFromHeadTriangles<1)
+    throw Error('v37 recessed eye socket mesh or eyeliner alignment invalid: '+JSON.stringify(original.female?.detailedParts));
    if(!original.savedNoseJawApplied||
      original.savedNoseJawDefaults?.jawSharpness!==5||
      original.savedNoseJawDefaults?.nostrilCover!==2||
      original.savedNoseJawDefaults?.noseBridgeSharpness!==2.5||
-     !original.female?.detailedParts?.eyeProfileLateralMargins?.every(v=>Number.isFinite(v)&&v>0)||
-     !original.male?.detailedParts?.eyeProfileLateralMargins?.every(v=>Number.isFinite(v)&&v>0))
+     !original.female?.detailedParts?.eyeProfileLateralMargins?.every(v=>Number.isFinite(v)&&v<.005)||
+     !original.male?.detailedParts?.eyeProfileLateralMargins?.every(v=>Number.isFinite(v)&&v<.005))
    throw Error('Saved nose/chin or lateral eye visibility broken '+JSON.stringify(original));
   if(original.gender!=='female'||original.bodyMeshes!==0||
      original.visibleFaceMeshes!==1||original.sourceUntouched!==true||
@@ -668,7 +670,7 @@ async function expectCenteredFaceSliders(page,gender){
    });
    if(irises.some(x=>!x.unclipped||Math.abs(x.ratio-1)>.02))
     throw Error('Irises still collapse into horizontal strips '+JSON.stringify(irises));
-   if(!eyeShape.dome||eyeShape.domeRatio<.2||
+   if(!eyeShape.dome||eyeShape.domeRatio<.075||
       eyeShape.stations!==5||eyeShape.curl<.8||eyeShape.length<1.3)
     throw Error('New eye bulge / eyelash curl was not rendered '+JSON.stringify(eyeShape));
 
@@ -895,7 +897,7 @@ async function expectCenteredFaceSliders(page,gender){
   {
    const modern=await browser.newPage({viewport:{width:412,height:844}});
    const modernErrors=[];modern.on('pageerror',e=>modernErrors.push(e.message));
-   await modern.goto('http://127.0.0.1:8765/face-mesh-studio.html?gender=female&v=35',
+   await modern.goto('http://127.0.0.1:8765/face-mesh-studio.html?gender=female&v=37',
     {waitUntil:'domcontentloaded',timeout:65000});
    await modern.waitForFunction(()=>window.__faceMasterQA?.().loaded===true,
     null,{timeout:100000});
@@ -942,7 +944,7 @@ async function expectCenteredFaceSliders(page,gender){
   }
   {
    const modern=await browser.newPage({viewport:{width:412,height:844}});
-   await modern.goto('http://127.0.0.1:8765/face-body-studio.html?v=36',
+   await modern.goto('http://127.0.0.1:8765/face-body-studio.html?v=37',
     {waitUntil:'domcontentloaded',timeout:65000});
    await modern.waitForFunction(()=>window.__heroineBodyQA?.().loaded===true,
     null,{timeout:100000});

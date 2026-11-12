@@ -4,7 +4,7 @@ import {readFileSync,existsSync} from 'node:fs';
 import * as THREE from 'three';
 import {makeIndependentFaceMaster,FACE_MASTER_SPEC,femaleInnerFeatureDelta,femaleCheekJawDelta}
  from '../src/independent-face-masters.js';
-import {updateFaceFeatureAngles,applyFaceColorMode,createFastFaceSurfaceSampler}
+import {updateFaceFeatureAngles,applyFaceColorMode,createFastFaceSurfaceSampler,sculptEyeSocketsInFaceGeometry}
  from '../src/face-feature-meshes.js';
 import {createScalpAnchoredWig,wigVolumeLiftAt} from '../src/face-scalp-wig.js';
 import {attachIndependentHeadToBody,buildBodyDepthCollision,removeHeadBustBelowNeck,createSealedNeckBridge,createClosedShoulderCaps} from '../src/face-body-assembly.js';
@@ -589,8 +589,8 @@ test('v13 eyes expose actual 3D sclera and cornea beyond the lateral head surfac
   assert.equal(eye.eyeballProjection,'sculpted-face-conforming-almond-no-sphere');
   assert.equal(eye.eyeProfileLateralMargins.length,2);
   for(const margin of eye.eyeProfileLateralMargins)
-   assert.ok(Number.isFinite(margin)&&margin>0,
-    'Profile eye still buried under facial skin: '+gender+' '+margin);
+   assert.ok(Number.isFinite(margin)&&margin<.005,
+    'Profile eye must stay in its sculpted socket, not protrude: '+gender+' '+margin);
   for(const side of ['LEFT','RIGHT']){
    const globe=model.parts.getObjectByName(side+'_ORBITAL_EYEBALL');
    assert.ok(globe.isMesh&&globe.userData.profileExposed);
@@ -1379,7 +1379,7 @@ test('v27 face-conforming eye bulges smoothly from eyeliner and default lashes c
   assert.ok(eye?.isMesh&&liner?.isMesh&&lash?.isMesh);
   assert.equal(eye.userData.noDetachedEyeball,true);
   assert.equal(eye.userData.eyelinerToCenterBulge,true);
-  assert.equal(eye.userData.eyelinerToCenterBulgeFraction,.245);
+  assert.equal(eye.userData.eyelinerToCenterBulgeFraction,.120);
   assert.equal(lash.userData.curvedRibbonStations,5);
   assert.equal(lash.userData.tipCurlsUpFromEyeliner,true);
   assert.equal(lash.userData.lashLength,1.4);
@@ -1389,7 +1389,7 @@ test('v27 face-conforming eye bulges smoothly from eyeliner and default lashes c
   assert.ok(lastZ>secondZ&&secondZ>firstZ,
    'Lashes must bend forward in 3D at the curled tip');
   assert.equal(m.report.detailedParts.eyeBulgeStartsAtEyeliner,true);
-  assert.equal(m.report.detailedParts.eyeBulgeFraction,.245);
+  assert.equal(m.report.detailedParts.eyeBulgeFraction,.120);
  }
  assert.equal(m.report.detailedParts.eyeWidthFactor,1);
  assert.equal(m.report.detailedParts.eyeHeightFactor,1);
@@ -1486,8 +1486,8 @@ test('v29 female eyes project forward of skin with convex globe, connected lids 
  assert.equal(report.eyeApertureHeightFraction,.50);
  assert.equal(report.eyeAnteriorClearanceRatios.length,2);
  for(const clearance of report.eyeAnteriorClearanceRatios)
-  assert.ok(clearance>.22&&clearance<.48,
-   'Cornea should swell subtly from the eyeliner without floating: '+clearance);
+  assert.ok(clearance>-.7&&clearance<.12,
+   'Cornea must sit slightly inside the eyelid instead of projecting forward: '+clearance);
  for(const side of ['LEFT','RIGHT']){
   const eye=model.parts.getObjectByName(side+'_ORBITAL_EYEBALL');
   const iris=model.parts.getObjectByName(side+'_CURVED_IRIS');
@@ -1495,14 +1495,14 @@ test('v29 female eyes project forward of skin with convex globe, connected lids 
   const lower=model.parts.getObjectByName(side+'_LOWER_ANATOMICAL_EYELID');
   assert.ok(eye?.userData.anteriorGlobeReconstruction);
   assert.ok(iris?.userData.unclippedTrueCircle&&upper?.isMesh&&lower?.isMesh);
-  assert.equal(eye.userData.eyelinerToCenterBulgeFraction,.245);
+  assert.equal(eye.userData.eyelinerToCenterBulgeFraction,.120);
   const p=eye.geometry.getAttribute('position');
   const eyeCenter=p.getZ(9*(48+1)+24);
   const upperRim=p.getZ(18*(48+1)+24);
   assert.ok(eyeCenter>upperRim-model.face.geometry.boundingBox.getSize(new THREE.Vector3()).x*.052*.16,
    'Corneal centre should remain near the eyeliner, not buried');
-  assert.ok(eye.userData.anteriorClearanceRatio>.22&&
-   eye.userData.anteriorClearanceRatio<.48);
+  assert.ok(eye.userData.anteriorClearanceRatio>-.7&&
+   eye.userData.anteriorClearanceRatio<.12);
  }
  const shallow=makeIndependentFaceMaster(fixture().source,'female',{
   femaleControls:{eyeDepth:-.3}
@@ -1511,7 +1511,7 @@ test('v29 female eyes project forward of skin with convex globe, connected lids 
   femaleControls:{eyeDepth:.85}
  });
  assert.ok(forward.report.detailedParts.eyeAnteriorClearanceRatios[0]>
-  shallow.report.detailedParts.eyeAnteriorClearanceRatios[0]+.14,
+  shallow.report.detailedParts.eyeAnteriorClearanceRatios[0]+.035,
   'Eye depth slider must move the anterior cornea, not cosmetic paint');
  assert.equal(FACE_SLIDER_RANGES.eyeDepth[1],.85);
 });
@@ -1567,8 +1567,9 @@ test('v31 width and height alone determine effective eye size; size never moves 
   // may legitimately shift with that skin; measure cornea-vs-skin
   // clearance instead of incorrectly demanding fixed world-space Z.
   for(const m of [normal,wide,tall,same]){
-   assert.ok(cornea(m).userData.anteriorClearanceRatio>.21,
-    'The cornea must stay in front of its locally reshaped eye socket');
+   assert.ok(cornea(m).userData.anteriorClearanceRatio>-.7&&
+    cornea(m).userData.anteriorClearanceRatio<.12,
+    'The cornea must stay recessed relative to the actual eyelid');
   }
   assert.ok(Math.abs(centerZ(same)-centerZ(wide))<1e-6,
    'Legacy eyeSize input must be ignored');
@@ -1652,7 +1653,7 @@ test('v32 selected nose, eyes and lips actually change original coherent mesh an
   assert.ok(moved>45,'Preset must sculpt the actual connected head, '+sex);
   assert.ok(b.parts.getObjectByName('LEFT_ORBITAL_EYEBALL').isMesh);
   assert.ok(b.parts.getObjectByName('UPPER_3D_VERMILION_LIP').isMesh);
-  assert.ok(b.report.detailedParts.eyeAnteriorClearanceRatios.every(x=>x>.20));
+  assert.ok(b.report.detailedParts.eyeAnteriorClearanceRatios.every(x=>x>-.7&&x<.12));
   assert.deepEqual(f.original.getAttribute('position').array,before);
   if(sex==='female'){
    applyFaceColorMode(b.face,'color',{contactColor:'#514139',makeupType:4});
@@ -1714,8 +1715,8 @@ test('v33 iris occupies more of true eye aperture while preserving a round pupil
   assert.ok(iris.userData.v33IrisOpeningFraction<=.94);
   assert.ok(iris.userData.unclippedTrueCircle);
   assert.ok(pupil.userData.unclippedTrueCircle);
-  assert.ok(eye.userData.anteriorClearanceRatio>.22&&
-   eye.userData.anteriorClearanceRatio<.48);
+  assert.ok(eye.userData.anteriorClearanceRatio>-.7&&
+   eye.userData.anteriorClearanceRatio<.12);
  }
  assert.equal(report.irisMeshCount,2);
 });
@@ -1859,31 +1860,34 @@ test('v35: mobile body studio exposes all selectors linked to live 3D model',()=
  assert.match(html,/wardrobe\.setSelection\(selectedStudio\)/);
 });
 
-test('v35 cornea and iris are never hidden behind the original skin at any eye vertex',()=>{
+test('v37 recessed eyes are clearly visible above sculpted socket skin, not floating over original skin',()=>{
  const model=makeIndependentFaceMaster(fixture().source,'female',{femaleControls:{
   eyeWidth:1.17,eyeHeight:1.12,irisDiameter:1.15,eyeDepth:-.12
  }});
  const sampler=createFastFaceSurfaceSampler(model.face.geometry);
  const radius=model.face.geometry.boundingBox.getSize(new THREE.Vector3()).x*.052;
+ model.root.updateMatrixWorld(true);
  for(const side of ['LEFT','RIGHT']){
   const eye=model.parts.getObjectByName(side+'_ORBITAL_EYEBALL');
   const iris=model.parts.getObjectByName(side+'_CURVED_IRIS');
   const pupil=model.parts.getObjectByName(side+'_CURVED_PUPIL');
-  model.root.updateMatrixWorld(true);
-  for(const part of [eye,iris,pupil]){
-   const positions=part.geometry.getAttribute('position');
-   const vertex=new THREE.Vector3();
-   for(let i=0;i<positions.count;i+=13){
-    vertex.fromBufferAttribute(positions,i);
-    part.localToWorld(vertex);model.face.worldToLocal(vertex);
-    const skin=sampler.query(vertex.x,vertex.y);
-    if(skin===null)continue;
-    assert.ok(vertex.z>skin+radius*.017,
-     part.name+' must sit in front of closed donor socket skin');
-   }
-  }
-  assert.ok(pupil.userData.circularProjectedRadius>radius*.18,
-   'Black pupil must be noticeably larger without clipping');
+  const visibleCenter=part=>{
+   const p=new THREE.Vector3().fromBufferAttribute(
+    part.geometry.getAttribute('position'),0);
+   part.localToWorld(p);model.face.worldToLocal(p);
+   return {z:p.z,skin:sampler.query(p.x,p.y)};
+  };
+  const cornea=visibleCenter(eye),irisCenter=visibleCenter(iris),
+   black=visibleCenter(pupil);
+  assert.ok(irisCenter.skin===null||irisCenter.z>irisCenter.skin,
+   'No original head triangles may cover the circular iris aperture');
+  assert.ok(black.z>irisCenter.z,
+   'Black pupil must be slightly nearer than the colored iris');
+  assert.ok(eye.userData.recessedBehindLid&&
+   eye.userData.socketDepressionInOriginalMesh);
+  assert.ok(iris.userData.circularProjectedRadius>radius*.20);
+  assert.ok(cornea.skin===null||cornea.z>cornea.skin,
+   'The face-conformal optical surface must not be buried by donor skin');
  }
  assert.equal(model.face.userData.softNaturalLipTint,true);
 });
@@ -1908,4 +1912,56 @@ test('v36 reuse registered skinned battle outfits instead of synthesizing a seco
  assert.doesNotMatch(studio,/fillSelect\('heroOutfit',HERO_OUTFITS\)/);
  for(const id of ['job01','job02','job03','job04','job05','job06','job07','job08','job09','job10'])
   assert.match(bridge,new RegExp("id:'"+id+"'"),'Every real combat job outfit must be selectable');
+});
+
+test('v37 eye socket is sculpted into the contiguous original face mesh and iris sits inside eyeliner',()=>{
+ const source=fixture().source;
+ const donor=source.getObjectByName('GEO-real-source-head');
+ const original=donor.geometry.getAttribute('position').array.slice();
+ const model=makeIndependentFaceMaster(source,'female');
+ const pos=model.face.geometry.getAttribute('position');
+ assert.equal(pos.count,original.length/3,'No replacement face card or point loss');
+ assert.equal(model.report.detailedParts.eyeSocketGeometry,
+  'original-head-socket-with-open-almond-apertures');
+ assert.equal(model.report.detailedParts.eyeSkinDepthClampRemoved,true);
+ assert.ok(model.report.detailedParts.eyeSocketSculptedVertices>0,
+  'The donor face triangles must be physically indented below eyelids');
+ assert.ok(model.report.detailedParts.eyeSocketMaxInset>0);
+ assert.ok(model.report.detailedParts.eyeOpeningsCutFromHeadTriangles>0,
+  'Original closed eye triangles must be removed to reveal iris under eyelid');
+ assert.equal(model.face.geometry.userData.anatomicalEyeSocketSculpt,true);
+ assert.deepEqual(donor.geometry.getAttribute('position').array,original,
+  'Original imported head remains immutable');
+ // Isolate the socket sculpt pass to measure real contiguous head-mesh
+ // deformation, excluding the earlier nose/cheek adjustments.
+ const probe=model.face.geometry.clone();
+ const before=probe.getAttribute('position').array.slice();
+ const sculpt=sculptEyeSocketsInFaceGeometry(probe,{
+  eyeWidth:1,eyeHeight:1,eyeSpacing:1.10,eyePositionY:0
+ },'female');
+ const sculpted=probe.getAttribute('position');
+ let receded=0;
+ for(let i=0;i<sculpted.count;i++){
+  if(sculpted.getZ(i)<before[i*3+2]-.0000005)receded++;
+ }
+ assert.ok(sculpt.vertices>0&&receded>=sculpt.vertices*.95,
+  'The same eye area must become physically recessed in the contiguous head mesh');
+ model.root.updateMatrixWorld(true);
+ for(const side of ['LEFT','RIGHT']){
+  const iris=model.parts.getObjectByName(side+'_CURVED_IRIS');
+  const pupil=model.parts.getObjectByName(side+'_CURVED_PUPIL');
+  const eyeliner=model.parts.getObjectByName(side+'_UPPER_EYELINER');
+  const eye=model.parts.getObjectByName(side+'_ORBITAL_EYEBALL');
+  const vertex=(mesh,index)=>model.face.worldToLocal(
+   mesh.localToWorld(new THREE.Vector3().fromBufferAttribute(
+    mesh.geometry.getAttribute('position'),index)));
+  const irisMiddle=vertex(iris,0);
+  const eyelinerMiddle=vertex(eyeliner,14);
+  assert.ok(irisMiddle.z<eyelinerMiddle.z,
+   'Iris centre belongs slightly BEHIND the upper eyeliner, not on top of the skin');
+  assert.ok(vertex(pupil,0).z>irisMiddle.z,
+   'Black pupil must be a thin layer on the same recessed corneal surface');
+  assert.equal(eye.userData.socketDepressionInOriginalMesh,true);
+  assert.equal(eye.userData.recessedBehindLid,true);
+ }
 });
