@@ -114,7 +114,7 @@ const camera=new THREE.PerspectiveCamera(38,1,.01,60);
 const orbit=new OrbitControls(camera,canvas);
 orbit.enableDamping=true;orbit.dampingFactor=.10;orbit.minDistance=.17;orbit.maxDistance=12;
 let model=null,bodyAttachment=null,wig=null,ready=false;
-let uncutScalpSource=null,neckCrop=null,sourceHead=null;const faceControls={...FEMALE_V7_DEFAULTS,eyeSpacing:FACE_EYE_SPACING_DEFAULT};
+let uncutScalpSource=null,neckCrop=null,sourceHead=null;const faceControls={...FEMALE_V7_DEFAULTS,eyeSpacing:FACE_EYE_SPACING_DEFAULT,eyeDepth:0};
 let view='front',zoomMode='full',wigVisible=true,outfitVisible=true;
 let contactColor=palette.iris;
 const counter={wigBuilds:0,glbExports:0};
@@ -305,7 +305,7 @@ function syncFaceControls(){
 }
 $('resetFaceControls').addEventListener('click',()=>{
  Object.assign(faceControls,FEMALE_V7_DEFAULTS,{
-  eyeSpacing:FACE_EYE_SPACING_DEFAULT
+  eyeSpacing:FACE_EYE_SPACING_DEFAULT,eyeDepth:0
  });
  syncFaceControls();rebuildFaceOnBody();
 });
