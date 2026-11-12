@@ -740,6 +740,8 @@ test('v16 rear hair roots are posterior and salon cut has actual staggered lengt
  assert.equal(r.centerBackCoverage,true);
  assert.equal(r.uShapedRearCut,true);
  assert.equal(r.longSalonLayers,true);
+ assert.equal(r.centralRearNeckOcclusionAvoided,true);
+ assert.equal(r.diagonalFeatheredFringe,true);
  assert.ok(r.rootDistribution.backLeft>=90&&r.rootDistribution.backRight>=90);
  const samples=w.getStyleSamples();
  const rear=samples.filter(s=>s.zone.startsWith('back')||s.zone.startsWith('nape'));
