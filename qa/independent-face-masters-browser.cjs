@@ -942,7 +942,7 @@ async function expectCenteredFaceSliders(page,gender){
   }
   {
    const modern=await browser.newPage({viewport:{width:412,height:844}});
-   await modern.goto('http://127.0.0.1:8765/face-body-studio.html?v=35',
+   await modern.goto('http://127.0.0.1:8765/face-body-studio.html?v=36',
     {waitUntil:'domcontentloaded',timeout:65000});
    await modern.waitForFunction(()=>window.__heroineBodyQA?.().loaded===true,
     null,{timeout:100000});
@@ -969,25 +969,34 @@ async function expectCenteredFaceSliders(page,gender){
     throw Error('v32 combined face/body/4-layer hair fitting failed '+JSON.stringify(report.v32PartSelection));
    // v35 public mobile selectors must change the actual 3D wardrobe,
    // action state, hairstyle and scalp volume (not only menu labels).
+   await modern.waitForFunction(()=>window.__heroineBodyQA?.()
+     .v36RealBattleCostume?.active===true,null,{timeout:120000});
+   // Costume and face are genuinely separate assets. Changing job, cloth,
+   // hair and action must keep the imported skinned 65-joint game body.
    await modern.locator('#heroJob').selectOption('mage');
-   await modern.locator('#heroOutfit').selectOption('robe');
+   await modern.locator('#heroOutfit').selectOption('job05');
    await modern.locator('#heroAction').selectOption('run');
    await modern.locator('#heroHairStyle').selectOption('soft-wave-long');
    await modern.locator('#heroHairVolume').selectOption('full');
    await modern.locator('#heroHairDensity').selectOption('5');
+   await modern.waitForFunction(()=>window.__heroineBodyQA?.()
+     .v36RealBattleCostume?.outfitId==='job05'&&
+     window.__heroineBodyQA?.().v36RealBattleCostume?.realOutfit===true,
+     null,{timeout:120000});
    const studio=await modern.evaluate(()=>window.__heroineBodyQA());
-   if(studio.v35Wardrobe?.jobId!=='mage'||
-      studio.v35Wardrobe?.outfitId!=='robe'||
-      studio.v35Wardrobe?.actionId!=='run'||
-      studio.v35Wardrobe?.equipmentCount<1||
+   if(studio.v36RealBattleCostume?.jobId!=='mage'||
+      studio.v36RealBattleCostume?.outfitId!=='job05'||
+      studio.v36RealBattleCostume?.headReport?.removedTriangles<1||
+      studio.v36RealBattleCostume?.headFit?.bone!=='Head'||
+      !studio.v36RealBattleCostume?.headFit?.attachedToRealHeadBone||
       studio.v35HairStyle!=='soft-wave-long'||
       studio.v35HairVolume!=='full'||
       studio.wig?.v33WigVolumeProfile!=='full'||
       studio.wigDensity!==5)
-    throw Error('v35 studio selections not applied to real 3D '+JSON.stringify(studio.v35Wardrobe));
+    throw Error('v36 real battle-clothing plus separate face fitting failed '+JSON.stringify(studio.v36RealBattleCostume));
    await modern.locator('#portrait').click();
    await modern.locator('#bodyCanvas').screenshot({
-    path:path.join(out,'v35-heroine-eye-job-hair-selectors.png')});
+    path:path.join(out,'v36-heroine-existing-battle-armor-real-face.png')});
    await modern.close();
   }
   if(errors.length)throw Error('Browser errors: '+JSON.stringify(errors));
