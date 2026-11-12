@@ -34,9 +34,9 @@ assert.match(open,/\$\('squadTactics'\)\.hidden=false;showSquadTacticsPanel\('ma
  'one tap opens the quick-order list, not the read-only circle inspector');
 assert.match(html,/add\('⚔ 突撃','charge',\(\)=>beginCircleTargetSelection\('attack'\)/,
  'Charge now explicitly selects an enemy circle before issuing a squad-wide mission');
-assert.match(html,/add\('🛡 防御','defend',\(\)=>issue\('defend'\)\)/);
-assert.match(html,/add\('⏸ 待機','hold',\(\)=>issue\('hold'\)\)/);
-assert.match(html,/add\('↘ 退却','retreat',\(\)=>issue\('retreat'\)\)/);
+assert.match(html,/add\('🛡 防御','defend',\(\)=>issue\('defend'\),/);
+assert.match(html,/add\('⏸ 待機','hold',\(\)=>issue\('hold'\),/);
+assert.match(html,/add\('↘ 退却','retreat',\(\)=>issue\('retreat'\),/);
 assert.match(html,/button\.onclick=\(\)=>\{if\(!button\.disabled\)action\(\)\}/,
  'order buttons execute on the first click');
 assert.match(html,/const issue=mode=>queueDirectOrder\(mode\)/,
