@@ -577,6 +577,55 @@ async function expectCenteredFaceSliders(page,gender){
       info.bodyMeshes<1||!info.sealedNeck||info.neckBridgeTriangles<200||
       !info.sourceHeadUnchanged||!info.sourceBodyUnchanged)
     throw Error('Body/head integration failed '+JSON.stringify(info));
+   // Hair-only inspection must make head, eyelids and torso disappear,
+   // WITHOUT hiding the wig (a child of the head mesh). Restoring the
+   // normal 3D view must bring every original part back.
+   if(!await hero.locator('#hairOnly').isEnabled())
+    throw Error('Hair-only preview button missing');
+   await hero.locator('#hairOnly').click();
+   const onlyHair=await hero.evaluate(()=>{
+    const preview=window.__heroineBodyPreview;
+    const face=preview.getFace(),eyes=preview.getEyeParts(),
+     torso=preview.getBody(),hair=preview.getWig();
+    const neck=face.getObjectByName('REAL_HEAD_BODY_CLOSED_NECK_SEAL');
+    return {hairOnly:window.__heroineBodyQA().hairOnly,
+     faceHidden:!face.material.visible,eyesHidden:!eyes.visible,
+     bodyHidden:!torso.visible,neckHidden:!neck.material.visible,
+     wigVisible:hair.visible,wigChildOfHead:hair.parent===face};
+   });
+   if(!Object.values(onlyHair).every(Boolean))
+    throw Error('Hair-only transparency did not keep the wig visible '+
+     JSON.stringify(onlyHair));
+   await hero.locator('#bodyCanvas').screenshot({
+    path:path.join(out,'heroine-v27-hair-only-transparent-body.png')});
+   await hero.locator('#hairOnly').click();
+   const restored=await hero.evaluate(()=>{
+    const p=window.__heroineBodyPreview;
+    return {hairOnly:window.__heroineBodyQA().hairOnly,
+     faceVisible:p.getFace().material.visible,
+     eyeVisible:p.getEyeParts().visible,
+     bodyVisible:p.getBody().visible,
+     wigVisible:p.getWig().visible};
+   });
+   if(restored.hairOnly||!restored.faceVisible||!restored.eyeVisible||
+      !restored.bodyVisible||!restored.wigVisible)
+    throw Error('Hair-only normal view did not restore '+JSON.stringify(restored));
+   // Eye mesh has no detached sphere, its centre rises continuously from
+   // the eyeliner. Curled upper lashes must have 5 curved ribbon stations.
+   const eyeShape=await hero.evaluate(()=>{
+    const actor=window.__heroineBodyPreview.getActor(),
+     eye=actor.getObjectByName('LEFT_ORBITAL_EYEBALL'),
+     lashes=actor.getObjectByName('LEFT_UPPER_LASH_MESH');
+    return {dome:eye?.userData?.eyelinerToCenterBulge,
+     domeRatio:eye?.userData?.eyelinerToCenterBulgeFraction,
+     stations:lashes?.userData?.curvedRibbonStations,
+     curl:lashes?.userData?.lashCurl,
+     length:lashes?.userData?.lashLength};
+   });
+   if(!eyeShape.dome||eyeShape.domeRatio<.2||
+      eyeShape.stations!==5||eyeShape.curl<.8||eyeShape.length<1.3)
+    throw Error('New eye bulge / eyelash curl was not rendered '+JSON.stringify(eyeShape));
+
    if(Math.abs(info.roundPupilAspectRatio-1)>.016)
     throw Error('Black pupil is not round: '+info.roundPupilAspectRatio);
    if(!info.wig?.usesRealBodyTriangleContacts||
