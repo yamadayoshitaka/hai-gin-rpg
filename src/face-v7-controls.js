@@ -83,7 +83,7 @@ export function normalizeFemaleFaceControls(settings={}){
  // Modern sculpt controls are additive: preserve every original Library
  // face slider value and provide stable neutral defaults for new features.
  const extras={eyeWidth:1,eyeHeight:1,browWidth:1,browThickness:1,
-  lashDensity:1,lashLength:1,lashThickness:1,lashCurl:.4};
+  lashDensity:1,lashLength:1.4,lashThickness:1,lashCurl:.85};
  for(const [key,fallback] of Object.entries(extras)){
   const value=Number(settings?.[key]);
   const [low,high]=FACE_SLIDER_RANGES[key];
