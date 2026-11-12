@@ -10,6 +10,7 @@ on:
       - 'src/inn-deployment.js'
       - 'src/adaptive-battle-resolution.js'
       - 'qa/command-touch-camera-performance.test.mjs'
+      - 'qa/mobile-command-hitbox-smoke.mjs'
       - 'src/tactical-command-descriptions.js'
       - 'qa/inn-deployment-command-effects.test.mjs'
       - 'src/story-campaign.js'
@@ -32,6 +33,7 @@ on:
       - 'src/inn-deployment.js'
       - 'src/adaptive-battle-resolution.js'
       - 'qa/command-touch-camera-performance.test.mjs'
+      - 'qa/mobile-command-hitbox-smoke.mjs'
       - 'src/tactical-command-descriptions.js'
       - 'qa/inn-deployment-command-effects.test.mjs'
       - 'src/story-campaign.js'
@@ -66,3 +68,18 @@ jobs:
           node --experimental-vm-modules qa/command-touch-camera-performance.test.mjs
           node qa/battle-radar-locked-strategy-and-movement.test.mjs
           node qa/town-facility-squad-gear.test.mjs
+
+  mobile-touch-smoke:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install headless Android-sized browser
+        run: |
+          npm install --no-save --package-lock=false playwright@1.56.0
+          npx playwright install --with-deps chromium
+      - name: Tap all inn and command controls on short and tall phones
+        run: node qa/mobile-command-hitbox-smoke.mjs
