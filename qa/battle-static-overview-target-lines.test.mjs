@@ -11,8 +11,7 @@ const required=[
  'controls.enabled=false;',
  "setBattleCamera(new THREE.Vector3(center,terrainY(center,center),center),cameraOverviewOffset);",
  "setCameraActive('camOverview');",
- 'enterCommandOverview(); // Wide, static camera wins over the initial squad focus.',
- 'pendingCircleTarget=candidate;\n enterCommandOverview();',
+ 'enterCommandOverview();\n document.body.dataset.circleTarget=',
  'pickingSquadDestination=true;pickingSquadMission=null;pickingStrategistWarp=false;',
  'if(commandOverviewLocked&&!next)return;',
  'if(!commandOverviewLocked)setBattlePaused(false)',
@@ -32,6 +31,8 @@ const required=[
  'selectableTargets:pendingCircleTarget?'
 ];
 for(const text of required)assert.ok(html.includes(text),'Missing static order or tap wiring: '+text);
+assert.match(html,/pendingCircleTarget=candidate;[\s\S]{0,700}?enterCommandOverview\(\);\s*document\.body\.dataset\.circleTarget=/,
+ 'Select the target only after opening the static overview, preserving the initial squad closeup');
 assert.match(html,/#squadCalloutLines\{[^}]*z-index:0/,'Lines must be behind labels');
 assert.match(html,/#squadScreenLabels \.squadScreenLabel\.ally\{background:#062b45!important\}/,'Opaque ally circles prevent see-through text');
 assert.match(html,/#squadScreenLabels \.squadScreenLabel\.enemy\{background:#55212d!important\}/,'Opaque red circles prevent see-through text');
