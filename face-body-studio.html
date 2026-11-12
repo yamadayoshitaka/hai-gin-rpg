@@ -209,7 +209,13 @@ function rebuildFaceOnBody(){
  const next=makeIndependentFaceMaster(sourceHead,'female',{femaleControls:faceControls});
  applyFaceColorMode(next.face,'color',{contactColor});
  next.root.add(bodyAttachment.root); // Reparent existing fitted body; no new GLB.
- if(wig){wig.root.removeFromParent();next.face.add(wig.root);}
+ if(wig){
+  wig.root.removeFromParent();next.face.add(wig.root);
+  // The invisible fitted wig foundation must follow EVERY face sculpt:
+  // it is a clone, so replacing it never alters the original donor head.
+  const base=wig.root.getObjectByName('DETACHABLE_WIG_TRANSPARENT_HEAD_BASE');
+  if(base){base.geometry.dispose();base.geometry=next.face.geometry.clone();}
+ }
  const height=next.face.geometry.boundingBox.getSize(new THREE.Vector3()).y;
  const cropped=removeHeadBustBelowNeck(next.face,
   bodyAttachment.report.neckSeamY+height*.028);
