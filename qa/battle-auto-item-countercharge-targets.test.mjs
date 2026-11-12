@@ -56,6 +56,8 @@ assert.match(html,/body\[data-circle-target\] \.squadScreenLabel\.eligible-targe
 assert.doesNotMatch(html,/body\[data-circle-target="ally"\] \.squadScreenLabel\.ally/,
  'Unselectable friendly squads must not blink');
 assert.match(html,/lastAllyItemDecisionAt<10/,'Auto item decisions are globally rate-limited');
-assert.match(html,/function useSquadBattleItem\(itemId,squadId\)/,
- 'Legacy manual item use interface stays unchanged');
+assert.match(html,/function useSquadBattleItem\(itemId,squadId(?:,issuerSquadId=null)?\)/,
+ 'Legacy manual item use interface stays callable with two arguments');
+assert.match(html,/return performSquadBattleItem\(itemId,squadId,\{issuerSquadId\}\)/,
+ 'Manual item use must still delegate to the same inventory-consuming implementation');
 console.log('PASS target-pulse, defensive countercharge, auto/manual finite items and combat UI wiring');
