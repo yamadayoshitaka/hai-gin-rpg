@@ -7,7 +7,7 @@ import {makeIndependentFaceMaster,FACE_MASTER_SPEC,femaleInnerFeatureDelta,femal
 import {updateFaceFeatureAngles,applyFaceColorMode,createFastFaceSurfaceSampler}
  from '../src/face-feature-meshes.js';
 import {createScalpAnchoredWig} from '../src/face-scalp-wig.js';
-import {attachIndependentHeadToBody,buildBodyDepthCollision} from '../src/face-body-assembly.js';
+import {attachIndependentHeadToBody,buildBodyDepthCollision,removeHeadBustBelowNeck} from '../src/face-body-assembly.js';
 import {CHAPTER_ONE_ART_BY_KEY,FEMALE_COMMANDER_ART_PALETTE} from '../src/chapter-one-character-art-references.js';
 import {DEFAULT_WIG_STYLE_ID,getWigStyle,listWigStyles} from '../src/face-wig-styles.js';
 import {normalizeFemaleFaceControls,FEMALE_V7_DEFAULTS,FACE_V7_PALETTE,CONTACT_COLORS,safeContactColor,LIBRARY_FACE_PRESET,MALE_REFERENCE_DEFAULT,FACE_SLIDER_RANGES}
@@ -937,6 +937,15 @@ test('v19 independent heroine face is attached to REAL female body without dupli
  assert.equal(typeof attached.setOutfitVisible,'function');
  assert.ok(attached.report.donorHeadTrianglesRemoved>0);
  assert.ok(attached.report.donorBodyTrianglesRetained>0);
+ const scalpCopy=new THREE.Mesh(head.face.geometry.clone(),head.face.material);
+ const cropped=removeHeadBustBelowNeck(head.face,
+  attached.report.neckSeamY-(head.face.geometry.boundingBox.max.y-
+   head.face.geometry.boundingBox.min.y)*.03);
+ assert.ok(cropped.removedTriangles>0);
+ assert.equal(head.face.userData.bustRemovedAtNeck,true);
+ assert.ok(scalpCopy.geometry.getIndex().count>
+  head.face.geometry.getIndex().count,
+  'The independent full scalp must remain available after bust crop');
  assert.equal(attached.body.name,'CC0_CLIPPED_FEMALE_BODY');
  assert.deepEqual(bodyGeometry.getAttribute('position').array,oldPositions,
   'Original body GLB must never be modified');
