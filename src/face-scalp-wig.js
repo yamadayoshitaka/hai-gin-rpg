@@ -9,6 +9,7 @@ import * as THREE from 'three';
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const fract=x=>x-Math.floor(x);
 const f3=(x,y,z)=>new THREE.Vector3(x,y,z);
+const envelopeCache=new WeakMap();
 const projectCapsule=(p,a,b,r)=>{
  const along=b.clone().sub(a),den=along.lengthSq();
  const t=den?clamp(p.clone().sub(a).dot(along)/den,0,1):0;
@@ -158,7 +159,11 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  const box=head.geometry.boundingBox.clone(),d=box.getSize(new THREE.Vector3());
  const center=box.getCenter(new THREE.Vector3());
  const {pools,all:scalpCandidates}=actualScalpCandidates(head.geometry,box);
- const radialScalp=createHeadEnvelope(head.geometry,box);
+ let radialScalp=envelopeCache.get(head.geometry);
+ if(!radialScalp){
+  radialScalp=createHeadEnvelope(head.geometry,box);
+  envelopeCache.set(head.geometry,radialScalp);
+ }
  const root=new THREE.Group();root.name='FEMALE_SCALP_ANCHORED_LONG_WIG';
  root.userData.hairOnRealHead=true;
  const cap=scalpShell(head.geometry,box,color);root.add(cap);
@@ -281,6 +286,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  const guideStride=Math.max(1,Math.ceil(lockCount/320));
  const guideCount=Math.ceil(lockCount/guideStride);
  let collisions=0,faceContacts=0,bodyContacts=0,accumulator=0,elapsed=0;
+ let meshUpdates=0;
  // Conservative, real-head-derived frontal collider. In addition to
  // an ellipsoid it uses the actual sculpted vertices for the scalp roots.
  const headCenter=f3(center.x,box.min.y+d.y*.635,center.z);
@@ -321,7 +327,12 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    }
   }
   attr.needsUpdate=true;
-  geo.computeVertexNormals();geo.computeBoundingSphere();
+  // Mobile optimization: 1440 ribbons do not need a full normal/tangent
+  // rebuild on EVERY physics tick. Their shaded normals are stable enough
+  // to refresh at ~7Hz while positions sway at 20Hz.
+  meshUpdates++;
+  if(meshUpdates===1||meshUpdates%3===0)geo.computeVertexNormals();
+  if(meshUpdates===1||meshUpdates%6===0)geo.computeBoundingSphere();
  }
  function update(dt=.016){
   accumulator+=Math.min(Math.max(0,dt),.05);
@@ -364,7 +375,8 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   rootDistribution:{...zoneCounts},
   zoneCandidateCounts:Object.fromEntries(Object.entries(pools).map(([key,list])=>[key,list.length])),
   collisionTypes:['head','face','neck','shoulder','chest',...externalColliders.map(c=>c.name||'body')],
-  meshCount:2,physicsHz:20,physicsGuideCount:guideCount,
+  meshCount:2,physicsHz:20,normalUpdateDivisor:3,
+  physicsGuideCount:guideCount,
   analyticSwayOtherLocks:true,lengthScale:clamp(lengthScale,.55,1.5),
   hairColor:'#'+rootColor.getHexString(),
   tipColor:'#'+tips.getHexString()
