@@ -6,6 +6,9 @@ on:
     paths:
       - '.github/workflows/story-panel-voicevox-generation.yml'
       - 'scripts/generate-story-panel-voicevox.mjs'
+      - 'src/story-chapter-comic.js'
+      - 'src/story-chapter-scene-selection.js'
+      - 'src/story-screenplay-v2.js'
       - 'src/story-voice-director.js'
       - 'src/story-stage-manga.js'
       - 'src/story-pronunciations.js'
@@ -17,7 +20,7 @@ on:
         required: true
         default: 'all'
         type: choice
-        options: ['all','0','1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20']
+        options: ['1-5','all','0','1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20']
       stage:
         description: 'When chapter=0, stage ID e.g. c01-s01'
         required: false
@@ -72,7 +75,7 @@ jobs:
           PY
       - name: Synthesize the chosen chapter or stage
         env:
-          CHAPTER: ${{ github.event.inputs.chapter || 'all' }}
+          CHAPTER: ${{ github.event_name == 'push' && '1-5' || github.event.inputs.chapter || '1-5' }}
           STAGE: ${{ github.event.inputs.stage || 'c01-s01' }}
         run: |
           if [ "$CHAPTER" = "all" ]; then
@@ -92,16 +95,28 @@ jobs:
                 fi
               fi
             done
+          elif [ "$CHAPTER" = "1-5" ]; then
+            for chapter in 1 2 3 4 5; do
+              echo "Chapter $chapter of 5: all manga outcomes and voice variants"
+              node scripts/generate-story-panel-voicevox.mjs --chapter "$chapter" --format mp3
+            done
           elif [ "$CHAPTER" = "0" ]; then
             node scripts/generate-story-panel-voicevox.mjs --stage "$STAGE" --format mp3
           else
             node scripts/generate-story-panel-voicevox.mjs --chapter "$CHAPTER" --format mp3
           fi
+      - name: Remove only byte-identical redundant voice recordings
+        run: |
+          node scripts/prune-voicevox-duplicates.mjs --apply
+          node scripts/prune-voicevox-duplicates.mjs
       - name: Validate all generated sound clips
         env:
           REQUIRE_ALL_STORY_VOICES: ${{ (github.event_name == 'push' || github.event.inputs.chapter == 'all') && '1' || '0' }}
         run: |
           node qa/story-panel-voice-assets.test.mjs
+          if [ "${{ github.event_name }}" = "push" ] || [ "${{ github.event.inputs.chapter }}" = "1-5" ]; then
+            node qa/story-five-chapter-voice-coverage.test.mjs
+          fi
       - name: Store audio and manifest on main
         run: |
           git config user.name "github-actions[bot]"

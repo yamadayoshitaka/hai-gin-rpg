@@ -10,9 +10,33 @@ export const STORY_COMIC_SCENE_SELECTION=Object.freeze({
  'c01-s01':Object.freeze({
   // The royal-capital introduction needs character meetings, the missing
   // memorial ledger, the suspect seal, and the start of the town inquiry.
-  pre:Object.freeze([1,2,3,4,5,11,12,14,15]),
+  pre:Object.freeze([1,2,3,4,5,11,12,13,14,15]),
   // Town aftermath is not a second enemy invasion or a forced battle.
   post:Object.freeze([6,7,8,9,16,19,10])
+ }),
+ 'c02-s05':Object.freeze({
+  // The alternate decision adds one panel. Keep the entire edition on ONE
+  // 2x5 sheet: nine essential beats + one branch-specific beat.
+  pre:Object.freeze([1,2,3,4,5,11,12,13,14]),
+  post:Object.freeze([6,7,8,9,16,17,18,19,10])
+ }),
+ 'c03-s05':Object.freeze({
+  // The alternate decision adds one panel. Keep the entire edition on ONE
+  // 2x5 sheet: nine essential beats + one branch-specific beat.
+  pre:Object.freeze([1,2,3,4,5,11,12,13,14]),
+  post:Object.freeze([6,7,8,9,16,17,18,19,10])
+ }),
+ 'c04-s05':Object.freeze({
+  // The alternate decision adds one panel. Keep the entire edition on ONE
+  // 2x5 sheet: nine essential beats + one branch-specific beat.
+  pre:Object.freeze([1,2,3,4,5,11,12,13,14]),
+  post:Object.freeze([6,7,8,9,16,17,18,19,10])
+ }),
+ 'c05-s05':Object.freeze({
+  // The alternate decision adds one panel. Keep the entire edition on ONE
+  // 2x5 sheet: nine essential beats + one branch-specific beat.
+  pre:Object.freeze([1,2,3,4,5,11,12,13,14]),
+  post:Object.freeze([6,7,8,9,16,17,18,19,10])
  })
 });
 export function selectComicBasePanels(story,phase){

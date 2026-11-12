@@ -8,6 +8,7 @@ import {mangaForStage} from './story-stage-manga.js';
 import {storyVoiceText} from './story-pronunciations.js';
 import {selectComicBasePanels} from './story-chapter-scene-selection.js';
 import {storyDecisionForStage,ROUTES,ENDING_GUIDE} from './story-narrative-flow.js';
+import {screenplayForStage,screenplayVoiceText,screenplayRubyTokens} from './story-screenplay-v2.js';
 
 export const STORY_MAX_CELLS_PER_SHEET=10; // production sheet size, NOT a story-panel quota
 const safeId=s=>/^[a-z][a-z0-9-]*$/.test(s);
@@ -58,8 +59,33 @@ export function comicForStage(stageId,phase,context={}){
  const safeContext=phase==='post'&&context?.battleOutcome?.playerCommanderDead===true
   ?{...context,battleOutcome:{...context.battleOutcome,victory:false}}:context;
  const original=mangaForStage(stageId,safeContext);
- const source=selectComicBasePanels(original,phase);
+ let source=selectComicBasePanels(original,phase);
  if(!source.length)throw Error('Empty comic phase '+stageId+' '+phase);
+ // Chapters 1-5 are now authored from the canonical 200-stage story beats:
+ // retain familiar panel IDs and original portraits, but replace generic
+ // openings/outcomes with the STAGE-SPECIFIC situation and verified result.
+ if(stage.chapter<=5){
+  const script=screenplayForStage(stageId,{...safeContext,
+   protagonistGender:context.protagonistGender==='female'?'female':'male'});
+  const retell=(reference,line)=>Object.freeze({...reference,
+   speaker:line.speaker,characterId:line.characterId,secondaryId:null,
+   kind:line.kind,text:line.text,subtitleText:line.text,
+   voiceText:line.voiceText,hasVoice:true,
+   rubyTokens:line.rubyTokens});
+  if(phase==='pre'&&stageId!=='c01-s01'){
+   const line=script.pre.find(p=>p.kind==='stage-setup');
+   source=[retell(source[0],line),...source.slice(1)];
+  }else if(phase==='post'&&script.outcome==='gameover'){
+   // A fallen protagonist cannot retreat to town or speak after death.
+   // Use the actual death scene, not the defeat/victory illustration.
+   const ends=script.post.filter(p=>p.kind==='player-death'||p.kind==='gameover-end');
+   source=ends.map((line,i)=>Object.freeze({...retell(source[Math.min(i,source.length-1)],line),
+    id:stageId+'-death-'+(i+1)}));
+  }else if(phase==='post'){
+   const first=script.post[0];
+   if(first)source=[retell(source[0],first),...source.slice(1)];
+  }
+ }
  const scenes=[...source];
  const decision=storyDecisionForStage(stageId);
  if(context?.decision&&decision){
@@ -76,7 +102,7 @@ export function comicForStage(stageId,phase,context={}){
    :'「'+route.name+'」の仲間に戦況を伝える。勝敗だけで今後の協力関係は決まらない。';
   scenes.splice(Math.max(0,scenes.length-1),0,branchShot(source,stageId,phase,'route-'+route.id,text));
  }
- if(phase==='post'&&context?.battleOutcome?.playerCommanderDead===true){
+ if(phase==='post'&&stage.chapter>5&&context?.battleOutcome?.playerCommanderDead===true){
   scenes.push(branchShot(source,stageId,phase,'gameover',
    '軍師の戦死が確認された。指揮を失った軍は戦いを終えた。この物語はゲームオーバーとして記録される。'));
  }
@@ -86,7 +112,8 @@ export function comicForStage(stageId,phase,context={}){
    '軍師は星鐘の未来として「'+ending.name+'」を選んだ。'+ending.summary+'。'));
  }
  const panels=Object.freeze(scenes.map((p,i)=>Object.freeze({
-  ...p,protagonistGender:genderValid(context.protagonistGender)?context.protagonistGender:'unspecified',
+  ...p,...(stage.chapter<=5?{rubyTokens:screenplayRubyTokens(p.text),
+   voiceText:p.voiceText||screenplayVoiceText(p.text)}:{}),protagonistGender:genderValid(context.protagonistGender)?context.protagonistGender:'unspecified',
   comicPhase:phase,comicEdition:edition,comicPosition:i,
   comicPage:Math.floor(i/STORY_MAX_CELLS_PER_SHEET)+1,
   comicCell:i%STORY_MAX_CELLS_PER_SHEET
