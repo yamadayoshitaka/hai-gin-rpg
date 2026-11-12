@@ -20,36 +20,61 @@ const projectCapsule=(p,a,b,r)=>{
  p.copy(closest).addScaledVector(diff,r);
  return true;
 };
+// No random global sampling: the sparse rear and side scalp would otherwise
+// lose almost all roots to the much denser triangles on the frontal head.
+const WIG_ZONE_WEIGHTS=Object.freeze([
+ ['crown',.15],['fringeLeft',.065],['fringeRight',.065],
+ ['templeLeft',.15],['templeRight',.15],
+ ['backLeft',.165],['backRight',.165],
+ ['napeLeft',.045],['napeRight',.045]
+]);
 function actualScalpCandidates(geo,box){
- const pos=geo.getAttribute('position'),normal=geo.getAttribute('normal');
+ const pos=geo.getAttribute('position'),normals=geo.getAttribute('normal');
  const d=box.getSize(new THREE.Vector3()),center=box.getCenter(new THREE.Vector3());
- const primary=[],fallback=[];
+ const pools=Object.fromEntries(WIG_ZONE_WEIGHTS.map(([name])=>[name,[]]));
+ const all=[];
  for(let i=0;i<pos.count;i++){
   const p=f3(pos.getX(i),pos.getY(i),pos.getZ(i));
-  const yn=(p.y-box.min.y)/d.y,zn=(p.z-center.z)/d.z;
-  if(yn<.76||yn>.997)continue;
-  const n=normal?f3(normal.getX(i),normal.getY(i),normal.getZ(i)).normalize():
+  const yn=(p.y-box.min.y)/d.y;
+  if(yn<.58||yn>.998)continue;
+  const nx=(p.x-center.x)/d.x,nz=(p.z-center.z)/d.z;
+  const side=nx<0?'Left':'Right';
+  const n=normals?f3(normals.getX(i),normals.getY(i),normals.getZ(i)).normalize():
    p.clone().sub(center).normalize();
-  // Hairline is above the brow; keep front roots clear of eyeballs.
-  if(zn>.18&&yn<.835)continue;
-  fallback.push({p,n,index:i});
-  if(n.y>.08||yn>.88)primary.push({p,n,index:i});
+  const sample={p,n,index:i};
+  all.push(sample);
+  if(yn>.83)pools.crown.push(sample);
+  if(yn>.76&&nz>.10)pools['fringe'+side].push(sample);
+  if(Math.abs(nx)>.18&&yn<.87&&nz>-.12)pools['temple'+side].push(sample);
+  if(nz<-.04&&yn>.60)pools['back'+side].push(sample);
+  if(nz<-.04&&yn>=.58&&yn<.76)pools['nape'+side].push(sample);
  }
- const candidates=primary.length>16?primary:fallback;
- if(candidates.length<12)throw Error('Scalp has too few real head vertices');
- return candidates;
+ if(all.length<12)throw Error('Scalp has too few real head vertices');
+ // A donor mesh with sparse topology still receives every hair zone.
+ for(const [zone,pool] of Object.entries(pools)){
+  if(pool.length>3)continue;
+  const candidates=all.filter(q=>
+   zone.endsWith('Left')?q.p.x<center.x:q.p.x>=center.x);
+  pools[zone]=candidates.length?candidates:all;
+ }
+ return {pools,all};
 }
 function scalpShell(geo,box,color){
  const src=geo.getAttribute('position'),idx=geo.index;
  const n=idx?idx.count:src.count,d=box.getSize(new THREE.Vector3());
  const normals=geo.getAttribute('normal'),verts=[];
- const yThreshold=box.min.y+d.y*.825;
+ const center=box.getCenter(new THREE.Vector3());
  const sample=i=>f3(src.getX(i),src.getY(i),src.getZ(i));
  for(let i=0;i+2<n;i+=3){
   const ids=[0,1,2].map(k=>idx?idx.getX(i+k):i+k);
   const p=ids.map(sample);
-  if(p.some(x=>x.y<yThreshold))continue;
   const mid=p[0].clone().add(p[1]).add(p[2]).multiplyScalar(1/3);
+  const zNorm=(mid.z-center.z)/d.z;
+  // Expose forehead and eyes. The back and temples need much lower
+  // real triangles to hide bald skull regions and sparse hair roots.
+  const yCut=box.min.y+d.y*(zNorm>.10?.80:
+   Math.abs((mid.x-center.x)/d.x)>.19?.61:.63);
+  if(p.some(vertex=>vertex.y<yCut))continue;
   // The scalp shell uses the donor topology, with a tiny offset only.
   for(let j=0;j<3;j++){
    const v=p[j].clone(),ii=ids[j];
