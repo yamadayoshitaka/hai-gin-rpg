@@ -13,6 +13,7 @@ on:
       - 'scripts/assemble-story-chapter-atlas.py'
       - 'scripts/run-story-chapter-pipeline.py'
       - 'qa/story-150-panel-atlas.test.mjs'
+      - 'qa/story-150-atlas-ingest-smoke.py'
       - 'assets/story/chapters/c0[1-5]/**'
       - 'src/story-ruby-display.js'
       - 'qa/story-ruby-display.test.mjs'
@@ -59,6 +60,10 @@ jobs:
           python3 -m py_compile scripts/ingest-story-chapter-atlas.py
           python3 -m py_compile scripts/assemble-story-chapter-atlas.py
           python3 -m py_compile scripts/run-story-chapter-pipeline.py
+      - name: Exercise full-size 150-cell cutter with CI-only synthetic stripes
+        run: |
+          python3 -m pip install --quiet Pillow
+          python3 qa/story-150-atlas-ingest-smoke.py
       - name: Prepare first five chapters together (no fake art)
         run: |
           node scripts/prepare-story-five-chapters.mjs
