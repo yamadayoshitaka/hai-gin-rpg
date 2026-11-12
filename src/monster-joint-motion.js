@@ -125,6 +125,28 @@ export function applyMonsterBiologicalMotion(model,{time=0,phase=0,action='idle'
     model.scale.z*=1+compression*.5;
    }
  }
+ if(study.id==='m003'){
+   // Fenrir's winter mantle lags the scapula and head during stride,
+   // and digitigrade toe joints flex in swing, extend at ground contact.
+   const attack=(action==='attack'||action==='special')?pulse:0;
+   const stride=locomotion?(run?.19:.11):0;
+   for(const side of [-1,1]){
+     const suffix=side<0?'L':'R',offset=side<0?0:PI;
+     const wave=Math.sin(phase+offset);
+     apply(p,'ear'+suffix,'x',.10+.22*attack+.065*Math.sin(time*1.4+offset));
+     apply(p,'ear'+suffix,'z',side*(.08+.08*Math.sin(time*.93+offset)));
+     apply(p,'scapula'+suffix,'x',stride*wave+.13*attack);
+     apply(p,'ruff'+suffix,'x',-.05+.08*Math.sin(phase+offset-.48)*Number(locomotion));
+     apply(p,'ruff'+suffix,'z',side*(.035*Math.sin(time*1.15+offset)));
+     for(const fore of ['front','rear']){
+       const key=fore+suffix;
+       const q=phase+offset+(fore==='rear'?PI*.54:0);
+       const swing=locomotion?Math.max(0,Math.cos(q)):0;
+       apply(p,'toe'+key,'x',-.045+.34*swing-.09*attack);
+     }
+   }
+   if(p.head)p.head.rotation.x-=.08*attack;
+ }
  if(study.id==='m002'){
    // Wolf pinnae are muscular, not welded to the skull. During a bite lunge
    // both ears flatten; outside combat they track slightly different bearings.
