@@ -923,7 +923,7 @@ export function applyFaceColorMode(face,mode='clay',{contactColor,makeupType=0}=
  ];
  const makeup=makeupChoices[Math.min(9,Math.max(0,Math.round(makeupType)))];
  const palette={
-  ...FACE_V7_PALETTE,lipBase:male?0xc9998b:makeup[0],
+  ...FACE_V7_PALETTE,lipBase:male?0xc9998b:(makeupType===0?0xd9a699:makeup[0]),
   upperShadow:makeup[1],blush:makeup[2],eyeliner:makeup[3],
   lipstick:makeup[0],
   iris:male?0x50413b:parseInt(safeContactColor(contactColor).slice(1),16)
