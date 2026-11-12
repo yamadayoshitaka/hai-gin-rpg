@@ -16,9 +16,9 @@ const sceneryByKind=Object.freeze({
  siege:'fortress',boss:'starbell'
 });
 const expressions=['resolute','anxious','determined','thoughtful','angry','hopeful','sorrowful'];
-export const MANGA_PANELS_PER_STAGE=10;
-export const MANGA_PRE_BATTLE_PANELS=5;
-export const MANGA_POST_BATTLE_PANELS=5;
+export const MANGA_PANELS_PER_STAGE=20;
+export const MANGA_PRE_BATTLE_PANELS=10;
+export const MANGA_POST_BATTLE_PANELS=10;
 export const MANGA_STAGE_COUNT=CAMPAIGN_STAGES.length;
 export const MANGA_TOTAL_PANELS=MANGA_PANELS_PER_STAGE*MANGA_STAGE_COUNT;
 export const mangaCast=STORY_KEY_PEOPLE;
@@ -30,7 +30,7 @@ function panel(stage,index,{character=null,second=null,text='',type='dialogue',v
   speaker:character?.name||'語り手',role:character?.role||'物語',
   faction:character?.faction||'星鐘',text:String(text).trim(),
   subtitleText:String(text).trim(),voiceText:storyVoiceText(text),
-  phase:index<5?'pre':'post',
+  phase:index<5||(index>=10&&index<15)?'pre':'post',
   expression:expression||expressions[(stage.number+index)%expressions.length],
   scenery:sceneryByKind[stage.kind]||'wilds',mood:
    index===0?'overture':index===3?'mystery':index===4?'conflict':
@@ -74,9 +74,8 @@ export function mangaForStage(idOrStage='c01-s01',context={}){
    id:stage.id,chapter:stage.chapter,slot:stage.slot,stageName:stage.name,stageKind:stage.kind,
    chapterTitle:chapter.title,act:chapter.act,location:chapter.location,
    number:stage.number,previousStageId:null,nextStageId:next?.id||null,
-   cast:Object.freeze([lucia,garan,iris]),panels:Object.freeze(applyPlayerGender([
-    ...intro.slice(0,5),...buildPostPanels(stage,chapter,narrative,[lucia,garan,iris],next,context)
-   ],context))
+   cast:Object.freeze([lucia,garan,iris]),panels:composeExpandedPanels(stage,chapter,narrative,[lucia,garan,iris],intro.slice(0,5),
+    buildPostPanels(stage,chapter,narrative,[lucia,garan,iris],next,context),context)
   });
  }
  const p=[
@@ -97,10 +96,9 @@ export function mangaForStage(idOrStage='c01-s01',context={}){
   chapterTitle:chapter.title,act:chapter.act,location:chapter.location,
   number:stage.number,previousStageId:prev?.id||null,nextStageId:next?.id||null,
   cast:Object.freeze([...new Set(p.flatMap(x=>[x.characterId,x.secondaryId]).filter(Boolean))].map(x=>byId[x])),
-  panels:Object.freeze(applyPlayerGender([
-    ...addRouteContext(p.slice(0,5),stage,context),
-    ...buildPostPanels(stage,chapter,narrative,[c1,c2,c3,specialA,specialB],next,context)
-   ],context))
+  panels:composeExpandedPanels(stage,chapter,narrative,[c1,c2,c3,specialA,specialB],
+    addRouteContext(p.slice(0,5),stage,context),
+    buildPostPanels(stage,chapter,narrative,[c1,c2,c3,specialA,specialB],next,context),context)
  });
 }
 
@@ -140,6 +138,80 @@ function buildPostPanels(stage,chapter,narrative,cast,next,context={}){
   panel(stage,9,{type:'closing',character:fifth,second:first,text:nextLine,expression:defeated?'sorrowful':'hopeful'})
  ];
 }
+
+/**
+ * Ten story beats before the event and ten after the verified result.
+ *
+ * Compatibility is intentional: historical m1..m5 remain the opening, and
+ * historical m6..m10 remain the epilogue (including existing WebP and voice
+ * file identities). Added frames are m11..m20. The playback order is
+ * pre: m1..m5,m11..m15; post: m6..m9,m16..m20,m10.
+ * Never repurpose an old post-event image as an opening image.
+ */
+function buildPreExpansion(stage,chapter,narrative,cast){
+ const [first,second,third,fourth,fifth]=cast;
+ const place=chapter.location,mission=stage.winCondition;
+ const town=stage.kind==='town';
+ return [
+  panel(stage,10,{type:'discovery',character:second,second:first,
+   text:'「'+place+'」の通りを進むと、'+narrative.scene+'。仲間たちは現場に残された手掛かりを確かめた。',
+   expression:'thoughtful'}),
+  panel(stage,11,{type:'dialogue',character:third,second:second,
+   text:'ここで暮らす人々の言葉を聞きましょう。'+chapter.dialogues[stage.slot%chapter.dialogues.length].line,
+   expression:'anxious'}),
+  panel(stage,12,{type:'revelation',character:fourth||first,second:third,
+   text:'手掛かりは「'+stage.name+'」で起きている出来事につながっている。'+narrative.conflict,
+   expression:'determined'}),
+  panel(stage,13,{type:'choice',character:fifth||second,second:first,
+   text:town?'町の調査を続けよう。誰かを置き去りにしたまま先へは行けない。':
+    'この地での任務は「'+mission+'」。目の前の命を守りながら作戦を進めよう。',
+   expression:'resolute'}),
+  panel(stage,14,{type:'transition',character:first,second:second,
+   text:town?'仲間たちは証言を胸に、町の奥へ歩き始めた。':
+    '合図を待つ兵士たちに、軍師は静かに頷いた。いよいよ「'+stage.name+'」での戦いが始まる。',
+   expression:'determined'})
+ ];
+}
+function buildPostExpansion(stage,chapter,narrative,cast,context={}){
+ const [first,second,third,fourth,fifth]=cast;
+ const isTown=stage.kind==='town',outcome=context?.battleOutcome;
+ const defeated=outcome?.victory===false;
+ const victorious=outcome?.victory===true;
+ const state=isTown?'町の調査で聞いた声を手帳に書き留めた。':
+  victorious?'軍師は確認された戦果を記録し、残る危険がないか調べた。':
+  defeated?'軍師は退却した部隊の無事を確かめ、記録を残した。':
+  '軍師は戦闘の記録を確かめ、これからの道を考えた。';
+ return [
+  panel(stage,15,{type:'aftermath',character:first,second:third,text:state,
+   expression:defeated?'sorrowful':'thoughtful'}),
+  panel(stage,16,{type:'discovery',character:second,second:fourth||third,
+   text:'戦いの前に見つけた手掛かりが、今になって新しい意味を帯びる。'+narrative.consequence,
+   expression:'thoughtful'}),
+  panel(stage,17,{type:'dialogue',character:third,second:second,
+   text:'今ここで起こったことを、遠くにいる人たちにも伝えなければなりません。'+
+    chapter.dialogues[(stage.slot+2)%chapter.dialogues.length].line,
+   expression:'anxious'}),
+  panel(stage,18,{type:'choice',character:fourth||first,second:fifth||second,
+   text:defeated?'失敗を無かったことにはできない。仲間を休ませ、次の判断に備えよう。':
+    '守るべきものを見失わないために、私たちは出来事を記録し続けよう。',
+   expression:defeated?'sorrowful':'resolute'}),
+  panel(stage,19,{type:'transition',character:fifth||first,second:first,
+   text:defeated?'新しい作戦を練り直すため、軍師たちは静かに町へ引き返した。':
+    '次の一歩を決める前に、仲間たちは互いの意志を確かめ合った。',
+   expression:defeated?'anxious':'hopeful'})
+ ];
+}
+function composeExpandedPanels(stage,chapter,narrative,cast,pre,post,context){
+ if(pre.length!==5||post.length!==5)throw Error('Legacy scene IDs must remain five and five: '+stage.id);
+ const frames=[...pre,...buildPreExpansion(stage,chapter,narrative,cast),
+  ...post.slice(0,4),...buildPostExpansion(stage,chapter,narrative,cast,context),post[4]];
+ if(frames.length!==MANGA_PANELS_PER_STAGE)throw Error('Incomplete twenty-frame stage: '+stage.id);
+ if(new Set(frames.map(p=>p.id)).size!==frames.length)throw Error('Duplicate manga frame: '+stage.id);
+ return Object.freeze(applyPlayerGender(frames,context).map((p,index)=>Object.freeze({
+  ...p,index,phase:index<MANGA_PRE_BATTLE_PANELS?'pre':'post'
+ })));
+}
+
 function applyPlayerGender(panels,context={}){
  const protagonistGender=context?.protagonistGender==='female'?'female':context?.protagonistGender==='male'?'male':'unspecified';
  return panels.map(panel=>Object.freeze({...panel,protagonistGender}));
