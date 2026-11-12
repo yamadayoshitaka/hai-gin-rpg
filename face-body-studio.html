@@ -709,19 +709,28 @@ frame();
   syncFaceControls();
   fitCamera();$('metrics').textContent=JSON.stringify(metrics(),null,2);
   status('女性主人公の顔を表示しています。続いて既存戦闘衣装を接続します。');
-  createRealBattleOutfitStudio({scene,faceModel:model,
-   jobId:selectedStudio.jobId,outfitId:selectedStudio.outfitId,
-   actionId:selectedStudio.actionId,onStatus:tellBattleStatus
-  }).then(bridge=>{
-   battleCostume=bridge;
-   bodyAttachment.root.visible=false;
-   wardrobe?.setVisible(false);
-   applyHairOnlyView();fitCamera();
-   $('metrics').textContent=JSON.stringify(metrics(),null,2);
-  }).catch(error=>{
-   tellBattleStatus('実戦闘衣装を表示できません：'+String(error));
-   console.error('Real battle outfit connection failed',error);
-  });
+  if(v32PartMode){
+   createRealBattleOutfitStudio({scene,faceModel:model,getFaceModel:()=>model,
+    jobId:selectedStudio.jobId,outfitId:selectedStudio.outfitId,
+    actionId:selectedStudio.actionId,onStatus:tellBattleStatus
+   }).then(bridge=>{
+    battleCostume=bridge;
+    bodyAttachment.root.visible=false;
+    wardrobe?.setVisible(false);
+    applyHairOnlyView();fitCamera();
+    $('metrics').textContent=JSON.stringify(metrics(),null,2);
+    const state=bridge.getState();
+    if(state.jobId!==selectedStudio.jobId||
+       state.outfitId!==selectedStudio.outfitId){
+     applyBattleSelection();
+    }else if(state.actionId!==selectedStudio.actionId){
+     void bridge.playAction(selectedStudio.actionId);
+    }
+   }).catch(error=>{
+    tellBattleStatus('実戦闘衣装を表示できません：'+String(error));
+    console.error('Real battle outfit connection failed',error);
+   });
+  }else tellBattleStatus('旧方式：従来の仮衣装（回帰テスト用）');
  }catch(error){status('3Dモデルの読み込み／接続に失敗：'+String(error));console.error(error);}
 })();
 </script>
