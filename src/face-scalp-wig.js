@@ -389,8 +389,9 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  },resolvePoint(point){
   const p=point.clone();resolveCollision(p);return p;
  },getCutSamples(){
-  return strands.slice(0,20).map(s=>({zone:s.zone,trimY:s.trimY,
-   minY:Math.min(...s.rest.map(p=>p.y))}));
+  return WIG_ZONE_WEIGHTS.map(([zone])=>strands.find(s=>s.zone===zone))
+   .filter(Boolean).map(s=>({zone:s.zone,trimY:s.trimY,
+    minY:Math.min(...s.rest.map(p=>p.y))}));
  },getRootSamples(){
   // Return a representative root from every scalp region for QA,
   // including the nape/back/temples that were previously completely bald.
