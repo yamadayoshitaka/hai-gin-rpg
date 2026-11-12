@@ -1,11 +1,12 @@
 /**
  * Touch-first continuous manga viewer used at every world-map sortie.
- * One complete approved ten-panel 2x5 manga sheet per phase and gender,
+ * Approved chapter/branch/gender manga sheets; scene counts are variable,
  * accessible speech text, optional Japanese reading and matching fantasy BGM.
  * The UI never touches combat actors, town 3D models or player stats.
  */
 import {mangaForStage} from './story-stage-manga.js';
-import {storyPageAsset,storyPagePanels,storyPagePosition} from './story-manga-page.js';
+import {storyPagePosition} from './story-manga-page.js';
+import {comicForStage,comicPageAsset} from './story-chapter-comic.js';
 import {fantasyCueForMangaPanel} from './fantasy-scene-score.js';
 import {createStoryVoiceDirector} from './story-voice-director.js';
 const CORE_SETTINGS='hai-gin-core-settings-v1';
@@ -79,7 +80,7 @@ export function createMangaViewer({container=document.body,storage=globalThis.lo
  `;
  container.append(root);document.head.append(style);
  const $=selector=>root.querySelector(selector);
- let story=null,visiblePanels=[],phase='pre',index=0,finish=null,voiceOn=readVoice(storage),active=false;
+ let story=null,visiblePanels=[],phase='pre',index=0,finish=null,voiceOn=readVoice(storage),active=false,storyContext={};
  let currentPagePath=null,pageRequest=0;
  const hotspots=$('.manga-hotspots');
  for(let i=0;i<10;i++){
@@ -87,12 +88,17 @@ export function createMangaViewer({container=document.body,storage=globalThis.lo
   button.setAttribute('aria-label','漫画'+(i+1)+'コマ目のセリフ');
   const position=storyPagePosition(i);
   button.dataset.row=String(position.row);button.dataset.column=String(position.column);
-  button.onclick=()=>{const base=phase==='all'&&index>=10?10:0;index=base+i;frame();};
+  button.onclick=()=>{
+   const current=visiblePanels[index];
+   const where=visiblePanels.findIndex(p=>p.comicEdition===current.comicEdition&&
+    p.comicPage===current.comicPage&&p.comicCell===i);
+   if(where>=0){index=where;frame();}
+  };
   hotspots.append(button);
  }
  function loadApprovedPage(shot){
   const pagePhase=shot.phase;
-  const asset=storyPageAsset(story.id,pagePhase,shot.protagonistGender);
+  const asset=comicPageAsset(story.id,pagePhase,storyContext,shot.comicPage,shot.protagonistGender);
   if(asset===currentPagePath)return;
   currentPagePath=asset;
   const request=++pageRequest,img=$('.manga-art'),missing=$('.manga-missing');
@@ -114,15 +120,20 @@ export function createMangaViewer({container=document.body,storage=globalThis.lo
   if(!story||!active)return;
   stopVoice();
   const shot=visiblePanels[index];
+  const pagePanels=visiblePanels.filter(p=>p.comicEdition===shot.comicEdition&&p.comicPage===shot.comicPage);
+  const pageRows=Math.ceil(pagePanels.length/2);
+  $('.manga-page-area').style.aspectRatio='1536 / '+(432*pageRows);
+  hotspots.style.gridTemplateRows='repeat('+pageRows+',1fr)';
+  [...hotspots.children].forEach((button,i)=>{button.hidden=i>=pagePanels.length;
+   button.classList.toggle('active',i===shot.comicCell);});
   $('.manga-stage').textContent='第'+story.chapter+'章 · '+story.stageName+' · '+(phase==='post'?(story.stageKind==='town'?'町の後日談':'戦闘後'):phase==='pre'?'開戦前':'全場面');
   loadApprovedPage(shot);
   $('.manga-art').alt=story.stageName+'の'+(shot.phase==='pre'?'イベント前':'イベント後')+
-   '10コマ漫画・'+(shot.protagonistGender==='female'?'女性版':'男性版');
-  [...hotspots.children].forEach((button,i)=>button.classList.toggle('active',i===index%10));
+   '（'+shot.comicEdition+'）'+(shot.protagonistGender==='female'?'女性版':'男性版');
   $('.manga-speaker').textContent=shot.speaker+(shot.characterId?'　／　'+shot.faction+'・'+shot.role:'　／　ナレーション');
   $('.manga-line').textContent=shot.subtitleText||shot.text;
-  $('.manga-shot').textContent=story.id.toUpperCase()+' · 2列×5行／10コマ1ページ';
-  $('.manga-progress').textContent='セリフ '+(index%10+1)+'/10（漫画ページは変わりません）';
+  $('.manga-shot').textContent=story.id.toUpperCase()+' · '+shot.comicEdition+' · ページ'+shot.comicPage;
+  $('.manga-progress').textContent='セリフ '+(index+1)+' / '+visiblePanels.length+'　（このページ '+(shot.comicCell+1)+' / '+pagePanels.length+'コマ）';
   $('.manga-previous').disabled=index===0;
   $('.manga-next').textContent=index===visiblePanels.length-1?
    (phase==='pre'?'ステージへ進む ▶':phase==='post'?'結果を閉じる ▶':'確認を終える ▶'):'次のセリフ ▶';
@@ -143,7 +154,10 @@ export function createMangaViewer({container=document.body,storage=globalThis.lo
   if(active)close({completed:false});
   story=mangaForStage(id,context||{});
   phase=which;
-  visiblePanels=which==='all'?[...storyPagePanels(story,'pre'),...storyPagePanels(story,'post')]:storyPagePanels(story,which);
+  storyContext=context||{};
+  visiblePanels=which==='all'
+   ?[...comicForStage(id,'pre',storyContext).panels,...comicForStage(id,'post',storyContext).panels]
+   :comicForStage(id,which,storyContext).panels;
   if(!visiblePanels.length)throw Error('No manga panels for '+id+' '+which);
   index=Math.max(0,Math.min(visiblePanels.length-1,at|0));
   currentPagePath=null;finish=onFinish;voiceOn=readVoice(storage);active=true;root.hidden=false;
