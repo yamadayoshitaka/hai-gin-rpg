@@ -18,6 +18,9 @@ for(let chapter=1;chapter<=20;chapter++){
   if(s.kind!=='town'){
    assert.ok(keys.has('post-victory'+(chapter>=13?'-route-silver':'')));
    assert.ok(keys.has('post-defeat'+(chapter>=13?'-route-silver':'')));
+   assert.ok(keys.has('post-gameover'+(chapter>=13?'-route-silver':'')));
+   assert.notEqual(comicEditionKey(s.id,'post',{battleOutcome:{victory:false}}),
+    comicEditionKey(s.id,'post',{battleOutcome:{victory:false,playerCommanderDead:true}}));
    assert.notEqual(comicEditionKey(s.id,'post',{battleOutcome:{victory:true}}),
     comicEditionKey(s.id,'post',{battleOutcome:{victory:false}}));
   }
@@ -33,7 +36,8 @@ for(let chapter=1;chapter<=20;chapter++){
     for(const sex of ['male','female']){
      const context={decision:edition.edition.match(/choice-([a-z]+)/)?.[1]||null,
        route:edition.edition.match(/route-([a-z]+)/)?.[1]||null,
-       battleOutcome:edition.edition.includes('victory')?{victory:true}:
+       battleOutcome:edition.edition.includes('gameover')?{victory:false,playerCommanderDead:true}:
+        edition.edition.includes('victory')?{victory:true}:
         edition.edition.includes('defeat')?{victory:false}:null,
        storyEnding:edition.edition.match(/ending-([a-z]+)/)?.[1]||null};
      const name=comicPageAsset(s.id,edition.phase,context,page.number,sex);
@@ -50,7 +54,8 @@ assert.equal(first.editions.filter(e=>e.phase==='pre').length,10);
 assert.equal(first.editions.filter(e=>e.phase==='post'&&e.edition==='post-victory').length,9);
 assert.equal(first.editions.filter(e=>e.phase==='post'&&e.edition==='post-defeat').length,9);
 assert.equal(first.editions.filter(e=>e.phase==='post'&&e.edition==='post-town').length,1);
-assert.equal(first.editions.length,29);
+assert.equal(first.editions.filter(e=>e.edition==='post-gameover').length,9);
+assert.equal(first.editions.length,38);
 const defeated=comicForStage('c01-s02','post',{battleOutcome:{victory:false},protagonistGender:'female'});
 const won=comicForStage('c01-s02','post',{battleOutcome:{victory:true},protagonistGender:'female'});
 assert.notEqual(defeated.edition,won.edition);
@@ -70,6 +75,10 @@ const ending=comicForStage('c20-s10','post',{route:'silver',storyEnding:'release
  battleOutcome:{victory:true}});
 assert.ok(ending.edition.includes('ending-release'));
 assert.match(ending.panels.at(-1).text,/解放の朝/);
+const died=comicForStage('c01-s02','post',{battleOutcome:{victory:false,playerCommanderDead:true}});
+assert.notEqual(died.edition,defeated.edition);
+assert.match(died.panels.at(-1).text,/ゲームオーバー/);
+assert.match(died.panels[0].text,/撤退/);
 const beforeOutcome=comicForStage('c01-s02','pre',{battleOutcome:{victory:false}});
 assert.ok(beforeOutcome.panels.every((p,i)=>p.text===comicForStage('c01-s02','pre',{}).panels[i].text));
 assert.equal(comicPageAsset('c01-s01','pre',{},1,'unspecified'),null);
