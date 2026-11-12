@@ -189,7 +189,7 @@ let view='front',zoomMode='full',wigVisible=true,outfitVisible=true;
 let wigBaseVisible=false,hairOnly=false;
 let contactColor=savedHeroinePreset?.contactColor||palette.iris;
 const counter={wigBuilds:0,glbExports:0};
-const selectedStudio={jobId:'knight',outfitId:'job',actionId:'idle'};
+const selectedStudio={jobId:'knight',outfitId:'job',actionId:'idle',nativeCommand:null};
 let battleRequest=0;
 const tellBattleStatus=message=>{
  $('realBattleCostumeState').textContent=message;
@@ -199,6 +199,8 @@ const applyBattleSelection=()=>{
  const request=++battleRequest;
  battleCostume.setSelection(selectedStudio).then(()=>{
   if(request!==battleRequest)return;
+  selectedStudio.nativeCommand=null;
+  renderNativeActionButtons();
   fitCamera();$('metrics').textContent=JSON.stringify(metrics(),null,2);
  }).catch(error=>tellBattleStatus('戦闘衣装の切替に失敗：'+String(error)));
 };
@@ -210,16 +212,37 @@ const fillSelect=(id,items)=>{
 fillSelect('heroJob',HERO_JOBS);
 fillSelect('heroOutfit',[{id:'job',label:'職業の標準衣装'},...REAL_BATTLE_WARDROBE]);
 fillSelect('heroAction',HERO_ACTIONS);
-for(const action of STUDIO_BATTLE_ACTIONS){
- const btn=document.createElement('button');btn.type='button';
- btn.dataset.action=action.id;btn.textContent=action.label;
- btn.setAttribute('aria-pressed',String(action.id==='idle'));
- btn.addEventListener('click',()=>{
-  $('heroAction').value=action.id;
-  $('heroAction').dispatchEvent(new Event('change',{bubbles:true}));
- });
- $('heroActionButtons').appendChild(btn);
+function renderNativeActionButtons(){
+ const host=$('heroActionButtons');host.replaceChildren();
+ const actions=battleCostume?.getAvailableActions?.()||[];
+ if(!actions.length){
+  $('actionStatus').textContent='実際の戦闘アニメーションを読み込んでいます。';
+  return;
+ }
+ for(const action of actions){
+  const btn=document.createElement('button');
+  btn.type='button';btn.dataset.command=action.id;
+  btn.textContent=action.label;btn.title='登録済み：'+action.clip;
+  btn.setAttribute('aria-pressed',String(selectedStudio.nativeCommand===action.id));
+  btn.addEventListener('click',async()=>{
+   if(!battleCostume)return;
+   const played=await battleCostume.playRegisteredCommand(action.id);
+   if(!played){
+    $('actionStatus').textContent='このモーションは再生できません：'+action.id;
+    return;
+   }
+   selectedStudio.nativeCommand=action.id;
+   const state=battleCostume.getState();
+   for(const item of host.children)
+    item.setAttribute('aria-pressed',String(item.dataset.command===action.id));
+   $('actionStatus').textContent='戦闘登録アクション：'+action.label+
+    '／クリップ：'+(state.nativeClip||action.clip);
+  });
+  host.append(btn);
+ }
+ $('actionStatus').textContent='職業別の登録済みモーション '+actions.length+'種類';
 }
+renderNativeActionButtons();
 fillSelect('heroHairStyle',listWigStyles());
 fillSelect('heroHairVolume',Object.entries(WIG_BASE_VOLUME_PROFILES).map(
  ([id,profile])=>({id,label:profile.label})));
@@ -538,12 +561,13 @@ $('heroHairDensity').addEventListener('change',()=>{
 $('heroJob').addEventListener('change',()=>{
  selectedStudio.jobId=$('heroJob').value;
  selectedStudio.outfitId='job';
+ selectedStudio.nativeCommand=null;
  selectedStudio.actionId=['mage','cleric','summoner'].includes(selectedStudio.jobId)?
   'cast':selectedStudio.jobId==='shield'?'guard':'attack';
  $('heroOutfit').value=selectedStudio.outfitId;
  $('heroAction').value=selectedStudio.actionId;
  for(const btn of $('heroActionButtons').children){
-  btn.setAttribute('aria-pressed',String(btn.dataset.action===selectedStudio.actionId));
+  btn.setAttribute('aria-pressed',String(btn.dataset.command===selectedStudio.nativeCommand));
  }
  wardrobe?.setSelection(selectedStudio);
  wardrobe?.setAction(selectedStudio.actionId);
@@ -557,7 +581,7 @@ $('heroOutfit').addEventListener('change',()=>{
 $('heroAction').addEventListener('change',()=>{
  selectedStudio.actionId=$('heroAction').value;
  for(const btn of $('heroActionButtons').children){
-  btn.setAttribute('aria-pressed',String(btn.dataset.action===selectedStudio.actionId));
+  btn.setAttribute('aria-pressed',String(btn.dataset.command===selectedStudio.nativeCommand));
  }
  $('actionStatus').textContent='戦闘アクション：'+(STUDIO_BATTLE_ACTIONS.find(a=>a.id===selectedStudio.actionId)?.label||selectedStudio.actionId)+'／エフェクト付きで再生';
  wardrobe?.setAction(selectedStudio.actionId);
@@ -766,6 +790,7 @@ frame();
     actionId:selectedStudio.actionId,onStatus:tellBattleStatus
    }).then(bridge=>{
     battleCostume=bridge;
+    renderNativeActionButtons();
     bodyAttachment.root.visible=false;
     wardrobe?.setVisible(false);
     applyHairOnlyView();fitCamera();
