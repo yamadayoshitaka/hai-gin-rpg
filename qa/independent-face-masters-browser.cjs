@@ -558,8 +558,17 @@ async function expectCenteredFaceSliders(page,gender){
    const errorsHero=[];hero.on('pageerror',e=>errorsHero.push(e.message));
    await hero.goto('http://127.0.0.1:8765/face-body-studio.html',
     {waitUntil:'domcontentloaded',timeout:60000});
-   await hero.waitForFunction(()=>window.__heroineBodyQA?.().loaded===true,
-    null,{timeout:120000,polling:250});
+   await hero.waitForFunction(()=>{
+    const loaded=window.__heroineBodyQA?.().loaded===true;
+    const status=document.getElementById('status')?.textContent||'';
+    return loaded||status.includes('3Dモデルの読み込み／接続に失敗');
+   },null,{timeout:120000,polling:250});
+   const loaded=await hero.evaluate(()=>window.__heroineBodyQA?.().loaded===true);
+   if(!loaded){
+    const status=await hero.locator('#status').textContent();
+    throw Error('Full-body preview setup failed: '+status+
+      '; browser errors: '+JSON.stringify(errorsHero));
+   }
    const info=await hero.evaluate(()=>window.__heroineBodyQA());
    if(info.characterId!=='hero-girl-01'||info.artMatched!==false||
       !info.artReference.includes('commander/female-master.webp'))
