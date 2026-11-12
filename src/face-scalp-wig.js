@@ -184,6 +184,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   return pool[Math.min(pool.length-1,Math.floor(u*pool.length))];
  };
  const strands=[];
+ let faceTrimmedStrands=0;
  const rootLift=d.x*.0045;
  // Shoulder/chest proxy geometry is in the SAME coordinates as the head.
  // Future full-body rigs can supply exact external capsules.
@@ -216,19 +217,27 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    Math.sign(wigRoot.x-center.x)||1;
   const fringe=zone.startsWith('fringe');
   const back=zone.startsWith('back')||zone.startsWith('nape');
+  const frontRoot=(wigRoot.z-center.z)/d.z>.07;
+  const midFace=Math.abs(wigRoot.x-center.x)/d.x<.225;
+  // Even non-fringe CROWN roots must be cut above the eyebrows if they
+  // face forward. Otherwise they form a long curtain across both eyes.
+  const overFace=!back&&frontRoot&&midFace;
+  if(overFace)faceTrimmedStrands++;
   const longFactor=zone.startsWith('nape')?.43:
    zone.startsWith('temple')?.54:back?.63:.59;
   // Fringe must terminate above the eyebrows, never obscure the eyes,
   // nose or mouth, even at the maximum hair-length slider value.
   const browLimit=box.min.y+d.y*.758;
   const bangLength=d.y*(.09+fract(i*.381966)*.045)*clamp(lengthScale,.55,1.5);
-  const length=fringe?Math.max(d.y*.008,Math.min(bangLength,wigRoot.y-browLimit)):
+  const length=(fringe||overFace)?
+   Math.max(d.y*.008,Math.min(bangLength,wigRoot.y-browLimit)):
    d.y*(longFactor+fract(i*.381966)*.13)*clamp(lengthScale,.55,1.5);
   const rest=[],points=[],vel=[];
   const trimY=Math.min(wigRoot.y-d.y*.012,
-   hairCutY(zone,box,lengthScale,i));
-  const guide=fringe?f3(side*.25,0,1):
-   back?f3(side*.18,0,-1):f3(side,0,zone.startsWith('temple')?.06:-.2);
+   (fringe||overFace)?browLimit:hairCutY(zone,box,lengthScale,i));
+  const guide=(fringe||overFace)?f3(side*.76,0,.68):
+   back?f3(side*.18,0,-1):
+   f3(side,0,zone.startsWith('temple')?-.18:-.2);
   guide.normalize();
   const origin=f3(wigRoot.x-center.x,0,wigRoot.z-center.z);
   if(origin.lengthSq()<d.x*d.x*.0009)origin.copy(guide);
@@ -237,7 +246,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   // against the source head envelope, COLLIDE later, TRIM at hairline.
   for(let j=0;j<=segments;j++){
    const t=j/segments;
-   const direction=origin.clone().lerp(guide,.45*t*t).normalize();
+   const direction=origin.clone().lerp(guide,(fringe||overFace?.88:.78)*t*t).normalize();
    const y=Math.max(trimY,wigRoot.y-length*t);
    const shell=radialScalp(y,direction);
    const gap=d.x*(.007+.015*t);
@@ -248,7 +257,8 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    rest.push(p);points.push(p.clone());vel.push(new THREE.Vector3());
   }
   strands.push({root:wigRoot,rest,points,vel,fringe,side,
-   zone,seedIndex:seed.index,trimY,growthLogic:'grow-relax-collide-trim'});
+   zone,seedIndex:seed.index,trimY,overFace,
+   growthLogic:'grow-relax-collide-trim'});
   const base=i*(segments+1)*4;
   for(let j=0;j<=segments;j++){
    const t=j/segments,shaded=rootColor.clone().lerp(tips,.3+.48*t)
@@ -370,6 +380,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  root.userData.wigReport={
   style:'real-scalp-shell-growing-then-trimmed',rooted:true,rootCount:lockCount,
   growthStages:['grow','relax','collide','trim'],
+  faceTrimmedStrands,faceCurtainPrevention:true,
   scalpCoverage:'continuous-colored-triangle-cap-plus-locks',
   pointCount:lockCount*(segments+1),realScalpCandidateCount:scalpCandidates.length,
   rootDistribution:{...zoneCounts},
