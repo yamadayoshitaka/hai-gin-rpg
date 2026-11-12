@@ -194,14 +194,18 @@ export function makeIndependentFaceMaster(sourceRoot,gender,{femaleControls={},m
    (1-smooth(.77,.86,yn));
   const orbitalWeight=apertureLateral*apertureVertical*
    smooth(.34,.56,zn);
-  const eyeSocketDx=Math.sign(xn)*d.x*.123*
-   (controls.eyeSpacing-1)*orbitalWeight;
-  // Eye angle rotates the whole eye group, but the underlying skin opening
-  // also needs to change: tilt the opening's outer corner with the eyeliner.
   const socketCenterX=cx+Math.sign(xn)*d.x*.123*controls.eyeSpacing;
+  const eyeSocketDx=(
+   Math.sign(xn)*d.x*.123*(controls.eyeSpacing-1)+
+   (x-socketCenterX)*(controls.eyeWidth-1)*.72
+  )*orbitalWeight;
+  // Width, lid opening and angle reshape the actual eye socket SKIN at
+  // the same time as the linked eye-region meshes and eyeliner.
   const eyeAngleRadians=(controls.eyeAngle||0)*Math.PI/180;
-  const eyeSocketDy=Math.tan(eyeAngleRadians)*
-   (x-socketCenterX)*orbitalWeight*.8;
+  const eyeSocketDy=(Math.tan(eyeAngleRadians)*
+   (x-socketCenterX)*.8+
+   (y-(box.min.y+d.y*.684))*(controls.eyeHeight-1)*.68
+  )*orbitalWeight;
   let nx=x+(x-cx)*(cheekSupport-spec.jawNarrow*ovalTransition)
     +local.dx+surfaceFairing.dx*.9+pointDx+eyeSocketDx;
   // Store the source X exactly at the preserved outer silhouette:
