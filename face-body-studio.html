@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>灰銀のレゾナンス｜女性主人公・全身＋顔・毛束v21</title>
+<title>灰銀のレゾナンス｜女性主人公・全身＋顔・毛束v22</title>
 <style>
 *{box-sizing:border-box}body{margin:0;background:#101c2e;color:#eaf3ff;font-family:system-ui,"Noto Sans JP",sans-serif}
 header{background:#183049;padding:17px 18px;border-bottom:1px solid #466780}
@@ -26,8 +26,8 @@ label{display:block;margin:10px 0}select{width:100%}
 </head>
 <body>
 <header>
-<h1>女性主人公・顔＋胴体・毛束v21</h1>
-<p>第1章「女性主人公 hero-girl-01」の登録原画を参照。元の女性胴体GLBと独立した顔メッシュを接続し、頭皮と実際の胴体への髪の接触判定を確認します。v21では髪の前後別の接触、細い前髪、目の間隔、唇の幅、細密まつ毛を調整できます。</p>
+<h1>女性主人公・顔＋胴体・毛束v22</h1>
+<p>第1章「女性主人公 hero-girl-01」の登録原画を参照。元の女性胴体GLBと独立した顔メッシュを接続し、頭皮と実際の胴体への髪の接触判定を確認します。v22では後ろ髪に厚みを加え、実胴体に沿って肩まで自然に下ろし、眉間の飛び毛を抑えました。目元一式の間隔と口紅も調整できます。</p>
 </header>
 <main>
 <section>
@@ -46,7 +46,7 @@ label{display:block;margin:10px 0}select{width:100%}
 <button id="saveGlb" disabled>顔＋胴体＋髪をGLB保存</button>
 </div>
 <div class="controls" aria-label="顔の詳細調整">
-<label for="eyeSpacing">目と目の間隔 <output id="eyeSpacingValue">1.1×</output>
+<label for="eyeSpacing">目元一式の間隔（眉・クマ含む） <output id="eyeSpacingValue">1.1×</output>
 <input type="range" id="eyeSpacing" min="0.85" max="1.35" step="0.01" value="1.1" disabled></label>
 <label for="lipstickWidth">口紅・唇の幅 <output id="lipstickWidthValue">1×</output>
 <input type="range" id="lipstickWidth" min="0.2" max="2.8" step="0.05" value="1" disabled></label>
@@ -64,11 +64,11 @@ alt="第1章女性主人公（暫定人物マスターの登録原画）">
 <label for="style">固有のヅラ（別アセット）
 <select id="style" disabled></select></label>
 <p class="note">眼球と黒目の正面投影を円形に修正。髪は実顔面と女性胴体の三角形表面との接触を判定し、肩・胸の簡易判定も併用します。</p>
-<a href="./face-mesh-studio.html?gender=female&v=21">顔の詳細スライダーへ戻る</a>
+<a href="./face-mesh-studio.html?gender=female&v=21">顔・まつ毛の詳細スライダーへ戻る</a>
 <details><summary>実メッシュ・接触検査</summary><pre id="metrics"></pre></details>
 </section>
 </main>
-<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/","./src/independent-face-masters.js":"./src/independent-face-masters.js?v=21","./src/face-feature-meshes.js":"./src/face-feature-meshes.js?v=21","./src/face-v7-controls.js":"./src/face-v7-controls.js?v=21","./src/face-body-assembly.js":"./src/face-body-assembly.js?v=21"}}</script>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/","./src/independent-face-masters.js":"./src/independent-face-masters.js?v=22","./src/face-feature-meshes.js":"./src/face-feature-meshes.js?v=22","./src/face-v7-controls.js":"./src/face-v7-controls.js?v=22","./src/face-body-assembly.js":"./src/face-body-assembly.js?v=22"}}</script>
 <script type="module">
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
@@ -77,7 +77,7 @@ import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {makeIndependentFaceMaster} from './src/independent-face-masters.js';
 import {FEMALE_V7_DEFAULTS,FACE_EYE_SPACING_DEFAULT} from './src/face-v7-controls.js';
 import {applyFaceColorMode} from './src/face-feature-meshes.js';
-import {createScalpAnchoredWig} from './src/face-scalp-wig.js?v=21';
+import {createScalpAnchoredWig} from './src/face-scalp-wig.js?v=22';
 import {attachIndependentHeadToBody,removeHeadBustBelowNeck} from './src/face-body-assembly.js';
 import {listWigStyles,DEFAULT_WIG_STYLE_ID} from './src/face-wig-styles.js';
 import {FEMALE_COMMANDER_ART_PALETTE,CHAPTER_ONE_ART_BY_KEY} from './src/chapter-one-character-art-references.js';
@@ -248,7 +248,7 @@ $('saveGlb').addEventListener('click',async()=>{
    exporter.parse(model.root,resolve,reject,{binary:true,onlyVisible:true}));
   const url=URL.createObjectURL(new Blob([result],{type:'model/gltf-binary'}));
   const a=document.createElement('a');a.href=url;
-  a.download='hai-gin-hero-girl-01-face-body-v21.glb';
+  a.download='hai-gin-hero-girl-01-face-body-v22.glb';
   document.body.appendChild(a);a.click();a.remove();
   setTimeout(()=>URL.revokeObjectURL(url),1000);
   counter.glbExports++;
