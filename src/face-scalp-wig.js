@@ -506,7 +506,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  // Real head-surface collision. The original giant ellipsoid forced
  // every strand out to an artificial spherical helmet around the ears.
  // Only points INSIDE the actual head silhouette are nudged outward.
- function resolveCollision(p,zone='crown',overFace=false){
+ function resolveCollision(p,zone='crown',overFace=false,allowDrapeAttraction=false){
   // Explicit contact with the ACTUAL front facial triangles. For hair
   // falling over the central eye/cheek region, first part it outwards.
   const yNorm=(p.y-box.min.y)/d.y;
@@ -563,7 +563,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   // silhouette gap from the ACTUAL imported torso, never cross the surface.
   // This corrects the floating shell visible from top/side without letting
   // thicker ribbons stab the chest. Head-only rigs have no real query.
-  if(bodyCollisionResolver?.query&&
+  if(allowDrapeAttraction&&bodyCollisionResolver?.query&&
      (contactSide==='rear'||contactSide==='front')&&
      p.y<box.min.y+d.y*.47){
    const torso=bodyCollisionResolver.query(p.x,p.y);
@@ -693,7 +693,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  // the real cheek, forehead and shoulder surfaces. Use resolved contacts
  // as the spring rest shape, rather than pulling hair through the face.
  for(const s of strands)for(let j=1;j<=segments;j++){
-  resolveCollision(s.points[j],s.zone,s.overFace);
+  resolveCollision(s.points[j],s.zone,s.overFace,true);
   s.points[j].y=Math.max(s.points[j].y,s.trimY);
   s.rest[j].copy(s.points[j]);
  }
@@ -721,6 +721,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   hairStrandWidthFraction:.0121,fullerCrownBackVolume:true,
   fullBodyTriangleContactBeforeProxy:true,neckAndShoulderDrape:true,
   fullBodyShoulderExtension:!!bodyCollisionResolver,
+  shoulderDrapeInitializedOnce:true,
   glabellaPartClearance:true,
   downwardGuidedLocks:true,realScalpEnvelopeCollision:true,
   longSalonLayers:true,centerBackCoverage:true,uShapedRearCut:true,
