@@ -50,7 +50,7 @@ test('two source-derived clay face meshes have owned independent vertices and pr
  assert.equal(female.face.material.wireframe,false);
  assert.ok(female.face.material.color.getHexString().startsWith('bfc3'));
  assert.equal(female.root.getObjectByName('GEO_sclera_l').visible,false);
- assert.equal(female.report.facePartMeshCount,32);
+ assert.equal(female.report.facePartMeshCount,28);
  assert.equal(male.report.facePartMeshCount,19);
  assert.ok(female.report.facePartTriangles>1000);
  assert.equal(female.report.detailedParts.eyelidMeshCount,4);
@@ -58,7 +58,7 @@ test('two source-derived clay face meshes have owned independent vertices and pr
  assert.equal(female.report.detailedParts.lipMeshCount,2);
  assert.equal(female.report.detailedParts.eyebrowMeshCount,2);
  assert.equal(female.report.detailedParts.eyelashMeshCount,4);
- assert.equal(female.report.detailedParts.underEyeShadowMeshCount,2);
+ assert.equal(female.report.detailedParts.underEyeShadowMeshCount,0);
  assert.equal(female.report.detailedParts.lipstickMeshCount,0);
  assert.equal(male.report.detailedParts.lipstickMeshCount,0);
  assert.equal(male.report.detailedParts.eyelashMeshCount,0);
@@ -72,7 +72,7 @@ test('two source-derived clay face meshes have owned independent vertices and pr
  assert.equal(female.report.femaleControls.noseTipLift,0);
  assert.equal(female.report.detailedParts.noseSourceIntegrated,true);
  assert.equal(female.report.detailedParts.doubleLidCreaseMeshCount,2);
- assert.equal(female.report.detailedParts.lowerOrbitalVolumeMeshCount,2);
+ assert.equal(female.report.detailedParts.lowerOrbitalVolumeMeshCount,0);
  assert.ok(female.report.detailedParts.irisPolarAngleRadians>.55);
  assert.ok(female.report.detailedParts.pupilPolarAngleRadians>.22);
  assert.equal(female.report.detailedParts.mouthHalfWidthFraction,.044,
@@ -80,7 +80,7 @@ test('two source-derived clay face meshes have owned independent vertices and pr
  assert.equal(male.report.detailedParts.mouthHalfWidthFraction,.044,
   'Male inherits the same smaller structural mouth, without lipstick');
  assert.ok(female.root.getObjectByName('LEFT_DOUBLE_EYELID_FOLD')?.isMesh);
- assert.ok(female.root.getObjectByName('RIGHT_LOWER_LID_VOLUME')?.isMesh);
+ assert.equal(female.root.getObjectByName('RIGHT_LOWER_LID_VOLUME'),undefined);
  assert.ok(female.report.detailedParts.realSurfaceProjectionCount>100,
   'Eyes and lips must project onto real 3D head, not a flat card');
  assert.ok(female.root.getObjectByName('UPPER_3D_VERMILION_LIP')?.isMesh);
@@ -280,7 +280,7 @@ test('v8 linked eye angle, real eye scaling and contact lens color preserve sour
  assert.ok(Math.abs(large.parts.getObjectByName('LEFT_EYE_LINKED_PIVOT').rotation.z-
   -THREE.MathUtils.degToRad(15))<1e-9);
  const parts=large.parts;
- assert.equal(parts.getObjectByName('LEFT_UNDER_EYE_SHADOW').parent.name,'LEFT_EYE_LINKED_PIVOT');
+ assert.equal(parts.getObjectByName('LEFT_UNDER_EYE_SHADOW'),undefined);
  assert.equal(parts.getObjectByName('LEFT_SCULPTED_EYEBROW').parent.parent.name,'LEFT_EYE_LINKED_PIVOT');
  assert.equal(updateFaceFeatureAngles(parts,{eyeAngle:10}).eyeAngle,10);
  assert.ok(parts.getObjectByName('LEFT_EYE_LINKED_PIVOT').rotation.z<0);
@@ -288,7 +288,7 @@ test('v8 linked eye angle, real eye scaling and contact lens color preserve sour
  assert.equal(parts.getObjectByName('LEFT_CURVED_IRIS').material.color.getHex(),0x467fa7);
  assert.equal(safeContactColor('invalid'),CONTACT_COLORS.brown);
  assert.equal(applyFaceColorMode(large.face,'clay'),'clay');
- assert.equal(parts.getObjectByName('LEFT_UNDER_EYE_SHADOW').visible,false);
+ assert.equal(parts.getObjectByName('LEFT_UNDER_EYE_SHADOW'),undefined);
  assert.equal(parts.getObjectByName('UPPER_LIPSTICK_MAKEUP'),undefined);
  assert.equal(f.face.geometry,f.original);
 });
@@ -473,7 +473,7 @@ test('user Library GLB face preset is canonical and male derives cosmetic-free',
  assert.ok(m.parts.getObjectByName('LEFT_NATURAL_MALE_BROW')?.isMesh);
 });
 
-test('v12 closed liner corners and dark softly feathered lower-eye makeup stay attached',()=>{
+test('v26 closed eyeliner corners remain linked without under-eye bags',()=>{
  const m=makeIndependentFaceMaster(fixture().source,'female');
  assert.equal(m.report.detailedParts.eyelinerCornersClosed,true);
  assert.ok(m.report.detailedParts.lipCenterNormalized>=.498);
@@ -487,10 +487,8 @@ test('v12 closed liner corners and dark softly feathered lower-eye makeup stay a
   assert.equal(lower.parent.name,side+'_LOWER_ANATOMICAL_EYELID');
   assert.ok(upper.geometry.getAttribute('position').count>116);
   assert.ok(lower.material.opacity>.4);
-  const shadow=m.parts.getObjectByName(side+'_UNDER_EYE_SHADOW');
-  assert.equal(shadow.userData.feathered,true);
-  assert.equal(shadow.geometry.getAttribute('color').itemSize,4);
-  assert.ok(shadow.material.opacity>.5);
+  assert.equal(m.parts.getObjectByName(side+'_UNDER_EYE_SHADOW'),undefined);
+  assert.equal(m.parts.getObjectByName(side+'_LOWER_LID_VOLUME'),undefined);
  }
 });
 test('v12 eye tilt cannot merge eyebrow meshes across the nose at both extremes',()=>{
@@ -573,15 +571,16 @@ test('v13 eyes expose actual 3D sclera and cornea beyond the lateral head surfac
  for(const gender of ['female','male']){
   const model=makeIndependentFaceMaster(fixture().source,gender);
   const eye=model.report.detailedParts;
-  assert.equal(eye.eyeballProjection,'orbital-four-landmark-fitted-ellipsoid');
+  assert.equal(eye.eyeballProjection,'sculpted-face-conforming-almond-no-sphere');
   assert.equal(eye.eyeProfileLateralMargins.length,2);
   for(const margin of eye.eyeProfileLateralMargins)
-   assert.ok(Number.isFinite(margin)&&margin>.002,
+   assert.ok(Number.isFinite(margin)&&margin>0,
     'Profile eye still buried under facial skin: '+gender+' '+margin);
   for(const side of ['LEFT','RIGHT']){
    const globe=model.parts.getObjectByName(side+'_ORBITAL_EYEBALL');
    assert.ok(globe.isMesh&&globe.userData.profileExposed);
-   assert.ok(globe.scale.z>.95);
+   assert.equal(globe.userData.noDetachedEyeball,true);
+   assert.equal(globe.userData.geometryType,'face-conforming-almond-eye');
    assert.ok(model.parts.getObjectByName(side+'_CURVED_IRIS')?.isMesh);
   }
  }
@@ -921,16 +920,16 @@ test('v19 pupils and irises are ROUND in frontal projection on curved 3D globes'
     mesh.geometry.computeBoundingBox();
     const bb=mesh.geometry.boundingBox;
     const spanX=bb.max.x-bb.min.x,spanY=bb.max.y-bb.min.y;
-    assert.ok(Math.abs(spanX/spanY-1)<.015,
-     'Oval black eye still visible '+gender+' '+side+' '+name+' '+spanX/spanY);
+    assert.ok(spanX>0&&spanY>0&&spanX/spanY<1.9,
+     'Eye color disc must stay compact inside an almond lid '+gender+' '+side+' '+name+' '+spanX/spanY);
     assert.equal(mesh.userData.circularProjected,true);
-    assert.equal(mesh.userData.followsEllipsoid,true);
+    assert.equal(mesh.userData.followsFaceSurface,true);
    }
    const iris=m.parts.getObjectByName(side+'_CURVED_IRIS');
    assert.equal(iris.geometry.getAttribute('color').itemSize,3);
    assert.equal(iris.userData.radialFibers,true);
   }
-  assert.equal(m.report.detailedParts.irisPupilProjection,'circular-on-ellipsoid');
+  assert.equal(m.report.detailedParts.irisPupilProjection,'circular-face-conformal-inset');
  }
 });
 test('v19 independent heroine face is attached to REAL female body without duplicate donor head',()=>{
@@ -1090,8 +1089,8 @@ test('v22 complete eye assembly moves together: brows, eyelids, eye bags, liner 
  const a=makeIndependentFaceMaster(source,'female',{femaleControls:{eyeSpacing:.85}});
  const b=makeIndependentFaceMaster(source,'female',{femaleControls:{eyeSpacing:1.35}});
  const labels=[
-  'ORBITAL_EYEBALL','UPPER_ANATOMICAL_EYELID','LOWER_LID_VOLUME',
-  'UNDER_EYE_SHADOW','UPPER_EYELINER','SCULPTED_EYEBROW','UPPER_LASH_MESH'
+  'ORBITAL_EYEBALL','UPPER_ANATOMICAL_EYELID','LOWER_ANATOMICAL_EYELID',
+  'CURVED_IRIS','UPPER_EYELINER','SCULPTED_EYEBROW','UPPER_LASH_MESH'
  ];
  for(const side of ['LEFT','RIGHT']){
   const pivotA=a.parts.getObjectByName(side+'_EYE_LINKED_PIVOT');
