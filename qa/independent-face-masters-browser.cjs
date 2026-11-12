@@ -593,6 +593,10 @@ async function expectCenteredFaceSliders(page,gender){
       !info.wig.fringeRootAboveHairline||!info.wig.fullLengthEyebrowFringe)
     throw Error('v23 hair still has duplicate rear sheets or eyebrow hair roots '+
      JSON.stringify(info.wig));
+   if(info.wig.frontalFaceCrossingLocks!==0||
+      !info.wig.frontalCrownEyebrowTrim||!info.wig.joinedRearSilhouette)
+    throw Error('v23 front still crosses nose/mouth or has a rear slit '+
+     JSON.stringify(info.wig));
    // Test real mouse-wheel pinch zoom (not merely the portrait button):
    // a face-slider rebuild must preserve the same camera pose and orbit.
    await hero.locator('#bodyCanvas').hover();
