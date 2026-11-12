@@ -1,0 +1,116 @@
+{
+  "schemaVersion": 1,
+  "stageId": "c01-s01",
+  "title": "黎明の王都レヴナ",
+  "chapterTitle": "灰の勅命",
+  "chapterSynopsis": "三国が睨み合う大陸で、灰銀の摂政リュシアは新しい軍師を王城に招く。先王の遺した命令書は「国境を守れ」の一行だけ。だが封蝋には十年前に処刑された鐘守の紋章があった。夜半、千年間鳴らなかった鐘が王城の地下で一度だけ響く。",
+  "coreConflict": "消えた死者名簿・不可解な王印・千年ぶりの星鐘の響きを調べる。第1ステージの結末は町の探索開始であり、軍団の出征や敵襲ではない。",
+  "visualReferences": {
+    "protagonistMale": {
+      "path": "assets/story/panels/c01-s01-m01.webp",
+      "kind": "existing-scene-not-character-master",
+      "status": "provisional",
+      "description": "黒髪の青年軍師。黒と金の鎧、濃紺のマント。画像は既存シーンのため本人以外を外見の参照にしない"
+    },
+    "protagonistFemale": {
+      "path": "assets/story/characters/commander/female-master.webp",
+      "kind": "character-master",
+      "description": "金髪の若い女性軍師、銀色の装甲と青い装飾。リュシアとは別人"
+    },
+    "lucia": {
+      "path": "assets/story/characters/lucia/master.webp",
+      "kind": "character-master",
+      "description": "灰銀の摂政。銀髪を編み上げた貴族女性、白と銀の宮廷礼装。金髪の女性軍師でもピンク髪の騎士でもない"
+    },
+    "garan": {
+      "path": "assets/story-cinema/cast/garan.webp",
+      "kind": "crop-from-ensemble-unverified-master",
+      "description": "灰髪で短い髭を蓄えた老騎士、毛皮の肩掛けと金属鎧。現国王ではない"
+    },
+    "iris": {
+      "path": "assets/story-cinema/cast/iris.webp",
+      "kind": "crop-from-ensemble-unverified-master",
+      "description": "淡色の髪、白い治癒師の衣装と頭布、書物を持つ若い女性。王女ではない"
+    }
+  },
+  "appearancePolicy": [
+    "各キャラクターは役名とIDで固定し、別人物の顔を流用しない",
+    "リュシアは摂政であり、女性主人公の別名ではない",
+    "ガランは老騎士であり、王冠をつけた王ではない",
+    "イリスは治癒師であり、王女や騎士団長ではない",
+    "単なるファイルパス文字列だけでは顔の参照画像はモデルに届かない。画像生成に実際の画像バイトを添付して目視確認する",
+    "背景と美術の矛盾がある既存の原画は暫定素材と明示し、構図だけを引き継ぐ",
+    "男女は同じ10コマの物語を保ち主人公だけを差し替える。リュシアその他の人物は変化させない"
+  ],
+  "excludedPlot": [
+    "生存する現国王からの勅命",
+    "王女からの出撃命令",
+    "帝国軍による即時侵攻",
+    "西方軍の到来",
+    "黒森の砦へ出陣",
+    "この段階で敵を殲滅する戦闘"
+  ],
+  "prePanelStoryboard": [
+    {
+      "cell": 1,
+      "panelId": "c01-s01-m1",
+      "scene": "夜明けの石造りの王都レヴナ。市場で働く市民と、王城へ招かれた新任軍師。戦争のただ中でも続く日常を画面の主題にする"
+    },
+    {
+      "cell": 2,
+      "panelId": "c01-s01-m2",
+      "scene": "王城の宮廷。銀髪の摂政リュシアが軍師へ挨拶する。視線は新任軍師に向ける。ガランは後方"
+    },
+    {
+      "cell": 3,
+      "panelId": "c01-s01-m3",
+      "scene": "老騎士ガランが王都の住民と市場の暮らしを見せ、守るべきものを語る"
+    },
+    {
+      "cell": 4,
+      "panelId": "c01-s01-m4",
+      "scene": "治癒師イリスが礼拝堂の死者名簿を開き、名前が消えた空白を示す"
+    },
+    {
+      "cell": 5,
+      "panelId": "c01-s01-m5",
+      "scene": "リュシアとイリスが勅命の封蝋を検分する。10年前に処刑された鐘守の紋章が刻まれている"
+    },
+    {
+      "cell": 6,
+      "panelId": "c01-s01-m11",
+      "scene": "ガランが軍師を町の通りへ導き、暮らしと調査現場を観察する。戦時下の緊張は控えめ"
+    },
+    {
+      "cell": 7,
+      "panelId": "c01-s01-m12",
+      "scene": "イリスとガランが町の人々に礼拝堂の夜の出来事を尋ね、証言を記録する"
+    },
+    {
+      "cell": 8,
+      "panelId": "c01-s01-m13",
+      "scene": "リュシアとイリスが帳簿の空白と古い王印を並べて比較する"
+    },
+    {
+      "cell": 9,
+      "panelId": "c01-s01-m14",
+      "scene": "ガランが軍師とリュシアに、戦の勝敗よりも生きている人々を守る判断を託す"
+    },
+    {
+      "cell": 10,
+      "panelId": "c01-s01-m15",
+      "scene": "軍師とリュシアが市場から町の奥へ歩き出す。敵軍へ出陣せず、町での調査を始める"
+    }
+  ],
+  "format": {
+    "columns": 2,
+    "rows": 5,
+    "onePage": true,
+    "heroVariant": [
+      "male",
+      "female"
+    ],
+    "eventPhase": "pre"
+  },
+  "qualityGate": "画像・章あらすじ・台本を三者照合してから採用。人物ID、年齢、衣装、イベント内容、10コマの連続性のいずれかが違えば不採用"
+}
