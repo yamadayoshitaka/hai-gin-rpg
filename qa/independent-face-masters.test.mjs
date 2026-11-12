@@ -974,3 +974,45 @@ test('v19 independent heroine face is attached to REAL female body without dupli
  assert.ok(attached.bodyCollider.getReport().contactCorrections>0);
  hair.dispose();attached.dispose();
 });
+
+test('v20 body collision protects visible hair-ribbon edges and clumped sway avoids frizz',()=>{
+ const face=makeIndependentFaceMaster(fixture().source,'female');
+ const box=face.face.geometry.boundingBox;
+ const threshold=box.min.y+(box.max.y-box.min.y)*.72;
+ const surfaceZ=.9;
+ let contacts=0;
+ // Simulated imported-body front surface. The solver pushes only points
+ // penetrating the torso, just like the real GLB triangle-depth collider.
+ const bodySolver={resolve(point){
+  if(point.y>=threshold||point.z>=surfaceZ)return false;
+  point.z=surfaceZ;contacts++;return true;
+ }};
+ const wig=createScalpAnchoredWig(face.face,{
+  count:96,lengthScale:1.1,bodyCollisionResolver:bodySolver
+ });
+ const hair=wig.root.getObjectByName('REAL_ROOTED_SWEPT_HAIR_LOCKS');
+ const report=wig.getReport();
+ assert.equal(report.renderedRibbonBodyCollision,true);
+ assert.equal(report.hairClumpSwayGroupSize,12);
+ assert.equal(report.frizzAmplitudeFactor,.025);
+ const pointsPerLock=report.pointCount/report.rootCount;
+ const verify=()=>{
+  const positions=hair.geometry.getAttribute('position');
+  let checked=0;
+  for(let i=0;i<positions.count;i++){
+   const section=Math.floor(i/4)%pointsPerLock;
+   if(section===0||positions.getY(i)>=threshold-1e-5)continue;
+   checked++;
+   assert.ok(positions.getZ(i)>=surfaceZ-1e-5,
+    'Actual rendered ribbon edge must remain outside torso collision surface');
+  }
+  assert.ok(checked>12,'Need a meaningful number of low-hair contact samples');
+ };
+ verify();
+ wig.update(.05);
+ verify();
+ assert.ok(contacts>0,'Actual render endpoints must use the body resolver');
+ assert.ok(wig.getReport().ribbonBodyContactEvents>0,
+  'Record visible-ribbon corrections separately from guide contacts');
+ wig.dispose();
+});
