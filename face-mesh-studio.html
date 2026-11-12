@@ -409,7 +409,11 @@ function rebuildFemale(){
  // Nose, chin and lipstick do not change the rear/crown hair follicles.
  // Reparent existing 1440-strand wig instead of rebuilding its geometry.
  const oldWig=wigs.get('female');
- if(oldWig&&wigOn)next.face.add(oldWig.root);
+ if(oldWig&&wigOn){
+  next.face.add(oldWig.root);
+  const base=oldWig.root.getObjectByName('DETACHABLE_WIG_TRANSPARENT_HEAD_BASE');
+  if(base){base.geometry.dispose();base.geometry=next.face.geometry.clone();}
+ }
  else if(wigOn)rebuildWig();
  performanceMetrics.headRebuilds++;
  if(wired)next.face.traverse(o=>{if(o.isMesh)o.material.wireframe=true;});
