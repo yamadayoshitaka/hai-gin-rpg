@@ -31,8 +31,11 @@ const existingMaleS02=Object.freeze({
 });
 function artPath(stageId,edition,gender,panelId){
  const suffix=panelId.slice(stageId.length+1);
- const legacy=stageId==='c01-s02'&&gender==='male'&&existingMaleS02[edition]?.includes(suffix);
- const name=legacy?panelId+'-'+gender+'.webp':panelId+'-'+edition+'-'+gender+'.webp';
+ const numeric=/^m(\\d{1,2})$/.exec(suffix);
+ const normalizedId=numeric?stageId+'-m'+String(Number(numeric[1])).padStart(2,'0'):panelId;
+ const normalizedSuffix=normalizedId.slice(stageId.length+1);
+ const legacy=stageId==='c01-s02'&&gender==='male'&&existingMaleS02[edition]?.includes(normalizedSuffix);
+ const name=legacy?normalizedId+'-'+gender+'.webp':normalizedId+'-'+edition+'-'+gender+'.webp';
  return 'assets/story/chapters/'+stageId.slice(0,3)+'/panels/'+name;
 }
 function present(p){return fs.existsSync(path.join(root,p));}
