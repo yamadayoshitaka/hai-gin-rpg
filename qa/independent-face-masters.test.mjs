@@ -1498,3 +1498,30 @@ test('v29 female eyes project forward of skin with convex globe, connected lids 
   'Eye depth slider must move the anterior cornea, not cosmetic paint');
  assert.equal(FACE_SLIDER_RANGES.eyeDepth[1],.85);
 });
+
+test('v30 corneal centre stays smooth and symmetrical instead of following source-skin triangulation',()=>{
+ const face=makeIndependentFaceMaster(fixture().source,'female');
+ assert.equal(face.report.detailedParts.smoothCornealCore,true);
+ assert.equal(face.report.detailedParts.eyeCoreSkinBlendPower,4);
+ for(const side of ['LEFT','RIGHT']){
+  const eye=face.parts.getObjectByName(side+'_ORBITAL_EYEBALL');
+  const iris=face.parts.getObjectByName(side+'_CURVED_IRIS');
+  assert.equal(eye.userData.smoothCornealCore,true);
+  assert.equal(eye.userData.skinBlendRestrictedToEyelidRim,true);
+  assert.equal(iris.userData.sharedSmoothCornealSurface,true);
+  const a=eye.geometry.getAttribute('position');
+  const z=i=>a.getZ(9*49+i);
+  const left=z(16),mid=z(24),right=z(32);
+  const span=face.face.geometry.boundingBox.getSize(new THREE.Vector3()).x;
+  const radius=span*.052;
+  assert.ok(mid>left+radius*.012&&mid>right+radius*.012,
+   'Eye front must have smooth visible corneal prominence');
+  assert.ok(Math.abs(left-right)<radius*.04,
+   'Eye must be symmetric at its core even when the source skin is uneven');
+  // Avoid alternating peaks across the iris/white of the actual 3D model.
+  const line=Array.from({length:17},(_,i)=>z(i+16));
+  const peaks=line.slice(1,-1).filter((v,i)=>
+   (v-line[i])*(v-line[i+2])>0).length;
+  assert.ok(peaks<=1,'The cornea should have one convex peak, not jagged bands');
+ }
+});
