@@ -6455,6 +6455,7 @@ let pendingDirectOrder=null;
 function queueDirectOrder(mode,id=orderedSquad()){
  if(id==null||!hasSquadCommander(id)||squadOrderCooldownSeconds(id)>0)return false;
  pendingDirectOrder={mode,id:String(id)};
+ $('battleOrderConfirm').querySelector('small').textContent=orderEffect(mode);
  $('battleOrderConfirmTitle').textContent=squadPrimaryJob(id)+'隊に「'+
   ({charge:'突撃',defend:'守備',hold:'待機',retreat:'退却'}[mode]||mode)+'」を発令しますか？';
  $('battleOrderConfirm').hidden=false;
@@ -6751,7 +6752,8 @@ function chooseCircleActionTarget(id,team){
  const actionLabel=action.kind==='attack'?'突撃':action.kind==='support'?'回復支援':'道具使用';
  $('battleTargetConfirmTitle').textContent=actionLabel+'：'+squadPrimaryJob(id,team)+'隊';
  $('battleTargetConfirmText').textContent=squadName(action.source)+
-  ' → '+(team===1?'敵':'味方')+squadName(id,team)+'。対象をズームして確認してください。';
+  ' → '+(team===1?'敵':'味方')+squadName(id,team)+'。'+
+  orderEffect(action.kind==='attack'?'charge':action.kind==='support'?'support':'explore');
  $('battleTargetConfirm').hidden=false;
  document.body.classList.add('command-target-preview');
  return true;
@@ -6899,7 +6901,7 @@ function buildSquadQuickCommands(){
   const node=document.createElement('div');node.className='quickGroup';node.textContent=value;
   squadQuickList.append(node);
  };
- const add=(label,key,action,{needsCommander=true,enabled=true}={})=>{
+ const add=(label,key,action,{needsCommander=true,enabled=true,effect=''}={})=>{
   const button=document.createElement('button');button.type='button';button.textContent=label;
   button.dataset.command=key;
   const cooldown=squadOrderCooldownSeconds(id);
@@ -6910,6 +6912,12 @@ function buildSquadQuickCommands(){
   if(locked){
    button.textContent=label+' ⏳'+cooldown+'秒';
    button.title='命令・アイテム再使用まで'+cooldown+'秒';
+  }
+  if(effect){
+   button.classList.add('quickDescribedOrder');
+   const caption=document.createElement('small');caption.className='quickCommandEffect';
+   caption.textContent=effect;button.append(caption);
+   button.title=label+'：'+effect;
   }
   button.onclick=()=>{if(!button.disabled)action()};
   (quickActionRow||squadQuickList).append(button);return button;
@@ -6963,14 +6971,14 @@ function buildSquadQuickCommands(){
   heading(cooldown?'再号令まで '+cooldown+'秒':'📯 号令（選択した部隊全員に適用）');
   const issue=mode=>queueDirectOrder(mode);
   heading('号令 · 対応部隊全員（統率Lvに応じた再発行間隔）');
-  add('⚔ 突撃','charge',()=>beginCircleTargetSelection('attack'));
-  add('✚ 支援','heal_target',()=>beginCircleTargetSelection('support'));
-  add('🛡 防御','defend',()=>issue('defend'));
-  add('⏸ 待機','hold',()=>issue('hold'));
-  add('↘ 退却','retreat',()=>issue('retreat'));
-  add('★ 推奨号令','recommend_order',()=>advice.order==='charge'?beginCircleTargetSelection('attack'):issue(advice.order));
+  add('⚔ 突撃','charge',()=>beginCircleTargetSelection('attack'),{effect:orderEffect('charge')});
+  add('✚ 支援','heal_target',()=>beginCircleTargetSelection('support'),{effect:orderEffect('support')});
+  add('🛡 防御','defend',()=>issue('defend'),{effect:orderEffect('defend')});
+  add('⏸ 待機','hold',()=>issue('hold'),{effect:orderEffect('hold')});
+  add('↘ 退却','retreat',()=>issue('retreat'),{effect:orderEffect('retreat')});
+  add('★ 推奨号令','recommend_order',()=>advice.order==='charge'?beginCircleTargetSelection('attack'):issue(advice.order),{effect:orderEffect(advice.order)});
   if(massSim)add('✨ 軍師ワープ','warp',()=>beginStrategistWarp(),
-   {enabled:general?.rarity==='UR'&&!general.strategistWarpUsed});
+   {enabled:general?.rarity==='UR'&&!general.strategistWarpUsed,effect:orderEffect('warp')});
  }else if(squadQuickPage==='items'){
   const owned=new Map();
   for(const stock of allyItemStocks()){
@@ -9118,7 +9126,7 @@ async function finishBattleLoading(){
   const planHeading=document.createElement('strong');
   planHeading.textContent='⚑ 開戦前の隊列編成';
   const planHint=document.createElement('p');
-  planHint.textContent='3ボタンは自動編成。職業は手動指定もできます。アイテムは部隊ごとに自動／手動を設定（初期値は手動）。実際の職業構成から部隊タイプを判定します。';
+  planHint.textContent='3ボタンは自動編成。職業は手動指定もできます。アイテムは部隊ごとに自動／手動を設定（初期値は手動）。実際の職業構成から部隊タイプを判定します。固定作戦の効果は各隊に表示します。';
   planHint.style.cssText='font:11px/1.55 system-ui;color:#c3dcea;margin:5px 0 8px';
   const planList=document.createElement('div');planList.id='openingPlanList';
   planList.style.cssText='overflow:hidden;display:grid;gap:6px';
@@ -9135,7 +9143,10 @@ async function finishBattleLoading(){
     selectedSquadFormations.set('0:'+detail.squadId,actualType);
     refs.name.textContent=squadName(detail.squadId)+'（'+detail.total+'人）';
     const assigned=Object.values(manualJobs[detail.squadId]||{}).reduce((n,v)=>n+v,0);
-    refs.preview.textContent='職業構成：前衛'+detail.front+'／遠距離'+detail.range+'／回復'+detail.heal+
+    const strategy=squadStrategies.get(String(detail.squadId))||'eliminate';
+    refs.preview.textContent='固定作戦：'+(TACTICAL_STRATEGIES[strategy]?.name||'全滅')+
+     ' ／効果：'+strategyEffect(strategy)+'\n'+
+     '職業：前衛'+detail.front+'／遠距離'+detail.range+'／回復'+detail.heal+
      ' · '+FORMATION_NAMES[actualType]+(assigned?'（手動'+assigned+'人・残り自動）':'（自動編成）');
     for(const btn of refs.buttons.querySelectorAll('button')){
      const active=btn.dataset.type===selectedSquadType(detail.squadId);
@@ -9288,12 +9299,17 @@ async function finishBattleLoading(){
      const option=document.createElement('option');option.value=value;option.textContent=label;orderSelect.append(option);
     }
     orderSelect.value='charge'; // Explicit opening command; never implicit auto/defend for mixed squads.
+    const effectLabel=document.createElement('small');
+    effectLabel.className='openingCommandEffect';effectLabel.textContent=orderEffect(orderSelect.value);
     const buildingPicker=createExplorationPicker();
     buildingPicker.element.hidden=true;
     buildingPicker.element.style.maxHeight='none';buildingPicker.element.style.overflow='hidden';
     if(!availableBuildings.length)orderSelect.querySelector('option[value="explore"]').disabled=true;
-    orderSelect.onchange=()=>buildingPicker.element.hidden=orderSelect.value!=='explore';
-    row.append(name,orderSelect,buildingPicker.element);orderList.append(row);
+    orderSelect.onchange=()=>{
+     buildingPicker.element.hidden=orderSelect.value!=='explore';
+     effectLabel.textContent=orderEffect(orderSelect.value);
+    };
+    row.append(name,orderSelect,effectLabel,buildingPicker.element);orderList.append(row);
     initialOrderInputs.push({team,id,orderSelect,buildingPicker,name});
    }
   }
