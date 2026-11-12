@@ -34,10 +34,6 @@ export function comicEditionKey(stageId,phase,context={}){
   if(!ROUTES.some(r=>r.id===route))throw Error('Invalid story cooperation '+route);
   parts.push('route-'+route);
  }
- if(phase==='post'&&context?.battleOutcome?.playerCommanderDead===true){
-  scenes.push(branchShot(source,stageId,phase,'gameover',
-   '軍師の戦死が確認された。指揮を失った軍は戦いを終えた。この物語はゲームオーバーとして記録される。'));
- }
  if(stageId==='c20-s10'&&phase==='post'&&context?.battleOutcome?.victory===true&&
     context?.battleOutcome?.playerCommanderDead!==true&&context?.storyEnding){
   if(!ENDING_GUIDE.some(e=>e.id===context.storyEnding))throw Error('Invalid story ending');
@@ -78,6 +74,10 @@ export function comicForStage(stageId,phase,context={}){
    ?'灰銀の軍師は「'+route.name+'」の協力方針で、この地の人々と向き合う。'
    :'「'+route.name+'」の仲間に戦況を伝える。勝敗だけで今後の協力関係は決まらない。';
   scenes.splice(Math.max(0,scenes.length-1),0,branchShot(source,stageId,phase,'route-'+route.id,text));
+ }
+ if(phase==='post'&&context?.battleOutcome?.playerCommanderDead===true){
+  scenes.push(branchShot(source,stageId,phase,'gameover',
+   '軍師の戦死が確認された。指揮を失った軍は戦いを終えた。この物語はゲームオーバーとして記録される。'));
  }
  if(stageId==='c20-s10'&&phase==='post'&&context?.battleOutcome?.victory===true&&context?.storyEnding){
   const ending=ENDING_GUIDE.find(x=>x.id===context.storyEnding);
