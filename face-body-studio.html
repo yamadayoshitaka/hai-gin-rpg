@@ -243,7 +243,8 @@ function rebuildFaceOnBody(){
  const savedCameraZoom=camera.zoom;
  const previous=model;
  if(hairOnly)applyFullModelVisibilityForExport();
- const next=makeIndependentFaceMaster(sourceHead,'female',{femaleControls:faceControls});
+ const next=makeIndependentFaceMaster(sourceHead,'female',{femaleControls:faceControls,
+  partSelection:v32PartMode?resolvePartSelection('female',v32BodyPart).ids:null});
  if(v32PartMode&&uncutScalpSource){
   uncutScalpSource.geometry.dispose();uncutScalpSource.geometry=next.face.geometry.clone();
  }
@@ -556,7 +557,8 @@ frame();
    loader.loadAsync(base+'realistic-body-female.glb')
   ]);
   sourceHead=head.scene;
-  model=makeIndependentFaceMaster(sourceHead,'female',{femaleControls:faceControls});
+  model=makeIndependentFaceMaster(sourceHead,'female',{femaleControls:faceControls,
+  partSelection:v32PartMode?resolvePartSelection('female',v32BodyPart).ids:null});
   applyFaceColorMode(model.face,'color',{contactColor,makeupType:v32PartMode?v32BodyPart.makeup:0});
   bodyAttachment=attachIndependentHeadToBody(model,body.scene,{
    outfitSource:null,characterId:art.characterId,
