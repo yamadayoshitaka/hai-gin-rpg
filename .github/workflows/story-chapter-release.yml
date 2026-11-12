@@ -1,0 +1,83 @@
+name: Chapter comic production and reviewed release
+
+on:
+  workflow_dispatch:
+    inputs:
+      chapter:
+        description: 'Chapter number (1-20). Process ALL ten stages and branches.'
+        required: true
+        type: number
+        default: 1
+      mode:
+        description: 'prepare = storyboard + missing-art report; publish = require all reviewed male/female branch artwork'
+        required: true
+        type: choice
+        default: prepare
+        options:
+          - prepare
+          - publish
+
+permissions:
+  contents: write
+
+concurrency:
+  group: reviewed-chapter-comic-release
+  cancel-in-progress: false
+
+jobs:
+  chapter:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Checkout latest approved game code
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install free local artwork verifier
+        run: python -m pip install --disable-pip-version-check Pillow==11.3.0
+      - name: Verify chapter and all scenario variants
+        env:
+          CHAPTER: ${{ inputs.chapter }}
+        run: |
+          node --check src/story-chapter-comic.js
+          node --check scripts/prepare-story-chapter.mjs
+          python -m py_compile scripts/publish-story-chapter.py
+          node qa/story-chapter-pipeline.test.mjs
+          if [ "$CHAPTER" -lt 1 ] || [ "$CHAPTER" -gt 20 ]; then
+            echo "Chapter must be from 1 through 20"; exit 1
+          fi
+          node scripts/prepare-story-chapter.mjs --chapter "$CHAPTER"
+      - name: Publish entire approved chapter or fail without changes
+        if: ${{ inputs.mode == 'publish' }}
+        env:
+          CHAPTER: ${{ inputs.chapter }}
+        run: |
+          python scripts/publish-story-chapter.py --chapter "$CHAPTER" --publish
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          CH=$(printf 'c%02d' "$CHAPTER")
+          git add "assets/story/chapters/$CH/"
+          if git diff --cached --quiet; then
+            echo "This chapter already contains exactly the reviewed pages."
+            exit 0
+          fi
+          git commit -m "assets(story): release reviewed chapter $CH (all routes, outcomes, genders)"
+          git pull --rebase origin main
+          git push origin HEAD:main
+      - name: Archive chapter production plan and audit
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: chapter-comic-production-${{ inputs.chapter }}
+          path: |
+            qa-reports/story-chapters/
+            assets/story/chapters/c*/registration.json
+          if-no-files-found: ignore
+          retention-days: 30
