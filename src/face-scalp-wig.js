@@ -27,10 +27,10 @@ const projectCapsule=(p,a,b,r)=>{
 // lose almost all roots to the much denser triangles on the frontal head.
 const WIG_ZONE_WEIGHTS=Object.freeze([
  // Top/crown roots + real back-of-head roots: sum exactly 1.
- ['crown',.20],['fringeLeft',.04],['fringeRight',.04],
+ ['crown',.23],['fringeLeft',.05],['fringeRight',.05],
  ['templeLeft',.105],['templeRight',.105],
- ['backLeft',.20],['backRight',.20],
- ['napeLeft',.055],['napeRight',.055]
+ ['backLeft',.18],['backRight',.18],
+ ['napeLeft',.05],['napeRight',.05]
 ]);
 function actualScalpCandidates(geo,box){
  const pos=geo.getAttribute('position'),normals=geo.getAttribute('normal');
@@ -409,7 +409,9 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  // scalp. Lift root centre along the true face normal by roughly one
  // ribbon half-width; the following per-vertex projection keeps its
  // visible outer edge clear without creating a balloon helmet.
- const rootLift=d.x*.0155;
+ // Keep the minimum crown almost flush with the real scalp. The old
+ // offset plus four thick stacked ribbons looked like a raised helmet.
+ const rootLift=d.x*.0125;
  // Shoulder/chest proxy geometry is in the SAME coordinates as the head.
  // Future full-body rigs can supply exact external capsules.
  const colliders=[
@@ -601,7 +603,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  geo.setAttribute('color',new THREE.BufferAttribute(colors,3));
  geo.setIndex(indices);
  const mat=new THREE.MeshStandardMaterial({
-  color:0xffffff,vertexColors:true,roughness:.78,metalness:0,
+  color:0xffffff,vertexColors:true,roughness:.69,metalness:0,
   side:THREE.DoubleSide
  });
  const locks=new THREE.Mesh(geo,mat);
@@ -613,7 +615,9 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  // forehead strips so additional volume does not turn bangs into boards.
  // Slightly broader surface-hugging strips, not another 10x increase in
  // underlying guides. Fine front fringe keeps its own small width factor.
- const half=d.x*.0142;
+ // Finer groomed layers: 4 overlapped cards remain, but individual
+ // panels no longer read as wide flat white ribbons in side view.
+ const half=d.x*.0135;
  // The visible mesh retains all 1440+ locks, but only ~320 master locks
  // require full constraint and capsule solving on Android.
  const guideStride=Math.max(1,Math.ceil(lockCount/320));
@@ -725,11 +729,11 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    // broad clean midsection and softly tapered point-cut tip. Keeping
    // crown cards narrow prevents the interlocking square tiles visible
    // in the previous overhead screenshots.
-   const rootProfile=.31+.69*THREE.MathUtils.smoothstep(t,0,.18);
+   const rootProfile=.36+.64*THREE.MathUtils.smoothstep(t,0,.23);
    const width=half*tip*rootProfile*(.90+.15*fract(i*.35))*
     (strand.zone.startsWith('fringe')?.17:
      strand.zone.startsWith('temple')?.58:
-     strand.zone==='crown'?.53:
+     strand.zone==='crown'?.49:
      strand.zone.startsWith('back')?.88:
      strand.zone.startsWith('nape')?.82:.86);
     // Groom BOTH ribbon planes along the actual hair-guide tangent.
@@ -756,7 +760,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
     for(let k=0;k<ribbonStride;k++){
      const at=(i*(segments+1)*ribbonStride+j*ribbonStride+k)*3;
      const layer=Math.floor(k/2),sign=k%2===0?-1:1;
-     const thickness=half*(.14+layer*.11)*Math.sin(Math.PI*Math.min(.99,t));
+     const thickness=half*(.10+layer*.085)*Math.sin(Math.PI*Math.min(.99,t));
      const layerWidth=[1,.84,.63,.43][layer];
      const scale=sign*width*layerWidth,blend=layer/3;
      let vx=p.x+sway+scale*(wx*(1-blend)+sx*blend)+nx*thickness;
@@ -949,7 +953,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   layeredRibbonCount:hairLayers,ribbonVerticesPerStation:ribbonStride,
   strandThicknessFraction:half*.47/d.x,
   salonStaticLongLayers:true,
-  helmetSilhouetteFix:'staggered-curtain-fringe-long-temples-feathered-tips',
+  helmetSilhouetteFix:'low-crown-dense-rooted-fine-feathered-overlapping-fibres',
   templeLongLayerCount:strands.filter(s=>s.zone.startsWith('temple')&&!s.overFace).length,
   fringeCutVariation:'center-shorter-sides-longer-with-deterministic-pointcut',
   narrowNaturalPart:true,templeCheekVolumeRestShape:true,
@@ -969,7 +973,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   rearBodyVolumeExtra,
   renderedRibbonBodyCollision:!!renderBodyCollider,
   strandRibbonOrientation:'guide-tangent-on-scalp',
-  crownRootRatio:.20,posteriorRootRatio:.51,
+  crownRootRatio:.23,posteriorRootRatio:.46,
   undercoatLockCount:cap.userData.rearUndercoatStripCount,
   singleRearLayer:!!bodyCollisionResolver,
   fringeRootAboveHairline:true,fullLengthEyebrowFringe:true,
@@ -980,9 +984,9 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    p.y<box.min.y+d.y*.56&&
    Math.abs(p.x-center.x)<d.x*.145&&
    p.z>center.z+d.z*.045)).length,
-  hairStrandWidthFraction:.0142,fullerCrownBackVolume:true,
+  hairStrandWidthFraction:.0135,fullerCrownBackVolume:true,
   transparentExactHeadWigBase:true,wigBaseMaterialOpacity:0,
-  wigBaseNeverWritesDepth:true,rootScalpLiftFraction:.0155,
+  wigBaseNeverWritesDepth:true,rootScalpLiftFraction:.0125,
   trueScalpRibbonVertexCollision:true,
   fullBodyTriangleContactBeforeProxy:true,neckAndShoulderDrape:true,
   fullBodyShoulderExtension:!!bodyCollisionResolver,
