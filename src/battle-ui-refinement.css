@@ -247,3 +247,25 @@ body.compact-command-dock.compact-orders-open .squadCommandRibbon .ribbonSquad.c
  }
  #panel.formation-command-ui #panelContent{overflow-y:auto!important}
 }
+
+
+/* Inn v2.5: strategy -> commander deployment -> initial orders on mobile. */
+#panel.formation-command-ui .innPage[data-inn-page="strategies"]{gap:8px;max-height:none}
+#panel.formation-command-ui .innPage[data-inn-page="deployment"]>.innCommanderRow{margin-bottom:3px}
+#panel.formation-command-ui .innPage[data-inn-page="overview"] .innOrderSelector{display:grid;gap:6px}
+.innTemplateEditor{display:grid;gap:7px;background:#11293e;border:1px solid #6788a0;border-radius:8px;padding:10px}
+.innTemplateEditor label,.innOrderSelector{display:grid;gap:4px;font-size:12px;color:#f4dfa9;font-weight:700;min-width:0}
+.innTemplateEditor input,.innTemplateEditor select,.innOrderSelector select{width:100%;font-weight:400;font-size:13px;min-height:39px}
+.innTemplateEditor .primary{width:100%;min-height:44px}
+.innTemplateEditor>small{font-size:11px;color:#b4cbdb}
+.innSavedPlans{display:grid;gap:7px}
+.innSavedPlan{display:grid;gap:5px;background:#18354a;border:1px solid #67869b;border-radius:8px;padding:9px}
+.innSavedPlan strong{font-size:13px;color:#ffdda8}
+.innSavedPlan small{font-size:11px;color:#cadfec;overflow-wrap:anywhere}
+.innSavedPlan .controls button{min-height:42px!important}
+#panel.formation-command-ui .innPageNav button{font-size:clamp(10px,2.7vw,12px)!important;white-space:nowrap}
+@media(max-width:360px){
+ #panel.formation-command-ui .innPageNav{gap:2px}
+ #panel.formation-command-ui .innPageNav button{padding:6px 1px!important;font-size:10px!important}
+ .innTemplateEditor{padding:7px}
+}
