@@ -25,5 +25,12 @@ for(const m of state.specimens){
 assert.equal(state.priorityOrder.length,34);
 assert.equal(new Set(state.priorityOrder).size,34);
 assert.ok(state.priorityOrder.every(id=>!protectedIds.has(id)));
-assert.equal(state.lastSuccessfulSpecimen,'m001');
+assert.equal(state.lastSuccessfulSpecimen,'m002');
+const finished=state.specimens.filter(m=>m.status==='first-pass-mesh-reviewed');
+assert.equal(finished.length,2,'Only two actual individual meshes have been reviewed');
+assert.deepEqual(finished.map(m=>m.id),['m001','m002']);
+const second=state.specimens.find(m=>m.id==='m002');
+assert.equal(second.latestIndividualPr,220);
+assert.equal(second.researchNote,'docs/monster-research/m002-flame-wolf-20261112.md');
+assert.equal(second.fullyPhotorealistic,false);
 console.log('Species-by-species research queue: 50 entries, 34 eligible, 16 frozen, no fake photorealism');
