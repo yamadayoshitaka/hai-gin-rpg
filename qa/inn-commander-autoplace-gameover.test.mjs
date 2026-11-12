@@ -58,6 +58,26 @@ assert.ok(!game.completedStages.includes('c01-s02'));
 assert.equal(settled.rewards.gold,0);
 assert.throws(()=>makeCoreBattleRequest(game,'c01-s02','again'),/地図上/);
 
+const many=createNewGame('偏り検査',{gender:'female',faceId:3});
+many.campaign.squads[0].count=1;
+many.campaign.squads[1].count=1;
+many.campaign.commanders.push({
+ id:1,name:'副軍師',gender:'male',faceId:1,level:1,xp:0,active:true,
+ territory:'silver-capital',purpose:'前線',orderId:'rally'
+});
+many.campaign.squads.push({
+ id:3,job:'騎士',rarity:'N',count:100,purpose:'前線',
+ commanderId:'1',faceId:0
+});
+many.campaign.nextSquadId=4;
+leaveTown(many);
+const weighted=makeCoreBattleRequest(many,'c01-s02','rare-player-regression');
+assert.equal(weighted.units.length,50);
+assert.equal(weighted.units.filter(u=>u.isPlayerHero).length,1,
+ 'even a 2-person protagonist company must never disappear in a 50-slot allocation');
+assert.equal(weighted.units.filter(u=>u.isStrategist).length,2);
+assert.equal(weighted.commanders.find(c=>c.id==='player').gender,'female');
+
 const poor=createNewGame('資金不足');
 poor.campaign.treasury=650;
 const poorCount=poor.campaign.commanders.length;
