@@ -273,7 +273,7 @@ function completeReturnedBattle(){
    victory:outcome.victory,casualties:outcome.casualties
   }));
   saveSession();
-  if(outcome.gameOver){showCampaignGameOver();return;}
+  if(outcome.gameOver){sessionStorage.removeItem(POST_EVENT_PENDING_KEY);showCampaignGameOver();return;}
   const nextStage=outcome.next||outcome.stage;chapter=nextStage.chapter;selected=nextStage.id;
   const rewards=outcome.rewards||{};
   const earned=outcome.victory?' 💰'+(rewards.gold||0)+'G / ✦'+(rewards.xp||0)+'EXP / 宝：'+(rewards.loot?.map(item=>item.name+'×'+item.quantity).join('・')||'なし'):'';
@@ -284,6 +284,7 @@ const params=new URLSearchParams(location.search);
 if(params.get('chapter')&&Number.isInteger(Number(params.get('chapter'))))chapter=Math.max(1,Math.min(20,Number(params.get('chapter'))));
 selected=stagesInChapter(chapter)[0].id;
 function showPendingPostBattleEvent(){
+ if(game.campaign.gameOver)return;
  let pending=null;
  try{pending=JSON.parse(sessionStorage.getItem(POST_EVENT_PENDING_KEY)||'null');}
  catch{sessionStorage.removeItem(POST_EVENT_PENDING_KEY);return;}
