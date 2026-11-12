@@ -199,6 +199,15 @@ test('independent cheek fill and chin contour actually alter different 3D region
  assert.ok(hollow.dz>.001&&hollow.dz<.009,'Smooth donor cheeks should receive only gentle support');
  assert.ok(hollow.dz>cheekBone.dz*15,
   'Do not exaggerate the cheekbone instead of filling the sunken cheek');
+ const lowerCheek=sculpt(.42,.41);
+ const middleCheek=sculpt(.42,.455);
+ const upperCheek=sculpt(.42,.54);
+ assert.ok(middleCheek.dz>.007&&lowerCheek.dz>.006&&upperCheek.dz>.004,
+  'Gaunt middle/lower cheeks should have continuous visible volume beneath the cheekbone');
+ assert.ok(Math.abs(sculpt(-.42,.455).dz-middleCheek.dz)<1e-12,
+  'Cheek volume should be bilaterally symmetrical');
+ assert.equal(sculpt(.42,.455,.12).dz,0,
+  'Cheek fill must not alter the back of the head');
  assert.equal(hollow.dx,0,'Cheek zone must keep its width');
  const chin=sculpt(.37,.30);
  assert.ok(chin.dx<-.004,'Lower jaw edge should taper, not just the centreline');
