@@ -354,7 +354,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  };
  const strands=[];
  let faceTrimmedStrands=0;
- const rootLift=d.x*.0045;
+ const rootLift=d.x*.0025;
  // Shoulder/chest proxy geometry is in the SAME coordinates as the head.
  // Future full-body rigs can supply exact external capsules.
  const colliders=[
@@ -390,8 +390,11 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    Math.max(0,1-Math.abs(wigRoot.x-whorl.x)/(d.x*.27)):0;
   const fringe=zone.startsWith('fringe');
   const back=zone.startsWith('back')||zone.startsWith('nape');
-  const frontRoot=(wigRoot.z-center.z)/d.z>.07;
-  const midFace=Math.abs(wigRoot.x-center.x)/d.x<.225;
+  // Near-frontal crown hairs also have to stop at eyebrow height. The
+  // old +.07 Z threshold let central near-side crown locks grow all the
+  // way across the nose and mouth, even when the short fringe was correct.
+  const frontRoot=(wigRoot.z-center.z)/d.z>-.12;
+  const midFace=Math.abs(wigRoot.x-center.x)/d.x<.315;
   // Even non-fringe CROWN roots must be cut above the eyebrows if they
   // face forward. Otherwise they form a long curtain across both eyes.
   const overFace=!back&&frontRoot&&midFace;
@@ -433,7 +436,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   // Posterior layers drift gently toward the center of the back,
   // closing the exposed rear part without piling into a single spike.
   const targetX=(back?
-   center.x+(wigRoot.x-center.x)*.78:
+   center.x+(wigRoot.x-center.x)*.57:
    wigRoot.x+side*d.x*(closeToFace?style.fringeSweep:.015))+
    partSide*d.x*style.partWidth*partInfluence;
   const targetZ=closeToFace?wigRoot.z+d.z*style.scalpClearance:
@@ -616,7 +619,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
      Math.sin(elapsed*.55+clumpPhase+j*.045)*d.x*.000018*t*t:0;
     // Full thick clumps near scalp and mid-length; point-cut taper only
    // in the last 15% instead of uniformly thinning into wire-like ends.
-   const tip=1-.90*Math.pow(t,8);
+   const tip=1-(strand.fringe?.84:.66)*Math.pow(t,8);
    const width=half*tip*(.90+.15*fract(i*.35))*
     (strand.zone.startsWith('fringe')?.235:
      strand.zone.startsWith('temple')?.95:
@@ -743,6 +746,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   undercoatLockCount:cap.userData.rearUndercoatStripCount,
   singleRearLayer:!!bodyCollisionResolver,
   fringeRootAboveHairline:true,fullLengthEyebrowFringe:true,
+  frontalCrownEyebrowTrim:true,joinedRearSilhouette:true,
   hairStrandWidthFraction:.0121,fullerCrownBackVolume:true,
   fullBodyTriangleContactBeforeProxy:true,neckAndShoulderDrape:true,
   fullBodyShoulderExtension:!!bodyCollisionResolver,
