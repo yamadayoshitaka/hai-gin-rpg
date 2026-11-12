@@ -293,7 +293,7 @@ test('v15 lipstick is painted only on REAL source-head triangles, no sliding lip
  const source=fixture().source;
  const base=makeIndependentFaceMaster(source,'female');
  const moved=makeIndependentFaceMaster(source,'female',{femaleControls:{
-  lipstickX:.05,lipstickY:-.025,lipstickWidth:1.25,lipstickHeight:.75
+  lipstickX:.12,lipstickY:.12,lipstickWidth:.2,lipstickHeight:.2
  }});
  const p=base.face.geometry.getAttribute('position');
  const q=moved.face.geometry.getAttribute('position');
