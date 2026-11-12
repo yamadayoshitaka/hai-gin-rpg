@@ -97,7 +97,7 @@ export const FACE_MASTER_SPEC=Object.freeze({
  })
 });
 
-export function makeIndependentFaceMaster(sourceRoot,gender,{femaleControls={},maleControls={}}={}){
+export function makeIndependentFaceMaster(sourceRoot,gender,{femaleControls={},maleControls={},partSelection=null}={}){
  const spec=FACE_MASTER_SPEC[gender];
  const controls=gender==='male'?normalizeMaleFaceControls(maleControls):
   normalizeFemaleFaceControls(femaleControls);
@@ -277,6 +277,7 @@ export function makeIndependentFaceMaster(sourceRoot,gender,{femaleControls={},m
  face.visible=true;
  face.name=gender.toUpperCase()+'_INDEPENDENT_CLAY_FACE';
  face.userData.colorRole='skin';
+ if(partSelection)face.userData.v32SelectedPartIds={...partSelection};
  // Anatomical parts are child meshes of the cloned face. Their vertices
  // follow its original local coordinate frame; there is no face-photo plane.
  const parts=createAnatomicalFaceParts(face,{gender,controls});
@@ -306,6 +307,7 @@ export function makeIndependentFaceMaster(sourceRoot,gender,{femaleControls={},m
   femaleJawStyle:gender==='female'?'full-cheek-smooth-oval-point-v6':null,
   sourceUntouched:true,sourceGeometryIndependent:face.geometry!==original,
   headOnly:true,bodyUnchanged:true,hairVisible:false,makeupVisible:false,
+  v32SelectedPartIds:partSelection?{...partSelection}:null,
   material:'neutral-gray-clay',artCertified:false,
   sourceNoseMeshIntegrated:true,facePartMeshCount:parts.report.partMeshCount,
   facePartTriangles:parts.report.partTriangles,
