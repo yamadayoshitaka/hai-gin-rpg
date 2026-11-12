@@ -593,7 +593,7 @@ test('v13 full scalp coverage allocates real roots to back, nape and both temple
  const g=w.root.getObjectByName('REAL_ROOTED_SWEPT_HAIR_LOCKS').geometry;
  const color=g.getAttribute('color');
  for(let i=0;i<color.count;i+=31){
-  assert.ok(color.getR(i)>color.getG(i)&&color.getG(i)>color.getB(i),
+  assert.ok(color.getX(i)>color.getY(i)&&color.getY(i)>color.getZ(i),
    'Hair gradient must stay in brown chroma');
  }
  w.dispose();
