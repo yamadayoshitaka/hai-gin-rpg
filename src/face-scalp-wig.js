@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {createFastFaceSurfaceSampler} from './face-feature-meshes.js';
-import {getWigStyle,DEFAULT_WIG_STYLE_ID} from './face-wig-styles.js';
+import {getWigStyle,DEFAULT_WIG_STYLE_ID} from './face-wig-styles.js?v=33';
 
 /**
  * Mobile-preview wig made of real scalp-rooted 3D lock ribbons.
