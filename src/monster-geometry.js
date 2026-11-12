@@ -515,23 +515,65 @@ function insect(g,s,{spider=false}={}){
  const head=g.group('head',[0,1.31,.64]);
  g.sphere(head,'skin',[0,0,0],[.35,.30,.35],{metal:.32});
  g.bridge(torso,'skin',[0,1.23,.39],[0,1.30,.67],.28,.21);
- g.eyes(head,.28,.09,.20,.06);
+ if(!spider)g.eyes(head,.28,.09,.20,.06);
  for(const side of [-1,1]){
-   g.tube(head,'accent',[[side*.13,.20,.16],[side*.25,.53,.33],[side*.37,.61,.38]],.025);
-   g.spike(head,'bone',[side*.16,-.13,.31],[side*.27,-.30,.60],.09);
+   if(!spider){
+     g.tube(head,'accent',[[side*.13,.20,.16],[side*.25,.53,.33],[side*.37,.61,.38]],.025);
+     g.spike(head,'bone',[side*.16,-.13,.31],[side*.27,-.30,.60],.09);
+   }else{
+     // Spider pedipalps are short paired sensory appendages, not the
+     // long beetle antennae used by the six-legged insect family.
+     g.tube(head,'accent',[[side*.17,-.04,.18],[side*.31,-.15,.34],[side*.29,-.20,.48]],.034);
+     g.sphere(head,'skin',[side*.29,-.20,.48],[.052,.047,.067],{rough:.68});
+   }
  }
  const jaws=g.group('jaw',[0,1.20,.82]);
- for(const side of [-1,1])g.spike(jaws,'bone',[side*.16,0,0],[side*.11,-.10,.35],.075);
+ for(const side of [-1,1]){
+   if(spider){
+     // Bulbous chelicerae and downward-curving fangs read as arachnid
+     // anatomy even when the camera is low or the face is in shadow.
+     g.sphere(jaws,'skin',[side*.135,-.035,.15],[.13,.15,.18],{rough:.61});
+     g.tube(jaws,'bone',[[side*.135,-.10,.24],[side*.11,-.24,.36],[side*.045,-.30,.39]],.048);
+   }else g.spike(jaws,'bone',[side*.16,0,0],[side*.11,-.10,.35],.075);
+ }
  const count=spider?4:3;
  for(const side of [-1,1])for(let i=0;i<count;i++){
    const z=.46-i*.36;const name='leg'+(side<0?'L':'R')+i;
    const leg=g.group(name,[side*.35,1.12,z]);
    const bend=[side*(.45+(i===0?.12:0)),i===3?.02:.22,(i-1)*.16];
    const foot=[side*(.72+i*.05),-.94,(i-1.5)*.23];
-   g.bone(leg,'skin',[0,0,0],bend,.085,{tipRadius:.055,metal:.4});
-   g.sphere(leg,'accent',bend,[.092,.09,.092],{metal:.4});
-   g.bone(leg,'shadow',bend,foot,.070,{tipRadius:.024,metal:.4});
-   g.spike(leg,'bone',foot,[foot[0]+side*.11,foot[1]-.08,foot[2]],.04);
+   if(spider){
+     // Spiders need a raised femur, a distinct patella and a descending
+     // tibia/metatarsus. The former two-stick silhouette looked like a
+     // six-legged beetle and buried the distal joints in the ground.
+     // Keep all segments under the original leg pivot for gait animation.
+     const spread=.56+i*.095+v*.018;
+     const knee=[side*spread,.32+(i%2)*.075,(1.5-i)*.205];
+     const ankle=[side*(.88+i*.065),-.72,(1.5-i)*.255];
+     const toe=[side*(.99+i*.07),-1.095,(1.5-i)*.27+.045];
+     g.bone(leg,'skin',[0,0,0],knee,.077,{tipRadius:.058,metal:.16});
+     g.sphere(leg,'accent',knee,[.093,.092,.093],{metal:.20,rough:.55});
+     g.bone(leg,'skin',knee,ankle,.062,{tipRadius:.037,metal:.16});
+     g.sphere(leg,'shadow',ankle,[.066,.072,.066],{metal:.12,rough:.63});
+     g.bone(leg,'shadow',ankle,toe,.036,{tipRadius:.014,metal:.08});
+     // Paired, slightly splayed tarsal claws remain above the floor and
+     // make the terminal foot visibly grasp rather than end in one spike.
+     for(const clawSide of [-1,1])g.spike(leg,'bone',toe,
+       [toe[0]+side*.065,toe[1]-.024,toe[2]+clawSide*.065],.018);
+     // Sparse tactile spines follow the upper limb, not a floating torso
+     // decoration. Variant spacing keeps the five spider species distinct.
+     for(let j=1;j<=3+v%2;j++){
+       const t=j/(5+v%2);
+       const point=[knee[0]*t,knee[1]*t,knee[2]*t];
+       g.spike(leg,'shadow',point,
+         [point[0]+side*(.07+v*.005),point[1]+.055,point[2]-.035],.013);
+     }
+   }else{
+     g.bone(leg,'skin',[0,0,0],bend,.085,{tipRadius:.055,metal:.4});
+     g.sphere(leg,'accent',bend,[.092,.09,.092],{metal:.4});
+     g.bone(leg,'shadow',bend,foot,.070,{tipRadius:.024,metal:.4});
+     g.spike(leg,'bone',foot,[foot[0]+side*.11,foot[1]-.08,foot[2]],.04);
+   }
  }
  if(!spider){
    if(s.id==='m023'){
@@ -562,8 +604,52 @@ function insect(g,s,{spider=false}={}){
    const abdomen=g.group('abdomen',[0,1.25,-.57]);
    g.sphere(abdomen,'skin',[0,0,-.25],[.54,.47,.60],{metal:.12,rough:.56});
    g.sphere(abdomen,'light',[0,.28,-.24],[.40,.11,.44]);
-   for(const side of [-1,1])for(let i=0;i<4;i++)
-     g.sphere(head,'eye',[side*(.07+i*.072),.12+(i%2)*.06,.30],[.025,.028,.012],{glow:true});
+   // Articulated dorsal plate ridges and paired spinnerets are actual
+   // geometry, not a painted decal; the abdomen pivot remains animatable.
+   for(let i=0;i<4+v%2;i++){
+     const z=-.55+i*.145;
+     const width=.24+.075*Math.sin((i+1)*Math.PI/6);
+     g.bridge(abdomen,i%2?'accent':'shadow',
+       [-width,.315,z],[width,.315,z],.023,.018);
+   }
+   // Paired lateral abdominal scutes overlap the dorsal shield instead of
+   // leaving an unnaturally smooth sphere. Each variant retains its own
+   // contour and the abdomen remains on the original animation pivot.
+   for(const side of [-1,1])for(let i=0;i<3+v%2;i++){
+     const z=-.56+i*.20;
+     const x=side*(.38+.035*Math.sin((i+1)*1.2));
+     g.sphere(abdomen,i%2?'shadow':'accent',
+       [x,.12-i*.028,z],[.075,.15,.135],{metal:.10,rough:.67});
+     g.spike(abdomen,'shadow',[x,.16,z-.04],
+       [x+side*.07,.20,z-.13],.018);
+   }
+   // Paired spinnerets emerge from articulated basal sockets, tapering
+   // backwards in two sections instead of looking like rigid thorns.
+   // Their independent groups preserve the existing abdomen gait pivot.
+   for(const side of [-1,1]){
+     const spinneret=g.group('spinneret'+(side<0?'L':'R'),
+       [side*.115,-.19,-.73]);
+     const elbow=[side*.035,-.055,-.115-v*.006];
+     const tip=[side*.065,-.09,-.21-v*.014];
+     g.sphere(spinneret,'skin',[0,0,0],[.067,.054,.075],
+       {metal:.06,rough:.76});
+     g.bone(spinneret,'shadow',[0,0,0],elbow,.043,
+       {tipRadius:.030,metal:.04});
+     g.sphere(spinneret,'accent',elbow,[.037,.036,.038],
+       {metal:.06,rough:.75});
+     g.bone(spinneret,'shadow',elbow,tip,.029,
+       {tipRadius:.012,metal:.04});
+   }
+   // Each of the four eye pairs sits in a raised socket, reducing the
+   // floating-neon-dot appearance without modifying shared face assets.
+   for(const side of [-1,1])for(let i=0;i<4;i++){
+     const x=side*(.07+i*.072),y=.12+(i%2)*.06;
+     // Project each socket onto the ellipsoid face rather than burying
+     // the eyes inside its surface (head radii .35/.30/.35).
+     const faceZ=.35*Math.sqrt(Math.max(.08,1-(x/.35)**2-(y/.30)**2));
+     g.sphere(head,'shadow',[x,y,faceZ+.008],[.036,.039,.024],{rough:.75});
+     g.sphere(head,'eye',[x,y,faceZ+.030],[.023,.026,.014],{glow:true});
+   }
    if(v>=2)for(let i=0;i<6;i++)g.spike(abdomen,'accent',[(i%2?1:-1)*.28,.28,-.42+(i/6)*.60],
      [(i%2?1:-1)*.35,.50+(i%3)*.07,-.42+(i/6)*.60],.05);
  }
