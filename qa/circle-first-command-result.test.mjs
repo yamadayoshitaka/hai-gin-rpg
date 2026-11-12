@@ -77,7 +77,8 @@ assert.match(html,/reportAfterBattleCutin\(next\.text,next\)/);
 assert.match(html,/queueBattleResultCutin\('🎁 アイテム入手'/);
 assert.match(html,/queueBattleResultCutin\('✚ 回復報告'/);
 assert.match(html,/queueBattleResultCutin\(defeatedEnemy\?'⚔ 敵部隊撃破':'☠ 味方部隊壊滅'/);
-assert.match(html,/battleCeremony\.update\(\);\s*updateBattleResultCutins\(\)/);
+assert.match(html,/battleCeremony\.update\(\);[\s\S]{0,650}?updateBattleResultCutins\(\)/,
+ 'Completed ceremony must advance result cutins after optional initial commander camera focus');
 
 const match=html.match(/<script type="module">([\s\S]*?)<\/script>/);
 assert.ok(match,'Battle module exists');
