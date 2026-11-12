@@ -453,6 +453,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
  // detached snail eyes in the mobile side view. Preserve slight curvature.
  const anteriorGlobeRatio=female?.120:.130;
  const eyeAnteriorClearances=[];
+ const irisUpperLidRecessRatios=[];
  const originalIrisAngle=.585;
  // v33 enlarges the real circular IRIS without squashing its rim.
  const originalPupilAngle=.236;
@@ -544,6 +545,12 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   };
   const z=insetZ(x,y);
   eyeAnteriorClearances.push((z-faceZ)/eyeRadius);
+  // The closed donor head may not have skin at the eye centre (its XY ray
+  // samples the back of the head), so compare to the REAL eyelid edge.
+  const upperEyelinerDepth=insetZ(x,y+rimHeight+eyeRadius*.045*eyeWidth)+
+   eyeRadius*.075+Math.max(.00012,d.z*.004);
+  irisUpperLidRecessRatios.push((upperEyelinerDepth-
+   (z+eyeRadius*.010))/eyeRadius);
   const eyePatch=buildGrid(eyeLabel+'_ORBITAL_EYEBALL',48,18,(u,v)=>{
    const t=u*2-1,arch=Math.pow(Math.max(0,1-t*t),.70);
    const xx=x+t*width;
@@ -939,6 +946,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   eyeSocketSculptedVertices:socketSculpt.vertices,
   eyeSocketMaxInset:socketSculpt.maxInset,
   eyeSkinDepthClampRemoved:true,
+  irisUpperLidRecessRatios:irisUpperLidRecessRatios.map(n=>Number(n.toFixed(3))),
   underEyeShadowMeshCount:0,
   doubleLidCreaseMeshCount:female?2:0,
   lowerOrbitalVolumeMeshCount:0,
