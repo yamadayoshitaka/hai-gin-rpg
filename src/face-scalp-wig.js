@@ -220,7 +220,8 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   const length=fringe?Math.max(d.y*.008,Math.min(bangLength,wigRoot.y-browLimit)):
    d.y*(longFactor+fract(i*.381966)*.13)*clamp(lengthScale,.55,1.5);
   const rest=[],points=[],vel=[];
-  const trimY=hairCutY(zone,box,lengthScale,i);
+  const trimY=Math.min(wigRoot.y-d.y*.012,
+   hairCutY(zone,box,lengthScale,i));
   const guide=fringe?f3(side*.25,0,1):
    back?f3(side*.18,0,-1):f3(side,0,zone.startsWith('temple')?.06:-.2);
   guide.normalize();
