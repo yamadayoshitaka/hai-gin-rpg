@@ -603,7 +603,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  geo.setAttribute('color',new THREE.BufferAttribute(colors,3));
  geo.setIndex(indices);
  const mat=new THREE.MeshStandardMaterial({
-  color:0xffffff,vertexColors:true,roughness:.69,metalness:0,
+  color:0xffffff,vertexColors:true,roughness:.49,metalness:0,
   side:THREE.DoubleSide
  });
  const locks=new THREE.Mesh(geo,mat);
@@ -879,7 +879,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   // 7 interpolation stations are enough for thin static filaments; the
   // original moving guide still uses all 12 points. This nearly halves
   // the render geometry cost on mobile at 10x density.
-  const fineSteps=[0,2,4,6,8,10,segments];
+  const fineSteps=[0,1,2,4,6,8,10,11,segments];
   const colorSeed=rootColor.clone();
   for(let i=0;i<strands.length;i++){
    const strand=strands[i],first=strand.points[0];
@@ -924,7 +924,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   fineGeo.setIndex(tris);
   fineGeo.computeVertexNormals();fineGeo.computeBoundingSphere();
   const fineMat=new THREE.MeshStandardMaterial({
-   color:0xffffff,vertexColors:true,roughness:.73,metalness:0,
+   color:0xffffff,vertexColors:true,roughness:.56,metalness:0,
    side:THREE.DoubleSide
   });
   const fineMesh=new THREE.Mesh(fineGeo,fineMat);
