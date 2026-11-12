@@ -55,24 +55,25 @@ function buildGrid(name,columns,rows,point,material){
 /** Fine tapered eyelashes rooted on the ACTUAL cosmetic eyeliner contour.
  * Keep the legacy upper/lower mesh identities, so eye-angle joints and GLB
  * export still contain just four lash meshes rather than floating cards. */
-function makeFineEyelashMesh(name,liner,x,y,z,eyeRadius,side,upper){
- const count=upper?84:42,vertices=[],indices=[];
+function makeFineEyelashMesh(name,liner,x,y,z,eyeRadius,side,upper,settings){
+ const count=Math.max(12,Math.round((upper?84:42)*settings.lashDensity)),
+  vertices=[],indices=[];
  const reference=(u)=>sampleGrid(liner,28,3,u,.24);
  for(let i=0;i<count;i++){
   const u=.055+.89*(i+.5)/count;
   const p=reference(u),edge=Math.pow(Math.sin(Math.PI*u),.58);
-  const step=.89/count*.16;
+  const step=.89/count*.16*settings.lashThickness;
   const left=reference(Math.max(0,u-step));
   const right=reference(Math.min(1,u+step));
   const a=new THREE.Vector3().lerpVectors(p,left,.62);
   const b=new THREE.Vector3().lerpVectors(p,right,.62);
   const spread=Math.abs(u-.5)*2;
-  const length=eyeRadius*(upper?.16:.065)*(.50+.50*edge)*
+  const length=eyeRadius*(upper?.16:.065)*settings.lashLength*(.50+.50*edge)*
    (.88+.12*Math.sin((i+1)*2.39996323));
   const tip=p.clone().add(new THREE.Vector3(
    side*spread*eyeRadius*.055,
    (upper?1:-1)*length,
-   eyeRadius*(upper?.11:.055)*(.65+.35*edge)));
+   eyeRadius*(upper?.11:.055)*(1+.8*settings.lashCurl)*(.65+.35*edge)));
   const start=vertices.length/3;
   for(const point of [a,b,tip]){
    vertices.push(point.x-x,point.y-y,point.z-z+eyeRadius*.018);
@@ -90,6 +91,9 @@ function makeFineEyelashMesh(name,liner,x,y,z,eyeRadius,side,upper){
  lash.name=name;lash.renderOrder=7;
  lash.userData.colorRole='lashes';
  lash.userData.filamentCount=count;
+ lash.userData.lashLength=settings.lashLength;
+ lash.userData.lashThickness=settings.lashThickness;
+ lash.userData.lashCurl=settings.lashCurl;
  lash.userData.rootedOnEyeliner=true;
  lash.userData.taperedGeometry=true;
  return lash;
@@ -290,6 +294,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
  };
  const female=gender==='female';
  const eyeScale=settings.eyeSize;
+ const eyeWidth=settings.eyeWidth,eyeHeight=settings.eyeHeight;
  const originalIrisAngle=.585;
  const originalPupilAngle=.236;
  // A doubled requested projected diameter must remain on a sphere:
@@ -311,7 +316,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   const eyeLabel=side===-1?'LEFT':'RIGHT';
   const x=cx+side*eyeSpacing,y=eyeHeight;
   // Fit from actual orbital boundary points on the sculpted face.
-  const rimWidth=eyeRadius*1.12,rimHeight=eyeRadius*.33;
+  const rimWidth=eyeRadius*1.12*eyeWidth,rimHeight=eyeRadius*.33*eyeHeight;
   const landmarks={
    inner:new THREE.Vector3(x-side*rimWidth,y,surfaceAt(x-side*rimWidth,y)),
    outer:new THREE.Vector3(x+side*rimWidth,y,surfaceAt(x+side*rimWidth,y)),
@@ -324,7 +329,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   // The source head has a deep orbital side-wall. A constant offset
   // can still leave the whole sclera hidden from a profile camera.
   // Solve the eye centre from the actual LATERAL facial skin surface.
-  const profileProbeX=x+side*eyeRadius*1.18*.86;
+  const profileProbeX=x+side*eyeRadius*1.18*.86*eyeWidth;
   const localSkinAtProfile=surfaceAt(profileProbeX,y);
   const cornealAtProfile=eyeRadius*.97*Math.sqrt(1-.86*.86);
   const desiredProfileGap=Math.max(d.z*.012,eyeRadius*.115);
@@ -394,14 +399,14 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   const lateralX=profileProbeX;
   const cornealZ=z+cornealAtProfile;
   lateralEyeMargins.push(cornealZ-localSkinAtProfile);
-  const width=eyeRadius*1.12;
+  const width=eyeRadius*1.12*eyeWidth;
   let upperEyeliner=null,lowerEyeliner=null;
   for(const upper of [true,false]){
    const label=(side===-1?'LEFT':'RIGHT')+(upper?'_UPPER':'_LOWER');
-   const height=eyeRadius*.33;
+   const height=eyeRadius*.33*eyeHeight;
    const mesh=buildGrid(label+'_ANATOMICAL_EYELID',28,4,(u,v)=>{
     const t=u*2-1,arch=Math.pow(Math.max(0,1-t*t),.73);
-    const cornerTilt=(t+1)*eyeRadius*.045;
+    const cornerTilt=(t+1)*eyeRadius*.045*eyeWidth;
     const nearY=y+(upper?1:-1)*height*arch+cornerTilt;
     const farY=nearY+(upper?1:-1)*eyeRadius*(upper?.28:.19)*v;
     const px=t*width/(1.18*eyeRadius),py=(nearY-y)/(.79*eyeRadius);
@@ -535,8 +540,8 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
    pivot.userData.side=side;
    const eyebrow=buildGrid(eyeLabel+'_SCULPTED_EYEBROW',34,4,(u,v)=>{
     const t=2*u-1,arch=Math.pow(Math.max(0,1-t*t),.65);
-    const xx=x+t*eyeRadius*1.37;
-    const yy=browY+eyeRadius*.10*arch+(v-.5)*eyeRadius*.17*arch;
+    const xx=x+t*eyeRadius*1.37*settings.browWidth;
+    const yy=browY+eyeRadius*.10*arch+(v-.5)*eyeRadius*.17*arch*settings.browThickness;
     const zz=surfaceAt(xx,yy)+d.z*(.011+.002*arch);
     return new THREE.Vector3(xx-pivot.position.x,yy-pivot.position.y,
      zz-pivot.position.z);
@@ -552,7 +557,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
    for(const upper of [true,false]){
     const lash=makeFineEyelashMesh(
      eyeLabel+(upper?'_UPPER':'_LOWER')+'_LASH_MESH',
-     upper?upperEyeliner:lowerEyeliner,x,y,z,eyeRadius,side,upper);
+     upper?upperEyeliner:lowerEyeliner,x,y,z,eyeRadius,side,upper,settings);
     lashPivot.add(lash);
    }
    root.add(lashPivot);
@@ -566,9 +571,9 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
    pivot.position.set(x,browY,surfaceAt(x,browY));
    const brow=buildGrid(label+'_NATURAL_MALE_BROW',30,4,(u,v)=>{
     const t=2*u-1,arch=Math.pow(Math.max(0,1-t*t),.72);
-    const xx=x+t*eyeRadius*1.37;
+    const xx=x+t*eyeRadius*1.37*settings.browWidth;
     const yy=browY+eyeRadius*.035*arch+
-      (v-.5)*eyeRadius*.23*arch;
+      (v-.5)*eyeRadius*.23*arch*settings.browThickness;
     const zz=surfaceAt(xx,yy)+d.z*.010;
     return new THREE.Vector3(xx-pivot.position.x,
       yy-pivot.position.y,zz-pivot.position.z);
