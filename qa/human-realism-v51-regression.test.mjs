@@ -215,6 +215,13 @@ test('v54 neck continuity removes the flat head bust and bridges the true torso'
  const original=source.getAttribute('position').array.slice();
  const face=new THREE.Mesh(source,new THREE.MeshStandardMaterial());
  face.position.y=1.13;headRoot.add(face);
+ const obsolete=['REAL_HEAD_BODY_CLOSED_NECK_SEAL',
+  'RIGHT_SHOULDER_CUT_SURFACE_CAP','LEFT_SHOULDER_CUT_SURFACE_CAP']
+   .map(name=>{
+    const panel=new THREE.Mesh(new THREE.BoxGeometry(.10,.01,.08),
+      new THREE.MeshStandardMaterial());
+    panel.name=name;headRoot.add(panel);return panel;
+   });
  const outfit=new THREE.Group();actor.add(outfit);
  const body=new THREE.SkinnedMesh(new THREE.BoxGeometry(.32,.48,.23),
   new THREE.MeshStandardMaterial());
@@ -230,6 +237,9 @@ test('v54 neck continuity removes the flat head bust and bridges the true torso'
  assert.ok(result.bustTrianglesRemoved>3);
  assert.ok(result.trimmedSculptBottomY>before.min.y);
  assert.equal(result.segmentCount,32);
+ assert.equal(result.legacyNeckPartsHidden,3);
+ assert.ok(obsolete.every(mesh=>!mesh.visible),
+  'obsolete white horizontal neck panels must not render');
  assert.ok(result.neckHeight>.025&&result.neckHeight<.18);
  assert.ok(result.connectorBottomY<result.actualTorsoTopY);
  assert.ok(result.connectorTopY>result.trimmedSculptBottomY);
@@ -251,6 +261,7 @@ test('v54 neck continuity removes the flat head bust and bridges the true torso'
  assert.ok(fittedAgain.appliedLift<.0001,
   'cropping the portrait must not cause feedback and raise the head again');
  connector.geometry.dispose();connector.material.dispose();
+ for(const piece of obsolete){piece.geometry.dispose();piece.material.dispose()}
  source.dispose();face.geometry.dispose();face.material.dispose();
  body.geometry.dispose();body.material.dispose();
 });
