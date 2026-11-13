@@ -9,6 +9,20 @@ import {generateCanineFurGuides} from './canine-fur-guides.js?v=4.4.92';
 import {monsterEvidenceFor} from './monster-anatomy-reference.js';
 import {MORTAL_HEAD_RINGS,MORTAL_TORSO_RINGS} from './monster-realistic-loft.js';
 import {sculptBloodMoonVampire,sculptVampireHand} from './monster-vampire-sculpt.js';
+/** Organic cranium sections shared by wolves, cats and reptiles.
+ * The muzzle, eyelids and the animated jaw remain their existing species
+ * parts. This skull is one continuous shaded volume instead of a sphere.
+ */
+const QUADRUPED_CRANIUM_RINGS=Object.freeze([
+ {y:-.244,rx:.093,rz:.149,cz:.070},
+ {y:-.187,rx:.215,rz:.287,cz:.058},
+ {y:-.106,rx:.304,rz:.336,cz:.058},
+ {y:.014,rx:.334,rz:.362,cz:.049},
+ {y:.105,rx:.320,rz:.342,cz:.044},
+ {y:.199,rx:.249,rz:.281,cz:.035},
+ {y:.271,rx:.142,rz:.175,cz:.028},
+ {y:.310,rx:.039,rz:.068,cz:.015},
+]);
 function feet(g,pivot,x,y,z,clawed=true,scale=1){
  g.sphere(pivot,'skin',[0,-.28,0],[.14*scale,.30*scale,.15*scale]);
  g.sphere(pivot,'shadow',[0,-.53,.13],[.13*scale,.08*scale,.22*scale]);
@@ -105,8 +119,13 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
  g.bridge(torso,'skin',[0,1.35,.32],[0,1.57,.76+v*.055],.325,.215);
  const head=g.group('head',[0,1.56,.70+v*.06]);
  // Rigid reptilian wedge instead of the same spherical skull as a cat.
- g.sphere(head,'skin',[0,.03,.06],reptile?[.294,.239,.385]:
-   feline?[.314,.271,.350]:[.33,.28,.36]);
+ const skullWidth=reptile?.905:feline?.95:1;
+ const skullDepth=reptile?1.065:feline?.965:1;
+ g.anatomicalLoft(head,'skin',
+   QUADRUPED_CRANIUM_RINGS.map(r=>({
+     ...r,rx:r.rx*skullWidth,rz:r.rz*skullDepth,
+   })),{name:'organic-cranium-'+s.id,kind:'face',
+     asymmetry:reptile?.10:.04});
  if(reptile){
    g.bridge(head,'skin',[0,.045,-.19],[0,-.085,.55],.257,.128);
  }else if(feline){
