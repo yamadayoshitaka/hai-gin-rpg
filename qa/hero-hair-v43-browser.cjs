@@ -79,15 +79,15 @@ const hex=bytes=>crypto.createHash('sha256').update(bytes).digest('hex');
    const faceAfter=await page.evaluate(()=>window.__faceMasterQA());
    if(faceAfter.wigReport?.hairstyleId!==hairBefore)
     throw Error('Changing complete face unexpectedly changed hairstyle');
-   if(gender==='female'&&faceAfter.femaleControls.eyeDepth>-.15)
-    throw Error('Complete face degraded eye depth');
+   if(gender==='female'&&faceAfter.femaleControls.eyeDepth<.03)
+    throw Error('Complete face did not apply forward lid-aligned cornea');
    if(gender==='female'){
     if(after.femaleControls.irisDiameter!==prior.femaleControls.irisDiameter)
      throw Error('Changing hair reset the heroine iris');
     await page.locator('#heroineBeautyV43').click();
     const beauty=await page.evaluate(()=>window.__faceMasterQA());
     if(beauty.femaleControls.irisDiameter<1.30||
-       beauty.femaleControls.eyeDepth>-.15||
+       beauty.femaleControls.eyeDepth<.03||
        beauty.femaleControls.lashCurl<1.1)
      throw Error('Heroine v43 optical preset was not applied');
     await page.locator('#front').click();
