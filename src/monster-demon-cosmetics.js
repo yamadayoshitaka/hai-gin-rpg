@@ -6,6 +6,8 @@
  */
 import * as THREE from 'three';
 import {createGothicHorn,createGothicBatWing} from './monster-gothic-sculpt.js';
+import {createConstructCarapaceGeometry}
+ from './monster-construct-costume.js';
 
 export const DEMON_MAKEUP_PRESETS=Object.freeze({
  m034:Object.freeze({style:'blood-noble',eyeliner:.90,lips:.74,sigil:.24,tail:false,horns:'none',wings:false}),
@@ -104,12 +106,53 @@ export function addDemonicFaceCosmetics({profile,frames,detail='high',attach,tub
   }
  }
  if(preset.tail){
-  const p=[[0,-.25,.15],[.17,-.47,.37],[.34,-.76,.55],
-    [.22,-1.01,.71],[.05,-1.20,.67]];
-  line(frames.chest,'horn','flexible-demon-tail',p,refined?.041:.054);
-  add(frames.chest,createGothicHorn({
-   side:1,detail,len:.19,radius:.063,curve:.10
-  }),'horn','tail-barb',[.05,-1.23,.67],[0,0,Math.PI*.72]);
+  if(!frames.pelvis)throw Error('Demonic tail requires anatomical hip attachment');
+  // The base starts behind the pelvis. The original chest-bone y=-.25
+  // landed below the abdomen and looked like a large crotch appendage.
+  const p=[[0,.02,.18],[.11,-.12,.32],[.30,-.35,.51],
+    [.22,-.56,.74],[.08,-.72,.83]];
+  line(frames.pelvis,'horn','flexible-demon-tail',p,refined?.033:.043);
+  add(frames.pelvis,createGothicHorn({
+   side:1,detail,len:.16,radius:.050,curve:.09
+  }),'horn','tail-barb',[.08,-.76,.84],[0,0,Math.PI*.73]);
+ }
+ // Unlike a human wearing black underwear, gargoyles and infernal demons
+ // must have a complete lower-body silhouette and connected armour seams.
+ if(['m041','m042','m043'].includes(profile.id)){
+  if(!frames.pelvis)throw Error('Demon loin armour requires hips');
+  const gargoyle=profile.id==='m042';
+  const stone=gargoyle?'skin':'metal';
+  const hem=new THREE.CylinderGeometry(gargoyle?.275:.25,
+     gargoyle?.337:.29,.42,refined?22:10,3,true);
+  add(frames.pelvis,hem,stone,'species-bone-anchored-loin-plate',
+    [0,-.075,0]);
+  for(const side of [-1,1]){
+   const i=side<0?0:1;
+   const hipPlating=new THREE.IcosahedronGeometry(1,refined?1:0);
+   hipPlating.scale(.13,.19,.18);
+   add(frames.pelvis,hipPlating,stone,
+     'hip-joint-cover-'+i,[side*.185,-.12,.012]);
+   if(gargoyle){
+    const shoulder=new THREE.IcosahedronGeometry(1,refined?1:0);
+    shoulder.scale(.165,.14,.17);
+    add(frames.arms[i],shoulder,'skin',
+      'gargoyle-shoulder-stone-'+i,[side*.03,.0,.006]);
+   }
+  }
+  if(gargoyle){
+   add(frames.chest,createConstructCarapaceGeometry({
+      detail,material:'stone',width:.32,height:.62,depth:.215
+    }),'skin','gargoyle-fitted-stone-chest');
+   // Three cold-stone dorsal ridges grow from the skull. Gargoyles have
+   // stony crests instead of a smooth human bald scalp.
+   for(let i=0;i<3;i++){
+    const crest=new THREE.ConeGeometry(.045,.13-i*.014,
+      refined?9:6,2);
+    crest.rotateZ(.17*(i-1));
+    add(frames.head,crest,'skin',
+      'gargoyle-cranial-ridge-'+i,[(i-1)*.09,.18,.045]);
+   }
+  }
  }
  return true;
 }
