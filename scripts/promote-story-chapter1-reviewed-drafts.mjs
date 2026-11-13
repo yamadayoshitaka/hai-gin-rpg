@@ -73,7 +73,8 @@ if(pages.length!==132||pages.reduce((sum,x)=>sum+x.shots.length,0)!==462)
  throw Error('Canonical chapter cardinality drift');
 const inspected=new Map();
 function inspect(item){
- if(item.existing)return {kind:'EXISTING_REGISTERED_NOT_P0_CERTIFIED'};
+ if(item.existing&&!exists(item.draft)&&!exists(item.sourceProof))
+  return {kind:'EXISTING_REGISTERED_NOT_P0_CERTIFIED'};
  if(!exists(item.draft)||!exists(item.sourceProof))return {kind:'MISSING_REAL_DRAFT'};
  if(!exists(item.approval))return {kind:'AWAITING_HUMAN_IMAGE_APPROVAL'};
  try{
@@ -147,7 +148,7 @@ if(!apply)process.exit(0);
 if(selected!==null&&!ready.length)throw Error('Selected page is missing human approval proofs');
 let promoted=0;
 for(const page of ready){
- const jobs=page.shots.filter(s=>!s.existing);
+ const jobs=page.shots.filter(s=>inspected.get(s.key).kind==='READY_HUMAN_REVIEWED_FOR_FORMAL_REGISTRATION');
  // All validations finish before any production file is copied.
  for(const item of jobs){
   const cert=inspected.get(item.key).proof;
@@ -160,7 +161,7 @@ for(const page of ready){
  // Existing transactional registration runner handles exact SHA + per-shot
  // human review validation; commits at most five *approved* frames at a time.
  const flags=['scripts/story-chapter-page-loop.mjs','--chapter','1',
-  '--page',String(page.number),'--execute',...(commit?['--commit']:[])];
+  '--page',String(page.number),'--execute','--upgrade-legacy',...(commit?['--commit']:[])];
  const executed=spawnSync(process.execPath,flags,{cwd:root,encoding:'utf8',maxBuffer:30000000});
  if(executed.status!==0)
   throw Error('Atomic formal registration stopped on page '+page.number+': '+
