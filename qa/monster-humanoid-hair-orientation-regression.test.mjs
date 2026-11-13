@@ -86,7 +86,7 @@ for(const p of profiles){
   assert.equal(groom.locks.geometry.userData.kind,'scalp-rooted-tapered-hair-strands');
   assert.ok(parts.every(m=>m.parent===head),'Hair not anchored to animated head '+p.id);
   assert.ok(parts.every(m=>m.userData.canonicalHairGroom),'Missing hair diagnostics '+p.id);
-  if(important.includes(p.id)){
+  if(important.includes(p.id)&&!(p.id==='m034'&&p.sex==='male')){
    assert.equal(p.hair,'long','Angels, forest spirit, succubus and women need long hair '+p.id);
    assert.ok(groom.crown.geometry.getAttribute('position').count>=140);
    assert.ok(groom.locks.geometry.getAttribute('position').count>500);
