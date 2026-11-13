@@ -69,7 +69,9 @@ const fs=require('node:fs');
   await page.screenshot({path:'qa-screenshots/human-v56/female-overlap.png',timeout:90000});
   // Render actual close-up portraits, not only the distant full-body view.
   // These reveal facial normal faceting and any opaque neck plate.
-  await page.locator('#portrait').click();
+  // Costume-only UI hides the portrait button; invoke its existing view
+  // controller directly for automated QA without changing user-facing UI.
+  await page.evaluate(()=>document.getElementById('portrait').click());
   await page.waitForTimeout(350);
   await page.screenshot({path:'qa-screenshots/human-v56/female-face-front.png',timeout:90000});
   await page.locator('#side').click();
