@@ -178,7 +178,7 @@ test('real skinned torso neckline, not armor, sets whole head height without sta
  const wardrobe=new THREE.Group();actor.add(wardrobe);
  const torsoGeometry=new THREE.BoxGeometry(.34,.60,.25);
  const torso=new THREE.SkinnedMesh(torsoGeometry,new THREE.MeshStandardMaterial());
- torso.name='Female_Ranger_Body';torso.position.y=1.24;wardrobe.add(torso);
+ torso.name='Female_Ranger_Body';torso.position.y=1.13;wardrobe.add(torso);
  actor.updateWorldMatrix(true,true);
  const sourcePosition=face.geometry.getAttribute('position').array.slice();
  const before=new THREE.Box3().setFromObject(face).min.y;
