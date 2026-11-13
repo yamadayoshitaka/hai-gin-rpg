@@ -22,9 +22,9 @@ import {classifyCosplaySurface,applyMonsterMaterialPigment}
 import {addConstructMonsterCostume,isConstructCostume}
  from './monster-construct-costume.js';
 import {addDemonicFaceCosmetics,hasDemonCosmetics}
- from './monster-demon-cosmetics.js';
+ from './monster-demon-cosmetics.js?v=4.5.04';
 import {addFemaleSummonCostume,isFemaleSummonCostume}
- from './female-summon-costumes.js';
+ from './female-summon-costumes.js?v=4.5.04';
 
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const boneName=s=>String(s??'').toLowerCase().replace(/[^a-z0-9]/g,'');
