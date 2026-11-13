@@ -1,12 +1,14 @@
 name: One-time Cloudflare Free real five-scene render (c01-s02 female victory)
 
-# Intentionally triggered exactly once by a specific immutable marker.
+# Triggered only by explicit immutable one-time marker files.
+# Credential-ready retry has a distinct marker; do not re-trigger original marker.
 # NEVER run on general push/PR. No unattended schedule or subsequent chapters.
 on:
   push:
     branches: [main]
     paths:
       - 'ops/cloudflare-free-c01s02-female-victory-p01-once-20261114.trigger'
+      - 'ops/cloudflare-free-c01s02-female-victory-p01-after-credentials-once-20261114.trigger'
 
 permissions:
   contents: write
