@@ -1,0 +1,63 @@
+name: One-stage story production batch (free)
+
+on:
+  workflow_dispatch:
+    inputs:
+      stage_id:
+        description: 'Exactly one stage with a committed stage-specific manifest (e.g. c01-s02)'
+        type: string
+        default: c01-s02
+        required: true
+  push:
+    branches: [main]
+    paths:
+      - 'assets/story/stage-manifests/**'
+      - 'scripts/run-story-stage.mjs'
+      - 'qa/story-single-stage-manifest.test.mjs'
+      - '.github/workflows/one-stage-story-batch.yml'
+      - 'docs/story-stage-poster-production-manifest-v2.md'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: one-stage-story-batch-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  stage-batch:
+    name: One locked stage, all genders and outcomes
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      STAGE_ID: ${{ github.event.inputs.stage_id || 'c01-s02' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install free open-source WebP validator (no paid image-generation API)
+        run: python -m pip install --disable-pip-version-check Pillow==11.3.0
+      - name: Validate screenplay, locked scene IDs and stage-wide no-text contract
+        run: |
+          node qa/story-stage-poster-production.test.mjs
+          node qa/story-single-stage-manifest.test.mjs
+      - name: Prepare and validate real cast reference images for stage2
+        if: env.STAGE_ID == 'c01-s02'
+        run: |
+          python scripts/build-story-character-reference-pack.py --stage c01-s02
+          python qa/story-character-reference-pack.test.py
+      - name: Single command compiles every variant and crops any actual hi-res source posters
+        run: node scripts/run-story-stage.mjs --stage "$STAGE_ID"
+      - name: Export immutable stage manifest, no-text prompts, per-frame WebPs and comparison reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: one-stage-story-${{ github.run_id }}
+          path: |
+            qa-reports/story-stage-production/batches/
+            qa-reports/story-stage-production/reference-packs/
+          if-no-files-found: error
+          retention-days: 30
