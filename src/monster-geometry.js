@@ -528,10 +528,20 @@ function insect(g,s,{spider=false}={}){
    const leg=g.group(name,[side*.35,1.12,z]);
    const bend=[side*(.45+(i===0?.12:0)),i===3?.02:.22,(i-1)*.16];
    const foot=[side*(.72+i*.05),-.94,(i-1.5)*.23];
-   g.bone(leg,'skin',[0,0,0],bend,.085,{tipRadius:.055,metal:.4});
-   g.sphere(leg,'accent',bend,[.092,.09,.092],{metal:.4});
-   g.bone(leg,'shadow',bend,foot,.070,{tipRadius:.024,metal:.4});
-   g.spike(leg,'bone',foot,[foot[0]+side*.11,foot[1]-.08,foot[2]],.04);
+   // Anatomical arthropod chain: coxa/hip -> femur -> patella -> tibia
+   // -> tarsus. The distal meshes inherit the proximal joint's rotation.
+   // Formerly femur and tibia were welded to the same single leg pivot,
+   // so the knee could neither lift nor flex during a step.
+   const femur=g.group(name+'Femur',[0,0,0],leg);
+   g.bone(femur,'skin',[0,0,0],bend,.085,{tipRadius:.055,metal:.4});
+   const patella=g.group(name+'Patella',bend,femur);
+   g.sphere(patella,'accent',[0,0,0],[.092,.09,.092],{metal:.4});
+   const tibia=g.group(name+'Tibia',[0,0,0],patella);
+   const distal=[foot[0]-bend[0],foot[1]-bend[1],foot[2]-bend[2]];
+   g.bone(tibia,'shadow',[0,0,0],distal,.070,{tipRadius:.024,metal:.4});
+   const tarsus=g.group(name+'Tarsus',distal,tibia);
+   g.sphere(tarsus,'shadow',[0,0,0],[.050,.045,.050],{metal:.18});
+   g.spike(tarsus,'bone',[0,0,0],[side*.11,-.08,0],.04);
  }
  if(!spider){
    if(s.id==='m023'){
