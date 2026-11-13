@@ -103,11 +103,18 @@ test('v56 neck colour follows cheek pigment instead of an opaque fixed beige car
  const connector=headRoot.getObjectByName('STUDIO_REAL_SKIN_NECK_CONNECTOR_V54');
  assert.ok(connector?.material.transparent);
  assert.equal(connector.material.depthWrite,false);
- assert.ok(connector.material.color.equals(face.material.color));
+ assert.equal(fitted.tunicInnerCollar,true);
+ assert.equal(connector.material.color.getHex(),0xffffff);
  const colors=connector.geometry.getAttribute('color');
  assert.equal(colors.itemSize,4);
  assert.ok(colors.getW(0)<.15,'bottom edge must blend into the outfit collar');
  assert.ok(colors.getW(colors.count-1)<.15,'top edge must blend into the jaw');
+ const collar=new THREE.Color(0x667d92);
+ assert.ok(Math.abs(colors.getX(0)-collar.r)<.002,
+  'lower collar should match the dark slate costume rather than white skin');
+ assert.ok(Math.abs(colors.getX(colors.count-1)-
+   face.material.color.r*.9*.78)<.015,
+  'skin tone should only appear under the jaw, never as a wide bright plate');
  assert.ok(colors.getW(Math.floor(colors.count/2))>.95);
  const allPositions=source.getAttribute('position').array.slice();
  const clipped=face.geometry;
