@@ -626,11 +626,48 @@ function upright(g,s,{rock=false,undead=false,demon=false}={}){
    [0,2.12,.08],rock?.23:.17,rock?.185:.135);
  const head=g.group('head',[0,2.17,.08]);
  if(rock)g.rock(head,'skin',[0,0,0],[.30,.33,.30]);
- else g.sphere(head,undead?'bone':'skin',[0,0,0],[.26,.32,.27]);
- g.eyes(head,.248,.025,.16,undead?.063:.048);
- if(undead){
+ else if(s.id==='m032'){
+   // Mummy: emaciated cranial volume and pronounced zygomatic cheek ridge,
+   // not a round flesh head. Eyes are sunken and matte, without magic glow.
+   g.sphere(head,'shadow',[0,0,0],[.235,.303,.248],
+     {name:'m032-desiccated-cranium'});
+   g.bridge(head,'bone',[0,-.085,.095],[0,-.19,.20],.151,.093);
+   for(const side of [-1,1]){
+     g.sphere(head,'shadow',[side*.175,.020,.223],[.078,.068,.027],
+       {name:'m032-orbit'});
+     g.sphere(head,'bone',[side*.175,.018,.237],[.030,.032,.014],
+       {rough:.93,name:'m032-clouded-iris'});
+     g.sphere(head,'skin',[side*.181,.086,.199],[.091,.030,.043],
+       {name:'m032-brow-ridge'});
+     g.bridge(head,'bone',[side*.147,-.102,.157],
+       [side*.178,-.184,.160],.051,.031);
+   }
+ }else g.sphere(head,undead?'bone':'skin',[0,0,0],[.26,.32,.27]);
+ if(s.id!=='m032')g.eyes(head,.248,.025,.16,undead?.063:.048);
+ if(undead&&s.id!=='m032'){
    for(const side of [-1,1])g.spike(head,'shadow',[side*.10,-.13,.23],[side*.12,-.26,.29],.045);
    for(let i=0;i<5;i++)g.bone(torso,'bone',[-.26,1.85-i*.16,.29],[.26,1.85-i*.16,.29],.028);
+ }
+ if(s.id==='m032'){
+   // Volumetric linen wraps: separate body/neck/head ribbons with real UVs.
+   // A gap across the eye line exposes both recessed eye sockets.
+   g.bandage(torso,'bone',{name:'m032-torso-wrap',center:[0,0,0],
+     radii:[.416,.315],startY:1.05,endY:1.83,
+     turns:6.3,width:.090,phase:.2,segments:g.root.userData.detail==='low'?35:110});
+   g.bandage(torso,'light',{name:'m032-neck-wrap',center:[0,0,.05],
+     radii:[.18,.17],startY:1.86,endY:2.09,
+     turns:2.8,width:.065,phase:.5,segments:45});
+   g.bandage(head,'bone',{name:'m032-head-crown-wrap',center:[0,0,0],
+     radii:[.247,.264],startY:.12,endY:.255,
+     turns:2.4,width:.056,phase:.15,segments:48});
+   g.bandage(head,'light',{name:'m032-head-jaw-wrap',center:[0,0,0],
+     radii:[.241,.255],startY:-.265,endY:-.135,
+     turns:2.2,width:.060,phase:1.1,segments:48});
+   for(let i=0;i<5;i++){
+     const x=(i-2)*.11;
+     g.fin(torso,i%2?'bone':'light',[x,1.34,.335],
+       [x+(i%2?.10:-.08),.91-(i%3)*.06,.35],.06);
+   }
  }
  if(rock){
    g.sphere(torso,'accent',[0,1.38,.35],[.16,.20,.08],{glow:true,metal:.5});
@@ -640,23 +677,58 @@ function upright(g,s,{rock=false,undead=false,demon=false}={}){
    }
  }
  for(const side of [-1,1]){
-   const arm=g.group('arm'+(side<0?'L':'R'),[side*.46,1.84,0]);
+   const suffix=side<0?'L':'R';
+   const arm=g.group('arm'+suffix,[side*.46,1.84,0]);
+   const elbow=g.group('elbow'+suffix,[side*.13,-.37,.12],arm);
    if(rock){
-     g.rock(arm,'skin',[side*.12,-.26,0],[.25,.36,.25]);
-     g.rock(arm,'light',[side*.17,-.56,.17],[.19,.21,.22]);
+     g.rock(arm,'skin',[side*.06,-.17,0],[.245,.275,.24]);
+     g.rock(elbow,'light',[side*.035,-.15,.045],[.185,.245,.195]);
    }else{
-     g.bone(arm,'skin',[0,0,0],[side*.17,-.56,.16],.16,{tipRadius:.11});
-     g.sphere(arm,'shadow',[side*.17,-.58,.18],[.15,.15,.15]);
+     g.bone(arm,'skin',[0,0,0],[side*.13,-.40,.12],.16,{tipRadius:.11});
+     g.sphere(arm,'shadow',[side*.13,-.37,.12],[.15,.145,.15],
+       {name:'monster-elbow-socket'});
+     g.bone(elbow,'skin',[0,0,0],[side*.045,-.31,.045],.12,{tipRadius:.075});
+     g.sphere(elbow,'skin',[side*.045,-.31,.045],[.103,.105,.11]);
    }
-   g.claws(arm,[side*.17,-.70,.26],1,rock?4:3,rock?1.35:1.1);
-   const leg=g.group('leg'+(side<0?'L':'R'),[side*.19,.96,0]);
-   if(rock)g.rock(leg,'skin',[0,-.35,0],[.24,.45,.24]);
-   else g.bone(leg,'skin',[0,0,0],[0,-.74,.07],.17,{tipRadius:.12});
-   g.sphere(leg,'shadow',[0,-.80,.15],[.21,.14,.27]);
+   g.claws(elbow,[side*.045,-.35,.15],1,rock?4:3,rock?1.35:1.1);
+   const leg=g.group('leg'+suffix,[side*.19,.96,0]);
+   const knee=g.group('knee'+suffix,[0,-.39,.04],leg);
+   if(rock){
+     g.rock(leg,'skin',[0,-.17,0],[.245,.30,.24]);
+     g.rock(knee,'light',[0,-.18,.035],[.185,.27,.19]);
+   }else{
+     g.bone(leg,'skin',[0,0,0],[0,-.40,.04],.17,{tipRadius:.13});
+     g.sphere(leg,'shadow',[0,-.39,.04],[.168,.155,.169],
+       {name:'monster-knee-socket'});
+     g.bone(knee,'skin',[0,0,0],[0,-.36,.03],.14,{tipRadius:.10});
+   }
+   g.sphere(knee,'shadow',[0,-.395,.105],[.21,.14,.255]);
+   if(s.id==='m032'){
+     const upperArm=[side*.05,-.17,.05];
+     g.bandage(arm,'bone',{name:'m032-upper-arm-'+suffix,
+       center:upperArm,radii:[.174,.163],startY:-.20,endY:.10,
+       turns:2.9,width:.067,phase:side*.17,segments:45});
+     g.bandage(elbow,'light',{name:'m032-forearm-'+suffix,
+       center:[side*.02,-.11,.025],radii:[.132,.127],
+       startY:-.18,endY:.09,turns:2.8,width:.057,
+       phase:side*.44,segments:40});
+     g.bandage(leg,'bone',{name:'m032-thigh-'+suffix,center:[0,-.16,.016],
+       radii:[.188,.164],startY:-.17,endY:.12,
+       turns:2.8,width:.067,phase:side*.30,segments:44});
+     g.bandage(knee,'light',{name:'m032-shin-'+suffix,
+       center:[0,-.15,.055],radii:[.146,.130],
+       startY:-.20,endY:.10,turns:2.9,width:.056,
+       phase:side*.63,segments:42});
+   }
  }
  if(demon){
    for(const side of [-1,1]){
-     g.spike(head,'shadow',[side*.20,.23,-.05],[side*.45,.65+v*.07,-.17],.12);
+     // Skull-connected horn socket: no floating cone at the temporal bone.
+     const base=[side*.20,.23,-.05],bend=[side*.34,.43+v*.025,-.12];
+     g.sphere(head,'skin',[side*.205,.225,-.045],[.145,.135,.145],
+       {name:'demon-horn-root'});
+     g.bridge(head,'shadow',base,bend,.119,.078);
+     g.spike(head,'shadow',bend,[side*.45,.65+v*.07,-.17],.078);
      const wing=g.group(side<0?'wingL':'wingR',[side*.36,1.67,-.2]);
      g.tube(wing,'skin',[[0,0,0],[side*.52,.54,-.12],[side*1.21,.73,-.4]],.07);
      for(let i=0;i<6+v*2;i++){const t=i/(6+v*2);
