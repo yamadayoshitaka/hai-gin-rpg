@@ -1,0 +1,80 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import {spawnSync} from 'node:child_process';
+import path from 'node:path';
+import {fileURLToPath} from 'node:url';
+
+const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
+const result=spawnSync(process.execPath,['scripts/run-story-stage.mjs',
+ '--stage','c01-s02','--prepare-only'],{cwd:root,encoding:'utf8'});
+assert.equal(result.status,0,result.stdout+'\n'+result.stderr);
+
+const dir=path.join(root,'qa-reports/story-stage-production/batches/c01-s02');
+const manifest=JSON.parse(fs.readFileSync(path.join(dir,'stage-manifest.json'),'utf8'));
+const briefs=JSON.parse(fs.readFileSync(path.join(dir,'render-briefs.json'),'utf8'));
+const summary=JSON.parse(fs.readFileSync(path.join(dir,'batch-summary.json'),'utf8'));
+const locked=JSON.parse(fs.readFileSync(path.join(root,'assets/story/stage-manifests/c01-s02.manifest.json'),'utf8'));
+
+assert.equal(manifest.kind,'production-manifest-not-generated-art');
+assert.equal(manifest.singleStageBatch,true);
+assert.equal(manifest.imageGeneratorConnected,false);
+assert.equal(manifest.qualityApproved,false);
+assert.equal(manifest.deployed,false);
+assert.equal(manifest.stages.length,1);
+assert.equal(manifest.stages[0].stageId,'c01-s02');
+assert.equal(manifest.stages[0].variants.length,8);
+assert.equal(manifest.totals.requiredPanels,48);
+assert.equal(manifest.totals.registeredDraftPanels,15);
+assert.equal(manifest.totals.missingPanels,33);
+assert.equal(manifest.totals.approvedPanels,0);
+assert.equal(manifest.sourcePosters.length,8);
+assert.equal(briefs.variants.length,8);
+assert.equal(summary.requiredPanels,48);
+assert.equal(summary.requiredVariantPosters,8);
+assert.equal(summary.oneInvocationOneStage,true);
+assert.equal(summary.stageApproved,false);
+assert.equal(summary.gameDeployed,false);
+assert.equal(summary.renderStatus,'PREPARED_ONLY');
+assert.equal(locked.variants.length,8);
+assert.equal(locked.layout.requiredPanels,48);
+assert.equal(locked.singleInvocation.artRendererConnected,false);
+const uniqueFrames=new Set(),uniquePosterSources=new Set();
+for(const variant of manifest.stages[0].variants){
+ const key=variant.edition+'|'+variant.gender;
+ const config=locked.variants.find(v=>v.edition+'|'+v.gender===key);
+ assert(config,'Missing immutable stage config for '+key);
+ assert.equal(variant.panels,config.count);
+ assert.equal(variant.pages.length,1);
+ const p=variant.pages[0];
+ const directive=p.stageBatch;
+ assert.equal(directive.variant,key);
+ assert.equal(directive.sourcePoster,config.posterInput);
+ assert.deepEqual(directive.expectedNativeSheet,config.posterMinNativePixels);
+ assert.equal(directive.requiresImageReferenceBytes,true);
+ assert.equal(directive.inImageTextAllowed,false);
+ assert.equal(directive.rendererAttached,false);
+ assert.equal(directive.approval,'NOT_APPROVED');
+ assert.match(directive.strictPictorialOnlyPrompt,/NOT a poster, advertisement, infographic/);
+ assert.match(directive.strictPictorialOnlyPrompt,/No panel numbers, text/);
+ assert.match(directive.strictPictorialOnlyPrompt,/No top or bottom title bar/);
+ assert.match(directive.strictPictorialOnlyPrompt,/NOT text to print in the image/);
+ assert.equal(p.panels.length,config.count);
+ assert.deepEqual(p.panelIds,config.scriptPanelIds);
+ assert(!uniquePosterSources.has(directive.sourcePoster));
+ uniquePosterSources.add(directive.sourcePoster);
+ for(const shot of p.panels){
+  assert(shot.generationPrompt.includes(shot.scriptText));
+  assert(shot.narrative.currentScene.scriptText===shot.scriptText);
+  assert(shot.individualMinPixels[0]===1536);
+  assert(shot.individualMinPixels[1]===864);
+  assert(!uniqueFrames.has(shot.shotKey));
+  uniqueFrames.add(shot.shotKey);
+  assert.equal(shot.approval.approved,false);
+ }
+}
+assert.equal(uniqueFrames.size,48);
+assert.equal(uniquePosterSources.size,8);
+const error=spawnSync(process.execPath,['scripts/run-story-stage.mjs',
+ '--stage','c01-s03','--prepare-only'],{cwd:root,encoding:'utf8'});
+assert.notEqual(error.status,0,'Missing per-stage contract must fail, not silently fall back to generic poster');
+console.log('PASS one-stage batch: 8 labelled-outside-only contracts, 48 canonical scenes, all under explicit 1536x864 gates; no fake render/publish');

@@ -1,0 +1,273 @@
+{
+  "schemaVersion": 4,
+  "kind": "STAGE_RENDER_CONTRACT_NOT_COMPLETED_ART",
+  "stageId": "c01-s02",
+  "stageName": "第一章・第二ステージ 礼拝堂への街道",
+  "canonicalSources": [
+    "src/story-chapter-comic.js",
+    "src/story-stage-beats-v2.js",
+    "src/story-stage-manga.js",
+    "src/story-pronunciations.js"
+  ],
+  "singleInvocation": {
+    "command": "node scripts/run-story-stage.mjs --stage c01-s02",
+    "workflow": ".github/workflows/story-stage-poster-batch.yml",
+    "batchUnit": "1_STORY_STAGE",
+    "externalPaidGeneration": false,
+    "backgroundGeneration": false,
+    "artRendererConnected": false
+  },
+  "goal": "一度のバッチで男女・全勝敗分岐の48コマをシナリオ照合・入力シート切出し・品質レビューまで一括処理する。画像生成器未接続なら画像は生まれない。",
+  "layout": {
+    "variantCount": 8,
+    "requiredPanels": 48,
+    "columns": 2,
+    "maxRows": 4,
+    "maxPanelsPerPoster": 8,
+    "minPerPanelNativePixels": [
+      1536,
+      864
+    ],
+    "preferredPerPanelNativePixels": [
+      2048,
+      1152
+    ],
+    "aspectRatio": "16:9",
+    "format": "webp",
+    "croppingCellOrder": "left-to-right, top-to-bottom",
+    "seventhCell": "blank eighth cell; no fabricated scene",
+    "noSheetCutAsFinalUnlessPerCellMeetsNativeResolution": true,
+    "blankCellCannotBecomeScene": true
+  },
+  "renderConstraints": {
+    "renderMode": "CLEAN_SCENE_GRID_ONLY",
+    "forbiddenInsideImage": [
+      "characters letters ideograms kanji hiragana katakana",
+      "digits 0-9",
+      "titles",
+      "chapter banners",
+      "scene identifiers",
+      "comic panel labels",
+      "subtitles",
+      "speech bubbles",
+      "ruby",
+      "legible markings on parchment or seals",
+      "tables",
+      "production reports",
+      "infographics",
+      "mock UI",
+      "interface buttons",
+      "watermarks",
+      "logos",
+      "developer notes",
+      "JSON code"
+    ],
+    "identityLock": "each visible actor must match supplied real master image bytes, never invent cast from names alone",
+    "heroGenderIsolation": true,
+    "noCrossOutcomeReuse": true,
+    "noEarlyVictory": true,
+    "oneBeatPerCell": true,
+    "continuity": "previous and following canonical screenplay beats",
+    "narrationDisplay": "outside illustration in game UI",
+    "proofing": "manual visual acceptance; OCR optional only, not assumed"
+  },
+  "operatingOrder": [
+    "load full stage screenplay",
+    "expand all 8 gender/outcome variants",
+    "freeze exact storyboard action for every cell",
+    "attach real cast image files",
+    "render textless hi-res posters for each variant (if an actual image generation provider is attached)",
+    "slice by explicit cell rectangles",
+    "check native pixels and provenance",
+    "review each cell vs its exact screenplay and approved reference",
+    "register only approved individual files",
+    "deploy after all variant checks pass"
+  ],
+  "referenceImages": {
+    "commander_male": "assets/story/panels/c01-s01-m01.webp",
+    "commander_female": "assets/story/characters/commander/female-master.webp",
+    "lucia": "assets/story/characters/lucia/master.webp",
+    "garan": "assets/story-cinema/cast/garan.webp",
+    "iris": "assets/story-cinema/cast/iris.webp"
+  },
+  "qualityReferenceByGender": {
+    "male": "assets/story/chapters/c01/panels/c01-s01-m02-male.webp",
+    "female": "assets/story/chapters/c01/panels/c01-s01-m02-female.webp"
+  },
+  "qualityReferenceApproval": "PROVISIONAL_NOT_HUMAN_APPROVED",
+  "existingGithubDrafts": 15,
+  "unregisteredLocalCandidates": "Previous 10 female draft images exist only in user-visible ZIP handoff; not in GitHub public game",
+  "complete": false,
+  "qualityApproved": false,
+  "deployedNewImages": false,
+  "variants": [
+    {
+      "edition": "pre",
+      "phase": "pre",
+      "gender": "male",
+      "count": 8,
+      "scriptPanelIds": [
+        "c01-s02-m1",
+        "c01-s02-m2",
+        "c01-s02-m3",
+        "c01-s02-m4",
+        "c01-s02-m5",
+        "c01-s02-m11",
+        "c01-s02-m13",
+        "c01-s02-m15"
+      ],
+      "posterInput": "assets/story/chapter-drafts/c01/posters/c01-s02-pre-male-p01.webp",
+      "posterMinNativePixels": [
+        3072,
+        3456
+      ],
+      "numberedArt": false,
+      "status": "SCRIPTED_NOT_APPROVED"
+    },
+    {
+      "edition": "pre",
+      "phase": "pre",
+      "gender": "female",
+      "count": 8,
+      "scriptPanelIds": [
+        "c01-s02-m1",
+        "c01-s02-m2",
+        "c01-s02-m3",
+        "c01-s02-m4",
+        "c01-s02-m5",
+        "c01-s02-m11",
+        "c01-s02-m13",
+        "c01-s02-m15"
+      ],
+      "posterInput": "assets/story/chapter-drafts/c01/posters/c01-s02-pre-female-p01.webp",
+      "posterMinNativePixels": [
+        3072,
+        3456
+      ],
+      "numberedArt": false,
+      "status": "SCRIPTED_NOT_APPROVED"
+    },
+    {
+      "edition": "post-victory",
+      "phase": "post",
+      "gender": "male",
+      "count": 7,
+      "scriptPanelIds": [
+        "c01-s02-m6",
+        "c01-s02-m7",
+        "c01-s02-m8",
+        "c01-s02-m9",
+        "c01-s02-m16",
+        "c01-s02-m19",
+        "c01-s02-m10"
+      ],
+      "posterInput": "assets/story/chapter-drafts/c01/posters/c01-s02-post-victory-male-p01.webp",
+      "posterMinNativePixels": [
+        3072,
+        3456
+      ],
+      "numberedArt": false,
+      "status": "SCRIPTED_NOT_APPROVED"
+    },
+    {
+      "edition": "post-victory",
+      "phase": "post",
+      "gender": "female",
+      "count": 7,
+      "scriptPanelIds": [
+        "c01-s02-m6",
+        "c01-s02-m7",
+        "c01-s02-m8",
+        "c01-s02-m9",
+        "c01-s02-m16",
+        "c01-s02-m19",
+        "c01-s02-m10"
+      ],
+      "posterInput": "assets/story/chapter-drafts/c01/posters/c01-s02-post-victory-female-p01.webp",
+      "posterMinNativePixels": [
+        3072,
+        3456
+      ],
+      "numberedArt": false,
+      "status": "SCRIPTED_NOT_APPROVED"
+    },
+    {
+      "edition": "post-defeat",
+      "phase": "post",
+      "gender": "male",
+      "count": 7,
+      "scriptPanelIds": [
+        "c01-s02-m6",
+        "c01-s02-m7",
+        "c01-s02-m8",
+        "c01-s02-m9",
+        "c01-s02-m16",
+        "c01-s02-m19",
+        "c01-s02-m10"
+      ],
+      "posterInput": "assets/story/chapter-drafts/c01/posters/c01-s02-post-defeat-male-p01.webp",
+      "posterMinNativePixels": [
+        3072,
+        3456
+      ],
+      "numberedArt": false,
+      "status": "SCRIPTED_NOT_APPROVED"
+    },
+    {
+      "edition": "post-defeat",
+      "phase": "post",
+      "gender": "female",
+      "count": 7,
+      "scriptPanelIds": [
+        "c01-s02-m6",
+        "c01-s02-m7",
+        "c01-s02-m8",
+        "c01-s02-m9",
+        "c01-s02-m16",
+        "c01-s02-m19",
+        "c01-s02-m10"
+      ],
+      "posterInput": "assets/story/chapter-drafts/c01/posters/c01-s02-post-defeat-female-p01.webp",
+      "posterMinNativePixels": [
+        3072,
+        3456
+      ],
+      "numberedArt": false,
+      "status": "SCRIPTED_NOT_APPROVED"
+    },
+    {
+      "edition": "post-gameover",
+      "phase": "post",
+      "gender": "male",
+      "count": 2,
+      "scriptPanelIds": [
+        "c01-s02-death-1",
+        "c01-s02-death-2"
+      ],
+      "posterInput": "assets/story/chapter-drafts/c01/posters/c01-s02-post-gameover-male-p01.webp",
+      "posterMinNativePixels": [
+        3072,
+        864
+      ],
+      "numberedArt": false,
+      "status": "SCRIPTED_NOT_APPROVED"
+    },
+    {
+      "edition": "post-gameover",
+      "phase": "post",
+      "gender": "female",
+      "count": 2,
+      "scriptPanelIds": [
+        "c01-s02-death-1",
+        "c01-s02-death-2"
+      ],
+      "posterInput": "assets/story/chapter-drafts/c01/posters/c01-s02-post-gameover-female-p01.webp",
+      "posterMinNativePixels": [
+        3072,
+        864
+      ],
+      "numberedArt": false,
+      "status": "SCRIPTED_NOT_APPROVED"
+    }
+  ]
+}
