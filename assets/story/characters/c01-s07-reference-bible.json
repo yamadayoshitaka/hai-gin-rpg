@@ -1,0 +1,72 @@
+{
+  "schemaVersion": 1,
+  "stageId": "c01-s07",
+  "kind": "REQUIRED_REAL_REFERENCE_IMAGE_ATTACHMENTS",
+  "sourcePriority": [
+    "official-character-master",
+    "stage1-verified-scene-reference",
+    "provisional-ensemble-crop"
+  ],
+  "policy": {
+    "attachRealImageBytesToGeneration": true,
+    "doNotRelyOnPathStringsAlone": true,
+    "keepSameSeedForSameCharacterWhenSupported": true,
+    "renderEachFrameSeparately": true,
+    "passCharacterReferencesForEveryFrame": true,
+    "prohibitReferenceSubstitutionAcrossGender": true,
+    "doNotCountAutomaticChecksAsHumanVisualApproval": true,
+    "doNotEdit3dCharacterModels": true,
+    "textlessArtOnly": true
+  },
+  "scene": "第一章・第7ステージ 外郭の監視拠点確保：王印を運んだ者の足跡は外郭の監視拠点へ続く。 勝利確定時のみ「監視拠点を確保し、無断で動いた文書の経路を絞り込む。」。敗北や軍師戦死を勝利と取り違えない。",
+  "actors": [
+    {
+      "id": "commander_male",
+      "role": "主人公・男性軍師",
+      "visualRule": "黒髪の若い男性軍師。既存第1ステージの人物基準と一致させる。",
+      "path": "assets/story/panels/c01-s01-m01.webp",
+      "masterQuality": "PROVISIONAL_SCENE_REFERENCE_NOT_FACE_MASTER",
+      "requiredForGender": "male"
+    },
+    {
+      "id": "commander_female",
+      "role": "主人公・女性軍師",
+      "visualRule": "金髪ロング、青い瞳、銀色の甲冑。既存女性軍師の正式マスター画像に優先して合わせる。リュシアと混同しない。",
+      "path": "assets/story/characters/commander/female-master.webp",
+      "masterQuality": "DEDICATED_MASTER_BUT_HUMAN_VISUAL_REVIEW_REQUIRED",
+      "requiredForGender": "female"
+    },
+    {
+      "id": "lucia",
+      "role": "リュシア・銀髪摂政",
+      "visualRule": "銀髪、摂政の衣装、少女の軍師と別人。国王や主人公に変更しない。",
+      "path": "assets/story/characters/lucia/master.webp",
+      "masterQuality": "DEDICATED_MASTER",
+      "requiredForGender": "both"
+    },
+    {
+      "id": "garan",
+      "role": "ガラン・老騎士",
+      "visualRule": "年長の老騎士。王や若い男性軍師へ変更しない。",
+      "path": "assets/story-cinema/cast/garan.webp",
+      "masterQuality": "PROVISIONAL_CAST_CROP_NEEDS_REVIEW",
+      "requiredForGender": "both"
+    },
+    {
+      "id": "iris",
+      "role": "イリス・治癒師",
+      "visualRule": "治癒師の衣装と落ち着いた表情。台本の同じ人物の髪色と衣装を固定。",
+      "path": "assets/story-cinema/cast/iris.webp",
+      "masterQuality": "PROVISIONAL_CAST_CROP_NEEDS_REVIEW",
+      "requiredForGender": "both"
+    }
+  ],
+  "rulesPerShot": [
+    "各ショットの人物IDから参照画像の実データを生成器へ添付する",
+    "前コマの採用画像も参考入力に含め、顔・髪・衣装・背景を連続させる",
+    "戦闘後は実際の結果版のみを参照し、勝利版の構図を敗北へ流用しない",
+    "画像内の文字・番号・見出し・セリフ・UI・透かしを排除する",
+    "生成器に参照画像の実バイナリが添付できない場合は品質を未承認として停止する",
+    "参照元のSHA256と作画のSHA256を分離して台帳記録する"
+  ]
+}
