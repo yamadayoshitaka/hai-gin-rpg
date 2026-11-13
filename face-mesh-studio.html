@@ -89,6 +89,10 @@ button{padding:9px 11px}
 <button id="autoBlink" type="button" aria-pressed="true" disabled>瞬き：自動</button>
 <button id="talkDemo" type="button" aria-pressed="false" disabled>口パク：停止</button>
 </div>
+<div class="controls" aria-label="顔の感情表現">
+ <label for="faceExpression">表情
+ <select id="faceExpression" aria-label="表情を10種類から選択"></select></label>
+ </div>
 </div>
 <section id="v32PartsStudio"><h2>完成顔を選ぶ（男女それぞれ10種類）</h2>
 <p class="v45Hint">顔型・目・鼻・口・メイクをまとめて切り替えます。髪型と髪色はそのまま保存されます。</p>
@@ -201,7 +205,7 @@ import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {GLTFExporter} from 'three/addons/exporters/GLTFExporter.js';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {makeIndependentFaceMaster,FACE_MASTER_SPEC} from './src/independent-face-masters.js';
-import {createFaceExpressionAnimator} from './src/face-expression-animation-v48.js?v=48';
+import {createFaceExpressionAnimator,FACE_EXPRESSIONS} from './src/face-expression-animation-v48.js?v=49';
 import {updateFaceFeatureAngles,applyFaceColorMode,updateRealFacePigment} from './src/face-feature-meshes.js';
 import {createScalpAnchoredWig} from './src/face-scalp-wig.js?v=44';
 import {createPartSelectorUI} from './src/face-part-selector-ui-v32.js?v=41';
@@ -211,12 +215,19 @@ import {resolveHeroHairSpec,synchronizeHeroHairSelection} from './src/hero-hair-
 import {chooseHeroFacePreset,polishHeroFaceControls,mountHeroFacePresetPicker,matchHeroFacePreset} from './src/hero-face-presets-v45.js?v=45';
 import {characterAppearance,mountCharacterCastSelect} from './src/character-cast-v46.js?v=46';
 import {AGE_PROFILES,BODY_PROFILES,applyDemographicFaceControls} from './src/character-demographics-v47.js?v=47';
+import {resolveEditedFaceControls,recordFaceManualEdit} from './src/face-state-v49.js?v=49';
 import {loadHeroineFacePreset,saveHeroineFacePreset} from './src/heroine-face-preset-store.js?v=41';
 import {heroineBeautyControlsV43,heroineBeautyControlsV47,HEROINE_BEAUTY_PART_SELECTION_V43,upgradeUneditedHeroineV42ToV43} from './src/heroine-beauty-preset-v42.js?v=47';
 import {loadMaleFacePreset,saveMaleFacePreset} from './src/male-face-preset-store.js?v=42';
 import {applyHeroineSkinMaterial} from './src/heroine-skin-material.js?v=41';
 import {FEMALE_V7_DEFAULTS,MALE_REFERENCE_DEFAULT,FACE_SLIDER_RANGES,FACE_EYE_SPACING_DEFAULT,FACE_EYE_SPACING_RANGE,CONTACT_COLORS,CONTACT_COLOR_LABELS,safeContactColor,normalizeFemaleFaceControls,normalizeMaleFaceControls} from './src/face-v7-controls.js';
 const $=id=>document.getElementById(id);
+for(const [key,preset] of Object.entries(FACE_EXPRESSIONS)){
+ const option=document.createElement('option');
+ option.value=key;option.textContent=preset.label;
+ $('faceExpression').append(option);
+}
+
 for(const [key,profile] of Object.entries(AGE_PROFILES)){
  const option=document.createElement('option');option.value=key;
  option.textContent=profile.label;$('v47AgeBand').append(option);
@@ -292,10 +303,18 @@ const v32PartMode=new URLSearchParams(location.search).get('qa')!=='legacy';
 if(!v32PartMode)document.body.classList.add('v32-legacy');
 const v32Parts={female:defaultPartSelection(),male:defaultPartSelection()};
 const v32Makeup={female:0,male:0};
+let manualFaceOverrides={female:{},male:{}};
 const savedHeroinePreset=v32PartMode?loadHeroineFacePreset():null;
 if(v32PartMode&&!savedHeroinePreset&&new URLSearchParams(location.search).get('hero')==='1')
  Object.assign(v32Parts.female,HEROINE_BEAUTY_PART_SELECTION_V43);
 const savedMalePreset=v32PartMode?loadMaleFacePreset():null;
+Object.assign(manualFaceOverrides.female,savedHeroinePreset?.manualOverrides||{});
+Object.assign(manualFaceOverrides.male,savedMalePreset?.manualOverrides||{});
+const facePolishMode={
+ female:savedHeroinePreset?.faceMode==='polished'||
+  (!savedHeroinePreset&&new URLSearchParams(location.search).get('hero')==='1'),
+ male:savedMalePreset?.faceMode==='polished'
+};
 if(savedMalePreset?.parts){
  Object.assign(v32Parts.male,savedMalePreset.parts);
  Object.assign(v32Parts.male,synchronizeHeroHairSelection('male',v32Parts.male,
@@ -327,7 +346,7 @@ for(const style of listWigStyles('female')){
 }
 $('wigStyle').value=wigStyleId;
 const performanceMetrics={headRebuilds:0,wigRebuilds:0,fastLipstickRepaints:0};
-const expressionPrefs={autoBlink:true,speaking:false},expressions=new Map();
+const expressionPrefs={autoBlink:true,speaking:false,expression:'neutral'},expressions=new Map();
 if(new URLSearchParams(location.search).get('qa')==='expression'){
  // Deterministic WebGL testing only; no extra controls exposed in gameplay.
  window.__faceExpressionQA={
@@ -337,8 +356,18 @@ if(new URLSearchParams(location.search).get('qa')==='expression'){
 function refreshExpression(sex){
  expressions.get(sex)?.dispose();
  const instance=models.get(sex);
- if(instance)expressions.set(sex,createFaceExpressionAnimator(instance,expressionPrefs));
+ if(instance){
+  const animator=createFaceExpressionAnimator(instance,expressionPrefs);
+  animator.setExpression(expressionPrefs.expression);
+  expressions.set(sex,animator);
+ }
 }
+$('faceExpression').addEventListener('change',()=>{
+ expressionPrefs.expression=$('faceExpression').value;
+ for(const animator of expressions.values())
+  animator.setExpression(expressionPrefs.expression);
+ $('metrics').textContent=JSON.stringify(metrics(),null,2);
+});
 for(const [id,key,labelOn,labelOff] of [
  ['autoBlink','autoBlink','瞬き：自動','瞬き：停止'],
  ['talkDemo','speaking','口パク：会話デモ','口パク：停止']
@@ -356,7 +385,9 @@ function persistHeroineFace(){
  if(!ready||!v32PartMode)return;
  saveHeroineFacePreset({parts:{...v32Parts.female},controls:{...modelChanges},
   hairStyleId:wigStyleId,hairColor:wigColor,hairDensity:wigDensity,
-  makeupType:v32Makeup.female,contactColor});
+  makeupType:v32Makeup.female,contactColor,
+  manualOverrides:{...manualFaceOverrides.female},
+  faceMode:facePolishMode.female?'polished':'custom'});
 }
 function persistMaleFace(){
  if(!ready||!v32PartMode)return;
@@ -364,7 +395,9 @@ function persistMaleFace(){
  saveMaleFacePreset({parts:{...v32Parts.male},controls:{...maleChanges},
   hairStyleId:maleSelection.hairStyleId,
   hairColor:v32Parts.male.hairColor,
-  hairDensity:wigDensity,contactColor:CONTACT_COLORS.brown});
+  hairDensity:wigDensity,contactColor:CONTACT_COLORS.brown,
+  manualOverrides:{...manualFaceOverrides.male},
+  faceMode:facePolishMode.male?'polished':'custom'});
 }
 function setActive(ids,id){
  for(const x of ids)$(x).setAttribute('aria-pressed',String(x===id));
@@ -396,7 +429,7 @@ function metrics(){
   male:models.get('male')?.report||null,
   visibleFaceMeshes:model?Number(model.face.visible&&model.root.visible):0,
   visiblePartMeshes:model&&partsOn&&model.root.visible?
-   (()=>{let n=0;model.parts.traverse(o=>{if(o.isMesh&&o.visible)n++});return n})():0,
+   (()=>{let n=0;model.parts.traverse(o=>{if(o.isMesh&&o.visible&&!o.name.endsWith('_ANIMATED_BLINK_CLOSURE'))n++});return n})():0,
   exportedSurface:'face-only',bodyMeshes:0,sourceUntouched:true};
 }
 window.__faceMasterQA=metrics;
@@ -718,6 +751,7 @@ for(const key of [...rebuildKeys,...cosmeticKeys,...angleKeys]){
  const el=$(key);
  el.addEventListener('input',()=>{
   modelChanges[key]=Number(el.value);
+  recordFaceManualEdit(manualFaceOverrides.female,key,modelChanges[key]);
   if(key==='eyeWidth'||key==='eyeHeight')
    modelChanges.eyeSize=Math.sqrt(modelChanges.eyeWidth*modelChanges.eyeHeight);
   setFaceControlDisplay(key,modelChanges[key]);
@@ -758,6 +792,7 @@ for(const key of [...maleRebuildKeys,...maleAngleKeys]){
  const id='male'+key[0].toUpperCase()+key.slice(1);
  $(id).addEventListener('input',()=>{
   maleChanges[key]=Number($(id).value);
+  recordFaceManualEdit(manualFaceOverrides.male,key,maleChanges[key]);
   if(key==='eyeWidth'||key==='eyeHeight')
    maleChanges.eyeSize=Math.sqrt(maleChanges.eyeWidth*maleChanges.eyeHeight);
   setMaleControlDisplay(key,maleChanges[key]);
@@ -869,6 +904,10 @@ $('export').addEventListener('click',async()=>{
   // Export face and, when enabled, our real 3D anatomical mesh parts.
   // The donor body and outfit remain excluded. The independent wig is
   // included in face exports only if it is currently attached and visible.
+  // Closure meshes are temporary blink geometry; exporting midway through
+  // a blink must not change the number of GLB primitives.
+  const faceAnimator=expressions.get(gender);
+  faceAnimator?.setBlinkProgress(0);
   const exporter=new GLTFExporter();
   const bin=await new Promise((resolve,reject)=>
    exporter.parse(model.root,resolve,reject,{binary:true,onlyVisible:true}));
@@ -880,7 +919,10 @@ $('export').addEventListener('click',async()=>{
   setTimeout(()=>URL.revokeObjectURL(url),1000);
   $('status').textContent='GLBを書き出しました（胴体なし・髪表示と顔パーツ表示に連動）。';
  }catch(e){$('status').textContent='GLB出力失敗: '+String(e);}
- finally{$('export').disabled=false;}
+ finally{
+  expressions.get(gender)?.setBlinkProgress(null);
+  $('export').disabled=false;
+ }
 });
 $('exportWig').addEventListener('click',async()=>{
  const wig=wigs.get(gender);
@@ -904,10 +946,12 @@ $('heroineBeautyV43').addEventListener('click',()=>{
  if(!ready||!v32PartMode)return;
  if(gender!=='female')selectGender('female');
  const selected=resolvePartSelection('female',v32Parts.female,FEMALE_V7_DEFAULTS);
- modelChanges=normalizeFemaleFaceControls(applyDemographicFaceControls(
-  heroineBeautyControlsV47(selected.controls),v32Parts.female.ageBand,
-  v32Parts.female.bodyType,'female'));
+ manualFaceOverrides.female={};
+ facePolishMode.female=true;
+ modelChanges=resolveEditedFaceControls('female',heroineBeautyControlsV47(selected.controls),
+  v32Parts.female.ageBand,v32Parts.female.bodyType,{},false);
  rebuildFemale();
+ syncFaceControlDisplays();
  repaint();persistHeroineFace();
  $('status').textContent='美少女顔 v47：瞳・まぶた・頬・唇と自然な眼球深度を補正しました';
  $('metrics').textContent=JSON.stringify(metrics(),null,2);
@@ -929,9 +973,12 @@ if(v32PartMode){
     const selected=resolvePartSelection(sex,v32Parts[sex],sex==='female'?FEMALE_V7_DEFAULTS:MALE_REFERENCE_DEFAULT);
     v32Makeup[sex]=picked.makeup;
     if(sex==='female'){
-     const nextControls=normalizeFemaleFaceControls(applyDemographicFaceControls(
-      completeFace?polishHeroFaceControls('female',selected.controls):selected.controls,
-      v32Parts.female.ageBand,v32Parts.female.bodyType,'female'));
+     if(completeFace){manualFaceOverrides.female={};facePolishMode.female=true;}
+     else if(['face','eye','nose','mouth'].some(k=>previousParts[k]!==picked[k]))
+      facePolishMode.female=false;
+     const nextControls=resolveEditedFaceControls('female',selected.controls,
+      v32Parts.female.ageBand,v32Parts.female.bodyType,
+      manualFaceOverrides.female,facePolishMode.female);
      const faceChanged=facePartChanged&&JSON.stringify(modelChanges)!==JSON.stringify(nextControls);
      if(facePartChanged)modelChanges=nextControls;
      wigStyleId=synchronized.styleId;
@@ -948,9 +995,12 @@ if(v32PartMode){
       if(faceChanged||hairChanged||!wigs.get('female'))rebuildWig();
      }
     }else{
-     const nextControls=normalizeMaleFaceControls(applyDemographicFaceControls(
-      completeFace?polishHeroFaceControls('male',selected.controls):selected.controls,
-      v32Parts.male.ageBand,v32Parts.male.bodyType,'male'));
+     if(completeFace){manualFaceOverrides.male={};facePolishMode.male=true;}
+     else if(['face','eye','nose','mouth'].some(k=>previousParts[k]!==picked[k]))
+      facePolishMode.male=false;
+     const nextControls=resolveEditedFaceControls('male',selected.controls,
+      v32Parts.male.ageBand,v32Parts.male.bodyType,
+      manualFaceOverrides.male,facePolishMode.male);
      const faceChanged=facePartChanged&&JSON.stringify(maleChanges)!==JSON.stringify(nextControls);
      if(facePartChanged)maleChanges=nextControls;
      if(hairChanged){
@@ -965,6 +1015,7 @@ if(v32PartMode){
      }
     }
     if(ready){repaint();if(sex==='female')persistHeroineFace();}
+    if(sex===gender)syncFaceControlDisplays();
     facePickerControls[sex]?.refresh(v32Parts[sex]);
    };
   partSelectionHandlers[sex]=onPartSelection;
@@ -977,12 +1028,15 @@ if(v32PartMode){
      onPartSelection(picked,true);
      createPartSelectorUI(selectorHost,sex,v32Parts[sex],onPartSelection);
      facePickerControls[sex].refresh(v32Parts[sex]);
+     if(sex===gender)syncFaceControlDisplays();
     }
    });
   castSelections[sex]=mountCharacterCastSelect(
    $('v46'+(sex==='female'?'Female':'Male')+'Cast'),sex,id=>{
     const look=characterAppearance(id,v32Parts[sex]);
     v32Parts[sex]={...look.parts};
+    manualFaceOverrides[sex]={};
+    facePolishMode[sex]=false;
     v32Makeup[sex]=look.parts.makeup;
     if(sex==='female'){
      const part=resolvePartSelection('female',v32Parts.female,FEMALE_V7_DEFAULTS);
@@ -1008,7 +1062,7 @@ if(v32PartMode){
   $(name).addEventListener('change',()=>{
    const picked={...v32Parts[gender],
     ageBand:$('v47AgeBand').value,bodyType:$('v47BodyType').value};
-   partSelectionHandlers[gender](picked,true);
+   partSelectionHandlers[gender](picked,false);
    createPartSelectorUI($('v32'+(gender==='female'?'Female':'Male')+'Choices'),
     gender,v32Parts[gender],partSelectionHandlers[gender]);
    $('status').textContent=AGE_PROFILES[picked.ageBand].label+'・'+

@@ -1,0 +1,62 @@
+name: v49 face hair expression regression
+on:
+  pull_request:
+    paths:
+      - 'src/face-age-detail-v49.js'
+      - 'src/face-state-v49.js'
+      - 'src/face-wig-ornaments-v49.js'
+      - 'src/face-scalp-wig.js'
+      - 'src/face-expression-animation-v48.js'
+      - 'src/independent-face-masters.js'
+      - 'src/face-feature-meshes.js'
+      - 'face-mesh-studio.html'
+      - 'face-body-studio.html'
+      - 'male-body-studio.html'
+      - 'qa/face-v49-regression.test.mjs'
+      - 'qa/face-v49-browser.cjs'
+      - '.github/workflows/face-v49-regression.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'src/face-age-detail-v49.js'
+      - 'src/face-state-v49.js'
+      - 'src/face-wig-ornaments-v49.js'
+      - 'src/face-scalp-wig.js'
+      - 'src/face-expression-animation-v48.js'
+      - 'src/independent-face-masters.js'
+      - 'src/face-feature-meshes.js'
+      - 'face-mesh-studio.html'
+      - 'face-body-studio.html'
+      - 'male-body-studio.html'
+      - 'qa/face-v49-regression.test.mjs'
+      - 'qa/face-v49-browser.cjs'
+      - '.github/workflows/face-v49-regression.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  v49-visual:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save --package-lock=false playwright@1.56.0 three@0.160.1
+      - name: v49 data and geometry tests
+        run: node --test qa/face-v49-regression.test.mjs qa/face-expression-v48.test.mjs qa/character-demographics-v47.test.mjs
+      - run: npx playwright install chromium
+      - name: Start preview server
+        run: |
+          python3 -m http.server 8766 --bind 127.0.0.1 > /tmp/v49-http.log 2>&1 &
+          sleep 2
+      - name: Capture actual 3D age/expressions/hair front-side-back
+        run: node qa/face-v49-browser.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: face-v49-age-expression-and-hair
+          path: qa-screenshots/face-v49/
+          retention-days: 14
+          if-no-files-found: warn

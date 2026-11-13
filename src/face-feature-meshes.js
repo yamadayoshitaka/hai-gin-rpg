@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import {normalizeFemaleFaceControls,normalizeMaleFaceControls,FACE_V7_PALETTE,MALE_REFERENCE_DEFAULT,safeContactColor} from './face-v7-controls.js';
+import {resolveAgeBand} from './character-demographics-v47.js?v=49';
 
 /**
  * Actual face-only polygon meshes. No 2D decals, portrait planes or hair.
@@ -175,9 +176,10 @@ function tintRealLipSurface(lip,settings,mode='color'){
  lip.userData.softSatinFinish=true;
  lip.userData.lipstickOnSourceHead=true;
 }
-export function updateRealFacePigment(face,controls={},mode='color'){
+export function updateRealFacePigment(face,controls={},mode='color',gender='female'){
  if(!face?.isMesh)throw Error('Sculpted head required for cosmetics');
- const settings=normalizeFemaleFaceControls(controls);
+ const settings=gender==='male'?normalizeMaleFaceControls(controls):
+  normalizeFemaleFaceControls(controls);
  const geometry=face.geometry;
  geometry.computeBoundingBox();
  const box=geometry.boundingBox,d=box.getSize(new THREE.Vector3());
@@ -186,13 +188,14 @@ export function updateRealFacePigment(face,controls={},mode='color'){
  const skin=new THREE.Color(FACE_V7_PALETTE.skin);
  const blush=new THREE.Color(FACE_V7_PALETTE.blush);
  const lipstick=new THREE.Color(FACE_V7_PALETTE.lipstick);
+ const age=resolveAgeBand(settings.ageBand);
  const positions=geometry.getAttribute('position'),colors=[];
  let actualLipTintVertices=0,actualCheekTintVertices=0;
  for(let i=0;i<positions.count;i++){
   const px=positions.getX(i),py=positions.getY(i),pz=positions.getZ(i);
   const nx=Math.abs((px-cx)/d.x),ny=(py-box.min.y)/d.y;
   const front=smoothstep(((pz-box.min.z)/d.z-.52)/.22);
-  const cheek=.78*bell(nx,.247,.10)*bell(ny,.551,.063)*front;
+  const cheek=gender==='male'?0:.78*bell(nx,.247,.10)*bell(ny,.551,.063)*front;
   const mouthX=(px-cx)/Math.max(.00001,d.x*.047*settings.lipstickWidth);
   const mouthY=(py-lipCenter-d.y*settings.lipstickY*.08)/
    Math.max(.00001,d.y*.012*settings.lipstickHeight);
@@ -205,11 +208,31 @@ export function updateRealFacePigment(face,controls={},mode='color'){
    Math.min(1.62,Math.pow(settings.lipstickWidth,.46)));
   const bound=smoothstep((1-Math.abs(anatomicalLipY))/.25)*
    smoothstep((1-Math.abs(anatomicalLipX))/.25);
-  const lipMask=lipX*lipY*front*bound;
+  const lipMask=gender==='male'?0:lipX*lipY*front*bound;
   if(cheek>.12)actualCheekTintVertices++;
   if(lipMask>.12)actualLipTintVertices++;
+  // Actual sculpted-skin vertex colours receive subtle occlusion in the
+  // nasolabial fold, eyes, nose wings and philtrum (no flat texture card).
+  // Older ages get pronounced crease pigment and lower-eye shadows.
+  const underEye=bell(nx,.345,.14)*bell(ny,.632,.027)*front;
+  const noseWing=bell(nx,.115,.045)*bell(ny,.551,.025)*front;
+  const philtrum=bell(nx,0,.075)*bell(ny,.528,.015)*front;
+  const lipShade=bell(nx,0,.18)*bell(ny,.468,.026)*front;
+  const foreheadBands=[.758,.794,.823].reduce((v,y)=>
+   v+bell(ny,y,.0055),0)*bell(nx,0,.70)*front;
+  const crows=bell(nx,.52,.12)*bell(ny,.675,.08)*front*
+   (.5+.5*Math.cos(ny*180+nx*31));
+  const nasolabial=bell(nx,.27+.08*(.63-ny),.029)*
+   bell(ny,.51,.099)*front;
+  const mouthCorners=bell(nx,.235,.035)*bell(ny,.478,.027)*front;
+  const ageShade=age.wrinkles*(.17*foreheadBands+.30*crows+
+   .42*nasolabial+.19*mouthCorners);
+  const contactShade=.15*underEye+.085*noseWing+.058*philtrum+
+   .07*lipShade+age.sag*.15*underEye+ageShade;
+  const s=Math.max(.55,1-contactShade);
   const rgb=pigmentFactor(skin,blush,cheek)
-   .multiply(pigmentFactor(skin,lipstick,.30*lipMask));
+   .multiply(pigmentFactor(skin,lipstick,.30*lipMask))
+   .multiplyScalar(s);
   colors.push(rgb.x,rgb.y,rgb.z);
  }
  setVertexMakeup(face,colors);
@@ -411,14 +434,18 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   color:0xbfc3cb,roughness:.54,metalness:0,
   clearcoat:.13,clearcoatRoughness:.39,side:THREE.DoubleSide
  });
- const eyeMat=new THREE.MeshStandardMaterial({
-  color:0xd5d8dd,roughness:.26,metalness:0
+ const eyeMat=new THREE.MeshPhysicalMaterial({
+  // Slightly warm white, natural wet sclera sheen rather than a bright disk.
+  color:0xe6e3df,roughness:.36,metalness:0,
+  clearcoat:.32,clearcoatRoughness:.17
  });
- const irisMat=new THREE.MeshStandardMaterial({
-  color:0x747a83,roughness:.26,metalness:0
+ const irisMat=new THREE.MeshPhysicalMaterial({
+  color:0x747a83,roughness:.32,metalness:0,
+  clearcoat:.40,clearcoatRoughness:.13
  });
- const pupilMat=new THREE.MeshStandardMaterial({
-  color:0x30353b,roughness:.24,metalness:0
+ const pupilMat=new THREE.MeshPhysicalMaterial({
+  color:0x161719,roughness:.15,metalness:0,
+  clearcoat:.28,clearcoatRoughness:.12
  });
  const root=new THREE.Group();
  root.name=gender.toUpperCase()+'_ANATOMICAL_CLAY_FACE_PARTS';
@@ -587,6 +614,20 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   eyePatch.userData.irisFitsApertureWithoutClamp=true;
   eyePatch.userData.eyelinerToCenterBulgeFraction=anteriorGlobeRatio;
   eyePatch.userData.colorRole='sclera';
+  // Occlusion on the INSIDE of the sclera, strongest under the upper lid,
+  // fading into a slight pink scleral margin at either eye corner.
+  const whiteShading=[];
+  for(let j=0;j<=18;j++)for(let i=0;i<=48;i++){
+   const u=i/48,v=j/18;
+   const top=Math.pow(THREE.MathUtils.smoothstep(v,.67,1),2);
+   const corners=Math.pow(Math.abs(u-.5)*2,5);
+   const shade=Math.max(.68,1-.18*top-.045*corners);
+   whiteShading.push(shade,shade*.985,shade*.973);
+  }
+  eyePatch.geometry.setAttribute('color',
+   new THREE.Float32BufferAttribute(whiteShading,3));
+  eyeMat.vertexColors=true;eyeMat.needsUpdate=true;
+  eyePatch.userData.scleralLidOcclusion=true;
   root.add(eyePatch);
   // Both pupils and colored contacts are sections of the same real skin-
   // fitting eye opening. Their radius and colors remain slider-controlled.
@@ -845,8 +886,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
  // Both cheek and lip pigments live on OWNED real head mesh vertices.
  // No separate lipstick sticker can drift over the skin/chin.
  face.userData.actualMouthCreaseY=lipCenter;
- const pigmentCount=female?
-  updateRealFacePigment(face,settings):{lip:0,cheek:0};
+ const pigmentCount=updateRealFacePigment(face,settings,'color',gender);
  const actualLipTintVertices=pigmentCount.lip;
  const actualCheekTintVertices=pigmentCount.cheek;
  // Two subtle natural vermilion volumes still follow the real face

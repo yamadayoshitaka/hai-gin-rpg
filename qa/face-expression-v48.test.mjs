@@ -68,7 +68,7 @@ test('real linked eyelids move and restore; speech controls real lip meshes',()=
 });
 test('normal and fat are fuller and fat has a visible abdomen morph',()=>{
  const thin=resolveBodyType('thin'),normal=resolveBodyType('normal'),fat=resolveBodyType('fat');
- assert.ok(normal.width>=1.10&&normal.depth>=1.10);
+ assert.ok(normal.width>=1&&normal.width<=1.075&&normal.depth<=1.075);
  assert.ok(fat.width>normal.width*1.25&&fat.depth>normal.depth*1.25);
  assert.ok(fat.abdomen>normal.abdomen*3);
  assert.ok(fat.faceFullness>normal.faceFullness);

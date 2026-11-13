@@ -73,6 +73,10 @@ body.costume-only .faceStudioOnly{display:none!important}
  <button id="autoBlink" type="button" aria-pressed="true">瞬き：自動</button>
  <button id="talkDemo" type="button" aria-pressed="false">口パク：停止</button>
  </div>
+ <div class="controls" aria-label="顔の感情表現">
+ <label for="faceExpression">表情
+ <select id="faceExpression" aria-label="表情を10種類から選択"></select></label>
+ </div>
  <div class="controls"><a href="./face-mesh-studio.html?gender=female&hero=1&v=43" class="buttonLink" id="faceEditorLink">顔・髪を編集する</a><a class="buttonLink" href="./male-body-studio.html?v=42">男性主人公の画面へ</a></div>
 <div id="heroActionButtons" class="actionButtonGrid" role="group" aria-label="実戦闘アクションを再生"></div>
 <p id="actionStatus" role="status">アクションを選んで再生してください。</p>
@@ -149,7 +153,7 @@ import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {GLTFExporter} from 'three/addons/exporters/GLTFExporter.js';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {makeIndependentFaceMaster} from './src/independent-face-masters.js';
-import {createFaceExpressionAnimator} from './src/face-expression-animation-v48.js?v=48';
+import {createFaceExpressionAnimator,FACE_EXPRESSIONS} from './src/face-expression-animation-v48.js?v=49';
 import {FEMALE_V7_DEFAULTS,FACE_EYE_SPACING_DEFAULT,FACE_EYE_SPACING_RANGE,FACE_SLIDER_RANGES,CONTACT_COLORS,CONTACT_COLOR_LABELS,safeContactColor,normalizeFemaleFaceControls} from './src/face-v7-controls.js';
 import {applyFaceColorMode} from './src/face-feature-meshes.js';
 import {createScalpAnchoredWig} from './src/face-scalp-wig.js?v=44';
@@ -162,6 +166,7 @@ import {chooseHeroFacePreset,polishHeroFaceControls,mountHeroFacePresetPicker,ma
 import {characterAppearance,mountCharacterCastSelect} from './src/character-cast-v46.js?v=46';
 import {AGE_PROFILES,BODY_PROFILES,applyDemographicFaceControls}
  from './src/character-demographics-v47.js?v=47';
+import {resolveEditedFaceControls,recordFaceManualEdit} from './src/face-state-v49.js?v=49';
 import {HERO_JOBS,HERO_ACTIONS,createHeroineStudioWardrobe} from './src/heroine-studio-wardrobe.js?v=41';
 import {REAL_BATTLE_WARDROBE,createRealBattleOutfitStudio} from './src/heroine-battle-costume-bridge.js?v=42';
 import {loadHeroineFacePreset,saveHeroineFacePreset} from './src/heroine-face-preset-store.js?v=43';
@@ -169,6 +174,12 @@ import {heroineBeautyControlsV43,heroineBeautyControlsV47,HEROINE_BEAUTY_PART_SE
 import {FEMALE_COMMANDER_ART_PALETTE,CHAPTER_ONE_ART_BY_KEY} from './src/chapter-one-character-art-references.js';
 
 const $=id=>document.getElementById(id);
+for(const [key,preset] of Object.entries(FACE_EXPRESSIONS)){
+ const option=document.createElement('option');
+ option.value=key;option.textContent=preset.label;
+ $('faceExpression').append(option);
+}
+
 const art=CHAPTER_ONE_ART_BY_KEY['commander-female'];
 const palette=FEMALE_COMMANDER_ART_PALETTE;
 $('artImage').src='./'+art.image;
@@ -201,7 +212,11 @@ const v32PartMode=new URLSearchParams(location.search).get('qa')!=='legacy';
 if(!v32PartMode)document.body.classList.add('v32-legacy');
 else document.body.classList.add('costume-only');
 const savedHeroinePreset=v32PartMode?loadHeroineFacePreset():null;
+let manualFaceOverrides={};
 let v32BodyPart={...defaultPartSelection(),...HEROINE_BEAUTY_PART_SELECTION_V43,...(savedHeroinePreset?.parts||{})};
+Object.assign(manualFaceOverrides,savedHeroinePreset?.manualOverrides||{});
+let facePolishMode=savedHeroinePreset?.faceMode==='polished'||
+ (true&&!savedHeroinePreset);
 v32BodyPart={...synchronizeHeroHairSelection('female',v32BodyPart,
  savedHeroinePreset?.hairStyleId).parts};
 const migratedBeauty=upgradeUneditedHeroineV42ToV43(savedHeroinePreset?.controls);
@@ -215,12 +230,18 @@ const counter={wigBuilds:0,glbExports:0,hairStyleChanges:0};
 const selectedStudio={jobId:'swordsman',outfitId:'job',actionId:'idle',nativeCommand:null};
 let selectedCastId='',selectedBodyShape='average';
 let expressionAnimator=null;
-const expressionPrefs={autoBlink:true,speaking:false};
+const expressionPrefs={autoBlink:true,speaking:false,expression:'neutral'};
 function refreshExpression(){
  expressionAnimator?.dispose();
  expressionAnimator=model?.face?
   createFaceExpressionAnimator(model,expressionPrefs):null;
+ expressionAnimator?.setExpression(expressionPrefs.expression);
 }
+$('faceExpression').addEventListener('change',()=>{
+ expressionPrefs.expression=$('faceExpression').value;
+ expressionAnimator?.setExpression(expressionPrefs.expression);
+ $('metrics').textContent=JSON.stringify(metrics(),null,2);
+});
 for(const [id,key,onText,offText] of [
  ['autoBlink','autoBlink','瞬き：自動','瞬き：停止'],
  ['talkDemo','speaking','口パク：会話デモ','口パク：停止']
@@ -541,9 +562,12 @@ for(const [key,title,step,group] of faceControlDefinitions){
  input.addEventListener('input',()=>{out.value=input.value;});
  input.addEventListener('change',()=>{
   faceControls[key]=Number(input.value);
+  recordFaceManualEdit(manualFaceOverrides,key,faceControls[key]);
   if(key==='eyeWidth'||key==='eyeHeight')
    faceControls.eyeSize=Math.sqrt(faceControls.eyeWidth*faceControls.eyeHeight);
   rebuildFaceOnBody();
+  syncFaceControls();
+  persistStudioHair();
  });
 }
 // Contact lenses are real, independently materialized curved iris meshes.
@@ -586,16 +610,21 @@ eyeColorInput.addEventListener('input',()=>{
 });
 syncLensPreset();
 function applyPartSelection(picked,completeFace=false){
+ // Age/build/hair do not undo polish. Selecting individual face parts
+ // intentionally switches to editable custom morphology.
+ if(completeFace){manualFaceOverrides={};facePolishMode=true;}
+ else if(['face','eye','nose','mouth'].some(k=>v32BodyPart[k]!==picked[k]))
+  facePolishMode=false;
  const hair=synchronizeHeroHairSelection('female',picked);
  v32BodyPart={...hair.parts};
  const chosen=resolvePartSelection('female',v32BodyPart,FEMALE_V7_DEFAULTS);
- Object.assign(faceControls,normalizeFemaleFaceControls(applyDemographicFaceControls(
-  completeFace?polishHeroFaceControls('female',chosen.controls):chosen.controls,
-  v32BodyPart.ageBand,v32BodyPart.bodyType,'female')));
+ Object.assign(faceControls,resolveEditedFaceControls('female',chosen.controls,
+  v32BodyPart.ageBand,v32BodyPart.bodyType,manualFaceOverrides,facePolishMode));
  $('style').value=hair.styleId;
  $('heroHairStyle').value=hair.styleId;
  $('heroHairVolume').value=picked.hairVolume;
  if(ready){rebuildFaceOnBody();rebuildWig();}
+ syncFaceControls();
  persistStudioHair();
  completeFacePicker?.refresh(v32BodyPart);
 }
@@ -615,12 +644,12 @@ for(const field of ['v47AgeBand','v47BodyType']){
   v32BodyPart={...v32BodyPart,
    ageBand:$('v47AgeBand').value,bodyType:$('v47BodyType').value};
   const selected=resolvePartSelection('female',v32BodyPart,FEMALE_V7_DEFAULTS);
-  Object.assign(faceControls,normalizeFemaleFaceControls(applyDemographicFaceControls(
-   polishHeroFaceControls('female',selected.controls),
-   v32BodyPart.ageBand,v32BodyPart.bodyType,'female')));
+  Object.assign(faceControls,resolveEditedFaceControls('female',selected.controls,
+   v32BodyPart.ageBand,v32BodyPart.bodyType,manualFaceOverrides,facePolishMode));
   if(v32PartMode)mountPartPicker();
   if(ready){rebuildFaceOnBody();rebuildWig();}
   battleCostume?.setDemographics?.(v32BodyPart.ageBand,v32BodyPart.bodyType);
+  syncFaceControls();
   persistStudioHair();
   $('status').textContent=AGE_PROFILES[v32BodyPart.ageBand].label+' / '+
    BODY_PROFILES[v32BodyPart.bodyType].label+'：顔・全身3D更新';
@@ -630,11 +659,13 @@ for(const field of ['v47AgeBand','v47BodyType']){
 mountCharacterCastSelect($('v46Cast'),'female',id=>{
  const look=characterAppearance(id,v32BodyPart);
  selectedCastId=id;selectedBodyShape=look.item.bodyShape;
+ manualFaceOverrides={};facePolishMode=false;
  $('v47AgeBand').value=look.ageBand;
  $('v47BodyType').value=look.bodyType;
  v32BodyPart={...look.parts};
  const selected=resolvePartSelection('female',v32BodyPart,FEMALE_V7_DEFAULTS);
  Object.assign(faceControls,normalizeFemaleFaceControls({...selected.controls,...look.controls}));
+ syncFaceControls();
  $('style').value=look.styleId;$('heroHairStyle').value=look.styleId;
  $('heroHairVolume').value=v32BodyPart.hairVolume;
  if(v32PartMode)mountPartPicker();
@@ -656,7 +687,9 @@ function persistStudioHair(){
  if(!v32PartMode)return;
  saveHeroineFacePreset({parts:{...v32BodyPart},controls:{...faceControls},
   hairStyleId:$('style').value,hairColor:v32BodyPart.hairColor,
-  hairDensity:Number($('wigDensity').value),makeupType:v32BodyPart.makeup,contactColor});
+  hairDensity:Number($('wigDensity').value),makeupType:v32BodyPart.makeup,contactColor,
+  manualOverrides:{...manualFaceOverrides},
+  faceMode:facePolishMode?'polished':'custom'});
 }
 $('heroHairStyle').addEventListener('change',()=>{
  const chosen=synchronizeHeroHairSelection('female',v32BodyPart,$('heroHairStyle').value);

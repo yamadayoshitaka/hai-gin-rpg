@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import {createFastFaceSurfaceSampler} from './face-feature-meshes.js';
 import {getWigStyle,DEFAULT_WIG_STYLE_ID,WIG_BASE_VOLUME_PROFILES,WIG_SILHOUETTE_PROFILES} from './face-wig-styles.js?v=44';
+import {makeStyleSpecificHair} from './face-wig-ornaments-v49.js?v=49';
 
 /**
  * Mobile-preview wig made of real scalp-rooted 3D lock ribbons.
@@ -955,6 +956,13 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   root.add(fineMesh);
   microFibreTriangles=tris.length/3;
  }
+ // Characteristic coiffure sections must have their OWN REAL GEOMETRY.
+ // A bun is not short straight hair with a "bun" label; plaits contain
+ // three interwoven strands and ponytails have a distinct tied root.
+ const styled=makeStyleSpecificHair(styleId,box,rootColor);
+ styled.meshes.forEach(mesh=>root.add(mesh));
+ root.userData.v49StyledHair=styled.type;
+ root.userData.v49StyledHairTriangles=styled.triangleCount;
  // In static studios, fold the fitted hair cap, all strands and fine
  // filaments into ONE Three.js Mesh. The same strand shape is duplicated
  // along its own outward vertex normals with small, progressive offsets;
@@ -963,7 +971,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  let consolidatedHair=null;
  if(staticGroom&&normalLayeredSingleMesh){
   const nodes=[cap,locks,...root.children.filter(node=>
-   node.name==='DETACHABLE_WIG_FINE_FIBRES')];
+   node.name==='DETACHABLE_WIG_FINE_FIBRES'||node.userData?.styledHairGeometry)];
   const positions=[],normals=[],colors=[],indices=[],materials=[];
   const normalLayers=3,normalStep=d.x*.0018;
   let vertexOffset=0;
@@ -1035,6 +1043,9 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  root.userData.wigReport={
   style:'real-scalp-shell-growing-then-trimmed',gender,rooted:true,rootCount:lockCount,
   hairstyleId:style.id,styleLabel:style.label,
+  v49StyledHairType:styled.type,
+  v49StyledHairMeshCount:styled.meshes.length,
+  v49StyledHairTriangles:styled.triangleCount,
   silhouette3dProfile:{...silhouette},
   hairColoredOpaqueRoot:cap.userData.hairColoredOpaqueRoot,
   frontRootCoverage:'lower-scalp-cap-and-overlapping-hair-cards',
@@ -1119,7 +1130,8 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   zoneCandidateCounts:Object.fromEntries(Object.entries(pools).map(([key,list])=>[key,list.length])),
   collisionTypes:['head','face','neck','shoulder','chest',...externalColliders.map(c=>c.name||'body')],
   usesRealBodyTriangleContacts:!!bodyCollisionResolver,
-  meshCount:staticGroom&&normalLayeredSingleMesh?1:3+(fiberMultiplier>1?1:0),
+  meshCount:staticGroom&&normalLayeredSingleMesh?1:
+   3+(fiberMultiplier>1?1:0)+styled.meshes.length,
   physicsHz:staticGroom?0:20,
   normalUpdateDivisor:staticGroom?0:3,
   physicsGuideCount:staticGroom?0:guideCount,
