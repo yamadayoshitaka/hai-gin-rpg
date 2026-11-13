@@ -25,6 +25,7 @@ assert.equal(briefs.maxScenesPerSheet,5);
 assert.equal(summary.p0Priority,'P0_ABSOLUTE_MUST_FOLLOW');
 assert.deepEqual(summary.reviewSheetPreferredPixels,[4096,3456]);
 assert.equal(summary.maxScenesPerReviewSheet,5);
+assert.deepEqual(summary.mobileNativeMinimumPixels,[768,320]);
 assert.equal(summary.generatorSupportsDirectFullResolution,'UNVERIFIED');
 assert.equal(summary.oneInvocationOneStage,true);
 assert.equal(summary.requiredPanels,48);
@@ -45,7 +46,9 @@ assert.equal(locked.layout.maxRows,3);
 assert.equal(locked.layout.maxPanelsPerPoster,5);
 assert.equal(locked.layout.nativeSheetPipeline.maximumFramesPerSheet,5);
 assert.deepEqual(locked.layout.nativeSheetPipeline.preferredFullFivePanelSheetPixels,[4096,3456]);
-assert.deepEqual(locked.layout.nativeSheetPipeline.minimumFullFivePanelSheetPixels,[3072,2592]);
+assert.deepEqual(locked.layout.nativeSheetPipeline.minimumFullFivePanelSheetPixels,[1536,960]);
+assert.deepEqual(locked.layout.minPerPanelNativePixels,[768,320]);
+assert.equal(locked.layout.aspectRatio,'PRESERVE_ORIGINAL_ASPECT_WITH_OBJECT_FIT_CONTAIN');
 assert.equal(locked.layout.nativeSheetPipeline.minimumFullTenPanelSheetPixels,undefined);
 assert.equal(locked.layout.nativeSheetPipeline.originalGeneratorSupports4096x3456,'UNVERIFIED_DO_NOT_ASSUME');
 assert.equal(locked.layout.bulkNativeSheetBatches.maxCanonicalFramesPerSheet,5);
@@ -91,7 +94,7 @@ for(const v of manifest.stages[0].variants){
   assert.equal(page.stageBatch.approval,'NOT_APPROVED');
   assert(page.stageBatch.strictPictorialOnlyPrompt.startsWith('P0_ABSOLUTE_MUST_FOLLOW.'));
   assert(page.stageBatch.strictPictorialOnlyPrompt.includes('P0_REFERENCE_IMAGE_BYTES'));
-  assert(page.stageBatch.strictPictorialOnlyPrompt.includes('P0_HIGHEST_NATIVE_RESOLUTION'));
+  assert(page.stageBatch.strictPictorialOnlyPrompt.includes('P0_MOBILE_NATIVE_MINIMUM'));
   assert(!posterInputs.has(page.stageBatch.sourcePoster));
   posterInputs.add(page.stageBatch.sourcePoster);
   assert.deepEqual(page.panelIds,lockedSheet.panelIds);
@@ -102,7 +105,7 @@ for(const v of manifest.stages[0].variants){
    assert.equal(shot.realCastImageBytesAttached,false);
    assert.equal(shot.renderReady,false);
    assert.equal(shot.approval.approved,false);
-   assert.deepEqual(shot.individualMinPixels,[1536,864]);
+   assert.deepEqual(shot.individualMinPixels,[768,320]);
    assert(!keys.has(shot.shotKey));
    keys.add(shot.shotKey);
   }
