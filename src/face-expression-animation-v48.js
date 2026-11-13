@@ -161,7 +161,7 @@ export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=fals
  const size=face.geometry.boundingBox.getSize(new THREE.Vector3());
  const sides=['LEFT','RIGHT'].map(side=>buildSide(parts,side,size)).filter(Boolean);
  const mouth=buildMouth(face,parts,size);
- let elapsed=0,blink=0,mouthOpen=0,manualMouth=null,disposed=false;
+ let elapsed=0,blink=0,mouthOpen=0,manualMouth=null,forcedBlink=null,disposed=false;
  const state={autoBlink:!!autoBlink,speaking:!!speaking};
  const setBlink=value=>{
   blink=clamp(value);
@@ -189,7 +189,7 @@ export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=fals
  const update=dt=>{
   if(disposed)return;
   elapsed+=Math.max(0,Math.min(.10,Number(dt)||0));
-  setBlink(state.autoBlink?blinkEnvelope(elapsed):0);
+  setBlink(forcedBlink===null?(state.autoBlink?blinkEnvelope(elapsed):0):forcedBlink);
   setMouthOpen(manualMouth!==null?manualMouth:
    state.speaking?speechEnvelope(elapsed):0);
  };
@@ -208,6 +208,11 @@ export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=fals
  return {
   update,dispose,setAutoBlink:on=>{state.autoBlink=!!on;if(!on)setBlink(0);},
   setSpeaking:on=>{state.speaking=!!on;if(!on&&manualMouth===null)setMouthOpen(0);},
+  // Stable direct preview/QA pose. Passing null restores periodic blinking.
+  setBlinkProgress:value=>{
+   forcedBlink=value===null?null:clamp(value);
+   setBlink(forcedBlink===null?0:forcedBlink);
+  },
   setMouthOpen:value=>{manualMouth=value===null?null:clamp(value);setMouthOpen(manualMouth??0);},
   getState:()=>({autoBlink:state.autoBlink,speaking:state.speaking,
    blink:Number(blink.toFixed(3)),mouthOpen:Number(mouthOpen.toFixed(3)),
