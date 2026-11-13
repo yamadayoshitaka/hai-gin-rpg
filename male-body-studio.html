@@ -25,6 +25,12 @@ button:disabled{opacity:.48;cursor:not-allowed}
 .heroSelectGrid label{font-size:13px;font-weight:600;margin:0}
 .heroSelectGrid select{font-size:14px;min-height:43px;margin-top:5px;width:100%;background:#213f58;border-color:#78a5b4}
 #heroStudioSelectors .note{margin-bottom:0}
+.hero-face-preset-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin:9px 0}
+.hero-face-preset-grid button{font-size:12px;text-align:left;min-height:48px;padding:8px;white-space:normal}
+.hero-face-preset-grid button[aria-pressed=true]{background:#236959;border-color:#b8e8d8}
+.hero-face-preset-title{font-size:15px;margin:14px 0 0}
+@media(min-width:900px){.hero-face-preset-grid{grid-template-columns:repeat(5,minmax(0,1fr))}}
+
 #metrics{font-size:11px;overflow:auto;white-space:pre-wrap;max-height:330px}
 label{display:block;margin:10px 0}select{width:100%}
 .buttonLink{display:inline-flex;align-items:center;justify-content:center;padding:11px 15px;border:1px solid #a3d9cc;border-radius:11px;background:#246b5b;color:white;text-decoration:none;font-weight:700}
@@ -83,7 +89,8 @@ body.costume-only .faceStudioOnly{display:none!important}
 <label for="heroHairStyle">髪型パターン<select id="heroHairStyle" aria-label="髪型パターンを選択"></select></label>
 <label for="heroHairVolume">髪ボリューム<select id="heroHairVolume" aria-label="髪ボリュームを選択"></select></label>
 <label for="heroHairDensity">髪の密度<select id="heroHairDensity" aria-label="髪の描画密度を選択"><option value="1">軽量1倍</option><option value="3">軽量3倍</option><option value="5" selected>高画質5倍</option><option value="10">最高画質10倍</option></select></label>
-</div><p class="note">全10職業で衣装の下の実人体（太腿・すね・足）を保持します。ボタンは登録済みの実モーションのみ表示し、未登録の勝利ポーズ等は作りません。戦闘本体は変更しません。</p>
+</div><h3 class="hero-face-preset-title">完成顔を選択（男性10種類）</h3>
+<div id="v45FacePresetGrid"></div><p class="note">全10職業で衣装の下の実人体（太腿・すね・足）を保持します。ボタンは登録済みの実モーションのみ表示し、未登録の勝利ポーズ等は作りません。戦闘本体は変更しません。</p>
 </section>
 <section id="v32BodyPartStudio"><h2>美少年3Dパーツを選択（各10種以上）</h2><div id="v32BodyChoices"></div>
 <label for="v32HairDensity">髪の描画密度<select id="v32HairDensity"><option value="1">軽量 1倍</option><option value="3">標準 3倍</option><option value="5" selected>高画質 5倍</option><option value="10">高密度 10倍</option></select></label></section>
@@ -140,6 +147,7 @@ import {defaultPartSelection,resolvePartSelection,PART_CATALOG} from './src/face
 import {attachIndependentHeadToBody,removeHeadBustBelowNeck,createSealedNeckBridge} from './src/face-body-assembly.js';
 import {listWigStyles,DEFAULT_WIG_STYLE_ID,WIG_BASE_VOLUME_PROFILES} from './src/face-wig-styles.js?v=44';
 import {resolveHeroHairSpec,synchronizeHeroHairSelection} from './src/hero-hair-controls-v43.js?v=44';
+import {chooseHeroFacePreset,polishHeroFaceControls,mountHeroFacePresetPicker,matchHeroFacePreset} from './src/hero-face-presets-v45.js?v=45';
 import {HERO_JOBS,HERO_ACTIONS,createHeroineStudioWardrobe} from './src/heroine-studio-wardrobe.js?v=41';
 import {REAL_BATTLE_WARDROBE,createRealBattleOutfitStudio} from './src/heroine-battle-costume-bridge.js?v=42';
 import {loadMaleFacePreset,saveMaleFacePreset} from './src/male-face-preset-store.js?v=43';
@@ -281,6 +289,7 @@ function metrics(){
   sourceHeadUnchanged:true,sourceBodyUnchanged:true,
   editableFaceControls:{...faceControls},
   v32PartSelection:{...v32BodyPart},
+  completeFacePreset:matchHeroFacePreset('male',v32BodyPart),
   v33HairColor:v32BodyPart.hairColor,
   v35Wardrobe:wardrobe?.getState()||{...selectedStudio},
   v36RealBattleCostume:battleCostume?.getState()||null,
@@ -526,19 +535,30 @@ eyeColorInput.addEventListener('input',()=>{
  syncLensPreset();paintLens();
 });
 syncLensPreset();
-function applyPartSelection(picked){
+function applyPartSelection(picked,completeFace=false){
  const hair=synchronizeHeroHairSelection('male',picked);
  v32BodyPart={...hair.parts};
  const chosen=resolvePartSelection('male',v32BodyPart,MALE_REFERENCE_DEFAULT);
- Object.assign(faceControls,normalizeMaleFaceControls(chosen.controls));
+ Object.assign(faceControls,normalizeMaleFaceControls(
+  completeFace?polishHeroFaceControls('male',chosen.controls):chosen.controls));
  $('style').value=hair.styleId;
  $('heroHairStyle').value=hair.styleId;
  $('heroHairVolume').value=picked.hairVolume;
  if(ready){rebuildFaceOnBody();rebuildWig();}
  persistStudioHair();
+ completeFacePicker?.refresh(v32BodyPart);
 }
 const mountPartPicker=()=>createPartSelectorUI(
  $('v32BodyChoices'),'male',v32BodyPart,applyPartSelection);
+const completeFacePicker=mountHeroFacePresetPicker($('v45FacePresetGrid'),{
+ gender:'male',getParts:()=>v32BodyPart,
+ onPick:index=>{
+  const picked=chooseHeroFacePreset('male',index,v32BodyPart);
+  applyPartSelection(picked,true);
+  if(v32PartMode)mountPartPicker();
+  $('status').textContent='完成顔 '+String(index+1).padStart(2,'0')+' を3Dへ反映しました';
+ }
+});
 if(v32PartMode){
  mountPartPicker();
  $('v32HairDensity').addEventListener('change',()=>{

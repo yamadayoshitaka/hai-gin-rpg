@@ -51,7 +51,7 @@ function actualScalpCandidates(geo,box){
   if(yn>.825&&nz<.21)pools.crown.push(sample);
   // True forehead hairline grows from the top cap, never from between the
   // eyebrows or the cheeks (these generated the disconnected tiny spikes).
-  if(yn>.895&&nz>.025&&yn<.992)pools['fringe'+side].push(sample);
+  if(yn>.870&&nz>.035&&yn<.992)pools['fringe'+side].push(sample);
   if(Math.abs(nx)>.185&&yn>.81&&yn<.94&&nz>-.075)
    pools['temple'+side].push(sample);
   // Rear/nape roots must originate in the posterior hemisphere.
@@ -206,7 +206,7 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
   // the rear nape; no floating rectangle across the rear neck.
   // The front cap is ONLY a scalp covering, never a second set of little
   // triangles growing from the forehead, eyebrow or glabella.
-  const yCut=box.min.y+d.y*(zNorm>.10?.887:
+  const yCut=box.min.y+d.y*(zNorm>.10?.850:
    zNorm<-.035?.58:
    Math.abs((mid.x-center.x)/d.x)>.19?.68:.71);
   if(p.some(vertex=>vertex.y<yCut))continue;
@@ -498,8 +498,10 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
     (fringe?silhouette.fringeDrop:Math.min(.035,silhouette.fringeDrop)));
   // Long feathered bangs from the real high hairline to the eyebrow level.
   // The old 0.09-head-height cap ended halfway down the forehead.
-  const bangLength=d.y*(.225+.040*cutPhase+silhouette.fringeDrop*.16)*
-   clamp(lengthScale,minLengthScale,1.5);
+  const bangLength=d.y*(.235+.045*cutPhase+silhouette.fringeDrop*.25)*
+   // Men's long cuts used lengthScale .33-.58 and clipped EVERY bang
+   // halfway up the forehead. Only shortCutKind may remain cropped.
+   Math.max(.86,clamp(lengthScale,minLengthScale,1.5));
   const cutKind=style.shortCutKind||null;
   const shortLength=cutKind==='buzz'?.013:
    cutKind==='very-short'?.060:.15;
@@ -747,11 +749,12 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    // broad clean midsection and softly tapered point-cut tip. Keeping
    // crown cards narrow prevents the interlocking square tiles visible
    // in the previous overhead screenshots.
-   const rootProfile=.36+.64*THREE.MathUtils.smoothstep(t,0,.23);
+   const rootProfile=(strand.fringe?.56:.36)+
+    (strand.fringe?.44:.64)*THREE.MathUtils.smoothstep(t,0,.23);
    const width=half*tip*rootProfile*(.90+.15*fract(i*.35))*
-    (strand.zone.startsWith('fringe')?.17:
+    (strand.zone.startsWith('fringe')?.43:
      strand.zone.startsWith('temple')?.58:
-     strand.zone==='crown'?.56:
+     strand.zone==='crown'?.70:
      strand.zone.startsWith('back')?.88:
      strand.zone.startsWith('nape')?.82:.86);
     // Groom BOTH ribbon planes along the actual hair-guide tangent.
@@ -1034,6 +1037,9 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   hairstyleId:style.id,styleLabel:style.label,
   silhouette3dProfile:{...silhouette},
   hairColoredOpaqueRoot:cap.userData.hairColoredOpaqueRoot,
+  frontRootCoverage:'lower-scalp-cap-and-overlapping-hair-cards',
+  fringeCardWidthFactor:.43,
+  maleLongFringeMinimumScale:.86,
   hairRootColor:cap.userData.hairRootColor,
   wigAssetType:'independent-wig',centerPart:style.part==='center',
   visualFiberMultiplier:fiberMultiplier,visualFiberCount:lockCount*fiberMultiplier,

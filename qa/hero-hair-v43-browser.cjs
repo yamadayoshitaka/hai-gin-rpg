@@ -66,6 +66,21 @@ const hex=bytes=>crypto.createHash('sha256').update(bytes).digest('hex');
    const after=await page.evaluate(()=>window.__faceMasterQA());
    if(after.gender!==gender||after.wigReport?.hairstyleId!=='buzz-cut')
     throw Error('Final 3D hairstyle differs from UI: '+gender);
+   // Complete face choices must change real face sculpt without changing
+   // the selected hairstyle and must retain the v43 eye quality.
+   const faceButton=page.locator('#v45'+label+'FacePresets button[data-preset-index="2"]');
+   const hairBefore=after.wigReport?.hairstyleId;
+   await faceButton.click();
+   await page.waitForFunction(({gender})=>{
+    const snapshot=window.__faceMasterQA?.();
+    return snapshot?.gender===gender&&snapshot?.completeFacePreset===2&&
+     snapshot?.wigReport?.hairstyleId==='buzz-cut';
+   },{gender},{timeout:90000});
+   const faceAfter=await page.evaluate(()=>window.__faceMasterQA());
+   if(faceAfter.wigReport?.hairstyleId!==hairBefore)
+    throw Error('Changing complete face unexpectedly changed hairstyle');
+   if(gender==='female'&&faceAfter.femaleControls.eyeDepth>-.15)
+    throw Error('Complete face degraded eye depth');
    if(gender==='female'){
     if(after.femaleControls.irisDiameter!==prior.femaleControls.irisDiameter)
      throw Error('Changing hair reset the heroine iris');
