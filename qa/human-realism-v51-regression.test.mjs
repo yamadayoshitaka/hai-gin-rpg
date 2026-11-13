@@ -10,6 +10,8 @@ import {enhanceStudioBodyMaterials,syncStudioBodyOutfitVisibility,
  alignStudioHeadToSkinnedTorso,fitStudioNeckContinuity}
  from '../src/heroine-battle-costume-bridge.js';
 import {applyHeroineSkinMaterial} from '../src/heroine-skin-material.js';
+import {femaleInnerFeatureDelta} from '../src/independent-face-masters.js';
+import {FEMALE_V7_DEFAULTS,normalizeMaleFaceControls} from '../src/face-v7-controls.js';
 
 test('normal human build stays standard-width but has slimmer skinned legs and softer cheeks',()=>{
  assert.equal(BODY_PROFILES.normal.width,1);
@@ -311,4 +313,29 @@ test('v55 high head is lowered as a whole and cannot regrow a giraffe neck',()=>
  headMesh.geometry.dispose();headMesh.material.dispose();
  hair.geometry.dispose();hair.material.dispose();
  torso.geometry.dispose();torso.material.dispose();
+});
+
+test('v55 anatomical neutral nose tips face gently down, not upward, in both sexes',()=>{
+ const morph=(xn,yn,controls)=>femaleInnerFeatureDelta({
+  xn,yn,zn:.98,offsetX:xn*.08,depth:.30,height:.40,controls
+ });
+ const female=morph(0,.566,FEMALE_V7_DEFAULTS);
+ const male=morph(0,.566,normalizeMaleFaceControls({}));
+ assert.ok(female.dy<-.003,'neutral female nose tip must slope downward');
+ assert.ok(male.dy<-.003,'neutral male nose tip must slope downward');
+ assert.ok(Math.abs(male.dy-female.dy)<1e-12,
+  'male and female base geometry must share the corrected neutral nasal slope');
+ const nostril=morph(.18,.53,FEMALE_V7_DEFAULTS);
+ assert.ok(nostril.dy<0,'alar rim should protect nostril from front view');
+ const side=morph(.40,.566,FEMALE_V7_DEFAULTS);
+ assert.deepEqual(side,{dx:0,dy:0,dz:0,noseSupport:0,mouthSupport:0},
+  'nose correction must not change cheeks, jaw or side-of-face geometry');
+ const behind=femaleInnerFeatureDelta({
+  xn:0,yn:.566,zn:.05,offsetX:0,depth:.30,height:.40,controls:FEMALE_V7_DEFAULTS
+ });
+ assert.equal(behind.dy,0,'back of head must not move');
+ const optionalUpturn=morph(0,.566,{...FEMALE_V7_DEFAULTS,noseTipLift:2});
+ assert.ok(optionalUpturn.dy>0,'user may explicitly choose a raised nose if desired');
+ const straight=morph(0,.566,{...FEMALE_V7_DEFAULTS,noseTipLift:.6});
+ assert.ok(Math.abs(straight.dy)<.001,'catalog-style moderate nose cannot accidentally lift upward');
 });
