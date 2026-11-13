@@ -73,7 +73,7 @@ assert.match(gallery,/createCosplayedHumanoidMonster\(m,\{detail\}\)/,
  'Viewer must actually select character-base monster models');
 assert.match(gallery,/mode==='procedural'\?humanoidMonsterCostumeFor\(m\):null/,
  'User-selected external GLB overrides must retain priority');
-assert.match(gallery,/costumeHandle\.ready\.then/,
+assert.match(gallery,/pending\.ready\.then/,
  'Async canonical source must update preview only after load');
 assert.match(gallery,/__monsterCosplayQA/,
  'Live visual source should be auditable on user device');
