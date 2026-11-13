@@ -68,6 +68,13 @@ export function applyDemographicFaceControls(controls={},ageBand='twenties',body
    beardDensity:age.id==='under10'?0:Math.max(0,Math.min(1,Number(base.beardDensity??age.beard)))}
    :{lashLength:age.id==='under10'?1.10:
      Math.max(.5,Math.min(2.1,Number(base.lashLength)||1.4))}),
+  // No five-o'clock shadow on an unedited young hero; manually selected
+  // dense beards and older NPC beard profiles stay available.
+  ...(gender==='male'?{
+   beardDensity:age.id==='under10'||age.id==='teens'?0:
+    age.id==='twenties'&&Number(base.beardDensity??age.beard)<=.35?0:
+    Math.max(0,Math.min(1,Number(base.beardDensity??age.beard)))}
+   :{}),
   // Geometry is not deepened when user chooses older or more weight.
   eyeDepth:Math.max(.02,Number(base.eyeDepth)||0)
  };

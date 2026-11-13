@@ -69,7 +69,9 @@ export function polishHeroFaceControls(gender,controls={}){
  };
  if(gender==='male')return {
   ...controls,eyeDepth:Math.max(.035,Number(controls.eyeDepth)||0),
-  irisDiameter:Math.max(1.08,Number(controls.irisDiameter)||1.08)
+  irisDiameter:Math.max(1.19,Number(controls.irisDiameter)||1.19),
+  eyeHeight:Math.max(1.11,Number(controls.eyeHeight)||1),
+  eyeWidth:Math.max(1.10,Number(controls.eyeWidth)||1)
  };
  throw Error('Unknown face gender '+gender);
 }
