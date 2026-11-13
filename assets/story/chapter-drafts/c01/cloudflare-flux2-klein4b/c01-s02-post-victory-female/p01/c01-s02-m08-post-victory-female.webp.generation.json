@@ -1,0 +1,56 @@
+{
+  "kind": "ACTUAL_CLOUDFLARE_GENERATED_FRAME_REVIEW_REQUIRED",
+  "shotKey": "c01-s02|post-victory|female|c01-s02-m8",
+  "stageId": "c01-s02",
+  "edition": "post-victory",
+  "gender": "female",
+  "panelId": "c01-s02-m8",
+  "nativePixels": [
+    1024,
+    576
+  ],
+  "outputPath": "assets/story/chapter-drafts/c01/cloudflare-flux2-klein4b/c01-s02-post-victory-female/p01/c01-s02-m08-post-victory-female.webp",
+  "imageSha256": "457d8ff5ed533931f5bd10860e75e8ccd8187edf874c4df8efccf6475658190a",
+  "outputBytes": 162144,
+  "sourceModel": "@cf/black-forest-labs/flux-2-klein-4b",
+  "generationSeed": 1804412685,
+  "renderPromptSha256": "11384e05ab95080ce45a9dd66c1f2d8ecf5cb3dbead64e7f636f7e137e37f0a0",
+  "sceneGoal": "証言の食い違いを確認する軍議",
+  "screenplayText": "人々は同じ出来事を少しずつ異なる言葉で語り、軍師は証言を照合する。 勝つだけなら将軍を呼びます。あなたには、何のために勝つかを決めてほしい。",
+  "speaker": "リュシア",
+  "compositionHint": "リュシアが主人公に証言の違いを伝える二人中心の中景。記録は判読できない紙面にし、文字を描かない。",
+  "visibleActorIds": [
+    "lucia",
+    "commander_female"
+  ],
+  "referencePayloadsSubmitted": [
+    {
+      "actorId": "lucia",
+      "originalPath": "assets/story/characters/lucia/master.webp",
+      "originalSha256": "87005a46d3b4a23714a25f1f9b2d46fee9a1ce3c6b5af0be78f85a1f1fd2b411",
+      "submittedInputSha256": "91344ba790293c03406ca1804f0360d135b0015aa75cc5b68d7904fc72de1173",
+      "thumbnailPixels": [
+        439,
+        480
+      ],
+      "attachedAs": "input_image_0"
+    },
+    {
+      "actorId": "commander_female",
+      "originalPath": "assets/story/characters/commander/female-master.webp",
+      "originalSha256": "757587a68647aa6637111110ef5c41d8f5827be0f10a204a7f7b14fde71182bf",
+      "submittedInputSha256": "7f8979767877bdd8148b133d56ce7e38c8fad2fe6436c1d327efcb66bf509a61",
+      "thumbnailPixels": [
+        384,
+        480
+      ],
+      "attachedAs": "input_image_1"
+    }
+  ],
+  "physicalReferencesActuallyAttached": true,
+  "identityMatchHumanApproved": false,
+  "screenplayMatchHumanApproved": false,
+  "noTextDigitsUiHumanApproved": false,
+  "visuallyApproved": false,
+  "approvedForFormalGameRegistration": false
+}
