@@ -84,7 +84,12 @@ button{padding:9px 11px}
 <button id="wig" aria-pressed="true" disabled>金髪ロング ON</button>
 <button id="clay" aria-pressed="false" disabled>灰色メッシュ</button>
 <button id="color" aria-pressed="true" disabled>カラー表示</button>
-</div></div>
+</div>
+<div class="controls" aria-label="3D表情アニメーション">
+<button id="autoBlink" type="button" aria-pressed="true" disabled>瞬き：自動</button>
+<button id="talkDemo" type="button" aria-pressed="false" disabled>口パク：停止</button>
+</div>
+</div>
 <section id="v32PartsStudio"><h2>完成顔を選ぶ（男女それぞれ10種類）</h2>
 <p class="v45Hint">顔型・目・鼻・口・メイクをまとめて切り替えます。髪型と髪色はそのまま保存されます。</p>
 <div class="controls" aria-label="年代と顔の体型">
@@ -196,6 +201,7 @@ import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {GLTFExporter} from 'three/addons/exporters/GLTFExporter.js';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {makeIndependentFaceMaster,FACE_MASTER_SPEC} from './src/independent-face-masters.js';
+import {createFaceExpressionAnimator} from './src/face-expression-animation-v48.js?v=48';
 import {updateFaceFeatureAngles,applyFaceColorMode,updateRealFacePigment} from './src/face-feature-meshes.js';
 import {createScalpAnchoredWig} from './src/face-scalp-wig.js?v=44';
 import {createPartSelectorUI} from './src/face-part-selector-ui-v32.js?v=41';
@@ -321,6 +327,25 @@ for(const style of listWigStyles('female')){
 }
 $('wigStyle').value=wigStyleId;
 const performanceMetrics={headRebuilds:0,wigRebuilds:0,fastLipstickRepaints:0};
+const expressionPrefs={autoBlink:true,speaking:false},expressions=new Map();
+function refreshExpression(sex){
+ expressions.get(sex)?.dispose();
+ const instance=models.get(sex);
+ if(instance)expressions.set(sex,createFaceExpressionAnimator(instance,expressionPrefs));
+}
+for(const [id,key,labelOn,labelOff] of [
+ ['autoBlink','autoBlink','瞬き：自動','瞬き：停止'],
+ ['talkDemo','speaking','口パク：会話デモ','口パク：停止']
+]){
+ $(id).addEventListener('click',()=>{
+  expressionPrefs[key]=!expressionPrefs[key];
+  for(const expression of expressions.values())
+   key==='autoBlink'?expression.setAutoBlink(expressionPrefs[key]):
+    expression.setSpeaking(expressionPrefs[key]);
+  $(id).setAttribute('aria-pressed',String(expressionPrefs[key]));
+  $(id).textContent=expressionPrefs[key]?labelOn:labelOff;
+ });
+}
 function persistHeroineFace(){
  if(!ready||!v32PartMode)return;
  saveHeroineFacePreset({parts:{...v32Parts.female},controls:{...modelChanges},
@@ -342,6 +367,7 @@ function metrics(){
  const model=models.get(gender);
  return {loaded:ready,gender,view:angle,wire:wired,partsOn,
   faceMode,contactColor,performanceMetrics:{...performanceMetrics},
+  expression:expressions.get(gender)?.getState()||null,
   v32PartSelection:{...v32Parts[gender]},
   completeFacePreset:matchHeroFacePreset(gender,v32Parts[gender]),
   v32CatalogCounts:Object.fromEntries(Object.entries(PART_CATALOG[gender]).map(([k,a])=>[k,a.length])),
@@ -552,6 +578,7 @@ function rebuildFemale(){
  next.parts.visible=partsOn;
  scene.add(next.root);
  models.set('female',next);
+ refreshExpression('female');
  applyFaceColorMode(next.face,faceMode,{contactColor,makeupType:v32Makeup.female});
  // Nose, chin and lipstick do not change the rear/crown hair follicles.
  // Reparent existing 1440-strand wig instead of rebuilding its geometry.
@@ -595,6 +622,7 @@ function rebuildMale(){
  next.root.visible=gender==='male';
  next.parts.visible=partsOn;
  scene.add(next.root);models.set('male',next);
+ refreshExpression('male');
  applyFaceColorMode(next.face,faceMode,{contactColor,makeupType:v32Makeup.male});
  performanceMetrics.headRebuilds++;
  if(wired)next.face.traverse(o=>{if(o.isMesh)o.material.wireframe=true;});
@@ -1010,10 +1038,11 @@ async function init(){
    models.set(g,model);scene.add(model.root);
   }
   ready=true;
+  for(const sex of ['female','male'])refreshExpression(sex);
   if(savedHeroinePreset?.hairDensity){$('wigDensity').value=String(wigDensity);
    $('wigDensityValue').value=String(wigDensity)+'束';}
   rebuildWig();rebuildMaleHair();
-  for(const id of ['female','male','front','threeQuarter','side','back','crown','wire','parts','wig','clay','color','resetPreset','resetMalePreset','export','exportWig','heroineBeautyV43'])
+  for(const id of ['female','male','front','threeQuarter','side','back','crown','wire','parts','wig','clay','color','resetPreset','resetMalePreset','export','exportWig','heroineBeautyV43','autoBlink','talkDemo'])
    $(id).disabled=false;
   const query=new URLSearchParams(location.search);
   selectGender(query.get('gender')==='male'?'male':'female');
@@ -1028,6 +1057,7 @@ async function init(){
 }
 function frame(){
  const dt=faceClock.getDelta();
+ expressions.get(gender)?.update(dt);
  if(wigOn&&models.get('female')?.root.visible)wigs.get('female')?.update(dt);
  resize();orbit.update();renderer.render(scene,camera);
  requestAnimationFrame(frame);

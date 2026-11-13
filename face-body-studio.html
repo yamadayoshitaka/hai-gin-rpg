@@ -69,7 +69,11 @@ body.costume-only .faceStudioOnly{display:none!important}
 <button id="back" aria-pressed="false" disabled>後頭部</button>
 <button id="crown" aria-pressed="false" disabled>頭頂部</button>
 </div>
-<div class="controls"><a href="./face-mesh-studio.html?gender=female&hero=1&v=43" class="buttonLink" id="faceEditorLink">顔・髪を編集する</a><a class="buttonLink" href="./male-body-studio.html?v=42">男性主人公の画面へ</a></div>
+ <div class="controls" aria-label="3D表情アニメーション">
+ <button id="autoBlink" type="button" aria-pressed="true">瞬き：自動</button>
+ <button id="talkDemo" type="button" aria-pressed="false">口パク：停止</button>
+ </div>
+ <div class="controls"><a href="./face-mesh-studio.html?gender=female&hero=1&v=43" class="buttonLink" id="faceEditorLink">顔・髪を編集する</a><a class="buttonLink" href="./male-body-studio.html?v=42">男性主人公の画面へ</a></div>
 <div id="heroActionButtons" class="actionButtonGrid" role="group" aria-label="実戦闘アクションを再生"></div>
 <p id="actionStatus" role="status">アクションを選んで再生してください。</p>
 <div class="controls">
@@ -145,6 +149,7 @@ import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {GLTFExporter} from 'three/addons/exporters/GLTFExporter.js';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {makeIndependentFaceMaster} from './src/independent-face-masters.js';
+import {createFaceExpressionAnimator} from './src/face-expression-animation-v48.js?v=48';
 import {FEMALE_V7_DEFAULTS,FACE_EYE_SPACING_DEFAULT,FACE_EYE_SPACING_RANGE,FACE_SLIDER_RANGES,CONTACT_COLORS,CONTACT_COLOR_LABELS,safeContactColor,normalizeFemaleFaceControls} from './src/face-v7-controls.js';
 import {applyFaceColorMode} from './src/face-feature-meshes.js';
 import {createScalpAnchoredWig} from './src/face-scalp-wig.js?v=44';
@@ -209,6 +214,25 @@ let contactColor=savedHeroinePreset?.contactColor||palette.iris;
 const counter={wigBuilds:0,glbExports:0,hairStyleChanges:0};
 const selectedStudio={jobId:'swordsman',outfitId:'job',actionId:'idle',nativeCommand:null};
 let selectedCastId='',selectedBodyShape='average';
+let expressionAnimator=null;
+const expressionPrefs={autoBlink:true,speaking:false};
+function refreshExpression(){
+ expressionAnimator?.dispose();
+ expressionAnimator=model?.face?
+  createFaceExpressionAnimator(model,expressionPrefs):null;
+}
+for(const [id,key,onText,offText] of [
+ ['autoBlink','autoBlink','瞬き：自動','瞬き：停止'],
+ ['talkDemo','speaking','口パク：会話デモ','口パク：停止']
+]){
+ $(id).addEventListener('click',()=>{
+  expressionPrefs[key]=!expressionPrefs[key];
+  if(key==='autoBlink')expressionAnimator?.setAutoBlink(expressionPrefs[key]);
+  else expressionAnimator?.setSpeaking(expressionPrefs[key]);
+  $(id).setAttribute('aria-pressed',String(expressionPrefs[key]));
+  $(id).textContent=expressionPrefs[key]?onText:offText;
+ });
+}
 for(const [key,profile] of Object.entries(AGE_PROFILES)){
  const option=document.createElement('option');option.value=key;
  option.textContent=profile.label;$('v47AgeBand').append(option);
@@ -314,6 +338,7 @@ function metrics(){
   v32PartSelection:{...v32BodyPart},
   completeFacePreset:matchHeroFacePreset('female',v32BodyPart),
   selectedCastId,selectedBodyShape,
+  expression:expressionAnimator?.getState()||null,
   v33HairColor:v32BodyPart.hairColor,
   v35Wardrobe:wardrobe?.getState()||{...selectedStudio},
   v36RealBattleCostume:battleCostume?.getState()||null,
@@ -448,6 +473,7 @@ function rebuildFaceOnBody(){
  // Rebuild the geometry in-place. The user may be pinching to inspect eyes
  // or nose: no fitCamera(), zoom mode, orbit target or orientation reset.
  model=next;neckCrop=cropped;
+ refreshExpression();
  wardrobe?.attachActor(next.root);
  battleCostume?.attachFace(next);
  applyHairOnlyView();
@@ -838,6 +864,7 @@ const clock=new THREE.Clock();
 function frame(){
  requestAnimationFrame(frame);
  const dt=clock.getDelta();
+ expressionAnimator?.update(dt);
  // Static groom: baked mesh and no per-frame hair physics.
  if(battleCostume)battleCostume.update(dt);
  else wardrobe?.update(dt);
@@ -878,6 +905,7 @@ frame();
    bodyCutY:bodyAttachment.report.neckSeamY
   });
   ready=true;
+  refreshExpression();
   for(const id of ['full','portrait','front','side','back','crown','toggleWig','hairOnly','toggleWigBase','toggleOutfit','style','wigDensity','saveGlb','saveWig','resetFaceControls'])
    $(id).disabled=false;
   for(const {input} of faceInputs.values())input.disabled=false;
