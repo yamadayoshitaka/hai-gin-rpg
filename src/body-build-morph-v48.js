@@ -30,6 +30,11 @@ export function applySkinnedBuildMorph(actorRoot,bodyType='normal'){
    w=Math.max(.000001,box.max.x-box.min.x),
    depth=Math.max(.000001,box.max.z-box.min.z);
   const cx=(box.max.x+box.min.x)/2,cz=(box.max.z+box.min.z)/2;
+  // Taper both real skinned legs about their own centres, never by scaling
+  // the entire actor (which pulls the knees together and changes the rig).
+  const legMesh=/(?:^|[_-])(?:ranger|peasant)[_-]legs(?:[_-]|$)|(?:^|[_-])(?:legs|thighs|calves)(?:[_-]|$)/i.test(mesh.name);
+  const legRadius=clamp(body.legRadius??1,.78,1.20);
+  const splitLegs=legMesh&&(box.min.x<cx-w*.18&&box.max.x>cx+w*.18);
   // Body-only morph: broader waist and outward abdominal curvature,
   // not a second visible ball/sphere added on top of the shirt.
   for(let i=0;i<target.count;i++){
@@ -42,7 +47,10 @@ export function applySkinnedBuildMorph(actorRoot,bodyType='normal'){
    const circumference=1+body.abdomen*
     (.24*waist+.11*belly+.12*hip+.035*shoulder);
    const front=Math.max(0,(z-cz)/depth);
-   target.setXYZ(i,cx+(x-cx)*circumference,y,
+   const waistX=cx+(x-cx)*circumference;
+   const anchor=splitLegs?cx+Math.sign(x-cx||1)*w*.25:cx;
+   const legGain=legMesh?1+(legRadius-1)*(.72+.28*gaussian(ny,.62,.50)):1;
+   target.setXYZ(i,legMesh?anchor+(waistX-anchor)*legGain:waistX,y,
     cz+(z-cz)*(1+body.abdomen*(.22*belly+.06*hip))+
      depth*body.abdomen*.105*belly*front);
   }
@@ -53,5 +61,5 @@ export function applySkinnedBuildMorph(actorRoot,bodyType='normal'){
   meshes++;vertices+=target.count;
  });
  return Object.freeze({bodyType:body.id,meshes,vertices,
-  geometryFromSource:true,accumulative:false,bellyMorph:body.abdomen});
+  geometryFromSource:true,accumulative:false,bellyMorph:body.abdomen,legRadius:body.legRadius??1});
 }
