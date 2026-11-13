@@ -1,0 +1,77 @@
+{
+  "schemaVersion": 1,
+  "stageId": "c01-s02",
+  "edition": "post-victory",
+  "gender": "female",
+  "reviewSheet": 1,
+  "exactPanelCount": 5,
+  "shotOrder": [
+    "c01-s02-m6",
+    "c01-s02-m7",
+    "c01-s02-m8",
+    "c01-s02-m9",
+    "c01-s02-m16"
+  ],
+  "originalNativePixels": [
+    1672,
+    941
+  ],
+  "reviewStatus": "CANDIDATE_ONLY_NOT_QUALITY_APPROVED",
+  "gameRegistered": false,
+  "actorReferenceBytesAttachedToGenerator": "UNVERIFIED",
+  "textFreeQualityReview": "PENDING",
+  "characterAndDialogueReview": "PENDING",
+  "notes": "Five preexisting independently generated still images; source SHA256 recorded. Separate sheet-by-sheet commit. Never publish as approved art without scene/cast/text checks.",
+  "assets": [
+    {
+      "name": "c01-s02-m06-post-victory-female.webp",
+      "gitBlobSha": "38ac5cbc24b7c323ef044de9f90ecb8e948e4d1f",
+      "sha256": "a430385da745d625a038ab7b0652e00ae857634f66f67f6c486bc86616883317",
+      "sourceNativePixels": [
+        1672,
+        941
+      ],
+      "approval": "PENDING_MANUAL_VISUAL_QA"
+    },
+    {
+      "name": "c01-s02-m07-post-victory-female.webp",
+      "gitBlobSha": "3d90432529e2332e029a3c49cf88f157bed1b1be",
+      "sha256": "800fb3cbe9e1bf72dcaa0d035d8c06c8d5a2fa2be6f7764463387da04bf48025",
+      "sourceNativePixels": [
+        1672,
+        941
+      ],
+      "approval": "PENDING_MANUAL_VISUAL_QA"
+    },
+    {
+      "name": "c01-s02-m08-post-victory-female.webp",
+      "gitBlobSha": "dd450e0ed020bd0a2fabf5debd47edc19dbabcf8",
+      "sha256": "91c01689703e7d5c9684c75bb7b8ea45f4fb3ed28a54762ba9c5014ec21a85c5",
+      "sourceNativePixels": [
+        1672,
+        941
+      ],
+      "approval": "PENDING_MANUAL_VISUAL_QA"
+    },
+    {
+      "name": "c01-s02-m09-post-victory-female.webp",
+      "gitBlobSha": "ad0040767810c399a68f8501d07e799d9c7f794f",
+      "sha256": "6c2595aedfd4a7dcf94b42460b69331398fda98e3327a1e104111e4765073956",
+      "sourceNativePixels": [
+        1672,
+        941
+      ],
+      "approval": "PENDING_MANUAL_VISUAL_QA"
+    },
+    {
+      "name": "c01-s02-m16-post-victory-female.webp",
+      "gitBlobSha": "bd43271145248b945571b7b020a8234a2861b425",
+      "sha256": "4e523e836a2ceebade502eafb614a17480716adaec75860c0db9243ee4eda864",
+      "sourceNativePixels": [
+        1672,
+        941
+      ],
+      "approval": "PENDING_MANUAL_VISUAL_QA"
+    }
+  ]
+}
