@@ -239,8 +239,10 @@ export function makeIndependentFaceMaster(sourceRoot,gender,{femaleControls={},m
   // v47 age × weight: deform ORIGINAL source-head vertices, never paste
   // spheres or detachable wrinkles on top of the face.
   const fullness=demo.body.faceFullness;
-  nx+=(x-cx)*fullness*(.075*cheek+.052*lowerCheek+.022*chin)*contourGuard;
-  nx-=(x-cx)*demo.age.sag*(.014*lowerCheek+.010*jaw)*contourGuard;
+  const demographicWidthDelta=(x-cx)*fullness*
+   (.075*cheek+.052*lowerCheek+.022*chin)*contourGuard-
+   (x-cx)*demo.age.sag*(.014*lowerCheek+.010*jaw)*contourGuard;
+  nx+=demographicWidthDelta;
   const ageSag=d.y*demo.age.sag*
    (.010*lowerCheek+.005*bell(yn,.58,.13)*front);
   const faceAgeY=-ageSag+
@@ -254,7 +256,8 @@ export function makeIndependentFaceMaster(sourceRoot,gender,{femaleControls={},m
   const smileCrease=bell(Math.abs(xn),.31,.068)*
    bell(yn,.495,.095)*front;
   const ageLines=d.z*demo.age.wrinkles*
-   (-.0045*foreheadLines+.0043*crowsFeet-.0040*smileCrease);
+   (-.013*foreheadLines+.011*crowsFeet-.012*smileCrease-
+    .007*bell(Math.abs(xn),.32,.13)*bell(yn,.636,.028)*front);
   ny+=faceAgeY;
   const nz=z+d.z*(spec.cheekFill*(.74*cheek+1.11*lowerCheek)
     +.016*chinHollow
@@ -287,7 +290,10 @@ export function makeIndependentFaceMaster(sourceRoot,gender,{femaleControls={},m
    if(Math.abs(xn)>=.30&&Math.abs(xn)<=.58
       &&yn>=.46&&yn<=.62&&zn>.58){
     cheekProtectedSamples++;
-    maxCheekWidthChange=Math.max(maxCheekWidthChange,Math.abs(nx-x));
+    // QA protects cheek sidewalls against NOSE and MOUTH morphs.
+    // Subtract the intentional age/build face silhouette before measuring.
+    maxCheekWidthChange=Math.max(maxCheekWidthChange,
+     Math.abs((nx-demographicWidthDelta)-x));
    }
   }
   p.setXYZ(i,nx,ny,nz);

@@ -519,8 +519,11 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   // The unmodified upper rim often slopes backward substantially.
   const upperLipSkin=surfaceAt(x,y+rimHeight+eyeRadius*.045*eyeWidth);
   const lowerLipSkin=surfaceAt(x,y-rimHeight+eyeRadius*.045*eyeWidth);
-  const orbitFrontZ=Math.min(upperLipSkin,lowerLipSkin,
-   landmarks.inner.z,landmarks.outer.z);
+  // Ignore a single heavily recessed donor-head rim sample; the second
+  // most recessed boundary is a more stable fit to the actual eyelids.
+  const rimDepths=[upperLipSkin,lowerLipSkin,landmarks.inner.z,
+   landmarks.outer.z].sort((a,b)=>a-b);
+  const orbitFrontZ=(rimDepths[0]+rimDepths[1])*.5;
   // Negative relative to the UNCARVED skin: the eye is now seated inside
   // the socket, not floating over it. Depth control adjusts the socket view
   // gently instead of pushing the whole globe outside the eyeliner.
@@ -528,7 +531,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   // A -0.20R baseline buried the 3D iris and sclera even when their
   // eyeliner was visible. Positive = towards camera (+Z). Keep < 0
   // so frontal eyelashes still sit naturally above the corneal dome.
-  const eyeSurfaceLift=baseEyeRadius*(-.055+settings.eyeDepth*.045);
+  const eyeSurfaceLift=baseEyeRadius*(-.020+settings.eyeDepth*.045);
   const eyeDomeHeight=baseEyeRadius*anteriorGlobeRatio;
   const insetZ=(px,py)=>{
    const tx=clamp((px-x)/width,-1,1);
