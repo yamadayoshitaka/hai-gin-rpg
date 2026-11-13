@@ -21,6 +21,10 @@ import {classifyCosplaySurface,applyMonsterMaterialPigment}
  from './monster-cosplay-pigmentation.js';
 import {addConstructMonsterCostume,isConstructCostume}
  from './monster-construct-costume.js';
+import {addDemonicFaceCosmetics,hasDemonCosmetics}
+ from './monster-demon-cosmetics.js';
+import {addFemaleSummonCostume,isFemaleSummonCostume}
+ from './female-summon-costumes.js';
 
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const boneName=s=>String(s??'').toLowerCase().replace(/[^a-z0-9]/g,'');
@@ -85,7 +89,14 @@ function buildMonsterCostume(THREE,model,profile,detail){
   lining:profile.costume==='vampire'?0x662c43:0x402a43,
   edge:profile.costume==='vampire'?0xac8e74:0x8d7774,
   horn:profile.costume==='succubus'?0x393344:0x58484c,
-  membrane:profile.costume==='succubus'?0x54334a:0x38323f};
+  membrane:profile.costume==='succubus'?0x54334a:0x38323f,
+  makeup:profile.makeup??0x201c29,
+  lip:profile.lip??0x5e273b,
+  rune:profile.accent??0x922c52,
+  leaf:profile.leaf??0x67854b,
+  feather:profile.feather??0xe3dec9,
+  crystal:profile.crystal??0x90d3dd
+ };
  const materials=new Map();
  const mat=(role)=>{
   if(!materials.has(role)){
@@ -95,8 +106,9 @@ function buildMonsterCostume(THREE,model,profile,detail){
       role==='velvet'?.96:role==='linen'?.96:
       role==='ivory'?.83:role==='iris'?.27:role==='membrane'?.81:.90,
     metalness:isMetal?.64:role==='edge'?.38:0,
-    emissive:role==='iris'?0x260907:0x000000,
-    emissiveIntensity:role==='iris'?.20:0,
+    emissive:role==='iris'?0x260907:
+      role==='rune'?new THREE.Color(palette.rune).multiplyScalar(.08):0x000000,
+    emissiveIntensity:role==='iris'?.20:role==='rune'?.14:0,
     side:THREE.DoubleSide,
    });
    // Reuse the exact bundled photographic texture cache that already serves
@@ -170,10 +182,18 @@ function buildMonsterCostume(THREE,model,profile,detail){
  const costume=profile.costume;
  const gothic=hasGothicMonsterSculpt(costume);
  const construct=isConstructCostume(profile);
+ const demonic=hasDemonCosmetics(profile);
+ const femaleSummon=isFemaleSummonCostume(profile);
  if(gothic)addGothicMonsterSculpt({
    THREE,profile,detail,frames,attach,tube,torus
  });
  if(construct)addConstructMonsterCostume({
+   THREE,profile,detail,frames,attach,tube
+ });
+ if(demonic)addDemonicFaceCosmetics({
+   THREE,profile,detail,frames,attach,tube
+ });
+ if(femaleSummon)addFemaleSummonCostume({
    THREE,profile,detail,frames,attach,tube
  });
  const ceremonial=['vampire','lich','succubus','death_knight','dark_knight'];
@@ -224,7 +244,7 @@ function buildMonsterCostume(THREE,model,profile,detail){
     'skin','fang-gum-'+side,[side*.040,-.072,-.115]);
   }
  }
- if((!gothic&&profile.horns)||costume==='tengu'){
+ if((!gothic&&!demonic&&profile.horns)||costume==='tengu'){
   for(const side of [-1,1]){
    attach(frames.head,new THREE.SphereGeometry(.052,9,8),
     'skin','horn-bone-bed-'+side,[side*.085,.115,-.024]);
@@ -257,7 +277,7 @@ function buildMonsterCostume(THREE,model,profile,detail){
   g.setIndex(indices);g.computeVertexNormals();
   attach(frames.chest,g,'cloth','draped-cape');
  }
- if(!gothic&&profile.wings){
+ if(!gothic&&!demonic&&!femaleSummon&&profile.wings){
   // Wing roots are rigidly anchored to the canonical upper torso;
   // skinned shoulders retain their original motion and proportions.
   for(const side of [-1,1]){
@@ -284,6 +304,8 @@ function buildMonsterCostume(THREE,model,profile,detail){
   gothicSculptEdition:gothic?'gothic-horror-2026-11':null,
   constructSculptEdition:construct?'human-rigged-construct-2026-11':null,
   skinColor:profile.skin,skinMaterialIsolation:true,
+  demonCosmeticsEdition:demonic?'horns-makeup-runes-v1':null,
+  femaleSummonCostumeEdition:femaleSummon?'female-summon-v1':null,
   jointAnchored:true,independentHeroMaterials:true,
  };
  return ()=>{
@@ -297,11 +319,14 @@ function buildMonsterCostume(THREE,model,profile,detail){
   }
  };
 }
-export function createCosplayedHumanoidMonster(spec,{detail='high',genderVariant=null}={}){
- const profile=humanoidMonsterCostumeFor(spec,{genderVariant});
+export function createCosplayedHumanoidMonster(spec,{
+ detail='high',genderVariant=null,profileOverride=null,withoutFallback=false
+}={}){
+ const profile=profileOverride||humanoidMonsterCostumeFor(spec,{genderVariant});
  if(!profile)throw Error('No humanoid cosplay mapping '+String(spec?.id));
  const root=new THREE.Group();root.name=spec.id+'-'+spec.name+'-cosplay';
- const fallback=createMonsterModel(spec,{detail});root.add(fallback);
+ const fallback=withoutFallback?null:createMonsterModel(spec,{detail});
+ if(fallback)root.add(fallback);
  const host=new THREE.Group();host.name='character-cosplay-host';root.add(host);
  host.userData.actorId='monster-'+spec.id;
  host.userData.canonicalCharacterTrial=true;
@@ -314,7 +339,7 @@ export function createCosplayedHumanoidMonster(spec,{detail='high',genderVariant
    if(root.userData.action!==action||root.userData.actionAt!==time){
     root.userData.action=action;root.userData.actionAt=time;
    }
-   if(!ready)startMonsterAction(fallback,action,time);
+   if(!ready&&fallback)startMonsterAction(fallback,action,time);
   },
   update(time){
    if(disposed)return;
@@ -323,7 +348,7 @@ export function createCosplayedHumanoidMonster(spec,{detail='high',genderVariant
     action='idle';root.userData.action='idle';root.userData.actionAt=time;
    }
    if(!ready){
-    if(fallback.parent){
+    if(fallback?.parent){
      if(fallback.userData.action!==action)startMonsterAction(fallback,action,time);
      animateMonsterModel(fallback,time);
     }
@@ -357,7 +382,7 @@ export function createCosplayedHumanoidMonster(spec,{detail='high',genderVariant
    host.userData.footContactIK?.dispose?.();
    if(visual)host.remove(visual);
    host.parent?.remove(host);
-   if(fallback.parent){root.remove(fallback);disposeMonsterSculpture(fallback);}
+   if(fallback?.parent){root.remove(fallback);disposeMonsterSculpture(fallback);}
    root.parent?.remove(root);
   },
  };
@@ -399,7 +424,7 @@ export function createCosplayedHumanoidMonster(spec,{detail='high',genderVariant
    if(disposed)return {source:'cancelled'};
    fallback.parent?.remove(fallback);
    disposeMonsterSculpture(fallback);
-   root.scale.setScalar((profile.scale??1)*spec.size);
+   root.scale.setScalar((profile.scale??1)*(spec.size??1));
    root.userData.speciesId=spec.id;
    root.userData.surfaceFamily=spec.family;
    root.userData.costumeSource=profile.modelId;
