@@ -60,9 +60,18 @@ def process_variant_page(variant, poster_root, output_root, multi_page):
         if width%columns or height%rows:
             raise ValueError('Poster dimensions not divisible by grid: '+str(source))
         cell_w,cell_h=width//columns,height//rows
-        if cell_w<1536 or cell_h<864 or abs(cell_w/cell_h-16/9)>0.002:
+        limits=[tuple(p['individualMinPixels']) for p in page['panels']]
+        if len(set(limits))!=1:
+            raise ValueError('Inconsistent native minimum across source sheet')
+        min_w,min_h=limits[0]
+        mobile=stage=='c01-s02'
+        if mobile and (min_w,min_h)!=(768,320):
+            raise ValueError('Missing stage2 768x320 mobile crop profile')
+        aspect_invalid=(cell_w<=cell_h if mobile else abs(cell_w/cell_h-16/9)>0.002)
+        if cell_w<min_w or cell_h<min_h or aspect_invalid:
             raise ValueError('REJECTED LOW-RES/ASPECT poster: '+str(source)+
-                             f' each cell {cell_w}x{cell_h} (needs >=1536x864 at 16:9)')
+                             f' each true cell {cell_w}x{cell_h} needs >= {min_w}x{min_h}'+
+                             (' preserving original landscape aspect' if mobile else ' at 16:9'))
         output=output_root/stage/variant['edition']/variant['gender']
         if multi_page:
             output=output/('p%02d'%page['page'])
@@ -85,7 +94,8 @@ def process_variant_page(variant, poster_root, output_root, multi_page):
             frames.append({'panelId':p['panelId'],'scriptText':p['scriptText'],
                 'edition':variant['edition'],'gender':variant['gender'],
                 'individualAsset':p['individualAsset'],'localReviewAsset':name,
-                'pixelSize':[cell_w,cell_h],'sourcePoster':str(source.relative_to(ROOT)),
+                'pixelSize':[cell_w,cell_h],'nativeMinimumPixels':[min_w,min_h],
+                'aspectPreserved':mobile,'sourcePoster':str(source.relative_to(ROOT)),
                 'posterSha256':digest(source),'sha256':digest(dst),
                 'qualityReferenceImage':p['qualityReferenceImage'],
                 'qualityReferenceStatus':p['qualityReferenceStatus'],
