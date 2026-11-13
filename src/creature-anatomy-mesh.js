@@ -69,7 +69,7 @@ export function createCreatureScuteGeometry({
    new THREE.Vector3(0,1,0);
  const tangent=guide.addScaledVector(n,-guide.dot(n)).normalize();
  const bitangent=new THREE.Vector3().crossVectors(n,tangent).normalize();
- const rings=detail==='high'?5:2,around=detail==='high'?10:6;
+ const rings=detail==='high'?3:1,around=detail==='high'?9:5;
  const vertices=[],uv=[],indices=[],base=V(center);
  for(let r=0;r<=rings;r++){
    const t=r/rings;
