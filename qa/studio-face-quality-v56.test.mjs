@@ -2,7 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import {clipStudioFaceBustPreservingSurface,
- restoreStudioFaceSurfaceQuality,sampleStudioFacePigment}
+ restoreStudioFaceSurfaceQuality,sampleStudioFacePigment,
+ smoothStudioFaceNormals}
  from '../src/studio-face-quality-v56.js';
 import {fitStudioNeckContinuity,alignStudioHeadToSkinnedTorso} from '../src/heroine-battle-costume-bridge.js';
 
@@ -94,6 +95,8 @@ test('v56 neck colour follows cheek pigment instead of an opaque fixed beige car
  assert.equal(fitted.matchedFaceMaterial,true);
  assert.equal(fitted.transparentNeckEdge,true);
  assert.equal(fitted.originalFaceNormalsPreserved,true);
+ assert.equal(fitted.smoothedFacialNormals,true);
+ assert.ok(fitted.normalWeldGroups>50);
  assert.equal(fitted.originalFaceColoursPreserved,true);
  assert.ok(fitted.untouchedFaceTriangles>100);
  assert.ok(fitted.newCutVertices>0);
