@@ -50,6 +50,8 @@ jobs:
         run: |
           node qa/story-chapter1-draft-regression.mjs --strict
           node qa/story-chapter-page-loop.test.mjs
+      - name: Build separate five-panel contact sheets for human visual review
+        run: python3 scripts/build-story-chapter1-review-sheets.py
       - name: Report how many canonical pages have ACTUAL human visual approval
         run: node scripts/promote-story-chapter1-reviewed-drafts.mjs --plan
       - name: Copy only signed and verified native images; formally register and commit per 1-5 scenes
@@ -67,6 +69,7 @@ jobs:
           name: chapter1-formal-promotions-${{ github.run_id }}
           path: |
             qa-reports/story-stage-production/chapter1-free-render/c01-regression.json
+            qa-reports/story-stage-production/chapter1-review-sheets/
             qa-reports/story-stage-production/chapter1-free-render/c01-promotion-readiness.json
             qa-reports/story-stage-production/chapter-page-loop/c01-queue.json
             qa-reports/story-stage-production/live-art-coverage/chapters-1.json
