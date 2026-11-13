@@ -28,12 +28,14 @@ export function applyHeroineSkinMaterial(face){
  if(!source)return {applied:false};
  const material=new THREE.MeshPhysicalMaterial({
   color:source.color?.clone()||new THREE.Color(0xf0d9cb),
-  map:source.map||null,vertexColors:!!source.vertexColors,
+  map:source.map||null,normalMap:source.normalMap||null,
+  roughnessMap:source.roughnessMap||null,aoMap:source.aoMap||null,
+  vertexColors:!!source.vertexColors,
   side:source.side,transparent:source.transparent,opacity:source.opacity,
-  roughness:.77,metalness:0,clearcoat:.045,clearcoatRoughness:.69,
-  sheen:.10,sheenRoughness:.85,sheenColor:new THREE.Color(0xc98978),
-  bumpMap:face.geometry?.getAttribute('uv')?getHeroineMicroSkinTexture():null,
-  bumpScale:.00010
+  roughness:.70,metalness:0,clearcoat:.055,clearcoatRoughness:.75,
+  sheen:.11,sheenRoughness:.85,sheenColor:new THREE.Color(0xc98978),
+  bumpMap:source.bumpMap||(face.geometry?.getAttribute('uv')?getHeroineMicroSkinTexture():null),
+  bumpScale:source.bumpMap?source.bumpScale:.000085
  });
  material.name='heroine-natural-skin-v41';
  face.material=material;
