@@ -47,7 +47,7 @@ export function groomGuideOffset(profile,{t,zone,partSide,front=false,rootIndex=
  const back=zone?.startsWith('back')||zone?.startsWith('nape');
  const side=zone?.startsWith('temple');
  const tip=Math.pow(weight,1.35);
- const sway=forward?1:side?.20:back?.10:.36;
+ const sway=forward?1:(side? .20:(back? .10:.36));
  let x=(profile.sweep||0)*tip*sway;
  let y=(profile.crown||0)*Math.sin(Math.PI*weight)*
   (forward||zone==='crown'?1:side?.38:0);

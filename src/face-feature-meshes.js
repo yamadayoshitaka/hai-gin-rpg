@@ -16,6 +16,12 @@ const bell=(x,c,w)=>Math.exp(-.5*((x-c)/w)**2);
 const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
 const smoothstep=t=>{const q=clamp(t,0,1);return q*q*(3-2*q)};
 const vertexMakeup=new WeakMap();
+/** Age is the sole source of old-looking under-eye pigment. */
+export function skinAgeShadowFactor(ageBand='twenties'){
+ const id=resolveAgeBand(ageBand).id;
+ return id==='under10'||id==='teens'?.06:id==='twenties'?.12:
+  id==='thirties'?.27:id==='forties'?.53:id==='sixties'?.88:1;
+}
 const orbitalRestPositions=new WeakMap();
 function setVertexMakeup(mesh,rgb){
  mesh.geometry.setAttribute('color',new THREE.Float32BufferAttribute(rgb,3));
@@ -229,9 +235,7 @@ export function updateRealFacePigment(face,controls={},mode='color',gender='fema
    .42*nasolabial+.19*mouthCorners);
   // 20s must not inherit the adult under-eye bag. Skin shades rise with
   // AGE independently of cosmetic presets; no permanent young wrinkles.
-  const youthFade=age.id==='under10'||age.id==='teens'?.06:
-   age.id==='twenties'?.12:age.id==='thirties'?.27:
-   age.id==='forties'?.53:age.id==='sixties'?.88:1;
+  const youthFade=skinAgeShadowFactor(age.id);
   const contactShade=(.018+.132*youthFade)*underEye+
    (.035+.05*youthFade)*noseWing+.028*philtrum+
    (.018+.052*youthFade)*lipShade+age.sag*.15*underEye+ageShade;
@@ -247,8 +251,7 @@ export function updateRealFacePigment(face,controls={},mode='color',gender='fema
  face.userData.softNaturalLipTint=true;
  face.userData.lipTintVertexCount=actualLipTintVertices;
  face.userData.cheekTintVertexCount=actualCheekTintVertices;
- face.userData.v50YouthShadowScale=age.id==='twenties'?.12:
-  age.id==='thirties'?.27:age.id==='forties'?.53:1;
+ face.userData.v50YouthShadowScale=skinAgeShadowFactor(age.id);
  for(const name of ['UPPER','LOWER']){
   const lip=face.getObjectByName(name+'_3D_VERMILION_LIP');
   if(lip)tintRealLipSurface(lip,settings,mode);

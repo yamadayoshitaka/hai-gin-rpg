@@ -2,7 +2,7 @@
 <html lang="ja"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#14263a">
-<title>灰銀のレゾナンス | 女性主人公の顔編集 v40</title>
+<title>灰銀のレゾナンス｜男女の顔・髪の編集 v50</title>
 <style>
 :root{font:15px/1.55 system-ui,-apple-system,"Noto Sans JP",sans-serif;color-scheme:dark}
 *{box-sizing:border-box}
@@ -62,8 +62,8 @@ button{padding:9px 11px}
 </style></head>
 <body>
 <header>
-<h1>顔・髪の編集 v43</h1>
-<a class="studioNav" href="./face-body-studio.html?v=41" id="returnToCostume">衣装確認画面に戻る</a>
+<h1>顔・髪の編集 v50</h1>
+<a class="studioNav" href="./face-body-studio.html?v=50" id="returnToCostume">衣装確認画面に戻る</a>
 <p>ライブラリに保存された実GLBの顔設定（顎先5倍・鼻穴隠し2・鼻筋2.5）を男女の実メッシュ標準に固定。口紅とチークを実メッシュの頂点に着色。上下アイライン・眉・眼球を調整し、女性用の高密度ロング（後頭部・両側頭部・襟足まで髪束生成・顔と肩への衝突対応）を追加。保存値とズームを維持します。</p>
 </header>
 <main><section class="panel">
@@ -478,7 +478,7 @@ function setView(view){
 function selectGender(next){
  if(!models.has(next))return;
  gender=next;
- $('returnToCostume').href=gender==='male'?'./male-body-studio.html?v=42':'./face-body-studio.html?v=42';
+ $('returnToCostume').href=gender==='male'?'./male-body-studio.html?v=50':'./face-body-studio.html?v=50';
  for(const [k,m] of models)m.root.visible=k===gender;
  $('wig').hidden=false;
   $('v47AgeBand').value=v32Parts[gender].ageBand;
