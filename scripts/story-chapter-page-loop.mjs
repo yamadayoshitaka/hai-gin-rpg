@@ -28,11 +28,12 @@ const value=k=>{const i=args.indexOf(k);return i<0?null:args[i+1];};
 const chapter=Number(value('--chapter'));
 const requestedPage=value('--page')===null?null:Number(value('--page'));
 const execute=args.includes('--execute'),commit=args.includes('--commit'),push=args.includes('--push');
+const upgradeLegacy=args.includes('--upgrade-legacy');
 if(!Number.isInteger(chapter)||chapter!==1|| // First chapter is the only production contract currently populated.
  (requestedPage!==null&&(!Number.isInteger(requestedPage)||requestedPage<1))||
  (!execute&&(commit||push))||(push&&!commit)||
  (args.includes('--plan')&&execute)||
- args.some(x=>x.startsWith('--')&&!['--chapter','--page','--plan','--execute','--commit','--push'].includes(x)))
+ args.some(x=>x.startsWith('--')&&!['--chapter','--page','--plan','--execute','--commit','--push','--upgrade-legacy'].includes(x)))
  throw Error('Usage: --chapter 1 [--plan | --execute [--commit [--push]]] [--page 1..N]');
 const stages=CAMPAIGN_STAGES.filter(x=>x.chapter===chapter);
 if(stages.length!==10)throw Error('Chapter must include exactly ten stages');
@@ -83,9 +84,12 @@ function reviewShot(shot,existing,existingOverride){
  const {image,proof}=pathsFor(shot);
  // Keep all existing registrations untouched. This is not equivalent to
  // certifying that existing artwork has passed the new P0 image-quality gate.
- if(existingOverride||existing)
-  return {key,shot,source:existingOverride||existing,status:'EXISTING_REGISTERED_NOT_P0_CERTIFIED'};
+ // Legacy registered art stays untouched unless a DIFFERENT, fully signed
+ // canonical replacement exists and the explicit upgrade mode was selected.
+ // Human-reviewed registry entries are never overwritten.
  const imageFile=path.join(root,image);
+ if(existingOverride||(existing&&(!upgradeLegacy||!fs.existsSync(imageFile))))
+  return {key,shot,source:existingOverride||existing,status:'EXISTING_REGISTERED_NOT_P0_CERTIFIED'};
  if(!fs.existsSync(imageFile))return {key,shot,image,proof,status:'BLOCKED_NEEDS_ONE_REAL_GENERATED_IMAGE'};
  let bytes,pixels,hash;
  try{
