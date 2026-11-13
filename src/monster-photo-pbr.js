@@ -76,11 +76,21 @@ function attachUser(tex,m){
  tex.userData.materialUsers.add(m);
  return tex;
 }
-export function decorateMonsterPhotoMaterial(material,{family,role,detail='high',metal=0,glow=false,translucent=false}={}){
+export function decorateMonsterPhotoMaterial(material,{family,speciesId='',role,
+ detail='high',metal=0,glow=false,translucent=false}={}){
  if(!material||glow||role==='eye'||role==='bone'||role==='accent'||translucent){
    return material;
  }
- const surfaceId=CREATURE_FAMILY_SURFACE[family];
+ // Anatomical realism needs independent materials for necrotic skin, linen
+ // wrappings, burgundy velvet coats, weathered leather and iron armour.
+ // The old family-wide 'undead = linen' made vampire faces look like cloth.
+ const surfaceId=role==='bandage'?'linen':
+   role==='fabric'?'velvet':
+   role==='metal'?'steel':
+   role==='leather'?'leather':
+   (family==='undead'||family==='fiend')?null:
+   (family==='golem'&&speciesId==='m036')?null:
+   CREATURE_FAMILY_SURFACE[family];
  if(!surfaceId)return material;
  const src=CREATURE_SURFACE_SOURCES[surfaceId];
  if(!src)return material;
