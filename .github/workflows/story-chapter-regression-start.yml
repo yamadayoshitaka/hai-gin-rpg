@@ -1,0 +1,46 @@
+name: Start Chapter 1 actual per-page regression checkpoint
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/start-chapter-one-regression.mjs'
+      - 'qa/story-chapter-regression-start.test.mjs'
+      - '.github/workflows/story-chapter-regression-start.yml'
+  pull_request:
+    paths:
+      - 'scripts/start-chapter-one-regression.mjs'
+      - 'qa/story-chapter-regression-start.test.mjs'
+      - '.github/workflows/story-chapter-regression-start.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: chapter-one-first-blocked-page-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  regress:
+    name: Execute Chapter 1 and capture first unapproved 5-frame task
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Execute first chapter page loop until ungenerated or unapproved page
+        run: |
+          node --check scripts/start-chapter-one-regression.mjs
+          node scripts/start-chapter-one-regression.mjs
+      - name: Verify expected blocked checkpoint without false formal registration
+        run: node qa/story-chapter-regression-start.test.mjs
+      - name: Export real first-blocker report and 132-page plan
+        uses: actions/upload-artifact@v4
+        with:
+          name: chapter1-actual-regression-checkpoint-${{ github.run_id }}
+          path: qa-reports/story-stage-production/chapter-page-loop/
+          if-no-files-found: error
+          retention-days: 30
