@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import {clipStudioFaceBustPreservingSurface,
  restoreStudioFaceSurfaceQuality,sampleStudioFacePigment}
  from '../src/studio-face-quality-v56.js';
-import {fitStudioNeckContinuity} from '../src/heroine-battle-costume-bridge.js';
+import {fitStudioNeckContinuity,alignStudioHeadToSkinnedTorso} from '../src/heroine-battle-costume-bridge.js';
 
 function indexedPortrait(){
  const geo=new THREE.BufferGeometry();
@@ -84,6 +84,8 @@ test('v56 neck colour follows cheek pigment instead of an opaque fixed beige car
   new THREE.MeshStandardMaterial());
  body.name='Female_Ranger_Body';body.position.y=.98;wardrobe.add(body);
  scene.updateMatrixWorld(true);
+ const alignment=alignStudioHeadToSkinnedTorso({faceRoot:headRoot,faceMesh:face,wardrobeRoot:wardrobe});
+ assert.equal(alignment.applied,true);
  const skin=sampleStudioFacePigment(face);
  assert.ok(skin.samples>0);
  assert.ok(Math.abs(skin.multiplier.r-.9)<.001);
