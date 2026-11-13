@@ -39,7 +39,7 @@ export const CREATURE_SURFACE_SOURCES=Object.freeze({
   }),
 });
 export const CREATURE_FAMILY_SURFACE=Object.freeze({
-  beast:'fur', feline:'fur', avian:'linen', reptile:'scales',
+  beast:'fur', feline:'fur', avian:null, reptile:'scales',
   insect:'scales', arachnid:'scales', undead:'linen', golem:'steel',
   fiend:'leather', aquatic:null,
 });
