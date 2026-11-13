@@ -15,6 +15,7 @@ on:
       - 'qa/face-v50-regression.test.mjs'
       - 'qa/face-v50-browser.cjs'
       - 'qa/human-neck-v52-browser.cjs'
+      - 'qa/human-head-occlusion-v53-browser.cjs'
       - 'qa/human-realism-v51-regression.test.mjs'
   push:
     branches: [main]
@@ -49,6 +50,8 @@ jobs:
         run: |
           python3 -m http.server 8766 --bind 127.0.0.1 > /tmp/v50-http.log 2>&1 &
           sleep 2
+      - name: Diagnose v53 character overlap against actual visible meshes
+        run: node qa/human-head-occlusion-v53-browser.cjs
       - name: Capture true mobile 3D faces and distinct groom silhouettes
         run: |
           node qa/face-v50-browser.cjs
@@ -60,5 +63,6 @@ jobs:
           path: |
             qa-screenshots/face-v50/
             qa-screenshots/human-neck-v52/
+            qa-screenshots/human-v53/
           retention-days: 14
           if-no-files-found: warn
