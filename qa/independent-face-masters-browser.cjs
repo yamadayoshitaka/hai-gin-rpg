@@ -905,8 +905,8 @@ async function expectCenteredFaceSliders(page,gender){
       await modern.locator('input[type="range"]:visible').count()!==0)
     throw Error('v32 user-facing face editor must not show sliders');
    for(const group of ['Face','Eye','Nose','Mouth','Hair','Makeup']){
-    if(await modern.locator('#v32Female'+group+' option').count()!==(group==='Hair'?16:10))
-     throw Error('v32 female ten-option mesh category missing: '+group);
+    if(await modern.locator('#v32Female'+group+' option').count()!==(group==='Hair'?24:10))
+     throw Error('v50 female mesh category size mismatch: '+group);
    }
    await modern.locator('#v32FemaleEye').selectOption('4');
    const changedEye=await modern.evaluate(()=>window.__faceMasterQA());
@@ -925,8 +925,8 @@ async function expectCenteredFaceSliders(page,gender){
     throw Error('v32 four-layer hair volume missing from real 3D');
    await modern.locator('#male').click();
    for(const group of ['Face','Eye','Nose','Mouth','Hair','Makeup'])
-    if(await modern.locator('#v32Male'+group+' option').count()!==(group==='Hair'?16:10))
-     throw Error('v32 male ten-option mesh category missing: '+group);
+    if(await modern.locator('#v32Male'+group+' option').count()!==(group==='Hair'?24:10))
+     throw Error('v50 male mesh category size mismatch: '+group);
    await selectPartOption(modern,'#v32MaleFace','5');
    await modern.locator('#v32MaleHair').selectOption('11');
    await modern.locator('#v33MaleHairColor').selectOption('red');
