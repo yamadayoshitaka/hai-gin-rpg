@@ -1,0 +1,27 @@
+name: Story mobile 787px artwork acceptance QA
+on:
+  pull_request:
+    paths:
+      - 'assets/story/quality/artwork-p0-rules.json'
+      - 'qa/story-mobile-native-resolution.test.mjs'
+      - 'docs/story-mobile-pixel-acceptance-20261113.md'
+      - '.github/workflows/story-mobile-acceptance.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'assets/story/quality/artwork-p0-rules.json'
+      - 'qa/story-mobile-native-resolution.test.mjs'
+      - '.github/workflows/story-mobile-acceptance.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  mobile-review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node qa/story-mobile-native-resolution.test.mjs
