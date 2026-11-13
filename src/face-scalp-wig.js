@@ -303,7 +303,7 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
  * @param {THREE.Mesh} head  owned sculpted female head
  * @param {{count?:number,color?:number,externalColliders?:Array}} options
  */
-export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalColliders=[],bodyCollisionResolver=null,lengthScale=1,styleId=DEFAULT_WIG_STYLE_ID,fineFringeMultiplier=1,visualFiberMultiplier=1,staticGroom=true,volumeProfile='natural',normalLayeredSingleMesh=false}={}){
+export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalColliders=[],bodyCollisionResolver=null,lengthScale=1,styleId=DEFAULT_WIG_STYLE_ID,fineFringeMultiplier=1,visualFiberMultiplier=1,staticGroom=true,volumeProfile='natural',normalLayeredSingleMesh=false,gender='female'}={}){
  if(!WIG_BASE_VOLUME_PROFILES[volumeProfile])
   throw Error('Unknown wig volume profile: '+volumeProfile);
  const style=getWigStyle(styleId);
@@ -329,7 +329,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   radialScalp=createHeadEnvelope(head.geometry,box);
   envelopeCache.set(head.geometry,radialScalp);
  }
- const root=new THREE.Group();root.name='FEMALE_SCALP_ANCHORED_LONG_WIG';
+ const root=new THREE.Group();root.name=gender==='male'?'MALE_SCALP_ANCHORED_WIG':'FEMALE_SCALP_ANCHORED_LONG_WIG';
  root.userData.hairOnRealHead=true;
  root.userData.staticGroom=!!staticGroom;
  root.userData.wigRig='surface-guided-static-layered-hair-cards';
@@ -353,6 +353,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  }
  root.userData.transparentWigFoundationRemoved=!!normalLayeredSingleMesh;
  root.userData.assetType='independent-wig';
+ root.userData.gender=gender;
  root.userData.hairStyleId=style.id;
  root.userData.hairStyleName=style.label;
  root.userData.part=style.part;
@@ -453,9 +454,8 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   const side=zone.endsWith('Left')?-1:zone.endsWith('Right')?1:
    Math.sign(wigRoot.x-center.x)||1;
   const partSide=Math.sign(wigRoot.x-whorl.x)||side;
-  const partInfluence=(style.part==='center'&&
-   (zone==='crown'||zone.startsWith('fringe')))?
-   Math.max(0,1-Math.abs(wigRoot.x-whorl.x)/(d.x*.27)):0;
+  const partInfluence=(zone==='crown'||zone.startsWith('fringe'))?
+   Math.max(0,1-Math.abs(wigRoot.x-whorl.x)/(d.x*.30)):0;
   const fringe=zone.startsWith('fringe');
   const back=zone.startsWith('back')||zone.startsWith('nape');
   // Near-frontal crown hairs also have to stop at eyebrow height. The
@@ -526,7 +526,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    partSide*d.x*style.partWidth*partInfluence*(fringe?.08:1);
   const targetZ=closeToFace?wigRoot.z+d.z*style.scalpClearance:
    // Go BEHIND the neck rather than being occluded by the rear bust skin.
-   back?Math.min(wigRoot.z-d.z*.035,center.z-d.z*.13):
+   back?Math.min(wigRoot.z-d.z*(style.backSweep??.035),center.z-d.z*.13):
    zone.startsWith('temple')?wigRoot.z-d.z*.035:
    Math.min(wigRoot.z-d.z*.075,center.z-d.z*.035);
   // No high-frequency radial scattering that makes fine hair frizzy.
@@ -535,11 +535,14 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   const g=style.gravityMps2*(d.y/2)*style.gravityScale;
   const fallTime=Math.sqrt(Math.max(1e-8,length/g));
   for(let j=0;j<=segments;j++){
-   const t=j/segments,fall=t*t*(3-2*t);
+   const t=j/segments,fall=Math.pow(t*t*(3-2*t),style.restFallExponent||1.1);
    const drop=.5*length*t+.5*g*(t*fallTime)**2;
    const y=Math.max(trimY,wigRoot.y-drop);
-   const curl=Math.sin(t*2.5+Math.floor(i/12)*.35)*d.x*
-    (style.strandWave??.045)*.001*t*t;
+   // Deterministic salon clumps: waves must have visible centimetric
+   // displacement. The old *.001 term made different groom presets look
+   // identical even though their style IDs and waves were different.
+   const curl=Math.sin(t*6.0+Math.floor(i/11)*.44)*d.x*
+    (style.strandWave??.045)*.17*t*t;
    // A gently rounded face-frame at cheek level prevents stiff curtain
    // rods. This is a fixed rest pose, not real-time hair physics.
    const templeVolume=zone.startsWith('temple')?
@@ -1013,7 +1016,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   root.userData.renderMeshCount=1;
  }
  root.userData.wigReport={
-  style:'real-scalp-shell-growing-then-trimmed',rooted:true,rootCount:lockCount,
+  style:'real-scalp-shell-growing-then-trimmed',gender,rooted:true,rootCount:lockCount,
   hairstyleId:style.id,styleLabel:style.label,
   wigAssetType:'independent-wig',centerPart:style.part==='center',
   visualFiberMultiplier:fiberMultiplier,visualFiberCount:lockCount*fiberMultiplier,
