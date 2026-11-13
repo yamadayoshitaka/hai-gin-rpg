@@ -61,9 +61,12 @@ function status(s){
  if(!image||!proof)return 'BLOCKED_UNPAIRED';
  try{
   const raw=fs.readFileSync(p(s.img)),meta=read(s.proof);
-  return raw.toString('ascii',0,4)==='RIFF'&&raw.toString('ascii',8,12)==='WEBP'&&
-   meta.imageSha256===hash(raw)&&meta.shotKey===s.key&&meta.visuallyApproved===false
-   ?'REAL_DRAFT_UNAPPROVED':'BLOCKED_BAD_PROVENANCE';
+  if(raw.toString('ascii',0,4)!=='RIFF'||raw.toString('ascii',8,12)!=='WEBP'||
+   meta.imageSha256!==hash(raw)||meta.shotKey!==s.key||meta.visuallyApproved!==false)
+   return 'BLOCKED_BAD_PROVENANCE';
+  const minimum=s.stage.id==='c01-s02'?[768,320]:[1536,864];
+  return Array.isArray(meta.nativePixels)&&meta.nativePixels[0]>=minimum[0]&&
+   meta.nativePixels[1]>=minimum[1]?'REAL_DRAFT_UNAPPROVED':'LOW_NATIVE_RESOLUTION_REGENERATE';
  }catch{return 'BLOCKED_BAD_PROVENANCE';}
 }
 function progress(){
@@ -71,7 +74,7 @@ function progress(){
  return {chapter:1,pages:132,totalScenes:462,
   existingRegisteredUnapproved:all.filter(s=>status(s)==='REGISTERED_NOT_P0_CERTIFIED').length,
   generatedDraftUnapproved:all.filter(s=>status(s)==='REAL_DRAFT_UNAPPROVED').length,
-  missing:all.filter(s=>status(s)==='MISSING').length,
+  missing:all.filter(s=>['MISSING','LOW_NATIVE_RESOLUTION_REGENERATE'].includes(status(s))).length,
   blocked:all.filter(s=>status(s).startsWith('BLOCKED')).map(s=>s.key),
   gameRegistrationsByThisTool:0,approvedByThisTool:0,
   pageStates:pages.map(pg=>({pageTask:pg.num,stage:pg.stage,edition:pg.edition,gender:pg.gender,
@@ -135,7 +138,10 @@ function renderSpec(s){
   ...refs.map((r,i)=>'Reference input '+i+' is actor '+r.id+', enforce reference face/age/silhouette/attire: '+r.rule),
   'If documents or maps occur, show entirely BLANK undecorated papers. Do NOT repeat appearance of female commander as Lucia, or Iris as an armored knight.'
  ].join('\n');
- return {actors,refs,prompt,estimate:4*26.05+refs.length*5.37};
+ const width=s.stage.id==='c01-s02'?1024:1536;
+ const height=s.stage.id==='c01-s02'?576:864;
+ return {actors,refs,prompt,width,height,
+  estimate:Math.ceil(width/512)*Math.ceil(height/512)*26.05+refs.length*5.37};
 }
 let reserved=0,requests=0,created=0,committed=0,blocked=[];
 const summary=reason=>{
@@ -148,7 +154,7 @@ const summary=reason=>{
 summary('STARTED');
 for(const pg of pages){
  if(committed>=maxPages){summary('PAGE_CAP');break;}
- const pending=pg.shots.filter(s=>status(s)==='MISSING');
+ const pending=pg.shots.filter(s=>['MISSING','LOW_NATIVE_RESOLUTION_REGENERATE'].includes(status(s)));
  if(!pending.length)continue;
  if(pg.shots.some(s=>status(s).startsWith('BLOCKED'))){
   blocked.push({page:pg.num,reason:'Unpaired or invalid existing source'});continue;
@@ -161,10 +167,14 @@ for(const pg of pages){
  const files=[];
  try{
   for(const {s,info} of todo){
+   if(status(s)==='LOW_NATIVE_RESOLUTION_REGENERATE'){
+    // Rejected below-spec candidates remain recoverable in Git history.
+    fs.rmSync(p(s.img),{force:true});fs.rmSync(p(s.proof),{force:true});
+   }
    if(fs.existsSync(p(s.img))||fs.existsSync(p(s.proof)))throw Error('Unexpected concurrent source');
    fs.mkdirSync(path.dirname(p(s.img)),{recursive:true});
    const form=new FormData();
-   form.append('prompt',info.prompt);form.append('width','1024');form.append('height','576');
+   form.append('prompt',info.prompt);form.append('width',String(info.width));form.append('height',String(info.height));
    const sent=[];
    for(let i=0;i<info.refs.length;i++){
     const r=info.refs[i],small=p(out+'reference-'+s.stage.id+'-'+r.id+'.png');
@@ -196,7 +206,8 @@ for(const pg of pages){
    try{conv=python('result',temp,p(s.img));}finally{fs.rmSync(temp,{force:true});}
    files.push(s.img);
    if(conv.inputPixels[0]!==conv.outputPixels[0]||conv.inputPixels[1]!==conv.outputPixels[1]||
-    conv.outputPixels[0]<768||conv.outputPixels[1]<320)throw Error('Non-native image dimensions');
+    conv.outputPixels[0]<(s.stage.id==='c01-s02'?768:1536)||
+    conv.outputPixels[1]<(s.stage.id==='c01-s02'?320:864))throw Error('Non-native image dimensions');
    const image=fs.readFileSync(p(s.img));
    fs.writeFileSync(p(s.proof),JSON.stringify({
     kind:'CLOUDFLARE_REAL_WEBP_REVIEW_CANDIDATE_NOT_APPROVED',
