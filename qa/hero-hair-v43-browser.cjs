@@ -54,6 +54,15 @@ const hex=bytes=>crypto.createHash('sha256').update(bytes).digest('hex');
     if(new Set(hashes[view]).size!==ids.length)
      throw Error('3D '+view+' silhouette did not change: '+
       gender+' '+hashes[view].join(' '));
+   // Root cap must follow the selected palette instead of remaining white,
+   // skin-toned or invisible when the color is changed independently.
+   await page.locator('#v33'+label+'HairColor').selectOption('black');
+   await page.waitForFunction(({gender})=>{
+    const v=window.__faceMasterQA?.();
+    return v?.gender===gender&&v?.v33HairColor==='black'&&
+     v?.wigReport?.hairColoredOpaqueRoot===true&&
+     v?.wigReport?.hairRootColor==='#292830';
+   },{gender},{timeout:60000});
    const after=await page.evaluate(()=>window.__faceMasterQA());
    if(after.gender!==gender||after.wigReport?.hairstyleId!=='buzz-cut')
     throw Error('Final 3D hairstyle differs from UI: '+gender);
