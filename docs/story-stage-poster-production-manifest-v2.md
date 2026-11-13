@@ -1,5 +1,29 @@
 # 灰銀のレゾナンス｜ステージ別ポスター・個別原画マニフェスト v3（2026-11-13）
 
+## 10シート×10コマ＝最大100コマ・一括レビューキュー（2026-11-13）
+
+**計算上は10×10=100コマを一括管理できるが、生成AIが10枚の4096×5760画像を1回の画像生成リクエストで返せるとは限らない。** さらに、低解像度のコマ割り画像を100枚に切っても本番品質を満たさないため、P0により不採用とする。
+
+実装は `scripts/assemble-story-bulk-100.py` で行う。これは**最大100枚の既存の独立原画を、台本キー付きで10枚の高精細レビューシートに可逆合成する処理**であり、**絵を生成するAIではない**。入力の存在・WebP形式・16:9・1536×864以上のネイティブ実画素を検証して、不備があるシートは `BLOCKED` とする。AI作画・人物マスター実バイト添付・目視承認は別工程。
+
+- ステージ2単独：**48場面→5シート（10/10/10/10/8）**。ステージ2を100枚に水増ししない。
+- ステージ2〜3：**96場面→10シート（最後6コマ）**。
+- ステージ2〜4：**144場面→最初のバッチ100場面（10シート）＋第2バッチ44場面**。この場合のシートは複数のステージや結果版を含む**レビュー用ファイル**であり、シナリオの結果・人物画を混ぜて流用するものではない。各コマは元の`stageId|edition|gender|panelId`で別々に管理する。
+- 本番目的の理想画質は独立原画それぞれ2048×1152。10コマ合成なら4096×5760。**分割画像のアップスケール、画像内UI・文字、別人物へのすり替え、未承認の公開は禁止。**
+
+再現コマンド：
+
+```bash
+node scripts/prepare-story-stage-posters.mjs --start c01-s02 --count 3 --out qa-reports/story-stage-production/bulk-native-100/source-stage2-through-stage4.json
+python scripts/assemble-story-bulk-100.py --manifest qa-reports/story-stage-production/bulk-native-100/source-stage2-through-stage4.json --batch-index 0 --prepare-only
+python scripts/assemble-story-bulk-100.py --manifest qa-reports/story-stage-production/bulk-native-100/source-stage2-through-stage4.json --batch-index 1 --prepare-only
+python qa/story-bulk-100-native.test.py
+```
+
+実原画が揃った後は `--prepare-only` を `--assemble` に変えて、**実ファイルが存在し、ネイティブ画素条件を満たすシートのみ**をQA用に合成できる。制作台本に存在しない場面は生成しない。GitHub Actions「Story native ten-panel sheet QA」がバッチ台帳を検証して成果物として出力する。
+
+---
+
 ## ネイティブ高画質10コマ・シート合成（2026-11-13）
 
 ### 絶対厳守 P0: コマ本体を先に作る
