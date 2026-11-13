@@ -6,8 +6,8 @@ import {measureHeadLocalBounds} from './character-system/hair-attachment-runtime
 import {createHeroineBattleActionVfx} from './heroine-battle-action-vfx.js?v=40';
 import {resolveBodyShape} from './character-cast-v46.js?v=46';
 import {resolveDemographicProfile,resolveBodyType,resolveAgeBand}
- from './character-demographics-v47.js?v=48';
-import {applySkinnedBuildMorph} from './body-build-morph-v48.js?v=48';
+ from './character-demographics-v47.js?v=51';
+import {applySkinnedBuildMorph} from './body-build-morph-v48.js?v=51';
 
 /**
  * Reuse EXACT game battle clothing: Female_Ranger / Female_Peasant skinned GLTF,
@@ -217,7 +217,7 @@ export function refineHeroineCostumeSilhouette(wardrobeRoot,{gender='female',job
   sourceGeometryUnmodified:true};
 }
 
-import {applyHeroineSkinMaterial} from './heroine-skin-material.js?v=41';
+import {applyHeroineSkinMaterial} from './heroine-skin-material.js?v=51';
 export function enhanceHeroineFaceSurface(face){
  return applyHeroineSkinMaterial(face);
 }
