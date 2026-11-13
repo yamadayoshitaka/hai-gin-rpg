@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "stageId": "c01-s02",
+  "edition": "post-victory",
+  "gender": "female",
+  "reviewSheet": 2,
+  "exactPanelCount": 2,
+  "shotOrder": [
+    "c01-s02-m19",
+    "c01-s02-m10"
+  ],
+  "originalNativePixels": [
+    1672,
+    941
+  ],
+  "reviewStatus": "CANDIDATE_ONLY_NOT_QUALITY_APPROVED",
+  "gameRegistered": false,
+  "actorReferenceBytesAttachedToGenerator": "UNVERIFIED",
+  "textFreeQualityReview": "PENDING",
+  "characterAndDialogueReview": "PENDING",
+  "notes": "Second review sheet; two existing individually generated source still images. Page-by-page commit. No false game approval.",
+  "assets": [
+    {
+      "name": "c01-s02-m19-post-victory-female.webp",
+      "gitBlobSha": "0e4ed87f3efe5851408a3a9cc536b2bd7598c649",
+      "sha256": "1757f75f24af7a972c42c6a2b4dc4e1505f95d1af3c88e447b7cdcbef2eb77d1",
+      "sourceNativePixels": [
+        1672,
+        941
+      ],
+      "approval": "PENDING_MANUAL_VISUAL_QA"
+    },
+    {
+      "name": "c01-s02-m10-post-victory-female.webp",
+      "gitBlobSha": "b1da3bc52bbc157e42350812768a31c6708f03a5",
+      "sha256": "1d58c454db4e7287632274e85c1f9259242a67fd809753ae0831eddf51887ac2",
+      "sourceNativePixels": [
+        1672,
+        941
+      ],
+      "approval": "PENDING_MANUAL_VISUAL_QA"
+    }
+  ]
+}
