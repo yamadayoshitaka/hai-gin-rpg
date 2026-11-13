@@ -133,6 +133,8 @@ import {MONSTER_CATALOG,MONSTER_BY_ID,MONSTER_FAMILIES,MONSTER_ELEMENTS,monsterL
 import {createMonsterModel,disposeMonsterSculpture,MONSTER_DETAIL_LEVELS,
   monsterSculptCacheStats,monsterPhotoCacheStats} from './src/monster-geometry.js?v=4.5.00';
 import {MONSTER_ACTIONS,startMonsterAction,animateMonsterModel} from './src/monster-animation.js?v=4.4.95';
+import {createCosplayedHumanoidMonster} from './src/monster-character-cosplay.js?v=4.5.01';
+import {humanoidMonsterCostumeFor,HUMAN_MONSTER_IDS} from './src/monster-character-cosplay-manifest.js?v=4.5.01';
 import {fetchCreatureRegistry,loadExternalCreature,loadPersonalGLB} from './src/creature-external-runtime.js?v=4.4.92';
 const byId=id=>document.getElementById(id);
 const storeKey='hai-gin.monster-manager.v1';
@@ -197,6 +199,7 @@ controls.enableDamping=true;controls.minDistance=2.2;controls.maxDistance=45;
 controls.maxPolarAngle=Math.PI*.54;controls.target.set(0,1.3,0);
 const clock=new THREE.Clock();
 let selected='m001',model=null,currentAction='idle',meshStats=null,frames=0;
+let costumeHandle=null;
 let externalRegistry={entries:{}},externalHandle=null,requestSerial=0;
 const localFiles=new Map(),assignmentKey='hai-gin.monster-external-assignment.v1';
 let modelAssignments={};
@@ -247,7 +250,8 @@ function loadEditor(m){
 }
 function disposeCurrent(){
  if(externalHandle){externalHandle.dispose();externalHandle=null;}
- else if(model)disposeMonsterSculpture(model);
+ if(costumeHandle){costumeHandle.dispose();costumeHandle=null;}
+ else if(model&&!externalHandle)disposeMonsterSculpture(model);
  model=null;
 }
 function refreshGeometry(){
@@ -278,17 +282,38 @@ function selectSpecies(id){
  }
  const m=specimen(id),detail=byId('quality').value;
  disposeCurrent();
- model=createMonsterModel(m,{detail});scene.add(model);
+ const mode=byId('assetSource').value;
+ const cosplay=mode==='procedural'?humanoidMonsterCostumeFor(m):null;
+ if(cosplay){
+   costumeHandle=createCosplayedHumanoidMonster(m,{detail});
+   model=costumeHandle.root;
+ }else model=createMonsterModel(m,{detail});
+ scene.add(model);
  refreshGeometry();
- startMonsterAction(model,'idle',clock.getElapsedTime());
+ if(costumeHandle)costumeHandle.start('idle',clock.getElapsedTime());
+ else startMonsterAction(model,'idle',clock.getElapsedTime());
  currentAction='idle';loadEditor(m);
  byId('name').textContent=m.name+' ('+m.rarity+')';
  byId('description').textContent=m.description+' — '+m.skill;
  focusCamera();renderList();
  notice('選択中: '+id+' — 動作と材質を確認');
- const mode=byId('assetSource').value;
  if(mode==='procedural'){
-   byId('assetStatus').textContent='従来3Dモデルを表示中';
+   if(costumeHandle){
+     const pending=costumeHandle;
+     byId('assetStatus').textContent='人物GLBの骨格・顔を読込中（従来3Dモデルを一時表示）';
+     pending.ready.then(result=>{
+       if(ticket!==requestSerial||costumeHandle!==pending||selected!==id)return;
+       if(result.source==='canonical-character-cosplay'){
+         refreshGeometry();focusCamera();
+         byId('assetStatus').textContent='人型モンスター刷新：既存キャラクターの全身GLB + 種族別衣装 '+result.modelId;
+         notice('人型の顔・体・アニメーションを既存キャラ素体へ切替済み：'+id);
+       }else if(result.source!=='cancelled'){
+         byId('assetStatus').textContent='人物GLBを読込めないため旧モデルを表示：'+(result.reason||'不明');
+       }
+     }).catch(error=>{
+       if(ticket===requestSerial)byId('assetStatus').textContent='人物GLBの読み込み失敗：'+error.message;
+     });
+   }else byId('assetStatus').textContent='非人型：専用3Dメッシュを表示中';
    return;
  }
  const chosenId=byId('externalAsset').value||id;
@@ -454,7 +479,8 @@ for(const [id,title] of MONSTER_ACTIONS){
  const button=document.createElement('button');button.textContent=title;button.title=id;
  button.onclick=()=>{
    if(!model)return;
-   startMonsterAction(model,id,clock.getElapsedTime());
+   if(costumeHandle)costumeHandle.start(id,clock.getElapsedTime());
+   else startMonsterAction(model,id,clock.getElapsedTime());
    externalHandle?.play(id);
    currentAction=id;
    notice(specimen(selected).name+'：'+title+' を再生');
@@ -480,7 +506,9 @@ function frame(){
  lastDrawAt=time;
  if(delta>0)fps=fps*.90+(1/delta)*.10;
  if(model){
-   const state=animateMonsterModel(model,time);
+   const state=costumeHandle?
+     (costumeHandle.update(time),{action:model.userData.action||'idle'}):
+     animateMonsterModel(model,time);
    externalHandle?.update(delta);
    const entry=specimen(selected);
    if((frames++%15)===0){
@@ -503,6 +531,13 @@ window.__monsterImportQA=()=>({
  externalActive:!!externalHandle,
  clips:externalHandle?.clips||[],
  selected
+});
+window.__monsterCosplayQA=()=>({
+ selected,eligible:HUMAN_MONSTER_IDS.includes(selected),
+ source:costumeHandle?.source||'native-monster',
+ canonicalModel:costumeHandle?.root.userData.costumeSource||null,
+ profile:humanoidMonsterCostumeFor(selected)?.costume||null,
+ loaded:costumeHandle?.source==='canonical-character-cosplay',
 });
 window.__monsterQualityQA=()=>({
  id:selected,detail:byId('quality').value,
