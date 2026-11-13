@@ -122,6 +122,11 @@ export function addConstructMonsterCostume({THREE:Engine=THREE,frames,
   contour(frames.chest,seams,type+'-chest-joint-'+side,[
    [side*.18,.18,-.20],[side*.21,-.08,-.23],
    [side*.14,-.30,-.20]],.012);
+  // Collar overlaps both the neck plate and shoulder shell: prevents an
+  // abrupt cut line, especially visible on bronze and white-silver statues.
+  contour(frames.chest,seams,type+'-forged-collar-'+side,[
+   [side*.11,.32,-.22],[side*.19,.28,-.223],
+   [side*.255,.17,-.204]],.015);
  }
  if(lava||crystal||type==='silver'){
   for(let i=0;i<5;i++){
