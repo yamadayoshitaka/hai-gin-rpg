@@ -1,0 +1,176 @@
+{
+  "schemaVersion": 1,
+  "kind": "EXISTING_STAGE1_CANONICAL_ART_AUDIT_AND_ONE_FRAME_RENDER_SLICES",
+  "stageId": "c01-s01",
+  "chapter": 1,
+  "stage": 1,
+  "priority": "P0_ABSOLUTE_MUST_FOLLOW",
+  "sourceOfScreenplay": "comicForStage(c01-s01) in src/story-chapter-comic.js",
+  "protectedExistingRegisteredWebps": 30,
+  "unregisteredExpected": 0,
+  "nativeMinimumPixels": [
+    768,
+    320
+  ],
+  "nativeMaximum": "USE_LARGEST_REAL_SUPPORTED_NEVER_UPSCALE",
+  "maximumFramesPerImageGenerationCall": 1,
+  "maximumFramesPerReviewSheet": 5,
+  "maximumReviewSheetsPerBatch": 10,
+  "registeredIsNotQualityApproved": true,
+  "realArtworkRegenerationIsOptInOnly": true,
+  "requireOneSceneAndOneSetOfCastIdsPerRequest": true,
+  "noTextOrNumbersOrUiInsideImages": true,
+  "noCrossGenderOrOutcomeReuse": true,
+  "mandatoryVisualQA": true,
+  "referenceMasterBible": "assets/story/characters/c01-s02-reference-bible.json",
+  "variants": [
+    {
+      "edition": "pre",
+      "gender": "male",
+      "panelIds": [
+        "c01-s01-m1",
+        "c01-s01-m2",
+        "c01-s01-m3",
+        "c01-s01-m4",
+        "c01-s01-m5",
+        "c01-s01-m11",
+        "c01-s01-m12",
+        "c01-s01-m13",
+        "c01-s01-m14",
+        "c01-s01-m15"
+      ],
+      "reviewSheets": [
+        {
+          "ordinal": 1,
+          "panelIds": [
+            "c01-s01-m1",
+            "c01-s01-m2",
+            "c01-s01-m3",
+            "c01-s01-m4",
+            "c01-s01-m5"
+          ],
+          "maximumPanelsPerSheet": 5,
+          "source": "FIVE_INDEPENDENT_WEBPS_ONLY",
+          "status": "REGISTERED_EXISTING_ART_UNAPPROVED"
+        },
+        {
+          "ordinal": 2,
+          "panelIds": [
+            "c01-s01-m11",
+            "c01-s01-m12",
+            "c01-s01-m13",
+            "c01-s01-m14",
+            "c01-s01-m15"
+          ],
+          "maximumPanelsPerSheet": 5,
+          "source": "FIVE_INDEPENDENT_WEBPS_ONLY",
+          "status": "REGISTERED_EXISTING_ART_UNAPPROVED"
+        }
+      ],
+      "requiredPanels": 10,
+      "alreadyRegistered": 10
+    },
+    {
+      "edition": "post-town",
+      "gender": "male",
+      "panelIds": [
+        "c01-s01-m6",
+        "c01-s01-m7",
+        "c01-s01-m8",
+        "c01-s01-m9",
+        "c01-s01-m10"
+      ],
+      "reviewSheets": [
+        {
+          "ordinal": 1,
+          "panelIds": [
+            "c01-s01-m6",
+            "c01-s01-m7",
+            "c01-s01-m8",
+            "c01-s01-m9",
+            "c01-s01-m10"
+          ],
+          "maximumPanelsPerSheet": 5,
+          "source": "FIVE_INDEPENDENT_WEBPS_ONLY",
+          "status": "REGISTERED_EXISTING_ART_UNAPPROVED"
+        }
+      ],
+      "requiredPanels": 5,
+      "alreadyRegistered": 5
+    },
+    {
+      "edition": "pre",
+      "gender": "female",
+      "panelIds": [
+        "c01-s01-m1",
+        "c01-s01-m2",
+        "c01-s01-m3",
+        "c01-s01-m4",
+        "c01-s01-m5",
+        "c01-s01-m11",
+        "c01-s01-m12",
+        "c01-s01-m13",
+        "c01-s01-m14",
+        "c01-s01-m15"
+      ],
+      "reviewSheets": [
+        {
+          "ordinal": 1,
+          "panelIds": [
+            "c01-s01-m1",
+            "c01-s01-m2",
+            "c01-s01-m3",
+            "c01-s01-m4",
+            "c01-s01-m5"
+          ],
+          "maximumPanelsPerSheet": 5,
+          "source": "FIVE_INDEPENDENT_WEBPS_ONLY",
+          "status": "REGISTERED_EXISTING_ART_UNAPPROVED"
+        },
+        {
+          "ordinal": 2,
+          "panelIds": [
+            "c01-s01-m11",
+            "c01-s01-m12",
+            "c01-s01-m13",
+            "c01-s01-m14",
+            "c01-s01-m15"
+          ],
+          "maximumPanelsPerSheet": 5,
+          "source": "FIVE_INDEPENDENT_WEBPS_ONLY",
+          "status": "REGISTERED_EXISTING_ART_UNAPPROVED"
+        }
+      ],
+      "requiredPanels": 10,
+      "alreadyRegistered": 10
+    },
+    {
+      "edition": "post-town",
+      "gender": "female",
+      "panelIds": [
+        "c01-s01-m6",
+        "c01-s01-m7",
+        "c01-s01-m8",
+        "c01-s01-m9",
+        "c01-s01-m10"
+      ],
+      "reviewSheets": [
+        {
+          "ordinal": 1,
+          "panelIds": [
+            "c01-s01-m6",
+            "c01-s01-m7",
+            "c01-s01-m8",
+            "c01-s01-m9",
+            "c01-s01-m10"
+          ],
+          "maximumPanelsPerSheet": 5,
+          "source": "FIVE_INDEPENDENT_WEBPS_ONLY",
+          "status": "REGISTERED_EXISTING_ART_UNAPPROVED"
+        }
+      ],
+      "requiredPanels": 5,
+      "alreadyRegistered": 5
+    }
+  ]
+}
