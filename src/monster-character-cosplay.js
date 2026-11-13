@@ -10,13 +10,17 @@ import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {createHumanBomRig} from './human-bom-renderer.js';
 import {attachTownOutfitNpc} from './cc0-town-npc-visuals.js';
-import {createMonsterModel,disposeMonsterSculpture} from './monster-geometry.js';
+import {createMonsterModel,disposeMonsterSculpture} from './monster-geometry.js?v=4.5.03';
 import {startMonsterAction,animateMonsterModel} from './monster-animation.js';
-import {humanoidMonsterCostumeFor} from './monster-character-cosplay-manifest.js';
+import {humanoidMonsterCostumeFor} from './monster-character-cosplay-manifest.js?v=4.5.03';
 import {addGothicMonsterSculpt,hasGothicMonsterSculpt}
  from './monster-gothic-sculpt.js';
 import {decorateMonsterPhotoMaterial,detachMonsterPhotoMaterial}
  from './monster-photo-pbr.js';
+import {classifyCosplaySurface,applyMonsterMaterialPigment}
+ from './monster-cosplay-pigmentation.js';
+import {addConstructMonsterCostume,isConstructCostume}
+ from './monster-construct-costume.js';
 
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const boneName=s=>String(s??'').toLowerCase().replace(/[^a-z0-9]/g,'');
@@ -144,20 +148,19 @@ function buildMonsterCostume(THREE,model,profile,detail){
  };
  // Keep the original canonical skinned face and facial bone proportions.
  // Colors are instance-local material CLONES, never mutated on hero assets.
- const recolored=new Set();
+ // Every canonical skinned mesh is given species pigmentation. Earlier,
+ // only hero meshes explicitly named "skin|face|body" changed color, leaving
+ // some healthy pink limbs/heads visible among undead costume parts.
+ // Original source materials remain untouched and maps/normals are retained.
  model.traverse(node=>{
   if(!node.isMesh||!node.material)return;
-  const combined=(node.name+' '+(Array.isArray(node.material)?
-   node.material.map(m=>m.name).join(' '):node.material.name)).toLowerCase();
-  if(!/(face|head|skin|body|hand|chest|eyebrow|eye|hair|cloth|armor|tunic|robe|dress)/.test(combined))return;
-  const role=/(face|head|skin|body|hand)/.test(combined)?'skin':
-    /(armor)/.test(combined)?'metal':'cloth';
-  const color=new THREE.Color(palette[role]);
   const recolor=m=>{
-   const copy=m.clone();ownedMats.push(copy);recolored.add(copy);
-   // Retain all source PBR maps/normal details; only adjust the monster
-   // instance's multiply tint for a decayed / demonic / noble appearance.
-   if(copy.color)copy.color.multiply(color.clone().lerp(new THREE.Color(0xffffff),.20));
+   const role=classifyCosplaySurface(node.name,m.name,{
+    isSkinnedMesh:!!node.isSkinnedMesh
+   });
+   if(role==='preserve')return m;
+   const copy=applyMonsterMaterialPigment(m,role,profile);
+   ownedMats.push(copy);
    return copy;
   };
   node.material=Array.isArray(node.material)?node.material.map(recolor):recolor(node.material);
@@ -166,8 +169,12 @@ function buildMonsterCostume(THREE,model,profile,detail){
  // identity (e.g. mummy wraps) and fitted folds; no replacement mannequin.
  const costume=profile.costume;
  const gothic=hasGothicMonsterSculpt(costume);
+ const construct=isConstructCostume(profile);
  if(gothic)addGothicMonsterSculpt({
    THREE,profile,detail,frames,attach,tube,torus
+ });
+ if(construct)addConstructMonsterCostume({
+   THREE,profile,detail,frames,attach,tube
  });
  const ceremonial=['vampire','lich','succubus','death_knight','dark_knight'];
  if(!gothic&&ceremonial.includes(costume)){
@@ -275,6 +282,8 @@ function buildMonsterCostume(THREE,model,profile,detail){
   id:profile.id,kind:costume,heroSource:profile.modelId,
   originalSkeleton:true,overlayMeshes:ownedGeo.length,
   gothicSculptEdition:gothic?'gothic-horror-2026-11':null,
+  constructSculptEdition:construct?'human-rigged-construct-2026-11':null,
+  skinColor:profile.skin,skinMaterialIsolation:true,
   jointAnchored:true,independentHeroMaterials:true,
  };
  return ()=>{

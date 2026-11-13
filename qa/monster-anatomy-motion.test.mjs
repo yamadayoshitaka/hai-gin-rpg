@@ -9,6 +9,7 @@ import './creature-face-volume-batch.test.mjs';
 import './creature-fangs-garment-seam-batch.test.mjs';
 import './monster-character-cosplay-regression.test.mjs';
 import './monster-gothic-sculpt-regression.test.mjs';
+import './monster-16-cosplay-pigment-regression.test.mjs';
 import {MONSTER_CATALOG,validateMonsterCatalog} from '../src/monster-catalog.js';
 import {
  ANATOMY_EVIDENCE, MONSTER_ANATOMY_RESEARCH, monsterEvidenceFor,
