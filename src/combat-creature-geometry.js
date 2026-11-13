@@ -57,6 +57,15 @@ function assemble(detail,face) {
     const geo=new THREE.SphereGeometry(1,detail==='high'?16:8,detail==='high'?12:6);
     geo.scale(sx,sy,sz);geo.translate(x,y,z);add(name,geo,tint);
   };
+  // Compact joint collar: closed and anatomically overlapped, but far fewer
+  // vertices than the generic fillet used on a thousand repeated dragons.
+  const socket=(name,tint,x,y,z,sx,sy,sz)=>{
+    const geo=new THREE.SphereGeometry(1,
+      detail==='high'?9:6,detail==='high'?7:4);
+    geo.scale(sx,sy,sz);
+    geo.translate(x,y,z);
+    add(name,geo,tint);
+  };
   const eyeSlit=(name,tint,side,x,y,z,halfLength,halfHeight,slope=0)=>{
     if(name==='eyes'){
       const shape=face.eyesType==='round'?1.18:face.eyesType==='narrow'?.71:face.eyesType==='hooded'?.87:1;
@@ -173,8 +182,8 @@ function assemble(detail,face) {
     add(name,createRootedCreatureHornGeometry({
       root,elbow,tip,radius,detail
     }),tint);
-    // Contoured keratin junction hides the horn/scalp seam.
-    joint(name,tint,...root,radius*1.04,radius*.66,radius*1.10);
+    // The wide root begins inside the skull, so no separate socket draw is
+    // required: this avoids a costly spherical mesh around every horn.
   };
   const scute=(name,tint,center,normal,rx,ry,depth)=>{
     add(name,createCreatureScuteGeometry({
@@ -341,7 +350,7 @@ function assemble(detail,face) {
     sphere(name,tint,x,y,z,sx*face.noseWidth*shape,sy,sz*face.noseLength);
   };
   return {add,sphere,noseSphere,joint,eyeSlit,profile,verticalProfile,
-    segment,horn,rootedHorn,scute,curved,fur,wing,majesticWing,finish};
+    segment,horn,rootedHorn,scute,socket,curved,fur,wing,majesticWing,finish};
 }
 
 function addCoatSculpture(g,type,s,detail){
@@ -708,7 +717,7 @@ function addHorse(g,s,detail){
 
 function addDragon(g,type,s,detail){
   const {sphere,noseSphere,joint,eyeSlit,profile,curved,segment,
-    horn,rootedHorn,scute,wing}=g;
+    horn,rootedHorn,scute,socket,wing}=g;
   const {skin,shadow,highlight,width:w,length:l,height:h,legs,tail,anatomy}=s;
   const elder=type==='elder_dragon',wyvern=anatomy==='wyvern';
   profile('core',skin,[
@@ -857,9 +866,9 @@ function addDragon(g,type,s,detail){
     const attach=[side*w*.71,h+.24,-l*.12],name=side===-1?'wingL':'wingR';
     wing(name,skin,shadow,attach,s.wing,side);
     // Both sides of the wing root overlap the scapular bed.
-    joint('core',skin,side*w*.70,h+.24,-l*.12,
+    socket('core',skin,side*w*.70,h+.24,-l*.12,
       w*.25,h*.16,l*.19);
-    joint(name,skin,0,0,0,w*.29,h*.18,l*.19);
+    socket(name,skin,0,0,0,w*.29,h*.18,l*.19);
     // Shape is model-local; placing the pivot is a renderer responsibility.
   }
   if(elder){
@@ -883,7 +892,7 @@ function addDragon(g,type,s,detail){
 
 function addDragonLord(g,s,detail){
   const {sphere,joint,eyeSlit,profile,verticalProfile,curved,segment,
-    horn,rootedHorn,scute,majesticWing}=g;
+    horn,rootedHorn,scute,socket,majesticWing}=g;
   const {skin,shadow,highlight,width:w,wing:span}=s;
   // This is an upright, claw-handed dragon, NOT a four-legged dragon with a
   // humanoid head glued on. Continuous torso and neck lofts keep the seams
@@ -1005,8 +1014,8 @@ function addDragonLord(g,s,detail){
   for(const side of [-1,1]){
     const name=side<0?'wingL':'wingR';
     majesticWing(name,0xc3ad9a,0x716361,span,side);
-    joint('core',skin,side*.60,2.97,-.19,.28,.23,.31);
-    joint(name,skin,0,0,0,.24,.20,.28);
+    socket('core',skin,side*.60,2.97,-.19,.28,.23,.31);
+    socket(name,skin,0,0,0,.24,.20,.28);
   }
   if(detail==='high'){
     // Individually modelled overlapping scales: close-up detail stays on the
