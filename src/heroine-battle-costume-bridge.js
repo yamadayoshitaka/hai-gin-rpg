@@ -348,7 +348,7 @@ export async function createRealBattleOutfitStudio({scene,faceModel,getFaceModel
    // Always graft the newest live face, never an already-disposed preview.
    const latestFace=getFaceModel?.()||faceModel;
    headRoot=latestFace.root;face=latestFace.face;
-   enhanceHeroineFaceSurface(face);
+   if(gender==='female')enhanceHeroineFaceSurface(face);
    scene.add(actor.object3D);
    headFit=attachIndependentFaceToBattleHead({faceRoot:headRoot,
     faceMesh:face,characterModel:actor.model,
@@ -421,7 +421,7 @@ export async function createRealBattleOutfitStudio({scene,faceModel,getFaceModel
  function attachFace(next){
   if(!next?.root||!next.face)throw Error('Updated face required');
   headRoot=next.root;face=next.face;
-  enhanceHeroineFaceSurface(face);
+  if(gender==='female')enhanceHeroineFaceSurface(face);
   if(actor){
    headFit=attachIndependentFaceToBattleHead({
     faceRoot:headRoot,faceMesh:face,characterModel:actor.model,
