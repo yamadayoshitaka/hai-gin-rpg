@@ -4,6 +4,10 @@ on:
   push:
     branches: [main]
     paths:
+      - 'scripts/story-chapter-page-loop.mjs'
+      - 'src/story-chapter-reviewed-art.js'
+      - 'qa/story-chapter-page-loop.test.mjs'
+      - '.github/workflows/story-chapter-page-loop.yml'
       - 'scripts/process-c01-s01-stage-batch.mjs'
       - 'qa/story-stage2-two-review-pages.test.mjs'
       - 'assets/story/chapter-drafts/c01/pending-art-review/**'
@@ -34,6 +38,11 @@ on:
       - 'assets/story/chapters/c01/stage2-stage3-production-queue.json'
   pull_request:
     paths:
+      - 'scripts/story-chapter-page-loop.mjs'
+      - 'src/story-chapter-reviewed-art.js'
+      - 'src/story-panel-registered-art.js'
+      - 'qa/story-chapter-page-loop.test.mjs'
+      - '.github/workflows/story-chapter-page-loop.yml'
       - 'qa/story-stage2-two-review-pages.test.mjs'
       - 'assets/story/chapter-drafts/c01/pending-art-review/**'
       - 'scripts/process-c01-s01-stage-batch.mjs'
@@ -76,6 +85,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Check chapter-level atomic five-frame tasks and registration fail-closed
+        run: |
+          node --check scripts/story-chapter-page-loop.mjs
+          node qa/story-chapter-page-loop.test.mjs
       - name: Audit all 30 existing Chapter 1 Stage 1 WebPs and run six five-frame one-shot slices
         run: |
           node --check scripts/process-c01-s01-stage-batch.mjs

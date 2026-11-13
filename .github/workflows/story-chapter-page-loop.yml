@@ -1,0 +1,78 @@
+name: Chapter comic page transactions (5 scenes -> reviewed -> registered -> committed)
+
+on:
+  workflow_dispatch:
+    inputs:
+      chapter:
+        description: 'Chapter currently supported by locked production contracts (1)'
+        type: choice
+        options: ['1']
+        default: '1'
+        required: true
+      mode:
+        description: 'Plan only, or process only pages with real WebP and human-approved image proofs'
+        type: choice
+        options: [plan, register-approved]
+        default: plan
+        required: true
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write
+
+concurrency:
+  group: story-chapter-one-page-loop
+  cancel-in-progress: false
+
+jobs:
+  chapter:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Test chapter page tasks, individual art, QA gates, 10-stage order
+        run: |
+          node --check scripts/story-chapter-page-loop.mjs
+          node qa/story-chapter-page-loop.test.mjs
+      - name: Generate the actual 10-stage and 132-page task queue
+        run: node scripts/story-chapter-page-loop.mjs --chapter "${{ inputs.chapter }}" --plan
+      - uses: actions/upload-artifact@v4
+        with:
+          name: chapter-${{ inputs.chapter }}-page-queue-${{ github.run_id }}
+          path: qa-reports/story-stage-production/chapter-page-loop/
+          retention-days: 30
+      # NOTE: no image-generation API has been connected to GitHub Actions.
+      # register-approved may commit images ONLY when every pending frame of
+      # that page physically exists and has a matching HUMAN-approved P0 proof.
+      # Any missing/incorrect frame stops the task; it cannot fabricate images.
+      - name: Create a separate branch for approved individual page commits
+        if: inputs.mode == 'register-approved'
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "story/chapter-c01-page-tasks-${{ github.run_id }}"
+      - name: Execute one page at a time and commit each approved page
+        if: inputs.mode == 'register-approved'
+        run: node scripts/story-chapter-page-loop.mjs --chapter "${{ inputs.chapter }}" --execute --commit --push
+      - name: Open a chapter-wide PR only after all page tasks have passed
+        if: inputs.mode == 'register-approved'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if git diff --quiet origin/main...HEAD; then
+            echo 'No new approved artwork was registered; no chapter PR.'
+            exit 2
+          fi
+          gh pr create --base main --head "story/chapter-c01-page-tasks-${{ github.run_id }}" \
+            --title "art(story): chapter 1 approved per-page registrations" \
+            --body "One page <=5 scenes per commit; every new art has a physical native WebP, matching scene/reference hashes, explicit human P0 review and a unique canonical registered binding. This workflow NEVER generates art or asserts image-generation was connected. Merge requires CI; the existing Publish RPG Pages workflow deploys the merged chapter."
