@@ -18,7 +18,7 @@ export function classifyCosplaySurface(nodeName='',materialName='',{
  const name=(String(nodeName)+' '+String(materialName)).toLowerCase();
  // Eye / cornea / iris / mouth interiors need their original optical detail,
  // otherwise a cyan corpse with cyan glass eyes looks toy-like.
- if(/eyes?\b|eyeball|eyewhite|eyelash|eyebrow|iris|pupil|cornea|tear|tongue|tooth|teeth|gum|mouth/i.test(name))return 'preserve';
+ if(/eyes?\b|eye[_\s-]?(ball|white|lash|brow|lid)|eyeball|eyewhite|eyelash|eyebrow|iris|pupil|cornea|tear|tongue|tooth|teeth|gum|mouth/i.test(name))return 'preserve';
  if(/hair|eyebrow|beard|facialhair|eyelash|wig|scalp/i.test(name))return 'hair';
  if(/armor|armour|metal|steel|plate|gauntlet|bracer|helmet|shield/i.test(name))return 'metal';
  if(/fabric|cloth|tunic|shirt|pants|trouser|coat|robe|cloak|cape|mantle|vest|dress|skirt|belt|boot|shoe|leather|outfit|uniform/i.test(name))return 'cloth';
