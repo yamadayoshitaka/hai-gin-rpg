@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import {createFastFaceSurfaceSampler} from './face-feature-meshes.js';
 import {getWigStyle,DEFAULT_WIG_STYLE_ID,WIG_BASE_VOLUME_PROFILES,WIG_SILHOUETTE_PROFILES} from './face-wig-styles.js?v=44';
 import {makeStyleSpecificHair} from './face-wig-ornaments-v49.js?v=49';
+import {catalogHairGroom,groomGuideOffset} from './face-hair-groom-v50.js?v=50';
 
 /**
  * Mobile-preview wig made of real scalp-rooted 3D lock ribbons.
@@ -314,6 +315,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   throw Error('Unknown wig volume profile: '+volumeProfile);
  const style=getWigStyle(styleId);
  const silhouette=WIG_SILHOUETTE_PROFILES[styleId];
+ const catalogGroom=catalogHairGroom(styleId);
  if(!silhouette)throw Error('Missing 3D silhouette for '+styleId);
  const minLengthScale=gender==='male'?.18:.55;
  // v25: a detachable wig keeps its current physically simulated guides;
@@ -496,7 +498,8 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   const browLimit=box.min.y+d.y*
    (.685+.090*Math.pow(1-centerDist,1.5)+
     .014*partSlope+featherVariation-
-    (fringe?silhouette.fringeDrop:Math.min(.035,silhouette.fringeDrop)));
+    (fringe?silhouette.fringeDrop:Math.min(.035,silhouette.fringeDrop))+
+    (fringe||overFace?catalogGroom.fringeLift:0));
   // Long feathered bangs from the real high hairline to the eyebrow level.
   // The old 0.09-head-height cap ended halfway down the forehead.
   const bangLength=d.y*(.235+.045*cutPhase+silhouette.fringeDrop*.25)*
@@ -513,12 +516,18 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
      (style.styleLength||1);
   const rest=[],points=[],vel=[];
   const lateral=2*Math.abs(wigRoot.x-center.x)/d.x;
-  const trimY=cutKind?wigRoot.y-length*1.06:
+  const baseTrimY=cutKind?wigRoot.y-length*1.06:
    Math.min(wigRoot.y-d.y*.012,
     (fringe||overFace)?browLimit:
      hairCutY(zone,box,lengthScale,i,lateral,minLengthScale)+
       (back?d.y*silhouette.rearCutShift:0)-
       (bodyCollisionResolver&&(back||zone.startsWith('temple'))?d.y*.26:0));
+  // A mash ends at the ear, not the collarbone; a short wolf keeps its
+  // nape. Existing one-mesh layered cards follow these individual cuts.
+  const floorRatio=back?catalogGroom.backFloor:
+   zone.startsWith('temple')?catalogGroom.templeFloor:0;
+  const trimY=floorRatio?Math.max(baseTrimY,
+   Math.min(wigRoot.y-d.y*.014,box.min.y+d.y*floorRatio)):baseTrimY;
   // Salon-guided locks: the real scalp root stays fixed. After a brief
   // head-conforming section, each lock DROPS DOWN, not out in a radial
   // fan. This removes the puffy helmet and spiked cheek-side fan.
@@ -573,6 +582,12 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
       -length*t,(back?-1:1)*d.z*(cutKind==='buzz'?.001:.007)*t)):
     f3(THREE.MathUtils.lerp(wigRoot.x,targetX,fall)+templeVolume+strandWave*t+curl,
      y,THREE.MathUtils.lerp(wigRoot.z,targetZ,fall)+curl*.35);
+   if(j>0){
+    const groom=groomGuideOffset(catalogGroom,{
+     t,zone,partSide,front:closeToFace,rootIndex:i
+    });
+    p.x+=d.x*groom.x;p.y+=d.y*groom.y;p.z+=d.z*groom.z;
+   }
    if(j>0&&t<.65&&y>box.min.y+d.y*.60){
     const direction=f3(p.x-scalpCenter.x,0,p.z-scalpCenter.z);
     const radius=direction.length();
@@ -1043,6 +1058,9 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  root.userData.wigReport={
   style:'real-scalp-shell-growing-then-trimmed',gender,rooted:true,rootCount:lockCount,
   hairstyleId:style.id,styleLabel:style.label,
+  v50CatalogGroom:catalogGroom.mode,
+  v50FringeLift:catalogGroom.fringeLift,
+  v50SideCutFloor:catalogGroom.templeFloor,
   v49StyledHairType:styled.type,
   v49StyledHairMeshCount:styled.meshes.length,
   v49StyledHairTriangles:styled.triangleCount,
