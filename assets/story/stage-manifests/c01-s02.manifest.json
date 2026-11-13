@@ -25,14 +25,14 @@
     "maxRows": 3,
     "maxPanelsPerPoster": 5,
     "minPerPanelNativePixels": [
-      1536,
-      864
+      768,
+      320
     ],
     "preferredPerPanelNativePixels": [
       2048,
       1152
     ],
-    "aspectRatio": "16:9",
+    "aspectRatio": "PRESERVE_ORIGINAL_ASPECT_WITH_OBJECT_FIT_CONTAIN",
     "format": "webp",
     "croppingCellOrder": "left-to-right, top-to-bottom",
     "seventhCell": "blank eighth cell; no fabricated scene",
@@ -45,13 +45,13 @@
         1152
       ],
       "minimumCellPixels": [
-        1536,
-        864
+        768,
+        320
       ],
       "maximumFramesPerSheet": 5,
       "columns": 2,
       "maxRows": 3,
-      "nativeDetailGuarantee": "Each scene must be independently rendered at native resolution; composite raster dimensions or upscaling alone are not proof",
+      "nativeDetailGuarantee": "Original source frame must be at least 768px wide and 320px high without enlargement; original aspect ratio retained, independent cast/scene human QA still mandatory",
       "gridOrder": "LEFT_TO_RIGHT_TOP_TO_BOTTOM",
       "absentLastCell": "UNUSED_NEUTRAL_CELL_NEVER_SCENE",
       "requiredChecks": [
@@ -74,9 +74,11 @@
       ],
       "originalGeneratorSupports4096x3456": "UNVERIFIED_DO_NOT_ASSUME",
       "minimumFullFivePanelSheetPixels": [
-        3072,
-        2592
-      ]
+        1536,
+        960
+      ],
+      "mobileNativeProfile": "MOBILE_768x320_NATIVE_NO_UPSCALE",
+      "cellAspectRule": "PRESERVE_ORIGINAL_ASPECT_WITH_OBJECT_FIT_CONTAIN"
     },
     "sheetPolicyAppliesToStage2ExistingVariants": true,
     "bulkNativeSheetBatches": {
@@ -93,8 +95,8 @@
         1152
       ],
       "nativeMinimumPerFrame": [
-        1536,
-        864
+        768,
+        320
       ],
       "assemblyAlgorithm": "INDIVIDUAL_NATIVE_WEBP_FIRST_THEN_LOSSLESS_COMPOSITE",
       "stagingSource": "scripts/prepare-story-stage-posters.mjs",
@@ -118,7 +120,7 @@
       "imageGenerator4096x5760NativeSupport": "NOT_VERIFIED",
       "approveOrDeployAutomatically": false,
       "missingActualReferenceImagePolicy": "BLOCKED",
-      "missingOrSubminimumNativeFramePolicy": "BLOCKED",
+      "missingOrSubminimumNativeFramePolicy": "BLOCKED_BELOW_768x320",
       "textOrUiMismatchPolicy": "REJECTED",
       "preferred5PanelSheetPixels": [
         4096,
@@ -160,7 +162,13 @@
     "priority": "P0_ABSOLUTE_MUST_FOLLOW",
     "mandatoryActualByteAttachments": true,
     "noTextIncludesGameScreenshots": true,
-    "onViolation": "REJECTED_NO_REGISTRATION_OR_DEPLOYMENT"
+    "onViolation": "REJECTED_NO_REGISTRATION_OR_DEPLOYMENT",
+    "nativeMinimumPixels": [
+      768,
+      320
+    ],
+    "aspectRatioPolicy": "PRESERVE_ORIGINAL_ASPECT_WITH_OBJECT_FIT_CONTAIN",
+    "noLowResolutionSheetUpscale": true
   },
   "operatingOrder": [
     "load full stage screenplay",
@@ -169,7 +177,7 @@
     "attach real cast image files",
     "P0 gate: every actor's real image bytes must be attached, otherwise BLOCKED (path strings do not count)",
     "P0 prompt: prepend mandatory absolute textless/cast-identity/canonical-scene rules to every shot and variant render prompt",
-    "independently render one native-resolution 16:9 WebP per canonical scene with real character master bytes (if image generator connected)",
+    "independently render one actual-native-resolution WebP (minimum 768x320) per canonical scene with real character master bytes (if image generator connected)",
     "assemble approved native WebP frames into 2-column x up-to-3-row lossless review-only sheets (up to 5; never use a low-resolution contact sheet as the original)",
     "for bulk review queues: at most 50 authentic independent WebPs, 10 sheets of up to 5, with deterministic batch indices; do not pad stage2's 48 canonically defined scenes",
     "if a native high-res input sheet is supplied, cut only when per-cell native pixels exceed minimum; otherwise BLOCKED_LOW_RES",
@@ -214,8 +222,8 @@
       ],
       "posterInput": "assets/story/chapter-drafts/c01/posters/c01-s02-pre-male-p01.webp",
       "posterMinNativePixels": [
-        3072,
-        2592
+        1536,
+        960
       ],
       "numberedArt": false,
       "status": "SCRIPTED_NOT_APPROVED",
@@ -240,7 +248,16 @@
         ],
         "noFabricatedCell": true,
         "noUpscale": true,
-        "approval": "NOT_APPROVED"
+        "approval": "NOT_APPROVED",
+        "minimumCellNativePixels": [
+          768,
+          320
+        ],
+        "cellAspectRule": "PRESERVE_ORIGINAL_ASPECT_WITH_OBJECT_FIT_CONTAIN",
+        "preferredCellNativePixels": [
+          2048,
+          1152
+        ]
       },
       "reviewSheets": [
         {
@@ -257,14 +274,19 @@
           "columns": 2,
           "rows": 3,
           "posterMinNativePixels": [
-            3072,
-            2592
+            1536,
+            960
           ],
           "posterPreferredNativePixels": [
             4096,
             3456
           ],
-          "approval": "NOT_APPROVED"
+          "approval": "NOT_APPROVED",
+          "nativeMinPixelsPerCell": [
+            768,
+            320
+          ],
+          "aspectRatioPolicy": "PRESERVE_ORIGINAL_ASPECT_WITH_OBJECT_FIT_CONTAIN"
         },
         {
           "page": 2,
@@ -278,14 +300,19 @@
           "columns": 2,
           "rows": 2,
           "posterMinNativePixels": [
-            3072,
-            1728
+            1536,
+            640
           ],
           "posterPreferredNativePixels": [
             4096,
             2304
           ],
-          "approval": "NOT_APPROVED"
+          "approval": "NOT_APPROVED",
+          "nativeMinPixelsPerCell": [
+            768,
+            320
+          ],
+          "aspectRatioPolicy": "PRESERVE_ORIGINAL_ASPECT_WITH_OBJECT_FIT_CONTAIN"
         }
       ],
       "sheetCount": 2
@@ -307,8 +334,8 @@
       ],
       "posterInput": "assets/story/chapter-drafts/c01/posters/c01-s02-pre-female-p01.webp",
       "posterMinNativePixels": [
-        3072,
-        2592
+        1536,
+        960
       ],
       "numberedArt": false,
       "status": "SCRIPTED_NOT_APPROVED",
@@ -333,7 +360,16 @@
         ],
         "noFabricatedCell": true,
         "noUpscale": true,
-        "approval": "NOT_APPROVED"
+        "approval": "NOT_APPROVED",
+        "minimumCellNativePixels": [
+          768,
+          320
+        ],
+        "cellAspectRule": "PRESERVE_ORIGINAL_ASPECT_WITH_OBJECT_FIT_CONTAIN",
+        "preferredCellNativePixels": [
+          2048,
+          1152
+        ]
       },
       "reviewSheets": [
         {
@@ -350,14 +386,19 @@
           "columns": 2,
           "rows": 3,
           "posterMinNativePixels": [
-            3072,
-            2592
+            1536,
+            960
           ],
           "posterPreferredNativePixels": [
             4096,
             3456
           ],
-          "approval": "NOT_APPROVED"
+          "approval": "NOT_APPROVED",
+          "nativeMinPixelsPerCell": [
+            768,
+            320
+          ],
+          "aspectRatioPolicy": "PRESERVE_ORIGINAL_ASPECT_WITH_OBJECT_FIT_CONTAIN"
         },
         {
           "page": 2,
@@ -371,14 +412,19 @@
           "columns": 2,
           "rows": 2,
           "posterMinNativePixels": [
-            3072,
-            1728
+            1536,
+            640
           ],
           "posterPreferredNativePixels": [
             4096,
             2304
           ],
-          "approval": "NOT_APPROVED"
+          "approval": "NOT_APPROVED",
+          "nativeMinPixelsPerCell": [
+            768,
+            320
+          ],
+          "aspectRatioPolicy": "PRESERVE_ORIGINAL_ASPECT_WITH_OBJECT_FIT_CONTAIN"
         }
       ],
       "sheetCount": 2
@@ -399,8 +445,8 @@
       ],
       "posterInput": "assets/story/chapter-drafts/c01/posters/c01-s02-post-victory-male-p01.webp",
       "posterMinNativePixels": [
-        3072,
-        2592
+        1536,
+        960
       ],
       "numberedArt": false,
       "status": "SCRIPTED_NOT_APPROVED",
@@ -425,7 +471,16 @@
         ],
         "noFabricatedCell": true,
         "noUpscale": true,
-        "approval": "NOT_APPROVED"
+        "approval": "NOT_APPROVED",
+        "minimumCellNativePixels": [
+          768,
+          320
+        ],
+        "cellAspectRule": "PRESERVE_ORIGINAL_ASPECT_WITH_OBJECT_FIT_CONTAIN",
+        "preferredCellNativePixels": [
+          2048,
+          1152
+        ]
       },
       "reviewSheets": [
         {
@@ -442,14 +497,19 @@
           "columns": 2,
           "rows": 3,
           "posterMinNativePixels": [
-            3072,
-            2592
+            1536,
+            960
           ],
           "posterPreferredNativePixels": [
             4096,
             3456
           ],
-          "approval": "NOT_APPROVED"
+          "approval": "NOT_APPROVED",
+          "nativeMinPixelsPerCell": [
+            768,
+            320
+          ],
+          "aspectRatioPolicy": "PRESERVE_ORIGINAL_ASPECT_WITH_OBJECT_FIT_CONTAIN"
         },
         {
           "page": 2,
@@ -462,14 +522,19 @@
           "columns": 2,
           "rows": 1,
           "posterMinNativePixels": [
-            3072,
-            864
+            1536,
+            320
           ],
           "posterPreferredNativePixels": [
             4096,
             1152
           ],
-          "approval": "NOT_APPROVED"
+          "approval": "NOT_APPROVED",
+          "nativeMinPixelsPerCell": [
+            768,
+            320
+          ],
+          "aspectRatioPolicy": "PRESERVE_ORIGINAL_ASPECT_WITH_OBJECT_FIT_CONTAIN"
         }
       ],
       "sheetCount": 2
@@ -490,8 +555,8 @@
       ],
       "posterInput": "assets/story/chapter-drafts/c01/posters/c01-s02-post-victory-female-p01.webp",
       "posterMinNativePixels": [
-        3072,
-        2592
+        1536,
+        960
       ],
       "numberedArt": false,
       "status": "SCRIPTED_NOT_APPROVED",
@@ -516,7 +581,16 @@
         ],
         "noFabricatedCell": true,
         "noUpscale": true,
-        "approval": "NOT_APPROVED"
+        "approval": "NOT_APPROVED",
+        "minimumCellNativePixels": [
+          768,
+          320
+        ],
+        "cellAspectRule": "PRESERVE_ORIGINAL_ASPECT_WITH_OBJECT_FIT_CONTAIN",
+        "preferredCellNativePixels": [
+          2048,
+          1152
+        ]
       },
       "reviewSheets": [
         {
@@ -533,14 +607,19 @@
           "columns": 2,
           "rows": 3,
           "posterMinNativePixels": [
-            3072,
-            2592
+            1536,
+            960
           ],
           "posterPreferredNativePixels": [
             4096,
             3456
           ],
-          "approval": "NOT_APPROVED"
+          "approval": "NOT_APPROVED",
+          "nativeMinPixelsPerCell": [
+            768,
+            320
+          ],
+          "aspectRatioPolicy": "PRESERVE_ORIGINAL_ASPECT_WITH_OBJECT_FIT_CONTAIN"
         },
         {
           "page": 2,
@@ -553,14 +632,19 @@
           "columns": 2,
           "rows": 1,
           "posterMinNativePixels": [
-            3072,
-            864
+            1536,
+            320
           ],
           "posterPreferredNativePixels": [
             4096,
             1152
           ],
-          "approval": "NOT_APPROVED"
+          "approval": "NOT_APPROVED",
+          "nativeMinPixelsPerCell": [
+            768,
+            320
+          ],
+          "aspectRatioPolicy": "PRESERVE_ORIGINAL_ASPECT_WITH_OBJECT_FIT_CONTAIN"
         }
       ],
       "sheetCount": 2
@@ -581,8 +665,8 @@
       ],
       "posterInput": "assets/story/chapter-drafts/c01/posters/c01-s02-post-defeat-male-p01.webp",
       "posterMinNativePixels": [
-        3072,
-        2592
+        1536,
+        960
       ],
       "numberedArt": false,
       "status": "SCRIPTED_NOT_APPROVED",
@@ -607,7 +691,16 @@
         ],
         "noFabricatedCell": true,
         "noUpscale": true,
-        "approval": "NOT_APPROVED"
+        "approval": "NOT_APPROVED",
+        "minimumCellNativePixels": [
+          768,
+          320
+        ],
+        "cellAspectRule": "PRESERVE_ORIGINAL_ASPECT_WITH_OBJECT_FIT_CONTAIN",
+        "preferredCellNativePixels": [
+          2048,
+          1152
+        ]
       },
       "reviewSheets": [
         {
@@ -624,14 +717,19 @@
           "columns": 2,
           "rows": 3,
           "posterMinNativePixels": [
-            3072,
-            2592
+            1536,
+            960
           ],
           "posterPreferredNativePixels": [
             4096,
             3456
           ],
-          "approval": "NOT_APPROVED"
+          "approval": "NOT_APPROVED",
+          "nativeMinPixelsPerCell": [
+            768,
+            320
+          ],
+          "aspectRatioPolicy": "PRESERVE_ORIGINAL_ASPECT_WITH_OBJECT_FIT_CONTAIN"
         },
         {
           "page": 2,
@@ -644,14 +742,19 @@
           "columns": 2,
           "rows": 1,
           "posterMinNativePixels": [
-            3072,
-            864
+            1536,
+            320
           ],
           "posterPreferredNativePixels": [
             4096,
             1152
           ],
-          "approval": "NOT_APPROVED"
+          "approval": "NOT_APPROVED",
+          "nativeMinPixelsPerCell": [
+            768,
+            320
+          ],
+          "aspectRatioPolicy": "PRESERVE_ORIGINAL_ASPECT_WITH_OBJECT_FIT_CONTAIN"
         }
       ],
       "sheetCount": 2
@@ -672,8 +775,8 @@
       ],
       "posterInput": "assets/story/chapter-drafts/c01/posters/c01-s02-post-defeat-female-p01.webp",
       "posterMinNativePixels": [
-        3072,
-        2592
+        1536,
+        960
       ],
       "numberedArt": false,
       "status": "SCRIPTED_NOT_APPROVED",
@@ -698,7 +801,16 @@
         ],
         "noFabricatedCell": true,
         "noUpscale": true,
-        "approval": "NOT_APPROVED"
+        "approval": "NOT_APPROVED",
+        "minimumCellNativePixels": [
+          768,
+          320
+        ],
+        "cellAspectRule": "PRESERVE_ORIGINAL_ASPECT_WITH_OBJECT_FIT_CONTAIN",
+        "preferredCellNativePixels": [
+          2048,
+          1152
+        ]
       },
       "reviewSheets": [
         {
@@ -715,14 +827,19 @@
           "columns": 2,
           "rows": 3,
           "posterMinNativePixels": [
-            3072,
-            2592
+            1536,
+            960
           ],
           "posterPreferredNativePixels": [
             4096,
             3456
           ],
-          "approval": "NOT_APPROVED"
+          "approval": "NOT_APPROVED",
+          "nativeMinPixelsPerCell": [
+            768,
+            320
+          ],
+          "aspectRatioPolicy": "PRESERVE_ORIGINAL_ASPECT_WITH_OBJECT_FIT_CONTAIN"
         },
         {
           "page": 2,
@@ -735,14 +852,19 @@
           "columns": 2,
           "rows": 1,
           "posterMinNativePixels": [
-            3072,
-            864
+            1536,
+            320
           ],
           "posterPreferredNativePixels": [
             4096,
             1152
           ],
-          "approval": "NOT_APPROVED"
+          "approval": "NOT_APPROVED",
+          "nativeMinPixelsPerCell": [
+            768,
+            320
+          ],
+          "aspectRatioPolicy": "PRESERVE_ORIGINAL_ASPECT_WITH_OBJECT_FIT_CONTAIN"
         }
       ],
       "sheetCount": 2
@@ -758,8 +880,8 @@
       ],
       "posterInput": "assets/story/chapter-drafts/c01/posters/c01-s02-post-gameover-male-p01.webp",
       "posterMinNativePixels": [
-        3072,
-        864
+        1536,
+        320
       ],
       "numberedArt": false,
       "status": "SCRIPTED_NOT_APPROVED",
@@ -784,7 +906,16 @@
         ],
         "noFabricatedCell": true,
         "noUpscale": true,
-        "approval": "NOT_APPROVED"
+        "approval": "NOT_APPROVED",
+        "minimumCellNativePixels": [
+          768,
+          320
+        ],
+        "cellAspectRule": "PRESERVE_ORIGINAL_ASPECT_WITH_OBJECT_FIT_CONTAIN",
+        "preferredCellNativePixels": [
+          2048,
+          1152
+        ]
       },
       "reviewSheets": [
         {
@@ -798,14 +929,19 @@
           "columns": 2,
           "rows": 1,
           "posterMinNativePixels": [
-            3072,
-            864
+            1536,
+            320
           ],
           "posterPreferredNativePixels": [
             4096,
             1152
           ],
-          "approval": "NOT_APPROVED"
+          "approval": "NOT_APPROVED",
+          "nativeMinPixelsPerCell": [
+            768,
+            320
+          ],
+          "aspectRatioPolicy": "PRESERVE_ORIGINAL_ASPECT_WITH_OBJECT_FIT_CONTAIN"
         }
       ],
       "sheetCount": 1
@@ -821,8 +957,8 @@
       ],
       "posterInput": "assets/story/chapter-drafts/c01/posters/c01-s02-post-gameover-female-p01.webp",
       "posterMinNativePixels": [
-        3072,
-        864
+        1536,
+        320
       ],
       "numberedArt": false,
       "status": "SCRIPTED_NOT_APPROVED",
@@ -847,7 +983,16 @@
         ],
         "noFabricatedCell": true,
         "noUpscale": true,
-        "approval": "NOT_APPROVED"
+        "approval": "NOT_APPROVED",
+        "minimumCellNativePixels": [
+          768,
+          320
+        ],
+        "cellAspectRule": "PRESERVE_ORIGINAL_ASPECT_WITH_OBJECT_FIT_CONTAIN",
+        "preferredCellNativePixels": [
+          2048,
+          1152
+        ]
       },
       "reviewSheets": [
         {
@@ -861,14 +1006,19 @@
           "columns": 2,
           "rows": 1,
           "posterMinNativePixels": [
-            3072,
-            864
+            1536,
+            320
           ],
           "posterPreferredNativePixels": [
             4096,
             1152
           ],
-          "approval": "NOT_APPROVED"
+          "approval": "NOT_APPROVED",
+          "nativeMinPixelsPerCell": [
+            768,
+            320
+          ],
+          "aspectRatioPolicy": "PRESERVE_ORIGINAL_ASPECT_WITH_OBJECT_FIT_CONTAIN"
         }
       ],
       "sheetCount": 1
@@ -907,8 +1057,8 @@
       1152
     ],
     "minimumIndependentNativePixels": [
-      1536,
-      864
+      768,
+      320
     ],
     "highestSupportedNativeSizeRequired": true,
     "actualGeneratorMaximum": "UNVERIFIED_DO_NOT_ASSUME",
@@ -920,7 +1070,10 @@
     "rejectUnverifiableSource": true,
     "preserveExistingRegisteredPanels": 23,
     "remainingNewPanels": 25,
-    "notYetPublished": true
+    "notYetPublished": true,
+    "aspectRatioPolicy": "PRESERVE_ORIGINAL_ASPECT_WITH_OBJECT_FIT_CONTAIN",
+    "profileId": "MOBILE_768x320_NATIVE_NO_UPSCALE",
+    "maximumSupportedSourceResolutionPreferred": true
   },
   "continuation": {
     "stageId": "c01-s02",
@@ -1061,6 +1214,12 @@
     ],
     "pendingSheetCount": 8,
     "newActualRegisteredWebps": 0,
-    "status": "BLOCKED_PENDING_NATIVE_SOURCES_AND_HUMAN_QA"
+    "status": "BLOCKED_PENDING_REAL_ART_AND_HUMAN_QA",
+    "minNativePixelsPerCut": [
+      768,
+      320
+    ],
+    "aspectRatioPolicy": "PRESERVE_ORIGINAL_ASPECT_WITH_OBJECT_FIT_CONTAIN",
+    "minimum1536x864Mandatory": false
   }
 }
