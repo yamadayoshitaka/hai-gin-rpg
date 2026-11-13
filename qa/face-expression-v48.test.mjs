@@ -42,6 +42,9 @@ test('real linked eyelids move and restore; speech controls real lip meshes',()=
  const animator=createFaceExpressionAnimator(model);
  assert.equal(animator.getState().blinkEyes,2);
  assert.equal(animator.getState().mouthIs3D,true);
+ animator.setBlinkProgress(1);
+ assert.equal(animator.getState().blink,1);
+ animator.setBlinkProgress(null);
  const upper=model.parts.getObjectByName('LEFT_UPPER_ANATOMICAL_EYELID');
  const before=upper.geometry.getAttribute('position').array.slice();
  for(let i=0;i<55;i++)animator.update(.05);

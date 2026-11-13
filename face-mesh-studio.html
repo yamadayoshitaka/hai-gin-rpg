@@ -328,6 +328,12 @@ for(const style of listWigStyles('female')){
 $('wigStyle').value=wigStyleId;
 const performanceMetrics={headRebuilds:0,wigRebuilds:0,fastLipstickRepaints:0};
 const expressionPrefs={autoBlink:true,speaking:false},expressions=new Map();
+if(new URLSearchParams(location.search).get('qa')==='expression'){
+ // Deterministic WebGL testing only; no extra controls exposed in gameplay.
+ window.__faceExpressionQA={
+  setBlink(value){expressions.get(gender)?.setBlinkProgress(value);}
+ };
+}
 function refreshExpression(sex){
  expressions.get(sex)?.dispose();
  const instance=models.get(sex);
