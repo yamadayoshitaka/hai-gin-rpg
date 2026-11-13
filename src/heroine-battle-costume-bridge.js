@@ -21,8 +21,8 @@ import {applySkinnedBuildMorph} from './body-build-morph-v48.js?v=51';
  */
 export const HEROINE_STUDIO_BODY_SCALE=.84;
 export const HERO_STUDIO_MALE_BODY_SCALE=.84;
-export const HEROINE_STUDIO_HEAD_LIFT=.18;
-export const HEROINE_STUDIO_HEAD_FORWARD=.10;
+export const HEROINE_STUDIO_HEAD_LIFT=.30;
+export const HEROINE_STUDIO_HEAD_FORWARD=.16;
 
 export function fitStudioFaceAboveArmor({actorRoot,faceRoot,faceFit,bodyScale=HEROINE_STUDIO_BODY_SCALE}){
  if(!actorRoot?.isObject3D||!faceRoot?.isObject3D||!faceFit?.targetSize)
@@ -147,6 +147,87 @@ export function syncStudioBodyOutfitVisibility(characterModel,outfit,{showBody=t
  * the studio narrows overly massive female plate limbs, and removes
  * disconnected *spherical* rivet objects that look like floating marbles.
  */
+// Store unmodified source vertices per preview mesh. Re-applying this on
+// body/age/job changes must NEVER squash an already fitted breastplate.
+const STUDIO_CHEST_ORIGINAL=new WeakMap();
+/**
+ * Real geometry-based neck clearance, for the PREVIEW only.
+ * A tall imported cuirass can physically hide the eyes and mouth despite
+ * a correctly attached head bone. Compress all chest metal in one world-Y
+ * coordinate system, anchoring its lowest point (no floating breastplate),
+ * until the top falls below the actual sculpted chin. Eye/face geometry and
+ * shared battle armor GLBs are never modified.
+ */
+export function fitStudioCuirassBelowChin({faceMesh,wardrobeRoot,marginRatio=.035}={}){
+ if(!faceMesh?.isMesh||!faceMesh.geometry?.getAttribute('position')||
+    !wardrobeRoot?.traverse)return {applied:false,reason:'head-or-wardrobe-missing'};
+ const chest=[];
+ wardrobeRoot.traverse(mesh=>{
+  if(mesh.isMesh&&!mesh.isSkinnedMesh&&mesh.visible&&
+     mesh.userData?.equipmentClass==='armor'&&mesh.userData?.equipmentSlot==='chest'&&
+     mesh.geometry?.getAttribute('position')?.count>0)chest.push(mesh);
+ });
+ if(!chest.length)return {applied:false,reason:'no-chest-armor',chestPieces:0};
+ faceMesh.updateWorldMatrix(true,false);
+ wardrobeRoot.updateWorldMatrix(true,true);
+ const faceGeometry=faceMesh.geometry;
+ if(!faceGeometry.boundingBox)faceGeometry.computeBoundingBox();
+ const faceBounds=faceGeometry.boundingBox.clone().applyMatrix4(faceMesh.matrixWorld);
+ const faceHeight=faceBounds.getSize(new THREE.Vector3()).y;
+ if(faceHeight<.01)return {applied:false,reason:'head-bounds-invalid'};
+ // Real facial mesh extends below the mandible at the cropped neck.
+ // Use the lower fifth of head height as the jaw landmark, not the eye-line.
+ const chinY=faceBounds.min.y+faceHeight*.20;
+ const limitY=chinY-Math.max(.008,faceHeight*marginRatio);
+ let highest=-Infinity,lowest=Infinity;
+ const worldPoint=new THREE.Vector3();
+ for(const mesh of chest){
+  let saved=STUDIO_CHEST_ORIGINAL.get(mesh);
+  if(!saved){
+   const geometry=mesh.geometry.clone();
+   mesh.geometry=geometry;
+   saved={positions:geometry.getAttribute('position').array.slice()};
+   STUDIO_CHEST_ORIGINAL.set(mesh,saved);
+  }
+  const pos=mesh.geometry.getAttribute('position');
+  pos.array.set(saved.positions);pos.needsUpdate=true;
+  mesh.geometry.computeBoundingBox();
+  mesh.updateWorldMatrix(true,false);
+  for(let i=0;i<pos.count;i++){
+   worldPoint.fromBufferAttribute(pos,i).applyMatrix4(mesh.matrixWorld);
+   highest=Math.max(highest,worldPoint.y);
+   lowest=Math.min(lowest,worldPoint.y);
+  }
+ }
+ if(!Number.isFinite(highest)||highest-lowest<.01)
+  return {applied:false,reason:'armor-bounds-invalid'};
+ const required=highest>limitY+.0005;
+ // An over-tall chestplate must not shrink to nothing. This guard protects
+ // art assets whose entire chest is above the neck (a broken attachment).
+ const targetRatio=THREE.MathUtils.clamp((limitY-lowest)/(highest-lowest),.35,1);
+ if(required){
+  for(const mesh of chest){
+   const pos=mesh.geometry.getAttribute('position');
+   const worldToLocal=mesh.matrixWorld.clone().invert();
+   for(let i=0;i<pos.count;i++){
+    worldPoint.fromBufferAttribute(pos,i).applyMatrix4(mesh.matrixWorld);
+    worldPoint.y=lowest+(worldPoint.y-lowest)*targetRatio;
+    worldPoint.applyMatrix4(worldToLocal);
+    pos.setXYZ(i,worldPoint.x,worldPoint.y,worldPoint.z);
+   }
+   pos.needsUpdate=true;
+   mesh.geometry.computeVertexNormals();
+   mesh.geometry.computeBoundingBox();
+   mesh.geometry.computeBoundingSphere();
+  }
+ }
+ return {applied:true,chestPieces:chest.length,compressed:required,
+  originalTopY:highest,correctedTopY:lowest+(highest-lowest)*targetRatio,
+  chinY,clearanceMeters:chinY-(lowest+(highest-lowest)*targetRatio),
+  compressionRatio:targetRatio,sourceGeometryPreserved:true,
+  nonAccumulative:true,onlyStudioPreview:true};
+}
+
 export function refineHeroineCostumeSilhouette(wardrobeRoot,{gender='female',job='swordsman'}={}){
  if(!wardrobeRoot?.traverse)throw Error('Outfit root required');
  let taperedLegPieces=0,narrowedCuirass=0,hiddenLooseStuds=0,
@@ -371,6 +452,7 @@ export async function createRealBattleOutfitStudio({scene,faceModel,getFaceModel
  let currentJob=jobId,currentOutfit=outfitId,currentAction=actionId;
  let nativeCommand=null,nativeClip=null,bodyShapeId='average',ageBandId='twenties',bodyTypeId='normal';
  let hiddenBody=false,outfitShown=true,disposed=false,request=0,headReport=null,headFit=null,proportions=null,finishReport=null;
+ let collarFitDirty=false;
  const chosenOutfit=()=>currentOutfit==='job'?
   realBattleJob(currentJob):realBattleJob(currentOutfit);
  async function install(){
@@ -423,6 +505,7 @@ export async function createRealBattleOutfitStudio({scene,faceModel,getFaceModel
     camera:scene.userData.studioPreviewCamera});
    nativeCommand=null;nativeClip=null;
    await playAction(currentAction);
+   collarFitDirty=true;
    onStatus('戦闘の既存衣装を反映：'+chosen.label+'。顔と髪は独立メッシュです。');
   }catch(error){
    clothing?.dispose();fresh.dispose();
@@ -500,7 +583,9 @@ export async function createRealBattleOutfitStudio({scene,faceModel,getFaceModel
    headFit.targetCenter[2]-headFit.sourceCenter[2]*headRoot.scale.z+
     headDepth*HEROINE_STUDIO_HEAD_FORWARD/sz
   );
-  proportions={...proportions,bodyShape:bodyShapeId,
+  const neckClearance=fitStudioCuirassBelowChin({faceMesh:face,wardrobeRoot:outfit?.root});
+  collarFitDirty=true;
+  proportions={...proportions,neckClearance,bodyShape:bodyShapeId,
    ageBand:ageBandId,bodyType:bodyTypeId,
    bodyWidth:body.width,bodyDepth:body.depth,bodyHeight:age.heightScale,
    headScale:age.headScale,buildMorph,skinnedBody:true,previewOnly:true};
@@ -542,7 +627,15 @@ export async function createRealBattleOutfitStudio({scene,faceModel,getFaceModel
  }
  function update(dt){
   if(disposed||!actor)return;
-  actor.update(dt);outfit?.sync();vfx?.update(dt);
+  actor.update(dt);outfit?.sync();
+  if(collarFitDirty&&outfit){
+   // First animation frame can move the spine from its bind pose.
+   // Refit once after skeletal matrices settle, never on every render frame.
+   proportions={...proportions,neckClearance:fitStudioCuirassBelowChin({
+    faceMesh:face,wardrobeRoot:outfit.root})};
+   collarFitDirty=false;
+  }
+  vfx?.update(dt);
  }
  function getState(){return {
   active:!!actor,gender,rigSource:'battle-character-and-real-65-bone-job-outfit',
