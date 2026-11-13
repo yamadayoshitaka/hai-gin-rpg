@@ -120,3 +120,29 @@ test('v56 neck colour follows cheek pigment instead of an opaque fixed beige car
  face.geometry.dispose();face.material.dispose();source.dispose();
  body.geometry.dispose();body.material.dispose();
 });
+
+test('v56 neighboring unshared triangle corners share smoother normals without moving sculpted vertices',()=>{
+ const geometry=new THREE.BufferGeometry();
+ geometry.setAttribute('position',new THREE.Float32BufferAttribute([
+  0,0,0, 1,0,0, 0,1,0,
+  0,0,0, 0,1,0, 0,0,1
+ ],3));
+ geometry.setAttribute('normal',new THREE.Float32BufferAttribute([
+  0,0,1, 0,0,1, 0,0,1,
+  1,0,0, 1,0,0, 1,0,0
+ ],3));
+ const positions=geometry.getAttribute('position').array.slice();
+ const originalNormals=geometry.getAttribute('normal').array.slice();
+ const report=smoothStudioFaceNormals(geometry);
+ assert.equal(report.applied,true);
+ assert.ok(report.weldedGroups>=2);
+ assert.ok(report.alteredNormalVertices>=4);
+ assert.equal(report.topologyUnmodified,true);
+ assert.deepEqual(geometry.getAttribute('position').array,positions);
+ const normal=geometry.getAttribute('normal');
+ const a=new THREE.Vector3(normal.getX(0),normal.getY(0),normal.getZ(0));
+ const b=new THREE.Vector3(normal.getX(3),normal.getY(3),normal.getZ(3));
+ assert.ok(a.dot(b)>.95,'shared vertices should no longer have a visible hard lighting seam');
+ assert.notDeepEqual(normal.array,originalNormals);
+ geometry.dispose();
+});
