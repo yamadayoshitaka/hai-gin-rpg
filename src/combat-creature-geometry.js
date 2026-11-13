@@ -75,7 +75,7 @@ function assemble(detail,face) {
       // A sculpted dragon lord has permanent bone-walled orbital sockets.
       // Randomized generic face spacing previously moved the iris BEHIND
       // that fixed skull, leaving a black-looking empty hole.
-      x*=face.id==='dragon_lord'?1:face.eyeSpacing;
+      x*=face.id==='dragon_lord'?(1+.11*(face.eyeSpacing-1)):face.eyeSpacing;
       halfLength*=face.eyeSize;halfHeight*=face.eyeSize*shape;
     }
     // Low-relief, pointed almond surface running down the animal's cheek.
