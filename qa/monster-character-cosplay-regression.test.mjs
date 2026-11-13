@@ -69,7 +69,7 @@ assert.match(runtime,/if\(!ok\)throw Error/,
  'Do not hide fallback until valid source GLB loads');
 assert.match(runtime,/if\(disposed\)return \{source:'cancelled'\}/,
  'Late asynchronous response must be ignored after selection change');
-assert.match(gallery,/createCosplayedHumanoidMonster\(m,\{detail\}\)/,
+assert.match(gallery,/createCosplayedHumanoidMonster\(m,\{[\s\S]*?detail,[\s\S]*?genderVariant:/,
  'Viewer must actually select character-base monster models');
 assert.match(gallery,/mode==='procedural'\?humanoidMonsterCostumeFor\(m\):null/,
  'User-selected external GLB overrides must retain priority');
