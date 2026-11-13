@@ -1,0 +1,39 @@
+name: Story mobile 25 real draft WebP registration QA
+on:
+  pull_request:
+    paths:
+      - 'assets/story/chapter-drafts/c01/mobile-5x5-20261113/**'
+      - 'story-art-review.html'
+      - 'src/story-manga-viewer.js'
+      - 'qa/story-mobile-25-draft-registration.test.py'
+      - '.github/workflows/story-mobile-25-art-intake.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'assets/story/chapter-drafts/c01/mobile-5x5-20261113/**'
+      - 'story-art-review.html'
+      - 'src/story-manga-viewer.js'
+      - 'qa/story-mobile-25-draft-registration.test.py'
+      - '.github/workflows/story-mobile-25-art-intake.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify-real-assets:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install free image validation
+        run: python -m pip install --disable-pip-version-check Pillow==11.3.0
+      - name: Verify binary WebP integrity, SHA256 and preview-only registration
+        run: |
+          python qa/story-mobile-25-draft-registration.test.py
+          node qa/story-mobile-native-resolution.test.mjs
+          node qa/story-live-art-coverage.test.mjs

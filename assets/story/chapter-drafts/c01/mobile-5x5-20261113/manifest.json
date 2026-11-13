@@ -1,0 +1,449 @@
+{
+  "schemaVersion": 1,
+  "kind": "CHAPTER_1_25_MOBILE_DRAFT_ART_INTAKE",
+  "batchId": "ch01-mobile-5x5-20261113",
+  "chapter": 1,
+  "createdDate": "2026-11-13",
+  "status": "ASSETS_IN_GIT_DRAFT_PREVIEW_ONLY",
+  "sourceFormat": "5 independent vertical sheets each cropped into 5 scenes",
+  "userAcceptedMobilePixels": {
+    "minWidth": 768,
+    "minHeight": 320
+  },
+  "p0": {
+    "canonicalScriptMapping": "NOT_VERIFIED",
+    "masterImageBytesAttachedAtGeneration": "NOT_VERIFIED",
+    "outcomeAndGenderMatch": "NOT_VERIFIED",
+    "inImageTextVisualReview": "NOT_VERIFIED",
+    "approvedForLiveManga": false
+  },
+  "totalPanels": 25,
+  "sources": 5,
+  "panels": [
+    {
+      "id": "ch01-draft-sheet01-panel01",
+      "sheetIndex": 1,
+      "cellIndex": 1,
+      "path": "assets/story/chapter-drafts/c01/mobile-5x5-20261113/sheet01-panel01.webp",
+      "sourceSha256": "fcfb973aff4bfd87af3287b8d67c147d80818d8588f74decfc38cc78ff6efff0",
+      "nativePixels": [
+        787,
+        389
+      ],
+      "sceneIdea": "朝の城壁・主人公",
+      "canonicalSceneId": null,
+      "edition": null,
+      "gender": null,
+      "mobileResolutionEligible": true,
+      "approval": "DRAFT_ONLY_NOT_VALIDATED_FOR_MANGA_VIEWER"
+    },
+    {
+      "id": "ch01-draft-sheet01-panel02",
+      "sheetIndex": 1,
+      "cellIndex": 2,
+      "path": "assets/story/chapter-drafts/c01/mobile-5x5-20261113/sheet01-panel02.webp",
+      "sourceSha256": "b3730ae55aaa15339a8bc071ca7ded5662707dd6bb06c576d137f7594d215b3c",
+      "nativePixels": [
+        787,
+        392
+      ],
+      "sceneIdea": "王の密命",
+      "canonicalSceneId": null,
+      "edition": null,
+      "gender": null,
+      "mobileResolutionEligible": true,
+      "approval": "DRAFT_ONLY_NOT_VALIDATED_FOR_MANGA_VIEWER"
+    },
+    {
+      "id": "ch01-draft-sheet01-panel03",
+      "sheetIndex": 1,
+      "cellIndex": 3,
+      "path": "assets/story/chapter-drafts/c01/mobile-5x5-20261113/sheet01-panel03.webp",
+      "sourceSha256": "14c3b13abc2830ccadf8bf3260aa70061145fc910e3538d6a35094d6ec1bf782",
+      "nativePixels": [
+        787,
+        391
+      ],
+      "sceneIdea": "軍議・地図",
+      "canonicalSceneId": null,
+      "edition": null,
+      "gender": null,
+      "mobileResolutionEligible": true,
+      "approval": "DRAFT_ONLY_NOT_VALIDATED_FOR_MANGA_VIEWER"
+    },
+    {
+      "id": "ch01-draft-sheet01-panel04",
+      "sheetIndex": 1,
+      "cellIndex": 4,
+      "path": "assets/story/chapter-drafts/c01/mobile-5x5-20261113/sheet01-panel04.webp",
+      "sourceSha256": "92bd81b2b24e7b1fd375bf462933238677883033498465c7f263c46a5d87a2f3",
+      "nativePixels": [
+        787,
+        350
+      ],
+      "sceneIdea": "騎乗出発",
+      "canonicalSceneId": null,
+      "edition": null,
+      "gender": null,
+      "mobileResolutionEligible": true,
+      "approval": "DRAFT_ONLY_NOT_VALIDATED_FOR_MANGA_VIEWER"
+    },
+    {
+      "id": "ch01-draft-sheet01-panel05",
+      "sheetIndex": 1,
+      "cellIndex": 5,
+      "path": "assets/story/chapter-drafts/c01/mobile-5x5-20261113/sheet01-panel05.webp",
+      "sourceSha256": "b5db7c74993a37a994582772e2bf7b4037c4787022b3508e4f4a5489ee85bdac",
+      "nativePixels": [
+        787,
+        433
+      ],
+      "sceneIdea": "月夜の警戒",
+      "canonicalSceneId": null,
+      "edition": null,
+      "gender": null,
+      "mobileResolutionEligible": true,
+      "approval": "DRAFT_ONLY_NOT_VALIDATED_FOR_MANGA_VIEWER"
+    },
+    {
+      "id": "ch01-draft-sheet02-panel01",
+      "sheetIndex": 2,
+      "cellIndex": 1,
+      "path": "assets/story/chapter-drafts/c01/mobile-5x5-20261113/sheet02-panel01.webp",
+      "sourceSha256": "16be5a59202d1da177e9d52ec1409d71df08409b6e9ba0b68a4e035e6cd1229d",
+      "nativePixels": [
+        787,
+        389
+      ],
+      "sceneIdea": "城下の群衆",
+      "canonicalSceneId": null,
+      "edition": null,
+      "gender": null,
+      "mobileResolutionEligible": true,
+      "approval": "DRAFT_ONLY_NOT_VALIDATED_FOR_MANGA_VIEWER"
+    },
+    {
+      "id": "ch01-draft-sheet02-panel02",
+      "sheetIndex": 2,
+      "cellIndex": 2,
+      "path": "assets/story/chapter-drafts/c01/mobile-5x5-20261113/sheet02-panel02.webp",
+      "sourceSha256": "13bb0bf88e5a7fb15b6b5dafc74640b9cbc19e4ec76a68fed80755cac3fbbc56",
+      "nativePixels": [
+        787,
+        394
+      ],
+      "sceneIdea": "治癒師と記録",
+      "canonicalSceneId": null,
+      "edition": null,
+      "gender": null,
+      "mobileResolutionEligible": true,
+      "approval": "DRAFT_ONLY_NOT_VALIDATED_FOR_MANGA_VIEWER"
+    },
+    {
+      "id": "ch01-draft-sheet02-panel03",
+      "sheetIndex": 2,
+      "cellIndex": 3,
+      "path": "assets/story/chapter-drafts/c01/mobile-5x5-20261113/sheet02-panel03.webp",
+      "sourceSha256": "ac2e2e2d7317b8bb341f922d369809df483e9cbf5347b296ee1f19d1aa531010",
+      "nativePixels": [
+        787,
+        394
+      ],
+      "sceneIdea": "帳簿・木箱",
+      "canonicalSceneId": null,
+      "edition": null,
+      "gender": null,
+      "mobileResolutionEligible": true,
+      "approval": "DRAFT_ONLY_NOT_VALIDATED_FOR_MANGA_VIEWER"
+    },
+    {
+      "id": "ch01-draft-sheet02-panel04",
+      "sheetIndex": 2,
+      "cellIndex": 4,
+      "path": "assets/story/chapter-drafts/c01/mobile-5x5-20261113/sheet02-panel04.webp",
+      "sourceSha256": "6b483b588b66ba28f3a6b295acf2357b2e55a9b85de9913dbc5a3ae4562c1786",
+      "nativePixels": [
+        787,
+        393
+      ],
+      "sceneIdea": "夜の潜伏",
+      "canonicalSceneId": null,
+      "edition": null,
+      "gender": null,
+      "mobileResolutionEligible": true,
+      "approval": "DRAFT_ONLY_NOT_VALIDATED_FOR_MANGA_VIEWER"
+    },
+    {
+      "id": "ch01-draft-sheet02-panel05",
+      "sheetIndex": 2,
+      "cellIndex": 5,
+      "path": "assets/story/chapter-drafts/c01/mobile-5x5-20261113/sheet02-panel05.webp",
+      "sourceSha256": "d74a310fe18209454386242e1e3aceccce00e6ed34f73fa03f4c63f9d67f9360",
+      "nativePixels": [
+        787,
+        391
+      ],
+      "sceneIdea": "礼拝堂へ向かう軍勢",
+      "canonicalSceneId": null,
+      "edition": null,
+      "gender": null,
+      "mobileResolutionEligible": true,
+      "approval": "DRAFT_ONLY_NOT_VALIDATED_FOR_MANGA_VIEWER"
+    },
+    {
+      "id": "ch01-draft-sheet03-panel01",
+      "sheetIndex": 3,
+      "cellIndex": 1,
+      "path": "assets/story/chapter-drafts/c01/mobile-5x5-20261113/sheet03-panel01.webp",
+      "sourceSha256": "8682c9912cb403c66a1becf777932d494e7a2fbdec520805891b0b31ad6de3ae",
+      "nativePixels": [
+        787,
+        386
+      ],
+      "sceneIdea": "古い門から潜入",
+      "canonicalSceneId": null,
+      "edition": null,
+      "gender": null,
+      "mobileResolutionEligible": true,
+      "approval": "DRAFT_ONLY_NOT_VALIDATED_FOR_MANGA_VIEWER"
+    },
+    {
+      "id": "ch01-draft-sheet03-panel02",
+      "sheetIndex": 3,
+      "cellIndex": 2,
+      "path": "assets/story/chapter-drafts/c01/mobile-5x5-20261113/sheet03-panel02.webp",
+      "sourceSha256": "60d819fce4f7b0d46e60ba8244abe71842091e5b87010456c15b4e8338ca6403",
+      "nativePixels": [
+        787,
+        397
+      ],
+      "sceneIdea": "地下遺構を探索",
+      "canonicalSceneId": null,
+      "edition": null,
+      "gender": null,
+      "mobileResolutionEligible": true,
+      "approval": "DRAFT_ONLY_NOT_VALIDATED_FOR_MANGA_VIEWER"
+    },
+    {
+      "id": "ch01-draft-sheet03-panel03",
+      "sheetIndex": 3,
+      "cellIndex": 3,
+      "path": "assets/story/chapter-drafts/c01/mobile-5x5-20261113/sheet03-panel03.webp",
+      "sourceSha256": "1b6f45ca95f6e704dd58dd2379d006f589db57a861b709adcc315136a917c55a",
+      "nativePixels": [
+        787,
+        394
+      ],
+      "sceneIdea": "巨大な鐘の発見",
+      "canonicalSceneId": null,
+      "edition": null,
+      "gender": null,
+      "mobileResolutionEligible": true,
+      "approval": "DRAFT_ONLY_NOT_VALIDATED_FOR_MANGA_VIEWER"
+    },
+    {
+      "id": "ch01-draft-sheet03-panel04",
+      "sheetIndex": 3,
+      "cellIndex": 4,
+      "path": "assets/story/chapter-drafts/c01/mobile-5x5-20261113/sheet03-panel04.webp",
+      "sourceSha256": "2a14ce57ec8e322fad5a52f9b9f566d0355b5d8d1aa845c40e4059202cf8248d",
+      "nativePixels": [
+        787,
+        394
+      ],
+      "sceneIdea": "紫の魔力と使い手",
+      "canonicalSceneId": null,
+      "edition": null,
+      "gender": null,
+      "mobileResolutionEligible": true,
+      "approval": "DRAFT_ONLY_NOT_VALIDATED_FOR_MANGA_VIEWER"
+    },
+    {
+      "id": "ch01-draft-sheet03-panel05",
+      "sheetIndex": 3,
+      "cellIndex": 5,
+      "path": "assets/story/chapter-drafts/c01/mobile-5x5-20261113/sheet03-panel05.webp",
+      "sourceSha256": "9d56fc1fe337c673e5d99076bee4fd9da75d9cc5f0b7c902a283d99e528188d4",
+      "nativePixels": [
+        787,
+        391
+      ],
+      "sceneIdea": "星鐘の異変",
+      "canonicalSceneId": null,
+      "edition": null,
+      "gender": null,
+      "mobileResolutionEligible": true,
+      "approval": "DRAFT_ONLY_NOT_VALIDATED_FOR_MANGA_VIEWER"
+    },
+    {
+      "id": "ch01-draft-sheet04-panel01",
+      "sheetIndex": 4,
+      "cellIndex": 1,
+      "path": "assets/story/chapter-drafts/c01/mobile-5x5-20261113/sheet04-panel01.webp",
+      "sourceSha256": "8e769ad6427a73e1a7d33ba8ba57a2c4afa65a094e0b45a811edde552d58f776",
+      "nativePixels": [
+        787,
+        390
+      ],
+      "sceneIdea": "主人公の突撃",
+      "canonicalSceneId": null,
+      "edition": null,
+      "gender": null,
+      "mobileResolutionEligible": true,
+      "approval": "DRAFT_ONLY_NOT_VALIDATED_FOR_MANGA_VIEWER"
+    },
+    {
+      "id": "ch01-draft-sheet04-panel02",
+      "sheetIndex": 4,
+      "cellIndex": 2,
+      "path": "assets/story/chapter-drafts/c01/mobile-5x5-20261113/sheet04-panel02.webp",
+      "sourceSha256": "5daa5e30153940e4833c84fa669970d341808b994a6cebd6c1f3c705eb21460e",
+      "nativePixels": [
+        787,
+        393
+      ],
+      "sceneIdea": "騎士の剣戟",
+      "canonicalSceneId": null,
+      "edition": null,
+      "gender": null,
+      "mobileResolutionEligible": true,
+      "approval": "DRAFT_ONLY_NOT_VALIDATED_FOR_MANGA_VIEWER"
+    },
+    {
+      "id": "ch01-draft-sheet04-panel03",
+      "sheetIndex": 4,
+      "cellIndex": 3,
+      "path": "assets/story/chapter-drafts/c01/mobile-5x5-20261113/sheet04-panel03.webp",
+      "sourceSha256": "3a31045ca31f08ac16adca745d033f2dfe03deb5fc275f9698b8f86e631017b1",
+      "nativePixels": [
+        787,
+        394
+      ],
+      "sceneIdea": "治癒魔法",
+      "canonicalSceneId": null,
+      "edition": null,
+      "gender": null,
+      "mobileResolutionEligible": true,
+      "approval": "DRAFT_ONLY_NOT_VALIDATED_FOR_MANGA_VIEWER"
+    },
+    {
+      "id": "ch01-draft-sheet04-panel04",
+      "sheetIndex": 4,
+      "cellIndex": 4,
+      "path": "assets/story/chapter-drafts/c01/mobile-5x5-20261113/sheet04-panel04.webp",
+      "sourceSha256": "269eb967ab46338e71cfcc0e1a373155c25558aa7c1793e16075494fefb11b2e",
+      "nativePixels": [
+        787,
+        392
+      ],
+      "sceneIdea": "魔術師との交戦",
+      "canonicalSceneId": null,
+      "edition": null,
+      "gender": null,
+      "mobileResolutionEligible": true,
+      "approval": "DRAFT_ONLY_NOT_VALIDATED_FOR_MANGA_VIEWER"
+    },
+    {
+      "id": "ch01-draft-sheet04-panel05",
+      "sheetIndex": 4,
+      "cellIndex": 5,
+      "path": "assets/story/chapter-drafts/c01/mobile-5x5-20261113/sheet04-panel05.webp",
+      "sourceSha256": "82316e987c420f6ff368d6e28454f83a46ae83a24021e8e01aedc9b988d4fa16",
+      "nativePixels": [
+        787,
+        394
+      ],
+      "sceneIdea": "鐘の崩落",
+      "canonicalSceneId": null,
+      "edition": null,
+      "gender": null,
+      "mobileResolutionEligible": true,
+      "approval": "DRAFT_ONLY_NOT_VALIDATED_FOR_MANGA_VIEWER"
+    },
+    {
+      "id": "ch01-draft-sheet05-panel01",
+      "sheetIndex": 5,
+      "cellIndex": 1,
+      "path": "assets/story/chapter-drafts/c01/mobile-5x5-20261113/sheet05-panel01.webp",
+      "sourceSha256": "beecdef886c9c2626577e75c498b0d88903b0381e2750336f4461927fcc87f30",
+      "nativePixels": [
+        787,
+        390
+      ],
+      "sceneIdea": "戦闘後の教会",
+      "canonicalSceneId": null,
+      "edition": null,
+      "gender": null,
+      "mobileResolutionEligible": true,
+      "approval": "DRAFT_ONLY_NOT_VALIDATED_FOR_MANGA_VIEWER"
+    },
+    {
+      "id": "ch01-draft-sheet05-panel02",
+      "sheetIndex": 5,
+      "cellIndex": 2,
+      "path": "assets/story/chapter-drafts/c01/mobile-5x5-20261113/sheet05-panel02.webp",
+      "sourceSha256": "20a150a73383fd34ef754fefd6a48b24ad54bddb4837862610b62f16838de25c",
+      "nativePixels": [
+        787,
+        392
+      ],
+      "sceneIdea": "負傷者の治療",
+      "canonicalSceneId": null,
+      "edition": null,
+      "gender": null,
+      "mobileResolutionEligible": true,
+      "approval": "DRAFT_ONLY_NOT_VALIDATED_FOR_MANGA_VIEWER"
+    },
+    {
+      "id": "ch01-draft-sheet05-panel03",
+      "sheetIndex": 5,
+      "cellIndex": 3,
+      "path": "assets/story/chapter-drafts/c01/mobile-5x5-20261113/sheet05-panel03.webp",
+      "sourceSha256": "29ae348188f09f5db9c0cc7f6e0b9ee555503e446c26086ce581e5d78495bc97",
+      "nativePixels": [
+        787,
+        393
+      ],
+      "sceneIdea": "指揮官と瓦礫",
+      "canonicalSceneId": null,
+      "edition": null,
+      "gender": null,
+      "mobileResolutionEligible": true,
+      "approval": "DRAFT_ONLY_NOT_VALIDATED_FOR_MANGA_VIEWER"
+    },
+    {
+      "id": "ch01-draft-sheet05-panel04",
+      "sheetIndex": 5,
+      "cellIndex": 4,
+      "path": "assets/story/chapter-drafts/c01/mobile-5x5-20261113/sheet05-panel04.webp",
+      "sourceSha256": "cebe671f3c07cbba3162b99df2e51dd58b63bfdd11deb9ad775d6f7813ebf17a",
+      "nativePixels": [
+        787,
+        392
+      ],
+      "sceneIdea": "勝利後の城下を見渡す",
+      "canonicalSceneId": null,
+      "edition": null,
+      "gender": null,
+      "mobileResolutionEligible": true,
+      "approval": "DRAFT_ONLY_NOT_VALIDATED_FOR_MANGA_VIEWER"
+    },
+    {
+      "id": "ch01-draft-sheet05-panel05",
+      "sheetIndex": 5,
+      "cellIndex": 5,
+      "path": "assets/story/chapter-drafts/c01/mobile-5x5-20261113/sheet05-panel05.webp",
+      "sourceSha256": "2ee5b40a7464b8f2a61000502cc3cbad3df5003918b65290b0f25ff068271cf6",
+      "nativePixels": [
+        787,
+        394
+      ],
+      "sceneIdea": "夕景に立つ主人公",
+      "canonicalSceneId": null,
+      "edition": null,
+      "gender": null,
+      "mobileResolutionEligible": true,
+      "approval": "DRAFT_ONLY_NOT_VALIDATED_FOR_MANGA_VIEWER"
+    }
+  ]
+}
