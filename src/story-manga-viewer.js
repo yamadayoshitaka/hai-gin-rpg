@@ -6,6 +6,7 @@
  */
 import {mangaForStage} from './story-stage-manga.js';
 import {registeredStoryPanelAsset,storySheetCrop,storyArtDisplayUrl} from './story-panel-registered-art.js';
+import {provisionalRegisteredStoryPanel} from './story-provisional-registered-art.js';
 import {comicForStage,comicPageAsset} from './story-chapter-comic.js';
 import {renderStoryRubyText} from './story-ruby-display.js';
 import {fantasyCueForMangaPanel} from './fantasy-scene-score.js';
@@ -83,8 +84,9 @@ export function createMangaViewer({container=document.body,storage=globalThis.lo
  function loadPanelArt(shot,pagePanels){
   // Only the exact scene/gender/outcome; prefer existing individually cut WebPs.
   const cut=registeredStoryPanelAsset(shot);
+  const draftRegistration=provisionalRegisteredStoryPanel(shot);
   const sheet=comicPageAsset(story.id,shot.phase,storyContext,shot.comicPage,shot.protagonistGender);
-  const key=[cut||'',sheet||'',shot.comicCell,pagePanels.length].join('|');
+  const key=[cut||'',sheet||'',shot.comicCell,pagePanels.length,draftRegistration?.status||''].join('|');
   if(key===currentArtKey)return;
   currentArtKey=key;
   const request=++pageRequest,img=$('.manga-art'),missing=$('.manga-missing');
@@ -131,7 +133,9 @@ export function createMangaViewer({container=document.body,storage=globalThis.lo
    '（'+shot.comicEdition+'）'+(shot.protagonistGender==='female'?'女性版':'男性版');
   $('.manga-speaker').textContent=shot.speaker+(shot.characterId?'　／　'+shot.faction+'・'+shot.role:'　／　ナレーション');
   renderStoryRubyText($('.manga-line'),shot);
-  $('.manga-shot').textContent=story.id.toUpperCase()+' · '+shot.comicEdition+' · ページ'+shot.comicPage;
+  const draftArt=provisionalRegisteredStoryPanel(shot);
+  $('.manga-shot').textContent=story.id.toUpperCase()+' · '+shot.comicEdition+' · ページ'+shot.comicPage+
+   (draftArt?' · 仮原画（人物・台本の品質承認前）':'');
   $('.manga-progress').textContent='セリフ '+(index+1)+' / '+visiblePanels.length+'　（このページ '+(shot.comicCell+1)+' / '+pagePanels.length+'コマ）';
   $('.manga-previous').disabled=index===0;
   $('.manga-next').textContent=index===visiblePanels.length-1?
