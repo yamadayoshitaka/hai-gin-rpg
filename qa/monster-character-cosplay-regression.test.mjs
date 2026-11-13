@@ -73,7 +73,7 @@ assert.match(runtime,/if\(disposed\)return \{source:'cancelled'\}/,
  'Late asynchronous response must be ignored after selection change');
 assert.match(gallery,/createCosplayedHumanoidMonster\(m,\{[\s\S]*?detail,[\s\S]*?genderVariant:/,
  'Viewer must actually select character-base monster models');
-assert.match(gallery,/mode==='procedural'\?humanoidMonsterCostumeFor\(m\):null/,
+assert.match(gallery,/mode==='procedural'\?humanoidMonsterCostumeFor\(m,\{/,
  'User-selected external GLB overrides must retain priority');
 assert.match(gallery,/pending\.ready\.then/,
  'Async canonical source must update preview only after load');
