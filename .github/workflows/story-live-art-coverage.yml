@@ -1,0 +1,48 @@
+name: Story live-game art coverage (missing frames)
+
+on:
+  pull_request:
+    paths:
+      - 'src/story-panel-registered-art.js'
+      - 'src/story-chapter-comic.js'
+      - 'src/story-manga-viewer.js'
+      - 'assets/story/chapters/**'
+      - 'scripts/audit-story-art-coverage.mjs'
+      - 'qa/story-live-art-coverage.test.mjs'
+      - '.github/workflows/story-live-art-coverage.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'src/story-panel-registered-art.js'
+      - 'src/story-chapter-comic.js'
+      - 'src/story-manga-viewer.js'
+      - 'assets/story/chapters/**'
+      - 'scripts/audit-story-art-coverage.mjs'
+      - 'qa/story-live-art-coverage.test.mjs'
+      - '.github/workflows/story-live-art-coverage.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  missing-panel-audit:
+    name: Explicitly report rendered image file coverage per gender / outcome
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Audit actual present images and screenshot case
+        run: |
+          node qa/story-live-art-coverage.test.mjs
+          node scripts/audit-story-art-coverage.mjs --chapters 1,2
+      - name: Upload missing-art reports with every exact shot key
+        uses: actions/upload-artifact@v4
+        with:
+          name: story-live-art-coverage-${{ github.run_id }}
+          path: qa-reports/story-stage-production/live-art-coverage/
+          if-no-files-found: error
+          retention-days: 30
