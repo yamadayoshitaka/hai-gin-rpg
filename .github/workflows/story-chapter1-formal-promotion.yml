@@ -48,7 +48,11 @@ jobs:
           git fetch origin story/chapter1-free-actual-art
           git fetch origin story/chapter1-formal-reviewed-art
           git switch -c story/chapter1-formal-reviewed-art --track origin/story/chapter1-formal-reviewed-art
-          git restore --source=origin/main --worktree -- scripts/build-story-chapter1-review-sheets.py
+          git restore --source=origin/main --worktree -- \
+            scripts/build-story-chapter1-review-sheets.py \
+            scripts/promote-story-chapter1-reviewed-drafts.mjs \
+            qa/story-chapter1-draft-regression.mjs \
+            scripts/verify-story-chapter1-release.mjs
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git restore --source=origin/story/chapter1-free-actual-art --worktree -- \
@@ -88,6 +92,13 @@ jobs:
           node qa/story-chapter-page-loop.test.mjs
           node scripts/audit-story-art-coverage.mjs --chapters 1
           node -e "const r=require('./qa-reports/story-stage-production/live-art-coverage/chapters-1.json');if(r.totals.expected!==462||r.totals.missing!==0||r.totals.invalidRegistration!==0)process.exit(5)"
+          # Release-only working-copy tools are un-staged and may differ from
+          # this historical formal branch. Restore them before merging main.
+          git restore --source=HEAD --worktree -- \
+            scripts/build-story-chapter1-review-sheets.py \
+            scripts/promote-story-chapter1-reviewed-drafts.mjs \
+            qa/story-chapter1-draft-regression.mjs \
+            scripts/verify-story-chapter1-release.mjs
           git fetch origin main
           git merge --no-ff origin/main -m "merge: chapter1 formally approved art with current game"
           node scripts/verify-story-chapter1-release.mjs --require-all
