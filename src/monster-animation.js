@@ -12,7 +12,6 @@ export const MONSTER_ACTIONS=Object.freeze([
 export function startMonsterAction(model,action,time=0){
  if(!Object.prototype.hasOwnProperty.call(durations,action))throw Error('Unknown monster action: '+action);
  model.userData.action=action;model.userData.actionAt=time;
- if(action==='defeat')model.userData.facialControls?.stop?.();
  return model;
 }
 export function animateMonsterModel(model,time=0){
