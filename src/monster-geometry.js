@@ -8,6 +8,7 @@ import {attachMonsterFaceControls} from './facial-feature-runtime.js?v=1';
 import {generateCanineFurGuides} from './canine-fur-guides.js?v=4.4.92';
 import {monsterEvidenceFor} from './monster-anatomy-reference.js';
 import {MORTAL_HEAD_RINGS,MORTAL_TORSO_RINGS} from './monster-realistic-loft.js';
+import {sculptBloodMoonVampire,sculptVampireHand} from './monster-vampire-sculpt.js';
 function feet(g,pivot,x,y,z,clawed=true,scale=1){
  g.sphere(pivot,'skin',[0,-.28,0],[.14*scale,.30*scale,.15*scale]);
  g.sphere(pivot,'shadow',[0,-.53,.13],[.13*scale,.08*scale,.22*scale]);
@@ -672,6 +673,8 @@ function upright(g,s,{rock=false,undead=false,demon=false}={}){
  }else g.sphere(head,'skin',[0,0,0],[.26,.32,.27]);
  if(s.id!=='m032'&&s.id!=='m034')g.eyes(head,.235,.043,.14,
    undead?.037:.035);
+ if(s.id==='m034')sculptBloodMoonVampire(g,head,torso,
+   {detail:g.root.userData.detail});
  if(undead&&['m031','m035'].includes(s.id)){
    for(const side of [-1,1])g.spike(head,'shadow',[side*.10,-.13,.23],[side*.12,-.26,.29],.045);
    for(let i=0;i<5;i++)g.bone(torso,'bone',[-.26,1.85-i*.16,.29],[.26,1.85-i*.16,.29],.028);
@@ -712,25 +715,45 @@ function upright(g,s,{rock=false,undead=false,demon=false}={}){
      g.rock(arm,'skin',[side*.06,-.17,0],[.245,.275,.24]);
      g.rock(elbow,'light',[side*.035,-.15,.045],[.185,.245,.195]);
    }else{
-     g.bone(arm,'skin',[0,0,0],[side*.13,-.40,.12],.16,{tipRadius:.11});
-     g.sphere(arm,'shadow',[side*.13,-.37,.12],[.15,.145,.15],
+     // Conical skin/fascia sections overlap the joints, unlike single rigid
+     // limb cylinders with visible circular cut ends.
+     g.sphere(arm,s.id==='m034'?'mortalSkin':'skin',
+       [0,-.02,0],[.182,.164,.17],
+       {name:'monster-shoulder-volume'});
+     g.bridge(arm,s.id==='m034'?'mortalSkin':'skin',
+       [0,0,0],[side*.13,-.40,.12],.162,.115);
+     g.sphere(arm,'shadow',[side*.13,-.37,.12],[.145,.140,.144],
        {name:'monster-elbow-socket'});
-     g.bone(elbow,'skin',[0,0,0],[side*.045,-.31,.045],.12,{tipRadius:.075});
-     g.sphere(elbow,'skin',[side*.045,-.31,.045],[.103,.105,.11]);
+     g.bridge(elbow,s.id==='m034'?'mortalSkin':'skin',
+       [0,.012,0],[side*.045,-.31,.045],.117,.077);
+     g.sphere(elbow,s.id==='m034'?'mortalSkin':'skin',
+       [side*.045,-.31,.045],[.097,.093,.10]);
    }
-   g.claws(elbow,[side*.045,-.35,.15],1,rock?4:3,rock?1.35:1.1);
+   if(s.id==='m034')sculptVampireHand(g,elbow,side,
+     {detail:g.root.userData.detail});
+   else g.claws(elbow,[side*.045,-.35,.15],1,
+     rock?4:3,rock?1.35:1.1);
    const leg=g.group('leg'+suffix,[side*.19,.96,0]);
    const knee=g.group('knee'+suffix,[0,-.39,.04],leg);
    if(rock){
      g.rock(leg,'skin',[0,-.17,0],[.245,.30,.24]);
      g.rock(knee,'light',[0,-.18,.035],[.185,.27,.19]);
    }else{
-     g.bone(leg,'skin',[0,0,0],[0,-.40,.04],.17,{tipRadius:.13});
-     g.sphere(leg,'shadow',[0,-.39,.04],[.168,.155,.169],
+     g.bridge(leg,s.id==='m034'?'mortalSkin':'skin',
+       [0,.01,0],[0,-.40,.04],.183,.141);
+     g.sphere(leg,'shadow',[0,-.39,.04],[.163,.148,.162],
        {name:'monster-knee-socket'});
-     g.bone(knee,'skin',[0,0,0],[0,-.36,.03],.14,{tipRadius:.10});
+     g.bridge(knee,s.id==='m034'?'mortalSkin':'skin',
+       [0,0,0],[0,-.36,.03],.135,.090);
    }
-   g.sphere(knee,'shadow',[0,-.395,.105],[.21,.14,.255]);
+   const ankle=g.group('ankle'+suffix,[0,-.33,.04],knee);
+   g.sphere(knee,'shadow',[0,-.31,.05],[.141,.125,.145],
+     {name:'monster-ankle-socket'});
+   g.sphere(ankle,s.id==='m034'?'leather':'shadow',
+     [0,-.066,.12],[.192,.115,.267],
+     {name:s.id==='m034'?'m034-leather-boot':'monster-foot'});
+   if(s.id==='m034')g.tube(ankle,'leather',[
+     [-.159,-.031,.24],[0,-.025,.31],[.154,-.031,.24]],.012);
    if(s.id==='m032'){
      const upperArm=[side*.05,-.17,.05];
      g.bandage(arm,'bandage',{name:'m032-upper-arm-'+suffix,
@@ -767,15 +790,22 @@ function upright(g,s,{rock=false,undead=false,demon=false}={}){
    const tail=g.group('tail',[0,1.06,-.18]);g.tube(tail,'skin',[[0,0,0],[0,.1,-.45],[.30,.03,-.84]],.08);
    g.spike(tail,'accent',[.30,.03,-.84],[.48,.13,-1.05],.13);
  }else if(undead){
-   g.sphere(torso,'shadow',[0,1.36,-.18],[.43,.56,.11],{rough:.85});
-   if(v>=2)g.spike(head,'accent',[0,.29,-.02],[0,.52,.1],.09);
+   // Old generic dark sphere obscured vampire tailoring and made every
+   // undead look like the same toy silhouette.
+   if(['m031','m035'].includes(s.id))
+     g.sphere(torso,'shadow',[0,1.36,-.18],[.35,.48,.09],{rough:.91});
+   if(s.id==='m033')
+     g.spike(head,'metal',[0,.27,-.045],[0,.44,-.08],.066);
  }else if(rock){
    for(let i=0;i<8+v*2;i++){
      const side=i%2?-1:1,y=1.14+(i%5)*.14;
      g.rock(torso,i%3?'skin':'light',[side*.43,y,-.1+(i%3)*.11],[.19,.14,.15]);
    }
  }
- const jaw=g.group('jaw',[0,1.99,.18]);g.sphere(jaw,rock?'shadow':'skin',[0,-.02,.02],[.20,.09,.20]);
+ const jaw=g.group('jaw',[0,1.99,.18]);
+ g.sphere(jaw,rock?'shadow':s.id==='m034'?'mortalSkin':'skin',
+   [0,-.025,.035],s.id==='m034'?[.130,.056,.118]:[.185,.079,.165],
+   {name:'monster-anatomical-lower-jaw'});
  g.root.scale.setScalar(s.size*(rock?.85:.87));
 }
 /** Marine serpent anatomy: axial undulation rather than decorative tiny
