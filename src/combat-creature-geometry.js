@@ -374,15 +374,40 @@ function addCoatSculpture(g,type,s,detail){
   profile('core',skin,[
     [headZ-l*.43,headY-.045,.012,.04],[headZ-l*.22,headY,w*.43,h*.19],
     [headZ,headY+.012,w*.46,h*.205],[headZ+l*.22,headY-.052,w*.365,h*.145],
-    [headZ+l*.51,headY-.13,w*.255,h*.091],
-    [headZ+l*.71,headY-.15,w*.20,h*.074],
-    [headZ+l*.81,headY-.17,.009,.022],
+    [headZ+l*.48,headY-.12,w*.275,h*.104],
+    [headZ+l*.66,headY-.15,w*.205,h*.074],
+    [headZ+l*.76,headY-.17,.009,.022],
   ]);
   profile('jaw',shadow,[
-    [headZ+l*.13,headY-.21,.01,.017],[headZ+l*.36,headY-.225,w*.28,h*.052],
-    [headZ+l*.64,headY-.216,w*.20,h*.035],
-    [headZ+l*.77,headY-.23,.008,.013],
+    [headZ+l*.13,headY-.21,.01,.017],[headZ+l*.36,headY-.225,w*.29,h*.065],
+    [headZ+l*.62,headY-.216,w*.21,h*.048],
+    [headZ+l*.73,headY-.23,.008,.013],
   ]);
+  // True upper/lower lip junction. The black oral aperture belongs to the
+  // moving jaw, so biting and roaring reveal a mouth rather than a blank snout.
+  profile('jaw',0x2b181b,[
+    [headZ+l*.22,headY-.188,.012,.010],
+    [headZ+l*.43,headY-.188,w*.205,h*.016],
+    [headZ+l*.64,headY-.191,w*.145,h*.011],
+    [headZ+l*.70,headY-.205,.008,.006],
+  ]);
+  if(detail==='high')profile('jaw',0x76504c,[
+    [headZ+l*.31,headY-.200,.008,.006],
+    [headZ+l*.46,headY-.198,w*.13,h*.011],
+    [headZ+l*.57,headY-.202,.012,.007],
+  ]);
+  for(const side of [-1,1]){
+    curved('core',shadow,[
+      [side*w*.31,headY-.175,headZ+l*.20],
+      [side*w*.265,headY-.191,headZ+l*.39],
+      [side*w*.195,headY-.187,headZ+l*.65]],
+      [w*.013,w*.012,w*.006]);
+    curved('jaw',0x3b2728,[
+      [side*w*.293,headY-.210,headZ+l*.22],
+      [side*w*.240,headY-.218,headZ+l*.43],
+      [side*w*.18,headY-.219,headZ+l*.65]],
+      [w*.009,w*.009,w*.004]);
+  }
   for(const side of [-1,1]){
     // Black tear-duct to rear corner: the eyes are deep, angry slits with no
     // round eyeball or bright glint. The brow overhangs the recessed iris.
@@ -419,12 +444,31 @@ function addCoatSculpture(g,type,s,detail){
       horn('core',i%2?highlight:shadow,[side*w*.40,headY-.12,whiskerZ],[side*w*.68,headY-.16+(i%2)*.07,whiskerZ+.12],.009);
     }
   }
-  // Leather seat with a raised front pommel and side straps. A rider is a
-  // regular soldier in a separate scene node, never merged into the wolf.
-  sphere('core',0x3f3332,0,h+.36,-l*.12,w*.86,.095,l*.43);
-  sphere('core',0x966b48,0,h+.44,-l*.12,w*.68,.052,l*.32);
-  for(const side of [-1,1])g.curved('core',0x4f3930,[
-    [side*w*.58,h+.38,-l*.26],[side*w*.89,h+.08,-l*.23],[side*w*.86,h-.30,-l*.22]],[.038,.033,.027]);
+  // Contoured leather saddle-pad hugs the ribs, while raised pommel/cantle
+  // and a girth close the seam against the moving animal instead of a chair.
+  profile('equipment',0x342c2a,[
+    [-l*.48,h+.255,.008,.013],[-l*.39,h+.32,w*.74,.075],
+    [-l*.14,h+.365,w*.77,.105],[l*.10,h+.335,w*.72,.082],
+    [l*.23,h+.28,.008,.015],
+  ]);
+  sphere('equipment',0x72533e,0,h+.420,-l*.13,w*.66,.047,l*.30);
+  for(const side of [-1,1]){
+    curved('equipment',0x3f302c,[
+      [side*w*.60,h+.395,-l*.40],[side*w*.83,h+.360,-l*.38],
+      [side*w*.86,h+.45,-l*.37]],[.034,.040,.018]);
+    curved('equipment',0x654734,[
+      [side*w*.57,h+.39,l*.06],[side*w*.71,h+.455,l*.11],
+      [side*w*.70,h+.37,l*.18]],[.027,.027,.010]);
+    curved('equipment',0x4f3930,[
+      [side*w*.58,h+.32,-l*.26],[side*w*.89,h+.08,-l*.23],
+      [side*w*.86,h-.30,-l*.22]],[.038,.033,.027]);
+    if(detail==='high'){
+      sphere('equipment',0xa69877,side*w*.82,h+.025,-l*.22,.036,.025,.014);
+      curved('equipment',0x9c8669,[
+        [side*w*.75,h+.385,-l*.37],[side*w*.73,h+.390,-l*.15],
+        [side*w*.68,h+.380,l*.06]],[.008,.008,.006]);
+    }
+  }
   // Dense directional fur rather than oversized cone spikes:
   // separate shoulder-guard, cheek-ruff and dorsal undercoat layers.
   // Only near LOD uses these ribbons; far LOD retains the original fur PBR
@@ -580,6 +624,20 @@ function addHorse(g,s,detail){
     [l*1.18,h+.46,.012,.020],[l*1.38,h+.432,w*.235,.057],
     [l*1.60,h+.395,w*.22,.046],[l*1.74,h+.398,.012,.014],
   ]);
+  // Lip fissure tracks the lower mandible instead of being painted onto
+  // a single fixed head surface. The horse keeps a closed neutral mouth.
+  for(const side of [-1,1]){
+    curved('core',0x2b211f,[
+      [side*w*.235,h+.466,l*1.36],
+      [side*w*.206,h+.439,l*1.53],
+      [side*w*.172,h+.422,l*1.70]],
+      [.014,.012,.006]);
+    curved('jaw',0x382924,[
+      [side*w*.226,h+.448,l*1.36],
+      [side*w*.195,h+.420,l*1.53],
+      [side*w*.160,h+.406,l*1.70]],
+      [.010,.009,.005]);
+  }
   for(const side of [-1,1]){
     // Horse eyes are dark recessed ALMONDS with a heavier upper lid. An
     // eyeball bead, bright reflection or oversized cheek patch reads as cute.
@@ -627,9 +685,13 @@ function addHorse(g,s,detail){
         [spread+Math.sin(i*2.4)*.075,crestY-.035,z-.28-f*.05]],
       detail==='high'?[.020,.014,.003]:[.035,.026,.004]);
   }
-  // Leather saddle is actual separate equipment geometry on the horse object.
-  sphere('equipment',0x372c2b,0,h+.42,-.16,w*.9,.13,l*.41);
-  sphere('equipment',0x946745,0,h+.53,-.18,w*.67,.065,l*.32);
+  // Continuous, rib-following saddle felt instead of a floating chair.
+  profile('equipment',0x372c2b,[
+    [-l*.58,h+.31,.008,.012],[-l*.46,h+.40,w*.84,.086],
+    [-l*.18,h+.43,w*.90,.107],[l*.10,h+.405,w*.81,.080],
+    [l*.22,h+.34,.008,.016],
+  ]);
+  sphere('equipment',0x946745,0,h+.51,-.18,w*.65,.055,l*.30);
   // Rear and flank armour closes the bare saddle blanket silhouette.
   sphere('equipment',0x463935,0,h+.33,-l*.45,w*.95,.080,l*.52);
   for(const side of [-1,1]){
@@ -740,9 +802,9 @@ function addDragon(g,type,s,detail){
     [headZ-l*.12,headY+.025,w*.385,h*.164],
     [headZ+l*.11,headY+.03,w*.42,h*.172],
     [headZ+l*.30,headY-.04,w*.34,h*.125],
-    [headZ+l*.55,headY-.107,w*.255,h*.087],
-    [headZ+l*.79,headY-.125,w*.196,h*.073],
-    [headZ+l*.88,headY-.126,.008,.020],
+    [headZ+l*.52,headY-.104,w*.265,h*.092],
+    [headZ+l*.73,headY-.125,w*.194,h*.075],
+    [headZ+l*.84,headY-.126,.008,.020],
   ]);
   profile('jaw',shadow,[
     [headZ+l*.10,headY-.218,.014,.020],
@@ -755,6 +817,26 @@ function addDragon(g,type,s,detail){
     [headZ+l*.51,headY-.192,w*.18,h*.012],
     [headZ+l*.69,headY-.184,.01,.009],
   ]);
+  // Oral cavity is a separate lower-jaw surface; its dark rim and throat
+  // follow the jaw pivot during breath, bite and roar.
+  profile('jaw',0x251c20,[
+    [headZ+l*.23,headY-.208,.012,.011],
+    [headZ+l*.42,headY-.209,w*.235,h*.018],
+    [headZ+l*.68,headY-.204,w*.150,h*.010],
+    [headZ+l*.78,headY-.208,.008,.006],
+  ]);
+  for(const side of [-1,1]){
+    curved('core',shadow,[
+      [side*w*.328,headY-.163,headZ+l*.21],
+      [side*w*.264,headY-.182,headZ+l*.45],
+      [side*w*.185,headY-.165,headZ+l*.73]],
+      [w*.014,w*.011,w*.004]);
+    curved('jaw',0x432b29,[
+      [side*w*.309,headY-.231,headZ+l*.24],
+      [side*w*.246,headY-.229,headZ+l*.46],
+      [side*w*.177,headY-.225,headZ+l*.72]],
+      [w*.012,w*.010,w*.004]);
+  }
   for(const side of [-1,1]){
     eyeSlit('core',shadow,side,w*.393,headY+.054,headZ+l*.193,l*.065,.013,-.013);
     eyeSlit('eyes',s.eyes,side,w*.398,headY+.052,headZ+l*.199,l*.039,.008,-.009);
