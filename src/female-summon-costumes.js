@@ -124,7 +124,12 @@ export function addFemaleSummonCostume({profile,frames,detail='high',attach,tube
      [0,side*.04,side*(.10+i*.027)]);
    }
   }
-  orb(frames.head,'metal','seraph-halo-core',[0,.34,.02],[.18,.024,.18]);
+  // The old flattened icosahedron was a horizontal WHITE BAR from the
+  // frontal camera. Use a true open halo facing the viewer (+Z).
+  const halo=new THREE.TorusGeometry(.160,.014,
+    hi?9:6,hi?45:18);
+  add(frames.head,halo,'metal','seraph-open-circular-halo',
+    [0,.365,-.018],[-.15,0,0]);
   add(frames.chest,createGothicMantle({detail,width:.34,drop:.92,back:.25}),
    'velvet','seraph-cloth-back');
  }
@@ -147,12 +152,13 @@ export function addFemaleSummonCostume({profile,frames,detail='high',attach,tube
      [.08,.066,.022]);
    }
   }
-  line(frames.chest,'horn','dragonkin-tail',[
-   [0,-.30,.18],[.18,-.54,.33],[.27,-.86,.50],
-   [.10,-1.10,.68]],.052);
-  add(frames.chest,createGothicHorn({
-   detail,len:.20,radius:.072,curve:.18
-  }),'horn','dragon-tail-blade',[.10,-1.12,.70],[0,0,Math.PI*.85]);
+  if(!frames.pelvis)throw Error('Dragonkin tail requires real pelvis');
+  line(frames.pelvis,'horn','dragonkin-tail',[
+   [0,.025,.17],[.16,-.17,.34],[.29,-.40,.55],
+   [.11,-.64,.73]],.043);
+  add(frames.pelvis,createGothicHorn({
+   detail,len:.18,radius:.058,curve:.16
+  }),'horn','dragon-tail-blade',[.11,-.67,.75],[0,0,Math.PI*.85]);
  }
  return true;
 }
