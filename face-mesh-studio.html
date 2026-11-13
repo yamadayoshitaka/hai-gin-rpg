@@ -89,6 +89,10 @@ button{padding:9px 11px}
 <button id="autoBlink" type="button" aria-pressed="true" disabled>瞬き：自動</button>
 <button id="talkDemo" type="button" aria-pressed="false" disabled>口パク：停止</button>
 </div>
+<div class="controls" aria-label="顔の感情表現">
+ <label for="faceExpression">表情
+ <select id="faceExpression" aria-label="表情を10種類から選択"></select></label>
+ </div>
 </div>
 <section id="v32PartsStudio"><h2>完成顔を選ぶ（男女それぞれ10種類）</h2>
 <p class="v45Hint">顔型・目・鼻・口・メイクをまとめて切り替えます。髪型と髪色はそのまま保存されます。</p>
@@ -201,7 +205,7 @@ import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {GLTFExporter} from 'three/addons/exporters/GLTFExporter.js';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {makeIndependentFaceMaster,FACE_MASTER_SPEC} from './src/independent-face-masters.js';
-import {createFaceExpressionAnimator} from './src/face-expression-animation-v48.js?v=48';
+import {createFaceExpressionAnimator,FACE_EXPRESSIONS} from './src/face-expression-animation-v48.js?v=49';
 import {updateFaceFeatureAngles,applyFaceColorMode,updateRealFacePigment} from './src/face-feature-meshes.js';
 import {createScalpAnchoredWig} from './src/face-scalp-wig.js?v=44';
 import {createPartSelectorUI} from './src/face-part-selector-ui-v32.js?v=41';
@@ -217,6 +221,12 @@ import {loadMaleFacePreset,saveMaleFacePreset} from './src/male-face-preset-stor
 import {applyHeroineSkinMaterial} from './src/heroine-skin-material.js?v=41';
 import {FEMALE_V7_DEFAULTS,MALE_REFERENCE_DEFAULT,FACE_SLIDER_RANGES,FACE_EYE_SPACING_DEFAULT,FACE_EYE_SPACING_RANGE,CONTACT_COLORS,CONTACT_COLOR_LABELS,safeContactColor,normalizeFemaleFaceControls,normalizeMaleFaceControls} from './src/face-v7-controls.js';
 const $=id=>document.getElementById(id);
+for(const [key,preset] of Object.entries(FACE_EXPRESSIONS)){
+ const option=document.createElement('option');
+ option.value=key;option.textContent=preset.label;
+ $('faceExpression').append(option);
+}
+
 for(const [key,profile] of Object.entries(AGE_PROFILES)){
  const option=document.createElement('option');option.value=key;
  option.textContent=profile.label;$('v47AgeBand').append(option);
@@ -327,7 +337,7 @@ for(const style of listWigStyles('female')){
 }
 $('wigStyle').value=wigStyleId;
 const performanceMetrics={headRebuilds:0,wigRebuilds:0,fastLipstickRepaints:0};
-const expressionPrefs={autoBlink:true,speaking:false},expressions=new Map();
+const expressionPrefs={autoBlink:true,speaking:false,expression:'neutral'},expressions=new Map();
 if(new URLSearchParams(location.search).get('qa')==='expression'){
  // Deterministic WebGL testing only; no extra controls exposed in gameplay.
  window.__faceExpressionQA={
@@ -337,8 +347,18 @@ if(new URLSearchParams(location.search).get('qa')==='expression'){
 function refreshExpression(sex){
  expressions.get(sex)?.dispose();
  const instance=models.get(sex);
- if(instance)expressions.set(sex,createFaceExpressionAnimator(instance,expressionPrefs));
+ if(instance){
+  const animator=createFaceExpressionAnimator(instance,expressionPrefs);
+  animator.setExpression(expressionPrefs.expression);
+  expressions.set(sex,animator);
+ }
 }
+$('faceExpression').addEventListener('change',()=>{
+ expressionPrefs.expression=$('faceExpression').value;
+ for(const animator of expressions.values())
+  animator.setExpression(expressionPrefs.expression);
+ $('metrics').textContent=JSON.stringify(metrics(),null,2);
+});
 for(const [id,key,labelOn,labelOff] of [
  ['autoBlink','autoBlink','瞬き：自動','瞬き：停止'],
  ['talkDemo','speaking','口パク：会話デモ','口パク：停止']

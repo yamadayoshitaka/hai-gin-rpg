@@ -73,6 +73,10 @@ body.costume-only .faceStudioOnly{display:none!important}
  <button id="autoBlink" type="button" aria-pressed="true">瞬き：自動</button>
  <button id="talkDemo" type="button" aria-pressed="false">口パク：停止</button>
  </div>
+ <div class="controls" aria-label="顔の感情表現">
+ <label for="faceExpression">表情
+ <select id="faceExpression" aria-label="表情を10種類から選択"></select></label>
+ </div>
  <div class="controls"><a href="./face-mesh-studio.html?gender=male&hero=1&v=43" class="buttonLink" id="faceEditorLink">男性の顔・髪を編集する</a><a class="buttonLink" href="./face-body-studio.html?v=42">女性主人公の画面へ</a></div>
 <div id="heroActionButtons" class="actionButtonGrid" role="group" aria-label="実戦闘アクションを再生"></div>
 <p id="actionStatus" role="status">アクションを選んで再生してください。</p>
@@ -148,7 +152,7 @@ import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {GLTFExporter} from 'three/addons/exporters/GLTFExporter.js';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {makeIndependentFaceMaster} from './src/independent-face-masters.js';
-import {createFaceExpressionAnimator} from './src/face-expression-animation-v48.js?v=48';
+import {createFaceExpressionAnimator,FACE_EXPRESSIONS} from './src/face-expression-animation-v48.js?v=49';
 import {MALE_REFERENCE_DEFAULT,FACE_EYE_SPACING_DEFAULT,FACE_EYE_SPACING_RANGE,FACE_SLIDER_RANGES,CONTACT_COLORS,CONTACT_COLOR_LABELS,safeContactColor,normalizeMaleFaceControls} from './src/face-v7-controls.js';
 import {applyFaceColorMode} from './src/face-feature-meshes.js';
 import {createScalpAnchoredWig} from './src/face-scalp-wig.js?v=44';
@@ -167,6 +171,12 @@ import {loadMaleFacePreset,saveMaleFacePreset} from './src/male-face-preset-stor
 import {FEMALE_COMMANDER_ART_PALETTE,CHAPTER_ONE_ART_BY_KEY} from './src/chapter-one-character-art-references.js';
 
 const $=id=>document.getElementById(id);
+for(const [key,preset] of Object.entries(FACE_EXPRESSIONS)){
+ const option=document.createElement('option');
+ option.value=key;option.textContent=preset.label;
+ $('faceExpression').append(option);
+}
+
 const art={characterId:'hero-boy-01',image:null,status:'male-reference-pending'};
 const palette={skin:'#e2c4b3',hair:'#543c2e',iris:'#514139',armor:'#bfc9d2',cloth:'#2a3d57'};
 for(const item of listWigStyles('male')){
@@ -211,12 +221,18 @@ const counter={wigBuilds:0,glbExports:0,hairStyleChanges:0};
 const selectedStudio={jobId:'swordsman',outfitId:'job',actionId:'idle',nativeCommand:null};
 let selectedCastId='',selectedBodyShape='average';
 let expressionAnimator=null;
-const expressionPrefs={autoBlink:true,speaking:false};
+const expressionPrefs={autoBlink:true,speaking:false,expression:'neutral'};
 function refreshExpression(){
  expressionAnimator?.dispose();
  expressionAnimator=model?.face?
   createFaceExpressionAnimator(model,expressionPrefs):null;
+ expressionAnimator?.setExpression(expressionPrefs.expression);
 }
+$('faceExpression').addEventListener('change',()=>{
+ expressionPrefs.expression=$('faceExpression').value;
+ expressionAnimator?.setExpression(expressionPrefs.expression);
+ $('metrics').textContent=JSON.stringify(metrics(),null,2);
+});
 for(const [id,key,onText,offText] of [
  ['autoBlink','autoBlink','瞬き：自動','瞬き：停止'],
  ['talkDemo','speaking','口パク：会話デモ','口パク：停止']
