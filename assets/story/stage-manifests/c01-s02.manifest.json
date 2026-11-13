@@ -69,18 +69,25 @@
     "oneBeatPerCell": true,
     "continuity": "previous and following canonical screenplay beats",
     "narrationDisplay": "outside illustration in game UI",
-    "proofing": "manual visual acceptance; OCR optional only, not assumed"
+    "proofing": "manual visual acceptance; OCR optional only, not assumed",
+    "priority": "P0_ABSOLUTE_MUST_FOLLOW",
+    "mandatoryActualByteAttachments": true,
+    "noTextIncludesGameScreenshots": true,
+    "onViolation": "REJECTED_NO_REGISTRATION_OR_DEPLOYMENT"
   },
   "operatingOrder": [
     "load full stage screenplay",
     "expand all 8 gender/outcome variants",
     "freeze exact storyboard action for every cell",
     "attach real cast image files",
+    "P0 gate: every actor's real image bytes must be attached, otherwise BLOCKED (path strings do not count)",
+    "P0 prompt: prepend mandatory absolute textless/cast-identity/canonical-scene rules to every shot and variant render prompt",
     "render textless hi-res posters for each variant (if an actual image generation provider is attached)",
     "slice by explicit cell rectangles",
     "check native pixels and provenance",
     "review each cell vs its exact screenplay and approved reference",
     "register only approved individual files",
+    "P0 visual review: REJECT any incorrect cast, UI/text/number, narrative mismatch or low-quality source; no autopromote",
     "deploy after all variant checks pass"
   ],
   "referenceImages": {
@@ -280,5 +287,19 @@
     "doNotCountAsRegisteredArt": true,
     "newlyGeneratedShot": "c01-s02|post-defeat|male|c01-s02-m6",
     "humanApproved": false
+  },
+  "criticalPriorityPolicy": {
+    "priority": "P0_ABSOLUTE_MUST_FOLLOW",
+    "rulesPath": "assets/story/quality/artwork-p0-rules.json",
+    "mandatoryAtPromptStart": true,
+    "mandatoryAtVariantPosterStart": true,
+    "failClosed": true,
+    "referToBinaryFilesNotMerelyPaths": true,
+    "requireCanonicalBeatAndOutcomeEveryShot": true,
+    "prohibitImageTextDigitsUI": true,
+    "rejectIfRenderFailsAnyP0": true,
+    "doNotPublishUnapproved": true,
+    "noPaidGenerationAPI": true,
+    "validation": "qa/story-single-stage-manifest.test.mjs"
   }
 }
