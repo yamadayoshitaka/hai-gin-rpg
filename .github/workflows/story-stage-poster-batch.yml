@@ -19,6 +19,13 @@ on:
       - 'docs/story-stage-poster-production-manifest-v2.md'
       - '.github/workflows/story-stage-poster-batch.yml'
       - 'assets/story/chapters/c01/stage2-stage3-production-queue.json'
+  pull_request:
+    paths:
+      - 'scripts/check-c01-s02-pending-art.mjs'
+      - 'src/story-stage2-reviewed-art.js'
+      - 'src/story-panel-registered-art.js'
+      - 'qa/story-stage2-25-gate.test.mjs'
+      - '.github/workflows/story-stage-poster-batch.yml'
   workflow_dispatch:
     inputs:
       start:
