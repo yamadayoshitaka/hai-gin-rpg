@@ -156,8 +156,8 @@ function createHeadEnvelope(geometry,box){
  };
  return {radius,radialCenter:center,angularCells:angular,axialCells:axial};
 }
-function hairCutY(zone,box,lengthScale,seed,normalizedX=0){
- const d=box.getSize(new THREE.Vector3()),scale=clamp(lengthScale,.55,1.5);
+function hairCutY(zone,box,lengthScale,seed,normalizedX=0,minLengthScale=.55){
+ const d=box.getSize(new THREE.Vector3()),scale=clamp(lengthScale,minLengthScale,1.5);
  // A salon U-shaped long layer: center-back hangs longest, sides end a
  // little higher; subtle point-cut variation instead of rigid saw teeth.
  const level=zone.startsWith('fringe')?.77:
@@ -307,6 +307,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  if(!WIG_BASE_VOLUME_PROFILES[volumeProfile])
   throw Error('Unknown wig volume profile: '+volumeProfile);
  const style=getWigStyle(styleId);
+ const minLengthScale=gender==='male'?.18:.55;
  // v25: a detachable wig keeps its current physically simulated guides;
  // micro-fibres are a single static extra mesh in the SAME removable asset.
  const fiberMultiplier=[1,3,5,10].includes(Number(visualFiberMultiplier))?
@@ -489,21 +490,21 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
     .014*partSlope+featherVariation);
   // Long feathered bangs from the real high hairline to the eyebrow level.
   // The old 0.09-head-height cap ended halfway down the forehead.
-  const bangLength=d.y*(.185+.035*cutPhase)*clamp(lengthScale,.55,1.5);
+  const bangLength=d.y*(.185+.035*cutPhase)*clamp(lengthScale,minLengthScale,1.5);
   const cutKind=style.shortCutKind||null;
   const shortLength=cutKind==='buzz'?.013:
    cutKind==='very-short'?.060:.15;
   const length=cutKind?d.y*shortLength*(.84+.26*fract(i*.618)):
    (fringe||overFace)?
     Math.max(d.y*.008,Math.min(bangLength,wigRoot.y-browLimit)):
-    d.y*(longFactor+fract(i*.381966)*.13)*clamp(lengthScale,.55,1.5)*
+    d.y*(longFactor+fract(i*.381966)*.13)*clamp(lengthScale,minLengthScale,1.5)*
      (style.styleLength||1);
   const rest=[],points=[],vel=[];
   const lateral=2*Math.abs(wigRoot.x-center.x)/d.x;
   const trimY=cutKind?wigRoot.y-length*1.06:
    Math.min(wigRoot.y-d.y*.012,
     (fringe||overFace)?browLimit:
-     hairCutY(zone,box,lengthScale,i,lateral)-
+     hairCutY(zone,box,lengthScale,i,lateral,minLengthScale)-
       (bodyCollisionResolver&&(back||zone.startsWith('temple'))?d.y*.26:0));
   // Salon-guided locks: the real scalp root stays fixed. After a brief
   // head-conforming section, each lock DROPS DOWN, not out in a radial
@@ -1100,7 +1101,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   physicsHz:staticGroom?0:20,
   normalUpdateDivisor:staticGroom?0:3,
   physicsGuideCount:staticGroom?0:guideCount,
-  analyticSwayOtherLocks:!staticGroom,lengthScale:clamp(lengthScale,.55,1.5),
+  analyticSwayOtherLocks:!staticGroom,lengthScale:clamp(lengthScale,minLengthScale,1.5),
   hairColor:'#'+rootColor.getHexString(),
   tipColor:'#'+tips.getHexString()
  };
