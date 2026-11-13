@@ -12,7 +12,7 @@ import {createHumanBomRig} from './human-bom-renderer.js';
 import {attachTownOutfitNpc} from './cc0-town-npc-visuals.js';
 import {createMonsterModel,disposeMonsterSculpture} from './monster-geometry.js';
 import {startMonsterAction,animateMonsterModel} from './monster-animation.js';
-import {humanoidMonsterCostumeFor} from './monster-character-cosplay-manifest.js';
+import {humanoidMonsterCostumeFor} from './monster-character-cosplay-manifest.js?v=4.5.03';
 import {addGothicMonsterSculpt,hasGothicMonsterSculpt}
  from './monster-gothic-sculpt.js';
 import {decorateMonsterPhotoMaterial,detachMonsterPhotoMaterial}
