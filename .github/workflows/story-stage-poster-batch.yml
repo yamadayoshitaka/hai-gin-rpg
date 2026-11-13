@@ -5,6 +5,10 @@ on:
     branches: [main]
     paths:
       - 'scripts/prepare-story-stage-posters.mjs'
+      - 'scripts/check-c01-s02-pending-art.mjs'
+      - 'src/story-stage2-reviewed-art.js'
+      - 'src/story-panel-registered-art.js'
+      - 'qa/story-stage2-25-gate.test.mjs'
       - 'scripts/ingest-story-stage-posters.py'
       - 'scripts/build-story-character-reference-pack.py'
       - 'qa/story-character-reference-pack.test.py'
@@ -49,6 +53,10 @@ jobs:
         run: |
           node --check scripts/prepare-story-stage-posters.mjs
           node qa/story-stage-poster-production.test.mjs
+      - name: Guard all 25 stage2 canonical bindings; preserve 23 registered scenes
+        run: |
+          node --check scripts/check-c01-s02-pending-art.mjs
+          node qa/story-stage2-25-gate.test.mjs
       - name: Generate batch poster and individual-frame briefs
         env:
           STAGE_START: ${{ github.event.inputs.start || 'c01-s02' }}
