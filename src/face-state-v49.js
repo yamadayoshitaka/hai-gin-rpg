@@ -4,8 +4,8 @@
  * edited eye cannot revert to an old preset when an age selector changes.
  */
 import {normalizeFemaleFaceControls,normalizeMaleFaceControls} from './face-v7-controls.js';
-import {applyDemographicFaceControls} from './character-demographics-v47.js?v=49';
-import {polishHeroFaceControls} from './hero-face-presets-v45.js';
+import {applyDemographicFaceControls} from './character-demographics-v47.js?v=50';
+import {polishHeroFaceControls} from './hero-face-presets-v45.js?v=50';
 export function resolveEditedFaceControls(gender,partControls={},ageBand='twenties',
  bodyType='normal',overrides={},completeFace=false){
  if(!['female','male'].includes(gender))throw Error('Unknown face gender');

@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {normalizeFemaleFaceControls,normalizeMaleFaceControls,FACE_V7_PALETTE,MALE_REFERENCE_DEFAULT,safeContactColor} from './face-v7-controls.js';
+import {normalizeFemaleFaceControls,normalizeMaleFaceControls,FACE_V7_PALETTE,MALE_REFERENCE_DEFAULT,safeContactColor} from './face-v7-controls.js?v=50';
 import {resolveAgeBand} from './character-demographics-v47.js?v=49';
 
 /**
