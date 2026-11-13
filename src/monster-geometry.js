@@ -817,6 +817,15 @@ function upright(g,s,{rock=false,undead=false,demon=false}={}){
      g.sphere(elbow,s.id==='m034'?'mortalSkin':'skin',
        [side*.045,-.31,.045],[.097,.093,.10]);
    }
+   // The sleeve must live on the SAME arm pivot that rotates at the elbow.
+   // The folded edge buries the skin/armour cut line for each costume type.
+   if(['m033','m034','m035','m045'].includes(s.id))
+     g.seamHem(arm,s.id==='m033'||s.id==='m045'?'metal':'fabric',{
+       center:[side*.123,-.358,.125],
+       axis:[side*.24,-1,.12],
+       radiusX:.135,radiusZ:.125,width:.055,thickness:.012,
+       name:s.id+'-sleeve-cuff-'+suffix
+     });
    if(s.id==='m034')sculptVampireHand(g,elbow,side,
      {detail:g.root.userData.detail});
    else g.claws(elbow,[side*.045,-.35,.15],1,
@@ -840,8 +849,15 @@ function upright(g,s,{rock=false,undead=false,demon=false}={}){
    g.sphere(ankle,s.id==='m034'?'leather':'shadow',
      [0,-.066,.12],[.192,.115,.267],
      {name:s.id==='m034'?'m034-leather-boot':'monster-foot'});
-   if(s.id==='m034')g.tube(ankle,'leather',[
-     [-.159,-.031,.24],[0,-.025,.31],[.154,-.031,.24]],.012);
+   if(s.id==='m034'){
+     // A real turned leather boot lip, attached to the ankle animation
+     // hierarchy, prevents the upper from looking like an isolated shoe.
+     g.seamHem(ankle,'leather',{center:[0,.023,.105],
+       radiusX:.171,radiusZ:.183,width:.056,thickness:.014,
+       name:'m034-boot-top-'+suffix});
+     g.tube(ankle,'leather',[
+       [-.159,-.031,.24],[0,-.025,.31],[.154,-.031,.24]],.012);
+   }
    if(s.id==='m032'){
      const upperArm=[side*.05,-.17,.05];
      g.bandage(arm,'bandage',{name:'m032-upper-arm-'+suffix,
