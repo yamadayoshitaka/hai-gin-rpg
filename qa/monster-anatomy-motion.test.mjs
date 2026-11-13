@@ -4,6 +4,7 @@ import './monster-leap-mummy-quality.test.mjs';
 import './monster-realistic-remesh.test.mjs';
 import './creature-dragon-realism-regression.test.mjs';
 import './creature-face-mouth-saddle-regression.test.mjs';
+import './dragonlord-cranium-jaw-seam.test.mjs';
 import {MONSTER_CATALOG,validateMonsterCatalog} from '../src/monster-catalog.js';
 import {
  ANATOMY_EVIDENCE, MONSTER_ANATOMY_RESEARCH, monsterEvidenceFor,

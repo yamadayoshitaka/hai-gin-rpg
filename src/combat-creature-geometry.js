@@ -20,7 +20,7 @@ export const CREATURE_VISUAL_SPECS = Object.freeze({
   wyvern: Object.freeze({ label:'飛竜', anatomy:'wyvern', skin:0x4e566d, shadow:0x273347, highlight:0x9292a3, eyes:0xb32620, height:1.37, width:.52, length:1.03, legs:.96, tail:1.75, wing:2.12 }),
   dragon: Object.freeze({ label:'古竜', anatomy:'dragon', skin:0x376050, shadow:0x1a3b37, highlight:0x759a86, eyes:0xb52018, height:1.68, width:.73, length:1.34, legs:1.04, tail:2.24, wing:2.5 }),
   elder_dragon: Object.freeze({ label:'天竜', anatomy:'dragon', skin:0xa1885c, shadow:0x534636, highlight:0xdbc49b, eyes:0x871522, height:1.76, width:.82, length:1.5, legs:1.12, tail:2.57, wing:3.03 }),
-  dragon_lord: Object.freeze({ label:'竜王', anatomy:'biped_dragon', skin:0xb5967b, shadow:0x695146, highlight:0xe4c9a5, eyes:0xce1826, height:2.70, width:.86, length:1.45, legs:1.78, tail:3.25, wing:3.72 }),
+  dragon_lord: Object.freeze({ label:'竜王', anatomy:'biped_dragon', skin:0x947b67, shadow:0x55443b, highlight:0xc8b09b, eyes:0x9c3b29, height:2.70, width:.86, length:1.45, legs:1.78, tail:3.25, wing:3.72 }),
   forest_archer: Object.freeze({ label:'森の精霊弓士', anatomy:'humanoid_archer', skin:0x6d8660, shadow:0x314b35, highlight:0xe2c17c, eyes:0x4d977e, height:1.44, width:.43, length:.48, legs:1.03, tail:0, wing:0 }),
   seraph_guardian: Object.freeze({ label:'光翼の守護天使', anatomy:'winged_humanoid', skin:0xece7da, shadow:0xaeb6b8, highlight:0xfff0cc, eyes:0x647f9d, height:1.48, width:.43, length:.48, legs:1.03, tail:0, wing:2.75 }),
   horse: Object.freeze({ label:'軍馬', anatomy:'mount', skin:0x6f4a39, shadow:0x2f2520, highlight:0x9d7a5c, eyes:0x381b1b, height:1.22, width:.43, length:.99, legs:1.07, tail:1.12, wing:0 }),
@@ -72,7 +72,11 @@ function assemble(detail,face) {
   const eyeSlit=(name,tint,side,x,y,z,halfLength,halfHeight,slope=0)=>{
     if(name==='eyes'){
       const shape=face.eyesType==='round'?1.18:face.eyesType==='narrow'?.71:face.eyesType==='hooded'?.87:1;
-      x*=face.eyeSpacing;halfLength*=face.eyeSize;halfHeight*=face.eyeSize*shape;
+      // A sculpted dragon lord has permanent bone-walled orbital sockets.
+      // Randomized generic face spacing previously moved the iris BEHIND
+      // that fixed skull, leaving a black-looking empty hole.
+      x*=face.id==='dragon_lord'?(1+.11*(face.eyeSpacing-1)):face.eyeSpacing;
+      halfLength*=face.eyeSize;halfHeight*=face.eyeSize*shape;
     }
     // Low-relief, pointed almond surface running down the animal's cheek.
     // A sphere catches a round highlight and makes an adult predator cute;
@@ -349,7 +353,19 @@ function assemble(detail,face) {
       // after de-indexing would turn every curved surface into hard facets.
       // Transform the entire articulated jaw, including fangs and skin,
       // rather than only its base cross-section. Keep it ONE GPU batch.
-      if(name==='jaw')merged.scale(face.mouthWidth,face.mouthFullness,1);
+      if(name==='jaw'){
+        // The jaw geometry is already expressed in WORLD-local coordinates
+        // (y ~= 1.5 on wolves, y ~= 3.5 on dragon lord). Scaling around the
+        // scene origin moved it several centimetres away from the skull.
+        // Scale the flesh thickness around its own anatomical centre so
+        // the mandible remains seated under the maxilla at rest.
+        merged.computeBoundingBox();
+        const bounds=merged.boundingBox;
+        const centerY=(bounds.min.y+bounds.max.y)*.5;
+        merged.translate(0,-centerY,0);
+        merged.scale(face.mouthWidth,face.mouthFullness,1);
+        merged.translate(0,centerY,0);
+      }
       merged.computeBoundingSphere();
       for(const geo of geos) geo.dispose();
       result[name]=merged;
@@ -1013,44 +1029,95 @@ function addDragonLord(g,s,detail){
       sphere('core',skin,side*(bulge+.07),y,.37+.03*Math.cos(t*5),.082,.038,.085);
     }
   }
-  // A long, bony predatory skull with a jaw that actually opens for breath.
+  // A SINGLE organic loft carries the neck directly into the cranial bowl,
+  // temporalis, cheek bones and shorter, broad nasal bridge. This replaces
+  // the disconnected thin rod-like head and covers the old neck/skull seam.
+  // The jaw alone stays articulated as a distinct GPU batch.
   const headY=3.72;
   profile('core',skin,[
-    [.36,headY-.06,.018,.035],[.62,headY+.015,.28,.23],
-    [.94,headY+.06,.38,.245],[1.22,headY+.005,.36,.18],
-    [1.55,headY-.09,.255,.11],[1.91,headY-.16,.16,.085],
-    [2.03,headY-.165,.012,.014],
+    [-.12,headY-.51,.015,.029],
+    [.09,headY-.39,.286,.263],
+    [.40,headY-.25,.367,.328],
+    [.65,headY-.075,.400,.348],
+    [.91,headY+.015,.473,.333],
+    [1.12,headY+.020,.458,.295],
+    [1.34,headY-.060,.391,.225],
+    [1.52,headY-.095,.326,.169],
+    [1.70,headY-.152,.259,.121],
+    [1.80,headY-.165,.195,.096],
+    [1.89,headY-.165,.009,.018],
   ]);
-  profile('jaw',shadow,[
-    [.80,headY-.28,.025,.025],[1.16,headY-.30,.30,.10],
-    [1.54,headY-.31,.235,.085],[1.94,headY-.29,.11,.042],
-    [2.02,headY-.275,.008,.012],
+  // Articulated mandible has a broad ramus at the ear, a strong jaw angle
+  // and a closing lip under the maxilla: no floating black tooth tray.
+  profile('jaw',skin,[
+    [.58,headY-.235,.012,.028],
+    [.82,headY-.257,.274,.136],
+    [1.09,headY-.281,.373,.126],
+    [1.36,headY-.284,.318,.111],
+    [1.59,headY-.292,.271,.087],
+    [1.76,headY-.292,.194,.064],
+    [1.88,headY-.292,.010,.016],
   ]);
+  // Mucosa and tongue are tucked INSIDE the closing jaw. They only become
+  // prominent when its real hinge rotates during roar or attack.
   profile('jaw',0x3c2929,[
-    [1.05,headY-.227,.01,.01],[1.36,headY-.229,.23,.026],
-    [1.80,headY-.22,.15,.020],[1.99,headY-.22,.008,.009],
-  ]);
+    [.84,headY-.197,.012,.008],
+    [1.17,headY-.194,.243,.021],
+    [1.48,headY-.204,.211,.018],
+    [1.75,headY-.221,.111,.012],
+    [1.84,headY-.231,.008,.006],
+  ],true);
   for(const side of [-1,1]){
-    const eyeX=side*.365;
-    // Set the thin red cornea inside a black orbital socket. The renderer's
-    // clear-coated eye material provides real specular glints.
-    eyeSlit('core',0x3c2b2b,side,.375,headY+.056,1.18,.145,.052,-.017);
-    eyeSlit('eyes',s.eyes,side,.385,headY+.057,1.20,.104,.032,-.013);
-    eyeSlit('eyes',0x130b0c,side,.394,headY+.058,1.21,.017,.027,-.003);
-    if(detail==='high')eyeSlit('eyes',0xffe5d1,side,.403,headY+.072,1.16,.018,.005,-.005);
-    curved('core',shadow,[[side*.31,headY+.12,.98],[eyeX,headY+.13,1.11],
-      [side*.35,headY+.08,1.32]],[.060,.043,.014]);
+    const eyeX=side*.458;
+    // Skull-embedded ocular socket + true iris / vertical pupil on the
+    // outside of the new broad cheek, not a black hole hidden in the cranium.
+    eyeSlit('core',0x352827,side,.451,headY+.061,1.16,.141,.047,-.012);
+    eyeSlit('eyes',s.eyes,side,.462,headY+.061,1.16,.082,.026,-.008);
+    eyeSlit('eyes',0x181512,side,.472,headY+.061,1.16,.019,.022,-.004);
+    if(detail==='high')eyeSlit('eyes',0xddbf9d,side,.480,headY+.073,1.13,.014,.003,-.004);
+    curved('core',skin,[
+      [side*.339,headY+.144,.97],
+      [eyeX,headY+.124,1.10],
+      [side*.414,headY+.097,1.30]],[.069,.045,.014]);
+    curved('core',shadow,[
+      [side*.408,headY+.014,1.03],
+      [side*.467,headY+.004,1.17],
+      [side*.389,headY-.011,1.29]],[.015,.015,.009]);
+    // Masseter wraps the cranial-to-mandible hinge from behind, while
+    // staying inside the fixed head GPU part during jaw animation.
+    curved('core',skin,[
+      [side*.32,headY-.247,.63],
+      [side*.387,headY-.234,.89],
+      [side*.349,headY-.255,1.22]],[.159,.161,.066]);
+    curved('jaw',skin,[
+      [side*.286,headY-.265,.66],
+      [side*.351,headY-.287,.91],
+      [side*.304,headY-.289,1.27]],[.122,.118,.048]);
+    // Two lips have distinct edges but overlap completely at rest.
+    curved('core',shadow,[
+      [side*.330,headY-.248,1.17],
+      [side*.288,headY-.258,1.47],
+      [side*.202,headY-.264,1.75]],[.013,.011,.004]);
+    curved('jaw',0x432a26,[
+      [side*.319,headY-.269,1.17],
+      [side*.277,headY-.280,1.47],
+      [side*.194,headY-.279,1.75]],[.011,.010,.005]);
     // Tall back-swept horns and smaller brow horns, six clear silhouettes.
     rootedHorn('core',highlight,[side*.25,headY+.10,.58],
       [side*.39,headY+.60,.30],[side*.46,headY+1.09,-.14],.145);
     rootedHorn('core',shadow,[side*.35,headY+.09,.68],
       [side*.56,headY+.43,.32],[side*.77,headY+.71,.05],.098);
-    horn('core',highlight,[side*.25,headY+.035,1.38],[side*.55,headY+.32,1.64],.072);
-    sphere('core',shadow,side*.17,headY-.125,1.91,.045,.023,.048);
-    for(let i=0;i<8;i++){
-      const z=1.22+i*.097,x=side*(.263-i*.017);
-      horn('jaw',0xf5e9d7,[x,headY-.32,z],[x,headY-.13-(i%3)*.019,z+.02],.033);
+    horn('core',highlight,[side*.257,headY+.055,1.38],[side*.435,headY+.235,1.60],.066);
+    sphere('core',shadow,side*.154,headY-.167,1.755,.043,.021,.045);
+    // Teeth arise from the gum on the rotating mandible, not a free
+    // comb above a detached dark plate. Small canines fold into the lips.
+    for(let i=0;i<6;i++){
+      const z=1.14+i*.107,x=side*(.295-i*.021);
+      horn('jaw',0xe6d8bd,[x,headY-.272,z],
+        [x*.96,headY-.195-(i%3)*.010,z+.015],.025);
     }
+    horn('core',0xe9d9bf,[side*.238,headY-.238,1.54],
+      [side*.228,headY-.308,1.57],.027);
     if(detail==='high')for(let i=0;i<5;i++){
       horn('core',shadow,[side*.21,headY+.12,.77-i*.10],
         [side*(.31+i*.03),headY+.35+i*.09,.45-i*.20],.055);
@@ -1060,11 +1127,17 @@ function addDragonLord(g,s,detail){
   // and an opposable inner thumb, all separated from the wing bones.
   for(const side of [-1,1]){
     const arm=side<0?'armL':'armR',x=side*.66;
-    joint('core',skin,x,2.77,.13,.38,.37,.40);
-    segment(arm,skin,[x,2.70,.24],[side*.96,2.12,.63],.29,.23);
-    joint(arm,skin,side*.95,2.12,.63,.24,.24,.24);
-    segment(arm,skin,[side*.96,2.12,.63],[side*1.08,1.73,.94],.22,.15);
-    joint(arm,shadow,side*1.08,1.74,.96,.20,.13,.20);
+    // Scapula and muscle tubes overlap while the limb rotates as one
+    // existing instanced arm part, removing the cylindrical socket look.
+    joint('core',skin,x,2.77,.13,.36,.34,.37);
+    curved(arm,skin,[
+      [x,2.72,.22],[side*.77,2.46,.37],[side*.96,2.13,.63]],
+      [.310,.274,.218],true);
+    joint(arm,skin,side*.95,2.12,.63,.236,.224,.238);
+    curved(arm,skin,[
+      [side*.96,2.13,.62],[side*1.016,1.94,.78],
+      [side*1.08,1.73,.94]],[.218,.186,.147],true);
+    joint(arm,skin,side*1.08,1.74,.96,.221,.155,.205);
     for(let finger=0;finger<4;finger++){
       const xx=side*(.93+finger*.10),z=.99+(finger%2)*.075;
       curved(arm,skin,[[side*1.08,1.71,.95],[xx,1.56,z+.15],[xx,1.43,z+.31]],
@@ -1078,11 +1151,16 @@ function addDragonLord(g,s,detail){
   // Digitigrade hind legs with powerful thigh, backward hock and long toes.
   for(const side of [-1,1]){
     const leg=side<0?'legBackL':'legBackR';
-    joint('core',skin,side*.41,1.53,-.22,.40,.41,.42);
-    joint(leg,skin,side*.48,1.48,-.17,.35,.37,.36);
-    segment(leg,skin,[side*.47,1.50,-.15],[side*.64,.82,.29],.35,.24);
-    joint(leg,skin,side*.64,.82,.29,.30,.25,.29);
-    segment(leg,shadow,[side*.64,.81,.28],[side*.60,.25,-.07],.22,.13);
+    joint('core',skin,side*.41,1.53,-.22,.366,.385,.396);
+    joint(leg,skin,side*.48,1.48,-.17,.34,.37,.35);
+    // Organic curved thigh/shin profiles overlap the knee and hock.
+    curved(leg,skin,[[side*.47,1.50,-.15],
+      [side*.57,1.16,.06],[side*.64,.82,.29]],
+      [.350,.308,.235],true);
+    joint(leg,skin,side*.64,.82,.29,.278,.249,.283);
+    curved(leg,shadow,[[side*.64,.81,.28],
+      [side*.65,.51,.11],[side*.60,.25,-.07]],
+      [.220,.174,.133],true);
     joint(leg,skin,side*.60,.25,-.07,.18,.19,.17);
     joint(leg,skin,side*.60,.14,.23,.27,.13,.42);
     for(let toe=0;toe<3;toe++){
@@ -1108,6 +1186,9 @@ function addDragonLord(g,s,detail){
   for(const side of [-1,1]){
     const name=side<0?'wingL':'wingR';
     majesticWing(name,0xc3ad9a,0x716361,span,side);
+    curved('core',skin,[
+      [side*.36,2.81,-.06],[side*.57,2.94,-.16],
+      [side*.71,3.03,-.28]],[.218,.211,.118],true);
     socket('core',skin,side*.60,2.97,-.19,.28,.23,.31);
     socket(name,skin,0,0,0,.24,.20,.28);
   }
