@@ -233,7 +233,7 @@ export function makeIndependentFaceMaster(sourceRoot,gender,{femaleControls={},m
   if(Math.abs(xn)>=.86)nx=x;
   const pointApex=smooth(.225,.265,yn)*(1-smooth(.34,.40,yn))
     *bell(yn,.282,.045)*bell(xn,0,.16)*front;
-  const ny=y+d.y*spec.chinLift*chin+surfaceFairing.dy*.9
+  let ny=y+d.y*spec.chinLift*chin+surfaceFairing.dy*.9
     +local.dy-d.y*.0025*pointGain*pointApex+eyeSocketDy+
     browFitY+noseFitY+mouthFitY;
   // v47 age × weight: deform ORIGINAL source-head vertices, never paste
