@@ -18,7 +18,7 @@ export function classifyCosplaySurface(nodeName='',materialName='',{
  const name=(String(nodeName)+' '+String(materialName)).toLowerCase();
  // Eye / cornea / iris / mouth interiors need their original optical detail,
  // otherwise a cyan corpse with cyan glass eyes looks toy-like.
- if(/eye(ball|white|lash|brow|lid)?\b|iris|pupil|cornea|tear|tongue|tooth|teeth|gum|mouth/i.test(name))return 'preserve';
+ if(/eyes?\b|eyeball|eyewhite|eyelash|eyebrow|iris|pupil|cornea|tear|tongue|tooth|teeth|gum|mouth/i.test(name))return 'preserve';
  if(/hair|eyebrow|beard|facialhair|eyelash|wig|scalp/i.test(name))return 'hair';
  if(/armor|armour|metal|steel|plate|gauntlet|bracer|helmet|shield/i.test(name))return 'metal';
  if(/fabric|cloth|tunic|shirt|pants|trouser|coat|robe|cloak|cape|mantle|vest|dress|skirt|belt|boot|shoe|leather|outfit|uniform/i.test(name))return 'cloth';
@@ -31,7 +31,8 @@ export function applyMonsterMaterialPigment(material,role,profile){
  if(!material||!profile)throw Error('Missing canonical monster pigmentation');
  const tinted=material.clone();
  if(role==='preserve')return tinted;
- const color=profile[role]??profile.skin;
+ const color=role==='hair'?(profile.hairColor??profile.cloth):
+   (profile[role]??profile.skin);
  if(!Number.isInteger(color)||color<0||color>0xffffff)
   throw Error('Invalid monstrous material role '+role);
  // The old code MULTIPLIED the import tint by an almost white overlay and
