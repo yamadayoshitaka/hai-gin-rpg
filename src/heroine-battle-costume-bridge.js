@@ -329,7 +329,20 @@ export function fitStudioNeckContinuity({faceRoot,faceMesh,wardrobeRoot}={}){
   placedUsingActualTorso:true,originalFaceGeometryPreserved:true};
  bridge.frustumCulled=false;bridge.castShadow=true;bridge.receiveShadow=true;
  faceRoot.add(bridge);
- return {applied:true,sourceTrianglesPreserved:true,
+ // The standalone portrait page used an older broad, flat neck seal plus
+ // LEFT/RIGHT shoulder cut caps. Those parts remain children of this face
+ // when it enters the armor preview. Keeping them visible alongside the
+ // new cervical connector recreates the white horizontal board beneath
+ // the chin, even after correctly cropping the original sculpted bust.
+ // These are preview-only visibility toggles; original geometry is kept.
+ let legacyNeckPartsHidden=0;
+ faceRoot.traverse(part=>{
+  if(part.isMesh&&/^(?:REAL_HEAD_BODY_CLOSED_NECK_SEAL|(?:LEFT|RIGHT)_SHOULDER_CUT_SURFACE_CAP)$/i.test(part.name)){
+   if(part.visible)legacyNeckPartsHidden++;
+   part.visible=false;
+  }
+ });
+ return {applied:true,legacyNeckPartsHidden,sourceTrianglesPreserved:true,
   bustTrianglesRemoved:cut.removedTriangles,
   trimmedSculptBottomY:safeCutY,
   actualTorsoTopY:torsoTop,connectorBottomY:bottomY,connectorTopY:topY,
