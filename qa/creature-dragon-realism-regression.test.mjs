@@ -79,7 +79,8 @@ if(THREE){
    const hi=buildCombatObjectGeometry(type,{detail:'high'});
    const lo=buildCombatObjectGeometry(type,{detail:'low'});
    const sum=geo=>Object.values(geo).reduce((n,g)=>n+g.getAttribute('position').count,0);
-   assert.ok(sum(hi)<max,'GPU per-type high LOD vertex limit exceeded: '+type);
+   assert.ok(sum(hi)<max,
+     'GPU high LOD budget exceeded '+type+': '+sum(hi)+' >= '+max);
    assert.ok(sum(hi)>sum(lo)*3,'Distance LOD no longer effective: '+type);
    assert.deepEqual(Object.keys(hi).sort(),Object.keys(lo).sort(),
      type+' must keep same articulated GPU part list at both LODs');
