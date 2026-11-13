@@ -30,6 +30,12 @@ h2{font-size:15px;color:var(--gold);margin:8px 0}
 #panelButtons button[aria-current]{border:2px solid #f3c67b;background:#58462e}
 #panelButtons .registered:after{content:'切出済';display:block;color:#aaf0c5;font-size:10px}
 .note small{color:#ddd3c5}
+
+#drafts{margin-top:24px}#drafts .draftNotice{background:#1f2d3f;border:1px solid #9a7848;border-radius:8px;padding:10px}
+#drafts .draftGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:12px}
+#drafts figure{margin:0;padding:0;border:1px solid #536b83;background:#112030;border-radius:9px;overflow:hidden}
+#drafts img{width:100%;height:auto;display:block;object-fit:contain;min-height:90px}
+#drafts figcaption{font-size:12px;color:#e0cbab;padding:7px 9px}
 </style></head><body>
 <header><strong>第一章・漫画原画を1コマずつ確認</strong><a href="./story-maintenance.html">物語メンテナンス</a></header>
 <main>
@@ -49,6 +55,12 @@ h2{font-size:15px;color:var(--gold);margin:8px 0}
 </section>
 <h2>原画の各コマを選ぶ</h2>
 <div id="panelButtons"></div>
+<section id="drafts">
+<h2>新しくコミットした試作原画25枚</h2>
+<p class="draftNotice">25枚の画像データはGitHubに登録されています。スマホ用の解像度基準には合格していますが、まだ台本コマID・人物・勝敗分岐を確認できていません。本編の未登録コマを勝手に置換せず、ここで原画候補を確認できます。</p>
+<p id="draftStatus" aria-live="polite">画像一覧を読み込み中...</p>
+<div id="draftGrid" class="draftGrid"></div>
+</section>
 <p>他のステージ・結果・性別の原画は表示しません。画像が正しい登場人物・内容を描いているか、ここで目視確認できます。</p>
 </main>
 <script type="module">
@@ -124,4 +136,24 @@ $('stage').onchange=changeStage;$('gender').onchange=update;$('outcome').onchang
 $('prev').onclick=()=>{if(index>0){index--;frame();}};
 $('next').onclick=()=>{if(index<comic.panels.length-1){index++;frame();}};
 changeStage();
+(async()=>{
+ const box=document.getElementById('draftGrid');
+ const status=document.getElementById('draftStatus');
+ try{
+  const response=await fetch('./assets/story/chapter-drafts/c01/mobile-5x5-20261113/manifest.json',{cache:'no-cache'});
+  if(!response.ok)throw Error('HTTP '+response.status);
+  const manifest=await response.json();
+  if(manifest.totalPanels!==25||manifest.p0.approvedForLiveManga!==false||manifest.panels.length!==25)
+   throw Error('試作登録台帳に矛盾があります');
+  for(const item of manifest.panels){
+   const figure=document.createElement('figure'),img=document.createElement('img');
+   img.src='./'+item.path;img.alt=item.sceneIdea+'（試作原画）';
+   img.loading='lazy';img.decoding='async';
+   const caption=document.createElement('figcaption');
+   caption.textContent=item.sceneIdea+' · '+item.nativePixels.join('×')+'px（未承認）';
+   figure.append(img,caption);box.append(figure);
+  }
+  status.textContent=manifest.totalPanels+'枚を原画候補として登録済み（本編には未割当）';
+ }catch(error){status.textContent='試作原画一覧の読み込み失敗：'+error.message;}
+})();
 </script></body></html>
