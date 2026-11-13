@@ -147,6 +147,66 @@ export function syncStudioBodyOutfitVisibility(characterModel,outfit,{showBody=t
  * the studio narrows overly massive female plate limbs, and removes
  * disconnected *spherical* rivet objects that look like floating marbles.
  */
+/**
+ * Anatomical head/torso fitting for the human STUDIO. The previous system
+ * fitted a detached head to a skull bone without considering where the
+ * imported Ranger/Peasant neckline actually ends. On the live female model
+ * this placed the face bottom at Y=1.00 while the skinned torso ended at
+ * Y=1.137: the neck and cuirass literally covered the mouth.
+ *
+ * Move the ENTIRE authored head hierarchy (skin, eyes, lashes, wig and
+ * closed-neck bridge) toward the *actual skinned torso* in world space.
+ * No mesh geometry, bind pose, battle units, or equipment is modified.
+ * Idempotent: repeated calls never add a second offset after alignment.
+ */
+export function alignStudioHeadToSkinnedTorso({
+ faceRoot,faceMesh,wardrobeRoot,clearance=.008,maxLift=.28
+}={}){
+ if(!faceRoot?.isObject3D||!faceMesh?.isMesh||
+    !wardrobeRoot?.traverse||!faceRoot.parent)
+  return {applied:false,reason:'head-or-wardrobe-missing'};
+ const bodies=[];
+ wardrobeRoot.traverse(mesh=>{
+  if(!mesh.isSkinnedMesh||!mesh.geometry?.getAttribute('position'))return;
+  if(/^(?:female|male)_(?:ranger|peasant)_body(?:_|$)/i.test(mesh.name))
+   bodies.push(mesh);
+ });
+ if(!bodies.length)return {applied:false,reason:'real-torso-mesh-missing'};
+ faceRoot.parent.updateWorldMatrix(true,true);
+ wardrobeRoot.updateWorldMatrix(true,true);
+ faceMesh.geometry.computeBoundingBox();
+ const headWorldBounds=faceMesh.geometry.boundingBox.clone()
+  .applyMatrix4(faceMesh.matrixWorld);
+ const beforeMinY=headWorldBounds.min.y;
+ let torsoTopY=-Infinity;
+ for(const mesh of bodies){
+  mesh.geometry.computeBoundingBox();
+  const box=mesh.geometry.boundingBox.clone().applyMatrix4(mesh.matrixWorld);
+  torsoTopY=Math.max(torsoTopY,box.max.y);
+ }
+ if(!Number.isFinite(torsoTopY)||!Number.isFinite(beforeMinY))
+  return {applied:false,reason:'nonfinite-head-torso-geometry'};
+ // The visible head begins just above the real neck seam. A small positive
+ // clearance avoids the underlying skin re-covering the lips during idle.
+ const requiredLift=Math.max(0,torsoTopY+clearance-beforeMinY);
+ const lift=Math.min(maxLift,requiredLift);
+ if(lift>1e-5){
+  const headOriginWorld=faceRoot.getWorldPosition(new THREE.Vector3());
+  const desiredLocal=faceRoot.parent.worldToLocal(
+   headOriginWorld.add(new THREE.Vector3(0,lift,0)));
+  faceRoot.position.copy(desiredLocal);
+  faceRoot.updateWorldMatrix(true,true);
+ }
+ const afterBounds=faceMesh.geometry.boundingBox.clone()
+  .applyMatrix4(faceMesh.matrixWorld);
+ return {applied:true,torsoMeshes:bodies.length,
+  faceBottomBeforeY:beforeMinY,faceBottomAfterY:afterBounds.min.y,
+  torsoNeckTopY:torsoTopY,requiredLift,appliedLift:lift,
+  gapMeters:afterBounds.min.y-torsoTopY,
+  headAndHairMovedTogether:true,originalMeshesPreserved:true,
+  previewOnly:true,nonAccumulative:true};
+}
+
 // Store unmodified source vertices per preview mesh. Re-applying this on
 // body/age/job changes must NEVER squash an already fitted breastplate.
 const STUDIO_CHEST_ORIGINAL=new WeakMap();
@@ -583,9 +643,11 @@ export async function createRealBattleOutfitStudio({scene,faceModel,getFaceModel
    headFit.targetCenter[2]-headFit.sourceCenter[2]*headRoot.scale.z+
     headDepth*HEROINE_STUDIO_HEAD_FORWARD/sz
   );
+  const headAlignment=alignStudioHeadToSkinnedTorso({
+   faceRoot:headRoot,faceMesh:face,wardrobeRoot:outfit?.root});
   const neckClearance=fitStudioCuirassBelowChin({faceMesh:face,wardrobeRoot:outfit?.root});
   collarFitDirty=true;
-  proportions={...proportions,neckClearance,bodyShape:bodyShapeId,
+  proportions={...proportions,headAlignment,neckClearance,bodyShape:bodyShapeId,
    ageBand:ageBandId,bodyType:bodyTypeId,
    bodyWidth:body.width,bodyDepth:body.depth,bodyHeight:age.heightScale,
    headScale:age.headScale,buildMorph,skinnedBody:true,previewOnly:true};
@@ -631,8 +693,11 @@ export async function createRealBattleOutfitStudio({scene,faceModel,getFaceModel
   if(collarFitDirty&&outfit){
    // First animation frame can move the spine from its bind pose.
    // Refit once after skeletal matrices settle, never on every render frame.
-   proportions={...proportions,neckClearance:fitStudioCuirassBelowChin({
-    faceMesh:face,wardrobeRoot:outfit.root})};
+   const headAlignment=alignStudioHeadToSkinnedTorso({
+    faceRoot:headRoot,faceMesh:face,wardrobeRoot:outfit.root});
+   proportions={...proportions,headAlignment,
+    neckClearance:fitStudioCuirassBelowChin({
+     faceMesh:face,wardrobeRoot:outfit.root})};
    collarFitDirty=false;
   }
   vfx?.update(dt);
