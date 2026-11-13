@@ -29,7 +29,7 @@ assert.equal(summary.generatorSupportsDirectFullResolution,'UNVERIFIED');
 assert.equal(summary.oneInvocationOneStage,true);
 assert.equal(summary.requiredPanels,48);
 assert.equal(summary.requiredVariantPosters,8);
-assert.equal(summary.sourcePosters.length,14);
+assert.equal(manifest.sourcePosters.length,14);
 assert.equal(summary.stageApproved,false);
 assert.equal(summary.gameDeployed,false);
 assert.equal(summary.renderStatus,'PREPARED_ONLY');
