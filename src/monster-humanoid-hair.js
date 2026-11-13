@@ -14,9 +14,10 @@ const finite=(value)=>Number.isFinite(value);
 const vec3=(a,b,c)=>new THREE.Vector3(a,b,c);
 
 export function measureCanonicalScalp(model,headBone){
+ model.updateMatrixWorld(true,true);
+ headBone.updateWorldMatrix(true,false);
  const inv=headBone.matrixWorld.clone().invert();
  const points=[];
- model.updateMatrixWorld(true,true);
  model.traverse(mesh=>{
   if(!mesh.isSkinnedMesh||!mesh.geometry||!mesh.skeleton)return;
   const geo=mesh.geometry,verts=geo.getAttribute('position');
@@ -47,8 +48,8 @@ export function measureCanonicalScalp(model,headBone){
  const scalp=points.filter(p=>p.y>=low+(top-low)*.43);
  const cx=scalp.reduce((n,p)=>n+p.x,0)/scalp.length;
  const cz=scalp.reduce((n,p)=>n+p.z,0)/scalp.length;
- const rx=Math.max(.085,Math.min(.19,...[Math.max(...scalp.map(p=>Math.abs(p.x-cx)))]));
- const rz=Math.max(.090,Math.min(.20,...[Math.max(...scalp.map(p=>Math.abs(p.z-cz)))]));
+ const rx=clamp(Math.max(...scalp.map(p=>Math.abs(p.x-cx))),.085,.19);
+ const rz=clamp(Math.max(...scalp.map(p=>Math.abs(p.z-cz))),.090,.20);
  const ry=clamp((top-low)*.37,.110,.205);
  return {center:[cx,top-ry+.004,cz],radius:[rx+.006,ry+.004,rz+.007],
   samples:points.length,fitted:true};
@@ -74,9 +75,9 @@ export function createCharacterCrownGeometry({
   const t=i/rows;
   for(let j=0;j<=cols;j++){
    const phi=j/cols*Math.PI*2;
-   // +Z points toward the face in the canonical source GLB. The
-   // forward-facing front edge terminates above the eyebrows.
-   const front=Math.max(0,Math.sin(phi));
+   // Quaternius characters look toward -Z. Keep the front hairline
+   // above the brows and grow longer hair toward the back (+Z).
+   const front=Math.max(0,-Math.sin(phi));
    const maxTheta=1.68-.34*front;
    const theta=t*maxTheta,s=Math.sin(theta);
    positions.push(cx+rx*s*Math.cos(phi),cy+ry*Math.cos(theta),
@@ -95,7 +96,7 @@ export function createCharacterHairStrandsGeometry({
  style='long',detail='high',seed=1,
 }={}){
  const [cx,cy,cz]=center,[rx,ry,rz]=radius;
- const groups=detail==='low'?44:style==='long'?180:115;
+ const groups=detail==='low'?72:style==='long'?320:180;
  const positions=[],uvs=[],indices=[];
  const maxLength=style==='long'?.39:style==='bob'?.19:
    style==='short'?.09:style==='swept'?.145:.20;
@@ -103,16 +104,18 @@ export function createCharacterHairStrandsGeometry({
  const rand=()=>{state=(Math.imul(state,1664525)+1013904223)>>>0;return state/4294967296;};
  for(let i=0;i<groups;i++){
   const phi=(i+.3+rand()*.36)/groups*Math.PI*2;
-  const front=Math.max(0,Math.sin(phi)),side=Math.abs(Math.cos(phi));
-  const theta=(1.22+rand()*.19-.16*front);
+  const front=Math.max(0,-Math.sin(phi)),side=Math.abs(Math.cos(phi));
+  // Include crown roots, not only the outer rim (helmet-like appearance).
+  const theta=.47+rand()*1.03-.13*front;
   const sin=Math.sin(theta),cos=Math.cos(theta);
   const base=vec3(cx+rx*sin*Math.cos(phi),cy+ry*cos,
     cz+rz*sin*Math.sin(phi));
   // Frontal bangs are cropped above the eyes, while rear hair reaches
   // behind shoulder plates; side locks transition without bald temples.
-  const tLen=maxLength*(front>.62?.25+rand()*.15:
-    side>.68?.57+rand()*.30:.78+rand()*.22);
-  const width=detail==='low'?.014:.009+rand()*.005;
+  const tLen=maxLength*(front>.62?.23+rand()*.17:
+    side>.68?.63+rand()*.30:.80+rand()*.20)*
+    (.65+.35*Math.sin(Math.min(1,theta/1.32)*Math.PI*.5));
+  const width=detail==='low'?.010:.004+rand()*.004;
   const sideVec=vec3(-Math.sin(phi),0,Math.cos(phi));
   const outward=vec3(Math.cos(phi),.06,Math.sin(phi));
   const start=positions.length/3;
@@ -144,7 +147,7 @@ export function attachCanonicalCharacterGroom({
  const scalp=measureCanonicalScalp(model,headBone);
  const fit={center:scalp.center,radius:scalp.radius,detail};
  const color=profile.hairColor??(
-  profile.id==='seraph_guardian'?0xd7bd7c:
+  profile.id==='seraph_guardian'?0xe0c48e:
   profile.id==='forest_archer'?0xb4a77a:
   profile.id==='dragon_lord'?0x583a49:
   profile.id==='m044'?0x2e233c:
