@@ -5,20 +5,24 @@ const fs=require('node:fs');
 const out='qa-screenshots/human-neck-v52';
 fs.mkdirSync(out,{recursive:true});
 (async()=>{
- const browser=await chromium.launch({headless:true,args:[
-  '--use-gl=angle','--use-angle=swiftshader'
- ]});
- try{
-  const page=await browser.newPage({viewport:{width:460,height:900},
-   deviceScaleFactor:1,isMobile:true,hasTouch:true});
-  const errors=[];
-  page.on('pageerror',error=>errors.push(error.message));
-  for(const [gender,path,qa] of [
-   ['female','face-body-studio.html','__heroineBodyQA'],
-   ['male','male-body-studio.html','__maleBodyQA']
-  ]){
+ // Each gender owns its own Chromium process. Reusing a page for both large
+ // WebGL characters can stall the second navigation on software GPU runners.
+ for(const [gender,path,qa] of [
+  ['female','face-body-studio.html','__heroineBodyQA'],
+  ['male','male-body-studio.html','__maleBodyQA']
+ ]){
+  const browser=await chromium.launch({headless:true,args:[
+   '--use-gl=angle','--use-angle=swiftshader'
+  ]});
+  try{
+   const page=await browser.newPage({viewport:{width:460,height:900},
+    deviceScaleFactor:1,isMobile:true,hasTouch:true});
+   const errors=[];
+   page.on('pageerror',error=>errors.push(error.message));
+   // Committed navigation is enough; readiness is checked against live 3D
+   // outfit + clearance metadata, not page-loaded timing.
    await page.goto('http://127.0.0.1:8766/'+path+'?v=52',
-    {waitUntil:'domcontentloaded',timeout:90000});
+    {waitUntil:'commit',timeout:120000});
    await page.waitForFunction(key=>{
     const state=window[key]?.();
     return state?.v36RealBattleCostume?.active&&
@@ -63,8 +67,9 @@ fs.mkdirSync(out,{recursive:true});
    fit=state.v36RealBattleCostume.proportions.neckClearance;
    if(!(fit.applied&&fit.clearanceMeters>=.007))
     throw Error(gender+' cuirass clearance lost after hiding/showing outfit');
-  }
-  if(errors.length)throw Error('browser JS errors: '+errors.slice(0,5).join(';'));
-  console.log('HUMAN_NECK_V52_BROWSER_OK: female/male armor chin clearance and torso restore');
- }finally{await browser.close()}
+   if(errors.length)throw Error(gender+' browser JS errors: '+errors.slice(0,5).join(';'));
+   console.log('HUMAN_NECK_V52_GENDER_OK: '+gender);
+  }finally{await browser.close()}
+ }
+ console.log('HUMAN_NECK_V52_BROWSER_OK: female/male armor chin clearance and torso restore');
 })().catch(error=>{console.error('HUMAN_NECK_V52_BROWSER_FAIL',error);process.exitCode=1});
