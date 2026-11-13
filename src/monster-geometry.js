@@ -897,6 +897,22 @@ function seaSerpent(g,s){
  }
  const jaw=g.group('jaw',[0,1.03,.89]);
  g.sphere(jaw,'shadow',[0,-.07,.35],[.21,.07,.40]);
+ // Sea-serpent species m020/m048 do not use the quadruped rig. Give
+ // both a physically visible split between their skull and moving jaw.
+ for(const side of [-1,1]){
+   g.tube(head,'shadow',[
+     [side*.239,-.137,.34],[side*.210,-.148,.55],
+     [side*.141,-.151,.765]],.013);
+   g.tube(jaw,'shadow',[
+     [side*.235,-.056,.225],[side*.203,-.073,.435],
+     [side*.137,-.074,.650]],.014);
+   g.spike(jaw,'bone',[side*.148,-.030,.52],
+     [side*.153,.058,.551],.026);
+ }
+ g.sphere(jaw,'shadow',[0,-.035,.405],[.143,.018,.176],
+   {name:'quadruped-oral-cavity'});
+ g.sphere(jaw,'light',[0,-.046,.47],[.090,.011,.099],
+   {name:'quadruped-tongue'});
  for(let i=0;i<7+v*2;i++){
    const z=.43-i*.18,attach=i<5?torso:spine;
    const localZ=i<5?z:z+.30;
