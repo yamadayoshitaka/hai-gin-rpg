@@ -1068,6 +1068,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   hairStrandWidthFraction:.0135,fullerCrownBackVolume:true,
   transparentExactHeadWigBase:!normalLayeredSingleMesh,
   wigBaseMaterialOpacity:normalLayeredSingleMesh?null:0,
+  wigBaseNeverWritesDepth:true,
   transparentBaseRemoved:!!normalLayeredSingleMesh,
   normalLayerCount:staticGroom&&normalLayeredSingleMesh?3:1,
   consolidatedHairMesh:staticGroom?consolidatedHair?.name:null,
