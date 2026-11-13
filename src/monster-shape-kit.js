@@ -6,7 +6,7 @@
 import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {nonhumanMonsterStage} from './nonhuman-model-quality.js';
-import {realismPaletteFor} from './monster-realistic-palettes.js';
+import {realismPaletteFor} from './monster-realistic-palettes.js?v=4.5.03';
 import {createMonsterAnatomicalLoft} from './monster-realistic-loft.js?v=4.4.99';
 import {createCreatureGumSocketGeometry,createCreatureFittedHemGeometry} from './creature-seam-geometry.js';
 import {creatureFaceVolume} from './creature-face-volume.js';
