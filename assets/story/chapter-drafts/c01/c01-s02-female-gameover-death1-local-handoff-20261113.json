@@ -28,7 +28,7 @@
     "assets/story/chapters/c01/panels/c01-s01-m02-female.webp"
   ],
   "notes": "Single independent death scene; no survival or victory, provisional visual match. A nonmatching generated scene and a text/UI-laden generated scene were rejected and are excluded.",
-  "visualStatus": "UNAPPROVED_DRAFT_PRELIMINARY_REVIEW",
+  "visualStatus": "REJECTED_P0_MISSING_CAST_ATTACHMENT",
   "humanApproval": false,
   "githubBinaryCommitted": false,
   "gameMappingAdded": false,
@@ -46,5 +46,13 @@
     "totalRequired": 48,
     "qualityApproved": 0
   },
-  "nextAction": "Import actual ZIP bytes; verify dimensions, hash and story/actor identity; obtain human QA; commit binary and wire its edition/gender-specific story panel mapping before deployment"
+  "nextAction": "Regenerate with actual master image bytes attached, verify text-free pixels and script fidelity by visual QA, then register SHA and publish only after passing 48-shot stage gates",
+  "absolutePriority": "P0_ABSOLUTE_MUST_FOLLOW",
+  "qualityGatePassed": false,
+  "p0Verdict": "REJECTED_MISSING_ACTUAL_MASTER_INPUT_BYTES",
+  "p0RejectReasons": [
+    "No auditable proof actual character master image bytes were attached to the source generation request",
+    "Master identity and exact screenshot exclusion not approved by human review"
+  ],
+  "mustRegenerateBeforeApproval": true
 }
