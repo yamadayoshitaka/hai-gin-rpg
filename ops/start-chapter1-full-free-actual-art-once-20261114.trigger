@@ -16,8 +16,8 @@
   "formalRegistration": false,
   "requiresHumanImageQA": true,
   "gitBranch": "story/chapter1-free-actual-art",
-  "preflightRetry": 2,
+  "preflightRetry": 3,
   "previousExecution": "43509861672 stopped before API calls because c01-s01 dedicated reference-bible did not exist",
   "fix": "reuse c01-s02 actor reference bible for already-registered c01-s01",
-  "diagnostic": "Single Free-only 900 estimated Neuron budget to identify sanitized Cloudflare HTTP 400; no paid fallback"
+  "diagnostic": "Verify Cloudflare safety-blocked shot skipped, native 1536x864 output, max 900 Neurons"
 }
