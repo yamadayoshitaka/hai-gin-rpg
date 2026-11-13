@@ -3,8 +3,8 @@
  * The 3D preview is rendered by the existing independent real-head/real-outfit rig. */
 import {normalizePartSelection,PART_CATALOG} from './face-part-catalog-v32.js';
 import {synchronizeHeroHairSelection} from './hero-hair-controls-v43.js';
-import {chooseHeroFacePreset,polishHeroFaceControls} from './hero-face-presets-v45.js';
-import {resolveAgeBand,resolveBodyType,applyDemographicFaceControls,AGE_BAND_IDS,BODY_TYPE_IDS} from './character-demographics-v47.js?v=47';
+import {chooseHeroFacePreset,polishHeroFaceControls} from './hero-face-presets-v45.js?v=50';
+import {resolveAgeBand,resolveBodyType,applyDemographicFaceControls,AGE_BAND_IDS,BODY_TYPE_IDS} from './character-demographics-v47.js?v=50';
 import {youngHeroMaleControls} from './hero-youthful-appearance-v50.js?v=50';
 export const BODY_SHAPES=Object.freeze({
  slim:Object.freeze({width:.91,depth:.92,label:'細身'}),

@@ -4,10 +4,10 @@ import {buildRiggedJobOutfit} from './character-system/rigged-outfit-runtime.js?
 import {loadJobMotionMap} from './character-system/job-motion-source.js?v=4.6.36';
 import {measureHeadLocalBounds} from './character-system/hair-attachment-runtime.js?v=4.4.89';
 import {createHeroineBattleActionVfx} from './heroine-battle-action-vfx.js?v=40';
-import {resolveBodyShape} from './character-cast-v46.js?v=46';
+import {resolveBodyShape} from './character-cast-v46.js?v=50';
 import {resolveDemographicProfile,resolveBodyType,resolveAgeBand}
- from './character-demographics-v47.js?v=48';
-import {applySkinnedBuildMorph} from './body-build-morph-v48.js?v=48';
+ from './character-demographics-v47.js?v=50';
+import {applySkinnedBuildMorph} from './body-build-morph-v48.js?v=50';
 
 /**
  * Reuse EXACT game battle clothing: Female_Ranger / Female_Peasant skinned GLTF,

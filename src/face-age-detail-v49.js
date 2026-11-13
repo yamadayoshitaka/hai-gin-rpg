@@ -4,8 +4,8 @@
  * Age strength is monotonic and young faces receive no marks.
  */
 import * as THREE from 'three';
-import {createFastFaceSurfaceSampler} from './face-feature-meshes.js';
-import {resolveAgeBand} from './character-demographics-v47.js?v=49';
+import {createFastFaceSurfaceSampler} from './face-feature-meshes.js?v=50';
+import {resolveAgeBand} from './character-demographics-v47.js?v=50';
 const clamp=(v,a=0,b=1)=>Math.max(a,Math.min(b,v));
 const makeLine=(name,points,sampler,box,opacity)=>{
  const d=box.getSize(new THREE.Vector3()),cx=(box.max.x+box.min.x)*.5;
