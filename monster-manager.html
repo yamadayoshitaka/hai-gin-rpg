@@ -48,7 +48,7 @@ legend{font-size:12px;color:#e8d9b6;padding:0 6px}
 </style>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
 </head><body>
-<header><a href="./index.html">← メニュー</a><h1>魔物図鑑・モンスター管理 <small>50種 / v4.5.01</small></h1>
+<header><a href="./index.html">← メニュー</a><h1>魔物図鑑・モンスター管理 <small>50種 / v4.5.02</small></h1>
  <a href="./summon-showcase.html?v=4.5.00">召喚獣一覧</a></header>
 <main>
  <aside>
@@ -133,7 +133,7 @@ import {MONSTER_CATALOG,MONSTER_BY_ID,MONSTER_FAMILIES,MONSTER_ELEMENTS,monsterL
 import {createMonsterModel,disposeMonsterSculpture,MONSTER_DETAIL_LEVELS,
   monsterSculptCacheStats,monsterPhotoCacheStats} from './src/monster-geometry.js?v=4.5.00';
 import {MONSTER_ACTIONS,startMonsterAction,animateMonsterModel} from './src/monster-animation.js?v=4.4.95';
-import {createCosplayedHumanoidMonster} from './src/monster-character-cosplay.js?v=4.5.01';
+import {createCosplayedHumanoidMonster} from './src/monster-character-cosplay.js?v=4.5.02';
 import {humanoidMonsterCostumeFor,HUMAN_MONSTER_IDS} from './src/monster-character-cosplay-manifest.js?v=4.5.01';
 import {fetchCreatureRegistry,loadExternalCreature,loadPersonalGLB} from './src/creature-external-runtime.js?v=4.4.92';
 const byId=id=>document.getElementById(id);
@@ -301,12 +301,12 @@ function selectSpecies(id){
  if(mode==='procedural'){
    if(costumeHandle){
      const pending=costumeHandle;
-     byId('assetStatus').textContent='人物GLBの骨格・顔を読込中（従来3Dモデルを一時表示）';
+     byId('assetStatus').textContent='人物GLB＋写実系衣装を読込中（従来モデルを一時表示）';
      pending.ready.then(result=>{
        if(ticket!==requestSerial||costumeHandle!==pending||selected!==id)return;
        if(result.source==='canonical-character-cosplay'){
          refreshGeometry();focusCamera();
-         byId('assetStatus').textContent='人型モンスター刷新：既存キャラクターの全身GLB + 種族別衣装 '+result.modelId;
+         byId('assetStatus').textContent='人型モンスター刷新：全身GLB＋ゴシック衣装・顔造形 '+result.modelId;
          notice('人型の顔・体・アニメーションを既存キャラ素体へ切替済み：'+id);
        }else if(result.source!=='cancelled'){
          byId('assetStatus').textContent='人物GLBを読込めないため旧モデルを表示：'+(result.reason||'不明');
