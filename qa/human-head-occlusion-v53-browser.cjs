@@ -47,6 +47,10 @@ const fs=require('node:fs');
   console.log('HUMAN_V53_ACTUAL_MESH_DIAGNOSTICS '+JSON.stringify(result));
   if(!(result.neckContinuity?.applied&&result.neckContinuity.bustTrianglesRemoved>3))
     throw Error('HEAD_BUST_STILL_PRESENT: '+JSON.stringify(result.neckContinuity));
+  if(result.neckContinuity.legacyNeckPartsHidden<3)
+    throw Error('FLAT_NECK_CAPS_STILL_VISIBLE: '+JSON.stringify(result.neckContinuity));
+  if(result.meshes.some(mesh=>/^(REAL_HEAD_BODY_CLOSED_NECK_SEAL|(?:LEFT|RIGHT)_SHOULDER_CUT_SURFACE_CAP)$/.test(mesh.name)))
+    throw Error('LEGACY_FLAT_NECK_MESH_IN_RENDER_LIST');
   if(!(result.headAlignment?.applied&&result.headAlignment.gapMeters>=.006))
     throw Error('FACE_STILL_INSIDE_TORSO: '+JSON.stringify(result.headAlignment));
   if(!(result.neck?.applied&&result.neck.clearanceMeters>=.007))
