@@ -350,7 +350,7 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
        minVertical:-.85,axis:'y',gravity:.20,
      });
      const lower=generateCanineFurGuides({
-       center:[0,-.215,-.015],radii:[.145,.29,.156],
+       center:[0,-.28,0],radii:[.145,.29,.156],
        rows:source?24:15,around:source?26:18,
        length:.064,width:.011,seed:v*13+side*7+fore*11+43,
        minVertical:-.72,axis:'y',gravity:.21,
@@ -358,22 +358,19 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
      const toeParent=(s.id==='m003'||s.id==='m004')?
        g.pivots['toe'+name]:distal;
      const paw=generateCanineFurGuides({
-       center:toeParent===distal?[0,-.465,.11]:[0,.020,-.050],
-       radii:[.136,.083,.195],
+       center:[0,-.53,.125],radii:[.136,.083,.195],
        rows:source?12:8,around:source?20:14,
        length:.028,width:.009,seed:v*17+side*5+fore*7+57,
        minVertical:-.15,maxVertical:.86,gravity:.20,
      });
-     // The upper coat follows the shoulder, lower coat follows the shin,
-     // and the toes carry the toe/foot coat (separate even during flexion).
-     for(const [parent,region,guides] of [
-       [leg,'upper',upper],[distal,'lower',lower],[toeParent,'paw',paw]
-     ]){
-       const furMesh=g.fur(parent,'skin',guides);
-       if(!furMesh)continue;
-       furMesh.name='canine-coat-'+region+name;
-       furMesh.userData.furRegion=region;
-     }
+     // Three joint influences are blended inside ONE skinned mesh per
+     // moving limb: stable four draw calls across all legs, GPU deformation,
+     // and no coat detachment at the elbow/hock/toe joint.
+     g.skinnedFur(leg,'skin',[
+       {joint:leg,region:'upper',guides:upper},
+       {joint:distal,region:'lower',guides:lower},
+       {joint:toeParent,region:'paw',guides:paw},
+     ],{name:'canine-coat-leg'+name});
    }
  }
  // Dense near-LOD hair follows the real body/cheek anatomy and does not
