@@ -95,6 +95,24 @@ const hex=bytes=>crypto.createHash('sha256').update(bytes).digest('hex');
      path:path.join(out,'female-v43-eyes-after-beauty.png'),
      timeout:60000,animations:'disabled'});
    }
+   // Every age and build choice must change real generated 3D face data.
+   // One old and one fat example are sufficient for the browser smoke;
+   // all 48 combinations are checked in the unit test.
+   await page.locator('#v47AgeBand').selectOption('eightyPlus');
+   await page.locator('#v47BodyType').selectOption('fat');
+   await page.waitForFunction(({gender})=>{
+    const s=window.__faceMasterQA?.();
+    return s?.loaded&&s.gender===gender&&
+     s.v32PartSelection?.ageBand==='eightyPlus'&&
+     s.v32PartSelection?.bodyType==='fat';
+   },{gender},{timeout:80000});
+   const old=await page.evaluate(()=>window.__faceMasterQA());
+   if(old[gender==='female'?'femaleControls':'maleControls']?.ageBand!=='eightyPlus')
+    throw Error('Age selector has not recreated the source face');
+   if(old[gender==='female'?'femaleControls':'maleControls']?.bodyType!=='fat')
+    throw Error('Face shape selector failed to reach real geometry');
+   await page.locator('#v47AgeBand').selectOption('twenties');
+   await page.locator('#v47BodyType').selectOption('normal');
    // Real browser: selecting a named cast member must change the actual 3D
    // wig, gender and face controls, rather than only a dropdown label.
    const actorId=gender==='female'?'lucia':'garan';
