@@ -146,6 +146,7 @@ import {listWigStyles,DEFAULT_WIG_STYLE_ID,WIG_BASE_VOLUME_PROFILES} from './src
 import {HERO_JOBS,HERO_ACTIONS,createHeroineStudioWardrobe} from './src/heroine-studio-wardrobe.js?v=41';
 import {REAL_BATTLE_WARDROBE,createRealBattleOutfitStudio} from './src/heroine-battle-costume-bridge.js?v=41';
 import {loadHeroineFacePreset} from './src/heroine-face-preset-store.js?v=41';
+import {heroineBeautyControlsV42,HEROINE_BEAUTY_PART_SELECTION_V42} from './src/heroine-beauty-preset-v42.js?v=42';
 import {FEMALE_COMMANDER_ART_PALETTE,CHAPTER_ONE_ART_BY_KEY} from './src/chapter-one-character-art-references.js';
 
 const $=id=>document.getElementById(id);
@@ -181,10 +182,10 @@ const v32PartMode=new URLSearchParams(location.search).get('qa')!=='legacy';
 if(!v32PartMode)document.body.classList.add('v32-legacy');
 else document.body.classList.add('costume-only');
 const savedHeroinePreset=v32PartMode?loadHeroineFacePreset():null;
-let v32BodyPart={...defaultPartSelection(),...(savedHeroinePreset?.parts||{})};
+let v32BodyPart={...defaultPartSelection(),...HEROINE_BEAUTY_PART_SELECTION_V42,...(savedHeroinePreset?.parts||{})};
 if(v32PartMode)Object.assign(faceControls,
  normalizeFemaleFaceControls(savedHeroinePreset?.controls||
-  resolvePartSelection('female',v32BodyPart,FEMALE_V7_DEFAULTS).controls));
+  heroineBeautyControlsV42(resolvePartSelection('female',v32BodyPart,FEMALE_V7_DEFAULTS).controls)));
 let view='front',zoomMode='full',wigVisible=true,outfitVisible=true;
 let wigBaseVisible=false,hairOnly=false;
 let contactColor=savedHeroinePreset?.contactColor||palette.iris;
