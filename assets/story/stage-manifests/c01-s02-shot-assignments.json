@@ -213,7 +213,7 @@
         "garan"
       ],
       "mustNotAppearActorIds": [
-        "commander_male"
+        "commander_female"
       ],
       "sceneGoal": "未達成の撤退",
       "compositionHint": "敗れた軍勢が礼拝堂から後退。黒髪男性軍師が生存して退却を指揮し、老騎士ガランが後衛を守る。勝利場面禁止。",
@@ -240,7 +240,7 @@
         "lucia"
       ],
       "mustNotAppearActorIds": [
-        "commander_male"
+        "commander_female"
       ],
       "sceneGoal": "負傷者の救護と撤退記録",
       "compositionHint": "イリスが撤退後の負傷者を手当てし、生存した軍師とリュシアが見守る。記録書類は無文字。",
@@ -265,7 +265,7 @@
         "commander_male"
       ],
       "mustNotAppearActorIds": [
-        "commander_male"
+        "commander_female"
       ],
       "sceneGoal": "敗北後の証言照合",
       "compositionHint": "沈んだ表情のリュシアが主人公に証言の食い違いを伝える。撤退した拠点内、勝利祝賀描写なし。",
@@ -292,7 +292,7 @@
         "vess"
       ],
       "mustNotAppearActorIds": [
-        "commander_male"
+        "commander_female"
       ],
       "sceneGoal": "生還兵を再編して退却準備",
       "compositionHint": "主人公が避難路の無文字地図を見て、リュシアが撤退を説明。ヴェスは後方で黙って記録。",
@@ -319,7 +319,7 @@
         "lucia"
       ],
       "mustNotAppearActorIds": [
-        "commander_male"
+        "commander_female"
       ],
       "sceneGoal": "部隊の生存確認",
       "compositionHint": "年配のガランが疲弊した生存兵を点検。軍師とリュシアが同行。生者を戦死者に見せない。",
@@ -346,7 +346,7 @@
         "vess"
       ],
       "mustNotAppearActorIds": [
-        "commander_male"
+        "commander_female"
       ],
       "sceneGoal": "失敗の記録と休養",
       "compositionHint": "リュシアが生き残った主人公を励ます静かな退却後の野営。ヴェスが記録を持つ。戦果や軍事地図に文字なし。",
@@ -373,7 +373,7 @@
         "garan"
       ],
       "mustNotAppearActorIds": [
-        "commander_male"
+        "commander_female"
       ],
       "sceneGoal": "町への退却と再挑戦の準備",
       "compositionHint": "町に戻る疲弊した軍団。軍師は生存、ガランが隊列を保つ。ヴェスは携行帳を持つが文字なし。次のステージ解放を描かない。",
@@ -585,7 +585,7 @@
         "iris"
       ],
       "mustNotAppearActorIds": [
-        "commander_male"
+        "commander_female"
       ],
       "sceneGoal": "軍師の戦死",
       "compositionHint": "礼拝堂の戦場に倒れ、動かない黒髪の男性軍師。ガランとイリスが悲嘆。主人公は明確に戦死し、起き上がらない。",
