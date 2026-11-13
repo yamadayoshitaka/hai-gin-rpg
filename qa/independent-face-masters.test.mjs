@@ -1631,9 +1631,9 @@ test('v32 catalogs contain 10 independently selectable 3D profiles per gender an
  for(const sex of ['female','male']){
   for(const group of PART_GROUPS){
    const candidates=PART_CATALOG[sex][group];
-   assert.equal(candidates.length,group==='hair'?16:10,sex+' '+group);
-   assert.equal(new Set(candidates.map(x=>x.id)).size,group==='hair'?16:10);
-   assert.equal(new Set(candidates.map(x=>JSON.stringify(x.values))).size,group==='hair'?16:10,
+   assert.equal(candidates.length,group==='hair'?24:10,sex+' '+group);
+   assert.equal(new Set(candidates.map(x=>x.id)).size,group==='hair'?24:10);
+   assert.equal(new Set(candidates.map(x=>JSON.stringify(x.values))).size,group==='hair'?24:10,
     sex+' '+group+' requires ten distinct geometry or material specifications');
   }
  }
@@ -1672,8 +1672,8 @@ test('v32 selected nose, eyes and lips actually change original coherent mesh an
   }
  }
 });
-test('v32 volumetric hair uses 4 offset stacked ribbon layers and 10 registered geometries',()=>{
- assert.equal(listWigStyles().length,16);
+test('v46 volumetric hair preserves 4 offset stacked ribbon layers and 42 registered styles',()=>{
+ assert.equal(listWigStyles().length,42);
  const face=makeIndependentFaceMaster(fixture().source,'female');
  const one=createScalpAnchoredWig(face.face,{count:96,staticGroom:true,
   styleId:'center-part-gravity-long'});
@@ -1766,7 +1766,7 @@ test('v33 shoulder seals match real donor vertex colors, have 3D dome shape and 
  }
 });
 test('v33 hairstyle selections include short, very short and scalp-hugging buzz for both genders',()=>{
- assert.equal(listWigStyles().length,16);
+ assert.equal(listWigStyles().length,42);
  for(const gender of ['female','male']){
   const chosen=PART_CATALOG[gender].hair;
   for(const [idx,kind] of [[10,'short'],[11,'very-short'],[12,'buzz']])
@@ -2281,7 +2281,7 @@ test('v42 male studio has independent body, editable face and all ten existing c
  assert.ok(beauty.eyeDepth<0);
 });
 
-test('v43 all 16 male and female haircut choices resolve finite distinct styles without dropped short indexes',()=>{
+test('v46 all 24 male and female haircut choices resolve finite distinct styles without dropped short indexes',()=>{
  for(const gender of ['male','female']){
   const styles=PART_CATALOG[gender].hair;
   assert.equal(styles.length,24);
@@ -2295,7 +2295,7 @@ test('v43 all 16 male and female haircut choices resolve finite distinct styles 
    seen.add(spec.styleId);
    if(gender==='male')assert.equal(spec.lengthScale,MALE_HAIR_LENGTH_V43[spec.styleId]);
   }
-  assert.equal(seen.size,16);
+  assert.equal(seen.size,24);
  }
  const short=resolveHeroHairSpec('male',{hair:11});
  const buzz=resolveHeroHairSpec('male',{hair:12});
