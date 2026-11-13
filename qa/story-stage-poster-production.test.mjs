@@ -17,15 +17,17 @@ assert.equal(report.failClosedOnMissingReferenceBytes,true);
 assert.equal(report.outputIsOnlyInstructions,true);
 assert.deepEqual(report.imageSpec.minimumNativePixels,[1536,864]);
 assert.deepEqual(report.imageSpec.preferredNativePixels,[2048,1152]);
-assert.equal(report.imageSpec.maxCellsPerReviewSheet,5);
+assert.equal(report.imageSpec.maxCellsPerReviewSheet,10);
+assert.equal(report.imageSpec.stage2MaxCellsPerReviewSheet,5);
 assert.deepEqual(report.imageSpec.fullFiveCellPreferredPixels,[4096,3456]);
 assert.equal(report.imageSpec.fullFiveCellGeneratorCapability,'UNVERIFIED_DO_NOT_ASSUME');
-assert.equal(report.reviewSheetPolicy.maxPanels,5);
+assert.equal(report.reviewSheetPolicy.maxPanels,10);
+assert.equal(report.reviewSheetPolicy.stageOverrides['c01-s02'],5);
 assert.equal(report.reviewSheetPolicy.rowsForFive,3);
 assert.deepEqual(report.reviewSheetPolicy.preferredFivePanelSheetPixels,[4096,3456]);
 assert.deepEqual(report.stages.map(x=>x.stageId),['c01-s02','c01-s03']);
 assert.deepEqual(report.totals,{
- stageCount:2,requiredPosters:28,requiredPanels:96,registeredDraftPanels:15,
+ stageCount:2,requiredPosters:22,requiredPanels:96,registeredDraftPanels:15,
  missingPanels:81,approvedPanels:0
 });
 const stageContract=JSON.parse(fs.readFileSync(
@@ -44,21 +46,23 @@ assert.equal(new Set(pendingKeys).size,25);
 const assets=new Set(),keys=new Set(),posters=new Set();
 for(const stage of report.stages){
  assert.equal(stage.variants.length,8);
- assert.equal(stage.requiredGenderOutcomePosters,14);
+ const maxCells=stage.stageId==='c01-s02'?5:10;
+ assert.equal(stage.maxReviewCells,maxCells);
+ assert.equal(stage.requiredGenderOutcomePosters,stage.stageId==='c01-s02'?14:8);
  assert.equal(stage.requiredIndividualImages,48);
  assert.equal(stage.stageCompletion,'NOT_APPROVED');
  const expected={pre:8,'post-victory':7,'post-defeat':7,'post-gameover':2};
  for(const edition of stage.variants){
   assert.equal(edition.panels,expected[edition.edition]);
-  assert.equal(edition.pageCount,Math.ceil(edition.panels/5));
+  assert.equal(edition.pageCount,Math.ceil(edition.panels/maxCells));
   let seen=0;
   for(const page of edition.pages){
-   assert(page.panels.length>=1&&page.panels.length<=5,'P0: over-five-panel page');
-   assert.equal(page.posterSpec.maxCellCount,5);
+   assert(page.panels.length>=1&&page.panels.length<=maxCells,'P0: oversized review sheet');
+   assert.equal(page.posterSpec.maxCellCount,maxCells);
    assert.equal(page.posterSpec.cellCount,page.panels.length);
    assert.equal(page.posterSpec.columns,2);
    assert.equal(page.posterSpec.rows,Math.ceil(page.panels.length/2));
-   assert(page.posterSpec.rows<=3);
+   assert(page.posterSpec.rows<=Math.ceil(maxCells/2));
    assert.equal(page.posterSpec.blankCells,page.posterSpec.rows*2-page.panels.length);
    assert.deepEqual(page.posterSpec.minNativePixels,[3072,page.posterSpec.rows*864]);
    assert.deepEqual(page.posterSpec.preferredNativePixels,[4096,page.posterSpec.rows*1152]);
@@ -69,7 +73,7 @@ for(const stage of report.stages){
    assert.equal(page.panelIds.length,page.panels.length);
    for(const panel of page.panels){
     assert.equal(panel.panelId,page.panelIds[panel.order-1]);
-    assert.equal(panel.order,(seen%5)+1);
+    assert.equal(panel.order,(seen%maxCells)+1);
     assert.equal(panel.globalOrder,seen+1);
     assert(!assets.has(panel.individualAsset),'No reused image across gender/outcome');
     assert(!keys.has(panel.shotKey),'No reused canonical shot key');
@@ -107,5 +111,5 @@ for(const stage of report.stages){
 }
 assert.equal(assets.size,96);
 assert.equal(keys.size,96);
-assert.equal(posters.size,28);
+assert.equal(posters.size,22);
 console.log('PASS: 96 independent branch/gender shot briefs, 28 sheets of <=5 frames, native 2048x1152 preferred, P0 fail-closed, existing registered images intact');
