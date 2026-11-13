@@ -179,7 +179,11 @@ function assemble(detail,face) {
   };
   const horn=(name,tint,base,tip,radius)=>{
     const a=P(...base),b=P(...tip),axis=b.clone().sub(a),len=axis.length();
-    const geo=new THREE.ConeGeometry(radius,len,detail==='high'?8:5,detail==='high'?3:1);
+    // Fine individual mane/tail hairs should not consume the same ring
+    // density as horns, fangs or horns on the dragon's skull.
+    const fine=radius<=.020;
+    const geo=new THREE.ConeGeometry(radius,len,
+      detail==='high'?(fine?6:8):5,detail==='high'?(fine?2:3):1);
     geo.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(P(0,1,0),axis.clone().normalize()));
     geo.translate(...a.addScaledVector(axis,.5).toArray());add(name,geo,tint);
   };
@@ -196,9 +200,11 @@ function assemble(detail,face) {
       center,normal,radiusX:rx,radiusY:ry,depth,detail,
     }),tint);
   };
-  const curved=(name,tint,points,radii)=>{
+  const curved=(name,tint,points,radii,lightweight=false)=>{
     const curve=new THREE.CatmullRomCurve3(points.map(p=>P(...p)));
-    const steps=detail==='high'?18:8,radial=detail==='high'?9:5;
+    // Keep every visible hair strand, reducing only its cross-section mesh.
+    const steps=detail==='high'?(lightweight?12:18):8,
+      radial=detail==='high'?(lightweight?6:9):5;
     const geo=new THREE.TubeGeometry(curve,steps,1,radial,false);
     const a=geo.getAttribute('position');
     for(let j=0;j<=steps;j++){
@@ -686,7 +692,7 @@ function addHorse(g,s,detail){
     curved('core',i%8===0?0x886a51:(i%3===0?0x4a322d:shadow),
       [[spread,crestY,z],[spread+Math.sin(i*2.4)*.035,crestY+.055,z-.095],
         [spread+Math.sin(i*2.4)*.075,crestY-.035,z-.28-f*.05]],
-      detail==='high'?[.020,.014,.003]:[.035,.026,.004]);
+      detail==='high'?[.020,.014,.003]:[.035,.026,.004],true);
   }
   // Continuous, rib-following saddle felt instead of a floating chair.
   profile('equipment',0x372c2b,[
