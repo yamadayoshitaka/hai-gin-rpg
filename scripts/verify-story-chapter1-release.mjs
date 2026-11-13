@@ -23,6 +23,15 @@ if(process.argv.slice(2).some(s=>!['--plan','--require-all'].includes(s)))
 const totals={required:462,p0HumanApproved:0,legacyApproved:0,chapterNewApproved:0,
  legacyPending:0,missingLiveRegistration:0,invalidHumanProof:0};
 const gaps=[],keys=new Set();
+function actualWebpDimensions(b){
+ if(b.length<30||b.toString('ascii',0,4)!=='RIFF'||b.toString('ascii',8,12)!=='WEBP')
+  throw Error('Not an actual WebP');
+ const type=b.toString('ascii',12,16);
+ if(type==='VP8 ')return [b.readUInt16LE(26)&0x3fff,b.readUInt16LE(28)&0x3fff];
+ if(type==='VP8L'){const n=b.readUInt32LE(21);return [(n&0x3fff)+1,((n>>>14)&0x3fff)+1];}
+ if(type==='VP8X')return [b.readUIntLE(24,3)+1,b.readUIntLE(27,3)+1];
+ throw Error('Unknown WebP encoding');
+}
 function context(edition,gender){
  const c={protagonistGender:gender};
  if(edition==='post-victory')c.battleOutcome={victory:true};
@@ -59,6 +68,15 @@ for(const gender of ['male','female']){
   const rel=source.slice(2).split(/[?#]/)[0];
   if(!fs.existsSync(abs(rel))){
    totals.missingLiveRegistration++;gaps.push({key,reason:'REGISTERED_IMAGE_MISSING'});
+   continue;
+  }
+  try {
+   const pixels=actualWebpDimensions(fs.readFileSync(abs(rel)));
+   const min=stage.id==='c01-s02'?[768,320]:[1536,864];
+   if(pixels[0]<min[0]||pixels[1]<min[1]||pixels[0]*9!==pixels[1]*16)
+    throw Error('Below-native-16:9');
+  }catch{
+   totals.invalidHumanProof++;gaps.push({key,reason:'REAL_NATIVE_WEBP_DIMENSIONS_P0_FAILED'});
    continue;
   }
   const name=shot.id.replace(/-m(\d{1,2})$/,(_,n)=>'-m'+String(Number(n)).padStart(2,'0'))+
