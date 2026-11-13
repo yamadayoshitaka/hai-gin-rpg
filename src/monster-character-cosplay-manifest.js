@@ -42,9 +42,17 @@ export const HUMANOID_MONSTER_COSTUMES=Object.freeze({
    'dark_knight',[0x937f85,0x282b34,0x4a4e59,0xa96a6c],{armor:true,cape:true}),
 });
 
+// Optional second gothic vampire visual, without increasing the canonical
+// 50-species catalog or changing battle damage/monster ID contracts.
+export const FEMALE_VAMPIRE_COSTUME=define('m034','female','royal',
+ 'slim','noble','long','noble','dagger','vampire',
+ [0xd2b5ba,0x422336,0x84737c,0xa13f5e],{fangs:true,cape:true});
 export const HUMAN_MONSTER_IDS=Object.freeze(Object.keys(HUMANOID_MONSTER_COSTUMES));
-export const humanoidMonsterCostumeFor=spec=>HUMANOID_MONSTER_COSTUMES[
- typeof spec==='string'?spec:spec?.id]??null;
+export const humanoidMonsterCostumeFor=(spec,{genderVariant=null}={})=>{
+ const id=typeof spec==='string'?spec:spec?.id;
+ return id==='m034'&&genderVariant==='female'?
+  FEMALE_VAMPIRE_COSTUME:(HUMANOID_MONSTER_COSTUMES[id]??null);
+};
 export function validateHumanoidMonsterCostumes(){
  const parts={body:'bodies',face:'faces',hair:'hairs',outfit:'outfits',equipment:'equipment'};
  const accepted=new Set(['m015',...Array.from({length:5},(_,i)=>'m0'+String(i+31)),...Array.from({length:5},(_,i)=>'m0'+String(i+41))]);
