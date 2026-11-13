@@ -1,5 +1,6 @@
 import * as THREE from 'three';
-import {clipMeshGeometryAtWorldNeck} from './face-body-assembly.js?v=54';
+import {clipStudioFaceBustPreservingSurface,restoreStudioFaceSurfaceQuality,
+ sampleStudioFacePigment} from './studio-face-quality-v56.js';
 import {createCharacter} from './character-system/shared-character-runtime.js?v=4.6.36';
 import {buildRiggedJobOutfit} from './character-system/rigged-outfit-runtime.js?v=41';
 import {loadJobMotionMap} from './character-system/job-motion-source.js?v=4.6.36';
@@ -276,14 +277,29 @@ export function fitStudioNeckContinuity({faceRoot,faceMesh,wardrobeRoot}={}){
  // pedestal is at the very bottom; the jaw, lips and ears must survive.
  const cutY=Math.max(originalFaceBounds.min.y+headHeight*.115,torsoTop+.006);
  const safeCutY=Math.min(cutY,originalFaceBounds.min.y+headHeight*.16);
- faceMesh.geometry=source;
- const cut=clipMeshGeometryAtWorldNeck(faceMesh,safeCutY,{keepBelow:false});
- if(cut.keptTriangles<100||cut.removedTriangles<3){
-  cut.geometry.dispose();
+ // Keep all untouched original sculpt vertices, normals, UVs and colour
+ // pigments INDEXED. Older preview clipping duplicated every triangle and
+ // visibly faceted the cheeks, chin and nose on some mobile renderers.
+ const localCutY=faceMesh.worldToLocal(new THREE.Vector3(0,safeCutY,0)).y;
+ let cut;
+ if(cached.clipped&&cached.cutReport&&
+    Math.abs((cached.localCutY??Infinity)-localCutY)<.00020){
+  cut=cached.cutReport;
+  faceMesh.geometry=cached.clipped;
+ }else{
   faceMesh.geometry=source;
-  return {applied:false,reason:'insufficient-sculpted-bust-to-trim'};
+  cut=clipStudioFaceBustPreservingSurface(faceMesh,safeCutY);
+  if(cut.keptTriangles<100||cut.removedTriangles<3){
+   cut.geometry.dispose();faceMesh.geometry=source;
+   return {applied:false,reason:'insufficient-sculpted-bust-to-trim'};
+  }
+  if(cached.clipped)cached.clipped.dispose();
+  cached.clipped=cut.geometry;
+  cached.cutReport=cut;cached.localCutY=localCutY;
+  faceMesh.geometry=cut.geometry;
  }
- faceMesh.geometry=cut.geometry;cached.clipped=cut.geometry;
+ const faceQuality=restoreStudioFaceSurfaceQuality(faceMesh);
+ const facePigment=sampleStudioFacePigment(faceMesh);
  const oldBridge=faceRoot.getObjectByName(STUDIO_NECK_NAME);
  if(oldBridge){
   oldBridge.removeFromParent();
@@ -302,14 +318,18 @@ export function fitStudioNeckContinuity({faceRoot,faceMesh,wardrobeRoot}={}){
  const radiusZ=THREE.MathUtils.clamp(faceWidth*.265,.030,.060);
  // A cylindrical cut looks like a pipe. Five spline-like tapered rings
  // keep the trapezius and under-jaw continuous without adding shoulders.
- const count=32,rings=6;
- const verts=[],normals=[],colors=[],uv=[],index=[];
- const bottomSkin=new THREE.Color(0xc69c82),topSkin=new THREE.Color(0xe7c8bd);
+ const count=32,rings=9;
+ const verts=[],colors=[],uv=[],index=[];
+ // Use the same face skin material and sampled lower-cheek pigment;
+ // a fixed opaque beige cylinder becomes a glaring white rectangular
+ // neck under blue/soft light. Alpha tapers into the actual chin and collar.
+ const bottomSkin=facePigment.multiplier.clone().multiplyScalar(.955);
+ const topSkin=facePigment.multiplier.clone();
  faceRoot.updateWorldMatrix(true,false);
  for(let r=0;r<rings;r++){
   const t=r/(rings-1);
   const y=bottomY+(topY-bottomY)*t;
-  const widen=1.18-.25*t-.045*Math.sin(Math.PI*t);
+  const widen=1.10-.24*t-.055*Math.sin(Math.PI*t);
   const xCenter=THREE.MathUtils.lerp(torsoX,cx,t);
   const zCenter=THREE.MathUtils.lerp(torsoZ-.015,cz,t);
   const skin=bottomSkin.clone().lerp(topSkin,t);
@@ -321,7 +341,8 @@ export function fitStudioNeckContinuity({faceRoot,faceMesh,wardrobeRoot}={}){
     zCenter+Math.sin(angle)*radiusZ*widen);
    const local=faceRoot.worldToLocal(world);
    verts.push(local.x,local.y,local.z);
-   colors.push(skin.r,skin.g,skin.b);
+   const edgeBlend=.10+.90*Math.min(1,t*4,(1-t)*4);
+   colors.push(skin.r,skin.g,skin.b,edgeBlend);
    uv.push(s/count,t);
   }
  }
@@ -331,12 +352,13 @@ export function fitStudioNeckContinuity({faceRoot,faceMesh,wardrobeRoot}={}){
  }
  const geometry=new THREE.BufferGeometry();
  geometry.setAttribute('position',new THREE.Float32BufferAttribute(verts,3));
- geometry.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));
+ geometry.setAttribute('color',new THREE.Float32BufferAttribute(colors,4));
  geometry.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
  geometry.setIndex(index);geometry.computeVertexNormals();
  const material=new THREE.MeshStandardMaterial({
-  color:0xffffff,vertexColors:true,roughness:.81,metalness:0,
-  side:THREE.DoubleSide,flatShading:false
+  color:facePigment.base.clone(),vertexColors:true,
+  roughness:.81,metalness:0,transparent:true,opacity:1,
+  depthWrite:false,side:THREE.DoubleSide,flatShading:false
  });
  const bridge=new THREE.Mesh(geometry,material);
  bridge.name=STUDIO_NECK_NAME;
@@ -364,6 +386,14 @@ export function fitStudioNeckContinuity({faceRoot,faceMesh,wardrobeRoot}={}){
   trimmedSculptBottomY:safeCutY,
   actualTorsoTopY:torsoTop,connectorBottomY:bottomY,connectorTopY:topY,
   segmentCount:count,neckHeight:topY-bottomY,headHeight,
+  originalIndexedVertices:cut.originalVertexCount,
+  untouchedFaceTriangles:cut.untouchedTriangles,
+  newCutVertices:cut.newCutVertices,
+  originalFaceNormalsPreserved:cut.sourceNormalsPreserved,
+  originalFaceColoursPreserved:true,
+  skinToneSource:facePigment.samples?'face-cheek-pigment':'face-material',
+  matchedFaceMaterial:true,transparentNeckEdge:true,
+  faceSurfaceQuality:faceQuality,
   neckToHeadRatio:(topY-bottomY)/headHeight,
   collarOverlapMeters:torsoTop-bottomY,
   skullAndHairUnaffected:true,previewOnly:true};
