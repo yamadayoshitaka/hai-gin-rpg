@@ -67,8 +67,13 @@ const fs=require('node:fs');
     throw Error('CHEST_STILL_ABOVE_CHIN: '+JSON.stringify(result.neck));
   fs.mkdirSync('qa-screenshots/human-v56',{recursive:true});
   await page.screenshot({path:'qa-screenshots/human-v56/female-overlap.png',timeout:90000});
+  // Render actual close-up portraits, not only the distant full-body view.
+  // These reveal facial normal faceting and any opaque neck plate.
+  await page.locator('#portrait').click();
+  await page.waitForTimeout(350);
+  await page.screenshot({path:'qa-screenshots/human-v56/female-face-front.png',timeout:90000});
   await page.locator('#side').click();
   await page.waitForTimeout(350);
-  await page.screenshot({path:'qa-screenshots/human-v56/female-side-quality.png',timeout:90000});
+  await page.screenshot({path:'qa-screenshots/human-v56/female-face-side.png',timeout:90000});
  }finally{await browser.close()}
 })().catch(e=>{console.error('HUMAN_V56_DIAGNOSTIC_FAIL '+e.stack);process.exitCode=1});
