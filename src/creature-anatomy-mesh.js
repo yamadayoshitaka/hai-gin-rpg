@@ -18,7 +18,7 @@ export function createRootedCreatureHornGeometry({
  if(![root,elbow,tip].every(v=>Array.isArray(v)&&v.length===3&&v.every(Number.isFinite))||
     !Number.isFinite(radius)||radius<=0)throw Error('Invalid anatomical horn');
  const curve=new THREE.QuadraticBezierCurve3(V(root),V(elbow),V(tip));
- const segments=detail==='high'?20:8,around=detail==='high'?12:6;
+ const segments=detail==='high'?10:6,around=detail==='high'?8:5;
  const points=[],uv=[],indices=[];
  for(let row=0;row<=segments;row++){
    const t=row/segments,center=curve.getPoint(t);
@@ -69,7 +69,7 @@ export function createCreatureScuteGeometry({
    new THREE.Vector3(0,1,0);
  const tangent=guide.addScaledVector(n,-guide.dot(n)).normalize();
  const bitangent=new THREE.Vector3().crossVectors(n,tangent).normalize();
- const rings=detail==='high'?3:1,around=detail==='high'?9:5;
+ const rings=detail==='high'?2:1,around=detail==='high'?8:5;
  const vertices=[],uv=[],indices=[],base=V(center);
  for(let r=0;r<=rings;r++){
    const t=r/rings;
