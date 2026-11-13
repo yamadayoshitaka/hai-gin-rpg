@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {clipStudioFaceBustPreservingSurface,restoreStudioFaceSurfaceQuality,
- sampleStudioFacePigment} from './studio-face-quality-v56.js';
+ sampleStudioFacePigment,smoothStudioFaceNormals} from './studio-face-quality-v56.js';
 import {createCharacter} from './character-system/shared-character-runtime.js?v=4.6.36';
 import {buildRiggedJobOutfit} from './character-system/rigged-outfit-runtime.js?v=41';
 import {loadJobMotionMap} from './character-system/job-motion-source.js?v=4.6.36';
@@ -296,8 +296,10 @@ export function fitStudioNeckContinuity({faceRoot,faceMesh,wardrobeRoot}={}){
   if(cached.clipped)cached.clipped.dispose();
   cached.clipped=cut.geometry;
   cached.cutReport=cut;cached.localCutY=localCutY;
+  cached.normalReport=smoothStudioFaceNormals(cut.geometry);
   faceMesh.geometry=cut.geometry;
  }
+ const normalQuality=cached.normalReport;
  const faceQuality=restoreStudioFaceSurfaceQuality(faceMesh);
  const facePigment=sampleStudioFacePigment(faceMesh);
  const oldBridge=faceRoot.getObjectByName(STUDIO_NECK_NAME);
@@ -323,15 +325,17 @@ export function fitStudioNeckContinuity({faceRoot,faceMesh,wardrobeRoot}={}){
  // Use the same face skin material and sampled lower-cheek pigment;
  // a fixed opaque beige cylinder becomes a glaring white rectangular
  // neck under blue/soft light. Alpha tapers into the actual chin and collar.
- const bottomSkin=facePigment.multiplier.clone().multiplyScalar(.955);
- const topSkin=facePigment.multiplier.clone();
+ const bottomSkin=facePigment.multiplier.clone().multiplyScalar(.83);
+ const topSkin=facePigment.multiplier.clone().multiplyScalar(.78);
  faceRoot.updateWorldMatrix(true,false);
  for(let r=0;r<rings;r++){
   const t=r/(rings-1);
   const y=bottomY+(topY-bottomY)*t;
-  const widen=1.10-.24*t-.055*Math.sin(Math.PI*t);
+  // Taper the visible top deeply under the chin. A broad top ring made
+  // a pale rectangular neck column despite the shorter connector height.
+  const widen=1.07-.45*t-.045*Math.sin(Math.PI*t);
   const xCenter=THREE.MathUtils.lerp(torsoX,cx,t);
-  const zCenter=THREE.MathUtils.lerp(torsoZ-.015,cz,t);
+  const zCenter=THREE.MathUtils.lerp(torsoZ-.015,cz-.024*t,t);
   const skin=bottomSkin.clone().lerp(topSkin,t);
   for(let s=0;s<=count;s++){
    const angle=2*Math.PI*s/count;
@@ -390,6 +394,9 @@ export function fitStudioNeckContinuity({faceRoot,faceMesh,wardrobeRoot}={}){
   untouchedFaceTriangles:cut.untouchedTriangles,
   newCutVertices:cut.newCutVertices,
   originalFaceNormalsPreserved:cut.sourceNormalsPreserved,
+  smoothedFacialNormals:!!normalQuality?.applied,
+  normalWeldGroups:normalQuality?.weldedGroups||0,
+  normalVerticesUpdated:normalQuality?.alteredNormalVertices||0,
   originalFaceColoursPreserved:true,
   skinToneSource:facePigment.samples?'face-cheek-pigment':'face-material',
   matchedFaceMaterial:true,transparentNeckEdge:true,
