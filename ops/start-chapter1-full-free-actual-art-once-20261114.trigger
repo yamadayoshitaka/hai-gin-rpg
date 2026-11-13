@@ -16,8 +16,10 @@
   "formalRegistration": false,
   "requiresHumanImageQA": true,
   "gitBranch": "story/chapter1-free-actual-art",
-  "preflightRetry": 3,
+  "preflightRetry": 4,
   "previousExecution": "43509861672 stopped before API calls because c01-s01 dedicated reference-bible did not exist",
   "fix": "reuse c01-s02 actor reference bible for already-registered c01-s01",
-  "diagnostic": "Verify Cloudflare safety-blocked shot skipped, native 1536x864 output, max 900 Neurons"
+  "diagnostic": "P0 regression: skip blocked scene, preserve siblings, verify all 462 real art after 900-Neuron Free-only batch",
+  "newQA": "qa/story-chapter1-draft-regression.mjs",
+  "existingFormalQA": "scripts/promote-story-chapter1-reviewed-drafts.mjs"
 }
