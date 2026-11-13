@@ -28,9 +28,21 @@ def inside(root, rel):
     return root/rel
 
 def process_variant(variant, parent, poster_root, output_root):
+    if len(variant['pages']) == 1:
+        return process_variant_page(variant, poster_root, output_root, False)
+    results=[]
+    for page in variant['pages']:
+        single=dict(variant, pages=[page])
+        results.append(process_variant_page(single, poster_root, output_root, True))
+    return {'id':variant['stageId']+'|'+variant['edition']+'|'+variant['gender'],
+            'status':'REVIEW_REQUIRED_NO_DEPLOY' if all(
+                x['status']=='REVIEW_REQUIRED_NO_DEPLOY' for x in results)
+                else 'PARTIAL_MISSING_SOURCE_POSTER',
+            'frames':sum(x.get('frames',0) for x in results),
+            'pages':results}
+
+def process_variant_page(variant, poster_root, output_root, multi_page):
     stage=variant['stageId']
-    if len(variant['pages']) != 1:
-        raise ValueError('Use one page per variant; unsupported multi-page '+stage)
     page=variant['pages'][0]
     source=inside(poster_root,stage[:3]+'/posters/'+Path(page['posterAsset']).name)
     if not source.exists():
@@ -43,7 +55,7 @@ def process_variant(variant, parent, poster_root, output_root):
         rows=page['posterSpec']['rows']
         if image.format!='WEBP':
             raise ValueError('Poster must be real WebP: '+str(source))
-        if columns!=2 or len(page['panels'])!=page['posterSpec']['cellCount']:
+        if columns!=2 or page['posterSpec']['cellCount']>5 or len(page['panels'])>5 or len(page['panels'])!=page['posterSpec']['cellCount']:
             raise ValueError('Scene cells do not match poster manifest')
         if width%columns or height%rows:
             raise ValueError('Poster dimensions not divisible by grid: '+str(source))
@@ -52,6 +64,8 @@ def process_variant(variant, parent, poster_root, output_root):
             raise ValueError('REJECTED LOW-RES/ASPECT poster: '+str(source)+
                              f' each cell {cell_w}x{cell_h} (needs >=1536x864 at 16:9)')
         output=output_root/stage/variant['edition']/variant['gender']
+        if multi_page:
+            output=output/('p%02d'%page['page'])
         output.mkdir(parents=True,exist_ok=True)
         target_poster=output/source.name
         target_poster.write_bytes(source.read_bytes())
@@ -117,10 +131,11 @@ def main():
                 key=(variant['stageId'],variant['edition'],variant['gender'])
                 by_id[key]=variant
     results=[process_variant(v,None,poster_root,out_root) for v in by_id.values()]
+    page_results=[p for v in results for p in v.get('pages',[v])]
     output=manifest_root/'ingestion-review-status.json'
     summary={'schemaVersion':1,'kind':'free-visual-review-input-not-approved-art',
-       'variantsFound':len(by_id),'postersProcessed':sum(x['status']=='REVIEW_REQUIRED_NO_DEPLOY' for x in results),
-       'postersMissing':sum(x['status']=='MISSING_SOURCE_POSTER' for x in results),
+       'variantsFound':len(by_id),'postersProcessed':sum(x['status']=='REVIEW_REQUIRED_NO_DEPLOY' for x in page_results),
+       'postersMissing':sum(x['status']=='MISSING_SOURCE_POSTER' for x in page_results),
        'artworkAutoApproved':False,'deployed':False,
        'results':results}
     output.write_text(json.dumps(summary,ensure_ascii=False,indent=2)+'\n',encoding='utf8')
