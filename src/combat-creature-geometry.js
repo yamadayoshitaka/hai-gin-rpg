@@ -11,6 +11,7 @@ import {generateCanineFurGuides} from './canine-fur-guides.js?v=4.4.92';
 import {buildCanineFurRibbonGeometry} from './canine-fur-ribbons.js?v=4.4.92';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import {createFaceProfile} from './facial-feature-profiles.js?v=1';
+import {creatureFaceVolume,sculptAxialFacePoint,sculptVerticalFacePoint} from './creature-face-volume.js';
 import {addHumanoidSummon} from './creature-summon-humanoid-anatomy.js?v=4.4.97';
 import {createRootedCreatureHornGeometry,createCreatureScuteGeometry}
   from './creature-anatomy-mesh.js';
@@ -104,7 +105,7 @@ function assemble(detail,face) {
     geo.setAttribute('uv',new THREE.Float32BufferAttribute(uvs,2));
     geo.setIndex(triangles);geo.computeVertexNormals();add(name,geo,tint);
   };
-  const profile=(name,tint,sections,trim=false)=>{
+  const profile=(name,tint,sections,trim=false,faceVolume=null)=>{
     // The main silhouette comes from anatomical cross sections, rather than
     // overlapping balls. Subdividing THESE surfaces yields smaller polygons
     // without making the creature's head or limbs look round and toy-like.
@@ -127,7 +128,9 @@ function assemble(detail,face) {
       const [z,y,rx,ry]=sectionAt(idx,t);
       for(let angle=0;angle<=radial;angle++){
         const a=2*Math.PI*angle/radial;
-        points.push(Math.cos(a)*Math.max(.003,rx),y+Math.sin(a)*Math.max(.003,ry),z);
+        const original=[Math.cos(a)*Math.max(.003,rx),y+Math.sin(a)*Math.max(.003,ry),z];
+        const point=faceVolume?sculptAxialFacePoint(...original,ring/(rings-1),a,faceVolume):original;
+        points.push(...point);
         uv.push(angle/radial,ring/(rings-1));
       }
     }
@@ -140,7 +143,7 @@ function assemble(detail,face) {
     geo.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
     geo.setIndex(indices);geo.computeVertexNormals();add(name,geo,tint);
   };
-  const verticalProfile=(name,tint,sections)=>{
+  const verticalProfile=(name,tint,sections,faceVolume=null)=>{
     // Upright dragon torso: one continuous muscular loft with no visible
     // sphere-to-sphere seams. [height, centerX, centerZ, width, depth].
     const radial=detail==='high'?32:12,subdivisions=detail==='high'?4:1;
@@ -159,7 +162,9 @@ function assemble(detail,face) {
       const [y,cx,cz,rx,rz]=values;
       for(let angle=0;angle<=radial;angle++){
         const a=2*Math.PI*angle/radial;
-        vertices.push(cx+Math.cos(a)*Math.max(.003,rx),y,cz+Math.sin(a)*Math.max(.003,rz));
+        const original=[cx+Math.cos(a)*Math.max(.003,rx),y,cz+Math.sin(a)*Math.max(.003,rz)];
+        const point=faceVolume?sculptVerticalFacePoint(...original,ring/(rings-1),Math.cos(a),Math.sin(a),faceVolume):original;
+        vertices.push(...point);
         uvs.push(angle/radial,ring/(rings-1));
       }
     }
@@ -402,7 +407,7 @@ function addCoatSculpture(g,type,s,detail){
     [headZ+l*.48,headY-.12,w*.275,h*.104],
     [headZ+l*.66,headY-.15,w*.205,h*.074],
     [headZ+l*.76,headY-.17,.009,.022],
-  ]);
+  ],false,creatureFaceVolume('wolf'));
   profile('jaw',shadow,[
     [headZ+l*.13,headY-.21,.01,.017],[headZ+l*.36,headY-.225,w*.29,h*.065],
     [headZ+l*.62,headY-.216,w*.21,h*.048],
@@ -644,7 +649,7 @@ function addHorse(g,s,detail){
     [l*1.23,h+.735,w*.345,.168],[l*1.40,h+.625,w*.285,.132],
     [l*1.60,h+.50,w*.208,.100],[l*1.71,h+.46,w*.206,.082],
     [l*1.79,h+.45,.012,.023],
-  ]);
+  ],false,creatureFaceVolume('horse'));
   profile('jaw',0x4b3430,[
     [l*1.18,h+.46,.012,.020],[l*1.38,h+.432,w*.235,.057],
     [l*1.60,h+.395,w*.22,.046],[l*1.74,h+.398,.012,.014],
@@ -830,7 +835,7 @@ function addDragon(g,type,s,detail){
     [headZ+l*.52,headY-.104,w*.265,h*.092],
     [headZ+l*.73,headY-.125,w*.194,h*.075],
     [headZ+l*.84,headY-.126,.008,.020],
-  ]);
+  ],false,creatureFaceVolume(type));
   profile('jaw',shadow,[
     [headZ+l*.10,headY-.218,.014,.020],
     [headZ+l*.37,headY-.238,w*.29,h*.066],
@@ -1046,7 +1051,7 @@ function addDragonLord(g,s,detail){
     [1.70,headY-.152,.259,.121],
     [1.80,headY-.165,.195,.096],
     [1.89,headY-.165,.009,.018],
-  ]);
+  ],false,creatureFaceVolume('dragon_lord'));
   // Articulated mandible has a broad ramus at the ear, a strong jaw angle
   // and a closing lip under the maxilla: no floating black tooth tray.
   profile('jaw',skin,[
