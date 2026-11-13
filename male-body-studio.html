@@ -91,6 +91,9 @@ body.costume-only .faceStudioOnly{display:none!important}
 <label for="heroHairDensity">髪の密度<select id="heroHairDensity" aria-label="髪の描画密度を選択"><option value="1">軽量1倍</option><option value="3">軽量3倍</option><option value="5" selected>高画質5倍</option><option value="10">最高画質10倍</option></select></label>
 </div><label for="v46Cast" class="hero-face-preset-title">主要人物・モブを3Dで表示
 <select id="v46Cast" aria-label="主要人物・モブから選択"></select></label>
+<div class="heroSelectGrid" aria-label="年代と体型を指定する">
+<label for="v47AgeBand">年代<select id="v47AgeBand" aria-label="年代8区分"></select></label>
+<label for="v47BodyType">顔・全身体型<select id="v47BodyType" aria-label="痩せ型 普通 太め"></select></label></div>
 <h3 class="hero-face-preset-title">完成顔を選択（男性10種類）</h3>
 <div id="v45FacePresetGrid"></div><p class="note">全10職業で衣装の下の実人体（太腿・すね・足）を保持します。ボタンは登録済みの実モーションのみ表示し、未登録の勝利ポーズ等は作りません。戦闘本体は変更しません。</p>
 </section>
@@ -151,6 +154,8 @@ import {listWigStyles,DEFAULT_WIG_STYLE_ID,WIG_BASE_VOLUME_PROFILES} from './src
 import {resolveHeroHairSpec,synchronizeHeroHairSelection} from './src/hero-hair-controls-v43.js?v=44';
 import {chooseHeroFacePreset,polishHeroFaceControls,mountHeroFacePresetPicker,matchHeroFacePreset} from './src/hero-face-presets-v45.js?v=45';
 import {characterAppearance,mountCharacterCastSelect} from './src/character-cast-v46.js?v=46';
+import {AGE_PROFILES,BODY_PROFILES,applyDemographicFaceControls}
+ from './src/character-demographics-v47.js?v=47';
 import {HERO_JOBS,HERO_ACTIONS,createHeroineStudioWardrobe} from './src/heroine-studio-wardrobe.js?v=41';
 import {REAL_BATTLE_WARDROBE,createRealBattleOutfitStudio} from './src/heroine-battle-costume-bridge.js?v=42';
 import {loadMaleFacePreset,saveMaleFacePreset} from './src/male-face-preset-store.js?v=43';
@@ -200,6 +205,16 @@ let contactColor=savedHeroinePreset?.contactColor||palette.iris;
 const counter={wigBuilds:0,glbExports:0,hairStyleChanges:0};
 const selectedStudio={jobId:'swordsman',outfitId:'job',actionId:'idle',nativeCommand:null};
 let selectedCastId='',selectedBodyShape='average';
+for(const [key,profile] of Object.entries(AGE_PROFILES)){
+ const option=document.createElement('option');option.value=key;
+ option.textContent=profile.label;$('v47AgeBand').append(option);
+}
+for(const [key,profile] of Object.entries(BODY_PROFILES)){
+ const option=document.createElement('option');option.value=key;
+ option.textContent=profile.label;$('v47BodyType').append(option);
+}
+$('v47AgeBand').value=v32BodyPart.ageBand;
+$('v47BodyType').value=v32BodyPart.bodyType;
 let battleRequest=0;
 const tellBattleStatus=message=>{
  $('realBattleCostumeState').textContent=message;
@@ -544,8 +559,9 @@ function applyPartSelection(picked,completeFace=false){
  const hair=synchronizeHeroHairSelection('male',picked);
  v32BodyPart={...hair.parts};
  const chosen=resolvePartSelection('male',v32BodyPart,MALE_REFERENCE_DEFAULT);
- Object.assign(faceControls,normalizeMaleFaceControls(
-  completeFace?polishHeroFaceControls('male',chosen.controls):chosen.controls));
+ Object.assign(faceControls,normalizeMaleFaceControls(applyDemographicFaceControls(
+  completeFace?polishHeroFaceControls('male',chosen.controls):chosen.controls,
+  v32BodyPart.ageBand,v32BodyPart.bodyType,'male')));
  $('style').value=hair.styleId;
  $('heroHairStyle').value=hair.styleId;
  $('heroHairVolume').value=picked.hairVolume;
@@ -564,9 +580,28 @@ const completeFacePicker=mountHeroFacePresetPicker($('v45FacePresetGrid'),{
   $('status').textContent='完成顔 '+String(index+1).padStart(2,'0')+' を3Dへ反映しました';
  }
 });
+for(const field of ['v47AgeBand','v47BodyType']){
+ $(field).addEventListener('change',()=>{
+  v32BodyPart={...v32BodyPart,
+   ageBand:$('v47AgeBand').value,bodyType:$('v47BodyType').value};
+  const selected=resolvePartSelection('male',v32BodyPart,MALE_REFERENCE_DEFAULT);
+  Object.assign(faceControls,normalizeMaleFaceControls(applyDemographicFaceControls(
+   polishHeroFaceControls('male',selected.controls),
+   v32BodyPart.ageBand,v32BodyPart.bodyType,'male')));
+  if(v32PartMode)mountPartPicker();
+  if(ready){rebuildFaceOnBody();rebuildWig();}
+  battleCostume?.setDemographics?.(v32BodyPart.ageBand,v32BodyPart.bodyType);
+  persistStudioHair();
+  $('status').textContent=AGE_PROFILES[v32BodyPart.ageBand].label+' / '+
+   BODY_PROFILES[v32BodyPart.bodyType].label+'：顔・全身3D更新';
+  $('metrics').textContent=JSON.stringify(metrics(),null,2);
+ });
+}
 mountCharacterCastSelect($('v46Cast'),'male',id=>{
  const look=characterAppearance(id,v32BodyPart);
  selectedCastId=id;selectedBodyShape=look.item.bodyShape;
+ $('v47AgeBand').value=look.ageBand;
+ $('v47BodyType').value=look.bodyType;
  v32BodyPart={...look.parts};
  const selected=resolvePartSelection('male',v32BodyPart,MALE_REFERENCE_DEFAULT);
  Object.assign(faceControls,normalizeMaleFaceControls({...selected.controls,...look.controls}));
@@ -574,7 +609,7 @@ mountCharacterCastSelect($('v46Cast'),'male',id=>{
  $('heroHairVolume').value=v32BodyPart.hairVolume;
  if(v32PartMode)mountPartPicker();
  if(ready){rebuildFaceOnBody();rebuildWig();}
- battleCostume?.setBodyShape?.(selectedBodyShape);
+ battleCostume?.setDemographics?.(v32BodyPart.ageBand,v32BodyPart.bodyType);
  persistStudioHair();
  completeFacePicker.refresh(v32BodyPart);
  $('status').textContent=look.item.label+'（3D顔・髪・体格を反映）';
@@ -852,7 +887,7 @@ frame();
     actionId:selectedStudio.actionId,gender:'male',onStatus:tellBattleStatus
    }).then(bridge=>{
     battleCostume=bridge;
-    battleCostume.setBodyShape(selectedBodyShape);
+    battleCostume.setDemographics(v32BodyPart.ageBand,v32BodyPart.bodyType);
     renderNativeActionButtons();
     bodyAttachment.root.visible=false;
     wardrobe?.setVisible(false);
