@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {createFastFaceSurfaceSampler} from './face-feature-meshes.js';
-import {getWigStyle,DEFAULT_WIG_STYLE_ID,WIG_BASE_VOLUME_PROFILES} from './face-wig-styles.js?v=35';
+import {getWigStyle,DEFAULT_WIG_STYLE_ID,WIG_BASE_VOLUME_PROFILES,WIG_SILHOUETTE_PROFILES} from './face-wig-styles.js?v=44';
 
 /**
  * Mobile-preview wig made of real scalp-rooted 3D lock ribbons.
@@ -206,7 +206,7 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
   // the rear nape; no floating rectangle across the rear neck.
   // The front cap is ONLY a scalp covering, never a second set of little
   // triangles growing from the forehead, eyebrow or glabella.
-  const yCut=box.min.y+d.y*(zNorm>.10?.915:
+  const yCut=box.min.y+d.y*(zNorm>.10?.887:
    zNorm<-.035?.58:
    Math.abs((mid.x-center.x)/d.x)>.19?.68:.71);
   if(p.some(vertex=>vertex.y<yCut))continue;
@@ -279,7 +279,10 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
   }
  }
  const material=new THREE.MeshStandardMaterial({
-  color,roughness:.84,metalness:0,side:THREE.DoubleSide
+  // Opaque, hair-palette-tinted scalp root, never a transparent wig edge.
+  color:new THREE.Color(color).multiplyScalar(.96),
+  roughness:.84,metalness:0,side:THREE.DoubleSide,
+  transparent:false,opacity:1,depthWrite:true
  });
  const buffer=new THREE.BufferGeometry();
  buffer.setAttribute('position',new THREE.Float32BufferAttribute(verts,3));
@@ -288,6 +291,8 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
  const mesh=new THREE.Mesh(buffer,material);
  mesh.name='REAL_SCALP_TRIANGLE_HAIR_CAP';
  mesh.userData.scalpSource='sculpted-real-head-triangles';
+ mesh.userData.hairColoredOpaqueRoot=true;
+ mesh.userData.hairRootColor='#'+new THREE.Color(color).getHexString();
  mesh.userData.v33RaisedWigBase=true;
  mesh.userData.v33WigVolumeProfile=volumeProfile;
  mesh.userData.rearUndercoatAnchoredToRealScalp=rearCandidates.length>0;
@@ -307,6 +312,8 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  if(!WIG_BASE_VOLUME_PROFILES[volumeProfile])
   throw Error('Unknown wig volume profile: '+volumeProfile);
  const style=getWigStyle(styleId);
+ const silhouette=WIG_SILHOUETTE_PROFILES[styleId];
+ if(!silhouette)throw Error('Missing 3D silhouette for '+styleId);
  const minLengthScale=gender==='male'?.18:.55;
  // v25: a detachable wig keeps its current physically simulated guides;
  // micro-fibres are a single static extra mesh in the SAME removable asset.
@@ -475,8 +482,8 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    (back||zone.startsWith('temple')) ? .30 : 0;
   const longFactor=(zone.startsWith('nape')?.68:
    zone.startsWith('temple')?.72:back?.80:.76)+torsoExtension;
-  // Fringe must terminate above the eyebrows, never obscure the eyes,
-  // nose or mouth, even at the maximum hair-length slider value.
+  // Longer cuts can fall from the eyebrow to the upper eye, while the
+  // crown is protected against draping into the pupil, nose and mouth.
   // Salon curtain bangs: a high central part, softly descending along
   // either cheek and with individually staggered point-cut lengths.
   const cutPhase=fract(i*.61803398875);
@@ -487,10 +494,12 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    .011*Math.sin(i*.79);
   const browLimit=box.min.y+d.y*
    (.685+.090*Math.pow(1-centerDist,1.5)+
-    .014*partSlope+featherVariation);
+    .014*partSlope+featherVariation-
+    (fringe?silhouette.fringeDrop:Math.min(.035,silhouette.fringeDrop)));
   // Long feathered bangs from the real high hairline to the eyebrow level.
   // The old 0.09-head-height cap ended halfway down the forehead.
-  const bangLength=d.y*(.185+.035*cutPhase)*clamp(lengthScale,minLengthScale,1.5);
+  const bangLength=d.y*(.225+.040*cutPhase+silhouette.fringeDrop*.16)*
+   clamp(lengthScale,minLengthScale,1.5);
   const cutKind=style.shortCutKind||null;
   const shortLength=cutKind==='buzz'?.013:
    cutKind==='very-short'?.060:.15;
@@ -504,7 +513,8 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   const trimY=cutKind?wigRoot.y-length*1.06:
    Math.min(wigRoot.y-d.y*.012,
     (fringe||overFace)?browLimit:
-     hairCutY(zone,box,lengthScale,i,lateral,minLengthScale)-
+     hairCutY(zone,box,lengthScale,i,lateral,minLengthScale)+
+      (back?d.y*silhouette.rearCutShift:0)-
       (bodyCollisionResolver&&(back||zone.startsWith('temple'))?d.y*.26:0));
   // Salon-guided locks: the real scalp root stays fixed. After a brief
   // head-conforming section, each lock DROPS DOWN, not out in a radial
@@ -520,14 +530,16 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   const curtainSweep=partSide*d.x*(.004+
    (style.fringeSweep||.025)*.7*Math.pow(1-centerDist,1.3));
   const targetX=(back?
-   center.x+(wigRoot.x-center.x)*.57:
+   center.x+(wigRoot.x-center.x)*silhouette.rearWidth:
    fringe?wigRoot.x+curtainSweep:
    wigRoot.x+(closeToFace?curtainSweep*.76:
-    zone.startsWith('temple')?side*d.x*.048:side*d.x*.015))+
+    zone.startsWith('temple')?side*d.x*(.035+silhouette.sideFlare):
+     side*d.x*(.010+silhouette.sideFlare*.55)))+
    partSide*d.x*style.partWidth*partInfluence*(fringe?.08:1);
   const targetZ=closeToFace?wigRoot.z+d.z*style.scalpClearance:
    // Go BEHIND the neck rather than being occluded by the rear bust skin.
-   back?Math.min(wigRoot.z-d.z*(style.backSweep??.035),center.z-d.z*.13):
+   back?Math.min(wigRoot.z-d.z*((style.backSweep??.035)+silhouette.rearDepth),
+    center.z-d.z*(.13+silhouette.rearDepth*.30)):
    zone.startsWith('temple')?wigRoot.z-d.z*.035:
    Math.min(wigRoot.z-d.z*.075,center.z-d.z*.035);
   // No high-frequency radial scattering that makes fine hair frizzy.
@@ -547,7 +559,8 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    // A gently rounded face-frame at cheek level prevents stiff curtain
    // rods. This is a fixed rest pose, not real-time hair physics.
    const templeVolume=zone.startsWith('temple')?
-    side*d.x*(style.templeVolume??.026)*Math.sin(Math.PI*t):0;
+    side*d.x*(style.templeVolume??.026)*(gender==='female'?.70:1)*
+     Math.sin(Math.PI*t):0;
    // Short locks grow along the *real scalp normal*. Buzz lies close
    // to the skin rather than shortening vertical long-hair curtains.
    const p=j===0?wigRoot.clone():cutKind?
@@ -1019,6 +1032,9 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  root.userData.wigReport={
   style:'real-scalp-shell-growing-then-trimmed',gender,rooted:true,rootCount:lockCount,
   hairstyleId:style.id,styleLabel:style.label,
+  silhouette3dProfile:{...silhouette},
+  hairColoredOpaqueRoot:cap.userData.hairColoredOpaqueRoot,
+  hairRootColor:cap.userData.hairRootColor,
   wigAssetType:'independent-wig',centerPart:style.part==='center',
   visualFiberMultiplier:fiberMultiplier,visualFiberCount:lockCount*fiberMultiplier,
   staticMicroFibreCount:microFibreCount,microFibreTriangles,
