@@ -74,6 +74,12 @@ jobs:
         if: always()
         run: |
           node qa/story-chapter1-draft-regression.mjs --strict
+      - name: Assemble at most five authentic panels per visual review sheet (never game art)
+        if: always()
+        run: |
+          if [ -f qa-reports/story-stage-production/chapter1-free-render/c01-regression.json ]; then
+            python3 scripts/build-story-chapter1-review-sheets.py
+          fi
       - name: Save full chapter regression report to review branch
         if: always()
         shell: bash
@@ -90,6 +96,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: chapter1-free-actual-art-progress-${{ github.run_id }}
-          path: qa-reports/story-stage-production/chapter1-free-render/
+          path: |
+            qa-reports/story-stage-production/chapter1-free-render/
+            qa-reports/story-stage-production/chapter1-review-sheets/
           retention-days: 30
           if-no-files-found: warn
