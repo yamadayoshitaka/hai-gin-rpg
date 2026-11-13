@@ -48,9 +48,8 @@ assert.equal(lid.position.y,lid.userData.restY,'living eye reopens after defeat'
 const source=readFileSync(new URL('../src/monster-geometry.js',import.meta.url),'utf8');
 assert.match(source,/else if\(s\.id!=='m003'\)/,
  'Fenrir cannot retain the duplicate rigid legacy paw');
-for(const name of ['upper','lower','paw'])
- assert.ok(source.includes("'canine-coat-'+region+name"),
-   'limb fur segments must be named and follow their own parent joints');
+assert.match(source,/g\.skinnedFur\(leg,'skin'/,
+ 'all three fur regions must use one GPU-skinned mesh per articulated leg');
 
 const THREE=await import('three').catch(e=>{
  if(e.code!=='ERR_MODULE_NOT_FOUND')throw e;
@@ -67,22 +66,34 @@ if(THREE){
    assert.ok(found,id+' missing '+name);return found;
   };
   const suffix='frontL';
-  assert.strictEqual(fur('canine-coat-upper'+suffix).parent,joints['leg'+suffix],
-    id+' upper coat must follow shoulder');
-  assert.strictEqual(fur('canine-coat-lower'+suffix).parent,joints['lower'+suffix],
-    id+' lower coat must follow shin');
-  assert.strictEqual(fur('canine-coat-paw'+suffix).parent,joints['toe'+suffix],
-    id+' paw coat must follow the actual toe pivot');
-  const paw=fur('canine-coat-paw'+suffix);
+  const paw=fur('canine-coat-leg'+suffix);
+  assert.strictEqual(paw.parent,joints['leg'+suffix],
+    id+' entire limb coat must be one shoulder-attached draw call');
+  assert.equal(paw.isSkinnedMesh,true,id+' GPU-weighted fur required');
+  assert.equal(paw.skeleton.bones.length,3,'upper/shin/paw must have independent bones');
+  for(const [i,part] of ['leg','lower','toe'].entries()){
+   assert.equal(paw.skeleton.bones[i].parent,joints[part+suffix],
+    id+' coat bone '+part+' must track the anatomical pivot');
+  }
   const positions=paw.geometry.getAttribute('position');
-  const sample=new THREE.Vector3().fromBufferAttribute(
-    positions,Math.floor(positions.count/2));
+  const indices=paw.geometry.getAttribute('skinIndex');
+  const weights=paw.geometry.getAttribute('skinWeight');
+  assert.equal(indices.count,positions.count);
+  assert.equal(weights.count,positions.count);
+  let sampleIndex=-1;
+  for(let i=0;i<positions.count;i++){
+   const sum=weights.getX(i)+weights.getY(i)+weights.getZ(i)+weights.getW(i);
+   assert.ok(Math.abs(sum-1)<.00001,'skin weights must sum to 1');
+   if(indices.getX(i)===2&&weights.getX(i)>.8){sampleIndex=i;break;}
+  }
+  assert.ok(sampleIndex>=0,'no paw-weighted vertices');
+  const point=new THREE.Vector3().fromBufferAttribute(positions,sampleIndex);
   model.updateMatrixWorld(true);
-  const old=sample.clone().applyMatrix4(paw.matrixWorld);
+  const old=paw.applyBoneTransform(sampleIndex,point.clone()).applyMatrix4(paw.matrixWorld);
   joints['toe'+suffix].rotation.x=.27;
   model.updateMatrixWorld(true);
-  const moved=sample.clone().applyMatrix4(paw.matrixWorld);
-  assert.ok(old.distanceTo(moved)>.001,id+' moving toe must move its coat vertices');
+  const moved=paw.applyBoneTransform(sampleIndex,point.clone()).applyMatrix4(paw.matrixWorld);
+  assert.ok(old.distanceTo(moved)>.001,id+' moving toe must deform coat vertices');
   disposeMonsterSculpture(model);
  }
  const wolf=createMonsterModel(MONSTER_BY_ID.m001,{detail:'low'});
