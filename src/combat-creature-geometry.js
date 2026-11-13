@@ -49,7 +49,7 @@ function assemble(detail,face) {
     // Large contours already use smooth loft profiles. Small armour,
     // throat and equipment overlays need fewer triangles: keeping these
     // balloons overly subdivided wasted the battlefield's GPU budget.
-    const geo=new THREE.SphereGeometry(1,detail==='high'?16:10,detail==='high'?12:8);
+    const geo=new THREE.SphereGeometry(1,detail==='high'?14:10,detail==='high'?10:8);
     geo.scale(sx,sy,sz);
     if(rotX) geo.rotateX(rotX);
     geo.translate(x,y,z); add(name,geo,tint);
