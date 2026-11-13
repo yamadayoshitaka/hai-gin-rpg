@@ -166,7 +166,7 @@ button{padding:9px 11px}
 <p>これは美形を目標にした<b>初回の造形試作</b>です。実写品質・原画一致・美術承認・ゲーム実装は未達です。顔の凹凸や横顔が自然かを先に評価してください。</p>
 <details><summary>実メッシュ数値と原本保護の確認</summary><div id="metrics"></div></details>
 </section></main><style>
-body #faceAdjustments,body #maleAdjustments{display:none!important}
+body:not(.v32-legacy) #faceAdjustments,body:not(.v32-legacy) #maleAdjustments{display:none!important}
 .hero-face-preset-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:10px 0 16px}
 .hero-face-preset-grid button{min-width:0;text-align:left;min-height:50px;white-space:normal;font-size:13px;padding:9px;border:1px solid #6489a8}
 .hero-face-preset-grid button[aria-pressed=true]{background:#246b5b;border-color:#b8e8d8}
