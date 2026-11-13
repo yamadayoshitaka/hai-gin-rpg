@@ -20,6 +20,7 @@ import {applySkinnedBuildMorph} from './body-build-morph-v48.js?v=48';
  * the independently authored face. This is NEVER applied in battle.
  */
 export const HEROINE_STUDIO_BODY_SCALE=.84;
+export const HERO_STUDIO_MALE_BODY_SCALE=.84;
 export const HEROINE_STUDIO_HEAD_LIFT=.44;
 export const HEROINE_STUDIO_HEAD_FORWARD=.16;
 
@@ -111,26 +112,35 @@ export function refineHeroineCostumeSilhouette(wardrobeRoot,{gender='female',job
   if(mesh.visible&&mesh.isSkinnedMesh&&/_(?:ranger|peasant)_legs/i.test(mesh.name))
    skinnedTrousers++;
   const slot=mesh.userData?.equipmentSlot||'';
-  if(gender==='female'&&mesh.userData?.equipmentClass==='armor'){
-   const factor=slot==='chest'?.93:slot==='shoulder'?.91:
-    ['thigh','knee','shin','boot-upper'].includes(slot)?.87:
-    slot==='boot-foot'?.95:1;
+  if(mesh.userData?.equipmentClass==='armor'){
+   // Men were left at the uncorrected oversized Quaternius plate fit.
+   // Correct the visible *equipment* independently of rigged body shape.
+   // Shields/weapons retain their original grip and collision envelope.
+   const factor=gender==='female'?
+    (slot==='chest'?.93:slot==='shoulder'?.91:
+     ['thigh','knee','shin','boot-upper'].includes(slot)?.87:
+     slot==='boot-foot'?.95:1):
+    (slot==='chest'?.83:slot==='shoulder'?.77:
+     ['thigh','knee','shin','boot-upper'].includes(slot)?.88:
+     slot==='boot-foot'?.92:1);
    if(factor!==1){
     mesh.scale.x*=factor;
     mesh.scale.z*=factor;
     if(slot==='chest'){
-     // Stop a large breastplate's high neck rim swallowing the face.
-     mesh.scale.y*=.94;mesh.position.y-=.012;collarClearancePieces++;
+     // Collar must sit below the chin and must not create a giant chest.
+     mesh.scale.y*=gender==='male'?.90:.94;
+     mesh.position.y-=gender==='male'?.018:.012;
+     collarClearancePieces++;
     }
     if(slot==='chest'||slot==='shoulder')narrowedCuirass++;
     else taperedLegPieces++;
    }
   }
-  if(gender==='female'&&/(?:neckguard|neck-plate|standing-collar|cuirass-collar)/i.test(mesh.name)
+  if(/(?:neckguard|neck-plate|standing-collar|cuirass-collar)/i.test(mesh.name)
     &&!mesh.isSkinnedMesh){
    mesh.scale.y*=.81;mesh.position.y-=.014;collarClearancePieces++;
   }
-  if(gender==='female'&&/cuirass-thigh-tasset/i.test(mesh.name)){
+  if(/cuirass-thigh-tasset/i.test(mesh.name)){
    // Half-width leather/steel panels instead of boxy vertical drainpipes.
    mesh.scale.x*=.82;mesh.scale.z*=.87;
    mesh.scale.y*=.86;loweredTassets++;
@@ -359,7 +369,7 @@ export async function createRealBattleOutfitStudio({scene,faceModel,getFaceModel
     headBounds:headReport.headBounds});
    proportions=fitStudioFaceAboveArmor({actorRoot:actor.object3D,
     faceRoot:headRoot,faceFit:headFit,
-    bodyScale:gender==='male'?.93:HEROINE_STUDIO_BODY_SCALE});
+    bodyScale:gender==='male'?HERO_STUDIO_MALE_BODY_SCALE:HEROINE_STUDIO_BODY_SCALE});
    applyBodyShape();
    setBodyVisible(!hiddenBody);
    outfit.root.visible=!hiddenBody&&outfitShown;
@@ -427,7 +437,7 @@ export async function createRealBattleOutfitStudio({scene,faceModel,getFaceModel
   if(!actor?.object3D||!headFit)return;
   const demographic=resolveDemographicProfile(ageBandId,bodyTypeId);
   const age=demographic.age,body=demographic.body;
-  const scale=gender==='male'?.93:HEROINE_STUDIO_BODY_SCALE;
+  const scale=gender==='male'?HERO_STUDIO_MALE_BODY_SCALE:HEROINE_STUDIO_BODY_SCALE;
   const original=actor.object3D.userData.originalStudioActorScale;
   if(!original)return;
   // Scale the actual skinned body, rigged clothing, and equipment together.
@@ -475,7 +485,7 @@ export async function createRealBattleOutfitStudio({scene,faceModel,getFaceModel
     headBounds:headReport.headBounds});
    proportions=fitStudioFaceAboveArmor({actorRoot:actor.object3D,
     faceRoot:headRoot,faceFit:headFit,
-    bodyScale:gender==='male'?.93:HEROINE_STUDIO_BODY_SCALE});
+    bodyScale:gender==='male'?HERO_STUDIO_MALE_BODY_SCALE:HEROINE_STUDIO_BODY_SCALE});
    applyBodyShape();
   }
   return headFit;

@@ -24,7 +24,7 @@ export const AGE_PROFILES=Object.freeze({
 export const AGE_BAND_IDS=Object.freeze(Object.keys(AGE_PROFILES));
 export const BODY_PROFILES=Object.freeze({
  thin:Object.freeze({id:'thin',label:'痩せ型',width:.90,depth:.90,faceFullness:-.75,neckWidth:.93,abdomen:-.075}),
- normal:Object.freeze({id:'normal',label:'普通',width:1.035,depth:1.035,faceFullness:.035,neckWidth:1.0,abdomen:.012}),
+ normal:Object.freeze({id:'normal',label:'普通',width:1.0,depth:1.0,faceFullness:.025,neckWidth:1.0,abdomen:.007}),
  fat:Object.freeze({id:'fat',label:'太め',width:1.37,depth:1.34,faceFullness:1.07,neckWidth:1.19,abdomen:.49})
 });
 export const BODY_TYPE_IDS=Object.freeze(Object.keys(BODY_PROFILES));
