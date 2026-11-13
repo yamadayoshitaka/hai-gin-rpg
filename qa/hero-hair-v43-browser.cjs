@@ -25,7 +25,7 @@ const hex=bytes=>crypto.createHash('sha256').update(bytes).digest('hex');
    await page.locator('#'+gender).click();
    const prior=await page.evaluate(()=>window.__faceMasterQA());
    const label=gender==='female'?'Female':'Male';
-   const hashes=[];
+   const hashes={front:[],side:[],back:[]};
    const ids=[0,10,12];
    for(const index of ids){
     const field=page.locator('#v32'+label+'Hair');
@@ -36,16 +36,24 @@ const hex=bytes=>crypto.createHash('sha256').update(bytes).digest('hex');
       v.wigReport?.normalLayerCount===3&&v.wigReport?.meshCount===1&&
       v.wigReport?.gender===gender;
     },{gender,index},{timeout:60000});
-    await page.locator('#front').click();
-    await page.waitForTimeout(120);
-    const filename=path.join(out,gender+'-style-'+index+'.png');
-    const shot=await page.locator('#faceCanvas').screenshot({path:filename,
-     timeout:60000,animations:'disabled'});
-    hashes.push(hex(shot));
+    const snapshot=await page.evaluate(()=>window.__faceMasterQA());
+    const expected={0:'center-part-gravity-long',10:'natural-short',12:'buzz-cut'}[index];
+    if(snapshot.wigReport?.hairstyleId!==expected ||
+       snapshot.wigReport?.hairColoredOpaqueRoot!==true)
+     throw Error('Hair part/style/root mismatch: '+gender+' '+index);
+    for(const view of ['front','side','back']){
+     await page.locator('#'+view).click();
+     await page.waitForTimeout(120);
+     const filename=path.join(out,gender+'-'+view+'-style-'+index+'.png');
+     const shot=await page.locator('#faceCanvas').screenshot({path:filename,
+      timeout:60000,animations:'disabled'});
+     hashes[view].push(hex(shot));
+    }
    }
-   if(new Set(hashes).size!==ids.length)
-    throw Error('Real rendered hair did not visually change: '+
-     gender+' '+hashes.join(' '));
+   for(const view of ['front','side','back'])
+    if(new Set(hashes[view]).size!==ids.length)
+     throw Error('3D '+view+' silhouette did not change: '+
+      gender+' '+hashes[view].join(' '));
    const after=await page.evaluate(()=>window.__faceMasterQA());
    if(after.gender!==gender||after.wigReport?.hairstyleId!=='buzz-cut')
     throw Error('Final 3D hairstyle differs from UI: '+gender);
@@ -65,7 +73,7 @@ const hex=bytes=>crypto.createHash('sha256').update(bytes).digest('hex');
    }
   }
   if(errors.length)throw Error('Browser exceptions: '+errors.join(';'));
-  console.log('HERO_HAIR_V43_VISUAL_QA_OK: three visibly distinct styles for each gender');
+  console.log('HERO_HAIR_V43_VISUAL_QA_OK: three unique front/side/back silhouettes per gender');
  }finally{await browser.close();}
 })().catch(error=>{console.error('HERO_HAIR_V43_VISUAL_QA_FAIL',error);
  process.exitCode=1;});

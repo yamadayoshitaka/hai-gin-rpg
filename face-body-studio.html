@@ -135,12 +135,12 @@ import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {makeIndependentFaceMaster} from './src/independent-face-masters.js';
 import {FEMALE_V7_DEFAULTS,FACE_EYE_SPACING_DEFAULT,FACE_EYE_SPACING_RANGE,FACE_SLIDER_RANGES,CONTACT_COLORS,CONTACT_COLOR_LABELS,safeContactColor,normalizeFemaleFaceControls} from './src/face-v7-controls.js';
 import {applyFaceColorMode} from './src/face-feature-meshes.js';
-import {createScalpAnchoredWig} from './src/face-scalp-wig.js?v=43';
+import {createScalpAnchoredWig} from './src/face-scalp-wig.js?v=44';
 import {createPartSelectorUI} from './src/face-part-selector-ui-v32.js?v=41';
 import {defaultPartSelection,resolvePartSelection,PART_CATALOG} from './src/face-part-catalog-v32.js?v=41';
 import {attachIndependentHeadToBody,removeHeadBustBelowNeck,createSealedNeckBridge} from './src/face-body-assembly.js';
-import {listWigStyles,DEFAULT_WIG_STYLE_ID,WIG_BASE_VOLUME_PROFILES} from './src/face-wig-styles.js?v=43';
-import {resolveHeroHairSpec} from './src/hero-hair-controls-v43.js?v=43';
+import {listWigStyles,DEFAULT_WIG_STYLE_ID,WIG_BASE_VOLUME_PROFILES} from './src/face-wig-styles.js?v=44';
+import {resolveHeroHairSpec,synchronizeHeroHairSelection} from './src/hero-hair-controls-v43.js?v=44';
 import {HERO_JOBS,HERO_ACTIONS,createHeroineStudioWardrobe} from './src/heroine-studio-wardrobe.js?v=41';
 import {REAL_BATTLE_WARDROBE,createRealBattleOutfitStudio} from './src/heroine-battle-costume-bridge.js?v=42';
 import {loadHeroineFacePreset,saveHeroineFacePreset} from './src/heroine-face-preset-store.js?v=43';
@@ -181,6 +181,8 @@ if(!v32PartMode)document.body.classList.add('v32-legacy');
 else document.body.classList.add('costume-only');
 const savedHeroinePreset=v32PartMode?loadHeroineFacePreset():null;
 let v32BodyPart={...defaultPartSelection(),...HEROINE_BEAUTY_PART_SELECTION_V43,...(savedHeroinePreset?.parts||{})};
+v32BodyPart={...synchronizeHeroHairSelection('female',v32BodyPart,
+ savedHeroinePreset?.hairStyleId).parts};
 const migratedBeauty=upgradeUneditedHeroineV42ToV43(savedHeroinePreset?.controls);
 if(v32PartMode)Object.assign(faceControls,
  normalizeFemaleFaceControls(migratedBeauty||savedHeroinePreset?.controls||
@@ -248,8 +250,7 @@ renderNativeActionButtons();
 fillSelect('heroHairStyle',PART_CATALOG.female.hair.map(item=>({id:item.values.styleId,label:item.label})));
 fillSelect('heroHairVolume',Object.entries(WIG_BASE_VOLUME_PROFILES).map(
  ([id,profile])=>({id,label:profile.label})));
-$('heroHairStyle').value=savedHeroinePreset?.hairStyleId||
- resolvePartSelection('female',v32BodyPart,FEMALE_V7_DEFAULTS).hairStyleId||DEFAULT_WIG_STYLE_ID;
+$('heroHairStyle').value=synchronizeHeroHairSelection('female',v32BodyPart).styleId;
 $('style').value=$('heroHairStyle').value;
 $('heroHairVolume').value=v32BodyPart.hairVolume;
 const status=(s)=>{$('status').textContent=s;};
@@ -351,7 +352,11 @@ function fitCamera(){
 }
 function rebuildWig(){
  if(!model||!bodyAttachment)return;
- const hairSpec=resolveHeroHairSpec('female',v32BodyPart,$('style').value);
+
+ const chosen=synchronizeHeroHairSelection('female',v32BodyPart,$('style').value);
+ v32BodyPart={...chosen.parts};
+ $('style').value=chosen.styleId;$('heroHairStyle').value=chosen.styleId;
+ const hairSpec=resolveHeroHairSpec('female',v32BodyPart,chosen.styleId);
  if(wig){wig.root.removeFromParent();wig.dispose();wig=null;}
  wig=createScalpAnchoredWig(uncutScalpSource||model.face,{
   count:v32PartMode?1400:2000,lengthScale:hairSpec.lengthScale,styleId:hairSpec.styleId,
@@ -526,13 +531,15 @@ eyeColorInput.addEventListener('input',()=>{
 });
 syncLensPreset();
 function applyPartSelection(picked){
- v32BodyPart=picked;
- const chosen=resolvePartSelection('female',picked,FEMALE_V7_DEFAULTS);
+ const hair=synchronizeHeroHairSelection('female',picked);
+ v32BodyPart={...hair.parts};
+ const chosen=resolvePartSelection('female',v32BodyPart,FEMALE_V7_DEFAULTS);
  Object.assign(faceControls,normalizeFemaleFaceControls(chosen.controls));
- $('style').value=chosen.hairStyleId;
- $('heroHairStyle').value=chosen.hairStyleId;
+ $('style').value=hair.styleId;
+ $('heroHairStyle').value=hair.styleId;
  $('heroHairVolume').value=picked.hairVolume;
  if(ready){rebuildFaceOnBody();rebuildWig();}
+ persistStudioHair();
 }
 const mountPartPicker=()=>createPartSelectorUI(
  $('v32BodyChoices'),'female',v32BodyPart,applyPartSelection);
@@ -551,13 +558,10 @@ function persistStudioHair(){
   hairDensity:Number($('wigDensity').value),makeupType:v32BodyPart.makeup,contactColor});
 }
 $('heroHairStyle').addEventListener('change',()=>{
- $('style').value=$('heroHairStyle').value;
- const index=PART_CATALOG.female.hair.findIndex(p=>
-  p.values.styleId===$('heroHairStyle').value);
- if(index>=0){
-  v32BodyPart={...v32BodyPart,hair:index};
-  if(v32PartMode)mountPartPicker();
- }
+ const chosen=synchronizeHeroHairSelection('female',v32BodyPart,$('heroHairStyle').value);
+ v32BodyPart={...chosen.parts};
+ $('style').value=chosen.styleId;$('heroHairStyle').value=chosen.styleId;
+ if(v32PartMode)mountPartPicker();
  if(ready){rebuildWig();counter.hairStyleChanges++;}
  persistStudioHair();
  $('status').textContent='髪型：'+$('heroHairStyle').selectedOptions[0]?.textContent+'（3D更新済み）';
@@ -690,7 +694,13 @@ $('toggleWigBase').addEventListener('click',()=>{
   'ウィッグ土台を透明へ戻す':'透明土台を可視化（検証）';
  $('metrics').textContent=JSON.stringify(metrics(),null,2);
 });
-$('style').addEventListener('change',()=>{rebuildWig();});
+$('style').addEventListener('change',()=>{
+ const chosen=synchronizeHeroHairSelection('female',v32BodyPart,$('style').value);
+ v32BodyPart={...chosen.parts};
+ $('style').value=chosen.styleId;$('heroHairStyle').value=chosen.styleId;
+ if(v32PartMode)mountPartPicker();
+ rebuildWig();persistStudioHair();
+});
 $('wigDensity').addEventListener('change',()=>{
  status('独立ウィッグの密度を変更しています…');rebuildWig();
  status('独立ウィッグを'+$('wigDensity').value+'倍表示に変更しました。');

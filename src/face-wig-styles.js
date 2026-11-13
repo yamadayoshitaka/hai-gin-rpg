@@ -196,6 +196,28 @@ export const WIG_STYLES=deepFreeze({
    wigType:'independent-3d-asset',collisions:['scalp','face','neck','shoulder','chest']
   }
 });
+
+// Haircut-specific 3D contours in source-head units; not texture/label changes.
+// Fringe drops can reach the brow and upper eyelid; rear width and cut line
+// establish distinct back silhouettes without inflating the crown.
+export const WIG_SILHOUETTE_PROFILES=deepFreeze({
+ 'center-part-gravity-long':{fringeDrop:.052,rearWidth:.58,rearCutShift:-.018,sideFlare:.006,rearDepth:.016},
+ 'salon-layered-long':{fringeDrop:.073,rearWidth:.68,rearCutShift:.025,sideFlare:.013,rearDepth:.034},
+ 'princess-long':{fringeDrop:.086,rearWidth:.56,rearCutShift:-.030,sideFlare:.006,rearDepth:.014},
+ 'curtain-bangs-long':{fringeDrop:.058,rearWidth:.76,rearCutShift:.010,sideFlare:.016,rearDepth:.025},
+ 'knight-long':{fringeDrop:.050,rearWidth:.65,rearCutShift:-.040,sideFlare:.009,rearDepth:.060},
+ 'soft-medium':{fringeDrop:.078,rearWidth:.76,rearCutShift:.145,sideFlare:.020,rearDepth:.020},
+ 'mature-layer-long':{fringeDrop:.039,rearWidth:.59,rearCutShift:-.025,sideFlare:.007,rearDepth:.043},
+ 'fringe-long':{fringeDrop:.105,rearWidth:.66,rearCutShift:-.025,sideFlare:.010,rearDepth:.027},
+ 'shag-long':{fringeDrop:.091,rearWidth:.86,rearCutShift:.045,sideFlare:.027,rearDepth:.050},
+ 'rounded-bob':{fringeDrop:.090,rearWidth:.90,rearCutShift:.260,sideFlare:.025,rearDepth:.010},
+ 'natural-short':{fringeDrop:.038,rearWidth:.84,rearCutShift:.320,sideFlare:.004,rearDepth:0},
+ 'very-short':{fringeDrop:.016,rearWidth:.95,rearCutShift:.340,sideFlare:0,rearDepth:0},
+ 'buzz-cut':{fringeDrop:0,rearWidth:1,rearCutShift:.380,sideFlare:0,rearDepth:0},
+ 'soft-wave-long':{fringeDrop:.073,rearWidth:.94,rearCutShift:-.025,sideFlare:.029,rearDepth:.070},
+ 'full-fringe-straight':{fringeDrop:.110,rearWidth:.61,rearCutShift:-.030,sideFlare:.007,rearDepth:.022},
+ 'airy-shoulder-layers':{fringeDrop:.082,rearWidth:.79,rearCutShift:.180,sideFlare:.025,rearDepth:.035}
+});
 export function listWigStyles(){
  return Object.values(WIG_STYLES).map(({id,label,part,cut})=>({id,label,part,cut}));
 }

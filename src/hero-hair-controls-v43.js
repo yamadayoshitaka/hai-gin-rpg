@@ -4,7 +4,7 @@
  * finite guide length. No silently undefined length when indexes reach 13-15.
  */
 import {PART_CATALOG,normalizePartSelection} from './face-part-catalog-v32.js?v=43';
-import {getWigStyle} from './face-wig-styles.js?v=43';
+import {getWigStyle} from './face-wig-styles.js?v=44';
 
 export const MALE_HAIR_LENGTH_V43=Object.freeze({
  'center-part-gravity-long':.57,'salon-layered-long':.33,
@@ -31,4 +31,13 @@ export function resolveHeroHairSpec(gender,rawParts={},requestedStyleId=null){
   shortCutKind:style.shortCutKind||null,
   cut:style.cut,part:style.part,
   selection:Object.freeze({...selection,hair:hairIndex})});
+}
+
+/** One atomic selection for both the stored parts.hair and the live styleId. */
+export function synchronizeHeroHairSelection(gender,parts={},requestedStyleId=null){
+ const spec=resolveHeroHairSpec(gender,parts,requestedStyleId);
+ return Object.freeze({
+  parts:Object.freeze({...spec.selection,hair:spec.hairIndex}),
+  styleId:spec.styleId,lengthScale:spec.lengthScale
+ });
 }
