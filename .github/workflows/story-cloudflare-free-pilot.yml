@@ -8,6 +8,8 @@ on:
       - 'scripts/story-cloudflare-image-io.py'
       - 'qa/story-cloudflare-free-page.test.mjs'
       - 'qa/story-cloudflare-image-io.test.py'
+      - 'qa/story-cloudflare-free-live-mock.test.mjs'
+      - 'qa/story-cloudflare-mock-fetch.mjs'
       - '.github/workflows/story-cloudflare-free-pilot.yml'
   pull_request:
     paths:
@@ -61,6 +63,7 @@ jobs:
           python -m py_compile scripts/story-cloudflare-image-io.py
           node qa/story-cloudflare-free-page.test.mjs
           python qa/story-cloudflare-image-io.test.py
+          node qa/story-cloudflare-free-live-mock.test.mjs
       - name: Produce stage2 pilot plan from actual canonical script and cast master bytes
         run: node scripts/generate-story-cloudflare-free-page.mjs --mode plan --page "${{ inputs.page || '1' }}"
       - name: One Cloudflare API request per shot, capped at 5 and 1000 estimated Neurons
