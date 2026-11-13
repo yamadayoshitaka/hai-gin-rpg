@@ -55,6 +55,9 @@ if(compiled.stages.length!==1||stage.stageId!==stageId)
 const byVariant=new Map(stage.variants.map(v=>[v.edition+'|'+v.gender,v]));
 if(contract.variants.length!==byVariant.size)
  throw Error('Canonical script changed: variant count differs from stage manifest');
+const mobileMin=stageId==='c01-s02'?[768,320]:[1536,864];
+if(JSON.stringify(contract.layout.minPerPanelNativePixels)!==JSON.stringify(mobileMin))
+ throw Error('Selected stage minimum must match mobile native profile');
 const imageRules=contract.renderConstraints;
 const nativeSheet=contract.layout.nativeSheetPipeline;
 const maxReviewCells=stageId==='c01-s02'?5:10;
@@ -124,7 +127,9 @@ for(const v of contract.variants){
   const noTextContract=[
    'P0_ABSOLUTE_MUST_FOLLOW. No text, digits, Japanese characters, subtitles, speech balloons, logos, symbols, watermarks or UI in ANY IMAGE.',
    'P0_SHEET_SCENE_LIMIT: Exactly '+page.panels.length+' independently authored frames on this review sheet; never more than '+maxReviewCells+'.',
-   'P0_HIGHEST_NATIVE_RESOLUTION: independently generate each 16:9 frame at highest genuine native resolution supported, prefer 2048x1152, never upscale; minimum 1536x864.',
+   stageId==='c01-s02'?
+    'P0_MOBILE_NATIVE_MINIMUM: each true source cut is at least 768x320 (width/height minimum); preserve source aspect ratio, do not enlarge; higher original resolution is welcome but 1536x864 is NOT required.':
+    'P0_HIGHEST_NATIVE_RESOLUTION: independently generate each 16:9 frame at highest genuine native resolution supported, prefer 2048x1152, never upscale; minimum 1536x864.',
    'P0_REFERENCE_IMAGE_BYTES: actual original cast master image bytes MUST be attached to image renderer; paths alone do not count.',
    'P0_CANONICAL_SCENE_AND_OUTCOME: each frame depicts its own exact screenplay beat, verified branch and gender only; no character swapping or reuse.',
    'P0_FAIL_CLOSED: missing true native detail, actual cast bytes, clean textless output or manual visual verification means REJECT, NO REGISTRATION, NO DEPLOY.',
