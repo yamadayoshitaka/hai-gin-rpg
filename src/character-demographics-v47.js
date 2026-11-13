@@ -23,9 +23,9 @@ export const AGE_PROFILES=Object.freeze({
 });
 export const AGE_BAND_IDS=Object.freeze(Object.keys(AGE_PROFILES));
 export const BODY_PROFILES=Object.freeze({
- thin:Object.freeze({id:'thin',label:'痩せ型',width:.89,depth:.90,faceFullness:-1,neckWidth:.93}),
- normal:Object.freeze({id:'normal',label:'普通',width:1,depth:1,faceFullness:0,neckWidth:1}),
- fat:Object.freeze({id:'fat',label:'太め',width:1.28,depth:1.27,faceFullness:1,neckWidth:1.18})
+ thin:Object.freeze({id:'thin',label:'痩せ型',width:.87,depth:.89,faceFullness:-.95,neckWidth:.92,abdomen:-.08}),
+ normal:Object.freeze({id:'normal',label:'普通',width:1.13,depth:1.12,faceFullness:.20,neckWidth:1.08,abdomen:.14}),
+ fat:Object.freeze({id:'fat',label:'太め',width:1.48,depth:1.46,faceFullness:1.48,neckWidth:1.31,abdomen:.55})
 });
 export const BODY_TYPE_IDS=Object.freeze(Object.keys(BODY_PROFILES));
 export const LEGACY_BODY_TYPE_MAP=Object.freeze({
@@ -42,7 +42,7 @@ export function resolveDemographicProfile(ageBand='twenties',bodyType='normal'){
  const age=resolveAgeBand(ageBand),body=resolveBodyType(bodyType);
  return Object.freeze({ageBand:age.id,bodyType:body.id,age,body,
   heightScale:age.heightScale,headScale:age.headScale,
-  faceFullness:body.faceFullness});
+  faceFullness:body.faceFullness,abdomen:body.abdomen});
 }
 /** No random genders, no missing decades, no dependency on UI DOM. */
 export function enumerateDemographics(){
