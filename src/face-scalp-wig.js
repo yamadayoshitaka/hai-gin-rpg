@@ -980,7 +980,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
     // Every draw group uses EXACTLY the source mesh's material.
     node.userData.normalOffsetCopies=copies;
     if(!root.userData.consolidatedDrawGroups)root.userData.consolidatedDrawGroups=[];
-    root.userData.consolidatedDrawGroups.push({surface:node.name,layer,offset,count});
+    root.userData.consolidatedDrawGroups.push({surface:node.name,layer,offset:layer*normalStep,count});
    }
   }
   const geometry=new THREE.BufferGeometry();
