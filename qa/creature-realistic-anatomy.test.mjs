@@ -2,8 +2,8 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 
 const source=readFileSync(new URL('../src/combat-creature-geometry.js',import.meta.url),'utf8');
-assert.match(source,/const profile=\(name,tint,sections\)=>/,'断面形状から体積を構成');
-assert.match(source,/const radial=detail==='high'\?32:12/,'詳細LODは小さな面へ再分割');
+assert.match(source,/const profile=\(name,tint,sections,trim=false\)=>/,'断面形状から体積を構成し薄い口腔・鞍を軽量LODで生成');
+assert.match(source,/radial=detail==='high'\?\(trim\?16:32\):12/,'頭蓋は高密度、口腔や革張りは軽量な曲面へ');
 assert.match(source,/Horse conformation/,'軍馬の胴体輪郭を解剖学的に定義');
 assert.match(source,/Long cannon bones and a bent hind hock/,'軍馬の長い骨と後脚の飛節');
 assert.match(source,/Long predatory skull/,'竜の頭部を球から長い骨格へ変更');
