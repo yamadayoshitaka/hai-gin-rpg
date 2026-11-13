@@ -35,9 +35,6 @@ label{display:block;margin:10px 0}select{width:100%}
 #heroActionButtons{max-height:250px;overflow-y:auto;overscroll-behavior:contain;padding:2px}
 body.costume-only #v32BodyPartStudio,
 body.costume-only #allFaceControls,
-body.costume-only label[for="heroHairStyle"],
-body.costume-only label[for="heroHairVolume"],
-body.costume-only label[for="heroHairDensity"],
 body.costume-only label[for="heroAction"],
 body.costume-only label[for="style"],
 body.costume-only #hairOnly,
@@ -46,7 +43,6 @@ body.costume-only #saveWig,
 body.costume-only #portrait,
 body.costume-only #crown,
 body.costume-only #back,
-body.costume-only #toggleWig,
 body.costume-only .faceStudioOnly{display:none!important}
 @media(max-width:730px){main{display:block}section{margin-bottom:12px}#bodyCanvas{height:56dvh;min-height:340px}.actionButtonGrid{grid-template-columns:repeat(4,minmax(0,1fr))}.actionButtonGrid button{padding:9px 4px;font-size:14px}}
 </style>
@@ -142,10 +138,11 @@ import {createScalpAnchoredWig} from './src/face-scalp-wig.js?v=42';
 import {createPartSelectorUI} from './src/face-part-selector-ui-v32.js?v=41';
 import {defaultPartSelection,resolvePartSelection,PART_CATALOG} from './src/face-part-catalog-v32.js?v=41';
 import {attachIndependentHeadToBody,removeHeadBustBelowNeck,createSealedNeckBridge} from './src/face-body-assembly.js';
-import {listWigStyles,DEFAULT_WIG_STYLE_ID,WIG_BASE_VOLUME_PROFILES} from './src/face-wig-styles.js?v=41';
+import {listWigStyles,DEFAULT_WIG_STYLE_ID,WIG_BASE_VOLUME_PROFILES} from './src/face-wig-styles.js?v=43';
+import {resolveHeroHairSpec} from './src/hero-hair-controls-v43.js?v=43';
 import {HERO_JOBS,HERO_ACTIONS,createHeroineStudioWardrobe} from './src/heroine-studio-wardrobe.js?v=41';
 import {REAL_BATTLE_WARDROBE,createRealBattleOutfitStudio} from './src/heroine-battle-costume-bridge.js?v=42';
-import {loadMaleFacePreset} from './src/male-face-preset-store.js?v=42';
+import {loadMaleFacePreset,saveMaleFacePreset} from './src/male-face-preset-store.js?v=43';
 import {FEMALE_COMMANDER_ART_PALETTE,CHAPTER_ONE_ART_BY_KEY} from './src/chapter-one-character-art-references.js';
 
 const $=id=>document.getElementById(id);
@@ -187,7 +184,7 @@ if(v32PartMode)Object.assign(faceControls,
 let view='front',zoomMode='full',wigVisible=true,outfitVisible=true;
 let wigBaseVisible=false,hairOnly=false;
 let contactColor=savedHeroinePreset?.contactColor||palette.iris;
-const counter={wigBuilds:0,glbExports:0};
+const counter={wigBuilds:0,glbExports:0,hairStyleChanges:0};
 const selectedStudio={jobId:'swordsman',outfitId:'job',actionId:'idle',nativeCommand:null};
 let battleRequest=0;
 const tellBattleStatus=message=>{
@@ -244,7 +241,7 @@ function renderNativeActionButtons(){
  $('actionStatus').textContent='職業別の登録済みモーション '+actions.length+'種類';
 }
 renderNativeActionButtons();
-fillSelect('heroHairStyle',listWigStyles());
+fillSelect('heroHairStyle',PART_CATALOG.male.hair.map(item=>({id:item.values.styleId,label:item.label})));
 fillSelect('heroHairVolume',Object.entries(WIG_BASE_VOLUME_PROFILES).map(
  ([id,profile])=>({id,label:profile.label})));
 $('heroHairStyle').value=savedHeroinePreset?.hairStyleId||
@@ -278,6 +275,7 @@ function metrics(){
   wig:wig?.getReport()||null,
   wigAssetType:wig?.root?.userData.assetType,
   styleId:wig?.root?.userData.hairStyleId,
+  selectedHairStyle:$('heroHairStyle').value,hairStyleChanges:counter.hairStyleChanges,
   roundPupilAspectRatio:pupilShape,
   sourceHeadUnchanged:true,sourceBodyUnchanged:true,
   editableFaceControls:{...faceControls},
@@ -349,9 +347,11 @@ function fitCamera(){
 }
 function rebuildWig(){
  if(!model||!bodyAttachment)return;
+ const hairSpec=resolveHeroHairSpec('male',v32BodyPart,$('style').value);
  if(wig){wig.root.removeFromParent();wig.dispose();wig=null;}
  wig=createScalpAnchoredWig(uncutScalpSource||model.face,{
-  count:2000,lengthScale:1.0,styleId:$('style').value,
+  count:v32PartMode?1400:2000,lengthScale:hairSpec.lengthScale,styleId:hairSpec.styleId,
+  gender:'male',
   normalLayeredSingleMesh:v32PartMode,
   fineFringeMultiplier:3,visualFiberMultiplier:Number($('wigDensity').value),
   staticGroom:true,
@@ -540,6 +540,12 @@ if(v32PartMode){
   if(ready)rebuildWig();
  });
 }
+function persistStudioHair(){
+ if(!v32PartMode)return;
+ saveMaleFacePreset({parts:{...v32BodyPart},controls:{...faceControls},
+  hairStyleId:$('style').value,hairColor:v32BodyPart.hairColor,
+  hairDensity:Number($('wigDensity').value),contactColor});
+}
 $('heroHairStyle').addEventListener('change',()=>{
  $('style').value=$('heroHairStyle').value;
  const index=PART_CATALOG.male.hair.findIndex(p=>
@@ -548,17 +554,21 @@ $('heroHairStyle').addEventListener('change',()=>{
   v32BodyPart={...v32BodyPart,hair:index};
   if(v32PartMode)mountPartPicker();
  }
- if(ready)rebuildWig();
+ if(ready){rebuildWig();counter.hairStyleChanges++;}
+ persistStudioHair();
+ $('status').textContent='髪型：'+$('heroHairStyle').selectedOptions[0]?.textContent+'（3D更新済み）';
 });
 $('heroHairVolume').addEventListener('change',()=>{
  v32BodyPart={...v32BodyPart,hairVolume:$('heroHairVolume').value};
  if(v32PartMode)mountPartPicker();
  if(ready)rebuildWig();
+ persistStudioHair();
 });
 $('heroHairDensity').addEventListener('change',()=>{
  $('v32HairDensity').value=$('heroHairDensity').value;
  $('wigDensity').value=$('heroHairDensity').value;
  if(ready)rebuildWig();
+ persistStudioHair();
 });
 $('heroJob').addEventListener('change',()=>{
  selectedStudio.jobId=$('heroJob').value;
