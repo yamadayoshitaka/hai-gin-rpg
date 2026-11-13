@@ -35,6 +35,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install Pillow for review-only contact sheets
+        run: python3 -m pip install --disable-pip-version-check Pillow==11.3.0
       - name: Fetch draft assets and separate formal-registration branch
         shell: bash
         run: |
@@ -42,6 +47,7 @@ jobs:
           git fetch origin story/chapter1-free-actual-art
           git fetch origin story/chapter1-formal-reviewed-art
           git switch -c story/chapter1-formal-reviewed-art --track origin/story/chapter1-formal-reviewed-art
+          git restore --source=origin/main --worktree -- scripts/build-story-chapter1-review-sheets.py
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git restore --source=origin/story/chapter1-free-actual-art --worktree -- \
