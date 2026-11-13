@@ -16,6 +16,8 @@ assert.equal(report.absolutePriority,'P0_ABSOLUTE_MUST_FOLLOW');
 assert.equal(report.failClosedOnMissingReferenceBytes,true);
 assert.equal(report.outputIsOnlyInstructions,true);
 assert.deepEqual(report.imageSpec.minimumNativePixels,[1536,864]);
+assert.deepEqual(report.mobileImageSpec.minimumNativePixels,[768,320]);
+assert.equal(report.mobileImageSpec.aspectRatioPolicy,'PRESERVE_ORIGINAL_ASPECT_WITH_OBJECT_FIT_CONTAIN');
 assert.deepEqual(report.imageSpec.preferredNativePixels,[2048,1152]);
 assert.equal(report.imageSpec.maxCellsPerReviewSheet,10);
 assert.equal(report.imageSpec.stage2MaxCellsPerReviewSheet,5);
@@ -64,7 +66,8 @@ for(const stage of report.stages){
    assert.equal(page.posterSpec.rows,Math.ceil(page.panels.length/2));
    assert(page.posterSpec.rows<=Math.ceil(maxCells/2));
    assert.equal(page.posterSpec.blankCells,page.posterSpec.rows*2-page.panels.length);
-   assert.deepEqual(page.posterSpec.minNativePixels,[3072,page.posterSpec.rows*864]);
+   assert.deepEqual(page.posterSpec.minNativePixels,stage.stageId==='c01-s02'?
+    [1536,page.posterSpec.rows*320]:[3072,page.posterSpec.rows*864]);
    assert.deepEqual(page.posterSpec.preferredNativePixels,[4096,page.posterSpec.rows*1152]);
    assert.equal(page.posterSpec.reviewOnlyNotGameArtwork,true);
    assert.equal(page.posterSpec.previewCannotBeRegisteredAsFinalArt,true);
@@ -83,11 +86,12 @@ for(const stage of report.stages){
     assert.equal(panel.renderReady,false);
     assert.equal(panel.approval.approved,false);
     assert.equal(panel.manualReviewRequired,true);
-    assert.deepEqual(panel.individualMinPixels,[1536,864]);
+    assert.deepEqual(panel.individualMinPixels,stage.stageId==='c01-s02'?[768,320]:[1536,864]);
     assert(panel.generationPrompt.startsWith('P0_ABSOLUTE_MUST_FOLLOW.'));
     for(const token of ['P0_REFERENCE_IMAGE_BYTES','P0_NO_TEXT_UI_IN_ART',
       'P0_FINAL_DOUBLE_CHECK','CURRENT EXACT SCREENPLAY BEAT: '+panel.scriptText,
-      '2048x1152','1536x864','NO text, Japanese letters, numbers'])
+      '2048x1152',stage.stageId==='c01-s02'?'768x320':'1536x864',
+      'NO text, Japanese letters, numbers'])
      assert(panel.generationPrompt.includes(token),'Missing '+token);
     assert.equal(panel.narrative.currentScene.shotKey,panel.shotKey);
     assert(panel.narrative.previousScene===null||panel.narrative.previousScene.panelId!==panel.panelId);
@@ -112,4 +116,4 @@ for(const stage of report.stages){
 assert.equal(assets.size,96);
 assert.equal(keys.size,96);
 assert.equal(posters.size,22);
-console.log('PASS: 96 independent branch/gender shot briefs, 28 sheets of <=5 frames, native 2048x1152 preferred, P0 fail-closed, existing registered images intact');
+console.log('PASS: c01-s02 mobile 768x320 true-native cuts, <=5 shots/sheet; other stages retain legacy contract; 96 unique scene briefs without false approval');
