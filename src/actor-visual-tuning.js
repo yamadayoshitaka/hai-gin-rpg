@@ -12,7 +12,7 @@ export const ACTOR_VISUAL_TUNING=Object.freeze({
   Male_Ranger:{headless:true,poseTargets:{upperarm_l:{child:'lowerarm_l',direction:[-0.16,-1,0]},upperarm_r:{child:'lowerarm_r',direction:[0.16,-1,0]}}},
   Female_Ranger:{headless:true,poseTargets:{upperarm_l:{child:'lowerarm_l',direction:[-0.16,-1,0]},upperarm_r:{child:'lowerarm_r',direction:[0.16,-1,0]}}}
  },
- profiles:{child:0.76,adult:1,sturdy:1.04,tall:1.08,slim:0.98},
+ profiles:{child:0.76,adult:1,sturdy:1.04,tall:1.08,slim:0.98,full:1.0,heavy:1.03},
  characterOverrides:{'royal-king':1.04,'castle-sentinel':1.06,'child':0.76},
  bounds:{minSourceHeight:0.08,maxSourceHeight:5,maxRenderedHeight:2.25},
 });

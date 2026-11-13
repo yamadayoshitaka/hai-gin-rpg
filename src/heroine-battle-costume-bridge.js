@@ -4,6 +4,7 @@ import {buildRiggedJobOutfit} from './character-system/rigged-outfit-runtime.js?
 import {loadJobMotionMap} from './character-system/job-motion-source.js?v=4.6.36';
 import {measureHeadLocalBounds} from './character-system/hair-attachment-runtime.js?v=4.4.89';
 import {createHeroineBattleActionVfx} from './heroine-battle-action-vfx.js?v=40';
+import {resolveBodyShape} from './character-cast-v46.js?v=46';
 
 /**
  * Reuse EXACT game battle clothing: Female_Ranger / Female_Peasant skinned GLTF,
@@ -310,7 +311,7 @@ export async function createRealBattleOutfitStudio({scene,faceModel,getFaceModel
  const jobs=await loadJobMotionMap();
  let actor=null,outfit=null,vfx=null,headRoot=faceModel.root,face=faceModel.face;
  let currentJob=jobId,currentOutfit=outfitId,currentAction=actionId;
- let nativeCommand=null,nativeClip=null;
+ let nativeCommand=null,nativeClip=null,bodyShapeId='average';
  let hiddenBody=false,outfitShown=true,disposed=false,request=0,headReport=null,headFit=null,proportions=null,finishReport=null;
  const chosenOutfit=()=>currentOutfit==='job'?
   realBattleJob(currentJob):realBattleJob(currentOutfit);
@@ -356,6 +357,7 @@ export async function createRealBattleOutfitStudio({scene,faceModel,getFaceModel
    proportions=fitStudioFaceAboveArmor({actorRoot:actor.object3D,
     faceRoot:headRoot,faceFit:headFit,
     bodyScale:gender==='male'?.93:HEROINE_STUDIO_BODY_SCALE});
+   applyBodyShape();
    setBodyVisible(!hiddenBody);
    outfit.root.visible=!hiddenBody&&outfitShown;
    vfx=createHeroineBattleActionVfx({THREE,actorRoot:actor.object3D,
@@ -418,6 +420,27 @@ export async function createRealBattleOutfitStudio({scene,faceModel,getFaceModel
   outfitShown=!!show;
   if(outfit)outfit.root.visible=!hiddenBody&&outfitShown;
  }
+ function applyBodyShape(){
+  if(!actor?.object3D||!headFit)return;
+  const shape=resolveBodyShape(bodyShapeId);
+  const scale=gender==='male'?.93:HEROINE_STUDIO_BODY_SCALE;
+  const original=actor.object3D.userData.originalStudioActorScale;
+  if(!original)return;
+  // Rig, armour, cloth and hands scale together; face compensates the width.
+  // Never modify the shared GLB or the real battle actor.
+  actor.object3D.scale.set(original[0]*scale*shape.width,
+   original[1]*scale,original[2]*scale*shape.depth);
+  headRoot.scale.set(headFit.scale/scale/shape.width,
+   headFit.scale/scale,headFit.scale/scale/shape.depth);
+  headRoot.position.x=headFit.targetCenter[0]-headFit.sourceCenter[0]*headRoot.scale.x;
+  headRoot.position.z=headFit.targetCenter[2]-headFit.sourceCenter[2]*headRoot.scale.z+
+   headFit.targetSize[2]*HEROINE_STUDIO_HEAD_FORWARD/scale;
+  proportions={...proportions,bodyShape:bodyShapeId,
+   bodyWidth:shape.width,bodyDepth:shape.depth};
+ }
+ function setBodyShape(id='average'){
+  resolveBodyShape(id);bodyShapeId=id;applyBodyShape();return bodyShapeId;
+ }
  function attachFace(next){
   if(!next?.root||!next.face)throw Error('Updated face required');
   headRoot=next.root;face=next.face;
@@ -429,6 +452,7 @@ export async function createRealBattleOutfitStudio({scene,faceModel,getFaceModel
    proportions=fitStudioFaceAboveArmor({actorRoot:actor.object3D,
     faceRoot:headRoot,faceFit:headFit,
     bodyScale:gender==='male'?.93:HEROINE_STUDIO_BODY_SCALE});
+   applyBodyShape();
   }
   return headFit;
  }
@@ -448,7 +472,7 @@ export async function createRealBattleOutfitStudio({scene,faceModel,getFaceModel
   active:!!actor,gender,rigSource:'battle-character-and-real-65-bone-job-outfit',
   jobId:currentJob,outfitId:currentOutfit,actionId:currentAction,
   nativeCommand,nativeClip,availableActionCount:availableActions().length,
-  garment:chosenOutfit().label,
+  garment:chosenOutfit().label,bodyShapeId,
   headReport,headFit,proportions,finishReport,
   sourceTrousers:outfit?.presentation?.().useSourceSkinnedLegs||false,
   retainedLegAnatomy:outfit?.diagnostics?.studioPreserveLegAnatomy||false,
@@ -465,5 +489,5 @@ export async function createRealBattleOutfitStudio({scene,faceModel,getFaceModel
  return {getState,getActor:()=>actor?.object3D||null,
   getOutfit:()=>outfit?.root||null,update,attachFace,setBodyVisible,
   setOutfitVisible,playAction,playRegisteredCommand,getAvailableActions:availableActions,
-  setSelection,dispose};
+  setSelection,setBodyShape,dispose};
 }

@@ -5,13 +5,18 @@ export const CHARACTER_PARTS=Object.freeze({
   tall:{height:1.88,scale:[1.045,1.08,1.045],compat:'humanoid',headRatio:7.7},
   slim:{height:1.68,scale:[.9,1,.9],compat:'humanoid'},
   child:{height:1.30,scale:[.83,.78,.83],compat:'humanoid'},
-  sturdy:{height:1.72,scale:[1.13,.98,1.13],compat:'humanoid'}
+  sturdy:{height:1.72,scale:[1.13,.98,1.13],compat:'humanoid'},
+  full:{height:1.72,scale:[1.23,1,1.18],compat:'humanoid'},
+  heavy:{height:1.77,scale:[1.36,1.03,1.28],compat:'humanoid'}
  },
  faces:{
   calm:{eyes:1,browAngle:0,cheeks:.05},
   stern:{eyes:.85,browAngle:-.16,cheeks:.03},
   youthful:{eyes:1.18,browAngle:.08,cheeks:.09},
-  noble:{eyes:1.02,browAngle:.02,cheeks:.06}
+  noble:{eyes:1.02,browAngle:.02,cheeks:.06},
+  elder:{eyes:.82,browAngle:-.07,cheeks:.13},
+  mature:{eyes:.92,browAngle:-.04,cheeks:.12},
+  'narrow-eyed':{eyes:.72,browAngle:-.06,cheeks:.07}
  },
  hairs:{
   short:{length:.12,layers:12,sweep:0,fullness:1},
@@ -19,7 +24,8 @@ export const CHARACTER_PARTS=Object.freeze({
   long:{length:.33,layers:30,sweep:.08,fullness:1.08},
   bob:{length:.235,layers:26,sweep:0,fullness:1.12},
   swept:{length:.19,layers:21,sweep:.34,fullness:1.03},
-  bald:{length:0,layers:0,sweep:0,fullness:0}
+  bald:{length:0,layers:0,sweep:0,fullness:0},
+  bun:{length:.16,layers:16,sweep:.10,fullness:1.0}
  },
  outfits:{
   traveler:{coat:1,hem:1,armor:false,cape:true},
