@@ -12,6 +12,7 @@ import {enhanceStudioBodyMaterials,syncStudioBodyOutfitVisibility,
 import {applyHeroineSkinMaterial} from '../src/heroine-skin-material.js';
 import {femaleInnerFeatureDelta} from '../src/independent-face-masters.js';
 import {FEMALE_V7_DEFAULTS,normalizeMaleFaceControls} from '../src/face-v7-controls.js';
+import {PART_CATALOG} from '../src/face-part-catalog-v32.js';
 
 test('normal human build stays standard-width but has slimmer skinned legs and softer cheeks',()=>{
  assert.equal(BODY_PROFILES.normal.width,1);
@@ -338,4 +339,21 @@ test('v55 anatomical neutral nose tips face gently down, not upward, in both sex
  assert.ok(optionalUpturn.dy>0,'user may explicitly choose a raised nose if desired');
  const straight=morph(0,.566,{...FEMALE_V7_DEFAULTS,noseTipLift:.6});
  assert.ok(Math.abs(straight.dy)<.001,'catalog-style moderate nose cannot accidentally lift upward');
+});
+
+test('v55 all twenty selectable nose presets remain natural with no default upward nostrils',()=>{
+ for(const gender of ['female','male']){
+  const presets=PART_CATALOG[gender]?.nose;
+  assert.equal(presets?.length,10,'ten nose options expected for '+gender);
+  for(const preset of presets){
+   const controls={...FEMALE_V7_DEFAULTS,...preset.values};
+   const tip=femaleInnerFeatureDelta({xn:0,yn:.566,zn:.98,
+    offsetX:0,depth:.3,height:.4,controls});
+   const alar=femaleInnerFeatureDelta({xn:.18,yn:.53,zn:.98,
+    offsetX:.02,depth:.3,height:.4,controls});
+   assert.ok(tip.dy<=.0007,
+    gender+': '+preset.id+' unexpectedly raises nasal tip');
+   assert.ok(alar.dy<0,gender+': '+preset.id+' nostril underside is exposed');
+  }
+ }
 });
