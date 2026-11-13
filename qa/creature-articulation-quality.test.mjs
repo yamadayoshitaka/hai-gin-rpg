@@ -13,6 +13,9 @@ for(const joint of ['Femur','Patella','Tibia','Tarsus'])
  assert.ok(geo.includes("name+'"+joint+"'"),joint+' geometry pivot is absent');
 assert.match(geo,/const distal=\[foot\[0\]-bend\[0\]/,
  'distal leg geometry must be expressed in its parent joint space');
+assert.match(geo,/horn-root-socket/,'horn base must be embedded into the skull');
+assert.match(geo,/const master=coatDetail==='source',lion=s.id==='m008'/,
+ 'feline coat needs a real lion mane, separate from wolf winter fur');
 
 const node=()=>({rotation:{x:0,y:0,z:0,set(x,y,z){this.x=x;this.y=y;this.z=z;}},
  position:{x:0,y:0,z:0,set(x,y,z){this.x=x;this.y=y;this.z=z;}},
