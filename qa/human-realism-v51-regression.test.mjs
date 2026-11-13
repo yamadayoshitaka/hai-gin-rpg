@@ -95,7 +95,7 @@ test('human skin surface clones skin materials while preserving source maps',()=
   new THREE.MeshStandardMaterial({map:texture,roughness:.92}));
  assert.equal(applyHeroineSkinMaterial(face).applied,true);
  assert.equal(face.material.map,texture);
- assert.equal(face.material.roughness,.70);
+ assert.equal(face.material.roughness,.74);
  assert.equal(applyHeroineSkinMaterial(face).reused,true);
  actor.clear();
  arms.geometry.dispose();arms.material.dispose();original.dispose();
