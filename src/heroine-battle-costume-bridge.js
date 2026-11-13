@@ -311,7 +311,7 @@ export function fitStudioNeckContinuity({faceRoot,faceMesh,wardrobeRoot}={}){
  // The connector is a SHORT under-chin transition, not a visible pipe.
  // Overlap its lower ring beneath the clothing; do not extend 27mm below
  // the collar and 13mm above the cropped head as v54 did.
- const bottomY=torsoTop-.015,topY=safeCutY+.008;
+ const bottomY=torsoTop-.013,topY=safeCutY+.004;
  if(topY<=bottomY+.008)return {applied:false,reason:'neck-height-invalid'};
  const cx=(originalFaceBounds.min.x+originalFaceBounds.max.x)*.5;
  const cz=(originalFaceBounds.min.z+originalFaceBounds.max.z)*.5-.011;
@@ -325,15 +325,15 @@ export function fitStudioNeckContinuity({faceRoot,faceMesh,wardrobeRoot}={}){
  // Use the same face skin material and sampled lower-cheek pigment;
  // a fixed opaque beige cylinder becomes a glaring white rectangular
  // neck under blue/soft light. Alpha tapers into the actual chin and collar.
- const bottomSkin=facePigment.multiplier.clone().multiplyScalar(.83);
- const topSkin=facePigment.multiplier.clone().multiplyScalar(.78);
+ const bottomSkin=facePigment.multiplier.clone().multiplyScalar(.79);
+ const topSkin=facePigment.multiplier.clone().multiplyScalar(.74);
  faceRoot.updateWorldMatrix(true,false);
  for(let r=0;r<rings;r++){
   const t=r/(rings-1);
   const y=bottomY+(topY-bottomY)*t;
   // Taper the visible top deeply under the chin. A broad top ring made
   // a pale rectangular neck column despite the shorter connector height.
-  const widen=1.07-.45*t-.045*Math.sin(Math.PI*t);
+  const widen=1.07-.50*t-.045*Math.sin(Math.PI*t);
   const xCenter=THREE.MathUtils.lerp(torsoX,cx,t);
   const zCenter=THREE.MathUtils.lerp(torsoZ-.015,cz-.024*t,t);
   const skin=bottomSkin.clone().lerp(topSkin,t);
@@ -345,7 +345,7 @@ export function fitStudioNeckContinuity({faceRoot,faceMesh,wardrobeRoot}={}){
     zCenter+Math.sin(angle)*radiusZ*widen);
    const local=faceRoot.worldToLocal(world);
    verts.push(local.x,local.y,local.z);
-   const edgeBlend=.10+.90*Math.min(1,t*4,(1-t)*4);
+   const edgeBlend=.065+.935*Math.min(1,t*4,(1-t)*4);
    colors.push(skin.r,skin.g,skin.b,edgeBlend);
    uv.push(s/count,t);
   }
