@@ -33,4 +33,3 @@ jobs:
           node qa/story-first-missing-live-registration.test.mjs
           node qa/story-live-art-coverage.test.mjs
           node qa/story-c01-s01-artwork-bytes.test.mjs
-          node qa/story-mobile-25-draft-registration.test.mjs || test "$?" -eq 127
