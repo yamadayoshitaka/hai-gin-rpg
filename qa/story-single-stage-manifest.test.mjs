@@ -122,6 +122,6 @@ for(const variant of manifest.stages[0].variants){
 assert.equal(uniqueFrames.size,48);
 assert.equal(uniquePosterSources.size,8);
 const error=spawnSync(process.execPath,['scripts/run-story-stage.mjs',
- '--stage','c01-s03','--prepare-only'],{cwd:root,encoding:'utf8'});
+ '--stage','c01-s06','--prepare-only'],{cwd:root,encoding:'utf8'});
 assert.notEqual(error.status,0,'Missing per-stage contract must fail, not silently fall back to generic poster');
 console.log('PASS one-stage batch: 8 labelled-outside-only contracts, 48 canonical scenes, all under explicit 1536x864 gates; no fake render/publish');
