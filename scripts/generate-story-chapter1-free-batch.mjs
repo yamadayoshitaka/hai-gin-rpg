@@ -19,6 +19,24 @@ const args=process.argv.slice(2),mode=args[args.indexOf('--mode')+1]||'plan';
 const maxPages=Number(args.includes('--max-pages')?args[args.indexOf('--max-pages')+1]:'12');
 const limit=Number(process.env.CLOUDFLARE_CHAPTER1_DAILY_ESTIMATE_CAP||'7500');
 const branch='story/chapter1-free-actual-art';
+function webpPixels(b){
+ if(b.length<30||b.toString('ascii',0,4)!=='RIFF'||b.toString('ascii',8,12)!=='WEBP')throw Error('not WebP');
+ const t=b.toString('ascii',12,16);
+ if(t==='VP8 ')return [b.readUInt16LE(26)&0x3fff,b.readUInt16LE(28)&0x3fff];
+ if(t==='VP8L'){const n=b.readUInt32LE(21);return [(n&0x3fff)+1,((n>>>14)&0x3fff)+1];}
+ if(t==='VP8X')return [b.readUIntLE(24,3)+1,b.readUIntLE(27,3)+1];
+ throw Error('unsupported WebP');
+}
+function legacyBelowNative(url,stageId){
+ if(!url||!url.startsWith('./'))return false;
+ const rel=url.slice(2).split(/[?#]/)[0];
+ if(!fs.existsSync(p(rel)))return true;
+ try{
+  const [w,h]=webpPixels(fs.readFileSync(p(rel)));
+  const [mw,mh]=stageId==='c01-s02'?[768,320]:[1536,864];
+  return w<mw||h<mh||w*9!==h*16;
+ }catch{return true;}
+}
 if(!['plan','generate'].includes(mode)||!Number.isInteger(maxPages)||maxPages<1||maxPages>15||
  !Number.isFinite(limit)||limit<=0||limit>7500)throw Error('Invalid run arguments or Free daily cap');
 const abs=read('assets/story/quality/artwork-p0-rules.json');
@@ -47,7 +65,9 @@ for(const stage of stages){
     const id=shot.id.replace(/-m(\d{1,2})$/,(_,n)=>'-m'+String(Number(n)).padStart(2,'0'));
     const dir='assets/story/chapter-drafts/c01/cloudflare-chapter1-free/'+stage.id+'-'+ed.edition+'-'+gender+'/p'+String(Math.floor(i/5)+1).padStart(2,'0')+'/';
     const img=dir+id+'-'+ed.edition+'-'+gender+'.webp';
-    return {key,shot,stage,gender,edition:ed.edition,img,proof:img+'.generation.json',registered:!!registeredStoryPanelAsset(shot)};
+    const live=registeredStoryPanelAsset(shot);
+    return {key,shot,stage,gender,edition:ed.edition,img,proof:img+'.generation.json',registered:!!live,
+     legacySource:live,legacyBelowNative:legacyBelowNative(live,stage.id)};
    });
    pages.push({num:pages.length+1,stage:stage.id,edition:ed.edition,gender,page:Math.floor(i/5)+1,shots:group});
   }
@@ -55,10 +75,10 @@ for(const stage of stages){
 }
 if(pages.length!==132||keys.size!==462)throw Error('Expected EXACTLY 132 pages and 462 canonical shots');
 function status(s){
- if(s.registered)return 'REGISTERED_NOT_P0_CERTIFIED';
  if(fs.existsSync(p(s.img+'.provider-blocked.json')))return 'BLOCKED_PROVIDER_SAFETY';
  const image=fs.existsSync(p(s.img)),proof=fs.existsSync(p(s.proof));
- if(!image&&!proof)return 'MISSING';
+ if(!image&&!proof)return s.legacyBelowNative?'LEGACY_NATIVE_DEFECT_NEEDS_REGEN':
+   s.registered?'REGISTERED_NOT_P0_CERTIFIED':'MISSING';
  if(!image||!proof)return 'BLOCKED_UNPAIRED';
  try{
   const raw=fs.readFileSync(p(s.img)),meta=read(s.proof);
@@ -73,9 +93,10 @@ function status(s){
 function progress(){
  const all=pages.flatMap(pg=>pg.shots);
  return {chapter:1,pages:132,totalScenes:462,
-  existingRegisteredUnapproved:all.filter(s=>status(s)==='REGISTERED_NOT_P0_CERTIFIED').length,
+  existingRegisteredUnapproved:all.filter(s=>s.registered).length,
+  legacyNativeDefects:all.filter(s=>status(s)==='LEGACY_NATIVE_DEFECT_NEEDS_REGEN').length,
   generatedDraftUnapproved:all.filter(s=>status(s)==='REAL_DRAFT_UNAPPROVED').length,
-  missing:all.filter(s=>['MISSING','LOW_NATIVE_RESOLUTION_REGENERATE'].includes(status(s))).length,
+  missing:all.filter(s=>['MISSING','LOW_NATIVE_RESOLUTION_REGENERATE','LEGACY_NATIVE_DEFECT_NEEDS_REGEN'].includes(status(s))).length,
   blocked:all.filter(s=>status(s).startsWith('BLOCKED')).map(s=>s.key),
   gameRegistrationsByThisTool:0,approvedByThisTool:0,
   pageStates:pages.map(pg=>({pageTask:pg.num,stage:pg.stage,edition:pg.edition,gender:pg.gender,
@@ -88,7 +109,7 @@ if(mode==='plan'){
  const result=progress();save({mode:'plan',apiRequests:0,imagesRendered:0});
  console.log(JSON.stringify({pages:132,scenes:462,registered:result.existingRegisteredUnapproved,
   drafts:result.generatedDraftUnapproved,missing:result.missing,blocked:result.blocked.length,
-  nextTask:result.pageStates.find(pg=>pg.states.includes('MISSING'))?.pageTask,apiRequests:0}));
+  nextTask:result.pageStates.find(pg=>pg.states.some(s=>['MISSING','LEGACY_NATIVE_DEFECT_NEEDS_REGEN'].includes(s)))?.pageTask,apiRequests:0}));
  process.exit(0);
 }
 const acct=process.env.CLOUDFLARE_ACCOUNT_ID||'',token=process.env.CLOUDFLARE_WORKERS_AI_API_TOKEN||'';
@@ -155,7 +176,7 @@ const summary=reason=>{
 summary('STARTED');
 for(const pg of pages){
  if(committed>=maxPages){summary('PAGE_CAP');break;}
- const pending=pg.shots.filter(s=>['MISSING','LOW_NATIVE_RESOLUTION_REGENERATE'].includes(status(s)));
+ const pending=pg.shots.filter(s=>['MISSING','LOW_NATIVE_RESOLUTION_REGENERATE','LEGACY_NATIVE_DEFECT_NEEDS_REGEN'].includes(status(s)));
  if(!pending.length)continue;
  const blockers=pg.shots.filter(s=>status(s).startsWith('BLOCKED'));
  if(blockers.length)blocked.push(...blockers.map(s=>({page:pg.num,shotKey:s.key,reason:status(s)})));
