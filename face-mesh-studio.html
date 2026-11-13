@@ -419,6 +419,7 @@ function rebuildWig(){
  try{
   const wig=createScalpAnchoredWig(models.get('female').face,{
    count:wigDensity,lengthScale:wigLength,fineFringeMultiplier:3,
+   normalLayeredSingleMesh:v32PartMode,
    styleId:wigStyleId,
    volumeProfile:v32PartMode?v32Parts.female.hairVolume:'natural',
    color:hairPalette[v32PartMode?v32Parts.female.hairColor:wigColor]||hairPalette.blonde
@@ -471,7 +472,7 @@ function rebuildMaleHair(){
  const lengths=[.60,.37,.41,.40,.55,.63,.36,.50,.60,.84,.35,.18,.12];
  const hair=createScalpAnchoredWig(models.get('male').face,{
   count:680,lengthScale:lengths[v32Parts.male.hair],fineFringeMultiplier:2,
-  visualFiberMultiplier:1,staticGroom:true,
+  visualFiberMultiplier:1,staticGroom:true,normalLayeredSingleMesh:v32PartMode,
   styleId:chosen.hairStyleId,
   volumeProfile:v32Parts.male.hairVolume,
   color:hairPalette[v32Parts.male.hairColor]||hairPalette.blonde
