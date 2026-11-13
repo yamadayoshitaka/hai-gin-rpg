@@ -1111,11 +1111,17 @@ function addDragonLord(g,s,detail){
   // and an opposable inner thumb, all separated from the wing bones.
   for(const side of [-1,1]){
     const arm=side<0?'armL':'armR',x=side*.66;
-    joint('core',skin,x,2.77,.13,.38,.37,.40);
-    segment(arm,skin,[x,2.70,.24],[side*.96,2.12,.63],.29,.23);
-    joint(arm,skin,side*.95,2.12,.63,.24,.24,.24);
-    segment(arm,skin,[side*.96,2.12,.63],[side*1.08,1.73,.94],.22,.15);
-    joint(arm,shadow,side*1.08,1.74,.96,.20,.13,.20);
+    // Scapula and muscle tubes overlap while the limb rotates as one
+    // existing instanced arm part, removing the cylindrical socket look.
+    joint('core',skin,x,2.77,.13,.36,.34,.37);
+    curved(arm,skin,[
+      [x,2.72,.22],[side*.77,2.46,.37],[side*.96,2.13,.63]],
+      [.310,.274,.218],true);
+    joint(arm,skin,side*.95,2.12,.63,.236,.224,.238);
+    curved(arm,skin,[
+      [side*.96,2.13,.62],[side*1.016,1.94,.78],
+      [side*1.08,1.73,.94]],[.218,.186,.147],true);
+    joint(arm,skin,side*1.08,1.74,.96,.221,.155,.205);
     for(let finger=0;finger<4;finger++){
       const xx=side*(.93+finger*.10),z=.99+(finger%2)*.075;
       curved(arm,skin,[[side*1.08,1.71,.95],[xx,1.56,z+.15],[xx,1.43,z+.31]],
@@ -1129,11 +1135,16 @@ function addDragonLord(g,s,detail){
   // Digitigrade hind legs with powerful thigh, backward hock and long toes.
   for(const side of [-1,1]){
     const leg=side<0?'legBackL':'legBackR';
-    joint('core',skin,side*.41,1.53,-.22,.40,.41,.42);
-    joint(leg,skin,side*.48,1.48,-.17,.35,.37,.36);
-    segment(leg,skin,[side*.47,1.50,-.15],[side*.64,.82,.29],.35,.24);
-    joint(leg,skin,side*.64,.82,.29,.30,.25,.29);
-    segment(leg,shadow,[side*.64,.81,.28],[side*.60,.25,-.07],.22,.13);
+    joint('core',skin,side*.41,1.53,-.22,.366,.385,.396);
+    joint(leg,skin,side*.48,1.48,-.17,.34,.37,.35);
+    // Organic curved thigh/shin profiles overlap the knee and hock.
+    curved(leg,skin,[[side*.47,1.50,-.15],
+      [side*.57,1.16,.06],[side*.64,.82,.29]],
+      [.350,.308,.235],true);
+    joint(leg,skin,side*.64,.82,.29,.278,.249,.283);
+    curved(leg,shadow,[[side*.64,.81,.28],
+      [side*.65,.51,.11],[side*.60,.25,-.07]],
+      [.220,.174,.133],true);
     joint(leg,skin,side*.60,.25,-.07,.18,.19,.17);
     joint(leg,skin,side*.60,.14,.23,.27,.13,.42);
     for(let toe=0;toe<3;toe++){
@@ -1159,6 +1170,9 @@ function addDragonLord(g,s,detail){
   for(const side of [-1,1]){
     const name=side<0?'wingL':'wingR';
     majesticWing(name,0xc3ad9a,0x716361,span,side);
+    curved('core',skin,[
+      [side*.36,2.81,-.06],[side*.57,2.94,-.16],
+      [side*.71,3.03,-.28]],[.218,.211,.118],true);
     socket('core',skin,side*.60,2.97,-.19,.28,.23,.31);
     socket(name,skin,0,0,0,.24,.20,.28);
   }
