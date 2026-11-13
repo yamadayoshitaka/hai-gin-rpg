@@ -45,6 +45,8 @@ assert.equal(locked.layout.maxRows,3);
 assert.equal(locked.layout.maxPanelsPerPoster,5);
 assert.equal(locked.layout.nativeSheetPipeline.maximumFramesPerSheet,5);
 assert.deepEqual(locked.layout.nativeSheetPipeline.preferredFullFivePanelSheetPixels,[4096,3456]);
+assert.deepEqual(locked.layout.nativeSheetPipeline.minimumFullFivePanelSheetPixels,[3072,2592]);
+assert.equal(locked.layout.nativeSheetPipeline.minimumFullTenPanelSheetPixels,undefined);
 assert.equal(locked.layout.nativeSheetPipeline.originalGeneratorSupports4096x3456,'UNVERIFIED_DO_NOT_ASSUME');
 assert.equal(locked.layout.bulkNativeSheetBatches.maxCanonicalFramesPerSheet,5);
 assert.equal(locked.layout.bulkNativeSheetBatches.maxCanonicalFramesPerBatch,50);
