@@ -244,5 +244,5 @@ for(const originalPage of target){
 }
 console.log(JSON.stringify({chapter,pagesProcessed:target.length,
  pagesCommitted:committed,newImagesFormallyRegistered:registered,
- chapterFullyCompleted:pages.every(p=>p.cells.every(x=>
-  x.status==='EXISTING_REGISTERED_NOT_P0_CERTIFIED'))&&registered===0}));
+ chapterFullyCompleted:false,
+ explanation:'Chapter completion needs fresh asset/reference validation, all pages registered, CI and a successful deployment. Existing registrations are NOT P0 quality approval.'}));
