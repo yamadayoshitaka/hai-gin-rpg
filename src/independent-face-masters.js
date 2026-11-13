@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import {createAnatomicalFaceParts} from './face-feature-meshes.js';
+import {attachAgeDetails} from './face-age-detail-v49.js?v=49';
 import {resolveDemographicProfile} from './character-demographics-v47.js?v=47';
 import {normalizeFemaleFaceControls,normalizeMaleFaceControls,FEMALE_V7_DEFAULTS} from './face-v7-controls.js';
 
@@ -305,7 +306,7 @@ export function makeIndependentFaceMaster(sourceRoot,gender,{femaleControls={},m
  geometry.computeVertexNormals();
  geometry.computeBoundingBox();geometry.computeBoundingSphere();
  face.material=new THREE.MeshStandardMaterial({
-  color:0xbfc3cb,roughness:.84,metalness:0,
+  color:0xbfc3cb,roughness:.70,metalness:0,
   side:THREE.FrontSide,flatShading:false
  });
  face.visible=true;
@@ -316,6 +317,7 @@ export function makeIndependentFaceMaster(sourceRoot,gender,{femaleControls={},m
  // follow its original local coordinate frame; there is no face-photo plane.
  const parts=createAnatomicalFaceParts(face,{gender,controls});
  face.add(parts.root);
+ const ageDetail=attachAgeDetails(face,demo.ageBand);
  // Original donor eyes/hair are hidden. Only our explicitly generated
  // eyeball/iris, eyelid and lip triangles can accompany the clay face.
  const triangleCount=geometry.index?
@@ -323,6 +325,7 @@ export function makeIndependentFaceMaster(sourceRoot,gender,{femaleControls={},m
  const report=Object.freeze({
   code:spec.code,gender,sourceVertices:most,
   v47Demographics:{ageBand:demo.ageBand,bodyType:demo.bodyType,wrinkleStrength:demo.age.wrinkles,faceFullness:demo.faceFullness},
+  v49AgeCreases:ageDetail,
   headTemplate:spec.sourceHead||(gender==='male'?'realistic-head-animation.glb':'unknown'),
   triangles:triangleCount,modifiedVertices:changed,
   cheekVolumeMetric:Number((cheekDelta/p.count).toFixed(9)),

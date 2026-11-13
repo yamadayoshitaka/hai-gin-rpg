@@ -36,10 +36,15 @@ export function applySkinnedBuildMorph(actorRoot,bodyType='normal'){
    const x=source.original[i*3],y=source.original[i*3+1],z=source.original[i*3+2];
    const ny=clamp((y-box.min.y)/h,0,1);
    const waist=gaussian(ny,.51,.25),belly=gaussian(ny,.45,.19);
-   const circumference=1+body.abdomen*(.19*waist+.115*belly);
+   // A real build changes waist, lower torso, upper arm and hip
+   // differently. A standard physique has almost no abdomen protrusion.
+   const hip=gaussian(ny,.34,.16),shoulder=gaussian(ny,.77,.12);
+   const circumference=1+body.abdomen*
+    (.24*waist+.11*belly+.12*hip+.035*shoulder);
    const front=Math.max(0,(z-cz)/depth);
    target.setXYZ(i,cx+(x-cx)*circumference,y,
-    cz+(z-cz)*(1+body.abdomen*.15*belly)+depth*body.abdomen*.07*belly*front);
+    cz+(z-cz)*(1+body.abdomen*(.22*belly+.06*hip))+
+     depth*body.abdomen*.105*belly*front);
   }
   target.needsUpdate=true;
   mesh.geometry.computeVertexNormals();

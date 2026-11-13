@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import {normalizeFemaleFaceControls,normalizeMaleFaceControls,FACE_V7_PALETTE,MALE_REFERENCE_DEFAULT,safeContactColor} from './face-v7-controls.js';
+import {resolveAgeBand} from './character-demographics-v47.js?v=49';
 
 /**
  * Actual face-only polygon meshes. No 2D decals, portrait planes or hair.
@@ -186,6 +187,7 @@ export function updateRealFacePigment(face,controls={},mode='color'){
  const skin=new THREE.Color(FACE_V7_PALETTE.skin);
  const blush=new THREE.Color(FACE_V7_PALETTE.blush);
  const lipstick=new THREE.Color(FACE_V7_PALETTE.lipstick);
+ const age=resolveAgeBand(settings.ageBand);
  const positions=geometry.getAttribute('position'),colors=[];
  let actualLipTintVertices=0,actualCheekTintVertices=0;
  for(let i=0;i<positions.count;i++){
@@ -208,8 +210,28 @@ export function updateRealFacePigment(face,controls={},mode='color'){
   const lipMask=lipX*lipY*front*bound;
   if(cheek>.12)actualCheekTintVertices++;
   if(lipMask>.12)actualLipTintVertices++;
+  // Actual sculpted-skin vertex colours receive subtle occlusion in the
+  // nasolabial fold, eyes, nose wings and philtrum (no flat texture card).
+  // Older ages get pronounced crease pigment and lower-eye shadows.
+  const underEye=bell(nx,.345,.14)*bell(ny,.632,.027)*front;
+  const noseWing=bell(nx,.115,.045)*bell(ny,.551,.025)*front;
+  const philtrum=bell(nx,0,.075)*bell(ny,.528,.015)*front;
+  const lipShade=bell(nx,0,.18)*bell(ny,.468,.026)*front;
+  const foreheadBands=[.758,.794,.823].reduce((v,y)=>
+   v+bell(ny,y,.0055),0)*bell(nx,0,.70)*front;
+  const crows=bell(nx,.52,.12)*bell(ny,.675,.08)*front*
+   (.5+.5*Math.cos(ny*180+nx*31));
+  const nasolabial=bell(nx,.27+.08*(.63-ny),.029)*
+   bell(ny,.51,.099)*front;
+  const mouthCorners=bell(nx,.235,.035)*bell(ny,.478,.027)*front;
+  const ageShade=age.wrinkles*(.17*foreheadBands+.30*crows+
+   .42*nasolabial+.19*mouthCorners);
+  const contactShade=.15*underEye+.085*noseWing+.058*philtrum+
+   .07*lipShade+age.sag*.15*underEye+ageShade;
+  const s=Math.max(.55,1-contactShade);
   const rgb=pigmentFactor(skin,blush,cheek)
-   .multiply(pigmentFactor(skin,lipstick,.30*lipMask));
+   .multiply(pigmentFactor(skin,lipstick,.30*lipMask))
+   .multiplyScalar(s);
   colors.push(rgb.x,rgb.y,rgb.z);
  }
  setVertexMakeup(face,colors);
