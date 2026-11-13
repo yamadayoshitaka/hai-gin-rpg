@@ -1,10 +1,12 @@
-name: Human v55 short neck continuity diagnostics
+name: Human v56 facial quality and skin neck diagnostics
 on:
   pull_request:
     paths:
       - 'src/heroine-battle-costume-bridge.js'
       - 'qa/human-head-occlusion-v53-browser.cjs'
       - 'qa/human-realism-v51-regression.test.mjs'
+      - 'qa/studio-face-quality-v56.test.mjs'
+      - 'src/studio-face-quality-v56.js'
       - '.github/workflows/human-v53-diagnostic.yml'
   workflow_dispatch:
 permissions:
@@ -24,13 +26,13 @@ jobs:
           python3 -m http.server 8766 --bind 127.0.0.1 >/tmp/human-v53-http.log 2>&1 &
           sleep 2
       - name: Verify neck connector and preserved head source geometry
-        run: node --test qa/human-realism-v51-regression.test.mjs
+        run: node --test qa/human-realism-v51-regression.test.mjs qa/studio-face-quality-v56.test.mjs
       - name: Report actual female face, neck and armor mesh bounds
         run: node qa/human-head-occlusion-v53-browser.cjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: human-v55-short-neck
-          path: qa-screenshots/human-v55/
+          name: human-v56-face-quality
+          path: qa-screenshots/human-v56/
           retention-days: 7
           if-no-files-found: warn

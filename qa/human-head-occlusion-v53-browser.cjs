@@ -6,7 +6,7 @@ const fs=require('node:fs');
  try{
   const page=await browser.newPage({viewport:{width:460,height:900},deviceScaleFactor:1});
   page.on('pageerror',e=>console.error('BROWSER_PAGE_ERROR '+e.message));
-  await page.goto('http://127.0.0.1:8766/face-body-studio.html?v=55',
+  await page.goto('http://127.0.0.1:8766/face-body-studio.html?v=56',
     {waitUntil:'commit',timeout:90000});
   await page.waitForFunction(()=>window.__heroineBodyQA?.()?.v36RealBattleCostume?.active,
     null,{timeout:180000});
@@ -44,7 +44,15 @@ const fs=require('node:fs');
     active:state.v36RealBattleCostume?.active,
     meshes:meshes.sort((a,b)=>b.box.max[1]-a.box.max[1]).slice(0,85)};
   });
-  console.log('HUMAN_V55_ACTUAL_MESH_DIAGNOSTICS '+JSON.stringify(result));
+  console.log('HUMAN_V56_ACTUAL_MESH_DIAGNOSTICS '+JSON.stringify(result));
+  if(!(result.neckContinuity?.applied&&result.neckContinuity.bustTrianglesRemoved>3&&
+        result.neckContinuity.originalFaceNormalsPreserved&&
+        result.neckContinuity.smoothedFacialNormals&&
+        result.neckContinuity.normalWeldGroups>50&&
+        result.neckContinuity.untouchedFaceTriangles>100&&
+        result.neckContinuity.matchedFaceMaterial&&
+        result.neckContinuity.transparentNeckEdge))
+    throw Error('FACETED_FACE_OR_UNMATCHED_NECK: '+JSON.stringify(result.neckContinuity));
   if(!(result.neckContinuity?.applied&&result.neckContinuity.bustTrianglesRemoved>3))
     throw Error('HEAD_BUST_STILL_PRESENT: '+JSON.stringify(result.neckContinuity));
   if(result.neckContinuity.legacyNeckPartsHidden<3)
@@ -59,7 +67,31 @@ const fs=require('node:fs');
     throw Error('GIRAFFE_NECK_DETECTED: '+JSON.stringify(result.neckContinuity));
   if(!(result.neck?.applied&&result.neck.clearanceMeters>=.007))
     throw Error('CHEST_STILL_ABOVE_CHIN: '+JSON.stringify(result.neck));
-  fs.mkdirSync('qa-screenshots/human-v55',{recursive:true});
-  await page.screenshot({path:'qa-screenshots/human-v55/female-overlap.png',timeout:90000});
+  fs.mkdirSync('qa-screenshots/human-v56',{recursive:true});
+  await page.screenshot({path:'qa-screenshots/human-v56/female-overlap.png',timeout:90000});
+  // Render actual close-up portraits, not only the distant full-body view.
+  // These reveal facial normal faceting and any opaque neck plate.
+  // Costume-only UI hides the portrait button; invoke its existing view
+  // controller directly for automated QA without changing user-facing UI.
+  await page.evaluate(()=>document.getElementById('portrait').click());
+  await page.waitForTimeout(350);
+  await page.screenshot({path:'qa-screenshots/human-v56/female-face-front.png',timeout:90000});
+  // Diagnostic isolation: identify whether the bright horizontal jaw plate
+  // belongs to the new neck connector or the cropped original face sculpt.
+  await page.evaluate(()=>{
+   const actor=window.__heroineBodyPreview?.getBattleActor?.();
+   const neck=actor?.getObjectByName('STUDIO_REAL_SKIN_NECK_CONNECTOR_V54');
+   if(neck)neck.visible=false;
+  });
+  await page.waitForTimeout(120);
+  await page.screenshot({path:'qa-screenshots/human-v56/female-connector-hidden.png',timeout:90000});
+  await page.evaluate(()=>{
+   const actor=window.__heroineBodyPreview?.getBattleActor?.();
+   const neck=actor?.getObjectByName('STUDIO_REAL_SKIN_NECK_CONNECTOR_V54');
+   if(neck)neck.visible=true;
+  });
+  await page.locator('#side').click();
+  await page.waitForTimeout(350);
+  await page.screenshot({path:'qa-screenshots/human-v56/female-face-side.png',timeout:90000});
  }finally{await browser.close()}
-})().catch(e=>{console.error('HUMAN_V55_DIAGNOSTIC_FAIL '+e.stack);process.exitCode=1});
+})().catch(e=>{console.error('HUMAN_V56_DIAGNOSTIC_FAIL '+e.stack);process.exitCode=1});
