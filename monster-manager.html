@@ -4,10 +4,10 @@
 <title>灰銀のレゾナンス | モンスター管理・50種</title>
 <style>
 :root{font-family:system-ui,-apple-system,"Noto Sans JP",sans-serif;color-scheme:dark}
-*{box-sizing:border-box}body{margin:0;background:#09141d;color:#edf5f8;min-height:100dvh}
-header{display:flex;gap:14px;align-items:center;flex-wrap:wrap;padding:13px 18px;background:#12293d;border-bottom:1px solid #48657d}
+*{box-sizing:border-box}body{margin:0;background:#09141d;color:#edf5f8;height:100dvh;min-height:0;display:flex;flex-direction:column;overflow:hidden}
+header{display:flex;flex:0 0 auto;gap:14px;align-items:center;flex-wrap:wrap;padding:13px 18px;background:#12293d;border-bottom:1px solid #48657d}
 header h1{margin:0;font-size:19px}header small{color:#9db2c5}
-a{color:#a6d9ef}main{display:grid;grid-template-columns:minmax(252px,290px) minmax(0,1fr);height:calc(100dvh - 65px);position:relative}
+a{color:#a6d9ef}main{display:grid;flex:1;min-height:0;grid-template-columns:minmax(252px,290px) minmax(0,1fr);height:auto;position:relative}
 aside{overflow-y:auto;border-right:1px solid #426277;background:#102332;padding:12px}
 label{display:block;font-size:12px;color:#c7dbe4;margin-bottom:4px}
 input,select,button{background:#19374b;color:white;border:1px solid #547891;border-radius:8px;padding:9px;font:inherit;min-width:0}
@@ -48,7 +48,7 @@ legend{font-size:12px;color:#e8d9b6;padding:0 6px}
 #mobileTip{font-size:11px;color:#9aafc2}
 @media(max-width:730px){
  header{gap:7px;padding:9px 12px}header h1{font-size:15px}header small{font-size:10px}
- main,main.catalogCollapsed{display:block;height:calc(100dvh - 53px);min-height:430px;overflow:hidden}
+ main,main.catalogCollapsed{display:block;flex:1;height:auto;min-height:0;overflow:hidden}
  .workspace{height:100%;min-height:0;width:100%;order:0}
  #view{flex:1;min-height:0}
  #info{top:6px;left:6px;right:8px;padding:8px;max-width:none}
