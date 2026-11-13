@@ -9,11 +9,11 @@ export function sculptBloodMoonVampire(g,head,torso,{detail='high'}={}){
  // Partial hair cap only covers the crown. The forehead, eyes, cheeks and
  // jaw remain visible, and the scalp never looks like a hovering wig base.
  g.anatomicalLoft(head,'hair',[
-  {y:.121,rx:.179,rz:.154,cz:-.110},
-  {y:.175,rx:.221,rz:.185,cz:-.072},
-  {y:.244,rx:.222,rz:.184,cz:-.063},
-  {y:.319,rx:.157,rz:.153,cz:-.044},
-  {y:.365,rx:.016,rz:.021,cz:-.042},
+  {y:.155,rx:.185,rz:.220,cz:-.050},
+  {y:.205,rx:.235,rz:.247,cz:-.027},
+  {y:.265,rx:.210,rz:.204,cz:-.016},
+  {y:.322,rx:.142,rz:.140,cz:-.020},
+  {y:.365,rx:.016,rz:.021,cz:-.025},
  ],{kind:'face',name:'m034-rooted-hair-cap',asymmetry:.06});
 
  for(const side of [-1,1]){
