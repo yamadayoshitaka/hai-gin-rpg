@@ -76,13 +76,19 @@ legend{font-size:12px;color:#e8d9b6;padding:0 6px}
       </select>
      </label>
      <span id="geometryStats" role="status"></span>
+     <label id="vampireSexControl" style="display:none">吸血鬼の姿
+       <select id="vampireSex" aria-label="吸血鬼の男性女性モデル切替">
+         <option value="male">男性（貴族ヴァンパイア）</option>
+         <option value="female">女性（貴族ヴァンパイア）</option>
+       </select>
+     </label>
     </div>
     <small>制作原型は品質確認専用です。Androidでは描画負荷が高いため、標準は高品質LOD。実写系PBRは同梱素材を使用し、未整備の材質は従来表現に戻します。</small>
    </fieldset>
    <fieldset><legend>外部GLB比較・品質選別</legend>
     <div class="toolrow">
      <label>3Dモデルの入手元
-      <select id="assetSource"><option value="procedural">従来モデル（品質基準・推奨）</option>
+      <select id="assetSource"><option value="procedural">標準3D（人型は人物GLB＋ゴシック衣装）</option>
        <option value="licensed">CC0外部モデル（低密度素材を含む）</option>
        <option value="personal">手元のGLB（非公開）</option></select>
      </label>
@@ -282,11 +288,14 @@ function selectSpecies(id){
    if(externalRegistry.entries[remembered])byId('assetSource').value='licensed';
  }
  const m=specimen(id),detail=byId('quality').value;
+ byId('vampireSexControl').style.display=id==='m034'?'block':'none';
  disposeCurrent();
  const mode=byId('assetSource').value;
  const cosplay=mode==='procedural'?humanoidMonsterCostumeFor(m):null;
  if(cosplay){
-   costumeHandle=createCosplayedHumanoidMonster(m,{detail});
+   costumeHandle=createCosplayedHumanoidMonster(m,{
+     detail,genderVariant:id==='m034'?byId('vampireSex').value:null
+   });
    model=costumeHandle.root;
  }else model=createMonsterModel(m,{detail});
  scene.add(model);
@@ -470,6 +479,12 @@ fetchCreatureRegistry().then(reg=>{
 }).catch(error=>{
  byId('assetStatus').textContent='外部モデルは未配信（従来モデルは利用できます）：'+error.message;
 });
+byId('vampireSex').addEventListener('change',()=>{
+  if(selected!=='m034')return;
+  selectSpecies(selected);
+  notice('吸血鬼の男女モデルを切り替えました：'+
+    (byId('vampireSex').value==='female'?'女性':'男性'));
+});
 byId('quality').addEventListener('change',()=>{
  const detail=byId('quality').value;
  if(!Object.hasOwn(MONSTER_DETAIL_LEVELS,detail))return;
@@ -537,7 +552,10 @@ window.__monsterCosplayQA=()=>({
  selected,eligible:HUMAN_MONSTER_IDS.includes(selected),
  source:costumeHandle?.source||'native-monster',
  canonicalModel:costumeHandle?.root.userData.costumeSource||null,
- profile:humanoidMonsterCostumeFor(selected)?.costume||null,
+ profile:humanoidMonsterCostumeFor(selected,{
+   genderVariant:selected==='m034'?byId('vampireSex').value:null
+ })?.costume||null,
+ genderVariant:selected==='m034'?byId('vampireSex').value:null,
  loaded:costumeHandle?.source==='canonical-character-cosplay',
 });
 window.__monsterQualityQA=()=>({
