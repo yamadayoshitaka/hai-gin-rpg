@@ -1,0 +1,62 @@
+{
+  "kind": "CLOUDFLARE_REAL_WEBP_REVIEW_CANDIDATE_NOT_APPROVED",
+  "shotKey": "c01-s02|post-victory|female|c01-s02-m10",
+  "stageId": "c01-s02",
+  "edition": "post-victory",
+  "gender": "female",
+  "panelId": "c01-s02-m10",
+  "screenplayText": "次の舞台「灰銀の本城・外郭陣地の確保」へ進む。ここで見たことを忘れてはならない。",
+  "visibleActorIds": [
+    "commander_female",
+    "vess",
+    "garan"
+  ],
+  "actualReferenceImagesAttached": [
+    {
+      "actorId": "commander_female",
+      "source": "assets/story/characters/commander/female-master.webp",
+      "originalSha256": "757587a68647aa6637111110ef5c41d8f5827be0f10a204a7f7b14fde71182bf",
+      "submittedSha256": "7f8979767877bdd8148b133d56ce7e38c8fad2fe6436c1d327efcb66bf509a61",
+      "actualBytes": 395204,
+      "pixels": [
+        384,
+        480
+      ]
+    },
+    {
+      "actorId": "vess",
+      "source": "assets/story-cinema/cast/vess.webp",
+      "originalSha256": "c4b0a92f75cad6f4b4682d4c8eb1b4bb70779271ba3673651a159bf4f9adfd1d",
+      "submittedSha256": "6c51eee922dad5f3a2f67b0809807476fb4a32da4acf3ee3a48f9fc5eaa45e3f",
+      "actualBytes": 324362,
+      "pixels": [
+        329,
+        480
+      ]
+    },
+    {
+      "actorId": "garan",
+      "source": "assets/story-cinema/cast/garan.webp",
+      "originalSha256": "aeb457957485f89244eb0b4f270b72e4bf0670341f2444ac7f43299222075a8b",
+      "submittedSha256": "30c17f9c9f97f0f7a5f66ce2e6f03a711d2ebfb697de0c6a8a84545f9c96cc3c",
+      "actualBytes": 262661,
+      "pixels": [
+        329,
+        480
+      ]
+    }
+  ],
+  "imageSha256": "92723b55e476035a630227b64828154b1db34f8a4edb209a281e21667507cc34",
+  "nativePixels": [
+    1024,
+    576
+  ],
+  "imageBytes": 154148,
+  "model": "@cf/black-forest-labs/flux-2-klein-4b",
+  "seed": 139537823,
+  "promptSha256": "278fc97d64288323b9ab43c61aaff90cb181cc1dba59b765a66b91d75941a9e4",
+  "estimatedNeurons": 120.31,
+  "visuallyApproved": false,
+  "formallyRegistered": false,
+  "gameDeployed": false
+}
