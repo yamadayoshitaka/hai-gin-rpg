@@ -70,12 +70,17 @@ function arthropodMotion(p,phase,locomotion,actionPulse,spider){
   const id='leg'+(side<0?'L':'R')+i;
   apply(p,id,'x',(locomotion?.28:0)*wave+actionPulse*(i===0?-.34:0));
   apply(p,id,'z',side*((locomotion?.22:0)*swing+actionPulse*.08));
-  // If a spider was previously individually rigged, use its real nested
-  // joint names too; do not mutate leg geometry from any human rig.
-  for(const suffix of ['Femur','Patella','Tibia','Tarsus']){
-   const child=pivot(p,id+suffix);
-   if(child)child.rotation.x=(locomotion?.2:0)*Math.sin(phase+offset+1.0);
-  }
+  // Articulated limb chain: the supporting leg extends while the
+  // airborne leg folds at the knee and re-extends before touchdown.
+  // The signs mirror across the body; avoid all joints bending together.
+  const power=locomotion?1:0;
+  apply(p,id+'Femur','x',power*.12*wave);
+  apply(p,id+'Femur','z',side*power*.08*swing);
+  apply(p,id+'Patella','z',side*(.10+power*.25*swing+actionPulse*.08));
+  apply(p,id+'Tibia','z',side*(-.10-power*.24*swing-actionPulse*.06));
+  apply(p,id+'Tibia','x',power*.09*Math.sin(phase+offset-.52));
+  apply(p,id+'Tarsus','x',power*(-.10*swing+.035*wave));
+  apply(p,id+'Tarsus','z',side*power*.045*swing);
  }
  for(const side of [-1,1]){
    const label=side<0?'L':'R';
