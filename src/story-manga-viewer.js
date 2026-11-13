@@ -28,7 +28,7 @@ export function createMangaViewer({container=document.body,storage=globalThis.lo
  root.innerHTML='<div class="manga-board">'+
   '<div class="manga-top"><div class="manga-heading"><span class="manga-kicker">HAIGIN · ILLUSTRATED CHRONICLE</span><strong class="manga-stage"></strong></div>'+
   '<button class="manga-voice" aria-label="物語の音声オン・オフ" type="button">音声 ON</button></div>'+
-  '<figure class="manga-figure"><div class="manga-page-area"><img class="manga-art" alt="物語の現在の1コマ" hidden/><div class="manga-missing" role="status">この場面の原画は未登録です。</div></div><figcaption class="manga-shot"></figcaption></figure>'+
+  '<figure class="manga-figure"><div class="manga-page-area"><img class="manga-art" alt="物語の現在の1コマ" hidden/><div class="manga-missing" role="status">この場面の原画は未登録です。</div></div><figcaption class="manga-shot"></figcaption><a class="manga-preview-link" href="./story-art-review.html#drafts" target="_blank" rel="noopener">試作原画25枚を確認</a></figure>'+
   '<div class="manga-dialogue" aria-live="polite"><div class="manga-speaker"></div><p class="manga-line"></p></div>'+
   '<div class="manga-bottom"><span class="manga-progress" aria-label="漫画のページ位置"></span>'+
   '<div class="manga-controls"><button type="button" class="manga-previous">◀ 前</button>'+
@@ -56,6 +56,7 @@ export function createMangaViewer({container=document.body,storage=globalThis.lo
  #stageMangaViewer .manga-missing{display:grid;place-items:center;text-align:center;height:100%;padding:24px;
    font:13px/1.7 system-ui;color:#d9c79e;background:#13273b}
  #stageMangaViewer .manga-shot{font:10px system-ui;text-align:right;color:#bfc8c8}
+ #stageMangaViewer .manga-preview-link{font:12px system-ui;color:#eecb97;text-decoration:underline;text-underline-offset:3px}
  #stageMangaViewer .manga-dialogue{padding:12px 14px;background:linear-gradient(120deg,#0b1629f5,#172c3de9);color:#f4e9d7;border:1px solid #a88d62;
    box-shadow:0 10px 25px #0008;min-height:95px;border-radius:4px}
  #stageMangaViewer .manga-speaker{font:bold 13px system-ui;color:#f0d7a6;border-bottom:1px solid #56647a;padding-bottom:4px}
