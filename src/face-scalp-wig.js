@@ -303,7 +303,7 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
  * @param {THREE.Mesh} head  owned sculpted female head
  * @param {{count?:number,color?:number,externalColliders?:Array}} options
  */
-export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalColliders=[],bodyCollisionResolver=null,lengthScale=1,styleId=DEFAULT_WIG_STYLE_ID,fineFringeMultiplier=1,visualFiberMultiplier=1,staticGroom=true,volumeProfile='natural'}={}){
+export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalColliders=[],bodyCollisionResolver=null,lengthScale=1,styleId=DEFAULT_WIG_STYLE_ID,fineFringeMultiplier=1,visualFiberMultiplier=1,staticGroom=true,volumeProfile='natural',normalLayeredSingleMesh=false}={}){
  if(!WIG_BASE_VOLUME_PROFILES[volumeProfile])
   throw Error('Unknown wig volume profile: '+volumeProfile);
  const style=getWigStyle(styleId);
@@ -334,10 +334,24 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  root.userData.staticGroom=!!staticGroom;
  root.userData.wigRig='surface-guided-static-layered-hair-cards';
  root.userData.v33WigVolumeProfile=volumeProfile;
- // v42: no transparent, duplicated head/helmet foundation. Hair volume
- // comes from the authored strand geometry, and the real source scalp is
- // retained strictly for anchoring/collision calculations.
- root.userData.transparentWigFoundationRemoved=true;
+ // Studio v42 removes the transparent duplicated face. Older preview
+ // consumers retain their previous fixture until fully migrated.
+ if(!normalLayeredSingleMesh){
+  const wigBaseGeometry=head.geometry.clone();
+  const wigBaseMaterial=new THREE.MeshBasicMaterial({
+   color:0xffffff,transparent:true,opacity:0,depthWrite:false,
+   side:THREE.DoubleSide
+  });
+  wigBaseMaterial.colorWrite=false;
+  const wigBase=new THREE.Mesh(wigBaseGeometry,wigBaseMaterial);
+  wigBase.name='DETACHABLE_WIG_TRANSPARENT_HEAD_BASE';
+  wigBase.userData.exactCopyOfSculptedHead=true;
+  wigBase.userData.invisibleWigFoundation=true;
+  wigBase.userData.sharesHeadLocalCoordinates=true;
+  wigBase.userData.neverCollidesWithCharacterBody=true;
+  root.add(wigBase);
+ }
+ root.userData.transparentWigFoundationRemoved=!!normalLayeredSingleMesh;
  root.userData.assetType='independent-wig';
  root.userData.hairStyleId=style.id;
  root.userData.hairStyleName=style.label;
@@ -927,7 +941,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  // this produces real thickness rather than inflating a transparent head.
  // Preserve the original per-surface materials using geometry draw groups.
  let consolidatedHair=null;
- if(staticGroom){
+ if(staticGroom&&normalLayeredSingleMesh){
   const nodes=[cap,locks,...root.children.filter(node=>
    node.name==='DETACHABLE_WIG_FINE_FIBRES')];
   const positions=[],normals=[],colors=[],indices=[],materials=[];
@@ -1008,7 +1022,9 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   staticGroom:!!staticGroom,simulationEnabled:!staticGroom,
   runtimePhysicsCallsPerFrame:staticGroom?0:1,
   constructionCollisionOnly:!!staticGroom,
-  hairCardStyle:'normal-offset-identical-strand-mesh-layers-one-render-object',
+  hairCardStyle:staticGroom&&normalLayeredSingleMesh?
+   'normal-offset-identical-strand-mesh-layers-one-render-object':
+   'four-stacked-thick-ribbon-layers-with-real-depth',
   v33ShortCutKind:style.shortCutKind||'long',
   v33WigVolumeProfile:volumeProfile,
   v33RaisedBaseMaxLiftFraction:WIG_BASE_VOLUME_PROFILES[volumeProfile].crown,
@@ -1050,8 +1066,9 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    Math.abs(p.x-center.x)<d.x*.145&&
    p.z>center.z+d.z*.045)).length,
   hairStrandWidthFraction:.0135,fullerCrownBackVolume:true,
-  transparentExactHeadWigBase:false,transparentBaseRemoved:true,
-  normalLayerCount:staticGroom?3:1,
+  transparentExactHeadWigBase:!normalLayeredSingleMesh,
+  transparentBaseRemoved:!!normalLayeredSingleMesh,
+  normalLayerCount:staticGroom&&normalLayeredSingleMesh?3:1,
   consolidatedHairMesh:staticGroom?consolidatedHair?.name:null,
   rootScalpLiftFraction:.0125,
   trueScalpRibbonVertexCollision:true,
@@ -1074,7 +1091,8 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   zoneCandidateCounts:Object.fromEntries(Object.entries(pools).map(([key,list])=>[key,list.length])),
   collisionTypes:['head','face','neck','shoulder','chest',...externalColliders.map(c=>c.name||'body')],
   usesRealBodyTriangleContacts:!!bodyCollisionResolver,
-  meshCount:staticGroom?1:2+(fiberMultiplier>1?1:0),physicsHz:staticGroom?0:20,
+  meshCount:staticGroom&&normalLayeredSingleMesh?1:3+(fiberMultiplier>1?1:0),
+  physicsHz:staticGroom?0:20,
   normalUpdateDivisor:staticGroom?0:3,
   physicsGuideCount:staticGroom?0:guideCount,
   analyticSwayOtherLocks:!staticGroom,lengthScale:clamp(lengthScale,.55,1.5),
