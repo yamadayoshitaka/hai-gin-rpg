@@ -335,6 +335,15 @@ export function createCosplayedHumanoidMonster(spec,{detail='high'}={}){
     id:'monster-costume-'+spec.id,role:profile.role,
     variant:spec.variant,assembly:contract
    });
+   // Exactly as in action-test.html: retain the logical BOM skeleton for
+   // rig validation, but remove its replacement mannequin, 10k strand hair
+   // and primitive outfit. They would otherwise pollute Box3 inspection
+   // bounds and could double-render over the canonical skinned GLB.
+   const obsolete=[];
+   rig.root.traverse(node=>{
+    if(node.isMesh||node.isLineSegments)obsolete.push(node);
+   });
+   for(const node of obsolete)node.parent?.remove(node);
    rig.root.visible=false;
    const ok=await attachTownOutfitNpc({
     host,rig,preset:contract,loader:new GLTFLoader(),THREE
