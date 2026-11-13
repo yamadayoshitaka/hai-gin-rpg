@@ -58,8 +58,20 @@ function buildSide(parts,side,headSize){
   rest:mesh.geometry.getAttribute('position').array.slice()
  });
  const a=remember(upper),b=remember(lower);
+ const decorations=[];
+ for(const [suffix,isUpper] of [
+  ['_UPPER_EYELINER',true],['_LOWER_EYELINER',false],
+  ['_UPPER_EYESHADOW',true]
+ ]){
+  const element=parts.getObjectByName(side+suffix);
+  if(element?.geometry?.getAttribute('position'))
+   decorations.push({...remember(element),isUpper,
+    rows:suffix.endsWith('EYESHADOW')?6:3});
+ }
+ const upperLash=parts.getObjectByName(side+'_UPPER_LASH_MESH');
+ const lashRestY=upperLash?.position.y??0;
  const cover=makeClosure(upper,lower,side,headSize);
- return {a,b,cover,eye,iris,pupil};
+ return {a,b,cover,eye,iris,pupil,decorations,upperLash,lashRestY};
 }
 function moveGrid({attr,rest},otherRest,openness,upper){
  const cols=28,rows=4;
@@ -72,6 +84,30 @@ function moveGrid({attr,rest},otherRest,openness,upper){
   attr.array[k+1]=rest[k+1]+delta*amount;
  }
  attr.needsUpdate=true;
+}
+function moveDecorations(side,blink){
+ const {a,b}=side;
+ const cols=28;
+ for(const decoration of side.decorations){
+  const {attr,rest,isUpper,rows}=decoration;
+  const count=Math.min(attr.count,(rows+1)*(cols+1));
+  for(let i=0;i<count;i++){
+   const col=i%(cols+1),row=Math.floor(i/(cols+1));
+   const start=col*3;
+   const gap=b.rest[start+1]-a.rest[start+1];
+   const arch=Math.pow(Math.max(0,Math.sin(Math.PI*col/cols)),.8);
+   const direction=isUpper?.89:.11;
+   const fade=rows===6?Math.max(.16,1-row/rows*.84):1;
+   attr.array[i*3+1]=rest[i*3+1]+(isUpper?gap:-gap)*blink*arch*direction*fade;
+  }
+  attr.needsUpdate=true;
+  decoration.mesh.geometry.computeBoundingSphere();
+ }
+ if(side.upperLash){
+  const center=14*3;
+  const gap=b.rest[center+1]-a.rest[center+1];
+  side.upperLash.position.y=side.lashRestY+gap*.89*blink;
+ }
 }
 function coverEye(side,blink,headSize){
  const {a,b,cover}=side;
@@ -132,6 +168,7 @@ export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=fals
   for(const side of sides){
    moveGrid(side.a,side.b.rest,blink,true);
    moveGrid(side.b,side.a.rest,blink,false);
+   moveDecorations(side,blink);
    coverEye(side,blink,size);
    // Eyeliner belongs to the eyelid and follows the moved lid,
    // iris and pupil retain their individual natural geometry.
