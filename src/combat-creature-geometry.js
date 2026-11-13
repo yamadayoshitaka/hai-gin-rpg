@@ -11,7 +11,7 @@ import {generateCanineFurGuides} from './canine-fur-guides.js?v=4.4.92';
 import {buildCanineFurRibbonGeometry} from './canine-fur-ribbons.js?v=4.4.92';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import {createFaceProfile} from './facial-feature-profiles.js?v=1';
-import {addHumanoidSummon} from './combat-humanoid-summons.js?v=4.4.79';
+import {addHumanoidSummon} from './combat-humanoid-summons.js?v=4.4.97';
 import {createRootedCreatureHornGeometry,createCreatureScuteGeometry}
   from './creature-anatomy-mesh.js';
 
