@@ -207,6 +207,7 @@ const summary={
   nativeSheet.preferredFullTenPanelSheetPixels,
  reviewSheetCompositionMode:nativeSheet.mode,
  maxScenesPerReviewSheet:maxReviewCells,
+ mobileNativeMinimumPixels:stageId==='c01-s02'?mobileMin:null,
  generatorSupportsDirectFullResolution:'UNVERIFIED',
  p0Priority:'P0_ABSOLUTE_MUST_FOLLOW',
  p0NotRenderedWithoutActualCastBytes:true,
