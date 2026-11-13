@@ -5,6 +5,8 @@ on:
     branches: [main]
     paths:
       - 'scripts/process-c01-s01-stage-batch.mjs'
+      - 'qa/story-stage2-two-review-pages.test.mjs'
+      - 'assets/story/chapter-drafts/c01/pending-art-review/**'
       - 'qa/story-stage1-complete-audit.test.mjs'
       - 'assets/story/stage-manifests/c01-s01.manifest.json'
       - 'scripts/prepare-story-stage-posters.mjs'
@@ -30,6 +32,8 @@ on:
       - 'assets/story/chapters/c01/stage2-stage3-production-queue.json'
   pull_request:
     paths:
+      - 'qa/story-stage2-two-review-pages.test.mjs'
+      - 'assets/story/chapter-drafts/c01/pending-art-review/**'
       - 'scripts/process-c01-s01-stage-batch.mjs'
       - 'qa/story-stage1-complete-audit.test.mjs'
       - 'assets/story/stage-manifests/c01-s01.manifest.json'
@@ -72,6 +76,8 @@ jobs:
         run: |
           node --check scripts/process-c01-s01-stage-batch.mjs
           node qa/story-stage1-complete-audit.test.mjs
+      - name: Verify five-frame page commits contain real distinct WebPs and remain unapproved
+        run: node qa/story-stage2-two-review-pages.test.mjs
       - name: Verify all stage 2 and 3 versions have unique assets and truthfully report missing art
         run: |
           node --check scripts/prepare-story-stage-posters.mjs
