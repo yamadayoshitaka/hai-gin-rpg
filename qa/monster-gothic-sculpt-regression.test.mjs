@@ -139,7 +139,7 @@ assert.match(costumeSource,/if\(!gothic&&costume==='mummy'\)/,
  'Do not draw old ribbon-string mummy over new linen fabric');
 assert.match(costumeSource,/if\(!gothic&&costume==='skeleton'\)/,
  'Do not render the old toy sphere skull over new anatomy');
-assert.match(costumeSource,/if\(!gothic&&profile.wings\)/,
+assert.match(costumeSource,/if\(!gothic&&!demonic&&!femaleSummon&&profile.wings\)/,
  'Do not overlay triangle wings over proper bat membranes');
 assert.match(costumeSource,/node\.material=Array\.isArray\(node\.material\)/,
  'Source hero material must be cloned before recoloring');
