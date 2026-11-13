@@ -32,10 +32,10 @@ export function applyHeroineSkinMaterial(face){
   roughnessMap:source.roughnessMap||null,aoMap:source.aoMap||null,
   vertexColors:!!source.vertexColors,
   side:source.side,transparent:source.transparent,opacity:source.opacity,
-  roughness:.70,metalness:0,clearcoat:.055,clearcoatRoughness:.75,
+  roughness:.74,metalness:0,clearcoat:.055,clearcoatRoughness:.75,
   sheen:.11,sheenRoughness:.85,sheenColor:new THREE.Color(0xc98978),
   bumpMap:source.bumpMap||(face.geometry?.getAttribute('uv')?getHeroineMicroSkinTexture():null),
-  bumpScale:source.bumpMap?source.bumpScale:.000085
+  bumpScale:source.bumpMap?source.bumpScale:.00010
  });
  material.name='heroine-natural-skin-v41';
  face.material=material;
