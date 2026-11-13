@@ -108,6 +108,14 @@ legend{font-size:12px;color:#e8d9b6;padding:0 6px}
          <option value="female">女性（貴族ヴァンパイア）</option>
        </select>
      </label>
+     <label id="demonToneControl" style="display:none">悪魔の配色
+       <select id="demonTone" aria-label="悪魔の肌・メイク・唇の色">
+         <option value="species">種族固有</option>
+         <option value="infernal">紅蓮・赤黒</option>
+         <option value="abyss">夜紫・青紫</option>
+         <option value="necrotic">灰白・呪い</option>
+       </select>
+     </label>
     </div>
     <small>制作原型は品質確認専用です。Androidでは描画負荷が高いため、標準は高品質LOD。実写系PBRは同梱素材を使用し、未整備の材質は従来表現に戻します。</small>
    </fieldset>
@@ -167,6 +175,8 @@ import {createMonsterModel,disposeMonsterSculpture,MONSTER_DETAIL_LEVELS,
 import {MONSTER_ACTIONS,startMonsterAction,animateMonsterModel} from './src/monster-animation.js?v=4.4.95';
 import {createCosplayedHumanoidMonster} from './src/monster-character-cosplay.js?v=4.5.03';
 import {humanoidMonsterCostumeFor,HUMAN_MONSTER_IDS} from './src/monster-character-cosplay-manifest.js?v=4.5.03';
+import {hasDemonCosmetics,withDemonColorTheme}
+ from './src/monster-demon-cosmetics.js?v=4.5.04';
 import {fetchCreatureRegistry,loadExternalCreature,loadPersonalGLB} from './src/creature-external-runtime.js?v=4.4.92';
 const byId=id=>document.getElementById(id);
 const isPhone=()=>matchMedia('(max-width:730px)').matches;
@@ -356,12 +366,16 @@ function selectSpecies(id){
  }
  const m=specimen(id),detail=byId('quality').value;
  byId('vampireSexControl').style.display=id==='m034'?'block':'none';
+ byId('demonToneControl').style.display=hasDemonCosmetics({id})?'block':'none';
  disposeCurrent();
  const mode=byId('assetSource').value;
- const cosplay=mode==='procedural'?humanoidMonsterCostumeFor(m):null;
+ const cosplay=mode==='procedural'?humanoidMonsterCostumeFor(m,{
+   genderVariant:id==='m034'?byId('vampireSex').value:null
+ }):null;
  if(cosplay){
    costumeHandle=createCosplayedHumanoidMonster(m,{
-     detail,genderVariant:id==='m034'?byId('vampireSex').value:null
+     detail,genderVariant:id==='m034'?byId('vampireSex').value:null,
+     profileOverride:withDemonColorTheme(cosplay,byId('demonTone').value)
    });
    model=costumeHandle.root;
  }else model=createMonsterModel(m,{detail});
@@ -546,6 +560,11 @@ fetchCreatureRegistry().then(reg=>{
 }).catch(error=>{
  byId('assetStatus').textContent='外部モデルは未配信（従来モデルは利用できます）：'+error.message;
 });
+byId('demonTone').addEventListener('change',()=>{
+  if(!hasDemonCosmetics({id:selected}))return;
+  selectSpecies(selected);
+  notice('悪魔系の肌・目元・唇・角の配色を変更しました');
+});
 byId('vampireSex').addEventListener('change',()=>{
   if(selected!=='m034')return;
   selectSpecies(selected);
@@ -623,9 +642,18 @@ window.__monsterCosplayQA=()=>({
    genderVariant:selected==='m034'?byId('vampireSex').value:null
  })?.costume||null,
  genderVariant:selected==='m034'?byId('vampireSex').value:null,
+ paletteTheme:byId('demonTone').value,
  loaded:costumeHandle?.source==='canonical-character-cosplay',
  skinHex:costumeHandle?.profile?.skin??null,
  materialIsolation:!!costumeHandle?.root.userData.costumeSource,
+});
+window.__monsterViewerLayoutQA=()=>({
+ mobile:isPhone(),
+ catalogOpen:mainPanel.classList.contains('catalogOpen'),
+ catalogCollapsed:mainPanel.classList.contains('catalogCollapsed'),
+ toolsOpen:!byId('modelTools').hidden,
+ canvasWidth:view.clientWidth,canvasHeight:view.clientHeight,
+ selected,zoomDistance:camera.position.distanceTo(controls.target),
 });
 window.__monsterQualityQA=()=>({
  id:selected,detail:byId('quality').value,
