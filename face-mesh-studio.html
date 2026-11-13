@@ -182,6 +182,7 @@ import {createPartSelectorUI} from './src/face-part-selector-ui-v32.js?v=41';
 import {defaultPartSelection,resolvePartSelection,PART_CATALOG,HAIR_COLORS} from './src/face-part-catalog-v32.js?v=41';
 import {listWigStyles,DEFAULT_WIG_STYLE_ID} from './src/face-wig-styles.js?v=41';
 import {loadHeroineFacePreset,saveHeroineFacePreset} from './src/heroine-face-preset-store.js?v=41';
+import {heroineBeautyControlsV42,HEROINE_BEAUTY_PART_SELECTION_V42} from './src/heroine-beauty-preset-v42.js?v=42';
 import {loadMaleFacePreset,saveMaleFacePreset} from './src/male-face-preset-store.js?v=42';
 import {applyHeroineSkinMaterial} from './src/heroine-skin-material.js?v=41';
 import {FEMALE_V7_DEFAULTS,MALE_REFERENCE_DEFAULT,FACE_SLIDER_RANGES,FACE_EYE_SPACING_DEFAULT,FACE_EYE_SPACING_RANGE,CONTACT_COLORS,CONTACT_COLOR_LABELS,safeContactColor,normalizeFemaleFaceControls,normalizeMaleFaceControls} from './src/face-v7-controls.js';
@@ -254,6 +255,8 @@ if(!v32PartMode)document.body.classList.add('v32-legacy');
 const v32Parts={female:defaultPartSelection(),male:defaultPartSelection()};
 const v32Makeup={female:0,male:0};
 const savedHeroinePreset=v32PartMode?loadHeroineFacePreset():null;
+if(v32PartMode&&!savedHeroinePreset&&new URLSearchParams(location.search).get('hero')==='1')
+ Object.assign(v32Parts.female,HEROINE_BEAUTY_PART_SELECTION_V42);
 const savedMalePreset=v32PartMode?loadMaleFacePreset():null;
 if(savedMalePreset?.parts)Object.assign(v32Parts.male,savedMalePreset.parts);
 if(savedHeroinePreset?.parts){
@@ -266,7 +269,9 @@ if(savedHeroinePreset?.parts){
 }
 if(v32PartMode){
  modelChanges=normalizeFemaleFaceControls(savedHeroinePreset?.controls||
-  resolvePartSelection('female',v32Parts.female,FEMALE_V7_DEFAULTS).controls);
+  (new URLSearchParams(location.search).get('hero')==='1'?
+   heroineBeautyControlsV42(resolvePartSelection('female',v32Parts.female,FEMALE_V7_DEFAULTS).controls):
+   resolvePartSelection('female',v32Parts.female,FEMALE_V7_DEFAULTS).controls));
  maleChanges=normalizeMaleFaceControls(savedMalePreset?.controls||
  resolvePartSelection('male',v32Parts.male,MALE_REFERENCE_DEFAULT).controls);
 }
