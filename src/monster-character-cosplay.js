@@ -22,9 +22,9 @@ import {classifyCosplaySurface,applyMonsterMaterialPigment}
 import {addConstructMonsterCostume,isConstructCostume}
  from './monster-construct-costume.js';
 import {addDemonicFaceCosmetics,hasDemonCosmetics}
- from './monster-demon-cosmetics.js?v=4.5.04';
+ from './monster-demon-cosmetics.js?v=4.5.05';
 import {addFemaleSummonCostume,isFemaleSummonCostume}
- from './female-summon-costumes.js?v=4.5.04';
+ from './female-summon-costumes.js?v=4.5.05';
 import {attachCanonicalCharacterGroom}
  from './monster-humanoid-hair.js?v=4.5.05';
 import {alignCostumeToCanonicalFacing}
