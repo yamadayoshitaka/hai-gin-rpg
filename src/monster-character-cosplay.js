@@ -15,6 +15,8 @@ import {startMonsterAction,animateMonsterModel} from './monster-animation.js';
 import {humanoidMonsterCostumeFor} from './monster-character-cosplay-manifest.js';
 import {addGothicMonsterSculpt,hasGothicMonsterSculpt}
  from './monster-gothic-sculpt.js';
+import {decorateMonsterPhotoMaterial,detachMonsterPhotoMaterial}
+ from './monster-photo-pbr.js';
 
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const boneName=s=>String(s??'').toLowerCase().replace(/[^a-z0-9]/g,'');
@@ -92,6 +94,15 @@ function buildMonsterCostume(THREE,model,profile,detail){
     emissive:role==='iris'?0x260907:0x000000,
     emissiveIntensity:role==='iris'?.20:0,
     side:THREE.DoubleSide,
+   });
+   // Reuse the exact bundled photographic texture cache that already serves
+   // the nonhumanoid bestiary. No new API, CDN request or per-monster textures.
+   const surfaceRole={
+    velvet:'fabric',lining:'fabric',linen:'bandage',
+    metal:'metal',edge:'metal',membrane:'leather'
+   }[role];
+   if(surfaceRole)decorateMonsterPhotoMaterial(m,{
+     family:'undead',speciesId:profile.id,role:surfaceRole,detail
    });
    materials.set(role,m);ownedMats.push(m);
   }
@@ -271,7 +282,10 @@ function buildMonsterCostume(THREE,model,profile,detail){
    ...frames.arms,...frames.forearms,...frames.legs,...frames.calves])
    frame.parent?.remove(frame);
   for(const geo of ownedGeo)geo.dispose();
-  for(const material of ownedMats)material.dispose();
+  for(const material of ownedMats){
+   detachMonsterPhotoMaterial(material);
+   material.dispose();
+  }
  };
 }
 export function createCosplayedHumanoidMonster(spec,{detail='high',genderVariant=null}={}){
