@@ -556,7 +556,8 @@ function rebuildFemale(){
   prev.face.traverse(o=>{
    if(!o.isMesh)return;
    o.geometry?.dispose();
-   o.material?.dispose();
+   for(const material of Array.isArray(o.material)?o.material:[o.material])
+    material?.dispose?.();
   });
  }
  camera.position.copy(cameraSnapshot.position);
@@ -588,7 +589,8 @@ function rebuildMale(){
    if(!o.isMesh)return;
    o.geometry?.dispose();
    // Male beard filaments share one material across their 5 groups.
-   o.material?.dispose();
+   for(const material of Array.isArray(o.material)?o.material:[o.material])
+    material?.dispose?.();
   });
  }
  camera.position.copy(cameraSnapshot.position);
