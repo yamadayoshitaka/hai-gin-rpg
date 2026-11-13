@@ -51,10 +51,6 @@
       "maximumFramesPerSheet": 5,
       "columns": 2,
       "maxRows": 3,
-      "minimumFullTenPanelSheetPixels": [
-        3072,
-        4320
-      ],
       "nativeDetailGuarantee": "Each scene must be independently rendered at native resolution; composite raster dimensions or upscaling alone are not proof",
       "gridOrder": "LEFT_TO_RIGHT_TOP_TO_BOTTOM",
       "absentLastCell": "UNUSED_NEUTRAL_CELL_NEVER_SCENE",
@@ -76,7 +72,11 @@
         4096,
         3456
       ],
-      "originalGeneratorSupports4096x3456": "UNVERIFIED_DO_NOT_ASSUME"
+      "originalGeneratorSupports4096x3456": "UNVERIFIED_DO_NOT_ASSUME",
+      "minimumFullFivePanelSheetPixels": [
+        3072,
+        2592
+      ]
     },
     "sheetPolicyAppliesToStage2ExistingVariants": true,
     "bulkNativeSheetBatches": {
@@ -108,7 +108,7 @@
       "stage2CanonicalScenes": 48,
       "stage2PlannedSheetCount": 14,
       "stage2PlusStage3CanonicalScenes": 96,
-      "stage2PlusStage3PlannedSheetCount": 28,
+      "stage2PlusStage3PlannedSheetCount": 22,
       "stage2ThroughStage4CanonicalScenes": 144,
       "firstBatchCanonicalScenes": 50,
       "secondBatchCanonicalScenes": 46,
