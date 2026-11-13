@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {MONSTER_BY_ID} from '../src/monster-catalog.js';
 const geometrySource=readFileSync(new URL('../src/combat-creature-geometry.js',import.meta.url),'utf8');
-const humanoidSource=readFileSync(new URL('../src/combat-humanoid-summons.js',import.meta.url),'utf8');
+const humanoidSource=readFileSync(new URL('../src/creature-summon-humanoid-anatomy.js',import.meta.url),'utf8');
 const bestiarySource=readFileSync(new URL('../src/monster-geometry.js',import.meta.url),'utf8');
 const rendererSource=readFileSync(new URL('../src/combat-world-object-renderer.js',import.meta.url),'utf8');
 assert.match(geometrySource,/True upper\/lower lip junction/,
