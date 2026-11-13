@@ -423,8 +423,13 @@ export function createCosplayedHumanoidMonster(spec,{
    if(disposed)return {source:'cancelled'};
    disposeCostume=buildMonsterCostume(THREE,visual,profile,detail);
    if(disposed)return {source:'cancelled'};
-   fallback.parent?.remove(fallback);
-   disposeMonsterSculpture(fallback);
+   // Female summon forms have NO procedural bestiary fallback owned by
+   // this adapter: their live battle InstancedMesh already stays visible
+   // until canonical GLB is ready. Do not dereference a null fallback.
+   if(fallback){
+     fallback.parent?.remove(fallback);
+     disposeMonsterSculpture(fallback);
+   }
    root.scale.setScalar((profile.scale??1)*(spec.size??1));
    root.userData.speciesId=spec.id;
    root.userData.surfaceFamily=spec.family;
