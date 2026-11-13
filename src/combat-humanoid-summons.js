@@ -69,30 +69,18 @@ function addFace(g,{angel,detail}){
   const skin=angel?0xe9cfc1:0xe4b9a1,shade=angel?0xc8a99d:0xb48a76;
   const hair=angel?0xc99e63:0xd7b04d,highlight=angel?0xe6ca9c:0xffdd81;
   const eyes=angel?0x667d9c:0x388a65;
-  const {sphere,curved,segment,horn,verticalProfile}=g;
-  // An adult-sized continuous cranium and jaw replaces two intersecting
-  // toy spheres. Donor faces replace this single fallback GPU part in high LOD.
-  verticalProfile('faceFallback',skin,[
-    [2.092,0,.113,.064,.083],[2.157,0,.101,.122,.136],
-    [2.243,0,.086,.153,.158],[2.345,0,.067,.190,.173],
-    [2.439,0,.054,.185,.165],[2.529,0,.045,.142,.129],
-    [2.585,0,.042,.021,.032],
-  ]);
-  curved('faceFallback',skin,[[0,2.394,.216],
-    [0,2.320,.267],[0,2.257,.272]],[.031,.037,.016]);
-  sphere('faceFallback',shade,0,2.208,.248,.052,.015,.020);
+  const {sphere,curved,segment,horn}=g;
+  // An adult proportional skull rather than oversized button eyes.
+  // A separate part allows the existing low-LOD/offline face to remain
+  // visible until the CC0 anatomical face library has loaded.
+  sphere('faceFallback',skin,0,2.34,.085,.185,.248,.17);
+  sphere('faceFallback',shade,0,2.18,.145,.145,.07,.13);
+  sphere('faceFallback',skin,0,2.29,.246,.054,.09,.055);
+  horn('faceFallback',shade,[0,2.29,.25],[0,2.19,.29],.027);
   for(const side of [-1,1]){
-    // Layer the iris and pupil UNDER a real lid margin instead of using
-    // separate button eyes. Keep the eyes species-pigmented, not neon.
-    sphere('faceFallback',0x4d3f3b,side*.083,2.368,.236,.047,.022,.018);
-    sphere('faceFallback',eyes,side*.081,2.368,.251,.023,.014,.008);
-    sphere('faceFallback',0x201c1d,side*.082,2.368,.258,.010,.011,.005);
-    curved('faceFallback',skin,[
-      [side*.034,2.389,.239],[side*.082,2.397,.244],
-      [side*.129,2.383,.220]],[.012,.015,.008]);
-    curved('faceFallback',shade,[
-      [side*.041,2.343,.238],[side*.084,2.341,.241],
-      [side*.125,2.348,.224]],[.008,.010,.005]);
+    sphere('faceFallback',0x3b302b,side*.078,2.365,.241,.048,.018,.018);
+    sphere('faceFallback',eyes,side*.078,2.369,.256,.024,.013,.007);
+    sphere('faceFallback',shade,side*.08,2.394,.258,.060,.012,.019);
     sphere('faceFallback',skin,side*.184,2.33,.05,.047,.092,.041);
     if(!angel){
       // The base of each ear is buried beneath hair, not pasted visibly to
@@ -145,21 +133,9 @@ function addClothing(g,{angel,detail}){
     [1.91,0,.03,.25,.19],[2.08,0,.045,.15,.14],
     [2.13,0,.055,.135,.125]
   ]);
-  // Skin under the donor mesh and underneath the costume collar is
-  // continuous from the chin to the clavicle; prevents a floating head and
-  // uses exactly the same pigments as each summon fallback face/hands.
-  const skin=angel?0xe9cfc1:0xe4b9a1;
-  verticalProfile('core',skin,[
-    [1.991,0,.048,.115,.108],[2.075,0,.067,.122,.116],
-    [2.166,0,.079,.112,.108],[2.245,0,.103,.078,.077],
-  ]);
-  for(const side of [-1,1]){
-    curved('core',skin,[
-      [side*.195,1.965,.131],[side*.111,2.035,.144],
-      [side*.064,2.100,.154]],[.035,.028,.016]);
-  }
-  // Raised, sculpted neckline overlaps the neck and under-chin skin,
-  // with no flat open hole between the donor face and the body.
+  // Raised, sculpted neckline hides the donor-head/body junction without
+  // scaling the head or painting an opaque sphere over the face. The collar
+  // physically overlaps the chin base and follows the tapered shoulders.
   verticalProfile('core',dark,[
     [1.94,0,.03,.235,.185],[2.035,0,.046,.20,.16],
     [2.11,0,.065,.167,.141],[2.165,0,.072,.155,.129]
@@ -207,7 +183,7 @@ function addClothing(g,{angel,detail}){
   for(const side of [-1,1]){
     const name=side<0?'armL':'armR';
     const x=side*.33;
-    sphere(name,angel?0xefebe4:0x384a37,x,1.84,.03,.132,.155,.145);
+    sphere(name,angel?0xefebe4:0x384a37,x,1.84,.03,.145,.18,.16);
     segment(name,angel?0xe5dfd8:0x5b6146,
       [x,1.81,.035],[side*.51,1.40,.19],.105,.070);
     sphere(name,angel?0xe8cfbe:0xcba88c,side*.52,1.34,.21,.074,.13,.076);
