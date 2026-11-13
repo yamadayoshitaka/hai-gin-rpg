@@ -62,7 +62,7 @@ button{padding:9px 11px}
 </style></head>
 <body>
 <header>
-<h1>顔・髪の編集 v41</h1>
+<h1>顔・髪の編集 v43</h1>
 <a class="studioNav" href="./face-body-studio.html?v=41" id="returnToCostume">衣装確認画面に戻る</a>
 <p>ライブラリに保存された実GLBの顔設定（顎先5倍・鼻穴隠し2・鼻筋2.5）を男女の実メッシュ標準に固定。口紅とチークを実メッシュの頂点に着色。上下アイライン・眉・眼球を調整し、女性用の高密度ロング（後頭部・両側頭部・襟足まで髪束生成・顔と肩への衝突対応）を追加。保存値とズームを維持します。</p>
 </header>
@@ -85,7 +85,7 @@ button{padding:9px 11px}
 <button id="clay" aria-pressed="false" disabled>灰色メッシュ</button>
 <button id="color" aria-pressed="true" disabled>カラー表示</button>
 </div></div>
-<section id="v32PartsStudio"><h2>男女独立3Dパーツ選択：各10種類</h2><div id="v32FemaleChoices"></div><div id="v32MaleChoices" hidden></div></section>
+<section id="v32PartsStudio"><h2>男女独立3Dパーツ選択：各10種類</h2><div id="v32FemaleChoices"></div><button id="heroineBeautyV43" type="button" disabled>女性主人公を美少女寄りに補正（瞳・目元・頬・唇）</button><div id="v32MaleChoices" hidden></div></section>
 <details id="faceAdjustments" open>
 <summary>女性顔の3Dパーツ調整</summary>
 <p class="slider-midpoint-note">保存した顔が中央（50%）です。右に動かすと保存時より強く調整できます。</p>
@@ -169,7 +169,7 @@ body.v32-legacy #v32PartsStudio{display:none!important}
 .v32-part-group select{display:block;width:100%;min-height:41px;margin:5px 0;padding:7px;background:#213d55;color:#fff;border:1px solid #7893a5;border-radius:8px}
 .v32-pose-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
 .v32-tip{color:#b8d5e8;font-size:12px}
-</style><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/","./src/independent-face-masters.js":"./src/independent-face-masters.js?v=41","./src/face-feature-meshes.js":"./src/face-feature-meshes.js?v=41","./src/face-v7-controls.js":"./src/face-v7-controls.js?v=41","./src/face-body-assembly.js":"./src/face-body-assembly.js?v=42"}}</script>
+</style><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/","./src/independent-face-masters.js":"./src/independent-face-masters.js?v=41","./src/face-feature-meshes.js":"./src/face-feature-meshes.js?v=43","./src/face-v7-controls.js":"./src/face-v7-controls.js?v=41","./src/face-body-assembly.js":"./src/face-body-assembly.js?v=42"}}</script>
 <script type="module">
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
@@ -177,12 +177,13 @@ import {GLTFExporter} from 'three/addons/exporters/GLTFExporter.js';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {makeIndependentFaceMaster,FACE_MASTER_SPEC} from './src/independent-face-masters.js';
 import {updateFaceFeatureAngles,applyFaceColorMode,updateRealFacePigment} from './src/face-feature-meshes.js';
-import {createScalpAnchoredWig} from './src/face-scalp-wig.js?v=42';
+import {createScalpAnchoredWig} from './src/face-scalp-wig.js?v=43';
 import {createPartSelectorUI} from './src/face-part-selector-ui-v32.js?v=41';
 import {defaultPartSelection,resolvePartSelection,PART_CATALOG,HAIR_COLORS} from './src/face-part-catalog-v32.js?v=41';
-import {listWigStyles,DEFAULT_WIG_STYLE_ID} from './src/face-wig-styles.js?v=41';
+import {listWigStyles,DEFAULT_WIG_STYLE_ID} from './src/face-wig-styles.js?v=43';
+import {resolveHeroHairSpec} from './src/hero-hair-controls-v43.js?v=43';
 import {loadHeroineFacePreset,saveHeroineFacePreset} from './src/heroine-face-preset-store.js?v=41';
-import {heroineBeautyControlsV42,HEROINE_BEAUTY_PART_SELECTION_V42} from './src/heroine-beauty-preset-v42.js?v=42';
+import {heroineBeautyControlsV43,HEROINE_BEAUTY_PART_SELECTION_V43,upgradeUneditedHeroineV42ToV43} from './src/heroine-beauty-preset-v42.js?v=43';
 import {loadMaleFacePreset,saveMaleFacePreset} from './src/male-face-preset-store.js?v=42';
 import {applyHeroineSkinMaterial} from './src/heroine-skin-material.js?v=41';
 import {FEMALE_V7_DEFAULTS,MALE_REFERENCE_DEFAULT,FACE_SLIDER_RANGES,FACE_EYE_SPACING_DEFAULT,FACE_EYE_SPACING_RANGE,CONTACT_COLORS,CONTACT_COLOR_LABELS,safeContactColor,normalizeFemaleFaceControls,normalizeMaleFaceControls} from './src/face-v7-controls.js';
@@ -256,7 +257,7 @@ const v32Parts={female:defaultPartSelection(),male:defaultPartSelection()};
 const v32Makeup={female:0,male:0};
 const savedHeroinePreset=v32PartMode?loadHeroineFacePreset():null;
 if(v32PartMode&&!savedHeroinePreset&&new URLSearchParams(location.search).get('hero')==='1')
- Object.assign(v32Parts.female,HEROINE_BEAUTY_PART_SELECTION_V42);
+ Object.assign(v32Parts.female,HEROINE_BEAUTY_PART_SELECTION_V43);
 const savedMalePreset=v32PartMode?loadMaleFacePreset():null;
 if(savedMalePreset?.parts)Object.assign(v32Parts.male,savedMalePreset.parts);
 if(savedHeroinePreset?.parts){
@@ -267,10 +268,11 @@ if(savedHeroinePreset?.parts){
  wigDensity=Math.max(300,Math.min(3200,Number(savedHeroinePreset.hairDensity)||wigDensity));
  contactColor=savedHeroinePreset.contactColor||contactColor;
 }
+const migratedBeauty=upgradeUneditedHeroineV42ToV43(savedHeroinePreset?.controls);
 if(v32PartMode){
- modelChanges=normalizeFemaleFaceControls(savedHeroinePreset?.controls||
+ modelChanges=normalizeFemaleFaceControls(migratedBeauty||savedHeroinePreset?.controls||
   (new URLSearchParams(location.search).get('hero')==='1'?
-   heroineBeautyControlsV42(resolvePartSelection('female',v32Parts.female,FEMALE_V7_DEFAULTS).controls):
+   heroineBeautyControlsV43(resolvePartSelection('female',v32Parts.female,FEMALE_V7_DEFAULTS).controls):
    resolvePartSelection('female',v32Parts.female,FEMALE_V7_DEFAULTS).controls));
  maleChanges=normalizeMaleFaceControls(savedMalePreset?.controls||
  resolvePartSelection('male',v32Parts.male,MALE_REFERENCE_DEFAULT).controls);
@@ -370,6 +372,7 @@ function selectGender(next){
  $('wig').hidden=false;
   $('v32FemaleChoices').hidden=gender!=='female';
   $('v32MaleChoices').hidden=gender!=='male';
+  $('heroineBeautyV43').hidden=gender!=='female';
  setActive(['female','male'],gender);
  $('faceAdjustments').hidden=gender!=='female';
  $('maleAdjustments').hidden=gender!=='male';
@@ -420,8 +423,8 @@ function rebuildWig(){
  try{
   const wig=createScalpAnchoredWig(models.get('female').face,{
    count:wigDensity,lengthScale:wigLength,fineFringeMultiplier:3,
-   normalLayeredSingleMesh:v32PartMode,
-   styleId:wigStyleId,
+   normalLayeredSingleMesh:v32PartMode,gender:'female',
+   styleId:resolveHeroHairSpec('female',v32Parts.female,v32PartMode?null:wigStyleId).styleId,
    volumeProfile:v32PartMode?v32Parts.female.hairVolume:'natural',
    color:hairPalette[v32PartMode?v32Parts.female.hairColor:wigColor]||hairPalette.blonde
   });
@@ -463,18 +466,19 @@ $('wigColor').addEventListener('change',()=>{
 });
 $('wigStyle').addEventListener('change',()=>{
  wigStyleId=$('wigStyle').value;
+ if(v32PartMode)v32Parts.female.hair=resolveHeroHairSpec('female',v32Parts.female,wigStyleId).hairIndex;
+ wigOn=true;
  rebuildWig();$('metrics').textContent=JSON.stringify(metrics(),null,2);
 });
 function rebuildMaleHair(){
  const previous=wigs.get('male');
  if(previous){previous.root.removeFromParent();previous.dispose();wigs.delete('male');}
  if(!v32PartMode||!ready||!wigOn||!models.get('male'))return;
- const chosen=resolvePartSelection('male',v32Parts.male,MALE_REFERENCE_DEFAULT);
- const lengths=[.60,.37,.41,.40,.55,.63,.36,.50,.60,.84,.35,.18,.12];
+ const hairSpec=resolveHeroHairSpec('male',v32Parts.male);
  const hair=createScalpAnchoredWig(models.get('male').face,{
-  count:680,lengthScale:lengths[v32Parts.male.hair],fineFringeMultiplier:2,
-  visualFiberMultiplier:1,staticGroom:true,normalLayeredSingleMesh:v32PartMode,
-  styleId:chosen.hairStyleId,
+  count:680,lengthScale:hairSpec.lengthScale,fineFringeMultiplier:2,
+  visualFiberMultiplier:1,staticGroom:true,normalLayeredSingleMesh:v32PartMode,gender:'male',
+  styleId:hairSpec.styleId,
   volumeProfile:v32Parts.male.hairVolume,
   color:hairPalette[v32Parts.male.hairColor]||hairPalette.blonde
  });
@@ -810,20 +814,57 @@ $('exportWig').addEventListener('click',async()=>{
  }catch(e){$('status').textContent='ヅラGLB出力失敗: '+String(e);}
  finally{$('exportWig').disabled=false;}
 });
+$('heroineBeautyV43').addEventListener('click',()=>{
+ if(!ready||!v32PartMode)return;
+ if(gender!=='female')selectGender('female');
+ const selected=resolvePartSelection('female',v32Parts.female,FEMALE_V7_DEFAULTS);
+ modelChanges=normalizeFemaleFaceControls(heroineBeautyControlsV43(selected.controls));
+ rebuildFemale();
+ repaint();persistHeroineFace();
+ $('status').textContent='美少女顔 v43：瞳・アイライン・まつ毛・頬を補正しました';
+ $('metrics').textContent=JSON.stringify(metrics(),null,2);
+});
 if(v32PartMode){
  for(const sex of ['female','male']){
   createPartSelectorUI($('v32'+(sex==='female'?'Female':'Male')+'Choices'),
    sex,v32Parts[sex],picked=>{
+    const previousParts=v32Parts[sex];
+    const hairKeys=['hair','hairColor','hairVolume','hairX','hairY','hairAngle'];
+    const hairChanged=hairKeys.some(key=>previousParts[key]!==picked[key]);
+    const facePartChanged=Object.keys(picked).some(key=>
+     key!=='makeup'&&!hairKeys.includes(key)&&previousParts[key]!==picked[key]);
     v32Parts[sex]=picked;
     const selected=resolvePartSelection(sex,picked,sex==='female'?FEMALE_V7_DEFAULTS:MALE_REFERENCE_DEFAULT);
     v32Makeup[sex]=picked.makeup;
     if(sex==='female'){
-     modelChanges=normalizeFemaleFaceControls(selected.controls);
+     const nextControls=normalizeFemaleFaceControls(selected.controls);
+     const faceChanged=facePartChanged&&JSON.stringify(modelChanges)!==JSON.stringify(nextControls);
+     if(facePartChanged)modelChanges=nextControls;
      wigStyleId=selected.hairStyleId;
-     if(ready){rebuildFemale();rebuildWig();}
+     $('wigStyle').value=wigStyleId;
+     if(hairChanged){
+     wigOn=true;
+     $('wig').setAttribute('aria-pressed','true');
+     $('wig').textContent='髪を隠す';
+    }
+     if(ready){
+      if(faceChanged)rebuildFemale();
+      if(hairChanged||!wigs.get('female'))rebuildWig();
+     }
     }else{
-     maleChanges=normalizeMaleFaceControls(selected.controls);
-     if(ready){rebuildMale();rebuildMaleHair();persistMaleFace();}
+     const nextControls=normalizeMaleFaceControls(selected.controls);
+     const faceChanged=facePartChanged&&JSON.stringify(maleChanges)!==JSON.stringify(nextControls);
+     if(facePartChanged)maleChanges=nextControls;
+     if(hairChanged){
+     wigOn=true;
+     $('wig').setAttribute('aria-pressed','true');
+     $('wig').textContent='髪を隠す';
+    }
+     if(ready){
+      if(faceChanged)rebuildMale();
+      if(faceChanged||hairChanged||!wigs.get('male'))rebuildMaleHair();
+      persistMaleFace();
+     }
     }
     if(ready){repaint();if(sex==='female')persistHeroineFace();}
    });
@@ -860,7 +901,7 @@ async function init(){
   if(savedHeroinePreset?.hairDensity){$('wigDensity').value=String(wigDensity);
    $('wigDensityValue').value=String(wigDensity)+'束';}
   rebuildWig();rebuildMaleHair();
-  for(const id of ['female','male','front','threeQuarter','side','back','crown','wire','parts','wig','clay','color','resetPreset','resetMalePreset','export','exportWig'])
+  for(const id of ['female','male','front','threeQuarter','side','back','crown','wire','parts','wig','clay','color','resetPreset','resetMalePreset','export','exportWig','heroineBeautyV43'])
    $(id).disabled=false;
   const query=new URLSearchParams(location.search);
   selectGender(query.get('gender')==='male'?'male':'female');

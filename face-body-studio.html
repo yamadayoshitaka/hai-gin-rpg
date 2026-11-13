@@ -35,9 +35,6 @@ label{display:block;margin:10px 0}select{width:100%}
 #heroActionButtons{max-height:250px;overflow-y:auto;overscroll-behavior:contain;padding:2px}
 body.costume-only #v32BodyPartStudio,
 body.costume-only #allFaceControls,
-body.costume-only label[for="heroHairStyle"],
-body.costume-only label[for="heroHairVolume"],
-body.costume-only label[for="heroHairDensity"],
 body.costume-only label[for="heroAction"],
 body.costume-only label[for="style"],
 body.costume-only #hairOnly,
@@ -46,7 +43,6 @@ body.costume-only #saveWig,
 body.costume-only #portrait,
 body.costume-only #crown,
 body.costume-only #back,
-body.costume-only #toggleWig,
 body.costume-only .faceStudioOnly{display:none!important}
 @media(max-width:730px){main{display:block}section{margin-bottom:12px}#bodyCanvas{height:56dvh;min-height:340px}.actionButtonGrid{grid-template-columns:repeat(4,minmax(0,1fr))}.actionButtonGrid button{padding:9px 4px;font-size:14px}}
 </style>
@@ -67,7 +63,7 @@ body.costume-only .faceStudioOnly{display:none!important}
 <button id="back" aria-pressed="false" disabled>後頭部</button>
 <button id="crown" aria-pressed="false" disabled>頭頂部</button>
 </div>
-<div class="controls"><a href="./face-mesh-studio.html?gender=female&hero=1&v=41" class="buttonLink" id="faceEditorLink">顔・髪を編集する</a><a class="buttonLink" href="./male-body-studio.html?v=42">男性主人公の画面へ</a></div>
+<div class="controls"><a href="./face-mesh-studio.html?gender=female&hero=1&v=43" class="buttonLink" id="faceEditorLink">顔・髪を編集する</a><a class="buttonLink" href="./male-body-studio.html?v=42">男性主人公の画面へ</a></div>
 <div id="heroActionButtons" class="actionButtonGrid" role="group" aria-label="実戦闘アクションを再生"></div>
 <p id="actionStatus" role="status">アクションを選んで再生してください。</p>
 <div class="controls">
@@ -117,7 +113,7 @@ alt="第1章女性主人公（暫定人物マスターの登録原画）">
 <label for="style">固有のヅラ（別アセット）
 <select id="style" disabled></select></label>
 <p class="note">v31：目のサイズは縦横から自動決定。目の前後位置と分離し、カラコンは17色＋自由色に対応。真円の黒目・瞳孔を維持。髪は実顔面と女性胴体の三角形表面との接触を判定し、肩・胸の簡易判定も併用します。</p>
-<a href="./face-mesh-studio.html?gender=female&hero=1&v=41" class="buttonLink" id="faceEditorSideLink">顔・髪の編集画面へ</a>
+<a href="./face-mesh-studio.html?gender=female&hero=1&v=43" class="buttonLink" id="faceEditorSideLink">顔・髪の編集画面へ</a>
 <details><summary>実メッシュ・接触検査</summary><pre id="metrics"></pre></details>
 </section>
 </main><style>
@@ -130,7 +126,7 @@ body.v32-legacy #v32BodyPartStudio{display:none!important}
 .v32-part-group select,#v32HairDensity{display:block;width:100%;min-height:41px;margin:5px 0;padding:7px;background:#213d55;color:#fff;border:1px solid #7893a5;border-radius:8px}
 .v32-pose-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
 .v32-tip{color:#b8d5e8;font-size:12px}
-</style><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/","./src/independent-face-masters.js":"./src/independent-face-masters.js?v=41","./src/face-feature-meshes.js":"./src/face-feature-meshes.js?v=41","./src/face-v7-controls.js":"./src/face-v7-controls.js?v=41","./src/face-body-assembly.js":"./src/face-body-assembly.js?v=42"}}</script>
+</style><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/","./src/independent-face-masters.js":"./src/independent-face-masters.js?v=41","./src/face-feature-meshes.js":"./src/face-feature-meshes.js?v=43","./src/face-v7-controls.js":"./src/face-v7-controls.js?v=41","./src/face-body-assembly.js":"./src/face-body-assembly.js?v=42"}}</script>
 <script type="module">
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
@@ -139,15 +135,16 @@ import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {makeIndependentFaceMaster} from './src/independent-face-masters.js';
 import {FEMALE_V7_DEFAULTS,FACE_EYE_SPACING_DEFAULT,FACE_EYE_SPACING_RANGE,FACE_SLIDER_RANGES,CONTACT_COLORS,CONTACT_COLOR_LABELS,safeContactColor,normalizeFemaleFaceControls} from './src/face-v7-controls.js';
 import {applyFaceColorMode} from './src/face-feature-meshes.js';
-import {createScalpAnchoredWig} from './src/face-scalp-wig.js?v=42';
+import {createScalpAnchoredWig} from './src/face-scalp-wig.js?v=43';
 import {createPartSelectorUI} from './src/face-part-selector-ui-v32.js?v=41';
 import {defaultPartSelection,resolvePartSelection,PART_CATALOG} from './src/face-part-catalog-v32.js?v=41';
 import {attachIndependentHeadToBody,removeHeadBustBelowNeck,createSealedNeckBridge} from './src/face-body-assembly.js';
-import {listWigStyles,DEFAULT_WIG_STYLE_ID,WIG_BASE_VOLUME_PROFILES} from './src/face-wig-styles.js?v=41';
+import {listWigStyles,DEFAULT_WIG_STYLE_ID,WIG_BASE_VOLUME_PROFILES} from './src/face-wig-styles.js?v=43';
+import {resolveHeroHairSpec} from './src/hero-hair-controls-v43.js?v=43';
 import {HERO_JOBS,HERO_ACTIONS,createHeroineStudioWardrobe} from './src/heroine-studio-wardrobe.js?v=41';
 import {REAL_BATTLE_WARDROBE,createRealBattleOutfitStudio} from './src/heroine-battle-costume-bridge.js?v=42';
-import {loadHeroineFacePreset} from './src/heroine-face-preset-store.js?v=41';
-import {heroineBeautyControlsV42,HEROINE_BEAUTY_PART_SELECTION_V42} from './src/heroine-beauty-preset-v42.js?v=42';
+import {loadHeroineFacePreset,saveHeroineFacePreset} from './src/heroine-face-preset-store.js?v=43';
+import {heroineBeautyControlsV43,HEROINE_BEAUTY_PART_SELECTION_V43,upgradeUneditedHeroineV42ToV43} from './src/heroine-beauty-preset-v42.js?v=43';
 import {FEMALE_COMMANDER_ART_PALETTE,CHAPTER_ONE_ART_BY_KEY} from './src/chapter-one-character-art-references.js';
 
 const $=id=>document.getElementById(id);
@@ -183,14 +180,15 @@ const v32PartMode=new URLSearchParams(location.search).get('qa')!=='legacy';
 if(!v32PartMode)document.body.classList.add('v32-legacy');
 else document.body.classList.add('costume-only');
 const savedHeroinePreset=v32PartMode?loadHeroineFacePreset():null;
-let v32BodyPart={...defaultPartSelection(),...HEROINE_BEAUTY_PART_SELECTION_V42,...(savedHeroinePreset?.parts||{})};
+let v32BodyPart={...defaultPartSelection(),...HEROINE_BEAUTY_PART_SELECTION_V43,...(savedHeroinePreset?.parts||{})};
+const migratedBeauty=upgradeUneditedHeroineV42ToV43(savedHeroinePreset?.controls);
 if(v32PartMode)Object.assign(faceControls,
- normalizeFemaleFaceControls(savedHeroinePreset?.controls||
-  heroineBeautyControlsV42(resolvePartSelection('female',v32BodyPart,FEMALE_V7_DEFAULTS).controls)));
+ normalizeFemaleFaceControls(migratedBeauty||savedHeroinePreset?.controls||
+  heroineBeautyControlsV43(resolvePartSelection('female',v32BodyPart,FEMALE_V7_DEFAULTS).controls)));
 let view='front',zoomMode='full',wigVisible=true,outfitVisible=true;
 let wigBaseVisible=false,hairOnly=false;
 let contactColor=savedHeroinePreset?.contactColor||palette.iris;
-const counter={wigBuilds:0,glbExports:0};
+const counter={wigBuilds:0,glbExports:0,hairStyleChanges:0};
 const selectedStudio={jobId:'swordsman',outfitId:'job',actionId:'idle',nativeCommand:null};
 let battleRequest=0;
 const tellBattleStatus=message=>{
@@ -247,7 +245,7 @@ function renderNativeActionButtons(){
  $('actionStatus').textContent='職業別の登録済みモーション '+actions.length+'種類';
 }
 renderNativeActionButtons();
-fillSelect('heroHairStyle',listWigStyles());
+fillSelect('heroHairStyle',PART_CATALOG.female.hair.map(item=>({id:item.values.styleId,label:item.label})));
 fillSelect('heroHairVolume',Object.entries(WIG_BASE_VOLUME_PROFILES).map(
  ([id,profile])=>({id,label:profile.label})));
 $('heroHairStyle').value=savedHeroinePreset?.hairStyleId||
@@ -281,6 +279,7 @@ function metrics(){
   wig:wig?.getReport()||null,
   wigAssetType:wig?.root?.userData.assetType,
   styleId:wig?.root?.userData.hairStyleId,
+  selectedHairStyle:$('heroHairStyle').value,hairStyleChanges:counter.hairStyleChanges,
   roundPupilAspectRatio:pupilShape,
   sourceHeadUnchanged:true,sourceBodyUnchanged:true,
   editableFaceControls:{...faceControls},
@@ -352,9 +351,11 @@ function fitCamera(){
 }
 function rebuildWig(){
  if(!model||!bodyAttachment)return;
+ const hairSpec=resolveHeroHairSpec('female',v32BodyPart,$('style').value);
  if(wig){wig.root.removeFromParent();wig.dispose();wig=null;}
  wig=createScalpAnchoredWig(uncutScalpSource||model.face,{
-  count:2000,lengthScale:1.0,styleId:$('style').value,
+  count:v32PartMode?1400:2000,lengthScale:hairSpec.lengthScale,styleId:hairSpec.styleId,
+  gender:'female',
   normalLayeredSingleMesh:v32PartMode,
   fineFringeMultiplier:3,visualFiberMultiplier:Number($('wigDensity').value),
   staticGroom:true,
@@ -543,6 +544,12 @@ if(v32PartMode){
   if(ready)rebuildWig();
  });
 }
+function persistStudioHair(){
+ if(!v32PartMode)return;
+ saveHeroineFacePreset({parts:{...v32BodyPart},controls:{...faceControls},
+  hairStyleId:$('style').value,hairColor:v32BodyPart.hairColor,
+  hairDensity:Number($('wigDensity').value),makeupType:v32BodyPart.makeup,contactColor});
+}
 $('heroHairStyle').addEventListener('change',()=>{
  $('style').value=$('heroHairStyle').value;
  const index=PART_CATALOG.female.hair.findIndex(p=>
@@ -551,17 +558,21 @@ $('heroHairStyle').addEventListener('change',()=>{
   v32BodyPart={...v32BodyPart,hair:index};
   if(v32PartMode)mountPartPicker();
  }
- if(ready)rebuildWig();
+ if(ready){rebuildWig();counter.hairStyleChanges++;}
+ persistStudioHair();
+ $('status').textContent='髪型：'+$('heroHairStyle').selectedOptions[0]?.textContent+'（3D更新済み）';
 });
 $('heroHairVolume').addEventListener('change',()=>{
  v32BodyPart={...v32BodyPart,hairVolume:$('heroHairVolume').value};
  if(v32PartMode)mountPartPicker();
  if(ready)rebuildWig();
+ persistStudioHair();
 });
 $('heroHairDensity').addEventListener('change',()=>{
  $('v32HairDensity').value=$('heroHairDensity').value;
  $('wigDensity').value=$('heroHairDensity').value;
  if(ready)rebuildWig();
+ persistStudioHair();
 });
 $('heroJob').addEventListener('change',()=>{
  selectedStudio.jobId=$('heroJob').value;
