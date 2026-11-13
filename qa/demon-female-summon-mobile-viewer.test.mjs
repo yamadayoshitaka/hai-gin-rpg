@@ -78,6 +78,7 @@ for(const factory of [createFemaleSummonFeather,createFemaleSummonLeaf]){
 }
 const fixture=(detail)=>{
  const frames={head:new THREE.Group(),chest:new THREE.Group(),
+  pelvis:new THREE.Group(),
   arms:[new THREE.Group(),new THREE.Group()],
   forearms:[new THREE.Group(),new THREE.Group()],
   legs:[new THREE.Group(),new THREE.Group()],
@@ -110,7 +111,10 @@ for(const id of specs){
  for(const n of hi.owned){
   check(n.geometry,id+'/'+n.name);
   assert.ok(n.parent===hi.frames.head||n.parent===hi.frames.chest||
-    hi.frames.forearms.includes(n.parent),'Cosmetic not attached to an animated parent');
+    n.parent===hi.frames.pelvis||
+    hi.frames.arms.includes(n.parent)||
+    hi.frames.forearms.includes(n.parent),
+    'Cosmetic not attached to a head, torso, hip or limb bone');
   n.geometry.dispose();n.material.dispose();
  }
 }

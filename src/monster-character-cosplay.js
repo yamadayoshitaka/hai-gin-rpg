@@ -22,9 +22,13 @@ import {classifyCosplaySurface,applyMonsterMaterialPigment}
 import {addConstructMonsterCostume,isConstructCostume}
  from './monster-construct-costume.js';
 import {addDemonicFaceCosmetics,hasDemonCosmetics}
- from './monster-demon-cosmetics.js?v=4.5.04';
+ from './monster-demon-cosmetics.js?v=4.5.05';
 import {addFemaleSummonCostume,isFemaleSummonCostume}
- from './female-summon-costumes.js?v=4.5.04';
+ from './female-summon-costumes.js?v=4.5.05';
+import {attachCanonicalCharacterGroom}
+ from './monster-humanoid-hair.js?v=4.5.05';
+import {alignCostumeToCanonicalFacing}
+ from './monster-anatomical-frame.js?v=4.5.05';
 
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const boneName=s=>String(s??'').toLowerCase().replace(/[^a-z0-9]/g,'');
@@ -61,6 +65,7 @@ function locateBones(model){
  return {
   head:find('Head','head_01'),neck:find('neck_01','neck'),
   spine:find('spine_02','spine_01','spine','chest','hips'),
+  pelvis:find('hips','pelvis','root'),
   arms:[find('upperarm_l','leftarm'),find('upperarm_r','rightarm')],
   forearms:[find('lowerarm_l','leftforearm'),find('lowerarm_r','rightforearm')],
   legs:[find('thigh_l','leftupleg'),find('thigh_r','rightupleg')],
@@ -75,6 +80,7 @@ function buildMonsterCostume(THREE,model,profile,detail){
   head:createFrame(joints.head,model),
   neck:createFrame(joints.neck??joints.head,model),
   chest:createFrame(joints.spine,model),
+  pelvis:createFrame(joints.pelvis??joints.spine,model),
   arms:joints.arms.map(b=>createFrame(b,model)),
   forearms:joints.forearms.map((b,i)=>createFrame(b??joints.arms[i],model)),
   legs:joints.legs.map(b=>createFrame(b,model)),
@@ -95,7 +101,11 @@ function buildMonsterCostume(THREE,model,profile,detail){
   rune:profile.accent??0x922c52,
   leaf:profile.leaf??0x67854b,
   feather:profile.feather??0xe3dec9,
-  crystal:profile.crystal??0x90d3dd
+  crystal:profile.crystal??0x90d3dd,
+  hair:profile.hairColor??(profile.id==='seraph_guardian'?0xd7bd7c:
+   profile.id==='forest_archer'?0xb4a77a:
+   profile.id==='dragon_lord'?0x583a49:
+   profile.sex==='female'?0x453243:0x302929)
  };
  const materials=new Map();
  const mat=(role)=>{
@@ -124,11 +134,16 @@ function buildMonsterCostume(THREE,model,profile,detail){
   }
   return materials.get(role);
  };
- const attach=(frame,geometry,role,name,position=[0,0,0],rotation=[0,0,0])=>{
+ const attach=(frame,geometry,role,name,
+   position=[0,0,0],rotation=[0,0,0],{groom=false}={})=>{
   const mesh=new THREE.Mesh(geometry,mat(role));
   mesh.name='monster-costume-'+name;
   mesh.position.set(...position);mesh.rotation.set(...rotation);
   mesh.castShadow=true;mesh.receiveShadow=true;mesh.userData.monsterCosplay=true;
+  // Facial ornaments are authored for -Z, whereas the canonical actor's
+  // FRONT is +Z. Flip only costume coordinates; head-fitted hair stays in
+  // exact source-skull coordinates so no wig/scalp misalignment can occur.
+  alignCostumeToCanonicalFacing(mesh,{groom});
   frame.add(mesh);ownedGeo.push(geometry);return mesh;
  };
  const tube=(frame,role,name,points,radius=.012)=>{
@@ -179,6 +194,13 @@ function buildMonsterCostume(THREE,model,profile,detail){
  });
  // The canonical actor already has garments. Overlays only cover species
  // identity (e.g. mummy wraps) and fitted folds; no replacement mannequin.
+ // attach a single continuous head-grown scalp and long, tapered hair:
+ // source Quaternius hair is intentionally hidden by canonical actor loader.
+ const groom=attachCanonicalCharacterGroom({
+  THREE,model,frames,headBone:joints.head,profile,detail,
+  attach:(frame,g,role,name,p,r)=>
+   attach(frame,g,role,name,p,r,{groom:true})
+ });
  const costume=profile.costume;
  const gothic=hasGothicMonsterSculpt(costume);
  const construct=isConstructCostume(profile);
@@ -281,8 +303,10 @@ function buildMonsterCostume(THREE,model,profile,detail){
   // Wing roots are rigidly anchored to the canonical upper torso;
   // skinned shoulders retain their original motion and proportions.
   for(const side of [-1,1]){
-   const pts=[[side*.15,.20,.16],[side*.43,.46,.42],
-    [side*.95,.55,.64],[side*1.25,.31,.75]];
+   // Mirrored by alignCostumeToCanonicalFacing: +Z authoring back becomes
+   // -Z behind the +Z-facing actor, not over their chest.
+   const pts=[[side*.15,.20,.22],[side*.43,.46,.43],
+    [side*.95,.55,.67],[side*1.25,.31,.79]];
    tube(frames.chest,'metal','wing-spar-'+side,pts,.056);
    const g=new THREE.BufferGeometry();
    const vertices=[...pts[0],...pts[1],...pts[2],
@@ -306,6 +330,8 @@ function buildMonsterCostume(THREE,model,profile,detail){
   skinColor:profile.skin,skinMaterialIsolation:true,
   demonCosmeticsEdition:demonic?'horns-makeup-runes-v1':null,
   femaleSummonCostumeEdition:femaleSummon?'female-summon-v1':null,
+  crownCovered:!!groom?.crown,hairStrands:!!groom?.locks,
+  hairSurfaceSamples:groom?.scalp.samples??0,
   jointAnchored:true,independentHeroMaterials:true,
  };
  return ()=>{
