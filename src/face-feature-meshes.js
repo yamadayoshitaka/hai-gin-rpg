@@ -456,7 +456,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
  const eyeApertureRatio=female?.50:.34;
  // A low, lid-seated corneal dome: the former 0.58R projection looked like
  // detached snail eyes in the mobile side view. Preserve slight curvature.
- const anteriorGlobeRatio=female?.105:.130;
+ const anteriorGlobeRatio=female?(settings.irisDiameter>=1.30?.105:.120):.130;
  const eyeAnteriorClearances=[];
  const irisUpperLidRecessRatios=[];
  const originalIrisAngle=.585;
@@ -588,12 +588,12 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
    // blue horizontal folds / stripes. A genuine round iris must fit the
    // actual opening instead, and no vertex may be clipped into a flat row.
    const isIris=label==='CURVED_IRIS';
-   const irisDisplayScale=isIris?(female?.94:.67):.82;
+   const irisDisplayScale=isIris?(female?(settings.irisDiameter>=1.30?.94:.88):.67):.82;
    const requested=eyeRadius*irisDisplayScale*Math.sin(angularRadius);
    const opening=eyeRadius*eyeApertureRatio*eyeHeight;
    // Keep a real circle and a thin white sclera ring; never clip the
    // actual iris geometry into an ugly horizontal stripe.
-   const physicalRadius=Math.min(requested,opening*(isIris?(female?.962:.90):.73));
+   const physicalRadius=Math.min(requested,opening*(isIris?(female?(settings.irisDiameter>=1.30?.962:.94):.90):.73));
    // The pupil and colored iris share one gentle nasal gaze shift, not
    // independent offsets that could create strabismus in oblique views.
    const gazeX=x-side*eyeRadius*.055*eyeWidth;
