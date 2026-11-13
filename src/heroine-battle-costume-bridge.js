@@ -181,6 +181,7 @@ export function alignStudioHeadToSkinnedTorso({
  const headWorldBounds=faceSource.boundingBox.clone()
   .applyMatrix4(faceMesh.matrixWorld);
  const beforeMinY=headWorldBounds.min.y;
+ const anatomicalHeadHeight=headWorldBounds.getSize(new THREE.Vector3()).y;
  let torsoTopY=-Infinity;
  for(const mesh of bodies){
   mesh.geometry.computeBoundingBox();
@@ -189,22 +190,33 @@ export function alignStudioHeadToSkinnedTorso({
  }
  if(!Number.isFinite(torsoTopY)||!Number.isFinite(beforeMinY))
   return {applied:false,reason:'nonfinite-head-torso-geometry'};
- // The visible head begins just above the real neck seam. A small positive
- // clearance avoids the underlying skin re-covering the lips during idle.
- const requiredLift=Math.max(0,torsoTopY+clearance-beforeMinY);
- const lift=Math.min(maxLift,requiredLift);
- if(lift>1e-5){
+ // The v53/v54 +8mm rule placed the *uncropped portrait bust* ABOVE the
+ // top of the actual torso. Cropping that bust then exposed a long cylinder
+ // between a floating chin and the armor. The original untrimmed face has a
+ // small lower bust skirt, so its lowest vertex should sit INSIDE the torso
+ // neckline by a bounded anatomical inset. The clipped jaw then ends just
+ // above the shirt collar, without sinking the mouth into the cuirass.
+ const anatomicalInset=THREE.MathUtils.clamp(anatomicalHeadHeight*.10,.012,.028);
+ const targetOriginalFaceBottomY=torsoTopY-anatomicalInset;
+ const requestedCorrectionY=targetOriginalFaceBottomY-beforeMinY;
+ const correctionY=THREE.MathUtils.clamp(requestedCorrectionY,-.20,maxLift);
+ if(Math.abs(correctionY)>1e-5){
   const headOriginWorld=faceRoot.getWorldPosition(new THREE.Vector3());
   const desiredLocal=faceRoot.parent.worldToLocal(
-   headOriginWorld.add(new THREE.Vector3(0,lift,0)));
+   headOriginWorld.add(new THREE.Vector3(0,correctionY,0)));
   faceRoot.position.copy(desiredLocal);
   faceRoot.updateWorldMatrix(true,true);
  }
- const afterBounds=faceMesh.geometry.boundingBox.clone()
+ // Always remeasure the immutable SOURCE face; the runtime visibly crops
+ // the lower bust, and using its smaller box on subsequent frames would
+ // feed back into another unwanted head lift.
+ const afterBounds=faceSource.boundingBox.clone()
   .applyMatrix4(faceMesh.matrixWorld);
  return {applied:true,torsoMeshes:bodies.length,
   faceBottomBeforeY:beforeMinY,faceBottomAfterY:afterBounds.min.y,
-  torsoNeckTopY:torsoTopY,requiredLift,appliedLift:lift,
+  torsoNeckTopY:torsoTopY,requiredLift:Math.max(0,requestedCorrectionY),
+  appliedLift:Math.max(0,correctionY),appliedLowering:Math.max(0,-correctionY),
+  correctionY,targetOriginalFaceBottomY,anatomicalInset,
   gapMeters:afterBounds.min.y-torsoTopY,
   headAndHairMovedTogether:true,originalMeshesPreserved:true,
   previewOnly:true,nonAccumulative:true};
@@ -262,8 +274,8 @@ export function fitStudioNeckContinuity({faceRoot,faceMesh,wardrobeRoot}={}){
  }
  // Crop only the lowest 10-12%: the portrait's broad, horizontal shoulder
  // pedestal is at the very bottom; the jaw, lips and ears must survive.
- const cutY=Math.max(originalFaceBounds.min.y+headHeight*.115,torsoTop+.016);
- const safeCutY=Math.min(cutY,originalFaceBounds.min.y+headHeight*.17);
+ const cutY=Math.max(originalFaceBounds.min.y+headHeight*.115,torsoTop+.006);
+ const safeCutY=Math.min(cutY,originalFaceBounds.min.y+headHeight*.16);
  faceMesh.geometry=source;
  const cut=clipMeshGeometryAtWorldNeck(faceMesh,safeCutY,{keepBelow:false});
  if(cut.keptTriangles<100||cut.removedTriangles<3){
@@ -278,7 +290,10 @@ export function fitStudioNeckContinuity({faceRoot,faceMesh,wardrobeRoot}={}){
   oldBridge.geometry.dispose();
   oldBridge.material.dispose();
  }
- const bottomY=torsoTop-.027,topY=safeCutY+.013;
+ // The connector is a SHORT under-chin transition, not a visible pipe.
+ // Overlap its lower ring beneath the clothing; do not extend 27mm below
+ // the collar and 13mm above the cropped head as v54 did.
+ const bottomY=torsoTop-.015,topY=safeCutY+.008;
  if(topY<=bottomY+.008)return {applied:false,reason:'neck-height-invalid'};
  const cx=(originalFaceBounds.min.x+originalFaceBounds.max.x)*.5;
  const cz=(originalFaceBounds.min.z+originalFaceBounds.max.z)*.5-.011;
@@ -294,7 +309,7 @@ export function fitStudioNeckContinuity({faceRoot,faceMesh,wardrobeRoot}={}){
  for(let r=0;r<rings;r++){
   const t=r/(rings-1);
   const y=bottomY+(topY-bottomY)*t;
-  const widen=1+.075*(1-t)-.06*Math.sin(Math.PI*t);
+  const widen=1.18-.25*t-.045*Math.sin(Math.PI*t);
   const xCenter=THREE.MathUtils.lerp(torsoX,cx,t);
   const zCenter=THREE.MathUtils.lerp(torsoZ-.015,cz,t);
   const skin=bottomSkin.clone().lerp(topSkin,t);
@@ -348,7 +363,9 @@ export function fitStudioNeckContinuity({faceRoot,faceMesh,wardrobeRoot}={}){
   bustTrianglesRemoved:cut.removedTriangles,
   trimmedSculptBottomY:safeCutY,
   actualTorsoTopY:torsoTop,connectorBottomY:bottomY,connectorTopY:topY,
-  segmentCount:count,neckHeight:topY-bottomY,
+  segmentCount:count,neckHeight:topY-bottomY,headHeight,
+  neckToHeadRatio:(topY-bottomY)/headHeight,
+  collarOverlapMeters:torsoTop-bottomY,
   skullAndHairUnaffected:true,previewOnly:true};
 }
 

@@ -10,6 +10,9 @@ import {enhanceStudioBodyMaterials,syncStudioBodyOutfitVisibility,
  alignStudioHeadToSkinnedTorso,fitStudioNeckContinuity}
  from '../src/heroine-battle-costume-bridge.js';
 import {applyHeroineSkinMaterial} from '../src/heroine-skin-material.js';
+import {femaleInnerFeatureDelta} from '../src/independent-face-masters.js';
+import {FEMALE_V7_DEFAULTS,normalizeMaleFaceControls} from '../src/face-v7-controls.js';
+import {PART_CATALOG} from '../src/face-part-catalog-v32.js';
 
 test('normal human build stays standard-width but has slimmer skinned legs and softer cheeks',()=>{
  assert.equal(BODY_PROFILES.normal.width,1);
@@ -186,9 +189,10 @@ test('real skinned torso neckline, not armor, sets whole head height without sta
  assert.equal(first.applied,true);
  assert.equal(first.torsoMeshes,1);
  assert.ok(first.appliedLift>.05&&first.appliedLift<.28);
- assert.ok(first.faceBottomAfterY>=first.torsoNeckTopY+.007);
+ assert.ok(first.gapMeters<0,'the uncropped source skirt should be slightly inside the neckline');
+ assert.ok(Math.abs(first.gapMeters+first.anatomicalInset)<1e-5);
  const second=alignStudioHeadToSkinnedTorso({faceRoot,faceMesh:face,wardrobeRoot:wardrobe});
- assert.ok(second.appliedLift<1e-5,'fitting twice cannot accumulate head lift');
+ assert.ok(Math.abs(second.correctionY)<1e-5,'fitting twice cannot accumulate head movement');
  assert.ok(Math.abs(second.faceBottomAfterY-first.faceBottomAfterY)<1e-5);
  assert.deepEqual(face.geometry.getAttribute('position').array,sourcePosition,
   'head geometry remains original while whole root moves');
@@ -240,7 +244,11 @@ test('v54 neck continuity removes the flat head bust and bridges the true torso'
  assert.equal(result.legacyNeckPartsHidden,3);
  assert.ok(obsolete.every(mesh=>!mesh.visible),
   'obsolete white horizontal neck panels must not render');
- assert.ok(result.neckHeight>.025&&result.neckHeight<.18);
+ assert.ok(result.neckHeight>.015&&result.neckHeight<.052,
+  'the neckline connection must be short, not a 7-9cm neck column');
+ assert.ok(result.neckToHeadRatio<.22,
+  'neck should occupy less than 22% of anatomical head height');
+ assert.ok(result.collarOverlapMeters>=.012&&result.collarOverlapMeters<=.02);
  assert.ok(result.connectorBottomY<result.actualTorsoTopY);
  assert.ok(result.connectorTopY>result.trimmedSculptBottomY);
  assert.notEqual(face.geometry,source);
@@ -258,8 +266,8 @@ test('v54 neck continuity removes the flat head bust and bridges the true torso'
  assert.deepEqual(source.getAttribute('position').array,original);
  const fittedAgain=alignStudioHeadToSkinnedTorso({
   faceRoot:headRoot,faceMesh:face,wardrobeRoot:outfit});
- assert.ok(fittedAgain.appliedLift<.0001,
-  'cropping the portrait must not cause feedback and raise the head again');
+ assert.ok(Math.abs(fittedAgain.correctionY)<.0001,
+  'cropping the portrait must not cause feedback or accumulate head movement');
  connector.geometry.dispose();connector.material.dispose();
  for(const piece of obsolete){piece.geometry.dispose();piece.material.dispose()}
  source.dispose();face.geometry.dispose();face.material.dispose();
@@ -276,4 +284,76 @@ test('v54 connector refuses to add artificial neck if actual torso is absent',()
  assert.equal(r.reason,'torso-missing');
  assert.equal(root.children.length,1);
  face.geometry.dispose();face.material.dispose();
+});
+
+test('v55 high head is lowered as a whole and cannot regrow a giraffe neck',()=>{
+ const actor=new THREE.Group(),headRoot=new THREE.Group(),outfit=new THREE.Group();
+ actor.add(headRoot,outfit);
+ const headMesh=new THREE.Mesh(new THREE.BoxGeometry(.16,.20,.12),
+  new THREE.MeshStandardMaterial());
+ headMesh.position.y=1.35;headRoot.add(headMesh);
+ const hair=new THREE.Mesh(new THREE.SphereGeometry(.13),new THREE.MeshStandardMaterial());
+ hair.position.set(0,1.47,0);headRoot.add(hair);
+ const torso=new THREE.SkinnedMesh(new THREE.BoxGeometry(.32,.5,.2),
+  new THREE.MeshStandardMaterial());
+ torso.name='Female_Ranger_Body';torso.position.y=.88;outfit.add(torso);
+ actor.updateMatrixWorld(true);
+ const hairBefore=hair.getWorldPosition(new THREE.Vector3()).y;
+ const result=alignStudioHeadToSkinnedTorso({
+  faceRoot:headRoot,faceMesh:headMesh,wardrobeRoot:outfit});
+ assert.equal(result.applied,true);
+ assert.ok(result.appliedLowering>.01,'a high head must go DOWN instead of remaining airborne');
+ assert.equal(result.appliedLift,0);
+ assert.ok(Math.abs(result.gapMeters+result.anatomicalInset)<.001);
+ const hairAfter=hair.getWorldPosition(new THREE.Vector3()).y;
+ assert.ok(Math.abs((hairAfter-hairBefore)-result.correctionY)<1e-5,
+  'hair, eyelashes and face must move together with the head root');
+ const again=alignStudioHeadToSkinnedTorso({
+  faceRoot:headRoot,faceMesh:headMesh,wardrobeRoot:outfit});
+ assert.ok(Math.abs(again.correctionY)<1e-5);
+ headMesh.geometry.dispose();headMesh.material.dispose();
+ hair.geometry.dispose();hair.material.dispose();
+ torso.geometry.dispose();torso.material.dispose();
+});
+
+test('v55 anatomical neutral nose tips face gently down, not upward, in both sexes',()=>{
+ const morph=(xn,yn,controls)=>femaleInnerFeatureDelta({
+  xn,yn,zn:.98,offsetX:xn*.08,depth:.30,height:.40,controls
+ });
+ const female=morph(0,.566,FEMALE_V7_DEFAULTS);
+ const male=morph(0,.566,normalizeMaleFaceControls({}));
+ assert.ok(female.dy<-.003,'neutral female nose tip must slope downward');
+ assert.ok(male.dy<-.003,'neutral male nose tip must slope downward');
+ assert.ok(Math.abs(male.dy-female.dy)<1e-12,
+  'male and female base geometry must share the corrected neutral nasal slope');
+ const nostril=morph(.18,.53,FEMALE_V7_DEFAULTS);
+ assert.ok(nostril.dy<0,'alar rim should protect nostril from front view');
+ const side=morph(.40,.566,FEMALE_V7_DEFAULTS);
+ assert.deepEqual(side,{dx:0,dy:0,dz:0,noseSupport:0,mouthSupport:0},
+  'nose correction must not change cheeks, jaw or side-of-face geometry');
+ const behind=femaleInnerFeatureDelta({
+  xn:0,yn:.566,zn:.05,offsetX:0,depth:.30,height:.40,controls:FEMALE_V7_DEFAULTS
+ });
+ assert.equal(behind.dy,0,'back of head must not move');
+ const optionalUpturn=morph(0,.566,{...FEMALE_V7_DEFAULTS,noseTipLift:2});
+ assert.ok(optionalUpturn.dy>0,'user may explicitly choose a raised nose if desired');
+ const straight=morph(0,.566,{...FEMALE_V7_DEFAULTS,noseTipLift:.6});
+ assert.ok(Math.abs(straight.dy)<.001,'catalog-style moderate nose cannot accidentally lift upward');
+});
+
+test('v55 all twenty selectable nose presets remain natural with no default upward nostrils',()=>{
+ for(const gender of ['female','male']){
+  const presets=PART_CATALOG[gender]?.nose;
+  assert.equal(presets?.length,10,'ten nose options expected for '+gender);
+  for(const preset of presets){
+   const controls={...FEMALE_V7_DEFAULTS,...preset.values};
+   const tip=femaleInnerFeatureDelta({xn:0,yn:.566,zn:.98,
+    offsetX:0,depth:.3,height:.4,controls});
+   const alar=femaleInnerFeatureDelta({xn:.18,yn:.53,zn:.98,
+    offsetX:.02,depth:.3,height:.4,controls});
+   assert.ok(tip.dy<=.0007,
+    gender+': '+preset.id+' unexpectedly raises nasal tip');
+   assert.ok(alar.dy<0,gender+': '+preset.id+' nostril underside is exposed');
+  }
+ }
 });

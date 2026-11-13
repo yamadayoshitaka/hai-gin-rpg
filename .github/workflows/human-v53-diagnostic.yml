@@ -1,4 +1,4 @@
-name: Human v54 neck continuity diagnostics
+name: Human v55 short neck continuity diagnostics
 on:
   pull_request:
     paths:
@@ -30,7 +30,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: human-v54-neck-continuity
-          path: qa-screenshots/human-v54/
+          name: human-v55-short-neck
+          path: qa-screenshots/human-v55/
           retention-days: 7
           if-no-files-found: warn
