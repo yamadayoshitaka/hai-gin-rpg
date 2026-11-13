@@ -974,7 +974,7 @@ if(v32PartMode){
     v32Makeup[sex]=picked.makeup;
     if(sex==='female'){
      if(completeFace){manualFaceOverrides.female={};facePolishMode.female=true;}
-     else if(facePartChanged&&!('ageBand' in picked||'bodyType' in picked))
+     else if(['face','eye','nose','mouth'].some(k=>previousParts[k]!==picked[k]))
       facePolishMode.female=false;
      const nextControls=resolveEditedFaceControls('female',selected.controls,
       v32Parts.female.ageBand,v32Parts.female.bodyType,
@@ -996,6 +996,8 @@ if(v32PartMode){
      }
     }else{
      if(completeFace){manualFaceOverrides.male={};facePolishMode.male=true;}
+     else if(['face','eye','nose','mouth'].some(k=>previousParts[k]!==picked[k]))
+      facePolishMode.male=false;
      const nextControls=resolveEditedFaceControls('male',selected.controls,
       v32Parts.male.ageBand,v32Parts.male.bodyType,
       manualFaceOverrides.male,facePolishMode.male);

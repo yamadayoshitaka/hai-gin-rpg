@@ -610,7 +610,11 @@ eyeColorInput.addEventListener('input',()=>{
 });
 syncLensPreset();
 function applyPartSelection(picked,completeFace=false){
+ // Age/build/hair do not undo polish. Selecting individual face parts
+ // intentionally switches to editable custom morphology.
  if(completeFace){manualFaceOverrides={};facePolishMode=true;}
+ else if(['face','eye','nose','mouth'].some(k=>v32BodyPart[k]!==picked[k]))
+  facePolishMode=false;
  const hair=synchronizeHeroHairSelection('female',picked);
  v32BodyPart={...hair.parts};
  const chosen=resolvePartSelection('female',v32BodyPart,FEMALE_V7_DEFAULTS);
