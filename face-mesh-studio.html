@@ -829,15 +829,17 @@ if(v32PartMode){
   createPartSelectorUI($('v32'+(sex==='female'?'Female':'Male')+'Choices'),
    sex,v32Parts[sex],picked=>{
     const previousParts=v32Parts[sex];
-    const hairChanged=['hair','hairColor','hairVolume','hairX','hairY','hairAngle']
-     .some(key=>previousParts[key]!==picked[key]);
+    const hairKeys=['hair','hairColor','hairVolume','hairX','hairY','hairAngle'];
+    const hairChanged=hairKeys.some(key=>previousParts[key]!==picked[key]);
+    const facePartChanged=Object.keys(picked).some(key=>
+     key!=='makeup'&&!hairKeys.includes(key)&&previousParts[key]!==picked[key]);
     v32Parts[sex]=picked;
     const selected=resolvePartSelection(sex,picked,sex==='female'?FEMALE_V7_DEFAULTS:MALE_REFERENCE_DEFAULT);
     v32Makeup[sex]=picked.makeup;
     if(sex==='female'){
      const nextControls=normalizeFemaleFaceControls(selected.controls);
-     const faceChanged=JSON.stringify(modelChanges)!==JSON.stringify(nextControls);
-     modelChanges=nextControls;
+     const faceChanged=facePartChanged&&JSON.stringify(modelChanges)!==JSON.stringify(nextControls);
+     if(facePartChanged)modelChanges=nextControls;
      wigStyleId=selected.hairStyleId;
      $('wigStyle').value=wigStyleId;
      if(hairChanged)wigOn=true;
@@ -847,8 +849,8 @@ if(v32PartMode){
      }
     }else{
      const nextControls=normalizeMaleFaceControls(selected.controls);
-     const faceChanged=JSON.stringify(maleChanges)!==JSON.stringify(nextControls);
-     maleChanges=nextControls;
+     const faceChanged=facePartChanged&&JSON.stringify(maleChanges)!==JSON.stringify(nextControls);
+     if(facePartChanged)maleChanges=nextControls;
      if(hairChanged)wigOn=true;
      if(ready){
       if(faceChanged)rebuildMale();
