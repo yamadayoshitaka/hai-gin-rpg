@@ -164,7 +164,7 @@ function shotGenerationPrompt(context){
   'NO text, Japanese letters, numbers, frame number, captions, dialogue, ruby, title, speech bubble, infographic, poster headline, UI, logos, signature or watermark INSIDE THE IMAGE.',
   'DO NOT swap genders, blend characters, combine multiple beats into a montage or reuse victory/defeat/death imagery.',
   'If the actual reference image bytes cannot be attached, mark the shot NOT READY; do not claim a cast match.',
-  'P0 FINAL DOUBLE-CHECK: NO TEXT / NO UI / MATCH ACTUAL MASTER IMAGES / CURRENT SCRIPT BEAT ONLY / REJECT IF UNSURE.'
+  'P0_FINAL_DOUBLE_CHECK: NO TEXT / NO UI / MATCH ACTUAL MASTER IMAGES / CURRENT SCRIPT BEAT ONLY / REJECT IF UNSURE.'
  ].join('\n');
 }
 const results=[];
