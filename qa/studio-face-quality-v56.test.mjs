@@ -109,7 +109,7 @@ test('v56 neck colour follows cheek pigment instead of an opaque fixed beige car
  assert.equal(colors.itemSize,4);
  assert.ok(colors.getW(0)<.15,'bottom edge must blend into the outfit collar');
  assert.ok(colors.getW(colors.count-1)<.15,'top edge must blend into the jaw');
- const collar=new THREE.Color(0x667d92);
+ const collar=new THREE.Color(0x526a7e);
  assert.ok(Math.abs(colors.getX(0)-collar.r)<.002,
   'lower collar should match the dark slate costume rather than white skin');
  assert.ok(Math.abs(colors.getX(colors.count-1)-
