@@ -4,8 +4,6 @@
  * The profile deliberately favors believable cadaver anatomy, dark velvet,
  * fine natural hair and two subtle canine teeth over anime silhouettes.
  */
-import {MORTAL_HEAD_RINGS} from './monster-realistic-loft.js';
-
 export function sculptBloodMoonVampire(g,head,torso,{detail='high'}={}){
  const full=detail!=='low';
  // Partial hair cap only covers the crown. The forehead, eyes, cheeks and
