@@ -39,10 +39,15 @@ const fs=require('node:fs');
    });
    return {face:format(bface),headPosition:face.getWorldPosition(face.position.clone()).toArray().map(q),
     neck:state.v36RealBattleCostume?.proportions?.neckClearance,
+    headAlignment:state.v36RealBattleCostume?.proportions?.headAlignment,
     active:state.v36RealBattleCostume?.active,
     meshes:meshes.sort((a,b)=>b.box.max[1]-a.box.max[1]).slice(0,85)};
   });
   console.log('HUMAN_V53_ACTUAL_MESH_DIAGNOSTICS '+JSON.stringify(result));
+  if(!(result.headAlignment?.applied&&result.headAlignment.gapMeters>=.006))
+    throw Error('FACE_STILL_INSIDE_TORSO: '+JSON.stringify(result.headAlignment));
+  if(!(result.neck?.applied&&result.neck.clearanceMeters>=.007))
+    throw Error('CHEST_STILL_ABOVE_CHIN: '+JSON.stringify(result.neck));
   fs.mkdirSync('qa-screenshots/human-v53',{recursive:true});
   await page.screenshot({path:'qa-screenshots/human-v53/female-overlap.png',timeout:90000});
  }finally{await browser.close()}
