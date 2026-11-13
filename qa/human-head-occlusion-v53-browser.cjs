@@ -76,6 +76,20 @@ const fs=require('node:fs');
   await page.evaluate(()=>document.getElementById('portrait').click());
   await page.waitForTimeout(350);
   await page.screenshot({path:'qa-screenshots/human-v56/female-face-front.png',timeout:90000});
+  // Diagnostic isolation: identify whether the bright horizontal jaw plate
+  // belongs to the new neck connector or the cropped original face sculpt.
+  await page.evaluate(()=>{
+   const actor=window.__heroineBodyPreview?.getBattleActor?.();
+   const neck=actor?.getObjectByName('STUDIO_REAL_SKIN_NECK_CONNECTOR_V54');
+   if(neck)neck.visible=false;
+  });
+  await page.waitForTimeout(120);
+  await page.screenshot({path:'qa-screenshots/human-v56/female-connector-hidden.png',timeout:90000});
+  await page.evaluate(()=>{
+   const actor=window.__heroineBodyPreview?.getBattleActor?.();
+   const neck=actor?.getObjectByName('STUDIO_REAL_SKIN_NECK_CONNECTOR_V54');
+   if(neck)neck.visible=true;
+  });
   await page.locator('#side').click();
   await page.waitForTimeout(350);
   await page.screenshot({path:'qa-screenshots/human-v56/female-face-side.png',timeout:90000});
