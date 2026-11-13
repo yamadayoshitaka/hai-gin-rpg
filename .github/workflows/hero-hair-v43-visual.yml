@@ -6,6 +6,9 @@ on:
       - 'src/hero-face-presets-v45.js'
       - 'src/character-cast-v46.js'
       - 'src/character-demographics-v47.js'
+      - 'src/face-expression-animation-v48.js'
+      - 'src/body-build-morph-v48.js'
+      - 'qa/face-expression-v48.test.mjs'
       - 'qa/character-demographics-v47.test.mjs'
       - 'src/independent-face-masters.js'
       - 'src/face-v7-controls.js'
@@ -60,7 +63,7 @@ jobs:
           npm install --no-save --package-lock=false playwright@1.56.0 three@0.160.1
           npx playwright install chromium
       - name: Unit-test 24 hairstyles, six featured roles and older NPC face variants
-        run: node --test qa/independent-face-masters.test.mjs qa/hero-hair-v43-selection.test.mjs qa/hero-face-v45.test.mjs qa/character-cast-v46.test.mjs qa/starter-town-character-bom.test.mjs qa/character-demographics-v47.test.mjs
+        run: node --test qa/independent-face-masters.test.mjs qa/hero-hair-v43-selection.test.mjs qa/hero-face-v45.test.mjs qa/character-cast-v46.test.mjs qa/starter-town-character-bom.test.mjs qa/character-demographics-v47.test.mjs qa/face-expression-v48.test.mjs
       - name: Serve actual GLB body and head assets locally
         run: |
           python3 -m http.server 8766 --bind 127.0.0.1 > /tmp/hair-v43-http.log 2>&1 &
