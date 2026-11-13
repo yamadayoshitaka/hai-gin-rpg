@@ -349,7 +349,19 @@ function assemble(detail,face) {
       // after de-indexing would turn every curved surface into hard facets.
       // Transform the entire articulated jaw, including fangs and skin,
       // rather than only its base cross-section. Keep it ONE GPU batch.
-      if(name==='jaw')merged.scale(face.mouthWidth,face.mouthFullness,1);
+      if(name==='jaw'){
+        // The jaw geometry is already expressed in WORLD-local coordinates
+        // (y ~= 1.5 on wolves, y ~= 3.5 on dragon lord). Scaling around the
+        // scene origin moved it several centimetres away from the skull.
+        // Scale the flesh thickness around its own anatomical centre so
+        // the mandible remains seated under the maxilla at rest.
+        merged.computeBoundingBox();
+        const bounds=merged.boundingBox;
+        const centerY=(bounds.min.y+bounds.max.y)*.5;
+        merged.translate(0,-centerY,0);
+        merged.scale(face.mouthWidth,face.mouthFullness,1);
+        merged.translate(0,centerY,0);
+      }
       merged.computeBoundingSphere();
       for(const geo of geos) geo.dispose();
       result[name]=merged;
