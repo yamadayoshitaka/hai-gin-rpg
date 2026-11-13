@@ -19,7 +19,7 @@ for(const stageId of stageIds){
  assert.equal(contract.kind,'STAGE_RENDER_CONTRACT_NOT_COMPLETED_ART');
  assert.equal(contract.stageId,stageId);
  assert.equal(contract.layout.requiredPanels,48);
- assert.equal(contract.layout.maxPanelsPerPoster,10);
+ assert.equal(contract.layout.maxPanelsPerPoster,stageId==='c01-s02'?5:10);
  assert.equal(contract.criticalPriorityPolicy.priority,'P0_ABSOLUTE_MUST_FOLLOW');
  assert.equal(contract.criticalPriorityPolicy.failClosed,true);
  assert.equal(contract.singleInvocation.artRendererConnected,false);
@@ -46,9 +46,15 @@ for(const stageId of stageIds){
   const v=contract.variants.find(x=>x.gender===gender&&x.edition===phase);
   assert(v);
   assert.equal(v.count,counts[phase]);
-  assert.deepEqual(v.posterMinNativePixels,[3072,Math.ceil(v.count/2)*864]);
-  assert.deepEqual(v.posterPreferredNativePixels,[4096,Math.ceil(v.count/2)*1152]);
-  assert.equal(v.nativeAssembly.realSceneCount,v.count);
+  const firstSheetCount=stageId==='c01-s02'?Math.min(5,v.count):v.count;
+  assert.deepEqual(v.posterMinNativePixels,[3072,Math.ceil(firstSheetCount/2)*864]);
+  assert.deepEqual(v.posterPreferredNativePixels,[4096,Math.ceil(firstSheetCount/2)*1152]);
+  assert.equal(v.nativeAssembly.realSceneCount,firstSheetCount);
+  if(stageId==='c01-s02'){
+   assert.equal(v.sheetCount,Math.ceil(v.count/5));
+   assert(v.reviewSheets.every(sheet=>sheet.panelIds.length<=5));
+   assert.deepEqual(v.reviewSheets.flatMap(sheet=>sheet.panelIds),v.scriptPanelIds);
+  }
   const context={protagonistGender:gender};
   if(phase==='post-victory')context.battleOutcome={victory:true};
   if(phase==='post-defeat')context.battleOutcome={victory:false};

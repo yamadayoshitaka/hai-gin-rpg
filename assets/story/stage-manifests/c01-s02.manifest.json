@@ -17,13 +17,13 @@
     "backgroundGeneration": false,
     "artRendererConnected": false
   },
-  "goal": "一度のバッチで男女・全勝敗分岐の48コマをシナリオ照合・入力シート切出し・品質レビューまで一括処理する。画像生成器未接続なら画像は生まれない。",
+  "goal": "男女・全勝敗分岐48コマを各シート最大5コマで台本照合・独立生成・切り出し・レビューする。実画像が検証・承認されるまで本編へ昇格しない。",
   "layout": {
     "variantCount": 8,
     "requiredPanels": 48,
     "columns": 2,
-    "maxRows": 5,
-    "maxPanelsPerPoster": 10,
+    "maxRows": 3,
+    "maxPanelsPerPoster": 5,
     "minPerPanelNativePixels": [
       1536,
       864
@@ -48,18 +48,9 @@
         1536,
         864
       ],
-      "maximumFramesPerSheet": 10,
+      "maximumFramesPerSheet": 5,
       "columns": 2,
-      "maxRows": 5,
-      "preferredFullTenPanelSheetPixels": [
-        4096,
-        5760
-      ],
-      "minimumFullTenPanelSheetPixels": [
-        3072,
-        4320
-      ],
-      "originalGeneratorSupports4096x5760": "UNVERIFIED_DO_NOT_ASSUME",
+      "maxRows": 3,
       "nativeDetailGuarantee": "Each scene must be independently rendered at native resolution; composite raster dimensions or upscaling alone are not proof",
       "gridOrder": "LEFT_TO_RIGHT_TOP_TO_BOTTOM",
       "absentLastCell": "UNUSED_NEUTRAL_CELL_NEVER_SCENE",
@@ -76,17 +67,26 @@
       "gameBinding": "Register individual reviewed frames by stageId|edition|gender|panelId",
       "assemblyScript": "scripts/assemble-story-panel-sheet.py",
       "qa": "qa/story-panel-sheet-native.test.py",
-      "afterAssembly": "NO_APPROVAL_AND_NO_DEPLOYMENT_UNTIL_ALL_P0_CHECKS_PASS"
+      "afterAssembly": "NO_APPROVAL_AND_NO_DEPLOYMENT_UNTIL_ALL_P0_CHECKS_PASS",
+      "preferredFullFivePanelSheetPixels": [
+        4096,
+        3456
+      ],
+      "originalGeneratorSupports4096x3456": "UNVERIFIED_DO_NOT_ASSUME",
+      "minimumFullFivePanelSheetPixels": [
+        3072,
+        2592
+      ]
     },
     "sheetPolicyAppliesToStage2ExistingVariants": true,
     "bulkNativeSheetBatches": {
-      "mode": "BATCH_UP_TO_TEN_SHEETS_MAX_100_INDEPENDENT_NATIVE_PANELS",
+      "mode": "BATCH_UP_TO_TEN_SHEETS_MAX_50_INDEPENDENT_NATIVE_PANELS",
       "maxSheetsPerBatch": 10,
-      "maxCanonicalFramesPerSheet": 10,
-      "maxCanonicalFramesPerBatch": 100,
+      "maxCanonicalFramesPerSheet": 5,
+      "maxCanonicalFramesPerBatch": 50,
       "sheetLayout": [
         2,
-        5
+        3
       ],
       "preferredPerFrameNativePixels": [
         2048,
@@ -95,10 +95,6 @@
       "nativeMinimumPerFrame": [
         1536,
         864
-      ],
-      "preferred10PanelSheetPixels": [
-        4096,
-        5760
       ],
       "assemblyAlgorithm": "INDIVIDUAL_NATIVE_WEBP_FIRST_THEN_LOSSLESS_COMPOSITE",
       "stagingSource": "scripts/prepare-story-stage-posters.mjs",
@@ -110,12 +106,12 @@
       "noFictitiousPaddingTo100": true,
       "batchIndexSupportsContinuingBeyond100": true,
       "stage2CanonicalScenes": 48,
-      "stage2PlannedSheetCount": 5,
+      "stage2PlannedSheetCount": 14,
       "stage2PlusStage3CanonicalScenes": 96,
-      "stage2PlusStage3PlannedSheetCount": 10,
+      "stage2PlusStage3PlannedSheetCount": 22,
       "stage2ThroughStage4CanonicalScenes": 144,
-      "firstBatchCanonicalScenes": 100,
-      "secondBatchCanonicalScenes": 44,
+      "firstBatchCanonicalScenes": 50,
+      "secondBatchCanonicalScenes": 46,
       "extraAPIGenerationCosts": false,
       "actualAiRendererConnected": false,
       "newArtActuallyGeneratedByThisBatch": 0,
@@ -123,7 +119,11 @@
       "approveOrDeployAutomatically": false,
       "missingActualReferenceImagePolicy": "BLOCKED",
       "missingOrSubminimumNativeFramePolicy": "BLOCKED",
-      "textOrUiMismatchPolicy": "REJECTED"
+      "textOrUiMismatchPolicy": "REJECTED",
+      "preferred5PanelSheetPixels": [
+        4096,
+        3456
+      ]
     }
   },
   "renderConstraints": {
@@ -170,8 +170,8 @@
     "P0 gate: every actor's real image bytes must be attached, otherwise BLOCKED (path strings do not count)",
     "P0 prompt: prepend mandatory absolute textless/cast-identity/canonical-scene rules to every shot and variant render prompt",
     "independently render one native-resolution 16:9 WebP per canonical scene with real character master bytes (if image generator connected)",
-    "assemble approved native WebP frames into 2-column x up-to-5-row lossless review-only sheets (up to 10; never use a low-resolution contact sheet as the original)",
-    "for bulk review queues: at most 100 authentic independent WebPs, 10 sheets of up to 10, with deterministic batch indices; do not pad stage2's 48 canonically defined scenes",
+    "assemble approved native WebP frames into 2-column x up-to-3-row lossless review-only sheets (up to 5; never use a low-resolution contact sheet as the original)",
+    "for bulk review queues: at most 50 authentic independent WebPs, 10 sheets of up to 5, with deterministic batch indices; do not pad stage2's 48 canonically defined scenes",
     "if a native high-res input sheet is supplied, cut only when per-cell native pixels exceed minimum; otherwise BLOCKED_LOW_RES",
     "check native pixels and provenance",
     "review each cell vs its exact screenplay and approved reference",
@@ -215,20 +215,20 @@
       "posterInput": "assets/story/chapter-drafts/c01/posters/c01-s02-pre-male-p01.webp",
       "posterMinNativePixels": [
         3072,
-        3456
+        2592
       ],
       "numberedArt": false,
       "status": "SCRIPTED_NOT_APPROVED",
       "posterPreferredNativePixels": [
         4096,
-        4608
+        3456
       ],
       "nativeAssembly": {
-        "rows": 4,
+        "rows": 3,
         "columns": 2,
-        "realSceneCount": 8,
-        "capacity": 8,
-        "blankCellCount": 0,
+        "realSceneCount": 5,
+        "capacity": 6,
+        "blankCellCount": 1,
         "source": "INDIVIDUAL_NATIVE_WEBP_ONLY",
         "cellNativePixels": [
           2048,
@@ -236,12 +236,59 @@
         ],
         "preferredSheetPixels": [
           4096,
-          4608
+          3456
         ],
         "noFabricatedCell": true,
         "noUpscale": true,
         "approval": "NOT_APPROVED"
-      }
+      },
+      "reviewSheets": [
+        {
+          "page": 1,
+          "posterInput": "assets/story/chapter-drafts/c01/posters/c01-s02-pre-male-p01.webp",
+          "panelIds": [
+            "c01-s02-m1",
+            "c01-s02-m2",
+            "c01-s02-m3",
+            "c01-s02-m4",
+            "c01-s02-m5"
+          ],
+          "count": 5,
+          "columns": 2,
+          "rows": 3,
+          "posterMinNativePixels": [
+            3072,
+            2592
+          ],
+          "posterPreferredNativePixels": [
+            4096,
+            3456
+          ],
+          "approval": "NOT_APPROVED"
+        },
+        {
+          "page": 2,
+          "posterInput": "assets/story/chapter-drafts/c01/posters/c01-s02-pre-male-p02.webp",
+          "panelIds": [
+            "c01-s02-m11",
+            "c01-s02-m13",
+            "c01-s02-m15"
+          ],
+          "count": 3,
+          "columns": 2,
+          "rows": 2,
+          "posterMinNativePixels": [
+            3072,
+            1728
+          ],
+          "posterPreferredNativePixels": [
+            4096,
+            2304
+          ],
+          "approval": "NOT_APPROVED"
+        }
+      ],
+      "sheetCount": 2
     },
     {
       "edition": "pre",
@@ -261,20 +308,20 @@
       "posterInput": "assets/story/chapter-drafts/c01/posters/c01-s02-pre-female-p01.webp",
       "posterMinNativePixels": [
         3072,
-        3456
+        2592
       ],
       "numberedArt": false,
       "status": "SCRIPTED_NOT_APPROVED",
       "posterPreferredNativePixels": [
         4096,
-        4608
+        3456
       ],
       "nativeAssembly": {
-        "rows": 4,
+        "rows": 3,
         "columns": 2,
-        "realSceneCount": 8,
-        "capacity": 8,
-        "blankCellCount": 0,
+        "realSceneCount": 5,
+        "capacity": 6,
+        "blankCellCount": 1,
         "source": "INDIVIDUAL_NATIVE_WEBP_ONLY",
         "cellNativePixels": [
           2048,
@@ -282,12 +329,59 @@
         ],
         "preferredSheetPixels": [
           4096,
-          4608
+          3456
         ],
         "noFabricatedCell": true,
         "noUpscale": true,
         "approval": "NOT_APPROVED"
-      }
+      },
+      "reviewSheets": [
+        {
+          "page": 1,
+          "posterInput": "assets/story/chapter-drafts/c01/posters/c01-s02-pre-female-p01.webp",
+          "panelIds": [
+            "c01-s02-m1",
+            "c01-s02-m2",
+            "c01-s02-m3",
+            "c01-s02-m4",
+            "c01-s02-m5"
+          ],
+          "count": 5,
+          "columns": 2,
+          "rows": 3,
+          "posterMinNativePixels": [
+            3072,
+            2592
+          ],
+          "posterPreferredNativePixels": [
+            4096,
+            3456
+          ],
+          "approval": "NOT_APPROVED"
+        },
+        {
+          "page": 2,
+          "posterInput": "assets/story/chapter-drafts/c01/posters/c01-s02-pre-female-p02.webp",
+          "panelIds": [
+            "c01-s02-m11",
+            "c01-s02-m13",
+            "c01-s02-m15"
+          ],
+          "count": 3,
+          "columns": 2,
+          "rows": 2,
+          "posterMinNativePixels": [
+            3072,
+            1728
+          ],
+          "posterPreferredNativePixels": [
+            4096,
+            2304
+          ],
+          "approval": "NOT_APPROVED"
+        }
+      ],
+      "sheetCount": 2
     },
     {
       "edition": "post-victory",
@@ -306,19 +400,19 @@
       "posterInput": "assets/story/chapter-drafts/c01/posters/c01-s02-post-victory-male-p01.webp",
       "posterMinNativePixels": [
         3072,
-        3456
+        2592
       ],
       "numberedArt": false,
       "status": "SCRIPTED_NOT_APPROVED",
       "posterPreferredNativePixels": [
         4096,
-        4608
+        3456
       ],
       "nativeAssembly": {
-        "rows": 4,
+        "rows": 3,
         "columns": 2,
-        "realSceneCount": 7,
-        "capacity": 8,
+        "realSceneCount": 5,
+        "capacity": 6,
         "blankCellCount": 1,
         "source": "INDIVIDUAL_NATIVE_WEBP_ONLY",
         "cellNativePixels": [
@@ -327,12 +421,58 @@
         ],
         "preferredSheetPixels": [
           4096,
-          4608
+          3456
         ],
         "noFabricatedCell": true,
         "noUpscale": true,
         "approval": "NOT_APPROVED"
-      }
+      },
+      "reviewSheets": [
+        {
+          "page": 1,
+          "posterInput": "assets/story/chapter-drafts/c01/posters/c01-s02-post-victory-male-p01.webp",
+          "panelIds": [
+            "c01-s02-m6",
+            "c01-s02-m7",
+            "c01-s02-m8",
+            "c01-s02-m9",
+            "c01-s02-m16"
+          ],
+          "count": 5,
+          "columns": 2,
+          "rows": 3,
+          "posterMinNativePixels": [
+            3072,
+            2592
+          ],
+          "posterPreferredNativePixels": [
+            4096,
+            3456
+          ],
+          "approval": "NOT_APPROVED"
+        },
+        {
+          "page": 2,
+          "posterInput": "assets/story/chapter-drafts/c01/posters/c01-s02-post-victory-male-p02.webp",
+          "panelIds": [
+            "c01-s02-m19",
+            "c01-s02-m10"
+          ],
+          "count": 2,
+          "columns": 2,
+          "rows": 1,
+          "posterMinNativePixels": [
+            3072,
+            864
+          ],
+          "posterPreferredNativePixels": [
+            4096,
+            1152
+          ],
+          "approval": "NOT_APPROVED"
+        }
+      ],
+      "sheetCount": 2
     },
     {
       "edition": "post-victory",
@@ -351,19 +491,19 @@
       "posterInput": "assets/story/chapter-drafts/c01/posters/c01-s02-post-victory-female-p01.webp",
       "posterMinNativePixels": [
         3072,
-        3456
+        2592
       ],
       "numberedArt": false,
       "status": "SCRIPTED_NOT_APPROVED",
       "posterPreferredNativePixels": [
         4096,
-        4608
+        3456
       ],
       "nativeAssembly": {
-        "rows": 4,
+        "rows": 3,
         "columns": 2,
-        "realSceneCount": 7,
-        "capacity": 8,
+        "realSceneCount": 5,
+        "capacity": 6,
         "blankCellCount": 1,
         "source": "INDIVIDUAL_NATIVE_WEBP_ONLY",
         "cellNativePixels": [
@@ -372,12 +512,58 @@
         ],
         "preferredSheetPixels": [
           4096,
-          4608
+          3456
         ],
         "noFabricatedCell": true,
         "noUpscale": true,
         "approval": "NOT_APPROVED"
-      }
+      },
+      "reviewSheets": [
+        {
+          "page": 1,
+          "posterInput": "assets/story/chapter-drafts/c01/posters/c01-s02-post-victory-female-p01.webp",
+          "panelIds": [
+            "c01-s02-m6",
+            "c01-s02-m7",
+            "c01-s02-m8",
+            "c01-s02-m9",
+            "c01-s02-m16"
+          ],
+          "count": 5,
+          "columns": 2,
+          "rows": 3,
+          "posterMinNativePixels": [
+            3072,
+            2592
+          ],
+          "posterPreferredNativePixels": [
+            4096,
+            3456
+          ],
+          "approval": "NOT_APPROVED"
+        },
+        {
+          "page": 2,
+          "posterInput": "assets/story/chapter-drafts/c01/posters/c01-s02-post-victory-female-p02.webp",
+          "panelIds": [
+            "c01-s02-m19",
+            "c01-s02-m10"
+          ],
+          "count": 2,
+          "columns": 2,
+          "rows": 1,
+          "posterMinNativePixels": [
+            3072,
+            864
+          ],
+          "posterPreferredNativePixels": [
+            4096,
+            1152
+          ],
+          "approval": "NOT_APPROVED"
+        }
+      ],
+      "sheetCount": 2
     },
     {
       "edition": "post-defeat",
@@ -396,19 +582,19 @@
       "posterInput": "assets/story/chapter-drafts/c01/posters/c01-s02-post-defeat-male-p01.webp",
       "posterMinNativePixels": [
         3072,
-        3456
+        2592
       ],
       "numberedArt": false,
       "status": "SCRIPTED_NOT_APPROVED",
       "posterPreferredNativePixels": [
         4096,
-        4608
+        3456
       ],
       "nativeAssembly": {
-        "rows": 4,
+        "rows": 3,
         "columns": 2,
-        "realSceneCount": 7,
-        "capacity": 8,
+        "realSceneCount": 5,
+        "capacity": 6,
         "blankCellCount": 1,
         "source": "INDIVIDUAL_NATIVE_WEBP_ONLY",
         "cellNativePixels": [
@@ -417,12 +603,58 @@
         ],
         "preferredSheetPixels": [
           4096,
-          4608
+          3456
         ],
         "noFabricatedCell": true,
         "noUpscale": true,
         "approval": "NOT_APPROVED"
-      }
+      },
+      "reviewSheets": [
+        {
+          "page": 1,
+          "posterInput": "assets/story/chapter-drafts/c01/posters/c01-s02-post-defeat-male-p01.webp",
+          "panelIds": [
+            "c01-s02-m6",
+            "c01-s02-m7",
+            "c01-s02-m8",
+            "c01-s02-m9",
+            "c01-s02-m16"
+          ],
+          "count": 5,
+          "columns": 2,
+          "rows": 3,
+          "posterMinNativePixels": [
+            3072,
+            2592
+          ],
+          "posterPreferredNativePixels": [
+            4096,
+            3456
+          ],
+          "approval": "NOT_APPROVED"
+        },
+        {
+          "page": 2,
+          "posterInput": "assets/story/chapter-drafts/c01/posters/c01-s02-post-defeat-male-p02.webp",
+          "panelIds": [
+            "c01-s02-m19",
+            "c01-s02-m10"
+          ],
+          "count": 2,
+          "columns": 2,
+          "rows": 1,
+          "posterMinNativePixels": [
+            3072,
+            864
+          ],
+          "posterPreferredNativePixels": [
+            4096,
+            1152
+          ],
+          "approval": "NOT_APPROVED"
+        }
+      ],
+      "sheetCount": 2
     },
     {
       "edition": "post-defeat",
@@ -441,19 +673,19 @@
       "posterInput": "assets/story/chapter-drafts/c01/posters/c01-s02-post-defeat-female-p01.webp",
       "posterMinNativePixels": [
         3072,
-        3456
+        2592
       ],
       "numberedArt": false,
       "status": "SCRIPTED_NOT_APPROVED",
       "posterPreferredNativePixels": [
         4096,
-        4608
+        3456
       ],
       "nativeAssembly": {
-        "rows": 4,
+        "rows": 3,
         "columns": 2,
-        "realSceneCount": 7,
-        "capacity": 8,
+        "realSceneCount": 5,
+        "capacity": 6,
         "blankCellCount": 1,
         "source": "INDIVIDUAL_NATIVE_WEBP_ONLY",
         "cellNativePixels": [
@@ -462,12 +694,58 @@
         ],
         "preferredSheetPixels": [
           4096,
-          4608
+          3456
         ],
         "noFabricatedCell": true,
         "noUpscale": true,
         "approval": "NOT_APPROVED"
-      }
+      },
+      "reviewSheets": [
+        {
+          "page": 1,
+          "posterInput": "assets/story/chapter-drafts/c01/posters/c01-s02-post-defeat-female-p01.webp",
+          "panelIds": [
+            "c01-s02-m6",
+            "c01-s02-m7",
+            "c01-s02-m8",
+            "c01-s02-m9",
+            "c01-s02-m16"
+          ],
+          "count": 5,
+          "columns": 2,
+          "rows": 3,
+          "posterMinNativePixels": [
+            3072,
+            2592
+          ],
+          "posterPreferredNativePixels": [
+            4096,
+            3456
+          ],
+          "approval": "NOT_APPROVED"
+        },
+        {
+          "page": 2,
+          "posterInput": "assets/story/chapter-drafts/c01/posters/c01-s02-post-defeat-female-p02.webp",
+          "panelIds": [
+            "c01-s02-m19",
+            "c01-s02-m10"
+          ],
+          "count": 2,
+          "columns": 2,
+          "rows": 1,
+          "posterMinNativePixels": [
+            3072,
+            864
+          ],
+          "posterPreferredNativePixels": [
+            4096,
+            1152
+          ],
+          "approval": "NOT_APPROVED"
+        }
+      ],
+      "sheetCount": 2
     },
     {
       "edition": "post-gameover",
@@ -507,7 +785,30 @@
         "noFabricatedCell": true,
         "noUpscale": true,
         "approval": "NOT_APPROVED"
-      }
+      },
+      "reviewSheets": [
+        {
+          "page": 1,
+          "posterInput": "assets/story/chapter-drafts/c01/posters/c01-s02-post-gameover-male-p01.webp",
+          "panelIds": [
+            "c01-s02-death-1",
+            "c01-s02-death-2"
+          ],
+          "count": 2,
+          "columns": 2,
+          "rows": 1,
+          "posterMinNativePixels": [
+            3072,
+            864
+          ],
+          "posterPreferredNativePixels": [
+            4096,
+            1152
+          ],
+          "approval": "NOT_APPROVED"
+        }
+      ],
+      "sheetCount": 1
     },
     {
       "edition": "post-gameover",
@@ -547,7 +848,30 @@
         "noFabricatedCell": true,
         "noUpscale": true,
         "approval": "NOT_APPROVED"
-      }
+      },
+      "reviewSheets": [
+        {
+          "page": 1,
+          "posterInput": "assets/story/chapter-drafts/c01/posters/c01-s02-post-gameover-female-p01.webp",
+          "panelIds": [
+            "c01-s02-death-1",
+            "c01-s02-death-2"
+          ],
+          "count": 2,
+          "columns": 2,
+          "rows": 1,
+          "posterMinNativePixels": [
+            3072,
+            864
+          ],
+          "posterPreferredNativePixels": [
+            4096,
+            1152
+          ],
+          "approval": "NOT_APPROVED"
+        }
+      ],
+      "sheetCount": 1
     }
   ],
   "offlineImageHandoff": {
@@ -574,5 +898,169 @@
     "doNotPublishUnapproved": true,
     "noPaidGenerationAPI": true,
     "validation": "qa/story-single-stage-manifest.test.mjs"
+  },
+  "activeP0BatchPolicy": {
+    "priority": "P0_ABSOLUTE_MUST_FOLLOW",
+    "maxPanelsPerSheet": 5,
+    "preferredIndependentNativePixels": [
+      2048,
+      1152
+    ],
+    "minimumIndependentNativePixels": [
+      1536,
+      864
+    ],
+    "highestSupportedNativeSizeRequired": true,
+    "actualGeneratorMaximum": "UNVERIFIED_DO_NOT_ASSUME",
+    "exactAspectRatio": "16:9",
+    "rejectUpscaledLowResolution": true,
+    "generateIndependentOriginals": true,
+    "mustAttachActualReferenceImageBytes": true,
+    "noInImageTextOrUI": true,
+    "rejectUnverifiableSource": true,
+    "preserveExistingRegisteredPanels": 23,
+    "remainingNewPanels": 25,
+    "notYetPublished": true
+  },
+  "continuation": {
+    "stageId": "c01-s02",
+    "scope": "ONLY_25_MISSING_NO_OVERWRITE",
+    "remainingSceneCount": 25,
+    "existingSceneCount": 23,
+    "pendingGroups": [
+      {
+        "edition": "post-victory",
+        "gender": "female",
+        "panels": [
+          "c01-s02-m6",
+          "c01-s02-m7",
+          "c01-s02-m8",
+          "c01-s02-m9",
+          "c01-s02-m16",
+          "c01-s02-m19",
+          "c01-s02-m10"
+        ],
+        "reviewSheets": [
+          {
+            "page": 1,
+            "panels": [
+              "c01-s02-m6",
+              "c01-s02-m7",
+              "c01-s02-m8",
+              "c01-s02-m9",
+              "c01-s02-m16"
+            ]
+          },
+          {
+            "page": 2,
+            "panels": [
+              "c01-s02-m19",
+              "c01-s02-m10"
+            ]
+          }
+        ]
+      },
+      {
+        "edition": "post-defeat",
+        "gender": "male",
+        "panels": [
+          "c01-s02-m6",
+          "c01-s02-m7",
+          "c01-s02-m8",
+          "c01-s02-m9",
+          "c01-s02-m16",
+          "c01-s02-m19",
+          "c01-s02-m10"
+        ],
+        "reviewSheets": [
+          {
+            "page": 1,
+            "panels": [
+              "c01-s02-m6",
+              "c01-s02-m7",
+              "c01-s02-m8",
+              "c01-s02-m9",
+              "c01-s02-m16"
+            ]
+          },
+          {
+            "page": 2,
+            "panels": [
+              "c01-s02-m19",
+              "c01-s02-m10"
+            ]
+          }
+        ]
+      },
+      {
+        "edition": "post-defeat",
+        "gender": "female",
+        "panels": [
+          "c01-s02-m6",
+          "c01-s02-m7",
+          "c01-s02-m8",
+          "c01-s02-m9",
+          "c01-s02-m16",
+          "c01-s02-m19",
+          "c01-s02-m10"
+        ],
+        "reviewSheets": [
+          {
+            "page": 1,
+            "panels": [
+              "c01-s02-m6",
+              "c01-s02-m7",
+              "c01-s02-m8",
+              "c01-s02-m9",
+              "c01-s02-m16"
+            ]
+          },
+          {
+            "page": 2,
+            "panels": [
+              "c01-s02-m19",
+              "c01-s02-m10"
+            ]
+          }
+        ]
+      },
+      {
+        "edition": "post-gameover",
+        "gender": "male",
+        "panels": [
+          "c01-s02-death-1",
+          "c01-s02-death-2"
+        ],
+        "reviewSheets": [
+          {
+            "page": 1,
+            "panels": [
+              "c01-s02-death-1",
+              "c01-s02-death-2"
+            ]
+          }
+        ]
+      },
+      {
+        "edition": "post-gameover",
+        "gender": "female",
+        "panels": [
+          "c01-s02-death-1",
+          "c01-s02-death-2"
+        ],
+        "reviewSheets": [
+          {
+            "page": 1,
+            "panels": [
+              "c01-s02-death-1",
+              "c01-s02-death-2"
+            ]
+          }
+        ]
+      }
+    ],
+    "pendingSheetCount": 8,
+    "newActualRegisteredWebps": 0,
+    "status": "BLOCKED_PENDING_NATIVE_SOURCES_AND_HUMAN_QA"
   }
 }

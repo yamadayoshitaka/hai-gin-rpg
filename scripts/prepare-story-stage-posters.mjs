@@ -27,7 +27,7 @@ function p0PromptLines(){
   'P0_NO_TEXT_UI_IN_ART: generate PURE SCENE ART ONLY. ABSOLUTELY NO kanji, hiragana, katakana, letters, digits, scene/frame numbers, speech balloons, text captions, dialogue, rubies, readable marks, interface/HUD/buttons, mock game screens, titles, logos, signatures or watermarks.',
   'P0_EXACT_CANONICAL_SCENE: depict only the currently specified screenplay beat. Previous/next beats are reference context ONLY. Do not depict future success, fake a scene, add characters, or invent a new objective.',
   'P0_CAST_AND_BRANCH: lock every face, hair, eyes, armor and outfit to uploaded master images. Female commander is long blonde-haired, blue-eyed, silver-armored, distinct from silver-haired Lucia. Male commander has dark hair. Do NOT blend cast or swap editions and outcomes.',
-  'P0_NATIVE_AND_QA: independently drawn cinematic 16:9 at native 1536x864 pixels minimum; no low-resolution collage, game screenshot or fake upscale. Keep critical faces/hands/items 5% in from frame edges.',
+  'P0_NATIVE_AND_QA: each scene is independently rendered at the MAXIMUM TRUE NATIVE RESOLUTION the generator supports. Prefer 2048x1152 16:9; minimum 1536x864, and no upscaling. For c01-s02 each review sheet contains AT MOST FIVE scenes; never render a 5x5 montage. Keep critical faces/hands/items 5% in from frame edges.',
   'P0_FAIL_CLOSED: if any required image bytes are missing or any constraint cannot be verified, mark BLOCKED/REJECTED. NEVER treat the result as approved, registered or deployed.',
   'All scene IDs, Japanese screenplay text, spoken dialogue, VOICEVOX readings and production metadata supplied below are INVISIBLE INSTRUCTIONS ONLY, never pixels.'
  ];
@@ -55,10 +55,12 @@ const imageSpec=Object.freeze({
  aspectRatio:'16:9',pixelWidth:1536,pixelHeight:864,
  minimumNativePixels:[1536,864],preferredNativePixels:[2048,1152],
  safeCompositionMarginPercent:5,
- maxCellsPerReviewSheet:10,preferredReviewSheetColumns:2,
+ maxCellsPerReviewSheet:10,stage2MaxCellsPerReviewSheet:5,preferredReviewSheetColumns:2,
  nativeSheetPolicy:'INDIVIDUAL_FIRST_2048x1152_NATIVE_WEBP_THEN_LOSSLESS_ASSEMBLY',
  fullTenCellPreferredPixels:[4096,5760],
  fullTenCellGeneratorCapability:'UNVERIFIED_DO_NOT_ASSUME',
+ fullFiveCellPreferredPixels:[4096,3456],
+ fullFiveCellGeneratorCapability:'UNVERIFIED_DO_NOT_ASSUME',
  format:'webp',textInsideArt:false,numberInsideArt:false,
  noFakeUpscale:true,
  visualReviewRequired:true
@@ -175,6 +177,7 @@ const results=[];
 for(const stage of stages){
  const [setup,victoryBeat]=STORY_STAGE_BEATS[stage.chapter-1][stage.slot-1];
  const bible=getCastBible(stage.id);
+ const maxReviewCells=stage.id==='c01-s02'?5:10;
  const variants=[];
  for(const edition of comicEditionsForStage(stage.id)){
   for(const gender of genders){
@@ -184,8 +187,9 @@ for(const stage of stages){
     throw Error('Gender-specific edition mismatch: '+stage.id+' '+edition.edition+' '+genderEdition.edition);
    const canonical=genderEdition.panels;
    const outcomeRule=outcomePolicy(edition.edition,victoryBeat);
-   const pages=genderEdition.pages.map(page=>{
-    const panelData=canonical.filter(p=>p.comicPage===page.number);
+   const pages=Array.from({length:Math.ceil(canonical.length/maxReviewCells)},(_,pageIndex)=>{
+    const page={number:pageIndex+1};
+    const panelData=canonical.slice(pageIndex*maxReviewCells,(pageIndex+1)*maxReviewCells);
     const reference=qualityReference[gender];
     const panels=panelData.map((shot,position)=>{
      const order=canonical.indexOf(shot);
@@ -253,7 +257,7 @@ for(const stage of stages){
      posterStatus:present(posterPath(stage.id,edition.edition,gender,page.number))?
       'AI_DRAFT_UNAPPROVED':'MISSING',
      posterSpec:{columns:2,rows,cellCount:panels.length,
-      maxCellCount:10,blankCells:rows*2-panels.length,
+      maxCellCount:maxReviewCells,blankCells:rows*2-panels.length,
       minNativePixels:[2*imageSpec.pixelWidth,rows*imageSpec.pixelHeight],
       preferredNativePixels:[2*imageSpec.preferredNativePixels[0],rows*imageSpec.preferredNativePixels[1]],
       assemblyMode:'INDIVIDUAL_NATIVE_FRAMES_FIRST_THEN_LOSSLESS_REVIEW_SHEET',
@@ -263,7 +267,7 @@ for(const stage of stages){
       reviewOnlyNotGameArtwork:true,
       previewMayBeLowResolution:true,
       previewCannotBeRegisteredAsFinalArt:true,
-      finalPosterAssembly:'Assemble ONLY from fully rendered individual native-detail shots, with no resizing: ten 2048x1152 frames -> 4096x5760 lossless sheet (generator sheet max is unverified)',
+      finalPosterAssembly:'Assemble ONLY from independently rendered native-detail shots, no resizing: at most '+maxReviewCells+' frames, 2048x1152 each, 2 columns; direct generator sheet max unverified',
       displayRule:'First show a labelled storyboard OUTSIDE the art; then render EACH exact screenplay shot individually at >=1536x864; finally assemble 2-column review poster'},
      panelIds:panels.map(p=>p.panelId),
      textFreePrompt:'CONTINUITY PREVIEW ONLY, not final artwork. Stage '+stage.id+', edition '+
@@ -282,7 +286,7 @@ for(const stage of stages){
  const n=variants.reduce((a,v)=>a+v.pages.reduce((b,p)=>b+p.panels.length,0),0);
  const existing=variants.reduce((a,v)=>a+v.pages.reduce((b,p)=>
   b+p.panels.filter(x=>x.status!=='MISSING').length,0),0);
- results.push({stageId:stage.id,stageName:stage.name,
+ results.push({stageId:stage.id,stageName:stage.name,maxReviewCells,
   requiredGenderOutcomePosters:variants.reduce((a,v)=>a+v.pageCount,0),
   requiredIndividualImages:n,alreadyRegisteredDraftImages:existing,
   missingIndividualImages:n-existing,qualityApprovedImages:0,
@@ -299,8 +303,8 @@ const totals={
 const report={schemaVersion:3,kind:'production-manifest-not-generated-art',
  generatedAt:new Date().toISOString(),qualityPolicy:'docs/story-stage-poster-production-manifest-v2.md',
  shotWorkflow:'SCREENPLAY_CONTEXT_PREVIOUS_CURRENT_NEXT_REAL_CAST_REFERENCES_PER_SHOT',
- imageSpec,reviewSheetPolicy:{columns:2,maxPanels:10,rowsForTen:5,
-  preferredNativeCellPixels:[2048,1152],preferredTenPanelSheetPixels:[4096,5760],
+ imageSpec,reviewSheetPolicy:{columns:2,maxPanels:10,stageOverrides:{'c01-s02':5},rowsForFive:3,rowsForTen:5,
+  preferredNativeCellPixels:[2048,1152],preferredFivePanelSheetPixels:[4096,3456],preferredTenPanelSheetPixels:[4096,5760],
   preferredBatchProcess:'RENDER_EACH_REAL_FRAME_THEN_LOSSLESS_COMPOSITE',
   directGiantSheetGenerationCapability:'NOT_VERIFIED',
   manualQualityInspectionMandatory:true},
