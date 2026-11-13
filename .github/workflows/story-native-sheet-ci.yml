@@ -1,0 +1,49 @@
+name: Story native ten-panel sheet QA
+
+on:
+  pull_request:
+    paths:
+      - 'assets/story/stage-manifests/**'
+      - 'assets/story/quality/artwork-p0-rules.json'
+      - 'scripts/prepare-story-stage-posters.mjs'
+      - 'scripts/run-story-stage.mjs'
+      - 'scripts/assemble-story-panel-sheet.py'
+      - 'qa/story-panel-sheet-native.test.py'
+      - 'qa/story-single-stage-manifest.test.mjs'
+      - 'qa/story-stage-poster-production.test.mjs'
+      - '.github/workflows/story-native-sheet-ci.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'assets/story/stage-manifests/**'
+      - 'scripts/prepare-story-stage-posters.mjs'
+      - 'scripts/run-story-stage.mjs'
+      - 'scripts/assemble-story-panel-sheet.py'
+      - 'qa/story-panel-sheet-native.test.py'
+      - '.github/workflows/story-native-sheet-ci.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  native-geometry:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install free Pillow test dependency (no paid image API)
+        run: python -m pip install --disable-pip-version-check Pillow==11.3.0
+      - name: Validate exact scenes, 2-column geometry, cast rules and unapproved status
+        run: |
+          node qa/story-stage-poster-production.test.mjs
+          node qa/story-single-stage-manifest.test.mjs
+          node qa/story-stage2-draft-intake.test.mjs
+      - name: Verify full-size 10 x 2048x1152 lossless review-sheet and exact crop roundtrip
+        run: python qa/story-panel-sheet-native.test.py

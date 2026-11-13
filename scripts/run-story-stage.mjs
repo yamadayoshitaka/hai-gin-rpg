@@ -56,6 +56,14 @@ const byVariant=new Map(stage.variants.map(v=>[v.edition+'|'+v.gender,v]));
 if(contract.variants.length!==byVariant.size)
  throw Error('Canonical script changed: variant count differs from stage manifest');
 const imageRules=contract.renderConstraints;
+const nativeSheet=contract.layout.nativeSheetPipeline;
+if(!nativeSheet||nativeSheet.maximumFramesPerSheet!==10||
+ contract.layout.maxRows!==5||contract.layout.maxPanelsPerPoster!==10||
+ JSON.stringify(nativeSheet.preferredCellPixels)!==JSON.stringify([2048,1152])||
+ JSON.stringify(nativeSheet.preferredFullTenPanelSheetPixels)!==JSON.stringify([4096,5760])||
+ nativeSheet.originalGeneratorSupports4096x5760!=='UNVERIFIED_DO_NOT_ASSUME'||
+ nativeSheet.mode!=='INDIVIDUAL_NATIVE_FRAMES_FIRST_THEN_LOSSLESS_REVIEW_SHEET')
+ throw Error('Invalid full-resolution ten-panel sheet production contract');
 const priority=contract.criticalPriorityPolicy;
 if(!priority||priority.priority!=='P0_ABSOLUTE_MUST_FOLLOW'||
  !priority.failClosed||!priority.mandatoryAtPromptStart||
@@ -89,6 +97,13 @@ for(const v of contract.variants){
   throw Error('Canonical screenplay changed; update stage manifest before production '+key);
  if(JSON.stringify(page.posterSpec.minNativePixels)!==JSON.stringify(v.posterMinNativePixels))
   throw Error('Poster size mismatch '+key);
+ const preferred=[2*2048,Math.ceil(v.count/2)*1152];
+ if(JSON.stringify(page.posterSpec.preferredNativePixels)!==JSON.stringify(preferred)||
+  JSON.stringify(v.posterPreferredNativePixels)!==JSON.stringify(preferred)||
+  page.posterSpec.maxCellCount!==10||
+  page.posterSpec.assemblyMode!==nativeSheet.mode||
+  page.posterSpec.blankCells!==Math.ceil(v.count/2)*2-v.count)
+  throw Error('Preferred native 10-panel sheet geometry violates contract '+key);
  const picturedBeats=page.panels.map(p=>({
   panelId:p.panelId,
   scriptText:p.scriptText,
@@ -108,6 +123,8 @@ for(const v of contract.variants){
   'P0_REFERENCE_IMAGE_BYTES: original cast images must be actually attached; path strings DO NOT count. If missing, BLOCKED/REJECTED, not generated.',
   'P0_EXACT_CANONICAL_SCENE: current scene and outcome only, continuity only for previous/next; never invent scenes or substitute characters.',
   'P0_VISUAL_QA: if any text/UI, cast mismatch, wrong outcome or insufficient detail, REJECT. Never approve, register or publish automatically.',
+  'P0_NATIVE_SHEET: render each frame separately at native 2048x1152; compose up to ten as TWO columns by FIVE rows using lossless WebP only after frame QA. A ten-frame review sheet is 4096x5760; a direct giant-sheet generator capability is NOT VERIFIED.',
+  'P0_NO_UPSCALE: NEVER stretch a low-resolution 10-frame contact sheet into full-sized game frames. The sheet is review/archive only, not registered as one gameplay frame.',
   'IMAGE-ONLY INSTRUCTIONS. Make an unlettered cinematic fantasy comic illustration grid.',
   'This is NOT a poster, advertisement, infographic, storyboard printout, dashboard, report, game interface or formatted mock-up.',
   'Exactly TWO COLUMNS and '+Math.ceil(v.count/2)+' ROWS, '+v.count+
@@ -131,6 +148,11 @@ for(const v of contract.variants){
  page.stageBatch={
   stageId,variant:key,sourcePoster:source,expectedNativeSheet:v.posterMinNativePixels,
   strictPictorialOnlyPrompt:noTextContract,scriptBeats:picturedBeats,
+  preferredNativeSheet:page.posterSpec.preferredNativePixels,
+  assemblyMode:nativeSheet.mode,
+  reviewOnlyAssemblyCommand:'python scripts/assemble-story-panel-sheet.py --manifest '+manifestRel+
+   ' --stage '+stageId+' --edition '+v.edition+' --gender '+v.gender,
+  nativeSourcesMustExistBeforeAssembly:true,
   requiresImageReferenceBytes:true,
   absolutePriority:'P0_ABSOLUTE_MUST_FOLLOW',
   failClosedOnMissingRealCastBytes:true,
@@ -152,6 +174,7 @@ compiled.qualityApproved=false;
 compiled.deployed=false;
 compiled.sourcePosters=sourceOutcomes;
 compiled.renderConstraints=imageRules;
+compiled.nativeTenPanelSheetContract=nativeSheet;
 compiled.criticalPriorityPolicy=priority;
 compiled.p0CompliantPromptsReady=true;
 compiled.generationBlockedUntilReferenceImagesActuallyAttached=true;
@@ -167,6 +190,8 @@ const brief={
   edition:v.edition,gender:v.gender,
   posterInput:v.pages[0].stageBatch.sourcePoster,
   requiredPosterPixels:v.pages[0].stageBatch.expectedNativeSheet,
+  preferredPosterPixels:v.pages[0].stageBatch.preferredNativeSheet,
+  reviewAssemblyCommand:v.pages[0].stageBatch.reviewOnlyAssemblyCommand,
   prompt:v.pages[0].stageBatch.strictPictorialOnlyPrompt,
   characterReferenceInputs:v.pages[0].panels.flatMap(p=>p.requiredCharacterReferences)
    .filter((r,i,a)=>a.findIndex(t=>t.actorId===r.actorId)===i)
@@ -186,6 +211,9 @@ const review=!prepareOnly&&fs.existsSync(reviewPath)?
  JSON.parse(fs.readFileSync(reviewPath,'utf8')):null;
 const summary={
  stageId,oneInvocationOneStage:true,requiredVariantPosters:contract.variants.length,
+ tenPanelSheetPreferredPixels:nativeSheet.preferredFullTenPanelSheetPixels,
+ tenPanelSheetCompositionMode:nativeSheet.mode,
+ generatorSupportsDirectTenPanelFullResolution:'UNVERIFIED',
  p0Priority:'P0_ABSOLUTE_MUST_FOLLOW',
  p0NotRenderedWithoutActualCastBytes:true,
  requiredPanels:stage.requiredIndividualImages,

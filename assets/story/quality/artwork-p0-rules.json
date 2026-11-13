@@ -80,7 +80,32 @@
     "output": "webp",
     "noUpscaledFakeResolution": true,
     "faceHandsImportantItemsInsidePercent": 5,
-    "qualityReferenceReview": true
+    "qualityReferenceReview": true,
+    "nativeTenPanelSheet": {
+      "maxSceneCells": 10,
+      "columns": 2,
+      "maxRows": 5,
+      "minimumTrueNativeCellPixels": [
+        1536,
+        864
+      ],
+      "preferredTrueNativeCellPixels": [
+        2048,
+        1152
+      ],
+      "preferredTenFrameLosslessSheetPixels": [
+        4096,
+        5760
+      ],
+      "assemblyMethod": "INDIVIDUAL_REAL_NATIVE_WEBP_FIRST",
+      "noUpscale": true,
+      "directImageGeneratorCapability": "UNVERIFIED",
+      "reviewOnly": true,
+      "doNotTreatSheetAsOneGameFrame": true,
+      "allowEmptyFinalCellForOddCounts": true,
+      "doNotGenerateExtraSceneForEmptyCell": true,
+      "verificationScript": "scripts/assemble-story-panel-sheet.py"
+    }
   },
   "qualityGates": [
     "HAS_ACTUAL_ATTACHED_CAST_BYTES_OR_BLOCK",

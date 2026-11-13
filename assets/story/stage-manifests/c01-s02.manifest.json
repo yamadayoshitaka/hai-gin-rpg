@@ -22,8 +22,8 @@
     "variantCount": 8,
     "requiredPanels": 48,
     "columns": 2,
-    "maxRows": 4,
-    "maxPanelsPerPoster": 8,
+    "maxRows": 5,
+    "maxPanelsPerPoster": 10,
     "minPerPanelNativePixels": [
       1536,
       864
@@ -37,7 +37,48 @@
     "croppingCellOrder": "left-to-right, top-to-bottom",
     "seventhCell": "blank eighth cell; no fabricated scene",
     "noSheetCutAsFinalUnlessPerCellMeetsNativeResolution": true,
-    "blankCellCannotBecomeScene": true
+    "blankCellCannotBecomeScene": true,
+    "nativeSheetPipeline": {
+      "mode": "INDIVIDUAL_NATIVE_FRAMES_FIRST_THEN_LOSSLESS_REVIEW_SHEET",
+      "preferredCellPixels": [
+        2048,
+        1152
+      ],
+      "minimumCellPixels": [
+        1536,
+        864
+      ],
+      "maximumFramesPerSheet": 10,
+      "columns": 2,
+      "maxRows": 5,
+      "preferredFullTenPanelSheetPixels": [
+        4096,
+        5760
+      ],
+      "minimumFullTenPanelSheetPixels": [
+        3072,
+        4320
+      ],
+      "originalGeneratorSupports4096x5760": "UNVERIFIED_DO_NOT_ASSUME",
+      "nativeDetailGuarantee": "Each scene must be independently rendered at native resolution; composite raster dimensions or upscaling alone are not proof",
+      "gridOrder": "LEFT_TO_RIGHT_TOP_TO_BOTTOM",
+      "absentLastCell": "UNUSED_NEUTRAL_CELL_NEVER_SCENE",
+      "requiredChecks": [
+        "realIndependentWebpFiles",
+        "eachNativeFrameDimensions",
+        "perFrame16by9",
+        "actualOriginalBytesAndSha256",
+        "identityAndTextFreeHumanQA",
+        "noAutomaticApproval",
+        "splitAndPixelRoundTripWithoutUpscaling"
+      ],
+      "sheetRole": "REVIEW_OR_ARCHIVE_ONLY_NOT_A_SINGLE_GAME_FRAME",
+      "gameBinding": "Register individual reviewed frames by stageId|edition|gender|panelId",
+      "assemblyScript": "scripts/assemble-story-panel-sheet.py",
+      "qa": "qa/story-panel-sheet-native.test.py",
+      "afterAssembly": "NO_APPROVAL_AND_NO_DEPLOYMENT_UNTIL_ALL_P0_CHECKS_PASS"
+    },
+    "sheetPolicyAppliesToStage2ExistingVariants": true
   },
   "renderConstraints": {
     "renderMode": "CLEAN_SCENE_GRID_ONLY",
@@ -82,8 +123,9 @@
     "attach real cast image files",
     "P0 gate: every actor's real image bytes must be attached, otherwise BLOCKED (path strings do not count)",
     "P0 prompt: prepend mandatory absolute textless/cast-identity/canonical-scene rules to every shot and variant render prompt",
-    "render textless hi-res posters for each variant (if an actual image generation provider is attached)",
-    "slice by explicit cell rectangles",
+    "independently render one native-resolution 16:9 WebP per canonical scene with real character master bytes (if image generator connected)",
+    "assemble approved native WebP frames into 2-column x up-to-5-row lossless review-only sheets (up to 10; never use a low-resolution contact sheet as the original)",
+    "if a native high-res input sheet is supplied, cut only when per-cell native pixels exceed minimum; otherwise BLOCKED_LOW_RES",
     "check native pixels and provenance",
     "review each cell vs its exact screenplay and approved reference",
     "register only approved individual files",
@@ -129,7 +171,30 @@
         3456
       ],
       "numberedArt": false,
-      "status": "SCRIPTED_NOT_APPROVED"
+      "status": "SCRIPTED_NOT_APPROVED",
+      "posterPreferredNativePixels": [
+        4096,
+        4608
+      ],
+      "nativeAssembly": {
+        "rows": 4,
+        "columns": 2,
+        "realSceneCount": 8,
+        "capacity": 8,
+        "blankCellCount": 0,
+        "source": "INDIVIDUAL_NATIVE_WEBP_ONLY",
+        "cellNativePixels": [
+          2048,
+          1152
+        ],
+        "preferredSheetPixels": [
+          4096,
+          4608
+        ],
+        "noFabricatedCell": true,
+        "noUpscale": true,
+        "approval": "NOT_APPROVED"
+      }
     },
     {
       "edition": "pre",
@@ -152,7 +217,30 @@
         3456
       ],
       "numberedArt": false,
-      "status": "SCRIPTED_NOT_APPROVED"
+      "status": "SCRIPTED_NOT_APPROVED",
+      "posterPreferredNativePixels": [
+        4096,
+        4608
+      ],
+      "nativeAssembly": {
+        "rows": 4,
+        "columns": 2,
+        "realSceneCount": 8,
+        "capacity": 8,
+        "blankCellCount": 0,
+        "source": "INDIVIDUAL_NATIVE_WEBP_ONLY",
+        "cellNativePixels": [
+          2048,
+          1152
+        ],
+        "preferredSheetPixels": [
+          4096,
+          4608
+        ],
+        "noFabricatedCell": true,
+        "noUpscale": true,
+        "approval": "NOT_APPROVED"
+      }
     },
     {
       "edition": "post-victory",
@@ -174,7 +262,30 @@
         3456
       ],
       "numberedArt": false,
-      "status": "SCRIPTED_NOT_APPROVED"
+      "status": "SCRIPTED_NOT_APPROVED",
+      "posterPreferredNativePixels": [
+        4096,
+        4608
+      ],
+      "nativeAssembly": {
+        "rows": 4,
+        "columns": 2,
+        "realSceneCount": 7,
+        "capacity": 8,
+        "blankCellCount": 1,
+        "source": "INDIVIDUAL_NATIVE_WEBP_ONLY",
+        "cellNativePixels": [
+          2048,
+          1152
+        ],
+        "preferredSheetPixels": [
+          4096,
+          4608
+        ],
+        "noFabricatedCell": true,
+        "noUpscale": true,
+        "approval": "NOT_APPROVED"
+      }
     },
     {
       "edition": "post-victory",
@@ -196,7 +307,30 @@
         3456
       ],
       "numberedArt": false,
-      "status": "SCRIPTED_NOT_APPROVED"
+      "status": "SCRIPTED_NOT_APPROVED",
+      "posterPreferredNativePixels": [
+        4096,
+        4608
+      ],
+      "nativeAssembly": {
+        "rows": 4,
+        "columns": 2,
+        "realSceneCount": 7,
+        "capacity": 8,
+        "blankCellCount": 1,
+        "source": "INDIVIDUAL_NATIVE_WEBP_ONLY",
+        "cellNativePixels": [
+          2048,
+          1152
+        ],
+        "preferredSheetPixels": [
+          4096,
+          4608
+        ],
+        "noFabricatedCell": true,
+        "noUpscale": true,
+        "approval": "NOT_APPROVED"
+      }
     },
     {
       "edition": "post-defeat",
@@ -218,7 +352,30 @@
         3456
       ],
       "numberedArt": false,
-      "status": "SCRIPTED_NOT_APPROVED"
+      "status": "SCRIPTED_NOT_APPROVED",
+      "posterPreferredNativePixels": [
+        4096,
+        4608
+      ],
+      "nativeAssembly": {
+        "rows": 4,
+        "columns": 2,
+        "realSceneCount": 7,
+        "capacity": 8,
+        "blankCellCount": 1,
+        "source": "INDIVIDUAL_NATIVE_WEBP_ONLY",
+        "cellNativePixels": [
+          2048,
+          1152
+        ],
+        "preferredSheetPixels": [
+          4096,
+          4608
+        ],
+        "noFabricatedCell": true,
+        "noUpscale": true,
+        "approval": "NOT_APPROVED"
+      }
     },
     {
       "edition": "post-defeat",
@@ -240,7 +397,30 @@
         3456
       ],
       "numberedArt": false,
-      "status": "SCRIPTED_NOT_APPROVED"
+      "status": "SCRIPTED_NOT_APPROVED",
+      "posterPreferredNativePixels": [
+        4096,
+        4608
+      ],
+      "nativeAssembly": {
+        "rows": 4,
+        "columns": 2,
+        "realSceneCount": 7,
+        "capacity": 8,
+        "blankCellCount": 1,
+        "source": "INDIVIDUAL_NATIVE_WEBP_ONLY",
+        "cellNativePixels": [
+          2048,
+          1152
+        ],
+        "preferredSheetPixels": [
+          4096,
+          4608
+        ],
+        "noFabricatedCell": true,
+        "noUpscale": true,
+        "approval": "NOT_APPROVED"
+      }
     },
     {
       "edition": "post-gameover",
@@ -257,7 +437,30 @@
         864
       ],
       "numberedArt": false,
-      "status": "SCRIPTED_NOT_APPROVED"
+      "status": "SCRIPTED_NOT_APPROVED",
+      "posterPreferredNativePixels": [
+        4096,
+        1152
+      ],
+      "nativeAssembly": {
+        "rows": 1,
+        "columns": 2,
+        "realSceneCount": 2,
+        "capacity": 2,
+        "blankCellCount": 0,
+        "source": "INDIVIDUAL_NATIVE_WEBP_ONLY",
+        "cellNativePixels": [
+          2048,
+          1152
+        ],
+        "preferredSheetPixels": [
+          4096,
+          1152
+        ],
+        "noFabricatedCell": true,
+        "noUpscale": true,
+        "approval": "NOT_APPROVED"
+      }
     },
     {
       "edition": "post-gameover",
@@ -274,7 +477,30 @@
         864
       ],
       "numberedArt": false,
-      "status": "SCRIPTED_NOT_APPROVED"
+      "status": "SCRIPTED_NOT_APPROVED",
+      "posterPreferredNativePixels": [
+        4096,
+        1152
+      ],
+      "nativeAssembly": {
+        "rows": 1,
+        "columns": 2,
+        "realSceneCount": 2,
+        "capacity": 2,
+        "blankCellCount": 0,
+        "source": "INDIVIDUAL_NATIVE_WEBP_ONLY",
+        "cellNativePixels": [
+          2048,
+          1152
+        ],
+        "preferredSheetPixels": [
+          4096,
+          1152
+        ],
+        "noFabricatedCell": true,
+        "noUpscale": true,
+        "approval": "NOT_APPROVED"
+      }
     }
   ],
   "offlineImageHandoff": {
