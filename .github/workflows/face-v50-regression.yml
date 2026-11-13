@@ -1,0 +1,58 @@
+name: v50 youthful hero and haircut catalog
+on:
+  pull_request:
+    paths:
+      - 'src/face-feature-meshes.js'
+      - 'src/face-hair-groom-v50.js'
+      - 'src/hero-youthful-appearance-v50.js'
+      - 'src/heroine-battle-costume-bridge.js'
+      - 'src/face-scalp-wig.js'
+      - 'src/character-demographics-v47.js'
+      - 'src/character-cast-v46.js'
+      - 'face-mesh-studio.html'
+      - 'face-body-studio.html'
+      - 'male-body-studio.html'
+      - 'qa/face-v50-regression.test.mjs'
+      - 'qa/face-v50-browser.cjs'
+  push:
+    branches: [main]
+    paths:
+      - 'src/face-feature-meshes.js'
+      - 'src/face-hair-groom-v50.js'
+      - 'src/hero-youthful-appearance-v50.js'
+      - 'src/heroine-battle-costume-bridge.js'
+      - 'src/face-scalp-wig.js'
+      - 'src/character-demographics-v47.js'
+      - 'src/character-cast-v46.js'
+      - 'face-mesh-studio.html'
+      - 'face-body-studio.html'
+      - 'male-body-studio.html'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  v50-visual:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save --package-lock=false playwright@1.56.0 three@0.160.1
+      - name: Verify v50 anatomy, armor and haircut catalog
+        run: node --test qa/face-v50-regression.test.mjs qa/face-v49-regression.test.mjs qa/hero-hair-v43-selection.test.mjs qa/character-demographics-v47.test.mjs
+      - run: npx playwright install chromium
+      - name: Start local model studio
+        run: |
+          python3 -m http.server 8766 --bind 127.0.0.1 > /tmp/v50-http.log 2>&1 &
+          sleep 2
+      - name: Capture true mobile 3D faces and distinct groom silhouettes
+        run: node qa/face-v50-browser.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: face-v50-youth-and-catalog
+          path: qa-screenshots/face-v50/
+          retention-days: 14
+          if-no-files-found: warn

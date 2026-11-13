@@ -16,6 +16,12 @@ const bell=(x,c,w)=>Math.exp(-.5*((x-c)/w)**2);
 const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
 const smoothstep=t=>{const q=clamp(t,0,1);return q*q*(3-2*q)};
 const vertexMakeup=new WeakMap();
+/** Age is the sole source of old-looking under-eye pigment. */
+export function skinAgeShadowFactor(ageBand='twenties'){
+ const id=resolveAgeBand(ageBand).id;
+ return id==='under10'||id==='teens'?.06:id==='twenties'?.12:
+  id==='thirties'?.27:id==='forties'?.53:id==='sixties'?.88:1;
+}
 const orbitalRestPositions=new WeakMap();
 function setVertexMakeup(mesh,rgb){
  mesh.geometry.setAttribute('color',new THREE.Float32BufferAttribute(rgb,3));
@@ -227,8 +233,12 @@ export function updateRealFacePigment(face,controls={},mode='color',gender='fema
   const mouthCorners=bell(nx,.235,.035)*bell(ny,.478,.027)*front;
   const ageShade=age.wrinkles*(.17*foreheadBands+.30*crows+
    .42*nasolabial+.19*mouthCorners);
-  const contactShade=.15*underEye+.085*noseWing+.058*philtrum+
-   .07*lipShade+age.sag*.15*underEye+ageShade;
+  // 20s must not inherit the adult under-eye bag. Skin shades rise with
+  // AGE independently of cosmetic presets; no permanent young wrinkles.
+  const youthFade=skinAgeShadowFactor(age.id);
+  const contactShade=(.018+.132*youthFade)*underEye+
+   (.035+.05*youthFade)*noseWing+.028*philtrum+
+   (.018+.052*youthFade)*lipShade+age.sag*.15*underEye+ageShade;
   const s=Math.max(.55,1-contactShade);
   const rgb=pigmentFactor(skin,blush,cheek)
    .multiply(pigmentFactor(skin,lipstick,.30*lipMask))
@@ -241,6 +251,7 @@ export function updateRealFacePigment(face,controls={},mode='color',gender='fema
  face.userData.softNaturalLipTint=true;
  face.userData.lipTintVertexCount=actualLipTintVertices;
  face.userData.cheekTintVertexCount=actualCheekTintVertices;
+ face.userData.v50YouthShadowScale=skinAgeShadowFactor(age.id);
  for(const name of ['UPPER','LOWER']){
   const lip=face.getObjectByName(name+'_3D_VERMILION_LIP');
   if(lip)tintRealLipSurface(lip,settings,mode);
@@ -480,7 +491,9 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
  const baseEyeRadius=d.x*.052;
  // Blender Studio: expose convex corneal volume above the real socket and
  // wrap the lids back onto the facial skin. Do not simply translate the eyes.
- const eyeApertureRatio=female?.50:.34;
+ // Male .34 made even the 20-year-old protagonist look sleepy/elderly.
+ // Restore a natural, expressive eye opening without artificial bulging.
+ const eyeApertureRatio=female?.50:.455;
  // A low, lid-seated corneal dome: the former 0.58R projection looked like
  // detached snail eyes in the mobile side view. Preserve slight curvature.
  const anteriorGlobeRatio=female?(settings.irisDiameter>=1.30?.105:.120):.130;

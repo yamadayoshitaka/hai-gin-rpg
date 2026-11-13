@@ -5,6 +5,7 @@ import {normalizePartSelection,PART_CATALOG} from './face-part-catalog-v32.js';
 import {synchronizeHeroHairSelection} from './hero-hair-controls-v43.js';
 import {chooseHeroFacePreset,polishHeroFaceControls} from './hero-face-presets-v45.js';
 import {resolveAgeBand,resolveBodyType,applyDemographicFaceControls,AGE_BAND_IDS,BODY_TYPE_IDS} from './character-demographics-v47.js?v=47';
+import {youngHeroMaleControls} from './hero-youthful-appearance-v50.js?v=50';
 export const BODY_SHAPES=Object.freeze({
  slim:Object.freeze({width:.91,depth:.92,label:'細身'}),
  average:Object.freeze({width:1,depth:1,label:'標準'}),
@@ -23,7 +24,7 @@ const rows=[
  ['commander-female','女性主人公・軍師','female','canon-provisional',
   'assets/story/characters/commander/female-master.webp','young','slim',0,'fringe-long','blonde','large','commander'],
  ['commander-male','男性主人公・軍師','male','canon-scene-only',
-  'assets/story/panels/c01-s01-m01.webp','young','average',5,'male-comma','black','focused','commander'],
+  'assets/story/panels/c01-s01-m01.webp','young','average',0,'male-comma','black','focused','commander'],
  ['lucia','リュシア・銀髪摂政','female','canon-master',
   'assets/story/characters/lucia/master.webp','adult','slim',3,'female-low-bun','silver','elegant','regent'],
  ['garan','ガラン・老騎士','male','canon-provisional',
@@ -75,8 +76,10 @@ export function characterAppearance(id,current={}){
   item.eyeShape==='small'?{eyeHeight:.83,eyeWidth:.92,irisDiameter:1.05}:
   item.eyeShape==='large'?{eyeHeight:1.31,eyeWidth:1.19,irisDiameter:1.23}:{};
  return {item,parts:hair.parts,styleId:hair.styleId,
-  controls:applyDemographicFaceControls({...refined,...eye,
-   beardDensity:item.gender==='male'?age.beard:0},
+  controls:applyDemographicFaceControls(
+   item.id==='commander-male'?
+    youngHeroMaleControls({...refined,...eye,beardDensity:0},item.ageBand):
+    {...refined,...eye,beardDensity:item.gender==='male'?age.beard:0},
    item.ageBand,item.bodyType,item.gender),
   bodyShape:resolveBodyShape(item.bodyShape),ageBand:item.ageBand,
   bodyType:item.bodyType};

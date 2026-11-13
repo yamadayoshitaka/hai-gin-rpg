@@ -2,7 +2,7 @@
 <html lang="ja"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#14263a">
-<title>灰銀のレゾナンス | 女性主人公の顔編集 v40</title>
+<title>灰銀のレゾナンス｜男女の顔・髪の編集 v50</title>
 <style>
 :root{font:15px/1.55 system-ui,-apple-system,"Noto Sans JP",sans-serif;color-scheme:dark}
 *{box-sizing:border-box}
@@ -62,8 +62,8 @@ button{padding:9px 11px}
 </style></head>
 <body>
 <header>
-<h1>顔・髪の編集 v43</h1>
-<a class="studioNav" href="./face-body-studio.html?v=41" id="returnToCostume">衣装確認画面に戻る</a>
+<h1>顔・髪の編集 v50</h1>
+<a class="studioNav" href="./face-body-studio.html?v=50" id="returnToCostume">衣装確認画面に戻る</a>
 <p>ライブラリに保存された実GLBの顔設定（顎先5倍・鼻穴隠し2・鼻筋2.5）を男女の実メッシュ標準に固定。口紅とチークを実メッシュの頂点に着色。上下アイライン・眉・眼球を調整し、女性用の高密度ロング（後頭部・両側頭部・襟足まで髪束生成・顔と肩への衝突対応）を追加。保存値とズームを維持します。</p>
 </header>
 <main><section class="panel">
@@ -219,6 +219,7 @@ import {resolveEditedFaceControls,recordFaceManualEdit} from './src/face-state-v
 import {loadHeroineFacePreset,saveHeroineFacePreset} from './src/heroine-face-preset-store.js?v=41';
 import {heroineBeautyControlsV43,heroineBeautyControlsV47,HEROINE_BEAUTY_PART_SELECTION_V43,upgradeUneditedHeroineV42ToV43} from './src/heroine-beauty-preset-v42.js?v=47';
 import {loadMaleFacePreset,saveMaleFacePreset} from './src/male-face-preset-store.js?v=42';
+import {youngHeroMaleControls} from './src/hero-youthful-appearance-v50.js?v=50';
 import {applyHeroineSkinMaterial} from './src/heroine-skin-material.js?v=41';
 import {FEMALE_V7_DEFAULTS,MALE_REFERENCE_DEFAULT,FACE_SLIDER_RANGES,FACE_EYE_SPACING_DEFAULT,FACE_EYE_SPACING_RANGE,CONTACT_COLORS,CONTACT_COLOR_LABELS,safeContactColor,normalizeFemaleFaceControls,normalizeMaleFaceControls} from './src/face-v7-controls.js';
 const $=id=>document.getElementById(id);
@@ -308,6 +309,11 @@ const savedHeroinePreset=v32PartMode?loadHeroineFacePreset():null;
 if(v32PartMode&&!savedHeroinePreset&&new URLSearchParams(location.search).get('hero')==='1')
  Object.assign(v32Parts.female,HEROINE_BEAUTY_PART_SELECTION_V43);
 const savedMalePreset=v32PartMode?loadMaleFacePreset():null;
+if(v32PartMode&&!savedMalePreset){
+ Object.assign(v32Parts.male,chooseHeroFacePreset('male',0,v32Parts.male));
+ Object.assign(v32Parts.male,
+  synchronizeHeroHairSelection('male',v32Parts.male,'male-comma').parts);
+}
 Object.assign(manualFaceOverrides.female,savedHeroinePreset?.manualOverrides||{});
 Object.assign(manualFaceOverrides.male,savedMalePreset?.manualOverrides||{});
 const facePolishMode={
@@ -336,8 +342,10 @@ if(v32PartMode){
   (new URLSearchParams(location.search).get('hero')==='1'?
    heroineBeautyControlsV47(resolvePartSelection('female',v32Parts.female,FEMALE_V7_DEFAULTS).controls):
    resolvePartSelection('female',v32Parts.female,FEMALE_V7_DEFAULTS).controls));
- maleChanges=normalizeMaleFaceControls(savedMalePreset?.controls||
- resolvePartSelection('male',v32Parts.male,MALE_REFERENCE_DEFAULT).controls);
+ maleChanges=normalizeMaleFaceControls(youngHeroMaleControls(
+  savedMalePreset?.controls||
+   resolvePartSelection('male',v32Parts.male,MALE_REFERENCE_DEFAULT).controls,
+  v32Parts.male.ageBand,manualFaceOverrides.male));
 }
 for(const style of listWigStyles('female')){
  const option=document.createElement('option');
@@ -470,7 +478,7 @@ function setView(view){
 function selectGender(next){
  if(!models.has(next))return;
  gender=next;
- $('returnToCostume').href=gender==='male'?'./male-body-studio.html?v=42':'./face-body-studio.html?v=42';
+ $('returnToCostume').href=gender==='male'?'./male-body-studio.html?v=50':'./face-body-studio.html?v=50';
  for(const [k,m] of models)m.root.visible=k===gender;
  $('wig').hidden=false;
   $('v47AgeBand').value=v32Parts[gender].ageBand;
@@ -1002,7 +1010,8 @@ if(v32PartMode){
       v32Parts.male.ageBand,v32Parts.male.bodyType,
       manualFaceOverrides.male,facePolishMode.male);
      const faceChanged=facePartChanged&&JSON.stringify(maleChanges)!==JSON.stringify(nextControls);
-     if(facePartChanged)maleChanges=nextControls;
+     if(facePartChanged)maleChanges=normalizeMaleFaceControls(
+      youngHeroMaleControls(nextControls,v32Parts.male.ageBand,manualFaceOverrides.male));
      if(hairChanged){
      wigOn=true;
      $('wig').setAttribute('aria-pressed','true');
@@ -1045,7 +1054,10 @@ if(v32PartMode){
      if(ready){rebuildFemale();rebuildWig();persistHeroineFace();}
     }else{
      const part=resolvePartSelection('male',v32Parts.male,MALE_REFERENCE_DEFAULT);
-     maleChanges=normalizeMaleFaceControls({...part.controls,...look.controls});
+     maleChanges=normalizeMaleFaceControls(
+      look.item.id==='commander-male'?
+       youngHeroMaleControls({...part.controls,...look.controls},
+        look.ageBand):{...part.controls,...look.controls});
      if(ready){rebuildMale();rebuildMaleHair();persistMaleFace();}
     }
     $('v47AgeBand').value=look.ageBand;
