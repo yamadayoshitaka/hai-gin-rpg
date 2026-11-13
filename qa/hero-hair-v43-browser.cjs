@@ -95,6 +95,24 @@ const hex=bytes=>crypto.createHash('sha256').update(bytes).digest('hex');
      path:path.join(out,'female-v43-eyes-after-beauty.png'),
      timeout:60000,animations:'disabled'});
    }
+   // Real browser: selecting a named cast member must change the actual 3D
+   // wig, gender and face controls, rather than only a dropdown label.
+   const actorId=gender==='female'?'lucia':'garan';
+   const expectedHair=gender==='female'?'female-low-bun':'male-senior-sidepart';
+   await page.locator('#v46'+label+'Cast').selectOption(actorId);
+   await page.waitForFunction(({gender,expectedHair})=>{
+    const state=window.__faceMasterQA?.();
+    return state?.loaded&&state.gender===gender&&
+     state.wigReport?.hairstyleId===expectedHair&&
+     state.wigReport?.gender===gender;
+   },{gender,expectedHair},{timeout:90000});
+   const cast=await page.evaluate(()=>window.__faceMasterQA());
+   if(gender==='female'&&cast.v33HairColor!=='silver')throw Error('Lucia lost silver hair');
+   if(gender==='male'&&cast.v33HairColor!=='ash')throw Error('Garan lost gray hair');
+   await page.locator('#front').click();
+   await page.locator('#faceCanvas').screenshot({
+    path:path.join(out,gender+'-featured-character.png'),
+    timeout:60000,animations:'disabled'});
   }
   if(errors.length)throw Error('Browser exceptions: '+errors.join(';'));
   console.log('HERO_HAIR_V43_VISUAL_QA_OK: three unique front/side/back silhouettes per gender');
