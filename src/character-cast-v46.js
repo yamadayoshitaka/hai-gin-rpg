@@ -4,6 +4,7 @@
 import {normalizePartSelection,PART_CATALOG} from './face-part-catalog-v32.js';
 import {synchronizeHeroHairSelection} from './hero-hair-controls-v43.js';
 import {chooseHeroFacePreset,polishHeroFaceControls} from './hero-face-presets-v45.js';
+import {resolveAgeBand,resolveBodyType,applyDemographicFaceControls,AGE_BAND_IDS,BODY_TYPE_IDS} from './character-demographics-v47.js?v=47';
 export const BODY_SHAPES=Object.freeze({
  slim:Object.freeze({width:.91,depth:.92,label:'細身'}),
  average:Object.freeze({width:1,depth:1,label:'標準'}),
@@ -42,8 +43,19 @@ const rows=[
  ['town-farmer','がっしり農夫','male','npc','','middle-aged','sturdy',8,'male-crew-cut','darkBrown','small','farmer'],
  ['town-librarian','細身の年配女性','female','npc','','elder','average',9,'female-pixie','ash','narrow','scholar']
 ];
+// Rebuild characters against the v47 age/build system, preserving the
+// canonical scene/portrait references and not confusing anyone's identity.
+const castAges=Object.freeze({
+ 'commander-female':'twenties','commander-male':'twenties',
+ lucia:'thirties',garan:'seventies',iris:'twenties',mina:'under10',
+ 'town-innkeeper':'forties','town-matron':'forties',
+ 'town-elder-woman':'eightyPlus','town-elder-man':'seventies',
+ 'town-merchant':'sixties','town-craftswoman':'thirties',
+ 'town-farmer':'forties','town-librarian':'sixties'
+});
 const cast=rows.map(([id,label,gender,status,artReference,age,bodyShape,facePreset,hairStyleId,hairColor,eyeShape,wardrobe])=>
- Object.freeze({id,label,gender,status,artReference,age,bodyShape,facePreset,hairStyleId,hairColor,eyeShape,wardrobe}));
+ Object.freeze({id,label,gender,status,artReference,age,bodyShape,facePreset,hairStyleId,hairColor,eyeShape,wardrobe,
+ ageBand:resolveAgeBand(castAges[id]).id,bodyType:resolveBodyType(bodyShape).id}));
 export const CHARACTER_CAST_V46=Object.freeze(cast);
 export const CHARACTER_CAST_BY_ID=Object.freeze(Object.fromEntries(cast.map(c=>[c.id,c])));
 export const MAJOR_CHARACTER_IDS=Object.freeze(cast.filter(c=>c.status.startsWith('canon-')).map(c=>c.id));
@@ -54,21 +66,20 @@ export function characterAppearance(id,current={}){
  const hairIndex=catalog.findIndex(row=>row.values.styleId===item.hairStyleId);
  if(hairIndex<0)throw Error('Gender-incompatible hairstyle '+item.gender+':'+item.hairStyleId);
  const parts=chooseHeroFacePreset(item.gender,item.facePreset,
-  normalizePartSelection({...current,hairColor:item.hairColor}));
+  normalizePartSelection({...current,hairColor:item.hairColor,
+   ageBand:item.ageBand,bodyType:item.bodyType}));
  const hair=synchronizeHeroHairSelection(item.gender,{...parts,hair:hairIndex},item.hairStyleId);
  const refined=polishHeroFaceControls(item.gender,{});
- const special={
-  young:{},adult:{},child:{faceMorph:.35,eyeHeight:1.27,jawSharpness:3.5},
-  'middle-aged':{faceMorph:-.05,jawSharpness:5.8,browThickness:1.10,eyeHeight:.91},
-  elder:{faceMorph:-.23,jawSharpness:7.0,browThickness:1.22,eyeHeight:.80,lashLength:1.10}
- }[item.age]||{};
+ const age=resolveAgeBand(item.ageBand);
  const eye=item.eyeShape==='narrow'?{eyeHeight:.72,eyeWidth:1.16,irisDiameter:1.03}:
   item.eyeShape==='small'?{eyeHeight:.83,eyeWidth:.92,irisDiameter:1.05}:
   item.eyeShape==='large'?{eyeHeight:1.31,eyeWidth:1.19,irisDiameter:1.23}:{};
  return {item,parts:hair.parts,styleId:hair.styleId,
-  controls:{...refined,...special,...eye,
-   beardDensity:item.gender==='male'?(item.age==='elder'?.55:item.age==='middle-aged'?.25:0):0},
-  bodyShape:resolveBodyShape(item.bodyShape)};
+  controls:applyDemographicFaceControls({...refined,...eye,
+   beardDensity:item.gender==='male'?age.beard:0},
+   item.ageBand,item.bodyType,item.gender),
+  bodyShape:resolveBodyShape(item.bodyShape),ageBand:item.ageBand,
+  bodyType:item.bodyType};
 }
 export function mountCharacterCastSelect(node,gender,onSelect){
  if(!node)throw Error('Missing character cast selection');

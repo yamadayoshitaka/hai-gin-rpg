@@ -62,13 +62,13 @@ export function polishHeroFaceControls(gender,controls={}){
   // Distinct authored eye shapes survive, but the v43 eye-in-lid realism
   // (iris inset, eyeliner clearance and curled lashes) never regresses.
   irisDiameter:Math.max(1.19,Number(controls.irisDiameter)||1.19),
-  eyeDepth:Math.min(-.18,Number(controls.eyeDepth)||0),
+  eyeDepth:Math.max(.045,Number(controls.eyeDepth)||0),
   lashCurl:Math.max(1.15,Number(controls.lashCurl)||0),
   lashLength:Math.max(1.55,Number(controls.lashLength)||0),
   lashDensity:Math.max(1.12,Number(controls.lashDensity)||0)
  };
  if(gender==='male')return {
-  ...controls,eyeDepth:Math.min(-.13,Number(controls.eyeDepth)||0),
+  ...controls,eyeDepth:Math.max(.035,Number(controls.eyeDepth)||0),
   irisDiameter:Math.max(1.08,Number(controls.irisDiameter)||1.08)
  };
  throw Error('Unknown face gender '+gender);

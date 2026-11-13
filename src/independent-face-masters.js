@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import {createAnatomicalFaceParts} from './face-feature-meshes.js';
+import {resolveDemographicProfile} from './character-demographics-v47.js?v=47';
 import {normalizeFemaleFaceControls,normalizeMaleFaceControls,FEMALE_V7_DEFAULTS} from './face-v7-controls.js';
 
 /**
@@ -129,6 +130,7 @@ export function makeIndependentFaceMaster(sourceRoot,gender,{femaleControls={},m
  if(d.x<.02||d.y<.02||d.z<.02)throw Error('Invalid real head geometry bounds');
  const p=geometry.getAttribute('position');
  const originalPoints=p.array.slice();
+ const demo=resolveDemographicProfile(controls.ageBand,controls.bodyType);
  const cx=(b.min.x+b.max.x)/2;
  let changed=0,cheekDelta=0,chinDelta=0;
  let addedCheekDepth=0,narrowedJawDistance=0,apexLowering=0;
@@ -234,13 +236,36 @@ export function makeIndependentFaceMaster(sourceRoot,gender,{femaleControls={},m
   const ny=y+d.y*spec.chinLift*chin+surfaceFairing.dy*.9
     +local.dy-d.y*.0025*pointGain*pointApex+eyeSocketDy+
     browFitY+noseFitY+mouthFitY;
+  // v47 age × weight: deform ORIGINAL source-head vertices, never paste
+  // spheres or detachable wrinkles on top of the face.
+  const fullness=demo.body.faceFullness;
+  nx+=(x-cx)*fullness*(.075*cheek+.052*lowerCheek+.022*chin)*contourGuard;
+  nx-=(x-cx)*demo.age.sag*(.014*lowerCheek+.010*jaw)*contourGuard;
+  const ageSag=d.y*demo.age.sag*
+   (.010*lowerCheek+.005*bell(yn,.58,.13)*front);
+  const faceAgeY=-ageSag+
+   d.y*demo.age.cheekRound*.009*cheek;
+  const forehead=bell(xn,0,.76)*front;
+  const foreheadLines=[.745,.784,.822].reduce((sum,at,k)=>
+   sum+Math.exp(-Math.pow((yn-at)/.0075,2))*(.73+.13*k),0)*forehead;
+  const crowsFeet=bell(Math.abs(xn),.53,.12)*
+   bell(yn,.68,.095)*front*
+   (Math.sin((yn-.645)*d.y*260+Math.abs(xn)*22)*.42+.58);
+  const smileCrease=bell(Math.abs(xn),.31,.068)*
+   bell(yn,.495,.095)*front;
+  const ageLines=d.z*demo.age.wrinkles*
+   (-.0045*foreheadLines+.0043*crowsFeet-.0040*smileCrease);
+  ny+=faceAgeY;
   const nz=z+d.z*(spec.cheekFill*(.74*cheek+1.11*lowerCheek)
     +.016*chinHollow
     +spec.eyeSocketSoftness*bell(Math.abs(xn),.43,.22)
       *bell(yn,.69,.055)*front)+local.dz+surfaceFairing.dz
     +d.z*.003*pointGain*pointApex+faceMorphZ+
     d.z*(.006*controls.nosePositionZ*noseMask+
-     .005*controls.mouthPositionZ*mouthMask);
+     .005*controls.mouthPositionZ*mouthMask)+
+    d.z*fullness*(.065*cheek+.040*lowerCheek+.022*chin)+
+    d.z*demo.age.cheekRound*.014*cheek-
+    d.z*demo.age.sag*(.012*lowerCheek+.010*chin)+ageLines;
   if(gender==='female'){
    if(Math.abs(xn)>=.86){
     outerContourSamples++;
@@ -291,6 +316,7 @@ export function makeIndependentFaceMaster(sourceRoot,gender,{femaleControls={},m
   geometry.index.count/3:p.count/3;
  const report=Object.freeze({
   code:spec.code,gender,sourceVertices:most,
+  v47Demographics:{ageBand:demo.ageBand,bodyType:demo.bodyType,wrinkleStrength:demo.age.wrinkles,faceFullness:demo.faceFullness},
   headTemplate:spec.sourceHead||(gender==='male'?'realistic-head-animation.glb':'unknown'),
   triangles:triangleCount,modifiedVertices:changed,
   cheekVolumeMetric:Number((cheekDelta/p.count).toFixed(9)),

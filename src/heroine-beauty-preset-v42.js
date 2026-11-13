@@ -50,3 +50,15 @@ export function upgradeUneditedHeroineV42ToV43(saved){
  if(!fields.every(key=>Math.abs(Number(saved[key])-old[key])<.0001))return null;
  return {...saved,...heroineBeautyControlsV43()};
 }
+
+// v47 youthful heroine polish: natural convex eyes seated at the liner,
+// gentle blush and soft oval chin. Older characters use the same topology
+// with demographic ageing, not this young-adult cosmetic preset.
+export function heroineBeautyControlsV47(base={}){
+ return {...heroineBeautyControlsV43(base),
+  faceMorph:.43,jawSharpness:4.05,
+  eyeWidth:1.27,eyeHeight:1.20,irisDiameter:1.36,eyeDepth:.055,
+  lashCurl:1.24,lashLength:1.69,lashDensity:1.28,
+  lipstickWidth:1.11,lipstickHeight:1.08,
+  ageBand:'twenties',bodyType:'thin'};
+}
