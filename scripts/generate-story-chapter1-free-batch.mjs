@@ -157,9 +157,11 @@ for(const pg of pages){
  if(committed>=maxPages){summary('PAGE_CAP');break;}
  const pending=pg.shots.filter(s=>['MISSING','LOW_NATIVE_RESOLUTION_REGENERATE'].includes(status(s)));
  if(!pending.length)continue;
- if(pg.shots.some(s=>status(s).startsWith('BLOCKED'))){
-  blocked.push({page:pg.num,reason:'Unpaired or invalid existing source'});continue;
- }
+ const blockers=pg.shots.filter(s=>status(s).startsWith('BLOCKED'));
+ if(blockers.length)blocked.push(...blockers.map(s=>({page:pg.num,shotKey:s.key,reason:status(s)})));
+ // A provider-blocked shot needs its own reviewed revision, but must not
+ // prevent completing the OTHER distinct scenes on this review page.
+ if(blockers.some(s=>status(s)!=='BLOCKED_PROVIDER_SAFETY'))continue;
  let todo;
  try{todo=pending.map(s=>({s,info:renderSpec(s)}));}
  catch(e){blocked.push({page:pg.num,reason:String(e.message)});continue;}
@@ -236,7 +238,8 @@ for(const pg of pages){
   exec('git',['commit','-m','art(review): '+pg.stage+' '+pg.edition+' '+pg.gender+' page '+pg.page+' '+todo.length+' real unapproved frames']);
   exec('git',['push','origin','HEAD:'+branch]);
   committed++;summary('PAGE_COMMITTED');
-  console.log(JSON.stringify({pageTask:pg.num,result:'FIVE_OR_FEWER_REAL_DRAFTS_COMMITTED_NO_FORMAL_REGISTRATION',shots:todo.length}));
+  console.log(JSON.stringify({pageTask:pg.num,result:pg.shots.some(s=>status(s)==='BLOCKED_PROVIDER_SAFETY')?
+   'PARTIAL_PAGE_DRAFTS_COMMITTED_PROVIDER_REVIEW_NEEDED':'FIVE_OR_FEWER_REAL_DRAFTS_COMMITTED_NO_FORMAL_REGISTRATION',shots:todo.length}));
  }catch(e){
   const error=String(e.message||e);
   if(activeShot&&error.includes('FREE_API_STOP_NO_RETRY_HTTP_400 3030:')){
@@ -247,8 +250,11 @@ for(const pg of pages){
     shotKey:activeShot.key,provider:'Cloudflare Workers AI',errorCode:3030,
     requiresHumanSceneRevision:true,automaticRetry:false,actualImageGenerated:false,
     formallyRegistered:false,gameDeployed:false},null,2)+'\n');
-   exec('git',['add','--',blocker]);
-   exec('git',['commit','-m','qa(story): record provider safety block for '+activeShot.key]);
+   // Safely preserve all earlier real images of this page as review-only.
+   // Do not claim the page is complete: the blocked frame still has NO art.
+   const validPartial=files.filter(rel=>fs.existsSync(p(rel)));
+   exec('git',['add','--',blocker,...validPartial]);
+   exec('git',['commit','-m','qa(story): preserve partial unapproved art and provider safety block for '+activeShot.key]);
    exec('git',['push','origin','HEAD:'+branch]);
    blocked.push({page:pg.num,shotKey:activeShot.key,reason:'CLOUDFLARE_SAFETY_3030'});
    summary('PROVIDER_SAFETY_BLOCK_RECORDED_AND_NEXT_PAGE');
