@@ -1,3 +1,4 @@
+import {stage2ReviewedPanelAsset} from './story-stage2-reviewed-art.js';
 import {provisionalRegisteredStoryPanel} from './story-provisional-registered-art.js';
 /**
  * Exactly registered and already sliced Chapter 1 manga panels.
@@ -14,6 +15,8 @@ const REGISTERED=Object.freeze({
 });
 export function registeredStoryPanelAsset(shot){
  if(!shot||typeof shot.id!=='string')return null;
+ const reviewedStage2=stage2ReviewedPanelAsset(shot);
+ if(reviewedStage2)return reviewedStage2;
  const provisional=provisionalRegisteredStoryPanel(shot);
  if(provisional)return provisional.asset;
  const allowed=REGISTERED[shot.stageId+'|'+shot.comicEdition+'|'+shot.protagonistGender];
