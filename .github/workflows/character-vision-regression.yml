@@ -17,7 +17,7 @@ concurrency:
 
 jobs:
   visual-matrix:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 24
     env:
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
