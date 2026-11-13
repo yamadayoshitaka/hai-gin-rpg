@@ -16,6 +16,22 @@ export const DEMON_MAKEUP_PRESETS=Object.freeze({
  m045:Object.freeze({style:'cursed-knight',eyeliner:.64,lips:.26,sigil:1,tail:false,horns:'none',wings:false}),
 });
 export const hasDemonCosmetics=profile=>!!DEMON_MAKEUP_PRESETS[profile?.id];
+export const DEMON_COLOR_THEMES=Object.freeze({
+ species:Object.freeze({label:'種族固有'}),
+ infernal:Object.freeze({label:'紅蓮',skin:0x813947,cloth:0x30202d,
+  metal:0x6d515a,accent:0xda6b54,makeup:0x24141f,lip:0x762a39}),
+ abyss:Object.freeze({label:'夜紫',skin:0x5b4a7e,cloth:0x282537,
+  metal:0x625d81,accent:0x9c70db,makeup:0x201628,lip:0x5c305e}),
+ necrotic:Object.freeze({label:'灰白',skin:0x82949b,cloth:0x31363f,
+  metal:0x818a94,accent:0x95c9c1,makeup:0x292f37,lip:0x475861}),
+});
+export function withDemonColorTheme(profile,theme='species'){
+ if(!profile||!hasDemonCosmetics(profile))return profile;
+ const t=DEMON_COLOR_THEMES[theme];
+ if(!t)throw Error('Unknown demon skin palette '+theme);
+ if(theme==='species')return profile;
+ return Object.freeze({...profile,...t,makeup:t.makeup,lip:t.lip});
+}
 
 export function addDemonicFaceCosmetics({profile,frames,detail='high',attach,tube}={}){
  const preset=DEMON_MAKEUP_PRESETS[profile?.id];
