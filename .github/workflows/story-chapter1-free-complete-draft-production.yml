@@ -70,6 +70,21 @@ jobs:
           CLOUDFLARE_FREE_PLAN_CONFIRMED: ${{ vars.CLOUDFLARE_FREE_PLAN_CONFIRMED }}
           CLOUDFLARE_CHAPTER1_DAILY_ESTIMATE_CAP: '7500'
         run: node scripts/generate-story-chapter1-free-batch.mjs --mode generate --max-pages 12
+      - name: Independently regress every canonical image and physical actor master (NO automatic visual approval)
+        if: always()
+        run: |
+          node qa/story-chapter1-draft-regression.mjs --strict
+      - name: Save full chapter regression report to review branch
+        if: always()
+        shell: bash
+        run: |
+          if [ -f qa-reports/story-stage-production/chapter1-free-render/c01-regression.json ]; then
+            git add -- qa-reports/story-stage-production/chapter1-free-render/c01-regression.json
+            if ! git diff --cached --quiet; then
+              git commit -m "qa(story): checkpoint 462-scene image integrity and manual visual QA gaps"
+              git push origin HEAD:story/chapter1-free-actual-art
+            fi
+          fi
       - name: Upload per-scene review and progress proof
         if: always()
         uses: actions/upload-artifact@v4
