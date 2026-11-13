@@ -6,6 +6,8 @@
 import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {nonhumanMonsterStage} from './nonhuman-model-quality.js';
+import {realismPaletteFor} from './monster-realistic-palettes.js';
+import {createMonsterAnatomicalLoft} from './monster-realistic-loft.js';
 import {buildCanineFurRibbonGeometry} from './canine-fur-ribbons.js?v=4.4.89';
 import {decorateMonsterPhotoMaterial,detachMonsterPhotoMaterial} from './monster-photo-pbr.js?v=4.4.81';
 
@@ -36,7 +38,7 @@ function cachedGeometry(key,make){
  return geometryCache.get(key);
 }
 function material(color,{metal=0.08,rough=.69,glow=false,translucent=false}={},spec={},role='skin',detail='high'){
- const key=[spec.family,role,detail,color,metal,rough,glow,translucent].join(':');
+ const key=[spec.id,spec.family,role,detail,color,metal,rough,glow,translucent].join(':');
  let entry=materialCache.get(key);
  if(!entry){
    const wet=spec.family==='aquatic'&&translucent;
@@ -50,9 +52,10 @@ function material(color,{metal=0.08,rough=.69,glow=false,translucent=false}={},s
      ...(wet?{clearcoat:.88,clearcoatRoughness:.085,ior:1.35,
        transmission:.14,thickness:.4}:{}),
    });
-   if(role==='skin'||role==='light'||(spec.family==='golem'&&role==='shadow')){
+   if(role==='skin'||role==='light'||role==='fabric'||role==='bandage'||
+     role==='leather'||role==='metal'||(spec.family==='golem'&&role==='shadow')){
      decorateMonsterPhotoMaterial(mat,{
-       family:spec.family,role,detail,metal,glow,translucent,
+       family:spec.family,speciesId:spec.id,role,detail,metal,glow,translucent,
      });
    }
    mat.userData.monsterCacheKey=key;
@@ -81,16 +84,17 @@ export function createSculpture(spec,detail='high'){
  const nonhumanStage=detail==='low'?0:nonhumanMonsterStage(spec);
  if(!resolution)throw Error('Unknown sculpture resolution: '+detail);
  const fine=detail!=='low',pivots={},root=new THREE.Group();root.name=spec.id+'-'+spec.name;
- const colors=spec.colors;
+ const colors=spec.colors,realism=realismPaletteFor(spec);
  const tone={skin:colors.base,light:colors.highlight,accent:colors.accent,
    shadow:'#26232c',bone:'#e9dfc5',
-   // Photographic iris pigment by anatomy rather than a shared neon eye.
-   // Preserve existing otherworldly eyes on protected humanoid monsters.
-   eye:nonhumanMonsterStage(spec)===0?'#edaf73':
-     ['insect','arachnid'].includes(spec.family)?'#30262a':
+   fabric:'#493d43',bandage:'#b4a993',leather:'#4b3734',
+   metal:'#737d83',hair:'#302a29',mortalSkin:'#a49b93',
+   // Eyes are pigmented and recessed, never generic neon spheres.
+   eye:['insect','arachnid'].includes(spec.family)?'#30262a':
      spec.family==='aquatic'?'#6fa0a2':
      spec.family==='reptile'?'#b18f4d':
      spec.family==='avian'?'#b99955':'#a68b51'};
+ if(realism)Object.assign(tone,realism);
  const V=v=>new THREE.Vector3(...v);
  const attach=(parent,geo,shade,opt={})=>{
    const isRole=typeof shade==='string'&&Object.hasOwn(tone,shade);
@@ -169,6 +173,13 @@ export function createSculpture(spec,detail='high'){
    geo.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
    geo.setIndex(indices);geo.computeVertexNormals();
    return own(attach(parent,geo,shade));
+ };
+ const anatomicalLoft=(parent,shade,rings,{name='realistic-anatomical-mesh',
+   kind='torso',asymmetry=0}={})=>{
+   const mesh=own(attach(parent,createMonsterAnatomicalLoft(rings,
+     {detail,kind,asymmetry}),shade,{rough:kind==='face'?.84:.92,metal:0,name}));
+   mesh.userData.anatomyLoft=true;
+   return mesh;
  };
  const fur=(parent,shade,guides)=>{
    if(!guides?.length)return null;
@@ -317,7 +328,7 @@ export function createSculpture(spec,detail='high'){
      // Eyes sit under a raised orbital ridge, rather than glowing orbs.
      sphere(parent,'shadow',[side*width,y,z],[size*1.45,size*.83,size*.35]);
      sphere(parent,'eye',[side*width,y+.003,z+.012],[size*.70,size*.57,size*.21],
-       {rough:.16,glow:!organic});
+       {rough:.35,glow:false});
      sphere(parent,'bone',[side*(width-size*.23),y+size*.20,z+.029],
        [size*.16,size*.14,size*.08],{rough:.12});
      sphere(parent,'skin',[side*width,y+size*.70,z-.004],
@@ -348,7 +359,8 @@ export function createSculpture(spec,detail='high'){
    const m=attach(parent,geo,shade,{metal:.32});m.position.set(...position);return m;
  };
  root.userData.detail=detail;
- return {root,pivots,group,sphere,rock,bone,spike,tube,bridge,fur,skinnedFur,bandage,fin,eyes,claws,ring,fine,colors};
+ return {root,pivots,group,sphere,rock,bone,spike,tube,bridge,
+   anatomicalLoft,fur,skinnedFur,bandage,fin,eyes,claws,ring,fine,colors};
 }
 export function disposeMonsterSculpture(model){
  if(!model)return;
