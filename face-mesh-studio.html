@@ -180,7 +180,8 @@ import {updateFaceFeatureAngles,applyFaceColorMode,updateRealFacePigment} from '
 import {createScalpAnchoredWig} from './src/face-scalp-wig.js?v=42';
 import {createPartSelectorUI} from './src/face-part-selector-ui-v32.js?v=41';
 import {defaultPartSelection,resolvePartSelection,PART_CATALOG,HAIR_COLORS} from './src/face-part-catalog-v32.js?v=41';
-import {listWigStyles,DEFAULT_WIG_STYLE_ID} from './src/face-wig-styles.js?v=41';
+import {listWigStyles,DEFAULT_WIG_STYLE_ID} from './src/face-wig-styles.js?v=43';
+import {resolveHeroHairSpec} from './src/hero-hair-controls-v43.js?v=43';
 import {loadHeroineFacePreset,saveHeroineFacePreset} from './src/heroine-face-preset-store.js?v=41';
 import {heroineBeautyControlsV42,HEROINE_BEAUTY_PART_SELECTION_V42} from './src/heroine-beauty-preset-v42.js?v=42';
 import {loadMaleFacePreset,saveMaleFacePreset} from './src/male-face-preset-store.js?v=42';
@@ -421,7 +422,7 @@ function rebuildWig(){
   const wig=createScalpAnchoredWig(models.get('female').face,{
    count:wigDensity,lengthScale:wigLength,fineFringeMultiplier:3,
    normalLayeredSingleMesh:v32PartMode,
-   styleId:wigStyleId,
+   styleId:resolveHeroHairSpec('female',v32Parts.female,v32PartMode?null:wigStyleId).styleId,
    volumeProfile:v32PartMode?v32Parts.female.hairVolume:'natural',
    color:hairPalette[v32PartMode?v32Parts.female.hairColor:wigColor]||hairPalette.blonde
   });
@@ -463,18 +464,19 @@ $('wigColor').addEventListener('change',()=>{
 });
 $('wigStyle').addEventListener('change',()=>{
  wigStyleId=$('wigStyle').value;
+ if(v32PartMode)v32Parts.female.hair=resolveHeroHairSpec('female',v32Parts.female,wigStyleId).hairIndex;
+ wigOn=true;
  rebuildWig();$('metrics').textContent=JSON.stringify(metrics(),null,2);
 });
 function rebuildMaleHair(){
  const previous=wigs.get('male');
  if(previous){previous.root.removeFromParent();previous.dispose();wigs.delete('male');}
  if(!v32PartMode||!ready||!wigOn||!models.get('male'))return;
- const chosen=resolvePartSelection('male',v32Parts.male,MALE_REFERENCE_DEFAULT);
- const lengths=[.60,.37,.41,.40,.55,.63,.36,.50,.60,.84,.35,.18,.12];
+ const hairSpec=resolveHeroHairSpec('male',v32Parts.male);
  const hair=createScalpAnchoredWig(models.get('male').face,{
-  count:680,lengthScale:lengths[v32Parts.male.hair],fineFringeMultiplier:2,
+  count:680,lengthScale:hairSpec.lengthScale,fineFringeMultiplier:2,
   visualFiberMultiplier:1,staticGroom:true,normalLayeredSingleMesh:v32PartMode,
-  styleId:chosen.hairStyleId,
+  styleId:hairSpec.styleId,
   volumeProfile:v32Parts.male.hairVolume,
   color:hairPalette[v32Parts.male.hairColor]||hairPalette.blonde
  });
@@ -814,16 +816,33 @@ if(v32PartMode){
  for(const sex of ['female','male']){
   createPartSelectorUI($('v32'+(sex==='female'?'Female':'Male')+'Choices'),
    sex,v32Parts[sex],picked=>{
+    const previousParts=v32Parts[sex];
+    const hairChanged=['hair','hairColor','hairVolume','hairX','hairY','hairAngle']
+     .some(key=>previousParts[key]!==picked[key]);
     v32Parts[sex]=picked;
     const selected=resolvePartSelection(sex,picked,sex==='female'?FEMALE_V7_DEFAULTS:MALE_REFERENCE_DEFAULT);
     v32Makeup[sex]=picked.makeup;
     if(sex==='female'){
-     modelChanges=normalizeFemaleFaceControls(selected.controls);
+     const nextControls=normalizeFemaleFaceControls(selected.controls);
+     const faceChanged=JSON.stringify(modelChanges)!==JSON.stringify(nextControls);
+     modelChanges=nextControls;
      wigStyleId=selected.hairStyleId;
-     if(ready){rebuildFemale();rebuildWig();}
+     $('wigStyle').value=wigStyleId;
+     if(hairChanged)wigOn=true;
+     if(ready){
+      if(faceChanged)rebuildFemale();
+      if(hairChanged||!wigs.get('female'))rebuildWig();
+     }
     }else{
-     maleChanges=normalizeMaleFaceControls(selected.controls);
-     if(ready){rebuildMale();rebuildMaleHair();persistMaleFace();}
+     const nextControls=normalizeMaleFaceControls(selected.controls);
+     const faceChanged=JSON.stringify(maleChanges)!==JSON.stringify(nextControls);
+     maleChanges=nextControls;
+     if(hairChanged)wigOn=true;
+     if(ready){
+      if(faceChanged)rebuildMale();
+      if(faceChanged||hairChanged||!wigs.get('male'))rebuildMaleHair();
+      persistMaleFace();
+     }
     }
     if(ready){repaint();if(sex==='female')persistHeroineFace();}
    });
