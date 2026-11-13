@@ -1,0 +1,57 @@
+name: v43 heroine and male hairstyle visual regression
+on:
+  pull_request:
+    paths:
+      - 'src/hero-hair-controls-v43.js'
+      - 'src/face-scalp-wig.js'
+      - 'src/face-feature-meshes.js'
+      - 'src/heroine-beauty-preset-v42.js'
+      - 'face-mesh-studio.html'
+      - 'face-body-studio.html'
+      - 'male-body-studio.html'
+      - 'qa/hero-hair-v43-browser.cjs'
+      - '.github/workflows/hero-hair-v43-visual.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'src/hero-hair-controls-v43.js'
+      - 'src/face-scalp-wig.js'
+      - 'src/face-feature-meshes.js'
+      - 'src/heroine-beauty-preset-v42.js'
+      - 'face-mesh-studio.html'
+      - 'face-body-studio.html'
+      - 'male-body-studio.html'
+      - 'qa/hero-hair-v43-browser.cjs'
+      - '.github/workflows/hero-hair-v43-visual.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  hero-hair-v43-visual:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install real three.js and Chromium
+        run: |
+          npm install --no-save --package-lock=false playwright@1.56.0 three@0.160.1
+          npx playwright install chromium
+      - name: Unit-test 16 hairstyles and preserved v43 eyes
+        run: node --test qa/independent-face-masters.test.mjs
+      - name: Serve actual GLB body and head assets locally
+        run: |
+          python3 -m http.server 8766 --bind 127.0.0.1 > /tmp/hair-v43-http.log 2>&1 &
+          sleep 2
+      - name: Screenshot 3 distinct actual 3D cuts per gender
+        run: node qa/hero-hair-v43-browser.cjs
+      - name: Save 6 hairstyle screenshots plus heroine eye comparison
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: v43-six-hair-silhouettes-and-heroine-eyes
+          path: qa-screenshots/hero-hair-v43/
+          retention-days: 14
+          if-no-files-found: warn
