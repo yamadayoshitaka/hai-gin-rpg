@@ -104,14 +104,25 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
  // avoiding the visible "two spheres glued together" silhouette.
  g.bridge(torso,'skin',[0,1.35,.32],[0,1.57,.76+v*.055],.325,.215);
  const head=g.group('head',[0,1.56,.70+v*.06]);
- g.sphere(head,'skin',[0,.03,.06],[.33,.28,.36]);
+ // Rigid reptilian wedge instead of the same spherical skull as a cat.
+ g.sphere(head,'skin',[0,.03,.06],reptile?[.294,.239,.385]:
+   feline?[.314,.271,.350]:[.33,.28,.36]);
+ if(reptile){
+   g.bridge(head,'skin',[0,.045,-.19],[0,-.085,.55],.257,.128);
+ }else if(feline){
+   g.bridge(head,'skin',[0,-.028,.10],[0,-.12,.36],.209,.131);
+ }
  if(canine){
    // Muzzle grows out of the cranium as a continuous tapered nasal bridge,
    // not a second round sphere pasted onto the face.
    g.bridge(head,'skin',[0,-.02,.13],[0,-.10,.54],.245,.125);
  }
  const muzzle=reptile?.57:feline?.32:.43;
- g.sphere(head,'light',[0,-.13,muzzle],[.23,.15,.31]);
+ if(reptile){
+   g.bridge(head,'skin',[0,-.115,.245],[0,-.152,.82],.203,.116);
+   g.sphere(head,'light',[0,-.162,.684],[.145,.064,.226]);
+ }else g.sphere(head,'light',[0,-.13,muzzle],
+   feline?[.204,.126,.259]:[.23,.15,.31]);
  g.sphere(head,'shadow',[0,-.17,muzzle+.19],[.18,.057,.12],{name:'nose'});
  if(canine){
    // Small almond eyes set INTO the bone, heavy brows, wet nose and
@@ -127,8 +138,27 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    // Philtrum separates the lip pads and links them naturally to the nose.
    g.tube(head,'shadow',[[0,-.195,muzzle+.285],[0,-.235,muzzle+.275],
       [0,-.26,muzzle+.22]],.009);
+ }else if(reptile){
+   // Narrow slit eyes, partially recessed into the cranium. The eyelids
+   // are anatomical pivots for the original blink and death regressions.
+   for(const side of [-1,1]){
+     const suffix=side<0?'L':'R';
+     g.sphere(head,'shadow',[side*.279,.095,.246],[.030,.033,.081],
+       {name:'reptile-orbital-socket'});
+     g.sphere(head,'eye',[side*.292,.098,.249],[.012,.020,.052],
+       {rough:.38,name:'reptile-recessed-eye'});
+     g.sphere(head,'skin',[side*.275,.151,.235],[.066,.025,.096],
+       {name:'reptile-supraorbital-ridge'});
+     g.sphere(head,'shadow',[side*.118,-.154,.819],[.025,.014,.028],
+       {name:'reptile-nostril'});
+     const lid=g.group('eyelid'+suffix,[side*.291,.172,.262],head);
+     lid.userData.restY=lid.position.y;
+     lid.userData.blinkTravel=.075;
+     g.sphere(lid,'skin',[0,0,0],[.050,.024,.068],
+       {name:'nictitating-membrane',rough:.87});
+   }
  }else{
-   g.eyes(head,.35,.11,.20,.055);
+   g.eyes(head,.335,.10,.195,.040);
  }
  for(const side of [-1,1]){
    const horn=v===2||reptile? .28:.12;
