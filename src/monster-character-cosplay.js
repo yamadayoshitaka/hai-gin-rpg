@@ -274,8 +274,8 @@ function buildMonsterCostume(THREE,model,profile,detail){
   for(const material of ownedMats)material.dispose();
  };
 }
-export function createCosplayedHumanoidMonster(spec,{detail='high'}={}){
- const profile=humanoidMonsterCostumeFor(spec);
+export function createCosplayedHumanoidMonster(spec,{detail='high',genderVariant=null}={}){
+ const profile=humanoidMonsterCostumeFor(spec,{genderVariant});
  if(!profile)throw Error('No humanoid cosplay mapping '+String(spec?.id));
  const root=new THREE.Group();root.name=spec.id+'-'+spec.name+'-cosplay';
  const fallback=createMonsterModel(spec,{detail});root.add(fallback);
