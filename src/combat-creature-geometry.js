@@ -100,11 +100,14 @@ function assemble(detail,face) {
     geo.setAttribute('uv',new THREE.Float32BufferAttribute(uvs,2));
     geo.setIndex(triangles);geo.computeVertexNormals();add(name,geo,tint);
   };
-  const profile=(name,tint,sections)=>{
+  const profile=(name,tint,sections,trim=false)=>{
     // The main silhouette comes from anatomical cross sections, rather than
     // overlapping balls. Subdividing THESE surfaces yields smaller polygons
     // without making the creature's head or limbs look round and toy-like.
-    const radial=detail==='high'?32:12,subdivisions=detail==='high'?5:1;
+    // Preserve the detailed skull/torso loft; thin mouth mucosa and leather
+    // saddle cloth need fewer rings, not a second high-density skeleton.
+    const radial=detail==='high'?(trim?16:32):12,
+      subdivisions=detail==='high'?(trim?2:5):1;
     const points=[],uv=[],indices=[];
     const curve=(a,b,c,d,t)=>.5*((2*b)+(-a+c)*t+
       (2*a-5*b+4*c-d)*t*t+(-a+3*b-3*c+d)*t*t*t);
@@ -390,12 +393,12 @@ function addCoatSculpture(g,type,s,detail){
     [headZ+l*.43,headY-.188,w*.205,h*.016],
     [headZ+l*.64,headY-.191,w*.145,h*.011],
     [headZ+l*.70,headY-.205,.008,.006],
-  ]);
+  ],true);
   if(detail==='high')profile('jaw',0x76504c,[
     [headZ+l*.31,headY-.200,.008,.006],
     [headZ+l*.46,headY-.198,w*.13,h*.011],
     [headZ+l*.57,headY-.202,.012,.007],
-  ]);
+  ],true);
   for(const side of [-1,1]){
     curved('core',shadow,[
       [side*w*.31,headY-.175,headZ+l*.20],
@@ -450,7 +453,7 @@ function addCoatSculpture(g,type,s,detail){
     [-l*.48,h+.255,.008,.013],[-l*.39,h+.32,w*.74,.075],
     [-l*.14,h+.365,w*.77,.105],[l*.10,h+.335,w*.72,.082],
     [l*.23,h+.28,.008,.015],
-  ]);
+  ],true);
   sphere('equipment',0x72533e,0,h+.420,-l*.13,w*.66,.047,l*.30);
   for(const side of [-1,1]){
     curved('equipment',0x3f302c,[
@@ -690,7 +693,7 @@ function addHorse(g,s,detail){
     [-l*.58,h+.31,.008,.012],[-l*.46,h+.40,w*.84,.086],
     [-l*.18,h+.43,w*.90,.107],[l*.10,h+.405,w*.81,.080],
     [l*.22,h+.34,.008,.016],
-  ]);
+  ],true);
   sphere('equipment',0x946745,0,h+.51,-.18,w*.65,.055,l*.30);
   // Rear and flank armour closes the bare saddle blanket silhouette.
   sphere('equipment',0x463935,0,h+.33,-l*.45,w*.95,.080,l*.52);
@@ -824,7 +827,7 @@ function addDragon(g,type,s,detail){
     [headZ+l*.42,headY-.209,w*.235,h*.018],
     [headZ+l*.68,headY-.204,w*.150,h*.010],
     [headZ+l*.78,headY-.208,.008,.006],
-  ]);
+  ],true);
   for(const side of [-1,1]){
     curved('core',shadow,[
       [side*w*.328,headY-.163,headZ+l*.21],
