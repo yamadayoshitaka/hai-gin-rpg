@@ -331,12 +331,11 @@ export function fitStudioNeckContinuity({faceRoot,faceMesh,wardrobeRoot}={}){
  // narrow soft skin transition right under the jaw.
  const skinShade=facePigment.base.clone()
   .multiply(facePigment.multiplier).multiplyScalar(.78);
- const fallbackCloth=new THREE.Color(0x667d92);
- const fabricMaterial=wardrobeRoot.getObjectByName('sewn-neckline')?.material;
- const fabricBase=Array.isArray(fabricMaterial)?fabricMaterial[0]:fabricMaterial;
- const tunicShade=fabricBase?.color&&
-  (fabricBase.color.r+fabricBase.color.g+fabricBase.color.b)<2.4?
-  fabricBase.color.clone():fallbackCloth;
+ // The source sewn-neckline texture is pale and its material.color
+ // does not represent the visible fabric pigment. Sampling it produced the
+ // same WHITE rectangle in actual Chromium. Use a consistent slate
+ // undershirt tint; fading the last ring inside the jaw hides its seam.
+ const tunicShade=new THREE.Color(0x526a7e);
  faceRoot.updateWorldMatrix(true,false);
  for(let r=0;r<rings;r++){
   const t=r/(rings-1);
@@ -346,7 +345,7 @@ export function fitStudioNeckContinuity({faceRoot,faceMesh,wardrobeRoot}={}){
   const widen=1.07-.50*t-.045*Math.sin(Math.PI*t);
   const xCenter=THREE.MathUtils.lerp(torsoX,cx,t);
   const zCenter=THREE.MathUtils.lerp(torsoZ-.015,cz-.024*t,t);
-  const nearChin=THREE.MathUtils.smoothstep(t,.72,.98);
+  const nearChin=THREE.MathUtils.smoothstep(t,.94,1);
   const surface=tunicShade.clone().lerp(skinShade,nearChin);
   for(let s=0;s<=count;s++){
    const angle=2*Math.PI*s/count;
@@ -411,7 +410,7 @@ export function fitStudioNeckContinuity({faceRoot,faceMesh,wardrobeRoot}={}){
   originalFaceColoursPreserved:true,
   skinToneSource:facePigment.samples?'face-cheek-pigment':'face-material',
   matchedFaceMaterial:true,tunicInnerCollar:true,
-  collarFabricColor:'#667d92',transparentNeckEdge:true,
+  collarFabricColor:'#526a7e',transparentNeckEdge:true,
   faceSurfaceQuality:faceQuality,
   neckToHeadRatio:(topY-bottomY)/headHeight,
   collarOverlapMeters:torsoTop-bottomY,
