@@ -87,6 +87,10 @@ button{padding:9px 11px}
 </div></div>
 <section id="v32PartsStudio"><h2>完成顔を選ぶ（男女それぞれ10種類）</h2>
 <p class="v45Hint">顔型・目・鼻・口・メイクをまとめて切り替えます。髪型と髪色はそのまま保存されます。</p>
+<label for="v46FemaleCast">主要キャラクター／モブ（女性）
+<select id="v46FemaleCast" aria-label="女性キャラクター選択"></select></label>
+<label for="v46MaleCast" hidden>主要キャラクター／モブ（男性）
+<select id="v46MaleCast" aria-label="男性キャラクター選択"></select></label>
 <div id="v45FemaleFacePresets"></div><div id="v45MaleFacePresets" hidden></div>
 <details id="v45AdvancedParts" open><summary>髪型・髪色とパーツの個別調整</summary>
 <div id="v32FemaleChoices"></div><div id="v32MaleChoices" hidden></div></details>
@@ -195,6 +199,7 @@ import {defaultPartSelection,resolvePartSelection,PART_CATALOG,HAIR_COLORS} from
 import {listWigStyles,DEFAULT_WIG_STYLE_ID} from './src/face-wig-styles.js?v=44';
 import {resolveHeroHairSpec,synchronizeHeroHairSelection} from './src/hero-hair-controls-v43.js?v=44';
 import {chooseHeroFacePreset,polishHeroFaceControls,mountHeroFacePresetPicker,matchHeroFacePreset} from './src/hero-face-presets-v45.js?v=45';
+import {characterAppearance,mountCharacterCastSelect} from './src/character-cast-v46.js?v=46';
 import {loadHeroineFacePreset,saveHeroineFacePreset} from './src/heroine-face-preset-store.js?v=41';
 import {heroineBeautyControlsV43,HEROINE_BEAUTY_PART_SELECTION_V43,upgradeUneditedHeroineV42ToV43} from './src/heroine-beauty-preset-v42.js?v=43';
 import {loadMaleFacePreset,saveMaleFacePreset} from './src/male-face-preset-store.js?v=42';
@@ -296,7 +301,7 @@ if(v32PartMode){
  maleChanges=normalizeMaleFaceControls(savedMalePreset?.controls||
  resolvePartSelection('male',v32Parts.male,MALE_REFERENCE_DEFAULT).controls);
 }
-for(const style of listWigStyles()){
+for(const style of listWigStyles('female')){
  const option=document.createElement('option');
  option.value=style.id;option.textContent=style.label;
  $('wigStyle').appendChild(option);
@@ -390,6 +395,8 @@ function selectGender(next){
  $('returnToCostume').href=gender==='male'?'./male-body-studio.html?v=42':'./face-body-studio.html?v=42';
  for(const [k,m] of models)m.root.visible=k===gender;
  $('wig').hidden=false;
+  $('v46FemaleCast').parentElement.hidden=gender!=='female';
+  $('v46MaleCast').parentElement.hidden=gender!=='male';
   $('v45FemaleFacePresets').hidden=gender!=='female';
   $('v45MaleFacePresets').hidden=gender!=='male';
   $('v32FemaleChoices').hidden=gender!=='female';
@@ -854,6 +861,7 @@ $('heroineBeautyV43').addEventListener('click',()=>{
 });
 if(v32PartMode){
  const facePickerControls={};
+ const castSelections={female:null,male:null};
  for(const sex of ['female','male']){
   const selectorHost=$('v32'+(sex==='female'?'Female':'Male')+'Choices');
   const onPartSelection=(picked,completeFace=false)=>{
@@ -913,6 +921,28 @@ if(v32PartMode){
      createPartSelectorUI(selectorHost,sex,v32Parts[sex],onPartSelection);
      facePickerControls[sex].refresh(v32Parts[sex]);
     }
+   });
+  castSelections[sex]=mountCharacterCastSelect(
+   $('v46'+(sex==='female'?'Female':'Male')+'Cast'),sex,id=>{
+    const look=characterAppearance(id,v32Parts[sex]);
+    v32Parts[sex]={...look.parts};
+    v32Makeup[sex]=look.parts.makeup;
+    if(sex==='female'){
+     const part=resolvePartSelection('female',v32Parts.female,FEMALE_V7_DEFAULTS);
+     modelChanges=normalizeFemaleFaceControls({...part.controls,...look.controls});
+     wigStyleId=look.styleId;$('wigStyle').value=look.styleId;
+     if(ready){rebuildFemale();rebuildWig();persistHeroineFace();}
+    }else{
+     const part=resolvePartSelection('male',v32Parts.male,MALE_REFERENCE_DEFAULT);
+     maleChanges=normalizeMaleFaceControls({...part.controls,...look.controls});
+     if(ready){rebuildMale();rebuildMaleHair();persistMaleFace();}
+    }
+    wigOn=true;
+    $('wig').setAttribute('aria-pressed','true');$('wig').textContent='髪を隠す';
+    createPartSelectorUI(selectorHost,sex,v32Parts[sex],onPartSelection);
+    facePickerControls[sex].refresh(v32Parts[sex]);
+    $('status').textContent=look.item.label+'：顔・髪の3Dモデルを選択';
+    if(ready)repaint();
    });
  }
 }
