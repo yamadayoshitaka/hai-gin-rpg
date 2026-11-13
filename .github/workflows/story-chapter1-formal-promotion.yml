@@ -67,7 +67,12 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          git push origin HEAD:story/chapter1-formal-reviewed-art
+          git fetch origin story/chapter1-formal-reviewed-art
+          if git merge-base --is-ancestor HEAD origin/story/chapter1-formal-reviewed-art; then
+            echo "No new approved image commits; keep newer remote formal branch unchanged"
+          else
+            git push origin HEAD:story/chapter1-formal-reviewed-art
+          fi
           node scripts/audit-story-art-coverage.mjs --chapters 1
       - name: Final chapter1 release gate - publish ONLY after 462 human P0 approved frames
         env:
