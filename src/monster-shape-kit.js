@@ -9,7 +9,7 @@ import {nonhumanMonsterStage} from './nonhuman-model-quality.js';
 import {realismPaletteFor} from './monster-realistic-palettes.js';
 import {createMonsterAnatomicalLoft} from './monster-realistic-loft.js';
 import {buildCanineFurRibbonGeometry} from './canine-fur-ribbons.js?v=4.4.89';
-import {decorateMonsterPhotoMaterial,detachMonsterPhotoMaterial} from './monster-photo-pbr.js?v=4.4.81';
+import {decorateMonsterPhotoMaterial,detachMonsterPhotoMaterial} from './monster-photo-pbr.js?v=4.4.95';
 
 export const MONSTER_DETAIL_LEVELS=Object.freeze({
   source:Object.freeze({sphere:[80,56],rock:3,rod:20,tube:[48,12],torus:[14,56]}),
