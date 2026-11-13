@@ -176,8 +176,15 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
        g.sphere(head,'light',[side*.217,.228,-.015],[.071,.045,.052]);
      }
    }else if(reptile||v>=2){
-     g.spike(head,v===2?'accent':'bone',[side*.21,.24,.0],
-       [side*(.38+v*.045),.47+horn,-.13],.085);
+     // Horns grow from an embedded keratin socket, travel through a
+     // tapered curved base and end in a sharp cap. No floating cone root.
+     const root=[side*.21,.24,0];
+     const elbow=[side*(.30+v*.026),.39+horn*.29,-.072];
+     const tip=[side*(.38+v*.045),.47+horn,-.13];
+     g.sphere(head,'skin',[side*.212,.235,-.012],[.115,.103,.132],
+       {name:'horn-root-socket'});
+     g.bridge(head,v===2?'accent':'bone',root,elbow,.102,.059);
+     g.spike(head,v===2?'accent':'bone',elbow,tip,.059);
    }else g.sphere(head,'skin',[side*.24,.24,-.09],[.10,.19,.07]);
    g.spike(head,'bone',[side*.13,-.20,muzzle+.08],[side*.13,-.31,muzzle+.22],.046);
  }
@@ -412,6 +419,25 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
  g.tube(tailMid,'skin',[[0,0,0],[0,.01,-.25-v*.05],[.09,-.11,-.49-v*.10]],reptile?.13:.078);
  const tailTip=g.group('tailTip',[.09,-.11,-.49-v*.10],tailMid);
  g.sphere(tailTip,'skin',[0,0,-.025],[.044,.047,.085]);
+ // Felines need short sleek directional fur instead of reusing a wolf
+ // winter coat. Only the lion grows a deep mane, anchored to its head
+ // so it follows jaw anticipation and neck pitch without floating.
+ if(feline&&coatDetail!=='low'){
+   const master=coatDetail==='source',lion=s.id==='m008';
+   addFur(torso,generateCanineFurGuides({
+     center:[0,1.30,-.025],radii:[.44+(v%2)*.06,.43,.71+v*.06],
+     rows:master?32:22,around:master?44:30,
+     length:lion?.060:.038,width:lion?.013:.009,
+     minVertical:-.88,maxVertical:.92,seed:110+v*17,gravity:.17,
+   }));
+   const cheek=generateCanineFurGuides({
+     center:[0,.035,-.075],radii:[.32,.285,.32],
+     rows:master?31:21,around:master?44:32,
+     length:lion?.20:.039,width:lion?.031:.009,
+     minVertical:-.83,maxVertical:.98,seed:157+v*19,gravity:.30,
+   }).filter(strand=>strand.root[2]<(lion?.15:.065));
+   addFur(head,cheek);
+ }
  if(canine&&coatDetail!=='low')addFur(tail,generateCanineFurGuides({
    center:[.015,.065,-.55-v*.055],radii:[.108,.124,.38+v*.04],
    rows:coatDetail==='source'?15:9,
