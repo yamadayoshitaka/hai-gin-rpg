@@ -40,8 +40,18 @@ fs.mkdirSync(out,{recursive:true});
       window.__maleBodyPreview)?.getBattleActor?.();
     const visibleBody=[];
     root?.traverse?.(mesh=>{
-     if(mesh.isSkinnedMesh&&mesh.visible&&
-      /(body|torso|arms|chest)/i.test(mesh.name))visibleBody.push(mesh.name);
+     if(!mesh.isSkinnedMesh||!mesh.visible||
+        !mesh.geometry?.getAttribute('position'))return;
+     let parent=mesh.parent,insideOutfit=false,hiddenAncestor=false;
+     while(parent){
+      if(parent.name?.startsWith('rigged-outfit-'))insideOutfit=true;
+      if(!parent.visible)hiddenAncestor=true;
+      parent=parent.parent;
+     }
+     if(!insideOutfit&&!hiddenAncestor&&
+       !/^(eyes|eyebrows)$/i.test(mesh.name)&&
+       mesh.geometry.getAttribute('position').count>=150)
+      visibleBody.push(mesh.name);
     });
     return {state:q?.v36RealBattleCostume,visibleBody};
    },qa);
