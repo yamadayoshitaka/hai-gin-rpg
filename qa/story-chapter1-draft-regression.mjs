@@ -60,6 +60,7 @@ for(const stage of CAMPAIGN_STAGES.filter(x=>x.chapter===1)){
 const base='assets/story/chapter-drafts/c01/cloudflare-chapter1-free/';
 const stageReports=[],imageHashes=new Map(),sceneKeys=new Set();
 const counts={expected:0,existingRegistrationNotP0Approved:0,
+ liveOriginalRegistrations:0,legacyNativeRegenerationRequired:0,
  validRealReviewDraft:0,missing:0,providerBlocked:0,
  incorrectNativePixels:0,invalidProof:0,duplicate:0,formallyApprovedNew:0};
 const rejected=[];
@@ -67,6 +68,7 @@ function mark(stage,row,status,reason){
  row.status=status;
  if(reason)row.reason=reason;
  const key=status==='EXISTING_REGISTERED_NOT_P0_CERTIFIED'?'existingRegistrationNotP0Approved':
+  status==='LEGACY_NATIVE_REGEN_REQUIRED'?'legacyNativeRegenerationRequired':
   status==='VALID_REAL_DRAFT_VISUAL_QA_PENDING'?'validRealReviewDraft':
   status==='MISSING_REAL_ART'?'missing':
   status==='PROVIDER_SAFETY_BLOCKED'?'providerBlocked':
@@ -87,14 +89,26 @@ for(const stage of CAMPAIGN_STAGES.filter(x=>x.chapter===1)){
    if(sceneKeys.has(key))throw Error('duplicated canonical shot '+key);
    sceneKeys.add(key);counts.expected++;
    const row={key,panelId:shot.id,gender,edition:ed.edition};
-   if(registeredStoryPanelAsset(shot)){mark(stageReport,row,'EXISTING_REGISTERED_NOT_P0_CERTIFIED');continue;}
+   const legacy=registeredStoryPanelAsset(shot);
+   if(legacy){row.originalLiveSource=legacy;counts.liveOriginalRegistrations++;}
    const normal=shot.id.replace(/-m(\d{1,2})$/,(_,n)=>'-m'+String(Number(n)).padStart(2,'0'));
    const page=String(Math.floor(i/5)+1).padStart(2,'0');
    const file=base+stage.id+'-'+ed.edition+'-'+gender+'/p'+page+'/'+normal+'-'+ed.edition+'-'+gender+'.webp';
    const proof=file+'.generation.json',block=file+'.provider-blocked.json';
    row.path=file;
    if(exists(block)){mark(stageReport,row,'PROVIDER_SAFETY_BLOCKED');continue;}
-   if(!exists(file)&&!exists(proof)){mark(stageReport,row,'MISSING_REAL_ART');continue;}
+   if(!exists(file)&&!exists(proof)){
+    if(!legacy){mark(stageReport,row,'MISSING_REAL_ART');continue;}
+    try{
+     const url=legacy.slice(2).split(/[?#]/)[0];
+     const [w,h]=webpDimensions(fs.readFileSync(path.join(root,url)));
+     const [mw,mh]=stage.id==='c01-s02'?[768,320]:[1536,864];
+     if(w<mw||h<mh||w*9!==h*16)
+      mark(stageReport,row,'LEGACY_NATIVE_REGEN_REQUIRED','Original '+w+'x'+h+' below '+mw+'x'+mh);
+     else mark(stageReport,row,'EXISTING_REGISTERED_NOT_P0_CERTIFIED');
+    }catch(e){mark(stageReport,row,'LEGACY_NATIVE_REGEN_REQUIRED','Original registered WebP invalid '+String(e.message));}
+    continue;
+   }
    if(!exists(file)||!exists(proof)){mark(stageReport,row,'INVALID_PROOF','Image and generation proof must both exist');continue;}
    try{
     const bytes=fs.readFileSync(path.join(root,file)),m=read(proof);
@@ -144,7 +158,7 @@ for(const stage of CAMPAIGN_STAGES.filter(x=>x.chapter===1)){
 }
 if(counts.expected!==462||stageReports.length!==10||sceneKeys.size!==462)
  throw Error('Chapter 1 queue cardinality mismatch');
-const unresolved=counts.missing+counts.providerBlocked+counts.incorrectNativePixels+
+const unresolved=counts.missing+counts.legacyNativeRegenerationRequired+counts.providerBlocked+counts.incorrectNativePixels+
  counts.invalidProof+counts.duplicate;
 const report={kind:'C01_ACTUAL_IMAGE_REGRESSION_NOT_HUMAN_VISUAL_APPROVAL',
  canonicalScenes:462,canonicalPages:132,counts,
