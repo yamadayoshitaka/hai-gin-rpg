@@ -1,0 +1,104 @@
+name: Story Cloudflare Workers AI Free five-frame pilot
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/generate-story-cloudflare-free-page.mjs'
+      - 'scripts/story-cloudflare-image-io.py'
+      - 'qa/story-cloudflare-free-page.test.mjs'
+      - '.github/workflows/story-cloudflare-free-pilot.yml'
+  pull_request:
+    paths:
+      - 'scripts/generate-story-cloudflare-free-page.mjs'
+      - 'scripts/story-cloudflare-image-io.py'
+      - 'qa/story-cloudflare-free-page.test.mjs'
+      - '.github/workflows/story-cloudflare-free-pilot.yml'
+  workflow_dispatch:
+    inputs:
+      mode:
+        type: choice
+        description: 'plan (no API calls) or generate (Cloudflare Free only, 1-5 original images)'
+        options: [plan, generate]
+        default: plan
+        required: true
+      page:
+        type: choice
+        description: 'Stage c01-s02 female victory review page (1 has 5, 2 has 2)'
+        options: ['1', '2']
+        default: '1'
+        required: true
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: cloudflare-free-story-pilot
+  cancel-in-progress: false
+
+jobs:
+  pilot:
+    name: Verify five native images on Free plan (never register unreviewed art)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install image decoder and native WebP exporter
+        run: python -m pip install --disable-pip-version-check Pillow==11.3.0
+      - name: Verify free-only, one-frame-per-call and missing-credential hard stop
+        run: |
+          node --check scripts/generate-story-cloudflare-free-page.mjs
+          python -m py_compile scripts/story-cloudflare-image-io.py
+          node qa/story-cloudflare-free-page.test.mjs
+      - name: Produce stage2 pilot plan from actual canonical script and cast master bytes
+        run: node scripts/generate-story-cloudflare-free-page.mjs --mode plan --page "${{ inputs.page || '1' }}"
+      - name: One Cloudflare API request per shot, capped at 5 and 1000 estimated Neurons
+        if: github.event_name == 'workflow_dispatch' && inputs.mode == 'generate'
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_WORKERS_AI_API_TOKEN: ${{ secrets.CLOUDFLARE_WORKERS_AI_API_TOKEN }}
+          CLOUDFLARE_FREE_PLAN_CONFIRMED: ${{ vars.CLOUDFLARE_FREE_PLAN_CONFIRMED }}
+          CLOUDFLARE_MAX_NEURONS: '1000'
+        run: |
+          node scripts/generate-story-cloudflare-free-page.mjs --mode generate --page "${{ inputs.page }}"
+      - name: Publish generated files as UNAPPROVED review candidates in a separate branch
+        if: github.event_name == 'workflow_dispatch' && inputs.mode == 'generate'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TASK_PAGE: ${{ inputs.page }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          branch="story/cloudflare-free-c01s02-female-victory-p${TASK_PAGE}-${GITHUB_RUN_ID}"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git switch -c "${branch}"
+          git add -- assets/story/chapter-drafts/c01/cloudflare-flux2-klein4b/
+          git diff --cached --quiet && { echo "No new actual images; refusing empty image-commit"; exit 2; }
+          git commit -m "art(review): Cloudflare Free c01-s02 female victory page ${TASK_PAGE} actual WebPs, P0 QA pending"
+          git push --set-upstream origin "${branch}"
+          if ! gh pr create --base main --head "${branch}" \
+            --title "art(review): Cloudflare Free generated page ${TASK_PAGE} (human P0 QA pending)" \
+            --body "REAL native WebPs from FLUX.2 Klein 4B with source-reference request proofs. One generated frame per call, max 5 per page. All art is unapproved review-only: NO game bindings or formal registration. Before promotion, manually verify screenplay, characters/identities, no text/digits/UI, resolution and correct gender/outcome."; then
+            echo "::warning::PR creation may be disabled for GitHub Actions. Review the pushed branch: ${branch}"
+          fi
+      - name: Upload canonical 5-shot plan and real-art review candidates (if generated)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cloudflare-free-pilot-${{ github.run_id }}-${{ inputs.page || '1' }}
+          path: |
+            qa-reports/story-stage-production/cloudflare-free-pilot/*.json
+            assets/story/chapter-drafts/c01/cloudflare-flux2-klein4b/**/*.webp
+            assets/story/chapter-drafts/c01/cloudflare-flux2-klein4b/**/*.generation.json
+          if-no-files-found: warn
+          retention-days: 30
