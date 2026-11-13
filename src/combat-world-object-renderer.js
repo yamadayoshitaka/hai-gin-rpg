@@ -88,14 +88,26 @@ function localAnimationMatrix(type,part,time,seed,object,motion=0,gaitPhase=0,ac
     pivot=[side*s.width*.71,s.height+.24,-s.length*.12];
     if(type==='seraph_guardian'){
       pivot=[side*.305,1.72,-.18];
-      rotation.makeRotationZ(side*(.12+.22*Math.sin(time*3+seed)+attackPulse*.16+special*.55+guard*.32+leap*.42));
-      rotation.multiply(translateMatrix.makeRotationX(.08*Math.sin(time*2.5+seed)));
+      const airborne=!!object.flying;
+      const beat=airborne?.22:.025;
+      rotation.makeRotationZ(side*((airborne?.12:.34)+
+        beat*Math.sin(time*(airborne?3:1.6)+seed)+attackPulse*.16+
+        special*.55+guard*.32+leap*.42));
+      rotation.multiply(translateMatrix.makeRotationX(
+        (airborne?.08:.024)*Math.sin(time*2.5+seed)));
       return morphMatrix.makeTranslation(...pivot).multiply(rotation);
     }
-    // Stable wing-beat phase avoids stuttering when flight speed changes.
-    const flapPhase=time*5.4+seed;
-    rotation.makeRotationZ(side*(.12+(.25+motion*.42)*Math.sin(flapPhase)+attackPulse*.32+special*.85+leap*.6+hit*.24));
-    rotation.multiply(translateMatrix.makeRotationX(.09*Math.sin(flapPhase-.6)+attackPulse*.12));
+    // A wing beats primarily in flight; on land it folds near the shoulder
+    // and only opens for a strike, leap or special action. The same instanced
+    // mesh and LOD contract remain intact, with no per-creature GPU rig.
+    const airborne=!!object.flying;
+    const flapPhase=time*(airborne?5.4:2.2)+seed;
+    const beat=airborne?.28+Math.min(1,motion)*.39:
+      .035+attackPulse*.11+special*.16+leap*.22;
+    rotation.makeRotationZ(side*((airborne?.12:.22)+beat*Math.sin(flapPhase)+
+      attackPulse*.25+special*.52+leap*.38+hit*.16));
+    rotation.multiply(translateMatrix.makeRotationX(
+      (airborne?.09:.025)*Math.sin(flapPhase-.6)+attackPulse*.12));
     return morphMatrix.makeTranslation(...pivot).multiply(rotation);
   }else if(part==='jaw'){
     let headY,headZ;

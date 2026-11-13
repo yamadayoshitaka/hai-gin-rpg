@@ -82,7 +82,14 @@ export function createSculpture(spec,detail='high'){
  const fine=detail!=='low',pivots={},root=new THREE.Group();root.name=spec.id+'-'+spec.name;
  const colors=spec.colors;
  const tone={skin:colors.base,light:colors.highlight,accent:colors.accent,
-   shadow:'#26232c',bone:'#e9dfc5',eye:'#edaf73'};
+   shadow:'#26232c',bone:'#e9dfc5',
+   // Photographic iris pigment by anatomy rather than a shared neon eye.
+   // Preserve existing otherworldly eyes on protected humanoid monsters.
+   eye:nonhumanMonsterStage(spec)===0?'#edaf73':
+     ['insect','arachnid'].includes(spec.family)?'#30262a':
+     spec.family==='aquatic'?'#6fa0a2':
+     spec.family==='reptile'?'#b18f4d':
+     spec.family==='avian'?'#b99955':'#a68b51'};
  const V=v=>new THREE.Vector3(...v);
  const attach=(parent,geo,shade,opt={})=>{
    const isRole=typeof shade==='string'&&Object.hasOwn(tone,shade);
@@ -207,14 +214,26 @@ export function createSculpture(spec,detail='high'){
    return own(attach(parent,geo,shade,{rough:.61,translucent:options.translucent??false}));
  };
  const eyes=(parent,z=.34,y=.03,width=.19,size=.05)=>{
+   const organic=nonhumanMonsterStage(spec)>0;
    for(const side of [-1,1]){
+     // Eyes sit under a raised orbital ridge, rather than glowing orbs.
      sphere(parent,'shadow',[side*width,y,z],[size*1.45,size*.83,size*.35]);
      sphere(parent,'eye',[side*width,y+.003,z+.012],[size*.70,size*.57,size*.21],
-       {rough:.16,glow:true});
-     sphere(parent,'bone',[side*width-size*.23,y+size*.20,z+.029],
+       {rough:.16,glow:!organic});
+     sphere(parent,'bone',[side*(width-size*.23),y+size*.20,z+.029],
        [size*.16,size*.14,size*.08],{rough:.12});
      sphere(parent,'skin',[side*width,y+size*.70,z-.004],
        [size*1.35,size*.19,size*.38]);
+     // Birds/reptiles have a nictitating lid. This is real cheek-local
+     // geometry, animated on a pivot; insect compound eyes do not blink.
+     if(organic&&['avian','reptile'].includes(spec.family)){
+       const lid=group('eyelid'+(side<0?'L':'R'),
+         [side*width,y+size*1.20,z+size*.34],parent);
+       lid.userData.restY=lid.position.y;
+       lid.userData.blinkTravel=size*1.12;
+       sphere(lid,'skin',[0,0,0],[size*1.08,size*.62,size*.23],
+         {rough:.74,name:'nictitating-membrane'});
+     }
    }
  };
  const claws=(parent,origin,forward=1,count=3,scale=1)=>{

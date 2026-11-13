@@ -176,8 +176,15 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
        g.sphere(head,'light',[side*.217,.228,-.015],[.071,.045,.052]);
      }
    }else if(reptile||v>=2){
-     g.spike(head,v===2?'accent':'bone',[side*.21,.24,.0],
-       [side*(.38+v*.045),.47+horn,-.13],.085);
+     // Horns grow from an embedded keratin socket, travel through a
+     // tapered curved base and end in a sharp cap. No floating cone root.
+     const root=[side*.21,.24,0];
+     const elbow=[side*(.30+v*.026),.39+horn*.29,-.072];
+     const tip=[side*(.38+v*.045),.47+horn,-.13];
+     g.sphere(head,'skin',[side*.212,.235,-.012],[.115,.103,.132],
+       {name:'horn-root-socket'});
+     g.bridge(head,v===2?'accent':'bone',root,elbow,.102,.059);
+     g.spike(head,v===2?'accent':'bone',elbow,tip,.059);
    }else g.sphere(head,'skin',[side*.24,.24,-.09],[.10,.19,.07]);
    g.spike(head,'bone',[side*.13,-.20,muzzle+.08],[side*.13,-.31,muzzle+.22],.046);
  }
@@ -412,6 +419,25 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
  g.tube(tailMid,'skin',[[0,0,0],[0,.01,-.25-v*.05],[.09,-.11,-.49-v*.10]],reptile?.13:.078);
  const tailTip=g.group('tailTip',[.09,-.11,-.49-v*.10],tailMid);
  g.sphere(tailTip,'skin',[0,0,-.025],[.044,.047,.085]);
+ // Felines need short sleek directional fur instead of reusing a wolf
+ // winter coat. Only the lion grows a deep mane, anchored to its head
+ // so it follows jaw anticipation and neck pitch without floating.
+ if(feline&&coatDetail!=='low'){
+   const master=coatDetail==='source',lion=s.id==='m008';
+   addFur(torso,generateCanineFurGuides({
+     center:[0,1.30,-.025],radii:[.44+(v%2)*.06,.43,.71+v*.06],
+     rows:master?32:22,around:master?44:30,
+     length:lion?.060:.038,width:lion?.013:.009,
+     minVertical:-.88,maxVertical:.92,seed:110+v*17,gravity:.17,
+   }));
+   const cheek=generateCanineFurGuides({
+     center:[0,.035,-.075],radii:[.32,.285,.32],
+     rows:master?31:21,around:master?44:32,
+     length:lion?.20:.039,width:lion?.031:.009,
+     minVertical:-.83,maxVertical:.98,seed:157+v*19,gravity:.30,
+   }).filter(strand=>strand.root[2]<(lion?.15:.065));
+   addFur(head,cheek);
+ }
  if(canine&&coatDetail!=='low')addFur(tail,generateCanineFurGuides({
    center:[.015,.065,-.55-v*.055],radii:[.108,.124,.38+v*.04],
    rows:coatDetail==='source'?15:9,
@@ -528,10 +554,20 @@ function insect(g,s,{spider=false}={}){
    const leg=g.group(name,[side*.35,1.12,z]);
    const bend=[side*(.45+(i===0?.12:0)),i===3?.02:.22,(i-1)*.16];
    const foot=[side*(.72+i*.05),-.94,(i-1.5)*.23];
-   g.bone(leg,'skin',[0,0,0],bend,.085,{tipRadius:.055,metal:.4});
-   g.sphere(leg,'accent',bend,[.092,.09,.092],{metal:.4});
-   g.bone(leg,'shadow',bend,foot,.070,{tipRadius:.024,metal:.4});
-   g.spike(leg,'bone',foot,[foot[0]+side*.11,foot[1]-.08,foot[2]],.04);
+   // Anatomical arthropod chain: coxa/hip -> femur -> patella -> tibia
+   // -> tarsus. The distal meshes inherit the proximal joint's rotation.
+   // Formerly femur and tibia were welded to the same single leg pivot,
+   // so the knee could neither lift nor flex during a step.
+   const femur=g.group(name+'Femur',[0,0,0],leg);
+   g.bone(femur,'skin',[0,0,0],bend,.085,{tipRadius:.055,metal:.4});
+   const patella=g.group(name+'Patella',bend,femur);
+   g.sphere(patella,'accent',[0,0,0],[.092,.09,.092],{metal:.4});
+   const tibia=g.group(name+'Tibia',[0,0,0],patella);
+   const distal=[foot[0]-bend[0],foot[1]-bend[1],foot[2]-bend[2]];
+   g.bone(tibia,'shadow',[0,0,0],distal,.070,{tipRadius:.024,metal:.4});
+   const tarsus=g.group(name+'Tarsus',distal,tibia);
+   g.sphere(tarsus,'shadow',[0,0,0],[.050,.045,.050],{metal:.18});
+   g.spike(tarsus,'bone',[0,0,0],[side*.11,-.08,0],.04);
  }
  if(!spider){
    if(s.id==='m023'){
