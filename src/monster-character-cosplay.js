@@ -10,7 +10,7 @@ import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {createHumanBomRig} from './human-bom-renderer.js';
 import {attachTownOutfitNpc} from './cc0-town-npc-visuals.js';
-import {createMonsterModel,disposeMonsterSculpture} from './monster-geometry.js';
+import {createMonsterModel,disposeMonsterSculpture} from './monster-geometry.js?v=4.5.03';
 import {startMonsterAction,animateMonsterModel} from './monster-animation.js';
 import {humanoidMonsterCostumeFor} from './monster-character-cosplay-manifest.js?v=4.5.03';
 import {addGothicMonsterSculpt,hasGothicMonsterSculpt}
