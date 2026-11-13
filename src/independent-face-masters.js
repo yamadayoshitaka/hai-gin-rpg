@@ -40,7 +40,8 @@ export function femaleInnerFeatureDelta({xn,yn,zn,offsetX,depth,height=0,control
  const bridgeRidge=bell(ax,0,.092)*bell(yn,.653,.098)*front;
  return {
   dx:-offsetX*(.35*noseSupport+.29*mouthSupport),
-  dy:height*(.020*controls.noseTipLift*tipLift-.012*tipLift
+  dy:height*(.020*controls.noseTipLift*tipLift
+    -.012*central*bell(yn,.572,.018)
     -.009*controls.nostrilCover*rimMask),
   dz:depth*(.023*bridgeSupport+.014*tipSupport-.016*mouthSupport
    +.020*controls.noseBridgeSharpness*bridgeRidge
