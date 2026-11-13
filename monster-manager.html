@@ -7,7 +7,7 @@
 *{box-sizing:border-box}body{margin:0;background:#09141d;color:#edf5f8;min-height:100dvh}
 header{display:flex;gap:14px;align-items:center;flex-wrap:wrap;padding:13px 18px;background:#12293d;border-bottom:1px solid #48657d}
 header h1{margin:0;font-size:19px}header small{color:#9db2c5}
-a{color:#a6d9ef}main{display:grid;grid-template-columns:minmax(300px,365px) minmax(0,1fr);height:calc(100dvh - 65px)}
+a{color:#a6d9ef}main{display:grid;grid-template-columns:minmax(252px,290px) minmax(0,1fr);height:calc(100dvh - 65px);position:relative}
 aside{overflow-y:auto;border-right:1px solid #426277;background:#102332;padding:12px}
 label{display:block;font-size:12px;color:#c7dbe4;margin-bottom:4px}
 input,select,button{background:#19374b;color:white;border:1px solid #547891;border-radius:8px;padding:9px;font:inherit;min-width:0}
@@ -25,11 +25,18 @@ button{cursor:pointer}button:hover,button:focus-visible{background:#275a72}
 .workspace{position:relative;overflow:hidden;display:flex;flex-direction:column}
 #view{position:relative;flex:1;min-height:230px;background:radial-gradient(ellipse at 40% 40%,#1f3743,#08111b 72%)}
 #view canvas{display:block;width:100%;height:100%;touch-action:none}
-#info{position:absolute;top:12px;left:12px;right:12px;pointer-events:none;text-shadow:0 2px 8px #000}
+#info{position:absolute;top:12px;left:12px;right:12px;pointer-events:none;text-shadow:0 2px 8px #000;max-width:540px;background:linear-gradient(90deg,#06101cb8,transparent);padding:8px 11px;border-radius:10px}
 #info h2{margin:0;color:#f2d59d;font-size:21px}
 #info p{margin:5px 0;font-size:13px}
 #hud{font-size:11px;color:#cde2e9}
-.tools{overflow-y:auto;max-height:43%;padding:12px;background:#11293c;border-top:1px solid #47657c}
+.tools{overflow-y:auto;max-height:34%;padding:12px;background:#11293c;border-top:1px solid #47657c}
+.tools[hidden]{display:none!important}
+#viewToolbar{position:absolute;bottom:12px;left:12px;right:12px;display:flex;flex-wrap:wrap;align-items:center;gap:7px;z-index:8;pointer-events:none}
+#viewToolbar button{pointer-events:auto;background:#0b263bdb;backdrop-filter:blur(7px);padding:10px 12px;font-size:12px;border-color:#7294aa;box-shadow:0 3px 12px #0009}
+#viewToolbar button[aria-pressed=true]{background:#325972;border-color:#e8d29a}
+#viewToolbar .pushRight{margin-left:auto}
+main.catalogCollapsed{grid-template-columns:0 minmax(0,1fr)}
+main.catalogCollapsed>aside{display:none}
 .toolrow{display:flex;flex-wrap:wrap;gap:7px;margin:5px 0 10px}
 .toolrow button{font-size:12px;padding:8px 11px}
 fieldset{border:1px solid #38546b;border-radius:9px;margin:8px 0;padding:8px}
@@ -40,18 +47,30 @@ legend{font-size:12px;color:#e8d9b6;padding:0 6px}
 #notice{color:#bfe0c7;font-size:12px;min-height:17px}
 #mobileTip{font-size:11px;color:#9aafc2}
 @media(max-width:730px){
- header{gap:7px;padding:9px 12px}header h1{font-size:15px}main{display:flex;flex-direction:column;height:auto;min-height:calc(100dvh - 55px)}
- aside{order:2;max-height:35dvh;overflow-y:auto;border-right:0;border-top:1px solid #48657d}
- #items{grid-template-columns:repeat(3,minmax(0,1fr))}.workspace{order:1;height:65dvh;min-height:460px}
- .tools{max-height:48%;padding:8px}#editor{grid-template-columns:repeat(3,minmax(0,1fr))}
+ header{gap:7px;padding:9px 12px}header h1{font-size:15px}header small{font-size:10px}
+ main,main.catalogCollapsed{display:block;height:calc(100dvh - 53px);min-height:430px;overflow:hidden}
+ .workspace{height:100%;min-height:0;width:100%;order:0}
+ #view{flex:1;min-height:0}
+ #info{top:6px;left:6px;right:8px;padding:8px;max-width:none}
+ #info h2{font-size:18px}#info p{font-size:11px;line-height:1.4}
+ #hud{font-size:10px;max-width:92%;line-height:1.55}
+ #viewToolbar{left:8px;right:8px;bottom:calc(8px + env(safe-area-inset-bottom));gap:5px}
+ #viewToolbar button{padding:9px 11px;font-size:12px;min-height:40px}
+ #viewToolbar .pushRight{margin-left:auto}
+ main>aside{display:none;position:absolute;z-index:15;inset:0 8% 0 0;order:unset;max-height:none;overflow-y:auto;border:0;border-right:2px solid #6c93a8;box-shadow:12px 0 35px #000b}
+ main.catalogOpen>aside,main.catalogCollapsed.catalogOpen>aside{display:block}
+ #items{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .tools{max-height:43%;padding:9px}
+ #editor{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
+@media(max-height:570px) and (max-width:730px){#info p{display:none}#hud{font-size:9px}.tools{max-height:52%}}
 </style>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
 </head><body>
 <header><a href="./index.html">← メニュー</a><h1>魔物図鑑・モンスター管理 <small>50種 / v4.5.03</small></h1>
  <a href="./summon-showcase.html?v=4.5.00">召喚獣一覧</a></header>
-<main>
- <aside>
+<main id="bestiaryMain">
+ <aside id="catalogPanel" aria-label="モンスター一覧">
   <div class="search">
    <label>検索 <input id="search" placeholder="名前・技・IDで検索"></label>
    <label>系統 <select id="family"><option value="">すべて</option></select></label>
@@ -63,8 +82,15 @@ legend{font-size:12px;color:#e8d9b6;padding:0 6px}
  <section class="workspace">
   <div id="view">
    <div id="info"><h2 id="name">モデルを読み込み中...</h2><p id="description"></p><div id="hud"></div></div>
+   <div id="viewToolbar" role="toolbar" aria-label="3Dモデル鑑賞操作">
+    <button id="toggleCatalog" type="button" aria-expanded="false" aria-controls="catalogPanel">☰ 一覧</button>
+    <button id="zoomIn" type="button" aria-label="モデルを拡大">＋ 拡大</button>
+    <button id="zoomOut" type="button" aria-label="モデルを縮小">－ 縮小</button>
+    <button id="resetCamera" type="button">全身</button>
+    <button id="toggleTools" type="button" class="pushRight" aria-expanded="false" aria-controls="modelTools">⚙ 設定</button>
+   </div>
   </div>
-  <section class="tools">
+  <section class="tools" id="modelTools" hidden>
    <div id="mobileTip">ドラッグ：回転 / ピンチ：拡大縮小。モデルは召喚獣と同じ3D方式で描画します。</div>
    <fieldset><legend>品質・ポリゴン密度</legend>
     <div class="toolrow">
@@ -143,6 +169,33 @@ import {createCosplayedHumanoidMonster} from './src/monster-character-cosplay.js
 import {humanoidMonsterCostumeFor,HUMAN_MONSTER_IDS} from './src/monster-character-cosplay-manifest.js?v=4.5.03';
 import {fetchCreatureRegistry,loadExternalCreature,loadPersonalGLB} from './src/creature-external-runtime.js?v=4.4.92';
 const byId=id=>document.getElementById(id);
+const isPhone=()=>matchMedia('(max-width:730px)').matches;
+const mainPanel=byId('bestiaryMain');
+const setCatalogOpen=(open)=>{
+ mainPanel.classList.toggle('catalogOpen',!!open);
+ if(!isPhone())mainPanel.classList.toggle('catalogCollapsed',!open);
+ byId('toggleCatalog').setAttribute('aria-expanded',String(!!open));
+ byId('toggleCatalog').setAttribute('aria-pressed',String(!!open));
+ byId('toggleCatalog').textContent=open?'× 一覧を閉じる':'☰ 一覧';
+};
+byId('toggleCatalog').onclick=()=>setCatalogOpen(
+ !mainPanel.classList.contains('catalogOpen')&&
+ (isPhone()||mainPanel.classList.contains('catalogCollapsed')));
+byId('toggleTools').onclick=()=>{
+ const tools=byId('modelTools'),open=tools.hidden;
+ tools.hidden=!open;
+ byId('toggleTools').setAttribute('aria-expanded',String(open));
+ byId('toggleTools').setAttribute('aria-pressed',String(open));
+ byId('toggleTools').textContent=open?'⚙ 設定を閉じる':'⚙ 設定';
+};
+window.addEventListener('keydown',event=>{
+ if(event.key==='Escape'){
+  setCatalogOpen(false);
+  byId('modelTools').hidden=true;
+  byId('toggleTools').setAttribute('aria-expanded','false');
+  byId('toggleTools').textContent='⚙ 設定';
+ }
+});
 const storeKey='hai-gin.monster-manager.v1';
 let changes={};
 try{const parsed=JSON.parse(localStorage.getItem(storeKey)||'{}');if(parsed&&typeof parsed==='object'&&!Array.isArray(parsed))changes=parsed;}catch{}
@@ -244,7 +297,10 @@ function renderList(){
    const name=document.createElement('strong');name.textContent=m.name;
    const desc=document.createElement('small');desc.textContent=MONSTER_FAMILIES[m.family]+' / '+MONSTER_ELEMENTS[m.element]+' / '+m.rarity+(humanoidMonsterCostumeFor(m)?' · 人物素体＋異形衣装':'')+(modelAssignments[entry.id]?' · GLB割当済':
       externalRegistry.entries[entry.id]?' · GLB候補':'');
-   btn.append(name,desc);btn.onclick=()=>selectSpecies(entry.id);root.append(btn);
+   btn.append(name,desc);btn.onclick=()=>{
+     selectSpecies(entry.id);
+     if(isPhone())setCatalogOpen(false);
+   };root.append(btn);
  }
  byId('count').textContent=list.length+' / 50体 表示中';
 }
@@ -273,9 +329,20 @@ function focusCamera(){
  const center=bounds.getCenter(new THREE.Vector3()),size=bounds.getSize(new THREE.Vector3());
  controls.target.set(center.x,Math.max(.7,center.y),center.z);
  const dist=Math.max(4,size.length()/(2*Math.tan(THREE.MathUtils.degToRad(camera.fov/2)))*.70);
- camera.position.set(center.x+dist*.38,center.y+dist*.30,center.z+dist);
+ camera.position.set(center.x+dist*.30,center.y+dist*.22,center.z+dist*.78);
  controls.update();
 }
+function zoomModel(factor){
+ const delta=camera.position.clone().sub(controls.target);
+ const distance=Math.max(controls.minDistance,Math.min(controls.maxDistance,
+  delta.length()*factor));
+ delta.setLength(distance);
+ camera.position.copy(controls.target).add(delta);
+ controls.update();
+}
+byId('zoomIn').onclick=()=>zoomModel(.76);
+byId('zoomOut').onclick=()=>zoomModel(1.30);
+byId('resetCamera').onclick=()=>{if(model)focusCamera();};
 function selectSpecies(id){
  if(!MONSTER_BY_ID[id])return;
  const ticket=++requestSerial;
@@ -566,5 +633,6 @@ window.__monsterQualityQA=()=>({
  photos:monsterPhotoCacheStats(),
  cache:monsterSculptCacheStats()
 });
+setCatalogOpen(false);
 selectSpecies(selected);resize();frame();
 </script></body></html>
