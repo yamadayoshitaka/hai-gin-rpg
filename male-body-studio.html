@@ -169,6 +169,7 @@ import {resolveEditedFaceControls,recordFaceManualEdit} from './src/face-state-v
 import {HERO_JOBS,HERO_ACTIONS,createHeroineStudioWardrobe} from './src/heroine-studio-wardrobe.js?v=41';
 import {REAL_BATTLE_WARDROBE,createRealBattleOutfitStudio} from './src/heroine-battle-costume-bridge.js?v=42';
 import {loadMaleFacePreset,saveMaleFacePreset} from './src/male-face-preset-store.js?v=43';
+import {youngHeroMaleControls} from './src/hero-youthful-appearance-v50.js?v=50';
 import {FEMALE_COMMANDER_ART_PALETTE,CHAPTER_ONE_ART_BY_KEY} from './src/chapter-one-character-art-references.js';
 
 const $=id=>document.getElementById(id);
@@ -211,14 +212,20 @@ else document.body.classList.add('costume-only');
 const savedHeroinePreset=v32PartMode?loadMaleFacePreset():null;
 let manualFaceOverrides={};
 let v32BodyPart={...defaultPartSelection(),...(savedHeroinePreset?.parts||{})};
+if(v32PartMode&&!savedHeroinePreset){
+ v32BodyPart=chooseHeroFacePreset('male',0,v32BodyPart);
+ v32BodyPart={...synchronizeHeroHairSelection('male',v32BodyPart,'male-comma').parts};
+}
 Object.assign(manualFaceOverrides,savedHeroinePreset?.manualOverrides||{});
 let facePolishMode=savedHeroinePreset?.faceMode==='polished'||
  (false&&!savedHeroinePreset);
 v32BodyPart={...synchronizeHeroHairSelection('male',v32BodyPart,
  savedHeroinePreset?.hairStyleId).parts};
 if(v32PartMode)Object.assign(faceControls,
- normalizeMaleFaceControls(savedHeroinePreset?.controls||
-  resolvePartSelection('male',v32BodyPart,MALE_REFERENCE_DEFAULT).controls));
+ normalizeMaleFaceControls(youngHeroMaleControls(
+  savedHeroinePreset?.controls||
+   resolvePartSelection('male',v32BodyPart,MALE_REFERENCE_DEFAULT).controls,
+  v32BodyPart.ageBand,manualFaceOverrides)));
 let view='front',zoomMode='full',wigVisible=true,outfitVisible=true;
 let wigBaseVisible=false,hairOnly=false;
 let contactColor=savedHeroinePreset?.contactColor||palette.iris;
@@ -614,8 +621,10 @@ function applyPartSelection(picked,completeFace=false){
  const hair=synchronizeHeroHairSelection('male',picked);
  v32BodyPart={...hair.parts};
  const chosen=resolvePartSelection('male',v32BodyPart,MALE_REFERENCE_DEFAULT);
- Object.assign(faceControls,resolveEditedFaceControls('male',chosen.controls,
-  v32BodyPart.ageBand,v32BodyPart.bodyType,manualFaceOverrides,facePolishMode));
+ Object.assign(faceControls,youngHeroMaleControls(
+  resolveEditedFaceControls('male',chosen.controls,v32BodyPart.ageBand,
+   v32BodyPart.bodyType,manualFaceOverrides,facePolishMode),
+  v32BodyPart.ageBand,manualFaceOverrides));
  $('style').value=hair.styleId;
  $('heroHairStyle').value=hair.styleId;
  $('heroHairVolume').value=picked.hairVolume;
@@ -640,8 +649,10 @@ for(const field of ['v47AgeBand','v47BodyType']){
   v32BodyPart={...v32BodyPart,
    ageBand:$('v47AgeBand').value,bodyType:$('v47BodyType').value};
   const selected=resolvePartSelection('male',v32BodyPart,MALE_REFERENCE_DEFAULT);
-  Object.assign(faceControls,resolveEditedFaceControls('male',selected.controls,
-   v32BodyPart.ageBand,v32BodyPart.bodyType,manualFaceOverrides,facePolishMode));
+  Object.assign(faceControls,youngHeroMaleControls(
+   resolveEditedFaceControls('male',selected.controls,v32BodyPart.ageBand,
+    v32BodyPart.bodyType,manualFaceOverrides,facePolishMode),
+   v32BodyPart.ageBand,manualFaceOverrides));
   if(v32PartMode)mountPartPicker();
   if(ready){rebuildFaceOnBody();rebuildWig();}
   battleCostume?.setDemographics?.(v32BodyPart.ageBand,v32BodyPart.bodyType);
@@ -660,7 +671,10 @@ mountCharacterCastSelect($('v46Cast'),'male',id=>{
  $('v47BodyType').value=look.bodyType;
  v32BodyPart={...look.parts};
  const selected=resolvePartSelection('male',v32BodyPart,MALE_REFERENCE_DEFAULT);
- Object.assign(faceControls,normalizeMaleFaceControls({...selected.controls,...look.controls}));
+ Object.assign(faceControls,normalizeMaleFaceControls(
+  look.item.id==='commander-male'?
+   youngHeroMaleControls({...selected.controls,...look.controls},look.ageBand):
+   {...selected.controls,...look.controls}));
  syncFaceControls();
  $('style').value=look.styleId;$('heroHairStyle').value=look.styleId;
  $('heroHairVolume').value=v32BodyPart.hairVolume;

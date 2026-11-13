@@ -219,6 +219,7 @@ import {resolveEditedFaceControls,recordFaceManualEdit} from './src/face-state-v
 import {loadHeroineFacePreset,saveHeroineFacePreset} from './src/heroine-face-preset-store.js?v=41';
 import {heroineBeautyControlsV43,heroineBeautyControlsV47,HEROINE_BEAUTY_PART_SELECTION_V43,upgradeUneditedHeroineV42ToV43} from './src/heroine-beauty-preset-v42.js?v=47';
 import {loadMaleFacePreset,saveMaleFacePreset} from './src/male-face-preset-store.js?v=42';
+import {youngHeroMaleControls} from './src/hero-youthful-appearance-v50.js?v=50';
 import {applyHeroineSkinMaterial} from './src/heroine-skin-material.js?v=41';
 import {FEMALE_V7_DEFAULTS,MALE_REFERENCE_DEFAULT,FACE_SLIDER_RANGES,FACE_EYE_SPACING_DEFAULT,FACE_EYE_SPACING_RANGE,CONTACT_COLORS,CONTACT_COLOR_LABELS,safeContactColor,normalizeFemaleFaceControls,normalizeMaleFaceControls} from './src/face-v7-controls.js';
 const $=id=>document.getElementById(id);
@@ -308,6 +309,11 @@ const savedHeroinePreset=v32PartMode?loadHeroineFacePreset():null;
 if(v32PartMode&&!savedHeroinePreset&&new URLSearchParams(location.search).get('hero')==='1')
  Object.assign(v32Parts.female,HEROINE_BEAUTY_PART_SELECTION_V43);
 const savedMalePreset=v32PartMode?loadMaleFacePreset():null;
+if(v32PartMode&&!savedMalePreset){
+ Object.assign(v32Parts.male,chooseHeroFacePreset('male',0,v32Parts.male));
+ Object.assign(v32Parts.male,
+  synchronizeHeroHairSelection('male',v32Parts.male,'male-comma').parts);
+}
 Object.assign(manualFaceOverrides.female,savedHeroinePreset?.manualOverrides||{});
 Object.assign(manualFaceOverrides.male,savedMalePreset?.manualOverrides||{});
 const facePolishMode={
@@ -336,8 +342,10 @@ if(v32PartMode){
   (new URLSearchParams(location.search).get('hero')==='1'?
    heroineBeautyControlsV47(resolvePartSelection('female',v32Parts.female,FEMALE_V7_DEFAULTS).controls):
    resolvePartSelection('female',v32Parts.female,FEMALE_V7_DEFAULTS).controls));
- maleChanges=normalizeMaleFaceControls(savedMalePreset?.controls||
- resolvePartSelection('male',v32Parts.male,MALE_REFERENCE_DEFAULT).controls);
+ maleChanges=normalizeMaleFaceControls(youngHeroMaleControls(
+  savedMalePreset?.controls||
+   resolvePartSelection('male',v32Parts.male,MALE_REFERENCE_DEFAULT).controls,
+  v32Parts.male.ageBand,manualFaceOverrides.male));
 }
 for(const style of listWigStyles('female')){
  const option=document.createElement('option');
@@ -1002,7 +1010,8 @@ if(v32PartMode){
       v32Parts.male.ageBand,v32Parts.male.bodyType,
       manualFaceOverrides.male,facePolishMode.male);
      const faceChanged=facePartChanged&&JSON.stringify(maleChanges)!==JSON.stringify(nextControls);
-     if(facePartChanged)maleChanges=nextControls;
+     if(facePartChanged)maleChanges=normalizeMaleFaceControls(
+      youngHeroMaleControls(nextControls,v32Parts.male.ageBand,manualFaceOverrides.male));
      if(hairChanged){
      wigOn=true;
      $('wig').setAttribute('aria-pressed','true');
@@ -1045,7 +1054,10 @@ if(v32PartMode){
      if(ready){rebuildFemale();rebuildWig();persistHeroineFace();}
     }else{
      const part=resolvePartSelection('male',v32Parts.male,MALE_REFERENCE_DEFAULT);
-     maleChanges=normalizeMaleFaceControls({...part.controls,...look.controls});
+     maleChanges=normalizeMaleFaceControls(
+      look.item.id==='commander-male'?
+       youngHeroMaleControls({...part.controls,...look.controls},
+        look.ageBand):{...part.controls,...look.controls});
      if(ready){rebuildMale();rebuildMaleHair();persistMaleFace();}
     }
     $('v47AgeBand').value=look.ageBand;
