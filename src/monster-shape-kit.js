@@ -8,6 +8,7 @@ import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {nonhumanMonsterStage} from './nonhuman-model-quality.js';
 import {realismPaletteFor} from './monster-realistic-palettes.js';
 import {createMonsterAnatomicalLoft} from './monster-realistic-loft.js';
+import {creatureFaceVolume} from './creature-face-volume.js';
 import {buildCanineFurRibbonGeometry} from './canine-fur-ribbons.js?v=4.4.89';
 import {decorateMonsterPhotoMaterial,detachMonsterPhotoMaterial} from './monster-photo-pbr.js?v=4.4.95';
 
@@ -190,7 +191,7 @@ export function createSculpture(spec,detail='high'){
  const anatomicalLoft=(parent,shade,rings,{name='realistic-anatomical-mesh',
    kind='torso',asymmetry=0}={})=>{
    const mesh=own(attach(parent,createMonsterAnatomicalLoft(rings,
-     {detail,kind,asymmetry}),shade,{rough:kind==='face'?.84:.92,metal:0,name}));
+     {detail,kind,asymmetry,faceVolume:kind==='face'?creatureFaceVolume(spec.id,spec.family):null}),shade,{rough:kind==='face'?.84:.92,metal:0,name}));
    mesh.userData.anatomyLoft=true;
    return mesh;
  };
