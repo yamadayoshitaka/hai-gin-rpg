@@ -8,6 +8,8 @@ on:
       - 'scripts/prepare-story-stage-posters.mjs'
       - 'scripts/run-story-stage.mjs'
       - 'scripts/assemble-story-panel-sheet.py'
+      - 'scripts/assemble-story-bulk-100.py'
+      - 'qa/story-bulk-100-native.test.py'
       - 'qa/story-panel-sheet-native.test.py'
       - 'qa/story-single-stage-manifest.test.mjs'
       - 'qa/story-stage-poster-production.test.mjs'
@@ -19,6 +21,8 @@ on:
       - 'scripts/prepare-story-stage-posters.mjs'
       - 'scripts/run-story-stage.mjs'
       - 'scripts/assemble-story-panel-sheet.py'
+      - 'scripts/assemble-story-bulk-100.py'
+      - 'qa/story-bulk-100-native.test.py'
       - 'qa/story-panel-sheet-native.test.py'
       - '.github/workflows/story-native-sheet-ci.yml'
   workflow_dispatch:
@@ -47,3 +51,20 @@ jobs:
           node qa/story-stage2-draft-intake.test.mjs
       - name: Verify full-size 10 x 2048x1152 lossless review-sheet and exact crop roundtrip
         run: python qa/story-panel-sheet-native.test.py
+      - name: Verify 10x10 = 100 independent canonical slots with no invented art
+        run: python qa/story-bulk-100-native.test.py
+      - name: Execute 100-shot batch preflight (source stages 2–4 contain 144)
+        run: |
+          python scripts/assemble-story-bulk-100.py \
+            --manifest qa-reports/story-stage-production/bulk-native-100/source-stage2-through-stage4.json \
+            --batch-index 0 --prepare-only
+          python scripts/assemble-story-bulk-100.py \
+            --manifest qa-reports/story-stage-production/bulk-native-100/source-stage2-through-stage4.json \
+            --batch-index 1 --prepare-only
+      - name: Deliver 10-sheet 100-shot queue with real missing-art status
+        uses: actions/upload-artifact@v4
+        with:
+          name: story-bulk-100-preflight-${{ github.run_id }}
+          path: qa-reports/story-stage-production/bulk-native-100/
+          if-no-files-found: error
+          retention-days: 30
