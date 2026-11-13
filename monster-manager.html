@@ -48,7 +48,7 @@ legend{font-size:12px;color:#e8d9b6;padding:0 6px}
 </style>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
 </head><body>
-<header><a href="./index.html">← メニュー</a><h1>魔物図鑑・モンスター管理 <small>50種 / v4.5.02</small></h1>
+<header><a href="./index.html">← メニュー</a><h1>魔物図鑑・モンスター管理 <small>50種 / v4.5.03</small></h1>
  <a href="./summon-showcase.html?v=4.5.00">召喚獣一覧</a></header>
 <main>
  <aside>
@@ -139,8 +139,8 @@ import {MONSTER_CATALOG,MONSTER_BY_ID,MONSTER_FAMILIES,MONSTER_ELEMENTS,monsterL
 import {createMonsterModel,disposeMonsterSculpture,MONSTER_DETAIL_LEVELS,
   monsterSculptCacheStats,monsterPhotoCacheStats} from './src/monster-geometry.js?v=4.5.00';
 import {MONSTER_ACTIONS,startMonsterAction,animateMonsterModel} from './src/monster-animation.js?v=4.4.95';
-import {createCosplayedHumanoidMonster} from './src/monster-character-cosplay.js?v=4.5.02';
-import {humanoidMonsterCostumeFor,HUMAN_MONSTER_IDS} from './src/monster-character-cosplay-manifest.js?v=4.5.01';
+import {createCosplayedHumanoidMonster} from './src/monster-character-cosplay.js?v=4.5.03';
+import {humanoidMonsterCostumeFor,HUMAN_MONSTER_IDS} from './src/monster-character-cosplay-manifest.js?v=4.5.03';
 import {fetchCreatureRegistry,loadExternalCreature,loadPersonalGLB} from './src/creature-external-runtime.js?v=4.4.92';
 const byId=id=>document.getElementById(id);
 const storeKey='hai-gin.monster-manager.v1';
@@ -242,7 +242,7 @@ function renderList(){
    btn.className='specimen';btn.dataset.id=entry.id;btn.type='button';
    btn.setAttribute('aria-pressed',String(entry.id===selected));
    const name=document.createElement('strong');name.textContent=m.name;
-   const desc=document.createElement('small');desc.textContent=MONSTER_FAMILIES[m.family]+' / '+MONSTER_ELEMENTS[m.element]+' / '+m.rarity+(modelAssignments[entry.id]?' · GLB割当済':
+   const desc=document.createElement('small');desc.textContent=MONSTER_FAMILIES[m.family]+' / '+MONSTER_ELEMENTS[m.element]+' / '+m.rarity+(humanoidMonsterCostumeFor(m)?' · 人物素体＋異形衣装':'')+(modelAssignments[entry.id]?' · GLB割当済':
       externalRegistry.entries[entry.id]?' · GLB候補':'');
    btn.append(name,desc);btn.onclick=()=>selectSpecies(entry.id);root.append(btn);
  }
@@ -315,7 +315,7 @@ function selectSpecies(id){
        if(ticket!==requestSerial||costumeHandle!==pending||selected!==id)return;
        if(result.source==='canonical-character-cosplay'){
          refreshGeometry();focusCamera();
-         byId('assetStatus').textContent='人型モンスター刷新：全身GLB＋ゴシック衣装・顔造形 '+result.modelId;
+         byId('assetStatus').textContent='人型モンスター16種：人外肌色＋人物GLB＋種族別衣装 '+result.modelId+' / 肌色 #'+(pending.profile.skin>>>0).toString(16).padStart(6,'0');
          notice('人型の顔・体・アニメーションを既存キャラ素体へ切替済み：'+id);
        }else if(result.source!=='cancelled'){
          byId('assetStatus').textContent='人物GLBを読込めないため旧モデルを表示：'+(result.reason||'不明');
@@ -557,6 +557,8 @@ window.__monsterCosplayQA=()=>({
  })?.costume||null,
  genderVariant:selected==='m034'?byId('vampireSex').value:null,
  loaded:costumeHandle?.source==='canonical-character-cosplay',
+ skinHex:costumeHandle?.profile?.skin??null,
+ materialIsolation:!!costumeHandle?.root.userData.costumeSource,
 });
 window.__monsterQualityQA=()=>({
  id:selected,detail:byId('quality').value,
