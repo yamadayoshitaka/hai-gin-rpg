@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {clipMeshGeometryAtWorldNeck} from './face-body-assembly.js?v=54';
 import {createCharacter} from './character-system/shared-character-runtime.js?v=4.6.36';
 import {buildRiggedJobOutfit} from './character-system/rigged-outfit-runtime.js?v=41';
 import {loadJobMotionMap} from './character-system/job-motion-source.js?v=4.6.36';
@@ -175,7 +176,9 @@ export function alignStudioHeadToSkinnedTorso({
  faceRoot.parent.updateWorldMatrix(true,true);
  wardrobeRoot.updateWorldMatrix(true,true);
  faceMesh.geometry.computeBoundingBox();
- const headWorldBounds=faceMesh.geometry.boundingBox.clone()
+ const faceSource=STUDIO_FACE_NECK_CACHE.get(faceMesh)?.source||faceMesh.geometry;
+ if(!faceSource.boundingBox)faceSource.computeBoundingBox();
+ const headWorldBounds=faceSource.boundingBox.clone()
   .applyMatrix4(faceMesh.matrixWorld);
  const beforeMinY=headWorldBounds.min.y;
  let torsoTopY=-Infinity;
@@ -210,6 +213,130 @@ export function alignStudioHeadToSkinnedTorso({
 // Store unmodified source vertices per preview mesh. Re-applying this on
 // body/age/job changes must NEVER squash an already fitted breastplate.
 const STUDIO_CHEST_ORIGINAL=new WeakMap();
+const STUDIO_FACE_NECK_CACHE=new WeakMap();
+const STUDIO_NECK_NAME='STUDIO_REAL_SKIN_NECK_CONNECTOR_V54';
+
+/**
+ * Remove the source CC0 portrait's flat shoulder-bust rim from the combat
+ * studio only. The visible horizontal board beneath the jaw is NOT part of
+ * the body outfit. Replace that lower slice with a short, tapered, actual 3D
+ * cervical mesh whose top and bottom overlap the intact face and chest.
+ *
+ * This operates on a cloned preview face geometry, never the GLB source.
+ * All positions are computed in world space then transformed into headRoot
+ * coordinates so the material/neck follow the 65-bone head animation.
+ */
+export function fitStudioNeckContinuity({faceRoot,faceMesh,wardrobeRoot}={}){
+ if(!faceRoot?.isObject3D||!faceMesh?.isMesh||
+    !faceMesh.geometry?.getAttribute('position')||
+    !wardrobeRoot?.traverse)return {applied:false,reason:'head-or-wardrobe-missing'};
+ let cached=STUDIO_FACE_NECK_CACHE.get(faceMesh);
+ if(!cached||faceMesh.geometry!==cached.clipped){
+  if(cached?.clipped)cached.clipped.dispose();
+  cached={source:faceMesh.geometry,clipped:null};
+  STUDIO_FACE_NECK_CACHE.set(faceMesh,cached);
+ }
+ const source=cached.source;
+ if(!source.boundingBox)source.computeBoundingBox();
+ faceRoot.updateWorldMatrix(true,true);
+ wardrobeRoot.updateWorldMatrix(true,true);
+ const originalFaceBounds=source.boundingBox.clone().applyMatrix4(faceMesh.matrixWorld);
+ const headHeight=originalFaceBounds.getSize(new THREE.Vector3()).y;
+ if(headHeight<.08)return {applied:false,reason:'face-height-invalid'};
+ const bodies=[];
+ wardrobeRoot.traverse(mesh=>{
+  if(mesh.isSkinnedMesh&&
+   /^(?:female|male)_(?:ranger|peasant)_body$/i.test(mesh.name)&&
+   mesh.geometry?.getAttribute('position'))bodies.push(mesh);
+ });
+ if(!bodies.length)return {applied:false,reason:'torso-missing'};
+ let torsoTop=-Infinity,torsoZ=0,torsoX=0;
+ for(const mesh of bodies){
+  mesh.geometry.computeBoundingBox();
+  const b=mesh.geometry.boundingBox.clone().applyMatrix4(mesh.matrixWorld);
+  if(b.max.y>torsoTop){
+   torsoTop=b.max.y;
+   torsoX=(b.min.x+b.max.x)*.5;
+   torsoZ=(b.min.z+b.max.z)*.5;
+  }
+ }
+ // Crop only the lowest 10-12%: the portrait's broad, horizontal shoulder
+ // pedestal is at the very bottom; the jaw, lips and ears must survive.
+ const cutY=Math.max(originalFaceBounds.min.y+headHeight*.115,torsoTop+.016);
+ const safeCutY=Math.min(cutY,originalFaceBounds.min.y+headHeight*.17);
+ faceMesh.geometry=source;
+ const cut=clipMeshGeometryAtWorldNeck(faceMesh,safeCutY,{keepBelow:false});
+ if(cut.keptTriangles<100||cut.removedTriangles<3){
+  cut.geometry.dispose();
+  faceMesh.geometry=source;
+  return {applied:false,reason:'insufficient-sculpted-bust-to-trim'};
+ }
+ faceMesh.geometry=cut.geometry;cached.clipped=cut.geometry;
+ const oldBridge=faceRoot.getObjectByName(STUDIO_NECK_NAME);
+ if(oldBridge){
+  oldBridge.removeFromParent();
+  oldBridge.geometry.dispose();
+  oldBridge.material.dispose();
+ }
+ const bottomY=torsoTop-.027,topY=safeCutY+.013;
+ if(topY<=bottomY+.008)return {applied:false,reason:'neck-height-invalid'};
+ const cx=(originalFaceBounds.min.x+originalFaceBounds.max.x)*.5;
+ const cz=(originalFaceBounds.min.z+originalFaceBounds.max.z)*.5-.011;
+ const faceWidth=originalFaceBounds.getSize(new THREE.Vector3()).x;
+ const radiusX=THREE.MathUtils.clamp(faceWidth*.29,.033,.066);
+ const radiusZ=THREE.MathUtils.clamp(faceWidth*.265,.030,.060);
+ // A cylindrical cut looks like a pipe. Five spline-like tapered rings
+ // keep the trapezius and under-jaw continuous without adding shoulders.
+ const count=32,rings=6;
+ const verts=[],normals=[],colors=[],uv=[],index=[];
+ const bottomSkin=new THREE.Color(0xc69c82),topSkin=new THREE.Color(0xe7c8bd);
+ faceRoot.updateWorldMatrix(true,false);
+ for(let r=0;r<rings;r++){
+  const t=r/(rings-1);
+  const y=bottomY+(topY-bottomY)*t;
+  const widen=1+.075*(1-t)-.06*Math.sin(Math.PI*t);
+  const xCenter=THREE.MathUtils.lerp(torsoX,cx,t);
+  const zCenter=THREE.MathUtils.lerp(torsoZ-.015,cz,t);
+  const skin=bottomSkin.clone().lerp(topSkin,t);
+  for(let s=0;s<=count;s++){
+   const angle=2*Math.PI*s/count;
+   const world=new THREE.Vector3(
+    xCenter+Math.cos(angle)*radiusX*widen,
+    y,
+    zCenter+Math.sin(angle)*radiusZ*widen);
+   const local=faceRoot.worldToLocal(world);
+   verts.push(local.x,local.y,local.z);
+   colors.push(skin.r,skin.g,skin.b);
+   uv.push(s/count,t);
+  }
+ }
+ for(let r=0;r<rings-1;r++)for(let s=0;s<count;s++){
+  const a=r*(count+1)+s,b=a+count+1;
+  index.push(a,b,a+1,b,b+1,a+1);
+ }
+ const geometry=new THREE.BufferGeometry();
+ geometry.setAttribute('position',new THREE.Float32BufferAttribute(verts,3));
+ geometry.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));
+ geometry.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
+ geometry.setIndex(index);geometry.computeVertexNormals();
+ const material=new THREE.MeshStandardMaterial({
+  color:0xffffff,vertexColors:true,roughness:.81,metalness:0,
+  side:THREE.DoubleSide,flatShading:false
+ });
+ const bridge=new THREE.Mesh(geometry,material);
+ bridge.name=STUDIO_NECK_NAME;
+ bridge.userData={studioPreviewOnly:true,realNeckConnector:true,
+  placedUsingActualTorso:true,originalFaceGeometryPreserved:true};
+ bridge.frustumCulled=false;bridge.castShadow=true;bridge.receiveShadow=true;
+ faceRoot.add(bridge);
+ return {applied:true,sourceTrianglesPreserved:true,
+  bustTrianglesRemoved:cut.removedTriangles,
+  trimmedSculptBottomY:safeCutY,
+  actualTorsoTopY:torsoTop,connectorBottomY:bottomY,connectorTopY:topY,
+  segmentCount:count,neckHeight:topY-bottomY,
+  skullAndHairUnaffected:true,previewOnly:true};
+}
+
 /**
  * Real geometry-based neck clearance, for the PREVIEW only.
  * A tall imported cuirass can physically hide the eyes and mouth despite
@@ -645,9 +772,11 @@ export async function createRealBattleOutfitStudio({scene,faceModel,getFaceModel
   );
   const headAlignment=alignStudioHeadToSkinnedTorso({
    faceRoot:headRoot,faceMesh:face,wardrobeRoot:outfit?.root});
+  const neckContinuity=fitStudioNeckContinuity({
+   faceRoot:headRoot,faceMesh:face,wardrobeRoot:outfit?.root});
   const neckClearance=fitStudioCuirassBelowChin({faceMesh:face,wardrobeRoot:outfit?.root});
   collarFitDirty=true;
-  proportions={...proportions,headAlignment,neckClearance,bodyShape:bodyShapeId,
+  proportions={...proportions,headAlignment,neckContinuity,neckClearance,bodyShape:bodyShapeId,
    ageBand:ageBandId,bodyType:bodyTypeId,
    bodyWidth:body.width,bodyDepth:body.depth,bodyHeight:age.heightScale,
    headScale:age.headScale,buildMorph,skinnedBody:true,previewOnly:true};
@@ -695,7 +824,9 @@ export async function createRealBattleOutfitStudio({scene,faceModel,getFaceModel
    // Refit once after skeletal matrices settle, never on every render frame.
    const headAlignment=alignStudioHeadToSkinnedTorso({
     faceRoot:headRoot,faceMesh:face,wardrobeRoot:outfit.root});
-   proportions={...proportions,headAlignment,
+   const neckContinuity=fitStudioNeckContinuity({
+    faceRoot:headRoot,faceMesh:face,wardrobeRoot:outfit.root});
+   proportions={...proportions,headAlignment,neckContinuity,
     neckClearance:fitStudioCuirassBelowChin({
      faceMesh:face,wardrobeRoot:outfit.root})};
    collarFitDirty=false;
