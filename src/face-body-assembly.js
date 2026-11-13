@@ -513,7 +513,7 @@ function measuredNeckCenter(root,planeY,halfWindow,maxSideDistance,baseline){
   samples:points.length};
 }
 export function attachIndependentHeadToBody(headModel,bodySource,{
- outfitSource=null,characterId='hero-girl-01',armor='#c9cbd3',cloth='#263958'
+ outfitSource=null,characterId='hero-girl-01',gender='female',armor='#c9cbd3',cloth='#263958'
 }={}){
  if(!headModel?.root||!headModel?.face||!bodySource?.traverse)
   throw Error('Real independent head and source body required');
@@ -536,11 +536,11 @@ export function attachIndependentHeadToBody(headModel,bodySource,{
   (headNeck?.z??headCenter.z)-(bodyNeck?.z??bodyCenter.z)
  );
  const attachment=new THREE.Group();
- attachment.name='HEROINE_REAL_BODY_ATTACHMENT';
+ attachment.name=gender==='male'?'HERO_REAL_MALE_BODY_ATTACHMENT':'HEROINE_REAL_BODY_ATTACHMENT';
  attachment.userData.characterId=characterId;
- attachment.userData.sourceBody='realistic-body-female.glb';
+ attachment.userData.sourceBody=gender==='male'?'realistic-body-male.glb':'realistic-body-female.glb';
  const actualBody=bodySource.clone(true);
- actualBody.name='CC0_CLIPPED_FEMALE_BODY';
+ actualBody.name=gender==='male'?'CC0_CLIPPED_MALE_BODY':'CC0_CLIPPED_FEMALE_BODY';
  attachment.add(actualBody);
  // Avoid overlaying the unfitted Viking donor outfit: its duplicate
  // arms and floating sleeves expose the naked source torso. Instead apply
@@ -606,7 +606,7 @@ export function attachIndependentHeadToBody(headModel,bodySource,{
  const bodySampler=buildBodyDepthCollision(attachment,head,{clearance:height*.009});
  const report={
   connectedCharacterId:characterId,
-  bodySource:'realistic-body-female.glb',
+  bodySource:attachment.userData.sourceBody,
   sourceBodyHeight:sourceSize.y,
   neckSeamY:cutY,
   neckOverlap:headBox.max.y-height-cutY,

@@ -97,7 +97,7 @@ export function enhanceStudioCombatMaterials(wardrobeRoot){
  * the studio narrows overly massive female plate limbs, and removes
  * disconnected *spherical* rivet objects that look like floating marbles.
  */
-export function refineHeroineCostumeSilhouette(wardrobeRoot){
+export function refineHeroineCostumeSilhouette(wardrobeRoot,{gender='female',job='swordsman'}={}){
  if(!wardrobeRoot?.traverse)throw Error('Outfit root required');
  let taperedLegPieces=0,narrowedCuirass=0,hiddenLooseStuds=0,
    loweredTassets=0,skinnedTrousers=0,collarClearancePieces=0;
@@ -107,7 +107,7 @@ export function refineHeroineCostumeSilhouette(wardrobeRoot){
   if(mesh.visible&&mesh.isSkinnedMesh&&/_(?:ranger|peasant)_legs/i.test(mesh.name))
    skinnedTrousers++;
   const slot=mesh.userData?.equipmentSlot||'';
-  if(mesh.userData?.equipmentClass==='armor'){
+  if(gender==='female'&&mesh.userData?.equipmentClass==='armor'){
    const factor=slot==='chest'?.93:slot==='shoulder'?.91:
     ['thigh','knee','shin','boot-upper'].includes(slot)?.87:
     slot==='boot-foot'?.95:1;
@@ -122,15 +122,18 @@ export function refineHeroineCostumeSilhouette(wardrobeRoot){
     else taperedLegPieces++;
    }
   }
-  if(/(?:neckguard|neck-plate|standing-collar|cuirass-collar)/i.test(mesh.name)
+  if(gender==='female'&&/(?:neckguard|neck-plate|standing-collar|cuirass-collar)/i.test(mesh.name)
     &&!mesh.isSkinnedMesh){
    mesh.scale.y*=.81;mesh.position.y-=.014;collarClearancePieces++;
   }
-  if(/cuirass-thigh-tasset/i.test(mesh.name)){
+  if(gender==='female'&&/cuirass-thigh-tasset/i.test(mesh.name)){
    // Half-width leather/steel panels instead of boxy vertical drainpipes.
    mesh.scale.x*=.82;mesh.scale.z*=.87;
    mesh.scale.y*=.86;loweredTassets++;
   }
+  const deliberatelyFloating=job==='summoner'&&
+   /(?:summon|orbit|floating|hover|magic-circle|halo|aura)/i.test(mesh.name);
+  if(deliberatelyFloating)return;
   if(/(?:cuirass-fastener|armor-rivet|harness-pin|hand-sewn-hem-stud|mantle-clasp|cuirass-suspension-bead)/i.test(mesh.name)){
    mesh.visible=false;hiddenLooseStuds++;
    return;
@@ -150,7 +153,7 @@ export function refineHeroineCostumeSilhouette(wardrobeRoot){
    mesh.visible=false;hiddenLooseStuds++;
   }
  });
- return {taperedLegPieces,narrowedCuirass,hiddenLooseStuds,
+ return {gender,job,taperedLegPieces,narrowedCuirass,hiddenLooseStuds,
   loweredTassets,skinnedTrousers,collarClearancePieces,onlyStudioPreview:true,
   sourceGeometryUnmodified:true};
 }
@@ -300,7 +303,8 @@ const motionByAction=Object.freeze({
 });
 
 export async function createRealBattleOutfitStudio({scene,faceModel,getFaceModel=null,onStatus=()=>{},
- jobId='knight',outfitId='job',actionId='idle'}={}){
+ jobId='knight',outfitId='job',actionId='idle',gender='female'}={}){
+ if(!['female','male'].includes(gender))throw Error('Unknown studio gender');
  if(!scene?.add||!faceModel?.root||!faceModel.face)
   throw Error('Real scene and independent face are required');
  const jobs=await loadJobMotionMap();
@@ -314,12 +318,12 @@ export async function createRealBattleOutfitStudio({scene,faceModel,getFaceModel
   const serial=++request,job=realBattleJob(currentJob);
   const chosen=chosenOutfit();
   onStatus('戦闘用の実衣装を接続中：'+chosen.label);
-  const fresh=await createCharacter({job:job.name,sex:'female',height:1.66,
-   jobs,faceQuality:'hero',faceId:'hero-girl-01'});
+  const fresh=await createCharacter({job:job.name,sex:gender,height:gender==='male'?1.77:1.66,
+   jobs,faceQuality:'hero',faceId:gender==='male'?'hero-boy-01':'hero-girl-01'});
   let clothing;
   try{
    clothing=await buildRiggedJobOutfit({characterModel:fresh.model,
-    parent:fresh.object3D,job:chosen.name,sex:'female',quality:'preview',
+    parent:fresh.object3D,job:chosen.name,sex:gender,quality:'preview',
     preserveBody:false,rarity:'N',studioPreferSkinnedLegs:true,
     studioPreserveLegAnatomy:true});
    if(serial!==request||disposed){
@@ -327,7 +331,7 @@ export async function createRealBattleOutfitStudio({scene,faceModel,getFaceModel
    }
    clothing.setHairVisible(false);clothing.setHelmetVisible(false);
    finishReport=enhanceStudioCombatMaterials(clothing.root);
-   const silhouetteReport=refineHeroineCostumeSilhouette(clothing.root);
+   const silhouetteReport=refineHeroineCostumeSilhouette(clothing.root,{gender,job:chosen.heroJob});
    finishReport={...finishReport,...silhouetteReport};
    const cut=hideBattleDonorFace(fresh.model);
    // Only the independent artist face owns eye and lid rendering.
@@ -344,13 +348,14 @@ export async function createRealBattleOutfitStudio({scene,faceModel,getFaceModel
    // Always graft the newest live face, never an already-disposed preview.
    const latestFace=getFaceModel?.()||faceModel;
    headRoot=latestFace.root;face=latestFace.face;
-   enhanceHeroineFaceSurface(face);
+   if(gender==='female')enhanceHeroineFaceSurface(face);
    scene.add(actor.object3D);
    headFit=attachIndependentFaceToBattleHead({faceRoot:headRoot,
     faceMesh:face,characterModel:actor.model,
     headBounds:headReport.headBounds});
    proportions=fitStudioFaceAboveArmor({actorRoot:actor.object3D,
-    faceRoot:headRoot,faceFit:headFit});
+    faceRoot:headRoot,faceFit:headFit,
+    bodyScale:gender==='male'?.93:HEROINE_STUDIO_BODY_SCALE});
    setBodyVisible(!hiddenBody);
    outfit.root.visible=!hiddenBody&&outfitShown;
    vfx=createHeroineBattleActionVfx({THREE,actorRoot:actor.object3D,
@@ -416,13 +421,14 @@ export async function createRealBattleOutfitStudio({scene,faceModel,getFaceModel
  function attachFace(next){
   if(!next?.root||!next.face)throw Error('Updated face required');
   headRoot=next.root;face=next.face;
-  enhanceHeroineFaceSurface(face);
+  if(gender==='female')enhanceHeroineFaceSurface(face);
   if(actor){
    headFit=attachIndependentFaceToBattleHead({
     faceRoot:headRoot,faceMesh:face,characterModel:actor.model,
     headBounds:headReport.headBounds});
    proportions=fitStudioFaceAboveArmor({actorRoot:actor.object3D,
-    faceRoot:headRoot,faceFit:headFit});
+    faceRoot:headRoot,faceFit:headFit,
+    bodyScale:gender==='male'?.93:HEROINE_STUDIO_BODY_SCALE});
   }
   return headFit;
  }
@@ -439,7 +445,7 @@ export async function createRealBattleOutfitStudio({scene,faceModel,getFaceModel
   actor.update(dt);outfit?.sync();vfx?.update(dt);
  }
  function getState(){return {
-  active:!!actor,rigSource:'battle-character-and-real-65-bone-job-outfit',
+  active:!!actor,gender,rigSource:'battle-character-and-real-65-bone-job-outfit',
   jobId:currentJob,outfitId:currentOutfit,actionId:currentAction,
   nativeCommand,nativeClip,availableActionCount:availableActions().length,
   garment:chosenOutfit().label,

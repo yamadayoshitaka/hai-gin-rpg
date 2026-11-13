@@ -25,6 +25,8 @@ import {clipBodyToGarment} from '../src/character-system/garment-coverage-runtim
 import {applyHeroineSkinMaterial} from '../src/heroine-skin-material.js';
 import {HEROINE_FACE_STUDIO_KEY,loadHeroineFacePreset,saveHeroineFacePreset}
  from '../src/heroine-face-preset-store.js';
+import {MALE_FACE_STUDIO_KEY,loadMaleFacePreset,saveMaleFacePreset} from '../src/male-face-preset-store.js';
+import {heroineBeautyControlsV42} from '../src/heroine-beauty-preset-v42.js';
 
 function fixture(){
  const original=new THREE.SphereGeometry(.19,64,48);
@@ -2227,4 +2229,53 @@ test('v41 realistic face micro-skin relief shared between editor and costume doe
  const html=readFileSync('face-mesh-studio.html','utf8');
  assert.match(html,/applyHeroineSkinMaterial\(next\.face\)/);
  assert.match(html,/if\(g==='female'\)applyHeroineSkinMaterial\(model\.face\)/);
+});
+
+
+test('v42 opted-in static hero hair is a single normal-layered mesh without cloned transparent face',()=>{
+ const female=makeIndependentFaceMaster(fixture().source,'female');
+ const sourceBefore=Array.from(female.face.geometry.getAttribute('position').array);
+ const wig=createScalpAnchoredWig(female.face,{
+  count:96,visualFiberMultiplier:3,staticGroom:true,normalLayeredSingleMesh:true
+ });
+ const meshes=[];wig.root.traverse(node=>{if(node.isMesh)meshes.push(node);});
+ assert.equal(meshes.length,1,'All rendered hair surfaces must be one mesh object');
+ const hair=meshes[0];
+ assert.equal(hair.name,'SINGLE_MESH_NORMAL_LAYERED_HAIR');
+ assert.equal(hair.userData.normalLayerCount,3);
+ assert.ok(hair.geometry.groups.length>=3);
+ assert.ok(hair.geometry.getAttribute('position').count>96*12*8*2);
+ assert.ok(Array.from(hair.geometry.getAttribute('position').array).every(Number.isFinite));
+ assert.equal(wig.root.getObjectByName('DETACHABLE_WIG_TRANSPARENT_HEAD_BASE'),undefined);
+ assert.equal(wig.getReport().transparentExactHeadWigBase,false);
+ assert.equal(wig.getReport().meshCount,1);
+ assert.match(wig.getReport().hairCardStyle,/normal-offset/);
+ assert.deepEqual(Array.from(female.face.geometry.getAttribute('position').array),sourceBefore);
+ wig.dispose();
+});
+test('v42 male studio has independent body, editable face and all ten existing clips',()=>{
+ const male=readFileSync('male-body-studio.html','utf8');
+ const female=readFileSync('face-body-studio.html','utf8');
+ const editor=readFileSync('face-mesh-studio.html','utf8');
+ assert.match(male,/realistic-body-male\.glb/);
+ assert.match(male,/makeIndependentFaceMaster\(sourceHead,'male'/);
+ assert.match(male,/gender:'male',onStatus:tellBattleStatus/);
+ assert.match(male,/loadMaleFacePreset/);
+ assert.match(male,/normalLayeredSingleMesh:v32PartMode/);
+ assert.match(male,/renderNativeActionButtons/);
+ assert.match(male,/REAL_BATTLE_WARDROBE\.map/);
+ assert.match(female,/gender=female&hero=1/);
+ assert.match(female,/male-body-studio\.html/);
+ assert.match(editor,/persistMaleFace/);
+ const storageMap=new Map();
+ const storage={getItem:k=>storageMap.get(k)||null,setItem:(k,v)=>storageMap.set(k,v)};
+ const data={parts:{face:3,eye:4,hair:8},controls:{irisDiameter:1.3,eyeDepth:-.1}};
+ assert.ok(saveMaleFacePreset(data,storage));
+ assert.ok(storageMap.has(MALE_FACE_STUDIO_KEY));
+ assert.equal(loadMaleFacePreset(storage).controls.irisDiameter,1.3);
+ assert.notEqual(MALE_FACE_STUDIO_KEY,HEROINE_FACE_STUDIO_KEY);
+ const beauty=heroineBeautyControlsV42(FEMALE_V7_DEFAULTS);
+ assert.ok(beauty.irisDiameter>1.2);
+ assert.ok(beauty.jawSharpness<FEMALE_V7_DEFAULTS.jawSharpness);
+ assert.ok(beauty.eyeDepth<0);
 });
