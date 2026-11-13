@@ -63,7 +63,17 @@ assert "mobile-5x5-20261113/manifest.json" in review
 assert "試作原画25枚" in review
 assert "story-art-review.html#drafts" in viewer
 assert "c01-draft" not in registered
-assert "mobile-5x5-20261113" not in registered
+assert "provisionalRegisteredStoryPanel" in registered
+assert "artrev=c01s02female20261113" in registered
+provisional = (ROOT / "src/story-provisional-registered-art.js").read_text(encoding="utf8")
+assert "PROVISIONAL_MOBILE_DRAFT_UNAPPROVED" in provisional
+assert "screenplayExactnessApproved:false" in provisional
+assert "textAndCharacterHumanQAComplete:false" in provisional
+assert "mustNotPromoteAsFinal:true" in provisional
+# Registered-to-game is allowed ONLY as an explicit, visibly unapproved P0 draft.
+assert provisional.count("'c01-s02|pre|female|") == 8
+assert "'c01-s02|post-" not in provisional
+assert "'c01-s02|pre|male|" not in provisional
 
 print(f"PASS: 25 real, intact SHA256-verified WebPs ({total_size} bytes); "
       f"{len(sizes)} native dimensions; 5x5 original crop order; "

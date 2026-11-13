@@ -1,3 +1,4 @@
+import {provisionalRegisteredStoryPanel} from './story-provisional-registered-art.js';
 /**
  * Exactly registered and already sliced Chapter 1 manga panels.
  * A registered original is NOT an approved/quality-reviewed image.
@@ -13,6 +14,8 @@ const REGISTERED=Object.freeze({
 });
 export function registeredStoryPanelAsset(shot){
  if(!shot||typeof shot.id!=='string')return null;
+ const provisional=provisionalRegisteredStoryPanel(shot);
+ if(provisional)return provisional.asset;
  const allowed=REGISTERED[shot.stageId+'|'+shot.comicEdition+'|'+shot.protagonistGender];
  const id=/^c\d{2}-s\d{2}-m(\d{1,2})$/.exec(shot.id);
  if(!allowed||!id||!allowed.includes(Number(id[1])))return null;
@@ -35,6 +38,8 @@ export function storySheetCrop(shot,pageCellCount){
 /** Version specific C01-S01 artwork URLs keep mobile browsers from showing older cached image bytes. */
 export function storyArtDisplayUrl(url){
  if(typeof url!=='string'||!url)return url;
+ if(url.includes('/assets/story/chapter-drafts/c01/mobile-5x5-20261113/'))
+  return url+(url.includes('?')?'&':'?')+'artrev=c01s02female20261113';
  if(!/\/assets\/story\/chapters\/c01\/(?:panels\/)?c01-s01-/.test(url))return url;
  return url+(url.includes('?')?'&':'?')+'artrev=c01s01-20261113-hires';
 }

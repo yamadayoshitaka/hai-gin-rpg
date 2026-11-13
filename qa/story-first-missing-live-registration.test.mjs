@@ -1,0 +1,54 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
+import {createHash} from 'node:crypto';
+import {fileURLToPath} from 'node:url';
+import {comicForStage} from '../src/story-chapter-comic.js';
+import {registeredStoryPanelAsset} from '../src/story-panel-registered-art.js';
+import {provisionalRegisteredStoryPanel,PROVISIONAL_STORY_SHOT_COUNT} from '../src/story-provisional-registered-art.js';
+const ROOT=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
+const root=path.join(ROOT,'assets/story/chapter-drafts/c01/mobile-5x5-20261113');
+const manifest=JSON.parse(fs.readFileSync(path.join(root,'manifest.json'),'utf8'));
+const females=comicForStage('c01-s02','pre',{protagonistGender:'female'}).panels;
+const males=comicForStage('c01-s02','pre',{protagonistGender:'male'}).panels;
+const victory=comicForStage('c01-s02','post',{protagonistGender:'female',battleOutcome:{victory:true}}).panels;
+const defeat=comicForStage('c01-s02','post',{protagonistGender:'female',battleOutcome:{victory:false}}).panels;
+const gameover=comicForStage('c01-s02','post',{protagonistGender:'female',battleOutcome:{victory:false,playerCommanderDead:true}}).panels;
+assert.equal(PROVISIONAL_STORY_SHOT_COUNT,8);
+assert.deepEqual(females.map(x=>x.id),['c01-s02-m1','c01-s02-m2','c01-s02-m3','c01-s02-m4','c01-s02-m5','c01-s02-m11','c01-s02-m13','c01-s02-m15']);
+const names=new Set(),usedPaths=new Set();
+for(const shot of females){
+ const draft=provisionalRegisteredStoryPanel(shot);
+ assert(draft,'Expected explicit first missing shot mapping for '+shot.id);
+ assert.equal(draft.status,'PROVISIONAL_MOBILE_DRAFT_UNAPPROVED');
+ assert.equal(draft.phoneSizeApproved,true);
+ assert.equal(draft.screenplayExactnessApproved,false);
+ assert.equal(draft.originalMasterImageInputsVerified,false);
+ assert.equal(draft.textAndCharacterHumanQAComplete,false);
+ assert.equal(draft.mustNotPromoteAsFinal,true);
+ assert(draft.asset.startsWith('./assets/story/chapter-drafts/c01/mobile-5x5-20261113/'));
+ assert.equal(registeredStoryPanelAsset(shot),draft.asset);
+ assert(!names.has(draft.sourceName),'No different live shots may borrow the same draft');
+ names.add(draft.sourceName);usedPaths.add(draft.asset);
+ const matched=manifest.panels.find(x=>x.path===draft.asset.slice(2));
+ assert(matched,'Missing user-accepted crop metadata for '+shot.id);
+ assert(matched.mobileResolutionEligible);
+ assert.equal(matched.approval,'DRAFT_ONLY_NOT_VALIDATED_FOR_MANGA_VIEWER');
+ const f=path.join(ROOT,matched.path);
+ const image=fs.readFileSync(f);
+ assert.equal(image.toString('ascii',0,4),'RIFF');
+ assert.equal(image.toString('ascii',8,12),'WEBP');
+ assert.equal(createHash('sha256').update(image).digest('hex'),matched.sourceSha256);
+ assert(matched.nativePixels[0]>=768&&matched.nativePixels[1]>=320);
+}
+assert.equal(names.size,8);
+for(const shot of [...males,...victory,...defeat,...gameover])
+ assert.equal(provisionalRegisteredStoryPanel(shot),null,'No gender/outcome shortcut '+shot.id);
+// Existing approved/registered stage1 files and male stage2 originals are not overwritten.
+const firstStagePre=comicForStage('c01-s01','pre',{protagonistGender:'female'}).panels;
+assert.equal(firstStagePre.length,10);
+assert(firstStagePre.every(x=>registeredStoryPanelAsset(x)?.includes('assets/story/chapters/c01/panels/c01-s01-')));
+assert(males.every(x=>registeredStoryPanelAsset(x)?.includes('assets/story/chapters/c01/panels/c01-s02-')));
+const gameViewer=fs.readFileSync(path.join(ROOT,'src/story-manga-viewer.js'),'utf8');
+assert(gameViewer.includes('仮原画（人物・台本の品質承認前）'));
+console.log('PASS: stage1 preserved, first missing c01-s02 female PRE all 8 real SHA-checked mobile crops bound in actual manga player; NO cross-gender/outcome reuse; labels remain unapproved.');
