@@ -1,0 +1,64 @@
+name: Story chapter 2 all 10 stages (P0 / all decisions)
+
+on:
+  pull_request:
+    paths:
+      - 'assets/story/stage-manifests/c02-s*.manifest.json'
+      - 'assets/story/characters/c02-s*-reference-bible.json'
+      - 'scripts/run-story-stage-range.mjs'
+      - 'qa/story-chapter2-full-production.test.mjs'
+      - '.github/workflows/story-chapter2-full-production.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'assets/story/stage-manifests/c02-s*.manifest.json'
+      - 'assets/story/characters/c02-s*-reference-bible.json'
+      - 'scripts/run-story-stage-range.mjs'
+      - 'qa/story-chapter2-full-production.test.mjs'
+      - '.github/workflows/story-chapter2-full-production.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  chapter2-production:
+    name: Verify chapter2 town/choice/outcome canon and native frame review queue
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install free Pillow for native WebP checks
+        run: python -m pip install --disable-pip-version-check Pillow==11.3.0
+      - name: Test all ten stage-specific manifests, actor image references, 574 canonical shot and choice branches
+        run: |
+          node qa/story-chapter2-full-production.test.mjs
+          node qa/story-stage-poster-production.test.mjs
+          node qa/story-single-stage-manifest.test.mjs
+          python qa/story-panel-sheet-native.test.py
+      - name: Execute ten-stage batch and assemble only actual native high-resolution reference-ready sources
+        run: node scripts/run-story-stage-range.mjs --start c02-s01 --through c02-s10
+      - name: Upload 574 stage-specific prompts, validation reports and missing-source manifest
+        uses: actions/upload-artifact@v4
+        with:
+          name: chapter2-ten-stage-art-production-${{ github.run_id }}
+          path: |
+            qa-reports/story-stage-production/range-c02-s01-through-c02-s10/
+            qa-reports/story-stage-production/batches/c02-s01/
+            qa-reports/story-stage-production/batches/c02-s02/
+            qa-reports/story-stage-production/batches/c02-s03/
+            qa-reports/story-stage-production/batches/c02-s04/
+            qa-reports/story-stage-production/batches/c02-s05/
+            qa-reports/story-stage-production/batches/c02-s06/
+            qa-reports/story-stage-production/batches/c02-s07/
+            qa-reports/story-stage-production/batches/c02-s08/
+            qa-reports/story-stage-production/batches/c02-s09/
+            qa-reports/story-stage-production/batches/c02-s10/
+          if-no-files-found: error
+          retention-days: 30
