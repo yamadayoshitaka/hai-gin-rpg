@@ -8,6 +8,7 @@ import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {nonhumanMonsterStage} from './nonhuman-model-quality.js';
 import {realismPaletteFor} from './monster-realistic-palettes.js';
 import {createMonsterAnatomicalLoft} from './monster-realistic-loft.js?v=4.4.99';
+import {createCreatureGumSocketGeometry,createCreatureFittedHemGeometry} from './creature-seam-geometry.js';
 import {creatureFaceVolume} from './creature-face-volume.js';
 import {buildCanineFurRibbonGeometry} from './canine-fur-ribbons.js?v=4.4.89';
 import {decorateMonsterPhotoMaterial,detachMonsterPhotoMaterial} from './monster-photo-pbr.js?v=4.4.95';
@@ -150,6 +151,28 @@ export function createSculpture(spec,detail='high'){
  const spike=(parent,shade,from,to,radius=.08)=>
    oriented(parent,shade,from,to,radius,0,
      length=>new THREE.ConeGeometry(radius,length,resolution.rod,2));
+ // A rooted organic tooth/nail has a buried enamel base and a material-
+ // correct flesh/keratin socket, both inheriting the same animated parent.
+ const rootedSpike=(parent,enamel,rootShade,from,to,radius=.034,{name='claw'}={})=>{
+   const a=V(from),axis=V(to).sub(a);
+   if(axis.lengthSq()<1e-9)return null;
+   const buried=a.clone().addScaledVector(axis,-.12).toArray();
+   const tooth=spike(parent,enamel,buried,to,radius);
+   if(tooth)tooth.name=name;
+   const socket=own(attach(parent,createCreatureGumSocketGeometry({
+     base:from,tip:to,radius,detail
+   }),rootShade,{name:name+'-root',rough:.88,metal:0}));
+   return {tooth,socket};
+ };
+ const seamHem=(parent,shade,{center,axis=[0,1,0],radiusX,radiusZ,
+   width=.06,thickness=.012,name='fitted-garment-hem'}={})=>{
+   const geometry=createCreatureFittedHemGeometry({
+     center,axis,radiusX,radiusZ,width,thickness,detail
+   });
+   return own(attach(parent,geometry,shade,{
+     name,rough:.91,metal:shade==='metal'?.54:0
+   }));
+ };
  const tube=(parent,shade,points,radius=.04)=>{
    const curve=new THREE.CatmullRomCurve3(points.map(V));
    const [segments,radial]=resolution.tube;
@@ -362,8 +385,9 @@ export function createSculpture(spec,detail='high'){
  const claws=(parent,origin,forward=1,count=3,scale=1)=>{
    for(let i=0;i<count;i++){
      const x=origin[0]+(i-(count-1)/2)*.073*scale,z=origin[2]+forward*.07*scale;
-     spike(parent,'bone',[x,origin[1],z],
-       [x+(i-(count-1)/2)*.016*scale,origin[1]-.09*scale,z+forward*.25*scale],.034*scale);
+     rootedSpike(parent,'bone','skin',[x,origin[1],z],
+       [x+(i-(count-1)/2)*.016*scale,origin[1]-.09*scale,z+forward*.25*scale],.034*scale,
+       {name:'rooted-claw-'+i});
    }
  };
  const ring=(parent,shade,position,radius=.25,tubeRadius=.03)=>{
@@ -373,7 +397,7 @@ export function createSculpture(spec,detail='high'){
    const m=attach(parent,geo,shade,{metal:.32});m.position.set(...position);return m;
  };
  root.userData.detail=detail;
- return {root,pivots,group,sphere,rock,bone,spike,tube,bridge,
+ return {root,pivots,group,sphere,rock,bone,spike,rootedSpike,seamHem,tube,bridge,
    anatomicalLoft,fur,skinnedFur,bandage,fin,eyes,claws,ring,fine,colors};
 }
 export function disposeMonsterSculpture(model){

@@ -12,9 +12,10 @@ import {buildCanineFurRibbonGeometry} from './canine-fur-ribbons.js?v=4.4.92';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import {createFaceProfile} from './facial-feature-profiles.js?v=1';
 import {creatureFaceVolume,sculptAxialFacePoint,sculptVerticalFacePoint} from './creature-face-volume.js';
-import {addHumanoidSummon} from './creature-summon-humanoid-anatomy.js?v=4.4.99';
+import {addHumanoidSummon} from './creature-summon-humanoid-anatomy.js?v=4.5.00';
 import {createRootedCreatureHornGeometry,createCreatureScuteGeometry}
   from './creature-anatomy-mesh.js';
+import {createCreatureGumSocketGeometry} from './creature-seam-geometry.js';
 
 export const CREATURE_VISUAL_SPECS = Object.freeze({
   wolf: Object.freeze({ label:'灰狼', anatomy:'quadruped', skin:0x65717a, shadow:0x303942, highlight:0x94a0a5, eyes:0x9b2027, height:.76, width:.39, length:.78, legs:.61, tail:1.0, wing:0 }),
@@ -197,6 +198,15 @@ function assemble(detail,face) {
     geo.translate(...a.addScaledVector(axis,.5).toArray());add(name,geo,tint);
   };
   /** Root and horn are part of the parent instanced geometry batch. */
+  // Tooth/claw roots are buried under soft socket geometry, all within
+  // the same anatomical jaw or limb part that owns their movement.
+  const rootedFang=(name,enamel,bed,base,tip,radius)=>{
+    const start=P(...base),end=P(...tip),axis=end.clone().sub(start);
+    if(axis.lengthSq()<1e-7)return;
+    const buried=start.clone().addScaledVector(axis,-.12).toArray();
+    horn(name,enamel,buried,tip,radius);
+    add(name,createCreatureGumSocketGeometry({base,tip,radius,detail}),bed);
+  };
   const rootedHorn=(name,tint,root,elbow,tip,radius)=>{
     add(name,createRootedCreatureHornGeometry({
       root,elbow,tip,radius,detail
@@ -383,11 +393,11 @@ function assemble(detail,face) {
     sphere(name,tint,x,y,z,sx*face.noseWidth*shape,sy,sz*face.noseLength);
   };
   return {add,sphere,noseSphere,joint,eyeSlit,profile,verticalProfile,
-    segment,horn,rootedHorn,scute,socket,curved,fur,wing,majesticWing,finish};
+    segment,horn,rootedFang,rootedHorn,scute,socket,curved,fur,wing,majesticWing,finish};
 }
 
 function addCoatSculpture(g,type,s,detail){
-  const {sphere,noseSphere,joint,eyeSlit,profile,horn,curved}=g;
+  const {sphere,noseSphere,joint,eyeSlit,profile,horn,rootedFang,curved}=g;
   const {skin,highlight,shadow,width:w,length:l,height:h,legs}=s;
   // Lean wolf silhouette: narrow tucked abdomen, high shoulder and pelvis.
   profile('core',skin,[
@@ -453,7 +463,7 @@ function addCoatSculpture(g,type,s,detail){
         [side*w*.365,headY+.031,headZ+l*.31]],[.027,.022,.007]);
       horn('core',highlight,[side*w*.32,headY+.17,headZ-.13],
         [side*w*.385,headY+.41,headZ-.16],w*.060);
-      for(let tooth=0;tooth<5;tooth++)horn('jaw',0xece9d9,
+      for(let tooth=0;tooth<5;tooth++)rootedFang('jaw',0xece9d9,0x493d3a,
         [side*w*.23,headY-.21,headZ+l*(.36+tooth*.078)],
         [side*w*.23,headY-.115,headZ+l*(.37+tooth*.078)],w*.045);
     }
@@ -468,7 +478,7 @@ function addCoatSculpture(g,type,s,detail){
       [side*w*.35,headY-.068,headZ+l*.27]],[.020,.016,.007]);
   }
   for(const side of [-1,1]){
-    horn('jaw',0xf5eadd,[side*w*.22,headY-.21,headZ+l*.47],[side*w*.22,headY-.09,headZ+l*.53],w*.065);
+    rootedFang('jaw',0xf5eadd,0x493d3a,[side*w*.22,headY-.21,headZ+l*.47],[side*w*.22,headY-.09,headZ+l*.53],w*.065);
     if(detail==='high')for(let i=0;i<6;i++){
       const whiskerZ=headZ+l*(.46+i*.045);
       horn('core',i%2?highlight:shadow,[side*w*.40,headY-.12,whiskerZ],[side*w*.68,headY-.16+(i%2)*.07,whiskerZ+.12],.009);
@@ -812,7 +822,7 @@ function addHorse(g,s,detail){
 
 function addDragon(g,type,s,detail){
   const {sphere,noseSphere,joint,eyeSlit,profile,curved,segment,
-    horn,rootedHorn,scute,socket,wing}=g;
+    horn,rootedFang,rootedHorn,scute,socket,wing}=g;
   const {skin,shadow,highlight,width:w,length:l,height:h,legs,tail,anatomy}=s;
   const elder=type==='elder_dragon',wyvern=anatomy==='wyvern';
   profile('core',skin,[
@@ -879,7 +889,7 @@ function addDragon(g,type,s,detail){
       [side*w*.62,headY+(elder?.83:.54),headZ-l*(elder?.51:.36)],
       w*.155);
     horn('core',highlight,[side*w*.33,headY-.08,headZ+l*.34],[side*w*.47,headY+.01,headZ+l*.61],w*.073);
-    for(let tooth=0;tooth<4;tooth++) horn('jaw',0xeedec0,[side*w*(.19+tooth*.05),headY-.23,headZ+l*(.34+tooth*.07)],[side*w*(.19+tooth*.05),headY-.12,headZ+l*(.37+tooth*.07)],w*.045);
+    for(let tooth=0;tooth<4;tooth++) rootedFang('jaw',0xeedec0,0x553934,[side*w*(.19+tooth*.05),headY-.23,headZ+l*(.34+tooth*.07)],[side*w*(.19+tooth*.05),headY-.12,headZ+l*(.37+tooth*.07)],w*.045);
     if(detail==='high'){
       // Sculpted eyebrow ridge, nostril and lower-jaw fangs: a recognisable
       // face even with the mouth open for its animated elemental breath.
@@ -889,7 +899,7 @@ function addDragon(g,type,s,detail){
       noseSphere('core',shadow,side*w*.18,headY-.098,headZ+l*.745,w*.047,.021,.038);
       for(let fang=0;fang<7;fang++){
         const z=headZ+l*(.23+fang*.073),offset=side*w*(.23+fang*.007);
-        horn('jaw',0xf3e9d6,[offset,headY-.245,z],
+        rootedFang('jaw',0xf3e9d6,0x553934,[offset,headY-.245,z],
           [offset*.98,headY-.36-(fang%3)*.025,z+.018],w*.040);
       }
       curved('core',shadow,[[side*w*.34,headY-.12,headZ-l*.1],
@@ -970,7 +980,7 @@ function addDragon(g,type,s,detail){
     joint(name,skin,...elbow,w*.21,legs*.15,w*.22);
     const foot=new THREE.CylinderGeometry(w*.245,w*.31,.19,7,1);
     foot.scale(1,1,1.25);foot.translate(x,.115,z+.32);g.add(name,foot,shadow);
-    for(let c=-1;c<=1;c++) horn(name,0xddd8c3,[x+c*w*.15,.11,z+.50],[x+c*w*.17,.08,z+.73],w*.066);
+    for(let c=-1;c<=1;c++) rootedFang(name,0xddd8c3,shadow,[x+c*w*.15,.11,z+.50],[x+c*w*.17,.08,z+.73],w*.066);
   }
   curved('tail',skin,[[0,h,-l*.88],[0,h+.19,-l*1.38],[0,h+.08,-l*2.0],[0,h+.35,-l*(2+tail*.33)]],[w*.48,w*.34,w*.19,.018]);
   if(detail==='high')for(let i=0;i<11;i++){
@@ -1007,7 +1017,7 @@ function addDragon(g,type,s,detail){
 
 function addDragonLord(g,s,detail){
   const {sphere,joint,eyeSlit,profile,verticalProfile,curved,segment,
-    horn,rootedHorn,scute,socket,majesticWing}=g;
+    horn,rootedFang,rootedHorn,scute,socket,majesticWing}=g;
   const {skin,shadow,highlight,width:w,wing:span}=s;
   // This is an upright, claw-handed dragon, NOT a four-legged dragon with a
   // humanoid head glued on. Continuous torso and neck lofts keep the seams
@@ -1118,10 +1128,10 @@ function addDragonLord(g,s,detail){
     // comb above a detached dark plate. Small canines fold into the lips.
     for(let i=0;i<6;i++){
       const z=1.14+i*.107,x=side*(.295-i*.021);
-      horn('jaw',0xe6d8bd,[x,headY-.272,z],
+      rootedFang('jaw',0xe6d8bd,0x553a33,[x,headY-.272,z],
         [x*.96,headY-.195-(i%3)*.010,z+.015],.025);
     }
-    horn('core',0xe9d9bf,[side*.238,headY-.238,1.54],
+    rootedFang('core',0xe9d9bf,0x553a33,[side*.238,headY-.238,1.54],
       [side*.228,headY-.308,1.57],.027);
     if(detail==='high')for(let i=0;i<5;i++){
       horn('core',shadow,[side*.21,headY+.12,.77-i*.10],
@@ -1147,11 +1157,11 @@ function addDragonLord(g,s,detail){
       const xx=side*(.93+finger*.10),z=.99+(finger%2)*.075;
       curved(arm,skin,[[side*1.08,1.71,.95],[xx,1.56,z+.15],[xx,1.43,z+.31]],
         [.070,.052,.019]);
-      horn(arm,0xf3e3cb,[xx,1.43,z+.31],[xx,1.37,z+.51],.038);
+      rootedFang(arm,0xf3e3cb,skin,[xx,1.43,z+.31],[xx,1.37,z+.51],.038);
     }
     curved(arm,skin,[[side*.94,1.75,.87],[side*.81,1.61,1.02],[side*.80,1.55,1.22]],
       [.083,.056,.014]);
-    horn(arm,0xf3e3cb,[side*.80,1.55,1.22],[side*.73,1.51,1.37],.039);
+    rootedFang(arm,0xf3e3cb,skin,[side*.80,1.55,1.22],[side*.73,1.51,1.37],.039);
   }
   // Digitigrade hind legs with powerful thigh, backward hock and long toes.
   for(const side of [-1,1]){
@@ -1171,7 +1181,7 @@ function addDragonLord(g,s,detail){
     for(let toe=0;toe<3;toe++){
       const xx=side*.60+(toe-1)*.20;
       curved(leg,skin,[[xx,.18,.26],[xx,.10,.47],[xx,.085,.64]],[.085,.07,.035]);
-      horn(leg,0xf2e2c9,[xx,.09,.64],[xx,.055,.90],.065);
+      rootedFang(leg,0xf2e2c9,skin,[xx,.09,.64],[xx,.055,.90],.065);
     }
     if(detail==='high')for(let row=0;row<8;row++){
       const y=.34+row*.17,z=.16+row*.019;

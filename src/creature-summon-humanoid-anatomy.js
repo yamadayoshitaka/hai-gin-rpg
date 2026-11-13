@@ -4,6 +4,7 @@
  * Axes: +Y up, +Z front; moving wings are LOCAL to their shoulder pivots.
  */
 import * as THREE from 'three';
+import {createCreatureFittedHemGeometry} from './creature-seam-geometry.js';
 import {creatureFaceVolume} from './creature-face-volume.js';
 
 function feather(g,name,side,a,b,width,color,detail='high'){
@@ -165,6 +166,12 @@ function addClothing(g,{angel,detail}){
     [1.94,0,.03,.235,.185],[2.035,0,.046,.20,.16],
     [2.11,0,.065,.167,.141],[2.165,0,.072,.155,.129]
   ]);
+  // The neckline is folded cloth with an inward lip, on the SAME animated
+  // core batch as the torso. No floating torus or abruptly cut neckline.
+  g.add('core',createCreatureFittedHemGeometry({
+    center:[0,2.162,.072],axis:[0,1,.08],
+    radiusX:.155,radiusZ:.129,width:.041,thickness:.011,detail
+  }),trim);
   for(const side of [-1,1]){
     curved('core',trim,[[side*.27,1.965,.11],[side*.18,2.085,.17],
       [side*.14,2.16,.16]],[.032,.020,.012]);
@@ -179,6 +186,12 @@ function addClothing(g,{angel,detail}){
       [.36*Math.cos(a),.36,.25*Math.sin(a)]],
       [.024,.018,.008]);
   }
+  // The gathered waist seam follows the garment's true elliptic outline;
+  // the hem curves over the waist instead of hanging off a cylinder.
+  g.add('core',createCreatureFittedHemGeometry({
+    center:[0,1.01,-.02],radiusX:.303,radiusZ:.234,
+    width:.044,thickness:.008,detail
+  }),dark);
   sphere('core',trim,0,1.70,.265,.07,.09,.03);
   segment('core',trim,[-.32,1.40,.235],[.32,1.40,.235],.024,.024);
   if(angel){
@@ -211,6 +224,12 @@ function addClothing(g,{angel,detail}){
     sphere(name,angel?0xefebe4:0x384a37,x,1.84,.03,.132,.155,.145);
     segment(name,angel?0xe5dfd8:0x5b6146,
       [x,1.81,.035],[side*.51,1.40,.19],.105,.070);
+    // Sewn sleeve edge follows the articulated ARM, not the fixed torso.
+    // The inner fold sinks into the elbow's clothing and hides cut seams.
+    g.add(name,createCreatureFittedHemGeometry({
+      center:[side*.492,1.431,.178],axis:[side*.34,-1,.34],
+      radiusX:.087,radiusZ:.084,width:.053,thickness:.011,detail
+    }),dark);
     sphere(name,angel?0xe8cfbe:0xcba88c,side*.52,1.34,.21,.074,.13,.076);
     for(let j=0;j<4;j++){
       segment(name,angel?0xe8cfbe:0xcba88c,
@@ -220,7 +239,7 @@ function addClothing(g,{angel,detail}){
   }
 }
 
-function addLegs(g,{angel}){
+function addLegs(g,{angel,detail}){
   const {sphere,segment,joint}=g;
   for(const side of [-1,1]){
     const part=side<0?'legBackL':'legBackR',x=side*.16;
@@ -231,6 +250,13 @@ function addLegs(g,{angel}){
     segment(part,angel?0xe5e1de:0x654e39,
       [side*.18,.52,.01],[side*.17,.11,.075],.095,.065);
     sphere(part,angel?0xf0e8df:0x3d342c,side*.17,.11,.20,.115,.09,.21);
+    // Boot/cuff root is part of the moving LEG part, closing the trouser
+    // and leather junction rather than masking it with a loose sphere.
+    g.add(part,createCreatureFittedHemGeometry({
+      center:[side*.18,.525,.016],axis:[side*.08,1,.12],
+      radiusX:.101,radiusZ:.103,width:.047,thickness:.011,
+      detail
+    }),angel?0xd6c4b1:0x675b49);
   }
 }
 

@@ -3,7 +3,7 @@
  * variants change horns, crests, armour, wings, limb lengths, weapons and fins.
  * Each specimen is real 3D geometry, never an image billboard.
  */
-import {createSculpture,disposeMonsterSculpture} from './monster-shape-kit.js?v=4.4.99';
+import {createSculpture,disposeMonsterSculpture} from './monster-shape-kit.js?v=4.5.00';
 import {attachMonsterFaceControls} from './facial-feature-runtime.js?v=1';
 import {generateCanineFurGuides} from './canine-fur-guides.js?v=4.4.92';
 import {monsterEvidenceFor} from './monster-anatomy-reference.js';
@@ -399,7 +399,8 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
        const x=(digit-1.5)*.072;
        g.sphere(toe,'skin',[x,-.085,.137],[.040,.046,.078],
          {name:'m004-digit'});
-       g.spike(toe,'bone',[x,-.054,.192],[x,-.090,.262],.021);
+       g.rootedSpike(toe,'bone','skin',[x,-.054,.192],
+         [x,-.090,.262],.021,{name:'rooted-claw-m004-'+digit});
      }
    }else if(s.id!=='m003'){
      // Fenrir owns a separate articulated toe assembly below. Rendering
@@ -416,8 +417,8 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
        const x=(digit-1.5)*.067;
        g.sphere(toe,'skin',[x,-.037,.112],
          [.043,.046,.092],{name:'m003-digit-pad'});
-       g.spike(toe,'bone',[x,-.025,.177],
-         [x,-.073,.262],.024);
+       g.rootedSpike(toe,'bone','skin',[x,-.025,.177],
+         [x,-.073,.262],.024,{name:'rooted-claw-m003-'+digit});
      }
    }
    g.sphere(leg,'skin',[0,-.04,.015],[.18,.18,.18]);
@@ -817,6 +818,15 @@ function upright(g,s,{rock=false,undead=false,demon=false}={}){
      g.sphere(elbow,s.id==='m034'?'mortalSkin':'skin',
        [side*.045,-.31,.045],[.097,.093,.10]);
    }
+   // The sleeve must live on the SAME arm pivot that rotates at the elbow.
+   // The folded edge buries the skin/armour cut line for each costume type.
+   if(['m033','m034','m035','m045'].includes(s.id))
+     g.seamHem(arm,s.id==='m033'||s.id==='m045'?'metal':'fabric',{
+       center:[side*.123,-.358,.125],
+       axis:[side*.24,-1,.12],
+       radiusX:.135,radiusZ:.125,width:.055,thickness:.012,
+       name:s.id+'-sleeve-cuff-'+suffix
+     });
    if(s.id==='m034')sculptVampireHand(g,elbow,side,
      {detail:g.root.userData.detail});
    else g.claws(elbow,[side*.045,-.35,.15],1,
@@ -840,8 +850,15 @@ function upright(g,s,{rock=false,undead=false,demon=false}={}){
    g.sphere(ankle,s.id==='m034'?'leather':'shadow',
      [0,-.066,.12],[.192,.115,.267],
      {name:s.id==='m034'?'m034-leather-boot':'monster-foot'});
-   if(s.id==='m034')g.tube(ankle,'leather',[
-     [-.159,-.031,.24],[0,-.025,.31],[.154,-.031,.24]],.012);
+   if(s.id==='m034'){
+     // A real turned leather boot lip, attached to the ankle animation
+     // hierarchy, prevents the upper from looking like an isolated shoe.
+     g.seamHem(ankle,'leather',{center:[0,.023,.105],
+       radiusX:.171,radiusZ:.183,width:.056,thickness:.014,
+       name:'m034-boot-top-'+suffix});
+     g.tube(ankle,'leather',[
+       [-.159,-.031,.24],[0,-.025,.31],[.154,-.031,.24]],.012);
+   }
    if(s.id==='m032'){
      const upperArm=[side*.05,-.17,.05];
      g.bandage(arm,'bandage',{name:'m032-upper-arm-'+suffix,
@@ -1037,5 +1054,5 @@ export function createMonsterModel(spec,{detail='high'}={}){
 export {disposeMonsterSculpture};
 // All renderer metrics share this module's exact shape/material instance.
 // Never independently import a differently versioned shape-kit into the UI.
-export {MONSTER_DETAIL_LEVELS,monsterSculptCacheStats} from './monster-shape-kit.js?v=4.4.99';
+export {MONSTER_DETAIL_LEVELS,monsterSculptCacheStats} from './monster-shape-kit.js?v=4.5.00';
 export {monsterPhotoCacheStats} from './monster-photo-pbr.js?v=4.4.81';

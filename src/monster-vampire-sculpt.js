@@ -69,9 +69,15 @@ export function sculptBloodMoonVampire(g,head,torso,{detail='high'}={}){
   [.095,-.200,.234]],.016);
  // The fangs are just long human upper canines, not protruding tusks.
  for(const side of [-1,1]){
-  g.spike(head,'bone',[side*.070,-.202,.244],
-    [side*.075,-.250,.250],.010);
+  g.rootedSpike(head,'bone','mortalSkin',
+    [side*.070,-.202,.244],[side*.075,-.250,.250],.010,
+    {name:'m034-gingival-canine-'+(side<0?'L':'R')});
  }
+ // A folded velvet lip is built around the torso's neck geometry.
+ // It hides the garment/skin cut line instead of placing a floating sphere.
+ g.seamHem(torso,'fabric',{center:[0,1.924,.012],
+   radiusX:.177,radiusZ:.155,width:.055,thickness:.012,
+   name:'m034-tailored-rolled-collar'});
  // Burgundy-black tailored coat with visible collar seams and weathered
  // cloak panels. Different physical material from his pale face.
  for(const side of [-1,1]){

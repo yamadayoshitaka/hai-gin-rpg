@@ -125,7 +125,7 @@ assert.match(source,/addCoat\('core'/,'Summoned wolf should have real physical c
 assert.match(source,/joint\('core',0x181a1b/,'Wolf nostrils should be distinct');
 const gallery=readFileSync(new URL('../summon-showcase.html',import.meta.url),'utf8');
 assert.match(gallery,/selected==='wolf'\)\{/,'Wolf must have a direct face close-up');
-const version=gallery.match(/3D鑑賞 v(4\.4\.\d+)/);
+const version=gallery.match(/3D鑑賞 v(\d+\.\d+\.\d+)/);
 assert.ok(version,'Viewer must display its current model revision');
 assert.ok(gallery.includes("combat-world-object-renderer.js?v="+version[1]),
   'The world-object renderer import must be cache-busted with the same revision');
