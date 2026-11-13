@@ -42,7 +42,6 @@ jobs:
       - name: Validate source and canonical chapter queue
         run: |
           node --check scripts/generate-story-chapter1-free-batch.mjs
-          node scripts/generate-story-chapter1-free-batch.mjs --mode plan
           node qa/story-chapter-page-loop.test.mjs
       - name: Fail before generation unless Free confirmed and both secrets available
         shell: bash
@@ -63,12 +62,14 @@ jobs:
           git switch -c story/chapter1-free-actual-art --track origin/story/chapter1-free-actual-art
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+      - name: Count true resume progress on persistent artwork branch
+        run: node scripts/generate-story-chapter1-free-batch.mjs --mode plan
       - name: Generate real review images with strict budget and page commits
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_WORKERS_AI_API_TOKEN: ${{ secrets.CLOUDFLARE_WORKERS_AI_API_TOKEN }}
           CLOUDFLARE_FREE_PLAN_CONFIRMED: ${{ vars.CLOUDFLARE_FREE_PLAN_CONFIRMED }}
-          CLOUDFLARE_CHAPTER1_DAILY_ESTIMATE_CAP: '900'
+          CLOUDFLARE_CHAPTER1_DAILY_ESTIMATE_CAP: '7500'
         run: node scripts/generate-story-chapter1-free-batch.mjs --mode generate --max-pages 12
       - name: Independently regress every canonical image and physical actor master (NO automatic visual approval)
         if: always()
