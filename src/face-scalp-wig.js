@@ -498,7 +498,8 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
     (fringe?silhouette.fringeDrop:Math.min(.035,silhouette.fringeDrop)));
   // Long feathered bangs from the real high hairline to the eyebrow level.
   // The old 0.09-head-height cap ended halfway down the forehead.
-  const bangLength=d.y*(.185+.035*cutPhase)*clamp(lengthScale,minLengthScale,1.5);
+  const bangLength=d.y*(.225+.040*cutPhase+silhouette.fringeDrop*.16)*
+   clamp(lengthScale,minLengthScale,1.5);
   const cutKind=style.shortCutKind||null;
   const shortLength=cutKind==='buzz'?.013:
    cutKind==='very-short'?.060:.15;
