@@ -89,7 +89,13 @@ for(const variant of stage.variants)for(const page of variant.pages)for(const sh
   shot.realCastImageBytesAttached!==false||shot.renderReady!==false||
   !shot.generationPrompt.includes('P0_NO_TEXT_UI_IN_ART')||
   !shot.generationPrompt.includes('P0_REFERENCE_IMAGE_BYTES')||
-  !shot.generationPrompt.includes(shot.scriptText))
+  !shot.generationPrompt.includes(shot.scriptText)||
+  (stageId==='c01-s02'&&shot.castAssignment&&
+    (!shot.generationPrompt.includes('FOREGROUND ACTOR ID: ')||
+     !shot.generationPrompt.includes('P0_REFERENCE_FILE_SHA256: ')||
+     shot.requiredCharacterReferences.some(ref=>!ref.sourceBytesVerified||
+        !/^[a-f0-9]{64}$/.test(ref.sourceSha256)||ref.sourceByteLength<=32))))
+
   throw Error('Unsafe/missing absolute P0 per-shot instructions '+shot.shotKey);
 }
 
@@ -121,8 +127,17 @@ for(const v of contract.variants){
    previous:p.narrative.previousScene?.scriptText||null,
    next:p.narrative.nextScene?.scriptText||null,
    sceneOutcome:p.narrative.verifiedOutcome,
-   visibleActorIds:[p.characterId,p.secondaryId].filter(Boolean),
-   realReferencePaths:p.requiredCharacterReferences.map(r=>r.sourceImage)
+   visibleActorIds:p.castAssignment?p.castAssignment.visibleActorIds:
+    [p.characterId,p.secondaryId].filter(Boolean),
+   foregroundActorId:p.castAssignment?.foregroundActorId??null,
+   supportActorIds:p.castAssignment?.supportActorIds||[],
+   mustNotAppearActorIds:p.castAssignment?.mustNotAppearActorIds||[],
+   sceneGoal:p.castAssignment?.sceneGoal||null,
+   compositionHint:p.castAssignment?.compositionHint||null,
+   realReferencePaths:p.requiredCharacterReferences.map(r=>r.sourceImage),
+   castSourceSha256:p.requiredCharacterReferences.map(r=>({actorId:r.actorId,
+     sha256:r.sourceSha256||null,byteLength:r.sourceByteLength||null,
+     attachedToRenderer:false}))
   }));
   const noTextContract=[
    'P0_ABSOLUTE_MUST_FOLLOW. No text, digits, Japanese characters, subtitles, speech balloons, logos, symbols, watermarks or UI in ANY IMAGE.',
@@ -139,6 +154,26 @@ for(const v of contract.variants){
     '; outcome: '+b.sceneOutcome+']')
   ].join('\n');
   page.textFreePrompt=noTextContract;
+  page.individualRenderTasks=page.panels.map(p=>({
+   shotKey:p.shotKey,panelId:p.panelId,edition:v.edition,gender:v.gender,
+   screenplayDialogue:p.scriptText,speaker:p.speaker,
+   foregroundActorId:p.castAssignment?.foregroundActorId??null,
+   supportActorIds:p.castAssignment?.supportActorIds||[],
+   mustNotAppearActorIds:p.castAssignment?.mustNotAppearActorIds||[],
+   sceneGoal:p.castAssignment?.sceneGoal||null,
+   compositionHint:p.castAssignment?.compositionHint||null,
+   protagonistState:p.castAssignment?.protagonistState||null,
+   renderMode:p.castAssignment?.renderMode||null,
+   imageGenerationPrompt:p.generationPrompt,
+   imageInputs:p.requiredCharacterReferences.map(r=>({
+    actorId:r.actorId,path:r.sourceImage,sha256:r.sourceSha256||null,
+    actualBytesReadable:r.sourceBytesVerified===true,
+    attachedToGenerator:false
+   })),
+   minimumNativePixels:p.individualMinPixels,
+   imageOutput:p.individualAsset,
+   approval:'BLOCKED_MISSING_ACTUAL_GENERATION_AND_REVIEW'
+  }));
   page.stageBatch={
    stageId,variant:key,sourcePoster:source,
    expectedNativeSheet:sheet.posterMinNativePixels,
@@ -184,7 +219,8 @@ const brief={
    requiredPosterPixels:page.stageBatch.expectedNativeSheet,
    preferredPosterPixels:page.stageBatch.preferredNativeSheet,
    prompt:page.stageBatch.strictPictorialOnlyPrompt,
-   frameKeys:page.panels.map(p=>p.shotKey)
+   frameKeys:page.panels.map(p=>p.shotKey),
+   individualRenderTasks:page.individualRenderTasks
   })),
   characterReferenceInputs:v.pages.flatMap(p=>p.panels).flatMap(p=>p.requiredCharacterReferences)
    .filter((r,i,a)=>a.findIndex(t=>t.actorId===r.actorId)===i)
@@ -201,6 +237,16 @@ if(!prepareOnly){
 const reviewPath=path.join(outputDir,'ingestion-review-status.json');
 const review=!prepareOnly&&fs.existsSync(reviewPath)?
  JSON.parse(fs.readFileSync(reviewPath,'utf8')):null;
+if(stageId==='c01-s02'){
+ const lockedShots=stage.variants.flatMap(v=>v.pages.flatMap(p=>p.individualRenderTasks))
+  .filter(x=>x.sceneGoal);
+ if(lockedShots.length!==25||lockedShots.some(x=>
+    !x.imageGenerationPrompt.includes('P0_PER_PANEL_ACTOR_ASSIGNMENT')||
+    !x.imageGenerationPrompt.includes('SCREENPLAY DIALOGUE FOR PERFORMANCE ONLY')||
+    (x.renderMode!=='ENVIRONMENT_ONLY'&&
+      x.imageInputs.some(r=>!r.actualBytesReadable))))
+  throw Error('Stage2 25 individual cast render tasks are missing / unverifiable');
+}
 const summary={
  stageId,oneInvocationOneStage:true,requiredVariantPosters:contract.variants.length,
  reviewSheetPreferredPixels:maxReviewCells===5?nativeSheet.preferredFullFivePanelSheetPixels:
@@ -214,6 +260,8 @@ const summary={
  requiredPanels:stage.requiredIndividualImages,
  alreadyRegisteredUnapproved:stage.alreadyRegisteredDraftImages,
  missingCanonicalArtwork:stage.missingIndividualImages,
+ perPanelActorLockedRenderTasks:stageId==='c01-s02'?25:null,
+ perPanelActorAssignmentManifest:stageId==='c01-s02'?'assets/story/stage-manifests/c01-s02-shot-assignments.json':null,
  sourcePosterPresent:sourceOutcomes.filter(x=>x.sourcePresent).length,
  sourcePosterMissing:sourceOutcomes.filter(x=>!x.sourcePresent).length,
  postersProcessedIntoUnapprovedReviewPacks:review?.postersProcessed||0,

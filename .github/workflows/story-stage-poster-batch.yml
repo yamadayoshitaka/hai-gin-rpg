@@ -5,10 +5,16 @@ on:
     branches: [main]
     paths:
       - 'scripts/prepare-story-stage-posters.mjs'
+      - 'scripts/run-story-stage.mjs'
+      - 'qa/story-stage2-cast-assignment.test.mjs'
+      - 'assets/story/stage-manifests/c01-s02-shot-assignments.json'
       - 'scripts/check-c01-s02-pending-art.mjs'
       - 'src/story-stage2-reviewed-art.js'
       - 'src/story-panel-registered-art.js'
       - 'qa/story-stage2-25-gate.test.mjs'
+      - 'qa/story-stage2-cast-assignment.test.mjs'
+      - 'assets/story/stage-manifests/c01-s02-shot-assignments.json'
+      - 'assets/story/characters/c01-s02-reference-bible.json'
       - 'scripts/ingest-story-stage-posters.py'
       - 'scripts/build-story-character-reference-pack.py'
       - 'qa/story-character-reference-pack.test.py'
@@ -64,6 +70,9 @@ jobs:
         run: |
           node --check scripts/check-c01-s02-pending-art.mjs
           node qa/story-stage2-25-gate.test.mjs
+      - name: Check strict per-panel cast, dialogue, composition and real WebP source hashes
+        run: |
+          node qa/story-stage2-cast-assignment.test.mjs
       - name: Generate batch poster and individual-frame briefs
         env:
           STAGE_START: ${{ github.event.inputs.start || 'c01-s02' }}

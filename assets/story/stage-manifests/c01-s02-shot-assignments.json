@@ -1,0 +1,668 @@
+{
+  "schemaVersion": 1,
+  "stageId": "c01-s02",
+  "kind": "CANONICAL_PER_PANEL_GENERATION_ASSIGNMENTS_NOT_GENERATED_ART",
+  "priority": "P0_ABSOLUTE_MUST_FOLLOW",
+  "notes": "All 25 missing scenes require independently rendered images and actual cast master bytes. Dialogue is metadata only, NEVER text in pixels. Review sheets assembled after approval, 5 max. Environment-only death ending is an explicit zero-actor exception.",
+  "minimumNativePixels": [
+    768,
+    320
+  ],
+  "maximumShotsPerReviewSheet": 5,
+  "requiredPendingCount": 25,
+  "entries": {
+    "post-victory|female|c01-s02-m6": {
+      "panelId": "c01-s02-m6",
+      "edition": "post-victory",
+      "gender": "female",
+      "scriptText": "勝利が確認された。礼拝堂へ通じる道を取り戻し、イリスの証言を調べる余地が生まれる。",
+      "speaker": "語り手",
+      "foregroundActorId": "commander_female",
+      "supportActorIds": [
+        "iris",
+        "garan"
+      ],
+      "visibleActorIds": [
+        "commander_female",
+        "iris",
+        "garan"
+      ],
+      "mustNotAppearActorIds": [
+        "commander_male"
+      ],
+      "sceneGoal": "奪還された礼拝堂へ通じる街道",
+      "compositionHint": "戦後の街道を俯瞰する中景。銀鎧の女性軍師を前景、イリスが進路を示す。ガランは背景。勝利後だが調査の緊張を残す。",
+      "protagonistState": "ALIVE_VICTORIOUS",
+      "renderMode": "CAST_SCENE",
+      "noInImageText": true,
+      "noExtraCharacters": true,
+      "requiresRealReferenceImageBytes": true
+    },
+    "post-victory|female|c01-s02-m7": {
+      "panelId": "c01-s02-m7",
+      "edition": "post-victory",
+      "gender": "female",
+      "scriptText": "勝利の報告だけでは終われない。戦場に残された人々と記録を調べよう。",
+      "speaker": "イリス",
+      "foregroundActorId": "iris",
+      "supportActorIds": [
+        "commander_female",
+        "lucia"
+      ],
+      "visibleActorIds": [
+        "iris",
+        "commander_female",
+        "lucia"
+      ],
+      "mustNotAppearActorIds": [
+        "commander_male"
+      ],
+      "sceneGoal": "戦場で人々と記録を調査",
+      "compositionHint": "負傷者を見守る治癒師イリス中心、女性軍師と銀髪のリュシアは少し離れて証拠を確認。新しい勝利イベントを作らない。",
+      "protagonistState": "ALIVE_VICTORIOUS",
+      "renderMode": "CAST_SCENE",
+      "noInImageText": true,
+      "noExtraCharacters": true,
+      "requiresRealReferenceImageBytes": true
+    },
+    "post-victory|female|c01-s02-m8": {
+      "panelId": "c01-s02-m8",
+      "edition": "post-victory",
+      "gender": "female",
+      "scriptText": "人々は同じ出来事を少しずつ異なる言葉で語り、軍師は証言を照合する。 勝つだけなら将軍を呼びます。あなたには、何のために勝つかを決めてほしい。",
+      "speaker": "リュシア",
+      "foregroundActorId": "lucia",
+      "supportActorIds": [
+        "commander_female"
+      ],
+      "visibleActorIds": [
+        "lucia",
+        "commander_female"
+      ],
+      "mustNotAppearActorIds": [
+        "commander_male"
+      ],
+      "sceneGoal": "証言の食い違いを確認する軍議",
+      "compositionHint": "リュシアが主人公に証言の違いを伝える二人中心の中景。記録は判読できない紙面にし、文字を描かない。",
+      "protagonistState": "ALIVE_VICTORIOUS",
+      "renderMode": "CAST_SCENE",
+      "noInImageText": true,
+      "noExtraCharacters": true,
+      "requiresRealReferenceImageBytes": true
+    },
+    "post-victory|female|c01-s02-m9": {
+      "panelId": "c01-s02-m9",
+      "edition": "post-victory",
+      "gender": "female",
+      "scriptText": "誰のためにこの地で戦ったのかを、忘れてはいけない。 軍師として名を刻み、最初の軍団を編成する。",
+      "speaker": "リュシア",
+      "foregroundActorId": "commander_female",
+      "supportActorIds": [
+        "lucia",
+        "vess"
+      ],
+      "visibleActorIds": [
+        "commander_female",
+        "lucia",
+        "vess"
+      ],
+      "mustNotAppearActorIds": [
+        "commander_male"
+      ],
+      "sceneGoal": "軍師として部隊編成の方針を考える",
+      "compositionHint": "主人公の前に配置を示す無文字の地図、リュシアが指を差し、ヴェスは離れた位置で資料を持つ。登場人物を混同しない。",
+      "protagonistState": "ALIVE_VICTORIOUS",
+      "renderMode": "CAST_SCENE",
+      "noInImageText": true,
+      "noExtraCharacters": true,
+      "requiresRealReferenceImageBytes": true
+    },
+    "post-victory|female|c01-s02-m16": {
+      "panelId": "c01-s02-m16",
+      "edition": "post-victory",
+      "gender": "female",
+      "scriptText": "軍師は確認された戦果を記録し、残る危険がないか調べた。",
+      "speaker": "ガラン",
+      "foregroundActorId": "garan",
+      "supportActorIds": [
+        "commander_female",
+        "lucia"
+      ],
+      "visibleActorIds": [
+        "garan",
+        "commander_female",
+        "lucia"
+      ],
+      "mustNotAppearActorIds": [
+        "commander_male"
+      ],
+      "sceneGoal": "戦果と残る危険の検証",
+      "compositionHint": "老騎士ガランが戦地を指し示し、女性軍師が損害状況を確認する。戦果を文字・数字で描かない。",
+      "protagonistState": "ALIVE_VICTORIOUS",
+      "renderMode": "CAST_SCENE",
+      "noInImageText": true,
+      "noExtraCharacters": true,
+      "requiresRealReferenceImageBytes": true
+    },
+    "post-victory|female|c01-s02-m19": {
+      "panelId": "c01-s02-m19",
+      "edition": "post-victory",
+      "gender": "female",
+      "scriptText": "守るべきものを見失わないために、私たちは出来事を記録し続けよう。",
+      "speaker": "リュシア",
+      "foregroundActorId": "lucia",
+      "supportActorIds": [
+        "commander_female",
+        "vess"
+      ],
+      "visibleActorIds": [
+        "lucia",
+        "commander_female",
+        "vess"
+      ],
+      "mustNotAppearActorIds": [
+        "commander_male"
+      ],
+      "sceneGoal": "戦いの記録と責任の確認",
+      "compositionHint": "リュシアが未記入風の記録帳を示し女性軍師が聞く。ヴェスは少し離れた位置。ノートに文字・数字なし。",
+      "protagonistState": "ALIVE_VICTORIOUS",
+      "renderMode": "CAST_SCENE",
+      "noInImageText": true,
+      "noExtraCharacters": true,
+      "requiresRealReferenceImageBytes": true
+    },
+    "post-victory|female|c01-s02-m10": {
+      "panelId": "c01-s02-m10",
+      "edition": "post-victory",
+      "gender": "female",
+      "scriptText": "次の舞台「灰銀の本城・外郭陣地の確保」へ進む。ここで見たことを忘れてはならない。",
+      "speaker": "ヴェス",
+      "foregroundActorId": "commander_female",
+      "supportActorIds": [
+        "vess",
+        "garan"
+      ],
+      "visibleActorIds": [
+        "commander_female",
+        "vess",
+        "garan"
+      ],
+      "mustNotAppearActorIds": [
+        "commander_male"
+      ],
+      "sceneGoal": "次の拠点へ進む決意",
+      "compositionHint": "崩れた街道の先に本城の外郭。女性軍師を主役にして一行が進む。ヴェスは記録院長として後景、ガランが警戒。次の戦闘を先取りしない。",
+      "protagonistState": "ALIVE_VICTORIOUS",
+      "renderMode": "CAST_SCENE",
+      "noInImageText": true,
+      "noExtraCharacters": true,
+      "requiresRealReferenceImageBytes": true
+    },
+    "post-defeat|male|c01-s02-m6": {
+      "panelId": "c01-s02-m6",
+      "edition": "post-defeat",
+      "gender": "male",
+      "scriptText": "「出現した全モンスターを討伐」は未達となった。部隊は撤退し、態勢を立て直す。",
+      "speaker": "語り手",
+      "foregroundActorId": "commander_male",
+      "supportActorIds": [
+        "garan"
+      ],
+      "visibleActorIds": [
+        "commander_male",
+        "garan"
+      ],
+      "mustNotAppearActorIds": [
+        "commander_female"
+      ],
+      "sceneGoal": "未達成の撤退",
+      "compositionHint": "敗れた軍勢が礼拝堂から後退。黒髪男性軍師が生存して退却を指揮し、老騎士ガランが後衛を守る。勝利場面禁止。",
+      "protagonistState": "ALIVE_DEFEATED",
+      "renderMode": "CAST_SCENE",
+      "noInImageText": true,
+      "noExtraCharacters": true,
+      "requiresRealReferenceImageBytes": true
+    },
+    "post-defeat|male|c01-s02-m7": {
+      "panelId": "c01-s02-m7",
+      "edition": "post-defeat",
+      "gender": "male",
+      "scriptText": "失った者の名を記録する。今は無理に進軍せず、町で態勢を整えよう。",
+      "speaker": "イリス",
+      "foregroundActorId": "iris",
+      "supportActorIds": [
+        "commander_male",
+        "lucia"
+      ],
+      "visibleActorIds": [
+        "iris",
+        "commander_male",
+        "lucia"
+      ],
+      "mustNotAppearActorIds": [
+        "commander_female"
+      ],
+      "sceneGoal": "負傷者の救護と撤退記録",
+      "compositionHint": "イリスが撤退後の負傷者を手当てし、生存した軍師とリュシアが見守る。記録書類は無文字。",
+      "protagonistState": "ALIVE_DEFEATED",
+      "renderMode": "CAST_SCENE",
+      "noInImageText": true,
+      "noExtraCharacters": true,
+      "requiresRealReferenceImageBytes": true
+    },
+    "post-defeat|male|c01-s02-m8": {
+      "panelId": "c01-s02-m8",
+      "edition": "post-defeat",
+      "gender": "male",
+      "scriptText": "人々は同じ出来事を少しずつ異なる言葉で語り、軍師は証言を照合する。 勝つだけなら将軍を呼びます。あなたには、何のために勝つかを決めてほしい。",
+      "speaker": "リュシア",
+      "foregroundActorId": "lucia",
+      "supportActorIds": [
+        "commander_male"
+      ],
+      "visibleActorIds": [
+        "lucia",
+        "commander_male"
+      ],
+      "mustNotAppearActorIds": [
+        "commander_female"
+      ],
+      "sceneGoal": "敗北後の証言照合",
+      "compositionHint": "沈んだ表情のリュシアが主人公に証言の食い違いを伝える。撤退した拠点内、勝利祝賀描写なし。",
+      "protagonistState": "ALIVE_DEFEATED",
+      "renderMode": "CAST_SCENE",
+      "noInImageText": true,
+      "noExtraCharacters": true,
+      "requiresRealReferenceImageBytes": true
+    },
+    "post-defeat|male|c01-s02-m9": {
+      "panelId": "c01-s02-m9",
+      "edition": "post-defeat",
+      "gender": "male",
+      "scriptText": "今は退くことが必要だ。 軍師として名を刻み、最初の軍団を編成する。",
+      "speaker": "リュシア",
+      "foregroundActorId": "commander_male",
+      "supportActorIds": [
+        "lucia",
+        "vess"
+      ],
+      "visibleActorIds": [
+        "commander_male",
+        "lucia",
+        "vess"
+      ],
+      "mustNotAppearActorIds": [
+        "commander_female"
+      ],
+      "sceneGoal": "生還兵を再編して退却準備",
+      "compositionHint": "主人公が避難路の無文字地図を見て、リュシアが撤退を説明。ヴェスは後方で黙って記録。",
+      "protagonistState": "ALIVE_DEFEATED",
+      "renderMode": "CAST_SCENE",
+      "noInImageText": true,
+      "noExtraCharacters": true,
+      "requiresRealReferenceImageBytes": true
+    },
+    "post-defeat|male|c01-s02-m16": {
+      "panelId": "c01-s02-m16",
+      "edition": "post-defeat",
+      "gender": "male",
+      "scriptText": "軍師は退却した部隊の無事を確かめ、記録を残した。",
+      "speaker": "ガラン",
+      "foregroundActorId": "garan",
+      "supportActorIds": [
+        "commander_male",
+        "lucia"
+      ],
+      "visibleActorIds": [
+        "garan",
+        "commander_male",
+        "lucia"
+      ],
+      "mustNotAppearActorIds": [
+        "commander_female"
+      ],
+      "sceneGoal": "部隊の生存確認",
+      "compositionHint": "年配のガランが疲弊した生存兵を点検。軍師とリュシアが同行。生者を戦死者に見せない。",
+      "protagonistState": "ALIVE_DEFEATED",
+      "renderMode": "CAST_SCENE",
+      "noInImageText": true,
+      "noExtraCharacters": true,
+      "requiresRealReferenceImageBytes": true
+    },
+    "post-defeat|male|c01-s02-m19": {
+      "panelId": "c01-s02-m19",
+      "edition": "post-defeat",
+      "gender": "male",
+      "scriptText": "失敗を無かったことにはできない。仲間を休ませ、次の判断に備えよう。",
+      "speaker": "リュシア",
+      "foregroundActorId": "lucia",
+      "supportActorIds": [
+        "commander_male",
+        "vess"
+      ],
+      "visibleActorIds": [
+        "lucia",
+        "commander_male",
+        "vess"
+      ],
+      "mustNotAppearActorIds": [
+        "commander_female"
+      ],
+      "sceneGoal": "失敗の記録と休養",
+      "compositionHint": "リュシアが生き残った主人公を励ます静かな退却後の野営。ヴェスが記録を持つ。戦果や軍事地図に文字なし。",
+      "protagonistState": "ALIVE_DEFEATED",
+      "renderMode": "CAST_SCENE",
+      "noInImageText": true,
+      "noExtraCharacters": true,
+      "requiresRealReferenceImageBytes": true
+    },
+    "post-defeat|male|c01-s02-m10": {
+      "panelId": "c01-s02-m10",
+      "edition": "post-defeat",
+      "gender": "male",
+      "scriptText": "退却を命じる。町で編成を立て直して、この地へ戻ろう。",
+      "speaker": "ヴェス",
+      "foregroundActorId": "commander_male",
+      "supportActorIds": [
+        "vess",
+        "garan"
+      ],
+      "visibleActorIds": [
+        "commander_male",
+        "vess",
+        "garan"
+      ],
+      "mustNotAppearActorIds": [
+        "commander_female"
+      ],
+      "sceneGoal": "町への退却と再挑戦の準備",
+      "compositionHint": "町に戻る疲弊した軍団。軍師は生存、ガランが隊列を保つ。ヴェスは携行帳を持つが文字なし。次のステージ解放を描かない。",
+      "protagonistState": "ALIVE_DEFEATED",
+      "renderMode": "CAST_SCENE",
+      "noInImageText": true,
+      "noExtraCharacters": true,
+      "requiresRealReferenceImageBytes": true
+    },
+    "post-defeat|female|c01-s02-m6": {
+      "panelId": "c01-s02-m6",
+      "edition": "post-defeat",
+      "gender": "female",
+      "scriptText": "「出現した全モンスターを討伐」は未達となった。部隊は撤退し、態勢を立て直す。",
+      "speaker": "語り手",
+      "foregroundActorId": "commander_female",
+      "supportActorIds": [
+        "garan"
+      ],
+      "visibleActorIds": [
+        "commander_female",
+        "garan"
+      ],
+      "mustNotAppearActorIds": [
+        "commander_male"
+      ],
+      "sceneGoal": "未達成の撤退",
+      "compositionHint": "敗れた軍勢が礼拝堂から後退。金髪女性軍師が生存して退却を指揮し、老騎士ガランが後衛を守る。勝利場面禁止。",
+      "protagonistState": "ALIVE_DEFEATED",
+      "renderMode": "CAST_SCENE",
+      "noInImageText": true,
+      "noExtraCharacters": true,
+      "requiresRealReferenceImageBytes": true
+    },
+    "post-defeat|female|c01-s02-m7": {
+      "panelId": "c01-s02-m7",
+      "edition": "post-defeat",
+      "gender": "female",
+      "scriptText": "失った者の名を記録する。今は無理に進軍せず、町で態勢を整えよう。",
+      "speaker": "イリス",
+      "foregroundActorId": "iris",
+      "supportActorIds": [
+        "commander_female",
+        "lucia"
+      ],
+      "visibleActorIds": [
+        "iris",
+        "commander_female",
+        "lucia"
+      ],
+      "mustNotAppearActorIds": [
+        "commander_male"
+      ],
+      "sceneGoal": "負傷者の救護と撤退記録",
+      "compositionHint": "イリスが撤退後の負傷者を手当てし、生存した軍師とリュシアが見守る。記録書類は無文字。",
+      "protagonistState": "ALIVE_DEFEATED",
+      "renderMode": "CAST_SCENE",
+      "noInImageText": true,
+      "noExtraCharacters": true,
+      "requiresRealReferenceImageBytes": true
+    },
+    "post-defeat|female|c01-s02-m8": {
+      "panelId": "c01-s02-m8",
+      "edition": "post-defeat",
+      "gender": "female",
+      "scriptText": "人々は同じ出来事を少しずつ異なる言葉で語り、軍師は証言を照合する。 勝つだけなら将軍を呼びます。あなたには、何のために勝つかを決めてほしい。",
+      "speaker": "リュシア",
+      "foregroundActorId": "lucia",
+      "supportActorIds": [
+        "commander_female"
+      ],
+      "visibleActorIds": [
+        "lucia",
+        "commander_female"
+      ],
+      "mustNotAppearActorIds": [
+        "commander_male"
+      ],
+      "sceneGoal": "敗北後の証言照合",
+      "compositionHint": "沈んだ表情のリュシアが主人公に証言の食い違いを伝える。撤退した拠点内、勝利祝賀描写なし。",
+      "protagonistState": "ALIVE_DEFEATED",
+      "renderMode": "CAST_SCENE",
+      "noInImageText": true,
+      "noExtraCharacters": true,
+      "requiresRealReferenceImageBytes": true
+    },
+    "post-defeat|female|c01-s02-m9": {
+      "panelId": "c01-s02-m9",
+      "edition": "post-defeat",
+      "gender": "female",
+      "scriptText": "今は退くことが必要だ。 軍師として名を刻み、最初の軍団を編成する。",
+      "speaker": "リュシア",
+      "foregroundActorId": "commander_female",
+      "supportActorIds": [
+        "lucia",
+        "vess"
+      ],
+      "visibleActorIds": [
+        "commander_female",
+        "lucia",
+        "vess"
+      ],
+      "mustNotAppearActorIds": [
+        "commander_male"
+      ],
+      "sceneGoal": "生還兵を再編して退却準備",
+      "compositionHint": "主人公が避難路の無文字地図を見て、リュシアが撤退を説明。ヴェスは後方で黙って記録。",
+      "protagonistState": "ALIVE_DEFEATED",
+      "renderMode": "CAST_SCENE",
+      "noInImageText": true,
+      "noExtraCharacters": true,
+      "requiresRealReferenceImageBytes": true
+    },
+    "post-defeat|female|c01-s02-m16": {
+      "panelId": "c01-s02-m16",
+      "edition": "post-defeat",
+      "gender": "female",
+      "scriptText": "軍師は退却した部隊の無事を確かめ、記録を残した。",
+      "speaker": "ガラン",
+      "foregroundActorId": "garan",
+      "supportActorIds": [
+        "commander_female",
+        "lucia"
+      ],
+      "visibleActorIds": [
+        "garan",
+        "commander_female",
+        "lucia"
+      ],
+      "mustNotAppearActorIds": [
+        "commander_male"
+      ],
+      "sceneGoal": "部隊の生存確認",
+      "compositionHint": "年配のガランが疲弊した生存兵を点検。軍師とリュシアが同行。生者を戦死者に見せない。",
+      "protagonistState": "ALIVE_DEFEATED",
+      "renderMode": "CAST_SCENE",
+      "noInImageText": true,
+      "noExtraCharacters": true,
+      "requiresRealReferenceImageBytes": true
+    },
+    "post-defeat|female|c01-s02-m19": {
+      "panelId": "c01-s02-m19",
+      "edition": "post-defeat",
+      "gender": "female",
+      "scriptText": "失敗を無かったことにはできない。仲間を休ませ、次の判断に備えよう。",
+      "speaker": "リュシア",
+      "foregroundActorId": "lucia",
+      "supportActorIds": [
+        "commander_female",
+        "vess"
+      ],
+      "visibleActorIds": [
+        "lucia",
+        "commander_female",
+        "vess"
+      ],
+      "mustNotAppearActorIds": [
+        "commander_male"
+      ],
+      "sceneGoal": "失敗の記録と休養",
+      "compositionHint": "リュシアが生き残った主人公を励ます静かな退却後の野営。ヴェスが記録を持つ。戦果や軍事地図に文字なし。",
+      "protagonistState": "ALIVE_DEFEATED",
+      "renderMode": "CAST_SCENE",
+      "noInImageText": true,
+      "noExtraCharacters": true,
+      "requiresRealReferenceImageBytes": true
+    },
+    "post-defeat|female|c01-s02-m10": {
+      "panelId": "c01-s02-m10",
+      "edition": "post-defeat",
+      "gender": "female",
+      "scriptText": "退却を命じる。町で編成を立て直して、この地へ戻ろう。",
+      "speaker": "ヴェス",
+      "foregroundActorId": "commander_female",
+      "supportActorIds": [
+        "vess",
+        "garan"
+      ],
+      "visibleActorIds": [
+        "commander_female",
+        "vess",
+        "garan"
+      ],
+      "mustNotAppearActorIds": [
+        "commander_male"
+      ],
+      "sceneGoal": "町への退却と再挑戦の準備",
+      "compositionHint": "町に戻る疲弊した軍団。軍師は生存、ガランが隊列を保つ。ヴェスは携行帳を持つが文字なし。次のステージ解放を描かない。",
+      "protagonistState": "ALIVE_DEFEATED",
+      "renderMode": "CAST_SCENE",
+      "noInImageText": true,
+      "noExtraCharacters": true,
+      "requiresRealReferenceImageBytes": true
+    },
+    "post-gameover|male|c01-s02-death-1": {
+      "panelId": "c01-s02-death-1",
+      "edition": "post-gameover",
+      "gender": "male",
+      "scriptText": "主人公の軍師が戦死した。指揮を失い、物語はゲームオーバーとなる。",
+      "speaker": "語り手",
+      "foregroundActorId": "commander_male",
+      "supportActorIds": [
+        "garan",
+        "iris"
+      ],
+      "visibleActorIds": [
+        "commander_male",
+        "garan",
+        "iris"
+      ],
+      "mustNotAppearActorIds": [
+        "commander_female"
+      ],
+      "sceneGoal": "軍師の戦死",
+      "compositionHint": "礼拝堂の戦場に倒れ、動かない黒髪の男性軍師。ガランとイリスが悲嘆。主人公は明確に戦死し、起き上がらない。",
+      "protagonistState": "DEAD_VISIBLE",
+      "renderMode": "CAST_SCENE",
+      "noInImageText": true,
+      "noExtraCharacters": true,
+      "requiresRealReferenceImageBytes": true
+    },
+    "post-gameover|male|c01-s02-death-2": {
+      "panelId": "c01-s02-death-2",
+      "edition": "post-gameover",
+      "gender": "male",
+      "scriptText": "この時間線では次へ進まない。生還や帰還を偽って描かない。",
+      "speaker": "語り手",
+      "foregroundActorId": null,
+      "supportActorIds": [],
+      "visibleActorIds": [],
+      "mustNotAppearActorIds": [
+        "commander_male",
+        "commander_female"
+      ],
+      "sceneGoal": "軍師を失い止まった時間線",
+      "compositionHint": "無人の戦場に倒れた青い軍旗と消えかける灯り。人間や主人公を一切映さない象徴的な終幕。生還・新ステージ・再出発を描かない。",
+      "protagonistState": "DEAD_ABSENT",
+      "renderMode": "ENVIRONMENT_ONLY",
+      "noInImageText": true,
+      "noExtraCharacters": true,
+      "requiresRealReferenceImageBytes": true
+    },
+    "post-gameover|female|c01-s02-death-1": {
+      "panelId": "c01-s02-death-1",
+      "edition": "post-gameover",
+      "gender": "female",
+      "scriptText": "主人公の軍師が戦死した。指揮を失い、物語はゲームオーバーとなる。",
+      "speaker": "語り手",
+      "foregroundActorId": "commander_female",
+      "supportActorIds": [
+        "garan",
+        "iris"
+      ],
+      "visibleActorIds": [
+        "commander_female",
+        "garan",
+        "iris"
+      ],
+      "mustNotAppearActorIds": [
+        "commander_male"
+      ],
+      "sceneGoal": "軍師の戦死",
+      "compositionHint": "礼拝堂の戦場に倒れ、動かない金髪青眼・銀鎧の女性軍師。ガランとイリスが悲嘆。主人公は明確に戦死し、起き上がらない。",
+      "protagonistState": "DEAD_VISIBLE",
+      "renderMode": "CAST_SCENE",
+      "noInImageText": true,
+      "noExtraCharacters": true,
+      "requiresRealReferenceImageBytes": true
+    },
+    "post-gameover|female|c01-s02-death-2": {
+      "panelId": "c01-s02-death-2",
+      "edition": "post-gameover",
+      "gender": "female",
+      "scriptText": "この時間線では次へ進まない。生還や帰還を偽って描かない。",
+      "speaker": "語り手",
+      "foregroundActorId": null,
+      "supportActorIds": [],
+      "visibleActorIds": [],
+      "mustNotAppearActorIds": [
+        "commander_male",
+        "commander_female"
+      ],
+      "sceneGoal": "軍師を失い止まった時間線",
+      "compositionHint": "無人の戦場に倒れた青い軍旗と消えかける灯り。人間や主人公を一切映さない象徴的な終幕。生還・新ステージ・再出発を描かない。",
+      "protagonistState": "DEAD_ABSENT",
+      "renderMode": "ENVIRONMENT_ONLY",
+      "noInImageText": true,
+      "noExtraCharacters": true,
+      "requiresRealReferenceImageBytes": true
+    }
+  }
+}

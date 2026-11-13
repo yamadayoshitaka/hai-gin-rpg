@@ -8,6 +8,7 @@
  * node scripts/prepare-story-stage-posters.mjs --start c01-s02 --count 2
  */
 import fs from 'node:fs';
+import crypto from 'node:crypto';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {CAMPAIGN_STAGES,CAMPAIGN_STAGE_BY_ID} from '../src/campaign-stage-plan.js';
@@ -131,6 +132,64 @@ function actorReference(stageId,actorId,bible){
   requiresActualImageBytes:true,attachmentStatus:'NOT_ATTACHED_BY_PREFLIGHT',
   sourceRule:found?.visualRule||null};
 }
+
+const shotAssignmentPath='assets/story/stage-manifests/c01-s02-shot-assignments.json';
+const shotAssignments=JSON.parse(fs.readFileSync(path.join(root,shotAssignmentPath),'utf8'));
+if(shotAssignments.stageId!=='c01-s02'||shotAssignments.priority!=='P0_ABSOLUTE_MUST_FOLLOW'||
+ shotAssignments.requiredPendingCount!==25||Object.keys(shotAssignments.entries).length!==25||
+ JSON.stringify(shotAssignments.minimumNativePixels)!==JSON.stringify([768,320])||
+ shotAssignments.maximumShotsPerReviewSheet!==5)
+ throw Error('C01-S02 P0 25-shot actor assignment manifest is incomplete');
+function shotAssignmentFor(stageId,edition,gender,panel){
+ if(stageId!=='c01-s02')return null;
+ const key=[edition,gender,panel.id].join('|');
+ const assignment=shotAssignments.entries[key]||null;
+ if(!assignment)return null; // Preserve the 23 already-registered scenes.
+ if(assignment.panelId!==panel.id||assignment.edition!==edition||assignment.gender!==gender||
+  assignment.scriptText!==(panel.subtitleText||panel.text)||
+  assignment.speaker!==(panel.speaker||'語り手')||
+  assignment.noInImageText!==true||assignment.requiresRealReferenceImageBytes!==true)
+  throw Error('P0 screenplay/cast assignment mismatched: '+key);
+ const visible=assignment.visibleActorIds;
+ if(!Array.isArray(visible)||!Array.isArray(assignment.supportActorIds)||
+  !Array.isArray(assignment.mustNotAppearActorIds)||
+  !Array.isArray(assignment.compositionHint? [assignment.compositionHint]:null)||
+  typeof assignment.sceneGoal!=='string'||!assignment.sceneGoal)
+  throw Error('Missing required P0 cast and composition fields '+key);
+ const expected=[assignment.foregroundActorId,...assignment.supportActorIds].filter(Boolean);
+ if(JSON.stringify(expected)!==JSON.stringify(visible)||
+  new Set(visible).size!==visible.length||
+  visible.some(id=>assignment.mustNotAppearActorIds.includes(id)))
+  throw Error('P0 invalid/overlapping actor IDs '+key);
+ if(assignment.renderMode==='ENVIRONMENT_ONLY'){
+  if(assignment.foregroundActorId!==null||visible.length!==0||
+   assignment.protagonistState!=='DEAD_ABSENT')
+   throw Error('P0 environment-only exception incorrectly defined '+key);
+ }else if(assignment.renderMode!=='CAST_SCENE'||!assignment.foregroundActorId||
+  !visible.includes(assignment.foregroundActorId))throw Error('P0 foreground actor missing '+key);
+ if(edition==='post-gameover'&&!assignment.protagonistState.startsWith('DEAD_'))
+  throw Error('P0 may not show living protagonist after death '+key);
+ if(edition!=='post-gameover'&&assignment.protagonistState.startsWith('DEAD_'))
+  throw Error('P0 defeat/victory falsely depicts death '+key);
+ return assignment;
+}
+function assertAssignedMasters(assignment,castReferences,bible,shotKey){
+ if(!assignment)return;
+ if(castReferences.length!==assignment.visibleActorIds.length)throw Error('Cast master mismatch '+shotKey);
+ if(castReferences.some(r=>!r.sourceExists||!bible.actors.some(a=>a.id===r.actorId)))
+  throw Error('Missing real reference master from the stage bible '+shotKey);
+ for(const ref of castReferences){
+  const bytes=fs.readFileSync(path.join(root,ref.sourceImage));
+  if(bytes.length<32||bytes.toString('ascii',0,4)!=='RIFF'||
+   bytes.toString('ascii',8,12)!=='WEBP')
+   throw Error('Not a real usable WebP master '+ref.actorId+' '+shotKey);
+  ref.sourceBytesVerified=true;
+  ref.sourceByteLength=bytes.length;
+  ref.sourceSha256=crypto.createHash('sha256').update(bytes).digest('hex');
+  ref.attachmentStatus='NOT_ATTACHED_BY_PREFLIGHT';
+ }
+}
+
 function outcomePolicy(edition,verifiedVictoryBeat){
  if(edition==='pre'||edition.startsWith('pre-'))
   return 'PRE_BATTLE_NO_RESULT: do not show victory, defeat, casualty totals or an unlocked next stage';
@@ -172,6 +231,20 @@ function shotGenerationPrompt(context){
   'OUTCOME STATE (MUST NOT CONTRADICT): '+context.outcomeRule,
   'CURRENT EXACT SCREENPLAY BEAT: '+context.currentScene.scriptText,
   'SPEAKER (may be off-screen): '+context.currentScene.speaker,
+  ...(context.castAssignment?[
+   'P0_PER_PANEL_ACTOR_ASSIGNMENT: This scene MUST use these actor IDs only; do not infer cast from other dialogue or neighboring frames.',
+   'FOREGROUND ACTOR ID: '+(context.castAssignment.foregroundActorId||'NONE_ENVIRONMENT_ONLY'),
+   'SUPPORT ACTOR IDS: '+(context.castAssignment.supportActorIds.join(', ')||'NONE'),
+   'VISIBLE ACTOR IDS EXACT: '+(context.castAssignment.visibleActorIds.join(', ')||'NONE'),
+   'MUST NOT APPEAR ACTOR IDS: '+context.castAssignment.mustNotAppearActorIds.join(', '),
+   'SCENE GOAL: '+context.castAssignment.sceneGoal,
+   'COMPOSITION HINT: '+context.castAssignment.compositionHint,
+   'PROTAGONIST STATE: '+context.castAssignment.protagonistState,
+   'RENDER MODE: '+context.castAssignment.renderMode,
+   'SCREENPLAY DIALOGUE FOR PERFORMANCE ONLY (NEVER DRAW TEXT): '+context.castAssignment.scriptText,
+   'P0_REFERENCE_FILE_SHA256: '+context.castReferences.map(r=>r.actorId+':'+r.sourceSha256).join(' | '),
+   'P0_REFERENCE_FILE_BYTES: must actually attach referenced image input files to the generator; SHA256 and paths alone are NOT attached bytes.'
+  ]:[]),
   'CURRENT CHARACTER IDS (do not assume extras): '+[context.currentScene.characterId,context.currentScene.secondaryId].filter(Boolean).join(', '),
   'PREVIOUS SCENE for continuity ONLY (never substitute it for current action): '+before,
   'NEXT SCENE for continuity ONLY (do not spoil or depict it yet): '+after,
@@ -215,13 +288,17 @@ for(const stage of stages){
       artPath(stage.id,edition.edition,'male',shot.id):null;
      const protagonistId=gender==='female'?'commander_female':'commander_male';
      // The protagonist is a continuity reference, not a mandatory visible extra.
-     const castIds=[protagonistId,shot.characterId,shot.secondaryId].filter(Boolean);
+     const castAssignment=shotAssignmentFor(stage.id,edition.edition,gender,shot);
+     const castIds=castAssignment?castAssignment.visibleActorIds:
+      [protagonistId,shot.characterId,shot.secondaryId].filter(Boolean);
      const castReferences=[...new Set(castIds)].map(id=>actorReference(stage.id,id,bible));
+     assertAssignedMasters(castAssignment,castReferences,bible,current.shotKey);
      const previousAsset=previous?artPath(stage.id,edition.edition,gender,previous.panelId):null;
      const shotContext={
       shotKey:current.shotKey,gender,stageId:stage.id,stageName:stage.name,stageSetup:setup,
       victoryCondition:stage.winCondition,outcomeRule,currentScene:current,
-      previousScene:previous,nextScene:next
+      previousScene:previous,nextScene:next,
+      castAssignment,castReferences
      };
      const canConsiderReuse=Boolean(maleSource&&present(maleSource));
      return {
@@ -231,6 +308,11 @@ for(const stage of stages){
       scriptText:current.scriptText,voiceText:shot.voiceText||'',
       speaker:current.speaker,rubyTokens:shot.rubyTokens||[],
       characterId:current.characterId,secondaryId:current.secondaryId,
+      castAssignment:castAssignment?{...castAssignment}:null,
+      foregroundActorId:castAssignment?.foregroundActorId??null,
+      supportActorIds:castAssignment?.supportActorIds||[],
+      visibleActorIds:castAssignment?.visibleActorIds||[],
+      mustNotAppearActorIds:castAssignment?.mustNotAppearActorIds||[],
       role:shot.role||null,kind:current.kind,expression:current.expression,
       setting:current.scenery||stage.name,
       narrative:{stageSetup:setup,winCondition:stage.winCondition,
@@ -306,6 +388,13 @@ for(const stage of stages){
   requiredIndividualImages:n,alreadyRegisteredDraftImages:existing,
   missingIndividualImages:n-existing,qualityApprovedImages:0,
   stageCompletion:'NOT_APPROVED',variants});
+}
+if(stages.some(s=>s.id==='c01-s02')){
+ const keys=new Set(results.find(s=>s.stageId==='c01-s02').variants.flatMap(v=>
+  v.pages.flatMap(page=>page.panels.filter(p=>p.castAssignment).map(p=>
+   [v.edition,v.gender,p.panelId].join('|')))));
+ const expected=Object.keys(shotAssignments.entries);
+ if(keys.size!==25||expected.some(k=>!keys.has(k)))throw Error('P0 assignment not applied to all 25 pending comic shots');
 }
 const totals={
  stageCount:results.length,

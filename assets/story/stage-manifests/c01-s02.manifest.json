@@ -1073,7 +1073,10 @@
     "notYetPublished": true,
     "aspectRatioPolicy": "PRESERVE_ORIGINAL_ASPECT_WITH_OBJECT_FIT_CONTAIN",
     "profileId": "MOBILE_768x320_NATIVE_NO_UPSCALE",
-    "maximumSupportedSourceResolutionPreferred": true
+    "maximumSupportedSourceResolutionPreferred": true,
+    "perPanelActorAndDialogueManifestRequired": true,
+    "environmentOnlyMustBeExplicitlyListed": true,
+    "castReferenceReadabilityAndHashGate": true
   },
   "continuation": {
     "stageId": "c01-s02",
@@ -1220,6 +1223,10 @@
       320
     ],
     "aspectRatioPolicy": "PRESERVE_ORIGINAL_ASPECT_WITH_OBJECT_FIT_CONTAIN",
-    "minimum1536x864Mandatory": false
+    "minimum1536x864Mandatory": false,
+    "canonicalShotAssignments": "assets/story/stage-manifests/c01-s02-shot-assignments.json",
+    "explicitCharacterAssignments": 25,
+    "unassignedCastBlocksGeneration": true,
+    "generatedAssetsRegisteredByThisChange": 0
   }
 }

@@ -16,7 +16,10 @@
     "prohibitReferenceSubstitutionAcrossGender": true,
     "doNotCountAutomaticChecksAsHumanVisualApproval": true,
     "doNotEdit3dCharacterModels": true,
-    "textlessArtOnly": true
+    "textlessArtOnly": true,
+    "assignActorsPerCanonicalPanel": true,
+    "noUnassignedActorsInRenderedShot": true,
+    "environmentOnlyPanelsMustBeExplicitlyAuthorized": true
   },
   "scene": "第一章 第二ステージ：礼拝堂へ続く街道に魔物が出現。死者名簿の欠落と星鐘の異変を調査。戦闘前／勝利／敗北／主人公戦死は別分岐。",
   "actors": [
@@ -59,6 +62,14 @@
       "path": "assets/story-cinema/cast/iris.webp",
       "masterQuality": "PROVISIONAL_CAST_CROP_NEEDS_REVIEW",
       "requiredForGender": "both"
+    },
+    {
+      "id": "vess",
+      "role": "ヴェス・記録院長",
+      "visualRule": "記録院長。参照原画の顔・髪色・年齢・衣装を固定し、軍師やリュシアに置き換えない。書類の文字は描かない。",
+      "path": "assets/story-cinema/cast/vess.webp",
+      "masterQuality": "PROVISIONAL_CAST_CROP_NEEDS_REVIEW",
+      "requiredForGender": "both"
     }
   ],
   "rulesPerShot": [
@@ -68,5 +79,6 @@
     "画像内の文字・番号・見出し・セリフ・UI・透かしを排除する",
     "生成器に参照画像の実バイナリが添付できない場合は品質を未承認として停止する",
     "参照元のSHA256と作画のSHA256を分離して台帳記録する"
-  ]
+  ],
+  "shotAssignmentFile": "assets/story/stage-manifests/c01-s02-shot-assignments.json"
 }
