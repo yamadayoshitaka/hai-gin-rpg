@@ -335,14 +335,16 @@ export function fitStudioNeckContinuity({faceRoot,faceMesh,wardrobeRoot}={}){
  // new cervical connector recreates the white horizontal board beneath
  // the chin, even after correctly cropping the original sculpted bust.
  // These are preview-only visibility toggles; original geometry is kept.
- let legacyNeckPartsHidden=0;
+ let legacyNeckPartsHidden=0,legacyNeckPartsAlreadyHidden=0;
  faceRoot.traverse(part=>{
   if(part.isMesh&&/^(?:REAL_HEAD_BODY_CLOSED_NECK_SEAL|(?:LEFT|RIGHT)_SHOULDER_CUT_SURFACE_CAP)$/i.test(part.name)){
-   if(part.visible)legacyNeckPartsHidden++;
+   if(!part.visible)legacyNeckPartsAlreadyHidden++;
+   legacyNeckPartsHidden++;
    part.visible=false;
   }
  });
- return {applied:true,legacyNeckPartsHidden,sourceTrianglesPreserved:true,
+ return {applied:true,legacyNeckPartsHidden,legacyNeckPartsAlreadyHidden,
+  sourceTrianglesPreserved:true,
   bustTrianglesRemoved:cut.removedTriangles,
   trimmedSculptBottomY:safeCutY,
   actualTorsoTopY:torsoTop,connectorBottomY:bottomY,connectorTopY:topY,
