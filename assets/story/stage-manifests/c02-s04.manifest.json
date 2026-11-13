@@ -1,0 +1,579 @@
+{
+  "schemaVersion": 4,
+  "kind": "STAGE_RENDER_CONTRACT_NOT_COMPLETED_ART",
+  "stageId": "c02-s04",
+  "stageName": "第二章・第4ステージ 記憶の重量を記した遺構",
+  "canonicalSources": [
+    "src/story-chapter-comic.js",
+    "src/story-stage-beats-v2.js",
+    "src/story-stage-manga.js",
+    "src/story-pronunciations.js"
+  ],
+  "singleInvocation": {
+    "command": "node scripts/run-story-stage.mjs --stage c02-s04",
+    "workflow": ".github/workflows/story-stage-poster-batch.yml",
+    "batchUnit": "1_STORY_STAGE",
+    "externalPaidGeneration": false,
+    "backgroundGeneration": false,
+    "artRendererConnected": false
+  },
+  "goal": "第二章第4ステージの正本台本・男女・全勝敗分岐を全て個別制約として固定し、高品質WebP実原画が存在する場合のみロスレスレビュー。生成器未接続なら作画済み扱い禁止。",
+  "layout": {
+    "variantCount": 8,
+    "requiredPanels": 48,
+    "columns": 2,
+    "maxRows": 5,
+    "maxPanelsPerPoster": 10,
+    "minPerPanelNativePixels": [
+      1536,
+      864
+    ],
+    "preferredPerPanelNativePixels": [
+      2048,
+      1152
+    ],
+    "aspectRatio": "16:9",
+    "format": "webp",
+    "croppingCellOrder": "left-to-right, top-to-bottom",
+    "seventhCell": "blank eighth cell; no fabricated scene",
+    "noSheetCutAsFinalUnlessPerCellMeetsNativeResolution": true,
+    "blankCellCannotBecomeScene": true,
+    "nativeSheetPipeline": {
+      "mode": "INDIVIDUAL_NATIVE_FRAMES_FIRST_THEN_LOSSLESS_REVIEW_SHEET",
+      "preferredCellPixels": [
+        2048,
+        1152
+      ],
+      "minimumCellPixels": [
+        1536,
+        864
+      ],
+      "maximumFramesPerSheet": 10,
+      "columns": 2,
+      "maxRows": 5,
+      "preferredFullTenPanelSheetPixels": [
+        4096,
+        5760
+      ],
+      "minimumFullTenPanelSheetPixels": [
+        3072,
+        4320
+      ],
+      "originalGeneratorSupports4096x5760": "UNVERIFIED_DO_NOT_ASSUME",
+      "nativeDetailGuarantee": "Each scene must be independently rendered at native resolution; composite raster dimensions or upscaling alone are not proof",
+      "gridOrder": "LEFT_TO_RIGHT_TOP_TO_BOTTOM",
+      "absentLastCell": "UNUSED_NEUTRAL_CELL_NEVER_SCENE",
+      "requiredChecks": [
+        "realIndependentWebpFiles",
+        "eachNativeFrameDimensions",
+        "perFrame16by9",
+        "actualOriginalBytesAndSha256",
+        "identityAndTextFreeHumanQA",
+        "noAutomaticApproval",
+        "splitAndPixelRoundTripWithoutUpscaling"
+      ],
+      "sheetRole": "REVIEW_OR_ARCHIVE_ONLY_NOT_A_SINGLE_GAME_FRAME",
+      "gameBinding": "Register individual reviewed frames by stageId|edition|gender|panelId",
+      "assemblyScript": "scripts/assemble-story-panel-sheet.py",
+      "qa": "qa/story-panel-sheet-native.test.py",
+      "afterAssembly": "NO_APPROVAL_AND_NO_DEPLOYMENT_UNTIL_ALL_P0_CHECKS_PASS"
+    },
+    "sheetPolicyAppliesToStage2ExistingVariants": true,
+    "bulkNativeSheetBatches": {
+      "mode": "BATCH_UP_TO_TEN_SHEETS_MAX_100_INDEPENDENT_NATIVE_PANELS",
+      "maxSheetsPerBatch": 10,
+      "maxCanonicalFramesPerSheet": 10,
+      "maxCanonicalFramesPerBatch": 100,
+      "sheetLayout": [
+        2,
+        5
+      ],
+      "preferredPerFrameNativePixels": [
+        2048,
+        1152
+      ],
+      "nativeMinimumPerFrame": [
+        1536,
+        864
+      ],
+      "preferred10PanelSheetPixels": [
+        4096,
+        5760
+      ],
+      "assemblyAlgorithm": "INDIVIDUAL_NATIVE_WEBP_FIRST_THEN_LOSSLESS_COMPOSITE",
+      "stagingSource": "scripts/prepare-story-stage-posters.mjs",
+      "orchestrator": "scripts/assemble-story-bulk-100.py",
+      "qa": "qa/story-bulk-100-native.test.py",
+      "mustGroupByActualScriptAndBranchKey": true,
+      "crossBranchFrameReuseForbidden": true,
+      "sheetMayContainMultipleDistinctBranchesForReviewOnly": true,
+      "noFictitiousPaddingTo100": true,
+      "batchIndexSupportsContinuingBeyond100": true,
+      "extraAPIGenerationCosts": false,
+      "actualAiRendererConnected": false,
+      "newArtActuallyGeneratedByThisBatch": 0,
+      "imageGenerator4096x5760NativeSupport": "NOT_VERIFIED",
+      "approveOrDeployAutomatically": false,
+      "missingActualReferenceImagePolicy": "BLOCKED",
+      "missingOrSubminimumNativeFramePolicy": "BLOCKED",
+      "textOrUiMismatchPolicy": "REJECTED",
+      "stageSpecificCanonicalScenes": 48,
+      "stageSpecificPlannedSheetCount": 5,
+      "chapterSpecificBranching": "c02-s05: BASE + rescue + evidence; each choice independent. c02-s01: town pre and post-town only"
+    }
+  },
+  "renderConstraints": {
+    "renderMode": "CLEAN_SCENE_GRID_ONLY",
+    "forbiddenInsideImage": [
+      "characters letters ideograms kanji hiragana katakana",
+      "digits 0-9",
+      "titles",
+      "chapter banners",
+      "scene identifiers",
+      "comic panel labels",
+      "subtitles",
+      "speech bubbles",
+      "ruby",
+      "legible markings on parchment or seals",
+      "tables",
+      "production reports",
+      "infographics",
+      "mock UI",
+      "interface buttons",
+      "watermarks",
+      "logos",
+      "developer notes",
+      "JSON code"
+    ],
+    "identityLock": "each visible actor must match supplied real master image bytes, never invent cast from names alone",
+    "heroGenderIsolation": true,
+    "noCrossOutcomeReuse": true,
+    "noEarlyVictory": true,
+    "oneBeatPerCell": true,
+    "continuity": "previous and following canonical screenplay beats",
+    "narrationDisplay": "outside illustration in game UI",
+    "proofing": "manual visual acceptance; OCR optional only, not assumed",
+    "priority": "P0_ABSOLUTE_MUST_FOLLOW",
+    "mandatoryActualByteAttachments": true,
+    "noTextIncludesGameScreenshots": true,
+    "onViolation": "REJECTED_NO_REGISTRATION_OR_DEPLOYMENT"
+  },
+  "operatingOrder": [
+    "load full stage screenplay",
+    "expand all 8 gender/outcome variants",
+    "freeze exact storyboard action for every cell",
+    "attach real cast image files",
+    "P0 gate: every actor's real image bytes must be attached, otherwise BLOCKED (path strings do not count)",
+    "P0 prompt: prepend mandatory absolute textless/cast-identity/canonical-scene rules to every shot and variant render prompt",
+    "independently render one native-resolution 16:9 WebP per canonical scene with real character master bytes (if image generator connected)",
+    "assemble approved native WebP frames into 2-column x up-to-5-row lossless review-only sheets (up to 10; never use a low-resolution contact sheet as the original)",
+    "for bulk review queues: at most 100 authentic independent WebPs, 10 sheets of up to 10, with deterministic batch indices; do not pad stage2's 48 canonically defined scenes",
+    "if a native high-res input sheet is supplied, cut only when per-cell native pixels exceed minimum; otherwise BLOCKED_LOW_RES",
+    "check native pixels and provenance",
+    "review each cell vs its exact screenplay and approved reference",
+    "register only approved individual files",
+    "P0 visual review: REJECT any incorrect cast, UI/text/number, narrative mismatch or low-quality source; no autopromote",
+    "deploy after all variant checks pass"
+  ],
+  "referenceImages": {
+    "commander_male": "assets/story/panels/c01-s01-m01.webp",
+    "commander_female": "assets/story/characters/commander/female-master.webp",
+    "lucia": "assets/story/characters/lucia/master.webp",
+    "garan": "assets/story-cinema/cast/garan.webp",
+    "iris": "assets/story-cinema/cast/iris.webp"
+  },
+  "qualityReferenceByGender": {
+    "male": "assets/story/chapters/c01/panels/c01-s01-m02-male.webp",
+    "female": "assets/story/chapters/c01/panels/c01-s01-m02-female.webp"
+  },
+  "qualityReferenceApproval": "PROVISIONAL_NOT_HUMAN_APPROVED",
+  "existingGithubDrafts": 0,
+  "complete": false,
+  "qualityApproved": false,
+  "deployedNewImages": false,
+  "variants": [
+    {
+      "edition": "pre",
+      "phase": "pre",
+      "gender": "male",
+      "count": 8,
+      "scriptPanelIds": [
+        "c02-s04-m1",
+        "c02-s04-m2",
+        "c02-s04-m3",
+        "c02-s04-m4",
+        "c02-s04-m5",
+        "c02-s04-m11",
+        "c02-s04-m13",
+        "c02-s04-m15"
+      ],
+      "posterInput": "assets/story/chapter-drafts/c02/posters/c02-s04-pre-male-p01.webp",
+      "posterMinNativePixels": [
+        3072,
+        3456
+      ],
+      "posterPreferredNativePixels": [
+        4096,
+        4608
+      ],
+      "nativeAssembly": {
+        "rows": 4,
+        "columns": 2,
+        "realSceneCount": 8,
+        "capacity": 8,
+        "blankCellCount": 0,
+        "source": "INDIVIDUAL_NATIVE_WEBP_ONLY",
+        "cellNativePixels": [
+          2048,
+          1152
+        ],
+        "preferredSheetPixels": [
+          4096,
+          4608
+        ],
+        "noFabricatedCell": true,
+        "noUpscale": true,
+        "approval": "NOT_APPROVED"
+      },
+      "numberedArt": false,
+      "status": "SCRIPTED_NOT_APPROVED_NO_SOURCE_IMAGE"
+    },
+    {
+      "edition": "pre",
+      "phase": "pre",
+      "gender": "female",
+      "count": 8,
+      "scriptPanelIds": [
+        "c02-s04-m1",
+        "c02-s04-m2",
+        "c02-s04-m3",
+        "c02-s04-m4",
+        "c02-s04-m5",
+        "c02-s04-m11",
+        "c02-s04-m13",
+        "c02-s04-m15"
+      ],
+      "posterInput": "assets/story/chapter-drafts/c02/posters/c02-s04-pre-female-p01.webp",
+      "posterMinNativePixels": [
+        3072,
+        3456
+      ],
+      "posterPreferredNativePixels": [
+        4096,
+        4608
+      ],
+      "nativeAssembly": {
+        "rows": 4,
+        "columns": 2,
+        "realSceneCount": 8,
+        "capacity": 8,
+        "blankCellCount": 0,
+        "source": "INDIVIDUAL_NATIVE_WEBP_ONLY",
+        "cellNativePixels": [
+          2048,
+          1152
+        ],
+        "preferredSheetPixels": [
+          4096,
+          4608
+        ],
+        "noFabricatedCell": true,
+        "noUpscale": true,
+        "approval": "NOT_APPROVED"
+      },
+      "numberedArt": false,
+      "status": "SCRIPTED_NOT_APPROVED_NO_SOURCE_IMAGE"
+    },
+    {
+      "edition": "post-victory",
+      "phase": "post",
+      "gender": "male",
+      "count": 7,
+      "scriptPanelIds": [
+        "c02-s04-m6",
+        "c02-s04-m7",
+        "c02-s04-m8",
+        "c02-s04-m9",
+        "c02-s04-m16",
+        "c02-s04-m19",
+        "c02-s04-m10"
+      ],
+      "posterInput": "assets/story/chapter-drafts/c02/posters/c02-s04-post-victory-male-p01.webp",
+      "posterMinNativePixels": [
+        3072,
+        3456
+      ],
+      "posterPreferredNativePixels": [
+        4096,
+        4608
+      ],
+      "nativeAssembly": {
+        "rows": 4,
+        "columns": 2,
+        "realSceneCount": 7,
+        "capacity": 8,
+        "blankCellCount": 1,
+        "source": "INDIVIDUAL_NATIVE_WEBP_ONLY",
+        "cellNativePixels": [
+          2048,
+          1152
+        ],
+        "preferredSheetPixels": [
+          4096,
+          4608
+        ],
+        "noFabricatedCell": true,
+        "noUpscale": true,
+        "approval": "NOT_APPROVED"
+      },
+      "numberedArt": false,
+      "status": "SCRIPTED_NOT_APPROVED_NO_SOURCE_IMAGE"
+    },
+    {
+      "edition": "post-victory",
+      "phase": "post",
+      "gender": "female",
+      "count": 7,
+      "scriptPanelIds": [
+        "c02-s04-m6",
+        "c02-s04-m7",
+        "c02-s04-m8",
+        "c02-s04-m9",
+        "c02-s04-m16",
+        "c02-s04-m19",
+        "c02-s04-m10"
+      ],
+      "posterInput": "assets/story/chapter-drafts/c02/posters/c02-s04-post-victory-female-p01.webp",
+      "posterMinNativePixels": [
+        3072,
+        3456
+      ],
+      "posterPreferredNativePixels": [
+        4096,
+        4608
+      ],
+      "nativeAssembly": {
+        "rows": 4,
+        "columns": 2,
+        "realSceneCount": 7,
+        "capacity": 8,
+        "blankCellCount": 1,
+        "source": "INDIVIDUAL_NATIVE_WEBP_ONLY",
+        "cellNativePixels": [
+          2048,
+          1152
+        ],
+        "preferredSheetPixels": [
+          4096,
+          4608
+        ],
+        "noFabricatedCell": true,
+        "noUpscale": true,
+        "approval": "NOT_APPROVED"
+      },
+      "numberedArt": false,
+      "status": "SCRIPTED_NOT_APPROVED_NO_SOURCE_IMAGE"
+    },
+    {
+      "edition": "post-defeat",
+      "phase": "post",
+      "gender": "male",
+      "count": 7,
+      "scriptPanelIds": [
+        "c02-s04-m6",
+        "c02-s04-m7",
+        "c02-s04-m8",
+        "c02-s04-m9",
+        "c02-s04-m16",
+        "c02-s04-m19",
+        "c02-s04-m10"
+      ],
+      "posterInput": "assets/story/chapter-drafts/c02/posters/c02-s04-post-defeat-male-p01.webp",
+      "posterMinNativePixels": [
+        3072,
+        3456
+      ],
+      "posterPreferredNativePixels": [
+        4096,
+        4608
+      ],
+      "nativeAssembly": {
+        "rows": 4,
+        "columns": 2,
+        "realSceneCount": 7,
+        "capacity": 8,
+        "blankCellCount": 1,
+        "source": "INDIVIDUAL_NATIVE_WEBP_ONLY",
+        "cellNativePixels": [
+          2048,
+          1152
+        ],
+        "preferredSheetPixels": [
+          4096,
+          4608
+        ],
+        "noFabricatedCell": true,
+        "noUpscale": true,
+        "approval": "NOT_APPROVED"
+      },
+      "numberedArt": false,
+      "status": "SCRIPTED_NOT_APPROVED_NO_SOURCE_IMAGE"
+    },
+    {
+      "edition": "post-defeat",
+      "phase": "post",
+      "gender": "female",
+      "count": 7,
+      "scriptPanelIds": [
+        "c02-s04-m6",
+        "c02-s04-m7",
+        "c02-s04-m8",
+        "c02-s04-m9",
+        "c02-s04-m16",
+        "c02-s04-m19",
+        "c02-s04-m10"
+      ],
+      "posterInput": "assets/story/chapter-drafts/c02/posters/c02-s04-post-defeat-female-p01.webp",
+      "posterMinNativePixels": [
+        3072,
+        3456
+      ],
+      "posterPreferredNativePixels": [
+        4096,
+        4608
+      ],
+      "nativeAssembly": {
+        "rows": 4,
+        "columns": 2,
+        "realSceneCount": 7,
+        "capacity": 8,
+        "blankCellCount": 1,
+        "source": "INDIVIDUAL_NATIVE_WEBP_ONLY",
+        "cellNativePixels": [
+          2048,
+          1152
+        ],
+        "preferredSheetPixels": [
+          4096,
+          4608
+        ],
+        "noFabricatedCell": true,
+        "noUpscale": true,
+        "approval": "NOT_APPROVED"
+      },
+      "numberedArt": false,
+      "status": "SCRIPTED_NOT_APPROVED_NO_SOURCE_IMAGE"
+    },
+    {
+      "edition": "post-gameover",
+      "phase": "post",
+      "gender": "male",
+      "count": 2,
+      "scriptPanelIds": [
+        "c02-s04-death-1",
+        "c02-s04-death-2"
+      ],
+      "posterInput": "assets/story/chapter-drafts/c02/posters/c02-s04-post-gameover-male-p01.webp",
+      "posterMinNativePixels": [
+        3072,
+        864
+      ],
+      "posterPreferredNativePixels": [
+        4096,
+        1152
+      ],
+      "nativeAssembly": {
+        "rows": 1,
+        "columns": 2,
+        "realSceneCount": 2,
+        "capacity": 2,
+        "blankCellCount": 0,
+        "source": "INDIVIDUAL_NATIVE_WEBP_ONLY",
+        "cellNativePixels": [
+          2048,
+          1152
+        ],
+        "preferredSheetPixels": [
+          4096,
+          1152
+        ],
+        "noFabricatedCell": true,
+        "noUpscale": true,
+        "approval": "NOT_APPROVED"
+      },
+      "numberedArt": false,
+      "status": "SCRIPTED_NOT_APPROVED_NO_SOURCE_IMAGE"
+    },
+    {
+      "edition": "post-gameover",
+      "phase": "post",
+      "gender": "female",
+      "count": 2,
+      "scriptPanelIds": [
+        "c02-s04-death-1",
+        "c02-s04-death-2"
+      ],
+      "posterInput": "assets/story/chapter-drafts/c02/posters/c02-s04-post-gameover-female-p01.webp",
+      "posterMinNativePixels": [
+        3072,
+        864
+      ],
+      "posterPreferredNativePixels": [
+        4096,
+        1152
+      ],
+      "nativeAssembly": {
+        "rows": 1,
+        "columns": 2,
+        "realSceneCount": 2,
+        "capacity": 2,
+        "blankCellCount": 0,
+        "source": "INDIVIDUAL_NATIVE_WEBP_ONLY",
+        "cellNativePixels": [
+          2048,
+          1152
+        ],
+        "preferredSheetPixels": [
+          4096,
+          1152
+        ],
+        "noFabricatedCell": true,
+        "noUpscale": true,
+        "approval": "NOT_APPROVED"
+      },
+      "numberedArt": false,
+      "status": "SCRIPTED_NOT_APPROVED_NO_SOURCE_IMAGE"
+    }
+  ],
+  "criticalPriorityPolicy": {
+    "priority": "P0_ABSOLUTE_MUST_FOLLOW",
+    "rulesPath": "assets/story/quality/artwork-p0-rules.json",
+    "mandatoryAtPromptStart": true,
+    "mandatoryAtVariantPosterStart": true,
+    "failClosed": true,
+    "referToBinaryFilesNotMerelyPaths": true,
+    "requireCanonicalBeatAndOutcomeEveryShot": true,
+    "prohibitImageTextDigitsUI": true,
+    "rejectIfRenderFailsAnyP0": true,
+    "doNotPublishUnapproved": true,
+    "noPaidGenerationAPI": true,
+    "validation": "qa/story-single-stage-manifest.test.mjs"
+  },
+  "canonicalStageName": "中央平原・荒野の掃討",
+  "stageSetup": "帳簿に記された「記憶の重量」を示す遺構が見つかる。",
+  "verifiedVictoryBeat": "遺構の魔物を退け、数値の意味を照合する資料を得る。",
+  "canonicalWinCondition": "出現した全モンスターを討伐",
+  "canonicalStageKind": "explore",
+  "variantCountSource": "comicEditionsForStage(); stage1 town=2 editions, stage5 policy=12 editions",
+  "referenceCharacterBible": "assets/story/characters/c02-s04-reference-bible.json",
+  "productionStatus": "SCRIPTED_LOCKED_NOT_AI_RENDERED_OR_APPROVED",
+  "branching": {
+    "selectionMode": "BATTLE_OUTCOME",
+    "requiredOutcomes": [
+      "pre",
+      "post-victory",
+      "post-defeat",
+      "post-gameover"
+    ]
+  }
+}

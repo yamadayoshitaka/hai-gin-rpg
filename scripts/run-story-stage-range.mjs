@@ -4,8 +4,8 @@
  * real-WebP review queues. No image generator is attached; this never claims
  * missing art was rendered or quality-approved.
  *
- * node scripts/run-story-stage-range.mjs --start c01-s02 --through c01-s05
- * node scripts/run-story-stage-range.mjs --start c01-s02 --through c01-s05 --prepare-only
+ * node scripts/run-story-stage-range.mjs --start c02-s01 --through c02-s10
+ * node scripts/run-story-stage-range.mjs --start c02-s01 --through c02-s10 --prepare-only
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -21,7 +21,7 @@ const prepareOnly=args.includes('--prepare-only');
 const from=CAMPAIGN_STAGES.findIndex(x=>x.id===start);
 const to=CAMPAIGN_STAGES.findIndex(x=>x.id===through);
 if(from<0||to<from||to-from>=10){
- throw Error('Usage: --start c01-s02 --through c01-s05 [--prepare-only]; 1..10 stages');
+ throw Error('Usage: --start c02-s01 --through c02-s10 [--prepare-only]; 1..10 stages');
 }
 const stages=CAMPAIGN_STAGES.slice(from,to+1);
 if(stages.some(s=>s.chapter!==stages[0].chapter)){
@@ -46,7 +46,11 @@ for(const s of stages){
  if(!fs.existsSync(path.join(root,manifest)))
   throw Error('Missing locked stage-specific render contract '+manifest);
  const contract=JSON.parse(fs.readFileSync(path.join(root,manifest),'utf8'));
- if(contract.stageId!==s.id||contract.layout.requiredPanels!==48||
+ if(contract.stageId!==s.id||
+  !Number.isInteger(contract.layout.requiredPanels)||
+  contract.layout.requiredPanels<1||
+  contract.layout.variantCount!==contract.variants.length||
+  contract.variants.reduce((total,v)=>total+v.count,0)!==contract.layout.requiredPanels||
   contract.criticalPriorityPolicy.priority!=='P0_ABSOLUTE_MUST_FOLLOW'||
   contract.singleInvocation.artRendererConnected!==false){
   throw Error('Unsafe stage contract '+manifest);
@@ -55,7 +59,8 @@ for(const s of stages){
   ...(prepareOnly?['--prepare-only']:[])]);
  const outcome=JSON.parse(fs.readFileSync(path.join(root,
   'qa-reports/story-stage-production/batches/'+s.id+'/batch-summary.json'),'utf8'));
- if(outcome.requiredPanels!==48||outcome.requiredVariantPosters!==8||
+ if(outcome.requiredPanels!==contract.layout.requiredPanels||
+  outcome.requiredVariantPosters!==contract.variants.length||
   outcome.stageApproved!==false||outcome.gameDeployed!==false){
   throw Error('Stage result mismatch or false approval: '+s.id);
  }
@@ -68,7 +73,7 @@ run(process.execPath,['scripts/prepare-story-stage-posters.mjs',
  '--start',start,'--count',String(stages.length),'--out',bulkManifestRel]);
 const canonical=JSON.parse(fs.readFileSync(path.join(root,bulkManifestRel),'utf8'));
 const count=canonical.totals.requiredPanels;
-if(count!==48*stages.length||canonical.totals.approvedPanels!==0){
+if(count!==processed.reduce((sum,s)=>sum+s.canonicalFrames,0)||canonical.totals.approvedPanels!==0){
  throw Error('Canonical range has wrong count or false approval');
 }
 const batchCount=Math.ceil(count/100);
