@@ -269,5 +269,16 @@
       "numberedArt": false,
       "status": "SCRIPTED_NOT_APPROVED"
     }
-  ]
+  ],
+  "offlineImageHandoff": {
+    "manifestPath": "assets/story/chapter-drafts/c01/c01-s02-11-draft-handoff-20261113.json",
+    "archiveName": "hai_gin_stage2_11_candidate_images_20261113.zip",
+    "candidateCount": 11,
+    "existingMaleGithubDrafts": 15,
+    "stillWithoutCandidate": 22,
+    "needsByteUploadToGitHub": true,
+    "doNotCountAsRegisteredArt": true,
+    "newlyGeneratedShot": "c01-s02|post-defeat|male|c01-s02-m6",
+    "humanApproved": false
+  }
 }
