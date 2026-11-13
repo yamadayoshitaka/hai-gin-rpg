@@ -47,6 +47,8 @@ const fs=require('node:fs');
   console.log('HUMAN_V56_ACTUAL_MESH_DIAGNOSTICS '+JSON.stringify(result));
   if(!(result.neckContinuity?.applied&&result.neckContinuity.bustTrianglesRemoved>3&&
         result.neckContinuity.originalFaceNormalsPreserved&&
+        result.neckContinuity.smoothedFacialNormals&&
+        result.neckContinuity.normalWeldGroups>50&&
         result.neckContinuity.untouchedFaceTriangles>100&&
         result.neckContinuity.matchedFaceMaterial&&
         result.neckContinuity.transparentNeckEdge))
