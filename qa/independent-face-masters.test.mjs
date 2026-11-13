@@ -26,7 +26,8 @@ import {applyHeroineSkinMaterial} from '../src/heroine-skin-material.js';
 import {HEROINE_FACE_STUDIO_KEY,loadHeroineFacePreset,saveHeroineFacePreset}
  from '../src/heroine-face-preset-store.js';
 import {MALE_FACE_STUDIO_KEY,loadMaleFacePreset,saveMaleFacePreset} from '../src/male-face-preset-store.js';
-import {heroineBeautyControlsV42} from '../src/heroine-beauty-preset-v42.js';
+import {heroineBeautyControlsV42,heroineBeautyControlsV43,upgradeUneditedHeroineV42ToV43} from '../src/heroine-beauty-preset-v42.js';
+import {resolveHeroHairSpec,MALE_HAIR_LENGTH_V43} from '../src/hero-hair-controls-v43.js';
 
 function fixture(){
  const original=new THREE.SphereGeometry(.19,64,48);
@@ -2278,4 +2279,72 @@ test('v42 male studio has independent body, editable face and all ten existing c
  assert.ok(beauty.irisDiameter>1.2);
  assert.ok(beauty.jawSharpness<FEMALE_V7_DEFAULTS.jawSharpness);
  assert.ok(beauty.eyeDepth<0);
+});
+
+test('v43 all 16 male and female haircut choices resolve finite distinct styles without dropped short indexes',()=>{
+ for(const gender of ['male','female']){
+  const styles=PART_CATALOG[gender].hair;
+  assert.equal(styles.length,16);
+  const seen=new Set();
+  for(let i=0;i<styles.length;i++){
+   const spec=resolveHeroHairSpec(gender,{hair:i});
+   assert.equal(spec.hairIndex,i);
+   assert.equal(spec.styleId,styles[i].values.styleId);
+   assert.ok(Number.isFinite(spec.lengthScale)&&spec.lengthScale>0);
+   assert.ok(!seen.has(spec.styleId));
+   seen.add(spec.styleId);
+   if(gender==='male')assert.equal(spec.lengthScale,MALE_HAIR_LENGTH_V43[spec.styleId]);
+  }
+  assert.equal(seen.size,16);
+ }
+ const short=resolveHeroHairSpec('male',{hair:11});
+ const buzz=resolveHeroHairSpec('male',{hair:12});
+ const airy=resolveHeroHairSpec('male',{hair:15});
+ assert.equal(short.shortCutKind,'very-short');
+ assert.equal(buzz.shortCutKind,'buzz');
+ assert.ok(Number.isFinite(airy.lengthScale));
+});
+test('v43 normal-layered studio hair changes real guide geometry for three cuts in each gender',()=>{
+ for(const gender of ['female','male']){
+  const face=makeIndependentFaceMaster(fixture().source,gender);
+  const signatures=[];
+  for(const index of [0,10,12]){
+   const spec=resolveHeroHairSpec(gender,{hair:index});
+   const wig=createScalpAnchoredWig(face.face,{
+    count:96,staticGroom:true,normalLayeredSingleMesh:true,
+    gender,styleId:spec.styleId,lengthScale:spec.lengthScale
+   });
+   const meshes=[];wig.root.traverse(o=>{if(o.isMesh)meshes.push(o);});
+   assert.equal(meshes.length,1);
+   assert.equal(wig.getReport().gender,gender);
+   assert.equal(wig.getReport().hairstyleId,spec.styleId);
+   assert.equal(wig.getReport().transparentExactHeadWigBase,false);
+   assert.ok(Array.from(meshes[0].geometry.getAttribute('position').array).every(Number.isFinite));
+   const samples=wig.getStyleSamples().slice(0,24).map(x=>
+    x.tip.map(v=>Math.round(v*10000)).join(',')).join(';');
+   signatures.push(samples);
+   wig.dispose();
+  }
+  assert.equal(new Set(signatures).size,3,gender+' hair cuts must differ in actual 3D geometry');
+ }
+});
+test('v43 larger heroine iris preserves edited presets while upgrading only untouched v42 baseline',()=>{
+ const old=heroineBeautyControlsV42(FEMALE_V7_DEFAULTS);
+ const refreshed=upgradeUneditedHeroineV42ToV43(old);
+ assert.ok(refreshed);
+ assert.ok(refreshed.irisDiameter>old.irisDiameter);
+ assert.ok(refreshed.eyeDepth<old.eyeDepth);
+ assert.ok(refreshed.lashCurl>old.lashCurl);
+ assert.ok(refreshed.faceMorph>old.faceMorph);
+ assert.equal(upgradeUneditedHeroineV42ToV43({...old,irisDiameter:1.4}),null);
+ const editor=readFileSync('face-mesh-studio.html','utf8');
+ const femaleBody=readFileSync('face-body-studio.html','utf8');
+ const maleBody=readFileSync('male-body-studio.html','utf8');
+ assert.match(editor,/heroineBeautyV43/);
+ assert.match(editor,/facePartChanged/);
+ assert.match(editor,/hairChanged\|\|!wigs\.get\('female'\)/);
+ assert.match(femaleBody,/persistStudioHair/);
+ assert.match(maleBody,/persistStudioHair/);
+ assert.match(femaleBody,/body\.costume-only label\[for="heroAction"\]/);
+ assert.doesNotMatch(femaleBody,/body\.costume-only label\[for="heroHairStyle"\]/);
 });
