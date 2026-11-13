@@ -166,6 +166,7 @@ import {chooseHeroFacePreset,polishHeroFaceControls,mountHeroFacePresetPicker,ma
 import {characterAppearance,mountCharacterCastSelect} from './src/character-cast-v46.js?v=46';
 import {AGE_PROFILES,BODY_PROFILES,applyDemographicFaceControls}
  from './src/character-demographics-v47.js?v=47';
+import {resolveEditedFaceControls,recordFaceManualEdit} from './src/face-state-v49.js?v=49';
 import {HERO_JOBS,HERO_ACTIONS,createHeroineStudioWardrobe} from './src/heroine-studio-wardrobe.js?v=41';
 import {REAL_BATTLE_WARDROBE,createRealBattleOutfitStudio} from './src/heroine-battle-costume-bridge.js?v=42';
 import {loadHeroineFacePreset,saveHeroineFacePreset} from './src/heroine-face-preset-store.js?v=43';
@@ -211,7 +212,9 @@ const v32PartMode=new URLSearchParams(location.search).get('qa')!=='legacy';
 if(!v32PartMode)document.body.classList.add('v32-legacy');
 else document.body.classList.add('costume-only');
 const savedHeroinePreset=v32PartMode?loadHeroineFacePreset():null;
+let manualFaceOverrides={};
 let v32BodyPart={...defaultPartSelection(),...HEROINE_BEAUTY_PART_SELECTION_V43,...(savedHeroinePreset?.parts||{})};
+Object.assign(manualFaceOverrides,savedHeroinePreset?.manualOverrides||{});
 v32BodyPart={...synchronizeHeroHairSelection('female',v32BodyPart,
  savedHeroinePreset?.hairStyleId).parts};
 const migratedBeauty=upgradeUneditedHeroineV42ToV43(savedHeroinePreset?.controls);
@@ -557,6 +560,7 @@ for(const [key,title,step,group] of faceControlDefinitions){
  input.addEventListener('input',()=>{out.value=input.value;});
  input.addEventListener('change',()=>{
   faceControls[key]=Number(input.value);
+  recordFaceManualEdit(manualFaceOverrides,key,faceControls[key]);
   if(key==='eyeWidth'||key==='eyeHeight')
    faceControls.eyeSize=Math.sqrt(faceControls.eyeWidth*faceControls.eyeHeight);
   rebuildFaceOnBody();
@@ -602,16 +606,17 @@ eyeColorInput.addEventListener('input',()=>{
 });
 syncLensPreset();
 function applyPartSelection(picked,completeFace=false){
+ if(completeFace)manualFaceOverrides={};
  const hair=synchronizeHeroHairSelection('female',picked);
  v32BodyPart={...hair.parts};
  const chosen=resolvePartSelection('female',v32BodyPart,FEMALE_V7_DEFAULTS);
- Object.assign(faceControls,normalizeFemaleFaceControls(applyDemographicFaceControls(
-  completeFace?polishHeroFaceControls('female',chosen.controls):chosen.controls,
-  v32BodyPart.ageBand,v32BodyPart.bodyType,'female')));
+ Object.assign(faceControls,resolveEditedFaceControls('female',chosen.controls,
+  v32BodyPart.ageBand,v32BodyPart.bodyType,manualFaceOverrides,completeFace));
  $('style').value=hair.styleId;
  $('heroHairStyle').value=hair.styleId;
  $('heroHairVolume').value=picked.hairVolume;
  if(ready){rebuildFaceOnBody();rebuildWig();}
+ syncFaceControls();
  persistStudioHair();
  completeFacePicker?.refresh(v32BodyPart);
 }
@@ -631,12 +636,12 @@ for(const field of ['v47AgeBand','v47BodyType']){
   v32BodyPart={...v32BodyPart,
    ageBand:$('v47AgeBand').value,bodyType:$('v47BodyType').value};
   const selected=resolvePartSelection('female',v32BodyPart,FEMALE_V7_DEFAULTS);
-  Object.assign(faceControls,normalizeFemaleFaceControls(applyDemographicFaceControls(
-   polishHeroFaceControls('female',selected.controls),
-   v32BodyPart.ageBand,v32BodyPart.bodyType,'female')));
+  Object.assign(faceControls,resolveEditedFaceControls('female',selected.controls,
+   v32BodyPart.ageBand,v32BodyPart.bodyType,manualFaceOverrides,false));
   if(v32PartMode)mountPartPicker();
   if(ready){rebuildFaceOnBody();rebuildWig();}
   battleCostume?.setDemographics?.(v32BodyPart.ageBand,v32BodyPart.bodyType);
+  syncFaceControls();
   persistStudioHair();
   $('status').textContent=AGE_PROFILES[v32BodyPart.ageBand].label+' / '+
    BODY_PROFILES[v32BodyPart.bodyType].label+'：顔・全身3D更新';
@@ -646,11 +651,13 @@ for(const field of ['v47AgeBand','v47BodyType']){
 mountCharacterCastSelect($('v46Cast'),'female',id=>{
  const look=characterAppearance(id,v32BodyPart);
  selectedCastId=id;selectedBodyShape=look.item.bodyShape;
+ manualFaceOverrides={};
  $('v47AgeBand').value=look.ageBand;
  $('v47BodyType').value=look.bodyType;
  v32BodyPart={...look.parts};
  const selected=resolvePartSelection('female',v32BodyPart,FEMALE_V7_DEFAULTS);
  Object.assign(faceControls,normalizeFemaleFaceControls({...selected.controls,...look.controls}));
+ syncFaceControls();
  $('style').value=look.styleId;$('heroHairStyle').value=look.styleId;
  $('heroHairVolume').value=v32BodyPart.hairVolume;
  if(v32PartMode)mountPartPicker();
@@ -672,7 +679,8 @@ function persistStudioHair(){
  if(!v32PartMode)return;
  saveHeroineFacePreset({parts:{...v32BodyPart},controls:{...faceControls},
   hairStyleId:$('style').value,hairColor:v32BodyPart.hairColor,
-  hairDensity:Number($('wigDensity').value),makeupType:v32BodyPart.makeup,contactColor});
+  hairDensity:Number($('wigDensity').value),makeupType:v32BodyPart.makeup,contactColor,
+  manualOverrides:{...manualFaceOverrides}});
 }
 $('heroHairStyle').addEventListener('change',()=>{
  const chosen=synchronizeHeroHairSelection('female',v32BodyPart,$('heroHairStyle').value);
