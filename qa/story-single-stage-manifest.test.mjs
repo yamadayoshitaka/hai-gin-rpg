@@ -20,6 +20,10 @@ assert.equal(manifest.singleStageBatch,true);
 assert.equal(manifest.imageGeneratorConnected,false);
 assert.equal(manifest.qualityApproved,false);
 assert.equal(manifest.deployed,false);
+assert.equal(manifest.criticalPriorityPolicy.priority,'P0_ABSOLUTE_MUST_FOLLOW');
+assert.equal(manifest.generationBlockedUntilReferenceImagesActuallyAttached,true);
+assert.equal(briefs.absolutePriority,'P0_ABSOLUTE_MUST_FOLLOW');
+assert.equal(summary.p0Priority,'P0_ABSOLUTE_MUST_FOLLOW');
 assert.equal(manifest.stages.length,1);
 assert.equal(manifest.stages[0].stageId,'c01-s02');
 assert.equal(manifest.stages[0].variants.length,8);
@@ -38,6 +42,15 @@ assert.equal(summary.renderStatus,'PREPARED_ONLY');
 assert.equal(locked.variants.length,8);
 assert.equal(locked.layout.requiredPanels,48);
 assert.equal(locked.singleInvocation.artRendererConnected,false);
+assert.equal(locked.criticalPriorityPolicy.failClosed,true);
+assert.equal(locked.renderConstraints.mandatoryActualByteAttachments,true);
+const p0=JSON.parse(fs.readFileSync(path.join(root,locked.criticalPriorityPolicy.rulesPath),'utf8'));
+assert.equal(p0.priority,'P0_ABSOLUTE_MUST_FOLLOW');
+assert.equal(p0.failClosed,true);
+assert.equal(p0.referenceRule.actualBytesMustBeAttached,true);
+assert.equal(p0.imageRule.textAllowed,false);
+assert.equal(p0.imageRule.uiAllowed,false);
+assert.equal(p0.storyRule.exactCurrentShotOnly,true);
 const uniqueFrames=new Set(),uniquePosterSources=new Set();
 for(const variant of manifest.stages[0].variants){
  const key=variant.edition+'|'+variant.gender;
@@ -53,6 +66,10 @@ for(const variant of manifest.stages[0].variants){
  assert.equal(directive.requiresImageReferenceBytes,true);
  assert.equal(directive.inImageTextAllowed,false);
  assert.equal(directive.rendererAttached,false);
+ assert.equal(directive.absolutePriority,'P0_ABSOLUTE_MUST_FOLLOW');
+ assert.equal(directive.failClosedOnMissingRealCastBytes,true);
+ assert.equal(directive.visualQualityRequiresHumanApproval,true);
+ assert(directive.strictPictorialOnlyPrompt.startsWith('P0_ABSOLUTE_MUST_FOLLOW.'));
  assert.equal(directive.approval,'NOT_APPROVED');
  assert.match(directive.strictPictorialOnlyPrompt,/NOT a poster, advertisement, infographic/);
  assert.match(directive.strictPictorialOnlyPrompt,/No panel numbers, text/);
@@ -64,6 +81,9 @@ for(const variant of manifest.stages[0].variants){
  uniquePosterSources.add(directive.sourcePoster);
  for(const shot of p.panels){
   assert(shot.generationPrompt.includes(shot.scriptText));
+  assert(shot.generationPrompt.startsWith('P0_ABSOLUTE_MUST_FOLLOW.'));
+  assert.equal(shot.realCastImageBytesAttached,false);
+  assert.equal(shot.renderReady,false);
   assert(shot.narrative.currentScene.scriptText===shot.scriptText);
   assert(shot.individualMinPixels[0]===1536);
   assert(shot.individualMinPixels[1]===864);
