@@ -7,7 +7,7 @@ import {
  createKnightSkullBrow,GOTHIC_MONSTER_KINDS,
  hasGothicMonsterSculpt,addGothicMonsterSculpt
 } from '../src/monster-gothic-sculpt.js';
-import {HUMANOID_MONSTER_COSTUMES} from '../src/monster-character-cosplay-manifest.js';
+import {HUMANOID_MONSTER_COSTUMES,FEMALE_VAMPIRE_COSTUME,humanoidMonsterCostumeFor} from '../src/monster-character-cosplay-manifest.js';
 
 function geometryContract(g,label){
  const p=g.getAttribute('position'),normal=g.getAttribute('normal'),
@@ -46,7 +46,12 @@ const expected=[
  ['m045','dark_knight',['dark_knight-breastplate-','dark_knight-battle-torn-cloak']]
 ];
 const results=new Map();
-const femaleVampire=HUMANOID_MONSTER_COSTUMES.m034;
+const femaleVampire=humanoidMonsterCostumeFor('m034',{genderVariant:'female'});
+assert.equal(femaleVampire,FEMALE_VAMPIRE_COSTUME);
+assert.equal(femaleVampire.sex,'female');
+assert.equal(femaleVampire.modelId,'Superhero_Female_FullBody');
+assert.equal(humanoidMonsterCostumeFor('m034').modelId,'Superhero_Male_FullBody');
+assert.equal(femaleVampire.costume,'vampire');
 const gallery=readFileSync(new URL('../monster-manager.html',import.meta.url),'utf8');
 const manifest=readFileSync(
  new URL('../src/monster-character-cosplay-manifest.js',import.meta.url),'utf8');
@@ -126,6 +131,10 @@ const costumeSource=readFileSync(
 const manager=readFileSync(new URL('../monster-manager.html',import.meta.url),'utf8');
 assert.match(costumeSource,/addGothicMonsterSculpt\(/);
 assert.match(costumeSource,/gothicSculptEdition/);
+assert.match(costumeSource,/decorateMonsterPhotoMaterial/,
+ 'Bundled linen, velvet, leather and steel photo texture needed');
+assert.match(costumeSource,/detachMonsterPhotoMaterial/,
+ 'Shared photo-textures must detach from disposed instance materials');
 assert.match(costumeSource,/if\(!gothic&&costume==='mummy'\)/,
  'Do not draw old ribbon-string mummy over new linen fabric');
 assert.match(costumeSource,/if\(!gothic&&costume==='skeleton'\)/,
