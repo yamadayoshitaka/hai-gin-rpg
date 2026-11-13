@@ -65,6 +65,8 @@
     "test:creature-face-volume-batch": "node qa/creature-face-volume-batch.test.mjs",
     "batch:creature-face-quality": "npm run test:summon-quality && npm run test:creature-master-quality && npm run test:face-analysis",
     "test:creature-seams": "node qa/creature-fangs-garment-seam-batch.test.mjs",
-    "batch:creature-seam-quality": "npm run test:summon-quality && npm run test:creature-master-quality && npm run test:creature-seams"
+    "batch:creature-seam-quality": "npm run test:summon-quality && npm run test:creature-master-quality && npm run test:creature-seams",
+    "test:humanoid-monster-cosplay": "node qa/monster-character-cosplay-regression.test.mjs",
+    "batch:humanoid-monster-refresh": "npm run test:humanoid-monster-cosplay && npm run test:creature-master-quality && npm run test:summon-quality"
   }
 }
