@@ -199,7 +199,7 @@ export function alignStudioHeadToSkinnedTorso({
  const anatomicalInset=THREE.MathUtils.clamp(anatomicalHeadHeight*.10,.012,.028);
  const targetOriginalFaceBottomY=torsoTopY-anatomicalInset;
  const requestedCorrectionY=targetOriginalFaceBottomY-beforeMinY;
- const correctionY=THREE.MathUtils.clamp(requestedCorrectionY,-.09,maxLift);
+ const correctionY=THREE.MathUtils.clamp(requestedCorrectionY,-.20,maxLift);
  if(Math.abs(correctionY)>1e-5){
   const headOriginWorld=faceRoot.getWorldPosition(new THREE.Vector3());
   const desiredLocal=faceRoot.parent.worldToLocal(
