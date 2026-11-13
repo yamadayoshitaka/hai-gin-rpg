@@ -566,7 +566,14 @@ function bird(g,s){
  g.sphere(torso,'light',[0,1.26,.31],[.27,.26,.26]);
  g.bridge(torso,'skin',[0,1.58,.18],[0,2.04,.30],.24,.18);
  const head=g.group('head',[0,2.00,.31]);
- g.sphere(head,'skin',[0,.03,0],[.25,.29,.28]);
+ // Birds retain the keratin beak but gain a rounded occiput and a
+ // sculpted orbital rim as part of the same skull surface. Do not alter
+ // m015 Tengu's protected humanoid proportions.
+ if(s.id==='m015')g.sphere(head,'skin',[0,.03,0],[.25,.29,.28]);
+ else g.anatomicalLoft(head,'skin',
+   QUADRUPED_CRANIUM_RINGS.map(r=>({...r,
+     y:r.y*.97,rx:r.rx*.76,rz:r.rz*.77,cz:(r.cz-.05)*.70
+   })),{name:'avian-cranium-'+s.id,kind:'face',asymmetry:.03});
  g.spike(head,'accent',[0,-.07,.20],[0,-.20,.61],.13);
  g.eyes(head,.22,.08,.18,.046);
  for(let i=0;i<7+v*2;i++){
@@ -906,7 +913,12 @@ function seaSerpent(g,s){
  const tip=g.group('tailTip',[0,-.10,-.52],mid);
  g.fin(tip,'accent',[0,0,0],[0,.42,-.35],.18);
  const head=g.group('head',[0,1.11,.78]);
- g.sphere(head,'skin',[0,.03,.13],[.32,.26,.48]);
+ // Leviathan and sea serpent: sculpted organic cranium and deep temporal
+ // muscles instead of a flattened scaled sphere. Keep existing jaw pivot.
+ g.anatomicalLoft(head,'skin',
+   QUADRUPED_CRANIUM_RINGS.map(r=>({...r,
+     y:r.y*.91,rx:r.rx*.94,rz:r.rz*1.23,cz:r.cz+.09,
+   })),{name:'serpent-cranium-'+s.id,kind:'face',asymmetry:.10});
  g.bridge(head,'skin',[0,-.02,.22],[0,-.11,.67],.25,.13);
  g.sphere(head,'light',[0,-.13,.59],[.205,.105,.25]);
  g.eyes(head,.32,.09,.25,.042);
