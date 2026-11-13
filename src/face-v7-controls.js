@@ -6,6 +6,7 @@
  * The GLB file is a reference, not a new donor head or outfit.
  * Do not infer the preset from an image or from earlier v8 defaults.
  */
+import {resolveAgeBand,resolveBodyType} from './character-demographics-v47.js?v=47';
 export const LIBRARY_FACE_PRESET=Object.freeze({
  sourceFile:'female-saved-preset-contact-makeup-v8.glb',
  sha256:'aecac5a923a1f56a6c53eeaebbe5c987cb5685144058054391a92d479dc21060',
@@ -100,6 +101,8 @@ export function normalizeFemaleFaceControls(settings={}){
  }
  // Calculated compatibility field; legacy eyeSize inputs are ignored.
  out.eyeSize=Math.sqrt(out.eyeWidth*out.eyeHeight);
+ out.ageBand=resolveAgeBand(settings.ageBand).id;
+ out.bodyType=resolveBodyType(settings.bodyType).id;
  return out;
 }
 

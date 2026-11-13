@@ -16,6 +16,7 @@ import {ACTOR_VISUAL_TUNING,resolveActorVisualTuning} from './actor-visual-tunin
 import {checkHumanoidManifest,checkArmDirections} from './humanoid-visual-contract.js';
 import {retainSkinnedHead,attachFittedHeadHair,attachFaceParts} from './quaternius-head-bom.js?v=133.8';
 import {CHARACTER_MODEL_REGISTRY,validateCharacterForGame} from './character-model-registry.js';
+import {resolveAgeBand,resolveBodyType} from './character-demographics-v47.js?v=47';
 import {resolveBodyShape} from './character-cast-v46.js?v=46';
 import {createJobMotionController} from './character-system/job-motion-controller.js?v=3ee4423f';
 const root='./assets/characters/quaternius-outfits/';
@@ -73,10 +74,15 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    const height=bounds.max.y-bounds.min.y;
    if(!Number.isFinite(height)||height<=0)throw Error('Invalid full-body geometry '+baseId);
    const tuning=resolveActorVisualTuning(preset,host.userData?.indoorResident?'indoor':'outdoor');
-   const targetHeight=Math.max(1.35,Math.min(ACTOR_VISUAL_TUNING.bounds.maxRenderedHeight,tuning.targetHeight*tuning.scaleMultiplier));
+   let targetHeight=Math.max(1.35,Math.min(ACTOR_VISUAL_TUNING.bounds.maxRenderedHeight,tuning.targetHeight*tuning.scaleMultiplier));
+   const age=resolveAgeBand(preset.ageBand);
+   if(preset.ageBand&&!(age.id==='under10'&&preset.body==='child'))
+    targetHeight*=age.heightScale;
+   host.userData.npcAgeBand=age.id;
+   host.userData.npcBodyType=resolveBodyType(preset.bodyType).id;
    model.scale.setScalar(targetHeight/height);
-   const shape=resolveBodyShape(['heavy','full','sturdy','slim','child'].includes(preset.body)?
-    preset.body:'average');
+   const shape=preset.bodyType?resolveBodyType(preset.bodyType):
+    resolveBodyShape(['heavy','full','sturdy','slim','child'].includes(preset.body)?preset.body:'average');
    model.scale.x*=shape.width;model.scale.z*=shape.depth;
    host.userData.bodyShapeV46={...shape,id:preset.body};
    model.position.set(-bounds.getCenter(new THREE.Vector3()).x*model.scale.x,-bounds.min.y*model.scale.y,-bounds.getCenter(new THREE.Vector3()).z*model.scale.z);
@@ -265,14 +271,19 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
   if(!host.parent||!rig.root.parent)return false;
   const tuning=resolveActorVisualTuning(preset,host.userData?.indoorResident?'indoor':'outdoor');
   const isChild=preset.body==='child'||preset.id==='child';
-  const targetHeight=Math.max(isChild?1.35:1.57,Math.min(ACTOR_VISUAL_TUNING.bounds.maxRenderedHeight,tuning.targetHeight*tuning.scaleMultiplier));
+  let targetHeight=Math.max(isChild?1.35:1.57,Math.min(ACTOR_VISUAL_TUNING.bounds.maxRenderedHeight,tuning.targetHeight*tuning.scaleMultiplier));
+   const age=resolveAgeBand(preset.ageBand);
+   if(preset.ageBand&&!(age.id==='under10'&&preset.body==='child'))
+    targetHeight*=age.heightScale;
+   host.userData.npcAgeBand=age.id;
+   host.userData.npcBodyType=resolveBodyType(preset.bodyType).id;
   // A precise skinned-mesh bound is required; default cached bounds can reflect bind pose.
   const measure=()=>{model.updateMatrixWorld(true);return new THREE.Box3().setFromObject(model,true);};
   const sourceBounds=measure(),sourceHeight=sourceBounds.max.y-sourceBounds.min.y;
   if(!Number.isFinite(sourceHeight)||sourceHeight<=0)throw Error('Invalid asset geometry: '+id);
   model.scale.setScalar(targetHeight/sourceHeight);
-   const shape=resolveBodyShape(['heavy','full','sturdy','slim','child'].includes(preset.body)?
-    preset.body:'average');
+   const shape=preset.bodyType?resolveBodyType(preset.bodyType):
+    resolveBodyShape(['heavy','full','sturdy','slim','child'].includes(preset.body)?preset.body:'average');
    model.scale.x*=shape.width;model.scale.z*=shape.depth;
    host.userData.bodyShapeV46={...shape,id:preset.body};
   model.updateMatrixWorld(true);

@@ -524,7 +524,11 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   // Negative relative to the UNCARVED skin: the eye is now seated inside
   // the socket, not floating over it. Depth control adjusts the socket view
   // gently instead of pushing the whole globe outside the eyeliner.
-  const eyeSurfaceLift=baseEyeRadius*(-.20+settings.eyeDepth*.045);
+  // v47: recenter the cornea to the actual upper/lower lid lip.
+  // A -0.20R baseline buried the 3D iris and sclera even when their
+  // eyeliner was visible. Positive = towards camera (+Z). Keep < 0
+  // so frontal eyelashes still sit naturally above the corneal dome.
+  const eyeSurfaceLift=baseEyeRadius*(-.055+settings.eyeDepth*.045);
   const eyeDomeHeight=baseEyeRadius*anteriorGlobeRatio;
   const insetZ=(px,py)=>{
    const tx=clamp((px-x)/width,-1,1);
@@ -575,6 +579,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   eyePatch.userData.v33OrbitalSkinFrontEnvelope=orbitFrontZ;
   eyePatch.userData.skinBlendRestrictedToEyelidRim=true;
   eyePatch.userData.anteriorClearanceRatio=(z-faceZ)/eyeRadius;
+  eyePatch.userData.corneaFitVersion='v47-lid-aligned-not-sunken';
   eyePatch.userData.eyelinerToCenterBulge=true;
   eyePatch.userData.irisFitsApertureWithoutClamp=true;
   eyePatch.userData.eyelinerToCenterBulgeFraction=anteriorGlobeRatio;

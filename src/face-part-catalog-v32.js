@@ -6,6 +6,7 @@
  * construction and the hair styles build volumetric layered hair-card meshes.
  */
 import {WIG_BASE_VOLUME_PROFILES} from './face-wig-styles.js?v=35';
+import {resolveAgeBand,resolveBodyType} from './character-demographics-v47.js?v=47';
 export const PART_GROUPS=Object.freeze(['face','eye','nose','mouth','hair','makeup']);
 export const PART_GROUP_LABELS=Object.freeze({
  face:'顔立ち',eye:'目',nose:'鼻',mouth:'口',
@@ -37,7 +38,7 @@ export const OFFSET_CHOICES=Object.freeze([
 ]);
 export const ANGLE_CHOICES=Object.freeze([-12,-6,0,6,12]);
 export function defaultPartSelection(){
- return {face:0,eye:0,nose:0,mouth:0,hair:0,makeup:0,hairColor:'blonde',hairVolume:'natural',
+ return {face:0,eye:0,nose:0,mouth:0,hair:0,makeup:0,hairColor:'blonde',hairVolume:'natural',ageBand:'twenties',bodyType:'normal',
   eyeX:0,eyeY:0,eyeZ:0,eyeAngle:0,
   noseX:0,noseY:0,noseZ:0,noseAngle:0,
   mouthX:0,mouthY:0,mouthZ:0,mouthAngle:0,
@@ -51,7 +52,9 @@ export function normalizePartSelection(input={}){
   Math.max(0,PART_CATALOG.female[group].length-1));
  out.hairColor=HAIR_COLORS[input.hairColor]?input.hairColor:'blonde';
  out.hairVolume=WIG_BASE_VOLUME_PROFILES[input.hairVolume]?input.hairVolume:'natural';
- for(const key of Object.keys(out).filter(k=>!PART_GROUPS.includes(k)&&k!=='hairColor'&&k!=='hairVolume')){
+ out.ageBand=resolveAgeBand(input.ageBand).id;
+ out.bodyType=resolveBodyType(input.bodyType).id;
+ for(const key of Object.keys(out).filter(k=>!PART_GROUPS.includes(k)&&k!=='hairColor'&&k!=='hairVolume'&&k!=='ageBand'&&k!=='bodyType')){
   const n=Number(input[key]);
   out[key]=Number.isFinite(n)?clamp(Math.round(n),
    key.toLowerCase().includes('angle')?-12:-2,
@@ -71,6 +74,7 @@ export function resolvePartSelection(gender,raw={},legacy={}){
  const makeup=catalog.makeup[selection.makeup].values;
  const controls={
   ...legacy,...face,...eye,...nose,...mouth,
+  ageBand:selection.ageBand,bodyType:selection.bodyType,
   // Discrete adjustment applies to both the face's ORIGINAL sculpted skin
   // and the linked 3D parts. No independent eyeScale slider.
   eyeSpacing:1.1+selection.eyeX*.045,

@@ -20,7 +20,7 @@ test('male and female have ten coherent complete-face shapes preserving hair',()
    assert.notDeepEqual(actual.controls,{});
    const beauty=polishHeroFaceControls(gender,actual.controls);
    assert.ok(beauty.irisDiameter>= (gender==='female'?1.19:1.08));
-   assert.ok(beauty.eyeDepth<= (gender==='female'?-.18:-.13));
+   assert.ok(beauty.eyeDepth>= (gender==='female'?.045:.035));
   }
  }
 });
