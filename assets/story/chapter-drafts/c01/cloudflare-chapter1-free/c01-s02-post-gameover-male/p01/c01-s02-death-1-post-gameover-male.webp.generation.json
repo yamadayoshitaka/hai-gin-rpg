@@ -1,0 +1,62 @@
+{
+  "kind": "CLOUDFLARE_REAL_WEBP_REVIEW_CANDIDATE_NOT_APPROVED",
+  "shotKey": "c01-s02|post-gameover|male|c01-s02-death-1",
+  "stageId": "c01-s02",
+  "edition": "post-gameover",
+  "gender": "male",
+  "panelId": "c01-s02-death-1",
+  "screenplayText": "主人公の軍師が戦死した。指揮を失い、物語はゲームオーバーとなる。",
+  "visibleActorIds": [
+    "commander_male",
+    "garan",
+    "iris"
+  ],
+  "actualReferenceImagesAttached": [
+    {
+      "actorId": "commander_male",
+      "source": "assets/story/panels/c01-s01-m01.webp",
+      "originalSha256": "cb7267de06efafb1a0188a0e9010aba7c6af160fac401173de2da443392a1133",
+      "submittedSha256": "b3828c989ab843034e6a0a7e1f55fa3b099a4b9ca3fa05602c5d244031e5dd2e",
+      "actualBytes": 316698,
+      "pixels": [
+        480,
+        270
+      ]
+    },
+    {
+      "actorId": "garan",
+      "source": "assets/story-cinema/cast/garan.webp",
+      "originalSha256": "aeb457957485f89244eb0b4f270b72e4bf0670341f2444ac7f43299222075a8b",
+      "submittedSha256": "30c17f9c9f97f0f7a5f66ce2e6f03a711d2ebfb697de0c6a8a84545f9c96cc3c",
+      "actualBytes": 262661,
+      "pixels": [
+        329,
+        480
+      ]
+    },
+    {
+      "actorId": "iris",
+      "source": "assets/story-cinema/cast/iris.webp",
+      "originalSha256": "6b9b49a242f75b39abd8c6ab2084ce50592b8d98c73443a360ab06e041ceadea",
+      "submittedSha256": "1393acc01d44b7907169c469d36fc47844e5ccc1b305c5b4f67f0501470d6741",
+      "actualBytes": 193906,
+      "pixels": [
+        329,
+        480
+      ]
+    }
+  ],
+  "imageSha256": "bbb18f417f849acf8b2a8d1cc184e7bbc6f75dbd2abb7008b2f01621892f8da8",
+  "nativePixels": [
+    1024,
+    576
+  ],
+  "imageBytes": 161400,
+  "model": "@cf/black-forest-labs/flux-2-klein-4b",
+  "seed": 90335612,
+  "promptSha256": "184edf3f9b2506ca698cdad3a15eede94ccde8531a9f426092d52a4c9ccb81e0",
+  "estimatedNeurons": 120.31,
+  "visuallyApproved": false,
+  "formallyRegistered": false,
+  "gameDeployed": false
+}
