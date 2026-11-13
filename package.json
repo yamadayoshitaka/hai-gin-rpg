@@ -62,6 +62,7 @@
     "test:creature-dragon-realism": "node qa/creature-dragon-realism-regression.test.mjs",
     "test:creature-face-mouth": "node qa/creature-face-mouth-saddle-regression.test.mjs",
     "test:dragonlord-seam": "node qa/dragonlord-cranium-jaw-seam.test.mjs",
-    "test:creature-face-volume-batch": "node qa/creature-face-volume-batch.test.mjs"
+    "test:creature-face-volume-batch": "node qa/creature-face-volume-batch.test.mjs",
+    "batch:creature-face-quality": "npm run test:summon-quality && npm run test:creature-master-quality && npm run test:face-analysis"
   }
 }
