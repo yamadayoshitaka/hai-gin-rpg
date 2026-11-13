@@ -6,8 +6,8 @@ import {measureHeadLocalBounds} from './character-system/hair-attachment-runtime
 import {createHeroineBattleActionVfx} from './heroine-battle-action-vfx.js?v=40';
 import {resolveBodyShape} from './character-cast-v46.js?v=46';
 import {resolveDemographicProfile,resolveBodyType,resolveAgeBand}
- from './character-demographics-v47.js?v=48';
-import {applySkinnedBuildMorph} from './body-build-morph-v48.js?v=48';
+ from './character-demographics-v47.js?v=51';
+import {applySkinnedBuildMorph} from './body-build-morph-v48.js?v=51';
 
 /**
  * Reuse EXACT game battle clothing: Female_Ranger / Female_Peasant skinned GLTF,
@@ -21,8 +21,8 @@ import {applySkinnedBuildMorph} from './body-build-morph-v48.js?v=48';
  */
 export const HEROINE_STUDIO_BODY_SCALE=.84;
 export const HERO_STUDIO_MALE_BODY_SCALE=.84;
-export const HEROINE_STUDIO_HEAD_LIFT=.44;
-export const HEROINE_STUDIO_HEAD_FORWARD=.16;
+export const HEROINE_STUDIO_HEAD_LIFT=.18;
+export const HEROINE_STUDIO_HEAD_FORWARD=.10;
 
 export function fitStudioFaceAboveArmor({actorRoot,faceRoot,faceFit,bodyScale=HEROINE_STUDIO_BODY_SCALE}){
  if(!actorRoot?.isObject3D||!faceRoot?.isObject3D||!faceFit?.targetSize)
@@ -96,6 +96,51 @@ export function enhanceStudioCombatMaterials(wardrobeRoot){
  return {armorMaterials,fabricMaterials,preservedTextures,sourceAssetsPreserved:true};
 }
 
+
+/**
+ * Preview-only skin PBR pass. Cloning leaves cached GLTF materials untouched.
+ * Keep original color, UV, normal and roughness texture maps.
+ */
+export function enhanceStudioBodyMaterials(characterModel){
+ if(!characterModel?.traverse)throw Error('Real skinned body required');
+ let skinMaterials=0,preservedTextures=0;
+ characterModel.traverse(mesh=>{
+  if(!mesh.isSkinnedMesh||!mesh.material)return;
+  const originals=Array.isArray(mesh.material)?mesh.material:[mesh.material];
+  const changed=originals.map(source=>{
+   if(!source?.isMeshStandardMaterial)return source;
+   const name=(mesh.name+' '+(source.name||'')).toLowerCase();
+   if(!/skin|body|torso|hand|arm|neck|face|leg|foot/.test(name)||
+    /armor|metal|shield|blade|weapon|fabric|cloth|trouser|pants|leather|eye|lash|brow/.test(name))
+    return source;
+   const surface=source.clone();
+   if(surface.map||surface.normalMap||surface.roughnessMap)preservedTextures++;
+   surface.metalness=0;
+   surface.roughness=THREE.MathUtils.clamp(surface.roughness,.64,.78);
+   surface.needsUpdate=true;skinMaterials++;
+   return surface;
+  });
+  mesh.material=Array.isArray(mesh.material)?changed:changed[0];
+ });
+ return {skinMaterials,preservedTextures,originalMaterialsUntouched:true,previewOnly:true};
+}
+
+/**
+ * Garment removal must also restore the rigged torso/arms.
+ * The body coverage cache is created after the original donor face is cut,
+ * so restoring skin will never resurrect the old eye sockets.
+ */
+export function syncStudioBodyOutfitVisibility(characterModel,outfit,{showBody=true,showOutfit=true}={}){
+ characterModel?.traverse?.(object=>{
+  if(!object.isSkinnedMesh)return;
+  if(/^(eyes|eyebrows)$/i.test(object.name)){object.visible=false;return;}
+  object.visible=!!showBody;
+ });
+ outfit?.setBodyOcclusion?.(!!(showBody&&showOutfit));
+ if(outfit?.root)outfit.root.visible=!!(showBody&&showOutfit);
+ return {bodyVisible:!!showBody,outfitVisible:!!(showBody&&showOutfit),
+  bodyOccludedByGarment:!!(showBody&&showOutfit)};
+}
 
 /**
  * Costume-only fitting pass. The source GLTFs remain intact:
@@ -172,7 +217,7 @@ export function refineHeroineCostumeSilhouette(wardrobeRoot,{gender='female',job
   sourceGeometryUnmodified:true};
 }
 
-import {applyHeroineSkinMaterial} from './heroine-skin-material.js?v=41';
+import {applyHeroineSkinMaterial} from './heroine-skin-material.js?v=51';
 export function enhanceHeroineFaceSurface(face){
  return applyHeroineSkinMaterial(face);
 }
@@ -336,6 +381,9 @@ export async function createRealBattleOutfitStudio({scene,faceModel,getFaceModel
    jobs,faceQuality:'hero',faceId:gender==='male'?'hero-boy-01':'hero-girl-01'});
   let clothing;
   try{
+   // Remove old face before the clothing library caches body geometry.
+   const cut=hideBattleDonorFace(fresh.model);
+   const skinSurface=enhanceStudioBodyMaterials(fresh.model);
    clothing=await buildRiggedJobOutfit({characterModel:fresh.model,
     parent:fresh.object3D,job:chosen.name,sex:gender,quality:'preview',
     preserveBody:false,rarity:'N',studioPreferSkinnedLegs:true,
@@ -346,8 +394,7 @@ export async function createRealBattleOutfitStudio({scene,faceModel,getFaceModel
    clothing.setHairVisible(false);clothing.setHelmetVisible(false);
    finishReport=enhanceStudioCombatMaterials(clothing.root);
    const silhouetteReport=refineHeroineCostumeSilhouette(clothing.root,{gender,job:chosen.heroJob});
-   finishReport={...finishReport,...silhouetteReport};
-   const cut=hideBattleDonorFace(fresh.model);
+   finishReport={...finishReport,...silhouetteReport,skinSurface};
    // Only the independent artist face owns eye and lid rendering.
    fresh.face?.setAutoBlink?.(false);
    fresh.face?.holdBlink?.(0);
@@ -362,7 +409,7 @@ export async function createRealBattleOutfitStudio({scene,faceModel,getFaceModel
    // Always graft the newest live face, never an already-disposed preview.
    const latestFace=getFaceModel?.()||faceModel;
    headRoot=latestFace.root;face=latestFace.face;
-   if(gender==='female')enhanceHeroineFaceSurface(face);
+   enhanceHeroineFaceSurface(face);
    scene.add(actor.object3D);
    headFit=attachIndependentFaceToBattleHead({faceRoot:headRoot,
     faceMesh:face,characterModel:actor.model,
@@ -372,7 +419,6 @@ export async function createRealBattleOutfitStudio({scene,faceModel,getFaceModel
     bodyScale:gender==='male'?HERO_STUDIO_MALE_BODY_SCALE:HEROINE_STUDIO_BODY_SCALE});
    applyBodyShape();
    setBodyVisible(!hiddenBody);
-   outfit.root.visible=!hiddenBody&&outfitShown;
    vfx=createHeroineBattleActionVfx({THREE,actorRoot:actor.object3D,
     camera:scene.userData.studioPreviewCamera});
    nativeCommand=null;nativeClip=null;
@@ -421,17 +467,13 @@ export async function createRealBattleOutfitStudio({scene,faceModel,getFaceModel
  }
  function setBodyVisible(show){
   hiddenBody=!show;
-  if(!actor)return;
-  actor.model.traverse(object=>{
-   if(!object.isSkinnedMesh)return;
-   if(/^(eyes|eyebrows)$/i.test(object.name)){object.visible=false;return;}
-   object.visible=show;
-  });
-  if(outfit)outfit.root.visible=show&&outfitShown;
+  if(actor)syncStudioBodyOutfitVisibility(actor.model,outfit,
+   {showBody:!hiddenBody,showOutfit:outfitShown});
  }
  function setOutfitVisible(show){
   outfitShown=!!show;
-  if(outfit)outfit.root.visible=!hiddenBody&&outfitShown;
+  if(actor)syncStudioBodyOutfitVisibility(actor.model,outfit,
+   {showBody:!hiddenBody,showOutfit:outfitShown});
  }
  function applyBodyShape(){
   if(!actor?.object3D||!headFit)return;
@@ -478,7 +520,7 @@ export async function createRealBattleOutfitStudio({scene,faceModel,getFaceModel
  function attachFace(next){
   if(!next?.root||!next.face)throw Error('Updated face required');
   headRoot=next.root;face=next.face;
-  if(gender==='female')enhanceHeroineFaceSurface(face);
+  enhanceHeroineFaceSurface(face);
   if(actor){
    headFit=attachIndependentFaceToBattleHead({
     faceRoot:headRoot,faceMesh:face,characterModel:actor.model,
