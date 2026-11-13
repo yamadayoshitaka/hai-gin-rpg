@@ -56,6 +56,28 @@ const byVariant=new Map(stage.variants.map(v=>[v.edition+'|'+v.gender,v]));
 if(contract.variants.length!==byVariant.size)
  throw Error('Canonical script changed: variant count differs from stage manifest');
 const imageRules=contract.renderConstraints;
+const priority=contract.criticalPriorityPolicy;
+if(!priority||priority.priority!=='P0_ABSOLUTE_MUST_FOLLOW'||
+ !priority.failClosed||!priority.mandatoryAtPromptStart||
+ !priority.mandatoryAtVariantPosterStart)
+ throw Error('P0 absolute image quality contract missing or weakened');
+const priorityFile=path.join(root,priority.rulesPath);
+if(!fs.existsSync(priorityFile))throw Error('P0 policy file is absent');
+const policy=JSON.parse(fs.readFileSync(priorityFile,'utf8'));
+if(policy.priority!=='P0_ABSOLUTE_MUST_FOLLOW'||!policy.failClosed||
+ !policy.referenceRule.actualBytesMustBeAttached||
+ policy.imageRule.textAllowed!==false)
+ throw Error('P0 policy is missing required rules');
+for(const variant of stage.variants)for(const page of variant.pages)for(const shot of page.panels){
+ if(!shot.generationPrompt.startsWith('P0_ABSOLUTE_MUST_FOLLOW.')||
+  shot.absolutePriority!=='P0_ABSOLUTE_MUST_FOLLOW'||
+  shot.realCastImageBytesAttached!==false||shot.renderReady!==false||
+  !shot.generationPrompt.includes('P0_NO_TEXT_UI_IN_ART')||
+  !shot.generationPrompt.includes('P0_REFERENCE_IMAGE_BYTES')||
+  !shot.generationPrompt.includes(shot.scriptText))
+  throw Error('Unsafe/missing absolute P0 per-shot instructions '+shot.shotKey);
+}
+
 const sourceOutcomes=[];
 for(const v of contract.variants){
  const key=v.edition+'|'+v.gender;
@@ -82,6 +104,10 @@ for(const v of contract.variants){
   cropOnlyIfNativePixelsAtLeast:v.posterMinNativePixels,
   status:sourceExists?'SOURCE_READY_NEEDS_VERIFICATION':'MISSING_SOURCE_POSTER'});
  const noTextContract=[
+  'P0_ABSOLUTE_MUST_FOLLOW. ALL BELOW ARE HARD REJECTION GATES; THE IMAGE MUST CONTAIN NO LETTERS, DIGITS, JAPANESE TEXT OR USER INTERFACE.',
+  'P0_REFERENCE_IMAGE_BYTES: original cast images must be actually attached; path strings DO NOT count. If missing, BLOCKED/REJECTED, not generated.',
+  'P0_EXACT_CANONICAL_SCENE: current scene and outcome only, continuity only for previous/next; never invent scenes or substitute characters.',
+  'P0_VISUAL_QA: if any text/UI, cast mismatch, wrong outcome or insufficient detail, REJECT. Never approve, register or publish automatically.',
   'IMAGE-ONLY INSTRUCTIONS. Make an unlettered cinematic fantasy comic illustration grid.',
   'This is NOT a poster, advertisement, infographic, storyboard printout, dashboard, report, game interface or formatted mock-up.',
   'Exactly TWO COLUMNS and '+Math.ceil(v.count/2)+' ROWS, '+v.count+
@@ -106,6 +132,9 @@ for(const v of contract.variants){
   stageId,variant:key,sourcePoster:source,expectedNativeSheet:v.posterMinNativePixels,
   strictPictorialOnlyPrompt:noTextContract,scriptBeats:picturedBeats,
   requiresImageReferenceBytes:true,
+  absolutePriority:'P0_ABSOLUTE_MUST_FOLLOW',
+  failClosedOnMissingRealCastBytes:true,
+  visualQualityRequiresHumanApproval:true,
   inImageTextAllowed:false,
   bytesPresent:sourceExists,
   textAndNumberScan:'VISUAL_REVIEW_REQUIRED_NOT_AUTOMATED',
@@ -123,9 +152,14 @@ compiled.qualityApproved=false;
 compiled.deployed=false;
 compiled.sourcePosters=sourceOutcomes;
 compiled.renderConstraints=imageRules;
+compiled.criticalPriorityPolicy=priority;
+compiled.p0CompliantPromptsReady=true;
+compiled.generationBlockedUntilReferenceImagesActuallyAttached=true;
 fs.writeFileSync(path.join(root,manifestRel),JSON.stringify(compiled,null,2)+'\n');
 const brief={
  stageId,kind:'SINGLE_STAGE_ARTWORK_INPUT_BRIEFS_NOT_RENDERED',
+ absolutePriority:'P0_ABSOLUTE_MUST_FOLLOW',
+ allGenerationBlockedUntilActualImageBytesAttached:true,
  complete:false,imageGeneratorConnected:false,
  literalCanvasTextProhibited:true,
  originalSceneCount:stage.requiredIndividualImages,
@@ -152,6 +186,8 @@ const review=!prepareOnly&&fs.existsSync(reviewPath)?
  JSON.parse(fs.readFileSync(reviewPath,'utf8')):null;
 const summary={
  stageId,oneInvocationOneStage:true,requiredVariantPosters:contract.variants.length,
+ p0Priority:'P0_ABSOLUTE_MUST_FOLLOW',
+ p0NotRenderedWithoutActualCastBytes:true,
  requiredPanels:stage.requiredIndividualImages,
  alreadyRegisteredUnapproved:stage.alreadyRegisteredDraftImages,
  missingCanonicalArtwork:stage.missingIndividualImages,

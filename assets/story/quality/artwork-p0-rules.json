@@ -1,0 +1,98 @@
+{
+  "schemaVersion": 1,
+  "policyId": "RPG_ART_P0_ABSOLUTE_NO_IMAGE_TEXT_AND_REAL_CAST",
+  "priority": "P0_ABSOLUTE_MUST_FOLLOW",
+  "appliesTo": "EVERY_STAGE_EVERY_GENDER_EVERY_OUTCOME_EVERY_SHOT",
+  "instruction": "ABSOLUTE PRIORITY. These are non-negotiable generation constraints. If any P0 condition is violated or cannot be verified, return REJECTED/NOT_READY, never claim approval.",
+  "ordering": [
+    "P0_REFERENCE_IMAGE_BYTES",
+    "P0_NO_TEXT_UI_IN_ART",
+    "P0_EXACT_CANONICAL_SCENE",
+    "P0_GENDER_OUTCOME_ISOLATION",
+    "P0_NATIVE_DETAIL_AND_VISUAL_QA",
+    "P1_COMPOSITION_STYLE"
+  ],
+  "failClosed": true,
+  "referenceRule": {
+    "actualBytesMustBeAttached": true,
+    "filePathsAloneDoNotCount": true,
+    "missingReferenceResult": "BLOCKED_MISSING_MASTER_IMAGE_BYTES",
+    "sameActorEveryFrame": true,
+    "heroine": "blonde long hair, blue eyes, ornate silver armor; not Lucia",
+    "hero": "dark hair; not Garan",
+    "doNotChangeSupportingCharacters": true,
+    "previousApprovedShotBytesForContinuity": true,
+    "provisionalReferencesAreNotApproved": true
+  },
+  "imageRule": {
+    "permitted": "Pure scene illustration only; not a screenshot, UI, formatted page, contact sheet, informational display or poster.",
+    "textAllowed": false,
+    "uiAllowed": false,
+    "numberAllowed": false,
+    "prohibited": [
+      "kanji",
+      "hiragana",
+      "katakana",
+      "Latin letters",
+      "Arabic digits",
+      "panel numbers",
+      "chapter labels",
+      "dialogue",
+      "narration",
+      "speech bubbles",
+      "ruby readings",
+      "subtitles",
+      "game HUD",
+      "menus",
+      "buttons",
+      "cards",
+      "banners",
+      "watermarks",
+      "signatures",
+      "logos",
+      "infographics",
+      "readable documents/map text",
+      "decorative text"
+    ],
+    "metadataStorage": "JSON outside raster only",
+    "forbidFauxText": true
+  },
+  "storyRule": {
+    "exactCurrentShotOnly": true,
+    "loadCanonicalScriptEachTime": true,
+    "previousNextAreContinuityOnly": true,
+    "noInventedCharacters": true,
+    "noOutcomeLeaks": true,
+    "noReuseAcrossOutcome": true,
+    "noHeroGenderSwaps": true,
+    "sceneKey": "stageId|edition|gender|panelId"
+  },
+  "technicalRule": {
+    "minimumNativePixels": [
+      1536,
+      864
+    ],
+    "preferredNativePixels": [
+      2048,
+      1152
+    ],
+    "landscapeAspect": "16:9",
+    "output": "webp",
+    "noUpscaledFakeResolution": true,
+    "faceHandsImportantItemsInsidePercent": 5,
+    "qualityReferenceReview": true
+  },
+  "qualityGates": [
+    "HAS_ACTUAL_ATTACHED_CAST_BYTES_OR_BLOCK",
+    "EXACT_SCRIPT_AND_OUTCOME_HUMAN_REVIEW",
+    "ACTOR_FACE_HAIR_CLOTHING_MATCH_HUMAN_REVIEW",
+    "NO_TEXT_UI_NUMBERS_HUMAN_REVIEW",
+    "NATIVE_DIMENSIONS_ASPECT_AND_WEBP_DECODE",
+    "SHA256_AND_SOURCE_PROVENANCE",
+    "APPROVED_REFERENCE_SIDE_BY_SIDE_REVIEW",
+    "REJECT_ON_ANY_FAILURE_AND_DO_NOT_PUBLISH"
+  ],
+  "processStatusWithoutRenderer": "PREFLIGHT_ONLY_NO_IMAGES_GENERATED",
+  "onViolation": "REJECTED_NO_GAME_REGISTRATION_NO_DEPLOYMENT",
+  "extraCosts": "NO_PAID_IMAGE_API_CALLS"
+}
