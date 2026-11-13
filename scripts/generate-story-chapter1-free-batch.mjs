@@ -193,7 +193,15 @@ for(const pg of pages){
    try{response=await fetch(api,{method:'POST',
     headers:{Authorization:'Bearer '+token,Accept:'application/json'},body:form,
     signal:controller.signal});}finally{clearTimeout(timer);}
-   if(!response.ok)throw Error('FREE_API_STOP_NO_RETRY_HTTP_'+response.status);
+   if(!response.ok){
+    // The API can return HTTP 400 for free-quota enforcement as well as malformed inputs.
+    // Log only provider error code / a sanitized short message, never account ID or token.
+    const detail=await response.json().catch(()=>null);
+    const reason=(Array.isArray(detail?.errors)?detail.errors:[]).map(e=>
+     String(e.code||'')+':'+String(e.message||'')).join('; ').slice(0,300);
+    const safe=reason.replaceAll(token,'[TOKEN_REDACTED]').replaceAll(acct,'[ACCOUNT_REDACTED]');
+    throw Error('FREE_API_STOP_NO_RETRY_HTTP_'+response.status+' '+safe);
+   }
    const body=await response.json(),encoded=body?.result?.image;
    if(body?.success===false||typeof encoded!=='string'||encoded.length<2000||
     (Array.isArray(body.result?.images)&&body.result.images.length!==1))
