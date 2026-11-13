@@ -2,7 +2,7 @@
 /** Real mobile Chromium regression: jaw must remain visible above the cuirass. */
 const {chromium}=require('playwright');
 const fs=require('node:fs');
-const out='qa-screenshots/human-neck-v52';
+const out='qa-screenshots/human-neck-v55';
 fs.mkdirSync(out,{recursive:true});
 (async()=>{
  // Each gender owns its own Chromium process. Reusing a page for both large
@@ -21,7 +21,7 @@ fs.mkdirSync(out,{recursive:true});
    page.on('pageerror',error=>errors.push(error.message));
    // Committed navigation is enough; readiness is checked against live 3D
    // outfit + clearance metadata, not page-loaded timing.
-   await page.goto('http://127.0.0.1:8766/'+path+'?v=53',
+   await page.goto('http://127.0.0.1:8766/'+path+'?v=55',
     {waitUntil:'commit',timeout:120000});
    await page.waitForFunction(key=>{
     const state=window[key]?.();
@@ -33,8 +33,12 @@ fs.mkdirSync(out,{recursive:true});
    let state=await page.evaluate(key=>window[key](),qa);
    let fit=state.v36RealBattleCostume.proportions.neckClearance;
    const alignment=state.v36RealBattleCostume.proportions.headAlignment;
-   if(!(alignment?.applied&&alignment.gapMeters>=.006))
-    throw Error(gender+' head is still buried in the body: '+JSON.stringify(alignment));
+   if(!(alignment?.applied&&
+        Math.abs(alignment.gapMeters+alignment.anatomicalInset)<.006))
+    throw Error(gender+' source head improperly seated relative to torso: '+JSON.stringify(alignment));
+   const neckShape=state.v36RealBattleCostume.proportions.neckContinuity;
+   if(!(neckShape?.applied&&neckShape.neckToHeadRatio<.22))
+    throw Error(gender+' neck is too long: '+JSON.stringify(neckShape));
    if(!(fit.chestPieces>0&&fit.clearanceMeters>=.007))
     throw Error(gender+' mouth hidden by cuirass: '+JSON.stringify(fit));
    await page.locator('#front').click();
