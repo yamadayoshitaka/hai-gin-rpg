@@ -1,0 +1,58 @@
+import assert from 'node:assert/strict';
+import crypto from 'node:crypto';
+import fs from 'node:fs';
+import path from 'node:path';
+import {fileURLToPath} from 'node:url';
+const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
+const read=p=>JSON.parse(fs.readFileSync(path.join(root,p),'utf8'));
+const dir='assets/story/chapter-drafts/c01/pending-art-review/c01-s02-post-victory-female';
+const contract=read('assets/story/stage-manifests/c01-s02.manifest.json');
+const locked=read('assets/story/stage-manifests/c01-s02-shot-assignments.json');
+assert.equal(contract.continuation.existingSceneCount,23);
+assert.equal(contract.continuation.remainingSceneCount,25);
+assert.equal(contract.continuation.newActualRegisteredWebps,0);
+const group=contract.continuation.pendingGroups.find(x=>x.edition==='post-victory'&&x.gender==='female');
+assert(group);
+const pages=group.reviewSheets;
+assert.deepEqual(pages.map(p=>p.panels.length),[5,2]);
+let good=0;
+const hashes=new Set();
+for(let n=1;n<=2;n++){
+ const folder=dir+'/p'+String(n).padStart(2,'0');
+ const info=read(folder+'/page-'+String(n).padStart(2,'0')+'-review.json');
+ assert.equal(info.stageId,'c01-s02');
+ assert.equal(info.edition,'post-victory');
+ assert.equal(info.gender,'female');
+ assert.equal(info.page,n);
+ const sources=info.actualSources||info.sources;
+ const ids=info.panelOrder||info.panelIds;
+ assert.equal(sources.length,pages[n-1].panels.length);
+ assert.deepEqual(ids,pages[n-1].panels);
+ for(let i=0;i<sources.length;i++){
+  const p=sources[i];
+  const name=ids[i];
+  assert.equal(p.panelId,name);
+  assert(locked.entries['post-victory|female|'+name]);
+  assert(p.path.startsWith(folder+'/'));
+  const bytes=fs.readFileSync(path.join(root,p.path));
+  assert.equal(bytes.toString('ascii',0,4),'RIFF');
+  assert.equal(bytes.toString('ascii',8,12),'WEBP');
+  assert(bytes.length>100_000);
+  assert.equal(bytes.length,p.bytes);
+  const sha=crypto.createHash('sha256').update(bytes).digest('hex');
+  assert.equal(sha,p.sha256);
+  assert(!hashes.has(sha));
+  hashes.add(sha);
+  const pixels=p.nativePixels||[p.nativeWidth,p.nativeHeight];
+  assert(pixels[0]>=768&&pixels[1]>=320);
+  assert.equal(pixels[0],1672);
+  assert.equal(pixels[1],941);
+  assert.equal(p.characterMasterIdentityApproved??p.characterIdentityApproved,false);
+  assert.equal(p.noTextHumanApproved??p.textlessHumanApproved,false);
+  assert.equal(p.screenplayAccuracyApproved??p.scriptExactnessApproved,false);
+  good++;
+ }
+}
+assert.equal(good,7);
+assert.equal(hashes.size,7);
+console.log('PASS: 7 actual distinct 1672x941 WebP original candidates stored as page commits 5 + 2; existing 23 game frames untouched, 18 still missing, 0 approvals/registrations.');
