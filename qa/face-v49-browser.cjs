@@ -49,7 +49,13 @@ fs.mkdirSync(out,{recursive:true});
      ['female-twin-braids','two-interwoven-plaits'],
      ['female-side-ponytail','side-ponytail']
     ]){
-     await page.locator('#wigStyle').selectOption(style);
+     // The old #wigStyle is intentionally HIDDEN in modern v32 mode.
+     // Operate the real, user-visible 24-cut part selector instead.
+     const index={
+      'female-low-bun':20,'female-twin-braids':19,
+      'female-side-ponytail':23
+     }[style];
+     await page.locator('#v32FemaleHair').selectOption(String(index));
      await page.waitForFunction(([style,kind])=>{
       const r=window.__faceMasterQA().wigReport;
       return r?.hairstyleId===style&&r.v49StyledHairType===kind&&
