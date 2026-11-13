@@ -1,4 +1,5 @@
 import {applyMonsterBiologicalMotion} from './monster-joint-motion.js';
+import {monsterLeapPose,applyMonsterLeapMotion} from './monster-leap-kinematics.js?v=1';
 /** Per-species, per-part procedural animation for bestiary inspection.
  * Separate head, jaws, limbs, wings and tentacles keep animation readable.
  */
@@ -35,6 +36,7 @@ export function animateMonsterModel(model,time=0){
  const hit=action==='hit'?pulse:0;
  const dodge=action==='dodge'?pulse:0;
  const leaping=action==='leap'?pulse:0;
+ const leap=action==='leap'?monsterLeapPose(progress,model.userData.surfaceFamily):null;
  const dying=action==='defeat'?progress:0;
  const sway=Math.sin(motionTime*2.1)*.027*(1-dying);
  // Rare, brief eye closure with a per-species offset. No random state,
@@ -43,10 +45,10 @@ export function animateMonsterModel(model,time=0){
    ((Number(model.userData.speciesId?.slice(-3))||0)%7)*.37))%4.7;
  const blink=action==='defeat'?dying:
    Math.max(0,1-Math.abs(blinkClock-4.50)/.13);
- model.rotation.set(-(strike*.23+special*.12+hit*.16)+dying*.19,
+ model.rotation.set(-(strike*.23+special*.12+hit*.16)+dying*.19+(leap?.pitch??0),
    dodge*Math.sin(progress*Math.PI)*.95,dying*.98+dodge*.25);
  model.position.set(dodge*Math.sin(progress*Math.PI)*1.3,Math.abs(Math.sin(gait))*(locomotion?.055:0)+
-   leaping*Math.sin(Math.PI*progress)*.86-dying*.48,0);
+   (leap?.height??0)-dying*.48,0);
  model.scale.setScalar((model.userData.homeScale??1)*(1-.16*dying));
  for(const [name,part] of Object.entries(p)){
    part.rotation.set(0,0,0);
@@ -98,8 +100,9 @@ export function animateMonsterModel(model,time=0){
  });
  // Existing jaw pivot continues its action animation; speech adds a
  // bounded jaw opening after the usual pose (no bones duplicated).
+ if(leap)applyMonsterLeapMotion(p,leap,model.userData.surfaceFamily);
  if(action!=='defeat')model.userData.facialControls?.update?.(
    Math.max(0,Math.min(.1,time-(model.userData.facialLastTime??time-.075))));
  model.userData.facialLastTime=time;
- return {action,progress};
+ return {action,progress,...(leap?{leapPhase:leap.phase}:null)};
 }
