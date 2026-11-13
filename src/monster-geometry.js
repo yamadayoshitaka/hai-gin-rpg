@@ -7,6 +7,7 @@ import {createSculpture,disposeMonsterSculpture} from './monster-shape-kit.js?v=
 import {attachMonsterFaceControls} from './facial-feature-runtime.js?v=1';
 import {generateCanineFurGuides} from './canine-fur-guides.js?v=4.4.92';
 import {monsterEvidenceFor} from './monster-anatomy-reference.js';
+import {MORTAL_HEAD_RINGS,MORTAL_TORSO_RINGS} from './monster-realistic-loft.js';
 function feet(g,pivot,x,y,z,clawed=true,scale=1){
  g.sphere(pivot,'skin',[0,-.28,0],[.14*scale,.30*scale,.15*scale]);
  g.sphere(pivot,'shadow',[0,-.53,.13],[.13*scale,.08*scale,.22*scale]);
@@ -619,18 +620,36 @@ function upright(g,s,{rock=false,undead=false,demon=false}={}){
  const bodyColor=rock?'shadow':'skin';
  if(rock)g.rock(torso,bodyColor,[0,1.35,0],[.55,.65,.33]);
  else {
-   g.sphere(torso,bodyColor,[0,1.34,0],[.40,.61,.28]);
-   g.sphere(torso,'light',[0,1.70,.10],[.32,.25,.24]);
+   // One contoured organic torso instead of two intersecting inflated
+   // spheres. Broad shoulders, tapered ribs/waist and asymmetric chest.
+   // All undead and fiends share a realistic baseline, never a hero model.
+   const thin=s.id==='m032'?.83:s.id==='m031'?.72:s.id==='m035'?.88:1;
+   const shoulder=s.id==='m034'?1.02:demon?1.10:1;
+   const bodyRings=MORTAL_TORSO_RINGS.map(r=>({
+     ...r,rx:r.rx*thin*(r.y>1.45?shoulder:1),
+     rz:r.rz*(s.id==='m031'?.78:1),
+   }));
+   g.anatomicalLoft(torso,undead&&s.id==='m031'?'bone':'skin',
+     bodyRings,{name:'monster-realistic-rib-waist',kind:'torso',
+       asymmetry:undead?.27:.11});
+   if(s.id==='m034'){
+     // Tailored velvet shell has a distinct PBR material; the cadaver face
+     // and hands below it are skin, not incorrectly textured like linen.
+     g.anatomicalLoft(torso,'fabric',bodyRings.map(r=>({
+       ...r,rx:r.rx*1.046,rz:r.rz*1.055,cz:(r.cz??0)-.012,
+     })),{name:'m034-velvet-coat',kind:'torso'});
+   }
  }
  g.bridge(torso,rock?'skin':'light',[0,1.80,.03],
    [0,2.12,.08],rock?.23:.17,rock?.185:.135);
  const head=g.group('head',[0,2.17,.08]);
  if(rock)g.rock(head,'skin',[0,0,0],[.30,.33,.30]);
  else if(s.id==='m032'){
-   // Mummy: emaciated cranial volume and pronounced zygomatic cheek ridge,
-   // not a round flesh head. Eyes are sunken and matte, without magic glow.
-   g.sphere(head,'shadow',[0,0,0],[.235,.303,.248],
-     {name:'m032-desiccated-cranium'});
+   // Collapsed temples, protruding cheekbones, recessed sockets and an
+   // actual nasal bridge are sculpted into continuous face topology.
+   g.anatomicalLoft(head,'mortalSkin',MORTAL_HEAD_RINGS.map(r=>({
+     ...r,rx:r.rx*.90,rz:r.rz*.95,
+   })),{name:'m032-desiccated-cranium',kind:'face',asymmetry:.90});
    g.bridge(head,'bone',[0,-.085,.095],[0,-.19,.20],.151,.093);
    for(const side of [-1,1]){
      g.sphere(head,'shadow',[side*.175,.020,.223],[.078,.068,.027],
@@ -642,25 +661,34 @@ function upright(g,s,{rock=false,undead=false,demon=false}={}){
      g.bridge(head,'bone',[side*.147,-.102,.157],
        [side*.178,-.184,.160],.051,.031);
    }
- }else g.sphere(head,undead?'bone':'skin',[0,0,0],[.26,.32,.27]);
- if(s.id!=='m032')g.eyes(head,.248,.025,.16,undead?.063:.048);
- if(undead&&s.id!=='m032'){
+ }else if(undead||demon){
+   g.anatomicalLoft(head,
+     s.id==='m031'?'bone':s.id==='m034'||demon?'mortalSkin':'skin',
+     MORTAL_HEAD_RINGS.map(r=>({...r,
+       rx:r.rx*(s.id==='m031'?.83:demon?.97:1),
+       rz:r.rz*(s.id==='m031'?.91:1),
+     })),{name:s.id+'-realistic-face',kind:'face',
+       asymmetry:undead?.19:.06});
+ }else g.sphere(head,'skin',[0,0,0],[.26,.32,.27]);
+ if(s.id!=='m032'&&s.id!=='m034')g.eyes(head,.235,.043,.14,
+   undead?.037:.035);
+ if(undead&&['m031','m035'].includes(s.id)){
    for(const side of [-1,1])g.spike(head,'shadow',[side*.10,-.13,.23],[side*.12,-.26,.29],.045);
    for(let i=0;i<5;i++)g.bone(torso,'bone',[-.26,1.85-i*.16,.29],[.26,1.85-i*.16,.29],.028);
  }
  if(s.id==='m032'){
    // Volumetric linen wraps: separate body/neck/head ribbons with real UVs.
    // A gap across the eye line exposes both recessed eye sockets.
-   g.bandage(torso,'bone',{name:'m032-torso-wrap',center:[0,0,0],
+   g.bandage(torso,'bandage',{name:'m032-torso-wrap',center:[0,0,0],
      radii:[.416,.315],startY:1.05,endY:1.83,
      turns:6.3,width:.090,phase:.2,segments:g.root.userData.detail==='low'?35:110});
-   g.bandage(torso,'light',{name:'m032-neck-wrap',center:[0,0,.05],
+   g.bandage(torso,'bandage',{name:'m032-neck-wrap',center:[0,0,.05],
      radii:[.18,.17],startY:1.86,endY:2.09,
      turns:2.8,width:.065,phase:.5,segments:45});
-   g.bandage(head,'bone',{name:'m032-head-crown-wrap',center:[0,0,0],
+   g.bandage(head,'bandage',{name:'m032-head-crown-wrap',center:[0,0,0],
      radii:[.247,.264],startY:.12,endY:.255,
      turns:2.4,width:.056,phase:.15,segments:48});
-   g.bandage(head,'light',{name:'m032-head-jaw-wrap',center:[0,0,0],
+   g.bandage(head,'bandage',{name:'m032-head-jaw-wrap',center:[0,0,0],
      radii:[.241,.255],startY:-.265,endY:-.135,
      turns:2.2,width:.060,phase:1.1,segments:48});
    for(let i=0;i<5;i++){
@@ -705,17 +733,17 @@ function upright(g,s,{rock=false,undead=false,demon=false}={}){
    g.sphere(knee,'shadow',[0,-.395,.105],[.21,.14,.255]);
    if(s.id==='m032'){
      const upperArm=[side*.05,-.17,.05];
-     g.bandage(arm,'bone',{name:'m032-upper-arm-'+suffix,
+     g.bandage(arm,'bandage',{name:'m032-upper-arm-'+suffix,
        center:upperArm,radii:[.174,.163],startY:-.20,endY:.10,
        turns:2.9,width:.067,phase:side*.17,segments:45});
-     g.bandage(elbow,'light',{name:'m032-forearm-'+suffix,
+     g.bandage(elbow,'bandage',{name:'m032-forearm-'+suffix,
        center:[side*.02,-.11,.025],radii:[.132,.127],
        startY:-.18,endY:.09,turns:2.8,width:.057,
        phase:side*.44,segments:40});
-     g.bandage(leg,'bone',{name:'m032-thigh-'+suffix,center:[0,-.16,.016],
+     g.bandage(leg,'bandage',{name:'m032-thigh-'+suffix,center:[0,-.16,.016],
        radii:[.188,.164],startY:-.17,endY:.12,
        turns:2.8,width:.067,phase:side*.30,segments:44});
-     g.bandage(knee,'light',{name:'m032-shin-'+suffix,
+     g.bandage(knee,'bandage',{name:'m032-shin-'+suffix,
        center:[0,-.15,.055],radii:[.146,.130],
        startY:-.20,endY:.10,turns:2.9,width:.056,
        phase:side*.63,segments:42});
