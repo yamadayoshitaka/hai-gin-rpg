@@ -12,6 +12,8 @@ assert.equal(data.kind,'production-manifest-not-generated-art');
 assert.equal(data.schemaVersion,3);
 assert.equal(data.noPaidAPICalls,true);
 assert.equal(data.artGeneratorAttached,false);
+assert.equal(data.absolutePriority,'P0_ABSOLUTE_MUST_FOLLOW');
+assert.equal(data.failClosedOnMissingReferenceBytes,true);
 assert.equal(data.outputIsOnlyInstructions,true);
 assert.equal(data.shotWorkflow,'SCREENPLAY_CONTEXT_PREVIOUS_CURRENT_NEXT_REAL_CAST_REFERENCES_PER_SHOT');
 assert.equal(data.imageSpec.aspectRatio,'16:9');
@@ -70,6 +72,16 @@ for(const stage of data.stages){
    assert(panel.qualityReferenceImage.endsWith('-'+edition.gender+'.webp'));
    assert(panel.qualityReferenceStatus.includes('NOT_HUMAN_APPROVED'));
    assert.equal(panel.attachmentGate,'ATTACH_REAL_IMAGE_BYTES_BEFORE_GENERATION');
+   assert.equal(panel.absolutePriority,'P0_ABSOLUTE_MUST_FOLLOW');
+   assert.equal(panel.realCastImageBytesAttached,false);
+   assert.equal(panel.renderReady,false);
+   assert.equal(panel.renderBlockedReason,'REAL_REFERENCE_IMAGE_BYTES_NOT_ATTACHED_BY_PREFLIGHT');
+   assert(panel.generationPrompt.startsWith('P0_ABSOLUTE_MUST_FOLLOW.'));
+   assert(panel.generationPrompt.includes('P0_NO_TEXT_UI_IN_ART'));
+   assert(panel.generationPrompt.includes('P0_REFERENCE_IMAGE_BYTES'));
+   assert(panel.generationPrompt.includes('P0_FINAL_DOUBLE_CHECK'));
+   assert(panel.requiredChecks.includes('rejectAnyInImageTextOrUI'));
+   assert(panel.requiredChecks.includes('failClosedOnMissingActualImageBytes'));
    assert(panel.requiredCharacterReferences.length>0);
    assert(panel.requiredCharacterReferences.every(x=>x.requiresActualImageBytes&&
     x.attachmentStatus==='NOT_ATTACHED_BY_PREFLIGHT'));
