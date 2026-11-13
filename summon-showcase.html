@@ -225,8 +225,9 @@
       handle.ready.then(result=>{
         if(ticket!==femaleRequest||handle!==femaleSummonHandle||selected!==id)return;
         if(result.source==='canonical-character-cosplay'){
-          controls.target.set(0,1.38,0);
-          camera.position.set(2.6,2.9,6.4);
+          const distance=id==='seraph_guardian'?8.6:id==='dragon_lord'?7.3:4.5;
+          controls.target.set(0,1.18,0);
+          camera.position.set(1.5,2.3,distance);
           controls.update();
         }else if(result.source!=='cancelled'){
           document.getElementById('metrics').textContent=
@@ -309,7 +310,9 @@
       femaleModeLabel.hidden=!femaleAvailable;
       femaleMode.disabled=!femaleAvailable;
       compareDragon.disabled=selected!=='dragon'||!licensedRegistry.entries.dragon;
-      document.getElementById('faceCloseup').disabled=!['forest_archer','seraph_guardian','wolf'].includes(selected);
+      document.getElementById('faceCloseup').disabled=!
+        (['forest_archer','seraph_guardian','wolf'].includes(selected)||
+          (selected==='dragon_lord'&&femaleMode.value==='female'));
       document.getElementById('coatCloseup').disabled=selected!=='wolf';
       previewObject={id:'gallery-'+selected,type:selected,x:0,z:0,alive:true,team:0,
         flying:!!COMBAT_OBJECT_SPECS[selected].flying,mountedBy:null,cryStartedAt:clock.getElapsedTime()};
@@ -358,9 +361,11 @@
         // Focus on nose, eyes, cheeks and the new physical fur silhouette.
         controls.target.set(0,1.07,1.16);
         camera.position.set(1.34,1.44,3.55);
-      }else if(['forest_archer','seraph_guardian'].includes(selected)){
-        controls.target.set(0,2.35,0);
-        camera.position.set(1.08,2.54,1.80);
+      }else if(['forest_archer','seraph_guardian'].includes(selected)||
+          (selected==='dragon_lord'&&femaleMode.value==='female')){
+        const femaleReady=femaleSummonHandle?.source==='canonical-character-cosplay';
+        controls.target.set(0,femaleReady?1.62:2.35,0);
+        camera.position.set(.83,femaleReady?1.81:2.54,femaleReady?1.92:1.80);
       }else return;
       camera.lookAt(controls.target);
       controls.update();
