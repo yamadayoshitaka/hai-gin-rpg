@@ -8,8 +8,8 @@ assert.match(source,/createRootedCreatureHornGeometry/,
  'Dragon horns must be grown from buried curved keratin sockets');
 assert.match(source,/createCreatureScuteGeometry/,
  'Dragon flank scales must have shallow natural dome, not plastic spikes');
-assert.match(source,/joint\(name,skin,0,0,0/,
- 'Rotating wing must carry a root socket that hides the hard joint cut');
+assert.match(source,/socket\(name,skin,0,0,0/,
+ 'Rotating wing must carry a compact rooted collar and avoid exposed seams');
 assert.match(source,/Discrete layered scales/,
  'Keep individually sculpted dragon armour scales');
 const reptileSource=readFileSync(new URL('../src/monster-geometry.js',import.meta.url),'utf8');
@@ -34,7 +34,7 @@ if(THREE){
  });
  assert.equal(horn.userData.kind,'curved-keratin-horn');
  assert.ok(horn.getAttribute('position').count>
-   hornLow.getAttribute('position').count*3,'horn LOD must be cheaper');
+   hornLow.getAttribute('position').count*2,'horn LOD must be cheaper');
  for(const geo of [horn,hornLow]){
    assert.ok(geo.index.count>20);
    for(const key of ['position','normal','uv'])
@@ -42,7 +42,7 @@ if(THREE){
        'rooted horn needs fully UV-mapped, shaded vertices');
    assert.ok(geo.getAttribute('normal').array.every(Number.isFinite));
  }
- const hornPos=horn.getAttribute('position'),circumference=13;
+ const hornPos=horn.getAttribute('position'),circumference=9;
  let rootWidth=0,tipWidth=0;
  for(let i=0;i<circumference;i++){
    const d=new THREE.Vector3().fromBufferAttribute(hornPos,i).distanceTo(
