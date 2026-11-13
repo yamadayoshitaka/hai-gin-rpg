@@ -6,7 +6,8 @@ import {measureHeadLocalBounds} from './character-system/hair-attachment-runtime
 import {createHeroineBattleActionVfx} from './heroine-battle-action-vfx.js?v=40';
 import {resolveBodyShape} from './character-cast-v46.js?v=46';
 import {resolveDemographicProfile,resolveBodyType,resolveAgeBand}
- from './character-demographics-v47.js?v=47';
+ from './character-demographics-v47.js?v=48';
+import {applySkinnedBuildMorph} from './body-build-morph-v48.js?v=48';
 
 /**
  * Reuse EXACT game battle clothing: Female_Ranger / Female_Peasant skinned GLTF,
@@ -435,6 +436,7 @@ export async function createRealBattleOutfitStudio({scene,faceModel,getFaceModel
   // slightly larger relative to its shorter body.
   const sx=scale*body.width,sy=scale*age.heightScale,sz=scale*body.depth;
   actor.object3D.scale.set(original[0]*sx,original[1]*sy,original[2]*sz);
+  const buildMorph=applySkinnedBuildMorph(actor.object3D,bodyTypeId);
   const faceGain=age.headScale;
   headRoot.scale.set(headFit.scale/sx*faceGain,
    headFit.scale/sy*faceGain,headFit.scale/sz*faceGain);
@@ -449,7 +451,7 @@ export async function createRealBattleOutfitStudio({scene,faceModel,getFaceModel
   proportions={...proportions,bodyShape:bodyShapeId,
    ageBand:ageBandId,bodyType:bodyTypeId,
    bodyWidth:body.width,bodyDepth:body.depth,bodyHeight:age.heightScale,
-   headScale:age.headScale,skinnedBody:true,previewOnly:true};
+   headScale:age.headScale,buildMorph,skinnedBody:true,previewOnly:true};
  }
  function setDemographics(ageBand='twenties',bodyType='normal'){
   ageBandId=resolveAgeBand(ageBand).id;
