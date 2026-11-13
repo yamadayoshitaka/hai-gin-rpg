@@ -93,10 +93,12 @@ with TemporaryDirectory(prefix="bulk-review-synthetic-NOT-story-art-") as d:
     for group in batch_0["groups"]:
         input_files = []
         for i, frame in enumerate(group["frames"]):
-            im = Image.new("RGB", (160, 90), ((i * 19 + 27) % 256,
-                                             group["sheetIndex"] * 18, 110))
+            # Intentionally high-contrast synthetic QA image. Earlier soft
+            # colors sometimes tripped the genuinely enforced blank-frame gate.
+            im = Image.new("RGB", (160, 90), (7, 11, 19))
             pen = ImageDraw.Draw(im)
-            pen.rectangle((10 + i, 10, 90 + i, 70), fill=(223, 123, 40))
+            pen.rectangle((10 + i, 10, 90 + i, 70), fill=(245, 247, 251))
+            pen.line((0, 0, 159, 89), fill=(246, 65, 43), width=5)
             filename = base / ("sheet-%02d-cell-%02d.webp" %
                                (group["sheetIndex"], i))
             im.save(filename, "WEBP", lossless=True, method=0)
