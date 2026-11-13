@@ -224,6 +224,15 @@ function createGothicPieces({profile,detail='high',frames,attach,tube}){
     [side*.041,-.082,-.135],[Math.PI,0,0]);
    ball(frames.head,'skin','vampire-gingival-margin-'+side,
     [side*.042,-.080,-.138],[.018,.012,.012]);
+   // Ocular tint is seated just behind the skin eyelids; muted crimson
+   // iris and dry, reddish tear duct replace generic glass-button eyes.
+   ball(frames.head,'black','vampire-orbital-shadow-'+side,
+    [side*.052,.031,-.126],[.032,.021,.009]);
+   ball(frames.head,'iris','vampire-blood-iris-'+side,
+    [side*.053,.031,-.140],[.012,.014,.006]);
+   line(frames.head,'stain','vampire-withered-tear-'+side,[
+    [side*.063,.012,-.130],[side*.066,-.029,-.130],
+    [side*.077,-.074,-.119]],.0038);
    line(frames.chest,'edge','vampire-waist-sash-'+side,[
     [side*.16,-.28,-.19],[side*.25,-.39,-.12],[side*.18,-.55,-.11]],.013);
   }
@@ -255,6 +264,12 @@ function createGothicPieces({profile,detail='high',frames,attach,tube}){
     [side*.10,-.065,-.125],[side*.069,-.105,-.145],
     [side*.032,-.095,-.151]],.007);
   }
+  // Uneven discoloured gingival line makes the bandaged figure appear
+  // desiccated rather than a clean mannequin wearing a scarf.
+  ball(frames.head,'black','mummy-decayed-mouth',
+   [0,-.094,-.139],[.066,.023,.013]);
+  for(let i=0;i<5;i++)ball(frames.head,'ivory','mummy-broken-tooth-'+i,
+   [(i-2)*.023,-.095-(i%2)*.006,-.150],[.008,.014-(i%3)*.002,.008]);
   for(let i=0;i<3;i++)line(frames.chest,'stain','mummy-chest-seam-'+i,[
    [-.15+i*.12,.18,-.206],[-.09+i*.14,-.05,-.218],
    [-.16+i*.09,-.25,-.187]],.004);
@@ -317,6 +332,17 @@ function createGothicPieces({profile,detail='high',frames,attach,tube}){
    line(frames.head,'accent','succubus-eye-makeup-'+side,[
     [side*.017,.066,-.130],[side*.056,.069,-.138],
     [side*.12,.081,-.116]],.010);
+   ball(frames.head,'iris','succubus-narrow-crimson-iris-'+side,
+    [side*.054,.032,-.141],[.013,.015,.005]);
+   // Long nails grow from the hand-side of the articulated forearms.
+   const index=side<0?0:1;
+   for(let nail=0;nail<3;nail++){
+    add(frames.forearms[index],createGothicHorn({
+      side,len:.093,radius:.011,detail,curve:.012
+    }),'horn','succubus-claw-'+side+'-'+nail,
+    [side*(.042+(nail-1)*.025),-.286,-.065],
+    [Math.PI,0,0]);
+   }
   }
   add(frames.chest,createGothicMantle({detail,width:.26,drop:.70,ripped:true}),
    'velvet','succubus-torn-skirt');
