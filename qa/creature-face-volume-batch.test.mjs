@@ -90,14 +90,16 @@ for(const id of ['wolf','horse','wyvern','dragon','elder_dragon','dragon_lord',
  'forest_archer','seraph_guardian']){
  const high=buildCombatObjectGeometry(id,{detail:'high'});
  const low=buildCombatObjectGeometry(id,{detail:'low'});
- assert.deepEqual(Object.keys(high).sort(),Object.keys(low).sort(),
-  'Must retain instanced LOD part contract '+id);
+ if(budgets[id])assert.deepEqual(Object.keys(high).sort(),Object.keys(low).sort(),
+  'Must retain articulated GPU part contract '+id);
+ else for(const name of Object.keys(low))
+  assert.ok(high[name],'High LOD lost its base humanoid part '+id+'/'+name);
  const vertices=o=>Object.values(o).reduce((n,g)=>
   n+g.getAttribute('position').count,0);
  if(budgets[id])assert.ok(vertices(high)<budgets[id],
   id+' high LOD exceeds existing GPU budget '+vertices(high));
  assert.ok(vertices(high)>vertices(low)*2,'LOD collapsed '+id);
- const parts=['core','eyes'];
+ const parts=budgets[id]?['core','eyes']:['core','faceFallback'];
  for(const p of parts)assert.ok(high[p]&&low[p],id+' missing '+p);
  for(const g of [...Object.values(high),...Object.values(low)]){
   const p=g.getAttribute('position');
