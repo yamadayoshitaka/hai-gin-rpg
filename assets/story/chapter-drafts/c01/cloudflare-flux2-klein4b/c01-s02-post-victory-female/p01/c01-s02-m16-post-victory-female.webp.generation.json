@@ -1,0 +1,68 @@
+{
+  "kind": "ACTUAL_CLOUDFLARE_GENERATED_FRAME_REVIEW_REQUIRED",
+  "shotKey": "c01-s02|post-victory|female|c01-s02-m16",
+  "stageId": "c01-s02",
+  "edition": "post-victory",
+  "gender": "female",
+  "panelId": "c01-s02-m16",
+  "nativePixels": [
+    1024,
+    576
+  ],
+  "outputPath": "assets/story/chapter-drafts/c01/cloudflare-flux2-klein4b/c01-s02-post-victory-female/p01/c01-s02-m16-post-victory-female.webp",
+  "imageSha256": "613b6a50c150a3d1049fcf2dc17b5c308881b2515ec9e8012746dc48ff3828f7",
+  "outputBytes": 128800,
+  "sourceModel": "@cf/black-forest-labs/flux-2-klein-4b",
+  "generationSeed": 756815935,
+  "renderPromptSha256": "0203e71b7780bbecf88b70a45cdddd19b37ceac6e4f7a13331ebc7cbffa1fe5e",
+  "sceneGoal": "戦果と残る危険の検証",
+  "screenplayText": "軍師は確認された戦果を記録し、残る危険がないか調べた。",
+  "speaker": "ガラン",
+  "compositionHint": "老騎士ガランが戦地を指し示し、女性軍師が損害状況を確認する。戦果を文字・数字で描かない。",
+  "visibleActorIds": [
+    "garan",
+    "commander_female",
+    "lucia"
+  ],
+  "referencePayloadsSubmitted": [
+    {
+      "actorId": "garan",
+      "originalPath": "assets/story-cinema/cast/garan.webp",
+      "originalSha256": "aeb457957485f89244eb0b4f270b72e4bf0670341f2444ac7f43299222075a8b",
+      "submittedInputSha256": "30c17f9c9f97f0f7a5f66ce2e6f03a711d2ebfb697de0c6a8a84545f9c96cc3c",
+      "thumbnailPixels": [
+        329,
+        480
+      ],
+      "attachedAs": "input_image_0"
+    },
+    {
+      "actorId": "commander_female",
+      "originalPath": "assets/story/characters/commander/female-master.webp",
+      "originalSha256": "757587a68647aa6637111110ef5c41d8f5827be0f10a204a7f7b14fde71182bf",
+      "submittedInputSha256": "7f8979767877bdd8148b133d56ce7e38c8fad2fe6436c1d327efcb66bf509a61",
+      "thumbnailPixels": [
+        384,
+        480
+      ],
+      "attachedAs": "input_image_1"
+    },
+    {
+      "actorId": "lucia",
+      "originalPath": "assets/story/characters/lucia/master.webp",
+      "originalSha256": "87005a46d3b4a23714a25f1f9b2d46fee9a1ce3c6b5af0be78f85a1f1fd2b411",
+      "submittedInputSha256": "91344ba790293c03406ca1804f0360d135b0015aa75cc5b68d7904fc72de1173",
+      "thumbnailPixels": [
+        439,
+        480
+      ],
+      "attachedAs": "input_image_2"
+    }
+  ],
+  "physicalReferencesActuallyAttached": true,
+  "identityMatchHumanApproved": false,
+  "screenplayMatchHumanApproved": false,
+  "noTextDigitsUiHumanApproved": false,
+  "visuallyApproved": false,
+  "approvedForFormalGameRegistration": false
+}

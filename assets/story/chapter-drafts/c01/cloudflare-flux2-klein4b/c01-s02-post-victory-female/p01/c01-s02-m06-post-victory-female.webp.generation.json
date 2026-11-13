@@ -1,0 +1,68 @@
+{
+  "kind": "ACTUAL_CLOUDFLARE_GENERATED_FRAME_REVIEW_REQUIRED",
+  "shotKey": "c01-s02|post-victory|female|c01-s02-m6",
+  "stageId": "c01-s02",
+  "edition": "post-victory",
+  "gender": "female",
+  "panelId": "c01-s02-m6",
+  "nativePixels": [
+    1024,
+    576
+  ],
+  "outputPath": "assets/story/chapter-drafts/c01/cloudflare-flux2-klein4b/c01-s02-post-victory-female/p01/c01-s02-m06-post-victory-female.webp",
+  "imageSha256": "d8a025127aa2de736b2dd6127472776f3f94812f8e4a9c7a6658268d6d347f7d",
+  "outputBytes": 244012,
+  "sourceModel": "@cf/black-forest-labs/flux-2-klein-4b",
+  "generationSeed": 299766072,
+  "renderPromptSha256": "9d48bf8f351f42db5a8df595fcd264beccad8aa7e4ab7efe477aced7ceaa7aae",
+  "sceneGoal": "奪還された礼拝堂へ通じる街道",
+  "screenplayText": "勝利が確認された。礼拝堂へ通じる道を取り戻し、イリスの証言を調べる余地が生まれる。",
+  "speaker": "語り手",
+  "compositionHint": "戦後の街道を俯瞰する中景。銀鎧の女性軍師を前景、イリスが進路を示す。ガランは背景。勝利後だが調査の緊張を残す。",
+  "visibleActorIds": [
+    "commander_female",
+    "iris",
+    "garan"
+  ],
+  "referencePayloadsSubmitted": [
+    {
+      "actorId": "commander_female",
+      "originalPath": "assets/story/characters/commander/female-master.webp",
+      "originalSha256": "757587a68647aa6637111110ef5c41d8f5827be0f10a204a7f7b14fde71182bf",
+      "submittedInputSha256": "7f8979767877bdd8148b133d56ce7e38c8fad2fe6436c1d327efcb66bf509a61",
+      "thumbnailPixels": [
+        384,
+        480
+      ],
+      "attachedAs": "input_image_0"
+    },
+    {
+      "actorId": "iris",
+      "originalPath": "assets/story-cinema/cast/iris.webp",
+      "originalSha256": "6b9b49a242f75b39abd8c6ab2084ce50592b8d98c73443a360ab06e041ceadea",
+      "submittedInputSha256": "1393acc01d44b7907169c469d36fc47844e5ccc1b305c5b4f67f0501470d6741",
+      "thumbnailPixels": [
+        329,
+        480
+      ],
+      "attachedAs": "input_image_1"
+    },
+    {
+      "actorId": "garan",
+      "originalPath": "assets/story-cinema/cast/garan.webp",
+      "originalSha256": "aeb457957485f89244eb0b4f270b72e4bf0670341f2444ac7f43299222075a8b",
+      "submittedInputSha256": "30c17f9c9f97f0f7a5f66ce2e6f03a711d2ebfb697de0c6a8a84545f9c96cc3c",
+      "thumbnailPixels": [
+        329,
+        480
+      ],
+      "attachedAs": "input_image_2"
+    }
+  ],
+  "physicalReferencesActuallyAttached": true,
+  "identityMatchHumanApproved": false,
+  "screenplayMatchHumanApproved": false,
+  "noTextDigitsUiHumanApproved": false,
+  "visuallyApproved": false,
+  "approvedForFormalGameRegistration": false
+}

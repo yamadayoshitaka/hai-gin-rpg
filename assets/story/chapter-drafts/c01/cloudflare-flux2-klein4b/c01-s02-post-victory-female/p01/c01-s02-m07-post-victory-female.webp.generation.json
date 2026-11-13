@@ -1,0 +1,68 @@
+{
+  "kind": "ACTUAL_CLOUDFLARE_GENERATED_FRAME_REVIEW_REQUIRED",
+  "shotKey": "c01-s02|post-victory|female|c01-s02-m7",
+  "stageId": "c01-s02",
+  "edition": "post-victory",
+  "gender": "female",
+  "panelId": "c01-s02-m7",
+  "nativePixels": [
+    1024,
+    576
+  ],
+  "outputPath": "assets/story/chapter-drafts/c01/cloudflare-flux2-klein4b/c01-s02-post-victory-female/p01/c01-s02-m07-post-victory-female.webp",
+  "imageSha256": "476ec3240c8b2789e75298f3bc79086b51662d3e138ebfb12a590bcc218ab7d9",
+  "outputBytes": 181734,
+  "sourceModel": "@cf/black-forest-labs/flux-2-klein-4b",
+  "generationSeed": 1776650317,
+  "renderPromptSha256": "b929ee54f4773b96c31a03a991e3b51d2e609a0cfad55a6b9dbe2943442bd4a1",
+  "sceneGoal": "戦場で人々と記録を調査",
+  "screenplayText": "勝利の報告だけでは終われない。戦場に残された人々と記録を調べよう。",
+  "speaker": "イリス",
+  "compositionHint": "負傷者を見守る治癒師イリス中心、女性軍師と銀髪のリュシアは少し離れて証拠を確認。新しい勝利イベントを作らない。",
+  "visibleActorIds": [
+    "iris",
+    "commander_female",
+    "lucia"
+  ],
+  "referencePayloadsSubmitted": [
+    {
+      "actorId": "iris",
+      "originalPath": "assets/story-cinema/cast/iris.webp",
+      "originalSha256": "6b9b49a242f75b39abd8c6ab2084ce50592b8d98c73443a360ab06e041ceadea",
+      "submittedInputSha256": "1393acc01d44b7907169c469d36fc47844e5ccc1b305c5b4f67f0501470d6741",
+      "thumbnailPixels": [
+        329,
+        480
+      ],
+      "attachedAs": "input_image_0"
+    },
+    {
+      "actorId": "commander_female",
+      "originalPath": "assets/story/characters/commander/female-master.webp",
+      "originalSha256": "757587a68647aa6637111110ef5c41d8f5827be0f10a204a7f7b14fde71182bf",
+      "submittedInputSha256": "7f8979767877bdd8148b133d56ce7e38c8fad2fe6436c1d327efcb66bf509a61",
+      "thumbnailPixels": [
+        384,
+        480
+      ],
+      "attachedAs": "input_image_1"
+    },
+    {
+      "actorId": "lucia",
+      "originalPath": "assets/story/characters/lucia/master.webp",
+      "originalSha256": "87005a46d3b4a23714a25f1f9b2d46fee9a1ce3c6b5af0be78f85a1f1fd2b411",
+      "submittedInputSha256": "91344ba790293c03406ca1804f0360d135b0015aa75cc5b68d7904fc72de1173",
+      "thumbnailPixels": [
+        439,
+        480
+      ],
+      "attachedAs": "input_image_2"
+    }
+  ],
+  "physicalReferencesActuallyAttached": true,
+  "identityMatchHumanApproved": false,
+  "screenplayMatchHumanApproved": false,
+  "noTextDigitsUiHumanApproved": false,
+  "visuallyApproved": false,
+  "approvedForFormalGameRegistration": false
+}
