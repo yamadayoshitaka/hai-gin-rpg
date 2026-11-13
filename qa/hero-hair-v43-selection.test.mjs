@@ -34,7 +34,12 @@ test('v43: all 16 hairstyles have real, distinct 3D fringe and rear contours',()
   assert.ok(profile.rearWidth>0&&profile.rearWidth<=1);
  }
  for(const sex of ['female','male'])
-  assert.deepEqual(new Set(PART_CATALOG[sex].hair.map(x=>x.values.styleId)),names);
+  for(const row of PART_CATALOG[sex].hair)
+   assert.ok(names.has(row.values.styleId),sex+' missing 3D silhouette '+row.values.styleId);
+ const male=new Set(PART_CATALOG.male.hair.map(x=>x.values.styleId));
+ for(const femaleOnly of ['princess-long','curtain-bangs-long','knight-long',
+  'mature-layer-long','full-fringe-straight'])
+  assert.equal(male.has(femaleOnly),false);
  assert.ok(WIG_SILHOUETTE_PROFILES['full-fringe-straight'].fringeDrop >
   WIG_SILHOUETTE_PROFILES['center-part-gravity-long'].fringeDrop);
  assert.ok(WIG_SILHOUETTE_PROFILES['rounded-bob'].rearCutShift >

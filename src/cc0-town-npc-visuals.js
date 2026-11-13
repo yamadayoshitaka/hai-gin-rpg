@@ -16,6 +16,7 @@ import {ACTOR_VISUAL_TUNING,resolveActorVisualTuning} from './actor-visual-tunin
 import {checkHumanoidManifest,checkArmDirections} from './humanoid-visual-contract.js';
 import {retainSkinnedHead,attachFittedHeadHair,attachFaceParts} from './quaternius-head-bom.js?v=133.8';
 import {CHARACTER_MODEL_REGISTRY,validateCharacterForGame} from './character-model-registry.js';
+import {resolveBodyShape} from './character-cast-v46.js?v=46';
 import {createJobMotionController} from './character-system/job-motion-controller.js?v=3ee4423f';
 const root='./assets/characters/quaternius-outfits/';
 const names=['Male_Peasant','Female_Peasant','Male_Ranger','Female_Ranger'];
@@ -74,6 +75,10 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    const tuning=resolveActorVisualTuning(preset,host.userData?.indoorResident?'indoor':'outdoor');
    const targetHeight=Math.max(1.35,Math.min(ACTOR_VISUAL_TUNING.bounds.maxRenderedHeight,tuning.targetHeight*tuning.scaleMultiplier));
    model.scale.setScalar(targetHeight/height);
+   const shape=resolveBodyShape(['heavy','full','sturdy','slim','child'].includes(preset.body)?
+    preset.body:'average');
+   model.scale.x*=shape.width;model.scale.z*=shape.depth;
+   host.userData.bodyShapeV46={...shape,id:preset.body};
    model.position.set(-bounds.getCenter(new THREE.Vector3()).x*model.scale.x,-bounds.min.y*model.scale.y,-bounds.getCenter(new THREE.Vector3()).z*model.scale.z);
    model.name='canonical-character-'+baseId;
    model.userData.sourceModelId=baseId;
@@ -266,6 +271,10 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
   const sourceBounds=measure(),sourceHeight=sourceBounds.max.y-sourceBounds.min.y;
   if(!Number.isFinite(sourceHeight)||sourceHeight<=0)throw Error('Invalid asset geometry: '+id);
   model.scale.setScalar(targetHeight/sourceHeight);
+   const shape=resolveBodyShape(['heavy','full','sturdy','slim','child'].includes(preset.body)?
+    preset.body:'average');
+   model.scale.x*=shape.width;model.scale.z*=shape.depth;
+   host.userData.bodyShapeV46={...shape,id:preset.body};
   model.updateMatrixWorld(true);
   const normalized=measure();
   model.position.y-=normalized.min.y;
@@ -427,6 +436,9 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    host.userData.faceMorphTargets=morphMeshes.reduce((n,m)=>n+Object.keys(m.morphTargetDictionary).length,0);
    return morphMeshes.length>0;
   };
+  if(preset.face==='narrow-eyed')host.userData.updateFaceParts({eyes:{size:.74}});
+  else if(preset.face==='elder')host.userData.updateFaceParts({eyes:{size:.84}});
+  host.userData.npcAgeFaceProfile=preset.face;
   // Preview-only blank anatomical head. Keep donor skeleton for animation and attachments.
   const mannequinHead=new THREE.Mesh(new THREE.SphereGeometry(1,32,24),new THREE.MeshStandardMaterial({color:0xb9a99a,roughness:.9}));
   mannequinHead.name='anatomical-mannequin-head';
