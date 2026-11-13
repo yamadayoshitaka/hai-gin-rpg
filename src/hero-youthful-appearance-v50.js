@@ -11,7 +11,10 @@ export function youngHeroMaleControls(base={},ageBand='twenties',manual={}){
  if(!['teens','twenties'].includes(ageBand))return {...base};
  const out={...base};
  for(const [key,value] of Object.entries(YOUNG_HERO_MALE_V50)){
-  if(Object.hasOwn(manual,key))continue;
+  if(Object.hasOwn(manual,key)){
+   out[key]=Number(manual[key]);
+   continue;
+  }
   const previous=Number(base[key]);
   if(['eyeWidth','eyeHeight','irisDiameter','eyeDepth'].includes(key))
    out[key]=Math.max(Number.isFinite(previous)?previous:0,value);
