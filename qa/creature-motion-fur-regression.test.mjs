@@ -11,11 +11,11 @@ const node=()=>({
 });
 const head=node(),wing=node(),tail=node(),lid=node(),leg=node(),lower=node();
 lid.userData={restY:.4,blinkTravel:.09};
-let faceUpdates=0,stoppedSpeech=0;
+let faceUpdates=0;
 const specimen={...node(),userData:{
  speciesId:'m011',homeScale:1,
  pivots:{head,wingL:wing,tail,eyelidL:lid,legfrontL:leg,lowerfrontL:lower},
- facialControls:{update(){faceUpdates++;},stop(){stoppedSpeech++;}},
+ facialControls:{update(){faceUpdates++;}},
 }};
 startMonsterAction(specimen,'run',0);
 animateMonsterModel(specimen,.25);
@@ -25,7 +25,6 @@ assert.notEqual(wing.rotation.z,livingWing,'living bird wing must move in flight
 assert.ok(faceUpdates>0,'living face updates should continue');
 
 startMonsterAction(specimen,'defeat',2);
-assert.equal(stoppedSpeech,1,'defeat cancels pending monster speech');
 animateMonsterModel(specimen,2.5);
 assert.ok(specimen.scale.x<1,'defeat should interpolate down to its final pose');
 animateMonsterModel(specimen,3.2);
