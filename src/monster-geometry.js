@@ -3,7 +3,7 @@
  * variants change horns, crests, armour, wings, limb lengths, weapons and fins.
  * Each specimen is real 3D geometry, never an image billboard.
  */
-import {createSculpture,disposeMonsterSculpture} from './monster-shape-kit.js?v=4.4.92';
+import {createSculpture,disposeMonsterSculpture} from './monster-shape-kit.js?v=4.4.93';
 import {attachMonsterFaceControls} from './facial-feature-runtime.js?v=1';
 import {generateCanineFurGuides} from './canine-fur-guides.js?v=4.4.92';
 import {monsterEvidenceFor} from './monster-anatomy-reference.js';
@@ -318,7 +318,9 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
          {name:'m004-digit'});
        g.spike(toe,'bone',[x,-.054,.192],[x,-.090,.262],.021);
      }
-   }else{
+   }else if(s.id!=='m003'){
+     // Fenrir owns a separate articulated toe assembly below. Rendering
+     // the legacy fixed paw as well made duplicate feet and floating claws.
      feet(g,distal,0,0,0,true,reptile?.75:1);
    }
    if(s.id==='m003'){
@@ -337,9 +339,9 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    }
    g.sphere(leg,'skin',[0,-.04,.015],[.18,.18,.18]);
    if(canine&&coatDetail!=='low'){
-     // Attach to the leg pivot so the coat swings with every footstep.
-     // The upper shank, lower forearm/hock, and paw use shorter strands
-     // than the shoulder and chest. One mesh per leg preserves draw calls.
+     // Each fur region belongs to its own anatomical joint. Previously
+     // all three patches lived on 'leg', so the shank and paw coat detached
+     // from the moving lower/hock/toe joints during a trot or gallop.
      const source=coatDetail==='source',near=fore===1;
      const upper=generateCanineFurGuides({
        center:[0,.17,0],radii:[.215,.395,.215],
@@ -353,16 +355,22 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
        length:.064,width:.011,seed:v*13+side*7+fore*11+43,
        minVertical:-.72,axis:'y',gravity:.21,
      });
+     const toeParent=(s.id==='m003'||s.id==='m004')?
+       g.pivots['toe'+name]:distal;
      const paw=generateCanineFurGuides({
        center:[0,-.53,.125],radii:[.136,.083,.195],
        rows:source?12:8,around:source?20:14,
        length:.028,width:.009,seed:v*17+side*5+fore*7+57,
        minVertical:-.15,maxVertical:.86,gravity:.20,
      });
-     const legCoat=[...upper,...lower,...paw];
-     const furMesh=g.fur(leg,'skin',legCoat);
-     furMesh.name='canine-coat-leg'+name;
-     furMesh.userData.furRegion='limb';
+     // Three joint influences are blended inside ONE skinned mesh per
+     // moving limb: stable four draw calls across all legs, GPU deformation,
+     // and no coat detachment at the elbow/hock/toe joint.
+     g.skinnedFur(leg,'skin',[
+       {joint:leg,region:'upper',guides:upper},
+       {joint:distal,region:'lower',guides:lower},
+       {joint:toeParent,region:'paw',guides:paw},
+     ],{name:'canine-coat-leg'+name});
    }
  }
  // Dense near-LOD hair follows the real body/cheek anatomy and does not
@@ -790,5 +798,5 @@ export function createMonsterModel(spec,{detail='high'}={}){
 export {disposeMonsterSculpture};
 // All renderer metrics share this module's exact shape/material instance.
 // Never independently import a differently versioned shape-kit into the UI.
-export {MONSTER_DETAIL_LEVELS,monsterSculptCacheStats} from './monster-shape-kit.js?v=4.4.92';
+export {MONSTER_DETAIL_LEVELS,monsterSculptCacheStats} from './monster-shape-kit.js?v=4.4.93';
 export {monsterPhotoCacheStats} from './monster-photo-pbr.js?v=4.4.81';

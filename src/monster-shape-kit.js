@@ -4,6 +4,7 @@
  * Meshes are cached only where geometry parameters are genuinely reusable.
  */
 import * as THREE from 'three';
+import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {nonhumanMonsterStage} from './nonhuman-model-quality.js';
 import {buildCanineFurRibbonGeometry} from './canine-fur-ribbons.js?v=4.4.89';
 import {decorateMonsterPhotoMaterial,detachMonsterPhotoMaterial} from './monster-photo-pbr.js?v=4.4.81';
@@ -177,6 +178,69 @@ export function createSculpture(spec,detail='high'){
    mesh.userData.furStrands=guides.length;
    return mesh;
  };
+ /** A SINGLE skinned draw call per limb, including upper coat, shin and
+  * toe hairs. Bone attachment is inherited from the already animated Groups.
+  * All ribbons are authored in the upper-leg's bind space; no per-frame CPU
+  * geometry edits, extra limb meshes or duplicate skin materials.
+  */
+ const skinnedFur=(parent,shade,regions,{name='jointed-coat'}={})=>{
+   if(!regions?.length)return null;
+   const bones=[],geometryParts=[];
+   let strands=0;
+   try{
+     for(let slot=0;slot<regions.length;slot++){
+       const {joint,guides,region}=regions[slot];
+       if(!joint||!guides?.length)throw Error('Missing coat joint or guides');
+       const bone=new THREE.Bone();
+       bone.name=name+'-'+region+'-bone';
+       joint.add(bone);
+       bones.push(bone);
+       const geo=buildCanineFurRibbonGeometry(guides);
+       const pos=geo.getAttribute('position'),count=pos.count;
+       const index=new Uint16Array(count*4);
+       const weight=new Float32Array(count*4);
+       for(let i=0;i<count;i++){
+         const y=pos.getY(i);
+         let other=slot,blend=0;
+         // A narrow 2-bone feathering zone prevents a hard hinge line
+         // where coat blades cross the elbow/hock. Otherwise keep follicles
+         // on their anatomical parent, so they cannot hover.
+         if(region==='upper'){other=1;blend=Math.min(.24,Math.max(0,(-.02-y)*1.2));}
+         else if(region==='lower'){
+           if(y>-.13){other=0;blend=Math.min(.24,(y+.13)*1.6);}
+           else {other=2;blend=Math.min(.24,Math.max(0,(-.40-y)*1.1));}
+         }else if(region==='paw'){other=1;blend=Math.min(.22,Math.max(0,(y+.50)*1.5));}
+         index[i*4]=slot;
+         index[i*4+1]=other;
+         weight[i*4]=1-blend;
+         weight[i*4+1]=blend;
+       }
+       geo.setAttribute('skinIndex',new THREE.Uint16BufferAttribute(index,4));
+       geo.setAttribute('skinWeight',new THREE.Float32BufferAttribute(weight,4));
+       geometryParts.push(geo);
+       strands+=guides.length;
+     }
+     const geometry=mergeGeometries(geometryParts,false);
+     if(!geometry)throw Error('Fur limb skinning merge failed');
+     geometry.userData={kind:'articulated-canine-coat',strands};
+     geometry.computeBoundingSphere();
+     const role=Object.hasOwn(tone,shade)?shade:'detail';
+     const skin=new THREE.SkinnedMesh(geometry,material(
+       tone[shade]??shade,{rough:.93,metal:0},spec,role,detail));
+     skin.name=name;skin.castShadow=true;skin.receiveShadow=true;
+     skin.userData.ownedGeometry=true;
+     skin.userData.furStrands=strands;
+     skin.userData.furRegion='limb';
+     // One animated limb in the inspector, not thousands of crowds.
+     skin.frustumCulled=false;
+     parent.add(skin);
+     root.updateMatrixWorld(true);
+     skin.bind(new THREE.Skeleton(bones));
+     return skin;
+   }finally{
+     for(const geo of geometryParts)geo.dispose();
+   }
+ };
  const fin=(parent,shade,base,tip,span=.34,options={})=>{
    // A curved tapered feather/wing membrane, not a planar two-triangle card.
    // Near LOD has curvature and subpixel normal detail; low LOD is compact.
@@ -250,13 +314,14 @@ export function createSculpture(spec,detail='high'){
    const m=attach(parent,geo,shade,{metal:.32});m.position.set(...position);return m;
  };
  root.userData.detail=detail;
- return {root,pivots,group,sphere,rock,bone,spike,tube,bridge,fur,fin,eyes,claws,ring,fine,colors};
+ return {root,pivots,group,sphere,rock,bone,spike,tube,bridge,fur,skinnedFur,fin,eyes,claws,ring,fine,colors};
 }
 export function disposeMonsterSculpture(model){
  if(!model)return;
  model.traverse(obj=>{
    if(!obj.isMesh)return;
    if(obj.userData.ownedGeometry)obj.geometry.dispose();
+   if(obj.isSkinnedMesh)obj.skeleton?.dispose?.();
    releaseMaterial(obj.material);
  });
  model.parent?.remove(model);
