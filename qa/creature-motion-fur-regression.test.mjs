@@ -74,12 +74,15 @@ if(THREE){
   assert.strictEqual(fur('canine-coat-paw'+suffix).parent,joints['toe'+suffix],
     id+' paw coat must follow the actual toe pivot');
   const paw=fur('canine-coat-paw'+suffix);
+  const positions=paw.geometry.getAttribute('position');
+  const sample=new THREE.Vector3().fromBufferAttribute(
+    positions,Math.floor(positions.count/2));
   model.updateMatrixWorld(true);
-  const old=new THREE.Vector3();paw.getWorldPosition(old);
+  const old=sample.clone().applyMatrix4(paw.matrixWorld);
   joints['toe'+suffix].rotation.x=.27;
   model.updateMatrixWorld(true);
-  const moved=new THREE.Vector3();paw.getWorldPosition(moved);
-  assert.ok(old.distanceTo(moved)>.00001,id+' moving toe must move its coat');
+  const moved=sample.clone().applyMatrix4(paw.matrixWorld);
+  assert.ok(old.distanceTo(moved)>.001,id+' moving toe must move its coat vertices');
   disposeMonsterSculpture(model);
  }
  const wolf=createMonsterModel(MONSTER_BY_ID.m001,{detail:'low'});
