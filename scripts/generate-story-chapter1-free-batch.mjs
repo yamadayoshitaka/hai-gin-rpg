@@ -56,6 +56,7 @@ for(const stage of stages){
 if(pages.length!==132||keys.size!==462)throw Error('Expected EXACTLY 132 pages and 462 canonical shots');
 function status(s){
  if(s.registered)return 'REGISTERED_NOT_P0_CERTIFIED';
+ if(fs.existsSync(p(s.img+'.provider-blocked.json')))return 'BLOCKED_PROVIDER_SAFETY';
  const image=fs.existsSync(p(s.img)),proof=fs.existsSync(p(s.proof));
  if(!image&&!proof)return 'MISSING';
  if(!image||!proof)return 'BLOCKED_UNPAIRED';
@@ -165,8 +166,10 @@ for(const pg of pages){
  const cost=todo.reduce((total,t)=>total+t.info.estimate,0);
  if(cost+reserved>limit){summary('DAILY_FREE_ESTIMATE_CAP');break;}
  const files=[];
+ let activeShot=null;
  try{
   for(const {s,info} of todo){
+   activeShot=s;
    if(status(s)==='LOW_NATIVE_RESOLUTION_REGENERATE'){
     // Rejected below-spec candidates remain recoverable in Git history.
     fs.rmSync(p(s.img),{force:true});fs.rmSync(p(s.proof),{force:true});
@@ -235,7 +238,23 @@ for(const pg of pages){
   committed++;summary('PAGE_COMMITTED');
   console.log(JSON.stringify({pageTask:pg.num,result:'FIVE_OR_FEWER_REAL_DRAFTS_COMMITTED_NO_FORMAL_REGISTRATION',shots:todo.length}));
  }catch(e){
-  const error=String(e.message||e);summary('STOPPED_NO_RETRIES_'+error);
+  const error=String(e.message||e);
+  if(activeShot&&error.includes('FREE_API_STOP_NO_RETRY_HTTP_400 3030:')){
+   // Respect provider moderation. Never retry a flagged prompt/input automatically.
+   const blocker=activeShot.img+'.provider-blocked.json';
+   fs.mkdirSync(path.dirname(p(blocker)),{recursive:true});
+   fs.writeFileSync(p(blocker),JSON.stringify({kind:'PROVIDER_GENERATION_SAFETY_BLOCK',
+    shotKey:activeShot.key,provider:'Cloudflare Workers AI',errorCode:3030,
+    requiresHumanSceneRevision:true,automaticRetry:false,actualImageGenerated:false,
+    formallyRegistered:false,gameDeployed:false},null,2)+'\n');
+   exec('git',['add','--',blocker]);
+   exec('git',['commit','-m','qa(story): record provider safety block for '+activeShot.key]);
+   exec('git',['push','origin','HEAD:'+branch]);
+   blocked.push({page:pg.num,shotKey:activeShot.key,reason:'CLOUDFLARE_SAFETY_3030'});
+   summary('PROVIDER_SAFETY_BLOCK_RECORDED_AND_NEXT_PAGE');
+   continue;
+  }
+  summary('STOPPED_NO_RETRIES_'+error);
   console.error('P0 FREE ONLY STOP: '+error);process.exitCode=2;break;
  }
 }
