@@ -1,0 +1,65 @@
+name: Story chapter 1 through stage 10 (P0 locked)
+
+on:
+  pull_request:
+    paths:
+      - 'assets/story/stage-manifests/**'
+      - 'assets/story/characters/c01-s*-reference-bible.json'
+      - 'scripts/run-story-stage-range.mjs'
+      - 'scripts/run-story-stage.mjs'
+      - 'scripts/prepare-story-stage-posters.mjs'
+      - 'scripts/assemble-story-bulk-100.py'
+      - 'qa/story-chapter1-through10-production.test.mjs'
+      - 'qa/story-single-stage-manifest.test.mjs'
+      - '.github/workflows/story-chapter1-through-stage10.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'assets/story/stage-manifests/**'
+      - 'scripts/run-story-stage-range.mjs'
+      - 'qa/story-chapter1-through10-production.test.mjs'
+      - 'qa/story-single-stage-manifest.test.mjs'
+      - '.github/workflows/story-chapter1-through-stage10.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  chapter1-through-stage10:
+    name: Verify stage 2-10 real screenplay keys, cast rules, 100-frame review batches
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install free open-source WebP checker
+        run: python -m pip install --disable-pip-version-check Pillow==11.3.0
+      - name: Check strict stage-locked screenplay and P0 master references
+        run: |
+          node qa/story-chapter1-through10-production.test.mjs
+          node qa/story-single-stage-manifest.test.mjs
+      - name: Run chapter1 stage2-10 preparation and review only native real images
+        run: node scripts/run-story-stage-range.mjs --start c01-s02 --through c01-s10
+      - name: Export all shot-specific briefs, 100-slot queues, and review-only artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: chapter1-stage2-through10-production-${{ github.run_id }}
+          path: |
+            qa-reports/story-stage-production/range-c01-s02-through-c01-s10/
+            qa-reports/story-stage-production/batches/c01-s02/
+            qa-reports/story-stage-production/batches/c01-s03/
+            qa-reports/story-stage-production/batches/c01-s04/
+            qa-reports/story-stage-production/batches/c01-s05/
+            qa-reports/story-stage-production/batches/c01-s06/
+            qa-reports/story-stage-production/batches/c01-s07/
+            qa-reports/story-stage-production/batches/c01-s08/
+            qa-reports/story-stage-production/batches/c01-s09/
+            qa-reports/story-stage-production/batches/c01-s10/
+          if-no-files-found: error
+          retention-days: 30
