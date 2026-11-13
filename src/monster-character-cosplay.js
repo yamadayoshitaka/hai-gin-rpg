@@ -13,6 +13,10 @@ import {attachTownOutfitNpc} from './cc0-town-npc-visuals.js';
 import {createMonsterModel,disposeMonsterSculpture} from './monster-geometry.js';
 import {startMonsterAction,animateMonsterModel} from './monster-animation.js';
 import {humanoidMonsterCostumeFor} from './monster-character-cosplay-manifest.js';
+import {addGothicMonsterSculpt,hasGothicMonsterSculpt}
+ from './monster-gothic-sculpt.js';
+import {decorateMonsterPhotoMaterial,detachMonsterPhotoMaterial}
+ from './monster-photo-pbr.js';
 
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const boneName=s=>String(s??'').toLowerCase().replace(/[^a-z0-9]/g,'');
@@ -70,15 +74,35 @@ function buildMonsterCostume(THREE,model,profile,detail){
  };
  const ownedGeo=[],ownedMats=[];
  const palette={skin:profile.skin,cloth:profile.cloth,metal:profile.metal,
-  accent:profile.accent,bone:0xd6cdb4,bandage:0xb6a993};
+  accent:profile.accent,bone:0xd6cdb4,bandage:0xb6a993,
+  ivory:0xc3b9ab,linen:0xb5a58e,
+  stain:0x3b322f,black:0x1b141a,iris:0xb94a2e,
+  velvet:profile.costume==='vampire'?0x251923:0x2d2733,
+  lining:profile.costume==='vampire'?0x662c43:0x402a43,
+  edge:profile.costume==='vampire'?0xac8e74:0x8d7774,
+  horn:profile.costume==='succubus'?0x393344:0x58484c,
+  membrane:profile.costume==='succubus'?0x54334a:0x38323f};
  const materials=new Map();
  const mat=(role)=>{
   if(!materials.has(role)){
    const isMetal=role==='metal',m=new THREE.MeshStandardMaterial({
     color:palette[role]??0x999999,
-    roughness:isMetal?.42:role==='bone'?.86:role==='bandage'?.96:.91,
-    metalness:isMetal?.64:0,
+    roughness:isMetal?.42:role==='bone'?.86:
+      role==='velvet'?.96:role==='linen'?.96:
+      role==='ivory'?.83:role==='iris'?.27:role==='membrane'?.81:.90,
+    metalness:isMetal?.64:role==='edge'?.38:0,
+    emissive:role==='iris'?0x260907:0x000000,
+    emissiveIntensity:role==='iris'?.20:0,
     side:THREE.DoubleSide,
+   });
+   // Reuse the exact bundled photographic texture cache that already serves
+   // the nonhumanoid bestiary. No new API, CDN request or per-monster textures.
+   const surfaceRole={
+    velvet:'fabric',lining:'fabric',linen:'bandage',
+    metal:'metal',edge:'metal',membrane:'leather'
+   }[role];
+   if(surfaceRole)decorateMonsterPhotoMaterial(m,{
+     family:'undead',speciesId:profile.id,role:surfaceRole,detail
    });
    materials.set(role,m);ownedMats.push(m);
   }
@@ -141,8 +165,12 @@ function buildMonsterCostume(THREE,model,profile,detail){
  // The canonical actor already has garments. Overlays only cover species
  // identity (e.g. mummy wraps) and fitted folds; no replacement mannequin.
  const costume=profile.costume;
+ const gothic=hasGothicMonsterSculpt(costume);
+ if(gothic)addGothicMonsterSculpt({
+   THREE,profile,detail,frames,attach,tube,torus
+ });
  const ceremonial=['vampire','lich','succubus','death_knight','dark_knight'];
- if(ceremonial.includes(costume)){
+ if(!gothic&&ceremonial.includes(costume)){
   torus(frames.chest,'cloth','fitted-collar',0,.21,-.005,.17,.095,.045);
   torus(frames.chest,'metal','waist-belt',0,-.33,0,.19,.13,.024);
   for(const side of [-1,1])
@@ -150,7 +178,7 @@ function buildMonsterCostume(THREE,model,profile,detail){
     [side*.13,.29,-.12],[side*.08,.05,-.16],[side*.19,-.21,-.14]
    ],.014);
  }
- if(['death_knight','dark_knight','demon','gargoyle'].includes(costume)){
+ if(!gothic&&['death_knight','dark_knight','demon','gargoyle'].includes(costume)){
   // Armour uses the same upper-arm bone as the game character.
   for(const side of [-1,1]){
    const k=side<0?0:1;
@@ -160,17 +188,17 @@ function buildMonsterCostume(THREE,model,profile,detail){
    torus(frames.forearms[k],'metal','gauntlet-rim-'+k,0,-.20,0,.088,.080,.016);
   }
  }
- if(['mummy','skeleton','lich'].includes(costume)){
+ if(!gothic&&['mummy','skeleton','lich'].includes(costume)){
   for(let side=0;side<2;side++){
    bands(frames.forearms[side],'forearm-wrap-'+side,-.27,.01,.084,.082,2.7);
    bands(frames.calves[side],'shin-wrap-'+side,-.27,.06,.115,.103,2.6);
   }
  }
- if(costume==='mummy'){
+ if(!gothic&&costume==='mummy'){
   bands(frames.head,'face-wrap',-.09,.16,.125,.14,2.9);
   bands(frames.chest,'torso-wrap',-.32,.31,.25,.19,3.8);
  }
- if(costume==='skeleton'){
+ if(!gothic&&costume==='skeleton'){
   // Existing humanoid facial anatomy stays beneath a bone-colored skull
   // mask, with recessed eye sockets; not the old separate puppet head.
   attach(frames.head,new THREE.SphereGeometry(.124,detail==='low'?14:22,12),
@@ -181,7 +209,7 @@ function buildMonsterCostume(THREE,model,profile,detail){
   for(let i=0;i<5;i++)tube(frames.chest,'bone','exposed-rib-'+i,
    [[-.18,.26-i*.094,-.12],[0,.21-i*.094,-.18],[.18,.26-i*.094,-.12]],.018);
  }
- if(profile.fangs){
+ if(!gothic&&profile.fangs){
   // Small attached canines follow the actual head bone on every action.
   for(const side of [-1,1]){
    horn(frames.head,'gingival-canine-'+side,side,.038,-.075,-.111,.056,.010,'bone');
@@ -189,7 +217,7 @@ function buildMonsterCostume(THREE,model,profile,detail){
     'skin','fang-gum-'+side,[side*.040,-.072,-.115]);
   }
  }
- if(profile.horns||costume==='tengu'){
+ if((!gothic&&profile.horns)||costume==='tengu'){
   for(const side of [-1,1]){
    attach(frames.head,new THREE.SphereGeometry(.052,9,8),
     'skin','horn-bone-bed-'+side,[side*.085,.115,-.024]);
@@ -201,7 +229,7 @@ function buildMonsterCostume(THREE,model,profile,detail){
   attach(frames.head,new THREE.ConeGeometry(.055,.18,10,4),
     'metal','tengu-beak',[0,-.018,-.157],[Math.PI*.5,0,0]);
  }
- if(profile.cape||['vampire','lich','dark_knight'].includes(costume)){
+ if(!gothic&&(profile.cape||['vampire','lich','dark_knight'].includes(costume))){
   // Back cloth is a concave sheet attached to the spine, not detached
   // shoulder pads placed above a separately animated torso.
   const w=.31,top=.24,bottom=-.78,g=new THREE.BufferGeometry();
@@ -222,7 +250,7 @@ function buildMonsterCostume(THREE,model,profile,detail){
   g.setIndex(indices);g.computeVertexNormals();
   attach(frames.chest,g,'cloth','draped-cape');
  }
- if(profile.wings){
+ if(!gothic&&profile.wings){
   // Wing roots are rigidly anchored to the canonical upper torso;
   // skinned shoulders retain their original motion and proportions.
   for(const side of [-1,1]){
@@ -246,6 +274,7 @@ function buildMonsterCostume(THREE,model,profile,detail){
  model.userData.monsterCostume={
   id:profile.id,kind:costume,heroSource:profile.modelId,
   originalSkeleton:true,overlayMeshes:ownedGeo.length,
+  gothicSculptEdition:gothic?'gothic-horror-2026-11':null,
   jointAnchored:true,independentHeroMaterials:true,
  };
  return ()=>{
@@ -253,11 +282,14 @@ function buildMonsterCostume(THREE,model,profile,detail){
    ...frames.arms,...frames.forearms,...frames.legs,...frames.calves])
    frame.parent?.remove(frame);
   for(const geo of ownedGeo)geo.dispose();
-  for(const material of ownedMats)material.dispose();
+  for(const material of ownedMats){
+   detachMonsterPhotoMaterial(material);
+   material.dispose();
+  }
  };
 }
-export function createCosplayedHumanoidMonster(spec,{detail='high'}={}){
- const profile=humanoidMonsterCostumeFor(spec);
+export function createCosplayedHumanoidMonster(spec,{detail='high',genderVariant=null}={}){
+ const profile=humanoidMonsterCostumeFor(spec,{genderVariant});
  if(!profile)throw Error('No humanoid cosplay mapping '+String(spec?.id));
  const root=new THREE.Group();root.name=spec.id+'-'+spec.name+'-cosplay';
  const fallback=createMonsterModel(spec,{detail});root.add(fallback);
