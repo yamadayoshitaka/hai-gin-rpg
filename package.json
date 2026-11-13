@@ -67,8 +67,9 @@
     "test:creature-seams": "node qa/creature-fangs-garment-seam-batch.test.mjs",
     "batch:creature-seam-quality": "npm run test:summon-quality && npm run test:creature-master-quality && npm run test:creature-seams",
     "test:humanoid-monster-cosplay": "node qa/monster-character-cosplay-regression.test.mjs",
-    "batch:humanoid-monster-refresh": "npm run test:humanoid-monster-cosplay && npm run test:creature-master-quality && npm run test:summon-quality && npm run test:monster-gothic-sculpt && npm run test:monster-inhuman-skin",
+    "batch:humanoid-monster-refresh": "npm run test:humanoid-monster-cosplay && npm run test:creature-master-quality && npm run test:summon-quality && npm run test:monster-gothic-sculpt && npm run test:monster-inhuman-skin && npm run test:creature-variants-mobile-viewer",
     "test:monster-gothic-sculpt": "node qa/monster-gothic-sculpt-regression.test.mjs",
-    "test:monster-inhuman-skin": "node qa/monster-16-cosplay-pigment-regression.test.mjs"
+    "test:monster-inhuman-skin": "node qa/monster-16-cosplay-pigment-regression.test.mjs",
+    "test:creature-variants-mobile-viewer": "node qa/demon-female-summon-mobile-viewer.test.mjs"
   }
 }
