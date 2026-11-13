@@ -6,7 +6,7 @@ const fs=require('node:fs');
  try{
   const page=await browser.newPage({viewport:{width:460,height:900},deviceScaleFactor:1});
   page.on('pageerror',e=>console.error('BROWSER_PAGE_ERROR '+e.message));
-  await page.goto('http://127.0.0.1:8766/face-body-studio.html?v=54',
+  await page.goto('http://127.0.0.1:8766/face-body-studio.html?v=55',
     {waitUntil:'commit',timeout:90000});
   await page.waitForFunction(()=>window.__heroineBodyQA?.()?.v36RealBattleCostume?.active,
     null,{timeout:180000});
@@ -44,18 +44,22 @@ const fs=require('node:fs');
     active:state.v36RealBattleCostume?.active,
     meshes:meshes.sort((a,b)=>b.box.max[1]-a.box.max[1]).slice(0,85)};
   });
-  console.log('HUMAN_V53_ACTUAL_MESH_DIAGNOSTICS '+JSON.stringify(result));
+  console.log('HUMAN_V55_ACTUAL_MESH_DIAGNOSTICS '+JSON.stringify(result));
   if(!(result.neckContinuity?.applied&&result.neckContinuity.bustTrianglesRemoved>3))
     throw Error('HEAD_BUST_STILL_PRESENT: '+JSON.stringify(result.neckContinuity));
   if(result.neckContinuity.legacyNeckPartsHidden<3)
     throw Error('FLAT_NECK_CAPS_STILL_VISIBLE: '+JSON.stringify(result.neckContinuity));
   if(result.meshes.some(mesh=>/^(REAL_HEAD_BODY_CLOSED_NECK_SEAL|(?:LEFT|RIGHT)_SHOULDER_CUT_SURFACE_CAP)$/.test(mesh.name)))
     throw Error('LEGACY_FLAT_NECK_MESH_IN_RENDER_LIST');
-  if(!(result.headAlignment?.applied&&result.headAlignment.gapMeters>=.006))
-    throw Error('FACE_STILL_INSIDE_TORSO: '+JSON.stringify(result.headAlignment));
+  if(!(result.headAlignment?.applied&&
+      Math.abs(result.headAlignment.gapMeters+result.headAlignment.anatomicalInset)<.006))
+    throw Error('HEAD_NOT_ANATOMICALLY_SEATED: '+JSON.stringify(result.headAlignment));
+  if(!(result.neckContinuity.neckHeight<.052&&
+      result.neckContinuity.neckToHeadRatio<.22))
+    throw Error('GIRAFFE_NECK_DETECTED: '+JSON.stringify(result.neckContinuity));
   if(!(result.neck?.applied&&result.neck.clearanceMeters>=.007))
     throw Error('CHEST_STILL_ABOVE_CHIN: '+JSON.stringify(result.neck));
-  fs.mkdirSync('qa-screenshots/human-v54',{recursive:true});
-  await page.screenshot({path:'qa-screenshots/human-v54/female-overlap.png',timeout:90000});
+  fs.mkdirSync('qa-screenshots/human-v55',{recursive:true});
+  await page.screenshot({path:'qa-screenshots/human-v55/female-overlap.png',timeout:90000});
  }finally{await browser.close()}
-})().catch(e=>{console.error('HUMAN_V53_DIAGNOSTIC_FAIL '+e.stack);process.exitCode=1});
+})().catch(e=>{console.error('HUMAN_V55_DIAGNOSTIC_FAIL '+e.stack);process.exitCode=1});
