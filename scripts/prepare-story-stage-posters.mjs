@@ -16,6 +16,22 @@ import {storyDecisionForStage,ROUTES,ENDING_GUIDE} from '../src/story-narrative-
 import {STORY_STAGE_BEATS} from '../src/story-stage-beats-v2.js';
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
+const ABSOLUTE_P0=JSON.parse(fs.readFileSync(path.join(root,
+ 'assets/story/quality/artwork-p0-rules.json'),'utf8'));
+if(ABSOLUTE_P0.priority!=='P0_ABSOLUTE_MUST_FOLLOW'||!ABSOLUTE_P0.failClosed)
+ throw Error('Critical story artwork P0 quality contract is missing or weakened');
+function p0PromptLines(){
+ return [
+  'P0_ABSOLUTE_MUST_FOLLOW. HARD REQUIREMENTS. Any violation = REJECTED, NOT READY, NO PUBLICATION.',
+  'P0_REFERENCE_IMAGE_BYTES: supply actual bytes of the exact named protagonist and all depicted cast references as image inputs BEFORE rendering. Filenames/paths or text descriptions DO NOT count as attachments.',
+  'P0_NO_TEXT_UI_IN_ART: generate PURE SCENE ART ONLY. ABSOLUTELY NO kanji, hiragana, katakana, letters, digits, scene/frame numbers, speech balloons, text captions, dialogue, rubies, readable marks, interface/HUD/buttons, mock game screens, titles, logos, signatures or watermarks.',
+  'P0_EXACT_CANONICAL_SCENE: depict only the currently specified screenplay beat. Previous/next beats are reference context ONLY. Do not depict future success, fake a scene, add characters, or invent a new objective.',
+  'P0_CAST_AND_BRANCH: lock every face, hair, eyes, armor and outfit to uploaded master images. Female commander is long blonde-haired, blue-eyed, silver-armored, distinct from silver-haired Lucia. Male commander has dark hair. Do NOT blend cast or swap editions and outcomes.',
+  'P0_NATIVE_AND_QA: independently drawn cinematic 16:9 at native 1536x864 pixels minimum; no low-resolution collage, game screenshot or fake upscale. Keep critical faces/hands/items 5% in from frame edges.',
+  'P0_FAIL_CLOSED: if any required image bytes are missing or any constraint cannot be verified, mark BLOCKED/REJECTED. NEVER treat the result as approved, registered or deployed.',
+  'All scene IDs, Japanese screenplay text, spoken dialogue, VOICEVOX readings and production metadata supplied below are INVISIBLE INSTRUCTIONS ONLY, never pixels.'
+ ];
+}
 const args=process.argv.slice(2);
 function argValue(name,fallback){
  const pos=args.indexOf(name);
@@ -128,6 +144,7 @@ function shotGenerationPrompt(context){
   'female strategist: LONG BLONDE HAIR, BLUE EYES, SILVER ARMOR; she is distinct from Lucia':
   'male strategist: DARK HAIR, distinguished from Garan';
  return [
+  ...p0PromptLines(),
   'Produce exactly ONE independent original fantasy RPG cinematic story illustration.',
   'CANVAS: landscape 16:9; native detail at 1536x864 pixels minimum, prefer 2048x1152; save WebP.',
   'SAFE COMPOSITION: preserve critical faces/hands/objects at least 5% inside every edge.',
@@ -146,7 +163,8 @@ function shotGenerationPrompt(context){
   'MATCH OR EXCEED the first-stage approved-looking style while treating stage-1 samples as provisional until a reviewer approves them.',
   'NO text, Japanese letters, numbers, frame number, captions, dialogue, ruby, title, speech bubble, infographic, poster headline, UI, logos, signature or watermark INSIDE THE IMAGE.',
   'DO NOT swap genders, blend characters, combine multiple beats into a montage or reuse victory/defeat/death imagery.',
-  'If the actual reference image bytes cannot be attached, mark the shot NOT READY; do not claim a cast match.'
+  'If the actual reference image bytes cannot be attached, mark the shot NOT READY; do not claim a cast match.',
+  'P0 FINAL DOUBLE-CHECK: NO TEXT / NO UI / MATCH ACTUAL MASTER IMAGES / CURRENT SCRIPT BEAT ONLY / REJECT IF UNSURE.'
  ].join('\n');
 }
 const results=[];
@@ -200,7 +218,12 @@ for(const stage of stages){
        precedingApprovedImageExists:previousAsset?present(previousAsset):false},
       imageSpec:{...imageSpec},
       generationPrompt:shotGenerationPrompt(shotContext),
+      absolutePriority:'P0_ABSOLUTE_MUST_FOLLOW',
+      absolutePriorityPolicy:'assets/story/quality/artwork-p0-rules.json',
       requiredCharacterReferences:castReferences,
+      realCastImageBytesAttached:false,
+      renderReady:false,
+      renderBlockedReason:'REAL_REFERENCE_IMAGE_BYTES_NOT_ATTACHED_BY_PREFLIGHT',
       attachmentGate:'ATTACH_REAL_IMAGE_BYTES_BEFORE_GENERATION',
       individualAsset,sourcePoster:posterPath(stage.id,edition.edition,gender,page.number),
       individualMinPixels:[imageSpec.pixelWidth,imageSpec.pixelHeight],
@@ -211,7 +234,9 @@ for(const stage of stages){
        sourceAsset:maleSource,decision:'VISUAL_REVIEW_REQUIRED_NOT_AUTOMATIC',
        acceptanceCondition:'Only if the hero is NOT visible and same cast, stage, beat, time and outcome; record the source SHA256'
       }:null,
-      requiredChecks:['sceneMatchesExactScript','previousAndNextContinuity','fixedCastIdentity',
+      requiredChecks:['p0PolicyPresent','failClosedOnMissingActualImageBytes',
+       'rejectAnyInImageTextOrUI','rejectAnyUnmatchedCastIdentity',
+       'sceneMatchesExactScript','previousAndNextContinuity','fixedCastIdentity',
        'realCastImagesAttached','genderCorrect','outcomeCorrect','noTextNumbersLogosOrUI',
        'sameStyleAsStage1','realNativeDetail','sharpFacesAndHands','safeArea5Percent',
        'full16by9','verifiedWebP','manualQualityReview','outputSha256Recorded'],
@@ -263,7 +288,10 @@ const totals={
 const report={schemaVersion:3,kind:'production-manifest-not-generated-art',
  generatedAt:new Date().toISOString(),qualityPolicy:'docs/story-stage-poster-production-manifest-v2.md',
  shotWorkflow:'SCREENPLAY_CONTEXT_PREVIOUS_CURRENT_NEXT_REAL_CAST_REFERENCES_PER_SHOT',
- imageSpec,outputIsOnlyInstructions:true,noPaidAPICalls:true,artGeneratorAttached:false,
+ imageSpec,absolutePriority:'P0_ABSOLUTE_MUST_FOLLOW',
+ absolutePriorityPolicy:'assets/story/quality/artwork-p0-rules.json',
+ failClosedOnMissingReferenceBytes:true,
+ outputIsOnlyInstructions:true,noPaidAPICalls:true,artGeneratorAttached:false,
  approvalPolicy:'NO_ARTWORK_MAY_BE_APPROVED_BY_THIS SCRIPT',
  nextStagePolicy:'Only advance when each edition/gender has manually reviewed and byte-verified art and live game verification',
  qualityReferenceImages:qualityReference,totals,stages:results};
