@@ -60,5 +60,5 @@ export function heroineBeautyControlsV47(base={}){
   eyeWidth:1.27,eyeHeight:1.20,irisDiameter:1.36,eyeDepth:.055,
   lashCurl:1.24,lashLength:1.69,lashDensity:1.28,
   lipstickWidth:1.11,lipstickHeight:1.08,
-  ageBand:'twenties',bodyType:'thin'};
+  ageBand:'twenties',bodyType:'normal'};
 }
