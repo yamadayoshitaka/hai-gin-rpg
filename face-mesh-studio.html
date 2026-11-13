@@ -85,7 +85,7 @@ button{padding:9px 11px}
 <button id="clay" aria-pressed="false" disabled>灰色メッシュ</button>
 <button id="color" aria-pressed="true" disabled>カラー表示</button>
 </div></div>
-<section id="v32PartsStudio"><h2>3Dパーツ選択：各10種類</h2><div id="v32FemaleChoices"></div><div id="v32MaleChoices" hidden></div></section>
+<section id="v32PartsStudio"><h2>男女独立3Dパーツ選択：各10種類</h2><div id="v32FemaleChoices"></div><div id="v32MaleChoices" hidden></div></section>
 <details id="faceAdjustments" open>
 <summary>女性顔の3Dパーツ調整</summary>
 <p class="slider-midpoint-note">保存した顔が中央（50%）です。右に動かすと保存時より強く調整できます。</p>
@@ -182,6 +182,7 @@ import {createPartSelectorUI} from './src/face-part-selector-ui-v32.js?v=41';
 import {defaultPartSelection,resolvePartSelection,PART_CATALOG,HAIR_COLORS} from './src/face-part-catalog-v32.js?v=41';
 import {listWigStyles,DEFAULT_WIG_STYLE_ID} from './src/face-wig-styles.js?v=41';
 import {loadHeroineFacePreset,saveHeroineFacePreset} from './src/heroine-face-preset-store.js?v=41';
+import {loadMaleFacePreset,saveMaleFacePreset} from './src/male-face-preset-store.js?v=42';
 import {applyHeroineSkinMaterial} from './src/heroine-skin-material.js?v=41';
 import {FEMALE_V7_DEFAULTS,MALE_REFERENCE_DEFAULT,FACE_SLIDER_RANGES,FACE_EYE_SPACING_DEFAULT,FACE_EYE_SPACING_RANGE,CONTACT_COLORS,CONTACT_COLOR_LABELS,safeContactColor,normalizeFemaleFaceControls,normalizeMaleFaceControls} from './src/face-v7-controls.js';
 const $=id=>document.getElementById(id);
@@ -253,6 +254,8 @@ if(!v32PartMode)document.body.classList.add('v32-legacy');
 const v32Parts={female:defaultPartSelection(),male:defaultPartSelection()};
 const v32Makeup={female:0,male:0};
 const savedHeroinePreset=v32PartMode?loadHeroineFacePreset():null;
+const savedMalePreset=v32PartMode?loadMaleFacePreset():null;
+if(savedMalePreset?.parts)Object.assign(v32Parts.male,savedMalePreset.parts);
 if(savedHeroinePreset?.parts){
  Object.assign(v32Parts.female,savedHeroinePreset.parts);
  v32Makeup.female=Number(savedHeroinePreset.makeupType??v32Parts.female.makeup)||0;
@@ -264,7 +267,8 @@ if(savedHeroinePreset?.parts){
 if(v32PartMode){
  modelChanges=normalizeFemaleFaceControls(savedHeroinePreset?.controls||
   resolvePartSelection('female',v32Parts.female,FEMALE_V7_DEFAULTS).controls);
- maleChanges=normalizeMaleFaceControls(resolvePartSelection('male',v32Parts.male,MALE_REFERENCE_DEFAULT).controls);
+ maleChanges=normalizeMaleFaceControls(savedMalePreset?.controls||
+ resolvePartSelection('male',v32Parts.male,MALE_REFERENCE_DEFAULT).controls);
 }
 for(const style of listWigStyles()){
  const option=document.createElement('option');
@@ -278,6 +282,14 @@ function persistHeroineFace(){
  saveHeroineFacePreset({parts:{...v32Parts.female},controls:{...modelChanges},
   hairStyleId:wigStyleId,hairColor:wigColor,hairDensity:wigDensity,
   makeupType:v32Makeup.female,contactColor});
+}
+function persistMaleFace(){
+ if(!ready||!v32PartMode)return;
+ const maleSelection=resolvePartSelection('male',v32Parts.male,MALE_REFERENCE_DEFAULT);
+ saveMaleFacePreset({parts:{...v32Parts.male},controls:{...maleChanges},
+  hairStyleId:maleSelection.hairStyleId,
+  hairColor:v32Parts.male.hairColor,
+  hairDensity:wigDensity,contactColor:CONTACT_COLORS.brown});
 }
 function setActive(ids,id){
  for(const x of ids)$(x).setAttribute('aria-pressed',String(x===id));
@@ -539,6 +551,7 @@ function rebuildMale(){
  const wasDamping=orbit.enableDamping;orbit.enableDamping=false;
  orbit.update();orbit.enableDamping=wasDamping;
  if(gender==='male')$('status').textContent='男性顔更新（ズーム・視点保持）';
+ persistMaleFace();
  $('metrics').textContent=JSON.stringify(metrics(),null,2);
 }
 // Extend the face-only sliders with the same actual eye-region controls
@@ -803,7 +816,7 @@ if(v32PartMode){
      if(ready){rebuildFemale();rebuildWig();}
     }else{
      maleChanges=normalizeMaleFaceControls(selected.controls);
-     if(ready){rebuildMale();rebuildMaleHair();}
+     if(ready){rebuildMale();rebuildMaleHair();persistMaleFace();}
     }
     if(ready){repaint();if(sex==='female')persistHeroineFace();}
    });
