@@ -4,6 +4,9 @@ on:
   push:
     branches: [main]
     paths:
+      - 'scripts/process-c01-s01-stage-batch.mjs'
+      - 'qa/story-stage1-complete-audit.test.mjs'
+      - 'assets/story/stage-manifests/c01-s01.manifest.json'
       - 'scripts/prepare-story-stage-posters.mjs'
       - 'scripts/run-story-stage.mjs'
       - 'qa/story-stage2-cast-assignment.test.mjs'
@@ -27,6 +30,9 @@ on:
       - 'assets/story/chapters/c01/stage2-stage3-production-queue.json'
   pull_request:
     paths:
+      - 'scripts/process-c01-s01-stage-batch.mjs'
+      - 'qa/story-stage1-complete-audit.test.mjs'
+      - 'assets/story/stage-manifests/c01-s01.manifest.json'
       - 'scripts/check-c01-s02-pending-art.mjs'
       - 'src/story-stage2-reviewed-art.js'
       - 'src/story-panel-registered-art.js'
@@ -62,6 +68,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Audit all 30 existing Chapter 1 Stage 1 WebPs and run six five-frame one-shot slices
+        run: |
+          node --check scripts/process-c01-s01-stage-batch.mjs
+          node qa/story-stage1-complete-audit.test.mjs
       - name: Verify all stage 2 and 3 versions have unique assets and truthfully report missing art
         run: |
           node --check scripts/prepare-story-stage-posters.mjs
