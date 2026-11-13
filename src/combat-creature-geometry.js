@@ -12,7 +12,7 @@ import {buildCanineFurRibbonGeometry} from './canine-fur-ribbons.js?v=4.4.92';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import {createFaceProfile} from './facial-feature-profiles.js?v=1';
 import {creatureFaceVolume,sculptAxialFacePoint,sculptVerticalFacePoint} from './creature-face-volume.js';
-import {addHumanoidSummon} from './creature-summon-humanoid-anatomy.js?v=4.4.97';
+import {addHumanoidSummon} from './creature-summon-humanoid-anatomy.js?v=4.4.99';
 import {createRootedCreatureHornGeometry,createCreatureScuteGeometry}
   from './creature-anatomy-mesh.js';
 
