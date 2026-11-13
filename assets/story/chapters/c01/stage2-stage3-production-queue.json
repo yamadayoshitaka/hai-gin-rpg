@@ -137,7 +137,18 @@
           "individualFormat": "assets/story/chapters/c01/panels/c01-s02-mNN-post-gameover-female.webp",
           "individualLegacyException": null
         }
-      ]
+      ],
+      "offlineDraftHandoff": {
+        "path": "assets/story/chapter-drafts/c01/c01-s02-11-draft-handoff-20261113.json",
+        "candidateCount": 11,
+        "femaleCandidates": 10,
+        "maleDefeatCandidates": 1,
+        "qualityApproved": 0,
+        "githubWebPBytesCommitted": false,
+        "remainingWithoutOfflineCandidate": 22,
+        "ingestionCommand": "python scripts/verify-stage2-draft-pack.py /path/to/hai_gin_stage2_11_candidate_images_20261113.zip --install-drafts",
+        "status": "REVIEW_REQUIRED_BEFORE_GAME_REGISTRATION"
+      }
     },
     {
       "stageId": "c01-s03",
@@ -245,5 +256,6 @@
     "registeredDraftPanels": 15,
     "missingPanels": 81,
     "qualityApprovedPanels": 0
-  }
+  },
+  "lastStage2ArtworkReview": "2026-11-13"
 }

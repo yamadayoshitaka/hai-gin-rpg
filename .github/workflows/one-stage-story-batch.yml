@@ -14,6 +14,9 @@ on:
       - 'assets/story/stage-manifests/**'
       - 'scripts/run-story-stage.mjs'
       - 'qa/story-single-stage-manifest.test.mjs'
+      - 'qa/story-stage2-draft-intake.test.mjs'
+      - 'scripts/verify-stage2-draft-pack.py'
+      - 'assets/story/chapter-drafts/c01/c01-s02-11-draft-handoff-20261113.json'
       - '.github/workflows/one-stage-story-batch.yml'
       - 'docs/story-stage-poster-production-manifest-v2.md'
 
@@ -45,6 +48,8 @@ jobs:
         run: |
           node qa/story-stage-poster-production.test.mjs
           node qa/story-single-stage-manifest.test.mjs
+          node qa/story-stage2-draft-intake.test.mjs
+          python -m py_compile scripts/verify-stage2-draft-pack.py
       - name: Prepare and validate real cast reference images for stage2
         if: env.STAGE_ID == 'c01-s02'
         run: |

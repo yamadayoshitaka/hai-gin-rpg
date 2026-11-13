@@ -1,0 +1,171 @@
+{
+  "schemaVersion": 1,
+  "kind": "EXISTING_OFFLINE_IMAGE_DRAFTS_NOT_GITHUB_ASSETS",
+  "stageId": "c01-s02",
+  "created": "2026-11-13",
+  "userDeliveryArchive": "hai_gin_stage2_11_candidate_images_20261113.zip",
+  "contract": "assets/story/stage-manifests/c01-s02.manifest.json",
+  "registeredExistingUnapprovedOnGithub": 15,
+  "offlineCandidates": 11,
+  "stillWithoutAnyCandidate": 22,
+  "qualityApprovedTotal": 0,
+  "realBinaryFilesCommittedToGithub": false,
+  "doNotPromoteUntilVisualQA": true,
+  "sourceMeta": "assets/story/chapter-drafts/c01/c01-s02-female-offline-handoff-20261113.json",
+  "images": [
+    {
+      "assetName": "c01-s02-m01-pre-female.webp",
+      "shotId": "c01-s02-m01",
+      "edition": "pre",
+      "gender": "female",
+      "pixels": [
+        1536,
+        864
+      ],
+      "sha256": "b7ab0ad273bf62017625eb6995357b335b510f715e6cda2e416189b619aeb0be",
+      "bytes": 530658,
+      "status": "UNAPPROVED_DRAFT_OFFLINE",
+      "source": "previous-session-real-WebP-original"
+    },
+    {
+      "assetName": "c01-s02-m02-pre-female.webp",
+      "shotId": "c01-s02-m02",
+      "edition": "pre",
+      "gender": "female",
+      "pixels": [
+        1536,
+        864
+      ],
+      "sha256": "a404838bd1f9899630da90c20eb36d7a2fe38178d3c2e9182af1f34454562909",
+      "bytes": 639674,
+      "status": "UNAPPROVED_DRAFT_OFFLINE",
+      "source": "previous-session-real-WebP-original"
+    },
+    {
+      "assetName": "c01-s02-m03-pre-female.webp",
+      "shotId": "c01-s02-m03",
+      "edition": "pre",
+      "gender": "female",
+      "pixels": [
+        1536,
+        864
+      ],
+      "sha256": "1d83114ef54f5b00bf1521291e277125b0a9559438ecb63091154c41d4e3e261",
+      "bytes": 631122,
+      "status": "UNAPPROVED_DRAFT_OFFLINE",
+      "source": "previous-session-real-WebP-original"
+    },
+    {
+      "assetName": "c01-s02-m04-pre-female.webp",
+      "shotId": "c01-s02-m04",
+      "edition": "pre",
+      "gender": "female",
+      "pixels": [
+        1536,
+        864
+      ],
+      "sha256": "ba5643ec326d764052a387f74206faf4e9b6bc0659fd85653ff0f6cb2ab1f7a2",
+      "bytes": 680088,
+      "status": "UNAPPROVED_DRAFT_OFFLINE",
+      "source": "previous-session-real-WebP-original"
+    },
+    {
+      "assetName": "c01-s02-m05-pre-female.webp",
+      "shotId": "c01-s02-m05",
+      "edition": "pre",
+      "gender": "female",
+      "pixels": [
+        1536,
+        864
+      ],
+      "sha256": "0e63f683b8bf1524fcfc5268a80849a12a8dd7c6e09cf0ad7cd480267a8c91c8",
+      "bytes": 659844,
+      "status": "UNAPPROVED_DRAFT_OFFLINE",
+      "source": "previous-session-real-WebP-original"
+    },
+    {
+      "assetName": "c01-s02-m11-pre-female.webp",
+      "shotId": "c01-s02-m11",
+      "edition": "pre",
+      "gender": "female",
+      "pixels": [
+        1536,
+        864
+      ],
+      "sha256": "a0607366b0b8f1d15526b43cb15d8f4765453f147cd38a2b747d8b25d6f308be",
+      "bytes": 683046,
+      "status": "UNAPPROVED_DRAFT_OFFLINE",
+      "source": "previous-session-real-WebP-original"
+    },
+    {
+      "assetName": "c01-s02-m13-pre-female.webp",
+      "shotId": "c01-s02-m13",
+      "edition": "pre",
+      "gender": "female",
+      "pixels": [
+        1536,
+        864
+      ],
+      "sha256": "619ead2801a4e01b518276b0336912a9b7eb1b36bd185d499e48397fcc221137",
+      "bytes": 684656,
+      "status": "UNAPPROVED_DRAFT_OFFLINE",
+      "source": "previous-session-real-WebP-original"
+    },
+    {
+      "assetName": "c01-s02-m15-pre-female.webp",
+      "shotId": "c01-s02-m15",
+      "edition": "pre",
+      "gender": "female",
+      "pixels": [
+        1536,
+        864
+      ],
+      "sha256": "4df7b96ae042332554e3d52b5fa5d90c65622a44cb1b17e4f3aa57929231aef0",
+      "bytes": 681636,
+      "status": "UNAPPROVED_DRAFT_OFFLINE",
+      "source": "previous-session-real-WebP-original"
+    },
+    {
+      "assetName": "c01-s02-m06-post-victory-female.webp",
+      "shotId": "c01-s02-m06",
+      "edition": "post-victory",
+      "gender": "female",
+      "pixels": [
+        1536,
+        864
+      ],
+      "sha256": "629a9e28f1fc00aaa82b02d1520eb60d4bdeb5fda193f7cdfa0899dc0ca8ad69",
+      "bytes": 667786,
+      "status": "UNAPPROVED_DRAFT_OFFLINE",
+      "source": "previous-session-real-WebP-original"
+    },
+    {
+      "assetName": "c01-s02-m07-post-victory-female.webp",
+      "shotId": "c01-s02-m07",
+      "edition": "post-victory",
+      "gender": "female",
+      "pixels": [
+        1536,
+        864
+      ],
+      "sha256": "0bd4c03feb1aaee5c5b97e4063915d1a3310414c47602751095c949c50961544",
+      "bytes": 729316,
+      "status": "UNAPPROVED_DRAFT_OFFLINE",
+      "source": "previous-session-real-WebP-original"
+    },
+    {
+      "assetName": "c01-s02-m06-post-defeat-male.webp",
+      "shotId": "c01-s02-m6",
+      "edition": "post-defeat",
+      "gender": "male",
+      "pixels": [
+        1536,
+        864
+      ],
+      "sha256": "26a2b9d5521a656a7e278a742ed98fbe2a0a03abea49b0f9944b037310a156d0",
+      "status": "UNAPPROVED_DRAFT_OFFLINE",
+      "source": "2026-11-13 imagegen single-scene retreat",
+      "bytes": 545028
+    }
+  ]
+}
