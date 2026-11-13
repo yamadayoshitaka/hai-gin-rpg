@@ -241,6 +241,40 @@ export function createSculpture(spec,detail='high'){
      for(const geo of geometryParts)geo.dispose();
    }
  };
+ /**
+  * Real ribbon-wrapped bandage, UV mapped and slightly lifted above the
+  * anatomical mesh. It belongs to its owning pivot (torso/head/forearm/shin)
+  * and therefore bends WITH the limb rather than floating beside it.
+  */
+ const bandage=(parent,shade,{name='cloth-bandage',center=[0,0,0],
+   radii=[.25,.25],startY=-.2,endY=.2,turns=2.5,width=.07,
+   phase=0,segments=68}={})=>{
+   const vertices=[],uv=[],indices=[];
+   const [cx,,cz]=center,[rx,rz]=radii;
+   const steps=Math.max(12,Math.min(144,Math.round(segments)));
+   for(let i=0;i<=steps;i++){
+     const t=i/steps,angle=phase+t*Math.PI*2*turns;
+     const ripple=1+.018*Math.sin(angle*3.2+phase)+.012*Math.sin(t*27+phase);
+     const x=cx+Math.cos(angle)*rx*ripple,z=cz+Math.sin(angle)*rz*ripple;
+     const y=center[1]+startY+(endY-startY)*t;
+     const taper=.55+.45*Math.min(1,t*13,(1-t)*13);
+     for(const sign of [-1,1]){
+       vertices.push(x,y+sign*width*taper*.5,z);
+       uv.push(t*turns,sign<0?0:1);
+     }
+   }
+   for(let i=0;i<steps;i++){
+     const a=2*i,b=a+2;
+     indices.push(a,b,a+1,a+1,b,b+1);
+   }
+   const geometry=new THREE.BufferGeometry();
+   geometry.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));
+   geometry.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
+   geometry.setIndex(indices);geometry.computeVertexNormals();
+   return own(attach(parent,geometry,shade,{
+     rough:.95,metal:0,name,
+   }));
+ };
  const fin=(parent,shade,base,tip,span=.34,options={})=>{
    // A curved tapered feather/wing membrane, not a planar two-triangle card.
    // Near LOD has curvature and subpixel normal detail; low LOD is compact.
@@ -314,7 +348,7 @@ export function createSculpture(spec,detail='high'){
    const m=attach(parent,geo,shade,{metal:.32});m.position.set(...position);return m;
  };
  root.userData.detail=detail;
- return {root,pivots,group,sphere,rock,bone,spike,tube,bridge,fur,skinnedFur,fin,eyes,claws,ring,fine,colors};
+ return {root,pivots,group,sphere,rock,bone,spike,tube,bridge,fur,skinnedFur,bandage,fin,eyes,claws,ring,fine,colors};
 }
 export function disposeMonsterSculpture(model){
  if(!model)return;
