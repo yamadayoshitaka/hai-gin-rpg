@@ -1,0 +1,36 @@
+name: Story first missing chapter1 live art registration QA
+on:
+  pull_request:
+    paths:
+      - 'src/story-provisional-registered-art.js'
+      - 'src/story-panel-registered-art.js'
+      - 'src/story-manga-viewer.js'
+      - 'qa/story-first-missing-live-registration.test.mjs'
+      - 'docs/story-first-missing-live-registration.md'
+      - '.github/workflows/story-first-missing-live-art.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'src/story-provisional-registered-art.js'
+      - 'src/story-panel-registered-art.js'
+      - 'src/story-manga-viewer.js'
+      - 'qa/story-first-missing-live-registration.test.mjs'
+      - '.github/workflows/story-first-missing-live-art.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify-first-8-scene-provisional-live-register:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify exact stage-specific 8-crop real image registry and SHA256
+        run: |
+          node qa/story-first-missing-live-registration.test.mjs
+          node qa/story-live-art-coverage.test.mjs
+          node qa/story-c01-s01-artwork-bytes.test.mjs
+          node qa/story-mobile-25-draft-registration.test.mjs || test "$?" -eq 127
