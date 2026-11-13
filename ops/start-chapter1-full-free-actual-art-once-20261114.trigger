@@ -16,10 +16,11 @@
   "formalRegistration": false,
   "requiresHumanImageQA": true,
   "gitBranch": "story/chapter1-free-actual-art",
-  "preflightRetry": 4,
+  "preflightRetry": 5,
   "previousExecution": "43509861672 stopped before API calls because c01-s01 dedicated reference-bible did not exist",
   "fix": "reuse c01-s02 actor reference bible for already-registered c01-s01",
-  "diagnostic": "P0 regression: skip blocked scene, preserve siblings, verify all 462 real art after 900-Neuron Free-only batch",
+  "diagnostic": "Generate first below-native legacy stage1 original as high-resolution isolated review draft; hard 900 Neuron Free-only budget",
   "newQA": "qa/story-chapter1-draft-regression.mjs",
-  "existingFormalQA": "scripts/promote-story-chapter1-reviewed-drafts.mjs"
+  "existingFormalQA": "scripts/promote-story-chapter1-reviewed-drafts.mjs",
+  "artWorkflowVersion": "LEGACY_NATIVE_DEFECT_NEEDS_REGEN"
 }
