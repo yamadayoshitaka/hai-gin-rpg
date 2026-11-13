@@ -89,7 +89,10 @@ if(THREE){
   assert.ok(sampleIndex>=0,'no paw-weighted vertices');
   const point=new THREE.Vector3().fromBufferAttribute(positions,sampleIndex);
   model.updateMatrixWorld(true);
+  const rest=point.clone().applyMatrix4(paw.matrixWorld);
   const old=paw.applyBoneTransform(sampleIndex,point.clone()).applyMatrix4(paw.matrixWorld);
+  assert.ok(rest.distanceTo(old)<.0005,
+    id+' coat bind pose must not shift vertices when model scale is applied');
   joints['toe'+suffix].rotation.x=.27;
   model.updateMatrixWorld(true);
   const moved=paw.applyBoneTransform(sampleIndex,point.clone()).applyMatrix4(paw.matrixWorld);
