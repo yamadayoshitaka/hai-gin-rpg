@@ -75,9 +75,9 @@ export function createCharacterCrownGeometry({
   const t=i/rows;
   for(let j=0;j<=cols;j++){
    const phi=j/cols*Math.PI*2;
-   // Quaternius characters look toward -Z. Keep the front hairline
-   // above the brows and grow longer hair toward the back (+Z).
-   const front=Math.max(0,-Math.sin(phi));
+   // Canonical Quaternius characters face +Z. Keep front hairline
+   // above the brows and let full-length hair flow toward -Z/back.
+   const front=Math.max(0,Math.sin(phi));
    const maxTheta=1.68-.34*front;
    const theta=t*maxTheta,s=Math.sin(theta);
    positions.push(cx+rx*s*Math.cos(phi),cy+ry*Math.cos(theta),
@@ -104,7 +104,7 @@ export function createCharacterHairStrandsGeometry({
  const rand=()=>{state=(Math.imul(state,1664525)+1013904223)>>>0;return state/4294967296;};
  for(let i=0;i<groups;i++){
   const phi=(i+.3+rand()*.36)/groups*Math.PI*2;
-  const front=Math.max(0,-Math.sin(phi)),side=Math.abs(Math.cos(phi));
+  const front=Math.max(0,Math.sin(phi)),side=Math.abs(Math.cos(phi));
   // Include crown roots, not only the outer rim (helmet-like appearance).
   const theta=.47+rand()*1.03-.13*front;
   const sin=Math.sin(theta),cos=Math.cos(theta);
