@@ -95,7 +95,9 @@ for(const stage of report.stages){
      assert(panel.generationPrompt.includes(token),'Missing '+token);
     assert.equal(panel.narrative.currentScene.shotKey,panel.shotKey);
     assert(panel.narrative.previousScene===null||panel.narrative.previousScene.panelId!==panel.panelId);
-    assert(panel.requiredCharacterReferences.length>0);
+    if(stage.stageId==='c01-s02'&&panel.castAssignment?.renderMode==='ENVIRONMENT_ONLY')
+     assert.deepEqual(panel.requiredCharacterReferences,[],'Death ending must contain no characters');
+    else assert(panel.requiredCharacterReferences.length>0);
     assert(panel.requiredCharacterReferences.every(r=>r.requiresActualImageBytes&&
       r.attachmentStatus==='NOT_ATTACHED_BY_PREFLIGHT'));
     assert(panel.requiredChecks.includes('rejectAnyInImageTextOrUI'));
@@ -103,8 +105,9 @@ for(const stage of report.stages){
     assert(panel.requiredChecks.includes('realNativeDetail'));
     if(stage.stageId==='c01-s02'){
      const hero=panel.requiredCharacterReferences.find(r=>r.actorId==='commander_'+edition.gender);
-     assert(hero&&hero.sourceExists);
-     if(edition.gender==='female')
+     if(panel.castAssignment?.renderMode==='ENVIRONMENT_ONLY') assert.equal(hero,undefined);
+      else assert(hero&&hero.sourceExists);
+     if(edition.gender==='female'&&hero)
       assert(hero.sourceImage.endsWith('/commander/female-master.webp'));
     }
     seen++;
