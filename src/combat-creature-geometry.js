@@ -1013,44 +1013,95 @@ function addDragonLord(g,s,detail){
       sphere('core',skin,side*(bulge+.07),y,.37+.03*Math.cos(t*5),.082,.038,.085);
     }
   }
-  // A long, bony predatory skull with a jaw that actually opens for breath.
+  // A SINGLE organic loft carries the neck directly into the cranial bowl,
+  // temporalis, cheek bones and shorter, broad nasal bridge. This replaces
+  // the disconnected thin rod-like head and covers the old neck/skull seam.
+  // The jaw alone stays articulated as a distinct GPU batch.
   const headY=3.72;
   profile('core',skin,[
-    [.36,headY-.06,.018,.035],[.62,headY+.015,.28,.23],
-    [.94,headY+.06,.38,.245],[1.22,headY+.005,.36,.18],
-    [1.55,headY-.09,.255,.11],[1.91,headY-.16,.16,.085],
-    [2.03,headY-.165,.012,.014],
+    [-.12,headY-.51,.015,.029],
+    [.09,headY-.39,.286,.263],
+    [.40,headY-.25,.367,.328],
+    [.65,headY-.075,.400,.348],
+    [.91,headY+.015,.473,.333],
+    [1.12,headY+.020,.458,.295],
+    [1.34,headY-.060,.391,.225],
+    [1.52,headY-.095,.326,.169],
+    [1.70,headY-.152,.259,.121],
+    [1.80,headY-.165,.195,.096],
+    [1.89,headY-.165,.009,.018],
   ]);
-  profile('jaw',shadow,[
-    [.80,headY-.28,.025,.025],[1.16,headY-.30,.30,.10],
-    [1.54,headY-.31,.235,.085],[1.94,headY-.29,.11,.042],
-    [2.02,headY-.275,.008,.012],
+  // Articulated mandible has a broad ramus at the ear, a strong jaw angle
+  // and a closing lip under the maxilla: no floating black tooth tray.
+  profile('jaw',skin,[
+    [.58,headY-.235,.012,.028],
+    [.82,headY-.257,.274,.136],
+    [1.09,headY-.281,.373,.126],
+    [1.36,headY-.284,.318,.111],
+    [1.59,headY-.292,.271,.087],
+    [1.76,headY-.292,.194,.064],
+    [1.88,headY-.292,.010,.016],
   ]);
+  // Mucosa and tongue are tucked INSIDE the closing jaw. They only become
+  // prominent when its real hinge rotates during roar or attack.
   profile('jaw',0x3c2929,[
-    [1.05,headY-.227,.01,.01],[1.36,headY-.229,.23,.026],
-    [1.80,headY-.22,.15,.020],[1.99,headY-.22,.008,.009],
-  ]);
+    [.84,headY-.197,.012,.008],
+    [1.17,headY-.194,.243,.021],
+    [1.48,headY-.204,.211,.018],
+    [1.75,headY-.221,.111,.012],
+    [1.84,headY-.231,.008,.006],
+  ],true);
   for(const side of [-1,1]){
-    const eyeX=side*.365;
-    // Set the thin red cornea inside a black orbital socket. The renderer's
-    // clear-coated eye material provides real specular glints.
-    eyeSlit('core',0x3c2b2b,side,.375,headY+.056,1.18,.145,.052,-.017);
-    eyeSlit('eyes',s.eyes,side,.385,headY+.057,1.20,.104,.032,-.013);
-    eyeSlit('eyes',0x130b0c,side,.394,headY+.058,1.21,.017,.027,-.003);
-    if(detail==='high')eyeSlit('eyes',0xffe5d1,side,.403,headY+.072,1.16,.018,.005,-.005);
-    curved('core',shadow,[[side*.31,headY+.12,.98],[eyeX,headY+.13,1.11],
-      [side*.35,headY+.08,1.32]],[.060,.043,.014]);
+    const eyeX=side*.458;
+    // Skull-embedded ocular socket + true iris / vertical pupil on the
+    // outside of the new broad cheek, not a black hole hidden in the cranium.
+    eyeSlit('core',0x352827,side,.451,headY+.061,1.16,.141,.047,-.012);
+    eyeSlit('eyes',s.eyes,side,.462,headY+.061,1.16,.082,.026,-.008);
+    eyeSlit('eyes',0x181512,side,.472,headY+.061,1.16,.019,.022,-.004);
+    if(detail==='high')eyeSlit('eyes',0xddbf9d,side,.480,headY+.073,1.13,.014,.003,-.004);
+    curved('core',skin,[
+      [side*.339,headY+.144,.97],
+      [eyeX,headY+.124,1.10],
+      [side*.414,headY+.097,1.30]],[.069,.045,.014]);
+    curved('core',shadow,[
+      [side*.408,headY+.014,1.03],
+      [side*.467,headY+.004,1.17],
+      [side*.389,headY-.011,1.29]],[.015,.015,.009]);
+    // Masseter wraps the cranial-to-mandible hinge from behind, while
+    // staying inside the fixed head GPU part during jaw animation.
+    curved('core',skin,[
+      [side*.32,headY-.247,.63],
+      [side*.387,headY-.234,.89],
+      [side*.349,headY-.255,1.22]],[.159,.161,.066]);
+    curved('jaw',skin,[
+      [side*.286,headY-.265,.66],
+      [side*.351,headY-.287,.91],
+      [side*.304,headY-.289,1.27]],[.122,.118,.048]);
+    // Two lips have distinct edges but overlap completely at rest.
+    curved('core',shadow,[
+      [side*.330,headY-.248,1.17],
+      [side*.288,headY-.258,1.47],
+      [side*.202,headY-.264,1.75]],[.013,.011,.004]);
+    curved('jaw',0x432a26,[
+      [side*.319,headY-.269,1.17],
+      [side*.277,headY-.280,1.47],
+      [side*.194,headY-.279,1.75]],[.011,.010,.005]);
     // Tall back-swept horns and smaller brow horns, six clear silhouettes.
     rootedHorn('core',highlight,[side*.25,headY+.10,.58],
       [side*.39,headY+.60,.30],[side*.46,headY+1.09,-.14],.145);
     rootedHorn('core',shadow,[side*.35,headY+.09,.68],
       [side*.56,headY+.43,.32],[side*.77,headY+.71,.05],.098);
-    horn('core',highlight,[side*.25,headY+.035,1.38],[side*.55,headY+.32,1.64],.072);
-    sphere('core',shadow,side*.17,headY-.125,1.91,.045,.023,.048);
-    for(let i=0;i<8;i++){
-      const z=1.22+i*.097,x=side*(.263-i*.017);
-      horn('jaw',0xf5e9d7,[x,headY-.32,z],[x,headY-.13-(i%3)*.019,z+.02],.033);
+    horn('core',highlight,[side*.257,headY+.055,1.38],[side*.435,headY+.235,1.60],.066);
+    sphere('core',shadow,side*.154,headY-.167,1.755,.043,.021,.045);
+    // Teeth arise from the gum on the rotating mandible, not a free
+    // comb above a detached dark plate. Small canines fold into the lips.
+    for(let i=0;i<6;i++){
+      const z=1.14+i*.107,x=side*(.295-i*.021);
+      horn('jaw',0xe6d8bd,[x,headY-.272,z],
+        [x*.96,headY-.195-(i%3)*.010,z+.015],.025);
     }
+    horn('core',0xe9d9bf,[side*.238,headY-.238,1.54],
+      [side*.228,headY-.308,1.57],.027);
     if(detail==='high')for(let i=0;i<5;i++){
       horn('core',shadow,[side*.21,headY+.12,.77-i*.10],
         [side*(.31+i*.03),headY+.35+i*.09,.45-i*.20],.055);
