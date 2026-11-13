@@ -21,8 +21,8 @@ import {applySkinnedBuildMorph} from './body-build-morph-v48.js?v=51';
  */
 export const HEROINE_STUDIO_BODY_SCALE=.84;
 export const HERO_STUDIO_MALE_BODY_SCALE=.84;
-export const HEROINE_STUDIO_HEAD_LIFT=.44;
-export const HEROINE_STUDIO_HEAD_FORWARD=.16;
+export const HEROINE_STUDIO_HEAD_LIFT=.18;
+export const HEROINE_STUDIO_HEAD_FORWARD=.10;
 
 export function fitStudioFaceAboveArmor({actorRoot,faceRoot,faceFit,bodyScale=HEROINE_STUDIO_BODY_SCALE}){
  if(!actorRoot?.isObject3D||!faceRoot?.isObject3D||!faceFit?.targetSize)
