@@ -429,7 +429,7 @@ function metrics(){
   male:models.get('male')?.report||null,
   visibleFaceMeshes:model?Number(model.face.visible&&model.root.visible):0,
   visiblePartMeshes:model&&partsOn&&model.root.visible?
-   (()=>{let n=0;model.parts.traverse(o=>{if(o.isMesh&&o.visible)n++});return n})():0,
+   (()=>{let n=0;model.parts.traverse(o=>{if(o.isMesh&&o.visible&&!o.name.endsWith('_ANIMATED_BLINK_CLOSURE'))n++});return n})():0,
   exportedSurface:'face-only',bodyMeshes:0,sourceUntouched:true};
 }
 window.__faceMasterQA=metrics;
