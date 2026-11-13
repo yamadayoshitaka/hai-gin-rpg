@@ -16,7 +16,9 @@ on:
       - 'qa/face-v50-browser.cjs'
       - 'qa/human-neck-v52-browser.cjs'
       - 'qa/human-head-occlusion-v53-browser.cjs'
-      - 'qa/human-realism-v51-regression.test.mjs'
+      - 'qa/human-realism-v51-regression.test.mjs qa/studio-face-quality-v56.test.mjs'
+      - 'qa/studio-face-quality-v56.test.mjs'
+      - 'src/studio-face-quality-v56.js'
   push:
     branches: [main]
     paths:
@@ -44,7 +46,7 @@ jobs:
           node-version: '22'
       - run: npm install --no-save --package-lock=false playwright@1.56.0 three@0.160.1
       - name: Verify v50 anatomy, armor and haircut catalog
-        run: node --test qa/face-v50-regression.test.mjs qa/face-v49-regression.test.mjs qa/hero-hair-v43-selection.test.mjs qa/character-demographics-v47.test.mjs qa/human-realism-v51-regression.test.mjs
+        run: node --test qa/face-v50-regression.test.mjs qa/face-v49-regression.test.mjs qa/hero-hair-v43-selection.test.mjs qa/character-demographics-v47.test.mjs qa/human-realism-v51-regression.test.mjs qa/studio-face-quality-v56.test.mjs
       - run: npx playwright install chromium
       - name: Start local model studio
         run: |
@@ -59,10 +61,10 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: face-v55-short-neck-and-catalog
+          name: face-v56-smooth-face-and-catalog
           path: |
             qa-screenshots/face-v50/
             qa-screenshots/human-neck-v55/
-            qa-screenshots/human-v55/
+            qa-screenshots/human-v56/
           retention-days: 14
           if-no-files-found: warn
