@@ -186,9 +186,10 @@ test('real skinned torso neckline, not armor, sets whole head height without sta
  assert.equal(first.applied,true);
  assert.equal(first.torsoMeshes,1);
  assert.ok(first.appliedLift>.05&&first.appliedLift<.28);
- assert.ok(first.faceBottomAfterY>=first.torsoNeckTopY+.007);
+ assert.ok(first.gapMeters<0,'the uncropped source skirt should be slightly inside the neckline');
+ assert.ok(Math.abs(first.gapMeters+first.anatomicalInset)<1e-5);
  const second=alignStudioHeadToSkinnedTorso({faceRoot,faceMesh:face,wardrobeRoot:wardrobe});
- assert.ok(second.appliedLift<1e-5,'fitting twice cannot accumulate head lift');
+ assert.ok(Math.abs(second.correctionY)<1e-5,'fitting twice cannot accumulate head movement');
  assert.ok(Math.abs(second.faceBottomAfterY-first.faceBottomAfterY)<1e-5);
  assert.deepEqual(face.geometry.getAttribute('position').array,sourcePosition,
   'head geometry remains original while whole root moves');
@@ -240,7 +241,11 @@ test('v54 neck continuity removes the flat head bust and bridges the true torso'
  assert.equal(result.legacyNeckPartsHidden,3);
  assert.ok(obsolete.every(mesh=>!mesh.visible),
   'obsolete white horizontal neck panels must not render');
- assert.ok(result.neckHeight>.025&&result.neckHeight<.18);
+ assert.ok(result.neckHeight>.015&&result.neckHeight<.052,
+  'the neckline connection must be short, not a 7-9cm neck column');
+ assert.ok(result.neckToHeadRatio<.22,
+  'neck should occupy less than 22% of anatomical head height');
+ assert.ok(result.collarOverlapMeters>=.012&&result.collarOverlapMeters<=.02);
  assert.ok(result.connectorBottomY<result.actualTorsoTopY);
  assert.ok(result.connectorTopY>result.trimmedSculptBottomY);
  assert.notEqual(face.geometry,source);
@@ -258,8 +263,8 @@ test('v54 neck continuity removes the flat head bust and bridges the true torso'
  assert.deepEqual(source.getAttribute('position').array,original);
  const fittedAgain=alignStudioHeadToSkinnedTorso({
   faceRoot:headRoot,faceMesh:face,wardrobeRoot:outfit});
- assert.ok(fittedAgain.appliedLift<.0001,
-  'cropping the portrait must not cause feedback and raise the head again');
+ assert.ok(Math.abs(fittedAgain.correctionY)<.0001,
+  'cropping the portrait must not cause feedback or accumulate head movement');
  connector.geometry.dispose();connector.material.dispose();
  for(const piece of obsolete){piece.geometry.dispose();piece.material.dispose()}
  source.dispose();face.geometry.dispose();face.material.dispose();
@@ -276,4 +281,34 @@ test('v54 connector refuses to add artificial neck if actual torso is absent',()
  assert.equal(r.reason,'torso-missing');
  assert.equal(root.children.length,1);
  face.geometry.dispose();face.material.dispose();
+});
+
+test('v55 high head is lowered as a whole and cannot regrow a giraffe neck',()=>{
+ const actor=new THREE.Group(),headRoot=new THREE.Group(),outfit=new THREE.Group();
+ actor.add(headRoot,outfit);
+ const headMesh=new THREE.Mesh(new THREE.BoxGeometry(.16,.20,.12),
+  new THREE.MeshStandardMaterial());
+ headMesh.position.y=1.35;headRoot.add(headMesh);
+ const hair=new THREE.Mesh(new THREE.SphereGeometry(.13),new THREE.MeshStandardMaterial());
+ hair.position.set(0,1.47,0);headRoot.add(hair);
+ const torso=new THREE.SkinnedMesh(new THREE.BoxGeometry(.32,.5,.2),
+  new THREE.MeshStandardMaterial());
+ torso.name='Female_Ranger_Body';torso.position.y=.88;outfit.add(torso);
+ actor.updateMatrixWorld(true);
+ const hairBefore=hair.getWorldPosition(new THREE.Vector3()).y;
+ const result=alignStudioHeadToSkinnedTorso({
+  faceRoot:headRoot,faceMesh:headMesh,wardrobeRoot:outfit});
+ assert.equal(result.applied,true);
+ assert.ok(result.appliedLowering>.01,'a high head must go DOWN instead of remaining airborne');
+ assert.equal(result.appliedLift,0);
+ assert.ok(Math.abs(result.gapMeters+result.anatomicalInset)<.001);
+ const hairAfter=hair.getWorldPosition(new THREE.Vector3()).y;
+ assert.ok(Math.abs((hairAfter-hairBefore)-result.correctionY)<1e-5,
+  'hair, eyelashes and face must move together with the head root');
+ const again=alignStudioHeadToSkinnedTorso({
+  faceRoot:headRoot,faceMesh:headMesh,wardrobeRoot:outfit});
+ assert.ok(Math.abs(again.correctionY)<1e-5);
+ headMesh.geometry.dispose();headMesh.material.dispose();
+ hair.geometry.dispose();hair.material.dispose();
+ torso.geometry.dispose();torso.material.dispose();
 });
