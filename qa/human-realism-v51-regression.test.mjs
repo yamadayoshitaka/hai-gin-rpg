@@ -6,7 +6,7 @@ import {BODY_PROFILES,resolveBodyType,applyDemographicFaceControls}
  from '../src/character-demographics-v47.js';
 import {applySkinnedBuildMorph} from '../src/body-build-morph-v48.js';
 import {enhanceStudioBodyMaterials,syncStudioBodyOutfitVisibility,
- HEROINE_STUDIO_HEAD_LIFT,HEROINE_STUDIO_HEAD_FORWARD}
+ HEROINE_STUDIO_HEAD_LIFT,HEROINE_STUDIO_HEAD_FORWARD,fitStudioCuirassBelowChin}
  from '../src/heroine-battle-costume-bridge.js';
 import {applyHeroineSkinMaterial} from '../src/heroine-skin-material.js';
 
@@ -103,11 +103,67 @@ test('human skin surface clones skin materials while preserving source maps',()=
 });
 
 test('neck correction and donor face clipping occur before garment coverage caching',()=>{
- assert.ok(HEROINE_STUDIO_HEAD_LIFT<=.20);
- assert.ok(HEROINE_STUDIO_HEAD_FORWARD<=.12);
+ assert.ok(HEROINE_STUDIO_HEAD_LIFT>=.26&&HEROINE_STUDIO_HEAD_LIFT<=.45);
+ assert.ok(HEROINE_STUDIO_HEAD_FORWARD>=.12&&HEROINE_STUDIO_HEAD_FORWARD<=.20);
  const bridge=readFileSync(new URL('../src/heroine-battle-costume-bridge.js',import.meta.url),'utf8');
  const cut=bridge.indexOf('const cut=hideBattleDonorFace(fresh.model);');
  const garment=bridge.indexOf('clothing=await buildRiggedJobOutfit(');
  assert.ok(cut>=0&&garment>cut,'face cut must precede coverage cache');
  assert.ok(bridge.includes('outfit?.setBodyOcclusion?.('));
+});
+
+test('studio cuirass follows real chin landmark rather than obscuring eyes and mouth',()=>{
+ const actor=new THREE.Group();
+ const face=new THREE.Mesh(new THREE.SphereGeometry(.13,16,16),
+  new THREE.MeshStandardMaterial());
+ face.position.set(0,1.42,.10);actor.add(face);
+ const outfit=new THREE.Group();actor.add(outfit);
+ const source=new THREE.BoxGeometry(.50,.68,.20,4,8,4);
+ const chest=new THREE.Mesh(source,new THREE.MeshStandardMaterial());
+ chest.position.set(0,1.30,.11);
+ chest.userData={equipmentClass:'armor',equipmentSlot:'chest'};
+ outfit.add(chest);
+ const decoration=new THREE.Mesh(new THREE.BoxGeometry(.05,.08,.05),
+  new THREE.MeshStandardMaterial());
+ decoration.position.set(.2,1.50,.12);
+ decoration.userData={equipmentClass:'armor',equipmentSlot:'shoulder'};
+ outfit.add(decoration);
+ const original=source.getAttribute('position').array.slice();
+ const shoulderGeometry=decoration.geometry;
+ const report=fitStudioCuirassBelowChin({faceMesh:face,wardrobeRoot:outfit});
+ assert.equal(report.applied,true);
+ assert.equal(report.chestPieces,1);
+ assert.equal(report.compressed,true);
+ assert.ok(report.compressionRatio<1);
+ assert.ok(report.correctedTopY<=report.chinY-.008,
+  'the chest metal must end below the chin, not across the mouth');
+ assert.equal(chest.geometry===source,false,'preview owns a geometry clone');
+ assert.deepEqual(source.getAttribute('position').array,original,
+  'original armor GLB vertices stay identical');
+ assert.equal(decoration.geometry,shoulderGeometry,
+  'no unrelated shoulder, blade or hair mesh is modified');
+ const refitted=fitStudioCuirassBelowChin({faceMesh:face,wardrobeRoot:outfit});
+ assert.ok(Math.abs(refitted.compressionRatio-report.compressionRatio)<1e-6);
+ assert.ok(Math.abs(refitted.correctedTopY-report.correctedTopY)<1e-6,
+  'repeated fits restore source instead of flattening geometry cumulatively');
+ face.position.y-=.05;
+ const younger=fitStudioCuirassBelowChin({faceMesh:face,wardrobeRoot:outfit});
+ assert.ok(younger.compressionRatio<report.compressionRatio,
+  'moving the chin lower forces the cuirass below it on age changes');
+ assert.ok(younger.correctedTopY<=younger.chinY-.008);
+ assert.deepEqual(source.getAttribute('position').array,original);
+ face.geometry.dispose();face.material.dispose();source.dispose();
+ chest.geometry.dispose();chest.material.dispose();
+ shoulderGeometry.dispose();decoration.material.dispose();
+});
+
+test('cloth-only outfits never trigger armor neck morph or deform the face',()=>{
+ const face=new THREE.Mesh(new THREE.SphereGeometry(.10,8,8),new THREE.MeshStandardMaterial());
+ const wardrobe=new THREE.Group();
+ const before=face.geometry.getAttribute('position').array.slice();
+ const result=fitStudioCuirassBelowChin({faceMesh:face,wardrobeRoot:wardrobe});
+ assert.equal(result.applied,false);
+ assert.equal(result.reason,'no-chest-armor');
+ assert.deepEqual(face.geometry.getAttribute('position').array,before);
+ face.geometry.dispose();face.material.dispose();
 });
