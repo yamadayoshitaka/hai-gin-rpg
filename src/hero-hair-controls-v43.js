@@ -14,7 +14,25 @@ export const MALE_HAIR_LENGTH_V43=Object.freeze({
  'shag-long':.58,'rounded-bob':.61,
  'natural-short':1,'very-short':1,'buzz-cut':1,
  'soft-wave-long':.64,'full-fringe-straight':.45,
- 'airy-shoulder-layers':.66
+ 'airy-shoulder-layers':.66,
+ "male-natural-mash":0.65,
+ "male-two-block":0.58,
+ "male-short-wolf":0.76,
+ "male-textured-short":0.38,
+ "male-long-bangs":0.64,
+ "male-shag-medium":0.83,
+ "male-medium-layers":0.74,
+ "male-wave-perm":0.67,
+ "male-side-sweep":0.58,
+ "male-shoulder-wolf":0.88,
+ "male-slick-back":0.55,
+ "male-crew-cut":0.3,
+ "male-short-spiky":0.35,
+ "male-undercut":0.46,
+ "male-curly-crop":0.54,
+ "male-comma":0.62,
+ "male-long-tied":0.83,
+ "male-senior-sidepart":0.5
 });
 export function resolveHeroHairSpec(gender,rawParts={},requestedStyleId=null){
  const catalog=PART_CATALOG[gender]?.hair;

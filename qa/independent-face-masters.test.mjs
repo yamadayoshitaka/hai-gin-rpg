@@ -2284,7 +2284,7 @@ test('v42 male studio has independent body, editable face and all ten existing c
 test('v43 all 16 male and female haircut choices resolve finite distinct styles without dropped short indexes',()=>{
  for(const gender of ['male','female']){
   const styles=PART_CATALOG[gender].hair;
-  assert.equal(styles.length,16);
+  assert.equal(styles.length,24);
   const seen=new Set();
   for(let i=0;i<styles.length;i++){
    const spec=resolveHeroHairSpec(gender,{hair:i});

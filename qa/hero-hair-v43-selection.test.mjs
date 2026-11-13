@@ -4,10 +4,10 @@ import {PART_CATALOG,defaultPartSelection} from '../src/face-part-catalog-v32.js
 import {WIG_SILHOUETTE_PROFILES} from '../src/face-wig-styles.js';
 import {synchronizeHeroHairSelection,resolveHeroHairSpec} from '../src/hero-hair-controls-v43.js';
 
-test('v43: every hair change synchronizes the stored index and live styleId',()=>{
+test('v46: every hair change synchronizes the stored index and live styleId',()=>{
  for(const gender of ['female','male']){
   const catalog=PART_CATALOG[gender].hair;
-  assert.equal(catalog.length,16);
+  assert.equal(catalog.length,24);
   for(const [index,entry] of catalog.entries()){
    const original={...defaultPartSelection(),hair:index===0?10:0};
    const chosen=synchronizeHeroHairSelection(gender,original,entry.values.styleId);
