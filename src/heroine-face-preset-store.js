@@ -3,7 +3,7 @@
  * heroine preset. This is local browser storage, not a cloud or game save.
  */
 export const HEROINE_FACE_STUDIO_KEY='hai-gin-heroine-face-studio-v40';
-const allowed=new Set(['parts','controls','hairStyleId','hairColor','hairDensity','contactColor','makeupType']);
+const allowed=new Set(['parts','controls','hairStyleId','hairColor','hairDensity','contactColor','makeupType','manualOverrides']);
 export function loadHeroineFacePreset(storage=globalThis?.localStorage){
  try{
   const text=storage?.getItem(HEROINE_FACE_STUDIO_KEY);

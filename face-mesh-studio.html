@@ -215,6 +215,7 @@ import {resolveHeroHairSpec,synchronizeHeroHairSelection} from './src/hero-hair-
 import {chooseHeroFacePreset,polishHeroFaceControls,mountHeroFacePresetPicker,matchHeroFacePreset} from './src/hero-face-presets-v45.js?v=45';
 import {characterAppearance,mountCharacterCastSelect} from './src/character-cast-v46.js?v=46';
 import {AGE_PROFILES,BODY_PROFILES,applyDemographicFaceControls} from './src/character-demographics-v47.js?v=47';
+import {resolveEditedFaceControls,recordFaceManualEdit} from './src/face-state-v49.js?v=49';
 import {loadHeroineFacePreset,saveHeroineFacePreset} from './src/heroine-face-preset-store.js?v=41';
 import {heroineBeautyControlsV43,heroineBeautyControlsV47,HEROINE_BEAUTY_PART_SELECTION_V43,upgradeUneditedHeroineV42ToV43} from './src/heroine-beauty-preset-v42.js?v=47';
 import {loadMaleFacePreset,saveMaleFacePreset} from './src/male-face-preset-store.js?v=42';
@@ -302,10 +303,13 @@ const v32PartMode=new URLSearchParams(location.search).get('qa')!=='legacy';
 if(!v32PartMode)document.body.classList.add('v32-legacy');
 const v32Parts={female:defaultPartSelection(),male:defaultPartSelection()};
 const v32Makeup={female:0,male:0};
+let manualFaceOverrides={female:{},male:{}};
 const savedHeroinePreset=v32PartMode?loadHeroineFacePreset():null;
 if(v32PartMode&&!savedHeroinePreset&&new URLSearchParams(location.search).get('hero')==='1')
  Object.assign(v32Parts.female,HEROINE_BEAUTY_PART_SELECTION_V43);
 const savedMalePreset=v32PartMode?loadMaleFacePreset():null;
+Object.assign(manualFaceOverrides.female,savedHeroinePreset?.manualOverrides||{});
+Object.assign(manualFaceOverrides.male,savedMalePreset?.manualOverrides||{});
 if(savedMalePreset?.parts){
  Object.assign(v32Parts.male,savedMalePreset.parts);
  Object.assign(v32Parts.male,synchronizeHeroHairSelection('male',v32Parts.male,
@@ -376,7 +380,8 @@ function persistHeroineFace(){
  if(!ready||!v32PartMode)return;
  saveHeroineFacePreset({parts:{...v32Parts.female},controls:{...modelChanges},
   hairStyleId:wigStyleId,hairColor:wigColor,hairDensity:wigDensity,
-  makeupType:v32Makeup.female,contactColor});
+  makeupType:v32Makeup.female,contactColor,
+  manualOverrides:{...manualFaceOverrides.female}});
 }
 function persistMaleFace(){
  if(!ready||!v32PartMode)return;
@@ -384,7 +389,8 @@ function persistMaleFace(){
  saveMaleFacePreset({parts:{...v32Parts.male},controls:{...maleChanges},
   hairStyleId:maleSelection.hairStyleId,
   hairColor:v32Parts.male.hairColor,
-  hairDensity:wigDensity,contactColor:CONTACT_COLORS.brown});
+  hairDensity:wigDensity,contactColor:CONTACT_COLORS.brown,
+  manualOverrides:{...manualFaceOverrides.male}});
 }
 function setActive(ids,id){
  for(const x of ids)$(x).setAttribute('aria-pressed',String(x===id));
@@ -738,6 +744,7 @@ for(const key of [...rebuildKeys,...cosmeticKeys,...angleKeys]){
  const el=$(key);
  el.addEventListener('input',()=>{
   modelChanges[key]=Number(el.value);
+  recordFaceManualEdit(manualFaceOverrides.female,key,modelChanges[key]);
   if(key==='eyeWidth'||key==='eyeHeight')
    modelChanges.eyeSize=Math.sqrt(modelChanges.eyeWidth*modelChanges.eyeHeight);
   setFaceControlDisplay(key,modelChanges[key]);
@@ -778,6 +785,7 @@ for(const key of [...maleRebuildKeys,...maleAngleKeys]){
  const id='male'+key[0].toUpperCase()+key.slice(1);
  $(id).addEventListener('input',()=>{
   maleChanges[key]=Number($(id).value);
+  recordFaceManualEdit(manualFaceOverrides.male,key,maleChanges[key]);
   if(key==='eyeWidth'||key==='eyeHeight')
    maleChanges.eyeSize=Math.sqrt(maleChanges.eyeWidth*maleChanges.eyeHeight);
   setMaleControlDisplay(key,maleChanges[key]);
@@ -924,10 +932,11 @@ $('heroineBeautyV43').addEventListener('click',()=>{
  if(!ready||!v32PartMode)return;
  if(gender!=='female')selectGender('female');
  const selected=resolvePartSelection('female',v32Parts.female,FEMALE_V7_DEFAULTS);
- modelChanges=normalizeFemaleFaceControls(applyDemographicFaceControls(
-  heroineBeautyControlsV47(selected.controls),v32Parts.female.ageBand,
-  v32Parts.female.bodyType,'female'));
+ manualFaceOverrides.female={};
+ modelChanges=resolveEditedFaceControls('female',heroineBeautyControlsV47(selected.controls),
+  v32Parts.female.ageBand,v32Parts.female.bodyType,{},false);
  rebuildFemale();
+ syncFaceControlDisplays();
  repaint();persistHeroineFace();
  $('status').textContent='美少女顔 v47：瞳・まぶた・頬・唇と自然な眼球深度を補正しました';
  $('metrics').textContent=JSON.stringify(metrics(),null,2);
@@ -949,9 +958,10 @@ if(v32PartMode){
     const selected=resolvePartSelection(sex,v32Parts[sex],sex==='female'?FEMALE_V7_DEFAULTS:MALE_REFERENCE_DEFAULT);
     v32Makeup[sex]=picked.makeup;
     if(sex==='female'){
-     const nextControls=normalizeFemaleFaceControls(applyDemographicFaceControls(
-      completeFace?polishHeroFaceControls('female',selected.controls):selected.controls,
-      v32Parts.female.ageBand,v32Parts.female.bodyType,'female'));
+     if(completeFace)manualFaceOverrides.female={};
+     const nextControls=resolveEditedFaceControls('female',selected.controls,
+      v32Parts.female.ageBand,v32Parts.female.bodyType,
+      manualFaceOverrides.female,completeFace);
      const faceChanged=facePartChanged&&JSON.stringify(modelChanges)!==JSON.stringify(nextControls);
      if(facePartChanged)modelChanges=nextControls;
      wigStyleId=synchronized.styleId;
@@ -968,9 +978,10 @@ if(v32PartMode){
       if(faceChanged||hairChanged||!wigs.get('female'))rebuildWig();
      }
     }else{
-     const nextControls=normalizeMaleFaceControls(applyDemographicFaceControls(
-      completeFace?polishHeroFaceControls('male',selected.controls):selected.controls,
-      v32Parts.male.ageBand,v32Parts.male.bodyType,'male'));
+     if(completeFace)manualFaceOverrides.male={};
+     const nextControls=resolveEditedFaceControls('male',selected.controls,
+      v32Parts.male.ageBand,v32Parts.male.bodyType,
+      manualFaceOverrides.male,completeFace);
      const faceChanged=facePartChanged&&JSON.stringify(maleChanges)!==JSON.stringify(nextControls);
      if(facePartChanged)maleChanges=nextControls;
      if(hairChanged){
@@ -985,6 +996,7 @@ if(v32PartMode){
      }
     }
     if(ready){repaint();if(sex==='female')persistHeroineFace();}
+    if(sex===gender)syncFaceControlDisplays();
     facePickerControls[sex]?.refresh(v32Parts[sex]);
    };
   partSelectionHandlers[sex]=onPartSelection;
@@ -997,12 +1009,14 @@ if(v32PartMode){
      onPartSelection(picked,true);
      createPartSelectorUI(selectorHost,sex,v32Parts[sex],onPartSelection);
      facePickerControls[sex].refresh(v32Parts[sex]);
+     if(sex===gender)syncFaceControlDisplays();
     }
    });
   castSelections[sex]=mountCharacterCastSelect(
    $('v46'+(sex==='female'?'Female':'Male')+'Cast'),sex,id=>{
     const look=characterAppearance(id,v32Parts[sex]);
     v32Parts[sex]={...look.parts};
+    manualFaceOverrides[sex]={};
     v32Makeup[sex]=look.parts.makeup;
     if(sex==='female'){
      const part=resolvePartSelection('female',v32Parts.female,FEMALE_V7_DEFAULTS);
@@ -1028,7 +1042,7 @@ if(v32PartMode){
   $(name).addEventListener('change',()=>{
    const picked={...v32Parts[gender],
     ageBand:$('v47AgeBand').value,bodyType:$('v47BodyType').value};
-   partSelectionHandlers[gender](picked,true);
+   partSelectionHandlers[gender](picked,false);
    createPartSelectorUI($('v32'+(gender==='female'?'Female':'Male')+'Choices'),
     gender,v32Parts[gender],partSelectionHandlers[gender]);
    $('status').textContent=AGE_PROFILES[picked.ageBand].label+'・'+
