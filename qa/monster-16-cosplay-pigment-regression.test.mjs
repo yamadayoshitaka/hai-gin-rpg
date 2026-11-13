@@ -11,6 +11,8 @@ import {isConstructCostume,addConstructMonsterCostume,
 
 assert.equal(HUMAN_MONSTER_IDS.length,16);
 assert.deepEqual(new Set(COSPLAY_INHUMAN_SKIN_IDS),new Set(HUMAN_MONSTER_IDS));
+const colorDistanceSquared=(a,b)=>
+  (a.r-b.r)**2+(a.g-b.g)**2+(a.b-b.b)**2;
 const skins=new Map(),uniqueColors=new Set();
 for(const id of HUMAN_MONSTER_IDS){
  const spec=MONSTER_BY_ID[id],profile=humanoidMonsterCostumeFor(spec);
@@ -21,7 +23,7 @@ for(const id of HUMAN_MONSTER_IDS){
  const skinHsl={};skin.getHSL(skinHsl);
  // All flesh is materially different from a healthy RGB peach material.
  const peach=new THREE.Color(0xcfa892);
- const distance=Math.sqrt(skin.distanceToSquared(peach));
+ const distance=Math.sqrt(colorDistanceSquared(skin,peach));
  assert.ok(distance>.14,'Monster remains normal human skin '+id+' '+distance);
  uniqueColors.add(profile.skin);skins.set(id,skin);
  const original=new THREE.MeshStandardMaterial({
@@ -37,7 +39,7 @@ for(const id of HUMAN_MONSTER_IDS){
  assert.strictEqual(cloned.map,map,'Skin PBR photo texture was discarded');
  assert.equal(original.color.getHex(),inputColor.getHex(),'Modified shared hero material '+id);
  const actual=new THREE.Color(profile.skin);
- assert.ok(cloned.color.distanceToSquared(actual)<.012,
+ assert.ok(colorDistanceSquared(cloned.color,actual)<.012,
    'Imported costume skin did not take distinct species pigment '+id);
  assert.ok(cloned.roughness>=.70,'Monster flesh too shiny '+id);
  assert.equal(cloned.emissiveIntensity,0,'Body becomes luminous toy '+id);
