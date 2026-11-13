@@ -98,6 +98,70 @@ export function clipStudioFaceBustPreservingSurface(mesh,worldCutY){
 }
 
 /**
+ * Restore smooth shading on the OWNED PREVIEW face after neck clipping.
+ * Some donor head meshes carry unshared, flat-lit triangles even before
+ * clipping. Weld NORMALS for position-coincident sculpt vertices, never
+ * positions, colour, UV, morph targets or eye/lip meshes.
+ */
+export function smoothStudioFaceNormals(geometry,{weldTolerance=.00007}={}){
+ const pos=geometry?.getAttribute?.('position'),src=geometry?.getAttribute?.('normal');
+ if(!pos||!src||pos.count!==src.count)
+  return {applied:false,reason:'missing-position-or-normals'};
+ const idx=geometry.getIndex(),triCount=(idx?idx.count:pos.count)/3;
+ const key=i=>Math.round(pos.getX(i)/weldTolerance)+':'+
+  Math.round(pos.getY(i)/weldTolerance)+':'+
+  Math.round(pos.getZ(i)/weldTolerance);
+ const groups=new Map();
+ const kByIndex=Array.from({length:pos.count},(_,i)=>key(i));
+ const vec=i=>new THREE.Vector3(pos.getX(i),pos.getY(i),pos.getZ(i));
+ for(let i=0;i<triCount;i++){
+  const ids=[0,1,2].map(j=>idx?idx.getX(i*3+j):i*3+j);
+  const a=vec(ids[0]),b=vec(ids[1]),d=vec(ids[2]);
+  const faceNormal=new THREE.Vector3().subVectors(b,a)
+   .cross(new THREE.Vector3().subVectors(d,a));
+  if(faceNormal.lengthSq()<1e-19)continue;
+  const originalDirection=new THREE.Vector3();
+  for(const id of ids)
+   originalDirection.add(new THREE.Vector3(src.getX(id),src.getY(id),src.getZ(id)));
+  if(faceNormal.dot(originalDirection)<0)faceNormal.negate();
+  for(const id of ids){
+   const k=kByIndex[id];
+   let g=groups.get(k);
+   if(!g){g={x:0,y:0,z:0,faces:0};groups.set(k,g)}
+   g.x+=faceNormal.x;g.y+=faceNormal.y;g.z+=faceNormal.z;g.faces++;
+  }
+ }
+ const normals=new Float32Array(src.array.length),out=new THREE.Vector3();
+ let smoothed=0,changed=0,maxAngleDegrees=0,weldedGroups=0;
+ for(const g of groups.values())if(g.faces>1)weldedGroups++;
+ for(let i=0;i<pos.count;i++){
+  const g=groups.get(kByIndex[i]);
+  const original=new THREE.Vector3(src.getX(i),src.getY(i),src.getZ(i));
+  if(original.lengthSq()<1e-15)original.set(0,0,1);
+  original.normalize();out.copy(original);
+  if(g?.faces>1){
+   const average=new THREE.Vector3(g.x,g.y,g.z);
+   if(average.lengthSq()>1e-18){
+    average.normalize();
+    const angle=original.angleTo(average)*180/Math.PI;
+    maxAngleDegrees=Math.max(maxAngleDegrees,angle);
+    if(angle<65){
+     out.copy(original).multiplyScalar(.13).addScaledVector(average,.87).normalize();
+     smoothed++;
+     if(angle>.5)changed++;
+    }
+   }
+  }
+  normals[i*3]=out.x;normals[i*3+1]=out.y;normals[i*3+2]=out.z;
+ }
+ geometry.setAttribute('normal',new THREE.Float32BufferAttribute(normals,3));
+ geometry.userData.studioSmoothedSkinNormals=true;
+ return {applied:true,vertexCount:pos.count,weldedGroups,smoothed,
+  alteredNormalVertices:changed,maxAngleDegrees,
+  topologyUnmodified:true,pigmentUnmodified:true,originalMeshUnmodified:true};
+}
+
+/**
  * Face is an independently cloned, already-owned preview mesh. Keep its
  * skin colours and eyes, make the light response slightly more matte and
  * reduce micro-bump highlights that exaggerate triangle boundaries.
