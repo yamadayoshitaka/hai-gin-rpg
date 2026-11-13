@@ -239,7 +239,7 @@ function addClothing(g,{angel,detail}){
   }
 }
 
-function addLegs(g,{angel}){
+function addLegs(g,{angel,detail}){
   const {sphere,segment,joint}=g;
   for(const side of [-1,1]){
     const part=side<0?'legBackL':'legBackR',x=side*.16;
@@ -255,7 +255,7 @@ function addLegs(g,{angel}){
     g.add(part,createCreatureFittedHemGeometry({
       center:[side*.18,.525,.016],axis:[side*.08,1,.12],
       radiusX:.101,radiusZ:.103,width:.047,thickness:.011,
-      detail:g.detail??'high'
+      detail
     }),angel?0xd6c4b1:0x675b49);
   }
 }
