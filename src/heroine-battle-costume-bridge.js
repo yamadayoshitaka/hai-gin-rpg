@@ -5,6 +5,8 @@ import {loadJobMotionMap} from './character-system/job-motion-source.js?v=4.6.36
 import {measureHeadLocalBounds} from './character-system/hair-attachment-runtime.js?v=4.4.89';
 import {createHeroineBattleActionVfx} from './heroine-battle-action-vfx.js?v=40';
 import {resolveBodyShape} from './character-cast-v46.js?v=46';
+import {resolveDemographicProfile,resolveBodyType,resolveAgeBand}
+ from './character-demographics-v47.js?v=47';
 
 /**
  * Reuse EXACT game battle clothing: Female_Ranger / Female_Peasant skinned GLTF,
@@ -311,7 +313,7 @@ export async function createRealBattleOutfitStudio({scene,faceModel,getFaceModel
  const jobs=await loadJobMotionMap();
  let actor=null,outfit=null,vfx=null,headRoot=faceModel.root,face=faceModel.face;
  let currentJob=jobId,currentOutfit=outfitId,currentAction=actionId;
- let nativeCommand=null,nativeClip=null,bodyShapeId='average';
+ let nativeCommand=null,nativeClip=null,bodyShapeId='average',ageBandId='twenties',bodyTypeId='normal';
  let hiddenBody=false,outfitShown=true,disposed=false,request=0,headReport=null,headFit=null,proportions=null,finishReport=null;
  const chosenOutfit=()=>currentOutfit==='job'?
   realBattleJob(currentJob):realBattleJob(currentOutfit);
@@ -422,24 +424,44 @@ export async function createRealBattleOutfitStudio({scene,faceModel,getFaceModel
  }
  function applyBodyShape(){
   if(!actor?.object3D||!headFit)return;
-  const shape=resolveBodyShape(bodyShapeId);
+  const demographic=resolveDemographicProfile(ageBandId,bodyTypeId);
+  const age=demographic.age,body=demographic.body;
   const scale=gender==='male'?.93:HEROINE_STUDIO_BODY_SCALE;
   const original=actor.object3D.userData.originalStudioActorScale;
   if(!original)return;
-  // Rig, armour, cloth and hands scale together; face compensates the width.
-  // Never modify the shared GLB or the real battle actor.
-  actor.object3D.scale.set(original[0]*scale*shape.width,
-   original[1]*scale,original[2]*scale*shape.depth);
-  headRoot.scale.set(headFit.scale/scale/shape.width,
-   headFit.scale/scale,headFit.scale/scale/shape.depth);
-  headRoot.position.x=headFit.targetCenter[0]-headFit.sourceCenter[0]*headRoot.scale.x;
-  headRoot.position.z=headFit.targetCenter[2]-headFit.sourceCenter[2]*headRoot.scale.z+
-   headFit.targetSize[2]*HEROINE_STUDIO_HEAD_FORWARD/scale;
+  // Scale the actual skinned body, rigged clothing, and equipment together.
+  // Age affects human height; build affects body width/depth only.
+  // The head compensates for body scaling, while a child's head remains
+  // slightly larger relative to its shorter body.
+  const sx=scale*body.width,sy=scale*age.heightScale,sz=scale*body.depth;
+  actor.object3D.scale.set(original[0]*sx,original[1]*sy,original[2]*sz);
+  const faceGain=age.headScale;
+  headRoot.scale.set(headFit.scale/sx*faceGain,
+   headFit.scale/sy*faceGain,headFit.scale/sz*faceGain);
+  const headHeight=headFit.targetSize[1],headDepth=headFit.targetSize[2];
+  headRoot.position.set(
+   headFit.targetCenter[0]-headFit.sourceCenter[0]*headRoot.scale.x,
+   headFit.targetCenter[1]-headFit.sourceCenter[1]*headRoot.scale.y+
+    headHeight*HEROINE_STUDIO_HEAD_LIFT/sy,
+   headFit.targetCenter[2]-headFit.sourceCenter[2]*headRoot.scale.z+
+    headDepth*HEROINE_STUDIO_HEAD_FORWARD/sz
+  );
   proportions={...proportions,bodyShape:bodyShapeId,
-   bodyWidth:shape.width,bodyDepth:shape.depth};
+   ageBand:ageBandId,bodyType:bodyTypeId,
+   bodyWidth:body.width,bodyDepth:body.depth,bodyHeight:age.heightScale,
+   headScale:age.headScale,skinnedBody:true,previewOnly:true};
  }
+ function setDemographics(ageBand='twenties',bodyType='normal'){
+  ageBandId=resolveAgeBand(ageBand).id;
+  bodyTypeId=resolveBodyType(bodyType).id;
+  bodyShapeId=bodyTypeId==='thin'?'slim':bodyTypeId==='fat'?'full':'average';
+  applyBodyShape();
+  return {ageBand:ageBandId,bodyType:bodyTypeId};
+ }
+ // Compatibility with the v46 cast menu.
  function setBodyShape(id='average'){
-  resolveBodyShape(id);bodyShapeId=id;applyBodyShape();return bodyShapeId;
+  resolveBodyShape(id);bodyShapeId=id;
+  bodyTypeId=resolveBodyType(id).id;applyBodyShape();return bodyShapeId;
  }
  function attachFace(next){
   if(!next?.root||!next.face)throw Error('Updated face required');
@@ -472,7 +494,7 @@ export async function createRealBattleOutfitStudio({scene,faceModel,getFaceModel
   active:!!actor,gender,rigSource:'battle-character-and-real-65-bone-job-outfit',
   jobId:currentJob,outfitId:currentOutfit,actionId:currentAction,
   nativeCommand,nativeClip,availableActionCount:availableActions().length,
-  garment:chosenOutfit().label,bodyShapeId,
+  garment:chosenOutfit().label,bodyShapeId,ageBand:ageBandId,bodyType:bodyTypeId,
   headReport,headFit,proportions,finishReport,
   sourceTrousers:outfit?.presentation?.().useSourceSkinnedLegs||false,
   retainedLegAnatomy:outfit?.diagnostics?.studioPreserveLegAnatomy||false,
@@ -489,5 +511,5 @@ export async function createRealBattleOutfitStudio({scene,faceModel,getFaceModel
  return {getState,getActor:()=>actor?.object3D||null,
   getOutfit:()=>outfit?.root||null,update,attachFace,setBodyVisible,
   setOutfitVisible,playAction,playRegisteredCommand,getAvailableActions:availableActions,
-  setSelection,setBodyShape,dispose};
+  setSelection,setBodyShape,setDemographics,dispose};
 }
