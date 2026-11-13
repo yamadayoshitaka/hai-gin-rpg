@@ -16,7 +16,7 @@ on:
       - 'qa/face-v50-browser.cjs'
       - 'qa/human-neck-v52-browser.cjs'
       - 'qa/human-head-occlusion-v53-browser.cjs'
-      - 'qa/human-realism-v51-regression.test.mjs qa/studio-face-quality-v56.test.mjs'
+      - 'qa/human-realism-v51-regression.test.mjs'
       - 'qa/studio-face-quality-v56.test.mjs'
       - 'src/studio-face-quality-v56.js'
   push:
@@ -64,7 +64,7 @@ jobs:
           name: face-v56-smooth-face-and-catalog
           path: |
             qa-screenshots/face-v50/
-            qa-screenshots/human-neck-v55/
+            qa-screenshots/human-neck-v56/
             qa-screenshots/human-v56/
           retention-days: 14
           if-no-files-found: warn
