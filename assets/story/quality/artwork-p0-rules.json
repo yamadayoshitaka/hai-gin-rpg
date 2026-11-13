@@ -105,6 +105,32 @@
       "allowEmptyFinalCellForOddCounts": true,
       "doNotGenerateExtraSceneForEmptyCell": true,
       "verificationScript": "scripts/assemble-story-panel-sheet.py"
+    },
+    "mobileDeliveryProfile": {
+      "profileId": "MOBILE_768x320_NATIVE_NO_UPSCALE",
+      "userApprovedUseCase": "Smartphone story playback; user explicitly accepts previous 787x350 crop quality",
+      "minimumNativePixels": [
+        768,
+        320
+      ],
+      "acceptedSourceExampleNativePixels": [
+        787,
+        350
+      ],
+      "ratioPolicy": "PRESERVE_ORIGINAL_ASPECT_WITH_OBJECT_FIT_CONTAIN",
+      "screenDisplayMaxCssWidth": 740,
+      "requiredNoUpscaling": true,
+      "scope": "SINGLE_CUT_IN_GAME_VIEWER_NOT_GIANT_SHEET_OR_NEW_AI_GENERATION",
+      "validForChapterDrafts": "resolution-only review: still requires exact scene/branch/cast and no text UI approval",
+      "status": "ALTERNATE_DELIVERY_PROFILE_NOT_AUTOMATIC_FINAL_APPROVAL",
+      "requiresManualApprovalFor": [
+        "referenceImageBytes",
+        "genderAndOutcome",
+        "exactCanonicalScript",
+        "noTextOrUI",
+        "subjectConsistency"
+      ],
+      "mobileThresholdOverridesDesktopOnlyWhenExplicitlySelected": true
     }
   },
   "qualityGates": [
