@@ -48,7 +48,7 @@ legend{font-size:12px;color:#e8d9b6;padding:0 6px}
 </style>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
 </head><body>
-<header><a href="./index.html">← メニュー</a><h1>魔物図鑑・モンスター管理 <small>50種 / v4.4.94</small></h1>
+<header><a href="./index.html">← メニュー</a><h1>魔物図鑑・モンスター管理 <small>50種 / v4.4.95</small></h1>
  <a href="./summon-showcase.html?v=4.4.92">召喚獣一覧</a></header>
 <main>
  <aside>
@@ -131,8 +131,8 @@ import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {MONSTER_CATALOG,MONSTER_BY_ID,MONSTER_FAMILIES,MONSTER_ELEMENTS,monsterList} from './src/monster-catalog.js?v=4.4.92';
 import {createMonsterModel,disposeMonsterSculpture,MONSTER_DETAIL_LEVELS,
-  monsterSculptCacheStats,monsterPhotoCacheStats} from './src/monster-geometry.js?v=4.4.94';
-import {MONSTER_ACTIONS,startMonsterAction,animateMonsterModel} from './src/monster-animation.js?v=4.4.94';
+  monsterSculptCacheStats,monsterPhotoCacheStats} from './src/monster-geometry.js?v=4.4.95';
+import {MONSTER_ACTIONS,startMonsterAction,animateMonsterModel} from './src/monster-animation.js?v=4.4.95';
 import {fetchCreatureRegistry,loadExternalCreature,loadPersonalGLB} from './src/creature-external-runtime.js?v=4.4.92';
 const byId=id=>document.getElementById(id);
 const storeKey='hai-gin.monster-manager.v1';
@@ -179,16 +179,16 @@ camera.position.set(4,3.5,7);
 const renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});
 renderer.outputColorSpace=THREE.SRGBColorSpace;
 renderer.toneMapping=THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure=1.33;renderer.shadowMap.enabled=true;
+renderer.toneMappingExposure=1.16;renderer.shadowMap.enabled=true;
 renderer.shadowMap.type=THREE.PCFSoftShadowMap;
 // Keep the dense sculpt, but avoid overshading every retina pixel on mobile.
 renderer.setPixelRatio(Math.min(devicePixelRatio||1,
   matchMedia('(max-width:730px)').matches?1.4:1.75));
 view.prepend(renderer.domElement);
-scene.add(new THREE.HemisphereLight(0xdce7f6,0x30343a,2.4));
-const sun=new THREE.DirectionalLight(0xffdfa6,3.0);sun.position.set(-3,10,7);sun.castShadow=true;
+scene.add(new THREE.HemisphereLight(0xdce7f6,0x30343a,1.55));
+const sun=new THREE.DirectionalLight(0xffdfa6,2.45);sun.position.set(-3,10,7);sun.castShadow=true;
 sun.shadow.mapSize.set(1024,1024);scene.add(sun);
-const fill=new THREE.DirectionalLight(0x72bdff,1.65);fill.position.set(4,5,-5);scene.add(fill);
+const fill=new THREE.DirectionalLight(0x72bdff,.91);fill.position.set(4,5,-5);scene.add(fill);
 const ground=new THREE.Mesh(new THREE.CircleGeometry(18,60),new THREE.MeshStandardMaterial({color:'#263a42',roughness:.96}));
 ground.rotation.x=-Math.PI/2;ground.receiveShadow=true;scene.add(ground);
 const grid=new THREE.GridHelper(14,18,0x4b737c,0x243943);grid.position.y=.008;scene.add(grid);

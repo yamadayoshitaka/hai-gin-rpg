@@ -57,6 +57,7 @@
     "test:town-visit": "node qa/town-visit-experience.test.mjs && node qa/town-audio-director.test.mjs",
     "test:creature-articulation": "node qa/creature-articulation-quality.test.mjs",
     "test:creature-motion-fur": "node qa/creature-motion-fur-regression.test.mjs",
-    "test:monster-leap-mummy": "node qa/monster-leap-mummy-quality.test.mjs"
+    "test:monster-leap-mummy": "node qa/monster-leap-mummy-quality.test.mjs",
+    "test:monster-realistic": "node qa/monster-realistic-remesh.test.mjs"
   }
 }

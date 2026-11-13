@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 // Run the same visual-anatomy contracts in CI's fixed 50-species suite.
 import './monster-leap-mummy-quality.test.mjs';
+import './monster-realistic-remesh.test.mjs';
 import {MONSTER_CATALOG,validateMonsterCatalog} from '../src/monster-catalog.js';
 import {
  ANATOMY_EVIDENCE, MONSTER_ANATOMY_RESEARCH, monsterEvidenceFor,
