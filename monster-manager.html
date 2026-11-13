@@ -249,9 +249,10 @@ function loadEditor(m){
    byId('edit-'+id).value=v;
 }
 function disposeCurrent(){
+ const wasExternal=!!externalHandle;
  if(externalHandle){externalHandle.dispose();externalHandle=null;}
  if(costumeHandle){costumeHandle.dispose();costumeHandle=null;}
- else if(model&&!externalHandle)disposeMonsterSculpture(model);
+ else if(model&&!wasExternal)disposeMonsterSculpture(model);
  model=null;
 }
 function refreshGeometry(){
