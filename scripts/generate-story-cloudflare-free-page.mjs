@@ -91,8 +91,12 @@ const shots=sheet.panels.map((id,i)=>{
 });
 if(shots.length>5||new Set(shots.map(s=>s.panelId)).size!==shots.length)
  throw Error('P0 five independent per-page shots only');
-const outRel='assets/story/chapter-drafts/c01/cloudflare-flux2-klein4b/'+
+const productionRel='assets/story/chapter-drafts/c01/cloudflare-flux2-klein4b/'+
  stage+'-'+edition+'-'+gender+'/p'+String(page).padStart(2,'0');
+// Test-mode candidates are isolated from every review branch and actual game asset.
+const isolatedMock=process.env.STORY_CLOUDFLARE_TEST_ISOLATION==='confirmed-local-fake';
+const outRel=isolatedMock?'qa-reports/story-stage-production/cloudflare-free-pilot/mock-art/'+
+ stage+'-'+edition+'-'+gender+'/p'+String(page).padStart(2,'0'):productionRel;
 const reportDir='qa-reports/story-stage-production/cloudflare-free-pilot';
 const pilotFile=reportDir+'/c01-s02-'+gender+'-'+edition+'-page'+page+'.json';
 const width=1024,height=576;
@@ -116,7 +120,9 @@ const report={kind:'CF_WORKERS_AI_FLUX2_KLEIN_4B_FIVE_NATIVE_SHOT_PILOT',
  freePlanDailyNeurons:10000,
  prices:{outputPer512Tile:26.05,inputPer512Tile:5.37},
  outputRoot:outRel,qualityApproved:false,formalArtRegistered:0,
- imagesActuallyGenerated:0,requestsActuallySent:0,tokenRequiredOnlyWhenModeGenerate:true,
+ imagesActuallyGenerated:0,existingCandidatesResumed:0,validCandidateCount:0,
+ requestsActuallySent:0,tokenRequiredOnlyWhenModeGenerate:true,
+ isolatedMock,
  shots:statuses};
 function save(){
  fs.mkdirSync(path.join(root,reportDir),{recursive:true});
@@ -146,18 +152,24 @@ function python(subCommand,input,output){
 const api='https://api.cloudflare.com/client/v4/accounts/'+account+
  '/ai/run/@cf/black-forest-labs/flux-2-klein-4b';
 let reserved=0;
+const distinctHashes=new Set();
 for(let i=0;i<shots.length;i++){
  const shot=shots[i],row=report.shots[i];
  if(reserved+estimate(shot)>limit)throw Error('P0 FREE_LIMIT_PREVENTED_CALL');
  const source=path.join(root,outRel,shot.filename);
  const proof=source+'.generation.json';
+ if(fs.existsSync(source)!==fs.existsSync(proof))
+  throw Error('P0 refusing to overwrite unpaired generated source/proof');
  if(fs.existsSync(source)&&fs.existsSync(proof)){
   const savedProof=JSON.parse(fs.readFileSync(proof,'utf8'));
   const present=hash(fs.readFileSync(source));
   if(savedProof.imageSha256!==present||savedProof.shotKey!==shot.shotKey)
    throw Error('P0 existing generated WebP proof does not match source; refuse overwrite');
+  if(distinctHashes.has(present))throw Error('P0 duplicated WebP across distinct story shots');
+  distinctHashes.add(present);
   row.skippedAlreadyGenerated=true;row.rendered=true;row.imageSha256=present;
-  row.outputPath=path.relative(root,source);report.imagesActuallyGenerated++;
+  row.outputPath=path.relative(root,source);
+  report.existingCandidatesResumed++;report.validCandidateCount++;
   save();
   continue;
  }
@@ -224,11 +236,18 @@ for(let i=0;i<shots.length;i++){
   converted.inputPixels[1]!==converted.outputPixels[1])
   throw Error('P0 native image invalid or upscaled');
  const webp=fs.readFileSync(source);
+ const resultHash=hash(webp);
+ if(distinctHashes.has(resultHash)){
+  fs.rmSync(source,{force:true});
+  row.error='DUPLICATE_OUTPUT_IMAGE';save();
+  throw Error('P0 duplicate generated image; one original per canonical scene required');
+ }
+ distinctHashes.add(resultHash);
  const generated={
   kind:'ACTUAL_CLOUDFLARE_GENERATED_FRAME_REVIEW_REQUIRED',
   shotKey:shot.shotKey,stageId:stage,edition,gender,panelId:shot.panelId,
   nativePixels:converted.outputPixels,outputPath:path.relative(root,source),
-  imageSha256:hash(webp),outputBytes:webp.length,
+  imageSha256:resultHash,outputBytes:webp.length,
   sourceModel:report.model,generationSeed:seed,renderPromptSha256:hash(Buffer.from(shot.prompt)),
   sceneGoal:shot.sceneGoal,screenplayText:shot.screenplayText,speaker:shot.speaker,
   compositionHint:shot.compositionHint,visibleActorIds:shot.visibleActorIds,
@@ -241,7 +260,7 @@ for(let i=0;i<shots.length;i++){
  fs.writeFileSync(proof,JSON.stringify(generated,null,2)+'\n');
  row.rendered=true;row.outputPath=generated.outputPath;
  row.imageSha256=generated.imageSha256;row.nativePixels=generated.nativePixels;
- report.imagesActuallyGenerated++;
+ report.imagesActuallyGenerated++;report.validCandidateCount++;
  save();
  console.log(JSON.stringify({shot:shot.panelId,
   rendered:true,nativePixels:converted.outputPixels,
@@ -249,5 +268,5 @@ for(let i=0;i<shots.length;i++){
 }
 console.log(JSON.stringify({status:'PILOT_REAL_ART_CANDIDATES_DONE_QA_PENDING',
  frames:shots.length,requestsSent:report.requestsActuallySent,
- readyForManualVisualReview:report.imagesActuallyGenerated,
+ readyForManualVisualReview:report.validCandidateCount,
  gameRegistrations:0,summary:pilotFile}));
