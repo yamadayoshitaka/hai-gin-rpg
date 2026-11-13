@@ -6,7 +6,8 @@ import {BODY_PROFILES,resolveBodyType,applyDemographicFaceControls}
  from '../src/character-demographics-v47.js';
 import {applySkinnedBuildMorph} from '../src/body-build-morph-v48.js';
 import {enhanceStudioBodyMaterials,syncStudioBodyOutfitVisibility,
- HEROINE_STUDIO_HEAD_LIFT,HEROINE_STUDIO_HEAD_FORWARD,fitStudioCuirassBelowChin}
+ HEROINE_STUDIO_HEAD_LIFT,HEROINE_STUDIO_HEAD_FORWARD,fitStudioCuirassBelowChin,
+ alignStudioHeadToSkinnedTorso}
  from '../src/heroine-battle-costume-bridge.js';
 import {applyHeroineSkinMaterial} from '../src/heroine-skin-material.js';
 
@@ -166,4 +167,42 @@ test('cloth-only outfits never trigger armor neck morph or deform the face',()=>
  assert.equal(result.reason,'no-chest-armor');
  assert.deepEqual(face.geometry.getAttribute('position').array,before);
  face.geometry.dispose();face.material.dispose();
+});
+
+test('real skinned torso neckline, not armor, sets whole head height without stacking lifts',()=>{
+ const actor=new THREE.Group();actor.scale.setScalar(.84);
+ const headBone=new THREE.Bone();headBone.name='head';actor.add(headBone);
+ const faceRoot=new THREE.Group();headBone.add(faceRoot);
+ const face=new THREE.Mesh(new THREE.BoxGeometry(.17,.24,.14),new THREE.MeshStandardMaterial());
+ face.position.y=1.30;faceRoot.add(face);
+ const wardrobe=new THREE.Group();actor.add(wardrobe);
+ const torsoGeometry=new THREE.BoxGeometry(.34,.60,.25);
+ const torso=new THREE.SkinnedMesh(torsoGeometry,new THREE.MeshStandardMaterial());
+ torso.name='Female_Ranger_Body';torso.position.y=1.13;wardrobe.add(torso);
+ actor.updateWorldMatrix(true,true);
+ const sourcePosition=face.geometry.getAttribute('position').array.slice();
+ const before=new THREE.Box3().setFromObject(face).min.y;
+ const first=alignStudioHeadToSkinnedTorso({faceRoot,faceMesh:face,wardrobeRoot:wardrobe});
+ assert.equal(first.applied,true);
+ assert.equal(first.torsoMeshes,1);
+ assert.ok(first.appliedLift>.05&&first.appliedLift<.28);
+ assert.ok(first.faceBottomAfterY>=first.torsoNeckTopY+.007);
+ const second=alignStudioHeadToSkinnedTorso({faceRoot,faceMesh:face,wardrobeRoot:wardrobe});
+ assert.ok(second.appliedLift<1e-5,'fitting twice cannot accumulate head lift');
+ assert.ok(Math.abs(second.faceBottomAfterY-first.faceBottomAfterY)<1e-5);
+ assert.deepEqual(face.geometry.getAttribute('position').array,sourcePosition,
+  'head geometry remains original while whole root moves');
+ assert.ok(first.faceBottomAfterY>before);
+ face.geometry.dispose();face.material.dispose();
+ torsoGeometry.dispose();torso.material.dispose();
+});
+
+test('head alignment is also applied before cuirass fit and after animation pose',()=>{
+ const source=readFileSync(new URL('../src/heroine-battle-costume-bridge.js',import.meta.url),'utf8');
+ const facePos=source.indexOf('headRoot.position.set(',source.indexOf('function applyBodyShape()'));
+ const align=source.indexOf('alignStudioHeadToSkinnedTorso({',facePos);
+ const armor=source.indexOf('fitStudioCuirassBelowChin({',facePos);
+ assert.ok(facePos>=0&&align>facePos&&armor>align,
+  'face must be aligned to actual torso before the metal gets clipped');
+ assert.match(source,/actor.update\(dt\);outfit\?\.sync\(\);[\s\S]*alignStudioHeadToSkinnedTorso/);
 });

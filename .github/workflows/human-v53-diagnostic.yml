@@ -1,0 +1,33 @@
+name: Human v53 direct mesh overlap diagnostics
+on:
+  pull_request:
+    paths:
+      - 'src/heroine-battle-costume-bridge.js'
+      - 'qa/human-head-occlusion-v53-browser.cjs'
+      - '.github/workflows/human-v53-diagnostic.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inspect-human:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save --package-lock=false playwright@1.56.0 three@0.160.1
+      - run: npx playwright install chromium
+      - run: |
+          python3 -m http.server 8766 --bind 127.0.0.1 >/tmp/human-v53-http.log 2>&1 &
+          sleep 2
+      - name: Report actual female face and armor mesh bounding boxes
+        run: node qa/human-head-occlusion-v53-browser.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: human-v53-overlay-diagnostic
+          path: qa-screenshots/human-v53/
+          retention-days: 7
+          if-no-files-found: warn
