@@ -164,7 +164,8 @@
       ],
       "sha256": "26a2b9d5521a656a7e278a742ed98fbe2a0a03abea49b0f9944b037310a156d0",
       "status": "UNAPPROVED_DRAFT_OFFLINE",
-      "source": "2026-11-13 imagegen single-scene retreat"
+      "source": "2026-11-13 imagegen single-scene retreat",
+      "bytes": 545028
     }
   ]
 }
