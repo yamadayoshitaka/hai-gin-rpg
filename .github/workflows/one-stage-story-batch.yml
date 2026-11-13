@@ -13,6 +13,9 @@ on:
     paths:
       - 'assets/story/stage-manifests/**'
       - 'scripts/run-story-stage.mjs'
+      - 'scripts/prepare-story-stage-posters.mjs'
+      - 'scripts/assemble-story-panel-sheet.py'
+      - 'qa/story-panel-sheet-native.test.py'
       - 'qa/story-single-stage-manifest.test.mjs'
       - 'qa/story-stage2-draft-intake.test.mjs'
       - 'scripts/verify-stage2-draft-pack.py'
@@ -50,6 +53,7 @@ jobs:
           node qa/story-single-stage-manifest.test.mjs
           node qa/story-stage2-draft-intake.test.mjs
           python -m py_compile scripts/verify-stage2-draft-pack.py
+          python qa/story-panel-sheet-native.test.py
       - name: Prepare and validate real cast reference images for stage2
         if: env.STAGE_ID == 'c01-s02'
         run: |
