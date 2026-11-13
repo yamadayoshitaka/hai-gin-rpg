@@ -260,6 +260,16 @@ for(const pg of pages){
    summary('PROVIDER_SAFETY_BLOCK_RECORDED_AND_NEXT_PAGE');
    continue;
   }
+  // A quota / network / decoder stop must not discard earlier independently
+  // verified actual WebPs from this page. Commit only complete image+proof pairs.
+  const complete=pg.shots.filter(s=>status(s)==='REAL_DRAFT_UNAPPROVED'&&
+   files.includes(s.img)&&files.includes(s.proof));
+  if(complete.length){
+   exec('git',['add','--',...complete.flatMap(s=>[s.img,s.proof])]);
+   exec('git',['commit','-m','art(review): preserve '+complete.length+' native unapproved frames before provider stop']);
+   exec('git',['push','origin','HEAD:'+branch]);
+   committed++;
+  }
   summary('STOPPED_NO_RETRIES_'+error);
   console.error('P0 FREE ONLY STOP: '+error);process.exitCode=2;break;
  }
