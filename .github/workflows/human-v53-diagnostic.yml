@@ -1,9 +1,10 @@
-name: Human v53 direct mesh overlap diagnostics
+name: Human v54 neck continuity diagnostics
 on:
   pull_request:
     paths:
       - 'src/heroine-battle-costume-bridge.js'
       - 'qa/human-head-occlusion-v53-browser.cjs'
+      - 'qa/human-realism-v51-regression.test.mjs'
       - '.github/workflows/human-v53-diagnostic.yml'
   workflow_dispatch:
 permissions:
@@ -22,12 +23,14 @@ jobs:
       - run: |
           python3 -m http.server 8766 --bind 127.0.0.1 >/tmp/human-v53-http.log 2>&1 &
           sleep 2
-      - name: Report actual female face and armor mesh bounding boxes
+      - name: Verify neck connector and preserved head source geometry
+        run: node --test qa/human-realism-v51-regression.test.mjs
+      - name: Report actual female face, neck and armor mesh bounds
         run: node qa/human-head-occlusion-v53-browser.cjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: human-v53-overlay-diagnostic
-          path: qa-screenshots/human-v53/
+          name: human-v54-neck-continuity
+          path: qa-screenshots/human-v54/
           retention-days: 7
           if-no-files-found: warn

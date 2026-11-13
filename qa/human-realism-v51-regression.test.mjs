@@ -7,7 +7,7 @@ import {BODY_PROFILES,resolveBodyType,applyDemographicFaceControls}
 import {applySkinnedBuildMorph} from '../src/body-build-morph-v48.js';
 import {enhanceStudioBodyMaterials,syncStudioBodyOutfitVisibility,
  HEROINE_STUDIO_HEAD_LIFT,HEROINE_STUDIO_HEAD_FORWARD,fitStudioCuirassBelowChin,
- alignStudioHeadToSkinnedTorso}
+ alignStudioHeadToSkinnedTorso,fitStudioNeckContinuity}
  from '../src/heroine-battle-costume-bridge.js';
 import {applyHeroineSkinMaterial} from '../src/heroine-skin-material.js';
 
@@ -205,4 +205,75 @@ test('head alignment is also applied before cuirass fit and after animation pose
  assert.ok(facePos>=0&&align>facePos&&armor>align,
   'face must be aligned to actual torso before the metal gets clipped');
  assert.match(source,/actor.update\(dt\);outfit\?\.sync\(\);[\s\S]*alignStudioHeadToSkinnedTorso/);
+});
+
+test('v54 neck continuity removes the flat head bust and bridges the true torso',()=>{
+ const actor=new THREE.Group();
+ const headRoot=new THREE.Group();actor.add(headRoot);
+ const source=new THREE.SphereGeometry(.10,44,24);
+ source.scale(1,1.20,1);
+ const original=source.getAttribute('position').array.slice();
+ const face=new THREE.Mesh(source,new THREE.MeshStandardMaterial());
+ face.position.y=1.13;headRoot.add(face);
+ const obsolete=['REAL_HEAD_BODY_CLOSED_NECK_SEAL',
+  'RIGHT_SHOULDER_CUT_SURFACE_CAP','LEFT_SHOULDER_CUT_SURFACE_CAP']
+   .map(name=>{
+    const panel=new THREE.Mesh(new THREE.BoxGeometry(.10,.01,.08),
+      new THREE.MeshStandardMaterial());
+    panel.name=name;headRoot.add(panel);return panel;
+   });
+ const outfit=new THREE.Group();actor.add(outfit);
+ const body=new THREE.SkinnedMesh(new THREE.BoxGeometry(.32,.48,.23),
+  new THREE.MeshStandardMaterial());
+ body.name='Female_Ranger_Body';
+ body.position.y=.98;outfit.add(body);
+ const alignment=alignStudioHeadToSkinnedTorso({
+  faceRoot:headRoot,faceMesh:face,wardrobeRoot:outfit});
+ assert.equal(alignment.applied,true);
+ const before=new THREE.Box3().setFromObject(face);
+ const result=fitStudioNeckContinuity({faceRoot:headRoot,
+  faceMesh:face,wardrobeRoot:outfit});
+ assert.equal(result.applied,true,JSON.stringify(result));
+ assert.ok(result.bustTrianglesRemoved>3);
+ assert.ok(result.trimmedSculptBottomY>before.min.y);
+ assert.equal(result.segmentCount,32);
+ assert.equal(result.legacyNeckPartsHidden,3);
+ assert.ok(obsolete.every(mesh=>!mesh.visible),
+  'obsolete white horizontal neck panels must not render');
+ assert.ok(result.neckHeight>.025&&result.neckHeight<.18);
+ assert.ok(result.connectorBottomY<result.actualTorsoTopY);
+ assert.ok(result.connectorTopY>result.trimmedSculptBottomY);
+ assert.notEqual(face.geometry,source);
+ assert.deepEqual(source.getAttribute('position').array,original,
+  'original 3D face source remains unchanged');
+ const connector=headRoot.getObjectByName('STUDIO_REAL_SKIN_NECK_CONNECTOR_V54');
+ assert.ok(connector?.isMesh&&connector.material.vertexColors);
+ assert.ok(connector.geometry.getAttribute('position').count>100);
+ assert.equal(headRoot.children.filter(o=>o.name==='STUDIO_REAL_SKIN_NECK_CONNECTOR_V54').length,1);
+ const second=fitStudioNeckContinuity({faceRoot:headRoot,faceMesh:face,wardrobeRoot:outfit});
+ assert.equal(second.applied,true);
+ assert.equal(headRoot.children.filter(o=>o.name==='STUDIO_REAL_SKIN_NECK_CONNECTOR_V54').length,1,
+  're-fitting must replace rather than stack neck connectors');
+ assert.ok(Math.abs(second.trimmedSculptBottomY-result.trimmedSculptBottomY)<1e-5);
+ assert.deepEqual(source.getAttribute('position').array,original);
+ const fittedAgain=alignStudioHeadToSkinnedTorso({
+  faceRoot:headRoot,faceMesh:face,wardrobeRoot:outfit});
+ assert.ok(fittedAgain.appliedLift<.0001,
+  'cropping the portrait must not cause feedback and raise the head again');
+ connector.geometry.dispose();connector.material.dispose();
+ for(const piece of obsolete){piece.geometry.dispose();piece.material.dispose()}
+ source.dispose();face.geometry.dispose();face.material.dispose();
+ body.geometry.dispose();body.material.dispose();
+});
+
+test('v54 connector refuses to add artificial neck if actual torso is absent',()=>{
+ const root=new THREE.Group(),face=new THREE.Mesh(
+  new THREE.SphereGeometry(.1,16,12),new THREE.MeshStandardMaterial());
+ root.add(face);
+ const empty=new THREE.Group();
+ const r=fitStudioNeckContinuity({faceRoot:root,faceMesh:face,wardrobeRoot:empty});
+ assert.equal(r.applied,false);
+ assert.equal(r.reason,'torso-missing');
+ assert.equal(root.children.length,1);
+ face.geometry.dispose();face.material.dispose();
 });
