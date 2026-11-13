@@ -1,0 +1,3852 @@
+{
+  "kind": "C01_ACTUAL_IMAGE_REGRESSION_NOT_HUMAN_VISUAL_APPROVAL",
+  "canonicalScenes": 462,
+  "canonicalPages": 132,
+  "counts": {
+    "expected": 462,
+    "existingRegistrationNotP0Approved": 53,
+    "validRealReviewDraft": 32,
+    "missing": 376,
+    "providerBlocked": 1,
+    "incorrectNativePixels": 0,
+    "invalidProof": 0,
+    "duplicate": 0,
+    "formallyApprovedNew": 0
+  },
+  "allArtBytesAccountedFor": false,
+  "P0VisualApprovalComplete": false,
+  "safeToAutoRegister": false,
+  "safeToDeploy": false,
+  "qualityGate": [
+    "native WebP 16:9 / per-stage source pixels",
+    "exact image SHA256 with immutable generation evidence",
+    "canonical gender/branch/storyboard text",
+    "physical actor master source hashes attached to generation",
+    "distinct real frame per distinct canonical shot",
+    "human verification STILL REQUIRED: appearance, anatomy, unwanted text, scene interpretation"
+  ],
+  "rejected": [],
+  "stages": [
+    {
+      "stageId": "c01-s01",
+      "scenes": [
+        {
+          "key": "c01-s01|pre|male|c01-s01-m1",
+          "panelId": "c01-s01-m1",
+          "gender": "male",
+          "edition": "pre",
+          "status": "EXISTING_REGISTERED_NOT_P0_CERTIFIED"
+        },
+        {
+          "key": "c01-s01|pre|male|c01-s01-m2",
+          "panelId": "c01-s01-m2",
+          "gender": "male",
+          "edition": "pre",
+          "status": "EXISTING_REGISTERED_NOT_P0_CERTIFIED"
+        },
+        {
+          "key": "c01-s01|pre|male|c01-s01-m3",
+          "panelId": "c01-s01-m3",
+          "gender": "male",
+          "edition": "pre",
+          "status": "EXISTING_REGISTERED_NOT_P0_CERTIFIED"
+        },
+        {
+          "key": "c01-s01|pre|male|c01-s01-m4",
+          "panelId": "c01-s01-m4",
+          "gender": "male",
+          "edition": "pre",
+          "status": "EXISTING_REGISTERED_NOT_P0_CERTIFIED"
+        },
+        {
+          "key": "c01-s01|pre|male|c01-s01-m5",
+          "panelId": "c01-s01-m5",
+          "gender": "male",
+          "edition": "pre",
+          "status": "EXISTING_REGISTERED_NOT_P0_CERTIFIED"
+        },
+        {
+          "key": "c01-s01|pre|male|c01-s01-m11",
+          "panelId": "c01-s01-m11",
+          "gender": "male",
+          "edition": "pre",
+          "status": "EXISTING_REGISTERED_NOT_P0_CERTIFIED"
+        },
+        {
+          "key": "c01-s01|pre|male|c01-s01-m12",
+          "panelId": "c01-s01-m12",
+          "gender": "male",
+          "edition": "pre",
+          "status": "EXISTING_REGISTERED_NOT_P0_CERTIFIED"
+        },
+        {
+          "key": "c01-s01|pre|male|c01-s01-m13",
+          "panelId": "c01-s01-m13",
+          "gender": "male",
+          "edition": "pre",
+          "status": "EXISTING_REGISTERED_NOT_P0_CERTIFIED"
+        },
+        {
+          "key": "c01-s01|pre|male|c01-s01-m14",
+          "panelId": "c01-s01-m14",
+          "gender": "male",
+          "edition": "pre",
+          "status": "EXISTING_REGISTERED_NOT_P0_CERTIFIED"
+        },
+        {
+          "key": "c01-s01|pre|male|c01-s01-m15",
+          "panelId": "c01-s01-m15",
+          "gender": "male",
+          "edition": "pre",
+          "status": "EXISTING_REGISTERED_NOT_P0_CERTIFIED"
+        },
+        {
+          "key": "c01-s01|pre|female|c01-s01-m1",
+          "panelId": "c01-s01-m1",
+          "gender": "female",
+          "edition": "pre",
+          "status": "EXISTING_REGISTERED_NOT_P0_CERTIFIED"
+        },
+        {
+          "key": "c01-s01|pre|female|c01-s01-m2",
+          "panelId": "c01-s01-m2",
+          "gender": "female",
+          "edition": "pre",
+          "status": "EXISTING_REGISTERED_NOT_P0_CERTIFIED"
+        },
+        {
+          "key": "c01-s01|pre|female|c01-s01-m3",
+          "panelId": "c01-s01-m3",
+          "gender": "female",
+          "edition": "pre",
+          "status": "EXISTING_REGISTERED_NOT_P0_CERTIFIED"
+        },
+        {
+          "key": "c01-s01|pre|female|c01-s01-m4",
+          "panelId": "c01-s01-m4",
+          "gender": "female",
+          "edition": "pre",
+          "status": "EXISTING_REGISTERED_NOT_P0_CERTIFIED"
+        },
+        {
+          "key": "c01-s01|pre|female|c01-s01-m5",
+          "panelId": "c01-s01-m5",
+          "gender": "female",
+          "edition": "pre",
+          "status": "EXISTING_REGISTERED_NOT_P0_CERTIFIED"
+        },
+        {
+          "key": "c01-s01|pre|female|c01-s01-m11",
+          "panelId": "c01-s01-m11",
+          "gender": "female",
+          "edition": "pre",
+          "status": "EXISTING_REGISTERED_NOT_P0_CERTIFIED"
+        },
+        {
+          "key": "c01-s01|pre|female|c01-s01-m12",
+          "panelId": "c01-s01-m12",
+          "gender": "female",
+          "edition": "pre",
+          "status": "EXISTING_REGISTERED_NOT_P0_CERTIFIED"
+        },
+        {
+          "key": "c01-s01|pre|female|c01-s01-m13",
+          "panelId": "c01-s01-m13",
+          "gender": "female",
+          "edition": "pre",
+          "status": "EXISTING_REGISTERED_NOT_P0_CERTIFIED"
+        },
+        {
+          "key": "c01-s01|pre|female|c01-s01-m14",
+          "panelId": "c01-s01-m14",
+          "gender": "female",
+          "edition": "pre",
+          "status": "EXISTING_REGISTERED_NOT_P0_CERTIFIED"
+        },
+        {
+          "key": "c01-s01|pre|female|c01-s01-m15",
+          "panelId": "c01-s01-m15",
+          "gender": "female",
+          "edition": "pre",
+          "status": "EXISTING_REGISTERED_NOT_P0_CERTIFIED"
+        },
+        {
+          "key": "c01-s01|post-town|male|c01-s01-m6",
+          "panelId": "c01-s01-m6",
+          "gender": "male",
+          "edition": "post-town",
+          "status": "EXISTING_REGISTERED_NOT_P0_CERTIFIED"
+        },
+        {
+          "key": "c01-s01|post-town|male|c01-s01-m7",
+          "panelId": "c01-s01-m7",
+          "gender": "male",
+          "edition": "post-town",
+          "status": "EXISTING_REGISTERED_NOT_P0_CERTIFIED"
+        },
+        {
+          "key": "c01-s01|post-town|male|c01-s01-m8",
+          "panelId": "c01-s01-m8",
+          "gender": "male",
+          "edition": "post-town",
+          "status": "EXISTING_REGISTERED_NOT_P0_CERTIFIED"
+        },
+        {
+          "key": "c01-s01|post-town|male|c01-s01-m9",
+          "panelId": "c01-s01-m9",
+          "gender": "male",
+          "edition": "post-town",
+          "status": "EXISTING_REGISTERED_NOT_P0_CERTIFIED"
+        },
+        {
+          "key": "c01-s01|post-town|male|c01-s01-m10",
+          "panelId": "c01-s01-m10",
+          "gender": "male",
+          "edition": "post-town",
+          "status": "EXISTING_REGISTERED_NOT_P0_CERTIFIED"
+        },
+        {
+          "key": "c01-s01|post-town|female|c01-s01-m6",
+          "panelId": "c01-s01-m6",
+          "gender": "female",
+          "edition": "post-town",
+          "status": "EXISTING_REGISTERED_NOT_P0_CERTIFIED"
+        },
+        {
+          "key": "c01-s01|post-town|female|c01-s01-m7",
+          "panelId": "c01-s01-m7",
+          "gender": "female",
+          "edition": "post-town",
+          "status": "EXISTING_REGISTERED_NOT_P0_CERTIFIED"
+        },
+        {
+          "key": "c01-s01|post-town|female|c01-s01-m8",
+          "panelId": "c01-s01-m8",
+          "gender": "female",
+          "edition": "post-town",
+          "status": "EXISTING_REGISTERED_NOT_P0_CERTIFIED"
+        },
+        {
+          "key": "c01-s01|post-town|female|c01-s01-m9",
+          "panelId": "c01-s01-m9",
+          "gender": "female",
+          "edition": "post-town",
+          "status": "EXISTING_REGISTERED_NOT_P0_CERTIFIED"
+        },
+        {
+          "key": "c01-s01|post-town|female|c01-s01-m10",
+          "panelId": "c01-s01-m10",
+          "gender": "female",
+          "edition": "post-town",
+          "status": "EXISTING_REGISTERED_NOT_P0_CERTIFIED"
+        }
+      ]
+    },
+    {
+      "stageId": "c01-s02",
+      "scenes": [
+        {
+          "key": "c01-s02|pre|male|c01-s02-m1",
+          "panelId": "c01-s02-m1",
+          "gender": "male",
+          "edition": "pre",
+          "status": "EXISTING_REGISTERED_NOT_P0_CERTIFIED"
+        },
+        {
+          "key": "c01-s02|pre|male|c01-s02-m2",
+          "panelId": "c01-s02-m2",
+          "gender": "male",
+          "edition": "pre",
+          "status": "EXISTING_REGISTERED_NOT_P0_CERTIFIED"
+        },
+        {
+          "key": "c01-s02|pre|male|c01-s02-m3",
+          "panelId": "c01-s02-m3",
+          "gender": "male",
+          "edition": "pre",
+          "status": "EXISTING_REGISTERED_NOT_P0_CERTIFIED"
+        },
+        {
+          "key": "c01-s02|pre|male|c01-s02-m4",
+          "panelId": "c01-s02-m4",
+          "gender": "male",
+          "edition": "pre",
+          "status": "EXISTING_REGISTERED_NOT_P0_CERTIFIED"
+        },
+        {
+          "key": "c01-s02|pre|male|c01-s02-m5",
+          "panelId": "c01-s02-m5",
+          "gender": "male",
+          "edition": "pre",
+          "status": "EXISTING_REGISTERED_NOT_P0_CERTIFIED"
+        },
+        {
+          "key": "c01-s02|pre|male|c01-s02-m11",
+          "panelId": "c01-s02-m11",
+          "gender": "male",
+          "edition": "pre",
+          "status": "EXISTING_REGISTERED_NOT_P0_CERTIFIED"
+        },
+        {
+          "key": "c01-s02|pre|male|c01-s02-m13",
+          "panelId": "c01-s02-m13",
+          "gender": "male",
+          "edition": "pre",
+          "status": "EXISTING_REGISTERED_NOT_P0_CERTIFIED"
+        },
+        {
+          "key": "c01-s02|pre|male|c01-s02-m15",
+          "panelId": "c01-s02-m15",
+          "gender": "male",
+          "edition": "pre",
+          "status": "EXISTING_REGISTERED_NOT_P0_CERTIFIED"
+        },
+        {
+          "key": "c01-s02|pre|female|c01-s02-m1",
+          "panelId": "c01-s02-m1",
+          "gender": "female",
+          "edition": "pre",
+          "status": "EXISTING_REGISTERED_NOT_P0_CERTIFIED"
+        },
+        {
+          "key": "c01-s02|pre|female|c01-s02-m2",
+          "panelId": "c01-s02-m2",
+          "gender": "female",
+          "edition": "pre",
+          "status": "EXISTING_REGISTERED_NOT_P0_CERTIFIED"
+        },
+        {
+          "key": "c01-s02|pre|female|c01-s02-m3",
+          "panelId": "c01-s02-m3",
+          "gender": "female",
+          "edition": "pre",
+          "status": "EXISTING_REGISTERED_NOT_P0_CERTIFIED"
+        },
+        {
+          "key": "c01-s02|pre|female|c01-s02-m4",
+          "panelId": "c01-s02-m4",
+          "gender": "female",
+          "edition": "pre",
+          "status": "EXISTING_REGISTERED_NOT_P0_CERTIFIED"
+        },
+        {
+          "key": "c01-s02|pre|female|c01-s02-m5",
+          "panelId": "c01-s02-m5",
+          "gender": "female",
+          "edition": "pre",
+          "status": "EXISTING_REGISTERED_NOT_P0_CERTIFIED"
+        },
+        {
+          "key": "c01-s02|pre|female|c01-s02-m11",
+          "panelId": "c01-s02-m11",
+          "gender": "female",
+          "edition": "pre",
+          "status": "EXISTING_REGISTERED_NOT_P0_CERTIFIED"
+        },
+        {
+          "key": "c01-s02|pre|female|c01-s02-m13",
+          "panelId": "c01-s02-m13",
+          "gender": "female",
+          "edition": "pre",
+          "status": "EXISTING_REGISTERED_NOT_P0_CERTIFIED"
+        },
+        {
+          "key": "c01-s02|pre|female|c01-s02-m15",
+          "panelId": "c01-s02-m15",
+          "gender": "female",
+          "edition": "pre",
+          "status": "EXISTING_REGISTERED_NOT_P0_CERTIFIED"
+        },
+        {
+          "key": "c01-s02|post-victory|male|c01-s02-m6",
+          "panelId": "c01-s02-m6",
+          "gender": "male",
+          "edition": "post-victory",
+          "status": "EXISTING_REGISTERED_NOT_P0_CERTIFIED"
+        },
+        {
+          "key": "c01-s02|post-victory|male|c01-s02-m7",
+          "panelId": "c01-s02-m7",
+          "gender": "male",
+          "edition": "post-victory",
+          "status": "EXISTING_REGISTERED_NOT_P0_CERTIFIED"
+        },
+        {
+          "key": "c01-s02|post-victory|male|c01-s02-m8",
+          "panelId": "c01-s02-m8",
+          "gender": "male",
+          "edition": "post-victory",
+          "status": "EXISTING_REGISTERED_NOT_P0_CERTIFIED"
+        },
+        {
+          "key": "c01-s02|post-victory|male|c01-s02-m9",
+          "panelId": "c01-s02-m9",
+          "gender": "male",
+          "edition": "post-victory",
+          "status": "EXISTING_REGISTERED_NOT_P0_CERTIFIED"
+        },
+        {
+          "key": "c01-s02|post-victory|male|c01-s02-m16",
+          "panelId": "c01-s02-m16",
+          "gender": "male",
+          "edition": "post-victory",
+          "status": "EXISTING_REGISTERED_NOT_P0_CERTIFIED"
+        },
+        {
+          "key": "c01-s02|post-victory|male|c01-s02-m19",
+          "panelId": "c01-s02-m19",
+          "gender": "male",
+          "edition": "post-victory",
+          "status": "EXISTING_REGISTERED_NOT_P0_CERTIFIED"
+        },
+        {
+          "key": "c01-s02|post-victory|male|c01-s02-m10",
+          "panelId": "c01-s02-m10",
+          "gender": "male",
+          "edition": "post-victory",
+          "status": "EXISTING_REGISTERED_NOT_P0_CERTIFIED"
+        },
+        {
+          "key": "c01-s02|post-victory|female|c01-s02-m6",
+          "panelId": "c01-s02-m6",
+          "gender": "female",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s02-post-victory-female/p01/c01-s02-m06-post-victory-female.webp",
+          "dimensions": [
+            1024,
+            576
+          ],
+          "status": "VALID_REAL_DRAFT_VISUAL_QA_PENDING"
+        },
+        {
+          "key": "c01-s02|post-victory|female|c01-s02-m7",
+          "panelId": "c01-s02-m7",
+          "gender": "female",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s02-post-victory-female/p01/c01-s02-m07-post-victory-female.webp",
+          "dimensions": [
+            1024,
+            576
+          ],
+          "status": "VALID_REAL_DRAFT_VISUAL_QA_PENDING"
+        },
+        {
+          "key": "c01-s02|post-victory|female|c01-s02-m8",
+          "panelId": "c01-s02-m8",
+          "gender": "female",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s02-post-victory-female/p01/c01-s02-m08-post-victory-female.webp",
+          "dimensions": [
+            1024,
+            576
+          ],
+          "status": "VALID_REAL_DRAFT_VISUAL_QA_PENDING"
+        },
+        {
+          "key": "c01-s02|post-victory|female|c01-s02-m9",
+          "panelId": "c01-s02-m9",
+          "gender": "female",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s02-post-victory-female/p01/c01-s02-m09-post-victory-female.webp",
+          "dimensions": [
+            1024,
+            576
+          ],
+          "status": "VALID_REAL_DRAFT_VISUAL_QA_PENDING"
+        },
+        {
+          "key": "c01-s02|post-victory|female|c01-s02-m16",
+          "panelId": "c01-s02-m16",
+          "gender": "female",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s02-post-victory-female/p01/c01-s02-m16-post-victory-female.webp",
+          "dimensions": [
+            1024,
+            576
+          ],
+          "status": "VALID_REAL_DRAFT_VISUAL_QA_PENDING"
+        },
+        {
+          "key": "c01-s02|post-victory|female|c01-s02-m19",
+          "panelId": "c01-s02-m19",
+          "gender": "female",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s02-post-victory-female/p02/c01-s02-m19-post-victory-female.webp",
+          "dimensions": [
+            1024,
+            576
+          ],
+          "status": "VALID_REAL_DRAFT_VISUAL_QA_PENDING"
+        },
+        {
+          "key": "c01-s02|post-victory|female|c01-s02-m10",
+          "panelId": "c01-s02-m10",
+          "gender": "female",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s02-post-victory-female/p02/c01-s02-m10-post-victory-female.webp",
+          "dimensions": [
+            1024,
+            576
+          ],
+          "status": "VALID_REAL_DRAFT_VISUAL_QA_PENDING"
+        },
+        {
+          "key": "c01-s02|post-defeat|male|c01-s02-m6",
+          "panelId": "c01-s02-m6",
+          "gender": "male",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s02-post-defeat-male/p01/c01-s02-m06-post-defeat-male.webp",
+          "dimensions": [
+            1024,
+            576
+          ],
+          "status": "VALID_REAL_DRAFT_VISUAL_QA_PENDING"
+        },
+        {
+          "key": "c01-s02|post-defeat|male|c01-s02-m7",
+          "panelId": "c01-s02-m7",
+          "gender": "male",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s02-post-defeat-male/p01/c01-s02-m07-post-defeat-male.webp",
+          "dimensions": [
+            1024,
+            576
+          ],
+          "status": "VALID_REAL_DRAFT_VISUAL_QA_PENDING"
+        },
+        {
+          "key": "c01-s02|post-defeat|male|c01-s02-m8",
+          "panelId": "c01-s02-m8",
+          "gender": "male",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s02-post-defeat-male/p01/c01-s02-m08-post-defeat-male.webp",
+          "dimensions": [
+            1024,
+            576
+          ],
+          "status": "VALID_REAL_DRAFT_VISUAL_QA_PENDING"
+        },
+        {
+          "key": "c01-s02|post-defeat|male|c01-s02-m9",
+          "panelId": "c01-s02-m9",
+          "gender": "male",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s02-post-defeat-male/p01/c01-s02-m09-post-defeat-male.webp",
+          "dimensions": [
+            1024,
+            576
+          ],
+          "status": "VALID_REAL_DRAFT_VISUAL_QA_PENDING"
+        },
+        {
+          "key": "c01-s02|post-defeat|male|c01-s02-m16",
+          "panelId": "c01-s02-m16",
+          "gender": "male",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s02-post-defeat-male/p01/c01-s02-m16-post-defeat-male.webp",
+          "dimensions": [
+            1024,
+            576
+          ],
+          "status": "VALID_REAL_DRAFT_VISUAL_QA_PENDING"
+        },
+        {
+          "key": "c01-s02|post-defeat|male|c01-s02-m19",
+          "panelId": "c01-s02-m19",
+          "gender": "male",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s02-post-defeat-male/p02/c01-s02-m19-post-defeat-male.webp",
+          "dimensions": [
+            1024,
+            576
+          ],
+          "status": "VALID_REAL_DRAFT_VISUAL_QA_PENDING"
+        },
+        {
+          "key": "c01-s02|post-defeat|male|c01-s02-m10",
+          "panelId": "c01-s02-m10",
+          "gender": "male",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s02-post-defeat-male/p02/c01-s02-m10-post-defeat-male.webp",
+          "dimensions": [
+            1024,
+            576
+          ],
+          "status": "VALID_REAL_DRAFT_VISUAL_QA_PENDING"
+        },
+        {
+          "key": "c01-s02|post-defeat|female|c01-s02-m6",
+          "panelId": "c01-s02-m6",
+          "gender": "female",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s02-post-defeat-female/p01/c01-s02-m06-post-defeat-female.webp",
+          "dimensions": [
+            1024,
+            576
+          ],
+          "status": "VALID_REAL_DRAFT_VISUAL_QA_PENDING"
+        },
+        {
+          "key": "c01-s02|post-defeat|female|c01-s02-m7",
+          "panelId": "c01-s02-m7",
+          "gender": "female",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s02-post-defeat-female/p01/c01-s02-m07-post-defeat-female.webp",
+          "dimensions": [
+            1024,
+            576
+          ],
+          "status": "VALID_REAL_DRAFT_VISUAL_QA_PENDING"
+        },
+        {
+          "key": "c01-s02|post-defeat|female|c01-s02-m8",
+          "panelId": "c01-s02-m8",
+          "gender": "female",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s02-post-defeat-female/p01/c01-s02-m08-post-defeat-female.webp",
+          "dimensions": [
+            1024,
+            576
+          ],
+          "status": "VALID_REAL_DRAFT_VISUAL_QA_PENDING"
+        },
+        {
+          "key": "c01-s02|post-defeat|female|c01-s02-m9",
+          "panelId": "c01-s02-m9",
+          "gender": "female",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s02-post-defeat-female/p01/c01-s02-m09-post-defeat-female.webp",
+          "dimensions": [
+            1024,
+            576
+          ],
+          "status": "VALID_REAL_DRAFT_VISUAL_QA_PENDING"
+        },
+        {
+          "key": "c01-s02|post-defeat|female|c01-s02-m16",
+          "panelId": "c01-s02-m16",
+          "gender": "female",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s02-post-defeat-female/p01/c01-s02-m16-post-defeat-female.webp",
+          "dimensions": [
+            1024,
+            576
+          ],
+          "status": "VALID_REAL_DRAFT_VISUAL_QA_PENDING"
+        },
+        {
+          "key": "c01-s02|post-defeat|female|c01-s02-m19",
+          "panelId": "c01-s02-m19",
+          "gender": "female",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s02-post-defeat-female/p02/c01-s02-m19-post-defeat-female.webp",
+          "dimensions": [
+            1024,
+            576
+          ],
+          "status": "VALID_REAL_DRAFT_VISUAL_QA_PENDING"
+        },
+        {
+          "key": "c01-s02|post-defeat|female|c01-s02-m10",
+          "panelId": "c01-s02-m10",
+          "gender": "female",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s02-post-defeat-female/p02/c01-s02-m10-post-defeat-female.webp",
+          "dimensions": [
+            1024,
+            576
+          ],
+          "status": "VALID_REAL_DRAFT_VISUAL_QA_PENDING"
+        },
+        {
+          "key": "c01-s02|post-gameover|male|c01-s02-death-1",
+          "panelId": "c01-s02-death-1",
+          "gender": "male",
+          "edition": "post-gameover",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s02-post-gameover-male/p01/c01-s02-death-1-post-gameover-male.webp",
+          "dimensions": [
+            1024,
+            576
+          ],
+          "status": "VALID_REAL_DRAFT_VISUAL_QA_PENDING"
+        },
+        {
+          "key": "c01-s02|post-gameover|male|c01-s02-death-2",
+          "panelId": "c01-s02-death-2",
+          "gender": "male",
+          "edition": "post-gameover",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s02-post-gameover-male/p01/c01-s02-death-2-post-gameover-male.webp",
+          "dimensions": [
+            1024,
+            576
+          ],
+          "status": "VALID_REAL_DRAFT_VISUAL_QA_PENDING"
+        },
+        {
+          "key": "c01-s02|post-gameover|female|c01-s02-death-1",
+          "panelId": "c01-s02-death-1",
+          "gender": "female",
+          "edition": "post-gameover",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s02-post-gameover-female/p01/c01-s02-death-1-post-gameover-female.webp",
+          "dimensions": [
+            1024,
+            576
+          ],
+          "status": "VALID_REAL_DRAFT_VISUAL_QA_PENDING"
+        },
+        {
+          "key": "c01-s02|post-gameover|female|c01-s02-death-2",
+          "panelId": "c01-s02-death-2",
+          "gender": "female",
+          "edition": "post-gameover",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s02-post-gameover-female/p01/c01-s02-death-2-post-gameover-female.webp",
+          "dimensions": [
+            1024,
+            576
+          ],
+          "status": "VALID_REAL_DRAFT_VISUAL_QA_PENDING"
+        }
+      ]
+    },
+    {
+      "stageId": "c01-s03",
+      "scenes": [
+        {
+          "key": "c01-s03|pre|male|c01-s03-m1",
+          "panelId": "c01-s03-m1",
+          "gender": "male",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s03-pre-male/p01/c01-s03-m01-pre-male.webp",
+          "status": "PROVIDER_SAFETY_BLOCKED"
+        },
+        {
+          "key": "c01-s03|pre|male|c01-s03-m2",
+          "panelId": "c01-s03-m2",
+          "gender": "male",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s03-pre-male/p01/c01-s03-m02-pre-male.webp",
+          "dimensions": [
+            1536,
+            864
+          ],
+          "status": "VALID_REAL_DRAFT_VISUAL_QA_PENDING"
+        },
+        {
+          "key": "c01-s03|pre|male|c01-s03-m3",
+          "panelId": "c01-s03-m3",
+          "gender": "male",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s03-pre-male/p01/c01-s03-m03-pre-male.webp",
+          "dimensions": [
+            1536,
+            864
+          ],
+          "status": "VALID_REAL_DRAFT_VISUAL_QA_PENDING"
+        },
+        {
+          "key": "c01-s03|pre|male|c01-s03-m4",
+          "panelId": "c01-s03-m4",
+          "gender": "male",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s03-pre-male/p01/c01-s03-m04-pre-male.webp",
+          "dimensions": [
+            1536,
+            864
+          ],
+          "status": "VALID_REAL_DRAFT_VISUAL_QA_PENDING"
+        },
+        {
+          "key": "c01-s03|pre|male|c01-s03-m5",
+          "panelId": "c01-s03-m5",
+          "gender": "male",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s03-pre-male/p01/c01-s03-m05-pre-male.webp",
+          "dimensions": [
+            1536,
+            864
+          ],
+          "status": "VALID_REAL_DRAFT_VISUAL_QA_PENDING"
+        },
+        {
+          "key": "c01-s03|pre|male|c01-s03-m11",
+          "panelId": "c01-s03-m11",
+          "gender": "male",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s03-pre-male/p02/c01-s03-m11-pre-male.webp",
+          "dimensions": [
+            1536,
+            864
+          ],
+          "status": "VALID_REAL_DRAFT_VISUAL_QA_PENDING"
+        },
+        {
+          "key": "c01-s03|pre|male|c01-s03-m13",
+          "panelId": "c01-s03-m13",
+          "gender": "male",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s03-pre-male/p02/c01-s03-m13-pre-male.webp",
+          "dimensions": [
+            1536,
+            864
+          ],
+          "status": "VALID_REAL_DRAFT_VISUAL_QA_PENDING"
+        },
+        {
+          "key": "c01-s03|pre|male|c01-s03-m15",
+          "panelId": "c01-s03-m15",
+          "gender": "male",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s03-pre-male/p02/c01-s03-m15-pre-male.webp",
+          "dimensions": [
+            1536,
+            864
+          ],
+          "status": "VALID_REAL_DRAFT_VISUAL_QA_PENDING"
+        },
+        {
+          "key": "c01-s03|pre|female|c01-s03-m1",
+          "panelId": "c01-s03-m1",
+          "gender": "female",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s03-pre-female/p01/c01-s03-m01-pre-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s03|pre|female|c01-s03-m2",
+          "panelId": "c01-s03-m2",
+          "gender": "female",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s03-pre-female/p01/c01-s03-m02-pre-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s03|pre|female|c01-s03-m3",
+          "panelId": "c01-s03-m3",
+          "gender": "female",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s03-pre-female/p01/c01-s03-m03-pre-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s03|pre|female|c01-s03-m4",
+          "panelId": "c01-s03-m4",
+          "gender": "female",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s03-pre-female/p01/c01-s03-m04-pre-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s03|pre|female|c01-s03-m5",
+          "panelId": "c01-s03-m5",
+          "gender": "female",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s03-pre-female/p01/c01-s03-m05-pre-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s03|pre|female|c01-s03-m11",
+          "panelId": "c01-s03-m11",
+          "gender": "female",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s03-pre-female/p02/c01-s03-m11-pre-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s03|pre|female|c01-s03-m13",
+          "panelId": "c01-s03-m13",
+          "gender": "female",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s03-pre-female/p02/c01-s03-m13-pre-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s03|pre|female|c01-s03-m15",
+          "panelId": "c01-s03-m15",
+          "gender": "female",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s03-pre-female/p02/c01-s03-m15-pre-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s03|post-victory|male|c01-s03-m6",
+          "panelId": "c01-s03-m6",
+          "gender": "male",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s03-post-victory-male/p01/c01-s03-m06-post-victory-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s03|post-victory|male|c01-s03-m7",
+          "panelId": "c01-s03-m7",
+          "gender": "male",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s03-post-victory-male/p01/c01-s03-m07-post-victory-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s03|post-victory|male|c01-s03-m8",
+          "panelId": "c01-s03-m8",
+          "gender": "male",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s03-post-victory-male/p01/c01-s03-m08-post-victory-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s03|post-victory|male|c01-s03-m9",
+          "panelId": "c01-s03-m9",
+          "gender": "male",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s03-post-victory-male/p01/c01-s03-m09-post-victory-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s03|post-victory|male|c01-s03-m16",
+          "panelId": "c01-s03-m16",
+          "gender": "male",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s03-post-victory-male/p01/c01-s03-m16-post-victory-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s03|post-victory|male|c01-s03-m19",
+          "panelId": "c01-s03-m19",
+          "gender": "male",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s03-post-victory-male/p02/c01-s03-m19-post-victory-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s03|post-victory|male|c01-s03-m10",
+          "panelId": "c01-s03-m10",
+          "gender": "male",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s03-post-victory-male/p02/c01-s03-m10-post-victory-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s03|post-victory|female|c01-s03-m6",
+          "panelId": "c01-s03-m6",
+          "gender": "female",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s03-post-victory-female/p01/c01-s03-m06-post-victory-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s03|post-victory|female|c01-s03-m7",
+          "panelId": "c01-s03-m7",
+          "gender": "female",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s03-post-victory-female/p01/c01-s03-m07-post-victory-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s03|post-victory|female|c01-s03-m8",
+          "panelId": "c01-s03-m8",
+          "gender": "female",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s03-post-victory-female/p01/c01-s03-m08-post-victory-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s03|post-victory|female|c01-s03-m9",
+          "panelId": "c01-s03-m9",
+          "gender": "female",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s03-post-victory-female/p01/c01-s03-m09-post-victory-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s03|post-victory|female|c01-s03-m16",
+          "panelId": "c01-s03-m16",
+          "gender": "female",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s03-post-victory-female/p01/c01-s03-m16-post-victory-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s03|post-victory|female|c01-s03-m19",
+          "panelId": "c01-s03-m19",
+          "gender": "female",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s03-post-victory-female/p02/c01-s03-m19-post-victory-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s03|post-victory|female|c01-s03-m10",
+          "panelId": "c01-s03-m10",
+          "gender": "female",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s03-post-victory-female/p02/c01-s03-m10-post-victory-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s03|post-defeat|male|c01-s03-m6",
+          "panelId": "c01-s03-m6",
+          "gender": "male",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s03-post-defeat-male/p01/c01-s03-m06-post-defeat-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s03|post-defeat|male|c01-s03-m7",
+          "panelId": "c01-s03-m7",
+          "gender": "male",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s03-post-defeat-male/p01/c01-s03-m07-post-defeat-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s03|post-defeat|male|c01-s03-m8",
+          "panelId": "c01-s03-m8",
+          "gender": "male",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s03-post-defeat-male/p01/c01-s03-m08-post-defeat-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s03|post-defeat|male|c01-s03-m9",
+          "panelId": "c01-s03-m9",
+          "gender": "male",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s03-post-defeat-male/p01/c01-s03-m09-post-defeat-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s03|post-defeat|male|c01-s03-m16",
+          "panelId": "c01-s03-m16",
+          "gender": "male",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s03-post-defeat-male/p01/c01-s03-m16-post-defeat-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s03|post-defeat|male|c01-s03-m19",
+          "panelId": "c01-s03-m19",
+          "gender": "male",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s03-post-defeat-male/p02/c01-s03-m19-post-defeat-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s03|post-defeat|male|c01-s03-m10",
+          "panelId": "c01-s03-m10",
+          "gender": "male",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s03-post-defeat-male/p02/c01-s03-m10-post-defeat-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s03|post-defeat|female|c01-s03-m6",
+          "panelId": "c01-s03-m6",
+          "gender": "female",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s03-post-defeat-female/p01/c01-s03-m06-post-defeat-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s03|post-defeat|female|c01-s03-m7",
+          "panelId": "c01-s03-m7",
+          "gender": "female",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s03-post-defeat-female/p01/c01-s03-m07-post-defeat-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s03|post-defeat|female|c01-s03-m8",
+          "panelId": "c01-s03-m8",
+          "gender": "female",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s03-post-defeat-female/p01/c01-s03-m08-post-defeat-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s03|post-defeat|female|c01-s03-m9",
+          "panelId": "c01-s03-m9",
+          "gender": "female",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s03-post-defeat-female/p01/c01-s03-m09-post-defeat-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s03|post-defeat|female|c01-s03-m16",
+          "panelId": "c01-s03-m16",
+          "gender": "female",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s03-post-defeat-female/p01/c01-s03-m16-post-defeat-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s03|post-defeat|female|c01-s03-m19",
+          "panelId": "c01-s03-m19",
+          "gender": "female",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s03-post-defeat-female/p02/c01-s03-m19-post-defeat-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s03|post-defeat|female|c01-s03-m10",
+          "panelId": "c01-s03-m10",
+          "gender": "female",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s03-post-defeat-female/p02/c01-s03-m10-post-defeat-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s03|post-gameover|male|c01-s03-death-1",
+          "panelId": "c01-s03-death-1",
+          "gender": "male",
+          "edition": "post-gameover",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s03-post-gameover-male/p01/c01-s03-death-1-post-gameover-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s03|post-gameover|male|c01-s03-death-2",
+          "panelId": "c01-s03-death-2",
+          "gender": "male",
+          "edition": "post-gameover",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s03-post-gameover-male/p01/c01-s03-death-2-post-gameover-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s03|post-gameover|female|c01-s03-death-1",
+          "panelId": "c01-s03-death-1",
+          "gender": "female",
+          "edition": "post-gameover",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s03-post-gameover-female/p01/c01-s03-death-1-post-gameover-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s03|post-gameover|female|c01-s03-death-2",
+          "panelId": "c01-s03-death-2",
+          "gender": "female",
+          "edition": "post-gameover",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s03-post-gameover-female/p01/c01-s03-death-2-post-gameover-female.webp",
+          "status": "MISSING_REAL_ART"
+        }
+      ]
+    },
+    {
+      "stageId": "c01-s04",
+      "scenes": [
+        {
+          "key": "c01-s04|pre|male|c01-s04-m1",
+          "panelId": "c01-s04-m1",
+          "gender": "male",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-pre-male/p01/c01-s04-m01-pre-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s04|pre|male|c01-s04-m2",
+          "panelId": "c01-s04-m2",
+          "gender": "male",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-pre-male/p01/c01-s04-m02-pre-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s04|pre|male|c01-s04-m3",
+          "panelId": "c01-s04-m3",
+          "gender": "male",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-pre-male/p01/c01-s04-m03-pre-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s04|pre|male|c01-s04-m4",
+          "panelId": "c01-s04-m4",
+          "gender": "male",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-pre-male/p01/c01-s04-m04-pre-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s04|pre|male|c01-s04-m5",
+          "panelId": "c01-s04-m5",
+          "gender": "male",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-pre-male/p01/c01-s04-m05-pre-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s04|pre|male|c01-s04-m11",
+          "panelId": "c01-s04-m11",
+          "gender": "male",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-pre-male/p02/c01-s04-m11-pre-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s04|pre|male|c01-s04-m13",
+          "panelId": "c01-s04-m13",
+          "gender": "male",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-pre-male/p02/c01-s04-m13-pre-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s04|pre|male|c01-s04-m15",
+          "panelId": "c01-s04-m15",
+          "gender": "male",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-pre-male/p02/c01-s04-m15-pre-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s04|pre|female|c01-s04-m1",
+          "panelId": "c01-s04-m1",
+          "gender": "female",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-pre-female/p01/c01-s04-m01-pre-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s04|pre|female|c01-s04-m2",
+          "panelId": "c01-s04-m2",
+          "gender": "female",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-pre-female/p01/c01-s04-m02-pre-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s04|pre|female|c01-s04-m3",
+          "panelId": "c01-s04-m3",
+          "gender": "female",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-pre-female/p01/c01-s04-m03-pre-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s04|pre|female|c01-s04-m4",
+          "panelId": "c01-s04-m4",
+          "gender": "female",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-pre-female/p01/c01-s04-m04-pre-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s04|pre|female|c01-s04-m5",
+          "panelId": "c01-s04-m5",
+          "gender": "female",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-pre-female/p01/c01-s04-m05-pre-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s04|pre|female|c01-s04-m11",
+          "panelId": "c01-s04-m11",
+          "gender": "female",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-pre-female/p02/c01-s04-m11-pre-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s04|pre|female|c01-s04-m13",
+          "panelId": "c01-s04-m13",
+          "gender": "female",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-pre-female/p02/c01-s04-m13-pre-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s04|pre|female|c01-s04-m15",
+          "panelId": "c01-s04-m15",
+          "gender": "female",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-pre-female/p02/c01-s04-m15-pre-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s04|post-victory|male|c01-s04-m6",
+          "panelId": "c01-s04-m6",
+          "gender": "male",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-post-victory-male/p01/c01-s04-m06-post-victory-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s04|post-victory|male|c01-s04-m7",
+          "panelId": "c01-s04-m7",
+          "gender": "male",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-post-victory-male/p01/c01-s04-m07-post-victory-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s04|post-victory|male|c01-s04-m8",
+          "panelId": "c01-s04-m8",
+          "gender": "male",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-post-victory-male/p01/c01-s04-m08-post-victory-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s04|post-victory|male|c01-s04-m9",
+          "panelId": "c01-s04-m9",
+          "gender": "male",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-post-victory-male/p01/c01-s04-m09-post-victory-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s04|post-victory|male|c01-s04-m16",
+          "panelId": "c01-s04-m16",
+          "gender": "male",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-post-victory-male/p01/c01-s04-m16-post-victory-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s04|post-victory|male|c01-s04-m19",
+          "panelId": "c01-s04-m19",
+          "gender": "male",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-post-victory-male/p02/c01-s04-m19-post-victory-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s04|post-victory|male|c01-s04-m10",
+          "panelId": "c01-s04-m10",
+          "gender": "male",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-post-victory-male/p02/c01-s04-m10-post-victory-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s04|post-victory|female|c01-s04-m6",
+          "panelId": "c01-s04-m6",
+          "gender": "female",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-post-victory-female/p01/c01-s04-m06-post-victory-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s04|post-victory|female|c01-s04-m7",
+          "panelId": "c01-s04-m7",
+          "gender": "female",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-post-victory-female/p01/c01-s04-m07-post-victory-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s04|post-victory|female|c01-s04-m8",
+          "panelId": "c01-s04-m8",
+          "gender": "female",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-post-victory-female/p01/c01-s04-m08-post-victory-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s04|post-victory|female|c01-s04-m9",
+          "panelId": "c01-s04-m9",
+          "gender": "female",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-post-victory-female/p01/c01-s04-m09-post-victory-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s04|post-victory|female|c01-s04-m16",
+          "panelId": "c01-s04-m16",
+          "gender": "female",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-post-victory-female/p01/c01-s04-m16-post-victory-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s04|post-victory|female|c01-s04-m19",
+          "panelId": "c01-s04-m19",
+          "gender": "female",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-post-victory-female/p02/c01-s04-m19-post-victory-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s04|post-victory|female|c01-s04-m10",
+          "panelId": "c01-s04-m10",
+          "gender": "female",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-post-victory-female/p02/c01-s04-m10-post-victory-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s04|post-defeat|male|c01-s04-m6",
+          "panelId": "c01-s04-m6",
+          "gender": "male",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-post-defeat-male/p01/c01-s04-m06-post-defeat-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s04|post-defeat|male|c01-s04-m7",
+          "panelId": "c01-s04-m7",
+          "gender": "male",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-post-defeat-male/p01/c01-s04-m07-post-defeat-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s04|post-defeat|male|c01-s04-m8",
+          "panelId": "c01-s04-m8",
+          "gender": "male",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-post-defeat-male/p01/c01-s04-m08-post-defeat-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s04|post-defeat|male|c01-s04-m9",
+          "panelId": "c01-s04-m9",
+          "gender": "male",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-post-defeat-male/p01/c01-s04-m09-post-defeat-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s04|post-defeat|male|c01-s04-m16",
+          "panelId": "c01-s04-m16",
+          "gender": "male",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-post-defeat-male/p01/c01-s04-m16-post-defeat-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s04|post-defeat|male|c01-s04-m19",
+          "panelId": "c01-s04-m19",
+          "gender": "male",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-post-defeat-male/p02/c01-s04-m19-post-defeat-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s04|post-defeat|male|c01-s04-m10",
+          "panelId": "c01-s04-m10",
+          "gender": "male",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-post-defeat-male/p02/c01-s04-m10-post-defeat-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s04|post-defeat|female|c01-s04-m6",
+          "panelId": "c01-s04-m6",
+          "gender": "female",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-post-defeat-female/p01/c01-s04-m06-post-defeat-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s04|post-defeat|female|c01-s04-m7",
+          "panelId": "c01-s04-m7",
+          "gender": "female",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-post-defeat-female/p01/c01-s04-m07-post-defeat-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s04|post-defeat|female|c01-s04-m8",
+          "panelId": "c01-s04-m8",
+          "gender": "female",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-post-defeat-female/p01/c01-s04-m08-post-defeat-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s04|post-defeat|female|c01-s04-m9",
+          "panelId": "c01-s04-m9",
+          "gender": "female",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-post-defeat-female/p01/c01-s04-m09-post-defeat-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s04|post-defeat|female|c01-s04-m16",
+          "panelId": "c01-s04-m16",
+          "gender": "female",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-post-defeat-female/p01/c01-s04-m16-post-defeat-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s04|post-defeat|female|c01-s04-m19",
+          "panelId": "c01-s04-m19",
+          "gender": "female",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-post-defeat-female/p02/c01-s04-m19-post-defeat-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s04|post-defeat|female|c01-s04-m10",
+          "panelId": "c01-s04-m10",
+          "gender": "female",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-post-defeat-female/p02/c01-s04-m10-post-defeat-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s04|post-gameover|male|c01-s04-death-1",
+          "panelId": "c01-s04-death-1",
+          "gender": "male",
+          "edition": "post-gameover",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-post-gameover-male/p01/c01-s04-death-1-post-gameover-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s04|post-gameover|male|c01-s04-death-2",
+          "panelId": "c01-s04-death-2",
+          "gender": "male",
+          "edition": "post-gameover",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-post-gameover-male/p01/c01-s04-death-2-post-gameover-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s04|post-gameover|female|c01-s04-death-1",
+          "panelId": "c01-s04-death-1",
+          "gender": "female",
+          "edition": "post-gameover",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-post-gameover-female/p01/c01-s04-death-1-post-gameover-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s04|post-gameover|female|c01-s04-death-2",
+          "panelId": "c01-s04-death-2",
+          "gender": "female",
+          "edition": "post-gameover",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-post-gameover-female/p01/c01-s04-death-2-post-gameover-female.webp",
+          "status": "MISSING_REAL_ART"
+        }
+      ]
+    },
+    {
+      "stageId": "c01-s05",
+      "scenes": [
+        {
+          "key": "c01-s05|pre|male|c01-s05-m1",
+          "panelId": "c01-s05-m1",
+          "gender": "male",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s05-pre-male/p01/c01-s05-m01-pre-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s05|pre|male|c01-s05-m2",
+          "panelId": "c01-s05-m2",
+          "gender": "male",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s05-pre-male/p01/c01-s05-m02-pre-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s05|pre|male|c01-s05-m3",
+          "panelId": "c01-s05-m3",
+          "gender": "male",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s05-pre-male/p01/c01-s05-m03-pre-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s05|pre|male|c01-s05-m4",
+          "panelId": "c01-s05-m4",
+          "gender": "male",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s05-pre-male/p01/c01-s05-m04-pre-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s05|pre|male|c01-s05-m5",
+          "panelId": "c01-s05-m5",
+          "gender": "male",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s05-pre-male/p01/c01-s05-m05-pre-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s05|pre|male|c01-s05-m11",
+          "panelId": "c01-s05-m11",
+          "gender": "male",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s05-pre-male/p02/c01-s05-m11-pre-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s05|pre|male|c01-s05-m13",
+          "panelId": "c01-s05-m13",
+          "gender": "male",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s05-pre-male/p02/c01-s05-m13-pre-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s05|pre|male|c01-s05-m15",
+          "panelId": "c01-s05-m15",
+          "gender": "male",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s05-pre-male/p02/c01-s05-m15-pre-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s05|pre|female|c01-s05-m1",
+          "panelId": "c01-s05-m1",
+          "gender": "female",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s05-pre-female/p01/c01-s05-m01-pre-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s05|pre|female|c01-s05-m2",
+          "panelId": "c01-s05-m2",
+          "gender": "female",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s05-pre-female/p01/c01-s05-m02-pre-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s05|pre|female|c01-s05-m3",
+          "panelId": "c01-s05-m3",
+          "gender": "female",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s05-pre-female/p01/c01-s05-m03-pre-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s05|pre|female|c01-s05-m4",
+          "panelId": "c01-s05-m4",
+          "gender": "female",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s05-pre-female/p01/c01-s05-m04-pre-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s05|pre|female|c01-s05-m5",
+          "panelId": "c01-s05-m5",
+          "gender": "female",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s05-pre-female/p01/c01-s05-m05-pre-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s05|pre|female|c01-s05-m11",
+          "panelId": "c01-s05-m11",
+          "gender": "female",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s05-pre-female/p02/c01-s05-m11-pre-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s05|pre|female|c01-s05-m13",
+          "panelId": "c01-s05-m13",
+          "gender": "female",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s05-pre-female/p02/c01-s05-m13-pre-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s05|pre|female|c01-s05-m15",
+          "panelId": "c01-s05-m15",
+          "gender": "female",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s05-pre-female/p02/c01-s05-m15-pre-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s05|post-victory|male|c01-s05-m6",
+          "panelId": "c01-s05-m6",
+          "gender": "male",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s05-post-victory-male/p01/c01-s05-m06-post-victory-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s05|post-victory|male|c01-s05-m7",
+          "panelId": "c01-s05-m7",
+          "gender": "male",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s05-post-victory-male/p01/c01-s05-m07-post-victory-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s05|post-victory|male|c01-s05-m8",
+          "panelId": "c01-s05-m8",
+          "gender": "male",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s05-post-victory-male/p01/c01-s05-m08-post-victory-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s05|post-victory|male|c01-s05-m9",
+          "panelId": "c01-s05-m9",
+          "gender": "male",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s05-post-victory-male/p01/c01-s05-m09-post-victory-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s05|post-victory|male|c01-s05-m16",
+          "panelId": "c01-s05-m16",
+          "gender": "male",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s05-post-victory-male/p01/c01-s05-m16-post-victory-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s05|post-victory|male|c01-s05-m19",
+          "panelId": "c01-s05-m19",
+          "gender": "male",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s05-post-victory-male/p02/c01-s05-m19-post-victory-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s05|post-victory|male|c01-s05-m10",
+          "panelId": "c01-s05-m10",
+          "gender": "male",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s05-post-victory-male/p02/c01-s05-m10-post-victory-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s05|post-victory|female|c01-s05-m6",
+          "panelId": "c01-s05-m6",
+          "gender": "female",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s05-post-victory-female/p01/c01-s05-m06-post-victory-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s05|post-victory|female|c01-s05-m7",
+          "panelId": "c01-s05-m7",
+          "gender": "female",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s05-post-victory-female/p01/c01-s05-m07-post-victory-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s05|post-victory|female|c01-s05-m8",
+          "panelId": "c01-s05-m8",
+          "gender": "female",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s05-post-victory-female/p01/c01-s05-m08-post-victory-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s05|post-victory|female|c01-s05-m9",
+          "panelId": "c01-s05-m9",
+          "gender": "female",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s05-post-victory-female/p01/c01-s05-m09-post-victory-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s05|post-victory|female|c01-s05-m16",
+          "panelId": "c01-s05-m16",
+          "gender": "female",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s05-post-victory-female/p01/c01-s05-m16-post-victory-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s05|post-victory|female|c01-s05-m19",
+          "panelId": "c01-s05-m19",
+          "gender": "female",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s05-post-victory-female/p02/c01-s05-m19-post-victory-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s05|post-victory|female|c01-s05-m10",
+          "panelId": "c01-s05-m10",
+          "gender": "female",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s05-post-victory-female/p02/c01-s05-m10-post-victory-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s05|post-defeat|male|c01-s05-m6",
+          "panelId": "c01-s05-m6",
+          "gender": "male",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s05-post-defeat-male/p01/c01-s05-m06-post-defeat-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s05|post-defeat|male|c01-s05-m7",
+          "panelId": "c01-s05-m7",
+          "gender": "male",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s05-post-defeat-male/p01/c01-s05-m07-post-defeat-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s05|post-defeat|male|c01-s05-m8",
+          "panelId": "c01-s05-m8",
+          "gender": "male",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s05-post-defeat-male/p01/c01-s05-m08-post-defeat-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s05|post-defeat|male|c01-s05-m9",
+          "panelId": "c01-s05-m9",
+          "gender": "male",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s05-post-defeat-male/p01/c01-s05-m09-post-defeat-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s05|post-defeat|male|c01-s05-m16",
+          "panelId": "c01-s05-m16",
+          "gender": "male",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s05-post-defeat-male/p01/c01-s05-m16-post-defeat-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s05|post-defeat|male|c01-s05-m19",
+          "panelId": "c01-s05-m19",
+          "gender": "male",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s05-post-defeat-male/p02/c01-s05-m19-post-defeat-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s05|post-defeat|male|c01-s05-m10",
+          "panelId": "c01-s05-m10",
+          "gender": "male",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s05-post-defeat-male/p02/c01-s05-m10-post-defeat-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s05|post-defeat|female|c01-s05-m6",
+          "panelId": "c01-s05-m6",
+          "gender": "female",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s05-post-defeat-female/p01/c01-s05-m06-post-defeat-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s05|post-defeat|female|c01-s05-m7",
+          "panelId": "c01-s05-m7",
+          "gender": "female",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s05-post-defeat-female/p01/c01-s05-m07-post-defeat-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s05|post-defeat|female|c01-s05-m8",
+          "panelId": "c01-s05-m8",
+          "gender": "female",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s05-post-defeat-female/p01/c01-s05-m08-post-defeat-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s05|post-defeat|female|c01-s05-m9",
+          "panelId": "c01-s05-m9",
+          "gender": "female",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s05-post-defeat-female/p01/c01-s05-m09-post-defeat-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s05|post-defeat|female|c01-s05-m16",
+          "panelId": "c01-s05-m16",
+          "gender": "female",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s05-post-defeat-female/p01/c01-s05-m16-post-defeat-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s05|post-defeat|female|c01-s05-m19",
+          "panelId": "c01-s05-m19",
+          "gender": "female",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s05-post-defeat-female/p02/c01-s05-m19-post-defeat-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s05|post-defeat|female|c01-s05-m10",
+          "panelId": "c01-s05-m10",
+          "gender": "female",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s05-post-defeat-female/p02/c01-s05-m10-post-defeat-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s05|post-gameover|male|c01-s05-death-1",
+          "panelId": "c01-s05-death-1",
+          "gender": "male",
+          "edition": "post-gameover",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s05-post-gameover-male/p01/c01-s05-death-1-post-gameover-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s05|post-gameover|male|c01-s05-death-2",
+          "panelId": "c01-s05-death-2",
+          "gender": "male",
+          "edition": "post-gameover",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s05-post-gameover-male/p01/c01-s05-death-2-post-gameover-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s05|post-gameover|female|c01-s05-death-1",
+          "panelId": "c01-s05-death-1",
+          "gender": "female",
+          "edition": "post-gameover",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s05-post-gameover-female/p01/c01-s05-death-1-post-gameover-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s05|post-gameover|female|c01-s05-death-2",
+          "panelId": "c01-s05-death-2",
+          "gender": "female",
+          "edition": "post-gameover",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s05-post-gameover-female/p01/c01-s05-death-2-post-gameover-female.webp",
+          "status": "MISSING_REAL_ART"
+        }
+      ]
+    },
+    {
+      "stageId": "c01-s06",
+      "scenes": [
+        {
+          "key": "c01-s06|pre|male|c01-s06-m1",
+          "panelId": "c01-s06-m1",
+          "gender": "male",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s06-pre-male/p01/c01-s06-m01-pre-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s06|pre|male|c01-s06-m2",
+          "panelId": "c01-s06-m2",
+          "gender": "male",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s06-pre-male/p01/c01-s06-m02-pre-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s06|pre|male|c01-s06-m3",
+          "panelId": "c01-s06-m3",
+          "gender": "male",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s06-pre-male/p01/c01-s06-m03-pre-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s06|pre|male|c01-s06-m4",
+          "panelId": "c01-s06-m4",
+          "gender": "male",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s06-pre-male/p01/c01-s06-m04-pre-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s06|pre|male|c01-s06-m5",
+          "panelId": "c01-s06-m5",
+          "gender": "male",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s06-pre-male/p01/c01-s06-m05-pre-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s06|pre|male|c01-s06-m11",
+          "panelId": "c01-s06-m11",
+          "gender": "male",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s06-pre-male/p02/c01-s06-m11-pre-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s06|pre|male|c01-s06-m13",
+          "panelId": "c01-s06-m13",
+          "gender": "male",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s06-pre-male/p02/c01-s06-m13-pre-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s06|pre|male|c01-s06-m15",
+          "panelId": "c01-s06-m15",
+          "gender": "male",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s06-pre-male/p02/c01-s06-m15-pre-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s06|pre|female|c01-s06-m1",
+          "panelId": "c01-s06-m1",
+          "gender": "female",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s06-pre-female/p01/c01-s06-m01-pre-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s06|pre|female|c01-s06-m2",
+          "panelId": "c01-s06-m2",
+          "gender": "female",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s06-pre-female/p01/c01-s06-m02-pre-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s06|pre|female|c01-s06-m3",
+          "panelId": "c01-s06-m3",
+          "gender": "female",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s06-pre-female/p01/c01-s06-m03-pre-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s06|pre|female|c01-s06-m4",
+          "panelId": "c01-s06-m4",
+          "gender": "female",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s06-pre-female/p01/c01-s06-m04-pre-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s06|pre|female|c01-s06-m5",
+          "panelId": "c01-s06-m5",
+          "gender": "female",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s06-pre-female/p01/c01-s06-m05-pre-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s06|pre|female|c01-s06-m11",
+          "panelId": "c01-s06-m11",
+          "gender": "female",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s06-pre-female/p02/c01-s06-m11-pre-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s06|pre|female|c01-s06-m13",
+          "panelId": "c01-s06-m13",
+          "gender": "female",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s06-pre-female/p02/c01-s06-m13-pre-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s06|pre|female|c01-s06-m15",
+          "panelId": "c01-s06-m15",
+          "gender": "female",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s06-pre-female/p02/c01-s06-m15-pre-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s06|post-victory|male|c01-s06-m6",
+          "panelId": "c01-s06-m6",
+          "gender": "male",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s06-post-victory-male/p01/c01-s06-m06-post-victory-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s06|post-victory|male|c01-s06-m7",
+          "panelId": "c01-s06-m7",
+          "gender": "male",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s06-post-victory-male/p01/c01-s06-m07-post-victory-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s06|post-victory|male|c01-s06-m8",
+          "panelId": "c01-s06-m8",
+          "gender": "male",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s06-post-victory-male/p01/c01-s06-m08-post-victory-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s06|post-victory|male|c01-s06-m9",
+          "panelId": "c01-s06-m9",
+          "gender": "male",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s06-post-victory-male/p01/c01-s06-m09-post-victory-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s06|post-victory|male|c01-s06-m16",
+          "panelId": "c01-s06-m16",
+          "gender": "male",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s06-post-victory-male/p01/c01-s06-m16-post-victory-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s06|post-victory|male|c01-s06-m19",
+          "panelId": "c01-s06-m19",
+          "gender": "male",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s06-post-victory-male/p02/c01-s06-m19-post-victory-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s06|post-victory|male|c01-s06-m10",
+          "panelId": "c01-s06-m10",
+          "gender": "male",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s06-post-victory-male/p02/c01-s06-m10-post-victory-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s06|post-victory|female|c01-s06-m6",
+          "panelId": "c01-s06-m6",
+          "gender": "female",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s06-post-victory-female/p01/c01-s06-m06-post-victory-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s06|post-victory|female|c01-s06-m7",
+          "panelId": "c01-s06-m7",
+          "gender": "female",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s06-post-victory-female/p01/c01-s06-m07-post-victory-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s06|post-victory|female|c01-s06-m8",
+          "panelId": "c01-s06-m8",
+          "gender": "female",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s06-post-victory-female/p01/c01-s06-m08-post-victory-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s06|post-victory|female|c01-s06-m9",
+          "panelId": "c01-s06-m9",
+          "gender": "female",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s06-post-victory-female/p01/c01-s06-m09-post-victory-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s06|post-victory|female|c01-s06-m16",
+          "panelId": "c01-s06-m16",
+          "gender": "female",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s06-post-victory-female/p01/c01-s06-m16-post-victory-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s06|post-victory|female|c01-s06-m19",
+          "panelId": "c01-s06-m19",
+          "gender": "female",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s06-post-victory-female/p02/c01-s06-m19-post-victory-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s06|post-victory|female|c01-s06-m10",
+          "panelId": "c01-s06-m10",
+          "gender": "female",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s06-post-victory-female/p02/c01-s06-m10-post-victory-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s06|post-defeat|male|c01-s06-m6",
+          "panelId": "c01-s06-m6",
+          "gender": "male",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s06-post-defeat-male/p01/c01-s06-m06-post-defeat-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s06|post-defeat|male|c01-s06-m7",
+          "panelId": "c01-s06-m7",
+          "gender": "male",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s06-post-defeat-male/p01/c01-s06-m07-post-defeat-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s06|post-defeat|male|c01-s06-m8",
+          "panelId": "c01-s06-m8",
+          "gender": "male",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s06-post-defeat-male/p01/c01-s06-m08-post-defeat-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s06|post-defeat|male|c01-s06-m9",
+          "panelId": "c01-s06-m9",
+          "gender": "male",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s06-post-defeat-male/p01/c01-s06-m09-post-defeat-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s06|post-defeat|male|c01-s06-m16",
+          "panelId": "c01-s06-m16",
+          "gender": "male",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s06-post-defeat-male/p01/c01-s06-m16-post-defeat-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s06|post-defeat|male|c01-s06-m19",
+          "panelId": "c01-s06-m19",
+          "gender": "male",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s06-post-defeat-male/p02/c01-s06-m19-post-defeat-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s06|post-defeat|male|c01-s06-m10",
+          "panelId": "c01-s06-m10",
+          "gender": "male",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s06-post-defeat-male/p02/c01-s06-m10-post-defeat-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s06|post-defeat|female|c01-s06-m6",
+          "panelId": "c01-s06-m6",
+          "gender": "female",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s06-post-defeat-female/p01/c01-s06-m06-post-defeat-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s06|post-defeat|female|c01-s06-m7",
+          "panelId": "c01-s06-m7",
+          "gender": "female",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s06-post-defeat-female/p01/c01-s06-m07-post-defeat-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s06|post-defeat|female|c01-s06-m8",
+          "panelId": "c01-s06-m8",
+          "gender": "female",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s06-post-defeat-female/p01/c01-s06-m08-post-defeat-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s06|post-defeat|female|c01-s06-m9",
+          "panelId": "c01-s06-m9",
+          "gender": "female",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s06-post-defeat-female/p01/c01-s06-m09-post-defeat-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s06|post-defeat|female|c01-s06-m16",
+          "panelId": "c01-s06-m16",
+          "gender": "female",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s06-post-defeat-female/p01/c01-s06-m16-post-defeat-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s06|post-defeat|female|c01-s06-m19",
+          "panelId": "c01-s06-m19",
+          "gender": "female",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s06-post-defeat-female/p02/c01-s06-m19-post-defeat-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s06|post-defeat|female|c01-s06-m10",
+          "panelId": "c01-s06-m10",
+          "gender": "female",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s06-post-defeat-female/p02/c01-s06-m10-post-defeat-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s06|post-gameover|male|c01-s06-death-1",
+          "panelId": "c01-s06-death-1",
+          "gender": "male",
+          "edition": "post-gameover",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s06-post-gameover-male/p01/c01-s06-death-1-post-gameover-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s06|post-gameover|male|c01-s06-death-2",
+          "panelId": "c01-s06-death-2",
+          "gender": "male",
+          "edition": "post-gameover",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s06-post-gameover-male/p01/c01-s06-death-2-post-gameover-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s06|post-gameover|female|c01-s06-death-1",
+          "panelId": "c01-s06-death-1",
+          "gender": "female",
+          "edition": "post-gameover",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s06-post-gameover-female/p01/c01-s06-death-1-post-gameover-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s06|post-gameover|female|c01-s06-death-2",
+          "panelId": "c01-s06-death-2",
+          "gender": "female",
+          "edition": "post-gameover",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s06-post-gameover-female/p01/c01-s06-death-2-post-gameover-female.webp",
+          "status": "MISSING_REAL_ART"
+        }
+      ]
+    },
+    {
+      "stageId": "c01-s07",
+      "scenes": [
+        {
+          "key": "c01-s07|pre|male|c01-s07-m1",
+          "panelId": "c01-s07-m1",
+          "gender": "male",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s07-pre-male/p01/c01-s07-m01-pre-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s07|pre|male|c01-s07-m2",
+          "panelId": "c01-s07-m2",
+          "gender": "male",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s07-pre-male/p01/c01-s07-m02-pre-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s07|pre|male|c01-s07-m3",
+          "panelId": "c01-s07-m3",
+          "gender": "male",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s07-pre-male/p01/c01-s07-m03-pre-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s07|pre|male|c01-s07-m4",
+          "panelId": "c01-s07-m4",
+          "gender": "male",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s07-pre-male/p01/c01-s07-m04-pre-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s07|pre|male|c01-s07-m5",
+          "panelId": "c01-s07-m5",
+          "gender": "male",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s07-pre-male/p01/c01-s07-m05-pre-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s07|pre|male|c01-s07-m11",
+          "panelId": "c01-s07-m11",
+          "gender": "male",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s07-pre-male/p02/c01-s07-m11-pre-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s07|pre|male|c01-s07-m13",
+          "panelId": "c01-s07-m13",
+          "gender": "male",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s07-pre-male/p02/c01-s07-m13-pre-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s07|pre|male|c01-s07-m15",
+          "panelId": "c01-s07-m15",
+          "gender": "male",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s07-pre-male/p02/c01-s07-m15-pre-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s07|pre|female|c01-s07-m1",
+          "panelId": "c01-s07-m1",
+          "gender": "female",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s07-pre-female/p01/c01-s07-m01-pre-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s07|pre|female|c01-s07-m2",
+          "panelId": "c01-s07-m2",
+          "gender": "female",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s07-pre-female/p01/c01-s07-m02-pre-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s07|pre|female|c01-s07-m3",
+          "panelId": "c01-s07-m3",
+          "gender": "female",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s07-pre-female/p01/c01-s07-m03-pre-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s07|pre|female|c01-s07-m4",
+          "panelId": "c01-s07-m4",
+          "gender": "female",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s07-pre-female/p01/c01-s07-m04-pre-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s07|pre|female|c01-s07-m5",
+          "panelId": "c01-s07-m5",
+          "gender": "female",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s07-pre-female/p01/c01-s07-m05-pre-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s07|pre|female|c01-s07-m11",
+          "panelId": "c01-s07-m11",
+          "gender": "female",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s07-pre-female/p02/c01-s07-m11-pre-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s07|pre|female|c01-s07-m13",
+          "panelId": "c01-s07-m13",
+          "gender": "female",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s07-pre-female/p02/c01-s07-m13-pre-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s07|pre|female|c01-s07-m15",
+          "panelId": "c01-s07-m15",
+          "gender": "female",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s07-pre-female/p02/c01-s07-m15-pre-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s07|post-victory|male|c01-s07-m6",
+          "panelId": "c01-s07-m6",
+          "gender": "male",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s07-post-victory-male/p01/c01-s07-m06-post-victory-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s07|post-victory|male|c01-s07-m7",
+          "panelId": "c01-s07-m7",
+          "gender": "male",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s07-post-victory-male/p01/c01-s07-m07-post-victory-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s07|post-victory|male|c01-s07-m8",
+          "panelId": "c01-s07-m8",
+          "gender": "male",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s07-post-victory-male/p01/c01-s07-m08-post-victory-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s07|post-victory|male|c01-s07-m9",
+          "panelId": "c01-s07-m9",
+          "gender": "male",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s07-post-victory-male/p01/c01-s07-m09-post-victory-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s07|post-victory|male|c01-s07-m16",
+          "panelId": "c01-s07-m16",
+          "gender": "male",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s07-post-victory-male/p01/c01-s07-m16-post-victory-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s07|post-victory|male|c01-s07-m19",
+          "panelId": "c01-s07-m19",
+          "gender": "male",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s07-post-victory-male/p02/c01-s07-m19-post-victory-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s07|post-victory|male|c01-s07-m10",
+          "panelId": "c01-s07-m10",
+          "gender": "male",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s07-post-victory-male/p02/c01-s07-m10-post-victory-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s07|post-victory|female|c01-s07-m6",
+          "panelId": "c01-s07-m6",
+          "gender": "female",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s07-post-victory-female/p01/c01-s07-m06-post-victory-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s07|post-victory|female|c01-s07-m7",
+          "panelId": "c01-s07-m7",
+          "gender": "female",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s07-post-victory-female/p01/c01-s07-m07-post-victory-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s07|post-victory|female|c01-s07-m8",
+          "panelId": "c01-s07-m8",
+          "gender": "female",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s07-post-victory-female/p01/c01-s07-m08-post-victory-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s07|post-victory|female|c01-s07-m9",
+          "panelId": "c01-s07-m9",
+          "gender": "female",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s07-post-victory-female/p01/c01-s07-m09-post-victory-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s07|post-victory|female|c01-s07-m16",
+          "panelId": "c01-s07-m16",
+          "gender": "female",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s07-post-victory-female/p01/c01-s07-m16-post-victory-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s07|post-victory|female|c01-s07-m19",
+          "panelId": "c01-s07-m19",
+          "gender": "female",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s07-post-victory-female/p02/c01-s07-m19-post-victory-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s07|post-victory|female|c01-s07-m10",
+          "panelId": "c01-s07-m10",
+          "gender": "female",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s07-post-victory-female/p02/c01-s07-m10-post-victory-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s07|post-defeat|male|c01-s07-m6",
+          "panelId": "c01-s07-m6",
+          "gender": "male",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s07-post-defeat-male/p01/c01-s07-m06-post-defeat-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s07|post-defeat|male|c01-s07-m7",
+          "panelId": "c01-s07-m7",
+          "gender": "male",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s07-post-defeat-male/p01/c01-s07-m07-post-defeat-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s07|post-defeat|male|c01-s07-m8",
+          "panelId": "c01-s07-m8",
+          "gender": "male",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s07-post-defeat-male/p01/c01-s07-m08-post-defeat-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s07|post-defeat|male|c01-s07-m9",
+          "panelId": "c01-s07-m9",
+          "gender": "male",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s07-post-defeat-male/p01/c01-s07-m09-post-defeat-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s07|post-defeat|male|c01-s07-m16",
+          "panelId": "c01-s07-m16",
+          "gender": "male",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s07-post-defeat-male/p01/c01-s07-m16-post-defeat-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s07|post-defeat|male|c01-s07-m19",
+          "panelId": "c01-s07-m19",
+          "gender": "male",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s07-post-defeat-male/p02/c01-s07-m19-post-defeat-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s07|post-defeat|male|c01-s07-m10",
+          "panelId": "c01-s07-m10",
+          "gender": "male",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s07-post-defeat-male/p02/c01-s07-m10-post-defeat-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s07|post-defeat|female|c01-s07-m6",
+          "panelId": "c01-s07-m6",
+          "gender": "female",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s07-post-defeat-female/p01/c01-s07-m06-post-defeat-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s07|post-defeat|female|c01-s07-m7",
+          "panelId": "c01-s07-m7",
+          "gender": "female",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s07-post-defeat-female/p01/c01-s07-m07-post-defeat-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s07|post-defeat|female|c01-s07-m8",
+          "panelId": "c01-s07-m8",
+          "gender": "female",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s07-post-defeat-female/p01/c01-s07-m08-post-defeat-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s07|post-defeat|female|c01-s07-m9",
+          "panelId": "c01-s07-m9",
+          "gender": "female",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s07-post-defeat-female/p01/c01-s07-m09-post-defeat-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s07|post-defeat|female|c01-s07-m16",
+          "panelId": "c01-s07-m16",
+          "gender": "female",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s07-post-defeat-female/p01/c01-s07-m16-post-defeat-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s07|post-defeat|female|c01-s07-m19",
+          "panelId": "c01-s07-m19",
+          "gender": "female",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s07-post-defeat-female/p02/c01-s07-m19-post-defeat-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s07|post-defeat|female|c01-s07-m10",
+          "panelId": "c01-s07-m10",
+          "gender": "female",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s07-post-defeat-female/p02/c01-s07-m10-post-defeat-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s07|post-gameover|male|c01-s07-death-1",
+          "panelId": "c01-s07-death-1",
+          "gender": "male",
+          "edition": "post-gameover",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s07-post-gameover-male/p01/c01-s07-death-1-post-gameover-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s07|post-gameover|male|c01-s07-death-2",
+          "panelId": "c01-s07-death-2",
+          "gender": "male",
+          "edition": "post-gameover",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s07-post-gameover-male/p01/c01-s07-death-2-post-gameover-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s07|post-gameover|female|c01-s07-death-1",
+          "panelId": "c01-s07-death-1",
+          "gender": "female",
+          "edition": "post-gameover",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s07-post-gameover-female/p01/c01-s07-death-1-post-gameover-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s07|post-gameover|female|c01-s07-death-2",
+          "panelId": "c01-s07-death-2",
+          "gender": "female",
+          "edition": "post-gameover",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s07-post-gameover-female/p01/c01-s07-death-2-post-gameover-female.webp",
+          "status": "MISSING_REAL_ART"
+        }
+      ]
+    },
+    {
+      "stageId": "c01-s08",
+      "scenes": [
+        {
+          "key": "c01-s08|pre|male|c01-s08-m1",
+          "panelId": "c01-s08-m1",
+          "gender": "male",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s08-pre-male/p01/c01-s08-m01-pre-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s08|pre|male|c01-s08-m2",
+          "panelId": "c01-s08-m2",
+          "gender": "male",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s08-pre-male/p01/c01-s08-m02-pre-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s08|pre|male|c01-s08-m3",
+          "panelId": "c01-s08-m3",
+          "gender": "male",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s08-pre-male/p01/c01-s08-m03-pre-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s08|pre|male|c01-s08-m4",
+          "panelId": "c01-s08-m4",
+          "gender": "male",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s08-pre-male/p01/c01-s08-m04-pre-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s08|pre|male|c01-s08-m5",
+          "panelId": "c01-s08-m5",
+          "gender": "male",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s08-pre-male/p01/c01-s08-m05-pre-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s08|pre|male|c01-s08-m11",
+          "panelId": "c01-s08-m11",
+          "gender": "male",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s08-pre-male/p02/c01-s08-m11-pre-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s08|pre|male|c01-s08-m13",
+          "panelId": "c01-s08-m13",
+          "gender": "male",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s08-pre-male/p02/c01-s08-m13-pre-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s08|pre|male|c01-s08-m15",
+          "panelId": "c01-s08-m15",
+          "gender": "male",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s08-pre-male/p02/c01-s08-m15-pre-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s08|pre|female|c01-s08-m1",
+          "panelId": "c01-s08-m1",
+          "gender": "female",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s08-pre-female/p01/c01-s08-m01-pre-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s08|pre|female|c01-s08-m2",
+          "panelId": "c01-s08-m2",
+          "gender": "female",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s08-pre-female/p01/c01-s08-m02-pre-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s08|pre|female|c01-s08-m3",
+          "panelId": "c01-s08-m3",
+          "gender": "female",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s08-pre-female/p01/c01-s08-m03-pre-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s08|pre|female|c01-s08-m4",
+          "panelId": "c01-s08-m4",
+          "gender": "female",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s08-pre-female/p01/c01-s08-m04-pre-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s08|pre|female|c01-s08-m5",
+          "panelId": "c01-s08-m5",
+          "gender": "female",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s08-pre-female/p01/c01-s08-m05-pre-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s08|pre|female|c01-s08-m11",
+          "panelId": "c01-s08-m11",
+          "gender": "female",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s08-pre-female/p02/c01-s08-m11-pre-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s08|pre|female|c01-s08-m13",
+          "panelId": "c01-s08-m13",
+          "gender": "female",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s08-pre-female/p02/c01-s08-m13-pre-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s08|pre|female|c01-s08-m15",
+          "panelId": "c01-s08-m15",
+          "gender": "female",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s08-pre-female/p02/c01-s08-m15-pre-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s08|post-victory|male|c01-s08-m6",
+          "panelId": "c01-s08-m6",
+          "gender": "male",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s08-post-victory-male/p01/c01-s08-m06-post-victory-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s08|post-victory|male|c01-s08-m7",
+          "panelId": "c01-s08-m7",
+          "gender": "male",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s08-post-victory-male/p01/c01-s08-m07-post-victory-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s08|post-victory|male|c01-s08-m8",
+          "panelId": "c01-s08-m8",
+          "gender": "male",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s08-post-victory-male/p01/c01-s08-m08-post-victory-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s08|post-victory|male|c01-s08-m9",
+          "panelId": "c01-s08-m9",
+          "gender": "male",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s08-post-victory-male/p01/c01-s08-m09-post-victory-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s08|post-victory|male|c01-s08-m16",
+          "panelId": "c01-s08-m16",
+          "gender": "male",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s08-post-victory-male/p01/c01-s08-m16-post-victory-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s08|post-victory|male|c01-s08-m19",
+          "panelId": "c01-s08-m19",
+          "gender": "male",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s08-post-victory-male/p02/c01-s08-m19-post-victory-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s08|post-victory|male|c01-s08-m10",
+          "panelId": "c01-s08-m10",
+          "gender": "male",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s08-post-victory-male/p02/c01-s08-m10-post-victory-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s08|post-victory|female|c01-s08-m6",
+          "panelId": "c01-s08-m6",
+          "gender": "female",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s08-post-victory-female/p01/c01-s08-m06-post-victory-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s08|post-victory|female|c01-s08-m7",
+          "panelId": "c01-s08-m7",
+          "gender": "female",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s08-post-victory-female/p01/c01-s08-m07-post-victory-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s08|post-victory|female|c01-s08-m8",
+          "panelId": "c01-s08-m8",
+          "gender": "female",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s08-post-victory-female/p01/c01-s08-m08-post-victory-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s08|post-victory|female|c01-s08-m9",
+          "panelId": "c01-s08-m9",
+          "gender": "female",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s08-post-victory-female/p01/c01-s08-m09-post-victory-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s08|post-victory|female|c01-s08-m16",
+          "panelId": "c01-s08-m16",
+          "gender": "female",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s08-post-victory-female/p01/c01-s08-m16-post-victory-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s08|post-victory|female|c01-s08-m19",
+          "panelId": "c01-s08-m19",
+          "gender": "female",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s08-post-victory-female/p02/c01-s08-m19-post-victory-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s08|post-victory|female|c01-s08-m10",
+          "panelId": "c01-s08-m10",
+          "gender": "female",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s08-post-victory-female/p02/c01-s08-m10-post-victory-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s08|post-defeat|male|c01-s08-m6",
+          "panelId": "c01-s08-m6",
+          "gender": "male",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s08-post-defeat-male/p01/c01-s08-m06-post-defeat-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s08|post-defeat|male|c01-s08-m7",
+          "panelId": "c01-s08-m7",
+          "gender": "male",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s08-post-defeat-male/p01/c01-s08-m07-post-defeat-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s08|post-defeat|male|c01-s08-m8",
+          "panelId": "c01-s08-m8",
+          "gender": "male",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s08-post-defeat-male/p01/c01-s08-m08-post-defeat-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s08|post-defeat|male|c01-s08-m9",
+          "panelId": "c01-s08-m9",
+          "gender": "male",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s08-post-defeat-male/p01/c01-s08-m09-post-defeat-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s08|post-defeat|male|c01-s08-m16",
+          "panelId": "c01-s08-m16",
+          "gender": "male",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s08-post-defeat-male/p01/c01-s08-m16-post-defeat-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s08|post-defeat|male|c01-s08-m19",
+          "panelId": "c01-s08-m19",
+          "gender": "male",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s08-post-defeat-male/p02/c01-s08-m19-post-defeat-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s08|post-defeat|male|c01-s08-m10",
+          "panelId": "c01-s08-m10",
+          "gender": "male",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s08-post-defeat-male/p02/c01-s08-m10-post-defeat-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s08|post-defeat|female|c01-s08-m6",
+          "panelId": "c01-s08-m6",
+          "gender": "female",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s08-post-defeat-female/p01/c01-s08-m06-post-defeat-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s08|post-defeat|female|c01-s08-m7",
+          "panelId": "c01-s08-m7",
+          "gender": "female",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s08-post-defeat-female/p01/c01-s08-m07-post-defeat-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s08|post-defeat|female|c01-s08-m8",
+          "panelId": "c01-s08-m8",
+          "gender": "female",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s08-post-defeat-female/p01/c01-s08-m08-post-defeat-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s08|post-defeat|female|c01-s08-m9",
+          "panelId": "c01-s08-m9",
+          "gender": "female",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s08-post-defeat-female/p01/c01-s08-m09-post-defeat-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s08|post-defeat|female|c01-s08-m16",
+          "panelId": "c01-s08-m16",
+          "gender": "female",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s08-post-defeat-female/p01/c01-s08-m16-post-defeat-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s08|post-defeat|female|c01-s08-m19",
+          "panelId": "c01-s08-m19",
+          "gender": "female",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s08-post-defeat-female/p02/c01-s08-m19-post-defeat-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s08|post-defeat|female|c01-s08-m10",
+          "panelId": "c01-s08-m10",
+          "gender": "female",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s08-post-defeat-female/p02/c01-s08-m10-post-defeat-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s08|post-gameover|male|c01-s08-death-1",
+          "panelId": "c01-s08-death-1",
+          "gender": "male",
+          "edition": "post-gameover",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s08-post-gameover-male/p01/c01-s08-death-1-post-gameover-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s08|post-gameover|male|c01-s08-death-2",
+          "panelId": "c01-s08-death-2",
+          "gender": "male",
+          "edition": "post-gameover",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s08-post-gameover-male/p01/c01-s08-death-2-post-gameover-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s08|post-gameover|female|c01-s08-death-1",
+          "panelId": "c01-s08-death-1",
+          "gender": "female",
+          "edition": "post-gameover",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s08-post-gameover-female/p01/c01-s08-death-1-post-gameover-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s08|post-gameover|female|c01-s08-death-2",
+          "panelId": "c01-s08-death-2",
+          "gender": "female",
+          "edition": "post-gameover",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s08-post-gameover-female/p01/c01-s08-death-2-post-gameover-female.webp",
+          "status": "MISSING_REAL_ART"
+        }
+      ]
+    },
+    {
+      "stageId": "c01-s09",
+      "scenes": [
+        {
+          "key": "c01-s09|pre|male|c01-s09-m1",
+          "panelId": "c01-s09-m1",
+          "gender": "male",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s09-pre-male/p01/c01-s09-m01-pre-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s09|pre|male|c01-s09-m2",
+          "panelId": "c01-s09-m2",
+          "gender": "male",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s09-pre-male/p01/c01-s09-m02-pre-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s09|pre|male|c01-s09-m3",
+          "panelId": "c01-s09-m3",
+          "gender": "male",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s09-pre-male/p01/c01-s09-m03-pre-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s09|pre|male|c01-s09-m4",
+          "panelId": "c01-s09-m4",
+          "gender": "male",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s09-pre-male/p01/c01-s09-m04-pre-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s09|pre|male|c01-s09-m5",
+          "panelId": "c01-s09-m5",
+          "gender": "male",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s09-pre-male/p01/c01-s09-m05-pre-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s09|pre|male|c01-s09-m11",
+          "panelId": "c01-s09-m11",
+          "gender": "male",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s09-pre-male/p02/c01-s09-m11-pre-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s09|pre|male|c01-s09-m13",
+          "panelId": "c01-s09-m13",
+          "gender": "male",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s09-pre-male/p02/c01-s09-m13-pre-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s09|pre|male|c01-s09-m15",
+          "panelId": "c01-s09-m15",
+          "gender": "male",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s09-pre-male/p02/c01-s09-m15-pre-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s09|pre|female|c01-s09-m1",
+          "panelId": "c01-s09-m1",
+          "gender": "female",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s09-pre-female/p01/c01-s09-m01-pre-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s09|pre|female|c01-s09-m2",
+          "panelId": "c01-s09-m2",
+          "gender": "female",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s09-pre-female/p01/c01-s09-m02-pre-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s09|pre|female|c01-s09-m3",
+          "panelId": "c01-s09-m3",
+          "gender": "female",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s09-pre-female/p01/c01-s09-m03-pre-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s09|pre|female|c01-s09-m4",
+          "panelId": "c01-s09-m4",
+          "gender": "female",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s09-pre-female/p01/c01-s09-m04-pre-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s09|pre|female|c01-s09-m5",
+          "panelId": "c01-s09-m5",
+          "gender": "female",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s09-pre-female/p01/c01-s09-m05-pre-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s09|pre|female|c01-s09-m11",
+          "panelId": "c01-s09-m11",
+          "gender": "female",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s09-pre-female/p02/c01-s09-m11-pre-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s09|pre|female|c01-s09-m13",
+          "panelId": "c01-s09-m13",
+          "gender": "female",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s09-pre-female/p02/c01-s09-m13-pre-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s09|pre|female|c01-s09-m15",
+          "panelId": "c01-s09-m15",
+          "gender": "female",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s09-pre-female/p02/c01-s09-m15-pre-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s09|post-victory|male|c01-s09-m6",
+          "panelId": "c01-s09-m6",
+          "gender": "male",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s09-post-victory-male/p01/c01-s09-m06-post-victory-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s09|post-victory|male|c01-s09-m7",
+          "panelId": "c01-s09-m7",
+          "gender": "male",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s09-post-victory-male/p01/c01-s09-m07-post-victory-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s09|post-victory|male|c01-s09-m8",
+          "panelId": "c01-s09-m8",
+          "gender": "male",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s09-post-victory-male/p01/c01-s09-m08-post-victory-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s09|post-victory|male|c01-s09-m9",
+          "panelId": "c01-s09-m9",
+          "gender": "male",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s09-post-victory-male/p01/c01-s09-m09-post-victory-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s09|post-victory|male|c01-s09-m16",
+          "panelId": "c01-s09-m16",
+          "gender": "male",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s09-post-victory-male/p01/c01-s09-m16-post-victory-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s09|post-victory|male|c01-s09-m19",
+          "panelId": "c01-s09-m19",
+          "gender": "male",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s09-post-victory-male/p02/c01-s09-m19-post-victory-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s09|post-victory|male|c01-s09-m10",
+          "panelId": "c01-s09-m10",
+          "gender": "male",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s09-post-victory-male/p02/c01-s09-m10-post-victory-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s09|post-victory|female|c01-s09-m6",
+          "panelId": "c01-s09-m6",
+          "gender": "female",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s09-post-victory-female/p01/c01-s09-m06-post-victory-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s09|post-victory|female|c01-s09-m7",
+          "panelId": "c01-s09-m7",
+          "gender": "female",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s09-post-victory-female/p01/c01-s09-m07-post-victory-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s09|post-victory|female|c01-s09-m8",
+          "panelId": "c01-s09-m8",
+          "gender": "female",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s09-post-victory-female/p01/c01-s09-m08-post-victory-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s09|post-victory|female|c01-s09-m9",
+          "panelId": "c01-s09-m9",
+          "gender": "female",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s09-post-victory-female/p01/c01-s09-m09-post-victory-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s09|post-victory|female|c01-s09-m16",
+          "panelId": "c01-s09-m16",
+          "gender": "female",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s09-post-victory-female/p01/c01-s09-m16-post-victory-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s09|post-victory|female|c01-s09-m19",
+          "panelId": "c01-s09-m19",
+          "gender": "female",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s09-post-victory-female/p02/c01-s09-m19-post-victory-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s09|post-victory|female|c01-s09-m10",
+          "panelId": "c01-s09-m10",
+          "gender": "female",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s09-post-victory-female/p02/c01-s09-m10-post-victory-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s09|post-defeat|male|c01-s09-m6",
+          "panelId": "c01-s09-m6",
+          "gender": "male",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s09-post-defeat-male/p01/c01-s09-m06-post-defeat-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s09|post-defeat|male|c01-s09-m7",
+          "panelId": "c01-s09-m7",
+          "gender": "male",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s09-post-defeat-male/p01/c01-s09-m07-post-defeat-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s09|post-defeat|male|c01-s09-m8",
+          "panelId": "c01-s09-m8",
+          "gender": "male",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s09-post-defeat-male/p01/c01-s09-m08-post-defeat-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s09|post-defeat|male|c01-s09-m9",
+          "panelId": "c01-s09-m9",
+          "gender": "male",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s09-post-defeat-male/p01/c01-s09-m09-post-defeat-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s09|post-defeat|male|c01-s09-m16",
+          "panelId": "c01-s09-m16",
+          "gender": "male",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s09-post-defeat-male/p01/c01-s09-m16-post-defeat-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s09|post-defeat|male|c01-s09-m19",
+          "panelId": "c01-s09-m19",
+          "gender": "male",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s09-post-defeat-male/p02/c01-s09-m19-post-defeat-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s09|post-defeat|male|c01-s09-m10",
+          "panelId": "c01-s09-m10",
+          "gender": "male",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s09-post-defeat-male/p02/c01-s09-m10-post-defeat-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s09|post-defeat|female|c01-s09-m6",
+          "panelId": "c01-s09-m6",
+          "gender": "female",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s09-post-defeat-female/p01/c01-s09-m06-post-defeat-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s09|post-defeat|female|c01-s09-m7",
+          "panelId": "c01-s09-m7",
+          "gender": "female",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s09-post-defeat-female/p01/c01-s09-m07-post-defeat-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s09|post-defeat|female|c01-s09-m8",
+          "panelId": "c01-s09-m8",
+          "gender": "female",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s09-post-defeat-female/p01/c01-s09-m08-post-defeat-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s09|post-defeat|female|c01-s09-m9",
+          "panelId": "c01-s09-m9",
+          "gender": "female",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s09-post-defeat-female/p01/c01-s09-m09-post-defeat-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s09|post-defeat|female|c01-s09-m16",
+          "panelId": "c01-s09-m16",
+          "gender": "female",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s09-post-defeat-female/p01/c01-s09-m16-post-defeat-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s09|post-defeat|female|c01-s09-m19",
+          "panelId": "c01-s09-m19",
+          "gender": "female",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s09-post-defeat-female/p02/c01-s09-m19-post-defeat-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s09|post-defeat|female|c01-s09-m10",
+          "panelId": "c01-s09-m10",
+          "gender": "female",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s09-post-defeat-female/p02/c01-s09-m10-post-defeat-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s09|post-gameover|male|c01-s09-death-1",
+          "panelId": "c01-s09-death-1",
+          "gender": "male",
+          "edition": "post-gameover",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s09-post-gameover-male/p01/c01-s09-death-1-post-gameover-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s09|post-gameover|male|c01-s09-death-2",
+          "panelId": "c01-s09-death-2",
+          "gender": "male",
+          "edition": "post-gameover",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s09-post-gameover-male/p01/c01-s09-death-2-post-gameover-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s09|post-gameover|female|c01-s09-death-1",
+          "panelId": "c01-s09-death-1",
+          "gender": "female",
+          "edition": "post-gameover",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s09-post-gameover-female/p01/c01-s09-death-1-post-gameover-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s09|post-gameover|female|c01-s09-death-2",
+          "panelId": "c01-s09-death-2",
+          "gender": "female",
+          "edition": "post-gameover",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s09-post-gameover-female/p01/c01-s09-death-2-post-gameover-female.webp",
+          "status": "MISSING_REAL_ART"
+        }
+      ]
+    },
+    {
+      "stageId": "c01-s10",
+      "scenes": [
+        {
+          "key": "c01-s10|pre|male|c01-s10-m1",
+          "panelId": "c01-s10-m1",
+          "gender": "male",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s10-pre-male/p01/c01-s10-m01-pre-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s10|pre|male|c01-s10-m2",
+          "panelId": "c01-s10-m2",
+          "gender": "male",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s10-pre-male/p01/c01-s10-m02-pre-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s10|pre|male|c01-s10-m3",
+          "panelId": "c01-s10-m3",
+          "gender": "male",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s10-pre-male/p01/c01-s10-m03-pre-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s10|pre|male|c01-s10-m4",
+          "panelId": "c01-s10-m4",
+          "gender": "male",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s10-pre-male/p01/c01-s10-m04-pre-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s10|pre|male|c01-s10-m5",
+          "panelId": "c01-s10-m5",
+          "gender": "male",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s10-pre-male/p01/c01-s10-m05-pre-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s10|pre|male|c01-s10-m11",
+          "panelId": "c01-s10-m11",
+          "gender": "male",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s10-pre-male/p02/c01-s10-m11-pre-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s10|pre|male|c01-s10-m13",
+          "panelId": "c01-s10-m13",
+          "gender": "male",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s10-pre-male/p02/c01-s10-m13-pre-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s10|pre|male|c01-s10-m15",
+          "panelId": "c01-s10-m15",
+          "gender": "male",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s10-pre-male/p02/c01-s10-m15-pre-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s10|pre|female|c01-s10-m1",
+          "panelId": "c01-s10-m1",
+          "gender": "female",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s10-pre-female/p01/c01-s10-m01-pre-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s10|pre|female|c01-s10-m2",
+          "panelId": "c01-s10-m2",
+          "gender": "female",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s10-pre-female/p01/c01-s10-m02-pre-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s10|pre|female|c01-s10-m3",
+          "panelId": "c01-s10-m3",
+          "gender": "female",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s10-pre-female/p01/c01-s10-m03-pre-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s10|pre|female|c01-s10-m4",
+          "panelId": "c01-s10-m4",
+          "gender": "female",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s10-pre-female/p01/c01-s10-m04-pre-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s10|pre|female|c01-s10-m5",
+          "panelId": "c01-s10-m5",
+          "gender": "female",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s10-pre-female/p01/c01-s10-m05-pre-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s10|pre|female|c01-s10-m11",
+          "panelId": "c01-s10-m11",
+          "gender": "female",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s10-pre-female/p02/c01-s10-m11-pre-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s10|pre|female|c01-s10-m13",
+          "panelId": "c01-s10-m13",
+          "gender": "female",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s10-pre-female/p02/c01-s10-m13-pre-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s10|pre|female|c01-s10-m15",
+          "panelId": "c01-s10-m15",
+          "gender": "female",
+          "edition": "pre",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s10-pre-female/p02/c01-s10-m15-pre-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s10|post-victory|male|c01-s10-m6",
+          "panelId": "c01-s10-m6",
+          "gender": "male",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s10-post-victory-male/p01/c01-s10-m06-post-victory-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s10|post-victory|male|c01-s10-m7",
+          "panelId": "c01-s10-m7",
+          "gender": "male",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s10-post-victory-male/p01/c01-s10-m07-post-victory-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s10|post-victory|male|c01-s10-m8",
+          "panelId": "c01-s10-m8",
+          "gender": "male",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s10-post-victory-male/p01/c01-s10-m08-post-victory-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s10|post-victory|male|c01-s10-m9",
+          "panelId": "c01-s10-m9",
+          "gender": "male",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s10-post-victory-male/p01/c01-s10-m09-post-victory-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s10|post-victory|male|c01-s10-m16",
+          "panelId": "c01-s10-m16",
+          "gender": "male",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s10-post-victory-male/p01/c01-s10-m16-post-victory-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s10|post-victory|male|c01-s10-m19",
+          "panelId": "c01-s10-m19",
+          "gender": "male",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s10-post-victory-male/p02/c01-s10-m19-post-victory-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s10|post-victory|male|c01-s10-m10",
+          "panelId": "c01-s10-m10",
+          "gender": "male",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s10-post-victory-male/p02/c01-s10-m10-post-victory-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s10|post-victory|female|c01-s10-m6",
+          "panelId": "c01-s10-m6",
+          "gender": "female",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s10-post-victory-female/p01/c01-s10-m06-post-victory-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s10|post-victory|female|c01-s10-m7",
+          "panelId": "c01-s10-m7",
+          "gender": "female",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s10-post-victory-female/p01/c01-s10-m07-post-victory-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s10|post-victory|female|c01-s10-m8",
+          "panelId": "c01-s10-m8",
+          "gender": "female",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s10-post-victory-female/p01/c01-s10-m08-post-victory-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s10|post-victory|female|c01-s10-m9",
+          "panelId": "c01-s10-m9",
+          "gender": "female",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s10-post-victory-female/p01/c01-s10-m09-post-victory-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s10|post-victory|female|c01-s10-m16",
+          "panelId": "c01-s10-m16",
+          "gender": "female",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s10-post-victory-female/p01/c01-s10-m16-post-victory-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s10|post-victory|female|c01-s10-m19",
+          "panelId": "c01-s10-m19",
+          "gender": "female",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s10-post-victory-female/p02/c01-s10-m19-post-victory-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s10|post-victory|female|c01-s10-m10",
+          "panelId": "c01-s10-m10",
+          "gender": "female",
+          "edition": "post-victory",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s10-post-victory-female/p02/c01-s10-m10-post-victory-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s10|post-defeat|male|c01-s10-m6",
+          "panelId": "c01-s10-m6",
+          "gender": "male",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s10-post-defeat-male/p01/c01-s10-m06-post-defeat-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s10|post-defeat|male|c01-s10-m7",
+          "panelId": "c01-s10-m7",
+          "gender": "male",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s10-post-defeat-male/p01/c01-s10-m07-post-defeat-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s10|post-defeat|male|c01-s10-m8",
+          "panelId": "c01-s10-m8",
+          "gender": "male",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s10-post-defeat-male/p01/c01-s10-m08-post-defeat-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s10|post-defeat|male|c01-s10-m9",
+          "panelId": "c01-s10-m9",
+          "gender": "male",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s10-post-defeat-male/p01/c01-s10-m09-post-defeat-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s10|post-defeat|male|c01-s10-m16",
+          "panelId": "c01-s10-m16",
+          "gender": "male",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s10-post-defeat-male/p01/c01-s10-m16-post-defeat-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s10|post-defeat|male|c01-s10-m19",
+          "panelId": "c01-s10-m19",
+          "gender": "male",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s10-post-defeat-male/p02/c01-s10-m19-post-defeat-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s10|post-defeat|male|c01-s10-m10",
+          "panelId": "c01-s10-m10",
+          "gender": "male",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s10-post-defeat-male/p02/c01-s10-m10-post-defeat-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s10|post-defeat|female|c01-s10-m6",
+          "panelId": "c01-s10-m6",
+          "gender": "female",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s10-post-defeat-female/p01/c01-s10-m06-post-defeat-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s10|post-defeat|female|c01-s10-m7",
+          "panelId": "c01-s10-m7",
+          "gender": "female",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s10-post-defeat-female/p01/c01-s10-m07-post-defeat-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s10|post-defeat|female|c01-s10-m8",
+          "panelId": "c01-s10-m8",
+          "gender": "female",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s10-post-defeat-female/p01/c01-s10-m08-post-defeat-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s10|post-defeat|female|c01-s10-m9",
+          "panelId": "c01-s10-m9",
+          "gender": "female",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s10-post-defeat-female/p01/c01-s10-m09-post-defeat-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s10|post-defeat|female|c01-s10-m16",
+          "panelId": "c01-s10-m16",
+          "gender": "female",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s10-post-defeat-female/p01/c01-s10-m16-post-defeat-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s10|post-defeat|female|c01-s10-m19",
+          "panelId": "c01-s10-m19",
+          "gender": "female",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s10-post-defeat-female/p02/c01-s10-m19-post-defeat-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s10|post-defeat|female|c01-s10-m10",
+          "panelId": "c01-s10-m10",
+          "gender": "female",
+          "edition": "post-defeat",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s10-post-defeat-female/p02/c01-s10-m10-post-defeat-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s10|post-gameover|male|c01-s10-death-1",
+          "panelId": "c01-s10-death-1",
+          "gender": "male",
+          "edition": "post-gameover",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s10-post-gameover-male/p01/c01-s10-death-1-post-gameover-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s10|post-gameover|male|c01-s10-death-2",
+          "panelId": "c01-s10-death-2",
+          "gender": "male",
+          "edition": "post-gameover",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s10-post-gameover-male/p01/c01-s10-death-2-post-gameover-male.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s10|post-gameover|female|c01-s10-death-1",
+          "panelId": "c01-s10-death-1",
+          "gender": "female",
+          "edition": "post-gameover",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s10-post-gameover-female/p01/c01-s10-death-1-post-gameover-female.webp",
+          "status": "MISSING_REAL_ART"
+        },
+        {
+          "key": "c01-s10|post-gameover|female|c01-s10-death-2",
+          "panelId": "c01-s10-death-2",
+          "gender": "female",
+          "edition": "post-gameover",
+          "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s10-post-gameover-female/p01/c01-s10-death-2-post-gameover-female.webp",
+          "status": "MISSING_REAL_ART"
+        }
+      ]
+    }
+  ]
+}
