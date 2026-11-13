@@ -46,7 +46,10 @@ function assemble(detail,face) {
       const shape=face.eyesType==='round'?1.10:face.eyesType==='narrow'?.78:face.eyesType==='hooded'?.90:1;
       x*=face.eyeSpacing;sx*=face.eyeSize;sy*=face.eyeSize*shape;
     }
-    const geo=new THREE.SphereGeometry(1,detail==='high'?22:10,detail==='high'?16:8);
+    // Large contours already use smooth loft profiles. Small armour,
+    // throat and equipment overlays need fewer triangles: keeping these
+    // balloons overly subdivided wasted the battlefield's GPU budget.
+    const geo=new THREE.SphereGeometry(1,detail==='high'?16:10,detail==='high'?12:8);
     geo.scale(sx,sy,sz);
     if(rotX) geo.rotateX(rotX);
     geo.translate(x,y,z); add(name,geo,tint);
