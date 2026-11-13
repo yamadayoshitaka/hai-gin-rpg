@@ -1,0 +1,80 @@
+name: Chapter 1 all 462 shots - resumed Free-only real draft images
+
+# Finite first-chapter production queue; outputs are review drafts only.
+# No paid endpoints, no automatic API retries, strict per-run estimate cap.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'ops/start-chapter1-full-free-actual-art-once-20261114.trigger'
+  schedule:
+    - cron: '30 22 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: chapter1-free-one-batch-per-day
+  cancel-in-progress: false
+
+jobs:
+  chapter1:
+    name: Resume up to 12 review-pages, max 7500 estimated Neurons
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - name: Checkout canonical main branch
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install image IO dependencies
+        run: python -m pip install --disable-pip-version-check Pillow==11.3.0
+      - name: Validate source and canonical chapter queue
+        run: |
+          node --check scripts/generate-story-chapter1-free-batch.mjs
+          node scripts/generate-story-chapter1-free-batch.mjs --mode plan
+          node qa/story-chapter-page-loop.test.mjs
+      - name: Fail before generation unless Free confirmed and both secrets available
+        shell: bash
+        env:
+          FREE_CONFIRMED: ${{ vars.CLOUDFLARE_FREE_PLAN_CONFIRMED }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_WORKERS_AI_API_TOKEN: ${{ secrets.CLOUDFLARE_WORKERS_AI_API_TOKEN }}
+        run: |
+          set -euo pipefail
+          [ "$FREE_CONFIRMED" = "true" ] || { echo "::error::Workers Free not confirmed"; exit 4; }
+          [ -n "$CLOUDFLARE_ACCOUNT_ID" ] && [ -n "$CLOUDFLARE_WORKERS_AI_API_TOKEN" ] || \
+            { echo "::error::Missing credentials"; exit 5; }
+          echo "Free confirmation and credentials are present (values redacted)"
+      - name: Checkout persistent review-only branch
+        run: |
+          set -euo pipefail
+          git fetch origin story/chapter1-free-actual-art
+          git switch -c story/chapter1-free-actual-art --track origin/story/chapter1-free-actual-art
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+      - name: Generate real review images with strict budget and page commits
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_WORKERS_AI_API_TOKEN: ${{ secrets.CLOUDFLARE_WORKERS_AI_API_TOKEN }}
+          CLOUDFLARE_FREE_PLAN_CONFIRMED: ${{ vars.CLOUDFLARE_FREE_PLAN_CONFIRMED }}
+          CLOUDFLARE_CHAPTER1_DAILY_ESTIMATE_CAP: '7500'
+        run: node scripts/generate-story-chapter1-free-batch.mjs --mode generate --max-pages 12
+      - name: Upload per-scene review and progress proof
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: chapter1-free-actual-art-progress-${{ github.run_id }}
+          path: qa-reports/story-stage-production/chapter1-free-render/
+          retention-days: 30
+          if-no-files-found: warn
