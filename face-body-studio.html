@@ -63,7 +63,7 @@ body.costume-only .faceStudioOnly{display:none!important}
 <button id="back" aria-pressed="false" disabled>後頭部</button>
 <button id="crown" aria-pressed="false" disabled>頭頂部</button>
 </div>
-<div class="controls"><a href="./face-mesh-studio.html?gender=female&hero=1&v=41" class="buttonLink" id="faceEditorLink">顔・髪を編集する</a><a class="buttonLink" href="./male-body-studio.html?v=42">男性主人公の画面へ</a></div>
+<div class="controls"><a href="./face-mesh-studio.html?gender=female&hero=1&v=43" class="buttonLink" id="faceEditorLink">顔・髪を編集する</a><a class="buttonLink" href="./male-body-studio.html?v=42">男性主人公の画面へ</a></div>
 <div id="heroActionButtons" class="actionButtonGrid" role="group" aria-label="実戦闘アクションを再生"></div>
 <p id="actionStatus" role="status">アクションを選んで再生してください。</p>
 <div class="controls">
@@ -113,7 +113,7 @@ alt="第1章女性主人公（暫定人物マスターの登録原画）">
 <label for="style">固有のヅラ（別アセット）
 <select id="style" disabled></select></label>
 <p class="note">v31：目のサイズは縦横から自動決定。目の前後位置と分離し、カラコンは17色＋自由色に対応。真円の黒目・瞳孔を維持。髪は実顔面と女性胴体の三角形表面との接触を判定し、肩・胸の簡易判定も併用します。</p>
-<a href="./face-mesh-studio.html?gender=female&hero=1&v=41" class="buttonLink" id="faceEditorSideLink">顔・髪の編集画面へ</a>
+<a href="./face-mesh-studio.html?gender=female&hero=1&v=43" class="buttonLink" id="faceEditorSideLink">顔・髪の編集画面へ</a>
 <details><summary>実メッシュ・接触検査</summary><pre id="metrics"></pre></details>
 </section>
 </main><style>
@@ -126,7 +126,7 @@ body.v32-legacy #v32BodyPartStudio{display:none!important}
 .v32-part-group select,#v32HairDensity{display:block;width:100%;min-height:41px;margin:5px 0;padding:7px;background:#213d55;color:#fff;border:1px solid #7893a5;border-radius:8px}
 .v32-pose-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
 .v32-tip{color:#b8d5e8;font-size:12px}
-</style><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/","./src/independent-face-masters.js":"./src/independent-face-masters.js?v=41","./src/face-feature-meshes.js":"./src/face-feature-meshes.js?v=41","./src/face-v7-controls.js":"./src/face-v7-controls.js?v=41","./src/face-body-assembly.js":"./src/face-body-assembly.js?v=42"}}</script>
+</style><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/","./src/independent-face-masters.js":"./src/independent-face-masters.js?v=41","./src/face-feature-meshes.js":"./src/face-feature-meshes.js?v=43","./src/face-v7-controls.js":"./src/face-v7-controls.js?v=41","./src/face-body-assembly.js":"./src/face-body-assembly.js?v=42"}}</script>
 <script type="module">
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
@@ -135,7 +135,7 @@ import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {makeIndependentFaceMaster} from './src/independent-face-masters.js';
 import {FEMALE_V7_DEFAULTS,FACE_EYE_SPACING_DEFAULT,FACE_EYE_SPACING_RANGE,FACE_SLIDER_RANGES,CONTACT_COLORS,CONTACT_COLOR_LABELS,safeContactColor,normalizeFemaleFaceControls} from './src/face-v7-controls.js';
 import {applyFaceColorMode} from './src/face-feature-meshes.js';
-import {createScalpAnchoredWig} from './src/face-scalp-wig.js?v=42';
+import {createScalpAnchoredWig} from './src/face-scalp-wig.js?v=43';
 import {createPartSelectorUI} from './src/face-part-selector-ui-v32.js?v=41';
 import {defaultPartSelection,resolvePartSelection,PART_CATALOG} from './src/face-part-catalog-v32.js?v=41';
 import {attachIndependentHeadToBody,removeHeadBustBelowNeck,createSealedNeckBridge} from './src/face-body-assembly.js';
