@@ -32,6 +32,17 @@ export function monsterResolutionFor(spec,detail='high'){
    torus:[base.torus[0]+Math.ceil(stage/3),base.torus[1]+stage],
  };
 }
+/** Tone down saturated game-toy pigments while preserving each element.
+ * Ritual accents remain identifiable; bodily surfaces resemble dry skin,
+ * worn scales and fur under neutral cinematic lighting.
+ */
+const naturalPigment=(hex,saturation=.80)=>{
+ const color=new THREE.Color(hex),hsl={};
+ color.getHSL(hsl);
+ color.setHSL(hsl.h,Math.max(0,Math.min(1,hsl.s*saturation)),
+   Math.max(0,Math.min(1,hsl.l*.97)));
+ return '#'+color.getHexString();
+};
 const geometryCache=new Map(),materialCache=new Map();
 function cachedGeometry(key,make){
  if(!geometryCache.has(key))geometryCache.set(key,make());
@@ -85,7 +96,9 @@ export function createSculpture(spec,detail='high'){
  if(!resolution)throw Error('Unknown sculpture resolution: '+detail);
  const fine=detail!=='low',pivots={},root=new THREE.Group();root.name=spec.id+'-'+spec.name;
  const colors=spec.colors,realism=realismPaletteFor(spec);
- const tone={skin:colors.base,light:colors.highlight,accent:colors.accent,
+ const tone={skin:naturalPigment(colors.base,.80),
+   light:naturalPigment(colors.highlight,.83),
+   accent:naturalPigment(colors.accent,.90),
    shadow:'#26232c',bone:'#e9dfc5',
    fabric:'#493d43',bandage:'#b4a993',leather:'#4b3734',
    metal:'#737d83',hair:'#302a29',mortalSkin:'#a49b93',
