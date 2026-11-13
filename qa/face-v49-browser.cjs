@@ -23,25 +23,25 @@ fs.mkdirSync(out,{recursive:true});
      v[g]?.v49AgeCreases?.count>10;
    },gender,{timeout:95000});
    await page.locator('#front').click();
-   await page.locator('#faceCanvas').screenshot({path:out+'/'+gender+'-80years.png',animations:'disabled'});
+   await page.screenshot({path:out+'/'+gender+'-80years.png',animations:'disabled',timeout:90000});
    await page.locator('#v47AgeBand').selectOption('twenties');
    await page.waitForFunction(g=>{
     const v=window.__faceMasterQA();
     return v.gender===g&&v.v32PartSelection.ageBand==='twenties'&&
      (v[g]?.v49AgeCreases?.count??-1)===0;
    },gender,{timeout:95000});
-   await page.locator('#faceCanvas').screenshot({path:out+'/'+gender+'-20years.png',animations:'disabled'});
+   await page.screenshot({path:out+'/'+gender+'-20years.png',animations:'disabled',timeout:90000});
    await page.locator('#v47BodyType').selectOption('normal');
    await page.locator('#faceExpression').selectOption('shout');
    await page.waitForFunction(()=>window.__faceMasterQA().expression?.mouthOpen>.94,
     null,{timeout:15000});
-   await page.locator('#faceCanvas').screenshot({path:out+'/'+gender+'-shout.png',animations:'disabled'});
+   await page.screenshot({path:out+'/'+gender+'-shout.png',animations:'disabled',timeout:90000});
    await page.locator('#faceExpression').selectOption('neutral');
    await page.waitForFunction(()=>window.__faceMasterQA().expression?.mouthOpen===0,
     null,{timeout:15000});
    await page.locator('#faceExpression').selectOption('smile');
    await page.waitForFunction(()=>window.__faceMasterQA().expression?.expression==='smile');
-   await page.locator('#faceCanvas').screenshot({path:out+'/'+gender+'-smile.png',animations:'disabled'});
+   await page.screenshot({path:out+'/'+gender+'-smile.png',animations:'disabled',timeout:90000});
    await page.locator('#faceExpression').selectOption('neutral');
    if(gender==='female'){
     for(const [style,kind] of [
@@ -57,8 +57,8 @@ fs.mkdirSync(out,{recursive:true});
      },[style,kind],{timeout:95000});
      for(const view of ['front','side','back']){
       await page.locator('#'+view).click();
-      await page.locator('#faceCanvas').screenshot({
-       path:out+'/'+style+'-'+view+'.png',animations:'disabled',timeout:60000});
+      await page.screenshot({
+       path:out+'/'+style+'-'+view+'.png',animations:'disabled',timeout:90000});
      }
     }
    }

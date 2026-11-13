@@ -351,7 +351,8 @@ test('v15 lipstick is painted only on REAL source-head triangles, no sliding lip
  assert.equal(moved.report.detailedParts.lipstickPlacement.paintAsVertexColor,true);
  assert.equal(moved.report.detailedParts.lipstickPlacement.appliedToSourceHead,true);
  const male=makeIndependentFaceMaster(source,'male');
- assert.equal(male.face.material.vertexColors,false);
+ assert.equal(male.face.material.vertexColors,true,
+  'male uses vertex colors for natural skin micro-shadows, not blush');
  assert.equal(male.root.getObjectByName('UPPER_LIPSTICK_MAKEUP'),undefined);
  assert.equal(male.root.getObjectByName('LEFT_UNDER_EYE_SHADOW'),undefined);
  assert.ok(male.root.getObjectByName('LEFT_NATURAL_MALE_BROW')?.isMesh);
@@ -492,7 +493,7 @@ test('user Library GLB face preset is canonical and male derives cosmetic-free',
   assert.equal(pf.getZ(i),pm.getZ(i));
  }
  assert.notEqual(f.face.geometry,m.face.geometry);
- assert.equal(m.face.material.vertexColors,false,'male face has no blush');
+ assert.equal(m.face.material.vertexColors,true,'male uses real skin vertex shadows without makeup');
  assert.equal(m.parts.getObjectByName('LEFT_UPPER_EYELINER'),undefined);
  assert.equal(m.parts.getObjectByName('LOWER_LIPSTICK_MAKEUP'),undefined);
  assert.equal(m.parts.getObjectByName('LEFT_UNDER_EYE_SHADOW'),undefined);
