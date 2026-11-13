@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "kind": "TWO_ACTUAL_WEBP_FRAMES_NOT_QUALITY_APPROVED",
+  "stageId": "c01-s02",
+  "edition": "post-victory",
+  "gender": "female",
+  "page": 2,
+  "requestedMaxPanelsPerPage": 5,
+  "actualPanels": 2,
+  "panelIds": [
+    "c01-s02-m19",
+    "c01-s02-m10"
+  ],
+  "sources": [
+    {
+      "panelId": "c01-s02-m19",
+      "path": "assets/story/chapter-drafts/c01/pending-art-review/c01-s02-post-victory-female/p02/c01-s02-m19-post-victory-female.webp",
+      "nativePixels": [
+        1672,
+        941
+      ],
+      "sha256": "1757f75f24af7a972c42c6a2b4dc4e1505f95d1af3c88e447b7cdcbef2eb77d1",
+      "bytes": 592064,
+      "githubBlobSha": "0e4ed87f3efe5851408a3a9cc536b2bd7598c649",
+      "visualQualityApproved": false,
+      "characterIdentityApproved": false,
+      "textlessHumanApproved": false,
+      "scriptExactnessApproved": false
+    },
+    {
+      "panelId": "c01-s02-m10",
+      "path": "assets/story/chapter-drafts/c01/pending-art-review/c01-s02-post-victory-female/p02/c01-s02-m10-post-victory-female.webp",
+      "nativePixels": [
+        1672,
+        941
+      ],
+      "sha256": "1d58c454db4e7287632274e85c1f9259242a67fd809753ae0831eddf51887ac2",
+      "bytes": 609692,
+      "githubBlobSha": "b1da3bc52bbc157e42350812768a31c6708f03a5",
+      "visualQualityApproved": false,
+      "characterIdentityApproved": false,
+      "textlessHumanApproved": false,
+      "scriptExactnessApproved": false
+    }
+  ],
+  "newGameBindings": 0,
+  "noOtherGenderOutcomeReused": true
+}
