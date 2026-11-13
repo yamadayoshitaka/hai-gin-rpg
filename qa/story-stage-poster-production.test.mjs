@@ -19,6 +19,12 @@ assert.equal(data.shotWorkflow,'SCREENPLAY_CONTEXT_PREVIOUS_CURRENT_NEXT_REAL_CA
 assert.equal(data.imageSpec.aspectRatio,'16:9');
 assert.deepEqual(data.imageSpec.minimumNativePixels,[1536,864]);
 assert.deepEqual(data.imageSpec.preferredNativePixels,[2048,1152]);
+assert.equal(data.imageSpec.maxCellsPerReviewSheet,10);
+assert.deepEqual(data.imageSpec.fullTenCellPreferredPixels,[4096,5760]);
+assert.equal(data.imageSpec.fullTenCellGeneratorCapability,'UNVERIFIED_DO_NOT_ASSUME');
+assert.equal(data.reviewSheetPolicy.maxPanels,10);
+assert.equal(data.reviewSheetPolicy.rowsForTen,5);
+assert.deepEqual(data.reviewSheetPolicy.preferredTenPanelSheetPixels,[4096,5760]);
 assert.equal(data.imageSpec.safeCompositionMarginPercent,5);
 assert.equal(data.stages.length,2);
 assert.deepEqual(data.stages.map(s=>s.stageId),['c01-s02','c01-s03']);
@@ -46,6 +52,11 @@ for(const stage of data.stages){
   assert.equal(poster.posterSpec.columns,2);
   assert.equal(poster.posterSpec.rows,Math.ceil(edition.panels/2));
   assert.deepEqual(poster.posterSpec.minNativePixels,[3072,poster.posterSpec.rows*864]);
+  assert.deepEqual(poster.posterSpec.preferredNativePixels,[4096,poster.posterSpec.rows*1152]);
+  assert.equal(poster.posterSpec.maxCellCount,10);
+  assert.equal(poster.posterSpec.blankCells,poster.posterSpec.rows*2-edition.panels);
+  assert.equal(poster.posterSpec.assemblyMode,'INDIVIDUAL_NATIVE_FRAMES_FIRST_THEN_LOSSLESS_REVIEW_SHEET');
+  assert.equal(poster.posterSpec.reviewOnlyNotGameArtwork,true);
   assert.equal(poster.posterSpec.previewCannotBeRegisteredAsFinalArt,true);
   assert(poster.textFreePrompt.startsWith('CONTINUITY PREVIEW ONLY'));
   assert.equal(poster.panels.length,phaseCounts[edition.edition]);
