@@ -37,7 +37,7 @@ fs.mkdirSync(out,{recursive:true});
    const naked=await page.evaluate(key=>{
     const q=window[key]?.();
     const root=(key==='__heroineBodyQA'?window.__heroineBodyPreview:
-      window.__maleBodyPreview)?.getActor?.();
+      window.__maleBodyPreview)?.getBattleActor?.();
     const visibleBody=[];
     root?.traverse?.(mesh=>{
      if(mesh.isSkinnedMesh&&mesh.visible&&
