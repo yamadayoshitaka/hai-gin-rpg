@@ -3,12 +3,26 @@
  * variants change horns, crests, armour, wings, limb lengths, weapons and fins.
  * Each specimen is real 3D geometry, never an image billboard.
  */
-import {createSculpture,disposeMonsterSculpture} from './monster-shape-kit.js?v=4.4.95';
+import {createSculpture,disposeMonsterSculpture} from './monster-shape-kit.js?v=4.4.99';
 import {attachMonsterFaceControls} from './facial-feature-runtime.js?v=1';
 import {generateCanineFurGuides} from './canine-fur-guides.js?v=4.4.92';
 import {monsterEvidenceFor} from './monster-anatomy-reference.js';
 import {MORTAL_HEAD_RINGS,MORTAL_TORSO_RINGS} from './monster-realistic-loft.js';
 import {sculptBloodMoonVampire,sculptVampireHand} from './monster-vampire-sculpt.js';
+/** Organic cranium sections shared by wolves, cats and reptiles.
+ * The muzzle, eyelids and the animated jaw remain their existing species
+ * parts. This skull is one continuous shaded volume instead of a sphere.
+ */
+const QUADRUPED_CRANIUM_RINGS=Object.freeze([
+ {y:-.244,rx:.093,rz:.149,cz:.070},
+ {y:-.187,rx:.215,rz:.287,cz:.058},
+ {y:-.106,rx:.304,rz:.336,cz:.058},
+ {y:.014,rx:.334,rz:.362,cz:.049},
+ {y:.105,rx:.320,rz:.342,cz:.044},
+ {y:.199,rx:.249,rz:.281,cz:.035},
+ {y:.271,rx:.142,rz:.175,cz:.028},
+ {y:.310,rx:.039,rz:.068,cz:.015},
+]);
 function feet(g,pivot,x,y,z,clawed=true,scale=1){
  g.sphere(pivot,'skin',[0,-.28,0],[.14*scale,.30*scale,.15*scale]);
  g.sphere(pivot,'shadow',[0,-.53,.13],[.13*scale,.08*scale,.22*scale]);
@@ -105,8 +119,13 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
  g.bridge(torso,'skin',[0,1.35,.32],[0,1.57,.76+v*.055],.325,.215);
  const head=g.group('head',[0,1.56,.70+v*.06]);
  // Rigid reptilian wedge instead of the same spherical skull as a cat.
- g.sphere(head,'skin',[0,.03,.06],reptile?[.294,.239,.385]:
-   feline?[.314,.271,.350]:[.33,.28,.36]);
+ const skullWidth=reptile?.905:feline?.95:1;
+ const skullDepth=reptile?1.065:feline?.965:1;
+ g.anatomicalLoft(head,'skin',
+   QUADRUPED_CRANIUM_RINGS.map(r=>({
+     ...r,rx:r.rx*skullWidth,rz:r.rz*skullDepth,
+   })),{name:'organic-cranium-'+s.id,kind:'face',
+     asymmetry:reptile?.10:.04});
  if(reptile){
    g.bridge(head,'skin',[0,.045,-.19],[0,-.085,.55],.257,.128);
  }else if(feline){
@@ -547,7 +566,14 @@ function bird(g,s){
  g.sphere(torso,'light',[0,1.26,.31],[.27,.26,.26]);
  g.bridge(torso,'skin',[0,1.58,.18],[0,2.04,.30],.24,.18);
  const head=g.group('head',[0,2.00,.31]);
- g.sphere(head,'skin',[0,.03,0],[.25,.29,.28]);
+ // Birds retain the keratin beak but gain a rounded occiput and a
+ // sculpted orbital rim as part of the same skull surface. Do not alter
+ // m015 Tengu's protected humanoid proportions.
+ if(s.id==='m015')g.sphere(head,'skin',[0,.03,0],[.25,.29,.28]);
+ else g.anatomicalLoft(head,'skin',
+   QUADRUPED_CRANIUM_RINGS.map(r=>({...r,
+     y:r.y*.97,rx:r.rx*.76,rz:r.rz*.77,cz:(r.cz-.05)*.70
+   })),{name:'avian-cranium-'+s.id,kind:'face',asymmetry:.03});
  g.spike(head,'accent',[0,-.07,.20],[0,-.20,.61],.13);
  g.eyes(head,.22,.08,.18,.046);
  for(let i=0;i<7+v*2;i++){
@@ -887,7 +913,12 @@ function seaSerpent(g,s){
  const tip=g.group('tailTip',[0,-.10,-.52],mid);
  g.fin(tip,'accent',[0,0,0],[0,.42,-.35],.18);
  const head=g.group('head',[0,1.11,.78]);
- g.sphere(head,'skin',[0,.03,.13],[.32,.26,.48]);
+ // Leviathan and sea serpent: sculpted organic cranium and deep temporal
+ // muscles instead of a flattened scaled sphere. Keep existing jaw pivot.
+ g.anatomicalLoft(head,'skin',
+   QUADRUPED_CRANIUM_RINGS.map(r=>({...r,
+     y:r.y*.91,rx:r.rx*.94,rz:r.rz*1.23,cz:r.cz+.09,
+   })),{name:'serpent-cranium-'+s.id,kind:'face',asymmetry:.10});
  g.bridge(head,'skin',[0,-.02,.22],[0,-.11,.67],.25,.13);
  g.sphere(head,'light',[0,-.13,.59],[.205,.105,.25]);
  g.eyes(head,.32,.09,.25,.042);
@@ -1006,5 +1037,5 @@ export function createMonsterModel(spec,{detail='high'}={}){
 export {disposeMonsterSculpture};
 // All renderer metrics share this module's exact shape/material instance.
 // Never independently import a differently versioned shape-kit into the UI.
-export {MONSTER_DETAIL_LEVELS,monsterSculptCacheStats} from './monster-shape-kit.js?v=4.4.95';
+export {MONSTER_DETAIL_LEVELS,monsterSculptCacheStats} from './monster-shape-kit.js?v=4.4.99';
 export {monsterPhotoCacheStats} from './monster-photo-pbr.js?v=4.4.81';

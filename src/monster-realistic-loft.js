@@ -5,6 +5,7 @@
  * Geometry only; no model loaders, network access or animation-side allocations.
  */
 import * as THREE from 'three';
+import {sculptVerticalFacePoint} from './creature-face-volume.js';
 
 const clamp=(x,a,b)=>Math.min(b,Math.max(a,x));
 const interpolate=(a,b,t)=>a+(b-a)*t;
@@ -31,7 +32,7 @@ const poseAt=(rings,y)=>{
  * Shape features are geometry, not oversized button eyes or emissive stickers.
  */
 export function createMonsterAnatomicalLoft(rings,{
- detail='high',kind='torso',asymmetry=0,
+ detail='high',kind='torso',asymmetry=0,faceVolume=null,
 }={}){
  if(!Array.isArray(rings)||rings.length<3 ||
    rings.some((r,i)=>!Number.isFinite(r.y)||!Number.isFinite(r.rx)||
@@ -70,6 +71,9 @@ export function createMonsterAnatomicalLoft(rings,{
     const navel=gauss(y,1.16,.035)*gauss(side,0,.15);
     z-=.008*Math.max(0,front)*navel;
    }
+   if(kind==='face'&&faceVolume){
+    [x,,z]=sculptVerticalFacePoint(x,y,z,v,side,front,faceVolume);
+   }
    if(asymmetry){
     const fine=(Math.sin(y*59.1+angle*5.7)+
        .52*Math.cos(y*81.3-angle*11.2))*.0026*asymmetry;
@@ -89,7 +93,7 @@ export function createMonsterAnatomicalLoft(rings,{
  geo.computeVertexNormals();
  geo.computeBoundingSphere();
  geo.userData={kind:'realistic-anatomical-loft',anatomy:kind,
-   profileRings:rings.length,detail};
+   profileRings:rings.length,detail,faceVolumeApplied:kind==='face'&&!!faceVolume};
  return geo;
 }
 export const MORTAL_HEAD_RINGS=Object.freeze([
