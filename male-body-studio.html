@@ -351,6 +351,7 @@ function rebuildWig(){
  if(wig){wig.root.removeFromParent();wig.dispose();wig=null;}
  wig=createScalpAnchoredWig(uncutScalpSource||model.face,{
   count:2000,lengthScale:1.0,styleId:$('style').value,
+  normalLayeredSingleMesh:v32PartMode,
   fineFringeMultiplier:3,visualFiberMultiplier:Number($('wigDensity').value),
   staticGroom:true,
   volumeProfile:v32PartMode?v32BodyPart.hairVolume:'natural',
