@@ -157,6 +157,20 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
      g.sphere(lid,'skin',[0,0,0],[.050,.024,.068],
        {name:'nictitating-membrane',rough:.87});
    }
+ }else if(feline){
+   // Cats need their own front-facing oval orbital cavities and vertical
+   // pupils. The generic round eye guide previously looked pasted on.
+   for(const side of [-1,1]){
+     const suffix=side<0?'L':'R';
+     g.sphere(head,'shadow',[side*.279,.103,.230],
+       [.047,.042,.054],{name:'feline-orbital-rim-'+suffix});
+     g.sphere(head,'eye',[side*.290,.103,.237],
+       [.017,.029,.033],{rough:.31,name:'feline-iris-'+suffix});
+     g.sphere(head,'shadow',[side*.306,.102,.247],
+       [.005,.022,.008],{name:'feline-slit-pupil-'+suffix});
+     g.sphere(head,'skin',[side*.274,.150,.213],
+       [.067,.023,.088],{name:'feline-upper-eyelid-'+suffix});
+   }
  }else{
    g.eyes(head,.335,.10,.195,.040);
  }
@@ -316,6 +330,24 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
  }
  g.sphere(jaw,'shadow',[0,-.03,.12],[.24,.045,.29]);
  if(canine)g.sphere(jaw,'skin',[0,-.054,.155],[.22,.060,.27]);
+ // Actual mouth split: upper lip belongs to the cranium, lower labial
+ // margin and a recessed oral cavity follow the opening jaw pivot.
+ // Keep both surfaces slightly overlapping in the idle pose.
+ const jawOffsetZ=.26-v*.06;
+ for(const side of [-1,1]){
+   g.tube(head,'shadow',[
+     [side*.205,-.192,.135],
+     [side*.204,-.200,muzzle+.025],
+     [side*.155,-.214,muzzle+.263]],.012);
+   g.tube(jaw,'shadow',[
+     [side*.200,-.052,.135-jawOffsetZ],
+     [side*.198,-.061,muzzle+.025-jawOffsetZ],
+     [side*.153,-.065,muzzle+.263-jawOffsetZ]],.013);
+ }
+ g.sphere(jaw,'shadow',[0,-.035,muzzle-.18+v*.06],
+   [.136,.018,.145],{name:'quadruped-oral-cavity'});
+ g.sphere(jaw,'light',[0,-.044,muzzle-.12+v*.06],
+   [.084,.014,.098],{name:'quadruped-tongue'});
  for(let i=0;i<4;i++)g.spike(jaw,'bone',[(i-1.5)*.12,.01,.27],[(i-1.5)*.12,-.10,.29],.025);
  for(const side of [-1,1])for(const fore of [-1,1]){
    const name=(fore===1?'front':'rear')+(side<0?'L':'R');
