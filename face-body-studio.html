@@ -383,7 +383,8 @@ function metrics(){
 }
 window.__heroineBodyQA=metrics;
 window.__heroineBodyPreview={
- getActor:()=>model?.root||null,getWig:()=>wig?.root||null,
+ getActor:()=>model?.root||null,getBattleActor:()=>battleCostume?.getActor()||null,
+ getWig:()=>wig?.root||null,
  getFace:()=>model?.face||null,getEyeParts:()=>model?.parts||null,
  getBody:()=>bodyAttachment?.root||null,
  getWardrobe:()=>wardrobe?.getState()||null,
