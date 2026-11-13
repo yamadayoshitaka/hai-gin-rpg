@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "kind": "NEW_LOCAL_IMAGE_CANDIDATE_NOT_GITHUB_ASSET",
+  "stageId": "c01-s02",
+  "created": "2026-11-13",
+  "shotId": "c01-s02-death-1",
+  "edition": "post-gameover",
+  "gender": "female",
+  "compoundKey": "c01-s02|post-gameover|female|c01-s02-death-1",
+  "screenplayText": "主人公の軍師が戦死した。指揮を失い、物語はゲームオーバーとなる。",
+  "imageFileName": "c01-s02-death-1-post-gameover-female.webp",
+  "pixelSize": [
+    1664,
+    936
+  ],
+  "minimumAcceptedNativePixels": [
+    1536,
+    864
+  ],
+  "mimeType": "image/webp",
+  "sha256": "cb6fe35fa9b4c570bcf434c3b5bf236f59e5d6970b64b52a9e9f987aac187e07",
+  "bytes": 276408,
+  "originalGeneratedImage": "a_cinematic_highly_detailed_fantasy_anime_style_s.png",
+  "userDeliveredArchive": "hai_gin_stage2_female_gameover_death1_draft_20261113.zip",
+  "location": "LOCAL_CHAT_HANDOFF_ONLY",
+  "referenceImagePaths": [
+    "assets/story/characters/commander/female-master.webp",
+    "assets/story/chapters/c01/panels/c01-s01-m02-female.webp"
+  ],
+  "notes": "Single independent death scene; no survival or victory, provisional visual match. A nonmatching generated scene and a text/UI-laden generated scene were rejected and are excluded.",
+  "visualStatus": "UNAPPROVED_DRAFT_PRELIMINARY_REVIEW",
+  "humanApproval": false,
+  "githubBinaryCommitted": false,
+  "gameMappingAdded": false,
+  "pagesDeploymentVerified": false,
+  "previousAccounting": {
+    "githubRegisteredUnapproved": 15,
+    "previousOfflineCandidates": 11,
+    "previousWithoutCandidate": 22
+  },
+  "currentAccounting": {
+    "githubRegisteredUnapproved": 15,
+    "previousOfflineCandidates": 11,
+    "newOfflineCandidates": 1,
+    "withoutCandidate": 21,
+    "totalRequired": 48,
+    "qualityApproved": 0
+  },
+  "nextAction": "Import actual ZIP bytes; verify dimensions, hash and story/actor identity; obtain human QA; commit binary and wire its edition/gender-specific story panel mapping before deployment"
+}
