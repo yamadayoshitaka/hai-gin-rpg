@@ -14,6 +14,8 @@ on:
       - 'male-body-studio.html'
       - 'qa/face-v50-regression.test.mjs'
       - 'qa/face-v50-browser.cjs'
+      - 'qa/human-neck-v52-browser.cjs'
+      - 'qa/human-realism-v51-regression.test.mjs'
   push:
     branches: [main]
     paths:
@@ -48,11 +50,15 @@ jobs:
           python3 -m http.server 8766 --bind 127.0.0.1 > /tmp/v50-http.log 2>&1 &
           sleep 2
       - name: Capture true mobile 3D faces and distinct groom silhouettes
-        run: node qa/face-v50-browser.cjs
+        run: |
+          node qa/face-v50-browser.cjs
+          node qa/human-neck-v52-browser.cjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: face-v50-youth-and-catalog
-          path: qa-screenshots/face-v50/
+          name: face-v52-armor-chin-and-catalog
+          path: |
+            qa-screenshots/face-v50/
+            qa-screenshots/human-neck-v52/
           retention-days: 14
           if-no-files-found: warn
