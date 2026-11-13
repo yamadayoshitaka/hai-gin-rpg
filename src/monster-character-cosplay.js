@@ -330,7 +330,8 @@ export function createCosplayedHumanoidMonster(spec,{
  const host=new THREE.Group();host.name='character-cosplay-host';root.add(host);
  host.userData.actorId='monster-'+spec.id;
  host.userData.canonicalCharacterTrial=true;
- host.userData.characterBOM={jobId:profile.role==='royal'?'mage':'swordsman'};
+ host.userData.characterBOM={jobId:profile.equipment==='bow'?'archer':
+   profile.equipment==='staff'||profile.role==='royal'?'mage':'swordsman'};
  host.userData.previewAction='idle';
  let disposed=false,ready=false,failed=false,rig=null,visual=null;
  let disposeCostume=null,activeAction='idle',lastTime=null,lastAction='idle';
