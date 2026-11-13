@@ -4,6 +4,7 @@
  * Axes: +Y up, +Z front; moving wings are LOCAL to their shoulder pivots.
  */
 import * as THREE from 'three';
+import {creatureFaceVolume} from './creature-face-volume.js';
 
 function feather(g,name,side,a,b,width,color,detail='high'){
   const points=[],uvs=[],faces=[],stepCount=detail==='high'?16:8;
@@ -77,7 +78,7 @@ function addFace(g,{angel,detail}){
     [2.243,0,.086,.153,.158],[2.345,0,.067,.190,.173],
     [2.439,0,.054,.185,.165],[2.529,0,.045,.142,.129],
     [2.585,0,.042,.021,.032],
-  ]);
+  ],creatureFaceVolume(angel?'seraph_guardian':'forest_archer'));
   curved('faceFallback',skin,[[0,2.394,.216],
     [0,2.320,.267],[0,2.257,.272]],[.031,.037,.016]);
   sphere('faceFallback',shade,0,2.208,.248,.052,.015,.020);
