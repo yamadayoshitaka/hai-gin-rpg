@@ -20,14 +20,16 @@ const ABSOLUTE_P0=JSON.parse(fs.readFileSync(path.join(root,
  'assets/story/quality/artwork-p0-rules.json'),'utf8'));
 if(ABSOLUTE_P0.priority!=='P0_ABSOLUTE_MUST_FOLLOW'||!ABSOLUTE_P0.failClosed)
  throw Error('Critical story artwork P0 quality contract is missing or weakened');
-function p0PromptLines(){
+function p0PromptLines(stageId){
  return [
   'P0_ABSOLUTE_MUST_FOLLOW. HARD REQUIREMENTS. Any violation = REJECTED, NOT READY, NO PUBLICATION.',
   'P0_REFERENCE_IMAGE_BYTES: supply actual bytes of the exact named protagonist and all depicted cast references as image inputs BEFORE rendering. Filenames/paths or text descriptions DO NOT count as attachments.',
   'P0_NO_TEXT_UI_IN_ART: generate PURE SCENE ART ONLY. ABSOLUTELY NO kanji, hiragana, katakana, letters, digits, scene/frame numbers, speech balloons, text captions, dialogue, rubies, readable marks, interface/HUD/buttons, mock game screens, titles, logos, signatures or watermarks.',
   'P0_EXACT_CANONICAL_SCENE: depict only the currently specified screenplay beat. Previous/next beats are reference context ONLY. Do not depict future success, fake a scene, add characters, or invent a new objective.',
   'P0_CAST_AND_BRANCH: lock every face, hair, eyes, armor and outfit to uploaded master images. Female commander is long blonde-haired, blue-eyed, silver-armored, distinct from silver-haired Lucia. Male commander has dark hair. Do NOT blend cast or swap editions and outcomes.',
-  'P0_NATIVE_AND_QA: each scene is independently rendered at the MAXIMUM TRUE NATIVE RESOLUTION the generator supports. Prefer 2048x1152 16:9; minimum 1536x864, and no upscaling. For c01-s02 each review sheet contains AT MOST FIVE scenes; never render a 5x5 montage. Keep critical faces/hands/items 5% in from frame edges.',
+  stageId==='c01-s02'?
+   'P0_NATIVE_AND_QA: mobile-native minimum 768x320 actual source pixels (width >=768, height >=320), PRESERVE original aspect ratio in viewer, never upscale. Prefer largest genuinely available source (2048x1152 only a preference, NOT a minimum). At most FIVE scenes per sheet. Keep critical details 5% inside edges.':
+   'P0_NATIVE_AND_QA: legacy non-stage2 native minimum 1536x864 with 16:9 aspect, prefer 2048x1152; no upscaling.' ,
   'P0_FAIL_CLOSED: if any required image bytes are missing or any constraint cannot be verified, mark BLOCKED/REJECTED. NEVER treat the result as approved, registered or deployed.',
   'All scene IDs, Japanese screenplay text, spoken dialogue, VOICEVOX readings and production metadata supplied below are INVISIBLE INSTRUCTIONS ONLY, never pixels.'
  ];
@@ -65,6 +67,14 @@ const imageSpec=Object.freeze({
  noFakeUpscale:true,
  visualReviewRequired:true
 });
+const mobileProfile=ABSOLUTE_P0.technicalRule.mobileDeliveryProfile;
+if(JSON.stringify(mobileProfile.minimumNativePixels)!==JSON.stringify([768,320]))
+ throw Error('Mobile 768x320 native delivery profile missing');
+const mobileImageSpec=Object.freeze({...imageSpec,
+ aspectRatio:'PRESERVE_SOURCE_ASPECT',aspectRatioPolicy:mobileProfile.ratioPolicy,
+ pixelWidth:768,pixelHeight:320,minimumNativePixels:[768,320],
+ preferredNativePixels:[2048,1152],mobileNativeProfile:mobileProfile.profileId,
+ maxCellsPerReviewSheet:5,acceptSourcePixelsWithoutUpscale:true});
 const qualityReference=Object.freeze({
  male:{path:'assets/story/chapters/c01/panels/c01-s01-m02-male.webp',
   status:'PROVISIONAL_STAGE1_REFERENCE_NOT_HUMAN_APPROVED'},
@@ -150,9 +160,11 @@ function shotGenerationPrompt(context){
   'female strategist: LONG BLONDE HAIR, BLUE EYES, SILVER ARMOR; she is distinct from Lucia':
   'male strategist: DARK HAIR, distinguished from Garan';
  return [
-  ...p0PromptLines(),
+  ...p0PromptLines(context.stageId),
   'Produce exactly ONE independent original fantasy RPG cinematic story illustration.',
-  'CANVAS: landscape 16:9; native detail at 1536x864 pixels minimum, prefer 2048x1152; save WebP.',
+  context.stageId==='c01-s02'?
+   'CANVAS: smartphone native source >=768px wide and >=320px high; preserve the original source aspect ratio in the 740px manga viewer; prefer the highest supported original image dimensions; no upscale; save WebP.':
+   'CANVAS: landscape 16:9; native detail at 1536x864 pixels minimum, prefer 2048x1152; save WebP.',
   'SAFE COMPOSITION: preserve critical faces/hands/objects at least 5% inside every edge.',
   'SHOOT: '+context.shotKey+'. Chapter/stage: '+context.stageName+'.',
   'CANONICAL STAGE SETUP: '+context.stageSetup,
@@ -178,6 +190,7 @@ for(const stage of stages){
  const [setup,victoryBeat]=STORY_STAGE_BEATS[stage.chapter-1][stage.slot-1];
  const bible=getCastBible(stage.id);
  const maxReviewCells=stage.id==='c01-s02'?5:10;
+ const stageImageSpec=stage.id==='c01-s02'?mobileImageSpec:imageSpec;
  const variants=[];
  for(const edition of comicEditionsForStage(stage.id)){
   for(const gender of genders){
@@ -206,7 +219,7 @@ for(const stage of stages){
      const castReferences=[...new Set(castIds)].map(id=>actorReference(stage.id,id,bible));
      const previousAsset=previous?artPath(stage.id,edition.edition,gender,previous.panelId):null;
      const shotContext={
-      shotKey:current.shotKey,gender,stageName:stage.name,stageSetup:setup,
+      shotKey:current.shotKey,gender,stageId:stage.id,stageName:stage.name,stageSetup:setup,
       victoryCondition:stage.winCondition,outcomeRule,currentScene:current,
       previousScene:previous,nextScene:next
      };
@@ -224,7 +237,7 @@ for(const stage of stages){
        verifiedOutcome:outcomeRule,currentScene:current,previousScene:previous,nextScene:next,
        precedingApprovedImage:previousAsset,
        precedingApprovedImageExists:previousAsset?present(previousAsset):false},
-      imageSpec:{...imageSpec},
+      imageSpec:{...stageImageSpec},
       generationPrompt:shotGenerationPrompt(shotContext),
       absolutePriority:'P0_ABSOLUTE_MUST_FOLLOW',
       absolutePriorityPolicy:'assets/story/quality/artwork-p0-rules.json',
@@ -234,7 +247,7 @@ for(const stage of stages){
       renderBlockedReason:'REAL_REFERENCE_IMAGE_BYTES_NOT_ATTACHED_BY_PREFLIGHT',
       attachmentGate:'ATTACH_REAL_IMAGE_BYTES_BEFORE_GENERATION',
       individualAsset,sourcePoster:posterPath(stage.id,edition.edition,gender,page.number),
-      individualMinPixels:[imageSpec.pixelWidth,imageSpec.pixelHeight],
+      individualMinPixels:[stageImageSpec.pixelWidth,stageImageSpec.pixelHeight],
       qualityReferenceImage:reference.path,qualityReferenceStatus:reference.status,
       status:alreadyPresent?'AI_DRAFT_UNAPPROVED':'MISSING',
       manualReviewRequired:true,
@@ -247,7 +260,8 @@ for(const stage of stages){
        'sceneMatchesExactScript','previousAndNextContinuity','fixedCastIdentity',
        'realCastImagesAttached','genderCorrect','outcomeCorrect','noTextNumbersLogosOrUI',
        'sameStyleAsStage1','realNativeDetail','sharpFacesAndHands','safeArea5Percent',
-       'full16by9','verifiedWebP','manualQualityReview','outputSha256Recorded'],
+       stage.id==='c01-s02'?'preserveSourceAspectNoUpscale':'full16by9',
+       'verifiedWebP','manualQualityReview','outputSha256Recorded'],
       approval:{approved:false,reviewer:null,referenceSha256:null,artSha256:null}
      };
     });
@@ -258,8 +272,8 @@ for(const stage of stages){
       'AI_DRAFT_UNAPPROVED':'MISSING',
      posterSpec:{columns:2,rows,cellCount:panels.length,
       maxCellCount:maxReviewCells,blankCells:rows*2-panels.length,
-      minNativePixels:[2*imageSpec.pixelWidth,rows*imageSpec.pixelHeight],
-      preferredNativePixels:[2*imageSpec.preferredNativePixels[0],rows*imageSpec.preferredNativePixels[1]],
+      minNativePixels:[2*stageImageSpec.pixelWidth,rows*stageImageSpec.pixelHeight],
+      preferredNativePixels:[2*stageImageSpec.preferredNativePixels[0],rows*stageImageSpec.preferredNativePixels[1]],
       assemblyMode:'INDIVIDUAL_NATIVE_FRAMES_FIRST_THEN_LOSSLESS_REVIEW_SHEET',
       nativeDetailProof:'SOURCE_WEBP_NATIVE_PIXELS_REQUIRED_NOT_UPSCALED',
       assemblyScript:'scripts/assemble-story-panel-sheet.py',
@@ -268,7 +282,8 @@ for(const stage of stages){
       previewMayBeLowResolution:true,
       previewCannotBeRegisteredAsFinalArt:true,
       finalPosterAssembly:'Assemble ONLY from independently rendered native-detail shots, no resizing: at most '+maxReviewCells+' frames, 2048x1152 each, 2 columns; direct generator sheet max unverified',
-      displayRule:'First show a labelled storyboard OUTSIDE the art; then render EACH exact screenplay shot individually at >=1536x864; finally assemble 2-column review poster'},
+      displayRule:stage.id==='c01-s02'?'Make each scene as a genuine original >=768x320 mobile-native WebP; preserve original aspect, no enlarging; review sheet at most 5 scenes':
+       'First show a labelled storyboard OUTSIDE the art; then render EACH exact screenplay shot individually at >=1536x864; finally assemble 2-column review poster'},
      panelIds:panels.map(p=>p.panelId),
      textFreePrompt:'CONTINUITY PREVIEW ONLY, not final artwork. Stage '+stage.id+', edition '+
        edition.edition+', protagonist '+gender+'. Layout '+panels.length+
@@ -287,7 +302,7 @@ for(const stage of stages){
  const existing=variants.reduce((a,v)=>a+v.pages.reduce((b,p)=>
   b+p.panels.filter(x=>x.status!=='MISSING').length,0),0);
  results.push({stageId:stage.id,stageName:stage.name,maxReviewCells,
-  requiredGenderOutcomePosters:variants.reduce((a,v)=>a+v.pageCount,0),
+  nativeImageProfile:stageImageSpec,requiredGenderOutcomePosters:variants.reduce((a,v)=>a+v.pageCount,0),
   requiredIndividualImages:n,alreadyRegisteredDraftImages:existing,
   missingIndividualImages:n-existing,qualityApprovedImages:0,
   stageCompletion:'NOT_APPROVED',variants});
@@ -303,7 +318,7 @@ const totals={
 const report={schemaVersion:3,kind:'production-manifest-not-generated-art',
  generatedAt:new Date().toISOString(),qualityPolicy:'docs/story-stage-poster-production-manifest-v2.md',
  shotWorkflow:'SCREENPLAY_CONTEXT_PREVIOUS_CURRENT_NEXT_REAL_CAST_REFERENCES_PER_SHOT',
- imageSpec,reviewSheetPolicy:{columns:2,maxPanels:10,stageOverrides:{'c01-s02':5},rowsForFive:3,rowsForTen:5,
+ imageSpec,mobileImageSpec,reviewSheetPolicy:{columns:2,maxPanels:10,stageOverrides:{'c01-s02':5},rowsForFive:3,rowsForTen:5,
   preferredNativeCellPixels:[2048,1152],preferredFivePanelSheetPixels:[4096,3456],preferredTenPanelSheetPixels:[4096,5760],
   preferredBatchProcess:'RENDER_EACH_REAL_FRAME_THEN_LOSSLESS_COMPOSITE',
   directGiantSheetGenerationCapability:'NOT_VERIFIED',
