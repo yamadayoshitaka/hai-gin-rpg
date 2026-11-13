@@ -6,6 +6,7 @@ import './creature-dragon-realism-regression.test.mjs';
 import './creature-face-mouth-saddle-regression.test.mjs';
 import './dragonlord-cranium-jaw-seam.test.mjs';
 import './creature-face-volume-batch.test.mjs';
+import './creature-fangs-garment-seam-batch.test.mjs';
 import {MONSTER_CATALOG,validateMonsterCatalog} from '../src/monster-catalog.js';
 import {
  ANATOMY_EVIDENCE, MONSTER_ANATOMY_RESEARCH, monsterEvidenceFor,
