@@ -99,6 +99,9 @@ for(const v of contract.variants){
    '; after: '+(b.next||'none')+'; outcome: '+b.sceneOutcome+']'),
   'For an odd number of cells, final unused grid cell must remain a plain empty neutral cell. Do not invent an extra story event.'
  ].join('\n');
+ // Do not retain the earlier numeric scene-list prompt as the poster's render prompt.
+ // All control metadata stays in JSON, never in the image pixels.
+ page.textFreePrompt=noTextContract;
  page.stageBatch={
   stageId,variant:key,sourcePoster:source,expectedNativeSheet:v.posterMinNativePixels,
   strictPictorialOnlyPrompt:noTextContract,scriptBeats:picturedBeats,
