@@ -1,0 +1,99 @@
+name: One-time Cloudflare Free real five-scene render (c01-s02 female victory)
+
+# Intentionally triggered exactly once by a specific immutable marker.
+# NEVER run on general push/PR. No unattended schedule or subsequent chapters.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'ops/cloudflare-free-c01s02-female-victory-p01-once-20261114.trigger'
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: cloudflare-free-story-pilot
+  cancel-in-progress: false
+
+jobs:
+  real-five-scenes:
+    name: Free-account-only first five *real* original images, human QA pending
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install Pillow to preserve real native dimensions
+        run: python -m pip install --disable-pip-version-check Pillow==11.3.0
+      - name: Hard-stop unless user confirmed Workers Free and added BOTH GitHub secrets
+        env:
+          FREE_PLAN_CONFIRMED: ${{ vars.CLOUDFLARE_FREE_PLAN_CONFIRMED }}
+          CF_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CF_WORKERS_TOKEN: ${{ secrets.CLOUDFLARE_WORKERS_AI_API_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "${FREE_PLAN_CONFIRMED}" != 'true' ]; then
+            echo "::error::CLOUDFLARE_FREE_PLAN_CONFIRMED is not true; no generation API calls, no charge"
+            exit 3
+          fi
+          if [ -z "${CF_ACCOUNT_ID}" ] || [ -z "${CF_WORKERS_TOKEN}" ]; then
+            echo "::error::Missing Cloudflare Account ID or Workers AI API Token; no API call"
+            exit 4
+          fi
+          echo "Workers Free preflight variables present; actual API usage capped to one page and 1000 estimated Neurons"
+      - name: Check 5-shot script, cast references and source resolution without live requests
+        run: |
+          node --check scripts/generate-story-cloudflare-free-page.mjs
+          node qa/story-cloudflare-free-page.test.mjs
+          python qa/story-cloudflare-image-io.test.py
+          node scripts/generate-story-cloudflare-free-page.mjs --mode plan --page 1
+      - name: Generate exactly 5 real images with Cloudflare Workers AI Free, 0 automatic retries
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_WORKERS_AI_API_TOKEN: ${{ secrets.CLOUDFLARE_WORKERS_AI_API_TOKEN }}
+          CLOUDFLARE_FREE_PLAN_CONFIRMED: ${{ vars.CLOUDFLARE_FREE_PLAN_CONFIRMED }}
+          CLOUDFLARE_MAX_NEURONS: '1000'
+        run: |
+          node scripts/generate-story-cloudflare-free-page.mjs --mode generate --page 1
+      - name: Commit only real independent WebP review candidates and physical provenance, NEVER formal register
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          branch="story/cloudflare-free-c01-s02-five-real-frames-${GITHUB_RUN_ID}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "${branch}"
+          git add -- assets/story/chapter-drafts/c01/cloudflare-flux2-klein4b/
+          if git diff --cached --quiet; then
+            echo "::error::No genuine generated image. Refusing empty commit"
+            exit 6
+          fi
+          git commit -m "art(review): 5 independent Workers Free native images c01-s02 female victory P01, human QA pending"
+          git push --set-upstream origin "${branch}"
+          if ! gh pr create --base main --head "${branch}" \
+            --title "art(review): 5 real FLUX.2 Free images - c01-s02 female victory (human approval required)" \
+            --body "Five original distinct native WebPs, each rendered with its own screenplay shot and physically attached character reference images. Still awaiting human review of identity, screenplay, text-free pixels, and branch continuity; NOT formally registered in the game. No paid API fallback."; then
+            echo "::warning::GitHub token cannot create a PR. New review branch is ${branch}. Raw images are in uploaded workflow artifact."
+          fi
+      - name: Keep evidence & generated assets even if downstream PR step fails
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: chapter1-cloudflare-free-five-real-images-${{ github.run_id }}
+          path: |
+            qa-reports/story-stage-production/cloudflare-free-pilot/*.json
+            assets/story/chapter-drafts/c01/cloudflare-flux2-klein4b/**/*.webp
+            assets/story/chapter-drafts/c01/cloudflare-flux2-klein4b/**/*.generation.json
+          if-no-files-found: warn
+          retention-days: 30
