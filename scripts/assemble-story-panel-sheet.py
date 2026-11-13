@@ -24,21 +24,25 @@ ROOT = Path(__file__).resolve().parents[1]
 MAX_COUNT = 10
 COLS = 2
 PREFERRED = (2048, 1152)
-MINIMUM = (1536, 864)
+MOBILE_MINIMUM = (768, 320)  # Stage2 per-cut minimum; no minimum 1536x864 for stage2
 
 
 def sha256(file):
     return hashlib.sha256(Path(file).read_bytes()).hexdigest()
 
 
-def geometry(count, cell_size=PREFERRED):
-    if not isinstance(count, int) or not 1 <= count <= MAX_COUNT:
-        raise ValueError("REJECTED: sheet must have 1..10 genuine scene IDs")
+def geometry(count, cell_size=PREFERRED, mobile=False):
+    cap = 5 if mobile else MAX_COUNT
+    if not isinstance(count, int) or not 1 <= count <= cap:
+        raise ValueError("REJECTED: exceeded the active review-sheet scene limit")
     w, h = cell_size
     if not isinstance(w, int) or not isinstance(h, int) or w <= 0 or h <= 0:
         raise ValueError("Invalid native cell dimensions")
-    if w * 9 != h * 16:
-        raise ValueError("REJECTED: cells must be exactly 16:9")
+    if mobile:
+        if w < MOBILE_MINIMUM[0] or h < MOBILE_MINIMUM[1] or w <= h:
+            raise ValueError("REJECTED_MOBILE_NATIVE_RESOLUTION: requires true source >=768x320 landscape")
+    elif w * 9 != h * 16:
+        raise ValueError("REJECTED: legacy cells must be exactly 16:9")
     rows = math.ceil(count / COLS)
     return {"columns": COLS, "rows": rows, "sceneCount": count,
             "blankCells": rows * COLS - count,
@@ -53,7 +57,7 @@ def safe_repo_file(relative):
     return ROOT / p
 
 
-def assemble_sheet(files, scene_ids, output, cell_size=PREFERRED):
+def assemble_sheet(files, scene_ids, output, cell_size=PREFERRED, mobile=False):
     """Lossless composite and exact split-roundtrip for supplied genuine WebPs.
 
     The assembly validates geometry/byte sources, not subjective visual quality.
@@ -61,7 +65,7 @@ def assemble_sheet(files, scene_ids, output, cell_size=PREFERRED):
     """
     if len(files) != len(scene_ids) or len(set(scene_ids)) != len(scene_ids):
         raise ValueError("REJECTED: one unique canonical ID required for each source")
-    info = geometry(len(files), cell_size)
+    info = geometry(len(files), cell_size, mobile=mobile)
     cw, ch = cell_size
     output = Path(output)
     output.parent.mkdir(parents=True, exist_ok=True)
@@ -103,6 +107,8 @@ def assemble_sheet(files, scene_ids, output, cell_size=PREFERRED):
     result = {"kind": "LOSSLESS_REVIEW_SHEET_NOT_GAME_ASSET",
               "status": "COMPOSITE_AND_PIXEL_ROUNDTRIP_PASS_VISUAL_QA_PENDING",
               "approved": False, "deployed": False,
+              "nativeMinimumPixels": list(MOBILE_MINIMUM) if mobile else None,
+              "sourceAspectRatioPreserved": mobile,
               "singleFrameNativeGenerationVerified": False,
               "actualCastImageAttachmentsVerified": False,
               "textFreeHumanReviewCompleted": False,
@@ -132,20 +138,32 @@ def main():
     if len(variants) != 1:
         raise ValueError("Unknown / ambiguous gender-outcome variant")
     pages = variants[0]["pages"]
-    if len(pages) != 1:
-        raise ValueError("One review sheet per edition required")
-    page = pages[0]
-    if len(page["panels"]) > MAX_COUNT:
-        raise ValueError("REJECTED: variant exceeds 10 frames")
-    files = [safe_repo_file(panel["individualAsset"]) for panel in page["panels"]]
-    ids = [panel["panelId"] for panel in page["panels"]]
+    mobile = args.stage == "c01-s02"
+    if not mobile and len(pages) != 1:
+        raise ValueError("Legacy per-edition review sheet count changed")
     out_root = Path(args.out_root)
     if out_root.is_absolute() or ".." in out_root.parts:
         raise ValueError("Unsafe review output location")
-    dest = ROOT / out_root / (args.stage + "-" + args.edition + "-" +
-                              args.gender + "-p01.webp")
-    report = assemble_sheet(files, ids, dest)
-    print(json.dumps({k: v for k, v in report.items() if k != "frames"},
+    reports = []
+    for page in pages:
+        if mobile and not 1 <= len(page["panels"]) <= 5:
+            raise ValueError("REJECTED: stage2 must have <=5 real frames per sheet")
+        files = [safe_repo_file(panel["individualAsset"]) for panel in page["panels"]]
+        ids = [panel["panelId"] for panel in page["panels"]]
+        if mobile:
+            if not files[0].is_file():
+                raise FileNotFoundError("BLOCKED_MISSING_REAL_FRAME: " + str(files[0]))
+            with Image.open(files[0]) as first:
+                native_size = first.size
+        else:
+            native_size = PREFERRED
+        dest = ROOT / out_root / (args.stage + "-" + args.edition + "-" +
+                                  args.gender + "-p%02d.webp" % page["page"])
+        report = assemble_sheet(files, ids, dest, cell_size=native_size, mobile=mobile)
+        reports.append({k: v for k, v in report.items() if k != "frames"})
+    print(json.dumps({"stageId": args.stage, "edition": args.edition,
+                      "gender": args.gender, "sheets": reports,
+                      "approved": False, "deployed": False},
                      ensure_ascii=False))
 
 

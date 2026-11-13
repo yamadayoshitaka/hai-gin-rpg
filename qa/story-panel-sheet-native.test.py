@@ -106,6 +106,37 @@ with TemporaryDirectory(prefix="story-sheet-geometry-only-") as temp:
         raise AssertionError("A missing frame was fabricated")
     assert not (root / "missing-output.webp").exists()
 
+# Stage 2 accepts truly native mobile cuts with ORIGINAL wide aspect, not upscale.
+with TemporaryDirectory(prefix="story-mobile-five-sheet-") as temp:
+    base = Path(temp)
+    inputs = create_test_frames(base, 5, (787, 350))
+    ids = ["c01-s02-test-%02d" % i for i in range(5)]
+    assert assembly.geometry(5, (787, 350), mobile=True)["sheetPixels"] == [1574, 1050]
+    out = base / "mobile-five-review.webp"
+    result = assembly.assemble_sheet(inputs, ids, out, (787, 350), mobile=True)
+    assert result["sourceAspectRatioPreserved"] is True
+    assert result["nativeMinimumPixels"] == [768, 320]
+    assert result["cellNativePixels"] == [787, 350]
+    assert result["approved"] is False
+    try:
+        assembly.geometry(6, (787, 350), mobile=True)
+        raise AssertionError("P0 accepted six scenes in a stage2 sheet")
+    except ValueError:
+        pass
+    try:
+        assembly.geometry(2, (767, 320), mobile=True)
+        raise AssertionError("P0 accepted below minimum phone-native width")
+    except ValueError:
+        pass
+    try:
+        assembly.assemble_sheet(inputs[:1], ids[:1],
+                                base / "false-upscale.webp", (1536, 864),
+                                mobile=True)
+        raise AssertionError("P0 enlarged a mobile source")
+    except ValueError:
+        pass
+    assert not (base / "false-upscale.webp").exists()
+
 print("PASS: synthetic 10x2048x1152 -> lossless 4096x5760 and exact split; "
       "stage2 8/7/2 geometry, blank cell, low-res and missing-input rejection. "
       "ZERO ARTWORK GENERATED OR APPROVED.")

@@ -47,7 +47,8 @@ for(const stageId of stageIds){
   assert(v);
   assert.equal(v.count,counts[phase]);
   const firstSheetCount=stageId==='c01-s02'?Math.min(5,v.count):v.count;
-  assert.deepEqual(v.posterMinNativePixels,[3072,Math.ceil(firstSheetCount/2)*864]);
+  assert.deepEqual(v.posterMinNativePixels,stageId==='c01-s02'?
+   [1536,Math.ceil(firstSheetCount/2)*320]:[3072,Math.ceil(firstSheetCount/2)*864]);
   assert.deepEqual(v.posterPreferredNativePixels,[4096,Math.ceil(firstSheetCount/2)*1152]);
   assert.equal(v.nativeAssembly.realSceneCount,firstSheetCount);
   if(stageId==='c01-s02'){
