@@ -334,23 +334,10 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  root.userData.staticGroom=!!staticGroom;
  root.userData.wigRig='surface-guided-static-layered-hair-cards';
  root.userData.v33WigVolumeProfile=volumeProfile;
- // v26: fitted detachable wig foundation is an exact copy of the
- // SCULPTED head surface. It is totally transparent, writes no depth
- // or color, and stays inside the separate wig GLB. It must NOT replace
- // or modify the character's face.
- const wigBaseGeometry=head.geometry.clone();
- const wigBaseMaterial=new THREE.MeshBasicMaterial({
-  color:0xffffff,transparent:true,opacity:0,
-  depthWrite:false,side:THREE.DoubleSide
- });
- wigBaseMaterial.colorWrite=false;
- const wigBase=new THREE.Mesh(wigBaseGeometry,wigBaseMaterial);
- wigBase.name='DETACHABLE_WIG_TRANSPARENT_HEAD_BASE';
- wigBase.userData.exactCopyOfSculptedHead=true;
- wigBase.userData.invisibleWigFoundation=true;
- wigBase.userData.sharesHeadLocalCoordinates=true;
- wigBase.userData.neverCollidesWithCharacterBody=true;
- root.add(wigBase);
+ // v42: no transparent, duplicated head/helmet foundation. Hair volume
+ // comes from the authored strand geometry, and the real source scalp is
+ // retained strictly for anchoring/collision calculations.
+ root.userData.transparentWigFoundationRemoved=true;
  root.userData.assetType='independent-wig';
  root.userData.hairStyleId=style.id;
  root.userData.hairStyleName=style.label;
@@ -934,6 +921,83 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   root.add(fineMesh);
   microFibreTriangles=tris.length/3;
  }
+ // In static studios, fold the fitted hair cap, all strands and fine
+ // filaments into ONE Three.js Mesh. The same strand shape is duplicated
+ // along its own outward vertex normals with small, progressive offsets;
+ // this produces real thickness rather than inflating a transparent head.
+ // Preserve the original per-surface materials using geometry draw groups.
+ let consolidatedHair=null;
+ if(staticGroom){
+  const nodes=[cap,locks,...root.children.filter(node=>
+   node.name==='DETACHABLE_WIG_FINE_FIBRES')];
+  const positions=[],normals=[],colors=[],indices=[],materials=[];
+  const normalLayers=3,normalStep=d.x*.0018;
+  let vertexOffset=0;
+  for(const node of nodes){
+   const src=node.geometry;
+   if(!src.getAttribute('normal'))src.computeVertexNormals();
+   const pos=src.getAttribute('position'),n=src.getAttribute('normal');
+   const c=src.getAttribute('color'),idx=src.getIndex();
+   const materialIndex=materials.length;
+   materials.push(node.material);
+   const copies=node===locks?normalLayers:1;
+   for(let layer=0;layer<copies;layer++){
+    const begin=indices.length;
+    for(let i=0;i<pos.count;i++){
+     const x=pos.getX(i),y=pos.getY(i),z=pos.getZ(i);
+     let nx=n.getX(i),ny=n.getY(i),nz=n.getZ(i);
+     const length=Math.hypot(nx,ny,nz)||1;
+     nx/=length;ny/=length;nz/=length;
+     // Guard against inward-facing imported triangles. At the scalp and
+     // along the draped locks, thickness should point AWAY from the head.
+     if(nx*(x-center.x)+nz*(z-center.z)<0){
+      nx=-nx;ny=-ny;nz=-nz;
+     }
+     const offset=layer*normalStep;
+     positions.push(x+nx*offset,y+ny*offset,z+nz*offset);
+     normals.push(nx,ny,nz);
+     colors.push(c?c.getX(i):1,c?c.getY(i):1,c?c.getZ(i):1);
+    }
+    if(idx)for(let i=0;i<idx.count;i++)indices.push(vertexOffset+idx.getX(i));
+    else for(let i=0;i<pos.count;i++)indices.push(vertexOffset+i);
+    vertexOffset+=pos.count;
+    const count=indices.length-begin;
+    // Three.js allows separate materials on a single renderable Mesh.
+    // Every draw group uses EXACTLY the source mesh's material.
+    node.userData.normalOffsetCopies=copies;
+    if(!root.userData.consolidatedDrawGroups)root.userData.consolidatedDrawGroups=[];
+    root.userData.consolidatedDrawGroups.push({surface:node.name,layer,offset,count});
+   }
+  }
+  const geometry=new THREE.BufferGeometry();
+  geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
+  geometry.setAttribute('normal',new THREE.Float32BufferAttribute(normals,3));
+  geometry.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));
+  geometry.setIndex(indices);
+  let offset=0,group=0;
+  for(const node of nodes){
+   const count=node===locks?normalLayers:1;
+   const sourceCount=node.geometry.index?.count||
+    node.geometry.getAttribute('position').count;
+   for(let layer=0;layer<count;layer++){
+    geometry.addGroup(offset,sourceCount,group);
+    offset+=sourceCount;
+   }
+   group++;
+  }
+  geometry.computeBoundingSphere();
+  consolidatedHair=new THREE.Mesh(geometry,materials);
+  consolidatedHair.name='SINGLE_MESH_NORMAL_LAYERED_HAIR';
+  consolidatedHair.castShadow=true;
+  consolidatedHair.userData.normalLayerCount=normalLayers;
+  consolidatedHair.userData.normalOffsetStep=normalStep;
+  consolidatedHair.userData.sourceHairStyle=style.id;
+  consolidatedHair.userData.noTransparentFoundation=true;
+  consolidatedHair.userData.sourceMeshes=nodes.map(node=>node.name);
+  for(const node of nodes){node.removeFromParent();node.geometry.dispose();}
+  root.add(consolidatedHair);
+  root.userData.renderMeshCount=1;
+ }
  root.userData.wigReport={
   style:'real-scalp-shell-growing-then-trimmed',rooted:true,rootCount:lockCount,
   hairstyleId:style.id,styleLabel:style.label,
@@ -944,7 +1008,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   staticGroom:!!staticGroom,simulationEnabled:!staticGroom,
   runtimePhysicsCallsPerFrame:staticGroom?0:1,
   constructionCollisionOnly:!!staticGroom,
-  hairCardStyle:'four-stacked-thick-ribbon-layers-with-real-depth',
+  hairCardStyle:'normal-offset-identical-strand-mesh-layers-one-render-object',
   v33ShortCutKind:style.shortCutKind||'long',
   v33WigVolumeProfile:volumeProfile,
   v33RaisedBaseMaxLiftFraction:WIG_BASE_VOLUME_PROFILES[volumeProfile].crown,
@@ -986,8 +1050,10 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    Math.abs(p.x-center.x)<d.x*.145&&
    p.z>center.z+d.z*.045)).length,
   hairStrandWidthFraction:.0135,fullerCrownBackVolume:true,
-  transparentExactHeadWigBase:true,wigBaseMaterialOpacity:0,
-  wigBaseNeverWritesDepth:true,rootScalpLiftFraction:.0125,
+  transparentExactHeadWigBase:false,transparentBaseRemoved:true,
+  normalLayerCount:staticGroom?3:1,
+  consolidatedHairMesh:staticGroom?consolidatedHair?.name:null,
+  rootScalpLiftFraction:.0125,
   trueScalpRibbonVertexCollision:true,
   fullBodyTriangleContactBeforeProxy:true,neckAndShoulderDrape:true,
   fullBodyShoulderExtension:!!bodyCollisionResolver,
@@ -1008,7 +1074,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   zoneCandidateCounts:Object.fromEntries(Object.entries(pools).map(([key,list])=>[key,list.length])),
   collisionTypes:['head','face','neck','shoulder','chest',...externalColliders.map(c=>c.name||'body')],
   usesRealBodyTriangleContacts:!!bodyCollisionResolver,
-  meshCount:3+(fiberMultiplier>1?1:0),physicsHz:staticGroom?0:20,
+  meshCount:staticGroom?1:2+(fiberMultiplier>1?1:0),physicsHz:staticGroom?0:20,
   normalUpdateDivisor:staticGroom?0:3,
   physicsGuideCount:staticGroom?0:guideCount,
   analyticSwayOtherLocks:!staticGroom,lengthScale:clamp(lengthScale,.55,1.5),
@@ -1016,7 +1082,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   tipColor:'#'+tips.getHexString()
  };
  return {root,update,dispose(){
-  root.traverse(o=>{if(o.isMesh){o.geometry.dispose();o.material.dispose();}});
+  root.traverse(o=>{if(o.isMesh){o.geometry.dispose();for(const material of Array.isArray(o.material)?o.material:[o.material])material?.dispose();}});
  },getReport(){
   return {...root.userData.wigReport,collisionEvents:collisions,
    faceContactEvents:faceContacts,bodyContactEvents:bodyContacts,
