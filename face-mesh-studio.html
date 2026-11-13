@@ -904,6 +904,10 @@ $('export').addEventListener('click',async()=>{
   // Export face and, when enabled, our real 3D anatomical mesh parts.
   // The donor body and outfit remain excluded. The independent wig is
   // included in face exports only if it is currently attached and visible.
+  // Closure meshes are temporary blink geometry; exporting midway through
+  // a blink must not change the number of GLB primitives.
+  const faceAnimator=expressions.get(gender);
+  faceAnimator?.setBlinkProgress(0);
   const exporter=new GLTFExporter();
   const bin=await new Promise((resolve,reject)=>
    exporter.parse(model.root,resolve,reject,{binary:true,onlyVisible:true}));
@@ -915,7 +919,10 @@ $('export').addEventListener('click',async()=>{
   setTimeout(()=>URL.revokeObjectURL(url),1000);
   $('status').textContent='GLBを書き出しました（胴体なし・髪表示と顔パーツ表示に連動）。';
  }catch(e){$('status').textContent='GLB出力失敗: '+String(e);}
- finally{$('export').disabled=false;}
+ finally{
+  expressions.get(gender)?.setBlinkProgress(null);
+  $('export').disabled=false;
+ }
 });
 $('exportWig').addEventListener('click',async()=>{
  const wig=wigs.get(gender);
