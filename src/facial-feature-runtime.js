@@ -187,7 +187,6 @@ export function attachMonsterFaceControls(model,{id,overrides={}}={}){
   get profile(){return profile;},
   setProfile(changes){profile=updateFaceProfile(profile,changes);apply();return this.diagnostics();},
   speak(text){age=0;count=mouthSyllableCount(text);return !!jaw;},
-  stop(){age=Infinity;count=0;},
   update(dt){
    if(Number.isFinite(age))age+=Math.max(0,Math.min(.2,Number(dt)||0));
    if(jaw&&Number.isFinite(age))jaw.rotation.x+=facialSpeechEnvelope(age,count)*.34;
