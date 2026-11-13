@@ -319,7 +319,7 @@ export async function createRealBattleOutfitStudio({scene,faceModel,getFaceModel
   const chosen=chosenOutfit();
   onStatus('戦闘用の実衣装を接続中：'+chosen.label);
   const fresh=await createCharacter({job:job.name,sex:gender,height:gender==='male'?1.77:1.66,
-   jobs,faceQuality:'hero',faceId:'hero-girl-01'});
+   jobs,faceQuality:'hero',faceId:gender==='male'?'hero-boy-01':'hero-girl-01'});
   let clothing;
   try{
    clothing=await buildRiggedJobOutfit({characterModel:fresh.model,
