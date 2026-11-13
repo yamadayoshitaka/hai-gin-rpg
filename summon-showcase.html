@@ -98,6 +98,12 @@
       <option value="seraph_guardian">光翼の守護天使（NEW）</option>
       <option value="horse">軍馬</option>
     </select></label>
+    <label id="femaleSummonModeLabel" for="humanoidForm" class="speciesPicker"><span class="typeCaption">見た目</span>
+     <select id="humanoidForm" aria-label="召喚獣の本来の姿と女性人型を切り替え">
+      <option value="original">元の召喚獣</option>
+      <option value="female" selected>女性人型</option>
+     </select>
+    </label>
     <details id="controlsDrawer">
       <summary aria-label="操作メニューを開く・閉じる">操作メニュー</summary>
       <div class="extraControls">
@@ -139,6 +145,8 @@
   <script type="module">
     import * as THREE from 'three';
     import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+    import {femaleSummonCosplayFor,FEMALE_SUMMON_FORM_IDS} from './src/female-summon-forms.js?v=4.5.04';
+    import {createCosplayedHumanoidMonster} from './src/monster-character-cosplay.js?v=4.5.04';
     import {COMBAT_OBJECT_SPECS} from './src/combat-action-spec.js?v=4.4.74';
     import {createCombatWorldObjectRenderer} from './src/combat-world-object-renderer.js?v=4.5.00';
     import {startCreaturePose} from './src/combat-creature-actions.js?v=4.4.92';
@@ -193,6 +201,38 @@
     if(!phoneLayout.matches)helpPanel.open=true;
     const clock=new THREE.Clock();
     let selected='forest_archer';
+    let femaleSummonHandle=null,femaleRequest=0;
+    const femaleMode=document.getElementById('humanoidForm');
+    const femaleModeLabel=document.getElementById('femaleSummonModeLabel');
+    const disposeFemaleSummon=()=>{
+      ++femaleRequest;
+      if(femaleSummonHandle){femaleSummonHandle.dispose();femaleSummonHandle=null;}
+    };
+    function selectFemaleSummonForm(){
+      disposeFemaleSummon();
+      if(femaleMode.value!=='female'||!femaleSummonCosplayFor(selected))return;
+      const id=selected,form=femaleSummonCosplayFor(id),ticket=++femaleRequest;
+      // The existing procedural GPU instance remains on screen until the
+      // canonical female Superhero GLB and animation clips load successfully.
+      const spec={id,name:COMBAT_OBJECT_SPECS[id].name,
+        size:1,variant:0,family:'summon'};
+      const handle=createCosplayedHumanoidMonster(spec,{
+        detail:'high',profileOverride:form,withoutFallback:true
+      });
+      femaleSummonHandle=handle;scene.add(handle.root);
+      document.getElementById('metrics').textContent='女性人型を読み込み中…（元の召喚獣を表示）';
+      handle.ready.then(result=>{
+        if(ticket!==femaleRequest||handle!==femaleSummonHandle||selected!==id)return;
+        if(result.source==='canonical-character-cosplay'){
+          controls.target.set(0,1.38,0);
+          camera.position.set(2.6,2.9,6.4);
+          controls.update();
+        }else if(result.source!=='cancelled'){
+          document.getElementById('metrics').textContent=
+            '女性人型が読込めないため元の姿を表示：'+(result.reason||'');
+        }
+      });
+    }
     let licensedRegistry={entries:{}},externalPreview=null,externalRequest=0,externalPreviewMode='licensed';
     const compareDragon=document.getElementById('compareDragon');
     const closeExternalPreview=()=>{
@@ -259,8 +299,12 @@
     });
     function changeType(){
       closeExternalPreview();
+      disposeFemaleSummon();
       document.getElementById('personalSummonGlb').value='';
       selected=select.value;
+      const femaleAvailable=FEMALE_SUMMON_FORM_IDS.includes(selected);
+      femaleModeLabel.hidden=!femaleAvailable;
+      femaleMode.disabled=!femaleAvailable;
       compareDragon.disabled=selected!=='dragon'||!licensedRegistry.entries.dragon;
       document.getElementById('faceCloseup').disabled=!['forest_archer','seraph_guardian','wolf'].includes(selected);
       document.getElementById('coatCloseup').disabled=selected!=='wolf';
@@ -288,7 +332,13 @@
         focus+(selected==='dragon_lord'?2:(phone?1.7:2.6)),
         selected==='dragon_lord'?dragonDistance:distance);
       controls.update();
+      if(femaleAvailable)selectFemaleSummonForm();
     }
+    femaleMode.addEventListener('change',()=>{
+      closeExternalPreview();
+      selectFemaleSummonForm();
+      if(femaleMode.value!=='female')changeType();
+    });
     select.addEventListener('change',changeType);changeType();
     document.getElementById('coatCloseup').onclick=()=>{
       if(selected!=='wolf')return;
@@ -322,6 +372,7 @@
       const t=clock.getElapsedTime();
       previewObject.attackStartedAt=t;
       externalPreview?.play('attack');
+      femaleSummonHandle?.start('attack',t);
       previewObject.attackTarget={x:0,z:5};
       setTimeout(()=>creatureSounds.play(selected,'attack',{objectId:previewObject.id,force:true}),70);
       const origin=new THREE.Vector3(0,selected==='dragon_lord'?9:
@@ -338,6 +389,7 @@
         const pose=button.dataset.pose,t=clock.getElapsedTime();
         startCreaturePose(previewObject,pose,t);
         externalPreview?.play(pose);
+        femaleSummonHandle?.start(pose,t);
         if(pose==='roar'){
           creatureSounds.unlock();previewObject.cryStartedAt=t;
           creatureSounds.play(selected,'attack',{objectId:previewObject.id,force:true});
@@ -355,6 +407,7 @@
     document.getElementById('walk').onclick=()=>{
       walking=!walking;routeStep=0;
       nextStepAt=clock.getElapsedTime();
+      femaleSummonHandle?.start(walking?'run':'idle',clock.getElapsedTime());
       document.getElementById('walk').textContent=walking?'移動を停止':'移動を再生';
     };
     let polygonInspection=false;
@@ -375,7 +428,9 @@
         Object.assign(previewObject,travelRoute[routeStep]);
         nextStepAt=t+1/spec.speed;
       }
-      objects.sync(externalPreview?[]:[previewObject],t);
+      const isFemaleReady=femaleSummonHandle?.source==='canonical-character-cosplay';
+      objects.sync(externalPreview||isFemaleReady?[]:[previewObject],t);
+      femaleSummonHandle?.update(t);
       if(externalPreview){
         externalPreview.root.position.x=previewObject.x;
         externalPreview.root.position.z=previewObject.z;
@@ -390,13 +445,17 @@
         ' / 描画 '+(lod.high?'精細':'軽量')+'LOD / GPUインスタンス'+
         (selected==='forest_archer'||selected==='seraph_guardian'?
         ' / 顔 '+(objects.faceLibraryReady(selected)?'Quaternius CC0実物':'軽量モデル（読込中・代替）'):'')+
-        (externalPreview?' / '+(externalPreviewMode==='local'?'手元GLB':'CC0外部候補')+'・独立3Dアニメ':'');
+        (externalPreview?' / '+(externalPreviewMode==='local'?'手元GLB':'CC0外部候補')+'・独立3Dアニメ':'')+
+        (femaleSummonHandle?' / 女性人型 '+(isFemaleReady?'キャラGLB・骨格連動':'読み込み中・元の姿'):'');
     }
     window.__summonGalleryLayoutQA=()=>({
       mobile:phoneLayout.matches,
       controlsOpen:document.getElementById('controlsDrawer').open,
       infoOpen:helpPanel.open,
       selected,
+      femaleMode:femaleMode.value,
+      femaleReady:femaleSummonHandle?.source==='canonical-character-cosplay',
+      femaleSource:femaleSummonHandle?.profile?.modelId||null,
       cameraDistance:camera.position.distanceTo(controls.target)
     });
     tick();
