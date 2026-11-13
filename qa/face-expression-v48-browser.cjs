@@ -28,7 +28,7 @@ fs.mkdirSync(out,{recursive:true});
    await page.waitForFunction(()=>window.__faceMasterQA?.()?.expression?.speaking===true);
    await page.waitForFunction(()=>window.__faceMasterQA?.()?.expression?.mouthOpen>.15,
     null,{timeout:10000});
-   await page.locator('#faceCanvas').screenshot({path:out+'/'+gender+'-talking.png',timeout:60000});
+   await page.screenshot({path:out+'/'+gender+'-talking.png',timeout:60000});
    await page.locator('#talkDemo').click();
    await page.waitForFunction(()=>window.__faceMasterQA?.()?.expression?.mouthOpen===0);
    await page.locator('#autoBlink').click();
@@ -39,7 +39,7 @@ fs.mkdirSync(out,{recursive:true});
    await page.evaluate(()=>window.__faceExpressionQA.setBlink(1));
    await page.waitForFunction(()=>window.__faceMasterQA?.()?.expression?.blink>=.99,
     null,{timeout:15000});
-   await page.locator('#faceCanvas').screenshot({path:out+'/'+gender+'-blink.png',timeout:60000});
+   await page.screenshot({path:out+'/'+gender+'-blink.png',timeout:60000});
    state=await page.evaluate(()=>window.__faceMasterQA());
    if(state.expression.blinkEyes!==2)
     throw Error(gender+': eye joint lost during expression');
