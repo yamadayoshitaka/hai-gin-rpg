@@ -80,7 +80,7 @@ test('manual changes survive all age/build swaps and do not compound',()=>{
   assert.deepEqual(young,reset);
   assert.equal(JSON.stringify(manual),prior);
   assert.ok(aged.eyeHeight<young.eyeHeight);
-  const chosen=resolveEditedFaceControls(gender,base,'twenties','normal',manual,true);
+  const chosen=resolveEditedFaceControls(gender,base,'twenties','normal',{},true);
   assert.notEqual(chosen.eyeWidth,1.33,'picking a complete face clears obsolete sliders');
  }
 });

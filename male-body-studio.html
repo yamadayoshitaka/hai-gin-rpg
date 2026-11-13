@@ -212,6 +212,8 @@ const savedHeroinePreset=v32PartMode?loadMaleFacePreset():null;
 let manualFaceOverrides={};
 let v32BodyPart={...defaultPartSelection(),...(savedHeroinePreset?.parts||{})};
 Object.assign(manualFaceOverrides,savedHeroinePreset?.manualOverrides||{});
+let facePolishMode=savedHeroinePreset?.faceMode==='polished'||
+ (false&&!savedHeroinePreset);
 v32BodyPart={...synchronizeHeroHairSelection('male',v32BodyPart,
  savedHeroinePreset?.hairStyleId).parts};
 if(v32PartMode)Object.assign(faceControls,
@@ -602,12 +604,12 @@ eyeColorInput.addEventListener('input',()=>{
 });
 syncLensPreset();
 function applyPartSelection(picked,completeFace=false){
- if(completeFace)manualFaceOverrides={};
+ if(completeFace){manualFaceOverrides={};facePolishMode=true;}
  const hair=synchronizeHeroHairSelection('male',picked);
  v32BodyPart={...hair.parts};
  const chosen=resolvePartSelection('male',v32BodyPart,MALE_REFERENCE_DEFAULT);
  Object.assign(faceControls,resolveEditedFaceControls('male',chosen.controls,
-  v32BodyPart.ageBand,v32BodyPart.bodyType,manualFaceOverrides,completeFace));
+  v32BodyPart.ageBand,v32BodyPart.bodyType,manualFaceOverrides,facePolishMode));
  $('style').value=hair.styleId;
  $('heroHairStyle').value=hair.styleId;
  $('heroHairVolume').value=picked.hairVolume;
@@ -633,7 +635,7 @@ for(const field of ['v47AgeBand','v47BodyType']){
    ageBand:$('v47AgeBand').value,bodyType:$('v47BodyType').value};
   const selected=resolvePartSelection('male',v32BodyPart,MALE_REFERENCE_DEFAULT);
   Object.assign(faceControls,resolveEditedFaceControls('male',selected.controls,
-   v32BodyPart.ageBand,v32BodyPart.bodyType,manualFaceOverrides,false));
+   v32BodyPart.ageBand,v32BodyPart.bodyType,manualFaceOverrides,facePolishMode));
   if(v32PartMode)mountPartPicker();
   if(ready){rebuildFaceOnBody();rebuildWig();}
   battleCostume?.setDemographics?.(v32BodyPart.ageBand,v32BodyPart.bodyType);
@@ -647,7 +649,7 @@ for(const field of ['v47AgeBand','v47BodyType']){
 mountCharacterCastSelect($('v46Cast'),'male',id=>{
  const look=characterAppearance(id,v32BodyPart);
  selectedCastId=id;selectedBodyShape=look.item.bodyShape;
- manualFaceOverrides={};
+ manualFaceOverrides={};facePolishMode=false;
  $('v47AgeBand').value=look.ageBand;
  $('v47BodyType').value=look.bodyType;
  v32BodyPart={...look.parts};
@@ -676,7 +678,8 @@ function persistStudioHair(){
  saveMaleFacePreset({parts:{...v32BodyPart},controls:{...faceControls},
   hairStyleId:$('style').value,hairColor:v32BodyPart.hairColor,
   hairDensity:Number($('wigDensity').value),contactColor,
-  manualOverrides:{...manualFaceOverrides}});
+  manualOverrides:{...manualFaceOverrides},
+  faceMode:facePolishMode?'polished':'custom'});
 }
 $('heroHairStyle').addEventListener('change',()=>{
  const chosen=synchronizeHeroHairSelection('male',v32BodyPart,$('heroHairStyle').value);

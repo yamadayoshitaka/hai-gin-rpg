@@ -10,7 +10,9 @@ export function resolveEditedFaceControls(gender,partControls={},ageBand='twenti
  bodyType='normal',overrides={},completeFace=false){
  if(!['female','male'].includes(gender))throw Error('Unknown face gender');
  const picked=completeFace?polishHeroFaceControls(gender,partControls):partControls;
- const manual=completeFace?{}:overrides;
+ // The calling UI clears obsolete controls ONLY when an entirely new
+ // complete face is explicitly chosen. Age swaps do not erase edits.
+ const manual=overrides;
  const controls=applyDemographicFaceControls({...picked,...manual},
   ageBand,bodyType,gender);
  return gender==='female'?normalizeFemaleFaceControls(controls):

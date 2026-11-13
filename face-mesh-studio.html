@@ -310,6 +310,11 @@ if(v32PartMode&&!savedHeroinePreset&&new URLSearchParams(location.search).get('h
 const savedMalePreset=v32PartMode?loadMaleFacePreset():null;
 Object.assign(manualFaceOverrides.female,savedHeroinePreset?.manualOverrides||{});
 Object.assign(manualFaceOverrides.male,savedMalePreset?.manualOverrides||{});
+const facePolishMode={
+ female:savedHeroinePreset?.faceMode==='polished'||
+  (!savedHeroinePreset&&new URLSearchParams(location.search).get('hero')==='1'),
+ male:savedMalePreset?.faceMode==='polished'
+};
 if(savedMalePreset?.parts){
  Object.assign(v32Parts.male,savedMalePreset.parts);
  Object.assign(v32Parts.male,synchronizeHeroHairSelection('male',v32Parts.male,
@@ -381,7 +386,8 @@ function persistHeroineFace(){
  saveHeroineFacePreset({parts:{...v32Parts.female},controls:{...modelChanges},
   hairStyleId:wigStyleId,hairColor:wigColor,hairDensity:wigDensity,
   makeupType:v32Makeup.female,contactColor,
-  manualOverrides:{...manualFaceOverrides.female}});
+  manualOverrides:{...manualFaceOverrides.female},
+  faceMode:facePolishMode.female?'polished':'custom'});
 }
 function persistMaleFace(){
  if(!ready||!v32PartMode)return;
@@ -390,7 +396,8 @@ function persistMaleFace(){
   hairStyleId:maleSelection.hairStyleId,
   hairColor:v32Parts.male.hairColor,
   hairDensity:wigDensity,contactColor:CONTACT_COLORS.brown,
-  manualOverrides:{...manualFaceOverrides.male}});
+  manualOverrides:{...manualFaceOverrides.male},
+  faceMode:facePolishMode.male?'polished':'custom'});
 }
 function setActive(ids,id){
  for(const x of ids)$(x).setAttribute('aria-pressed',String(x===id));
@@ -933,6 +940,7 @@ $('heroineBeautyV43').addEventListener('click',()=>{
  if(gender!=='female')selectGender('female');
  const selected=resolvePartSelection('female',v32Parts.female,FEMALE_V7_DEFAULTS);
  manualFaceOverrides.female={};
+ facePolishMode.female=true;
  modelChanges=resolveEditedFaceControls('female',heroineBeautyControlsV47(selected.controls),
   v32Parts.female.ageBand,v32Parts.female.bodyType,{},false);
  rebuildFemale();
@@ -958,10 +966,12 @@ if(v32PartMode){
     const selected=resolvePartSelection(sex,v32Parts[sex],sex==='female'?FEMALE_V7_DEFAULTS:MALE_REFERENCE_DEFAULT);
     v32Makeup[sex]=picked.makeup;
     if(sex==='female'){
-     if(completeFace)manualFaceOverrides.female={};
+     if(completeFace){manualFaceOverrides.female={};facePolishMode.female=true;}
+     else if(facePartChanged&&!('ageBand' in picked||'bodyType' in picked))
+      facePolishMode.female=false;
      const nextControls=resolveEditedFaceControls('female',selected.controls,
       v32Parts.female.ageBand,v32Parts.female.bodyType,
-      manualFaceOverrides.female,completeFace);
+      manualFaceOverrides.female,facePolishMode.female);
      const faceChanged=facePartChanged&&JSON.stringify(modelChanges)!==JSON.stringify(nextControls);
      if(facePartChanged)modelChanges=nextControls;
      wigStyleId=synchronized.styleId;
@@ -978,10 +988,10 @@ if(v32PartMode){
       if(faceChanged||hairChanged||!wigs.get('female'))rebuildWig();
      }
     }else{
-     if(completeFace)manualFaceOverrides.male={};
+     if(completeFace){manualFaceOverrides.male={};facePolishMode.male=true;}
      const nextControls=resolveEditedFaceControls('male',selected.controls,
       v32Parts.male.ageBand,v32Parts.male.bodyType,
-      manualFaceOverrides.male,completeFace);
+      manualFaceOverrides.male,facePolishMode.male);
      const faceChanged=facePartChanged&&JSON.stringify(maleChanges)!==JSON.stringify(nextControls);
      if(facePartChanged)maleChanges=nextControls;
      if(hairChanged){
@@ -1017,6 +1027,7 @@ if(v32PartMode){
     const look=characterAppearance(id,v32Parts[sex]);
     v32Parts[sex]={...look.parts};
     manualFaceOverrides[sex]={};
+    facePolishMode[sex]=false;
     v32Makeup[sex]=look.parts.makeup;
     if(sex==='female'){
      const part=resolvePartSelection('female',v32Parts.female,FEMALE_V7_DEFAULTS);

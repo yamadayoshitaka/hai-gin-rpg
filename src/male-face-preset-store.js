@@ -3,7 +3,7 @@
  * v42: no shared storage key, hairstyle, hair color or makeup settings.
  */
 export const MALE_FACE_STUDIO_KEY='hai-gin-hero-male-face-studio-v42';
-const keys=new Set(['parts','controls','hairStyleId','hairColor','hairDensity','contactColor','manualOverrides']);
+const keys=new Set(['parts','controls','hairStyleId','hairColor','hairDensity','contactColor','manualOverrides','faceMode']);
 export function loadMaleFacePreset(storage=globalThis?.localStorage){
  try{
   const value=storage?.getItem(MALE_FACE_STUDIO_KEY);
