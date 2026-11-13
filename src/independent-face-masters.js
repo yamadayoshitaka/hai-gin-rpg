@@ -30,7 +30,9 @@ export function femaleInnerFeatureDelta({xn,yn,zn,offsetX,depth,height=0,control
  const bridgeSupport=(1-smooth(.13,.26,ax))*bell(yn,.624,.075)*front;
  const tipSupport=(1-smooth(.13,.26,ax))*bell(yn,.566,.045)*front;
  const mouthSupport=(1-smooth(.13,.28,ax))*bell(yn,.503,.029)*front;
- // Nasal tip moves up independently; lower alar rim drops subtly
+ // Natural male/female neutral nose: lower the front-facing upturned tip
+  // by 1.2% of face height; positive tip controls can still override it.
+  // Nasal tip adjusts independently; lower alar rim drops subtly
  // to conceal the nostril from the frontal camera.
  const central=(1-smooth(.10,.26,ax))*front;
  const tipLift=central*bell(yn,.566,.036);
@@ -38,10 +40,11 @@ export function femaleInnerFeatureDelta({xn,yn,zn,offsetX,depth,height=0,control
  const bridgeRidge=bell(ax,0,.092)*bell(yn,.653,.098)*front;
  return {
   dx:-offsetX*(.35*noseSupport+.29*mouthSupport),
-  dy:height*(.020*controls.noseTipLift*tipLift-.008*controls.nostrilCover*rimMask),
+  dy:height*(.020*controls.noseTipLift*tipLift-.012*tipLift
+    -.009*controls.nostrilCover*rimMask),
   dz:depth*(.023*bridgeSupport+.014*tipSupport-.016*mouthSupport
    +.020*controls.noseBridgeSharpness*bridgeRidge
-   +.004*controls.nostrilCover*rimMask),
+   +.004*controls.nostrilCover*rimMask+.004*tipLift),
   noseSupport,mouthSupport
  };
 }
