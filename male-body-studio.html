@@ -562,6 +562,8 @@ for(const [key,title,step,group] of faceControlDefinitions){
   if(key==='eyeWidth'||key==='eyeHeight')
    faceControls.eyeSize=Math.sqrt(faceControls.eyeWidth*faceControls.eyeHeight);
   rebuildFaceOnBody();
+  syncFaceControls();
+  persistStudioHair();
  });
 }
 // Contact lenses are real, independently materialized curved iris meshes.
