@@ -1973,8 +1973,13 @@ test('v37 eye socket is sculpted into the contiguous original face mesh and iris
     mesh.geometry.getAttribute('position'),index)));
   const irisMiddle=vertex(iris,0);
   const eyelinerMiddle=vertex(eyeliner,14);
-  assert.ok(irisMiddle.z<eyelinerMiddle.z,
-   'Iris centre belongs slightly BEHIND the upper eyeliner, not on top of the skin');
+  // A convex corneal centre may bulge subtly in front of the upper liner.
+  // Reject protruding "snail eyes" without forcing the entire iris to sink
+  // behind the edge (the v47 inset regression).
+  const headWidth=model.face.geometry.boundingBox.getSize(new THREE.Vector3()).x;
+  const maxNaturalCorneaBulge=headWidth*.052*.30;
+  assert.ok(irisMiddle.z<eyelinerMiddle.z+maxNaturalCorneaBulge,
+   'Cornea must remain near the upper eyeliner without protruding unnaturally');
   assert.ok(vertex(pupil,0).z>irisMiddle.z,
    'Black pupil must be a thin layer on the same recessed corneal surface');
   assert.equal(eye.userData.socketDepressionInOriginalMesh,true);
