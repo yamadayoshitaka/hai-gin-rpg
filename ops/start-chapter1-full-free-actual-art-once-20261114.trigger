@@ -15,5 +15,8 @@
   "noImmediateAutomaticRetries": true,
   "formalRegistration": false,
   "requiresHumanImageQA": true,
-  "gitBranch": "story/chapter1-free-actual-art"
+  "gitBranch": "story/chapter1-free-actual-art",
+  "preflightRetry": 1,
+  "previousExecution": "43509861672 stopped before API calls because c01-s01 dedicated reference-bible did not exist",
+  "fix": "reuse c01-s02 actor reference bible for already-registered c01-s01"
 }
