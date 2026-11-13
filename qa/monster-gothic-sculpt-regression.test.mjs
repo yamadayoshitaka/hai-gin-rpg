@@ -46,6 +46,20 @@ const expected=[
  ['m045','dark_knight',['dark_knight-breastplate-','dark_knight-battle-torn-cloak']]
 ];
 const results=new Map();
+const femaleVampire=HUMANOID_MONSTER_COSTUMES.m034;
+const gallery=readFileSync(new URL('../monster-manager.html',import.meta.url),'utf8');
+const manifest=readFileSync(
+ new URL('../src/monster-character-cosplay-manifest.js',import.meta.url),'utf8');
+const runtime=readFileSync(
+ new URL('../src/monster-character-cosplay.js',import.meta.url),'utf8');
+assert.match(manifest,/FEMALE_VAMPIRE_COSTUME/,
+ 'A female version must use the same canonical female hero model');
+assert.match(runtime,/genderVariant=null/,
+ 'The actual 3D runtime needs a selectable vampire variant');
+assert.match(gallery,/id="vampireSex"/,
+ 'Show a male/female vampire model switch in the actual game viewer');
+assert.match(gallery,/genderVariant:id==='m034'\?byId\('vampireSex'\).value:null/,
+ 'The displayed monster must respect the female vampire selection');
 function fixture(detail){
  const make=()=>new THREE.Group();
  const frames={head:make(),chest:make(),
