@@ -325,8 +325,18 @@ export function fitStudioNeckContinuity({faceRoot,faceMesh,wardrobeRoot}={}){
  // Use the same face skin material and sampled lower-cheek pigment;
  // a fixed opaque beige cylinder becomes a glaring white rectangular
  // neck under blue/soft light. Alpha tapers into the actual chin and collar.
- const bottomSkin=facePigment.multiplier.clone().multiplyScalar(.79);
- const topSkin=facePigment.multiplier.clone().multiplyScalar(.74);
+ // Real browser isolation proved the flat white bar IS this neck connector.
+ // Its lower surface must visually be a cloth collar, not a bright skin
+ // cylinder. Match the slate tunic under every combat garment; retain a
+ // narrow soft skin transition right under the jaw.
+ const skinShade=facePigment.base.clone()
+  .multiply(facePigment.multiplier).multiplyScalar(.78);
+ const fallbackCloth=new THREE.Color(0x667d92);
+ const fabricMaterial=wardrobeRoot.getObjectByName('sewn-neckline')?.material;
+ const fabricBase=Array.isArray(fabricMaterial)?fabricMaterial[0]:fabricMaterial;
+ const tunicShade=fabricBase?.color&&
+  (fabricBase.color.r+fabricBase.color.g+fabricBase.color.b)<2.4?
+  fabricBase.color.clone():fallbackCloth;
  faceRoot.updateWorldMatrix(true,false);
  for(let r=0;r<rings;r++){
   const t=r/(rings-1);
@@ -336,7 +346,8 @@ export function fitStudioNeckContinuity({faceRoot,faceMesh,wardrobeRoot}={}){
   const widen=1.07-.50*t-.045*Math.sin(Math.PI*t);
   const xCenter=THREE.MathUtils.lerp(torsoX,cx,t);
   const zCenter=THREE.MathUtils.lerp(torsoZ-.015,cz-.024*t,t);
-  const skin=bottomSkin.clone().lerp(topSkin,t);
+  const nearChin=THREE.MathUtils.smoothstep(t,.72,.98);
+  const surface=tunicShade.clone().lerp(skinShade,nearChin);
   for(let s=0;s<=count;s++){
    const angle=2*Math.PI*s/count;
    const world=new THREE.Vector3(
@@ -346,7 +357,7 @@ export function fitStudioNeckContinuity({faceRoot,faceMesh,wardrobeRoot}={}){
    const local=faceRoot.worldToLocal(world);
    verts.push(local.x,local.y,local.z);
    const edgeBlend=.065+.935*Math.min(1,t*4,(1-t)*4);
-   colors.push(skin.r,skin.g,skin.b,edgeBlend);
+   colors.push(surface.r,surface.g,surface.b,edgeBlend);
    uv.push(s/count,t);
   }
  }
@@ -360,8 +371,8 @@ export function fitStudioNeckContinuity({faceRoot,faceMesh,wardrobeRoot}={}){
  geometry.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
  geometry.setIndex(index);geometry.computeVertexNormals();
  const material=new THREE.MeshStandardMaterial({
-  color:facePigment.base.clone(),vertexColors:true,
-  roughness:.81,metalness:0,transparent:true,opacity:1,
+  color:0xffffff,vertexColors:true,
+  roughness:.92,metalness:0,transparent:true,opacity:1,
   depthWrite:false,side:THREE.DoubleSide,flatShading:false
  });
  const bridge=new THREE.Mesh(geometry,material);
@@ -399,7 +410,8 @@ export function fitStudioNeckContinuity({faceRoot,faceMesh,wardrobeRoot}={}){
   normalVerticesUpdated:normalQuality?.alteredNormalVertices||0,
   originalFaceColoursPreserved:true,
   skinToneSource:facePigment.samples?'face-cheek-pigment':'face-material',
-  matchedFaceMaterial:true,transparentNeckEdge:true,
+  matchedFaceMaterial:true,tunicInnerCollar:true,
+  collarFabricColor:'#667d92',transparentNeckEdge:true,
   faceSurfaceQuality:faceQuality,
   neckToHeadRatio:(topY-bottomY)/headHeight,
   collarOverlapMeters:torsoTop-bottomY,
