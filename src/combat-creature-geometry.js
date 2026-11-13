@@ -12,6 +12,8 @@ import {buildCanineFurRibbonGeometry} from './canine-fur-ribbons.js?v=4.4.92';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import {createFaceProfile} from './facial-feature-profiles.js?v=1';
 import {addHumanoidSummon} from './combat-humanoid-summons.js?v=4.4.79';
+import {createRootedCreatureHornGeometry,createCreatureScuteGeometry}
+  from './creature-anatomy-mesh.js';
 
 export const CREATURE_VISUAL_SPECS = Object.freeze({
   wolf: Object.freeze({ label:'灰狼', anatomy:'quadruped', skin:0x65717a, shadow:0x303942, highlight:0x94a0a5, eyes:0x9b2027, height:.76, width:.39, length:.78, legs:.61, tail:1.0, wing:0 }),
@@ -44,7 +46,10 @@ function assemble(detail,face) {
       const shape=face.eyesType==='round'?1.10:face.eyesType==='narrow'?.78:face.eyesType==='hooded'?.90:1;
       x*=face.eyeSpacing;sx*=face.eyeSize;sy*=face.eyeSize*shape;
     }
-    const geo=new THREE.SphereGeometry(1,detail==='high'?22:10,detail==='high'?16:8);
+    // Large contours already use smooth loft profiles. Small armour,
+    // throat and equipment overlays need fewer triangles: keeping these
+    // balloons overly subdivided wasted the battlefield's GPU budget.
+    const geo=new THREE.SphereGeometry(1,detail==='high'?16:10,detail==='high'?12:8);
     geo.scale(sx,sy,sz);
     if(rotX) geo.rotateX(rotX);
     geo.translate(x,y,z); add(name,geo,tint);
@@ -54,6 +59,15 @@ function assemble(detail,face) {
     // expensive high-detail sphere for every socket, knee and tendon.
     const geo=new THREE.SphereGeometry(1,detail==='high'?16:8,detail==='high'?12:6);
     geo.scale(sx,sy,sz);geo.translate(x,y,z);add(name,geo,tint);
+  };
+  // Compact joint collar: closed and anatomically overlapped, but far fewer
+  // vertices than the generic fillet used on a thousand repeated dragons.
+  const socket=(name,tint,x,y,z,sx,sy,sz)=>{
+    const geo=new THREE.SphereGeometry(1,
+      detail==='high'?9:6,detail==='high'?7:4);
+    geo.scale(sx,sy,sz);
+    geo.translate(x,y,z);
+    add(name,geo,tint);
   };
   const eyeSlit=(name,tint,side,x,y,z,halfLength,halfHeight,slope=0)=>{
     if(name==='eyes'){
@@ -165,6 +179,19 @@ function assemble(detail,face) {
     const geo=new THREE.ConeGeometry(radius,len,detail==='high'?8:5,detail==='high'?3:1);
     geo.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(P(0,1,0),axis.clone().normalize()));
     geo.translate(...a.addScaledVector(axis,.5).toArray());add(name,geo,tint);
+  };
+  /** Root and horn are part of the parent instanced geometry batch. */
+  const rootedHorn=(name,tint,root,elbow,tip,radius)=>{
+    add(name,createRootedCreatureHornGeometry({
+      root,elbow,tip,radius,detail
+    }),tint);
+    // The wide root begins inside the skull, so no separate socket draw is
+    // required: this avoids a costly spherical mesh around every horn.
+  };
+  const scute=(name,tint,center,normal,rx,ry,depth)=>{
+    add(name,createCreatureScuteGeometry({
+      center,normal,radiusX:rx,radiusY:ry,depth,detail,
+    }),tint);
   };
   const curved=(name,tint,points,radii)=>{
     const curve=new THREE.CatmullRomCurve3(points.map(p=>P(...p)));
@@ -325,7 +352,8 @@ function assemble(detail,face) {
       face.noseType==='aquiline'?1.08:1;
     sphere(name,tint,x,y,z,sx*face.noseWidth*shape,sy,sz*face.noseLength);
   };
-  return {add,sphere,noseSphere,joint,eyeSlit,profile,verticalProfile,segment,horn,curved,fur,wing,majesticWing,finish};
+  return {add,sphere,noseSphere,joint,eyeSlit,profile,verticalProfile,
+    segment,horn,rootedHorn,scute,socket,curved,fur,wing,majesticWing,finish};
 }
 
 function addCoatSculpture(g,type,s,detail){
@@ -691,7 +719,8 @@ function addHorse(g,s,detail){
 }
 
 function addDragon(g,type,s,detail){
-  const {sphere,noseSphere,joint,eyeSlit,profile,curved,segment,horn,wing}=g;
+  const {sphere,noseSphere,joint,eyeSlit,profile,curved,segment,
+    horn,rootedHorn,scute,socket,wing}=g;
   const {skin,shadow,highlight,width:w,length:l,height:h,legs,tail,anatomy}=s;
   const elder=type==='elder_dragon',wyvern=anatomy==='wyvern';
   profile('core',skin,[
@@ -732,7 +761,11 @@ function addDragon(g,type,s,detail){
     // A narrow upright reptilian pupil sits inside the heavy overhanging lid.
     eyeSlit('eyes',0x111615,side,w*.404,headY+.052,headZ+l*.203,l*.008,.007,-.002);
     if(detail==='high')eyeSlit('eyes',0xd8aaa4,side,w*.414,headY+.060,headZ+l*.178,l*.010,.0015,-.002);
-    horn('core',shadow,[side*w*.29,headY+.12,headZ-.13],[side*w*.62,headY+(elder?.83:.54),headZ-l*(elder?.51:.36)],w*.175);
+    rootedHorn('core',shadow,
+      [side*w*.27,headY+.075,headZ-.12],
+      [side*w*.40,headY+.35,headZ-l*.16],
+      [side*w*.62,headY+(elder?.83:.54),headZ-l*(elder?.51:.36)],
+      w*.155);
     horn('core',highlight,[side*w*.33,headY-.08,headZ+l*.34],[side*w*.47,headY+.01,headZ+l*.61],w*.073);
     for(let tooth=0;tooth<4;tooth++) horn('jaw',0xeedec0,[side*w*(.19+tooth*.05),headY-.23,headZ+l*(.34+tooth*.07)],[side*w*(.19+tooth*.05),headY-.12,headZ+l*(.37+tooth*.07)],w*.045);
     if(detail==='high'){
@@ -809,7 +842,8 @@ function addDragon(g,type,s,detail){
       // Skip underside and forward face, retaining layered lateral armour.
       if(Math.sin(angle)<-.4 || Math.abs(z)>.94*l) continue;
       const up=Math.max(.04,Math.sin(angle));
-      horn('core',col%4===0?highlight:skin,[x,y,z],[x*1.07,y+up*.032,z-.12],w*.055);
+      scute('core',col%4===0?highlight:skin,[x,y,z],
+        [Math.cos(angle),Math.sin(angle),.08],w*.080,l*.11,w*.022);
     }
   }
   for(const side of [-1,1])for(const front of (wyvern?[false]:[true,false])){
@@ -834,11 +868,18 @@ function addDragon(g,type,s,detail){
   for(const side of [-1,1]){
     const attach=[side*w*.71,h+.24,-l*.12],name=side===-1?'wingL':'wingR';
     wing(name,skin,shadow,attach,s.wing,side);
+    // Both sides of the wing root overlap the scapular bed.
+    socket('core',skin,side*w*.70,h+.24,-l*.12,
+      w*.25,h*.16,l*.19);
+    socket(name,skin,0,0,0,w*.29,h*.18,l*.19);
     // Shape is model-local; placing the pivot is a renderer responsibility.
   }
   if(elder){
     for(const side of [-1,1]){
-      horn('core',0xf4e6b8,[side*w*.24,headY+.2,headZ-.2],[side*w*.37,headY+1.18,headZ-.57],w*.11);
+      rootedHorn('core',0xd7c7a5,
+        [side*w*.235,headY+.14,headZ-.22],
+        [side*w*.28,headY+.69,headZ-.32],
+        [side*w*.37,headY+1.18,headZ-.57],w*.11);
       horn('core',0xd4b96b,[side*w*.49,h+.13,l*.24],[side*w*.80,h+.47,l*.27],w*.13);
     }
     // Crown and glowing runic chest plates, still part of the shared mesh.
@@ -853,7 +894,8 @@ function addDragon(g,type,s,detail){
 }
 
 function addDragonLord(g,s,detail){
-  const {sphere,joint,eyeSlit,profile,verticalProfile,curved,segment,horn,majesticWing}=g;
+  const {sphere,joint,eyeSlit,profile,verticalProfile,curved,segment,
+    horn,rootedHorn,scute,socket,majesticWing}=g;
   const {skin,shadow,highlight,width:w,wing:span}=s;
   // This is an upright, claw-handed dragon, NOT a four-legged dragon with a
   // humanoid head glued on. Continuous torso and neck lofts keep the seams
@@ -908,8 +950,10 @@ function addDragonLord(g,s,detail){
     curved('core',shadow,[[side*.31,headY+.12,.98],[eyeX,headY+.13,1.11],
       [side*.35,headY+.08,1.32]],[.060,.043,.014]);
     // Tall back-swept horns and smaller brow horns, six clear silhouettes.
-    horn('core',highlight,[side*.25,headY+.17,.58],[side*.46,headY+1.09,-.14],.145);
-    horn('core',shadow,[side*.35,headY+.12,.68],[side*.77,headY+.71,.05],.098);
+    rootedHorn('core',highlight,[side*.25,headY+.10,.58],
+      [side*.39,headY+.60,.30],[side*.46,headY+1.09,-.14],.145);
+    rootedHorn('core',shadow,[side*.35,headY+.09,.68],
+      [side*.56,headY+.43,.32],[side*.77,headY+.71,.05],.098);
     horn('core',highlight,[side*.25,headY+.035,1.38],[side*.55,headY+.32,1.64],.072);
     sphere('core',shadow,side*.17,headY-.125,1.91,.045,.023,.048);
     for(let i=0;i<8;i++){
@@ -970,8 +1014,12 @@ function addDragonLord(g,s,detail){
     const t=i/15,z=-.77-t*3.15,y=1.38-t*.65+Math.pow(t,3)*.39;
     horn('tail',i%3===0?highlight:shadow,[0,y,z],[0,y+.15*(1-t)+.025,z-.14],.10*(1-t*.75));
   }
-  for(const side of [-1,1])
-    majesticWing(side<0?'wingL':'wingR',0xdcb6a2,0x966d65,span,side);
+  for(const side of [-1,1]){
+    const name=side<0?'wingL':'wingR';
+    majesticWing(name,0xc3ad9a,0x716361,span,side);
+    socket('core',skin,side*.60,2.97,-.19,.28,.23,.31);
+    socket(name,skin,0,0,0,.24,.20,.28);
+  }
   if(detail==='high'){
     // Individually modelled overlapping scales: close-up detail stays on the
     // shared core mesh and is not regenerated for each summoned creature.
@@ -981,8 +1029,8 @@ function addDragonLord(g,s,detail){
       if(Math.sin(angle)>.52)continue; // cream chest plates stay readable
       const rx=.39+.33*Math.sin(Math.PI*t),rz=.36+.13*Math.sin(Math.PI*t);
       const x=rx*Math.cos(angle),z=.03+rz*Math.sin(angle);
-      horn('core',column%5===0?highlight:skin,[x,y,z],
-        [x*1.055,y-.10,z*1.07],.065);
+      scute('core',column%5===0?highlight:skin,[x,y,z],
+        [Math.cos(angle),.1,Math.sin(angle)],.084,.102,.021);
     }
     for(let row=0;row<15;row++){
       const t=row/14,y=1.52+t*2.04;
