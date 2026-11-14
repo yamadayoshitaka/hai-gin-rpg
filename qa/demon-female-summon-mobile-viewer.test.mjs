@@ -9,6 +9,7 @@ import {FEMALE_SUMMON_FORMS,FEMALE_SUMMON_FORM_IDS,
  femaleSummonCosplayFor,validateFemaleSummonForms}
  from '../src/female-summon-forms.js';
 import {createFemaleSummonFeather,createFemaleSummonLeaf,
+ createDragonkinCranialShellGeometry,createDragonkinAlmondEyeGeometry,
  addFemaleSummonCostume,isFemaleSummonCostume}
  from '../src/female-summon-costumes.js';
 import {COMBAT_OBJECT_SPECS} from '../src/combat-action-spec.js';
@@ -76,6 +77,38 @@ for(const factory of [createFemaleSummonFeather,createFemaleSummonLeaf]){
   'High/low summon geometry must reduce mobile triangles');
  hi.dispose();lo.dispose();
 }
+// Screenshot regression: retain female face, not black goggles or
+// protruding yellow marble eyes and a bald scalp.
+const fitted={center:[.012,.070,.005],radius:[.132,.176,.133]};
+for(const factory of [createDragonkinCranialShellGeometry,
+ createDragonkinAlmondEyeGeometry]){
+ const hi=factory({detail:'high',...fitted}),lo=factory({detail:'low',...fitted});
+ check(hi,factory.name+' high');check(lo,factory.name+' low');
+ assert.ok(hi.getAttribute('position').count>lo.getAttribute('position').count*2,
+  'Near-camera face mesh must have higher density than mobile LOD');
+ if(factory===createDragonkinCranialShellGeometry){
+  const bounds=new THREE.Box3().setFromBufferAttribute(hi.getAttribute('position'));
+  assert.ok(bounds.max.y>.248&&bounds.max.y<.26,
+   'Measured crown must cover source scalp instead of leaving a bald circle');
+  assert.ok(Math.abs((bounds.max.x+bounds.min.x)/2-fitted.center[0])<.012);
+  assert.ok(hi.userData.sourceHairless&&hi.userData.headAligned);
+ }else{
+  const bb=new THREE.Box3().setFromBufferAttribute(hi.getAttribute('position'));
+  assert.ok(bb.max.x-bb.min.x<.08,'No protruding giant iris spheres');
+  assert.ok(bb.max.y-bb.min.y<.029,'Golden eye must be an almond, not a circle');
+  assert.ok(bb.max.z-bb.min.z<.012,'Eye must sit close to native eyelid');
+  assert.ok(hi.userData.pupilFree&&hi.userData.sourceLidPreserved);
+ }
+ hi.dispose();lo.dispose();
+}
+assert.throws(()=>createDragonkinAlmondEyeGeometry({side:0}),/eye side/);
+assert.throws(()=>createDragonkinCranialShellGeometry({radius:[0,0,0]}),/valid measured skull/);
+assert.match(runtime,/measureCanonicalScalp\(model,joints\.head,\{groomFrame:frames\.headGroom\}\)/,
+ 'Skull fit must sample actual original Head vertices');
+assert.match(runtime,/skullFit:dragonSkull/,
+ 'Measured head dimensions must reach dragon face sculpt');
+assert.match(runtime,/attach\(frame,g,role,name,p,r,\{groom:true\}\)/,
+ 'Dragon crown uses non-mirrored source head frame');
 const fixture=(detail)=>{
  const frames={head:new THREE.Group(),chest:new THREE.Group(),
   pelvis:new THREE.Group(),
@@ -130,8 +163,20 @@ for(const id of FEMALE_SUMMON_FORM_IDS){
   assert.ok(high.owned.filter(n=>n.geometry.userData.kind==='female-summon-feather-vane').length>=10);
  if(id==='forest_archer')
   assert.ok(high.owned.filter(n=>n.geometry.userData.kind==='forest-spirit-leaf').length>=8);
- if(id==='dragon_lord')
+ if(id==='dragon_lord'){
   assert.equal(high.owned.filter(n=>n.geometry.userData.kind==='scalloped-bat-wing-membrane').length,2);
+  for(const f of [high,low]){
+   const eye=f.owned.filter(n=>n.name.includes('dragonkin-solid-golden-eye-'));
+   assert.equal(eye.length,2,'Two small golden eyes, not one solid visor');
+   assert.ok(eye.every(n=>n.geometry.userData.kind==='dragonkin-inset-almond-golden-eye'&&
+    n.geometry.userData.pupilFree),'No oversized iris spheres');
+   assert.equal(f.owned.filter(n=>n.name.includes('dragonkin-scaled-hairless-crown')).length,1);
+   assert.ok(f.owned.some(n=>n.name.includes('dragonkin-natural-lower-lip')),
+    'Keep identifiable lower face below subtle draconic crown');
+   assert.ok(!f.owned.some(n=>n.name.includes('dragonkin-eye-ridge')),
+    'Heavy metal goggle frame must not reappear');
+  }
+ }
  for(const n of [...high.owned,...low.owned]){
   check(n.geometry,id+'/'+n.name);
   assert.ok(n.parent?.isGroup);

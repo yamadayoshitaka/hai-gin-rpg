@@ -189,9 +189,21 @@ assert.equal(dragon.all.filter(o=>o.name.includes('dragonkin-solid-golden-eye-')
 assert.ok(dragon.all.every(o=>!o.name.includes('dragonkin-hair')));
 const dragonEyes=dragon.all.filter(o=>o.name.includes('dragonkin-solid-golden-eye-'));
 assert.ok(dragonEyes.every(o=>o.userData.role==='dragonEye'),
- 'Pupil-less iris must use solid yellow emissive material');
-assert.ok(dragon.all.some(o=>o.name.includes('dragonkin-scaled-hairless-crown')),
- 'Dragon king requires actual draconic head covering without wig');
+ 'Pupil-free almond eyes must retain muted golden iris material');
+assert.ok(dragonEyes.every(o=>o.geometry.userData.kind==='dragonkin-inset-almond-golden-eye'),
+ 'Screenshot regression: never replace the female face with flat yellow marble eyeballs');
+for(const n of dragonEyes){
+ const bb=new THREE.Box3().setFromBufferAttribute(n.geometry.getAttribute('position'));
+ assert.ok(bb.max.y-bb.min.y<.029&&bb.max.z-bb.min.z<.012,
+  'Eyes must remain small shallow almonds and preserve natural eye socket');
+}
+assert.ok(dragon.all.some(o=>o.name.includes('dragonkin-scaled-hairless-crown')&&
+  o.geometry.userData.kind==='dragonkin-scaled-cranial-shell'),
+ 'Dragon Lord bald skull must be an anatomical continuous scaled plate, not sphere helmet');
+assert.equal(dragon.all.filter(o=>o.name.includes('dragonkin-delicate-upper-lid-')).length,2);
+assert.equal(dragon.all.filter(o=>o.name.includes('dragonkin-cheekbone-contour-')).length,2);
+assert.ok(dragon.all.some(o=>o.name.includes('dragonkin-fine-nasal-bridge')));
+assert.ok(dragon.all.some(o=>o.name.includes('dragonkin-natural-lower-lip')));
 dragon.dispose();
 const runtime=readFileSync(new URL('../src/monster-character-cosplay.js',import.meta.url),'utf8');
 const gallery=readFileSync(new URL('../summon-showcase.html',import.meta.url),'utf8');
@@ -200,6 +212,6 @@ assert.match(runtime,/addRegalHumanoidOutfit\(/,
  'Regal clothes must be instantiated onto actual canonical hero models');
 assert.match(runtime,/fullBodyOutfit:royalOutfit\?\.style/,
  'Runtime should expose the full-body outfit actually selected');
-assert.match(gallery,/monster-character-cosplay\.js\?v=4\.5\.11/);
-assert.match(bestiary,/monster-character-cosplay\.js\?v=4\.5\.11/);
+assert.match(gallery,/monster-character-cosplay\.js\?v=4\.5\.12/);
+assert.match(bestiary,/monster-character-cosplay\.js\?v=4\.5\.12/);
 console.log('Full-body reference-inspired humanoid wardrobe regression PASS',report);

@@ -60,7 +60,83 @@ export function createFemaleSummonLeaf({
  geo.userData={kind:'forest-spirit-leaf',detail};
  return geo;
 }
-export function addFemaleSummonCostume({profile,frames,detail='high',attach,tube}={}){
+
+/**
+ * Dragon Lord's bald hairstyle is a living, scale-plated skull—not an
+ * exposed smooth human scalp or a black opaque helmet. The geometry is
+ * measured in the same model-upright, Head-attached coordinate frame as
+ * the original skin. No source GLB, facial rig or hair is replaced.
+ */
+export function createDragonkinCranialShellGeometry({
+ detail='high',center=[0,.095,0],radius=[.115,.160,.125]
+}={}){
+ const rows=detail==='low'?8:20,columns=detail==='low'?20:48;
+ const [cx,cy,cz]=center,[rx,ry,rz]=radius;
+ if(![...center,...radius].every(Number.isFinite)||Math.min(...radius)<=0)
+  throw Error('Dragonkin crown must fit a valid measured skull');
+ const verts=[],uv=[],indices=[];
+ for(let i=0;i<=rows;i++){
+  const t=i/rows;
+  for(let j=0;j<=columns;j++){
+   const phi=j/columns*Math.PI*2;
+   // Source actor front is +Z. Raise the front hairline to reveal the
+   // intact face; cover rear and temples down to just above the ears.
+   const front=Math.max(0,Math.sin(phi));
+   const theta=t*(1.73-.39*front);
+   const st=Math.sin(theta),ct=Math.cos(theta);
+   // Subtle raised keratin scutes, with dense plate roots at the crown.
+   const relief=(.0025*Math.sin(phi*12+theta*5)+
+    .0017*Math.cos(phi*7-theta*13))*Math.sin(Math.PI*t);
+   verts.push(
+    cx+(rx+.009+relief)*st*Math.cos(phi),
+    cy+(ry+.008+relief*.5)*ct,
+    cz+(rz+.010+relief)*st*Math.sin(phi)
+   );
+   uv.push(j/columns,t);
+   if(i<rows&&j<columns){
+    const a=i*(columns+1)+j,c=a+columns+1;
+    indices.push(a,a+1,c,a+1,c+1,c);
+   }
+  }
+ }
+ const g=new THREE.BufferGeometry();
+ g.setAttribute('position',new THREE.Float32BufferAttribute(verts,3));
+ g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
+ g.setIndex(indices);g.computeVertexNormals();
+ g.userData={kind:'dragonkin-scaled-cranial-shell',detail,
+  headAligned:true,sourceHairless:true};
+ return g;
+}
+/**
+ * Small almond-shaped gold eyes are recessed into the imported eyelids,
+ * unlike the earlier black goggles and floating lemon-colored spheres.
+ * The reference identity remains golden and explicitly pupil-free.
+ */
+export function createDragonkinAlmondEyeGeometry({side=1,detail='high'}={}){
+ if(side!==-1&&side!==1)throw Error('Invalid dragonkin eye side');
+ const segments=detail==='low'?18:40;
+ const x0=side*.052,y0=.033,z0=-.148;
+ const verts=[x0,y0,z0-.004],uv=[.5,.5],indices=[];
+ for(let i=0;i<=segments;i++){
+  const a=i/segments*Math.PI*2;
+  const c=Math.cos(a),sn=Math.sin(a);
+  const x=x0+side*.032*c;
+  const y=y0+.0115*sn*(1-.11*c);
+  const z=z0+.0045*c*c;
+  verts.push(x,y,z);
+  uv.push(.5+.5*c,.5+.5*sn);
+  if(i<segments)indices.push(0,i+1,i+2);
+ }
+ const g=new THREE.BufferGeometry();
+ g.setAttribute('position',new THREE.Float32BufferAttribute(verts,3));
+ g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
+ g.setIndex(indices);g.computeVertexNormals();
+ g.userData={kind:'dragonkin-inset-almond-golden-eye',detail,
+  pupilFree:true,sourceLidPreserved:true,side};
+ return g;
+}
+export function addFemaleSummonCostume({profile,frames,detail='high',attach,tube,
+ attachGroom=null,skullFit=null}={}){
  if(!isFemaleSummonCostume(profile))return false;
  const hi=detail!=='low';
  const add=(parent,g,role,name,p=[0,0,0],r=[0,0,0])=>
@@ -75,12 +151,16 @@ export function addFemaleSummonCostume({profile,frames,detail='high',attach,tube
  for(const side of [-1,1]){
   const i=side<0?0:1;
   const liner=type==='forest_spirit_female'?'makeup':'lip';
-  line(frames.head,liner,'canthal-liner-'+side,[
-   [side*.016,.058,-.132],[side*.061,.074,-.143],
-   [side*.121,.089,-.108]],.006);
-  line(frames.head,'rune','temple-mark-'+side,[
-   [side*.094,.021,-.105],[side*.113,-.028,-.090],
-   [side*.099,-.064,-.102]],.005);
+  if(type!=='dragonkin_female'){
+   // Dragon Lord has its own close-fitting eye sockets. These common
+   // heavy face lines would stack into the black goggle-like band.
+   line(frames.head,liner,'canthal-liner-'+side,[
+    [side*.016,.058,-.132],[side*.061,.074,-.143],
+    [side*.121,.089,-.108]],.006);
+   line(frames.head,'rune','temple-mark-'+side,[
+    [side*.094,.021,-.105],[side*.113,-.028,-.090],
+    [side*.099,-.064,-.102]],.005);
+  }
   line(frames.forearms[i],type==='forest_spirit_female'?'leaf':'metal',
    'arm-guard-'+side,[[0,-.12,-.08],[side*.08,-.20,-.066],
    [0,-.30,-.05]],.016);
@@ -134,29 +214,46 @@ export function addFemaleSummonCostume({profile,frames,detail='high',attach,tube
    'velvet','seraph-cloth-back');
  }
  if(type==='dragonkin_female'){
-  // Hairless draconic cranium: an overlapping bony scalp plate replaces
-  // the human hairline. No wig, fringe or visible bare mannequin crown.
-  const crest=new THREE.SphereGeometry(.159,hi?22:10,hi?12:7,
-    0,Math.PI*2,0,Math.PI*.63);
-  add(frames.head,crest,'metal','dragonkin-scaled-hairless-crown',
-    [0,.067,.01]);
+  // One continuous SCALP-FITTED armour crown, attached to the actual Head
+  // via its model-upright groom anchor. A fixed cap previously left a large
+  // bald orange disc visible over the forehead in the mobile gallery.
+  const crownFrame=frames.headGroom??frames.head;
+  const crownGeometry=createDragonkinCranialShellGeometry({
+   detail,...(skullFit?{center:skullFit.center,radius:skullFit.radius}:{})
+  });
+  if(attachGroom&&frames.headGroom){
+   attachGroom(crownFrame,crownGeometry,'dragonScale',
+    'female-dragonkin-scaled-hairless-crown');
+  }else add(crownFrame,crownGeometry,'dragonScale',
+   'dragonkin-scaled-hairless-crown');
   for(const side of [-1,1]){
-   // The whole visible eye is amber-yellow; no black pupils or a separate
-   // iris sphere. This follows Head, not the chest or camera.
-   const eye=new THREE.SphereGeometry(1,hi?14:8,hi?9:6);
-   eye.scale(.039,.026,.012);
-   add(frames.head,eye,'dragonEye','dragonkin-solid-golden-eye-'+side,
-    [side*.051,.032,-.166]);
-   line(frames.head,'metal','dragonkin-eye-ridge-'+side,[
-    [side*.015,.066,-.132],[side*.053,.081,-.155],
-    [side*.103,.068,-.129]],hi?.013:.016);
+   // Eyes are now shallow, almond-shaped surfaces under their own slim
+   // upper lids. Keep gold color without toy-like glowing black goggles.
+   add(frames.head,createDragonkinAlmondEyeGeometry({side,detail}),
+    'dragonEye','dragonkin-solid-golden-eye-'+side);
+   line(frames.head,'dragonRim','dragonkin-delicate-upper-lid-'+side,[
+    [side*.017,.042,-.129],[side*.050,.052,-.151],
+    [side*.086,.041,-.135]],hi?.0045:.0058);
+   line(frames.head,'dragonRim','dragonkin-cheekbone-contour-'+side,[
+    [side*.092,.006,-.125],[side*.114,-.040,-.116],
+    [side*.082,-.090,-.133]],hi?.0055:.007);
+   // The source's female nose and mouth remain visible: these lines are
+   // tiny bony accents, NOT a second opaque facial mask.
+   line(frames.head,'dragonScale','dragonkin-temple-scute-'+side,[
+    [side*.113,.113,-.081],[side*.131,.052,-.090],
+    [side*.126,-.022,-.083]],hi?.007:.009);
   }
+  line(frames.head,'dragonScale','dragonkin-fine-nasal-bridge',[
+   [0,.074,-.119],[0,.007,-.145],[0,-.039,-.147]],.0055);
+  line(frames.head,'lip','dragonkin-natural-lower-lip',[
+   [-.051,-.105,-.130],[-.021,-.123,-.143],[0,-.128,-.148],
+   [.021,-.123,-.143],[.051,-.105,-.130]],.0035);
   for(const side of [-1,1]){
-   orb(frames.head,'horn','dragon-horn-root-'+side,
-    [side*.09,.12,.03],[.067,.034,.061]);
+   orb(frames.head,'dragonScale','dragon-horn-root-'+side,
+    [side*.105,.149,.013],[.053,.027,.051]);
    add(frames.head,createGothicHorn({
-    side,len:.35,radius:.067,curve:.35,detail
-   }),'horn','dragon-swept-horn-'+side,[side*.09,.13,.02]);
+    side,len:.28,radius:.054,curve:.24,detail
+   }),'horn','dragon-swept-horn-'+side,[side*.105,.157,.006]);
    add(frames.chest,createGothicBatWing({
     side,detail,width:1.04,height:.76
    }),'membrane','dragon-wing-'+side,[0,.09,.05]);
