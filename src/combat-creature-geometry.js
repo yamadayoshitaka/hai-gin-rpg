@@ -413,17 +413,15 @@ function addCoatSculpture(g,type,s,detail){
   if(s.hybrid&&detail==='high'){
     const blend=s.hybrid.weight;
     for(const side of [-1,1]){
-      curved('core',highlight,[
-        [side*w*.65,h+.20,l*.54],
-        [side*w*(.82+.08*blend),h+.31,l*.32],
-        [side*w*(1.02+.08*blend),h+.18,l*.08],
-        [side*w*.75,h+.07,-l*.18]
-      ],[.045,.076,.055,.004]);
-      curved('core',shadow,[
-        [side*w*.36,h+.33,l*.89],
-        [side*w*.52,h+.23,l*1.02],
-        [side*w*.49,h+.06,l*1.25]
-      ],[.040,.049,.002]);
+      // Thin rooted fur-tuft silhouettes are inherited from the source
+      // wolf king. Do not add another high-poly curved tube per cheek:
+      // that exceeded the strict 125k-vertex mobile instancing budget.
+      horn('core',highlight,
+        [side*w*.73,h+.16,l*.43],
+        [side*w*(.92+.12*blend),h+.25,l*.18],w*.060);
+      horn('core',shadow,
+        [side*w*.40,h+.05,l*1.12],
+        [side*w*(.60+.10*blend),h-.04,l*1.20],w*.038);
     }
   }
   const headY=h+.275,headZ=l+.32;
