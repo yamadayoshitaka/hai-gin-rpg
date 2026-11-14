@@ -230,7 +230,8 @@ assert.equal(addFemaleSummonCostume({
  ...king,profile:MALE_DRAGON_LORD_FORM,detail:'high'
 }),true);
 assert.equal(king.all.filter(o=>o.name.includes('dragon-king-crown-horn-')).length,2);
-assert.equal(king.all.filter(o=>o.name.includes('dragon-king-wing-')).length,2);
+assert.equal(king.all.filter(o=>o.name.includes('dragon-king-wing-')&&
+  !o.name.includes('wing-spar')).length,2);
 assert.equal(king.all.some(o=>o.name.includes('dragonkin-natural-lower-lip')),false,
  'Male dragon must not reuse female face makeup');
 king.dispose();
