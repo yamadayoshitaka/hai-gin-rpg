@@ -50,12 +50,16 @@ async function main(){
     const one=state.v36RealBattleCostume;
     const neck=one.proportions.neckContinuity;
     const ratio=neck.visibleSkinNeckLength;
-    if(!(neck.actualCollarSource&&neck.raisedInnerCollarApplied&&
+    if(!(neck.v60NapeRise===(gender==='male'?.018:.012)&&
+      neck.actualCollarSource&&neck.raisedInnerCollarApplied&&
      neck.unifiedNeckBottomHeight<neck.actualCollarHeight&&
      ratio>.015&&ratio<.026&&neck.reusedFaceMaterial&&
      neck.separateNeckGeometryHidden))
      throw Error(gender+' '+build+' neck/cloth fit failed '+JSON.stringify(neck));
-    const buildMorph=one.proportions.buildMorph;
+    console.log('V60_NECK_METRICS '+JSON.stringify({gender,build,napeRise:neck.v60NapeRise,
+      visibleSkin:neck.visibleSkinNeckLength,collar:neck.actualCollarHeight,
+      bottom:neck.unifiedNeckBottomHeight,jawRatio:neck.neckToHeadRatio}));
+     const buildMorph=one.proportions.buildMorph;
     if(!(buildMorph?.geometryFromSource&&buildMorph?.accumulative===false&&
      buildMorph.bodyType===build&&buildMorph.meshes>0))
      throw Error(gender+' '+build+' build morph missing '+JSON.stringify(buildMorph));
