@@ -169,6 +169,8 @@ export function applyMonsterBiologicalMotion(model,{time=0,phase=0,action='idle'
    // Canid gait studies: slow walking and obstacle stepping call for
    // carpal/tarsal flexion; forepaw placement and hindlimb push differ.
    // This 'creep' is a game posture, not a claim of observed wolf data.
+   // Keep the original ten-action semantics; visual E2E is checked together
+   // with the mobile bestiary's now-responsive catalog/settings controls.
    const threat=(action==='attack'||action==='special')?pulse:0;
    const quiet=action==='walk';
    apply(p,'neckGuard','x',quiet?-.065+.018*Math.sin(phase*.50):
