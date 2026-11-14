@@ -23,7 +23,7 @@ export const REGAL_HUMANOID_WARDROBE=Object.freeze({
   hem:'velvet',trim:'edge',skirt:.77,flare:.37,sleeve:'velvet',
   sleeveLength:.30,leggings:'velvet',head:'none'}),
  vampire:Object.freeze({style:'aristocratic-frockcoat',bodice:'velvet',
-  hem:'lining',trim:'edge',skirt:.82,flare:.30,sleeve:'velvet',
+  hem:'lining',trim:'edge',skirt:.80,flare:.19,sleeve:'velvet',
   sleeveLength:.47,leggings:'cloth',head:'none'}),
  gargoyle:Object.freeze({style:'stone-demon-carapace',bodice:'skin',
   hem:'metal',trim:'edge',skirt:.54,flare:.29,sleeve:'skin',
@@ -51,6 +51,25 @@ export const REGAL_HUMANOID_WARDROBE=Object.freeze({
   sleeveLength:.33,leggings:'cloth',head:'none'}),
 });
 export const wardrobeFor=profile=>REGAL_HUMANOID_WARDROBE[profile?.costume]??null;
+/**
+ * The monster costumes are instance-local, but donor bodies vary by sex and
+ * body type. Constrain the existing metre-authored robe to the real distance
+ * between shoulder pivots, without rewriting common actor rigs/GLBs.
+ * Ignore implausible/missing measurements instead of distorting the costume.
+ */
+export function measureRegalShoulderFit(leftArm,rightArm){
+ if(!leftArm?.isBone||!rightArm?.isBone)return {widthScale:1,depthScale:1,calibrated:false};
+ leftArm.updateWorldMatrix(true,false);
+ rightArm.updateWorldMatrix(true,false);
+ const l=leftArm.getWorldPosition(new THREE.Vector3());
+ const rr=rightArm.getWorldPosition(new THREE.Vector3());
+ const span=Math.hypot(l.x-rr.x,l.z-rr.z);
+ if(!Number.isFinite(span)||span<.26||span>.75)
+  return {widthScale:1,depthScale:1,calibrated:false};
+ const widthScale=THREE.MathUtils.clamp(span/.48,.72,1.08);
+ return {widthScale,depthScale:THREE.MathUtils.clamp(.90+.10*widthScale,.94,1.02),
+  calibrated:true,shoulderSpan:span};
+}
 
 const detailSegments=(detail)=>detail==='low'?10:28;
 function loftRings(rings,{detail='high',pleat=0,name='layered-cloth'}={}){
@@ -150,12 +169,12 @@ export function createRegalShoulderYokeGeometry({
 }={}){
  const scale=armoured?1.035:1;
  return loftRings([
-  {y:.335,rx:.166,rz:.126},
-  {y:.285,rx:.235*scale,rz:.169*scale},
-  {y:.235,rx:.288*scale,rz:.194*scale},
-  {y:.145,rx:.302*scale,rz:.207*scale},
-  {y:.075,rx:.241*scale,rz:.177*scale},
-  {y:-.035,rx:.232*scale,rz:.172*scale}
+  {y:.265,rx:.160,rz:.121},
+  {y:.225,rx:.213*scale,rz:.159*scale},
+  {y:.175,rx:.268*scale,rz:.187*scale},
+  {y:.090,rx:.287*scale,rz:.202*scale},
+  {y:.015,rx:.238*scale,rz:.177*scale},
+  {y:-.075,rx:.231*scale,rz:.172*scale}
  ],{detail,pleat:armoured?.009:.020,
   name:armoured?'shoulder-yoke-articulated-plate':'shoulder-yoke-tailored-cloth'});
 }
@@ -166,10 +185,10 @@ export function createRegalShoulderYokeGeometry({
  */
 export function createRegalCollarGeometry({detail='high'}={}){
  return loftRings([
-  {y:.265,rx:.179,rz:.136},
-  {y:.313,rx:.158,rz:.120},
-  {y:.375,rx:.130,rz:.100},
-  {y:.427,rx:.108,rz:.088}
+  {y:.215,rx:.177,rz:.134},
+  {y:.262,rx:.155,rz:.118},
+  {y:.318,rx:.127,rz:.097},
+  {y:.362,rx:.108,rz:.085}
  ],{detail,pleat:.012,name:'wrapped-ceremonial-collar'});
 }
 const needsLeggings=p=>p?.leggings!==null;
