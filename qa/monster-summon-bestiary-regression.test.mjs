@@ -3,6 +3,7 @@ import {readFileSync} from 'node:fs';
 import {MONSTER_CATALOG,MONSTER_BY_ID} from '../src/monster-catalog.js';
 import {COMBAT_OBJECT_SPECS,COMBAT_JOB_SPECS,availableCombatSkills,COMBAT_RULES}
  from '../src/combat-action-spec.js';
+import {CombatActionRuntime} from '../src/combat-action-runtime.js';
 import {creatureSize,LARGE_SUMMON_IDS,SUMMON_WORLD_SCALE}
  from '../src/combat-creature-performance.js';
 import {combatEffectDirective} from '../src/combat-effect-directives.js';
@@ -68,6 +69,35 @@ for(const [type,element] of [
 }
 assert.equal(COMBAT_OBJECT_SPECS.horse.category,'mount');
 assert.equal(creatureSize('horse'),1);
+// These are genuine battle skills, not catalog-only thumbnails. The real
+// action runtime must spawn and replace independent water/nature/earth objects.
+{
+ const owner={id:0,team:0,jobId:'summoner',squadId:'alpha',
+  x:9,z:10,hp:200,maxHp:200,mp:500,maxMp:500,
+  rarity:'UR',alive:true,cooldown:0};
+ const enemy={id:1,team:1,jobId:'fighter',squadId:'beta',
+  x:13,z:10,hp:200,maxHp:200,mp:0,maxMp:0,
+  rarity:'N',alive:true,cooldown:0};
+ const units=[owner,enemy],tiles=new Uint8Array(32*32).fill(1);
+ const runtime=new CombatActionRuntime({width:32,height:32,walkable:tiles});
+ runtime.beginTick(.1,units,{walkable:tiles});
+ for(const [id,element] of [
+  ['m020','water'],['m018','nature'],['m017','earth']
+ ]){
+  const skill=availableCombatSkills('summoner','UR')
+   .find(s=>s.id==='call_'+id);
+  assert.ok(skill,'Missing real battle skill '+id);
+  assert.equal(runtime.fireSkill(owner,skill,owner,units),true);
+  const summoned=runtime.summonOf(owner);
+  assert.equal(summoned.length,1,
+   'Summoner must not exceed its existing one-familiar rule');
+  assert.equal(summoned[0].type,'summon_'+id);
+  assert.equal(summoned[0].spec.element,element);
+  assert.equal(summoned[0].spec.sourceMonsterId,id);
+  assert.equal(summoned[0].category,'summon');
+ }
+}
+
 
 const gallery=readFileSync(new URL('../summon-showcase.html',import.meta.url),'utf8');
 const battleRenderer=readFileSync(new URL('../src/combat-world-object-renderer.js',import.meta.url),'utf8');
