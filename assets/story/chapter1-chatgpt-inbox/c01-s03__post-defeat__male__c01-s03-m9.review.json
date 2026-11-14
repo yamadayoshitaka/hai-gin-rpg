@@ -1,0 +1,34 @@
+{
+  "shotKey": "c01-s03|post-defeat|male|c01-s03-m9",
+  "scriptText": "今は退くことが必要だ。 軍師として名を刻み、最初の軍団を編成する。",
+  "sourceModel": "ChatGPT Images",
+  "sourceImageLocalFile": "敗戦後の軍議_紫金の指揮卓.png",
+  "qaStatus": "OWNER_PROVISIONAL",
+  "ownerAuthorized": true,
+  "humanVisualQAConfirmed": false,
+  "finalP0Approved": false,
+  "reviewedBy": "assistant-visual-inspection",
+  "reviewedAt": "2026-11-14T12:34:48.373426Z",
+  "generationReferencesAttached": false,
+  "quality": {
+    "exactCanonicalScene": true,
+    "exactCast": true,
+    "genderAndOutcomeCorrect": true,
+    "noTextUI": true,
+    "original3DCinematicStyle": true,
+    "nativeDetail": true,
+    "realReferenceBytesAttachedToImageGenerator": false
+  },
+  "referenceImagesAttached": [],
+  "imageSha256": "001a76d15b830c8aef84ad3215ddf3e023ec1b2cb34113b0599574f0dd5a7dd2",
+  "nativePixels": [
+    1664,
+    936
+  ],
+  "actorIds": [
+    "lucia",
+    "vess"
+  ],
+  "qaCaveats": "Retreat route is discussed over an unlettered map. Warm lighting shifts the silver hair toward pale gold; formal actor reference comparison still required.",
+  "notes": "Owner-authorized visual placeholder; P0 uniform/hair continuity and human approval NOT claimed. Correct script is displayed by game UI, not burned in image. Existing game art reversible."
+}

@@ -1,0 +1,34 @@
+{
+  "shotKey": "c01-s03|post-defeat|female|c01-s03-m8",
+  "scriptText": "補給路を奪うだけでは真実は残らない。護衛も運び手も生きたまま話を聞く必要がある。 命令は紙一枚だ。だが戦場の命は、一枚では数え切れん。",
+  "sourceModel": "ChatGPT Images",
+  "sourceImageLocalFile": "a_highly_detailed_cinematic_fantasy_cgi_scene_depi.png",
+  "qaStatus": "OWNER_PROVISIONAL",
+  "ownerAuthorized": true,
+  "humanVisualQAConfirmed": false,
+  "finalP0Approved": false,
+  "reviewedBy": "assistant-visual-inspection",
+  "reviewedAt": "2026-11-14T12:34:49.393093Z",
+  "generationReferencesAttached": false,
+  "quality": {
+    "exactCanonicalScene": true,
+    "exactCast": true,
+    "genderAndOutcomeCorrect": true,
+    "noTextUI": true,
+    "original3DCinematicStyle": true,
+    "nativeDetail": true,
+    "realReferenceBytesAttachedToImageGenerator": false
+  },
+  "referenceImagesAttached": [],
+  "imageSha256": "0bce986d7d4088a5694af4a5b4fd9962e2f2d9efad83e9eb54566baf0c10f273",
+  "nativePixels": [
+    1664,
+    936
+  ],
+  "actorIds": [
+    "garan",
+    "lucia"
+  ],
+  "qaCaveats": "Gray-haired veteran points out the supply route in the unlettered map to silver-haired Lucia. Not formal P0 certified.",
+  "notes": "Owner-authorized visual placeholder; P0 uniform/hair continuity and human approval NOT claimed. Correct script is displayed by game UI, not burned in image. Existing game art reversible."
+}

@@ -1,0 +1,34 @@
+{
+  "shotKey": "c01-s03|post-defeat|female|c01-s03-m7",
+  "scriptText": "失った者の名を記録する。今は無理に進軍せず、町で態勢を整えよう。",
+  "sourceModel": "ChatGPT Images",
+  "sourceImageLocalFile": "夕暮れの追悼記録.png",
+  "qaStatus": "OWNER_PROVISIONAL",
+  "ownerAuthorized": true,
+  "humanVisualQAConfirmed": false,
+  "finalP0Approved": false,
+  "reviewedBy": "assistant-visual-inspection",
+  "reviewedAt": "2026-11-14T12:34:48.911464Z",
+  "generationReferencesAttached": false,
+  "quality": {
+    "exactCanonicalScene": true,
+    "exactCast": true,
+    "genderAndOutcomeCorrect": true,
+    "noTextUI": true,
+    "original3DCinematicStyle": true,
+    "nativeDetail": true,
+    "realReferenceBytesAttachedToImageGenerator": false
+  },
+  "referenceImagesAttached": [],
+  "imageSha256": "de2ed0706259d605bff8d5708044f6e0109912a8eee193ba3ce21ae3ffc1f7a7",
+  "nativePixels": [
+    1664,
+    936
+  ],
+  "actorIds": [
+    "lucia",
+    "garan"
+  ],
+  "qaCaveats": "Quiet casualty ledger after defeat; warm sunset casts pale silver hair golden. No female player commander present. Not P0 certified.",
+  "notes": "Owner-authorized visual placeholder; P0 uniform/hair continuity and human approval NOT claimed. Correct script is displayed by game UI, not burned in image. Existing game art reversible."
+}

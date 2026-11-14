@@ -1,0 +1,34 @@
+{
+  "shotKey": "c01-s03|post-defeat|female|c01-s03-m9",
+  "scriptText": "今は退くことが必要だ。 軍師として名を刻み、最初の軍団を編成する。",
+  "sourceModel": "ChatGPT Images",
+  "sourceImageLocalFile": "敗戦後の紫金軍議.png",
+  "qaStatus": "OWNER_PROVISIONAL",
+  "ownerAuthorized": true,
+  "humanVisualQAConfirmed": false,
+  "finalP0Approved": false,
+  "reviewedBy": "assistant-visual-inspection",
+  "reviewedAt": "2026-11-14T12:34:49.872086Z",
+  "generationReferencesAttached": false,
+  "quality": {
+    "exactCanonicalScene": true,
+    "exactCast": true,
+    "genderAndOutcomeCorrect": true,
+    "noTextUI": true,
+    "original3DCinematicStyle": true,
+    "nativeDetail": true,
+    "realReferenceBytesAttachedToImageGenerator": false
+  },
+  "referenceImagesAttached": [],
+  "imageSha256": "899e3e3db984db6172c672aa66eba23c1bad76ad2e2019c7cf1f59297c74bc55",
+  "nativePixels": [
+    1664,
+    936
+  ],
+  "actorIds": [
+    "lucia",
+    "vess"
+  ],
+  "qaCaveats": "Two principal characters consult an unlettered retreat map in military tent; background soldiers are contextual, not additional speaking cast. Warm color grading; P0 actor uniform check pending.",
+  "notes": "Owner-authorized visual placeholder; P0 uniform/hair continuity and human approval NOT claimed. Correct script is displayed by game UI, not burned in image. Existing game art reversible."
+}

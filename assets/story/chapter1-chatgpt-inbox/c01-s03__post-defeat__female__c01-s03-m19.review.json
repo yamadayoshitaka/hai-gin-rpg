@@ -1,0 +1,34 @@
+{
+  "shotKey": "c01-s03|post-defeat|female|c01-s03-m19",
+  "scriptText": "失敗を無かったことにはできない。仲間を休ませ、次の判断に備えよう。",
+  "sourceModel": "ChatGPT Images",
+  "sourceImageLocalFile": "敗北後の月夜の休息会議.png",
+  "qaStatus": "OWNER_PROVISIONAL",
+  "ownerAuthorized": true,
+  "humanVisualQAConfirmed": false,
+  "finalP0Approved": false,
+  "reviewedBy": "assistant-visual-inspection",
+  "reviewedAt": "2026-11-14T12:34:50.406158Z",
+  "generationReferencesAttached": false,
+  "quality": {
+    "exactCanonicalScene": true,
+    "exactCast": true,
+    "genderAndOutcomeCorrect": true,
+    "noTextUI": true,
+    "original3DCinematicStyle": true,
+    "nativeDetail": true,
+    "realReferenceBytesAttachedToImageGenerator": false
+  },
+  "referenceImagesAttached": [],
+  "imageSha256": "34f0b418f56c3d4b0f861fa4b85243f9460a6a4e907e0ddc4f51af5beb114703",
+  "nativePixels": [
+    1664,
+    936
+  ],
+  "actorIds": [
+    "lucia",
+    "vess"
+  ],
+  "qaCaveats": "Two principals oversee exhausted soldiers taking a rest after defeat at moonlit camp; background soldiers are contextual. Not P0 certified.",
+  "notes": "Owner-authorized visual placeholder; P0 uniform/hair continuity and human approval NOT claimed. Correct script is displayed by game UI, not burned in image. Existing game art reversible."
+}
