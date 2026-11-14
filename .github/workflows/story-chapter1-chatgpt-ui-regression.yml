@@ -1,0 +1,31 @@
+name: Chapter1 ChatGPT manga panel UI regression
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/story-chapter1-review-core.js'
+      - 'src/story-chapter1-image-prompt.js'
+      - 'src/story-chapter1-approval-ui.js'
+      - 'story-chapter1-approval.html'
+      - 'story-maintenance.html'
+      - 'qa/story-chapter1-chatgpt-image-handoff.test.mjs'
+      - '.github/workflows/story-chapter1-chatgpt-ui-regression.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  review-ui:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax-check browser and prompt modules
+        run: |
+          node --check src/story-chapter1-review-core.js
+          node --check src/story-chapter1-image-prompt.js
+          node --check src/story-chapter1-approval-ui.js
+      - name: Verify 132 manga pages, 462 story shots, exact screenplay and ChatGPT prompt handoff
+        run: node qa/story-chapter1-chatgpt-image-handoff.test.mjs
