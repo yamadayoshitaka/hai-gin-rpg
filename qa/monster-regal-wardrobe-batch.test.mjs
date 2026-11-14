@@ -9,7 +9,7 @@ import {REGAL_HUMANOID_WARDROBE,wardrobeFor,
  from '../src/monster-regal-garments.js';
 import {HUMANOID_MONSTER_COSTUMES,FEMALE_VAMPIRE_COSTUME}
  from '../src/monster-character-cosplay-manifest.js';
-import {FEMALE_SUMMON_FORMS} from '../src/female-summon-forms.js';
+import {FEMALE_SUMMON_FORMS,MALE_DRAGON_LORD_FORM} from '../src/female-summon-forms.js';
 import {addFemaleSummonCostume}
  from '../src/female-summon-costumes.js';
 
@@ -100,7 +100,7 @@ assert.equal(measureRegalShoulderFit(null,null).calibrated,false);
  assert.equal(measureRegalShoulderFit(a,b).calibrated,false,
   'Impossible tiny shoulder span must not crush outfit');
 }
-assert.equal(Object.keys(REGAL_HUMANOID_WARDROBE).length,13);
+assert.equal(Object.keys(REGAL_HUMANOID_WARDROBE).length,14);
 for(const [type,profile] of Object.entries(REGAL_HUMANOID_WARDROBE)){
  assert.ok(profile.style&&profile.bodice&&profile.hem&&profile.trim);
  assert.ok(profile.skirt>=.5&&profile.skirt<=1,'Uncovered swimsuit '+type);
@@ -124,7 +124,7 @@ const cases=[
  HUMANOID_MONSTER_COSTUMES.m043,
  HUMANOID_MONSTER_COSTUMES.m044,
  HUMANOID_MONSTER_COSTUMES.m045,
- ...Object.values(FEMALE_SUMMON_FORMS)
+ ...Object.values(FEMALE_SUMMON_FORMS),MALE_DRAGON_LORD_FORM
 ];
 const report=[];
 for(const profile of cases){
@@ -162,6 +162,9 @@ for(const profile of cases){
   assert.equal(f.all.filter(o=>o.parent===f.frames.pelvis).length,2,
    'Skirt and floor hem must follow pelvis');
   assert.equal(f.all.filter(o=>o.parent===f.frames.arms[0]).length,1);
+  if(['seraph_female','dragonkin_male'].includes(profile.costume))
+   assert.equal(f.all.filter(o=>o.name.includes('boot-toe-metal-trim')).length,2,
+     'Royal feet require opaque boots with metal edging '+profile.costume);
   for(let i=0;i<2;i++){
    const side=i===0?'left':'right';
    const thigh=f.all.filter(o=>o.name.includes('full-thigh-'+i));
@@ -193,6 +196,12 @@ for(const profile of cases){
  report.push({costume:profile.costume,high,low});
  hi.dispose();lo.dispose();
 }
+assert.equal(MALE_DRAGON_LORD_FORM.sex,'male');
+assert.equal(MALE_DRAGON_LORD_FORM.modelId,'Superhero_Male_FullBody');
+assert.equal(MALE_DRAGON_LORD_FORM.costume,'dragonkin_male');
+assert.equal(REGAL_HUMANOID_WARDROBE.seraph_female.leggings,'metal',
+ 'Seraph legs need visible opaque footwear, not bare skin tones');
+assert.equal(REGAL_HUMANOID_WARDROBE.dragonkin_male.bootTrim,'gold');
 assert.equal(FEMALE_SUMMON_FORMS.dragon_lord.hair,'long',
  'Approved dragon queen uses a fitted plum full-crown groom');
 assert.notEqual(FEMALE_SUMMON_FORMS.seraph_guardian.face,
@@ -216,6 +225,15 @@ assert.ok(!dragon.all.some(o=>o.name.includes('dragonkin-fine-nasal-bridge')),
  'Remove duplicate nose tube which showed as a hanging face ornament');
 assert.ok(dragon.all.some(o=>o.name.includes('dragonkin-natural-lower-lip')));
 dragon.dispose();
+const king=fixture();
+assert.equal(addFemaleSummonCostume({
+ ...king,profile:MALE_DRAGON_LORD_FORM,detail:'high'
+}),true);
+assert.equal(king.all.filter(o=>o.name.includes('dragon-king-crown-horn-')).length,2);
+assert.equal(king.all.filter(o=>o.name.includes('dragon-king-wing-')).length,2);
+assert.equal(king.all.some(o=>o.name.includes('dragonkin-natural-lower-lip')),false,
+ 'Male dragon must not reuse female face makeup');
+king.dispose();
 const runtime=readFileSync(new URL('../src/monster-character-cosplay.js',import.meta.url),'utf8');
 const gallery=readFileSync(new URL('../summon-showcase.html',import.meta.url),'utf8');
 const bestiary=readFileSync(new URL('../monster-manager.html',import.meta.url),'utf8');
