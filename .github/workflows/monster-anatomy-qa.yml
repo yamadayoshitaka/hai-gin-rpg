@@ -10,6 +10,8 @@ on:
       - 'src/monster-humanoid-hair.js'
       - 'src/monster-character-cosplay.js'
       - 'src/monster-gothic-sculpt.js'
+      - 'src/monster-regal-garments.js'
+      - 'qa/monster-regal-wardrobe-batch.test.mjs'
       - 'qa/monster-gothic-sculpt-regression.test.mjs'
       - 'qa/monster-humanoid-hair-orientation-regression.test.mjs'
       - 'qa/monster-anatomy-motion.test.mjs'
@@ -39,7 +41,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for file in src/monster-anatomy-reference.js src/monster-joint-motion.js src/monster-animation.js src/monster-geometry.js src/monster-humanoid-hair.js src/monster-character-cosplay.js src/monster-gothic-sculpt.js; do
+          for file in src/monster-anatomy-reference.js src/monster-joint-motion.js src/monster-animation.js src/monster-geometry.js src/monster-humanoid-hair.js src/monster-character-cosplay.js src/monster-gothic-sculpt.js src/monster-regal-garments.js; do
             node --check "$file"
           done
       - name: Install pinned Three.js geometry runtime
@@ -47,6 +49,12 @@ jobs:
       - name: Run every-monster anatomy / action / reference test and baseline mesh contracts
         run: |
           node --test qa/monster-anatomy-motion.test.mjs qa/monster-bestiary.test.mjs qa/monster-realism-progress.test.mjs qa/monster-m002-flame-wolf-rig.test.mjs qa/monster-m003-fenrir-rig.test.mjs qa/monster-m004-thunderwolf-gallop.test.mjs
+      - name: Regress all humanoid instances, cloak, hair, skeleton and fitted outfit geometry
+        run: |
+          npm run test:humanoid-monster-cosplay
+          npm run test:monster-gothic-sculpt
+          npm run test:humanoid-orientation-hair
+          npm run test:regal-humanoid-wardrobe
       - name: Assert no human-character assets entered patch
         env:
           GH_BASE: '${{ github.event.pull_request.base.sha }}'
