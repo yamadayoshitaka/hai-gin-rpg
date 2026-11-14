@@ -529,6 +529,7 @@ export function createCosplayedHumanoidMonster(spec,{
    if(!visual?.userData?.sourceModelId)throw Error('Canonical visual missing');
    if(disposed)return {source:'cancelled'};
    disposeCostume=buildMonsterCostume(THREE,visual,profile,detail);
+   state.metadata=visual.userData.monsterCostume;
    seraphWingPivots=[];
    if(profile.costume==='seraph_female')visual.traverse(node=>{
     if(node.userData?.seraphFlightWingSide===-1||
