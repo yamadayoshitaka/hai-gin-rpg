@@ -16,7 +16,7 @@ import * as THREE from 'three';
  */
 export function studioAnatomicalSeamY(worldCutY,worldX,worldZ,{
  centerX=0,centerZ=0,halfWidth=.1,halfDepth=.08,
- sideRise=.008,backRise=.003
+ sideRise=.028,backRise=.006
 }={}){
  const across=THREE.MathUtils.clamp(
   Math.abs(worldX-centerX)/Math.max(.001,halfWidth),0,1);
@@ -49,7 +49,7 @@ export function clipStudioFaceBustPreservingSurface(mesh,worldCutY,{anatomicalCu
  const seamProfile={
   centerX:worldCenter.x,centerZ:worldCenter.z,
   halfWidth:worldSize.x*.48,halfDepth:worldSize.z*.5,
-  sideRise:.008,backRise:.003
+  sideRise:.028,backRise:.006
  };
  const signedY=new Float64Array(pos.count),worldY=new Float64Array(pos.count);
  const tmp=new THREE.Vector3();
