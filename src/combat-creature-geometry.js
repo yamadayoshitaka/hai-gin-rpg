@@ -14,6 +14,8 @@ import {createFaceProfile} from './facial-feature-profiles.js?v=1';
 import {creatureFaceVolume,sculptAxialFacePoint,sculptVerticalFacePoint} from './creature-face-volume.js';
 import {addHumanoidSummon} from './creature-summon-humanoid-anatomy.js?v=4.5.20';
 import {blendSummonedWolfBlueprint} from './creature-wolf-hybrid.js?v=4.5.20';
+import {blendSummonDragonBlueprint,addSourceDragonRelief}
+ from './creature-dragon-hybrids.js?v=4.5.20';
 import {createRootedCreatureHornGeometry,createCreatureScuteGeometry}
   from './creature-anatomy-mesh.js';
 import {createCreatureGumSocketGeometry} from './creature-seam-geometry.js';
@@ -1014,6 +1016,9 @@ function addDragon(g,type,s,detail){
     socket(name,skin,0,0,0,w*.29,h*.18,l*.19);
     // Shape is model-local; placing the pivot is a renderer responsibility.
   }
+  // Layer source-bestiaric dragon character shapes on the existing animated
+  // rig; no duplicate wings, heads or incompatible donor skeletons.
+  addSourceDragonRelief(g,type,s,detail);
   if(elder){
     for(const side of [-1,1]){
       rootedHorn('core',0xd7c7a5,
@@ -1276,7 +1281,7 @@ export function buildCombatObjectGeometry(type,{detail='high',faceOverrides={}}=
     else if(type==='horse') addHorse(g,s,detail);
     else if(type==='dragon_lord')addDragonLord(g,s,detail);
     else if(type==='forest_archer'||type==='seraph_guardian')addHumanoidSummon(g,type,s,detail);
-    else addDragon(g,type,s,detail);
+    else addDragon(g,type,blendSummonDragonBlueprint(type,s),detail);
   }
   return g.finish();
 }
