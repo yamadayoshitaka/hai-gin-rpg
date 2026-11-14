@@ -10,7 +10,8 @@ import {HEROINE_FACE_STUDIO_KEY,loadHeroineFacePreset,saveHeroineFacePreset}
  from '../src/heroine-face-preset-store.js';
 import {MALE_FACE_STUDIO_KEY,loadMaleFacePreset,saveMaleFacePreset}
  from '../src/male-face-preset-store.js';
-import {addStudioRaisedInnerCollar} from '../src/studio-unified-neck-v59.js';
+import {addStudioRaisedInnerCollar,studioNeckV61Profile,STUDIO_NECK_V61_SHAPE}
+ from '../src/studio-unified-neck-v59.js';
 import {clipStudioFaceBustPreservingSurface} from '../src/studio-face-quality-v56.js';
 
 test('v60: old thin is exactly ultraThin, new thin lies strictly between it and normal',()=>{
@@ -97,7 +98,31 @@ test('v60: real skinned arms and legs are re-created from bind pose, never cumul
  }
 });
 
-test('v60: cloth collar hides 18 percent more skin while retaining welded v59 face',()=>{
+test('v61: neck width/depth form a smooth anatomical bell with unmodified jaw and collar endpoints',()=>{
+ const a=studioNeckV61Profile(0),mid=studioNeckV61Profile(.5),b=studioNeckV61Profile(1);
+ assert.equal(a.widthGain,1);
+ assert.equal(b.widthGain,1);
+ assert.equal(a.depthGain,1);
+ assert.equal(b.depthGain,1);
+ assert.ok(Math.abs(mid.widthGain-1.10)<1e-8);
+ assert.ok(Math.abs(mid.depthGain-1.08)<1e-8);
+ assert.ok(STUDIO_NECK_V61_SHAPE.lowerWidthFactor>.83);
+ assert.ok(STUDIO_NECK_V61_SHAPE.lowerDepthFactor>.81);
+ const oldX=.5*(1+.83),newX=.5*(1+.90)*mid.widthGain;
+ const oldZ=.5*(1+.81),newZ=.5*(1+.89)*mid.depthGain;
+ assert.ok(newX/oldX>1.13&&newX/oldX<1.17,
+  'mid-neck width should grow ~14%, without a visible pipe');
+ assert.ok(newZ/oldZ>1.11&&newZ/oldZ<1.15,
+  'mid-neck depth should grow ~13% without moving the donor face');
+ for(let t=.05;t<1;t+=.05){
+  const current=studioNeckV61Profile(t);
+  const next=studioNeckV61Profile(t+.001);
+  assert.ok(Math.abs(next.widthGain-current.widthGain)<.001);
+  assert.ok(Math.abs(next.depthGain-current.depthGain)<.001);
+ }
+});
+
+test('v61: cloth collar hides 24 percent more skin while retaining welded v59 face',()=>{
  const wardrobe=new THREE.Group();
  const sourceFace=new THREE.Mesh(new THREE.SphereGeometry(.11,8,8),
   new THREE.MeshStandardMaterial({color:0xe9b6aa}));
@@ -106,8 +131,10 @@ test('v60: cloth collar hides 18 percent more skin while retaining welded v59 fa
   jawHalfX:.045,jawHalfZ:.041,centerX:0,centerZ:0};
  const report=addStudioRaisedInnerCollar({wardrobeRoot:wardrobe,joined});
  assert.equal(report.applied,true);
- assert.ok(Math.abs(report.visibleSkinLength-.029*.82)<1e-8);
- assert.ok(report.visibleSkinLength<.029*.85);
+ assert.ok(Math.abs(report.visibleSkinLength-.029*.76)<1e-8);
+ assert.ok(report.visibleSkinLength<.029*.80);
+ assert.ok(report.v61TopHalfWidthX>.046);
+ assert.ok(report.v61TopHalfDepthZ>.040);
  assert.ok(report.topY>report.baseY);
  assert.equal(report.mesh.parent,wardrobe);
  assert.equal(report.mesh.userData.notPartOfFace,true);
@@ -143,7 +170,7 @@ test('v60: both body studios and face editor offer one shared four-build contrac
   assert.ok(source.includes('setQAView:'),file);
   assert.ok(source.includes('threeQuarterLeft'),file);
   assert.ok(source.includes('threeQuarterRight'),file);
-  assert.ok(source.includes('heroine-battle-costume-bridge.js?v=60'),file);
+  assert.ok(source.includes('heroine-battle-costume-bridge.js?v=61'),file);
  }
 });
 
