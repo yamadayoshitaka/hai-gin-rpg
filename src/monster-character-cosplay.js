@@ -29,8 +29,8 @@ import {attachCanonicalCharacterGroom,createCanonicalHeadLocalGroomAnchor}
  from './monster-humanoid-hair.js?v=4.5.08';
 import {alignCostumeToCanonicalFacing}
  from './monster-anatomical-frame.js?v=4.5.05';
-import {addRegalHumanoidOutfit,wardrobeFor}
- from './monster-regal-garments.js?v=4.5.10';
+import {addRegalHumanoidOutfit,wardrobeFor,measureRegalShoulderFit}
+ from './monster-regal-garments.js?v=4.5.11';
 
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const boneName=s=>String(s??'').toLowerCase().replace(/[^a-z0-9]/g,'');
@@ -90,7 +90,10 @@ function buildMonsterCostume(THREE,model,profile,detail){
  };
  // Cosmetics use a model-oriented head frame; scalp is measured in the
  // donor head bone's LOCAL coordinates. Never combine the two spaces.
- frames.headGroom=createCanonicalHeadLocalGroomAnchor(joints.head);
+ frames.headGroom=createCanonicalHeadLocalGroomAnchor(joints.head,model);
+ // Use measured real shoulder pivots rather than one arbitrary gown
+ // diameter for a slim female, heavy guard and broad male actor.
+ const outfitFit=measureRegalShoulderFit(joints.arms[0],joints.arms[1]);
  const ownedGeo=[],ownedMats=[];
  const palette={skin:profile.skin,cloth:profile.cloth,metal:profile.metal,
   accent:profile.accent,bone:0xd6cdb4,bandage:0xb6a993,
@@ -156,6 +159,11 @@ function buildMonsterCostume(THREE,model,profile,detail){
   // FRONT is +Z. Flip only costume coordinates; head-fitted hair stays in
   // exact source-skull coordinates so no wig/scalp misalignment can occur.
   alignCostumeToCanonicalFacing(mesh,{groom});
+  if(name.startsWith('regal-')&&outfitFit.calibrated){
+   mesh.scale.x*=outfitFit.widthScale;
+   mesh.scale.z*=outfitFit.depthScale;
+   mesh.userData.anatomicalWidthFit=outfitFit.widthScale;
+  }
   frame.add(mesh);ownedGeo.push(geometry);return mesh;
  };
  const tube=(frame,role,name,points,radius=.012)=>{
@@ -353,9 +361,13 @@ function buildMonsterCostume(THREE,model,profile,detail){
   headBoneLocalGroom:!!groom?.crown&&groom.crown.parent===frames.headGroom,
   hairSurfaceSamples:groom?.scalp.samples??0,
   hairScalpFitted:!!groom?.scalp.fitted,
+  modelUprightGroom:!!frames.headGroom.userData.modelUprightGroom,
   fullBodyOutfit:royalOutfit?.style||null,
   fullBodySkirt:!!royalOutfit,clothCoverageValidated:!!royalOutfit,
   shoulderYokeAttached:!!royalOutfit,neckCollarTapered:!!royalOutfit,
+  shoulderFitCalibrated:outfitFit.calibrated,
+  shoulderWidthScale:outfitFit.widthScale,
+  realShoulderSpan:outfitFit.shoulderSpan??null,
   jointAnchored:true,independentHeroMaterials:true,
  };
  return ()=>{
