@@ -70,3 +70,26 @@ test('mobile summon gallery: compact model-first view, functional drawers and ca
     animations:'disabled',timeout:15000});
   expect(errors).toEqual([]);
 });
+
+test('mobile bestiary: catalog and setting drawers remain operable after responsive redesign',async({page})=>{
+ const errors=[];page.on('pageerror',e=>errors.push(String(e)));
+ await page.goto('/monster-manager.html?v=4.5.06',
+   {waitUntil:'domcontentloaded',timeout:65000});
+ await expect(page.locator('#items .specimen')).toHaveCount(50,{timeout:50000});
+ const panel=page.locator('#catalogPanel'),tools=page.locator('#modelTools');
+ await expect(panel).toBeHidden();
+ await expect(tools).toBeHidden();
+ await page.locator('#toggleCatalog').click();
+ await expect(panel).toBeVisible();
+ await page.locator('.specimen[data-id="m005"]').click();
+ await expect(page.locator('#name')).toContainText('翠森の古狼');
+ await expect(panel).toBeHidden();
+ await page.locator('#toggleTools').click();
+ await expect(tools).toBeVisible();
+ await page.locator('#quality').selectOption('low');
+ await expect.poll(async()=>page.evaluate(()=>
+   window.__monsterQualityQA?.().detail),{timeout:20000}).toBe('low');
+ await page.locator('#toggleTools').click();
+ await expect(tools).toBeHidden();
+ expect(errors).toEqual([]);
+});
