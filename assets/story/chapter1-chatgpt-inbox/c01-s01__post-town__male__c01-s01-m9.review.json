@@ -1,0 +1,47 @@
+{
+  "qaStatus": "OWNER_PROVISIONAL",
+  "shotKey": "c01-s01|post-town|male|c01-s01-m9",
+  "scriptText": "誰のためにこの地で戦ったのかを、忘れてはいけない。 軍師として名を刻み、最初の軍団を編成する。",
+  "sourceModel": "ChatGPT Images",
+  "ownerAuthorized": true,
+  "humanVisualQAConfirmed": false,
+  "finalP0Approved": false,
+  "reviewedBy": "assistant-visual-inspection",
+  "reviewedAt": "2026-11-14T08:51:00Z",
+  "generationReferencesAttached": false,
+  "referenceImagesAttached": [],
+  "quality": {
+    "exactCanonicalScene": true,
+    "exactCast": true,
+    "genderAndOutcomeCorrect": true,
+    "noTextUI": true,
+    "original3DCinematicStyle": true,
+    "nativeDetail": true,
+    "realReferenceBytesAttachedToImageGenerator": false
+  },
+  "provisionalOnly": true,
+  "missingP0Requirements": [
+    "original character master image bytes were not attached to ChatGPT generator",
+    "formal visual P0 approval pending"
+  ],
+  "provisionalVisualBrief": "王都を見渡し決意する男性軍師",
+  "imageSha256": "b8ef6170ffe0d6eb3e0408a595540dd875d57512d2d16f22f15e60f15e26616c",
+  "nativePixels": [
+    1664,
+    936
+  ],
+  "provenance": {
+    "sourceFileName": "夕映えの王都を見守る若き司令官.png",
+    "unscaledCenterCrop": [
+      4,
+      2,
+      1668,
+      938
+    ],
+    "noUpscaling": true,
+    "sourceResolution": [
+      1672,
+      941
+    ]
+  }
+}

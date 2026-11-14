@@ -1,0 +1,47 @@
+{
+  "qaStatus": "OWNER_PROVISIONAL",
+  "shotKey": "c01-s03|post-gameover|male|c01-s03-death-1",
+  "scriptText": "主人公の軍師が戦死した。指揮を失い、物語はゲームオーバーとなる。",
+  "sourceModel": "ChatGPT Images",
+  "ownerAuthorized": true,
+  "humanVisualQAConfirmed": false,
+  "finalP0Approved": false,
+  "reviewedBy": "assistant-visual-inspection",
+  "reviewedAt": "2026-11-14T08:51:00Z",
+  "generationReferencesAttached": false,
+  "referenceImagesAttached": [],
+  "quality": {
+    "exactCanonicalScene": true,
+    "exactCast": true,
+    "genderAndOutcomeCorrect": true,
+    "noTextUI": true,
+    "original3DCinematicStyle": true,
+    "nativeDetail": true,
+    "realReferenceBytesAttachedToImageGenerator": false
+  },
+  "provisionalOnly": true,
+  "missingP0Requirements": [
+    "original character master image bytes were not attached to ChatGPT generator",
+    "formal visual P0 approval pending"
+  ],
+  "provisionalVisualBrief": "廃墟で戦死した男性軍師。戦闘後は復活しない",
+  "imageSha256": "4f8d6a919fa579411576bd2445f2bb204dc725c4d3efee8392f477747bb7a9e1",
+  "nativePixels": [
+    1664,
+    936
+  ],
+  "provenance": {
+    "sourceFileName": "敗北の聖堂に眠る黒衣の司令官.png",
+    "unscaledCenterCrop": [
+      4,
+      2,
+      1668,
+      938
+    ],
+    "noUpscaling": true,
+    "sourceResolution": [
+      1672,
+      941
+    ]
+  }
+}

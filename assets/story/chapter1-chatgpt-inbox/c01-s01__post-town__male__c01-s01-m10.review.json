@@ -1,0 +1,47 @@
+{
+  "qaStatus": "OWNER_PROVISIONAL",
+  "shotKey": "c01-s01|post-town|male|c01-s01-m10",
+  "scriptText": "次の舞台「灰銀の本城・封印地の討伐」へ進む。ここで見たことを忘れてはならない。",
+  "sourceModel": "ChatGPT Images",
+  "ownerAuthorized": true,
+  "humanVisualQAConfirmed": false,
+  "finalP0Approved": false,
+  "reviewedBy": "assistant-visual-inspection",
+  "reviewedAt": "2026-11-14T08:51:00Z",
+  "generationReferencesAttached": false,
+  "referenceImagesAttached": [],
+  "quality": {
+    "exactCanonicalScene": true,
+    "exactCast": true,
+    "genderAndOutcomeCorrect": true,
+    "noTextUI": true,
+    "original3DCinematicStyle": true,
+    "nativeDetail": true,
+    "realReferenceBytesAttachedToImageGenerator": false
+  },
+  "provisionalOnly": true,
+  "missingP0Requirements": [
+    "original character master image bytes were not attached to ChatGPT generator",
+    "formal visual P0 approval pending"
+  ],
+  "provisionalVisualBrief": "男性軍師とリュシアが次の任務へ出発",
+  "imageSha256": "45885f6098ed20ab66a2f12a107498cae26c05b2f5da2a447a99868daba08da6",
+  "nativePixels": [
+    1664,
+    936
+  ],
+  "provenance": {
+    "sourceFileName": "暁の王城を出発する二人.png",
+    "unscaledCenterCrop": [
+      4,
+      2,
+      1668,
+      938
+    ],
+    "noUpscaling": true,
+    "sourceResolution": [
+      1672,
+      941
+    ]
+  }
+}

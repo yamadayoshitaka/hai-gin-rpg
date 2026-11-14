@@ -1,0 +1,47 @@
+{
+  "qaStatus": "OWNER_PROVISIONAL",
+  "shotKey": "c01-s03|post-defeat|male|c01-s03-m6",
+  "scriptText": "「指定した陣地を確保」は未達となった。部隊は撤退し、態勢を立て直す。",
+  "sourceModel": "ChatGPT Images",
+  "ownerAuthorized": true,
+  "humanVisualQAConfirmed": false,
+  "finalP0Approved": false,
+  "reviewedBy": "assistant-visual-inspection",
+  "reviewedAt": "2026-11-14T08:51:00Z",
+  "generationReferencesAttached": false,
+  "referenceImagesAttached": [],
+  "quality": {
+    "exactCanonicalScene": true,
+    "exactCast": true,
+    "genderAndOutcomeCorrect": true,
+    "noTextUI": true,
+    "original3DCinematicStyle": true,
+    "nativeDetail": true,
+    "realReferenceBytesAttachedToImageGenerator": false
+  },
+  "provisionalOnly": true,
+  "missingP0Requirements": [
+    "original character master image bytes were not attached to ChatGPT generator",
+    "formal visual P0 approval pending"
+  ],
+  "provisionalVisualBrief": "敗北後の外郭で軍師が荒廃した戦場を見渡す",
+  "imageSha256": "25b842191281853542c701cff5b85fec9f6727c479ad74f00800392e5ddc5567",
+  "nativePixels": [
+    1664,
+    936
+  ],
+  "provenance": {
+    "sourceFileName": "嵐の戦場を見据える黒衣の指揮官.png",
+    "unscaledCenterCrop": [
+      4,
+      2,
+      1668,
+      938
+    ],
+    "noUpscaling": true,
+    "sourceResolution": [
+      1672,
+      941
+    ]
+  }
+}
