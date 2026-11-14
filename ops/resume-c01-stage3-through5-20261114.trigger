@@ -8,3 +8,6 @@
 # Retry after generator source branch overlay fix; do not bill a paid endpoint.
 
 # Retry after confirming Stage3 native owner-accepted frames outrank legacy Cloudflare block reports.
+
+# Owner-requested manual continuation on 2026-11-14: Stage 3 48/48 already present; resume only missing native Stage 4 then Stage 5 shots.
+# Stop immediately on Free quota exhaustion. Never regenerate registered frames or use paid fallback.
