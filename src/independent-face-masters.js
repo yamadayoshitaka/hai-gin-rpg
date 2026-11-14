@@ -254,15 +254,14 @@ export function makeIndependentFaceMaster(sourceRoot,gender,{femaleControls={},m
    d.y*demo.age.cheekRound*.009*cheek;
   const forehead=bell(xn,0,.76)*front;
   const foreheadLines=[.745,.784,.822].reduce((sum,at,k)=>
-   sum+Math.exp(-Math.pow((yn-at)/.0075,2))*(.73+.13*k),0)*forehead;
-  const crowsFeet=bell(Math.abs(xn),.53,.12)*
-   bell(yn,.68,.095)*front*
-   (Math.sin((yn-.645)*d.y*260+Math.abs(xn)*22)*.42+.58);
+   sum+Math.exp(-Math.pow((yn-at)/.019,2))*(.57+.11*k),0)*forehead;
+  const crowsFeet=bell(Math.abs(xn),.53,.125)*
+   bell(yn,.68,.095)*front;
   const smileCrease=bell(Math.abs(xn),.31,.068)*
    bell(yn,.495,.095)*front;
   const ageLines=d.z*demo.age.wrinkles*
-   (-.013*foreheadLines+.011*crowsFeet-.012*smileCrease-
-    .007*bell(Math.abs(xn),.32,.13)*bell(yn,.636,.028)*front);
+   (-.0055*foreheadLines+.0042*crowsFeet-.0064*smileCrease-
+    .0035*bell(Math.abs(xn),.32,.13)*bell(yn,.636,.036)*front);
   ny+=faceAgeY;
   const nz=z+d.z*(spec.cheekFill*(.74*cheek+1.11*lowerCheek)
     +.016*chinHollow
@@ -330,6 +329,7 @@ export function makeIndependentFaceMaster(sourceRoot,gender,{femaleControls={},m
   code:spec.code,gender,sourceVertices:most,
   v47Demographics:{ageBand:demo.ageBand,bodyType:demo.bodyType,wrinkleStrength:demo.age.wrinkles,faceFullness:demo.faceFullness},
   v49AgeCreases:ageDetail,
+  v64SoftAnatomicalAgeContours:true,
   headTemplate:spec.sourceHead||(gender==='male'?'realistic-head-animation.glb':'unknown'),
   triangles:triangleCount,modifiedVertices:changed,
   cheekVolumeMetric:Number((cheekDelta/p.count).toFixed(9)),
