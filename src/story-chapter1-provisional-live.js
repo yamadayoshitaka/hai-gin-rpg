@@ -1104,6 +1104,27 @@ export const CHAPTER1_PROVISIONAL_LIVE=Object.freeze({
     "stageId": "c01-s03",
     "edition": "post-defeat",
     "gender": "male"
+  },
+  "c01-s03|post-gameover|female|c01-s03-death-2": {
+    "asset": "./assets/story/chapter1-provisional-live/c01-s03__post-gameover__female__c01-s03-death-2.webp",
+    "sha256": "e6e2a495da290e86a785420d923890ed16f10545e103b01289d04a44675101e8",
+    "provenance": "assets/story/chapter1-owner-provisional-proof/c01-s03__post-gameover__female__c01-s03-death-2.json",
+    "sourceDraft": "ChatGPT Images first image in current conversation; direct 1672x941 PNG center-cropped 1664x936 WebP",
+    "status": "PROVISIONAL_OWNER_AUTHORIZED_PENDING_P0",
+    "originalLivePath": null,
+    "stageId": "c01-s03",
+    "edition": "post-gameover",
+    "gender": "female",
+    "nativePixels": [
+      1664,
+      936
+    ],
+    "visualStatus": "OWNER_ACCEPTED_VISUAL_DRAFT",
+    "outstandingP0": [
+      "character master bytes not attached to generator",
+      "sunset instead of dawn; broken sword not apparent",
+      "formal QA not completed"
+    ]
   }
 });
 export function chapter1ProvisionalLivePanel(shot){
