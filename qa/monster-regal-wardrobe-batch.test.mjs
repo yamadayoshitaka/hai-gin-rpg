@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import {REGAL_HUMANOID_WARDROBE,wardrobeFor,
  createRegalBodiceGeometry,createRegalSkirtGeometry,
  createRegalHemGeometry,createRegalLimbGeometry,
- createRegalCollarGeometry,addRegalHumanoidOutfit}
+ createRegalCollarGeometry,createRegalShoulderYokeGeometry,addRegalHumanoidOutfit}
  from '../src/monster-regal-garments.js';
 import {HUMANOID_MONSTER_COSTUMES,FEMALE_VAMPIRE_COSTUME}
  from '../src/monster-character-cosplay-manifest.js';
@@ -48,13 +48,34 @@ const validate=(geometry,name)=>{
 };
 for(const factory of [
  createRegalBodiceGeometry,createRegalSkirtGeometry,createRegalHemGeometry,
- createRegalLimbGeometry,createRegalCollarGeometry
+ createRegalLimbGeometry,createRegalCollarGeometry,
+ createRegalShoulderYokeGeometry
 ]){
  const hi=factory({detail:'high'}),lo=factory({detail:'low'});
  validate(hi,factory.name);validate(lo,factory.name);
  assert.ok(hi.getAttribute('position').count>=
   lo.getAttribute('position').count*1.55,'No LOD savings '+factory.name);
  hi.dispose();lo.dispose();
+}
+// A fitted collar must narrow toward the neck instead of flaring like a
+// detached ring, and the yoke must cover both shoulders in one mesh.
+for(const detail of ['high','low']){
+ const collar=createRegalCollarGeometry({detail}),p=collar.getAttribute('position');
+ const segments=detail==='low'?10:28,ringSize=segments+1;
+ let bottomRadius=0,topRadius=0;
+ for(let j=0;j<ringSize;j++){
+  bottomRadius=Math.max(bottomRadius,Math.abs(p.getX(j)));
+  topRadius=Math.max(topRadius,Math.abs(p.getX(3*ringSize+j)));
+ }
+ assert.ok(topRadius<bottomRadius*.7,
+  'Collar top must taper around neck, not float as a broad hoop');
+ const yoke=createRegalShoulderYokeGeometry({detail,armoured:true});
+ validate(yoke,'shoulder yoke');
+ const bounds=new THREE.Box3().setFromBufferAttribute(
+  yoke.getAttribute('position'));
+ assert.ok(bounds.max.x>.29 && bounds.min.x<-.29,
+  'Shoulder yoke does not cover both upper arm sleeve roots');
+ collar.dispose();yoke.dispose();
 }
 assert.equal(Object.keys(REGAL_HUMANOID_WARDROBE).length,13);
 for(const [type,profile] of Object.entries(REGAL_HUMANOID_WARDROBE)){
@@ -96,8 +117,23 @@ for(const profile of cases){
    'Sleeve missing from arms '+profile.costume);
   assert.ok(f.all.some(o=>o.name.includes('floor-hem')),
    'Missing continuous hem '+profile.costume);
-  assert.ok(f.all.filter(o=>o.parent===f.frames.chest).length>=2,
-   'Bodice not anchored to chest');
+  assert.ok(f.all.filter(o=>o.parent===f.frames.chest).length>=3,
+   'Bodice, yoke and collar must follow animated chest bone');
+  const yokes=f.all.filter(o=>o.name.includes('shoulder-yoke'));
+  assert.equal(yokes.length,1,'Shoulder seal missing '+profile.costume);
+  assert.equal(yokes[0].parent,f.frames.chest,
+   'Shoulder bridge cannot be a detached upper-arm sphere');
+  assert.ok(yokes[0].geometry.userData.kind.startsWith('shoulder-yoke-'));
+  const yokeBounds=new THREE.Box3().setFromBufferAttribute(
+   yokes[0].geometry.getAttribute('position'));
+  const collar=f.all.find(o=>o.name.endsWith('-collar'));
+  const topCrown=collar.geometry.getAttribute('position');
+  const ringVertices=f.all.find(o=>o.name.includes('fitted-bodice')).geometry.getAttribute('position');
+  assert.ok(yokeBounds.max.x>.285 && yokeBounds.min.x<-.285,
+   'No coverage between torso and shoulder sleeve roots');
+  assert.ok(yokeBounds.max.y>.32 && yokeBounds.min.y<0,
+   'Shoulder seam needs to overlap neck collar and torso');
+  assert.ok(topCrown.count>20 && ringVertices.count>20);
   assert.equal(f.all.filter(o=>o.parent===f.frames.pelvis).length,2,
    'Skirt and floor hem must follow pelvis');
   assert.equal(f.all.filter(o=>o.parent===f.frames.arms[0]).length,1);
