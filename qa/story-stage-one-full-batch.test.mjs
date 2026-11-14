@@ -41,7 +41,8 @@ for(const [gender,phase,expected] of allowed){
    assert.equal(url,live.asset,'Wrong provisional source');
    assert(url.includes([p.stageId,p.comicEdition,gender,p.id].join('__')),
     'Wrong gender/edition provisional filename');
-   assert.equal(live.status,'PROVISIONAL_NOT_VISUALLY_APPROVED');
+   assert.equal(live.status,'PROVISIONAL_OWNER_AUTHORIZED_PENDING_P0',
+    'Game display is provisional by user request, never a claim of P0 final QA');
   }else{
    assert(url.endsWith('-'+gender+'.webp'),'Cross-gender legacy frame '+p.id);
   }
