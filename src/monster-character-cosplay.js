@@ -25,7 +25,7 @@ import {addConstructMonsterCostume,isConstructCostume}
 import {addDemonicFaceCosmetics,hasDemonCosmetics}
  from './monster-demon-cosmetics.js?v=4.5.05';
 import {addFemaleSummonCostume,isFemaleSummonCostume}
- from './female-summon-costumes.js?v=4.5.14';
+ from './female-summon-costumes.js?v=4.5.17';
 import {createDragonkinNativeScalpOverlay}
  from './dragonkin-native-scalp.js?v=4.5.14';
 import {cutFemaleSummonScalpUnderCover}
