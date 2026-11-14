@@ -77,6 +77,14 @@ async function main(){
      {selector:'#bodyCanvas'});
    }
    if(errors.length)throw Error(gender+' browser errors '+errors.slice(0,4).join(' | '));
+   // Export the real Chromium pixels to test logs for visual review by
+   // connected CI consumers; JPEG/painted surrogate renders are forbidden.
+   for(const view of ['front','side']){
+    const filename=out+'/'+gender+'-normal-'+view+'-portrait.png';
+    const base64=fs.readFileSync(filename).toString('base64');
+    for(let at=0;at<base64.length;at+=6000)
+     console.log('V60_REVIEW_PNG '+gender+' '+view+' '+at+' '+base64.slice(at,at+6000));
+   }
    console.log('HUMAN_MODEL_V60_WEBGL_OK '+gender+' jobs='+jobs+' views=5 builds=3');
   }finally{await browser.close()}
  }
