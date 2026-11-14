@@ -24,10 +24,10 @@ import {addConstructMonsterCostume,isConstructCostume}
 import {addDemonicFaceCosmetics,hasDemonCosmetics}
  from './monster-demon-cosmetics.js?v=4.5.05';
 import {addFemaleSummonCostume,isFemaleSummonCostume}
- from './female-summon-costumes.js?v=4.5.12';
+ from './female-summon-costumes.js?v=4.5.13';
 import {attachCanonicalCharacterGroom,createCanonicalHeadLocalGroomAnchor,
  measureCanonicalScalp}
- from './monster-humanoid-hair.js?v=4.5.11';
+ from './monster-humanoid-hair.js?v=4.5.13';
 import {alignCostumeToCanonicalFacing}
  from './monster-anatomical-frame.js?v=4.5.05';
 import {addRegalHumanoidOutfit,wardrobeFor,measureRegalShoulderFit}
@@ -119,6 +119,7 @@ function buildMonsterCostume(THREE,model,profile,detail){
   gold:profile.costume==='seraph_female'?0xd9b96e:
    profile.costume==='forest_spirit_female'?0xb1a26a:0xa88152,
   dragonScale:0x665162,dragonRim:0x503e50,
+  seraphWing:0xffffff,
   dragonEye:0xe4b564
  };
  const materials=new Map();
@@ -126,10 +127,12 @@ function buildMonsterCostume(THREE,model,profile,detail){
   if(!materials.has(role)){
    const isMetal=role==='metal'||role==='gold',m=new THREE.MeshStandardMaterial({
     color:palette[role]??0x999999,
+    vertexColors:role==='seraphWing',
     roughness:isMetal?.42:role==='bone'?.86:
       role==='velvet'?.96:role==='linen'?.96:
       role==='ivory'?.83:role==='iris'?.27:role==='membrane'?.81:
       role==='dragonScale'?.78:role==='dragonRim'?.83:
+      role==='seraphWing'?.88:
       role==='dragonEye'?.56:.90,
     metalness:isMetal?.64:role==='edge'?.38:
       role==='dragonScale'?.13:0,
@@ -367,7 +370,9 @@ function buildMonsterCostume(THREE,model,profile,detail){
   skinColor:profile.skin,skinMaterialIsolation:true,
   demonCosmeticsEdition:demonic?'horns-makeup-runes-v1':null,
   femaleSummonCostumeEdition:femaleSummon?
-   (profile.costume==='dragonkin_female'?'dragonkin-fitted-face-v2':'female-summon-v1'):null,
+   (profile.costume==='dragonkin_female'?'dragonkin-fitted-face-v2':
+    profile.costume==='seraph_female'?'seraph-original-wing-flight-v2':
+    'female-summon-v1'):null,
   dragonCraniumFitted:dragonSkull?!!dragonSkull.fitted:null,
   dragonCraniumSamples:dragonSkull?.samples??0,
   crownCovered:!!groom?.crown,hairStrands:!!groom?.locks,
@@ -409,6 +414,7 @@ export function createCosplayedHumanoidMonster(spec,{
    profile.equipment==='staff'||profile.role==='royal'?'mage':'swordsman'};
  host.userData.previewAction='idle';
  let disposed=false,ready=false,failed=false,rig=null,visual=null;
+ let seraphWingPivots=[];
  let disposeCostume=null,activeAction='idle',lastTime=null,lastAction='idle';
  const state={root,source:'procedural-loading',profile,
   start(action,time=0){
@@ -444,6 +450,13 @@ export function createCosplayedHumanoidMonster(spec,{
    }
    const delta=lastTime===null?0:clamp(time-lastTime,0,.13);
    lastTime=time;motion.mixer.update(delta);
+   if(profile.costume==='seraph_female'){
+    for(const pivot of seraphWingPivots){
+     const side=pivot.userData.seraphFlightWingSide,beat=Math.sin(time*4.1);
+     pivot.rotation.z=side*(.14+.23*beat);
+     pivot.rotation.x=side*(.065+.10*Math.cos(time*4.1));
+    }
+   }
    host.userData.previewAction=action;
    host.userData.syncFacialSkeleton?.();
    // Costume groups are parented directly to the SAME GLB bones and require
@@ -497,6 +510,11 @@ export function createCosplayedHumanoidMonster(spec,{
    if(!visual?.userData?.sourceModelId)throw Error('Canonical visual missing');
    if(disposed)return {source:'cancelled'};
    disposeCostume=buildMonsterCostume(THREE,visual,profile,detail);
+   seraphWingPivots=[];
+   if(profile.costume==='seraph_female')visual.traverse(node=>{
+    if(node.userData?.seraphFlightWingSide===-1||
+       node.userData?.seraphFlightWingSide===1)seraphWingPivots.push(node);
+   });
    if(disposed)return {source:'cancelled'};
    // Female summon forms have NO procedural bestiary fallback owned by
    // this adapter: their live battle InstancedMesh already stays visible
