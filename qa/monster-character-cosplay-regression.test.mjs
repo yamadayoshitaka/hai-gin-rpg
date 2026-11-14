@@ -69,8 +69,14 @@ assert.match(runtime,/disposeCostume\?\.\(\)/,
  'Cosmetic material and geometry must be released when model changes');
 assert.match(runtime,/if\(!ok\)throw Error/,
  'Do not hide fallback until valid source GLB loads');
-assert.match(runtime,/if\(disposed\)return \{source:'cancelled'\}/,
- 'Late asynchronous response must be ignored after selection change');
+assert.match(runtime,/releaseLateCharacterLoad=\(\)=>\{/,
+ 'Late loaded GLB must have a dedicated preview-only cleanup path');
+assert.match(runtime,/if\(disposed\)\{releaseLateCharacterLoad\(\);return \{source:'cancelled'\};\}/,
+ 'Late asynchronous response must detach and clean the disposed character');
+assert.equal((runtime.match(/if\(disposed\)\{releaseLateCharacterLoad\(\);return \{source:'cancelled'\};\}/g)||[]).length,2,
+ 'Both after-load and after-costume cancellation boundaries must clean up');
+assert.match(runtime,/lateVisual\.parent\.remove\(lateVisual\)/,
+ 'A late loaded skinned character must not remain attached to an orphaned host');
 assert.match(gallery,/createCosplayedHumanoidMonster\(m,\{[\s\S]*?detail,[\s\S]*?genderVariant:/,
  'Viewer must actually select character-base monster models');
 assert.match(gallery,/mode==='procedural'\?humanoidMonsterCostumeFor\(m,\{/,
