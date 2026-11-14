@@ -362,7 +362,7 @@ export function fitStudioNeckContinuity({faceRoot,faceMesh,wardrobeRoot}={}){
     centerX:cx,centerZ:(originalFaceBounds.min.z+originalFaceBounds.max.z)*.5,
     halfWidth:faceWidth*.48,
     halfDepth:originalFaceBounds.getSize(new THREE.Vector3()).z*.5,
-    sideRise:.008,backRise:.003
+    sideRise:.028,backRise:.006
    });
    // A visible jaw has a shallow U-shaped underside, not a flat bar.
    // At the exposed connector top lift both lateral edges ~5mm into the
