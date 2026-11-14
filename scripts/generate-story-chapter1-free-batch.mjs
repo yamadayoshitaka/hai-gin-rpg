@@ -11,6 +11,7 @@ import {fileURLToPath} from 'node:url';
 import {CAMPAIGN_STAGES} from '../src/campaign-stage-plan.js';
 import {comicEditionsForStage,comicForStage} from '../src/story-chapter-comic.js';
 import {registeredStoryPanelAsset} from '../src/story-panel-registered-art.js';
+import {buildStage45ArtPrompt,STAGE45_IDS} from '../src/story-c01-stage45-art-guard.js';
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const p=rel=>path.join(root,rel),read=rel=>JSON.parse(fs.readFileSync(p(rel),'utf8'));
@@ -132,7 +133,8 @@ function renderSpec(s){
  if(fixed&&fixed.scriptText!==(s.shot.subtitleText||s.shot.text))throw Error('Stage2 canonical screenplay drift');
  let actors=fixed?fixed.visibleActorIds:
   [s.shot.characterId,s.shot.secondaryId].filter(Boolean);
- if(!fixed&&!s.edition.includes('gameover')&&!actors.includes('commander_'+s.gender))
+ // Stage 4/5 must use ONLY the screenplay's actual named cast, not auto-add a hero.
+ if(!fixed&&!STAGE45_IDS.includes(s.stage.id)&&!s.edition.includes('gameover')&&!actors.includes('commander_'+s.gender))
   actors.push('commander_'+s.gender);
  actors=[...new Set(actors)];
  if(actors.includes('commander_'+(s.gender==='male'?'female':'male'))||actors.length>4)
@@ -147,6 +149,19 @@ function renderSpec(s){
   if(raw.toString('ascii',0,4)!=='RIFF'||raw.toString('ascii',8,12)!=='WEBP')throw Error('Bad master '+rel);
   return {id,rel,sha:hash(raw),rule:bible?.visualRule||id};
  });
+ const stage45=STAGE45_IDS.includes(s.stage.id);
+ const styleSource='assets/story/chapters/c01/panels/c01-s01-m02-'+s.gender+'.webp';
+ let styleRef=null;
+ if(stage45){
+  if(refs.length>=4)throw Error('P0 stage4/5 style reference exceeds image slots '+s.key);
+  if(!fs.existsSync(p(styleSource)))throw Error('P0 missing native stage1 style image '+styleSource);
+  const image=fs.readFileSync(p(styleSource));
+  if(image.toString('ascii',0,4)!=='RIFF'||image.toString('ascii',8,12)!=='WEBP')
+   throw Error('P0 invalid style source '+styleSource);
+  styleRef={id:'style_benchmark',rel:styleSource,sha:hash(image),
+   rule:'style and lighting quality ONLY, not an additional visible character',
+   gender:s.gender,path:styleSource};
+ }
  const branchRule=s.edition==='pre'?'BEFORE battle, NO known outcome':
  s.edition==='post-victory'?'AFTER confirmed victory; commander ALIVE':
  s.edition==='post-defeat'?'AFTER confirmed defeat; NO victory':
@@ -165,10 +180,17 @@ function renderSpec(s){
   ...refs.map((r,i)=>'Reference input '+i+' is actor '+r.id+', enforce reference face/age/silhouette/attire: '+r.rule),
   'If documents or maps occur, show entirely BLANK undecorated papers. Do NOT repeat appearance of female commander as Lucia, or Iris as an armored knight.'
  ].join('\n');
+ const guardedPrompt=stage45?buildStage45ArtPrompt({
+  stageId:s.stage.id,stageName:s.stage.name||s.stage.id,edition:s.edition,gender:s.gender,shot:s.shot,
+  actorRefs:refs.map(r=>({id:r.id,path:r.rel,sha:r.sha,rule:r.rule})),
+  stageStory:read('assets/story/characters/'+s.stage.id+'-reference-bible.json').scene,
+  styleRef
+ }):prompt;
+ const submittedRefs=styleRef?[...refs,styleRef]:refs;
  const width=s.stage.id==='c01-s02'?1024:1536;
  const height=s.stage.id==='c01-s02'?576:864;
- return {actors,refs,prompt,width,height,
-  estimate:Math.ceil(width/512)*Math.ceil(height/512)*26.05+refs.length*5.37};
+ return {actors,refs:submittedRefs,prompt:guardedPrompt,width,height,
+  estimate:Math.ceil(width/512)*Math.ceil(height/512)*26.05+submittedRefs.length*5.37};
 }
 let reserved=0,requests=0,created=0,committed=0,blocked=[];
 let freeLimitReached=false;
