@@ -50,6 +50,30 @@ for(const original of manual.shots){
 }
 assert(prompt.includes('ステージ正本：assets/story/stage-manifests/c01-s02.manifest.json'));
 assert(prompt.includes(stage2Manifest.renderConstraints.identityLock));
+const remainingStage3=JSON.parse(fs.readFileSync(
+ 'assets/story/stage-manifests/c01-s03-manual-regression-remaining.json','utf8'));
+const stage3Manifest=JSON.parse(fs.readFileSync(
+ 'assets/story/stage-manifests/c01-s03.manifest.json','utf8'));
+assert.equal(remainingStage3.shots.length,11,'Stage3 must have 11 pending regression inputs');
+assert.equal(remainingStage3.generatorInputContract.oneStandaloneFramePerInvocation,true);
+const pendingKeys=new Set(remainingStage3.shots.map(x=>x.key));
+assert.equal(pendingKeys.size,11,'All pending stage3 scenes must be unique');
+for(const item of remainingStage3.shots){
+ const canonicalPage=pages.find(p=>p.stageId==='c01-s03'&&p.edition===item.edition&&
+  p.gender===item.gender&&p.shots.some(x=>x.key===item.key));
+ assert(canonicalPage,'Unknown stage3 shot: '+item.key);
+ const canonicalShot=canonicalPage.shots.find(x=>x.key===item.key);
+ assert.equal(item.script,canonicalShot.scriptText,'Manifest must quote canonical text');
+ const output=buildChapter1ImagePrompt({shot:canonicalShot,page:canonicalPage,
+  stageManifest:stage3Manifest,manualManifest:remainingStage3,qualityRules});
+ for(const literal of [item.scene,item.key,remainingStage3.visualStyleLock.id,
+  'c01-s03-manual-regression-remaining.json',
+  remainingStage3.generatorInputContract.instruction,
+  ...item.actors]){
+  assert(output.includes(literal),'Stage3 generator dropped a required manifest input: '+literal);
+ }
+ assert(output.includes('複数コマの一覧、コラージュ、サムネイル集は禁止'));
+}
 assert.throws(()=>buildChapter1ImagePrompt({shot,page,edit,bible,assignment,
  stageManifest:{...stage2Manifest,stageId:'c01-s03'},qualityRules}),/Wrong stage manifest/);
 
@@ -80,6 +104,7 @@ assert(pageHtml.includes('html,body{height:100%;height:100dvh;overflow:hidden}')
 assert(ui.includes('ChatGPTでこの1コマを画像生成'));
 assert(ui.includes('buildChapter1ImagePrompt'));
 assert(ui.includes('manualManifestFor(shot)'),'The UI must load the shot-specific production manifest');
+assert(ui.includes('c01-s03-manual-regression-remaining.json'),'Stage3 regression manifest missing from UI runtime');
 assert(ui.includes('stageManifestFor(shot)'),'The UI must load EACH stage manifest');
 assert(ui.includes('stageManifest:prepared.stageManifest'),
  'The stage manifest must reach the generator prompt');
