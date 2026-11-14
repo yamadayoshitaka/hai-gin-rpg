@@ -379,14 +379,15 @@
       femaleMode.disabled=!femaleAvailable;
       compareDragon.disabled=selected!=='dragon'||!licensedRegistry.entries.dragon;
       document.getElementById('faceCloseup').disabled=!
-        (['forest_archer','seraph_guardian','wolf'].includes(selected)||
+        (isMonsterSummonType(selected)||
+          ['forest_archer','seraph_guardian','wolf'].includes(selected)||
           (selected==='dragon_lord'&&femaleMode.value==='male'));
       const sourceMonster=MONSTER_SUMMON_BY_TYPE[selected]||null;
       document.getElementById('coatCloseup').disabled=selected!=='wolf'&&
         !['beast','feline','avian'].includes(sourceMonster?.family);
       frameMonsterType=null;
-      document.getElementById('footCloseup').disabled=!femaleAvailable||
-        femaleMode.value==='original';
+      document.getElementById('footCloseup').disabled=!isMonsterSummonType(selected)&&
+        (!femaleAvailable||femaleMode.value==='original');
       previewObject={id:'gallery-'+selected,type:selected,x:0,z:0,alive:true,team:0,
         flying:!!COMBAT_OBJECT_SPECS[selected].flying,mountedBy:null,cryStartedAt:clock.getElapsedTime()};
       walking=false;routeStep=0;
@@ -483,6 +484,21 @@
       controls.update();
     };
     document.getElementById('footCloseup').onclick=()=>{
+      if(isMonsterSummonType(selected)){
+        const source=objects.monsterSourceModel(previewObject.id);
+        if(!source)return;
+        const bb=new THREE.Box3().setFromObject(source);
+        const center=bb.getCenter(new THREE.Vector3());
+        const dimensions=bb.getSize(new THREE.Vector3());
+        const focusY=bb.min.y+dimensions.y*.14;
+        controls.target.set(center.x,focusY,center.z);
+        camera.position.set(center.x+Math.max(2,dimensions.x*.65),
+          focusY+Math.max(2,dimensions.y*.25),
+          center.z+Math.max(4,dimensions.y*.95));
+        controls.update();
+        document.getElementById('controlsDrawer').open=false;
+        return;
+      }
       // A fixed shin/ankle inspection camera for spotting garment holes.
       if(!femaleSummonHandle?.root||femaleMode.value==='original')return;
       const targetHeight=selected==='seraph_guardian'?.53:.43;
@@ -512,14 +528,18 @@
       femaleSummonHandle?.start('attack',t);
       previewObject.attackTarget={x:0,z:5};
       setTimeout(()=>creatureSounds.play(selected,'attack',{objectId:previewObject.id,force:true}),70);
-      const origin=new THREE.Vector3(0,selected==='dragon_lord'?9:
+      const giant=MONSTER_SUMMON_BY_TYPE[selected];
+      const origin=new THREE.Vector3(0,giant?
+        MONSTER_SUMMON_MODEL_HEIGHT*giant.size*.65:
+        selected==='dragon_lord'?9:
         (selected==='horse'?1.8:2.2)+(previewObject.flying?2.6:0),selected==='dragon_lord'?3:1);
       const target=new THREE.Vector3(0,.2,6);
       if(selected==='seraph_guardian')vfx.emitArea(target,2,{element:'nature',heal:true});
        else if(selected==='forest_archer')vfx.emit('arrow',{position:origin,target,job:selected,magic:'nature',scale:1.8});
        else if(selected.includes('dragon'))vfx.emitBreath(origin,target,{element:selected==='elder_dragon'?'arcane':'fire',radius:1.25});
       else vfx.emit(selected==='wolf'?'attack':'heavy',
-        {position:origin,target,job:selected,magic:'arcane',scale:1.5});
+        {position:origin,target,job:selected,
+         magic:giant?.element||'arcane',scale:giant?3:1.5});
     };
     // The action strip stays visible while the full-size 3D scene remains
     // interactive; no menu expansion or camera shrinking is necessary.
@@ -550,12 +570,16 @@
           creatureSounds.play(selected,'attack',{objectId:previewObject.id,force:true});
         }
         if(pose==='special'){
-          const y=(previewObject.flying?5.3:2.2),source=new THREE.Vector3(0,y,0);
+          const giant=MONSTER_SUMMON_BY_TYPE[selected];
+          const y=giant?MONSTER_SUMMON_MODEL_HEIGHT*giant.size*.7:
+            (previewObject.flying?5.3:2.2);
+          const source=new THREE.Vector3(0,y,0);
           const target=new THREE.Vector3(0,.2,6);
           if(selected==='seraph_guardian')vfx.emitArea(target,3,{element:'nature',heal:true});
           else if(selected==='forest_archer')vfx.emit('arrow',{position:source,target,job:selected,magic:'nature',scale:2.4});
           else if(selected.includes('dragon'))vfx.emitBreath(source,target,{element:'fire',radius:2.2});
-          else vfx.emit('heavy',{position:source,target,job:selected,magic:'arcane',scale:2.1});
+          else vfx.emit('heavy',{position:source,target,job:selected,
+           magic:giant?.element||'arcane',scale:giant?3.2:2.1});
         }
       };
     });
