@@ -72,7 +72,7 @@ for(const gender of ['male','female'])
 const newShot='c01-s04|pre|male|c01-s04-m2';
 const nativeFrame=CHAPTER1_PROVISIONAL_LIVE[newShot];
 assert(nativeFrame&&nativeFrame.gender==='male'&&nativeFrame.edition==='pre'&&nativeFrame.status==='PROVISIONAL_OWNER_AUTHORIZED_PENDING_P0');
-const framePath=nativeFrame.asset.replace(/^\\.\\//,'');
+const framePath=nativeFrame.asset.startsWith('./')?nativeFrame.asset.slice(2):nativeFrame.asset;
 const frameBytes=fs.readFileSync(framePath);
 assert.equal(frameBytes.toString('ascii',0,4),'RIFF');
 assert.equal(frameBytes.toString('ascii',8,12),'WEBP');
