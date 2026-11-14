@@ -4,3 +4,5 @@
 # Generate each shot in ONE native 16:9 image with stage/cast/style/outcome/no-text guard.
 # The Free Cloudflare quota was exhausted earlier; do NOT use paid fallback or silently skip incomplete stages.
 # The workflow only generates what quota permits and is NOT a promise of completion.
+
+# Retry after generator source branch overlay fix; do not bill a paid endpoint.
