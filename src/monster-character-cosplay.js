@@ -24,8 +24,9 @@ import {addConstructMonsterCostume,isConstructCostume}
 import {addDemonicFaceCosmetics,hasDemonCosmetics}
  from './monster-demon-cosmetics.js?v=4.5.05';
 import {addFemaleSummonCostume,isFemaleSummonCostume}
- from './female-summon-costumes.js?v=4.5.05';
-import {attachCanonicalCharacterGroom,createCanonicalHeadLocalGroomAnchor}
+ from './female-summon-costumes.js?v=4.5.12';
+import {attachCanonicalCharacterGroom,createCanonicalHeadLocalGroomAnchor,
+ measureCanonicalScalp}
  from './monster-humanoid-hair.js?v=4.5.11';
 import {alignCostumeToCanonicalFacing}
  from './monster-anatomical-frame.js?v=4.5.05';
@@ -117,7 +118,8 @@ function buildMonsterCostume(THREE,model,profile,detail){
   ivoryCloth:profile.costume==='seraph_female'?0xe8dfd2:0xd1c1ae,
   gold:profile.costume==='seraph_female'?0xd9b96e:
    profile.costume==='forest_spirit_female'?0xb1a26a:0xa88152,
-  dragonEye:0xffd638
+  dragonScale:0x665162,dragonRim:0x503e50,
+  dragonEye:0xe4b564
  };
  const materials=new Map();
  const mat=(role)=>{
@@ -126,12 +128,15 @@ function buildMonsterCostume(THREE,model,profile,detail){
     color:palette[role]??0x999999,
     roughness:isMetal?.42:role==='bone'?.86:
       role==='velvet'?.96:role==='linen'?.96:
-      role==='ivory'?.83:role==='iris'?.27:role==='membrane'?.81:.90,
-    metalness:isMetal?.64:role==='edge'?.38:0,
+      role==='ivory'?.83:role==='iris'?.27:role==='membrane'?.81:
+      role==='dragonScale'?.78:role==='dragonRim'?.83:
+      role==='dragonEye'?.56:.90,
+    metalness:isMetal?.64:role==='edge'?.38:
+      role==='dragonScale'?.13:0,
     emissive:role==='iris'?0x260907:
-      role==='dragonEye'?0xb78a00:
+      role==='dragonEye'?0x382307:
       role==='rune'?new THREE.Color(palette.rune).multiplyScalar(.08):0x000000,
-    emissiveIntensity:role==='iris'?.20:role==='dragonEye'?.24:
+    emissiveIntensity:role==='iris'?.20:role==='dragonEye'?.07:
       role==='rune'?.14:0,
     side:THREE.DoubleSide,
    });
@@ -236,8 +241,13 @@ function buildMonsterCostume(THREE,model,profile,detail){
  if(demonic)addDemonicFaceCosmetics({
    THREE,profile,detail,frames,attach,tube
  });
+ const dragonSkull=profile.costume==='dragonkin_female'?
+  measureCanonicalScalp(model,joints.head,{groomFrame:frames.headGroom}):null;
  if(femaleSummon)addFemaleSummonCostume({
-   THREE,profile,detail,frames,attach,tube
+   THREE,profile,detail,frames,attach,tube,
+   skullFit:dragonSkull,
+   attachGroom:(frame,g,role,name,p,r)=>
+    attach(frame,g,role,name,p,r,{groom:true})
  });
  // Structural garment layers are essential: the canonical full-body donor
  // wears little clothing. A cape or set of wings is not an outfit.
@@ -356,7 +366,10 @@ function buildMonsterCostume(THREE,model,profile,detail){
   constructSculptEdition:construct?'human-rigged-construct-2026-11':null,
   skinColor:profile.skin,skinMaterialIsolation:true,
   demonCosmeticsEdition:demonic?'horns-makeup-runes-v1':null,
-  femaleSummonCostumeEdition:femaleSummon?'female-summon-v1':null,
+  femaleSummonCostumeEdition:femaleSummon?
+   (profile.costume==='dragonkin_female'?'dragonkin-fitted-face-v2':'female-summon-v1'):null,
+  dragonCraniumFitted:dragonSkull?!!dragonSkull.fitted:null,
+  dragonCraniumSamples:dragonSkull?.samples??0,
   crownCovered:!!groom?.crown,hairStrands:!!groom?.locks,
   headBoneLocalGroom:!!groom?.crown&&groom.crown.parent===frames.headGroom,
   hairSurfaceSamples:groom?.scalp.samples??0,
