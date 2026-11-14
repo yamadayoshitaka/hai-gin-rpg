@@ -28,7 +28,15 @@ assert(malePage);
 assert(malePage.shots.every(s=>s.gender==='male'));
 const pageHtml=fs.readFileSync('story-chapter1-approval.html','utf8');
 const ui=fs.readFileSync('src/story-chapter1-approval-ui.js','utf8');
-assert(pageHtml.includes('漫画を読んで作画・承認'));
+assert(pageHtml.includes('漫画を読んで確認・修正'));
+assert(!pageHtml.includes('id="visualConfirm"'),'No unnecessary manual temporary-approval checkbox');
+assert(!ui.includes("'◎ 仮承認'"),'No temporary-approval action');
+assert(!ui.includes("['approve'"),'Automatic registration must not ask for approval');
+assert(ui.includes("['revise','↶ このコマを差し戻す']"),'Rollback remains available');
+assert(ui.includes('function stepShot(direction)'), 'Single cut previous/next navigation');
+assert(pageHtml.includes('html,body{height:100%;height:100dvh;overflow:hidden}'),
+ 'No vertically scrolling manga document');
+
 assert(ui.includes('ChatGPTでこの1コマを画像生成'));
 assert(ui.includes('buildChapter1ImagePrompt'));
 assert(ui.includes('navigator.clipboard.writeText'));
