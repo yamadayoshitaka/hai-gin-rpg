@@ -314,11 +314,14 @@
       closeExternalPreview();
       disposeFemaleSummon();
       document.getElementById('personalSummonGlb').value='';
+      const previousSpecies=selected;
       selected=select.value;
       // Dragon Lord is a dragon by default, not a forced female character.
       const femaleAvailable=selected!=='dragon_lord'&&
         FEMALE_SUMMON_FORM_IDS.includes(selected);
       if(selected==='dragon_lord')femaleMode.value='original';
+      else if(previousSpecies==='dragon_lord'&&femaleAvailable)
+        femaleMode.value='female';
       femaleModeLabel.hidden=!femaleAvailable;
       femaleMode.disabled=!femaleAvailable;
       compareDragon.disabled=selected!=='dragon'||!licensedRegistry.entries.dragon;
@@ -422,8 +425,13 @@
     document.querySelectorAll('[data-pose]').forEach(button=>{
       button.onclick=()=>{
         const pose=button.dataset.pose,t=clock.getElapsedTime();
-        if(pose==='idle')walking=false;
-        startCreaturePose(previewObject,pose,t);
+        if(pose==='idle'){
+          // Creature pose runtime only accepts finite actions. Clear its
+          // envelope rather than passing an unsupported 'idle' action.
+          walking=false;previewObject.poseAction=null;
+          previewObject.poseStartedAt=null;
+          previewObject.attackStartedAt=-Infinity;
+        }else startCreaturePose(previewObject,pose,t);
         externalPreview?.play(pose);
         femaleSummonHandle?.start(pose,t);
         if(pose==='roar'){
