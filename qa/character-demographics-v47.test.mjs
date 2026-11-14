@@ -6,14 +6,14 @@ import {AGE_PROFILES,BODY_PROFILES,AGE_BAND_IDS,BODY_TYPE_IDS,
 import {defaultPartSelection,resolvePartSelection,normalizePartSelection} from '../src/face-part-catalog-v32.js';
 import {normalizeFemaleFaceControls,normalizeMaleFaceControls} from '../src/face-v7-controls.js';
 import {CHARACTER_CAST_V46,characterAppearance,MAJOR_CHARACTER_IDS} from '../src/character-cast-v46.js';
-test('8 age groups × 3 body builds × both sexes = 48 individually selectable real 3D recipes',()=>{
+test('8 age groups × 4 body builds × both sexes = 64 individually selectable real 3D recipes',()=>{
  assert.equal(AGE_BAND_IDS.length,8);
  assert.deepEqual(AGE_BAND_IDS,['under10','teens','twenties','thirties',
   'forties','sixties','seventies','eightyPlus']);
- assert.deepEqual(BODY_TYPE_IDS,['thin','normal','fat']);
+ assert.deepEqual(BODY_TYPE_IDS,['ultraThin','thin','normal','fat']);
  const grid=enumerateDemographics();
- assert.equal(grid.length,48);
- assert.equal(new Set(grid.map(c=>c.id)).size,48);
+ assert.equal(grid.length,64);
+ assert.equal(new Set(grid.map(c=>c.id)).size,64);
  for(const record of grid){
   const age=AGE_PROFILES[record.ageBand],body=BODY_PROFILES[record.bodyType];
   const demo=resolveDemographicProfile(record.ageBand,record.bodyType);
