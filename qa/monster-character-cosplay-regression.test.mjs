@@ -81,6 +81,16 @@ assert.match(gallery,/__monsterCosplayQA/,
  'Live visual source should be auditable on user device');
 assert.ok(gallery.includes('monster-character-cosplay.js?v=4.5.11'),
  'Viewer must bust cached humanoid costume bundle');
+assert.match(runtime,/measureRegalShoulderFit\(joints\.arms\[0\],joints\.arms\[1\]\)/,
+ 'Monster-only outfits must measure native shoulder pivots, not use generic dress size');
+assert.match(runtime,/mesh\.userData\.anatomicalWidthFit/,
+ 'Measured fit must be applied to the actual instanced garment meshes');
+assert.match(runtime,/createCanonicalHeadLocalGroomAnchor\(joints\.head,model\)/,
+ 'Head-local hair must grow upright even for rotated donor skeleton bones');
+assert.match(gallery,/controls\.minPolarAngle=HUMAN_MONSTER_IDS\.includes\(selected\)/,
+ 'Only humanlike previews should restrict top-down scalp views');
+assert.match(gallery,/else camera\.position\.set\(center\.x\+dist\*\.30/,
+ 'Nonhumanoid camera framing must keep prior behavior');
 assert.ok(old.includes('export function createMonsterModel'),
  'Existing nonhumanoid 3D geometry pipeline must stay unchanged');
 assert.ok(hero.includes('Superhero_Female_FullBody')&&hero.includes('Superhero_Male_FullBody'),
