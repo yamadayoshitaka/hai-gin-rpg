@@ -3,7 +3,7 @@ import {buildStudioContourNeck} from './studio-contour-neck-v58.js';
 import {weldStudioNeckIntoFace,addStudioRaisedInnerCollar} from './studio-unified-neck-v59.js?v=60';
 import {clipStudioFaceBustPreservingSurface,restoreStudioFaceSurfaceQuality,
  sampleStudioFacePigment,smoothStudioFaceNormals,
- studioAnatomicalSeamY,taperStudioLowerBustBelowChin} from './studio-face-quality-v56.js?v=57';
+ studioAnatomicalSeamY,taperStudioLowerBustBelowChin} from './studio-face-quality-v56.js?v=60';
 import {createCharacter} from './character-system/shared-character-runtime.js?v=4.6.36';
 import {buildRiggedJobOutfit} from './character-system/rigged-outfit-runtime.js?v=41';
 import {loadJobMotionMap} from './character-system/job-motion-source.js?v=4.6.36';
