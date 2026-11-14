@@ -20,7 +20,7 @@ export const FEMALE_SUMMON_FORMS=Object.freeze({
   'seraph_female',[0xc6c3dd,0xe7dfcd,0xd8c89a,0xffe1a1],{
    leaf:0xc8c3dc,feather:0xf4efe2,makeup:0x64668d,lip:0x8c759d
   }),
- dragon_lord:make('dragon_lord','guard','sturdy','stern','long','paladin','sword',
+ dragon_lord:make('dragon_lord','guard','sturdy','stern','bald','paladin','sword',
   'dragonkin_female',[0x84636b,0x342a3b,0x797d88,0xc77369],{
    horns:true,wings:true,makeup:0x352435,lip:0x7f394b
   }),
