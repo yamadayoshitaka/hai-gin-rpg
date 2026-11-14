@@ -139,12 +139,38 @@ export function createRegalLimbGeometry({
  ],{detail,pleat:kind==='sleeve'?.025:.009,
   name:kind==='sleeve'?'full-arm-costume-sleeve':'armoured-leg-or-boot'});
 }
-/** A complete fitted neckline with a curved metal or cord edge. */
+/**
+ * Chest-bone yoke sits underneath the movable upper-arm sleeves. Its rim
+ * overlaps the collar and torso (rather than leaving a square shoulder hole
+ * between an independent shoulder pad and a nearly naked source character).
+ * One mesh is used for both shoulders to avoid detached floating pad pieces.
+ */
+export function createRegalShoulderYokeGeometry({
+ detail='high',armoured=false
+}={}){
+ const scale=armoured?1.035:1;
+ return loftRings([
+  {y:.335,rx:.166,rz:.126},
+  {y:.285,rx:.235*scale,rz:.169*scale},
+  {y:.235,rx:.288*scale,rz:.194*scale},
+  {y:.145,rx:.302*scale,rz:.207*scale},
+  {y:.075,rx:.241*scale,rz:.177*scale},
+  {y:-.035,rx:.232*scale,rz:.172*scale}
+ ],{detail,pleat:armoured?.009:.020,
+  name:armoured?'shoulder-yoke-articulated-plate':'shoulder-yoke-tailored-cloth'});
+}
+/**
+ * Neckline tapers TOWARD the neck. The older collar widened at the top,
+ * forming a floating hollow ring above the shoulder gap. The lower ring
+ * overlaps the underlying yoke; no detached trim is constructed.
+ */
 export function createRegalCollarGeometry({detail='high'}={}){
  return loftRings([
-  {y:.28,rx:.17,rz:.117},{y:.36,rx:.187,rz:.138},
-  {y:.42,rx:.197,rz:.146}
- ],{detail,pleat:.018,name:'wrapped-ceremonial-collar'});
+  {y:.265,rx:.179,rz:.136},
+  {y:.313,rx:.158,rz:.120},
+  {y:.375,rx:.130,rz:.100},
+  {y:.427,rx:.108,rz:.088}
+ ],{detail,pleat:.012,name:'wrapped-ceremonial-collar'});
 }
 const needsLeggings=p=>p?.leggings!==null;
 export function addRegalHumanoidOutfit({profile,frames,detail='high',attach,tube}={}){
@@ -158,6 +184,11 @@ export function addRegalHumanoidOutfit({profile,frames,detail='high',attach,tube
  const decorated=['dragonkin_female','demon','gargoyle','death_knight','dark_knight'].includes(profile.costume);
  add(frames.chest,createRegalBodiceGeometry({detail,armoured:decorated}),
   plan.bodice,plan.style+'-fitted-bodice');
+ // One continuous shoulder closure overlaps both torso and arm sleeve roots
+ // while remaining parented to the animated chest bone.
+ add(frames.chest,createRegalShoulderYokeGeometry({
+  detail,armoured:decorated
+ }),plan.bodice,plan.style+'-shoulder-yoke');
  add(frames.chest,createRegalCollarGeometry({detail}),
   plan.trim,plan.style+'-collar');
  add(frames.pelvis,createRegalSkirtGeometry({
