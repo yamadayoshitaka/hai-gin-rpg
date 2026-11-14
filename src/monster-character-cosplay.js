@@ -19,13 +19,13 @@ import {addGothicMonsterSculpt,hasGothicMonsterSculpt}
 import {decorateMonsterPhotoMaterial,detachMonsterPhotoMaterial}
  from './monster-photo-pbr.js';
 import {classifyCosplaySurface,applyMonsterMaterialPigment}
- from './monster-cosplay-pigmentation.js';
+ from './monster-cosplay-pigmentation.js?v=4.5.21';
 import {addConstructMonsterCostume,isConstructCostume}
  from './monster-construct-costume.js';
 import {addDemonicFaceCosmetics,hasDemonCosmetics}
  from './monster-demon-cosmetics.js?v=4.5.05';
 import {addFemaleSummonCostume,isFemaleSummonCostume}
- from './female-summon-costumes.js?v=4.5.19';
+ from './female-summon-costumes.js?v=4.5.21';
 import {createDragonkinNativeScalpOverlay}
  from './dragonkin-native-scalp.js?v=4.5.14';
 import {cutFemaleSummonScalpUnderCover}
