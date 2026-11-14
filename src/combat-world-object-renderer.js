@@ -5,7 +5,9 @@
  * meshes, not thousands of per-creature JS objects or a humanoid rig.
  */
 import * as THREE from 'three';
-import { COMBAT_OBJECT_SPECS } from './combat-action-spec.js?v=4.4.74';
+import { COMBAT_OBJECT_SPECS } from './combat-action-spec.js?v=4.6.38';
+import {isMonsterSummonType} from './monster-summon-registry.js?v=1';
+import {createMonsterSummonRenderer} from './monster-summon-renderer.js?v=1';
 import { buildCombatObjectGeometry, CREATURE_VISUAL_SPECS } from './combat-creature-geometry.js?v=4.5.20';
 import {creatureInstancePhase,creatureFlightHeight,creatureSize,creatureAttackProgress,mountedFlightSway,mountedFlightBaseHeight} from './combat-creature-performance.js?v=4.6.37';
 import {createCreatureLocomotion,advanceCreatureLocomotion,creatureLegSwing} from './combat-creature-locomotion.js?v=4.4.59';
@@ -212,7 +214,13 @@ function createSpeciesCoat(type,photos){
  * @param {THREE.Camera=} options.camera - enables distance-based LOD
  */
 export function createCombatWorldObjectRenderer(scene,{cellSize=1.12,offset=6,terrainY=()=>0,camera=null,highDetailDistance=HIGH_DETAIL_DISTANCE}={}){
-  const types=Object.keys(COMBAT_OBJECT_SPECS);
+  // 50 native monsters use lazy pooled source-sculptures, NOT 100 eager
+  // InstancedMesh collections which would choke the 1000v1000 loading UI.
+  const types=Object.keys(COMBAT_OBJECT_SPECS).filter(type=>
+    !isMonsterSummonType(type));
+  const bestiarySummons=createMonsterSummonRenderer(scene,{
+    cellSize,offset,terrainY,camera,highDetailDistance
+  });
   const species=new Map();
   // Renderer-only interpolation and gait history; gameplay keeps integer tiles.
   const locomotion=new Map();
@@ -302,6 +310,7 @@ export function createCombatWorldObjectRenderer(scene,{cellSize=1.12,offset=6,te
   const commanderHorseColor=new THREE.Color(1.3,1.10,.72);
   const counts={};
   function sync(objects,time=0,units=null,actionTime=time,alpha=0,frame=-1){
+    bestiarySummons.sync(objects,time,actionTime);
     for(const [type,lods] of species){
       counts[type]=0;
       lods.high.count=0;lods.low.count=0;
@@ -443,6 +452,7 @@ export function createCombatWorldObjectRenderer(scene,{cellSize=1.12,offset=6,te
     disposed=true;
     locomotion.clear();
     footfalls.dispose();
+    bestiarySummons.dispose();
     for(const lods of species.values())for(const lod of Object.values(lods))
       for(const [part,mesh] of lod.meshes){
         scene.remove(mesh);mesh.geometry.dispose();
@@ -463,9 +473,19 @@ export function createCombatWorldObjectRenderer(scene,{cellSize=1.12,offset=6,te
     sync,dispose,
     faceLibraryReady:type=>libraryFaceTypes.has(type),
     footfallStats:footfalls.stats,
-    stats:()=>Object.fromEntries(types.map(type=>[type,counts[type]??0])),
-    detailStats:()=>Object.fromEntries(types.map(type=>[type,{
-      high:species.get(type).high.count,low:species.get(type).low.count,
-    }])),
+    stats:()=>({
+      ...Object.fromEntries(types.map(type=>[type,counts[type]??0])),
+      ...Object.fromEntries(Object.entries(bestiarySummons.detailStats()).map(
+       ([,v])=>[v.type,(bestiarySummons.stats().active?1:0)]))
+    }),
+    detailStats:()=>({
+      ...Object.fromEntries(types.map(type=>[type,{
+        high:species.get(type).high.count,low:species.get(type).low.count,
+      }])),
+      ...Object.fromEntries(Object.entries(bestiarySummons.detailStats()).map(
+        ([,v])=>[v.type,{high:v.high,low:v.low}]))
+    }),
+    monsterSourceModel:id=>bestiarySummons.actualModel(id),
+    monsterSourceStats:bestiarySummons.stats,
   };
 }
