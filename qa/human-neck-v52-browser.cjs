@@ -43,11 +43,15 @@ fs.mkdirSync(out,{recursive:true});
         neckShape.unifiedSkinNeckTriangles>=30&&
         neckShape.reusedFaceMaterial&&neckShape.separateNeckGeometryHidden&&
         neckShape.actualCollarSource&&
-        neckShape.unifiedNeckBottomHeight<neckShape.actualCollarHeight&&
+        (neckShape.v62SkinFirst?
+         neckShape.v62ClothingFittedAfterSkin&&
+         neckShape.v62SkinToTorsoOverlap>=.012&&
+         neckShape.unifiedNeckBottomHeight<neckShape.actualTorsoTopY:
+         neckShape.unifiedNeckBottomHeight<neckShape.actualCollarHeight)&&
         neckShape.raisedInnerCollarApplied&&
         neckShape.visibleSkinNeckLength<.04&&
         neckShape.unifiedNeckColorSmoothed&&neckShape.unifiedNeckNormalsSmoothed))
-    throw Error(gender+' one-piece neck does not reach the clothing collar: '+JSON.stringify(neckShape));
+    throw Error(gender+' skin-first neck seam or clothing collar is not seated: '+JSON.stringify(neckShape));
    if(!(neckShape?.applied&&neckShape.originalFaceNormalsPreserved&&
         neckShape.matchedFaceMaterial&&neckShape.transparentNeckEdge&&
         neckShape.anatomicalJawCut&&neckShape.narrowUnderJawConnector&&
