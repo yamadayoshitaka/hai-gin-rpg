@@ -69,12 +69,18 @@ export function measureStudioBareTorsoNeck(bodyRoot,{bandMeters=.035}={}){
  bodyRoot?.updateWorldMatrix?.(true,true);
  bodyRoot?.traverse?.(mesh=>{
   if(!mesh?.isMesh||!mesh.geometry?.getAttribute?.('position')||
-   !/^(?:female|male)_(?:ranger|peasant)_body$/i.test(mesh.name||''))return;
+   !/^(?:(?:female|male)_(?:ranger|peasant)_body|superhero_(?:female|male))$/i.test(mesh.name||''))return;
   const attr=mesh.geometry.getAttribute('position'),v=new THREE.Vector3();
   const samples=[];
   // Explicitly skin every donor vertex before measuring the neckline:
   // static geometry.boundingBox would refer to the T-pose, not the pose.
-  for(let i=0;i<attr.count;i++){
+  // Important: the donor head was removed by editing triangle indices,
+  // NOT by deleting vertex buffers. Reading ALL vertices would accidentally
+  // reintroduce discarded head vertices into the neck measurement.
+  const ids=mesh.geometry.getIndex()?
+   new Set(Array.from(mesh.geometry.getIndex().array)):
+   new Set(Array.from({length:attr.count},(_,i)=>i));
+  for(const i of ids){
    if(mesh.isSkinnedMesh&&mesh.skeleton&&mesh.getVertexPosition)
     mesh.getVertexPosition(i,v);
    else v.fromBufferAttribute(attr,i);
