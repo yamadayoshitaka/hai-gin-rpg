@@ -13,10 +13,16 @@ const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
 const finite=(value)=>Number.isFinite(value);
 const vec3=(a,b,c)=>new THREE.Vector3(a,b,c);
 
-export function measureCanonicalScalp(model,headBone){
+export function measureCanonicalScalp(model,headBone,{groomFrame=null}={}){
  model.updateMatrixWorld(true,true);
  headBone.updateWorldMatrix(true,false);
- const inv=headBone.matrixWorld.clone().invert();
+ // The GLB's Head bone need not use local +Y as anatomical up. Sample in
+ // the *same* model-upright frame that the hair geometry will attach to.
+ if(groomFrame){
+  if(groomFrame.parent!==headBone)throw Error('Scalp sample frame must belong to Head bone');
+  groomFrame.updateWorldMatrix(true,false);
+ }
+ const inv=(groomFrame??headBone).matrixWorld.clone().invert();
  const points=[];
  model.traverse(mesh=>{
   if(!mesh.isSkinnedMesh||!mesh.geometry||!mesh.skeleton)return;
@@ -167,10 +173,19 @@ export function createCharacterHairStrandsGeometry({
  * detaches the fringe whenever bind-pose head orientation is nonidentity.
  * Keep this group in the original bone's exact local coordinate system.
  */
-export function createCanonicalHeadLocalGroomAnchor(headBone){
+export function createCanonicalHeadLocalGroomAnchor(headBone,model=null){
  if(!headBone?.isBone)throw Error('Canonical hair requires the original head bone');
  const anchor=new THREE.Group();
  anchor.name='monster-head-local-groom-anchor';
+ if(model){
+  // Follow genuine Head animation, but use the actor's upright basis for
+  // the actual crown so donor head-local sideways axes cannot make bald caps.
+  headBone.updateWorldMatrix(true,false);
+  model.updateWorldMatrix(true,false);
+  anchor.quaternion.copy(headBone.getWorldQuaternion(new THREE.Quaternion()).invert()
+   .multiply(model.getWorldQuaternion(new THREE.Quaternion())));
+  anchor.userData.modelUprightGroom=true;
+ }
  headBone.add(anchor);
  anchor.userData.canonicalHeadBoneLocal=true;
  return anchor;
@@ -180,7 +195,7 @@ export function attachCanonicalCharacterGroom({
  attach,
 }={}){
  if(!profile||profile.hair==='bald')return null;
- const scalp=measureCanonicalScalp(model,headBone);
+ const scalp=measureCanonicalScalp(model,headBone,{groomFrame:frames.head});
  const fit={center:scalp.center,radius:scalp.radius,detail};
  const color=profile.hairColor??(
   profile.id==='seraph_guardian'?0xe0c48e:
