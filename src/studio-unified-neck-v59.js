@@ -114,6 +114,10 @@ export function weldStudioNeckIntoFace({
     bottomWorldY,
     garmentZ+(upperWorld.z-centerZ)*.81);
    const interpolated=upperWorld.clone().lerp(skinBottom,smooth);
+   // Sculpt throat and nape in profile; both actual boundary rings remain
+   // intact, so the imported face and garment connection never drift.
+   const forward=(upperWorld.z-centerZ)>=0;
+   interpolated.z+=Math.sin(Math.PI*t)*(forward?-.0022:.0013);
    const result=interpolated.applyMatrix4(fromWorld);
    vertexMap.set(row+':'+id,vertexCount+(row-1)*cols+k);
    for(const name of attrNames){
@@ -196,7 +200,9 @@ export function weldStudioNeckIntoFace({
 export function addStudioRaisedInnerCollar({wardrobeRoot,joined}={}){
  if(!wardrobeRoot?.isObject3D||!joined?.applied)
   return {applied:false,reason:'outfit-or-neck-unavailable'};
- const topY=joined.seamMinY-.029;
+ // v60: 18% less visible skin between jaw and the existing tunic collar.
+ // Neck/face remains one welded mesh, with no change to the source face.
+ const topY=joined.seamMinY-.029*.82;
  const baseY=joined.collarY-.016;
  if(topY-baseY<.012||topY>=joined.seamMinY-.012)
   return {applied:false,reason:'collar-height-invalid',topY,baseY};
@@ -241,7 +247,8 @@ export function addStudioRaisedInnerCollar({wardrobeRoot,joined}={}){
  mesh.name='STUDIO_RAISED_INNER_TUNIC_COLLAR_V59';
  mesh.frustumCulled=false;
  mesh.userData={previewOnly:true,attachedToActualSewnCollar:true,
-  replacesExposedLowerNeck:true,notPartOfFace:true};
+  replacesExposedLowerNeck:true,notPartOfFace:true,
+  v60VisibleNeckReduction:.18};
  wardrobeRoot.add(mesh);
  return {applied:true,mesh,topY,baseY,visibleSkinLength:joined.seamMinY-topY,
   source:collar.mesh,sourceColor:'#536a7e',rings,count};
