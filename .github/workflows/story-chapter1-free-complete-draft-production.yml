@@ -71,6 +71,7 @@ jobs:
         run: |
           set -euo pipefail
           git show origin/main:scripts/generate-story-chapter1-free-batch.mjs > scripts/generate-story-chapter1-free-batch.mjs
+          git show origin/main:src/story-c01-stage45-art-guard.js > src/story-c01-stage45-art-guard.js
           git show origin/main:src/story-chapter1-provisional-live.js > src/story-chapter1-provisional-live.js
           git show origin/main:src/story-panel-registered-art.js > src/story-panel-registered-art.js
           while IFS= read -r asset; do
