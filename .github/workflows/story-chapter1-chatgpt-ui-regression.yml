@@ -9,6 +9,11 @@ on:
       - 'story-chapter1-approval.html'
       - 'story-maintenance.html'
       - 'qa/story-chapter1-chatgpt-image-handoff.test.mjs'
+      - 'qa/story-chapter1-automatic-release.test.mjs'
+      - 'scripts/generate-story-chapter1-free-batch.mjs'
+      - 'scripts/publish-story-chapter1-provisional.mjs'
+      - '.github/workflows/story-chapter1-free-complete-draft-production.yml'
+      - '.github/workflows/story-chapter1-provisional-game-register.yml'
       - '.github/workflows/story-chapter1-chatgpt-ui-regression.yml'
   workflow_dispatch:
 permissions:
@@ -29,3 +34,9 @@ jobs:
           node --check src/story-chapter1-approval-ui.js
       - name: Verify 132 manga pages, 462 story shots, exact screenplay and ChatGPT prompt handoff
         run: node qa/story-chapter1-chatgpt-image-handoff.test.mjs
+      - name: Verify complete free-only 462-scene generation-to-game pipeline and reversible no-approval mode
+        run: |
+          node --check scripts/generate-story-chapter1-free-batch.mjs
+          node --check scripts/publish-story-chapter1-provisional.mjs
+          node qa/story-chapter1-automatic-release.test.mjs
+          node scripts/generate-story-chapter1-free-batch.mjs --mode plan
