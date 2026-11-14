@@ -9,12 +9,15 @@ export function loadMaleFacePreset(storage=globalThis?.localStorage){
   const value=storage?.getItem(MALE_FACE_STUDIO_KEY);
   if(!value)return null;
   const data=JSON.parse(value);
-  return data?.version===42&&data?.parts&&data?.controls?data:null;
+  if(data?.version!==42||!data?.parts||!data?.controls)return null;
+  if(data.bodyPresetVersion!==60&&data.parts.bodyType==='thin')
+   return {...data,parts:{...data.parts,bodyType:'ultraThin'}};
+  return data;
  }catch{return null;}
 }
 export function saveMaleFacePreset(data,storage=globalThis?.localStorage){
  if(!storage||!data?.parts||!data?.controls)return false;
- const content={version:42};
+ const content={version:42,bodyPresetVersion:60};
  for(const [key,value] of Object.entries(data)){
   if(keys.has(key))content[key]=value;
  }
