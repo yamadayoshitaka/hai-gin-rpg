@@ -1027,6 +1027,47 @@ function aquatic(g,s){
  }
  g.root.scale.setScalar(s.size*.86);
 }
+/**
+ * Species-matched regalia for NONHUMAN bosses. Armour is fitted into the
+ * existing anatomical torso, follows its motion and keeps paws / wings free.
+ * Never dress natural wolves, spiders or the separately protected m005/m006.
+ * Outfitting only the relevant mythical/armoured species avoids generic
+ * humanoid clothes and preserves all 50 species silhouettes.
+ */
+export const NONHUMAN_MONSTER_WARDROBE=Object.freeze({
+ m008:Object.freeze({name:'lion-king-regalia',role:'fabric',w:.43,y:1.30}),
+ m012:Object.freeze({name:'griffin-royal-harness',role:'metal',w:.36,y:1.44}),
+ m017:Object.freeze({name:'basilisk-scale-plate',role:'metal',w:.43,y:1.30}),
+ m050:Object.freeze({name:'sea-god-raiment',role:'metal',w:.43,y:1.30}),
+});
+export function addNonhumanMonsterWardrobe(g,s){
+ const plan=NONHUMAN_MONSTER_WARDROBE[s.id];
+ if(!plan)return false;
+ const torso=g.pivots.torso;
+ if(!torso)throw Error('Regalia needs original anatomical torso '+s.id);
+ const {w,y,name,role}=plan,outer=w*.92;
+ for(const side of [-1,1]){
+  // Embedded overlapping segments instead of detached spheres. They remain
+  // a thin surface on top of the actual skin/scale envelope.
+  for(let row=0;row<3;row++){
+   const z=-.28+row*.28;
+   g.sphere(torso,role,[side*outer,y+.09,z],
+    [.076,.238,.205],{
+     name:'monster-outfit-'+name+'-flank-'+(side<0?'L':'R')+'-'+row,
+     metal:role==='metal'?.70:.1,rough:role==='metal'?.48:.82
+    });
+  }
+  g.tube(torso,'leather',[
+   [side*w*.62,y+.35,-.40],[side*outer,y+.34,-.22],
+   [side*(outer+.015),y+.32,.12],[side*w*.67,y+.36,.34]
+  ],.024);
+  g.sphere(torso,'accent',[side*(outer+.024),y+.35,.14],
+   [.042,.042,.027],{name:'monster-outfit-'+name+'-clasp-'+side,
+     metal:.45,rough:.48});
+ }
+ g.root.userData.nonhumanOutfit=name;
+ return true;
+}
 export function createMonsterModel(spec,{detail='high'}={}){
  if(!spec||!spec.family)throw Error('Invalid monster definition');
  const g=createSculpture(spec,detail);
@@ -1043,6 +1084,7 @@ export function createMonsterModel(spec,{detail='high'}={}){
    case 'aquatic':aquatic(g,spec);break;
    default:throw Error('Unknown anatomy: '+spec.family);
  }
+ addNonhumanMonsterWardrobe(g,spec);
  g.root.userData.speciesId=spec.id;
  g.root.userData.pivots=g.pivots;
  g.root.userData.homeScale=g.root.scale.x;
