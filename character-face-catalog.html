@@ -108,7 +108,9 @@ function renderDetails(){
  }
  const url=buildUrl(selected);$('openStudio').href=url;
  const frame=$('preview');frame.hidden=false;
- const target=new URL(url,location.href).href;
+ const previewUrl=new URL(url,location.href);
+ previewUrl.searchParams.set('preview','1');
+ const target=previewUrl.href;
  if(frame.src!==target)frame.src=target;
 }
 function render(){
