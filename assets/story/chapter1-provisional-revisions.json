@@ -73,6 +73,13 @@
       "sha256": "7d49bc89ef790fbee4ac287bc2ef82e43fef86aefef3bc8d44aac6c00877788f",
       "proof": "assets/story/chapter1-chatgpt-inbox/c01-s03__post-gameover__female__c01-s03-death-1.review.json",
       "actionAt": "2026-11-14T09:04:40.947Z"
+    },
+    {
+      "kind": "CHATGPT_OWNER_PROVISIONAL_NOT_P0",
+      "key": "c01-s03|pre|male|c01-s03-m1",
+      "sha256": "69c939a2a85d5ced6ffb8277b028400fe6336c8364d202df9dc3f022611d09a6",
+      "proof": "assets/story/chapter1-chatgpt-inbox/c01-s03__pre__male__c01-s03-m1.review.json",
+      "actionAt": "2026-11-14T10:03:05.450Z"
     }
   ]
 }

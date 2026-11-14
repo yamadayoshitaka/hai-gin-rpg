@@ -983,6 +983,17 @@ export const CHAPTER1_PROVISIONAL_LIVE=Object.freeze({
     "stageId": "c01-s03",
     "edition": "post-gameover",
     "gender": "female"
+  },
+  "c01-s03|pre|male|c01-s03-m1": {
+    "asset": "./assets/story/chapter1-provisional-live/c01-s03__pre__male__c01-s03-m1.webp",
+    "sha256": "69c939a2a85d5ced6ffb8277b028400fe6336c8364d202df9dc3f022611d09a6",
+    "provenance": "assets/story/chapter1-chatgpt-inbox/c01-s03__pre__male__c01-s03-m1.review.json",
+    "sourceDraft": "assets/story/chapter1-chatgpt-inbox/c01-s03__pre__male__c01-s03-m1.webp",
+    "status": "PROVISIONAL_OWNER_AUTHORIZED_PENDING_P0",
+    "originalLivePath": null,
+    "stageId": "c01-s03",
+    "edition": "pre",
+    "gender": "male"
   }
 });
 export function chapter1ProvisionalLivePanel(shot){
