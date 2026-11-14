@@ -1,5 +1,6 @@
 import {chapterOneReviewPages,EDITION_LABELS,REVIEW_BRANCH,REVIEW_REPO} from './story-chapter1-review-core.js';
 import {buildChapter1ImagePrompt,CHATGPT_IMAGES_URL} from './story-chapter1-image-prompt.js';
+import {chapter1ProvisionalLivePanel} from './story-chapter1-provisional-live.js';
 const $=id=>document.getElementById(id);
 const all=chapterOneReviewPages(),pages=new Map(all.map(p=>[p.number,p]));
 const rawRoot='https://raw.githubusercontent.com/'+REVIEW_REPO+'/'+REVIEW_BRANCH+'/';
@@ -317,7 +318,12 @@ async function load(shot,view,v){
   const ok=dimensionsOK(probe.naturalWidth,probe.naturalHeight,shot.stageId);
   urls.add(url);
   view.img.src=url;view.img.hidden=false;view.empty.hidden=true;
-  view.caption.textContent=(ok?(kind==='legacy'?'既存ゲーム原画':'新規候補・ハッシュ確認済み'):
+  const live=chapter1ProvisionalLivePanel({
+   stageId:shot.stageId,comicEdition:shot.edition,
+   protagonistGender:shot.gender,id:shot.shotId
+  });
+  view.caption.textContent=(ok?(live?.sha256===hash?'ゲームに仮反映済み・差し戻し可能':
+   kind==='legacy'?'既存ゲーム原画':'新規候補・本編仮反映待ち'):
    '解像度不足・再生成対象')+'　'+probe.naturalWidth+'×'+probe.naturalHeight;
   states.set(shot.key,{kind,hash,available:ok,bytes});
   for(const button of view.actions.querySelectorAll('button:not([data-choice="hold"])'))
