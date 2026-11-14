@@ -2,7 +2,8 @@
 /** Real mobile Chromium regression: jaw must remain visible above the cuirass. */
 const {chromium}=require('playwright');
 const fs=require('node:fs');
-const out='qa-screenshots/human-neck-v58';
+const {captureChromiumScreenshot}=require('./chromium-webgl-screenshot.cjs');
+const out='qa-screenshots/human-neck-v59';
 fs.mkdirSync(out,{recursive:true});
 (async()=>{
  // Each gender owns its own Chromium process. Reusing a page for both large
@@ -21,7 +22,7 @@ fs.mkdirSync(out,{recursive:true});
    page.on('pageerror',error=>errors.push(error.message));
    // Committed navigation is enough; readiness is checked against live 3D
    // outfit + clearance metadata, not page-loaded timing.
-   await page.goto('http://127.0.0.1:8766/'+path+'?v=58',
+   await page.goto('http://127.0.0.1:8766/'+path+'?v=59',
     {waitUntil:'commit',timeout:120000});
    await page.waitForFunction(key=>{
     const state=window[key]?.();
@@ -37,9 +38,16 @@ fs.mkdirSync(out,{recursive:true});
         Math.abs(alignment.gapMeters+alignment.anatomicalInset)<.006))
     throw Error(gender+' source head improperly seated relative to torso: '+JSON.stringify(alignment));
    const neckShape=state.v36RealBattleCostume.proportions.neckContinuity;
-   if(!(neckShape?.contourNeckApplied&&neckShape.actualCutEdgeSegments>=12&&
-        neckShape.originalBluePipeHidden&&neckShape.correctSkinNeckColor))
-    throw Error(gender+' still using detached fabricated neck: '+JSON.stringify(neckShape));
+   if(!(neckShape?.unifiedSkinNeckApplied&&
+        neckShape.unifiedSkinNeckEdges>=12&&
+        neckShape.unifiedSkinNeckTriangles>=30&&
+        neckShape.reusedFaceMaterial&&neckShape.separateNeckGeometryHidden&&
+        neckShape.actualCollarSource&&
+        neckShape.unifiedNeckBottomHeight<neckShape.actualCollarHeight&&
+        neckShape.raisedInnerCollarApplied&&
+        neckShape.visibleSkinNeckLength<.04&&
+        neckShape.unifiedNeckColorSmoothed&&neckShape.unifiedNeckNormalsSmoothed))
+    throw Error(gender+' one-piece neck does not reach the clothing collar: '+JSON.stringify(neckShape));
    if(!(neckShape?.applied&&neckShape.originalFaceNormalsPreserved&&
         neckShape.matchedFaceMaterial&&neckShape.transparentNeckEdge&&
         neckShape.anatomicalJawCut&&neckShape.narrowUnderJawConnector&&
@@ -48,7 +56,7 @@ fs.mkdirSync(out,{recursive:true});
    if(!(fit.chestPieces>0&&fit.clearanceMeters>=.007))
     throw Error(gender+' mouth hidden by cuirass: '+JSON.stringify(fit));
    await page.locator('#front').click();
-   await page.screenshot({path:out+'/'+gender+'-front.png',timeout:90000});
+   await captureChromiumScreenshot(page,out+'/'+gender+'-front.png');
    await page.locator('#toggleOutfit').click();
    // The naked torso must be restored when clothing hides.
    const naked=await page.evaluate(key=>{
@@ -74,7 +82,7 @@ fs.mkdirSync(out,{recursive:true});
    },qa);
    if(!naked.visibleBody.length)
     throw Error(gender+' clothes-off test: skinned torso/arms missing');
-   await page.screenshot({path:out+'/'+gender+'-body-restored.png',timeout:90000});
+   await captureChromiumScreenshot(page,out+'/'+gender+'-body-restored.png');
    await page.locator('#toggleOutfit').click();
    state=await page.evaluate(key=>window[key](),qa);
    fit=state.v36RealBattleCostume.proportions.neckClearance;

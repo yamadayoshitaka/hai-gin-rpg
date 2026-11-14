@@ -42,10 +42,12 @@ test('v58 neck is skin colored and its upper boundary follows actual cropped fac
  assert.ok(result.contourNeckLength>0&&result.contourNeckLength<.11);
  const contour=face.getObjectByName('STUDIO_CONTOUR_SKIN_NECK_V58');
  const old=head.getObjectByName('STUDIO_REAL_SKIN_NECK_CONNECTOR_V54');
- assert.ok(contour?.isMesh&&contour.visible);
+ assert.ok(contour?.isMesh&&!contour.visible, 'old v58 separate surface must be hidden');
  assert.equal(contour.parent,face,
   'physical face boundary should be inherited without a separate head transform');
  assert.equal(old.visible,false,'the blue shelf must never be displayed');
+ assert.equal(result.unifiedSkinNeckApplied,true,JSON.stringify(result));
+ assert.equal(face.geometry.userData.studioUnifiedNeck,true);
  assert.equal(contour.material.transparent,false);
  assert.equal(contour.material.vertexColors,true);
  assert.equal(contour.material.color.getHex(),face.material.color.getHex(),
@@ -60,6 +62,7 @@ test('v58 neck is skin colored and its upper boundary follows actual cropped fac
  const before=contour;
  const second=fitStudioNeckContinuity({faceRoot:head,faceMesh:face,wardrobeRoot:outfit});
  assert.equal(second.contourNeckApplied,true);
+ assert.equal(second.unifiedSkinNeckApplied,true);
  assert.equal(face.children.filter(m=>m.name==='STUDIO_CONTOUR_SKIN_NECK_V58').length,1);
  assert.notEqual(face.getObjectByName('STUDIO_CONTOUR_SKIN_NECK_V58'),before);
  assert.deepEqual(source.getAttribute('position').array,positions,

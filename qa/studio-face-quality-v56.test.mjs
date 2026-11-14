@@ -127,7 +127,10 @@ test('v56 neck colour follows cheek pigment instead of an opaque fixed beige car
  const clipped=face.geometry;
  const second=fitStudioNeckContinuity({faceRoot:headRoot,faceMesh:face,wardrobeRoot:wardrobe});
  assert.equal(second.applied,true);
- assert.equal(face.geometry,clipped,'stationary head can reuse exact clipped face geometry');
+ assert.equal(face.geometry.getAttribute('position').count,
+  clipped.getAttribute('position').count,
+  're-fitting retains a stable one-piece neck vertex count');
+ assert.equal(second.unifiedSkinNeckApplied,true);
  assert.deepEqual(source.getAttribute('position').array,allPositions,
   'no face morph or mesh position may be modified by a neck edit');
  connector.geometry.dispose();connector.material.dispose();
