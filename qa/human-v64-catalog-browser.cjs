@@ -28,8 +28,21 @@ async function ready(page){
   await captureChromiumScreenshot(page,out+'/catalog-female-01.png');
   // Sixteenth new face preset must be ACTUALLY applied to the 3D model.
   await page.locator('.entry').filter({hasText:'儚げな妖精'}).click();
-  await page.waitForFunction(()=>document.querySelector('#preview')?.contentWindow
-    ?.__faceMasterQA?.()?.completeFacePreset===15,null,{timeout:90000});
+  await page.waitForTimeout(3500);
+  const face16Audit=await page.evaluate(()=>{
+   const frame=document.querySelector('#preview');
+   let state=null,status=null,frameHref=null,scriptError=null;
+   try{state=frame?.contentWindow?.__faceMasterQA?.();status=frame?.contentDocument?.querySelector('#status')?.textContent;frameHref=frame?.contentWindow?.location.href;}
+   catch(e){scriptError=e.message;}
+   return {src:frame?.src,frameHref,status,
+    loaded:state?.loaded,gender:state?.gender,completeFacePreset:state?.completeFacePreset,
+    faceParts:state?.v32PartSelection,scriptError};
+  });
+  console.log('V64_FACE16_PREVIEW_AUDIT '+JSON.stringify({face16Audit,errors}));
+  try{await page.waitForFunction(()=>document.querySelector('#preview')?.contentWindow
+    ?.__faceMasterQA?.()?.completeFacePreset===15,null,{timeout:45000});}
+  catch(error){throw Error('face16 actual 3D preset failed: '+JSON.stringify({
+   face16Audit,errors,reason:error.message}));}
   await captureChromiumScreenshot(page,out+'/catalog-female-16.png');
   // The photographed side-ponytail must attach to real scalp, not bbox.
   await page.locator('[data-tab="hair"]').click();
