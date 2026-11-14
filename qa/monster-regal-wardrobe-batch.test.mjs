@@ -173,8 +173,8 @@ for(const profile of cases){
  report.push({costume:profile.costume,high,low});
  hi.dispose();lo.dispose();
 }
-assert.equal(FEMALE_SUMMON_FORMS.dragon_lord.hair,'bald',
- 'Dragon king must be hairless as the user specified');
+assert.equal(FEMALE_SUMMON_FORMS.dragon_lord.hair,'long',
+ 'Approved dragon queen uses a fitted plum full-crown groom');
 assert.notEqual(FEMALE_SUMMON_FORMS.seraph_guardian.face,
  FEMALE_SUMMON_FORMS.dragon_lord.face,
  'Angel and dragon should not have the same facial character');
@@ -184,25 +184,16 @@ const dragon=fixture();
 assert.equal(addFemaleSummonCostume({
  ...dragon,profile:FEMALE_SUMMON_FORMS.dragon_lord,detail:'high'
 }),true);
-assert.equal(dragon.all.filter(o=>o.name.includes('dragonkin-solid-golden-eye-')).length,2,
- 'Dragon king must have two pupil-free yellow eyes');
-assert.ok(dragon.all.every(o=>!o.name.includes('dragonkin-hair')));
-const dragonEyes=dragon.all.filter(o=>o.name.includes('dragonkin-solid-golden-eye-'));
-assert.ok(dragonEyes.every(o=>o.userData.role==='dragonEye'),
- 'Pupil-free almond eyes must retain muted golden iris material');
-assert.ok(dragonEyes.every(o=>o.geometry.userData.kind==='dragonkin-inset-almond-golden-eye'),
- 'Screenshot regression: never replace the female face with flat yellow marble eyeballs');
-for(const n of dragonEyes){
- const bb=new THREE.Box3().setFromBufferAttribute(n.geometry.getAttribute('position'));
- assert.ok(bb.max.y-bb.min.y<.029&&bb.max.z-bb.min.z<.012,
-  'Eyes must remain small shallow almonds and preserve natural eye socket');
-}
-assert.ok(dragon.all.some(o=>o.name.includes('dragonkin-scaled-hairless-crown')&&
-  o.geometry.userData.kind==='dragonkin-scaled-cranial-shell'),
- 'Dragon Lord bald skull must be an anatomical continuous scaled plate, not sphere helmet');
+assert.equal(dragon.all.filter(o=>o.name.includes('dragonkin-solid-golden-eye-')).length,0,
+ 'Keep native skinned eyes rather than overlaying fake gold eyeballs');
+assert.equal(dragon.all.filter(o=>o.name.includes('dragonkin-scaled-hairless-crown')).length,0,
+ 'No opaque helmet over the approved long-haired dragon queen');
+assert.equal(dragon.all.filter(o=>o.name.includes('dragon-swept-horn-')).length,2,
+ 'Horns must remain bone-anchored on both sides');
 assert.equal(dragon.all.filter(o=>o.name.includes('dragonkin-delicate-upper-lid-')).length,2);
 assert.equal(dragon.all.filter(o=>o.name.includes('dragonkin-cheekbone-contour-')).length,2);
-assert.ok(dragon.all.some(o=>o.name.includes('dragonkin-fine-nasal-bridge')));
+assert.ok(!dragon.all.some(o=>o.name.includes('dragonkin-fine-nasal-bridge')),
+ 'Remove duplicate nose tube which showed as a hanging face ornament');
 assert.ok(dragon.all.some(o=>o.name.includes('dragonkin-natural-lower-lip')));
 dragon.dispose();
 const runtime=readFileSync(new URL('../src/monster-character-cosplay.js',import.meta.url),'utf8');
@@ -212,6 +203,6 @@ assert.match(runtime,/addRegalHumanoidOutfit\(/,
  'Regal clothes must be instantiated onto actual canonical hero models');
 assert.match(runtime,/fullBodyOutfit:royalOutfit\?\.style/,
  'Runtime should expose the full-body outfit actually selected');
-assert.match(gallery,/monster-character-cosplay\.js\?v=4\.5\.16/);
+assert.match(gallery,/monster-character-cosplay\.js\?v=4\.5\.17/);
 assert.match(bestiary,/monster-character-cosplay\.js\?v=4\.5\.16/);
 console.log('Full-body reference-inspired humanoid wardrobe regression PASS',report);
