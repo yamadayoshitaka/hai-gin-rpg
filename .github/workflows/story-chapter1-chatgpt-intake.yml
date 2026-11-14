@@ -1,0 +1,68 @@
+name: Chapter1 ChatGPT QA-passed images to reversible game registry
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'assets/story/chapter1-chatgpt-inbox/**'
+      - 'scripts/import-story-chapter1-chatgpt-staging.mjs'
+      - '.github/workflows/story-chapter1-chatgpt-intake.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: chapter1-live-provisional-safe-revisions
+  cancel-in-progress: false
+
+jobs:
+  quality-gated-intake:
+    name: Verify art bytes, actor references and reversible game binding
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Audit actual ChatGPT files and P0 human-review attestations
+        run: |
+          node --check scripts/import-story-chapter1-chatgpt-staging.mjs
+          node scripts/import-story-chapter1-chatgpt-staging.mjs --plan
+      - name: Register only QA-passed independent shots
+        run: node scripts/import-story-chapter1-chatgpt-staging.mjs --apply
+      - name: Verify chapter story, panel IDs and gender/outcome isolation
+        run: |
+          node qa/story-chapter1-chatgpt-image-handoff.test.mjs
+          node qa/story-panel-one-at-a-time.test.mjs
+      - name: Commit safe provisional assets
+        id: save
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A -- src/story-chapter1-provisional-live.js assets/story/chapter1-provisional-revisions.json
+          if [ -d assets/story/chapter1-provisional-live ]; then
+            git add -A -- assets/story/chapter1-provisional-live
+          fi
+          if git diff --cached --quiet; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "No newly QA-passed real ChatGPT artwork"
+          else
+            git commit -m 'art(provisional): import reviewed ChatGPT artwork with P0 provenance'
+            git fetch origin main
+            git rebase origin/main
+            git push origin HEAD:main
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Deploy game only after new verified art was committed
+        if: steps.save.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run publish-pages.yml --ref main
