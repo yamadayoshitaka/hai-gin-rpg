@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import {
  createMummyWrapRibbon,createGothicMantle,
  createRibbedBreastplate,createGothicHorn,createGothicBatWing,
- createKnightSkullBrow,GOTHIC_MONSTER_KINDS,
+ createKnightSkullBrow,createGothicUpperLashFanGeometry,GOTHIC_MONSTER_KINDS,
  hasGothicMonsterSculpt,addGothicMonsterSculpt
 } from '../src/monster-gothic-sculpt.js';
 import {HUMANOID_MONSTER_COSTUMES,FEMALE_VAMPIRE_COSTUME,humanoidMonsterCostumeFor} from '../src/monster-character-cosplay-manifest.js';
@@ -112,6 +112,25 @@ for(const [id,costume,needles] of expected){
     o.parent===hi.frames.head).length,2,
     'Both vampire fangs must move with actual head');
  }
+ if(id==='m034'||id==='m044'){
+  for(const sculpt of [hi,lo]){
+   const lashes=sculpt.nodes.filter(o=>o.name.includes('-upper-lashes-'));
+   assert.equal(lashes.length,2,id+' needs both native-eye eyelash fans');
+   for(const node of lashes){
+    assert.strictEqual(node.parent,sculpt.frames.head,
+     'Eyelashes must move with canonical Head bone');
+    assert.equal(node.userData.role,'makeup','No emissive fake iris materials');
+    assert.equal(node.geometry.userData.kind,'gothic-canonical-upper-lash-fan');
+    const p=node.geometry.getAttribute('position'),
+     uv=node.geometry.getAttribute('uv'),normal=node.geometry.getAttribute('normal');
+    assert.equal(uv.count,p.count);assert.equal(normal.count,p.count);
+    assert.ok(p.array.every(Number.isFinite));
+    assert.ok(node.geometry.index.count>=24);
+   }
+   assert.ok(sculpt.nodes.every(o=>!/(vampire-blood-iris|vampire-orbital-shadow|succubus-narrow-crimson-iris|succubus-eye-makeup)/.test(o.name)),
+    'Duplicate artificial iris or heavy eye sphere: '+id);
+  }
+ }
  if(id==='m032'){
   assert.ok(hi.nodes.filter(o=>o.name.includes('mummy-')&&
     o.geometry.userData.kind==='mummy-wrapped-linen-ribbon').length>=7,
@@ -126,6 +145,28 @@ for(const [id,costume,needles] of expected){
   n.geometry.dispose();n.material.dispose();
  }
 }
+// Preserve the real imported eye lens; verify near/distant geometry budget.
+for(const side of [-1,1]){
+ const high=createGothicUpperLashFanGeometry({side,detail:'high'});
+ const low=createGothicUpperLashFanGeometry({side,detail:'low'});
+ assert.ok(high.getAttribute('position').count>low.getAttribute('position').count*1.9);
+ assert.ok(high.getAttribute('position').count<100,'Mobile lash vertices ceiling');
+ for(const g of [high,low]){
+  const a=g.getAttribute('position');
+  assert.ok(a.array.every(Number.isFinite));
+  assert.equal(g.getAttribute('uv').count,a.count);
+  assert.equal(g.getAttribute('normal').count,a.count);
+  assert.ok(g.getAttribute('normal').array.every(Number.isFinite));
+  assert.ok(g.index.count>=24);
+ }
+ high.dispose();low.dispose();
+}
+assert.throws(()=>createGothicUpperLashFanGeometry({side:0}),/Lash side/);
+const variant=fixture('high');
+assert.equal(addGothicMonsterSculpt({profile:FEMALE_VAMPIRE_COSTUME,detail:'high',...variant}),true);
+assert.equal(variant.nodes.filter(o=>o.name.includes('vampire-upper-lashes-')).length,2);
+assert.equal(variant.nodes.filter(o=>/vampire-blood-iris|vampire-orbital-shadow/.test(o.name)).length,0);
+for(const n of variant.nodes){n.geometry.dispose();n.material.dispose();}
 const costumeSource=readFileSync(
  new URL('../src/monster-character-cosplay.js',import.meta.url),'utf8');
 const manager=readFileSync(new URL('../monster-manager.html',import.meta.url),'utf8');
