@@ -21,7 +21,7 @@
   "formallyApproved": false,
   "gameRegisteredByThisFile": false,
   "gameDeployedByThisFile": false,
-  "renderRule": "One original cinematic 16:9 frame per shot. Do NOT generate 5-panel sheet as original; sheet for review only. No text, lettering, UI, numbers, speech bubbles, writing or watermarks in pixels. Keep exact actor list and gender. 1536x864 or higher native resolution, WebP lossless or high quality. Never upscale poor art to imply quality. Review face, hair, clothing, anatomy, hands, scene, branch, and real attached reference images, before any game binding.",
+  "renderRule": "P0 STYLE LOCK: STAGE1_HI_FIDELITY_3D_JRPG_ANIME_REALISM_V1. Match existing stage1 high fidelity 3D JRPG/anime-realistic cinematic CGI, detailed lit faces/hair/materials. NEVER 2D manga/cel-shading/comic panels/poster. One original cinematic 16:9 frame per shot. Do NOT generate 5-panel sheet as original; sheet for review only. No text, lettering, UI, numbers, speech bubbles, writing or watermarks in pixels. Keep exact actor list and gender. 1536x864 or higher native resolution, WebP lossless or high quality. Never upscale poor art to imply quality. Attach ACTUAL reference image bytes (path strings do not count), then review face, hair, clothing, anatomy, hands, scene, branch and style vs references before any game binding.",
   "characterMasters": {
     "commander_male": {
       "path": "assets/story/panels/c01-s01-m01.webp",
@@ -126,5 +126,39 @@
       "canonConfirmed": true
     }
   ],
-  "generationNotes": "Do not reuse prior invalid ChatGPT generation. A generated image must be physically available, verifiably correct, and mapped to this scene's key before registration. Images appearing only in chat are NOT in git automatically."
+  "generationNotes": "Do not reuse prior invalid ChatGPT generation. A generated image must be physically available, verifiably correct, and mapped to this scene's key before registration. Images appearing only in chat are NOT in git automatically. 2026-11-14 STYLE REGRESSION: A previous generated image changed into 2D anime manga with speech bubbles and incorrect guild-quest story, which violates P0 and is rejected. Do not register those outputs; stage1 3D JRPG art style is locked.",
+  "visualStyleLock": {
+    "id": "STAGE1_HI_FIDELITY_3D_JRPG_ANIME_REALISM_V1",
+    "priority": "P0_ABSOLUTE_MUST_FOLLOW",
+    "identity": "Match chapter 1's original high fidelity 3D-rendered Japanese fantasy RPG cutscene style. Do not change art style between scenes or protagonist variants.",
+    "look": "Semi-realistic anime-inspired facial anatomy rendered in detailed three-dimensional CGI, fine natural hair strands, believable skin shading, tactile fabric and ornate metal armor, physically based light, rich depth and coherent atmosphere. Keep the earlier stage 1 image quality, character design and color grading.",
+    "forbidStyles": [
+      "2D flat anime",
+      "cel-shaded comic",
+      "hand-drawn manga page",
+      "comic panel layout",
+      "cartoon",
+      "chibi",
+      "illustrated storyboards",
+      "posters",
+      "typographic layouts",
+      "generic adventure-guild illustrations"
+    ],
+    "referenceImagePaths": [
+      "assets/story/panels/c01-s01-m01.webp",
+      "assets/story/chapters/c01/panels/c01-s01-m02-female.webp",
+      "assets/story/chapters/c01/panels/c01-s01-m06-male.webp"
+    ],
+    "referencePurposes": [
+      "male commander and overall high-end 3D RPG rendered environment",
+      "female hero and lighting quality where appropriate; never introduce her in male-only shots",
+      "existing castle and clothing visual continuity, not human-approved finished quality"
+    ],
+    "actualReferenceImageBytesRequired": true,
+    "pathsAloneAreNotInputs": true,
+    "mustCompareCandidateToReferenceImages": true,
+    "failOnStyleDrift": true,
+    "noVisualApprovalWithoutRealReferenceComparison": true,
+    "doNotClaimReferencesWereProvidedUnlessActuallyAttached": true
+  }
 }
