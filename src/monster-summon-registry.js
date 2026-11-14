@@ -28,6 +28,8 @@ export const MONSTER_SUMMON_ENTRIES=Object.freeze(MONSTER_CATALOG.map(monster=>{
    attack:monster.stats.attack,interval:rare?3.1:2.3,
    range:ranged?8:2,radius:rare?8:5,
    flying:airborne,duration:rare?33:45,
+   element:monster.element,sourceSkill:monster.skill,
+   monsterFamily:monster.family,monsterRarity:monster.rarity,
   }),
   skillSpec:Object.freeze({
    id:'call_'+monster.id,rank,kind:'summon',
