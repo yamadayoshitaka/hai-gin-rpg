@@ -7,7 +7,7 @@
 import * as THREE from 'three';
 import { COMBAT_OBJECT_SPECS } from './combat-action-spec.js?v=4.4.74';
 import { buildCombatObjectGeometry, CREATURE_VISUAL_SPECS } from './combat-creature-geometry.js?v=4.5.00';
-import {creatureInstancePhase,creatureFlightHeight,creatureSize,creatureAttackProgress,mountedFlightSway,mountedFlightBaseHeight} from './combat-creature-performance.js?v=4.6.29';
+import {creatureInstancePhase,creatureFlightHeight,creatureSize,creatureAttackProgress,mountedFlightSway,mountedFlightBaseHeight} from './combat-creature-performance.js?v=4.6.30';
 import {createCreatureLocomotion,advanceCreatureLocomotion,creatureLegSwing} from './combat-creature-locomotion.js?v=4.4.59';
 import {createCreatureFootfallFx} from './combat-creature-footfall-fx.js?v=4.4.23';
 import {loadQuaterniusSummonFace} from './combat-summon-face-library.js?v=4.4.78';
@@ -409,7 +409,10 @@ export function createCombatWorldObjectRenderer(scene,{cellSize=1.12,offset=6,te
       base.scale.set(scale*breathe*(1-dying*.15),scale*(1-dying*.18),scale*breathe*(1-dying*.15));
       base.updateMatrix();
       const distance=camera?camera.position.distanceTo(base.position):0;
-      const detail=distance<highDetailDistance*scale?'high':'low';
+      // 10x physical scale should NOT force every summon into heavy
+      // near-LOD across hundreds of grid cells. Per-species geometry is
+      // instanced, but source skins still need camera-distance LOD.
+      const detail=distance<highDetailDistance*Math.sqrt(scale)?'high':'low';
       const lod=species.get(o.type)[detail],slot=lod.count++;
       counts[o.type]++;
       for(const [part,mesh] of lod.meshes){
