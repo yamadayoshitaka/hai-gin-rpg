@@ -97,7 +97,7 @@ function writeMapAndLedger(){
  fs.writeFileSync(toAbs(reviewedFile),newBody);
  fs.writeFileSync(toAbs(ledgerPath),JSON.stringify(ledger,null,2)+'\n');
 }
-let imported=0,removed=0,unchanged=0,missing=0,failures=[];
+let imported=0,removed=0,unchanged=0,missing=0,providerBlocked=0,failures=[];
 if(mode==='--return-issue'){
  const raw=process.env.STORY_REVIEW_ISSUE_BODY||'';
  if(raw.length>30000)throw Error('Issue body too long');
@@ -133,6 +133,8 @@ const available=sourceManifest();
 const already=new Set();
 for(const s of shots){
  if(!canActOn(s))continue;
+ // Output rejected by provider safety filters must NEVER be published.
+ if(available.has(s.draftPath+'.provider-blocked.json')){providerBlocked++;continue;}
  if(!available.has(s.draftPath)||!available.has(s.draftPath+'.generation.json')){
   missing++;continue;
  }
@@ -162,6 +164,7 @@ if(failures.length){
  process.exitCode=2;
 }else if(mode==='--apply'&&imported)writeMapAndLedger();
 console.log(JSON.stringify({mode,registeredCandidates:imported,previousUnchangedOrReturned:unchanged,
- missingPhysicalImages:missing,invalidProof:failures.length,existingLiveProvisional:Object.keys(active).length,
+ missingPhysicalImages:missing,providerSafetyBlocked:providerBlocked,
+ invalidProof:failures.length,existingLiveProvisional:Object.keys(active).length,
  p0VisuallyApprovedByThisScript:0,automaticFinalRelease:false,
  reversibleViaLedgerAndGit:true}));
