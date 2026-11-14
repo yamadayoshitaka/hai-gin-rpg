@@ -85,7 +85,7 @@ assert.match(gallery,/pending\.ready\.then/,
  'Async canonical source must update preview only after load');
 assert.match(gallery,/__monsterCosplayQA/,
  'Live visual source should be auditable on user device');
-assert.ok(gallery.includes('monster-character-cosplay.js?v=4.5.18'),
+assert.ok(gallery.includes('monster-character-cosplay.js?v=4.5.19'),
  'Viewer must bust cached humanoid costume bundle');
 assert.match(runtime,/measureRegalShoulderFit\(joints\.arms\[0\],joints\.arms\[1\]\)/,
  'Monster-only outfits must measure native shoulder pivots, not use generic dress size');
