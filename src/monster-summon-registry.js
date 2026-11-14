@@ -20,7 +20,8 @@ export const MONSTER_SUMMON_ENTRIES=Object.freeze(MONSTER_CATALOG.map(monster=>{
  return Object.freeze({
   id,monsterId:monster.id,name:monster.name,family:monster.family,
   element:monster.element,rarity:monster.rarity,rank,
-  size:monster.size,flying:airborne,aquatic,
+  // Never render a summoned monster shorter than 10 human heights.
+  size:Math.max(1,monster.size),flying:airborne,aquatic,
   objectSpec:Object.freeze({
    name:monster.name,category:'summon',sourceMonsterId:monster.id,
    hp:monster.stats.hp,speed:Math.max(6,Math.min(15,monster.stats.speed)),
