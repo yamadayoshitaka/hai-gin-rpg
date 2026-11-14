@@ -8,6 +8,8 @@
  * The current game deliberately remains on its known-good canonical actors
  * until a separately versioned, fully-tested studio actor package exists.
  */
+import {inspectStudioSkinnedActor}
+ from './monster-studio-skinned-rig-audit.js';
 export const STUDIO_ACTOR_PACKAGE_SCHEMA='hai-gin/studio-skinned-actor/v1';
 export const STUDIO_MODEL_PREVIEW_REVISION='v59';
 
@@ -105,19 +107,31 @@ export function validateStudioHumanActorPackage(pkg,{sex='female'}={}){
 /** Preserve known-good actors even if a future studio package is submitted.
  * Runtime activation belongs to a separate verified adapter implementation.
  * Purely records what is missing; it does not turn studio files into actors. */
-export function planHumanoidCosplayBase(profile,{studioPackage=null}={}){
+export function planHumanoidCosplayBase(profile,{
+ studioPackage=null,studioScene=null,studioAnimations=[]
+}={}){
  const id=profile?.id??null,sex=profile?.sex??null;
  const isPilot=sex==='female'&&HUMANLIKE_SUMMON_PILOT_IDS.includes(id);
  const isMappedMonster=HUMANOID_COSPLAY_TARGET_IDS.includes(id);
  const actorPackage=validateStudioHumanActorPackage(studioPackage,{
   sex:sex==='male'?'male':'female'
  });
+ // A metadata-valid package is not enough. Demand actual weighted meshes,
+ // a complete Head/Spine/Limb hierarchy and real bound animation clips.
+ const rigAudit=actorPackage.ready&&studioScene?
+  inspectStudioSkinnedActor(studioScene,studioPackage,{
+   animations:studioAnimations
+  }):null;
  return Object.freeze({
   requestedId:id,
   sex,
   rollout:isPilot?'female-summon-pilot':
    isMappedMonster?'humanoid-monster-next':'unmapped',
   studioPackageReady:actorPackage.ready,
+  studioRigReady:!!rigAudit?.ready,
+  studioRigErrors:rigAudit?.errors??(actorPackage.ready?
+   ['studio-scene-not-audited']:[]),
+  studioRigSkinnedMeshes:rigAudit?.skinnedMeshes??0,
   errors:actorPackage.errors,
   activeModelId:profile?.modelId??null,
   liveSource:COSPLAY_HUMAN_BASE_RELEASE_POLICY.defaultSource,
@@ -125,7 +139,8 @@ export function planHumanoidCosplayBase(profile,{studioPackage=null}={}){
   activationAllowed:false,
   // Do not accidentally replace a production skinned animation rig merely
   // because a package exists in a separate studio scene.
-  nextAction:actorPackage.ready?'implement-and-test-actor-loader':
+  nextAction:rigAudit?.ready?'implement-and-test-actor-loader':
+   actorPackage.ready?'audit-loaded-studio-skeleton-and-motion':
    'finish-game-rigged-studio-asset'
  });
 }
