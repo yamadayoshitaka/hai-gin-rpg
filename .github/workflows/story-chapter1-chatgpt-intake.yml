@@ -30,24 +30,20 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Audit canonical missing scene scripts for first and third stages
+      - name: Audit canonical unresolved scenes, cast, and outcome per branch
         run: |
           node --input-type=module <<'NODE'
           import {chapterOneReviewPages} from './src/story-chapter1-review-core.js';
-          import {comicForStage} from './src/story-chapter-comic.js';
-          const wanted=new Set([
-            'c01-s01|post-town|male|c01-s01-m6','c01-s01|post-town|male|c01-s01-m7',
-            'c01-s01|post-town|male|c01-s01-m8','c01-s01|post-town|male|c01-s01-m9',
-            'c01-s01|post-town|male|c01-s01-m10',
-            'c01-s03|post-defeat|male|c01-s03-m6','c01-s03|post-defeat|male|c01-s03-m7',
-            'c01-s03|post-defeat|male|c01-s03-m8','c01-s03|post-defeat|male|c01-s03-m9',
-            'c01-s03|post-defeat|male|c01-s03-m16','c01-s03|post-gameover|male|c01-s03-death-1',
-            'c01-s03|post-gameover|male|c01-s03-death-2'
-          ]);
-          for(const page of chapterOneReviewPages())
-            for(const shot of page.shots)if(wanted.has(shot.key))console.log('CANONICAL_SCENE '+JSON.stringify({
-              key:shot.key,scriptText:shot.scriptText,legacyPath:shot.legacyPath||null,
-              stageName:page.stageName}));
+          import {CHAPTER1_PROVISIONAL_LIVE} from './src/story-chapter1-provisional-live.js';
+          import {registeredStoryPanelAsset} from './src/story-panel-registered-art.js';
+          const open=chapterOneReviewPages().flatMap(page=>page.shots
+            .filter(shot=>shot.stageId==='c01-s03'&&
+              !CHAPTER1_PROVISIONAL_LIVE[shot.key]&&!registeredStoryPanelAsset(shot))
+            .map(shot=>({key:shot.key,scriptText:shot.scriptText,characters:{
+              characterId:shot.characterId,secondaryId:shot.secondaryId,
+              speaker:shot.speaker,sceneKind:shot.sceneKind},stageName:page.stageName})));
+          console.log('STAGE3_MISSING_COUNT='+open.length);
+          for(const shot of open)console.log('STAGE3_MISSING '+JSON.stringify(shot));
           NODE
       - name: Audit actual ChatGPT files and P0 human-review attestations
         run: |
