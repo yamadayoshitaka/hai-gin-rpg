@@ -8,6 +8,7 @@ on:
     branches: [main]
     paths:
       - 'ops/start-chapter1-full-free-actual-art-once-20261114.trigger'
+      - 'ops/resume-c01-from-stage3-20261114.trigger'
   workflow_dispatch:
 
 permissions:
@@ -42,6 +43,7 @@ jobs:
         run: |
           node --check scripts/generate-story-chapter1-free-batch.mjs
           node qa/story-chapter-page-loop.test.mjs
+          node qa/story-chapter1-stage-priority.test.mjs
       - name: Fail before generation unless Free confirmed and both secrets available
         shell: bash
         env:
@@ -61,15 +63,27 @@ jobs:
           git switch -c story/chapter1-free-actual-art --track origin/story/chapter1-free-actual-art
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-      - name: Count true resume progress on persistent artwork branch
-        run: node scripts/generate-story-chapter1-free-batch.mjs --mode plan
+      - name: Restore current main game registration and latest stage-order generator for accurate missing-image checks
+        shell: bash
+        run: |
+          set -euo pipefail
+          git show origin/main:scripts/generate-story-chapter1-free-batch.mjs > scripts/generate-story-chapter1-free-batch.mjs
+          git show origin/main:src/story-chapter1-provisional-live.js > src/story-chapter1-provisional-live.js
+          git show origin/main:src/story-panel-registered-art.js > src/story-panel-registered-art.js
+          while IFS= read -r asset; do
+            mkdir -p "$(dirname "$asset")"
+            git show "origin/main:$asset" > "$asset"
+          done < <(git ls-tree -r --name-only origin/main -- assets/story/chapter1-provisional-live)
+          node --check scripts/generate-story-chapter1-free-batch.mjs
+      - name: Count stage3 then later stage missing real artworks
+        run: node scripts/generate-story-chapter1-free-batch.mjs --mode plan --start-stage c01-s03 --through-stage c01-s10
       - name: Generate real review images with strict budget and page commits
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_WORKERS_AI_API_TOKEN: ${{ secrets.CLOUDFLARE_WORKERS_AI_API_TOKEN }}
           CLOUDFLARE_FREE_PLAN_CONFIRMED: ${{ vars.CLOUDFLARE_FREE_PLAN_CONFIRMED }}
           CLOUDFLARE_CHAPTER1_DAILY_ESTIMATE_CAP: '7500'
-        run: node scripts/generate-story-chapter1-free-batch.mjs --mode generate --max-pages 12
+        run: node scripts/generate-story-chapter1-free-batch.mjs --mode generate --max-pages 12 --start-stage c01-s03 --through-stage c01-s10
       - name: Independently regress every canonical image and physical actor master (NO automatic visual approval)
         if: always()
         run: |
