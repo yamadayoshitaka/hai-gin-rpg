@@ -1,5 +1,18 @@
 import {test,expect} from '@playwright/test';
 
+// On phones, use the real catalog and settings drawers as a player would.
+async function selectMonster(page,id){
+ const option=page.locator(`.specimen[data-id="${id}"]`);
+ if(!(await option.isVisible()))await page.locator('#toggleCatalog').click();
+ await expect(option).toBeVisible();
+ await option.click({timeout:15000});
+}
+async function openSettings(page){
+ const tools=page.locator('#modelTools');
+ if(!(await tools.isVisible()))await page.locator('#toggleTools').click();
+ await expect(tools).toBeVisible();
+}
+
 test('mobile bestiary: 50 unique 3D monsters, saved edits and sample motions',async({page})=>{
  const errors=[];
  page.on('pageerror',error=>errors.push(String(error)));
@@ -16,10 +29,11 @@ test('mobile bestiary: 50 unique 3D monsters, saved edits and sample motions',as
   ['m046','浅瀬スライム'],['m050','珊瑚の海神獣']
  ];
  for(const [id,name] of silhouettes){
-   await page.locator('.specimen[data-id="'+id+'"]').click({timeout:15000});
+   await selectMonster(page,id);
    await expect(page.locator('#name')).toContainText(name);
    await expect(page.locator('#hud')).toContainText('3Dモデル');
  }
+ await openSettings(page);
  await page.locator('#actions button[title="special"]').click();
  await expect(page.locator('#notice')).toContainText('固有技');
  await page.locator('#actions button[title="dodge"]').click();
@@ -30,7 +44,8 @@ test('mobile bestiary: 50 unique 3D monsters, saved edits and sample motions',as
  await expect(page.locator('#edit-hp')).toHaveValue('7777');
  await page.reload({waitUntil:'domcontentloaded'});
  await expect(page.locator('#items .specimen')).toHaveCount(50,{timeout:50000});
- await page.locator('.specimen[data-id="m050"]').click();
+ await selectMonster(page,'m050');
+ await openSettings(page);
  await expect(page.locator('#edit-hp')).toHaveValue('7777');
  await page.locator('#reset').click();
  await expect(page.locator('#edit-hp')).not.toHaveValue('7777');
@@ -45,6 +60,7 @@ test('50-monster quality inspector: source/high/low & photo PBR, no geometry lea
  await page.goto('/monster-manager.html?v=4.4.85',{waitUntil:'domcontentloaded',timeout:65000});
  await expect(page.locator('#items .specimen')).toHaveCount(50,{timeout:50000});
  const qa=()=>page.evaluate(()=>window.__monsterQualityQA?.());
+ await openSettings(page);
  const high=await qa();
  expect(high?.detail).toBe('high');
  expect(high?.triangles).toBeGreaterThan(1000);
@@ -62,7 +78,7 @@ test('50-monster quality inspector: source/high/low & photo PBR, no geometry lea
  expect(low.triangles).toBeLessThan(high.triangles*.7);
  await page.locator('#quality').selectOption('high');
  for(const id of ['m011','m016','m021','m026','m031','m036','m041','m046']){
-   await page.locator('.specimen[data-id="'+id+'"]').click();
+   await selectMonster(page,id);
    const current=await qa();
    expect(current.id).toBe(id);
    expect(current.triangles).toBeGreaterThan(1000);
@@ -79,6 +95,7 @@ test('CC0 GLB registration, safe procedural fallback, personal GLB input',async(
  const errors=[];page.on('pageerror',e=>errors.push(String(e)));
  await page.goto('/monster-manager.html?v=4.4.85',{waitUntil:'domcontentloaded',timeout:65000});
  await expect(page.locator('#items .specimen')).toHaveCount(50,{timeout:50000});
+ await openSettings(page);
  await expect(page.locator('#assetSource')).toBeVisible();
  await expect(page.locator('#personalGlb')).toBeAttached();
  await expect(page.locator('#assetStatus')).toContainText(/CC0|GLB|外部/,{timeout:30000});
@@ -86,7 +103,7 @@ test('CC0 GLB registration, safe procedural fallback, personal GLB input',async(
  expect(info).toBeTruthy();
  expect(info.source).toBe('procedural');
  expect(info.approvedEntries).toBeGreaterThanOrEqual(0);
- await page.locator('.specimen[data-id="m043"]').click();
+ await selectMonster(page,'m043');
  await page.locator('#assetSource').selectOption('licensed');
  if(info.approvedEntries>0){
    await expect.poll(async()=>page.evaluate(()=>window.__monsterImportQA?.().externalActive),
@@ -109,6 +126,7 @@ test('Quaternius all fifty-model registration: catalog, 3D animation and saved a
    waitUntil:'domcontentloaded',timeout:65000
  });
  await expect(page.locator('#items .specimen')).toHaveCount(50,{timeout:50000});
+ await openSettings(page);
  await expect(page.locator('#externalAsset')).toBeVisible();
  await expect.poll(()=>page.evaluate(()=>window.__monsterImportQA?.()?.approvedEntries>=0),
   {timeout:30000}).toBe(true);
@@ -122,7 +140,7 @@ test('Quaternius all fifty-model registration: catalog, 3D animation and saved a
    expect(errors).toEqual([]);
    return;
  }
- await page.locator('.specimen[data-id="m001"]').click();
+ await selectMonster(page,'m001');
  await page.locator('#externalAsset').selectOption('q050');
  await expect.poll(()=>page.evaluate(()=>window.__monsterImportQA()?.externalActive),
   {timeout:50000}).toBe(true);
@@ -132,6 +150,7 @@ test('Quaternius all fifty-model registration: catalog, 3D animation and saved a
  await page.locator('#rememberAsset').click();
  await expect(page.locator('#assignmentStatus')).toContainText('割当保存済み');
  await page.reload({waitUntil:'domcontentloaded'});
+ await openSettings(page);
  await expect.poll(()=>page.evaluate(()=>window.__monsterImportQA()?.externalAsset),
   {timeout:30000}).toBe('q050');
  await expect.poll(()=>page.evaluate(()=>window.__monsterImportQA()?.externalActive),
