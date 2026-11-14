@@ -3,6 +3,7 @@
 const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const {chromium}=require('playwright');
+const {launchBattleViaThreeStepWizard}=require('./opening-three-stage.cjs');
 
 (async()=>{
   const browser=await chromium.launch({headless:true,args:[
@@ -49,16 +50,10 @@ const {chromium}=require('playwright');
     await page.goto('http://127.0.0.1:8765/tactics-wireframe.html?army=100&v=4.4.0',{
       waitUntil:'domcontentloaded',timeout:60000
     });
-    // Loading now waits for the stage BGM to buffer. Browsers need a
-    // user gesture before music playback; the test must press Start too.
-    await page.waitForFunction(()=>{
-      const start=document.querySelector('#loadingStart');
-      const error=document.querySelector('#runtimeError');
-      return start&&!start.hidden||error?.style.display==='block';
-    },null,{timeout:180000,polling:800});
-    if(await page.locator('#loadingStart').isVisible()){
-      await page.locator('#loadingStart').click();
-    }
+    // The currently shipped game uses a three-step opening wizard.
+    // Complete it through the visible UI; opening the old hidden Start
+    // button directly would wait forever at "① 編成".
+    await launchBattleViaThreeStepWizard(page,{timeout:180000});
     await page.waitForFunction(()=>{
       const stats=window.getMassBattleStats?.();
       const startup=window.getBattleStartupStats?.();
