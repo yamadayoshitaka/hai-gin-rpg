@@ -6,3 +6,5 @@
 # The workflow only generates what quota permits and is NOT a promise of completion.
 
 # Retry after generator source branch overlay fix; do not bill a paid endpoint.
+
+# Retry after confirming Stage3 native owner-accepted frames outrank legacy Cloudflare block reports.

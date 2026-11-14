@@ -80,6 +80,10 @@ for(const stage of stages){
 }
 if(pages.length!==132||keys.size!==462)throw Error('Expected EXACTLY 132 pages and 462 canonical shots');
 function status(s){
+ // A separately owner-accepted, native and physically present live image supersedes
+ // an old Cloudflare safety-block marker for the SAME scene. Never re-call a
+ // provider-blocked generation unless that alternative registration is removed.
+ if(s.registered&&!s.legacyBelowNative)return 'REGISTERED_NOT_P0_CERTIFIED';
  if(fs.existsSync(p(s.img+'.provider-blocked.json')))return 'BLOCKED_PROVIDER_SAFETY';
  const image=fs.existsSync(p(s.img)),proof=fs.existsSync(p(s.proof));
  if(!image&&!proof)return s.legacyBelowNative?'LEGACY_NATIVE_DEFECT_NEEDS_REGEN':
