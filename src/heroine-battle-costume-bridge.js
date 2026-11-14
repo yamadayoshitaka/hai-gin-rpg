@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import {clipStudioFaceBustPreservingSurface,restoreStudioFaceSurfaceQuality,
  sampleStudioFacePigment,smoothStudioFaceNormals,
- studioAnatomicalSeamY} from './studio-face-quality-v56.js?v=57';
+ studioAnatomicalSeamY,taperStudioLowerBustBelowChin} from './studio-face-quality-v56.js?v=57';
 import {createCharacter} from './character-system/shared-character-runtime.js?v=4.6.36';
 import {buildRiggedJobOutfit} from './character-system/rigged-outfit-runtime.js?v=41';
 import {loadJobMotionMap} from './character-system/job-motion-source.js?v=4.6.36';
@@ -297,10 +297,15 @@ export function fitStudioNeckContinuity({faceRoot,faceMesh,wardrobeRoot}={}){
   if(cached.clipped)cached.clipped.dispose();
   cached.clipped=cut.geometry;
   cached.cutReport=cut;cached.localCutY=localCutY;
-  cached.normalReport=smoothStudioFaceNormals(cut.geometry);
   faceMesh.geometry=cut.geometry;
+  cached.bustTaperReport=taperStudioLowerBustBelowChin(faceMesh,{
+   sourceWorldBounds:originalFaceBounds,
+   upperRatio:.27,lowerRatio:.10,edgeReduction:.72
+  });
+  cached.normalReport=smoothStudioFaceNormals(cut.geometry);
  }
  const normalQuality=cached.normalReport;
+ const bustTaper=cached.bustTaperReport;
  const faceQuality=restoreStudioFaceSurfaceQuality(faceMesh);
  const facePigment=sampleStudioFacePigment(faceMesh);
  const oldBridge=faceRoot.getObjectByName(STUDIO_NECK_NAME);
@@ -418,6 +423,9 @@ export function fitStudioNeckContinuity({faceRoot,faceMesh,wardrobeRoot}={}){
   trimmedSculptBottomY:safeCutY,
   anatomicalJawCut:!!cut.anatomicalCurve,
   cutPlaneType:cut.cutPlaneType,
+  lowerBustTapered:!!bustTaper?.applied,
+  lowerBustTaperedVertices:bustTaper?.affectedVertices||0,
+  sourceFaceUnchangedByBustTaper:!!bustTaper?.sourceGeometryUntouched,
   narrowUnderJawConnector:true,
   originalFaceGeometryPreserved:true,
   actualTorsoTopY:torsoTop,connectorBottomY:bottomY,connectorTopY:topY,
