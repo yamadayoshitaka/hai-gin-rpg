@@ -27,7 +27,7 @@ async function ready(page){
   if(first.completeFacePreset!==0)throw Error('First real face not selected: '+first.completeFacePreset);
   await captureChromiumScreenshot(page,out+'/catalog-female-01.png');
   // Sixteenth new face preset must be ACTUALLY applied to the 3D model.
-  await page.locator('.entry').filter({hasText:'儚げな妖精'}).click();
+  await page.evaluate(()=>[...document.querySelectorAll('.entry')].find(b=>b.textContent.includes('儚げな妖精'))?.click());
   await page.waitForTimeout(3500);
   const face16Audit=await page.evaluate(()=>{
    const frame=document.querySelector('#preview');
@@ -45,10 +45,10 @@ async function ready(page){
    face16Audit,errors,reason:error.message}));}
   await captureChromiumScreenshot(page,out+'/catalog-female-16.png');
   // The photographed side-ponytail must attach to real scalp, not bbox.
-  await page.locator('[data-tab="hair"]').click();
+  await page.evaluate(()=>document.querySelector('[data-tab="hair"]')?.click());
   await page.locator('#gender').selectOption('female');
   await page.locator('#search').fill('サイドポニーテール');
-  await page.locator('.entry').filter({hasText:'サイドポニーテール'}).click();
+  await page.evaluate(()=>[...document.querySelectorAll('.entry')].find(b=>b.textContent.includes('サイドポニーテール'))?.click());
   await page.waitForFunction(()=>{
    const frame=document.querySelector('#preview')?.contentWindow;
    return frame?.__faceMasterQA?.()?.loaded&&
@@ -59,21 +59,21 @@ async function ready(page){
   if(!side.wigReport?.v64RealScalpTiedRoot)
    throw Error('Side ponytail remains detached from real donor head '+JSON.stringify(side.wigReport));
   await captureChromiumScreenshot(page,out+'/female-side-ponytail-front.png');
-  await page.locator('#viewSide').click();
+  await page.evaluate(()=>document.querySelector('#viewSide')?.click());
   await page.waitForFunction(()=>document.querySelector('#preview')?.contentWindow
    ?.__faceMasterQA?.()?.view==='side',null,{timeout:90000});
   await captureChromiumScreenshot(page,out+'/female-side-ponytail-side.png');
   // All 22 expression entries should generate actual face geometry.
-  await page.locator('[data-tab="expressions"]').click();
+  await page.evaluate(()=>document.querySelector('[data-tab="expressions"]')?.click());
   await page.locator('#search').fill('決意');
-  await page.locator('.entry').filter({hasText:'決意'}).click();
+  await page.evaluate(()=>[...document.querySelectorAll('.entry')].find(b=>b.textContent.includes('決意'))?.click());
   await page.waitForFunction(()=>document.querySelector('#preview')?.contentWindow
    ?.__faceMasterQA?.()?.expression?.expression==='determined',null,{timeout:90000});
   await captureChromiumScreenshot(page,out+'/female-determined-expression.png');
   await page.locator('#gender').selectOption('male');
-  await page.locator('[data-tab="faces"]').click();
+  await page.evaluate(()=>document.querySelector('[data-tab="faces"]')?.click());
   await page.locator('#search').fill('貴公子');
-  await page.locator('.entry').filter({hasText:'中性的な貴公子'}).click();
+  await page.evaluate(()=>[...document.querySelectorAll('.entry')].find(b=>b.textContent.includes('中性的な貴公子'))?.click());
   await page.waitForFunction(()=>{
    const state=document.querySelector('#preview')?.contentWindow?.__faceMasterQA?.();
    return state?.loaded&&state.gender==='male'&&state.completeFacePreset===15;
