@@ -27,6 +27,8 @@ import {addFemaleSummonCostume,isFemaleSummonCostume}
  from './female-summon-costumes.js?v=4.5.14';
 import {createDragonkinNativeScalpOverlay}
  from './dragonkin-native-scalp.js?v=4.5.14';
+import {cutFemaleSummonScalpUnderCover}
+ from './female-summon-scalp-cut.js?v=4.5.15';
 import {attachCanonicalCharacterGroom,createCanonicalHeadLocalGroomAnchor,
  measureCanonicalScalp}
  from './monster-humanoid-hair.js?v=4.5.13';
@@ -268,6 +270,17 @@ function buildMonsterCostume(THREE,model,profile,detail){
    attachGroom:(frame,g,role,name,p,r)=>
     attach(frame,g,role,name,p,r,{groom:true})
  });
+ // Subtract only native crown triangles hidden under a fitted wig or scale
+ // cap. Keep the real eyes, forehead, ears, neck, joint motion and GLB.
+ // Important: measure and build all hair/armour BEFORE modifying indices.
+ const scalpCoverKind=['forest_spirit_female','seraph_female'].includes(
+  profile.costume)?'wig':profile.costume==='dragonkin_female'&&nativeDragonCrown
+  ?'scales':null;
+ const scalpCut=scalpCoverKind?cutFemaleSummonScalpUnderCover({
+  model,headBone:joints.head,groomFrame:frames.headGroom,
+  scalp:scalpCoverKind==='wig'?groom?.scalp:dragonSkull,
+  kind:scalpCoverKind
+ }):null;
  // Structural garment layers are essential: the canonical full-body donor
  // wears little clothing. A cape or set of wings is not an outfit.
  const royalOutfit=wardrobeFor(profile);
@@ -393,6 +406,11 @@ function buildMonsterCostume(THREE,model,profile,detail){
   dragonCraniumSamples:dragonSkull?.samples??0,
   dragonCraniumNativeTopology:!!nativeDragonCrown,
   dragonNativeScalpTriangles:nativeDragonCrown?.userData.sourceTriangles??0,
+  sourceCraniumWigCut:!!scalpCut,
+  sourceCraniumCutMode:scalpCut?.kind??null,
+  sourceCraniumRemovedTriangles:scalpCut?.removedTriangles??0,
+  sourceCraniumPreservedTriangles:scalpCut?.preservedTriangles??0,
+  sourceCraniumSourcePreserved:scalpCut?.sourcePreserved??true,
   crownCovered:!!groom?.crown,hairStrands:!!groom?.locks,
   headBoneLocalGroom:!!groom?.crown&&groom.crown.parent===frames.headGroom,
   hairSurfaceSamples:groom?.scalp.samples??0,
@@ -407,6 +425,7 @@ function buildMonsterCostume(THREE,model,profile,detail){
   jointAnchored:true,independentHeroMaterials:true,
  };
  return ()=>{
+  scalpCut?.dispose();
   for(const frame of [...Object.values(frames).filter(x=>x?.isGroup),
    ...frames.arms,...frames.forearms,...frames.legs,...frames.calves])
    frame.parent?.remove(frame);

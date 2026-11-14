@@ -79,7 +79,7 @@ assert.match(gallery,/pending\.ready\.then/,
  'Async canonical source must update preview only after load');
 assert.match(gallery,/__monsterCosplayQA/,
  'Live visual source should be auditable on user device');
-assert.ok(gallery.includes('monster-character-cosplay.js?v=4.5.14'),
+assert.ok(gallery.includes('monster-character-cosplay.js?v=4.5.15'),
  'Viewer must bust cached humanoid costume bundle');
 assert.match(runtime,/measureRegalShoulderFit\(joints\.arms\[0\],joints\.arms\[1\]\)/,
  'Monster-only outfits must measure native shoulder pivots, not use generic dress size');
@@ -87,6 +87,14 @@ assert.match(runtime,/mesh\.userData\.anatomicalWidthFit/,
  'Measured fit must be applied to the actual instanced garment meshes');
 assert.match(runtime,/createCanonicalHeadLocalGroomAnchor\(joints\.head,model\)/,
  'Head-local hair must grow upright even for rotated donor skeleton bones');
+assert.match(runtime,/cutFemaleSummonScalpUnderCover\(/,
+ 'Visible original skin must be subtracted under the female wig base');
+assert.match(runtime,/\['forest_spirit_female','seraph_female'\]/,
+ 'Never apply wig scalp cut to generic monsters or human heroes');
+assert.match(runtime,/scalpCut\?\.dispose\(\)/,
+ 'Cloned skin geometry must restore the donor when model unloads');
+assert.match(runtime,/sourceCraniumPreservedTriangles:/,
+ 'Expose proof that face/ear/neck triangles survive a crown cut');
 assert.match(gallery,/controls\.minPolarAngle=HUMAN_MONSTER_IDS\.includes\(selected\)/,
  'Only humanlike previews should restrict top-down scalp views');
 assert.match(gallery,/else camera\.position\.set\(center\.x\+dist\*\.30/,
