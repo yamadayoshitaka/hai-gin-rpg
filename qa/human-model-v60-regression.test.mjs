@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
+import {spawnSync} from 'node:child_process';
 import * as THREE from 'three';
 import {BODY_PROFILES,BODY_TYPE_IDS,resolveBodyType,enumerateDemographics}
  from '../src/character-demographics-v47.js';
@@ -128,5 +129,17 @@ test('v60: both body studios and face editor offer one shared four-build contrac
   assert.ok(source.includes('threeQuarterLeft'),file);
   assert.ok(source.includes('threeQuarterRight'),file);
   assert.ok(source.includes('heroine-battle-costume-bridge.js?v=60'),file);
+ }
+});
+
+test('v60: inline browser ESM in all three studios is syntactically valid',()=>{
+ for(const file of ['face-body-studio.html','male-body-studio.html','face-mesh-studio.html']){
+  const html=readFileSync(new URL('../'+file,import.meta.url),'utf8');
+  const match=html.match(/<script\s+type="module">([\s\S]*?)<\/script>/);
+  assert.ok(match,'studio module script exists: '+file);
+  const parsed=spawnSync(process.execPath,['--check','--input-type=module'],{
+   encoding:'utf8',input:match[1]
+  });
+  assert.equal(parsed.status,0,file+': '+parsed.stderr);
  }
 });
