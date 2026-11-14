@@ -30,4 +30,10 @@ assert.equal(answer.nextTask,eligible[0]?.pageTask);
 assert.ok(eligible.length===0||eligible[0].stage>='c01-s03','stage1/2 appeared in prioritized batch');
 const invalid=run(['--start-stage','c01-s11']);
 assert.notEqual(invalid.status,0,'Invalid stage cannot launch Free API generation');
+const generatorSource=readFileSync(path.join(root,script),'utf8');
+const registeredGuard="if(s.registered&&!s.legacyBelowNative)return 'REGISTERED_NOT_P0_CERTIFIED';";
+const oldProviderBlock="if(fs.existsSync(p(s.img+'.provider-blocked.json')))return 'BLOCKED_PROVIDER_SAFETY';";
+assert(generatorSource.indexOf(registeredGuard)>0&&generatorSource.indexOf(registeredGuard)<generatorSource.indexOf(oldProviderBlock),
+ 'Existing native owner-accepted image must be recognized before old Cloudflare provider block');
+assert(generatorSource.includes("if(incomplete.length)"),'Stage cannot skip other missing physical shots');
 console.log('story stage-priority plan: PASS (no generation, no registration)');
