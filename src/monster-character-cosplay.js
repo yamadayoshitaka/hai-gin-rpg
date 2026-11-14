@@ -352,6 +352,7 @@ function buildMonsterCostume(THREE,model,profile,detail){
   crownCovered:!!groom?.crown,hairStrands:!!groom?.locks,
   headBoneLocalGroom:!!groom?.crown&&groom.crown.parent===frames.headGroom,
   hairSurfaceSamples:groom?.scalp.samples??0,
+  hairScalpFitted:!!groom?.scalp.fitted,
   fullBodyOutfit:royalOutfit?.style||null,
   fullBodySkirt:!!royalOutfit,clothCoverageValidated:!!royalOutfit,
   jointAnchored:true,independentHeroMaterials:true,
