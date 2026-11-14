@@ -137,7 +137,7 @@ function render(){
   const b=plain('button','entry','');b.type='button';b.setAttribute('aria-pressed',String(selected?.id===row.id));
   b.append(plain('strong','',row.name),plain('small','',row.id),
    plain('small','',row.gender==='all'?'共通':sexName(row.gender)+' · '+(row.tag||'')));
-  b.onclick=()=>{setSelected(row);render()};root.append(b);
+  b.onclick=()=>{selected=row;render()};root.append(b);
  }
  if(selected&&entries.some(x=>x.id===selected.id))selected=entries.find(x=>x.id===selected.id);
  else selected=entries[0]||null;
