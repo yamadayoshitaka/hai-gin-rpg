@@ -1,0 +1,130 @@
+{
+  "schemaVersion": 1,
+  "kind": "MANUAL_CHATGPT_IMAGE_PRODUCTION_HANDOFF_ONLY_NO_IMAGE_CLAIMS",
+  "project": "灰銀のレゾナンス",
+  "stageId": "c01-s01",
+  "edition": "post-town",
+  "gender": "male",
+  "pageWithinEdition": 1,
+  "canonicalPageTask": 5,
+  "totalChapter1Pages": 132,
+  "expectedShots": 5,
+  "sourceOfTruth": [
+    "src/story-chapter-comic.js",
+    "src/story-stage-manga.js",
+    "src/story-screenplay-v2.js",
+    "src/story-chapter-scene-selection.js"
+  ],
+  "noCloudflareCalls": true,
+  "noPaidFallback": true,
+  "provisional": false,
+  "formallyApproved": false,
+  "gameRegisteredByThisFile": false,
+  "gameDeployedByThisFile": false,
+  "renderRule": "One original cinematic 16:9 frame per shot. Do NOT generate 5-panel sheet as original; sheet for review only. No text, lettering, UI, numbers, speech bubbles, writing or watermarks in pixels. Keep exact actor list and gender. 1536x864 or higher native resolution, WebP lossless or high quality. Never upscale poor art to imply quality. Review face, hair, clothing, anatomy, hands, scene, branch, and real attached reference images, before any game binding.",
+  "characterMasters": {
+    "commander_male": {
+      "path": "assets/story/panels/c01-s01-m01.webp",
+      "role": "young male commander with black hair, dark purple and gold cloak",
+      "githubBlobSha": "20897f8653fba5bb7e7b8b04ff0e4efd7264994e"
+    },
+    "lucia": {
+      "path": "assets/story/characters/lucia/master.webp",
+      "role": "silver-haired regent, ornate pale silver regalia",
+      "githubBlobSha": "68fe790ac72812facafec22bed7e04a1f5888568"
+    },
+    "garan": {
+      "path": "assets/story-cinema/cast/garan.webp",
+      "role": "elder gray-bearded knight in dark armor and fur mantle",
+      "githubBlobSha": "bec7fae693f52e072e085014aa170ff701d3b4ec"
+    },
+    "iris": {
+      "path": "assets/story-cinema/cast/iris.webp",
+      "role": "calm young healer in a pale hooded habit",
+      "githubBlobSha": "48aba1f03d53e2bb039192163fdf4f7089600df1"
+    }
+  },
+  "shots": [
+    {
+      "id": "c01-s01-m6",
+      "script": "町での調査と準備を終えた。王城の勅命に使われた王印が、記録と食い違うことを確認する。",
+      "actors": [
+        "commander_male"
+      ],
+      "scene": "Male commander, alone, reviews a blank royal decree and an engraved wax seal in Rewna castle records room. No Lucia or Garan on screen.",
+      "status": "WAITING_FOR_COMPLIANT_IMAGE",
+      "previousRejected": "Generated council portrait included Lucia and Garan despite a male commander-only cast.",
+      "key": "c01-s01|post-town|male|c01-s01-m6",
+      "referencePaths": [
+        "assets/story/panels/c01-s01-m01.webp"
+      ],
+      "canonConfirmed": true
+    },
+    {
+      "id": "c01-s01-m7",
+      "script": "拠点で得た証言と準備を整理し、次の任務に備えよう。",
+      "actors": [
+        "garan",
+        "iris",
+        "commander_male"
+      ],
+      "scene": "Older knight Garan advises healer Iris and the black-haired male commander while they organize evidence and supplies; serious, collaborative mood.",
+      "status": "WAITING_FOR_COMPLIANT_IMAGE",
+      "previousRejected": "Generated unrelated guild-quest manga page contained Japanese lettering, panel numbers and female alternate hero.",
+      "key": "c01-s01|post-town|male|c01-s01-m7",
+      "referencePaths": [
+        "assets/story-cinema/cast/garan.webp",
+        "assets/story-cinema/cast/iris.webp",
+        "assets/story/panels/c01-s01-m01.webp"
+      ],
+      "canonConfirmed": true
+    },
+    {
+      "id": "c01-s01-m8",
+      "script": "国の命令より、目の前の人間の証言を先に確かめることになった。 鐘が鳴った夜、礼拝堂の死者名簿から文字が消えました。",
+      "actors": [
+        "iris",
+        "commander_male"
+      ],
+      "scene": "Healer Iris solemnly shows the male commander an eerie, completely BLANK memorial ledger in an old castle chapel archive; only those two characters.",
+      "status": "WAITING_FOR_COMPLIANT_IMAGE",
+      "key": "c01-s01|post-town|male|c01-s01-m8",
+      "referencePaths": [
+        "assets/story-cinema/cast/iris.webp",
+        "assets/story/panels/c01-s01-m01.webp"
+      ],
+      "canonConfirmed": true
+    },
+    {
+      "id": "c01-s01-m9",
+      "script": "誰のためにこの地で戦ったのかを、忘れてはいけない。 軍師として名を刻み、最初の軍団を編成する。",
+      "actors": [
+        "commander_male"
+      ],
+      "scene": "The lone male commander on the ramparts overlooking the capital, contemplating whom his future army will protect; hopeful but solemn.",
+      "status": "WAITING_FOR_COMPLIANT_IMAGE",
+      "key": "c01-s01|post-town|male|c01-s01-m9",
+      "referencePaths": [
+        "assets/story/panels/c01-s01-m01.webp"
+      ],
+      "canonConfirmed": true
+    },
+    {
+      "id": "c01-s01-m10",
+      "script": "次の舞台「灰銀の本城・封印地の討伐」へ進む。ここで見たことを忘れてはならない。",
+      "actors": [
+        "lucia",
+        "commander_male"
+      ],
+      "scene": "The silver-haired regent Lucia and black-haired male commander prepare to depart the royal castle together toward the outer roads, with no other characters.",
+      "status": "WAITING_FOR_COMPLIANT_IMAGE",
+      "key": "c01-s01|post-town|male|c01-s01-m10",
+      "referencePaths": [
+        "assets/story/characters/lucia/master.webp",
+        "assets/story/panels/c01-s01-m01.webp"
+      ],
+      "canonConfirmed": true
+    }
+  ],
+  "generationNotes": "Do not reuse prior invalid ChatGPT generation. A generated image must be physically available, verifiably correct, and mapped to this scene's key before registration. Images appearing only in chat are NOT in git automatically."
+}
