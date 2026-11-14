@@ -42,7 +42,10 @@ fs.mkdirSync(out,{recursive:true});
         neckShape.unifiedSkinNeckTriangles>=30&&
         neckShape.reusedFaceMaterial&&neckShape.separateNeckGeometryHidden&&
         neckShape.actualCollarSource&&
-        neckShape.unifiedNeckBottomHeight<neckShape.actualCollarHeight))
+        neckShape.unifiedNeckBottomHeight<neckShape.actualCollarHeight&&
+        neckShape.raisedInnerCollarApplied&&
+        neckShape.visibleSkinNeckLength<.04&&
+        neckShape.unifiedNeckColorSmoothed&&neckShape.unifiedNeckNormalsSmoothed))
     throw Error(gender+' one-piece neck does not reach the clothing collar: '+JSON.stringify(neckShape));
     throw Error(gender+' still using detached fabricated neck: '+JSON.stringify(neckShape));
    if(!(neckShape?.applied&&neckShape.originalFaceNormalsPreserved&&
