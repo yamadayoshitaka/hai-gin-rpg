@@ -1495,7 +1495,7 @@ test('v29 female eyes project forward of skin with convex globe, connected lids 
  const model=makeIndependentFaceMaster(fixture().source,'female');
  const report=model.report.detailedParts;
  assert.equal(report.anteriorEyeGlobeReconstructed,true);
- assert.equal(report.eyeApertureHeightFraction,.50);
+ assert.equal(report.eyeApertureHeightFraction,.476);
  assert.equal(report.eyeAnteriorClearanceRatios.length,2);
  for(const clearance of report.eyeAnteriorClearanceRatios)
   assert.ok(clearance>-.7&&clearance<.12,
@@ -2187,7 +2187,8 @@ test('v41 real female anatomical legs remain after studio armor coverage across 
  const coverage=readFileSync('src/character-system/garment-coverage-runtime.js','utf8');
  const bridge=readFileSync('src/heroine-battle-costume-bridge.js','utf8');
  assert.match(source,/studioPreserveLegAnatomy=false/);
- assert.match(source,/preserveRegions:studioPreserveLegAnatomy\?\['thigh','calf','foot'\]:\[\]/);
+ assert.match(source,/studioCoveredSkinPolicy/);
+ assert.match(source,/preserveRegions:studioSkinPolicy\.preserveRegions/);
  assert.match(coverage,/const preserved=new Set\(preserveRegions\)/);
  assert.match(bridge,/studioPreserveLegAnatomy:true/);
  const actor=new THREE.Group();

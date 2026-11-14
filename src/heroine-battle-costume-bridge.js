@@ -6,7 +6,7 @@ import {clipStudioFaceBustPreservingSurface,restoreStudioFaceSurfaceQuality,
  sampleStudioFacePigment,smoothStudioFaceNormals,
  studioAnatomicalSeamY,taperStudioLowerBustBelowChin} from './studio-face-quality-v56.js?v=60';
 import {createCharacter} from './character-system/shared-character-runtime.js?v=4.6.36';
-import {buildRiggedJobOutfit} from './character-system/rigged-outfit-runtime.js?v=41';
+import {buildRiggedJobOutfit} from './character-system/rigged-outfit-runtime.js?v=63';
 import {loadJobMotionMap} from './character-system/job-motion-source.js?v=4.6.36';
 import {measureHeadLocalBounds} from './character-system/hair-attachment-runtime.js?v=4.4.89';
 import {createHeroineBattleActionVfx} from './heroine-battle-action-vfx.js?v=40';
@@ -1128,6 +1128,8 @@ export async function createRealBattleOutfitStudio({scene,faceModel,getFaceModel
   headReport,headFit,proportions,finishReport,
   sourceTrousers:outfit?.presentation?.().useSourceSkinnedLegs||false,
   retainedLegAnatomy:outfit?.diagnostics?.studioPreserveLegAnatomy||false,
+  v63CoveredSkinMasked:outfit?.diagnostics?.v63CoveredSkinMasked||false,
+  v63BareAnatomyRestorable:outfit?.diagnostics?.v63BareAnatomyRestorable||false,
   preservedLegRegions:outfit?.diagnostics?.preservedUnderGarmentLegRegions||[],
   vfx:vfx?.getState()||null,
   realOutfit:!!outfit,hasMotion:!!actor?.diagnostics()?.playing

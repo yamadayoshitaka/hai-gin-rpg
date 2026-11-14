@@ -5,6 +5,10 @@ on:
     paths:
       - 'src/character-demographics-v47.js'
       - 'src/body-build-morph-v48.js'
+      - 'src/face-feature-meshes.js'
+      - 'src/face-scalp-wig.js'
+      - 'src/character-system/rigged-outfit-runtime.js'
+      - 'qa/human-v63-quality.test.mjs'
       - 'src/heroine-battle-costume-bridge.js'
       - 'src/studio-unified-neck-v59.js'
       - 'src/character-cast-v46.js'
@@ -49,7 +53,7 @@ jobs:
         run: npm install --no-save --package-lock=false three@0.160.1 playwright@1.56.0
       - name: Validate v59 preserved geometry, migration and v60 body profiles
         run: |
-          node --test qa/character-demographics-v47.test.mjs qa/face-v49-regression.test.mjs qa/human-realism-v51-regression.test.mjs qa/studio-unified-neck-v59.test.mjs qa/human-model-v60-regression.test.mjs qa/human-v62-skin-first.test.mjs
+          node --test qa/character-demographics-v47.test.mjs qa/face-v49-regression.test.mjs qa/human-realism-v51-regression.test.mjs qa/studio-unified-neck-v59.test.mjs qa/human-model-v60-regression.test.mjs qa/human-v62-skin-first.test.mjs qa/human-v63-quality.test.mjs
       - name: Validate all male and female job attachment contracts
         run: npm run test:all-job-fit
       - name: Install mobile Chromium

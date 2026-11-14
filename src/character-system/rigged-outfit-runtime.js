@@ -21,6 +21,18 @@ import {normalizeOutfitRarity,outfitRarityFinish} from './outfit-rarity-policy.j
 import {protectFaceSkin} from './skin-face-protection.js?v=4.4.89';
 import {deriveGarmentCoverage,clipBodyToGarment,originalSkinGeometry} from './garment-coverage-runtime.js?v=41';
 
+// The original humanoid is preserved in the reversible skin cache, but
+// opaque trousers must hide the covered visible skin while worn.
+export function studioCoveredSkinPolicy({studioPreferSkinnedLegs=false,
+ studioPreserveLegAnatomy=false,preserveBody=false}={}){
+ const masked=!!studioPreferSkinnedLegs&&!!studioPreserveLegAnatomy&&!preserveBody;
+ return Object.freeze({
+  preserveRegions:studioPreserveLegAnatomy&&!masked?['thigh','calf','foot']:[],
+  coveredSkinMasked:masked,underlyingAnatomyRestorable:masked,
+  faceNeckHandsProtected:true
+ });
+}
+
 const loader=new GLTFLoader(),sourceCache=new Map();
 let materialPromise;
 const vector=new THREE.Vector3();
@@ -587,13 +599,15 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
   const bodyMeshStats=[];
   const bodyFitBox=lowDetail?null:skinnedBounds(characterModel,bodyMeshStats);
   const bodyBindBox=lowDetail?null:bindGeometryBounds(characterModel);
+  const studioSkinPolicy=studioCoveredSkinPolicy({studioPreferSkinnedLegs,
+   studioPreserveLegAnatomy,preserveBody});
   let coverageHandle=preserveBody?null:clipBodyToGarment(characterModel,garmentCoverage,{surfaceCheck:true,
-    preserveRegions:studioPreserveLegAnatomy?['thigh','calf','foot']:[]});
+    preserveRegions:studioSkinPolicy.preserveRegions});
   let bodyMasked=!preserveBody;
   function setBodyOcclusion(enabled){
     if(preserveBody)return;
     if(enabled&&!bodyMasked){coverageHandle=clipBodyToGarment(characterModel,garmentCoverage,{surfaceCheck:true,
-    preserveRegions:studioPreserveLegAnatomy?['thigh','calf','foot']:[]});bodyMasked=true}
+    preserveRegions:studioSkinPolicy.preserveRegions});bodyMasked=true}
     else if(!enabled&&bodyMasked){coverageHandle?.restore();coverageHandle=null;bodyMasked=false}
   }
   let disposed=false;
@@ -901,6 +915,8 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
       headwearKeptTriangles:hair?.diagnostics.headwearKeptTriangles||0,
       helmetVisible:helm.length>0&&helm.every(piece=>piece.visible),
       helmetPieces:helm.length,shieldFrontDot,bodyMasked,
+      v63CoveredSkinMasked:studioSkinPolicy.coveredSkinMasked,
+      v63BareAnatomyRestorable:studioSkinPolicy.underlyingAnatomyRestorable,
       armorDepthOffsets:armor?.depthOffsets||{helmet:0,chest:0},
       armorPartAxes:armor?.diagnostics.partAxes||{},
       suppressedBaseLegMeshes,retainedSkinnedLegMeshes,useSourceSkinnedLegs,studioPreferSkinnedLegs,
@@ -935,6 +951,8 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
     coveredFoot:garmentCoverage.footCovered,
     clippedSkinTriangles:coverageHandle?.diagnostics.removedTriangles||0,
     studioPreserveLegAnatomy,
+    v63CoveredSkinMasked:studioSkinPolicy.coveredSkinMasked,
+    v63BareAnatomyRestorable:studioSkinPolicy.underlyingAnatomyRestorable,
     preservedUnderGarmentLegRegions:coverageHandle?.diagnostics.preservedRegions||[],
     garmentSurfaceSamples:coverageHandle?.diagnostics.garmentSurfaceSamples||0,
     compactedSkinVertices:Math.max(0,(coverageHandle?.diagnostics.sourceVertices||0)-(coverageHandle?.diagnostics.keptVertices||0)),
