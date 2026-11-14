@@ -85,8 +85,10 @@ assert(ui.includes('stageManifest:prepared.stageManifest'),
  'The stage manifest must reach the generator prompt');
 assert(ui.includes('qualityRulesFor()'),'The UI must load P0 quality JSON for every prompt');
 assert(ui.includes('referenceFilesForHandoff(shot,prepared)'),'Android share must include real master image bytes');
-assert(ui.includes('manualManifest:prepared.manualManifest,qualityRules:prepared.qualityRules'),
- 'The UI must pass BOTH manifests into image prompt generator');
+assert(ui.includes('manualManifest:prepared.manualManifest'),
+ 'The UI must pass the scene-specific manual manifest');
+assert(ui.includes('qualityRules:prepared.qualityRules'),
+ 'The UI must pass the global P0 manifest');
 assert(ui.includes('navigator.clipboard.writeText'));
 assert(ui.includes('window.location.assign(CHATGPT_IMAGES_URL)'));
 assert(!ui.includes('chatgpt.com/?q='));
