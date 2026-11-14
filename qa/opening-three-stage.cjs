@@ -6,10 +6,11 @@ const assert=require('node:assert/strict');
 async function launchBattleViaThreeStepWizard(page,{
   timeout=240000,requireReady=true
 }={}){
-  // Headless SwiftShader is expensive for 100 detailed soldiers: wait for
-  // the actual DOM controls instead of a requestAnimationFrame-bound JS
-  // predicate that can starve while the GPU warms up.
-  const tabs=page.locator('.openingWizardTabs button');
+  // The wizard container includes three hidden legacy controls before
+  // the three visible steps. Selecting :first would target a HIDDEN button
+  // and hang even when the screenshot clearly shows "準備完了".
+  // Always target only the visible ①編成 / ②初期号令 / ③開戦 tabs.
+  const tabs=page.locator('.openingWizardTabs button:visible');
   try{
     await tabs.first().waitFor({state:'visible',timeout});
   }catch(error){
@@ -30,7 +31,9 @@ async function launchBattleViaThreeStepWizard(page,{
     error:document.querySelector('#runtimeError')?.style.display==='block'
       ?document.querySelector('#runtimeError')?.textContent:null,
     stage:document.querySelector('#loadingStage')?.textContent,
-    tabs:[...document.querySelectorAll('.openingWizardTabs button')].map(x=>x.textContent),
+    tabs:[...document.querySelectorAll('.openingWizardTabs button')]
+      .filter(x=>x.getClientRects().length>0&&getComputedStyle(x).visibility!=='hidden')
+      .map(x=>x.textContent),
     startHidden:document.querySelector('#loadingStart')?.hidden
   }));
   assert.ok(!ready.error,'Battle startup error before the 3-stage wizard: '+ready.error);
