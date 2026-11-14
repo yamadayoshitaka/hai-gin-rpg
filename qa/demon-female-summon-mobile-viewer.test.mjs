@@ -204,7 +204,7 @@ assert.match(gallery,/FEMALE_SUMMON_FORM_IDS.includes\(selected\)/);
 assert.match(gallery,/createCosplayedHumanoidMonster\(spec,\{/);
 assert.match(gallery,/withoutFallback:true/);
 assert.match(gallery,/femaleSummonHandle\?\.update\(t\)/);
-assert.match(gallery,/femaleFlightAltitude=\.76\+\.11\*Math\.sin\(t\*1\.85\)/,
+assert.match(gallery,/femaleFlightAltitude=\(\.76\+\.11\*Math\.sin\(t\*1\.85\)\)\*SUMMON_WORLD_SCALE/,
  'Seraph female must visibly float above ground');
 assert.match(gallery,/femaleSummonHandle\.root\.position\.y=femaleFlightAltitude/,
  'Flight offset must reach visible skinned actor');

@@ -12,7 +12,10 @@ import {buildCanineFurRibbonGeometry} from './canine-fur-ribbons.js?v=4.4.92';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import {createFaceProfile} from './facial-feature-profiles.js?v=1';
 import {creatureFaceVolume,sculptAxialFacePoint,sculptVerticalFacePoint} from './creature-face-volume.js';
-import {addHumanoidSummon} from './creature-summon-humanoid-anatomy.js?v=4.5.00';
+import {addHumanoidSummon} from './creature-summon-humanoid-anatomy.js?v=4.5.20';
+import {blendSummonedWolfBlueprint} from './creature-wolf-hybrid.js?v=4.5.20';
+import {blendSummonDragonBlueprint,addSourceDragonRelief}
+ from './creature-dragon-hybrids.js?v=4.5.20';
 import {createRootedCreatureHornGeometry,createCreatureScuteGeometry}
   from './creature-anatomy-mesh.js';
 import {createCreatureGumSocketGeometry} from './creature-seam-geometry.js';
@@ -23,8 +26,8 @@ export const CREATURE_VISUAL_SPECS = Object.freeze({
   dragon: Object.freeze({ label:'古竜', anatomy:'dragon', skin:0x376050, shadow:0x1a3b37, highlight:0x759a86, eyes:0xb52018, height:1.68, width:.73, length:1.34, legs:1.04, tail:2.24, wing:2.5 }),
   elder_dragon: Object.freeze({ label:'天竜', anatomy:'dragon', skin:0xa1885c, shadow:0x534636, highlight:0xdbc49b, eyes:0x871522, height:1.76, width:.82, length:1.5, legs:1.12, tail:2.57, wing:3.03 }),
   dragon_lord: Object.freeze({ label:'竜王', anatomy:'biped_dragon', skin:0x947b67, shadow:0x55443b, highlight:0xc8b09b, eyes:0x9c3b29, height:2.70, width:.86, length:1.45, legs:1.78, tail:3.25, wing:3.72 }),
-  forest_archer: Object.freeze({ label:'森の精霊弓士', anatomy:'humanoid_archer', skin:0x6d8660, shadow:0x314b35, highlight:0xe2c17c, eyes:0x4d977e, height:1.44, width:.43, length:.48, legs:1.03, tail:0, wing:0 }),
-  seraph_guardian: Object.freeze({ label:'光翼の守護天使', anatomy:'winged_humanoid', skin:0xece7da, shadow:0xaeb6b8, highlight:0xfff0cc, eyes:0x647f9d, height:1.48, width:.43, length:.48, legs:1.03, tail:0, wing:2.75 }),
+  forest_archer: Object.freeze({ label:'森の精霊弓士', anatomy:'humanoid_archer', skin:0xe4b9a1, shadow:0x215633, highlight:0x6ad66d, eyes:0x4d977e, height:1.44, width:.43, length:.48, legs:1.03, tail:0, wing:0 }),
+  seraph_guardian: Object.freeze({ label:'光翼の守護天使', anatomy:'winged_humanoid', skin:0xf4f5f4, shadow:0xc5cbd0, highlight:0xfff0cc, eyes:0x647f9d, height:1.48, width:.43, length:.48, legs:1.03, tail:0, wing:2.75 }),
   horse: Object.freeze({ label:'軍馬', anatomy:'mount', skin:0x6f4a39, shadow:0x2f2520, highlight:0x9d7a5c, eyes:0x381b1b, height:1.22, width:.43, length:.99, legs:1.07, tail:1.12, wing:0 }),
 });
 
@@ -406,6 +409,23 @@ function addCoatSculpture(g,type,s,detail){
     [l*.18,h-.025,w*.84,h*.31],[l*.57,h+.065,w*.99,h*.39],
     [l*.85,h+.09,w*.72,h*.31],[l*1.03,h+.05,.012,.06],
   ]);
+  // Morphological cross of current grey wolf with the original m001
+  // wolf king: borrow cheek/neck ridge geometry without replacing the
+  // existing animated jaw and four separate paw batches.
+  if(s.hybrid&&detail==='high'){
+    const blend=s.hybrid.weight;
+    for(const side of [-1,1]){
+      // Thin rooted fur-tuft silhouettes are inherited from the source
+      // wolf king. Do not add another high-poly curved tube per cheek:
+      // that exceeded the strict 125k-vertex mobile instancing budget.
+      horn('core',highlight,
+        [side*w*.73,h+.16,l*.43],
+        [side*w*(.92+.12*blend),h+.25,l*.18],w*.060);
+      horn('core',shadow,
+        [side*w*.40,h+.05,l*1.12],
+        [side*w*(.60+.10*blend),h-.04,l*1.20],w*.038);
+    }
+  }
   const headY=h+.275,headZ=l+.32;
   const neckStart=[0,h+.13,l*.55],neckEnd=[0,headY-.13,headZ-.26];
   g.curved('core',skin,[neckStart,[0,h+.34,l*.8],neckEnd],[w*.54,w*.48,w*.38]);
@@ -996,6 +1016,9 @@ function addDragon(g,type,s,detail){
     socket(name,skin,0,0,0,w*.29,h*.18,l*.19);
     // Shape is model-local; placing the pivot is a renderer responsibility.
   }
+  // Layer source-bestiaric dragon character shapes on the existing animated
+  // rig; no duplicate wings, heads or incompatible donor skeletons.
+  addSourceDragonRelief(g,type,s,detail);
   if(elder){
     for(const side of [-1,1]){
       rootedHorn('core',0xd7c7a5,
@@ -1253,11 +1276,12 @@ export function buildCombatObjectGeometry(type,{detail='high',faceOverrides={}}=
   else {
     const s=CREATURE_VISUAL_SPECS[type];
     if(!s)throw Error('未登録の召喚・騎乗オブジェクト: '+type);
-    if(type==='wolf') addCoatSculpture(g,type,s,detail);
+    if(type==='wolf') addCoatSculpture(g,type,
+      blendSummonedWolfBlueprint(s),detail);
     else if(type==='horse') addHorse(g,s,detail);
     else if(type==='dragon_lord')addDragonLord(g,s,detail);
     else if(type==='forest_archer'||type==='seraph_guardian')addHumanoidSummon(g,type,s,detail);
-    else addDragon(g,type,s,detail);
+    else addDragon(g,type,blendSummonDragonBlueprint(type,s),detail);
   }
   return g.finish();
 }

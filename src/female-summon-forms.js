@@ -13,12 +13,12 @@ const make=(id,role,body,face,hair,outfit,equipment,costume,palette,options={})=
  });
 export const FEMALE_SUMMON_FORMS=Object.freeze({
  forest_archer:make('forest_archer','civilian','slim','narrow-eyed','long','ranger','bow',
-  'forest_spirit_female',[0x8a6755,0x34503d,0xbca886,0x8ebe73],{
-   hairColor:0x896b82,leaf:0x62865b,feather:0xc1c5a3,makeup:0x243d32,lip:0x667c62
+  'forest_spirit_female',[0xe1b496,0x245f39,0xbca886,0x65cb67],{
+   hairColor:0xa3885e,leaf:0x32964a,feather:0xbad4a8,makeup:0x665347,lip:0xae756b,forestGreen:true
   }),
  seraph_guardian:make('seraph_guardian','royal','tall','noble','long','paladin','staff',
-  'seraph_female',[0xc6c3dd,0xe7dfcd,0xd8c89a,0xffe1a1],{
-   leaf:0xc8c3dc,feather:0xf4efe2,makeup:0x64668d,lip:0x8c759d
+  'seraph_female',[0xf4f4f2,0xf3f0e7,0xd8c89a,0xffe9b3],{
+   hairColor:0xe8d7a8,leaf:0xe9e3d9,feather:0xffffff,makeup:0xaaa5af,lip:0xcbb9bc,faceOpenHair:true
   }),
  dragon_lord:make('dragon_lord','guard','sturdy','stern','long','paladin','sword',
   'dragonkin_female',[0x925e51,0x342a3b,0xc5a682,0xc77369],{

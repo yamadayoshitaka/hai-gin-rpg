@@ -3,6 +3,7 @@
 const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const {chromium}=require('playwright');
+const {launchBattleViaThreeStepWizard}=require('./opening-three-stage.cjs');
 
 (async()=>{
   const browser=await chromium.launch({headless:true,args:[
@@ -49,16 +50,10 @@ const {chromium}=require('playwright');
     await page.goto('http://127.0.0.1:8765/tactics-wireframe.html?army=100&v=4.4.0',{
       waitUntil:'domcontentloaded',timeout:60000
     });
-    // Loading now waits for the stage BGM to buffer. Browsers need a
-    // user gesture before music playback; the test must press Start too.
-    await page.waitForFunction(()=>{
-      const start=document.querySelector('#loadingStart');
-      const error=document.querySelector('#runtimeError');
-      return start&&!start.hidden||error?.style.display==='block';
-    },null,{timeout:180000,polling:800});
-    if(await page.locator('#loadingStart').isVisible()){
-      await page.locator('#loadingStart').click();
-    }
+    // The currently shipped game uses a three-step opening wizard.
+    // Complete it through the visible UI; opening the old hidden Start
+    // button directly would wait forever at "① 編成".
+    await launchBattleViaThreeStepWizard(page,{timeout:240000});
     await page.waitForFunction(()=>{
       const stats=window.getMassBattleStats?.();
       const startup=window.getBattleStartupStats?.();
@@ -77,7 +72,17 @@ const {chromium}=require('playwright');
     assert.equal(result.startup?.dressed,24,'every detailed rig dressed before animation begins');
     assert.ok(result.startup?.buildingBatchStats?.sourceMeshes>result.startup?.buildingBatchStats?.batches,
       'repeated town walls share GPU draw batches');
-    assert.ok(result.startup?.pixelRatio>=.8,'the character viewport is no longer half resolution');
+    // SwiftShader can lower 3D resolution to the explicit adaptive floor
+    // during the GPU warm-up; do not mistake the supported 72% floor for a
+    // regression to the old fixed half-resolution mode.
+    const quality=result.startup?.adaptiveQuality;
+    assert.ok(quality&&quality.min>=.70&&quality.max>=.90,
+      'adaptive resolution must retain the documented mobile quality range');
+    assert.ok(result.startup?.pixelRatio>=quality.min-.015,
+      'battle viewport fell below its mobile quality floor: '+
+      JSON.stringify({ratio:result.startup?.pixelRatio,quality}));
+    assert.ok(result.startup?.bufferWidth>=430*(quality.min-.02),
+      'viewport unexpectedly collapsed towards the retired 50% resolution');
     assert.equal(await page.locator('#battleLoading').isVisible(),false,'loading overlay clears only after warmup');
     assert.equal(result.stats?.bodyAssemblyAudit.length,10,'all 10 job rigs are baked');
     assert.ok(result.stats.bodyDrawLayers>=10,'each crowd profession has explicit full-human GPU draw layers');

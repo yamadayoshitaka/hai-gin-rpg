@@ -75,7 +75,7 @@ if(THREE){
  for(const type of ['forest_archer','seraph_guardian']){
    const high=buildCombatObjectGeometry(type,{detail:'high'});
    const low=buildCombatObjectGeometry(type,{detail:'low'});
-   const skin=type==='seraph_guardian'?0xe9cfc1:0xe4b9a1;
+   const skin=type==='seraph_guardian'?0xf4f5f4:0xe4b9a1;
    assert.ok(high.faceFallback&&low.faceFallback,'No offline face '+type);
    assert.ok(tagged(high.core,skin)>60,
      'Neck transition must match fallback face and hands '+type);

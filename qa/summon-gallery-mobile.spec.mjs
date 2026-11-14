@@ -54,8 +54,9 @@ test('mobile summon gallery: compact model-first view, functional drawers and ca
       mobile:true,controlsOpen:false,infoOpen:false,selected:'forest_archer'
     });
   const distance=await page.evaluate(()=>window.__summonGalleryLayoutQA().cameraDistance);
-  expect(distance).toBeGreaterThan(4);
-  expect(distance).toBeLessThan(9);
+  expect(distance).toBeGreaterThan(40);
+  expect(distance).toBeLessThan(95);
+  expect((await page.evaluate(()=>window.__summonGalleryLayoutQA())).summonWorldScale).toBe(10);
   await expect(page.locator('canvas')).toBeVisible();
 
   // Wolf face/fur must be inspectable in the same folded mobile showcase.
@@ -67,14 +68,14 @@ test('mobile summon gallery: compact model-first view, functional drawers and ca
   await page.locator('#coatCloseup').click();
   const wholeBodyDistance=await page.evaluate(()=>
     window.__summonGalleryLayoutQA()?.cameraDistance);
-  expect(wholeBodyDistance).toBeGreaterThan(4);
-  expect(wholeBodyDistance).toBeLessThan(7.5);
+  expect(wholeBodyDistance).toBeGreaterThan(40);
+  expect(wholeBodyDistance).toBeLessThan(75);
   await page.screenshot({path:'test-results/wolf-fullbody-coat-legs-belly.png',
     animations:'disabled',timeout:15000});
   await page.locator('#faceCloseup').click();
   await expect.poll(async()=>page.evaluate(()=>
     window.__summonGalleryLayoutQA()?.cameraDistance),{timeout:15000})
-    .toBeLessThan(4);
+    .toBeLessThan(40);
   await drawer.locator('summary').first().click();
   await expect(drawer).not.toHaveAttribute('open',/./);
   await page.screenshot({path:'test-results/summoned-wolf-fur-face-closeup.png',
@@ -95,8 +96,8 @@ test('female seraph: original wing pair and animated airborne preview',async({pa
  expect(before.sourceCraniumCutMode).toBe('wig');
  expect(before.sourceCraniumRemovedTriangles).toBeGreaterThan(8);
  expect(before.sourceCraniumPreservedTriangles).toBeGreaterThan(8);
- expect(before.femaleFlightAltitude).toBeGreaterThan(.60);
- expect(before.femaleFlightAltitude).toBeLessThan(.95);
+ expect(before.femaleFlightAltitude).toBeGreaterThan(6);
+ expect(before.femaleFlightAltitude).toBeLessThan(10);
  await page.waitForTimeout(450);
  const after=await page.evaluate(()=>window.__summonGalleryLayoutQA());
  expect(Math.abs(after.femaleFlightAltitude-before.femaleFlightAltitude)).toBeGreaterThan(.005);
@@ -124,7 +125,7 @@ test('male Dragon Lord: canonical male GLB, battleplate and original creature to
  await page.locator('#controlsDrawer summary').first().click();
  await expect(page.locator('#footCloseup')).toBeVisible();
  await page.locator('#footCloseup').click();
- expect((await page.evaluate(()=>window.__summonGalleryLayoutQA())).cameraDistance).toBeLessThan(4);
+ expect((await page.evaluate(()=>window.__summonGalleryLayoutQA())).cameraDistance).toBeLessThan(40);
  await page.screenshot({path:'test-results/male-dragonlord-armoured-feet-v4.5.19.png',
   animations:'disabled',timeout:15000});
  await page.locator('#humanoidForm').selectOption('original');

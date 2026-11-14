@@ -34,7 +34,7 @@ import {planHumanoidCosplayBase}
  from './monster-studio-base-intake.js?v=4.5.16';
 import {attachCanonicalCharacterGroom,createCanonicalHeadLocalGroomAnchor,
  measureCanonicalScalp}
- from './monster-humanoid-hair.js?v=4.5.13';
+ from './monster-humanoid-hair.js?v=4.5.20';
 import {alignCostumeToCanonicalFacing}
  from './monster-anatomical-frame.js?v=4.5.05';
 import {addRegalHumanoidOutfit,wardrobeFor,measureRegalShoulderFit,
