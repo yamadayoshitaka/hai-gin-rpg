@@ -13,11 +13,13 @@ async function openSettings(page){
  await expect(tools).toBeVisible();
 }
 
-test('mobile bestiary: 50 unique 3D monsters, saved edits and sample motions',async({page})=>{
- const errors=[];
- page.on('pageerror',error=>errors.push(String(error)));
+// Keep mesh churn and saved-settings reload in different browser contexts.
+ // Running ten heavy WebGL families then reloading on the same page can
+ // retain GPU pressure and stall mobile control event processing.
+test('mobile bestiary: 50 unique 3D monsters across ten families',async({page})=>{
+ const errors=[];page.on('pageerror',error=>errors.push(String(error)));
  await page.goto('/monster-manager.html?v=4.4.85',
-   {waitUntil:'domcontentloaded',timeout:65000});
+  {waitUntil:'domcontentloaded',timeout:65000});
  await expect(page.locator('#items .specimen')).toHaveCount(50,{timeout:50000});
  await expect(page.locator('#view canvas')).toBeVisible();
  await expect(page.locator('#name')).toContainText('灰牙の狼王');
@@ -29,16 +31,24 @@ test('mobile bestiary: 50 unique 3D monsters, saved edits and sample motions',as
   ['m046','浅瀬スライム'],['m050','珊瑚の海神獣']
  ];
  for(const [id,name] of silhouettes){
-   await selectMonster(page,id);
-   await expect(page.locator('#name')).toContainText(name);
-   await expect(page.locator('#hud')).toContainText('3Dモデル');
+  await selectMonster(page,id);
+  await expect(page.locator('#name')).toContainText(name);
+  await expect(page.locator('#hud')).toContainText('3Dモデル');
  }
+ expect(errors).toEqual([]);
+});
+test('mobile bestiary: save, reload, actions and reset after model switch',
+ async({page})=>{
+ const errors=[];page.on('pageerror',error=>errors.push(String(error)));
+ await page.goto('/monster-manager.html?v=4.4.85',
+  {waitUntil:'domcontentloaded',timeout:65000});
+ await expect(page.locator('#items .specimen')).toHaveCount(50,{timeout:50000});
+ await selectMonster(page,'m050');
  await openSettings(page);
  await page.locator('#actions button[title="special"]').click();
  await expect(page.locator('#notice')).toContainText('固有技');
  await page.locator('#actions button[title="dodge"]').click();
  await expect(page.locator('#notice')).toContainText('回避');
- // An editable monster should persist through reselection and reload.
  await page.locator('#edit-hp').fill('7777');
  await page.locator('#save').click();
  await expect(page.locator('#edit-hp')).toHaveValue('7777');
@@ -49,9 +59,9 @@ test('mobile bestiary: 50 unique 3D monsters, saved edits and sample motions',as
  await expect(page.locator('#edit-hp')).toHaveValue('7777');
  await page.locator('#reset').click();
  await expect(page.locator('#edit-hp')).not.toHaveValue('7777');
- await expect(errors).toEqual([]);
+ expect(errors).toEqual([]);
  await page.screenshot({path:'test-results/monster-manager-50.png',
-   animations:'disabled',timeout:15000});
+  animations:'disabled',timeout:15000});
 });
 
 test('50-monster quality inspector: source/high/low & photo PBR, no geometry leakage',async({page})=>{
