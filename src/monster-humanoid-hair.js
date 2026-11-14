@@ -113,10 +113,10 @@ export function createCharacterHairStrandsGeometry({
  const [cx,cy,cz]=center,[rx,ry,rz]=radius;
  // Near-LOD strands are batched into one BufferGeometry, never one mesh per lock.
  const groups=detail==='low'?72:
-  style==='long'?520:style==='swept'?300:
+  (style==='long'||style==='seraph-face-open')?520:style==='swept'?300:
   style==='bob'?320:style==='short'?240:240;
  const positions=[],uvs=[],indices=[];
- const maxLength=style==='long'?.39:style==='bob'?.19:
+ const maxLength=(style==='long'||style==='seraph-face-open')?.39:style==='bob'?.19:
    style==='short'?.09:style==='swept'?.145:.20;
  let state=(seed>>>0)||1;
  const rand=()=>{state=(Math.imul(state,1664525)+1013904223)>>>0;return state/4294967296;};
@@ -133,7 +133,8 @@ export function createCharacterHairStrandsGeometry({
     cz+rz*sin*Math.sin(phi));
   // Frontal bangs are cropped above the eyes, while rear hair reaches
   // behind shoulder plates; side locks transition without bald temples.
-  const tLen=maxLength*(front>.62?.23+rand()*.17:
+  const tLen=maxLength*(front>.62?
+    (style==='seraph-face-open'?.075+rand()*.085:.23+rand()*.17):
     side>.68?.63+rand()*.30:.80+rand()*.20)*
     (.65+.35*Math.sin(Math.min(1,theta/1.32)*Math.PI*.5));
   const width=detail==='low'?.010:.004+rand()*.004;
@@ -238,7 +239,8 @@ export function attachCanonicalCharacterGroom({
  const crown=attach(frames.head,createCharacterCrownGeometry(fit),
   'hair','fitted-canonical-scalp-crown');
  const locks=attach(frames.head,createCharacterHairStrandsGeometry({
-  ...fit,style:profile.hair,seed:(profile.id||'monster').split('')
+  ...fit,style:profile.faceOpenHair?'seraph-face-open':profile.hair,
+  seed:(profile.id||'monster').split('')
    .reduce((n,c)=>n*31+c.charCodeAt(0),7)>>>0
  }), 'hair','continuous-rooted-hair-strands');
  for(const item of [crown,locks]){
