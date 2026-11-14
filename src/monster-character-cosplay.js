@@ -12,6 +12,7 @@ import {createHumanBomRig} from './human-bom-renderer.js';
 import {attachTownOutfitNpc} from './cc0-town-npc-visuals.js';
 import {createMonsterModel,disposeMonsterSculpture} from './monster-geometry.js?v=4.5.03';
 import {startMonsterAction,animateMonsterModel} from './monster-animation.js';
+import {createHumanoidMonsterCombatMotion} from './monster-humanoid-combat-poses.js?v=4.5.17';
 import {humanoidMonsterCostumeFor} from './monster-character-cosplay-manifest.js?v=4.5.03';
 import {addGothicMonsterSculpt,hasGothicMonsterSculpt}
  from './monster-gothic-sculpt.js?v=4.5.11';
@@ -263,7 +264,8 @@ function buildMonsterCostume(THREE,model,profile,detail){
  });
  const dragonSkull=profile.costume==='dragonkin_female'?
   measureCanonicalScalp(model,joints.head,{groomFrame:frames.headGroom}):null;
- const nativeDragonCrown=dragonSkull?createDragonkinNativeScalpOverlay({
+ const nativeDragonCrown=dragonSkull&&profile.hair==='bald'?
+  createDragonkinNativeScalpOverlay({
    model,headBone:joints.head,groomFrame:frames.headGroom,scalp:dragonSkull,detail
   }):null;
  if(femaleSummon)addFemaleSummonCostume({
@@ -276,7 +278,8 @@ function buildMonsterCostume(THREE,model,profile,detail){
  // cap. Keep the real eyes, forehead, ears, neck, joint motion and GLB.
  // Important: measure and build all hair/armour BEFORE modifying indices.
  const scalpCoverKind=['forest_spirit_female','seraph_female'].includes(
-  profile.costume)?'wig':profile.costume==='dragonkin_female'&&nativeDragonCrown
+  profile.costume)||(profile.costume==='dragonkin_female'&&profile.hair!=='bald')
+  ?'wig':profile.costume==='dragonkin_female'&&nativeDragonCrown
   ?'scales':null;
  const scalpCut=scalpCoverKind?cutFemaleSummonScalpUnderCover({
   model,headBone:joints.head,groomFrame:frames.headGroom,
@@ -401,7 +404,9 @@ function buildMonsterCostume(THREE,model,profile,detail){
   skinColor:profile.skin,skinMaterialIsolation:true,
   demonCosmeticsEdition:demonic?'horns-makeup-runes-v1':null,
   femaleSummonCostumeEdition:femaleSummon?
-   (profile.costume==='dragonkin_female'?'dragonkin-native-head-topology-v3':
+   (profile.costume==='dragonkin_female'?
+     (profile.hair==='bald'?'dragonkin-native-head-topology-v3':
+      'approved-dragon-queen-plum-groom-v4'):
     profile.costume==='seraph_female'?'seraph-original-wing-flight-v2':
     'female-summon-v1'):null,
   dragonCraniumFitted:dragonSkull?!!dragonSkull.fitted:null,
@@ -463,11 +468,12 @@ export function createCosplayedHumanoidMonster(spec,{
  host.userData.humanBaseMigration=humanBaseMigration;
  root.userData.humanBaseMigration=humanBaseMigration;
  let disposed=false,ready=false,failed=false,rig=null,visual=null;
- let seraphWingPivots=[];
+ let seraphWingPivots=[],combatMotion=null;
  let disposeCostume=null,activeAction='idle',lastTime=null,lastAction='idle';
  // A GLB may finish loading after a user switches species. The late visual
  // must not remain attached to an already disposed preview host.
  const releaseLateCharacterLoad=()=>{
+  combatMotion?.dispose();combatMotion=null;
   disposeCostume?.();disposeCostume=null;
   host.userData.canonicalMotion?.mixer?.stopAllAction();
   host.userData.canonicalMotion?.jobController?.dispose?.();
@@ -500,7 +506,10 @@ export function createCosplayedHumanoidMonster(spec,{
    }
    const motion=host.userData.canonicalMotion;
    if(!motion)return;
-   const clip=DEFAULT_MOTION[action]||'idle',chosen=motion.actions[clip]?clip:'idle';
+   // A cast is not a sword swing. Keep the native idle base and overlay
+   // a per-instance casting gesture; ordinary attacks still use the GLB clip.
+   const clip=action==='special'?'idle':(DEFAULT_MOTION[action]||'idle');
+   const chosen=motion.actions[clip]?clip:'idle';
    if(lastAction!==chosen||!motion.active){
     if(motion.active&&motion.active!==motion.actions[chosen])
      motion.active.fadeOut(.16);
@@ -512,6 +521,7 @@ export function createCosplayedHumanoidMonster(spec,{
    }
    const delta=lastTime===null?0:clamp(time-lastTime,0,.13);
    lastTime=time;motion.mixer.update(delta);
+   combatMotion?.update(action,clamp(elapsed/(TIME_LIMITS[action]||1),0,1),time);
    if(profile.costume==='seraph_female'){
     for(const pivot of seraphWingPivots){
      const side=pivot.userData.seraphFlightWingSide,beat=Math.sin(time*4.1);
@@ -527,6 +537,7 @@ export function createCosplayedHumanoidMonster(spec,{
   dispose(){
    if(disposed)return;
    disposed=true;
+   combatMotion?.dispose();combatMotion=null;
    disposeCostume?.();
    host.userData.canonicalMotion?.mixer?.stopAllAction();
    host.userData.canonicalMotion?.jobController?.dispose?.();
@@ -573,6 +584,8 @@ export function createCosplayedHumanoidMonster(spec,{
    if(disposed){releaseLateCharacterLoad();return {source:'cancelled'};}
    disposeCostume=buildMonsterCostume(THREE,visual,profile,detail);
    state.metadata=visual.userData.monsterCostume;
+   combatMotion=createHumanoidMonsterCombatMotion(visual,profile);
+   state.metadata.combatMotionLayer='native-clip-plus-procedural-charge-release-v1';
    seraphWingPivots=[];
    if(profile.costume==='seraph_female')visual.traverse(node=>{
     if(node.userData?.seraphFlightWingSide===-1||
@@ -597,6 +610,7 @@ export function createCosplayedHumanoidMonster(spec,{
    failed=true;
    state.source='procedural-fallback';
    state.reason=String(error?.message||error);
+   combatMotion?.dispose();combatMotion=null;
    host.userData.canonicalMotion?.mixer?.stopAllAction();
    disposeCostume?.();
    if(visual)host.remove(visual);
