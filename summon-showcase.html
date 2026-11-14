@@ -111,7 +111,7 @@
 </head>
 <body>
   <header id="galleryHeader">
-    <div class="galleryHeading"><h1>召喚獣・軍馬 3D鑑賞 v4.5.20</h1><small>森の精霊弓士・光翼の守護天使 / CC0 Quaternius人体の顔・弓・羽毛の翼・回復・蘇生</small></div>
+    <div class="galleryHeading"><h1>召喚獣・軍馬 3D鑑賞 v4.5.21</h1><small>森の精霊弓士・光翼の守護天使 / CC0 Quaternius人体の顔・弓・羽毛の翼・回復・蘇生</small></div>
     <label for="type" class="speciesPicker"><span class="typeCaption">種類</span><select id="type">
       <option value="wolf">灰狼</option>
       <option value="wyvern">飛竜</option>
@@ -181,11 +181,11 @@
   <script type="module">
     import * as THREE from 'three';
     import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
-    import {femaleSummonCosplayFor,FEMALE_SUMMON_FORM_IDS,MALE_DRAGON_LORD_FORM} from './src/female-summon-forms.js?v=4.5.20';
-    import {createCosplayedHumanoidMonster} from './src/monster-character-cosplay.js?v=4.5.20';
+    import {femaleSummonCosplayFor,FEMALE_SUMMON_FORM_IDS,MALE_DRAGON_LORD_FORM} from './src/female-summon-forms.js?v=4.5.21';
+    import {createCosplayedHumanoidMonster} from './src/monster-character-cosplay.js?v=4.5.21';
     import {COMBAT_OBJECT_SPECS} from './src/combat-action-spec.js?v=4.4.74';
     import {creatureSize,SUMMON_WORLD_SCALE,LARGE_SUMMON_IDS} from './src/combat-creature-performance.js?v=4.6.37';
-    import {createCombatWorldObjectRenderer} from './src/combat-world-object-renderer.js?v=4.5.20';
+    import {createCombatWorldObjectRenderer} from './src/combat-world-object-renderer.js?v=4.5.21';
     import {startCreaturePose} from './src/combat-creature-actions.js?v=4.4.92';
     import {createCreatureSoundRuntime} from './src/combat-creature-sounds.js?v=4.4.74';
     import {ActionVfxRuntime} from './src/character-system/action-vfx-runtime.js?v=4.4.23';
@@ -565,6 +565,27 @@
           ' '+(isFemaleReady?'キャラGLB・骨格連動':'読み込み中・元の姿'):'')+
         (femaleFlightAltitude>0?' / 空中飛行 '+femaleFlightAltitude.toFixed(2)+'m・羽ばたき':'');
     }
+    // Diagnose the actual skinned forest wardrobe, not only a hex-code
+    // present somewhere in the source. The old black velvet albedo passed
+    // source-level color checks while the phone still showed a black dress.
+    const forestSurfaceAudit=()=>{
+      if(selected!=='forest_archer'||femaleSummonHandle?.source!=='canonical-character-cosplay')
+        return null;
+      const result={leafPanels:0,emeraldMeshes:0,donorClothMeshes:0,
+       darkPhotoSurfaceMeshes:0,skin:0xe1b496};
+      femaleSummonHandle.root.traverse(node=>{
+        if(!node.isMesh)return;
+        if(node.userData.forestCanopyOuterLayer)result.leafPanels++;
+        const material=Array.isArray(node.material)?node.material:[node.material];
+        for(const m of material){
+          if(m?.userData?.forestVisibleGreen)result.emeraldMeshes++;
+          if(m?.userData?.forestOpaqueEmeraldOutfit)result.donorClothMeshes++;
+          if(m?.userData?.forestVisibleGreen&&
+             m.userData.photoSurface==='velvet')result.darkPhotoSurfaceMeshes++;
+        }
+      });
+      return result;
+    };
     window.__summonGalleryLayoutQA=()=>({
       motionStripVisible:getComputedStyle(document.getElementById('summonMotionStrip')).display!=='none',
       actionButtons:document.querySelectorAll('#summonMotionStrip button').length,
@@ -580,6 +601,7 @@
       inspectorWidth:document.querySelector('#controlsDrawer .extraControls')?.getBoundingClientRect().width??0,
       inspectorHeight:document.querySelector('#controlsDrawer .extraControls')?.getBoundingClientRect().height??0,
       femaleReady:femaleSummonHandle?.source==='canonical-character-cosplay',
+      forestSurfaceAudit:forestSurfaceAudit(),
       femaleSource:femaleSummonHandle?.profile?.modelId||null,
       dragonCraniumNativeTopology:
        femaleSummonHandle?.metadata?.dragonCraniumNativeTopology??null,

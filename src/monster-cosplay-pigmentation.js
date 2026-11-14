@@ -54,6 +54,24 @@ export function applyMonsterMaterialPigment(material,role,profile){
  }
  if(role==='cloth'){
   tinted.roughness=Math.max(.79,tinted.roughness??.8);
+  if(profile.forestGreen){
+   // Some imported ranger outfits bake BLACK cloth directly into their
+   // baseColor map. Multiplying the new emerald tint by that black albedo
+   // keeps the robe black no matter what profile.cloth says. Preserve the
+   // donor geometry, normals and UVs; only replace the instance's opaque
+   // dark albedo. Never alter skin or any shared source GLB material.
+   if(!tinted.transparent&&!tinted.alphaMap){
+    tinted.map=null;
+    tinted.color.setHex(profile.cloth);
+    tinted.needsUpdate=true;
+   }
+   if(tinted.emissive){
+    tinted.emissive.setHex(0x073318);
+    tinted.emissiveIntensity=.12;
+   }
+   tinted.userData={...tinted.userData,
+    forestOpaqueEmeraldOutfit:true,sourceMaterialUnmodified:true};
+  }
  }
  tinted.userData={...tinted.userData,
   monsterCosplayPigment:true,pigmentRole:role,

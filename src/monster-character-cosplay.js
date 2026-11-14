@@ -19,13 +19,13 @@ import {addGothicMonsterSculpt,hasGothicMonsterSculpt}
 import {decorateMonsterPhotoMaterial,detachMonsterPhotoMaterial}
  from './monster-photo-pbr.js';
 import {classifyCosplaySurface,applyMonsterMaterialPigment}
- from './monster-cosplay-pigmentation.js';
+ from './monster-cosplay-pigmentation.js?v=4.5.21';
 import {addConstructMonsterCostume,isConstructCostume}
  from './monster-construct-costume.js';
 import {addDemonicFaceCosmetics,hasDemonCosmetics}
  from './monster-demon-cosmetics.js?v=4.5.05';
 import {addFemaleSummonCostume,isFemaleSummonCostume}
- from './female-summon-costumes.js?v=4.5.19';
+ from './female-summon-costumes.js?v=4.5.21';
 import {createDragonkinNativeScalpOverlay}
  from './dragonkin-native-scalp.js?v=4.5.14';
 import {cutFemaleSummonScalpUnderCover}
@@ -119,6 +119,8 @@ function buildMonsterCostume(THREE,model,profile,detail){
   lip:profile.lip??0x5e273b,
   rune:profile.accent??0x922c52,
   leaf:profile.leaf??0x67854b,
+  forestMint:profile.forestMint??0x92de69,
+  forestDeep:profile.forestDeep??0x197540,
   feather:profile.feather??0xe3dec9,
   crystal:profile.crystal??0x90d3dd,
   hair:profile.hairColor??(profile.id==='seraph_guardian'?0xd7bd7c:
@@ -169,11 +171,27 @@ function buildMonsterCostume(THREE,model,profile,detail){
    const surfaceRole={
     velvet:'fabric',lining:'fabric',linen:'bandage',
     metal:'metal',gold:'metal',ivoryCloth:'fabric',
-    leaf:'fabric',cloth:'fabric',edge:'metal',membrane:'leather'
+    // The user's screenshot showed a BLACK forest robe: the library's
+    // 'fabric' category loads dark burgundy/black velvet ALBEDO and
+    // multiplies the leaf green tint almost to zero. Forest greens
+    // need pale LINEN albedo for physically shaded readable saturation.
+    leaf:'bandage',forestMint:'bandage',forestDeep:'bandage',
+    cloth:profile.forestGreen?'bandage':'fabric',
+    edge:'metal',membrane:'leather'
    }[role];
    if(surfaceRole)decorateMonsterPhotoMaterial(m,{
      family:'undead',speciesId:profile.id,role:surfaceRole,detail
    });
+   if(profile.forestGreen&&
+      ['leaf','forestMint','forestDeep','cloth'].includes(role)){
+     // The neutral linen detail retains folds, unlike a dark velvet map.
+     // A tiny green ambient lift keeps deep folds readable on smartphones,
+     // without making the forest sorceress glow.
+     m.emissive.setHex(role==='forestMint'?0x15391b:0x07331c);
+     m.emissiveIntensity=.18;
+     m.userData.forestVisibleGreen=true;
+     m.userData.forestColorRole=role;
+   }
    materials.set(role,m);ownedMats.push(m);
   }
   return materials.get(role);

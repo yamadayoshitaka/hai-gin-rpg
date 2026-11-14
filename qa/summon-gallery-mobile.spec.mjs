@@ -83,6 +83,32 @@ test('mobile summon gallery: compact model-first view, functional drawers and ca
   expect(errors).toEqual([]);
 });
 
+test('forest spirit has green real clothing in the 3D viewer, not black velvet',async({page})=>{
+ const errors=[];
+ page.on('pageerror',e=>errors.push(String(e)));
+ await page.goto('/summon-showcase.html?v=4.5.21',
+  {waitUntil:'domcontentloaded',timeout:65000});
+ await page.locator('#type').selectOption('forest_archer');
+ await expect.poll(()=>page.evaluate(()=>
+   window.__summonGalleryLayoutQA?.()?.femaleReady),
+  {timeout:110000}).toBe(true);
+ const actual=await page.evaluate(()=>
+  window.__summonGalleryLayoutQA()?.forestSurfaceAudit);
+ expect(actual).toMatchObject({
+   leafPanels:36,
+   darkPhotoSurfaceMeshes:0,
+   skin:0xe1b496
+ });
+ expect(actual.emeraldMeshes).toBeGreaterThanOrEqual(37);
+ // Material and mesh checks ensure the green dress exists in the actual
+ // skinned actor, not merely a profile color that a black texture obscures.
+ await page.screenshot({
+   path:'test-results/forest-spirit-emerald-robe-front-back-check-v4.5.21.png',
+   animations:'disabled',timeout:20000
+ });
+ expect(errors).toEqual([]);
+});
+
 test('female seraph: original wing pair and animated airborne preview',async({page})=>{
  const errors=[];page.on('pageerror',e=>errors.push(String(e)));
  await page.goto('/summon-showcase.html?v=4.5.13',

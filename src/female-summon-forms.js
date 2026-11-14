@@ -13,8 +13,9 @@ const make=(id,role,body,face,hair,outfit,equipment,costume,palette,options={})=
  });
 export const FEMALE_SUMMON_FORMS=Object.freeze({
  forest_archer:make('forest_archer','civilian','slim','narrow-eyed','long','ranger','bow',
-  'forest_spirit_female',[0xe1b496,0x245f39,0xbca886,0x65cb67],{
-   hairColor:0xa3885e,leaf:0x32964a,feather:0xbad4a8,makeup:0x665347,lip:0xae756b,forestGreen:true
+  'forest_spirit_female',[0xe1b496,0x338c51,0xbca886,0x80d975],{
+   hairColor:0xa3885e,leaf:0x39be67,feather:0xbad4a8,makeup:0x665347,lip:0xae756b,
+   forestGreen:true,forestMint:0x92de69,forestDeep:0x197540
   }),
  seraph_guardian:make('seraph_guardian','royal','tall','noble','long','paladin','staff',
   'seraph_female',[0xf4f4f2,0xf3f0e7,0xd8c89a,0xffe9b3],{

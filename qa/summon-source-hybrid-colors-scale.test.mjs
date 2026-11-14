@@ -76,7 +76,7 @@ assert.equal(FEMALE_SUMMON_FORMS.seraph_guardian.skin,0xf4f4f2);
 assert.equal(FEMALE_SUMMON_FORMS.seraph_guardian.faceOpenHair,true);
 assert.equal(FEMALE_SUMMON_FORMS.forest_archer.skin,0xe1b496);
 assert.equal(FEMALE_SUMMON_FORMS.forest_archer.forestGreen,true);
-assert.ok(FEMALE_SUMMON_FORMS.forest_archer.leaf===0x32964a);
+assert.ok(FEMALE_SUMMON_FORMS.forest_archer.leaf===0x39be67);
 assert.equal(MALE_DRAGON_LORD_FORM.sex,'male');
 
 const source=readFileSync(new URL('../src/combat-creature-geometry.js',import.meta.url),'utf8');
