@@ -3,6 +3,7 @@ const {chromium}=require('playwright');
 const fs=require('node:fs');
 const path=require('node:path');
 const crypto=require('node:crypto');
+const {captureChromiumScreenshot}=require('./chromium-webgl-screenshot.cjs');
 const out='qa-screenshots/hero-hair-v43';
 fs.mkdirSync(out,{recursive:true});
 const hex=bytes=>crypto.createHash('sha256').update(bytes).digest('hex');
@@ -45,8 +46,7 @@ const hex=bytes=>crypto.createHash('sha256').update(bytes).digest('hex');
      await page.locator('#'+view).click();
      await page.waitForTimeout(120);
      const filename=path.join(out,gender+'-'+view+'-style-'+index+'.png');
-     const shot=await page.locator('#faceCanvas').screenshot({path:filename,
-      timeout:60000,animations:'disabled'});
+     const shot=await captureChromiumScreenshot(page,filename,{selector:'#faceCanvas'});
      hashes[view].push(hex(shot));
     }
    }
@@ -91,9 +91,8 @@ const hex=bytes=>crypto.createHash('sha256').update(bytes).digest('hex');
        beauty.femaleControls.lashCurl<1.1)
      throw Error('Heroine v43 optical preset was not applied');
     await page.locator('#front').click();
-    await page.locator('#faceCanvas').screenshot({
-     path:path.join(out,'female-v43-eyes-after-beauty.png'),
-     timeout:60000,animations:'disabled'});
+    await captureChromiumScreenshot(page,
+     path.join(out,'female-v43-eyes-after-beauty.png'),{selector:'#faceCanvas'});
    }
    // Every age and build choice must change real generated 3D face data.
    // One old and one fat example are sufficient for the browser smoke;
