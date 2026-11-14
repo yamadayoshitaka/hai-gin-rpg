@@ -38,7 +38,7 @@ function go(number,scroll=true){
   (next.gender==='female'?'女性':'男性')+'主人公・'+next.shots.length+'コマ';
  $('prevPage').disabled=$('prevBottom').disabled=number===1;
  $('nextPage').disabled=$('nextBottom').disabled=number===all.length;
- $('visualConfirm').checked=false;
+ // No approval/confirmation step: inspected REAL images are shown in game automatically.
  const fragment=document.createDocumentFragment();
  const renderTicket=ticket;
  next.shots.forEach((shot,i)=>{
@@ -100,12 +100,12 @@ function panel(shot,index){
  const txt=document.createElement('div');txt.className='scene-text';txt.textContent=shot.displayText||shot.scriptText||'（セリフなし）';
  const caption=document.createElement('div');caption.className='source';caption.textContent='画像の同一性を確認しています';
  const actions=document.createElement('div');actions.className='actions';
- for(const [action,label] of [['approve','◎ 仮承認'],['revise','↶ 差し戻し'],['hold','― 保留']]){
+ for(const [action,label] of [['revise','↶ このコマを差し戻す']]){
   const b=document.createElement('button');b.type='button';b.dataset.choice=action;b.textContent=label;
-  if(action!=='hold')b.disabled=true;
+  b.disabled=true;
   b.addEventListener('click',()=>{
    const state=states.get(shot.key);
-   if(action!=='hold'&&!state?.available)return;
+   if(!state?.available)return;
    const old=saved[shot.key];
    saved[shot.key]={decision:action,kind:state?.kind||'pending',hash:state?.hash||null,
     feedback:old?.hash===state?.hash?old.feedback||'':''};
@@ -326,8 +326,8 @@ async function load(shot,view,v){
    kind==='legacy'?'既存ゲーム原画':'新規候補・本編仮反映待ち'):
    '解像度不足・再生成対象')+'　'+probe.naturalWidth+'×'+probe.naturalHeight;
   states.set(shot.key,{kind,hash,available:ok,bytes});
-  for(const button of view.actions.querySelectorAll('button:not([data-choice="hold"])'))
-   button.disabled=!ok;
+  for(const button of view.actions.querySelectorAll('button[data-choice="revise"]'))
+   button.disabled=!(ok&&live?.sha256===hash);
   if(saved[shot.key]?.hash!==hash){delete saved[shot.key];persist();}
   refreshCard(shot.key);update();
  }catch(e){
@@ -341,22 +341,28 @@ async function load(shot,view,v){
 function update(){
  const ready=current.shots.filter(s=>saved[s.key]?.decision&&
   saved[s.key].hash===states.get(s.key)?.hash);
- const approved=ready.filter(s=>saved[s.key].decision==='approve');
+ const corrections=ready.filter(s=>saved[s.key].decision==='revise');
  const pc=Math.round(ready.length/current.shots.length*100);
  $('progressBar').style.width=pc+'%';
  document.querySelector('.progress').setAttribute('aria-valuenow',pc);
  $('progressLabel').textContent='このページ '+ready.length+'/'+current.shots.length+'コマを判定';
- $('draftCount').textContent='現在のコマ '+(activeShotIndex+1)+' / '+current.shots.length+'（仮反映は自動）';
+ $('draftCount').textContent='第'+current.number+'ページ・'+(activeShotIndex+1)+'/'+current.shots.length+'コマ（実絵は自動反映）';
  // Provisional publication is automatic for real verified frames.
  // Only an explicit "return for revision" needs to be sent to GitHub.
- const needsReturn=ready.some(s=>saved[s.key].decision==='revise'&&
-  states.get(s.key)?.available);
+ const needsReturn=corrections.some(s=>states.get(s.key)?.available&&
+  chapter1ProvisionalLivePanel({
+   stageId:s.stageId,comicEdition:s.edition,protagonistGender:s.gender,id:s.shotId
+  })?.sha256===states.get(s.key)?.hash);
  $('submit').disabled=!needsReturn;
 }
 function send(){
  const votes=current.shots.map(s=>{
   const state=states.get(s.key),d=saved[s.key];
-  if(!state?.available||!d||d.hash!==state.hash||d.decision!=='revise')return null;
+  const live=chapter1ProvisionalLivePanel({
+   stageId:s.stageId,comicEdition:s.edition,protagonistGender:s.gender,id:s.shotId
+  });
+  if(!state?.available||!d||d.hash!==state.hash||d.decision!=='revise'||
+   live?.sha256!==state.hash)return null;
   return {key:s.key,kind:state.kind,decision:d.decision,
    imageSha256:state.hash,feedback:String(d.feedback||'').trim()};
  }).filter(Boolean);
@@ -366,7 +372,7 @@ function send(){
  }
 
  const payload={type:'HAI_GIN_CHAPTER1_MANGA_REVIEW_V1',chapter:1,
-  pageTask:current.number,confirmVisualReview:$('visualConfirm').checked,votes};
+  pageTask:current.number,confirmVisualReview:false,votes};
  const title='[漫画差し戻し] 第一章 p'+current.number+' '+current.stageId+' '+current.gender;
  const body='灰銀のレゾナンス 漫画コマの差し戻し申請。\n'+
   'このIssueを送信すると、現在の仮登録画像のSHAを照合して元のゲーム表示へ戻します。\n\n'+
@@ -382,7 +388,6 @@ $('prevPage').addEventListener('click',()=>stepShot(-1));
 $('nextPage').addEventListener('click',()=>stepShot(1));
 $('prevBottom').addEventListener('click',()=>stepShot(-1));
 $('nextBottom').addEventListener('click',()=>stepShot(1));
-$('visualConfirm').addEventListener('change',update);
 $('submit').addEventListener('click',send);
 const query=new URLSearchParams(location.search),start=Number(query.get('page')||1);
 go(pages.has(start)?start:1,false);
