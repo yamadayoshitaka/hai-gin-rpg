@@ -146,6 +146,7 @@ function buildGenerationControls(shot){
  open.textContent='✦ ChatGPTでこの1コマを画像生成';
  const copy=document.createElement('button');copy.type='button';copy.textContent='プロンプトをコピー';
  const show=document.createElement('button');show.type='button';show.textContent='生成指示を確認';
+ const share=document.createElement('button');share.type='button';share.textContent='Androidで共有';
  const message=document.createElement('p');message.className='handoff';
  message.textContent='ChatGPT Plusの画像生成を利用。追加のAPIキー不要。画像の自動取り込みは未対応。';
  const preview=document.createElement('textarea');preview.className='preview-prompt';
@@ -199,7 +200,24 @@ function buildGenerationControls(shot){
   try{await loadContract;prepare();preview.hidden=false;setGeneratorMessage(message,'この内容をChatGPTへ渡します。台本の文字は画像に描きません。');}
   catch(e){setGeneratorMessage(message,'準備に失敗：'+e.message);}
  });
- buttons.append(open,copy,show);
+ share.addEventListener('click',async()=>{
+  try{
+   if(!navigator.share)throw Error('このブラウザに共有機能がありません。コピーを利用してください');
+   const prompt=prepare();
+   const data={title:'灰銀のレゾナンス '+shot.shotId+'の画像を生成',text:prompt};
+   const state=states.get(shot.key);
+   if(state?.bytes&&typeof File!=='undefined'&&navigator.canShare){
+    const source=new File([state.bytes],shot.shotId+'-reference.webp',{type:'image/webp'});
+    if(navigator.canShare({files:[source]}))data.files=[source];
+   }
+   await navigator.share(data);
+   setGeneratorMessage(message,'共有メニューでChatGPTを選び、生成指示を確認して送信してください。');
+  }catch(e){
+   if(e.name!=='AbortError')setGeneratorMessage(message,
+    '共有できませんでした：'+e.message+'。プロンプトのコピーをご利用ください。');
+  }
+ });
+ buttons.append(open,copy,show,share);
  box.append(heading,label,input,buttons,message,preview);
  return box;
 }
@@ -269,7 +287,7 @@ async function load(shot,view,v){
   view.img.src=url;view.img.hidden=false;view.empty.hidden=true;
   view.caption.textContent=(ok?(kind==='legacy'?'既存ゲーム原画':'新規候補・ハッシュ確認済み'):
    '解像度不足・再生成対象')+'　'+probe.naturalWidth+'×'+probe.naturalHeight;
-  states.set(shot.key,{kind,hash,available:ok});
+  states.set(shot.key,{kind,hash,available:ok,bytes});
   for(const button of view.actions.querySelectorAll('button:not([data-choice="hold"])'))
    button.disabled=!ok;
   if(saved[shot.key]?.hash!==hash){delete saved[shot.key];persist();}
