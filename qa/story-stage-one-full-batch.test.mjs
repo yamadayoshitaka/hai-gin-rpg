@@ -3,6 +3,7 @@ import {readFileSync,existsSync} from 'node:fs';
 import {createHash} from 'node:crypto';
 import {comicForStage,comicPageAsset} from '../src/story-chapter-comic.js';
 import {registeredStoryPanelAsset} from '../src/story-panel-registered-art.js';
+import {chapter1ProvisionalLivePanel} from '../src/story-chapter1-provisional-live.js';
 
 const resource=relative=>new URL('../'+relative,import.meta.url);
 const inventory=JSON.parse(readFileSync(resource('assets/story/chapters/c01/c01-s01-draft-registry-20261113.json'),'utf8'));
@@ -34,7 +35,16 @@ for(const [gender,phase,expected] of allowed){
   const p=comic.panels[i],url=registeredStoryPanelAsset(p);
   assert.equal(p.protagonistGender,gender);
   assert(p.voiceText&&p.voiceText.trim().length>0,'Missing voice text '+p.id);
-  assert(url&&url.endsWith('-'+gender+'.webp'),'Cross-gender frame '+p.id);
+  const live=chapter1ProvisionalLivePanel(p);
+  assert(url,'Missing registered source '+p.id);
+  if(live){
+   assert.equal(url,live.asset,'Wrong provisional source');
+   assert(url.includes([p.stageId,p.comicEdition,gender,p.id].join('__')),
+    'Wrong gender/edition provisional filename');
+   assert.equal(live.status,'PROVISIONAL_NOT_VISUALLY_APPROVED');
+  }else{
+   assert(url.endsWith('-'+gender+'.webp'),'Cross-gender legacy frame '+p.id);
+  }
   assert(!seen.has(url),'Same file reused across gender/phase editions '+url);
   seen.add(url);
   const rel=url.slice(2);
@@ -43,11 +53,18 @@ for(const [gender,phase,expected] of allowed){
   assert.equal(b.toString('ascii',0,4),'RIFF','Corrupt art '+url);
   assert.equal(b.toString('ascii',8,12),'WEBP','Corrupt art '+url);
   assert(b.length>12000,'Too-small artwork '+url);
+  if(live){
+    assert.equal(live.sha256,createHash('sha256').update(b).digest('hex'),
+      'SHA mismatch for reversible provisional source');
+  }
   if(e){
-    const md=e.panels[i];
-    assert.equal(md.path,rel,'Wrong stage-panel registration '+url);
-    assert.equal(md.bytes,b.length,'Unexpected file size '+url);
-    assert.equal(md.sha256,createHash('sha256').update(b).digest('hex'),'Wrong WebP asset '+url);
+    // Never alter or delete original archival art even when a provisional
+    // higher-quality image is displayed by the live game resolver.
+    const md=e.panels[i],original=readFileSync(resource(md.path));
+    assert.equal(md.bytes,original.length,'Legacy image bytes were changed');
+    assert.equal(md.sha256,createHash('sha256').update(original).digest('hex'),
+      'Legacy archive SHA changed');
+    if(!live)assert.equal(md.path,rel,'Wrong original stage-panel registration '+url);
   }
  }
 }
