@@ -30,7 +30,7 @@ import {createDragonkinNativeScalpOverlay}
 import {cutFemaleSummonScalpUnderCover}
  from './female-summon-scalp-cut.js?v=4.5.15';
 import {planHumanoidCosplayBase}
- from './humanoid-studio-base-intake.js?v=4.5.16';
+ from './monster-studio-base-intake.js?v=4.5.16';
 import {attachCanonicalCharacterGroom,createCanonicalHeadLocalGroomAnchor,
  measureCanonicalScalp}
  from './monster-humanoid-hair.js?v=4.5.13';
