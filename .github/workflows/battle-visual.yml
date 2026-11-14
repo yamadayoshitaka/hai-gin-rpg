@@ -12,6 +12,8 @@ on:
       - 'qa/skirmish-two-legs.spec.mjs'
       - 'qa/armor-four-legs-regression.test.mjs'
       - 'qa/battle-visual.spec.mjs'
+      - 'qa/monster-manager.spec.mjs'
+      - 'monster-manager.html'
       - 'qa/summon-gallery-mobile.spec.mjs'
       - 'qa/canine-fur-face-regression.test.mjs'
       - 'summon-showcase.html'
@@ -19,6 +21,7 @@ on:
       - '.github/workflows/battle-visual.yml'
   pull_request:
     paths:
+      - '.github/workflows/battle-visual.yml'
       - 'index.html'
       - 'assets/creatures/quaternius50/**'
       - 'qa/quaternius-ultimate50.test.mjs'
@@ -27,6 +30,8 @@ on:
       - 'qa/skirmish-two-legs.spec.mjs'
       - 'qa/armor-four-legs-regression.test.mjs'
       - 'qa/battle-visual.spec.mjs'
+      - 'qa/monster-manager.spec.mjs'
+      - 'monster-manager.html'
       - 'qa/summon-gallery-mobile.spec.mjs'
       - 'qa/canine-fur-face-regression.test.mjs'
       - 'summon-showcase.html'
