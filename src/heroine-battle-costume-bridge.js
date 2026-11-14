@@ -729,6 +729,8 @@ export function hideBattleDonorFace(model){
  let removedTriangles=0,removedNeckTriangles=0,retainedTriangles=0,
    hiddenEyeMeshes=0,changedMeshes=0;
  const point=new THREE.Vector3(),sample=new THREE.Vector3();
+ const headCenter=region.bounds.getCenter(new THREE.Vector3());
+ let spineWeightedNeckVertices=0,removedCervicalBoundaryTriangles=0;
  model.traverse(mesh=>{
   if(!mesh.isSkinnedMesh)return;
   if(/^(eyes|eyebrows)$/i.test(mesh.name)){
@@ -752,9 +754,9 @@ export function hideBattleDonorFace(model){
     if(joint===index)headWeight+=weight;
     if(neckJoints.has(joint))neckWeight+=weight;
    }
-   if(headWeight<.10&&neckWeight<.14){
-    pointCache.set(i,0);return 0;
-   }
+   // Do NOT stop here when head/neck bone weights are small: the donor
+   // mesh's remaining orange neck wedges are often weighted entirely to
+   // Spine/Clavicle. Those vertices must still be tested geometrically.
    mesh.getVertexPosition(i,point);
    sample.copy(point).applyMatrix4(mesh.matrixWorld);
    head.worldToLocal(sample);
@@ -763,13 +765,14 @@ export function hideBattleDonorFace(model){
    // clavicle rather than 'neck', so v58/v59 left orange triangular shards
    // piercing the neck beside the hair. A narrow geometric envelope covers
    // only the neck shaft, never shoulders, fingers or the lower chest.
-   const headCenter=region.bounds.getCenter(new THREE.Vector3());
    const centralCervical=sample.y>neckTrimY&&
      sample.y<trimY+size.y*.08&&
      Math.abs(sample.x-headCenter.x)<size.x*.365&&
      Math.abs(sample.z-headCenter.z)<size.z*.385;
    const isNeck=(headWeight>=.10||neckWeight>=.14||centralCervical)&&
      sample.y>neckTrimY;
+   if(centralCervical&&headWeight<.10&&neckWeight<.14)
+    spineWeightedNeckVertices++;
    const reason=isHead?1:isNeck?2:0;
    pointCache.set(i,reason);return reason;
   };
@@ -779,9 +782,27 @@ export function hideBattleDonorFace(model){
    // head bone above the cut. Do not leave original skin in the eye socket.
    const reasons=indices.map(belongs);
    const count=reasons.filter(Boolean).length;
-   if(count>=2){
+   // Border triangles with one cervical vertex still protrude through the
+   // newly unified neck as orange spikes. Mask them only when their other
+   // vertices are also inside the tight central neck envelope.
+   const cervical=(reasons.filter(r=>r===2).length);
+   let maskBoundary=count===1&&cervical===1;
+   if(maskBoundary){
+    const trianglePos=indices.map(vertex=>{
+     mesh.getVertexPosition(vertex,point);
+     sample.copy(point).applyMatrix4(mesh.matrixWorld);
+     return head.worldToLocal(sample.clone());
+    });
+    maskBoundary=trianglePos.every(v=>
+     v.y>neckTrimY-size.y*.035&&
+     v.y<trimY+size.y*.10&&
+     Math.abs(v.x-headCenter.x)<size.x*.42&&
+     Math.abs(v.z-headCenter.z)<size.z*.43);
+   }
+   if(count>=2||maskBoundary){
     removedTriangles++;
-    if(reasons.filter(r=>r===2).length)removedNeckTriangles++;
+    if(cervical)removedNeckTriangles++;
+    if(maskBoundary)removedCervicalBoundaryTriangles++;
     continue;
    }
    retained.push(...indices);retainedTriangles++;
@@ -795,8 +816,9 @@ export function hideBattleDonorFace(model){
  if(removedTriangles<1)throw Error('Original rigged face could not be isolated');
  // The existing battle facial accessories are not needed when the independent
  // artist face replaces their original eyes and lids.
- return {removedTriangles,removedNeckTriangles,retainedTriangles,
-  hiddenEyeMeshes,changedMeshes,
+ return {removedTriangles,removedNeckTriangles,
+  removedCervicalBoundaryTriangles,spineWeightedNeckVertices,
+  retainedTriangles,hiddenEyeMeshes,changedMeshes,
   preservedRig:true,regionSamples:region.samples,trimY,neckTrimY,
   headBounds:{min:region.bounds.min.toArray(),max:region.bounds.max.toArray()}};
 }
