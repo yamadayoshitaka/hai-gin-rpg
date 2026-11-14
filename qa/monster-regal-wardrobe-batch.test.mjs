@@ -3,7 +3,7 @@ import {readFileSync} from 'node:fs';
 import * as THREE from 'three';
 import {REGAL_HUMANOID_WARDROBE,wardrobeFor,
  createRegalBodiceGeometry,createRegalSkirtGeometry,
- createRegalHemGeometry,createRegalLimbGeometry,
+ createRegalHemGeometry,createRegalLimbGeometry,createRegalFootGeometry,
  createRegalCollarGeometry,createRegalShoulderYokeGeometry,addRegalHumanoidOutfit,
  measureRegalShoulderFit}
  from '../src/monster-regal-garments.js';
@@ -18,7 +18,8 @@ const fixture=()=>{
   pelvis:new THREE.Group(),arms:[new THREE.Group(),new THREE.Group()],
   forearms:[new THREE.Group(),new THREE.Group()],
   legs:[new THREE.Group(),new THREE.Group()],
-  calves:[new THREE.Group(),new THREE.Group()]};
+  calves:[new THREE.Group(),new THREE.Group()],
+  feet:[new THREE.Group(),new THREE.Group()]};
  const all=[];
  const attach=(parent,geometry,role,name,p=[0,0,0],r=[0,0,0])=>{
   const mesh=new THREE.Mesh(geometry,new THREE.MeshBasicMaterial());
@@ -50,7 +51,7 @@ const validate=(geometry,name)=>{
 for(const factory of [
  createRegalBodiceGeometry,createRegalSkirtGeometry,createRegalHemGeometry,
  createRegalLimbGeometry,createRegalCollarGeometry,
- createRegalShoulderYokeGeometry
+ createRegalShoulderYokeGeometry,createRegalFootGeometry
 ]){
  const hi=factory({detail:'high'}),lo=factory({detail:'low'});
  validate(hi,factory.name);validate(lo,factory.name);
@@ -161,6 +162,23 @@ for(const profile of cases){
   assert.equal(f.all.filter(o=>o.parent===f.frames.pelvis).length,2,
    'Skirt and floor hem must follow pelvis');
   assert.equal(f.all.filter(o=>o.parent===f.frames.arms[0]).length,1);
+  for(let i=0;i<2;i++){
+   const side=i===0?'left':'right';
+   const thigh=f.all.filter(o=>o.name.includes('full-thigh-'+i));
+   const shin=f.all.filter(o=>o.name.includes('full-shin-boot-'+i));
+   const foot=f.all.filter(o=>o.name.includes('full-foot-boot-'+i));
+   assert.equal(thigh.length,1,'Exposed '+side+' thigh '+profile.costume);
+   assert.equal(shin.length,1,'Exposed '+side+' calf '+profile.costume);
+   assert.equal(foot.length,1,'Exposed '+side+' foot '+profile.costume);
+   assert.strictEqual(thigh[0].parent,f.frames.legs[i],
+    'Thigh costume must follow real thigh bone');
+   assert.strictEqual(shin[0].parent,f.frames.calves[i],
+    'Shin boot must follow real calf bone');
+   assert.strictEqual(foot[0].parent,f.frames.feet[i],
+    'Shoe must follow real foot bone');
+   assert.ok([thigh[0],shin[0],foot[0]].every(o=>o.userData.role!=='skin'),
+    'No exposed humanoid donor limb behind costumes');
+  }
   for(const o of f.all){
    assert.ok(o.geometry.getAttribute('position').array.every(Number.isFinite));
    assert.ok(o.geometry.getAttribute('normal').array.every(Number.isFinite));
