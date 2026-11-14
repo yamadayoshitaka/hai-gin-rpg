@@ -1,0 +1,38 @@
+{
+  "kind": "CLOUDFLARE_REAL_WEBP_REVIEW_CANDIDATE_NOT_APPROVED",
+  "shotKey": "c01-s03|post-victory|male|c01-s03-m6",
+  "stageId": "c01-s03",
+  "edition": "post-victory",
+  "gender": "male",
+  "panelId": "c01-s03-m6",
+  "screenplayText": "勝利が確認された。王城と町を結ぶ陣地を確保し、使者の移動記録を追えるようになる。",
+  "visibleActorIds": [
+    "commander_male"
+  ],
+  "actualReferenceImagesAttached": [
+    {
+      "actorId": "commander_male",
+      "source": "assets/story/panels/c01-s01-m01.webp",
+      "originalSha256": "cb7267de06efafb1a0188a0e9010aba7c6af160fac401173de2da443392a1133",
+      "submittedSha256": "b3828c989ab843034e6a0a7e1f55fa3b099a4b9ca3fa05602c5d244031e5dd2e",
+      "actualBytes": 316698,
+      "pixels": [
+        480,
+        270
+      ]
+    }
+  ],
+  "imageSha256": "9d2e26181da4438ced12566b035b5ea9544f1169d7c8b9aaa8f3b46315a464f1",
+  "nativePixels": [
+    1536,
+    864
+  ],
+  "imageBytes": 247690,
+  "model": "@cf/black-forest-labs/flux-2-klein-4b",
+  "seed": 2047796150,
+  "promptSha256": "f11180c4a7e872297a7ef4301a43a982456c66a59bd8edb292236167bf888401",
+  "estimatedNeurons": 161.67,
+  "visuallyApproved": false,
+  "formallyRegistered": false,
+  "gameDeployed": false
+}
