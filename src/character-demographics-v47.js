@@ -23,10 +23,10 @@ export const AGE_PROFILES=Object.freeze({
 });
 export const AGE_BAND_IDS=Object.freeze(Object.keys(AGE_PROFILES));
 export const BODY_PROFILES=Object.freeze({
- ultraThin:Object.freeze({id:'ultraThin',label:'超痩せ型',width:.90,depth:.90,faceFullness:-.75,neckWidth:.93,abdomen:-.075,legRadius:.89,armRadius:.92}),
+ ultraThin:Object.freeze({id:'ultraThin',label:'超痩せ型',width:.90,depth:.90,faceFullness:-.75,neckWidth:.93,abdomen:-.075,legRadius:.89,armRadius:1}),
  thin:Object.freeze({id:'thin',label:'痩せ型',width:.95,depth:.95,faceFullness:-.285,neckWidth:.965,abdomen:-.034,legRadius:.91,armRadius:.96}),
  normal:Object.freeze({id:'normal',label:'普通',width:1.0,depth:1.0,faceFullness:.18,neckWidth:1.0,abdomen:.007,legRadius:.93,armRadius:1}),
- fat:Object.freeze({id:'fat',label:'太め',width:1.37,depth:1.34,faceFullness:1.07,neckWidth:1.19,abdomen:.49,legRadius:1.08,armRadius:1.1})
+ fat:Object.freeze({id:'fat',label:'太め',width:1.37,depth:1.34,faceFullness:1.07,neckWidth:1.19,abdomen:.49,legRadius:1.08,armRadius:1})
 });
 export const BODY_TYPE_IDS=Object.freeze(Object.keys(BODY_PROFILES));
 export const LEGACY_BODY_TYPE_MAP=Object.freeze({
