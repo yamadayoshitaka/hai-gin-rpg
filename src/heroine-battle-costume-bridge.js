@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {buildStudioContourNeck} from './studio-contour-neck-v58.js';
-import {weldStudioNeckIntoFace,addStudioRaisedInnerCollar} from './studio-unified-neck-v59.js';
+import {weldStudioNeckIntoFace,addStudioRaisedInnerCollar} from './studio-unified-neck-v59.js?v=60';
 import {clipStudioFaceBustPreservingSurface,restoreStudioFaceSurfaceQuality,
  sampleStudioFacePigment,smoothStudioFaceNormals,
  studioAnatomicalSeamY,taperStudioLowerBustBelowChin} from './studio-face-quality-v56.js?v=57';
@@ -11,8 +11,8 @@ import {measureHeadLocalBounds} from './character-system/hair-attachment-runtime
 import {createHeroineBattleActionVfx} from './heroine-battle-action-vfx.js?v=40';
 import {resolveBodyShape} from './character-cast-v46.js?v=46';
 import {resolveDemographicProfile,resolveBodyType,resolveAgeBand}
- from './character-demographics-v47.js?v=51';
-import {applySkinnedBuildMorph} from './body-build-morph-v48.js?v=51';
+ from './character-demographics-v47.js?v=60';
+import {applySkinnedBuildMorph} from './body-build-morph-v48.js?v=60';
 
 /**
  * Reuse EXACT game battle clothing: Female_Ranger / Female_Peasant skinned GLTF,
@@ -1016,7 +1016,7 @@ export async function createRealBattleOutfitStudio({scene,faceModel,getFaceModel
  function setDemographics(ageBand='twenties',bodyType='normal'){
   ageBandId=resolveAgeBand(ageBand).id;
   bodyTypeId=resolveBodyType(bodyType).id;
-  bodyShapeId=bodyTypeId==='thin'?'slim':bodyTypeId==='fat'?'full':'average';
+  bodyShapeId=['thin','ultraThin'].includes(bodyTypeId)?'slim':bodyTypeId==='fat'?'full':'average';
   applyBodyShape();
   return {ageBand:ageBandId,bodyType:bodyTypeId};
  }
