@@ -2,6 +2,9 @@
  * Real-time army combat contract v1.0. Pure data: no renderer, skeleton or
  * wardrobe dependencies. One tile is a human step. Values are design baselines.
  */
+import {MONSTER_SUMMON_SPECS,MONSTER_SUMMON_SKILLS}
+ from './monster-summon-registry.js?v=1';
+
 export const RARITY_RANK = Object.freeze({ N: 0, R: 1, UR: 2 });
 export const COMBAT_RULES = Object.freeze({
   tickSeconds: 0.1, maxMp: 100, mpRecoveryPerSecond: 0.45,
@@ -78,6 +81,9 @@ export const COMBAT_JOB_SPECS = Object.freeze({
        skill('call_wyvern', 'R', 'summon', 25, 24, 3, { name: '飛竜召喚', objectType: 'wyvern', animation: 'cast', effect: 'arcane' }),
       skill('call_dragon', 'UR', 'summon', 48, 50, 3, { name: '古竜召喚', objectType: 'dragon', animation: 'cast', effect: 'fire' }),
       skill('call_seraph_guardian', 'UR', 'summon', 42, 42, 3, { name: '光翼の守護天使召喚', objectType: 'seraph_guardian', animation: 'cast', effect: 'heal' }),
+      // All 50 native bestiary models are independent, summonable creatures.
+      // N/R/SR/UR monsters respect the existing N/R/UR skill progression.
+      ...MONSTER_SUMMON_SKILLS,
        skill('sacrifice_dragon', 'UR', 'sacrifice', 35, 50, 3, { name: '生贄・天竜降臨', objectType: 'elder_dragon', sacrificeCount: 1, animation: 'cast', effect: 'arcane' }),
       skill('sacrifice_dragon_lord', 'UR', 'sacrifice', 60, 90, 3, { name: '生贄・竜王降臨', objectType: 'dragon_lord', sacrificeCount: 1, animation: 'cast', effect: 'fire' }),
     ]) }),
@@ -91,6 +97,7 @@ export const COMBAT_JOB_SPECS = Object.freeze({
 
 /** Summons, mounts and timed explosives are world objects, never soldiers. */
 export const COMBAT_OBJECT_SPECS = Object.freeze({
+  ...MONSTER_SUMMON_SPECS,
   wolf: Object.freeze({ name: '灰狼', category: 'summon', hp: 95, speed: 14, attack: 22, interval: 1.6, range: 2, radius: 4, flying: false, duration: 45 }),
   wyvern: Object.freeze({ name: '飛竜', category: 'summon', hp: 175, speed: 15, attack: 40, interval: 2.3, range: 4, radius: 5, flying: true, duration: 45 }),
   dragon: Object.freeze({ name: '古竜', category: 'summon', hp: 400, speed: 15, attack: 62, interval: 3.0, range: 5, radius: 7, flying: true, duration: 45 }),
