@@ -7,7 +7,7 @@ import {MONSTER_CATALOG,MONSTER_BY_ID} from './monster-catalog.js';
 
 export const MONSTER_SUMMON_PREFIX='summon_';
 export const MONSTER_SUMMON_MODEL_HEIGHT=17; // 1.7 m human x 10
-export const MONSTER_SUMMON_MAX_ACTIVE=12; // pooled, lazy 3D scenes
+export const MONSTER_SUMMON_MAX_ACTIVE=24; // ten squads per side + small reserve
 export const MONSTER_SUMMON_MAX_HIGH_DETAIL=2;
 export const MONSTER_SUMMON_ENTRIES=Object.freeze(MONSTER_CATALOG.map(monster=>{
  const id=MONSTER_SUMMON_PREFIX+monster.id;
