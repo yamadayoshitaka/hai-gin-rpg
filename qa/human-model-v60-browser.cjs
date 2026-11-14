@@ -67,7 +67,7 @@ async function main(){
      {selector:'#bodyCanvas'});
    }
    // Five matched, real rendered views of neck / jaw / nape / armor collar.
-   await page.locator('#portrait').click();
+   await page.evaluate(args=>window[args.preview].setQAZoom('portrait'),{preview});
    for(const view of ['front','left','side','threeQuarterLeft','threeQuarterRight']){
     await page.evaluate(args=>window[args.preview].setQAView(args.view),{preview,view});
     await page.waitForTimeout(220);
