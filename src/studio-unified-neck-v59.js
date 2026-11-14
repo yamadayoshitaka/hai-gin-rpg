@@ -58,7 +58,7 @@ function orientedStudioCutEdges(geometry,originalVertexCount){
 
 export function weldStudioNeckIntoFace({
  faceMesh,cut,wardrobeRoot,torsoTopY,torsoCenterX=0,torsoCenterZ=0,
- rings=7,collarInset=.009
+ facePigment=null,rings=7,collarInset=.009
 }={}){
  const source=faceMesh?.geometry,position=source?.getAttribute?.('position');
  if(!faceMesh?.isMesh||!source?.getIndex()||!position||
@@ -128,8 +128,15 @@ export function weldStudioNeckIntoFace({
      outward.normalize();
      // Preserve the source normal exactly at the attachment boundary;
      // gradually roll toward neck side normals only near the collar.
-     normal.lerp(outward,Math.min(.82,smooth*.8)).normalize();
+     normal.lerp(outward,Math.min(1,smooth*3.25)).normalize();
      values[0]=normal.x;values[1]=normal.y;values[2]=normal.z;
+    }else if(name==='color'&&values.length>=3&&facePigment?.multiplier){
+     // The donor face lower edge contains isolated dark/light pigments.
+     // Extending those colors down the entire neck creates vertical stripes.
+     const blend=THREE.MathUtils.smoothstep(t,.04,.32);
+     const m=facePigment.multiplier;
+     for(let k=0;k<3;k++)
+      values[k]=THREE.MathUtils.lerp(values[k],[m.r,m.g,m.b][k],blend);
     }else if(name==='uv'&&values.length>=2){
      values[1]=values[1]+t*.015;
     }
@@ -175,5 +182,67 @@ export function weldStudioNeckIntoFace({
   seamMinY:minY,seamMaxY:maxY,neckBottomY:bottomWorldY,neckHeight,
   sourceVertexPositionsUnchanged:true,sourceFaceNormalsUnchanged:true,
   separateNeckMeshesNeeded:false,faceSkinMaterialReused:true,
+  neckColorSmoothed:true,neckNormalsSmoothed:true,
+  centerX,centerZ,jawHalfX:(maxX-minX)*.5,jawHalfZ:(maxZ-minZ)*.5,
   previewOnly:true};
+}
+
+/**
+ * Short raised cloth collar, part of the GARMENT and hidden with it.
+ * It conceals the lower half of an elongated exposed neck without placing
+ * another blue disc under the chin. Only a narrow tapered tube fits the
+ * existing sewn-neckline. Top sits ~29mm below the real lower jaw.
+ */
+export function addStudioRaisedInnerCollar({wardrobeRoot,joined}={}){
+ if(!wardrobeRoot?.isObject3D||!joined?.applied)
+  return {applied:false,reason:'outfit-or-neck-unavailable'};
+ const topY=joined.seamMinY-.029;
+ const baseY=joined.collarY-.016;
+ if(topY-baseY<.012||topY>=joined.seamMinY-.012)
+  return {applied:false,reason:'collar-height-invalid',topY,baseY};
+ const count=40,rings=8,verts=[],uv=[],indices=[];
+ const upperRadiusX=THREE.MathUtils.clamp(joined.jawHalfX*.90,.029,.046);
+ const upperRadiusZ=THREE.MathUtils.clamp(joined.jawHalfZ*.84,.028,.044);
+ const lowerRadiusX=Math.max(upperRadiusX*1.28,.046);
+ const lowerRadiusZ=Math.max(upperRadiusZ*1.26,.042);
+ const collar=measureStudioGarmentCollar(wardrobeRoot,{
+  torsoTopY:joined.collarY+.05});
+ wardrobeRoot.updateWorldMatrix(true,false);
+ const inverse=wardrobeRoot.matrixWorld.clone().invert();
+ for(let r=0;r<rings;r++){
+  const t=r/(rings-1),shoulder=1-THREE.MathUtils.smoothstep(t,.15,.92);
+  const cx=THREE.MathUtils.lerp(collar.x,joined.centerX,t*.85);
+  const cz=THREE.MathUtils.lerp(collar.z,joined.centerZ,t*.85);
+  for(let i=0;i<count;i++){
+   const angle=2*Math.PI*i/count;
+   const wave=.0018*t*Math.sin(angle*2);
+   const radiusX=THREE.MathUtils.lerp(upperRadiusX,lowerRadiusX,shoulder);
+   const radiusZ=THREE.MathUtils.lerp(upperRadiusZ,lowerRadiusZ,shoulder);
+   const world=new THREE.Vector3(
+    cx+radiusX*Math.cos(angle),baseY+(topY-baseY)*t+wave,
+    cz+radiusZ*Math.sin(angle));
+   const local=world.applyMatrix4(inverse);
+   verts.push(local.x,local.y,local.z);uv.push(i/count,t);
+  }
+ }
+ for(let r=0;r<rings-1;r++)for(let i=0;i<count;i++){
+  const a=r*count+i,b=r*count+(i+1)%count,c=a+count,d=b+count;
+  indices.push(a,b,c,b,d,c);
+ }
+ const geometry=new THREE.BufferGeometry();
+ geometry.setAttribute('position',new THREE.Float32BufferAttribute(verts,3));
+ geometry.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
+ geometry.setIndex(indices);geometry.computeVertexNormals();
+ geometry.computeBoundingBox();geometry.computeBoundingSphere();
+ const material=new THREE.MeshStandardMaterial({
+  color:0x536a7e,roughness:.91,metalness:0,side:THREE.DoubleSide
+ });
+ const mesh=new THREE.Mesh(geometry,material);
+ mesh.name='STUDIO_RAISED_INNER_TUNIC_COLLAR_V59';
+ mesh.frustumCulled=false;
+ mesh.userData={previewOnly:true,attachedToActualSewnCollar:true,
+  replacesExposedLowerNeck:true,notPartOfFace:true};
+ wardrobeRoot.add(mesh);
+ return {applied:true,mesh,topY,baseY,visibleSkinLength:joined.seamMinY-topY,
+  source:collar.mesh,sourceColor:'#536a7e',rings,count};
 }
