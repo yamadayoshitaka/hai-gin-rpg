@@ -58,7 +58,6 @@ const fs=require('node:fs');
     throw Error('STILL_HAS_DETACHED_NECK_OR_ORANGE_GAP: '+JSON.stringify(result.neckContinuity));
   if(!(result.donor?.removedNeckTriangles>0))
     throw Error('DONOR_ORANGE_NECK_STILL_PRESENT: '+JSON.stringify(result.donor));
-    throw Error('DETACHED_BLUE_NECK_STILL_PRESENT: '+JSON.stringify(result.neckContinuity));
   if(!(result.neckContinuity?.applied&&result.neckContinuity.bustTrianglesRemoved>3&&
         result.neckContinuity.originalFaceNormalsPreserved&&
         result.neckContinuity.smoothedFacialNormals&&
