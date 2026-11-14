@@ -204,5 +204,5 @@ assert.match(runtime,/addRegalHumanoidOutfit\(/,
 assert.match(runtime,/fullBodyOutfit:royalOutfit\?\.style/,
  'Runtime should expose the full-body outfit actually selected');
 assert.match(gallery,/monster-character-cosplay\.js\?v=4\.5\.17/);
-assert.match(bestiary,/monster-character-cosplay\.js\?v=4\.5\.16/);
+assert.match(bestiary,/monster-character-cosplay\.js\?v=4\.5\.17/);
 console.log('Full-body reference-inspired humanoid wardrobe regression PASS',report);
