@@ -23,6 +23,7 @@ on:
       - 'qa/dragonkin-native-scalp-regression.test.mjs'
       - 'qa/demon-female-summon-mobile-viewer.test.mjs'
       - 'qa/monster-humanoid-combat-poses.test.mjs'
+      - 'qa/nonhuman-monster-wardrobe.test.mjs'
       - 'qa/monster-regal-wardrobe-batch.test.mjs'
       - 'qa/monster-gothic-sculpt-regression.test.mjs'
       - 'qa/monster-humanoid-hair-orientation-regression.test.mjs'
@@ -71,6 +72,7 @@ jobs:
           npm run test:regal-humanoid-wardrobe
           npm run test:creature-variants-mobile-viewer
           npm run test:humanoid-spell-motion
+          npm run test:nonhuman-monster-outfits
           node qa/dragonkin-native-scalp-regression.test.mjs
           node qa/female-summon-scalp-cut-regression.test.mjs
       - name: Assert no human-character assets entered PR patch
