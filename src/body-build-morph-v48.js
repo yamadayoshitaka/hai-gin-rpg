@@ -33,7 +33,9 @@ export function applySkinnedBuildMorph(actorRoot,bodyType='normal'){
   // Taper both real skinned legs about their own centres, never by scaling
   // the entire actor (which pulls the knees together and changes the rig).
   const legMesh=/(?:^|[_-])(?:ranger|peasant)[_-]legs(?:[_-]|$)|(?:^|[_-])(?:legs|thighs|calves)(?:[_-]|$)/i.test(mesh.name);
+  const armMesh=/(?:^|[_-])(?:ranger|peasant)[_-]arms(?:[_-]|$)|(?:^|[_-])(?:arms|forearms)(?:[_-]|$)/i.test(mesh.name);
   const legRadius=clamp(body.legRadius??1,.78,1.20);
+  const armRadius=clamp(body.armRadius??1,.85,1.15);
   const splitLegs=legMesh&&(box.min.x<cx-w*.18&&box.max.x>cx+w*.18);
   // Body-only morph: broader waist and outward abdominal curvature,
   // not a second visible ball/sphere added on top of the shirt.
@@ -50,7 +52,11 @@ export function applySkinnedBuildMorph(actorRoot,bodyType='normal'){
    const waistX=cx+(x-cx)*circumference;
    const anchor=splitLegs?cx+Math.sign(x-cx||1)*w*.25:cx;
    const legGain=legMesh?1+(legRadius-1)*(.72+.28*gaussian(ny,.62,.50)):1;
-   target.setXYZ(i,legMesh?anchor+(waistX-anchor)*legGain:waistX,y,
+   // Keep arms/forearms consistent with the torso and leg presets; preview
+   // geometry is rebuilt from bind-pose vertices on every selection.
+   const armGain=armMesh?1+(armRadius-1)*(.68+.32*gaussian(ny,.55,.40)):1;
+   target.setXYZ(i,legMesh?anchor+(waistX-anchor)*legGain:
+    armMesh?cx+(waistX-cx)*armGain:waistX,y,
     cz+(z-cz)*(1+body.abdomen*(.22*belly+.06*hip))+
      depth*body.abdomen*.105*belly*front);
   }
@@ -61,5 +67,6 @@ export function applySkinnedBuildMorph(actorRoot,bodyType='normal'){
   meshes++;vertices+=target.count;
  });
  return Object.freeze({bodyType:body.id,meshes,vertices,
-  geometryFromSource:true,accumulative:false,bellyMorph:body.abdomen,legRadius:body.legRadius??1});
+  geometryFromSource:true,accumulative:false,bellyMorph:body.abdomen,
+  legRadius:body.legRadius??1,armRadius:body.armRadius??1});
 }
