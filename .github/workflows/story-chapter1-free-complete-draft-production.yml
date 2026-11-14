@@ -43,6 +43,7 @@ jobs:
         run: |
           node --check scripts/generate-story-chapter1-free-batch.mjs
           node qa/story-chapter-page-loop.test.mjs
+          node qa/story-chapter1-stage-priority.test.mjs
       - name: Fail before generation unless Free confirmed and both secrets available
         shell: bash
         env:
