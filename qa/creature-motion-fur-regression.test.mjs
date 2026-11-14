@@ -46,8 +46,8 @@ assert.ok(faceUpdates>stoppedUpdates,'explicit new action resumes facial animati
 assert.equal(lid.position.y,lid.userData.restY,'living eye reopens after defeat');
 
 const source=readFileSync(new URL('../src/monster-geometry.js',import.meta.url),'utf8');
-assert.match(source,/else if\(s\.id!=='m003'&&s\.id!=='m005'\)/,
- 'Fenrir and woodland wolf cannot retain duplicate rigid legacy paws');
+assert.match(source,/else if\(s\.id!=='m003'&&s\.id!=='m005'&&s\.id!=='m006'\)/,
+ 'Articulated wolves and panther cannot retain duplicate legacy paws');
 assert.match(source,/g\.skinnedFur\(leg,'skin'/,
  'all three fur regions must use one GPU-skinned mesh per articulated leg');
 
