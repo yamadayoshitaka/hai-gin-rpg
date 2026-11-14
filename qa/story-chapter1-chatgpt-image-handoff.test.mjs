@@ -23,6 +23,14 @@ for(const phrase of [shot.key,shot.scriptText,assignment.sceneGoal,assignment.co
  assert(prompt.includes(phrase),'Missing canonical instruction: '+phrase);
 }
 assert(!prompt.includes('プログラムの自動起動成功'));
+const manual=JSON.parse(fs.readFileSync('assets/story/stage-manifests/c01-s01-post-town-male-p01-manual-production.json','utf8'));
+assert.equal(manual.visualStyleLock.id,'STAGE1_HI_FIDELITY_3D_JRPG_ANIME_REALISM_V1');
+assert.equal(manual.visualStyleLock.failOnStyleDrift,true);
+assert.equal(manual.visualStyleLock.actualReferenceImageBytesRequired,true);
+assert(manual.visualStyleLock.referenceImagePaths.some(p=>p.endsWith('c01-s01-m01.webp')));
+for(const phrase of ['ハイエンド3D JRPG','2Dイラスト調','実際に添付する','c01-s01-m01.webp']){
+ assert(prompt.includes(phrase),'Chapter1 visual style lock missing: '+phrase);
+}
 const malePage=pages.find(p=>p.stageId==='c01-s02'&&p.gender==='male'&&p.edition==='post-victory');
 assert(malePage);
 assert(malePage.shots.every(s=>s.gender==='male'));
