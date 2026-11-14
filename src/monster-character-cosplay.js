@@ -14,7 +14,7 @@ import {createMonsterModel,disposeMonsterSculpture} from './monster-geometry.js?
 import {startMonsterAction,animateMonsterModel} from './monster-animation.js';
 import {humanoidMonsterCostumeFor} from './monster-character-cosplay-manifest.js?v=4.5.03';
 import {addGothicMonsterSculpt,hasGothicMonsterSculpt}
- from './monster-gothic-sculpt.js';
+ from './monster-gothic-sculpt.js?v=4.5.09';
 import {decorateMonsterPhotoMaterial,detachMonsterPhotoMaterial}
  from './monster-photo-pbr.js';
 import {classifyCosplaySurface,applyMonsterMaterialPigment}
