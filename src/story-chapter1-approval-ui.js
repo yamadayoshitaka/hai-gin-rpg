@@ -146,7 +146,7 @@ async function stage2Assignment(shot){
 // Generation handoff MUST load repository manifests and pass their contents to
 // buildChapter1ImagePrompt for the exact scene. A path written in a prompt is
 // not the same as an image byte attachment to ChatGPT.
-let p0RulesPromise=null,stage1ManualPromise=null;
+let p0RulesPromise=null,stage1ManualPromise=null,stage3ManualPromise=null;
 const stageManifestPromises=new Map();
 async function stageManifestFor(shot){
  const path='./assets/story/stage-manifests/'+shot.stageId+'.manifest.json';
@@ -162,6 +162,16 @@ async function qualityRulesFor(){
  return p0RulesPromise;
 }
 async function manualManifestFor(shot){
+ if(shot.stageId==='c01-s03'){
+  if(!stage3ManualPromise)stage3ManualPromise=fetch(
+   './assets/story/stage-manifests/c01-s03-manual-regression-remaining.json'
+  ).then(r=>{if(!r.ok)throw Error('ステージ3の残コマ回帰マニフェストを取得できません');return r.json();})
+   .catch(e=>{stage3ManualPromise=null;throw e;});
+  const manifest=await stage3ManualPromise;
+  // The file intentionally lists only pending stage-3 shots. Already registered
+  // stage-3 shots must keep their canonical, unmodified scene selection.
+  return manifest.shots?.some(x=>x.key===shot.key)?manifest:null;
+ }
  if(shot.stageId!=='c01-s01'||shot.edition!=='post-town'||shot.gender!=='male')return null;
  if(!stage1ManualPromise)stage1ManualPromise=fetch(
   './assets/story/stage-manifests/c01-s01-post-town-male-p01-manual-production.json'
