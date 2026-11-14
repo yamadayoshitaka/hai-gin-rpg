@@ -2,6 +2,7 @@
 /** Real mobile Chromium regression: jaw must remain visible above the cuirass. */
 const {chromium}=require('playwright');
 const fs=require('node:fs');
+const {captureChromiumScreenshot}=require('./chromium-webgl-screenshot.cjs');
 const out='qa-screenshots/human-neck-v59';
 fs.mkdirSync(out,{recursive:true});
 (async()=>{
@@ -55,7 +56,7 @@ fs.mkdirSync(out,{recursive:true});
    if(!(fit.chestPieces>0&&fit.clearanceMeters>=.007))
     throw Error(gender+' mouth hidden by cuirass: '+JSON.stringify(fit));
    await page.locator('#front').click();
-   await page.screenshot({path:out+'/'+gender+'-front.png',timeout:90000});
+   await captureChromiumScreenshot(page,out+'/'+gender+'-front.png');
    await page.locator('#toggleOutfit').click();
    // The naked torso must be restored when clothing hides.
    const naked=await page.evaluate(key=>{
@@ -81,7 +82,7 @@ fs.mkdirSync(out,{recursive:true});
    },qa);
    if(!naked.visibleBody.length)
     throw Error(gender+' clothes-off test: skinned torso/arms missing');
-   await page.screenshot({path:out+'/'+gender+'-body-restored.png',timeout:90000});
+   await captureChromiumScreenshot(page,out+'/'+gender+'-body-restored.png');
    await page.locator('#toggleOutfit').click();
    state=await page.evaluate(key=>window[key](),qa);
    fit=state.v36RealBattleCostume.proportions.neckClearance;
