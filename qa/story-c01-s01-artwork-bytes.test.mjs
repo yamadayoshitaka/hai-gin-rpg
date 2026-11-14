@@ -47,7 +47,8 @@ for(const e of inventory.editions){
    const newImage=bytesFor(provisional.asset.slice(2));
    assert.equal(createHash('sha256').update(newImage).digest('hex'),
     provisional.sha256,'Provisional image bytes differ from SHA-verified art');
-   assert.equal(provisional.status,'PROVISIONAL_NOT_VISUALLY_APPROVED');
+   assert.equal(provisional.status,'PROVISIONAL_OWNER_AUTHORIZED_PENDING_P0',
+    'Owner-authorized provisional display must not be confused with final P0 approval');
   }else{
    assert.equal('./'+p.path,live,'Legacy gender/outcome binding must remain unchanged');
   }
