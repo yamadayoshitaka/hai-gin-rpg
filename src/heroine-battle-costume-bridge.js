@@ -282,7 +282,9 @@ export function fitStudioNeckContinuity({faceRoot,faceMesh,wardrobeRoot,garmentR
  }
  // PHASE 1: align the neck directly to the real posed bare torso skin.
  // No metal plate, cloth collar or outfit visibility participates in this.
- const bareProfile=measureStudioBareTorsoNeck(wardrobeRoot);
+ const bareProfile=garmentRoot?
+  measureStudioBareTorsoNeck(wardrobeRoot):
+  {applied:false,reason:'legacy-single-root-garment-compatibility'};
  if(bareProfile.applied){
   torsoTop=bareProfile.topY;
   torsoX=bareProfile.centerX;
