@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {buildStudioContourNeck} from './studio-contour-neck-v58.js';
-import {weldStudioNeckIntoFace,addStudioRaisedInnerCollar} from './studio-unified-neck-v59.js?v=60';
+import {weldStudioNeckIntoFace,addStudioRaisedInnerCollar} from './studio-unified-neck-v59.js?v=61';
 import {clipStudioFaceBustPreservingSurface,restoreStudioFaceSurfaceQuality,
  sampleStudioFacePigment,smoothStudioFaceNormals,
  studioAnatomicalSeamY,taperStudioLowerBustBelowChin} from './studio-face-quality-v56.js?v=60';
@@ -469,6 +469,13 @@ export function fitStudioNeckContinuity({faceRoot,faceMesh,wardrobeRoot}={}){
   unifiedSkinNeckApplied:!!united.applied,
   unifiedSkinNeckReason:united.reason||null,
   unifiedSkinNeckTriangles:united.addedTriangles||0,
+  v61WidenedNeck:!!united.v61WidenedNeck,
+  v61WidthGainAtMid:united.v61WidthGainAtMid??null,
+  v61DepthGainAtMid:united.v61DepthGainAtMid??null,
+  v61NeckMidHalfWidth:united.neckMidHalfWidthX??null,
+  v61NeckMidHalfDepth:united.neckMidHalfDepthZ??null,
+  v61CollarTopHalfWidth:raisedCollar.v61TopHalfWidthX??null,
+  v61CollarTopHalfDepth:raisedCollar.v61TopHalfDepthZ??null,
   unifiedSkinNeckEdges:united.boundaryEdges||0,
   reusedFaceMaterial:!!united.faceSkinMaterialReused,
   actualCollarSource:united.collarSource||null,
