@@ -1,4 +1,4 @@
-name: Human v56 facial quality and skin neck diagnostics
+name: Human v57 anatomical jaw-to-neck diagnostics
 on:
   pull_request:
     paths:
@@ -7,6 +7,8 @@ on:
       - 'qa/human-realism-v51-regression.test.mjs'
       - 'qa/studio-face-quality-v56.test.mjs'
       - 'src/studio-face-quality-v56.js'
+      - 'face-body-studio.html'
+      - 'male-body-studio.html'
       - '.github/workflows/human-v53-diagnostic.yml'
   workflow_dispatch:
 permissions:
@@ -32,7 +34,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: human-v56-face-quality
-          path: qa-screenshots/human-v56/
+          name: human-v57-jaw-continuity
+          path: qa-screenshots/human-v57/
           retention-days: 7
           if-no-files-found: warn
