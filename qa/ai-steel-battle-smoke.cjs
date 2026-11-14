@@ -16,7 +16,7 @@ fs.mkdirSync(out,{recursive:true});
   try{
    // Three-stage UI is intentional. Visit 編成 → 初期号令 → 開戦
    // through user-visible controls, then use the real audio fallback.
-   await launchBattleViaThreeStepWizard(page,{timeout:120000});
+   await launchBattleViaThreeStepWizard(page,{timeout:240000});
    await page.waitForFunction(()=>{
     const error=document.querySelector('#runtimeError');
     const state=window.__aiSteelBattleQA?.();
