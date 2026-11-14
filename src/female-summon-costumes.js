@@ -4,9 +4,34 @@
  * animal/dragon instancing remains untouched. Fitted to m-scale GLB body.
  */
 import * as THREE from 'three';
+import {buildCombatObjectGeometry}
+ from './combat-creature-geometry.js?v=4.5.00';
 import {createGothicHorn,createGothicBatWing,createGothicMantle}
  from './monster-gothic-sculpt.js';
 
+/**
+ * Reuse the HIGH-QUALITY 3-layer, 82-feather-per-side wing ALREADY authored
+ * for the original Guardian summon. Never replace it with the 9 flat leaves
+ * that created a serrated white fan in the user's mobile screenshot.
+ * Dispose unrelated original-summon geometry after extracting the pair.
+ */
+export function createOriginalGuardianWingPair({detail='high'}={}){
+ if(detail!=='high'&&detail!=='low')throw Error('Unknown original wing LOD');
+ const parts=buildCombatObjectGeometry('seraph_guardian',{detail});
+ const left=parts.wingL,right=parts.wingR;
+ if(!left?.isBufferGeometry||!right?.isBufferGeometry){
+  for(const g of Object.values(parts))g?.dispose?.();
+  throw Error('Original Guardian left and right wing geometry missing');
+ }
+ for(const [name,g] of Object.entries(parts)){
+  if(name!=='wingL'&&name!=='wingR')g.dispose();
+ }
+ for(const [side,g] of [[-1,left],[1,right]]){
+  g.userData={...g.userData,kind:'original-guardian-overlapping-feather-wing',
+   originalSource:true,side,detail};
+ }
+ return {left,right};
+}
 export const FEMALE_SUMMON_COSTUMES=Object.freeze([
  'forest_spirit_female','seraph_female','dragonkin_female'
 ]);
@@ -190,19 +215,23 @@ export function addFemaleSummonCostume({profile,frames,detail='high',attach,tube
    'velvet','forest-woven-cape');
  }
  if(type==='seraph_female'){
-  // Both wings are feathered and rooted in upper-back musculature.
+  // Retain the ORIGINAL Guardian's sculpted 3-row wing geometry, including
+  // primary feathers, coverts and roots. Two pivots flap independently
+  // while they stay attached to the real animated chest bone.
+  const pair=createOriginalGuardianWingPair({detail:hi?'high':'low'});
   for(const side of [-1,1]){
-   line(frames.chest,'metal','wing-scapula-'+side,[
-    [side*.13,.20,.17],[side*.34,.39,.34],
-    [side*.95,.63,.51]],.042);
-   for(let i=0;i<(hi?9:5);i++){
-    const t=i/(hi?9:5);
-    add(frames.chest,createFemaleSummonFeather({
-      detail,length:.70+i*.075,width:.10+i*.006,side
-    }),'feather','seraph-primary-'+side+'-'+i,
-     [side*(.25+i*.052),.31-i*.092,.34+i*.012],
-     [0,side*.04,side*(.10+i*.027)]);
-   }
+   const pivot=new THREE.Group();
+   pivot.name='female-seraph-original-wing-pivot-'+side;
+   pivot.position.set(side*.15,.18,-.15);
+   pivot.userData.seraphFlightWingSide=side;
+   frames.chest.add(pivot);
+   const geo=side<0?pair.left:pair.right;
+   const mesh=attachGroom?
+    attachGroom(pivot,geo,'seraphWing',
+     'female-seraph-original-layered-wing-'+side):
+    add(pivot,geo,'seraphWing','seraph-original-layered-wing-'+side);
+   mesh.scale.setScalar(.61);
+   mesh.userData.seraphOriginalSculpt=true;
   }
   // The old flattened icosahedron was a horizontal WHITE BAR from the
   // frontal camera. Use a true open halo facing the viewer (+Z).

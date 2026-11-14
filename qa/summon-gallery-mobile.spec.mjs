@@ -71,6 +71,25 @@ test('mobile summon gallery: compact model-first view, functional drawers and ca
   expect(errors).toEqual([]);
 });
 
+test('female seraph: original wing pair and animated airborne preview',async({page})=>{
+ const errors=[];page.on('pageerror',e=>errors.push(String(e)));
+ await page.goto('/summon-showcase.html?v=4.5.13',
+  {waitUntil:'domcontentloaded',timeout:65000});
+ await page.locator('#type').selectOption('seraph_guardian');
+ await expect.poll(()=>page.evaluate(()=>
+  window.__summonGalleryLayoutQA?.()?.femaleReady),{timeout:110000}).toBe(true);
+ const before=await page.evaluate(()=>window.__summonGalleryLayoutQA());
+ expect(before.seraphOriginalWingCount).toBe(2);
+ expect(before.femaleFlightAltitude).toBeGreaterThan(.60);
+ expect(before.femaleFlightAltitude).toBeLessThan(.95);
+ await page.waitForTimeout(450);
+ const after=await page.evaluate(()=>window.__summonGalleryLayoutQA());
+ expect(Math.abs(after.femaleFlightAltitude-before.femaleFlightAltitude)).toBeGreaterThan(.005);
+ await page.screenshot({path:'test-results/seraph-original-wings-flying-v4.5.13.png',
+  animations:'disabled',timeout:15000});
+ expect(errors).toEqual([]);
+});
+
 test('mobile bestiary: catalog and setting drawers remain operable after responsive redesign',async({page})=>{
  const errors=[];page.on('pageerror',e=>errors.push(String(e)));
  await page.goto('/monster-manager.html?v=4.5.06',

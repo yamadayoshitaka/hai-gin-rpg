@@ -88,7 +88,7 @@
 </head>
 <body>
   <header id="galleryHeader">
-    <div class="galleryHeading"><h1>召喚獣・軍馬 3D鑑賞 v4.5.12</h1><small>森の精霊弓士・光翼の守護天使 / CC0 Quaternius人体の顔・弓・羽毛の翼・回復・蘇生</small></div>
+    <div class="galleryHeading"><h1>召喚獣・軍馬 3D鑑賞 v4.5.13</h1><small>森の精霊弓士・光翼の守護天使 / CC0 Quaternius人体の顔・弓・羽毛の翼・回復・蘇生</small></div>
     <label for="type" class="speciesPicker"><span class="typeCaption">種類</span><select id="type">
       <option value="wolf">灰狼</option>
       <option value="wyvern">飛竜</option>
@@ -147,9 +147,9 @@
     import * as THREE from 'three';
     import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
     import {femaleSummonCosplayFor,FEMALE_SUMMON_FORM_IDS} from './src/female-summon-forms.js?v=4.5.04';
-    import {createCosplayedHumanoidMonster} from './src/monster-character-cosplay.js?v=4.5.12';
+    import {createCosplayedHumanoidMonster} from './src/monster-character-cosplay.js?v=4.5.13';
     import {COMBAT_OBJECT_SPECS} from './src/combat-action-spec.js?v=4.4.74';
-    import {createCombatWorldObjectRenderer} from './src/combat-world-object-renderer.js?v=4.5.12';
+    import {createCombatWorldObjectRenderer} from './src/combat-world-object-renderer.js?v=4.5.13';
     import {startCreaturePose} from './src/combat-creature-actions.js?v=4.4.92';
     import {createCreatureSoundRuntime} from './src/combat-creature-sounds.js?v=4.4.74';
     import {ActionVfxRuntime} from './src/character-system/action-vfx-runtime.js?v=4.4.23';
@@ -203,11 +203,13 @@
     const clock=new THREE.Clock();
     let selected='forest_archer';
     let femaleSummonHandle=null,femaleRequest=0;
+    let femaleFlightAltitude=0;
     const femaleMode=document.getElementById('humanoidForm');
     const femaleModeLabel=document.getElementById('femaleSummonModeLabel');
     const disposeFemaleSummon=()=>{
       ++femaleRequest;
       if(femaleSummonHandle){femaleSummonHandle.dispose();femaleSummonHandle=null;}
+      femaleFlightAltitude=0;
     };
     function selectFemaleSummonForm(){
       disposeFemaleSummon();
@@ -226,8 +228,8 @@
         if(ticket!==femaleRequest||handle!==femaleSummonHandle||selected!==id)return;
         if(result.source==='canonical-character-cosplay'){
           const distance=id==='seraph_guardian'?8.6:id==='dragon_lord'?7.3:4.5;
-          controls.target.set(0,1.18,0);
-          camera.position.set(1.5,2.3,distance);
+          controls.target.set(0,id==='seraph_guardian'?1.95:1.18,0);
+          camera.position.set(1.5,id==='seraph_guardian'?2.9:2.3,distance);
           controls.update();
         }else if(result.source!=='cancelled'){
           document.getElementById('metrics').textContent=
@@ -440,6 +442,14 @@
       const isFemaleReady=femaleSummonHandle?.source==='canonical-character-cosplay';
       objects.sync(externalPreview||isFemaleReady?[]:[previewObject],t);
       femaleSummonHandle?.update(t);
+      // Only the optional gallery female Seraph levitates; the original
+      // battlefield summons, rider rules and physics are unchanged.
+      if(isFemaleReady&&selected==='seraph_guardian'&&femaleMode.value==='female'){
+        femaleFlightAltitude=.76+.11*Math.sin(t*1.85);
+        femaleSummonHandle.root.position.y=femaleFlightAltitude;
+        femaleSummonHandle.root.position.x=previewObject.x||0;
+        femaleSummonHandle.root.position.z=previewObject.z||0;
+      }else femaleFlightAltitude=0;
       if(externalPreview){
         externalPreview.root.position.x=previewObject.x;
         externalPreview.root.position.z=previewObject.z;
@@ -455,7 +465,8 @@
         (selected==='forest_archer'||selected==='seraph_guardian'?
         ' / 顔 '+(objects.faceLibraryReady(selected)?'Quaternius CC0実物':'軽量モデル（読込中・代替）'):'')+
         (externalPreview?' / '+(externalPreviewMode==='local'?'手元GLB':'CC0外部候補')+'・独立3Dアニメ':'')+
-        (femaleSummonHandle?' / 女性人型 '+(isFemaleReady?'キャラGLB・骨格連動':'読み込み中・元の姿'):'');
+        (femaleSummonHandle?' / 女性人型 '+(isFemaleReady?'キャラGLB・骨格連動':'読み込み中・元の姿'):'')+
+        (femaleFlightAltitude>0?' / 空中飛行 '+femaleFlightAltitude.toFixed(2)+'m・羽ばたき':'');
     }
     window.__summonGalleryLayoutQA=()=>({
       mobile:phoneLayout.matches,
@@ -465,6 +476,10 @@
       femaleMode:femaleMode.value,
       femaleReady:femaleSummonHandle?.source==='canonical-character-cosplay',
       femaleSource:femaleSummonHandle?.profile?.modelId||null,
+      femaleFlightAltitude,
+      seraphOriginalWingCount:femaleSummonHandle?.root?.getObjectByName?
+        [-1,1].filter(side=>!!femaleSummonHandle.root.getObjectByName(
+         'female-seraph-original-wing-pivot-'+side)).length:0,
       cameraDistance:camera.position.distanceTo(controls.target)
     });
     tick();

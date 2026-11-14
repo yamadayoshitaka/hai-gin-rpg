@@ -59,6 +59,19 @@ assert.ok(highLocks.getAttribute('position').count>
  lowLocks.getAttribute('position').count*4,
  'Head closeups need distinct groom/LOD geometry');
 assert.ok(highLocks.getAttribute('normal').array.every(Number.isFinite));
+assert.equal(highLocks.userData.poleCoverage,true);
+assert.equal(highLocks.userData.crownCanopyStrands,168);
+assert.equal(lowLocks.userData.crownCanopyStrands,48);
+const locks=highLocks.getAttribute('position');
+let northPoleRoots=0;
+for(let i=0;i<locks.count;i+=10){
+ const x=locks.getX(i),z=locks.getZ(i),y=locks.getY(i);
+ // A scalp crown top > .97 of its height must be covered by visible hair
+ // ribbons. The old generator placed zero ribbons in this region.
+ if(y>.095+.16*.97&&Math.hypot(x,z)<.035)northPoleRoots++;
+}
+assert.ok(northPoleRoots>=12,
+ 'Seraph/Forest Archer top crown still lacks central hair roots');
 highLocks.dispose();lowLocks.dispose();
 
 
@@ -273,10 +286,19 @@ for(const [id,p] of Object.entries(FEMALE_SUMMON_FORMS)){
  const test=fixture();
  assert.equal(addFemaleSummonCostume({...test,profile:p,detail:'low'}),true);
  if(id==='seraph_guardian'){
-  const feathers=test.nodes.filter(n=>n.name.includes('seraph-primary'));
-  assert.ok(feathers.length>=10,'Do not remove feathered angel wings');
-  const featherBox=new THREE.Box3().setFromObject(feathers[0]);
-  assert.ok(featherBox.max.z<0,'Seraph wings still in front of body');
+  const wings=test.nodes.filter(n=>n.geometry.userData.kind===
+   'original-guardian-overlapping-feather-wing');
+  assert.equal(wings.length,2,'Both original multilayer Angel wings must remain');
+  // Fixture groups are detached from a real model, so the parent's world
+  // matrices must be updated before evaluating the installed wing bounds.
+  test.frames.chest.updateMatrixWorld(true);
+  const featherBox=new THREE.Box3().setFromObject(wings[0]);
+  assert.ok(wings[0].parent.position.z<0,
+   'Original Seraph wing root must sit behind real shoulder blades');
+  assert.ok(featherBox.max.z<.12,
+   'Original Seraph wing has moved to the front of the face');
+  assert.ok(wings.every(n=>n.geometry.getAttribute('color')),
+   'Keep the original high-quality feather shading');
   const halo=test.nodes.find(n=>n.name.includes('seraph-open-circular-halo'));
   assert.ok(halo,'Missing halo');
   assert.ok(halo.geometry.type==='TorusGeometry','Halo should not be a flat bar');
