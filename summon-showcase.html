@@ -126,6 +126,7 @@
      <select id="humanoidForm" aria-label="召喚獣の本来の姿と女性人型を切り替え">
       <option value="original">元の召喚獣</option>
       <option value="female" selected>女性人型</option>
+       <option value="male" hidden>男性竜王</option>
      </select>
     </label>
     <details id="controlsDrawer">
@@ -180,7 +181,7 @@
   <script type="module">
     import * as THREE from 'three';
     import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
-    import {femaleSummonCosplayFor,FEMALE_SUMMON_FORM_IDS} from './src/female-summon-forms.js?v=4.5.18';
+    import {femaleSummonCosplayFor,FEMALE_SUMMON_FORM_IDS,MALE_DRAGON_LORD_FORM} from './src/female-summon-forms.js?v=4.5.19';
     import {createCosplayedHumanoidMonster} from './src/monster-character-cosplay.js?v=4.5.18';
     import {COMBAT_OBJECT_SPECS} from './src/combat-action-spec.js?v=4.4.74';
     import {createCombatWorldObjectRenderer} from './src/combat-world-object-renderer.js?v=4.5.18';
@@ -247,17 +248,22 @@
     };
     function selectFemaleSummonForm(){
       disposeFemaleSummon();
-      if(femaleMode.value!=='female'||!femaleSummonCosplayFor(selected))return;
-      const id=selected,form=femaleSummonCosplayFor(id),ticket=++femaleRequest;
-      // The existing procedural GPU instance remains on screen until the
-      // canonical female Superhero GLB and animation clips load successfully.
+      if(femaleMode.value==='original')return;
+      const id=selected;
+      const form=id==='dragon_lord'&&femaleMode.value==='male'?
+        MALE_DRAGON_LORD_FORM:femaleSummonCosplayFor(id);
+      if(!form||form.sex!==femaleMode.value)return;
+      const ticket=++femaleRequest;
+      // Keep original battle summon on-screen until the sex-correct
+      // Superhero skinned GLB is loaded; no gender swap on the same actor.
       const spec={id,name:COMBAT_OBJECT_SPECS[id].name,
         size:1,variant:0,family:'summon'};
       const handle=createCosplayedHumanoidMonster(spec,{
         detail:'high',profileOverride:form,withoutFallback:true
       });
       femaleSummonHandle=handle;scene.add(handle.root);
-      document.getElementById('metrics').textContent='女性人型を読み込み中…（元の召喚獣を表示）';
+      document.getElementById('metrics').textContent=
+        (form.sex==='male'?'男性竜王':'女性人型')+'を読み込み中…（元の召喚獣を表示）';
       handle.ready.then(result=>{
         if(ticket!==femaleRequest||handle!==femaleSummonHandle||selected!==id)return;
         if(result.source==='canonical-character-cosplay'){
@@ -267,7 +273,7 @@
           controls.update();
         }else if(result.source!=='cancelled'){
           document.getElementById('metrics').textContent=
-            '女性人型が読込めないため元の姿を表示：'+(result.reason||'');
+            (form.sex==='male'?'男性竜王':'女性人型')+'が読込めないため元の姿を表示：'+(result.reason||'');
         }
       });
     }
@@ -333,29 +339,32 @@
       {x:0,z:1},{x:-1,z:1},{x:-2,z:1},{x:-2,z:0},{x:-1,z:0}];
     let previewObject={id:'gallery-creature',type:selected,x:0,z:0,alive:true,team:0,flying:false,mountedBy:null};
     const select=document.getElementById('type');
-    // Species selection stays accessible while the large action menu is folded.
+    // Species selection stays accessible while display settings are folded.
     select.addEventListener('change',()=>{
       document.getElementById('controlsDrawer').open=false;
     });
-    function changeType(){
+    function changeType(preserveMode=false){
       closeExternalPreview();
       disposeFemaleSummon();
       document.getElementById('personalSummonGlb').value='';
       const previousSpecies=selected;
       selected=select.value;
-      // Dragon Lord is a dragon by default, not a forced female character.
-      const femaleAvailable=selected!=='dragon_lord'&&
-        FEMALE_SUMMON_FORM_IDS.includes(selected);
-      if(selected==='dragon_lord')femaleMode.value='original';
-      else if(previousSpecies==='dragon_lord'&&femaleAvailable)
-        femaleMode.value='female';
+      const femaleAvailable=FEMALE_SUMMON_FORM_IDS.includes(selected);
+      // New Dragon Lord is a male humanoid by default. Original winged
+      // dragon remains selectable, female trial stays out of the UI.
+      femaleMode.querySelector('[value="female"]').hidden=selected==='dragon_lord';
+      femaleMode.querySelector('[value="male"]').hidden=selected!=='dragon_lord';
+      if(!preserveMode||previousSpecies!==selected)
+        femaleMode.value=selected==='dragon_lord'?'male':'female';
       femaleModeLabel.hidden=!femaleAvailable;
       femaleMode.disabled=!femaleAvailable;
       compareDragon.disabled=selected!=='dragon'||!licensedRegistry.entries.dragon;
       document.getElementById('faceCloseup').disabled=!
         (['forest_archer','seraph_guardian','wolf'].includes(selected)||
-          (selected==='dragon_lord'&&femaleMode.value==='female'));
+          (selected==='dragon_lord'&&femaleMode.value==='male'));
       document.getElementById('coatCloseup').disabled=selected!=='wolf';
+      document.getElementById('footCloseup').disabled=!femaleAvailable||
+        femaleMode.value==='original';
       previewObject={id:'gallery-'+selected,type:selected,x:0,z:0,alive:true,team:0,
         flying:!!COMBAT_OBJECT_SPECS[selected].flying,mountedBy:null,cryStartedAt:clock.getElapsedTime()};
       walking=false;routeStep=0;
@@ -363,9 +372,13 @@
       document.querySelectorAll('#summonMotionStrip button').forEach(button=>
         button.setAttribute('aria-pressed',String(button.dataset.pose==='idle')));
       document.getElementById('species').textContent=COMBAT_OBJECT_SPECS[selected].name+
-        (femaleAvailable&&femaleMode.value==='female'?'・女性人型':'');
+        (femaleAvailable&&femaleMode.value==='female'?'・女性人型':
+         selected==='dragon_lord'&&femaleMode.value==='male'?'・男性竜王':'');
       document.getElementById('desc').textContent=descriptions[selected]+
-        (femaleAvailable&&femaleMode.value==='female'?' 女性キャラクター素体を使用した別の姿。戦闘用の元の召喚獣は維持。':'');
+        (femaleAvailable&&femaleMode.value==='female'?
+          ' 女性キャラクター素体を使用した別の姿。戦闘用の元の召喚獣は維持。':
+         selected==='dragon_lord'&&femaleMode.value==='male'?
+          ' 男性スキン付き素体に角、胸装甲、翼と足甲を付けた竜王。元のドラゴン姿も選択可能。':'');
       const focus=selected==='forest_archer'?1.3:selected==='seraph_guardian'?1.6:selected==='dragon_lord'?6.4:selected==='elder_dragon'?2.9:selected==='dragon'?2.6:selected==='wyvern'?2.2:1.2;
       controls.target.set(0,focus,0);
       // The bat wings are about 15 world units wide at summon scale. Fit
@@ -388,9 +401,9 @@
     }
     femaleMode.addEventListener('change',()=>{
       closeExternalPreview();
-      changeType();
+      changeType(true);
     });
-    select.addEventListener('change',changeType);changeType();
+    select.addEventListener('change',()=>changeType());changeType();
     document.getElementById('coatCloseup').onclick=()=>{
       if(selected!=='wolf')return;
       // Frame both forepaws and hind legs plus the coat beneath the torso.
@@ -406,7 +419,7 @@
         controls.target.set(0,1.07,1.16);
         camera.position.set(1.34,1.44,3.55);
       }else if(['forest_archer','seraph_guardian'].includes(selected)||
-          (selected==='dragon_lord'&&femaleMode.value==='female')){
+          (selected==='dragon_lord'&&femaleMode.value==='male')){
         const femaleReady=femaleSummonHandle?.source==='canonical-character-cosplay';
         controls.target.set(0,femaleReady?1.62:2.35,0);
         camera.position.set(.83,femaleReady?1.81:2.54,femaleReady?1.92:1.80);
@@ -414,6 +427,21 @@
       camera.lookAt(controls.target);
       controls.update();
     };
+    document.getElementById('footCloseup').onclick=()=>{
+      // A fixed shin/ankle inspection camera for spotting garment holes.
+      if(!femaleSummonHandle?.root||femaleMode.value==='original')return;
+      const targetHeight=selected==='seraph_guardian'?.53:.43;
+      controls.target.set(0,targetHeight,0);
+      camera.position.set(.85,targetHeight+.34,2.72);
+      controls.update();
+      document.getElementById('controlsDrawer').open=false;
+    };
+    document.getElementById('dismissControls').onclick=()=>{
+      document.getElementById('controlsDrawer').open=false;
+    };
+    document.addEventListener('keydown',event=>{
+      if(event.key==='Escape')document.getElementById('controlsDrawer').open=false;
+    });
     document.getElementById('cry').onclick=()=>{
       creatureSounds.unlock();
       startCreaturePose(previewObject,'roar',clock.getElapsedTime());
@@ -525,7 +553,8 @@
         (selected==='forest_archer'||selected==='seraph_guardian'?
         ' / 顔 '+(objects.faceLibraryReady(selected)?'Quaternius CC0実物':'軽量モデル（読込中・代替）'):'')+
         (externalPreview?' / '+(externalPreviewMode==='local'?'手元GLB':'CC0外部候補')+'・独立3Dアニメ':'')+
-        (femaleSummonHandle?' / 女性人型 '+(isFemaleReady?'キャラGLB・骨格連動':'読み込み中・元の姿'):'')+
+        (femaleSummonHandle?' / '+(femaleSummonHandle.profile.sex==='male'?'男性竜王':'女性人型')+
+          ' '+(isFemaleReady?'キャラGLB・骨格連動':'読み込み中・元の姿'):'')+
         (femaleFlightAltitude>0?' / 空中飛行 '+femaleFlightAltitude.toFixed(2)+'m・羽ばたき':'');
     }
     window.__summonGalleryLayoutQA=()=>({
@@ -539,6 +568,9 @@
       infoOpen:helpPanel.open,
       selected,
       femaleMode:femaleMode.value,
+      actorSex:femaleSummonHandle?.profile?.sex??null,
+      inspectorWidth:document.querySelector('#controlsDrawer .extraControls')?.getBoundingClientRect().width??0,
+      inspectorHeight:document.querySelector('#controlsDrawer .extraControls')?.getBoundingClientRect().height??0,
       femaleReady:femaleSummonHandle?.source==='canonical-character-cosplay',
       femaleSource:femaleSummonHandle?.profile?.modelId||null,
       dragonCraniumNativeTopology:
