@@ -150,6 +150,14 @@
       "sha256": "001a76d15b830c8aef84ad3215ddf3e023ec1b2cb34113b0599574f0dd5a7dd2",
       "proof": "assets/story/chapter1-chatgpt-inbox/c01-s03__post-defeat__male__c01-s03-m9.review.json",
       "actionAt": "2026-11-14T12:38:35.834Z"
+    },
+    {
+      "kind": "CHATGPT_OWNER_PROVISIONAL_NOT_P0",
+      "key": "c01-s03|post-gameover|female|c01-s03-death-2",
+      "sha256": "e6e2a495da290e86a785420d923890ed16f10545e103b01289d04a44675101e8",
+      "proof": "assets/story/chapter1-owner-provisional-proof/c01-s03__post-gameover__female__c01-s03-death-2.json",
+      "actionAt": "2026-11-14T13:20:00Z",
+      "note": "Owner accepted first 3D cinematic image, NOT second anime text/UI image. Original screenplay remains in UI metadata; visual script discrepancy noted."
     }
   ]
 }

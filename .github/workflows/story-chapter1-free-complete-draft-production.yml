@@ -9,6 +9,7 @@ on:
     paths:
       - 'ops/start-chapter1-full-free-actual-art-once-20261114.trigger'
       - 'ops/resume-c01-from-stage3-20261114.trigger'
+      - 'ops/resume-c01-stage3-through5-20261114.trigger'
   workflow_dispatch:
 
 permissions:
@@ -44,6 +45,8 @@ jobs:
           node --check scripts/generate-story-chapter1-free-batch.mjs
           node qa/story-chapter-page-loop.test.mjs
           node qa/story-chapter1-stage-priority.test.mjs
+          node qa/story-stage3-owner-provisional-completion.test.mjs
+          node qa/story-c01-stage45-generation-guard.test.mjs
       - name: Fail before generation unless Free confirmed and both secrets available
         shell: bash
         env:
@@ -76,14 +79,14 @@ jobs:
           done < <(git ls-tree -r --name-only origin/main -- assets/story/chapter1-provisional-live)
           node --check scripts/generate-story-chapter1-free-batch.mjs
       - name: Count stage3 then later stage missing real artworks
-        run: node scripts/generate-story-chapter1-free-batch.mjs --mode plan --start-stage c01-s03 --through-stage c01-s10
+        run: node scripts/generate-story-chapter1-free-batch.mjs --mode plan --start-stage c01-s03 --through-stage c01-s05
       - name: Generate real review images with strict budget and page commits
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_WORKERS_AI_API_TOKEN: ${{ secrets.CLOUDFLARE_WORKERS_AI_API_TOKEN }}
           CLOUDFLARE_FREE_PLAN_CONFIRMED: ${{ vars.CLOUDFLARE_FREE_PLAN_CONFIRMED }}
           CLOUDFLARE_CHAPTER1_DAILY_ESTIMATE_CAP: '7500'
-        run: node scripts/generate-story-chapter1-free-batch.mjs --mode generate --max-pages 12 --start-stage c01-s03 --through-stage c01-s10
+        run: node scripts/generate-story-chapter1-free-batch.mjs --mode generate --max-pages 12 --start-stage c01-s03 --through-stage c01-s05
       - name: Independently regress every canonical image and physical actor master (NO automatic visual approval)
         if: always()
         run: |

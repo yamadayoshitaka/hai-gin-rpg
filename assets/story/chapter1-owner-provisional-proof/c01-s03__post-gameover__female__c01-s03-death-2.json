@@ -1,0 +1,58 @@
+{
+  "schemaVersion": 1,
+  "kind": "OWNER_ACCEPTED_REVERSIBLE_VISUAL_DRAFT_NOT_FORMAL_P0",
+  "shotKey": "c01-s03|post-gameover|female|c01-s03-death-2",
+  "stageId": "c01-s03",
+  "edition": "post-gameover",
+  "gender": "female",
+  "panelId": "c01-s03-death-2",
+  "canonicalScript": "この時間線では次へ進まない。生還や帰還を偽って描かない。",
+  "source": "ChatGPT Images",
+  "generationId": "354068c3-9e55-4449-80b9-e03ee1efc74c",
+  "selectedImage": "FIRST 3D cinematic image; second version showing text and UI was explicitly rejected",
+  "ownerAccepted": true,
+  "formalQualityApproved": false,
+  "visuallyReviewedByOwner": true,
+  "image": {
+    "path": "assets/story/chapter1-provisional-live/c01-s03__post-gameover__female__c01-s03-death-2.webp",
+    "sourcePixels": [
+      1672,
+      941
+    ],
+    "unscaledCenterCrop": [
+      4,
+      2,
+      1668,
+      938
+    ],
+    "nativePixels": [
+      1664,
+      936
+    ],
+    "sha256": "e6e2a495da290e86a785420d923890ed16f10545e103b01289d04a44675101e8",
+    "noUpscale": true
+  },
+  "style": {
+    "benchmark": "stage1 high-fidelity 3D-JRPG, realistic CGI",
+    "singleFrame": true,
+    "hasTextOrSpeechBubbles": false,
+    "uiBakedIntoArt": false
+  },
+  "scenario": {
+    "commanderFemaleDeceased": true,
+    "lifeOrReturnShown": false,
+    "canonicalVisualMismatch": [
+      "The image shows sunset rather than the scripted dawn",
+      "A broken sword is not clearly depicted"
+    ],
+    "scriptTextStoredOutsidePixels": true
+  },
+  "referenceImagesAttachedToGenerator": [],
+  "referenceMasterCompliance": "UNVERIFIED",
+  "finalP0Blockers": [
+    "Actual character master image bytes not attached",
+    "Visual scene discrepancies require a later correction",
+    "No formal human P0 visual QA"
+  ],
+  "revocationPolicy": "Remove this one canonical map key and restore unregistered scene; do not reuse across genders or outcomes"
+}

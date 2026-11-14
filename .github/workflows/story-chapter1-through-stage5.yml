@@ -10,6 +10,11 @@ on:
       - 'scripts/prepare-story-stage-posters.mjs'
       - 'scripts/assemble-story-bulk-100.py'
       - 'qa/story-stage2-through5-production.test.mjs'
+      - 'src/story-c01-stage45-art-guard.js'
+      - 'qa/story-c01-stage45-generation-guard.test.mjs'
+      - 'qa/story-stage3-owner-provisional-completion.test.mjs'
+      - 'scripts/generate-story-chapter1-free-batch.mjs'
+      - 'src/story-chapter1-provisional-live.js'
       - '.github/workflows/story-chapter1-through-stage5.yml'
   push:
     branches: [main]
@@ -18,6 +23,11 @@ on:
       - 'scripts/run-story-stage-range.mjs'
       - 'scripts/assemble-story-bulk-100.py'
       - 'qa/story-stage2-through5-production.test.mjs'
+      - 'src/story-c01-stage45-art-guard.js'
+      - 'qa/story-c01-stage45-generation-guard.test.mjs'
+      - 'qa/story-stage3-owner-provisional-completion.test.mjs'
+      - 'scripts/generate-story-chapter1-free-batch.mjs'
+      - 'src/story-chapter1-provisional-live.js'
       - '.github/workflows/story-chapter1-through-stage5.yml'
   workflow_dispatch:
 
@@ -41,6 +51,10 @@ jobs:
         run: python -m pip install --disable-pip-version-check Pillow==11.3.0
       - name: Verify four stage-specific manifest contracts, 192 exact canonical shots and P0 quality gates
         run: node qa/story-stage2-through5-production.test.mjs
+      - name: Verify stage3 adopted 48/48 art bindings and 96 per-shot locked generator instructions
+        run: |
+          node qa/story-stage3-owner-provisional-completion.test.mjs
+          node qa/story-c01-stage45-generation-guard.test.mjs
       - name: Process each locked stage and review only eligible native panels
         run: node scripts/run-story-stage-range.mjs --start c01-s02 --through c01-s05
       - name: Upload exact screenplay-to-shot references and native 100-frame review reports
