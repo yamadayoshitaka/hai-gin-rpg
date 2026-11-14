@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import {studioCoveredSkinPolicy} from '../src/character-system/rigged-outfit-runtime.js';
+import {addStudioRaisedInnerCollar} from '../src/studio-unified-neck-v59.js';
 import {v63WigScalpTone,v63WigLockTone} from '../src/face-scalp-wig.js';
 import {v63IrisOpticalTones,updateRealFacePigment} from '../src/face-feature-meshes.js';
 
@@ -70,4 +71,24 @@ test('v63: face pigment adds soft eyelid occlusion while preserving youthful non
  assert.equal(face.userData.v63AnatomicalEyelidContactShadow,true);
  assert.ok(Number.isFinite(report.cheek));
  geo.dispose();face.material.dispose();
+});
+
+
+test('v63: high skinned-garment neckline still fits an inner collar after skin weld',()=>{
+ const outfit=new THREE.Group();
+ const sewn=new THREE.Mesh(new THREE.BoxGeometry(.12,.012,.11),
+  new THREE.MeshStandardMaterial({color:0x536a7e}));
+ sewn.name='sewn-neckline';sewn.position.y=1.225;outfit.add(sewn);
+ const joined={applied:true,seamMinY:1.24,collarY:1.226,
+  jawHalfX:.040,jawHalfZ:.036,centerX:0,centerZ:0};
+ const result=addStudioRaisedInnerCollar({wardrobeRoot:outfit,joined});
+ assert.equal(result.applied,true,JSON.stringify(result));
+ assert.ok(result.topY-result.baseY>=.0139);
+ assert.ok(result.mesh.isMesh);
+ assert.equal(outfit.children.filter(x=>
+  x.name==='STUDIO_RAISED_INNER_TUNIC_COLLAR_V59').length,1);
+ assert.equal(sewn.geometry.getAttribute('position').count,24,
+  'clothing fallback must not alter the original sewn mesh');
+ result.mesh.geometry.dispose();result.mesh.material.dispose();
+ sewn.geometry.dispose();sewn.material.dispose();
 });
