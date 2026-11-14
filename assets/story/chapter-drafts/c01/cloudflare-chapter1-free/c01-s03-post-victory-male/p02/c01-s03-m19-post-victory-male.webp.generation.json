@@ -1,0 +1,62 @@
+{
+  "kind": "CLOUDFLARE_REAL_WEBP_REVIEW_CANDIDATE_NOT_APPROVED",
+  "shotKey": "c01-s03|post-victory|male|c01-s03-m19",
+  "stageId": "c01-s03",
+  "edition": "post-victory",
+  "gender": "male",
+  "panelId": "c01-s03-m19",
+  "screenplayText": "守るべきものを見失わないために、私たちは出来事を記録し続けよう。",
+  "visibleActorIds": [
+    "lucia",
+    "vess",
+    "commander_male"
+  ],
+  "actualReferenceImagesAttached": [
+    {
+      "actorId": "lucia",
+      "source": "assets/story/characters/lucia/master.webp",
+      "originalSha256": "87005a46d3b4a23714a25f1f9b2d46fee9a1ce3c6b5af0be78f85a1f1fd2b411",
+      "submittedSha256": "91344ba790293c03406ca1804f0360d135b0015aa75cc5b68d7904fc72de1173",
+      "actualBytes": 322498,
+      "pixels": [
+        439,
+        480
+      ]
+    },
+    {
+      "actorId": "vess",
+      "source": "assets/story-cinema/cast/vess.webp",
+      "originalSha256": "c4b0a92f75cad6f4b4682d4c8eb1b4bb70779271ba3673651a159bf4f9adfd1d",
+      "submittedSha256": "6c51eee922dad5f3a2f67b0809807476fb4a32da4acf3ee3a48f9fc5eaa45e3f",
+      "actualBytes": 324362,
+      "pixels": [
+        329,
+        480
+      ]
+    },
+    {
+      "actorId": "commander_male",
+      "source": "assets/story/panels/c01-s01-m01.webp",
+      "originalSha256": "cb7267de06efafb1a0188a0e9010aba7c6af160fac401173de2da443392a1133",
+      "submittedSha256": "b3828c989ab843034e6a0a7e1f55fa3b099a4b9ca3fa05602c5d244031e5dd2e",
+      "actualBytes": 316698,
+      "pixels": [
+        480,
+        270
+      ]
+    }
+  ],
+  "imageSha256": "1a10c5c72e83d5cd6a21f67e753a901ba314d0df4074dfbad4909b960517a4c8",
+  "nativePixels": [
+    1536,
+    864
+  ],
+  "imageBytes": 361732,
+  "model": "@cf/black-forest-labs/flux-2-klein-4b",
+  "seed": 1955565892,
+  "promptSha256": "ec559863cd6ab51da408daa1ee3b0b3883244ffebd9fbec2308a82c9bf0fa662",
+  "estimatedNeurons": 172.41,
+  "visuallyApproved": false,
+  "formallyRegistered": false,
+  "gameDeployed": false
+}

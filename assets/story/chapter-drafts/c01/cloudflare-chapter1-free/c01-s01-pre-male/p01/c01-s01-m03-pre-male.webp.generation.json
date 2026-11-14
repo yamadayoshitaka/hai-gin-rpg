@@ -1,0 +1,62 @@
+{
+  "kind": "CLOUDFLARE_REAL_WEBP_REVIEW_CANDIDATE_NOT_APPROVED",
+  "shotKey": "c01-s01|pre|male|c01-s01-m3",
+  "stageId": "c01-s01",
+  "edition": "pre",
+  "gender": "male",
+  "panelId": "c01-s01-m3",
+  "screenplayText": "俺はガラン。老騎士だ。まずは、この町で暮らす者たちを見てほしい。",
+  "visibleActorIds": [
+    "garan",
+    "lucia",
+    "commander_male"
+  ],
+  "actualReferenceImagesAttached": [
+    {
+      "actorId": "garan",
+      "source": "assets/story-cinema/cast/garan.webp",
+      "originalSha256": "aeb457957485f89244eb0b4f270b72e4bf0670341f2444ac7f43299222075a8b",
+      "submittedSha256": "30c17f9c9f97f0f7a5f66ce2e6f03a711d2ebfb697de0c6a8a84545f9c96cc3c",
+      "actualBytes": 262661,
+      "pixels": [
+        329,
+        480
+      ]
+    },
+    {
+      "actorId": "lucia",
+      "source": "assets/story/characters/lucia/master.webp",
+      "originalSha256": "87005a46d3b4a23714a25f1f9b2d46fee9a1ce3c6b5af0be78f85a1f1fd2b411",
+      "submittedSha256": "91344ba790293c03406ca1804f0360d135b0015aa75cc5b68d7904fc72de1173",
+      "actualBytes": 322498,
+      "pixels": [
+        439,
+        480
+      ]
+    },
+    {
+      "actorId": "commander_male",
+      "source": "assets/story/panels/c01-s01-m01.webp",
+      "originalSha256": "cb7267de06efafb1a0188a0e9010aba7c6af160fac401173de2da443392a1133",
+      "submittedSha256": "b3828c989ab843034e6a0a7e1f55fa3b099a4b9ca3fa05602c5d244031e5dd2e",
+      "actualBytes": 316698,
+      "pixels": [
+        480,
+        270
+      ]
+    }
+  ],
+  "imageSha256": "afe6cf85832ed75a972c76bc34f795c192cb42be9606c4636587612cfbc16aad",
+  "nativePixels": [
+    1536,
+    864
+  ],
+  "imageBytes": 413378,
+  "model": "@cf/black-forest-labs/flux-2-klein-4b",
+  "seed": 1728830959,
+  "promptSha256": "6609fda09dff6b1f864a8808cfddbb9eee5915d86af957f70f1d9e14fe6ac648",
+  "estimatedNeurons": 172.41,
+  "visuallyApproved": false,
+  "formallyRegistered": false,
+  "gameDeployed": false
+}

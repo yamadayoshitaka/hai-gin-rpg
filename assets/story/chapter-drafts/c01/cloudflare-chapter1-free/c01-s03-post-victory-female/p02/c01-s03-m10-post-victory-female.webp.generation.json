@@ -1,0 +1,62 @@
+{
+  "kind": "CLOUDFLARE_REAL_WEBP_REVIEW_CANDIDATE_NOT_APPROVED",
+  "shotKey": "c01-s03|post-victory|female|c01-s03-m10",
+  "stageId": "c01-s03",
+  "edition": "post-victory",
+  "gender": "female",
+  "panelId": "c01-s03-m10",
+  "screenplayText": "次の舞台「灰銀の本城・森と遺構の調査」へ進む。ここで見たことを忘れてはならない。",
+  "visibleActorIds": [
+    "vess",
+    "iris",
+    "commander_female"
+  ],
+  "actualReferenceImagesAttached": [
+    {
+      "actorId": "vess",
+      "source": "assets/story-cinema/cast/vess.webp",
+      "originalSha256": "c4b0a92f75cad6f4b4682d4c8eb1b4bb70779271ba3673651a159bf4f9adfd1d",
+      "submittedSha256": "6c51eee922dad5f3a2f67b0809807476fb4a32da4acf3ee3a48f9fc5eaa45e3f",
+      "actualBytes": 324362,
+      "pixels": [
+        329,
+        480
+      ]
+    },
+    {
+      "actorId": "iris",
+      "source": "assets/story-cinema/cast/iris.webp",
+      "originalSha256": "6b9b49a242f75b39abd8c6ab2084ce50592b8d98c73443a360ab06e041ceadea",
+      "submittedSha256": "1393acc01d44b7907169c469d36fc47844e5ccc1b305c5b4f67f0501470d6741",
+      "actualBytes": 193906,
+      "pixels": [
+        329,
+        480
+      ]
+    },
+    {
+      "actorId": "commander_female",
+      "source": "assets/story/characters/commander/female-master.webp",
+      "originalSha256": "757587a68647aa6637111110ef5c41d8f5827be0f10a204a7f7b14fde71182bf",
+      "submittedSha256": "7f8979767877bdd8148b133d56ce7e38c8fad2fe6436c1d327efcb66bf509a61",
+      "actualBytes": 395204,
+      "pixels": [
+        384,
+        480
+      ]
+    }
+  ],
+  "imageSha256": "71ca51974060d166ea48d36146f8d1fb8857c6ce0cf92a79201d019e2c181cd9",
+  "nativePixels": [
+    1536,
+    864
+  ],
+  "imageBytes": 385074,
+  "model": "@cf/black-forest-labs/flux-2-klein-4b",
+  "seed": 468248365,
+  "promptSha256": "b63f9758c1904f7258cf1132933ce39b0abc5d17a39c200f48729013390f7ea4",
+  "estimatedNeurons": 172.41,
+  "visuallyApproved": false,
+  "formallyRegistered": false,
+  "gameDeployed": false
+}

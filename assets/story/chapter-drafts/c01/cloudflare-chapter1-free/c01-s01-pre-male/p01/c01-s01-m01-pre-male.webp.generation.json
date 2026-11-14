@@ -1,0 +1,50 @@
+{
+  "kind": "CLOUDFLARE_REAL_WEBP_REVIEW_CANDIDATE_NOT_APPROVED",
+  "shotKey": "c01-s01|pre|male|c01-s01-m1",
+  "stageId": "c01-s01",
+  "edition": "pre",
+  "gender": "male",
+  "panelId": "c01-s01-m1",
+  "screenplayText": "灰銀の王都レヴナ。朝の市場を抜け、ひとりの新任軍師が王城へ招かれた。",
+  "visibleActorIds": [
+    "lucia",
+    "commander_male"
+  ],
+  "actualReferenceImagesAttached": [
+    {
+      "actorId": "lucia",
+      "source": "assets/story/characters/lucia/master.webp",
+      "originalSha256": "87005a46d3b4a23714a25f1f9b2d46fee9a1ce3c6b5af0be78f85a1f1fd2b411",
+      "submittedSha256": "91344ba790293c03406ca1804f0360d135b0015aa75cc5b68d7904fc72de1173",
+      "actualBytes": 322498,
+      "pixels": [
+        439,
+        480
+      ]
+    },
+    {
+      "actorId": "commander_male",
+      "source": "assets/story/panels/c01-s01-m01.webp",
+      "originalSha256": "cb7267de06efafb1a0188a0e9010aba7c6af160fac401173de2da443392a1133",
+      "submittedSha256": "b3828c989ab843034e6a0a7e1f55fa3b099a4b9ca3fa05602c5d244031e5dd2e",
+      "actualBytes": 316698,
+      "pixels": [
+        480,
+        270
+      ]
+    }
+  ],
+  "imageSha256": "de58d985084b0ec85a20028d5e8baf6db9872c5c82d0296fcc7dbb36df0689e1",
+  "nativePixels": [
+    1536,
+    864
+  ],
+  "imageBytes": 359872,
+  "model": "@cf/black-forest-labs/flux-2-klein-4b",
+  "seed": 1292072890,
+  "promptSha256": "096b1c3852810addcf70b508f11d5d945d4912ae1a2ef38fe2e9da2cb16b8831",
+  "estimatedNeurons": 167.04,
+  "visuallyApproved": false,
+  "formallyRegistered": false,
+  "gameDeployed": false
+}

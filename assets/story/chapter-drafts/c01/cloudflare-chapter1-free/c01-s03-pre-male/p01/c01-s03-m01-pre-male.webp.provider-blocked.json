@@ -1,0 +1,14 @@
+{
+  "kind": "PROVIDER_GENERATION_SAFETY_BLOCK",
+  "shotKey": "c01-s03|pre|male|c01-s03-m1",
+  "provider": "Cloudflare Workers AI",
+  "model": "@cf/black-forest-labs/flux-2-klein-4b",
+  "errorCode": 3030,
+  "failedRun": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/43511508720",
+  "requiresHumanSceneRevision": true,
+  "automaticRetry": false,
+  "actualImageGenerated": false,
+  "formallyRegistered": false,
+  "gameDeployed": false,
+  "notes": "One output was flagged by provider; do not repeat the same prompt/seed. Human must review canonical safe adaptation before a new image request."
+}

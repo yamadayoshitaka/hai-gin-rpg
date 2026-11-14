@@ -1,0 +1,62 @@
+{
+  "kind": "CLOUDFLARE_REAL_WEBP_REVIEW_CANDIDATE_NOT_APPROVED",
+  "shotKey": "c01-s01|pre|male|c01-s01-m13",
+  "stageId": "c01-s01",
+  "edition": "pre",
+  "gender": "male",
+  "panelId": "c01-s01-m13",
+  "screenplayText": "手掛かりは「黎明の王都レヴナ」で起きている出来事につながっている。亡命者を守るため、敵国の使者と密約を結ぶ。",
+  "visibleActorIds": [
+    "lucia",
+    "iris",
+    "commander_male"
+  ],
+  "actualReferenceImagesAttached": [
+    {
+      "actorId": "lucia",
+      "source": "assets/story/characters/lucia/master.webp",
+      "originalSha256": "87005a46d3b4a23714a25f1f9b2d46fee9a1ce3c6b5af0be78f85a1f1fd2b411",
+      "submittedSha256": "91344ba790293c03406ca1804f0360d135b0015aa75cc5b68d7904fc72de1173",
+      "actualBytes": 322498,
+      "pixels": [
+        439,
+        480
+      ]
+    },
+    {
+      "actorId": "iris",
+      "source": "assets/story-cinema/cast/iris.webp",
+      "originalSha256": "6b9b49a242f75b39abd8c6ab2084ce50592b8d98c73443a360ab06e041ceadea",
+      "submittedSha256": "1393acc01d44b7907169c469d36fc47844e5ccc1b305c5b4f67f0501470d6741",
+      "actualBytes": 193906,
+      "pixels": [
+        329,
+        480
+      ]
+    },
+    {
+      "actorId": "commander_male",
+      "source": "assets/story/panels/c01-s01-m01.webp",
+      "originalSha256": "cb7267de06efafb1a0188a0e9010aba7c6af160fac401173de2da443392a1133",
+      "submittedSha256": "b3828c989ab843034e6a0a7e1f55fa3b099a4b9ca3fa05602c5d244031e5dd2e",
+      "actualBytes": 316698,
+      "pixels": [
+        480,
+        270
+      ]
+    }
+  ],
+  "imageSha256": "acb2d3c8bb8a3eef502b3d9d11840434f3a7d5ab61bc42d052f00b3941e1bf14",
+  "nativePixels": [
+    1536,
+    864
+  ],
+  "imageBytes": 358120,
+  "model": "@cf/black-forest-labs/flux-2-klein-4b",
+  "seed": 219132268,
+  "promptSha256": "5514f2a86707d819bc09eb522d0fafc01893c991c980b0b9b074e7d528ec0ee9",
+  "estimatedNeurons": 172.41,
+  "visuallyApproved": false,
+  "formallyRegistered": false,
+  "gameDeployed": false
+}

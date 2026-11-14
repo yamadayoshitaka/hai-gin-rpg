@@ -1,0 +1,62 @@
+{
+  "kind": "CLOUDFLARE_REAL_WEBP_REVIEW_CANDIDATE_NOT_APPROVED",
+  "shotKey": "c01-s02|post-defeat|female|c01-s02-m16",
+  "stageId": "c01-s02",
+  "edition": "post-defeat",
+  "gender": "female",
+  "panelId": "c01-s02-m16",
+  "screenplayText": "軍師は退却した部隊の無事を確かめ、記録を残した。",
+  "visibleActorIds": [
+    "garan",
+    "commander_female",
+    "lucia"
+  ],
+  "actualReferenceImagesAttached": [
+    {
+      "actorId": "garan",
+      "source": "assets/story-cinema/cast/garan.webp",
+      "originalSha256": "aeb457957485f89244eb0b4f270b72e4bf0670341f2444ac7f43299222075a8b",
+      "submittedSha256": "30c17f9c9f97f0f7a5f66ce2e6f03a711d2ebfb697de0c6a8a84545f9c96cc3c",
+      "actualBytes": 262661,
+      "pixels": [
+        329,
+        480
+      ]
+    },
+    {
+      "actorId": "commander_female",
+      "source": "assets/story/characters/commander/female-master.webp",
+      "originalSha256": "757587a68647aa6637111110ef5c41d8f5827be0f10a204a7f7b14fde71182bf",
+      "submittedSha256": "7f8979767877bdd8148b133d56ce7e38c8fad2fe6436c1d327efcb66bf509a61",
+      "actualBytes": 395204,
+      "pixels": [
+        384,
+        480
+      ]
+    },
+    {
+      "actorId": "lucia",
+      "source": "assets/story/characters/lucia/master.webp",
+      "originalSha256": "87005a46d3b4a23714a25f1f9b2d46fee9a1ce3c6b5af0be78f85a1f1fd2b411",
+      "submittedSha256": "91344ba790293c03406ca1804f0360d135b0015aa75cc5b68d7904fc72de1173",
+      "actualBytes": 322498,
+      "pixels": [
+        439,
+        480
+      ]
+    }
+  ],
+  "imageSha256": "d8a410c192111d18b8f55881415f02523485b015498bc9d1c7d7c4cfe1a8991c",
+  "nativePixels": [
+    1024,
+    576
+  ],
+  "imageBytes": 159680,
+  "model": "@cf/black-forest-labs/flux-2-klein-4b",
+  "seed": 2091171987,
+  "promptSha256": "037fd2f3fa9952f0affaff694b2d9cdb6fddae16fdce7177d4d31922b9695d87",
+  "estimatedNeurons": 120.31,
+  "visuallyApproved": false,
+  "formallyRegistered": false,
+  "gameDeployed": false
+}
