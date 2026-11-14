@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {buildStudioContourNeck} from './studio-contour-neck-v58.js';
 import {clipStudioFaceBustPreservingSurface,restoreStudioFaceSurfaceQuality,
  sampleStudioFacePigment,smoothStudioFaceNormals,
  studioAnatomicalSeamY,taperStudioLowerBustBelowChin} from './studio-face-quality-v56.js?v=57';
@@ -229,6 +230,7 @@ export function alignStudioHeadToSkinnedTorso({
 const STUDIO_CHEST_ORIGINAL=new WeakMap();
 const STUDIO_FACE_NECK_CACHE=new WeakMap();
 const STUDIO_NECK_NAME='STUDIO_REAL_SKIN_NECK_CONNECTOR_V54';
+const STUDIO_NEW_NECK_NAME='STUDIO_CONTOUR_SKIN_NECK_V58';
 
 /**
  * Remove the source CC0 portrait's flat shoulder-bust rim from the combat
@@ -308,6 +310,12 @@ export function fitStudioNeckContinuity({faceRoot,faceMesh,wardrobeRoot}={}){
  const bustTaper=cached.bustTaperReport;
  const faceQuality=restoreStudioFaceSurfaceQuality(faceMesh);
  const facePigment=sampleStudioFacePigment(faceMesh);
+ const oldContour=faceMesh.getObjectByName(STUDIO_NEW_NECK_NAME);
+ if(oldContour){
+  oldContour.removeFromParent();
+  oldContour.geometry.dispose();
+  oldContour.material.dispose();
+ }
  const oldBridge=faceRoot.getObjectByName(STUDIO_NECK_NAME);
  if(oldBridge){
   oldBridge.removeFromParent();
@@ -403,6 +411,14 @@ export function fitStudioNeckContinuity({faceRoot,faceMesh,wardrobeRoot}={}){
   placedUsingActualTorso:true,originalFaceGeometryPreserved:true};
  bridge.frustumCulled=false;bridge.castShadow=true;bridge.receiveShadow=true;
  faceRoot.add(bridge);
+ // v58: the real cut-edge loft replaces the approximate blue fabric pipe.
+ // The former bridge remains as a fallback ONLY when imported geometry
+ // genuinely lacks a continuous lower-face cut boundary.
+ const contourNeck=buildStudioContourNeck({
+  faceRoot,faceMesh,cut,torsoTopY:torsoTop,
+  torsoCenterX:torsoX,torsoCenterZ:torsoZ,facePigment
+ });
+ bridge.visible=!contourNeck.applied;
  // The standalone portrait page used an older broad, flat neck seal plus
  // LEFT/RIGHT shoulder cut caps. Those parts remain children of this face
  // when it enters the armor preview. Keeping them visible alongside the
@@ -418,6 +434,13 @@ export function fitStudioNeckContinuity({faceRoot,faceMesh,wardrobeRoot}={}){
   }
  });
  return {applied:true,legacyNeckPartsHidden,legacyNeckPartsAlreadyHidden,
+  contourNeckApplied:!!contourNeck.applied,
+  contourNeckReason:contourNeck.reason||null,
+  actualCutEdgeSegments:contourNeck.segments||0,
+  seamSampleFallbacks:contourNeck.fallbackCount||0,
+  correctSkinNeckColor:contourNeck.skinColored||false,
+  originalBluePipeHidden:!bridge.visible,
+  contourNeckLength:contourNeck.neckHeight||null,
   sourceTrianglesPreserved:true,
   bustTrianglesRemoved:cut.removedTriangles,
   trimmedSculptBottomY:safeCutY,

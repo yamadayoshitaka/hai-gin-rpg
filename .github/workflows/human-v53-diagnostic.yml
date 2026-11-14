@@ -1,4 +1,4 @@
-name: Human v57 anatomical jaw-to-neck diagnostics
+name: Human v58 real-contour skin neck diagnostics
 on:
   pull_request:
     paths:
@@ -7,6 +7,8 @@ on:
       - 'qa/human-realism-v51-regression.test.mjs'
       - 'qa/studio-face-quality-v56.test.mjs'
       - 'src/studio-face-quality-v56.js'
+      - 'src/studio-contour-neck-v58.js'
+      - 'qa/studio-contour-neck-v58.test.mjs'
       - 'face-body-studio.html'
       - 'male-body-studio.html'
       - '.github/workflows/human-v53-diagnostic.yml'
@@ -28,13 +30,13 @@ jobs:
           python3 -m http.server 8766 --bind 127.0.0.1 >/tmp/human-v53-http.log 2>&1 &
           sleep 2
       - name: Verify neck connector and preserved head source geometry
-        run: node --test qa/human-realism-v51-regression.test.mjs qa/studio-face-quality-v56.test.mjs
+        run: node --test qa/human-realism-v51-regression.test.mjs qa/studio-face-quality-v56.test.mjs qa/studio-contour-neck-v58.test.mjs
       - name: Report actual female face, neck and armor mesh bounds
         run: node qa/human-head-occlusion-v53-browser.cjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: human-v57-jaw-continuity
-          path: qa-screenshots/human-v57/
+          name: human-v58-real-cut-skin-stitch
+          path: qa-screenshots/human-v58/
           retention-days: 7
           if-no-files-found: warn
