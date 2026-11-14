@@ -12,7 +12,7 @@ const make=(id,role,body,face,hair,outfit,equipment,costume,palette,options={})=
   metal:palette[2],accent:palette[3],...options
  });
 export const FEMALE_SUMMON_FORMS=Object.freeze({
- forest_archer:make('forest_archer','civilian','slim','noble','long','ranger','bow',
+ forest_archer:make('forest_archer','civilian','slim','narrow-eyed','long','ranger','bow',
   'forest_spirit_female',[0x8ea7a1,0x34503d,0xbca886,0x8ebe73],{
    leaf:0x62865b,feather:0xc1c5a3,makeup:0x243d32,lip:0x667c62
   }),
