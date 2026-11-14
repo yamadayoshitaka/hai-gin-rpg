@@ -30,6 +30,7 @@ REMOVED_TREE_PREFIXES = (
     "motions/candidates/",
     "assets/characters/experimental/",
     "assets/story/chapter1-provisional-live/",
+    "assets/story/chapter1-chatgpt-inbox/",  # Generation/provenance staging, never game runtime
 )
 ROOT_DEV_SUFFIXES = (".md", ".py", ".ps1", ".yml", ".yaml", ".zip", ".blend")
 REQUIRED = (
