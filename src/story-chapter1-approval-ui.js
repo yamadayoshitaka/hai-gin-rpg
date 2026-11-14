@@ -143,13 +143,52 @@ async function stage2Assignment(shot){
  const json=await stage2Assignments;
  return json.entries?.[shot.edition+'|'+shot.gender+'|'+shot.shotId]||null;
 }
-function setGeneratorMessage(node,value){
- node.textContent=value;
+// Generation handoff MUST load repository manifests and pass their contents to
+// buildChapter1ImagePrompt for the exact scene. A path written in a prompt is
+// not the same as an image byte attachment to ChatGPT.
+let p0RulesPromise=null,stage1ManualPromise=null;
+async function qualityRulesFor(){
+ if(!p0RulesPromise)p0RulesPromise=fetch('./assets/story/quality/artwork-p0-rules.json')
+  .then(r=>{if(!r.ok)throw Error('P0品質マニフェストを取得できません');return r.json();})
+  .catch(e=>{p0RulesPromise=null;throw e;});
+ return p0RulesPromise;
+}
+async function manualManifestFor(shot){
+ if(shot.stageId!=='c01-s01'||shot.edition!=='post-town'||shot.gender!=='male')return null;
+ if(!stage1ManualPromise)stage1ManualPromise=fetch(
+  './assets/story/stage-manifests/c01-s01-post-town-male-p01-manual-production.json'
+ ).then(r=>{if(!r.ok)throw Error('コマ別制作マニフェストを取得できません');return r.json();})
+  .catch(e=>{stage1ManualPromise=null;throw e;});
+ return stage1ManualPromise;
+}
+async function referenceFilesForHandoff(shot,prepared){
+ const ids=prepared.manualManifest?.shots?.find(s=>s.key===shot.key)?.actors||
+  prepared.assignment?.visibleActorIds||
+  [...new Set([shot.characterId,shot.secondaryId,
+    ...(shot.edition==='post-gameover'?[]:['commander_'+shot.gender])].filter(Boolean))];
+ const actorFiles=ids.map(id=>prepared.manualManifest?.characterMasters?.[id]?.path||
+  prepared.bible?.actors?.find(r=>r.id===id)?.path);
+ if(actorFiles.some(p=>!p))throw Error('人物参照画像が未登録です。生成前に補完してください。');
+ const styleRefs=prepared.manualManifest?.visualStyleLock?.referenceImagePaths?.slice(0,1)||
+  ['assets/story/panels/c01-s01-m01.webp'];
+ const paths=[...new Set([...actorFiles,...styleRefs])];
+ const files=[];
+ for(const p of paths){
+  if(!/^assets\/[-a-zA-Z0-9_/.]+\.webp$/.test(p)||p.includes('..'))
+   throw Error('不正な参照画像パス：'+p);
+  const res=await fetch('./'+p);
+  if(!res.ok)throw Error('参照画像の実データが読めません：'+p);
+  const blob=await res.blob();
+  if(!blob.size)throw Error('参照画像が空です：'+p);
+  files.push(new File([blob],p.split('/').at(-1),{type:'image/webp'}));
+ }
+ return files;
 }
 async function generatePrompt(shot,notes){
- const bible=await referenceFor(shot);
- const assignment=await stage2Assignment(shot);
- return buildChapter1ImagePrompt({shot,page:current,bible,assignment,
+ const [bible,assignment,manualManifest,qualityRules]=await Promise.all([
+  referenceFor(shot),stage2Assignment(shot),manualManifestFor(shot),qualityRulesFor()
+ ]);
+ return buildChapter1ImagePrompt({shot,page:current,bible,assignment,manualManifest,qualityRules,
   edit:notes||saved[shot.key]?.feedback||'',sourceKind:states.get(shot.key)?.kind});
 }
 async function copyPrompt(text,textarea){
@@ -186,17 +225,19 @@ function buildGenerationControls(shot){
  const preview=document.createElement('textarea');preview.className='preview-prompt';
  preview.readOnly=true;preview.hidden=true;preview.setAttribute('aria-label','ChatGPTに渡す完成プロンプト');
  let prepared=null;
- const loadContract=Promise.all([referenceFor(shot),stage2Assignment(shot)])
-  .then(([bible,assignment])=>{
-   prepared={bible,assignment};
-   setGeneratorMessage(message,'台本・登場人物を読込済み。ChatGPTに渡す指示を作成できます。');
+ const loadContract=Promise.all([
+  referenceFor(shot),stage2Assignment(shot),manualManifestFor(shot),qualityRulesFor()
+ ]).then(([bible,assignment,manualManifest,qualityRules])=>{
+   prepared={bible,assignment,manualManifest,qualityRules};
+   setGeneratorMessage(message,'台本・コマ別マニフェスト・P0品質条件を読込済み。ChatGPTへ渡す生成指示に全項目を反映します。参照画像は別途実ファイル添付が必要です。');
   }).catch(e=>{
-   setGeneratorMessage(message,'参照情報の読込エラー：'+e.message);
+   setGeneratorMessage(message,'必須マニフェストの読込エラー（生成禁止）：'+e.message);
   });
  function prepare(){
   if(!prepared)throw Error('参照データを読み込み中です。もう一度押してください。');
   const prompt=buildChapter1ImagePrompt({
    shot,page:current,bible:prepared.bible,assignment:prepared.assignment,
+   manualManifest:prepared.manualManifest,qualityRules:prepared.qualityRules,
    edit:input.value.trim()||saved[shot.key]?.feedback||'',
    sourceKind:states.get(shot.key)?.kind
   });
@@ -214,7 +255,7 @@ function buildGenerationControls(shot){
     show.onclick=()=>window.location.assign(CHATGPT_IMAGES_URL);
     return;
    }
-   setGeneratorMessage(message,'プロンプトをコピーしました。ChatGPTの入力欄に貼り付けて送信してください。');
+   setGeneratorMessage(message,'必須マニフェストを含む生成指示をコピーしました。ChatGPTで貼り付け、人物・画風の参照画像を実ファイルで添付してから生成してください。');
    // Do not use unsupported ?q= query parameters or claim that an
    // external web page can invoke the in-app image generation tool.
    window.location.assign(CHATGPT_IMAGES_URL);
@@ -225,7 +266,7 @@ function buildGenerationControls(shot){
   try{
    const prompt=prepare();
    const success=await copyPrompt(prompt,preview);
-   setGeneratorMessage(message,success?'コピーしました。ChatGPTで貼り付けて画像生成を依頼してください。':'表示した文章を選択してコピーしてください。');
+   setGeneratorMessage(message,success?'マニフェストを含む指示をコピーしました。ChatGPTに貼り付け、参照画像を添付して生成してください。':'表示した文章を選択してコピーしてください。');
   }catch(e){setGeneratorMessage(message,'準備に失敗：'+e.message);}
  });
  show.addEventListener('click',async()=>{
@@ -239,13 +280,13 @@ function buildGenerationControls(shot){
    if(!navigator.share)throw Error('このブラウザに共有機能がありません。コピーを利用してください');
    const prompt=prepare();
    const data={title:'灰銀のレゾナンス '+shot.shotId+'の画像を生成',text:prompt};
-   const state=states.get(shot.key);
-   if(state?.bytes&&typeof File!=='undefined'&&navigator.canShare){
-    const source=new File([state.bytes],shot.shotId+'-reference.webp',{type:'image/webp'});
-    if(navigator.canShare({files:[source]}))data.files=[source];
-   }
+   if(!prepared)throw Error('必須マニフェストを読み込み中です');
+   const files=await referenceFilesForHandoff(shot,prepared);
+   if(!navigator.canShare?.({files}))
+    throw Error('参照画像ファイルを共有できません。ChatGPTに実画像を手動添付してください。');
+   data.files=files;
    await navigator.share(data);
-   setGeneratorMessage(message,'共有メニューでChatGPTを選び、生成指示を確認して送信してください。');
+   setGeneratorMessage(message,'制作マニフェストの指示文と参照画像ファイルを共有しました。ChatGPT側で両方が添付されたことを確認してください。');
   }catch(e){
    if(e.name!=='AbortError')setGeneratorMessage(message,
     '共有できませんでした：'+e.message+'。プロンプトのコピーをご利用ください。');
