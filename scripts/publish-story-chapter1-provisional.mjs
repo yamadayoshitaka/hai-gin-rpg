@@ -147,7 +147,7 @@ for(const s of shots){
   if(active[s.key]?.sha256===verified.sha256){unchanged++;continue;}
   const rel='assets/story/chapter1-provisional-live/'+slug(s.key)+'.webp';
   const binding={asset:'./'+rel,sha256:verified.sha256,provenance:verified.proof,
-   sourceDraft:s.draftPath,status:'PROVISIONAL_NOT_VISUALLY_APPROVED',
+   sourceDraft:s.draftPath,status:'PROVISIONAL_OWNER_AUTHORIZED_PENDING_P0',
    originalLivePath:s.legacyPath||null,stageId:s.stageId,edition:s.edition,gender:s.gender};
   if(mode==='--apply'){
    fs.mkdirSync(path.dirname(toAbs(rel)),{recursive:true});
