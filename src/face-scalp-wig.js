@@ -225,7 +225,10 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
   // the rear nape; no floating rectangle across the rear neck.
   // The front cap is ONLY a scalp covering, never a second set of little
   // triangles growing from the forehead, eyebrow or glabella.
-  const yCut=box.min.y+d.y*(zNorm>.10?.850:
+  // Lower only the front *scalp-colored* underlay across the upper
+  // forehead, closing the triangular skin void under parted bangs.
+  // Eyelids remain far below this threshold and are never overpainted.
+  const yCut=box.min.y+d.y*(zNorm>.10?.815:
    zNorm<-.035?.58:
    Math.abs((mid.x-center.x)/d.x)>.19?.68:.71);
   if(p.some(vertex=>vertex.y<yCut))continue;
