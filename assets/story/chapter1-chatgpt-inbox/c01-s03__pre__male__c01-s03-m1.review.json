@@ -1,0 +1,47 @@
+{
+  "qaStatus": "OWNER_PROVISIONAL",
+  "shotKey": "c01-s03|pre|male|c01-s03-m1",
+  "scriptText": "王城へ戻る補給路が不審な使者に押さえられる。",
+  "sourceModel": "ChatGPT Images",
+  "ownerAuthorized": true,
+  "humanVisualQAConfirmed": false,
+  "finalP0Approved": false,
+  "reviewedBy": "assistant-visual-inspection",
+  "reviewedAt": "2026-11-14T09:49:00Z",
+  "generationReferencesAttached": false,
+  "referenceImagesAttached": [],
+  "quality": {
+    "exactCanonicalScene": true,
+    "exactCast": true,
+    "genderAndOutcomeCorrect": true,
+    "noTextUI": true,
+    "original3DCinematicStyle": true,
+    "nativeDetail": true,
+    "realReferenceBytesAttachedToImageGenerator": false
+  },
+  "provisionalOnly": true,
+  "missingP0Requirements": [
+    "Original character master image bytes not attached to ChatGPT image generation",
+    "Formal human P0 visual QA pending"
+  ],
+  "provisionalVisualBrief": "王城への補給路を不審な使者が封鎖し、黒髪の男性軍師が立ち止まる。",
+  "imageSha256": "69c939a2a85d5ced6ffb8277b028400fe6336c8364d202df9dc3f022611d09a6",
+  "nativePixels": [
+    1664,
+    936
+  ],
+  "provenance": {
+    "sourceFileName": "a_cinematic_ultra_detailed_fantasy_medieval_scene.png",
+    "sourceResolution": [
+      1672,
+      941
+    ],
+    "unscaledCenterCrop": [
+      4,
+      2,
+      1668,
+      938
+    ],
+    "noUpscaling": true
+  }
+}
