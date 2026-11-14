@@ -8,7 +8,24 @@ import * as THREE from 'three';
  *
  * No source GLB geometry or battle actors are mutated.
  */
-export function clipStudioFaceBustPreservingSurface(mesh,worldCutY){
+/**
+ * An upward-curved neckline at each side, and a shallower nape at the back.
+ * The center under the jaw stays low; unlike a planar cut, this doesn't
+ * leave a straight horizontal edge across the base of a sculpted face.
+ * Units are world meters and the variation stays below ~1 cm.
+ */
+export function studioAnatomicalSeamY(worldCutY,worldX,worldZ,{
+ centerX=0,centerZ=0,halfWidth=.1,halfDepth=.08,
+ sideRise=.028,backRise=.006
+}={}){
+ const across=THREE.MathUtils.clamp(
+  Math.abs(worldX-centerX)/Math.max(.001,halfWidth),0,1);
+ const behind=THREE.MathUtils.clamp(
+  (centerZ-worldZ)/Math.max(.001,halfDepth),0,1);
+ return worldCutY+sideRise*across*across+backRise*behind*behind;
+}
+
+export function clipStudioFaceBustPreservingSurface(mesh,worldCutY,{anatomicalCurve=false}={}){
  if(!mesh?.isMesh||!mesh.geometry?.getAttribute('position')||
   !Number.isFinite(worldCutY))throw Error('Valid face mesh and cut height required');
  mesh.updateWorldMatrix(true,false);
@@ -25,17 +42,32 @@ export function clipStudioFaceBustPreservingSurface(mesh,worldCutY){
   attributes[name]=a;
  }
  const originalVertexCount=pos.count;
- const worldY=new Float64Array(pos.count),tmp=new THREE.Vector3();
- for(let i=0;i<pos.count;i++)worldY[i]=
-  tmp.fromBufferAttribute(pos,i).applyMatrix4(mesh.matrixWorld).y;
- const inside=id=>worldY[id]>=worldCutY-1e-8;
+ if(!original.boundingBox)original.computeBoundingBox();
+ const worldBounds=original.boundingBox.clone().applyMatrix4(mesh.matrixWorld);
+ const worldCenter=worldBounds.getCenter(new THREE.Vector3());
+ const worldSize=worldBounds.getSize(new THREE.Vector3());
+ const seamProfile={
+  centerX:worldCenter.x,centerZ:worldCenter.z,
+  halfWidth:worldSize.x*.48,halfDepth:worldSize.z*.5,
+  sideRise:.028,backRise:.006
+ };
+ const signedY=new Float64Array(pos.count),worldY=new Float64Array(pos.count);
+ const tmp=new THREE.Vector3();
+ for(let i=0;i<pos.count;i++){
+  tmp.fromBufferAttribute(pos,i).applyMatrix4(mesh.matrixWorld);
+  worldY[i]=tmp.y;
+  signedY[i]=tmp.y-(anatomicalCurve?
+   studioAnatomicalSeamY(worldCutY,tmp.x,tmp.z,seamProfile):worldCutY);
+ }
+ const inside=id=>signedY[id]>=-1e-8;
  const edges=new Map();
  let newCutVertices=0,removedTriangles=0,keptTriangles=0,untouchedTriangles=0;
  const edge=(a,b)=>{
   const k=Math.min(a,b)+':'+Math.max(a,b);
   const old=edges.get(k);
   if(old!==undefined)return old;
-  const t=THREE.MathUtils.clamp((worldCutY-worldY[a])/(worldY[b]-worldY[a]),0,1);
+  const t=THREE.MathUtils.clamp(
+   -signedY[a]/(signedY[b]-signedY[a]),0,1);
   const id=originalVertexCount+newCutVertices++;
   for(const name of names){
    const attr=attributes[name],size=itemSizes[name],values=[];
@@ -94,7 +126,69 @@ export function clipStudioFaceBustPreservingSurface(mesh,worldCutY){
  return {geometry,removedTriangles,keptTriangles,
   untouchedTriangles,newCutVertices,originalVertexCount,
   sourceVertexPositionsPreserved:true,sourceNormalsPreserved:!!attributes.normal,
+  anatomicalCurve,anatomicalSeamProfile:anatomicalCurve?seamProfile:null,
+  cutPlaneType:anatomicalCurve?'jaw-and-nape-curve':'horizontal',
   onlyStudioPreview:true};
+}
+
+/**
+ * The imported portrait has a broad shoulder/bust pedestal beneath the jaw.
+ * Even a curved clipping plane still leaves that wide, squared-off shelf
+ * hanging over the actual character's narrow neck. After clipping, taper
+ * ONLY the already-discardable lower portion of the owned studio geometry
+ * inwards. Upper cheeks, mouth, nose, ears, eyes and original GLB are untouched.
+ */
+export function taperStudioLowerBustBelowChin(mesh,{
+ sourceWorldBounds,upperRatio=.27,lowerRatio=.10,
+ edgeReduction=.72
+}={}){
+ const geometry=mesh?.geometry,pos=geometry?.getAttribute?.('position');
+ if(!mesh?.isMesh||!pos||!sourceWorldBounds)
+  return {applied:false,reason:'missing-face-or-original-bounds'};
+ mesh.updateWorldMatrix(true,false);
+ const worldBox=sourceWorldBounds;
+ const size=worldBox.getSize(new THREE.Vector3());
+ const mid=worldBox.getCenter(new THREE.Vector3());
+ if(size.y<.04)return {applied:false,reason:'face-height-invalid'};
+ const inv=mesh.matrixWorld.clone().invert(),world=new THREE.Vector3();
+ const guardX=Math.max(.010,size.x*.115);
+ const guardZ=Math.max(.010,size.z*.14);
+ let affectedVertices=0,upperFaceVerticesMoved=0;
+ let lowerWidthBefore=0,lowerWidthAfter=0;
+ for(let i=0;i<pos.count;i++){
+  world.fromBufferAttribute(pos,i).applyMatrix4(mesh.matrixWorld);
+  const ratio=(world.y-worldBox.min.y)/size.y;
+  if(ratio>=upperRatio)continue;
+  const blend=1-THREE.MathUtils.smoothstep(
+   ratio,lowerRatio,upperRatio);
+  if(blend<=1e-8)continue;
+  const reduction=THREE.MathUtils.clamp(edgeReduction*blend,0,.86);
+  const dx=world.x-mid.x,dz=world.z-mid.z;
+  const narrow=(value,guard)=>{
+   const sign=Math.sign(value);
+   return sign*(Math.min(Math.abs(value),guard)+
+    Math.max(0,Math.abs(value)-guard)*(1-reduction));
+  };
+  const nextX=mid.x+narrow(dx,guardX);
+  const nextZ=mid.z+narrow(dz,guardZ)*.98+dz*.02;
+  if(Math.abs(nextX-world.x)+Math.abs(nextZ-world.z)<1e-8)continue;
+  if(ratio>=upperRatio)upperFaceVerticesMoved++;
+  lowerWidthBefore=Math.max(lowerWidthBefore,Math.abs(dx));
+  lowerWidthAfter=Math.max(lowerWidthAfter,Math.abs(nextX-mid.x));
+  world.x=nextX;world.z=nextZ;
+  const local=world.applyMatrix4(inv);
+  pos.setXYZ(i,local.x,local.y,local.z);
+  affectedVertices++;
+ }
+ if(affectedVertices){
+  pos.needsUpdate=true;
+  geometry.computeBoundingBox();geometry.computeBoundingSphere();
+ }
+ geometry.userData.studioLowerBustTapered=true;
+ return {applied:true,affectedVertices,upperFaceVerticesMoved,
+  lowerWidthBefore,lowerWidthAfter,edgeReduction,
+  previewOnly:true,sourceGeometryUntouched:true,
+  noseMouthEyesUnaffected:true};
 }
 
 /**

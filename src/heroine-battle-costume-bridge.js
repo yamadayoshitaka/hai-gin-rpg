@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import {clipStudioFaceBustPreservingSurface,restoreStudioFaceSurfaceQuality,
- sampleStudioFacePigment,smoothStudioFaceNormals} from './studio-face-quality-v56.js';
+ sampleStudioFacePigment,smoothStudioFaceNormals,
+ studioAnatomicalSeamY,taperStudioLowerBustBelowChin} from './studio-face-quality-v56.js?v=57';
 import {createCharacter} from './character-system/shared-character-runtime.js?v=4.6.36';
 import {buildRiggedJobOutfit} from './character-system/rigged-outfit-runtime.js?v=41';
 import {loadJobMotionMap} from './character-system/job-motion-source.js?v=4.6.36';
@@ -288,7 +289,7 @@ export function fitStudioNeckContinuity({faceRoot,faceMesh,wardrobeRoot}={}){
   faceMesh.geometry=cached.clipped;
  }else{
   faceMesh.geometry=source;
-  cut=clipStudioFaceBustPreservingSurface(faceMesh,safeCutY);
+  cut=clipStudioFaceBustPreservingSurface(faceMesh,safeCutY,{anatomicalCurve:true});
   if(cut.keptTriangles<100||cut.removedTriangles<3){
    cut.geometry.dispose();faceMesh.geometry=source;
    return {applied:false,reason:'insufficient-sculpted-bust-to-trim'};
@@ -296,10 +297,15 @@ export function fitStudioNeckContinuity({faceRoot,faceMesh,wardrobeRoot}={}){
   if(cached.clipped)cached.clipped.dispose();
   cached.clipped=cut.geometry;
   cached.cutReport=cut;cached.localCutY=localCutY;
-  cached.normalReport=smoothStudioFaceNormals(cut.geometry);
   faceMesh.geometry=cut.geometry;
+  cached.bustTaperReport=taperStudioLowerBustBelowChin(faceMesh,{
+   sourceWorldBounds:originalFaceBounds,
+   upperRatio:.27,lowerRatio:.10,edgeReduction:.72
+  });
+  cached.normalReport=smoothStudioFaceNormals(cut.geometry);
  }
  const normalQuality=cached.normalReport;
+ const bustTaper=cached.bustTaperReport;
  const faceQuality=restoreStudioFaceSurfaceQuality(faceMesh);
  const facePigment=sampleStudioFacePigment(faceMesh);
  const oldBridge=faceRoot.getObjectByName(STUDIO_NECK_NAME);
@@ -311,13 +317,16 @@ export function fitStudioNeckContinuity({faceRoot,faceMesh,wardrobeRoot}={}){
  // The connector is a SHORT under-chin transition, not a visible pipe.
  // Overlap its lower ring beneath the clothing; do not extend 27mm below
  // the collar and 13mm above the cropped head as v54 did.
- const bottomY=torsoTop-.013,topY=safeCutY+.004;
+ const bottomY=torsoTop-.016,topY=safeCutY+.003;
  if(topY<=bottomY+.008)return {applied:false,reason:'neck-height-invalid'};
  const cx=(originalFaceBounds.min.x+originalFaceBounds.max.x)*.5;
  const cz=(originalFaceBounds.min.z+originalFaceBounds.max.z)*.5-.011;
  const faceWidth=originalFaceBounds.getSize(new THREE.Vector3()).x;
- const radiusX=THREE.MathUtils.clamp(faceWidth*.29,.033,.066);
- const radiusZ=THREE.MathUtils.clamp(faceWidth*.265,.030,.060);
+ // v57: a visible rectangular strip was partly caused by the connector
+ // being nearly as wide as the chin. Taper inside the *real* jaw outline,
+ // widening only beneath the tunic collar and keeping the top inconspicuous.
+ const radiusX=THREE.MathUtils.clamp(faceWidth*.20,.026,.043);
+ const radiusZ=THREE.MathUtils.clamp(faceWidth*.17,.024,.039);
  // A cylindrical cut looks like a pipe. Five spline-like tapered rings
  // keep the trapezius and under-jaw continuous without adding shoulders.
  const count=32,rings=9;
@@ -330,7 +339,7 @@ export function fitStudioNeckContinuity({faceRoot,faceMesh,wardrobeRoot}={}){
  // cylinder. Match the slate tunic under every combat garment; retain a
  // narrow soft skin transition right under the jaw.
  const skinShade=facePigment.base.clone()
-  .multiply(facePigment.multiplier).multiplyScalar(.78);
+  .multiply(facePigment.multiplier).multiplyScalar(.96);
  // The source sewn-neckline texture is pale and its material.color
  // does not represent the visible fabric pigment. Sampling it produced the
  // same WHITE rectangle in actual Chromium. Use a consistent slate
@@ -339,23 +348,37 @@ export function fitStudioNeckContinuity({faceRoot,faceMesh,wardrobeRoot}={}){
  faceRoot.updateWorldMatrix(true,false);
  for(let r=0;r<rings;r++){
   const t=r/(rings-1);
-  const y=bottomY+(topY-bottomY)*t;
+  const baseY=bottomY+(topY-bottomY)*t;
   // Taper the visible top deeply under the chin. A broad top ring made
   // a pale rectangular neck column despite the shorter connector height.
-  const widen=1.07-.50*t-.045*Math.sin(Math.PI*t);
+  const widen=1.10-.33*t-.04*Math.sin(Math.PI*t);
   const xCenter=THREE.MathUtils.lerp(torsoX,cx,t);
-  const zCenter=THREE.MathUtils.lerp(torsoZ-.015,cz-.024*t,t);
-  const nearChin=THREE.MathUtils.smoothstep(t,.94,1);
+  const zCenter=THREE.MathUtils.lerp(torsoZ-.015,cz-.022*t,t);
+  const nearChin=THREE.MathUtils.smoothstep(t,.31,.86);
   const surface=tunicShade.clone().lerp(skinShade,nearChin);
   for(let s=0;s<=count;s++){
    const angle=2*Math.PI*s/count;
-   const world=new THREE.Vector3(
-    xCenter+Math.cos(angle)*radiusX*widen,
-    y,
-    zCenter+Math.sin(angle)*radiusZ*widen);
+   const x=xCenter+Math.cos(angle)*radiusX*widen;
+   const z=zCenter+Math.sin(angle)*radiusZ*widen;
+   // Follow the same shallow jaw/nape curve as the source-face cut.
+   // The upper ring disappears a few millimeters inside the face instead
+   // of ending in a prominent perfectly horizontal rectangular shelf.
+   const seamY=studioAnatomicalSeamY(safeCutY,x,z,{
+    centerX:cx,centerZ:(originalFaceBounds.min.z+originalFaceBounds.max.z)*.5,
+    halfWidth:faceWidth*.48,
+    halfDepth:originalFaceBounds.getSize(new THREE.Vector3()).z*.5,
+    sideRise:.028,backRise:.006
+   });
+   // A visible jaw has a shallow U-shaped underside, not a flat bar.
+   // At the exposed connector top lift both lateral edges ~5mm into the
+   // existing face mesh, leaving the chin center lower and the hard rim
+   // concealed behind the cheek contour. The bottom clothing ring stays put.
+   const jawArc=.005*Math.pow(Math.abs(Math.cos(angle)),1.5);
+   const y=baseY+Math.pow(t,3)*(seamY-safeCutY+jawArc);
+   const world=new THREE.Vector3(x,y,z);
    const local=faceRoot.worldToLocal(world);
    verts.push(local.x,local.y,local.z);
-   const edgeBlend=.065+.935*Math.min(1,t*4,(1-t)*4);
+   const edgeBlend=.035+.965*Math.min(1,t*4,(1-t)*5);
    colors.push(surface.r,surface.g,surface.b,edgeBlend);
    uv.push(s/count,t);
   }
@@ -398,6 +421,13 @@ export function fitStudioNeckContinuity({faceRoot,faceMesh,wardrobeRoot}={}){
   sourceTrianglesPreserved:true,
   bustTrianglesRemoved:cut.removedTriangles,
   trimmedSculptBottomY:safeCutY,
+  anatomicalJawCut:!!cut.anatomicalCurve,
+  cutPlaneType:cut.cutPlaneType,
+  lowerBustTapered:!!bustTaper?.applied,
+  lowerBustTaperedVertices:bustTaper?.affectedVertices||0,
+  sourceFaceUnchangedByBustTaper:!!bustTaper?.sourceGeometryUntouched,
+  narrowUnderJawConnector:true,
+  originalFaceGeometryPreserved:true,
   actualTorsoTopY:torsoTop,connectorBottomY:bottomY,connectorTopY:topY,
   segmentCount:count,neckHeight:topY-bottomY,headHeight,
   originalIndexedVertices:cut.originalVertexCount,

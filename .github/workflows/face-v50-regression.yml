@@ -61,10 +61,10 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: face-v56-smooth-face-and-catalog
+          name: face-v57-curved-jaw-and-catalog
           path: |
             qa-screenshots/face-v50/
-            qa-screenshots/human-neck-v56/
-            qa-screenshots/human-v56/
+            qa-screenshots/human-neck-v57/
+            qa-screenshots/human-v57/
           retention-days: 14
           if-no-files-found: warn
