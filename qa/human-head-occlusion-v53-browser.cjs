@@ -112,5 +112,22 @@ const fs=require('node:fs');
   await page.locator('#side').click();
   await page.waitForTimeout(350);
   await page.screenshot({path:'qa-screenshots/human-v59/female-face-side.png',timeout:90000});
+  // The old camera framing hid the neck behind the wig and previously
+  // gave false "visual pass" reports. Reproduce the actual Android close
+  // view and expose the entire seam with the wig temporarily hidden.
+  await page.locator('#bodyCanvas').hover();
+  await page.mouse.wheel(0,-690);
+  await page.waitForTimeout(420);
+  await page.screenshot({path:'qa-screenshots/human-v59/female-neck-side-zoom.png',timeout:90000});
+  await page.evaluate(()=>{
+   const wig=window.__heroineBodyPreview?.getWig?.();
+   if(wig)wig.visible=false;
+  });
+  await page.waitForTimeout(250);
+  await page.screenshot({path:'qa-screenshots/human-v59/female-neck-side-hair-hidden.png',timeout:90000});
+  await page.evaluate(()=>{
+   const wig=window.__heroineBodyPreview?.getWig?.();
+   if(wig)wig.visible=true;
+  });
  }finally{await browser.close()}
 })().catch(e=>{console.error('HUMAN_V59_DIAGNOSTIC_FAIL '+e.stack);process.exitCode=1});
