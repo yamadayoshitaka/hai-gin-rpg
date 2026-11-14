@@ -1,0 +1,93 @@
+name: Chapter1 reversible provisional game artwork register
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/story-chapter1-provisional-game-register.yml'
+  workflow_run:
+    workflows:
+      - 'Chapter 1 all 462 shots - resumed Free-only real draft images'
+    types: [completed]
+  issues:
+    types: [opened]
+  schedule:
+    - cron: '45 23 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: write
+  issues: read
+
+concurrency:
+  group: chapter1-live-provisional-safe-revisions
+  cancel-in-progress: false
+
+jobs:
+  provisional-game:
+    if: >-
+      (github.event_name != 'issues' || github.event.issue.user.login == 'yamadayoshitaka') &&
+      (github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout real game production main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Configure Git author and fetch independent unapproved art
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git fetch origin story/chapter1-free-actual-art
+      - name: Revoke selected provisional artwork when owner files a correction
+        if: github.event_name == 'issues'
+        env:
+          STORY_REVIEW_ISSUE_BODY: ${{ github.event.issue.body }}
+          STORY_REVIEW_ISSUE_URL: ${{ github.event.issue.html_url }}
+        run: |
+          set -euo pipefail
+          if [[ "$STORY_REVIEW_ISSUE_BODY" != *"HAI_GIN_CHAPTER1_REVIEW_JSON_START"* ]]; then
+            echo "Unrelated issue; no story changes"
+          else
+            node scripts/publish-story-chapter1-provisional.mjs --return-issue
+          fi
+      - name: Provisional-only register actual generated chapter1 images
+        if: github.event_name != 'issues'
+        run: |
+          node scripts/publish-story-chapter1-provisional.mjs --plan
+          node scripts/publish-story-chapter1-provisional.mjs --apply
+      - name: Preserve original branch and all first chapter game regressions
+        run: |
+          node qa/story-chapter1-chatgpt-image-handoff.test.mjs
+          node qa/story-panel-one-at-a-time.test.mjs
+          node qa/stage-manga-continuity.test.mjs
+      - name: Commit reversible real live candidates, never declare human QA
+        id: save
+        shell: bash
+        run: |
+          set -euo pipefail
+          git add -A -- src/story-chapter1-provisional-live.js assets/story/chapter1-provisional-revisions.json
+          if [ -d assets/story/chapter1-provisional-live ]; then
+            git add -A -- assets/story/chapter1-provisional-live
+          fi
+          if git diff --cached --quiet; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "No new source-verified frame or revocation"
+          else
+            git commit -m 'art(provisional): reversible live first chapter image bindings (not P0 approved)'
+            git fetch origin main
+            git rebase origin/main
+            git push origin HEAD:main
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Explicitly deploy new main game content (Actions push does not trigger deploy)
+        if: steps.save.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run publish-pages.yml --ref main
