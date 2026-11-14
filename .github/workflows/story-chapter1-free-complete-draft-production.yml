@@ -1,14 +1,13 @@
 name: Chapter 1 all 462 shots - resumed Free-only real draft images
 
 # Finite first-chapter production queue; outputs are review drafts only.
-# No paid endpoints, no automatic API retries, strict per-run estimate cap.
+# Manual-only generation. No scheduled jobs, no paid endpoints, no automatic API retries.
+# Trigger through workflow_dispatch or the explicit operator trigger file; strict per-run estimate cap.
 on:
   push:
     branches: [main]
     paths:
       - 'ops/start-chapter1-full-free-actual-art-once-20261114.trigger'
-  schedule:
-    - cron: '15 * * * *' # Hourly at minute 15 UTC = minute 15 Asia/Tokyo; Free-only, quota errors stop without retry
   workflow_dispatch:
 
 permissions:
