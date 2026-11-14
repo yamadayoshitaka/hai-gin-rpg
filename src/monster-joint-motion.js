@@ -130,6 +130,41 @@ export function applyMonsterBiologicalMotion(model,{time=0,phase=0,action='idle'
     model.scale.z*=1+compression*.5;
    }
  }
+ if(study.id==='m006'){
+   // Scapulae translate/rotate along the ribcage. Distinct wrist and
+   // distal claw pivots support a stealthy feline footfall and grasp.
+   const strike=(action==='attack'||action==='special')?pulse:0;
+   const stalk=action==='walk',power=locomotion?(run?.17:.085):0;
+   apply(p,'paraspinal','x',locomotion?(run?.065:.022)*Math.sin(phase*2):0);
+   for(const side of [-1,1]){
+     const suffix=side<0?'L':'R',offset=side<0?0:PI;
+     apply(p,'scapula'+suffix,'x',
+       power*Math.sin(phase+offset-.36)+.20*strike);
+     apply(p,'scapula'+suffix,'z',side*power*.20*
+       Math.cos(phase+offset));
+     for(const fore of ['front','rear']){
+       const name=fore+suffix,q=phase+offset+
+         (fore==='rear'?PI*.64:0);
+       const swing=locomotion?Math.max(0,Math.cos(q)):0;
+       const stance=locomotion?Math.max(0,-Math.cos(q)):0;
+       if(stalk)apply(p,'leg'+name,'x',
+         .24*Math.sin(q)+(fore==='front'?-.035:.035));
+       apply(p,'wrist'+name,'x',clamp(
+         -.075+.26*swing-.085*stance+.085*strike,-.25,.38));
+       apply(p,'paw'+name,'x',clamp(
+         -.04+.22*swing-.105*stance-.065*strike,-.28,.32));
+       for(let digit=0;digit<4;digit++){
+         // Strong claw extension only on prey grab, retracted during
+         // quiet approach. A tiny spread makes all toes non-rigid.
+         apply(p,'claw'+name+digit,'x',clamp(
+           .32-.64*strike-.055*swing+
+           (digit-1.5)*.009,-.48,.39));
+       }
+     }
+   }
+   apply(p,'caudalMuscle','y',.07*Math.sin(phase*.53-.42));
+   if(p.head&&stalk)p.head.rotation.x-=.06;
+ }
  if(study.id==='m005'){
    // Canid gait studies: slow walking and obstacle stepping call for
    // carpal/tarsal flexion; forepaw placement and hindlimb push differ.
