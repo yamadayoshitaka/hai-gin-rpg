@@ -1,6 +1,7 @@
 const {chromium}=require('playwright');
 const fs=require('node:fs');
 const path=require('node:path');
+const {launchBattleViaThreeStepWizard}=require('./opening-three-stage.cjs');
 const out='qa-screenshots/ai-steel-finish';
 fs.mkdirSync(out,{recursive:true});
 (async()=>{
@@ -13,35 +14,13 @@ fs.mkdirSync(out,{recursive:true});
   // Waiting for battleReady without pressing 開戦 always times out, even if
   // every shader, model and armor is fully prepared.
   try{
-   await page.waitForFunction(()=>{
-    const launch=document.querySelector('#loadingStart');
-    const error=document.querySelector('#runtimeError');
-    return (launch&&!launch.hidden&&!launch.disabled)||error?.style.display==='block';
-   },null,{timeout:120000,polling:500});
-   const before=await page.evaluate(()=>({
-    error:document.querySelector('#runtimeError')?.textContent,
-    shown:document.querySelector('#runtimeError')?.style.display==='block',
-    stage:document.querySelector('#loadingStage')?.textContent
-   }));
-   if(before.shown)throw Error('Battle asset load failed: '+before.error);
-   await page.locator('#loadingStart').click();
-   // Headless CI cannot promise audio permission. When BGM unlock is denied,
-   // choose the application's real mute-and-start action; do not spoof ready.
-   await page.waitForFunction(()=>{
-    const started=window.getBattleStartupStats?.();
-    const skip=document.querySelector('#loadingSkipAudio');
-    const error=document.querySelector('#runtimeError');
-    return started?.ready||error?.style.display==='block'||(skip&&!skip.hidden);
-   },null,{timeout:20000,polling:250});
-   if(!(await page.evaluate(()=>window.getBattleStartupStats?.()?.ready))){
-    const skip=page.locator('#loadingSkipAudio');
-    if(await skip.isVisible())await skip.click();
-   }
+   // Three-stage UI is intentional. Visit 編成 → 初期号令 → 開戦
+   // through user-visible controls, then use the real audio fallback.
+   await launchBattleViaThreeStepWizard(page,{timeout:120000});
    await page.waitForFunction(()=>{
     const error=document.querySelector('#runtimeError');
     const state=window.__aiSteelBattleQA?.();
-    const started=window.getBattleStartupStats?.();
-    return (started?.ready&&state?.actorId)||state?.error||error?.style.display==='block';
+    return state?.actorId||state?.error||error?.style.display==='block';
    },null,{timeout:60000,polling:500});
   }catch(error){
    const diagnostic=await page.evaluate(()=>({
