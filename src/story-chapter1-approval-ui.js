@@ -3,6 +3,7 @@ import {buildChapter1ImagePrompt,CHATGPT_IMAGES_URL} from './story-chapter1-imag
 import {chapter1ProvisionalLivePanel} from './story-chapter1-provisional-live.js';
 const $=id=>document.getElementById(id);
 const all=chapterOneReviewPages(),pages=new Map(all.map(p=>[p.number,p]));
+const gameVisibleCount=all.flatMap(p=>p.shots).filter(s=>!!s.legacyPath).length;
 const rawRoot='https://raw.githubusercontent.com/'+REVIEW_REPO+'/'+REVIEW_BRANCH+'/';
 const STORE='hai-gin-ch1-review-drafts-v1';
 const PROMPTS_STORE='hai-gin-ch1-chatgpt-image-prompts-v1';
@@ -346,7 +347,7 @@ function update(){
  $('progressBar').style.width=pc+'%';
  document.querySelector('.progress').setAttribute('aria-valuenow',pc);
  $('progressLabel').textContent='このページ '+ready.length+'/'+current.shots.length+'コマを判定';
- $('draftCount').textContent='第'+current.number+'ページ・'+(activeShotIndex+1)+'/'+current.shots.length+'コマ（実絵は自動反映）';
+ $('draftCount').textContent='本編表示 '+gameVisibleCount+'/462　コマ '+(activeShotIndex+1)+'/'+current.shots.length;
  // Provisional publication is automatic for real verified frames.
  // Only an explicit "return for revision" needs to be sent to GitHub.
  const needsReturn=corrections.some(s=>states.get(s.key)?.available&&
