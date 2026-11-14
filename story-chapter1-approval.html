@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#201d1a">
-<title>灰銀のレゾナンス | 第一章・ChatGPT漫画作画室</title>
+<title>灰銀のレゾナンス | 第一章・漫画確認と修正</title>
 <style>
 :root{--paper:#fff7e6;--ink:#262321;--gold:#be8a3f;--sub:#625f5a;--frame:#282422;--ok:#226d4a;--bad:#963c3f;--held:#765f39;color-scheme:light}
 *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:#272520;color:var(--ink);font-family:"Noto Sans JP",system-ui,sans-serif;line-height:1.65}
@@ -141,14 +141,19 @@ footer #submit{font-size:12px;min-width:132px}
  .panel .speaker{display:none}
  .panel .generator{padding:1px 8px}
 }
+
+#panels>.panel.is-active>.actions{grid-template-columns:1fr}
+#panels>.panel.is-active>.actions button[data-choice="revise"]{width:100%;font-size:13px}
+#panels>.panel.is-active>.actions button[data-choice="revise"]:not(:disabled){color:#8f3332}
+#panels>.panel.is-active>.actions button[data-choice="revise"].selected{color:white}
 </style>
 </head>
 <body>
-<header class="top"><strong>灰銀のレゾナンス ／ 漫画作画・承認室</strong><a href="./story-art-review.html">既存の原画一覧</a></header>
+<header class="top"><strong>灰銀のレゾナンス ／ 第一章・漫画確認／修正</strong><a href="./story-art-review.html">既存の原画一覧</a></header>
 <main class="content">
 <div class="eyebrow">CHAPTER 01 · VISUAL REVIEW</div>
-<h1>第一章・漫画を読んで作画・承認</h1>
-<p class="lead">1画面1コマ・前後ボタンで切替。生成済み画像を仮承認でゲームに表示し、後から差し戻しできます。</p>
+<h1>第一章・漫画を読んで確認・修正</h1>
+<p class="lead">1画面1コマ・前後ボタンで切替。画像は生成・技術検査後に自動でゲームへ反映し、問題があれば差し戻せます。</p>
 <div class="progress" role="progressbar" aria-label="表示したページの確認状況" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="progressBar"></span></div>
 <div class="progress-info"><span id="progressLabel">読み込み中…</span><span id="globalCount">第一章 132ページ</span></div>
 <div class="filters">
@@ -156,14 +161,14 @@ footer #submit{font-size:12px;min-width:132px}
 <label for="gender">主人公<select id="gender"><option value="male">男性</option><option value="female">女性</option></select></label>
 <label for="edition">展開<select id="edition"></select></label>
 </div>
-<div class="page-nav"><button type="button" id="prevPage">◀ 前の5コマ</button><div><div id="pageTitle">第一章</div><div id="pageSub"></div></div><button type="button" id="nextPage">次の5コマ ▶</button></div>
-<div class="how">生成済みの実画像を自動的に仮登録してゲームに反映。問題があれば「差し戻し」を選んでGitHubに送信。元画像へ復帰できます。ChatGPTの新画像は別途取り込みが必要です。</div>
+<div class="page-nav"><button type="button" id="prevPage">◀ 前のコマ</button><div><div id="pageTitle">第一章</div><div id="pageSub"></div></div><button type="button" id="nextPage">次のコマ ▶</button></div>
+<div class="how">承認操作不要。生成済みの実画像を自動検証してゲームに反映します。問題があれば「このコマを差し戻す」で修正理由を記入しGitHubへ送信。元画像へ復帰できます。</div>
 <div id="panels" class="panels" aria-live="polite"></div>
 <p id="info" role="status"></p>
-<label id="confirmLabel"><input type="checkbox" id="visualConfirm">「承認」を選んだコマは、登場人物・台本・勝敗・画像内の不要な文字・画質を自分の目で確認しました。</label>
-<p class="lead">承認判定のGitHub送信は、ChatGPTでの画像生成とは別の処理です。ChatGPTで作った画像は保存してこの画面へ戻してください。生成画像のゲーム自動登録は未接続です。</p>
+
+<p class="lead">承認は不要です。ChatGPTで生成した画像のゲームへの自動取り込みは未接続です。Cloudflareで生成済みの実絵は自動反映します。</p>
 <div class="page-nav"><button type="button" id="prevBottom">◀ 前のページ</button><button type="button" id="nextBottom">次のページ ▶</button></div>
 </main>
-<footer><div class="foot-inner"><div><strong id="draftCount">1コマずつ表示</strong><small>差し戻しのみGitHubで確定。実絵は自動仮反映</small></div><button id="submit" disabled type="button">差し戻しを登録</button></div></footer>
+<footer><div class="foot-inner"><div><strong id="draftCount">1コマずつ表示</strong><small>承認操作なし・差し戻し時のみGitHubへ送信</small></div><button id="submit" disabled type="button">差し戻しを登録</button></div></footer>
 <script type="module" src="./src/story-chapter1-approval-ui.js"></script>
 </body></html>
