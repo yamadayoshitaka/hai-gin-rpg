@@ -13,8 +13,6 @@ on:
     types: [completed]
   issues:
     types: [opened]
-  schedule:
-    - cron: '45 23 * * *'
   workflow_dispatch:
 
 permissions:
