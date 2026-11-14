@@ -111,6 +111,17 @@ for(const [id,costume,needles] of expected){
   assert.equal(hi.nodes.filter(o=>o.name.includes('vampire-recessed-canine-')&&
     o.parent===hi.frames.head).length,2,
     'Both vampire fangs must move with actual head');
+   const mantle=hi.nodes.find(o=>o.name.includes('vampire-blackcoat-back'));
+   const bounds=new THREE.Box3().setFromBufferAttribute(
+    mantle.geometry.getAttribute('position'));
+   assert.ok(bounds.max.y<.16 && bounds.min.y>-.69,
+    'Vampire mantle begins above skull or surrounds legs as a huge loop');
+   assert.ok(bounds.max.x<.36 && bounds.min.x>-.36,
+    'Vampire cape is floating broader than shoulders');
+   assert.equal(hi.nodes.filter(o=>o.name.includes('vampire-high-collar')).length,0,
+    'Duplicate free-standing vampire neck ring floats above fitted neckline');
+   assert.equal(hi.nodes.filter(o=>o.name.includes('vampire-worn-burgundy-lining')).length,1,
+    'One separate recessed lining follows the spine');
  }
  if(id==='m034'||id==='m044'){
   for(const sculpt of [hi,lo]){
