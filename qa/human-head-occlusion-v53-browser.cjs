@@ -50,6 +50,8 @@ const fs=require('node:fs');
         result.neckContinuity.smoothedFacialNormals&&
         result.neckContinuity.anatomicalJawCut&&
         result.neckContinuity.narrowUnderJawConnector&&
+        result.neckContinuity.lowerBustTapered&&
+        result.neckContinuity.lowerBustTaperedVertices>30&&
         result.neckContinuity.normalWeldGroups>50&&
         result.neckContinuity.untouchedFaceTriangles>100&&
         result.neckContinuity.matchedFaceMaterial&&
