@@ -33,7 +33,7 @@ export function createOriginalGuardianWingPair({detail='high'}={}){
  return {left,right};
 }
 export const FEMALE_SUMMON_COSTUMES=Object.freeze([
- 'forest_spirit_female','seraph_female','dragonkin_female'
+ 'forest_spirit_female','seraph_female','dragonkin_female','dragonkin_male'
 ]);
 export const isFemaleSummonCostume=profile=>
  FEMALE_SUMMON_COSTUMES.includes(profile?.costume);
@@ -164,10 +164,11 @@ export function addFemaleSummonCostume({profile,frames,detail='high',attach,tube
  attachGroom=null,skullFit=null,nativeScalp=null}={}){
  if(!isFemaleSummonCostume(profile))return false;
  const hi=detail!=='low';
+ const prefix=profile.sex==='male'?'male-':'female-';
  const add=(parent,g,role,name,p=[0,0,0],r=[0,0,0])=>
-  attach(parent,g,role,'female-'+name,p,r);
+  attach(parent,g,role,prefix+name,p,r);
  const line=(parent,role,name,points,radius=.011)=>
-  tube(parent,role,'female-'+name,points,radius);
+  tube(parent,role,prefix+name,points,radius);
  const orb=(parent,role,name,p,scale)=>{
   const g=new THREE.IcosahedronGeometry(1,hi?1:0);g.scale(...scale);
   return add(parent,g,role,name,p);
@@ -176,7 +177,7 @@ export function addFemaleSummonCostume({profile,frames,detail='high',attach,tube
  for(const side of [-1,1]){
   const i=side<0?0:1;
   const liner=type==='forest_spirit_female'?'makeup':'lip';
-  if(type!=='dragonkin_female'){
+  if(!['dragonkin_female','dragonkin_male'].includes(type)){
    // Dragon Lord has its own close-fitting eye sockets. These common
    // heavy face lines would stack into the black goggle-like band.
    line(frames.head,liner,'canthal-liner-'+side,[
@@ -250,6 +251,47 @@ export function addFemaleSummonCostume({profile,frames,detail='high',attach,tube
     [0,.365,-.018],[-.15,0,0]);
   add(frames.chest,createGothicMantle({detail,width:.34,drop:.92,back:.25}),
    'velvet','seraph-cloth-back');
+ }
+ if(type==='dragonkin_male'){
+  // Male sovereign: a broad plated head silhouette, horns, hinged wings,
+  // sculpted chest armour and a skeletal tail. Unlike the archived female
+  // prototype, NO eyeliner, cosmetics, false eyes or second nose are added.
+  const rx=skullFit?.radius?.[0]??.125;
+  for(const side of [-1,1]){
+   const baseX=Math.max(.112,Math.min(.17,rx*.96));
+   const hornBase=[side*baseX,.17,.012];
+   orb(frames.head,'metal','dragon-king-horn-socket-'+side,
+    hornBase,[.065,.048,.07]);
+   add(frames.head,createGothicHorn({
+    side,len:.38,radius:.073,curve:.32,detail
+   }),'horn','dragon-king-crown-horn-'+side,
+   [side*baseX,.18,.015]);
+   line(frames.head,'dragonScale','dragon-king-temple-armour-'+side,[
+    [side*.115,.10,-.09],[side*.15,.035,-.10],
+    [side*.144,-.064,-.078]],hi?.015:.022);
+   add(frames.chest,createGothicBatWing({
+    side,detail,width:1.24,height:.90
+   }),'membrane','dragon-king-wing-'+side,[0,.09,.08]);
+   line(frames.chest,'horn','dragon-king-wing-spar-'+side,[
+    [side*.15,.22,.20],[side*.50,.48,.38],
+    [side*1.08,.26,.60]],.044);
+   for(let i=0;i<5;i++)
+    orb(frames.chest,i%2?'gold':'metal',
+     'dragon-king-chest-plate-'+side+'-'+i,
+     [side*(.085+i*.031),.26-i*.14,-.215],
+     [.095,.086,.027]);
+  }
+  for(const side of [-1,1])line(frames.chest,'gold',
+   'dragon-king-collar-engraving-'+side,[
+    [side*.17,.31,-.125],[side*.23,.18,-.176],
+    [side*.175,.0,-.183]],.011);
+  line(frames.pelvis,'horn','dragon-king-tail',[
+   [0,.035,.18],[.12,-.14,.30],[.26,-.41,.52],
+   [.13,-.71,.73]],.051);
+  add(frames.pelvis,createGothicHorn({
+   detail,len:.23,radius:.070,curve:.15
+  }),'horn','dragon-king-tail-blade',[.13,-.73,.73],
+  [0,0,Math.PI*.85]);
  }
  if(type==='dragonkin_female'){
   // One continuous SCALP-FITTED armour crown, attached to the actual Head
