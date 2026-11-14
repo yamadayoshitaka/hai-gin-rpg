@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>灰銀のレゾナンス｜キャラクター・顔・髪カタログ v64</title>
+<style>
+:root{color-scheme:dark;font-family:system-ui,-apple-system,"Noto Sans JP",sans-serif;background:#101c2e;color:#ecf4ff}
+*{box-sizing:border-box}body{margin:0}header{padding:15px 14px;background:#19324e;border-bottom:1px solid #5c88ac}
+h1{font-size:22px;margin:0 0 5px}h2{font-size:17px;margin:0 0 9px}.sub{color:#bbd2e7;font-size:13px}
+a{color:#a8dbff}main{max-width:1160px;margin:auto;padding:12px;display:grid;gap:12px}
+nav{display:flex;gap:6px;flex-wrap:wrap}nav button,button,.action{background:#20435d;border:1px solid #729ab9;border-radius:9px;color:#fff;padding:10px 12px;min-height:44px;font:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #e1ce85;outline-offset:2px}
+nav button[aria-selected=true],button[aria-pressed=true]{background:#2b7765;border-color:#b8e2d1}
+.filters{display:flex;gap:8px;flex-wrap:wrap}.filters label{flex:1;min-width:140px;color:#d3e5f7;font-size:13px}
+input,select,textarea{width:100%;background:#213c54;color:#fff;border:1px solid #8eaec7;border-radius:8px;font:inherit;padding:10px;min-height:44px}
+.layout{display:grid;gap:12px;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr)}
+.panel{background:#172b43;border:1px solid #4a7293;border-radius:12px;padding:12px;min-width:0}
+.catalog{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px;max-height:68vh;overflow:auto}
+.entry{background:#1d3954;border:1px solid #426b8f;border-radius:9px;text-align:left;min-height:108px;padding:11px}
+.entry strong{display:block;margin-bottom:5px;font-size:14px}.entry small{font-size:12px;color:#b9cde1;display:block;margin-top:4px}
+.entry[aria-pressed=true]{border-color:#bceac9;background:#265b57}
+.count{color:#b8d1e2;font-size:12px;margin:3px 0 9px}
+#preview{border:1px solid #6387a3;width:100%;height:425px;border-radius:10px;background:#14283b}
+#preview[hidden]{display:none}.previewActions{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+dl{display:grid;grid-template-columns:7em 1fr;gap:5px;font-size:13px}dt{color:#adc9df}dd{margin:0;overflow-wrap:anywhere}
+.note{font-size:12px;color:#b3cadc}#customForm{display:grid;gap:9px}#customForm[hidden]{display:none}
+#customActions{display:flex;gap:6px;flex-wrap:wrap}.danger{border-color:#c08383}
+@media(max-width:760px){.layout{grid-template-columns:1fr}.catalog{max-height:46vh;grid-template-columns:repeat(2,minmax(0,1fr))}#preview{height:380px}}
+</style></head><body>
+<header><h1>キャラクター・顔タイプ管理</h1><div class="sub">灰銀のレゾナンス v64｜既存キャラ・完成顔・髪型・表情を一元管理</div>
+<a href="index.html">ゲームに戻る</a> ｜ <a href="face-mesh-studio.html">3D顔編集スタジオ</a></header>
+<main>
+<nav aria-label="管理カテゴリ" id="tabs">
+<button data-tab="faces" aria-selected="true">顔タイプ</button><button data-tab="hair" aria-selected="false">髪型</button>
+<button data-tab="expressions" aria-selected="false">表情</button><button data-tab="characters" aria-selected="false">キャラクター</button>
+</nav>
+<section class="filters">
+<label>性別<select id="gender"><option value="all">男女すべて</option><option value="female">女性</option><option value="male">男性</option></select></label>
+<label>名前・ID・分類を検索<input id="search" type="search" placeholder="例：美少年、王女、ポニー"></label>
+</section>
+<div class="layout">
+<section class="panel"><h2 id="listHeading">顔タイプ一覧</h2><p id="count" class="count"></p><div id="catalog" class="catalog" role="group" aria-label="カタログ項目"></div></section>
+<aside class="panel"><h2 id="detailHeading">項目を選択</h2><p class="note">選択した顔・髪・表情は実際の3D編集画面で確認できます。サムネイルの代わりに本物の3Dモデルを表示します。</p>
+<div class="previewActions"><button id="viewFront">正面</button><button id="viewSide">横顔</button><button id="viewBack">後頭部</button></div>
+<iframe id="preview" title="選択したモデルの実3Dプレビュー" loading="lazy" hidden></iframe>
+<div id="details"></div><div class="previewActions"><a id="openStudio" class="action" href="face-mesh-studio.html" target="_blank" rel="noopener">3D編集画面で開く</a></div>
+</aside></div>
+<section class="panel"><h2>自分の顔タイプを登録</h2>
+<p class="note">既存の完成顔16種類／性別をベースに名前と分類を登録できます。登録内容はこの端末のブラウザに保存します。GitHubの共有マスタを書き換える機能ではありません。</p>
+<div id="customActions"><button id="newCustom">顔タイプを追加</button><button id="exportJson">登録した顔タイプをJSONで出力</button><button id="importButton">JSONを読み込む</button><input id="importJson" type="file" accept=".json,application/json" hidden></div>
+<form id="customForm" hidden><label>名前<input id="customName" maxlength="50" required placeholder="例：清楚な騎士"></label>
+<label>性別<select id="customGender"><option value="female">女性</option><option value="male">男性</option></select></label>
+<label>元の顔タイプ<select id="customBase"></select></label><label>分類・メモ<input id="customTag" maxlength="80" placeholder="例：美少女・騎士"></label>
+<div class="previewActions"><button type="submit">端末に保存</button><button type="button" id="cancelCustom">キャンセル</button></div></form>
+<p class="note" id="saveStatus" role="status"></p></section>
+</main>
+<script type="module">
+import {FACE_CATALOG_V64,HAIR_CATALOG_V64,EXPRESSION_CATALOG_V64,CHARACTER_CATALOG_V64,
+ catalogStudioUrlV64,catalogValidationV64} from './src/character-face-catalog-v64.js?v=64';
+const $=id=>document.getElementById(id);
+const key='hai-gin-human-v64-custom-face-types';
+const issues=catalogValidationV64();
+if(issues.length)$('saveStatus').textContent='カタログ検査：'+issues.join('、');
+let tab='faces',selected=null,view='front',entries=[],custom=[],previewOn=false;
+try{const stored=JSON.parse(localStorage.getItem(key)||'[]');custom=Array.isArray(stored)?stored.filter(x=>typeof x.name==='string'&&['male','female'].includes(x.gender)&&
+ Number.isInteger(x.baseIndex)&&x.baseIndex>=0&&x.baseIndex<FACE_CATALOG_V64[x.gender].length).slice(0,250):[];}catch{}
+const save=()=>localStorage.setItem(key,JSON.stringify(custom));
+const sexName=x=>x==='female'?'女性':'男性';
+const plain=(tag,cls,content)=>{const e=document.createElement(tag);if(cls)e.className=cls;e.textContent=String(content??'');return e;};
+function allEntries(){
+ if(tab==='faces')return [...FACE_CATALOG_V64.female,...FACE_CATALOG_V64.male,
+  ...custom.map(x=>({id:x.id,gender:x.gender,name:x.name,tag:x.tag,facePresetIndex:x.baseIndex,
+   canonical:false,characters:[],parts:FACE_CATALOG_V64[x.gender][x.baseIndex].parts}))];
+ if(tab==='hair')return [...HAIR_CATALOG_V64.female,...HAIR_CATALOG_V64.male].map(x=>({...x,name:x.label,tag:x.cut}));
+ if(tab==='expressions')return EXPRESSION_CATALOG_V64.map(x=>({...x,name:x.label,tag:'感情表現',gender:'all'}));
+ return CHARACTER_CATALOG_V64.map(x=>({...x,name:x.name,tag:x.status}));
+}
+function buildUrl(row){
+ if(!row)return 'face-mesh-studio.html';
+ const gender=row.gender==='male'?'male':'female';
+ return catalogStudioUrlV64({gender,view,faceIndex:tab==='faces'?row.facePresetIndex:null,
+  hairStyleId:tab==='hair'?row.id:tab==='characters'?row.hairStyleId:'',
+  expression:tab==='expressions'?row.id:'neutral',characterId:tab==='characters'?row.id:''});
+}
+function setSelected(row){
+ selected=row;previewOn=!!row;renderDetails();
+}
+function renderDetails(){
+ $('detailHeading').textContent=selected?.name||'項目を選択';
+ const d=$('details');d.replaceChildren();
+ if(!selected){$('preview').hidden=true;return;}
+ const dl=document.createElement('dl');
+ const fields=[['ID',selected.id],['性別',selected.gender==='all'?'共通':sexName(selected.gender)],
+  ['分類',selected.tag||'—']];
+ if(tab==='faces'){
+  for(const [k,v] of Object.entries(selected.parts||{}))fields.push([({face:'輪郭',eye:'目',nose:'鼻',mouth:'口',makeup:'化粧'})[k]||k,v]);
+  fields.push(['使用中の人物',(selected.characters||[]).join('・')||'未割当']);
+ }else if(tab==='hair'){
+  fields.push(['カタログの3D輪郭',selected.silhouetteDefined?'定義済み':'未定義'],
+   ['使用中の人物',(selected.uses||[]).join('・')||'未割当']);
+ }else if(tab==='characters'){
+  fields.push(['顔タイプ',selected.faceTypeId],['髪型',selected.hairStyleId],
+   ['年齢',selected.ageBand],['体型',selected.bodyType],['衣装',selected.wardrobe],
+   ['参照画像',selected.artReference||'未登録']);
+ }else fields.push(...Object.entries(selected.features||{}).map(([k,v])=>[k,v]));
+ for(const [k,v] of fields){dl.append(plain('dt','',k),plain('dd','',v));}d.append(dl);
+ if(tab==='faces'&&!selected.canonical){
+  const b=plain('button','danger','この端末の登録を削除');
+  b.onclick=()=>{custom=custom.filter(x=>x.id!==selected.id);save();selected=null;render();};d.append(b);
+ }
+ const url=buildUrl(selected);$('openStudio').href=url;
+ const frame=$('preview');frame.hidden=false;
+ const target=new URL(url,location.href).href;
+ if(frame.src!==target)frame.src=target;
+}
+function render(){
+ const q=$('search').value.trim().toLowerCase(),sex=$('gender').value;
+ entries=allEntries().filter(x=>(sex==='all'||x.gender===sex||x.gender==='all')&&
+  [x.id,x.name,x.tag,x.hairStyleId,x.faceTypeId].filter(Boolean).join(' ').toLowerCase().includes(q));
+ const headings={faces:'完成顔タイプ',hair:'髪型カタログ',expressions:'表情カタログ',characters:'登場人物'};
+ $('listHeading').textContent=headings[tab];$('count').textContent=entries.length+'件';
+ const root=$('catalog');root.replaceChildren();
+ for(const row of entries){
+  const b=plain('button','entry','');b.type='button';b.setAttribute('aria-pressed',String(selected?.id===row.id));
+  b.append(plain('strong','',row.name),plain('small','',row.id),
+   plain('small','',row.gender==='all'?'共通':sexName(row.gender)+' · '+(row.tag||'')));
+  b.onclick=()=>{setSelected(row);render()};root.append(b);
+ }
+ if(selected&&entries.some(x=>x.id===selected.id))selected=entries.find(x=>x.id===selected.id);
+ else selected=entries[0]||null;
+ renderDetails();
+}
+for(const b of document.querySelectorAll('[data-tab]'))b.onclick=()=>{
+ tab=b.dataset.tab;selected=null;
+ for(const x of document.querySelectorAll('[data-tab]'))x.setAttribute('aria-selected',String(x===b));
+ render();
+};
+$('gender').onchange=render;$('search').oninput=render;
+for(const [id,target] of [['viewFront','front'],['viewSide','side'],['viewBack','back']])
+ $(id).onclick=()=>{view=target;renderDetails();};
+function updateBase(){
+ const sex=$('customGender').value,sel=$('customBase');sel.replaceChildren();
+ for(const item of FACE_CATALOG_V64[sex]){
+  const o=document.createElement('option');o.value=String(item.index);o.textContent=item.name;sel.append(o);
+ }
+}
+$('customGender').onchange=updateBase;
+$('newCustom').onclick=()=>{$('customForm').hidden=false;updateBase()};
+$('cancelCustom').onclick=()=>{$('customForm').hidden=true};
+$('customForm').onsubmit=e=>{
+ e.preventDefault();const gender=$('customGender').value,baseIndex=Number($('customBase').value);
+ if(!Number.isInteger(baseIndex)||!FACE_CATALOG_V64[gender][baseIndex])return;
+ const id='custom-'+Date.now().toString(36)+'-'+Math.floor(Math.random()*10000).toString(36);
+ custom.push({id,name:$('customName').value.trim(),gender,baseIndex,tag:$('customTag').value.trim()});
+ custom=custom.slice(-250);save();$('customForm').hidden=true;
+ $('saveStatus').textContent='この端末に保存しました。JSONで共有できます。';
+ tab='faces';for(const b of document.querySelectorAll('[data-tab]'))b.setAttribute('aria-selected',String(b.dataset.tab==='faces'));
+ selected=null;render();
+};
+$('exportJson').onclick=()=>{
+ const b=new Blob([JSON.stringify({schema:'hai-gin-v64-custom-faces',version:1,faces:custom},null,2)],{type:'application/json'});
+ const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='hai-gin-face-catalog-v64.json';a.click();
+ setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+};
+$('importButton').onclick=()=>$('importJson').click();
+$('importJson').onchange=async()=>{
+ try{const data=JSON.parse(await $('importJson').files[0].text());
+  if(data?.schema!=='hai-gin-v64-custom-faces'||!Array.isArray(data.faces))throw Error('形式が違います');
+  const safe=data.faces.filter(x=>typeof x.name==='string'&&x.name.length<51&&
+   ['male','female'].includes(x.gender)&&Number.isInteger(x.baseIndex)&&x.baseIndex>=0&&x.baseIndex<16)
+   .slice(0,250).map(x=>({id:String(x.id).slice(0,80),name:x.name,gender:x.gender,
+    baseIndex:x.baseIndex,tag:String(x.tag||'').slice(0,80)}));
+  custom=[...new Map([...custom,...safe].map(x=>[x.id,x])).values()].slice(-250);save();render();
+  $('saveStatus').textContent=safe.length+'件を読み込みました。';
+ }catch(e){$('saveStatus').textContent='読み込み失敗：'+e.message;}
+};
+render();
+</script></body></html>
