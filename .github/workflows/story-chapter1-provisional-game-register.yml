@@ -6,6 +6,7 @@ on:
       - '.github/workflows/story-chapter1-provisional-game-register.yml'
       - 'scripts/publish-story-chapter1-provisional.mjs'
       - 'qa/story-panel-one-at-a-time.test.mjs'
+      - 'qa/story-chapter1-chatgpt-image-handoff.test.mjs'
   workflow_run:
     workflows:
       - 'Chapter 1 all 462 shots - resumed Free-only real draft images'
