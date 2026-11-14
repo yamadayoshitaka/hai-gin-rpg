@@ -45,9 +45,9 @@ for(const kind of ['wig','scales']){
  assert.ok(cut.sourcePreserved);
  assert.notStrictEqual(d.skinned.geometry,initial);
  assert.strictEqual(d.skinned.material,oldMaterial);
- assert.strictEqual(d.skinned.geometry.getAttribute('position'),
-  initial.getAttribute('position')===d.skinned.geometry.getAttribute('position')
-   ?initial.getAttribute('position'):d.skinned.geometry.getAttribute('position'));
+ assert.equal(d.skinned.geometry.getAttribute('position').count,
+  initial.getAttribute('position').count,
+  'Keep the source skinned vertex and morph attribute layout');
  assert.equal(d.skinned.geometry.getAttribute('uv').count,oldUV.count);
  assert.equal(d.skinned.geometry.getAttribute('skinWeight').count,
   initial.getAttribute('skinWeight').count);
