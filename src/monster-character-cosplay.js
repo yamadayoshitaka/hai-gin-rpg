@@ -24,7 +24,9 @@ import {addConstructMonsterCostume,isConstructCostume}
 import {addDemonicFaceCosmetics,hasDemonCosmetics}
  from './monster-demon-cosmetics.js?v=4.5.05';
 import {addFemaleSummonCostume,isFemaleSummonCostume}
- from './female-summon-costumes.js?v=4.5.13';
+ from './female-summon-costumes.js?v=4.5.14';
+import {createDragonkinNativeScalpOverlay}
+ from './dragonkin-native-scalp.js?v=4.5.14';
 import {attachCanonicalCharacterGroom,createCanonicalHeadLocalGroomAnchor,
  measureCanonicalScalp}
  from './monster-humanoid-hair.js?v=4.5.13';
@@ -95,7 +97,7 @@ function buildMonsterCostume(THREE,model,profile,detail){
  // Use measured real shoulder pivots rather than one arbitrary gown
  // diameter for a slim female, heavy guard and broad male actor.
  const outfitFit=measureRegalShoulderFit(joints.arms[0],joints.arms[1]);
- const ownedGeo=[],ownedMats=[];
+ const ownedGeo=[],ownedMats=[],ownedTextures=[];
  const palette={skin:profile.skin,cloth:profile.cloth,metal:profile.metal,
   accent:profile.accent,bone:0xd6cdb4,bandage:0xb6a993,
   ivory:0xc3b9ab,linen:0xb5a58e,
@@ -143,6 +145,17 @@ function buildMonsterCostume(THREE,model,profile,detail){
       role==='rune'?.14:0,
     side:THREE.DoubleSide,
    });
+   // Use the original Guardian's own bundled linen photograph on the
+   // borrowed feather geometry, with its existing vertex-colour gradients.
+   if(role==='seraphWing'&&typeof document!=='undefined'){
+    const wingMap=new THREE.TextureLoader().load(
+     new URL('../assets/textures/outfits/linen.jpg',import.meta.url).href);
+    wingMap.colorSpace=THREE.SRGBColorSpace;
+    wingMap.wrapS=wingMap.wrapT=THREE.RepeatWrapping;
+    wingMap.repeat.set(1.8,1.8);
+    wingMap.anisotropy=4;
+    m.map=wingMap;m.needsUpdate=true;ownedTextures.push(wingMap);
+   }
    // Reuse the exact bundled photographic texture cache that already serves
    // the nonhumanoid bestiary. No new API, CDN request or per-monster textures.
    const surfaceRole={
@@ -246,9 +259,12 @@ function buildMonsterCostume(THREE,model,profile,detail){
  });
  const dragonSkull=profile.costume==='dragonkin_female'?
   measureCanonicalScalp(model,joints.head,{groomFrame:frames.headGroom}):null;
+ const nativeDragonCrown=dragonSkull?createDragonkinNativeScalpOverlay({
+   model,headBone:joints.head,groomFrame:frames.headGroom,scalp:dragonSkull,detail
+  }):null;
  if(femaleSummon)addFemaleSummonCostume({
    THREE,profile,detail,frames,attach,tube,
-   skullFit:dragonSkull,
+   skullFit:dragonSkull,nativeScalp:nativeDragonCrown,
    attachGroom:(frame,g,role,name,p,r)=>
     attach(frame,g,role,name,p,r,{groom:true})
  });
@@ -370,11 +386,13 @@ function buildMonsterCostume(THREE,model,profile,detail){
   skinColor:profile.skin,skinMaterialIsolation:true,
   demonCosmeticsEdition:demonic?'horns-makeup-runes-v1':null,
   femaleSummonCostumeEdition:femaleSummon?
-   (profile.costume==='dragonkin_female'?'dragonkin-fitted-face-v2':
+   (profile.costume==='dragonkin_female'?'dragonkin-native-head-topology-v3':
     profile.costume==='seraph_female'?'seraph-original-wing-flight-v2':
     'female-summon-v1'):null,
   dragonCraniumFitted:dragonSkull?!!dragonSkull.fitted:null,
   dragonCraniumSamples:dragonSkull?.samples??0,
+  dragonCraniumNativeTopology:!!nativeDragonCrown,
+  dragonNativeScalpTriangles:nativeDragonCrown?.userData.sourceTriangles??0,
   crownCovered:!!groom?.crown,hairStrands:!!groom?.locks,
   headBoneLocalGroom:!!groom?.crown&&groom.crown.parent===frames.headGroom,
   hairSurfaceSamples:groom?.scalp.samples??0,
@@ -393,6 +411,7 @@ function buildMonsterCostume(THREE,model,profile,detail){
    ...frames.arms,...frames.forearms,...frames.legs,...frames.calves])
    frame.parent?.remove(frame);
   for(const geo of ownedGeo)geo.dispose();
+  for(const texture of ownedTextures)texture.dispose();
   for(const material of ownedMats){
    detachMonsterPhotoMaterial(material);
    material.dispose();
@@ -510,6 +529,7 @@ export function createCosplayedHumanoidMonster(spec,{
    if(!visual?.userData?.sourceModelId)throw Error('Canonical visual missing');
    if(disposed)return {source:'cancelled'};
    disposeCostume=buildMonsterCostume(THREE,visual,profile,detail);
+   state.metadata=visual.userData.monsterCostume;
    seraphWingPivots=[];
    if(profile.costume==='seraph_female')visual.traverse(node=>{
     if(node.userData?.seraphFlightWingSide===-1||

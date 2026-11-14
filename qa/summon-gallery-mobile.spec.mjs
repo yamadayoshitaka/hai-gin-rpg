@@ -90,6 +90,21 @@ test('female seraph: original wing pair and animated airborne preview',async({pa
  expect(errors).toEqual([]);
 });
 
+test('female Dragon Lord: native skinned scalp instead of an oversized purple cap',async({page})=>{
+ const errors=[];page.on('pageerror',e=>errors.push(String(e)));
+ await page.goto('/summon-showcase.html?v=4.5.14',
+  {waitUntil:'domcontentloaded',timeout:65000});
+ await page.locator('#type').selectOption('dragon_lord');
+ await expect.poll(()=>page.evaluate(()=>
+  window.__summonGalleryLayoutQA?.()?.femaleReady),{timeout:110000}).toBe(true);
+ const state=await page.evaluate(()=>window.__summonGalleryLayoutQA());
+ expect(state.dragonCraniumNativeTopology).toBe(true);
+ expect(state.dragonNativeScalpTriangles).toBeGreaterThan(20);
+ await page.screenshot({path:'test-results/dragonlord-native-scalp-v4.5.14.png',
+  animations:'disabled',timeout:15000});
+ expect(errors).toEqual([]);
+});
+
 test('mobile bestiary: catalog and setting drawers remain operable after responsive redesign',async({page})=>{
  const errors=[];page.on('pageerror',e=>errors.push(String(e)));
  await page.goto('/monster-manager.html?v=4.5.06',

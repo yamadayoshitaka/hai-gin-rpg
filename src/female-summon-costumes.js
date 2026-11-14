@@ -161,7 +161,7 @@ export function createDragonkinAlmondEyeGeometry({side=1,detail='high'}={}){
  return g;
 }
 export function addFemaleSummonCostume({profile,frames,detail='high',attach,tube,
- attachGroom=null,skullFit=null}={}){
+ attachGroom=null,skullFit=null,nativeScalp=null}={}){
  if(!isFemaleSummonCostume(profile))return false;
  const hi=detail!=='low';
  const add=(parent,g,role,name,p=[0,0,0],r=[0,0,0])=>
@@ -247,7 +247,10 @@ export function addFemaleSummonCostume({profile,frames,detail='high',attach,tube
   // via its model-upright groom anchor. A fixed cap previously left a large
   // bald orange disc visible over the forehead in the mobile gallery.
   const crownFrame=frames.headGroom??frames.head;
-  const crownGeometry=createDragonkinCranialShellGeometry({
+  // Prefer original skinned female scalp triangles. A synthetic sphere cap
+  // proved to be an oversized purple onion in the real user screenshot.
+  // Keep the existing fallback only for missing/unsupported donor skins.
+  const crownGeometry=nativeScalp??createDragonkinCranialShellGeometry({
    detail,...(skullFit?{center:skullFit.center,radius:skullFit.radius}:{})
   });
   if(attachGroom&&frames.headGroom){
