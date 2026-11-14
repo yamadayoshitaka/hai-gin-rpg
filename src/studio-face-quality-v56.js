@@ -8,7 +8,24 @@ import * as THREE from 'three';
  *
  * No source GLB geometry or battle actors are mutated.
  */
-export function clipStudioFaceBustPreservingSurface(mesh,worldCutY){
+/**
+ * An upward-curved neckline at each side, and a shallower nape at the back.
+ * The center under the jaw stays low; unlike a planar cut, this doesn't
+ * leave a straight horizontal edge across the base of a sculpted face.
+ * Units are world meters and the variation stays below ~1 cm.
+ */
+export function studioAnatomicalSeamY(worldCutY,worldX,worldZ,{
+ centerX=0,centerZ=0,halfWidth=.1,halfDepth=.08,
+ sideRise=.008,backRise=.003
+}={}){
+ const across=THREE.MathUtils.clamp(
+  Math.abs(worldX-centerX)/Math.max(.001,halfWidth),0,1);
+ const behind=THREE.MathUtils.clamp(
+  (centerZ-worldZ)/Math.max(.001,halfDepth),0,1);
+ return worldCutY+sideRise*across*across+backRise*behind*behind;
+}
+
+export function clipStudioFaceBustPreservingSurface(mesh,worldCutY,{anatomicalCurve=false}={}){
  if(!mesh?.isMesh||!mesh.geometry?.getAttribute('position')||
   !Number.isFinite(worldCutY))throw Error('Valid face mesh and cut height required');
  mesh.updateWorldMatrix(true,false);
@@ -25,17 +42,32 @@ export function clipStudioFaceBustPreservingSurface(mesh,worldCutY){
   attributes[name]=a;
  }
  const originalVertexCount=pos.count;
- const worldY=new Float64Array(pos.count),tmp=new THREE.Vector3();
- for(let i=0;i<pos.count;i++)worldY[i]=
-  tmp.fromBufferAttribute(pos,i).applyMatrix4(mesh.matrixWorld).y;
- const inside=id=>worldY[id]>=worldCutY-1e-8;
+ if(!original.boundingBox)original.computeBoundingBox();
+ const worldBounds=original.boundingBox.clone().applyMatrix4(mesh.matrixWorld);
+ const worldCenter=worldBounds.getCenter(new THREE.Vector3());
+ const worldSize=worldBounds.getSize(new THREE.Vector3());
+ const seamProfile={
+  centerX:worldCenter.x,centerZ:worldCenter.z,
+  halfWidth:worldSize.x*.48,halfDepth:worldSize.z*.5,
+  sideRise:.008,backRise:.003
+ };
+ const signedY=new Float64Array(pos.count),worldY=new Float64Array(pos.count);
+ const tmp=new THREE.Vector3();
+ for(let i=0;i<pos.count;i++){
+  tmp.fromBufferAttribute(pos,i).applyMatrix4(mesh.matrixWorld);
+  worldY[i]=tmp.y;
+  signedY[i]=tmp.y-(anatomicalCurve?
+   studioAnatomicalSeamY(worldCutY,tmp.x,tmp.z,seamProfile):worldCutY);
+ }
+ const inside=id=>signedY[id]>=-1e-8;
  const edges=new Map();
  let newCutVertices=0,removedTriangles=0,keptTriangles=0,untouchedTriangles=0;
  const edge=(a,b)=>{
   const k=Math.min(a,b)+':'+Math.max(a,b);
   const old=edges.get(k);
   if(old!==undefined)return old;
-  const t=THREE.MathUtils.clamp((worldCutY-worldY[a])/(worldY[b]-worldY[a]),0,1);
+  const t=THREE.MathUtils.clamp(
+   -signedY[a]/(signedY[b]-signedY[a]),0,1);
   const id=originalVertexCount+newCutVertices++;
   for(const name of names){
    const attr=attributes[name],size=itemSizes[name],values=[];
@@ -94,6 +126,8 @@ export function clipStudioFaceBustPreservingSurface(mesh,worldCutY){
  return {geometry,removedTriangles,keptTriangles,
   untouchedTriangles,newCutVertices,originalVertexCount,
   sourceVertexPositionsPreserved:true,sourceNormalsPreserved:!!attributes.normal,
+  anatomicalCurve,anatomicalSeamProfile:anatomicalCurve?seamProfile:null,
+  cutPlaneType:anatomicalCurve?'jaw-and-nape-curve':'horizontal',
   onlyStudioPreview:true};
 }
 
