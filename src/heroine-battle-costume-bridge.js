@@ -246,6 +246,13 @@ const STUDIO_NEW_NECK_NAME='STUDIO_CONTOUR_SKIN_NECK_V58';
  * All positions are computed in world space then transformed into headRoot
  * coordinates so the material/neck follow the 65-bone head animation.
  */
+/** Select anatomy from the actual naked donor OR Ranger/Peasant mesh. */
+export function studioNapeRiseForBodies(bodies=[]){
+ return bodies.some(body=>
+  /^(?:male_(?:ranger|peasant)_body|superhero_male)$/i.test(body?.name||''))?
+  .018:.012;
+}
+
 export function fitStudioNeckContinuity({faceRoot,faceMesh,wardrobeRoot,garmentRoot=null}={}){
  if(!faceRoot?.isObject3D||!faceMesh?.isMesh||
     !faceMesh.geometry?.getAttribute('position')||
@@ -310,9 +317,7 @@ export function fitStudioNeckContinuity({faceRoot,faceMesh,wardrobeRoot,garmentR
   // preview geometry; preserve jaw/lips/eyes and the original source GLB.
   // A skin-first donor is named SuperHero_Male/SuperHero_Female rather
   // than Male_Ranger_Body. Detect both before choosing the rear neckline.
-  const maleSkin=bodies.some(body=>
-   /^(?:male_(?:ranger|peasant)_body|superhero_male)$/i.test(body.name));
-  const napeRise=maleSkin?.018:.012;
+  const napeRise=studioNapeRiseForBodies(bodies);
   cut=clipStudioFaceBustPreservingSurface(faceMesh,safeCutY,{
    anatomicalCurve:true,backRise:napeRise});
   if(cut.keptTriangles<100||cut.removedTriangles<3){
