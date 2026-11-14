@@ -9,7 +9,7 @@ const RAW='https://raw.githubusercontent.com/yamadayoshitaka/hai-gin-rpg/';
 const LIVE=RAW+'main/';
 const CANDIDATES=RAW+'story/chapter1-free-actual-art/';
 export function buildChapter1ImagePrompt({shot,page,edit='',bible=null,assignment=null,
- manualManifest=null,qualityRules=null,sourceKind='missing'}){
+ manualManifest=null,stageManifest=null,qualityRules=null,sourceKind='missing'}){
  if(!shot?.key||!page?.stageId)throw Error('Canonical panel metadata is required');
  // A manifest is INPUT to the generator, not merely a repository note.
  // Reject mismatched stage/edition/gender/shot rather than silently ignoring it.
@@ -17,6 +17,13 @@ export function buildChapter1ImagePrompt({shot,page,edit='',bible=null,assignmen
     qualityRules.imageRule?.textAllowed!==false||
     qualityRules.referenceRule?.actualBytesMustBeAttached!==true)
    throw Error('P0 image-generation quality manifest must be loaded before prompt handoff');
+ if(stageManifest&&stageManifest.stageId!==shot.stageId)
+   throw Error('Wrong stage manifest for '+shot.key);
+ const variant=stageManifest?.variants?.find(v=>v.edition===shot.edition&&v.gender===shot.gender);
+ if(stageManifest?.variants?.length&&!variant)throw Error('Stage manifest has no edition/gender: '+shot.key);
+ const declaredIds=variant?.scriptPanelIds||variant?.panelIds;
+ if(declaredIds&&!declaredIds.includes(shot.shotId))
+   throw Error('Shot ID not present in stage manifest: '+shot.key);
  if(manualManifest&&(manualManifest.stageId!==shot.stageId||
     manualManifest.edition!==shot.edition||manualManifest.gender!==shot.gender))
    throw Error('Mismatched manual production manifest');
@@ -58,6 +65,13 @@ export function buildChapter1ImagePrompt({shot,page,edit='',bible=null,assignmen
   ...missing.map(id=>'・'+id+'：この人物のマスター画像は未特定。別人へ置換しない。'),
   '',
   '【GitHubマニフェストを生成器へ必須投入／省略不可】',
+  stageManifest?'ステージ正本：assets/story/stage-manifests/'+stageManifest.stageId+'.manifest.json':'ステージ正本未連携（参照設定を要確認）',
+  stageManifest?'ステージ名称：'+(stageManifest.stageName||stageManifest.canonicalStageName||page.stageName):'',
+  stageManifest?.stageSetup?'ステージ開始状況：'+stageManifest.stageSetup:'',
+  stageManifest?.canonicalWinCondition?'勝利条件：'+stageManifest.canonicalWinCondition:'',
+  stageManifest?.renderConstraints?.identityLock?'人物同一性：'+stageManifest.renderConstraints.identityLock:'',
+  variant?'ステージマニフェストの対象版：'+variant.edition+' / '+variant.gender+' / '+shot.shotId:'',
+  '重要：ステージのコマ割り指定はレビュー用の配置。画像生成器へ渡すのは現在の1コマの台本・構図・登場人物指定だけ。',
   '共通P0：'+qualityRules.policyId+'。定義済み禁止事項と人物参照の全項目を今回の画像に適用する。',
   'P0禁止要素：'+qualityRules.imageRule.prohibited.join('、'),
   manualManifest?'使用する制作マニフェスト：assets/story/stage-manifests/c01-s01-post-town-male-p01-manual-production.json':'制作マニフェスト：共通P0・当該ステージのキャスト／台本ルールを適用',
