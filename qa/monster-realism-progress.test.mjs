@@ -48,4 +48,11 @@ assert.equal(fifth.researchNote,'docs/monster-research/m005-woodland-wolf-footfa
 assert.equal(fifth.closeupVisualVerified,false);
 assert.equal(fifth.mobileFpsVerified,false);
 assert.equal(fifth.fullyPhotorealistic,false);
+const sixth=state.specimens.find(m=>m.id==='m006');
+assert.equal(sixth.status,'under-pr-review');
+assert.equal(sixth.latestIndividualPr,346);
+assert.equal(sixth.researchNote,'docs/monster-research/m006-panther-retractile-claws-20261114.md');
+assert.equal(sixth.closeupVisualVerified,false);
+assert.equal(sixth.mobileFpsVerified,false);
+assert.equal(sixth.fullyPhotorealistic,false);
 console.log('Species-by-species research queue: 50 entries, 34 eligible, 16 frozen, no fake photorealism');
