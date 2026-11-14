@@ -6,23 +6,24 @@ test('mobile summon gallery: compact model-first view, functional drawers and ca
   await page.goto('/summon-showcase.html?v=4.4.91',
     {waitUntil:'domcontentloaded',timeout:65000});
 
-  // The species picker remains usable when actions are hidden.
+  // The species picker and motion strip stay accessible without opening settings.
   const choose=page.locator('#type');
   const drawer=page.locator('#controlsDrawer');
   const info=page.locator('#info');
   await expect(choose).toBeVisible();
   await expect(drawer).not.toHaveAttribute('open',/./);
   await expect(info).not.toHaveAttribute('open',/./);
-  await expect(page.locator('#attack')).toBeHidden();
+  await expect(page.locator('#summonMotionStrip button')).toHaveCount(10);
+  await expect(page.locator('#attack')).toBeVisible();
 
   // Compact header should not consume most of the phone's viewport.
   const size=await page.locator('#galleryHeader').boundingBox();
   expect(size?.height).toBeLessThan(90);
   await drawer.locator('summary').first().click();
   await expect(drawer).toHaveAttribute('open','');
-  await expect(page.locator('#attack')).toBeVisible();
+  await expect(page.locator('#wireframe')).toBeVisible();
   await drawer.locator('summary').first().click();
-  await expect(page.locator('#attack')).toBeHidden();
+  await expect(page.locator('#attack')).toBeVisible();
 
   await info.locator('summary').click();
   await expect(info).toHaveAttribute('open','');
@@ -36,6 +37,12 @@ test('mobile summon gallery: compact model-first view, functional drawers and ca
   await expect(drawer).not.toHaveAttribute('open',/./);
   await choose.selectOption('forest_archer');
   await expect(page.locator('#species')).toContainText('精霊弓士');
+  await page.locator('#summonMotionStrip [data-pose="special"]').click();
+  const duringSpell=await page.evaluate(()=>window.__summonGalleryLayoutQA());
+  expect(duringSpell.motionStripVisible).toBe(true);
+  expect(duringSpell.activeMotion).toBe('special');
+  await page.locator('#summonMotionStrip [data-pose="idle"]').click();
+  expect((await page.evaluate(()=>window.__summonGalleryLayoutQA())).activeMotion).toBe('idle');
 
   // The portrait view starts roughly twice as close as the previous design.
   await expect.poll(()=>page.evaluate(()=>window.__summonGalleryLayoutQA?.()),
@@ -94,21 +101,19 @@ test('female seraph: original wing pair and animated airborne preview',async({pa
  expect(errors).toEqual([]);
 });
 
-test('female Dragon Lord: approved plum hair instead of an oversized purple cap',async({page})=>{
+test('dragon lord defaults to original dragon, not a forced female character',async({page})=>{
  const errors=[];page.on('pageerror',e=>errors.push(String(e)));
- await page.goto('/summon-showcase.html?v=4.5.14',
+ await page.goto('/summon-showcase.html?v=4.5.18',
   {waitUntil:'domcontentloaded',timeout:65000});
  await page.locator('#type').selectOption('dragon_lord');
- await expect.poll(()=>page.evaluate(()=>
-  window.__summonGalleryLayoutQA?.()?.femaleReady),{timeout:110000}).toBe(true);
  const state=await page.evaluate(()=>window.__summonGalleryLayoutQA());
- expect(state.dragonCraniumNativeTopology).toBe(false);
- expect(state.dragonNativeScalpTriangles).toBe(0);
- expect(state.hairStrands).toBe(true);
- expect(state.sourceCraniumWigCut).toBe(true);
- expect(state.sourceCraniumCutMode).toBe('wig');
- expect(state.sourceCraniumRemovedTriangles).toBeGreaterThan(8);
- await page.screenshot({path:'test-results/dragonlord-approved-plum-hair-v4.5.17.png',
+ expect(state.selected).toBe('dragon_lord');
+ expect(state.femaleMode).toBe('original');
+ expect(state.femaleReady).toBe(false);
+ expect(state.motionStripVisible).toBe(true);
+ await expect(page.locator('#femaleSummonModeLabel')).toBeHidden();
+ await expect(page.locator('#attack')).toBeVisible();
+ await page.screenshot({path:'test-results/dragonlord-original-male-independent-v4.5.18.png',
   animations:'disabled',timeout:15000});
  expect(errors).toEqual([]);
 });
