@@ -29,6 +29,8 @@ import {attachCanonicalCharacterGroom}
  from './monster-humanoid-hair.js?v=4.5.05';
 import {alignCostumeToCanonicalFacing}
  from './monster-anatomical-frame.js?v=4.5.05';
+import {addRegalHumanoidOutfit,wardrobeFor}
+ from './monster-regal-garments.js?v=4.5.06';
 
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const boneName=s=>String(s??'').toLowerCase().replace(/[^a-z0-9]/g,'');
@@ -105,27 +107,34 @@ function buildMonsterCostume(THREE,model,profile,detail){
   hair:profile.hairColor??(profile.id==='seraph_guardian'?0xd7bd7c:
    profile.id==='forest_archer'?0xb4a77a:
    profile.id==='dragon_lord'?0x583a49:
-   profile.sex==='female'?0x453243:0x302929)
+   profile.sex==='female'?0x453243:0x302929),
+  ivoryCloth:profile.costume==='seraph_female'?0xe8dfd2:0xd1c1ae,
+  gold:profile.costume==='seraph_female'?0xd9b96e:
+   profile.costume==='forest_spirit_female'?0xb1a26a:0xa88152,
+  dragonEye:0xffd638
  };
  const materials=new Map();
  const mat=(role)=>{
   if(!materials.has(role)){
-   const isMetal=role==='metal',m=new THREE.MeshStandardMaterial({
+   const isMetal=role==='metal'||role==='gold',m=new THREE.MeshStandardMaterial({
     color:palette[role]??0x999999,
     roughness:isMetal?.42:role==='bone'?.86:
       role==='velvet'?.96:role==='linen'?.96:
       role==='ivory'?.83:role==='iris'?.27:role==='membrane'?.81:.90,
     metalness:isMetal?.64:role==='edge'?.38:0,
     emissive:role==='iris'?0x260907:
+      role==='dragonEye'?0xb78a00:
       role==='rune'?new THREE.Color(palette.rune).multiplyScalar(.08):0x000000,
-    emissiveIntensity:role==='iris'?.20:role==='rune'?.14:0,
+    emissiveIntensity:role==='iris'?.20:role==='dragonEye'?.24:
+      role==='rune'?.14:0,
     side:THREE.DoubleSide,
    });
    // Reuse the exact bundled photographic texture cache that already serves
    // the nonhumanoid bestiary. No new API, CDN request or per-monster textures.
    const surfaceRole={
     velvet:'fabric',lining:'fabric',linen:'bandage',
-    metal:'metal',edge:'metal',membrane:'leather'
+    metal:'metal',gold:'metal',ivoryCloth:'fabric',
+    leaf:'fabric',cloth:'fabric',edge:'metal',membrane:'leather'
    }[role];
    if(surfaceRole)decorateMonsterPhotoMaterial(m,{
      family:'undead',speciesId:profile.id,role:surfaceRole,detail
@@ -217,6 +226,12 @@ function buildMonsterCostume(THREE,model,profile,detail){
  });
  if(femaleSummon)addFemaleSummonCostume({
    THREE,profile,detail,frames,attach,tube
+ });
+ // Structural garment layers are essential: the canonical full-body donor
+ // wears little clothing. A cape or set of wings is not an outfit.
+ const royalOutfit=wardrobeFor(profile);
+ if(royalOutfit)addRegalHumanoidOutfit({
+   profile,detail,frames,attach,tube
  });
  const ceremonial=['vampire','lich','succubus','death_knight','dark_knight'];
  if(!gothic&&ceremonial.includes(costume)){
@@ -332,6 +347,8 @@ function buildMonsterCostume(THREE,model,profile,detail){
   femaleSummonCostumeEdition:femaleSummon?'female-summon-v1':null,
   crownCovered:!!groom?.crown,hairStrands:!!groom?.locks,
   hairSurfaceSamples:groom?.scalp.samples??0,
+  fullBodyOutfit:royalOutfit?.style||null,
+  fullBodySkirt:!!royalOutfit,clothCoverageValidated:!!royalOutfit,
   jointAnchored:true,independentHeroMaterials:true,
  };
  return ()=>{
