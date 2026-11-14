@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import {clipStudioFaceBustPreservingSurface,
  restoreStudioFaceSurfaceQuality,sampleStudioFacePigment,
- smoothStudioFaceNormals}
+ smoothStudioFaceNormals,studioAnatomicalSeamY}
  from '../src/studio-face-quality-v56.js';
 import {fitStudioNeckContinuity,alignStudioHeadToSkinnedTorso} from '../src/heroine-battle-costume-bridge.js';
 
@@ -93,6 +93,10 @@ test('v56 neck colour follows cheek pigment instead of an opaque fixed beige car
  const fitted=fitStudioNeckContinuity({faceRoot:headRoot,faceMesh:face,wardrobeRoot:wardrobe});
  assert.equal(fitted.applied,true,JSON.stringify(fitted));
  assert.equal(fitted.matchedFaceMaterial,true);
+ assert.equal(fitted.anatomicalJawCut,true,
+  'face should end in a shallow anatomical curve, not a straight ruler edge');
+ assert.equal(fitted.cutPlaneType,'jaw-and-nape-curve');
+ assert.equal(fitted.narrowUnderJawConnector,true);
  assert.equal(fitted.transparentNeckEdge,true);
  assert.equal(fitted.originalFaceNormalsPreserved,true);
  assert.equal(fitted.smoothedFacialNormals,true);
@@ -113,7 +117,7 @@ test('v56 neck colour follows cheek pigment instead of an opaque fixed beige car
  assert.ok(Math.abs(colors.getX(0)-collar.r)<.002,
   'lower collar should match the dark slate costume rather than white skin');
  assert.ok(Math.abs(colors.getX(colors.count-1)-
-   face.material.color.r*.9*.78)<.015,
+   face.material.color.r*.9*.96)<.015,
   'skin tone should only appear under the jaw, never as a wide bright plate');
  assert.ok(colors.getW(Math.floor(colors.count/2))>.95);
  const allPositions=source.getAttribute('position').array.slice();
@@ -152,4 +156,64 @@ test('v56 neighboring unshared triangle corners share smoother normals without m
  assert.ok(a.dot(b)>.95,'shared vertices should no longer have a visible hard lighting seam');
  assert.notDeepEqual(normal.array,originalNormals);
  geometry.dispose();
+});
+
+test('v57 curved under-jaw clip is not a flat plane and leaves source face unchanged',()=>{
+ const source=new THREE.SphereGeometry(.11,48,28);
+ const face=new THREE.Mesh(source,new THREE.MeshStandardMaterial({color:0xffc8b5}));
+ const before=source.getAttribute('position').array.slice();
+ const base=clipStudioFaceBustPreservingSurface(face,-.045);
+ const curved=clipStudioFaceBustPreservingSurface(face,-.045,{anatomicalCurve:true});
+ assert.equal(base.cutPlaneType,'horizontal');
+ assert.equal(curved.cutPlaneType,'jaw-and-nape-curve');
+ assert.equal(curved.anatomicalCurve,true);
+ assert.ok(curved.newCutVertices>10);
+ const originalCount=curved.originalVertexCount;
+ const vertices=curved.geometry.getAttribute('position');
+ const newYs=Array.from({length:curved.newCutVertices},
+  (_,i)=>vertices.getY(originalCount+i));
+ const spread=Math.max(...newYs)-Math.min(...newYs);
+ assert.ok(spread>.003,'the cut edge must curve upward at the cheeks and nape');
+ assert.deepEqual(source.getAttribute('position').array,before,
+  'lower-face clipping must not change forehead, eyes, nose or mouth');
+ const p={centerX:0,centerZ:0,halfWidth:.1,halfDepth:.1};
+ const middle=studioAnatomicalSeamY(1,0,.04,p);
+ const side=studioAnatomicalSeamY(1,.10,.04,p);
+ const rear=studioAnatomicalSeamY(1,0,-.10,p);
+ assert.ok(side>middle+.006);
+ assert.ok(rear>middle+.002);
+ base.geometry.dispose();curved.geometry.dispose();
+ source.dispose();face.material.dispose();
+});
+
+test('v57 connector rises gently at the sides, is narrower than the jaw, and has a soft top edge',()=>{
+ const scene=new THREE.Group(),head=new THREE.Group(),wardrobe=new THREE.Group();
+ scene.add(head,wardrobe);
+ const source=new THREE.SphereGeometry(.11,48,28);
+ const face=new THREE.Mesh(source,new THREE.MeshStandardMaterial({color:0xe8bdaf}));
+ face.position.y=1.14;head.add(face);
+ const torso=new THREE.SkinnedMesh(new THREE.BoxGeometry(.31,.46,.22),
+  new THREE.MeshStandardMaterial());
+ torso.name='Female_Ranger_Body';torso.position.y=.99;wardrobe.add(torso);
+ scene.updateMatrixWorld(true);
+ const alignment=alignStudioHeadToSkinnedTorso({
+  faceRoot:head,faceMesh:face,wardrobeRoot:wardrobe});
+ assert.equal(alignment.applied,true);
+ const fit=fitStudioNeckContinuity({faceRoot:head,faceMesh:face,wardrobeRoot:wardrobe});
+ assert.equal(fit.applied,true,JSON.stringify(fit));
+ assert.equal(fit.anatomicalJawCut,true);
+ assert.equal(fit.narrowUnderJawConnector,true);
+ assert.ok(fit.neckHeight<.052);
+ const bridge=head.getObjectByName('STUDIO_REAL_SKIN_NECK_CONNECTOR_V54');
+ assert.ok(bridge);
+ const ring=bridge.geometry.getAttribute('position');
+ const row=fit.segmentCount+1,start=(ring.count-row);
+ const ys=Array.from({length:row},(_,i)=>ring.getY(start+i));
+ assert.ok(Math.max(...ys)-Math.min(...ys)>.002,
+  'upper contour must vary with cheek geometry, not form a flat horizontal shelf');
+ assert.equal(bridge.material.transparent,true);
+ assert.deepEqual(source.getAttribute('position').count>0,true);
+ bridge.geometry.dispose();bridge.material.dispose();
+ face.geometry.dispose();source.dispose();face.material.dispose();
+ torso.geometry.dispose();torso.material.dispose();
 });
