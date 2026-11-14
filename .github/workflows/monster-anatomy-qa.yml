@@ -11,6 +11,7 @@ on:
       - 'qa/monster-m002-flame-wolf-rig.test.mjs'
       - 'qa/monster-m003-fenrir-rig.test.mjs'
       - 'qa/monster-m004-thunderwolf-gallop.test.mjs'
+      - 'qa/monster-m005-forestwolf-footfall.test.mjs'
       - 'docs/monster-research/**'
       - 'data/monster-realism-progress.json'
       - 'qa/monster-realism-progress.test.mjs'
@@ -41,7 +42,7 @@ jobs:
         run: npm install --no-save --package-lock=false three@0.180.0
       - name: Run every-monster anatomy / action / reference test and baseline mesh contracts
         run: |
-          node --test qa/monster-anatomy-motion.test.mjs qa/monster-bestiary.test.mjs qa/monster-realism-progress.test.mjs qa/monster-m002-flame-wolf-rig.test.mjs qa/monster-m003-fenrir-rig.test.mjs qa/monster-m004-thunderwolf-gallop.test.mjs
+          node --test qa/monster-anatomy-motion.test.mjs qa/monster-bestiary.test.mjs qa/monster-realism-progress.test.mjs qa/monster-m002-flame-wolf-rig.test.mjs qa/monster-m003-fenrir-rig.test.mjs qa/monster-m004-thunderwolf-gallop.test.mjs qa/monster-m005-forestwolf-footfall.test.mjs
       - name: Assert no human-character assets entered patch
         env:
           GH_BASE: '${{ github.event.pull_request.base.sha }}'
