@@ -80,7 +80,7 @@ async function main(){
    await page.waitForFunction(key=>window[key]?.().v36RealBattleCostume?.bodyType==='normal',qa,
     {timeout:45000});
    await page.evaluate(args=>window[args.preview].setQAZoom('portrait'),{preview});
-   for(const view of ['front','left','side','threeQuarterLeft','threeQuarterRight']){
+   for(const view of ['front','left','side','back','threeQuarterLeft','threeQuarterRight']){
     await page.evaluate(args=>window[args.preview].setQAView(args.view),{preview,view});
     await page.waitForTimeout(220);
     const cam=await page.evaluate(args=>window[args.preview].getCameraState(),{preview});
@@ -97,7 +97,7 @@ async function main(){
     for(let at=0;at<base64.length;at+=6000)
      console.log('V60_REVIEW_PNG '+gender+' '+view+' '+at+' '+base64.slice(at,at+6000));
    }
-   console.log('HUMAN_MODEL_V61_WEBGL_OK '+gender+' jobs='+jobs+' views=5 builds=4');
+   console.log('HUMAN_MODEL_V61_WEBGL_OK '+gender+' jobs='+jobs+' views=6 builds=4');
   }finally{await browser.close()}
  }
  console.log('HUMAN_MODEL_V60_WEBGL_OK BOTH_GENDERS');
