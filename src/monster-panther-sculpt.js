@@ -59,8 +59,12 @@ export function addPantherArticulation(g,{head,torso}={}){
      g.sphere(paw,'skin',[x,-.038,.113],[.042,.047,.083],
        {name:'m006-digit'});
      const nail=g.group('claw'+name+digit,[x,-.056,.177],paw);
-     g.rootedSpike(nail,'bone','skin',[0,0,0],
-       [0,-.052,.101],.024,{name:'m006-retractile-claw'});
+     const rooted=g.rootedSpike(nail,'bone','skin',[0,0,0],
+       [0,-.052,.101],.024,
+       {name:'rooted-claw-m006-'+name+'-'+digit});
+     // Retain the visible fang class while giving the socket the
+     // rooted-claw-* contract used by all other feline/canine rigs.
+     if(rooted?.tooth)rooted.tooth.name='m006-retractile-claw';
    }
  }
  const tail=p.tail;
