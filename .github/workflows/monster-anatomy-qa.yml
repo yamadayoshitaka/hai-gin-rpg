@@ -37,6 +37,7 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
+  pull-requests: read
 concurrency:
   group: monster-anatomy-${{ github.ref }}
   cancel-in-progress: true
@@ -72,15 +73,20 @@ jobs:
           npm run test:humanoid-spell-motion
           node qa/dragonkin-native-scalp-regression.test.mjs
           node qa/female-summon-scalp-cut-regression.test.mjs
-      - name: Assert no human-character assets entered patch
+      - name: Assert no human-character assets entered PR patch
         env:
-          GH_BASE: '${{ github.event.pull_request.base.sha }}'
+          GH_TOKEN: ${{ github.token }}
+          GH_PR_NUMBER: '${{ github.event.pull_request.number }}'
         shell: bash
         run: |
           set -euo pipefail
-          if [[ -n "$GH_BASE" ]]; then
-            git fetch --no-tags origin "$GH_BASE" --depth=1
-            FILES="$(git diff --name-only "$GH_BASE" HEAD)"
+          # actions/checkout uses the synthetic PR merge commit. Comparing
+          # base.sha to HEAD incorrectly flags unrelated concurrent main
+          # merges as if they were part of this PR. Query only PR filenames.
+          if [[ -n "$GH_PR_NUMBER" ]]; then
+            FILES="$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${GH_PR_NUMBER}/files?per_page=100" --paginate --jq '.[].filename')"
+            echo "PR changed files:"
+            printf '%s\n' "$FILES"
             if grep -E '(^src/(master-heroine|character-|humanoid|facial-|combat-humanoid)|\.glb$|^assets/humans/)' <<<"$FILES"; then
               echo 'Forbidden human model or mesh change' >&2
               exit 1
