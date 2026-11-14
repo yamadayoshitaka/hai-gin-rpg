@@ -476,6 +476,10 @@
       femaleMode:femaleMode.value,
       femaleReady:femaleSummonHandle?.source==='canonical-character-cosplay',
       femaleSource:femaleSummonHandle?.profile?.modelId||null,
+      dragonCraniumNativeTopology:
+       femaleSummonHandle?.metadata?.dragonCraniumNativeTopology??null,
+      dragonNativeScalpTriangles:
+       femaleSummonHandle?.metadata?.dragonNativeScalpTriangles??0,
       femaleFlightAltitude,
       seraphOriginalWingCount:femaleSummonHandle?.root?.getObjectByName?
         [-1,1].filter(side=>!!femaleSummonHandle.root.getObjectByName(
