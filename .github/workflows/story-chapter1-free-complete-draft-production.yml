@@ -92,6 +92,50 @@ jobs:
               git push origin HEAD:story/chapter1-free-actual-art
             fi
           fi
+      - name: Publish verified image counts and quota status
+        if: always()
+        shell: bash
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          const load=(p)=>fs.existsSync(p)?JSON.parse(fs.readFileSync(p,'utf8')):null;
+          const run=load('qa-reports/story-stage-production/chapter1-free-render/last-run.json');
+          const qa=load('qa-reports/story-stage-production/chapter1-free-render/c01-regression.json');
+          const counts=qa?.counts||{};
+          const show=(value)=>value===null||value===undefined?'unknown':String(value);
+          const lines=[
+            '## Chapter 1: real image production (not an approval claim)',
+            '',
+            '| Item | Actual result |',
+            '|---|---:|',
+            '| New images in THIS run | '+show(run?.newRealDraftImages)+' |',
+            '| New page commits in THIS run | '+show(run?.newDraftPageCommits)+' |',
+            '| Cloudflare API requests in THIS run | '+show(run?.apiRequests)+' |',
+            '| Run stop reason | '+show(run?.stopReason)+' |',
+            '| Canonical shots | '+show(counts.expected)+' |',
+            '| Native real draft images (not visually approved) | '+show(counts.validRealReviewDraft)+' |',
+            '| Pre-existing registered art (P0 not certified) | '+show(counts.existingRegistrationNotP0Approved)+' |',
+            '| Missing images | '+show(counts.missing)+' |',
+            '| Legacy images requiring regeneration | '+show(counts.legacyNativeRegenerationRequired)+' |',
+            '| Provider safety-blocked shots | '+show(counts.providerBlocked)+' |',
+            '',
+            'A green workflow run does NOT mean all artwork is generated, approved, or published.',
+            'On Cloudflare Free quota exhaustion there is no paid fallback and no automatic retry in that run.',
+            ''
+          ];
+          if(qa?.stages?.length){
+            lines.push('### Per-stage native drafts and remaining work','','| Stage | Drafts | Missing / rework / blocked |','|---|---:|---:|');
+            for(const stage of qa.stages){
+              const all=stage.scenes||[];
+              const drafts=all.filter(s=>s.status==='VALID_REAL_DRAFT_VISUAL_QA_PENDING').length;
+              const remaining=all.filter(s=>['MISSING_REAL_ART','LEGACY_NATIVE_REGEN_REQUIRED','PROVIDER_SAFETY_BLOCKED'].includes(s.status)).length;
+              lines.push('| '+stage.stageId+' | '+drafts+' | '+remaining+' |');
+            }
+          }
+          const content=lines.join('\n')+'\n';
+          console.log(content);
+          if(process.env.GITHUB_STEP_SUMMARY)fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY,content);
+          NODE
       - name: Upload per-scene review and progress proof
         if: always()
         uses: actions/upload-artifact@v4
