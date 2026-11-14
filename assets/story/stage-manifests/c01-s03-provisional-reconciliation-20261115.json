@@ -6,7 +6,7 @@
   "sourceRegistry": "src/story-chapter1-provisional-live.js",
   "sourceRegistryBlobSha": "87e397314e5023ea4dfd75e3678364737c41e141",
   "canonicalStageManifest": "assets/story/stage-manifests/c01-s03.manifest.json",
-  "canonicalStageManifestBlobSha": "94e8380cc2e71612d005a371760246610dd1439f",
+  "canonicalStageManifestBlobSha": "d2ff319547bc18ae56f2c81fdb634015178bbb00",
   "canonicalManualBrief": "assets/story/stage-manifests/c01-s03-manual-regression-remaining.json",
   "summary": {
     "requiredShots": 48,
@@ -26,17 +26,18 @@
     "targetPanelsPerSheet": 2,
     "preferredSheetLongSidePixels": 2048,
     "minimumNativePanelPixels": [
-      1536,
-      864
+      800,
+      450
     ],
     "preferredNativePanelPixels": [
-      2048,
-      1152
+      1024,
+      576
     ],
-    "warning": "Two panels in a 2048px-wide sheet may fail 1536px per-cell minimum. Render individual native panels first unless full sheet geometry proves sufficient.",
+    "warning": "Prior 1536x864px per-panel minimum is retired. In a roughly 2048px-wide two-panel sheet, aim for about 1024px width per panel; accept 800px+ native width with proportional height and satisfactory visual quality. Validate each panel after cutting without upscaling.",
     "requiredNoTextPrompt": "画像にはセリフ・吹き出し・文字・説明文・字幕・ナレーション・効果音の擬音文字・数字・コマ番号・タイトル・ロゴを一切描かない。絵だけを作る。",
     "mustAttachActualCastReferenceBytes": true,
-    "noPaidFallback": true
+    "noPaidFallback": true,
+    "minimumPanelWidthPixels": 800
   },
   "shots": [
     {
