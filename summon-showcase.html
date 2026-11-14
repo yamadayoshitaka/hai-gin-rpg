@@ -111,7 +111,7 @@
 </head>
 <body>
   <header id="galleryHeader">
-    <div class="galleryHeading"><h1>召喚獣・軍馬 3D鑑賞 v4.5.19</h1><small>森の精霊弓士・光翼の守護天使 / CC0 Quaternius人体の顔・弓・羽毛の翼・回復・蘇生</small></div>
+    <div class="galleryHeading"><h1>召喚獣・軍馬 3D鑑賞 v4.5.20</h1><small>森の精霊弓士・光翼の守護天使 / CC0 Quaternius人体の顔・弓・羽毛の翼・回復・蘇生</small></div>
     <label for="type" class="speciesPicker"><span class="typeCaption">種類</span><select id="type">
       <option value="wolf">灰狼</option>
       <option value="wyvern">飛竜</option>
@@ -181,18 +181,19 @@
   <script type="module">
     import * as THREE from 'three';
     import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
-    import {femaleSummonCosplayFor,FEMALE_SUMMON_FORM_IDS,MALE_DRAGON_LORD_FORM} from './src/female-summon-forms.js?v=4.5.19';
-    import {createCosplayedHumanoidMonster} from './src/monster-character-cosplay.js?v=4.5.19';
+    import {femaleSummonCosplayFor,FEMALE_SUMMON_FORM_IDS,MALE_DRAGON_LORD_FORM} from './src/female-summon-forms.js?v=4.5.20';
+    import {createCosplayedHumanoidMonster} from './src/monster-character-cosplay.js?v=4.5.20';
     import {COMBAT_OBJECT_SPECS} from './src/combat-action-spec.js?v=4.4.74';
-    import {createCombatWorldObjectRenderer} from './src/combat-world-object-renderer.js?v=4.5.19';
+    import {creatureSize,SUMMON_WORLD_SCALE,LARGE_SUMMON_IDS} from './src/combat-creature-performance.js?v=4.6.30';
+    import {createCombatWorldObjectRenderer} from './src/combat-world-object-renderer.js?v=4.5.20';
     import {startCreaturePose} from './src/combat-creature-actions.js?v=4.4.92';
     import {createCreatureSoundRuntime} from './src/combat-creature-sounds.js?v=4.4.74';
     import {ActionVfxRuntime} from './src/character-system/action-vfx-runtime.js?v=4.4.23';
     import {fetchCreatureRegistry,loadExternalCreature,loadPersonalGLB} from './src/creature-external-runtime.js?v=4.4.92';
     const scene=new THREE.Scene();
     scene.background=new THREE.Color(0x0b1823);
-    scene.fog=new THREE.Fog(0x0b1823,25,70);
-    const camera=new THREE.PerspectiveCamera(48,innerWidth/innerHeight,.1,130);
+    scene.fog=new THREE.Fog(0x0b1823,220,730);
+    const camera=new THREE.PerspectiveCamera(48,innerWidth/innerHeight,.1,900);
     camera.position.set(6,6,13);
     const renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});
     renderer.setPixelRatio(Math.min(devicePixelRatio,2));
@@ -207,14 +208,14 @@
     const sun=new THREE.DirectionalLight(0xffe0ab,3.2);
     sun.position.set(-5,11,6);sun.castShadow=true;
     sun.shadow.mapSize.set(1024,1024);
-    sun.shadow.camera.left=-12;sun.shadow.camera.right=12;sun.shadow.camera.top=12;sun.shadow.camera.bottom=-12;
+    sun.shadow.camera.left=-160;sun.shadow.camera.right=160;sun.shadow.camera.top=160;sun.shadow.camera.bottom=-160;
     scene.add(sun);
     const rim=new THREE.DirectionalLight(0x83b9ff,2.4);rim.position.set(7,5,-8);scene.add(rim);
-    const ground=new THREE.Mesh(new THREE.CircleGeometry(12,96),new THREE.MeshStandardMaterial({color:0x293d42,roughness:1,metalness:.05}));
+    const ground=new THREE.Mesh(new THREE.CircleGeometry(190,96),new THREE.MeshStandardMaterial({color:0x293d42,roughness:1,metalness:.05}));
     ground.rotation.x=-Math.PI/2;ground.position.y=-.035;ground.receiveShadow=true;scene.add(ground);
-    const rings=new THREE.GridHelper(16,24,0x64838d,0x2d4855);rings.position.y=.006;scene.add(rings);
+    const rings=new THREE.GridHelper(180,24,0x64838d,0x2d4855);rings.position.y=.006;scene.add(rings);
     const controls=new OrbitControls(camera,renderer.domElement);
-    controls.enableDamping=true;controls.minDistance=.65;controls.maxDistance=65;
+    controls.enableDamping=true;controls.minDistance=.65;controls.maxDistance=850;
     controls.maxPolarAngle=Math.PI*.49;controls.target.set(0,2.1,0);controls.update();
     const objects=createCombatWorldObjectRenderer(scene,{camera,offset:0,cellSize:1,
       terrainY:()=>0,highDetailDistance:65});
@@ -257,7 +258,7 @@
       // Keep original battle summon on-screen until the sex-correct
       // Superhero skinned GLB is loaded; no gender swap on the same actor.
       const spec={id,name:COMBAT_OBJECT_SPECS[id].name,
-        size:1,variant:0,family:'summon'};
+        size:SUMMON_WORLD_SCALE,variant:0,family:'summon'};
       const handle=createCosplayedHumanoidMonster(spec,{
         detail:'high',profileOverride:form,withoutFallback:true
       });
@@ -267,9 +268,10 @@
       handle.ready.then(result=>{
         if(ticket!==femaleRequest||handle!==femaleSummonHandle||selected!==id)return;
         if(result.source==='canonical-character-cosplay'){
-          const distance=id==='seraph_guardian'?8.6:id==='dragon_lord'?7.3:4.5;
-          controls.target.set(0,id==='seraph_guardian'?1.95:1.18,0);
-          camera.position.set(1.5,id==='seraph_guardian'?2.9:2.3,distance);
+          const distance=(id==='seraph_guardian'?8.6:id==='dragon_lord'?7.3:4.5)*SUMMON_WORLD_SCALE;
+          controls.target.set(0,(id==='seraph_guardian'?1.95:1.18)*SUMMON_WORLD_SCALE,0);
+          camera.position.set(1.5*SUMMON_WORLD_SCALE,
+            (id==='seraph_guardian'?2.9:2.3)*SUMMON_WORLD_SCALE,distance);
           controls.update();
         }else if(result.source!=='cancelled'){
           document.getElementById('metrics').textContent=
@@ -380,7 +382,8 @@
          selected==='dragon_lord'&&femaleMode.value==='male'?
           ' 男性スキン付き素体に角、胸装甲、翼と足甲を付けた竜王。元のドラゴン姿も選択可能。':'');
       const focus=selected==='forest_archer'?1.3:selected==='seraph_guardian'?1.6:selected==='dragon_lord'?6.4:selected==='elder_dragon'?2.9:selected==='dragon'?2.6:selected==='wyvern'?2.2:1.2;
-      controls.target.set(0,focus,0);
+      const worldScale=LARGE_SUMMON_IDS.includes(selected)?SUMMON_WORLD_SCALE:1;
+      controls.target.set(0,focus*worldScale,0);
       // The bat wings are about 15 world units wide at summon scale. Fit
       // their entire span even on narrow portrait phone displays.
       const dragonDistance=Math.max(37,17/(2*Math.tan(THREE.MathUtils.degToRad(camera.fov/2))*camera.aspect));
@@ -393,9 +396,9 @@
         selected==='wyvern'?(phone?9:12):
         selected==='dragon'?(phone?11:13):
         selected==='forest_archer'?(phone?6.4:9):phone?7:9;
-      camera.position.set(selected==='dragon_lord'?3:(phone?1.8:3.6),
-        focus+(selected==='dragon_lord'?2:(phone?1.7:2.6)),
-        selected==='dragon_lord'?dragonDistance:distance);
+      camera.position.set((selected==='dragon_lord'?3:(phone?1.8:3.6))*worldScale,
+        (focus+(selected==='dragon_lord'?2:(phone?1.7:2.6)))*worldScale,
+        (selected==='dragon_lord'?dragonDistance:distance)*worldScale);
       controls.update();
       if(femaleAvailable)selectFemaleSummonForm();
     }
@@ -408,21 +411,25 @@
       if(selected!=='wolf')return;
       // Frame both forepaws and hind legs plus the coat beneath the torso.
       // Aim slightly from the side so back, belly and paw silhouettes show.
-      controls.target.set(0,.99,.12);
-      camera.position.set(3.20,1.83,3.92);
+      const factor=creatureSize('wolf');
+      controls.target.set(0,.99*factor,.12*factor);
+      camera.position.set(3.20*factor,1.83*factor,3.92*factor);
       camera.lookAt(controls.target);
       controls.update();
     };
     document.getElementById('faceCloseup').onclick=()=>{
       if(selected==='wolf'){
         // Focus on nose, eyes, cheeks and the new physical fur silhouette.
-        controls.target.set(0,1.07,1.16);
-        camera.position.set(1.34,1.44,3.55);
+        const factor=creatureSize('wolf');
+        controls.target.set(0,1.07*factor,1.16*factor);
+        camera.position.set(1.34*factor,1.44*factor,3.55*factor);
       }else if(['forest_archer','seraph_guardian'].includes(selected)||
           (selected==='dragon_lord'&&femaleMode.value==='male')){
         const femaleReady=femaleSummonHandle?.source==='canonical-character-cosplay';
-        controls.target.set(0,femaleReady?1.62:2.35,0);
-        camera.position.set(.83,femaleReady?1.81:2.54,femaleReady?1.92:1.80);
+        const factor=SUMMON_WORLD_SCALE;
+        controls.target.set(0,(femaleReady?1.62:2.35)*factor,0);
+        camera.position.set(.83*factor,(femaleReady?1.81:2.54)*factor,
+          (femaleReady?1.92:1.80)*factor);
       }else return;
       camera.lookAt(controls.target);
       controls.update();
@@ -431,8 +438,9 @@
       // A fixed shin/ankle inspection camera for spotting garment holes.
       if(!femaleSummonHandle?.root||femaleMode.value==='original')return;
       const targetHeight=selected==='seraph_guardian'?.53:.43;
-      controls.target.set(0,targetHeight,0);
-      camera.position.set(.85,targetHeight+.34,2.72);
+      const factor=SUMMON_WORLD_SCALE;
+      controls.target.set(0,targetHeight*factor,0);
+      camera.position.set(.85*factor,(targetHeight+.34)*factor,2.72*factor);
       controls.update();
       document.getElementById('controlsDrawer').open=false;
     };
@@ -533,7 +541,7 @@
       // Only the optional gallery female Seraph levitates; the original
       // battlefield summons, rider rules and physics are unchanged.
       if(isFemaleReady&&selected==='seraph_guardian'&&femaleMode.value==='female'){
-        femaleFlightAltitude=.76+.11*Math.sin(t*1.85);
+        femaleFlightAltitude=(.76+.11*Math.sin(t*1.85))*SUMMON_WORLD_SCALE;
         femaleSummonHandle.root.position.y=femaleFlightAltitude;
         femaleSummonHandle.root.position.x=previewObject.x||0;
         femaleSummonHandle.root.position.z=previewObject.z||0;
@@ -591,6 +599,9 @@
       seraphOriginalWingCount:femaleSummonHandle?.root?.getObjectByName?
         [-1,1].filter(side=>!!femaleSummonHandle.root.getObjectByName(
          'female-seraph-original-wing-pivot-'+side)).length:0,
+      summonWorldScale:SUMMON_WORLD_SCALE,
+      wolfHybridPrimary:'combat-summon-wolf',
+      wolfHybridSecondary:'m001',
       cameraDistance:camera.position.distanceTo(controls.target)
     });
     tick();
