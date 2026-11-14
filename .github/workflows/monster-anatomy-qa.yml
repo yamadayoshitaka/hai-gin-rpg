@@ -9,6 +9,7 @@ on:
       - 'src/monster-shape-kit.js'
       - 'src/monster-humanoid-hair.js'
       - 'src/monster-character-cosplay.js'
+      - 'src/monster-humanoid-combat-poses.js'
       - 'src/monster-studio-base-intake.js'
       - 'src/monster-studio-skinned-rig-audit.js'
       - 'qa/monster-studio-skinned-rig-audit.test.mjs'
@@ -21,6 +22,7 @@ on:
       - 'qa/female-summon-scalp-cut-regression.test.mjs'
       - 'qa/dragonkin-native-scalp-regression.test.mjs'
       - 'qa/demon-female-summon-mobile-viewer.test.mjs'
+      - 'qa/monster-humanoid-combat-poses.test.mjs'
       - 'qa/monster-regal-wardrobe-batch.test.mjs'
       - 'qa/monster-gothic-sculpt-regression.test.mjs'
       - 'qa/monster-humanoid-hair-orientation-regression.test.mjs'
@@ -51,7 +53,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for file in src/monster-anatomy-reference.js src/monster-joint-motion.js src/monster-animation.js src/monster-geometry.js src/monster-humanoid-hair.js src/monster-character-cosplay.js src/monster-studio-base-intake.js src/monster-studio-skinned-rig-audit.js src/monster-gothic-sculpt.js src/monster-regal-garments.js src/female-summon-costumes.js src/dragonkin-native-scalp.js src/female-summon-scalp-cut.js; do
+          for file in src/monster-anatomy-reference.js src/monster-joint-motion.js src/monster-animation.js src/monster-geometry.js src/monster-humanoid-hair.js src/monster-character-cosplay.js src/monster-humanoid-combat-poses.js src/monster-studio-base-intake.js src/monster-studio-skinned-rig-audit.js src/monster-gothic-sculpt.js src/monster-regal-garments.js src/female-summon-costumes.js src/dragonkin-native-scalp.js src/female-summon-scalp-cut.js; do
             node --check "$file"
           done
       - name: Install pinned Three.js geometry runtime
@@ -67,6 +69,7 @@ jobs:
           npm run test:humanoid-orientation-hair
           npm run test:regal-humanoid-wardrobe
           npm run test:creature-variants-mobile-viewer
+          npm run test:humanoid-spell-motion
           node qa/dragonkin-native-scalp-regression.test.mjs
           node qa/female-summon-scalp-cut-regression.test.mjs
       - name: Assert no human-character assets entered patch
