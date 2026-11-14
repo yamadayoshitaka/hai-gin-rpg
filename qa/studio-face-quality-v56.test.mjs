@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import {clipStudioFaceBustPreservingSurface,
  restoreStudioFaceSurfaceQuality,sampleStudioFacePigment,
- smoothStudioFaceNormals,studioAnatomicalSeamY}
+ smoothStudioFaceNormals,studioAnatomicalSeamY,taperStudioLowerBustBelowChin}
  from '../src/studio-face-quality-v56.js';
 import {fitStudioNeckContinuity,alignStudioHeadToSkinnedTorso} from '../src/heroine-battle-costume-bridge.js';
 
@@ -97,6 +97,9 @@ test('v56 neck colour follows cheek pigment instead of an opaque fixed beige car
   'face should end in a shallow anatomical curve, not a straight ruler edge');
  assert.equal(fitted.cutPlaneType,'jaw-and-nape-curve');
  assert.equal(fitted.narrowUnderJawConnector,true);
+ assert.equal(fitted.lowerBustTapered,true);
+ assert.ok(fitted.lowerBustTaperedVertices>0);
+ assert.equal(fitted.sourceFaceUnchangedByBustTaper,true);
  assert.equal(fitted.transparentNeckEdge,true);
  assert.equal(fitted.originalFaceNormalsPreserved,true);
  assert.equal(fitted.smoothedFacialNormals,true);
@@ -216,4 +219,36 @@ test('v57 connector rises gently at the sides, is narrower than the jaw, and has
  bridge.geometry.dispose();bridge.material.dispose();
  face.geometry.dispose();source.dispose();face.material.dispose();
  torso.geometry.dispose();torso.material.dispose();
+});
+
+test('v57 lower bust taper narrows cropped pedestal while upper facial coordinates remain bit-identical',()=>{
+ const source=new THREE.SphereGeometry(.12,40,26);
+ const working=source.clone();
+ source.computeBoundingBox();
+ const face=new THREE.Mesh(working,new THREE.MeshStandardMaterial());
+ const originalSource=source.getAttribute('position').array.slice();
+ const originalWorking=working.getAttribute('position').array.slice();
+ const bounds=source.boundingBox.clone();
+ const report=taperStudioLowerBustBelowChin(face,{sourceWorldBounds:bounds});
+ assert.equal(report.applied,true);
+ assert.ok(report.affectedVertices>20);
+ assert.ok(report.lowerWidthAfter<report.lowerWidthBefore,
+  'shoulder/bust flange must become narrower toward the neck');
+ assert.equal(report.upperFaceVerticesMoved,0);
+ const a=working.getAttribute('position').array;
+ const b=originalWorking;
+ const cutoff=bounds.min.y+bounds.getSize(new THREE.Vector3()).y*.27;
+ let upper=0;
+ for(let i=0;i<b.length/3;i++){
+  if(b[i*3+1]>=cutoff-1e-7){
+   upper++;
+   assert.deepEqual(Array.from(a.slice(i*3,i*3+3)),
+    Array.from(b.slice(i*3,i*3+3)),
+    'upper face, nose, cheeks and eyes must never move');
+  }
+ }
+ assert.ok(upper>200);
+ assert.deepEqual(source.getAttribute('position').array,originalSource,
+  'original imported GLB remains unchanged');
+ working.dispose();source.dispose();face.material.dispose();
 });
