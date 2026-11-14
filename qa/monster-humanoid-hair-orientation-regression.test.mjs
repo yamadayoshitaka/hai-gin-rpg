@@ -88,6 +88,41 @@ highLocks.dispose();lowLocks.dispose();
  assert.throws(()=>createCanonicalHeadLocalGroomAnchor(donor),
   /head bone/,'A regular Model Group must not be used as head bone');
 }
+// A real imported Head bind axis can be rotated 90 degrees relative to
+// actor +Y. An ellipsoid head is vertical in MODEL coordinates; measuring
+// as uncorrected Head-local +Y turns the scalp 90 degrees and leaves a bald
+// patch across the actual crown. The group and measurements must agree.
+{
+ const donor=new THREE.Group(),bone=new THREE.Bone();
+ const geo=new THREE.SphereGeometry(1,24,20);
+ geo.scale(.108,.180,.122);geo.translate(0,.055,0);
+ const n=geo.getAttribute('position').count;
+ const indices=new Uint16Array(n*4),weights=new Float32Array(n*4);
+ for(let i=0;i<n;i++)weights[i*4]=1;
+ geo.setAttribute('skinIndex',new THREE.Uint16BufferAttribute(indices,4));
+ geo.setAttribute('skinWeight',new THREE.Float32BufferAttribute(weights,4));
+ const face=new THREE.SkinnedMesh(geo,new THREE.MeshBasicMaterial());
+ face.name='FaceBody';face.add(bone);donor.add(face);
+ bone.name='Head';bone.rotation.z=Math.PI*.50;
+ face.bind(new THREE.Skeleton([bone]));
+ const legacy=measureCanonicalScalp(donor,bone);
+ const upright=createCanonicalHeadLocalGroomAnchor(bone,donor);
+ const fit=measureCanonicalScalp(donor,bone,{groomFrame:upright});
+ assert.equal(upright.parent,bone);
+ assert.ok(upright.userData.modelUprightGroom);
+ assert.ok(fit.fitted && fit.samples>50);
+ assert.ok(fit.radius[0]<legacy.radius[0]-.02,
+  'Head bone local axis rotated the scalp over the side of the skull');
+ donor.updateMatrixWorld(true);
+ const modelUp=new THREE.Vector3(0,1,0)
+  .applyQuaternion(donor.getWorldQuaternion(new THREE.Quaternion()));
+ const groomUp=new THREE.Vector3(0,1,0)
+  .applyQuaternion(upright.getWorldQuaternion(new THREE.Quaternion()));
+ assert.ok(modelUp.dot(groomUp)>.9999,'Hair must grow upward in model frame');
+ assert.throws(()=>measureCanonicalScalp(donor,bone,{groomFrame:donor}),
+  /Head bone/,'Never sample hair in an unrelated attachment frame');
+ face.geometry.dispose();face.material.dispose();
+}
 for(const style of ['long','swept','bob','short']){
  const fit={style,detail:'high',center:[0,0,0],radius:[1,1,1]};
  const hi=createCharacterHairStrandsGeometry(fit);
@@ -259,7 +294,7 @@ assert.match(source,/attachCanonicalCharacterGroom\(/);
 assert.match(source,/groom:true/);
 assert.match(source,/crownCovered:!!groom\?\.crown/);
 assert.match(source,/pelvis:createFrame\(joints\.pelvis/);
-assert.match(source,/frames\.headGroom=createCanonicalHeadLocalGroomAnchor\(joints\.head\)/,
+assert.match(source,/frames\.headGroom=createCanonicalHeadLocalGroomAnchor\(joints\.head,model\)/,
  'Missing head-bone local groom instance in monster runtime');
 assert.match(source,/frames:\{\.\.\.frames,head:frames\.headGroom\}/,
  'Do not attach hair into reoriented makeup frame');

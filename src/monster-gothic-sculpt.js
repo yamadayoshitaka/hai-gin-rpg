@@ -61,7 +61,7 @@ export function createMummyWrapRibbon({
  * rather than 3 disconnected cones. Top partly sinks into the collar.
  */
 export function createGothicMantle({
- side=1,width=.34,drop=.92,back=.23,detail='high',ripped=false
+ side=1,width=.34,drop=.92,back=.23,top=.29,detail='high',ripped=false
 }={}){
  const rows=detail==='low'?6:18,columns=detail==='low'?5:12;
  const pos=[],uv=[];
@@ -73,7 +73,7 @@ export function createGothicMantle({
    const edge=side*span*flare;
    const hem=ripped&&r===rows?(.028*Math.sin(u*32+side*7)+.022*Math.sin(u*77)):0;
    const fold=Math.sin(u*11*Math.PI+side*.5)*(.005+.018*t);
-   pos.push(edge, .29-drop*t+hem,
+   pos.push(edge, top-drop*t+hem,
      back+.11*t*t+fold+Math.abs(edge)*.07);
    uv.push(u*2,t*2);
   }
@@ -243,11 +243,16 @@ function createGothicPieces({profile,detail='high',frames,attach,tube}){
  if(kind==='vampire'){
   // A noble old-world coat with layered velvet, pointed collar, red lining,
   // necklace, and tiny canines embedded inside the lip line.
-  add(frames.chest,createGothicMantle({detail,width:.40,drop:1.04}),
-    'velvet','vampire-blackcoat-back');
-  add(frames.chest,createGothicMantle({detail,width:.35,drop:.95,back:.215,ripped:true}),
-    'lining','vampire-worn-burgundy-lining',[0,0,.01]);
-  fold(frames.chest,'velvet','vampire-high-collar',.25,.215);
+  // Keep the outer mantle behind the articulated shoulders, not above
+  // the head. The former broad metre-long double sheet inflated the shape.
+  add(frames.chest,createGothicMantle({
+   detail,width:.29,drop:.77,back:.195,top:.135
+  }),'velvet','vampire-blackcoat-back');
+  add(frames.chest,createGothicMantle({
+   detail,width:.27,drop:.73,back:.172,top:.123,ripped:true
+  }),'lining','vampire-worn-burgundy-lining',[0,0,.003]);
+  // Regal neckline already provides a close-fitting collar: no second
+  // collar tube floating over the real shoulder/neck connection.
   for(const side of [-1,1]){
    line(frames.chest,'edge','vampire-double-lapel-'+side,[
     [side*.22,.26,-.145],[side*.09,.13,-.24],

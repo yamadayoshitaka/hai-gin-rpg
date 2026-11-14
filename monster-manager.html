@@ -67,7 +67,7 @@ legend{font-size:12px;color:#e8d9b6;padding:0 6px}
 </style>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
 </head><body>
-<header><a href="./index.html">← メニュー</a><h1>魔物図鑑・モンスター管理 <small>50種 / v4.5.10</small></h1>
+<header><a href="./index.html">← メニュー</a><h1>魔物図鑑・モンスター管理 <small>50種 / v4.5.11</small></h1>
  <a href="./summon-showcase.html?v=4.5.06">召喚獣一覧</a></header>
 <main id="bestiaryMain">
  <aside id="catalogPanel" aria-label="モンスター一覧">
@@ -173,7 +173,7 @@ import {MONSTER_CATALOG,MONSTER_BY_ID,MONSTER_FAMILIES,MONSTER_ELEMENTS,monsterL
 import {createMonsterModel,disposeMonsterSculpture,MONSTER_DETAIL_LEVELS,
   monsterSculptCacheStats,monsterPhotoCacheStats} from './src/monster-geometry.js?v=4.5.04';
 import {MONSTER_ACTIONS,startMonsterAction,animateMonsterModel} from './src/monster-animation.js?v=4.4.95';
-import {createCosplayedHumanoidMonster} from './src/monster-character-cosplay.js?v=4.5.10';
+import {createCosplayedHumanoidMonster} from './src/monster-character-cosplay.js?v=4.5.11';
 import {humanoidMonsterCostumeFor,HUMAN_MONSTER_IDS} from './src/monster-character-cosplay-manifest.js?v=4.5.04';
 import {hasDemonCosmetics,withDemonColorTheme}
  from './src/monster-demon-cosmetics.js?v=4.5.04';
@@ -266,6 +266,9 @@ const grid=new THREE.GridHelper(14,18,0x4b737c,0x243943);grid.position.y=.008;sc
 const controls=new OrbitControls(camera,renderer.domElement);
 controls.enableDamping=true;controls.minDistance=2.2;controls.maxDistance=45;
 controls.maxPolarAngle=Math.PI*.54;controls.target.set(0,1.3,0);
+// Portrait inspection: prevent accidental straight-down views that hide
+// facial features beneath the cape while preserving free beast orbiting.
+const HUMAN_INSPECT_MIN_POLAR=Math.PI*.30;
 const clock=new THREE.Clock();
 let selected='m001',model=null,currentAction='idle',meshStats=null,frames=0;
 let costumeHandle=null;
@@ -335,11 +338,16 @@ function refreshGeometry(){
   ' / 写真材質 '+(meshStats.photoSurfaces.join('・')||'未割当');
 }
 function focusCamera(){
+ controls.minPolarAngle=HUMAN_MONSTER_IDS.includes(selected)?
+   HUMAN_INSPECT_MIN_POLAR:0;
  const bounds=new THREE.Box3().setFromObject(model);
  const center=bounds.getCenter(new THREE.Vector3()),size=bounds.getSize(new THREE.Vector3());
  controls.target.set(center.x,Math.max(.7,center.y),center.z);
  const dist=Math.max(4,size.length()/(2*Math.tan(THREE.MathUtils.degToRad(camera.fov/2)))*.70);
- camera.position.set(center.x+dist*.30,center.y+dist*.22,center.z+dist*.78);
+ // Favor the real +Z-facing actor's face and torso.
+ if(HUMAN_MONSTER_IDS.includes(selected))
+  camera.position.set(center.x+dist*.17,center.y+dist*.14,center.z+dist*.85);
+ else camera.position.set(center.x+dist*.30,center.y+dist*.22,center.z+dist*.78);
  controls.update();
 }
 function zoomModel(factor){
@@ -654,6 +662,8 @@ window.__monsterViewerLayoutQA=()=>({
  toolsOpen:!byId('modelTools').hidden,
  canvasWidth:view.clientWidth,canvasHeight:view.clientHeight,
  selected,zoomDistance:camera.position.distanceTo(controls.target),
+ minPolarAngle:controls.minPolarAngle,
+ humanoidPortrait:HUMAN_MONSTER_IDS.includes(selected),
 });
 window.__monsterQualityQA=()=>({
  id:selected,detail:byId('quality').value,
