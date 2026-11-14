@@ -16,7 +16,11 @@ const bible=JSON.parse(fs.readFileSync('assets/story/characters/c01-s02-referenc
 const assignment=JSON.parse(fs.readFileSync('assets/story/stage-manifests/c01-s02-shot-assignments.json','utf8')).entries['post-victory|female|c01-s02-m6'];
 const edit='イリスの顔をマスター画像に一致させ、紙面の文字を消す';
 const qualityRules=JSON.parse(fs.readFileSync('assets/story/quality/artwork-p0-rules.json','utf8'));
-const prompt=buildChapter1ImagePrompt({shot,page,edit,bible,assignment,qualityRules,sourceKind:'candidate'});
+const stage2Manifest=JSON.parse(fs.readFileSync('assets/story/stage-manifests/c01-s02.manifest.json','utf8'));
+const stage1Manifest=JSON.parse(fs.readFileSync('assets/story/stage-manifests/c01-s01.manifest.json','utf8'));
+const prompt=buildChapter1ImagePrompt({
+ shot,page,edit,bible,assignment,stageManifest:stage2Manifest,qualityRules,sourceKind:'candidate'
+});
 for(const phrase of [shot.key,shot.scriptText,assignment.sceneGoal,assignment.compositionHint,
  ...assignment.visibleActorIds,edit,'画像を実際に1枚生成','16:9','画像に台詞・説明文を焼き込まない',
  'assets/story/characters/commander/female-master.webp',
@@ -35,13 +39,20 @@ for(const original of manual.shots){
  const panel=maleTownPage.shots.find(x=>x.key===original.key);
  assert(panel,'The production manifest cannot refer to a noncanonical shot '+original.key);
  const shotPrompt=buildChapter1ImagePrompt({
-  shot:panel,page:maleTownPage,manualManifest:manual,qualityRules,bible,sourceKind:'legacy'
+  shot:panel,page:maleTownPage,manualManifest:manual,stageManifest:stage1Manifest,
+  qualityRules,bible,sourceKind:'legacy'
  });
  for(const phrase of [original.scene,...original.actors,
   manual.visualStyleLock.id,qualityRules.policyId,'5コマ1枚のコラージュを描かない']){
   assert(shotPrompt.includes(phrase),'Manifest not injected into ChatGPT generator: '+phrase);
  }
+ assert(shotPrompt.includes('ステージ正本：assets/story/stage-manifests/c01-s01.manifest.json'));
 }
+assert(prompt.includes('ステージ正本：assets/story/stage-manifests/c01-s02.manifest.json'));
+assert(prompt.includes(stage2Manifest.renderConstraints.identityLock));
+assert.throws(()=>buildChapter1ImagePrompt({shot,page,edit,bible,assignment,
+ stageManifest:{...stage2Manifest,stageId:'c01-s03'},qualityRules}),/Wrong stage manifest/);
+
 assert.throws(()=>buildChapter1ImagePrompt({
  shot:maleTownPage.shots[0],page:maleTownPage,manualManifest:manual,bible
 }),/P0 image-generation quality manifest/);
@@ -69,6 +80,9 @@ assert(pageHtml.includes('html,body{height:100%;height:100dvh;overflow:hidden}')
 assert(ui.includes('ChatGPTでこの1コマを画像生成'));
 assert(ui.includes('buildChapter1ImagePrompt'));
 assert(ui.includes('manualManifestFor(shot)'),'The UI must load the shot-specific production manifest');
+assert(ui.includes('stageManifestFor(shot)'),'The UI must load EACH stage manifest');
+assert(ui.includes('stageManifest:prepared.stageManifest'),
+ 'The stage manifest must reach the generator prompt');
 assert(ui.includes('qualityRulesFor()'),'The UI must load P0 quality JSON for every prompt');
 assert(ui.includes('referenceFilesForHandoff(shot,prepared)'),'Android share must include real master image bytes');
 assert(ui.includes('manualManifest:prepared.manualManifest,qualityRules:prepared.qualityRules'),
