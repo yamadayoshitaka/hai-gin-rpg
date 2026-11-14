@@ -47,7 +47,19 @@
       "provider safety block"
     ],
     "noFormalP0AutoApproval": true,
-    "actualImagesRegisteredByThisManifest": 0
+    "actualImagesRegisteredByThisManifest": 0,
+    "imageTextPolicy": {
+      "imageTextPolicy": "none",
+      "speechBubble": false,
+      "dialogueInImage": false,
+      "narrationInImage": false,
+      "captionInImage": false,
+      "sfxTextInImage": false,
+      "titleInImage": false,
+      "panelNumberInImage": false,
+      "watermark": false
+    },
+    "requiredNoTextPrompt": "画像にはセリフ・吹き出し・文字・説明文・字幕・ナレーション・効果音の擬音文字・数字・コマ番号・タイトル・ロゴを一切描かない。絵だけを作る。"
   },
   "stageId": "c01-s04",
   "stageName": "第一章・第四ステージ 森と遺構の調査",
@@ -73,12 +85,12 @@
     "maxRows": 5,
     "maxPanelsPerPoster": 10,
     "minPerPanelNativePixels": [
-      1536,
-      864
+      800,
+      450
     ],
     "preferredPerPanelNativePixels": [
-      2048,
-      1152
+      1024,
+      576
     ],
     "aspectRatio": "16:9",
     "format": "webp",
@@ -89,23 +101,23 @@
     "nativeSheetPipeline": {
       "mode": "INDIVIDUAL_NATIVE_FRAMES_FIRST_THEN_LOSSLESS_REVIEW_SHEET",
       "preferredCellPixels": [
-        2048,
-        1152
+        1024,
+        576
       ],
       "minimumCellPixels": [
-        1536,
-        864
+        800,
+        450
       ],
       "maximumFramesPerSheet": 10,
       "columns": 2,
       "maxRows": 5,
       "preferredFullTenPanelSheetPixels": [
-        4096,
-        5760
+        2048,
+        2880
       ],
       "minimumFullTenPanelSheetPixels": [
-        3072,
-        4320
+        1600,
+        2250
       ],
       "originalGeneratorSupports4096x5760": "UNVERIFIED_DO_NOT_ASSUME",
       "nativeDetailGuarantee": "Each scene must be independently rendered at native resolution; composite raster dimensions or upscaling alone are not proof",
@@ -137,16 +149,16 @@
         5
       ],
       "preferredPerFrameNativePixels": [
-        2048,
-        1152
+        1024,
+        576
       ],
       "nativeMinimumPerFrame": [
-        1536,
-        864
+        800,
+        450
       ],
       "preferred10PanelSheetPixels": [
-        4096,
-        5760
+        2048,
+        2880
       ],
       "assemblyAlgorithm": "INDIVIDUAL_NATIVE_WEBP_FIRST_THEN_LOSSLESS_COMPOSITE",
       "stagingSource": "scripts/prepare-story-stage-posters.mjs",
@@ -174,6 +186,25 @@
       "textOrUiMismatchPolicy": "REJECTED",
       "stageSpecificCanonicalScenes": 48,
       "stageSpecificPlannedSheetCount": 5
+    },
+    "generationSheetPolicy": {
+      "preferredPanelsPerGeneratedSheet": 2,
+      "targetGeneratedSheetsPerRun": 10,
+      "targetUsablePanelsPerRun": 20,
+      "preferredSheetLongSidePixels": 2048,
+      "minimumPanelDimensionsAt16by9": [
+        800,
+        450
+      ],
+      "preferredPanelDimensionsAt16by9": [
+        1024,
+        576
+      ],
+      "twoPanelGeneratedSheetsPermitted": true,
+      "eachPanelHasDistinctShotPrompt": true,
+      "cutOutWithoutUpscale": true,
+      "qualityGateBeyondSize": true,
+      "old1536MinimumRetired": true
     }
   },
   "renderConstraints": {
@@ -263,14 +294,14 @@
       ],
       "posterInput": "assets/story/chapter-drafts/c01/posters/c01-s04-pre-male-p01.webp",
       "posterMinNativePixels": [
-        3072,
-        3456
+        1600,
+        1800
       ],
       "numberedArt": false,
       "status": "SCRIPTED_NOT_APPROVED_NO_SOURCE_IMAGE",
       "posterPreferredNativePixels": [
-        4096,
-        4608
+        2048,
+        2304
       ],
       "nativeAssembly": {
         "rows": 4,
@@ -280,8 +311,8 @@
         "blankCellCount": 0,
         "source": "INDIVIDUAL_NATIVE_WEBP_ONLY",
         "cellNativePixels": [
-          2048,
-          1152
+          1024,
+          576
         ],
         "preferredSheetPixels": [
           4096,
@@ -309,14 +340,14 @@
       ],
       "posterInput": "assets/story/chapter-drafts/c01/posters/c01-s04-pre-female-p01.webp",
       "posterMinNativePixels": [
-        3072,
-        3456
+        1600,
+        1800
       ],
       "numberedArt": false,
       "status": "SCRIPTED_NOT_APPROVED_NO_SOURCE_IMAGE",
       "posterPreferredNativePixels": [
-        4096,
-        4608
+        2048,
+        2304
       ],
       "nativeAssembly": {
         "rows": 4,
@@ -326,8 +357,8 @@
         "blankCellCount": 0,
         "source": "INDIVIDUAL_NATIVE_WEBP_ONLY",
         "cellNativePixels": [
-          2048,
-          1152
+          1024,
+          576
         ],
         "preferredSheetPixels": [
           4096,
@@ -354,14 +385,14 @@
       ],
       "posterInput": "assets/story/chapter-drafts/c01/posters/c01-s04-post-victory-male-p01.webp",
       "posterMinNativePixels": [
-        3072,
-        3456
+        1600,
+        1800
       ],
       "numberedArt": false,
       "status": "SCRIPTED_NOT_APPROVED_NO_SOURCE_IMAGE",
       "posterPreferredNativePixels": [
-        4096,
-        4608
+        2048,
+        2304
       ],
       "nativeAssembly": {
         "rows": 4,
@@ -371,8 +402,8 @@
         "blankCellCount": 1,
         "source": "INDIVIDUAL_NATIVE_WEBP_ONLY",
         "cellNativePixels": [
-          2048,
-          1152
+          1024,
+          576
         ],
         "preferredSheetPixels": [
           4096,
@@ -399,14 +430,14 @@
       ],
       "posterInput": "assets/story/chapter-drafts/c01/posters/c01-s04-post-victory-female-p01.webp",
       "posterMinNativePixels": [
-        3072,
-        3456
+        1600,
+        1800
       ],
       "numberedArt": false,
       "status": "SCRIPTED_NOT_APPROVED_NO_SOURCE_IMAGE",
       "posterPreferredNativePixels": [
-        4096,
-        4608
+        2048,
+        2304
       ],
       "nativeAssembly": {
         "rows": 4,
@@ -416,8 +447,8 @@
         "blankCellCount": 1,
         "source": "INDIVIDUAL_NATIVE_WEBP_ONLY",
         "cellNativePixels": [
-          2048,
-          1152
+          1024,
+          576
         ],
         "preferredSheetPixels": [
           4096,
@@ -444,14 +475,14 @@
       ],
       "posterInput": "assets/story/chapter-drafts/c01/posters/c01-s04-post-defeat-male-p01.webp",
       "posterMinNativePixels": [
-        3072,
-        3456
+        1600,
+        1800
       ],
       "numberedArt": false,
       "status": "SCRIPTED_NOT_APPROVED_NO_SOURCE_IMAGE",
       "posterPreferredNativePixels": [
-        4096,
-        4608
+        2048,
+        2304
       ],
       "nativeAssembly": {
         "rows": 4,
@@ -461,8 +492,8 @@
         "blankCellCount": 1,
         "source": "INDIVIDUAL_NATIVE_WEBP_ONLY",
         "cellNativePixels": [
-          2048,
-          1152
+          1024,
+          576
         ],
         "preferredSheetPixels": [
           4096,
@@ -489,14 +520,14 @@
       ],
       "posterInput": "assets/story/chapter-drafts/c01/posters/c01-s04-post-defeat-female-p01.webp",
       "posterMinNativePixels": [
-        3072,
-        3456
+        1600,
+        1800
       ],
       "numberedArt": false,
       "status": "SCRIPTED_NOT_APPROVED_NO_SOURCE_IMAGE",
       "posterPreferredNativePixels": [
-        4096,
-        4608
+        2048,
+        2304
       ],
       "nativeAssembly": {
         "rows": 4,
@@ -506,8 +537,8 @@
         "blankCellCount": 1,
         "source": "INDIVIDUAL_NATIVE_WEBP_ONLY",
         "cellNativePixels": [
-          2048,
-          1152
+          1024,
+          576
         ],
         "preferredSheetPixels": [
           4096,
@@ -529,14 +560,14 @@
       ],
       "posterInput": "assets/story/chapter-drafts/c01/posters/c01-s04-post-gameover-male-p01.webp",
       "posterMinNativePixels": [
-        3072,
-        864
+        1600,
+        450
       ],
       "numberedArt": false,
       "status": "SCRIPTED_NOT_APPROVED_NO_SOURCE_IMAGE",
       "posterPreferredNativePixels": [
-        4096,
-        1152
+        2048,
+        576
       ],
       "nativeAssembly": {
         "rows": 1,
@@ -546,8 +577,8 @@
         "blankCellCount": 0,
         "source": "INDIVIDUAL_NATIVE_WEBP_ONLY",
         "cellNativePixels": [
-          2048,
-          1152
+          1024,
+          576
         ],
         "preferredSheetPixels": [
           4096,
@@ -569,14 +600,14 @@
       ],
       "posterInput": "assets/story/chapter-drafts/c01/posters/c01-s04-post-gameover-female-p01.webp",
       "posterMinNativePixels": [
-        3072,
-        864
+        1600,
+        450
       ],
       "numberedArt": false,
       "status": "SCRIPTED_NOT_APPROVED_NO_SOURCE_IMAGE",
       "posterPreferredNativePixels": [
-        4096,
-        1152
+        2048,
+        576
       ],
       "nativeAssembly": {
         "rows": 1,
@@ -586,8 +617,8 @@
         "blankCellCount": 0,
         "source": "INDIVIDUAL_NATIVE_WEBP_ONLY",
         "cellNativePixels": [
-          2048,
-          1152
+          1024,
+          576
         ],
         "preferredSheetPixels": [
           4096,
