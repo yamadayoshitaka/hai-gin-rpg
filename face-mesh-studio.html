@@ -1082,6 +1082,32 @@ if(v32PartMode){
     BODY_PROFILES[picked.bodyType].label+'の3D顔を再生成';
   });
  }
+ // Mobile catalog reuses ONE real WebGL preview. Reloading the entire iframe
+ // for every face causes stale 3D state and SwiftShader context exhaustion.
+ // Only same-origin calls can drive the preview; this never writes a preset.
+ window.addEventListener('message',event=>{
+  const m=event.data;
+  if(event.origin!==location.origin||m?.type!=='hai-gin-v64-preview-select'||!ready)return;
+  const sex=m.gender==='male'?'male':'female';
+  if(sex!==gender)selectGender(sex);
+  if(m.character&&CHARACTER_CAST_BY_ID[m.character]){
+   const sel=$('v46'+(sex==='female'?'Female':'Male')+'Cast');
+   if(sel){sel.value=m.character;sel.dispatchEvent(new Event('change',{bubbles:true}));}
+  }else if(Number.isInteger(m.faceIndex)&&HERO_FACE_PRESETS[sex]?.[m.faceIndex]){
+   const host=$('v45'+(sex==='female'?'Female':'Male')+'FacePresets');
+   host?.querySelector('button[data-preset-index="'+m.faceIndex+'"]')?.click();
+  }
+  if(m.hair&&[...$('wigStyle').options].some(o=>o.value===m.hair)){
+   $('wigStyle').value=m.hair;$('wigStyle').dispatchEvent(new Event('change',{bubbles:true}));
+  }
+  if(FACE_EXPRESSIONS[m.expression]){
+   $('faceExpression').value=m.expression;
+   $('faceExpression').dispatchEvent(new Event('change',{bubbles:true}));
+  }
+  if(['front','side','back','threeQuarter','crown'].includes(m.view))setView(m.view);
+  $('status').textContent='v64 カタログの3D実体プレビュー：'+sex;
+  repaint();
+ });
 }
 async function init(){
  // Set the slider thumbs, labels and contact menu before the remote GLB
