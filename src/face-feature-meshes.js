@@ -678,7 +678,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
    const opening=eyeRadius*eyeApertureRatio*eyeHeight;
    // Keep a real circle and a thin white sclera ring; never clip the
    // actual iris geometry into an ugly horizontal stripe.
-   const physicalRadius=Math.min(requested,opening*(isIris?(female?(settings.irisDiameter>=1.30?.962:.94):.90):.73));
+   const physicalRadius=Math.min(requested,opening*(isIris?(female?(settings.irisDiameter>=1.30?.962:.935):.90):.73));
    // The pupil and colored iris share one gentle nasal gaze shift, not
    // independent offsets that could create strabismus in oblique views.
    const gazeX=x-side*eyeRadius*.055*eyeWidth;
