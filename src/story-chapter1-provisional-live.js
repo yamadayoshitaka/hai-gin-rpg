@@ -994,6 +994,50 @@ export const CHAPTER1_PROVISIONAL_LIVE=Object.freeze({
     "stageId": "c01-s03",
     "edition": "pre",
     "gender": "male"
+  },
+  "c01-s03|post-defeat|female|c01-s03-m10": {
+    "asset": "./assets/story/chapter1-provisional-live/c01-s03__post-defeat__female__c01-s03-m10.webp",
+    "sha256": "8d34ab8b96b519066465bbe1e532963b46e389b5eb4d3f98d01d2c61ff5a726d",
+    "provenance": "assets/story/chapter1-chatgpt-inbox/c01-s03__post-defeat__female__c01-s03-m10.review.json",
+    "sourceDraft": "assets/story/chapter1-chatgpt-inbox/c01-s03__post-defeat__female__c01-s03-m10.webp",
+    "status": "PROVISIONAL_OWNER_AUTHORIZED_PENDING_P0",
+    "originalLivePath": null,
+    "stageId": "c01-s03",
+    "edition": "post-defeat",
+    "gender": "female"
+  },
+  "c01-s03|post-defeat|female|c01-s03-m16": {
+    "asset": "./assets/story/chapter1-provisional-live/c01-s03__post-defeat__female__c01-s03-m16.webp",
+    "sha256": "ea9b302639cecdcab1450c5945f6542ee3075f25010ea131394f5802b82aa760",
+    "provenance": "assets/story/chapter1-chatgpt-inbox/c01-s03__post-defeat__female__c01-s03-m16.review.json",
+    "sourceDraft": "assets/story/chapter1-chatgpt-inbox/c01-s03__post-defeat__female__c01-s03-m16.webp",
+    "status": "PROVISIONAL_OWNER_AUTHORIZED_PENDING_P0",
+    "originalLivePath": null,
+    "stageId": "c01-s03",
+    "edition": "post-defeat",
+    "gender": "female"
+  },
+  "c01-s03|post-defeat|female|c01-s03-m6": {
+    "asset": "./assets/story/chapter1-provisional-live/c01-s03__post-defeat__female__c01-s03-m6.webp",
+    "sha256": "eada7d5723e6c79867991975d5809c4e2ad311c997e54b5db35b99467bb7dc5e",
+    "provenance": "assets/story/chapter1-chatgpt-inbox/c01-s03__post-defeat__female__c01-s03-m6.review.json",
+    "sourceDraft": "assets/story/chapter1-chatgpt-inbox/c01-s03__post-defeat__female__c01-s03-m6.webp",
+    "status": "PROVISIONAL_OWNER_AUTHORIZED_PENDING_P0",
+    "originalLivePath": null,
+    "stageId": "c01-s03",
+    "edition": "post-defeat",
+    "gender": "female"
+  },
+  "c01-s03|post-defeat|male|c01-s03-m16": {
+    "asset": "./assets/story/chapter1-provisional-live/c01-s03__post-defeat__male__c01-s03-m16.webp",
+    "sha256": "238d2ae17d8d63db77b6b144d979f06ebf95338e8fe6a98a1a32504877b86cc1",
+    "provenance": "assets/story/chapter1-chatgpt-inbox/c01-s03__post-defeat__male__c01-s03-m16.review.json",
+    "sourceDraft": "assets/story/chapter1-chatgpt-inbox/c01-s03__post-defeat__male__c01-s03-m16.webp",
+    "status": "PROVISIONAL_OWNER_AUTHORIZED_PENDING_P0",
+    "originalLivePath": null,
+    "stageId": "c01-s03",
+    "edition": "post-defeat",
+    "gender": "male"
   }
 });
 export function chapter1ProvisionalLivePanel(shot){

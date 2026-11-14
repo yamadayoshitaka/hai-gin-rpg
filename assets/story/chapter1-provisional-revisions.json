@@ -80,6 +80,34 @@
       "sha256": "69c939a2a85d5ced6ffb8277b028400fe6336c8364d202df9dc3f022611d09a6",
       "proof": "assets/story/chapter1-chatgpt-inbox/c01-s03__pre__male__c01-s03-m1.review.json",
       "actionAt": "2026-11-14T10:03:05.450Z"
+    },
+    {
+      "kind": "CHATGPT_OWNER_PROVISIONAL_NOT_P0",
+      "key": "c01-s03|post-defeat|female|c01-s03-m10",
+      "sha256": "8d34ab8b96b519066465bbe1e532963b46e389b5eb4d3f98d01d2c61ff5a726d",
+      "proof": "assets/story/chapter1-chatgpt-inbox/c01-s03__post-defeat__female__c01-s03-m10.review.json",
+      "actionAt": "2026-11-14T11:18:53.004Z"
+    },
+    {
+      "kind": "CHATGPT_OWNER_PROVISIONAL_NOT_P0",
+      "key": "c01-s03|post-defeat|female|c01-s03-m16",
+      "sha256": "ea9b302639cecdcab1450c5945f6542ee3075f25010ea131394f5802b82aa760",
+      "proof": "assets/story/chapter1-chatgpt-inbox/c01-s03__post-defeat__female__c01-s03-m16.review.json",
+      "actionAt": "2026-11-14T11:18:53.005Z"
+    },
+    {
+      "kind": "CHATGPT_OWNER_PROVISIONAL_NOT_P0",
+      "key": "c01-s03|post-defeat|female|c01-s03-m6",
+      "sha256": "eada7d5723e6c79867991975d5809c4e2ad311c997e54b5db35b99467bb7dc5e",
+      "proof": "assets/story/chapter1-chatgpt-inbox/c01-s03__post-defeat__female__c01-s03-m6.review.json",
+      "actionAt": "2026-11-14T11:18:53.005Z"
+    },
+    {
+      "kind": "CHATGPT_OWNER_PROVISIONAL_NOT_P0",
+      "key": "c01-s03|post-defeat|male|c01-s03-m16",
+      "sha256": "238d2ae17d8d63db77b6b144d979f06ebf95338e8fe6a98a1a32504877b86cc1",
+      "proof": "assets/story/chapter1-chatgpt-inbox/c01-s03__post-defeat__male__c01-s03-m16.review.json",
+      "actionAt": "2026-11-14T11:18:53.005Z"
     }
   ]
 }
