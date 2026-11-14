@@ -1,8 +1,12 @@
 import {chapterOneReviewPages,EDITION_LABELS,REVIEW_BRANCH,REVIEW_REPO} from './story-chapter1-review-core.js';
+import {buildChapter1ImagePrompt,CHATGPT_IMAGES_URL} from './story-chapter1-image-prompt.js';
 const $=id=>document.getElementById(id);
 const all=chapterOneReviewPages(),pages=new Map(all.map(p=>[p.number,p]));
 const rawRoot='https://raw.githubusercontent.com/'+REVIEW_REPO+'/'+REVIEW_BRANCH+'/';
 const STORE='hai-gin-ch1-review-drafts-v1';
+const PROMPTS_STORE='hai-gin-ch1-chatgpt-image-prompts-v1';
+let imageInstructions={};try{imageInstructions=JSON.parse(localStorage.getItem(PROMPTS_STORE)||'{}')||{};}catch{}
+const persistInstructions=()=>{try{localStorage.setItem(PROMPTS_STORE,JSON.stringify(imageInstructions));}catch{}};
 let saved={};try{saved=JSON.parse(localStorage.getItem(STORE)||'{}')||{};}catch{}
 const persist=()=>{try{localStorage.setItem(STORE,JSON.stringify(saved));}catch{}};
 const urls=new Set(),states=new Map();
@@ -84,9 +88,110 @@ function panel(shot,index){
  input.value=saved[shot.key]?.feedback||'';
  input.addEventListener('input',()=>{if(saved[shot.key]){saved[shot.key].feedback=input.value;persist();}});
  reason.append(why,input);
- root.append(top,art,speaker,txt,caption,actions,reason);
+ root.append(top,art,speaker,txt,caption,actions,reason,buildGenerationControls(shot));
  return {root,img,empty,caption,actions};
 }
+const referencePromises=new Map();
+async function referenceFor(shot){
+ const target=shot.stageId==='c01-s01'?'c01-s02':shot.stageId;
+ const file='./assets/story/characters/'+target+'-reference-bible.json';
+ if(!referencePromises.has(file))referencePromises.set(file,
+  fetch(file).then(r=>{if(!r.ok)throw Error('参照人物設定を取得できません');return r.json();})
+   .catch(e=>{referencePromises.delete(file);throw e;}));
+ return referencePromises.get(file);
+}
+let stage2Assignments=null;
+async function stage2Assignment(shot){
+ if(shot.stageId!=='c01-s02')return null;
+ if(!stage2Assignments)stage2Assignments=fetch(
+  './assets/story/stage-manifests/c01-s02-shot-assignments.json'
+ ).then(r=>{if(!r.ok)throw Error('シーン構成を取得できません');return r.json();})
+  .catch(e=>{stage2Assignments=null;throw e;});
+ const json=await stage2Assignments;
+ return json.entries?.[shot.edition+'|'+shot.gender+'|'+shot.shotId]||null;
+}
+function setGeneratorMessage(node,value){
+ node.textContent=value;
+}
+async function generatePrompt(shot,notes){
+ const bible=await referenceFor(shot);
+ const assignment=await stage2Assignment(shot);
+ return buildChapter1ImagePrompt({shot,page:current,bible,assignment,
+  edit:notes||saved[shot.key]?.feedback||'',sourceKind:states.get(shot.key)?.kind});
+}
+async function copyPrompt(text,textarea){
+ try{
+  if(!navigator.clipboard?.writeText)throw Error('Browser clipboard unavailable');
+  await navigator.clipboard.writeText(text);
+  return true;
+ }catch{
+  textarea.hidden=false;textarea.value=text;
+  textarea.focus();textarea.select();
+  return false;
+ }
+}
+function buildGenerationControls(shot){
+ const box=document.createElement('section');box.className='generator';
+ const heading=document.createElement('h3');
+ heading.textContent='✦ このコマをChatGPTで画像生成';
+ const label=document.createElement('label');label.textContent='ChatGPTに伝えたい修正・作画指示';
+ const input=document.createElement('textarea');input.rows=3;
+ input.placeholder='例：主人公の目を自然に、髪を長く、背景を夕焼けに。登場人物の服を参照画像に統一。';
+ input.value=imageInstructions[shot.key]||saved[shot.key]?.feedback||'';
+ input.addEventListener('input',()=>{
+  imageInstructions[shot.key]=input.value;persistInstructions();
+ });
+ const buttons=document.createElement('div');buttons.className='generation-actions';
+ const open=document.createElement('button');open.type='button';open.className='chatgpt-button';
+ open.textContent='✦ ChatGPTでこの1コマを画像生成';
+ const copy=document.createElement('button');copy.type='button';copy.textContent='プロンプトをコピー';
+ const show=document.createElement('button');show.type='button';show.textContent='生成指示を確認';
+ const message=document.createElement('p');message.className='handoff';
+ message.textContent='ChatGPT Plusの画像生成を利用。追加のAPIキー不要。画像の自動取り込みは未対応。';
+ const preview=document.createElement('textarea');preview.className='preview-prompt';
+ preview.readOnly=true;preview.hidden=true;preview.setAttribute('aria-label','ChatGPTに渡す完成プロンプト');
+ async function prepare(){
+  setGeneratorMessage(message,'台本とキャラ参照画像をまとめています…');
+  const prompt=await generatePrompt(shot,input.value.trim());
+  preview.value=prompt;
+  return prompt;
+ }
+ open.addEventListener('click',async()=>{
+  open.disabled=true;
+  try{
+   const prompt=await prepare();
+   const success=await copyPrompt(prompt,preview);
+   if(!success){
+    setGeneratorMessage(message,'自動コピーできませんでした。表示したプロンプトを長押しでコピーし、「ChatGPTを開く」を利用してください。');
+    show.textContent='ChatGPTを開く';
+    show.onclick=()=>window.location.assign(CHATGPT_IMAGES_URL);
+    return;
+   }
+   setGeneratorMessage(message,'プロンプトをコピーしました。ChatGPTの入力欄に貼り付けて送信してください。');
+   // Do not use unsupported ?q= query parameters or claim that an
+   // external web page can invoke the in-app image generation tool.
+   window.location.assign(CHATGPT_IMAGES_URL);
+  }catch(error){setGeneratorMessage(message,'準備に失敗：'+error.message);}
+  finally{open.disabled=false;}
+ });
+ copy.addEventListener('click',async()=>{
+  try{
+   const prompt=await prepare();
+   const success=await copyPrompt(prompt,preview);
+   setGeneratorMessage(message,success?'コピーしました。ChatGPTで貼り付けて画像生成を依頼してください。':'表示した文章を選択してコピーしてください。');
+  }catch(e){setGeneratorMessage(message,'準備に失敗：'+e.message);}
+ });
+ show.addEventListener('click',async()=>{
+  if(show.textContent==='ChatGPTを開く'){window.location.assign(CHATGPT_IMAGES_URL);return;}
+  if(!preview.hidden){preview.hidden=true;return;}
+  try{await prepare();preview.hidden=false;setGeneratorMessage(message,'この内容をChatGPTへ渡します。台本の文字は画像に描きません。');}
+  catch(e){setGeneratorMessage(message,'準備に失敗：'+e.message);}
+ });
+ buttons.append(open,copy,show);
+ box.append(heading,label,input,buttons,message,preview);
+ return box;
+}
+
 function refreshCard(key){
  const el=document.querySelector('[data-shot-key="'+CSS.escape(key)+'"]');
  if(!el)return;
