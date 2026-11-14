@@ -470,6 +470,7 @@ export function fitStudioNeckContinuity({faceRoot,faceMesh,wardrobeRoot}={}){
   unifiedSkinNeckReason:united.reason||null,
   unifiedSkinNeckTriangles:united.addedTriangles||0,
   v61WidenedNeck:!!united.v61WidenedNeck,
+  v61NeckRingCount:united.v61NeckRingCount??null,
   v61WidthGainAtMid:united.v61WidthGainAtMid??null,
   v61DepthGainAtMid:united.v61DepthGainAtMid??null,
   v61NeckMidHalfWidth:united.neckMidHalfWidthX??null,
