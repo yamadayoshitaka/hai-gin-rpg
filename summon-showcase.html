@@ -88,7 +88,7 @@
 </head>
 <body>
   <header id="galleryHeader">
-    <div class="galleryHeading"><h1>召喚獣・軍馬 3D鑑賞 v4.5.16</h1><small>森の精霊弓士・光翼の守護天使 / CC0 Quaternius人体の顔・弓・羽毛の翼・回復・蘇生</small></div>
+    <div class="galleryHeading"><h1>召喚獣・軍馬 3D鑑賞 v4.5.17</h1><small>森の精霊弓士・光翼の守護天使 / CC0 Quaternius人体の顔・弓・羽毛の翼・回復・蘇生</small></div>
     <label for="type" class="speciesPicker"><span class="typeCaption">種類</span><select id="type">
       <option value="wolf">灰狼</option>
       <option value="wyvern">飛竜</option>
@@ -120,7 +120,7 @@
       style="max-width:180px;font-size:12px"></label>
     <details><summary>追加アクション 7種</summary><div id="poseButtons">
       <button type="button" data-pose="roar">咆哮・鳴き声</button>
-      <button type="button" data-pose="special">必殺技</button>
+      <button type="button" data-pose="special">魔法・必殺技（詠唱）</button>
       <button type="button" data-pose="dodge">回避</button>
       <button type="button" data-pose="guard">防御</button>
       <button type="button" data-pose="hit">被弾</button>
@@ -480,6 +480,8 @@
        femaleSummonHandle?.metadata?.dragonCraniumNativeTopology??null,
       dragonNativeScalpTriangles:
        femaleSummonHandle?.metadata?.dragonNativeScalpTriangles??0,
+      hairStrands:femaleSummonHandle?.metadata?.hairStrands??null,
+      combatMotionLayer:femaleSummonHandle?.metadata?.combatMotionLayer??null,
       sourceCraniumWigCut:
        femaleSummonHandle?.metadata?.sourceCraniumWigCut??null,
       sourceCraniumCutMode:
