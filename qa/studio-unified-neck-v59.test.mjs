@@ -47,6 +47,16 @@ test('v59 unified connector shares face draw mesh and physically reaches the act
   'the connector must not stop at the top of an exposed donor neck');
  assert.equal(result.separateNeckGeometryHidden,true,
   'v54/v58 detached tubes must not render on top of skin');
+ assert.equal(result.unifiedNeckColorSmoothed,true);
+ assert.equal(result.unifiedNeckNormalsSmoothed,true);
+ assert.equal(result.raisedInnerCollarApplied,true);
+ assert.ok(result.visibleSkinNeckLength>.017&&result.visibleSkinNeckLength<.04,
+  'only a short skin neck is visible above the under-armour tunic collar');
+ assert.ok(result.raisedInnerCollarTopY>result.actualCollarHeight);
+ const raised=wardrobe.getObjectByName('STUDIO_RAISED_INNER_TUNIC_COLLAR_V59');
+ assert.ok(raised?.isMesh);
+ assert.equal(raised.material.color.getHex(),0x536a7e);
+ assert.equal(raised.parent,wardrobe,'raised collar belongs to outfit, not face');
  assert.equal(face.geometry.userData.studioUnifiedNeck,true);
  assert.equal(face.children.filter(x=>x.isMesh&&x.visible).length,0,
   'skin neck must be part of face geometry, not a separate rendered cylinder');
@@ -58,6 +68,8 @@ test('v59 unified connector shares face draw mesh and physically reaches the act
  assert.equal(again.unifiedSkinNeckApplied,true);
  assert.equal(face.geometry.getAttribute('position').count,initialVerts,
   'reapplying body pose cannot add a second cumulative neck');
+ assert.equal(wardrobe.children.filter(m=>m.name==='STUDIO_RAISED_INNER_TUNIC_COLLAR_V59').length,1,
+  'switching poses must replace the garment collar rather than accumulate tubes');
  assert.deepEqual(source.getAttribute('position').array,sourcePosition);
  assert.deepEqual(source.getAttribute('color').array,sourceColors);
  root.clear();face.geometry.dispose();source.dispose();face.material.dispose();
