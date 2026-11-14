@@ -163,7 +163,37 @@ export function createCharacterHairStrandsGeometry({
    }
   }
  }
- return surfaceMesh(positions,uvs,indices,'scalp-rooted-tapered-hair-strands');
+ // Outer locks begin ~0.40 radians below the crown and leave a bald disc.
+ // Densely combed centre-to-rim ribbons bridge the pole all the way to the
+ // existing long locks. Do not use a bright plastic helmet to hide the hole.
+ const canopy=detail==='low'?48:168;
+ for(let i=0;i<canopy;i++){
+  const phi0=(i*.61803398875%1)*Math.PI*2;
+  const startTheta=.022+Math.sqrt(rand())*.45;
+  const sweep=.34+rand()*.34;
+  const start=positions.length/3;
+  for(let k=0;k<=4;k++){
+   const t=k/4,theta=startTheta+sweep*t;
+   const phi=phi0+.13*t*Math.sin(i*3.1);
+   const st=Math.sin(theta),ct=Math.cos(theta),lift=.003+Math.sin(Math.PI*t)*.006;
+   const centerPoint=vec3(cx+(rx+lift)*st*Math.cos(phi),
+    cy+(ry+lift)*ct,cz+(rz+lift)*st*Math.sin(phi));
+   const tangent=vec3(-Math.sin(phi),0,Math.cos(phi));
+   const width=(detail==='low'?.009:.0056)*(1-t*.65);
+   for(const sign of [-1,1]){
+    const q=centerPoint.clone().addScaledVector(tangent,width*sign);
+    positions.push(q.x,q.y,q.z);uvs.push(i/canopy,t);
+   }
+   if(k<4){
+    const a=start+k*2;
+    indices.push(a,a+1,a+2,a+1,a+3,a+2);
+   }
+  }
+ }
+ const g=surfaceMesh(positions,uvs,indices,'scalp-rooted-tapered-hair-strands');
+ g.userData.crownCanopyStrands=canopy;
+ g.userData.poleCoverage=true;
+ return g;
 }
 /**
  * measureCanonicalScalp() returns coordinates in the source HEAD-BONE
@@ -216,5 +246,10 @@ export function attachCanonicalCharacterGroom({
   item.userData.canonicalHairGroom=true;
   item.userData.scaffoldSamples=scalp.samples;
  }
+ // Shade the scalp base below the fibre layer. A pale cream shell with
+ // near-zero top roots previously looked exactly like exposed scalp.
+ if(crown.material?.color)crown.material.color.setHex(color).multiplyScalar(.80);
+ if(crown.material?.roughness!=null)crown.material.roughness=.97;
+ crown.userData.crownBaseTinted=true;
  return {crown,locks,scalp};
 }
