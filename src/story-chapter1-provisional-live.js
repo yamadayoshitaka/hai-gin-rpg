@@ -1167,6 +1167,26 @@ export const CHAPTER1_PROVISIONAL_LIVE=Object.freeze({
       "Official character references were not physically attached to generation",
       "Formal P0 visual approval incomplete"
     ]
+  },
+  "c01-s04|pre|male|c01-s04-m2": {
+    "asset": "./assets/story/chapter1-provisional-live/c01-s04__pre__male__c01-s04-m2.webp",
+    "sha256": "fc035c7037f7ccc2cfb0281796c533e99986f6884e084e4905da00fe362338a3",
+    "provenance": "assets/story/chapter1-chatgpt-inbox/c01-s04__pre__male__c01-s04-m2.review.json",
+    "sourceDraft": "assets/story/chapter1-chatgpt-inbox/c01-s04__pre__male__c01-s04-m2.webp",
+    "status": "PROVISIONAL_OWNER_AUTHORIZED_PENDING_P0",
+    "originalLivePath": null,
+    "stageId": "c01-s04",
+    "edition": "pre",
+    "gender": "male",
+    "nativePixels": [
+      1664,
+      936
+    ],
+    "visualStatus": "VISUALLY_CHECKED_OWNER_AUTHORIZED_PROVISIONAL",
+    "outstandingP0": [
+      "Official Lucia/Garan master image bytes not attached to ChatGPT generator",
+      "Formal P0 approval not granted"
+    ]
   }
 });
 export function chapter1ProvisionalLivePanel(shot){

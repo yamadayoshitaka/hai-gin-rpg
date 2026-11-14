@@ -174,6 +174,14 @@
       "proof": "assets/story/chapter1-chatgpt-inbox/c01-s04__pre__female__c01-s04-m1.candidate.json",
       "actionAt": "2026-11-14T15:13:47.774Z",
       "note": "Owner explicitly authorized reversible provisional registration of the displayed stage4 candidate despite pre-existing cast mismatch. No formal P0 claim; must regenerate against official Lucia master. Cross-gender and cross-outcome reuse prohibited."
+    },
+    {
+      "kind": "CHATGPT_OWNER_PROVISIONAL_NOT_P0",
+      "key": "c01-s04|pre|male|c01-s04-m2",
+      "sha256": "fc035c7037f7ccc2cfb0281796c533e99986f6884e084e4905da00fe362338a3",
+      "proof": "assets/story/chapter1-chatgpt-inbox/c01-s04__pre__male__c01-s04-m2.review.json",
+      "actionAt": "2026-11-15T00:26:00+09:00",
+      "note": "Distinct one-frame cinematic ChatGPT output, exactly Lucia and Garan; user requested bulk production and reversible registration. No character-master binary attachment, no formal QA."
     }
   ]
 }

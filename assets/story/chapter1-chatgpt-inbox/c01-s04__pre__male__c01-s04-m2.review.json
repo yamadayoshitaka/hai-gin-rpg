@@ -1,0 +1,48 @@
+{
+  "qaStatus": "OWNER_PROVISIONAL",
+  "shotKey": "c01-s04|pre|male|c01-s04-m2",
+  "scriptText": "勝つだけなら将軍を呼びます。あなたには、何のために勝つかを決めてほしい。",
+  "sourceModel": "ChatGPT Images",
+  "ownerAuthorized": true,
+  "humanVisualQAConfirmed": false,
+  "finalP0Approved": false,
+  "reviewedBy": "assistant-visual-inspection",
+  "reviewedAt": "2026-11-15T00:26:00+09:00",
+  "generationReferencesAttached": false,
+  "referenceImagesAttached": [],
+  "quality": {
+    "exactCanonicalScene": true,
+    "exactCast": true,
+    "genderAndOutcomeCorrect": true,
+    "noTextUI": true,
+    "original3DCinematicStyle": true,
+    "nativeDetail": true,
+    "realReferenceBytesAttachedToImageGenerator": false
+  },
+  "provisionalOnly": true,
+  "missingP0Requirements": [
+    "physical official Lucia/Garan cast master images were not supplied to generator",
+    "formal P0 visual approval missing"
+  ],
+  "provisionalVisualBrief": "Two-person dialogue in forest stone ruins: silver-haired young regent Lucia in blue-and-silver regal attire gestures to stern older scarred knight Garan in worn armor. No young male hero is shown, as canonical m2 does not feature him. No text or UI.",
+  "imageSha256": "fc035c7037f7ccc2cfb0281796c533e99986f6884e084e4905da00fe362338a3",
+  "nativePixels": [
+    1664,
+    936
+  ],
+  "provenance": {
+    "sourceFileName": "a_cinematic_hyper_realistic_3d_fantasy_scene_in_a.png",
+    "sourceResolution": [
+      1672,
+      941
+    ],
+    "unscaledCenterCrop": [
+      4,
+      2,
+      1668,
+      938
+    ],
+    "noUpscaling": true,
+    "generationId": "85adf086-dda7-4edc-a747-5d73a535e3cc"
+  }
+}
