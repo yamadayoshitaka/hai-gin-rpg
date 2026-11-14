@@ -7,6 +7,7 @@
 import {mangaForStage} from './story-stage-manga.js';
 import {registeredStoryPanelAsset,storySheetCrop,storyArtDisplayUrl} from './story-panel-registered-art.js';
 import {provisionalRegisteredStoryPanel} from './story-provisional-registered-art.js';
+import {chapter1ProvisionalLivePanel} from './story-chapter1-provisional-live.js';
 import {comicForStage,comicPageAsset} from './story-chapter-comic.js';
 import {renderStoryRubyText} from './story-ruby-display.js';
 import {fantasyCueForMangaPanel} from './fantasy-scene-score.js';
@@ -133,9 +134,9 @@ export function createMangaViewer({container=document.body,storage=globalThis.lo
    '（'+shot.comicEdition+'）'+(shot.protagonistGender==='female'?'女性版':'男性版');
   $('.manga-speaker').textContent=shot.speaker+(shot.characterId?'　／　'+shot.faction+'・'+shot.role:'　／　ナレーション');
   renderStoryRubyText($('.manga-line'),shot);
-  const draftArt=provisionalRegisteredStoryPanel(shot);
+  const draftArt=chapter1ProvisionalLivePanel(shot)||provisionalRegisteredStoryPanel(shot);
   $('.manga-shot').textContent=story.id.toUpperCase()+' · '+shot.comicEdition+' · ページ'+shot.comicPage+
-   (draftArt?' · 仮原画（人物・台本の品質承認前）':'');
+   (draftArt?' · 仮承認・ゲーム反映中（正式品質審査前／差し戻し可能）':'');
   $('.manga-progress').textContent='セリフ '+(index+1)+' / '+visiblePanels.length+'　（このページ '+(shot.comicCell+1)+' / '+pagePanels.length+'コマ）';
   $('.manga-previous').disabled=index===0;
   $('.manga-next').textContent=index===visiblePanels.length-1?
