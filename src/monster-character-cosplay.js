@@ -454,6 +454,18 @@ export function createCosplayedHumanoidMonster(spec,{
  let disposed=false,ready=false,failed=false,rig=null,visual=null;
  let seraphWingPivots=[];
  let disposeCostume=null,activeAction='idle',lastTime=null,lastAction='idle';
+ // A GLB may finish loading after a user switches species. The late visual
+ // must not remain attached to an already disposed preview host.
+ const releaseLateCharacterLoad=()=>{
+  disposeCostume?.();disposeCostume=null;
+  host.userData.canonicalMotion?.mixer?.stopAllAction();
+  host.userData.canonicalMotion?.jobController?.dispose?.();
+  host.userData.footContactIK?.dispose?.();
+  const lateVisual=visual||host.userData.canonicalVisualRoot||
+   host.children.find(x=>x.userData?.sourceModelId);
+  if(lateVisual?.parent)lateVisual.parent.remove(lateVisual);
+  host.parent?.remove(host);
+ };
  const state={root,source:'procedural-loading',profile,
   start(action,time=0){
    if(root.userData.action!==action||root.userData.actionAt!==time){
@@ -546,7 +558,7 @@ export function createCosplayedHumanoidMonster(spec,{
    visual=host.userData.canonicalVisualRoot||
       host.children.find(x=>x.userData?.sourceModelId);
    if(!visual?.userData?.sourceModelId)throw Error('Canonical visual missing');
-   if(disposed)return {source:'cancelled'};
+   if(disposed){releaseLateCharacterLoad();return {source:'cancelled'};}
    disposeCostume=buildMonsterCostume(THREE,visual,profile,detail);
    state.metadata=visual.userData.monsterCostume;
    seraphWingPivots=[];
@@ -554,7 +566,7 @@ export function createCosplayedHumanoidMonster(spec,{
     if(node.userData?.seraphFlightWingSide===-1||
        node.userData?.seraphFlightWingSide===1)seraphWingPivots.push(node);
    });
-   if(disposed)return {source:'cancelled'};
+   if(disposed){releaseLateCharacterLoad();return {source:'cancelled'};}
    // Female summon forms have NO procedural bestiary fallback owned by
    // this adapter: their live battle InstancedMesh already stays visible
    // until canonical GLB is ready. Do not dereference a null fallback.
