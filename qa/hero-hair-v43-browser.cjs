@@ -127,9 +127,8 @@ const hex=bytes=>crypto.createHash('sha256').update(bytes).digest('hex');
    if(gender==='female'&&cast.v33HairColor!=='silver')throw Error('Lucia lost silver hair');
    if(gender==='male'&&cast.v33HairColor!=='ash')throw Error('Garan lost gray hair');
    await page.locator('#front').click();
-   await page.locator('#faceCanvas').screenshot({
-    path:path.join(out,gender+'-featured-character.png'),
-    timeout:60000,animations:'disabled'});
+   await captureChromiumScreenshot(page,
+    path.join(out,gender+'-featured-character.png'),{selector:'#faceCanvas'});
   }
   if(errors.length)throw Error('Browser exceptions: '+errors.join(';'));
   console.log('HERO_HAIR_V43_VISUAL_QA_OK: three unique front/side/back silhouettes per gender');
