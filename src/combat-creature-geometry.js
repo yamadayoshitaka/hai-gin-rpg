@@ -13,6 +13,7 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import {createFaceProfile} from './facial-feature-profiles.js?v=1';
 import {creatureFaceVolume,sculptAxialFacePoint,sculptVerticalFacePoint} from './creature-face-volume.js';
 import {addHumanoidSummon} from './creature-summon-humanoid-anatomy.js?v=4.5.00';
+import {blendSummonedWolfBlueprint} from './creature-wolf-hybrid.js?v=4.5.20';
 import {createRootedCreatureHornGeometry,createCreatureScuteGeometry}
   from './creature-anatomy-mesh.js';
 import {createCreatureGumSocketGeometry} from './creature-seam-geometry.js';
@@ -406,6 +407,25 @@ function addCoatSculpture(g,type,s,detail){
     [l*.18,h-.025,w*.84,h*.31],[l*.57,h+.065,w*.99,h*.39],
     [l*.85,h+.09,w*.72,h*.31],[l*1.03,h+.05,.012,.06],
   ]);
+  // Morphological cross of current grey wolf with the original m001
+  // wolf king: borrow cheek/neck ridge geometry without replacing the
+  // existing animated jaw and four separate paw batches.
+  if(s.hybrid&&detail==='high'){
+    const blend=s.hybrid.weight;
+    for(const side of [-1,1]){
+      curved('core',highlight,[
+        [side*w*.65,h+.20,l*.54],
+        [side*w*(.82+.08*blend),h+.31,l*.32],
+        [side*w*(1.02+.08*blend),h+.18,l*.08],
+        [side*w*.75,h+.07,-l*.18]
+      ],[.045,.076,.055,.004]);
+      curved('core',shadow,[
+        [side*w*.36,h+.33,l*.89],
+        [side*w*.52,h+.23,l*1.02],
+        [side*w*.49,h+.06,l*1.25]
+      ],[.040,.049,.002]);
+    }
+  }
   const headY=h+.275,headZ=l+.32;
   const neckStart=[0,h+.13,l*.55],neckEnd=[0,headY-.13,headZ-.26];
   g.curved('core',skin,[neckStart,[0,h+.34,l*.8],neckEnd],[w*.54,w*.48,w*.38]);
@@ -1253,7 +1273,8 @@ export function buildCombatObjectGeometry(type,{detail='high',faceOverrides={}}=
   else {
     const s=CREATURE_VISUAL_SPECS[type];
     if(!s)throw Error('未登録の召喚・騎乗オブジェクト: '+type);
-    if(type==='wolf') addCoatSculpture(g,type,s,detail);
+    if(type==='wolf') addCoatSculpture(g,type,
+      blendSummonedWolfBlueprint(s),detail);
     else if(type==='horse') addHorse(g,s,detail);
     else if(type==='dragon_lord')addDragonLord(g,s,detail);
     else if(type==='forest_archer'||type==='seraph_guardian')addHumanoidSummon(g,type,s,detail);
