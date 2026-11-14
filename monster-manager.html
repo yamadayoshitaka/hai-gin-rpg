@@ -67,7 +67,7 @@ legend{font-size:12px;color:#e8d9b6;padding:0 6px}
 </style>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
 </head><body>
-<header><a href="./index.html">← メニュー</a><h1>魔物図鑑・モンスター管理 <small>50種 / v4.5.16</small></h1>
+<header><a href="./index.html">← メニュー</a><h1>魔物図鑑・モンスター管理 <small>50種 / v4.5.17</small></h1>
  <a href="./summon-showcase.html?v=4.5.16">召喚獣一覧</a></header>
 <main id="bestiaryMain">
  <aside id="catalogPanel" aria-label="モンスター一覧">
@@ -586,7 +586,7 @@ byId('quality').addEventListener('change',()=>{
  notice('描画密度を '+detail+' に変更しました。制作原型は高負荷です。');
 });
 for(const [id,title] of MONSTER_ACTIONS){
- const button=document.createElement('button');button.textContent=title;button.title=id;
+ const button=document.createElement('button');button.textContent=id==='special'?'固有技・魔法（詠唱）':title;button.title=id;
  button.onclick=()=>{
    if(!model)return;
    if(costumeHandle)costumeHandle.start(id,clock.getElapsedTime());
