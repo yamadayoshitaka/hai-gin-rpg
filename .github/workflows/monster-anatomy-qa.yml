@@ -9,6 +9,8 @@ on:
       - 'src/monster-shape-kit.js'
       - 'src/monster-humanoid-hair.js'
       - 'src/monster-character-cosplay.js'
+      - 'src/monster-studio-base-intake.js'
+      - 'qa/monster-studio-base-intake.test.mjs'
       - 'src/monster-gothic-sculpt.js'
       - 'src/monster-regal-garments.js'
       - 'src/female-summon-costumes.js'
@@ -47,7 +49,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for file in src/monster-anatomy-reference.js src/monster-joint-motion.js src/monster-animation.js src/monster-geometry.js src/monster-humanoid-hair.js src/monster-character-cosplay.js src/monster-gothic-sculpt.js src/monster-regal-garments.js src/female-summon-costumes.js src/dragonkin-native-scalp.js src/female-summon-scalp-cut.js; do
+          for file in src/monster-anatomy-reference.js src/monster-joint-motion.js src/monster-animation.js src/monster-geometry.js src/monster-humanoid-hair.js src/monster-character-cosplay.js src/monster-studio-base-intake.js src/monster-gothic-sculpt.js src/monster-regal-garments.js src/female-summon-costumes.js src/dragonkin-native-scalp.js src/female-summon-scalp-cut.js; do
             node --check "$file"
           done
       - name: Install pinned Three.js geometry runtime
@@ -58,6 +60,7 @@ jobs:
       - name: Regress all humanoid instances, cloak, hair, skeleton and fitted outfit geometry
         run: |
           npm run test:humanoid-monster-cosplay
+          npm run test:monster-studio-base-intake
           npm run test:monster-gothic-sculpt
           npm run test:humanoid-orientation-hair
           npm run test:regal-humanoid-wardrobe
