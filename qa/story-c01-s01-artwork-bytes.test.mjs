@@ -3,6 +3,7 @@ import {readFileSync,existsSync} from 'node:fs';
 import {createHash} from 'node:crypto';
 import {comicForStage,comicPageAsset} from '../src/story-chapter-comic.js';
 import {registeredStoryPanelAsset} from '../src/story-panel-registered-art.js';
+import {chapter1ProvisionalLivePanel} from '../src/story-chapter1-provisional-live.js';
 const root=new URL('../',import.meta.url);
 const inventory=JSON.parse(readFileSync(new URL('../assets/story/chapters/c01/c01-s01-draft-registry-20261113.json',import.meta.url),'utf8'));
 assert.equal(inventory.stageId,'c01-s01');
@@ -36,7 +37,20 @@ for(const e of inventory.editions){
  for(let i=0;i<e.panelCount;i++){
   const p=e.panels[i],scene=comic.panels[i];
   assert.equal(scene.id,'c01-s01-m'+Number(p.id.match(/-m(\d+)$/)?.[1]),'Wrong canonical scene order '+e.edition);
-  assert.equal('./'+p.path,registeredStoryPanelAsset(scene),'Wrong gender/outcome art path');
+  const live=registeredStoryPanelAsset(scene);
+  const provisional=chapter1ProvisionalLivePanel(scene);
+  if(provisional){
+   assert.equal(live,provisional.asset,'Provisional game must bind real canonical image');
+   assert(provisional.asset.includes(
+    [scene.stageId,scene.comicEdition,scene.protagonistGender,scene.id].join('__')),
+    'Provisional image key cannot borrow gender, outcome or shot');
+   const newImage=bytesFor(provisional.asset.slice(2));
+   assert.equal(createHash('sha256').update(newImage).digest('hex'),
+    provisional.sha256,'Provisional image bytes differ from SHA-verified art');
+   assert.equal(provisional.status,'PROVISIONAL_NOT_VISUALLY_APPROVED');
+  }else{
+   assert.equal('./'+p.path,live,'Legacy gender/outcome binding must remain unchanged');
+  }
   assert(!usedPaths.has(p.path),'Same image path assigned to two cuts');
   usedPaths.add(p.path);
   const file=bytesFor(p.path);
