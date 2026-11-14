@@ -311,7 +311,13 @@ export function addStudioRaisedInnerCollar({wardrobeRoot,joined}={}){
  // v61: shorten visible neck 24% from v59, while thickening the cervical
  // surface. The face skin still uses its original material and vertices.
  const topY=joined.seamMinY-.029*STUDIO_NECK_V61_SHAPE.visibleSkinFactor;
- const baseY=joined.collarY-.016;
+ // Skinned outfits can raise the sewn neckline independently of the bare
+ // collarbone during animation. Never skip the only fabric underlap when
+ // a slim male/female pose makes the measured garment just 8–11mm below the
+ // jaw. The new lower bound extends fabric INSIDE the existing garment,
+ // rather than moving or cutting any skin vertices.
+ const nominalBaseY=joined.collarY-.016;
+ const baseY=Math.min(nominalBaseY,topY-.014);
  if(topY-baseY<.012||topY>=joined.seamMinY-.012)
   return {applied:false,reason:'collar-height-invalid',topY,baseY};
  const count=48,rings=10,verts=[],uv=[],indices=[];

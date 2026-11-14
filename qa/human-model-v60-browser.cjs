@@ -48,6 +48,8 @@ async function main(){
     await page.waitForTimeout(250);
     const state=await page.evaluate(key=>window[key](),qa);
     const one=state.v36RealBattleCostume;
+    if(!one.v63CoveredSkinMasked||!one.v63BareAnatomyRestorable)
+     throw Error(gender+' '+build+' v63 reversible skin coverage inactive');
     const neck=one.proportions.neckContinuity;
     const ratio=neck.visibleSkinNeckLength;
     if(!(neck.v60NapeRise===(gender==='male'?.018:.012)&&
@@ -81,6 +83,20 @@ async function main(){
     await captureChromiumScreenshot(page,out+'/'+gender+'-'+build+'-full-front.png',
      {selector:'#bodyCanvas'});
    }
+   // Verify real shaded scalp and optical fibers through native 3D meshes.
+   const optics=await page.evaluate(args=>{
+    const preview=window[args.preview],wig=preview?.getWig?.();
+    const layered=wig?.getObjectByName('SINGLE_MESH_NORMAL_LAYERED_HAIR');
+    const iris=preview?.getEyeParts?.()?.getObjectByName('LEFT_CURVED_IRIS');
+    return {wig:!!layered,wigColors:layered?.geometry?.getAttribute('color')?.count||0,
+      iris:!!iris,irisColors:iris?.geometry?.getAttribute('color')?.count||0,
+      irisDetail:iris?.userData?.v63RadialCrypts===true,
+      opticVersion:iris?.userData?.opticalDetailVersion||null};
+   },{preview});
+   if(!(optics.wig&&optics.wigColors>1000&&optics.iris&&
+      optics.irisColors>1000&&optics.irisDetail))
+    throw Error(gender+' v63 optics/fiber mesh not active '+JSON.stringify(optics));
+   console.log('V63_VISUAL_QUALITY '+JSON.stringify({gender,...optics}));
    // Return to standard build for five matched neck / jaw / nape views.
    await page.locator('#v47BodyType').selectOption('normal');
    await page.waitForFunction(key=>window[key]?.().v36RealBattleCostume?.bodyType==='normal',qa,
