@@ -81,7 +81,7 @@ function orientedStudioCutEdges(geometry,originalVertexCount){
 
 export function weldStudioNeckIntoFace({
  faceMesh,cut,wardrobeRoot,torsoTopY,torsoCenterX=0,torsoCenterZ=0,
- facePigment=null,rings=7,collarInset=.009
+ facePigment=null,rings=11,collarInset=.009
 }={}){
  const source=faceMesh?.geometry,position=source?.getAttribute?.('position');
  if(!faceMesh?.isMesh||!source?.getIndex()||!position||
@@ -226,7 +226,7 @@ export function weldStudioNeckIntoFace({
   separateNeckMeshesNeeded:false,faceSkinMaterialReused:true,
   neckColorSmoothed:true,neckNormalsSmoothed:true,
   centerX,centerZ,jawHalfX:(maxX-minX)*.5,jawHalfZ:(maxZ-minZ)*.5,
-  v61WidenedNeck:true,
+  v61WidenedNeck:true,v61NeckRingCount:rings,
   v61WidthGainAtMid:studioNeckV61Profile(.5).widthGain,
   v61DepthGainAtMid:studioNeckV61Profile(.5).depthGain,
   neckMidHalfWidthX:midHalfWidthX,neckMidHalfDepthZ:midHalfDepthZ,
@@ -248,7 +248,7 @@ export function addStudioRaisedInnerCollar({wardrobeRoot,joined}={}){
  const baseY=joined.collarY-.016;
  if(topY-baseY<.012||topY>=joined.seamMinY-.012)
   return {applied:false,reason:'collar-height-invalid',topY,baseY};
- const count=40,rings=8,verts=[],uv=[],indices=[];
+ const count=48,rings=10,verts=[],uv=[],indices=[];
  // Follow the widened neck, without adding detached skin rings or changing
  // metal armour. The fabric upper edge covers the skin-to-cloth transition.
  const upperRadiusX=THREE.MathUtils.clamp(
