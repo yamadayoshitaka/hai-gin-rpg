@@ -1,5 +1,6 @@
 const {chromium}=require('playwright');
 const fs=require('node:fs'),path=require('node:path');
+const {captureChromiumScreenshot}=require('./chromium-webgl-screenshot.cjs');
 const out='qa-screenshots/independent-faces';
 fs.mkdirSync(out,{recursive:true});
 // Verify displayed controls, not only the internally stored 3D parameter
@@ -848,12 +849,12 @@ async function expectCenteredFaceSliders(page,gender){
    await hero.locator('#toggleWig').click();
    await hero.screenshot({path:path.join(out,'heroine-v19-art-versus-3d.png')});
    await hero.locator('#side').click();
-   await c.screenshot({path:path.join(out,'heroine-v19-hair-body-side.png')});
-   await c.screenshot({path:path.join(out,'heroine-v22-thicker-shoulder-hair-side.png')});
+   await captureChromiumScreenshot(hero,path.join(out,'heroine-v19-hair-body-side.png'),{selector:'#bodyCanvas'});
+   await captureChromiumScreenshot(hero,path.join(out,'heroine-v22-thicker-shoulder-hair-side.png'),{selector:'#bodyCanvas'});
    await hero.locator('#crown').click();
-   await c.screenshot({path:path.join(out,'heroine-v22-hair-crown-body-contact.png')});
+   await captureChromiumScreenshot(hero,path.join(out,'heroine-v22-hair-crown-body-contact.png'),{selector:'#bodyCanvas'});
    await hero.locator('#back').click();
-   await c.screenshot({path:path.join(out,'heroine-v19-hair-body-back.png')});
+   await captureChromiumScreenshot(hero,path.join(out,'heroine-v19-hair-body-back.png'),{selector:'#bodyCanvas'});
    await hero.locator('#front').click();
    await hero.locator('#full').click();
    const artOk=await hero.locator('#artImage').evaluate(el=>
