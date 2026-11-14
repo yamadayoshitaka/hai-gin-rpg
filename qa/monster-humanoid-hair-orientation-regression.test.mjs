@@ -5,7 +5,7 @@ import {CANONICAL_HUMAN_FRONT_Z,LEGACY_COSTUME_FRONT_Z,
  shouldCorrectCostumeFront,alignCostumeToCanonicalFacing}
  from '../src/monster-anatomical-frame.js';
 import {createCharacterCrownGeometry,createCharacterHairStrandsGeometry,
- attachCanonicalCharacterGroom}
+ attachCanonicalCharacterGroom,createCanonicalHeadLocalGroomAnchor}
  from '../src/monster-humanoid-hair.js';
 import {HUMANOID_MONSTER_COSTUMES,FEMALE_VAMPIRE_COSTUME}
  from '../src/monster-character-cosplay-manifest.js';
@@ -59,6 +59,51 @@ assert.ok(highLocks.getAttribute('position').count>
  'Head closeups need distinct groom/LOD geometry');
 assert.ok(highLocks.getAttribute('normal').array.every(Number.isFinite));
 highLocks.dispose();lowLocks.dispose();
+
+
+// A canonical head bone can have an arbitrary bind-pose orientation. Fitted
+// hair points live in its LOCAL coordinates, not in the counter-rotated
+// MODEL coordinate frame used by horns and makeup.
+{
+ const donor=new THREE.Group(),bone=new THREE.Bone();
+ donor.position.set(.24,1.2,-.32);
+ donor.rotation.set(.10,-.39,.06);
+ bone.name='Head';bone.position.set(.04,.47,.02);
+ bone.rotation.set(.14,.63,-.22);
+ donor.add(bone);
+ const anchor=createCanonicalHeadLocalGroomAnchor(bone);
+ assert.equal(anchor.parent,bone);
+ assert.ok(anchor.userData.canonicalHeadBoneLocal);
+ assert.ok(anchor.position.length()<1e-10);
+ assert.ok(anchor.quaternion.equals(new THREE.Quaternion()));
+ assert.ok(anchor.scale.equals(new THREE.Vector3(1,1,1)));
+ const testPoint=new THREE.Vector3(.072,.14,.105);
+ donor.updateMatrixWorld(true);
+ const expected=bone.localToWorld(testPoint.clone());
+ const actual=anchor.localToWorld(testPoint.clone());
+ assert.ok(actual.distanceTo(expected)<1e-8,
+  'Hair in head bone coordinates misaligned on rotated original donor pose');
+ anchor.parent.remove(anchor);
+ assert.throws(()=>createCanonicalHeadLocalGroomAnchor(donor),
+  /head bone/,'A regular Model Group must not be used as head bone');
+}
+for(const style of ['long','swept','bob','short']){
+ const fit={style,detail:'high',center:[0,0,0],radius:[1,1,1]};
+ const hi=createCharacterHairStrandsGeometry(fit);
+ const low=createCharacterHairStrandsGeometry({...fit,detail:'low'});
+ const a=hi.getAttribute('position'),l=low.getAttribute('position');
+ assert.ok(a.count>l.count*3,'Missing near-LOD hair coverage '+style);
+ assert.ok(a.array.every(Number.isFinite));
+ assert.ok(hi.getAttribute('normal').array.every(Number.isFinite));
+ for(let i=0;i<a.count;i+=10){
+   const x=a.getX(i),y=a.getY(i),z=a.getZ(i);
+   const phi=Math.atan2(z,x),front=Math.max(0,Math.sin(phi));
+   const theta=Math.acos(Math.max(-1,Math.min(1,y)));
+   assert.ok(theta<1.68-.34*front+.075,
+     'Disconnected scalp root '+style+' at strand '+i/10);
+ }
+ hi.dispose();low.dispose();
+}
 
 const profiles=[
  ...Object.values(HUMANOID_MONSTER_COSTUMES),
@@ -181,4 +226,10 @@ assert.match(source,/attachCanonicalCharacterGroom\(/);
 assert.match(source,/groom:true/);
 assert.match(source,/crownCovered:!!groom\?\.crown/);
 assert.match(source,/pelvis:createFrame\(joints\.pelvis/);
+assert.match(source,/frames\.headGroom=createCanonicalHeadLocalGroomAnchor\(joints\.head\)/,
+ 'Missing head-bone local groom instance in monster runtime');
+assert.match(source,/frames:\{\.\.\.frames,head:frames\.headGroom\}/,
+ 'Do not attach hair into reoriented makeup frame');
+assert.match(source,/headBoneLocalGroom:/,
+ 'Diagnostics must expose skull-local groom attachment');
 console.log('Humanoid wings/tails/scalp regression PASS: all 16 character monsters, succubus hair, blonde seraph, 3 female summons and back-facing wing/tail anatomy');
