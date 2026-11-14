@@ -74,6 +74,25 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
        [.090,.137,.222],{name:'m004-cervical-muscle'});
    }
  }
+ if(s.id==='m005'){
+   // Woodland wolf: separate mobile scapulae and a cervical mantle.
+   const guard=g.group('neckGuard',[0,1.48,.43],torso);
+   g.bridge(guard,'skin',[0,-.13,-.17],[0,.075,.31],.270,.18);
+   for(const side of [-1,1]){
+     const suffix=side<0?'L':'R';
+     const scapula=g.group('scapula'+suffix,[side*.32,1.40,.30],torso);
+     g.bridge(scapula,'skin',[0,-.18,-.12],
+       [side*.026,.16,.11],.132,.075);
+     g.sphere(scapula,'light',[side*.023,.023,.002],
+       [.092,.160,.170],{name:'m005-mobile-scapula'});
+     g.sphere(guard,'skin',[side*.18,-.02,.12],
+       [.103,.165,.240],{name:'m005-cervical-guard'});
+     // The three neck tufts intersect the mane rather than the face.
+     for(let i=0;i<3;i++)g.spike(guard,i===0?'light':'skin',
+       [side*(.15+i*.033),.060-i*.064,.08-i*.060],
+       [side*(.23+i*.036),-.12-i*.085,-.13-i*.065],.042);
+   }
+ }
  if(s.id==='m003'){
    // Ice Fenrir: independently moving shoulder mantle; thick winter neck
    // guard hair is a solid layered silhouette even at distant LOD.
@@ -196,7 +215,15 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
  for(const side of [-1,1]){
    const horn=v===2||reptile? .28:.12;
    if(canine){
-     if(s.id==='m004'){
+     if(s.id==='m005'){
+       const ear=g.group('ear'+(side<0?'L':'R'),
+         [side*.216,.216,-.078],head);
+       g.spike(ear,'skin',[0,0,0],[side*.078,.340,-.028],.097);
+       g.spike(ear,'shadow',[side*.020,.050,.060],
+         [side*.063,.283,.033],.050);
+       g.sphere(ear,'light',[0,.021,.041],[.075,.061,.070],
+         {name:'m005-pinna-inner-cartilage'});
+     }else if(s.id==='m004'){
        const ear=g.group('ear'+(side<0?'L':'R'),
          [side*.215,.208,-.075],head);
        g.spike(ear,'skin',[0,0,0],
@@ -289,6 +316,22 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
          [side*.235,-.095-i*.027,.010+i*.034],
          [side*(.33+i*.011),-.16-i*.041,-.10+i*.042],.025);
    }
+ }
+ if(s.id==='m005'){
+   // Continuous tapered bridge, inset nostrils and cheek muscles.
+   g.bridge(head,'skin',[0,.070,-.16],[0,-.040,.424],.172,.109);
+   for(const side of [-1,1]){
+     g.bridge(head,'skin',[side*.194,-.048,-.040],
+       [side*.260,-.106,.20],.115,.073);
+     g.sphere(head,'skin',[side*.227,-.079,.055],
+       [.109,.125,.172],{name:'m005-masseter'});
+     g.tube(head,'light',[[side*.187,.117,-.080],
+       [side*.281,.112,.102],[side*.293,.062,.232]],.024);
+     g.sphere(head,'shadow',[side*.085,-.168,muzzle+.278],
+       [.025,.016,.013],{name:'m005-inset-nostril'});
+   }
+   g.sphere(head,'shadow',[0,-.171,muzzle+.295],
+     [.144,.043,.082],{name:'m005-nasal-leather'});
  }
  if(s.id==='m002'){
    // Cranial surface references: wolf sagittal crest, zygomatic arch and
@@ -385,7 +428,23 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    const distal=g.group('lower'+name,[0,-.065,.015],leg);
    g.sphere(distal,'skin',[0,-.16,0],[reptile?.13:.15,.27,reptile?.13:.15]);
    g.sphere(distal,'shadow',[0,0,0],[.144,.125,.14],{name:'joint-'+name});
-   if(s.id==='m004'){
+   if(s.id==='m005'){
+     // Four articulated contact paws; do not also draw the legacy feet.
+     const carpal=g.group('carpal'+name,[0,-.265,.025],distal);
+     g.bridge(carpal,'skin',[0,.075,-.025],[0,-.217,.060],.112,.084);
+     g.sphere(carpal,'shadow',[0,0,0],
+       [.108,.105,.108],{name:'m005-carpal-tarsal-pad'});
+     const toe=g.group('toe'+name,[0,-.24,.105],carpal);
+     g.sphere(toe,'skin',[0,-.031,.020],
+       [.155,.081,.166],{name:'m005-metapodial-pad'});
+     for(let digit=0;digit<4;digit++){
+       const x=(digit-1.5)*.072;
+       g.sphere(toe,'skin',[x,-.051,.119],
+         [.041,.046,.076],{name:'m005-digit-pad'});
+       g.rootedSpike(toe,'bone','skin',[x,-.036,.173],
+         [x,-.084,.239],.021,{name:'m005-rooted-claw-'+digit});
+     }
+   }else if(s.id==='m004'){
      // The wolf's digitigrade tarsus and four toes are geometry attached
      // to two separate rotating joints, not duplicate static feet.
      const hock=g.group('hock'+name,[0,-.19,.017],distal);
@@ -402,7 +461,7 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
        g.rootedSpike(toe,'bone','skin',[x,-.054,.192],
          [x,-.090,.262],.021,{name:'rooted-claw-m004-'+digit});
      }
-   }else if(s.id!=='m003'){
+   }else if(s.id!=='m003'&&s.id!=='m005'){
      // Fenrir owns a separate articulated toe assembly below. Rendering
      // the legacy fixed paw as well made duplicate feet and floating claws.
      feet(g,distal,0,0,0,true,reptile?.75:1);
@@ -439,7 +498,7 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
        length:.064,width:.011,seed:v*13+side*7+fore*11+43,
        minVertical:-.72,axis:'y',gravity:.21,
      });
-     const toeParent=(s.id==='m003'||s.id==='m004')?
+     const toeParent=(s.id==='m003'||s.id==='m004'||s.id==='m005')?
        g.pivots['toe'+name]:distal;
      const paw=generateCanineFurGuides({
        center:[0,-.53,.125],radii:[.136,.083,.195],
@@ -507,6 +566,9 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    s.id==='m004'?[0,.11,-.03]:[0,1.35,-.55],
    s.id==='m004'?g.pivots.pelvis:g.root);
  g.tube(tail,'skin',[[0,0,.05],[0,.17,-.34],[0,.08,-.50]],reptile?.14:.085);
+ if(s.id==='m005')
+   g.sphere(tail,'skin',[0,.035,-.076],[.135,.110,.176],
+     {name:'m005-caudal-root-muscle'});
  const tailMid=g.group('tailMid',[0,.08,-.50],tail);
  g.tube(tailMid,'skin',[[0,0,0],[0,.01,-.25-v*.05],[.09,-.11,-.49-v*.10]],reptile?.13:.078);
  const tailTip=g.group('tailTip',[.09,-.11,-.49-v*.10],tailMid);
