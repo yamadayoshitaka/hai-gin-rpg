@@ -197,22 +197,31 @@ export function addFemaleSummonCostume({profile,frames,detail='high',attach,tube
    line(frames.head,'leaf','wood-antler-trunk-'+side,[
     [side*.10,.12,.01],[side*.17,.26,.06],
     [side*.24,.37,.10]],.034);
-   for(let i=0;i<3;i++)
+   // Branching woodland antlers carry foliage and blossom buds, never
+   // the Guardian's feathers or halo. All details follow the Head bone.
+   for(let i=0;i<3;i++){
+    const y=.25+i*.056,x=.16+i*.031;
+    line(frames.head,'leaf','wood-antler-branch-'+side+'-'+i,[
+     [side*(x-.025),y-.04,.065],[side*(x+.045),y+.035,.063],
+     [side*(x+.081),y+.072,.052]],.011);
     add(frames.head,createFemaleSummonLeaf({detail,size:.16+i*.025}),
      'leaf','antler-leaf-'+side+'-'+i,
-     [side*(.16+i*.032),.24+i*.058,.05],
-     [side*.2,0,side*(.9+i*.35)]);
+     [side*x,y,.05],[side*.2,0,side*(.9+i*.35)]);
+    orb(frames.head,'ivoryCloth','forest-flower-bud-'+side+'-'+i,
+     [side*(x+.073),y+.067,.052],[.019,.012,.019]);
+   }
    add(frames.head,createFemaleSummonLeaf({detail,size:.12}),
     'leaf','pointed-elf-ear-'+side,
     [side*.14,.024,-.013],[0,0,side*(Math.PI*.43)]);
-   for(let i=0;i<4;i++)
-    add(frames.chest,createFemaleSummonLeaf({detail,size:.21+i*.018}),
+   for(let i=0;i<6;i++)
+    add(frames.chest,createFemaleSummonLeaf({detail,size:.21+i*.023}),
      'leaf','growing-mantle-leaf-'+side+'-'+i,
-     [side*(.13+i*.05),.19-i*.13,.04],
+     [side*(.12+i*.037),.22-i*.10,.04],
      [.05,0,side*.55]);
   }
+  // A green organic leaf mantle instead of the angel's ceremonial cloth.
   add(frames.chest,createGothicMantle({detail,width:.30,drop:.87,back:.26}),
-   'velvet','forest-woven-cape');
+   'leaf','forest-woven-cape');
  }
  if(type==='seraph_female'){
   // Retain the ORIGINAL Guardian's sculpted 3-row wing geometry, including
@@ -253,16 +262,26 @@ export function addFemaleSummonCostume({profile,frames,detail='high',attach,tube
   const crownGeometry=nativeScalp??createDragonkinCranialShellGeometry({
    detail,...(skullFit?{center:skullFit.center,radius:skullFit.radius}:{})
   });
-  if(attachGroom&&frames.headGroom){
-   attachGroom(crownFrame,crownGeometry,'dragonScale',
-    'female-dragonkin-scaled-hairless-crown');
-  }else add(crownFrame,crownGeometry,'dragonScale',
-   'dragonkin-scaled-hairless-crown');
+  if(profile.hair==='bald'){
+   // Legacy hairless variant only. The approved dragon-queen design uses
+   // continuous plum hair, so never put a scale helmet over that groom.
+   if(attachGroom&&frames.headGroom){
+    attachGroom(crownFrame,crownGeometry,'dragonScale',
+     'female-dragonkin-scaled-hairless-crown');
+   }else add(crownFrame,crownGeometry,'dragonScale',
+    'dragonkin-scaled-hairless-crown');
+  }else if(!nativeScalp){
+   // No synthetic dome or redundant opaque forehead on the hair variant.
+   crownGeometry.dispose();
+  }
   for(const side of [-1,1]){
    // Eyes are now shallow, almond-shaped surfaces under their own slim
    // upper lids. Keep gold color without toy-like glowing black goggles.
-   add(frames.head,createDragonkinAlmondEyeGeometry({side,detail}),
+   if(profile.hair==='bald')add(frames.head,
+    createDragonkinAlmondEyeGeometry({side,detail}),
     'dragonEye','dragonkin-solid-golden-eye-'+side);
+   // The approved coiffed variant retains original skinned eyeballs,
+   // iris and eyelids. No duplicate gold circles over the real eyes.
    line(frames.head,'dragonRim','dragonkin-delicate-upper-lid-'+side,[
     [side*.017,.042,-.129],[side*.050,.052,-.151],
     [side*.086,.041,-.135]],hi?.0045:.0058);
@@ -275,17 +294,24 @@ export function addFemaleSummonCostume({profile,frames,detail='high',attach,tube
     [side*.113,.113,-.081],[side*.131,.052,-.090],
     [side*.126,-.022,-.083]],hi?.007:.009);
   }
-  line(frames.head,'dragonScale','dragonkin-fine-nasal-bridge',[
-   [0,.074,-.119],[0,.007,-.145],[0,-.039,-.147]],.0055);
+  if(profile.hair==='bald')line(frames.head,'dragonScale',
+   'dragonkin-fine-nasal-bridge',[
+    [0,.074,-.119],[0,.007,-.145],[0,-.039,-.147]],.0055);
+  // The original nose stays exposed in the coiffed design: a vertical
+  // nasal tube caused the user's dangling moustache screenshot.
   line(frames.head,'lip','dragonkin-natural-lower-lip',[
    [-.051,-.105,-.130],[-.021,-.123,-.143],[0,-.128,-.148],
    [.021,-.123,-.143],[.051,-.105,-.130]],.0035);
   for(const side of [-1,1]){
-   orb(frames.head,'dragonScale','dragon-horn-root-'+side,
-    [side*.105,.149,.013],[.053,.027,.051]);
+   const rx=skullFit?.radius?.[0]??.119;
+   const hornX=Math.max(.091,Math.min(.143,rx*.87));
+   const hornY=Math.max(.12,Math.min(.19,
+    (skullFit?.center?.[1]??.095)+(skullFit?.radius?.[1]??.16)*.37));
+   orb(frames.head,'horn','dragon-horn-root-'+side,
+    [side*hornX,hornY,.013],[.052,.028,.052]);
    add(frames.head,createGothicHorn({
-    side,len:.28,radius:.054,curve:.24,detail
-   }),'horn','dragon-swept-horn-'+side,[side*.105,.157,.006]);
+    side,len:.30,radius:.055,curve:.25,detail
+   }),'horn','dragon-swept-horn-'+side,[side*hornX,hornY,.006]);
    add(frames.chest,createGothicBatWing({
     side,detail,width:1.04,height:.76
    }),'membrane','dragon-wing-'+side,[0,.09,.05]);
