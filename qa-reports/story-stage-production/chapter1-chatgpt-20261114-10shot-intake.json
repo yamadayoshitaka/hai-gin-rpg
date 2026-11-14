@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "source": "ChatGPT 10 images in conversation (not in GitHub)",
+  "chapter": 1,
+  "edition": "post-town",
+  "stage": "c01-s01",
+  "totalCandidates": 10,
+  "checkedNativeSize": [
+    1672,
+    941
+  ],
+  "convertedNativeSize": [
+    1664,
+    936
+  ],
+  "sizingMethod": "center crop (no upscale)",
+  "visuallyPlausiblePendingP0": 8,
+  "rejectedActorMismatch": 2,
+  "rejected": [
+    "c01-s01|post-town|male|c01-s01-m8",
+    "c01-s01|post-town|female|c01-s01-m8"
+  ],
+  "rejectionReason": "Iris appears as silver-haired Lucia-like woman",
+  "realCastReferenceBytesAttachedToGenerator": false,
+  "allCandidatesP0Approved": false,
+  "newlyRegisteredInThisReport": 0,
+  "gameAssetUpdated": false,
+  "assetBytesInGitHub": false,
+  "existingProvisionalCount": 79,
+  "stage1MissingOrRequiresRegeneration": 5,
+  "stage2Missing": 0,
+  "stage3MissingOrBlocked": 17,
+  "rule": "NEVER auto-register unapproved or absent images. Confirm exact cast reference bytes at generation, per-cut art, no text, byte hash, and 16:9 before provisional registration.",
+  "candidatePackage": "ChatGPT conversation delivery only; not in git"
+}
