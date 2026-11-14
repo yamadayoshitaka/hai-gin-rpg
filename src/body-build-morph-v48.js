@@ -2,7 +2,7 @@
  * We always copy from original bind-pose geometry; toggling normal/fat/thin
  * can never accumulate distortion and NEVER edits the shared source GLB.
  */
-import {resolveBodyType} from './character-demographics-v47.js?v=51';
+import {resolveBodyType} from './character-demographics-v47.js?v=60';
 const ORIGINAL=new WeakMap();
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const gaussian=(x,c,w)=>Math.exp(-Math.pow((x-c)/w,2));
