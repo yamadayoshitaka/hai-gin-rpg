@@ -77,7 +77,7 @@ function makeFineEyelashMesh(name,liner,x,y,z,eyeRadius,side,upper,settings){
   const spread=Math.abs(u-.5)*2;
   const length=eyeRadius*(upper?.29:.080)*settings.lashLength*(.58+.42*edge)*
    (.88+.12*Math.sin((i+1)*2.39996323));
-  const baseWidth=Math.max(.000015,a.distanceTo(b)*.46);
+  const baseWidth=Math.max(.000010,a.distanceTo(b)*.34);
   const baseCentre=new THREE.Vector3().addVectors(a,b).multiplyScalar(.5);
   const across=new THREE.Vector3().subVectors(b,a).normalize();
   const start=vertices.length/3,stations=5;
@@ -105,7 +105,7 @@ function makeFineEyelashMesh(name,liner,x,y,z,eyeRadius,side,upper,settings){
  geo.setIndex(indices);geo.computeVertexNormals();geo.computeBoundingSphere();
  const material=new THREE.MeshBasicMaterial({
   color:FACE_V7_PALETTE.lashes,side:THREE.DoubleSide,
-  transparent:true,opacity:upper?.95:.76,depthWrite:false
+  transparent:true,opacity:upper?.86:.56,depthWrite:false
  });
  const lash=new THREE.Mesh(geo,material);
  lash.name=name;lash.renderOrder=7;
@@ -219,7 +219,7 @@ export function updateRealFacePigment(face,controls={},mode='color',gender='fema
   const px=positions.getX(i),py=positions.getY(i),pz=positions.getZ(i);
   const nx=Math.abs((px-cx)/d.x),ny=(py-box.min.y)/d.y;
   const front=smoothstep(((pz-box.min.z)/d.z-.52)/.22);
-  const cheek=gender==='male'?0:.78*bell(nx,.247,.10)*bell(ny,.551,.063)*front;
+  const cheek=gender==='male'?0:.64*bell(nx,.247,.10)*bell(ny,.551,.063)*front;
   const mouthX=(px-cx)/Math.max(.00001,d.x*.047*settings.lipstickWidth);
   const mouthY=(py-lipCenter-d.y*settings.lipstickY*.08)/
    Math.max(.00001,d.y*.012*settings.lipstickHeight);
@@ -516,7 +516,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
  // wrap the lids back onto the facial skin. Do not simply translate the eyes.
  // Male .34 made even the 20-year-old protagonist look sleepy/elderly.
  // Restore a natural, expressive eye opening without artificial bulging.
- const eyeApertureRatio=female?.50:.455;
+ const eyeApertureRatio=female?.476:.440;
  // A low, lid-seated corneal dome: the former 0.58R projection looked like
  // detached snail eyes in the mobile side view. Preserve slight curvature.
  const anteriorGlobeRatio=female?(settings.irisDiameter>=1.30?.105:.120):.130;
