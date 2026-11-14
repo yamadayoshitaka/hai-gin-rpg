@@ -56,6 +56,7 @@ async function main(){
      ratio>.015&&ratio<.026&&neck.reusedFaceMaterial&&
      neck.separateNeckGeometryHidden&&neck.v61WidenedNeck===true&&
      neck.v61WidthGainAtMid>=1.099&&neck.v61DepthGainAtMid>=1.079&&
+     neck.v61NeckRingCount>=11&&
      neck.v61NeckMidHalfWidth>.02&&neck.v61NeckMidHalfDepth>.017&&
      neck.v61CollarTopHalfWidth>=.03&&neck.v61CollarTopHalfDepth>=.029))
      throw Error(gender+' '+build+' neck/cloth fit failed '+JSON.stringify(neck));
