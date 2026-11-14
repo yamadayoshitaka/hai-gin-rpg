@@ -160,5 +160,21 @@
     "failOnStyleDrift": true,
     "noVisualApprovalWithoutRealReferenceComparison": true,
     "doNotClaimReferencesWereProvidedUnlessActuallyAttached": true
+  },
+  "generatorInputContract": {
+    "priority": "P0_ABSOLUTE_MUST_FOLLOW",
+    "instruction": "このJSONは保管用に留めない。ChatGPT画像生成ボタンを押す前にGitHubから必ず読み込み、対象キーと一致するshots[]のscene, actors, referencePathsとvisualStyleLock, renderRule, 禁止事項を生成プロンプトへ渡す。参照画像は実バイトを共有/添付する。入力できない場合は生成・承認・仮登録しない。",
+    "runtimeSource": "src/story-chapter1-approval-ui.js / manualManifestFor(shot)",
+    "generatorPrompt": "src/story-chapter1-image-prompt.js / buildChapter1ImagePrompt({manualManifest,stageManifest,qualityRules})",
+    "mustLoadBeforeAnyGeneration": true,
+    "mustMatchStageGenderEditionAndShotId": true,
+    "oneIndependentImagePerShot": true,
+    "generateReviewSheetOnlyAfterIndependentApprovedImages": true,
+    "mustPassActorsAndSceneAndStyleToGeneratorPrompt": true,
+    "mustAttachReferenceImageBytes": true,
+    "pathStringsAreNotReferenceImages": true,
+    "errorIfManifestOrShotMissing": true,
+    "noAutomaticChatGPTGenerationThroughGitHubActions": true,
+    "approvalRequiresActualImageAndSeparateVisualQA": true
   }
 }
