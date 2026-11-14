@@ -45,7 +45,7 @@ for(const gender of ['male','female']){
  assert(item&&item.status==='PROVISIONAL_OWNER_AUTHORIZED_PENDING_P0','Stage4 original not marked provisional');
  assert.equal(item.gender,gender);
  assert(item.outstandingP0.some(x=>x.includes('Lucia')||x.includes('摂政')),'Cast mismatch must remain visible');
- const actual=fs.readFileSync(item.asset.replace(/^\\.\\//,''));
+ const actual=fs.readFileSync(item.asset.startsWith('./')?item.asset.slice(2):item.asset);
  assert.equal(actual.toString('ascii',0,4),'RIFF');
  assert.equal(actual.toString('ascii',8,12),'WEBP');
  assert.equal(crypto.createHash('sha256').update(actual).digest('hex'),item.sha256,'Wrong actual WebP bytes');
