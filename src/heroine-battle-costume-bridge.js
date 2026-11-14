@@ -1,9 +1,9 @@
 import * as THREE from 'three';
 import {buildStudioContourNeck} from './studio-contour-neck-v58.js';
-import {weldStudioNeckIntoFace,addStudioRaisedInnerCollar} from './studio-unified-neck-v59.js';
+import {weldStudioNeckIntoFace,addStudioRaisedInnerCollar} from './studio-unified-neck-v59.js?v=61';
 import {clipStudioFaceBustPreservingSurface,restoreStudioFaceSurfaceQuality,
  sampleStudioFacePigment,smoothStudioFaceNormals,
- studioAnatomicalSeamY,taperStudioLowerBustBelowChin} from './studio-face-quality-v56.js?v=57';
+ studioAnatomicalSeamY,taperStudioLowerBustBelowChin} from './studio-face-quality-v56.js?v=60';
 import {createCharacter} from './character-system/shared-character-runtime.js?v=4.6.36';
 import {buildRiggedJobOutfit} from './character-system/rigged-outfit-runtime.js?v=41';
 import {loadJobMotionMap} from './character-system/job-motion-source.js?v=4.6.36';
@@ -11,8 +11,8 @@ import {measureHeadLocalBounds} from './character-system/hair-attachment-runtime
 import {createHeroineBattleActionVfx} from './heroine-battle-action-vfx.js?v=40';
 import {resolveBodyShape} from './character-cast-v46.js?v=46';
 import {resolveDemographicProfile,resolveBodyType,resolveAgeBand}
- from './character-demographics-v47.js?v=51';
-import {applySkinnedBuildMorph} from './body-build-morph-v48.js?v=51';
+ from './character-demographics-v47.js?v=60';
+import {applySkinnedBuildMorph} from './body-build-morph-v48.js?v=60';
 
 /**
  * Reuse EXACT game battle clothing: Female_Ranger / Female_Peasant skinned GLTF,
@@ -292,7 +292,12 @@ export function fitStudioNeckContinuity({faceRoot,faceMesh,wardrobeRoot}={}){
   faceMesh.geometry=cached.clipped;
  }else{
   faceMesh.geometry=source;
-  cut=clipStudioFaceBustPreservingSurface(faceMesh,safeCutY,{anatomicalCurve:true});
+  // The imported male nape retains more angular shoulder-bust than the
+  // female portrait. Trim only the donor's low rear bust in disposable
+  // preview geometry; preserve jaw/lips/eyes and the original source GLB.
+  const napeRise=/^male_/i.test(bodies[0].name)? .018 : .012;
+  cut=clipStudioFaceBustPreservingSurface(faceMesh,safeCutY,{
+   anatomicalCurve:true,backRise:napeRise});
   if(cut.keptTriangles<100||cut.removedTriangles<3){
    cut.geometry.dispose();faceMesh.geometry=source;
    return {applied:false,reason:'insufficient-sculpted-bust-to-trim'};
@@ -464,6 +469,14 @@ export function fitStudioNeckContinuity({faceRoot,faceMesh,wardrobeRoot}={}){
   unifiedSkinNeckApplied:!!united.applied,
   unifiedSkinNeckReason:united.reason||null,
   unifiedSkinNeckTriangles:united.addedTriangles||0,
+  v61WidenedNeck:!!united.v61WidenedNeck,
+  v61NeckRingCount:united.v61NeckRingCount??null,
+  v61WidthGainAtMid:united.v61WidthGainAtMid??null,
+  v61DepthGainAtMid:united.v61DepthGainAtMid??null,
+  v61NeckMidHalfWidth:united.neckMidHalfWidthX??null,
+  v61NeckMidHalfDepth:united.neckMidHalfDepthZ??null,
+  v61CollarTopHalfWidth:raisedCollar.v61TopHalfWidthX??null,
+  v61CollarTopHalfDepth:raisedCollar.v61TopHalfDepthZ??null,
   unifiedSkinNeckEdges:united.boundaryEdges||0,
   reusedFaceMaterial:!!united.faceSkinMaterialReused,
   actualCollarSource:united.collarSource||null,
@@ -488,6 +501,7 @@ export function fitStudioNeckContinuity({faceRoot,faceMesh,wardrobeRoot}={}){
   trimmedSculptBottomY:safeCutY,
   anatomicalJawCut:!!cut.anatomicalCurve,
   cutPlaneType:cut.cutPlaneType,
+  v60NapeRise:cut.anatomicalSeamProfile?.backRise??null,
   lowerBustTapered:!!bustTaper?.applied,
   lowerBustTaperedVertices:bustTaper?.affectedVertices||0,
   sourceFaceUnchangedByBustTaper:!!bustTaper?.sourceGeometryUntouched,
@@ -1016,7 +1030,7 @@ export async function createRealBattleOutfitStudio({scene,faceModel,getFaceModel
  function setDemographics(ageBand='twenties',bodyType='normal'){
   ageBandId=resolveAgeBand(ageBand).id;
   bodyTypeId=resolveBodyType(bodyType).id;
-  bodyShapeId=bodyTypeId==='thin'?'slim':bodyTypeId==='fat'?'full':'average';
+  bodyShapeId=['thin','ultraThin'].includes(bodyTypeId)?'slim':bodyTypeId==='fat'?'full':'average';
   applyBodyShape();
   return {ageBand:ageBandId,bodyType:bodyTypeId};
  }

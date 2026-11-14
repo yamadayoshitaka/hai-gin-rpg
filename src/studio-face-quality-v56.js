@@ -25,7 +25,7 @@ export function studioAnatomicalSeamY(worldCutY,worldX,worldZ,{
  return worldCutY+sideRise*across*across+backRise*behind*behind;
 }
 
-export function clipStudioFaceBustPreservingSurface(mesh,worldCutY,{anatomicalCurve=false}={}){
+export function clipStudioFaceBustPreservingSurface(mesh,worldCutY,{anatomicalCurve=false,backRise=.006}={}){
  if(!mesh?.isMesh||!mesh.geometry?.getAttribute('position')||
   !Number.isFinite(worldCutY))throw Error('Valid face mesh and cut height required');
  mesh.updateWorldMatrix(true,false);
@@ -49,7 +49,7 @@ export function clipStudioFaceBustPreservingSurface(mesh,worldCutY,{anatomicalCu
  const seamProfile={
   centerX:worldCenter.x,centerZ:worldCenter.z,
   halfWidth:worldSize.x*.48,halfDepth:worldSize.z*.5,
-  sideRise:.028,backRise:.006
+  sideRise:.028,backRise:THREE.MathUtils.clamp(backRise,.006,.026)
  };
  const signedY=new Float64Array(pos.count),worldY=new Float64Array(pos.count);
  const tmp=new THREE.Vector3();

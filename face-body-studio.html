@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>灰銀のレゾナンス｜女性主人公・衣装と顔造形 v59</title>
+<title>灰銀のレゾナンス｜女性主人公・衣装と顔造形 v60</title>
 <style>
 *{box-sizing:border-box}body{margin:0;background:#101c2e;color:#eaf3ff;font-family:system-ui,"Noto Sans JP",sans-serif}
 header{background:#183049;padding:17px 18px;border-bottom:1px solid #466780}
@@ -55,7 +55,7 @@ body.costume-only .faceStudioOnly{display:none!important}
 </head>
 <body>
 <header>
-<h1>女性主人公・全職業の衣装／登録済みアクション v59</h1>
+<h1>女性主人公・全職業の衣装／登録済みアクション v60</h1>
 <p>女主人公の衣装を全職業で確認する画面です。脚の人体メッシュを保持し、職業で登録されている実際のモーションをボタンから再生します。顔と髪は専用画面で編集します。</p>
 </header>
 <main>
@@ -77,7 +77,7 @@ body.costume-only .faceStudioOnly{display:none!important}
  <label for="faceExpression">表情
  <select id="faceExpression" aria-label="表情を10種類から選択"></select></label>
  </div>
- <div class="controls"><a href="./face-mesh-studio.html?gender=female&hero=1&v=59" class="buttonLink" id="faceEditorLink">顔・髪を編集する</a><a class="buttonLink" href="./male-body-studio.html?v=59">男性主人公の画面へ</a></div>
+ <div class="controls"><a href="./face-mesh-studio.html?gender=female&hero=1&v=60" class="buttonLink" id="faceEditorLink">顔・髪を編集する</a><a class="buttonLink" href="./male-body-studio.html?v=60">男性主人公の画面へ</a></div>
 <div id="heroActionButtons" class="actionButtonGrid" role="group" aria-label="実戦闘アクションを再生"></div>
 <p id="actionStatus" role="status">アクションを選んで再生してください。</p>
 <div class="controls">
@@ -101,7 +101,7 @@ body.costume-only .faceStudioOnly{display:none!important}
 <select id="v46Cast" aria-label="主要人物・モブから選択"></select></label>
 <div class="heroSelectGrid" aria-label="年代と体型を指定する">
 <label for="v47AgeBand">年代<select id="v47AgeBand" aria-label="年代8区分"></select></label>
-<label for="v47BodyType">顔・全身体型<select id="v47BodyType" aria-label="痩せ型 普通 太め"></select></label></div>
+<label for="v47BodyType">顔・全身体型<select id="v47BodyType" aria-label="超痩せ型 痩せ型 普通 太め"></select></label></div>
 <h3 class="hero-face-preset-title">完成顔を選択（女性10種類）</h3>
 <div id="v45FacePresetGrid"></div><p class="note">全10職業で衣装の下の実人体（太腿・すね・足）を保持します。ボタンは登録済みの実モーションのみ表示し、未登録の勝利ポーズ等は作りません。戦闘本体は変更しません。</p>
 </section>
@@ -133,7 +133,7 @@ alt="第1章女性主人公（暫定人物マスターの登録原画）">
 <label for="style">固有のヅラ（別アセット）
 <select id="style" disabled></select></label>
 <p class="note">v31：目のサイズは縦横から自動決定。目の前後位置と分離し、カラコンは17色＋自由色に対応。真円の黒目・瞳孔を維持。髪は実顔面と女性胴体の三角形表面との接触を判定し、肩・胸の簡易判定も併用します。</p>
-<a href="./face-mesh-studio.html?gender=female&hero=1&v=59" class="buttonLink" id="faceEditorSideLink">顔・髪の編集画面へ</a>
+<a href="./face-mesh-studio.html?gender=female&hero=1&v=60" class="buttonLink" id="faceEditorSideLink">顔・髪の編集画面へ</a>
 <details><summary>実メッシュ・接触検査</summary><pre id="metrics"></pre></details>
 </section>
 </main><style>
@@ -163,13 +163,13 @@ import {attachIndependentHeadToBody,removeHeadBustBelowNeck,createSealedNeckBrid
 import {listWigStyles,DEFAULT_WIG_STYLE_ID,WIG_BASE_VOLUME_PROFILES} from './src/face-wig-styles.js?v=44';
 import {resolveHeroHairSpec,synchronizeHeroHairSelection} from './src/hero-hair-controls-v43.js?v=44';
 import {chooseHeroFacePreset,polishHeroFaceControls,mountHeroFacePresetPicker,matchHeroFacePreset} from './src/hero-face-presets-v45.js?v=45';
-import {characterAppearance,mountCharacterCastSelect} from './src/character-cast-v46.js?v=51';
+import {characterAppearance,mountCharacterCastSelect} from './src/character-cast-v46.js?v=60';
 import {AGE_PROFILES,BODY_PROFILES,applyDemographicFaceControls}
- from './src/character-demographics-v47.js?v=51';
+ from './src/character-demographics-v47.js?v=60';
 import {resolveEditedFaceControls,recordFaceManualEdit} from './src/face-state-v49.js?v=51';
 import {HERO_JOBS,HERO_ACTIONS,createHeroineStudioWardrobe} from './src/heroine-studio-wardrobe.js?v=41';
-import {REAL_BATTLE_WARDROBE,createRealBattleOutfitStudio} from './src/heroine-battle-costume-bridge.js?v=59';
-import {loadHeroineFacePreset,saveHeroineFacePreset} from './src/heroine-face-preset-store.js?v=43';
+import {REAL_BATTLE_WARDROBE,createRealBattleOutfitStudio} from './src/heroine-battle-costume-bridge.js?v=61';
+import {loadHeroineFacePreset,saveHeroineFacePreset} from './src/heroine-face-preset-store.js?v=60';
 import {heroineBeautyControlsV43,heroineBeautyControlsV47,HEROINE_BEAUTY_PART_SELECTION_V43,upgradeUneditedHeroineV42ToV43} from './src/heroine-beauty-preset-v42.js?v=51';
 import {FEMALE_COMMANDER_ART_PALETTE,CHAPTER_ONE_ART_BY_KEY} from './src/chapter-one-character-art-references.js';
 
@@ -389,6 +389,15 @@ window.__heroineBodyPreview={
  getBody:()=>bodyAttachment?.root||null,
  getWardrobe:()=>wardrobe?.getState()||null,
  getBattleCostume:()=>battleCostume?.getState()||null,
+ // For true WebGL front/profile/diagonal regression capture.
+ setQAZoom:(next)=>{
+  if(!['full','portrait'].includes(next))throw Error('Invalid QA zoom');
+  zoomMode=next;fitCamera();return zoomMode;
+ },
+ setQAView:(next)=>{
+  if(!['front','side','left','back','threeQuarterLeft','threeQuarterRight'].includes(next))throw Error('Invalid QA view');
+  view=next;fitCamera();return view;
+ },
  getCameraState:()=>({position:camera.position.toArray(),target:orbit.target.toArray(),
   up:camera.up.toArray(),zoom:camera.zoom,mode:zoomMode,view}),
  sampleTorso:(x,y)=>bodyAttachment?.bodyCollider.query(x,y)||null
@@ -412,7 +421,10 @@ function fitCamera(){
  const center=b.getCenter(new THREE.Vector3());
  const h=b.getSize(new THREE.Vector3());
  const radius=Math.max(h.x,h.y,h.z)*.5;
- const dir=view==='back'?new THREE.Vector3(0,0,-1):
+ const dir=view==='left'?new THREE.Vector3(-1,0,0):
+  view==='threeQuarterLeft'?new THREE.Vector3(-Math.SQRT1_2,0,Math.SQRT1_2):
+  view==='threeQuarterRight'?new THREE.Vector3(Math.SQRT1_2,0,Math.SQRT1_2):
+  view==='back'?new THREE.Vector3(0,0,-1):
   view==='side'?new THREE.Vector3(1,0,0):
   view==='crown'?new THREE.Vector3(0,1,0):
   new THREE.Vector3(0,0,1);

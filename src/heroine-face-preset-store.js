@@ -11,11 +11,15 @@ export function loadHeroineFacePreset(storage=globalThis?.localStorage){
   const data=JSON.parse(text);
   if(!data||data.version!==40||typeof data.parts!=='object'||
    typeof data.controls!=='object')return null;
+  // v59 stored 'thin' for the old very narrow silhouette. The new v60
+  // 'thin' is fuller; migrate once without altering face, makeup, or hair.
+  if(data.bodyPresetVersion!==60&&data.parts.bodyType==='thin')
+   return {...data,parts:{...data.parts,bodyType:'ultraThin'}};
   return data;
  }catch{return null}
 }
 export function saveHeroineFacePreset(data,storage=globalThis?.localStorage){
- const content={version:40};
+ const content={version:40,bodyPresetVersion:60};
  for(const [name,value] of Object.entries(data||{})){
   if(allowed.has(name))content[name]=value;
  }

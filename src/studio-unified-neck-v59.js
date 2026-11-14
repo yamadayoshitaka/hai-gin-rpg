@@ -35,6 +35,29 @@ export function measureStudioGarmentCollar(wardrobeRoot,{torsoTopY=0}={}){
  return candidate||{y:torsoTopY-.052,x:0,z:0,mesh:'torso-based-fallback'};
 }
 
+// v61 preview-only anatomical neck silhouette: widen the visible mid-neck
+// without moving the jaw cut, expanding shoulder geometry, or changing the
+// original face GLB. Both horizontal axes taper smoothly into the garment.
+export const STUDIO_NECK_V61_SHAPE=Object.freeze({
+ lowerWidthFactor:.90,lowerDepthFactor:.89,
+ midWidthGain:.10,midDepthGain:.08,
+ collarWidthFactor:1.06,collarDepthFactor:.98,
+ visibleSkinFactor:.76
+});
+
+export function studioNeckV61Profile(t){
+ const u=THREE.MathUtils.clamp(t,0,1);
+ const smooth=THREE.MathUtils.smoothstep(u,0,1);
+ const bell=Math.sin(Math.PI*u);
+ return {
+  lowerWidthFactor:STUDIO_NECK_V61_SHAPE.lowerWidthFactor,
+  lowerDepthFactor:STUDIO_NECK_V61_SHAPE.lowerDepthFactor,
+  widthGain:1+STUDIO_NECK_V61_SHAPE.midWidthGain*bell,
+  depthGain:1+STUDIO_NECK_V61_SHAPE.midDepthGain*bell,
+  centerBlend:smooth
+ };
+}
+
 function orientedStudioCutEdges(geometry,originalVertexCount){
  const indices=geometry?.getIndex();
  if(!indices)return [];
@@ -58,7 +81,7 @@ function orientedStudioCutEdges(geometry,originalVertexCount){
 
 export function weldStudioNeckIntoFace({
  faceMesh,cut,wardrobeRoot,torsoTopY,torsoCenterX=0,torsoCenterZ=0,
- facePigment=null,rings=7,collarInset=.009
+ facePigment=null,rings=11,collarInset=.009
 }={}){
  const source=faceMesh?.geometry,position=source?.getAttribute?.('position');
  if(!faceMesh?.isMesh||!source?.getIndex()||!position||
@@ -103,17 +126,36 @@ export function weldStudioNeckIntoFace({
  }
  const vertexCount=position.count,cols=boundaryIds.length;
  const vertexMap=new Map();
+ let midHalfWidthX=0,midHalfDepthZ=0;
  const garmentX=collar.mesh==='torso-based-fallback'?torsoCenterX:collar.x;
  const garmentZ=collar.mesh==='torso-based-fallback'?torsoCenterZ:collar.z;
  for(let row=1;row<rings;row++){
-  const t=row/(rings-1),smooth=THREE.MathUtils.smoothstep(t,0,1);
+  const t=row/(rings-1),profile=studioNeckV61Profile(t);
+  const smooth=profile.centerBlend;
+  const midCenterX=THREE.MathUtils.lerp(centerX,garmentX,smooth);
+  const midCenterZ=THREE.MathUtils.lerp(centerZ,garmentZ,smooth);
   for(let k=0;k<cols;k++){
    const id=boundaryIds[k],upperWorld=world.get(id);
    const skinBottom=new THREE.Vector3(
-    garmentX+(upperWorld.x-centerX)*.83,
+    garmentX+(upperWorld.x-centerX)*profile.lowerWidthFactor,
     bottomWorldY,
-    garmentZ+(upperWorld.z-centerZ)*.81);
+    garmentZ+(upperWorld.z-centerZ)*profile.lowerDepthFactor);
    const interpolated=upperWorld.clone().lerp(skinBottom,smooth);
+   // Anatomical cervical fullness: the donor face remains untouched at the
+   // jaw boundary, while the middle 40–60% gains width/depth. The bottom
+   // stays inside the actual raised garment collar instead of a thin tube.
+   interpolated.x=midCenterX+(interpolated.x-midCenterX)*profile.widthGain;
+   interpolated.z=midCenterZ+(interpolated.z-midCenterZ)*profile.depthGain;
+   if(row===Math.floor((rings-1)/2)){
+    midHalfWidthX=Math.max(midHalfWidthX,Math.abs(interpolated.x-midCenterX));
+    midHalfDepthZ=Math.max(midHalfDepthZ,Math.abs(interpolated.z-midCenterZ));
+   }
+   // Sculpt throat and nape in profile; both actual boundary rings remain
+   // intact, so the imported face and garment connection never drift.
+   const relativeDepth=(upperWorld.z-centerZ)/Math.max(.001,(maxZ-minZ)*.5);
+   const frontWeight=THREE.MathUtils.smoothstep(relativeDepth,-.85,.85);
+   const anatomicalSweep=THREE.MathUtils.lerp(.0013,-.0022,frontWeight);
+   interpolated.z+=Math.sin(Math.PI*t)*anatomicalSweep;
    const result=interpolated.applyMatrix4(fromWorld);
    vertexMap.set(row+':'+id,vertexCount+(row-1)*cols+k);
    for(const name of attrNames){
@@ -184,6 +226,10 @@ export function weldStudioNeckIntoFace({
   separateNeckMeshesNeeded:false,faceSkinMaterialReused:true,
   neckColorSmoothed:true,neckNormalsSmoothed:true,
   centerX,centerZ,jawHalfX:(maxX-minX)*.5,jawHalfZ:(maxZ-minZ)*.5,
+  v61WidenedNeck:true,v61NeckRingCount:rings,
+  v61WidthGainAtMid:studioNeckV61Profile(.5).widthGain,
+  v61DepthGainAtMid:studioNeckV61Profile(.5).depthGain,
+  neckMidHalfWidthX:midHalfWidthX,neckMidHalfDepthZ:midHalfDepthZ,
   previewOnly:true};
 }
 
@@ -196,15 +242,21 @@ export function weldStudioNeckIntoFace({
 export function addStudioRaisedInnerCollar({wardrobeRoot,joined}={}){
  if(!wardrobeRoot?.isObject3D||!joined?.applied)
   return {applied:false,reason:'outfit-or-neck-unavailable'};
- const topY=joined.seamMinY-.029;
+ // v61: shorten visible neck 24% from v59, while thickening the cervical
+ // surface. The face skin still uses its original material and vertices.
+ const topY=joined.seamMinY-.029*STUDIO_NECK_V61_SHAPE.visibleSkinFactor;
  const baseY=joined.collarY-.016;
  if(topY-baseY<.012||topY>=joined.seamMinY-.012)
   return {applied:false,reason:'collar-height-invalid',topY,baseY};
- const count=40,rings=8,verts=[],uv=[],indices=[];
- const upperRadiusX=THREE.MathUtils.clamp(joined.jawHalfX*.90,.029,.046);
- const upperRadiusZ=THREE.MathUtils.clamp(joined.jawHalfZ*.84,.028,.044);
- const lowerRadiusX=Math.max(upperRadiusX*1.28,.046);
- const lowerRadiusZ=Math.max(upperRadiusZ*1.26,.042);
+ const count=48,rings=10,verts=[],uv=[],indices=[];
+ // Follow the widened neck, without adding detached skin rings or changing
+ // metal armour. The fabric upper edge covers the skin-to-cloth transition.
+ const upperRadiusX=THREE.MathUtils.clamp(
+  joined.jawHalfX*STUDIO_NECK_V61_SHAPE.collarWidthFactor,.030,.053);
+ const upperRadiusZ=THREE.MathUtils.clamp(
+  joined.jawHalfZ*STUDIO_NECK_V61_SHAPE.collarDepthFactor,.029,.051);
+ const lowerRadiusX=Math.max(upperRadiusX*1.22,.049);
+ const lowerRadiusZ=Math.max(upperRadiusZ*1.22,.045);
  const collar=measureStudioGarmentCollar(wardrobeRoot,{
   torsoTopY:joined.collarY+.05});
  wardrobeRoot.updateWorldMatrix(true,false);
@@ -215,7 +267,13 @@ export function addStudioRaisedInnerCollar({wardrobeRoot,joined}={}){
   const cz=THREE.MathUtils.lerp(collar.z,joined.centerZ,t*.85);
   for(let i=0;i<count;i++){
    const angle=2*Math.PI*i/count;
-   const wave=.0018*t*Math.sin(angle*2);
+   // Lower the throat slightly and raise the rear/side neckline so the
+   // collar follows the jaw-to-nape contour, not a cut horizontal pipe.
+   // Both garment seam and original facial vertices remain in place.
+   const front=Math.max(0,Math.sin(angle));
+   const rear=Math.max(0,-Math.sin(angle));
+   const sides=Math.abs(Math.cos(angle));
+   const wave=.0018*t*Math.sin(angle*2)+t*t*(.002*sides+.003*rear-.0015*front);
    const radiusX=THREE.MathUtils.lerp(upperRadiusX,lowerRadiusX,shoulder);
    const radiusZ=THREE.MathUtils.lerp(upperRadiusZ,lowerRadiusZ,shoulder);
    const world=new THREE.Vector3(
@@ -241,8 +299,11 @@ export function addStudioRaisedInnerCollar({wardrobeRoot,joined}={}){
  mesh.name='STUDIO_RAISED_INNER_TUNIC_COLLAR_V59';
  mesh.frustumCulled=false;
  mesh.userData={previewOnly:true,attachedToActualSewnCollar:true,
-  replacesExposedLowerNeck:true,notPartOfFace:true};
+  replacesExposedLowerNeck:true,notPartOfFace:true,
+  v60VisibleNeckReduction:.18,v61VisibleNeckReduction:.24,
+  v61AnatomicalWidth:true};
  wardrobeRoot.add(mesh);
  return {applied:true,mesh,topY,baseY,visibleSkinLength:joined.seamMinY-topY,
+  v61TopHalfWidthX:upperRadiusX,v61TopHalfDepthZ:upperRadiusZ,
   source:collar.mesh,sourceColor:'#536a7e',rings,count};
 }

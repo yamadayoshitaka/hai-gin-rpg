@@ -98,7 +98,7 @@ button{padding:9px 11px}
 <p class="v45Hint">顔型・目・鼻・口・メイクをまとめて切り替えます。髪型と髪色はそのまま保存されます。</p>
 <div class="controls" aria-label="年代と顔の体型">
 <label for="v47AgeBand">年代<select id="v47AgeBand" aria-label="年代を8種類から選択"></select></label>
-<label for="v47BodyType">顔・体型<select id="v47BodyType" aria-label="痩せ型・普通・太めから選択"></select></label>
+<label for="v47BodyType">顔・体型<select id="v47BodyType" aria-label="超痩せ型・痩せ型・普通・太めから選択"></select></label>
 </div>
 <label for="v46FemaleCast">主要キャラクター／モブ（女性）
 <select id="v46FemaleCast" aria-label="女性キャラクター選択"></select></label>
@@ -213,12 +213,12 @@ import {defaultPartSelection,resolvePartSelection,PART_CATALOG,HAIR_COLORS} from
 import {listWigStyles,DEFAULT_WIG_STYLE_ID} from './src/face-wig-styles.js?v=44';
 import {resolveHeroHairSpec,synchronizeHeroHairSelection} from './src/hero-hair-controls-v43.js?v=44';
 import {chooseHeroFacePreset,polishHeroFaceControls,mountHeroFacePresetPicker,matchHeroFacePreset} from './src/hero-face-presets-v45.js?v=45';
-import {characterAppearance,mountCharacterCastSelect} from './src/character-cast-v46.js?v=46';
-import {AGE_PROFILES,BODY_PROFILES,applyDemographicFaceControls} from './src/character-demographics-v47.js?v=47';
+import {characterAppearance,mountCharacterCastSelect} from './src/character-cast-v46.js?v=60';
+import {AGE_PROFILES,BODY_PROFILES,applyDemographicFaceControls} from './src/character-demographics-v47.js?v=60';
 import {resolveEditedFaceControls,recordFaceManualEdit} from './src/face-state-v49.js?v=49';
-import {loadHeroineFacePreset,saveHeroineFacePreset} from './src/heroine-face-preset-store.js?v=41';
+import {loadHeroineFacePreset,saveHeroineFacePreset} from './src/heroine-face-preset-store.js?v=60';
 import {heroineBeautyControlsV43,heroineBeautyControlsV47,HEROINE_BEAUTY_PART_SELECTION_V43,upgradeUneditedHeroineV42ToV43} from './src/heroine-beauty-preset-v42.js?v=47';
-import {loadMaleFacePreset,saveMaleFacePreset} from './src/male-face-preset-store.js?v=42';
+import {loadMaleFacePreset,saveMaleFacePreset} from './src/male-face-preset-store.js?v=60';
 import {youngHeroMaleControls} from './src/hero-youthful-appearance-v50.js?v=50';
 import {applyHeroineSkinMaterial} from './src/heroine-skin-material.js?v=41';
 import {FEMALE_V7_DEFAULTS,MALE_REFERENCE_DEFAULT,FACE_SLIDER_RANGES,FACE_EYE_SPACING_DEFAULT,FACE_EYE_SPACING_RANGE,CONTACT_COLORS,CONTACT_COLOR_LABELS,safeContactColor,normalizeFemaleFaceControls,normalizeMaleFaceControls} from './src/face-v7-controls.js';
