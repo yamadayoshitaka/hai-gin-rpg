@@ -1,6 +1,54 @@
 {
   "schemaVersion": 4,
   "kind": "STAGE_RENDER_CONTRACT_NOT_COMPLETED_ART",
+  "perShotGeneratorGuard": {
+    "status": "ENFORCED_BEFORE_EACH_REAL_IMAGE_GENERATION_NOT_A_COMPLETION_CLAIM",
+    "runtime": "scripts/generate-story-chapter1-free-batch.mjs",
+    "callable": "src/story-c01-stage45-art-guard.js#buildStage45ArtPrompt",
+    "realGenerator": "Cloudflare Workers AI Free if provider quota and credentials available; no paid fallback",
+    "actorReferenceRule": "attach actual SHA-verified master image bytes, not merely file paths",
+    "sameGenderVisualBenchmark": "assets/story/chapters/c01/panels/c01-s01-m02-gender_is_per_shot.webp",
+    "requiredPerCallInputs": [
+      "canonical shot id",
+      "canonical screenplay text",
+      "stage name",
+      "stage plot context",
+      "stage unique environment",
+      "gender",
+      "pre/victory/defeat/gameover state",
+      "actor ids and appearance locks",
+      "physical reference images",
+      "same-gender style reference",
+      "P0 textless cinematic instruction",
+      "single 16:9 frame",
+      "real image hash and proof"
+    ],
+    "noTextOrUI": [
+      "speech bubbles",
+      "narration inside image",
+      "GAME OVER letters",
+      "UI",
+      "menu buttons",
+      "watermarks",
+      "numbers",
+      "kanji",
+      "latin letters",
+      "comic panel borders",
+      "collage"
+    ],
+    "styleLock": "CINEMATIC_SEMI_REAL_3D_JRPG_STAGE1_STAGE3_NOT_2D_MANGA",
+    "failClosedOn": [
+      "missing actor reference",
+      "missing same-gender style source",
+      "wrong gender",
+      "cross-outcome reuse",
+      "non-native geometry",
+      "image/proof mismatch",
+      "provider safety block"
+    ],
+    "noFormalP0AutoApproval": true,
+    "actualImagesRegisteredByThisManifest": 0
+  },
   "stageId": "c01-s05",
   "stageName": "第一章・第五ステージ 防衛線の死守",
   "canonicalSources": [
