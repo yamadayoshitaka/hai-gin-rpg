@@ -113,6 +113,20 @@ with TemporaryDirectory(prefix="bulk-review-synthetic-NOT-story-art-") as d:
         assert trial["deployed"] is False
         assert output.is_file()
 
+# Regression: stage 3 accepts native 800x450 panel images, while older
+# stage-specific quality requirements remain unchanged for other stages.
+with TemporaryDirectory(prefix="stage3-800px-regression-") as d:
+    panel = Path(d) / "synthetic-stage3-panel.webp"
+    Image.new("RGB", (800, 450), (51, 73, 99)).save(panel, "WEBP")
+    assert bulk.inspect_native_frame(panel, "c01-s03")["status"] == (
+        "NATIVE_PIXELS_VALID_VISUAL_QA_PENDING")
+    assert bulk.inspect_native_frame(panel, "c01-s02")["status"] == (
+        "REJECTED_NATIVE_PIXELS_OR_ASPECT")
+    too_small = Path(d) / "synthetic-too-small.webp"
+    Image.new("RGB", (784, 441), (51, 73, 99)).save(too_small, "WEBP")
+    assert bulk.inspect_native_frame(too_small, "c01-s03")["status"] == (
+        "REJECTED_NATIVE_PIXELS_OR_ASPECT")
+
 # Production code refuses to assemble absent genuine native images.
 verified = bulk.build_queue(stage2, 0, check_real_files=True)
 assert verified["newArtActuallyGenerated"] == 0
