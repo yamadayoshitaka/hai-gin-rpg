@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Import actual ChatGPT WebP only after exact scene/actor, source bytes and native geometry audit.
- * Owner-authorized PROVISIONAL art may remain missing P0 master image input;
+ * Stage4/5 real ChatGPT images are admitted only with explicit QA proof.\n * Owner-authorized PROVISIONAL art may remain missing P0 master image input;
  * this is expressly NOT final quality approval. No ChatGPT/OpenAI API is invoked.
  * Existing reviewed originals, gender/outcome separation and rollback remain.
  */
@@ -52,7 +52,7 @@ for(const file of proofs){
     review.generationReferencesAttached===false;
   if(!isStrictP0&&!isOwnerProvisional){skipped.push(file);continue;}
   const shot=keys.get(review.shotKey);
-  if(!shot||!['c01-s01','c01-s02','c01-s03'].includes(shot.stageId))throw Error('Not canonical stage1-3 shot');
+  if(!shot||!['c01-s01','c01-s02','c01-s03','c01-s04','c01-s05'].includes(shot.stageId))throw Error('Not canonical stage1-3 shot');
   if(chapterReviewedPanelAsset({stageId:shot.stageId,comicEdition:shot.edition,protagonistGender:shot.gender,id:shot.shotId})||
     stage2ReviewedPanelAsset({stageId:shot.stageId,comicEdition:shot.edition,protagonistGender:shot.gender,id:shot.shotId}))
     throw Error('Refusing to replace formally reviewed art');
