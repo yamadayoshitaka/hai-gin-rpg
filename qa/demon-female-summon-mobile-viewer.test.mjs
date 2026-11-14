@@ -10,7 +10,7 @@ import {FEMALE_SUMMON_FORMS,FEMALE_SUMMON_FORM_IDS,
  from '../src/female-summon-forms.js';
 import {createFemaleSummonFeather,createFemaleSummonLeaf,
  createDragonkinCranialShellGeometry,createDragonkinAlmondEyeGeometry,
- addFemaleSummonCostume,isFemaleSummonCostume}
+ createOriginalGuardianWingPair,addFemaleSummonCostume,isFemaleSummonCostume}
  from '../src/female-summon-costumes.js';
 import {COMBAT_OBJECT_SPECS} from '../src/combat-action-spec.js';
 
@@ -158,9 +158,25 @@ for(const id of FEMALE_SUMMON_FORM_IDS){
  assert.ok(high.owned.length>=8,'Missing sculpted costume '+id);
  const count=owned=>owned.reduce((sum,n)=>sum+n.geometry.getAttribute('position').count,0);
  assert.ok(count(high.owned)>count(low.owned)*1.5,'LOD not cheaper for '+id);
- assert.ok(count(high.owned)<45000,'Female costume GPU detail too expensive '+id);
- if(id==='seraph_guardian')
-  assert.ok(high.owned.filter(n=>n.geometry.userData.kind==='female-summon-feather-vane').length>=10);
+ assert.ok(count(high.owned)<(id==='seraph_guardian'?260000:45000),
+  'Female costume GPU detail too expensive '+id);
+ if(id==='seraph_guardian'){
+  for(const fixture of [high,low]){
+   const wings=fixture.owned.filter(n=>n.geometry.userData.kind===
+    'original-guardian-overlapping-feather-wing');
+   assert.equal(wings.length,2,'Both original feathered Guardian wings are required');
+   for(const wing of wings){
+    assert.equal(wing.geometry.userData.originalSource,true);
+    assert.ok(wing.geometry.getAttribute('color'),
+     'Original high-quality feather vertex shading must remain');
+    assert.ok(Math.abs(wing.parent.userData.seraphFlightWingSide)===1,
+     'Wings must have independent flight pivots');
+    assert.strictEqual(wing.parent.parent,fixture.frames.chest);
+   }
+   assert.equal(fixture.owned.filter(n=>n.name.includes('seraph-primary-')).length,0,
+    'Do not use nine serrated cardboard feather strips');
+  }
+ }
  if(id==='forest_archer')
   assert.ok(high.owned.filter(n=>n.geometry.userData.kind==='forest-spirit-leaf').length>=8);
  if(id==='dragon_lord'){
@@ -188,6 +204,12 @@ assert.match(gallery,/FEMALE_SUMMON_FORM_IDS.includes\(selected\)/);
 assert.match(gallery,/createCosplayedHumanoidMonster\(spec,\{/);
 assert.match(gallery,/withoutFallback:true/);
 assert.match(gallery,/femaleSummonHandle\?\.update\(t\)/);
+assert.match(gallery,/femaleFlightAltitude=\.76\+\.11\*Math\.sin\(t\*1\.85\)/,
+ 'Seraph female must visibly float above ground');
+assert.match(gallery,/femaleSummonHandle\.root\.position\.y=femaleFlightAltitude/,
+ 'Flight offset must reach visible skinned actor');
+assert.match(runtime,/seraphWingPivots/,
+ 'Original Guardian wings require independent animated pivots');
 assert.match(gallery,/objects.sync\(externalPreview\|\|isFemaleReady\?\[\]:\[previewObject\],t\)/);
 assert.match(gallery,/disposeFemaleSummon\(\)/);
 assert.match(manager,/id="toggleCatalog"/);
