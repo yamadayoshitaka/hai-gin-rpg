@@ -9,6 +9,7 @@ on:
       - 'src/monster-shape-kit.js'
       - 'src/monster-humanoid-hair.js'
       - 'src/monster-character-cosplay.js'
+      - 'src/monster-humanoid-combat-poses.js'
       - 'src/monster-studio-base-intake.js'
       - 'src/monster-studio-skinned-rig-audit.js'
       - 'qa/monster-studio-skinned-rig-audit.test.mjs'
@@ -21,6 +22,8 @@ on:
       - 'qa/female-summon-scalp-cut-regression.test.mjs'
       - 'qa/dragonkin-native-scalp-regression.test.mjs'
       - 'qa/demon-female-summon-mobile-viewer.test.mjs'
+      - 'qa/monster-humanoid-combat-poses.test.mjs'
+      - 'qa/nonhuman-monster-wardrobe.test.mjs'
       - 'qa/monster-regal-wardrobe-batch.test.mjs'
       - 'qa/monster-gothic-sculpt-regression.test.mjs'
       - 'qa/monster-humanoid-hair-orientation-regression.test.mjs'
@@ -35,6 +38,7 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
+  pull-requests: read
 concurrency:
   group: monster-anatomy-${{ github.ref }}
   cancel-in-progress: true
@@ -51,7 +55,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for file in src/monster-anatomy-reference.js src/monster-joint-motion.js src/monster-animation.js src/monster-geometry.js src/monster-humanoid-hair.js src/monster-character-cosplay.js src/monster-studio-base-intake.js src/monster-studio-skinned-rig-audit.js src/monster-gothic-sculpt.js src/monster-regal-garments.js src/female-summon-costumes.js src/dragonkin-native-scalp.js src/female-summon-scalp-cut.js; do
+          for file in src/monster-anatomy-reference.js src/monster-joint-motion.js src/monster-animation.js src/monster-geometry.js src/monster-humanoid-hair.js src/monster-character-cosplay.js src/monster-humanoid-combat-poses.js src/monster-studio-base-intake.js src/monster-studio-skinned-rig-audit.js src/monster-gothic-sculpt.js src/monster-regal-garments.js src/female-summon-costumes.js src/dragonkin-native-scalp.js src/female-summon-scalp-cut.js; do
             node --check "$file"
           done
       - name: Install pinned Three.js geometry runtime
@@ -67,17 +71,24 @@ jobs:
           npm run test:humanoid-orientation-hair
           npm run test:regal-humanoid-wardrobe
           npm run test:creature-variants-mobile-viewer
+          npm run test:humanoid-spell-motion
+          npm run test:nonhuman-monster-outfits
           node qa/dragonkin-native-scalp-regression.test.mjs
           node qa/female-summon-scalp-cut-regression.test.mjs
-      - name: Assert no human-character assets entered patch
+      - name: Assert no human-character assets entered PR patch
         env:
-          GH_BASE: '${{ github.event.pull_request.base.sha }}'
+          GH_TOKEN: ${{ github.token }}
+          GH_PR_NUMBER: '${{ github.event.pull_request.number }}'
         shell: bash
         run: |
           set -euo pipefail
-          if [[ -n "$GH_BASE" ]]; then
-            git fetch --no-tags origin "$GH_BASE" --depth=1
-            FILES="$(git diff --name-only "$GH_BASE" HEAD)"
+          # actions/checkout uses the synthetic PR merge commit. Comparing
+          # base.sha to HEAD incorrectly flags unrelated concurrent main
+          # merges as if they were part of this PR. Query only PR filenames.
+          if [[ -n "$GH_PR_NUMBER" ]]; then
+            FILES="$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${GH_PR_NUMBER}/files?per_page=100" --paginate --jq '.[].filename')"
+            echo "PR changed files:"
+            printf '%s\n' "$FILES"
             if grep -E '(^src/(master-heroine|character-|humanoid|facial-|combat-humanoid)|\.glb$|^assets/humans/)' <<<"$FILES"; then
               echo 'Forbidden human model or mesh change' >&2
               exit 1

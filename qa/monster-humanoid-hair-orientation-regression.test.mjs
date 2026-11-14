@@ -222,8 +222,8 @@ for(const p of profiles){
 }
 assert.equal(HUMANOID_MONSTER_COSTUMES.m044.hair,'long');
 assert.equal(FEMALE_VAMPIRE_COSTUME.hair,'long');
-assert.equal(FEMALE_SUMMON_FORMS.dragon_lord.hair,'bald',
- 'Dragon king crown uses dragon plates and yellow eyes, not a misplaced wig');
+assert.equal(FEMALE_SUMMON_FORMS.dragon_lord.hair,'long',
+ 'Approved Dragon Queen wears a continuous plum groom, not a cap');
 
 const groups=()=>({head:new THREE.Group(),chest:new THREE.Group(),
  pelvis:new THREE.Group(),arms:[new THREE.Group(),new THREE.Group()],

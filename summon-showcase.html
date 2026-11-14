@@ -13,7 +13,14 @@
     small{display:block;color:#b5c9cf;font-size:11px;margin-top:5px}
     select,button{background:#1b3447;color:#fff;border:1px solid #708f9a;border-radius:8px;font:inherit;padding:9px;min-width:125px;cursor:pointer}
     #femaleSummonModeLabel[hidden]{display:none!important}
-    #info{position:fixed;z-index:5;left:12px;bottom:12px;right:12px;max-width:530px;border:1px solid #708f9a;background:#0f1d2ce0;border-radius:12px;padding:13px;line-height:1.7}
+    #info{position:fixed;z-index:5;left:12px;bottom:74px;right:12px;max-width:530px;border:1px solid #708f9a;background:#0f1d2ce0;border-radius:12px;padding:13px;line-height:1.7}
+    #summonMotionStrip{position:fixed;z-index:21;bottom:max(7px,env(safe-area-inset-bottom));
+      left:8px;right:8px;display:flex;align-items:center;gap:6px;overflow-x:auto;
+      padding:6px;border-radius:11px;scrollbar-width:thin;overscroll-behavior-x:contain;
+      background:#071d2be8;border:1px solid #507d95;backdrop-filter:blur(9px)}
+    #summonMotionStrip button{min-width:max-content;flex:0 0 auto;
+      font-size:12px;padding:8px 10px;min-height:40px}
+    #summonMotionStrip button[aria-pressed=true]{background:#356785;border-color:#edcd89}
     header details{position:relative;z-index:22}
     header summary{list-style:none;cursor:pointer;background:#1b3447;border:1px solid #708f9a;padding:10px;border-radius:8px;font-size:13px}
     header details[open] #poseButtons{position:absolute;right:0;top:calc(100% + 5px);display:grid;grid-template-columns:1fr 1fr;gap:5px;background:#122f43;border:1px solid #708f9a;border-radius:10px;padding:8px;min-width:270px;max-height:55dvh;overflow-y:auto;box-shadow:0 7px 25px #0009}
@@ -30,15 +37,32 @@
     #controlsDrawer>summary::-webkit-details-marker{display:none}
     #controlsDrawer>summary::after{content:' ▾'}
     #controlsDrawer[open]>summary::after{content:' ▴'}
+    /* Small bottom inspector, away from the model's face and wings. */
     #controlsDrawer .extraControls{
-      position:absolute;right:0;top:calc(100% + 9px);display:flex;
-      flex-wrap:wrap;align-items:center;gap:9px;padding:12px;
-      width:min(520px,calc(100vw - 16px));max-height:70dvh;overflow-y:auto;
-      background:#0f1d2cf5;border:1px solid #587489;border-radius:12px;
-      box-shadow:0 12px 30px #0009
+      position:fixed;right:10px;left:auto;top:auto;
+      bottom:calc(72px + env(safe-area-inset-bottom));display:grid;
+      gap:9px;padding:11px;width:min(365px,calc(100vw - 20px));
+      max-height:min(52dvh,470px);overflow-y:auto;overflow-x:hidden;
+      overscroll-behavior:contain;background:#0f1d2cf7;
+      border:1px solid #728c9f;border-radius:14px;
+      box-shadow:0 14px 36px #000b
     }
     #controlsDrawer:not([open]) .extraControls{display:none}
-    #controlsDrawer .extraControls a{padding:7px 5px}
+    .inspectorHeading{display:flex;align-items:center;justify-content:space-between;
+      gap:10px;font-size:14px;color:#ead5a5}
+    #dismissControls{min-width:0;width:auto;padding:6px 11px;font-size:12px}
+    .inspectorGroup{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:7px;align-items:center;padding:9px;background:#172d40b9;
+      border:1px solid #4e6a7e;border-radius:9px}
+    .inspectorGroup strong{grid-column:1/-1;color:#b7d9e5;font-size:12px}
+    .inspectorGroup button{min-width:0;width:100%;padding:8px 5px;
+      font-size:12px;line-height:1.4;min-height:38px}
+    .inspectorGroup a{display:block;min-width:0;padding:8px 4px;
+      border-radius:7px;background:#203b50;text-align:center;
+      text-decoration:none;font-size:12px}
+    .inspectorWide{grid-column:1/-1}
+    .inspectorGroup input[type=file]{max-width:100%;font-size:11px}
+    .inspectorGroup label{font-size:12px}
     #info{padding:0;overflow-y:auto;max-height:55dvh}
     #info>summary{
       display:flex;align-items:center;justify-content:space-between;gap:10px;
@@ -67,14 +91,13 @@
         padding:9px 7px;min-width:76px;text-align:center;font-size:13px;height:40px
       }
       header #controlsDrawer .extraControls{
-        position:fixed;left:8px;right:8px;top:62px;width:auto;
-        max-height:calc(100dvh - 135px);gap:8px;padding:10px
+        position:fixed;left:8px;right:8px;top:auto;
+        bottom:calc(71px + env(safe-area-inset-bottom));width:auto;
+        max-height:min(49dvh,430px);gap:7px;padding:10px
       }
-      header #controlsDrawer .extraControls>button{
-        flex:1 1 calc(50% - 8px);min-width:0;font-size:13px;padding:9px 5px
-      }
-      header #controlsDrawer .extraControls>a{font-size:13px}
-      #info{bottom:8px;left:8px;right:8px;max-width:none;max-height:46dvh}
+      .inspectorGroup{padding:8px;gap:6px}
+      .inspectorGroup button{font-size:12px}
+      #info{bottom:72px;left:8px;right:8px;max-width:none;max-height:40dvh}
       #info>summary{padding:9px 10px}
       #info>summary #species{font-size:14px}
       #infoBody{padding:0 10px 10px}
@@ -88,7 +111,7 @@
 </head>
 <body>
   <header id="galleryHeader">
-    <div class="galleryHeading"><h1>召喚獣・軍馬 3D鑑賞 v4.5.16</h1><small>森の精霊弓士・光翼の守護天使 / CC0 Quaternius人体の顔・弓・羽毛の翼・回復・蘇生</small></div>
+    <div class="galleryHeading"><h1>召喚獣・軍馬 3D鑑賞 v4.5.19</h1><small>森の精霊弓士・光翼の守護天使 / CC0 Quaternius人体の顔・弓・羽毛の翼・回復・蘇生</small></div>
     <label for="type" class="speciesPicker"><span class="typeCaption">種類</span><select id="type">
       <option value="wolf">灰狼</option>
       <option value="wyvern">飛竜</option>
@@ -103,36 +126,48 @@
      <select id="humanoidForm" aria-label="召喚獣の本来の姿と女性人型を切り替え">
       <option value="original">元の召喚獣</option>
       <option value="female" selected>女性人型</option>
+       <option value="male" hidden>男性竜王</option>
      </select>
     </label>
     <details id="controlsDrawer">
-      <summary aria-label="操作メニューを開く・閉じる">操作メニュー</summary>
-      <div class="extraControls">
-    <button id="cry" type="button">鳴き声</button>
-    <button id="attack" type="button">攻撃モーション</button>
-    <button id="walk" type="button">移動を再生</button>
-    <button id="wireframe" type="button">ポリゴンを確認</button>
-    <button id="faceCloseup" type="button">顔・継ぎ目を拡大</button>
-    <button id="coatCloseup" type="button" disabled>全身の毛を拡大</button>
-    <button id="compareDragon" type="button" disabled>CC0外部ドラゴンを比較</button>
-    <label style="font-size:12px">手元GLBで外観比較
-      <input id="personalSummonGlb" type="file" accept=".glb,model/gltf-binary"
-      style="max-width:180px;font-size:12px"></label>
-    <details><summary>追加アクション 7種</summary><div id="poseButtons">
-      <button type="button" data-pose="roar">咆哮・鳴き声</button>
-      <button type="button" data-pose="special">必殺技</button>
-      <button type="button" data-pose="dodge">回避</button>
-      <button type="button" data-pose="guard">防御</button>
-      <button type="button" data-pose="hit">被弾</button>
-      <button type="button" data-pose="leap">跳躍</button>
-      <button type="button" data-pose="defeat">倒れる</button>
-    </div></details>
-    <a href="./monster-manager.html?v=4.5.16">魔物50体の管理</a>
-    <a href="./motion-external-test.html">職業・アクション画面</a>
-    <a href="./tactics-wireframe.html">戦場へ</a>
+      <summary aria-label="描画設定を開く・閉じる">表示設定</summary>
+      <div class="extraControls" aria-label="3Dモデルの表示設定">
+        <div class="inspectorHeading"><strong>鑑賞・モデル確認</strong>
+          <button type="button" id="dismissControls">× 閉じる</button></div>
+        <div class="inspectorGroup">
+          <strong>カメラ・見た目</strong>
+          <button id="faceCloseup" type="button">顔・衣装</button>
+          <button id="footCloseup" type="button">足元・装備</button>
+          <button id="coatCloseup" type="button" disabled>毛並みを見る</button>
+          <button id="wireframe" type="button">線画・ポリゴン</button>
+        </div>
+        <div class="inspectorGroup">
+          <strong>モデル比較</strong>
+          <button id="compareDragon" type="button" class="inspectorWide" disabled>外部ドラゴンと比較</button>
+          <label class="inspectorWide">手元GLBで比較
+            <input id="personalSummonGlb" type="file" accept=".glb,model/gltf-binary"></label>
+        </div>
+        <div class="inspectorGroup">
+          <strong>関連画面</strong>
+          <a href="./monster-manager.html?v=4.5.19">モンスター図鑑</a>
+          <a href="./motion-external-test.html">人間の動作</a>
+          <a href="./tactics-wireframe.html" class="inspectorWide">戦闘画面</a>
+        </div>
       </div>
     </details>
   </header>
+  <nav id="summonMotionStrip" aria-label="モンスターの基本モーションを直接再生">
+    <button type="button" data-pose="idle" aria-pressed="true">待機</button>
+    <button id="walk" type="button" aria-pressed="false">移動</button>
+    <button id="attack" type="button" aria-pressed="false">攻撃</button>
+    <button type="button" data-pose="special" aria-pressed="false">魔法・固有技</button>
+    <button type="button" data-pose="guard" aria-pressed="false">防御</button>
+    <button type="button" data-pose="dodge" aria-pressed="false">回避</button>
+    <button type="button" data-pose="hit" aria-pressed="false">被弾</button>
+    <button type="button" data-pose="leap" aria-pressed="false">跳躍</button>
+    <button type="button" data-pose="defeat" aria-pressed="false">倒れる</button>
+    <button id="cry" type="button" aria-pressed="false">鳴き声</button>
+  </nav>
   <details id="info">
     <summary aria-label="召喚獣の詳細を表示・非表示"><strong id="species">森の精霊弓士</strong>
       <span class="infoHint hintOpen">詳細を見る ▴</span>
@@ -146,10 +181,10 @@
   <script type="module">
     import * as THREE from 'three';
     import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
-    import {femaleSummonCosplayFor,FEMALE_SUMMON_FORM_IDS} from './src/female-summon-forms.js?v=4.5.04';
-    import {createCosplayedHumanoidMonster} from './src/monster-character-cosplay.js?v=4.5.16';
+    import {femaleSummonCosplayFor,FEMALE_SUMMON_FORM_IDS,MALE_DRAGON_LORD_FORM} from './src/female-summon-forms.js?v=4.5.19';
+    import {createCosplayedHumanoidMonster} from './src/monster-character-cosplay.js?v=4.5.19';
     import {COMBAT_OBJECT_SPECS} from './src/combat-action-spec.js?v=4.4.74';
-    import {createCombatWorldObjectRenderer} from './src/combat-world-object-renderer.js?v=4.5.16';
+    import {createCombatWorldObjectRenderer} from './src/combat-world-object-renderer.js?v=4.5.19';
     import {startCreaturePose} from './src/combat-creature-actions.js?v=4.4.92';
     import {createCreatureSoundRuntime} from './src/combat-creature-sounds.js?v=4.4.74';
     import {ActionVfxRuntime} from './src/character-system/action-vfx-runtime.js?v=4.4.23';
@@ -213,17 +248,22 @@
     };
     function selectFemaleSummonForm(){
       disposeFemaleSummon();
-      if(femaleMode.value!=='female'||!femaleSummonCosplayFor(selected))return;
-      const id=selected,form=femaleSummonCosplayFor(id),ticket=++femaleRequest;
-      // The existing procedural GPU instance remains on screen until the
-      // canonical female Superhero GLB and animation clips load successfully.
+      if(femaleMode.value==='original')return;
+      const id=selected;
+      const form=id==='dragon_lord'&&femaleMode.value==='male'?
+        MALE_DRAGON_LORD_FORM:femaleSummonCosplayFor(id);
+      if(!form||form.sex!==femaleMode.value)return;
+      const ticket=++femaleRequest;
+      // Keep original battle summon on-screen until the sex-correct
+      // Superhero skinned GLB is loaded; no gender swap on the same actor.
       const spec={id,name:COMBAT_OBJECT_SPECS[id].name,
         size:1,variant:0,family:'summon'};
       const handle=createCosplayedHumanoidMonster(spec,{
         detail:'high',profileOverride:form,withoutFallback:true
       });
       femaleSummonHandle=handle;scene.add(handle.root);
-      document.getElementById('metrics').textContent='女性人型を読み込み中…（元の召喚獣を表示）';
+      document.getElementById('metrics').textContent=
+        (form.sex==='male'?'男性竜王':'女性人型')+'を読み込み中…（元の召喚獣を表示）';
       handle.ready.then(result=>{
         if(ticket!==femaleRequest||handle!==femaleSummonHandle||selected!==id)return;
         if(result.source==='canonical-character-cosplay'){
@@ -233,7 +273,7 @@
           controls.update();
         }else if(result.source!=='cancelled'){
           document.getElementById('metrics').textContent=
-            '女性人型が読込めないため元の姿を表示：'+(result.reason||'');
+            (form.sex==='male'?'男性竜王':'女性人型')+'が読込めないため元の姿を表示：'+(result.reason||'');
         }
       });
     }
@@ -299,31 +339,46 @@
       {x:0,z:1},{x:-1,z:1},{x:-2,z:1},{x:-2,z:0},{x:-1,z:0}];
     let previewObject={id:'gallery-creature',type:selected,x:0,z:0,alive:true,team:0,flying:false,mountedBy:null};
     const select=document.getElementById('type');
-    // Species selection stays accessible while the large action menu is folded.
+    // Species selection stays accessible while display settings are folded.
     select.addEventListener('change',()=>{
       document.getElementById('controlsDrawer').open=false;
     });
-    function changeType(){
+    function changeType(preserveMode=false){
       closeExternalPreview();
       disposeFemaleSummon();
       document.getElementById('personalSummonGlb').value='';
+      const previousSpecies=selected;
       selected=select.value;
       const femaleAvailable=FEMALE_SUMMON_FORM_IDS.includes(selected);
+      // New Dragon Lord is a male humanoid by default. Original winged
+      // dragon remains selectable, female trial stays out of the UI.
+      femaleMode.querySelector('[value="female"]').hidden=selected==='dragon_lord';
+      femaleMode.querySelector('[value="male"]').hidden=selected!=='dragon_lord';
+      if(!preserveMode||previousSpecies!==selected)
+        femaleMode.value=selected==='dragon_lord'?'male':'female';
       femaleModeLabel.hidden=!femaleAvailable;
       femaleMode.disabled=!femaleAvailable;
       compareDragon.disabled=selected!=='dragon'||!licensedRegistry.entries.dragon;
       document.getElementById('faceCloseup').disabled=!
         (['forest_archer','seraph_guardian','wolf'].includes(selected)||
-          (selected==='dragon_lord'&&femaleMode.value==='female'));
+          (selected==='dragon_lord'&&femaleMode.value==='male'));
       document.getElementById('coatCloseup').disabled=selected!=='wolf';
+      document.getElementById('footCloseup').disabled=!femaleAvailable||
+        femaleMode.value==='original';
       previewObject={id:'gallery-'+selected,type:selected,x:0,z:0,alive:true,team:0,
         flying:!!COMBAT_OBJECT_SPECS[selected].flying,mountedBy:null,cryStartedAt:clock.getElapsedTime()};
       walking=false;routeStep=0;
-      document.getElementById('walk').textContent='移動を再生';
+      document.getElementById('walk').textContent='移動';
+      document.querySelectorAll('#summonMotionStrip button').forEach(button=>
+        button.setAttribute('aria-pressed',String(button.dataset.pose==='idle')));
       document.getElementById('species').textContent=COMBAT_OBJECT_SPECS[selected].name+
-        (femaleAvailable&&femaleMode.value==='female'?'・女性人型':'');
+        (femaleAvailable&&femaleMode.value==='female'?'・女性人型':
+         selected==='dragon_lord'&&femaleMode.value==='male'?'・男性竜王':'');
       document.getElementById('desc').textContent=descriptions[selected]+
-        (femaleAvailable&&femaleMode.value==='female'?' 女性キャラクター素体を使用した別の姿。戦闘用の元の召喚獣は維持。':'');
+        (femaleAvailable&&femaleMode.value==='female'?
+          ' 女性キャラクター素体を使用した別の姿。戦闘用の元の召喚獣は維持。':
+         selected==='dragon_lord'&&femaleMode.value==='male'?
+          ' 男性スキン付き素体に角、胸装甲、翼と足甲を付けた竜王。元のドラゴン姿も選択可能。':'');
       const focus=selected==='forest_archer'?1.3:selected==='seraph_guardian'?1.6:selected==='dragon_lord'?6.4:selected==='elder_dragon'?2.9:selected==='dragon'?2.6:selected==='wyvern'?2.2:1.2;
       controls.target.set(0,focus,0);
       // The bat wings are about 15 world units wide at summon scale. Fit
@@ -346,9 +401,9 @@
     }
     femaleMode.addEventListener('change',()=>{
       closeExternalPreview();
-      changeType();
+      changeType(true);
     });
-    select.addEventListener('change',changeType);changeType();
+    select.addEventListener('change',()=>changeType());changeType();
     document.getElementById('coatCloseup').onclick=()=>{
       if(selected!=='wolf')return;
       // Frame both forepaws and hind legs plus the coat beneath the torso.
@@ -364,7 +419,7 @@
         controls.target.set(0,1.07,1.16);
         camera.position.set(1.34,1.44,3.55);
       }else if(['forest_archer','seraph_guardian'].includes(selected)||
-          (selected==='dragon_lord'&&femaleMode.value==='female')){
+          (selected==='dragon_lord'&&femaleMode.value==='male')){
         const femaleReady=femaleSummonHandle?.source==='canonical-character-cosplay';
         controls.target.set(0,femaleReady?1.62:2.35,0);
         camera.position.set(.83,femaleReady?1.81:2.54,femaleReady?1.92:1.80);
@@ -372,6 +427,21 @@
       camera.lookAt(controls.target);
       controls.update();
     };
+    document.getElementById('footCloseup').onclick=()=>{
+      // A fixed shin/ankle inspection camera for spotting garment holes.
+      if(!femaleSummonHandle?.root||femaleMode.value==='original')return;
+      const targetHeight=selected==='seraph_guardian'?.53:.43;
+      controls.target.set(0,targetHeight,0);
+      camera.position.set(.85,targetHeight+.34,2.72);
+      controls.update();
+      document.getElementById('controlsDrawer').open=false;
+    };
+    document.getElementById('dismissControls').onclick=()=>{
+      document.getElementById('controlsDrawer').open=false;
+    };
+    document.addEventListener('keydown',event=>{
+      if(event.key==='Escape')document.getElementById('controlsDrawer').open=false;
+    });
     document.getElementById('cry').onclick=()=>{
       creatureSounds.unlock();
       startCreaturePose(previewObject,'roar',clock.getElapsedTime());
@@ -395,10 +465,28 @@
       else vfx.emit(selected==='wolf'?'attack':'heavy',
         {position:origin,target,job:selected,magic:'arcane',scale:1.5});
     };
+    // The action strip stays visible while the full-size 3D scene remains
+    // interactive; no menu expansion or camera shrinking is necessary.
+    document.querySelectorAll('#summonMotionStrip button').forEach(button=>{
+      button.addEventListener('click',()=>{
+        document.querySelectorAll('#summonMotionStrip button').forEach(other=>
+          other.setAttribute('aria-pressed',String(other===button)));
+        if(button.dataset.pose==='idle'){
+          walking=false;
+          document.getElementById('walk').textContent='移動';
+        }
+      });
+    });
     document.querySelectorAll('[data-pose]').forEach(button=>{
       button.onclick=()=>{
         const pose=button.dataset.pose,t=clock.getElapsedTime();
-        startCreaturePose(previewObject,pose,t);
+        if(pose==='idle'){
+          // Creature pose runtime only accepts finite actions. Clear its
+          // envelope rather than passing an unsupported 'idle' action.
+          walking=false;previewObject.poseAction=null;
+          previewObject.poseStartedAt=null;
+          previewObject.attackStartedAt=-Infinity;
+        }else startCreaturePose(previewObject,pose,t);
         externalPreview?.play(pose);
         femaleSummonHandle?.start(pose,t);
         if(pose==='roar'){
@@ -419,7 +507,7 @@
       walking=!walking;routeStep=0;
       nextStepAt=clock.getElapsedTime();
       femaleSummonHandle?.start(walking?'run':'idle',clock.getElapsedTime());
-      document.getElementById('walk').textContent=walking?'移動を停止':'移動を再生';
+      document.getElementById('walk').textContent=walking?'停止':'移動';
     };
     let polygonInspection=false;
     document.getElementById('wireframe').onclick=()=>{
@@ -465,21 +553,32 @@
         (selected==='forest_archer'||selected==='seraph_guardian'?
         ' / 顔 '+(objects.faceLibraryReady(selected)?'Quaternius CC0実物':'軽量モデル（読込中・代替）'):'')+
         (externalPreview?' / '+(externalPreviewMode==='local'?'手元GLB':'CC0外部候補')+'・独立3Dアニメ':'')+
-        (femaleSummonHandle?' / 女性人型 '+(isFemaleReady?'キャラGLB・骨格連動':'読み込み中・元の姿'):'')+
+        (femaleSummonHandle?' / '+(femaleSummonHandle.profile.sex==='male'?'男性竜王':'女性人型')+
+          ' '+(isFemaleReady?'キャラGLB・骨格連動':'読み込み中・元の姿'):'')+
         (femaleFlightAltitude>0?' / 空中飛行 '+femaleFlightAltitude.toFixed(2)+'m・羽ばたき':'');
     }
     window.__summonGalleryLayoutQA=()=>({
+      motionStripVisible:getComputedStyle(document.getElementById('summonMotionStrip')).display!=='none',
+      actionButtons:document.querySelectorAll('#summonMotionStrip button').length,
+      activeMotion:document.querySelector('#summonMotionStrip button[aria-pressed=true]')?.dataset.pose||
+        (document.getElementById('walk').getAttribute('aria-pressed')==='true'?'walk':
+         document.getElementById('attack').getAttribute('aria-pressed')==='true'?'attack':'other'),
       mobile:phoneLayout.matches,
       controlsOpen:document.getElementById('controlsDrawer').open,
       infoOpen:helpPanel.open,
       selected,
       femaleMode:femaleMode.value,
+      actorSex:femaleSummonHandle?.profile?.sex??null,
+      inspectorWidth:document.querySelector('#controlsDrawer .extraControls')?.getBoundingClientRect().width??0,
+      inspectorHeight:document.querySelector('#controlsDrawer .extraControls')?.getBoundingClientRect().height??0,
       femaleReady:femaleSummonHandle?.source==='canonical-character-cosplay',
       femaleSource:femaleSummonHandle?.profile?.modelId||null,
       dragonCraniumNativeTopology:
        femaleSummonHandle?.metadata?.dragonCraniumNativeTopology??null,
       dragonNativeScalpTriangles:
        femaleSummonHandle?.metadata?.dragonNativeScalpTriangles??0,
+      hairStrands:femaleSummonHandle?.metadata?.hairStrands??null,
+      combatMotionLayer:femaleSummonHandle?.metadata?.combatMotionLayer??null,
       sourceCraniumWigCut:
        femaleSummonHandle?.metadata?.sourceCraniumWigCut??null,
       sourceCraniumCutMode:

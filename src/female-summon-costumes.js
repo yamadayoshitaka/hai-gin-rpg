@@ -33,7 +33,7 @@ export function createOriginalGuardianWingPair({detail='high'}={}){
  return {left,right};
 }
 export const FEMALE_SUMMON_COSTUMES=Object.freeze([
- 'forest_spirit_female','seraph_female','dragonkin_female'
+ 'forest_spirit_female','seraph_female','dragonkin_female','dragonkin_male'
 ]);
 export const isFemaleSummonCostume=profile=>
  FEMALE_SUMMON_COSTUMES.includes(profile?.costume);
@@ -164,10 +164,11 @@ export function addFemaleSummonCostume({profile,frames,detail='high',attach,tube
  attachGroom=null,skullFit=null,nativeScalp=null}={}){
  if(!isFemaleSummonCostume(profile))return false;
  const hi=detail!=='low';
+ const prefix=profile.sex==='male'?'male-':'female-';
  const add=(parent,g,role,name,p=[0,0,0],r=[0,0,0])=>
-  attach(parent,g,role,'female-'+name,p,r);
+  attach(parent,g,role,prefix+name,p,r);
  const line=(parent,role,name,points,radius=.011)=>
-  tube(parent,role,'female-'+name,points,radius);
+  tube(parent,role,prefix+name,points,radius);
  const orb=(parent,role,name,p,scale)=>{
   const g=new THREE.IcosahedronGeometry(1,hi?1:0);g.scale(...scale);
   return add(parent,g,role,name,p);
@@ -176,7 +177,7 @@ export function addFemaleSummonCostume({profile,frames,detail='high',attach,tube
  for(const side of [-1,1]){
   const i=side<0?0:1;
   const liner=type==='forest_spirit_female'?'makeup':'lip';
-  if(type!=='dragonkin_female'){
+  if(!['dragonkin_female','dragonkin_male'].includes(type)){
    // Dragon Lord has its own close-fitting eye sockets. These common
    // heavy face lines would stack into the black goggle-like band.
    line(frames.head,liner,'canthal-liner-'+side,[
@@ -197,22 +198,31 @@ export function addFemaleSummonCostume({profile,frames,detail='high',attach,tube
    line(frames.head,'leaf','wood-antler-trunk-'+side,[
     [side*.10,.12,.01],[side*.17,.26,.06],
     [side*.24,.37,.10]],.034);
-   for(let i=0;i<3;i++)
+   // Branching woodland antlers carry foliage and blossom buds, never
+   // the Guardian's feathers or halo. All details follow the Head bone.
+   for(let i=0;i<3;i++){
+    const y=.25+i*.056,x=.16+i*.031;
+    line(frames.head,'leaf','wood-antler-branch-'+side+'-'+i,[
+     [side*(x-.025),y-.04,.065],[side*(x+.045),y+.035,.063],
+     [side*(x+.081),y+.072,.052]],.011);
     add(frames.head,createFemaleSummonLeaf({detail,size:.16+i*.025}),
      'leaf','antler-leaf-'+side+'-'+i,
-     [side*(.16+i*.032),.24+i*.058,.05],
-     [side*.2,0,side*(.9+i*.35)]);
+     [side*x,y,.05],[side*.2,0,side*(.9+i*.35)]);
+    orb(frames.head,'ivoryCloth','forest-flower-bud-'+side+'-'+i,
+     [side*(x+.073),y+.067,.052],[.019,.012,.019]);
+   }
    add(frames.head,createFemaleSummonLeaf({detail,size:.12}),
     'leaf','pointed-elf-ear-'+side,
     [side*.14,.024,-.013],[0,0,side*(Math.PI*.43)]);
-   for(let i=0;i<4;i++)
-    add(frames.chest,createFemaleSummonLeaf({detail,size:.21+i*.018}),
+   for(let i=0;i<6;i++)
+    add(frames.chest,createFemaleSummonLeaf({detail,size:.21+i*.023}),
      'leaf','growing-mantle-leaf-'+side+'-'+i,
-     [side*(.13+i*.05),.19-i*.13,.04],
+     [side*(.12+i*.037),.22-i*.10,.04],
      [.05,0,side*.55]);
   }
+  // A green organic leaf mantle instead of the angel's ceremonial cloth.
   add(frames.chest,createGothicMantle({detail,width:.30,drop:.87,back:.26}),
-   'velvet','forest-woven-cape');
+   'leaf','forest-woven-cape');
  }
  if(type==='seraph_female'){
   // Retain the ORIGINAL Guardian's sculpted 3-row wing geometry, including
@@ -242,6 +252,47 @@ export function addFemaleSummonCostume({profile,frames,detail='high',attach,tube
   add(frames.chest,createGothicMantle({detail,width:.34,drop:.92,back:.25}),
    'velvet','seraph-cloth-back');
  }
+ if(type==='dragonkin_male'){
+  // Male sovereign: a broad plated head silhouette, horns, hinged wings,
+  // sculpted chest armour and a skeletal tail. Unlike the archived female
+  // prototype, NO eyeliner, cosmetics, false eyes or second nose are added.
+  const rx=skullFit?.radius?.[0]??.125;
+  for(const side of [-1,1]){
+   const baseX=Math.max(.112,Math.min(.17,rx*.96));
+   const hornBase=[side*baseX,.17,.012];
+   orb(frames.head,'metal','dragon-king-horn-socket-'+side,
+    hornBase,[.065,.048,.07]);
+   add(frames.head,createGothicHorn({
+    side,len:.38,radius:.073,curve:.32,detail
+   }),'horn','dragon-king-crown-horn-'+side,
+   [side*baseX,.18,.015]);
+   line(frames.head,'dragonScale','dragon-king-temple-armour-'+side,[
+    [side*.115,.10,-.09],[side*.15,.035,-.10],
+    [side*.144,-.064,-.078]],hi?.015:.022);
+   add(frames.chest,createGothicBatWing({
+    side,detail,width:1.24,height:.90
+   }),'membrane','dragon-king-wing-'+side,[0,.09,.08]);
+   line(frames.chest,'horn','dragon-king-wing-spar-'+side,[
+    [side*.15,.22,.20],[side*.50,.48,.38],
+    [side*1.08,.26,.60]],.044);
+   for(let i=0;i<5;i++)
+    orb(frames.chest,i%2?'gold':'metal',
+     'dragon-king-chest-plate-'+side+'-'+i,
+     [side*(.085+i*.031),.26-i*.14,-.215],
+     [.095,.086,.027]);
+  }
+  for(const side of [-1,1])line(frames.chest,'gold',
+   'dragon-king-collar-engraving-'+side,[
+    [side*.17,.31,-.125],[side*.23,.18,-.176],
+    [side*.175,.0,-.183]],.011);
+  line(frames.pelvis,'horn','dragon-king-tail',[
+   [0,.035,.18],[.12,-.14,.30],[.26,-.41,.52],
+   [.13,-.71,.73]],.051);
+  add(frames.pelvis,createGothicHorn({
+   detail,len:.23,radius:.070,curve:.15
+  }),'horn','dragon-king-tail-blade',[.13,-.73,.73],
+  [0,0,Math.PI*.85]);
+ }
  if(type==='dragonkin_female'){
   // One continuous SCALP-FITTED armour crown, attached to the actual Head
   // via its model-upright groom anchor. A fixed cap previously left a large
@@ -253,16 +304,26 @@ export function addFemaleSummonCostume({profile,frames,detail='high',attach,tube
   const crownGeometry=nativeScalp??createDragonkinCranialShellGeometry({
    detail,...(skullFit?{center:skullFit.center,radius:skullFit.radius}:{})
   });
-  if(attachGroom&&frames.headGroom){
-   attachGroom(crownFrame,crownGeometry,'dragonScale',
-    'female-dragonkin-scaled-hairless-crown');
-  }else add(crownFrame,crownGeometry,'dragonScale',
-   'dragonkin-scaled-hairless-crown');
+  if(profile.hair==='bald'){
+   // Legacy hairless variant only. The approved dragon-queen design uses
+   // continuous plum hair, so never put a scale helmet over that groom.
+   if(attachGroom&&frames.headGroom){
+    attachGroom(crownFrame,crownGeometry,'dragonScale',
+     'female-dragonkin-scaled-hairless-crown');
+   }else add(crownFrame,crownGeometry,'dragonScale',
+    'dragonkin-scaled-hairless-crown');
+  }else if(!nativeScalp){
+   // No synthetic dome or redundant opaque forehead on the hair variant.
+   crownGeometry.dispose();
+  }
   for(const side of [-1,1]){
    // Eyes are now shallow, almond-shaped surfaces under their own slim
    // upper lids. Keep gold color without toy-like glowing black goggles.
-   add(frames.head,createDragonkinAlmondEyeGeometry({side,detail}),
+   if(profile.hair==='bald')add(frames.head,
+    createDragonkinAlmondEyeGeometry({side,detail}),
     'dragonEye','dragonkin-solid-golden-eye-'+side);
+   // The approved coiffed variant retains original skinned eyeballs,
+   // iris and eyelids. No duplicate gold circles over the real eyes.
    line(frames.head,'dragonRim','dragonkin-delicate-upper-lid-'+side,[
     [side*.017,.042,-.129],[side*.050,.052,-.151],
     [side*.086,.041,-.135]],hi?.0045:.0058);
@@ -275,17 +336,24 @@ export function addFemaleSummonCostume({profile,frames,detail='high',attach,tube
     [side*.113,.113,-.081],[side*.131,.052,-.090],
     [side*.126,-.022,-.083]],hi?.007:.009);
   }
-  line(frames.head,'dragonScale','dragonkin-fine-nasal-bridge',[
-   [0,.074,-.119],[0,.007,-.145],[0,-.039,-.147]],.0055);
+  if(profile.hair==='bald')line(frames.head,'dragonScale',
+   'dragonkin-fine-nasal-bridge',[
+    [0,.074,-.119],[0,.007,-.145],[0,-.039,-.147]],.0055);
+  // The original nose stays exposed in the coiffed design: a vertical
+  // nasal tube caused the user's dangling moustache screenshot.
   line(frames.head,'lip','dragonkin-natural-lower-lip',[
    [-.051,-.105,-.130],[-.021,-.123,-.143],[0,-.128,-.148],
    [.021,-.123,-.143],[.051,-.105,-.130]],.0035);
   for(const side of [-1,1]){
-   orb(frames.head,'dragonScale','dragon-horn-root-'+side,
-    [side*.105,.149,.013],[.053,.027,.051]);
+   const rx=skullFit?.radius?.[0]??.119;
+   const hornX=Math.max(.091,Math.min(.143,rx*.87));
+   const hornY=Math.max(.12,Math.min(.19,
+    (skullFit?.center?.[1]??.095)+(skullFit?.radius?.[1]??.16)*.37));
+   orb(frames.head,'horn','dragon-horn-root-'+side,
+    [side*hornX,hornY,.013],[.052,.028,.052]);
    add(frames.head,createGothicHorn({
-    side,len:.28,radius:.054,curve:.24,detail
-   }),'horn','dragon-swept-horn-'+side,[side*.105,.157,.006]);
+    side,len:.30,radius:.055,curve:.25,detail
+   }),'horn','dragon-swept-horn-'+side,[side*hornX,hornY,.006]);
    add(frames.chest,createGothicBatWing({
     side,detail,width:1.04,height:.76
    }),'membrane','dragon-wing-'+side,[0,.09,.05]);

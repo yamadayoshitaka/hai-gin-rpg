@@ -34,6 +34,13 @@ button{cursor:pointer}button:hover,button:focus-visible{background:#275a72}
 #viewToolbar{position:absolute;bottom:12px;left:12px;right:12px;display:flex;flex-wrap:wrap;align-items:center;gap:7px;z-index:8;pointer-events:none}
 #viewToolbar button{pointer-events:auto;background:#0b263bdb;backdrop-filter:blur(7px);padding:10px 12px;font-size:12px;border-color:#7294aa;box-shadow:0 3px 12px #0009}
 #viewToolbar button[aria-pressed=true]{background:#325972;border-color:#e8d29a}
+#actions{position:absolute;z-index:9;left:8px;right:8px;bottom:65px;
+ display:flex;gap:6px;align-items:center;overflow-x:auto;padding:6px;
+ border-radius:10px;background:#091f31df;border:1px solid #597c95;
+ backdrop-filter:blur(9px);scrollbar-width:thin;overscroll-behavior-x:contain}
+#actions button{flex:0 0 auto;white-space:nowrap;padding:8px 10px;
+ min-height:40px;font-size:12px;background:#183b51}
+#actions button[aria-pressed=true]{background:#356a85;border-color:#e8cc86}
 #viewToolbar .pushRight{margin-left:auto}
 main.catalogCollapsed{grid-template-columns:0 minmax(0,1fr)}
 main.catalogCollapsed>aside{display:none}
@@ -54,9 +61,12 @@ legend{font-size:12px;color:#e8d9b6;padding:0 6px}
  #info{top:6px;left:6px;right:8px;padding:8px;max-width:none}
  #info h2{font-size:18px}#info p{font-size:11px;line-height:1.4}
  #hud{font-size:10px;max-width:92%;line-height:1.55}
- #viewToolbar{left:8px;right:8px;bottom:calc(8px + env(safe-area-inset-bottom));gap:5px}
- #viewToolbar button{padding:9px 11px;font-size:12px;min-height:40px}
- #viewToolbar .pushRight{margin-left:auto}
+ #viewToolbar{left:8px;right:8px;bottom:calc(8px + env(safe-area-inset-bottom));
+  gap:5px;flex-wrap:nowrap;overflow-x:auto;pointer-events:auto;
+  scrollbar-width:none;overscroll-behavior-x:contain}
+ #viewToolbar button{padding:8px 9px;font-size:11px;min-height:40px;
+  flex:0 0 auto;white-space:nowrap}
+ #viewToolbar .pushRight{margin-left:0}
  main>aside{display:none;position:absolute;z-index:15;inset:0 8% 0 0;order:unset;max-height:none;overflow-y:auto;border:0;border-right:2px solid #6c93a8;box-shadow:12px 0 35px #000b}
  main.catalogOpen>aside,main.catalogCollapsed.catalogOpen>aside{display:block}
  #items{grid-template-columns:repeat(2,minmax(0,1fr))}
@@ -67,8 +77,8 @@ legend{font-size:12px;color:#e8d9b6;padding:0 6px}
 </style>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
 </head><body>
-<header><a href="./index.html">← メニュー</a><h1>魔物図鑑・モンスター管理 <small>50種 / v4.5.16</small></h1>
- <a href="./summon-showcase.html?v=4.5.16">召喚獣一覧</a></header>
+<header><a href="./index.html">← メニュー</a><h1>魔物図鑑・モンスター管理 <small>50種 / v4.5.19</small></h1>
+ <a href="./summon-showcase.html?v=4.5.18">召喚獣一覧</a></header>
 <main id="bestiaryMain">
  <aside id="catalogPanel" aria-label="モンスター一覧">
   <div class="search">
@@ -87,8 +97,10 @@ legend{font-size:12px;color:#e8d9b6;padding:0 6px}
     <button id="zoomIn" type="button" aria-label="モデルを拡大">＋ 拡大</button>
     <button id="zoomOut" type="button" aria-label="モデルを縮小">－ 縮小</button>
     <button id="resetCamera" type="button">全身</button>
+    <button id="portraitCamera" type="button">顔・衣装</button>
     <button id="toggleTools" type="button" class="pushRight" aria-expanded="false" aria-controls="modelTools">⚙ 設定</button>
    </div>
+   <nav id="actions" aria-label="モンスターの基本モーションを直接選択"></nav>
   </div>
   <section class="tools" id="modelTools" hidden>
    <div id="mobileTip">ドラッグ：回転 / ピンチ：拡大縮小。モデルは召喚獣と同じ3D方式で描画します。</div>
@@ -144,7 +156,6 @@ legend{font-size:12px;color:#e8d9b6;padding:0 6px}
     <small>外部GLBは品質が劣る場合があります。従来モデルを標準とし、外観を確認するまで戦闘には採用しません。手元のGLBは
     このブラウザー内でのみ読み込み、サーバーには送信しません。</small>
    </fieldset>
-   <fieldset><legend>モーション検証（モンスター別）</legend><div id="actions" class="toolrow"></div></fieldset>
    <fieldset><legend>個体データ編集（この端末に保存）</legend>
     <div id="editor">
      <label>名称<input id="edit-name" maxlength="40"></label>
@@ -171,9 +182,9 @@ import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {MONSTER_CATALOG,MONSTER_BY_ID,MONSTER_FAMILIES,MONSTER_ELEMENTS,monsterList} from './src/monster-catalog.js?v=4.4.92';
 import {createMonsterModel,disposeMonsterSculpture,MONSTER_DETAIL_LEVELS,
-  monsterSculptCacheStats,monsterPhotoCacheStats} from './src/monster-geometry.js?v=4.5.04';
-import {MONSTER_ACTIONS,startMonsterAction,animateMonsterModel} from './src/monster-animation.js?v=4.4.95';
-import {createCosplayedHumanoidMonster} from './src/monster-character-cosplay.js?v=4.5.16';
+  monsterSculptCacheStats,monsterPhotoCacheStats} from './src/monster-geometry.js?v=4.5.18';
+import {MONSTER_ACTIONS,startMonsterAction,animateMonsterModel} from './src/monster-animation.js?v=4.5.18';
+import {createCosplayedHumanoidMonster} from './src/monster-character-cosplay.js?v=4.5.19';
 import {humanoidMonsterCostumeFor,HUMAN_MONSTER_IDS} from './src/monster-character-cosplay-manifest.js?v=4.5.04';
 import {hasDemonCosmetics,withDemonColorTheme}
  from './src/monster-demon-cosmetics.js?v=4.5.04';
@@ -271,6 +282,7 @@ controls.maxPolarAngle=Math.PI*.54;controls.target.set(0,1.3,0);
 const HUMAN_INSPECT_MIN_POLAR=Math.PI*.30;
 const clock=new THREE.Clock();
 let selected='m001',model=null,currentAction='idle',meshStats=null,frames=0;
+let nextActionReplay=Infinity;
 let costumeHandle=null;
 let externalRegistry={entries:{}},externalHandle=null,requestSerial=0;
 const localFiles=new Map(),assignmentKey='hai-gin.monster-external-assignment.v1';
@@ -361,6 +373,17 @@ function zoomModel(factor){
 byId('zoomIn').onclick=()=>zoomModel(.76);
 byId('zoomOut').onclick=()=>zoomModel(1.30);
 byId('resetCamera').onclick=()=>{if(model)focusCamera();};
+byId('portraitCamera').onclick=()=>{
+ if(!model)return;
+ const box=new THREE.Box3().setFromObject(model);
+ const center=box.getCenter(new THREE.Vector3());
+ const height=Math.max(1.3,box.getSize(new THREE.Vector3()).y);
+ const distance=Math.max(controls.minDistance,Math.min(7,height*1.15));
+ controls.target.set(center.x,center.y+height*.13,center.z);
+ camera.position.set(center.x+distance*.17,center.y+height*.13,
+  center.z+distance*.91);
+ controls.update();
+};
 function selectSpecies(id){
  if(!MONSTER_BY_ID[id])return;
  const ticket=++requestSerial;
@@ -391,7 +414,10 @@ function selectSpecies(id){
  refreshGeometry();
  if(costumeHandle)costumeHandle.start('idle',clock.getElapsedTime());
  else startMonsterAction(model,'idle',clock.getElapsedTime());
- currentAction='idle';loadEditor(m);
+ currentAction='idle';nextActionReplay=Infinity;
+ for(const button of byId('actions').querySelectorAll('button'))
+  button.setAttribute('aria-pressed',String(button.title==='idle'));
+ loadEditor(m);
  byId('name').textContent=m.name+' ('+m.rarity+')';
  byId('description').textContent=m.description+' — '+m.skill;
  focusCamera();renderList();
@@ -585,14 +611,28 @@ byId('quality').addEventListener('change',()=>{
  selectSpecies(selected);
  notice('描画密度を '+detail+' に変更しました。制作原型は高負荷です。');
 });
+const actionDurations={attack:1.1,special:1.6,roar:1.3,guard:.9,
+ dodge:.7,hit:.45,leap:1.25};
+function playPreviewAction(action){
+ if(!model)return;
+ const time=clock.getElapsedTime();
+ if(costumeHandle)costumeHandle.start(action,time);
+ else startMonsterAction(model,action,time);
+ externalHandle?.play(action);
+ currentAction=action;
+ // Auto-replay finite gestures for hands-free inspection; defeat is terminal.
+ nextActionReplay=Number.isFinite(actionDurations[action])?
+   time+actionDurations[action]+.35:Infinity;
+}
 for(const [id,title] of MONSTER_ACTIONS){
- const button=document.createElement('button');button.textContent=title;button.title=id;
+ const button=document.createElement('button');
+ button.textContent=id==='special'?'魔法・固有技':title;
+ button.title=id;button.type='button';
+ button.setAttribute('aria-pressed',String(id==='idle'));
  button.onclick=()=>{
-   if(!model)return;
-   if(costumeHandle)costumeHandle.start(id,clock.getElapsedTime());
-   else startMonsterAction(model,id,clock.getElapsedTime());
-   externalHandle?.play(id);
-   currentAction=id;
+   playPreviewAction(id);
+   byId('actions').querySelectorAll('button').forEach(other=>
+     other.setAttribute('aria-pressed',String(other===button)));
    notice(specimen(selected).name+'：'+title+' を再生');
  };
  byId('actions').append(button);
@@ -616,6 +656,9 @@ function frame(){
  lastDrawAt=time;
  if(delta>0)fps=fps*.90+(1/delta)*.10;
  if(model){
+   if(time>=nextActionReplay&&Number.isFinite(nextActionReplay)){
+     playPreviewAction(currentAction);
+   }
    const state=costumeHandle?
      (costumeHandle.update(time),{action:model.userData.action||'idle'}):
      animateMonsterModel(model,time);
@@ -662,6 +705,9 @@ window.__monsterViewerLayoutQA=()=>({
  toolsOpen:!byId('modelTools').hidden,
  canvasWidth:view.clientWidth,canvasHeight:view.clientHeight,
  selected,zoomDistance:camera.position.distanceTo(controls.target),
+ motionStripVisible:byId('actions').getBoundingClientRect().height>0,
+ motionButtons:byId('actions').querySelectorAll('button').length,
+ selectedMotion:currentAction,
  minPolarAngle:controls.minPolarAngle,
  humanoidPortrait:HUMAN_MONSTER_IDS.includes(selected),
 });

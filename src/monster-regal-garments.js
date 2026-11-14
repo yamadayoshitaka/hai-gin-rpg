@@ -12,13 +12,16 @@ import * as THREE from 'three';
 export const REGAL_HUMANOID_WARDROBE=Object.freeze({
  seraph_female:Object.freeze({style:'celestial-vestment',bodice:'ivoryCloth',
   hem:'ivoryCloth',trim:'gold',skirt:.99,flare:.49,sleeve:'ivoryCloth',
-  sleeveLength:.42,leggings:null,head:'none'}),
+  sleeveLength:.42,leggings:'metal',bootTrim:'gold',head:'none'}),
  forest_spirit_female:Object.freeze({style:'living-leaf-robe',bodice:'leaf',
   hem:'leaf',trim:'gold',skirt:.82,flare:.40,sleeve:'leaf',
   sleeveLength:.36,leggings:'leaf',head:'none'}),
  dragonkin_female:Object.freeze({style:'scaled-regalia',bodice:'metal',
   hem:'velvet',trim:'gold',skirt:.72,flare:.30,sleeve:'metal',
   sleeveLength:.39,leggings:'metal',head:'draconic-mask'}),
+ dragonkin_male:Object.freeze({style:'sovereign-dragon-battleplate',bodice:'metal',
+  hem:'velvet',trim:'gold',skirt:.73,flare:.30,sleeve:'metal',
+  sleeveLength:.43,leggings:'metal',bootTrim:'gold',head:'dragon-helm'}),
  succubus:Object.freeze({style:'violet-gothic-gown',bodice:'velvet',
   hem:'velvet',trim:'edge',skirt:.77,flare:.37,sleeve:'velvet',
   sleeveLength:.30,leggings:'velvet',head:'none'}),
@@ -191,16 +194,33 @@ export function createRegalCollarGeometry({detail='high'}={}){
   {y:.362,rx:.108,rz:.085}
  ],{detail,pleat:.012,name:'wrapped-ceremonial-collar'});
 }
-const needsLeggings=p=>p?.leggings!==null;
+/**
+ * Always seal the exposed donor legs beneath costume silhouettes. A skirt
+ * alone cannot hide knees during jumps, hit reactions or 3/4 camera views.
+ * Use the garment cloth if an explicit leg material is not supplied.
+ */
+const legMaterial=plan=>plan.leggings||plan.hem;
+export function createRegalFootGeometry({detail='high'}={}){
+ // Anatomical toe and heel volume follows each source foot bone, and closes
+ // the bottom of the shin boot. No detached shoe floating at the origin.
+ const g=new THREE.SphereGeometry(1,
+  detail==='low'?10:24,detail==='low'?7:14);
+ // Substantial closed toe, heel and ankle volume: the borrowed actor's
+ // nude foot was still visible on 3/4 camera views under tiny shoe shells.
+ g.scale(.171,.138,.295);
+ g.translate(0,-.055,-.125);
+ g.userData={kind:'bone-anchored-full-foot-boot',detail};
+ return g;
+}
 export function addRegalHumanoidOutfit({profile,frames,detail='high',attach,tube}={}){
  const plan=wardrobeFor(profile);
  if(!plan)return false;
  if(!frames?.chest||!frames?.pelvis||frames.arms?.length!==2||
-    frames.calves?.length!==2)
+    frames.legs?.length!==2||frames.calves?.length!==2)
   throw Error('Regal outfit requires full torso, pelvic and articulated arm/leg frames');
  const add=(parent,g,role,name,p=[0,0,0],r=[0,0,0])=>
   attach(parent,g,role,'regal-'+name,p,r);
- const decorated=['dragonkin_female','demon','gargoyle','death_knight','dark_knight'].includes(profile.costume);
+ const decorated=['dragonkin_female','dragonkin_male','demon','gargoyle','death_knight','dark_knight'].includes(profile.costume);
  add(frames.chest,createRegalBodiceGeometry({detail,armoured:decorated}),
   plan.bodice,plan.style+'-fitted-bodice');
  // One continuous shoulder closure overlaps both torso and arm sleeve roots
@@ -225,10 +245,28 @@ export function addRegalHumanoidOutfit({profile,frames,detail='high',attach,tube
   add(frames.forearms[i],createRegalLimbGeometry({
    detail,length:.31,kind:'sleeve',top:.097,bottom:.071
   }),plan.trim,plan.style+'-bracelet-'+i);
-  if(needsLeggings(plan)){
-   add(frames.calves[i],createRegalLimbGeometry({
-    detail,length:.46,kind:'boot',top:.126,bottom:.105
-   }),plan.leggings,plan.style+'-boot-'+i);
+  // Layered trousers attach to actual thigh bones; boot uppers overlap
+  // knees and close with ankle/foot volumes to avoid exposed calves and toes.
+  // Avoid relying on the skirt to conceal moving bare human donor legs.
+  add(frames.legs[i],createRegalLimbGeometry({
+   detail,length:.51,kind:'trouser',top:.185,bottom:.137
+  }),legMaterial(plan),plan.style+'-full-thigh-'+i);
+  add(frames.calves[i],createRegalLimbGeometry({
+   detail,length:.49,kind:'boot',top:.147,bottom:.112
+  }),legMaterial(plan),plan.style+'-full-shin-boot-'+i);
+  const footBone=frames.feet?.[i]||frames.calves[i];
+  const footOffset=frames.feet?.[i]?[0,0,0]:[0,-.49,0];
+  add(footBone,createRegalFootGeometry({detail}),
+   legMaterial(plan),plan.style+'-full-foot-boot-'+i,footOffset);
+  // A bright metal toe cap separates boots from skin, especially
+  // on the Seraph where ivory cloth matched the donor complexion.
+  if(plan.bootTrim){
+   const toeBand=new THREE.TorusGeometry(.129,.018,
+    detail==='low'?6:8,detail==='low'?12:24,Math.PI*1.40);
+   toeBand.rotateX(Math.PI*.5);
+   add(footBone,toeBand,plan.bootTrim,
+    plan.style+'-boot-toe-metal-trim-'+i,
+    [0,footOffset[1]-.063,footOffset[2]-.26]);
   }
  }
  // Gold/leaf embroidery is welded to the SAME torso bone and embedded over

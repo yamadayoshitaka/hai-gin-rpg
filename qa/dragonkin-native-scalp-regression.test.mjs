@@ -66,7 +66,10 @@ const tube=(parent,role,name,points,radius=.01)=>{
  return attach(parent,geo,role,name);
 };
 assert.equal(addFemaleSummonCostume({
- profile:FEMALE_SUMMON_FORMS.dragon_lord,frames:f,detail:'high',
+ // Legacy hairless variant still supports native-scales fallback; approved
+ // Dragon Queen production preset now uses fitted plum long hair instead.
+ profile:{...FEMALE_SUMMON_FORMS.dragon_lord,hair:'bald'},
+ frames:f,detail:'high',
  attach,tube,nativeScalp:crown,skullFit:scalp,
  attachGroom:attach
 }),true);

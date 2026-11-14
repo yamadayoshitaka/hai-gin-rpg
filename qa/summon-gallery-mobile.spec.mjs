@@ -6,23 +6,28 @@ test('mobile summon gallery: compact model-first view, functional drawers and ca
   await page.goto('/summon-showcase.html?v=4.4.91',
     {waitUntil:'domcontentloaded',timeout:65000});
 
-  // The species picker remains usable when actions are hidden.
+  // The species picker and motion strip stay accessible without opening settings.
   const choose=page.locator('#type');
   const drawer=page.locator('#controlsDrawer');
   const info=page.locator('#info');
   await expect(choose).toBeVisible();
   await expect(drawer).not.toHaveAttribute('open',/./);
   await expect(info).not.toHaveAttribute('open',/./);
-  await expect(page.locator('#attack')).toBeHidden();
+  await expect(page.locator('#summonMotionStrip button')).toHaveCount(10);
+  await expect(page.locator('#attack')).toBeVisible();
 
   // Compact header should not consume most of the phone's viewport.
   const size=await page.locator('#galleryHeader').boundingBox();
   expect(size?.height).toBeLessThan(90);
   await drawer.locator('summary').first().click();
   await expect(drawer).toHaveAttribute('open','');
+  await expect(page.locator('#wireframe')).toBeVisible();
+  await expect(page.locator('.inspectorGroup')).toHaveCount(3);
+  const height=await page.locator('#controlsDrawer .extraControls').evaluate(
+    el=>el.getBoundingClientRect().height);
+  expect(height).toBeLessThan(page.viewportSize().height*.55);
+  await page.locator('#dismissControls').click();
   await expect(page.locator('#attack')).toBeVisible();
-  await drawer.locator('summary').first().click();
-  await expect(page.locator('#attack')).toBeHidden();
 
   await info.locator('summary').click();
   await expect(info).toHaveAttribute('open','');
@@ -36,6 +41,12 @@ test('mobile summon gallery: compact model-first view, functional drawers and ca
   await expect(drawer).not.toHaveAttribute('open',/./);
   await choose.selectOption('forest_archer');
   await expect(page.locator('#species')).toContainText('精霊弓士');
+  await page.locator('#summonMotionStrip [data-pose="special"]').click();
+  const duringSpell=await page.evaluate(()=>window.__summonGalleryLayoutQA());
+  expect(duringSpell.motionStripVisible).toBe(true);
+  expect(duringSpell.activeMotion).toBe('special');
+  await page.locator('#summonMotionStrip [data-pose="idle"]').click();
+  expect((await page.evaluate(()=>window.__summonGalleryLayoutQA())).activeMotion).toBe('idle');
 
   // The portrait view starts roughly twice as close as the previous design.
   await expect.poll(()=>page.evaluate(()=>window.__summonGalleryLayoutQA?.()),
@@ -94,21 +105,33 @@ test('female seraph: original wing pair and animated airborne preview',async({pa
  expect(errors).toEqual([]);
 });
 
-test('female Dragon Lord: native skinned scalp instead of an oversized purple cap',async({page})=>{
+test('male Dragon Lord: canonical male GLB, battleplate and original creature toggle',async({page})=>{
  const errors=[];page.on('pageerror',e=>errors.push(String(e)));
- await page.goto('/summon-showcase.html?v=4.5.14',
+ await page.goto('/summon-showcase.html?v=4.5.19',
   {waitUntil:'domcontentloaded',timeout:65000});
  await page.locator('#type').selectOption('dragon_lord');
  await expect.poll(()=>page.evaluate(()=>
   window.__summonGalleryLayoutQA?.()?.femaleReady),{timeout:110000}).toBe(true);
  const state=await page.evaluate(()=>window.__summonGalleryLayoutQA());
- expect(state.dragonCraniumNativeTopology).toBe(true);
- expect(state.dragonNativeScalpTriangles).toBeGreaterThan(20);
- expect(state.sourceCraniumWigCut).toBe(true);
- expect(state.sourceCraniumCutMode).toBe('scales');
- expect(state.sourceCraniumRemovedTriangles).toBeGreaterThan(8);
- await page.screenshot({path:'test-results/dragonlord-native-scalp-v4.5.14.png',
+ expect(state.selected).toBe('dragon_lord');
+ expect(state.femaleMode).toBe('male');
+ expect(state.actorSex).toBe('male');
+ expect(state.femaleSource).toBe('Superhero_Male_FullBody');
+ expect(state.motionStripVisible).toBe(true);
+ await expect(page.locator('#femaleSummonModeLabel')).toBeVisible();
+ await expect(page.locator('#humanoidForm option[value="female"]')).toBeHidden();
+ await expect(page.locator('#attack')).toBeVisible();
+ await page.locator('#controlsDrawer summary').first().click();
+ await expect(page.locator('#footCloseup')).toBeVisible();
+ await page.locator('#footCloseup').click();
+ expect((await page.evaluate(()=>window.__summonGalleryLayoutQA())).cameraDistance).toBeLessThan(4);
+ await page.screenshot({path:'test-results/male-dragonlord-armoured-feet-v4.5.19.png',
   animations:'disabled',timeout:15000});
+ await page.locator('#humanoidForm').selectOption('original');
+ expect((await page.evaluate(()=>window.__summonGalleryLayoutQA())).femaleMode).toBe('original');
+ await page.locator('#humanoidForm').selectOption('male');
+ await expect.poll(()=>page.evaluate(()=>window.__summonGalleryLayoutQA?.()?.femaleReady),
+  {timeout:110000}).toBe(true);
  expect(errors).toEqual([]);
 });
 

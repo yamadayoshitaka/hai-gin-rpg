@@ -183,10 +183,10 @@ for(const id of FEMALE_SUMMON_FORM_IDS){
   assert.equal(high.owned.filter(n=>n.geometry.userData.kind==='scalloped-bat-wing-membrane').length,2);
   for(const f of [high,low]){
    const eye=f.owned.filter(n=>n.name.includes('dragonkin-solid-golden-eye-'));
-   assert.equal(eye.length,2,'Two small golden eyes, not one solid visor');
-   assert.ok(eye.every(n=>n.geometry.userData.kind==='dragonkin-inset-almond-golden-eye'&&
-    n.geometry.userData.pupilFree),'No oversized iris spheres');
-   assert.equal(f.owned.filter(n=>n.name.includes('dragonkin-scaled-hairless-crown')).length,1);
+   assert.equal(eye.length,0,'Approved coiffed dragon must use original rigged eyes');
+   assert.equal(f.owned.filter(n=>n.name.includes('dragonkin-scaled-hairless-crown')).length,0,
+    'No synthetic scalp cap over the fitted plum hairstyle');
+   assert.equal(f.owned.filter(n=>n.name.includes('dragon-swept-horn-')).length,2);
    assert.ok(f.owned.some(n=>n.name.includes('dragonkin-natural-lower-lip')),
     'Keep identifiable lower face below subtle draconic crown');
    assert.ok(!f.owned.some(n=>n.name.includes('dragonkin-eye-ridge')),
