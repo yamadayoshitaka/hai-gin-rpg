@@ -59,9 +59,11 @@ assert.equal(validateStudioHumanActorPackage(packageCandidate).ready,true);
 for(const profile of Object.values(FEMALE_SUMMON_FORMS)){
  const result=planHumanoidCosplayBase(profile,{studioPackage:packageCandidate});
  assert.equal(result.studioPackageReady,true);
+ assert.equal(result.studioRigReady,false);
+ assert.deepEqual(result.studioRigErrors,['studio-scene-not-audited']);
  assert.equal(result.liveSource,'canonical-fullbody');
  assert.equal(result.activationAllowed,false);
- assert.equal(result.nextAction,'implement-and-test-actor-loader');
+ assert.equal(result.nextAction,'audit-loaded-studio-skeleton-and-motion');
 }
 const bad=[
  {part:{modelId:'Superhero_Female_FullBody'},error:'new-model-id'},
