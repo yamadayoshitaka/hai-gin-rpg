@@ -972,6 +972,17 @@ export const CHAPTER1_PROVISIONAL_LIVE=Object.freeze({
     "stageId": "c01-s03",
     "edition": "post-gameover",
     "gender": "male"
+  },
+  "c01-s03|post-gameover|female|c01-s03-death-1": {
+    "asset": "./assets/story/chapter1-provisional-live/c01-s03__post-gameover__female__c01-s03-death-1.webp",
+    "sha256": "7d49bc89ef790fbee4ac287bc2ef82e43fef86aefef3bc8d44aac6c00877788f",
+    "provenance": "assets/story/chapter1-chatgpt-inbox/c01-s03__post-gameover__female__c01-s03-death-1.review.json",
+    "sourceDraft": "assets/story/chapter1-chatgpt-inbox/c01-s03__post-gameover__female__c01-s03-death-1.webp",
+    "status": "PROVISIONAL_OWNER_AUTHORIZED_PENDING_P0",
+    "originalLivePath": null,
+    "stageId": "c01-s03",
+    "edition": "post-gameover",
+    "gender": "female"
   }
 });
 export function chapter1ProvisionalLivePanel(shot){
