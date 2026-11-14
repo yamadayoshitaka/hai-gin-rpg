@@ -4,11 +4,11 @@
   "canonicalPages": 132,
   "counts": {
     "expected": 462,
-    "existingRegistrationNotP0Approved": 43,
-    "liveOriginalRegistrations": 125,
+    "existingRegistrationNotP0Approved": 44,
+    "liveOriginalRegistrations": 126,
     "legacyNativeRegenerationRequired": 0,
     "validRealReviewDraft": 79,
-    "missing": 337,
+    "missing": 336,
     "providerBlocked": 3,
     "incorrectNativePixels": 0,
     "invalidProof": 0,
@@ -1488,8 +1488,9 @@
           "panelId": "c01-s03-death-2",
           "gender": "female",
           "edition": "post-gameover",
+          "originalLiveSource": "./assets/story/chapter1-provisional-live/c01-s03__post-gameover__female__c01-s03-death-2.webp",
           "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s03-post-gameover-female/p01/c01-s03-death-2-post-gameover-female.webp",
-          "status": "MISSING_REAL_ART"
+          "status": "EXISTING_REGISTERED_NOT_P0_CERTIFIED"
         }
       ]
     },
