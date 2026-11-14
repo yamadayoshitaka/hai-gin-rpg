@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "kind": "CHATGPT_OWNER_AUTHORIZED_REVERSIBLE_PROVISIONAL_NOT_P0",
+  "shotKey": "c01-s04|pre|male|c01-s04-m4",
+  "stageId": "c01-s04",
+  "edition": "pre",
+  "gender": "male",
+  "shotId": "c01-s04-m4",
+  "canonicalSource": "chapterOneReviewPages() / mangaForStage() / screenplayForStage()",
+  "sourceModel": "ChatGPT Images",
+  "generationId": "745dc2d0-a21d-4246-bc94-3c79596b9f02",
+  "ownerAuthorizedForProvisional": true,
+  "ownerAuthorizationContext": "Previous explicit 'では仮登録してください' and present request to generate and work on as many scenes as possible",
+  "humanVisualQAConfirmed": false,
+  "formallyApproved": false,
+  "referenceImagesAttachedToGenerator": false,
+  "provisionalRegistered": true,
+  "image": {
+    "path": "assets/story/chapter1-provisional-live/c01-s04__pre__male__c01-s04-m4.webp",
+    "sha256": "b9b8deee5d266e55ae708bfaa1dc2bc785a247e3cf7b0497b490e268a0ffdf2c",
+    "byteCount": 382618,
+    "sourcePixels": [
+      1672,
+      941
+    ],
+    "cropRectangle": [
+      4,
+      2,
+      1668,
+      938
+    ],
+    "nativePixels": [
+      1664,
+      936
+    ],
+    "noUpscaling": true,
+    "format": "WebP",
+    "aspectRatio": "16:9"
+  },
+  "cast": [
+    "iris",
+    "lucia"
+  ],
+  "visualBrief": "イリスと銀髪摂政リュシアが古代の鐘守紋章・封蝋の痕跡を見つける",
+  "quality": {
+    "oneIndependentScene": true,
+    "original3DCinematicStyle": true,
+    "noSpeechBubblesOrBakedText": true,
+    "noUI": true,
+    "characterRefsPhysicallyAttached": false,
+    "formalP0Status": "BLOCKED_PENDING_VISUAL_MASTER_AND_CANONICAL_PRECISION"
+  },
+  "knownVisualDiscrepancies": [
+    "Narrative dialogue about missing names is not directly visible; needs future exact screenplay visual QA"
+  ],
+  "unmetP0": [
+    "Official cast/quality reference image bytes were not physically supplied to ChatGPT Images",
+    "Formal P0 visual approval is pending",
+    "Narrative dialogue about missing names is not directly visible; needs future exact screenplay visual QA"
+  ],
+  "rollback": "Remove exactly this canonical shot key from src/story-chapter1-provisional-live.js; do not reuse its pixels for a different gender/branch."
+}

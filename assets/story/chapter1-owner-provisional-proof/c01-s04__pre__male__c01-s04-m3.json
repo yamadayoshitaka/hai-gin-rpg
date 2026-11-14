@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "kind": "CHATGPT_OWNER_AUTHORIZED_REVERSIBLE_PROVISIONAL_NOT_P0",
+  "shotKey": "c01-s04|pre|male|c01-s04-m3",
+  "stageId": "c01-s04",
+  "edition": "pre",
+  "gender": "male",
+  "shotId": "c01-s04-m3",
+  "canonicalSource": "chapterOneReviewPages() / mangaForStage() / screenplayForStage()",
+  "sourceModel": "ChatGPT Images",
+  "generationId": "00b9105a-46a8-496e-960b-c5507dab7317",
+  "ownerAuthorizedForProvisional": true,
+  "ownerAuthorizationContext": "Previous explicit 'では仮登録してください' and present request to generate and work on as many scenes as possible",
+  "humanVisualQAConfirmed": false,
+  "formallyApproved": false,
+  "referenceImagesAttachedToGenerator": false,
+  "provisionalRegistered": true,
+  "image": {
+    "path": "assets/story/chapter1-provisional-live/c01-s04__pre__male__c01-s04-m3.webp",
+    "sha256": "c9d2d43c582908b4c66707c335c043ab1559df395dc5274ef910255b231f1f96",
+    "byteCount": 281218,
+    "sourcePixels": [
+      1672,
+      941
+    ],
+    "cropRectangle": [
+      4,
+      2,
+      1668,
+      938
+    ],
+    "nativePixels": [
+      1664,
+      936
+    ],
+    "noUpscaling": true,
+    "format": "WebP",
+    "aspectRatio": "16:9"
+  },
+  "cast": [
+    "garan",
+    "iris"
+  ],
+  "visualBrief": "老騎士ガランが遺構の前で治癒師イリスへ戦場の命を語る",
+  "quality": {
+    "oneIndependentScene": true,
+    "original3DCinematicStyle": true,
+    "noSpeechBubblesOrBakedText": true,
+    "noUI": true,
+    "characterRefsPhysicallyAttached": false,
+    "formalP0Status": "BLOCKED_PENDING_VISUAL_MASTER_AND_CANONICAL_PRECISION"
+  },
+  "knownVisualDiscrepancies": [],
+  "unmetP0": [
+    "Official cast/quality reference image bytes were not physically supplied to ChatGPT Images",
+    "Formal P0 visual approval is pending"
+  ],
+  "rollback": "Remove exactly this canonical shot key from src/story-chapter1-provisional-live.js; do not reuse its pixels for a different gender/branch."
+}

@@ -1187,6 +1187,88 @@ export const CHAPTER1_PROVISIONAL_LIVE=Object.freeze({
       "Official Lucia/Garan master image bytes not attached to ChatGPT generator",
       "Formal P0 approval not granted"
     ]
+  },
+  "c01-s04|pre|male|c01-s04-m3": {
+    "asset": "./assets/story/chapter1-provisional-live/c01-s04__pre__male__c01-s04-m3.webp",
+    "sha256": "c9d2d43c582908b4c66707c335c043ab1559df395dc5274ef910255b231f1f96",
+    "provenance": "assets/story/chapter1-owner-provisional-proof/c01-s04__pre__male__c01-s04-m3.json",
+    "sourceDraft": "ChatGPT Images original 00b9105a-46a8-496e-960b-c5507dab7317; direct unscaled 1672x941 PNG to 1664x936 WebP",
+    "status": "PROVISIONAL_OWNER_AUTHORIZED_PENDING_P0",
+    "originalLivePath": null,
+    "stageId": "c01-s04",
+    "edition": "pre",
+    "gender": "male",
+    "nativePixels": [
+      1664,
+      936
+    ],
+    "visualStatus": "OWNER_PROVISIONAL_CINEMATIC_SINGLE_FRAME_WITH_P0_GAPS",
+    "outstandingP0": [
+      "Official cast/quality reference image bytes were not physically supplied to ChatGPT Images",
+      "Formal P0 visual approval is pending"
+    ]
+  },
+  "c01-s04|pre|female|c01-s04-m3": {
+    "asset": "./assets/story/chapter1-provisional-live/c01-s04__pre__female__c01-s04-m3.webp",
+    "sha256": "cac502be198e3934f55090fe591a5d35b4a25a6d895eec2ad860e4b8cb20b934",
+    "provenance": "assets/story/chapter1-owner-provisional-proof/c01-s04__pre__female__c01-s04-m3.json",
+    "sourceDraft": "ChatGPT Images original abf32d5e-c51d-42ca-8ab6-8ceb2f8f7bb7; direct unscaled 1672x941 PNG to 1664x936 WebP",
+    "status": "PROVISIONAL_OWNER_AUTHORIZED_PENDING_P0",
+    "originalLivePath": null,
+    "stageId": "c01-s04",
+    "edition": "pre",
+    "gender": "female",
+    "nativePixels": [
+      1664,
+      936
+    ],
+    "visualStatus": "OWNER_PROVISIONAL_CINEMATIC_SINGLE_FRAME_WITH_P0_GAPS",
+    "outstandingP0": [
+      "Official cast/quality reference image bytes were not physically supplied to ChatGPT Images",
+      "Formal P0 visual approval is pending"
+    ]
+  },
+  "c01-s04|pre|male|c01-s04-m4": {
+    "asset": "./assets/story/chapter1-provisional-live/c01-s04__pre__male__c01-s04-m4.webp",
+    "sha256": "b9b8deee5d266e55ae708bfaa1dc2bc785a247e3cf7b0497b490e268a0ffdf2c",
+    "provenance": "assets/story/chapter1-owner-provisional-proof/c01-s04__pre__male__c01-s04-m4.json",
+    "sourceDraft": "ChatGPT Images original 745dc2d0-a21d-4246-bc94-3c79596b9f02; direct unscaled 1672x941 PNG to 1664x936 WebP",
+    "status": "PROVISIONAL_OWNER_AUTHORIZED_PENDING_P0",
+    "originalLivePath": null,
+    "stageId": "c01-s04",
+    "edition": "pre",
+    "gender": "male",
+    "nativePixels": [
+      1664,
+      936
+    ],
+    "visualStatus": "OWNER_PROVISIONAL_CINEMATIC_SINGLE_FRAME_WITH_P0_GAPS",
+    "outstandingP0": [
+      "Official cast/quality reference image bytes were not physically supplied to ChatGPT Images",
+      "Formal P0 visual approval is pending",
+      "Narrative dialogue about missing names is not directly visible; needs future exact screenplay visual QA"
+    ]
+  },
+  "c01-s04|pre|male|c01-s04-m15": {
+    "asset": "./assets/story/chapter1-provisional-live/c01-s04__pre__male__c01-s04-m15.webp",
+    "sha256": "59f3ea7757e27c3f546c6afacf09dc1ec98e0b30f93a3d9f6a79268f752953f1",
+    "provenance": "assets/story/chapter1-owner-provisional-proof/c01-s04__pre__male__c01-s04-m15.json",
+    "sourceDraft": "ChatGPT Images original d73aaf6f-fbdc-4fba-a581-b70fe0a8a77f; direct unscaled 1672x941 PNG to 1664x936 WebP",
+    "status": "PROVISIONAL_OWNER_AUTHORIZED_PENDING_P0",
+    "originalLivePath": null,
+    "stageId": "c01-s04",
+    "edition": "pre",
+    "gender": "male",
+    "nativePixels": [
+      1664,
+      936
+    ],
+    "visualStatus": "OWNER_PROVISIONAL_CINEMATIC_SINGLE_FRAME_WITH_P0_GAPS",
+    "outstandingP0": [
+      "Official cast/quality reference image bytes were not physically supplied to ChatGPT Images",
+      "Formal P0 visual approval is pending",
+      "Canonical script refers to the commander nodding; commander not clearly visible in frame. Future correction needed"
+    ]
   }
 });
 export function chapter1ProvisionalLivePanel(shot){
