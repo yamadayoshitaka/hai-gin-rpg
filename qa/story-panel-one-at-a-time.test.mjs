@@ -10,6 +10,7 @@ assert.doesNotMatch(viewer,/loadApprovedPage/);
 assert.match(review,/registeredStoryPanelAsset\(shot\)/);
 assert.match(review,/storySheetCrop\(shot,count\)/);
 let found=0;
+const visibleArt=new Map();
 for(const [stage,gender,outcome,expected] of [
  ['c01-s01','male','pre',10],
  ['c01-s02','male','pre',8],
@@ -29,7 +30,22 @@ for(const [stage,gender,outcome,expected] of [
  const phase=outcome==='pre'?'pre':'post';
  const story=comicForStage(stage,phase,context);
  const cuts=story.panels.filter(p=>registeredStoryPanelAsset(p));
- assert.equal(cuts.length,expected,stage+'/'+gender+'/'+outcome);
+ assert(cuts.length>=expected,
+  stage+'/'+gender+'/'+outcome+': legacy minimum '+expected+', now '+cuts.length);
+ // Any newly provisional scene must own its own physical WebP. Never borrow a
+ // male, female, winner or loser scene from a different canonical key.
+ for(const cut of cuts){
+  const src=registeredStoryPanelAsset(cut);
+  if(src.includes('/chapter1-provisional-live/')){
+   assert(src.endsWith('.webp'));
+   assert(src.includes([cut.stageId,cut.comicEdition,cut.protagonistGender,cut.id].join('__')),
+    'provisional original must bind to its own exact gender/outcome shot');
+  }
+  const prior=visibleArt.get(src);
+  assert(!prior||prior===cut.stageId+'|'+cut.comicEdition+'|'+cut.protagonistGender+'|'+cut.id,
+   'two distinct scenes must not share the same image URL');
+  visibleArt.set(src,cut.stageId+'|'+cut.comicEdition+'|'+cut.protagonistGender+'|'+cut.id);
+ }
  found+=cuts.length;
  for(const p of story.panels){
   const count=story.pages.find(x=>x.number===p.comicPage).cellCount;
@@ -40,5 +56,5 @@ for(const [stage,gender,outcome,expected] of [
   assert.equal(c.topPercent,-Math.floor(p.comicCell/2)*100);
  }
 }
-assert.equal(found,45);
-console.log('PASS: one manga cell per panel; 45 registered Chapter 1 cut panels; no outcome/gender reuse.');
+assert(found>=45,'Legacy 45 registered images must remain available');
+console.log('PASS: one manga cell per panel; legacy 45 preserved, provisional chapter1 image URLs unique across genders/outcomes; visible='+found);
