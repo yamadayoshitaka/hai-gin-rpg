@@ -5,7 +5,7 @@
  * meshes, not thousands of per-creature JS objects or a humanoid rig.
  */
 import * as THREE from 'three';
-import { COMBAT_OBJECT_SPECS } from './combat-action-spec.js?v=4.6.38';
+import { COMBAT_OBJECT_SPECS } from './combat-action-spec.js?v=4.6.51';
 import {isMonsterSummonType} from './monster-summon-registry.js?v=1';
 import {createMonsterSummonRenderer} from './monster-summon-renderer.js?v=1';
 import { buildCombatObjectGeometry, CREATURE_VISUAL_SPECS } from './combat-creature-geometry.js?v=4.5.20';
