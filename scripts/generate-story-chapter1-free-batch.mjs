@@ -166,6 +166,7 @@ function renderSpec(s){
   estimate:Math.ceil(width/512)*Math.ceil(height/512)*26.05+refs.length*5.37};
 }
 let reserved=0,requests=0,created=0,committed=0,blocked=[];
+let freeLimitReached=false;
 const summary=reason=>{
  const o={mode:'generate',stopReason:reason,runRequestedPages:maxPages,
   estimatedNeuronsReserved:Number(reserved.toFixed(2)),apiRequests:requests,
@@ -291,9 +292,17 @@ for(const pg of pages){
    exec('git',['push','origin','HEAD:'+branch]);
    committed++;
   }
+  if(error.includes('FREE_API_STOP_NO_RETRY_HTTP_429 4006:')){
+   // Cloudflare Free allocation exhausted, NOT a production defect.
+   // Do not retry or switch to a paid provider. Resume on next scheduled day.
+   freeLimitReached=true;
+   summary('FREE_QUOTA_EXHAUSTED_RESUME_NEXT_SCHEDULE');
+   console.log('FREE_QUOTA_EXHAUSTED: no paid fallback, no retry; preserved all complete real images');
+   break;
+  }
   summary('STOPPED_NO_RETRIES_'+error);
   console.error('P0 FREE ONLY STOP: '+error);process.exitCode=2;break;
  }
 }
-const state=summary(process.exitCode?'ERROR':committed===maxPages?'PAGE_CAP_OR_DAILY_CAP':'BATCH_LIMIT_OR_ALL_DONE');
+const state=summary(process.exitCode?'ERROR':freeLimitReached?'FREE_QUOTA_EXHAUSTED_RESUME_NEXT_SCHEDULE':committed===maxPages?'PAGE_CAP_OR_DAILY_CAP':'BATCH_LIMIT_OR_ALL_DONE');
 console.log(JSON.stringify({status:'REAL_DRAFTS_ONLY',...state,imagesMissing:progress().missing,reviewRequired:true}));
