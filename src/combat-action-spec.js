@@ -76,14 +76,15 @@ export const COMBAT_JOB_SPECS = Object.freeze({
     ]) }),
   summoner: Object.freeze({ name: '召喚士', aliases: [], role: 'support',
     skills: Object.freeze([
+      // Catalog alternatives come first. Auto-cast iterates in reverse:
+      // retain the established 7 default choices, while explicit summon
+      // commands can still select any of these 50 independent monsters.
+      ...MONSTER_SUMMON_SKILLS,
       skill('call_wolf', 'N', 'summon', 15, 16, 3, { name: '灰狼召喚', objectType: 'wolf', animation: 'cast', effect: 'nature' }),
       skill('call_forest_archer', 'R', 'summon', 26, 24, 3, { name: '森の精霊弓士召喚', objectType: 'forest_archer', animation: 'cast', effect: 'nature' }),
        skill('call_wyvern', 'R', 'summon', 25, 24, 3, { name: '飛竜召喚', objectType: 'wyvern', animation: 'cast', effect: 'arcane' }),
       skill('call_dragon', 'UR', 'summon', 48, 50, 3, { name: '古竜召喚', objectType: 'dragon', animation: 'cast', effect: 'fire' }),
       skill('call_seraph_guardian', 'UR', 'summon', 42, 42, 3, { name: '光翼の守護天使召喚', objectType: 'seraph_guardian', animation: 'cast', effect: 'heal' }),
-      // All 50 native bestiary models are independent, summonable creatures.
-      // N/R/SR/UR monsters respect the existing N/R/UR skill progression.
-      ...MONSTER_SUMMON_SKILLS,
        skill('sacrifice_dragon', 'UR', 'sacrifice', 35, 50, 3, { name: '生贄・天竜降臨', objectType: 'elder_dragon', sacrificeCount: 1, animation: 'cast', effect: 'arcane' }),
       skill('sacrifice_dragon_lord', 'UR', 'sacrifice', 60, 90, 3, { name: '生贄・竜王降臨', objectType: 'dragon_lord', sacrificeCount: 1, animation: 'cast', effect: 'fire' }),
     ]) }),
