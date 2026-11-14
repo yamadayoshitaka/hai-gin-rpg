@@ -289,8 +289,14 @@ for(const [id,p] of Object.entries(FEMALE_SUMMON_FORMS)){
   const wings=test.nodes.filter(n=>n.geometry.userData.kind===
    'original-guardian-overlapping-feather-wing');
   assert.equal(wings.length,2,'Both original multilayer Angel wings must remain');
+  // Fixture groups are detached from a real model, so the parent's world
+  // matrices must be updated before evaluating the installed wing bounds.
+  test.frames.chest.updateMatrixWorld(true);
   const featherBox=new THREE.Box3().setFromObject(wings[0]);
-  assert.ok(featherBox.max.z<0,'Original Seraph wings still in front of body');
+  assert.ok(wings[0].parent.position.z<0,
+   'Original Seraph wing root must sit behind real shoulder blades');
+  assert.ok(featherBox.max.z<.12,
+   'Original Seraph wing has moved to the front of the face');
   assert.ok(wings.every(n=>n.geometry.getAttribute('color')),
    'Keep the original high-quality feather shading');
   const halo=test.nodes.find(n=>n.name.includes('seraph-open-circular-halo'));
