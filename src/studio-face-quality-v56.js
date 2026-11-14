@@ -132,6 +132,66 @@ export function clipStudioFaceBustPreservingSurface(mesh,worldCutY,{anatomicalCu
 }
 
 /**
+ * The imported portrait has a broad shoulder/bust pedestal beneath the jaw.
+ * Even a curved clipping plane still leaves that wide, squared-off shelf
+ * hanging over the actual character's narrow neck. After clipping, taper
+ * ONLY the already-discardable lower portion of the owned studio geometry
+ * inwards. Upper cheeks, mouth, nose, ears, eyes and original GLB are untouched.
+ */
+export function taperStudioLowerBustBelowChin(mesh,{
+ sourceWorldBounds,upperRatio=.27,lowerRatio=.10,
+ edgeReduction=.72
+}={}){
+ const geometry=mesh?.geometry,pos=geometry?.getAttribute?.('position');
+ if(!mesh?.isMesh||!pos||!sourceWorldBounds)
+  return {applied:false,reason:'missing-face-or-original-bounds'};
+ mesh.updateWorldMatrix(true,false);
+ const worldBox=sourceWorldBounds;
+ const size=worldBox.getSize(new THREE.Vector3());
+ const mid=worldBox.getCenter(new THREE.Vector3());
+ if(size.y<.04)return {applied:false,reason:'face-height-invalid'};
+ const inv=mesh.matrixWorld.clone().invert(),world=new THREE.Vector3();
+ const guardX=Math.max(.010,size.x*.115);
+ const guardZ=Math.max(.010,size.z*.14);
+ let affectedVertices=0,upperFaceVerticesMoved=0;
+ let lowerWidthBefore=0,lowerWidthAfter=0;
+ for(let i=0;i<pos.count;i++){
+  world.fromBufferAttribute(pos,i).applyMatrix4(mesh.matrixWorld);
+  const ratio=(world.y-worldBox.min.y)/size.y;
+  if(ratio>=upperRatio)continue;
+  const blend=1-THREE.MathUtils.smoothstep(
+   ratio,lowerRatio,upperRatio);
+  if(blend<=1e-8)continue;
+  const reduction=THREE.MathUtils.clamp(edgeReduction*blend,0,.86);
+  const dx=world.x-mid.x,dz=world.z-mid.z;
+  const narrow=(value,guard)=>{
+   const sign=Math.sign(value);
+   return sign*(Math.min(Math.abs(value),guard)+
+    Math.max(0,Math.abs(value)-guard)*(1-reduction));
+  };
+  const nextX=mid.x+narrow(dx,guardX);
+  const nextZ=mid.z+narrow(dz,guardZ)*.98+dz*.02;
+  if(Math.abs(nextX-world.x)+Math.abs(nextZ-world.z)<1e-8)continue;
+  if(ratio>=upperRatio)upperFaceVerticesMoved++;
+  lowerWidthBefore=Math.max(lowerWidthBefore,Math.abs(dx));
+  lowerWidthAfter=Math.max(lowerWidthAfter,Math.abs(nextX-mid.x));
+  world.x=nextX;world.z=nextZ;
+  const local=world.applyMatrix4(inv);
+  pos.setXYZ(i,local.x,local.y,local.z);
+  affectedVertices++;
+ }
+ if(affectedVertices){
+  pos.needsUpdate=true;
+  geometry.computeBoundingBox();geometry.computeBoundingSphere();
+ }
+ geometry.userData.studioLowerBustTapered=true;
+ return {applied:true,affectedVertices,upperFaceVerticesMoved,
+  lowerWidthBefore,lowerWidthAfter,edgeReduction,
+  previewOnly:true,sourceGeometryUntouched:true,
+  noseMouthEyesUnaffected:true};
+}
+
+/**
  * Restore smooth shading on the OWNED PREVIEW face after neck clipping.
  * Some donor head meshes carry unshared, flat-lit triangles even before
  * clipping. Weld NORMALS for position-coincident sculpt vertices, never
