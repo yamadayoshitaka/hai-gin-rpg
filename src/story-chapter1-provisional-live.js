@@ -873,6 +873,105 @@ export const CHAPTER1_PROVISIONAL_LIVE=Object.freeze({
     "stageId": "c01-s03",
     "edition": "post-defeat",
     "gender": "male"
+  },
+  "c01-s01|post-town|male|c01-s01-m10": {
+    "asset": "./assets/story/chapter1-provisional-live/c01-s01__post-town__male__c01-s01-m10.webp",
+    "sha256": "45885f6098ed20ab66a2f12a107498cae26c05b2f5da2a447a99868daba08da6",
+    "provenance": "assets/story/chapter1-chatgpt-inbox/c01-s01__post-town__male__c01-s01-m10.review.json",
+    "sourceDraft": "assets/story/chapter1-chatgpt-inbox/c01-s01__post-town__male__c01-s01-m10.webp",
+    "status": "PROVISIONAL_OWNER_AUTHORIZED_PENDING_P0",
+    "originalLivePath": "./assets/story/chapters/c01/panels/c01-s01-m10-male.webp",
+    "stageId": "c01-s01",
+    "edition": "post-town",
+    "gender": "male"
+  },
+  "c01-s01|post-town|male|c01-s01-m6": {
+    "asset": "./assets/story/chapter1-provisional-live/c01-s01__post-town__male__c01-s01-m6.webp",
+    "sha256": "0f6c3d4e50da9502895ff202a113a338e08cc9ba097fd37f12d401faf04cbea0",
+    "provenance": "assets/story/chapter1-chatgpt-inbox/c01-s01__post-town__male__c01-s01-m6.review.json",
+    "sourceDraft": "assets/story/chapter1-chatgpt-inbox/c01-s01__post-town__male__c01-s01-m6.webp",
+    "status": "PROVISIONAL_OWNER_AUTHORIZED_PENDING_P0",
+    "originalLivePath": "./assets/story/chapters/c01/panels/c01-s01-m06-male.webp",
+    "stageId": "c01-s01",
+    "edition": "post-town",
+    "gender": "male"
+  },
+  "c01-s01|post-town|male|c01-s01-m7": {
+    "asset": "./assets/story/chapter1-provisional-live/c01-s01__post-town__male__c01-s01-m7.webp",
+    "sha256": "3d73f0ef35b1d9fe95534f9a6402970d5497ed73692fe36f4dc106099da98fa4",
+    "provenance": "assets/story/chapter1-chatgpt-inbox/c01-s01__post-town__male__c01-s01-m7.review.json",
+    "sourceDraft": "assets/story/chapter1-chatgpt-inbox/c01-s01__post-town__male__c01-s01-m7.webp",
+    "status": "PROVISIONAL_OWNER_AUTHORIZED_PENDING_P0",
+    "originalLivePath": "./assets/story/chapters/c01/panels/c01-s01-m07-male.webp",
+    "stageId": "c01-s01",
+    "edition": "post-town",
+    "gender": "male"
+  },
+  "c01-s01|post-town|male|c01-s01-m8": {
+    "asset": "./assets/story/chapter1-provisional-live/c01-s01__post-town__male__c01-s01-m8.webp",
+    "sha256": "b8801bdafbb4fe9656da1d75ee01cf026d0c184d08c4b3a29ee693a3b1e8ef91",
+    "provenance": "assets/story/chapter1-chatgpt-inbox/c01-s01__post-town__male__c01-s01-m8.review.json",
+    "sourceDraft": "assets/story/chapter1-chatgpt-inbox/c01-s01__post-town__male__c01-s01-m8.webp",
+    "status": "PROVISIONAL_OWNER_AUTHORIZED_PENDING_P0",
+    "originalLivePath": "./assets/story/chapters/c01/panels/c01-s01-m08-male.webp",
+    "stageId": "c01-s01",
+    "edition": "post-town",
+    "gender": "male"
+  },
+  "c01-s01|post-town|male|c01-s01-m9": {
+    "asset": "./assets/story/chapter1-provisional-live/c01-s01__post-town__male__c01-s01-m9.webp",
+    "sha256": "b8ef6170ffe0d6eb3e0408a595540dd875d57512d2d16f22f15e60f15e26616c",
+    "provenance": "assets/story/chapter1-chatgpt-inbox/c01-s01__post-town__male__c01-s01-m9.review.json",
+    "sourceDraft": "assets/story/chapter1-chatgpt-inbox/c01-s01__post-town__male__c01-s01-m9.webp",
+    "status": "PROVISIONAL_OWNER_AUTHORIZED_PENDING_P0",
+    "originalLivePath": "./assets/story/chapters/c01/panels/c01-s01-m09-male.webp",
+    "stageId": "c01-s01",
+    "edition": "post-town",
+    "gender": "male"
+  },
+  "c01-s03|post-defeat|male|c01-s03-m6": {
+    "asset": "./assets/story/chapter1-provisional-live/c01-s03__post-defeat__male__c01-s03-m6.webp",
+    "sha256": "25b842191281853542c701cff5b85fec9f6727c479ad74f00800392e5ddc5567",
+    "provenance": "assets/story/chapter1-chatgpt-inbox/c01-s03__post-defeat__male__c01-s03-m6.review.json",
+    "sourceDraft": "assets/story/chapter1-chatgpt-inbox/c01-s03__post-defeat__male__c01-s03-m6.webp",
+    "status": "PROVISIONAL_OWNER_AUTHORIZED_PENDING_P0",
+    "originalLivePath": null,
+    "stageId": "c01-s03",
+    "edition": "post-defeat",
+    "gender": "male"
+  },
+  "c01-s03|post-defeat|male|c01-s03-m8": {
+    "asset": "./assets/story/chapter1-provisional-live/c01-s03__post-defeat__male__c01-s03-m8.webp",
+    "sha256": "7344fa3f7d55a49d3503868e07b096e21c1f6aaf0f682a39707cfa073834346c",
+    "provenance": "assets/story/chapter1-chatgpt-inbox/c01-s03__post-defeat__male__c01-s03-m8.review.json",
+    "sourceDraft": "assets/story/chapter1-chatgpt-inbox/c01-s03__post-defeat__male__c01-s03-m8.webp",
+    "status": "PROVISIONAL_OWNER_AUTHORIZED_PENDING_P0",
+    "originalLivePath": null,
+    "stageId": "c01-s03",
+    "edition": "post-defeat",
+    "gender": "male"
+  },
+  "c01-s03|post-gameover|male|c01-s03-death-1": {
+    "asset": "./assets/story/chapter1-provisional-live/c01-s03__post-gameover__male__c01-s03-death-1.webp",
+    "sha256": "4f8d6a919fa579411576bd2445f2bb204dc725c4d3efee8392f477747bb7a9e1",
+    "provenance": "assets/story/chapter1-chatgpt-inbox/c01-s03__post-gameover__male__c01-s03-death-1.review.json",
+    "sourceDraft": "assets/story/chapter1-chatgpt-inbox/c01-s03__post-gameover__male__c01-s03-death-1.webp",
+    "status": "PROVISIONAL_OWNER_AUTHORIZED_PENDING_P0",
+    "originalLivePath": null,
+    "stageId": "c01-s03",
+    "edition": "post-gameover",
+    "gender": "male"
+  },
+  "c01-s03|post-gameover|male|c01-s03-death-2": {
+    "asset": "./assets/story/chapter1-provisional-live/c01-s03__post-gameover__male__c01-s03-death-2.webp",
+    "sha256": "3e4ba9c4538d523d2177261acb889145b46844d7a0daab43120a50fd4b0aa3c7",
+    "provenance": "assets/story/chapter1-chatgpt-inbox/c01-s03__post-gameover__male__c01-s03-death-2.review.json",
+    "sourceDraft": "assets/story/chapter1-chatgpt-inbox/c01-s03__post-gameover__male__c01-s03-death-2.webp",
+    "status": "PROVISIONAL_OWNER_AUTHORIZED_PENDING_P0",
+    "originalLivePath": null,
+    "stageId": "c01-s03",
+    "edition": "post-gameover",
+    "gender": "male"
   }
 });
 export function chapter1ProvisionalLivePanel(shot){
