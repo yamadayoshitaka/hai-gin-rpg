@@ -100,7 +100,7 @@ for(const profile of cases){
    'Bodice not anchored to chest');
   assert.equal(f.all.filter(o=>o.parent===f.frames.pelvis).length,2,
    'Skirt and floor hem must follow pelvis');
-  assert.equal(f.all.filter(o=>o.parent===f.frames.arms[i=0]).length,1);
+  assert.equal(f.all.filter(o=>o.parent===f.frames.arms[0]).length,1);
   for(const o of f.all){
    assert.ok(o.geometry.getAttribute('position').array.every(Number.isFinite));
    assert.ok(o.geometry.getAttribute('normal').array.every(Number.isFinite));
