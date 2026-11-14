@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {buildStudioContourNeck} from './studio-contour-neck-v58.js';
-import {weldStudioNeckIntoFace} from './studio-unified-neck-v59.js';
+import {weldStudioNeckIntoFace,addStudioRaisedInnerCollar} from './studio-unified-neck-v59.js';
 import {clipStudioFaceBustPreservingSurface,restoreStudioFaceSurfaceQuality,
  sampleStudioFacePigment,smoothStudioFaceNormals,
  studioAnatomicalSeamY,taperStudioLowerBustBelowChin} from './studio-face-quality-v56.js?v=57';
@@ -311,6 +311,11 @@ export function fitStudioNeckContinuity({faceRoot,faceMesh,wardrobeRoot}={}){
  const bustTaper=cached.bustTaperReport;
  const faceQuality=restoreStudioFaceSurfaceQuality(faceMesh);
  const facePigment=sampleStudioFacePigment(faceMesh);
+ const oldRaisedCollar=wardrobeRoot.getObjectByName('STUDIO_RAISED_INNER_TUNIC_COLLAR_V59');
+ if(oldRaisedCollar){
+  oldRaisedCollar.removeFromParent();
+  oldRaisedCollar.geometry.dispose();oldRaisedCollar.material.dispose();
+ }
  const oldContour=faceMesh.getObjectByName(STUDIO_NEW_NECK_NAME);
  if(oldContour){
   oldContour.removeFromParent();
@@ -425,9 +430,11 @@ export function fitStudioNeckContinuity({faceRoot,faceMesh,wardrobeRoot}={}){
  // actual garment neckline, not the uppermost torso vertex.
  const united=weldStudioNeckIntoFace({
   faceMesh,cut,wardrobeRoot,torsoTopY:torsoTop,
-  torsoCenterX:torsoX,torsoCenterZ:torsoZ
+  torsoCenterX:torsoX,torsoCenterZ:torsoZ,facePigment
  });
+ let raisedCollar={applied:false,reason:'unified-neck-not-ready'};
  if(united.applied){
+  raisedCollar=addStudioRaisedInnerCollar({wardrobeRoot,joined:united});
   if(cached.stitched&&cached.stitched!==united.geometry)
    cached.stitched.dispose();
   cached.stitched=united.geometry;
@@ -462,6 +469,12 @@ export function fitStudioNeckContinuity({faceRoot,faceMesh,wardrobeRoot}={}){
   actualCollarSource:united.collarSource||null,
   actualCollarHeight:united.collarY??null,
   unifiedNeckBottomHeight:united.neckBottomY??null,
+  unifiedNeckColorSmoothed:!!united.neckColorSmoothed,
+  unifiedNeckNormalsSmoothed:!!united.neckNormalsSmoothed,
+  raisedInnerCollarApplied:!!raisedCollar.applied,
+  raisedInnerCollarTopY:raisedCollar.topY??null,
+  raisedInnerCollarBottomY:raisedCollar.baseY??null,
+  visibleSkinNeckLength:raisedCollar.visibleSkinLength??null,
   separateNeckGeometryHidden:!!united.applied&&
    !bridge.visible&&(!contourNeck.mesh||!contourNeck.mesh.visible),
   originalFaceGeometryImmutable:!!united.sourceVertexPositionsUnchanged,
