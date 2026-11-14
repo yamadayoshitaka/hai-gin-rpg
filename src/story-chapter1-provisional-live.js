@@ -1049,6 +1049,61 @@ export const CHAPTER1_PROVISIONAL_LIVE=Object.freeze({
     "stageId": "c01-s03",
     "edition": "post-defeat",
     "gender": "male"
+  },
+  "c01-s03|post-defeat|female|c01-s03-m19": {
+    "asset": "./assets/story/chapter1-provisional-live/c01-s03__post-defeat__female__c01-s03-m19.webp",
+    "sha256": "34f0b418f56c3d4b0f861fa4b85243f9460a6a4e907e0ddc4f51af5beb114703",
+    "provenance": "assets/story/chapter1-chatgpt-inbox/c01-s03__post-defeat__female__c01-s03-m19.review.json",
+    "sourceDraft": "assets/story/chapter1-chatgpt-inbox/c01-s03__post-defeat__female__c01-s03-m19.webp",
+    "status": "PROVISIONAL_OWNER_AUTHORIZED_PENDING_P0",
+    "originalLivePath": null,
+    "stageId": "c01-s03",
+    "edition": "post-defeat",
+    "gender": "female"
+  },
+  "c01-s03|post-defeat|female|c01-s03-m7": {
+    "asset": "./assets/story/chapter1-provisional-live/c01-s03__post-defeat__female__c01-s03-m7.webp",
+    "sha256": "de2ed0706259d605bff8d5708044f6e0109912a8eee193ba3ce21ae3ffc1f7a7",
+    "provenance": "assets/story/chapter1-chatgpt-inbox/c01-s03__post-defeat__female__c01-s03-m7.review.json",
+    "sourceDraft": "assets/story/chapter1-chatgpt-inbox/c01-s03__post-defeat__female__c01-s03-m7.webp",
+    "status": "PROVISIONAL_OWNER_AUTHORIZED_PENDING_P0",
+    "originalLivePath": null,
+    "stageId": "c01-s03",
+    "edition": "post-defeat",
+    "gender": "female"
+  },
+  "c01-s03|post-defeat|female|c01-s03-m8": {
+    "asset": "./assets/story/chapter1-provisional-live/c01-s03__post-defeat__female__c01-s03-m8.webp",
+    "sha256": "0bce986d7d4088a5694af4a5b4fd9962e2f2d9efad83e9eb54566baf0c10f273",
+    "provenance": "assets/story/chapter1-chatgpt-inbox/c01-s03__post-defeat__female__c01-s03-m8.review.json",
+    "sourceDraft": "assets/story/chapter1-chatgpt-inbox/c01-s03__post-defeat__female__c01-s03-m8.webp",
+    "status": "PROVISIONAL_OWNER_AUTHORIZED_PENDING_P0",
+    "originalLivePath": null,
+    "stageId": "c01-s03",
+    "edition": "post-defeat",
+    "gender": "female"
+  },
+  "c01-s03|post-defeat|female|c01-s03-m9": {
+    "asset": "./assets/story/chapter1-provisional-live/c01-s03__post-defeat__female__c01-s03-m9.webp",
+    "sha256": "899e3e3db984db6172c672aa66eba23c1bad76ad2e2019c7cf1f59297c74bc55",
+    "provenance": "assets/story/chapter1-chatgpt-inbox/c01-s03__post-defeat__female__c01-s03-m9.review.json",
+    "sourceDraft": "assets/story/chapter1-chatgpt-inbox/c01-s03__post-defeat__female__c01-s03-m9.webp",
+    "status": "PROVISIONAL_OWNER_AUTHORIZED_PENDING_P0",
+    "originalLivePath": null,
+    "stageId": "c01-s03",
+    "edition": "post-defeat",
+    "gender": "female"
+  },
+  "c01-s03|post-defeat|male|c01-s03-m9": {
+    "asset": "./assets/story/chapter1-provisional-live/c01-s03__post-defeat__male__c01-s03-m9.webp",
+    "sha256": "001a76d15b830c8aef84ad3215ddf3e023ec1b2cb34113b0599574f0dd5a7dd2",
+    "provenance": "assets/story/chapter1-chatgpt-inbox/c01-s03__post-defeat__male__c01-s03-m9.review.json",
+    "sourceDraft": "assets/story/chapter1-chatgpt-inbox/c01-s03__post-defeat__male__c01-s03-m9.webp",
+    "status": "PROVISIONAL_OWNER_AUTHORIZED_PENDING_P0",
+    "originalLivePath": null,
+    "stageId": "c01-s03",
+    "edition": "post-defeat",
+    "gender": "male"
   }
 });
 export function chapter1ProvisionalLivePanel(shot){
