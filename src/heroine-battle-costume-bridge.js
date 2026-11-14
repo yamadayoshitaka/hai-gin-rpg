@@ -292,7 +292,12 @@ export function fitStudioNeckContinuity({faceRoot,faceMesh,wardrobeRoot}={}){
   faceMesh.geometry=cached.clipped;
  }else{
   faceMesh.geometry=source;
-  cut=clipStudioFaceBustPreservingSurface(faceMesh,safeCutY,{anatomicalCurve:true});
+  // The imported male nape retains more angular shoulder-bust than the
+  // female portrait. Trim only the donor's low rear bust in disposable
+  // preview geometry; preserve jaw/lips/eyes and the original source GLB.
+  const napeRise=/^male_/i.test(bodies[0].name)? .018 : .012;
+  cut=clipStudioFaceBustPreservingSurface(faceMesh,safeCutY,{
+   anatomicalCurve:true,backRise:napeRise});
   if(cut.keptTriangles<100||cut.removedTriangles<3){
    cut.geometry.dispose();faceMesh.geometry=source;
    return {applied:false,reason:'insufficient-sculpted-bust-to-trim'};
@@ -488,6 +493,7 @@ export function fitStudioNeckContinuity({faceRoot,faceMesh,wardrobeRoot}={}){
   trimmedSculptBottomY:safeCutY,
   anatomicalJawCut:!!cut.anatomicalCurve,
   cutPlaneType:cut.cutPlaneType,
+  v60NapeRise:cut.anatomicalSeamProfile?.backRise??null,
   lowerBustTapered:!!bustTaper?.applied,
   lowerBustTaperedVertices:bustTaper?.affectedVertices||0,
   sourceFaceUnchangedByBustTaper:!!bustTaper?.sourceGeometryUntouched,
