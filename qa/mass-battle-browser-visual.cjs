@@ -49,13 +49,25 @@ const {chromium}=require('playwright');
     await page.goto('http://127.0.0.1:8765/tactics-wireframe.html?army=100&v=4.4.0',{
       waitUntil:'domcontentloaded',timeout:60000
     });
-    // Loading now waits for the stage BGM to buffer. Browsers need a
-    // user gesture before music playback; the test must press Start too.
+    // The pre-battle UI has THREE phases (formation, initial orders,
+    // launch). Its actual Start button is intentionally hidden on phase 1.
+    // Old QA waited for that hidden button forever despite a fully ready
+    // browser. Advance via the same visible step ③ that real users press.
     await page.waitForFunction(()=>{
+      const launch=[...document.querySelectorAll('.openingWizardTabs button')]
+        .find(b=>b.textContent.includes('③ 開戦'));
       const start=document.querySelector('#loadingStart');
       const error=document.querySelector('#runtimeError');
-      return start&&!start.hidden||error?.style.display==='block';
+      return !!launch||start&&!start.hidden||error?.style.display==='block';
     },null,{timeout:180000,polling:800});
+    const launchTab=page.getByRole('button',{name:'③ 開戦'});
+    if(await launchTab.count()){
+      await launchTab.click();
+      await page.waitForFunction(()=>{
+        const btn=document.querySelector('#loadingStart');
+        return btn&&!btn.hidden||document.querySelector('#runtimeError')?.style.display==='block';
+      },null,{timeout:15000,polling:300});
+    }
     if(await page.locator('#loadingStart').isVisible()){
       await page.locator('#loadingStart').click();
     }
