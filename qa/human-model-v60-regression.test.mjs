@@ -11,6 +11,7 @@ import {HEROINE_FACE_STUDIO_KEY,loadHeroineFacePreset,saveHeroineFacePreset}
 import {MALE_FACE_STUDIO_KEY,loadMaleFacePreset,saveMaleFacePreset}
  from '../src/male-face-preset-store.js';
 import {addStudioRaisedInnerCollar} from '../src/studio-unified-neck-v59.js';
+import {clipStudioFaceBustPreservingSurface} from '../src/studio-face-quality-v56.js';
 
 test('v60: old thin is exactly ultraThin, new thin lies strictly between it and normal',()=>{
  assert.deepEqual(BODY_TYPE_IDS,['ultraThin','thin','normal','fat']);
@@ -114,6 +115,20 @@ test('v60: cloth collar hides 18 percent more skin while retaining welded v59 fa
  assert.deepEqual(sourceFace.geometry.getAttribute('position').array,facePositions);
  report.mesh.geometry.dispose();report.mesh.material.dispose();
  sourceFace.geometry.dispose();sourceFace.material.dispose();
+});
+
+test('v60: raised nape cutoff changes only disposable low rear-bust mesh',()=>{
+ const source=new THREE.SphereGeometry(.11,36,24);
+ const face=new THREE.Mesh(source,new THREE.MeshStandardMaterial());
+ const untouched=source.getAttribute('position').array.slice();
+ const plain=clipStudioFaceBustPreservingSurface(face,-.05,{anatomicalCurve:true});
+ const raised=clipStudioFaceBustPreservingSurface(face,-.05,{anatomicalCurve:true,backRise:.018});
+ assert.equal(plain.anatomicalSeamProfile.backRise,.006);
+ assert.equal(raised.anatomicalSeamProfile.backRise,.018);
+ assert.ok(raised.removedTriangles>=plain.removedTriangles);
+ assert.deepEqual(source.getAttribute('position').array,untouched);
+ assert.equal(raised.sourceNormalsPreserved,true);
+ face.geometry.dispose();raised.geometry.dispose();plain.geometry.dispose();
 });
 
 test('v60: both body studios and face editor offer one shared four-build contract',()=>{
