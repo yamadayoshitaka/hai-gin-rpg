@@ -29,6 +29,8 @@ import {createDragonkinNativeScalpOverlay}
  from './dragonkin-native-scalp.js?v=4.5.14';
 import {cutFemaleSummonScalpUnderCover}
  from './female-summon-scalp-cut.js?v=4.5.15';
+import {planHumanoidCosplayBase}
+ from './monster-studio-base-intake.js?v=4.5.16';
 import {attachCanonicalCharacterGroom,createCanonicalHeadLocalGroomAnchor,
  measureCanonicalScalp}
  from './monster-humanoid-hair.js?v=4.5.13';
@@ -438,10 +440,17 @@ function buildMonsterCostume(THREE,model,profile,detail){
  };
 }
 export function createCosplayedHumanoidMonster(spec,{
- detail='high',genderVariant=null,profileOverride=null,withoutFallback=false
+ detail='high',genderVariant=null,profileOverride=null,withoutFallback=false,
+ studioActorPackage=null
 }={}){
  const profile=profileOverride||humanoidMonsterCostumeFor(spec,{genderVariant});
  if(!profile)throw Error('No humanoid cosplay mapping '+String(spec?.id));
+ // v59 face studio is a preview, NOT a skinned production body. Audit any
+ // future candidate while keeping the proven Superhero actor live until a
+ // separate, tested studio actor loader has been shipped.
+ const humanBaseMigration=planHumanoidCosplayBase(profile,{
+  studioPackage:studioActorPackage
+ });
  const root=new THREE.Group();root.name=spec.id+'-'+spec.name+'-cosplay';
  const fallback=withoutFallback?null:createMonsterModel(spec,{detail});
  if(fallback)root.add(fallback);
@@ -451,10 +460,13 @@ export function createCosplayedHumanoidMonster(spec,{
  host.userData.characterBOM={jobId:profile.equipment==='bow'?'archer':
    profile.equipment==='staff'||profile.role==='royal'?'mage':'swordsman'};
  host.userData.previewAction='idle';
+ host.userData.humanBaseMigration=humanBaseMigration;
+ root.userData.humanBaseMigration=humanBaseMigration;
  let disposed=false,ready=false,failed=false,rig=null,visual=null;
  let seraphWingPivots=[];
  let disposeCostume=null,activeAction='idle',lastTime=null,lastAction='idle';
  const state={root,source:'procedural-loading',profile,
+  humanBaseMigration,
   start(action,time=0){
    if(root.userData.action!==action||root.userData.actionAt!==time){
     root.userData.action=action;root.userData.actionAt=time;
