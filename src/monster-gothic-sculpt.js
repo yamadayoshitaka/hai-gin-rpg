@@ -173,6 +173,39 @@ export function createKnightSkullBrow({
  return mesh(vertices,uv,indexGrid(rows,cols),
   {kind:'anatomical-cheek-arch',detail});
 }
+/**
+ * One batched upper-lash fan per eye. The imported skinned GLB retains its
+ * native sclera, cornea and iris: no opaque eyeball overlays are generated.
+ * The small three-dimensional wedge roots are placed along the upper lid.
+ */
+export function createGothicUpperLashFanGeometry({side=1,detail='high'}={}){
+ if(side!==-1&&side!==1)throw Error('Lash side must be -1 or +1');
+ if(!['low','high','source'].includes(detail))throw Error('Invalid lash LOD');
+ const strands=detail==='low'?3:detail==='source'?8:6;
+ const positions=[],uv=[],indices=[];
+ for(let i=0;i<strands;i++){
+  const u=(i+.65)/(strands+.25),x=side*(.027+.079*u);
+  const y=.078+.010*Math.sin(Math.PI*u);
+  const z=-.145+.034*u*u;
+  const length=(.010+.009*u)*(1-(u-.74)*(u-.74)*.40);
+  const start=positions.length/3;
+  const points=[
+   [x-side*.003,y,z],[x+side*.003,y,z-.002],
+   [x+side*.006,y+length*.55,z-.004],
+   [x+side*(.009+.003*u),y+length,z-.002],
+   [x+side*.006,y+length*.55,z+.0005],[x,y+.002,z+.001]
+  ];
+  for(let j=0;j<points.length;j++){positions.push(...points[j]);uv.push(u,j/5);}
+  for(const [a,b,c] of [
+   [0,1,2],[1,3,2],[1,4,3],[4,5,3],
+   [5,0,2],[5,2,3],[0,5,4],[0,4,1]
+  ])indices.push(start+a,start+b,start+c);
+ }
+ return mesh(positions,uv,indices,{
+  kind:'gothic-canonical-upper-lash-fan',
+  detail,rootedTo:'native-upper-eyelid',strands
+ });
+}
 function createGothicPieces({profile,detail='high',frames,attach,tube}){
  const kind=profile.costume,isHigh=detail!=='low',add=(frame,g,role,name,p=[0,0,0],r=[0,0,0])=>
   attach(frame,g,role,name,p,r);
@@ -224,12 +257,14 @@ function createGothicPieces({profile,detail='high',frames,attach,tube}){
     [side*.041,-.082,-.135],[Math.PI,0,0]);
    ball(frames.head,'skin','vampire-gingival-margin-'+side,
     [side*.042,-.080,-.138],[.018,.012,.012]);
-   // Ocular tint is seated just behind the skin eyelids; muted crimson
-   // iris and dry, reddish tear duct replace generic glass-button eyes.
-   ball(frames.head,'black','vampire-orbital-shadow-'+side,
-    [side*.052,.031,-.126],[.032,.021,.009]);
-   ball(frames.head,'iris','vampire-blood-iris-'+side,
-    [side*.053,.031,-.140],[.012,.014,.006]);
+   // Keep the original cornea and pigmented iris. The previous extra
+   // black sphere and tiny crimson iris obscured the imported eyeball,
+   // producing a bulbous or misaligned look in portrait closeups.
+   line(frames.head,'makeup','vampire-upper-lid-crease-'+side,[
+    [side*.026,.093,-.133],[side*.057,.100,-.137],
+    [side*.102,.090,-.112]],.0035);
+   add(frames.head,createGothicUpperLashFanGeometry({side,detail}),
+    'makeup','vampire-upper-lashes-'+side);
    line(frames.head,'stain','vampire-withered-tear-'+side,[
     [side*.063,.012,-.130],[side*.066,-.029,-.130],
     [side*.077,-.074,-.119]],.0038);
@@ -329,11 +364,10 @@ function createGothicPieces({profile,detail='high',frames,attach,tube}){
    line(frames.chest,'metal','succubus-corset-edge-'+side,[
     [side*.19,.22,-.17],[side*.25,-.07,-.20],
     [side*.13,-.41,-.18]],.014);
-   line(frames.head,'accent','succubus-eye-makeup-'+side,[
-    [side*.017,.066,-.130],[side*.056,.069,-.138],
-    [side*.12,.081,-.116]],.010);
-   ball(frames.head,'iris','succubus-narrow-crimson-iris-'+side,
-    [side*.054,.032,-.141],[.013,.015,.005]);
+   // Demon cosmetics already draws eyeliner. Layer only individual lashes;
+   // never occlude the Quaternius native pupil with a second sphere.
+   add(frames.head,createGothicUpperLashFanGeometry({side,detail}),
+    'makeup','succubus-upper-lashes-'+side);
    // Long nails grow from the hand-side of the articulated forearms.
    const index=side<0?0:1;
    for(let nail=0;nail<3;nail++){
