@@ -59,8 +59,8 @@ main{padding:8px}
 .adjustGrid label{min-height:85px}
 button{padding:9px 11px}
 }
-</style></head>
-<body>
+</style><style>.v64-manager-link{display:inline-flex;margin:8px 0;padding:9px 12px;border-radius:8px;background:#246b59;color:white;text-decoration:none;border:1px solid #9bd8be}</style></head>
+<body><a class="v64-manager-link" href="character-face-catalog.html">顔・髪・キャラクター管理一覧 v64</a>
 <header>
 <h1>顔・髪の編集 v55</h1>
 <a class="studioNav" href="./face-body-studio.html?v=57" id="returnToCostume">衣装確認画面に戻る</a>
@@ -91,7 +91,7 @@ button{padding:9px 11px}
 </div>
 <div class="controls" aria-label="顔の感情表現">
  <label for="faceExpression">表情
- <select id="faceExpression" aria-label="表情を10種類から選択"></select></label>
+ <select id="faceExpression" aria-label="表情を22種類から選択"></select></label>
  </div>
 </div>
 <section id="v32PartsStudio"><h2>完成顔を選ぶ（男女それぞれ10種類）</h2>
@@ -204,16 +204,16 @@ import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {GLTFExporter} from 'three/addons/exporters/GLTFExporter.js';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
-import {makeIndependentFaceMaster,FACE_MASTER_SPEC} from './src/independent-face-masters.js';
-import {createFaceExpressionAnimator,FACE_EXPRESSIONS} from './src/face-expression-animation-v48.js?v=49';
-import {updateFaceFeatureAngles,applyFaceColorMode,updateRealFacePigment} from './src/face-feature-meshes.js';
-import {createScalpAnchoredWig} from './src/face-scalp-wig.js?v=63';
+import {makeIndependentFaceMaster,FACE_MASTER_SPEC} from './src/independent-face-masters.js?v=64';
+import {createFaceExpressionAnimator,FACE_EXPRESSIONS} from './src/face-expression-animation-v48.js?v=64';
+import {updateFaceFeatureAngles,applyFaceColorMode,updateRealFacePigment} from './src/face-feature-meshes.js?v=64';
+import {createScalpAnchoredWig} from './src/face-scalp-wig.js?v=64';
 import {createPartSelectorUI} from './src/face-part-selector-ui-v32.js?v=41';
 import {defaultPartSelection,resolvePartSelection,PART_CATALOG,HAIR_COLORS} from './src/face-part-catalog-v32.js?v=41';
 import {listWigStyles,DEFAULT_WIG_STYLE_ID} from './src/face-wig-styles.js?v=44';
 import {resolveHeroHairSpec,synchronizeHeroHairSelection} from './src/hero-hair-controls-v43.js?v=44';
-import {chooseHeroFacePreset,polishHeroFaceControls,mountHeroFacePresetPicker,matchHeroFacePreset} from './src/hero-face-presets-v45.js?v=45';
-import {characterAppearance,mountCharacterCastSelect} from './src/character-cast-v46.js?v=60';
+import {chooseHeroFacePreset,polishHeroFaceControls,mountHeroFacePresetPicker,matchHeroFacePreset,HERO_FACE_PRESETS} from './src/hero-face-presets-v45.js?v=64';
+import {characterAppearance,mountCharacterCastSelect,CHARACTER_CAST_BY_ID} from './src/character-cast-v46.js?v=64';
 import {AGE_PROFILES,BODY_PROFILES,applyDemographicFaceControls} from './src/character-demographics-v47.js?v=60';
 import {resolveEditedFaceControls,recordFaceManualEdit} from './src/face-state-v49.js?v=49';
 import {loadHeroineFacePreset,saveHeroineFacePreset} from './src/heroine-face-preset-store.js?v=60';
@@ -390,7 +390,7 @@ for(const [id,key,labelOn,labelOff] of [
  });
 }
 function persistHeroineFace(){
- if(!ready||!v32PartMode)return;
+ if(!ready||!v32PartMode||new URLSearchParams(location.search).get('preview')==='1')return;
  saveHeroineFacePreset({parts:{...v32Parts.female},controls:{...modelChanges},
   hairStyleId:wigStyleId,hairColor:wigColor,hairDensity:wigDensity,
   makeupType:v32Makeup.female,contactColor,
@@ -398,7 +398,7 @@ function persistHeroineFace(){
   faceMode:facePolishMode.female?'polished':'custom'});
 }
 function persistMaleFace(){
- if(!ready||!v32PartMode)return;
+ if(!ready||!v32PartMode||new URLSearchParams(location.search).get('preview')==='1')return;
  const maleSelection=resolvePartSelection('male',v32Parts.male,MALE_REFERENCE_DEFAULT);
  saveMaleFacePreset({parts:{...v32Parts.male},controls:{...maleChanges},
   hairStyleId:maleSelection.hairStyleId,
@@ -1117,7 +1117,32 @@ async function init(){
   for(const id of ['female','male','front','threeQuarter','side','back','crown','wire','parts','wig','clay','color','resetPreset','resetMalePreset','export','exportWig','heroineBeautyV43','autoBlink','talkDemo'])
    $(id).disabled=false;
   const query=new URLSearchParams(location.search);
-  selectGender(query.get('gender')==='male'?'male':'female');
+  // v64: real 3D deep links share existing part/character picker logic.
+  // Browsing in preview mode never overwrites the saved user face.
+  const character=query.get('character');
+  const cast=CHARACTER_CAST_BY_ID[character];
+  const selectedGender=cast?.gender|| (query.get('gender')==='male'?'male':'female');
+  selectGender(selectedGender);
+  if(cast){
+   const select=$('v46'+(selectedGender==='female'?'Female':'Male')+'Cast');
+   if(select){select.value=character;select.dispatchEvent(new Event('change',{bubbles:true}));}
+  }else if(/^\d+$/.test(query.get('facePreset')||'')){
+   const index=Number(query.get('facePreset'));
+   if(HERO_FACE_PRESETS[selectedGender]?.[index]){
+    const host=$('v45'+(selectedGender==='female'?'Female':'Male')+'FacePresets');
+    host?.querySelector('button[data-preset-index="'+index+'"]')?.click();
+   }
+  }
+  if(query.has('hair')){
+   const style=query.get('hair');
+   if([...$('wigStyle').options].some(o=>o.value===style)){
+    $('wigStyle').value=style;$('wigStyle').dispatchEvent(new Event('change',{bubbles:true}));
+   }
+  }
+  if(FACE_EXPRESSIONS[query.get('expression')]){
+   $('faceExpression').value=query.get('expression');
+   $('faceExpression').dispatchEvent(new Event('change',{bubbles:true}));
+  }
   repaint();
   setView(['front','side','back','threeQuarter','crown'].includes(query.get('view'))?
    query.get('view'):'front');
