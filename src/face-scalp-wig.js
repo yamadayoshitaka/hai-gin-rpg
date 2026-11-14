@@ -565,7 +565,10 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   // Blow-dried curtain guide: the fringe softly sweeps away from the
   // part rather than falling as an identical vertical row above the eyes.
   const curtainSweep=partSide*d.x*(.004+
-   (style.fringeSweep||.025)*.7*Math.pow(1-centerDist,1.3));
+   // v63: the old strong outward impulse created an artificial triangular
+   // bald notch above the forehead centre. Keep a subtle parted silhouette
+   // without pulling the actual rooted bangs entirely off the centreline.
+   (style.fringeSweep||.025)*.28*Math.pow(1-centerDist,1.1));
   const targetX=(back?
    center.x+(wigRoot.x-center.x)*silhouette.rearWidth:
    fringe?wigRoot.x+curtainSweep:
