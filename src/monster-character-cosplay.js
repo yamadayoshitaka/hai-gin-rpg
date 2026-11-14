@@ -97,7 +97,7 @@ function buildMonsterCostume(THREE,model,profile,detail){
  // Use measured real shoulder pivots rather than one arbitrary gown
  // diameter for a slim female, heavy guard and broad male actor.
  const outfitFit=measureRegalShoulderFit(joints.arms[0],joints.arms[1]);
- const ownedGeo=[],ownedMats=[];
+ const ownedGeo=[],ownedMats=[],ownedTextures=[];
  const palette={skin:profile.skin,cloth:profile.cloth,metal:profile.metal,
   accent:profile.accent,bone:0xd6cdb4,bandage:0xb6a993,
   ivory:0xc3b9ab,linen:0xb5a58e,
@@ -145,6 +145,17 @@ function buildMonsterCostume(THREE,model,profile,detail){
       role==='rune'?.14:0,
     side:THREE.DoubleSide,
    });
+   // Use the original Guardian's own bundled linen photograph on the
+   // borrowed feather geometry, with its existing vertex-colour gradients.
+   if(role==='seraphWing'&&typeof document!=='undefined'){
+    const wingMap=new THREE.TextureLoader().load(
+     new URL('../assets/textures/outfits/linen.jpg',import.meta.url).href);
+    wingMap.colorSpace=THREE.SRGBColorSpace;
+    wingMap.wrapS=wingMap.wrapT=THREE.RepeatWrapping;
+    wingMap.repeat.set(1.8,1.8);
+    wingMap.anisotropy=4;
+    m.map=wingMap;m.needsUpdate=true;ownedTextures.push(wingMap);
+   }
    // Reuse the exact bundled photographic texture cache that already serves
    // the nonhumanoid bestiary. No new API, CDN request or per-monster textures.
    const surfaceRole={
@@ -400,6 +411,7 @@ function buildMonsterCostume(THREE,model,profile,detail){
    ...frames.arms,...frames.forearms,...frames.legs,...frames.calves])
    frame.parent?.remove(frame);
   for(const geo of ownedGeo)geo.dispose();
+  for(const texture of ownedTextures)texture.dispose();
   for(const material of ownedMats){
    detachMonsterPhotoMaterial(material);
    material.dispose();
