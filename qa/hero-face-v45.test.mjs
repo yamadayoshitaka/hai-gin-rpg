@@ -2,12 +2,12 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {defaultPartSelection,resolvePartSelection,PART_CATALOG} from '../src/face-part-catalog-v32.js';
 import {HERO_FACE_PRESETS,chooseHeroFacePreset,matchHeroFacePreset,polishHeroFaceControls} from '../src/hero-face-presets-v45.js';
-test('male and female have ten coherent complete-face shapes preserving hair',()=>{
+test('male and female have sixteen coherent complete-face shapes preserving hair',()=>{
  for(const gender of ['male','female']){
   const presets=HERO_FACE_PRESETS[gender];
-  assert.equal(presets.length,10);
-  assert.equal(new Set(presets.map(p=>p.id)).size,10);
-  for(let index=0;index<10;index++){
+  assert.equal(presets.length,16);
+  assert.equal(new Set(presets.map(p=>p.id)).size,16);
+  for(let index=0;index<16;index++){
    const before={...defaultPartSelection(),hair:14,hairColor:'pink',hairVolume:'soft',hairY:-1};
    const after=chooseHeroFacePreset(gender,index,before);
    assert.equal(after.hair,14);
@@ -27,6 +27,6 @@ test('male and female have ten coherent complete-face shapes preserving hair',()
 test('every face preset has a distinct eye/face/nose/mouth signature',()=>{
  for(const gender of ['male','female']){
   const variants=HERO_FACE_PRESETS[gender].map(p=>[p.face,p.eye,p.nose,p.mouth].join(':'));
-  assert.equal(new Set(variants).size,10);
+  assert.equal(new Set(variants).size,16);
  }
 });
