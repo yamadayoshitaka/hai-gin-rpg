@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import {clipStudioFaceBustPreservingSurface,restoreStudioFaceSurfaceQuality,
  sampleStudioFacePigment,smoothStudioFaceNormals,
- studioAnatomicalSeamY} from './studio-face-quality-v56.js';
+ studioAnatomicalSeamY} from './studio-face-quality-v56.js?v=57';
 import {createCharacter} from './character-system/shared-character-runtime.js?v=4.6.36';
 import {buildRiggedJobOutfit} from './character-system/rigged-outfit-runtime.js?v=41';
 import {loadJobMotionMap} from './character-system/job-motion-source.js?v=4.6.36';
