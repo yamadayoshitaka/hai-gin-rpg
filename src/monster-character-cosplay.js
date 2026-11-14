@@ -45,10 +45,10 @@ const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const boneName=s=>String(s??'').toLowerCase().replace(/[^a-z0-9]/g,'');
 const DEFAULT_MOTION=Object.freeze({
  idle:'idle',walk:'walk',run:'run',attack:'attack',special:'attack',
- roar:'attack',dodge:'guard',hit:'hit',leap:'run',defeat:'dead'
+ roar:'attack',guard:'guard',dodge:'guard',hit:'hit',leap:'run',defeat:'dead'
 });
 const TIME_LIMITS=Object.freeze({
- attack:1.1,special:1.6,roar:1.3,dodge:.7,hit:.45,leap:1.25
+ attack:1.1,special:1.6,roar:1.3,guard:.9,dodge:.7,hit:.45,leap:1.25
 });
 
 /** Convert a visible canonical human rig bone into an anatomical world-metre
