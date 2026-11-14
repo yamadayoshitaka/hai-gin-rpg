@@ -5,6 +5,7 @@ import {COMBAT_OBJECT_SPECS,COMBAT_JOB_SPECS,availableCombatSkills,COMBAT_RULES}
  from '../src/combat-action-spec.js';
 import {creatureSize,LARGE_SUMMON_IDS,SUMMON_WORLD_SCALE}
  from '../src/combat-creature-performance.js';
+import {combatEffectDirective} from '../src/combat-effect-directives.js';
 import {MONSTER_SUMMON_ENTRIES,MONSTER_SUMMON_BY_TYPE,MONSTER_SUMMON_SPECS,
  MONSTER_SUMMON_SKILLS,MONSTER_SUMMON_MODEL_HEIGHT,MONSTER_SUMMON_MAX_ACTIVE,
  isMonsterSummonType,monsterSummonSource,monsterSummonWorldScale}
@@ -30,6 +31,8 @@ for(const m of MONSTER_CATALOG){
  assert.equal(e.objectSpec.category,'summon');
  assert.equal(COMBAT_OBJECT_SPECS[id],e.objectSpec);
  assert.equal(COMBAT_OBJECT_SPECS[id].name,m.name);
+ assert.equal(COMBAT_OBJECT_SPECS[id].element,m.element);
+ assert.equal(COMBAT_OBJECT_SPECS[id].sourceSkill,m.skill);
  assert.ok(COMBAT_OBJECT_SPECS[id].hp>0);
  assert.ok(e.skillSpec.name.includes(m.name));
  assert.ok(e.skillSpec.objectType===id);
@@ -51,6 +54,18 @@ assert.equal(isMonsterSummonType('horse'),false);
 assert.equal(isMonsterSummonType('wolf'),false);
 assert.equal(monsterSummonSource('horse'),null);
 assert.throws(()=>monsterSummonWorldScale('summon_m020',0));
+// Attribute-specific visual feedback must survive the summon bridge.
+for(const [type,element] of [
+ ['summon_m020','water'],['summon_m018','nature'],
+ ['summon_m017','earth'],['summon_m013','fire']
+]){
+ const vfx=combatEffectDirective({
+  type:'objectAttack',objectType:type,
+  sourceMonsterId:type.slice(7),effect:element,radius:8
+ });
+ assert.equal(vfx.kind,'area');
+ assert.equal(vfx.element,element);
+}
 assert.equal(COMBAT_OBJECT_SPECS.horse.category,'mount');
 assert.equal(creatureSize('horse'),1);
 
