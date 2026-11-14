@@ -1125,6 +1125,48 @@ export const CHAPTER1_PROVISIONAL_LIVE=Object.freeze({
       "sunset instead of dawn; broken sword not apparent",
       "formal QA not completed"
     ]
+  },
+  "c01-s04|pre|male|c01-s04-m1": {
+    "asset": "./assets/story/chapter1-provisional-live/c01-s04__pre__male__c01-s04-m1.webp",
+    "sha256": "ab13bab5ecb868e3df95f2401a88280092be37d41eb39d53103423ef5e395739",
+    "provenance": "assets/story/chapter1-chatgpt-inbox/c01-s04__pre__male__c01-s04-m1.candidate.json",
+    "sourceDraft": "assets/story/chapter1-chatgpt-inbox/c01-s04__pre__male__c01-s04-m1.webp",
+    "status": "PROVISIONAL_OWNER_AUTHORIZED_PENDING_P0",
+    "originalLivePath": null,
+    "stageId": "c01-s04",
+    "edition": "pre",
+    "gender": "male",
+    "nativePixels": [
+      1664,
+      936
+    ],
+    "visualStatus": "OWNER_AUTHORIZED_TO_DISPLAY_CANDIDATE_WITH_KNOWN_CAST_MISMATCH",
+    "outstandingP0": [
+      "The canonical panel's secondary actor Lucia is absent",
+      "Official character references were not physically attached to generation",
+      "Formal P0 visual approval incomplete"
+    ]
+  },
+  "c01-s04|pre|female|c01-s04-m1": {
+    "asset": "./assets/story/chapter1-provisional-live/c01-s04__pre__female__c01-s04-m1.webp",
+    "sha256": "f99069f7a8e49e5577ba8e03afad8dc1853a265859065b42c9be7633b28286ad",
+    "provenance": "assets/story/chapter1-chatgpt-inbox/c01-s04__pre__female__c01-s04-m1.candidate.json",
+    "sourceDraft": "assets/story/chapter1-chatgpt-inbox/c01-s04__pre__female__c01-s04-m1.webp",
+    "status": "PROVISIONAL_OWNER_AUTHORIZED_PENDING_P0",
+    "originalLivePath": null,
+    "stageId": "c01-s04",
+    "edition": "pre",
+    "gender": "female",
+    "nativePixels": [
+      1664,
+      936
+    ],
+    "visualStatus": "OWNER_AUTHORIZED_TO_DISPLAY_CANDIDATE_WITH_KNOWN_CAST_MISMATCH",
+    "outstandingP0": [
+      "The image includes blonde female commander rather than the canonical silver-haired regent Lucia",
+      "Official character references were not physically attached to generation",
+      "Formal P0 visual approval incomplete"
+    ]
   }
 });
 export function chapter1ProvisionalLivePanel(shot){
