@@ -10,7 +10,7 @@ const persistInstructions=()=>{try{localStorage.setItem(PROMPTS_STORE,JSON.strin
 let saved={};try{saved=JSON.parse(localStorage.getItem(STORE)||'{}')||{};}catch{}
 const persist=()=>{try{localStorage.setItem(STORE,JSON.stringify(saved));}catch{}};
 const urls=new Set(),states=new Map();
-let current=all[0],ticket=0;
+let current=all[0],ticket=0,activeShotIndex=0;
 const uniq=a=>[...new Set(a)];
 const stageOptions=uniq(all.map(p=>p.stageId));
 for(const stage of stageOptions){
@@ -29,7 +29,7 @@ function setEditionOptions(){
 function go(number,scroll=true){
  const next=pages.get(number);if(!next)return;
  for(const url of urls)URL.revokeObjectURL(url);
- urls.clear();states.clear();current=next;ticket++;
+ urls.clear();states.clear();current=next;ticket++;activeShotIndex=0;
  $('stage').value=next.stageId;$('gender').value=next.gender;
  setEditionOptions();$('edition').value=next.edition;
  $('pageTitle').textContent='第'+number+' / 132ページ';
@@ -46,9 +46,40 @@ function go(number,scroll=true){
   load(shot,view,renderTicket);
  });
  $('panels').replaceChildren(fragment);
- $('info').textContent='原画を確認中。青い四角などの仮画像は承認できません。';
+ showCurrentShot();
+ $('info').textContent='原画を確認中。生成済みの実画像だけをゲームに仮反映します。';
  update();
- if(scroll)window.scrollTo({top:0,behavior:'smooth'});
+ // Vertical scrolling is intentionally disabled; one manga cut at a time.
+}
+function showCurrentShot(){
+ const cards=[...document.querySelectorAll('#panels .panel')];
+ cards.forEach((el,i)=>{
+  el.classList.toggle('is-active',i===activeShotIndex);
+  el.setAttribute('aria-hidden',i===activeShotIndex?'false':'true');
+  if(i!==activeShotIndex){
+   const generator=el.querySelector('details.generator');
+   if(generator)generator.open=false;
+  }
+ });
+ const shot=current.shots[activeShotIndex];
+ $('pageTitle').textContent='第'+current.number+'ページ '+(activeShotIndex+1)+'/'+current.shots.length+'コマ';
+ $('pageSub').textContent=(EDITION_LABELS[current.edition]||current.edition)+'・'+
+  (current.gender==='female'?'女性':'男性')+'主人公　'+shot.shotId;
+ const first=current.number===1&&activeShotIndex===0;
+ const last=current.number===all.length&&activeShotIndex===current.shots.length-1;
+ $('prevPage').disabled=$('prevBottom').disabled=first;
+ $('nextPage').disabled=$('nextBottom').disabled=last;
+ update();
+}
+function stepShot(direction){
+ const i=activeShotIndex+direction;
+ if(i>=0&&i<current.shots.length){
+  activeShotIndex=i;showCurrentShot();return;
+ }
+ const adjacent=pages.get(current.number+(direction>0?1:-1));
+ if(!adjacent)return;
+ go(adjacent.number,false);
+ if(direction<0){activeShotIndex=adjacent.shots.length-1;showCurrentShot();}
 }
 function variant(){
  const match=all.find(p=>p.stageId===$('stage').value&&
@@ -68,7 +99,7 @@ function panel(shot,index){
  const txt=document.createElement('div');txt.className='scene-text';txt.textContent=shot.displayText||shot.scriptText||'（セリフなし）';
  const caption=document.createElement('div');caption.className='source';caption.textContent='画像の同一性を確認しています';
  const actions=document.createElement('div');actions.className='actions';
- for(const [action,label] of [['approve','◎ 承認'],['revise','✎ 修正'],['hold','― 保留']]){
+ for(const [action,label] of [['approve','◎ 仮承認'],['revise','↶ 差し戻し'],['hold','― 保留']]){
   const b=document.createElement('button');b.type='button';b.dataset.choice=action;b.textContent=label;
   if(action!=='hold')b.disabled=true;
   b.addEventListener('click',()=>{
@@ -131,7 +162,8 @@ async function copyPrompt(text,textarea){
  }
 }
 function buildGenerationControls(shot){
- const box=document.createElement('section');box.className='generator';
+ const box=document.createElement('details');box.className='generator';
+ const summary=document.createElement('summary');summary.textContent='✦ ChatGPTでこのコマを修正・再生成';
  const heading=document.createElement('h3');
  heading.textContent='✦ このコマをChatGPTで画像生成';
  const label=document.createElement('label');label.textContent='ChatGPTに伝えたい修正・作画指示';
@@ -218,7 +250,7 @@ function buildGenerationControls(shot){
   }
  });
  buttons.append(open,copy,show,share);
- box.append(heading,label,input,buttons,message,preview);
+ box.append(summary,heading,label,input,buttons,message,preview);
  return box;
 }
 
@@ -308,7 +340,7 @@ function update(){
  $('progressBar').style.width=pc+'%';
  document.querySelector('.progress').setAttribute('aria-valuenow',pc);
  $('progressLabel').textContent='このページ '+ready.length+'/'+current.shots.length+'コマを判定';
- $('draftCount').textContent='判定 '+ready.length+'/'+current.shots.length+'（承認 '+approved.length+'）';
+ $('draftCount').textContent='現在のコマ '+(activeShotIndex+1)+' / '+current.shots.length+'（仮反映は自動）';
  const sendable=ready.some(s=>['approve','revise'].includes(saved[s.key].decision)&&states.get(s.key)?.available);
  $('submit').disabled=!sendable||(approved.length>0&&!$('visualConfirm').checked);
 }
@@ -339,10 +371,10 @@ function send(){
 $('stage').addEventListener('change',()=>{setEditionOptions();variant();});
 $('gender').addEventListener('change',()=>{setEditionOptions();variant();});
 $('edition').addEventListener('change',variant);
-$('prevPage').addEventListener('click',()=>go(current.number-1));
-$('nextPage').addEventListener('click',()=>go(current.number+1));
-$('prevBottom').addEventListener('click',()=>go(current.number-1));
-$('nextBottom').addEventListener('click',()=>go(current.number+1));
+$('prevPage').addEventListener('click',()=>stepShot(-1));
+$('nextPage').addEventListener('click',()=>stepShot(1));
+$('prevBottom').addEventListener('click',()=>stepShot(-1));
+$('nextBottom').addEventListener('click',()=>stepShot(1));
 $('visualConfirm').addEventListener('change',update);
 $('submit').addEventListener('click',send);
 const query=new URLSearchParams(location.search),start=Number(query.get('page')||1);
