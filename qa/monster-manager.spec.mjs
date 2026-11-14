@@ -31,6 +31,9 @@ test('mobile bestiary: 50 unique 3D monsters across ten families',async({page})=
  await page.locator('#portraitCamera').click();
  const after=await page.evaluate(()=>window.__monsterViewerLayoutQA());
  expect(after.motionStripVisible).toBe(true);
+ const toolbarHeight=await page.locator('#viewToolbar').evaluate(node=>
+  node.getBoundingClientRect().height);
+ expect(toolbarHeight).toBeLessThan(54);
  expect(after.toolsOpen).toBe(false);
  expect(after.canvasHeight).toBe(before.canvasHeight);
  await expect(page.locator('#name')).toContainText('灰牙の狼王');
