@@ -150,16 +150,28 @@ function buildGenerationControls(shot){
  message.textContent='ChatGPT Plusの画像生成を利用。追加のAPIキー不要。画像の自動取り込みは未対応。';
  const preview=document.createElement('textarea');preview.className='preview-prompt';
  preview.readOnly=true;preview.hidden=true;preview.setAttribute('aria-label','ChatGPTに渡す完成プロンプト');
- async function prepare(){
-  setGeneratorMessage(message,'台本とキャラ参照画像をまとめています…');
-  const prompt=await generatePrompt(shot,input.value.trim());
+ let prepared=null;
+ const loadContract=Promise.all([referenceFor(shot),stage2Assignment(shot)])
+  .then(([bible,assignment])=>{
+   prepared={bible,assignment};
+   setGeneratorMessage(message,'台本・登場人物を読込済み。ChatGPTに渡す指示を作成できます。');
+  }).catch(e=>{
+   setGeneratorMessage(message,'参照情報の読込エラー：'+e.message);
+  });
+ function prepare(){
+  if(!prepared)throw Error('参照データを読み込み中です。もう一度押してください。');
+  const prompt=buildChapter1ImagePrompt({
+   shot,page:current,bible:prepared.bible,assignment:prepared.assignment,
+   edit:input.value.trim()||saved[shot.key]?.feedback||'',
+   sourceKind:states.get(shot.key)?.kind
+  });
   preview.value=prompt;
   return prompt;
  }
  open.addEventListener('click',async()=>{
   open.disabled=true;
   try{
-   const prompt=await prepare();
+   const prompt=prepare();
    const success=await copyPrompt(prompt,preview);
    if(!success){
     setGeneratorMessage(message,'自動コピーできませんでした。表示したプロンプトを長押しでコピーし、「ChatGPTを開く」を利用してください。');
@@ -176,7 +188,7 @@ function buildGenerationControls(shot){
  });
  copy.addEventListener('click',async()=>{
   try{
-   const prompt=await prepare();
+   const prompt=prepare();
    const success=await copyPrompt(prompt,preview);
    setGeneratorMessage(message,success?'コピーしました。ChatGPTで貼り付けて画像生成を依頼してください。':'表示した文章を選択してコピーしてください。');
   }catch(e){setGeneratorMessage(message,'準備に失敗：'+e.message);}
@@ -184,7 +196,7 @@ function buildGenerationControls(shot){
  show.addEventListener('click',async()=>{
   if(show.textContent==='ChatGPTを開く'){window.location.assign(CHATGPT_IMAGES_URL);return;}
   if(!preview.hidden){preview.hidden=true;return;}
-  try{await prepare();preview.hidden=false;setGeneratorMessage(message,'この内容をChatGPTへ渡します。台本の文字は画像に描きません。');}
+  try{await loadContract;prepare();preview.hidden=false;setGeneratorMessage(message,'この内容をChatGPTへ渡します。台本の文字は画像に描きません。');}
   catch(e){setGeneratorMessage(message,'準備に失敗：'+e.message);}
  });
  buttons.append(open,copy,show);
