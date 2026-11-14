@@ -61,9 +61,12 @@ legend{font-size:12px;color:#e8d9b6;padding:0 6px}
  #info{top:6px;left:6px;right:8px;padding:8px;max-width:none}
  #info h2{font-size:18px}#info p{font-size:11px;line-height:1.4}
  #hud{font-size:10px;max-width:92%;line-height:1.55}
- #viewToolbar{left:8px;right:8px;bottom:calc(8px + env(safe-area-inset-bottom));gap:5px}
- #viewToolbar button{padding:9px 11px;font-size:12px;min-height:40px}
- #viewToolbar .pushRight{margin-left:auto}
+ #viewToolbar{left:8px;right:8px;bottom:calc(8px + env(safe-area-inset-bottom));
+  gap:5px;flex-wrap:nowrap;overflow-x:auto;pointer-events:auto;
+  scrollbar-width:none;overscroll-behavior-x:contain}
+ #viewToolbar button{padding:8px 9px;font-size:11px;min-height:40px;
+  flex:0 0 auto;white-space:nowrap}
+ #viewToolbar .pushRight{margin-left:0}
  main>aside{display:none;position:absolute;z-index:15;inset:0 8% 0 0;order:unset;max-height:none;overflow-y:auto;border:0;border-right:2px solid #6c93a8;box-shadow:12px 0 35px #000b}
  main.catalogOpen>aside,main.catalogCollapsed.catalogOpen>aside{display:block}
  #items{grid-template-columns:repeat(2,minmax(0,1fr))}
