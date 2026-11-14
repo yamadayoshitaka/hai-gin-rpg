@@ -182,6 +182,24 @@ function tintRealLipSurface(lip,settings,mode='color'){
  lip.userData.softSatinFinish=true;
  lip.userData.lipstickOnSourceHead=true;
 }
+// Bake iris radial fibres, crypts and catchlights into the curved geometry.
+export function v63IrisOpticalTones(r,angle,{female=true}={}){
+ const radius=THREE.MathUtils.clamp(r,0,1);
+ const fiber=.92+.078*Math.sin(angle*29+radius*21)*Math.cos(angle*17-radius*15)+
+  .037*Math.sin(angle*53-radius*18)*Math.sin(angle*11+radius*31)+
+  .019*Math.sin(angle*71+radius*58);
+ const limbal=1-(female?.43:.37)*Math.pow(THREE.MathUtils.smoothstep(radius,.80,.995),2);
+ const collarette=.89+.15*Math.exp(-Math.pow((radius-.43)/.115,2));
+ const crypt=.045*Math.sin(angle*37+radius*9)*Math.exp(-Math.pow((radius-.58)/.21,2));
+ const glint1=.074*Math.exp(-Math.pow((angle-2.24)/.24,2))*
+  Math.exp(-Math.pow((radius-.70)/.17,2));
+ const glint2=.029*Math.exp(-Math.pow((angle-4.00)/.14,2))*
+  Math.exp(-Math.pow((radius-.51)/.11,2));
+ const value=THREE.MathUtils.clamp((fiber+crypt)*limbal*collarette+glint1+glint2,.36,1.19);
+ const warm=.045*Math.exp(-Math.pow((radius-.43)/.12,2));
+ return [value*(1+warm),value*(.979+.15*warm),value*(.944-.11*warm)];
+}
+
 export function updateRealFacePigment(face,controls={},mode='color',gender='female'){
  if(!face?.isMesh)throw Error('Sculpted head required for cosmetics');
  const settings=gender==='male'?normalizeMaleFaceControls(controls):
@@ -221,6 +239,9 @@ export function updateRealFacePigment(face,controls={},mode='color',gender='fema
   // nasolabial fold, eyes, nose wings and philtrum (no flat texture card).
   // Older ages get pronounced crease pigment and lower-eye shadows.
   const underEye=bell(nx,.345,.14)*bell(ny,.632,.027)*front;
+  // Fine eyelid and inner-canthus shading, without adding ageing wrinkles.
+  const upperLidOcclusion=bell(nx,.123,.092)*bell(ny,.702,.020)*front;
+  const innerCanthus=bell(nx,.063,.034)*bell(ny,.679,.027)*front;
   const noseWing=bell(nx,.115,.045)*bell(ny,.551,.025)*front;
   const philtrum=bell(nx,0,.075)*bell(ny,.528,.015)*front;
   const lipShade=bell(nx,0,.18)*bell(ny,.468,.026)*front;
@@ -238,7 +259,8 @@ export function updateRealFacePigment(face,controls={},mode='color',gender='fema
   const youthFade=skinAgeShadowFactor(age.id);
   const contactShade=(.018+.132*youthFade)*underEye+
    (.035+.05*youthFade)*noseWing+.028*philtrum+
-   (.018+.052*youthFade)*lipShade+age.sag*.15*underEye+ageShade;
+   (.018+.052*youthFade)*lipShade+age.sag*.15*underEye+ageShade+
+   .051*upperLidOcclusion+.023*innerCanthus;
   const s=Math.max(.55,1-contactShade);
   const rgb=pigmentFactor(skin,blush,cheek)
    .multiply(pigmentFactor(skin,lipstick,.30*lipMask))
@@ -252,6 +274,7 @@ export function updateRealFacePigment(face,controls={},mode='color',gender='fema
  face.userData.lipTintVertexCount=actualLipTintVertices;
  face.userData.cheekTintVertexCount=actualCheekTintVertices;
  face.userData.v50YouthShadowScale=skinAgeShadowFactor(age.id);
+ face.userData.v63AnatomicalEyelidContactShadow=true;
  for(const name of ['UPPER','LOWER']){
   const lip=face.getObjectByName(name+'_3D_VERMILION_LIP');
   if(lip)tintRealLipSurface(lip,settings,mode);
@@ -447,12 +470,12 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
  });
  const eyeMat=new THREE.MeshPhysicalMaterial({
   // Slightly warm white, natural wet sclera sheen rather than a bright disk.
-  color:0xe6e3df,roughness:.36,metalness:0,
-  clearcoat:.32,clearcoatRoughness:.17
+  color:0xe6e3df,roughness:.30,metalness:0,
+  clearcoat:.29,clearcoatRoughness:.15
  });
  const irisMat=new THREE.MeshPhysicalMaterial({
-  color:0x747a83,roughness:.32,metalness:0,
-  clearcoat:.40,clearcoatRoughness:.13
+  color:0x747a83,roughness:.27,metalness:0,
+  clearcoat:.34,clearcoatRoughness:.16
  });
  const pupilMat=new THREE.MeshPhysicalMaterial({
   color:0x161719,roughness:.15,metalness:0,
@@ -682,31 +705,17 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   const fiberColors=[];
   for(let j=0;j<=20;j++)for(let i=0;i<=64;i++){
    const r=j/20,angle=i/64*Math.PI*2;
-   const radialStreak=Math.sin(angle*23+r*18)*Math.cos(angle*13-r*12);
-   const fineStreak=Math.sin(angle*27-r*26)*Math.sin(angle*17+r*11);
-   // Female heroine: multi-frequency iris spokes, discrete collarette,
-   // dark limbal ring and tiny reflected highlights. All are baked as
-   // vertex colours ON the curved iris (no floating billboard decals).
-   const feathery=Math.sin(angle*43+r*31)*Math.cos(angle*9-r*29);
-   const fiber=(female?.915:.935)+.058*radialStreak+
-    .026*fineStreak+(female?.034:.012)*feathery;
-   const limbal=1-(female?.39:.30)*
-    Math.pow(THREE.MathUtils.smoothstep(r,.80,1),2);
-   const collarette=.89+.115*Math.exp(-Math.pow((r-.44)/.12,2));
-   // Microfibres, a darker limbal ring and soft upper catchlight are
-   // encoded directly in the iris geometry (no floating eye decals).
-   const highlight=Math.exp(-Math.pow((angle-2.24)/.25,2))*
-    Math.exp(-Math.pow((r-.73)/.16,2));
-   const c=fiber*limbal*collarette+.080*highlight;
-   fiberColors.push(c,c*.975,c*.955);
+   fiberColors.push(...v63IrisOpticalTones(r,angle,{female}));
   }
   iris.geometry.setAttribute('color',
    new THREE.Float32BufferAttribute(fiberColors,3));
   irisMat.vertexColors=true;
   iris.userData.circularProjected=true;
   iris.userData.radialFibers=true;
-  iris.userData.opticalDetailVersion=female?'v43-heroine-multifrequency-iris':'v33';
-  iris.userData.limbalDarkening=female?.39:.30;
+  iris.userData.opticalDetailVersion='v63-iris-optics-both-sexes';
+  iris.userData.v63RadialCrypts=true;
+  iris.userData.v63DualGlints=true;
+  iris.userData.limbalDarkening=female?.43:.37;
   iris.userData.subtleIrisCatchlight=true;
   iris.userData.sharedSmoothCornealSurface=true;
   iris.userData.colorRole='iris';root.add(iris);
