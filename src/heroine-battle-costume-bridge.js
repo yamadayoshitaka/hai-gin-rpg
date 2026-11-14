@@ -266,7 +266,7 @@ export function fitStudioNeckContinuity({faceRoot,faceMesh,wardrobeRoot,garmentR
  const bodies=[];
  wardrobeRoot.traverse(mesh=>{
   if(mesh.isSkinnedMesh&&
-   /^(?:female|male)_(?:ranger|peasant)_body$/i.test(mesh.name)&&
+   /^(?:(?:female|male)_(?:ranger|peasant)_body|superhero_(?:female|male))$/i.test(mesh.name)&&
    mesh.geometry?.getAttribute('position'))bodies.push(mesh);
  });
  if(!bodies.length)return {applied:false,reason:'torso-missing'};
