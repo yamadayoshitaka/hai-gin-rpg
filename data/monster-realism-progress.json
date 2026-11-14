@@ -97,13 +97,14 @@
       "id": "m005",
       "name": "翠森の古狼",
       "family": "beast",
-      "status": "queued-for-individual-reference-review",
+      "status": "under-pr-review",
       "evidenceFile": "src/monster-anatomy-reference.js",
       "qaFile": "qa/monster-anatomy-motion.test.mjs",
-      "latestIndividualPr": null,
+      "latestIndividualPr": 345,
       "closeupVisualVerified": false,
       "mobileFpsVerified": false,
-      "fullyPhotorealistic": false
+      "fullyPhotorealistic": false,
+      "researchNote": "docs/monster-research/m005-woodland-wolf-footfall-20261114.md"
     },
     {
       "id": "m006",

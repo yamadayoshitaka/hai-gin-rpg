@@ -130,6 +130,48 @@ export function applyMonsterBiologicalMotion(model,{time=0,phase=0,action='idle'
     model.scale.z*=1+compression*.5;
    }
  }
+ if(study.id==='m005'){
+   // Canid gait studies: slow walking and obstacle stepping call for
+   // carpal/tarsal flexion; forepaw placement and hindlimb push differ.
+   // This 'creep' is a game posture, not a claim of observed wolf data.
+   // Keep the original ten-action semantics; visual E2E is checked together
+   // with the mobile bestiary's now-responsive catalog/settings controls.
+   const threat=(action==='attack'||action==='special')?pulse:0;
+   const quiet=action==='walk';
+   apply(p,'neckGuard','x',quiet?-.065+.018*Math.sin(phase*.50):
+     -.025-.08*threat);
+   if(p.head)p.head.rotation.x+=quiet?-.055:-.035*threat;
+   for(const side of [-1,1]){
+     const suffix=side<0?'L':'R',offset=side<0?0:PI;
+     apply(p,'scapula'+suffix,'x',
+       (locomotion?(run?.18:.10):0)*Math.sin(phase+offset-.25)
+       +.13*threat);
+     apply(p,'ear'+suffix,'x',
+       .085+.17*threat+.038*Math.sin(time*1.05+offset));
+     apply(p,'ear'+suffix,'y',
+       side*(.06+.11*Math.sin(time*.84+offset)));
+     for(const fore of ['front','rear']){
+       const key=fore+suffix;
+       const q=phase+offset+(fore==='rear'?PI*.52:0);
+       const swing=locomotion?Math.max(0,Math.cos(q)):0;
+       const stance=locomotion?Math.max(0,-Math.cos(q)):0;
+       if(quiet)apply(p,'leg'+key,'x',
+         .23*Math.sin(q)+(fore==='front'?-.10:.06)*threat);
+       apply(p,'carpal'+key,'x',clamp(
+         -.065+(fore==='front'?.24:.19)*swing-.08*stance
+         +.08*threat,-.26,.36));
+       apply(p,'toe'+key,'x',clamp(
+         -.035+.24*swing-.12*stance-.07*threat,-.23,.32));
+     }
+   }
+   // Dog caudal-muscle EMG supports independent pitch and left-right
+   // stabilization. Avoid frantic tail wagging in a quiet approach.
+   apply(p,'tail','y',locomotion?
+     (run?.10:.055)*Math.sin(phase*.55):.035*Math.sin(time*.8));
+   apply(p,'tail','x',quiet?.055: -.045*threat);
+   apply(p,'tailMid','y',locomotion?
+     (run?.14:.075)*Math.sin(phase*.55-.50):.06*Math.sin(time*.75));
+ }
  if(study.id==='m004'){
    // Wolf studies distinguish relatively stiff endurance pursuit from the
    // stronger sagittal flexion used when accelerating for a final strike.
