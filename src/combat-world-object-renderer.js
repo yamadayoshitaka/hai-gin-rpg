@@ -469,21 +469,29 @@ export function createCombatWorldObjectRenderer(scene,{cellSize=1.12,offset=6,te
     photos.dispose();
     distantMaterial.dispose();
   }
+  function bestiaryDetailCounts(){
+    const out={};
+    for(const value of Object.values(bestiarySummons.detailStats())){
+      const entry=out[value.type]??{high:0,low:0};
+      entry.high+=value.high;entry.low+=value.low;
+      out[value.type]=entry;
+    }
+    return out;
+  }
   return {
     sync,dispose,
     faceLibraryReady:type=>libraryFaceTypes.has(type),
     footfallStats:footfalls.stats,
     stats:()=>({
       ...Object.fromEntries(types.map(type=>[type,counts[type]??0])),
-      ...Object.fromEntries(Object.entries(bestiarySummons.detailStats()).map(
-       ([,v])=>[v.type,(bestiarySummons.stats().active?1:0)]))
+      ...Object.fromEntries(Object.entries(bestiaryDetailCounts())
+        .map(([type,c])=>[type,c.high+c.low]))
     }),
     detailStats:()=>({
       ...Object.fromEntries(types.map(type=>[type,{
         high:species.get(type).high.count,low:species.get(type).low.count,
       }])),
-      ...Object.fromEntries(Object.entries(bestiarySummons.detailStats()).map(
-        ([,v])=>[v.type,{high:v.high,low:v.low}]))
+      ...bestiaryDetailCounts()
     }),
     monsterSourceModel:id=>bestiarySummons.actualModel(id),
     monsterSourceStats:bestiarySummons.stats,
