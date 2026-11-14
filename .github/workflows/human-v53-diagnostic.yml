@@ -1,4 +1,4 @@
-name: Human v58 real-contour skin neck diagnostics
+name: Human v59 unified face-to-collar geometry diagnostics
 on:
   pull_request:
     paths:
@@ -8,6 +8,8 @@ on:
       - 'qa/studio-face-quality-v56.test.mjs'
       - 'src/studio-face-quality-v56.js'
       - 'src/studio-contour-neck-v58.js'
+      - 'src/studio-unified-neck-v59.js'
+      - 'qa/studio-unified-neck-v59.test.mjs'
       - 'qa/studio-contour-neck-v58.test.mjs'
       - 'face-body-studio.html'
       - 'male-body-studio.html'
@@ -30,13 +32,13 @@ jobs:
           python3 -m http.server 8766 --bind 127.0.0.1 >/tmp/human-v53-http.log 2>&1 &
           sleep 2
       - name: Verify neck connector and preserved head source geometry
-        run: node --test qa/human-realism-v51-regression.test.mjs qa/studio-face-quality-v56.test.mjs qa/studio-contour-neck-v58.test.mjs
+        run: node --test qa/human-realism-v51-regression.test.mjs qa/studio-face-quality-v56.test.mjs qa/studio-contour-neck-v58.test.mjs qa/studio-unified-neck-v59.test.mjs
       - name: Report actual female face, neck and armor mesh bounds
         run: node qa/human-head-occlusion-v53-browser.cjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: human-v58-real-cut-skin-stitch
-          path: qa-screenshots/human-v58/
+          name: human-v59-one-piece-face-and-neck
+          path: qa-screenshots/human-v59/
           retention-days: 7
           if-no-files-found: warn
