@@ -358,7 +358,8 @@ const expressionPrefs={autoBlink:true,speaking:false,expression:'neutral'},expre
 if(new URLSearchParams(location.search).get('qa')==='expression'){
  // Deterministic WebGL testing only; no extra controls exposed in gameplay.
  window.__faceExpressionQA={
-  setBlink(value){expressions.get(gender)?.setBlinkProgress(value);}
+  setBlink(value){expressions.get(gender)?.setBlinkProgress(value);},
+   setMouth(value){expressions.get(gender)?.setMouthOpen(value);}
  };
 }
 function refreshExpression(sex){
