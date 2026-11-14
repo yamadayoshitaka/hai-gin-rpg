@@ -36,7 +36,7 @@ assert(ui.includes("new File([blob]"));
 assert(ui.includes('ChatGPT Plusの画像生成を利用'));
 
 const registered=Object.entries(CHAPTER1_PROVISIONAL_LIVE).filter(([key])=>key.startsWith('c01-s04|'));
-assert.equal(registered.length,2,'Only the two actual ChatGPT candidate frames have owner provisional authorization');
+assert.equal(registered.length,3,'Exactly three distinct native ChatGPT stage4 frames are owner-provisional; do not count rejected grids');
 const liveS05=Object.keys(CHAPTER1_PROVISIONAL_LIVE).filter(key=>key.startsWith('c01-s05|'));
 assert.equal(liveS05.length,0,'No image may be fabricated or counted as stage5 completed');
 for(const gender of ['male','female']){
@@ -69,4 +69,26 @@ for(const gender of ['male','female'])
  assert(ledger.history.some(h=>h.key==='c01-s04|pre|'+gender+'|c01-s04-m1' &&
    h.kind==='CHATGPT_OWNER_PROVISIONAL_KNOWN_CAST_MISMATCH_NOT_P0'),'No reversible audit event for '+gender);
 
+const newShot='c01-s04|pre|male|c01-s04-m2';
+const nativeFrame=CHAPTER1_PROVISIONAL_LIVE[newShot];
+assert(nativeFrame&&nativeFrame.gender==='male'&&nativeFrame.edition==='pre'&&nativeFrame.status==='PROVISIONAL_OWNER_AUTHORIZED_PENDING_P0');
+const framePath=nativeFrame.asset.replace(/^\\.\\//,'');
+const frameBytes=fs.readFileSync(framePath);
+assert.equal(frameBytes.toString('ascii',0,4),'RIFF');
+assert.equal(frameBytes.toString('ascii',8,12),'WEBP');
+assert.equal(crypto.createHash('sha256').update(frameBytes).digest('hex'),nativeFrame.sha256);
+assert.equal(nativeFrame.sha256,'fc035c7037f7ccc2cfb0281796c533e99986f6884e084e4905da00fe362338a3');
+assert.deepEqual(nativeFrame.nativePixels,[1664,936]);
+assert.equal(chapter1ProvisionalLivePanel({
+ stageId:'c01-s04',comicEdition:'pre',protagonistGender:'male',id:'c01-s04-m2'
+})?.asset,nativeFrame.asset);
+const m2Proof=JSON.parse(fs.readFileSync(nativeFrame.provenance,'utf8'));
+assert.equal(m2Proof.shotKey,newShot);
+assert.equal(m2Proof.imageSha256,nativeFrame.sha256);
+assert.equal(m2Proof.qaStatus,'OWNER_PROVISIONAL');
+assert.equal(m2Proof.finalP0Approved,false);
+assert.equal(m2Proof.quality.exactCast,true);
+assert.equal(m2Proof.quality.realReferenceBytesAttachedToImageGenerator,false);
+assert.equal(m2Proof.scriptText,pages.flatMap(p=>p.shots).find(x=>x.key===newShot).scriptText);
+assert(ledger.history.some(h=>h.key===newShot&&h.kind==='CHATGPT_OWNER_PROVISIONAL_NOT_P0'));
 console.log('PASS: 96 exact stage4/5 ChatGPT per-shot handoffs, actual bytes, style and branch safety, no paid API');
