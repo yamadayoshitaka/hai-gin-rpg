@@ -111,7 +111,7 @@
 </head>
 <body>
   <header id="galleryHeader">
-    <div class="galleryHeading"><h1>召喚獣・軍馬 3D鑑賞 v4.5.21</h1><small>森の精霊弓士・光翼の守護天使 / CC0 Quaternius人体の顔・弓・羽毛の翼・回復・蘇生</small></div>
+    <div class="galleryHeading"><h1>召喚獣57種・軍馬 3D鑑賞 v4.5.22</h1><small>森の精霊弓士・光翼の守護天使 / CC0 Quaternius人体の顔・弓・羽毛の翼・回復・蘇生</small></div>
     <label for="type" class="speciesPicker"><span class="typeCaption">種類</span><select id="type">
       <option value="wolf">灰狼</option>
       <option value="wyvern">飛竜</option>
@@ -183,9 +183,12 @@
     import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
     import {femaleSummonCosplayFor,FEMALE_SUMMON_FORM_IDS,MALE_DRAGON_LORD_FORM} from './src/female-summon-forms.js?v=4.5.21';
     import {createCosplayedHumanoidMonster} from './src/monster-character-cosplay.js?v=4.5.21';
-    import {COMBAT_OBJECT_SPECS} from './src/combat-action-spec.js?v=4.4.74';
-    import {creatureSize,SUMMON_WORLD_SCALE,LARGE_SUMMON_IDS} from './src/combat-creature-performance.js?v=4.6.37';
-    import {createCombatWorldObjectRenderer} from './src/combat-world-object-renderer.js?v=4.5.21';
+    import {COMBAT_OBJECT_SPECS} from './src/combat-action-spec.js?v=4.6.38';
+    import {MONSTER_CATALOG,MONSTER_FAMILIES} from './src/monster-catalog.js';
+    import {MONSTER_SUMMON_BY_TYPE,isMonsterSummonType,MONSTER_SUMMON_MODEL_HEIGHT}
+      from './src/monster-summon-registry.js?v=1';
+    import {creatureSize,SUMMON_WORLD_SCALE,LARGE_SUMMON_IDS} from './src/combat-creature-performance.js?v=4.6.38';
+    import {createCombatWorldObjectRenderer} from './src/combat-world-object-renderer.js?v=4.5.22';
     import {startCreaturePose} from './src/combat-creature-actions.js?v=4.4.92';
     import {createCreatureSoundRuntime} from './src/combat-creature-sounds.js?v=4.4.74';
     import {ActionVfxRuntime} from './src/character-system/action-vfx-runtime.js?v=4.4.23';
@@ -341,6 +344,20 @@
       {x:0,z:1},{x:-1,z:1},{x:-2,z:1},{x:-2,z:0},{x:-1,z:0}];
     let previewObject={id:'gallery-creature',type:selected,x:0,z:0,alive:true,team:0,flying:false,mountedBy:null};
     const select=document.getElementById('type');
+    // A grouped selector makes all 50 EXISTING monster species individually
+    // summonable without burying the original 7 in a long flat mobile menu.
+    for(const [family,label] of Object.entries(MONSTER_FAMILIES)){
+      const group=document.createElement('optgroup');
+      group.label=label+'系モンスター';
+      for(const monster of MONSTER_CATALOG.filter(m=>m.family===family)){
+        const option=document.createElement('option');
+        option.value='summon_'+monster.id;
+        option.textContent=monster.name+'（'+monster.id+'）';
+        group.append(option);
+      }
+      select.append(group);
+    }
+    let frameMonsterType=null;
     // Species selection stays accessible while display settings are folded.
     select.addEventListener('change',()=>{
       document.getElementById('controlsDrawer').open=false;
@@ -364,7 +381,10 @@
       document.getElementById('faceCloseup').disabled=!
         (['forest_archer','seraph_guardian','wolf'].includes(selected)||
           (selected==='dragon_lord'&&femaleMode.value==='male'));
-      document.getElementById('coatCloseup').disabled=selected!=='wolf';
+      const sourceMonster=MONSTER_SUMMON_BY_TYPE[selected]||null;
+      document.getElementById('coatCloseup').disabled=selected!=='wolf'&&
+        !['beast','feline','avian'].includes(sourceMonster?.family);
+      frameMonsterType=null;
       document.getElementById('footCloseup').disabled=!femaleAvailable||
         femaleMode.value==='original';
       previewObject={id:'gallery-'+selected,type:selected,x:0,z:0,alive:true,team:0,
@@ -376,13 +396,22 @@
       document.getElementById('species').textContent=COMBAT_OBJECT_SPECS[selected].name+
         (femaleAvailable&&femaleMode.value==='female'?'・女性人型':
          selected==='dragon_lord'&&femaleMode.value==='male'?'・男性竜王':'');
-      document.getElementById('desc').textContent=descriptions[selected]+
+      const originalMonster=sourceMonster?
+        MONSTER_CATALOG.find(m=>m.id===sourceMonster.monsterId):null;
+      document.getElementById('desc').textContent=
+        (originalMonster?
+          '図鑑 '+originalMonster.id+' の既存3Dモデルを直接召喚。'+
+          originalMonster.description+
+          ' 人間の約10倍の身長。召喚専用サイズで通常の敵図鑑は変更しない。':
+          descriptions[selected])+
         (femaleAvailable&&femaleMode.value==='female'?
           ' 女性キャラクター素体を使用した別の姿。戦闘用の元の召喚獣は維持。':
          selected==='dragon_lord'&&femaleMode.value==='male'?
           ' 男性スキン付き素体に角、胸装甲、翼と足甲を付けた竜王。元のドラゴン姿も選択可能。':'');
-      const focus=selected==='forest_archer'?1.3:selected==='seraph_guardian'?1.6:selected==='dragon_lord'?6.4:selected==='elder_dragon'?2.9:selected==='dragon'?2.6:selected==='wyvern'?2.2:1.2;
-      const worldScale=LARGE_SUMMON_IDS.includes(selected)?SUMMON_WORLD_SCALE:1;
+      const focus=sourceMonster?MONSTER_SUMMON_MODEL_HEIGHT*.48:
+        selected==='forest_archer'?1.3:selected==='seraph_guardian'?1.6:selected==='dragon_lord'?6.4:selected==='elder_dragon'?2.9:selected==='dragon'?2.6:selected==='wyvern'?2.2:1.2;
+      const worldScale=sourceMonster?1:
+        LARGE_SUMMON_IDS.includes(selected)?SUMMON_WORLD_SCALE:1;
       controls.target.set(0,focus*worldScale,0);
       // The bat wings are about 15 world units wide at summon scale. Fit
       // their entire span even on narrow portrait phone displays.
@@ -391,7 +420,8 @@
       // an elf occupied only a tiny fraction of a portrait mobile screen.
       // Magnify regular creatures, while fitting the giant dragon's full wings.
       const phone=phoneLayout.matches;
-      const distance=selected==='seraph_guardian'?(phone?11:15):
+      const distance=sourceMonster?(phone?66:48):
+        selected==='seraph_guardian'?(phone?11:15):
         selected==='elder_dragon'?(phone?12:15):
         selected==='wyvern'?(phone?9:12):
         selected==='dragon'?(phone?11:13):
@@ -408,7 +438,17 @@
     });
     select.addEventListener('change',()=>changeType());changeType();
     document.getElementById('coatCloseup').onclick=()=>{
-      if(selected!=='wolf')return;
+      if(selected!=='wolf'&&!isMonsterSummonType(selected))return;
+      if(isMonsterSummonType(selected)){
+        const root=objects.monsterSourceModel(previewObject.id);
+        if(!root)return;
+        const bb=new THREE.Box3().setFromObject(root);
+        const c=bb.getCenter(new THREE.Vector3()),size=bb.getSize(new THREE.Vector3());
+        controls.target.copy(c);
+        camera.position.set(c.x+size.x*.85,c.y+size.y*.5,c.z+Math.max(size.x,size.y,size.z)*1.65);
+        controls.update();
+        return;
+      }
       // Frame both forepaws and hind legs plus the coat beneath the torso.
       // Aim slightly from the side so back, belly and paw silhouettes show.
       const factor=creatureSize('wolf');
@@ -430,6 +470,14 @@
         controls.target.set(0,(femaleReady?1.62:2.35)*factor,0);
         camera.position.set(.83*factor,(femaleReady?1.81:2.54)*factor,
           (femaleReady?1.92:1.80)*factor);
+      }else if(isMonsterSummonType(selected)){
+        const root=objects.monsterSourceModel(previewObject.id);
+        if(!root)return;
+        const bb=new THREE.Box3().setFromObject(root);
+        const size=bb.getSize(new THREE.Vector3());
+        const c=bb.getCenter(new THREE.Vector3());
+        controls.target.set(c.x,c.y+size.y*.18,c.z);
+        camera.position.set(c.x+size.x*.25,c.y+size.y*.25,c.z+Math.max(4,size.y*.88));
       }else return;
       camera.lookAt(controls.target);
       controls.update();
@@ -537,6 +585,26 @@
       }
       const isFemaleReady=femaleSummonHandle?.source==='canonical-character-cosplay';
       objects.sync(externalPreview||isFemaleReady?[]:[previewObject],t);
+      // Camera framing derives from the real monster sculpture, including
+      // Leviathan's long body and Kraken's tentacles. Fitting one source once
+      // avoids hardcoded sizes that crop giant 10x creatures on mobile.
+      if(isMonsterSummonType(selected)&&frameMonsterType!==selected){
+        const model=objects.monsterSourceModel(previewObject.id);
+        if(model){
+          const bounds=new THREE.Box3().setFromObject(model);
+          const center=bounds.getCenter(new THREE.Vector3());
+          const size=bounds.getSize(new THREE.Vector3());
+          const a=THREE.MathUtils.degToRad(camera.fov*.5);
+          const need=Math.max(size.y/(2*Math.tan(a)),
+            size.x/(2*Math.tan(a)*camera.aspect),
+            size.z/(2*Math.tan(a)*camera.aspect));
+          const distance=Math.max(14,need*1.48);
+          controls.target.copy(center);
+          camera.position.set(center.x+distance*.22,
+            center.y+distance*.21,center.z+distance);
+          frameMonsterType=selected;
+        }
+      }
       femaleSummonHandle?.update(t);
       // Only the optional gallery female Seraph levitates; the original
       // battlefield summons, rider rules and physics are unchanged.
@@ -554,7 +622,7 @@
       vfx.update(dt);
       controls.update();
       renderer.render(scene,camera);
-      const lod=objects.detailStats()[selected];
+      const lod=objects.detailStats()[selected]||{high:0,low:0};
       document.getElementById('metrics').textContent=
         '耐久 '+spec.hp+' / 攻撃 '+spec.attack+' / '+(spec.category==='mount'?'騎乗物':'独立召喚オブジェクト')+
         ' / 描画 '+(lod.high?'精細':'軽量')+'LOD / GPUインスタンス'+
@@ -622,6 +690,11 @@
         [-1,1].filter(side=>!!femaleSummonHandle.root.getObjectByName(
          'female-seraph-original-wing-pivot-'+side)).length:0,
       summonWorldScale:SUMMON_WORLD_SCALE,
+      summonSpeciesCount:7+MONSTER_CATALOG.length,
+      catalogSummonCount:MONSTER_CATALOG.length,
+      monsterSourceType:MONSTER_SUMMON_BY_TYPE[selected]?.monsterId??null,
+      monsterRendered:!!objects.monsterSourceModel(previewObject.id),
+      monsterFramed:frameMonsterType===selected,
       wolfHybridPrimary:'combat-summon-wolf',
       wolfHybridSecondary:'m001',
       cameraDistance:camera.position.distanceTo(controls.target)
