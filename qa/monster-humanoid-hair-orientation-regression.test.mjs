@@ -5,7 +5,8 @@ import {CANONICAL_HUMAN_FRONT_Z,LEGACY_COSTUME_FRONT_Z,
  shouldCorrectCostumeFront,alignCostumeToCanonicalFacing}
  from '../src/monster-anatomical-frame.js';
 import {createCharacterCrownGeometry,createCharacterHairStrandsGeometry,
- attachCanonicalCharacterGroom,createCanonicalHeadLocalGroomAnchor}
+ attachCanonicalCharacterGroom,createCanonicalHeadLocalGroomAnchor,
+ measureCanonicalScalp}
  from '../src/monster-humanoid-hair.js';
 import {HUMANOID_MONSTER_COSTUMES,FEMALE_VAMPIRE_COSTUME}
  from '../src/monster-character-cosplay-manifest.js';
@@ -103,6 +104,38 @@ for(const style of ['long','swept','bob','short']){
      'Disconnected scalp root '+style+' at strand '+i/10);
  }
  hi.dispose();low.dispose();
+}
+
+
+// A hidden donor helmet or model-side hair must not enlarge the measured
+// skull and re-introduce a bald cap / hovering wig above a real head.
+{
+ const donor=new THREE.Group(),head=new THREE.Bone();
+ head.name='Head';
+ const makeSkin=(radius,name,visible=true)=>{
+   const geo=new THREE.SphereGeometry(radius,18,12),n=geo.getAttribute('position').count;
+   const indices=new Uint16Array(n*4),weights=new Float32Array(n*4);
+   for(let i=0;i<n;i++)weights[i*4]=1;
+   geo.setAttribute('skinIndex',new THREE.Uint16BufferAttribute(indices,4));
+   geo.setAttribute('skinWeight',new THREE.Float32BufferAttribute(weights,4));
+   const mesh=new THREE.SkinnedMesh(geo,new THREE.MeshBasicMaterial());
+   mesh.name=name;mesh.visible=visible;donor.add(mesh);return mesh;
+ };
+ const skin=makeSkin(.122,'FaceBody');
+ skin.add(head);skin.bind(new THREE.Skeleton([head]));
+ const helmet=makeSkin(.275,'HiddenHairHelmet',false);
+ helmet.bind(new THREE.Skeleton([head]));
+ let scalp=measureCanonicalScalp(donor,head);
+ assert.ok(scalp.fitted&&scalp.samples>20,
+  'Real donor head vertices should be measured with bound skin weights');
+ assert.ok(scalp.radius[0]<.16,
+  'Invisible donor hair/helmet must not inflate fitted scalp');
+ helmet.visible=true;
+ scalp=measureCanonicalScalp(donor,head);
+ assert.ok(scalp.radius[0]<.16,
+  'Decorative helmet geometry is never a valid skull measurement source');
+ skin.geometry.dispose();skin.material.dispose();
+ helmet.geometry.dispose();helmet.material.dispose();
 }
 
 const profiles=[
