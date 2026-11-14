@@ -134,6 +134,23 @@ export function addFemaleSummonCostume({profile,frames,detail='high',attach,tube
    'velvet','seraph-cloth-back');
  }
  if(type==='dragonkin_female'){
+  // Hairless draconic cranium: an overlapping bony scalp plate replaces
+  // the human hairline. No wig, fringe or visible bare mannequin crown.
+  const crest=new THREE.SphereGeometry(.159,hi?22:10,hi?12:7,
+    0,Math.PI*2,0,Math.PI*.63);
+  add(frames.head,crest,'metal','dragonkin-scaled-hairless-crown',
+    [0,.067,.01]);
+  for(const side of [-1,1]){
+   // The whole visible eye is amber-yellow; no black pupils or a separate
+   // iris sphere. This follows Head, not the chest or camera.
+   const eye=new THREE.SphereGeometry(1,hi?14:8,hi?9:6);
+   eye.scale(.039,.026,.012);
+   add(frames.head,eye,'dragonEye','dragonkin-solid-golden-eye-'+side,
+    [side*.051,.032,-.166]);
+   line(frames.head,'metal','dragonkin-eye-ridge-'+side,[
+    [side*.015,.066,-.132],[side*.053,.081,-.155],
+    [side*.103,.068,-.129]],hi?.013:.016);
+  }
   for(const side of [-1,1]){
    orb(frames.head,'horn','dragon-horn-root-'+side,
     [side*.09,.12,.03],[.067,.034,.061]);
