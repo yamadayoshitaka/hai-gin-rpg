@@ -116,8 +116,10 @@ export function weldStudioNeckIntoFace({
    const interpolated=upperWorld.clone().lerp(skinBottom,smooth);
    // Sculpt throat and nape in profile; both actual boundary rings remain
    // intact, so the imported face and garment connection never drift.
-   const forward=(upperWorld.z-centerZ)>=0;
-   interpolated.z+=Math.sin(Math.PI*t)*(forward?-.0022:.0013);
+   const relativeDepth=(upperWorld.z-centerZ)/Math.max(.001,(maxZ-minZ)*.5);
+   const frontWeight=THREE.MathUtils.smoothstep(relativeDepth,-.85,.85);
+   const anatomicalSweep=THREE.MathUtils.lerp(.0013,-.0022,frontWeight);
+   interpolated.z+=Math.sin(Math.PI*t)*anatomicalSweep;
    const result=interpolated.applyMatrix4(fromWorld);
    vertexMap.set(row+':'+id,vertexCount+(row-1)*cols+k);
    for(const name of attrNames){
@@ -221,7 +223,13 @@ export function addStudioRaisedInnerCollar({wardrobeRoot,joined}={}){
   const cz=THREE.MathUtils.lerp(collar.z,joined.centerZ,t*.85);
   for(let i=0;i<count;i++){
    const angle=2*Math.PI*i/count;
-   const wave=.0018*t*Math.sin(angle*2);
+   // Lower the throat slightly and raise the rear/side neckline so the
+   // collar follows the jaw-to-nape contour, not a cut horizontal pipe.
+   // Both garment seam and original facial vertices remain in place.
+   const front=Math.max(0,Math.sin(angle));
+   const rear=Math.max(0,-Math.sin(angle));
+   const sides=Math.abs(Math.cos(angle));
+   const wave=.0018*t*Math.sin(angle*2)+t*t*(.002*sides+.003*rear-.0015*front);
    const radiusX=THREE.MathUtils.lerp(upperRadiusX,lowerRadiusX,shoulder);
    const radiusZ=THREE.MathUtils.lerp(upperRadiusZ,lowerRadiusZ,shoulder);
    const world=new THREE.Vector3(
