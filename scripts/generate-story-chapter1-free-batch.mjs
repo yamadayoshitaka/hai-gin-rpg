@@ -37,7 +37,7 @@ function legacyBelowNative(url,stageId){
  if(!fs.existsSync(p(rel)))return true;
  try{
   const [w,h]=webpPixels(fs.readFileSync(p(rel)));
-  const [mw,mh]=stageId==='c01-s02'?[768,320]:[1536,864];
+  const [mw,mh]=stageId==='c01-s02'?[768,320]:(stageId>='c01-s04'?[800,450]:[1536,864]);
   return w<mw||h<mh||w*9!==h*16;
  }catch{return true;}
 }
@@ -94,7 +94,7 @@ function status(s){
   if(raw.toString('ascii',0,4)!=='RIFF'||raw.toString('ascii',8,12)!=='WEBP'||
    meta.imageSha256!==hash(raw)||meta.shotKey!==s.key||meta.visuallyApproved!==false)
    return 'BLOCKED_BAD_PROVENANCE';
-  const minimum=s.stage.id==='c01-s02'?[768,320]:[1536,864];
+  const minimum=s.stage.id==='c01-s02'?[768,320]:(s.stage.id>='c01-s04'?[800,450]:[1536,864]);
   return Array.isArray(meta.nativePixels)&&meta.nativePixels[0]>=minimum[0]&&
    meta.nativePixels[1]>=minimum[1]?'REAL_DRAFT_UNAPPROVED':'LOW_NATIVE_RESOLUTION_REGENERATE';
  }catch{return 'BLOCKED_BAD_PROVENANCE';}
@@ -286,8 +286,8 @@ for(const pg of pages){
    try{conv=python('result',temp,p(s.img));}finally{fs.rmSync(temp,{force:true});}
    files.push(s.img);
    if(conv.inputPixels[0]!==conv.outputPixels[0]||conv.inputPixels[1]!==conv.outputPixels[1]||
-    conv.outputPixels[0]<(s.stage.id==='c01-s02'?768:1536)||
-    conv.outputPixels[1]<(s.stage.id==='c01-s02'?320:864))throw Error('Non-native image dimensions');
+    conv.outputPixels[0]<(s.stage.id==='c01-s02'?768:s.stage.id>='c01-s04'?800:1536)||
+    conv.outputPixels[1]<(s.stage.id==='c01-s02'?320:s.stage.id>='c01-s04'?450:864))throw Error('Non-native image dimensions');
    const image=fs.readFileSync(p(s.img));
    fs.writeFileSync(p(s.proof),JSON.stringify({
     kind:'CLOUDFLARE_REAL_WEBP_REVIEW_CANDIDATE_NOT_APPROVED',
