@@ -69,7 +69,7 @@ jobs:
         run: |
           node qa/story-chapter1-chatgpt-image-handoff.test.mjs
           node qa/story-panel-one-at-a-time.test.mjs
-          node qa/stage-manga-continuity.test.mjs
+          node --experimental-vm-modules qa/stage-manga-continuity.test.mjs
       - name: Commit reversible real live candidates, never declare human QA
         id: save
         shell: bash
