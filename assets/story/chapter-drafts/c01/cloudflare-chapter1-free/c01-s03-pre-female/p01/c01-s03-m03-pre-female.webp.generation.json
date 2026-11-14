@@ -1,0 +1,62 @@
+{
+  "kind": "CLOUDFLARE_REAL_WEBP_REVIEW_CANDIDATE_NOT_APPROVED",
+  "shotKey": "c01-s03|pre|female|c01-s03-m3",
+  "stageId": "c01-s03",
+  "edition": "pre",
+  "gender": "female",
+  "panelId": "c01-s03-m3",
+  "screenplayText": "勝つだけなら将軍を呼びます。あなたには、何のために勝つかを決めてほしい。",
+  "visibleActorIds": [
+    "lucia",
+    "garan",
+    "commander_female"
+  ],
+  "actualReferenceImagesAttached": [
+    {
+      "actorId": "lucia",
+      "source": "assets/story/characters/lucia/master.webp",
+      "originalSha256": "87005a46d3b4a23714a25f1f9b2d46fee9a1ce3c6b5af0be78f85a1f1fd2b411",
+      "submittedSha256": "91344ba790293c03406ca1804f0360d135b0015aa75cc5b68d7904fc72de1173",
+      "actualBytes": 322498,
+      "pixels": [
+        439,
+        480
+      ]
+    },
+    {
+      "actorId": "garan",
+      "source": "assets/story-cinema/cast/garan.webp",
+      "originalSha256": "aeb457957485f89244eb0b4f270b72e4bf0670341f2444ac7f43299222075a8b",
+      "submittedSha256": "30c17f9c9f97f0f7a5f66ce2e6f03a711d2ebfb697de0c6a8a84545f9c96cc3c",
+      "actualBytes": 262661,
+      "pixels": [
+        329,
+        480
+      ]
+    },
+    {
+      "actorId": "commander_female",
+      "source": "assets/story/characters/commander/female-master.webp",
+      "originalSha256": "757587a68647aa6637111110ef5c41d8f5827be0f10a204a7f7b14fde71182bf",
+      "submittedSha256": "7f8979767877bdd8148b133d56ce7e38c8fad2fe6436c1d327efcb66bf509a61",
+      "actualBytes": 395204,
+      "pixels": [
+        384,
+        480
+      ]
+    }
+  ],
+  "imageSha256": "850b3d512b93e267a1e9170d4288195dd06dfceeffb283ff0dbbe1e55227fe59",
+  "nativePixels": [
+    1536,
+    864
+  ],
+  "imageBytes": 333184,
+  "model": "@cf/black-forest-labs/flux-2-klein-4b",
+  "seed": 1414727053,
+  "promptSha256": "6d06df78c392382e48c5c6a7e5be9c16cc190448ddbae9416c4654ea43ac51cb",
+  "estimatedNeurons": 172.41,
+  "visuallyApproved": false,
+  "formallyRegistered": false,
+  "gameDeployed": false
+}
