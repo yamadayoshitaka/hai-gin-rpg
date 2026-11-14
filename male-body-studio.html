@@ -393,6 +393,10 @@ window.__maleBodyPreview={
  getWardrobe:()=>wardrobe?.getState()||null,
  getBattleCostume:()=>battleCostume?.getState()||null,
  // For true WebGL front/profile/diagonal regression capture.
+ setQAZoom:(next)=>{
+  if(!['full','portrait'].includes(next))throw Error('Invalid QA zoom');
+  zoomMode=next;fitCamera();return zoomMode;
+ },
  setQAView:(next)=>{
   if(!['front','side','left','threeQuarterLeft','threeQuarterRight'].includes(next))throw Error('Invalid QA view');
   view=next;fitCamera();return view;
