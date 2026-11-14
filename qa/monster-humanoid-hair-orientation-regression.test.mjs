@@ -64,7 +64,7 @@ const profiles=[
  ...Object.values(HUMANOID_MONSTER_COSTUMES),
  FEMALE_VAMPIRE_COSTUME,...Object.values(FEMALE_SUMMON_FORMS)
 ];
-const important=['m044','m034','seraph_guardian','forest_archer','dragon_lord'];
+const important=['m044','m034','seraph_guardian','forest_archer'];
 for(const p of profiles){
  const donor=new THREE.Group(),headBone=new THREE.Bone();
  headBone.name='Head';donor.add(headBone);
@@ -96,6 +96,8 @@ for(const p of profiles){
 }
 assert.equal(HUMANOID_MONSTER_COSTUMES.m044.hair,'long');
 assert.equal(FEMALE_VAMPIRE_COSTUME.hair,'long');
+assert.equal(FEMALE_SUMMON_FORMS.dragon_lord.hair,'bald',
+ 'Dragon king crown uses dragon plates and yellow eyes, not a misplaced wig');
 
 const groups=()=>({head:new THREE.Group(),chest:new THREE.Group(),
  pelvis:new THREE.Group(),arms:[new THREE.Group(),new THREE.Group()],
