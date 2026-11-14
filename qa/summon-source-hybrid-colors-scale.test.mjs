@@ -3,6 +3,10 @@ import {readFileSync} from 'node:fs';
 import {MONSTER_BY_ID} from '../src/monster-catalog.js';
 import {SUMMON_WOLF_HYBRID,blendSummonedWolfBlueprint}
  from '../src/creature-wolf-hybrid.js';
+import {DRAGON_SOURCE_HYBRIDS,blendSummonDragonBlueprint}
+ from '../src/creature-dragon-hybrids.js';
+import {CREATURE_VISUAL_SPECS,buildCombatObjectGeometry}
+ from '../src/combat-creature-geometry.js';
 import {FEMALE_SUMMON_FORMS,MALE_DRAGON_LORD_FORM}
  from '../src/female-summon-forms.js';
 import {creatureSize,SUMMON_WORLD_SCALE,LARGE_SUMMON_IDS,
@@ -29,6 +33,33 @@ assert.deepEqual(JSON.stringify(original),input);
 assert(Object.isFrozen(hybrid));
 assert.throws(()=>blendSummonedWolfBlueprint({anatomy:'dragon'}));
 
+// All three dragon models retain their own moving wing, jaw, tail and leg
+// geometry, and each draws quality features from a DISTINCT existing species.
+const expectedDonors={wyvern:'m017',dragon:'m018',elder_dragon:'m020'};
+const mobileBudgets={wyvern:175000,dragon:175000,elder_dragon:205000};
+for(const [type,donor] of Object.entries(expectedDonors)){
+ const original=CREATURE_VISUAL_SPECS[type];
+ const mix=blendSummonDragonBlueprint(type,original);
+ assert.equal(DRAGON_SOURCE_HYBRIDS[type].donor,donor);
+ assert.equal(mix.hybrid.sourceId,donor);
+ assert.ok(mix.hybrid.weight>0&&mix.hybrid.weight<.5);
+ assert.ok(mix.width>original.width&&mix.width<original.width*1.02);
+ assert.notEqual(mix.highlight,original.highlight);
+ for(const part of ['originalWingRig','originalLegRig','originalTailRig'])
+  assert.equal(mix.hybrid[part],true);
+ assert.ok(Object.isFrozen(mix));
+ const high=buildCombatObjectGeometry(type,{detail:'high'});
+ const low=buildCombatObjectGeometry(type,{detail:'low'});
+ const vertices=Object.values(high).reduce((n,g)=>n+g.getAttribute('position').count,0);
+ assert.ok(vertices<mobileBudgets[type],type+' exceeded mobile model budget: '+vertices);
+ for(const part of ['core','jaw','wingL','wingR','tail']){
+  assert.ok(high[part]?.getAttribute('position')?.count>60,
+   type+' source blend lost animated '+part);
+ }
+ assert.ok(Object.values(low).reduce((n,g)=>n+g.getAttribute('position').count,0)
+  <vertices*.70,type+' lacks low-detail LOD');
+ for(const geo of Object.values(high).concat(Object.values(low)))geo.dispose();
+}
 assert.equal(SUMMON_WORLD_SCALE,10);
 assert.equal(LARGE_SUMMON_IDS.length,7);
 for(const id of LARGE_SUMMON_IDS)assert.ok(creatureSize(id)>=10,
