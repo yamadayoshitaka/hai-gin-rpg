@@ -9,7 +9,7 @@ import * as THREE from 'three';
 const clamp=(v,a=0,b=1)=>Math.max(a,Math.min(b,Number(v)||0));
 const smooth=t=>{const x=clamp(t);return x*x*(3-2*x);};
 /** Signed intensities are blended with ongoing blink and speech.
- * The ten presets change actual 3D skin and part geometry, not labels. */
+ * Every expression preset changes actual 3D skin and part geometry, not labels. */
 export const FACE_EXPRESSIONS=Object.freeze({
  neutral:Object.freeze({label:'通常',brow:0,tilt:0,squint:0,smile:0,open:0,cheek:0}),
  softSmile:Object.freeze({label:'微笑み',brow:.07,tilt:0,squint:.10,smile:.35,open:0,cheek:.24}),
@@ -20,7 +20,19 @@ export const FACE_EXPRESSIONS=Object.freeze({
  sad:Object.freeze({label:'悲しい',brow:-.06,tilt:.20,squint:.19,smile:-.45,open:.05,cheek:-.13}),
  surprised:Object.freeze({label:'驚き',brow:.36,tilt:.04,squint:-.16,smile:0,open:.38,cheek:0}),
  troubled:Object.freeze({label:'困る',brow:.12,tilt:.23,squint:.11,smile:-.19,open:.04,cheek:0}),
- serious:Object.freeze({label:'真剣',brow:-.12,tilt:-.08,squint:.13,smile:0,open:0,cheek:-.03})
+ serious:Object.freeze({label:'真剣',brow:-.12,tilt:-.08,squint:.13,smile:0,open:0,cheek:-.03}),
+ determined:Object.freeze({label:'決意',brow:-.19,tilt:-.10,squint:.22,smile:.03,open:0,cheek:.09}),
+ embarrassed:Object.freeze({label:'恥ずかしい',brow:.14,tilt:.12,squint:.20,smile:.20,open:.04,cheek:.61}),
+ tearful:Object.freeze({label:'涙目',brow:.15,tilt:.29,squint:.18,smile:-.42,open:.09,cheek:-.10}),
+ sleepy:Object.freeze({label:'眠い',brow:-.05,tilt:0,squint:.58,smile:-.04,open:0,cheek:-.05}),
+ skeptical:Object.freeze({label:'疑い',brow:.17,tilt:-.16,squint:.32,smile:-.12,open:0,cheek:-.08}),
+ smug:Object.freeze({label:'不敵な笑み',brow:-.08,tilt:-.12,squint:.26,smile:.47,open:0,cheek:.23}),
+ focused:Object.freeze({label:'集中',brow:-.13,tilt:-.06,squint:.26,smile:0,open:0,cheek:0}),
+ curious:Object.freeze({label:'好奇心',brow:.18,tilt:.06,squint:-.04,smile:.17,open:.10,cheek:.08}),
+ startled:Object.freeze({label:'動揺',brow:.28,tilt:.17,squint:-.08,smile:-.20,open:.33,cheek:-.07}),
+ afraid:Object.freeze({label:'恐怖',brow:.31,tilt:.25,squint:-.07,smile:-.41,open:.29,cheek:-.16}),
+ relaxed:Object.freeze({label:'安らぎ',brow:.05,tilt:.01,squint:.23,smile:.24,open:0,cheek:.12}),
+ pout:Object.freeze({label:'不満',brow:-.10,tilt:.12,squint:.16,smile:-.31,open:0,cheek:-.06})
 });
 export function blinkEnvelope(seconds=0){
  // Deliberate, fast human-like closing/opening, once every ~4.3 seconds.
