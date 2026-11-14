@@ -220,9 +220,30 @@ export function addFemaleSummonCostume({profile,frames,detail='high',attach,tube
      [side*(.12+i*.037),.22-i*.10,.04],
      [.05,0,side*.55]);
   }
-  // A green organic leaf mantle instead of the angel's ceremonial cloth.
+  // The previously dark velvet-backed mantle must now be visibly green.
   add(frames.chest,createGothicMantle({detail,width:.30,drop:.87,back:.26}),
-   'leaf','forest-woven-cape');
+   'forestDeep','forest-woven-cape');
+
+  // The imported ranger robe was almost entirely BLACK in the mobile
+  // screenshot. Add real 360-degree leaf-layer surfaces OUTSIDE its skirt,
+  // following the existing pelvic bone (never merging a foreign rig).
+  // Bright fern tips and mint edges make the forest class recognizable
+  // from front, back, and side even in shadow.
+  for(let tier=0;tier<2;tier++){
+   const count=detail==='low'?10:18;
+   for(let i=0;i<count;i++){
+    const phi=Math.PI*2*(i+(tier?0.5:0))/count;
+    const size=(tier===0?.44:.51)+.035*Math.sin(i*2.1);
+    const radius=tier===0?.27:.42;
+    const mesh=add(frames.pelvis,createFemaleSummonLeaf({detail,size}),
+     i%4===0?'forestMint':i%3===0?'forestDeep':'leaf',
+     'emerald-outer-skirt-leaf-'+tier+'-'+i,
+     [Math.sin(phi)*radius,.095-tier*.28,Math.cos(phi)*radius],
+     [Math.PI,phi,Math.sin(phi)*.12]);
+    mesh.userData.forestCanopyOuterLayer=true;
+    mesh.userData.forestCanopyTier=tier;
+   }
+  }
  }
  if(type==='seraph_female'){
   // Retain the ORIGINAL Guardian's sculpted 3-row wing geometry, including
