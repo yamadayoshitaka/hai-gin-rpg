@@ -72,7 +72,17 @@ const {launchBattleViaThreeStepWizard}=require('./opening-three-stage.cjs');
     assert.equal(result.startup?.dressed,24,'every detailed rig dressed before animation begins');
     assert.ok(result.startup?.buildingBatchStats?.sourceMeshes>result.startup?.buildingBatchStats?.batches,
       'repeated town walls share GPU draw batches');
-    assert.ok(result.startup?.pixelRatio>=.8,'the character viewport is no longer half resolution');
+    // SwiftShader can lower 3D resolution to the explicit adaptive floor
+    // during the GPU warm-up; do not mistake the supported 72% floor for a
+    // regression to the old fixed half-resolution mode.
+    const quality=result.startup?.adaptiveQuality;
+    assert.ok(quality&&quality.min>=.70&&quality.max>=.90,
+      'adaptive resolution must retain the documented mobile quality range');
+    assert.ok(result.startup?.pixelRatio>=quality.min-.015,
+      'battle viewport fell below its mobile quality floor: '+
+      JSON.stringify({ratio:result.startup?.pixelRatio,quality}));
+    assert.ok(result.startup?.bufferWidth>=430*(quality.min-.02),
+      'viewport unexpectedly collapsed towards the retired 50% resolution');
     assert.equal(await page.locator('#battleLoading').isVisible(),false,'loading overlay clears only after warmup');
     assert.equal(result.stats?.bodyAssemblyAudit.length,10,'all 10 job rigs are baked');
     assert.ok(result.stats.bodyDrawLayers>=10,'each crowd profession has explicit full-human GPU draw layers');
