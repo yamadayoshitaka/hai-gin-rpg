@@ -2187,7 +2187,8 @@ test('v41 real female anatomical legs remain after studio armor coverage across 
  const coverage=readFileSync('src/character-system/garment-coverage-runtime.js','utf8');
  const bridge=readFileSync('src/heroine-battle-costume-bridge.js','utf8');
  assert.match(source,/studioPreserveLegAnatomy=false/);
- assert.match(source,/preserveRegions:studioPreserveLegAnatomy\?\['thigh','calf','foot'\]:\[\]/);
+ assert.match(source,/studioCoveredSkinPolicy/);
+ assert.match(source,/preserveRegions:studioSkinPolicy\.preserveRegions/);
  assert.match(coverage,/const preserved=new Set\(preserveRegions\)/);
  assert.match(bridge,/studioPreserveLegAnatomy:true/);
  const actor=new THREE.Group();
