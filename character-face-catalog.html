@@ -112,7 +112,19 @@ function renderDetails(){
  const previewUrl=new URL(url,location.href);
  previewUrl.searchParams.set('preview','1');
  const target=previewUrl.href;
- if(frame.src!==target)frame.src=target;
+ const model=frame.contentWindow?.__faceMasterQA?.();
+ if(model?.loaded){
+  // Keep the existing 3D GPU/GLB context alive. Explicit state messages
+  // avoid repeatedly recreating all strands, skeletons and textures.
+  const message={type:'hai-gin-v64-preview-select',
+   gender:selected.gender==='male'?'male':'female',
+   faceIndex:tab==='faces'?selected.facePresetIndex:null,
+   character:tab==='characters'?selected.id:'',
+   hair:tab==='hair'?selected.id:'',
+   expression:tab==='expressions'?selected.id:'neutral',
+   view};
+  frame.contentWindow.postMessage(message,location.origin);
+ }else if(frame.src!==target)frame.src=target;
 }
 function render(){
  const q=$('search').value.trim().toLowerCase(),sex=$('gender').value;
