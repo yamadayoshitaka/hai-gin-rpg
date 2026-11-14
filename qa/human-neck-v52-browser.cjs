@@ -2,7 +2,7 @@
 /** Real mobile Chromium regression: jaw must remain visible above the cuirass. */
 const {chromium}=require('playwright');
 const fs=require('node:fs');
-const out='qa-screenshots/human-neck-v58';
+const out='qa-screenshots/human-neck-v59';
 fs.mkdirSync(out,{recursive:true});
 (async()=>{
  // Each gender owns its own Chromium process. Reusing a page for both large
@@ -21,7 +21,7 @@ fs.mkdirSync(out,{recursive:true});
    page.on('pageerror',error=>errors.push(error.message));
    // Committed navigation is enough; readiness is checked against live 3D
    // outfit + clearance metadata, not page-loaded timing.
-   await page.goto('http://127.0.0.1:8766/'+path+'?v=58',
+   await page.goto('http://127.0.0.1:8766/'+path+'?v=59',
     {waitUntil:'commit',timeout:120000});
    await page.waitForFunction(key=>{
     const state=window[key]?.();
@@ -37,8 +37,13 @@ fs.mkdirSync(out,{recursive:true});
         Math.abs(alignment.gapMeters+alignment.anatomicalInset)<.006))
     throw Error(gender+' source head improperly seated relative to torso: '+JSON.stringify(alignment));
    const neckShape=state.v36RealBattleCostume.proportions.neckContinuity;
-   if(!(neckShape?.contourNeckApplied&&neckShape.actualCutEdgeSegments>=12&&
-        neckShape.originalBluePipeHidden&&neckShape.correctSkinNeckColor))
+   if(!(neckShape?.unifiedSkinNeckApplied&&
+        neckShape.unifiedSkinNeckEdges>=12&&
+        neckShape.unifiedSkinNeckTriangles>=30&&
+        neckShape.reusedFaceMaterial&&neckShape.separateNeckGeometryHidden&&
+        neckShape.actualCollarSource&&
+        neckShape.unifiedNeckBottomHeight<neckShape.actualCollarHeight))
+    throw Error(gender+' one-piece neck does not reach the clothing collar: '+JSON.stringify(neckShape));
     throw Error(gender+' still using detached fabricated neck: '+JSON.stringify(neckShape));
    if(!(neckShape?.applied&&neckShape.originalFaceNormalsPreserved&&
         neckShape.matchedFaceMaterial&&neckShape.transparentNeckEdge&&
