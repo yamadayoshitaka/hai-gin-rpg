@@ -759,7 +759,17 @@ export function hideBattleDonorFace(model){
    sample.copy(point).applyMatrix4(mesh.matrixWorld);
    head.worldToLocal(sample);
    const isHead=headWeight>=.10&&sample.y>trimY;
-   const isNeck=(headWeight>=.10||neckWeight>=.14)&&sample.y>neckTrimY;
+   // Adjacent donor polygons at the cervical base are weighted to spine /
+   // clavicle rather than 'neck', so v58/v59 left orange triangular shards
+   // piercing the neck beside the hair. A narrow geometric envelope covers
+   // only the neck shaft, never shoulders, fingers or the lower chest.
+   const headCenter=region.bounds.getCenter(new THREE.Vector3());
+   const centralCervical=sample.y>neckTrimY&&
+     sample.y<trimY+size.y*.08&&
+     Math.abs(sample.x-headCenter.x)<size.x*.365&&
+     Math.abs(sample.z-headCenter.z)<size.z*.385;
+   const isNeck=(headWeight>=.10||neckWeight>=.14||centralCervical)&&
+     sample.y>neckTrimY;
    const reason=isHead?1:isNeck?2:0;
    pointCache.set(i,reason);return reason;
   };
