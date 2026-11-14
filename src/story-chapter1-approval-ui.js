@@ -341,13 +341,16 @@ function update(){
  document.querySelector('.progress').setAttribute('aria-valuenow',pc);
  $('progressLabel').textContent='このページ '+ready.length+'/'+current.shots.length+'コマを判定';
  $('draftCount').textContent='現在のコマ '+(activeShotIndex+1)+' / '+current.shots.length+'（仮反映は自動）';
- const sendable=ready.some(s=>['approve','revise'].includes(saved[s.key].decision)&&states.get(s.key)?.available);
- $('submit').disabled=!sendable||(approved.length>0&&!$('visualConfirm').checked);
+ // Provisional publication is automatic for real verified frames.
+ // Only an explicit "return for revision" needs to be sent to GitHub.
+ const needsReturn=ready.some(s=>saved[s.key].decision==='revise'&&
+  states.get(s.key)?.available);
+ $('submit').disabled=!needsReturn;
 }
 function send(){
  const votes=current.shots.map(s=>{
   const state=states.get(s.key),d=saved[s.key];
-  if(!state?.available||!d||d.hash!==state.hash||!['approve','revise'].includes(d.decision))return null;
+  if(!state?.available||!d||d.hash!==state.hash||d.decision!=='revise')return null;
   return {key:s.key,kind:state.kind,decision:d.decision,
    imageSha256:state.hash,feedback:String(d.feedback||'').trim()};
  }).filter(Boolean);
@@ -355,14 +358,12 @@ function send(){
  if(votes.some(v=>v.decision==='revise'&&!v.feedback)){
   $('info').textContent='修正コマには直したい点を入力してください';return;
  }
- if(votes.some(v=>v.decision==='approve')&&!$('visualConfirm').checked){
-  $('info').textContent='承認したコマの目視確認チェックが必要です';return;
- }
+
  const payload={type:'HAI_GIN_CHAPTER1_MANGA_REVIEW_V1',chapter:1,
   pageTask:current.number,confirmVisualReview:$('visualConfirm').checked,votes};
- const title='[漫画承認] 第一章 p'+current.number+' '+current.stageId+' '+current.gender;
- const body='灰銀のレゾナンス 漫画承認室の目視審査記録。\n'+
-  'このIssueを送信すると画像の同一性をGitHub Actionsが照合します。\n\n'+
+ const title='[漫画差し戻し] 第一章 p'+current.number+' '+current.stageId+' '+current.gender;
+ const body='灰銀のレゾナンス 漫画コマの差し戻し申請。\n'+
+  'このIssueを送信すると、現在の仮登録画像のSHAを照合して元のゲーム表示へ戻します。\n\n'+
   'HAI_GIN_CHAPTER1_REVIEW_JSON_START\n'+JSON.stringify(payload)+'\nHAI_GIN_CHAPTER1_REVIEW_JSON_END\n';
  const href='https://github.com/'+REVIEW_REPO+'/issues/new?'+new URLSearchParams({title,body});
  $('info').textContent='GitHubへ移動します。「Submit new issue」を押すと記録が確定します。';
