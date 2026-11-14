@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "kind": "CHATGPT_IMAGES_CANDIDATE_NOT_REGISTERED",
+  "shotKey": "c01-s04|pre|female|c01-s04-m1",
+  "scriptText": "処刑された鐘守の紋章が古い遺構に残るとの噂が立つ。",
+  "candidatePath": "assets/story/chapter1-chatgpt-inbox/c01-s04__pre__female__c01-s04-m1.webp",
+  "source": "ChatGPT Images in current conversation",
+  "generationId": "44a9e115-bbb1-4cf7-a6c1-292de227f0d2",
+  "nativePixels": [
+    1664,
+    936
+  ],
+  "sourcePixels": [
+    1672,
+    941
+  ],
+  "unscaledCenterCrop": [
+    4,
+    2,
+    1668,
+    938
+  ],
+  "sha256": "f99069f7a8e49e5577ba8e03afad8dc1853a265859065b42c9be7633b28286ad",
+  "upscaled": false,
+  "description": "Blonde armored female commander in ruined forest, bellkeeper emblem visible.",
+  "review": "P0_REVIEW_REQUIRED: this canonical shot carries Lucia (silver-haired regent); blonde protagonist is a different person, exact cast not verified. Do not register automatically.",
+  "provisionalRegistered": false,
+  "formallyApproved": false,
+  "ownerAuthorizedForP0": false,
+  "quality": {
+    "noTextOrUI": true,
+    "oneStandaloneFrame": true,
+    "cinematic3D": true,
+    "genderAndOutcomeCorrect": "NEEDS_CAST_REVIEW",
+    "exactCast": false,
+    "referenceMasterImageAttached": false
+  },
+  "nextAction": "Regenerate or correct character identity against real Lucia master; only then add exact matching .review.json for safe reversible game import. Do not assign to another canonical shot or gender."
+}
