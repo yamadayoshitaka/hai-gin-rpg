@@ -81,6 +81,7 @@ export function buildChapter1ImagePrompt({shot,page,edit='',bible=null,assignmen
   manualManifest?'画風ID：'+(manualManifest.visualStyleLock?.id||'未指定'):'画風ID：STAGE1_HI_FIDELITY_3D_JRPG_ANIME_REALISM_V1',
   manualManifest?'画風定義：'+(manualManifest.visualStyleLock?.look||manualManifest.renderRule):'画風は第1ステージの3D JRPG基準に固定',
   manualManifest?'画風禁止：'+(manualManifest.visualStyleLock?.forbidStyles||[]).join('、'):'2Dセル画・漫画ページ・コマ割りを禁止',
+  manualManifest?.generatorInputContract?.instruction||'',
   '画像生成の単位は今指定された1コマのみ。5コマ分の設定は生成要求5回に分け、5コマ1枚のコラージュを描かない。',
   '【生成・品質の絶対条件】',
   '・【P0画風固定】第一章ステージ1原画と同じハイエンド3D JRPGシネマティックCG（アニメ造形×セミリアル）。立体的な顔・髪・瞳、自然な肌の陰影、金属鎧・布の実在感、奥行きのある照明、精密な背景を全コマで維持する。',
