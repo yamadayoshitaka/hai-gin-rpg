@@ -308,7 +308,11 @@ export function fitStudioNeckContinuity({faceRoot,faceMesh,wardrobeRoot,garmentR
   // The imported male nape retains more angular shoulder-bust than the
   // female portrait. Trim only the donor's low rear bust in disposable
   // preview geometry; preserve jaw/lips/eyes and the original source GLB.
-  const napeRise=/^male_/i.test(bodies[0].name)? .018 : .012;
+  // A skin-first donor is named SuperHero_Male/SuperHero_Female rather
+  // than Male_Ranger_Body. Detect both before choosing the rear neckline.
+  const maleSkin=bodies.some(body=>
+   /^(?:male_(?:ranger|peasant)_body|superhero_male)$/i.test(body.name));
+  const napeRise=maleSkin?.018:.012;
   cut=clipStudioFaceBustPreservingSurface(faceMesh,safeCutY,{
    anatomicalCurve:true,backRise:napeRise});
   if(cut.keptTriangles<100||cut.removedTriangles<3){
