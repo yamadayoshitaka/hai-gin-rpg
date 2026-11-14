@@ -2,8 +2,18 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import {measureStudioBareTorsoNeck} from '../src/studio-unified-neck-v59.js';
-import {alignStudioHeadToSkinnedTorso,fitStudioNeckContinuity}
+import {alignStudioHeadToSkinnedTorso,fitStudioNeckContinuity,studioNapeRiseForBodies}
  from '../src/heroine-battle-costume-bridge.js';
+
+test('v62: sex from naked SuperHero body is identical to Ranger donor sex',()=>{
+ assert.equal(studioNapeRiseForBodies([{name:'SuperHero_Male'}]),.018);
+ assert.equal(studioNapeRiseForBodies([{name:'Male_Ranger_Body'}]),.018);
+ assert.equal(studioNapeRiseForBodies([{name:'Male_Peasant_Body'}]),.018);
+ assert.equal(studioNapeRiseForBodies([{name:'SuperHero_Female'}]),.012);
+ assert.equal(studioNapeRiseForBodies([{name:'Female_Ranger_Body'}]),.012);
+ assert.equal(studioNapeRiseForBodies([{name:'Female_Peasant_Body'}]),.012);
+ assert.equal(studioNapeRiseForBodies([{name:'SuperHero_Male'},{name:'Male_Ranger_Body'}]),.018);
+});
 
 // Regression contract: anatomy is fitted to genuine skinned torso vertices
 // BEFORE any clothing. The real skin and donor face source stay untouched.
