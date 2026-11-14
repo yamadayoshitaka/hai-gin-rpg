@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict';
-import {readFileSync} from 'node:fs';
+import {readFileSync,existsSync} from 'node:fs';
+import {createHash} from 'node:crypto';
+import {CHAPTER1_PROVISIONAL_LIVE} from '../src/story-chapter1-provisional-live.js';
 import {comicForStage} from '../src/story-chapter-comic.js';
 import {registeredStoryPanelAsset,storySheetCrop} from '../src/story-panel-registered-art.js';
 const read=p=>readFileSync(new URL('../'+p,import.meta.url),'utf8');
@@ -57,4 +59,21 @@ for(const [stage,gender,outcome,expected] of [
  }
 }
 assert(found>=45,'Legacy 45 registered images must remain available');
+const liveEntries=Object.entries(CHAPTER1_PROVISIONAL_LIVE);
+assert(liveEntries.length>=79,'Do not drop existing 79 provisional game images');
+const liveHashes=new Set();
+for(const [key,rec] of liveEntries){
+ assert.equal(rec.status,'PROVISIONAL_OWNER_AUTHORIZED_PENDING_P0',
+  'Owner has authorized provisional display but not P0 final quality approval');
+ assert(rec.asset.startsWith('./assets/story/chapter1-provisional-live/'));
+ assert(rec.asset.includes(key.replaceAll('|','__')),'Provisional scene/gender/outcome path mismatch');
+ assert(/^[a-f0-9]{64}$/.test(rec.sha256),'Unverified hash '+key);
+ assert(!liveHashes.has(rec.sha256),'Duplicate game image used across scenes');
+ liveHashes.add(rec.sha256);
+ const local=rec.asset.slice(2);
+ assert(existsSync(new URL('../'+local,import.meta.url)),'Missing actual game WebP: '+key);
+ const digest=createHash('sha256').update(readFileSync(new URL('../'+local,import.meta.url))).digest('hex');
+ assert.equal(digest,rec.sha256,'Game art bytes differ from provisional proof '+key);
+}
 console.log('PASS: one manga cell per panel; legacy 45 preserved, provisional chapter1 image URLs unique across genders/outcomes; visible='+found);
+console.log('PASS: '+liveEntries.length+' owner-authorized provisional images physically present, SHA-256 verified, reversible; final P0 QA remains pending');
