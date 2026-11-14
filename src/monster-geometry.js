@@ -6,6 +6,7 @@
 import {createSculpture,disposeMonsterSculpture} from './monster-shape-kit.js?v=4.5.03';
 import {attachMonsterFaceControls} from './facial-feature-runtime.js?v=1';
 import {generateCanineFurGuides} from './canine-fur-guides.js?v=4.4.92';
+import {addPantherArticulation} from './monster-panther-sculpt.js';
 import {monsterEvidenceFor} from './monster-anatomy-reference.js';
 import {MORTAL_HEAD_RINGS,MORTAL_TORSO_RINGS} from './monster-realistic-loft.js';
 import {sculptBloodMoonVampire,sculptVampireHand} from './monster-vampire-sculpt.js';
@@ -461,7 +462,7 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
        g.rootedSpike(toe,'bone','skin',[x,-.054,.192],
          [x,-.090,.262],.021,{name:'rooted-claw-m004-'+digit});
      }
-   }else if(s.id!=='m003'&&s.id!=='m005'){
+   }else if(s.id!=='m003'&&s.id!=='m005'&&s.id!=='m006'){
      // Fenrir owns a separate articulated toe assembly below. Rendering
      // the legacy fixed paw as well made duplicate feet and floating claws.
      feet(g,distal,0,0,0,true,reptile?.75:1);
@@ -620,6 +621,7 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
      g.spike(torso,'bone',[side*.46,2.23,1.0],[side*.55,2.53,.78],.07);
    }
  }
+ if(s.id==='m006')addPantherArticulation(g,{head,torso});
  g.root.scale.setScalar(k*.86);
 }
 function bird(g,s){
