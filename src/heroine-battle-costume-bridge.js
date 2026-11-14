@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import {buildStudioContourNeck} from './studio-contour-neck-v58.js';
+import {weldStudioNeckIntoFace} from './studio-unified-neck-v59.js';
 import {clipStudioFaceBustPreservingSurface,restoreStudioFaceSurfaceQuality,
  sampleStudioFacePigment,smoothStudioFaceNormals,
  studioAnatomicalSeamY,taperStudioLowerBustBelowChin} from './studio-face-quality-v56.js?v=57';
@@ -247,7 +248,7 @@ export function fitStudioNeckContinuity({faceRoot,faceMesh,wardrobeRoot}={}){
     !faceMesh.geometry?.getAttribute('position')||
     !wardrobeRoot?.traverse)return {applied:false,reason:'head-or-wardrobe-missing'};
  let cached=STUDIO_FACE_NECK_CACHE.get(faceMesh);
- if(!cached||faceMesh.geometry!==cached.clipped){
+ if(!cached||(faceMesh.geometry!==cached.clipped&&faceMesh.geometry!==cached.stitched)){
   if(cached?.clipped)cached.clipped.dispose();
   cached={source:faceMesh.geometry,clipped:null};
   STUDIO_FACE_NECK_CACHE.set(faceMesh,cached);
@@ -419,6 +420,23 @@ export function fitStudioNeckContinuity({faceRoot,faceMesh,wardrobeRoot}={}){
   torsoCenterX:torsoX,torsoCenterZ:torsoZ,facePigment
  });
  bridge.visible=!contourNeck.applied;
+ // Real skin is stitched into the SAME indexed face geometry and rendered
+ // with the SAME material. Unlike v58's separate cylinder, it reaches the
+ // actual garment neckline, not the uppermost torso vertex.
+ const united=weldStudioNeckIntoFace({
+  faceMesh,cut,wardrobeRoot,torsoTopY:torsoTop,
+  torsoCenterX:torsoX,torsoCenterZ:torsoZ
+ });
+ if(united.applied){
+  if(cached.stitched&&cached.stitched!==united.geometry)
+   cached.stitched.dispose();
+  cached.stitched=united.geometry;
+  faceMesh.geometry=united.geometry;
+  // v54 and v58 meshes remain geometry fallbacks only. Neither may be
+  // rendered on top of the unified facial skin surface.
+  bridge.visible=false;
+  if(contourNeck.mesh)contourNeck.mesh.visible=false;
+ }
  // The standalone portrait page used an older broad, flat neck seal plus
  // LEFT/RIGHT shoulder cut caps. Those parts remain children of this face
  // when it enters the armor preview. Keeping them visible alongside the
@@ -436,6 +454,17 @@ export function fitStudioNeckContinuity({faceRoot,faceMesh,wardrobeRoot}={}){
  return {applied:true,legacyNeckPartsHidden,legacyNeckPartsAlreadyHidden,
   contourNeckApplied:!!contourNeck.applied,
   contourNeckReason:contourNeck.reason||null,
+  unifiedSkinNeckApplied:!!united.applied,
+  unifiedSkinNeckReason:united.reason||null,
+  unifiedSkinNeckTriangles:united.addedTriangles||0,
+  unifiedSkinNeckEdges:united.boundaryEdges||0,
+  reusedFaceMaterial:!!united.faceSkinMaterialReused,
+  actualCollarSource:united.collarSource||null,
+  actualCollarHeight:united.collarY??null,
+  unifiedNeckBottomHeight:united.neckBottomY??null,
+  separateNeckGeometryHidden:!!united.applied&&
+   !bridge.visible&&(!contourNeck.mesh||!contourNeck.mesh.visible),
+  originalFaceGeometryImmutable:!!united.sourceVertexPositionsUnchanged,
   actualCutEdgeSegments:contourNeck.segments||0,
   seamSampleFallbacks:contourNeck.fallbackCount||0,
   correctSkinNeckColor:contourNeck.skinColored||false,
@@ -490,7 +519,10 @@ export function fitStudioCuirassBelowChin({faceMesh,wardrobeRoot,marginRatio=.03
  if(!chest.length)return {applied:false,reason:'no-chest-armor',chestPieces:0};
  faceMesh.updateWorldMatrix(true,false);
  wardrobeRoot.updateWorldMatrix(true,true);
- const faceGeometry=faceMesh.geometry;
+ // The v59 unified mesh extends into the shirt, so use the cached actual
+ // HEAD sculpt (before added neck rings) when locating the mandible. Using
+ // the new neckline as a chin marker would shrink the cuirass incorrectly.
+ const faceGeometry=STUDIO_FACE_NECK_CACHE.get(faceMesh)?.clipped||faceMesh.geometry;
  if(!faceGeometry.boundingBox)faceGeometry.computeBoundingBox();
  const faceBounds=faceGeometry.boundingBox.clone().applyMatrix4(faceMesh.matrixWorld);
  const faceHeight=faceBounds.getSize(new THREE.Vector3()).y;
@@ -675,7 +707,14 @@ export function hideBattleDonorFace(model){
  // Include the chin / under-lip perimeter. The previous +18% cut left
  // a brown jaw and moustache-shaped strip over the new heroine face.
  const trimY=region.bounds.min.y-size.y*.025;
- let removedTriangles=0,retainedTriangles=0,hiddenEyeMeshes=0,changedMeshes=0;
+ // The original skinned donor FACE and NECK are one orange-tinted surface.
+ // v58 removed the face but deliberately retained a thick naked neck stump,
+ // which protruded above the blue uniform. Trimming just head vertices does
+ // not remove neck-bone triangles. Remove the cervical region locally, but
+ // preserve collarbone / torso bones and never touch hands or legs.
+ const neckTrimY=region.bounds.min.y-size.y*.38;
+ let removedTriangles=0,removedNeckTriangles=0,retainedTriangles=0,
+   hiddenEyeMeshes=0,changedMeshes=0;
  const point=new THREE.Vector3(),sample=new THREE.Vector3();
  model.traverse(mesh=>{
   if(!mesh.isSkinnedMesh)return;
@@ -686,28 +725,42 @@ export function hideBattleDonorFace(model){
    joints=geometry?.getAttribute('skinIndex'),weights=geometry?.getAttribute('skinWeight');
   const index=mesh.skeleton?.bones.findIndex(b=>b===head);
   if(!position||!joints||!weights||index<0)return;
+  const neckJoints=new Set(mesh.skeleton.bones.map((b,j)=>
+    /^(?:neck(?:_\\d+)?)$/i.test(b.name)?j:-1).filter(j=>j>=0));
   const raw=geometry.index,triangleCount=(raw?raw.count:position.count)/3;
   if(triangleCount<1)return;
   const retained=[];
   const pointCache=new Map();
   const belongs=i=>{
    if(pointCache.has(i))return pointCache.get(i);
-   let influence=0;
-   for(let k=0;k<4;k++)if(joints.getComponent(i,k)===index)
-    influence+=weights.getComponent(i,k);
-   if(influence<.10){pointCache.set(i,false);return false;}
+   let headWeight=0,neckWeight=0;
+   for(let k=0;k<4;k++){
+    const joint=joints.getComponent(i,k),weight=weights.getComponent(i,k);
+    if(joint===index)headWeight+=weight;
+    if(neckJoints.has(joint))neckWeight+=weight;
+   }
+   if(headWeight<.10&&neckWeight<.14){
+    pointCache.set(i,0);return 0;
+   }
    mesh.getVertexPosition(i,point);
    sample.copy(point).applyMatrix4(mesh.matrixWorld);
    head.worldToLocal(sample);
-   const onFace=sample.y>trimY;
-   pointCache.set(i,onFace);return onFace;
+   const isHead=headWeight>=.10&&sample.y>trimY;
+   const isNeck=(headWeight>=.10||neckWeight>=.14)&&sample.y>neckTrimY;
+   const reason=isHead?1:isNeck?2:0;
+   pointCache.set(i,reason);return reason;
   };
   for(let i=0;i<triangleCount;i++){
    const indices=[0,1,2].map(k=>raw?raw.getX(i*3+k):i*3+k);
    // Remove a whole facial triangle when two of its vertices lie on the
    // head bone above the cut. Do not leave original skin in the eye socket.
-   const count=indices.filter(belongs).length;
-   if(count>=2){removedTriangles++;continue;}
+   const reasons=indices.map(belongs);
+   const count=reasons.filter(Boolean).length;
+   if(count>=2){
+    removedTriangles++;
+    if(reasons.filter(r=>r===2).length)removedNeckTriangles++;
+    continue;
+   }
    retained.push(...indices);retainedTriangles++;
   }
   if(retained.length!==triangleCount*3){
@@ -719,8 +772,9 @@ export function hideBattleDonorFace(model){
  if(removedTriangles<1)throw Error('Original rigged face could not be isolated');
  // The existing battle facial accessories are not needed when the independent
  // artist face replaces their original eyes and lids.
- return {removedTriangles,retainedTriangles,hiddenEyeMeshes,changedMeshes,
-  preservedRig:true,regionSamples:region.samples,trimY,
+ return {removedTriangles,removedNeckTriangles,retainedTriangles,
+  hiddenEyeMeshes,changedMeshes,
+  preservedRig:true,regionSamples:region.samples,trimY,neckTrimY,
   headBounds:{min:region.bounds.min.toArray(),max:region.bounds.max.toArray()}};
 }
 
