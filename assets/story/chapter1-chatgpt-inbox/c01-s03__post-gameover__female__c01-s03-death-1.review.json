@@ -1,0 +1,47 @@
+{
+  "qaStatus": "OWNER_PROVISIONAL",
+  "shotKey": "c01-s03|post-gameover|female|c01-s03-death-1",
+  "scriptText": "主人公の軍師が戦死した。指揮を失い、物語はゲームオーバーとなる。",
+  "sourceModel": "ChatGPT Images",
+  "ownerAuthorized": true,
+  "humanVisualQAConfirmed": false,
+  "finalP0Approved": false,
+  "reviewedBy": "assistant-visual-inspection",
+  "reviewedAt": "2026-11-14T09:03:00Z",
+  "generationReferencesAttached": false,
+  "referenceImagesAttached": [],
+  "quality": {
+    "exactCanonicalScene": true,
+    "exactCast": true,
+    "genderAndOutcomeCorrect": true,
+    "noTextUI": true,
+    "original3DCinematicStyle": true,
+    "nativeDetail": true,
+    "realReferenceBytesAttachedToImageGenerator": false
+  },
+  "provisionalOnly": true,
+  "missingP0Requirements": [
+    "cast-master image bytes not supplied to generator",
+    "formal P0 not approved"
+  ],
+  "provisionalVisualBrief": "Gold-blonde female commander fallen on ruined fortress field, armored, closed eyes; no male protagonist and no resurrection",
+  "imageSha256": "7d49bc89ef790fbee4ac287bc2ef82e43fef86aefef3bc8d44aac6c00877788f",
+  "nativePixels": [
+    1664,
+    936
+  ],
+  "provenance": {
+    "sourceFileName": "a_cinematic_ultra_detailed_3d_cg_scene_a_highly.png",
+    "unscaledCenterCrop": [
+      4,
+      2,
+      1668,
+      938
+    ],
+    "noUpscaling": true,
+    "sourceResolution": [
+      1672,
+      941
+    ]
+  }
+}
