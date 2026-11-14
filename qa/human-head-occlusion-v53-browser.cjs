@@ -1,6 +1,7 @@
 'use strict';
 const {chromium}=require('playwright');
 const fs=require('node:fs');
+const {captureChromiumScreenshot}=require('./chromium-webgl-screenshot.cjs');
 (async()=>{
  const browser=await chromium.launch({headless:true,args:['--use-gl=angle','--use-angle=swiftshader']});
  try{
@@ -89,14 +90,14 @@ const fs=require('node:fs');
   if(!(result.neck?.applied&&result.neck.clearanceMeters>=.007))
     throw Error('CHEST_STILL_ABOVE_CHIN: '+JSON.stringify(result.neck));
   fs.mkdirSync('qa-screenshots/human-v59',{recursive:true});
-  await page.screenshot({path:'qa-screenshots/human-v59/female-overlap.png',timeout:90000});
+  await captureChromiumScreenshot(page,'qa-screenshots/human-v59/female-overlap.png');
   // Render actual close-up portraits, not only the distant full-body view.
   // These reveal facial normal faceting and any opaque neck plate.
   // Costume-only UI hides the portrait button; invoke its existing view
   // controller directly for automated QA without changing user-facing UI.
   await page.evaluate(()=>document.getElementById('portrait').click());
   await page.waitForTimeout(350);
-  await page.screenshot({path:'qa-screenshots/human-v59/female-face-front.png',timeout:90000});
+  await captureChromiumScreenshot(page,'qa-screenshots/human-v59/female-face-front.png');
   // Diagnostic isolation: identify whether the bright horizontal jaw plate
   // belongs to the new neck connector or the cropped original face sculpt.
   await page.evaluate(()=>{
@@ -107,7 +108,7 @@ const fs=require('node:fs');
    if(donor)donor.visible=false;
   });
   await page.waitForTimeout(120);
-  await page.screenshot({path:'qa-screenshots/human-v59/female-connector-hidden.png',timeout:90000});
+  await captureChromiumScreenshot(page,'qa-screenshots/human-v59/female-connector-hidden.png');
   await page.evaluate(()=>{
    const actor=window.__heroineBodyPreview?.getBattleActor?.();
    const donor=actor?.getObjectByName('Superhero_Female');
@@ -115,20 +116,20 @@ const fs=require('node:fs');
   });
   await page.locator('#side').click();
   await page.waitForTimeout(350);
-  await page.screenshot({path:'qa-screenshots/human-v59/female-face-side.png',timeout:90000});
+  await captureChromiumScreenshot(page,'qa-screenshots/human-v59/female-face-side.png');
   // The old camera framing hid the neck behind the wig and previously
   // gave false "visual pass" reports. Reproduce the actual Android close
   // view and expose the entire seam with the wig temporarily hidden.
   await page.locator('#bodyCanvas').hover();
   await page.mouse.wheel(0,-690);
   await page.waitForTimeout(420);
-  await page.screenshot({path:'qa-screenshots/human-v59/female-neck-side-zoom.png',timeout:90000});
+  await captureChromiumScreenshot(page,'qa-screenshots/human-v59/female-neck-side-zoom.png');
   await page.evaluate(()=>{
    const wig=window.__heroineBodyPreview?.getWig?.();
    if(wig)wig.visible=false;
   });
   await page.waitForTimeout(250);
-  await page.screenshot({path:'qa-screenshots/human-v59/female-neck-side-hair-hidden.png',timeout:90000});
+  await captureChromiumScreenshot(page,'qa-screenshots/human-v59/female-neck-side-hair-hidden.png');
   await page.evaluate(()=>{
    const wig=window.__heroineBodyPreview?.getWig?.();
    if(wig)wig.visible=true;
