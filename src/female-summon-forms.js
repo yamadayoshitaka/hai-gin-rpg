@@ -25,9 +25,24 @@ export const FEMALE_SUMMON_FORMS=Object.freeze({
    hairColor:0x78566f,horns:true,wings:true,makeup:0x352435,lip:0x7f394b
   }),
 });
+/** The Dragon Lord is a male sovereign, not the female dragon-queen
+ * prototype. Keep that legacy prototype as an internal asset for comparison,
+ * but do not offer it as the default 3D gallery appearance. */
+export const MALE_DRAGON_LORD_FORM=Object.freeze({
+ id:'dragon_lord',sourceSpecies:'dragon_lord',sex:'male',
+ role:'guard',body:'sturdy',face:'stern',hair:'swept',
+ outfit:'knight',equipment:'sword',costume:'dragonkin_male',
+ modelId:MODEL_IDS[0],skin:0x765d59,cloth:0x302733,
+ metal:0x85777a,accent:0xb78d63,hairColor:0x30232a,
+ horns:true,wings:true,makeup:0x34252c,lip:0x583d3f
+});
 export const FEMALE_SUMMON_FORM_IDS=Object.freeze(Object.keys(FEMALE_SUMMON_FORMS));
 export const femaleSummonCosplayFor=id=>FEMALE_SUMMON_FORMS[id]??null;
 export function validateFemaleSummonForms(){
+ if(MALE_DRAGON_LORD_FORM.sex!=='male'||
+   MALE_DRAGON_LORD_FORM.modelId!=='Superhero_Male_FullBody'||
+   MALE_DRAGON_LORD_FORM.costume!=='dragonkin_male')
+  throw Error('Dragon Lord must use canonical male anatomy');
  if(FEMALE_SUMMON_FORM_IDS.length!==3)throw Error('Expected 3 existing humanoid summon forms');
  for(const [id,form] of Object.entries(FEMALE_SUMMON_FORMS)){
   if(form.sex!=='female'||form.sourceSpecies!==id||
