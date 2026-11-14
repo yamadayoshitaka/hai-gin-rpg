@@ -1,0 +1,69 @@
+name: Human model v60 neck and build regression
+
+on:
+  pull_request:
+    paths:
+      - 'src/character-demographics-v47.js'
+      - 'src/body-build-morph-v48.js'
+      - 'src/heroine-battle-costume-bridge.js'
+      - 'src/studio-unified-neck-v59.js'
+      - 'src/character-cast-v46.js'
+      - 'src/face-part-catalog-v32.js'
+      - 'src/face-state-v49.js'
+      - 'src/heroine-face-preset-store.js'
+      - 'src/male-face-preset-store.js'
+      - 'face-body-studio.html'
+      - 'male-body-studio.html'
+      - 'face-mesh-studio.html'
+      - 'qa/human-model-v60-*'
+      - 'qa/character-demographics-v47.test.mjs'
+      - '.github/workflows/human-model-v60.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'src/character-demographics-v47.js'
+      - 'src/body-build-morph-v48.js'
+      - 'src/heroine-battle-costume-bridge.js'
+      - 'src/studio-unified-neck-v59.js'
+      - 'src/heroine-face-preset-store.js'
+      - 'src/male-face-preset-store.js'
+      - 'face-body-studio.html'
+      - 'male-body-studio.html'
+      - 'face-mesh-studio.html'
+      - 'qa/human-model-v60-*'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  v60-real-webgl:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install reproducible Three.js and Playwright without lockfile mutation
+        run: npm install --no-save --package-lock=false three@0.160.1 playwright@1.56.0
+      - name: Validate v59 preserved geometry, migration and v60 body profiles
+        run: |
+          node --test qa/character-demographics-v47.test.mjs qa/face-v49-regression.test.mjs qa/human-realism-v51-regression.test.mjs qa/studio-unified-neck-v59.test.mjs qa/human-model-v60-regression.test.mjs
+      - name: Validate all male and female job attachment contracts
+        run: npm run test:all-job-fit
+      - name: Install mobile Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Start local preview server
+        run: |
+          python3 -m http.server 8766 --bind 127.0.0.1 > /tmp/human-model-v60-http.log 2>&1 &
+          sleep 2
+      - name: Capture both sexes with real WebGL mobile-sized 3D camera views
+        run: node qa/human-model-v60-browser.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: human-model-v60-real-android-sized-webgl
+          path: qa-screenshots/human-model-v60/
+          retention-days: 14
+          if-no-files-found: warn
