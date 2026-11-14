@@ -25,7 +25,7 @@ import {addConstructMonsterCostume,isConstructCostume}
 import {addDemonicFaceCosmetics,hasDemonCosmetics}
  from './monster-demon-cosmetics.js?v=4.5.05';
 import {addFemaleSummonCostume,isFemaleSummonCostume}
- from './female-summon-costumes.js?v=4.5.18';
+ from './female-summon-costumes.js?v=4.5.19';
 import {createDragonkinNativeScalpOverlay}
  from './dragonkin-native-scalp.js?v=4.5.14';
 import {cutFemaleSummonScalpUnderCover}
@@ -39,7 +39,7 @@ import {alignCostumeToCanonicalFacing}
  from './monster-anatomical-frame.js?v=4.5.05';
 import {addRegalHumanoidOutfit,wardrobeFor,measureRegalShoulderFit,
  createRegalLimbGeometry,createRegalFootGeometry}
- from './monster-regal-garments.js?v=4.5.18';
+ from './monster-regal-garments.js?v=4.5.19';
 
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const boneName=s=>String(s??'').toLowerCase().replace(/[^a-z0-9]/g,'');
