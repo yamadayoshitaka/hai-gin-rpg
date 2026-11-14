@@ -1,0 +1,11 @@
+{
+  "kind": "PROVIDER_GENERATION_SAFETY_BLOCK",
+  "shotKey": "c01-s03|post-defeat|male|c01-s03-m6",
+  "provider": "Cloudflare Workers AI",
+  "errorCode": 3030,
+  "requiresHumanSceneRevision": true,
+  "automaticRetry": false,
+  "actualImageGenerated": false,
+  "formallyRegistered": false,
+  "gameDeployed": false
+}
