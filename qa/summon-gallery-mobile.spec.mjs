@@ -80,6 +80,10 @@ test('female seraph: original wing pair and animated airborne preview',async({pa
   window.__summonGalleryLayoutQA?.()?.femaleReady),{timeout:110000}).toBe(true);
  const before=await page.evaluate(()=>window.__summonGalleryLayoutQA());
  expect(before.seraphOriginalWingCount).toBe(2);
+ expect(before.sourceCraniumWigCut).toBe(true);
+ expect(before.sourceCraniumCutMode).toBe('wig');
+ expect(before.sourceCraniumRemovedTriangles).toBeGreaterThan(8);
+ expect(before.sourceCraniumPreservedTriangles).toBeGreaterThan(8);
  expect(before.femaleFlightAltitude).toBeGreaterThan(.60);
  expect(before.femaleFlightAltitude).toBeLessThan(.95);
  await page.waitForTimeout(450);
@@ -100,6 +104,9 @@ test('female Dragon Lord: native skinned scalp instead of an oversized purple ca
  const state=await page.evaluate(()=>window.__summonGalleryLayoutQA());
  expect(state.dragonCraniumNativeTopology).toBe(true);
  expect(state.dragonNativeScalpTriangles).toBeGreaterThan(20);
+ expect(state.sourceCraniumWigCut).toBe(true);
+ expect(state.sourceCraniumCutMode).toBe('scales');
+ expect(state.sourceCraniumRemovedTriangles).toBeGreaterThan(8);
  await page.screenshot({path:'test-results/dragonlord-native-scalp-v4.5.14.png',
   animations:'disabled',timeout:15000});
  expect(errors).toEqual([]);
