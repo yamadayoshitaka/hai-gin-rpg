@@ -41,6 +41,8 @@ export function chapterOneReviewPages(){
     seen.add(key);
     return {key,shotId:shot.id,scriptText:shot.subtitleText||shot.text||'',
      displayText:shot.text||'',speaker:shot.speaker||'語り手',
+     characterId:shot.characterId||null,secondaryId:shot.secondaryId||null,
+     sceneKind:shot.kind||null,scenery:shot.scenery||null,
      draftPath:originalDraftPath(stage.id,ed.edition,gender,shot.id,within),
      legacyPath:registeredStoryPanelAsset(shot),
      stageId:stage.id,gender,edition:ed.edition};
