@@ -108,6 +108,13 @@
       "sha256": "238d2ae17d8d63db77b6b144d979f06ebf95338e8fe6a98a1a32504877b86cc1",
       "proof": "assets/story/chapter1-chatgpt-inbox/c01-s03__post-defeat__male__c01-s03-m16.review.json",
       "actionAt": "2026-11-14T11:18:53.005Z"
+    },
+    {
+      "kind": "CHATGPT_OWNER_PROVISIONAL_NOT_P0",
+      "key": "c01-s03|post-defeat|male|c01-s03-m7",
+      "sha256": "08d290e2bb74ff3b970c5e9e4932aa232f0f025d49843edc5ec95c3a4067be6d",
+      "proof": "assets/story/chapter1-chatgpt-inbox/c01-s03__post-defeat__male__c01-s03-m7.review.json",
+      "actionAt": "2026-11-14T11:25:57.331Z"
     }
   ]
 }
