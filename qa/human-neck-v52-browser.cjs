@@ -2,7 +2,7 @@
 /** Real mobile Chromium regression: jaw must remain visible above the cuirass. */
 const {chromium}=require('playwright');
 const fs=require('node:fs');
-const out='qa-screenshots/human-neck-v56';
+const out='qa-screenshots/human-neck-v57';
 fs.mkdirSync(out,{recursive:true});
 (async()=>{
  // Each gender owns its own Chromium process. Reusing a page for both large
@@ -21,7 +21,7 @@ fs.mkdirSync(out,{recursive:true});
    page.on('pageerror',error=>errors.push(error.message));
    // Committed navigation is enough; readiness is checked against live 3D
    // outfit + clearance metadata, not page-loaded timing.
-   await page.goto('http://127.0.0.1:8766/'+path+'?v=56',
+   await page.goto('http://127.0.0.1:8766/'+path+'?v=57',
     {waitUntil:'commit',timeout:120000});
    await page.waitForFunction(key=>{
     const state=window[key]?.();
@@ -39,6 +39,7 @@ fs.mkdirSync(out,{recursive:true});
    const neckShape=state.v36RealBattleCostume.proportions.neckContinuity;
    if(!(neckShape?.applied&&neckShape.originalFaceNormalsPreserved&&
         neckShape.matchedFaceMaterial&&neckShape.transparentNeckEdge&&
+        neckShape.anatomicalJawCut&&neckShape.narrowUnderJawConnector&&
         neckShape.neckToHeadRatio<.22))
     throw Error(gender+' neck is too long: '+JSON.stringify(neckShape));
    if(!(fit.chestPieces>0&&fit.clearanceMeters>=.007))
