@@ -37,8 +37,9 @@ import {attachCanonicalCharacterGroom,createCanonicalHeadLocalGroomAnchor,
  from './monster-humanoid-hair.js?v=4.5.13';
 import {alignCostumeToCanonicalFacing}
  from './monster-anatomical-frame.js?v=4.5.05';
-import {addRegalHumanoidOutfit,wardrobeFor,measureRegalShoulderFit}
- from './monster-regal-garments.js?v=4.5.11';
+import {addRegalHumanoidOutfit,wardrobeFor,measureRegalShoulderFit,
+ createRegalLimbGeometry,createRegalFootGeometry}
+ from './monster-regal-garments.js?v=4.5.18';
 
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const boneName=s=>String(s??'').toLowerCase().replace(/[^a-z0-9]/g,'');
@@ -80,6 +81,7 @@ function locateBones(model){
   forearms:[find('lowerarm_l','leftforearm'),find('lowerarm_r','rightforearm')],
   legs:[find('thigh_l','leftupleg'),find('thigh_r','rightupleg')],
   calves:[find('calf_l','leftleg'),find('calf_r','rightleg')],
+  feet:[find('foot_l','leftfoot'),find('foot_r','rightfoot')]
  };
 }
 function buildMonsterCostume(THREE,model,profile,detail){
@@ -95,6 +97,7 @@ function buildMonsterCostume(THREE,model,profile,detail){
   forearms:joints.forearms.map((b,i)=>createFrame(b??joints.arms[i],model)),
   legs:joints.legs.map(b=>createFrame(b,model)),
   calves:joints.calves.map((b,i)=>createFrame(b??joints.legs[i],model)),
+  feet:joints.feet.map((b,i)=>b?createFrame(b,model):null),
  };
  // Cosmetics use a model-oriented head frame; scalp is measured in the
  // donor head bone's LOCAL coordinates. Never combine the two spaces.
@@ -292,6 +295,23 @@ function buildMonsterCostume(THREE,model,profile,detail){
  if(royalOutfit)addRegalHumanoidOutfit({
    profile,detail,frames,attach,tube
  });
+ // Mummies and the five constructs already own species-specific torso
+ // sculpting. Close all exposed donor legs without placing a second gown
+ // over bandages, crystal or rock armour. Every plate follows the source rig.
+ if(!royalOutfit&&(profile.costume==='mummy'||construct)){
+  const role=profile.costume==='mummy'?'bandage':'metal';
+  for(let i=0;i<2;i++){
+   attach(frames.legs[i],createRegalLimbGeometry({
+    detail,kind:'trouser',length:.51,top:.188,bottom:.137
+   }),role,'monster-leg-coverage-thigh-'+i);
+   attach(frames.calves[i],createRegalLimbGeometry({
+    detail,kind:'boot',length:.49,top:.148,bottom:.112
+   }),role,'monster-leg-coverage-shin-'+i);
+   attach(frames.feet[i]||frames.calves[i],
+    createRegalFootGeometry({detail}),role,'monster-leg-coverage-foot-'+i,
+    frames.feet[i]?[0,0,0]:[0,-.49,0]);
+  }
+ }
  const ceremonial=['vampire','lich','succubus','death_knight','dark_knight'];
  if(!gothic&&ceremonial.includes(costume)){
   torus(frames.chest,'cloth','fitted-collar',0,.21,-.005,.17,.095,.045);
@@ -424,7 +444,9 @@ function buildMonsterCostume(THREE,model,profile,detail){
   hairScalpFitted:!!groom?.scalp.fitted,
   modelUprightGroom:!!frames.headGroom.userData.modelUprightGroom,
   fullBodyOutfit:royalOutfit?.style||null,
-  fullBodySkirt:!!royalOutfit,clothCoverageValidated:!!royalOutfit,
+  fullBodySkirt:!!royalOutfit,
+  fullLegCoverage:!!royalOutfit||profile.costume==='mummy'||construct,
+  clothCoverageValidated:!!royalOutfit,
   shoulderYokeAttached:!!royalOutfit,neckCollarTapered:!!royalOutfit,
   shoulderFitCalibrated:outfitFit.calibrated,
   shoulderWidthScale:outfitFit.widthScale,
@@ -434,7 +456,8 @@ function buildMonsterCostume(THREE,model,profile,detail){
  return ()=>{
   scalpCut?.dispose();
   for(const frame of [...Object.values(frames).filter(x=>x?.isGroup),
-   ...frames.arms,...frames.forearms,...frames.legs,...frames.calves])
+   ...frames.arms,...frames.forearms,...frames.legs,...frames.calves,
+   ...frames.feet.filter(Boolean)])
    frame.parent?.remove(frame);
   for(const geo of ownedGeo)geo.dispose();
   for(const texture of ownedTextures)texture.dispose();
