@@ -5,6 +5,9 @@ on:
     paths:
       - 'assets/story/chapter1-chatgpt-inbox/**'
       - 'scripts/import-story-chapter1-chatgpt-staging.mjs'
+      - 'src/story-chapter1-image-prompt.js'
+      - 'src/story-chapter1-approval-ui.js'
+      - 'qa/story-chatgpt-stage45-switch.test.mjs'
       - '.github/workflows/story-chapter1-chatgpt-intake.yml'
   workflow_dispatch:
 
@@ -54,6 +57,7 @@ jobs:
       - name: Verify chapter story, panel IDs and gender/outcome isolation
         run: |
           node qa/story-chapter1-chatgpt-image-handoff.test.mjs
+          node qa/story-chatgpt-stage45-switch.test.mjs
           node qa/story-panel-one-at-a-time.test.mjs
       - name: Commit safe provisional assets
         id: save

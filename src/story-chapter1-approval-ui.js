@@ -183,12 +183,18 @@ async function referenceFilesForHandoff(shot,prepared){
  const ids=prepared.manualManifest?.shots?.find(s=>s.key===shot.key)?.actors||
   prepared.assignment?.visibleActorIds||
   [...new Set([shot.characterId,shot.secondaryId,
-    ...(shot.edition==='post-gameover'?[]:['commander_'+shot.gender])].filter(Boolean))];
+    ...(['c01-s04','c01-s05'].includes(shot.stageId)||shot.edition==='post-gameover'?
+     []:['commander_'+shot.gender])].filter(Boolean))];
  const actorFiles=ids.map(id=>prepared.manualManifest?.characterMasters?.[id]?.path||
   prepared.bible?.actors?.find(r=>r.id===id)?.path);
  if(actorFiles.some(p=>!p))throw Error('人物参照画像が未登録です。生成前に補完してください。');
- const styleRefs=prepared.manualManifest?.visualStyleLock?.referenceImagePaths?.slice(0,1)||
-  ['assets/story/panels/c01-s01-m01.webp'];
+ const stage45=['c01-s04','c01-s05'].includes(shot.stageId);
+ const sameGenderStyle=prepared.stageManifest?.qualityReferenceByGender?.[shot.gender];
+ if(stage45&&!sameGenderStyle)
+  throw Error('ステージ4・5の同性別ステージ1画風参照が見つかりません。');
+ const styleRefs=stage45?[sameGenderStyle]:
+  (prepared.manualManifest?.visualStyleLock?.referenceImagePaths?.slice(0,1)||
+  ['assets/story/panels/c01-s01-m01.webp']);
  const paths=[...new Set([...actorFiles,...styleRefs])];
  const files=[];
  for(const p of paths){

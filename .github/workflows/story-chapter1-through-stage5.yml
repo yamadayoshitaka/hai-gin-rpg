@@ -12,6 +12,10 @@ on:
       - 'qa/story-stage2-through5-production.test.mjs'
       - 'src/story-c01-stage45-art-guard.js'
       - 'qa/story-c01-stage45-generation-guard.test.mjs'
+      - 'src/story-chapter1-image-prompt.js'
+      - 'src/story-chapter1-approval-ui.js'
+      - 'scripts/import-story-chapter1-chatgpt-staging.mjs'
+      - 'qa/story-chatgpt-stage45-switch.test.mjs'
       - 'qa/story-stage3-owner-provisional-completion.test.mjs'
       - 'scripts/generate-story-chapter1-free-batch.mjs'
       - 'src/story-chapter1-provisional-live.js'
@@ -25,6 +29,10 @@ on:
       - 'qa/story-stage2-through5-production.test.mjs'
       - 'src/story-c01-stage45-art-guard.js'
       - 'qa/story-c01-stage45-generation-guard.test.mjs'
+      - 'src/story-chapter1-image-prompt.js'
+      - 'src/story-chapter1-approval-ui.js'
+      - 'scripts/import-story-chapter1-chatgpt-staging.mjs'
+      - 'qa/story-chatgpt-stage45-switch.test.mjs'
       - 'qa/story-stage3-owner-provisional-completion.test.mjs'
       - 'scripts/generate-story-chapter1-free-batch.mjs'
       - 'src/story-chapter1-provisional-live.js'
@@ -55,6 +63,7 @@ jobs:
         run: |
           node qa/story-stage3-owner-provisional-completion.test.mjs
           node qa/story-c01-stage45-generation-guard.test.mjs
+          node qa/story-chatgpt-stage45-switch.test.mjs
       - name: Process each locked stage and review only eligible native panels
         run: node scripts/run-story-stage-range.mjs --start c01-s02 --through c01-s05
       - name: Upload exact screenplay-to-shot references and native 100-frame review reports
