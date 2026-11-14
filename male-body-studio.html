@@ -398,7 +398,7 @@ window.__maleBodyPreview={
   zoomMode=next;fitCamera();return zoomMode;
  },
  setQAView:(next)=>{
-  if(!['front','side','left','threeQuarterLeft','threeQuarterRight'].includes(next))throw Error('Invalid QA view');
+  if(!['front','side','left','back','threeQuarterLeft','threeQuarterRight'].includes(next))throw Error('Invalid QA view');
   view=next;fitCamera();return view;
  },
  getCameraState:()=>({position:camera.position.toArray(),target:orbit.target.toArray(),
