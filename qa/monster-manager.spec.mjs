@@ -22,6 +22,17 @@ test('mobile bestiary: 50 unique 3D monsters across ten families',async({page})=
   {waitUntil:'domcontentloaded',timeout:65000});
  await expect(page.locator('#items .specimen')).toHaveCount(50,{timeout:50000});
  await expect(page.locator('#view canvas')).toBeVisible();
+ await expect(page.locator('#actions button')).toHaveCount(11);
+ await expect(page.locator('#actions button[title="guard"]')).toBeVisible();
+ await page.locator('#actions button[title="guard"]').click();
+ await expect.poll(()=>page.evaluate(()=>
+  window.__monsterViewerLayoutQA().selectedMotion)).toBe('guard');
+ const before=await page.evaluate(()=>window.__monsterViewerLayoutQA());
+ await page.locator('#portraitCamera').click();
+ const after=await page.evaluate(()=>window.__monsterViewerLayoutQA());
+ expect(after.motionStripVisible).toBe(true);
+ expect(after.toolsOpen).toBe(false);
+ expect(after.canvasHeight).toBe(before.canvasHeight);
  await expect(page.locator('#name')).toContainText('灰牙の狼王');
  const silhouettes=[
   ['m006','黒爪パンサー'],['m011','荒野の大鷲'],
