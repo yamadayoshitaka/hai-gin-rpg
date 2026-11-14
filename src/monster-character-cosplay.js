@@ -265,7 +265,7 @@ function buildMonsterCostume(THREE,model,profile,detail){
  if(demonic)addDemonicFaceCosmetics({
    THREE,profile,detail,frames,attach,tube
  });
- const dragonSkull=profile.costume==='dragonkin_female'?
+ const dragonSkull=['dragonkin_female','dragonkin_male'].includes(profile.costume)?
   measureCanonicalScalp(model,joints.head,{groomFrame:frames.headGroom}):null;
  const nativeDragonCrown=dragonSkull&&profile.hair==='bald'?
   createDragonkinNativeScalpOverlay({
@@ -281,7 +281,8 @@ function buildMonsterCostume(THREE,model,profile,detail){
  // cap. Keep the real eyes, forehead, ears, neck, joint motion and GLB.
  // Important: measure and build all hair/armour BEFORE modifying indices.
  const scalpCoverKind=['forest_spirit_female','seraph_female'].includes(
-  profile.costume)||(profile.costume==='dragonkin_female'&&profile.hair!=='bald')
+  profile.costume)||(['dragonkin_female','dragonkin_male'].includes(
+  profile.costume)&&profile.hair!=='bald')
   ?'wig':profile.costume==='dragonkin_female'&&nativeDragonCrown
   ?'scales':null;
  const scalpCut=scalpCoverKind?cutFemaleSummonScalpUnderCover({
@@ -360,7 +361,7 @@ function buildMonsterCostume(THREE,model,profile,detail){
     'skin','fang-gum-'+side,[side*.040,-.072,-.115]);
   }
  }
- if((!gothic&&!demonic&&profile.horns)||costume==='tengu'){
+ if((!gothic&&!demonic&&!femaleSummon&&profile.horns)||costume==='tengu'){
   for(const side of [-1,1]){
    attach(frames.head,new THREE.SphereGeometry(.052,9,8),
     'skin','horn-bone-bed-'+side,[side*.085,.115,-.024]);
@@ -424,7 +425,8 @@ function buildMonsterCostume(THREE,model,profile,detail){
   skinColor:profile.skin,skinMaterialIsolation:true,
   demonCosmeticsEdition:demonic?'horns-makeup-runes-v1':null,
   femaleSummonCostumeEdition:femaleSummon?
-   (profile.costume==='dragonkin_female'?
+   (profile.costume==='dragonkin_male'?'male-dragon-sovereign-plate-wings-v1':
+    profile.costume==='dragonkin_female'?
      (profile.hair==='bald'?'dragonkin-native-head-topology-v3':
       'approved-dragon-queen-plum-groom-v4'):
     profile.costume==='seraph_female'?'seraph-original-wing-flight-v2':
