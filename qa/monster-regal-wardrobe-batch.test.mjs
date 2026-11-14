@@ -212,6 +212,6 @@ assert.match(runtime,/addRegalHumanoidOutfit\(/,
  'Regal clothes must be instantiated onto actual canonical hero models');
 assert.match(runtime,/fullBodyOutfit:royalOutfit\?\.style/,
  'Runtime should expose the full-body outfit actually selected');
-assert.match(gallery,/monster-character-cosplay\.js\?v=4\.5\.14/);
-assert.match(bestiary,/monster-character-cosplay\.js\?v=4\.5\.14/);
+assert.match(gallery,/monster-character-cosplay\.js\?v=4\.5\.15/);
+assert.match(bestiary,/monster-character-cosplay\.js\?v=4\.5\.15/);
 console.log('Full-body reference-inspired humanoid wardrobe regression PASS',report);
