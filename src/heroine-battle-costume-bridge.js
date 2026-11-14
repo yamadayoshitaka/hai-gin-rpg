@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import {buildStudioContourNeck} from './studio-contour-neck-v58.js';
-import {weldStudioNeckIntoFace,addStudioRaisedInnerCollar} from './studio-unified-neck-v59.js?v=61';
+import {weldStudioNeckIntoFace,addStudioRaisedInnerCollar,
+ measureStudioBareTorsoNeck,measureStudioGarmentCollar} from './studio-unified-neck-v59.js?v=62';
 import {clipStudioFaceBustPreservingSurface,restoreStudioFaceSurfaceQuality,
  sampleStudioFacePigment,smoothStudioFaceNormals,
  studioAnatomicalSeamY,taperStudioLowerBustBelowChin} from './studio-face-quality-v56.js?v=60';
@@ -173,7 +174,7 @@ export function alignStudioHeadToSkinnedTorso({
  const bodies=[];
  wardrobeRoot.traverse(mesh=>{
   if(!mesh.isSkinnedMesh||!mesh.geometry?.getAttribute('position'))return;
-  if(/^(?:female|male)_(?:ranger|peasant)_body$/i.test(mesh.name))
+  if(/^(?:(?:female|male)_(?:ranger|peasant)_body|superhero_(?:female|male))$/i.test(mesh.name))
    bodies.push(mesh);
  });
  if(!bodies.length)return {applied:false,reason:'real-torso-mesh-missing'};
@@ -192,6 +193,8 @@ export function alignStudioHeadToSkinnedTorso({
   const box=mesh.geometry.boundingBox.clone().applyMatrix4(mesh.matrixWorld);
   torsoTopY=Math.max(torsoTopY,box.max.y);
  }
+ const measuredSkin=measureStudioBareTorsoNeck(wardrobeRoot);
+ if(measuredSkin.applied)torsoTopY=measuredSkin.topY;
  if(!Number.isFinite(torsoTopY)||!Number.isFinite(beforeMinY))
   return {applied:false,reason:'nonfinite-head-torso-geometry'};
  // The v53/v54 +8mm rule placed the *uncropped portrait bust* ABOVE the
@@ -243,7 +246,14 @@ const STUDIO_NEW_NECK_NAME='STUDIO_CONTOUR_SKIN_NECK_V58';
  * All positions are computed in world space then transformed into headRoot
  * coordinates so the material/neck follow the 65-bone head animation.
  */
-export function fitStudioNeckContinuity({faceRoot,faceMesh,wardrobeRoot}={}){
+/** Select anatomy from the actual naked donor OR Ranger/Peasant mesh. */
+export function studioNapeRiseForBodies(bodies=[]){
+ return bodies.some(body=>
+  /^(?:male_(?:ranger|peasant)_body|superhero_male)$/i.test(body?.name||''))?
+  .018:.012;
+}
+
+export function fitStudioNeckContinuity({faceRoot,faceMesh,wardrobeRoot,garmentRoot=null}={}){
  if(!faceRoot?.isObject3D||!faceMesh?.isMesh||
     !faceMesh.geometry?.getAttribute('position')||
     !wardrobeRoot?.traverse)return {applied:false,reason:'head-or-wardrobe-missing'};
@@ -263,7 +273,7 @@ export function fitStudioNeckContinuity({faceRoot,faceMesh,wardrobeRoot}={}){
  const bodies=[];
  wardrobeRoot.traverse(mesh=>{
   if(mesh.isSkinnedMesh&&
-   /^(?:female|male)_(?:ranger|peasant)_body$/i.test(mesh.name)&&
+   /^(?:(?:female|male)_(?:ranger|peasant)_body|superhero_(?:female|male))$/i.test(mesh.name)&&
    mesh.geometry?.getAttribute('position'))bodies.push(mesh);
  });
  if(!bodies.length)return {applied:false,reason:'torso-missing'};
@@ -276,6 +286,16 @@ export function fitStudioNeckContinuity({faceRoot,faceMesh,wardrobeRoot}={}){
    torsoX=(b.min.x+b.max.x)*.5;
    torsoZ=(b.min.z+b.max.z)*.5;
   }
+ }
+ // PHASE 1: align the neck directly to the real posed bare torso skin.
+ // No metal plate, cloth collar or outfit visibility participates in this.
+ const bareProfile=garmentRoot?
+  measureStudioBareTorsoNeck(wardrobeRoot):
+  {applied:false,reason:'legacy-single-root-garment-compatibility'};
+ if(bareProfile.applied){
+  torsoTop=bareProfile.topY;
+  torsoX=bareProfile.centerX;
+  torsoZ=bareProfile.centerZ;
  }
  // Crop only the lowest 10-12%: the portrait's broad, horizontal shoulder
  // pedestal is at the very bottom; the jaw, lips and ears must survive.
@@ -295,7 +315,9 @@ export function fitStudioNeckContinuity({faceRoot,faceMesh,wardrobeRoot}={}){
   // The imported male nape retains more angular shoulder-bust than the
   // female portrait. Trim only the donor's low rear bust in disposable
   // preview geometry; preserve jaw/lips/eyes and the original source GLB.
-  const napeRise=/^male_/i.test(bodies[0].name)? .018 : .012;
+  // A skin-first donor is named SuperHero_Male/SuperHero_Female rather
+  // than Male_Ranger_Body. Detect both before choosing the rear neckline.
+  const napeRise=studioNapeRiseForBodies(bodies);
   cut=clipStudioFaceBustPreservingSurface(faceMesh,safeCutY,{
    anatomicalCurve:true,backRise:napeRise});
   if(cut.keptTriangles<100||cut.removedTriangles<3){
@@ -316,7 +338,8 @@ export function fitStudioNeckContinuity({faceRoot,faceMesh,wardrobeRoot}={}){
  const bustTaper=cached.bustTaperReport;
  const faceQuality=restoreStudioFaceSurfaceQuality(faceMesh);
  const facePigment=sampleStudioFacePigment(faceMesh);
- const oldRaisedCollar=wardrobeRoot.getObjectByName('STUDIO_RAISED_INNER_TUNIC_COLLAR_V59');
+ const clothes=garmentRoot||wardrobeRoot;
+ const oldRaisedCollar=clothes.getObjectByName('STUDIO_RAISED_INNER_TUNIC_COLLAR_V59');
  if(oldRaisedCollar){
   oldRaisedCollar.removeFromParent();
   oldRaisedCollar.geometry.dispose();oldRaisedCollar.material.dispose();
@@ -435,11 +458,15 @@ export function fitStudioNeckContinuity({faceRoot,faceMesh,wardrobeRoot}={}){
  // actual garment neckline, not the uppermost torso vertex.
  const united=weldStudioNeckIntoFace({
   faceMesh,cut,wardrobeRoot,torsoTopY:torsoTop,
-  torsoCenterX:torsoX,torsoCenterZ:torsoZ,facePigment
+  torsoCenterX:torsoX,torsoCenterZ:torsoZ,facePigment,
+  bareTorsoProfile:bareProfile.applied?bareProfile:null
  });
  let raisedCollar={applied:false,reason:'unified-neck-not-ready'};
  if(united.applied){
-  raisedCollar=addStudioRaisedInnerCollar({wardrobeRoot,joined:united});
+  // PHASE 2: only after the skin seam exists, fit the outfit collar.
+  const actualGarment=measureStudioGarmentCollar(clothes,{torsoTopY:torsoTop});
+  raisedCollar=addStudioRaisedInnerCollar({wardrobeRoot:clothes,
+   joined:{...united,collarY:actualGarment.y,collarSource:actualGarment.mesh}});
   if(cached.stitched&&cached.stitched!==united.geometry)
    cached.stitched.dispose();
   cached.stitched=united.geometry;
@@ -467,6 +494,13 @@ export function fitStudioNeckContinuity({faceRoot,faceMesh,wardrobeRoot}={}){
   contourNeckApplied:!!contourNeck.applied,
   contourNeckReason:contourNeck.reason||null,
   unifiedSkinNeckApplied:!!united.applied,
+  v62SkinFirst:!!united.v62SkinFirst,
+  v62SkinToTorsoOverlap:united.v62SkinToTorsoOverlap??null,
+  v62BareBodyNeckSource:bareProfile.applied?bareProfile.mesh:null,
+  v62BareBodyNeckSamples:bareProfile.ringSamples??0,
+  v62MeasuredBodyNeckWidth:bareProfile.halfWidth??null,
+  v62MeasuredBodyNeckDepth:bareProfile.halfDepth??null,
+  v62ClothingFittedAfterSkin:!!united.applied&&!!raisedCollar.applied,
   unifiedSkinNeckReason:united.reason||null,
   unifiedSkinNeckTriangles:united.addedTriangles||0,
   v61WidenedNeck:!!united.v61WidenedNeck,
@@ -479,8 +513,12 @@ export function fitStudioNeckContinuity({faceRoot,faceMesh,wardrobeRoot}={}){
   v61CollarTopHalfDepth:raisedCollar.v61TopHalfDepthZ??null,
   unifiedSkinNeckEdges:united.boundaryEdges||0,
   reusedFaceMaterial:!!united.faceSkinMaterialReused,
-  actualCollarSource:united.collarSource||null,
-  actualCollarHeight:united.collarY??null,
+  actualCollarSource:garmentRoot?
+   measureStudioGarmentCollar(clothes,{torsoTopY:torsoTop}).mesh:
+   united.collarSource||null,
+  actualCollarHeight:garmentRoot?
+   measureStudioGarmentCollar(clothes,{torsoTopY:torsoTop}).y:
+   united.collarY??null,
   unifiedNeckBottomHeight:united.neckBottomY??null,
   unifiedNeckColorSmoothed:!!united.neckColorSmoothed,
   unifiedNeckNormalsSmoothed:!!united.neckNormalsSmoothed,
@@ -1016,10 +1054,12 @@ export async function createRealBattleOutfitStudio({scene,faceModel,getFaceModel
    headFit.targetCenter[2]-headFit.sourceCenter[2]*headRoot.scale.z+
     headDepth*HEROINE_STUDIO_HEAD_FORWARD/sz
   );
+  // Bare torso dictates both anatomical cuts. Clothes are fitted last.
   const headAlignment=alignStudioHeadToSkinnedTorso({
-   faceRoot:headRoot,faceMesh:face,wardrobeRoot:outfit?.root});
+   faceRoot:headRoot,faceMesh:face,wardrobeRoot:actor.model});
   const neckContinuity=fitStudioNeckContinuity({
-   faceRoot:headRoot,faceMesh:face,wardrobeRoot:outfit?.root});
+   faceRoot:headRoot,faceMesh:face,wardrobeRoot:actor.model,
+   garmentRoot:outfit?.root});
   const neckClearance=fitStudioCuirassBelowChin({faceMesh:face,wardrobeRoot:outfit?.root});
   collarFitDirty=true;
   proportions={...proportions,headAlignment,neckContinuity,neckClearance,bodyShape:bodyShapeId,
@@ -1069,9 +1109,10 @@ export async function createRealBattleOutfitStudio({scene,faceModel,getFaceModel
    // First animation frame can move the spine from its bind pose.
    // Refit once after skeletal matrices settle, never on every render frame.
    const headAlignment=alignStudioHeadToSkinnedTorso({
-    faceRoot:headRoot,faceMesh:face,wardrobeRoot:outfit.root});
+    faceRoot:headRoot,faceMesh:face,wardrobeRoot:actor.model});
    const neckContinuity=fitStudioNeckContinuity({
-    faceRoot:headRoot,faceMesh:face,wardrobeRoot:outfit.root});
+    faceRoot:headRoot,faceMesh:face,wardrobeRoot:actor.model,
+    garmentRoot:outfit.root});
    proportions={...proportions,headAlignment,neckContinuity,
     neckClearance:fitStudioCuirassBelowChin({
      faceMesh:face,wardrobeRoot:outfit.root})};

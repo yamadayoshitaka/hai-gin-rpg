@@ -52,7 +52,9 @@ async function main(){
     const ratio=neck.visibleSkinNeckLength;
     if(!(neck.v60NapeRise===(gender==='male'?.018:.012)&&
       neck.actualCollarSource&&neck.raisedInnerCollarApplied&&
-     neck.unifiedNeckBottomHeight<neck.actualCollarHeight&&
+     neck.v62SkinFirst===true&&neck.v62ClothingFittedAfterSkin===true&&
+      neck.v62BareBodyNeckSamples>=12&&neck.v62SkinToTorsoOverlap>=.012&&
+      neck.unifiedNeckBottomHeight<neck.actualTorsoTopY-.008&&
      ratio>.015&&ratio<.026&&neck.reusedFaceMaterial&&
      neck.separateNeckGeometryHidden&&neck.v61WidenedNeck===true&&
      neck.v61WidthGainAtMid>=1.099&&neck.v61DepthGainAtMid>=1.079&&
@@ -64,6 +66,9 @@ async function main(){
       visibleSkin:neck.visibleSkinNeckLength,collar:neck.actualCollarHeight,
       bottom:neck.unifiedNeckBottomHeight,jawRatio:neck.neckToHeadRatio,
       midHalfWidth:neck.v61NeckMidHalfWidth,midHalfDepth:neck.v61NeckMidHalfDepth,
+      v62BareBodyNeckSource:neck.v62BareBodyNeckSource,
+      v62BareBodyNeckSamples:neck.v62BareBodyNeckSamples,
+      v62SkinToTorsoOverlap:neck.v62SkinToTorsoOverlap,
       topCollarHalfWidth:neck.v61CollarTopHalfWidth}));
      const buildMorph=one.proportions.buildMorph;
     if(!(buildMorph?.geometryFromSource&&buildMorph?.accumulative===false&&
@@ -89,6 +94,22 @@ async function main(){
     await captureChromiumScreenshot(page,out+'/'+gender+'-normal-'+view+'-portrait.png',
      {selector:'#bodyCanvas'});
    }
+   // Bare-skin QA is obligatory: the skin-to-skin seam must remain when
+   // the entire clothing object (including the synthetic inner collar) is off.
+   const bare=await page.evaluate(args=>window[args.preview].setQABareMode(true),{preview});
+   if(!bare?.bare||bare.outfitVisible||!bare.skinVisible)
+    throw Error(gender+' bare body mode missing '+JSON.stringify(bare));
+   for(const view of ['front','side','back']){
+    await page.evaluate(args=>window[args.preview].setQAView(args.view),{preview,view});
+    await page.waitForTimeout(200);
+    await captureChromiumScreenshot(page,out+'/'+gender+'-normal-BARE-'+view+'.png',
+     {selector:'#bodyCanvas'});
+   }
+   const dressed=await page.evaluate(args=>window[args.preview].setQABareMode(false),{preview});
+   if(!dressed?.outfitVisible)throw Error(gender+' clothing could not be restored');
+   await page.evaluate(args=>window[args.preview].setQAView('front'),{preview});
+   await captureChromiumScreenshot(page,out+'/'+gender+'-normal-DRESSED-front.png',
+    {selector:'#bodyCanvas'});
    if(errors.length)throw Error(gender+' browser errors '+errors.slice(0,4).join(' | '));
    // Export the real Chromium pixels to test logs for visual review by
    // connected CI consumers; JPEG/painted surrogate renders are forbidden.
@@ -98,7 +119,7 @@ async function main(){
     for(let at=0;at<base64.length;at+=6000)
      console.log('V60_REVIEW_PNG '+gender+' '+view+' '+at+' '+base64.slice(at,at+6000));
    }
-   console.log('HUMAN_MODEL_V61_WEBGL_OK '+gender+' jobs='+jobs+' views=6 builds=4');
+   console.log('HUMAN_MODEL_V62_WEBGL_OK '+gender+' jobs='+jobs+' views=6 builds=4 bare=3 dressed=1');
   }finally{await browser.close()}
  }
  console.log('HUMAN_MODEL_V60_WEBGL_OK BOTH_GENDERS');

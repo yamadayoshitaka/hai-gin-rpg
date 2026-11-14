@@ -170,7 +170,7 @@ test('v60: both body studios and face editor offer one shared four-build contrac
   assert.ok(source.includes('setQAView:'),file);
   assert.ok(source.includes('threeQuarterLeft'),file);
   assert.ok(source.includes('threeQuarterRight'),file);
-  assert.ok(source.includes('heroine-battle-costume-bridge.js?v=61'),file);
+  assert.ok(source.includes('heroine-battle-costume-bridge.js?v=62'),file);
  }
 });
 

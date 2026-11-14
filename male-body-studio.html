@@ -167,7 +167,7 @@ import {AGE_PROFILES,BODY_PROFILES,applyDemographicFaceControls}
  from './src/character-demographics-v47.js?v=60';
 import {resolveEditedFaceControls,recordFaceManualEdit} from './src/face-state-v49.js?v=51';
 import {HERO_JOBS,HERO_ACTIONS,createHeroineStudioWardrobe} from './src/heroine-studio-wardrobe.js?v=41';
-import {REAL_BATTLE_WARDROBE,createRealBattleOutfitStudio} from './src/heroine-battle-costume-bridge.js?v=61';
+import {REAL_BATTLE_WARDROBE,createRealBattleOutfitStudio} from './src/heroine-battle-costume-bridge.js?v=62';
 import {loadMaleFacePreset,saveMaleFacePreset} from './src/male-face-preset-store.js?v=60';
 import {youngHeroMaleControls} from './src/hero-youthful-appearance-v50.js?v=50';
 import {FEMALE_COMMANDER_ART_PALETTE,CHAPTER_ONE_ART_BY_KEY} from './src/chapter-one-character-art-references.js';
@@ -392,6 +392,14 @@ window.__maleBodyPreview={
  getBody:()=>bodyAttachment?.root||null,
  getWardrobe:()=>wardrobe?.getState()||null,
  getBattleCostume:()=>battleCostume?.getState()||null,
+ // Skin-first visual QA must work even when costume controls are hidden.
+ setQABareMode:(bare)=>{
+  outfitVisible=!bare;
+  bodyAttachment?.setOutfitVisible(outfitVisible);
+  wardrobe?.setVisible(outfitVisible);
+  battleCostume?.setOutfitVisible(outfitVisible);
+  return {bare:!!bare,outfitVisible,skinVisible:!!battleCostume?.getActor()};
+ },
  // For true WebGL front/profile/diagonal regression capture.
  setQAZoom:(next)=>{
   if(!['full','portrait'].includes(next))throw Error('Invalid QA zoom');
