@@ -12,6 +12,7 @@ import {createMonsterModel,disposeMonsterSculpture}
  from './monster-geometry.js?v=4.5.21';
 import {startMonsterAction,animateMonsterModel}
  from './monster-animation.js?v=4.5.18';
+import {creatureFlightHeight} from './combat-creature-performance.js?v=4.6.39';
 import {isMonsterSummonType,monsterSummonSource,
  monsterSummonWorldScale,MONSTER_SUMMON_MAX_HIGH_DETAIL,
  MONSTER_SUMMON_MAX_ACTIVE,MONSTER_SUMMON_BY_TYPE}
@@ -94,7 +95,8 @@ export function createMonsterSummonRenderer(scene,{
    }
    node.anchor.position.set(px,ground,pz);
    const catalog=MONSTER_SUMMON_BY_TYPE[o.type];
-   if(o.flying)node.anchor.position.y+=node.size*.35;
+   // Match the original 10x dragon/angel flight lane, including roofs.
+   if(o.flying)node.anchor.position.y+=creatureFlightHeight(o,time);
    if(catalog?.aquatic)node.anchor.position.y+=.18*Math.sin(time*2.1);
    node.anchor.rotation.y=Number.isFinite(o.yaw)?o.yaw:
     Number.isFinite(o.facingX)&&Number.isFinite(o.facingZ)?
