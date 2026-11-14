@@ -1,0 +1,38 @@
+{
+  "kind": "CLOUDFLARE_REAL_WEBP_REVIEW_CANDIDATE_NOT_APPROVED",
+  "shotKey": "c01-s01|post-town|female|c01-s01-m6",
+  "stageId": "c01-s01",
+  "edition": "post-town",
+  "gender": "female",
+  "panelId": "c01-s01-m6",
+  "screenplayText": "町での調査と準備を終えた。王城の勅命に使われた王印が、記録と食い違うことを確認する。",
+  "visibleActorIds": [
+    "commander_female"
+  ],
+  "actualReferenceImagesAttached": [
+    {
+      "actorId": "commander_female",
+      "source": "assets/story/characters/commander/female-master.webp",
+      "originalSha256": "757587a68647aa6637111110ef5c41d8f5827be0f10a204a7f7b14fde71182bf",
+      "submittedSha256": "7f8979767877bdd8148b133d56ce7e38c8fad2fe6436c1d327efcb66bf509a61",
+      "actualBytes": 395204,
+      "pixels": [
+        384,
+        480
+      ]
+    }
+  ],
+  "imageSha256": "cc7b44d875693a893234c5f2d1385dea8817eed90c8c08f69af7ec42861d4cfd",
+  "nativePixels": [
+    1536,
+    864
+  ],
+  "imageBytes": 372478,
+  "model": "@cf/black-forest-labs/flux-2-klein-4b",
+  "seed": 1606430208,
+  "promptSha256": "4c24ceadc07520cc7c2e3ce86c3f3dda91f4f6e3c6a197fc97d2ee546491f4a6",
+  "estimatedNeurons": 161.67,
+  "visuallyApproved": false,
+  "formallyRegistered": false,
+  "gameDeployed": false
+}

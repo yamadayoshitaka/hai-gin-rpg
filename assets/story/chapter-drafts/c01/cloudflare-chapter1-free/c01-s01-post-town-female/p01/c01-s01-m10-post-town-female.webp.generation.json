@@ -1,0 +1,50 @@
+{
+  "kind": "CLOUDFLARE_REAL_WEBP_REVIEW_CANDIDATE_NOT_APPROVED",
+  "shotKey": "c01-s01|post-town|female|c01-s01-m10",
+  "stageId": "c01-s01",
+  "edition": "post-town",
+  "gender": "female",
+  "panelId": "c01-s01-m10",
+  "screenplayText": "次の舞台「灰銀の本城・封印地の討伐」へ進む。ここで見たことを忘れてはならない。",
+  "visibleActorIds": [
+    "lucia",
+    "commander_female"
+  ],
+  "actualReferenceImagesAttached": [
+    {
+      "actorId": "lucia",
+      "source": "assets/story/characters/lucia/master.webp",
+      "originalSha256": "87005a46d3b4a23714a25f1f9b2d46fee9a1ce3c6b5af0be78f85a1f1fd2b411",
+      "submittedSha256": "91344ba790293c03406ca1804f0360d135b0015aa75cc5b68d7904fc72de1173",
+      "actualBytes": 322498,
+      "pixels": [
+        439,
+        480
+      ]
+    },
+    {
+      "actorId": "commander_female",
+      "source": "assets/story/characters/commander/female-master.webp",
+      "originalSha256": "757587a68647aa6637111110ef5c41d8f5827be0f10a204a7f7b14fde71182bf",
+      "submittedSha256": "7f8979767877bdd8148b133d56ce7e38c8fad2fe6436c1d327efcb66bf509a61",
+      "actualBytes": 395204,
+      "pixels": [
+        384,
+        480
+      ]
+    }
+  ],
+  "imageSha256": "d939e446b718984a3045b000d444c58809576bbf0ba6bd2460a9480310354718",
+  "nativePixels": [
+    1536,
+    864
+  ],
+  "imageBytes": 305104,
+  "model": "@cf/black-forest-labs/flux-2-klein-4b",
+  "seed": 2117822359,
+  "promptSha256": "4f6846e4cca9cb9ca59b49d9fd39acdb20e13994ca4d53d8e0c4032931539eb8",
+  "estimatedNeurons": 167.04,
+  "visuallyApproved": false,
+  "formallyRegistered": false,
+  "gameDeployed": false
+}
