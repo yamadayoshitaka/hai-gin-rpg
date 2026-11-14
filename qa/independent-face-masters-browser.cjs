@@ -973,8 +973,9 @@ async function expectCenteredFaceSliders(page,gender){
       outfit.v36RealBattleCostume?.finishReport?.sourceAssetsPreserved!==true||
       !outfit.v36RealBattleCostume?.sourceTrousers||
       !outfit.v36RealBattleCostume?.retainedLegAnatomy||
-      !['thigh','calf','foot'].every(zone=>
-       outfit.v36RealBattleCostume?.preservedLegRegions?.includes(zone))||
+      !(outfit.v36RealBattleCostume?.v63CoveredSkinMasked===true&&
+        outfit.v36RealBattleCostume?.v63BareAnatomyRestorable===true&&
+        outfit.v36RealBattleCostume?.preservedLegRegions?.length===0)||
       outfit.v36RealBattleCostume?.availableActionCount<8||
       outfit.v36RealBattleCostume?.finishReport?.collarClearancePieces<1||
       outfit.v36RealBattleCostume?.finishReport?.taperedLegPieces<1||
