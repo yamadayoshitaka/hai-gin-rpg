@@ -1,0 +1,47 @@
+{
+  "qaStatus": "OWNER_PROVISIONAL",
+  "shotKey": "c01-s03|post-defeat|male|c01-s03-m7",
+  "scriptText": "失った者の名を記録する。今は無理に進軍せず、町で態勢を整えよう。",
+  "sourceModel": "ChatGPT Images",
+  "ownerAuthorized": true,
+  "humanVisualQAConfirmed": false,
+  "finalP0Approved": false,
+  "reviewedBy": "assistant-visual-inspection",
+  "reviewedAt": "2026-11-14T11:35:00Z",
+  "generationReferencesAttached": false,
+  "referenceImagesAttached": [],
+  "quality": {
+    "exactCanonicalScene": true,
+    "exactCast": true,
+    "genderAndOutcomeCorrect": true,
+    "noTextUI": true,
+    "original3DCinematicStyle": true,
+    "nativeDetail": true,
+    "realReferenceBytesAttachedToImageGenerator": false
+  },
+  "provisionalOnly": true,
+  "missingP0Requirements": [
+    "Original character master image bytes not provided in generation",
+    "Formal visual P0 quality approval pending"
+  ],
+  "provisionalVisualBrief": "Silver-haired braided Lucia and white-haired veteran Garan mourn together over blank casualty ledger in the aftermath of a retreat",
+  "imageSha256": "08d290e2bb74ff3b970c5e9e4932aa232f0f025d49843edc5ec95c3a4067be6d",
+  "nativePixels": [
+    1664,
+    936
+  ],
+  "provenance": {
+    "sourceFileName": "a_cinematic_highly_detailed_3d_rendered_fantasy_s.png",
+    "unscaledCenterCrop": [
+      4,
+      2,
+      1668,
+      938
+    ],
+    "noUpscaling": true,
+    "sourceResolution": [
+      1672,
+      941
+    ]
+  }
+}
