@@ -8,7 +8,7 @@ on:
     paths:
       - 'ops/start-chapter1-full-free-actual-art-once-20261114.trigger'
   schedule:
-    - cron: '30 22 * * *'
+    - cron: '15 3 * * *' # 12:15 Asia/Tokyo; after nominal UTC reset, one batch/day
   workflow_dispatch:
 
 permissions:
