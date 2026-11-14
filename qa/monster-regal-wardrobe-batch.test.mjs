@@ -176,8 +176,10 @@ for(const profile of cases){
     'Shin boot must follow real calf bone');
    assert.strictEqual(foot[0].parent,f.frames.feet[i],
     'Shoe must follow real foot bone');
-   assert.ok([thigh[0],shin[0],foot[0]].every(o=>o.userData.role!=='skin'),
-    'No exposed humanoid donor limb behind costumes');
+   assert.ok([thigh[0],shin[0],foot[0]].every(o=>
+      o.userData.role&&
+      (o.userData.role!=='skin'||profile.costume==='gargoyle')),
+    'No bare donor limb: gargoyle natural stone shell is allowed');
   }
   for(const o of f.all){
    assert.ok(o.geometry.getAttribute('position').array.every(Number.isFinite));
