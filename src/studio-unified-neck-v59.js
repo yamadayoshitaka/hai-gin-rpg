@@ -58,6 +58,52 @@ export function studioNeckV61Profile(t){
  };
 }
 
+/**
+ * Phase 1 (BARE BODY): measure the actual *posed* skinned neck of the torso,
+ * not a sewn garment collar. The head donor's lower bust is cut elsewhere;
+ * the body donor head is hidden elsewhere. This measurement NEVER cuts the
+ * real body or modifies original rig/bind vertices.
+ */
+export function measureStudioBareTorsoNeck(bodyRoot,{bandMeters=.035}={}){
+ const candidates=[];
+ bodyRoot?.updateWorldMatrix?.(true,true);
+ bodyRoot?.traverse?.(mesh=>{
+  if(!mesh?.isMesh||!mesh.geometry?.getAttribute?.('position')||
+   !/^(?:female|male)_(?:ranger|peasant)_body$/i.test(mesh.name||''))return;
+  const attr=mesh.geometry.getAttribute('position'),v=new THREE.Vector3();
+  const samples=[];
+  // Explicitly skin every donor vertex before measuring the neckline:
+  // static geometry.boundingBox would refer to the T-pose, not the pose.
+  for(let i=0;i<attr.count;i++){
+   if(mesh.isSkinnedMesh&&mesh.skeleton&&mesh.getVertexPosition)
+    mesh.getVertexPosition(i,v);
+   else v.fromBufferAttribute(attr,i);
+   const w=v.clone().applyMatrix4(mesh.matrixWorld);
+   if(Number.isFinite(w.x)&&Number.isFinite(w.y)&&Number.isFinite(w.z))samples.push(w);
+  }
+  if(samples.length>=24)candidates.push({mesh,samples});
+ });
+ if(!candidates.length)return {applied:false,reason:'real-skin-torso-missing'};
+ const selected=candidates.reduce((a,b)=>a.samples.length>=b.samples.length?a:b);
+ const all=selected.samples,topY=Math.max(...all.map(p=>p.y));
+ const band=Math.max(.018,Math.min(.065,bandMeters));
+ const ring=all.filter(p=>p.y>=topY-band&&p.y<=topY+.0005);
+ if(ring.length<12)return {applied:false,reason:'bare-torso-neck-ring-missing',samples:ring.length};
+ const percent=(items,p)=>{
+  const sorted=items.slice().sort((a,b)=>a-b);
+  return sorted[Math.min(sorted.length-1,Math.floor((sorted.length-1)*p))];
+ };
+ const xs=ring.map(v=>v.x),zs=ring.map(v=>v.z);
+ const xlo=percent(xs,.10),xhi=percent(xs,.90),zlo=percent(zs,.10),zhi=percent(zs,.90);
+ const halfWidth=THREE.MathUtils.clamp((xhi-xlo)*.5,.025,.080);
+ const halfDepth=THREE.MathUtils.clamp((zhi-zlo)*.5,.024,.075);
+ return {applied:true,phase:'skin-before-clothing',mesh:selected.mesh.name,
+  centerX:(xlo+xhi)*.5,centerZ:(zlo+zhi)*.5,
+  topY,innerOverlapY:topY-.014,halfWidth,halfDepth,
+  skinVertices:all.length,ringSamples:ring.length,
+  source:'posed-real-skinned-torso',sourceGarmentIndependent:true};
+}
+
 function orientedStudioCutEdges(geometry,originalVertexCount){
  const indices=geometry?.getIndex();
  if(!indices)return [];
@@ -81,7 +127,7 @@ function orientedStudioCutEdges(geometry,originalVertexCount){
 
 export function weldStudioNeckIntoFace({
  faceMesh,cut,wardrobeRoot,torsoTopY,torsoCenterX=0,torsoCenterZ=0,
- facePigment=null,rings=11,collarInset=.009
+ facePigment=null,rings=11,collarInset=.009,bareTorsoProfile=null
 }={}){
  const source=faceMesh?.geometry,position=source?.getAttribute?.('position');
  if(!faceMesh?.isMesh||!source?.getIndex()||!position||
@@ -94,7 +140,12 @@ export function weldStudioNeckIntoFace({
  const collar=measureStudioGarmentCollar(wardrobeRoot,{torsoTopY});
  // The REAL shirt top is far below the skinned body's apparent top. Cover
  // the gap to the collar, otherwise a coloured neck stump remains exposed.
- const bottomWorldY=Math.min(torsoTopY-.015,collar.y-collarInset);
+ // v62 skin-first: the bottom ring is placed INSIDE the real torso skin,
+ // independent of any garment. A separate clothing pass occurs afterwards.
+ const skinFirst=bareTorsoProfile?.applied===true;
+ const bottomWorldY=skinFirst?
+  Math.min(torsoTopY-.010,bareTorsoProfile.innerOverlapY):
+  Math.min(torsoTopY-.015,collar.y-collarInset);
  faceMesh.updateWorldMatrix(true,false);
  const toWorld=faceMesh.matrixWorld;
  const fromWorld=toWorld.clone().invert();
@@ -127,8 +178,10 @@ export function weldStudioNeckIntoFace({
  const vertexCount=position.count,cols=boundaryIds.length;
  const vertexMap=new Map();
  let midHalfWidthX=0,midHalfDepthZ=0;
- const garmentX=collar.mesh==='torso-based-fallback'?torsoCenterX:collar.x;
- const garmentZ=collar.mesh==='torso-based-fallback'?torsoCenterZ:collar.z;
+ const garmentX=skinFirst?bareTorsoProfile.centerX:
+  (collar.mesh==='torso-based-fallback'?torsoCenterX:collar.x);
+ const garmentZ=skinFirst?bareTorsoProfile.centerZ:
+  (collar.mesh==='torso-based-fallback'?torsoCenterZ:collar.z);
  for(let row=1;row<rings;row++){
   const t=row/(rings-1),profile=studioNeckV61Profile(t);
   const smooth=profile.centerBlend;
@@ -136,10 +189,15 @@ export function weldStudioNeckIntoFace({
   const midCenterZ=THREE.MathUtils.lerp(centerZ,garmentZ,smooth);
   for(let k=0;k<cols;k++){
    const id=boundaryIds[k],upperWorld=world.get(id);
-   const skinBottom=new THREE.Vector3(
-    garmentX+(upperWorld.x-centerX)*profile.lowerWidthFactor,
-    bottomWorldY,
-    garmentZ+(upperWorld.z-centerZ)*profile.lowerDepthFactor);
+   // Match the LOWER ring to the real body-neck contour, not to armour.
+   // Its last 14mm live within the torso volume to hide all open edges.
+   const bodyX=skinFirst?
+    (upperWorld.x-centerX)/Math.max(.001,(maxX-minX)*.5)*bareTorsoProfile.halfWidth*.96:
+    (upperWorld.x-centerX)*profile.lowerWidthFactor;
+   const bodyZ=skinFirst?
+    (upperWorld.z-centerZ)/Math.max(.001,(maxZ-minZ)*.5)*bareTorsoProfile.halfDepth*.96:
+    (upperWorld.z-centerZ)*profile.lowerDepthFactor;
+   const skinBottom=new THREE.Vector3(garmentX+bodyX,bottomWorldY,garmentZ+bodyZ);
    const interpolated=upperWorld.clone().lerp(skinBottom,smooth);
    // Anatomical cervical fullness: the donor face remains untouched at the
    // jaw boundary, while the middle 40–60% gains width/depth. The bottom
@@ -227,6 +285,8 @@ export function weldStudioNeckIntoFace({
   neckColorSmoothed:true,neckNormalsSmoothed:true,
   centerX,centerZ,jawHalfX:(maxX-minX)*.5,jawHalfZ:(maxZ-minZ)*.5,
   v61WidenedNeck:true,v61NeckRingCount:rings,
+  v62SkinFirst:skinFirst,v62BareTorsoProfile:skinFirst?bareTorsoProfile:null,
+  v62SkinToTorsoOverlap:skinFirst?bareTorsoProfile.topY-bottomWorldY:null,
   v61WidthGainAtMid:studioNeckV61Profile(.5).widthGain,
   v61DepthGainAtMid:studioNeckV61Profile(.5).depthGain,
   neckMidHalfWidthX:midHalfWidthX,neckMidHalfDepthZ:midHalfDepthZ,
