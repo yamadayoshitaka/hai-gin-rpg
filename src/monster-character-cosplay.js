@@ -30,7 +30,7 @@ import {attachCanonicalCharacterGroom,createCanonicalHeadLocalGroomAnchor}
 import {alignCostumeToCanonicalFacing}
  from './monster-anatomical-frame.js?v=4.5.05';
 import {addRegalHumanoidOutfit,wardrobeFor}
- from './monster-regal-garments.js?v=4.5.06';
+ from './monster-regal-garments.js?v=4.5.10';
 
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const boneName=s=>String(s??'').toLowerCase().replace(/[^a-z0-9]/g,'');
@@ -355,6 +355,7 @@ function buildMonsterCostume(THREE,model,profile,detail){
   hairScalpFitted:!!groom?.scalp.fitted,
   fullBodyOutfit:royalOutfit?.style||null,
   fullBodySkirt:!!royalOutfit,clothCoverageValidated:!!royalOutfit,
+  shoulderYokeAttached:!!royalOutfit,neckCollarTapered:!!royalOutfit,
   jointAnchored:true,independentHeroMaterials:true,
  };
  return ()=>{
