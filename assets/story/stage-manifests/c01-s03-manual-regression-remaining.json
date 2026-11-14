@@ -1,0 +1,287 @@
+{
+  "schemaVersion": 1,
+  "kind": "CHAPTER1_STAGE3_MANUAL_REGRESSION_GENERATOR_INPUT_REQUIRED",
+  "stageId": "c01-s03",
+  "chapter": 1,
+  "scope": "Unregistered stage3 scenes only after first pre-male scene was provisionally bound",
+  "generatorInputContract": {
+    "priority": "P0_MUST_APPLY_TO_EVERY_SINGLE_IMAGE_CALL",
+    "instruction": "生成器に対象コマのscene/actors/台本/visualStyleLockを毎回必ず渡す。1生成=1独立した原画。10枚のコマ割り原画や一枚に複数の物語を描くことは絶対に禁止。画像実ファイルの生成・目視検査・品質証拠・別分岐照合を行ってから仮登録・デプロイする。",
+    "mustLoadBeforeGeneration": true,
+    "exactShotAndGenderMatch": true,
+    "oneStandaloneFramePerInvocation": true,
+    "neverCreateAComicSheetAsSourceArt": true,
+    "noLettersNoSpeechBubblesNoPanelBorders": true,
+    "mustUseActualCastReferenceImages": true,
+    "noArtworkAcceptedByTextOnly": true,
+    "provisionalRegistrationOnlyAfterVisualQA": true
+  },
+  "visualStyleLock": {
+    "id": "STAGE1_HI_FIDELITY_3D_JRPG_ANIME_REALISM_V1",
+    "look": "One standalone seamless 16:9 high-end semi-realistic 3D Japanese fantasy RPG cutscene, detailed CGI character faces, cloth and metal PBR, physically plausible lighting, consistently faithful character appearances. Not a manga comic page.",
+    "forbidStyles": [
+      "manga contact sheet",
+      "2x5 or 5x2 panel grid",
+      "multiple frames in one image",
+      "panel borders",
+      "speech bubbles",
+      "captions",
+      "lettering",
+      "numbers",
+      "watermarks",
+      "flat illustration",
+      "cel shaded comic"
+    ],
+    "referenceImagePaths": [
+      "assets/story/panels/c01-s01-m01.webp",
+      "assets/story/characters/lucia/master.webp"
+    ],
+    "actualReferenceImageBytesRequired": true,
+    "pathsAloneAreNotInputs": true,
+    "failOnStyleDrift": true
+  },
+  "characterMasters": {
+    "lucia": {
+      "path": "assets/story/characters/lucia/master.webp",
+      "role": "silver-haired regent in ornate silver and dark-blue/ivory royal armor with braided hair"
+    },
+    "garan": {
+      "path": "assets/story-cinema/cast/garan.webp",
+      "role": "aged gray-haired and white-bearded armored veteran with dark fur mantle"
+    },
+    "vess": {
+      "path": "assets/story-cinema/cast/vess.webp",
+      "role": "older gray-haired and gray-bearded armored senior officer, visually grounded in Vess cast portrait"
+    },
+    "iris": {
+      "path": "assets/story-cinema/cast/iris.webp",
+      "role": "young pale-hooded healer carrying a book, soft ash-blonde hair, white robe"
+    },
+    "commander_female": {
+      "path": "assets/story/chapter1-provisional-live/c01-s03__pre__female__c01-s03-m1.webp",
+      "role": "blonde woman commander wearing silver armour with a purple-and-gold cape"
+    }
+  },
+  "renderRule": "One and ONLY ONE continuous independent 16:9 image per shot, native >=1536x864, WebP, no upscaling; absolutely no text, panel boundaries, title, or speech bubble.",
+  "sourceOfTruth": [
+    "src/story-chapter1-review-core.js",
+    "src/story-chapter-comic.js",
+    "src/story-screenplay-v2.js"
+  ],
+  "noCloudflareCalls": true,
+  "noPaidFallback": true,
+  "shots": [
+    {
+      "key": "c01-s03|post-defeat|male|c01-s03-m7",
+      "id": "c01-s03-m7",
+      "stageId": "c01-s03",
+      "edition": "post-defeat",
+      "gender": "male",
+      "script": "失った者の名を記録する。今は無理に進軍せず、町で態勢を整えよう。",
+      "actors": [
+        "lucia",
+        "garan"
+      ],
+      "referencePaths": [
+        "assets/story/characters/lucia/master.webp",
+        "assets/story-cinema/cast/garan.webp"
+      ],
+      "scene": "銀髪を編み込んだリュシアと白髪髭の老騎士ガランが、撤退後の天幕で空白の羊皮紙を見つめ犠牲者に黙祷する。二人以外の顔を出さない。",
+      "status": "AWAITING_NATIVE_SINGLE_FRAME_AND_QA",
+      "formallyApproved": false,
+      "provisionallyRegistered": false
+    },
+    {
+      "key": "c01-s03|post-defeat|male|c01-s03-m9",
+      "id": "c01-s03-m9",
+      "stageId": "c01-s03",
+      "edition": "post-defeat",
+      "gender": "male",
+      "script": "今は退くことが必要だ。 軍師として名を刻み、最初の軍団を編成する。",
+      "actors": [
+        "lucia",
+        "vess"
+      ],
+      "referencePaths": [
+        "assets/story/characters/lucia/master.webp",
+        "assets/story-cinema/cast/vess.webp"
+      ],
+      "scene": "銀髪のリュシアと白髭の古参軍人ヴェスが、撤退のための進路を無言で指し示す。暗い作戦室、未記入の地図。",
+      "status": "AWAITING_NATIVE_SINGLE_FRAME_AND_QA",
+      "formallyApproved": false,
+      "provisionallyRegistered": false
+    },
+    {
+      "key": "c01-s03|post-defeat|male|c01-s03-m16",
+      "id": "c01-s03-m16",
+      "stageId": "c01-s03",
+      "edition": "post-defeat",
+      "gender": "male",
+      "script": "軍師は退却した部隊の無事を確かめ、記録を残した。",
+      "actors": [
+        "iris",
+        "garan"
+      ],
+      "referencePaths": [
+        "assets/story-cinema/cast/iris.webp",
+        "assets/story-cinema/cast/garan.webp"
+      ],
+      "scene": "フード付き白い衣を纏った治癒師イリスと老騎士ガランが、避難テントで帰還兵の装備を確認し記録を整理する。人物は二人、静謐な雰囲気。",
+      "status": "AWAITING_NATIVE_SINGLE_FRAME_AND_QA",
+      "formallyApproved": false,
+      "provisionallyRegistered": false
+    },
+    {
+      "key": "c01-s03|post-defeat|female|c01-s03-m6",
+      "id": "c01-s03-m6",
+      "stageId": "c01-s03",
+      "edition": "post-defeat",
+      "gender": "female",
+      "script": "「指定した陣地を確保」は未達となった。部隊は撤退し、態勢を立て直す。",
+      "actors": [
+        "commander_female"
+      ],
+      "referencePaths": [
+        "assets/story/chapter1-provisional-live/c01-s03__pre__female__c01-s03-m1.webp"
+      ],
+      "scene": "金髪・銀鎧・紫紋章の女性軍師が外郭陣地から兵を撤退させる後ろ姿。陥落した城門と曇天、敗北を示すがゲームオーバーや戦死は描かない。",
+      "status": "AWAITING_NATIVE_SINGLE_FRAME_AND_QA",
+      "formallyApproved": false,
+      "provisionallyRegistered": false
+    },
+    {
+      "key": "c01-s03|post-defeat|female|c01-s03-m7",
+      "id": "c01-s03-m7",
+      "stageId": "c01-s03",
+      "edition": "post-defeat",
+      "gender": "female",
+      "script": "失った者の名を記録する。今は無理に進軍せず、町で態勢を整えよう。",
+      "actors": [
+        "lucia",
+        "garan"
+      ],
+      "referencePaths": [
+        "assets/story/characters/lucia/master.webp",
+        "assets/story-cinema/cast/garan.webp"
+      ],
+      "scene": "銀髪のリュシアと老騎士ガランが、撤退後の軍営で落ち着いて犠牲者の空白台帳を確認する。主人公は映さない。",
+      "status": "AWAITING_NATIVE_SINGLE_FRAME_AND_QA",
+      "formallyApproved": false,
+      "provisionallyRegistered": false
+    },
+    {
+      "key": "c01-s03|post-defeat|female|c01-s03-m8",
+      "id": "c01-s03-m8",
+      "stageId": "c01-s03",
+      "edition": "post-defeat",
+      "gender": "female",
+      "script": "補給路を奪うだけでは真実は残らない。護衛も運び手も生きたまま話を聞く必要がある。 命令は紙一枚だ。だが戦場の命は、一枚では数え切れん。",
+      "actors": [
+        "garan",
+        "lucia"
+      ],
+      "referencePaths": [
+        "assets/story-cinema/cast/garan.webp",
+        "assets/story/characters/lucia/master.webp"
+      ],
+      "scene": "険しい顔の老騎士ガランが、銀髪のリュシアに空白の勅命と補給路の地図を示し、命の重さを訴える。夕刻の野営机。",
+      "status": "AWAITING_NATIVE_SINGLE_FRAME_AND_QA",
+      "formallyApproved": false,
+      "provisionallyRegistered": false
+    },
+    {
+      "key": "c01-s03|post-defeat|female|c01-s03-m9",
+      "id": "c01-s03-m9",
+      "stageId": "c01-s03",
+      "edition": "post-defeat",
+      "gender": "female",
+      "script": "今は退くことが必要だ。 軍師として名を刻み、最初の軍団を編成する。",
+      "actors": [
+        "lucia",
+        "vess"
+      ],
+      "referencePaths": [
+        "assets/story/characters/lucia/master.webp",
+        "assets/story-cinema/cast/vess.webp"
+      ],
+      "scene": "白銀のリュシアと灰髭の軍人ヴェスが、燃える陣地からの退路を相談する。鎧と外套の同一性を守る。",
+      "status": "AWAITING_NATIVE_SINGLE_FRAME_AND_QA",
+      "formallyApproved": false,
+      "provisionallyRegistered": false
+    },
+    {
+      "key": "c01-s03|post-defeat|female|c01-s03-m16",
+      "id": "c01-s03-m16",
+      "stageId": "c01-s03",
+      "edition": "post-defeat",
+      "gender": "female",
+      "script": "軍師は退却した部隊の無事を確かめ、記録を残した。",
+      "actors": [
+        "iris",
+        "garan"
+      ],
+      "referencePaths": [
+        "assets/story-cinema/cast/iris.webp",
+        "assets/story-cinema/cast/garan.webp"
+      ],
+      "scene": "治癒師イリスと老騎士ガランが、救護所で帰還兵の数を確認し破損した軍旗と未記入台帳を静かに整理する。",
+      "status": "AWAITING_NATIVE_SINGLE_FRAME_AND_QA",
+      "formallyApproved": false,
+      "provisionallyRegistered": false
+    },
+    {
+      "key": "c01-s03|post-defeat|female|c01-s03-m19",
+      "id": "c01-s03-m19",
+      "stageId": "c01-s03",
+      "edition": "post-defeat",
+      "gender": "female",
+      "script": "失敗を無かったことにはできない。仲間を休ませ、次の判断に備えよう。",
+      "actors": [
+        "lucia",
+        "vess"
+      ],
+      "referencePaths": [
+        "assets/story/characters/lucia/master.webp",
+        "assets/story-cinema/cast/vess.webp"
+      ],
+      "scene": "銀髪のリュシアとヴェスが、雨上がりの軍営で疲れた部隊の休息を見守る。二人のみを中心に、希望を残しつつ敗北を受け止める。",
+      "status": "AWAITING_NATIVE_SINGLE_FRAME_AND_QA",
+      "formallyApproved": false,
+      "provisionallyRegistered": false
+    },
+    {
+      "key": "c01-s03|post-defeat|female|c01-s03-m10",
+      "id": "c01-s03-m10",
+      "stageId": "c01-s03",
+      "edition": "post-defeat",
+      "gender": "female",
+      "script": "退却を命じる。町で編成を立て直して、この地へ戻ろう。",
+      "actors": [
+        "vess",
+        "iris"
+      ],
+      "referencePaths": [
+        "assets/story-cinema/cast/vess.webp",
+        "assets/story-cinema/cast/iris.webp"
+      ],
+      "scene": "灰髭の軍人ヴェスが治癒師イリスとともに、傷病兵が戻る退路で帰還準備を指揮する。生還・撤退は描くが勝利や追撃は描かない。",
+      "status": "AWAITING_NATIVE_SINGLE_FRAME_AND_QA",
+      "formallyApproved": false,
+      "provisionallyRegistered": false
+    },
+    {
+      "key": "c01-s03|post-gameover|female|c01-s03-death-2",
+      "id": "c01-s03-death-2",
+      "stageId": "c01-s03",
+      "edition": "post-gameover",
+      "gender": "female",
+      "script": "この時間線では次へ進まない。生還や帰還を偽って描かない。",
+      "actors": [],
+      "referencePaths": [],
+      "scene": "軍師が戦死した灰色の外郭戦場。地面に残る金髪の女性軍師の銀鎧と紫の紋章マント、折れた剣と静かな夜明け。生きた主人公や帰還場面を一切描かない。",
+      "status": "AWAITING_NATIVE_SINGLE_FRAME_AND_QA",
+      "formallyApproved": false,
+      "provisionallyRegistered": false
+    }
+  ]
+}
