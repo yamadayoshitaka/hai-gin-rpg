@@ -27,7 +27,7 @@ for(const stageId of STAGE45_IDS){
    actorRefs:refs,stageStory:bible.scene,
    styleRef:{gender:s.gender,path:stylePath,sha:physical(stylePath)}});
   const must=[s.key,s.scriptText,bible.scene,stylePath,'speech balloons',
-   'P0 NO TEXT','P0 VISUAL STYLE LOCK','P0 VISIBLE CAST STRICT','16:9','stage'];
+   'P0 NO TEXT','P0 VISUAL STYLE LOCK','P0 VISIBLE CAST STRICT','16:9','P0 STAGE'];
   must.forEach(x=>assert(output.includes(x),'Per-shot instruction missing '+s.key+' / '+x));
   assert(output.includes(s.edition==='post-gameover'?'commander DEATH':
    s.edition==='pre'?'Outcome UNKNOWN':
