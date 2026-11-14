@@ -38,7 +38,7 @@ async function main(){
     throw Error(gender+' incorrect body selector '+JSON.stringify(options));
    const jobs=await page.locator('#heroJob option').count();
    if(jobs<10)throw Error(gender+' job/outfit selector does not cover 10 occupations: '+jobs);
-   for(const build of ['ultraThin','thin','normal']){
+   for(const build of ['ultraThin','thin','normal','fat']){
     await page.locator('#v47BodyType').selectOption(build);
     await page.waitForFunction(({qa,build})=>{
      const state=window[qa]?.();
@@ -54,23 +54,31 @@ async function main(){
       neck.actualCollarSource&&neck.raisedInnerCollarApplied&&
      neck.unifiedNeckBottomHeight<neck.actualCollarHeight&&
      ratio>.015&&ratio<.026&&neck.reusedFaceMaterial&&
-     neck.separateNeckGeometryHidden))
+     neck.separateNeckGeometryHidden&&neck.v61WidenedNeck===true&&
+     neck.v61WidthGainAtMid>=1.099&&neck.v61DepthGainAtMid>=1.079&&
+     neck.v61NeckMidHalfWidth>.02&&neck.v61NeckMidHalfDepth>.017&&
+     neck.v61CollarTopHalfWidth>=.03&&neck.v61CollarTopHalfDepth>=.029))
      throw Error(gender+' '+build+' neck/cloth fit failed '+JSON.stringify(neck));
     console.log('V60_NECK_METRICS '+JSON.stringify({gender,build,napeRise:neck.v60NapeRise,
       visibleSkin:neck.visibleSkinNeckLength,collar:neck.actualCollarHeight,
-      bottom:neck.unifiedNeckBottomHeight,jawRatio:neck.neckToHeadRatio}));
+      bottom:neck.unifiedNeckBottomHeight,jawRatio:neck.neckToHeadRatio,
+      midHalfWidth:neck.v61NeckMidHalfWidth,midHalfDepth:neck.v61NeckMidHalfDepth,
+      topCollarHalfWidth:neck.v61CollarTopHalfWidth}));
      const buildMorph=one.proportions.buildMorph;
     if(!(buildMorph?.geometryFromSource&&buildMorph?.accumulative===false&&
      buildMorph.bodyType===build&&buildMorph.meshes>0))
      throw Error(gender+' '+build+' build morph missing '+JSON.stringify(buildMorph));
-    // Capture equivalent full-body images for 3 width/depth comparisons.
+    // Capture all four body types to verify chest/arm/neck proportion consistency.
     await page.locator('#full').click();
     await page.evaluate(args=>window[args.preview].setQAView('front'),{preview});
     await page.waitForTimeout(220);
     await captureChromiumScreenshot(page,out+'/'+gender+'-'+build+'-full-front.png',
      {selector:'#bodyCanvas'});
    }
-   // Five matched, real rendered views of neck / jaw / nape / armor collar.
+   // Return to standard build for five matched neck / jaw / nape views.
+   await page.locator('#v47BodyType').selectOption('normal');
+   await page.waitForFunction(key=>window[key]?.().v36RealBattleCostume?.bodyType==='normal',qa,
+    {timeout:45000});
    await page.evaluate(args=>window[args.preview].setQAZoom('portrait'),{preview});
    for(const view of ['front','left','side','threeQuarterLeft','threeQuarterRight']){
     await page.evaluate(args=>window[args.preview].setQAView(args.view),{preview,view});
@@ -89,7 +97,7 @@ async function main(){
     for(let at=0;at<base64.length;at+=6000)
      console.log('V60_REVIEW_PNG '+gender+' '+view+' '+at+' '+base64.slice(at,at+6000));
    }
-   console.log('HUMAN_MODEL_V60_WEBGL_OK '+gender+' jobs='+jobs+' views=5 builds=3');
+   console.log('HUMAN_MODEL_V61_WEBGL_OK '+gender+' jobs='+jobs+' views=5 builds=4');
   }finally{await browser.close()}
  }
  console.log('HUMAN_MODEL_V60_WEBGL_OK BOTH_GENDERS');
