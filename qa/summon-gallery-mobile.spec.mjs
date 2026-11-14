@@ -22,7 +22,11 @@ test('mobile summon gallery: compact model-first view, functional drawers and ca
   await drawer.locator('summary').first().click();
   await expect(drawer).toHaveAttribute('open','');
   await expect(page.locator('#wireframe')).toBeVisible();
-  await drawer.locator('summary').first().click();
+  await expect(page.locator('.inspectorGroup')).toHaveCount(3);
+  const height=await page.locator('#controlsDrawer .extraControls').evaluate(
+    el=>el.getBoundingClientRect().height);
+  expect(height).toBeLessThan(page.viewportSize().height*.55);
+  await page.locator('#dismissControls').click();
   await expect(page.locator('#attack')).toBeVisible();
 
   await info.locator('summary').click();
@@ -101,20 +105,33 @@ test('female seraph: original wing pair and animated airborne preview',async({pa
  expect(errors).toEqual([]);
 });
 
-test('dragon lord defaults to original dragon, not a forced female character',async({page})=>{
+test('male Dragon Lord: canonical male GLB, battleplate and original creature toggle',async({page})=>{
  const errors=[];page.on('pageerror',e=>errors.push(String(e)));
- await page.goto('/summon-showcase.html?v=4.5.18',
+ await page.goto('/summon-showcase.html?v=4.5.19',
   {waitUntil:'domcontentloaded',timeout:65000});
  await page.locator('#type').selectOption('dragon_lord');
+ await expect.poll(()=>page.evaluate(()=>
+  window.__summonGalleryLayoutQA?.()?.femaleReady),{timeout:110000}).toBe(true);
  const state=await page.evaluate(()=>window.__summonGalleryLayoutQA());
  expect(state.selected).toBe('dragon_lord');
- expect(state.femaleMode).toBe('original');
- expect(state.femaleReady).toBe(false);
+ expect(state.femaleMode).toBe('male');
+ expect(state.actorSex).toBe('male');
+ expect(state.femaleSource).toBe('Superhero_Male_FullBody');
  expect(state.motionStripVisible).toBe(true);
- await expect(page.locator('#femaleSummonModeLabel')).toBeHidden();
+ await expect(page.locator('#femaleSummonModeLabel')).toBeVisible();
+ await expect(page.locator('#humanoidForm option[value="female"]')).toBeHidden();
  await expect(page.locator('#attack')).toBeVisible();
- await page.screenshot({path:'test-results/dragonlord-original-male-independent-v4.5.18.png',
+ await page.locator('#controlsDrawer summary').first().click();
+ await expect(page.locator('#footCloseup')).toBeVisible();
+ await page.locator('#footCloseup').click();
+ expect((await page.evaluate(()=>window.__summonGalleryLayoutQA())).cameraDistance).toBeLessThan(4);
+ await page.screenshot({path:'test-results/male-dragonlord-armoured-feet-v4.5.19.png',
   animations:'disabled',timeout:15000});
+ await page.locator('#humanoidForm').selectOption('original');
+ expect((await page.evaluate(()=>window.__summonGalleryLayoutQA())).femaleMode).toBe('original');
+ await page.locator('#humanoidForm').selectOption('male');
+ await expect.poll(()=>page.evaluate(()=>window.__summonGalleryLayoutQA?.()?.femaleReady),
+  {timeout:110000}).toBe(true);
  expect(errors).toEqual([]);
 });
 
