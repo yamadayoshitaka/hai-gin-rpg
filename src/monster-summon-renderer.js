@@ -66,9 +66,21 @@ export function createMonsterSummonRenderer(scene,{
  }
  function sync(objects,time=0,actionTime=time){
   if(removed)return;
-  const summoned=(objects||[]).filter(o=>o&&isMonsterSummonType(o.type)&&
+  const allSummoned=(objects||[]).filter(o=>o&&isMonsterSummonType(o.type)&&
    (o.alive!==false||(o.poseAction==='defeat'&&
      actionTime-safe(o.poseStartedAt,-Infinity)<=1.2)));
+  // Large battle: retain the NEAREST 24 original models, not merely the
+  // first 24 spawned. This prevents a distant army occupying the model pool
+  // while a visible Leviathan or Hydra silently disappears.
+  const distSq=o=>{
+    if(!camera)return 0;
+    const x=(safe(o.x)-offset)*cellSize,z=(safe(o.z)-offset)*cellSize;
+    return (x-camera.position.x)**2+(z-camera.position.z)**2;
+  };
+  const summoned=allSummoned.length<=MONSTER_SUMMON_MAX_ACTIVE?
+    allSummoned:allSummoned.slice().sort((a,b)=>distSq(a)-distSq(b))
+       .slice(0,MONSTER_SUMMON_MAX_ACTIVE);
+  stats.dropped+=Math.max(0,allSummoned.length-summoned.length);
   const visibleIds=new Set(summoned.map(o=>String(o.id)));
   for(const id of active.keys())if(!visibleIds.has(id))release(id);
   let highCount=0;
