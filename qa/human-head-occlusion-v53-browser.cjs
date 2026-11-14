@@ -6,7 +6,7 @@ const fs=require('node:fs');
  try{
   const page=await browser.newPage({viewport:{width:460,height:900},deviceScaleFactor:1});
   page.on('pageerror',e=>console.error('BROWSER_PAGE_ERROR '+e.message));
-  await page.goto('http://127.0.0.1:8766/face-body-studio.html?v=58',
+  await page.goto('http://127.0.0.1:8766/face-body-studio.html?v=59',
     {waitUntil:'commit',timeout:90000});
   await page.waitForFunction(()=>window.__heroineBodyQA?.()?.v36RealBattleCostume?.active,
     null,{timeout:180000});
@@ -38,17 +38,26 @@ const fs=require('node:fs');
     });
    });
    return {face:format(bface),headPosition:face.getWorldPosition(face.position.clone()).toArray().map(q),
+    donor:state.v36RealBattleCostume?.headReport,
+    unifiedFaceGeometry:!!face.geometry.userData.studioUnifiedNeck,
     neck:state.v36RealBattleCostume?.proportions?.neckClearance,
     neckContinuity:state.v36RealBattleCostume?.proportions?.neckContinuity,
     headAlignment:state.v36RealBattleCostume?.proportions?.headAlignment,
     active:state.v36RealBattleCostume?.active,
     meshes:meshes.sort((a,b)=>b.box.max[1]-a.box.max[1]).slice(0,85)};
   });
-  console.log('HUMAN_V58_ACTUAL_MESH_DIAGNOSTICS '+JSON.stringify(result));
-  if(!(result.neckContinuity?.contourNeckApplied&&
-        result.neckContinuity.actualCutEdgeSegments>=12&&
-        result.neckContinuity.correctSkinNeckColor&&
-        result.neckContinuity.originalBluePipeHidden))
+  console.log('HUMAN_V59_ACTUAL_MESH_DIAGNOSTICS '+JSON.stringify(result));
+  if(!(result.unifiedFaceGeometry&&
+        result.neckContinuity?.unifiedSkinNeckApplied&&
+        result.neckContinuity.unifiedSkinNeckEdges>=12&&
+        result.neckContinuity.unifiedSkinNeckTriangles>=30&&
+        result.neckContinuity.reusedFaceMaterial&&
+        result.neckContinuity.separateNeckGeometryHidden&&
+        result.neckContinuity.actualCollarSource&&
+        result.neckContinuity.unifiedNeckBottomHeight<result.neckContinuity.actualCollarHeight))
+    throw Error('STILL_HAS_DETACHED_NECK_OR_ORANGE_GAP: '+JSON.stringify(result.neckContinuity));
+  if(!(result.donor?.removedNeckTriangles>0))
+    throw Error('DONOR_ORANGE_NECK_STILL_PRESENT: '+JSON.stringify(result.donor));
     throw Error('DETACHED_BLUE_NECK_STILL_PRESENT: '+JSON.stringify(result.neckContinuity));
   if(!(result.neckContinuity?.applied&&result.neckContinuity.bustTrianglesRemoved>3&&
         result.neckContinuity.originalFaceNormalsPreserved&&
@@ -76,31 +85,33 @@ const fs=require('node:fs');
     throw Error('GIRAFFE_NECK_DETECTED: '+JSON.stringify(result.neckContinuity));
   if(!(result.neck?.applied&&result.neck.clearanceMeters>=.007))
     throw Error('CHEST_STILL_ABOVE_CHIN: '+JSON.stringify(result.neck));
-  fs.mkdirSync('qa-screenshots/human-v58',{recursive:true});
-  await page.screenshot({path:'qa-screenshots/human-v58/female-overlap.png',timeout:90000});
+  fs.mkdirSync('qa-screenshots/human-v59',{recursive:true});
+  await page.screenshot({path:'qa-screenshots/human-v59/female-overlap.png',timeout:90000});
   // Render actual close-up portraits, not only the distant full-body view.
   // These reveal facial normal faceting and any opaque neck plate.
   // Costume-only UI hides the portrait button; invoke its existing view
   // controller directly for automated QA without changing user-facing UI.
   await page.evaluate(()=>document.getElementById('portrait').click());
   await page.waitForTimeout(350);
-  await page.screenshot({path:'qa-screenshots/human-v58/female-face-front.png',timeout:90000});
+  await page.screenshot({path:'qa-screenshots/human-v59/female-face-front.png',timeout:90000});
   // Diagnostic isolation: identify whether the bright horizontal jaw plate
   // belongs to the new neck connector or the cropped original face sculpt.
   await page.evaluate(()=>{
    const actor=window.__heroineBodyPreview?.getBattleActor?.();
-   const neck=actor?.getObjectByName('STUDIO_CONTOUR_SKIN_NECK_V58');
-   if(neck)neck.visible=false;
+   // Confirm the skinned donor is not responsible for any remaining
+   // orange cervical area in this side-by-side debug frame.
+   const donor=actor?.getObjectByName('Superhero_Female');
+   if(donor)donor.visible=false;
   });
   await page.waitForTimeout(120);
-  await page.screenshot({path:'qa-screenshots/human-v58/female-connector-hidden.png',timeout:90000});
+  await page.screenshot({path:'qa-screenshots/human-v59/female-connector-hidden.png',timeout:90000});
   await page.evaluate(()=>{
    const actor=window.__heroineBodyPreview?.getBattleActor?.();
-   const neck=actor?.getObjectByName('STUDIO_CONTOUR_SKIN_NECK_V58');
-   if(neck)neck.visible=true;
+   const donor=actor?.getObjectByName('Superhero_Female');
+   if(donor)donor.visible=true;
   });
   await page.locator('#side').click();
   await page.waitForTimeout(350);
-  await page.screenshot({path:'qa-screenshots/human-v58/female-face-side.png',timeout:90000});
+  await page.screenshot({path:'qa-screenshots/human-v59/female-face-side.png',timeout:90000});
  }finally{await browser.close()}
-})().catch(e=>{console.error('HUMAN_V58_DIAGNOSTIC_FAIL '+e.stack);process.exitCode=1});
+})().catch(e=>{console.error('HUMAN_V59_DIAGNOSTIC_FAIL '+e.stack);process.exitCode=1});
