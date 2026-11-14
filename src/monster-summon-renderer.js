@@ -66,7 +66,8 @@ export function createMonsterSummonRenderer(scene,{
  function sync(objects,time=0,actionTime=time){
   if(removed)return;
   const summoned=(objects||[]).filter(o=>o&&isMonsterSummonType(o.type)&&
-   (o.alive!==false||o.poseAction==='defeat'));
+   (o.alive!==false||(o.poseAction==='defeat'&&
+     actionTime-safe(o.poseStartedAt,-Infinity)<=1.2)));
   const visibleIds=new Set(summoned.map(o=>String(o.id)));
   for(const id of active.keys())if(!visibleIds.has(id))release(id);
   let highCount=0;
