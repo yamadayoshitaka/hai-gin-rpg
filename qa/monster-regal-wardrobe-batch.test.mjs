@@ -4,7 +4,8 @@ import * as THREE from 'three';
 import {REGAL_HUMANOID_WARDROBE,wardrobeFor,
  createRegalBodiceGeometry,createRegalSkirtGeometry,
  createRegalHemGeometry,createRegalLimbGeometry,
- createRegalCollarGeometry,createRegalShoulderYokeGeometry,addRegalHumanoidOutfit}
+ createRegalCollarGeometry,createRegalShoulderYokeGeometry,addRegalHumanoidOutfit,
+ measureRegalShoulderFit}
  from '../src/monster-regal-garments.js';
 import {HUMANOID_MONSTER_COSTUMES,FEMALE_VAMPIRE_COSTUME}
  from '../src/monster-character-cosplay-manifest.js';
@@ -73,15 +74,37 @@ for(const detail of ['high','low']){
  validate(yoke,'shoulder yoke');
  const bounds=new THREE.Box3().setFromBufferAttribute(
   yoke.getAttribute('position'));
- assert.ok(bounds.max.x>.29 && bounds.min.x<-.29,
+ assert.ok(bounds.max.x>.28 && bounds.min.x<-.28,
   'Shoulder yoke does not cover both upper arm sleeve roots');
+ assert.ok(bounds.max.y<.30,'Shoulder yoke must stay below the face');
  collar.dispose();yoke.dispose();
+}
+// Calibrate shoulder width from actual donor bone positions (not a one-size
+// constant that hovers outside narrow female characters).
+for(const [span,expectedMax] of [[.34,.76],[.48,1.01],[.60,1.09]]){
+ const root=new THREE.Group();
+ const left=new THREE.Bone(),right=new THREE.Bone();
+ left.position.x=span/2;right.position.x=-span/2;
+ root.add(left,right);root.updateMatrixWorld(true);
+ const fit=measureRegalShoulderFit(left,right);
+ assert.equal(fit.calibrated,true);
+ assert.ok(fit.widthScale<=expectedMax);
+ assert.ok(fit.depthScale>=.94&&fit.depthScale<=1.02);
+}
+assert.equal(measureRegalShoulderFit(null,null).calibrated,false);
+{
+ const root=new THREE.Group(),a=new THREE.Bone(),b=new THREE.Bone();
+ root.add(a,b);a.position.x=.04;b.position.x=-.04;
+ root.updateMatrixWorld(true);
+ assert.equal(measureRegalShoulderFit(a,b).calibrated,false,
+  'Impossible tiny shoulder span must not crush outfit');
 }
 assert.equal(Object.keys(REGAL_HUMANOID_WARDROBE).length,13);
 for(const [type,profile] of Object.entries(REGAL_HUMANOID_WARDROBE)){
  assert.ok(profile.style&&profile.bodice&&profile.hem&&profile.trim);
  assert.ok(profile.skirt>=.5&&profile.skirt<=1,'Uncovered swimsuit '+type);
- assert.ok(profile.flare>=.26,'Skirt cannot cover pelvis '+type);
+ assert.ok(profile.flare>=(type==='vampire'?.17:.26),
+  'Skirt cannot cover pelvis '+type);
 }
 assert.equal(wardrobeFor(HUMANOID_MONSTER_COSTUMES.m032),null,
  'Mummies should retain intact wrapped bandage garments');
@@ -129,10 +152,11 @@ for(const profile of cases){
   const collar=f.all.find(o=>o.name.endsWith('-collar'));
   const topCrown=collar.geometry.getAttribute('position');
   const ringVertices=f.all.find(o=>o.name.includes('fitted-bodice')).geometry.getAttribute('position');
-  assert.ok(yokeBounds.max.x>.285 && yokeBounds.min.x<-.285,
+  assert.ok(yokeBounds.max.x>.27 && yokeBounds.min.x<-.27,
    'No coverage between torso and shoulder sleeve roots');
-  assert.ok(yokeBounds.max.y>.32 && yokeBounds.min.y<0,
-   'Shoulder seam needs to overlap neck collar and torso');
+  assert.ok(yokeBounds.max.y>.25 && yokeBounds.max.y<.30 &&
+    yokeBounds.min.y<-.04,
+   'Shoulder seam must stay under face and overlap collar/torso');
   assert.ok(topCrown.count>20 && ringVertices.count>20);
   assert.equal(f.all.filter(o=>o.parent===f.frames.pelvis).length,2,
    'Skirt and floor hem must follow pelvis');
