@@ -79,28 +79,100 @@ function bun(box,material){
  }
  return nodes;
 }
-function ponytail(box,material,side=1,half=false){
+/** v64: the tie must be rooted in an ACTUAL scalp triangle/vertex,
+ * never in the bounding box behind the head (detached rod regression). */
+export function resolveTiedHairScalpAnchor(box,side=1,scalpCandidates=[]){
  const d=box.getSize(new THREE.Vector3()),c=box.getCenter(new THREE.Vector3());
- const origin=V(c.x+side*d.x*(side===0?0:.31),
-  box.min.y+d.y*(half?.78:.74),box.min.z-d.z*.078);
- const nodes=[ellipsoid('PONYTAIL_TIED_ROOT',origin,
-  V(d.x*.065,d.y*.033,d.z*.045),fiberMaterial(material.color,.75))];
- for(let k=0;k<7;k++){
-  const angle=(k/7)*Math.PI*2,
-    len=half?.36:.54;
-  const radius=d.x*(.031+.01*Math.sin(k*2));
-  const pts=[
-   origin.clone().add(V(radius*Math.cos(angle),d.y*.010,radius*Math.sin(angle))),
-   origin.clone().add(V(side*d.x*.035+radius*Math.cos(angle),-d.y*.12,-d.z*.065)),
-   origin.clone().add(V(side*d.x*.12+radius*Math.cos(angle)*.85,-d.y*len*.68,-d.z*.035)),
-   origin.clone().add(V(side*d.x*.15+radius*Math.cos(angle)*.40,-d.y*len,-d.z*.018))
-  ];
-  nodes.push(tube('PONYTAIL_FALLING_LOCK_'+k,pts,
-   d.x*.022,fiberMaterial(material.color,.9+(k%3)*.045),38));
+ const target=V(c.x+side*d.x*(side===0?0:.30),
+  box.min.y+d.y*(side===0?.76:.75),c.z-d.z*.26);
+ const points=scalpCandidates.map(item=>item?.p||item).filter(p=>
+  p?.isVector3&&Number.isFinite(p.x)&&Number.isFinite(p.y)&&Number.isFinite(p.z));
+ const eligible=points.filter(p=>
+  (side===0?Math.abs(p.x-c.x)<d.x*.18:
+   side*(p.x-c.x)>d.x*.17)&&
+  p.y>box.min.y+d.y*.59&&p.y<box.min.y+d.y*.92&&
+  p.z<c.z+d.z*.06);
+ const pool=eligible.length?eligible:points;
+ if(!pool.length) return {position:target,source:'bbox-fallback'};
+ const p=pool.reduce((best,point)=>
+  point.distanceToSquared(target)<best.distanceToSquared(target)?point:best);
+ return {position:p.clone(),source:'real-scalp-vertex'};
+}
+function taperedLock(label,points,radius,material){
+ const curve=new THREE.CatmullRomCurve3(points);
+ const steps=32,sides=8,frames=curve.computeFrenetFrames(steps,false);
+ const vertices=[],indices=[];
+ for(let i=0;i<=steps;i++){
+  const t=i/steps,p=curve.getPointAt(t);
+  const thickness=radius*(.95-.86*Math.pow(t,5))*
+   (1+.035*Math.sin(t*Math.PI*2));
+  for(let k=0;k<sides;k++){
+   const angle=k/sides*Math.PI*2;
+   const v=p.clone().addScaledVector(frames.normals[i],Math.cos(angle)*thickness)
+    .addScaledVector(frames.binormals[i],Math.sin(angle)*thickness);
+   vertices.push(v.x,v.y,v.z);
+  }
  }
+ for(let i=0;i<steps;i++)for(let k=0;k<sides;k++){
+  const a=i*sides+k,b=i*sides+(k+1)%sides,c=(i+1)*sides+k,d=(i+1)*sides+(k+1)%sides;
+  indices.push(a,c,b,b,c,d);
+ }
+ const geo=new THREE.BufferGeometry();
+ geo.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));
+ geo.setIndex(indices);geo.computeVertexNormals();geo.computeBoundingSphere();
+ const mesh=new THREE.Mesh(geo,material);
+ mesh.name=label;mesh.userData.styledHairGeometry=true;
+ mesh.userData.v64TaperedLock=true;return mesh;
+}
+function ponytail(box,material,side=1,half=false,scalpCandidates=[]){
+ const d=box.getSize(new THREE.Vector3()),c=box.getCenter(new THREE.Vector3());
+ const resolved=resolveTiedHairScalpAnchor(box,side,scalpCandidates);
+ // Raise only one root-diameter above ACTUAL scalp to avoid z-fighting.
+ const outward=resolved.position.clone().sub(c);
+ outward.y=0;if(outward.lengthSq()<1e-9)outward.set(0,0,-1);
+ outward.normalize();
+ const origin=resolved.position.clone().addScaledVector(outward,d.x*.008);
+ const nodes=[ellipsoid('PONYTAIL_TIED_ROOT',origin,
+  V(d.x*.054,d.y*.030,d.z*.049),fiberMaterial(material.color,.83))];
+ nodes[0].userData.v64AnchorSource=resolved.source;
+ nodes[0].userData.v64AnchorDistance=origin.distanceTo(resolved.position);
+ // Dense scalp-hugging sweeps feed into the tie, not seven isolated stalks.
+ const roots=scalpCandidates.map(item=>item?.p||item).filter(p=>p?.isVector3);
+ for(let k=0;k<7&&roots.length;k++){
+  const sampleTarget=V(c.x+side*d.x*(.10+k*.029),
+   origin.y+d.y*(.060+.007*Math.sin(k)),origin.z+d.z*.025);
+  const source=roots.reduce((best,p)=>p.distanceToSquared(sampleTarget)<
+   best.distanceToSquared(sampleTarget)?p:best);
+  const tip=origin.clone().add(V(d.x*.009*Math.cos(k*2.4),0,d.z*.006*Math.sin(k)));
+  const middle=source.clone().lerp(tip,.55);
+  middle.y=Math.max(middle.y,tip.y+d.y*.024);
+  nodes.push(taperedLock('PONYTAIL_SCALP_FEED_'+k,
+   [source.clone(),middle,tip],d.x*.010,material));
+ }
+ const length=half?.39:.55;
+ for(let k=0;k<14;k++){
+  const angle=(k/14)*Math.PI*2;
+  const radius=d.x*(.020+.005*Math.sin(k*2.3));
+  const displacement=V(radius*Math.cos(angle),0,radius*Math.sin(angle));
+  const flow=side===0?0:side;
+  const pts=[
+   origin.clone().add(displacement.clone().multiplyScalar(.58)),
+   origin.clone().add(V(flow*d.x*.025+radius*Math.cos(angle),-d.y*.070,
+    -d.z*.013+radius*Math.sin(angle))),
+   origin.clone().add(V(flow*d.x*.055+radius*Math.cos(angle)*.85,
+    -d.y*length*.40,-d.z*.035)),
+   origin.clone().add(V(flow*d.x*.075+radius*Math.cos(angle)*.45,
+    -d.y*length*.81,-d.z*.016)),
+   origin.clone().add(V(flow*d.x*.085+radius*Math.cos(angle)*.21,
+    -d.y*length*(.97+.06*Math.sin(k*2.4)),-d.z*.008))
+  ];
+  nodes.push(taperedLock('PONYTAIL_FALLING_LOCK_'+k,pts,
+   d.x*.0135,fiberMaterial(material.color,.93+(k%3)*.027)));
+ }
+ nodes.forEach(m=>{m.userData.v64ScalpAnchored=resolved.source==='real-scalp-vertex';});
  return nodes;
 }
-export function makeStyleSpecificHair(styleId,box,hairColor){
+export function makeStyleSpecificHair(styleId,box,hairColor,{scalpCandidates=[]}={}){
  const mat=fiberMaterial(hairColor,.94);
  let type='none',meshes=[];
  if(styleId==='female-low-bun'){
@@ -108,11 +180,11 @@ export function makeStyleSpecificHair(styleId,box,hairColor){
  }else if(styleId==='female-twin-braids'){
   type='two-interwoven-plaits';meshes=[...braid(-1,box,mat),...braid(1,box,mat)];
  }else if(styleId==='female-side-ponytail'){
-  type='side-ponytail';meshes=ponytail(box,mat,-1);
+  type='side-ponytail';meshes=ponytail(box,mat,-1,false,scalpCandidates);
  }else if(styleId==='female-half-up'){
-  type='half-up';meshes=ponytail(box,mat,0,true);
+  type='half-up';meshes=ponytail(box,mat,0,true,scalpCandidates);
  }else if(styleId==='male-long-tied'){
-  type='low-tied-men';meshes=ponytail(box,mat,0,false);
+  type='low-tied-men';meshes=ponytail(box,mat,0,false,scalpCandidates);
  }
  for(const m of meshes){
   m.userData.hairStyleId=styleId;

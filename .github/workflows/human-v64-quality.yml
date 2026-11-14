@@ -1,0 +1,64 @@
+name: Human v64 hair scalp, expressions and character catalog QA
+on:
+  pull_request:
+    paths:
+      - 'src/face-wig-ornaments-v49.js'
+      - 'src/face-scalp-wig.js'
+      - 'src/face-feature-meshes.js'
+      - 'src/independent-face-masters.js'
+      - 'src/face-expression-animation-v48.js'
+      - 'src/hero-face-presets-v45.js'
+      - 'src/character-face-catalog-v64.js'
+      - 'character-face-catalog.html'
+      - 'face-mesh-studio.html'
+      - 'face-body-studio.html'
+      - 'male-body-studio.html'
+      - 'qa/human-v64-*'
+      - '.github/workflows/human-v64-quality.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'src/face-wig-ornaments-v49.js'
+      - 'src/face-scalp-wig.js'
+      - 'src/face-feature-meshes.js'
+      - 'src/independent-face-masters.js'
+      - 'src/face-expression-animation-v48.js'
+      - 'src/hero-face-presets-v45.js'
+      - 'src/character-face-catalog-v64.js'
+      - 'character-face-catalog.html'
+      - 'face-mesh-studio.html'
+      - 'qa/human-v64-*'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  v64-canonical-geometry-and-browser:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install deterministic Three and mobile Playwright
+        run: npm install --no-save --package-lock=false three@0.160.1 playwright@1.56.0
+      - name: Validate hairstyles, face catalog, age creases and expressions
+        run: |
+          node --test qa/human-v64-catalog-and-hair.test.mjs qa/human-v63-quality.test.mjs qa/face-v49-regression.test.mjs
+      - name: Validate previous 3D independent face controls and source GLB integrity
+        run: node --test qa/independent-face-masters.test.mjs
+      - name: Install mobile Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Start preview HTTP server
+        run: |
+          python3 -m http.server 8766 --bind 127.0.0.1 > /tmp/human-v64-http.log 2>&1 &
+          sleep 2
+      - name: Mobile real WebGL screenshots for side ponytail, face types and expressions
+        run: node qa/human-v64-catalog-browser.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: human-v64-real-webgl-face-hair-and-catalog
+          path: qa-screenshots/human-v64/
+          retention-days: 14
+          if-no-files-found: warn

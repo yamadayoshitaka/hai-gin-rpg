@@ -240,16 +240,19 @@ export function updateRealFacePigment(face,controls={},mode='color',gender='fema
   // Older ages get pronounced crease pigment and lower-eye shadows.
   const underEye=bell(nx,.345,.14)*bell(ny,.632,.027)*front;
   // Fine eyelid and inner-canthus shading, without adding ageing wrinkles.
-  const upperLidOcclusion=bell(nx,.123,.092)*bell(ny,.702,.020)*front;
-  const innerCanthus=bell(nx,.063,.034)*bell(ny,.679,.027)*front;
+  // Follow the actual eye region near ±.35 head width, not the nose
+  // bridge (.12). The previous mismatch looked like a floating crease.
+  const lidY=.695+THREE.MathUtils.clamp(Number(settings.eyeY)||0,-3,3)*.006;
+  const upperLidOcclusion=bell(nx,.346,.112)*bell(ny,lidY+.017,.018)*front;
+  const lowerLidOcclusion=bell(nx,.346,.115)*bell(ny,lidY-.043,.029)*front;
+  const innerCanthus=bell(nx,.245,.046)*bell(ny,lidY-.014,.028)*front;
   const noseWing=bell(nx,.115,.045)*bell(ny,.551,.025)*front;
   const philtrum=bell(nx,0,.075)*bell(ny,.528,.015)*front;
   const lipShade=bell(nx,0,.18)*bell(ny,.468,.026)*front;
   const foreheadBands=[.758,.794,.823].reduce((v,y)=>
    v+bell(ny,y,.0055),0)*bell(nx,0,.70)*front;
-  const crows=bell(nx,.52,.12)*bell(ny,.675,.08)*front*
-   (.5+.5*Math.cos(ny*180+nx*31));
-  const nasolabial=bell(nx,.27+.08*(.63-ny),.029)*
+  const crows=bell(nx,.52,.13)*bell(ny,.675,.085)*front;
+  const nasolabial=bell(nx,.27+.08*(.63-ny),.052)*
    bell(ny,.51,.099)*front;
   const mouthCorners=bell(nx,.235,.035)*bell(ny,.478,.027)*front;
   const ageShade=age.wrinkles*(.17*foreheadBands+.30*crows+
@@ -260,7 +263,8 @@ export function updateRealFacePigment(face,controls={},mode='color',gender='fema
   const contactShade=(.018+.132*youthFade)*underEye+
    (.035+.05*youthFade)*noseWing+.028*philtrum+
    (.018+.052*youthFade)*lipShade+age.sag*.15*underEye+ageShade+
-   .051*upperLidOcclusion+.023*innerCanthus;
+   .047*upperLidOcclusion+.021*innerCanthus+
+   (.010+.020*youthFade)*lowerLidOcclusion;
   const s=Math.max(.55,1-contactShade);
   const rgb=pigmentFactor(skin,blush,cheek)
    .multiply(pigmentFactor(skin,lipstick,.30*lipMask))
@@ -275,6 +279,8 @@ export function updateRealFacePigment(face,controls={},mode='color',gender='fema
  face.userData.cheekTintVertexCount=actualCheekTintVertices;
  face.userData.v50YouthShadowScale=skinAgeShadowFactor(age.id);
  face.userData.v63AnatomicalEyelidContactShadow=true;
+ face.userData.v64EyeShadowFollowsAnatomicalEyes=true;
+ face.userData.v64AgeWrinkleIntensity=age.wrinkles;
  for(const name of ['UPPER','LOWER']){
   const lip=face.getObjectByName(name+'_3D_VERMILION_LIP');
   if(lip)tintRealLipSurface(lip,settings,mode);

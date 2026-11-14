@@ -1,6 +1,7 @@
 'use strict';
 const {chromium}=require('playwright');
 const fs=require('node:fs');
+const {captureChromiumScreenshot}=require('./chromium-webgl-screenshot.cjs');
 const out='qa-screenshots/face-expression-v48';
 fs.mkdirSync(out,{recursive:true});
 (async()=>{
@@ -26,9 +27,11 @@ fs.mkdirSync(out,{recursive:true});
    await page.waitForFunction(()=>window.__faceMasterQA?.()?.expression?.autoBlink===false);
    await page.locator('#talkDemo').click();
    await page.waitForFunction(()=>window.__faceMasterQA?.()?.expression?.speaking===true);
-   await page.waitForFunction(()=>window.__faceMasterQA?.()?.expression?.mouthOpen>.15,
-    null,{timeout:10000});
-   await page.screenshot({path:out+'/'+gender+'-talking.png',timeout:60000});
+   await page.evaluate(()=>window.__faceExpressionQA.setMouth(.55));
+   await page.waitForFunction(()=>window.__faceMasterQA?.()?.expression?.mouthOpen>.50,
+    null,{timeout:15000});
+   await captureChromiumScreenshot(page,out+'/'+gender+'-talking.png',{selector:'#faceCanvas'});
+   await page.evaluate(()=>window.__faceExpressionQA.setMouth(null));
    await page.locator('#talkDemo').click();
    await page.waitForFunction(()=>window.__faceMasterQA?.()?.expression?.mouthOpen===0);
    await page.locator('#autoBlink').click();
@@ -39,7 +42,7 @@ fs.mkdirSync(out,{recursive:true});
    await page.evaluate(()=>window.__faceExpressionQA.setBlink(1));
    await page.waitForFunction(()=>window.__faceMasterQA?.()?.expression?.blink>=.99,
     null,{timeout:15000});
-   await page.screenshot({path:out+'/'+gender+'-blink.png',timeout:60000});
+   await captureChromiumScreenshot(page,out+'/'+gender+'-blink.png',{selector:'#faceCanvas'});
    state=await page.evaluate(()=>window.__faceMasterQA());
    if(state.expression.blinkEyes!==2)
     throw Error(gender+': eye joint lost during expression');

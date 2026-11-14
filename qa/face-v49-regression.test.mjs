@@ -55,8 +55,8 @@ test('haircut name is backed by nonempty distinct 3D bun, braid, ponytail geomet
  }
  assert.equal(makeStyleSpecificHair('natural-short',box,0x343434).type,'none');
 });
-test('ten facial expressions are valid and include laugh, shout, anger and sadness',()=>{
- assert.equal(Object.keys(FACE_EXPRESSIONS).length,10);
+test('v64 supports 22 rigged expressions while retaining original laugh, shout, anger and sadness',()=>{
+ assert.equal(Object.keys(FACE_EXPRESSIONS).length,22);
  assert.ok(FACE_EXPRESSIONS.shout.open>.9);
  assert.ok(FACE_EXPRESSIONS.laugh.smile>.8);
  assert.ok(FACE_EXPRESSIONS.angry.brow<0);
