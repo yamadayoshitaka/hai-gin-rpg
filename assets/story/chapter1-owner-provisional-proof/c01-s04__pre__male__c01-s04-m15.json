@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "kind": "CHATGPT_OWNER_AUTHORIZED_REVERSIBLE_PROVISIONAL_NOT_P0",
+  "shotKey": "c01-s04|pre|male|c01-s04-m15",
+  "stageId": "c01-s04",
+  "edition": "pre",
+  "gender": "male",
+  "shotId": "c01-s04-m15",
+  "canonicalSource": "chapterOneReviewPages() / mangaForStage() / screenplayForStage()",
+  "sourceModel": "ChatGPT Images",
+  "generationId": "d73aaf6f-fbdc-4fba-a581-b70fe0a8a77f",
+  "ownerAuthorizedForProvisional": true,
+  "ownerAuthorizationContext": "Previous explicit 'では仮登録してください' and present request to generate and work on as many scenes as possible",
+  "humanVisualQAConfirmed": false,
+  "formallyApproved": false,
+  "referenceImagesAttachedToGenerator": false,
+  "provisionalRegistered": true,
+  "image": {
+    "path": "assets/story/chapter1-provisional-live/c01-s04__pre__male__c01-s04-m15.webp",
+    "sha256": "59f3ea7757e27c3f546c6afacf09dc1ec98e0b30f93a3d9f6a79268f752953f1",
+    "byteCount": 345814,
+    "sourcePixels": [
+      1672,
+      941
+    ],
+    "cropRectangle": [
+      4,
+      2,
+      1668,
+      938
+    ],
+    "nativePixels": [
+      1664,
+      936
+    ],
+    "noUpscaling": true,
+    "format": "WebP",
+    "aspectRatio": "16:9"
+  },
+  "cast": [
+    "lucia",
+    "garan"
+  ],
+  "visualBrief": "リュシアとガランが森の遺構へ向かう隊列を見送り出撃の緊迫感を描写",
+  "quality": {
+    "oneIndependentScene": true,
+    "original3DCinematicStyle": true,
+    "noSpeechBubblesOrBakedText": true,
+    "noUI": true,
+    "characterRefsPhysicallyAttached": false,
+    "formalP0Status": "BLOCKED_PENDING_VISUAL_MASTER_AND_CANONICAL_PRECISION"
+  },
+  "knownVisualDiscrepancies": [
+    "Canonical script refers to the commander nodding; commander not clearly visible in frame. Future correction needed"
+  ],
+  "unmetP0": [
+    "Official cast/quality reference image bytes were not physically supplied to ChatGPT Images",
+    "Formal P0 visual approval is pending",
+    "Canonical script refers to the commander nodding; commander not clearly visible in frame. Future correction needed"
+  ],
+  "rollback": "Remove exactly this canonical shot key from src/story-chapter1-provisional-live.js; do not reuse its pixels for a different gender/branch."
+}

@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "kind": "CHATGPT_OWNER_AUTHORIZED_REVERSIBLE_PROVISIONAL_NOT_P0",
+  "shotKey": "c01-s04|pre|female|c01-s04-m3",
+  "stageId": "c01-s04",
+  "edition": "pre",
+  "gender": "female",
+  "shotId": "c01-s04-m3",
+  "canonicalSource": "chapterOneReviewPages() / mangaForStage() / screenplayForStage()",
+  "sourceModel": "ChatGPT Images",
+  "generationId": "abf32d5e-c51d-42ca-8ab6-8ceb2f8f7bb7",
+  "ownerAuthorizedForProvisional": true,
+  "ownerAuthorizationContext": "Previous explicit 'では仮登録してください' and present request to generate and work on as many scenes as possible",
+  "humanVisualQAConfirmed": false,
+  "formallyApproved": false,
+  "referenceImagesAttachedToGenerator": false,
+  "provisionalRegistered": true,
+  "image": {
+    "path": "assets/story/chapter1-provisional-live/c01-s04__pre__female__c01-s04-m3.webp",
+    "sha256": "cac502be198e3934f55090fe591a5d35b4a25a6d895eec2ad860e4b8cb20b934",
+    "byteCount": 319236,
+    "sourcePixels": [
+      1672,
+      941
+    ],
+    "cropRectangle": [
+      4,
+      2,
+      1668,
+      938
+    ],
+    "nativePixels": [
+      1664,
+      936
+    ],
+    "noUpscaling": true,
+    "format": "WebP",
+    "aspectRatio": "16:9"
+  },
+  "cast": [
+    "garan",
+    "iris"
+  ],
+  "visualBrief": "女性主人公版の別原画。ガランとイリスの対話、苔に覆われた森の古代石造建築",
+  "quality": {
+    "oneIndependentScene": true,
+    "original3DCinematicStyle": true,
+    "noSpeechBubblesOrBakedText": true,
+    "noUI": true,
+    "characterRefsPhysicallyAttached": false,
+    "formalP0Status": "BLOCKED_PENDING_VISUAL_MASTER_AND_CANONICAL_PRECISION"
+  },
+  "knownVisualDiscrepancies": [],
+  "unmetP0": [
+    "Official cast/quality reference image bytes were not physically supplied to ChatGPT Images",
+    "Formal P0 visual approval is pending"
+  ],
+  "rollback": "Remove exactly this canonical shot key from src/story-chapter1-provisional-live.js; do not reuse its pixels for a different gender/branch."
+}

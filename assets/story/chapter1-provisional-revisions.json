@@ -182,6 +182,38 @@
       "proof": "assets/story/chapter1-chatgpt-inbox/c01-s04__pre__male__c01-s04-m2.review.json",
       "actionAt": "2026-11-15T00:26:00+09:00",
       "note": "Distinct one-frame cinematic ChatGPT output, exactly Lucia and Garan; user requested bulk production and reversible registration. No character-master binary attachment, no formal QA."
+    },
+    {
+      "kind": "CHATGPT_OWNER_PROVISIONAL_NOT_P0",
+      "key": "c01-s04|pre|male|c01-s04-m3",
+      "sha256": "c9d2d43c582908b4c66707c335c043ab1559df395dc5274ef910255b231f1f96",
+      "proof": "assets/story/chapter1-owner-provisional-proof/c01-s04__pre__male__c01-s04-m3.json",
+      "actionAt": "2026-11-15T00:26:00+09:00",
+      "note": "User authorized batch provisional registration. Independent native 16:9 frame, no upscaling, not formally P0 approved. Individual rollback supported; known discrepancies recorded."
+    },
+    {
+      "kind": "CHATGPT_OWNER_PROVISIONAL_NOT_P0",
+      "key": "c01-s04|pre|female|c01-s04-m3",
+      "sha256": "cac502be198e3934f55090fe591a5d35b4a25a6d895eec2ad860e4b8cb20b934",
+      "proof": "assets/story/chapter1-owner-provisional-proof/c01-s04__pre__female__c01-s04-m3.json",
+      "actionAt": "2026-11-15T00:26:00+09:00",
+      "note": "User authorized batch provisional registration. Independent native 16:9 frame, no upscaling, not formally P0 approved. Individual rollback supported; known discrepancies recorded."
+    },
+    {
+      "kind": "CHATGPT_OWNER_PROVISIONAL_NOT_P0",
+      "key": "c01-s04|pre|male|c01-s04-m4",
+      "sha256": "b9b8deee5d266e55ae708bfaa1dc2bc785a247e3cf7b0497b490e268a0ffdf2c",
+      "proof": "assets/story/chapter1-owner-provisional-proof/c01-s04__pre__male__c01-s04-m4.json",
+      "actionAt": "2026-11-15T00:26:00+09:00",
+      "note": "User authorized batch provisional registration. Independent native 16:9 frame, no upscaling, not formally P0 approved. Individual rollback supported; known discrepancies recorded."
+    },
+    {
+      "kind": "CHATGPT_OWNER_PROVISIONAL_NOT_P0",
+      "key": "c01-s04|pre|male|c01-s04-m15",
+      "sha256": "59f3ea7757e27c3f546c6afacf09dc1ec98e0b30f93a3d9f6a79268f752953f1",
+      "proof": "assets/story/chapter1-owner-provisional-proof/c01-s04__pre__male__c01-s04-m15.json",
+      "actionAt": "2026-11-15T00:26:00+09:00",
+      "note": "User authorized batch provisional registration. Independent native 16:9 frame, no upscaling, not formally P0 approved. Individual rollback supported; known discrepancies recorded."
     }
   ]
 }

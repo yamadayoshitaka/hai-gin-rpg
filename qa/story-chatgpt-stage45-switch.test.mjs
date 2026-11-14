@@ -36,7 +36,7 @@ assert(ui.includes("new File([blob]"));
 assert(ui.includes('ChatGPT Plusの画像生成を利用'));
 
 const registered=Object.entries(CHAPTER1_PROVISIONAL_LIVE).filter(([key])=>key.startsWith('c01-s04|'));
-assert.equal(registered.length,3,'Exactly three distinct native ChatGPT stage4 frames are owner-provisional; do not count rejected grids');
+assert.equal(registered.length,7,'Only seven individually uploaded ChatGPT stage4 WebPs are registered, never rejected collages');
 const liveS05=Object.keys(CHAPTER1_PROVISIONAL_LIVE).filter(key=>key.startsWith('c01-s05|'));
 assert.equal(liveS05.length,0,'No image may be fabricated or counted as stage5 completed');
 for(const gender of ['male','female']){
@@ -91,4 +91,68 @@ assert.equal(m2Proof.quality.exactCast,true);
 assert.equal(m2Proof.quality.realReferenceBytesAttachedToImageGenerator,false);
 assert.equal(m2Proof.scriptText,pages.flatMap(p=>p.shots).find(x=>x.key===newShot).scriptText);
 assert(ledger.history.some(h=>h.key===newShot&&h.kind==='CHATGPT_OWNER_PROVISIONAL_NOT_P0'));
+
+const newNative=[
+  {
+    "key": "c01-s04|pre|male|c01-s04-m3",
+    "hash": "c9d2d43c582908b4c66707c335c043ab1559df395dc5274ef910255b231f1f96",
+    "actors": [
+      "garan",
+      "iris"
+    ]
+  },
+  {
+    "key": "c01-s04|pre|female|c01-s04-m3",
+    "hash": "cac502be198e3934f55090fe591a5d35b4a25a6d895eec2ad860e4b8cb20b934",
+    "actors": [
+      "garan",
+      "iris"
+    ]
+  },
+  {
+    "key": "c01-s04|pre|male|c01-s04-m4",
+    "hash": "b9b8deee5d266e55ae708bfaa1dc2bc785a247e3cf7b0497b490e268a0ffdf2c",
+    "actors": [
+      "iris",
+      "lucia"
+    ]
+  },
+  {
+    "key": "c01-s04|pre|male|c01-s04-m15",
+    "hash": "59f3ea7757e27c3f546c6afacf09dc1ec98e0b30f93a3d9f6a79268f752953f1",
+    "actors": [
+      "lucia",
+      "garan"
+    ]
+  }
+];
+const knownKeys=new Set(pages.flatMap(p=>p.shots.map(s=>s.key)));
+const usedHashes=new Set();
+for(const spec of newNative){
+ assert(knownKeys.has(spec.key),'Unknown canonical shot '+spec.key);
+ const shot=pages.flatMap(p=>p.shots).find(s=>s.key===spec.key);
+ assert.deepEqual([shot.characterId,shot.secondaryId],spec.actors,'Incorrect script cast '+spec.key);
+ const live=CHAPTER1_PROVISIONAL_LIVE[spec.key];
+ assert(live&&live.sha256===spec.hash&&live.status==='PROVISIONAL_OWNER_AUTHORIZED_PENDING_P0');
+ assert(!usedHashes.has(live.sha256),'Same binary used for multiple gender/branch shots');
+ usedHashes.add(live.sha256);
+ const imageBytes=fs.readFileSync(live.asset.startsWith('./')?live.asset.slice(2):live.asset);
+ assert.equal(imageBytes.toString('ascii',0,4),'RIFF');
+ assert.equal(imageBytes.toString('ascii',8,12),'WEBP');
+ assert.equal(crypto.createHash('sha256').update(imageBytes).digest('hex'),spec.hash);
+ const proof=JSON.parse(fs.readFileSync(live.provenance,'utf8'));
+ assert.equal(proof.shotKey,spec.key);
+ assert.equal(proof.image.sha256,spec.hash);
+ assert.deepEqual(proof.image.nativePixels,[1664,936]);
+ assert.equal(proof.image.noUpscaling,true);
+ assert.equal(proof.formallyApproved,false);
+ assert.equal(proof.referenceImagesAttachedToGenerator,false);
+ assert.equal(proof.provisionalRegistered,true);
+ assert.equal(proof.cast.join('|'),spec.actors.join('|'));
+ assert.equal(chapter1ProvisionalLivePanel({
+  stageId:shot.stageId,comicEdition:shot.edition,protagonistGender:shot.gender,id:shot.shotId
+ })?.asset,live.asset,'Registration resolver did not use the correct native image');
+ assert(ledger.history.some(h=>h.key===spec.key&&h.sha256===spec.hash&&h.kind==='CHATGPT_OWNER_PROVISIONAL_NOT_P0'));
+}
+
 console.log('PASS: 96 exact stage4/5 ChatGPT per-shot handoffs, actual bytes, style and branch safety, no paid API');
