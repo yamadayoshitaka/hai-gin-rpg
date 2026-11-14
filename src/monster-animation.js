@@ -4,10 +4,10 @@ import {monsterLeapPose,applyMonsterLeapMotion} from './monster-leap-kinematics.
  * Separate head, jaws, limbs, wings and tentacles keep animation readable.
  */
 const durations=Object.freeze({idle:Infinity,walk:Infinity,run:Infinity,attack:1.1,
-  special:1.6,roar:1.3,dodge:.7,hit:.45,leap:1.25,defeat:1.15});
+  special:1.6,roar:1.3,dodge:.7,guard:.9,hit:.45,leap:1.25,defeat:1.15});
 export const MONSTER_ACTIONS=Object.freeze([
  ['idle','待機'],['walk','歩行'],['run','疾走'],['attack','通常攻撃'],
- ['special','固有技'],['roar','威嚇'],['dodge','回避'],
+ ['special','固有技'],['roar','威嚇'],['guard','防御'],['dodge','回避'],
  ['hit','被弾'],['leap','跳躍'],['defeat','倒れる'],
 ]);
 export function startMonsterAction(model,action,time=0){
@@ -35,6 +35,7 @@ export function animateMonsterModel(model,time=0){
  const special=action==='special'?pulse:0;
  const hit=action==='hit'?pulse:0;
  const dodge=action==='dodge'?pulse:0;
+ const guard=action==='guard'?pulse:0;
  const leaping=action==='leap'?pulse:0;
  const leap=action==='leap'?monsterLeapPose(progress,model.userData.surfaceFamily):null;
  const dying=action==='defeat'?progress:0;
@@ -86,7 +87,8 @@ export function animateMonsterModel(model,time=0){
      const side=name.includes('L')?-1:1,number=Number(name.slice(-1))||0;
      const gaitOffset=side>0?Math.PI:0;
      part.rotation.x=(locomotion?Math.sin(gait+gaitOffset+number*.62)*(action==='run'?.62:.34):0)+
-       strike*(name.startsWith('arm')?-.70:-.2)+special*(name.startsWith('arm')?-.95:-.29);
+       strike*(name.startsWith('arm')?-.70:-.2)+special*(name.startsWith('arm')?-.95:-.29)+
+       guard*(name.startsWith('arm')?-.90:-.06);
      part.rotation.z=side*(dodge*.19+hit*.14+dying*.15);
    }else if(name==='torso'){
      part.rotation.z=sway+hit*.16+dying*.10;
