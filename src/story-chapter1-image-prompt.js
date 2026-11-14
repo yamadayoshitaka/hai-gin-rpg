@@ -32,9 +32,12 @@ export function buildChapter1ImagePrompt({shot,page,edit='',bible=null,assignmen
  if(manualManifest&&!manualShot)throw Error('Shot missing from production manifest: '+shot.key);
  if(manualManifest?.stageId==='c01-s03'&&manualShot?.script!==shot.scriptText)
    throw Error('Stage3 per-cut script differs from canonical scene: '+shot.key);
+ const stage45=shot.stageId==='c01-s04'||shot.stageId==='c01-s05';
+ // Stage4/5 uses actual canonical cast from THIS scene; do not inject an
+ // extra protagonist into an establishing scene or death outcome.
  const actors=manualShot?.actors||assignment?.visibleActorIds||
   [...new Set([shot.characterId,shot.secondaryId,
-   ...(page.edition==='post-gameover'?[]:['commander_'+page.gender])].filter(Boolean))];
+   ...(stage45||page.edition==='post-gameover'?[]:['commander_'+page.gender])].filter(Boolean))];
  const normalizedActors=[...new Set(actors)];
  const supplemental=Object.entries(manualManifest?.characterMasters||{}).map(([id,r])=>({
   id,path:r.path,role:r.role,visualRule:r.role
@@ -45,6 +48,11 @@ export function buildChapter1ImagePrompt({shot,page,edit='',bible=null,assignmen
  const gender=page.gender==='female'?'女性':'男性';
  const outcome={'pre':'戦闘前','post-town':'町イベント後','post-victory':'勝利後',
   'post-defeat':'敗北後','post-gameover':'軍師戦死／ゲームオーバー'}[page.edition]||page.edition;
+ const stage45Story=stage45?(shot.stageId==='c01-s04'?
+  '第4ステージ：森の古代遺構。処刑された鐘守の紋章と封蝋の出所を調べる。蔦、苔、崩れた石柱、森林の遺構。勝利以前に調査成功を描かない。':
+  '第5ステージ：王都へ迫る軍勢を前に、銀髪の摂政リュシアが住民退避を指揮する。城壁、避難路、町民と防衛部隊。勝利以前に防衛成功を描かない。'):'';
+ const stage45StyleRef=stage45?stageManifest?.qualityReferenceByGender?.[page.gender]:null;
+ if(stage45&&!stage45StyleRef)throw Error('Stage4/5 same-gender style reference missing for '+shot.key);
  const lines=[
   '【灰銀のレゾナンス／漫画原画の画像生成依頼】',
   '以下の台本に沿って、最終的な画像を実際に1枚生成してください。文章での解説だけで終えないでください。',
@@ -55,6 +63,20 @@ export function buildChapter1ImagePrompt({shot,page,edit='',bible=null,assignmen
   '',
   '【このコマの正式な台本】',
   shot.scriptText||shot.displayText||'（台詞のない情景カット）',
+  ...(stage45?[
+   '',
+   '【第4・5ステージ専用P0：この1枚を生成するたびに最優先で適用】',
+   '生成器はChatGPT Imagesを使用。Cloudflare Workers AI、外部有料API、ダミー画像への置換は禁止。',
+   '固定された舞台：'+stage45Story,
+   '結果の状態：'+outcome+'。勝利前の場面で成功、敗北、死亡、帰還を描写しない。負けや戦死の場面で生還させない。',
+   'カメラ構図はこの1コマの台本の動作を中心に、映画的3D JRPGクオリティの独立した16:9原画1枚。',
+   '原画内に文字・台詞・吹き出し・番号・GAME OVER文字・メニュー・UI・装飾的疑似文字を絶対に入れない。',
+   '白黒漫画、線画、アニメセル塗り、漫画ページ、コラージュ、4分割、ゲームスクリーンショット化は禁止。',
+   '人物はこのショットに宣言された登場人物だけ。主役・銀髪の摂政リュシア・老騎士ガラン・治癒師イリスを取り違えない。',
+   '前後のコマは連続性の参照にとどめ、このコマにない台詞や人物や結末を流用しない。',
+   '基準となる同一性別のステージ1原画を実ファイルとして添付：'+stage45StyleRef,
+   '人物マスターも台本で登場する人物分だけ実ファイルを添付する。添付が欠けた場合は正式P0承認を付けない。'
+  ]:[]),
   '',
   '【シーン・構図／マニフェスト必須入力】',
   manualShot?.scene||assignment?.sceneGoal||shot.sceneKind||page.stageName,
