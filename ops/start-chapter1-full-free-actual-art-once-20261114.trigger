@@ -22,5 +22,9 @@
   "diagnostic": "Generate first below-native legacy stage1 original as high-resolution isolated review draft; hard 900 Neuron Free-only budget",
   "newQA": "qa/story-chapter1-draft-regression.mjs",
   "existingFormalQA": "scripts/promote-story-chapter1-reviewed-drafts.mjs",
-  "artWorkflowVersion": "LEGACY_NATIVE_DEFECT_NEEDS_REGEN"
+  "artWorkflowVersion": "LEGACY_NATIVE_DEFECT_NEEDS_REGEN",
+  "manualResumeCount": 1,
+  "manualResumeReason": "User approved proceeding with full chapter1 regression and manual free-only batch after verifying no recent scheduled run",
+  "mustNotAutoApprove": true,
+  "maxEstimatedNeurons": 7500
 }
