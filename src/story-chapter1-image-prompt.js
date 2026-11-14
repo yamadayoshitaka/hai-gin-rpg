@@ -25,10 +25,13 @@ export function buildChapter1ImagePrompt({shot,page,edit='',bible=null,assignmen
  if(declaredIds&&!declaredIds.includes(shot.shotId))
    throw Error('Shot ID not present in stage manifest: '+shot.key);
  if(manualManifest&&(manualManifest.stageId!==shot.stageId||
-    manualManifest.edition!==shot.edition||manualManifest.gender!==shot.gender))
+    (manualManifest.edition&&manualManifest.edition!==shot.edition)||
+    (manualManifest.gender&&manualManifest.gender!==shot.gender)))
    throw Error('Mismatched manual production manifest');
  const manualShot=manualManifest?.shots?.find(s=>s.key===shot.key)||null;
  if(manualManifest&&!manualShot)throw Error('Shot missing from production manifest: '+shot.key);
+ if(manualManifest?.stageId==='c01-s03'&&manualShot?.script!==shot.scriptText)
+   throw Error('Stage3 per-cut script differs from canonical scene: '+shot.key);
  const actors=manualShot?.actors||assignment?.visibleActorIds||
   [...new Set([shot.characterId,shot.secondaryId,
    ...(page.edition==='post-gameover'?[]:['commander_'+page.gender])].filter(Boolean))];
@@ -74,7 +77,7 @@ export function buildChapter1ImagePrompt({shot,page,edit='',bible=null,assignmen
   '重要：ステージのコマ割り指定はレビュー用の配置。画像生成器へ渡すのは現在の1コマの台本・構図・登場人物指定だけ。',
   '共通P0：'+qualityRules.policyId+'。定義済み禁止事項と人物参照の全項目を今回の画像に適用する。',
   'P0禁止要素：'+qualityRules.imageRule.prohibited.join('、'),
-  manualManifest?'使用する制作マニフェスト：assets/story/stage-manifests/c01-s01-post-town-male-p01-manual-production.json':'制作マニフェスト：共通P0・当該ステージのキャスト／台本ルールを適用',
+  manualManifest?'使用する制作マニフェスト：assets/story/stage-manifests/'+(shot.stageId==='c01-s03'?'c01-s03-manual-regression-remaining.json':'c01-s01-post-town-male-p01-manual-production.json'):'制作マニフェスト：共通P0・当該ステージのキャスト／台本ルールを適用',
   manualManifest?'画風ID：'+(manualManifest.visualStyleLock?.id||'未指定'):'画風ID：STAGE1_HI_FIDELITY_3D_JRPG_ANIME_REALISM_V1',
   manualManifest?'画風定義：'+(manualManifest.visualStyleLock?.look||manualManifest.renderRule):'画風は第1ステージの3D JRPG基準に固定',
   manualManifest?'画風禁止：'+(manualManifest.visualStyleLock?.forbidStyles||[]).join('、'):'2Dセル画・漫画ページ・コマ割りを禁止',
@@ -84,7 +87,7 @@ export function buildChapter1ImagePrompt({shot,page,edit='',bible=null,assignmen
   '・【画風基準の原画】'+LIVE+'assets/story/panels/c01-s01-m01.webp',
   '・【画風補助参考】'+LIVE+'assets/story/chapters/c01/panels/c01-s01-m06-male.webp',
   '・2Dイラスト調、セル塗り、漫画ページ、絵コンテ、複数の枠を持つコマ割り、ギルド冒険譚への改変など、既存の3D RPG原画と異なる画風は絶対禁止。',
-  '・画風参照と登場人物の実画像ファイルを生成時に実際に添付する。URLやファイルパスだけは添付扱いにしない。未添付なら品質合格も正式・仮登録も主張しない。',
+  '・画風参照と登場人物の実画像ファイルを生成時に実際に添付する。URLやファイルパスだけは添付扱いにしない。未添付ならP0正式品質合格は禁止。ユーザー明示承認の仮登録でも未添付を証拠に明記し、人物/画風/1枚絵の目視検査を通す。',
   '・16:9横長の高精細な単一シーン。可能なら1536×864以上のネイティブ画質を目標。単なる拡大処理で品質を偽装しない。',
   '・ゲームの原画として、美麗で立体感のあるシネマティックなファンタジー画風。顔・瞳・髪・服の縫い目・陰影を精密に。',
   '・女性主人公と男性主人公を混同しない。リュシア、イリス、ガランなどを別人・別衣装に変更しない。',
