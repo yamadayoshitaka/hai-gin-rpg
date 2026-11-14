@@ -1,0 +1,94 @@
+{
+  "schema": "hai-gin/humanoid-visual-standards/v1",
+  "approvedDate": "2026-11-14",
+  "status": "approved-2d-targets-pending-new-studio-base",
+  "repositoryImagesCommitted": false,
+  "imagePackage": "hai-gin-approved-2d-human-base-migration-v1.zip",
+  "currentGameBase": [
+    "Superhero_Male_FullBody",
+    "Superhero_Female_FullBody"
+  ],
+  "targetHumanBase": {
+    "source": "face-body-studio.html / male-body-studio.html",
+    "latestVerifiedRevision": "v59",
+    "modelReadyForCosplay": false,
+    "requireRiggedPlayableExport": true,
+    "bodyTypes": [
+      "ultra_slim",
+      "slim",
+      "normal",
+      "sturdy",
+      "heavy"
+    ],
+    "protectSharedAssets": true
+  },
+  "qualityTargets": [
+    {
+      "id": "forest_archer",
+      "type": "female-summon",
+      "art": "forest_archer.png",
+      "sha256": "2bc3f68cd52da3b6aaedbc9efc3a9a6c10acb8a5d7e7a808c718b411506d4d85",
+      "repoPath": null,
+      "focus": [
+        "new-female-face",
+        "full-scalp-platinum-hair",
+        "ear-safe-wig-cut",
+        "navy-gold-ranger-clothing",
+        "bow-and-quiver"
+      ]
+    },
+    {
+      "id": "dragon_lord",
+      "type": "female-summon",
+      "art": "dragon_lord.png",
+      "sha256": "1e508f5d8caf48979d471fdac1cd921f6123e3e2573534c1d6e822e4d5911525",
+      "repoPath": null,
+      "focus": [
+        "new-female-face",
+        "long-silver-lavender-hair-supersedes-bald-3d",
+        "integrated-horns",
+        "temple-scales",
+        "black-crimson-gold-regal-wardrobe",
+        "preserve-wings"
+      ]
+    },
+    {
+      "id": "seraph_guardian",
+      "type": "female-summon",
+      "art": "seraph_guardian.png",
+      "sha256": "4fdcafb4514eea9349a7462f3328ccec5e2e98afa0c942851b93ae6c372cf470",
+      "repoPath": null,
+      "focus": [
+        "new-female-face",
+        "full-scalp-silver-hair",
+        "white-gold-navy-sacred-outfit",
+        "preserve-original-multilayer-feathers",
+        "airborne-and-flapping"
+      ]
+    },
+    {
+      "id": null,
+      "type": "doll-concept-sheet",
+      "art": "humanoid_doll_concepts.png",
+      "sha256": "6b3d5079e9271ff9ebf993e34025dd6c792885cc66c9525f6588e293e4f2ac4e",
+      "repoPath": null,
+      "concepts": [
+        "porcelain-doll-princess",
+        "marionette-assassin",
+        "plush-doll-guardian",
+        "clockwork-doll-mage"
+      ],
+      "existingMonsterIdsAssigned": false
+    }
+  ],
+  "releaseGates": [
+    "studio-production-skinned-GLB-export",
+    "Head-Neck-Spine-UpperArm-Forearm-Hips-Thigh-Calf-bone-mapping",
+    "retarget-idle-walk-run-attack-hit-dead",
+    "source-face-expression-and-blink",
+    "outfit-skin-and-wig-refit",
+    "2d-front-side-rear-top-compare",
+    "mobile-webgl-and-regression-tests"
+  ],
+  "runtimeMigrationEnabled": false
+}
