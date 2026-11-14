@@ -147,6 +147,14 @@ async function stage2Assignment(shot){
 // buildChapter1ImagePrompt for the exact scene. A path written in a prompt is
 // not the same as an image byte attachment to ChatGPT.
 let p0RulesPromise=null,stage1ManualPromise=null;
+const stageManifestPromises=new Map();
+async function stageManifestFor(shot){
+ const path='./assets/story/stage-manifests/'+shot.stageId+'.manifest.json';
+ if(!stageManifestPromises.has(path))stageManifestPromises.set(path,
+  fetch(path).then(r=>{if(!r.ok)throw Error('ステージマニフェストを取得できません');return r.json();})
+   .catch(e=>{stageManifestPromises.delete(path);throw e;}));
+ return stageManifestPromises.get(path);
+}
 async function qualityRulesFor(){
  if(!p0RulesPromise)p0RulesPromise=fetch('./assets/story/quality/artwork-p0-rules.json')
   .then(r=>{if(!r.ok)throw Error('P0品質マニフェストを取得できません');return r.json();})
@@ -185,10 +193,11 @@ async function referenceFilesForHandoff(shot,prepared){
  return files;
 }
 async function generatePrompt(shot,notes){
- const [bible,assignment,manualManifest,qualityRules]=await Promise.all([
-  referenceFor(shot),stage2Assignment(shot),manualManifestFor(shot),qualityRulesFor()
+ const [bible,assignment,manualManifest,stageManifest,qualityRules]=await Promise.all([
+  referenceFor(shot),stage2Assignment(shot),manualManifestFor(shot),
+  stageManifestFor(shot),qualityRulesFor()
  ]);
- return buildChapter1ImagePrompt({shot,page:current,bible,assignment,manualManifest,qualityRules,
+ return buildChapter1ImagePrompt({shot,page:current,bible,assignment,manualManifest,stageManifest,qualityRules,
   edit:notes||saved[shot.key]?.feedback||'',sourceKind:states.get(shot.key)?.kind});
 }
 async function copyPrompt(text,textarea){
@@ -226,9 +235,10 @@ function buildGenerationControls(shot){
  preview.readOnly=true;preview.hidden=true;preview.setAttribute('aria-label','ChatGPTに渡す完成プロンプト');
  let prepared=null;
  const loadContract=Promise.all([
-  referenceFor(shot),stage2Assignment(shot),manualManifestFor(shot),qualityRulesFor()
- ]).then(([bible,assignment,manualManifest,qualityRules])=>{
-   prepared={bible,assignment,manualManifest,qualityRules};
+  referenceFor(shot),stage2Assignment(shot),manualManifestFor(shot),
+  stageManifestFor(shot),qualityRulesFor()
+ ]).then(([bible,assignment,manualManifest,stageManifest,qualityRules])=>{
+   prepared={bible,assignment,manualManifest,stageManifest,qualityRules};
    setGeneratorMessage(message,'台本・コマ別マニフェスト・P0品質条件を読込済み。ChatGPTへ渡す生成指示に全項目を反映します。参照画像は別途実ファイル添付が必要です。');
   }).catch(e=>{
    setGeneratorMessage(message,'必須マニフェストの読込エラー（生成禁止）：'+e.message);
@@ -237,7 +247,8 @@ function buildGenerationControls(shot){
   if(!prepared)throw Error('参照データを読み込み中です。もう一度押してください。');
   const prompt=buildChapter1ImagePrompt({
    shot,page:current,bible:prepared.bible,assignment:prepared.assignment,
-   manualManifest:prepared.manualManifest,qualityRules:prepared.qualityRules,
+   manualManifest:prepared.manualManifest,stageManifest:prepared.stageManifest,
+   qualityRules:prepared.qualityRules,
    edit:input.value.trim()||saved[shot.key]?.feedback||'',
    sourceKind:states.get(shot.key)?.kind
   });
