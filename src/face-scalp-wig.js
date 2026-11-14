@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import {createFastFaceSurfaceSampler} from './face-feature-meshes.js';
 import {getWigStyle,DEFAULT_WIG_STYLE_ID,WIG_BASE_VOLUME_PROFILES,WIG_SILHOUETTE_PROFILES} from './face-wig-styles.js?v=44';
-import {makeStyleSpecificHair} from './face-wig-ornaments-v49.js?v=49';
+import {makeStyleSpecificHair} from './face-wig-ornaments-v49.js?v=64';
 import {catalogHairGroom,groomGuideOffset} from './face-hair-groom-v50.js?v=50';
 
 /**
@@ -231,18 +231,37 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
   const yCut=box.min.y+d.y*(zNorm>.10?.815:
    zNorm<-.035?.58:
    Math.abs((mid.x-center.x)/d.x)>.19?.68:.71);
-  if(p.some(vertex=>vertex.y<yCut))continue;
-  // The scalp shell uses the donor topology, with a tiny offset only.
-  for(let j=0;j<3;j++){
-   const v=p[j].clone(),ii=ids[j];
-   const normal=normals?f3(normals.getX(ii),normals.getY(ii),normals.getZ(ii)):
+  // v64: do not DISCARD a whole scalp triangle if only one vertex
+  // falls below the hairline. That produced peppered scalp holes and
+  // jagged roots. Clip the REAL triangle to the hairline plane and
+  // interpolate the source normal so the seam is continuous.
+  const sourceNodes=p.map((v,j)=>{
+   const ii=ids[j];
+   const n=normals?f3(normals.getX(ii),normals.getY(ii),normals.getZ(ii)):
     v.clone().sub(mid).normalize();
-   if(normal.dot(v.clone().sub(center))<0)normal.negate();
-   v.addScaledVector(normal,d.x*.0015+
-    wigVolumeLiftAt(v,box,volumeProfile));
+   if(n.dot(v.clone().sub(center))<0)n.negate();
+   return {p:v,n:n.normalize()};
+  });
+  const clipped=[];
+  for(let j=0;j<3;j++){
+   const current=sourceNodes[j],previous=sourceNodes[(j+2)%3];
+   const inside=current.p.y>=yCut,wasInside=previous.p.y>=yCut;
+   if(inside!==wasInside){
+    const t=THREE.MathUtils.clamp((yCut-previous.p.y)/
+     Math.max(1e-9,Math.abs(current.p.y-previous.p.y))*
+     Math.sign(current.p.y-previous.p.y),0,1);
+    clipped.push({p:previous.p.clone().lerp(current.p,t),
+     n:previous.n.clone().lerp(current.n,t).normalize()});
+   }
+   if(inside)clipped.push(current);
+  }
+  if(clipped.length<3)continue;
+  for(let j=1;j+1<clipped.length;j++)for(const node of
+   [clipped[0],clipped[j],clipped[j+1]]){
+   const v=node.p.clone(),n=node.n;
+   v.addScaledVector(n,d.x*.0015+wigVolumeLiftAt(v,box,volumeProfile));
    verts.push(v.x,v.y,v.z);
-   // Preserve smooth source-head normals; nonindexed compute would make a flat helmet.
-   smoothNormals.push(normal.x,normal.y,normal.z);
+   smoothNormals.push(n.x,n.y,n.z);
   }
  }
  // 52 independent tapered underlocks: rooted on actual posterior head
@@ -1006,7 +1025,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  // Characteristic coiffure sections must have their OWN REAL GEOMETRY.
  // A bun is not short straight hair with a "bun" label; plaits contain
  // three interwoven strands and ponytails have a distinct tied root.
- const styled=makeStyleSpecificHair(styleId,box,rootColor);
+ const styled=makeStyleSpecificHair(styleId,box,rootColor,{scalpCandidates});
  styled.meshes.forEach(mesh=>root.add(mesh));
  root.userData.v49StyledHair=styled.type;
  root.userData.v49StyledHairTriangles=styled.triangleCount;
