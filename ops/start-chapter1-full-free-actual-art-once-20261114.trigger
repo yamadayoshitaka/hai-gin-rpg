@@ -23,8 +23,8 @@
   "newQA": "qa/story-chapter1-draft-regression.mjs",
   "existingFormalQA": "scripts/promote-story-chapter1-reviewed-drafts.mjs",
   "artWorkflowVersion": "LEGACY_NATIVE_DEFECT_NEEDS_REGEN",
-  "manualResumeCount": 3,
-  "manualResumeReason": "Owner requested next immediate single run for chapter1 462-shot Free-only image generation. Preserve hourly schedule and no paid fallback.",
+  "manualResumeCount": 4,
+  "manualResumeReason": "Owner explicitly requested the next single manual execution of Chapter1 462-scene Free-only batch. Previous run exhausted free quota; one bounded attempt, no paid fallback and no additional automatic retries.",
   "mustNotAutoApprove": true,
   "maxEstimatedNeurons": 7500,
   "lastManualTriggerDate": "2026-11-14"
