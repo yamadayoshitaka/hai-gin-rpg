@@ -54,7 +54,11 @@ const fs=require('node:fs');
         result.neckContinuity.reusedFaceMaterial&&
         result.neckContinuity.separateNeckGeometryHidden&&
         result.neckContinuity.actualCollarSource&&
-        result.neckContinuity.unifiedNeckBottomHeight<result.neckContinuity.actualCollarHeight))
+        result.neckContinuity.unifiedNeckBottomHeight<result.neckContinuity.actualCollarHeight&&
+        result.neckContinuity.raisedInnerCollarApplied&&
+        result.neckContinuity.visibleSkinNeckLength<.04&&
+        result.neckContinuity.unifiedNeckColorSmoothed&&
+        result.neckContinuity.unifiedNeckNormalsSmoothed))
     throw Error('STILL_HAS_DETACHED_NECK_OR_ORANGE_GAP: '+JSON.stringify(result.neckContinuity));
   if(!(result.donor?.removedNeckTriangles>0))
     throw Error('DONOR_ORANGE_NECK_STILL_PRESENT: '+JSON.stringify(result.donor));
