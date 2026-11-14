@@ -13,7 +13,14 @@
     small{display:block;color:#b5c9cf;font-size:11px;margin-top:5px}
     select,button{background:#1b3447;color:#fff;border:1px solid #708f9a;border-radius:8px;font:inherit;padding:9px;min-width:125px;cursor:pointer}
     #femaleSummonModeLabel[hidden]{display:none!important}
-    #info{position:fixed;z-index:5;left:12px;bottom:12px;right:12px;max-width:530px;border:1px solid #708f9a;background:#0f1d2ce0;border-radius:12px;padding:13px;line-height:1.7}
+    #info{position:fixed;z-index:5;left:12px;bottom:74px;right:12px;max-width:530px;border:1px solid #708f9a;background:#0f1d2ce0;border-radius:12px;padding:13px;line-height:1.7}
+    #summonMotionStrip{position:fixed;z-index:21;bottom:max(7px,env(safe-area-inset-bottom));
+      left:8px;right:8px;display:flex;align-items:center;gap:6px;overflow-x:auto;
+      padding:6px;border-radius:11px;scrollbar-width:thin;overscroll-behavior-x:contain;
+      background:#071d2be8;border:1px solid #507d95;backdrop-filter:blur(9px)}
+    #summonMotionStrip button{min-width:max-content;flex:0 0 auto;
+      font-size:12px;padding:8px 10px;min-height:40px}
+    #summonMotionStrip button[aria-pressed=true]{background:#356785;border-color:#edcd89}
     header details{position:relative;z-index:22}
     header summary{list-style:none;cursor:pointer;background:#1b3447;border:1px solid #708f9a;padding:10px;border-radius:8px;font-size:13px}
     header details[open] #poseButtons{position:absolute;right:0;top:calc(100% + 5px);display:grid;grid-template-columns:1fr 1fr;gap:5px;background:#122f43;border:1px solid #708f9a;border-radius:10px;padding:8px;min-width:270px;max-height:55dvh;overflow-y:auto;box-shadow:0 7px 25px #0009}
@@ -74,7 +81,7 @@
         flex:1 1 calc(50% - 8px);min-width:0;font-size:13px;padding:9px 5px
       }
       header #controlsDrawer .extraControls>a{font-size:13px}
-      #info{bottom:8px;left:8px;right:8px;max-width:none;max-height:46dvh}
+      #info{bottom:72px;left:8px;right:8px;max-width:none;max-height:40dvh}
       #info>summary{padding:9px 10px}
       #info>summary #species{font-size:14px}
       #infoBody{padding:0 10px 10px}
@@ -106,11 +113,8 @@
      </select>
     </label>
     <details id="controlsDrawer">
-      <summary aria-label="操作メニューを開く・閉じる">操作メニュー</summary>
+      <summary aria-label="描画設定を開く・閉じる">表示設定</summary>
       <div class="extraControls">
-    <button id="cry" type="button">鳴き声</button>
-    <button id="attack" type="button">攻撃モーション</button>
-    <button id="walk" type="button">移動を再生</button>
     <button id="wireframe" type="button">ポリゴンを確認</button>
     <button id="faceCloseup" type="button">顔・継ぎ目を拡大</button>
     <button id="coatCloseup" type="button" disabled>全身の毛を拡大</button>
@@ -118,21 +122,24 @@
     <label style="font-size:12px">手元GLBで外観比較
       <input id="personalSummonGlb" type="file" accept=".glb,model/gltf-binary"
       style="max-width:180px;font-size:12px"></label>
-    <details><summary>追加アクション 7種</summary><div id="poseButtons">
-      <button type="button" data-pose="roar">咆哮・鳴き声</button>
-      <button type="button" data-pose="special">魔法・必殺技（詠唱）</button>
-      <button type="button" data-pose="dodge">回避</button>
-      <button type="button" data-pose="guard">防御</button>
-      <button type="button" data-pose="hit">被弾</button>
-      <button type="button" data-pose="leap">跳躍</button>
-      <button type="button" data-pose="defeat">倒れる</button>
-    </div></details>
     <a href="./monster-manager.html?v=4.5.17">魔物50体の管理</a>
     <a href="./motion-external-test.html">職業・アクション画面</a>
     <a href="./tactics-wireframe.html">戦場へ</a>
       </div>
     </details>
   </header>
+  <nav id="summonMotionStrip" aria-label="モンスターの基本モーションを直接再生">
+    <button type="button" data-pose="idle" aria-pressed="true">待機</button>
+    <button id="walk" type="button" aria-pressed="false">移動</button>
+    <button id="attack" type="button" aria-pressed="false">攻撃</button>
+    <button type="button" data-pose="special" aria-pressed="false">魔法・固有技</button>
+    <button type="button" data-pose="guard" aria-pressed="false">防御</button>
+    <button type="button" data-pose="dodge" aria-pressed="false">回避</button>
+    <button type="button" data-pose="hit" aria-pressed="false">被弾</button>
+    <button type="button" data-pose="leap" aria-pressed="false">跳躍</button>
+    <button type="button" data-pose="defeat" aria-pressed="false">倒れる</button>
+    <button id="cry" type="button" aria-pressed="false">鳴き声</button>
+  </nav>
   <details id="info">
     <summary aria-label="召喚獣の詳細を表示・非表示"><strong id="species">森の精霊弓士</strong>
       <span class="infoHint hintOpen">詳細を見る ▴</span>
@@ -308,7 +315,10 @@
       disposeFemaleSummon();
       document.getElementById('personalSummonGlb').value='';
       selected=select.value;
-      const femaleAvailable=FEMALE_SUMMON_FORM_IDS.includes(selected);
+      // Dragon Lord is a dragon by default, not a forced female character.
+      const femaleAvailable=selected!=='dragon_lord'&&
+        FEMALE_SUMMON_FORM_IDS.includes(selected);
+      if(selected==='dragon_lord')femaleMode.value='original';
       femaleModeLabel.hidden=!femaleAvailable;
       femaleMode.disabled=!femaleAvailable;
       compareDragon.disabled=selected!=='dragon'||!licensedRegistry.entries.dragon;
@@ -319,7 +329,9 @@
       previewObject={id:'gallery-'+selected,type:selected,x:0,z:0,alive:true,team:0,
         flying:!!COMBAT_OBJECT_SPECS[selected].flying,mountedBy:null,cryStartedAt:clock.getElapsedTime()};
       walking=false;routeStep=0;
-      document.getElementById('walk').textContent='移動を再生';
+      document.getElementById('walk').textContent='移動';
+      document.querySelectorAll('#summonMotionStrip button').forEach(button=>
+        button.setAttribute('aria-pressed',String(button.dataset.pose==='idle')));
       document.getElementById('species').textContent=COMBAT_OBJECT_SPECS[selected].name+
         (femaleAvailable&&femaleMode.value==='female'?'・女性人型':'');
       document.getElementById('desc').textContent=descriptions[selected]+
@@ -395,9 +407,22 @@
       else vfx.emit(selected==='wolf'?'attack':'heavy',
         {position:origin,target,job:selected,magic:'arcane',scale:1.5});
     };
+    // The action strip stays visible while the full-size 3D scene remains
+    // interactive; no menu expansion or camera shrinking is necessary.
+    document.querySelectorAll('#summonMotionStrip button').forEach(button=>{
+      button.addEventListener('click',()=>{
+        document.querySelectorAll('#summonMotionStrip button').forEach(other=>
+          other.setAttribute('aria-pressed',String(other===button)));
+        if(button.dataset.pose==='idle'){
+          walking=false;
+          document.getElementById('walk').textContent='移動';
+        }
+      });
+    });
     document.querySelectorAll('[data-pose]').forEach(button=>{
       button.onclick=()=>{
         const pose=button.dataset.pose,t=clock.getElapsedTime();
+        if(pose==='idle')walking=false;
         startCreaturePose(previewObject,pose,t);
         externalPreview?.play(pose);
         femaleSummonHandle?.start(pose,t);
@@ -419,7 +444,7 @@
       walking=!walking;routeStep=0;
       nextStepAt=clock.getElapsedTime();
       femaleSummonHandle?.start(walking?'run':'idle',clock.getElapsedTime());
-      document.getElementById('walk').textContent=walking?'移動を停止':'移動を再生';
+      document.getElementById('walk').textContent=walking?'停止':'移動';
     };
     let polygonInspection=false;
     document.getElementById('wireframe').onclick=()=>{
@@ -469,6 +494,11 @@
         (femaleFlightAltitude>0?' / 空中飛行 '+femaleFlightAltitude.toFixed(2)+'m・羽ばたき':'');
     }
     window.__summonGalleryLayoutQA=()=>({
+      motionStripVisible:getComputedStyle(document.getElementById('summonMotionStrip')).display!=='none',
+      actionButtons:document.querySelectorAll('#summonMotionStrip button').length,
+      activeMotion:document.querySelector('#summonMotionStrip button[aria-pressed=true]')?.dataset.pose||
+        (document.getElementById('walk').getAttribute('aria-pressed')==='true'?'walk':
+         document.getElementById('attack').getAttribute('aria-pressed')==='true'?'attack':'other'),
       mobile:phoneLayout.matches,
       controlsOpen:document.getElementById('controlsDrawer').open,
       infoOpen:helpPanel.open,
