@@ -37,15 +37,32 @@
     #controlsDrawer>summary::-webkit-details-marker{display:none}
     #controlsDrawer>summary::after{content:' ▾'}
     #controlsDrawer[open]>summary::after{content:' ▴'}
+    /* Small bottom inspector, away from the model's face and wings. */
     #controlsDrawer .extraControls{
-      position:absolute;right:0;top:calc(100% + 9px);display:flex;
-      flex-wrap:wrap;align-items:center;gap:9px;padding:12px;
-      width:min(520px,calc(100vw - 16px));max-height:70dvh;overflow-y:auto;
-      background:#0f1d2cf5;border:1px solid #587489;border-radius:12px;
-      box-shadow:0 12px 30px #0009
+      position:fixed;right:10px;left:auto;top:auto;
+      bottom:calc(72px + env(safe-area-inset-bottom));display:grid;
+      gap:9px;padding:11px;width:min(365px,calc(100vw - 20px));
+      max-height:min(52dvh,470px);overflow-y:auto;overflow-x:hidden;
+      overscroll-behavior:contain;background:#0f1d2cf7;
+      border:1px solid #728c9f;border-radius:14px;
+      box-shadow:0 14px 36px #000b
     }
     #controlsDrawer:not([open]) .extraControls{display:none}
-    #controlsDrawer .extraControls a{padding:7px 5px}
+    .inspectorHeading{display:flex;align-items:center;justify-content:space-between;
+      gap:10px;font-size:14px;color:#ead5a5}
+    #dismissControls{min-width:0;width:auto;padding:6px 11px;font-size:12px}
+    .inspectorGroup{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:7px;align-items:center;padding:9px;background:#172d40b9;
+      border:1px solid #4e6a7e;border-radius:9px}
+    .inspectorGroup strong{grid-column:1/-1;color:#b7d9e5;font-size:12px}
+    .inspectorGroup button{min-width:0;width:100%;padding:8px 5px;
+      font-size:12px;line-height:1.4;min-height:38px}
+    .inspectorGroup a{display:block;min-width:0;padding:8px 4px;
+      border-radius:7px;background:#203b50;text-align:center;
+      text-decoration:none;font-size:12px}
+    .inspectorWide{grid-column:1/-1}
+    .inspectorGroup input[type=file]{max-width:100%;font-size:11px}
+    .inspectorGroup label{font-size:12px}
     #info{padding:0;overflow-y:auto;max-height:55dvh}
     #info>summary{
       display:flex;align-items:center;justify-content:space-between;gap:10px;
@@ -74,13 +91,12 @@
         padding:9px 7px;min-width:76px;text-align:center;font-size:13px;height:40px
       }
       header #controlsDrawer .extraControls{
-        position:fixed;left:8px;right:8px;top:62px;width:auto;
-        max-height:calc(100dvh - 135px);gap:8px;padding:10px
+        position:fixed;left:8px;right:8px;top:auto;
+        bottom:calc(71px + env(safe-area-inset-bottom));width:auto;
+        max-height:min(49dvh,430px);gap:7px;padding:10px
       }
-      header #controlsDrawer .extraControls>button{
-        flex:1 1 calc(50% - 8px);min-width:0;font-size:13px;padding:9px 5px
-      }
-      header #controlsDrawer .extraControls>a{font-size:13px}
+      .inspectorGroup{padding:8px;gap:6px}
+      .inspectorGroup button{font-size:12px}
       #info{bottom:72px;left:8px;right:8px;max-width:none;max-height:40dvh}
       #info>summary{padding:9px 10px}
       #info>summary #species{font-size:14px}
@@ -114,17 +130,28 @@
     </label>
     <details id="controlsDrawer">
       <summary aria-label="描画設定を開く・閉じる">表示設定</summary>
-      <div class="extraControls">
-    <button id="wireframe" type="button">ポリゴンを確認</button>
-    <button id="faceCloseup" type="button">顔・継ぎ目を拡大</button>
-    <button id="coatCloseup" type="button" disabled>全身の毛を拡大</button>
-    <button id="compareDragon" type="button" disabled>CC0外部ドラゴンを比較</button>
-    <label style="font-size:12px">手元GLBで外観比較
-      <input id="personalSummonGlb" type="file" accept=".glb,model/gltf-binary"
-      style="max-width:180px;font-size:12px"></label>
-    <a href="./monster-manager.html?v=4.5.18">魔物50体の管理</a>
-    <a href="./motion-external-test.html">職業・アクション画面</a>
-    <a href="./tactics-wireframe.html">戦場へ</a>
+      <div class="extraControls" aria-label="3Dモデルの表示設定">
+        <div class="inspectorHeading"><strong>鑑賞・モデル確認</strong>
+          <button type="button" id="dismissControls">× 閉じる</button></div>
+        <div class="inspectorGroup">
+          <strong>カメラ・見た目</strong>
+          <button id="faceCloseup" type="button">顔・衣装</button>
+          <button id="footCloseup" type="button">足元・装備</button>
+          <button id="coatCloseup" type="button" disabled>毛並みを見る</button>
+          <button id="wireframe" type="button">線画・ポリゴン</button>
+        </div>
+        <div class="inspectorGroup">
+          <strong>モデル比較</strong>
+          <button id="compareDragon" type="button" class="inspectorWide" disabled>外部ドラゴンと比較</button>
+          <label class="inspectorWide">手元GLBで比較
+            <input id="personalSummonGlb" type="file" accept=".glb,model/gltf-binary"></label>
+        </div>
+        <div class="inspectorGroup">
+          <strong>関連画面</strong>
+          <a href="./monster-manager.html?v=4.5.19">モンスター図鑑</a>
+          <a href="./motion-external-test.html">人間の動作</a>
+          <a href="./tactics-wireframe.html" class="inspectorWide">戦闘画面</a>
+        </div>
       </div>
     </details>
   </header>
