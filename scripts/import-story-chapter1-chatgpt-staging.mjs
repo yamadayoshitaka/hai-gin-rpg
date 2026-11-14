@@ -81,7 +81,7 @@ if(mode==='--apply'&&changes.length){
   fs.mkdirSync(path.dirname(abs(dest)),{recursive:true});
   fs.writeFileSync(abs(dest),original);
   active[shot.key]={asset:'./'+dest,sha256:sum,provenance:reviewPath,
-   sourceDraft:imagePath,status:'PROVISIONAL_QA_VERIFIED_NOT_FINAL',
+   sourceDraft:imagePath,status:'PROVISIONAL_OWNER_AUTHORIZED_PENDING_P0',
    originalLivePath:shot.legacyPath||null,stageId:shot.stageId,edition:shot.edition,gender:shot.gender};
   ledger.history.push({kind:'CHATGPT_QA_PASSED_PROVISIONAL',key:shot.key,
    sha256:sum,proof:reviewPath,actionAt:new Date().toISOString()});
