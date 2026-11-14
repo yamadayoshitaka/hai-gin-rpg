@@ -32,7 +32,8 @@ ROOT = Path(__file__).resolve().parents[1]
 MAX_SHEETS = 10
 MAX_PER_SHEET = 10
 MAX_BATCH = MAX_SHEETS * MAX_PER_SHEET
-MIN_FRAME = (1536, 864)
+MIN_FRAME = (1536, 864)  # Legacy threshold for stages other than c01-s03
+STAGE3_MIN_FRAME = (800, 450)  # User-approved 16:9 lower bound
 PREFERRED_FRAME = (2048, 1152)
 SCENE_PROVENANCE_SEPARATOR = "|"
 MODULE = ROOT / "scripts/assemble-story-panel-sheet.py"
@@ -103,7 +104,8 @@ def canonical_frames(doc):
     return entries
 
 
-def inspect_native_frame(file):
+def inspect_native_frame(file, stage_id=None):
+    min_frame = STAGE3_MIN_FRAME if stage_id == "c01-s03" else MIN_FRAME
     if not file.is_file():
         return {"status": "MISSING_REAL_INDEPENDENT_WEBP", "nativePixels": None}
     try:
@@ -113,7 +115,7 @@ def inspect_native_frame(file):
             webp = im.format == "WEBP"
         if not webp:
             return {"status": "REJECTED_NOT_WEBP", "nativePixels": list(size)}
-        if size[0] < MIN_FRAME[0] or size[1] < MIN_FRAME[1] or \
+        if size[0] < min_frame[0] or size[1] < min_frame[1] or \
                 size[0] * 9 != size[1] * 16:
             return {"status": "REJECTED_NATIVE_PIXELS_OR_ASPECT",
                     "nativePixels": list(size)}
@@ -137,7 +139,7 @@ def build_queue(doc, batch_index=0, check_real_files=True):
         sheet_no = i // MAX_PER_SHEET + 1
         checked = []
         for panel in group:
-            result = inspect_native_frame(repo_path(panel["sourceImage"])) \
+            result = inspect_native_frame(repo_path(panel["sourceImage"]), panel["stageId"]) \
                 if check_real_files else {
                     "status": "NOT_INSPECTED_TEST_ONLY",
                     "nativePixels": None
