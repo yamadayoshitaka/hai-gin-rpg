@@ -53,7 +53,7 @@ const {launchBattleViaThreeStepWizard}=require('./opening-three-stage.cjs');
     // The currently shipped game uses a three-step opening wizard.
     // Complete it through the visible UI; opening the old hidden Start
     // button directly would wait forever at "① 編成".
-    await launchBattleViaThreeStepWizard(page,{timeout:180000});
+    await launchBattleViaThreeStepWizard(page,{timeout:240000});
     await page.waitForFunction(()=>{
       const stats=window.getMassBattleStats?.();
       const startup=window.getBattleStartupStats?.();
