@@ -20,7 +20,7 @@ for(const text of ['FREE_QUOTA_EXHAUSTED_RESUME_NEXT_SCHEDULE',
  assert(generation.includes(text),'Missing Free-only safe stop / provenance '+text);
 }
 assert(generation.includes('if(blockers.some(s=>status(s)!=='), 'Blocked safety scenes must not stop unrelated scenes');
-assert(generateWorkflow.includes("cron: '15 3 * * *'"),'Daily resume schedule missing');
+assert(generateWorkflow.includes("cron: '15 * * * *'"),'Hourly minute-15 resume schedule missing');
 assert(generateWorkflow.includes("CLOUDFLARE_CHAPTER1_DAILY_ESTIMATE_CAP: '7500'"));
 assert(!generation.includes("https://api.openai.com"),'Never use OpenAI paid API for batch');
 assert(registrationWorkflow.includes('workflow_run:'),'Automatically register after generated output');
