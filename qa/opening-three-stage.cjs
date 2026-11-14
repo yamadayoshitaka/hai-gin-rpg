@@ -4,16 +4,28 @@
 const assert=require('node:assert/strict');
 
 async function launchBattleViaThreeStepWizard(page,{
-  timeout=180000,requireReady=true
+  timeout=240000,requireReady=true
 }={}){
-  await page.waitForFunction(()=>{
-    const error=document.querySelector('#runtimeError');
-    const tabs=document.querySelectorAll('.openingWizardTabs button');
-    const loading=document.querySelector('#loadingStage')?.textContent||'';
-    return error?.style.display==='block'||
-      (tabs.length===3&&loading.includes('準備完了'));
-  },null,{timeout,polling:500});
-
+  // Headless SwiftShader is expensive for 100 detailed soldiers: wait for
+  // the actual DOM controls instead of a requestAnimationFrame-bound JS
+  // predicate that can starve while the GPU warms up.
+  const tabs=page.locator('.openingWizardTabs button');
+  try{
+    await tabs.first().waitFor({state:'visible',timeout});
+  }catch(error){
+    const diagnostic=await page.evaluate(()=>({
+      stage:document.querySelector('#loadingStage')?.textContent,
+      tabs:[...document.querySelectorAll('.openingWizardTabs button')]
+        .map(x=>({label:x.textContent,visible:x.getBoundingClientRect().height>0})),
+      startHidden:document.querySelector('#loadingStart')?.hidden,
+      percent:document.querySelector('#loadingPercent')?.textContent,
+      startup:window.getBattleStartupStats?.(),
+      runtimeError:document.querySelector('#runtimeError')?.textContent,
+      runtimeErrorVisible:document.querySelector('#runtimeError')?.style.display==='block'
+    })).catch(e=>({evaluationError:String(e)}));
+    throw Error('Battle opening wizard did not become visible: '+
+      JSON.stringify(diagnostic)+'; '+String(error));
+  }
   const ready=await page.evaluate(()=>({
     error:document.querySelector('#runtimeError')?.style.display==='block'
       ?document.querySelector('#runtimeError')?.textContent:null,
@@ -27,7 +39,6 @@ async function launchBattleViaThreeStepWizard(page,{
     'Keep the real 3-stage prebattle menu, not a debug shortcut');
   assert.equal(ready.startHidden,true,'Launch must be hidden on the formation page');
 
-  const tabs=page.locator('.openingWizardTabs button');
   await tabs.nth(1).click();
   await page.locator('#openingSquadOrders').waitFor({state:'visible',timeout:15000});
   await tabs.nth(2).click();
