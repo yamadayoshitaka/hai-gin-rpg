@@ -191,6 +191,23 @@ export function wigVolumeLiftAt(point,box,profileId='natural'){
   (1-THREE.MathUtils.smoothstep(y,.86,.95));
  return d.x*(profile.crown*crown+profile.side*side)*faceGuard;
 }
+// Rooted fibre shading on real opaque 3D scalp, no flat texture cards.
+export function v63WigScalpTone(x,y,z,box){
+ const d=box.getSize(new THREE.Vector3()),c=box.getCenter(new THREE.Vector3());
+ const u=(x-c.x)/Math.max(d.x,.001),v=(y-box.min.y)/Math.max(d.y,.001);
+ const w=(z-c.z)/Math.max(d.z,.001);
+ const growth=.89+.07*THREE.MathUtils.smoothstep(v,.52,.96);
+ const fibers=.029*Math.sin(u*91+w*39+v*16)*Math.sin(u*53-w*24);
+ return THREE.MathUtils.clamp(growth+fibers,.83,1.04);
+}
+export function v63WigLockTone(t,seed,layer=0){
+ const u=THREE.MathUtils.clamp(t,0,1);
+ const growth=.89+.115*THREE.MathUtils.smoothstep(u,0,.38);
+ const strands=.042*Math.sin(seed*2.3999632+u*6.7)+
+  .014*Math.cos(seed*.723+u*34.2)*u;
+ return THREE.MathUtils.clamp(growth+strands-layer*.022,.80,1.09);
+}
+
 function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile='natural'}={}){
  const src=geo.getAttribute('position'),idx=geo.index;
  const n=idx?idx.count:src.count,d=box.getSize(new THREE.Vector3());
@@ -280,20 +297,28 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
    }
   }
  }
- const material=new THREE.MeshStandardMaterial({
-  // Opaque, hair-palette-tinted scalp root, never a transparent wig edge.
-  color:new THREE.Color(color).multiplyScalar(.96),
-  roughness:.84,metalness:0,side:THREE.DoubleSide,
+ const material=new THREE.MeshPhysicalMaterial({
+  color:new THREE.Color(color),vertexColors:true,
+  roughness:.73,metalness:0,clearcoat:.045,clearcoatRoughness:.59,
+  side:THREE.DoubleSide,
   transparent:false,opacity:1,depthWrite:true
  });
  const buffer=new THREE.BufferGeometry();
  buffer.setAttribute('position',new THREE.Float32BufferAttribute(verts,3));
+ const melanin=[];
+ for(let i=0;i<verts.length;i+=3){
+  const shade=v63WigScalpTone(verts[i],verts[i+1],verts[i+2],box);
+  melanin.push(shade,shade*.995,shade*.988);
+ }
+ buffer.setAttribute('color',new THREE.Float32BufferAttribute(melanin,3));
  if(smoothNormals.length)buffer.setAttribute('normal',
   new THREE.Float32BufferAttribute(smoothNormals,3));
  const mesh=new THREE.Mesh(buffer,material);
  mesh.name='REAL_SCALP_TRIANGLE_HAIR_CAP';
  mesh.userData.scalpSource='sculpted-real-head-triangles';
  mesh.userData.hairColoredOpaqueRoot=true;
+ mesh.userData.v63RootMelaninShading=true;
+ mesh.userData.v63VertexColorCount=melanin.length/3;
  mesh.userData.hairRootColor='#'+new THREE.Color(color).getHexString();
  mesh.userData.v33RaisedWigBase=true;
  mesh.userData.v33WigVolumeProfile=volumeProfile;
@@ -616,11 +641,10 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    gravityRestShape:true,growthLogic:'grow-relax-collide-trim'});
   const base=i*(segments+1)*ribbonStride;
   for(let j=0;j<=segments;j++){
-   const t=j/segments,shaded=rootColor.clone().lerp(tips,.3+.48*t)
-    .multiplyScalar(.96+.075*fract(i*.3719));
+   const t=j/segments,shaded=rootColor.clone().lerp(tips,.22+.51*t);
    for(let k=0;k<ribbonStride;k++){
     const at=(base+j*ribbonStride+k)*3;
-    const layer=Math.floor(k/2),tone=1-layer*.045;
+    const layer=Math.floor(k/2),tone=v63WigLockTone(t,i,layer);
     colors[at]=shaded.r*tone;colors[at+1]=shaded.g*tone;
     colors[at+2]=shaded.b*tone;
    }
@@ -639,12 +663,14 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  geo.setAttribute('color',new THREE.BufferAttribute(colors,3));
  geo.setIndex(indices);
  const mat=new THREE.MeshPhysicalMaterial({
-  color:0xffffff,vertexColors:true,roughness:.42,metalness:0,
-  clearcoat:.10,clearcoatRoughness:.34,side:THREE.DoubleSide
+  color:0xffffff,vertexColors:true,roughness:.56,metalness:0,
+  clearcoat:.075,clearcoatRoughness:.49,side:THREE.DoubleSide
  });
  const locks=new THREE.Mesh(geo,mat);
  locks.name='REAL_ROOTED_SWEPT_HAIR_LOCKS';
  locks.userData.rootedOnRealScalp=true;
+ locks.userData.v63DirectionalFiberPigment=true;
+ locks.userData.v63ReducedPlasticSpecular=true;
  locks.userData.lockCount=lockCount;
  root.add(locks);
  // Fuller salon silhouette: broaden body/crown locks; preserve feather-fine
@@ -961,8 +987,8 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   fineGeo.setIndex(tris);
   fineGeo.computeVertexNormals();fineGeo.computeBoundingSphere();
   const fineMat=new THREE.MeshPhysicalMaterial({
-   color:0xffffff,vertexColors:true,roughness:.47,metalness:0,
-   clearcoat:.07,clearcoatRoughness:.40,side:THREE.DoubleSide
+   color:0xffffff,vertexColors:true,roughness:.57,metalness:0,
+   clearcoat:.055,clearcoatRoughness:.48,side:THREE.DoubleSide
   });
   const fineMesh=new THREE.Mesh(fineGeo,fineMat);
   fineMesh.name='DETACHABLE_WIG_FINE_FIBRES';
