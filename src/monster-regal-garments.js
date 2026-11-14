@@ -12,7 +12,7 @@ import * as THREE from 'three';
 export const REGAL_HUMANOID_WARDROBE=Object.freeze({
  seraph_female:Object.freeze({style:'celestial-vestment',bodice:'ivoryCloth',
   hem:'ivoryCloth',trim:'gold',skirt:.99,flare:.49,sleeve:'ivoryCloth',
-  sleeveLength:.42,leggings:null,head:'none'}),
+  sleeveLength:.42,leggings:'ivoryCloth',head:'none'}),
  forest_spirit_female:Object.freeze({style:'living-leaf-robe',bodice:'leaf',
   hem:'leaf',trim:'gold',skirt:.82,flare:.40,sleeve:'leaf',
   sleeveLength:.36,leggings:'leaf',head:'none'}),
@@ -191,12 +191,27 @@ export function createRegalCollarGeometry({detail='high'}={}){
   {y:.362,rx:.108,rz:.085}
  ],{detail,pleat:.012,name:'wrapped-ceremonial-collar'});
 }
-const needsLeggings=p=>p?.leggings!==null;
+/**
+ * Always seal the exposed donor legs beneath costume silhouettes. A skirt
+ * alone cannot hide knees during jumps, hit reactions or 3/4 camera views.
+ * Use the garment cloth if an explicit leg material is not supplied.
+ */
+const legMaterial=plan=>plan.leggings||plan.hem;
+export function createRegalFootGeometry({detail='high'}={}){
+ // Anatomical toe and heel volume follows each source foot bone, and closes
+ // the bottom of the shin boot. No detached shoe floating at the origin.
+ const g=new THREE.SphereGeometry(1,
+  detail==='low'?10:24,detail==='low'?7:14);
+ g.scale(.132,.103,.218);
+ g.translate(0,-.050,-.105);
+ g.userData={kind:'bone-anchored-full-foot-boot',detail};
+ return g;
+}
 export function addRegalHumanoidOutfit({profile,frames,detail='high',attach,tube}={}){
  const plan=wardrobeFor(profile);
  if(!plan)return false;
  if(!frames?.chest||!frames?.pelvis||frames.arms?.length!==2||
-    frames.calves?.length!==2)
+    frames.legs?.length!==2||frames.calves?.length!==2)
   throw Error('Regal outfit requires full torso, pelvic and articulated arm/leg frames');
  const add=(parent,g,role,name,p=[0,0,0],r=[0,0,0])=>
   attach(parent,g,role,'regal-'+name,p,r);
@@ -225,11 +240,19 @@ export function addRegalHumanoidOutfit({profile,frames,detail='high',attach,tube
   add(frames.forearms[i],createRegalLimbGeometry({
    detail,length:.31,kind:'sleeve',top:.097,bottom:.071
   }),plan.trim,plan.style+'-bracelet-'+i);
-  if(needsLeggings(plan)){
-   add(frames.calves[i],createRegalLimbGeometry({
-    detail,length:.46,kind:'boot',top:.126,bottom:.105
-   }),plan.leggings,plan.style+'-boot-'+i);
-  }
+  // Layered trousers attach to actual thigh bones; boot uppers overlap
+  // knees and close with ankle/foot volumes to avoid exposed calves and toes.
+  // Avoid relying on the skirt to conceal moving bare human donor legs.
+  add(frames.legs[i],createRegalLimbGeometry({
+   detail,length:.51,kind:'trouser',top:.185,bottom:.137
+  }),legMaterial(plan),plan.style+'-full-thigh-'+i);
+  add(frames.calves[i],createRegalLimbGeometry({
+   detail,length:.49,kind:'boot',top:.147,bottom:.112
+  }),legMaterial(plan),plan.style+'-full-shin-boot-'+i);
+  const footBone=frames.feet?.[i]||frames.calves[i];
+  add(footBone,createRegalFootGeometry({detail}),
+   legMaterial(plan),plan.style+'-full-foot-boot-'+i,
+   frames.feet?.[i]?[0,0,0]:[0,-.49,0]);
  }
  // Gold/leaf embroidery is welded to the SAME torso bone and embedded over
  // the front of its bodice. The actor adapter reflects old -Z front to +Z.
