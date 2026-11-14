@@ -61,7 +61,7 @@ for(const [type,donor] of Object.entries(expectedDonors)){
  for(const geo of Object.values(high).concat(Object.values(low)))geo.dispose();
 }
 assert.equal(SUMMON_WORLD_SCALE,10);
-assert.equal(LARGE_SUMMON_IDS.length,7);
+assert.equal(LARGE_SUMMON_IDS.length,57);
 for(const id of LARGE_SUMMON_IDS)assert.ok(creatureSize(id)>=10,
  'Summon is not ten times a human '+id);
 assert.equal(creatureSize('horse'),1,'A horse is not a summoned monster');
