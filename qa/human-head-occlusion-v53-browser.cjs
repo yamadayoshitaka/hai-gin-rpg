@@ -55,7 +55,10 @@ const {captureChromiumScreenshot}=require('./chromium-webgl-screenshot.cjs');
         result.neckContinuity.reusedFaceMaterial&&
         result.neckContinuity.separateNeckGeometryHidden&&
         result.neckContinuity.actualCollarSource&&
-        result.neckContinuity.unifiedNeckBottomHeight<result.neckContinuity.actualCollarHeight&&
+        (result.neckContinuity.v62SkinFirst?
+         result.neckContinuity.v62SkinToTorsoOverlap>=.012&&
+         result.neckContinuity.unifiedNeckBottomHeight<result.neckContinuity.actualTorsoTopY:
+         result.neckContinuity.unifiedNeckBottomHeight<result.neckContinuity.actualCollarHeight)&&
         result.neckContinuity.raisedInnerCollarApplied&&
         result.neckContinuity.visibleSkinNeckLength<.04&&
         result.neckContinuity.unifiedNeckColorSmoothed&&
