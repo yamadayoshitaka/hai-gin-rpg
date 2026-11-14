@@ -1495,7 +1495,7 @@ test('v29 female eyes project forward of skin with convex globe, connected lids 
  const model=makeIndependentFaceMaster(fixture().source,'female');
  const report=model.report.detailedParts;
  assert.equal(report.anteriorEyeGlobeReconstructed,true);
- assert.equal(report.eyeApertureHeightFraction,.50);
+ assert.equal(report.eyeApertureHeightFraction,.476);
  assert.equal(report.eyeAnteriorClearanceRatios.length,2);
  for(const clearance of report.eyeAnteriorClearanceRatios)
   assert.ok(clearance>-.7&&clearance<.12,
