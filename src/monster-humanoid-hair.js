@@ -96,7 +96,10 @@ export function createCharacterHairStrandsGeometry({
  style='long',detail='high',seed=1,
 }={}){
  const [cx,cy,cz]=center,[rx,ry,rz]=radius;
- const groups=detail==='low'?72:style==='long'?320:180;
+ // Near-LOD strands are batched into one BufferGeometry, never one mesh per lock.
+ const groups=detail==='low'?72:
+  style==='long'?520:style==='swept'?300:
+  style==='bob'?320:style==='short'?240:240;
  const positions=[],uvs=[],indices=[];
  const maxLength=style==='long'?.39:style==='bob'?.19:
    style==='short'?.09:style==='swept'?.145:.20;
@@ -106,7 +109,10 @@ export function createCharacterHairStrandsGeometry({
   const phi=(i+.3+rand()*.36)/groups*Math.PI*2;
   const front=Math.max(0,Math.sin(phi)),side=Math.abs(Math.cos(phi));
   // Include crown roots, not only the outer rim (helmet-like appearance).
-  const theta=.47+rand()*1.03-.13*front;
+  // Hair must originate under the actual crown shell. Prior roots ran
+  // beyond the raised front hairline, leaving exposed temple patches.
+  const maxTheta=1.68-.34*front;
+  const theta=.40+rand()*Math.max(.02,maxTheta-.43);
   const sin=Math.sin(theta),cos=Math.cos(theta);
   const base=vec3(cx+rx*sin*Math.cos(phi),cy+ry*cos,
     cz+rz*sin*Math.sin(phi));
@@ -121,9 +127,14 @@ export function createCharacterHairStrandsGeometry({
   const start=positions.length/3;
   for(let k=0;k<=4;k++){
    const t=k/4;
+   // Bury roots in the cap (2 mm), let mid-strands carry volume, and
+   // differentiate back-swept and bob hair from generic straight cuts.
+   const sweep=style==='swept'?.045*t*t:0;
+   const bobCurl=style==='bob'?-.025*t*t:0;
    const p=base.clone()
-    .addScaledVector(outward,.007+Math.sin(t*Math.PI)*.023+t*.037)
-    .addScaledVector(sideVec,Math.sin(i*1.61+t*6)*.009*t)
+    .addScaledVector(outward,-.002+Math.sin(t*Math.PI)*.020+
+      t*(.031+bobCurl))
+    .addScaledVector(sideVec,Math.sin(i*1.61+t*6)*.007*t+sweep)
     .add(vec3(0,-tLen*t,0));
    const w=width*(1-t*.88);
    for(const sign of [-1,1]){
@@ -138,6 +149,22 @@ export function createCharacterHairStrandsGeometry({
   }
  }
  return surfaceMesh(positions,uvs,indices,'scalp-rooted-tapered-hair-strands');
+}
+/**
+ * measureCanonicalScalp() returns coordinates in the source HEAD-BONE
+ * local frame, whereas the costume frame counter-rotates into MODEL space
+ * to position historically authored horns/makeup. Fitted hair must not be
+ * attached to that counter-rotated frame: doing so reveals bald temples and
+ * detaches the fringe whenever bind-pose head orientation is nonidentity.
+ * Keep this group in the original bone's exact local coordinate system.
+ */
+export function createCanonicalHeadLocalGroomAnchor(headBone){
+ if(!headBone?.isBone)throw Error('Canonical hair requires the original head bone');
+ const anchor=new THREE.Group();
+ anchor.name='monster-head-local-groom-anchor';
+ headBone.add(anchor);
+ anchor.userData.canonicalHeadBoneLocal=true;
+ return anchor;
 }
 export function attachCanonicalCharacterGroom({
  THREE:Engine=THREE,model,frames,headBone,profile,detail='high',
