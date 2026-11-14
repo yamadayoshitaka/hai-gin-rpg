@@ -17,6 +17,9 @@ const p=rel=>path.join(root,rel),read=rel=>JSON.parse(fs.readFileSync(p(rel),'ut
 const hash=b=>crypto.createHash('sha256').update(b).digest('hex');
 const args=process.argv.slice(2),mode=args[args.indexOf('--mode')+1]||'plan';
 const maxPages=Number(args.includes('--max-pages')?args[args.indexOf('--max-pages')+1]:'12');
+const startStage=args.includes('--start-stage')?args[args.indexOf('--start-stage')+1]:'c01-s01';
+const throughStage=args.includes('--through-stage')?args[args.indexOf('--through-stage')+1]:'c01-s10';
+const isStageId=id=>/^c01-s(?:0[1-9]|10)$/.test(id);
 const limit=Number(process.env.CLOUDFLARE_CHAPTER1_DAILY_ESTIMATE_CAP||'7500');
 const branch='story/chapter1-free-actual-art';
 function webpPixels(b){
@@ -38,7 +41,8 @@ function legacyBelowNative(url,stageId){
  }catch{return true;}
 }
 if(!['plan','generate'].includes(mode)||!Number.isInteger(maxPages)||maxPages<1||maxPages>15||
- !Number.isFinite(limit)||limit<=0||limit>7500)throw Error('Invalid run arguments or Free daily cap');
+ !Number.isFinite(limit)||limit<=0||limit>7500||!isStageId(startStage)||!isStageId(throughStage)||startStage>throughStage)
+ throw Error('Invalid run arguments, one-stage range or Free daily cap');
 const abs=read('assets/story/quality/artwork-p0-rules.json');
 if(abs.priority!=='P0_ABSOLUTE_MUST_FOLLOW'||!abs.failClosed)throw Error('P0 contract missing');
 const stages=CAMPAIGN_STAGES.filter(s=>s.chapter===1);
@@ -109,7 +113,8 @@ if(mode==='plan'){
  const result=progress();save({mode:'plan',apiRequests:0,imagesRendered:0});
  console.log(JSON.stringify({pages:132,scenes:462,registered:result.existingRegisteredUnapproved,
   drafts:result.generatedDraftUnapproved,missing:result.missing,blocked:result.blocked.length,
-  nextTask:result.pageStates.find(pg=>pg.states.some(s=>['MISSING','LEGACY_NATIVE_DEFECT_NEEDS_REGEN'].includes(s)))?.pageTask,apiRequests:0}));
+  startStage,throughStage,
+  nextTask:result.pageStates.find(pg=>pg.stage>=startStage&&pg.stage<=throughStage&&pg.states.some(s=>['MISSING','LEGACY_NATIVE_DEFECT_NEEDS_REGEN'].includes(s)))?.pageTask,apiRequests:0}));
  process.exit(0);
 }
 const acct=process.env.CLOUDFLARE_ACCOUNT_ID||'',token=process.env.CLOUDFLARE_WORKERS_AI_API_TOKEN||'';
@@ -175,7 +180,21 @@ const summary=reason=>{
  save(o);return o;
 };
 summary('STARTED');
+let activeStage=null,stageGateStopped=false;
 for(const pg of pages){
+ if(pg.stage<startStage||pg.stage>throughStage)continue;
+ // Stage order is strict: unfinished, blocked or low-native Stage N prevents Stage N+1.
+ if(activeStage!==null&&activeStage!==pg.stage){
+  const incomplete=pages.filter(page=>page.stage===activeStage).flatMap(page=>page.shots)
+   .filter(shot=>!['REGISTERED_NOT_P0_CERTIFIED','REAL_DRAFT_UNAPPROVED'].includes(status(shot)));
+  if(incomplete.length){
+   stageGateStopped=true;
+   console.log(JSON.stringify({stageGate:'STOP_BEFORE_NEXT_STAGE',stage:activeStage,
+    remainingKeys:incomplete.map(shot=>shot.key),nextStage:pg.stage}));
+   summary('STAGE_INCOMPLETE_DO_NOT_ADVANCE');break;
+  }
+ }
+ activeStage=pg.stage;
  if(committed>=maxPages){summary('PAGE_CAP');break;}
  const pending=pg.shots.filter(s=>['MISSING','LOW_NATIVE_RESOLUTION_REGENERATE','LEGACY_NATIVE_DEFECT_NEEDS_REGEN'].includes(status(s)));
  if(!pending.length)continue;
@@ -304,5 +323,5 @@ for(const pg of pages){
   console.error('P0 FREE ONLY STOP: '+error);process.exitCode=2;break;
  }
 }
-const state=summary(process.exitCode?'ERROR':freeLimitReached?'FREE_QUOTA_EXHAUSTED_RESUME_NEXT_SCHEDULE':committed===maxPages?'PAGE_CAP_OR_DAILY_CAP':'BATCH_LIMIT_OR_ALL_DONE');
+const state=summary(process.exitCode?'ERROR':freeLimitReached?'FREE_QUOTA_EXHAUSTED_RESUME_NEXT_SCHEDULE':stageGateStopped?'STAGE_INCOMPLETE_DO_NOT_ADVANCE':committed===maxPages?'PAGE_CAP_OR_DAILY_CAP':'BATCH_LIMIT_OR_ALL_DONE');
 console.log(JSON.stringify({status:'REAL_DRAFTS_ONLY',...state,imagesMissing:progress().missing,reviewRequired:true}));
