@@ -68,7 +68,7 @@ function buildWings(g,detail){
 }
 
 function addFace(g,{angel,detail}){
-  const skin=angel?0xe9cfc1:0xe4b9a1,shade=angel?0xc8a99d:0xb48a76;
+  const skin=angel?0xf4f5f4:0xe4b9a1,shade=angel?0xd7d9dc:0xb48a76;
   const hair=angel?0xc99e63:0xd7b04d,highlight=angel?0xe6ca9c:0xffdd81;
   const eyes=angel?0x667d9c:0x388a65;
   const {sphere,curved,segment,horn,verticalProfile}=g;
@@ -137,8 +137,8 @@ function addFace(g,{angel,detail}){
 
 function addClothing(g,{angel,detail}){
   const {sphere,verticalProfile,curved,segment,horn}=g;
-  const fabric=angel?0xe3e1db:0x416943;
-  const dark=angel?0xb5b5b2:0x304336;
+  const fabric=angel?0xe3e1db:0x2b7740;
+  const dark=angel?0xb5b5b2:0x19502b;
   const trim=angel?0xf0d8b6:0xb4b16c;
   verticalProfile('core',fabric,[
     [.30,0,-.05,.34,.25],[.54,0,-.05,.36,.28],
@@ -150,7 +150,7 @@ function addClothing(g,{angel,detail}){
   // Skin under the donor mesh and underneath the costume collar is
   // continuous from the chin to the clavicle; prevents a floating head and
   // uses exactly the same pigments as each summon fallback face/hands.
-  const skin=angel?0xe9cfc1:0xe4b9a1;
+  const skin=angel?0xf4f5f4:0xe4b9a1;
   verticalProfile('core',skin,[
     [1.991,0,.048,.115,.108],[2.075,0,.067,.122,.116],
     [2.166,0,.079,.112,.108],[2.245,0,.103,.078,.077],
@@ -203,6 +203,18 @@ function addClothing(g,{angel,detail}){
         [side*.25,1.18,.22]],[.023,.016,.005]);
     }
   }else{
+    // More emerald than the pale olive prototype. Existing green fabric,
+    // broad organic mantle and elven anatomy remain the source model.
+    for(let side of [-1,1]){
+      for(let i=0;i<(detail==='high'?8:4);i++){
+        const t=i/(detail==='high'?8:4);
+        curved('core',i%2?0x3d9d4d:0x69c75f,[
+          [side*(.15+t*.10),1.79-t*.30,-.13],
+          [side*(.27+t*.14),1.52-t*.44,-.24],
+          [side*(.35+t*.16),1.15-t*.46,-.30]
+        ],[.032,.028,.002]);
+      }
+    }
     // Functional leather quiver and a green layered leaf cloak.
     sphere('core',0x503a29,-.23,1.63,-.31,.12,.38,.13,-.2);
     for(let i=0;i<(detail==='high'?8:4);i++){
@@ -230,9 +242,9 @@ function addClothing(g,{angel,detail}){
       center:[side*.492,1.431,.178],axis:[side*.34,-1,.34],
       radiusX:.087,radiusZ:.084,width:.053,thickness:.011,detail
     }),dark);
-    sphere(name,angel?0xe8cfbe:0xcba88c,side*.52,1.34,.21,.074,.13,.076);
+    sphere(name,angel?0xf4f5f4:0xcba88c,side*.52,1.34,.21,.074,.13,.076);
     for(let j=0;j<4;j++){
-      segment(name,angel?0xe8cfbe:0xcba88c,
+      segment(name,angel?0xf4f5f4:0xcba88c,
         [side*(.48+j*.027),1.27,.245],[side*(.49+j*.027),1.16,.32],
         .015,.01);
     }
