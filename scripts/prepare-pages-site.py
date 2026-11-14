@@ -29,6 +29,7 @@ REMOVED_TREE_PREFIXES = (
     "assets/ai-reference/",
     "motions/candidates/",
     "assets/characters/experimental/",
+    "assets/story/chapter1-provisional-live/",
 )
 ROOT_DEV_SUFFIXES = (".md", ".py", ".ps1", ".yml", ".yaml", ".zip", ".blend")
 REQUIRED = (
@@ -54,6 +55,7 @@ OFFLOAD_MIN_BYTES = 128_000
 REMOTE_ONLY_PREFIXES = (
     "audio/voicevox/clips/", "assets/master-sources/", "assets/ai-reference/",
     "motions/candidates/", "assets/characters/experimental/",
+    "assets/story/chapter1-provisional-live/",
 )
 ASSET_RELAY_NAME = "pages-asset-relay-sw.js"
 
