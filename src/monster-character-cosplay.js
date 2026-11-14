@@ -25,8 +25,8 @@ import {addDemonicFaceCosmetics,hasDemonCosmetics}
  from './monster-demon-cosmetics.js?v=4.5.05';
 import {addFemaleSummonCostume,isFemaleSummonCostume}
  from './female-summon-costumes.js?v=4.5.05';
-import {attachCanonicalCharacterGroom}
- from './monster-humanoid-hair.js?v=4.5.05';
+import {attachCanonicalCharacterGroom,createCanonicalHeadLocalGroomAnchor}
+ from './monster-humanoid-hair.js?v=4.5.08';
 import {alignCostumeToCanonicalFacing}
  from './monster-anatomical-frame.js?v=4.5.05';
 import {addRegalHumanoidOutfit,wardrobeFor}
@@ -88,6 +88,9 @@ function buildMonsterCostume(THREE,model,profile,detail){
   legs:joints.legs.map(b=>createFrame(b,model)),
   calves:joints.calves.map((b,i)=>createFrame(b??joints.legs[i],model)),
  };
+ // Cosmetics use a model-oriented head frame; scalp is measured in the
+ // donor head bone's LOCAL coordinates. Never combine the two spaces.
+ frames.headGroom=createCanonicalHeadLocalGroomAnchor(joints.head);
  const ownedGeo=[],ownedMats=[];
  const palette={skin:profile.skin,cloth:profile.cloth,metal:profile.metal,
   accent:profile.accent,bone:0xd6cdb4,bandage:0xb6a993,
@@ -206,7 +209,8 @@ function buildMonsterCostume(THREE,model,profile,detail){
  // attach a single continuous head-grown scalp and long, tapered hair:
  // source Quaternius hair is intentionally hidden by canonical actor loader.
  const groom=attachCanonicalCharacterGroom({
-  THREE,model,frames,headBone:joints.head,profile,detail,
+  THREE,model,frames:{...frames,head:frames.headGroom},
+  headBone:joints.head,profile,detail,
   attach:(frame,g,role,name,p,r)=>
    attach(frame,g,role,name,p,r,{groom:true})
  });
@@ -346,7 +350,9 @@ function buildMonsterCostume(THREE,model,profile,detail){
   demonCosmeticsEdition:demonic?'horns-makeup-runes-v1':null,
   femaleSummonCostumeEdition:femaleSummon?'female-summon-v1':null,
   crownCovered:!!groom?.crown,hairStrands:!!groom?.locks,
+  headBoneLocalGroom:!!groom?.crown&&groom.crown.parent===frames.headGroom,
   hairSurfaceSamples:groom?.scalp.samples??0,
+  hairScalpFitted:!!groom?.scalp.fitted,
   fullBodyOutfit:royalOutfit?.style||null,
   fullBodySkirt:!!royalOutfit,clothCoverageValidated:!!royalOutfit,
   jointAnchored:true,independentHeroMaterials:true,

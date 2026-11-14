@@ -7,6 +7,9 @@ on:
       - 'src/monster-animation.js'
       - 'src/monster-geometry.js'
       - 'src/monster-shape-kit.js'
+      - 'src/monster-humanoid-hair.js'
+      - 'src/monster-character-cosplay.js'
+      - 'qa/monster-humanoid-hair-orientation-regression.test.mjs'
       - 'qa/monster-anatomy-motion.test.mjs'
       - 'qa/monster-m002-flame-wolf-rig.test.mjs'
       - 'qa/monster-m003-fenrir-rig.test.mjs'
@@ -34,7 +37,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for file in src/monster-anatomy-reference.js src/monster-joint-motion.js src/monster-animation.js src/monster-geometry.js; do
+          for file in src/monster-anatomy-reference.js src/monster-joint-motion.js src/monster-animation.js src/monster-geometry.js src/monster-humanoid-hair.js src/monster-character-cosplay.js; do
             node --check "$file"
           done
       - name: Install pinned Three.js geometry runtime
