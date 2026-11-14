@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#201d1a">
+<title>灰銀のレゾナンス | 第一章・漫画の承認室</title>
+<style>
+:root{--paper:#fff7e6;--ink:#262321;--gold:#be8a3f;--sub:#625f5a;--frame:#282422;--ok:#226d4a;--bad:#963c3f;--held:#765f39;color-scheme:light}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:#272520;color:var(--ink);font-family:"Noto Sans JP",system-ui,sans-serif;line-height:1.65}
+button,select,textarea,input{font:inherit}button,select{min-height:46px}button{cursor:pointer}button:disabled{cursor:not-allowed;opacity:.44}
+button:focus-visible,select:focus-visible,textarea:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid #df9f32;outline-offset:3px}
+.top{background:#1d1a18;color:#fff0d3;padding:13px clamp(12px,4vw,24px);border-bottom:4px double var(--gold);display:flex;align-items:center;justify-content:space-between;gap:8px;position:sticky;top:0;z-index:7}
+.top strong{font-size:clamp(16px,3vw,21px);letter-spacing:.04em}.top a{color:#ffe3ab;font-size:12px}
+.content{max-width:1020px;margin:0 auto;background:var(--paper);min-height:100vh;padding:20px clamp(12px,3.5vw,32px) 120px;box-shadow:0 0 0 1px #5d4b39}
+.eyebrow{font-weight:800;letter-spacing:.15em;font-size:12px;color:#77512f}
+h1{font-size:clamp(24px,5.4vw,39px);margin:4px 0 5px;line-height:1.3;font-family:Georgia,"Noto Serif JP",serif;letter-spacing:.06em}
+.lead{margin:6px 0 12px;color:#544d45;font-size:13px}
+.progress{background:#e5d7c0;border:2px solid #322a23;border-radius:99px;height:14px;overflow:hidden;margin:9px 0}
+.progress>span{display:block;height:100%;background:var(--gold);width:0;transition:width .2s}
+.progress-info{display:flex;justify-content:space-between;font-size:12px;font-weight:700;gap:10px}
+.filters{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;padding:14px 0;border-bottom:2px solid #443a2c}
+.filters label{display:flex;flex-direction:column;font-size:12px;font-weight:700;min-width:0;gap:4px}
+.filters select{width:100%;min-width:0;appearance:auto;padding:7px 8px;border:2px solid #413a34;border-radius:5px;background:#fffdf5;color:#242221}
+.page-nav{display:flex;justify-content:space-between;align-items:center;gap:9px;margin:15px 0}
+.page-nav button{background:#322b28;color:#fff9ee;border:2px solid #322b28;border-radius:5px;padding:6px 13px;font-weight:700}
+#pageTitle{font-family:Georgia,"Noto Serif JP",serif;font-size:clamp(17px,4vw,24px);font-weight:900;text-align:center;line-height:1.3}
+#pageSub{font-size:12px;color:#665747;text-align:center}
+.how{background:#fffdf8;padding:12px;border:2px solid #39342e;margin:14px 0;font-size:13px;box-shadow:4px 4px 0 #e4cfac}
+.how strong{color:#493119}
+.panels{display:grid;grid-template-columns:1fr;gap:21px}
+.panel{border:4px solid #211f1c;background:white;box-shadow:5px 5px 0 #c9bda9;overflow:hidden;scroll-margin-top:85px}
+.panel-top{display:flex;justify-content:space-between;gap:8px;padding:8px 12px;align-items:center;background:#221e1c;color:#f5e8cc}
+.panel-top strong{font-size:15px}.panel-top small{font-size:11px;opacity:.8}
+.art{aspect-ratio:16 / 9;background:#dad1bf;display:grid;place-items:center;position:relative;border-bottom:3px solid #222;overflow:hidden}
+.art img{display:block;width:100%;height:100%;object-fit:contain;background:#161719}
+.art .empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;color:#554b41;background:repeating-linear-gradient(-35deg,#e9dfcd,#e9dfcd 14px,#f4ebdb 14px,#f4ebdb 28px);font-weight:700}
+.art .empty[hidden]{display:none}.art img[hidden]{display:none}
+.scene-text{position:relative;margin:13px 16px;padding:15px 17px;border:2px solid #222;border-radius:15px;background:#fffefc;font-size:clamp(14px,3vw,17px);line-height:1.8;white-space:pre-wrap}
+.scene-text:before{content:"";position:absolute;left:20px;top:-10px;background:#fffefc;border-left:2px solid #222;border-top:2px solid #222;width:13px;height:13px;transform:rotate(45deg)}
+.speaker{font-weight:850;font-size:12px;margin:0 17px;padding-top:7px;color:#644c2b}
+.source{padding:0 16px 11px;font-size:12px;color:#686058;word-break:break-all}
+.actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;padding:11px;background:#f5efdf;border-top:2px solid #352e26}
+.actions button{border:2px solid #514f48;background:#fffdf4;border-radius:7px;font-weight:800;font-size:clamp(12px,2.6vw,15px);padding:8px 3px;min-height:48px}
+.actions button[data-choice="approve"]{color:var(--ok);border-color:var(--ok)}
+.actions button[data-choice="revise"]{color:var(--bad);border-color:var(--bad)}
+.actions button[data-choice="hold"]{color:var(--held)}
+.actions button.selected[data-choice="approve"]{background:var(--ok);color:#fff}
+.actions button.selected[data-choice="revise"]{background:var(--bad);color:#fff}
+.actions button.selected[data-choice="hold"]{background:var(--held);color:#fff}
+.feedback-wrap{display:none;padding:0 11px 12px;background:#f5efdf}
+.feedback-wrap.show{display:block}.feedback-wrap label{font-size:12px;font-weight:800}
+.feedback-wrap textarea{width:100%;min-height:76px;padding:9px;border:1px solid #79685a;border-radius:5px;background:#fff}
+footer{position:fixed;bottom:0;left:0;right:0;z-index:8;background:#1b1a19;color:#fff9ed;padding:9px max(12px,env(safe-area-inset-left)) calc(10px + env(safe-area-inset-bottom));box-shadow:0 -5px 20px #0008}
+.foot-inner{max-width:1020px;margin:auto;display:flex;align-items:center;gap:12px;justify-content:space-between}
+.foot-inner small{font-size:11px;line-height:1.4;display:block;color:#f1dabc}
+#submit{border:0;border-radius:8px;background:#f6c468;color:#2d2011;font-size:14px;font-weight:900;padding:10px 14px;min-width:148px}
+#submit:disabled{background:#8a7f6b}
+#info{font-size:12px;color:#6a4b32;min-height:25px}
+#confirmLabel{display:flex;align-items:center;gap:10px;background:#eee0c8;padding:12px;border-left:4px solid #675034;font-weight:700;font-size:13px}
+#confirmLabel input{width:22px;height:22px;flex:none;accent-color:#276643}
+a{color:#62451a}
+@media(min-width:760px){.panels{grid-template-columns:repeat(2,minmax(0,1fr))}.panel:first-child:last-child{grid-column:1/-1;max-width:650px;margin:auto}.filters{grid-template-columns:2fr 1fr 1.5fr}.panel .art{min-height:205px}}
+@media(max-width:460px){.top strong{font-size:15px}.top a{font-size:10px}.filters{grid-template-columns:1fr 1fr}.filters label:last-child{grid-column:1/-1}.foot-inner small{font-size:10px}#submit{min-width:138px;padding:8px 10px}}
+</style>
+</head>
+<body>
+<header class="top"><strong>灰銀のレゾナンス ／ 漫画承認室</strong><a href="./story-art-review.html">既存の原画一覧</a></header>
+<main class="content">
+<div class="eyebrow">CHAPTER 01 · VISUAL REVIEW</div>
+<h1>第一章・漫画を読んで承認</h1>
+<p class="lead">5コマずつ、実際の漫画を読むように確認できます。人物・髪型・衣装・台本・文字混入を見てください。</p>
+<div class="progress" role="progressbar" aria-label="表示したページの確認状況" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="progressBar"></span></div>
+<div class="progress-info"><span id="progressLabel">読み込み中…</span><span id="globalCount">第一章 132ページ</span></div>
+<div class="filters">
+<label for="stage">ステージ<select id="stage"></select></label>
+<label for="gender">主人公<select id="gender"><option value="male">男性</option><option value="female">女性</option></select></label>
+<label for="edition">展開<select id="edition"></select></label>
+</div>
+<div class="page-nav"><button type="button" id="prevPage">◀ 前の5コマ</button><div><div id="pageTitle">第一章</div><div id="pageSub"></div></div><button type="button" id="nextPage">次の5コマ ▶</button></div>
+<div class="how"><strong>読みながら3択で判定</strong>　<em>◎ 承認</em> は画質・内容とも問題なし、<em>✎ 修正</em> は理由を記入、<em>― 保留</em> は後回し。判定は一度この端末に下書き保存されます。</div>
+<div id="panels" class="panels" aria-live="polite"></div>
+<p id="info" role="status"></p>
+<label id="confirmLabel"><input type="checkbox" id="visualConfirm">「承認」を選んだコマは、登場人物・台本・勝敗・画像内の不要な文字・画質を自分の目で確認しました。</label>
+<p class="lead">GitHubで送信すると、画像のハッシュを確認したうえで審査記録を保存します。未生成画像や安全性により生成が拒否されたコマは承認できません。</p>
+<div class="page-nav"><button type="button" id="prevBottom">◀ 前のページ</button><button type="button" id="nextBottom">次のページ ▶</button></div>
+</main>
+<footer><div class="foot-inner"><div><strong id="draftCount">このページ 0 / 5 判定</strong><small>送信後、GitHubで「Submit new issue」を押して確定</small></div><button id="submit" disabled type="button">GitHubへ判定を送る</button></div></footer>
+<script type="module" src="./src/story-chapter1-approval-ui.js"></script>
+</body></html>
