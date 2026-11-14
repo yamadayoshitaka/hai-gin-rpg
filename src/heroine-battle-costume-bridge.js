@@ -174,7 +174,7 @@ export function alignStudioHeadToSkinnedTorso({
  const bodies=[];
  wardrobeRoot.traverse(mesh=>{
   if(!mesh.isSkinnedMesh||!mesh.geometry?.getAttribute('position'))return;
-  if(/^(?:female|male)_(?:ranger|peasant)_body$/i.test(mesh.name))
+  if(/^(?:(?:female|male)_(?:ranger|peasant)_body|superhero_(?:female|male))$/i.test(mesh.name))
    bodies.push(mesh);
  });
  if(!bodies.length)return {applied:false,reason:'real-torso-mesh-missing'};
