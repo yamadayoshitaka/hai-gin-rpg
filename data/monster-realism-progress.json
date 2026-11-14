@@ -110,13 +110,14 @@
       "id": "m006",
       "name": "黒爪パンサー",
       "family": "feline",
-      "status": "queued-for-individual-reference-review",
+      "status": "under-pr-review",
       "evidenceFile": "src/monster-anatomy-reference.js",
       "qaFile": "qa/monster-anatomy-motion.test.mjs",
-      "latestIndividualPr": null,
+      "latestIndividualPr": 346,
       "closeupVisualVerified": false,
       "mobileFpsVerified": false,
-      "fullyPhotorealistic": false
+      "fullyPhotorealistic": false,
+      "researchNote": "docs/monster-research/m006-panther-retractile-claws-20261114.md"
     },
     {
       "id": "m007",
