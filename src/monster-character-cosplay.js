@@ -10,9 +10,9 @@ import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {createHumanBomRig} from './human-bom-renderer.js';
 import {attachTownOutfitNpc} from './cc0-town-npc-visuals.js';
-import {createMonsterModel,disposeMonsterSculpture} from './monster-geometry.js?v=4.5.03';
+import {createMonsterModel,disposeMonsterSculpture} from './monster-geometry.js?v=4.5.18';
 import {startMonsterAction,animateMonsterModel} from './monster-animation.js';
-import {createHumanoidMonsterCombatMotion} from './monster-humanoid-combat-poses.js?v=4.5.17';
+import {createHumanoidMonsterCombatMotion} from './monster-humanoid-combat-poses.js?v=4.5.18';
 import {humanoidMonsterCostumeFor} from './monster-character-cosplay-manifest.js?v=4.5.03';
 import {addGothicMonsterSculpt,hasGothicMonsterSculpt}
  from './monster-gothic-sculpt.js?v=4.5.11';
@@ -25,7 +25,7 @@ import {addConstructMonsterCostume,isConstructCostume}
 import {addDemonicFaceCosmetics,hasDemonCosmetics}
  from './monster-demon-cosmetics.js?v=4.5.05';
 import {addFemaleSummonCostume,isFemaleSummonCostume}
- from './female-summon-costumes.js?v=4.5.17';
+ from './female-summon-costumes.js?v=4.5.18';
 import {createDragonkinNativeScalpOverlay}
  from './dragonkin-native-scalp.js?v=4.5.14';
 import {cutFemaleSummonScalpUnderCover}
