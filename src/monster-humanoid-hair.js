@@ -20,6 +20,15 @@ export function measureCanonicalScalp(model,headBone){
  const points=[];
  model.traverse(mesh=>{
   if(!mesh.isSkinnedMesh||!mesh.geometry||!mesh.skeleton)return;
+  // Donor helmets, hair caps, lashes and invisible accessories must NOT
+  // determine the underlying skull silhouette. traverse() still visits
+  // hidden children; sampling them expands the scalp into a floating wig.
+  for(let parent=mesh;parent;parent=parent.parent){
+   if(parent.visible===false)return;
+   if(parent===model)break;
+  }
+  if(/hair|wig|helmet|hat|headgear|eyelash|eyebrow|cornea|iris|eye[_\\s-]?lash/i
+   .test(mesh.name))return;
   const geo=mesh.geometry,verts=geo.getAttribute('position');
   const skinIndex=geo.getAttribute('skinIndex'),skinWeight=geo.getAttribute('skinWeight');
   if(!verts||!skinIndex||!skinWeight)return;
