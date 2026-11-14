@@ -94,7 +94,7 @@ test('female seraph: original wing pair and animated airborne preview',async({pa
  expect(errors).toEqual([]);
 });
 
-test('female Dragon Lord: native skinned scalp instead of an oversized purple cap',async({page})=>{
+test('female Dragon Lord: approved plum hair instead of an oversized purple cap',async({page})=>{
  const errors=[];page.on('pageerror',e=>errors.push(String(e)));
  await page.goto('/summon-showcase.html?v=4.5.14',
   {waitUntil:'domcontentloaded',timeout:65000});
@@ -102,12 +102,13 @@ test('female Dragon Lord: native skinned scalp instead of an oversized purple ca
  await expect.poll(()=>page.evaluate(()=>
   window.__summonGalleryLayoutQA?.()?.femaleReady),{timeout:110000}).toBe(true);
  const state=await page.evaluate(()=>window.__summonGalleryLayoutQA());
- expect(state.dragonCraniumNativeTopology).toBe(true);
- expect(state.dragonNativeScalpTriangles).toBeGreaterThan(20);
+ expect(state.dragonCraniumNativeTopology).toBe(false);
+ expect(state.dragonNativeScalpTriangles).toBe(0);
+ expect(state.hairStrands).toBe(true);
  expect(state.sourceCraniumWigCut).toBe(true);
- expect(state.sourceCraniumCutMode).toBe('scales');
+ expect(state.sourceCraniumCutMode).toBe('wig');
  expect(state.sourceCraniumRemovedTriangles).toBeGreaterThan(8);
- await page.screenshot({path:'test-results/dragonlord-native-scalp-v4.5.14.png',
+ await page.screenshot({path:'test-results/dragonlord-approved-plum-hair-v4.5.17.png',
   animations:'disabled',timeout:15000});
  expect(errors).toEqual([]);
 });
