@@ -23,8 +23,9 @@
   "newQA": "qa/story-chapter1-draft-regression.mjs",
   "existingFormalQA": "scripts/promote-story-chapter1-reviewed-drafts.mjs",
   "artWorkflowVersion": "LEGACY_NATIVE_DEFECT_NEEDS_REGEN",
-  "manualResumeCount": 1,
-  "manualResumeReason": "User approved proceeding with full chapter1 regression and manual free-only batch after verifying no recent scheduled run",
+  "manualResumeCount": 2,
+  "manualResumeReason": "User explicitly requested one immediate run after switching chapter1 Free-only batch to hourly; keep no-paid-fallback and quota-stop.",
   "mustNotAutoApprove": true,
-  "maxEstimatedNeurons": 7500
+  "maxEstimatedNeurons": 7500,
+  "lastManualTriggerDate": "2026-11-14"
 }
