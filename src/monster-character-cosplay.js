@@ -14,7 +14,7 @@ import {createMonsterModel,disposeMonsterSculpture} from './monster-geometry.js?
 import {startMonsterAction,animateMonsterModel} from './monster-animation.js';
 import {humanoidMonsterCostumeFor} from './monster-character-cosplay-manifest.js?v=4.5.03';
 import {addGothicMonsterSculpt,hasGothicMonsterSculpt}
- from './monster-gothic-sculpt.js?v=4.5.09';
+ from './monster-gothic-sculpt.js?v=4.5.11';
 import {decorateMonsterPhotoMaterial,detachMonsterPhotoMaterial}
  from './monster-photo-pbr.js';
 import {classifyCosplaySurface,applyMonsterMaterialPigment}
@@ -26,7 +26,7 @@ import {addDemonicFaceCosmetics,hasDemonCosmetics}
 import {addFemaleSummonCostume,isFemaleSummonCostume}
  from './female-summon-costumes.js?v=4.5.05';
 import {attachCanonicalCharacterGroom,createCanonicalHeadLocalGroomAnchor}
- from './monster-humanoid-hair.js?v=4.5.08';
+ from './monster-humanoid-hair.js?v=4.5.11';
 import {alignCostumeToCanonicalFacing}
  from './monster-anatomical-frame.js?v=4.5.05';
 import {addRegalHumanoidOutfit,wardrobeFor,measureRegalShoulderFit}
