@@ -1,13 +1,16 @@
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {
-  CREATURE_PERFORMANCE,creatureFlightHeight,riderSeatHeight,riderSeatLocalOffset,
+  CREATURE_PERFORMANCE,SUMMON_WORLD_SCALE,creatureFlightHeight,riderSeatHeight,riderSeatLocalOffset,
   mountedFlightSway,mountedFlightBaseHeight,
 } from '../src/combat-creature-performance.js';
 
 for(const type of ['wyvern','dragon','elder_dragon']){
   const mount={id:'flight-'+type,type,category:'summon',mountedBy:7,alive:true,flying:true,height:6.4};
-  const clearance=CREATURE_PERFORMANCE[type].seat;
+  // Colossal summoned flyers need the original saddle clearance
+  // measured relative to their ten-times enlarged chest, not the old
+  // human-sized clearance that would bury the rider in the body.
+  const clearance=CREATURE_PERFORMANCE[type].seat*SUMMON_WORLD_SCALE;
   assert.ok(riderSeatLocalOffset(mount).z<0,type+' saddle stays behind shoulder');
   for(let frame=0;frame<600;frame++){
     const time=frame/60,ground=1.7+frame/700;

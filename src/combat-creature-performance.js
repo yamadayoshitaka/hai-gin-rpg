@@ -26,14 +26,29 @@ export function creatureInstancePhase(id){
   return (hash>>>0)%628/100;
 }
 
+// Summon monsters are colossal relative to the human rig (1 unit).
+// The horse remains a rideable mount rather than a summoned monster.
+// This governs actual rendered scale, not just the preview camera.
+export const SUMMON_WORLD_SCALE=10;
+export const LARGE_SUMMON_IDS=Object.freeze([
+ 'wolf','wyvern','dragon','elder_dragon','dragon_lord',
+ 'forest_archer','seraph_guardian'
+]);
+const isColossalSummon=type=>LARGE_SUMMON_IDS.includes(type);
+
 export function creatureFlightHeight(object,time=0){
-  if(!object?.flying)return 0;
-  return Math.max(2.6,object.height||0)+.22*Math.sin(time*3.7+creatureInstancePhase(object.id));
+ if(!object?.flying)return 0;
+ const factor=isColossalSummon(object.type)?SUMMON_WORLD_SCALE:1;
+ return Math.max(2.6*factor,object.height||0)+
+  .22*factor*Math.sin(time*3.7+creatureInstancePhase(object.id));
 }
 
 export function creatureSize(type,mounted=false){
-  const base={wolf:1,wyvern:1.05,dragon:1.35,elder_dragon:1.55,dragon_lord:1.70,forest_archer:1,seraph_guardian:1,horse:1};
-  return mounted?(CREATURE_PERFORMANCE[type]?.scaleWhenMounted??base[type]??1):(base[type]??1);
+ const base={wolf:1,wyvern:1.05,dragon:1.35,elder_dragon:1.55,
+  dragon_lord:1.70,forest_archer:1,seraph_guardian:1,horse:1};
+ const original=mounted?(CREATURE_PERFORMANCE[type]?.scaleWhenMounted??base[type]??1):
+  (base[type]??1);
+ return original*(isColossalSummon(type)?SUMMON_WORLD_SCALE:1);
 }
 
 /** Rider's local root offset relative to its mount's original origin.
@@ -53,7 +68,8 @@ export function riderSeatHeight(object,time=0){
   // Special commander horses are scaled ×1.12 by the creature renderer.
   // Add rig-dependent saddle clearance so boots and thighs do not pierce the mount.
   const commanderRise=object.type==='horse'&&object.commanderMount?.26:0;
-  return settings.seat+commanderRise+creatureFlightHeight(object,time);
+  return settings.seat*(isColossalSummon(object.type)?SUMMON_WORLD_SCALE:1)+
+   commanderRise+creatureFlightHeight(object,time);
 }
 
 /** Returns 0 outside the current, server-authoritative attack window. */
