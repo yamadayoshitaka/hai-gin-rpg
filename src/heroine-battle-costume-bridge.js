@@ -364,7 +364,12 @@ export function fitStudioNeckContinuity({faceRoot,faceMesh,wardrobeRoot}={}){
     halfDepth:originalFaceBounds.getSize(new THREE.Vector3()).z*.5,
     sideRise:.008,backRise:.003
    });
-   const y=baseY+Math.pow(t,3)*(seamY-safeCutY);
+   // A visible jaw has a shallow U-shaped underside, not a flat bar.
+   // At the exposed connector top lift both lateral edges ~5mm into the
+   // existing face mesh, leaving the chin center lower and the hard rim
+   // concealed behind the cheek contour. The bottom clothing ring stays put.
+   const jawArc=.005*Math.pow(Math.abs(Math.cos(angle)),1.5);
+   const y=baseY+Math.pow(t,3)*(seamY-safeCutY+jawArc);
    const world=new THREE.Vector3(x,y,z);
    const local=faceRoot.worldToLocal(world);
    verts.push(local.x,local.y,local.z);
