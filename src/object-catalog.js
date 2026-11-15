@@ -263,7 +263,21 @@ export function createObjectById(id,{cellSize=2.2}={}){
    b(1.46*c,.18*c,2.22*c,0,.69*c,0,linen);
    b(1.12*c,.13*c,.47*c,0,.85*c,-.77*c,linen);
   }
-  if(id==='cottage_shelf_001'){for(const x of [-.8,.8])b(.14*c,2.8*c,.7*c,x*c,1.4*c,0);for(let y=.3;y<2.8;y+=.62){b(1.8*c,.12*c,.8*c,0,y*c,0);for(let i=0;i<5;i++)b(.17*c,.36*c,.36*c,(i-2)*.31*c,(y+.23)*c,0,i%2?dark:linen)}}
+  if(id==='cottage_shelf_001'){
+   // Grounded side panels, housed shelves, full back, and anti-racking rear cross brace.
+   for(const x of [-.84,.84])b(.13*c,2.72*c,.76*c,x*c,1.36*c,0,dark);
+   b(1.81*c,.13*c,.83*c,0,.085*c,0,dark);
+   b(1.81*c,.12*c,.83*c,0,2.69*c,0,dark);
+   b(1.66*c,2.53*c,.055*c,0,1.37*c,-.39*c,dark);
+   for(const y of [.48,1.04,1.60,2.16]){
+    b(1.65*c,.105*c,.72*c,0,y*c,.025*c);
+    for(let i=0;i<4;i++){
+     const h=(.27+(i%3)*.055)*c;
+     b(.20*c,h,.34*c,(i-1.5)*.36*c,(y+.0525)*c+h/2,.06*c,i%2?dark:linen);
+    }
+   }
+   for(const x of [-.68,.68])b(.095*c,.13*c,.72*c,x*c,.26*c,0,dark);
+  }
   if(id==='cottage_fireplace_001'){b(2.6*c,.3*c,1*c,0,.15*c,0,stone);for(const x of [-1.1,1.1])b(.42*c,2.5*c,.9*c,x*c,1.25*c,0,stone);b(2.65*c,.4*c,1.05*c,0,2.5*c,0,stone);b(1.2*c,.45*c,.4*c,0,.48*c,.1*c,fire)}
   if(id==='cottage_barrel_001'){const o=new THREE.Mesh(new THREE.CylinderGeometry(.48*c,.52*c,1.15*c,24,3),timber);o.position.y=.58*c;o.castShadow=true;root.add(o);for(const y of [.2,.94]){const ring=new THREE.Mesh(new THREE.TorusGeometry(.49*c,.045*c,7,28),dark);ring.rotation.x=Math.PI/2;ring.position.y=y*c;root.add(ring)}}
   if(id==='treasure_chest_001'){
@@ -280,7 +294,32 @@ export function createObjectById(id,{cellSize=2.2}={}){
    root.add(lid);root.userData.openable=true;root.userData.opened=false;
    root.userData.lidName='treasure_chest_lid';
   }
-  if(id==='cottage_stairs_001'){for(let i=0;i<9;i++)b(1.8*c,.16*c,.48*c,0,(i+.5)*.34*c,(i-4)*.43*c);for(const x of [-.85,.85])b(.12*c,3.2*c,.12*c,x*c,1.6*c,0,dark)}
+  if(id==='cottage_stairs_001'){
+   // Continuous inclined stringers support every tread; closed risers block open gaps.
+   const steps=9,rise=.34*c,run=.43*c,startZ=-1.72*c;
+   const slope=Math.atan2(rise,run),length=Math.hypot(9*rise,9*run);
+   for(const x of [-.82,.82]){
+    const stringer=b(.16*c,.28*c,length,x*c,1.53*c,0,dark);
+    stringer.rotation.x=-slope;
+    for(let i=0;i<9;i++){
+     const y=(i+.5)*rise,z=startZ+i*run;
+     b(.14*c,.28*c,.12*c,x*c,y-.11*c,z,dark);
+    }
+   }
+   for(let i=0;i<9;i++){
+    const y=(i+1)*rise,z=startZ+i*run;
+    b(1.85*c,.14*c,.47*c,0,y,z);
+    b(1.76*c,rise-.12*c,.09*c,0,y-rise/2-.07*c,z-.205*c,dark);
+   }
+   for(const x of [-.82,.82]){
+    for(let i of [0,4,8]){
+     const y=(i+1)*rise,z=startZ+i*run;
+     b(.095*c,.85*c,.095*c,x*c,y+.425*c,z,dark);
+    }
+    const rail=b(.10*c,.11*c,length,x*c,2.40*c,0,dark);
+    rail.rotation.x=-slope;
+   }
+  }
   root.userData.catalogId=id;root.userData.passable=false;return root;
  }
  if(OBJECT_CATALOG[id].kind==='town_prop'){
