@@ -166,19 +166,27 @@ const KEY='hai-gin.monster-quality-review.v1';
 let records={};
 try{records=JSON.parse(localStorage.getItem(KEY)||'{}')||{};}catch{records={};}
 const extras=[
- {id:'wolf',name:'専用召喚狼',monsterId:'m001'},
- {id:'wyvern',name:'飛竜',monsterId:'m017'},
- {id:'dragon',name:'古竜',monsterId:'m017'},
- {id:'elder_dragon',name:'天竜',monsterId:'m017'},
- {id:'dragon_lord',name:'竜王（竜本体）',monsterId:'m017'},
- {id:'forest_archer',name:'森の精霊弓士',monsterId:'m034'},
- {id:'seraph_guardian',name:'光翼の守護天使',monsterId:'m015'},
- {id:'horse',name:'軍馬',monsterId:'m001'}
+ {id:'wolf',name:'専用召喚狼',family:'beast',
+  visual:'灰白毛の召喚狼。自然な四足骨格と軽い青白い魔法発光'},
+ {id:'wyvern',name:'飛竜',family:'reptile',
+  visual:'二脚・大きな膜翼を備えた竜。飛行、接地、尻尾の連続性'},
+ {id:'dragon',name:'古竜',family:'reptile',
+  visual:'大型の古竜。長い尾と鱗、翼のボーン、口からのブレス'},
+ {id:'elder_dragon',name:'天竜',family:'reptile',
+  visual:'巨大な神話竜。立体的な鱗、角と翼、魔法発光'},
+ {id:'dragon_lord',name:'竜王（竜本体）',family:'reptile',
+  visual:'竜王のドラゴン形態。人間形態とは別素体、古代竜の翼と角'},
+ {id:'forest_archer',name:'森の精霊弓士',family:'fiend',
+  visual:'精霊の人型弓使い。顔・手足と弓、衣装の密着を確認'},
+ {id:'seraph_guardian',name:'光翼の守護天使',family:'avian',
+  visual:'白い肌の人型天使。翼と鎧を骨格に固定し飛行と回復を確認'},
+ {id:'horse',name:'軍馬',family:'beast',
+  visual:'写実的な四足の馬。脚の接地と鞍・騎乗者の位置を保持'}
 ];
 const creatures=[
  ...MONSTER_CATALOG.map(m=>({id:m.id,kind:'monster',name:m.name,monsterId:m.id,family:m.family})),
  ...MONSTER_SUMMON_ENTRIES.map(s=>({id:s.id,kind:'summon',name:s.name,monsterId:s.monsterId,family:s.family})),
- ...extras.map(s=>({...s,kind:'summon',family:MONSTER_BY_ID[s.monsterId]?.family||'beast'}))
+ ...extras.map(s=>({...s,kind:'summon',isExtra:true,monsterId:null}))
 ];
 let selected='m001',stage='after',kindFilter='monster';
 const current=()=>creatures.find(c=>c.id===selected)||creatures[0];
@@ -241,13 +249,16 @@ function updateScore(){
  if(validImage)$('refImage').src=url;
 }
 function fillEditor(){
- const c=current(),record=currentEntry(),m=MONSTER_BY_ID[c.monsterId];
- const humanoid=HUMAN_MONSTER_IDS.includes(m.id);
+ const c=current(),record=currentEntry(),m=MONSTER_BY_ID[c.monsterId]||null;
+ const humanoid=!!m&&HUMAN_MONSTER_IDS.includes(m.id);
  $('speciesTitle').textContent=c.id+'　'+c.name+(c.kind==='summon'?'（召喚獣）':'（敵モンスター）');
  const wolf=WOLF_QUALITY_REFERENCE[c.id];
- $('speciesDescription').textContent=(wolf?.visual||m.description)+
-  ' / '+MONSTER_FAMILIES[m.family]+(humanoid?' / 人間タイプ素体（獣へは置換しない）':'');
- const modelHref=humanoid?'./monster-manager.html?monster='+m.id:
+ $('speciesDescription').textContent=(wolf?.visual||c.visual||m?.description||'基準画未登録')+
+  ' / '+(MONSTER_FAMILIES[c.family]||c.family)+
+  (humanoid?' / 人間タイプ素体（獣へは置換しない）':'');
+ const modelHref=c.isExtra?
+  './summon-showcase.html?summon='+encodeURIComponent(c.id):
+  humanoid?'./monster-manager.html?monster='+m.id:
   './creature-model-adoption.html?species='+encodeURIComponent(c.id);
  $('modelLink').href=modelHref;
  $('adoptionLink').href=modelHref;
@@ -277,10 +288,10 @@ function fillEditor(){
   $(id).value=record.evidence?.[id]||'';
  $('fps1Low').value=record.metrics?.fps1Low??'';
  $('crashCount').value=record.metrics?.crashCount??'';
- const isExtra=!MONSTER_BY_ID[c.id.replace(/^summon_/,'')];
+ const isExtra=!!c.isExtra;
  $('prompts').textContent=isExtra?
   '専用召喚獣 '+c.name+'。元の種族骨格を維持し、非人型は適正な動物骨格で表現。'+'\n'+
-  (wolf?.visual||'高品質の写実的な3Dゲーム向け基準画。')+'\n番号・文字・コマ割り・誤った脚数・部品貫通は禁止。':
+  (wolf?.visual||c.visual||'高品質の写実的な3Dゲーム向け基準画。')+'\n番号・文字・コマ割り・誤った脚数・部品貫通は禁止。':
   monsterDesignPrompt(c.id,{summoned:c.kind==='summon'});
  updateScore();
 }
@@ -333,9 +344,11 @@ $('copyPrompt').onclick=()=>navigator.clipboard?.writeText($('prompts').textCont
 $('compare').onclick=()=>{
  $('modelPanel').open=true;
  const c=current();
- const url=HUMAN_MONSTER_IDS.includes(c.monsterId)?
-  './monster-manager.html?monster='+encodeURIComponent(c.monsterId):
-  './creature-model-adoption.html?species='+encodeURIComponent(c.id);
+ const url=c.isExtra?
+  './summon-showcase.html?summon='+encodeURIComponent(c.id):
+  HUMAN_MONSTER_IDS.includes(c.monsterId)?
+   './monster-manager.html?monster='+encodeURIComponent(c.monsterId):
+   './creature-model-adoption.html?species='+encodeURIComponent(c.id);
  $('previewFrame').src=url;
  $('modelPanel').scrollIntoView({behavior:'smooth',block:'nearest'});
 };
