@@ -93,6 +93,7 @@ jobs:
           npm run test:creature-variants-mobile-viewer
           npm run test:humanoid-spell-motion
           npm run test:nonhuman-monster-outfits
+          npm run test:monster-source-rebuild
           npm run test:summon-source-hybrid
           npm run test:monster-summon-catalog
           node qa/monster-beastfolk-wolf-regression.test.mjs
