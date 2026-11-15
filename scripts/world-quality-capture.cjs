@@ -15,7 +15,7 @@ const path=require('node:path');
    let errors=[];page.on('pageerror',err=>errors.push(err.message));
    const url='http://127.0.0.1:8765/world-quality-preview.html?object='+id+'&roughnessScale='+roughnessScale;
    await page.goto(url,{waitUntil:'domcontentloaded',timeout:45000});
-   await page.waitForFunction(()=>['true','error'].includes(document.body.dataset.qaReady),{timeout:30000});
+   await page.waitForFunction(()=>['true','error'].includes(document.body.dataset.qaReady),null,{timeout:30000});
    const state=await page.locator('body').evaluate(e=>({...e.dataset}));
    if(state.qaReady!=='true'||errors.length)throw Error('Failed WebGL capture '+id+' '+roughnessScale+' '+JSON.stringify({state,errors}));
    const filename=path.join(dir,id+'-rough-'+String(roughnessScale).replace('.','_')+'.png');
