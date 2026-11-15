@@ -5,7 +5,7 @@
  * The renderer keeps the existing model if the remote host or CORS fails.
  */
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
-import {loadExternalCreature,prepareExternalGLTF} from './creature-external-runtime.js';
+import {loadExternalCreature,prepareExternalGLTF} from './creature-external-runtime.js?v=wolf-actions-v3';
 import {applyGreyFangWolfFinish} from './grey-fang-wolf-finish.js?v=wolf-actions-v3';
 import {installGreyWolfActions} from './grey-wolf-action-runtime.js?v=wolf-actions-v3';
 
