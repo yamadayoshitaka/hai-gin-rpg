@@ -64,6 +64,7 @@ import {MONSTER_CATALOG,MONSTER_BY_ID} from './src/monster-catalog.js';
 import {MONSTER_SUMMON_ENTRIES} from './src/monster-summon-registry.js';
 import {createMonsterModel,disposeMonsterSculpture} from './src/monster-geometry.js';
 import {startMonsterAction,animateMonsterModel} from './src/monster-animation.js';
+import {buildCombatObjectGeometry} from './src/combat-creature-geometry.js';
 import {fetchCreatureRegistry,loadExternalCreature} from './src/creature-external-runtime.js';
 import {NONHUMAN_MONSTER_IDS,NONHUMAN_EXTRA_SUMMON_IDS,recommendedMeshSources,adoptedCreatureMesh,setAdoptedCreatureMesh,compatibleSourceWarning} from './src/creature-mesh-adoption.js';
 const $=id=>document.getElementById(id);
@@ -105,8 +106,45 @@ const ground=new THREE.GridHelper(12,12,0x456979,0x294455);scene.add(ground);
 function disposePreview(){
  ++serial;
  if(handle){scene.remove(handle.root);handle.dispose();handle=null;}
- if(legacyActor){scene.remove(legacyActor);disposeMonsterSculpture(legacyActor);legacyActor=null;}
+ if(legacyActor){
+  scene.remove(legacyActor);
+  if(legacyActor.userData.isCombatGeometryPreview){
+   legacyActor.traverse(node=>{if(!node.isMesh)return;node.geometry?.dispose();
+    if(Array.isArray(node.material))node.material.forEach(m=>m.dispose());
+    else node.material?.dispose();});
+  }else disposeMonsterSculpture(legacyActor);
+  legacyActor=null;
+ }
  ready=false;$('adopt').disabled=true;
+}
+function buildOriginal(id,detail='high'){
+ const m=MONSTER_BY_ID[id.replace(/^summon_/,'')];
+ if(m)return createMonsterModel(m,{detail});
+ // Separate standalone summons use the same actual procedural mesh factory
+ // as battle, rather than a blank placeholder or an unrelated bestiary model.
+ const geometries=buildCombatObjectGeometry(id,{detail});
+ const root=new THREE.Group();root.name='CurrentCreature_'+id;
+ root.userData.isCombatGeometryPreview=true;
+ for(const [part,geometry] of Object.entries(geometries)){
+  const isEquipment=part==='equipment';
+  const material=new THREE.MeshStandardMaterial({
+   vertexColors:true,side:THREE.DoubleSide,
+   roughness:isEquipment?.55:.84,metalness:isEquipment?.26:0
+  });
+  const mesh=new THREE.Mesh(geometry,material);mesh.name=part;root.add(mesh);
+ }
+ return root;
+}
+function showOriginal(id,detail='high'){
+ try{
+  legacyActor=buildOriginal(id,detail);
+  if(legacyActor){
+   scene.add(legacyActor);
+   if(!legacyActor.userData.isCombatGeometryPreview)
+    startMonsterAction(legacyActor,'idle',0);
+   focus();
+  }
+ }catch(error){$('status').textContent='元モデルを表示できません：'+error.message;}
 }
 function focus(){
  const root=handle?.root||legacyActor;if(!root)return;
@@ -158,23 +196,28 @@ function previewChoice(){
  $('modelName').textContent=speciesName(id)+' / '+(source==='legacy'?'現行モデル':registry.entries[source]?.name||source);
  const ticket=serial;
  if(source==='legacy'){
-  const m=MONSTER_BY_ID[id.replace(/^summon_/,'')];
-  if(m){
-   legacyActor=createMonsterModel(m,{detail:'high'});
-   scene.add(legacyActor);startMonsterAction(legacyActor,'idle',0);focus();
-   ready=true;$('adopt').disabled=false;
-   $('status').textContent='現行3Dを表示中。採用すると新モデルの選択を解除します。';
-  }else{
-   ready=true;$('adopt').disabled=false;
-   $('status').textContent='専用召喚獣の現行モデルは下のリンクから確認できます。新GLBはここで比較できます。';
-  }
+  showOriginal(id);
+  ready=!!legacyActor;$('adopt').disabled=!ready;
+  $('status').textContent=legacyActor?'現行3Dを表示中。採用すると選択した新モデルを解除します。':
+    '元モデルを表示できないため、元画面のリンクで確認してください。';
   savedStatus();return;
  }
  const entry=registry.entries[source];
  if(!entry){$('status').textContent='登録済みのGLBではありません';return;}
- $('status').textContent='GLBを読み込み中：'+entry.name+'（画面が表示できるまで採用できません）';
+ // Use the old model as the loading/error fallback; it remains fully intact.
+ showOriginal(id,'low');
+ $('status').textContent='GLBを読み込み中：'+entry.name+'（読込完了まで採用できません）';
  loadExternalCreature(entry,'high').then(loaded=>{
   if(ticket!==serial){loaded.dispose();return;}
+  if(legacyActor){
+   scene.remove(legacyActor);
+   if(legacyActor.userData.isCombatGeometryPreview){
+    legacyActor.traverse(node=>{if(!node.isMesh)return;node.geometry?.dispose();
+     if(Array.isArray(node.material))node.material.forEach(m=>m.dispose());
+     else node.material?.dispose();});
+   }else disposeMonsterSculpture(legacyActor);
+   legacyActor=null;
+  }
   handle=loaded;scene.add(handle.root);focus();
   ready=true;$('adopt').disabled=false;
   $('status').textContent='GLB表示成功：'+entry.name+' / '+entry.license+
@@ -208,14 +251,16 @@ for(const b of document.querySelectorAll('[data-action]')){
  b.onclick=()=>{
   currentAction=b.dataset.action;
   if(handle)handle.play(currentAction);
-  if(legacyActor)startMonsterAction(legacyActor,currentAction,performance.now()/1000);
+  if(legacyActor&&!legacyActor.userData.isCombatGeometryPreview)
+   startMonsterAction(legacyActor,currentAction,performance.now()/1000);
  };
 }
 function loop(time){
  requestAnimationFrame(loop);
  const dt=Math.min(.1,Math.max(0,(time-frameLast)/1000));frameLast=time;
  if(handle)handle.update(dt);
- if(legacyActor)animateMonsterModel(legacyActor,time/1000);
+ if(legacyActor&&!legacyActor.userData.isCombatGeometryPreview)
+  animateMonsterModel(legacyActor,time/1000);
  const rect=$('stage').getBoundingClientRect();
  const w=Math.floor(rect.width),h=Math.floor(rect.height);
  if(w>0&&h>0&&(renderer.domElement.width!==Math.round(w*renderer.getPixelRatio())||renderer.domElement.height!==Math.round(h*renderer.getPixelRatio()))){
