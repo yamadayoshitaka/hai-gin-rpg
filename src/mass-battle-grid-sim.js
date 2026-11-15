@@ -100,7 +100,7 @@ export class MassBattleGridSimulation {
     // Each squad shares one BFS field; never calculate A* for 1000 soldiers.
     this.squadDestinations=new Map();this.squadFlows=new Map();this.squadCommands=new Map();
     this.enemySquadCommands=new Map();this.explorationOrders=new Map();this.explorationFlows=new Map();this.enemySquadItemBuffs=new Map();
-    this.squadItemBuffs=new Map();
+    this.squadItemBuffs=new Map();this.squadDebuffs=new Map();
     // Cache target-focused BFS fields across troops. A soldier must retain
     // the direction of an enemy hidden by a wall, tree or indoor furnishing.
     // The budget prevents 2000 agents from creating separate A* searches.
@@ -457,7 +457,7 @@ export class MassBattleGridSimulation {
         }
         if(u.cooldown<=0&&this._canSee(u,enemy)){
           const job=JOBS[u.jobIndex];
-          this.actions.damageUnit(enemy,Math.max(1,job.damage),u);
+          this.actions.damageUnit(enemy,this._debuffDamage(u,enemy,Math.max(1,job.damage)),u);
           enemy.hitFlash=.2;this.attacks++;
           u.cooldown=Math.max(.4,job.interval);
           u.attackElapsed=0;u.action='attack';
@@ -501,7 +501,7 @@ export class MassBattleGridSimulation {
       }
       if(nearest){
         const damage=Math.max(1,Math.round(job.damage*Math.min(8,2**(route.level-1))));
-        this.actions.damageUnit(nearest,damage,u);
+        this.actions.damageUnit(nearest,this._debuffDamage(u,nearest,damage),u);
         nearest.hitFlash=.2;this.attacks++;
         u.cooldown=Math.max(.45,job.interval);u.attackElapsed=0;u.action='attack';
         this.actions.event('skill',{sourceId:u.id,x:Math.round(center.x),z:Math.round(center.z),
@@ -779,6 +779,7 @@ export class MassBattleGridSimulation {
   healFromItem(unitId,amount){
     const target=this.units.find(unit=>unit.id===Number(unitId));
     if(!target||!target.alive||!(target.hp>0)||!(amount>0)||!Number.isFinite(amount))return false;
+    if(this._squadDebuff(target,'heal_block')>=1)return false;
     const gain=Math.min(target.maxHp-target.hp,Math.min(500,Math.round(amount)));
     if(gain<=0)return false;
     target.hp+=gain;
@@ -790,12 +791,14 @@ export class MassBattleGridSimulation {
 
   /** Same capped healing budget in the Worker and main-thread mirrors. */
   healSquadFromItem(squadId,totalHp,team=0){
+    if(this._squadDebuff({team,squadId},'heal_block')>=1)return false;
     return applySquadHeal(this.units,squadId,totalHp,{team});
   }
   /** Per-squad buff effects run in the authoritative AI, not just as UI labels. */
   applySquadItemBuff(squadId,itemId,buff,duration,team=0){
     const id=String(squadId);
     if(!this.units.some(u=>u.team===team&&String(u.squadId)===id&&u.alive&&u.hp>0))return false;
+    if(this._squadDebuff({team,squadId:id},'buff_block')>=1)return false;
     const values={attack:Math.min(.5,Math.max(0,Number(buff?.attack)||0)),
       defense:Math.min(.4,Math.max(0,Number(buff?.defense)||0)),
       speed:Math.min(.6,Math.max(0,Number(buff?.speed)||0))};
@@ -991,6 +994,26 @@ export class MassBattleGridSimulation {
     const key=team+':'+String(squadId);
     this.explorationOrders.delete(key);this.explorationFlows.delete(key);
   }
+  /** Targeted, time-limited force suppression. Shared by all units of the enemy squad. */
+  applySquadDebuff(squadId,stat,amount,duration=20,team=1){
+    const id=String(squadId),key=team+':'+id;
+    if(!['attack','defense','speed','heal_block','buff_block'].includes(stat)||!Number.isFinite(amount)||amount<=0||
+      !this.units.some(u=>u.team===team&&String(u.squadId)===id&&u.alive))return false;
+    const existing=this.squadDebuffs.get(key)||{};
+    this.squadDebuffs.set(key,{...existing,[stat]:Math.min(stat.endsWith('_block')?1:.4,Math.max(existing[stat]||0,amount)),
+     until:Math.max(existing.until||0,this.time+Math.max(1,Math.min(45,duration)))});
+    return true;
+  }
+  _squadDebuff(unit,stat){
+    if(!unit)return 0;
+    const value=this.squadDebuffs.get(unit.team+':'+String(unit.squadId));
+    return value?.until>this.time?value[stat]||0:0;
+  }
+  _debuffDamage(attacker,defender,damage){
+    const reduced=1-this._squadDebuff(attacker,'attack');
+    const exposed=1+this._squadDebuff(defender,'defense');
+    return Math.max(1,Math.round(damage*reduced*exposed));
+  }
   setSquadCommand(squadId,command,team=0){
     const id=String(squadId);
     if(!['charge','defend','hold','retreat'].includes(command)||!this.units.some(u=>u.team===team&&String(u.squadId)===id))return false;
@@ -1006,7 +1029,7 @@ export class MassBattleGridSimulation {
 
   requestSquadHealing(targetSquadId,preferredSupportId=null){
     const targetId=String(targetSquadId);
-    const wounded=this.units.filter(u=>u.alive&&u.team===0&&String(u.squadId)===targetId&&u.hp<u.maxHp);
+    const wounded=this.units.filter(u=>u.alive&&u.team===0&&String(u.squadId)===targetId&&u.hp<u.maxHp&&this._squadDebuff(u,'heal_block')<1);
     if(!wounded.length)return null;
     const candidateSupportIds=[...new Set(this.units.filter(u=>u.alive&&u.team===0&&u.formationType==='support'&&u.jobId==='priest')
       .map(u=>String(u.squadId)))];
@@ -1465,7 +1488,7 @@ export class MassBattleGridSimulation {
         if(u.cooldown<=0){
           u.cooldown+=job.interval;
           u.attackElapsed=0;
-          this.actions.damageUnit(nearest,job.damage,u);
+          this.actions.damageUnit(nearest,this._debuffDamage(u,nearest,job.damage),u);
           nearest.hitFlash=.2;this.attacks++;
         }
         continue;
@@ -1583,7 +1606,7 @@ export class MassBattleGridSimulation {
       const multiplier=(order==='charge'?1.3:order==='defend'?.65:1)*(u.itemSpeedMultiplier||1);
       const mounted=u.mountId&&this.objects.some(o=>o.id===u.mountId&&o.alive&&o.mountedBy===u.id);
       if(!mounted)u.mountId=null;
-      u.moveDuration=massStepDuration(job.speed,u.vx,u.vz,{
+      u.moveDuration=massStepDuration(job.speed*(1-this._squadDebuff(u,'speed')),u.vx,u.vz,{
         scale:MASS_MOVEMENT_SCALE,command:multiplier,formation:squadSpeedFactor(u.formationType),
         mounted:mounted?COMBAT_RULES.mountedSpeedMultiplier:1});
       u.moveElapsed=0;u.action='walk';

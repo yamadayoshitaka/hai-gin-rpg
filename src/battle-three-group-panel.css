@@ -1,0 +1,17 @@
+/* Story campaigns: keep only three group entries visible until drilled into. */
+body.story-three-group-ui #allySquadRibbon .ribbonList,
+body.story-three-group-ui #allySquadRibbon .ribbonPager,
+body.story-three-group-ui #enemySquadRibbon .ribbonList,
+body.story-three-group-ui #enemySquadRibbon .ribbonPager{display:none!important}
+body.story-three-group-ui.story-enemy-details #enemySquadRibbon .ribbonList,
+body.story-three-group-ui.story-enemy-details #enemySquadRibbon .ribbonPager{display:flex!important}
+body.story-three-group-ui .battleThreeGroupPanel{display:grid;gap:5px;padding:4px;max-height:min(42dvh,390px);overflow-y:auto;overscroll-behavior:contain}
+body.story-three-group-ui .battleThreeGroupPanel button{display:flex;flex-direction:column;justify-content:center;gap:2px;min-height:42px;width:100%;color:#f9e8c7;background:#1d4155;border:1px solid #719bb6;border-radius:7px;padding:6px 7px;font:700 11px/1.35 system-ui;text-align:left}
+body.story-three-group-ui .battleThreeGroupPanel button strong{font:700 12px/1.3 system-ui}
+body.story-three-group-ui .battleThreeGroupPanel button small{font:10px/1.25 system-ui;color:#c9dce6}
+body.story-three-group-ui .battleThreeGroupPanel button.danger{border-color:#e0a174;background:#653e38}
+body.story-three-group-ui .battleThreeGroupPanel button:disabled{opacity:.38}
+body.story-three-group-ui .battleThreeGroupPanel .threeGroupActions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px}
+body.story-three-group-ui .battleThreeGroupPanel .threeGroupStep{color:#ffde9c;font:700 11px/1.35 system-ui}
+body.story-three-group-ui #battleEnemyGroupSummary{display:block;width:100%;padding:8px 4px;border:1px solid #a37a87;background:#443440;color:#fbe5e8;border-radius:7px;font:700 12px/1.35 system-ui}
+body.story-three-group-ui #allySquadRibbon,body.story-three-group-ui #enemySquadRibbon{max-height:75dvh}

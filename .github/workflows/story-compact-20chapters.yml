@@ -1,0 +1,52 @@
+name: Story compact 20-chapter runtime regression
+on:
+  pull_request:
+    paths:
+      - 'src/story-compact-comic.js'
+      - 'src/story-manga-viewer.js'
+      - 'src/story-narrative-flow.js'
+      - 'game.html'
+      - 'town-hub.html'
+      - 'world-map.html'
+      - 'data/story-compact-20chapters.json'
+      - 'story-compact-review.html'
+      - 'qa/story-compact-20-chapters.test.mjs'
+      - '.github/workflows/story-compact-20chapters.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'src/story-compact-comic.js'
+      - 'src/story-manga-viewer.js'
+      - 'data/story-compact-20chapters.json'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  story-compact:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify syntax of compact event runtime
+        run: |
+          node --check src/story-compact-comic.js
+          node --check src/story-manga-viewer.js
+          node --check src/story-narrative-flow.js
+      - name: Verify all twenty chapters, 200 stages and distinct defeat/gameover
+        run: node qa/story-compact-20-chapters.test.mjs
+      - name: Verify compact CG reuse of 40 existing first-four-stage gender/outcome original assets
+        run: node qa/story-compact-art-reuse.test.mjs
+      - name: Build full 200-stage CG reuse/missing queue for next manga batch
+        run: node scripts/build-story-compact-production-queue.mjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: story-compact-200-stage-cg-production-queue
+          path: qa-reports/story-compact-production-queue.json
+          if-no-files-found: error
+      - name: Preserve old individual registered artwork and 462-cut review archive
+        run: |
+          node qa/story-panel-one-at-a-time.test.mjs
+          node qa/story-stage1-4-backlog.test.mjs

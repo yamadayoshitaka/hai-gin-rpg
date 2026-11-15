@@ -52,6 +52,6 @@ assert.match(town,/paperPending=false;paperPhase=phase/);
 assert.match(town,/game\.storyFlags\.stageMangaSeen/);
 assert.match(town,/game\.storyFlags\.stagePostMangaSeen/);
 assert.match(viewer,/loadPanelArt\(shot,pagePanels\)/,'every dialogue must display a single stage-matched panel');
-assert.match(viewer,/storySheetCrop\(shot,pagePanels.length\)/,'2x5 sheets must crop one panel at a time');
+assert.match(viewer,/storySheetCrop\(shot,shot\.sourceSheetCount\|\|pagePanels\.length\)/,'existing 2x5 sheets must crop the original individual panel under compact display');
 assert.doesNotMatch(viewer,/applyCinematicImage\(/,'do not substitute portraits for an unfinished page');
 console.log('PASS cinematic raster: 20 persistent cast portraits, 20 chapter backdrops, title cover, 200×20 panels (10+10), one-time town intro and inline NPC speech');

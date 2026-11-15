@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "sourceZip": "assets/story/chapter1-chatgpt-queue/hai_gin_c01_s05_female_pre_5shots_autoregister.zip",
+  "zipSha256": "43025a89813966bd1e6526301c395e2401b3b2474a0d9f5d4338ae2694c27a10",
+  "shotKeys": [
+    "c01-s05|pre|female|c01-s05-m1",
+    "c01-s05|pre|female|c01-s05-m2",
+    "c01-s05|pre|female|c01-s05-m3",
+    "c01-s05|pre|female|c01-s05-m4",
+    "c01-s05|pre|female|c01-s05-m5"
+  ],
+  "candidateCount": 5,
+  "registrationStatus": "AUTO_PROVISIONAL_PENDING_P0",
+  "humanVisualQualityCertified": false,
+  "note": "Validated package metadata and SHA. Existing canonical importer validates the actual WebP bytes, screenplay, gender/outcome and state. This receipt alone does not certify character/style/text accuracy."
+}

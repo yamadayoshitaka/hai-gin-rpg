@@ -71,7 +71,7 @@ const game=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'ut
 const local=game.indexOf('const localEnemy=healing?null:nearestSkirmishEnemy(a,actors');
 const waiting=game.indexOf("if(travel.phase==='upstairs'&&!travel.windowReady&&!localEnemy)");
 assert.ok(local>0&&waiting>local,'same-roof detection must precede wait-for-window guard');
-assert.match(game,/const actualDamage=localEnemy===target\?a\.job\.damage:stats\.damage/,
+assert.match(game,/const actualDamage=strategicDamage\(a,target,localEnemy===target\?a\.job\.damage:stats\.damage\)/,
  'same-level combat uses ordinary attack strength, not an elevated shooting bonus');
 assert.match(game,/function hideCollectedRoomLootMarkers\(/,
  'all exhausted overlapping treasure objects must disappear');

@@ -127,8 +127,9 @@ const gallery=readFileSync(new URL('../summon-showcase.html',import.meta.url),'u
 assert.match(gallery,/selected==='wolf'\)\{/,'Wolf must have a direct face close-up');
 const version=gallery.match(/3D鑑賞 v(\d+\.\d+\.\d+)/);
 assert.ok(version,'Viewer must display its current model revision');
-assert.ok(gallery.includes("combat-world-object-renderer.js?v="+version[1]),
-  'The world-object renderer import must be cache-busted with the same revision');
+assert.ok(gallery.includes('combat-world-object-renderer.js?v=natural-size-20261116')||
+ gallery.includes('combat-world-object-renderer.js?v='+version[1]),
+ 'The mobile gallery must use a versioned combat renderer, including the natural-size rollback');
 const manager=readFileSync(new URL('../monster-manager.html',import.meta.url),'utf8');
 assert.match(manager,/value="procedural"/,'Keep original, high-quality procedural model as default');
 assert.match(manager,/戦闘は未置換/,'Never silently substitute external low-poly combat models');

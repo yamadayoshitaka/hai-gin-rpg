@@ -38,7 +38,12 @@ export function buildChapter1ImagePrompt({shot,page,edit='',bible=null,assignmen
  const actors=manualShot?.actors||assignment?.visibleActorIds||
   [...new Set([shot.characterId,shot.secondaryId,
    ...(stage45||page.edition==='post-gameover'?[]:['commander_'+page.gender])].filter(Boolean))];
- const normalizedActors=[...new Set(actors)];
+ // Stage5 opening is about Lucia issuing evacuation orders. The original
+ // generic screenplay frame has no actor metadata, but depicting no Lucia
+ // contradicts the canonical stage beat. Do not apply to other shot keys.
+ const correctedActors=shot.stageId==='c01-s05'&&shot.edition==='pre'&&
+  shot.shotId==='c01-s05-m1'?['lucia']:actors;
+ const normalizedActors=[...new Set(correctedActors)];
  const supplemental=Object.entries(manualManifest?.characterMasters||{}).map(([id,r])=>({
   id,path:r.path,role:r.role,visualRule:r.role
  }));
@@ -52,6 +57,14 @@ export function buildChapter1ImagePrompt({shot,page,edit='',bible=null,assignmen
   '第4ステージ：森の古代遺構。処刑された鐘守の紋章と封蝋の出所を調べる。蔦、苔、崩れた石柱、森林の遺構。勝利以前に調査成功を描かない。':
   '第5ステージ：王都へ迫る軍勢を前に、銀髪の摂政リュシアが住民退避を指揮する。城壁、避難路、町民と防衛部隊。勝利以前に防衛成功を描かない。'):'';
  const stage45StyleRef=stage45?stageManifest?.qualityReferenceByGender?.[page.gender]:null;
+ const supplementalStyleRef='assets/story/chapters/c01/panels/c01-s01-m06-'+page.gender+'.webp';
+ const sceneInstructions=shot.stageId==='c01-s05'&&shot.edition==='pre'?({
+  'c01-s05-m1':'城門前でリュシアが住民を避難路へ導く、危機の導入。ガラン・イリス・主人公を足さない。',
+  'c01-s05-m2':'ガランとイリスの会話。老騎士の表情に焦点を合わせる。リュシアを足さない。',
+  'c01-s05-m3':'鐘が鳴った夜の礼拝堂内部。イリスとリュシアの二人だけが、文字が完全に消えた白紙の死者名簿を開いて驚く。城門・ガラン・巻物・戦闘風景を描かない。',
+  'c01-s05-m4':'第1コマとは違う引きの構図。城門前で避難民が味方の旗を見て立ち止まる。旗に文字なし。固有人物はリュシアだけで、脇に立ち腕を上げず苦悩して住民を見守る。紙・王印・ガラン・イリスを描かない。',
+  'c01-s05-m5':'偽造された王印を示す無地の勅命と朱色の封蝋に注目。銀髪のリュシアと、長い銀白髪・灰色の髭・皺のある年長者ヴェスだけを写す。黒髪の若者に置換しない。紙面に文字なし。'
+ })[shot.shotId]:null;
  if(stage45&&!stage45StyleRef)throw Error('Stage4/5 same-gender style reference missing for '+shot.key);
  const lines=[
   '【灰銀のレゾナンス／漫画原画の画像生成依頼】',
@@ -79,6 +92,7 @@ export function buildChapter1ImagePrompt({shot,page,edit='',bible=null,assignmen
   ]:[]),
   '',
   '【シーン・構図／マニフェスト必須入力】',
+  ...(sceneInstructions?['【このコマ固有の構図（P0：他のコマと混同禁止）】',sceneInstructions]:[]),
   manualShot?.scene||assignment?.sceneGoal||shot.sceneKind||page.stageName,
   manualShot?.compositionHint||assignment?.compositionHint||shot.scenery||'台本が示す行動と人物の表情を、一瞬の場面で表現する',
   '当該コマの台本を唯一の正本とする。マニフェストの場面指示と矛盾する場合は生成せず修正対象とする。',
@@ -108,7 +122,7 @@ export function buildChapter1ImagePrompt({shot,page,edit='',bible=null,assignmen
   '【生成・品質の絶対条件】',
   '・【P0画風固定】第一章ステージ1原画と同じハイエンド3D JRPGシネマティックCG（アニメ造形×セミリアル）。立体的な顔・髪・瞳、自然な肌の陰影、金属鎧・布の実在感、奥行きのある照明、精密な背景を全コマで維持する。',
   '・【画風基準の原画】'+LIVE+'assets/story/panels/c01-s01-m01.webp',
-  '・【画風補助参考】'+LIVE+'assets/story/chapters/c01/panels/c01-s01-m06-male.webp',
+  '・【画風補助参考】'+LIVE+supplementalStyleRef,
   '・2Dイラスト調、セル塗り、漫画ページ、絵コンテ、複数の枠を持つコマ割り、ギルド冒険譚への改変など、既存の3D RPG原画と異なる画風は絶対禁止。',
   '・画風参照と登場人物の実画像ファイルを生成時に実際に添付する。URLやファイルパスだけは添付扱いにしない。未添付ならP0正式品質合格は禁止。ユーザー明示承認の仮登録でも未添付を証拠に明記し、人物/画風/1枚絵の目視検査を通す。',
   '・16:9横長の高精細な単一シーン。可能なら1536×864以上のネイティブ画質を目標。単なる拡大処理で品質を偽装しない。',

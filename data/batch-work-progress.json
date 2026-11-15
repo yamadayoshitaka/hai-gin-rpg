@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "asOf": "2026-11-15T12:58:00Z",
+  "asOf": "2026-11-16T02:50:00+09:00",
   "description": "工程別の実作業証跡。GitHub Actionsの成功や定期タスクの実行完了を、3D改修・PR・デプロイの完了と混同しない。これはGitHubに最後に記録されたスナップショットであり、ChatGPTサービスのライブ状態ではない。",
   "stageOrder": [
     "launch",
@@ -14,13 +14,13 @@
   "groups": {
     "human": {
       "source": "ChatGPT 定期タスクの実行結果",
-      "lastRunAt": "2026-11-15T14:58:00Z",
-      "subject": "Issue #417 男女剣士の背面に重なるサーフェスと鎧再現不良（#399から優先切替）",
-      "summary": "最新owner指示#417を優先。鎧付きjob01/job05で背面布パネルと背面胸甲の二重描画を回避する実コード修正を専用ブランチにコミット214aa0f、Draft PR #418作成。ブランチ再取得による静的確認成功。単体/ブラウザ実行、WebGL画像、Android計測、CI成功は未確認。#399の踵不具合は引継ぎ。",
+      "lastRunAt": "2026-11-15T21:04:10Z",
+      "subject": "後部胸甲の実メッシュ深度制限WIP・全人物回帰未完了",
+      "summary": "human ON確認。PR #456の実ゲーム用src/outfit-maintenance-model.jsの後部胸甲を実人体表面深度で制限し、前後逆転・板状突出を抑制するコード差分を専用ブランチにコミット594df102。チェックポイント9c720408を保存。WebGL/Node/Android対象別QA未実施、全人物ID列挙と再生成未実施。Issue #438未解決。実写級・公開は未承認。",
       "status": "in_review",
       "carryover": true,
-      "issueNumber": 417,
-      "nextAction": "PR #418で剣士男女の背面・横・踵をWebGL比較し、鎧背面の二重面解消と欠損なしを検証。単体/ブラウザQAとAndroid性能を確認。#399踵異物の原因修正を継続。未達ならmainマージ禁止。",
+      "issueNumber": 438,
+      "nextAction": "PR #456の後部胸甲を男女剣士/盾戦士のWebGL背面・側面で比較し、#438背面異物を根本修正。Node構文/CI確認、全人物ID列挙と再生成・対象別QAを実施。mainマージ禁止。",
       "steps": {
         "launch": "done",
         "code": "done",
@@ -32,31 +32,31 @@
       },
       "evidence": [
         {
-          "label": "最新owner指示 Issue #417",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/issues/417"
+          "label": "今回の実ソース修正",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/594df102d49e57757383ce824f77f157067a440d"
         },
         {
-          "label": "実コード修正 commit 214aa0f",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/214aa0fde0c91e485a195cfb3dda9e0b92db602c"
+          "label": "Draft PR #456",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/456"
         },
         {
-          "label": "Draft PR #418",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/418"
+          "label": "WIPチェックポイント",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/9c720408b19fd0831e25dca5d51f7f9bf18c1e37"
         },
         {
-          "label": "旧継続 Issue #399",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/issues/399"
+          "label": "未完了 Issue #438",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/issues/438"
         }
       ]
     },
     "monster": {
       "source": "ChatGPT 定期タスクの実行結果",
-      "lastRunAt": "2026-11-15T15:10:59Z",
-      "subject": "PR #382 非人間型34種の可動関節欠落時の衣装欠損を明示的エラー化",
-      "summary": "monsterスイッチON。PR #382のsrc/monster-species-wardrobe.jsで、可動関節が存在しないと衣装カフを無言で省略していた不具合を例外化し、専用ブランチに実コードコミット435b7d4。GitHub再取得で差分確認済み。単体/ブラウザQA実行なし、コミット対応CIランなし、WebGL画像/Android FPS未確認。PR #385 E2E photoSurfaces/source-composite未解消。mainマージ・公開なし。",
-      "status": "in_review",
+      "lastRunAt": "2026-11-15T21:05:00Z",
+      "subject": "m020左右鰓室に独立した支持弓と呼吸可動を追加・全108体未監査",
+      "summary": "monsterスイッチON。PR #426でm020の左右鰓室に各4本の湾曲支持弓、呼吸に同期した回転/厚み変化を実メッシュコードへ追加。実ソースSHA 2a80e3f2を保存しcheckpoint a2cee403へ反映。108ID全件監査・Node/Three/WebGL実描画・Android・ゲーム登録は未実施。今回実造形変更1ID、再生成0、描画QA合格0、実ゲーム反映0。mainマージ/公開なし。",
+      "status": "work_incomplete",
       "carryover": true,
-      "nextAction": "PR #382で node qa/nonhuman-monster-wardrobe.test.mjs を実行し関節ピボット欠落がないか確認、ブラウザ翼/脚カフ前後左右と動作貫通検証。PR #385 photoSurfaces/source-composite E2E修正とPixel 7/Android FPS検証。未達ならmainマージ禁止。",
+      "nextAction": "PR #426でm020の鰓室支持弓の位置と呼吸可動をnode構文・Three.js WebGL四方向表示で検証し、ゲーム/マスターへの実接続。正本108IDの全件監査を実施し、m048独立海蛇母体に着手。",
       "steps": {
         "launch": "done",
         "code": "done",
@@ -68,37 +68,66 @@
       },
       "evidence": [
         {
-          "label": "今回の可動関節欠落修正コミット",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/435b7d42365016d6b48a0b83f920b92c72409e2f"
+          "label": "今回m020鰓室実メッシュ改修SHA",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/2a80e3f2dbe78b6fddd6d7eaeb0502db8b7a931a"
         },
         {
-          "label": "既存Draft PR #382",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/382"
+          "label": "Draft PR #426",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/426"
         },
         {
-          "label": "PR #385 E2E失敗",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/43692535840"
+          "label": "今回WIPチェックポイント",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/a2cee403ee481a2b56fdfddb4179118d09dba21a"
         }
       ]
     },
     "world": {
-      "source": "GitHub Actions（状態未照合）",
-      "lastRunAt": null,
-      "status": "unverified",
-      "carryover": false,
-      "subject": "オブジェクト・ステージ品質回帰",
-      "summary": "実作業の工程別証跡はまだ取得していない。スイッチONは実装完了を意味しない。",
-      "nextAction": "次回の実行後、実画像・コード変更・QA・PR・公開を個別に確認し、この履歴に記録する。",
+      "source": "GitHub実ソース+World専用CIでの対象群一括回帰",
+      "lastRunAt": "2026-11-16T02:50:00+09:00",
+      "status": "in_review",
+      "carryover": true,
+      "subject": "全53種中11種の実3D改善PR審査中（扉5種を新規一括改修）",
+      "summary": "53件全てを一度に写実完成させるのではなく、共通構造を持つ対象群ごとに実3D生成器を共有して一括改善する方針へ切替。今回entry_door_lv1_001〜entry_door_lv5_001の5件について木の有厚8〜10枚板、木製支柱・まぐさ・敷居、レベル別2〜3本の補強・蝶番/鉄鋲・鍵座・取手を実メッシュとして追加、src/object-catalog.jsのゲーム用経路に反映、Draft PR #442に実コミット。専用Node QAをGitHub world-quality CIへ導入しCI #43743734541成功。並走バッチで木製食卓/椅子2件をPR #434に実改修したこともGitHub差分で確認。進捗台帳は11件実3D候補・42件未着手・品質承認0。全体Architecture CI失敗、実WebGL正面側面俯瞰・Android FPS未確認なのでmainマージ/本編公開は未実施。",
+      "nextAction": "PR #442の実WebGL/Android画面・キャラ/衝突整合性を確認し、不具合があれば修正。PR #434、#430、#427、#409と順次QA/マージ条件を確認。残42種は建造物9、街路小物など構造が共通する群をまとめて5〜10種類ずつ一括生成器で実改修。承認済み53/53かつmain反映・Pages公開の全件検証が終わるまでcarryover=trueを維持。",
       "steps": {
-        "launch": "unknown",
-        "code": "unknown",
-        "qa": "unknown",
-        "commit": "unknown",
-        "pr": "unknown",
-        "merge": "unknown",
-        "deploy": "unknown"
+        "launch": "done",
+        "code": "done",
+        "qa": "pending",
+        "commit": "done",
+        "pr": "done",
+        "merge": "pending",
+        "deploy": "pending"
       },
-      "evidence": []
+      "evidence": [
+        {
+          "label": "扉5種類の一括実3D造形 PR #442",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/442"
+        },
+        {
+          "label": "扉5種の実ソース最終コミット",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/5fc214ae4b79fcd651ee22a73004a720f188be31"
+        },
+        {
+          "label": "World品質CI成功",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/43743734541"
+        },
+        {
+          "label": "食卓・椅子の木組み PR #434",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/434"
+        },
+        {
+          "label": "田畑2種 PR #427",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/427"
+        },
+        {
+          "label": "木樽・井戸 PR #430",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/430"
+        },
+        {
+          "label": "53件の個別承認台帳",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/blob/main/data/world-quality/object-realism-acceptance.json"
+        }
+      ]
     },
     "anime": {
       "source": "ChatGPTタスクのスケジュール確認",

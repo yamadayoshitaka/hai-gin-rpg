@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>灰銀｜第1〜4ステージ原画改修174コマ</title>
+<style>
+:root{color-scheme:dark;--bg:#151923;--fg:#f4eee4;--muted:#b8b1a7;--gold:#d6b574}*{box-sizing:border-box}html,body{height:100%;height:100dvh;margin:0;overflow:hidden}body{font:14px/1.5 system-ui,"Noto Sans JP",sans-serif;background:var(--bg);color:var(--fg);display:flex;flex-direction:column}a{color:var(--gold)}header{min-height:41px;padding:6px 10px;display:flex;justify-content:space-between;align-items:center;gap:8px;border-bottom:1px solid #5b523f}header strong{font-size:14px}header a{font-size:11px}.filters{display:grid;grid-template-columns:1.2fr .8fr 1.3fr;gap:5px;padding:5px 7px}.filters label{font-size:10px;color:var(--muted)}select{display:block;width:100%;border:1px solid #74674d;border-radius:5px;background:#222b37;color:var(--fg);padding:5px;font:inherit;font-size:12px}.numbers{padding:2px 9px;display:flex;justify-content:space-between;font-size:11px;color:var(--gold)}main{flex:1;min-height:0;display:flex;flex-direction:column;gap:6px;padding:6px}.frame{flex:1;min-height:0;background:#0b0f17;border:1px solid #4e4d4d;border-radius:9px;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}.frame img{max-width:100%;max-height:100%;object-fit:contain}.fallback{padding:18px;text-align:center;color:var(--muted)}.frame .tag{position:absolute;top:7px;left:7px;background:#000b;font-size:11px;padding:2px 6px}.meta{font-size:12px;background:#222935;border:1px solid #3c4856;border-radius:7px;padding:7px 10px;flex:none}.meta .key{color:var(--gold);font-weight:700;font-size:11px}.meta p{margin:4px 0;max-height:49px;overflow:auto}.meta small{color:var(--muted)}.nav{display:grid;grid-template-columns:1fr 1fr 1.5fr;gap:5px}button{border:1px solid #8d7856;color:var(--fg);background:#2c3442;border-radius:6px;padding:8px;font:inherit;font-size:12px}button:disabled{opacity:.35}.footer{font-size:10px;display:flex;justify-content:space-between;gap:8px;padding:0 7px 4px;color:var(--muted)}@media(max-height:560px){header{min-height:34px}.filters{padding:2px 6px}.meta p{max-height:22px}.nav button{padding:4px}.frame .tag{font-size:10px}}
+</style></head><body>
+<header><strong>灰銀｜第1〜4ステージ 174コマ品質確認</strong><a href="./story-chapter1-approval.html">既存の差し戻し画面</a></header>
+<section class="filters"><label>ステージ<select id="stage"><option value="all">すべて</option></select></label><label>主人公<select id="gender"><option value="all">男女</option><option value="male">男性</option><option value="female">女性</option></select></label><label>分岐<select id="edition"><option value="all">全分岐</option></select></label></section>
+<div class="numbers"><span id="summary">検査対象を読み込み中</span><span id="index"></span></div>
+<main><div class="frame"><img id="art" hidden alt="コマの実画像"><div id="fallback" class="fallback">登録画像を確認中</div><span class="tag" id="status">保留</span></div>
+<div class="meta"><div class="key" id="key"></div><p id="script"></p><small id="detail">P0正式品質承認とは異なります。</small></div>
+<div class="nav"><button id="prev">◀ 前のコマ</button><button id="next">次のコマ ▶</button><button id="open">差し戻し画面で確認</button></div></main>
+<div class="footer"><span>実画像がない/不一致なら完成扱いにしません</span><a href="./batch-monitor.html">バッチ画面</a></div>
+<script type="module">
+import {chapterOneReviewPages} from './src/story-chapter1-review-core.js';
+import {CHAPTER1_PROVISIONAL_LIVE} from './src/story-chapter1-provisional-live.js';
+import {REGISTERED_CHAPTER_REVIEWED} from './src/story-chapter-reviewed-art.js';
+import {REGISTERED_C01_S02_REVIEWED} from './src/story-stage2-reviewed-art.js';
+const $=id=>document.getElementById(id),all=chapterOneReviewPages().filter(p=>/^c01-s0[1-4]$/.test(p.stageId))
+.flatMap(p=>p.shots.map(s=>({...s,stageName:p.stageName})));
+if(all.length!==174)throw Error('Expected 174 canonical shots');
+const unique=x=>[...new Set(x)],names={pre:'戦闘前','post-town':'町の後','post-victory':'勝利後','post-defeat':'敗北後','post-gameover':'軍師戦死'};
+const rep=await fetch('./data/story-stage1-4-p0-backlog.json',{cache:'no-store'}).then(r=>{if(!r.ok)throw Error('QA台帳なし');return r.json()});
+const ledger=new Map(rep.items.map(x=>[x.key,x]));if(ledger.size!==174)throw Error('Invalid 174-shot review ledger');
+for(const stage of unique(all.map(x=>x.stageId))){const o=document.createElement('option');o.value=stage;o.textContent='第'+Number(stage.slice(-1))+'ステージ';$('stage').append(o)}
+for(const edition of unique(all.map(x=>x.edition))){const o=document.createElement('option');o.value=edition;o.textContent=names[edition]||edition;$('edition').append(o)}
+const formal=new Set([...Object.keys(REGISTERED_CHAPTER_REVIEWED),...Object.keys(REGISTERED_C01_S02_REVIEWED)]);
+let filtered=all,i=0,token=0;
+function recalc(){filtered=all.filter(x=>($('stage').value==='all'||x.stageId===$('stage').value)&&($('gender').value==='all'||x.gender===$('gender').value)&&($('edition').value==='all'||x.edition===$('edition').value));i=0;draw()}
+function draw(){const s=filtered[i],img=$('art'),tip=$('fallback'),version=++token;
+$('summary').textContent='P0未承認 '+all.filter(x=>!formal.has(x.key)).length+' / '+all.length+'件｜仮登録と正式承認を区別';$('index').textContent=s?(i+1)+' / '+filtered.length:'0件';
+img.hidden=true;img.removeAttribute('src');tip.hidden=false;
+$('prev').disabled=!s||i===0;$('next').disabled=!s||i===filtered.length-1;$('open').disabled=!s;
+if(!s){tip.textContent='該当コマなし';return}
+const live=CHAPTER1_PROVISIONAL_LIVE[s.key],entry=ledger.get(s.key),approved=REGISTERED_CHAPTER_REVIEWED[s.key]||REGISTERED_C01_S02_REVIEWED[s.key],canonical=approved||s.legacyPath||live?.asset,candidate=!canonical?entry?.reviewCandidate:null,source=canonical||candidate;
+$('key').textContent=s.stageId+'｜'+(names[s.edition]||s.edition)+'｜'+(s.gender==='female'?'女性':'男性')+'｜'+s.shotId;
+$('script').textContent=s.scriptText||s.displayText||'台詞のない情景';
+$('status').textContent=approved?'正式承認済':live?'仮登録・P0未承認':canonical?'旧/暫定原画・P0未承認':candidate?'差し戻し候補・本編未登録':'未登録';
+$('detail').textContent=approved?'正式登録台帳にある原画。差し戻し状態は登録履歴と照合してください。':entry?.candidateNote||'台本、人物原画、文字混入、男女・勝敗、画質を目視で確認。まだ正式品質承認されていません。';
+if(source){img.onload=()=>{if(version!==token)return;img.hidden=false;tip.hidden=true};img.onerror=()=>{if(version!==token)return;tip.textContent='原画の読込に失敗。リンクと画像実体を確認してください。'};img.src=source}else tip.textContent='本編原画が未登録。候補のみの画像は自動採用しません。';
+}
+$('prev').onclick=()=>{if(i>0){i--;draw()}};$('next').onclick=()=>{if(i<filtered.length-1){i++;draw()}};
+$('open').onclick=()=>{const s=filtered[i];if(s)location.href='./story-chapter1-approval.html?stage='+encodeURIComponent(s.stageId)+'&gender='+s.gender+'&edition='+s.edition};
+for(const id of ['stage','gender','edition'])$(id).addEventListener('change',recalc);
+recalc();
+</script></body></html>

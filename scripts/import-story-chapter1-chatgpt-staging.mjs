@@ -8,6 +8,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
+import {validChatGPTPanelGeometry} from '../src/story-chatgpt-panel-geometry.js';
 import {fileURLToPath} from 'node:url';
 import {chapterOneReviewPages} from '../src/story-chapter1-review-core.js';
 import {chapterReviewedPanelAsset} from '../src/story-chapter-reviewed-art.js';
@@ -80,8 +81,8 @@ for(const file of proofs){
   const original=bytes(imagePath),sum=hash(original),[w,h]=webpSize(original);
   if(sum!==review.imageSha256||review.nativePixels?.[0]!==w||review.nativePixels?.[1]!==h)
     throw Error('Real WebP/hash/size mismatch');
-  const min=shot.stageId==='c01-s02'?[768,320]:[1536,864];
-  if(w<min[0]||h<min[1]||w*9!==h*16)throw Error('Invalid native aspect/dimensions');
+  if(!validChatGPTPanelGeometry(shot.stageId,w,h))
+    throw Error('Invalid native aspect/dimensions');
   if(ledger.returned?.[shot.key]===sum)throw Error('Returned SHA cannot be imported again');
   if(active[shot.key]?.sha256===sum){skipped.push(file);continue;}
   if(seen.has(sum))throw Error('Duplicate bytes bound to multiple shots');

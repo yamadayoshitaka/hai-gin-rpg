@@ -1,0 +1,4066 @@
+{
+  "schemaVersion": 1,
+  "kind": "STORY_COMPACT_20_CHAPTERS_V1",
+  "chapterCount": 20,
+  "stageCount": 200,
+  "chapterOpeningPerChapter": 4,
+  "prePerStage": 2,
+  "postPerStage": 2,
+  "commonDefeatPanels": 2,
+  "commonGameoverPanels": 2,
+  "expectedNormalImageSlots": 880,
+  "expectedWithCommonDefeat": 882,
+  "nonDestructive": true,
+  "oldStoryboardPreserved": true,
+  "chapterOpeningsSeenOnceViaGameStoryFlags": true,
+  "textInImages": false,
+  "speakerFacesInMessageWindow": true,
+  "chapters": [
+    {
+      "chapter": 1,
+      "firstStage": "c01-s01",
+      "chapterOpeningCount": 4,
+      "stages": [
+        {
+          "stageId": "c01-s01",
+          "chapter": 1,
+          "slot": 1,
+          "chapterOpeningIds": [
+            "c01-s01-m1",
+            "c01-s01-m2",
+            "c01-s01-m3",
+            "c01-s01-m4"
+          ],
+          "beforeIds": [
+            "c01-s01-m5",
+            "c01-s01-m15"
+          ],
+          "afterIds": [
+            "c01-s01-m6",
+            "c01-s01-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c01-s02",
+          "chapter": 1,
+          "slot": 2,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c01-s02-m1",
+            "c01-s02-m15"
+          ],
+          "afterIds": [
+            "c01-s02-m6",
+            "c01-s02-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c01-s03",
+          "chapter": 1,
+          "slot": 3,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c01-s03-m1",
+            "c01-s03-m15"
+          ],
+          "afterIds": [
+            "c01-s03-m6",
+            "c01-s03-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c01-s04",
+          "chapter": 1,
+          "slot": 4,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c01-s04-m1",
+            "c01-s04-m15"
+          ],
+          "afterIds": [
+            "c01-s04-m6",
+            "c01-s04-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c01-s05",
+          "chapter": 1,
+          "slot": 5,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c01-s05-m1",
+            "c01-s05-m15"
+          ],
+          "afterIds": [
+            "c01-s05-m6",
+            "c01-s05-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c01-s06",
+          "chapter": 1,
+          "slot": 6,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c01-s06-m1",
+            "c01-s06-m15"
+          ],
+          "afterIds": [
+            "c01-s06-m6",
+            "c01-s06-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c01-s07",
+          "chapter": 1,
+          "slot": 7,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c01-s07-m1",
+            "c01-s07-m15"
+          ],
+          "afterIds": [
+            "c01-s07-m6",
+            "c01-s07-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c01-s08",
+          "chapter": 1,
+          "slot": 8,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c01-s08-m1",
+            "c01-s08-m15"
+          ],
+          "afterIds": [
+            "c01-s08-m6",
+            "c01-s08-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c01-s09",
+          "chapter": 1,
+          "slot": 9,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c01-s09-m1",
+            "c01-s09-m15"
+          ],
+          "afterIds": [
+            "c01-s09-m6",
+            "c01-s09-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c01-s10",
+          "chapter": 1,
+          "slot": 10,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c01-s10-m1",
+            "c01-s10-m15"
+          ],
+          "afterIds": [
+            "c01-s10-m6",
+            "c01-s10-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        }
+      ]
+    },
+    {
+      "chapter": 2,
+      "firstStage": "c02-s01",
+      "chapterOpeningCount": 4,
+      "stages": [
+        {
+          "stageId": "c02-s01",
+          "chapter": 2,
+          "slot": 1,
+          "chapterOpeningIds": [
+            "c02-s01-m1",
+            "c02-s01-m2",
+            "c02-s01-m3",
+            "c02-s01-m4"
+          ],
+          "beforeIds": [
+            "c02-s01-m5",
+            "c02-s01-m15"
+          ],
+          "afterIds": [
+            "c02-s01-m6",
+            "c02-s01-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c02-s02",
+          "chapter": 2,
+          "slot": 2,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c02-s02-m1",
+            "c02-s02-m15"
+          ],
+          "afterIds": [
+            "c02-s02-m6",
+            "c02-s02-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c02-s03",
+          "chapter": 2,
+          "slot": 3,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c02-s03-m1",
+            "c02-s03-m15"
+          ],
+          "afterIds": [
+            "c02-s03-m6",
+            "c02-s03-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c02-s04",
+          "chapter": 2,
+          "slot": 4,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c02-s04-m1",
+            "c02-s04-m15"
+          ],
+          "afterIds": [
+            "c02-s04-m6",
+            "c02-s04-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c02-s05",
+          "chapter": 2,
+          "slot": 5,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c02-s05-m1",
+            "c02-s05-m15"
+          ],
+          "afterIds": [
+            "c02-s05-m6",
+            "c02-s05-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c02-s06",
+          "chapter": 2,
+          "slot": 6,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c02-s06-m1",
+            "c02-s06-m15"
+          ],
+          "afterIds": [
+            "c02-s06-m6",
+            "c02-s06-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c02-s07",
+          "chapter": 2,
+          "slot": 7,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c02-s07-m1",
+            "c02-s07-m15"
+          ],
+          "afterIds": [
+            "c02-s07-m6",
+            "c02-s07-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c02-s08",
+          "chapter": 2,
+          "slot": 8,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c02-s08-m1",
+            "c02-s08-m15"
+          ],
+          "afterIds": [
+            "c02-s08-m6",
+            "c02-s08-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c02-s09",
+          "chapter": 2,
+          "slot": 9,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c02-s09-m1",
+            "c02-s09-m15"
+          ],
+          "afterIds": [
+            "c02-s09-m6",
+            "c02-s09-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c02-s10",
+          "chapter": 2,
+          "slot": 10,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c02-s10-m1",
+            "c02-s10-m15"
+          ],
+          "afterIds": [
+            "c02-s10-m6",
+            "c02-s10-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        }
+      ]
+    },
+    {
+      "chapter": 3,
+      "firstStage": "c03-s01",
+      "chapterOpeningCount": 4,
+      "stages": [
+        {
+          "stageId": "c03-s01",
+          "chapter": 3,
+          "slot": 1,
+          "chapterOpeningIds": [
+            "c03-s01-m1",
+            "c03-s01-m2",
+            "c03-s01-m3",
+            "c03-s01-m4"
+          ],
+          "beforeIds": [
+            "c03-s01-m5",
+            "c03-s01-m15"
+          ],
+          "afterIds": [
+            "c03-s01-m6",
+            "c03-s01-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c03-s02",
+          "chapter": 3,
+          "slot": 2,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c03-s02-m1",
+            "c03-s02-m15"
+          ],
+          "afterIds": [
+            "c03-s02-m6",
+            "c03-s02-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c03-s03",
+          "chapter": 3,
+          "slot": 3,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c03-s03-m1",
+            "c03-s03-m15"
+          ],
+          "afterIds": [
+            "c03-s03-m6",
+            "c03-s03-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c03-s04",
+          "chapter": 3,
+          "slot": 4,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c03-s04-m1",
+            "c03-s04-m15"
+          ],
+          "afterIds": [
+            "c03-s04-m6",
+            "c03-s04-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c03-s05",
+          "chapter": 3,
+          "slot": 5,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c03-s05-m1",
+            "c03-s05-m15"
+          ],
+          "afterIds": [
+            "c03-s05-m6",
+            "c03-s05-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c03-s06",
+          "chapter": 3,
+          "slot": 6,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c03-s06-m1",
+            "c03-s06-m15"
+          ],
+          "afterIds": [
+            "c03-s06-m6",
+            "c03-s06-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c03-s07",
+          "chapter": 3,
+          "slot": 7,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c03-s07-m1",
+            "c03-s07-m15"
+          ],
+          "afterIds": [
+            "c03-s07-m6",
+            "c03-s07-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c03-s08",
+          "chapter": 3,
+          "slot": 8,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c03-s08-m1",
+            "c03-s08-m15"
+          ],
+          "afterIds": [
+            "c03-s08-m6",
+            "c03-s08-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c03-s09",
+          "chapter": 3,
+          "slot": 9,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c03-s09-m1",
+            "c03-s09-m15"
+          ],
+          "afterIds": [
+            "c03-s09-m6",
+            "c03-s09-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c03-s10",
+          "chapter": 3,
+          "slot": 10,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c03-s10-m1",
+            "c03-s10-m15"
+          ],
+          "afterIds": [
+            "c03-s10-m6",
+            "c03-s10-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        }
+      ]
+    },
+    {
+      "chapter": 4,
+      "firstStage": "c04-s01",
+      "chapterOpeningCount": 4,
+      "stages": [
+        {
+          "stageId": "c04-s01",
+          "chapter": 4,
+          "slot": 1,
+          "chapterOpeningIds": [
+            "c04-s01-m1",
+            "c04-s01-m2",
+            "c04-s01-m3",
+            "c04-s01-m4"
+          ],
+          "beforeIds": [
+            "c04-s01-m5",
+            "c04-s01-m15"
+          ],
+          "afterIds": [
+            "c04-s01-m6",
+            "c04-s01-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c04-s02",
+          "chapter": 4,
+          "slot": 2,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c04-s02-m1",
+            "c04-s02-m15"
+          ],
+          "afterIds": [
+            "c04-s02-m6",
+            "c04-s02-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c04-s03",
+          "chapter": 4,
+          "slot": 3,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c04-s03-m1",
+            "c04-s03-m15"
+          ],
+          "afterIds": [
+            "c04-s03-m6",
+            "c04-s03-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c04-s04",
+          "chapter": 4,
+          "slot": 4,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c04-s04-m1",
+            "c04-s04-m15"
+          ],
+          "afterIds": [
+            "c04-s04-m6",
+            "c04-s04-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c04-s05",
+          "chapter": 4,
+          "slot": 5,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c04-s05-m1",
+            "c04-s05-m15"
+          ],
+          "afterIds": [
+            "c04-s05-m6",
+            "c04-s05-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c04-s06",
+          "chapter": 4,
+          "slot": 6,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c04-s06-m1",
+            "c04-s06-m15"
+          ],
+          "afterIds": [
+            "c04-s06-m6",
+            "c04-s06-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c04-s07",
+          "chapter": 4,
+          "slot": 7,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c04-s07-m1",
+            "c04-s07-m15"
+          ],
+          "afterIds": [
+            "c04-s07-m6",
+            "c04-s07-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c04-s08",
+          "chapter": 4,
+          "slot": 8,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c04-s08-m1",
+            "c04-s08-m15"
+          ],
+          "afterIds": [
+            "c04-s08-m6",
+            "c04-s08-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c04-s09",
+          "chapter": 4,
+          "slot": 9,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c04-s09-m1",
+            "c04-s09-m15"
+          ],
+          "afterIds": [
+            "c04-s09-m6",
+            "c04-s09-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c04-s10",
+          "chapter": 4,
+          "slot": 10,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c04-s10-m1",
+            "c04-s10-m15"
+          ],
+          "afterIds": [
+            "c04-s10-m6",
+            "c04-s10-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        }
+      ]
+    },
+    {
+      "chapter": 5,
+      "firstStage": "c05-s01",
+      "chapterOpeningCount": 4,
+      "stages": [
+        {
+          "stageId": "c05-s01",
+          "chapter": 5,
+          "slot": 1,
+          "chapterOpeningIds": [
+            "c05-s01-m1",
+            "c05-s01-m2",
+            "c05-s01-m3",
+            "c05-s01-m4"
+          ],
+          "beforeIds": [
+            "c05-s01-m5",
+            "c05-s01-m15"
+          ],
+          "afterIds": [
+            "c05-s01-m6",
+            "c05-s01-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c05-s02",
+          "chapter": 5,
+          "slot": 2,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c05-s02-m1",
+            "c05-s02-m15"
+          ],
+          "afterIds": [
+            "c05-s02-m6",
+            "c05-s02-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c05-s03",
+          "chapter": 5,
+          "slot": 3,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c05-s03-m1",
+            "c05-s03-m15"
+          ],
+          "afterIds": [
+            "c05-s03-m6",
+            "c05-s03-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c05-s04",
+          "chapter": 5,
+          "slot": 4,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c05-s04-m1",
+            "c05-s04-m15"
+          ],
+          "afterIds": [
+            "c05-s04-m6",
+            "c05-s04-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c05-s05",
+          "chapter": 5,
+          "slot": 5,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c05-s05-m1",
+            "c05-s05-m15"
+          ],
+          "afterIds": [
+            "c05-s05-m6",
+            "c05-s05-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c05-s06",
+          "chapter": 5,
+          "slot": 6,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c05-s06-m1",
+            "c05-s06-m15"
+          ],
+          "afterIds": [
+            "c05-s06-m6",
+            "c05-s06-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c05-s07",
+          "chapter": 5,
+          "slot": 7,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c05-s07-m1",
+            "c05-s07-m15"
+          ],
+          "afterIds": [
+            "c05-s07-m6",
+            "c05-s07-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c05-s08",
+          "chapter": 5,
+          "slot": 8,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c05-s08-m1",
+            "c05-s08-m15"
+          ],
+          "afterIds": [
+            "c05-s08-m6",
+            "c05-s08-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c05-s09",
+          "chapter": 5,
+          "slot": 9,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c05-s09-m1",
+            "c05-s09-m15"
+          ],
+          "afterIds": [
+            "c05-s09-m6",
+            "c05-s09-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c05-s10",
+          "chapter": 5,
+          "slot": 10,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c05-s10-m1",
+            "c05-s10-m15"
+          ],
+          "afterIds": [
+            "c05-s10-m6",
+            "c05-s10-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        }
+      ]
+    },
+    {
+      "chapter": 6,
+      "firstStage": "c06-s01",
+      "chapterOpeningCount": 4,
+      "stages": [
+        {
+          "stageId": "c06-s01",
+          "chapter": 6,
+          "slot": 1,
+          "chapterOpeningIds": [
+            "c06-s01-m1",
+            "c06-s01-m2",
+            "c06-s01-m3",
+            "c06-s01-m4"
+          ],
+          "beforeIds": [
+            "c06-s01-m5",
+            "c06-s01-m15"
+          ],
+          "afterIds": [
+            "c06-s01-m6",
+            "c06-s01-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c06-s02",
+          "chapter": 6,
+          "slot": 2,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c06-s02-m1",
+            "c06-s02-m15"
+          ],
+          "afterIds": [
+            "c06-s02-m6",
+            "c06-s02-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c06-s03",
+          "chapter": 6,
+          "slot": 3,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c06-s03-m1",
+            "c06-s03-m15"
+          ],
+          "afterIds": [
+            "c06-s03-m6",
+            "c06-s03-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c06-s04",
+          "chapter": 6,
+          "slot": 4,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c06-s04-m1",
+            "c06-s04-m15"
+          ],
+          "afterIds": [
+            "c06-s04-m6",
+            "c06-s04-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c06-s05",
+          "chapter": 6,
+          "slot": 5,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c06-s05-m1",
+            "c06-s05-m15"
+          ],
+          "afterIds": [
+            "c06-s05-m6",
+            "c06-s05-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c06-s06",
+          "chapter": 6,
+          "slot": 6,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c06-s06-m1",
+            "c06-s06-m15"
+          ],
+          "afterIds": [
+            "c06-s06-m6",
+            "c06-s06-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c06-s07",
+          "chapter": 6,
+          "slot": 7,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c06-s07-m1",
+            "c06-s07-m15"
+          ],
+          "afterIds": [
+            "c06-s07-m6",
+            "c06-s07-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c06-s08",
+          "chapter": 6,
+          "slot": 8,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c06-s08-m1",
+            "c06-s08-m15"
+          ],
+          "afterIds": [
+            "c06-s08-m6",
+            "c06-s08-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c06-s09",
+          "chapter": 6,
+          "slot": 9,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c06-s09-m1",
+            "c06-s09-m15"
+          ],
+          "afterIds": [
+            "c06-s09-m6",
+            "c06-s09-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c06-s10",
+          "chapter": 6,
+          "slot": 10,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c06-s10-m1",
+            "c06-s10-m15"
+          ],
+          "afterIds": [
+            "c06-s10-m6",
+            "c06-s10-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        }
+      ]
+    },
+    {
+      "chapter": 7,
+      "firstStage": "c07-s01",
+      "chapterOpeningCount": 4,
+      "stages": [
+        {
+          "stageId": "c07-s01",
+          "chapter": 7,
+          "slot": 1,
+          "chapterOpeningIds": [
+            "c07-s01-m1",
+            "c07-s01-m2",
+            "c07-s01-m3",
+            "c07-s01-m4"
+          ],
+          "beforeIds": [
+            "c07-s01-m5",
+            "c07-s01-m15"
+          ],
+          "afterIds": [
+            "c07-s01-m6",
+            "c07-s01-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c07-s02",
+          "chapter": 7,
+          "slot": 2,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c07-s02-m1",
+            "c07-s02-m15"
+          ],
+          "afterIds": [
+            "c07-s02-m6",
+            "c07-s02-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c07-s03",
+          "chapter": 7,
+          "slot": 3,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c07-s03-m1",
+            "c07-s03-m15"
+          ],
+          "afterIds": [
+            "c07-s03-m6",
+            "c07-s03-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c07-s04",
+          "chapter": 7,
+          "slot": 4,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c07-s04-m1",
+            "c07-s04-m15"
+          ],
+          "afterIds": [
+            "c07-s04-m6",
+            "c07-s04-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c07-s05",
+          "chapter": 7,
+          "slot": 5,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c07-s05-m1",
+            "c07-s05-m15"
+          ],
+          "afterIds": [
+            "c07-s05-m6",
+            "c07-s05-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c07-s06",
+          "chapter": 7,
+          "slot": 6,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c07-s06-m1",
+            "c07-s06-m15"
+          ],
+          "afterIds": [
+            "c07-s06-m6",
+            "c07-s06-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c07-s07",
+          "chapter": 7,
+          "slot": 7,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c07-s07-m1",
+            "c07-s07-m15"
+          ],
+          "afterIds": [
+            "c07-s07-m6",
+            "c07-s07-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c07-s08",
+          "chapter": 7,
+          "slot": 8,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c07-s08-m1",
+            "c07-s08-m15"
+          ],
+          "afterIds": [
+            "c07-s08-m6",
+            "c07-s08-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c07-s09",
+          "chapter": 7,
+          "slot": 9,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c07-s09-m1",
+            "c07-s09-m15"
+          ],
+          "afterIds": [
+            "c07-s09-m6",
+            "c07-s09-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c07-s10",
+          "chapter": 7,
+          "slot": 10,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c07-s10-m1",
+            "c07-s10-m15"
+          ],
+          "afterIds": [
+            "c07-s10-m6",
+            "c07-s10-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        }
+      ]
+    },
+    {
+      "chapter": 8,
+      "firstStage": "c08-s01",
+      "chapterOpeningCount": 4,
+      "stages": [
+        {
+          "stageId": "c08-s01",
+          "chapter": 8,
+          "slot": 1,
+          "chapterOpeningIds": [
+            "c08-s01-m1",
+            "c08-s01-m2",
+            "c08-s01-m3",
+            "c08-s01-m4"
+          ],
+          "beforeIds": [
+            "c08-s01-m5",
+            "c08-s01-m15"
+          ],
+          "afterIds": [
+            "c08-s01-m6",
+            "c08-s01-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c08-s02",
+          "chapter": 8,
+          "slot": 2,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c08-s02-m1",
+            "c08-s02-m15"
+          ],
+          "afterIds": [
+            "c08-s02-m6",
+            "c08-s02-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c08-s03",
+          "chapter": 8,
+          "slot": 3,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c08-s03-m1",
+            "c08-s03-m15"
+          ],
+          "afterIds": [
+            "c08-s03-m6",
+            "c08-s03-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c08-s04",
+          "chapter": 8,
+          "slot": 4,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c08-s04-m1",
+            "c08-s04-m15"
+          ],
+          "afterIds": [
+            "c08-s04-m6",
+            "c08-s04-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c08-s05",
+          "chapter": 8,
+          "slot": 5,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c08-s05-m1",
+            "c08-s05-m15"
+          ],
+          "afterIds": [
+            "c08-s05-m6",
+            "c08-s05-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c08-s06",
+          "chapter": 8,
+          "slot": 6,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c08-s06-m1",
+            "c08-s06-m15"
+          ],
+          "afterIds": [
+            "c08-s06-m6",
+            "c08-s06-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c08-s07",
+          "chapter": 8,
+          "slot": 7,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c08-s07-m1",
+            "c08-s07-m15"
+          ],
+          "afterIds": [
+            "c08-s07-m6",
+            "c08-s07-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c08-s08",
+          "chapter": 8,
+          "slot": 8,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c08-s08-m1",
+            "c08-s08-m15"
+          ],
+          "afterIds": [
+            "c08-s08-m6",
+            "c08-s08-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c08-s09",
+          "chapter": 8,
+          "slot": 9,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c08-s09-m1",
+            "c08-s09-m15"
+          ],
+          "afterIds": [
+            "c08-s09-m6",
+            "c08-s09-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c08-s10",
+          "chapter": 8,
+          "slot": 10,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c08-s10-m1",
+            "c08-s10-m15"
+          ],
+          "afterIds": [
+            "c08-s10-m6",
+            "c08-s10-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        }
+      ]
+    },
+    {
+      "chapter": 9,
+      "firstStage": "c09-s01",
+      "chapterOpeningCount": 4,
+      "stages": [
+        {
+          "stageId": "c09-s01",
+          "chapter": 9,
+          "slot": 1,
+          "chapterOpeningIds": [
+            "c09-s01-m1",
+            "c09-s01-m2",
+            "c09-s01-m3",
+            "c09-s01-m4"
+          ],
+          "beforeIds": [
+            "c09-s01-m5",
+            "c09-s01-m15"
+          ],
+          "afterIds": [
+            "c09-s01-m6",
+            "c09-s01-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c09-s02",
+          "chapter": 9,
+          "slot": 2,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c09-s02-m1",
+            "c09-s02-m15"
+          ],
+          "afterIds": [
+            "c09-s02-m6",
+            "c09-s02-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c09-s03",
+          "chapter": 9,
+          "slot": 3,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c09-s03-m1",
+            "c09-s03-m15"
+          ],
+          "afterIds": [
+            "c09-s03-m6",
+            "c09-s03-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c09-s04",
+          "chapter": 9,
+          "slot": 4,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c09-s04-m1",
+            "c09-s04-m15"
+          ],
+          "afterIds": [
+            "c09-s04-m6",
+            "c09-s04-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c09-s05",
+          "chapter": 9,
+          "slot": 5,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c09-s05-m1",
+            "c09-s05-m15"
+          ],
+          "afterIds": [
+            "c09-s05-m6",
+            "c09-s05-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c09-s06",
+          "chapter": 9,
+          "slot": 6,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c09-s06-m1",
+            "c09-s06-m15"
+          ],
+          "afterIds": [
+            "c09-s06-m6",
+            "c09-s06-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c09-s07",
+          "chapter": 9,
+          "slot": 7,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c09-s07-m1",
+            "c09-s07-m15"
+          ],
+          "afterIds": [
+            "c09-s07-m6",
+            "c09-s07-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c09-s08",
+          "chapter": 9,
+          "slot": 8,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c09-s08-m1",
+            "c09-s08-m15"
+          ],
+          "afterIds": [
+            "c09-s08-m6",
+            "c09-s08-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c09-s09",
+          "chapter": 9,
+          "slot": 9,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c09-s09-m1",
+            "c09-s09-m15"
+          ],
+          "afterIds": [
+            "c09-s09-m6",
+            "c09-s09-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c09-s10",
+          "chapter": 9,
+          "slot": 10,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c09-s10-m1",
+            "c09-s10-m15"
+          ],
+          "afterIds": [
+            "c09-s10-m6",
+            "c09-s10-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        }
+      ]
+    },
+    {
+      "chapter": 10,
+      "firstStage": "c10-s01",
+      "chapterOpeningCount": 4,
+      "stages": [
+        {
+          "stageId": "c10-s01",
+          "chapter": 10,
+          "slot": 1,
+          "chapterOpeningIds": [
+            "c10-s01-m1",
+            "c10-s01-m2",
+            "c10-s01-m3",
+            "c10-s01-m4"
+          ],
+          "beforeIds": [
+            "c10-s01-m5",
+            "c10-s01-m15"
+          ],
+          "afterIds": [
+            "c10-s01-m6",
+            "c10-s01-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c10-s02",
+          "chapter": 10,
+          "slot": 2,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c10-s02-m1",
+            "c10-s02-m15"
+          ],
+          "afterIds": [
+            "c10-s02-m6",
+            "c10-s02-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c10-s03",
+          "chapter": 10,
+          "slot": 3,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c10-s03-m1",
+            "c10-s03-m15"
+          ],
+          "afterIds": [
+            "c10-s03-m6",
+            "c10-s03-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c10-s04",
+          "chapter": 10,
+          "slot": 4,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c10-s04-m1",
+            "c10-s04-m15"
+          ],
+          "afterIds": [
+            "c10-s04-m6",
+            "c10-s04-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c10-s05",
+          "chapter": 10,
+          "slot": 5,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c10-s05-m1",
+            "c10-s05-m15"
+          ],
+          "afterIds": [
+            "c10-s05-m6",
+            "c10-s05-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c10-s06",
+          "chapter": 10,
+          "slot": 6,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c10-s06-m1",
+            "c10-s06-m15"
+          ],
+          "afterIds": [
+            "c10-s06-m6",
+            "c10-s06-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c10-s07",
+          "chapter": 10,
+          "slot": 7,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c10-s07-m1",
+            "c10-s07-m15"
+          ],
+          "afterIds": [
+            "c10-s07-m6",
+            "c10-s07-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c10-s08",
+          "chapter": 10,
+          "slot": 8,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c10-s08-m1",
+            "c10-s08-m15"
+          ],
+          "afterIds": [
+            "c10-s08-m6",
+            "c10-s08-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c10-s09",
+          "chapter": 10,
+          "slot": 9,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c10-s09-m1",
+            "c10-s09-m15"
+          ],
+          "afterIds": [
+            "c10-s09-m6",
+            "c10-s09-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c10-s10",
+          "chapter": 10,
+          "slot": 10,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c10-s10-m1",
+            "c10-s10-m15"
+          ],
+          "afterIds": [
+            "c10-s10-m6",
+            "c10-s10-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        }
+      ]
+    },
+    {
+      "chapter": 11,
+      "firstStage": "c11-s01",
+      "chapterOpeningCount": 4,
+      "stages": [
+        {
+          "stageId": "c11-s01",
+          "chapter": 11,
+          "slot": 1,
+          "chapterOpeningIds": [
+            "c11-s01-m1",
+            "c11-s01-m2",
+            "c11-s01-m3",
+            "c11-s01-m4"
+          ],
+          "beforeIds": [
+            "c11-s01-m5",
+            "c11-s01-m15"
+          ],
+          "afterIds": [
+            "c11-s01-m6",
+            "c11-s01-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c11-s02",
+          "chapter": 11,
+          "slot": 2,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c11-s02-m1",
+            "c11-s02-m15"
+          ],
+          "afterIds": [
+            "c11-s02-m6",
+            "c11-s02-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c11-s03",
+          "chapter": 11,
+          "slot": 3,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c11-s03-m1",
+            "c11-s03-m15"
+          ],
+          "afterIds": [
+            "c11-s03-m6",
+            "c11-s03-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c11-s04",
+          "chapter": 11,
+          "slot": 4,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c11-s04-m1",
+            "c11-s04-m15"
+          ],
+          "afterIds": [
+            "c11-s04-m6",
+            "c11-s04-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c11-s05",
+          "chapter": 11,
+          "slot": 5,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c11-s05-m1",
+            "c11-s05-m15"
+          ],
+          "afterIds": [
+            "c11-s05-m6",
+            "c11-s05-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c11-s06",
+          "chapter": 11,
+          "slot": 6,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c11-s06-m1",
+            "c11-s06-m15"
+          ],
+          "afterIds": [
+            "c11-s06-m6",
+            "c11-s06-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c11-s07",
+          "chapter": 11,
+          "slot": 7,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c11-s07-m1",
+            "c11-s07-m15"
+          ],
+          "afterIds": [
+            "c11-s07-m6",
+            "c11-s07-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c11-s08",
+          "chapter": 11,
+          "slot": 8,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c11-s08-m1",
+            "c11-s08-m15"
+          ],
+          "afterIds": [
+            "c11-s08-m6",
+            "c11-s08-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c11-s09",
+          "chapter": 11,
+          "slot": 9,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c11-s09-m1",
+            "c11-s09-m15"
+          ],
+          "afterIds": [
+            "c11-s09-m6",
+            "c11-s09-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c11-s10",
+          "chapter": 11,
+          "slot": 10,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c11-s10-m1",
+            "c11-s10-m15"
+          ],
+          "afterIds": [
+            "c11-s10-m6",
+            "c11-s10-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        }
+      ]
+    },
+    {
+      "chapter": 12,
+      "firstStage": "c12-s01",
+      "chapterOpeningCount": 4,
+      "stages": [
+        {
+          "stageId": "c12-s01",
+          "chapter": 12,
+          "slot": 1,
+          "chapterOpeningIds": [
+            "c12-s01-m1",
+            "c12-s01-m2",
+            "c12-s01-m3",
+            "c12-s01-m4"
+          ],
+          "beforeIds": [
+            "c12-s01-m5",
+            "c12-s01-m15"
+          ],
+          "afterIds": [
+            "c12-s01-m6",
+            "c12-s01-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c12-s02",
+          "chapter": 12,
+          "slot": 2,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c12-s02-m1",
+            "c12-s02-m15"
+          ],
+          "afterIds": [
+            "c12-s02-m6",
+            "c12-s02-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c12-s03",
+          "chapter": 12,
+          "slot": 3,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c12-s03-m1",
+            "c12-s03-m15"
+          ],
+          "afterIds": [
+            "c12-s03-m6",
+            "c12-s03-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c12-s04",
+          "chapter": 12,
+          "slot": 4,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c12-s04-m1",
+            "c12-s04-m15"
+          ],
+          "afterIds": [
+            "c12-s04-m6",
+            "c12-s04-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c12-s05",
+          "chapter": 12,
+          "slot": 5,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c12-s05-m1",
+            "c12-s05-m15"
+          ],
+          "afterIds": [
+            "c12-s05-m6",
+            "c12-s05-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c12-s06",
+          "chapter": 12,
+          "slot": 6,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c12-s06-m1",
+            "c12-s06-m15"
+          ],
+          "afterIds": [
+            "c12-s06-m6",
+            "c12-s06-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c12-s07",
+          "chapter": 12,
+          "slot": 7,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c12-s07-m1",
+            "c12-s07-m15"
+          ],
+          "afterIds": [
+            "c12-s07-m6",
+            "c12-s07-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c12-s08",
+          "chapter": 12,
+          "slot": 8,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c12-s08-m1",
+            "c12-s08-m15"
+          ],
+          "afterIds": [
+            "c12-s08-m6",
+            "c12-s08-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c12-s09",
+          "chapter": 12,
+          "slot": 9,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c12-s09-m1",
+            "c12-s09-m15"
+          ],
+          "afterIds": [
+            "c12-s09-m6",
+            "c12-s09-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c12-s10",
+          "chapter": 12,
+          "slot": 10,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c12-s10-m1",
+            "c12-s10-m15"
+          ],
+          "afterIds": [
+            "c12-s10-m6",
+            "c12-s10-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        }
+      ]
+    },
+    {
+      "chapter": 13,
+      "firstStage": "c13-s01",
+      "chapterOpeningCount": 4,
+      "stages": [
+        {
+          "stageId": "c13-s01",
+          "chapter": 13,
+          "slot": 1,
+          "chapterOpeningIds": [
+            "c13-s01-m1",
+            "c13-s01-m2",
+            "c13-s01-m3",
+            "c13-s01-m4"
+          ],
+          "beforeIds": [
+            "c13-s01-m5",
+            "c13-s01-m15"
+          ],
+          "afterIds": [
+            "c13-s01-m6",
+            "c13-s01-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c13-s02",
+          "chapter": 13,
+          "slot": 2,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c13-s02-m1",
+            "c13-s02-m15"
+          ],
+          "afterIds": [
+            "c13-s02-m6",
+            "c13-s02-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c13-s03",
+          "chapter": 13,
+          "slot": 3,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c13-s03-m1",
+            "c13-s03-m15"
+          ],
+          "afterIds": [
+            "c13-s03-m6",
+            "c13-s03-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c13-s04",
+          "chapter": 13,
+          "slot": 4,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c13-s04-m1",
+            "c13-s04-m15"
+          ],
+          "afterIds": [
+            "c13-s04-m6",
+            "c13-s04-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c13-s05",
+          "chapter": 13,
+          "slot": 5,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c13-s05-m1",
+            "c13-s05-m15"
+          ],
+          "afterIds": [
+            "c13-s05-m6",
+            "c13-s05-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c13-s06",
+          "chapter": 13,
+          "slot": 6,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c13-s06-m1",
+            "c13-s06-m15"
+          ],
+          "afterIds": [
+            "c13-s06-m6",
+            "c13-s06-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c13-s07",
+          "chapter": 13,
+          "slot": 7,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c13-s07-m1",
+            "c13-s07-m15"
+          ],
+          "afterIds": [
+            "c13-s07-m6",
+            "c13-s07-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c13-s08",
+          "chapter": 13,
+          "slot": 8,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c13-s08-m1",
+            "c13-s08-m15"
+          ],
+          "afterIds": [
+            "c13-s08-m6",
+            "c13-s08-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c13-s09",
+          "chapter": 13,
+          "slot": 9,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c13-s09-m1",
+            "c13-s09-m15"
+          ],
+          "afterIds": [
+            "c13-s09-m6",
+            "c13-s09-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c13-s10",
+          "chapter": 13,
+          "slot": 10,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c13-s10-m1",
+            "c13-s10-m15"
+          ],
+          "afterIds": [
+            "c13-s10-m6",
+            "c13-s10-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        }
+      ]
+    },
+    {
+      "chapter": 14,
+      "firstStage": "c14-s01",
+      "chapterOpeningCount": 4,
+      "stages": [
+        {
+          "stageId": "c14-s01",
+          "chapter": 14,
+          "slot": 1,
+          "chapterOpeningIds": [
+            "c14-s01-m1",
+            "c14-s01-m2",
+            "c14-s01-m3",
+            "c14-s01-m4"
+          ],
+          "beforeIds": [
+            "c14-s01-m5",
+            "c14-s01-m15"
+          ],
+          "afterIds": [
+            "c14-s01-m6",
+            "c14-s01-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c14-s02",
+          "chapter": 14,
+          "slot": 2,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c14-s02-m1",
+            "c14-s02-m15"
+          ],
+          "afterIds": [
+            "c14-s02-m6",
+            "c14-s02-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c14-s03",
+          "chapter": 14,
+          "slot": 3,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c14-s03-m1",
+            "c14-s03-m15"
+          ],
+          "afterIds": [
+            "c14-s03-m6",
+            "c14-s03-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c14-s04",
+          "chapter": 14,
+          "slot": 4,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c14-s04-m1",
+            "c14-s04-m15"
+          ],
+          "afterIds": [
+            "c14-s04-m6",
+            "c14-s04-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c14-s05",
+          "chapter": 14,
+          "slot": 5,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c14-s05-m1",
+            "c14-s05-m15"
+          ],
+          "afterIds": [
+            "c14-s05-m6",
+            "c14-s05-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c14-s06",
+          "chapter": 14,
+          "slot": 6,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c14-s06-m1",
+            "c14-s06-m15"
+          ],
+          "afterIds": [
+            "c14-s06-m6",
+            "c14-s06-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c14-s07",
+          "chapter": 14,
+          "slot": 7,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c14-s07-m1",
+            "c14-s07-m15"
+          ],
+          "afterIds": [
+            "c14-s07-m6",
+            "c14-s07-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c14-s08",
+          "chapter": 14,
+          "slot": 8,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c14-s08-m1",
+            "c14-s08-m15"
+          ],
+          "afterIds": [
+            "c14-s08-m6",
+            "c14-s08-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c14-s09",
+          "chapter": 14,
+          "slot": 9,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c14-s09-m1",
+            "c14-s09-m15"
+          ],
+          "afterIds": [
+            "c14-s09-m6",
+            "c14-s09-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c14-s10",
+          "chapter": 14,
+          "slot": 10,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c14-s10-m1",
+            "c14-s10-m15"
+          ],
+          "afterIds": [
+            "c14-s10-m6",
+            "c14-s10-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        }
+      ]
+    },
+    {
+      "chapter": 15,
+      "firstStage": "c15-s01",
+      "chapterOpeningCount": 4,
+      "stages": [
+        {
+          "stageId": "c15-s01",
+          "chapter": 15,
+          "slot": 1,
+          "chapterOpeningIds": [
+            "c15-s01-m1",
+            "c15-s01-m2",
+            "c15-s01-m3",
+            "c15-s01-m4"
+          ],
+          "beforeIds": [
+            "c15-s01-m5",
+            "c15-s01-m15"
+          ],
+          "afterIds": [
+            "c15-s01-m6",
+            "c15-s01-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c15-s02",
+          "chapter": 15,
+          "slot": 2,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c15-s02-m1",
+            "c15-s02-m15"
+          ],
+          "afterIds": [
+            "c15-s02-m6",
+            "c15-s02-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c15-s03",
+          "chapter": 15,
+          "slot": 3,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c15-s03-m1",
+            "c15-s03-m15"
+          ],
+          "afterIds": [
+            "c15-s03-m6",
+            "c15-s03-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c15-s04",
+          "chapter": 15,
+          "slot": 4,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c15-s04-m1",
+            "c15-s04-m15"
+          ],
+          "afterIds": [
+            "c15-s04-m6",
+            "c15-s04-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c15-s05",
+          "chapter": 15,
+          "slot": 5,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c15-s05-m1",
+            "c15-s05-m15"
+          ],
+          "afterIds": [
+            "c15-s05-m6",
+            "c15-s05-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c15-s06",
+          "chapter": 15,
+          "slot": 6,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c15-s06-m1",
+            "c15-s06-m15"
+          ],
+          "afterIds": [
+            "c15-s06-m6",
+            "c15-s06-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c15-s07",
+          "chapter": 15,
+          "slot": 7,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c15-s07-m1",
+            "c15-s07-m15"
+          ],
+          "afterIds": [
+            "c15-s07-m6",
+            "c15-s07-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c15-s08",
+          "chapter": 15,
+          "slot": 8,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c15-s08-m1",
+            "c15-s08-m15"
+          ],
+          "afterIds": [
+            "c15-s08-m6",
+            "c15-s08-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c15-s09",
+          "chapter": 15,
+          "slot": 9,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c15-s09-m1",
+            "c15-s09-m15"
+          ],
+          "afterIds": [
+            "c15-s09-m6",
+            "c15-s09-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c15-s10",
+          "chapter": 15,
+          "slot": 10,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c15-s10-m1",
+            "c15-s10-m15"
+          ],
+          "afterIds": [
+            "c15-s10-m6",
+            "c15-s10-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        }
+      ]
+    },
+    {
+      "chapter": 16,
+      "firstStage": "c16-s01",
+      "chapterOpeningCount": 4,
+      "stages": [
+        {
+          "stageId": "c16-s01",
+          "chapter": 16,
+          "slot": 1,
+          "chapterOpeningIds": [
+            "c16-s01-m1",
+            "c16-s01-m2",
+            "c16-s01-m3",
+            "c16-s01-m4"
+          ],
+          "beforeIds": [
+            "c16-s01-m5",
+            "c16-s01-m15"
+          ],
+          "afterIds": [
+            "c16-s01-m6",
+            "c16-s01-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c16-s02",
+          "chapter": 16,
+          "slot": 2,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c16-s02-m1",
+            "c16-s02-m15"
+          ],
+          "afterIds": [
+            "c16-s02-m6",
+            "c16-s02-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c16-s03",
+          "chapter": 16,
+          "slot": 3,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c16-s03-m1",
+            "c16-s03-m15"
+          ],
+          "afterIds": [
+            "c16-s03-m6",
+            "c16-s03-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c16-s04",
+          "chapter": 16,
+          "slot": 4,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c16-s04-m1",
+            "c16-s04-m15"
+          ],
+          "afterIds": [
+            "c16-s04-m6",
+            "c16-s04-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c16-s05",
+          "chapter": 16,
+          "slot": 5,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c16-s05-m1",
+            "c16-s05-m15"
+          ],
+          "afterIds": [
+            "c16-s05-m6",
+            "c16-s05-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c16-s06",
+          "chapter": 16,
+          "slot": 6,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c16-s06-m1",
+            "c16-s06-m15"
+          ],
+          "afterIds": [
+            "c16-s06-m6",
+            "c16-s06-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c16-s07",
+          "chapter": 16,
+          "slot": 7,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c16-s07-m1",
+            "c16-s07-m15"
+          ],
+          "afterIds": [
+            "c16-s07-m6",
+            "c16-s07-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c16-s08",
+          "chapter": 16,
+          "slot": 8,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c16-s08-m1",
+            "c16-s08-m15"
+          ],
+          "afterIds": [
+            "c16-s08-m6",
+            "c16-s08-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c16-s09",
+          "chapter": 16,
+          "slot": 9,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c16-s09-m1",
+            "c16-s09-m15"
+          ],
+          "afterIds": [
+            "c16-s09-m6",
+            "c16-s09-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c16-s10",
+          "chapter": 16,
+          "slot": 10,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c16-s10-m1",
+            "c16-s10-m15"
+          ],
+          "afterIds": [
+            "c16-s10-m6",
+            "c16-s10-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        }
+      ]
+    },
+    {
+      "chapter": 17,
+      "firstStage": "c17-s01",
+      "chapterOpeningCount": 4,
+      "stages": [
+        {
+          "stageId": "c17-s01",
+          "chapter": 17,
+          "slot": 1,
+          "chapterOpeningIds": [
+            "c17-s01-m1",
+            "c17-s01-m2",
+            "c17-s01-m3",
+            "c17-s01-m4"
+          ],
+          "beforeIds": [
+            "c17-s01-m5",
+            "c17-s01-m15"
+          ],
+          "afterIds": [
+            "c17-s01-m6",
+            "c17-s01-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c17-s02",
+          "chapter": 17,
+          "slot": 2,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c17-s02-m1",
+            "c17-s02-m15"
+          ],
+          "afterIds": [
+            "c17-s02-m6",
+            "c17-s02-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c17-s03",
+          "chapter": 17,
+          "slot": 3,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c17-s03-m1",
+            "c17-s03-m15"
+          ],
+          "afterIds": [
+            "c17-s03-m6",
+            "c17-s03-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c17-s04",
+          "chapter": 17,
+          "slot": 4,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c17-s04-m1",
+            "c17-s04-m15"
+          ],
+          "afterIds": [
+            "c17-s04-m6",
+            "c17-s04-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c17-s05",
+          "chapter": 17,
+          "slot": 5,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c17-s05-m1",
+            "c17-s05-m15"
+          ],
+          "afterIds": [
+            "c17-s05-m6",
+            "c17-s05-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c17-s06",
+          "chapter": 17,
+          "slot": 6,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c17-s06-m1",
+            "c17-s06-m15"
+          ],
+          "afterIds": [
+            "c17-s06-m6",
+            "c17-s06-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c17-s07",
+          "chapter": 17,
+          "slot": 7,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c17-s07-m1",
+            "c17-s07-m15"
+          ],
+          "afterIds": [
+            "c17-s07-m6",
+            "c17-s07-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c17-s08",
+          "chapter": 17,
+          "slot": 8,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c17-s08-m1",
+            "c17-s08-m15"
+          ],
+          "afterIds": [
+            "c17-s08-m6",
+            "c17-s08-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c17-s09",
+          "chapter": 17,
+          "slot": 9,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c17-s09-m1",
+            "c17-s09-m15"
+          ],
+          "afterIds": [
+            "c17-s09-m6",
+            "c17-s09-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c17-s10",
+          "chapter": 17,
+          "slot": 10,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c17-s10-m1",
+            "c17-s10-m15"
+          ],
+          "afterIds": [
+            "c17-s10-m6",
+            "c17-s10-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        }
+      ]
+    },
+    {
+      "chapter": 18,
+      "firstStage": "c18-s01",
+      "chapterOpeningCount": 4,
+      "stages": [
+        {
+          "stageId": "c18-s01",
+          "chapter": 18,
+          "slot": 1,
+          "chapterOpeningIds": [
+            "c18-s01-m1",
+            "c18-s01-m2",
+            "c18-s01-m3",
+            "c18-s01-m4"
+          ],
+          "beforeIds": [
+            "c18-s01-m5",
+            "c18-s01-m15"
+          ],
+          "afterIds": [
+            "c18-s01-m6",
+            "c18-s01-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c18-s02",
+          "chapter": 18,
+          "slot": 2,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c18-s02-m1",
+            "c18-s02-m15"
+          ],
+          "afterIds": [
+            "c18-s02-m6",
+            "c18-s02-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c18-s03",
+          "chapter": 18,
+          "slot": 3,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c18-s03-m1",
+            "c18-s03-m15"
+          ],
+          "afterIds": [
+            "c18-s03-m6",
+            "c18-s03-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c18-s04",
+          "chapter": 18,
+          "slot": 4,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c18-s04-m1",
+            "c18-s04-m15"
+          ],
+          "afterIds": [
+            "c18-s04-m6",
+            "c18-s04-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c18-s05",
+          "chapter": 18,
+          "slot": 5,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c18-s05-m1",
+            "c18-s05-m15"
+          ],
+          "afterIds": [
+            "c18-s05-m6",
+            "c18-s05-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c18-s06",
+          "chapter": 18,
+          "slot": 6,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c18-s06-m1",
+            "c18-s06-m15"
+          ],
+          "afterIds": [
+            "c18-s06-m6",
+            "c18-s06-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c18-s07",
+          "chapter": 18,
+          "slot": 7,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c18-s07-m1",
+            "c18-s07-m15"
+          ],
+          "afterIds": [
+            "c18-s07-m6",
+            "c18-s07-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c18-s08",
+          "chapter": 18,
+          "slot": 8,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c18-s08-m1",
+            "c18-s08-m15"
+          ],
+          "afterIds": [
+            "c18-s08-m6",
+            "c18-s08-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c18-s09",
+          "chapter": 18,
+          "slot": 9,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c18-s09-m1",
+            "c18-s09-m15"
+          ],
+          "afterIds": [
+            "c18-s09-m6",
+            "c18-s09-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c18-s10",
+          "chapter": 18,
+          "slot": 10,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c18-s10-m1",
+            "c18-s10-m15"
+          ],
+          "afterIds": [
+            "c18-s10-m6",
+            "c18-s10-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        }
+      ]
+    },
+    {
+      "chapter": 19,
+      "firstStage": "c19-s01",
+      "chapterOpeningCount": 4,
+      "stages": [
+        {
+          "stageId": "c19-s01",
+          "chapter": 19,
+          "slot": 1,
+          "chapterOpeningIds": [
+            "c19-s01-m1",
+            "c19-s01-m2",
+            "c19-s01-m3",
+            "c19-s01-m4"
+          ],
+          "beforeIds": [
+            "c19-s01-m5",
+            "c19-s01-m15"
+          ],
+          "afterIds": [
+            "c19-s01-m6",
+            "c19-s01-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c19-s02",
+          "chapter": 19,
+          "slot": 2,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c19-s02-m1",
+            "c19-s02-m15"
+          ],
+          "afterIds": [
+            "c19-s02-m6",
+            "c19-s02-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c19-s03",
+          "chapter": 19,
+          "slot": 3,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c19-s03-m1",
+            "c19-s03-m15"
+          ],
+          "afterIds": [
+            "c19-s03-m6",
+            "c19-s03-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c19-s04",
+          "chapter": 19,
+          "slot": 4,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c19-s04-m1",
+            "c19-s04-m15"
+          ],
+          "afterIds": [
+            "c19-s04-m6",
+            "c19-s04-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c19-s05",
+          "chapter": 19,
+          "slot": 5,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c19-s05-m1",
+            "c19-s05-m15"
+          ],
+          "afterIds": [
+            "c19-s05-m6",
+            "c19-s05-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c19-s06",
+          "chapter": 19,
+          "slot": 6,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c19-s06-m1",
+            "c19-s06-m15"
+          ],
+          "afterIds": [
+            "c19-s06-m6",
+            "c19-s06-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c19-s07",
+          "chapter": 19,
+          "slot": 7,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c19-s07-m1",
+            "c19-s07-m15"
+          ],
+          "afterIds": [
+            "c19-s07-m6",
+            "c19-s07-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c19-s08",
+          "chapter": 19,
+          "slot": 8,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c19-s08-m1",
+            "c19-s08-m15"
+          ],
+          "afterIds": [
+            "c19-s08-m6",
+            "c19-s08-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c19-s09",
+          "chapter": 19,
+          "slot": 9,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c19-s09-m1",
+            "c19-s09-m15"
+          ],
+          "afterIds": [
+            "c19-s09-m6",
+            "c19-s09-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c19-s10",
+          "chapter": 19,
+          "slot": 10,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c19-s10-m1",
+            "c19-s10-m15"
+          ],
+          "afterIds": [
+            "c19-s10-m6",
+            "c19-s10-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        }
+      ]
+    },
+    {
+      "chapter": 20,
+      "firstStage": "c20-s01",
+      "chapterOpeningCount": 4,
+      "stages": [
+        {
+          "stageId": "c20-s01",
+          "chapter": 20,
+          "slot": 1,
+          "chapterOpeningIds": [
+            "c20-s01-m1",
+            "c20-s01-m2",
+            "c20-s01-m3",
+            "c20-s01-m4"
+          ],
+          "beforeIds": [
+            "c20-s01-m5",
+            "c20-s01-m15"
+          ],
+          "afterIds": [
+            "c20-s01-m6",
+            "c20-s01-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c20-s02",
+          "chapter": 20,
+          "slot": 2,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c20-s02-m1",
+            "c20-s02-m15"
+          ],
+          "afterIds": [
+            "c20-s02-m6",
+            "c20-s02-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c20-s03",
+          "chapter": 20,
+          "slot": 3,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c20-s03-m1",
+            "c20-s03-m15"
+          ],
+          "afterIds": [
+            "c20-s03-m6",
+            "c20-s03-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c20-s04",
+          "chapter": 20,
+          "slot": 4,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c20-s04-m1",
+            "c20-s04-m15"
+          ],
+          "afterIds": [
+            "c20-s04-m6",
+            "c20-s04-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c20-s05",
+          "chapter": 20,
+          "slot": 5,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c20-s05-m1",
+            "c20-s05-m15"
+          ],
+          "afterIds": [
+            "c20-s05-m6",
+            "c20-s05-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c20-s06",
+          "chapter": 20,
+          "slot": 6,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c20-s06-m1",
+            "c20-s06-m15"
+          ],
+          "afterIds": [
+            "c20-s06-m6",
+            "c20-s06-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c20-s07",
+          "chapter": 20,
+          "slot": 7,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c20-s07-m1",
+            "c20-s07-m15"
+          ],
+          "afterIds": [
+            "c20-s07-m6",
+            "c20-s07-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c20-s08",
+          "chapter": 20,
+          "slot": 8,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c20-s08-m1",
+            "c20-s08-m15"
+          ],
+          "afterIds": [
+            "c20-s08-m6",
+            "c20-s08-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c20-s09",
+          "chapter": 20,
+          "slot": 9,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c20-s09-m1",
+            "c20-s09-m15"
+          ],
+          "afterIds": [
+            "c20-s09-m6",
+            "c20-s09-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        },
+        {
+          "stageId": "c20-s10",
+          "chapter": 20,
+          "slot": 10,
+          "chapterOpeningIds": [],
+          "beforeIds": [
+            "c20-s10-m1",
+            "c20-s10-m15"
+          ],
+          "afterIds": [
+            "c20-s10-m6",
+            "c20-s10-m10"
+          ],
+          "defeatDialogueRef": "global-defeat-v1",
+          "gameoverDialogueRef": "global-gameover-v1",
+          "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
+          "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
+          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+        }
+      ]
+    }
+  ],
+  "sharedDefeatAssets": [
+    "./assets/story/shared/shared-defeat-01.webp",
+    "./assets/story/shared/shared-defeat-02.webp"
+  ],
+  "sharedDefeatArtStatus": "REAL_2_OF_2_PROVISIONAL_NO_FORMAL_P0",
+  "sharedGameoverAssetsStatus": "PENDING_PRODUCTION_DISTINCT_FROM_DEFEAT"
+}

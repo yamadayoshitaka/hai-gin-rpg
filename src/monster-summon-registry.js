@@ -1,12 +1,12 @@
 /**
  * Bridges the 50 existing bestiary species to independent summoned actors.
  * No donor monster model, m005/m006 protected PR or humanoid source is edited.
- * Summoned copies are 10x human height; bestiary/enemy specimens stay native.
+ * Summoned copies use natural human-relative heights; bestiary/enemy specimens stay native.
  */
 import {MONSTER_CATALOG,MONSTER_BY_ID} from './monster-catalog.js';
 
 export const MONSTER_SUMMON_PREFIX='summon_';
-export const MONSTER_SUMMON_MODEL_HEIGHT=17; // 1.7 m human x 10
+export const MONSTER_SUMMON_MODEL_HEIGHT=1.7; // Restore original human-relative summon scale.
 export const MONSTER_SUMMON_MAX_ACTIVE=24; // ten squads per side + small reserve
 export const MONSTER_SUMMON_MAX_HIGH_DETAIL=2;
 export const MONSTER_SUMMON_ENTRIES=Object.freeze(MONSTER_CATALOG.map(monster=>{
@@ -20,7 +20,7 @@ export const MONSTER_SUMMON_ENTRIES=Object.freeze(MONSTER_CATALOG.map(monster=>{
  return Object.freeze({
   id,monsterId:monster.id,name:monster.name,family:monster.family,
   element:monster.element,rarity:monster.rarity,rank,
-  // Never render a summoned monster shorter than 10 human heights.
+  // Preserve the source monster's original species size multiplier.
   size:Math.max(1,monster.size),flying:airborne,aquatic,
   objectSpec:Object.freeze({
    name:monster.name,category:'summon',sourceMonsterId:monster.id,
@@ -62,7 +62,6 @@ export function monsterSummonWorldScale(type,boundsHeight){
  if(!item)throw Error('Unknown bestiary summon '+type);
  if(!Number.isFinite(boundsHeight)||boundsHeight<=0)
   throw Error('Summon must have a measurable source model height');
- // Preserve different silhouettes: giant golems a little taller than 10x,
- // and serpents longer than 10x; 10x is the shared human-height baseline.
+ // Keep species-specific proportions and the original 1.7m reference.
  return MONSTER_SUMMON_MODEL_HEIGHT*item.size/boundsHeight;
 }

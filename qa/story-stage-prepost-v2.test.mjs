@@ -54,7 +54,7 @@ assert.equal(STORY_READINGS['ガラン'],'がらん');
 assert.equal(storyRubyTokens('灰銀・レヴナ')[0].ruby,'はいぎん');
 
 const town=await readFile(new URL('../town-hub.html',import.meta.url),'utf8');
-assert.ok(town.includes("startPaperStory('post')"),'town must show a ten-shot epilogue before returning to map');
+assert.ok(town.includes("startPaperStory('post')"),'town must show a verified post-event comic before returning to map');
 assert.ok(town.includes('stagePostMangaSeen'),'town post event must be remembered');
 const map=await readFile(new URL('../world-map.html',import.meta.url),'utf8');
 const viewer=await readFile(new URL('../src/story-manga-viewer.js',import.meta.url),'utf8');
@@ -64,6 +64,6 @@ assert.ok(map.includes("phase:'post'"));
 assert.ok(map.includes("phase:'pre'"));
 assert.ok(map.includes("stagePostMangaSeen"));
 assert.ok(map.includes("settleCoreBattle(game,request,result)"));
-assert.ok(viewer.includes("comicForStage(id,which,storyContext)"),'viewer must show the selected outcome-specific chapter edition');
+assert.ok(viewer.includes("compactComicForStage(id,which,storyContext)"),'viewer must show the selected outcome-specific compact chapter edition');
 assert.ok(voice.includes("panel.voiceText.slice(0,380)"));
 console.log('PASS: all 200 stages, 4000 canonical panels, 10+10, verified result epilogues and proper-noun voice readings');

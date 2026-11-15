@@ -3,7 +3,8 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 const map=fs.readFileSync('world-map.html','utf8'),town=fs.readFileSync('town-hub.html','utf8');
 const stage={id:'c01-s01',kind:'town',chapter:1};
-const handler=map.slice(map.indexOf("$('sortie').onclick=()=>{"),map.indexOf('function completeReturnedBattle()'));
+const handler=map.slice(map.indexOf('function beginSortie(stage){'),map.indexOf('function completeReturnedBattle()'));
+assert.ok(handler.includes("$('sortie').onclick=()=>{"),'the stage sortie handler remains wired');
 for(const legacy of [null,'chapter','opening']){
  const game={campaign:{},storyFlags:{}};let opened=0,launched=0,saved=null;
  if(legacy==='chapter')game.storyFlags.chapterOpenings={1:true};
@@ -36,7 +37,7 @@ function scene(flags={}){
  const nodes=new Map();const node=id=>{if(!nodes.has(id))nodes.set(id,{});return nodes.get(id);};
  const context={game:{townStage:stage.id,storyFlags:structuredClone(flags)},townReady:true,townChapter:1,paperPending:false,
   townManga:{stageName:'町'},STORY_CHAPTERS:[{title:'第1章'}],$:node,
-  comicForStage:()=>({panels:[]}),storyStageContext:()=>({}),
+  comicForStage:()=>({panels:[]}),compactComicForStage:()=>({panels:[]}),storyStageContext:()=>({}),
   document:{querySelector:node},townAudio:{effect(){},setScene(){}},
   hideTownDialogue(){},resetTownMovement(){},closePanel(){},speakCurrentScene(){},
   persistSession(g){receipt=structuredClone(g.storyFlags);},sessionStorage:{},

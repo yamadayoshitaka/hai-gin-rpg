@@ -1,0 +1,14 @@
+import assert from 'node:assert/strict';import fs from 'node:fs';
+import {chapterOneReviewPages} from '../src/story-chapter1-review-core.js';
+const p=JSON.parse(fs.readFileSync('data/story-stage1-4-p0-backlog.json','utf8'));
+const canonical=chapterOneReviewPages().filter(x=>/^c01-s0[1-4]$/.test(x.stageId)).flatMap(x=>x.shots);
+assert.equal(canonical.length,174);assert.equal(p.count,174);assert.equal(p.items.length,174);
+assert.deepEqual([...new Set(p.items.map(x=>x.key))].sort(),canonical.map(x=>x.key).sort());
+assert(p.items.every(x=>x.qualityStatus==='P0_PENDING'),'Do not claim unverified art formally approved');
+assert(p.items.every(x=>['active_provisional','legacy_or_draft','missing'].includes(x.sourceKind)));
+const snapshotMissing=p.items.filter(x=>x.sourceKind==='missing').length;
+assert.equal(snapshotMissing,Object.values(p.groups).reduce((sum,stage)=>sum+stage.missing,0),'Report snapshot counts must reconcile');
+assert.equal(p.groups['c01-s01'].required,30);
+const html=fs.readFileSync('story-stage1-4-pending.html','utf8');
+assert(html.includes('CHAPTER1_PROVISIONAL_LIVE'));assert(html.includes('s.legacyPath'));assert(html.includes('img.onerror'));
+console.log('PASS: 174 canonically distinct stage1-4 cases, 0 invented approvals, reconciled snapshot');

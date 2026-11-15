@@ -1,4 +1,5 @@
 import {armyGroupFor,armyCaptain,captainBonus} from './army-groups.js';
+import {makeThreeTeamBattleRequest} from './three-team-core-bridge.js';
 /**
  * Adapter from the 20x10 campaign to the existing 3D 50-person battle.
  * The battle remains authoritative for wins, unit casualties and monster clears.
@@ -17,8 +18,9 @@ const validStageId=id=>Boolean(CAMPAIGN_STAGE_BY_ID[id]);
 export function makeCoreBattleRequest(game,stageId,battleId=String(Date.now())){
  const stage=CAMPAIGN_STAGE_BY_ID[stageId];
  if(!stage||stage.kind==='town'||game?.location!=='map')throw Error('地図上の出撃ステージを選んでください。');
+  if(game.sortiePlan?.version===1)return makeThreeTeamBattleRequest(game,stage,battleId);
  const squads=game.campaign.squads.filter(s=>s.count>0&&String(squadCommanderId(s))!=='reserve');
- const allotment=allocateSortieSlots(squads);
+ const allotment=allocateSortieSlots(squads,stage.deploymentLimit??50);
  // When more than 50 soldiers exist, proportional selection can omit a
  // small strategist formation. Reserve one participant per commander so the
  // protagonist and every represented strategist are physically present.
@@ -88,7 +90,8 @@ export function makeCoreBattleRequest(game,stageId,battleId=String(Date.now())){
   enemyMonsterIds:monsterBattle?[...stage.monsters]:[],
   enemyName:monsterBattle?'魔物群':storyContext?.enemy||'紅炎軍',
   enemyCount:monsterBattle?Math.min(20,Math.max(4,stage.monsters.length*3)):Math.min(50,12+stage.difficulty),
-  units,commanders,armyGroupBySquad,initialSquadOrders,tacticalTemplate,totalReserves:reserveTroops(game.campaign)
+  units,commanders,armyGroupBySquad,initialSquadOrders,tacticalTemplate,
+  deploymentLimit:stage.deploymentLimit??50,totalReserves:reserveTroops(game.campaign)
  };
 }
 export function settleCoreBattle(game,request,result){

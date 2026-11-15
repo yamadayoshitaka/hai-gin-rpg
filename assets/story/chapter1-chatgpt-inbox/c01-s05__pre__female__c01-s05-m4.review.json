@@ -1,0 +1,31 @@
+{
+  "shotKey": "c01-s05|pre|female|c01-s05-m4",
+  "scriptText": "戦火から逃れてきた人々が、味方の旗を見て立ち止まる。旗だけでは安全を約束できない。 勝つだけなら将軍を呼びます。あなたには、何のために勝つかを決めてほしい。",
+  "sourceModel": "ChatGPT Images",
+  "reviewedAt": "2026-11-15T17:10:50Z",
+  "reviewedBy": "assistant-visual-inspection",
+  "reviewer": null,
+  "qaStatus": "OWNER_PROVISIONAL",
+  "ownerAuthorized": true,
+  "humanVisualQAConfirmed": false,
+  "finalP0Approved": false,
+  "generationReferencesAttached": false,
+  "referenceImagesAttached": [],
+  "quality": {
+    "exactCanonicalScene": true,
+    "exactCast": true,
+    "genderAndOutcomeCorrect": true,
+    "noTextUI": true,
+    "original3DCinematicStyle": true,
+    "nativeDetail": true,
+    "realReferenceBytesAttachedToImageGenerator": false
+  },
+  "nativePixels": [
+    1664,
+    936
+  ],
+  "imageSha256": "1742047973a5f65fa26144692b985f4e35fc1388637417b607f15fa0509a7bff",
+  "provisionalNotes": "Owner authorized reversible provisional. Image generated through normal ChatGPT Images. Image references were available as GitHub file references in conversation but were NOT provably attached as generator image inputs; not P0 approved. Stage5 female pre single frame m4.",
+  "originalSource": "a_cinematic_highly_detailed_realistic_cgi_fantas.png",
+  "rollback": "Remove corresponding entry from CHAPTER1_PROVISIONAL_LIVE and revert art using revisions ledger."
+}

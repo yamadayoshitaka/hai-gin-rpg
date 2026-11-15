@@ -71,6 +71,9 @@ body.town-loading #townRadar,body:has(#opening:not([hidden])) #townRadar,body:ha
 #eventSceneArt:after{content:'';position:absolute;inset:0;border:6px solid #e8d4a021;pointer-events:none;box-shadow:inset 0 0 35px #081021}
 #eventVoice{border:1px solid #526477!important;background:#243648!important;color:#c7d4db!important;font:11px system-ui!important;min-height:30px!important;padding:5px 9px!important}#eventSpeaker{font:700 clamp(13px,3vw,17px) Georgia,'Noto Serif JP',serif;text-align:left;color:#ffe2ac;letter-spacing:.05em;border-left:3px solid #cdb17a;padding:5px 11px;background:#0c2033c9}
 #eventSpeaker small{display:block;font:10px system-ui;color:#c0d6e4}
+#eventSpeakerRow{display:flex;align-items:center;gap:10px;text-align:left}#eventSpeakerRow #eventSpeaker{flex:1;min-width:0}
+#eventPortrait{width:64px;height:64px;flex:none;object-fit:cover;object-position:center 20%;border-radius:5px;border:1px solid #b6a078}
+#eventPortrait[hidden]{display:none!important}
 .sceneCard{max-height:96dvh;overflow:auto}
 .sceneCard p#eventText{min-height:0;margin:0;text-align:left;line-height:1.7;font-size:clamp(14px,3.5vw,17px);padding:7px 4px}
 @media(max-height:680px){#eventSceneArt{max-height:45dvh}.sceneCard{gap:6px!important;padding:12px!important}}
@@ -104,13 +107,13 @@ header nav button,header nav a{min-width:0;padding:7px 2px;white-space:nowrap;fo
 #townExplorerControls,#townRadar,#townGuide,#veil{display:none!important}
 @media(min-aspect-ratio:1/1){body{grid-template-rows:auto auto minmax(0,1fr)}body>header{flex-wrap:nowrap}header .label{width:auto;max-width:38%}header nav{max-width:60%}#townScene{max-width:760px;justify-self:center}}
 </style>
-<link rel="stylesheet" href="./src/tactical-command-ui.css?v=2.1"><link rel="stylesheet" href="./src/battle-ui-refinement.css?v=2.4"></head><body class="town-loading">
+<link rel="stylesheet" href="./src/tactical-command-ui.css?v=2.1"><link rel="stylesheet" href="./src/battle-ui-refinement.css?v=2.4"><link rel="stylesheet" href="./src/three-team-sortie-ui.css?v=3"></head><body class="town-loading">
 <main id="townScene" aria-label="町の施設を選択">
 <img id="townArtwork" src="./assets/town/royal-town-hub-v1.webp" alt="城、教会、宿屋、武器屋、酒場、道具屋が並ぶ王都" fetchpriority="high">
 <div id="townFacilityPins">
 <button data-facility="story" style="--x:50%;--y:20%">♛ 城<small>物語・謁見</small></button>
 <button data-facility="save" style="--x:20%;--y:36%">✚ 教会<small>セーブ</small></button>
-<button data-facility="formation" style="--x:25%;--y:56%">⌂ 宿屋<small>編成・配置</small></button>
+<button data-facility="formation" style="--x:25%;--y:56%">⌂ 宿屋<small>編成・号令</small></button>
 <button data-facility="weapons" style="--x:77%;--y:48%">⚔ 武器屋<small>武器・防具</small></button>
 <button data-facility="tavern" style="--x:74%;--y:70%">♜ 酒場<small>雇用・依頼</small></button>
 <button data-facility="items" style="--x:39%;--y:78%">▣ 道具屋<small>買い物</small></button>
@@ -135,14 +138,17 @@ header nav button,header nav a{min-width:0;padding:7px 2px;white-space:nowrap;fo
 </section>
 <section id="townGuide" aria-label="町の施設案内地図" hidden><div id="townGuideCard"><div class="toprow"><h2>レヴナ施設案内</h2><button id="closeTownGuide" type="button">閉じる ✕</button></div>
 <small id="townGuideHint">町全域の真上からの地図です。青い印が軍師です。施設名をタップすると選択した建物の室内へ直接入れます。</small><div id="townGuideBoard"><canvas id="townGuideCanvas" width="464" height="464" aria-label="町の地形・川・道路・屋根の俯瞰マップ"></canvas><div id="townPlayerPin">軍師</div></div><div id="townGuideActions"><button id="townOverhead" type="button">3Dで町全体を俯瞰</button><button id="townReturnCamera" type="button">軍師視点に戻る</button></div><div id="townGuideList"></div></div></section>
-<section id="opening" aria-label="紙芝居・オープニング" hidden><div class="sceneCard"><div class="eyebrow">第1章・紙芝居　灰の勅命</div><div id="eventSceneArt"><img id="eventSceneImage" alt="物語の現在の1コマ" hidden><div id="eventSheetMissing" role="status">漫画原画を制作・確認中</div></div><h1>レヴナの町</h1><div id="eventSpeaker" aria-live="polite">語り手</div><p id="eventText">星鐘が鳴った。</p><div class="controls"><button id="eventVoice" type="button" aria-label="漫画の音声のオン・オフ">音声 ON</button><button id="eventNext">次へ ▶</button></div><button id="skipPaper" type="button">物語を閉じて町へ進む</button></div></section>
+<section id="opening" aria-label="紙芝居・オープニング" hidden><div class="sceneCard"><div class="eyebrow">第1章・紙芝居　灰の勅命</div><div id="eventSceneArt"><img id="eventSceneImage" alt="物語の現在の1コマ" hidden><div id="eventSheetMissing" role="status">漫画原画を制作・確認中</div></div><h1>レヴナの町</h1><div id="eventSpeakerRow"><img id="eventPortrait" hidden alt="話者の顔"><div id="eventSpeaker" aria-live="polite">語り手</div></div><p id="eventText">星鐘が鳴った。</p><div class="controls"><button id="eventVoice" type="button" aria-label="漫画の音声のオン・オフ">音声 ON</button><button id="eventNext">次へ ▶</button></div><button id="skipPaper" type="button">物語を閉じて町へ進む</button></div></section>
 <script type="module">
 import {armyGroups,armyGroupFor,setArmyGroup,captainCandidates,armyCaptain,setArmyCaptain,captainBonus} from './src/army-groups.js';
+import {renderThreeTeamPlanner} from './src/three-team-sortie-ui.js';
+import {ensureSortiePlan,setSortieCount,setSortieCaptain,setSortieFormation,setSortieGridCell,setSortieOrder,setSortieTactics,setSortieDivisions} from './src/three-team-sortie.js';
 import {STORY_CHAPTERS,storyVoiceKey} from './src/story-chapters.js';
 import {STORY_KEY_PEOPLE} from './src/story-cinematic.js';
 import {mangaForStage} from './src/story-stage-manga.js';
 import {storyStageContext} from './src/story-narrative-flow.js';
-import {comicForStage,comicPageAsset} from './src/story-chapter-comic.js';
+import {comicPageAsset} from './src/story-chapter-comic.js';
+import {compactComicForStage} from './src/story-compact-comic.js';
 import {registeredStoryPanelAsset,storySheetCrop,storyArtDisplayUrl} from './src/story-panel-registered-art.js';
 
 import {fantasyCueForMangaPanel} from './src/fantasy-scene-score.js';
@@ -236,7 +242,7 @@ $('townDialogueNext').onclick=()=>{
 };
 $('townDialogueService').onclick=()=>{if(!activeTalk?.panel)return;const service=activeTalk.panel;hideTownDialogue();openPanel(service);};
 $('townDialogueClose').onclick=()=>{hideTownDialogue();stopNarration();};
-function openPanel(which){if(!townReady)return;hideTownDialogue();resetTownMovement();panel=which;if(which==='formation')innPage='deployment';
+function openPanel(which){if(!townReady)return;hideTownDialogue();resetTownMovement();panel=which;if(which==='formation'){sortieView='setup';sortieTeamId=1;sortieCellIndex=5;sortieJobPage=0;sortieTemplatePage=0;sortieStrategyFamily='attack';sortieStrategyIntent='melee';ensureSortiePlan(game);persistSession(game,sessionStorage);}
  townAudio.effect('open');page=0;shopCategory=which==='weapons'?'武器':'道具';notice('');$('panel').hidden=false;$('panelBackdrop').hidden=false;renderPanel();}
 function closePanel(){$('panel').hidden=true;$('panelBackdrop').hidden=true;panel='';townAudio.effect('cancel');townAudio.setScene('town');}
 $('panelClose').onclick=closePanel;$('panelBackdrop').onclick=closePanel;
@@ -394,10 +400,11 @@ function renderInnPages(){
  }
  root.replaceChildren(heading,nav,pages.strategies,pages.deployment,pages.overview,pages.squads,pages.recruit);
 }
+let sortieView='setup',sortieTeamId=1,sortieCellIndex=5,sortieJobPage=0,sortieTemplatePage=0,sortieStrategyFamily='attack',sortieStrategyIntent='melee';
 function renderPanel(){
  if(!panel)return;
  $('panel').classList.toggle('formation-command-ui',panel==='formation');
- $('panelTitle').textContent=({weapons:'武具屋・隊列装備',items:'道具屋・消耗品',formation:'宿屋・隊列設定',tavern:'酒場・イベント請負',save:'教会・旅の記録',story:'王城・物語',dialogue:activeTalk?.name||'町人との会話'})[panel]||'町の施設';
+ $('panelTitle').textContent=({weapons:'武具屋・隊列装備',items:'道具屋・消耗品',formation:'宿屋・編成と作戦',tavern:'酒場・イベント請負',save:'教会・旅の記録',story:'王城・物語',dialogue:activeTalk?.name||'町人との会話'})[panel]||'町の施設';
  $('panelSummary').innerHTML='<div class="stat">軍師：<strong>'+escapeHtml(game.playerName)+'</strong></div><div class="stat">現在：<strong>第'+CAMPAIGN_STAGE_BY_ID[game.townStage].chapter+'章・町</strong></div>';
  if(panel==='dialogue'){
    const talk=activeTalk;
@@ -419,57 +426,8 @@ function renderPanel(){
    '<div class="entries">'+rowsHtml(stock,item=>'<div class="entry"><div><b>'+escapeHtml(item.name)+'</b><small>'+item.price+'G · 所持 '+(game.inventory[item.id]||0)+' · '+escapeHtml(item.description)+'</small></div><div><button type="button" data-buy="'+item.id+'" '+(game.wallet<item.price?'disabled':'')+'>購入</button> '+(armory?'<button type="button" data-equip="'+item.id+'" '+(!(game.inventory[item.id]>0)||!squads.length?'disabled':'')+'>隊列に装備</button>':'')+'</div></div>')+'</div>'+
    '<p>所持金：'+game.wallet+'G'+(armory?'　※同じ装備を複数隊列に使うには人数分ではなく隊列数分の在庫が必要です。':'')+'</p>';
  }else if(panel==='formation'){
-  const nextStage=stagesInChapter(CAMPAIGN_STAGE_BY_ID[game.townStage].chapter)
-    .find(entry=>entry.kind!=='town'&&!game.completedStages.includes(entry.id))||
-    stagesInChapter(CAMPAIGN_STAGE_BY_ID[game.townStage].chapter).find(entry=>entry.kind!=='town');
-  const suggestedStrategy=nextStage?.kind==='defend'?'支援・守備':
-    nextStage?.kind==='capture'?'目的遂行・制圧':
-    nextStage?.kind==='siege'?'目的遂行・攻城':'全滅・掃討';
-  const leaders=commanderList(game.campaign);
-  if(!leaders.some(c=>String(c.id)===String(innCommanderId)))innCommanderId='player';
-  const commander=leaders.find(c=>String(c.id)===String(innCommanderId));
-  const owned=game.campaign.squads.filter(s=>String(s.commanderId??'player')===String(innCommanderId)&&s.count>0);
-  const members=owned.reduce((n,s)=>n+s.count,0);
-  const totalPower=squadPower(owned);
-  const jobs=JOBS.map(job=>({job,count:game.campaign.squads.filter(x=>x.job===job).reduce((n,x)=>n+x.count,0)}));
-  const commanderSpecialty=commander.specialty||'assault';
-  const advisory=owned.flatMap(s=>Array.from({length:Math.min(100,s.count)},()=>({job:s.job,rarity:s.rarity,hp:1})));
-  const charge=evaluateTacticalOrder({units:advisory,mode:'charge',commander:{specialty:commanderSpecialty,alive:commander.active!==false}});
-  const defend=evaluateTacticalOrder({units:advisory,mode:'defend',commander:{specialty:commanderSpecialty,alive:commander.active!==false}});
-  const squadRows=owned.map(s=>{
-   const buff=squadEquipmentBonus(s);
-   const weapon=TOWN_SHOP.find(i=>i.id===buff.weapon)?.name||'なし',armor=TOWN_SHOP.find(i=>i.id===buff.armor)?.name||'なし';
-   return '<article class="innSquadCard"><header><strong>⚔ '+escapeHtml(s.job)+'</strong><span class="rank">'+escapeHtml(s.rarity)+'・'+s.count+'人</span></header>'+
-    '<div class="innTacticalScore"><span>基礎戦力</span><b>'+squadPower([s]).toFixed(1)+'</b></div>'+
-    '<small>武器：'+escapeHtml(weapon)+'／防具：'+escapeHtml(armor)+'</small>'+
-    '<small>常時強化：攻撃+'+Math.round(buff.attack*100)+'%・HP+'+Math.round(buff.defense*100)+'%</small></article>';
-  }).join('')||'<p>この軍師には兵士が未配属です。予備兵を雇用し、軍団画面で配属してください。</p>';
-  $('panelContent').innerHTML='<div class="innCommandHeading"><span class="eyebrow">INN · TACTICAL FORMATION</span>'+
-   '<strong>⚑ 軍師と隊列の編成</strong>'+
-    '<small>次の戦場：'+escapeHtml(nextStage?.name||'未決定')+'</small>'+
-    '<small>勝利目的：'+escapeHtml(nextStage?.winCondition||'ステージ選択後に表示')+'</small>'+
-    '<small>各隊を最大3班へ編成。軍師が班へ号令します。</small></div>'+
-   '<div class="innCommanderRow"><strong>指揮する軍師</strong>'+innCommanderButtons(leaders)+
-   '<strong>軍師の得意分野</strong><div class="innTapOptions">'+Object.entries(STRATEGIST_SPECIALTIES).map(([value,label])=>
-    '<button type="button" data-inn-specialty="'+value+'" class="'+(commanderSpecialty===value?'selected':'')+'">'+escapeHtml(label)+'</button>').join('')+'</div>'+
-   '<small>軍師：'+escapeHtml(commander.rarity||'R')+' / 統率Lv.'+Number(commander.level||1)+
-   ' · 号令間隔 '+tacticalCooldownSeconds(commander.level)+'秒（設計値）</small></div>'+
-   '<div class="innCommandGrid"><div class="innMetric"><small>配属人数</small><b>'+members+'/100</b></div>'+
-    '<div class="innMetric"><small>基礎戦力</small><b>'+totalPower.toFixed(1)+'</b></div>'+
-    '<div class="innMetric"><small>予備兵</small><b>'+reserveTroops(game.campaign)+'</b></div></div>'+
-   '<div class="innCommandGrid"><div class="innMetric"><small>突撃・効果</small><b>'+charge.effect+'/100</b></div>'+
-    '<div class="innMetric"><small>守備・効果</small><b>'+defend.effect+'/100</b></div>'+
-    '<div class="innMetric"><small>軍資金</small><b>'+game.campaign.treasury+'G</b></div></div>'+
-   '<small>号令の効果は無抵抗時の戦術評価値です。実戦の成功見込みは敵抵抗や地形を含めて再計算します。</small>'+
-   '<div class="entry"><div><b>✦ 星鐘の召喚・仲間ガチャ</b><small>1回 '+RECRUIT_GACHA.cost+'G ／ N 78%・R 20%・UR 2% ／ 10回以内R以上・40回以内UR保証。獲得兵は予備隊へ。</small><small>累計 '+(game.recruitGacha?.total||0)+'回'+(game.recruitGacha?.last?' · 前回：'+escapeHtml(game.recruitGacha.last.job)+'（'+game.recruitGacha.last.rarity+'）':'')+'</small></div><button type="button" class="primary" data-gacha-draw>召喚</button></div>'+
-   '<div class="innAutoControls"><strong>オート配置方針</strong><div class="innTapOptions">'+['均衡'].map(x=>
-    '<button type="button" data-inn-priority="'+x+'" class="'+(armyPriority===x?'selected':'')+'">'+x+'</button>').join('')+'</div>'+
-    '<button type="button" class="primary" data-inn-auto-place>全軍オート配置＋空き枠の軍師雇用</button>'+
-    '<small>軍師の雇用600G、必要な兵士は通常の雇用費。最大10軍師・軍師レベルによる解放上限まで。</small></div>'+
-   '<h3>配属中の部隊・レアリティ戦力</h3><div class="entries">'+squadRows+'</div>'+
-   '<h3>予備兵の雇用</h3><div class="entries">'+rowsHtml(jobs,entry=>'<div class="entry"><div><b>'+escapeHtml(entry.job)+'</b><small>全保有 '+entry.count+'人 · N傭兵 10G/人</small></div><button type="button" data-recruit="'+escapeHtml(entry.job)+'">＋10人</button></div>')+'</div>';
-  renderInnPages();
- }else if(panel==='tavern'){
+   $('panelContent').innerHTML=renderThreeTeamPlanner({game,teamId:sortieTeamId,cellIndex:sortieCellIndex,jobPage:sortieJobPage,templatePage:sortieTemplatePage,strategyFamily:sortieStrategyFamily,strategyIntent:sortieStrategyIntent,view:sortieView});
+  }else if(panel==='tavern'){
   game.acceptedEvents??=[];game.claimedEvents??=[];
   $('panelContent').innerHTML='<p>酒場の依頼掲示板。受注後はワールドマップで指定ステージを攻略し、酒場に戻って報酬を受け取ります。</p>'+
    '<div class="entries">'+TOWN_EVENTS.map(entry=>{
@@ -487,7 +445,21 @@ function renderPanel(){
    '<div class="controls"><button type="button" id="readNarration">▶ ナレーション（エコー付き）</button><button type="button" id="openMap">地図へ進む</button></div>';
  }
 }
-$('panelContent').addEventListener('change',event=>{if(event.target.id==='equipSquadSelect')selectedSquadId=Number(event.target.value)||0;
+$('panelContent').addEventListener('change',event=>{
+ if(panel==='formation'){
+  const field=event.target;
+  if(!field.hasAttribute('data-sortie-count'))return;
+  try{
+   const team=game.sortiePlan?.teams?.find(t=>t.id===sortieTeamId);
+   const sid=team?.grid?.[sortieCellIndex];
+   if(!sid)throw Error('ジョブを選んでから人数を設定してください。');
+   setSortieCount(game,sortieTeamId,sid,Number(field.value));
+   persist();renderPanel();
+  }catch(error){notice(error.message||String(error));renderPanel();}
+  return;
+ }
+
+if(event.target.id==='equipSquadSelect')selectedSquadId=Number(event.target.value)||0;
  if(event.target.id==='innCommanderSelect'){innCommanderId=event.target.value;page=0;innDeploymentSelected=null;renderPanel();}
  if(event.target.id==='innInitialOrderSelect'){
   setInnCommanderInitialOrder(game,innCommanderId,event.target.value);persist();renderPanel();
@@ -499,6 +471,70 @@ $('panelContent').addEventListener('change',event=>{if(event.target.id==='equipS
   if(leader){leader.specialty=key;persist();renderPanel();}
  }});
 $('panelContent').onclick=event=>{
+ if(panel==='formation'){
+  const target=event.target.closest('button');
+  if(!target)return;
+  if(target.hasAttribute('data-sortie-team')){
+   sortieTeamId=Number(target.dataset.sortieTeam);sortieCellIndex=5;sortieView='setup';sortieJobPage=0;sortieTemplatePage=0;renderPanel();return;
+  }
+  if(target.hasAttribute('data-sortie-cell')){
+   sortieCellIndex=Number(target.dataset.sortieCell);
+   const selectedTeam=game.sortiePlan?.teams?.find(t=>t.id===sortieTeamId);
+   sortieView=selectedTeam?.formation==='free'?'jobs':'count';
+   sortieJobPage=0;renderPanel();return;
+  }
+  if(target.hasAttribute('data-sortie-view')){
+   sortieView=target.dataset.sortieView;renderPanel();return;
+  }
+  if(target.hasAttribute('data-sortie-job-page')){
+   sortieJobPage=Math.max(0,Number(target.dataset.sortieJobPage)||0);renderPanel();return;
+  }
+  if(target.hasAttribute('data-sortie-template-page')){
+   sortieTemplatePage=Math.max(0,Number(target.dataset.sortieTemplatePage)||0);renderPanel();return;
+  }
+  if(target.hasAttribute('data-sortie-strategy-family')){
+   sortieStrategyFamily=target.dataset.sortieStrategyFamily;sortieStrategyIntent='';renderPanel();return;
+  }
+  if(target.hasAttribute('data-sortie-strategy-intent')){
+   sortieStrategyIntent=target.dataset.sortieStrategyIntent;renderPanel();return;
+  }
+  try{
+   if(target.hasAttribute('data-sortie-job')){
+    setSortieGridCell(game,sortieTeamId,sortieCellIndex,target.dataset.sortieJob||null);
+    sortieView='setup';
+   }else if(target.hasAttribute('data-sortie-formation')){
+    setSortieFormation(game,sortieTeamId,target.dataset.sortieFormation);
+    sortieView='setup';
+
+   }else if(target.hasAttribute('data-sortie-division')){
+    const team=game.sortiePlan?.teams?.find(t=>t.id===sortieTeamId);
+    const sid=team?.grid?.[sortieCellIndex];
+    if(!sid)throw Error('ジョブを配置してから分隊してください。');
+    setSortieDivisions(game,sortieTeamId,sid,Number(target.dataset.sortieDivision));
+   }else if(target.hasAttribute('data-sortie-captain')){
+    setSortieCaptain(game,sortieTeamId,target.dataset.sortieCaptain);
+   }else if(target.hasAttribute('data-sortie-step')){
+    const team=game.sortiePlan?.teams?.find(t=>t.id===sortieTeamId);
+    const sid=team?.grid?.[sortieCellIndex];
+    if(!sid)throw Error('ジョブを選んでください。');
+    const source=game.campaign.squads.find(s=>String(s.id)===sid);
+    const assignedElsewhere=game.sortiePlan.teams.filter(t=>t.id!==sortieTeamId).reduce((n,t)=>n+(t.counts[sid]||0),0);
+    const max=(source?.count||0)-assignedElsewhere;
+    const count=Math.max(1,Math.min(max,(team.counts[sid]||0)+Number(target.dataset.sortieStep)));
+    setSortieCount(game,sortieTeamId,sid,count);
+   }else if(target.hasAttribute('data-sortie-strategy-method')){
+    const team=game.sortiePlan?.teams?.find(t=>t.id===sortieTeamId);
+    const id=target.dataset.sortieStrategyMethod;
+    const selected=team?.tactics||[];
+    setSortieTactics(game,sortieTeamId,selected.includes(id)?selected.filter(x=>x!==id):[...selected,id]);
+   }else if(target.hasAttribute('data-sortie-order')){
+    setSortieOrder(game,sortieTeamId,target.dataset.sortieOrder);
+   }else return;
+   persist();renderPanel();
+  }catch(error){notice(error.message||String(error));renderPanel();}
+  return;
+ }
+
  const target=event.target.closest('button');if(!target)return;
  if(target.hasAttribute('data-army-group')){
   setArmyGroup(game.campaign,innCommanderId,Number(target.dataset.armyGroup));persist();renderPanel();return;
@@ -835,9 +871,21 @@ async function speakChapter(number,{autoplay=false}={}){
 // Every town stop uses the exact same serial-manga identity and panel order
 // as the other 180 combat/exploration stages.
 const townManga=mangaForStage(game.townStage);
-let eventComic=comicForStage(game.townStage,'pre',storyStageContext(game,game.townStage));
+let eventComic=compactComicForStage(game.townStage,'pre',storyStageContext(game,game.townStage));
 let eventScenes=eventComic.panels;
-let eventIndex=0,paperPhase='pre',leaveAfterPaper=false,renderedTownFrame=null,eventArtRequest=0;
+let eventIndex=0,eventTalkIndex=0,paperPhase='pre',leaveAfterPaper=false,renderedTownFrame=null,eventArtRequest=0;
+const storyCastIds=new Set(STORY_KEY_PEOPLE.map(p=>p.id));
+function currentTownTurn(){const shot=eventScenes[eventIndex];return shot?.dialogueTurns?.[eventTalkIndex]||shot}
+function showTownPortrait(talk){
+ const img=$('eventPortrait');
+ const src=storyCastIds.has(talk?.characterId)?'./assets/story-cinema/cast/'+talk.characterId+'.webp':
+  talk?.speaker==='軍師'&&game.campaign?.commander?.gender==='female'?'./assets/story/characters/commander/female-master.webp':null;
+ img.hidden=!src;
+ if(!src){img.removeAttribute('src');return}
+ img.onerror=()=>{if(img.getAttribute('src')===src)img.hidden=true};
+ if(img.getAttribute('src')!==src)img.src=src;
+ img.alt=talk.speaker+'の顔';
+}
 const voiceIsOn=()=>{
  try{return JSON.parse(localStorage.getItem('hai-gin-core-settings-v1')||'{}')?.voice!==false;}
  catch{return true;}
@@ -850,11 +898,11 @@ function setVoiceEnabled(value){
  $('eventVoice').textContent=value?'音声 ON':'音声 OFF';
 };
 function eventRender(){
- const shot=eventScenes[eventIndex],context=storyStageContext(game,game.townStage);
- $('eventText').textContent=shot.text;
- const cut=registeredStoryPanelAsset(shot);
+ const shot=eventScenes[eventIndex],talk=currentTownTurn(),context=storyStageContext(game,game.townStage);
+ $('eventText').textContent=talk.text;
+ const cut=shot.sharedArtAsset||registeredStoryPanelAsset(shot);
  const sheet=comicPageAsset(game.townStage,paperPhase,context,shot.comicPage,shot.protagonistGender);
- const cells=eventComic.pages.find(p=>p.number===shot.comicPage)?.cellCount||1;
+ const cells=shot.sourceSheetCount||eventComic.pages.find(p=>p.number===shot.comicPage)?.cellCount||1;
  const frameKey=[shot.id,shot.comicEdition,shot.protagonistGender,cut||'',sheet||''].join('|');
  $('eventSceneArt').style.aspectRatio='16 / 9';
  if(renderedTownFrame!==frameKey){
@@ -893,17 +941,18 @@ function eventRender(){
  $('eventSceneImage').alt='第'+townChapter+'章 '+townManga.stageName+' の'+
   (paperPhase==='pre'?'イベント前':'イベント後')+
   '（'+(shot.protagonistGender==='female'?'女性版':'男性版')+'）第'+(eventIndex+1)+'コマ';
- $('eventSpeaker').textContent=shot.characterId?
-  shot.speaker+'　／　'+shot.faction+'・'+shot.role:'語り手　／　'+townManga.chapterTitle;
+ $('eventSpeaker').textContent=talk.characterId?
+  talk.speaker+'　／　'+talk.faction+'・'+talk.role:'語り手　／　'+townManga.chapterTitle;
+ showTownPortrait(talk);
  $('eventText').style.animation='none';void $('eventText').offsetWidth;$('eventText').style.animation='';
- $('eventNext').textContent=eventIndex===eventScenes.length-1?
+ $('eventNext').textContent=eventIndex===eventScenes.length-1&&eventTalkIndex===(shot.dialogueTurns?.length||1)-1?
   (paperPhase==='post'?'地図へ進む ▶':'町へ進む ▶'):'次のセリフ ▶';
  setVoiceEnabled(voiceIsOn());
  const cue=fantasyCueForMangaPanel({id:townManga.id,number:townManga.number,kind:'town'},eventIndex);
  townAudio.setScene('paper',cue.url);
 }
 function speakCurrentScene(){
- const shot=eventScenes[eventIndex];
+ const shot=currentTownTurn();
  stopNarration();
  currentStoryPanelVoiceId=shot.id;
  if(voiceIsOn())speakTownLine(shot.text,shot.characterId);
@@ -911,8 +960,11 @@ function speakCurrentScene(){
 }
 $('eventNext').onclick=()=>{
  townAudio.effect('paper');
+ if(eventTalkIndex<(eventScenes[eventIndex].dialogueTurns?.length||1)-1){
+  stopNarration();eventTalkIndex++;eventRender();speakCurrentScene();return;
+ }
  if(eventIndex<eventScenes.length-1){
-  stopNarration();eventIndex++;eventRender();speakCurrentScene();return;
+  stopNarration();eventIndex++;eventTalkIndex=0;eventRender();speakCurrentScene();return;
  }
  closePaperStory();
 };
@@ -951,7 +1003,7 @@ function startPaperStory(phase='pre'){
   game.storyFlags.stagePostMangaSeen[game.townStage]=true;
  }
  persistSession(game,sessionStorage);
- eventComic=comicForStage(game.townStage,phase,storyStageContext(game,game.townStage));
+ eventComic=compactComicForStage(game.townStage,phase,storyStageContext(game,game.townStage));
  eventScenes=eventComic.panels;
  hideTownDialogue();
  townAudio.effect('paper');townAudio.setScene('paper');
@@ -959,7 +1011,7 @@ function startPaperStory(phase='pre'){
  const chapterData=STORY_CHAPTERS[townChapter-1];
  document.querySelector('#opening .eyebrow').textContent='第'+townChapter+'章・'+(phase==='post'?'町の後日談':'連続漫画')+'　'+chapterData.title;
  document.querySelector('#opening .sceneCard h1').textContent=townManga.stageName;
- eventIndex=0;renderedTownFrame=null;eventRender();$('opening').hidden=false;
+ eventIndex=0;eventTalkIndex=0;renderedTownFrame=null;eventRender();$('opening').hidden=false;
  speakCurrentScene();
 }
 $('skipPaper').onclick=closePaperStory;

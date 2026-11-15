@@ -5,7 +5,7 @@
  * preallocating 50 x high/low high-poly meshes at battle startup. The actual
  * existing bestiary geometry, articulation, materials and PBR are reused.
  * No changes to enemy bestiary scale, m005/m006 donor assets, grid AI or
- * soldier skeletons. A normal human (1.7m) is 1/10 visual height.
+ * soldier skeletons. Summoned species have their normal human-relative height.
  */
 import * as THREE from 'three';
 import {createMonsterModel,disposeMonsterSculpture}
@@ -16,7 +16,7 @@ import {humanoidMonsterCostumeFor}
  from './monster-character-cosplay-manifest.js?v=4.5.03';
 import {startMonsterAction,animateMonsterModel}
  from './monster-animation.js?v=4.5.18';
-import {creatureFlightHeight} from './combat-creature-performance.js?v=4.6.39';
+import {creatureFlightHeight} from './combat-creature-performance.js?v=natural-size-20261116';
 import {adoptedCreatureMesh} from './creature-mesh-adoption.js?v=web-mesh-26-v1';
 import {fetchCreatureRegistry} from './creature-external-runtime.js';
 import {loadCreatureMeshSource} from './creature-real-source-catalog.js?v=real-body-only-v4';
@@ -24,8 +24,8 @@ import {chooseCreatureLod} from './creature-master-library.js?v=masters-v1';
 import {protectedCreature} from './creature-mesh-adoption.js?v=real-bodies-v3';
 import {isMonsterSummonType,monsterSummonSource,
  monsterSummonWorldScale,MONSTER_SUMMON_MAX_HIGH_DETAIL,
- MONSTER_SUMMON_MAX_ACTIVE,MONSTER_SUMMON_BY_TYPE}
- from './monster-summon-registry.js';
+ MONSTER_SUMMON_MAX_ACTIVE,MONSTER_SUMMON_BY_TYPE,MONSTER_SUMMON_MODEL_HEIGHT}
+ from './monster-summon-registry.js?v=natural-size-20261116';
 
 const safe=(x,fallback=0)=>Number.isFinite(x)?x:fallback;
 
@@ -102,7 +102,7 @@ export function createMonsterSummonRenderer(scene,{
   // update the ANCESTOR world matrices. Finalize the native donor rig's
   // parent chain immediately, before the first renderer.render call.
   // Otherwise it appears 1.7m to the camera fitter despite having a
-  // 17m parent scale, cropping the giant in mobile gallery.
+  // parent scale, clipping the model in mobile gallery.
   anchor.updateMatrixWorld(true);
   if(costumeHandle){
    costumeHandle.start('idle',0);
@@ -121,7 +121,7 @@ export function createMonsterSummonRenderer(scene,{
     if(!Number.isFinite(finalHeight)||finalHeight<=.01){
      actor.userData.modelError='empty-loaded-skin';return;
     }
-    const targetHeight=MONSTER_SUMMON_BY_TYPE[object.type].size*17;
+    const targetHeight=MONSTER_SUMMON_BY_TYPE[object.type].size*MONSTER_SUMMON_MODEL_HEIGHT;
     fitting.scale.multiplyScalar(targetHeight/finalHeight);
     anchor.updateWorldMatrix(true,true);
     const corrected=new THREE.Box3().setFromObject(actor);

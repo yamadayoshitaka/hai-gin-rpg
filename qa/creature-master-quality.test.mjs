@@ -5,7 +5,8 @@ import {CREATURE_SURFACE_SOURCES,CREATURE_FAMILY_SURFACE} from '../src/monster-p
 import {MONSTER_DETAIL_LEVELS,monsterSculptCacheStats,createMonsterModel,disposeMonsterSculpture} from '../src/monster-geometry.js?v=4.4.83';
 import {startMonsterAction,animateMonsterModel,MONSTER_ACTIONS} from '../src/monster-animation.js';
 
-assert.deepEqual(Object.keys(MONSTER_DETAIL_LEVELS),['source','high','low']);
+assert.deepEqual(Object.keys(MONSTER_DETAIL_LEVELS),['source','high','medium','low'],
+ 'retain the dedicated medium LOD between detailed and distant monster models');
 const inspectorPage=readFileSync(new URL('../monster-manager.html',import.meta.url),'utf8');
 assert.ok(inspectorPage.includes('monsterSculptCacheStats,monsterPhotoCacheStats} from'),
  'Inspector must import metrics via the same monster-geometry instance');
