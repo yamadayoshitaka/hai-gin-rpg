@@ -57,7 +57,7 @@ jobs:
     timeout-minutes: 35
     env:
       REVIEW_BRANCH: quality/battle-lod-candidates
-      TARGET_ID: \${{ inputs.target || 'all' }}
+      TARGET_ID: ${{ inputs.target || 'all' }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -127,7 +127,7 @@ jobs:
       - name: Open a single DRAFT review PR (no live actor replacement)
         if: steps.publish.outputs.changed == 'true'
         env:
-          GH_TOKEN: \${{ github.token }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           existing=$(gh pr list --state open --head "$REVIEW_BRANCH" --json number --jq length)
@@ -140,7 +140,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: battle-lod-gate-\${{ github.run_id }}
+          name: battle-lod-gate-${{ github.run_id }}
           path: qa-reports/battle-lod/
           retention-days: 14
           if-no-files-found: warn
