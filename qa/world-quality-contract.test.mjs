@@ -1,0 +1,36 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import {qualityInventory,objectCount,stageCount,referencePrompt} from '../scripts/world-quality-catalog.mjs';
+assert.equal(stageCount,200,'All 20 x 10 campaign stages included');
+assert.equal(objectCount,54,'Every catalog object should be included');
+assert.equal(qualityInventory.length,254);
+assert.equal(new Set(qualityInventory.map(x=>x.key)).size,254);
+assert(qualityInventory.find(x=>x.key==='object:timber_bridge_001'));
+assert(qualityInventory.find(x=>x.key==='object:castle_001'));
+assert(qualityInventory.find(x=>x.key==='stage:c20-s10'));
+for(const row of qualityInventory){
+ const prompt=referencePrompt(row);
+ assert.match(prompt,/PHOTOREAL/);
+ assert.match(prompt,/no words/i);
+ assert.match(prompt,/16:9/);
+ assert.match(prompt,/not actual game geometry|not actual game geometry|NOT actual game geometry/i);
+}
+const master=fs.readFileSync('scripts/world-quality-run.mjs','utf8');
+const runner=fs.readFileSync('scripts/world-quality-postprocess.mjs','utf8');
+const pbr=fs.readFileSync('src/world-quality-pbr.js','utf8');
+const html=fs.readFileSync('batch-monitor.html','utf8');
+assert(master.includes('CLOUDFLARE_FREE_PLAN_CONFIRMED'));
+assert(master.includes('NO_PAID_FALLBACK'));
+assert(master.includes('referenceSha256'));
+assert(runner.includes('world-quality-capture.cjs'));
+assert(runner.includes('world-quality-stage-capture.cjs'));
+assert(pbr.includes('WORLD_QUALITY_AUTO_BEGIN'));
+assert(pbr.includes('WORLD_QUALITY_AUTO_END'));
+assert(html.includes("api+'workflows?per_page=100"));
+assert(html.includes("batch-chatgpt-snapshot.json"));
+assert(html.includes("REAL_STAGE_CAPTURE_HUMAN_QA_PENDING")===false);
+const preview=fs.readFileSync('world-quality-preview.html','utf8');
+assert(preview.includes('createCatalogObject'));
+assert(preview.includes('roughnessScale'));
+assert(preview.includes("dataset.qaReady='true'"));
+console.log('PASS: 54 objects + 200 campaign stages; references, capture, bounded tuning, dashboard QA gates');
