@@ -3,14 +3,14 @@
  * pre-battle blueprint; midbattle support transfers only surviving soldiers
  * between divisions of the SAME army group and never duplicates inventory.
  */
-export const squadAlive=u=>u?.team===0&&u.hp>0&&u.alive!==false&&!u.defeated&&!u.isStrategist;
+export const squadAlive=u=>u?.team===0&&u.hp>0&&u.alive!==false&&!u.defeated;
 const same=(a,b)=>String(a)===String(b);
 export function threeGroupOverview(units,groupBySquad,initialUnits=[]){
  const output=[1,2,3].map(id=>({id,alive:0,initial:0,hp:0,maxHp:0,divisions:[],danger:false}));
  const initialSource=initialUnits.length?initialUnits:units.filter(u=>u.team===0&&!u.isStrategist);
  const visited=new Map();
  for(const u of initialSource){
-  if(u.isStrategist||u.team!==0)continue;
+  if(u.team!==0)continue;
   const group=Number(u.armyGroupId??groupBySquad[String(u.squadId)]||1);
   if(group>=1&&group<=3)output[group-1].initial++;
  }
@@ -38,7 +38,7 @@ export function reinforceDivision(units,groupBySquad,toId,{fromId=null,amount=nu
  const group=Number(target[0].armyGroupId??groupBySquad[String(toId)]);
  const donors=new Map();
  for(const u of units){
-  if(!squadAlive(u)||same(u.squadId,toId)||u.isPlayerHero)continue;
+  if(!squadAlive(u)||same(u.squadId,toId)||u.isPlayerHero||u.isStrategist)continue;
   if(Number(u.armyGroupId??groupBySquad[String(u.squadId)])!==group)continue;
   const id=String(u.squadId);
   if(fromId!==null&&!same(id,fromId))continue;
@@ -58,6 +58,7 @@ export function reinforceDivision(units,groupBySquad,toId,{fromId=null,amount=nu
 }
 export function mergeDivision(units,groupBySquad,fromId,{intoId=null}={}){
  const members=units.filter(u=>squadAlive(u)&&same(u.squadId,fromId));
+ if(members.some(u=>u.isPlayerHero||u.isStrategist))return {ok:false,reason:'軍師・主人公がいる本隊は統合先として維持してください。'};
  if(!members.length)return {ok:false,reason:'再統合できる生存兵がいません。'};
  const group=Number(members[0].armyGroupId??groupBySquad[String(fromId)]);
  const alternatives=new Map();
