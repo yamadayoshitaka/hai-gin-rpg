@@ -115,7 +115,9 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
  // Individual shoulder, ribcage and pelvis stations replace a rescaled ball.
  // The moving limb pivots and species-specific head/coat are unchanged.
  const bodyWidth=.43+(v%2)*.06,bodyLength=.72+v*.06;
- g.axialLoft(torso,'skin',[
+ if(s.id==='m005'||s.id==='m006')
+  g.sphere(torso,'skin',[0,1.30,0],[bodyWidth,.43,bodyLength]);
+ else g.axialLoft(torso,'skin',[
   {z:bodyLength*.96,y:1.34,rx:.12,ry:.17},
   {z:bodyLength*.71,y:1.32,rx:bodyWidth*.84,ry:.365},
   {z:bodyLength*.25,y:1.30,rx:bodyWidth*1.04,ry:.430},
