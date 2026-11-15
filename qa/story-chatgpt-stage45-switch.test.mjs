@@ -49,8 +49,44 @@ for(const [key,item] of registered){
  assert.equal(bytes.toString('ascii',8,12),'WEBP',key);
  assert.equal(crypto.createHash('sha256').update(bytes).digest('hex'),item.sha256,key+' image differs from registry');
 }
-const liveS05=Object.keys(CHAPTER1_PROVISIONAL_LIVE).filter(key=>key.startsWith('c01-s05|'));
-assert.equal(liveS05.length,0,'No image may be fabricated or counted as stage5 completed');
+// Stage5 is now supplied with genuine ChatGPT image bytes. Never assert that
+// this stage remains permanently empty. Accept only canonical, SHA-verified,
+// reversible provisional artwork and keep final P0 approval explicitly false.
+const stage5Canonical=new Map(pages.filter(p=>p.stageId==='c01-s05')
+ .flatMap(p=>p.shots.map(shot=>[shot.key,shot])));
+const liveS05=Object.entries(CHAPTER1_PROVISIONAL_LIVE)
+ .filter(([key])=>key.startsWith('c01-s05|'));
+assert(liveS05.length<=stage5Canonical.size,'Stage5 cannot register invented shots');
+const seenS05=new Set();
+for(const [key,item] of liveS05){
+ const canonicalShot=stage5Canonical.get(key);
+ assert(canonicalShot,'Noncanonical stage5 shot: '+key);
+ assert.equal(item.status,'PROVISIONAL_OWNER_AUTHORIZED_PENDING_P0',key+' must remain provisional');
+ assert.equal(item.stageId,canonicalShot.stageId);
+ assert.equal(item.edition,canonicalShot.edition);
+ assert.equal(item.gender,canonicalShot.gender);
+ assert(!seenS05.has(item.sha256),'Same image registered for different stage5 shots');
+ seenS05.add(item.sha256);
+ assert(item.asset.startsWith('./assets/story/chapter1-provisional-live/'));
+ const bytes=fs.readFileSync(item.asset.slice(2));
+ assert.equal(bytes.toString('ascii',0,4),'RIFF',key);
+ assert.equal(bytes.toString('ascii',8,12),'WEBP',key);
+ assert.equal(crypto.createHash('sha256').update(bytes).digest('hex'),item.sha256,key+' actual image mismatch');
+ const proof=JSON.parse(fs.readFileSync(item.provenance,'utf8'));
+ assert.equal(proof.shotKey,key);
+ assert.equal(proof.scriptText,canonicalShot.scriptText,key+' does not match canonical screenplay');
+ if(proof.qaStatus==='OWNER_PROVISIONAL'){
+  assert.equal(proof.sourceModel,'ChatGPT Images');
+  assert.equal(proof.finalP0Approved,false);
+  assert.equal(proof.humanVisualQAConfirmed,false);
+  assert.equal(proof.quality?.realReferenceBytesAttachedToImageGenerator,false);
+  assert.equal(proof.imageSha256,item.sha256,'Image proof SHA mismatch');
+ }
+ assert.equal(chapter1ProvisionalLivePanel({
+  stageId:canonicalShot.stageId,comicEdition:canonicalShot.edition,
+  protagonistGender:canonicalShot.gender,id:canonicalShot.shotId
+ })?.asset,item.asset,'Game resolver fails to use the real stage5 image');
+}
 for(const gender of ['male','female']){
  const key='c01-s04|pre|'+gender+'|c01-s04-m1';
  const item=CHAPTER1_PROVISIONAL_LIVE[key];
