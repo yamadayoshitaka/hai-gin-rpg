@@ -428,9 +428,13 @@ function selectSpecies(id){
  byId('demonToneControl').style.display=hasDemonCosmetics({id})?'block':'none';
  disposeCurrent();
  const mode=byId('assetSource').value;
- const cosplay=mode==='procedural'?humanoidMonsterCostumeFor(m,{
+ // All 16 humanoid species must render the skinned actor, even when a
+ // curator temporarily selects a different source to compare. An external
+ // GLB may replace the actor on success; the old procedural humanoid must
+ // never appear before, during or after the request.
+ const cosplay=humanoidMonsterCostumeFor(m,{
    genderVariant:id==='m034'?byId('vampireSex').value:null
- }):null;
+ });
  const showBeastfolk=mode==='procedural'&&!!beastfolkRecipeFor(m)&&
    byId('beastfolkForm').value==='beastfolk';
  if(showBeastfolk){
