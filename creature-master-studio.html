@@ -107,8 +107,8 @@ label{display:block;font-size:12px;color:#c7d9e5}label select,label input{displa
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {CREATURE_MASTER_ENTRIES,CREATURE_MASTER_BY_ID,MASTER_RENDER_TIERS,
- CREATURE_MASTER_COUNTS} from './src/creature-master-library.js?v=masters-v1';
-import {createCreatureMaster} from './src/creature-master-runtime.js?v=masters-v1';
+ CREATURE_MASTER_COUNTS} from './src/creature-master-library.js?v=masters-v2';
+import {createCreatureMaster} from './src/creature-master-runtime.js?v=masters-v2';
 const $=id=>document.getElementById(id);
 const groups=[['monster','敵モンスター50種'],['summon','召喚版モンスター50種'],
  ['dedicated','専用召喚獣・軍馬8種']];
@@ -230,7 +230,7 @@ async function load(){
   else $('status').textContent='原型モデルを生成しました。三角形と実際の形状を確認できます。';
   fit();updateMetrics();
   const next=new URLSearchParams(location.search);
-  next.set('species',id);next.set('tier',tier);next.set('v','master-108-v1');
+  next.set('species',id);next.set('tier',tier);next.set('v','master-108-v2');
   history.replaceState(null,'','?'+next.toString());
  }catch(e){
   if(serial===ticket){$('status').textContent='生成エラー：'+String(e.message||e);$('exportButton').disabled=true;}
