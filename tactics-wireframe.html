@@ -5717,7 +5717,7 @@ function squadFixedStrategyLabel(id,team=0){
  if(team===1)return '敵AI・全滅';
  return STRATEGY_LABELS[squadStrategies.get(String(id))]||'全滅';
 }
-const INITIAL_ORDER_LABELS={charge:'⚔ 突撃',defend:'🛡 守備',hold:'⏸ 待機',retreat:'↘ 退却',explore:'🔎 探索'};
+const INITIAL_ORDER_LABELS={charge:'⚔ 突撃',defend:'🛡 守備',hold:'⏸ 待機',retreat:'↘ 退却',support:'✚ 支援',explore:'🔎 探索'};
 const startingSquadOrders=new Map(),activeBuildingExplorations=new Map(),explorationQueues=new Map();
 const exploreRangeBySquad=new Map(); // 0 means unrestricted, measured in map cells.
 let lastEnemyItemDecisionAt=-Infinity,lastEnemyTacticalDecisionAt=-Infinity,lastAllyItemDecisionAt=-Infinity;
@@ -5902,6 +5902,19 @@ function issueBuildingExploration(team,squadId,buildingId,{beforeBattle=false}={
 function setStartingSquadOrder(team,squadId,mode,buildingId=null){
  const id=String(squadId),side=Number(team),key=squadOrderKey(side,id);
  if(mode==='explore')return issueBuildingExploration(side,id,buildingId,{beforeBattle:true});
+  // Support stance is a valid priest-dependent prebattle command. A resting
+  // position leaves healing AI free to treat casualties once combat starts.
+  if(mode==='support'){
+   const hasPriest=squadRoster.some(u=>u.team===side&&String(u.squadId)===id&&
+    (u.jobId==='priest'||u.job?.name==='僧侶'));
+   if(!hasPriest)return false;
+   if(massSim&&!massSim.setSquadCommand(id,'hold',side))return false;
+   if(massWorker?.active)massWorker.setSquadCommand(id,'hold',side);
+   activeBuildingExplorations.delete(key);
+   startingSquadOrders.set(key,{mode:'hold',supportPriority:true});
+   if(side===0)squadOrderRegistry.set(id,{mode:'hold',supportPriority:true});
+   return true;
+  }
  if(!['charge','defend','hold','retreat'].includes(mode))return false;
  if(massSim&&!massSim.setSquadCommand(id,mode,side))return false;
  if(massWorker?.active)massWorker.setSquadCommand(id,mode,side);
