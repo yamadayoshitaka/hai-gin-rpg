@@ -10,6 +10,8 @@ on:
       - 'scripts/batch-center-toggle.mjs'
       - 'qa/batch-center-toggle.test.mjs'
       - 'batch-monitor.html'
+      - 'data/batch-work-progress.json'
+      - 'qa/batch-work-progress.test.mjs'
 permissions:
   contents: write
   actions: write
@@ -28,6 +30,7 @@ jobs:
         run: |
           node --check scripts/manual-hourly-batch-dispatch.mjs
           node --test qa/manual-hourly-batch-dispatch.test.mjs
+          node --test qa/batch-work-progress.test.mjs
           node --check scripts/batch-center-toggle.mjs
           node --test qa/batch-center-toggle.test.mjs
       - name: Dispatch selected one-shot workflow
