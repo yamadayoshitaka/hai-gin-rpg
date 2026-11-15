@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>灰銀のレゾナンス | 全モンスター・召喚獣 実写ベースメッシュ選定</title>
+<style>
+:root{font-family:system-ui,-apple-system,"Noto Sans JP",sans-serif;color-scheme:dark}
+*{box-sizing:border-box}body{background:#07121e;color:#edf5ff;margin:0;min-height:100dvh}
+a{color:#a8deef}header{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:#10283c;padding:10px 15px;border-bottom:1px solid #46637e}
+h1{font-size:17px;margin:0}header span{font-size:12px;color:#b8cfdf}
+main{display:grid;grid-template-columns:minmax(245px,300px) minmax(0,1fr);height:calc(100dvh - 57px);min-height:0}
+aside{padding:10px;background:#122637;border-right:1px solid #3a5e74;overflow:auto}
+button,select,input,textarea{background:#19384f;border:1px solid #577e98;color:#f5f8fc;border-radius:8px;padding:9px;font:inherit}
+button{cursor:pointer}button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid #f2d38c}
+label{display:block;font-size:12px;color:#c1d8e7;margin:7px 0}label input,label select{width:100%;margin-top:4px}
+nav{display:flex;gap:6px;margin:10px 0}nav button{flex:1;font-size:12px;white-space:nowrap;padding:8px 3px}
+nav button.active{background:#356985;border-color:#ead191}
+#count{color:#b1cedd;font-size:11px;margin:8px 0}
+#items{display:grid;gap:5px}.item{width:100%;text-align:left;padding:9px;font-size:12px}
+.item strong{display:block;font-size:13px}.item small{display:block;color:#adc5d5;font-size:10px}
+.item[aria-pressed=true]{background:#32617a;border-color:#e9c986}
+section.workspace{display:flex;flex-direction:column;min-height:0;overflow-y:auto;padding:12px;gap:10px}
+#meta{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+h2{font-size:19px;margin:0;color:#f1d99f}
+.flag{display:inline-block;padding:4px 8px;background:#23435a;border-radius:12px;font-size:11px}
+.note{font-size:12px;color:#bed0dd;line-height:1.6;margin:2px 0}
+#compare{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;min-height:360px}
+.panel{background:#11283b;border:1px solid #41677e;border-radius:11px;overflow:hidden;min-width:0;display:flex;flex-direction:column}
+.panelTitle{display:flex;align-items:center;justify-content:space-between;gap:6px;padding:8px 10px;font-size:12px;font-weight:bold}
+.panel iframe{height:330px;flex:1;min-height:260px;border:0;background:#081626;width:100%}
+.panel .placeholder{display:grid;place-items:center;min-height:290px;padding:20px;text-align:center;line-height:1.8;font-size:13px;color:#c5d5e2;flex:1}
+.links{display:flex;flex-wrap:wrap;gap:8px;padding:7px 10px;font-size:12px}
+.links a{display:inline-block;border:1px solid #56778e;padding:6px 9px;border-radius:8px;text-decoration:none}
+#candidates{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:7px}
+.source{padding:10px;border:1px solid #4a6477;background:#142b3f;border-radius:9px}
+.source b{font-size:13px}.source small{display:block;font-size:11px;color:#b9cbda;margin:6px 0;line-height:1.5}
+details{background:#102639;border:1px solid #3e6178;padding:10px;border-radius:9px}
+summary{cursor:pointer;color:#ead39d;font-weight:bold}
+#parts{font-size:12px;line-height:1.7;color:#cbdce8}
+#status{font-size:12px;line-height:1.6;color:#b6d5d5}
+#previewCanvas{height:340px;width:100%;display:none;touch-action:none;background:#081521}
+#localBox{display:none}
+.actions{display:flex;flex-wrap:wrap;gap:6px}.actions button{font-size:12px}
+#download{background:#365d5c}
+#protect{color:#f0d19e}
+@media(max-width:780px){
+ main{display:block;height:auto}
+ aside{max-height:185px;border-right:0;border-bottom:1px solid #3a5e74;padding:7px}
+ #items{grid-template-columns:repeat(3,minmax(0,1fr));max-height:96px;overflow:auto}
+ .item{font-size:10px;padding:7px}.item strong{font-size:10px}
+ .workspace{height:auto;padding:9px}
+ #compare{grid-template-columns:1fr;min-height:0}
+ .panel iframe{height:275px;min-height:275px}
+ .panel .placeholder{min-height:160px}
+ header{gap:7px}h1{font-size:14px}
+}
+</style></head><body>
+<header><a href="./dev-menu.html">← 開発メニュー</a><h1>全モンスター・召喚獣　ベースメッシュ選定</h1><span>現行3D ⇄ 実写候補 ⇄ 骨格と既存パーツ</span></header>
+<main>
+<aside>
+ <label>名前・ID検索<input id="search" type="search" placeholder="オオカミ、m001、召喚獣"></label>
+ <nav><button data-kind="monster" class="active">魔物50</button><button data-kind="summon">召喚獣57</button><button data-kind="all">全部</button></nav>
+ <div id="count"></div><div id="items"></div>
+</aside>
+<section class="workspace">
+ <div id="meta"><h2 id="name">選択中</h2><span class="flag" id="state">候補調査中</span><span class="flag" id="family"></span></div>
+ <p class="note">検索で見つけたモデルは<strong>品質の基準候補</strong>です。外部サイトのモデル表示＝ゲームへ取り込み済み、ではありません。最終採用には商用権利・リグ・LOD・既存パーツの貫通を確認します。</p>
+ <p id="protect" class="note"></p>
+ <div id="compare">
+  <div class="panel"><div class="panelTitle">現行のゲームモデル <a id="currentLink" target="_blank" rel="noopener">全画面で確認</a></div><iframe id="currentFrame" loading="lazy" title="現在のゲーム3Dプレビュー"></iframe></div>
+  <div class="panel"><div class="panelTitle"><span id="candidateTitle">外部3D基準候補</span><button id="showSource" type="button">参考モデル表示</button></div>
+   <div id="candidatePlaceholder" class="placeholder">候補の3Dソースを選択すると、ここに比較表示できます。</div>
+   <iframe id="candidateFrame" title="外部3Dの基準候補" loading="lazy" style="display:none" referrerpolicy="origin"></iframe>
+   <canvas id="previewCanvas"></canvas>
+   <div class="links"><a id="candidateLink" target="_blank" rel="noopener noreferrer">配布元・3Dビューアを開く</a></div>
+  </div>
+ </div>
+ <div id="candidateDescription" class="note"></div>
+ <div id="candidates"></div>
+ <details open><summary>現在のパーツを載せ替える方針</summary><div id="parts"></div></details>
+ <details><summary>手持ちのGLBを立体で確認（端末内のみ）</summary>
+  <p class="note">配布元から取得した正規のGLBを読み込んで回転・拡大できます。端末内で確認し、ゲーム本編・GitHubへのアップロードはしません。</p>
+  <label>GLBファイル<input type="file" id="file" accept=".glb,model/gltf-binary"></label>
+  <div class="actions"><button type="button" id="backToSource">ソースの3D表示に戻す</button></div>
+  <div id="localBox" class="note"></div>
+ </details>
+ <div class="actions"><button id="save" type="button">このメッシュを採用候補に記録</button>
+  <button id="download" type="button">選定結果JSONを出力</button>
+  <button id="clear" type="button">この個体の選定を解除</button></div>
+ <div id="status" role="status">選定記録はこのブラウザーに保存されます。承認前のモデルを戦闘へ自動適用しません。</div>
+</section>
+</main>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
+<script type="module">
+import * as THREE from 'three';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+import {MONSTER_CATALOG,MONSTER_FAMILIES} from './src/monster-catalog.js';
+import {MONSTER_SUMMON_ENTRIES} from './src/monster-summon-registry.js';
+import {loadPersonalGLB} from './src/creature-external-runtime.js';
+const $=id=>document.getElementById(id);
+const SKETCH='https://sketchfab.com/models/';
+const SOURCE=Object.freeze({
+ wolf:[{name:'Dire Wolf Lite（第一候補）',url:'https://literock-studios.itch.io/direwolf-lite',license:'無料・商用利用可（配布規約に従う）',tris:'9,991 tris / 35 bones / 4 motions',quality:'PBR、2K、GLB。実ファイル未取込',kind:'candidate'},
+       {name:'Realistic Wolf 2.0（造形比較）',url:'https://sketchfab.com/3d-models/realistic-wolf-3d-model-20-demo-free-download-3a969e2c3bf544d48345685b0c1f59e2',embed:'3a969e2c3bf544d48345685b0c1f59e2',license:'無料デモは個人利用のみ・ゲーム使用不可',tris:'16,300 tris',quality:'毛並みと顔の品質目標のみ',kind:'reference'}],
+ wyvern:[{name:'Ashwing Drake Lite（第一候補）',url:'https://literock-studios.itch.io/ashwing-drake-lite',license:'無料・商用利用可（配布規約に従う）',tris:'11,992 tris / 61 bones / 6 motions',quality:'PBR、2K、GLB。翼と飛行の整合確認待ち',kind:'candidate'}],
+ dragon:[{name:'Ashwing Drake（翼を持つ竜の参考）',url:'https://literock-studios.itch.io/ashwing-drake-lite',license:'無料・商用利用可',tris:'11,992 tris',quality:'ワイバーン骨格。四足竜へそのまま流用しない',kind:'reference'}],
+ feline:[{name:'リアル猫科メッシュ（再選定）',url:'https://sketchfab.com/search?q=realistic%20panther%20rigged&type=models',license:'モデル別に要確認',tris:'不明',quality:'前後肢・尾・猫科頭骨に合う候補を選定中',kind:'search'}],
+ avian:[{name:'Animated Eagle（翼の参考）',url:'https://sketchfab.com/3d-models/animated-eagle-8fb150270adb45aa9653e857f3fa351b',embed:'8fb150270adb45aa9653e857f3fa351b',license:'CC BY・著作者表示必須',tris:'3,900 tris',quality:'翼骨格の参考。実写品質には未達',kind:'reference'}],
+ reptile:[{name:'Alligator Realistic（爬虫類頭骨の参考）',url:'https://sketchfab.com/3d-models/alligator-realistic-3d-model-demo-free-7d25e7522898418188d3783c53fbe72a',embed:'7d25e7522898418188d3783c53fbe72a',license:'無料デモの商用権利未確認・参照専用',tris:'31,000 tris',quality:'トカゲ骨格と完全一致しない',kind:'reference'}],
+ insect:[{name:'Realistic Dung Beetle（外観基準）',url:'https://sketchfab.com/3d-models/realistic-dung-beetle-3d-model-35847e17706e442ba2c3f3ba95b2b2dc',embed:'35847e17706e442ba2c3f3ba95b2b2dc',license:'CC BY・著作者表示必須',tris:'219,400 tris',quality:'形状は高精細だが軽量化とリグの検証が必要',kind:'candidate'}],
+ arachnid:[{name:'Widow Spider Rigged（アニメ基準）',url:'https://sketchfab.com/3d-models/spider-widow-rigged-animated-ik-bones-cf9ac4b7f65e4f7aa72b46a0249da489',embed:'cf9ac4b7f65e4f7aa72b46a0249da489',license:'CC BY・著作者表示必須',tris:'9,200 tris',quality:'8本脚・リグ付き。毛皮と質感は要比較',kind:'candidate'}],
+ aquatic:[{name:'Realistic Octopus（蛸・クラーケン限定）',url:'https://sketchfab.com/3d-models/octopus-with-textured-reddish-brown-skin-a6e8afbc35604438bbd4fba04e866025',embed:'a6e8afbc35604438bbd4fba04e866025',license:'CC BY・著作者表示必須',tris:'約200万 tris',quality:'高精細参考。Android用の再トポロジーと触手リグ必須',kind:'reference'}],
+ humanoid:[{name:'現行の共通人物GLB＋種族衣装',url:'./character-face.html',license:'既存ゲーム内モデル',tris:'人物メッシュ',quality:'顔の品質改善版を継承。別の人型へ無断置換しない',kind:'existing'}],
+ horse:[{name:'Rigged Horse（暫定候補）',url:'https://sketchfab.com/3d-models/free-to-use-low-poly-horse-527c570af430404ba8458d473db8cc20',embed:'527c570af430404ba8458d473db8cc20',license:'CC BY・著作者表示必須',tris:'7,700 tris',quality:'リグあり。造形品質は再選定が必要',kind:'reference'}]
+});
+const CUSTOM={
+ m012:'griffon',m013:'phoenix',m015:'humanoid',m018:'hydra',m020:'leviathan',m023:'mantis',m030:'spiderqueen',
+ m046:'slime',m048:'seaserpent',m050:'seabeast'
+};
+const SEARCH_TERMS={griffon:'realistic griffin rigged',phoenix:'realistic phoenix rigged',hydra:'realistic hydra creature 3d',
+ leviathan:'realistic leviathan sea monster',mantis:'realistic mantis 3d rigged',spiderqueen:'realistic spider queen',
+ slime:'realistic slime shader 3d',seaserpent:'realistic sea serpent rigged',seabeast:'realistic sea monster rigged'};
+const PARTS={
+ beast:'狼の首毛・牙・爪・尾・額角・属性毛色を流用。頭部/脚の骨格に合わせて再配置。',
+ feline:'耳・尾・牙・爪・縞/雪毛と装飾。脚と頭骨が違うモデルへ流用しない。',
+ avian:'既存の翼・風切羽・尾羽・脚爪・頭部装飾を骨に固定。飛行モーションを検査。',
+ reptile:'鱗・角・背棘・大顎・長尾・炎/氷/水エフェクトを既存配置から引き継ぐ。',
+ insect:'甲殻・大顎・角・複眼・鎌・羽。6脚と節ごとの骨格を必須とする。',
+ arachnid:'8脚・鋏角・毒牙・糸・腹部装甲を保存。股節アンカーに追従させる。',
+ undead:'人間の顔・手足と骨格を維持し、包帯・鎧・武器・骨・衣装だけを品質向上。',
+ golem:'人間型骨格の接続を保ち、岩石・青銅・クリスタル・鎧・巨腕の装甲を再利用。',
+ fiend:'人間型素体と角・翼・尾・鎧・魔槍・化粧を個別ボーンへフィット。',
+ aquatic:'水棲の触手・鰭・吸盤・甲羅・尾・装飾を流用。蛸と蛇を同じメッシュにしない。'
+};
+const summonIds=['wolf','wyvern','dragon','elder_dragon','dragon_lord','forest_archer','seraph_guardian'];
+const UNIQUE_LABELS=['灰狼','飛竜','古竜','天竜','竜王','森の精霊弓士','光翼の守護天使'];
+const items=[
+ ...MONSTER_CATALOG.map(m=>({id:m.id,name:m.name,family:m.family,kind:'monster',monster:m})),
+ ...MONSTER_SUMMON_ENTRIES.map(s=>({id:s.id,name:s.name,family:s.family,kind:'summon',monster:MONSTER_CATALOG.find(m=>m.id===s.monsterId)})),
+ ...summonIds.map((id,i)=>({id,name:UNIQUE_LABELS[i],family:id==='wolf'?'beast':id==='forest_archer'||id==='seraph_guardian'||id==='dragon_lord'?'fiend':'reptile',kind:'summon'})),
+ {id:'horse',name:'軍馬',family:'beast',kind:'summon'}];
+const protectedIds=new Set(['m005','m006','summon_m005','summon_m006']);
+let filter='monster',selected='m001',sourceIndex=0,showing=false,localHandle=null;
+const KEY='hai-gin-real-mesh-selection-v1';
+let saved={};try{saved=JSON.parse(localStorage.getItem(KEY)||'{}')||{}}catch{saved={}}
+function candidateFor(item){
+ const mid=item.monster?.id||item.id.replace(/^summon_/,'');
+ if(mid==='m001'||mid==='m002'||mid==='m003'||mid==='m004'||mid==='m005'||item.id==='wolf')return SOURCE.wolf;
+ if(item.id==='wyvern')return SOURCE.wyvern;
+ if(item.id==='dragon'||item.id==='elder_dragon'||item.id==='dragon_lord')return SOURCE.dragon;
+ if(item.id==='horse')return SOURCE.horse;
+ if(item.id==='forest_archer'||item.id==='seraph_guardian')return SOURCE.humanoid;
+ if(['undead','golem','fiend'].includes(item.family)||CUSTOM[mid]==='humanoid')return SOURCE.humanoid;
+ const special=CUSTOM[mid];
+ if(special){
+  return [{name:'専用の'+special+'メッシュを再選定',url:'https://sketchfab.com/search?q='+encodeURIComponent(SEARCH_TERMS[special]||special)+'&type=models',license:'個別ライセンス未確認',tris:'未選定',quality:'他の種族の骨格を流用せず、専用モデルで比較',kind:'search'}];
+ }
+ if(item.family==='aquatic'&&mid!=='m047'&&mid!=='m049')return [{
+  name:'水棲'+item.name+'の専用メッシュを選定',url:'https://sketchfab.com/search?q='+encodeURIComponent('realistic '+item.name+' aquatic 3d')+'&type=models',license:'個別ライセンス未確認',tris:'未選定',quality:'蛸・蛇・魚の骨格混用を防止',kind:'search'}];
+ return SOURCE[item.family]||SOURCE.humanoid;
+}
+function currentUrl(item){
+ return item.kind==='monster'?'./monster-manager.html?monster='+item.id+'&v=mesh-baseline-1':
+  './summon-showcase.html?summon='+item.id+'&v=mesh-baseline-1';
+}
+function allVisible(){
+ const q=$('search').value.trim().toLowerCase();
+ return items.filter(x=>(filter==='all'||x.kind===filter)&&
+  (!q||(x.id+x.name+x.family+(MONSTER_FAMILIES[x.family]||'')).toLowerCase().includes(q)));
+}
+function listRender(){
+ const visible=allVisible();
+ $('count').textContent=visible.length+'件 / モンスター50 + 召喚獣57 + 軍馬1';
+ const el=$('items');el.replaceChildren();
+ for(const item of visible){
+  const b=document.createElement('button');b.type='button';b.className='item';
+  b.setAttribute('aria-pressed',String(item.id===selected));
+  const active=Object.hasOwn(saved,item.id)?' ● 選定中':'';
+  const protectedNote=protectedIds.has(item.id)?' / 保護':'';
+  b.innerHTML='<strong></strong><small></small>';
+  b.firstChild.textContent=item.name;
+  b.lastChild.textContent=item.id+active+protectedNote;
+  b.onclick=()=>{selected=item.id;sourceIndex=0;showing=false;render();};
+  el.appendChild(b);
+ }
+}
+function render(){
+ const item=items.find(x=>x.id===selected)||items[0];
+ const choices=candidateFor(item);
+ sourceIndex=Math.min(sourceIndex,choices.length-1);
+ const c=choices[sourceIndex];
+ $('name').textContent=item.name+' / '+item.id;
+ $('family').textContent=MONSTER_FAMILIES[item.family]||item.family;
+ $('state').textContent=Object.hasOwn(saved,item.id)?'候補保存済み（端末のみ）':'選定・比較中';
+ $('protect').textContent=protectedIds.has(item.id)?
+  '保護対象：PR #345 / #346由来モデルは変更しません。ここでできるのは候補の閲覧・比較のみ。':'';
+ $('currentLink').href=currentUrl(item);
+ $('currentFrame').src=currentUrl(item);
+ const cards=$('candidates');cards.replaceChildren();
+ choices.forEach((s,index)=>{
+  const el=document.createElement('div');el.className='source';
+  const name=document.createElement('b');name.textContent=(index===sourceIndex?'◉ ':'○ ')+s.name;el.appendChild(name);
+  const desc=document.createElement('small');desc.textContent=s.license+' / '+s.tris+' / '+s.quality;el.appendChild(desc);
+  const b=document.createElement('button');b.textContent='この候補を比較';b.onclick=()=>{
+   sourceIndex=index;showing=true;renderCandidate();listRender();};el.appendChild(b);
+  const a=document.createElement('a');a.textContent=' 配布元';a.href=s.url;a.target='_blank';a.rel='noopener noreferrer';el.appendChild(a);
+  cards.appendChild(el);
+ });
+ $('parts').textContent=(PARTS[item.family]||'既存の種族パーツを保護。')+' アンカー不一致・貫通・UV破損を修正し、リグ・LOD・アニメを確認後のみ本編へ採用する。';
+ $('candidateDescription').textContent='選択中：'+c.name+'｜'+c.quality+'｜'+c.license;
+ renderCandidate();
+ listRender();
+}
+function renderCandidate(){
+ const item=items.find(x=>x.id===selected),c=candidateFor(item)[sourceIndex];
+ $('candidateTitle').textContent=c.name;
+ $('candidateLink').href=c.url;$('candidateLink').textContent=c.kind==='search'?'検索結果を開く':'配布元・3Dビューアを開く';
+ $('candidateFrame').style.display='none';
+ $('previewCanvas').style.display='none';$('candidatePlaceholder').style.display='';
+ if(localHandle){localHandle.dispose();localHandle=null;}
+ $('localBox').style.display='none';
+ $('candidateFrame').src='about:blank';
+ if(c.embed&&showing){
+  $('candidateFrame').src=SKETCH+c.embed+'/embed?autostart=0&ui_infos=0&ui_controls=1';
+  $('candidateFrame').style.display='block';$('candidatePlaceholder').style.display='none';
+ }else if(showing){
+  $('candidatePlaceholder').textContent='この候補は配布元のリンクで確認してください。GLBを入手できたら「手持ちのGLBを立体で確認」から同じ画面で回せます。';
+ }else{
+  $('candidatePlaceholder').textContent='「参考モデル表示」を押すと、候補の3Dプレビューを開きます。外部デモは非商用の場合があるため、表示とゲーム採用は別です。';
+ }
+}
+$('showSource').onclick=()=>{showing=true;renderCandidate();};
+$('backToSource').onclick=()=>{renderCandidate();};
+$('file').onchange=async event=>{
+ const file=event.target.files?.[0];if(!file)return;
+ try{
+  if(localHandle){localHandle.dispose();localHandle=null;}
+  const handle=await loadPersonalGLB(file,{id:selected,targetHeight:2.5});localHandle=handle;
+  $('candidateFrame').style.display='none';$('candidateFrame').src='about:blank';
+  $('candidatePlaceholder').style.display='none';$('previewCanvas').style.display='block';
+  $('localBox').style.display='block';
+  $('localBox').textContent='読み込み完了：'+file.name+' / アニメ '+handle.clips.join('・');
+  previewScene.add(handle.root);previewCamera.position.set(3.4,2.4,5.2);previewControls.target.set(0,1.3,0);previewControls.update();
+ }catch(error){$('status').textContent='GLB読み込み失敗：'+error.message;renderCandidate();}
+};
+$('save').onclick=()=>{
+ const item=items.find(x=>x.id===selected),c=candidateFor(item)[sourceIndex];
+ if(protectedIds.has(item.id)){ $('status').textContent='PR保護対象は変更・選定登録せず閲覧のみ可能です。';return;}
+ saved[selected]={id:selected,sourceName:c.name,url:c.url,license:c.license,kind:c.kind,
+  state:'candidate-review-only',savedAt:new Date().toISOString(),partsTransferred:false,battleEnabled:false};
+ localStorage.setItem(KEY,JSON.stringify(saved));$('status').textContent='候補を端末内に記録しました。本編やGitHubへの反映ではありません。';
+ render();
+};
+$('clear').onclick=()=>{delete saved[selected];localStorage.setItem(KEY,JSON.stringify(saved));render();};
+$('download').onclick=()=>{
+ const payload={schema:'hai-gin/real-mesh-review/v1',createdAt:new Date().toISOString(),
+  notice:'Candidate selection only; no GLB imported, no combat actor replaced',
+  selections:saved};
+ const b=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
+ const url=URL.createObjectURL(b);const a=document.createElement('a');a.href=url;a.download='hai-gin-real-mesh-review.json';a.click();
+ setTimeout(()=>URL.revokeObjectURL(url),1000);
+};
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{
+ filter=b.dataset.kind;document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('active',x===b));
+ const view=allVisible();if(!view.some(x=>x.id===selected))selected=view[0]?.id||'m001';
+ sourceIndex=0;showing=false;render();
+});
+$('search').addEventListener('input',listRender);
+const previewScene=new THREE.Scene();previewScene.background=new THREE.Color(0x0c1a28);
+const previewCamera=new THREE.PerspectiveCamera(45,1,.05,1000);
+const renderer=new THREE.WebGLRenderer({canvas:$('previewCanvas'),antialias:true});
+const previewControls=new OrbitControls(previewCamera,$('previewCanvas'));
+previewControls.enableDamping=true;
+previewScene.add(new THREE.HemisphereLight(0xeaf4ff,0x273944,2.1));
+const keyLight=new THREE.DirectionalLight(0xffeecc,3.0);keyLight.position.set(3,8,5);previewScene.add(keyLight);
+const grid=new THREE.GridHelper(10,10,0x486475,0x284456);previewScene.add(grid);
+const clock=new THREE.Clock();
+function frame(){
+ requestAnimationFrame(frame);
+ if($('previewCanvas').style.display==='block'){
+  const w=$('previewCanvas').clientWidth,h=$('previewCanvas').clientHeight;
+  if(w>0&&h>0){renderer.setSize(w,h,false);previewCamera.aspect=w/h;previewCamera.updateProjectionMatrix();}
+  localHandle?.update(clock.getDelta());previewControls.update();renderer.render(previewScene,previewCamera);
+ }else clock.getDelta();
+}
+render();frame();
+</script></body></html>
