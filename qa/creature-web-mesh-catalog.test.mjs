@@ -34,7 +34,7 @@ test('published download links and licenses are real catalog entries, no guessed
 });
 test('high-poly anatomical scans stay references: never direct GLB imports',()=>{
  assert.equal(validateAnatomySources(),true);
- assert.equal(Object.keys(WEB_CREATURE_ANATOMY_REFERENCES).length,12);
+ assert.equal(Object.keys(WEB_CREATURE_ANATOMY_REFERENCES).length,13);
  for(const [id,ref] of Object.entries(WEB_CREATURE_ANATOMY_REFERENCES)){
   assert.equal(ref.rigVerified,false,id);
   assert.equal('downloadUrl' in ref,false,id);
@@ -43,7 +43,7 @@ test('high-poly anatomical scans stay references: never direct GLB imports',()=>
   assert.equal(eligibleCreature(id),false,id);
   assert.throws(()=>setAdoptedCreatureMesh('m026',id,storage()));
  }
- for(const id of ['s-spider','s-salamander','s-octopus','s-snake','s-lizard']){
+ for(const id of ['s-spider','s-salamander','s-octopus','s-snake','s-lizard','s-slime-cc0']){
   assert.ok(WEB_CREATURE_ANATOMY_REFERENCES[id]);
  }
 });
