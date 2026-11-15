@@ -4,7 +4,7 @@ import {MONSTER_CATALOG} from '../src/monster-catalog.js';
 import {HUMAN_MONSTER_IDS} from '../src/monster-character-cosplay-manifest.js';
 import {NONHUMAN_MONSTER_IDS,NONHUMAN_EXTRA_SUMMON_IDS,
  eligibleCreature,baseMonsterId,recommendedMeshSources,adoptedCreatureMesh,
- setAdoptedCreatureMesh,MESH_ADOPTION_STORAGE_KEY}
+ setAdoptedCreatureMesh,MESH_ADOPTION_STORAGE_KEY,DEFAULT_CREATURE_MESHES}
  from '../src/creature-mesh-adoption.js';
 
 function memoryStorage(){
@@ -24,7 +24,10 @@ test('nonhuman species and summon mirrors cover every nonhuman catalog entry',()
 });
 test('adoption is explicit, persisted, isolated per species and reversible',()=>{
  const storage=memoryStorage();
- assert.equal(adoptedCreatureMesh('m001',storage),'legacy');
+ assert.equal(adoptedCreatureMesh('m001',storage),'r-wolf');
+ assert.equal(adoptedCreatureMesh('summon_m001',storage),'r-wolf');
+ assert.equal(adoptedCreatureMesh('wolf',storage),'r-wolf');
+ assert.equal(DEFAULT_CREATURE_MESHES.m001,'r-wolf');
  setAdoptedCreatureMesh('m001','q022',storage);
  assert.equal(adoptedCreatureMesh('m001',storage),'q022');
  assert.equal(adoptedCreatureMesh('summon_m001',storage),'q022');
@@ -61,4 +64,25 @@ test('existing protected original animal geometry is not modified by candidate m
  assert.ok(Array.isArray(recommendedMeshSources('m005')));
  assert.ok(Array.isArray(recommendedMeshSources('m006')));
  assert.equal(recommendedMeshSources('m026').length,0);
+});
+
+test('shipped r-wolf defaults yield to deliberate legacy choices, including across reloads',()=>{
+ const storage=memoryStorage();
+ assert.equal(adoptedCreatureMesh('m001',storage),'r-wolf');
+ assert.equal(adoptedCreatureMesh('summon_m001',storage),'r-wolf');
+ assert.equal(adoptedCreatureMesh('wolf',storage),'r-wolf');
+ setAdoptedCreatureMesh('m001','legacy',storage);
+ assert.equal(adoptedCreatureMesh('m001',storage),'legacy');
+ assert.equal(adoptedCreatureMesh('summon_m001',storage),'legacy');
+ setAdoptedCreatureMesh('m001','r-wolf',storage);
+ assert.equal(adoptedCreatureMesh('m001',storage),'r-wolf');
+ setAdoptedCreatureMesh('summon_m001','legacy',storage);
+ assert.equal(adoptedCreatureMesh('summon_m001',storage),'legacy');
+ assert.equal(adoptedCreatureMesh('m001',storage),'r-wolf');
+ setAdoptedCreatureMesh('wolf','legacy',storage);
+ assert.equal(adoptedCreatureMesh('wolf',storage),'legacy');
+ assert.equal(adoptedCreatureMesh('m001',storage),'r-wolf');
+ const persisted=JSON.parse(storage.getItem(MESH_ADOPTION_STORAGE_KEY));
+ assert.equal(persisted.wolf,'legacy');
+ assert.equal(persisted.summon_m001,'legacy');
 });
