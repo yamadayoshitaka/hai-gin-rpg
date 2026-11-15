@@ -7,6 +7,11 @@ import {MONSTER_CATALOG,MONSTER_BY_ID} from './monster-catalog.js';
 import {HUMAN_MONSTER_IDS} from './monster-character-cosplay-manifest.js';
 
 export const MESH_ADOPTION_STORAGE_KEY='hai-gin.creature-mesh-adoption.v1';
+// Shipped visual baseline. These three distinct actors share the same source
+// mesh, but keep separate reversible local overrides.
+export const DEFAULT_CREATURE_MESHES=Object.freeze({
+ m001:'r-wolf',summon_m001:'r-wolf',wolf:'r-wolf'
+});
 export const NONHUMAN_MONSTER_IDS=Object.freeze(
  MONSTER_CATALOG.filter(m=>!HUMAN_MONSTER_IDS.includes(m.id)).map(m=>m.id));
 export const NONHUMAN_EXTRA_SUMMON_IDS=Object.freeze([
@@ -62,7 +67,12 @@ export function creatureMeshAdoptions(storage=globalThis.localStorage){
 export function adoptedCreatureMesh(id,storage=globalThis.localStorage){
  if(!eligibleCreature(id))return 'legacy';
  const map=stored(storage);
- const choice=map[id]??(String(id).startsWith('summon_')?map[id.slice(7)]:null);
+ // A saved "legacy" is an intentional rollback; never silently
+ // reapply the shipped r-wolf default after the user chooses the old mesh.
+ const own=Object.hasOwn(map,id)?map[id]:undefined;
+ const parent=String(id).startsWith('summon_')?id.slice(7):null;
+ const inherited=parent&&Object.hasOwn(map,parent)?map[parent]:undefined;
+ const choice=own??inherited??DEFAULT_CREATURE_MESHES[id]??'legacy';
  return typeof choice==='string'&&sourceId.test(choice)?choice:'legacy';
 }
 export function setAdoptedCreatureMesh(id,source,storage=globalThis.localStorage){
@@ -70,10 +80,11 @@ export function setAdoptedCreatureMesh(id,source,storage=globalThis.localStorage
  if(source!=='legacy'&&!sourceId.test(source))throw Error('未登録の外部モデル: '+source);
  if(!storage?.setItem)throw Error('端末ストレージへ保存できません');
  const map=stored(storage);
- // A summoned copy can explicitly keep its ORIGINAL form even when its
- // parent bestiary species has a different adopted appearance.
+ // Explicit rollback persists even when a future build ships r-wolf
+ // as its default. Ordinary non-default species keep the compact storage.
  if(source==='legacy'){
-  if(String(id).startsWith('summon_'))map[id]='legacy';
+  if(Object.hasOwn(DEFAULT_CREATURE_MESHES,id)||String(id).startsWith('summon_'))
+   map[id]='legacy';
   else delete map[id];
  }else map[id]=source;
  storage.setItem(MESH_ADOPTION_STORAGE_KEY,JSON.stringify(map));
