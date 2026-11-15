@@ -204,6 +204,15 @@ export function v63WigScalpTone(x,y,z,box){
   .007*Math.sin(u*17-w*13+v*29);
  return THREE.MathUtils.clamp(growth+flow,.87,1.03);
 }
+/** Seam-safe root pigment: match the opaque scalp on the first hair station,
+ * then gradually restore individual strand tones, with no extra geometry. */
+export function v67ScalpMatchedLockTone(point,box,t,seed,layer=0){
+ const u=THREE.MathUtils.clamp(t,0,1);
+ const scalp=v63WigScalpTone(point.x,point.y,point.z,box);
+ const strand=v63WigLockTone(u,seed,layer);
+ return THREE.MathUtils.lerp(scalp,strand,
+  THREE.MathUtils.smoothstep(u,0,.30));
+}
 export function v63WigLockTone(t,seed,layer=0){
  const u=THREE.MathUtils.clamp(t,0,1);
  const growth=.89+.115*THREE.MathUtils.smoothstep(u,0,.38);
@@ -833,7 +842,8 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    const t=j/segments,shaded=rootColor.clone().lerp(tips,.22+.51*t);
    for(let k=0;k<ribbonStride;k++){
     const at=(base+j*ribbonStride+k)*3;
-    const layer=Math.floor(k/2),tone=v63WigLockTone(t,i,layer);
+    const layer=Math.floor(k/2);
+     const tone=v67ScalpMatchedLockTone(wigRoot,box,t,i,layer);
     colors[at]=shaded.r*tone;colors[at+1]=shaded.g*tone;
     colors[at+2]=shaded.b*tone;
    }
@@ -862,6 +872,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  locks.userData.rootedOnRealScalp=true;
  locks.userData.v63DirectionalFiberPigment=true;
  locks.userData.v63ReducedPlasticSpecular=true;
+ locks.userData.v67RootToneMatchedToScalp=true;
  locks.userData.lockCount=lockCount;
  root.add(locks);
  // Fuller salon silhouette: broaden body/crown locks; preserve feather-fine
