@@ -59,15 +59,17 @@ for(const [family,x] of Object.entries(STRATEGY_TREE)){
 assert.equal(STRATEGY_METHODS.prevent_heal.debuff.stat,'heal_block');
 assert.equal(STRATEGY_METHODS.prevent_buff.debuff.stat,'buff_block');
 const candidates={allowed:['charge','weaken'],squads:[
- {id:'sword',jobs:['sword'],allowed:['charge']},
- {id:'mage',jobs:['mage'],allowed:['charge','weaken']},
- {id:'ninja',jobs:['ninja'],allowed:['charge','weaken']}
+ {id:'sword',soldiers:2,jobs:['sword'],allowed:['charge']},
+ {id:'mage',soldiers:3,jobs:['mage'],allowed:['charge','weaken']},
+ {id:'ninja',soldiers:5,jobs:['ninja'],allowed:['charge','weaken']}
 ]};
 const plan=planStrategyDistribution(candidates,['sword','mage','ninja'],
  ['melee_focus','cut_attack','cut_speed']);
 assert.equal(plan.total,3);
 assert.equal(plan.unmatched.length,0);
 assert.equal(plan.rows.reduce((n,x)=>n+x.percent,0),100);
+assert.equal(plan.totalSoldiers,10);
+assert.deepEqual(plan.rows.map(x=>x.percent),[20,30,50],'percentages are weighted by actual troop counts');
 assert.equal(new Set(plan.rows.flatMap(x=>x.squadIds)).size,3,'a physical squad is not duplicated');
 
 const sim=Object.create(MassBattleGridSimulation.prototype);
