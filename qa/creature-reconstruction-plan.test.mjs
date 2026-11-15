@@ -54,25 +54,28 @@ test('previously protected old wolf and panther stay excluded from all rewrite w
   assert.equal(item.anatomyReferences.length,0);
  }
 });
-test('free GLB candidates never replace species-specialized skeletons or CC0 scans',()=>{
- for(const id of ['m008','m014','m021','m022','m023','m024','m025']){
+test('realistic anatomy references are separated from approved rigged models',()=>{
+ for(const id of ['m008','m021','m022','m023','m024','m025']){
   const item=CREATURE_RECONSTRUCTION_BY_ID[id];
-  assert.equal(item.stage,'candidate',id);
-  assert.ok(item.candidateSources.some(src=>src.startsWith('g-')),id);
+  assert.equal(item.stage,'anatomy',id);
+  assert.deepEqual(item.candidateSources,[],id);
+  assert.ok(item.anatomyReferences.length>0,id);
   assert.equal(item.baseMesh,'legacy',id);
  }
- for(const id of ['m012','m013','m016','m017','m018','m019','m020','m026','m027','m028','m029','m030','m047','m048','m049']){
+ for(const id of ['m012','m013','m016','m017','m018','m019','m020','m026','m027','m028','m029','m030','m046','m047','m048','m049']){
   const item=CREATURE_RECONSTRUCTION_BY_ID[id];
   assert.equal(item.stage,'anatomy',id);
   assert.equal(item.candidateSources.length,0,id);
   assert.ok(item.anatomyReferences.length>0,id);
  }
+ assert.equal(CREATURE_RECONSTRUCTION_BY_ID.m014.stage,'missing');
+ assert.ok(CREATURE_RECONSTRUCTION_BY_ID.m008.anatomyReferences.includes('w-lion'));
+ assert.ok(CREATURE_RECONSTRUCTION_BY_ID.m010.anatomyReferences.includes('w-tiger'));
  for(const id of ['m026','m027','m028','m029','m030'])
   assert.ok(CREATURE_RECONSTRUCTION_BY_ID[id].anatomyReferences.includes('s-spider'),id);
  assert.ok(CREATURE_RECONSTRUCTION_BY_ID.m047.anatomyReferences.includes('s-octopus'));
  assert.ok(CREATURE_RECONSTRUCTION_BY_ID.m019.anatomyReferences.includes('s-salamander'));
  assert.ok(CREATURE_RECONSTRUCTION_BY_ID.m016.anatomyReferences.includes('s-lizard'));
- assert.equal(CREATURE_RECONSTRUCTION_BY_ID.m046.stage,'anatomy');
  assert.ok(CREATURE_RECONSTRUCTION_BY_ID.m046.anatomyReferences.includes('s-slime-cc0'));
  for(let n=21;n<=25;n++){
   const id='m'+String(n).padStart(3,'0');
@@ -99,10 +102,10 @@ test('r-wolf is the only existing three-wolf adopted visual baseline',()=>{
   assert.equal(CREATURE_RECONSTRUCTION_BY_ID[id].baseMesh,'legacy',id);
   assert.deepEqual(CREATURE_RECONSTRUCTION_BY_ID[id].candidateSources,['r-wolf']);
  }
- assert.deepEqual(CREATURE_RECONSTRUCTION_BY_ID.horse.candidateSources,['g-horse']);
+ assert.deepEqual(CREATURE_RECONSTRUCTION_BY_ID.horse.candidateSources,[]);
  assert.equal(CREATURE_RECONSTRUCTION_BY_ID.horse.baseMesh,'legacy');
  assert.equal(CREATURE_RECONSTRUCTION_BY_ID.wyvern.candidateSources.length,0);
- assert.ok(CREATURE_RECONSTRUCTION_BY_ID.wyvern.anatomyReferences.includes('g-ptero'));
+ assert.ok(CREATURE_RECONSTRUCTION_BY_ID.wyvern.anatomyReferences.includes('s-dragon-low'));
  assert.equal(CREATURE_RECONSTRUCTION_BY_ID.dragon_lord.archetype,'dragon-lord');
  assert.equal(CREATURE_RECONSTRUCTION_BY_ID.seraph_guardian.archetype,'humanoid-angel');
 });
