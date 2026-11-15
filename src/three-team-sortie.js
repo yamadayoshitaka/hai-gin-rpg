@@ -125,6 +125,25 @@ const ownSquads=game=>(game?.campaign?.squads||[]).filter(s=>s.count>0&&String(s
 export const stageIsControlled=(game,stage)=>Boolean(stage?.id&&game?.completedStages?.includes(stage.id));
 export const allowedSortieSlots=(game,stage)=>stageIsControlled(game,stage)?allSlots:SORTIE_ENTRY_SLOTS;
 const blankTeam=id=>({id,slots:Array(SORTIE_SQUADS_PER_GROUP).fill(null),grid:Array(SORTIE_GRID_CELLS).fill(null),counts:{},divisions:{},captainId:null,formation:'balanced',tactics:[],deploymentSlot:SORTIE_ENTRY_SLOTS[id-1],initialOrder:'charge'});
+/** Normalize old free-layout saves as well: no rarity can bypass its ceiling. */
+function clampFreeTeam(team,squads){
+ const spec=formationTemplate('free'),byId=new Map(squads.map(x=>[String(x.id),x]));
+ const rarity={N:0,R:0,SR:0,SSR:0,UR:0};let total=0;
+ for(const raw of team.slots){
+  const id=String(raw||''),count=Math.trunc(Number(team.counts[id])||0);
+  if(!count)continue;
+  const tier=rarityOf(byId.get(id));
+  const keep=Math.max(0,Math.min(count,spec.rarityCaps[tier]-rarity[tier],spec.maxTroops-total));
+  if(keep){
+   team.counts[id]=keep;rarity[tier]+=keep;total+=keep;
+   team.divisions[id]=Math.min(team.divisions[id]||1,4,keep);
+  }else{
+   delete team.counts[id];delete team.divisions[id];
+   team.slots=team.slots.map(v=>String(v)===id?null:v);
+   team.grid=team.grid.map(v=>String(v)===id?null:v);
+  }
+ }
+}
 const teamOf=(game,id)=>game.sortiePlan?.teams?.find(t=>t.id===Number(id));
 const rarityScore=s=>({N:0,R:1,SR:2,SSR:3,UR:4})[s?.rarity]??0;
 
@@ -190,6 +209,7 @@ export function ensureSortiePlan(game){
   });
  }
  clampPlannedHeadcount(teams,sortiePlanningLimit(game));
+ for(const team of teams)if(team.formation===FREE_FORMATION)clampFreeTeam(team,sources);
  for(const team of teams)if(team.formation!==FREE_FORMATION&&sortieTeamCount(team)){
   // Older saves may contain job swaps; fixed presets always reconstruct the layout.
   rebuildNamedFormation(game,teams,team,team.formation,team.slots.filter(Boolean).length);
@@ -333,7 +353,13 @@ export function setSortieJobSlot(game,teamId,slotIndex,squadId){
  let available=source?source.count-elsewhere:0;
  const assignedTotal=game.sortiePlan.teams.reduce((n,t)=>n+sortieTeamCount(t),0);
  const replacing=previous?Number(team.counts[previous]||0):0;
- const budget=Math.max(0,sortiePlanningLimit(game)-assignedTotal+replacing);
+ const tier=rarityOf(source),oldRarity=previous?rarityOf(ownSquads(game).find(x=>String(x.id)===String(previous))):null;
+ const freeSpec=formationTemplate('free');
+ const tierCount=formationRarityCounts(team,ownSquads(game))[tier],
+  tierRoom=freeSpec.rarityCaps[tier]-tierCount+(oldRarity===tier?replacing:0);
+ const groupRoom=freeSpec.maxTroops-sortieTeamCount(team)+replacing;
+ const budget=Math.max(0,Math.min(sortiePlanningLimit(game)-assignedTotal+replacing,tierRoom,groupRoom));
+ if(sid&&(tierRoom<=0||groupRoom<=0))throw Error('自由陣形の'+tier+'または総人数上限です。');
  const donorAvailable=sid?game.sortiePlan.teams.some(t=>t!==team&&(t.counts[sid]||0)>0):false;
  if(sid&&Math.min(available,budget)<=0&&!donorAvailable)
   throw Error('ステージ出撃上限または保有兵数に空きがありません。先に人数を減らしてください。');
@@ -348,7 +374,7 @@ export function setSortieJobSlot(game,teamId,slotIndex,squadId){
   // transfer soldiers out of another group rather than cloning them.
   if(Math.min(available,budget)<=0){
    const donor=game.sortiePlan.teams.find(t=>t!==team&&(t.counts[sid]||0)>0);
-   const moved=Math.min(10,donor.counts[sid]);
+   const moved=Math.min(10,donor.counts[sid],tierRoom,groupRoom);
    donor.counts[sid]-=moved;
    if(!donor.counts[sid]){
     delete donor.counts[sid];delete donor.divisions[sid];
@@ -441,7 +467,7 @@ export function setSortieFormation(game,teamId,formation){
  ensureSortiePlan(game);
  const team=teamOf(game,teamId);
  if(!team||(formation!==FREE_FORMATION&&(!Object.hasOwn(SORTIE_FORMATIONS,formation)||SORTIE_FORMATIONS[formation].level>sortieLevel(game))))throw Error('この陣形は軍師レベルが不足しています。');
- if(formation===FREE_FORMATION){team.formation=formation;}
+ if(formation===FREE_FORMATION){team.formation=formation;clampFreeTeam(team,ownSquads(game));}
  else rebuildNamedFormation(game,game.sortiePlan.teams,team,formation,formationTemplate(formation).slots);
  if(!availableSortieOrders(game,teamId).includes(team.initialOrder))team.initialOrder='hold';
  return team;
