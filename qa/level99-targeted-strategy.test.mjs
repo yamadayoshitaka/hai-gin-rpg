@@ -28,6 +28,10 @@ assert.equal(divided.length,30);
 assert.ok(divided.every(u=>u.formationBuff.attack===.25));
 assert.ok(divided.every(u=>u.armyGroupId===1));
 assert.equal(divided.filter(u=>u.isStrategist).length,1,'only the main retains the protagonist');
+assert.equal(new Set(req.units.filter(u=>u.teamMainLeader).map(u=>u.squadId)).size,1,
+ 'a group has precisely one main squad even across several jobs');
+assert.ok(req.units.find(u=>u.isStrategist).teamMainLeader,'the protagonist stays with the main');
+assert.equal(Object.values(req.subdivisionMap).filter(row=>row.leaderHeldInMain).length,1);
 assert.equal(Object.keys(req.subdivisionMap).length,4,'3 knight platoons and 1 priest platoon');
 const strong=req.units.find(u=>u.sourceSquadId===1);
 assert.ok(strong.equipmentBuff.attack>=.25,'formation bonus is applied in the authoritative battle request');
