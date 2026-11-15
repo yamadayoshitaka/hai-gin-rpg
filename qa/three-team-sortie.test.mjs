@@ -86,6 +86,7 @@ assert.equal(sortieTeams(roster)[1].slots.filter(Boolean).length,1);
 assert.ok(availableSortieOrders(roster,1).includes('explore'),'job-only ninja/thief order');
 setSortieFormation(roster,1,'support');
 assert.ok(availableSortieOrders(roster,1).includes('explore'),'rear formation does not lock exploration');
+setSortieCount(roster,2,5,0);
 assert.throws(()=>setSortieCount(roster,1,5,1),/最大4隊/);
 setSortieJobSlot(roster,2,1,1);
 assert.equal(sortieTeams(roster)[1].slots[1],'1');
