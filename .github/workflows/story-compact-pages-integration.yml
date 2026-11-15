@@ -1,0 +1,22 @@
+name: Compact title and town Pages integration
+on:
+  pull_request:
+    paths:
+      - 'qa/real-game-c01-manga-integration.test.mjs'
+      - 'game.html'
+      - 'town-hub.html'
+      - 'src/story-compact-comic.js'
+      - '.github/workflows/story-compact-pages-integration.yml'
+permissions:
+  contents: read
+jobs:
+  integration:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify exact gender art and compact title/town event
+        run: node qa/real-game-c01-manga-integration.test.mjs
