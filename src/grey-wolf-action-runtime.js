@@ -8,35 +8,13 @@
  */
 import * as THREE from 'three';
 
-export const WOLF_ACTION_NAMES=Object.freeze([
- 'idle','walk','run','attack','roar','special','hit','defeat',
- 'guard','dodge','leap'
-]);
-const LIMIT=Object.freeze({
- attack:1.1,roar:1.45,special:1.5,hit:.6,guard:.9,dodge:.75,leap:.9,
- idle:Infinity,walk:Infinity,run:Infinity,defeat:Infinity
-});
-const clean=s=>String(s||'').toLowerCase().replace(/[^a-z0-9]/g,'');
-const hasClip=(clips,expr)=>clips.some(n=>expr.test(clean(n)));
-export function resolveWolfAction(clips,action){
- const names=Array.isArray(clips)?clips:[];
- const known=WOLF_ACTION_NAMES.includes(action)?action:'idle';
- if(known==='defeat')return {action:known,sourceAction:
-   hasClip(names,/death|defeat|die|sleep/)?'defeat':'idle',
-   procedural:'defeat'};
- if(known==='attack'||known==='roar'||known==='special')
-  return {action:known,sourceAction:
-   hasClip(names,/rrar|roar|attack|bite|growl/)?'roar':'idle',
-   procedural:known};
- if(known==='walk'||known==='run')
-  return {action:known,sourceAction:
-   hasClip(names,known==='run'?/run|sprint|gallop/:/walk|trot/)?
-    known:'idle',procedural:known};
- return {action:known,sourceAction:'idle',procedural:known};
-}
+import {WOLF_ACTION_LIMITS,resolveWolfAction}
+ from './grey-wolf-action-contract.js';
+
+// Re-export the pure action resolver for tooling and consumer inspectors.
+export {resolveWolfAction} from './grey-wolf-action-contract.js';
 
 const X=new THREE.Vector3(1,0,0);
-const ZERO=new THREE.Quaternion();
 const PREVIOUS=new THREE.Quaternion();
 const DELTA=new THREE.Quaternion();
 const IRIS_ACTION_PULSE=Object.freeze({attack:.10,roar:.14,special:.22,hit:.035});
@@ -115,13 +93,13 @@ export function installGreyWolfActions(handle){
   }
   nativeUpdate(seconds);
   elapsed+=seconds;
-  if(current!=='defeat'&&elapsed>LIMIT[current]){
+  if(current!=='defeat'&&elapsed>WOLF_ACTION_LIMITS[current]){
    setAction('idle'); // Reset one-shot attack, roar or hit to natural IDLE.
   }
   const a=current,t=elapsed;
   const walking=a==='walk',running=a==='run',moving=walking||running;
   if(moving)phase+=seconds*(running?11.8:7.1);
-  const pulse=Math.sin(Math.PI*Math.min(1,t/Math.max(.001,LIMIT[a]||1)));
+  const pulse=Math.sin(Math.PI*Math.min(1,t/Math.max(.001,WOLF_ACTION_LIMITS[a]||1)));
   const attack=a==='attack'||a==='roar'||a==='special';
   const hit=a==='hit',fall=a==='defeat';
   // Pivot motion is cosmetic. Collision/hitboxes and root world position
