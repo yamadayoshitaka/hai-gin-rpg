@@ -1,0 +1,61 @@
+{
+  "kind": "CLOUDFLARE_REAL_WEBP_REVIEW_CANDIDATE_NOT_APPROVED",
+  "shotKey": "c01-s04|post-victory|male|c01-s04-m16",
+  "stageId": "c01-s04",
+  "edition": "post-victory",
+  "gender": "male",
+  "panelId": "c01-s04-m16",
+  "screenplayText": "軍師は確認された戦果を記録し、残る危険がないか調べた。",
+  "visibleActorIds": [
+    "lucia",
+    "iris"
+  ],
+  "actualReferenceImagesAttached": [
+    {
+      "actorId": "lucia",
+      "source": "assets/story/characters/lucia/master.webp",
+      "originalSha256": "87005a46d3b4a23714a25f1f9b2d46fee9a1ce3c6b5af0be78f85a1f1fd2b411",
+      "submittedSha256": "91344ba790293c03406ca1804f0360d135b0015aa75cc5b68d7904fc72de1173",
+      "actualBytes": 322498,
+      "pixels": [
+        439,
+        480
+      ]
+    },
+    {
+      "actorId": "iris",
+      "source": "assets/story-cinema/cast/iris.webp",
+      "originalSha256": "6b9b49a242f75b39abd8c6ab2084ce50592b8d98c73443a360ab06e041ceadea",
+      "submittedSha256": "1393acc01d44b7907169c469d36fc47844e5ccc1b305c5b4f67f0501470d6741",
+      "actualBytes": 193906,
+      "pixels": [
+        329,
+        480
+      ]
+    },
+    {
+      "actorId": "style_benchmark",
+      "source": "assets/story/chapters/c01/panels/c01-s01-m02-male.webp",
+      "originalSha256": "e70901415a751b576a00dcac34f93065051b3513b875f58546533f59ccfee71d",
+      "submittedSha256": "a6602427e7fde9cda0e99dd5511998682513154a72c029a190abd5e74786eca2",
+      "actualBytes": 247193,
+      "pixels": [
+        480,
+        270
+      ]
+    }
+  ],
+  "imageSha256": "d179ad10c6f5cd953a75f0aa1529e72f41e16b3bd2675ce11db92b0914224ff1",
+  "nativePixels": [
+    1024,
+    576
+  ],
+  "imageBytes": 203568,
+  "model": "@cf/black-forest-labs/flux-2-klein-4b",
+  "seed": 2146644717,
+  "promptSha256": "971e122b1bfde90b0e89f6e7c846f809f83023889907f924c231e9db1a2b10f7",
+  "estimatedNeurons": 120.31,
+  "visuallyApproved": false,
+  "formallyRegistered": false,
+  "gameDeployed": false
+}

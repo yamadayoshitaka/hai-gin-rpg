@@ -1,0 +1,36 @@
+{
+  "kind": "CLOUDFLARE_REAL_WEBP_REVIEW_CANDIDATE_NOT_APPROVED",
+  "shotKey": "c01-s04|post-victory|male|c01-s04-m6",
+  "stageId": "c01-s04",
+  "edition": "post-victory",
+  "gender": "male",
+  "panelId": "c01-s04-m6",
+  "screenplayText": "勝利が確認された。遺構の周囲の危険を除き、封蝋の出所へ調査を進める。",
+  "visibleActorIds": [],
+  "actualReferenceImagesAttached": [
+    {
+      "actorId": "style_benchmark",
+      "source": "assets/story/chapters/c01/panels/c01-s01-m02-male.webp",
+      "originalSha256": "e70901415a751b576a00dcac34f93065051b3513b875f58546533f59ccfee71d",
+      "submittedSha256": "a6602427e7fde9cda0e99dd5511998682513154a72c029a190abd5e74786eca2",
+      "actualBytes": 247193,
+      "pixels": [
+        480,
+        270
+      ]
+    }
+  ],
+  "imageSha256": "4229e3cd3bed5f63454a56adfe3884d896e9c21dd13ff720b30b3195c1f731eb",
+  "nativePixels": [
+    1024,
+    576
+  ],
+  "imageBytes": 152766,
+  "model": "@cf/black-forest-labs/flux-2-klein-4b",
+  "seed": 410893661,
+  "promptSha256": "2c2d5639b2cc929b708e38900a047190bdfdaafa04957d3531149ea545a317f3",
+  "estimatedNeurons": 109.57,
+  "visuallyApproved": false,
+  "formallyRegistered": false,
+  "gameDeployed": false
+}

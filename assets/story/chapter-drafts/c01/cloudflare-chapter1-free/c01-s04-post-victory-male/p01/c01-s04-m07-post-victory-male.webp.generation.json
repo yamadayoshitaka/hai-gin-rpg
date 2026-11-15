@@ -1,0 +1,61 @@
+{
+  "kind": "CLOUDFLARE_REAL_WEBP_REVIEW_CANDIDATE_NOT_APPROVED",
+  "shotKey": "c01-s04|post-victory|male|c01-s04-m7",
+  "stageId": "c01-s04",
+  "edition": "post-victory",
+  "gender": "male",
+  "panelId": "c01-s04-m7",
+  "screenplayText": "勝利の報告だけでは終われない。戦場に残された人々と記録を調べよう。",
+  "visibleActorIds": [
+    "garan",
+    "iris"
+  ],
+  "actualReferenceImagesAttached": [
+    {
+      "actorId": "garan",
+      "source": "assets/story-cinema/cast/garan.webp",
+      "originalSha256": "aeb457957485f89244eb0b4f270b72e4bf0670341f2444ac7f43299222075a8b",
+      "submittedSha256": "30c17f9c9f97f0f7a5f66ce2e6f03a711d2ebfb697de0c6a8a84545f9c96cc3c",
+      "actualBytes": 262661,
+      "pixels": [
+        329,
+        480
+      ]
+    },
+    {
+      "actorId": "iris",
+      "source": "assets/story-cinema/cast/iris.webp",
+      "originalSha256": "6b9b49a242f75b39abd8c6ab2084ce50592b8d98c73443a360ab06e041ceadea",
+      "submittedSha256": "1393acc01d44b7907169c469d36fc47844e5ccc1b305c5b4f67f0501470d6741",
+      "actualBytes": 193906,
+      "pixels": [
+        329,
+        480
+      ]
+    },
+    {
+      "actorId": "style_benchmark",
+      "source": "assets/story/chapters/c01/panels/c01-s01-m02-male.webp",
+      "originalSha256": "e70901415a751b576a00dcac34f93065051b3513b875f58546533f59ccfee71d",
+      "submittedSha256": "a6602427e7fde9cda0e99dd5511998682513154a72c029a190abd5e74786eca2",
+      "actualBytes": 247193,
+      "pixels": [
+        480,
+        270
+      ]
+    }
+  ],
+  "imageSha256": "c4dd162bc2675fd99e45875a91035a1b444ed3c2fa23a0c3e3599e94c7e8d665",
+  "nativePixels": [
+    1024,
+    576
+  ],
+  "imageBytes": 204516,
+  "model": "@cf/black-forest-labs/flux-2-klein-4b",
+  "seed": 834222177,
+  "promptSha256": "812d7384fdfd6db4369ff5453b8d654f6129b87f81fe3ead46194c5cf5f1d631",
+  "estimatedNeurons": 120.31,
+  "visuallyApproved": false,
+  "formallyRegistered": false,
+  "gameDeployed": false
+}
