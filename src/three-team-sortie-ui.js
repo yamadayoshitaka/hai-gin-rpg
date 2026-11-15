@@ -1,8 +1,8 @@
 import {
- SORTIE_FORMATIONS,SORTIE_GRID_CELLS,SORTIE_FORMATION_CELLS,sortieFormationStatus,ensureSortiePlan,sortieTeams,sortieSquadCap,sortieLevel,sortieFormationBuff,unlockedSortieFormations,sortieDebuffTypes,
+ SORTIE_FORMATIONS,SORTIE_GRID_CELLS,SORTIE_FORMATION_CELLS,sortieFormationStatus,sortieAllowedCells,sortieCellJobs,ensureSortiePlan,sortieTeams,sortieSquadCap,sortieLevel,sortieFormationBuff,unlockedSortieFormations,sortieDebuffTypes,
  sortieTeamCount,sortieTeamSquads,sortieAdjacentJobs,availableSortieOrders
 } from './three-team-sortie.js';
-import {FORMATION_ROLES,ROLE_NAMES} from './sortie-formation-logic.js';
+import {FORMATION_ROLES,ROLE_NAMES,FREE_FORMATION_NAME} from './sortie-formation-logic.js';
 import {STRATEGY_TREE,STRATEGY_METHODS,STORY_JOB_TO_STRATEGY_JOB} from './three-step-strategy-catalog.js';
 import {planStrategyDistribution} from './targeted-strategy-runtime.js';
 import {TACTICAL_ORDERS} from './tactical-command-descriptions.js';
@@ -34,19 +34,22 @@ export function renderThreeTeamPlanner({game,teamId=1,cellIndex=5,view='setup',j
   (captainChoices||'<small>ジョブを配置すると隊長を選べます</small>')+'</div></div>';
  const captainPage='<div class="sortieSubHead"><b>班の隊長を選択</b>'+back+'</div>'+
   '<div class="sortieCaptainChoices">'+(captainChoices||'<small>ジョブを先に配置してください</small>')+'</div>';
+ const allowedCells=sortieAllowedCells(game,team.id);
  const cells=Array.from({length:SORTIE_GRID_CELLS},(_,i)=>{
   const source=byId.get(String(team.grid?.[i])),count=source?team.counts[String(source.id)]||0:0;
-  const label=source?esc(source.job):'＋';
-  return button('data-sortie-cell="'+i+'" aria-label="'+(Math.floor(i/4)+1)+'行'+(i%4+1)+'列 '+(source?esc(source.job)+' '+count+'人':'空きマス')+'"',
-    '<span>'+label+'</span>'+(source?'<small>'+count+'人</small>':''),
+  const available=allowedCells.includes(i),jobs=sortieCellJobs(game,team.id,i);
+  const label=source?esc(source.job):!available?'🔒':'＋';
+  return button('data-sortie-cell="'+i+'" class="sortieCell '+(!available?'locked':team.formation==='free'?'free':'formation')+'" '+(!available?'disabled':'')+
+    ' aria-label="'+(Math.floor(i/4)+1)+'行'+(i%4+1)+'列 '+(!available?'陣形枠外':source?esc(source.job)+' '+count+'人':'配置可能・'+(jobs?jobs.join('・'):'自由'))+'"',
+    '<span>'+label+'</span>'+(source?'<small>'+count+'人</small>':available&&jobs?'<small>'+esc(jobs.slice(0,2).join('/'))+'</small>':''),
     i===pos&&view!=='setup' );
  }).join('');
  const main='<div class="sortieBar">'+
-  button('data-sortie-view="templates"','陣形：'+esc(status.valid?SORTIE_FORMATIONS[team.formation]?.name:'自由配置')+' ▾')+
+  button('data-sortie-view="templates"','陣形：'+esc(team.formation==='free'?FREE_FORMATION_NAME:SORTIE_FORMATIONS[team.formation]?.name||'標準陣形')+' ▾')+
   button('data-sortie-view="orders"','作戦 '+(team.tactics||[]).length+'件選択 ▸')+
   '</div><div class="sortieGridHint"><b>配置盤 4×4</b><small>敵陣 ↑　マスをタップしてジョブ選択</small></div>'+
   '<div class="sortieFormationGrid" role="group" aria-label="4×4のジョブ配置盤">'+cells+'</div>'+
-  '<div class="sortieGridFooter"><small>'+esc(status.reason)+' · 上限'+cap+'隊</small>'+
+  '<div class="sortieGridFooter"><small>配置可能 '+allowedCells.length+'枠・隊数上限'+cap+' · '+esc(status.reason)+'</small>'+
   button('data-sortie-view="count"','人数 ▸')+button('data-sortie-view="divisions"','分隊 ▸')+'</div>'+captainPanel;
  const templateIds=Object.keys(SORTIE_FORMATIONS);
  const pageCap=6,templatePages=Math.ceil(templateIds.length/pageCap);
@@ -54,21 +57,25 @@ export function renderThreeTeamPlanner({game,teamId=1,cellIndex=5,view='setup',j
  const templates='<div class="sortieSubHead"><b>陣形テンプレートを選択 · Lv.'+level+'</b>'+back+'</div>'+
   '<div class="sortieTemplateChoices">'+templateIds.slice(tPage*pageCap,tPage*pageCap+pageCap).map(id=>{const entry=SORTIE_FORMATIONS[id],unlocked=entry.level<=level;
    const preview=Object.fromEntries(SORTIE_FORMATION_CELLS[id].slice(0,4).map((cell,index)=>[cell,FORMATION_ROLES[id][index]]));
-   const grid=Array.from({length:16},(_,i)=>'<i class="'+(preview[i]?'occupied':'')+'" title="'+esc(ROLE_NAMES[preview[i]]||'空き')+'">'+(preview[i]?esc((ROLE_NAMES[preview[i]]||'').slice(0,1)):'')+'</i>').join('');
+   const extra=new Set(SORTIE_FORMATION_CELLS[id].slice(4,cap));
+   const grid=Array.from({length:16},(_,i)=>'<i class="'+(preview[i]?'occupied':extra.has(i)?'extra':'')+'" title="'+esc(ROLE_NAMES[preview[i]]|| (extra.has(i)?'Lvで追加解放':'空き'))+'">'+(preview[i]?esc((ROLE_NAMES[preview[i]]||'').slice(0,1)):extra.has(i)?'＋':'')+'</i>').join('');
    return button('data-sortie-formation="'+id+'" '+(!unlocked?'disabled':'') ,'<b>'+esc(entry.name)+'</b><small>Lv.'+entry.level+'解放'+(unlocked?'':' 🔒')+'</small><span class="sortieMiniGrid">'+grid+'</span><small>'+esc(FORMATION_ROLES[id].slice(0,4).map(x=>ROLE_NAMES[x]).join('/'))+'</small><small>攻撃'+Math.round((entry.attack||0)*100)+'% / 防御'+Math.round((entry.defense||0)*100)+'%</small>',team.formation===id);
-  }).join('')+'</div>'+
+  }).join('')+
+  button('data-sortie-formation="free"','<b>自由陣形</b><small>全レベル</small><span class="sortieMiniGrid freePreview">'+
+    Array.from({length:16},()=>'<i class="extra">＋</i>').join('')+'</span><small>第1〜3班で自由配置</small><small>陣形バフなし</small>',team.formation==='free')+'</div>'+
  '<div class="sortiePager">'+button('data-sortie-template-page="'+(tPage-1)+'" '+(!tPage?'disabled':''),'◀ 前')+
  '<small>'+(tPage+1)+' / '+templatePages+'</small>'+
  button('data-sortie-template-page="'+(tPage+1)+'" '+(tPage>=templatePages-1?'disabled':''),'次 ▶')+'</div>'+
- '<small class="sortieHint">色付き4マスが陣形の主要配置。指定職業と配置が一致しない場合は自由配置となり、陣形バフ・作戦は無効です。</small>';
+ '<small class="sortieHint">金色＝基本4枠、水色＝レベルで追加解放された枠。通常陣形は表示された指定枠に指定職業だけ配置できます。自由陣形は第1〜3班とも任意のマスに配置できますが、陣形バフ・専用作戦はありません。</small>';
  const pages=Math.max(1,Math.ceil(sources.length/6));
  const page=Math.max(0,Math.min(pages-1,Number(jobPage)||0));
  const jobs='<div class="sortieSubHead"><b>行'+(Math.floor(pos/4)+1)+'・列'+(pos%4+1)+'のジョブを選択</b>'+back+'</div>'+
   '<div class="sortieJobChoices">'+sources.slice(page*6,page*6+6).map(s=>{
    const sid=String(s.id),usedByOthers=teams.filter(t=>t.id!==team.id).reduce((n,t)=>n+(t.counts[sid]||0),0);
+   const needed=sortieCellJobs(game,team.id,pos),wrongJob=needed&&!needed.includes(s.job);
    const mine=team.counts[sid]||0,free=s.count-usedByOthers-mine;
-   return button('data-sortie-job="'+esc(s.id)+'"',
-    '<strong>'+esc(s.job)+'</strong><small>'+esc(s.rarity)+' · '+(mine?'配置済み '+mine+'人':free>0?'残り '+free+'人':'他班から移動')+'</small>',
+   return button('data-sortie-job="'+esc(s.id)+'" '+(wrongJob?'disabled':''),
+    '<strong>'+esc(s.job)+'</strong><small>'+esc(s.rarity)+' · '+(wrongJob?'枠の職業条件外':mine?'配置済み '+mine+'人':free>0?'残り '+free+'人':'他班から移動')+'</small>',
     sid===String(selectedSid));
   }).join('')+'</div>'+
   (pages>1?'<div class="sortiePager">'+button('data-sortie-job-page="'+(page-1)+'" '+(page===0?'disabled':''),'◀ 前')+
@@ -120,5 +127,5 @@ export function renderThreeTeamPlanner({game,teamId=1,cellIndex=5,view='setup',j
  return '<section class="sortiePlanner" aria-label="最大3班・Lvに応じた隊数・4×4配置">'+
   '<div class="sortieTop"><b>⚑ 最大3班・Lv.'+level+'（仮）</b><small>各班上限'+cap+'隊</small></div>'+
   groupButtons+(pagesByView[view]||main)+
-  '<small class="sortieHint">主人公Lv.'+level+'（暫定検証）・班ごと'+cap+'隊、3班合計最大'+(cap*3)+'隊。'+esc(status.reason)+'。有効バフ：攻撃'+Math.round(formBuff.attack*100)+'%／防御'+Math.round(formBuff.defense*100)+'%。分隊後も隊長の班に所属する限り維持。出撃地点は戦闘前に選択。</small></section>';
+  '<small class="sortieHint">主人公Lv.'+level+'（暫定検証）・班ごと最大'+cap+'隊（陣形枠限定）、3班合計最大'+(cap*3)+'隊。ステージごとに出撃人数制限があります。'+esc(status.reason)+'。有効バフ：攻撃'+Math.round(formBuff.attack*100)+'%／防御'+Math.round(formBuff.defense*100)+'%。分隊後も隊長の班に所属する限り維持。出撃地点は戦闘前に選択。</small></section>';
 }
