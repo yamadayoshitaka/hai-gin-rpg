@@ -49,6 +49,7 @@ button{cursor:pointer;min-height:40px}button:disabled{opacity:.5;cursor:not-allo
  <div id="warning">既存モデルは削除しません。選択するだけでは反映されません。</div>
  <button id="adopt" type="button" disabled>④ このモデルを採用</button>
  <div id="status" role="status">モデル一覧を読み込み中</div>
+ <a id="sourceCredit" href="#" target="_blank" rel="noopener noreferrer" style="font-size:11px;display:none"></a>
  <div id="actionGroup"><button data-action="idle" type="button">待機</button><button data-action="walk" type="button">歩行</button><button data-action="attack" type="button">攻撃</button></div>
  <a id="external" href="./monster-manager.html" target="_blank" rel="noopener">現行モデルを別画面で確認</a>
  <div id="notice">採用結果はこの端末のゲーム・召喚表示へ保存。別端末／他ユーザーへの公開は別途反映が必要です。</div>
@@ -65,7 +66,8 @@ import {MONSTER_SUMMON_ENTRIES} from './src/monster-summon-registry.js';
 import {createMonsterModel,disposeMonsterSculpture} from './src/monster-geometry.js';
 import {startMonsterAction,animateMonsterModel} from './src/monster-animation.js';
 import {buildCombatObjectGeometry} from './src/combat-creature-geometry.js';
-import {fetchCreatureRegistry,loadExternalCreature} from './src/creature-external-runtime.js';
+import {fetchCreatureRegistry} from './src/creature-external-runtime.js';
+import {REAL_CREATURE_MESH_SOURCES,loadCreatureMeshSource} from './src/creature-real-source-catalog.js';
 import {NONHUMAN_MONSTER_IDS,NONHUMAN_EXTRA_SUMMON_IDS,recommendedMeshSources,adoptedCreatureMesh,setAdoptedCreatureMesh,compatibleSourceWarning} from './src/creature-mesh-adoption.js';
 const $=id=>document.getElementById(id);
 const creatureIds=new Set(NONHUMAN_MONSTER_IDS);
@@ -89,7 +91,7 @@ for(const group of groups){
 const query=new URLSearchParams(location.search);
 const requested=query.get('monster')||query.get('summon')||query.get('species')||'m001';
 if(Array.from($('species').options).some(o=>o.value===requested))$('species').value=requested;
-let registry={entries:{}},handle=null,legacyActor=null,serial=0,ready=false,activeChoice='legacy',currentAction='idle';
+let registry={entries:{...REAL_CREATURE_MESH_SOURCES}},handle=null,legacyActor=null,serial=0,ready=false,activeChoice='legacy',currentAction='idle';
 let frameLast=performance.now();
 const scene=new THREE.Scene();scene.background=new THREE.Color(0x0c1d2b);
 const camera=new THREE.PerspectiveCamera(43,1,.01,2000);
@@ -171,10 +173,10 @@ function chooseSpecies(){
  const options=$('modelChoice');options.replaceChildren();
  options.add(new Option('現行モデル（保持・いつでも戻せる）','legacy'));
  const rec=new Set(recommendedMeshSources(id));
- for(const [name,keys] of [['おすすめの既存GLB',[...rec]],['その他の登録済みGLB（50種）',Object.keys(registry.entries).filter(k=>k.startsWith('q')&&!rec.has(k))]]){
+ for(const [name,keys] of [['推奨メッシュ（リアル候補・既存素材）',[...rec]],['他の実物メッシュ（外部リアル候補）',Object.keys(REAL_CREATURE_MESH_SOURCES).filter(k=>!rec.has(k))],['その他の登録済みCC0 GLB（50種）',Object.keys(registry.entries).filter(k=>k.startsWith('q')&&!rec.has(k))]]){
   const group=document.createElement('optgroup');group.label=name;
   for(const key of keys){
-   const entry=registry.entries[key];if(!entry||!key.startsWith('q'))continue;
+   const entry=registry.entries[key];if(!entry)continue;
    const op=new Option(entry.name+' ['+key+']'+(rec.has(key)?'・暫定推奨':''),key);
    group.append(op);
   }
@@ -203,11 +205,16 @@ function previewChoice(){
   savedStatus();return;
  }
  const entry=registry.entries[source];
+ const credit=$('sourceCredit');
+ credit.style.display=entry?.sourceUrl?'block':'none';
+ if(entry?.sourceUrl){credit.href=entry.sourceUrl;
+  credit.textContent='素材元：'+entry.name+' / '+entry.license+
+   (entry.author?' / © '+entry.author:'');}
  if(!entry){$('status').textContent='登録済みのGLBではありません';return;}
  // Use the old model as the loading/error fallback; it remains fully intact.
  showOriginal(id,'low');
  $('status').textContent='GLBを読み込み中：'+entry.name+'（読込完了まで採用できません）';
- loadExternalCreature(entry,'high').then(loaded=>{
+ loadCreatureMeshSource(source,registry,'high').then(loaded=>{
   if(ticket!==serial){loaded.dispose();return;}
   if(legacyActor){
    scene.remove(legacyActor);
@@ -269,8 +276,9 @@ function loop(time){
  controls.update();renderer.render(scene,camera);
 }
 fetchCreatureRegistry().then(result=>{
- registry=result;
- $('status').textContent='登録済みCC0メッシュ '+result.all50Count+'件を読み込みました。';
+ registry={...result,entries:{...result.entries,...REAL_CREATURE_MESH_SOURCES}};
+ $('status').textContent='登録済みCC0メッシュ '+result.all50Count+
+  '件＋外部リアル候補 '+Object.keys(REAL_CREATURE_MESH_SOURCES).length+'件。';
  chooseSpecies();
 }).catch(error=>{
  $('status').textContent='GLB登録一覧の取得失敗：'+error.message+'（現行モデルは使用できます）';
