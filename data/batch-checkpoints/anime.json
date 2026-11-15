@@ -9,12 +9,21 @@
       ],
       "commitSha": "33eadbbc7c22e7b0437292fcf770937e22114d4e",
       "qa": "unverified"
+    },
+    {
+      "id": "compact-shared-defeat-second-art-fail-closed",
+      "sourceFiles": [
+        "src/story-compact-comic.js"
+      ],
+      "commitSha": "321a1a9d48dff83de7a689e60dfeab27f9e66713",
+      "qa": "unverified"
     }
   ],
   "remainingIds": [
     "compact-c01-s01..c20-s10-CG-audit",
     "compact-portrait-dialogue-QA",
-    "compact-outcome-branch-QA"
+    "compact-outcome-branch-QA",
+    "compact-shared-defeat-second-art-visual-verification"
   ],
-  "nextAction": "PR #458の章1→章2遷移・同章再入室をブラウザで回帰検証。20章正本のCG実WebP/SHA/人物/性別を監査し、既存CGの安全な再利用を実装。無料生成器の接続確認後のみ新規生成。"
+  "nextAction": "第2敗戦共通CGの実WebPと人物不在・性別・SHAを視覚監査してから共通登録。PR #458の章遷移QAも未実施。"
 }
