@@ -29,7 +29,7 @@ assert.match(game,/軍師戦死：命令不可（自動行動）/);
 assert.match(game,/label\.userDataStrength\.textContent=sum\.n\+'\/'\+sum\.total/,
  'Each circle now displays the survivor fraction without a separate status ribbon');
 assert.match(game,/squadCommanderUnavailableReason\(selectedSquadId\)/);
-assert.match(game,/setBattleCamera\(new THREE\.Vector3\(x,terrainY\(x,z\),z\),\s*new THREE\.Vector3\(\.02,Math\.ceil\(WORLD_SIZE\*CELL\*1\.36\),\.02\)\)/);
+assert.match(game,/setBattleCamera\(new THREE\.Vector3\(x,terrainY\(x,z\),z\),cameraOverviewOffset\)/);
 assert.match(game,/createBattleOrchestralScore\(\)/);
 
 const elements={};

@@ -30,7 +30,8 @@ test('dashboard always shows exactly four task groups with existing previews',()
  const d=JSON.parse(fs.readFileSync('data/hourly-batch-dashboard.json','utf8'));
  assert.equal(d.groups.length,4);
  assert.deepEqual(d.groups.map(g=>g.id),['human','monster','world','anime']);
- assert.deepEqual(d.groups.map(g=>g.autoEnabled),[true,true,true,false]);
+ const switches=JSON.parse(fs.readFileSync('data/batch-center-switches.json','utf8'));
+ assert.deepEqual(d.groups.map(g=>g.autoEnabled),d.groups.map(g=>switches.groups[g.id].enabled));
  for(const x of d.groups){assert.equal(typeof x.preview,'string');assert.equal(typeof x.workflow,'string');}
  const html=fs.readFileSync('batch-monitor.html','utf8');
  assert(html.includes('現在の画面を見る'));

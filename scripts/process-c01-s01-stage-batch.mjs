@@ -98,7 +98,8 @@ for(const variant of contract.variants){
    if(seen.has(key))throw Error('Duplicate canonical shot '+key);
    seen.add(key);sheet.shotKeys.push(key);
    const registered=registeredStoryPanelAsset(shot);
-   if(!registered||!registered.startsWith('./assets/story/chapters/c01/panels/'))
+   if(!registered||!registered.startsWith('./assets/story/chapters/c01/panels/')&&
+       !registered.startsWith('./assets/story/chapter1-provisional-live/'))
     throw Error('Missing exact existing game registration for '+key);
    const rel=registered.slice(2);
    if(rel.includes('..'))throw Error('Unsafe WebP path');

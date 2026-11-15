@@ -112,16 +112,13 @@ for(const name of ['game.html','town-hub.html','town-stage-scene.html','world-ma
 }
 const townHtml=fs.readFileSync(path.join(base,'town-hub.html'),'utf8');
 const sceneHtml=fs.readFileSync(path.join(base,'town-stage-scene.html'),'utf8');
-assert.ok(townHtml.includes('src="about:blank"'),'Heavy 3D town must only load after game stage is resolved');
-assert.ok(townHtml.includes("townSceneUrl='./tactics-wireframe.html?town=1&stage='"),
- 'Town must directly embed the original stage/character engine, not a re-created map');
-assert.ok(!townHtml.includes('play-v23-1.html'),'Legacy action scene is not the campaign town');
-assert.ok(!townHtml.includes('<iframe id="townScene" src="./town-stage-scene.html'),'Do not use the simplified duplicate town renderer');
-assert.ok(townHtml.includes("const currentPreset=CAMPAIGN_STAGE_BY_ID[game.townStage]?.scenePreset"),
- 'Chapter town must select the actual registered world stage');
-assert.ok(townHtml.includes("type==='hai-gin-town-stage-ready'"),'Native stage must report readiness to hub');
-assert.ok(townHtml.includes("sendTown('hai-gin-town-input',townAxis)"),'Town stick drives real character position');
-assert.ok(townHtml.includes("sendTown('hai-gin-town-interact')"),'Town building interaction is wired');
+assert.ok(!townHtml.includes('<iframe'),'Illustrated hub must not create a second runtime');
+assert.ok(!townHtml.includes('townFrame.src='),'Hub never loads the 3D battle stage');
+assert.match(townHtml,/id="townArtwork"/,'Town has one illustrated background');
+for(const facility of ['story','save','formation','weapons','tavern','items']){
+ assert.ok(townHtml.includes('data-facility="'+facility+'"'),'Every facility opens from the illustration');
+}
+assert.ok(townHtml.includes('openPanel(button.dataset.facility)'),'Facility selection opens existing services');
 assert.match(townHtml,/<a id="leaveTown" href="\.\/world-map\.html\?v=town-exit-2"/,
  'A real navigable map exit anchor must exist even if JS fails');
 assert.ok(townHtml.includes("window.location.assign('./world-map.html?v=town-exit-2')"),

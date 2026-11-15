@@ -10,3 +10,7 @@
 # Requested on 2026-11-15. One-time trigger; no unattended recurrence.
 
 # Second owner-authorized pass: preserve 40 registered Stage4 frames, skip 4 provider-blocked shots, attempt only the remaining 4 nonblocked Stage4 shots. Recompute QA with corrected style-benchmark actor logic. Free-only, no retries of blocked prompts, no paid fallback.
+
+# 2026-11-15 late owner instruction: manga regression ON; request one budget-guarded production pass.
+# First check today's prior production attempts; skip any duplicate and retain Free-only 7500-neuron cap.
+# Do not auto-approve frames, use paid API, or retry blocked safety prompts.

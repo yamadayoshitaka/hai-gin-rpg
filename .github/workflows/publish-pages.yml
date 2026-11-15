@@ -30,10 +30,23 @@ jobs:
       - uses: actions/checkout@v5
       - name: Reject corrupted public HTML and JavaScript blobs
         run: node --experimental-vm-modules qa/pages-publication-integrity.cjs
+      - name: Verify 108 original high-poly master and three level-of-detail contracts
+        run: node --test qa/creature-master-studio.test.mjs
+      - name: Verify 108-creature reconstruction scope, anatomy and non-destructive model assignments
+        run: |
+          node --test qa/creature-reconstruction-plan.test.mjs
+          node --test qa/creature-web-mesh-catalog.test.mjs
+      - name: Verify opt-in monster mesh adoption, nonhuman scope and rollback
+        run: node --test qa/creature-mesh-adoption.test.mjs
+      - name: Verify 50 monster and summon reference prompts plus evidence-based 100-point KPI
+        run: |
+          node --test qa/monster-quality-kpi.test.mjs
+          node scripts/monster-quality-status.mjs
       - name: Verify 20 chapters, story progression and recorded AI voice contract
         run: node qa/story-chronicle.test.mjs
       - name: Verify new game core, town save, shops and 200-stage transitions
-        run: node --experimental-vm-modules qa/game-core-contract.test.mjs
+        run: |
+          node --experimental-vm-modules qa/game-core-contract.test.mjs
       - name: Verify continents, gacha, NPC models and fences/flowers
         run: node qa/continent-town-gacha-regression.test.mjs
       - name: Verify registered Chapter 1 character-art references and 3D viewer linkage
@@ -41,7 +54,7 @@ jobs:
       - name: Verify independent male/female source-derived face meshes
         run: |
           npm install --no-save --package-lock=false three@0.160.1
-          node --test qa/independent-face-masters.test.mjs
+          node --test qa/independent-face-masters.test.mjs qa/grey-wolf-runtime.test.mjs
       - name: Verify illustrated dialogue, original opening and scene music
         run: |
           node --experimental-vm-modules qa/story-cinematic-audio.test.mjs
@@ -61,12 +74,16 @@ jobs:
           cache-dependency-path: scripts/requirements-pages.txt
       - name: Install image optimizer for slim Pages artifact
         run: python -m pip install --disable-pip-version-check -r scripts/requirements-pages.txt
+      - name: Verify relay startup without duplicate page reloads
+        run: node qa/scene-navigation-startup.test.mjs
       - name: Inventory all 1400 real chapter-panel pictures and validate gender-safe fallbacks
         run: |
           node scripts/build-story-art-coverage.mjs
           node qa/story-art-coverage.test.mjs
       - name: Assemble compact game website without master asset archives
         run: python scripts/prepare-pages-site.py --out pages-dist
+      - name: Require same latest provisional artwork in game, chapter review and deployed release
+        run: node qa/pages-story-live-parity.test.mjs
       # GitHub Pages can leave the deployment lock active even after the
       # original deploy-pages job times out. Release the known orphan from
       # the 2026-11-10 09:53 UTC attempt before creating a new deployment.
@@ -141,7 +158,38 @@ jobs:
           done
           echo "::error::Pages artifact not visible after upload; aborting deploy safely"
           exit 1
+      # Serialized releases may trail active editing, but must never roll back
+      # a successful release or publish a commit outside main's history.
+      - name: Publish source in order without starving active development
+        id: latest
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          newest=$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/heads/main" --jq '.object.sha')
+          relation=$(gh api "repos/${GITHUB_REPOSITORY}/compare/${GITHUB_SHA}...${newest}" --jq '.status')
+          case "${relation}" in
+            ahead|identical) ;;
+            *)
+              echo "publish=false" >> "${GITHUB_OUTPUT}"
+              echo "::notice::Skipping source outside current main history"
+              exit 0 ;;
+          esac
+          previous=$(gh api "repos/${GITHUB_REPOSITORY}/actions/workflows/publish-pages.yml/runs?status=success&branch=main&per_page=1" --jq '.workflow_runs[0].head_sha // ""')
+          if [[ -n "${previous}" && "${previous}" != "${GITHUB_SHA}" ]]; then
+            order=$(gh api "repos/${GITHUB_REPOSITORY}/compare/${previous}...${GITHUB_SHA}" --jq '.status')
+            case "${order}" in
+              ahead|identical) ;;
+              *)
+                echo "publish=false" >> "${GITHUB_OUTPUT}"
+                echo "::notice::Skipping source older than the last successful release"
+                exit 0 ;;
+            esac
+          fi
+          echo "publish=true" >> "${GITHUB_OUTPUT}"
       - id: deployment
+        if: steps.latest.outputs.publish == 'true'
         uses: actions/deploy-pages@v5
         with:
           artifact_name: github-pages-${{ github.run_id }}-${{ github.run_attempt }}

@@ -108,21 +108,28 @@ self.addEventListener('fetch', (event) => {
                     .replace("__EXTRA_PREFIXES__", json.dumps(REMOTE_ONLY_PREFIXES)))
     (out / ASSET_RELAY_NAME).write_text(worker, encoding="utf-8")
     # Self-install on all standalone game/preview routes, including deep links.
-    # Existing visitors get one reload after the new worker claims the page;
-    # subsequent loads remain controlled and use normal browser caching.
+    # Wait for the asset relay before starting module runtimes. Claiming or
+    # updating a worker must never reload an active game or replay its opening.
     boot = """<script id="pages-asset-relay-bootstrap">
-(function () {
-  if (!('serviceWorker' in navigator)) return;
-  const version = '__COMMIT__';
-  const key = 'hai-gin-pages-relay-reload';
-  navigator.serviceWorker.addEventListener('controllerchange', function () {
-    if (sessionStorage.getItem(key) === version) return;
-    sessionStorage.setItem(key, version);
-    location.reload();
-  });
-  navigator.serviceWorker.register('./pages-asset-relay-sw.js', {scope: './'})
-    .catch(function (error) { console.warn('Pages asset relay unavailable', error); });
-})();
+window.__haiGinAssetRelayReady = new Promise(function (resolve) {
+  if (!('serviceWorker' in navigator)) { resolve(); return; }
+  let complete = false;
+  const finish = function () {
+    if (complete) return;
+    complete = true;
+    clearTimeout(timer);
+    navigator.serviceWorker.removeEventListener('controllerchange', finish);
+    resolve();
+  };
+  const timer = setTimeout(finish, 15000);
+  navigator.serviceWorker.addEventListener('controllerchange', finish);
+  const revision = '__COMMIT__';
+  navigator.serviceWorker.register('./pages-asset-relay-sw.js?rev=' + revision, {scope: './'})
+    .then(function (registration) {
+      if (navigator.serviceWorker.controller && !registration.installing && !registration.waiting) finish();
+    })
+    .catch(function (error) { console.warn('Pages asset relay unavailable', error); finish(); });
+});
 </script>
 """.replace("__COMMIT__", commit_sha)
     changed = 0
@@ -138,6 +145,8 @@ self.addEventListener('fetch', (event) => {
                               flags=re.IGNORECASE)
         else:
             continue
+        contents = re.sub(r'(<script\s+type=["\']module["\']\s*>)',
+                          r'\1\nawait window.__haiGinAssetRelayReady;\n', contents)
         html.write_text(contents, encoding="utf-8")
         changed += 1
     if changed < 5:
@@ -180,6 +189,53 @@ def copy_asset(src: Path, dst: Path) -> None:
     shutil.copy2(src, dst)
 
 
+
+
+STORY_RELEASE_PLACEHOLDER = "__HAI_GIN_STORY_RELEASE_SHA__"
+
+
+def pin_public_story_images(out: Path, sha: str) -> None:
+    """Make game and reviewer load the same revision-specific source originals.
+
+    145+ provisional WebPs are over 37 MiB, so packaging all of them exceeds
+    the existing 90 MiB limit. Every image URL resolves by SHA to the exact
+    release instead. Reloaded HTML and all nested JS imports are also cache-
+    busted together so old modules cannot select outdated artwork.
+    """
+    if not re.fullmatch(r"[0-9a-f]{40}", sha):
+        if os.environ.get("GITHUB_ACTIONS") == "true":
+            raise RuntimeError("The published Pages artifact requires an exact 40-character commit SHA")
+        print("LOCAL PREVIEW: no deployment revision; keeping local artwork paths.")
+        return
+    registry = out / "src" / "story-panel-registered-art.js"
+    source = registry.read_text(encoding="utf-8")
+    if source.count(STORY_RELEASE_PLACEHOLDER) != 1:
+        raise RuntimeError("Cannot pin the shared manga game/review URL resolver")
+    registry.write_text(source.replace(STORY_RELEASE_PLACEHOLDER, sha), encoding="utf-8")
+    suffix = sha[:12]
+
+    # Only rewrite actual JS module imports or script src attributes.
+    # Leave image URLs, external packages and source repository files untouched.
+    pattern = re.compile(
+        r"(?P<lead>\bfrom\s*|\bimport\s*\(\s*|\bimport\s+|\bsrc=)"
+        r"(?P<q>['\"])(?P<path>\./[^'\"\n]+?\.(?:m?js)(?:\?[^'\"\n]*)?)(?P=q)"
+    )
+    def version_import(match):
+        url = match.group("path")
+        if "release=" in url:
+            return match.group(0)
+        sep = "&" if "?" in url else "?"
+        return match.group("lead") + match.group("q") + url + sep + "release=" + suffix + match.group("q")
+
+    updated = 0
+    for file in list(out.rglob("*.js")) + list(out.rglob("*.html")):
+        before = file.read_text(encoding="utf-8")
+        after = pattern.sub(version_import, before)
+        if after != before:
+            file.write_text(after, encoding="utf-8")
+            updated += 1
+    print(f"PAGES STORY PARITY: pinned artwork to {sha[:12]}, versioned {updated} HTML/JS files.")
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--out", default="pages-dist")
@@ -214,7 +270,9 @@ def main() -> None:
     # Every release gets unique URLs for the town hub and its heavy iframe.
     # Without this, mobile browsers can reuse an older 3D page despite the
     # latest Pages deployment completing successfully.
-    stamp = os.environ.get("GITHUB_SHA", "local")[:12]
+    release_sha = os.environ.get("GITHUB_SHA", "local")
+    stamp = release_sha[:12]
+    pin_public_story_images(out, release_sha)
     # URLs are bound to the exact deployed revision to prevent stale assets.
     add_asset_relay(out, sorted(offloaded), os.environ.get("GITHUB_SHA", "main"))
     for page in ("game.html", "world-map.html", "town-hub.html"):
@@ -227,7 +285,9 @@ def main() -> None:
     (out / ".nojekyll").touch()
     release = {
         "sha": os.environ.get("GITHUB_SHA", "local"),
-        "version": "town-pages-slim-asset-relay-v2",
+        "version": "town-pages-slim-asset-relay-v3-story-pinned",
+        "story_art_revision": release_sha,
+        "story_art_source": "github-raw-exact-release",
         "offloaded_binary_count": len(offloaded),
         "offloaded_binary_bytes": offloaded_bytes,
         "voice_source": "github-raw",

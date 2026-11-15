@@ -1,0 +1,119 @@
+{
+  "schemaVersion": 1,
+  "asOf": "2026-11-15T12:58:00Z",
+  "description": "工程別の実作業証跡。GitHub Actionsの成功や定期タスクの実行完了を、3D改修・PR・デプロイの完了と混同しない。これはGitHubに最後に記録されたスナップショットであり、ChatGPTサービスのライブ状態ではない。",
+  "stageOrder": [
+    "launch",
+    "code",
+    "qa",
+    "commit",
+    "pr",
+    "merge",
+    "deploy"
+  ],
+  "groups": {
+    "human": {
+      "source": "ChatGPT 定期タスクの実行結果",
+      "lastRunAt": "2026-11-15T14:04:32Z",
+      "status": "in_review",
+      "carryover": true,
+      "issueNumber": 399,
+      "subject": "Issue #399 男女剣士背面・踵の板状／石状異物",
+      "summary": "剣士背面鎧の広域Zサンプリングを局所X/Yサンプリングに変更。実ソースコミット2e87b869、Draft PR #414作成。静的ソース確認成功、ローカルgit cloneはDNS失敗、実WebGL/Android/CI未検証。踵は未修正。",
+      "nextAction": "PR #414でCI・ブラウザWebGL正面/背面/踵比較を実行し、背面の突起が減るか検証。踵の別原因を調査し追加修正。失敗時はブランチで修正継続しmainへマージしない。",
+      "steps": {
+        "launch": "done",
+        "code": "done",
+        "qa": "failed",
+        "commit": "done",
+        "pr": "done",
+        "merge": "pending",
+        "deploy": "pending"
+      },
+      "evidence": [
+        {
+          "label": "Issue #399",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/issues/399"
+        },
+        {
+          "label": "実コード修正コミット",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/2e87b869b3829d81fb0bf282de244a3858b34d61"
+        },
+        {
+          "label": "Draft PR #414",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/414"
+        }
+      ]
+    },
+    "monster": {
+      "source": "ChatGPT 定期タスクの実行結果",
+      "lastRunAt": "2026-11-15T14:07:51Z",
+      "subject": "PR #382 鳥類の翼カフを小型化し羽根のシルエット干渉を低減",
+      "summary": "実処理ON。非人間型衣装src/monster-species-wardrobe.jsの鳥類翼カフを[.105,.067,.094]から[.075,.043,.068]へ縮小しPR #382の既存ブランチに実コミット1c756f3c。GitHub再取得で差分の静的確認成功。ただし単体テスト・CI・WebGL画像・Android FPS未実行。PR #385 E2E photoSurfaces/source-composite不整合は引継ぎ未解消。品質未承認・mainマージ/公開なし。",
+      "status": "in_review",
+      "carryover": true,
+      "nextAction": "PR #382の衣装単体QAとブラウザ前後左右・翼羽ばたき画像を実行し貫通を比較。PR #385のphotoSurfaces/source-composite E2E不整合を修正して再実行。Pixel 7相当とAndroid FPS確認までマージ・公開禁止。",
+      "steps": {
+        "launch": "done",
+        "code": "done",
+        "qa": "pending",
+        "commit": "done",
+        "pr": "done",
+        "merge": "pending",
+        "deploy": "pending"
+      },
+      "evidence": [
+        {
+          "label": "翼カフ実修正コミット",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/1c756f3c9fc76c506af35803cae3c9afec4ad48c"
+        },
+        {
+          "label": "既存Draft PR #382",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/382"
+        },
+        {
+          "label": "PR #385 E2E失敗",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/43692535840"
+        }
+      ]
+    },
+    "world": {
+      "source": "GitHub Actions（状態未照合）",
+      "lastRunAt": null,
+      "status": "unverified",
+      "carryover": false,
+      "subject": "オブジェクト・ステージ品質回帰",
+      "summary": "実作業の工程別証跡はまだ取得していない。スイッチONは実装完了を意味しない。",
+      "nextAction": "次回の実行後、実画像・コード変更・QA・PR・公開を個別に確認し、この履歴に記録する。",
+      "steps": {
+        "launch": "unknown",
+        "code": "unknown",
+        "qa": "unknown",
+        "commit": "unknown",
+        "pr": "unknown",
+        "merge": "unknown",
+        "deploy": "unknown"
+      },
+      "evidence": []
+    },
+    "anime": {
+      "source": "ChatGPTタスクのスケジュール確認",
+      "lastRunAt": "2026-11-15T09:01:20.385653Z",
+      "status": "paused",
+      "carryover": true,
+      "subject": "漫画制作の定期タスクは停止中",
+      "summary": "GitHub実行制御がONでもChatGPT漫画定期タスクは停止中。Cloudflare日次無料生成は別の実行経路。",
+      "nextAction": "漫画の実登録・QA・公開の結果を日次GitHub Actionsの成果物と照合する。ChatGPT自動生成が稼働中とは表示しない。",
+      "steps": {
+        "launch": "skipped",
+        "code": "unknown",
+        "qa": "unknown",
+        "commit": "unknown",
+        "pr": "unknown",
+        "merge": "unknown",
+        "deploy": "unknown"
+      },
+      "evidence": []
+    }
+  }
+}

@@ -1,6 +1,7 @@
 import {chapterOneReviewPages,EDITION_LABELS,REVIEW_BRANCH,REVIEW_REPO} from './story-chapter1-review-core.js';
 import {buildChapter1ImagePrompt,CHATGPT_IMAGES_URL} from './story-chapter1-image-prompt.js';
 import {chapter1ProvisionalLivePanel} from './story-chapter1-provisional-live.js';
+import {registeredStoryPanelAsset,storyArtDisplayUrl} from './story-panel-registered-art.js';
 const $=id=>document.getElementById(id);
 const all=chapterOneReviewPages(),pages=new Map(all.map(p=>[p.number,p]));
 const gameVisibleCount=all.flatMap(p=>p.shots).filter(s=>!!s.legacyPath).length;
@@ -343,40 +344,49 @@ async function readBytes(url){
  return response.arrayBuffer();
 }
 function dimensionsOK(w,h,stage){
- const [a,b]=stage==='c01-s02'?[768,320]:[1536,864];
- return w>=a&&h>=b&&w*9===h*16;
+ const [a,b]=stage==='c01-s02'?[768,320]:
+  (stage==='c01-s03'||stage==='c01-s04')?[800,450]:[1536,864];
+ return w>=a&&h>=b&&(stage==='c01-s02'||w*9===h*16);
+}
+function liveForShot(shot){
+ return chapter1ProvisionalLivePanel({
+  stageId:shot.stageId,comicEdition:shot.edition,
+  protagonistGender:shot.gender,id:shot.shotId
+ });
 }
 async function load(shot,view,v){
- let kind='candidate',imageUrl=rawRoot+shot.draftPath,expected=null;
- try{
-  const response=await fetch(imageUrl+'.generation.json',{cache:'no-store'});
-  if(!response.ok)throw Error('draft missing');
-  const meta=await response.json();
-  if(meta.shotKey!==shot.key||meta.visuallyApproved!==false||
-   meta.formallyRegistered!==false||!(/^[a-f0-9]{64}$/i.test(meta.imageSha256)))
-   throw Error('invalid draft provenance');
-  expected=meta.imageSha256;
- }catch{
-  if(shot.legacyPath?.startsWith('./')){
-   kind='legacy';imageUrl=shot.legacyPath;
-  }else{
-   kind='missing';
-   try{
-    const test=await fetch(rawRoot+shot.draftPath+'.provider-blocked.json',{cache:'no-store'});
-    if(test.ok)kind='blocked';
-   }catch{}
-  }
+ // The exact live game registry is the source of truth on this screen too.
+ // Never let a separate working branch overwrite the game's newer image.
+ const live=liveForShot(shot);
+ const gameAsset=live?.asset||registeredStoryPanelAsset({
+  stageId:shot.stageId,comicEdition:shot.edition,
+  protagonistGender:shot.gender,id:shot.shotId
+ });
+ let kind=live?'live':gameAsset?'legacy':'missing';
+ let imageUrl=gameAsset?storyArtDisplayUrl(gameAsset):null;
+ let expected=live?.sha256||null;
+ if(!imageUrl&&new URLSearchParams(location.search).get('draft')==='1'){
+  // Opt-in only: production candidates do not imply deployment or approval.
+  kind='candidate';imageUrl=rawRoot+shot.draftPath;
+  try{
+   const response=await fetch(imageUrl+'.generation.json',{cache:'no-store'});
+   if(!response.ok)throw Error('draft missing');
+   const meta=await response.json();
+   if(meta.shotKey!==shot.key||meta.visuallyApproved!==false||
+    meta.formallyRegistered!==false||!(/^[a-f0-9]{64}$/i.test(meta.imageSha256)))
+    throw Error('invalid draft provenance');
+   expected=meta.imageSha256;
+  }catch{kind='missing';imageUrl=null}
  }
  if(v!==ticket)return;
- if(kind==='missing'||kind==='blocked'){
-  view.empty.textContent=kind==='blocked'?'生成モデルが拒否しました。修正方針の確認が必要です。':
-   'このコマの画像はまだ生成されていません';
-  view.caption.textContent=kind==='blocked'?'生成拒否・審査待ち':'未生成・制作待ち';
-  states.set(shot.key,{available:false,hash:null,kind});update();return;
+ if(!imageUrl){
+  view.empty.textContent='ゲーム本編と同じ原画を照合しましたが、このコマは未登録です';
+  view.caption.textContent='未登録・制作待ち（他の性別・結果の原画は流用しません）';
+  states.set(shot.key,{available:false,hash:null,kind:'missing'});update();return;
  }
  try{
   const bytes=await readBytes(imageUrl),hash=await sha256(bytes);
-  if(expected&&hash!==expected)throw Error('生成画像とハッシュが一致しません');
+  if(expected&&hash!==expected)throw Error('仮登録台帳のSHA256と実画像が一致しません');
   const url=URL.createObjectURL(new Blob([bytes],{type:'image/webp'}));
   const probe=new Image();
   await new Promise((resolve,reject)=>{
@@ -387,22 +397,21 @@ async function load(shot,view,v){
   const ok=dimensionsOK(probe.naturalWidth,probe.naturalHeight,shot.stageId);
   urls.add(url);
   view.img.src=url;view.img.hidden=false;view.empty.hidden=true;
-  const live=chapter1ProvisionalLivePanel({
-   stageId:shot.stageId,comicEdition:shot.edition,
-   protagonistGender:shot.gender,id:shot.shotId
-  });
-  view.caption.textContent=(ok?(live?.sha256===hash?'ゲームに仮反映済み・差し戻し可能':
-   kind==='legacy'?'既存ゲーム原画':'新規候補・本編仮反映待ち'):
-   '解像度不足・再生成対象')+'　'+probe.naturalWidth+'×'+probe.naturalHeight;
-  states.set(shot.key,{kind,hash,available:ok,bytes});
+  view.caption.textContent=(kind==='live'?
+   'ゲーム本編と同じ最新仮登録原画・差し戻し可能'+(ok?'':'（品質寸法は要確認）'):
+   kind==='legacy'?'ゲーム本編と同じ既存原画（正式品質審査は別）':
+   '旧制作ブランチの候補原画・ゲーム未登録')+
+   '　'+probe.naturalWidth+'×'+probe.naturalHeight;
+  states.set(shot.key,{kind,hash,available:true,qualitySizeOK:ok,bytes});
   for(const button of view.actions.querySelectorAll('button[data-choice="revise"]'))
-   button.disabled=!(ok&&live?.sha256===hash);
+   button.disabled=!(kind==='live'&&live?.sha256===hash);
   if(saved[shot.key]?.hash!==hash){delete saved[shot.key];persist();}
   refreshCard(shot.key);update();
  }catch(e){
   if(v!==ticket)return;
-  view.empty.textContent='画像の照合に失敗しました。'+e.message;
-  view.caption.textContent='ハッシュ・原画を要確認';
+  view.img.hidden=true;view.empty.hidden=false;
+  view.empty.textContent='最新原画の照合失敗。古い絵へ自動切替は行いません：'+e.message;
+  view.caption.textContent='ゲームと同じ最新画像の取得・ハッシュを要確認';
   states.set(shot.key,{available:false,hash:null,kind:'invalid'});
   update();
  }
@@ -459,7 +468,19 @@ $('prevBottom').addEventListener('click',()=>stepShot(-1));
 $('nextBottom').addEventListener('click',()=>stepShot(1));
 $('submit').addEventListener('click',send);
 const query=new URLSearchParams(location.search);
-const wantedStage=query.get('stage'),wantedGender=query.get('gender');
-const match=wantedStage?all.find(p=>p.stageId===wantedStage&&p.edition==='pre'&&(!wantedGender||p.gender===wantedGender)):null;
+const wantedStage=query.get('stage'),wantedGender=query.get('gender'),wantedEdition=query.get('edition')||'pre';
+const match=wantedStage?all.find(p=>p.stageId===wantedStage&&p.edition===wantedEdition&&(!wantedGender||p.gender===wantedGender)):null;
 const start=Number(query.get('page')||(match?.number||1));
 go(pages.has(start)?start:1,false);
+const wantedShot=query.get('shot');
+if(wantedShot){
+ const i=current.shots.findIndex(s=>s.shotId===wantedShot);
+ if(i>=0){activeShotIndex=i;showCurrentShot();}
+}
+if(query.get('provider')==='chatgpt'){
+ // This only prepares a human-initiated Plus image request. No browser/API
+ // can silently call ChatGPT's image generator on behalf of the visitor.
+ $('info').textContent='Cloudflare無料枠を使い切ったコマの手動引き継ぎです。台本・マニフェストを確認し、人物・画風の実画像を添付してChatGPTで生成してください。自動生成・自動登録は行いません。';
+ const handoff=document.querySelector('#panels .panel.is-active details.generator');
+ if(handoff)handoff.open=true;
+}

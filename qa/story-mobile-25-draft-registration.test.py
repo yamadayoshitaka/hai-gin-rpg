@@ -60,8 +60,8 @@ review = (ROOT / "story-art-review.html").read_text(encoding="utf8")
 viewer = (ROOT / "src/story-manga-viewer.js").read_text(encoding="utf8")
 registered = (ROOT / "src/story-panel-registered-art.js").read_text(encoding="utf8")
 assert "mobile-5x5-20261113/manifest.json" in review
-assert "試作原画25枚" in review
-assert "story-art-review.html#drafts" in viewer
+assert "試作原画25枚" in review or "試作原画25枚（ゲーム未割当）" in review
+assert "story-chapter1-approval.html" in viewer
 assert "c01-draft" not in registered
 assert "provisionalRegisteredStoryPanel" in registered
 assert "artrev=c01s02female20261113" in registered

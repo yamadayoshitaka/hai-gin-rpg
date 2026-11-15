@@ -150,7 +150,7 @@
         </div>
         <div class="inspectorGroup">
           <strong>関連画面</strong>
-          <a href="./monster-manager.html?v=4.5.19">モンスター図鑑</a>
+          <a href="./monster-manager.html?v=4.5.19">モンスター図鑑</a><a href="./creature-model-adoption.html">モデル選択・採用</a>
           <a href="./motion-external-test.html">人間の動作</a>
           <a href="./tactics-wireframe.html" class="inspectorWide">戦闘画面</a>
         </div>
@@ -159,7 +159,7 @@
   </header>
   <nav id="summonMotionStrip" aria-label="モンスターの基本モーションを直接再生">
     <button type="button" data-pose="idle" aria-pressed="true">待機</button>
-    <button id="walk" type="button" aria-pressed="false">移動</button>
+    <button id="walk" type="button" aria-pressed="false">歩行</button><button id="runButton" type="button" aria-pressed="false">走行</button>
     <button id="attack" type="button" aria-pressed="false">攻撃</button>
     <button type="button" data-pose="special" aria-pressed="false">魔法・固有技</button>
     <button type="button" data-pose="guard" aria-pressed="false">防御</button>
@@ -190,11 +190,12 @@
     import {MONSTER_SUMMON_BY_TYPE,isMonsterSummonType,MONSTER_SUMMON_MODEL_HEIGHT}
       from './src/monster-summon-registry.js?v=1';
     import {creatureSize,SUMMON_WORLD_SCALE,LARGE_SUMMON_IDS} from './src/combat-creature-performance.js?v=4.6.39';
-    import {createCombatWorldObjectRenderer} from './src/combat-world-object-renderer.js?v=4.6.91';
+    import {createCombatWorldObjectRenderer} from './src/combat-world-object-renderer.js?v=masters-v1';
     import {startCreaturePose} from './src/combat-creature-actions.js?v=4.4.92';
     import {createCreatureSoundRuntime} from './src/combat-creature-sounds.js?v=4.4.74';
     import {ActionVfxRuntime} from './src/character-system/action-vfx-runtime.js?v=4.4.23';
     import {fetchCreatureRegistry,loadExternalCreature,loadPersonalGLB} from './src/creature-external-runtime.js?v=4.4.92';
+    import {adoptedCreatureMesh} from './src/creature-mesh-adoption.js?v=web-mesh-26-v1';
     const scene=new THREE.Scene();
     scene.background=new THREE.Color(0x0b1823);
     scene.fog=new THREE.Fog(0x0b1823,220,730);
@@ -332,7 +333,7 @@
     fetchCreatureRegistry().then(reg=>{
       licensedRegistry=reg;
       compareDragon.disabled=!reg.entries.dragon||selected!=='dragon';
-      if(selected==='wolf')showNewWolfSource();
+      if(selected==='wolf'&&new URLSearchParams(location.search).get('source')==='source-composite')showNewWolfSource();
     }).catch(()=>{compareDragon.disabled=true;});
     compareDragon.onclick=async()=>{
       if(selected!=='dragon')return;
@@ -379,7 +380,7 @@
         document.getElementById('metrics').textContent='GLBを読み込めません：'+error.message;
       }
     });
-    let walking=false,nextStepAt=0,routeStep=0;
+    let walking=false,running=false,nextStepAt=0,routeStep=0;
     const travelRoute=[{x:0,z:0},{x:1,z:0},{x:2,z:0},{x:2,z:1},{x:1,z:1},
       {x:0,z:1},{x:-1,z:1},{x:-2,z:1},{x:-2,z:0},{x:-1,z:0}];
     let previewObject={id:'gallery-creature',type:selected,x:0,z:0,alive:true,team:0,flying:false,mountedBy:null};
@@ -425,7 +426,8 @@
       femaleMode.querySelector('[value="male"]').hidden=selected!=='dragon_lord';
       femaleMode.querySelector('[value="human"]').hidden=selected!=='dragon_lord';
       if(!preserveMode||previousSpecies!==selected)
-        femaleMode.value=selected==='dragon_lord'?'male':'female';
+        femaleMode.value=selected==='dragon_lord'?
+          (adoptedCreatureMesh('dragon_lord')!=='legacy'?'original':'male'):'female';
       femaleModeLabel.hidden=!femaleAvailable;
       femaleMode.disabled=!femaleAvailable;
       compareDragon.disabled=selected!=='dragon'||!licensedRegistry.entries.dragon;
@@ -441,8 +443,9 @@
         (!femaleAvailable||femaleMode.value==='original');
       previewObject={id:'gallery-'+selected,type:selected,x:0,z:0,alive:true,team:0,
         flying:!!COMBAT_OBJECT_SPECS[selected].flying,mountedBy:null,cryStartedAt:clock.getElapsedTime()};
-      walking=false;routeStep=0;
-      document.getElementById('walk').textContent='移動';
+      walking=false;running=false;routeStep=0;
+      document.getElementById('walk').textContent='歩行';
+      document.getElementById('runButton').textContent='走行';
       document.querySelectorAll('#summonMotionStrip button').forEach(button=>
         button.setAttribute('aria-pressed',String(button.dataset.pose==='idle')));
       document.getElementById('species').textContent=COMBAT_OBJECT_SPECS[selected].name+
@@ -486,7 +489,7 @@
         (selected==='dragon_lord'?dragonDistance:distance)*worldScale);
       controls.update();
       if(femaleAvailable)selectFemaleSummonForm();
-      else if(selected==='wolf')showNewWolfSource();
+      else if(selected==='wolf'&&new URLSearchParams(location.search).get('source')==='source-composite')showNewWolfSource();
     }
     femaleMode.addEventListener('change',()=>{
       closeExternalPreview();
@@ -603,8 +606,9 @@
         document.querySelectorAll('#summonMotionStrip button').forEach(other=>
           other.setAttribute('aria-pressed',String(other===button)));
         if(button.dataset.pose==='idle'){
-          walking=false;
-          document.getElementById('walk').textContent='移動';
+          walking=false;running=false;
+          document.getElementById('walk').textContent='歩行';
+          document.getElementById('runButton').textContent='走行';
         }
       });
     });
@@ -614,7 +618,7 @@
         if(pose==='idle'){
           // Creature pose runtime only accepts finite actions. Clear its
           // envelope rather than passing an unsupported 'idle' action.
-          walking=false;previewObject.poseAction=null;
+          walking=false;running=false;previewObject.poseAction=null;
           previewObject.poseStartedAt=null;
           previewObject.attackStartedAt=-Infinity;
         }else startCreaturePose(previewObject,pose,t);
@@ -638,11 +642,20 @@
         }
       };
     });
-    document.getElementById('walk').onclick=()=>{
-      walking=!walking;routeStep=0;
-      nextStepAt=clock.getElapsedTime();
+    const updateMoveLabels=()=>{
+      document.getElementById('walk').textContent=walking&&!running?'歩行停止':'歩行';
+      document.getElementById('runButton').textContent=walking&&running?'走行停止':'走行';
+      previewObject.moving=walking;
+      previewObject.previewWalk=walking&&!running;
       femaleSummonHandle?.start(walking?'run':'idle',clock.getElapsedTime());
-      document.getElementById('walk').textContent=walking?'停止':'移動';
+    };
+    document.getElementById('walk').onclick=()=>{
+      walking=running?true:!walking;running=false;routeStep=0;
+      nextStepAt=clock.getElapsedTime();updateMoveLabels();
+    };
+    document.getElementById('runButton').onclick=()=>{
+      walking=!walking||!running;running=walking;routeStep=0;
+      nextStepAt=clock.getElapsedTime();updateMoveLabels();
     };
     let polygonInspection=false;
     document.getElementById('wireframe').onclick=()=>{
@@ -660,9 +673,11 @@
       if(walking&&t>=nextStepAt){
         routeStep=(routeStep+1)%travelRoute.length;
         Object.assign(previewObject,travelRoute[routeStep]);
-        nextStepAt=t+1/spec.speed;
+        nextStepAt=t+1/(spec.speed*(running?1.8:1));
       }
       const isFemaleReady=femaleSummonHandle?.source==='canonical-character-cosplay';
+      previewObject.moving=walking;
+      previewObject.previewWalk=walking&&!running;
       objects.sync(externalPreview||isFemaleReady?[]:[previewObject],t);
       // Camera framing derives from the real monster sculpture, including
       // Leviathan's long body and Kraken's tentacles. Fitting one source once
@@ -712,7 +727,8 @@
          'CC0外部候補')+'・独立3Dアニメ':'')+
         (femaleSummonHandle?' / '+(femaleSummonHandle.profile.sex==='male'?'男性竜王':'女性人型')+
           ' '+(isFemaleReady?'キャラGLB・骨格連動':'読み込み中・元の姿'):'')+
-        (femaleFlightAltitude>0?' / 空中飛行 '+femaleFlightAltitude.toFixed(2)+'m・羽ばたき':'');
+        (femaleFlightAltitude>0?' / 空中飛行 '+femaleFlightAltitude.toFixed(2)+'m・羽ばたき':'')+
+        (adoptedCreatureMesh(selected)!=='legacy'?' / 採用メッシュ '+adoptedCreatureMesh(selected):'');
     }
     // Diagnose the actual skinned forest wardrobe, not only a hex-code
     // present somewhere in the source. The old black velvet albedo passed

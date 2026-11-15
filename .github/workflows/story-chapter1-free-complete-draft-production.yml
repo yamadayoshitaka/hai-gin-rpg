@@ -48,6 +48,8 @@ jobs:
           node qa/story-chapter1-stage-priority.test.mjs
           node qa/story-stage3-owner-provisional-completion.test.mjs
           node qa/story-c01-stage45-generation-guard.test.mjs
+          node qa/story-generation-fallback.test.mjs
+          node qa/story-free-spend-policy.test.mjs
       - name: Fail before generation unless Free confirmed and both secrets available
         shell: bash
         env:
@@ -60,6 +62,21 @@ jobs:
           [ -n "$CLOUDFLARE_ACCOUNT_ID" ] && [ -n "$CLOUDFLARE_WORKERS_AI_API_TOKEN" ] || \
             { echo "::error::Missing credentials"; exit 5; }
           echo "Free confirmation and credentials are present (values redacted)"
+      - name: Refuse another Cloudflare production attempt on the same UTC date
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          today=$(date -u +%Y-%m-%d)
+          raw=$(gh api "repos/${GITHUB_REPOSITORY}/actions/workflows/story-chapter1-free-complete-draft-production.yml/runs?per_page=100")
+          duplicate=$(printf '%s' "$raw" | jq --arg today "$today" --argjson self "$GITHUB_RUN_ID" \
+            '[.workflow_runs[] | select(.id != $self) | select(.event=="workflow_dispatch" or .event=="push") |
+              select(.created_at | startswith($today))] | length')
+          if [ "$duplicate" -gt 0 ]; then
+            echo "::error::Cloudflare Free daily invocation already used; no more provider calls until next UTC date"
+            exit 7
+          fi
       - name: Checkout persistent review-only branch
         run: |
           set -euo pipefail
@@ -72,6 +89,8 @@ jobs:
         run: |
           set -euo pipefail
           git show origin/main:scripts/generate-story-chapter1-free-batch.mjs > scripts/generate-story-chapter1-free-batch.mjs
+          git show origin/main:src/story-generation-fallback.js > src/story-generation-fallback.js
+          git show origin/main:data/story-generation-spend-policy.json > data/story-generation-spend-policy.json
           git show origin/main:src/story-c01-stage45-art-guard.js > src/story-c01-stage45-art-guard.js
           git show origin/main:qa/story-chapter1-draft-regression.mjs > qa/story-chapter1-draft-regression.mjs
           git show origin/main:assets/story/stage-manifests/c01-s04.manifest.json > assets/story/stage-manifests/c01-s04.manifest.json
@@ -113,7 +132,7 @@ jobs:
               git push origin HEAD:story/chapter1-free-actual-art
             fi
           fi
-      - name: Publish verified image counts and quota status
+      - name: Publish verified image counts and Cloudflare to ChatGPT fallback status
         if: always()
         shell: bash
         run: |
@@ -133,6 +152,8 @@ jobs:
             '| New page commits in THIS run | '+show(run?.newDraftPageCommits)+' |',
             '| Cloudflare API requests in THIS run | '+show(run?.apiRequests)+' |',
             '| Run stop reason | '+show(run?.stopReason)+' |',
+            '| ChatGPT manual handoff | '+show(run?.chatGPTManualHandoff)+' |',
+            '| Handoff shot (not rendered) | '+show(run?.chatGPTHandoffShotKey)+' |',
             '| Canonical shots | '+show(counts.expected)+' |',
             '| Native real draft images (not visually approved) | '+show(counts.validRealReviewDraft)+' |',
             '| Pre-existing registered art (P0 not certified) | '+show(counts.existingRegistrationNotP0Approved)+' |',
@@ -141,7 +162,7 @@ jobs:
             '| Provider safety-blocked shots | '+show(counts.providerBlocked)+' |',
             '',
             'A green workflow run does NOT mean all artwork is generated, approved, or published.',
-            'On Cloudflare Free quota exhaustion there is no paid fallback and no automatic retry in that run.',
+            'On Cloudflare Free quota exhaustion there is no paid API switch and no automatic retry. A ChatGPT Plus handoff link is issued for manual image creation, not an automatically generated image.',
             ''
           ];
           if(qa?.stages?.length){

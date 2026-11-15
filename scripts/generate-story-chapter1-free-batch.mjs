@@ -12,6 +12,7 @@ import {CAMPAIGN_STAGES} from '../src/campaign-stage-plan.js';
 import {comicEditionsForStage,comicForStage} from '../src/story-chapter-comic.js';
 import {registeredStoryPanelAsset} from '../src/story-panel-registered-art.js';
 import {buildStage45ArtPrompt,STAGE45_IDS} from '../src/story-c01-stage45-art-guard.js';
+import {classifyCloudflareFailure,canOfferChatGPTHandoff,makeChatGPTHandoff} from '../src/story-generation-fallback.js';
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const p=rel=>path.join(root,rel),read=rel=>JSON.parse(fs.readFileSync(p(rel),'utf8'));
@@ -21,7 +22,15 @@ const maxPages=Number(args.includes('--max-pages')?args[args.indexOf('--max-page
 const startStage=args.includes('--start-stage')?args[args.indexOf('--start-stage')+1]:'c01-s01';
 const throughStage=args.includes('--through-stage')?args[args.indexOf('--through-stage')+1]:'c01-s10';
 const isStageId=id=>/^c01-s(?:0[1-9]|10)$/.test(id);
+const budget=read('data/story-generation-spend-policy.json');
+if(budget.policyId!=='HAI_GIN_CHATGPT_SUBSCRIPTION_ONLY_NO_PAID_API_V1'||
+   budget.allowedAdditionalPaidApiSpendJpy!==0||
+   budget.cloudflare?.paidTierOrTopUpsAllowed!==false||
+   budget.chatGPTImageGeneration?.automaticPaidApiFallback!==false)
+ throw Error('BUDGET_POLICY_FAIL_CLOSED: Additional paid APIs are forbidden');
 const limit=Number(process.env.CLOUDFLARE_CHAPTER1_DAILY_ESTIMATE_CAP||'7500');
+if(limit>budget.cloudflare.cloudflareDailyEstimatedNeuronCap)
+ throw Error('BUDGET_POLICY_FAIL_CLOSED: Neuron cap exceeded');
 const branch='story/chapter1-free-actual-art';
 function webpPixels(b){
  if(b.length<30||b.toString('ascii',0,4)!=='RIFF'||b.toString('ascii',8,12)!=='WEBP')throw Error('not WebP');
@@ -113,6 +122,18 @@ function progress(){
 }
 const out='qa-reports/story-stage-production/chapter1-free-render/';
 fs.mkdirSync(p(out),{recursive:true});
+let handoff=null;
+function queueChatGPTHandoff(reason,s,attemptedRequests=0){
+ if(!s||!canOfferChatGPTHandoff(reason))return null;
+ const queue=makeChatGPTHandoff({reason,attemptedRequests,shot:{
+  stageId:s.stage.id,edition:s.edition,gender:s.gender,shotId:s.shot.id}});
+ handoff=queue;
+ // This report is not a ChatGPT API call or proof of rendered art.
+ fs.writeFileSync(p(out+'chatgpt-handoff.json'),JSON.stringify(queue,null,2)+'\n');
+ console.log(JSON.stringify({chatGPTManualHandoff:queue.chatGPTReviewUrl,
+  shotKey:queue.shotKey,reason,requiresUserAction:true,actualChatGPTImagesGenerated:0}));
+ return queue;
+}
 function save(meta){fs.writeFileSync(p(out+'last-run.json'),JSON.stringify({...progress(),...meta},null,2)+'\n');}
 if(mode==='plan'){
  const result=progress();save({mode:'plan',apiRequests:0,imagesRendered:0});
@@ -123,8 +144,12 @@ if(mode==='plan'){
  process.exit(0);
 }
 const acct=process.env.CLOUDFLARE_ACCOUNT_ID||'',token=process.env.CLOUDFLARE_WORKERS_AI_API_TOKEN||'';
-if(process.env.CLOUDFLARE_FREE_PLAN_CONFIRMED!=='true'||!/^[a-f0-9]{32}$/i.test(acct)||token.length<20)
- throw Error('FREE_ONLY: Variable and two secrets required; no API call attempted');
+if(process.env.CLOUDFLARE_FREE_PLAN_CONFIRMED!=='true'||!/^[a-f0-9]{32}$/i.test(acct)||token.length<20){
+ const first=pages.filter(pg=>pg.stage>=startStage&&pg.stage<=throughStage)
+  .flatMap(pg=>pg.shots).find(s=>['MISSING','LEGACY_NATIVE_DEFECT_NEEDS_REGEN'].includes(status(s)));
+ queueChatGPTHandoff('CLOUDFLARE_NOT_CONFIGURED',first,0);
+ throw Error('FREE_ONLY: Missing GitHub Actions Free configuration; no API calls. ChatGPT manual queue emitted if an unregistered shot exists');
+}
 const api='https://api.cloudflare.com/client/v4/accounts/'+acct+'/ai/run/@cf/black-forest-labs/flux-2-klein-4b';
 const exec=(program,items)=>{
  const v=spawnSync(program,items,{cwd:root,encoding:'utf8'});
@@ -205,6 +230,8 @@ const summary=reason=>{
  const o={mode:'generate',stopReason:reason,runRequestedPages:maxPages,
   estimatedNeuronsReserved:Number(reserved.toFixed(2)),apiRequests:requests,
   newRealDraftImages:created,newDraftPageCommits:committed,blockedPages:blocked,
+  chatGPTManualHandoff:handoff?.chatGPTReviewUrl||null,
+  chatGPTHandoffShotKey:handoff?.shotKey||null,
   freeOnly:true,noPaidFallback:true,noAutoApproval:true};
  save(o);return o;
 };
@@ -236,7 +263,10 @@ for(const pg of pages){
  try{todo=pending.map(s=>({s,info:renderSpec(s)}));}
  catch(e){blocked.push({page:pg.num,reason:String(e.message)});continue;}
  const cost=todo.reduce((total,t)=>total+t.info.estimate,0);
- if(cost+reserved>limit){summary('DAILY_FREE_ESTIMATE_CAP');break;}
+ if(cost+reserved>limit){
+  queueChatGPTHandoff('FREE_ESTIMATE_CAP',todo[0]?.s,requests);
+  summary('DAILY_FREE_ESTIMATE_CAP_CHATGPT_MANUAL_HANDOFF');break;
+ }
  const files=[];
  let activeShot=null;
  try{
@@ -340,17 +370,21 @@ for(const pg of pages){
    exec('git',['push','origin','HEAD:'+branch]);
    committed++;
   }
-  if(error.includes('FREE_API_STOP_NO_RETRY_HTTP_429 4006:')){
-   // Cloudflare Free allocation exhausted, NOT a production defect.
-   // Do not retry or switch to a paid provider. Resume on next scheduled day.
+  const http=error.match(/FREE_API_STOP_NO_RETRY_HTTP_(\d{3})/);
+  const codes=[...error.matchAll(/\b(\d{4}):/g)].map(m=>({code:m[1]}));
+  const stopReason=classifyCloudflareFailure({status:http?Number(http[1]):null,errors:codes});
+  if(canOfferChatGPTHandoff(stopReason)){
+   // The provider may use HTTP 400 or 429 for free-quota enforcement.
+   // No automatic ChatGPT image call is attempted: the Plus tool is interactive.
    freeLimitReached=true;
-   summary('FREE_QUOTA_EXHAUSTED_RESUME_NEXT_SCHEDULE');
-   console.log('FREE_QUOTA_EXHAUSTED: no paid fallback, no retry; preserved all complete real images');
+   queueChatGPTHandoff(stopReason,activeShot,requests);
+   summary('FREE_QUOTA_EXHAUSTED_CHATGPT_MANUAL_HANDOFF');
+   console.log('FREE_ONLY_STOP: existing verified image+proof pairs saved; no paid calls');
    break;
   }
   summary('STOPPED_NO_RETRIES_'+error);
   console.error('P0 FREE ONLY STOP: '+error);process.exitCode=2;break;
  }
 }
-const state=summary(process.exitCode?'ERROR':freeLimitReached?'FREE_QUOTA_EXHAUSTED_RESUME_NEXT_SCHEDULE':stageGateStopped?'STAGE_INCOMPLETE_DO_NOT_ADVANCE':committed===maxPages?'PAGE_CAP_OR_DAILY_CAP':'BATCH_LIMIT_OR_ALL_DONE');
+const state=summary(process.exitCode?'ERROR':handoff?'CLOUDFLARE_STOP_CHATGPT_MANUAL_HANDOFF':freeLimitReached?'FREE_QUOTA_EXHAUSTED':stageGateStopped?'STAGE_INCOMPLETE_DO_NOT_ADVANCE':committed===maxPages?'PAGE_CAP_OR_DAILY_CAP':'BATCH_LIMIT_OR_ALL_DONE');
 console.log(JSON.stringify({status:'REAL_DRAFTS_ONLY',...state,imagesMissing:progress().missing,reviewRequired:true}));

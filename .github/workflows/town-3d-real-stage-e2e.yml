@@ -1,10 +1,12 @@
-name: Town 3D Real-Stage Android E2E
+name: Illustrated Town Android E2E
 on:
   push:
     branches: [main]
     paths:
       - '.github/workflows/town-3d-real-stage-e2e.yml'
       - 'town-hub.html'
+      - 'world-map.html'
+      - 'assets/town/royal-town-hub-v1.webp'
       - 'town-stage-scene.html'
       - 'tactics-wireframe.html'
       - 'src/town-scene-policy.js'
@@ -43,5 +45,12 @@ jobs:
         run: |
           python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/town-3d-server.log 2>&1 &
           sleep 2
-      - name: Start title, create character, render original castle and exit to map
+      - name: Start title, select all six facilities and verify the full continent map
         run: node qa/town-real-stage-browser-smoke.cjs
+      - name: Save Android town and map screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: illustrated-town-android
+          path: qa-reports/illustrated-town/
+          if-no-files-found: ignore

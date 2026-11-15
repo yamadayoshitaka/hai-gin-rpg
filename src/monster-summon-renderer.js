@@ -17,6 +17,11 @@ import {humanoidMonsterCostumeFor}
 import {startMonsterAction,animateMonsterModel}
  from './monster-animation.js?v=4.5.18';
 import {creatureFlightHeight} from './combat-creature-performance.js?v=4.6.39';
+import {adoptedCreatureMesh} from './creature-mesh-adoption.js?v=web-mesh-26-v1';
+import {fetchCreatureRegistry} from './creature-external-runtime.js';
+import {loadCreatureMeshSource} from './creature-real-source-catalog.js?v=real-body-only-v4';
+import {chooseCreatureLod} from './creature-master-library.js?v=masters-v1';
+import {protectedCreature} from './creature-mesh-adoption.js?v=real-bodies-v3';
 import {isMonsterSummonType,monsterSummonSource,
  monsterSummonWorldScale,MONSTER_SUMMON_MAX_HIGH_DETAIL,
  MONSTER_SUMMON_MAX_ACTIVE,MONSTER_SUMMON_BY_TYPE}
@@ -29,13 +34,16 @@ export function createMonsterSummonRenderer(scene,{
  highDetailDistance=25
 }={}){
  const active=new Map();
+ let licensedRegistryRequest=null;
  let removed=false;
  const stats={created:0,disposed:0,peak:0,dropped:0};
  function release(id){
   const node=active.get(id);
   if(!node)return;
+  node.disposed=true;
   scene.remove(node.anchor);
-  if(node.costumeHandle)node.costumeHandle.dispose();
+  if(node.externalHandle)node.externalHandle.dispose();
+  else if(node.costumeHandle)node.costumeHandle.dispose();
   else disposeMonsterSculpture(node.actor);
   if(node.statusMarker){
    node.statusMarker.geometry.dispose();
@@ -132,10 +140,54 @@ export function createMonsterSummonRenderer(scene,{
    });
   }else startMonsterAction(actor,'idle',0);
   stats.created++;
-  return {actor,anchor,detail,type:object.type,size,costumeHandle,
-   statusMarker,
+  const node={actor,anchor,detail,type:object.type,size,costumeHandle,
+   statusMarker,externalHandle:null,sourceChoice:adoptedCreatureMesh(object.type),
+   disposed:false,sourceError:null,
    lastX:object.x,lastZ:object.z,lastT:0,lastAttack:-Infinity,
    lastPose:null,lastAction:'idle'};
+  // No implicit replacement: keep the existing monster visible and
+  // animated until an explicitly adopted licensed source has loaded.
+  // Human-shaped monster rigs stay on the established character path.
+  // Keep expensive high-resolution skin rigs limited to the two nearest
+  // high-LOD summoned actors. Distant wolves preserve the original source
+  // silhouette/animation until camera proximity warrants the detailed GLB.
+  const useHeavyWolf=node.sourceChoice==='r-wolf';
+  if(!isHumanoid&&node.sourceChoice!=='legacy'&&
+     (!useHeavyWolf||detail==='high'||detail==='source')){
+   const sourceId=node.sourceChoice;
+   if(sourceId.startsWith('q'))licensedRegistryRequest??=fetchCreatureRegistry();
+   const registryTask=sourceId.startsWith('q')?licensedRegistryRequest:
+     Promise.resolve({entries:{}});
+   registryTask.then(registry=>
+    loadCreatureMeshSource(sourceId,registry,detail,{creatureId:object.type})
+   ).then(loaded=>{
+    if(removed||node.disposed||!node.anchor.parent||
+       adoptedCreatureMesh(object.type)!==sourceId){
+      loaded.dispose();return;
+    }
+    const sourceBounds=new THREE.Box3().setFromObject(loaded.root);
+    const sourceHeight=sourceBounds.max.y-sourceBounds.min.y;
+    if(!Number.isFinite(sourceHeight)||sourceHeight<=.0001){
+     loaded.dispose();node.sourceError='Empty source GLB';return;
+    }
+    const targetScale=monsterSummonWorldScale(object.type,sourceHeight);
+    // Only this summoned actor changes. Original source and catalog remain.
+    position.remove(node.actor);
+    disposeMonsterSculpture(node.actor);
+    node.actor=loaded.root;node.externalHandle=loaded;
+    position.position.y=-sourceBounds.min.y;
+    position.add(loaded.root);
+    fitting.scale.setScalar(targetScale);
+    node.size=targetScale;
+    anchor.updateMatrixWorld(true);
+    loaded.play(node.lastAction);
+    node.sourceError=null;
+   }).catch(error=>{
+    if(!node.disposed)node.sourceError=String(error?.message||error);
+    // Failed optional GLB never removes the original 3D actor.
+   });
+  }
+  return node;
  }
  function sync(objects,time=0,actionTime=time){
   if(removed)return;
@@ -150,32 +202,56 @@ export function createMonsterSummonRenderer(scene,{
     const x=(safe(o.x)-offset)*cellSize,z=(safe(o.z)-offset)*cellSize;
     return (x-camera.position.x)**2+(z-camera.position.z)**2;
   };
-  const summoned=allSummoned.length<=MONSTER_SUMMON_MAX_ACTIVE?
-    allSummoned:allSummoned.slice().sort((a,b)=>distSq(a)-distSq(b))
-       .slice(0,MONSTER_SUMMON_MAX_ACTIVE);
+  // Rank every visible actor by distance, including crowds under the cap.
+ // This reserves the source master for the actual closest nonhuman beast,
+ // rather than the first summon in an input collection.
+ const summoned=allSummoned.slice().sort((a,b)=>distSq(a)-distSq(b))
+   .slice(0,MONSTER_SUMMON_MAX_ACTIVE);
   stats.dropped+=Math.max(0,allSummoned.length-summoned.length);
   const visibleIds=new Set(summoned.map(o=>String(o.id)));
   for(const id of active.keys())if(!visibleIds.has(id))release(id);
-  let highCount=0;
-  for(const entry of active.values())if(entry.detail==='high')highCount++;
-  // Stable input order is the combat order. New high-poly actors are strictly
-  // limited; the entire 50-type catalog is never allocated at startup.
+  let detailedCount=0,sourceCount=0;
+  // Exactly three visual distances in combat. Source is deliberately
+  // allocated only to one nearest nonhuman actor; high is the intermediate
+  // shape and low is the distant shape. The gallery has no such cap.
   for(const o of summoned){
    const id=String(o.id);
    let node=active.get(id);
-   if(!node&&active.size>=MONSTER_SUMMON_MAX_ACTIVE){
-    stats.dropped++;continue;
-   }
    const px=(safe(o.x)-offset)*cellSize,pz=(safe(o.z)-offset)*cellSize;
    const ground=terrainY(px,pz);
    const distance=camera?camera.position.distanceTo(
     new THREE.Vector3(px,ground,pz)):Infinity;
+   const spec=monsterSummonSource(o.type);
+   const human=!!humanoidMonsterCostumeFor(spec);
+   const sourceAllowed=!human&&!protectedCreature(spec?.id);
+   let target=chooseCreatureLod(distance,{
+    near:highDetailDistance*.72,mid:highDetailDistance*Math.sqrt(10)
+   });
+   if(target==='near'&&(!sourceAllowed||sourceCount>=1))target='mid';
+   let detail=target==='near'?'source':target==='mid'?'high':'low';
+   if(detail!=='low'&&detailedCount>=MONSTER_SUMMON_MAX_HIGH_DETAIL)
+    detail='low';
+   // Avoid reallocating intricate models when the zoom hovers over a
+   // threshold. Hysteresis applies only if an actor has a slot to retain.
+   if(node&&node.detail!==detail){
+    const boundary=detail==='source'||node.detail==='source'?
+     highDetailDistance*.72:highDetailDistance*Math.sqrt(10);
+    const sameBand=Math.abs(distance-boundary)<boundary*.10;
+    if(sameBand&&node.detail!=='source'||
+       sameBand&&node.detail==='source'&&sourceAllowed&&sourceCount===0)
+     detail=node.detail;
+   }
+   if(detail==='source')sourceCount++;
+   if(detail!=='low')detailedCount++;
+   if(node&&(node.sourceChoice!==adoptedCreatureMesh(o.type)||node.detail!==detail)){
+    release(id);node=null;
+   }
+   if(!node&&active.size>=MONSTER_SUMMON_MAX_ACTIVE){
+    stats.dropped++;continue;
+   }
    if(!node){
-    const detail=highCount<MONSTER_SUMMON_MAX_HIGH_DETAIL&&
-     distance<highDetailDistance*Math.sqrt(10)?'high':'low';
     node=spawn(o,detail);
     if(!node)continue;
-    if(detail==='high')highCount++;
     active.set(id,node);
    }
    node.anchor.position.set(px,ground,pz);
@@ -190,23 +266,26 @@ export function createMonsterSummonRenderer(scene,{
    // a working neck, griffons real wings, and arachnids real articulated legs.
    const pulse=Number.isFinite(o.attackStartedAt)&&
     actionTime-o.attackStartedAt>=0&&actionTime-o.attackStartedAt<.95;
-   const moving=Math.hypot(safe(o.x)-safe(node.lastX),safe(o.z)-safe(node.lastZ))>.001;
+   const moving=!!o.moving||Math.hypot(safe(o.x)-safe(node.lastX),safe(o.z)-safe(node.lastZ))>.001;
    let action=o.poseAction;
    if(!['guard','dodge','hit','leap','defeat','special','roar'].includes(action)||
       actionTime-safe(o.poseStartedAt,-Infinity)>2)action=null;
-   action=action||(pulse?'attack':moving?'run':'idle');
+   action=action||(pulse?'attack':moving?(o.previewWalk?'walk':'run'):'idle');
    const actionAt=action===o.poseAction?o.poseStartedAt:
      action==='attack'?o.attackStartedAt:time;
    if(node.lastAction!==action||(
       action==='attack'&&node.lastAttack!==o.attackStartedAt)||
       (action===o.poseAction&&node.lastPose!==o.poseStartedAt)){
-    if(node.costumeHandle)node.costumeHandle.start(action,Number.isFinite(actionAt)?actionAt:time);
+    if(node.externalHandle)node.externalHandle.play(action);
+    else if(node.costumeHandle)node.costumeHandle.start(action,Number.isFinite(actionAt)?actionAt:time);
     else startMonsterAction(node.actor,action,Number.isFinite(actionAt)?actionAt:time);
     node.lastAction=action;
     node.lastAttack=o.attackStartedAt;
     node.lastPose=o.poseStartedAt;
    }
-   if(node.costumeHandle)node.costumeHandle.update(time);
+   if(node.externalHandle)node.externalHandle.update(
+    Math.max(0,Math.min(.1,time-node.lastT)));
+   else if(node.costumeHandle)node.costumeHandle.update(time);
    else animateMonsterModel(node.actor,time);
    node.lastX=o.x;node.lastZ=o.z;node.lastT=time;
    stats.peak=Math.max(stats.peak,active.size);
@@ -220,7 +299,10 @@ export function createMonsterSummonRenderer(scene,{
   sync,dispose,
   stats:()=>Object.freeze({...stats,active:active.size}),
   detailStats:()=>Object.fromEntries([...active.entries()].map(([id,m])=>[
-   id,{type:m.type,high:m.detail==='high'?1:0,low:m.detail==='low'?1:0}
+   id,{type:m.type,source:m.detail==='source'?1:0,
+    high:m.detail==='high'?1:0,low:m.detail==='low'?1:0,
+    selectedMesh:m.sourceChoice,loadedMesh:m.externalHandle?.root.userData.externalSourceId||'legacy',
+    error:m.sourceError}
   ])),
   actualModel:id=>active.get(String(id))?.actor||null,
   activeCount:()=>active.size

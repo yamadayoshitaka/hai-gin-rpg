@@ -48,7 +48,7 @@
 <main class="shell"><div class="crest" aria-hidden="true">✦　✧　✦</div><div class="subtitle">CHRONICLES OF THE SILENT STARBELL</div><h1>灰銀のレゾナンス</h1><div class="ornament"></div><div class="subtitle">沈黙の星鐘 — 千年の記憶が鳴らす、最後の戦争。</div>
 <nav class="title-menu" aria-label="ゲームメニュー">
 <button id="newGame">ニューゲーム</button><button id="replayTutorial">はじめての方・操作ガイド</button><button id="viewPrologue">序章を見る</button><button id="continueGame">続きから</button><button id="versus">対戦</button><button id="settings">設定</button><button id="storyMaintenance" type="button">物語フロー・保守</button></nav>
-<div class="version">GAME CORE v0.1 · 20章 × 10ステージ = 200</div></main>
+<div class="version">GAME CORE v0.1 · 20章 × 10ステージ = 200　<a href="./creature-model-credits.html" style="color:#b9dbea">3Dモデル著作者・ライセンス</a></div></main>
 <div id="tutorialModal" class="modal" hidden><section class="panel" aria-label="はじめての方へのチュートリアル"><div class="guide-top"><span id="guideEyebrow">最初の一歩</span><span id="guideCount">1 / 5</span></div><div class="guide-art"><div class="guide-icon" id="guideIcon">✦</div></div><h2 id="guideTitle">この世界について</h2><p id="guideBody"></p><p id="guideTip"></p><div id="guideDots" class="guide-dots" aria-hidden="true"></div><div class="choice"><button id="guideBack" type="button">◀ 前へ</button><button id="guideNext" type="button" class="primary">次へ ▶</button></div><button id="guideSkip" type="button" style="margin-top:9px;width:100%;min-height:35px;background:transparent;border:0;color:#adbcc8;font-size:12px">ガイドを省略する</button></section></div>
 <div id="newModal" class="modal" hidden><section class="panel"><h2>新しい物語</h2><p>あなたは灰銀軍の軍師。名前を決めると、レヴナの町で第一章のオープニングイベントが始まります。</p><form id="newForm"><label for="playerName">軍師の名前</label><input id="playerName" maxlength="24" required autocomplete="off" placeholder="軍師名を入力"><label for="playerGender">主人公の性別</label><select id="playerGender"><option value="male">男性</option><option value="female">女性</option></select><div class="choice"><button type="button" data-close>戻る</button><button type="submit" class="primary">物語を始める ▶</button></div><p id="newMessage"></p></form></section></div>
 <div id="settingsModal" class="modal" hidden><section class="panel"><h2>ゲーム設定</h2><p>基本設定は端末に保存します。町や戦闘の音声・画質には、各画面固有の設定もあります。</p><div class="setting"><span>BGM</span><button id="optBgm" type="button"></button></div><div class="setting"><span>音声</span><button id="optVoice" type="button" aria-label="音声のオン・オフ"></button></div><div class="setting"><label for="optQuality">画質</label><select id="optQuality"><option value="auto">自動</option><option value="high">高</option><option value="low">軽量</option></select></div><div class="choice"><button type="button" data-close>戻る</button><button type="button" class="primary" id="saveSettings">保存</button></div><p><a href="./dev-menu.html" style="color:#badbeb">開発・テスト用メニュー</a></p></section></div>
@@ -106,7 +106,9 @@ function showIntroPage(){
  img.hidden=true;notice.hidden=false;notice.textContent='現在の1コマの原画を確認しています…';
  const missing=()=>{if(ticket!==introImageRequest)return;
   img.hidden=true;notice.hidden=false;
-  notice.textContent='この性別のオープニング原画は未登録です。別の絵は使いません。';
+  notice.textContent=cut?.includes('/chapter1-provisional-live/')?
+   '最新の仮登録原画を取得できません。古い原画へ戻さず再読込してください。':
+   'この性別のオープニング原画は未登録です。別の絵は使いません。';
  };
  const load=(asset,type)=>{
   if(!asset){missing();return;}
@@ -121,7 +123,7 @@ function showIntroPage(){
    img.hidden=false;notice.hidden=true;
   };
   img.onerror=()=>{if(ticket!==introImageRequest)return;
-   if(type==='single')load(sheet,'sheet');else missing();
+   if(type==='single'&&!cut?.includes('/chapter1-provisional-live/'))load(sheet,'sheet');else missing();
   };
   img.alt='第1章イベント前 '+(shot.protagonistGender==='female'?'女性':'男性')+'の第'+(index+1)+'コマ';
   img.src=storyArtDisplayUrl(asset);

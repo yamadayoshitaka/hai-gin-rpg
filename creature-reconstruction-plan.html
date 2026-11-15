@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>灰銀のレゾナンス | 108体3D再構成計画</title>
+<style>
+:root{font-family:system-ui,"Noto Sans JP",sans-serif;color-scheme:dark}
+*{box-sizing:border-box}body{margin:0;background:#091726;color:#eaf2f8;font-size:14px}
+a{color:#a9dff2}button,select,input{font:inherit;border-radius:8px;padding:9px;border:1px solid #587d95;background:#17374e;color:#fff}
+button{cursor:pointer}button:focus-visible,select:focus-visible,a:focus-visible{outline:2px solid #e7cf93}
+header{padding:12px 16px;background:#153249;border-bottom:1px solid #4c7088;display:flex;gap:11px;align-items:center;flex-wrap:wrap}
+h1{font-size:18px;margin:0;color:#f0d393}h2{font-size:16px;margin:0;color:#f1d395}
+main{max-width:1300px;margin:auto;padding:13px}
+.statusbar{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
+.stat{border:1px solid #47667d;border-radius:10px;padding:10px;background:#102a3e}
+.stat strong{font-size:24px;display:block}.stat small{color:#bad0db;font-size:11px}
+.controls{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:12px 0}
+.controls label{font-size:11px;color:#c4d4e1;display:block}
+.controls select,.controls input{width:100%;margin-top:4px}
+.note{color:#c2d4e0;font-size:12px;line-height:1.6;margin:9px 0}
+#columns{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(340px,1fr);gap:12px}
+.panel{border:1px solid #45657a;border-radius:12px;background:#102638;padding:12px;min-width:0}
+#results{display:grid;gap:5px;max-height:69dvh;overflow:auto;margin-top:9px}
+.item{display:flex;width:100%;align-items:center;gap:8px;text-align:left;padding:8px}
+.item[aria-pressed=true]{border-color:#f0cf8c;background:#315670}
+.item .name{flex:1;min-width:0}.item strong{display:block;font-size:12px}
+.item small{color:#bdd0dd;font-size:10px}
+.pill{font-size:10px;padding:4px 6px;border-radius:12px;background:#29465b;max-width:160px}
+#details dl{display:grid;grid-template-columns:9em 1fr;gap:7px;font-size:12px}
+#details dt{color:#a9c5d5}#details dd{margin:0;overflow-wrap:anywhere}
+#sources a{display:block;margin:5px 0}
+#steps{padding-left:20px;font-size:12px;line-height:1.8}
+.actions{display:flex;flex-wrap:wrap;gap:6px;margin:11px 0}
+.actions a,.actions button{flex:1;text-align:center;text-decoration:none;white-space:nowrap;min-width:135px;border:1px solid #5b8298;background:#1c3c54;border-radius:8px;padding:9px}
+pre{white-space:pre-wrap;font-size:11px;line-height:1.65;max-height:220px;overflow:auto;background:#071728;border-radius:9px;padding:12px}
+details{border:1px solid #3c6176;border-radius:8px;padding:9px}summary{cursor:pointer;color:#eed79b}
+#selectedState{border-left:3px solid #edcb91;padding-left:9px;font-size:12px}
+#selectedState strong{display:block}
+#workload{font-size:11px;color:#aecbda}
+@media(max-width:800px){
+ header{padding:8px}h1{font-size:14px}
+ main{padding:7px}
+ .statusbar{grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}
+ .stat{padding:8px}.stat strong{font-size:20px}
+ .controls{grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}
+ #columns{grid-template-columns:1fr;gap:7px}
+ #results{max-height:230px;grid-template-columns:repeat(2,minmax(0,1fr))}
+ .item{display:block;font-size:10px;min-width:0}
+ .pill{display:block;width:fit-content;margin-top:5px}
+ #details dl{grid-template-columns:7em 1fr}
+}
+</style></head><body>
+<header><a href="./dev-menu.html">← メニュー</a><h1>モンスター・召喚獣 108体再構成計画</h1>
+ <a href="./monster-quality-review.html">品質KPI</a><a href="./creature-master-studio.html?species=m001&tier=master">🧬 高精細母体108体</a>
+ <a href="./creature-model-adoption.html">モデル選択</a>
+</header>
+<main>
+<div class="statusbar">
+ <div class="stat"><small>全対象</small><strong id="total">108</strong></div>
+ <div class="stat"><small>敵モンスター</small><strong>50</strong></div>
+ <div class="stat"><small>召喚コピー</small><strong>50</strong></div>
+ <div class="stat"><small>専用召喚</small><strong>8</strong></div>
+ <div class="stat"><small>実機KPI合格</small><strong id="passed">0</strong></div>
+</div>
+<p class="note">現在は<strong>再構成の設計・候補選定段階</strong>です。基準画の生成指示と実際に生成・承認された原画、3D候補と完成GLBを区別します。各モデルは旧版を保持し、採用ボタンを押さない限り本編の採用設定を変更しません。m005・m006およびその召喚版は保護し、改修・再検証しません。</p>
+<div class="controls">
+ <label>名前・ID<input id="query" type="search" placeholder="m001、狼、天使"></label>
+ <label>対象<select id="kind"><option value="">全部108</option><option value="monster">敵50</option><option value="summon">召喚コピー50</option><option value="dedicated-summon">専用8</option></select></label>
+ <label>系統<select id="family"><option value="">全系統</option></select></label>
+ <label>工程<select id="stage"><option value="">すべて</option><option value="default">初期モデル実装あり</option><option value="candidate">候補メッシュあり</option><option value="anatomy">解剖参考のみ</option><option value="missing">専用メッシュ未選定</option><option value="human">人型素体あり</option><option value="protected">変更禁止</option></select></label>
+</div>
+<div id="columns">
+ <section class="panel">
+  <div class="actions"><button id="export">全108対象の作業計画をJSON出力</button><button id="reset">フィルタを戻す</button></div>
+  <div id="workload" aria-live="polite"></div>
+  <div id="results"></div>
+ </section>
+ <section class="panel" id="details" aria-live="polite">
+  <h2 id="actorName">対象を選択</h2><div id="selectedState"></div>
+  <dl>
+   <dt>種族の形</dt><dd id="shape"></dd>
+   <dt>本体メッシュ</dt><dd id="mesh"></dd>
+   <dt>品質の工程</dt><dd id="step"></dd>
+   <dt>再利用パーツ</dt><dd id="parts"></dd>
+   <dt>再構成ルール</dt><dd id="strategy"></dd>
+   <dt>固有の注意点</dt><dd id="instructions"></dd>
+  </dl>
+  <h2>メッシュ候補の確認</h2><div id="sources" class="note"></div>
+  <p class="note" id="licenseInfo"></p>
+  <h2>完成までの工程</h2>
+  <ol id="steps">
+   <li>2D基準画の個別生成と実物・キャラ指定との照合</li>
+   <li>種族骨格に一致する高精細GLB選定</li>
+   <li>旧パーツ移植・毛並み・装飾・骨格合わせ</li>
+   <li>待機／歩行／走行／攻撃／咆哮／被弾／死亡の7動作</li>
+   <li>Android実機で白化・貫通・LOD・FPSを検査</li>
+   <li>KPI90点＋重大欠陥0を満たしてから明示採用</li>
+  </ol>
+  <div class="actions">
+   <a id="preview" target="_blank" rel="noopener">現在のモデルを見る</a>
+   <a id="quality" target="_blank" rel="noopener">品質KPIを開く</a>
+   <a id="adoption" target="_blank" rel="noopener">採用画面を開く</a>
+  </div>
+  <details>
+   <summary>個別2D基準画の制作プロンプト（原画の生成完了とは別）</summary>
+   <pre id="prompt"></pre>
+   <button id="copyPrompt" style="margin-top:7px">生成指示をコピー</button>
+  </details>
+ </section>
+</div>
+</main>
+<script type="module">
+import {CREATURE_RECONSTRUCTION_WORK,CREATURE_RECONSTRUCTION_BY_ID,
+ CREATURE_RECONSTRUCTION_SUMMARY,MESH_STAGE} from './src/creature-reconstruction-plan.js?v=real-body-only-v4';
+import {MONSTER_FAMILIES} from './src/monster-catalog.js';
+import {monsterDesignPrompt} from './src/monster-reference-design.js';
+import {WEB_CREATURE_MESH_SOURCES} from './src/creature-web-mesh-catalog.js';
+import {WEB_CREATURE_ANATOMY_REFERENCES} from './src/creature-research-reference-catalog.js';
+const $=id=>document.getElementById(id);
+const urlArgs=new URLSearchParams(location.search);
+let selected=CREATURE_RECONSTRUCTION_BY_ID[urlArgs.get('species')]?urlArgs.get('species'):'m001';
+for(const [code,name] of Object.entries(MONSTER_FAMILIES))
+ $('family').add(new Option(name,code));
+$('total').textContent=CREATURE_RECONSTRUCTION_SUMMARY.total;
+$('passed').textContent=CREATURE_RECONSTRUCTION_SUMMARY.qualityPassed;
+function applicableActors(){
+ const q=$('query').value.trim().toLowerCase();
+ return CREATURE_RECONSTRUCTION_WORK.filter(m=>
+  (!$('kind').value||m.kind===$('kind').value)&&
+  (!$('family').value||m.family===$('family').value)&&
+  (!$('stage').value||m.stage===$('stage').value)&&
+  (!q||(m.id+' '+m.name+' '+m.archetype+' '+m.family).toLowerCase().includes(q))
+ ).sort((a,b)=>a.priority-b.priority||a.id.localeCompare(b.id));
+}
+function pick(item){
+ selected=item.id;
+ $('actorName').textContent=item.id+' / '+item.name;
+ $('selectedState').replaceChildren();
+ const strong=document.createElement('strong');strong.textContent=MESH_STAGE[item.stage];
+ const small=document.createElement('span');
+ small.textContent=(item.kind==='monster'?'敵モンスター':item.kind==='summon'?'モンスター召喚版':'専用召喚獣')+
+  ' / 優先度 '+item.priority+' / 実3D再構成 '+(item.rebuiltGLBComplete?'完成':'未完了')+
+  ' / KPI '+(item.kpiPass?'合格':'未検証');
+ $('selectedState').append(strong,small);
+ $('shape').textContent=item.archetype;
+ $('mesh').textContent=item.baseMesh;
+ $('step').textContent=MESH_STAGE[item.stage];
+ $('parts').textContent=item.reusedParts.join('、');
+ $('strategy').textContent=item.strategy;
+ $('instructions').textContent=item.instructions+'／'+item.appearance;
+ const sources=$('sources');sources.replaceChildren();
+ const candidates=item.candidateSources;
+ const anatomy=item.anatomyReferences;
+ if(!candidates.length&&!anatomy.length)
+  sources.textContent='採用可能な高精細メッシュは未確定（現行メッシュ保全）。';
+ const oldReal={
+  'r-wolf':'https://sketchfab.com/3d-models/wolf-animated-79bd16a8c36a45c78ccd13b84b7ca99c',
+  'r-tiger':'https://sketchfab.com/3d-models/running-tiger-fc2c7fd74dd04e39935803b884c77258',
+  'r-jaguar':'https://sketchfab.com/3d-models/none-91c61c329d2a4668816f81f08dfcd492',
+  'r-eagle':'https://sketchfab.com/3d-models/american-bald-eagle-ae252eac5e2e4299be268aa0b320cd8a',
+  'r-crocodile':'https://sketchfab.com/3d-models/crocodile-49c9823cddcd4d1fb2ecae8395a46bd0'
+ };
+ for(const [ids,prefix] of [[candidates,'GLB候補'],[anatomy,'解剖学参考']]){
+  for(const id of ids){
+   const web=WEB_CREATURE_MESH_SOURCES[id];
+   const scanned=WEB_CREATURE_ANATOMY_REFERENCES[id];
+   const link=document.createElement('a');
+   link.href=web?.sourceUrl||scanned?.sourceUrl||oldReal[id]||'#';
+   link.target='_blank';link.rel='noopener noreferrer';
+   const license=web?.license||scanned?.license||(id.startsWith('r-')?'CC BY 4.0':'');
+   const modelName=web?.name||scanned?.name||id;
+   const label=(web?.style==='low-poly'?'［動作確認用・低ポリ］':web?.style==='realistic'?
+    '［写実候補・負荷高］':scanned?'［高精細スキャン・未リグ］':'［外部候補］');
+   link.textContent=prefix+' '+id+'：'+modelName+' '+label+' / '+license;
+   sources.append(link);
+   if(web?.downloadUrl){
+    const asset=document.createElement('a');
+    asset.href=web.downloadUrl;asset.target='_blank';asset.rel='noopener noreferrer';
+    asset.textContent='GLB実ファイルの配布元へ：'+id;
+    sources.append(asset);
+   }
+   if(scanned?.caution||web?.qualityCaution){
+    const note=document.createElement('div');
+    note.textContent=scanned?.caution||web.qualityCaution;
+    sources.append(note);
+   }
+  }
+ }
+ $('licenseInfo').textContent=candidates.length?
+  '既存候補は外部CC BYモデルです。著作者表示・実機動作・リグ接続を個別に検証しない限り品質合格にはできません。':
+  '専用素体の取得・制作・商用権利の確認が必要です。';
+ let prompt;
+ if(item.monsterId){
+  prompt=monsterDesignPrompt(
+   item.kind==='summon'?'summon_'+item.monsterId:item.monsterId,
+   {summoned:item.kind==='summon'});
+ }else{
+  prompt='『灰銀のレゾナンス』専用召喚獣「'+item.name+'」の個別2D基準画を制作。'+
+   '骨格：'+item.archetype+'。維持する部位：'+item.reusedParts.join('、')+
+   '。召喚獣としての威厳と神秘感を表現。'+item.instructions+
+   '。全身を収め、文字・番号・透かし・誤った脚数は描かない。';
+ }
+ $('prompt').textContent=prompt;
+ const val=encodeURIComponent(item.id),hasBase=!!item.monsterId;
+ const id=encodeURIComponent(item.monsterId||item.id);
+ const human=item.stage==='human';
+ $('preview').href=item.kind==='dedicated-summon'?
+  './summon-showcase.html?summon='+val:
+  human?'./monster-manager.html?monster='+id:
+  './creature-model-adoption.html?species='+val;
+ $('quality').href='./monster-quality-review.html?species='+val;
+ $('adoption').href=human?'./monster-manager.html?monster='+id:
+  './creature-model-adoption.html?species='+val;
+ if(item.stage==='protected'){
+  $('quality').textContent='保護対象（検査しない）';
+  $('quality').removeAttribute('href');
+  $('adoption').textContent='保護対象（採用しない）';
+  $('adoption').removeAttribute('href');
+ }else{
+  $('quality').textContent='品質KPIを開く';
+  $('adoption').textContent=human?'人型管理を確認':'モデルの選択・採用';
+ }
+ history.replaceState(null,'','?species='+val);
+ renderList();
+}
+function renderList(){
+ const data=applicableActors();
+ $('workload').textContent='表示 '+data.length+' / 108件：'+
+  '既定モデル（未合格） '+data.filter(x=>x.stage==='default').length+'、'+
+  '候補あり '+data.filter(x=>x.stage==='candidate').length+'、'+
+  '専用メッシュ未選定 '+data.filter(x=>x.stage==='missing'||x.stage==='anatomy').length+'、'+
+  '人型 '+data.filter(x=>x.stage==='human').length+'、'+
+  '保護 '+data.filter(x=>x.stage==='protected').length;
+ const list=$('results');list.replaceChildren();
+ for(const item of data){
+  const b=document.createElement('button');b.type='button';b.className='item';
+  b.setAttribute('aria-pressed',String(item.id===selected));
+  const name=document.createElement('div');name.className='name';
+  const title=document.createElement('strong');title.textContent=item.name;
+  const small=document.createElement('small');small.textContent=item.id+' / '+item.archetype+' / 優先 '+item.priority;
+  name.append(title,small);
+  const status=document.createElement('span');status.className='pill';status.textContent=MESH_STAGE[item.stage];
+  b.append(name,status);b.onclick=()=>pick(item);list.append(b);
+ }
+}
+for(const id of ['query','kind','family','stage']){
+ $(id).addEventListener(id==='query'?'input':'change',renderList);
+}
+$('reset').onclick=()=>{$('query').value='';$('kind').value='';$('family').value='';$('stage').value='';renderList();};
+$('export').onclick=()=>{
+ const result={schema:'hai-gin/creature-reconstruction-plan/v1',
+  note:'Reconstruction work instructions, NOT approved GLBs or KPI results',
+  ...CREATURE_RECONSTRUCTION_SUMMARY,actors:CREATURE_RECONSTRUCTION_WORK};
+ const blob=new Blob([JSON.stringify(result,null,2)],{type:'application/json'});
+ const url=URL.createObjectURL(blob),a=document.createElement('a');
+ a.href=url;a.download='hai-gin-108-creature-reconstruction.json';a.click();
+ setTimeout(()=>URL.revokeObjectURL(url),1500);
+};
+$('copyPrompt').onclick=()=>{
+ const src=$('prompt').textContent;
+ if(!navigator.clipboard?.writeText)return;
+ navigator.clipboard.writeText(src)
+  .then(()=>{$('copyPrompt').textContent='コピーしました';})
+  .catch(()=>{$('copyPrompt').textContent='手動でコピーしてください';});
+};
+pick(CREATURE_RECONSTRUCTION_BY_ID[selected]);
+</script>
+</body></html>

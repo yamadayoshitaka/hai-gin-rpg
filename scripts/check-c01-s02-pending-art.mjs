@@ -64,12 +64,15 @@ for(const group of groups){
   const rel='assets/story/chapters/c01/panels/'+normalized+'-'+group.edition+'-'+group.gender+'.webp';
   if(seenKeys.has(key)||seenFiles.has(rel))throw Error('Duplicate pending key/path '+key);
   seenKeys.add(key);seenFiles.add(rel);
-  if(registeredStoryPanelAsset(shot))throw Error('Attempt to overwrite registered shot '+key);
+  const currentGameAsset=registeredStoryPanelAsset(shot);
+  if(currentGameAsset&&!currentGameAsset.startsWith('./assets/story/chapter1-provisional-live/'))
+   throw Error('Unexpected protected legacy binding in pending group '+key);
   const proofRel=realProofRoot+normalized+'-'+group.edition+'-'+group.gender+'.review.json';
   const row={shotKey:key,panelId:shot.id,gender:group.gender,outcome:group.edition,
    scriptText:shot.subtitleText||shot.text,individualAsset:rel,reviewProof:proofRel,
    minNativePixels:[768,320],status:'MISSING_REAL_IMAGE',dimensions:null,sha256:null,
-   sourceVerified:false,personAndTextApproved:false,gameRegistered:false};
+   sourceVerified:false,personAndTextApproved:false,
+   gameRegistered:Boolean(currentGameAsset),provisionalGameAsset:currentGameAsset||null};
   const file=path.join(root,rel);
   if(fs.existsSync(file)){
    const bytes=fs.readFileSync(file),sha=hash(bytes);
@@ -106,6 +109,7 @@ if(rows.length!==25||seenKeys.size!==25||seenFiles.size!==25)throw Error('Pendin
 const allReady=rows.every(r=>r.status==='REVIEWED_REAL_ART_READY_FOR_REGISTRATION');
 const report={kind:'C01_S02_REAL_ART_READINESS_CHECK_NOT_APPROVAL',stageId:stage,
  generatedAt:new Date().toISOString(),expectedPending:25,existingProtected:23,
+ existingProvisionalGameRegistrations:rows.filter(r=>r.gameRegistered).length,
  registeredNewImages:0,readyForRegistration:rows.filter(r=>r.status==='REVIEWED_REAL_ART_READY_FOR_REGISTRATION').length,
  sourceImagesFound:rows.filter(r=>r.sha256).length,allReady,
  noArtificialUpscale:true,manualArtworkReviewRequired:true,rows};
