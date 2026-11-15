@@ -86,7 +86,7 @@ for(const stage of report.stages){
     assert.equal(panel.renderReady,false);
     assert.equal(panel.approval.approved,false);
     assert.equal(panel.manualReviewRequired,true);
-    assert.deepEqual(panel.individualMinPixels,stage.stageId==='c01-s02'?[768,320]:[1536,864]);
+    assert.deepEqual(panel.individualMinPixels,stage.nativeImageProfile.minimumNativePixels);
     assert(panel.generationPrompt.startsWith('P0_ABSOLUTE_MUST_FOLLOW.'));
     for(const token of ['P0_REFERENCE_IMAGE_BYTES','P0_NO_TEXT_UI_IN_ART',
       'P0_FINAL_DOUBLE_CHECK','CURRENT EXACT SCREENPLAY BEAT: '+panel.scriptText,
