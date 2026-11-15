@@ -34,7 +34,7 @@ test('adoption is explicit, persisted, isolated per species and reversible',()=>
  setAdoptedCreatureMesh('m001','q022',storage);
  assert.equal(adoptedCreatureMesh('m001',storage),'q022');
  assert.equal(adoptedCreatureMesh('summon_m001',storage),'q022');
- assert.equal(adoptedCreatureMesh('m002',storage),'legacy');
+ assert.equal(adoptedCreatureMesh('m002',storage),'r-wolf');
  setAdoptedCreatureMesh('summon_m001','legacy',storage);
  assert.equal(adoptedCreatureMesh('summon_m001',storage),'legacy');
  assert.equal(adoptedCreatureMesh('m001',storage),'q022');
