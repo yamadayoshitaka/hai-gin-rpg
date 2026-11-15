@@ -940,7 +940,9 @@ export async function createRealBattleOutfitStudio({scene,faceModel,getFaceModel
    clothing=await buildRiggedJobOutfit({characterModel:fresh.model,
     parent:fresh.object3D,job:chosen.name,sex:gender,quality:'preview',
     preserveBody:false,rarity:'N',studioPreferSkinnedLegs:true,
-    studioPreserveLegAnatomy:true});
+    studioPreserveLegAnatomy:true,
+    // Keep anatomically skinned calves/feet in the swordsman preview only.
+    studioVisibleLegAnatomy:chosen.heroJob==='swordsman'});
    if(serial!==request||disposed){
     clothing.dispose();fresh.dispose();return;
    }
@@ -1128,6 +1130,7 @@ export async function createRealBattleOutfitStudio({scene,faceModel,getFaceModel
   headReport,headFit,proportions,finishReport,
   sourceTrousers:outfit?.presentation?.().useSourceSkinnedLegs||false,
   retainedLegAnatomy:outfit?.diagnostics?.studioPreserveLegAnatomy||false,
+  swordsmanVisibleLegAnatomy:outfit?.diagnostics?.studioVisibleLegAnatomy||false,
   v63CoveredSkinMasked:outfit?.diagnostics?.v63CoveredSkinMasked||false,
   v63BareAnatomyRestorable:outfit?.diagnostics?.v63BareAnatomyRestorable||false,
   preservedLegRegions:outfit?.diagnostics?.preservedUnderGarmentLegRegions||[],
