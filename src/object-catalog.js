@@ -516,29 +516,59 @@ export function createObjectById(id,{cellSize=2.2}={}){
    }
   }
   if(id==='town_handcart_001'){
-   box(2.8*c,.23*c,1.65*c,0,1.08*c,0,wood);
-   for(const z of [-.73,.73])box(2.9*c,.46*c,.14*c,0,1.42*c,z*c,wood);
-   for(const x of [-1.33,1.33])box(.13*c,.46*c,1.6*c,x*c,1.42*c,0,wood);
-   for(const z of [-1.04,1.04]){
-    const wheel=new THREE.Mesh(new THREE.TorusGeometry(.56*c,.15*c,8,16),wood);
-    wheel.position.set(0,.58*c,z*c);root.add(wheel);
-    for(let i=0;i<6;i++){const a=i*Math.PI/3;
-     const spoke=new THREE.Mesh(new THREE.BoxGeometry(.08*c,.95*c,.08*c),wood);
-     spoke.position.set(0,.58*c,z*c);spoke.rotation.z=a;root.add(spoke);
+   // Longitudinal chassis bears the bed; wheel hubs and axle connect the rolling assembly.
+   for(const z of [-.63,.63])box(3.12*c,.2*c,.17*c,0,.93*c,z*c,wood);
+   for(const x of [-1.22,0,1.22])box(.17*c,.17*c,1.52*c,x*c,.96*c,0,wood);
+   for(let i=0;i<8;i++)box(.34*c,.13*c,1.55*c,(-3.5+i)*.35*c,1.11*c,0,wood);
+   for(const z of [-.79,.79]){
+    for(let i=0;i<5;i++)box(.53*c,.34*c,.105*c,(-2+i)*.54*c,1.42*c,z*c,wood);
+   }
+   for(const x of [-1.37,1.37])box(.12*c,.45*c,1.55*c,x*c,1.4*c,0,wood);
+   const axle=new THREE.Mesh(new THREE.CylinderGeometry(.095*c,.095*c,2.55*c,12),iron);
+   axle.rotation.x=Math.PI/2;axle.position.set(0,.6*c,0);root.add(axle);
+   for(const z of [-1.14,1.14]){
+    const wheel=new THREE.Mesh(new THREE.TorusGeometry(.51*c,.105*c,10,24),wood);
+    wheel.position.set(0,.6*c,z*c);root.add(wheel);
+    const hub=new THREE.Mesh(new THREE.CylinderGeometry(.18*c,.18*c,.21*c,12),wood);
+    hub.rotation.x=Math.PI/2;hub.position.set(0,.6*c,z*c);root.add(hub);
+    for(let i=0;i<8;i++){
+     const spoke=new THREE.Mesh(new THREE.BoxGeometry(.075*c,.83*c,.075*c),wood);
+     spoke.position.set(0,.6*c,z*c);spoke.rotation.z=i*Math.PI/8;root.add(spoke);
     }
    }
-   for(const z of [-.5,.5])box(1.8*c,.1*c,.1*c,2*c,.93*c,z*c,wood);
+   for(const z of [-.53,.53]){
+    box(1.72*c,.12*c,.14*c,2.0*c,.95*c,z*c,wood);
+    box(.12*c,.25*c,.12*c,2.75*c,.84*c,z*c,iron);
+   }
   }
   if(id==='stone_fence_001'){
+   // Individual ashlar courses overlap at the joints rather than intersecting continuous bars.
    for(const x of [-1.3,0,1.3]){
-    box(.32*c,1.25*c,.32*c,x*c,.625*c,0,stone);
-    box(.43*c,.16*c,.43*c,x*c,1.32*c,0,stone);
+    box(.4*c,.19*c,.47*c,x*c,.095*c,0,stone);
+    box(.31*c,1.16*c,.31*c,x*c,.74*c,0,stone);
+    box(.47*c,.17*c,.47*c,x*c,1.39*c,0,stone);
+    box(.32*c,.12*c,.32*c,x*c,1.51*c,0,stone);
    }
-   for(const y of [.42,.91])box(3*c,.23*c,.25*c,0,y*c,0,stone);
+   for(const y of [.45,.91]){
+    for(let i=0;i<10;i++){
+     const x=-1.43+(i+.5)*.286;
+     box(.278*c,.22*c,.25*c,x*c,y*c,0,stone);
+    }
+   }
   }
   if(id==='town_fence_001'){
-   for(const x of [-1.3,0,1.3])box(.16*c,1.3*c,.16*c,x*c,.65*c,0,wood);
-   for(const y of [.45,.95])box(3*c,.13*c,.15*c,0,y*c,0,wood);
+   // Grounded posts, two mortised rails and separate pickets with capped end grain.
+   for(const x of [-1.3,0,1.3]){
+    box(.24*c,.14*c,.26*c,x*c,.07*c,0,stone);
+    box(.19*c,1.38*c,.19*c,x*c,.72*c,0,wood);
+    box(.24*c,.1*c,.24*c,x*c,1.44*c,0,wood);
+   }
+   for(const y of [.43,1.04])box(2.85*c,.15*c,.16*c,0,y*c,0,wood);
+   for(let i=0;i<12;i++){
+    const x=-1.18+i*(2.36/11);
+    box(.115*c,1.05*c,.095*c,x*c,.65*c,.12*c,wood);
+    box(.13*c,.085*c,.115*c,x*c,1.2*c,.12*c,wood);
+   }
   }
   if(id==='stone_archway_001'){
    for(const sign of [-1,1]){
