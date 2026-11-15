@@ -359,7 +359,10 @@ export function createDetailedOutfit(job, sex, body, textures, {quality='preview
           rearPoint.x,rearPoint.y,rearPoint.z);
         backUv.push(col/cols,0,col/cols,1);
         if(col<cols){const i=start+col*2;
-          backFaces.push(i,i+1,i+2,i+1,i+3,i+2);
+          // The upper and lower rims face opposite directions. Keeping the
+          // same winding on both inverted one rim's PBR vertex normals.
+          if(y===top)backFaces.push(i,i+1,i+2,i+1,i+3,i+2);
+          else backFaces.push(i,i+2,i+1,i+1,i+2,i+3);
         }
       }
     }
