@@ -108,7 +108,8 @@ assert.ok(battle.units.some(u=>Number.isInteger(u.formationCell)&&u.formationCel
 assert.equal(battle.units.find(u=>u.armyGroupId===2).formationType,'support');
 assert.ok(availableSortieOrders(game,2).includes('support'),'a priest with a valid formation can support');
 setSortieFormation(game,2,'attack');
-assert.deepEqual(availableSortieOrders(game,2),[],'wrong job roles make a free layout with no orders');
+assert.deepEqual(availableSortieOrders(game,2),['charge','defend','hold','retreat'],
+ 'changing the preset auto-fits a compatible attacker and removes unavailable priest support');
 setSortieFormation(game,2,'support');
 setSortieFormation(game,2,'free');
 setSortieGridCell(game,2,15,2);
