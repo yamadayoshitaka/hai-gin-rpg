@@ -6219,7 +6219,16 @@ let lastCircleTargetResolvedAt=-Infinity;
 const orderedSquad=()=>selectedSquadId;
 function squadCommanderId(id){return storyRequest?.units.find(u=>String(u.squadId)===String(id))?.commanderId??'provisional';}
 function individualCommanderUnavailableReason(id){
- if(id==null)return '部隊未選択';
+  if(id==null)return '部隊未選択';
+  // One strategist commands all three sortie teams; no per-team general.
+  if(storyRequest?.sortieTeamCount){
+   const leader=(massSim?.units??actors).find(u=>u.team===0&&u.isStrategist);
+   if(!leader)return '軍師不在：命令不可（自動行動）';
+   if(leader.alive===false||leader.hp<=0)return '☠ 軍師戦死：命令不可（自動行動）';
+   if(storyRequest.commanders?.find(c=>String(c.id)==='player')?.active===false)
+    return '☠ 軍師戦死：命令不可（自動行動）';
+   return '';
+  }
  if(massSim){
   const strategist=massSim.units.find(u=>u.team===0&&u.isStrategist&&String(u.squadId)===String(id));
   if(!strategist)return '軍師不在：命令不可（自動行動）';
@@ -9281,7 +9290,8 @@ async function finishBattleLoading(){
    const plan=previewFormationPlan();
    for(const detail of plan.summaries){
     const refs=formationRows.get(detail.squadId);if(!refs)continue;
-    const actualType=classifySquad(detail);
+    const savedType=storyRequest?.sortieTeamCount?storyRequest.units.find(u=>String(u.squadId)===String(detail.squadId))?.formationType:null;
+     const actualType=['attack','balanced','support'].includes(savedType)?savedType:classifySquad(detail);
     selectedSquadFormations.set('0:'+detail.squadId,actualType);
     refs.name.textContent=squadName(detail.squadId)+'（'+detail.total+'人）';
     const assigned=Object.values(manualJobs[detail.squadId]||{}).reduce((n,v)=>n+v,0);
@@ -9436,7 +9446,13 @@ async function finishBattleLoading(){
     const orderSelect=document.createElement('select');orderSelect.setAttribute('aria-label',squadName(id,team)+'の初期号令');
     orderSelect.style.cssText='width:100%;padding:7px;color:white;background:#193852;border:1px solid #6b90ac;border-radius:6px';
     for(const [value,label] of Object.entries(INITIAL_ORDER_LABELS)){
-     const option=document.createElement('option');option.value=value;option.textContent=label;orderSelect.append(option);
+     const option=document.createElement('option');option.value=value;option.textContent=label;
+      if(team===0&&storyRequest?.sortieTeamCount){
+       const jobs=storyRequest.units.filter(u=>String(u.squadId)===String(id)).map(u=>u.job);
+       if(value==='support'&&!jobs.includes('僧侶'))option.disabled=true;
+       if(value==='explore'&&!jobs.some(j=>j==='忍者'||j==='盗賊'))option.disabled=true;
+      }
+      orderSelect.append(option);
     }
     const innOrder=team===0?storyRequest?.initialSquadOrders?.[String(id)]:null;
      orderSelect.value=innOrder&&Object.hasOwn(INITIAL_ORDER_LABELS,innOrder)&&innOrder!=='explore'?innOrder:'charge';
