@@ -59,6 +59,9 @@ assert.match(jobs,/data-sortie-job="/);assert.match(jobs,/data-sortie-view="setu
 assert.ok(!jobs.includes('data-sortie-cell="'),'job chooser replaces the board, not stacked below it');
 const templates=renderThreeTeamPlanner({game,teamId:2,view:'templates'});
 assert.equal((templates.match(/data-sortie-formation="/g)||[]).length,3);
+const captains=renderThreeTeamPlanner({game,teamId:2,view:'captains'});
+assert.match(captains,/班の隊長を選択/);
+assert.match(captains,/data-sortie-captain=/);
 const counts=renderThreeTeamPlanner({game,teamId:2,cellIndex:9,view:'count'});
 assert.match(counts,/data-sortie-count/);
 assert.ok(!html.includes('軍師雇用'));
