@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import {createFastFaceSurfaceSampler} from './face-feature-meshes.js';
 import {getWigStyle,DEFAULT_WIG_STYLE_ID,WIG_BASE_VOLUME_PROFILES,WIG_SILHOUETTE_PROFILES} from './face-wig-styles.js?v=44';
-import {makeStyleSpecificHair} from './face-wig-ornaments-v49.js?v=65';
+import {makeStyleSpecificHair} from './face-wig-ornaments-v49.js?v=66';
 import {catalogHairGroom,groomGuideOffset} from './face-hair-groom-v50.js?v=50';
 
 /**
