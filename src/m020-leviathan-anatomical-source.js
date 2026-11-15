@@ -67,6 +67,21 @@ export function buildLeviathanAnatomicalSource(THREE,{segments=56,radial=18}={})
   ellipsoid(head,'cornea-'+side,iris,[.52,.25,side*.80],[.19,.18,.085]);
   ellipsoid(head,'vertical-pupil-'+side,black,[.57,.25,side*.866],[.06,.135,.028]);
   ellipsoid(head,'nostril-'+side,black,[1.94,-.035,side*.30],[.08,.035,.06]);
+  // Four independent curved opercular slits follow the skull's lateral contour.
+  // They are inset dark grooves, not markings projected onto the eye sphere.
+  for(let gill=0;gill<4;gill++){
+   const x=-.74+gill*.19,curve=[];
+   for(let k=0;k<=12;k++){
+    const t=k/12,angle=-.63+1.18*t;
+    curve.push(new THREE.Vector3(
+     x-.085*Math.sin(Math.PI*t),
+     -.06+.44*Math.sin(angle),
+     side*(.62+.105*Math.cos(angle)-.025*gill)));
+   }
+   const slit=new THREE.Mesh(new THREE.TubeGeometry(
+    new THREE.CatmullRomCurve3(curve),20,.018,5,false),black);
+   slit.name='opercular-gill-slit-'+side+'-'+gill;head.add(slit);
+  }
   for(let i=0;i<9;i++){
    const x=.12+i*.19;
    const fang=new THREE.Mesh(new THREE.ConeGeometry(.044,.17,6),bone);
