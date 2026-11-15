@@ -46,8 +46,16 @@ async function ready(page){
   await captureChromiumScreenshot(page,out+'/catalog-female-16.png');
   // The photographed side-ponytail must attach to real scalp, not bbox.
   await page.evaluate(()=>document.querySelector('[data-tab="hair"]')?.click());
-  await page.locator('#gender').selectOption('female');
-  await page.locator('#search').fill('サイドポニーテール');
+  await page.evaluate(()=>{
+   const el=document.getElementById('gender');
+   if(!el)throw Error('Catalog gender selector disappeared at '+location.href);
+   el.value='female';el.dispatchEvent(new Event('change',{bubbles:true}));
+  });
+  await page.evaluate(()=>{
+   const el=document.getElementById('search');
+   if(!el)throw Error('Catalog search missing');
+   el.value='サイドポニーテール';el.dispatchEvent(new Event('input',{bubbles:true}));
+  });
   await page.evaluate(()=>[...document.querySelectorAll('.entry')].find(b=>b.textContent.includes('サイドポニーテール'))?.click());
   await page.waitForFunction(()=>{
    const frame=document.querySelector('#preview')?.contentWindow;
@@ -65,14 +73,26 @@ async function ready(page){
   await captureChromiumScreenshot(page,out+'/female-side-ponytail-side.png');
   // All 22 expression entries should generate actual face geometry.
   await page.evaluate(()=>document.querySelector('[data-tab="expressions"]')?.click());
-  await page.locator('#search').fill('決意');
+  await page.evaluate(()=>{
+   const el=document.getElementById('search');
+   if(!el)throw Error('Catalog search missing');
+   el.value='決意';el.dispatchEvent(new Event('input',{bubbles:true}));
+  });
   await page.evaluate(()=>[...document.querySelectorAll('.entry')].find(b=>b.textContent.includes('決意'))?.click());
   await page.waitForFunction(()=>document.querySelector('#preview')?.contentWindow
    ?.__faceMasterQA?.()?.expression?.expression==='determined',null,{timeout:90000});
   await captureChromiumScreenshot(page,out+'/female-determined-expression.png');
-  await page.locator('#gender').selectOption('male');
+  await page.evaluate(()=>{
+   const el=document.getElementById('gender');
+   if(!el)throw Error('Catalog gender selector disappeared at '+location.href);
+   el.value='male';el.dispatchEvent(new Event('change',{bubbles:true}));
+  });
   await page.evaluate(()=>document.querySelector('[data-tab="faces"]')?.click());
-  await page.locator('#search').fill('貴公子');
+  await page.evaluate(()=>{
+   const el=document.getElementById('search');
+   if(!el)throw Error('Catalog search missing');
+   el.value='貴公子';el.dispatchEvent(new Event('input',{bubbles:true}));
+  });
   await page.evaluate(()=>[...document.querySelectorAll('.entry')].find(b=>b.textContent.includes('中性的な貴公子'))?.click());
   await page.waitForFunction(()=>{
    const state=document.querySelector('#preview')?.contentWindow?.__faceMasterQA?.();
