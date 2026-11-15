@@ -50,12 +50,14 @@ export function applyHeroineSkinMaterial(face){
   roughnessMap:source.roughnessMap||null,aoMap:source.aoMap||null,
   vertexColors:!!source.vertexColors,
   side:source.side,transparent:source.transparent,opacity:source.opacity,
-  roughness:.74,metalness:0,clearcoat:.052,clearcoatRoughness:.78,
-  sheen:.095,sheenRoughness:.83,sheenColor:new THREE.Color(0xc98978),
+  roughness:.74,metalness:0,clearcoat:.035,clearcoatRoughness:.82,
+  sheen:.075,sheenRoughness:.86,sheenColor:new THREE.Color(0xc98978),
   bumpMap:source.bumpMap||(face.geometry?.getAttribute('uv')?getHeroineMicroSkinTexture():null),
   bumpScale:source.bumpMap?source.bumpScale:.00010
  });
- material.name='heroine-natural-skin-v66';
+ material.name='heroine-natural-skin-v67';
+ // Retain low-amplitude physical highlights; reduce mannequin-like clearcoat.
+ face.userData.v67SoftSkinSpecular=true;
  face.userData.v66MultiScalePoreTexture=true;
  face.userData.v66PoreTextureResolution=128;
  face.material=material;
