@@ -15,6 +15,11 @@ export function makeThreeTeamBattleRequest(game,stage,battleId){
  const teams=sortieTeams(game).filter(t=>sortieTeamCount(t)>0);
  if(teams.length>3)throw Error('出撃できる隊は最大3隊です。');
  const captainById=new Map(chosen.map(a=>[a.teamId,a.captain]));
+ const mainSourceByTeam=new Map(teams.map(team=>{
+  const group=chosen.filter(x=>x.teamId===team.id);
+  const preferred=group.find(x=>String(x.squad.id)===String(team.captainId))||group[0];
+  return [team.id,String(preferred.squad.id)];
+ }));
  const orders={},allowed={},armyGroupBySquad={},subdivisionMap={};
  const heroTeamId=teams[0]?.id;
  let heroIncluded=false;
@@ -23,6 +28,7 @@ export function makeThreeTeamBattleRequest(game,stage,battleId){
    equipment=squadEquipmentBonus(squad),parts=Math.max(1,Math.min(divisionCount||1,count)),
    sourceId=String(squad.id),group=String(teamId);
   const splits=Array.from({length:parts},(_,i)=>Math.floor(count/parts)+(i<count%parts?1:0));
+  const mainSource=String(squad.id)===mainSourceByTeam.get(teamId);
   return splits.flatMap((size,part)=>{
    // Stable unique physical squad ID: every job cell can be commanded
    // independently; all its parts still inherit the parent's group buffs.
@@ -32,9 +38,9 @@ export function makeThreeTeamBattleRequest(game,stage,battleId){
      teams.find(t=>t.id===teamId).initialOrder:'hold';
    allowed[key]=availableSortieOrders(game,teamId);
    armyGroupBySquad[key]=teamId;
-   subdivisionMap[key]={parentGroup:teamId,sourceSquadId:squad.id,part:part+1,parts,formationCell,leaderHeldInMain:part===0};
+   subdivisionMap[key]={parentGroup:teamId,sourceSquadId:squad.id,part:part+1,parts,formationCell,leaderHeldInMain:mainSource&&part===0};
    return Array.from({length:size},()=>{
-    const isStrategist=!heroIncluded&&teamId===heroTeamId;
+    const isStrategist=!heroIncluded&&teamId===heroTeamId&&mainSource&&part===0;
     if(isStrategist)heroIncluded=true;
     return {
      squadId,sourceSquadId:squad.id,commanderId:'player',
@@ -43,7 +49,7 @@ export function makeThreeTeamBattleRequest(game,stage,battleId){
      equipmentBuff:{...equipment,attack:(equipment.attack||0)+bonus.attack+formationBonus.attack,
       defense:(equipment.defense||0)+bonus.defense+formationBonus.defense},
      formationBuff:{...formationBonus},
-     armyGroupId:teamId,teamMainLeader:part===0,
+     armyGroupId:teamId,teamMainLeader:mainSource&&part===0,
      captain:captain?{id:captain.id,name:captain.characterName||captain.name||captain.job+'代表',
       rarity:captain.rarity,job:captain.job}:null,
      formationType:formation,formationCell,divisionPart:part+1,divisionParts:parts,
