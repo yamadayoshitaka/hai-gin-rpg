@@ -5,6 +5,9 @@
  */
 export const MONSTER_QUALITY_SCHEMA='hai-gin/monster-quality-review/v1';
 export const MONSTER_QUALITY_TARGET=90;
+export const MONSTER_QUALITY_MIN_RATINGS=Object.freeze({
+ design:4,anatomy:4,materials:4,actions:4,parts:4,mobile:3,regression:4,rights:5
+});
 export const MONSTER_QUALITY_FIELDS=Object.freeze([
  Object.freeze({id:'design',name:'2D基準画との一致',weight:20,
   description:'顔、体格、シルエット、属性、種族固有特徴の一致'}),
@@ -100,8 +103,11 @@ export function assessMonsterQuality(record){
  const missingActions=MONSTER_QUALITY_ACTIONS.filter(field=>!asBool(actions[field.id]))
   .map(field=>field.id);
  const speciesChecks=Array.isArray(record?.speciesChecks)?record.speciesChecks:[];
- const missingAnatomy=speciesChecks.length&&speciesChecks.every(asBool)?[]:
+ const missingAnatomy=speciesChecks.length===3&&speciesChecks.every(asBool)?[]:
   ['speciesAnatomy'];
+ const lowCategories=MONSTER_QUALITY_FIELDS.filter(
+  f=>isRating(ratings[f.id])&&ratings[f.id]<MONSTER_QUALITY_MIN_RATINGS[f.id]
+ ).map(f=>f.id);
  const metrics=record?.metrics||{};
  const measuredFps=Number(metrics.fps1Low);
  const fpsValid=hasText(String(metrics.fps1Low??''))&&
@@ -120,9 +126,11 @@ export function assessMonsterQuality(record){
  if(!performanceVerified)missingEvidence.push('performanceMetric');
  const ready=missingRatings.length===0&&unverified.length===0&&
   missingActions.length===0&&missingAnatomy.length===0&&missingEvidence.length===0;
- const status=!ready?'unverified':score>=MONSTER_QUALITY_TARGET?'pass':'fail';
+ const status=!ready?'unverified':
+  score>=MONSTER_QUALITY_TARGET&&lowCategories.length===0?'pass':'fail';
  return Object.freeze({score,status,ready,pass:status==='pass',
   missingRatings,unverified,missingActions,missingAnatomy,missingEvidence,
+  lowCategories,
   threshold:MONSTER_QUALITY_TARGET});
 }
 export function monsterQualityProgress(record){
