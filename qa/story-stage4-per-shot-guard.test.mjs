@@ -36,7 +36,7 @@ for(const prompt of [m2,m4]){
  assert.match(prompt,/>=800x450/);
  assert.match(prompt,/do not auto-approve/i);
  assert.match(prompt,/never repeat their scenery/i);
- assert.match(prompt,/not a diptych, triptych, collage/i);
+ assert.match(prompt,/do not turn a one-frame shot into a diptych/i);
  assert.doesNotMatch(prompt,/native original frame at >=1536x864/);
 }
 console.log('PASS: separate Stage 4 m2/m4 per-shot directing, cast, native 800 threshold, no collage; raster review pending.');
