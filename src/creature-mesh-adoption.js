@@ -22,6 +22,8 @@ const allowed=new Set([
  ...NONHUMAN_MONSTER_IDS.map(id=>'summon_'+id),
  ...NONHUMAN_EXTRA_SUMMON_IDS
 ]);
+const protectedIds=new Set(['m005','m006','summon_m005','summon_m006']);
+export const protectedCreature=id=>protectedIds.has(String(id));
 const sourceId=/^(?:q(?:00[1-9]|0[1-4][0-9]|050)|r-(?:wolf|tiger|jaguar|eagle|crocodile))$/;
 const recommend=Object.freeze({
  beast:['q022'], feline:['q020'], avian:['q048','q030','q002'],
@@ -39,13 +41,14 @@ const exceptions=Object.freeze({
  m046:['q024','q031'],m047:['q049'],m048:[],m049:['q049'],m050:['q008']
 });
 export function eligibleCreature(id){
- return allowed.has(id);
+ return allowed.has(id)&&!protectedCreature(id);
 }
 export function baseMonsterId(id){
  const raw=String(id).startsWith('summon_')?String(id).slice(7):String(id);
  return MONSTER_BY_ID[raw]?raw:null;
 }
 export function recommendedMeshSources(id){
+ if(protectedCreature(id))return [];
  const m=MONSTER_BY_ID[baseMonsterId(id)];
  if(!m)return id==='wolf'?['r-wolf','q022']:
    ['wyvern','dragon','elder_dragon','dragon_lord'].includes(id)?['q040','q039']:[];
@@ -76,7 +79,7 @@ export function adoptedCreatureMesh(id,storage=globalThis.localStorage){
  return typeof choice==='string'&&sourceId.test(choice)?choice:'legacy';
 }
 export function setAdoptedCreatureMesh(id,source,storage=globalThis.localStorage){
- if(!eligibleCreature(id))throw Error('人間タイプ・未知の種族は切り替えできません: '+id);
+ if(!eligibleCreature(id))throw Error('人間タイプ・保護対象・未知の種族は切り替えできません: '+id);
  if(source!=='legacy'&&!sourceId.test(source))throw Error('未登録の外部モデル: '+source);
  if(!storage?.setItem)throw Error('端末ストレージへ保存できません');
  const map=stored(storage);
@@ -92,6 +95,7 @@ export function setAdoptedCreatureMesh(id,source,storage=globalThis.localStorage
  return source;
 }
 export function compatibleSourceWarning(id,source){
+ if(protectedCreature(id))return 'PR #345/#346の保護対象です。モデルの変更と再検証を行いません。';
  if(source==='legacy')return '';
  if(!sourceId.test(source))return '未登録のGLB';
  if(source.startsWith('r-'))return 'CC BY 4.0の外部リアル候補。著作者表示必須。アニメーション・既存パーツの移植は未完了のため動作を確認してください。';
