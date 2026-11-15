@@ -25,6 +25,14 @@
       ],
       "commitSha": "b64fd12308664debb41d14ba76d0ffe7d4da669c",
       "qa": "unverified"
+    },
+    {
+      "id": "shared-scalp-outward-winding",
+      "sourceFiles": [
+        "src/character-system/hair-attachment-runtime.js"
+      ],
+      "commitSha": "7346c5714f5ad266721c8d7cd8ba58a9b101714b",
+      "qa": "unverified"
     }
   ],
   "remainingIds": [
@@ -34,5 +42,5 @@
     "job05-male",
     "job05-female"
   ],
-  "nextAction": "Run Node syntax and WebGL front/side/back QA for lateral torso sampling; enumerate all human IDs and validate each preset; fix remaining #438 rear artifact."
+  "nextAction": "Run Node syntax/WebGL crown and rear views for both sexes and all hairstyles; enumerate full character catalog and validate each preset, then resolve #438 rear armor artifacts."
 }
