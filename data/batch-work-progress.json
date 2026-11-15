@@ -51,12 +51,12 @@
     },
     "monster": {
       "source": "ChatGPT 定期タスクの実行結果",
-      "lastRunAt": "2026-11-15T14:07:51Z",
-      "subject": "PR #382 鳥類の翼カフを小型化し羽根のシルエット干渉を低減",
-      "summary": "実処理ON。非人間型衣装src/monster-species-wardrobe.jsの鳥類翼カフを[.105,.067,.094]から[.075,.043,.068]へ縮小しPR #382の既存ブランチに実コミット1c756f3c。GitHub再取得で差分の静的確認成功。ただし単体テスト・CI・WebGL画像・Android FPS未実行。PR #385 E2E photoSurfaces/source-composite不整合は引継ぎ未解消。品質未承認・mainマージ/公開なし。",
+      "lastRunAt": "2026-11-15T15:10:59Z",
+      "subject": "PR #382 非人間型34種の可動関節欠落時の衣装欠損を明示的エラー化",
+      "summary": "monsterスイッチON。PR #382のsrc/monster-species-wardrobe.jsで、可動関節が存在しないと衣装カフを無言で省略していた不具合を例外化し、専用ブランチに実コードコミット435b7d4。GitHub再取得で差分確認済み。単体/ブラウザQA実行なし、コミット対応CIランなし、WebGL画像/Android FPS未確認。PR #385 E2E photoSurfaces/source-composite未解消。mainマージ・公開なし。",
       "status": "in_review",
       "carryover": true,
-      "nextAction": "PR #382の衣装単体QAとブラウザ前後左右・翼羽ばたき画像を実行し貫通を比較。PR #385のphotoSurfaces/source-composite E2E不整合を修正して再実行。Pixel 7相当とAndroid FPS確認までマージ・公開禁止。",
+      "nextAction": "PR #382で node qa/nonhuman-monster-wardrobe.test.mjs を実行し関節ピボット欠落がないか確認、ブラウザ翼/脚カフ前後左右と動作貫通検証。PR #385 photoSurfaces/source-composite E2E修正とPixel 7/Android FPS検証。未達ならmainマージ禁止。",
       "steps": {
         "launch": "done",
         "code": "done",
@@ -68,8 +68,8 @@
       },
       "evidence": [
         {
-          "label": "翼カフ実修正コミット",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/1c756f3c9fc76c506af35803cae3c9afec4ad48c"
+          "label": "今回の可動関節欠落修正コミット",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/435b7d42365016d6b48a0b83f920b92c72409e2f"
         },
         {
           "label": "既存Draft PR #382",
