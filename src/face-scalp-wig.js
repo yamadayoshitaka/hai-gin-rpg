@@ -1184,6 +1184,13 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  styled.meshes.forEach(mesh=>root.add(mesh));
  root.userData.v49StyledHair=styled.type;
  root.userData.v49StyledHairTriangles=styled.triangleCount;
+ // Keep the measured scalp anchor before consolidation removes source meshes.
+ // Never infer attachment success merely from the selected hairstyle ID.
+ const tiedRoot=styled.meshes.find(node=>node.name==='PONYTAIL_TIED_ROOT');
+ const tiedRootRealScalp=!!tiedRoot &&
+  tiedRoot.userData.v64AnchorSource==='real-scalp-vertex' &&
+  Number.isFinite(tiedRoot.userData.v64AnchorDistance) &&
+  tiedRoot.userData.v64AnchorDistance<=d.x*.02;
  // In static studios, fold the fitted hair cap, all strands and fine
  // filaments into ONE Three.js Mesh. The same strand shape is duplicated
  // along its own outward vertex normals with small, progressive offsets;
@@ -1269,6 +1276,9 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   v50SideCutFloor:catalogGroom.templeFloor,
   v49StyledHairType:styled.type,
   v49StyledHairMeshCount:styled.meshes.length,
+  v64RealScalpTiedRoot:tiedRootRealScalp,
+  v64TiedRootSource:tiedRoot?.userData.v64AnchorSource||null,
+  v64TiedRootAttachmentDistance:tiedRoot?.userData.v64AnchorDistance??null,
   v49StyledHairTriangles:styled.triangleCount,
   v65BatchedPonytailFiberCount:styled.meshes.find(m=>
    m.name==='PONYTAIL_MICROFIBER_BUNDLE_V65')?.userData?.v65FiberCount||0,
