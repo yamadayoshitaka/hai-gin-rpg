@@ -19,7 +19,7 @@ const ACTION_CLIPS=Object.freeze({
  dodge:['dodge','roll','jump','evade'],
  hit:['hitreact','hit','damage','hurt'],
  leap:['jump','leap','fly','flying'],
- defeat:['death','die','defeat','dead']
+ defeat:['death','die','defeat','dead','sleep']
 });
 export function validateCreatureRegistry(reg){
  if(reg?.schema!=='hai-gin/creature-library/v1'||!reg.entries||
@@ -98,11 +98,14 @@ export function prepareExternalGLTF(gltf,{
  source.traverse(node=>{if(node.isMesh){
    node.castShadow=true;node.receiveShadow=true;
  }});
- const play=action=>{
+ const play=(action,{restart=false}={})=>{
   if(!mixer)return false;
   const clip=chooseClip(clips,action);
   if(!clip)return false;
-  if(active?.getClip()===clip)return true;
+  if(active?.getClip()===clip){
+   if(restart)active.reset().play();
+   return true;
+  }
   if(active)active.fadeOut(.14);
   const next=mixer.clipAction(clip);
   next.reset().fadeIn(.14);
