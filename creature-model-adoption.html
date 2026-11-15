@@ -21,7 +21,7 @@ button{cursor:pointer;min-height:40px}button:disabled{opacity:.5;cursor:not-allo
 #modelName{position:absolute;left:12px;top:10px;background:#071525d8;border-radius:8px;padding:9px;font-size:12px;pointer-events:none}
 #viewToolbar{position:absolute;bottom:12px;left:12px;right:12px;display:flex;gap:7px;max-width:430px}
 #viewToolbar button{width:auto;font-size:12px;padding:8px 12px;background:#173348e8}
-#actionGroup{display:flex;gap:7px}#actionGroup button{font-size:12px;padding:7px;flex:1}
+#actionGroup{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}#actionGroup button{font-size:12px;padding:8px 4px;min-width:0}#actionGroup button[aria-pressed=true]{border-color:#f8d892;background:#315e74}
 #external{display:block;margin-top:3px;font-size:12px}
 #notice{font-size:11px;color:#b5cdd9}
 @media(max-width:720px){
@@ -50,7 +50,15 @@ button{cursor:pointer;min-height:40px}button:disabled{opacity:.5;cursor:not-allo
  <button id="adopt" type="button" disabled>④ このモデルを採用</button>
  <div id="status" role="status">モデル一覧を読み込み中</div>
  <a id="sourceCredit" href="#" target="_blank" rel="noopener noreferrer" style="font-size:11px;display:none"></a><a href="./creature-model-credits.html" target="_blank" rel="noopener" style="font-size:11px">3Dモデルの著作者・ライセンスを確認</a>
- <div id="actionGroup"><button data-action="idle" type="button">待機</button><button data-action="walk" type="button">歩行</button><button data-action="attack" type="button">攻撃</button></div>
+ <div id="actionGroup" aria-label="狼の動作を確認">
+<button data-action="idle" type="button" aria-pressed="true">待機</button>
+<button data-action="walk" type="button" aria-pressed="false">歩行</button>
+<button data-action="run" type="button" aria-pressed="false">走行</button>
+<button data-action="attack" type="button" aria-pressed="false">攻撃</button>
+<button data-action="roar" type="button" aria-pressed="false">咆哮</button>
+<button data-action="hit" type="button" aria-pressed="false">被弾</button>
+<button data-action="defeat" type="button" aria-pressed="false">死亡</button></div>
+<div id="motionStatus" class="note" role="status" style="font-size:11px;color:#bbdcf2;grid-column:1/-1">動作：待機</div>
  <a id="external" href="./monster-manager.html" target="_blank" rel="noopener">現行モデルを別画面で確認</a>
  <div id="notice">採用結果はこの端末のゲーム・召喚表示へ保存。別端末／他ユーザーへの公開は別途反映が必要です。</div>
 </form>
@@ -92,7 +100,7 @@ const query=new URLSearchParams(location.search);
 const requested=query.get('monster')||query.get('summon')||query.get('species')||'m001';
 if(Array.from($('species').options).some(o=>o.value===requested))$('species').value=requested;
 let registry={entries:{...REAL_CREATURE_MESH_SOURCES}},handle=null,legacyActor=null,serial=0,ready=false,activeChoice='legacy',currentAction='idle';
-let frameLast=performance.now();
+let frameLast=performance.now(),lastMotionRead=0;
 const scene=new THREE.Scene();scene.background=new THREE.Color(0x0c1d2b);
 const camera=new THREE.PerspectiveCamera(43,1,.01,2000);
 const renderer=new THREE.WebGLRenderer({canvas:$('stage'),antialias:true,powerPreference:'high-performance'});
@@ -258,7 +266,11 @@ for(const [id,factor] of [['zoomIn',.74],['zoomOut',1.34]]){
 for(const b of document.querySelectorAll('[data-action]')){
  b.onclick=()=>{
   currentAction=b.dataset.action;
-  if(handle)handle.play(currentAction);
+  if(handle)handle.play(currentAction,{restart:true});
+   document.querySelectorAll('[data-action]').forEach(button=>
+    button.setAttribute('aria-pressed',String(button===b)));
+   $('motionStatus').textContent='動作：'+b.textContent+' / '+(
+     handle?.root.userData.greyWolfRuntimeState?.sourceAction||'既存動作');
   if(legacyActor&&!legacyActor.userData.isCombatGeometryPreview)
    startMonsterAction(legacyActor,currentAction,performance.now()/1000);
  };
@@ -267,6 +279,13 @@ function loop(time){
  requestAnimationFrame(loop);
  const dt=Math.min(.1,Math.max(0,(time-frameLast)/1000));frameLast=time;
  if(handle)handle.update(dt);
+ if(handle?.root.userData.greyWolfRuntimeState&&time-lastMotionRead>280){
+  const pose=handle.root.userData.greyWolfRuntimeState;
+  $('motionStatus').textContent='動作：'+pose.action+' / 元GLB：'+
+   pose.sourceAction+' / 補助動作：'+pose.procedural+
+   ' / 脚ボーン '+pose.joints+' / 追加ポリゴン '+pose.meshAdditions;
+  lastMotionRead=time;
+ }
  if(legacyActor&&!legacyActor.userData.isCombatGeometryPreview)
   animateMonsterModel(legacyActor,time/1000);
  const rect=$('stage').getBoundingClientRect();
