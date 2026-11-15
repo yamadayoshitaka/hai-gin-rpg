@@ -188,7 +188,12 @@ function chooseSpecies(){
   $('adopt').disabled=true;
   $('status').textContent='PR #345/#346保護対象。旧モデルは保持し、採用・再検証対象から除外します。';
  }else options.disabled=false;
- if(!protectedCreature(id))for(const [name,keys] of [['推奨メッシュ（リアル候補・既存素材）',[...rec]],['他の実物メッシュ（外部リアル候補）',Object.keys(REAL_CREATURE_MESH_SOURCES).filter(k=>!rec.has(k))],['その他の登録済みCC0 GLB（50種）',Object.keys(registry.entries).filter(k=>k.startsWith('q')&&!rec.has(k))]]){
+ if(!protectedCreature(id))for(const [name,keys] of [
+  ['種族別GLB候補（適合確認が必要）',[...rec]],
+  ['写実・外部GLB候補',Object.keys(REAL_CREATURE_MESH_SOURCES).filter(k=>!rec.has(k)&&!k.startsWith('g-')&&REAL_CREATURE_MESH_SOURCES[k].style!=='low-poly')],
+  ['無料CC0の動作比較用・低ポリGLB',Object.keys(REAL_CREATURE_MESH_SOURCES).filter(k=>!rec.has(k)&&REAL_CREATURE_MESH_SOURCES[k].style==='low-poly')],
+  ['従来のCC0素材50種',Object.keys(registry.entries).filter(k=>k.startsWith('q')&&!rec.has(k))]
+ ]){
   const group=document.createElement('optgroup');group.label=name;
   for(const key of keys){
    const entry=registry.entries[key];if(!entry)continue;
@@ -244,7 +249,9 @@ function previewChoice(){
   handle=loaded;scene.add(handle.root);focus();
   ready=true;$('adopt').disabled=protectedCreature(id);
   $('status').textContent='GLB表示成功：'+entry.name+' / '+entry.license+
-   ' / アニメ '+handle.clips.length+'種類。採用は未確定です。';
+   ' / アニメ '+handle.clips.length+'種類。採用は未確定です。'+
+   (entry.style==='low-poly'?' 低ポリの動作比較候補であり、実写完成版ではありません。':'')+
+   (entry.qualityCaution?' '+entry.qualityCaution:'');
   savedStatus();
  }).catch(e=>{
   if(ticket!==serial)return;
