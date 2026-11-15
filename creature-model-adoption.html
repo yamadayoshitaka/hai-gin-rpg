@@ -47,8 +47,8 @@ button{cursor:pointer;min-height:40px}button:disabled{opacity:.5;cursor:not-allo
 <header><a href="./dev-menu.html">← メニュー</a><h1>モンスター・召喚獣 モデル採用</h1><a href="./creature-reconstruction-plan.html">108体再構成計画</a><small>①キャラ → ②モデル → ③確認 → ④採用</small><a href="./monster-quality-review.html?monster=m001">品質KPI判定</a></header>
 <main><form id="controls" onsubmit="return false">
  <label>① モンスター・召喚獣<select id="species" aria-label="種類を選択"></select></label>
- <div id="newBanner">🆕 今回追加したGLBは26件（CC0動作確認用24・高精細候補2）。以前のリアル狼などとは別です。</div>
- <button id="newOnly" type="button" aria-pressed="true">🆕 新しい26件だけ表示中（押すと全モデル）</button>
+ <div id="newBanner">写実的な母体だけを比較します。魚類や低ポリ素材は候補から除外。写実GLBでも実物の品質確認と骨格の適合検査は未完了です。</div>
+ <button id="newOnly" type="button" aria-pressed="true">この種族に合う写実候補のみ（押すと他の写実候補）</button>
  <label>② モデルの選択<select id="modelChoice" aria-label="使用するメッシュを選択">
   <option value="legacy">現行モデル（保持）</option></select></label>
  <div id="sourceKind" role="status">候補の区分：確認中</div>
@@ -83,8 +83,8 @@ import {startMonsterAction,animateMonsterModel} from './src/monster-animation.js
 import {buildCombatObjectGeometry} from './src/combat-creature-geometry.js';
 import {fetchCreatureRegistry} from './src/creature-external-runtime.js';
 import {REAL_CREATURE_MESH_SOURCES,loadCreatureMeshSource} from './src/creature-real-source-catalog.js?v=web-mesh-26-ui-v2';
-import {WEB_CREATURE_MESH_SOURCES} from './src/creature-web-mesh-catalog.js';
-import {NONHUMAN_MONSTER_IDS,NONHUMAN_EXTRA_SUMMON_IDS,recommendedMeshSources,adoptedCreatureMesh,setAdoptedCreatureMesh,compatibleSourceWarning,protectedCreature} from './src/creature-mesh-adoption.js?v=web-mesh-26-v1';
+import {REAL_BODY_CANDIDATES} from './src/creature-real-body-candidates.js';
+import {NONHUMAN_MONSTER_IDS,NONHUMAN_EXTRA_SUMMON_IDS,recommendedMeshSources,adoptedCreatureMesh,setAdoptedCreatureMesh,compatibleSourceWarning,protectedCreature,referenceOnlySource} from './src/creature-mesh-adoption.js?v=real-bodies-v3';
 const $=id=>document.getElementById(id);
 const creatureIds=new Set(NONHUMAN_MONSTER_IDS);
 const groups=[
@@ -109,14 +109,15 @@ const requested=query.get('monster')||query.get('summon')||query.get('species')|
 if(Array.from($('species').options).some(o=>o.value===requested))$('species').value=requested;
 let registry={entries:{...REAL_CREATURE_MESH_SOURCES}},handle=null,legacyActor=null,serial=0,ready=false,activeChoice='legacy',currentAction='idle';
 let frameLast=performance.now(),lastMotionRead=0;
-let newOnly=true;
-const newIds=Object.keys(WEB_CREATURE_MESH_SOURCES);
-const isNew=id=>Object.hasOwn(WEB_CREATURE_MESH_SOURCES,id);
+let matchedOnly=true;
+const isNewBody=id=>Object.hasOwn(REAL_BODY_CANDIDATES,id);
+const isReal=id=>id.startsWith('r-')||isNewBody(id);
 function labelKind(id){
- return id==='legacy'?'旧モデル（NEWではありません）':
- isNew(id)?'🆕 今回追加：'+(WEB_CREATURE_MESH_SOURCES[id].style==='low-poly'?'低ポリ・動作比較用':'高精細候補'):
- id.startsWith('r-')?'以前のリアル候補（NEWではありません）':
- '従来CC0モデル（NEWではありません）';
+ if(id==='legacy')return '既存の元モデル（保持）';
+ if(isNewBody(id))return '写実的な母体候補・静止GLB・骨格なし（比較専用）';
+ if(id.startsWith('r-'))return '既存のリアル寄りGLB（アニメと品質は個体別に確認）';
+ if(referenceOnlySource(id))return '低ポリ/比較用モデル・本編採用不可';
+ return '従来のメッシュ';
 }
 const scene=new THREE.Scene();scene.background=new THREE.Color(0x0c1d2b);
 const camera=new THREE.PerspectiveCamera(43,1,.01,2000);
@@ -192,46 +193,53 @@ function savedStatus(){
  const isSaved=$('modelChoice').value===s;
  $('adopt').textContent=protectedCreature(id)?'保護対象（変更不可）':
   isSaved?'現在採用中（再採用できます）':'④ このモデルを採用';
- if(protectedCreature(id))$('adopt').disabled=true;
+ if(protectedCreature(id)||referenceOnlySource($('modelChoice').value))
+  $('adopt').disabled=true;
 }
 function chooseSpecies(){
  const id=$('species').value;
  const chosen=adoptedCreatureMesh(id);
  const options=$('modelChoice');options.replaceChildren();
- options.add(new Option('現行モデル（保持・いつでも戻せる）','legacy'));
+ options.add(new Option('元からある現行3D（旧モデル・元に戻せる）','legacy'));
  const rec=new Set(recommendedMeshSources(id));
+ const realIds=Object.keys(REAL_CREATURE_MESH_SOURCES)
+  .filter(k=>isReal(k));
+ function addGroup(name,keys){
+  const group=document.createElement('optgroup');group.label=name;
+  for(const key of [...new Set(keys)]){
+   const entry=registry.entries[key];
+   if(!entry)continue;
+   const qualifier=isNewBody(key)?'［静止／採用不可］':'［要品質確認］';
+   group.append(new Option((isNewBody(key)?'🆕 母体候補 ':'リアル ')+
+    entry.name+' '+qualifier+' ['+key+']',key));
+  }
+  if(group.children.length)options.appendChild(group);
+ }
  if(protectedCreature(id)){
-  options.value='legacy';options.disabled=true;
+  options.disabled=true;options.value='legacy';
   $('adopt').disabled=true;
-  $('status').textContent='PR #345/#346保護対象。旧モデルは保持し、採用・再検証対象から除外します。';
- }else options.disabled=false;
- if(!protectedCreature(id)){
-  function addGroup(name,keys){
-   const grp=document.createElement('optgroup');grp.label=name;
-   for(const key of keys){
-    const e=registry.entries[key];if(!e)continue;
-    const prefix=isNew(key)?'🆕 NEW ':key.startsWith('r-')?'以前のリアル ':'旧CC0 ';
-    grp.append(new Option(prefix+e.name+' ['+key+']'+(rec.has(key)?' ★この種族の候補':''),key));
-   }
-   if(grp.children.length)options.appendChild(grp);
-  }
-  if(newOnly&&chosen!=='legacy'&&!isNew(chosen))
-   addGroup('現在採用中（新着ではありません）',[chosen]);
-  addGroup('🆕 今回追加・種族別おすすめ',newIds.filter(k=>rec.has(k)));
-  addGroup('🆕 今回追加・高精細候補（2件）',newIds.filter(k=>!rec.has(k)&&WEB_CREATURE_MESH_SOURCES[k].style==='realistic'));
-  addGroup('🆕 今回追加・無料動作比較モデル',newIds.filter(k=>!rec.has(k)&&WEB_CREATURE_MESH_SOURCES[k].style==='low-poly'));
-  if(!newOnly){
-   addGroup('以前のリアル候補5件',Object.keys(REAL_CREATURE_MESH_SOURCES).filter(k=>k.startsWith('r-')));
-   addGroup('従来のCC0メッシュ50件',Object.keys(registry.entries).filter(k=>k.startsWith('q')));
-  }
+  $('newBanner').textContent='PR #345/#346の保護対象です。現行モデルを維持します。';
+ }else{
+  options.disabled=false;
+  if(chosen!=='legacy'&&!rec.has(chosen))
+   addGroup('現在採用中のモデル',[chosen]);
+  addGroup('この種族に一致する写実候補',[...rec]);
+  if(!matchedOnly)addGroup('他の写実候補（種族が違う場合は採用不可）',
+   realIds.filter(k=>!rec.has(k)));
+  $('newBanner').textContent=rec.size?
+   'この種族に合う写実候補：'+rec.size+'件。静止GLBは骨格・7動作が未対応なので、比較のみできます。':
+   'この種族に適合する写実GLBはまだ未確保です。魚や低ポリモデルで代替せず、旧モデルを保持します。基準画を元に専用母体を選定してください。';
  }
  options.value=Array.from(options.options).some(o=>o.value===chosen)?chosen:'legacy';
  $('external').href=creatureIds.has(id)||id.startsWith('summon_')?
   './monster-manager.html?monster='+id.replace(/^summon_/,''):
   './summon-showcase.html?summon='+id;
- history.replaceState(null,'','?species='+encodeURIComponent(id));
+ const share=new URLSearchParams(location.search);
+ share.set('species',id);share.set('v','real-bodies-v3');
+ history.replaceState(null,'','?'+share.toString());
  previewChoice();savedStatus();
 }
+
 function previewChoice(){
  const id=$('species').value,source=$('modelChoice').value;
  activeChoice=source;
@@ -240,7 +248,8 @@ function previewChoice(){
  $('sourceCredit').style.display='none';
  $('warning').textContent=compatibleSourceWarning(id,source)||
   '既存の造形データ・装飾・アニメーションは保持。採用しても元モデルを削除しません。';
- $('modelName').textContent=(isNew(source)?'🆕 NEW / ':'')+speciesName(id)+' / '+(source==='legacy'?'現行モデル':registry.entries[source]?.name||source);
+ $('modelName').textContent=(isNewBody(source)?'🆕 写実母体候補 / ':'')+speciesName(id)+' / '+
+  (source==='legacy'?'現行モデル':registry.entries[source]?.name||source);
  const ticket=serial;
  if(source==='legacy'){
   showOriginal(id);
@@ -271,11 +280,16 @@ function previewChoice(){
    legacyActor=null;
   }
   handle=loaded;scene.add(handle.root);focus();
-  ready=true;$('adopt').disabled=protectedCreature(id);
+  ready=true;$('adopt').disabled=protectedCreature(id)||referenceOnlySource(source)||
+    (!recommendedMeshSources(id).includes(source)&&source!=='legacy');
+  if(referenceOnlySource(source))$('adopt').textContent='未リグ・比較専用（採用不可）';
   $('status').textContent='GLB表示成功：'+entry.name+' / '+entry.license+
    ' / アニメ '+handle.clips.length+'種類。採用は未確定です。'+
    (entry.style==='low-poly'?' 低ポリの動作比較候補であり、実写完成版ではありません。':'')+
    (entry.qualityCaution?' '+entry.qualityCaution:'');
+  if(referenceOnlySource(source)){
+   $('status').textContent+=' このGLBは現行より高品質と未確認のため採用できません。';
+  }
   savedStatus();
  }).catch(e=>{
   if(ticket!==serial)return;
@@ -283,13 +297,21 @@ function previewChoice(){
   $('adopt').disabled=true;
  });
 }
-$('newOnly').onclick=()=>{newOnly=!newOnly;$('newOnly').setAttribute('aria-pressed',String(newOnly));$('newOnly').textContent=newOnly?'🆕 新しい26件だけ表示中（押すと全モデル）':'全モデル表示中（押すと新規26件のみ）';chooseSpecies();};
+$('newOnly').onclick=()=>{
+ matchedOnly=!matchedOnly;
+ $('newOnly').setAttribute('aria-pressed',String(matchedOnly));
+ $('newOnly').textContent=matchedOnly?'この種族に合う写実候補のみ（押すと他の写実候補）':
+  '他の写実候補も表示（押すと種族一致のみ）';
+ chooseSpecies();
+};
 $('species').onchange=chooseSpecies;
 $('modelChoice').onchange=()=>{previewChoice();savedStatus();};
 $('adopt').onclick=()=>{
  if(!ready||protectedCreature($('species').value)||$('modelChoice').value!==activeChoice)return;
  try{
   const id=$('species').value,source=$('modelChoice').value;
+  if(referenceOnlySource(source)||(!recommendedMeshSources(id).includes(source)&&source!=='legacy'))
+   throw Error('実物適合と品質確認が済んでいない候補は採用できません');
   setAdoptedCreatureMesh(id,source);
   $('status').textContent=(source==='legacy'?'現行モデルに戻しました。':'選択したGLBを採用しました。')+
    ' 同じ端末のゲームに反映されます。別端末へは自動同期しません。';
@@ -337,7 +359,8 @@ function loop(time){
 fetchCreatureRegistry().then(result=>{
  registry={...result,entries:{...result.entries,...REAL_CREATURE_MESH_SOURCES}};
  $('status').textContent='登録済みCC0メッシュ '+result.all50Count+
-  '件＋外部GLB '+Object.keys(REAL_CREATURE_MESH_SOURCES).length+'件（今回新着26件）。';
+  '件＋外部比較素材 '+Object.keys(REAL_CREATURE_MESH_SOURCES).length+
+  '件。低ポリは初期候補から除外しました。';
  chooseSpecies();
 }).catch(error=>{
  $('status').textContent='GLB登録一覧の取得失敗：'+error.message+'（現行モデルは使用できます）';
