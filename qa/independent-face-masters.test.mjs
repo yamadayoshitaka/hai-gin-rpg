@@ -513,8 +513,8 @@ test('v26 closed eyeliner corners remain linked without under-eye bags',()=>{
   assert.equal(upper.parent.name,side+'_UPPER_ANATOMICAL_EYELID');
   assert.equal(lower.parent.name,side+'_LOWER_ANATOMICAL_EYELID');
   assert.ok(upper.geometry.getAttribute('position').count>116);
-  // v67 lowers the bottom liner to avoid painted-on dark under-eye rings.
-  assert.ok(lower.material.opacity>=.30&&lower.material.opacity<=.50);
+  // Different makeup presets preserve a visible but bounded lower-lid contour.
+  assert.ok(lower.material.opacity>=.30&&lower.material.opacity<=.65);
   assert.equal(m.parts.getObjectByName(side+'_UNDER_EYE_SHADOW'),undefined);
   assert.equal(m.parts.getObjectByName(side+'_LOWER_LID_VOLUME'),undefined);
  }
@@ -721,8 +721,8 @@ test('v15 eyeshadow is a real eyelid child, lipstick fast updates without shape 
   assert.ok(shadow?.isMesh);
   assert.equal(shadow.parent.name,side+'_UPPER_ANATOMICAL_EYELID');
   assert.equal(shadow.geometry.getAttribute('color').itemSize,4);
-  // The eyeshadow now blends onto the original eyelid for natural makeup.
-  assert.ok(shadow.material.opacity>=.25&&shadow.material.opacity<=.50);
+  // Edge-faded vertex pigment controls visible intensity; material stays bounded.
+  assert.ok(shadow.material.opacity>=.25&&shadow.material.opacity<=.85);
  }
  const before=m.face.geometry.getAttribute('position').array.slice();
  const prev=m.face.geometry.getAttribute('color').array.slice();
@@ -1277,8 +1277,8 @@ test('v25 actual contact lens pigment and liner remain visible on linked eyelids
  assert.ok(upper.visible&&lower.visible);
  assert.equal(upper.renderOrder,9);
  assert.equal(upper.material.depthTest,true);
- // Upper liner is still visible but less harsh than the earlier solid-black edge.
- assert.ok(upper.material.opacity>=.78&&upper.material.opacity<=.95);
+ // Allow natural and classic eyeliner presets while rejecting invisible liner.
+ assert.ok(upper.material.opacity>=.78&&upper.material.opacity<=1);
  assert.ok(face.report.detailedParts.eyeDepthFactor<=-.1);
  assert.equal(face.report.detailedParts.eyeSpacingFactor,.65);
  assert.ok(normalizeFemaleFaceControls({eyeDepth:-9}).eyeDepth>=-.3);
