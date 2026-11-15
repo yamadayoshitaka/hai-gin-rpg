@@ -17,6 +17,14 @@
       ],
       "commitSha": "594df102d49e57757383ce824f77f157067a440d",
       "qa": "unverified"
+    },
+    {
+      "id": "shared-lateral-torso-depth",
+      "sourceFiles": [
+        "src/outfit-maintenance-model.js"
+      ],
+      "commitSha": "b64fd12308664debb41d14ba76d0ffe7d4da669c",
+      "qa": "unverified"
     }
   ],
   "remainingIds": [
@@ -26,5 +34,5 @@
     "job05-male",
     "job05-female"
   ],
-  "nextAction": "Run Node syntax and WebGL front/back comparison for rear cuirass depth; fix #438 back artifact; enumerate all authoritative human IDs and audit all presets."
+  "nextAction": "Run Node syntax and WebGL front/side/back QA for lateral torso sampling; enumerate all human IDs and validate each preset; fix remaining #438 rear artifact."
 }
