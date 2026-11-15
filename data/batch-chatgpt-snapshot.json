@@ -1,14 +1,14 @@
 {
   "schemaVersion": 1,
   "source": "ChatGPT automations snapshot (not live)",
-  "asOf": "2026-11-15T07:00:00Z",
+  "asOf": "2026-11-15T09:02:23Z",
   "items": [
     {
       "title": "灰銀・人モデル実写品質回帰",
       "enabled": true,
       "source": "ChatGPT 定期タスク",
       "schedule": "毎時",
-      "lastRunAt": "2026-11-15T06:57:00.953057+00:00",
+      "lastRunAt": "2026-11-15T08:57:37.621478Z",
       "nextRunAt": "2026-11-15T17:00:00+09:00",
       "lastRunResult": "未取得",
       "note": "状態はスナップショットです。Webページからリアルタイム取得・実行操作はできません。"
@@ -18,7 +18,7 @@
       "enabled": true,
       "source": "ChatGPT 定期タスク",
       "schedule": "毎時",
-      "lastRunAt": "2026-11-15T06:13:01.910296+00:00",
+      "lastRunAt": "2026-11-15T09:05:45.834220Z",
       "nextRunAt": "2026-11-15T16:08:36+09:00",
       "lastRunResult": "未取得",
       "note": "状態はスナップショットです。Webページからリアルタイム取得・実行操作はできません。"
@@ -28,10 +28,10 @@
       "enabled": false,
       "source": "ChatGPT 定期タスク",
       "schedule": "毎時",
-      "lastRunAt": "2026-11-15T03:59:02.241459+00:00",
+      "lastRunAt": "2026-11-15T09:01:20.385653Z",
       "nextRunAt": null,
-      "lastRunResult": "未取得",
-      "note": "状態はスナップショットです。Webページからリアルタイム取得・実行操作はできません。"
+      "lastRunResult": "BLOCKED_GENERATOR_NOT_CONNECTED: Cloudflare実行環境に無料枠確認フラグ・アカウントID・Workers AIトークンが見つからず画像生成0件。ChatGPTタスクは停止中。",
+      "note": "GitHubのgroups.anime.enabledはtrueだが、ChatGPTの定期スケジュールは停止中。これは生成器の接続問題であり、既存の仮登録画像の公開に影響しない。"
     },
     {
       "title": "灰銀 第1章画像生成チェック",
