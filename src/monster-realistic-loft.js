@@ -39,8 +39,8 @@ export function createMonsterAnatomicalLoft(rings,{
      !Number.isFinite(r.rz)||r.rx<=0||r.rz<=0||
      (i>0&&r.y<=rings[i-1].y)))
    throw Error('Loft requires three+ ascending positive anatomical rings');
- const steps=detail==='source'?72:detail==='high'?44:18;
- const around=detail==='source'?56:detail==='high'?40:16;
+ const steps=detail==='source'?72:detail==='high'?44:detail==='medium'?30:18;
+ const around=detail==='source'?56:detail==='high'?40:detail==='medium'?28:16;
  const positions=[],uv=[],indices=[];
  const ymin=rings[0].y,ymax=rings[rings.length-1].y;
  for(let row=0;row<=steps;row++){
