@@ -147,13 +147,13 @@ export function createBeastfolkMonsterModel(spec,{detail='high'}={}){
   cylinder(knee,fur,'shin-'+label,[0,-.22,-.015],.132,.09,.43*leg);
   const foot=createHumanlikeFrame(THREE,root,'foot'+label,0,-.43,.13,knee);
   sphere(foot,fur,'hock-'+label,[0,0,0],[.15,.115,.20]);
-  const donorPaw=src['lowerrear'+label];
-  if(donorPaw){
-    donorPaw.position.set(0,.07,.12);donorPaw.rotation.set(0,0,0);
-    donorPaw.scale.setScalar(.55);
-    donorPaw.userData.originalCaninePaw=true;
-    foot.add(donorPaw);
-    pivots['lowerrear'+label]=donorPaw;
+  const rearPaw=src['lowerrear'+label];
+  if(rearPaw){
+    rearPaw.position.set(0,.07,.12);rearPaw.rotation.set(0,0,0);
+    rearPaw.scale.setScalar(.55);
+    rearPaw.userData.originalCaninePaw=true;
+    foot.add(rearPaw);
+    pivots['lowerrear'+label]=rearPaw;
   }
   for(let i=0;i<4;i++){
     sphere(foot,fur,'toe-'+label+'-'+i,
