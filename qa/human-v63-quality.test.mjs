@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
-import {studioCoveredSkinPolicy} from '../src/character-system/rigged-outfit-runtime.js';
+import {readFileSync} from 'node:fs';
+import {studioCoveredSkinPolicy,studioRetainSourceBoot} from '../src/character-system/rigged-outfit-runtime.js';
 import {addStudioRaisedInnerCollar} from '../src/studio-unified-neck-v59.js';
 import {v63WigScalpTone,v63WigLockTone} from '../src/face-scalp-wig.js';
 import {v63IrisOpticalTones,updateRealFacePigment} from '../src/face-feature-meshes.js';
@@ -106,4 +107,31 @@ test('v68: swordsman preview keeps both original skinned legs underneath partial
   studioPreserveLegAnatomy:true,studioVisibleLegAnatomy:false,preserveBody:false});
  assert.deepEqual(otherStudio.preserveRegions,[],
   'unrelated job skins must retain their previous masking policy');
+});
+
+test('v69: actual Ranger skinned boot shafts stay on in swordsman model preview',()=>{
+ const preview={jobId:'job01',studioVisibleLegAnatomy:true,isSkinnedMesh:true};
+ for(const name of ['Female_Ranger_Feet','Male_Ranger_Feet','Female_Peasant_Feet_Boots']){
+  assert.equal(studioRetainSourceBoot({...preview,meshName:name}),true);
+ }
+ for(const opts of [
+  {...preview,jobId:'job09'},
+  {...preview,studioVisibleLegAnatomy:false},
+  {...preview,isSkinnedMesh:false}
+ ]){
+  assert.equal(studioRetainSourceBoot({...opts,meshName:'Female_Ranger_Feet'}),false,
+   'non-preview or non-skinned models must not change');
+ }
+ assert.equal(studioRetainSourceBoot({...preview,meshName:'Female_Ranger_Legs'}),false);
+});
+test('v69: real source foot asset is an animated calf-height boot not skeleton-only',()=>{
+ const src=JSON.parse(readFileSync('assets/characters/quaternius-outfits/Female_Ranger.gltf','utf8'));
+ const foot=src.nodes.find(n=>n.name==='Female_Ranger_Feet');
+ assert.ok(foot&&Number.isInteger(foot.skin),'source boot must have rig skin');
+ const mesh=src.meshes[foot.mesh];
+ const p=src.accessors[mesh.primitives[0].attributes.POSITION];
+ assert.ok(p.max[1]>.5&&p.min[1]<.05,
+  'real foot boot must bridge trouser hem to footwear');
+ const bridge=readFileSync('src/heroine-battle-costume-bridge.js','utf8');
+ assert.match(bridge,/studioVisibleLegAnatomy:chosen\.heroJob==='swordsman'/);
 });
