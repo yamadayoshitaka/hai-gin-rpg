@@ -419,8 +419,12 @@ function selectSpecies(id){
    const remembered=modelAssignments[id];
    byId('externalAsset').value=externalRegistry.entries[remembered]?remembered:
      externalRegistry.entries[id]?id:'';
-   if(externalRegistry.entries[remembered]&&!HUMAN_MONSTER_IDS.includes(id))byId('assetSource').value='licensed';
-   else if(HUMAN_MONSTER_IDS.includes(id))byId('assetSource').value='procedural';
+   if(externalRegistry.entries[remembered]&&!HUMAN_MONSTER_IDS.includes(id))
+     byId('assetSource').value='licensed';
+   else if(id==='m001'&&new URLSearchParams(location.search).get('form')!=='beastfolk'
+       &&new URLSearchParams(location.search).get('source')!=='legacy')
+     byId('assetSource').value='source-composite';
+   else byId('assetSource').value='procedural';
  }
  const m=specimen(id),detail=byId('quality').value;
  byId('vampireSexControl').style.display=id==='m034'?'block':'none';
@@ -493,6 +497,11 @@ function selectSpecies(id){
  }
  if(mode==='source-composite'&&!isSpeciesSourcePilot(m)){
    byId('assetStatus').textContent='この個体に適合するCC0実物モデルは未承認です。既存3Dを維持します。';
+   return;
+ }
+ if(mode==='source-composite'&&!externalRegistry.entries[
+    SPECIES_SOURCE_REBUILD_PILOTS[id].donor]){
+   byId('assetStatus').textContent='オオカミ新モデル用のCC0素材一覧を読込中…';
    return;
  }
  byId('assetStatus').textContent='高品質GLBを読み込み中...';
@@ -631,13 +640,15 @@ fetchCreatureRegistry().then(reg=>{
  picker.append(old);
  const saved=modelAssignments[selected];
  picker.value=reg.entries[saved]?saved:reg.entries[selected]?selected:'';
- if(reg.entries[saved])byId('assetSource').value='licensed';
+ if(reg.entries[saved]&&!HUMAN_MONSTER_IDS.includes(selected))
+   byId('assetSource').value='licensed';
  byId('assignmentStatus').textContent=reg.entries[saved]?'前回のGLB割当を復元':'未割当（従来モデル）';
  renderList();
  byId('assetStatus').textContent='Quaterniusオリジナル '+reg.all50Count+
    ' / 50体、既存比較 '+(Object.keys(reg.entries).length-reg.all50Count)+
    '体。外部GLBは任意で選択できます。';
- if(byId('assetSource').value==='licensed')selectSpecies(selected);
+ if(['licensed','source-composite'].includes(byId('assetSource').value))
+   selectSpecies(selected);
 }).catch(error=>{
  byId('assetStatus').textContent='外部モデルは未配信（従来モデルは利用できます）：'+error.message;
 });
@@ -792,7 +803,11 @@ window.__monsterQualityQA=()=>({
 setCatalogOpen(!isPhone());
 const requestedMonster=new URLSearchParams(location.search).get('monster');
 if(requestedMonster&&MONSTER_BY_ID[requestedMonster])selected=requestedMonster;
-if(new URLSearchParams(location.search).get('form')==='beastfolk'&&
-   beastfolkRecipeFor(selected))byId('beastfolkForm').value='beastfolk';
+const launchOptions=new URLSearchParams(location.search);
+if(launchOptions.get('form')==='beastfolk'&&beastfolkRecipeFor(selected))
+ byId('beastfolkForm').value='beastfolk';
+else if(selected==='m001'&&launchOptions.get('source')!=='legacy'&&
+ !modelAssignments[selected])
+ byId('assetSource').value='source-composite';
 selectSpecies(selected);resize();frame();
 </script></body></html>
