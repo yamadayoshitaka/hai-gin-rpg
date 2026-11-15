@@ -10,6 +10,8 @@ on:
       - 'scripts/batch-center-toggle.mjs'
       - 'qa/batch-center-toggle.test.mjs'
       - 'batch-monitor.html'
+      - 'batch-pr-preview.html'
+      - 'data/batch-pr-previews.json'
       - 'data/batch-work-progress.json'
       - 'qa/batch-work-progress.test.mjs'
 permissions:

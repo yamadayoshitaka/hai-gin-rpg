@@ -1,0 +1,79 @@
+{
+  "schemaVersion": 1,
+  "description": "GitHub PR内の実コード改修と本編Pagesの公開差を可視確認するためのPR別表示先。PRは未マージなら本編未反映。PR版のCDNプレビューは外部サービス経由の試験用で実描画QA合格を保証しない。",
+  "groups": {
+    "world": [
+      {
+        "pr": 434,
+        "title": "木製食卓・椅子：木組み実造形",
+        "page": "object-list.html",
+        "object": "cottage_table_001",
+        "ids": [
+          "cottage_table_001",
+          "cottage_chair_001"
+        ]
+      },
+      {
+        "pr": 430,
+        "title": "木樽・井戸：石積みと巻上機",
+        "page": "object-list.html",
+        "object": "cottage_barrel_001",
+        "ids": [
+          "cottage_barrel_001",
+          "town_well_001"
+        ]
+      },
+      {
+        "pr": 427,
+        "title": "田んぼ・畑：植物メッシュ",
+        "page": "object-list.html",
+        "object": "rice_paddy_001",
+        "ids": [
+          "rice_paddy_001",
+          "vegetable_field_001"
+        ]
+      },
+      {
+        "pr": 409,
+        "title": "木・建造物：炎や影の描画",
+        "page": "object-list.html",
+        "object": "tree",
+        "ids": []
+      }
+    ],
+    "human": [
+      {
+        "pr": 418,
+        "title": "男女剣士：背面と鎧の接合",
+        "page": "face-body-studio.html",
+        "ids": []
+      }
+    ],
+    "monster": [
+      {
+        "pr": 426,
+        "title": "m020リヴァイアサン：尾鰭",
+        "page": "monster-manager.html",
+        "ids": [
+          "m020"
+        ]
+      }
+    ],
+    "anime": [
+      {
+        "pr": 415,
+        "title": "漫画：独立コマ寸法・人物参照QA",
+        "page": "story-chapter1-approval.html",
+        "params": "stage=c01-s04",
+        "ids": []
+      },
+      {
+        "pr": 424,
+        "title": "漫画：無料原画生成実験",
+        "page": "story-chapter1-approval.html",
+        "params": "stage=c01-s04",
+        "ids": []
+      }
+    ]
+  }
+}

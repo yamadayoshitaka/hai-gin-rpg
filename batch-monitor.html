@@ -38,7 +38,7 @@ small{font-size:11px}strong{font-weight:700}
 </style></head><body>
 <header><a href="./dev-menu.html">← メンテナンス</a><strong>⚙ 灰銀｜毎時バッチ管理</strong><a href="./monster-quality-review.html">モンスター品質KPI</a><a href="./creature-reconstruction-plan.html">108体再構成計画</a><button class="refresh" id="refresh" type="button">状況を更新</button></header>
 <main><h1>品質改善バッチ：4系統</h1>
-<p>確認する対象を4つに整理しました。各カードから<strong>いまのゲーム画面を見る</strong>、実行状況を開く、次の指示を送る操作ができます。</p>
+<p>各バッチの<strong>作業ブランチ・PR・QA・mainマージ・Pages公開</strong>を区別して確認できます。改修中の3Dモデルと本編の表示は、下の「PR版と本編を比較」から切り替えます。</p>
 <div class="summary" aria-live="polite"><span id="groupCount">4系統</span><span id="enabledCount">自動実行を確認中</span><span id="activeCount">GitHub実行状況を照合中</span><span id="schedulerCount">ChatGPT実行予約を確認中</span></div>
 <p id="fresh" class="muted">GitHub Actionsは画面表示時・更新時に確認します。ChatGPTの実行中判定はこのページから取得できません。</p>
 <p class="panel"><strong>第1章漫画（ゲーム本編との照合）：</strong><span id="chapter4status">各ステージの本編原画を照合中</span>　<a href="./story-chapter1-approval.html?stage=c01-s04">漫画確認・差し戻し</a></p>
@@ -51,7 +51,7 @@ small{font-size:11px}strong{font-weight:700}
  <p>「毎時有効」はスケジュールが有効という意味で、いま処理しているという意味ではありません。ChatGPT側は取得時点の記録を表示し、GitHub側は最新のActions履歴を取得します。</p>
  <p><strong>有効／無効：</strong>バッチの作業実行を切り替えるには各カードのボタンからGitHub Issueを開き、所有者が「Submit new issue」で確定します。ChatGPTの定期タスクそのもののON/OFF操作とは別です。人・モンスターの既存定期タスクは実行前に切替設定を確認するよう変更が必要です。</p>
  <p><strong>参考画像：</strong>ここに画像を選択・貼り付けて確認し、画像をコピーしてGitHub Issue本文へ貼り付けてください。画像はPagesから直接アップロードされません。</p>
- <p><strong>実作業の工程別進捗：</strong>起動・ソース修正・QA・コミット・PR・マージ・公開を別々に表示します。「実作業未完了」は完了扱いにせず、次回引継ぎを表示します。この情報はGitHubへ最後に保存された記録で、ChatGPTタスクの生の実行状態ではありません。</p>
+ <p><strong>実作業の工程別進捗：</strong>起動・ソース修正・QA・コミット・PR・マージ・公開を別々に表示します。「実作業未完了」は完了扱いにせず、次回引継ぎを表示します。工程台帳は最終保存時点、PRの最新コミットとマージ状態はGitHubから照会します。改修中の画面はPR版比較で開き、本編の公開SHAも別途照合します。</p>
  <p><strong>手動指示の送り方：</strong>各カードに修正内容を入力 →「手動指示を送る」→ GitHubのIssue画面で「Submit new issue」を押してください。これは1回限りの依頼で、GitHub認証情報をこのサイトに入力する必要はありません。</p>
  <p class="note">人モデル・モンスター・漫画のChatGPT定期タスクはGitHubの切替設定を毎回確認します。現在のスケジュール有効/無効はこのサイトから直接取得できず、最新のChatGPT実行日時は記録時点の情報です。GitHub ActionsのQA成功だけで画像生成・3D修正・本編反映の完了とは判断しません。追加の有料API課金は行いません。</p>
  <div class="links"><a href="https://github.com/yamadayoshitaka/hai-gin-rpg/actions" target="_blank" rel="noopener noreferrer">全GitHub Actionsを見る</a><a href="https://github.com/yamadayoshitaka/hai-gin-rpg/issues?q=is%3Aissue+is%3Aopen+%22hai-gin-batch%22" target="_blank" rel="noopener noreferrer">手動指示の履歴を見る</a></div>
@@ -95,6 +95,12 @@ function createCard(data){
  if(data.blockedReason)c.appendChild(paragraph('直近の停止理由：'+data.blockedReason,'note'));
  if(data.details)c.appendChild(paragraph('主な作業：'+data.details,'muted'));
  if(data.goal)c.appendChild(paragraph('完了判定：'+data.goal,'note'));
+ const previewPanel=tag('section','panel');
+ const previewHead=tag('strong','','改修中の実画面・本編公開を確認');
+ const previewStatus=paragraph('関連するGitHub PRを照合中…','status');
+ const previewLink=makeLink('PR版と本編を視覚比較','./batch-pr-preview.html?group='+encodeURIComponent(data.id),false);
+ previewLink.className='link';previewPanel.append(previewHead,previewStatus,previewLink);
+ c.appendChild(previewPanel);
  const progressBox=tag('section','panel work-progress');
  const head=tag('div','progress-head');
  const heading=tag('strong','','実作業進捗（スケジュールとは別）');
@@ -190,7 +196,7 @@ function createCard(data){
   const win=window.open(link,'_blank','noopener,noreferrer');
   if(!win)window.location.assign(link);
  });
- $('cards').appendChild(c);elements.set(data.id,{detail,activity,log,swText,swBtn,badge,progress:{current,stageGrid,progressTime,progressSummary,nextAction,progressEvidence}});
+ $('cards').appendChild(c);elements.set(data.id,{detail,activity,log,swText,swBtn,badge,previewStatus,previewLink,progress:{current,stageGrid,progressTime,progressSummary,nextAction,progressEvidence}});
 }
 async function fetchJSON(url){const r=await fetch(url,{cache:'no-store',headers:{Accept:'application/vnd.github+json'}});if(!r.ok)throw Error('HTTP '+r.status);return r.json()}
 
@@ -251,6 +257,26 @@ async function updateProgress(){
    p.nextAction.textContent='次回引継ぎ：記録確認が必要';
    p.stageGrid.replaceChildren();p.progressEvidence.replaceChildren();
   }
+ }
+}
+async function updatePreviewStatus(){
+ try{
+  const catalog=await fetchJSON('./data/batch-pr-previews.json?ts='+Date.now());
+  if(catalog.schemaVersion!==1||!catalog.groups)throw Error('PR紐付け不正');
+  await Promise.all(groups.map(async group=>{
+   const view=elements.get(group.id),item=catalog.groups[group.id]?.[0];
+   if(!view||!item)return;
+   view.previewLink.href='./batch-pr-preview.html?group='+encodeURIComponent(group.id)+'&pr='+item.pr;
+   try{
+    const pr=await fetchJSON(API+'/pulls/'+item.pr);
+    const sha=String(pr.head?.sha||'');
+    const latest=sha.length>=12?sha.slice(0,12):'不明';
+    view.previewStatus.textContent='直近の確認対象：PR #'+item.pr+' ／ '+latest+' ／ '+
+     (pr.merged_at?'mainマージ済み（Pages公開は別途照合）':pr.draft?'Draft・main未反映':pr.state==='open'?'PR審査中・main未反映':'PR終了・main未反映');
+   }catch(e){view.previewStatus.textContent='PR #'+item.pr+' の状態取得不可。PRの画面で確認：'+e.message}
+  }));
+ }catch(e){
+  for(const group of groups){const v=elements.get(group.id);if(v)v.previewStatus.textContent='関連PRを確認できません：'+e.message}
  }
 }
 async function updateChapter4(){
@@ -329,9 +355,9 @@ async function start(){
   $('enabledCount').textContent='GitHub作業許可：'+groups.filter(g=>g.autoEnabled).length+'有効・'+groups.filter(g=>!g.autoEnabled).length+'停止';
   $('schedulerCount').textContent='ChatGPT定期タスク：'+groups.filter(g=>g.schedulerEnabled===true&&g.source.includes('ChatGPT')).length+'有効・'+groups.filter(g=>g.schedulerEnabled===false&&g.source.includes('ChatGPT')).length+'停止（記録時点）';
   $('fresh').textContent='ChatGPTタスク最終確認：'+TIME(j.asOf)+' ／ 現在処理中かはGitHub Actionsのみ取得可能';
-  await updateSwitches();await updateProgress();await updateChapter4();await updateStoryBudget();await updateRelease();await updateRuns();
+  await updateSwitches();await updateProgress();await updatePreviewStatus();await updateChapter4();await updateStoryBudget();await updateRelease();await updateRuns();
  }catch(e){$('cards').textContent='管理データを読み込めませんでした：'+e.message}
 }
-$('refresh').addEventListener('click',async()=>{await updateSwitches();await updateProgress();await updateChapter4();await updateStoryBudget();await updateRelease();await updateRuns()});
+$('refresh').addEventListener('click',async()=>{await updateSwitches();await updateProgress();await updatePreviewStatus();await updateChapter4();await updateStoryBudget();await updateRelease();await updateRuns()});
 start();setInterval(()=>{if(!document.hidden&&groups.length){updateSwitches();updateProgress();updateRuns()}},90000);
 </script></body></html>
