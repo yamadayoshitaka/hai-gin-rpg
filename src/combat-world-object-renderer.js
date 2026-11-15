@@ -7,6 +7,7 @@
 import * as THREE from 'three';
 import { COMBAT_OBJECT_SPECS } from './combat-action-spec.js?v=4.6.51';
 import {isMonsterSummonType} from './monster-summon-registry.js?v=1';
+import {createAdoptedSpecialSummonRenderer} from './combat-creature-adopted-overlays.js';
 import {createMonsterSummonRenderer} from './monster-summon-renderer.js?v=4.6.91';
 import { buildCombatObjectGeometry, CREATURE_VISUAL_SPECS } from './combat-creature-geometry.js?v=4.5.20';
 import {creatureInstancePhase,creatureFlightHeight,creatureSize,creatureAttackProgress,mountedFlightSway,mountedFlightBaseHeight} from './combat-creature-performance.js?v=4.6.37';
@@ -221,6 +222,7 @@ export function createCombatWorldObjectRenderer(scene,{cellSize=1.12,offset=6,te
   const bestiarySummons=createMonsterSummonRenderer(scene,{
     cellSize,offset,terrainY,camera,highDetailDistance
   });
+  const adoptedSpecialSummons=createAdoptedSpecialSummonRenderer(scene);
   const species=new Map();
   // Renderer-only interpolation and gait history; gameplay keeps integer tiles.
   const locomotion=new Map();
@@ -311,6 +313,7 @@ export function createCombatWorldObjectRenderer(scene,{cellSize=1.12,offset=6,te
   const counts={};
   function sync(objects,time=0,units=null,actionTime=time,alpha=0,frame=-1){
     bestiarySummons.sync(objects,time,actionTime);
+    adoptedSpecialSummons.beginSync();
     for(const [type,lods] of species){
       counts[type]=0;
       lods.high.count=0;lods.low.count=0;
@@ -417,6 +420,13 @@ export function createCombatWorldObjectRenderer(scene,{cellSize=1.12,offset=6,te
       if(!attachedFlying)base.rotation.z+=dying*1.25+dodge*.22;
       base.scale.set(scale*breathe*(1-dying*.15),scale*(1-dying*.18),scale*breathe*(1-dying*.15));
       base.updateMatrix();
+      // Replace a creature instance only after the adopted GLB is loaded.
+      // Keep existing GPU geometry as loading/offline fallback.
+      if(adoptedSpecialSummons.use(o,base,time,actionTime,
+          CREATURE_VISUAL_SPECS[o.type]?.height||2.4)){
+        counts[o.type]++;
+        continue;
+      }
       const distance=camera?camera.position.distanceTo(base.position):0;
       // 10x physical scale should NOT force every summon into heavy
       // near-LOD across hundreds of grid cells. Per-species geometry is
@@ -432,6 +442,7 @@ export function createCombatWorldObjectRenderer(scene,{cellSize=1.12,offset=6,te
         if(o.type==='horse')mesh.setColorAt(slot,o.commanderMount?commanderHorseColor:ordinaryHorseColor);
       }
     }
+    adoptedSpecialSummons.endSync();
     for(const [type,lods] of species)for(const [detail,lod] of Object.entries(lods)){
       for(const [part,mesh] of lod.meshes){
         const replacedFace=detail==='high'&&part==='faceFallback'&&libraryFaceTypes.has(type);
@@ -453,6 +464,7 @@ export function createCombatWorldObjectRenderer(scene,{cellSize=1.12,offset=6,te
     locomotion.clear();
     footfalls.dispose();
     bestiarySummons.dispose();
+    adoptedSpecialSummons.dispose();
     for(const lods of species.values())for(const lod of Object.values(lods))
       for(const [part,mesh] of lod.meshes){
         scene.remove(mesh);mesh.geometry.dispose();
@@ -495,5 +507,6 @@ export function createCombatWorldObjectRenderer(scene,{cellSize=1.12,offset=6,te
     }),
     monsterSourceModel:id=>bestiarySummons.actualModel(id),
     monsterSourceStats:bestiarySummons.stats,
+    adoptedSpecialSourceStats:adoptedSpecialSummons.stats,
   };
 }
