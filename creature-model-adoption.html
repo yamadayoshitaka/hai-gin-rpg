@@ -193,6 +193,7 @@ function previewChoice(){
  const id=$('species').value,source=$('modelChoice').value;
  activeChoice=source;
  disposePreview();
+ $('sourceCredit').style.display='none';
  $('warning').textContent=compatibleSourceWarning(id,source)||
   '既存の造形データ・装飾・アニメーションは保持。採用しても元モデルを削除しません。';
  $('modelName').textContent=speciesName(id)+' / '+(source==='legacy'?'現行モデル':registry.entries[source]?.name||source);
