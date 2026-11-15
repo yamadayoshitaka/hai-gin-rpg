@@ -4056,5 +4056,11 @@
         }
       ]
     }
-  ]
+  ],
+  "sharedDefeatAssets": [
+    "./assets/story/shared/shared-defeat-01.webp",
+    "./assets/story/shared/shared-defeat-02.webp"
+  ],
+  "sharedDefeatArtStatus": "REAL_2_OF_2_PROVISIONAL_NO_FORMAL_P0",
+  "sharedGameoverAssetsStatus": "PENDING_PRODUCTION_DISTINCT_FROM_DEFEAT"
 }
