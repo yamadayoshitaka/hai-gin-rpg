@@ -19,7 +19,7 @@ import {startMonsterAction,animateMonsterModel}
 import {creatureFlightHeight} from './combat-creature-performance.js?v=4.6.39';
 import {adoptedCreatureMesh} from './creature-mesh-adoption.js';
 import {fetchCreatureRegistry} from './creature-external-runtime.js';
-import {loadCreatureMeshSource} from './creature-real-source-catalog.js';
+import {loadCreatureMeshSource} from './creature-real-source-catalog.js?v=white-surface-fix-2';
 import {isMonsterSummonType,monsterSummonSource,
  monsterSummonWorldScale,MONSTER_SUMMON_MAX_HIGH_DETAIL,
  MONSTER_SUMMON_MAX_ACTIVE,MONSTER_SUMMON_BY_TYPE}
