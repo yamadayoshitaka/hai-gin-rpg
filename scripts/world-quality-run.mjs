@@ -23,6 +23,9 @@ const progress=readProgress(dataPath);
 const now=()=>new Date().toISOString();
 const save=()=>fs.writeFileSync(dataPath,JSON.stringify(progress,null,2)+'\n');
 const previous=new Set(Object.keys(progress.assets));
+const pendingCapture=qualityInventory.filter(x=>progress.assets[x.key]?.referenceSha256 &&
+ !progress.assets[x.key]?.gameScreenshot &&
+ (progress.assets[x.key]?.captureAttempts||0)<3);
 const candidates=qualityInventory.filter(x=>!progress.assets[x.key]?.referenceSha256&&
  !progress.assets[x.key]?.providerSafetyBlocked);
 const run={id:process.env.GITHUB_RUN_ID||'manual',startedAt:now(),mode,requested:limit,
@@ -58,12 +61,18 @@ if(mode==='results'){
    row.gameScreenshot=item.gameScreenshot;
    row.roughnessProposal=item.chosenRoughnessScale;
    row.review=item.review||'WEBGL_EVIDENCE_HUMAN_QA_PENDING';
-   if(item.error)row.error=item.error;
+   if(item.error){row.error=item.error;row.captureAttempts=(row.captureAttempts||0)+1;}
+   else {delete row.error;row.captureAttempts=0;}
    row.productionApplied=false;
   }
   run.targetIds=updates.map(x=>x.key);
  }
  run.stopReason='REVIEW_PROPOSALS_RECORDED_NOT_MERGED';writeRun();process.exit(0);
+}
+// Retry existing reference captures up to three times; do not regenerate their 2D image.
+run.targetIds.push(...pendingCapture.slice(0,limit).map(x=>x.key));
+if(run.targetIds.length>=limit){
+ run.stopReason='REVIEW_EXISTING_REFERENCE_ONLY';writeRun();process.exit(0);
 }
 if(process.env.CLOUDFLARE_FREE_PLAN_CONFIRMED!=='true'){
  run.stopReason='FREE_PLAN_NOT_CONFIRMED';writeRun();process.exit(0);
@@ -73,7 +82,7 @@ if(!account||!token){run.stopReason='CLOUDFLARE_GITHUB_SECRETS_NOT_AVAILABLE';wr
 const model='@cf/black-forest-labs/flux-2-klein-4b';
 const api='https://api.cloudflare.com/client/v4/accounts/'+encodeURIComponent(account)+'/ai/run/'+model;
 let reserved=0;
-for(const target of candidates.slice(0,limit)){
+for(const target of candidates.slice(0,limit-run.targetIds.length)){
  const estimate=125;
  if(reserved+estimate>375){run.stopReason='FREE_ESTIMATE_CAP';break;}
  reserved+=estimate;run.providerCalls++;
