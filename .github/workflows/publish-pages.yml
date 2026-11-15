@@ -31,7 +31,9 @@ jobs:
       - name: Reject corrupted public HTML and JavaScript blobs
         run: node --experimental-vm-modules qa/pages-publication-integrity.cjs
       - name: Verify 108-creature reconstruction scope, anatomy and non-destructive model assignments
-        run: node --test qa/creature-reconstruction-plan.test.mjs
+        run: |
+          node --test qa/creature-reconstruction-plan.test.mjs
+          node --test qa/creature-web-mesh-catalog.test.mjs
       - name: Verify opt-in monster mesh adoption, nonhuman scope and rollback
         run: node --test qa/creature-mesh-adoption.test.mjs
       - name: Verify 50 monster and summon reference prompts plus evidence-based 100-point KPI
