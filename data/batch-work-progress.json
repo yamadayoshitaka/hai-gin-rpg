@@ -51,12 +51,12 @@
     },
     "monster": {
       "source": "ChatGPT 定期タスクの実行結果",
-      "lastRunAt": "2026-11-15T21:05:00Z",
-      "subject": "m020左右鰓室に独立した支持弓と呼吸可動を追加・全108体未監査",
-      "summary": "monsterスイッチON。PR #426でm020の左右鰓室に各4本の湾曲支持弓、呼吸に同期した回転/厚み変化を実メッシュコードへ追加。実ソースSHA 2a80e3f2を保存しcheckpoint a2cee403へ反映。108ID全件監査・Node/Three/WebGL実描画・Android・ゲーム登録は未実施。今回実造形変更1ID、再生成0、描画QA合格0、実ゲーム反映0。mainマージ/公開なし。",
+      "lastRunAt": "2026-11-15T22:06:28Z",
+      "subject": "m048海蛇の独立軸体・頭蓋・顎・泳動メッシュをWIP実装（全108未監査）",
+      "summary": "monster ON。PR #426にm048独立原型ソースを新規追加。実ソースSHA f27f98f09c62d01b8c01fe2225245a5f0b9caf9c。連続軸体、腹側鱗板、蛇型頭蓋、可動下顎、眼・歯、背鰭、頂点変形による泳動を実装。ゲーム/マスター接続・Node/WebGL/Android QA未実施。今回実コード変更1ID、GLB再生成0、描画QA合格0、ゲーム反映0。正本108ID監査未完了、mainマージ・公開なし。",
       "status": "work_incomplete",
       "carryover": true,
-      "nextAction": "PR #426でm020の鰓室支持弓の位置と呼吸可動をnode構文・Three.js WebGL四方向表示で検証し、ゲーム/マスターへの実接続。正本108IDの全件監査を実施し、m048独立海蛇母体に着手。",
+      "nextAction": "m048のジオメトリ法線・泳動・四方向WebGLを検証し、m020とともにゲーム/マスター実接続。正本108ID全件監査と種族別原型追加。",
       "steps": {
         "launch": "done",
         "code": "done",
@@ -68,16 +68,16 @@
       },
       "evidence": [
         {
-          "label": "今回m020鰓室実メッシュ改修SHA",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/2a80e3f2dbe78b6fddd6d7eaeb0502db8b7a931a"
+          "label": "m048実ソースコミット",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/f27f98f09c62d01b8c01fe2225245a5f0b9caf9c"
         },
         {
           "label": "Draft PR #426",
           "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/426"
         },
         {
-          "label": "今回WIPチェックポイント",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/a2cee403ee481a2b56fdfddb4179118d09dba21a"
+          "label": "m048 WIPチェックポイント",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/9277c4e40e5b6e9ef10c8128f0a523907a083cee"
         }
       ]
     },
