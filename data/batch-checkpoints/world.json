@@ -97,6 +97,30 @@
       ],
       "commitSha": "6d4700bab22e7df643c1cbd4bfd18babcdf4b5fe",
       "qa": "unverified"
+    },
+    {
+      "id": "town_planter_001",
+      "sourceFiles": [
+        "src/object-catalog.js"
+      ],
+      "commitSha": "692d250edc653b6f28b74ebd3ac8612a997102fa",
+      "qa": "unverified"
+    },
+    {
+      "id": "town_crate_001",
+      "sourceFiles": [
+        "src/object-catalog.js"
+      ],
+      "commitSha": "692d250edc653b6f28b74ebd3ac8612a997102fa",
+      "qa": "unverified"
+    },
+    {
+      "id": "town_notice_001",
+      "sourceFiles": [
+        "src/object-catalog.js"
+      ],
+      "commitSha": "692d250edc653b6f28b74ebd3ac8612a997102fa",
+      "qa": "unverified"
     }
   ],
   "remainingIds": [
@@ -108,9 +132,6 @@
     "entry_door_lv5_001",
     "fountain_001",
     "town_well_001",
-    "town_planter_001",
-    "town_crate_001",
-    "town_notice_001",
     "town_fence_001",
     "stone_fence_001",
     "town_trash_bin_001",
@@ -142,5 +163,5 @@
     "timber_bridge_broken_001",
     "stone_bridge_broken_001"
   ],
-  "nextAction": "今回のベンチ・露店・街灯のNode構文/Three WebGL正面側面俯瞰とAndroid実機を検証し、次に花壇・荷箱・掲示板の実メッシュを改修する。"
+  "nextAction": "花壇・荷箱・掲示板の構文とWebGL三方向描画、Android負荷を検証し、次に木柵・石柵・荷車の支持構造を改修する。"
 }
