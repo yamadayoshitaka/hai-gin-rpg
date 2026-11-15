@@ -1,0 +1,121 @@
+{
+  "schemaVersion": 1,
+  "kind": "PHOTOREAL_WORLD_QUALITY_REVIEW_NOT_PRODUCTION",
+  "assets": {
+    "object:cottage_table_001": {
+      "name": "木製食卓",
+      "type": "object",
+      "referenceFile": "assets/world-quality/references/cottage_table_001.webp",
+      "referenceSha256": "2500fddcf247713a8f74ea6d831318e226873426ae72f7dc34475051f54aa23e",
+      "referencePromptHash": "daff1455fce51f00c8dffb66ff42080333cf52b72ebf6e225ad4fc2ffcaf4d37",
+      "referenceCreatedAt": "2026-11-15T08:07:35.112Z",
+      "gameScreenshot": null,
+      "comparisonReport": null,
+      "roughnessProposal": 1,
+      "review": "WEBGL_CAPTURE_OR_COMPARE_BLOCKED",
+      "productionApplied": false,
+      "lastReviewedAt": "2026-11-15T08:08:37.265Z",
+      "error": "python3 scripts/world-quality-compare.py: Traceback (most recent call last):\n  File \"/home/runner/work/hai-gin-rpg/hai-gin-rpg/scripts/world-quality-compare.py\", line 70, in <module>\n    output=run(Path(args.reference),json.loads(Path(args.capture_json).read_text()))\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/hai-gin-rpg/hai-gin-rpg/scripts/world-quality-compare.py\", line 41, in run\n    ref=features(ref_path)\n        ^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/hai-gin-rpg/hai-gin-rpg/scripts/world-quality-compare.py\", line 25",
+      "captureAttempts": 1
+    },
+    "object:cottage_chair_001": {
+      "name": "木製椅子",
+      "type": "object",
+      "referenceFile": "assets/world-quality/references/cottage_chair_001.webp",
+      "referenceSha256": "f5eb818afd33384cd910b5ef878adf1e985c71a9c503474a3ef3bb407f1d63b1",
+      "referencePromptHash": "d097e31669b47ef0c2fdcb300df34cc270a397c4242971900140617e808f8955",
+      "referenceCreatedAt": "2026-11-15T08:07:50.156Z",
+      "gameScreenshot": null,
+      "comparisonReport": null,
+      "roughnessProposal": 1,
+      "review": "WEBGL_CAPTURE_OR_COMPARE_BLOCKED",
+      "productionApplied": false,
+      "lastReviewedAt": "2026-11-15T08:08:37.265Z",
+      "error": "python3 scripts/world-quality-compare.py: Traceback (most recent call last):\n  File \"/home/runner/work/hai-gin-rpg/hai-gin-rpg/scripts/world-quality-compare.py\", line 70, in <module>\n    output=run(Path(args.reference),json.loads(Path(args.capture_json).read_text()))\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/hai-gin-rpg/hai-gin-rpg/scripts/world-quality-compare.py\", line 41, in run\n    ref=features(ref_path)\n        ^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/hai-gin-rpg/hai-gin-rpg/scripts/world-quality-compare.py\", line 25",
+      "captureAttempts": 1
+    },
+    "object:cottage_bed_001": {
+      "name": "寝台",
+      "type": "object",
+      "referenceFile": "assets/world-quality/references/cottage_bed_001.webp",
+      "referenceSha256": "18a8fd2b995b6fc8c2db0aa190c8cbebb0a0b426aebdbca18dc51ce2117dc517",
+      "referencePromptHash": "0c9b1d62e6f6df0a462c7e5ac5ae0a3593aa670800494e572f3252929772e39c",
+      "referenceCreatedAt": "2026-11-15T08:08:02.278Z",
+      "gameScreenshot": null,
+      "comparisonReport": null,
+      "roughnessProposal": 1,
+      "review": "WEBGL_CAPTURE_OR_COMPARE_BLOCKED",
+      "productionApplied": false,
+      "lastReviewedAt": "2026-11-15T08:08:37.265Z",
+      "error": "python3 scripts/world-quality-compare.py: Traceback (most recent call last):\n  File \"/home/runner/work/hai-gin-rpg/hai-gin-rpg/scripts/world-quality-compare.py\", line 70, in <module>\n    output=run(Path(args.reference),json.loads(Path(args.capture_json).read_text()))\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/hai-gin-rpg/hai-gin-rpg/scripts/world-quality-compare.py\", line 41, in run\n    ref=features(ref_path)\n        ^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/hai-gin-rpg/hai-gin-rpg/scripts/world-quality-compare.py\", line 25",
+      "captureAttempts": 1
+    }
+  },
+  "runs": [
+    {
+      "id": "43692690503",
+      "startedAt": "2026-11-15T08:07:21.570Z",
+      "mode": "reference",
+      "requested": 3,
+      "requestedTarget": null,
+      "requestedKind": "all",
+      "customInstructionHash": null,
+      "stageCount": 200,
+      "objectCount": 53,
+      "targetIds": [
+        "object:cottage_table_001",
+        "object:cottage_chair_001",
+        "object:cottage_bed_001"
+      ],
+      "generated": 3,
+      "failed": [],
+      "providerCalls": 3,
+      "stopReason": "REFERENCE_GENERATED_VISUAL_QA_PENDING",
+      "completedAt": "2026-11-15T08:08:02.278Z"
+    },
+    {
+      "id": "43692690503",
+      "startedAt": "2026-11-15T08:08:37.264Z",
+      "mode": "results",
+      "requested": 3,
+      "requestedTarget": null,
+      "requestedKind": "all",
+      "customInstructionHash": null,
+      "stageCount": 200,
+      "objectCount": 53,
+      "targetIds": [
+        "object:cottage_table_001",
+        "object:cottage_chair_001",
+        "object:cottage_bed_001"
+      ],
+      "generated": 3,
+      "failed": [],
+      "providerCalls": 3,
+      "stopReason": "REVIEW_PROPOSALS_RECORDED_NOT_MERGED",
+      "referenceStopReason": "REFERENCE_GENERATED_VISUAL_QA_PENDING",
+      "completedAt": "2026-11-15T08:08:37.265Z"
+    }
+  ],
+  "lastRun": {
+    "id": "43692690503",
+    "startedAt": "2026-11-15T08:08:37.264Z",
+    "mode": "results",
+    "requested": 3,
+    "requestedTarget": null,
+    "requestedKind": "all",
+    "customInstructionHash": null,
+    "stageCount": 200,
+    "objectCount": 53,
+    "targetIds": [
+      "object:cottage_table_001",
+      "object:cottage_chair_001",
+      "object:cottage_bed_001"
+    ],
+    "generated": 3,
+    "failed": [],
+    "providerCalls": 3,
+    "stopReason": "REVIEW_PROPOSALS_RECORDED_NOT_MERGED",
+    "referenceStopReason": "REFERENCE_GENERATED_VISUAL_QA_PENDING",
+    "completedAt": "2026-11-15T08:08:37.265Z"
+  }
+}

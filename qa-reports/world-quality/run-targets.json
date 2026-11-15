@@ -1,0 +1,29 @@
+{
+  "targets": [
+    "object:cottage_table_001",
+    "object:cottage_chair_001",
+    "object:cottage_bed_001"
+  ],
+  "run": {
+    "id": "43692690503",
+    "startedAt": "2026-11-15T08:08:37.264Z",
+    "mode": "results",
+    "requested": 3,
+    "requestedTarget": null,
+    "requestedKind": "all",
+    "customInstructionHash": null,
+    "stageCount": 200,
+    "objectCount": 53,
+    "targetIds": [
+      "object:cottage_table_001",
+      "object:cottage_chair_001",
+      "object:cottage_bed_001"
+    ],
+    "generated": 3,
+    "failed": [],
+    "providerCalls": 3,
+    "stopReason": "REVIEW_PROPOSALS_RECORDED_NOT_MERGED",
+    "referenceStopReason": "REFERENCE_GENERATED_VISUAL_QA_PENDING",
+    "completedAt": "2026-11-15T08:08:37.265Z"
+  }
+}

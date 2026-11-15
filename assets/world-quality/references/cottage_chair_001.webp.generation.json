@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "kind": "AI_2D_REFERENCE_NOT_GAME_3D",
+  "targetKey": "object:cottage_chair_001",
+  "model": "@cf/black-forest-labs/flux-2-klein-4b",
+  "promptHash": "d097e31669b47ef0c2fdcb300df34cc270a397c4242971900140617e808f8955",
+  "referenceSha256": "f5eb818afd33384cd910b5ef878adf1e985c71a9c503474a3ef3bb407f1d63b1",
+  "referenceFile": "assets/world-quality/references/cottage_chair_001.webp",
+  "widthRequest": 1024,
+  "heightRequest": 576,
+  "originalPixels": "1024x576",
+  "byteSize": 37824,
+  "humanVisualQA": "PENDING",
+  "game3DQuality": "NOT_TESTED",
+  "generatedAt": "2026-11-15T08:07:50.156Z"
+}
