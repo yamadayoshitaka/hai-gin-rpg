@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "description": "Owner-confirmed switches controlling next batch work, not the ChatGPT scheduling service itself. Manual one-shot QA remains available while disabled.",
+  "groups": {
+    "human": {
+      "enabled": true
+    },
+    "monster": {
+      "enabled": true
+    },
+    "world": {
+      "enabled": true
+    },
+    "anime": {
+      "enabled": false
+    }
+  }
+}
