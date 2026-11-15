@@ -37,7 +37,8 @@ test('dashboard always shows exactly four task groups with existing previews',()
  assert(html.includes('次の手動指示'));
  assert(html.includes('issues/new?'));
  assert(html.includes('daily')===false);
- const script=html.match(/<script>([\\s\\S]*?)<\\/script>/)?.[1];
+ const start=html.indexOf('<script>')+8, end=html.indexOf('</script>',start);
+ const script=start>7&&end>start?html.slice(start,end):null;
  assert(script,'Dashboard JavaScript must exist');
  assert.doesNotThrow(()=>new vm.Script(script),'Inline batch control JavaScript must parse');
 });
