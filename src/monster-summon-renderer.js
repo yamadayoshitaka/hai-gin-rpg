@@ -18,7 +18,8 @@ import {startMonsterAction,animateMonsterModel}
  from './monster-animation.js?v=4.5.18';
 import {creatureFlightHeight} from './combat-creature-performance.js?v=4.6.39';
 import {adoptedCreatureMesh} from './creature-mesh-adoption.js';
-import {fetchCreatureRegistry,loadExternalCreature} from './creature-external-runtime.js';
+import {fetchCreatureRegistry} from './creature-external-runtime.js';
+import {loadCreatureMeshSource} from './creature-real-source-catalog.js';
 import {isMonsterSummonType,monsterSummonSource,
  monsterSummonWorldScale,MONSTER_SUMMON_MAX_HIGH_DETAIL,
  MONSTER_SUMMON_MAX_ACTIVE,MONSTER_SUMMON_BY_TYPE}
@@ -147,12 +148,12 @@ export function createMonsterSummonRenderer(scene,{
   // Human-shaped monster rigs stay on the established character path.
   if(!isHumanoid&&node.sourceChoice!=='legacy'){
    const sourceId=node.sourceChoice;
-   licensedRegistryRequest??=fetchCreatureRegistry();
-   licensedRegistryRequest.then(registry=>{
-    const donor=registry.entries[sourceId];
-    if(!donor||!sourceId.startsWith('q'))throw Error('Missing licensed GLB '+sourceId);
-    return loadExternalCreature(donor,detail);
-   }).then(loaded=>{
+   if(sourceId.startsWith('q'))licensedRegistryRequest??=fetchCreatureRegistry();
+   const registryTask=sourceId.startsWith('q')?licensedRegistryRequest:
+     Promise.resolve({entries:{}});
+   registryTask.then(registry=>
+    loadCreatureMeshSource(sourceId,registry,detail)
+   ).then(loaded=>{
     if(removed||node.disposed||!node.anchor.parent||
        adoptedCreatureMesh(object.type)!==sourceId){
       loaded.dispose();return;
