@@ -1,0 +1,345 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>灰銀のレゾナンス | モンスター品質KPI判定</title>
+<style>
+:root{font-family:system-ui,"Noto Sans JP",sans-serif;color-scheme:dark}
+*{box-sizing:border-box}body{margin:0;background:#081724;color:#e9f4fa}
+a{color:#b4e5f3}button,select,input,textarea{font:inherit;color:#f4f8fc;background:#17344c;border:1px solid #65859b;border-radius:8px;padding:9px}
+button{cursor:pointer}button:disabled{opacity:.5}
+h1{font-size:18px;margin:0;color:#f5d79d}h2{font-size:16px;margin:0 0 9px;color:#f6dbae}h3{font-size:13px;margin:8px 0}
+header{background:#122f45;border-bottom:1px solid #446782;padding:11px 16px;display:flex;gap:11px;align-items:center;flex-wrap:wrap}
+header small{color:#b9d1df}main{max-width:1180px;margin:auto;display:grid;grid-template-columns:280px minmax(0,1fr);gap:14px;padding:14px}
+.panel{border:1px solid #3e6279;background:#0d2639;border-radius:12px;padding:13px;min-width:0}
+aside{align-self:start;position:sticky;top:9px;max-height:calc(100dvh - 83px);display:flex;flex-direction:column}
+.row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.cols2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.cols4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+label{font-size:12px;color:#d2e3f0;display:block}
+label input,label select,label textarea{width:100%;margin-top:4px}
+input[type="checkbox"]{width:auto;margin-right:6px;accent-color:#a8d4d6}
+#filter{width:100%;margin-bottom:9px}
+#list{overflow:auto;display:grid;gap:3px;min-height:90px}
+#list button{font-size:11px;text-align:left;padding:8px;background:#15364d}
+#list button[aria-pressed=true]{background:#38627c;border-color:#e5c982}
+#list button span{float:right;color:#b9d4e4}
+#list button b{font-size:12px}
+.muted{font-size:12px;color:#b9ccda;line-height:1.55}
+.hint{font-size:11px;color:#b6cfe0}
+#score{font-size:30px;font-weight:800;letter-spacing:.03em}
+.kpi{background:#17374b;border:1px solid #496b80;border-radius:10px;padding:11px;min-height:90px}
+#status{font-weight:700}
+#qualityForm{display:grid;gap:12px}
+.rating{display:flex;gap:10px;align-items:center;justify-content:space-between;border-bottom:1px solid #36536b;padding:9px 0}
+.rating:last-child{border:0}.rating select{min-width:120px;max-width:145px}.rating b{font-size:12px}
+.rating small{font-size:11px;color:#b9cfe0;display:block}
+.checks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.checks label{padding:9px;background:#18354c;border-radius:8px;display:flex;align-items:center;cursor:pointer;line-height:1.45}
+.controls{display:flex;gap:7px;flex-wrap:wrap}.controls button{flex:1;min-width:130px}
+#prompts{white-space:pre-wrap;word-break:break-word;font-size:12px;line-height:1.6;background:#071727;padding:12px;border-radius:8px;max-height:270px;overflow:auto}
+details{border:1px solid #3e6279;border-radius:9px;padding:10px}
+summary{font-weight:700;cursor:pointer;color:#e4cb96}
+#summaryReasons{font-size:11px;line-height:1.7}
+#previewFrame{width:100%;height:345px;border:1px solid #48667b;border-radius:9px;background:#071827}
+#refImage{display:none;width:100%;height:220px;object-fit:contain;background:#081b2a;border:1px solid #496c81;border-radius:9px}
+#status[aria-label="passed"]{color:#b5e3ca}
+#status[aria-label="failed"]{color:#ffd2a2}
+#status[aria-label="unknown"]{color:#bfd5e5}
+#diff{font-size:14px;font-weight:700}
+footer{padding:15px;text-align:center;color:#b9cfdd;font-size:12px}
+@media(max-width:750px){
+ header{gap:7px;padding:8px}h1{font-size:14px}header small{display:none}
+ main{display:block;padding:7px}
+ aside{position:static;max-height:210px;padding:7px;margin-bottom:8px}
+ #list{grid-template-columns:repeat(2,minmax(0,1fr));overflow:auto}
+ #list button{padding:7px;font-size:10px}
+ #qualityForm{gap:8px}
+ .panel{padding:9px;margin-bottom:8px}
+ .cols4{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .checks{grid-template-columns:1fr}
+ #previewFrame{height:265px}
+ .rating select{min-width:102px}
+}
+</style></head><body>
+<header>
+ <a href="./dev-menu.html">← メニュー</a>
+ <h1>モンスター・召喚獣 品質KPI管理</h1>
+ <small>実写基準画 → 3D化 → 動作 → Android計測 → 90点＆重大不具合ゼロで合格</small>
+</header>
+<main>
+<aside class="panel">
+ <label>モンスター・召喚獣一覧<input id="filter" type="search" placeholder="名前・ID・種族"></label>
+ <div class="row" style="margin-bottom:8px">
+ <button data-filter="monster" aria-pressed="true">敵50種</button>
+ <button data-filter="summon" aria-pressed="false">召喚版</button>
+ <button data-filter="all" aria-pressed="false">全部</button>
+ </div>
+ <div id="list" aria-label="品質管理対象の一覧"></div>
+</aside>
+<section id="qualityForm">
+ <div class="panel">
+  <div class="row" style="justify-content:space-between">
+   <div><h2 id="speciesTitle"></h2><div class="muted" id="speciesDescription"></div></div>
+   <a id="modelLink" target="_blank" rel="noopener noreferrer">3Dモデル確認</a>
+  </div>
+  <p class="muted">「改善前」「改善後」を別々に採点します。実機計測や基準画像が未登録なら合格扱いにしません。</p>
+  <div class="row" style="margin:8px 0">
+   <button id="before" aria-pressed="false" type="button">改善前</button>
+   <button id="after" aria-pressed="true" type="button">改善後</button>
+   <button id="compare" type="button">3Dを比較表示</button>
+  </div>
+  <div class="cols4">
+   <div class="kpi"><div class="muted">総合品質 / 100</div><div id="score">未採点</div></div>
+   <div class="kpi"><div class="muted">採用基準</div><div style="font-size:23px;font-weight:800">90点</div></div>
+   <div class="kpi"><div class="muted">改善量（前 → 後）</div><div id="diff">未計測</div></div>
+   <div class="kpi"><div class="muted">判定</div><div id="status" aria-label="unknown">未判定</div></div>
+  </div>
+  <p id="summaryReasons" class="muted" role="status">証拠を入力して評価を始めてください。</p>
+ </div>
+ <div class="panel"><h2>① 品質採点（0〜5段階、100点換算）</h2>
+  <p class="hint">0=未実装、1=重大欠陥、2=不十分、3=最低動作、4=高品質、5=2D基準画に十分一致。空欄は未評価です。</p>
+  <div id="ratings"></div>
+ </div>
+ <div class="panel"><h2>② 重大不具合ゲート（全件必須）</h2>
+  <p class="muted">90点以上でも1項目が未確認なら不合格ではなく「未判定」とします。</p>
+  <div class="checks" id="gates"></div>
+  <h3>種族ごとの必須検査</h3><div class="checks" id="anatomy"></div>
+ </div>
+ <div class="panel"><h2>③ アクション7種類の実機確認</h2>
+  <div class="checks" id="actions"></div>
+ </div>
+ <div class="panel">
+  <h2>④ Android性能（実測のみ）</h2>
+  <p class="muted">主要試験：50対50を10分以上、同じ画角・同じ兵数で改善前後比較。暫定基準：1% low FPSが30以上、クラッシュ0件。1000対1000は別途LODストレス試験を記録します。</p>
+  <div class="cols2">
+   <label>50対50 1% low FPS（実測）<input id="fps1Low" type="number" min="0" max="240" step="0.1" placeholder="未計測"></label>
+   <label>クラッシュ回数（実測）<input id="crashCount" type="number" min="0" step="1" placeholder="未計測"></label>
+  </div>
+ </div>
+ <div class="panel">
+  <h2>⑤ 証拠と比較</h2>
+  <p class="muted">URL、GitHubの成果物パス、CI結果IDなどを記録します。画像を持っているだけでは合格扱いにしません。</p>
+  <div class="cols2">
+   <label>2D基準画（原画のURL・パス）<input id="reference" placeholder="例：assets/reference/m001.png"></label>
+   <label>改善前の3D画像<escape> /</escape> 動画<input id="renderBefore" placeholder="before.png / URL"></label>
+   <label>改善後の3D画像<escape> /</escape> 動画<input id="renderAfter" placeholder="after.png / URL"></label>
+   <label>7動作の証拠動画<escape> /</escape> CI<input id="motion" placeholder="motion-test.mp4 / CI ID"></label>
+   <label>Android実測結果<input id="device" placeholder="機種・10分間の測定ログ"></label>
+   <label>権利と著作者表示の証拠<input id="license" placeholder="ライセンスURL / credits"></label>
+  </div>
+  <div style="margin-top:10px"><img id="refImage" alt="選択した2D基準画"></div>
+ </div>
+ <div class="panel">
+  <div class="controls">
+   <button id="save" type="button" style="background:#8b7040">この評価を保存</button>
+   <button id="export" type="button">全評価をJSON出力</button>
+   <button id="reset" type="button">この評価を初期化</button>
+  </div>
+  <p class="hint">保存先はこの端末のブラウザです。別端末共有・正式採用にはJSONをレビューしてGitHubへ取り込みます。</p>
+ </div>
+ <details><summary>このモンスター用の2D基準画生成指示</summary>
+  <pre id="prompts"></pre>
+  <button id="copyPrompt" type="button">生成指示をコピー</button>
+ </details>
+ <details id="modelPanel"><summary>実ゲームの3Dプレビュー</summary>
+  <p class="hint">プレビューは実ゲームの3Dモデル確認画面を読み込むだけです。採用状態を変更しません。</p>
+  <iframe id="previewFrame" loading="lazy" title="現在の3Dモデルプレビュー"></iframe>
+ </details>
+ <div class="panel"><h2>採用する場合</h2>
+  <p class="muted">このページの評価はチェックリストです。採用ボタンは既存の管理画面側に残し、品質スコアを書き込むだけで勝手にゲームのモデルを変更しません。</p>
+  <a href="./creature-model-adoption.html" id="adoptionLink" target="_blank" rel="noopener noreferrer">モデル採用画面を開く</a>
+ </div>
+</section>
+</main>
+<footer>© 灰銀のレゾナンス｜本管理画面の未入力値はすべて「未測定・未判定」として扱います。</footer>
+<script type="module">
+import {MONSTER_CATALOG,MONSTER_BY_ID,MONSTER_FAMILIES} from './src/monster-catalog.js';
+import {HUMAN_MONSTER_IDS} from './src/monster-character-cosplay-manifest.js';
+import {MONSTER_SUMMON_ENTRIES} from './src/monster-summon-registry.js';
+import {monsterDesignPrompt} from './src/monster-reference-design.js';
+import {MONSTER_QUALITY_SCHEMA,MONSTER_QUALITY_TARGET,MONSTER_QUALITY_FIELDS,
+ MONSTER_QUALITY_ACTIONS,MONSTER_QUALITY_GATES,MONSTER_QUALITY_ANATOMY,
+ WOLF_QUALITY_REFERENCE,monsterQualityScore,assessMonsterQuality,
+ monsterQualityProgress} from './src/monster-quality-kpi.js';
+const $=id=>document.getElementById(id);
+const KEY='hai-gin.monster-quality-review.v1';
+let records={};
+try{records=JSON.parse(localStorage.getItem(KEY)||'{}')||{};}catch{records={};}
+const extras=[
+ {id:'wolf',name:'専用召喚狼',monsterId:'m001'},
+ {id:'wyvern',name:'飛竜',monsterId:'m017'},
+ {id:'dragon',name:'古竜',monsterId:'m017'},
+ {id:'elder_dragon',name:'天竜',monsterId:'m017'},
+ {id:'dragon_lord',name:'竜王（竜本体）',monsterId:'m017'},
+ {id:'forest_archer',name:'森の精霊弓士',monsterId:'m034'},
+ {id:'seraph_guardian',name:'光翼の守護天使',monsterId:'m015'},
+ {id:'horse',name:'軍馬',monsterId:'m001'}
+];
+const creatures=[
+ ...MONSTER_CATALOG.map(m=>({id:m.id,kind:'monster',name:m.name,monsterId:m.id,family:m.family})),
+ ...MONSTER_SUMMON_ENTRIES.map(s=>({id:s.id,kind:'summon',name:s.name,monsterId:s.monsterId,family:s.family})),
+ ...extras.map(s=>({...s,kind:'summon',family:MONSTER_BY_ID[s.monsterId]?.family||'beast'}))
+];
+let selected='m001',stage='after',kindFilter='monster';
+const current=()=>creatures.find(c=>c.id===selected)||creatures[0];
+const currentEntry=()=>records[selected]?.[stage]||{};
+const anatomyFor=c=>MONSTER_QUALITY_ANATOMY[c.family]||MONSTER_QUALITY_ANATOMY.beast;
+const saveAll=()=>{
+ try{localStorage.setItem(KEY,JSON.stringify(records));return true;}
+ catch(error){$('summaryReasons').textContent='保存できません：'+error.message;return false;}
+};
+function writeRecord(){
+ const old=records[selected]||{};
+ const ratings={};
+ for(const field of MONSTER_QUALITY_FIELDS){
+  const raw=$('rating_'+field.id).value;
+  if(raw!=='')ratings[field.id]=Number(raw);
+ }
+ const gates={};
+ for(const gate of MONSTER_QUALITY_GATES)gates[gate.id]=$('gate_'+gate.id).checked;
+ const actions={};
+ for(const action of MONSTER_QUALITY_ACTIONS)actions[action.id]=$('action_'+action.id).checked;
+ const speciesChecks=anatomyFor(current()).map((_,i)=>$('anatomy_'+i).checked);
+ const evidence=Object.fromEntries(['reference','renderBefore','renderAfter','motion','device','license']
+  .map(id=>[id,$(id).value.trim()]));
+ const metrics={fps1Low:$('fps1Low').value.trim(),crashCount:$('crashCount').value.trim()};
+ records[selected]={...old,[stage]:{ratings,gates,actions,speciesChecks,evidence,metrics,
+  reviewedAt:new Date().toISOString(),kind:current().kind,schema:MONSTER_QUALITY_SCHEMA}};
+ saveAll();updateScore();showList();
+}
+function labelCheck(prefix,id,caption,checked){
+ const label=document.createElement('label');
+ const input=document.createElement('input');input.type='checkbox';input.id=prefix+id;input.checked=!!checked;
+ input.onchange=writeRecord;label.appendChild(input);
+ const span=document.createElement('span');span.textContent=caption;label.appendChild(span);
+ return label;
+}
+function updateScore(){
+ const rec=currentEntry(),q=assessMonsterQuality(rec);
+ const before=monsterQualityScore(records[selected]?.before?.ratings);
+ const after=monsterQualityScore(records[selected]?.after?.ratings);
+ $('score').textContent=q.score===null?'未採点':q.score.toFixed(1)+'点';
+ $('status').textContent=q.pass?'合格':q.ready?'要改善':'未判定';
+ $('status').setAttribute('aria-label',q.pass?'passed':q.ready?'failed':'unknown');
+ $('diff').textContent=before===null||after===null?'未計測':
+  (after-before>=0?'+':'')+(after-before).toFixed(1)+'点';
+ const missing=[];
+ if(q.missingRatings.length)missing.push('未採点 '+q.missingRatings.length+'項目');
+ if(q.unverified.length)missing.push('重大ゲート未確認 '+q.unverified.length+'件');
+ if(q.missingActions.length)missing.push('アクション未検査 '+q.missingActions.length+'件');
+ if(q.missingAnatomy.length)missing.push('種族固有構造が未確認');
+ if(q.missingEvidence.length)missing.push('証拠不足 '+q.missingEvidence.join(', '));
+ if(q.ready&&!q.pass)missing.push('90点の基準に未到達');
+ $('summaryReasons').textContent=q.pass?
+  '合格：90点以上、7動作・重大欠陥ゲート・実機性能・証拠が全て確認済み。':
+  '合格保留：'+(missing.join(' / ')||'必要な検証を追加してください');
+ const url=rec.evidence?.reference||'';
+ const validImage=/^https:\/\/[^\s]+?\.(?:png|jpe?g|webp)(?:\?.*)?$/i.test(url);
+ $('refImage').style.display=validImage?'block':'none';
+ if(validImage)$('refImage').src=url;
+}
+function fillEditor(){
+ const c=current(),record=currentEntry(),m=MONSTER_BY_ID[c.monsterId];
+ const humanoid=HUMAN_MONSTER_IDS.includes(m.id);
+ $('speciesTitle').textContent=c.id+'　'+c.name+(c.kind==='summon'?'（召喚獣）':'（敵モンスター）');
+ const wolf=WOLF_QUALITY_REFERENCE[c.id];
+ $('speciesDescription').textContent=(wolf?.visual||m.description)+
+  ' / '+MONSTER_FAMILIES[m.family]+(humanoid?' / 人間タイプ素体（獣へは置換しない）':'');
+ const modelHref=humanoid?'./monster-manager.html?monster='+m.id:
+  './creature-model-adoption.html?species='+encodeURIComponent(c.id);
+ $('modelLink').href=modelHref;
+ $('adoptionLink').href=modelHref;
+ $('before').setAttribute('aria-pressed',String(stage==='before'));
+ $('after').setAttribute('aria-pressed',String(stage==='after'));
+ const ratings=$('ratings');ratings.replaceChildren();
+ for(const f of MONSTER_QUALITY_FIELDS){
+  const div=document.createElement('div');div.className='rating';
+  const block=document.createElement('div'),b=document.createElement('b');
+  b.textContent=f.name+'（'+f.weight+'点）';
+  const small=document.createElement('small');small.textContent=f.description;
+  block.append(b,small);
+  const select=document.createElement('select');select.id='rating_'+f.id;
+  select.add(new Option('未採点',''));
+  for(let v=0;v<=5;v++)select.add(new Option(v+' / 5',String(v)));
+  select.value=Number.isFinite(record.ratings?.[f.id])?
+   String(record.ratings[f.id]):'';
+  select.onchange=writeRecord;div.append(block,select);ratings.appendChild(div);
+ }
+ $('gates').replaceChildren(...MONSTER_QUALITY_GATES.map(g=>
+  labelCheck('gate_',g.id,g.label,record.gates?.[g.id])));
+ $('anatomy').replaceChildren(...anatomyFor(c).map((text,i)=>
+  labelCheck('anatomy_',i,text,record.speciesChecks?.[i])));
+ $('actions').replaceChildren(...MONSTER_QUALITY_ACTIONS.map(a=>
+  labelCheck('action_',a.id,a.label+'：実3Dで動作を確認',record.actions?.[a.id])));
+ for(const id of ['reference','renderBefore','renderAfter','motion','device','license'])
+  $(id).value=record.evidence?.[id]||'';
+ $('fps1Low').value=record.metrics?.fps1Low??'';
+ $('crashCount').value=record.metrics?.crashCount??'';
+ const isExtra=!MONSTER_BY_ID[c.id.replace(/^summon_/,'')];
+ $('prompts').textContent=isExtra?
+  '専用召喚獣 '+c.name+'。元の種族骨格を維持し、非人型は適正な動物骨格で表現。'+'\n'+
+  (wolf?.visual||'高品質の写実的な3Dゲーム向け基準画。')+'\n番号・文字・コマ割り・誤った脚数・部品貫通は禁止。':
+  monsterDesignPrompt(c.id,{summoned:c.kind==='summon'});
+ updateScore();
+}
+function showList(){
+ const items=$('list');items.replaceChildren();
+ const q=$('filter').value.trim().toLowerCase();
+ const visible=creatures.filter(c=>(kindFilter==='all'||c.kind===kindFilter)&&
+  (c.name.toLowerCase().includes(q)||c.id.includes(q)||c.family.includes(q)));
+ for(const c of visible){
+  const btn=document.createElement('button');btn.type='button';
+  btn.setAttribute('aria-pressed',String(c.id===selected));
+  const b=document.createElement('b');b.textContent=c.name;
+  const span=document.createElement('span');
+  const result=assessMonsterQuality(records[c.id]?.after);
+  span.textContent=result.pass?'合格':result.score===null?'未採点':result.score.toFixed(1)+'点';
+  btn.append(b,document.createTextNode(' ['+c.id+'] '),span);
+  btn.onclick=()=>{selected=c.id;fillEditor();showList();};
+  items.append(btn);
+ }
+}
+for(const b of document.querySelectorAll('[data-filter]'))b.onclick=()=>{
+ kindFilter=b.dataset.filter;document.querySelectorAll('[data-filter]').forEach(x=>
+  x.setAttribute('aria-pressed',String(x===b)));
+ if(kindFilter!=='all'&&current().kind!==kindFilter)
+  selected=kindFilter==='monster'?'m001':'summon_m001';
+ fillEditor();showList();
+};
+$('filter').oninput=showList;
+$('before').onclick=()=>{stage='before';fillEditor();};
+$('after').onclick=()=>{stage='after';fillEditor();};
+for(const id of ['reference','renderBefore','renderAfter','motion','device','license','fps1Low','crashCount'])
+ $(id).addEventListener('change',writeRecord);
+$('save').onclick=writeRecord;
+$('reset').onclick=()=>{
+ if(!confirm('この個体の'+(stage==='before'?'改善前':'改善後')+'の評価だけを初期化しますか？'))return;
+ if(records[selected])delete records[selected][stage];
+ saveAll();fillEditor();showList();
+};
+$('export').onclick=()=>{
+ writeRecord();
+ const blob=new Blob([JSON.stringify({schema:MONSTER_QUALITY_SCHEMA,
+  exportedAt:new Date().toISOString(),records},null,2)],{type:'application/json'});
+ const url=URL.createObjectURL(blob);const a=document.createElement('a');
+ a.href=url;a.download='hai-gin-monster-quality-kpi.json';a.click();
+ setTimeout(()=>URL.revokeObjectURL(url),1500);
+};
+$('copyPrompt').onclick=()=>navigator.clipboard?.writeText($('prompts').textContent)
+ .then(()=>{$('copyPrompt').textContent='コピーしました';})
+ .catch(()=>{$('copyPrompt').textContent='選択してコピーしてください';});
+$('compare').onclick=()=>{
+ $('modelPanel').open=true;
+ const c=current();
+ const url=HUMAN_MONSTER_IDS.includes(c.monsterId)?
+  './monster-manager.html?monster='+encodeURIComponent(c.monsterId):
+  './creature-model-adoption.html?species='+encodeURIComponent(c.id);
+ $('previewFrame').src=url;
+ $('modelPanel').scrollIntoView({behavior:'smooth',block:'nearest'});
+};
+const qp=new URLSearchParams(location.search),requested=qp.get('monster')||qp.get('species');
+if(creatures.some(c=>c.id===requested))selected=requested;
+if(qp.get('kind')==='summon')kindFilter='summon';
+document.querySelectorAll('[data-filter]').forEach(b=>b.setAttribute('aria-pressed',
+ String(b.dataset.filter===kindFilter)));
+fillEditor();showList();
+</script></body></html>
