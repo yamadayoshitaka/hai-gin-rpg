@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "category": "anime",
+  "saved": [
+    {
+      "id": "c01-s04/c01-s05-reference-attestation-guard",
+      "sourceFiles": [
+        "src/story-c01-stage45-art-guard.js"
+      ],
+      "commitSha": "1f76d309cef1b7de8a22b967981b218a268275cd",
+      "qa": "unverified"
+    }
+  ],
+  "remainingIds": [
+    "c01-s04|post-victory|female|c01-s04-m8",
+    "c01-s01..c01-s04 all unverified P0 shots"
+  ],
+  "nextAction": "Verify actual reference image byte attachment in generator call path, run Node/browser QA, inspect all 174 shot assets and replace missing female victory m8 only with genuinely generated and reviewed artwork; do not merge draft PR before QA."
+}
