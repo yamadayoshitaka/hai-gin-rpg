@@ -152,7 +152,7 @@ export function createMonsterSummonRenderer(scene,{
    const registryTask=sourceId.startsWith('q')?licensedRegistryRequest:
      Promise.resolve({entries:{}});
    registryTask.then(registry=>
-    loadCreatureMeshSource(sourceId,registry,detail)
+    loadCreatureMeshSource(sourceId,registry,detail,{creatureId:object.type})
    ).then(loaded=>{
     if(removed||node.disposed||!node.anchor.parent||
        adoptedCreatureMesh(object.type)!==sourceId){
