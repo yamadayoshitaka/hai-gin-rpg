@@ -507,7 +507,7 @@ function selectSpecies(id){
    return;
  }
  byId('assetStatus').textContent='高品質GLBを読み込み中...';
- const pending=mode==='licensed'?loadCreatureMeshSource(chosenId,externalRegistry,detail):
+ const pending=mode==='licensed'?loadCreatureMeshSource(chosenId,externalRegistry,detail,{creatureId:id}):
    mode==='source-composite'?loadSpeciesSourceComposite(m,externalRegistry,{detail}):
    loadPersonalGLB(file,{id,targetHeight:2.4*m.size});
  pending.then(handle=>{
