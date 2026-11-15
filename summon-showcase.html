@@ -150,7 +150,7 @@
         </div>
         <div class="inspectorGroup">
           <strong>関連画面</strong>
-          <a href="./monster-manager.html?v=4.5.19">モンスター図鑑</a>
+          <a href="./monster-manager.html?v=4.5.19">モンスター図鑑</a><a href="./creature-model-adoption.html">モデル選択・採用</a>
           <a href="./motion-external-test.html">人間の動作</a>
           <a href="./tactics-wireframe.html" class="inspectorWide">戦闘画面</a>
         </div>
@@ -195,6 +195,7 @@
     import {createCreatureSoundRuntime} from './src/combat-creature-sounds.js?v=4.4.74';
     import {ActionVfxRuntime} from './src/character-system/action-vfx-runtime.js?v=4.4.23';
     import {fetchCreatureRegistry,loadExternalCreature,loadPersonalGLB} from './src/creature-external-runtime.js?v=4.4.92';
+    import {adoptedCreatureMesh} from './src/creature-mesh-adoption.js';
     const scene=new THREE.Scene();
     scene.background=new THREE.Color(0x0b1823);
     scene.fog=new THREE.Fog(0x0b1823,220,730);
@@ -332,7 +333,7 @@
     fetchCreatureRegistry().then(reg=>{
       licensedRegistry=reg;
       compareDragon.disabled=!reg.entries.dragon||selected!=='dragon';
-      if(selected==='wolf')showNewWolfSource();
+      if(selected==='wolf'&&new URLSearchParams(location.search).get('source')==='source-composite')showNewWolfSource();
     }).catch(()=>{compareDragon.disabled=true;});
     compareDragon.onclick=async()=>{
       if(selected!=='dragon')return;
@@ -486,7 +487,7 @@
         (selected==='dragon_lord'?dragonDistance:distance)*worldScale);
       controls.update();
       if(femaleAvailable)selectFemaleSummonForm();
-      else if(selected==='wolf')showNewWolfSource();
+      else if(selected==='wolf'&&new URLSearchParams(location.search).get('source')==='source-composite')showNewWolfSource();
     }
     femaleMode.addEventListener('change',()=>{
       closeExternalPreview();
@@ -712,7 +713,8 @@
          'CC0外部候補')+'・独立3Dアニメ':'')+
         (femaleSummonHandle?' / '+(femaleSummonHandle.profile.sex==='male'?'男性竜王':'女性人型')+
           ' '+(isFemaleReady?'キャラGLB・骨格連動':'読み込み中・元の姿'):'')+
-        (femaleFlightAltitude>0?' / 空中飛行 '+femaleFlightAltitude.toFixed(2)+'m・羽ばたき':'');
+        (femaleFlightAltitude>0?' / 空中飛行 '+femaleFlightAltitude.toFixed(2)+'m・羽ばたき':'')+
+        (adoptedCreatureMesh(selected)!=='legacy'?' / 採用メッシュ '+adoptedCreatureMesh(selected):'');
     }
     // Diagnose the actual skinned forest wardrobe, not only a hex-code
     // present somewhere in the source. The old black velvet albedo passed
