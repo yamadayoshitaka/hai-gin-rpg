@@ -14,13 +14,13 @@
   "groups": {
     "human": {
       "source": "ChatGPT 定期タスクの実行結果",
-      "lastRunAt": "2026-11-15T17:58:00Z",
-      "subject": "Issue #431/#399 鎧側面閉鎖メッシュの一体化（男女剣士・盾戦士4組）",
-      "summary": "スイッチON。既存Draft PR #418に側面閉鎖メッシュを背面胸甲の同一BufferGeometryへ統合する実コード変更をコミット80ca95b。4組に共通の生成経路を変更し、鎧キャラ1体当たり追加2ドローコールを削減する設計。静的5条件確認成功。ただし実行時Node/Chromium WebGL/Android/CI未検証で実描画の改善は未承認。mainマージ・公開なし。",
+      "lastRunAt": "2026-11-15T19:03:19Z",
+      "subject": "Issue #431 鎧下端リムの法線反転修正・全人物品質回帰は継続",
+      "summary": "humanスイッチON。PR #418の既存生成器から鎧上端と下端で同じ三角面向きが使われていた問題を修正し、下端リムの面向きを反転。実ソースcommit d835229、Draft PR #451、チェックポイント保存。静的条件4件成立。ただしNode/ブラウザWebGL/Androidと全人物ID走査は未実施。実描画品質は未承認。",
       "status": "in_review",
       "carryover": true,
       "issueNumber": 431,
-      "nextAction": "PR #418 head 80ca95bの男女job01/job05を実WebGLで背面・踵・上面比較し、法線/メッシュインデックス/衣装スキニング/描画コールを測定。Issue #431の顔髪と残存サーフェスを引き続き改修。",
+      "nextAction": "全人物プリセットの正本IDを列挙し全件走査。PR #451で鎧の上下法線をNode/Three.jsとWebGL正面・背面・上面で検証、男女job01/job05の衣装比較、顔髪表情の共通生成器を追加修正。CIと実描画合格までマージ禁止。",
       "steps": {
         "launch": "done",
         "code": "done",
@@ -32,16 +32,20 @@
       },
       "evidence": [
         {
-          "label": "所有者指示 Issue #431",
+          "label": "実コード変更コミット",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/d83522926ed49dac1fce2c71052a7f05e114a301"
+        },
+        {
+          "label": "Draft PR #451",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/451"
+        },
+        {
+          "label": "チェックポイント保存コミット",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/ed55a87c26d45cc0f4e6289ce3d04a1d9631f79a"
+        },
+        {
+          "label": "未完了指示 Issue #431",
           "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/issues/431"
-        },
-        {
-          "label": "今回の実ソース変更",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/80ca95ba1c2390996086e8ff6d6fd585ae477728"
-        },
-        {
-          "label": "Draft PR #418",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/418"
         }
       ]
     },
