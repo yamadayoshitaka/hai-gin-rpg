@@ -15,7 +15,7 @@
       "sourceFiles": [
         "src/m048-sea-serpent-anatomical-source.js"
       ],
-      "commitSha": "f27f98f09c62d01b8c01fe2225245a5f0b9caf9c",
+      "commitSha": "0ff32dbcbf788789aada38fefd9ded47edf79bca",
       "qa": "unverified"
     }
   ],
@@ -67,5 +67,5 @@
     "m049",
     "m050"
   ],
-  "nextAction": "Validate m048 mesh index winding and swim deformation with Node/Three and four-view WebGL; connect m020/m048 prototype to game/master only after visual review; enumerate canonical 108 IDs and continue species-specific meshes."
+  "nextAction": "m048 fin/body synchronized axial deformation committed; execute Node Three mesh validation and four-angle WebGL QA, then integrate into game/master. Audit all 108 canonical IDs; retain protected m005/m006 and summon counterparts."
 }
