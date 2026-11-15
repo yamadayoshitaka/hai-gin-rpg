@@ -282,6 +282,15 @@ export function setSortieCount(game,teamId,squadId,count){
  if(assigned-(team.counts[String(source.id)]||0)+n>budget)
   throw Error('このステージの出撃上限は'+budget+'人です。他の隊の人数を減らしてから割り当ててください。');
  const sid=String(source.id);
+ const cap=formationTemplate(team.formation)||formationTemplate('free');
+ const rarity=rarityOf(source),old=Number(team.counts[sid]||0);
+ const rarityCount=formationRarityCounts(team,ownSquads(game))[rarity];
+ if(n&&sortieTeamCount(team)-old+n>cap.maxTroops)
+  throw Error('この陣形の総人数上限は'+cap.maxTroops+'人です。');
+ if(n&&rarityCount-old+n>cap.rarityCaps[rarity])
+  throw Error(rarity+'はこの陣形で最大'+cap.rarityCaps[rarity]+'人までです。');
+ if(!n&&team.formation!==FREE_FORMATION)
+  throw Error('通常陣形の枠はテンプレート固定です。必要なら人数を1人以上にしてください。');
  if(n){
   if(!team.slots.includes(sid)&&team.formation!==FREE_FORMATION)
    throw Error('通常陣形の職業とマスは固定です。別の陣形か自由陣形を選んでください。');
