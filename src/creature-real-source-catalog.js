@@ -5,6 +5,7 @@
  * The renderer keeps the existing model if the remote host or CORS fails.
  */
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {WEB_CREATURE_MESH_SOURCES} from './creature-web-mesh-catalog.js';
 import {loadExternalCreature,prepareExternalGLTF} from './creature-external-runtime.js?v=wolf-actions-v3';
 import {applyGreyFangWolfFinish} from './grey-fang-wolf-finish.js?v=wolf-actions-v3';
 import {installGreyWolfActions} from './grey-wolf-action-runtime.js?v=wolf-actions-v3';
@@ -49,13 +50,16 @@ export const REAL_CREATURE_MESH_SOURCES=Object.freeze({
   downloadUrl:'https://huggingface.co/datasets/allenai/objaverse/resolve/main/glbs/000-066/49c9823cddcd4d1fb2ecae8395a46bd0.glb',
   licenseUrl:'https://creativecommons.org/licenses/by/4.0/',
   caution:'未リグ。ワニ以外の爬虫類へそのまま適用しない'
- })
+ }),
+ ...WEB_CREATURE_MESH_SOURCES
 });
 export async function loadCreatureMeshSource(sourceId,registry,detail='high',{creatureId=null}={}){
  const real=REAL_CREATURE_MESH_SOURCES[sourceId];
  if(real){
   const gltf=await new GLTFLoader().loadAsync(real.downloadUrl);
   const handle=prepareExternalGLTF(gltf,{id:sourceId,name:real.name,targetHeight:2.4});
+  handle.root.userData.creatureCandidateStatus=real.integration||'preview-only';
+  handle.root.userData.creatureCandidateStyle=real.style||'source-photoreal';
   handle.root.userData.creatureMeshAttribution={
    author:real.author,license:real.license,licenseUrl:real.licenseUrl,
    sourceUrl:real.sourceUrl,sourceId
