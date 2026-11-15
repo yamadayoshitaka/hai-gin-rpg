@@ -23,6 +23,8 @@ on:
       - 'tactics-wireframe.html'
       - 'src/central-battle-orders.css'
       - 'qa/central-battle-orders.test.mjs'
+      - 'qa/formation-minimum-deployment-radar.test.mjs'
+      - 'src/prebattle-deployment-radar.css'
       - 'qa/three-team-sortie.test.mjs'
       - 'qa/level99-targeted-strategy.test.mjs'
       - 'qa/formation-and-three-step-strategy.test.mjs'
@@ -67,6 +69,7 @@ jobs:
           node --experimental-vm-modules qa/formation-stage-collapse.test.mjs
           node --experimental-vm-modules qa/formation-template-rarity-quotas.test.mjs
           node --experimental-vm-modules qa/central-battle-orders.test.mjs
+          node --experimental-vm-modules qa/formation-minimum-deployment-radar.test.mjs
           node --experimental-vm-modules qa/strict-formation-three-group-summon-size.test.mjs
           node --experimental-vm-modules qa/inn-deployment-command-effects.test.mjs
           node --experimental-vm-modules qa/inn-commander-autoplace-gameover.test.mjs
