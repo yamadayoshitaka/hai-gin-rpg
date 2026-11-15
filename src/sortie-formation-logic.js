@@ -37,7 +37,7 @@ export function formationStatus(team,ownedSquads,positions,capacity=16){
   return {id:'free',valid:false,reason:'自由配置：陣形未成立'};
  const jobs=new Map(ownedSquads.map(s=>[String(s.id),s.job]));
  for(const sid of ids){
-  const cell=team.grid.indexOf(String(sid)),rank=cells.slice(0,Math.max(4,Math.min(16,Number(capacity)||4))).indexOf(cell);
+  const cell=team.grid.indexOf(String(sid)),rank=cells.slice(0,Math.max(4,Math.min(ids.length,Number(capacity)||4))).indexOf(cell);
   if(rank<0||!ROLE_JOBS[roles[rank]]?.includes(jobs.get(String(sid))))
    return {id:'free',valid:false,reason:'自由配置：職業と位置が陣形条件に不一致'};
  }
@@ -48,12 +48,12 @@ export function arrangeFormation(team,ownedSquads,formation,positions,capacity=1
  const ids=team.slots.filter(Boolean),cells=positions[formation],roles=FORMATION_ROLES[formation],
   jobs=new Map(ownedSquads.map(s=>[String(s.id),s.job])),remaining=[...ids],grid=Array(16).fill(null);
  // Fill specialist positions first, leaving non-matching squads in a free layout.
- for(let i=0;i<Math.max(4,Math.min(16,Number(capacity)||4));i++){
+ for(let i=0;i<Math.max(4,Math.min(ids.length,Number(capacity)||4));i++){
   const index=remaining.findIndex(sid=>ROLE_JOBS[roles[i]]?.includes(jobs.get(String(sid))));
   if(index>=0)grid[cells[i]]=remaining.splice(index,1)[0];
  }
  for(const sid of remaining){
-  const cell=cells.slice(0,Math.max(4,Math.min(16,Number(capacity)||4))).find(c=>grid[c]===null);
+  const cell=cells.slice(0,Math.max(4,Math.min(ids.length,Number(capacity)||4))).find(c=>grid[c]===null);
   if(cell!==undefined)grid[cell]=sid;
  }
  team.grid=grid;
