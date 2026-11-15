@@ -59,6 +59,14 @@
       "path": "assets/story-cinema/cast/iris.webp",
       "masterQuality": "PROVISIONAL_CAST_CROP_NEEDS_REVIEW",
       "requiredForGender": "both"
+    },
+    {
+      "id": "vess",
+      "role": "ヴェス・年長の王印調査官",
+      "visualRule": "長い銀白髪、灰白色の髭、皺のある顔、重厚な暗色鎧と毛皮。黒髪の若い男と誤認しない。既存キャストマスターの人物に一致させる。",
+      "path": "assets/story-cinema/cast/vess.webp",
+      "masterQuality": "PROVISIONAL_CAST_CROP_NEEDS_REVIEW",
+      "requiredForGender": "both"
     }
   ],
   "rulesPerShot": [
