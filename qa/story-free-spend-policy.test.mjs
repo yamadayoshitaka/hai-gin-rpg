@@ -8,7 +8,8 @@ assert.equal(p.cloudflare.paidTierOrTopUpsAllowed,false);
 assert.equal(p.chatGPTImageGeneration.automaticPaidApiFallback,false);
 assert.equal(p.chatGPTImageGeneration.requiresUserInteraction,true);
 const w=fs.readFileSync('.github/workflows/story-cloudflare-free-daily.yml','utf8');
-for(const token of ["20 0 * * *","switches.groups?.anime?.enabled!==true","event==\\\"workflow_dispatch\\\"","gh workflow run story-chapter1-free-complete-draft-production.yml --ref main","STORY_FREE_DAILY_SKIP"])
+for(const token of ["20 0 * * *","switches.groups?.anime?.enabled!==true","event==\"workflow_dispatch\" or .event==\"push\"","gh workflow run story-chapter1-free-complete-draft-production.yml --ref main","STORY_FREE_DAILY_SKIP"])
  assert(w.includes(token),'Daily free-only workflow is missing: '+token);
 assert(!w.includes('api.openai.com'));
+assert(w.includes('cloudflare free plan') || w.includes('Cloudflare Free'));
 console.log('PASS: ChatGPT subscription-only planning cap (3,000 yen), 0 paid API allowance and one Cloudflare run/day.');
