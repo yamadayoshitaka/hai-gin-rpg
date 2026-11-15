@@ -197,8 +197,12 @@ export function v63WigScalpTone(x,y,z,box){
  const u=(x-c.x)/Math.max(d.x,.001),v=(y-box.min.y)/Math.max(d.y,.001);
  const w=(z-c.z)/Math.max(d.z,.001);
  const growth=.89+.07*THREE.MathUtils.smoothstep(v,.52,.96);
- const fibers=.029*Math.sin(u*91+w*39+v*16)*Math.sin(u*53-w*24);
- return THREE.MathUtils.clamp(growth+fibers,.83,1.04);
+ // Hair-root melanin should not form near-black pixel clusters at the crown.
+ // Use two low-amplitude, spatially coherent frequencies instead of
+ // multiplying high-frequency waves into isolated dark dots.
+ const flow=.010*Math.sin(u*43+w*22+v*12)+
+  .007*Math.sin(u*17-w*13+v*29);
+ return THREE.MathUtils.clamp(growth+flow,.87,1.03);
 }
 export function v63WigLockTone(t,seed,layer=0){
  const u=THREE.MathUtils.clamp(t,0,1);
