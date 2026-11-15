@@ -12,6 +12,14 @@ assert.equal(nonhuman.length,34);
 assert.deepEqual(SPECIES_COSPLAY_IDS,nonhuman.map(s=>s.id));
 assert.deepEqual(Object.keys(NONHUMAN_MONSTER_WARDROBE),
  ['m008','m012','m017','m050']);
+for(const [id,role] of Object.entries({
+ m001:'leather',m003:'leather',m006:'leather',m011:'leather',
+ m016:'metal',m021:'metal',m026:'fabric',m030:'fabric',
+ m046:'fabric',m047:'fabric',m048:'metal'
+})){
+ assert.equal(SPECIES_COSPLAY_WARDROBE[id].role,role,
+  'Species material should match anatomical coat / shell: '+id);
+}
 for(const spec of nonhuman){
  let lowCostumeCount=0;
  const profile=SPECIES_COSPLAY_WARDROBE[spec.id];
@@ -60,6 +68,17 @@ for(const spec of nonhuman){
      Object.values(model.userData.pivots).includes(piece.parent),
      'Outfit must follow anatomical pivot: '+piece.name);
    }
+  }
+  if(detail==='high'&&['beast','insect','arachnid'].includes(spec.family)){
+   const name=spec.family==='beast'?'nape-collar':
+     spec.family==='insect'?'elytra-crown':'abdomen-saddle';
+   const matched=costume.filter(p=>p.name.endsWith('-'+name));
+   assert.equal(matched.length,1,
+    'Each beast / insect group must have its anatomy-specific garment: '+spec.id);
+   if(spec.family==='arachnid'){
+    assert.equal(matched[0].parent,model.userData.pivots.abdomen,
+     'Spider abdomen clothing must track the moving abdomen pivot');
+   }else assert.equal(matched[0].parent,model.userData.pivots.torso);
   }
   if(profile.legacy)assert.equal(model.userData.speciesCosplay.applied,
     'existing-boss-regalia');
