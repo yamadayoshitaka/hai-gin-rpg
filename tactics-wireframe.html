@@ -314,6 +314,7 @@ body[data-circle-target] #destinationPrompt{border:2px solid #ffed9c;box-shadow:
   }
 }
 </style>
+<link rel="stylesheet" href="./src/battle-three-group-panel.css?v=1">
 <div id="vitalsPanel" hidden role="region" aria-label="戦況HP・MP一覧"><div class="vitalsHead"><strong>部隊別 HP / MP（⏸ 一時停止中）</strong><button id="vitalsClose" aria-label="戦況を閉じる">✕ 閉じる</button></div><div id="vitalsOverview"></div><div class="vitalsFilters"><label>軍<select id="vitalsTeam"><option value="0">味方</option><option value="1">敵</option></select></label><label>部隊<select id="vitalsSquad"><option value="all">全部隊</option></select></label><label>職業<select id="vitalsJob"><option value="all">全職業</option></select></label></div><div class="squadHelp" id="vitalsSquadStatus">部隊を選ぶと個人のHPとMPを確認できます。</div><button id="vitalsHealing" disabled>✚ この部隊へ回復支援を要請</button><div id="vitalsJobSummary"></div><div id="vitalsIndividuals"></div><div class="vitalsPages"><button id="vitalsPrev">◀ 前</button><span id="vitalsPageLabel">1 / 1</span><button id="vitalsNext">次 ▶</button></div></div>
 <button id="battleMenuToggle" aria-expanded="false">☰ メニュー</button>
 <div id="teamLegend" aria-label="陣地識別色"><span class="ally">■ 味方陣地・西</span><span class="enemy">■ 敵陣地・東</span><span>▣ 中立帯</span></div>
@@ -745,6 +746,7 @@ import {normalizeArmyGroup,battleGroupMembers} from './src/army-groups.js';
 import {createTargetedStrategyUi} from './src/targeted-strategy-runtime.js';
 import {STRATEGY_METHODS} from './src/three-step-strategy-catalog.js';
 import {brokenFormationGroups} from './src/battle-formation-integrity.js';
+import {createBattleThreeGroupPanel} from './src/battle-three-group-panel.js';
 import * as THREE from 'three';
 import {createGamePageAudio} from './src/game-page-audio.js';
 import {layoutSquadCallouts,squadCalloutLeader} from './src/battle-squad-callout-layout.js?v=2';
@@ -8037,6 +8039,24 @@ for(const team of [0,1]){
  bar.append(previous,status,next);list.parentNode.append(bar);
  ribbonPageNodes.set(team,{previous,status,next});
 }
+const threeGroupPanel=storyRequest?.sortieTeamCount?createBattleThreeGroupPanel({
+ alliedNav:$('allySquadRibbon'),enemyNav:$('enemySquadRibbon'),
+ actors,groupBySquad:armyGroupBySquad,initialUnits:storyRequest.units,
+ enemyInitial:storyRequest.enemyCount,
+ onSquadSelect:id=>{trackedAllySquadId=String(id);refreshBattleTargetSummary(lastRibbonSums);},
+ onStrategy:groupId=>{if(battleReady&&!finished)targetedStrategyUi.open(groupId);},
+ onInspect:id=>openVitals(id),
+ onReinforce:result=>{
+  const point=squadCenter(result.toId,0);
+  if(point)issueTargetedPlatoon(result.toId,'defend',{x:Math.round(point.x),z:Math.round(point.z)});
+ },
+ onMerge:result=>{
+  squadOrderRegistry.delete(result.fromId);
+  targetedArrivalOrders.delete(result.fromId);
+  targetedEnemyQueues.delete(result.fromId);
+ },
+ onLog:log
+}):null;
 function markRibbonOrderIssued(id){
  lastSquadOrderAt.set(String(id),elapsed);
  lastRibbonOrderAt.set(squadKey(0,String(id)),elapsed*1000);
@@ -8121,6 +8141,7 @@ function refreshBattleTargetSummary(sums){
 }
 function renderSquadRibbons(sums){
  lastRibbonSums=sums;
+ threeGroupPanel?.render(false,Boolean(pendingCircleTarget));
  battleTacticalUi.onSquadSums(sums);
  refreshBattleTargetSummary(sums);
  // The only live controls are now 3D squad circles; do not reflow invisible sidebars.
@@ -8514,7 +8535,8 @@ function updateUI(){
   if($('squadOrderStatus').textContent!==newPurpose)$('squadOrderStatus').textContent=newPurpose;
  }
  const aliveCounts=teamCounts();
- const initialCounts=massSim?[massSim.sideCount,massSim.sideCount]:[
+ const initialCounts=massSim?[massSim.sideCount,massSim.sideCount]:storyRequest?
+  [storyRequest.units.length,storyRequest.enemyCount]:[
   actors.filter(a=>a.team===0).length,actors.filter(a=>a.team===1).length];
 $('allyCasualties').textContent=Math.max(0,initialCounts[0]-aliveCounts[0])+'/'+initialCounts[0];
 $('enemyCasualties').textContent=Math.max(0,initialCounts[1]-aliveCounts[1])+'/'+initialCounts[1];
