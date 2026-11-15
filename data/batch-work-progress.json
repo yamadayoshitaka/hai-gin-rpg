@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "asOf": "2026-11-15T16:21:28.912Z",
+  "asOf": "2026-11-15T16:32:02.410Z",
   "description": "工程別の実作業証跡。GitHub Actionsの成功や定期タスクの実行完了を、3D改修・PR・デプロイの完了と混同しない。これはGitHubに最後に記録されたスナップショットであり、ChatGPTサービスのライブ状態ではない。",
   "stageOrder": [
     "launch",
@@ -82,13 +82,13 @@
       ]
     },
     "world": {
-      "source": "ChatGPT手動回帰（GitHub実コード・CI証跡）",
-      "lastRunAt": "2026-11-15T16:21:28.912Z",
+      "source": "ChatGPT今すぐ手動実行（GitHub main+独立PR）",
+      "lastRunAt": "2026-11-15T16:32:02.410Z",
       "status": "in_review",
       "carryover": true,
-      "subject": "実写方向の全53種3Dオブジェクト品質回帰：田畑2種を実改修、残51種未着手",
-      "summary": "world実行スイッチON。全53対象の受入台帳を作成（最終承認0、実3D改善候補2、未確認51）。稲・野菜の円錐型株を湾曲した複数葉のInstancedMeshへ置換し、専用QAとCIを追加してDraft PR #427に実コミット。世界専用CI #43734700827はsuccess（対象QA通過）。Architecture / Battle CIは変更対象外の qa/battle-unified-voice-and-intent.test.mjs:58 にある固定作戦表示の文字列期待不一致でfailure。WebGL画面・Android実機は未検証、main未マージ、Pages未公開。PR #409も未マージ。carryoverを維持。",
-      "nextAction": "PR #427でworld-qualityのCI・正面側面俯瞰WebGL・Android FPSを実検証し、崩れ・浮遊・密度や株幅の違和感を修正。既存PR #409の陰影QA/マージ可否も確認。同時にobject-realism-acceptance.jsonの未確認51種から構造的欠陥を優先して実3Dメッシュ改修し、個別にPR/QA/公開まで進める。53件の全通過までcarryoverを維持。",
+      "subject": "全53種リアル造形回帰、木樽・井戸の実3D改修をコミット（PR #430）",
+      "summary": "worldスイッチON確認、既存定期タスク有効。木樽cottage_barrel_001の円柱を18枚の閉じた有厚湾曲樽板・実形状の3本の鉄帯・天底板/栓へ置換。井戸town_well_001に中空石積み・厚い笠石・目地・木製巻き上げ軸・クランク・巻胴・ロープ・木桶・金属金具を追加。src/world-craft-props.js（実ジオメトリ）/src/object-catalog.js（実ゲーム用呼出）/専用QA/World CI変更を専用ブランチにコミット、Draft PR #430を作成。全53受入台帳も承認0・実コード改善審査4・未検証49へ更新。WebGL・Android表示とPages公開は未確認、main未マージ。CI実行待ち/進行中。PR #427/#409も未マージ、継続。",
+      "nextAction": "PR #430のWorld専用CI/静的Nodeテスト、元のObject Catalogとの互換とWebGL正面/側面/俯瞰/Android FPSを確認し、形状浮遊・水面干渉・樽の接合と物理的荷重支持を追加修正。PR #427/#409のQAとマージの安全ゲートを確認し、受入台帳の未検証49種を順番に実3D改修し、全53件のQA/マージ/公開までcarryover継続。",
       "steps": {
         "launch": "done",
         "code": "done",
@@ -100,28 +100,28 @@
       },
       "evidence": [
         {
-          "label": "全53オブジェクト承認台帳（完了0）",
+          "label": "今回の実3D変更 PR #430",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/430"
+        },
+        {
+          "label": "今回の最終メッシュ実コードコミット",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/f2deed2d55bd2a44e9823fbdb180e32e46e180ba"
+        },
+        {
+          "label": "World専用QA起動",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/43735922434"
+        },
+        {
+          "label": "全53種受入台帳（審査4・未確認49）",
           "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/blob/main/data/world-quality/object-realism-acceptance.json"
         },
         {
-          "label": "今回の実ソース変更 PR #427",
+          "label": "前回の田畑2種 PR #427",
           "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/427"
         },
         {
-          "label": "実メッシュ実装コミット",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/4d80b19cf80211492b51cfb1b1f2fdf575805cee"
-        },
-        {
-          "label": "既存継続案件 PR #409",
+          "label": "既存陰影修正 PR #409",
           "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/409"
-        },
-        {
-          "label": "World専用CI通過（run 43734700827）",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/43734700827"
-        },
-        {
-          "label": "全体CI（戦闘固定作戦の既存テストで失敗）",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/43734700856"
         }
       ]
     },
