@@ -14,13 +14,13 @@
   "groups": {
     "human": {
       "source": "ChatGPT 定期タスクの実行結果",
-      "lastRunAt": "2026-11-15T21:04:10Z",
-      "subject": "後部胸甲の実メッシュ深度制限WIP・全人物回帰未完了",
-      "summary": "human ON確認。PR #456の実ゲーム用src/outfit-maintenance-model.jsの後部胸甲を実人体表面深度で制限し、前後逆転・板状突出を抑制するコード差分を専用ブランチにコミット594df102。チェックポイント9c720408を保存。WebGL/Node/Android対象別QA未実施、全人物ID列挙と再生成未実施。Issue #438未解決。実写級・公開は未承認。",
+      "lastRunAt": "2026-11-15T22:04:31Z",
+      "subject": "側面胸甲の疎サンプル時の深度推定を実修正・全人物監査未完了",
+      "summary": "human ON。PR #456のsrc/outfit-maintenance-model.jsで、体幹表面推定のサンプル不足時に全横幅へフォールバックして側面装甲が浮く問題を、横方向を維持した段階的近傍探索に修正。実ソースSHA b64fd123、チェックポイント923e917。Node/WebGL/Android QA未実施、全人物ID列挙・再生成未実施、品質承認0。mainマージ・公開なし。",
       "status": "in_review",
       "carryover": true,
       "issueNumber": 438,
-      "nextAction": "PR #456の後部胸甲を男女剣士/盾戦士のWebGL背面・側面で比較し、#438背面異物を根本修正。Node構文/CI確認、全人物ID列挙と再生成・対象別QAを実施。mainマージ禁止。",
+      "nextAction": "PR #456のNode構文・男女剣士/盾戦士の正面左右背面WebGL QAを実行。全人物IDと生成経路を列挙して全件走査・再生成・対象別QAへ進む。Issue #438を継続し未承認mainマージ禁止。",
       "steps": {
         "launch": "done",
         "code": "done",
@@ -32,8 +32,8 @@
       },
       "evidence": [
         {
-          "label": "今回の実ソース修正",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/594df102d49e57757383ce824f77f157067a440d"
+          "label": "実ソース改修",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/b64fd12308664debb41d14ba76d0ffe7d4da669c"
         },
         {
           "label": "Draft PR #456",
@@ -41,7 +41,7 @@
         },
         {
           "label": "WIPチェックポイント",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/9c720408b19fd0831e25dca5d51f7f9bf18c1e37"
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/923e917278c9ee262741c89020dc7498076d55d4"
         },
         {
           "label": "未完了 Issue #438",
