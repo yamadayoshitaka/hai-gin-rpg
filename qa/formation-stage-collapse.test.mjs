@@ -23,9 +23,9 @@ assert.equal(sortieSquadCap(game),4);
 assert.equal(sortieAllowedCells(game,1).length,4);
 assert.equal((renderThreeTeamPlanner({game,teamId:1}).match(/data-sortie-state="locked"/g)||[]).length,12,
  'preset formation at level 1 must lock twelve cells');
-assert.throws(()=>setSortieGridCell(game,1,15,1),/指定マス/,
+assert.throws(()=>setSortieGridCell(game,1,15,1),/固定配置/,
  'manual job placement outside a preset formation is prohibited');
-assert.throws(()=>setSortieGridCell(game,1,6,1),/職業/,
+assert.throws(()=>setSortieGridCell(game,1,6,1),/固定配置/,
  'a knight cannot be assigned to a support role');
 game.sortieTestLevel=7;
 assert.equal(sortieSquadCap(game),5,'seventh level unlocks fifth contingent');
