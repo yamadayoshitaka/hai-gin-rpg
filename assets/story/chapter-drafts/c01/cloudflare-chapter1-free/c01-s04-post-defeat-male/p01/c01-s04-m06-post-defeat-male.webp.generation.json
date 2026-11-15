@@ -1,0 +1,36 @@
+{
+  "kind": "CLOUDFLARE_REAL_WEBP_REVIEW_CANDIDATE_NOT_APPROVED",
+  "shotKey": "c01-s04|post-defeat|male|c01-s04-m6",
+  "stageId": "c01-s04",
+  "edition": "post-defeat",
+  "gender": "male",
+  "panelId": "c01-s04-m6",
+  "screenplayText": "「出現した全モンスターを討伐」は未達となった。部隊は撤退し、態勢を立て直す。",
+  "visibleActorIds": [],
+  "actualReferenceImagesAttached": [
+    {
+      "actorId": "style_benchmark",
+      "source": "assets/story/chapters/c01/panels/c01-s01-m02-male.webp",
+      "originalSha256": "e70901415a751b576a00dcac34f93065051b3513b875f58546533f59ccfee71d",
+      "submittedSha256": "a6602427e7fde9cda0e99dd5511998682513154a72c029a190abd5e74786eca2",
+      "actualBytes": 247193,
+      "pixels": [
+        480,
+        270
+      ]
+    }
+  ],
+  "imageSha256": "8ac179f4ef753ced1a43ef602c4b2323c811a6d8a2594a46dd5fd2b0d38fb31d",
+  "nativePixels": [
+    1024,
+    576
+  ],
+  "imageBytes": 156944,
+  "model": "@cf/black-forest-labs/flux-2-klein-4b",
+  "seed": 1430710752,
+  "promptSha256": "49547ed3bf6f6bac45a50c4546132c635de7d5bdb46b0b940f5b6e0f2670fdc3",
+  "estimatedNeurons": 109.57,
+  "visuallyApproved": false,
+  "formallyRegistered": false,
+  "gameDeployed": false
+}
