@@ -38,7 +38,11 @@ function scene(base,turns,{opening=false,sharedKind=null}={}){
  if(!base||!turns.length)throw Error('Compact scene missing art identity or dialogue');
  const first=turns[0];
  return freeze({...base,compactStory:true,isChapterOpening:opening,
-  sharedSceneKind:sharedKind,protagonistAssetPolicy:'exact-gender-or-proven-neutral-only',
+  sharedSceneKind:sharedKind,
+  // Only the first defeat CG has a physically verified character-free shared original.
+  // Other outcome images remain per-stage or unregistered until safely replaced.
+  sharedArtAsset:sharedKind==='defeat'&&/-m6$/.test(base.id)?'./assets/story/shared/shared-defeat-01.webp':null,
+  protagonistAssetPolicy:'exact-gender-or-proven-neutral-only',
   originalSceneId:base.id,originalComicCell:base.comicCell,
   originalSheetCount:base.sourceSheetCount??null,
   dialogueTurns:freeze(turns),
