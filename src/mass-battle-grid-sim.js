@@ -779,6 +779,7 @@ export class MassBattleGridSimulation {
   healFromItem(unitId,amount){
     const target=this.units.find(unit=>unit.id===Number(unitId));
     if(!target||!target.alive||!(target.hp>0)||!(amount>0)||!Number.isFinite(amount))return false;
+    if(this._squadDebuff(target,'heal_block')>=1)return false;
     const gain=Math.min(target.maxHp-target.hp,Math.min(500,Math.round(amount)));
     if(gain<=0)return false;
     target.hp+=gain;
@@ -790,12 +791,14 @@ export class MassBattleGridSimulation {
 
   /** Same capped healing budget in the Worker and main-thread mirrors. */
   healSquadFromItem(squadId,totalHp,team=0){
+    if(this._squadDebuff({team,squadId},'heal_block')>=1)return false;
     return applySquadHeal(this.units,squadId,totalHp,{team});
   }
   /** Per-squad buff effects run in the authoritative AI, not just as UI labels. */
   applySquadItemBuff(squadId,itemId,buff,duration,team=0){
     const id=String(squadId);
     if(!this.units.some(u=>u.team===team&&String(u.squadId)===id&&u.alive&&u.hp>0))return false;
+    if(this._squadDebuff({team,squadId:id},'buff_block')>=1)return false;
     const values={attack:Math.min(.5,Math.max(0,Number(buff?.attack)||0)),
       defense:Math.min(.4,Math.max(0,Number(buff?.defense)||0)),
       speed:Math.min(.6,Math.max(0,Number(buff?.speed)||0))};
@@ -994,10 +997,10 @@ export class MassBattleGridSimulation {
   /** Targeted, time-limited force suppression. Shared by all units of the enemy squad. */
   applySquadDebuff(squadId,stat,amount,duration=20,team=1){
     const id=String(squadId),key=team+':'+id;
-    if(!['attack','defense','speed'].includes(stat)||!Number.isFinite(amount)||amount<=0||
+    if(!['attack','defense','speed','heal_block','buff_block'].includes(stat)||!Number.isFinite(amount)||amount<=0||
       !this.units.some(u=>u.team===team&&String(u.squadId)===id&&u.alive))return false;
     const existing=this.squadDebuffs.get(key)||{};
-    this.squadDebuffs.set(key,{...existing,[stat]:Math.min(.4,Math.max(existing[stat]||0,amount)),
+    this.squadDebuffs.set(key,{...existing,[stat]:Math.min(stat.endsWith('_block')?1:.4,Math.max(existing[stat]||0,amount)),
      until:Math.max(existing.until||0,this.time+Math.max(1,Math.min(45,duration)))});
     return true;
   }
@@ -1026,7 +1029,7 @@ export class MassBattleGridSimulation {
 
   requestSquadHealing(targetSquadId,preferredSupportId=null){
     const targetId=String(targetSquadId);
-    const wounded=this.units.filter(u=>u.alive&&u.team===0&&String(u.squadId)===targetId&&u.hp<u.maxHp);
+    const wounded=this.units.filter(u=>u.alive&&u.team===0&&String(u.squadId)===targetId&&u.hp<u.maxHp&&this._squadDebuff(u,'heal_block')<1);
     if(!wounded.length)return null;
     const candidateSupportIds=[...new Set(this.units.filter(u=>u.alive&&u.team===0&&u.formationType==='support'&&u.jobId==='priest')
       .map(u=>String(u.squadId)))];
