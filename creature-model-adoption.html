@@ -76,7 +76,7 @@ import {startMonsterAction,animateMonsterModel} from './src/monster-animation.js
 import {buildCombatObjectGeometry} from './src/combat-creature-geometry.js';
 import {fetchCreatureRegistry} from './src/creature-external-runtime.js';
 import {REAL_CREATURE_MESH_SOURCES,loadCreatureMeshSource} from './src/creature-real-source-catalog.js?v=wolf-actions-v3';
-import {NONHUMAN_MONSTER_IDS,NONHUMAN_EXTRA_SUMMON_IDS,recommendedMeshSources,adoptedCreatureMesh,setAdoptedCreatureMesh,compatibleSourceWarning} from './src/creature-mesh-adoption.js?v=wolf-whitefix-2';
+import {NONHUMAN_MONSTER_IDS,NONHUMAN_EXTRA_SUMMON_IDS,recommendedMeshSources,adoptedCreatureMesh,setAdoptedCreatureMesh,compatibleSourceWarning,protectedCreature} from './src/creature-mesh-adoption.js?v=protected-assets-v2';
 const $=id=>document.getElementById(id);
 const creatureIds=new Set(NONHUMAN_MONSTER_IDS);
 const groups=[
@@ -173,7 +173,9 @@ function savedStatus(){
   (adoptedCreatureMesh(id.slice(7))===s?'（元モンスターから継承）':''):'';
  $('current').textContent='現在の採用：'+(s==='legacy'?'現行モデル':(registry.entries[s]?.name||s)+' ['+s+']')+inherited;
  const isSaved=$('modelChoice').value===s;
- $('adopt').textContent=isSaved?'現在採用中（再採用できます）':'④ このモデルを採用';
+ $('adopt').textContent=protectedCreature(id)?'保護対象（変更不可）':
+  isSaved?'現在採用中（再採用できます）':'④ このモデルを採用';
+ if(protectedCreature(id))$('adopt').disabled=true;
 }
 function chooseSpecies(){
  const id=$('species').value;
@@ -181,7 +183,12 @@ function chooseSpecies(){
  const options=$('modelChoice');options.replaceChildren();
  options.add(new Option('現行モデル（保持・いつでも戻せる）','legacy'));
  const rec=new Set(recommendedMeshSources(id));
- for(const [name,keys] of [['推奨メッシュ（リアル候補・既存素材）',[...rec]],['他の実物メッシュ（外部リアル候補）',Object.keys(REAL_CREATURE_MESH_SOURCES).filter(k=>!rec.has(k))],['その他の登録済みCC0 GLB（50種）',Object.keys(registry.entries).filter(k=>k.startsWith('q')&&!rec.has(k))]]){
+ if(protectedCreature(id)){
+  options.value='legacy';options.disabled=true;
+  $('adopt').disabled=true;
+  $('status').textContent='PR #345/#346保護対象。旧モデルは保持し、採用・再検証対象から除外します。';
+ }else options.disabled=false;
+ if(!protectedCreature(id))for(const [name,keys] of [['推奨メッシュ（リアル候補・既存素材）',[...rec]],['他の実物メッシュ（外部リアル候補）',Object.keys(REAL_CREATURE_MESH_SOURCES).filter(k=>!rec.has(k))],['その他の登録済みCC0 GLB（50種）',Object.keys(registry.entries).filter(k=>k.startsWith('q')&&!rec.has(k))]]){
   const group=document.createElement('optgroup');group.label=name;
   for(const key of keys){
    const entry=registry.entries[key];if(!entry)continue;
@@ -208,7 +215,7 @@ function previewChoice(){
  const ticket=serial;
  if(source==='legacy'){
   showOriginal(id);
-  ready=!!legacyActor;$('adopt').disabled=!ready;
+  ready=!!legacyActor;$('adopt').disabled=!ready||protectedCreature(id);
   $('status').textContent=legacyActor?'現行3Dを表示中。採用すると選択した新モデルを解除します。':
     '元モデルを表示できないため、元画面のリンクで確認してください。';
   savedStatus();return;
@@ -235,7 +242,7 @@ function previewChoice(){
    legacyActor=null;
   }
   handle=loaded;scene.add(handle.root);focus();
-  ready=true;$('adopt').disabled=false;
+  ready=true;$('adopt').disabled=protectedCreature(id);
   $('status').textContent='GLB表示成功：'+entry.name+' / '+entry.license+
    ' / アニメ '+handle.clips.length+'種類。採用は未確定です。';
   savedStatus();
@@ -248,7 +255,7 @@ function previewChoice(){
 $('species').onchange=chooseSpecies;
 $('modelChoice').onchange=()=>{previewChoice();savedStatus();};
 $('adopt').onclick=()=>{
- if(!ready||$('modelChoice').value!==activeChoice)return;
+ if(!ready||protectedCreature($('species').value)||$('modelChoice').value!==activeChoice)return;
  try{
   const id=$('species').value,source=$('modelChoice').value;
   setAdoptedCreatureMesh(id,source);
