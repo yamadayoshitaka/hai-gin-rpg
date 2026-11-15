@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "asOf": "2026-11-15T12:58:00Z",
+  "asOf": "2026-11-15T16:19:45.754Z",
   "description": "工程別の実作業証跡。GitHub Actionsの成功や定期タスクの実行完了を、3D改修・PR・デプロイの完了と混同しない。これはGitHubに最後に記録されたスナップショットであり、ChatGPTサービスのライブ状態ではない。",
   "stageOrder": [
     "launch",
@@ -82,23 +82,44 @@
       ]
     },
     "world": {
-      "source": "GitHub Actions（状態未照合）",
-      "lastRunAt": null,
-      "status": "unverified",
-      "carryover": false,
-      "subject": "オブジェクト・ステージ品質回帰",
-      "summary": "実作業の工程別証跡はまだ取得していない。スイッチONは実装完了を意味しない。",
-      "nextAction": "次回の実行後、実画像・コード変更・QA・PR・公開を個別に確認し、この履歴に記録する。",
+      "source": "ChatGPT手動回帰（GitHub実コード・CI証跡）",
+      "lastRunAt": "2026-11-15T16:19:45.754Z",
+      "status": "in_review",
+      "carryover": true,
+      "subject": "実写方向の全53種3Dオブジェクト品質回帰：田畑2種を実改修、残51種未着手",
+      "summary": "world実行スイッチON。mainに53件の対象別受入台帳を作成（承認済0、コード改修候補2、未確認51）。rice_paddy_001とvegetable_field_001の100個の円錐植物を種別の先細り葉群InstancedMeshに置換し、専用QAとGitHub Actionsチェックを追加、Draft PR #427へコミット。リアル3D品質のWebGL画像・Android性能は未検証でmain未マージ・Pages未公開。既存PR #409大型建造物影改善も未マージ。定期タスクは全件承認・公開まで継続。",
+      "nextAction": "PR #427でworld-qualityのCI・正面側面俯瞰WebGL・Android FPSを実検証し、崩れ・浮遊・密度や株幅の違和感を修正。既存PR #409の陰影QA/マージ可否も確認。同時にobject-realism-acceptance.jsonの未確認51種から構造的欠陥を優先して実3Dメッシュ改修し、個別にPR/QA/公開まで進める。53件の全通過までcarryoverを維持。",
       "steps": {
-        "launch": "unknown",
-        "code": "unknown",
-        "qa": "unknown",
-        "commit": "unknown",
-        "pr": "unknown",
-        "merge": "unknown",
-        "deploy": "unknown"
+        "launch": "done",
+        "code": "done",
+        "qa": "pending",
+        "commit": "done",
+        "pr": "done",
+        "merge": "pending",
+        "deploy": "pending"
       },
-      "evidence": []
+      "evidence": [
+        {
+          "label": "全53オブジェクト承認台帳（完了0）",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/blob/main/data/world-quality/object-realism-acceptance.json"
+        },
+        {
+          "label": "今回の実ソース変更 PR #427",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/427"
+        },
+        {
+          "label": "実メッシュ実装コミット",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/4d80b19cf80211492b51cfb1b1f2fdf575805cee"
+        },
+        {
+          "label": "既存継続案件 PR #409",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/409"
+        },
+        {
+          "label": "新規World品質CI",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/43734700827"
+        }
+      ]
     },
     "anime": {
       "source": "ChatGPTタスクのスケジュール確認",
