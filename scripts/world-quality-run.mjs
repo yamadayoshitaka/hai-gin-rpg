@@ -42,6 +42,12 @@ if(mode==='plan'){
  writeRun();process.exit(0);
 }
 if(mode==='results'){
+ const previousRun=progress.lastRun;
+ if(previousRun?.mode==='reference'){
+  run.providerCalls=previousRun.providerCalls;
+  run.generated=previousRun.generated;
+  run.referenceStopReason=previousRun.stopReason;
+ }
  const reportFile=dir('qa-reports/world-quality/result-updates.json');
  if(fs.existsSync(reportFile)){
   const updates=JSON.parse(fs.readFileSync(reportFile,'utf8'));
