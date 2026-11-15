@@ -34,8 +34,9 @@ def scene_stats():
 
 
 def import_master(source):
-    bpy.ops.object.select_all(action='SELECT')
-    bpy.ops.object.delete(use_global=False)
+    # Reset the WHOLE Blender file for each tier. Removing objects alone leaves
+    # orphan actions, meshes, and skins that get exported into subsequent GLBs.
+    bpy.ops.wm.read_factory_settings(use_empty=True)
     bpy.ops.import_scene.gltf(filepath=str(source))
     if not any(o.type == 'MESH' and o.data.polygons for o in bpy.data.objects):
         raise RuntimeError('Master GLB has no usable triangles')
@@ -98,9 +99,29 @@ def export_file(destination):
                               export_animations=True,export_skins=True,
                               export_morph=True,export_yup=True)
     raw=destination.read_bytes()
-    if len(raw)<20 or raw[:4]!=b'glTF':
+    if len(raw)<20 or raw[:4]!=b'glTF' or int.from_bytes(raw[8:12],'little')!=len(raw):
         raise RuntimeError('Invalid generated GLB')
-    return {'bytes':len(raw),'sha256':hashlib.sha256(raw).hexdigest()}
+    json_length=int.from_bytes(raw[12:16],'little')
+    if raw[16:20]!=b'JSON' or 20+json_length>len(raw):
+        raise RuntimeError('Missing GLB JSON chunk')
+    model=json.loads(raw[20:20+json_length].decode('utf-8'))
+    accessors=model.get('accessors',[])
+    triangles=0
+    for mesh in model.get('meshes',[]):
+        for primitive in mesh.get('primitives',[]):
+            if primitive.get('mode',4)!=4:
+                raise RuntimeError('Non-triangle primitive in export')
+            index=primitive.get('indices',primitive.get('attributes',{}).get('POSITION'))
+            if not isinstance(index,int) or index<0 or index>=len(accessors):
+                raise RuntimeError('Export mesh missing position/index accessor')
+            triangles+=accessors[index]['count']//3
+    if triangles<=0:raise RuntimeError('Export GLB has no triangles')
+    # Every gate compares ACTUAL serialized GLBs, not a pre-export Blender scene.
+    return {'bytes':len(raw),'sha256':hashlib.sha256(raw).hexdigest(),
+            'meshParts':len(model.get('meshes',[])),'triangles':triangles,
+            'materials':len(model.get('materials',[])),
+            'skins':len(model.get('skins',[])),
+            'animations':len(model.get('animations',[]))}
 
 
 def main():
@@ -127,7 +148,10 @@ def main():
         file=dest/(name+'.glb')
         blob=export_file(file)
         records[name]={'path':file.relative_to(root).as_posix(),'ratio':ratio,
-                       **count,'joinedParts':joined,**reduced,**blob}
+                       'sceneTriangles':count['triangles'],'sceneMeshParts':count['meshParts'],
+                       'armatures':count['armatures'],'skinnedParts':count['skinnedParts'],
+                       'morphParts':count['morphParts'],
+                       'joinedParts':joined,**reduced,**blob}
     report={
         'schema':'hai-gin/battle-lod-candidate/v1','id':options.id,
         'source':source.relative_to(root).as_posix(),
