@@ -280,7 +280,13 @@ export function repairRealCrownScalpHoles(vertices,normals,box){
   const capCenter=[center[0],center[1]+d.y*.00055,center[2]];
   for(let j=0;j<positions.length;j++){
    const a=positions[j],b=positions[(j+1)%positions.length];
-   for(const p of [capCenter,a,b]){
+   // A boundary loop can wind clockwise or counterclockwise depending on
+   // source triangle ordering. Match the donor scalp outward normal so
+   // repaired crown faces are not culled or rendered as dark backfaces.
+   const edgeA=new THREE.Vector3(...a).sub(new THREE.Vector3(...capCenter));
+   const edgeB=new THREE.Vector3(...b).sub(new THREE.Vector3(...capCenter));
+   const outward=edgeA.cross(edgeB).dot(normal)>=0;
+   for(const p of outward?[capCenter,a,b]:[capCenter,b,a]){
     vertices.push(...p);normals.push(normal.x,normal.y,normal.z);
    }
    addedTriangles++;
