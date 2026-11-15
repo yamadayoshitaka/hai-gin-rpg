@@ -15,7 +15,7 @@ export const TACTICAL_ORDERS=Object.freeze({
  retreat:Object.freeze({name:'退却',effect:'マップ上の退却先へ後退。追加の数値強化なし。'}),
  support:Object.freeze({name:'支援',effect:'地図で支援先を指定し、僧侶などの分隊が救護。'}),
  explore:Object.freeze({name:'探索',effect:'指定した建物・宝箱などのオブジェクトを探索。'}),
- destroy:Object.freeze({name:'破壊',effect:'指定した門・橋・木・建物などのオブジェクトを破壊。忍者・魔法使い・召喚士・格闘家が担当。'}),
+ destroy:Object.freeze({name:'破壊',effect:'指定した門・橋・木・建物などのオブジェクトを破壊。忍者・魔法使いが担当。'}),
  weaken:Object.freeze({name:'弱体',effect:'忍者は機動-18%、シーフは防御-15%、魔法使いは攻撃-20%。狙った敵に時間制のデバフ。'}),
  warp:Object.freeze({name:'軍師ワープ',effect:'UR軍師のみ、味方陣地の空き地点へ戦闘中1回移動。'})
 });
