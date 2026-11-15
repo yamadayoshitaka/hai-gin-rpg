@@ -9,6 +9,9 @@ on:
       - 'scripts/world-quality-*.cjs'
       - 'scripts/world-quality-compare.py'
       - 'src/world-quality-pbr.js'
+      - 'src/object-catalog.js'
+      - 'src/world-graded-entry-doors.js'
+      - 'qa/world-five-entry-doors.test.mjs'
       - 'world-quality-preview.html'
       - 'batch-monitor.html'
       - 'qa/world-quality-contract.test.mjs'
@@ -82,6 +85,9 @@ jobs:
           node --check scripts/world-quality-stage-capture.cjs
           python3 -m py_compile scripts/world-quality-compare.py
           node qa/world-quality-contract.test.mjs
+          node --check src/world-graded-entry-doors.js
+          node qa/world-five-entry-doors.test.mjs
+          node qa/object-list-catalog.test.mjs
   generate-and-regress-one-batch:
     if: github.event_name != 'pull_request'
     needs: static-contracts
