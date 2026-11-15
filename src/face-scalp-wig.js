@@ -1115,6 +1115,10 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   v49StyledHairType:styled.type,
   v49StyledHairMeshCount:styled.meshes.length,
   v49StyledHairTriangles:styled.triangleCount,
+  v65BatchedPonytailFiberCount:styled.meshes.find(m=>
+   m.name==='PONYTAIL_MICROFIBER_BUNDLE_V65')?.userData?.v65FiberCount||0,
+  v65BatchedPonytailDrawMeshes:styled.meshes.some(m=>
+   m.name==='PONYTAIL_MICROFIBER_BUNDLE_V65')?1:0,
   silhouette3dProfile:{...silhouette},
   hairColoredOpaqueRoot:cap.userData.hairColoredOpaqueRoot,
   frontRootCoverage:'lower-scalp-cap-and-overlapping-hair-cards',
