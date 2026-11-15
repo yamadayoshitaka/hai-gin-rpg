@@ -47,9 +47,13 @@ for(const stageId of stageIds){
   assert(v);
   assert.equal(v.count,counts[phase]);
   const firstSheetCount=stageId==='c01-s02'?Math.min(5,v.count):v.count;
-  assert.deepEqual(v.posterMinNativePixels,stageId==='c01-s02'?
-   [1536,Math.ceil(firstSheetCount/2)*320]:[3072,Math.ceil(firstSheetCount/2)*864]);
-  assert.deepEqual(v.posterPreferredNativePixels,[4096,Math.ceil(firstSheetCount/2)*1152]);
+  // Each poster's expected native size follows that stage's actual frame-size policy.
+  // Older stages retain their own minimum; stages 3/4 use the revised 800x450 floor.
+  const rows=Math.ceil(firstSheetCount/2);
+  const [minW,minH]=contract.layout.minPerPanelNativePixels;
+  const [prefW,prefH]=contract.layout.preferredPerPanelNativePixels;
+  assert.deepEqual(v.posterMinNativePixels,[minW*2,rows*minH]);
+  assert.deepEqual(v.posterPreferredNativePixels,[prefW*2,rows*prefH]);
   assert.equal(v.nativeAssembly.realSceneCount,firstSheetCount);
   if(stageId==='c01-s02'){
    assert.equal(v.sheetCount,Math.ceil(v.count/5));
