@@ -20,7 +20,7 @@ test('nonhuman species and summon mirrors cover every nonhuman catalog entry',()
   assert.equal(eligibleCreature(m.id),!HUMAN_MONSTER_IDS.includes(m.id));
   assert.equal(eligibleCreature('summon_'+m.id),!HUMAN_MONSTER_IDS.includes(m.id));
  }
- assert.equal(NONHUMAN_EXTRA_SUMMON_IDS.length,5);
+ assert.equal(NONHUMAN_EXTRA_SUMMON_IDS.length,6);
 });
 test('adoption is explicit, persisted, isolated per species and reversible',()=>{
  const storage=memoryStorage();
