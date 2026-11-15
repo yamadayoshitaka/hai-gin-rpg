@@ -55,12 +55,12 @@
     },
     "monster": {
       "source": "ChatGPT 定期タスクの実行結果",
-      "lastRunAt": "2026-11-15T16:14:46Z",
-      "subject": "m020深海リヴァイアサン新規解剖メッシュ原型・Draft PR #426",
-      "summary": "monsterスイッチON。m020専用の新規3D造形ソースを作業ブランチに追加（軸骨格的胴体・腹板・頭蓋/顎/眼・胸鰭/腹鰭・尾鰭・遊泳/開口アニメ）。品質ソース実コミットa0113e8、Draft PR #426。ゲーム/マスター未接続、GLB未生成、単体/ブラウザQA未実施、前後左右画像・Android FPS未確認。既存#382と#385 E2E未完了を引継ぎ。mainマージ・公開なし。",
-      "status": "work_incomplete",
+      "lastRunAt": "2026-11-15T17:08:31Z",
+      "subject": "m020深海リヴァイアサン尾鰭の立体膜・支持条の実造形（PR #426）",
+      "summary": "スイッチON、手動monster Issueなし。m020の平面三角形尾鰭を曲面グリッド膜と湾曲支持条へ実造形変更。実コードコミットeec905eをPR #426ブランチへ反映。静的差分条件確認済み、Node/Three.js/WebGL実行・ゲーム/マスター接続・Android FPS未確認。旧PR #382/#385のE2E課題も継続。mainマージ/公開なし。",
+      "status": "in_review",
       "carryover": true,
-      "nextAction": "PR #426のJS構文とThree.jsジオメトリ検査を実行し、m020ゲーム/マスター双方へ明示的な試作切替を接続。前後左右WebGL画像、遊泳/顎の可動・法線・貫通、Android FPSを検証。既存PR #382/#385の未完了QAも保持。未承認のmainマージ禁止。",
+      "nextAction": "PR #426のm020造形コードをNode+Three.jsで構文・メッシュ法線/インデックス/ジオメトリ検査し、前後左右WebGL画像を取得。尾鰭の膜/支持条・遊泳を比較し、ゲーム/マスターに試作表示を接続。Android FPS確認後にのみマージ判断。PR #382/#385 E2E未完了も継続。",
       "steps": {
         "launch": "done",
         "code": "done",
@@ -72,16 +72,12 @@
       },
       "evidence": [
         {
-          "label": "m020造形実コードcommit a0113e8",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/a0113e8acf3aea8280752a1efc6357d0d1aca81c"
+          "label": "m020尾鰭実造形変更 eec905e",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/eec905ec6db44ec2469c6542bcfb16569e76effc"
         },
         {
-          "label": "m020原型Draft PR #426",
+          "label": "Draft PR #426",
           "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/426"
-        },
-        {
-          "label": "前回未完了PR #382",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/382"
         }
       ]
     },
