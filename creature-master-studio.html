@@ -110,7 +110,7 @@ import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {CREATURE_MASTER_ENTRIES,CREATURE_MASTER_BY_ID,MASTER_RENDER_TIERS,
  CREATURE_MASTER_COUNTS} from './src/creature-master-library.js?v=masters-v2';
-import {createCreatureMaster} from './src/creature-master-runtime.js?v=masters-v3-real-sources';
+import {createCreatureMaster} from './src/creature-master-runtime.js?v=original-m020-v1';
 import {realSourceAuditFor} from './src/creature-real-source-audit.js?v=masters-v3-real-sources';
 const $=id=>document.getElementById(id);
 const groups=[['monster','敵モンスター50種'],['summon','召喚版モンスター50種'],
@@ -235,14 +235,17 @@ async function load(){
   $('exportButton').disabled=false;
   const outcome=await model.ready;
   if(serial!==ticket)return;
-  if(outcome?.source==='procedural-fallback')
+  if(outcome?.source==='original-m020-glb'){
+   $('status').textContent='新設計のm020 GLBを実際に読込：'+outcome.bones+'関節／'+outcome.animations+'動作。原型アート品質は未認定。';
+   $('realismGate').textContent='オリジナル海竜GLB（独立PBR材質・可動尾骨・顎・3段階LOD）を表示中。商用FF級の写実品質・人体比較等は未承認。';
+  }else if(outcome?.source==='procedural-fallback')
    $('status').textContent='実人型GLBを取得できず暫定3Dにフォールバック：'+outcome.reason;
   else if(outcome?.source==='canonical-character-cosplay')
    $('status').textContent='人型の既存スキン付き3Dを読み込みました。';
   else $('status').textContent='原型モデルを生成しました。三角形と実際の形状を確認できます。';
   fit();updateMetrics();
   const next=new URLSearchParams(location.search);
-  next.set('species',id);next.set('tier',tier);next.set('v','master-108-real-source-v3');
+  next.set('species',id);next.set('tier',tier);next.set('v','original-m020-v1');
   history.replaceState(null,'','?'+next.toString());
  }catch(e){
   if(serial===ticket){$('status').textContent='生成エラー：'+String(e.message||e);$('exportButton').disabled=true;}

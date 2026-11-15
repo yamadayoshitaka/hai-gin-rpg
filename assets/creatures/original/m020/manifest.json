@@ -1,0 +1,48 @@
+{
+  "schema": "hai-gin/original-real-creature/v1",
+  "id": "m020",
+  "name": "深海リヴァイアサン",
+  "author": "Hai-Gin original generated geometry",
+  "license": "Project original, no external donor mesh",
+  "master": "./assets/creatures/original/m020/source.glb",
+  "high": "./assets/creatures/original/m020/high.glb",
+  "low": "./assets/creatures/original/m020/low.glb",
+  "model": {
+    "authoring": "hand-authored sectional marine anatomy",
+    "pbr": true,
+    "jointCount": 4,
+    "realAnimationClips": 7,
+    "photogrammetry": false,
+    "ffQualityApproved": false,
+    "characterDesignerApproved": false
+  },
+  "generated": [
+    {
+      "tier": "source",
+      "triangles": 39364,
+      "vertices": 20021,
+      "bytes": 1892848,
+      "skinJoints": 4,
+      "clips": 7,
+      "file": "assets/creatures/original/m020/source.glb"
+    },
+    {
+      "tier": "high",
+      "triangles": 18808,
+      "vertices": 10283,
+      "bytes": 1016552,
+      "skinJoints": 4,
+      "clips": 7,
+      "file": "assets/creatures/original/m020/high.glb"
+    },
+    {
+      "tier": "low",
+      "triangles": 8368,
+      "vertices": 5021,
+      "bytes": 555432,
+      "skinJoints": 4,
+      "clips": 7,
+      "file": "assets/creatures/original/m020/low.glb"
+    }
+  ]
+}

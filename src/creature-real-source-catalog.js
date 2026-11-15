@@ -56,6 +56,34 @@ export const REAL_CREATURE_MESH_SOURCES=Object.freeze({
  ...REAL_BODY_CANDIDATES
 });
 export async function loadCreatureMeshSource(sourceId,registry,detail='high',{creatureId=null}={}){
+ if(sourceId==='original-m020'){
+  if(!['m020','summon_m020'].includes(creatureId))
+   throw Error('オリジナル海竜GLBはm020専用です');
+  const tier=detail==='source'?'source':detail==='low'?'low':'high';
+  // The full-resolution original is loaded on demand; the Pages asset
+  // relay redirects offloaded binaries to the matching Git commit.
+  const url=new URL('../assets/creatures/original/m020/'+tier+'.glb',import.meta.url);
+  const gltf=await new GLTFLoader().loadAsync(url.href);
+  if(!gltf.scene||gltf.animations.length<7)
+   throw Error('Original Leviathan GLB lacks geometry or seven real clips');
+  let joints=0,meshes=0,skin=0;
+  gltf.scene.traverse(n=>{
+   if(n.isBone)joints++;
+   if(n.isMesh){meshes++;if(n.isSkinnedMesh)skin++;}
+  });
+  if(joints<4||!skin||meshes<2)
+   throw Error('Original Leviathan must retain its four-joint skinned body and jaw');
+  const handle=prepareExternalGLTF(gltf,{
+   id:'original-m020',name:'深海リヴァイアサン',targetHeight:2.4
+  });
+  handle.root.userData.creatureCandidateStatus='original-redesign-prototype';
+  handle.root.userData.photorealCertified=false;
+  handle.root.userData.creatureSourceStyle='marine-real-anatomy-draft';
+  handle.root.userData.creatureMeshAttribution={
+   author:'Hai-Gin original',license:'Project original',sourceId
+  };
+  return handle;
+ }
  const real=REAL_CREATURE_MESH_SOURCES[sourceId];
  if(real){
   const gltf=await new GLTFLoader().loadAsync(real.downloadUrl);

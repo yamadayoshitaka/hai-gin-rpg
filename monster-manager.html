@@ -142,6 +142,7 @@ legend{font-size:12px;color:#e8d9b6;padding:0 6px}
      <label>3Dモデルの入手元
       <select id="assetSource"><option value="procedural">標準3D（人型は人物GLB＋ゴシック衣装）</option>
        <option value="licensed">CC0外部モデル（低密度素材を含む）</option>
+       <option value="original">オリジナル新設計海竜（m020／PBR＋リグ）</option>
        <option value="source-composite">実物GLB＋既存装飾（6種の品質試作）</option>
        <option value="personal">手元のGLB（非公開）</option></select>
      </label>
@@ -200,8 +201,8 @@ import {humanoidMonsterCostumeFor,HUMAN_MONSTER_IDS} from './src/monster-charact
 import {hasDemonCosmetics,withDemonColorTheme}
  from './src/monster-demon-cosmetics.js?v=4.5.04';
 import {fetchCreatureRegistry,loadExternalCreature,loadPersonalGLB} from './src/creature-external-runtime.js?v=4.4.92';
-import {adoptedCreatureMesh} from './src/creature-mesh-adoption.js?v=web-mesh-26-v1';
-import {REAL_CREATURE_MESH_SOURCES,loadCreatureMeshSource} from './src/creature-real-source-catalog.js?v=real-body-only-v4';
+import {adoptedCreatureMesh} from './src/creature-mesh-adoption.js?v=original-m020-v1';
+import {REAL_CREATURE_MESH_SOURCES,loadCreatureMeshSource} from './src/creature-real-source-catalog.js?v=original-m020-v1';
 import {loadSpeciesSourceComposite,isSpeciesSourcePilot,SPECIES_SOURCE_REBUILD_PILOTS}
  from './src/monster-source-composite.js?v=4.6.90';
 const byId=id=>document.getElementById(id);
@@ -424,8 +425,8 @@ function selectSpecies(id){
      externalRegistry.entries[remembered]?remembered:
      externalRegistry.entries[id]?id:'';
    // Only the new Adopt button makes a choice active by default.
-   byId('assetSource').value=externalRegistry.entries[approved]&&
-     !HUMAN_MONSTER_IDS.includes(id)?'licensed':'procedural';
+   byId('assetSource').value=approved==='original-m020'?'original':
+     externalRegistry.entries[approved]&&!HUMAN_MONSTER_IDS.includes(id)?'licensed':'procedural';
  }
  const m=specimen(id),detail=byId('quality').value;
  byId('vampireSexControl').style.display=id==='m034'?'block':'none';
@@ -489,6 +490,10 @@ function selectSpecies(id){
  const chosenId=byId('externalAsset').value||
     (adoptedCreatureMesh(id)!=='legacy'?adoptedCreatureMesh(id):id);
  const entry=externalRegistry.entries[chosenId],file=localFiles.get(id);
+ if(mode==='original'&&id!=='m020'){
+   byId('assetStatus').textContent='新しい海竜モデルはm020専用です。';
+   return;
+ }
  if(mode==='licensed'&&!entry){
    byId('assetStatus').textContent='外部モデル50体の一覧から個体を選んでください。従来モデルを表示します。';
    return;
@@ -507,7 +512,8 @@ function selectSpecies(id){
    return;
  }
  byId('assetStatus').textContent='高品質GLBを読み込み中...';
- const pending=mode==='licensed'?loadCreatureMeshSource(chosenId,externalRegistry,detail,{creatureId:id}):
+ const pending=mode==='original'?loadCreatureMeshSource('original-m020',externalRegistry,detail,{creatureId:id}):
+   mode==='licensed'?loadCreatureMeshSource(chosenId,externalRegistry,detail,{creatureId:id}):
    mode==='source-composite'?loadSpeciesSourceComposite(m,externalRegistry,{detail}):
    loadPersonalGLB(file,{id,targetHeight:2.4*m.size});
  pending.then(handle=>{
@@ -644,8 +650,8 @@ fetchCreatureRegistry().then(reg=>{
  const approved=adoptedCreatureMesh(selected);
  picker.value=externalRegistry.entries[approved]?approved:externalRegistry.entries[saved]?saved:
    externalRegistry.entries[selected]?selected:'';
- byId('assetSource').value=externalRegistry.entries[approved]&&
-   !HUMAN_MONSTER_IDS.includes(selected)?'licensed':'procedural';
+ byId('assetSource').value=approved==='original-m020'?'original':
+   externalRegistry.entries[approved]&&!HUMAN_MONSTER_IDS.includes(selected)?'licensed':'procedural';
  byId('assignmentStatus').textContent=externalRegistry.entries[approved]?
    '採用済み：'+approved:reg.entries[saved]?
    '旧画面の比較候補（未採用）':'採用なし（現行モデル）';

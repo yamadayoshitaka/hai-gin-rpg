@@ -19,6 +19,12 @@ on:
       - 'src/monster-animation.js'
       - 'src/monster-geometry.js'
       - 'src/creature-real-source-audit.js'
+      - 'assets/creatures/original/**'
+      - 'src/creature-real-source-catalog.js'
+      - 'src/creature-master-runtime.js'
+      - 'src/creature-mesh-adoption.js'
+      - 'scripts/package-original-leviathan.py'
+      - 'qa/original-leviathan-asset.test.mjs'
       - 'qa/creature-real-source-audit.test.mjs'
       - 'creature-master-studio.html'
       - 'src/monster-source-composite.js'
@@ -91,6 +97,8 @@ jobs:
           node --check src/monster-shape-kit.js
           node --check src/creature-real-source-audit.js
           node --test qa/creature-real-source-audit.test.mjs qa/creature-master-studio.test.mjs qa/creature-reconstruction-plan.test.mjs
+          node --test qa/original-leviathan-asset.test.mjs
+          node --test qa/creature-mesh-adoption.test.mjs
       - name: Regress all humanoid instances, cloak, hair, skeleton and fitted outfit geometry
         env:
           NODE_OPTIONS: '--import=./qa/node-progress-event-polyfill.mjs'
@@ -124,7 +132,10 @@ jobs:
             FILES="$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${GH_PR_NUMBER}/files?per_page=100" --paginate --jq '.[].filename')"
             echo "PR changed files:"
             printf '%s\n' "$FILES"
-            if grep -E '(^src/(master-heroine|character-|humanoid|facial-|combat-humanoid)|\.glb$|^assets/humans/)' <<<"$FILES"; then
+            # Original creature-only GLBs are legitimate production outputs.
+            # Still block edits to unrelated/human meshes.
+            MODEL_FILES="$(printf '%s\n' "$FILES" | grep -vE '^assets/creatures/original/[a-z0-9_]+/(source|high|low)\.glb$' || true)"
+            if grep -E '(^src/(master-heroine|character-|humanoid|facial-|combat-humanoid)|\.glb$|^assets/humans/)' <<<"$MODEL_FILES"; then
               echo 'Forbidden human model or mesh change' >&2
               exit 1
             fi
