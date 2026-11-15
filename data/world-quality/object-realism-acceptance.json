@@ -6,8 +6,8 @@
   "versionDate": "2026-11-16",
   "total": 53,
   "accepted": 0,
-  "inReview": 4,
-  "unreviewed": 49,
+  "inReview": 11,
+  "unreviewed": 42,
   "acceptanceGates": [
     "credible_real_world_structure",
     "real_game_3d_geometry",
@@ -30,14 +30,17 @@
       "kind": "furniture",
       "order": 1,
       "physicalTarget": "木材の板厚・荷重支持・接合構造・床接地、布や金属との材質差",
-      "phase": "pending_physical_review",
-      "geometryChanged": false,
+      "phase": "3d_code_in_review",
+      "geometryChanged": true,
       "webglQA": "unverified",
       "androidQA": "unverified",
       "mainMerged": false,
       "pagesDeployed": false,
       "accepted": false,
-      "evidence": []
+      "evidence": [
+        "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/434"
+      ],
+      "lastCodeChange": "PR #434: actual timber table and chair joinery geometry authored"
     },
     {
       "id": "cottage_chair_001",
@@ -46,14 +49,17 @@
       "kind": "furniture",
       "order": 2,
       "physicalTarget": "木材の板厚・荷重支持・接合構造・床接地、布や金属との材質差",
-      "phase": "pending_physical_review",
-      "geometryChanged": false,
+      "phase": "3d_code_in_review",
+      "geometryChanged": true,
       "webglQA": "unverified",
       "androidQA": "unverified",
       "mainMerged": false,
       "pagesDeployed": false,
       "accepted": false,
-      "evidence": []
+      "evidence": [
+        "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/434"
+      ],
+      "lastCodeChange": "PR #434: actual timber table and chair joinery geometry authored"
     },
     {
       "id": "cottage_bed_001",
@@ -193,14 +199,17 @@
       "kind": "building_component",
       "order": 11,
       "physicalTarget": "石/木/金属の厚みと建具・階段の支持構造、開閉と衝突形状",
-      "phase": "pending_physical_review",
-      "geometryChanged": false,
+      "phase": "3d_code_in_review",
+      "geometryChanged": true,
       "webglQA": "unverified",
       "androidQA": "unverified",
       "mainMerged": false,
       "pagesDeployed": false,
       "accepted": false,
-      "evidence": []
+      "evidence": [
+        "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/442"
+      ],
+      "lastCodeChange": "PR #442: shared physically supported thick wooden staves, frame and level-specific lock ironwork"
     },
     {
       "id": "entry_door_lv2_001",
@@ -209,14 +218,17 @@
       "kind": "building_component",
       "order": 12,
       "physicalTarget": "石/木/金属の厚みと建具・階段の支持構造、開閉と衝突形状",
-      "phase": "pending_physical_review",
-      "geometryChanged": false,
+      "phase": "3d_code_in_review",
+      "geometryChanged": true,
       "webglQA": "unverified",
       "androidQA": "unverified",
       "mainMerged": false,
       "pagesDeployed": false,
       "accepted": false,
-      "evidence": []
+      "evidence": [
+        "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/442"
+      ],
+      "lastCodeChange": "PR #442: shared physically supported thick wooden staves, frame and level-specific lock ironwork"
     },
     {
       "id": "entry_door_lv3_001",
@@ -225,14 +237,17 @@
       "kind": "building_component",
       "order": 13,
       "physicalTarget": "石/木/金属の厚みと建具・階段の支持構造、開閉と衝突形状",
-      "phase": "pending_physical_review",
-      "geometryChanged": false,
+      "phase": "3d_code_in_review",
+      "geometryChanged": true,
       "webglQA": "unverified",
       "androidQA": "unverified",
       "mainMerged": false,
       "pagesDeployed": false,
       "accepted": false,
-      "evidence": []
+      "evidence": [
+        "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/442"
+      ],
+      "lastCodeChange": "PR #442: shared physically supported thick wooden staves, frame and level-specific lock ironwork"
     },
     {
       "id": "entry_door_lv4_001",
@@ -241,14 +256,17 @@
       "kind": "building_component",
       "order": 14,
       "physicalTarget": "石/木/金属の厚みと建具・階段の支持構造、開閉と衝突形状",
-      "phase": "pending_physical_review",
-      "geometryChanged": false,
+      "phase": "3d_code_in_review",
+      "geometryChanged": true,
       "webglQA": "unverified",
       "androidQA": "unverified",
       "mainMerged": false,
       "pagesDeployed": false,
       "accepted": false,
-      "evidence": []
+      "evidence": [
+        "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/442"
+      ],
+      "lastCodeChange": "PR #442: shared physically supported thick wooden staves, frame and level-specific lock ironwork"
     },
     {
       "id": "entry_door_lv5_001",
@@ -257,14 +275,17 @@
       "kind": "building_component",
       "order": 15,
       "physicalTarget": "石/木/金属の厚みと建具・階段の支持構造、開閉と衝突形状",
-      "phase": "pending_physical_review",
-      "geometryChanged": false,
+      "phase": "3d_code_in_review",
+      "geometryChanged": true,
       "webglQA": "unverified",
       "androidQA": "unverified",
       "mainMerged": false,
       "pagesDeployed": false,
       "accepted": false,
-      "evidence": []
+      "evidence": [
+        "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/442"
+      ],
+      "lastCodeChange": "PR #442: shared physically supported thick wooden staves, frame and level-specific lock ironwork"
     },
     {
       "id": "fountain_001",
