@@ -10,6 +10,7 @@ on:
       - 'ops/start-chapter1-full-free-actual-art-once-20261114.trigger'
       - 'ops/resume-c01-from-stage3-20261114.trigger'
       - 'ops/resume-c01-stage3-through5-20261114.trigger'
+      - 'ops/owner-request-stage4-through10-free-20261115.trigger'
   workflow_dispatch:
 
 permissions:
@@ -72,6 +73,9 @@ jobs:
           set -euo pipefail
           git show origin/main:scripts/generate-story-chapter1-free-batch.mjs > scripts/generate-story-chapter1-free-batch.mjs
           git show origin/main:src/story-c01-stage45-art-guard.js > src/story-c01-stage45-art-guard.js
+          git show origin/main:qa/story-chapter1-draft-regression.mjs > qa/story-chapter1-draft-regression.mjs
+          git show origin/main:assets/story/stage-manifests/c01-s04.manifest.json > assets/story/stage-manifests/c01-s04.manifest.json
+          git show origin/main:assets/story/stage-manifests/c01-s05.manifest.json > assets/story/stage-manifests/c01-s05.manifest.json
           git show origin/main:src/story-chapter1-provisional-live.js > src/story-chapter1-provisional-live.js
           git show origin/main:src/story-panel-registered-art.js > src/story-panel-registered-art.js
           while IFS= read -r asset; do
@@ -80,14 +84,14 @@ jobs:
           done < <(git ls-tree -r --name-only origin/main -- assets/story/chapter1-provisional-live)
           node --check scripts/generate-story-chapter1-free-batch.mjs
       - name: Count stage3 then later stage missing real artworks
-        run: node scripts/generate-story-chapter1-free-batch.mjs --mode plan --start-stage c01-s03 --through-stage c01-s05
+        run: node scripts/generate-story-chapter1-free-batch.mjs --mode plan --start-stage c01-s04 --through-stage c01-s10
       - name: Generate real review images with strict budget and page commits
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_WORKERS_AI_API_TOKEN: ${{ secrets.CLOUDFLARE_WORKERS_AI_API_TOKEN }}
           CLOUDFLARE_FREE_PLAN_CONFIRMED: ${{ vars.CLOUDFLARE_FREE_PLAN_CONFIRMED }}
           CLOUDFLARE_CHAPTER1_DAILY_ESTIMATE_CAP: '7500'
-        run: node scripts/generate-story-chapter1-free-batch.mjs --mode generate --max-pages 12 --start-stage c01-s03 --through-stage c01-s05
+        run: node scripts/generate-story-chapter1-free-batch.mjs --mode generate --max-pages 12 --start-stage c01-s04 --through-stage c01-s10
       - name: Independently regress every canonical image and physical actor master (NO automatic visual approval)
         if: always()
         run: |
