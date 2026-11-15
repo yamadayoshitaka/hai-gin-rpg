@@ -56,8 +56,14 @@ on:
       - 'qa/monster-realism-progress.test.mjs'
       - '.github/workflows/monster-anatomy-qa.yml'
   workflow_dispatch:
+    inputs:
+      batch_issue:
+        description: 'Optional owner quality Issue number for QA feedback'
+        required: false
+        type: string
 permissions:
   contents: read
+  issues: write
   pull-requests: read
 concurrency:
   group: monster-anatomy-${{ github.ref }}
@@ -119,3 +125,11 @@ jobs:
               exit 1
             fi
           fi
+      - name: Report verified qa outcome to originating owner Issue
+        if: always() && github.event_name == 'workflow_dispatch' && inputs.batch_issue != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BATCH_CATEGORY: monster
+          QA_STAGE: qa
+          QA_JOB_STATUS: ${{ job.status }}
+        run: node scripts/batch-qa-report.mjs

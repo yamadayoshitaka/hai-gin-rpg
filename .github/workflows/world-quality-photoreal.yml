@@ -16,6 +16,10 @@ on:
     types: [opened]
   workflow_dispatch:
     inputs:
+      batch_issue:
+        description: 'Optional owner quality Issue number for QA feedback'
+        required: false
+        type: string
       target_type:
         description: 'Targets to run: all, object, or stage'
         required: true
@@ -47,6 +51,7 @@ permissions:
   contents: write
   pull-requests: write
   actions: read
+  issues: write
 concurrency:
   group: world-photoreal-reference-quality-review
   cancel-in-progress: false
@@ -82,6 +87,15 @@ jobs:
           node --check scripts/world-quality-stage-capture.cjs
           python3 -m py_compile scripts/world-quality-compare.py
           node qa/world-quality-contract.test.mjs
+      - name: Report verified static-contracts outcome to originating owner Issue
+        if: always() && github.event_name == 'workflow_dispatch' && inputs.batch_issue != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BATCH_CATEGORY: world
+          QA_STAGE: static-contracts
+          QA_JOB_STATUS: ${{ job.status }}
+        run: node scripts/batch-qa-report.mjs
+
   generate-and-regress-one-batch:
     if: github.event_name != 'pull_request'
     needs: static-contracts
@@ -202,3 +216,11 @@ jobs:
             data/world-quality/progress.json
           retention-days: 14
           if-no-files-found: warn
+      - name: Report verified generate outcome to originating owner Issue
+        if: always() && github.event_name == 'workflow_dispatch' && inputs.batch_issue != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BATCH_CATEGORY: world
+          QA_STAGE: generate
+          QA_JOB_STATUS: ${{ job.status }}
+        run: node scripts/batch-qa-report.mjs

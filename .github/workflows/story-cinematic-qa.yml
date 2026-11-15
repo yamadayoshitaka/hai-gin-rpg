@@ -88,8 +88,14 @@ on:
       - 'src/town-audio-director.js'
       - 'qa/story-cinematic-audio.test.mjs'
   workflow_dispatch:
+    inputs:
+      batch_issue:
+        description: 'Optional owner quality Issue number for QA feedback'
+        required: false
+        type: string
 permissions:
   contents: read
+  issues: write
 jobs:
   cinematic:
     runs-on: ubuntu-latest
@@ -143,3 +149,11 @@ jobs:
             assets/story/panel-art-coverage.json
           if-no-files-found: ignore
           retention-days: 14
+      - name: Report verified qa outcome to originating owner Issue
+        if: always() && github.event_name == 'workflow_dispatch' && inputs.batch_issue != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BATCH_CATEGORY: anime
+          QA_STAGE: qa
+          QA_JOB_STATUS: ${{ job.status }}
+        run: node scripts/batch-qa-report.mjs

@@ -125,6 +125,10 @@ function createCard(data){
  links.append(makeLink('現在の画面を見る', './'+data.preview,false),makeLink(data.secondaryName,'./'+data.secondary,false));
  const log=makeLink('実行ログを見る',GH+'/actions/workflows/'+data.workflow,true);links.appendChild(log);c.appendChild(links);
  const activity=paragraph('GitHubのQA状況：照合中…','status');c.appendChild(activity);
+ const handoff=tag('div','panel');
+ const handoffStatus=paragraph('最新の手動依頼・QA引継ぎ：照合中','muted');
+ const handoffLink=makeLink('直近の指示Issueを見る',GH+'/issues',true);handoffLink.hidden=true;
+ handoff.append(handoffStatus,handoffLink);c.appendChild(handoff);
  const box=tag('div','field');
  const title2=tag('label','','次の手動指示（1回だけ）');
  const instruction=document.createElement('textarea');instruction.maxLength=500;instruction.placeholder={
@@ -190,7 +194,7 @@ function createCard(data){
   const win=window.open(link,'_blank','noopener,noreferrer');
   if(!win)window.location.assign(link);
  });
- $('cards').appendChild(c);elements.set(data.id,{detail,activity,log,swText,swBtn,badge,progress:{current,stageGrid,progressTime,progressSummary,nextAction,progressEvidence}});
+ $('cards').appendChild(c);elements.set(data.id,{detail,activity,log,swText,swBtn,badge,handoffStatus,handoffLink,progress:{current,stageGrid,progressTime,progressSummary,nextAction,progressEvidence}});
 }
 async function fetchJSON(url){const r=await fetch(url,{cache:'no-store',headers:{Accept:'application/vnd.github+json'}});if(!r.ok)throw Error('HTTP '+r.status);return r.json()}
 
@@ -304,6 +308,35 @@ async function updateRelease(){
    (sha.length>=12?sha.slice(0,12):'取得不可')+' ／ 漫画画像も同じ公開コミットに固定';
  }catch(e){$('releaseStatus').textContent='公開版の照合に失敗：'+e.message}
 }
+async function updateIssueHandoff(){
+ try{
+  const all=await fetchJSON(API+'/issues?state=open&per_page=100');
+  const requests=(Array.isArray(all)?all:[]).filter(x=>!x.pull_request&&
+    String(x.title||'').startsWith('[hai-gin-batch]')&&
+    String(x.body||'').startsWith('<!-- hai-gin-hourly-batch-v1 -->'));
+  for(const g of groups){
+   const view=elements.get(g.id);if(!view)continue;
+   const issue=requests.find(x=>{
+    const match=String(x.body||'').match(/```json\s*([\s\S]*?)\s*```/);
+    if(!match)return false;
+    try{return JSON.parse(match[1]).category===g.id}catch{return false}
+   });
+   if(!issue){view.handoffStatus.textContent='未処理の手動指示Issueなし（定期指示は継続）';view.handoffLink.hidden=true;continue;}
+   view.handoffLink.href=issue.html_url;view.handoffLink.hidden=false;
+   const comments=issue.comments>0?await fetchJSON(API+'/issues/'+issue.number+'/comments?per_page=100'):[];
+   const qa=[...comments].reverse().find(c=>
+    String(c.body||'').includes('<!-- hai-gin-batch-qa-v1:'+g.id+'-'));
+   const handled=comments.some(c=>c.user?.login===REPO.split('/')[0]&&
+    String(c.body||'').includes('MANUAL_BATCH_HANDLED category='+g.id));
+   const qaStatus=qa?(String(qa.body).includes('QA成功')?'QA成功をIssueへ返信済み':'QA失敗をIssueへ返信済み'):
+    'QA返信なし（旧指示、またはQA結果待ち）';
+   view.handoffStatus.textContent='Issue #'+issue.number+'：'+qaStatus+' ／ '+
+    (handled?'実作業の処理済みコメントあり（成果物確認が必要）':'ChatGPT実改修・成果物の完了未確認');
+  }
+ }catch(e){
+  for(const g of groups){const v=elements.get(g.id);if(v)v.handoffStatus.textContent='指示・QA引継ぎの取得失敗：'+e.message}
+ }
+}
 async function updateRuns(){
  try{
   const workflows=await fetchJSON(API+'/actions/workflows?per_page=100');
@@ -329,9 +362,9 @@ async function start(){
   $('enabledCount').textContent='GitHub作業許可：'+groups.filter(g=>g.autoEnabled).length+'有効・'+groups.filter(g=>!g.autoEnabled).length+'停止';
   $('schedulerCount').textContent='ChatGPT定期タスク：'+groups.filter(g=>g.schedulerEnabled===true&&g.source.includes('ChatGPT')).length+'有効・'+groups.filter(g=>g.schedulerEnabled===false&&g.source.includes('ChatGPT')).length+'停止（記録時点）';
   $('fresh').textContent='ChatGPTタスク最終確認：'+TIME(j.asOf)+' ／ 現在処理中かはGitHub Actionsのみ取得可能';
-  await updateSwitches();await updateProgress();await updateChapter4();await updateStoryBudget();await updateRelease();await updateRuns();
+  await updateSwitches();await updateProgress();await updateChapter4();await updateStoryBudget();await updateRelease();await updateRuns();await updateIssueHandoff();
  }catch(e){$('cards').textContent='管理データを読み込めませんでした：'+e.message}
 }
-$('refresh').addEventListener('click',async()=>{await updateSwitches();await updateProgress();await updateChapter4();await updateStoryBudget();await updateRelease();await updateRuns()});
+$('refresh').addEventListener('click',async()=>{await updateSwitches();await updateProgress();await updateChapter4();await updateStoryBudget();await updateRelease();await updateRuns();await updateIssueHandoff()});
 start();setInterval(()=>{if(!document.hidden&&groups.length){updateSwitches();updateProgress();updateRuns()}},90000);
 </script></body></html>
