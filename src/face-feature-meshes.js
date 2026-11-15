@@ -1239,22 +1239,17 @@ export function applyFaceColorMode(face,mode='clay',{contactColor,makeupType=0}=
   brow:0xa2a6ac,lashes:0x8c929a
  };
  // Selected makeup recolors actual 3D lip and lid geometry; no decals.
- const makeupChoices=[
-  [0xc07c82,0x865b7d,0xcf8383,0x30252b],
-  [0xc28289,0xaa828e,0xcd9290,0x403037],
-  [0xda93a4,0xb38b9e,0xe59ba7,0x403039],
-  [0xb37b70,0x947565,0xbd8b7f,0x332b28],
-  [0xd09ca8,0xb5a4b6,0xc8abb3,0x514451],
-  [0xdf8698,0xc18d9f,0xda8d9d,0x352633],
-  [0xa56c7b,0x776b93,0xaf8890,0x252334],
-  [0xd55c86,0xaa6388,0xcf819e,0x271e30],
-  [0xb54b67,0x8b5168,0xb47c80,0x24212a],
-  [0x9f4e66,0x6c4c76,0xb16a83,0x281b32]
- ];
- const makeup=makeupChoices[Math.min(9,Math.max(0,Math.round(makeupType)))];
+ const styleIndex=Math.max(0,Math.min(9,Math.round(Number(makeupType)||0)));
+ const makeup=FACE_MAKEUP_PALETTES[styleIndex];
+ // Retint source head vertices as well: the old menu only changed two eyelid
+ // meshes, so cheek blush and the lip tint stayed the same for all ten styles.
+ if(face.userData.facePigmentControls){
+  updateRealFacePigment(face,face.userData.facePigmentControls,mode,
+   male?'male':'female',styleIndex);
+ }
  const palette={
-  ...FACE_V7_PALETTE,lipBase:male?(makeupType===0?0xc9998b:makeup[0]):
-   (makeupType===0?0xd9a699:makeup[0]),
+  ...FACE_V7_PALETTE,lipBase:male?0xc9998b:
+   new THREE.Color(0xd9a699).lerp(new THREE.Color(makeup[0]),.32).getHex(),
   upperShadow:makeup[1],blush:makeup[2],eyeliner:makeup[3],
   lipstick:makeup[0],
   iris:male?0x50413b:parseInt(safeContactColor(contactColor).slice(1),16)
@@ -1274,5 +1269,6 @@ export function applyFaceColorMode(face,mode='clay',{contactColor,makeupType=0}=
  });
  face.userData.faceColorMode=colored?'color':'clay';
  face.userData.contactColor=male?null:safeContactColor(contactColor);
+ face.userData.activeMakeupType=male?null:styleIndex;
  return face.userData.faceColorMode;
 }
