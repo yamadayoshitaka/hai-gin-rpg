@@ -17,7 +17,7 @@ def inspect(path):
         source.load()
         im = source.convert("RGB")
     w, h = im.size
-    pixels = im.load()
+    # Reject undersized or non-16:9 source frames before any visual heuristics.\n    # Tolerance allows a few native encoder pixels, never an upscale.\n    geometry_ok = w >= 800 and h >= 450 and abs(w * 9 - h * 16) <= max(w, h) * 0.015\n    pixels = im.load()
     ys = range(max(0, h // 10), max(1, h * 9 // 10), max(1, h // 256))
     xs = range(max(0, w // 10), max(1, w * 9 // 10), max(1, w // 256))
 
@@ -35,7 +35,7 @@ def inspect(path):
                   if solid_share(pixels[x, y] for x in xs) > .93]
     return {
         "path": str(p),
-        "nativePixels": [w, h],
+        "nativePixels": [w, h],\n        "nativeGeometryPass": geometry_ok,\n        "geometryFailure": None if geometry_ok else "NATIVE_SIZE_OR_ASPECT_RATIO_REJECTED",
         "possibleVerticalGutterColumns": vertical[:20],
         "possibleHorizontalGutterRows": horizontal[:20],
         "collageOrHardGutterSuspected": bool(vertical or horizontal),
@@ -52,7 +52,7 @@ def main():
     args = parser.parse_args()
     verdicts = [inspect(name) for name in args.frames]
     print(json.dumps(verdicts, ensure_ascii=False, indent=2))
-    if any(v["collageOrHardGutterSuspected"] for v in verdicts):
+    if any(v["collageOrHardGutterSuspected"] or not v["nativeGeometryPass"] for v in verdicts):
         raise SystemExit(1)
 
 
