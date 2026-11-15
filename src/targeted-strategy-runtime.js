@@ -27,10 +27,11 @@ export function planStrategyDistribution(plan,selectedSquads,methodIds){
   possible[0].squadIds.push(String(id));
  }
  const total=allocations.reduce((n,x)=>n+x.squadIds.length,0);
- const rows=allocations.filter(x=>x.squadIds.length);
+ const rows=allocations.filter(x=>x.squadIds.length).map(x=>({...x,soldiers:x.squadIds.reduce((n,id)=>n+Math.max(1,Number(squadById.get(id)?.soldiers)||1),0)}));
+ const totalSoldiers=rows.reduce((n,x)=>n+x.soldiers,0);
  let running=0;
- return {total,unmatched,rows:rows.map((x,i)=>{
-  const percent=i===rows.length-1?100-running:Math.round(x.squadIds.length/total*100);
+ return {total,totalSoldiers,unmatched,rows:rows.map((x,i)=>{
+  const percent=i===rows.length-1?100-running:Math.round(x.soldiers/totalSoldiers*100);
   running+=percent;return {...x,percent};
  })};
 }
@@ -85,9 +86,9 @@ export function createTargetedStrategyUi({getPlan,getEnemyTargets,getObjects,onE
    (maxSquadPage?'<div class="targetedStrategyFoot">'+button('data-strategy-squad-page="'+(squadPage-1)+'"','◀ 分隊',false,squadPage===0)+
     '<small>'+(squadPage+1)+'/'+(maxSquadPage+1)+'</small>'+
     button('data-strategy-squad-page="'+(squadPage+1)+'"','次 ▶',false,squadPage===maxSquadPage)+'</div>':'')+
-   '<b>兵力配分率（成功率ではありません）</b>'+
+   '<b>兵員配分率（成功率ではありません）</b>'+
    '<div class="targetedShares">'+(distribution.rows.map(x=>
-    '<div><span>'+esc(x.method.name)+' · '+x.squadIds.length+'隊</span><meter value="'+x.percent+'" min="0" max="100"></meter><b>'+x.percent+'%</b></div>').join('')||'<small>第③段階の実行方法を選択してください</small>')+'</div>'+
+    '<div><span>'+esc(x.method.name)+' · '+x.squadIds.length+'隊/'+x.soldiers+'人</span><meter value="'+x.percent+'" min="0" max="100"></meter><b>'+x.percent+'%</b></div>').join('')||'<small>第③段階の実行方法を選択してください</small>')+'</div>'+
    (distribution.unmatched.length?'<small>職業条件が合わず配属できない分隊：'+distribution.unmatched.length+'隊</small>':'')+
    (type==='map'?'<small>次にレーダー／地面で作戦位置を指定します。</small>':
     type==='mixed'?'<small>敵／オブジェクト／地図の作戦は種類を分けて実行してください。</small>':
