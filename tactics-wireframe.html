@@ -9491,7 +9491,7 @@ async function finishBattleLoading(){
     const innOrder=team===0?storyRequest?.initialSquadOrders?.[String(id)]:null;
      const validInn=innOrder&&Object.hasOwn(INITIAL_ORDER_LABELS,innOrder)&&innOrder!=='explore'&&
       !orderSelect.querySelector('option[value="'+innOrder+'"]')?.disabled;
-     orderSelect.value=validInn?innOrder:'hold';
+     orderSelect.value=validInn?innOrder:(team===0&&storyRequest?.sortieTeamCount?'hold':'charge');
     const effectLabel=document.createElement('small');
     effectLabel.className='openingCommandEffect';effectLabel.textContent=orderEffect(orderSelect.value);
     const buildingPicker=createExplorationPicker();
