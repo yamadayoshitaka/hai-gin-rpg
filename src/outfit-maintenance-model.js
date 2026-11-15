@@ -347,6 +347,22 @@ export function createDetailedOutfit(job, sex, body, textures, {quality='preview
       }
     }
     const backGeometry=new THREE.BufferGeometry();
+    // Close the exposed shoulder and waist rims using the existing backplate
+    // geometry/material. Separate front/back sheets previously ended as open
+    // edges, making the cuirass appear unfinished from elevated rear views.
+    // Reuse the same draw call; do not alter the skinned source garment.
+    for(const y of [top,bottom]){
+      const start=backPoints.length/3;
+      for(let col=0;col<=cols;col++){
+        const u=col/cols*2-1,frontPoint=edge(u,y),rearPoint=backEdge(u,y);
+        backPoints.push(frontPoint.x,frontPoint.y,frontPoint.z,
+          rearPoint.x,rearPoint.y,rearPoint.z);
+        backUv.push(col/cols,0,col/cols,1);
+        if(col<cols){const i=start+col*2;
+          backFaces.push(i,i+1,i+2,i+1,i+3,i+2);
+        }
+      }
+    }
     backGeometry.setAttribute('position',new THREE.Float32BufferAttribute(backPoints,3));
     backGeometry.setAttribute('uv',new THREE.Float32BufferAttribute(backUv,2));
     backGeometry.setIndex(backFaces);backGeometry.computeVertexNormals();
