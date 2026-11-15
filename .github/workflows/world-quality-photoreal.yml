@@ -51,8 +51,20 @@ concurrency:
   group: world-photoreal-reference-quality-review
   cancel-in-progress: false
 jobs:
+  scheduled-switch:
+    runs-on: ubuntu-24.04
+    outputs:
+      enabled: ${{ steps.read.outputs.enabled }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: read
+        shell: bash
+        run: |
+          value=$(node --input-type=module -e "import fs from 'node:fs'; const s=JSON.parse(fs.readFileSync('data/batch-center-switches.json','utf8')); process.stdout.write(String(s.groups.world.enabled))")
+          echo "enabled=$value" >> "$GITHUB_OUTPUT"
   static-contracts:
-    if: github.event_name != 'issues' || (startsWith(github.event.issue.title, '[world-quality]') && github.event.issue.user.login == github.repository_owner)
+    needs: scheduled-switch
+    if: (github.event_name != 'schedule' || needs.scheduled-switch.outputs.enabled == 'true') && (github.event_name != 'issues' || (startsWith(github.event.issue.title, '[world-quality]') && github.event.issue.user.login == github.repository_owner))
     runs-on: ubuntu-24.04
     timeout-minutes: 9
     steps:
