@@ -106,7 +106,7 @@ export function createMangaViewer({container=document.body,storage=globalThis.lo
  let currentArtKey=null,pageRequest=0;
  function loadPanelArt(shot,pagePanels){
   // Only the exact scene/gender/outcome; prefer existing individually cut WebPs.
-  const cut=registeredStoryPanelAsset(shot);
+  const cut=shot.sharedArtAsset||registeredStoryPanelAsset(shot);
   const draftRegistration=provisionalRegisteredStoryPanel(shot);
   const sheet=comicPageAsset(story.id,shot.phase,storyContext,shot.comicPage,shot.protagonistGender);
   const key=[cut||'',sheet||'',shot.comicCell,shot.sourceSheetCount||pagePanels.length,draftRegistration?.status||''].join('|');
