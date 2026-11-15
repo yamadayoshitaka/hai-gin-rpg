@@ -1,0 +1,24 @@
+name: ChatGPT stage4 generated-frame PR preflight
+on:
+  pull_request:
+    paths:
+      - 'assets/story/chapter1-chatgpt-inbox/**'
+      - 'src/story-chatgpt-panel-geometry.js'
+      - 'scripts/import-story-chapter1-chatgpt-staging.mjs'
+      - '.github/workflows/story-stage4-chatgpt-pr-preflight.yml'
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate original sizes, native 16:9, SHA, scripted scene, gender and outcome
+        run: |
+          node qa/story-chatgpt-panel-geometry.test.mjs
+          node scripts/import-story-chapter1-chatgpt-staging.mjs --plan
+          node qa/story-chatgpt-stage45-switch.test.mjs

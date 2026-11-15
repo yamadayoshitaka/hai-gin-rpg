@@ -1,0 +1,49 @@
+{
+  "qaStatus": "OWNER_PROVISIONAL",
+  "shotKey": "c01-s04|post-victory|female|c01-s04-m19",
+  "scriptText": "守るべきものを見失わないために、私たちは出来事を記録し続けよう。",
+  "sourceModel": "ChatGPT Images",
+  "ownerAuthorized": true,
+  "humanVisualQAConfirmed": false,
+  "finalP0Approved": false,
+  "reviewedBy": "assistant-visual-inspection",
+  "reviewedAt": "2026-11-15T18:29:00Z",
+  "generationReferencesAttached": false,
+  "referenceImagesAttached": [],
+  "quality": {
+    "exactCanonicalScene": true,
+    "exactCast": true,
+    "genderAndOutcomeCorrect": true,
+    "noTextUI": true,
+    "original3DCinematicStyle": true,
+    "nativeDetail": true,
+    "realReferenceBytesAttachedToImageGenerator": false
+  },
+  "provisionalOnly": true,
+  "missingP0Requirements": [
+    "Original cast master image bytes were not attached to the generation request",
+    "Formal P0 human visual approval has not been granted"
+  ],
+  "provisionalVisualBrief": "Lucia and Vess review an old sealed document and preserve the record after a verified victory. No text or UI appears inside the image.",
+  "imageSha256": "7ab782ebc45f240c806efc50f07261723ab75deb6c85315477989f69d88b3f56",
+  "nativePixels": [
+    1664,
+    936
+  ],
+  "provenance": {
+    "sourceFileName": "a_cinematic_hyper_realistic_fantasy_scene_in_a_mo.png",
+    "sourceResolution": [
+      1672,
+      941
+    ],
+    "unscaledCenterCrop": [
+      4,
+      2,
+      1668,
+      938
+    ],
+    "noUpscaling": true,
+    "generationId": "097c950d-4d45-4999-b271-f1c888fa5315"
+  },
+  "rollback": "Remove the live registry entry and restore previous art from the revision ledger"
+}
