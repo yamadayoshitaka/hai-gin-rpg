@@ -63,7 +63,7 @@ const clamp=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
 const ownSquads=game=>(game?.campaign?.squads||[]).filter(s=>s.count>0&&String(s.commanderId??'player')!=='reserve');
 export const stageIsControlled=(game,stage)=>Boolean(stage?.id&&game?.completedStages?.includes(stage.id));
 export const allowedSortieSlots=(game,stage)=>stageIsControlled(game,stage)?allSlots:SORTIE_ENTRY_SLOTS;
-const blankTeam=id=>({id,slots:Array(SORTIE_SQUADS_PER_GROUP).fill(null),grid:Array(SORTIE_GRID_CELLS).fill(null),counts:{},captainId:null,formation:'balanced',deploymentSlot:SORTIE_ENTRY_SLOTS[id-1],initialOrder:'charge'});
+const blankTeam=id=>({id,slots:Array(SORTIE_SQUADS_PER_GROUP).fill(null),grid:Array(SORTIE_GRID_CELLS).fill(null),counts:{},divisions:{},captainId:null,formation:'balanced',deploymentSlot:SORTIE_ENTRY_SLOTS[id-1],initialOrder:'charge'});
 const teamOf=(game,id)=>game.sortiePlan?.teams?.find(t=>t.id===Number(id));
 const rarityScore=s=>({N:0,R:1,SR:2,SSR:3,UR:4})[s?.rarity]??0;
 
@@ -90,7 +90,7 @@ export function ensureSortiePlan(game){
    const count=old.counts?.[sid];
    const available=remaining.get(sid)||0;
    const valid=clamp(Number.isFinite(Number(count))?Math.trunc(Number(count)):0,0,available);
-   if(valid){team.slots[index]=sid;team.counts[sid]=valid;remaining.set(sid,available-valid);seen.add(sid);}
+   if(valid){team.slots[index]=sid;team.counts[sid]=valid;team.divisions[sid]=clamp(Math.trunc(Number(old.divisions?.[sid])||1),1,Math.min(4,valid));remaining.set(sid,available-valid);seen.add(sid);}
   });
   team.formation=Object.hasOwn(SORTIE_FORMATIONS,old.formation)&&
    SORTIE_FORMATIONS[old.formation].level<=sortieLevel(game)?old.formation:'balanced';
@@ -114,7 +114,7 @@ export function ensureSortiePlan(game){
   sources.slice(0,SORTIE_TEAM_IDS.length*sortieSquadCap(game)).forEach((s,index)=>{
    const cap=sortieSquadCap(game),team=teams[Math.floor(index/cap)];
    team.slots[index%cap]=String(s.id);
-   team.counts[String(s.id)]=s.count;
+   team.counts[String(s.id)]=s.count;team.divisions[String(s.id)]=1;
   });
   teams.forEach(team=>{
    team.slots.filter(Boolean).forEach((sid,index)=>{team.grid[SORTIE_FORMATION_CELLS.balanced[index]]=sid;});
@@ -149,9 +149,9 @@ export function setSortieCount(game,teamId,squadId,count){
    const preferred=SORTIE_FORMATION_CELLS[team.formation][empty];
    team.grid[team.grid[preferred]===null?preferred:team.grid.indexOf(null)]=sid;
   }
-  team.counts[sid]=n;
+  team.counts[sid]=n;team.divisions[sid]=Math.min(team.divisions[sid]||1,Math.min(4,n));
  }else{
-  delete team.counts[sid];
+  delete team.counts[sid];delete team.divisions[sid];
   team.slots=team.slots.map(id=>id===sid?null:id);
   team.grid=team.grid.map(id=>id===sid?null:id);
  }
@@ -180,7 +180,7 @@ export function setSortieJobSlot(game,teamId,slotIndex,squadId){
  if(sid&&available<=0&&!game.sortiePlan.teams.some(t=>t!==team&&(t.counts[sid]||0)>0))
   throw Error('このジョブの配属可能人数がありません。');
  if(previous){
-  delete team.counts[previous];team.slots[index]=null;
+  delete team.counts[previous];delete team.divisions[previous];team.slots[index]=null;
   team.grid=team.grid.map(id=>id===previous?null:id);
  }
  if(sid){
@@ -191,14 +191,14 @@ export function setSortieJobSlot(game,teamId,slotIndex,squadId){
    const moved=Math.min(10,donor.counts[sid]);
    donor.counts[sid]-=moved;
    if(!donor.counts[sid]){
-    delete donor.counts[sid];
+    delete donor.counts[sid];delete donor.divisions[sid];
     donor.slots=donor.slots.map(v=>v===sid?null:v);
     donor.grid=donor.grid.map(v=>v===sid?null:v);
    }
    available=moved;
   }
   team.slots[index]=sid;
-  team.counts[sid]=Math.min(10,available);
+  team.counts[sid]=Math.min(10,available);team.divisions[sid]=1;
   const target=SORTIE_FORMATION_CELLS[team.formation][index];
   team.grid[team.grid[target]===null?target:team.grid.indexOf(null)]=sid;
  }
@@ -250,6 +250,14 @@ export function sortieAdjacentJobs(game,teamId){
   }
  }
  return links;
+}
+/** Pre-battle division: splits real men from one contingent, without duplicate troops. */
+export function setSortieDivisions(game,teamId,squadId,parts){
+ ensureSortiePlan(game);
+ const team=teamOf(game,teamId),sid=String(squadId),n=Number(parts);
+ if(!team||!team.counts[sid]||!Number.isInteger(n)||n<1||n>Math.min(4,team.counts[sid]))
+  throw Error('分隊数は1～4、かつ実人数以下で選択してください。');
+ team.divisions[sid]=n;return team;
 }
 export function setSortieCaptain(game,teamId,squadId){
  ensureSortiePlan(game);
@@ -358,6 +366,7 @@ export function allocateThreeTeamSortie(game,stage,limit=SORTIE_TOTAL_RENDER_LIM
  return allocations.filter(x=>x.count>0).map(x=>({
   teamId:x.team.id,squad:x.squad,count:x.count,
   formationCell:x.team.grid.indexOf(String(x.squad.id)),
+  divisionCount:Math.min(x.count,Math.max(1,x.team.divisions?.[String(x.squad.id)]||1)),
   deploymentSlot:positions.get(x.team.id),
   captain:sources.get(String(x.team.captainId))||null,
   formation:x.team.formation,
