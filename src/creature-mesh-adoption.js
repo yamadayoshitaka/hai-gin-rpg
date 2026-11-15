@@ -17,11 +17,15 @@ const allowed=new Set([
  ...NONHUMAN_MONSTER_IDS.map(id=>'summon_'+id),
  ...NONHUMAN_EXTRA_SUMMON_IDS
 ]);
-const sourceId=/^q(?:00[1-9]|0[1-4][0-9]|050)$/;
+const sourceId=/^(?:q(?:00[1-9]|0[1-4][0-9]|050)|r-(?:wolf|tiger|jaguar|eagle|crocodile))$/;
 const recommend=Object.freeze({
  beast:['q022'], feline:['q020'], avian:['q048','q030','q002'],
  reptile:['q007','q040','q039'], insect:['q037','q036'],
  arachnid:[],aquatic:['q049','q008','q023','q024']
+});
+const realRecommendations=Object.freeze({
+ beast:['r-wolf'],feline:['r-tiger','r-jaguar'],
+ avian:[],reptile:[],insect:[],arachnid:[],aquatic:[]
 });
 const exceptions=Object.freeze({
  m012:['q040','q048'],m013:['q048','q040'],m018:['q039'],
@@ -38,9 +42,13 @@ export function baseMonsterId(id){
 }
 export function recommendedMeshSources(id){
  const m=MONSTER_BY_ID[baseMonsterId(id)];
- if(!m)return ['wolf','horse'].includes(id)?['q022']:
+ if(!m)return id==='wolf'?['r-wolf','q022']:
    ['wyvern','dragon','elder_dragon'].includes(id)?['q040','q039']:[];
- return exceptions[m.id]??recommend[m.family]??[];
+ const base=exceptions[m.id]??recommend[m.family]??[];
+ const real=m.id==='m011'?['r-eagle']:
+   m.id==='m016'?['r-crocodile']:
+   (realRecommendations[m.family]??[]);
+ return [...real,...base];
 }
 function stored(storage){
  try{
@@ -75,6 +83,7 @@ export function setAdoptedCreatureMesh(id,source,storage=globalThis.localStorage
 export function compatibleSourceWarning(id,source){
  if(source==='legacy')return '';
  if(!sourceId.test(source))return '未登録のGLB';
+ if(source.startsWith('r-'))return 'CC BY 4.0の外部リアル候補。著作者表示必須。アニメーション・既存パーツの移植は未完了のため動作を確認してください。';
  if(recommendedMeshSources(id).includes(source))return '系統から選んだ暫定候補です。外観と骨格の適合を必ず確認してください。';
  return '注意：系統外のメッシュです。角・羽・脚などの接続やシルエットが崩れる可能性があります。';
 }
