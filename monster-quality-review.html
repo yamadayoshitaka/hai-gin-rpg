@@ -73,6 +73,7 @@ footer{padding:15px;text-align:center;color:#b9cfdd;font-size:12px}
  <button data-filter="summon" aria-pressed="false">召喚版</button>
  <button data-filter="all" aria-pressed="false">全部</button>
  </div>
+ <p id="overall" class="hint" aria-live="polite">対象108種 / 合格0 / 未検証108</p>
  <div id="list" aria-label="品質管理対象の一覧"></div>
 </aside>
 <section id="qualityForm">
@@ -298,6 +299,17 @@ function fillEditor(){
 }
 function showList(){
  const items=$('list');items.replaceChildren();
+ const quality=creatures.map(c=>assessMonsterQuality(records[c.id]?.after));
+ const passed=quality.filter(q=>q.pass).length;
+ const reviewed=quality.filter(q=>q.score!==null).length;
+ const improving=creatures.filter(c=>{
+   const before=monsterQualityScore(records[c.id]?.before?.ratings);
+   const after=monsterQualityScore(records[c.id]?.after?.ratings);
+   return before!==null&&after!==null&&after>before;
+ }).length;
+ $('overall').textContent='対象 '+creatures.length+'件 / 合格 '+passed+
+  '件 / 採点済 '+reviewed+'件 / 改善 '+improving+
+  '件 / 未検証 '+(creatures.length-passed)+'件';
  const q=$('filter').value.trim().toLowerCase();
  const visible=creatures.filter(c=>(kindFilter==='all'||c.kind===kindFilter)&&
   (c.name.toLowerCase().includes(q)||c.id.includes(q)||c.family.includes(q)));
