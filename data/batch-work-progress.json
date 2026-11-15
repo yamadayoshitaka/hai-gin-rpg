@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "asOf": "2026-11-15T16:32:02.410Z",
+  "asOf": "2026-11-15T16:32:30.311Z",
   "description": "工程別の実作業証跡。GitHub Actionsの成功や定期タスクの実行完了を、3D改修・PR・デプロイの完了と混同しない。これはGitHubに最後に記録されたスナップショットであり、ChatGPTサービスのライブ状態ではない。",
   "stageOrder": [
     "launch",
@@ -83,11 +83,11 @@
     },
     "world": {
       "source": "ChatGPT今すぐ手動実行（GitHub main+独立PR）",
-      "lastRunAt": "2026-11-15T16:32:02.410Z",
+      "lastRunAt": "2026-11-15T16:32:30.311Z",
       "status": "in_review",
       "carryover": true,
       "subject": "全53種リアル造形回帰、木樽・井戸の実3D改修をコミット（PR #430）",
-      "summary": "worldスイッチON確認、既存定期タスク有効。木樽cottage_barrel_001の円柱を18枚の閉じた有厚湾曲樽板・実形状の3本の鉄帯・天底板/栓へ置換。井戸town_well_001に中空石積み・厚い笠石・目地・木製巻き上げ軸・クランク・巻胴・ロープ・木桶・金属金具を追加。src/world-craft-props.js（実ジオメトリ）/src/object-catalog.js（実ゲーム用呼出）/専用QA/World CI変更を専用ブランチにコミット、Draft PR #430を作成。全53受入台帳も承認0・実コード改善審査4・未検証49へ更新。WebGL・Android表示とPages公開は未確認、main未マージ。CI実行待ち/進行中。PR #427/#409も未マージ、継続。",
+      "summary": "worldスイッチON・手動即時実行。木樽（cottage_barrel_001）の18枚の閉じた湾曲樽板/鉄帯/天底板・栓、井戸（town_well_001）の中空石積み/笠石/木軸/クランク/木桶/ロープ等を、実ゲーム3D生成経路src/object-catalog.jsに実装し、Draft PR #430（実コミットf2deed2）へ保存。専用テストを含むworld品質CI #43735922434のstatic-contractsはsuccess、参考画像生成ジョブはPRイベントでskipped。ArchitectureとBattle全体CIは既存のqa/battle-unified-voice-and-intent.test.mjs:58の固定作戦表示文字列アサーションでfailure（今回のworld変更とは独立）。WebGL/Android実機画質・Pagesは未検証でmainは未マージ。受入台帳：完成0、実修正審査中4、未着手49。全53完了までcarryover継続。",
       "nextAction": "PR #430のWorld専用CI/静的Nodeテスト、元のObject Catalogとの互換とWebGL正面/側面/俯瞰/Android FPSを確認し、形状浮遊・水面干渉・樽の接合と物理的荷重支持を追加修正。PR #427/#409のQAとマージの安全ゲートを確認し、受入台帳の未検証49種を順番に実3D改修し、全53件のQA/マージ/公開までcarryover継続。",
       "steps": {
         "launch": "done",
@@ -108,7 +108,7 @@
           "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/f2deed2d55bd2a44e9823fbdb180e32e46e180ba"
         },
         {
-          "label": "World専用QA起動",
+          "label": "World専用CI static-contracts 成功",
           "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/43735922434"
         },
         {
@@ -122,6 +122,10 @@
         {
           "label": "既存陰影修正 PR #409",
           "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/409"
+        },
+        {
+          "label": "全体CIは既存戦闘テスト assertion によりfailure",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/43735922324"
         }
       ]
     },
