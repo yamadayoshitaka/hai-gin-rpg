@@ -1,0 +1,38 @@
+{
+  "shot": {
+    "key": "c01-s04|pre|female|c01-s04-m5",
+    "shotId": "c01-s04-m5",
+    "scriptText": "この勅命に記された王印は、本物ではありません。",
+    "displayText": "この勅命に記された王印は、本物ではありません。",
+    "speaker": "リュシア",
+    "characterId": "lucia",
+    "secondaryId": "vess",
+    "sceneKind": "confrontation",
+    "scenery": "wilds",
+    "draftPath": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-pre-female/p01/c01-s04-m05-pre-female.webp",
+    "legacyPath": null,
+    "stageId": "c01-s04",
+    "gender": "female",
+    "edition": "pre"
+  },
+  "refs": [
+    {
+      "id": "lucia",
+      "path": "assets/story/characters/lucia/master.webp",
+      "rule": "Use master aristocratic silver hair braided updo, navy and silver embroidered high collar regent clothing, white fur shoulder mantle.",
+      "sha": "87005a46d3b4a23714a25f1f9b2d46fee9a1ce3c6b5af0be78f85a1f1fd2b411"
+    },
+    {
+      "id": "vess",
+      "path": "assets/story-cinema/cast/vess.webp",
+      "rule": "ONLY the large older grey-haired bearded man at TOP of this ensemble image is Vess. Ignore every other face. Preserve his weathered face, shoulder-length grey hair, grey beard, dark ornate coat and fur collar.",
+      "sha": "c4b0a92f75cad6f4b4682d4c8eb1b4bb70779271ba3673651a159bf4f9adfd1d"
+    }
+  ],
+  "styleRef": {
+    "path": "assets/story/chapters/c01/panels/c01-s01-m02-female.webp",
+    "gender": "female",
+    "sha": "e16731b753237f0aa88e2c906d7ff46a929df1300728292d878eb1a27272ec6f"
+  },
+  "sourceCommit": "262eb99cc90a01d9506aa4727c0c183031302dbc"
+}

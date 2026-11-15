@@ -1676,6 +1676,17 @@ export const CHAPTER1_PROVISIONAL_LIVE=Object.freeze({
     "stageId": "c01-s04",
     "edition": "post-defeat",
     "gender": "female"
+  },
+  "c01-s04|pre|female|c01-s04-m5": {
+    "asset": "./assets/story/chapter1-provisional-live/c01-s04__pre__female__c01-s04-m5.webp",
+    "sha256": "8e6406557f951f245fb13e6e0dd150e662f0c240b0639be4732f75b8d3ca34e0",
+    "provenance": "assets/story/chapter1-chatgpt-inbox/c01-s04__pre__female__c01-s04-m5.review.json",
+    "sourceDraft": "assets/story/chapter1-chatgpt-inbox/c01-s04__pre__female__c01-s04-m5.webp",
+    "status": "PROVISIONAL_OWNER_AUTHORIZED_PENDING_P0",
+    "originalLivePath": null,
+    "stageId": "c01-s04",
+    "edition": "pre",
+    "gender": "female"
   }
 });
 export function chapter1ProvisionalLivePanel(shot){
