@@ -18,6 +18,7 @@ const X=new THREE.Vector3(1,0,0);
 const PREVIOUS=new THREE.Quaternion();
 const DELTA=new THREE.Quaternion();
 const IRIS_ACTION_PULSE=Object.freeze({attack:.10,roar:.14,special:.22,hit:.035});
+const clean=s=>String(s||'').toLowerCase().replace(/[^a-z0-9]/g,'');
 function limbNodes(source){
  const bones=[];
  source.traverse(node=>{
