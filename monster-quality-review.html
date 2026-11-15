@@ -96,7 +96,7 @@ footer{padding:15px;text-align:center;color:#b9cfdd;font-size:12px}
   <p id="summaryReasons" class="muted" role="status">証拠を入力して評価を始めてください。</p>
  </div>
  <div class="panel"><h2>① 品質採点（0〜5段階、100点換算）</h2>
-  <p class="hint">0=未実装、1=重大欠陥、2=不十分、3=最低動作、4=高品質、5=2D基準画に十分一致。空欄は未評価です。</p>
+  <p class="hint">0=未実装、1=重大欠陥、2=不十分、3=最低動作、4=高品質、5=2D基準画に十分一致。空欄は未評価です。重要分野は原則4/5以上、権利は5/5必須。</p>
   <div id="ratings"></div>
  </div>
  <div class="panel"><h2>② 重大不具合ゲート（全件必須）</h2>
@@ -120,9 +120,9 @@ footer{padding:15px;text-align:center;color:#b9cfdd;font-size:12px}
   <p class="muted">URL、GitHubの成果物パス、CI結果IDなどを記録します。画像を持っているだけでは合格扱いにしません。</p>
   <div class="cols2">
    <label>2D基準画（原画のURL・パス）<input id="reference" placeholder="例：assets/reference/m001.png"></label>
-   <label>改善前の3D画像<escape> /</escape> 動画<input id="renderBefore" placeholder="before.png / URL"></label>
-   <label>改善後の3D画像<escape> /</escape> 動画<input id="renderAfter" placeholder="after.png / URL"></label>
-   <label>7動作の証拠動画<escape> /</escape> CI<input id="motion" placeholder="motion-test.mp4 / CI ID"></label>
+   <label>改善前の3D画像 / 動画<input id="renderBefore" placeholder="before.png / URL"></label>
+   <label>改善後の3D画像 / 動画<input id="renderAfter" placeholder="after.png / URL"></label>
+   <label>7動作の証拠動画 / CI<input id="motion" placeholder="motion-test.mp4 / CI ID"></label>
    <label>Android実測結果<input id="device" placeholder="機種・10分間の測定ログ"></label>
    <label>権利と著作者表示の証拠<input id="license" placeholder="ライセンスURL / credits"></label>
   </div>
@@ -158,6 +158,7 @@ import {MONSTER_SUMMON_ENTRIES} from './src/monster-summon-registry.js';
 import {monsterDesignPrompt} from './src/monster-reference-design.js';
 import {MONSTER_QUALITY_SCHEMA,MONSTER_QUALITY_TARGET,MONSTER_QUALITY_FIELDS,
  MONSTER_QUALITY_ACTIONS,MONSTER_QUALITY_GATES,MONSTER_QUALITY_ANATOMY,
+ MONSTER_QUALITY_MIN_RATINGS,
  WOLF_QUALITY_REFERENCE,monsterQualityScore,assessMonsterQuality,
  monsterQualityProgress} from './src/monster-quality-kpi.js';
 const $=id=>document.getElementById(id);
@@ -228,7 +229,9 @@ function updateScore(){
  if(q.missingActions.length)missing.push('アクション未検査 '+q.missingActions.length+'件');
  if(q.missingAnatomy.length)missing.push('種族固有構造が未確認');
  if(q.missingEvidence.length)missing.push('証拠不足 '+q.missingEvidence.join(', '));
- if(q.ready&&!q.pass)missing.push('90点の基準に未到達');
+ if(q.lowCategories.length)missing.push('基準点未満：'+q.lowCategories.join('、'));
+ if(q.ready&&!q.pass&&q.score<MONSTER_QUALITY_TARGET)
+  missing.push('総合90点の基準に未到達');
  $('summaryReasons').textContent=q.pass?
   '合格：90点以上、7動作・重大欠陥ゲート・実機性能・証拠が全て確認済み。':
   '合格保留：'+(missing.join(' / ')||'必要な検証を追加してください');
@@ -254,7 +257,7 @@ function fillEditor(){
  for(const f of MONSTER_QUALITY_FIELDS){
   const div=document.createElement('div');div.className='rating';
   const block=document.createElement('div'),b=document.createElement('b');
-  b.textContent=f.name+'（'+f.weight+'点）';
+  b.textContent=f.name+'（'+f.weight+'点 / 最低 '+MONSTER_QUALITY_MIN_RATINGS[f.id]+'/5）';
   const small=document.createElement('small');small.textContent=f.description;
   block.append(b,small);
   const select=document.createElement('select');select.id='rating_'+f.id;
@@ -338,7 +341,7 @@ $('compare').onclick=()=>{
 };
 const qp=new URLSearchParams(location.search),requested=qp.get('monster')||qp.get('species');
 if(creatures.some(c=>c.id===requested))selected=requested;
-if(qp.get('kind')==='summon')kindFilter='summon';
+if(qp.get('kind')==='summon'||current().kind==='summon')kindFilter='summon';
 document.querySelectorAll('[data-filter]').forEach(b=>b.setAttribute('aria-pressed',
  String(b.dataset.filter===kindFilter)));
 fillEditor();showList();
