@@ -217,3 +217,45 @@ test('mobile bestiary: catalog and setting drawers remain operable after respons
  await expect(tools).toBeHidden();
  expect(errors).toEqual([]);
 });
+
+
+test('dragon lord three distinct canonical forms and white beardless seraph visual evidence',async({page})=>{
+ test.setTimeout(180000);
+ const errors=[];
+ page.on('pageerror',e=>errors.push(String(e)));
+ await page.goto('/summon-showcase.html?v=4.6.91',{
+  waitUntil:'domcontentloaded',timeout:65000
+ });
+ await page.locator('#type').selectOption('dragon_lord');
+ await expect(page.locator('#humanoidForm')).toHaveValue('male');
+ await expect.poll(()=>page.evaluate(()=>
+  window.__summonGalleryLayoutQA?.()?.femaleReady),{timeout:110000}).toBe(true);
+ let state=await page.evaluate(()=>window.__summonGalleryLayoutQA());
+ expect(state.dragonLordForm).toBe('male');
+ expect(state.dragonLordCostume).toBe('dragonkin_male');
+ await page.screenshot({path:'test-results/dragon-lord-dragonkin.png',
+  animations:'disabled',timeout:20000});
+ await page.locator('#humanoidForm').selectOption('human');
+ await expect(page.locator('#species')).toContainText('人間型');
+ await expect.poll(()=>page.evaluate(()=>({
+  ready:window.__summonGalleryLayoutQA?.()?.femaleReady,
+  form:window.__summonGalleryLayoutQA?.()?.dragonLordCostume
+ })),{timeout:110000}).toEqual({ready:true,form:'human_royal'});
+ state=await page.evaluate(()=>window.__summonGalleryLayoutQA());
+ expect(state.actorSex).toBe('male');
+ await page.screenshot({path:'test-results/dragon-lord-human-no-horns-wings.png',
+  animations:'disabled',timeout:20000});
+ await page.locator('#humanoidForm').selectOption('original');
+ await expect(page.locator('#species')).toContainText('竜王');
+ await expect(page.locator('#humanoidForm')).toHaveValue('original');
+ await page.locator('#type').selectOption('seraph_guardian');
+ await expect.poll(()=>page.evaluate(()=>
+  window.__summonGalleryLayoutQA?.()?.femaleReady),{timeout:110000}).toBe(true);
+ state=await page.evaluate(()=>window.__summonGalleryLayoutQA());
+ expect(state.angelNoBeard).toBe(true);
+ expect(state.angelSkinColor).toBe(0xf8f9f8);
+ expect(state.seraphOriginalWingCount).toBe(2);
+ await page.screenshot({path:'test-results/white-beardless-angel-original-wings.png',
+  animations:'disabled',timeout:20000});
+ expect(errors).toEqual([]);
+});
