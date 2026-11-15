@@ -1,0 +1,72 @@
+{
+  "schemaVersion": 2,
+  "asOf": "2026-11-15T07:48:00Z",
+  "tz": "Asia/Tokyo",
+  "description": "GitHub公開画面からChatGPTタスクの実行結果は直接参照できないため、この2件は取得時点のスナップショット。GitHub Actionsの結果のみ画面表示時に更新する。",
+  "groups": [
+    {
+      "id": "human",
+      "name": "人モデル",
+      "subtitle": "顔・髪・体型・表情・衣装",
+      "source": "ChatGPT定期タスク",
+      "autoEnabled": true,
+      "time": "毎時00分",
+      "next": "2026-11-15T08:00:00Z",
+      "last": "2026-11-15T06:57:00.953057Z",
+      "preview": "face-body-studio.html",
+      "secondary": "face-mesh-studio.html",
+      "secondaryName": "顔・髪の詳細",
+      "workflow": "human-v65-quality.yml",
+      "workflowName": "人モデル品質QA",
+      "issueRole": "manual instruction stored; QA dispatched; ChatGPT automation reads issue on next run"
+    },
+    {
+      "id": "monster",
+      "name": "モンスター・召喚獣",
+      "subtitle": "全50種・人型・獣型・女性召喚獣",
+      "source": "ChatGPT定期タスク",
+      "autoEnabled": true,
+      "time": "毎時08分頃",
+      "next": "2026-11-15T08:08:36Z",
+      "last": "2026-11-15T07:11:57.753133Z",
+      "preview": "monster-manager.html",
+      "secondary": "character-motion-studio.html",
+      "secondaryName": "モーション確認",
+      "workflow": "monster-anatomy-qa.yml",
+      "workflowName": "モンスター・召喚獣品質QA",
+      "issueRole": "manual instruction stored; QA dispatched; ChatGPT automation reads issue on next run"
+    },
+    {
+      "id": "world",
+      "name": "オブジェクト・ステージ",
+      "subtitle": "53種類のオブジェクト・200ステージ",
+      "source": "GitHub Actions",
+      "autoEnabled": true,
+      "time": "毎時41分",
+      "next": "2026-11-15T08:41:00Z",
+      "last": null,
+      "preview": "object-list.html",
+      "secondary": "stage-manager.html",
+      "secondaryName": "200ステージを見る",
+      "workflow": "world-quality-photoreal.yml",
+      "workflowName": "全オブジェクト・ステージ実写品質回帰",
+      "issueRole": "manual instruction passed as image-reference guidance to Cloudflare Free"
+    },
+    {
+      "id": "anime",
+      "name": "アニメ・漫画・演出",
+      "subtitle": "漫画コマ・イベント演出・ストーリー",
+      "source": "ChatGPT定期タスク／GitHub Actions",
+      "autoEnabled": false,
+      "time": "毎時自動は現在停止",
+      "next": null,
+      "last": "2026-11-15T03:59:02.241459Z",
+      "preview": "story-cinema-preview.html",
+      "secondary": "story-art-review.html",
+      "secondaryName": "漫画の確認",
+      "workflow": "story-cinematic-qa.yml",
+      "workflowName": "ストーリー映像・演出QA",
+      "issueRole": "manual instruction stored and visual QA dispatched; ChatGPT manga automation is paused and not resumed"
+    }
+  ]
+}
