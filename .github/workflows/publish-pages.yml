@@ -43,7 +43,7 @@ jobs:
       - name: Verify independent male/female source-derived face meshes
         run: |
           npm install --no-save --package-lock=false three@0.160.1
-          node --test qa/independent-face-masters.test.mjs
+          node --test qa/independent-face-masters.test.mjs qa/grey-wolf-runtime.test.mjs
       - name: Verify illustrated dialogue, original opening and scene music
         run: |
           node --experimental-vm-modules qa/story-cinematic-audio.test.mjs
