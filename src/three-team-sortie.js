@@ -174,11 +174,81 @@ export function ensureSortiePlan(game){
   });
  }
  clampPlannedHeadcount(teams,sortiePlanningLimit(game));
+ for(const team of teams)if(team.formation!==FREE_FORMATION&&sortieTeamCount(team)){
+  // Older saves may contain job swaps; fixed presets always reconstruct the layout.
+  rebuildNamedFormation(game,teams,team,team.formation,team.slots.filter(Boolean).length);
+ }
  game.sortiePlan={version:1,teams};
  return game.sortiePlan;
 }
 export const sortieTeams=game=>ensureSortiePlan(game).teams;
 export const sortieTeamCount=team=>Object.values(team?.counts||{}).reduce((a,b)=>a+Number(b||0),0);
+
+/** A named formation owns its job-to-cell mapping. Rebuild from inventory
+ * rather than preserving user-swapped cells or incompatible old-save jobs.
+ */
+function rebuildNamedFormation(game,teams,team,formation,desired){
+ const candidates=ownSquads(game),other=new Map();
+ for(const t of teams)if(t!==team)for(const [id,count] of Object.entries(t.counts))
+  other.set(id,(other.get(id)||0)+Number(count||0));
+ const current={...team.counts},currentTotal=Object.values(current).reduce((n,x)=>n+Number(x||0),0);
+ const maxRows=Math.min(sortieSquadCap(game),Math.max(4,Math.floor(desired)||4));
+ const slots=Array(SORTIE_SQUADS_PER_GROUP).fill(null),chosen=[],used=new Set();
+ for(let i=0;i<maxRows;i++){
+  const role=FORMATION_ROLES[formation][i],jobs=ROLE_JOBS[role]||[];
+  const eligible=candidates.filter(item=>{
+   const id=String(item.id);
+   return !used.has(id)&&jobs.includes(item.job)&&item.count>(other.get(id)||0);
+  });
+  eligible.sort((a,b)=>{
+   const av=Number(current[String(a.id)]||0),bv=Number(current[String(b.id)]||0);
+   return (bv>0?1:0)-(av>0?1:0)||bv-av||
+    (b.count-(other.get(String(b.id))||0))-(a.count-(other.get(String(a.id))||0));
+  });
+  const candidate=eligible[0];if(!candidate)continue;
+  const id=String(candidate.id);used.add(id);slots[i]=id;
+  chosen.push({id,capacity:candidate.count-(other.get(id)||0),
+   weight:Math.max(1,Number(current[id]||Math.min(10,candidate.count)))});
+ }
+ const maxTotal=Math.max(0,sortiePlanningLimit(game)-teams.filter(t=>t!==team)
+  .reduce((n,t)=>n+sortieTeamCount(t),0));
+ const target=Math.min(currentTotal,maxTotal,chosen.reduce((n,x)=>n+x.capacity,0));
+ const counts={},divisions={},shares=chosen.map(x=>({...x,count:0}));
+ if(target>0){
+  for(const x of shares.slice(0,target))x.count=1;
+  let left=target-shares.reduce((n,x)=>n+x.count,0);
+  while(left>0){
+   const best=shares.filter(x=>x.count<x.capacity).sort((a,b)=>
+    b.weight/(b.count+1)-a.weight/(a.count+1)||a.id.localeCompare(b.id))[0];
+   if(!best)break;best.count++;left--;
+  }
+ }
+ for(const x of shares)if(x.count){
+  counts[x.id]=x.count;divisions[x.id]=Math.max(1,Math.min(team.divisions[x.id]||1,x.count,4));
+ }
+ team.formation=formation;team.slots=slots;team.counts=counts;team.divisions=divisions;
+ arrangeFormation(team,candidates,formation,SORTIE_FORMATION_CELLS,sortieSquadCap(game));
+ if(!counts[String(team.captainId)]){
+  const people=candidates.filter(x=>counts[String(x.id)]);
+  team.captainId=[...people].sort((a,b)=>rarityScore(b)-rarityScore(a))[0]?.id??null;
+ }
+ return team;
+}
+export function setSortieFormationSize(game,teamId,desired){
+ ensureSortiePlan(game);
+ const team=teamOf(game,teamId),n=Number(desired);
+ if(!team||team.formation===FREE_FORMATION)
+  throw Error('通常陣形の部隊数を変更する場合は、先に陣形を選んでください。');
+ if(!Number.isInteger(n)||n<4||n>sortieSquadCap(game))
+  throw Error('陣形の部隊数はレベルで解放される4～'+sortieSquadCap(game)+'隊です。');
+ const before=team.slots.filter(Boolean).length;
+ if(n>before&&ownSquads(game).filter(x=>(x.count-game.sortiePlan.teams
+  .filter(t=>t!==team).reduce((sum,t)=>sum+(t.counts[String(x.id)]||0),0))>0).length<=before)
+  throw Error('追加可能な職業の隊がありません。');
+ rebuildNamedFormation(game,game.sortiePlan.teams,team,team.formation,n);
+ return team;
+}
+
 export function sortieTeamSquads(game,teamId){
  const team=teamOf(game,teamId);
  if(!team)return [];
@@ -341,9 +411,9 @@ export function setSortieFormation(game,teamId,formation){
  ensureSortiePlan(game);
  const team=teamOf(game,teamId);
  if(!team||(formation!==FREE_FORMATION&&(!Object.hasOwn(SORTIE_FORMATIONS,formation)||SORTIE_FORMATIONS[formation].level>sortieLevel(game))))throw Error('この陣形は軍師レベルが不足しています。');
- team.formation=formation;
- // Auto-position by actual roles, not just by arbitrary unit order.
- arrangeFormation(team,ownSquads(game),formation,SORTIE_FORMATION_CELLS,sortieSquadCap(game));
+ if(formation===FREE_FORMATION){team.formation=formation;}
+ else rebuildNamedFormation(game,game.sortiePlan.teams,team,formation,
+  Math.max(4,team.slots.filter(Boolean).length));
  if(!availableSortieOrders(game,teamId).includes(team.initialOrder))team.initialOrder='hold';
  return team;
 }
