@@ -55,18 +55,21 @@ if(compiled.stages.length!==1||stage.stageId!==stageId)
 const byVariant=new Map(stage.variants.map(v=>[v.edition+'|'+v.gender,v]));
 if(contract.variants.length!==byVariant.size)
  throw Error('Canonical script changed: variant count differs from stage manifest');
-const mobileMin=stageId==='c01-s02'?[768,320]:[1536,864];
+const mobileMin=stageId==='c01-s02'?[768,320]:
+ ['c01-s03','c01-s04'].includes(stageId)?[800,450]:[1536,864];
 if(JSON.stringify(contract.layout.minPerPanelNativePixels)!==JSON.stringify(mobileMin))
- throw Error('Selected stage minimum must match mobile native profile');
+ throw Error('Selected stage minimum must match stage-specific mobile native profile');
 const imageRules=contract.renderConstraints;
 const nativeSheet=contract.layout.nativeSheetPipeline;
 const maxReviewCells=stageId==='c01-s02'?5:10;
 if(!nativeSheet||nativeSheet.maximumFramesPerSheet!==maxReviewCells||
  contract.layout.maxRows!==(maxReviewCells===5?3:5)||
  contract.layout.maxPanelsPerPoster!==maxReviewCells||
- JSON.stringify(nativeSheet.preferredCellPixels)!==JSON.stringify([2048,1152])||
+ JSON.stringify(nativeSheet.preferredCellPixels)!==JSON.stringify(contract.layout.preferredPerPanelNativePixels)||
  JSON.stringify(maxReviewCells===5?nativeSheet.preferredFullFivePanelSheetPixels:
-  nativeSheet.preferredFullTenPanelSheetPixels)!==JSON.stringify(maxReviewCells===5?[4096,3456]:[4096,5760])||
+  nativeSheet.preferredFullTenPanelSheetPixels)!==JSON.stringify([
+   contract.layout.preferredPerPanelNativePixels[0]*2,
+   Math.ceil(maxReviewCells/2)*contract.layout.preferredPerPanelNativePixels[1]])||
  (maxReviewCells===5?nativeSheet.originalGeneratorSupports4096x3456:
   nativeSheet.originalGeneratorSupports4096x5760)!=='UNVERIFIED_DO_NOT_ASSUME'||
  nativeSheet.mode!=='INDIVIDUAL_NATIVE_FRAMES_FIRST_THEN_LOSSLESS_REVIEW_SHEET')
@@ -142,9 +145,9 @@ for(const v of contract.variants){
   const noTextContract=[
    'P0_ABSOLUTE_MUST_FOLLOW. No text, digits, Japanese characters, subtitles, speech balloons, logos, symbols, watermarks or UI in ANY IMAGE.',
    'P0_SHEET_SCENE_LIMIT: Exactly '+page.panels.length+' independently authored frames on this review sheet; never more than '+maxReviewCells+'.',
-   stageId==='c01-s02'?
-    'P0_MOBILE_NATIVE_MINIMUM: each true source cut is at least 768x320 (width/height minimum); preserve source aspect ratio, do not enlarge; higher original resolution is welcome but 1536x864 is NOT required.':
-    'P0_HIGHEST_NATIVE_RESOLUTION: independently generate each 16:9 frame at highest genuine native resolution supported, prefer 2048x1152, never upscale; minimum 1536x864.',
+   'P0_MOBILE_NATIVE_MINIMUM: each actual source cut is at least '+mobileMin.join('x')+
+    ' (width/height minimum), preferred '+contract.layout.preferredPerPanelNativePixels.join('x')+
+    '; keep true native detail and source aspect ratio, never upscale.',
    'P0_REFERENCE_IMAGE_BYTES: actual original cast master image bytes MUST be attached to image renderer; paths alone do not count.',
    'P0_CANONICAL_SCENE_AND_OUTCOME: each frame depicts its own exact screenplay beat, verified branch and gender only; no character swapping or reuse.',
    'P0_FAIL_CLOSED: missing true native detail, actual cast bytes, clean textless output or manual visual verification means REJECT, NO REGISTRATION, NO DEPLOY.',
