@@ -80,6 +80,24 @@ for(const spec of nonhuman){
      'Spider abdomen clothing must track the moving abdomen pivot');
    }else assert.equal(matched[0].parent,model.userData.pivots.torso);
   }
+  // Anatomical limb equipment must follow the actual animated pivot.
+  // A missing pivot is a regression, not a reason to silently skip a cuff.
+  if(detail==='high'&&!profile.legacy){
+   const family=spec.family;
+   const expected=['beast','feline','reptile'].includes(family)&&
+     !['m020','m048'].includes(spec.id)?['legfrontL','legfrontR']:
+     family==='avian'?['wingL','wingR']:
+     ['insect','arachnid'].includes(family)?['legL0','legR0']:[];
+   for(const key of expected){
+    const joint=model.userData.pivots[key];
+    assert.ok(joint,'Missing anatomical costume joint: '+spec.id+' '+key);
+    const pieces=costume.filter(p=>p.name.endsWith('-joint-'+key));
+    assert.equal(pieces.length,1,
+     'Missing or duplicate moving joint cuff: '+spec.id+' '+key);
+    assert.equal(pieces[0].parent,joint,
+     'Joint cuff must inherit animation: '+spec.id+' '+key);
+   }
+  }
   if(profile.legacy)assert.equal(model.userData.speciesCosplay.applied,
     'existing-boss-regalia');
   else assert.equal(model.userData.speciesCosplay.applied,'species-fitted');
