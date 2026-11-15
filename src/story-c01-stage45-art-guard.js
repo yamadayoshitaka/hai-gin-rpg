@@ -31,7 +31,8 @@ export function buildStage45ArtPrompt({stageId,stageName,edition,gender,shot,act
   'c01-s04-m11':'A pre-battle lost-road investigation: older knight Garan kneels to study an overgrown stone route omitted from the map, while regent Lucia searches ahead. TWO people ONLY, sunlit forest ruin pathway, wide establishing composition, NO combat and NO close-up pointing at bell relief.',
   'c01-s04-m13':'A pre-battle clue inspection: regent Lucia and cream-hooded healer Iris study a bell-keeper emblem and traces of ancient wax seal on a weathered ruin. TWO women ONLY, intimate diagonal two-shot, NO armored older knight, and NOT the preceding lost-road scene.'
  };
- const specialDirection=stageId==='c01-s04'?mandatorySceneDirections[shot.id]:null;
+ const specialDirection=isText(shot.visualDirection)?shot.visualDirection:
+  (stageId==='c01-s04'?mandatorySceneDirections[shot.id]:null);
  const scenes={
   'c01-s04':'Ancient overgrown stone ruins deep in a forest; an executed bell-keeper\'s emblem, old wax seal traces and the investigation. Forest moss, broken columns, mysterious late medieval stonework. Do not invent results of the investigation before a confirmed victory.',
   'c01-s05':'A besieged medieval town at the defensive perimeter: intact civilian evacuation routes, stone walls, guard barricades, retreating villagers and military formations appropriate to the specific shot. Do not depict defence as successful before confirmed victory.'
