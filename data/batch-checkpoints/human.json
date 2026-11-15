@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "category": "human",
+  "saved": [
+    {
+      "id": "armored-cuirass-lower-rim-shared-generator",
+      "sourceFiles": [
+        "src/outfit-maintenance-model.js"
+      ],
+      "commitSha": "d83522926ed49dac1fce2c71052a7f05e114a301",
+      "qa": "unverified"
+    }
+  ],
+  "remainingIds": [
+    "all-human-preset-IDs-pending-inventory",
+    "female-job01-webgl",
+    "male-job01-webgl",
+    "female-job05-webgl",
+    "male-job05-webgl",
+    "face-hair-expression-variants"
+  ],
+  "nextAction": "Enumerate actual preset IDs; run Node geometry normal checks and WebGL front/back/top views on armored male/female job01/job05; compare CI, then iterate hair/face generators. Do not merge until visual QA."
+}
