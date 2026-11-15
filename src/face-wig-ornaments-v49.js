@@ -9,7 +9,9 @@ const colors=[1,.91,.82];
 function fiberMaterial(color,shade=1){
  return new THREE.MeshPhysicalMaterial({
   color:new THREE.Color(color).multiplyScalar(shade),
-  roughness:.51,metalness:0,clearcoat:.08,clearcoatRoughness:.38,
+  roughness:.70,metalness:0,clearcoat:.028,clearcoatRoughness:.74,
+  sheen:.18,sheenRoughness:.69,
+  sheenColor:new THREE.Color(color).multiplyScalar(.44),
   side:THREE.DoubleSide
  });
 }
@@ -165,7 +167,8 @@ export function makePonytailMicrofibers(origin,d,side=1,half=false,color=0x80604
  geometry.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));
  geometry.setIndex(indices);geometry.computeVertexNormals();geometry.computeBoundingSphere();
  const material=new THREE.MeshStandardMaterial({
-  color:0xffffff,vertexColors:true,roughness:.68,metalness:0,
+  color:0xffffff,vertexColors:true,roughness:.73,metalness:0,
+  clearcoat:.018,clearcoatRoughness:.72,
   side:THREE.DoubleSide
  });
  const fibers=new THREE.Mesh(geometry,material);
