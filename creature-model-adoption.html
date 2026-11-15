@@ -215,7 +215,7 @@ function previewChoice(){
  // Use the old model as the loading/error fallback; it remains fully intact.
  showOriginal(id,'low');
  $('status').textContent='GLBを読み込み中：'+entry.name+'（読込完了まで採用できません）';
- loadCreatureMeshSource(source,registry,'high').then(loaded=>{
+ loadCreatureMeshSource(source,registry,'high',{creatureId:id}).then(loaded=>{
   if(ticket!==serial){loaded.dispose();return;}
   if(legacyActor){
    scene.remove(legacyActor);
