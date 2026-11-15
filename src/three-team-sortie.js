@@ -3,6 +3,7 @@
  * inventory remains in campaign.squads, while this plan assigns actual people.
  * A source squad may be split between teams but never duplicated.
  */
+import {formationStatus,arrangeFormation} from './sortie-formation-logic.js';
 export const SORTIE_TEAM_IDS=Object.freeze([1,2,3]);
 export const SORTIE_SQUADS_PER_GROUP=16;
 /** Temporary level-99 battle/formation test without rewriting career XP. */
@@ -48,11 +49,12 @@ export const SORTIE_FORMATIONS=Object.freeze({
  dragon:Object.freeze({name:'龍牙陣形',level:85,attack:.23,defense:.12,mobility:.09}),
  constellation:Object.freeze({name:'星鐘陣形',level:99,attack:.25,defense:.22,mobility:.14,healing:.12})
 });
+export const sortieFormationStatus=(game,teamId)=>formationStatus(game?.sortiePlan?.teams?.find(t=>t.id===Number(teamId)),ownSquads(game),SORTIE_FORMATION_CELLS);
 export const unlockedSortieFormations=game=>Object.entries(SORTIE_FORMATIONS)
  .filter(([,x])=>sortieLevel(game)>=x.level).map(([id])=>id);
 export function sortieFormationBuff(game,teamId){
  const t=game?.sortiePlan?.teams?.find(x=>x.id===Number(teamId));
- const f=SORTIE_FORMATIONS[t?.formation]||SORTIE_FORMATIONS.balanced;
+ const f=SORTIE_FORMATIONS[sortieFormationStatus(game,teamId).id]||{};
  return {attack:f.attack||0,defense:f.defense||0,mobility:f.mobility||0,healing:f.healing||0};
 }
 export const SORTIE_ENTRY_SLOTS=Object.freeze([9,10,11]);
@@ -117,7 +119,7 @@ export function ensureSortiePlan(game){
    team.counts[String(s.id)]=s.count;team.divisions[String(s.id)]=1;
   });
   teams.forEach(team=>{
-   team.slots.filter(Boolean).forEach((sid,index)=>{team.grid[SORTIE_FORMATION_CELLS.balanced[index]]=sid;});
+   arrangeFormation(team,sources,'balanced',SORTIE_FORMATION_CELLS);
    const candidates=sources.filter(s=>team.counts[String(s.id)]);
    team.captainId=[...candidates].sort((a,b)=>rarityScore(b)-rarityScore(a))[0]?.id??null;
   });
@@ -271,10 +273,8 @@ export function setSortieFormation(game,teamId,formation){
  const team=teamOf(game,teamId);
  if(!team||!Object.hasOwn(SORTIE_FORMATIONS,formation)||SORTIE_FORMATIONS[formation].level>sortieLevel(game))throw Error('この陣形は軍師レベルが不足しています。');
  team.formation=formation;
- // A chosen preset rearranges current contingents on the same 4x4 board.
- const order=team.slots.filter(Boolean);
- team.grid=Array(SORTIE_GRID_CELLS).fill(null);
- order.forEach((sid,index)=>{team.grid[SORTIE_FORMATION_CELLS[formation][index]]=sid;});
+ // Auto-position by actual roles, not just by arbitrary unit order.
+ arrangeFormation(team,ownSquads(game),formation,SORTIE_FORMATION_CELLS);
  if(!availableSortieOrders(game,teamId).includes(team.initialOrder))team.initialOrder='hold';
  return team;
 }
@@ -295,7 +295,7 @@ export function resolvedSortieSlot(game,stage,team){
 }
 export function availableSortieOrders(game,teamId){
  const jobs=new Set(sortieTeamSquads(game,teamId).map(s=>s.job));
- if(!jobs.size)return [];
+ if(!jobs.size||!sortieFormationStatus(game,teamId).valid)return [];
  const orders=['charge','defend','hold','retreat'];
  const links=sortieAdjacentJobs(game,teamId);
  // A healer needs a neighboring unit to issue group support; a scout needs
@@ -319,6 +319,7 @@ export function setSortieOrder(game,teamId,order){
 }
 /** Job-specific suppression effects; activated only by a real planned debuff order. */
 export function sortieDebuffTypes(game,teamId){
+ if(!sortieFormationStatus(game,teamId).valid)return [];
  const jobs=new Set(sortieTeamSquads(game,teamId).map(s=>s.job));
  return [
   ...(jobs.has('忍者')?[{job:'忍者',stat:'speed',amount:.18,name:'機動力低下'}]:[]),
@@ -369,7 +370,7 @@ export function allocateThreeTeamSortie(game,stage,limit=SORTIE_TOTAL_RENDER_LIM
   divisionCount:Math.min(x.count,Math.max(1,x.team.divisions?.[String(x.squad.id)]||1)),
   deploymentSlot:positions.get(x.team.id),
   captain:sources.get(String(x.team.captainId))||null,
-  formation:x.team.formation,
+  formation:sortieFormationStatus(game,x.team.id).id,
   initialOrder:availableSortieOrders(game,x.team.id).includes(x.team.initialOrder)?x.team.initialOrder:'hold'
  }));
 }
