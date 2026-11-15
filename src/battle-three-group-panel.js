@@ -13,7 +13,7 @@ export function createBattleThreeGroupPanel({
  const enemy=document.createElement('button');enemy.type='button';enemy.id='battleEnemyGroupSummary';
  enemyNav.insertBefore(enemy,enemyNav.querySelector('.ribbonList'));
  document.body.classList.add('story-three-group-ui');
- let level='groups',groupId=1,divisionId=null,enemyOpen=false,pointerDown=false,oldMarkup='',oldEnemy='';
+ let level='groups',groupId=1,divisionId=null,enemyOpen=false,pointerDown=false,lastPointerAt=-Infinity,oldMarkup='',oldEnemy='';
  const escape=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const summaries=()=>threeGroupOverview(actors,groupBySquad,initialUnits);
  const back=(where,label)=>'<button type="button" data-back="'+where+'">◀ '+label+'</button>';
@@ -44,14 +44,17 @@ export function createBattleThreeGroupPanel({
     '<button data-action="reinforce" '+(!d||selected.divisions.length<2?'disabled':'')+'>🛡 同班から援軍</button>'+
     '<button data-action="merge" '+(!d||selected.divisions.length<2?'disabled':'')+'>⇄ 再統合</button></div>';
   }
-  if((force||html!==oldMarkup)&&!pointerDown){ally.innerHTML=html;oldMarkup=html;}
+  if((force||html!==oldMarkup)&&!pointerDown&&
+   (force||performance.now()-lastPointerAt>400)){ally.innerHTML=html;oldMarkup=html;}
   const live=actors.filter(u=>u.team===1&&u.hp>0&&!u.defeated).length;
   const label='🔴 敵軍 '+live+'/'+Math.max(enemyInitial,live)+'人 '+(enemyOpen?'▲':'▼');
   if(label!==oldEnemy){enemy.textContent=label;oldEnemy=label;}
   document.body.classList.toggle('story-enemy-details',enemyOpen||targetsActive);
  }
  ally.addEventListener('pointerdown',()=>pointerDown=true);
- for(const type of ['pointerup','pointercancel','blur'])ally.addEventListener(type,()=>pointerDown=false);
+ for(const type of ['pointerup','pointercancel','blur'])ally.addEventListener(type,()=>{
+  pointerDown=false;lastPointerAt=performance.now();
+ });
  ally.addEventListener('click',event=>{
   const button=event.target.closest('button');if(!button||button.disabled)return;
   if(button.dataset.group){groupId=Number(button.dataset.group);level='divisions';}
