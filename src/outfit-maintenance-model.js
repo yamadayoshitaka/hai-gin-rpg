@@ -186,7 +186,8 @@ export function createDetailedOutfit(job, sex, body, textures, {quality='preview
     // crushed the fabric details to near-black on mobile ACES tonemapping.
     const color=new THREE.Color(tint).lerp(new THREE.Color(0xffffff),.57);
     const m=new THREE.MeshStandardMaterial({map:t,color,metalness,roughness,
-      bumpMap:t,bumpScale:type==='steel'?.0013:.0027,side:THREE.DoubleSide});
+      bumpMap:type==='steel'?(textures['steel-grain']||t):t,
+      bumpScale:type==='steel'?.0013:.0027,side:THREE.DoubleSide});
     mats.push(m);return m;
   }
   const cloth=material(style.fabric,fabricTint,style.fabric==='steel'?.67:0,style.fabric==='steel'?.34:.84);
