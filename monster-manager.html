@@ -201,6 +201,7 @@ import {hasDemonCosmetics,withDemonColorTheme}
  from './src/monster-demon-cosmetics.js?v=4.5.04';
 import {fetchCreatureRegistry,loadExternalCreature,loadPersonalGLB} from './src/creature-external-runtime.js?v=4.4.92';
 import {adoptedCreatureMesh} from './src/creature-mesh-adoption.js';
+import {creatureSpeciesBlueprint} from './src/creature-species-blueprints.js';
 import {REAL_CREATURE_MESH_SOURCES,loadCreatureMeshSource} from './src/creature-real-source-catalog.js?v=wolf-actions-v3';
 import {loadSpeciesSourceComposite,isSpeciesSourcePilot,SPECIES_SOURCE_REBUILD_PILOTS}
  from './src/monster-source-composite.js?v=4.6.90';
@@ -461,7 +462,10 @@ function selectSpecies(id){
   button.setAttribute('aria-pressed',String(button.title==='idle'));
  loadEditor(m);
  byId('name').textContent=m.name+' ('+m.rarity+')';
- byId('description').textContent=m.description+' — '+m.skill;
+ const blueprint=creatureSpeciesBlueprint(id);
+ byId('description').textContent=m.description+' — '+m.skill+
+   (blueprint?' — 種族別特徴：'+blueprint.feature+
+    '（'+blueprint.anatomy+'）':'');
  focusCamera();renderList();
  notice('選択中: '+id+' — 動作と材質を確認');
  if(mode==='procedural'){
@@ -517,7 +521,11 @@ function selectSpecies(id){
    disposeCurrent();
    model=handle.root;externalHandle=handle;scene.add(model);
    refreshGeometry();focusCamera();
-   // Native GLB pose is controlled by externalHandle, not MonsterAnimation.
+   // Missing imported clips are procedurally animated with species anatomy.
+    const tuned=model.userData.speciesRefinement;
+    if(tuned)model.userData.rebuildReviewNote='外観:'+tuned.feature+
+      ' / 対象骨格:'+tuned.anatomy+' / 実機品質未承認';
+    // Native GLB pose is controlled by externalHandle, not MonsterAnimation.
    byId('assetStatus').textContent=(mode==='licensed'?entry.license+'候補 '+entry.name:
       mode==='source-composite'?'CC0実物GLB '+handle.sourceComposite.donorName+
       ' ＋種族配色・装飾（品質試作・戦闘未置換）':
