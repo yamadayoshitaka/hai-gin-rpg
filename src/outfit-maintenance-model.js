@@ -173,7 +173,11 @@ export function createDetailedOutfit(job, sex, body, textures, {quality='preview
     // chest. The old centerline-only Z estimate suspended plates at the ribs
     // while cutting into the pectorals when the character turned sideways.
     const band=torsoSamples.filter(([px,py])=>Math.abs(py-y)<H*.069&&Math.abs(px-x)<sx*.20);
-    const eligible=band.length>=9?band:torsoSamples.filter(([,py])=>Math.abs(py-y)<H*.077);
+    // Preserve the requested lateral position even for sparse shoulder/waist
+    // slices. Falling back to every X in the torso selected the center chest
+    // depth for flank armor and created suspended rear/side plates.
+    const wider=torsoSamples.filter(([px,py])=>Math.abs(py-y)<H*.10&&Math.abs(px-x)<sx*.34);
+    const eligible=band.length>=9?band:wider.length>=5?wider:band;
     const z=eligible.map(p=>p[2]).sort((a,b)=>a-b);
     return z.length>10?z[Math.floor((z.length-1)*(back?.08:.92))]:mz+(back?-1:1)*sz*.69;
   }
