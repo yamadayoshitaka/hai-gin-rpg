@@ -24,8 +24,12 @@ export function renderThreeTeamPlanner({game,teamId=1,cellIndex=5,view='setup',j
  const back=button('data-sortie-view="setup"','◀ 配置へ戻る');
  const captainChoices=assigned.map(s=>button('data-sortie-captain="'+esc(s.id)+'"',
    esc(s.characterName||s.name||s.job+'代表')+' <small>'+esc(s.job)+'</small>',String(s.id)===String(team.captainId))).join('');
- const captainPanel='<div class="sortieCaptains"><b>班の隊長</b><div class="sortieCaptainButtons">'+
+ const captainPanel='<div class="sortieCaptains"><b>班の隊長</b>'+
+  button('data-sortie-view="captains" class="sortieCaptainOpen"','隊長を選ぶ ▸')+
+  '<div class="sortieCaptainButtons">'+
   (captainChoices||'<small>ジョブを配置すると隊長を選べます</small>')+'</div></div>';
+ const captainPage='<div class="sortieSubHead"><b>班の隊長を選択</b>'+back+'</div>'+
+  '<div class="sortieCaptainChoices">'+(captainChoices||'<small>ジョブを先に配置してください</small>')+'</div>';
  const cells=Array.from({length:SORTIE_GRID_CELLS},(_,i)=>{
   const source=byId.get(String(team.grid?.[i])),count=source?team.counts[String(source.id)]||0:0;
   const label=source?esc(source.job):'＋';
@@ -74,7 +78,7 @@ export function renderThreeTeamPlanner({game,teamId=1,cellIndex=5,view='setup',j
     '<strong>'+esc(TACTICAL_ORDERS[id]?.name||id)+'</strong><small>'+esc(TACTICAL_ORDERS[id]?.effect||'')+'</small>',team.initialOrder===id)).join('')+'</div>'+
   '<small class="sortieHint">待機・退却・突撃・守備は基本号令。支援は僧侶と別ジョブ、探索は忍者/シーフと別隊が上下左右に隣接すると解放します。</small>'+
   '<div class="sortieAdjacency"><b>隣接ジョブ</b><small>'+(links.map(x=>esc(x.a)+' × '+esc(x.b)).join(' ／ ')||'なし（マスを移動して隣接させてください）')+'</small></div>';
- const pagesByView={setup:main,templates,jobs,count:countPanel,orders:orderPanel};
+ const pagesByView={setup:main,templates,jobs,count:countPanel,orders:orderPanel,captains:captainPage};
  return '<section class="sortiePlanner" aria-label="最大3班・1班4隊・4×4配置">'+
   '<div class="sortieTop"><b>⚑ 最大3班 × 各班4隊</b><small>宿屋のテンプレート</small></div>'+
   groupButtons+(pagesByView[view]||main)+
