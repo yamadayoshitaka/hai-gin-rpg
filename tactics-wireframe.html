@@ -6931,7 +6931,7 @@ function closeSquadTactics(returnToOverview=false){
  else if(battleViewMode==='commander'&&battleReady&&!finished&&!commanderCinematic)followSelectedCommander();
 }
 $('battleCancelCircleTarget').onclick=()=>{if(pendingCircleTarget)closeSquadTactics();};
-function finishSquadDestination(accepted){closeSquadTactics(Boolean(accepted));if(!accepted)log('目的地・命令の指定を取り消しました');}
+function finishSquadDestination(accepted){pendingTargetedMap=null;closeSquadTactics(Boolean(accepted));if(!accepted)log('目的地・命令の指定を取り消しました');}
 function requestSquadRecovery(targetId){
  const id=String(targetId),unavailable=squadCommanderUnavailableReason(id);
  if(unavailable){log(unavailable);return false}
