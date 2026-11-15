@@ -292,6 +292,12 @@ export function repairRealCrownScalpHoles(vertices,normals,box){
  * deeper layer ONLY across the anatomical upper crown. It uses the EXACT
  * donor triangles and normals, so no flat disk or helmet-shaped fake scalp
  * can appear above the existing hairstyle. It shares the cap draw mesh. */
+export function uniqueHairFibreStations(segments=11){
+ const last=Math.max(1,Math.floor(segments));
+ return [...new Set([0,1,2,4,6,8,10,last].filter(x=>x<=last))]
+  .sort((a,b)=>a-b);
+}
+
 export function appendRealCrownUnderlay(geo,box,vertices,normals,volumeProfile='natural'){
  const attr=geo?.getAttribute?.('position'),normal=geo?.getAttribute?.('normal');
  if(!attr)throw Error('True 3D source head required');
@@ -304,8 +310,8 @@ export function appendRealCrownUnderlay(geo,box,vertices,normals,volumeProfile='
   const points=ids.map(i=>f3(attr.getX(i),attr.getY(i),attr.getZ(i)));
   const mid=points[0].clone().add(points[1]).add(points[2]).multiplyScalar(1/3);
   if(mid.y<minHeight||
-   Math.abs(mid.x-c.x)>d.x*.17||
-   Math.abs(mid.z-c.z)>d.z*.19)continue;
+   Math.abs(mid.x-c.x)>d.x*.27||
+   Math.abs(mid.z-c.z)>d.z*.25)continue;
   // Never extend this cover over the forehead or brows. Intact donor
   // triangles entirely above the upper hairline are the only source.
   if(points.some(p=>p.y<box.min.y+d.y*.74))continue;
@@ -1106,10 +1112,11 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  let microFibreCount=0,microFibreTriangles=0;
  if(fiberMultiplier>1){
   const extra=fiberMultiplier-1,coords=[],shades=[],tris=[];
-  // 7 interpolation stations are enough for thin static filaments; the
-  // original moving guide still uses all 12 points. This nearly halves
+  // Unique coarse hair stations avoid zero-area tip triangles from an
+  // accidentally repeated last point. Moving guides still use 12 points;
+  // the static sample retains the low mobile geometry budget.
   // the render geometry cost on mobile at 10x density.
-  const fineSteps=[0,1,2,4,6,8,10,11,segments];
+  const fineSteps=uniqueHairFibreStations(segments);
   const colorSeed=rootColor.clone();
   for(let i=0;i<strands.length;i++){
    const strand=strands[i],first=strand.points[0];
