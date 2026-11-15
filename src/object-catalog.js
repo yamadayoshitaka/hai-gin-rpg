@@ -431,9 +431,15 @@ export function createObjectById(id,{cellSize=2.2}={}){
    root.userData.farmland=true;root.userData.passable=true;
   }
   if(id==='town_bench_001'){
-   for(const z of [-.38,.38])box(2.7*c,.12*c,.18*c,0,.78*c,z*c,wood);
-   box(2.8*c,.16*c,.8*c,0,.47*c,0,wood);
-   for(const x of [-1.1,1.1])for(const z of [-.3,.3])box(.15*c,.48*c,.15*c,x*c,.24*c,z*c,iron);
+   // Timber seat planks rest on two transverse bearers, with mortised legs and rear back posts.
+   for(const z of [-.27,.27])box(2.72*c,.105*c,.43*c,0,.87*c,z*c,wood);
+   for(const x of [-1.05,1.05]){
+    for(const z of [-.3,.3])box(.19*c,.85*c,.19*c,x*c,.425*c,z*c,wood);
+    box(.28*c,.15*c,.85*c,x*c,.77*c,0,wood);
+    box(.19*c,1.15*c,.19*c,x*c,1.37*c,-.34*c,wood);
+   }
+   for(const y of [1.28,1.68])box(2.35*c,.17*c,.13*c,0,y*c,-.34*c,wood);
+   box(2.2*c,.13*c,.13*c,0,.38*c,0,wood);
   }
   if(id==='town_well_001'){
    const ring=new THREE.Mesh(new THREE.CylinderGeometry(1.2*c,1.2*c,.95*c,16,1,true),stone);
@@ -585,15 +591,32 @@ export function createObjectById(id,{cellSize=2.2}={}){
    }
    for(let i=0;i<8;i++){const a=i*Math.PI/4;box(.42*cellSize,.9*cellSize,.42*cellSize,Math.sin(a)*2.9*cellSize,.85*cellSize,Math.cos(a)*2.9*cellSize,stone)}
   }else if(id==='market_stall_001'){
-   for(const x of [-2,2])for(const z of [-1.4,1.4])box(.18*cellSize,3*cellSize,.18*cellSize,x*cellSize,1.5*cellSize,z*cellSize,wood);
-   box(4.4*cellSize,.2*cellSize,2.7*cellSize,0,1.45*cellSize,0,wood);
-   for(let i=0;i<8;i++)box(.54*cellSize,.12*cellSize,3.6*cellSize,(i-3.5)*.56*cellSize,3.1*cellSize,0,i%2?cloth:stone);
+   // Four anchored timber posts, diagonal knee braces and rafters carry a pitched fabric canopy.
+   for(const x of [-2,2])for(const z of [-1.4,1.4]){
+    box(.19*c,3.05*c,.19*c,x*c,1.525*c,z*c,wood);
+    const brace=box(.13*c,.85*c,.13*c,(x-Math.sign(x)*.28)*c,2.72*c,z*c,wood);
+    brace.rotation.z=Math.sign(x)*.7;
+   }
+   for(const z of [-1.4,1.4])box(4.35*c,.2*c,.18*c,0,3.02*c,z*c,wood);
+   for(const x of [-2,2])box(.17*c,.15*c,3*c,x*c,3.02*c,0,wood);
+   box(4.4*c,.17*c,2.7*c,0,1.45*c,0,wood);
+   for(const x of [-1.8,0,1.8])box(.14*c,.75*c,.14*c,x*c,.98*c,0,wood);
+   for(let i=0;i<8;i++){
+    const panel=box(.56*c,.045*c,3.25*c,(i-3.5)*.56*c,3.32*c,0,i%2?cloth:wood);
+    panel.rotation.z=(i<4?-.12:.12);
+   }
    for(let i=0;i<9;i++){const m=new THREE.Mesh(new THREE.SphereGeometry(.22*cellSize,6,4),new THREE.MeshStandardMaterial({color:i%2?0xb78a46:0x65944a}));m.position.set(((i%3)-1)*.8*cellSize,1.8*cellSize,(Math.floor(i/3)-1)*.6*cellSize);root.add(m)}
   }else if(id==='street_lamp_001'){
-   box(.24*cellSize,4.2*cellSize,.24*cellSize,0,2.1*cellSize,0,iron);
-   box(1.1*cellSize,.18*cellSize,1.1*cellSize,0,4.3*cellSize,0,iron);
-   const lantern=new THREE.Mesh(new THREE.SphereGeometry(.43*cellSize,12,8),light.clone());lantern.name='street_lamp_bulb';lantern.position.y=4.65*cellSize;root.add(lantern);
-   box(.95*cellSize,.17*cellSize,.95*cellSize,0,5.13*cellSize,0,iron);
+   // Cast-metal pedestal, tapered mast and four-sided glazed lantern cage.
+   box(.78*c,.17*c,.78*c,0,.085*c,0,iron);
+   box(.43*c,.42*c,.43*c,0,.34*c,0,iron);
+   const mast=new THREE.Mesh(new THREE.CylinderGeometry(.095*c,.18*c,3.75*c,10),iron);
+   mast.position.y=2.37*c;mast.castShadow=true;root.add(mast);
+   box(.92*c,.16*c,.92*c,0,4.31*c,0,iron);
+   for(const x of [-.38,.38])for(const z of [-.38,.38])box(.075*c,.8*c,.075*c,x*c,4.78*c,z*c,iron);
+   const lantern=new THREE.Mesh(new THREE.SphereGeometry(.32*c,12,8),light.clone());lantern.name='street_lamp_bulb';lantern.position.y=4.76*c;root.add(lantern);
+   box(.98*c,.15*c,.98*c,0,5.22*c,0,iron);
+   const cap=new THREE.Mesh(new THREE.ConeGeometry(.68*c,.38*c,4),iron);cap.rotation.y=Math.PI/4;cap.position.y=5.48*c;root.add(cap);
   }
   // New detailed props are authored from many pieces but submitted as just a
   // few material batches. Geometry still comes from the physical object BOM.
