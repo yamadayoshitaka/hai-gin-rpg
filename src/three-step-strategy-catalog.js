@@ -41,7 +41,7 @@ export const STRATEGY_TREE=Object.freeze({
    {id:'scout_walk',name:'徒歩で建物探索',mode:'explore',type:'object',jobs:['thief','ninja']}
   ]},
   summon:{name:'召喚獣',methods:[
-   {id:'scout_summon',name:'召喚獣で先行偵察',mode:'explore',type:'object',jobs:['summoner']}
+   {id:'scout_summon',name:'召喚獣で先行偵察',mode:'explore',type:'object',jobs:['summoner'],requiresSummon:true}
   ]}
  }},
  weaken:{name:'弱体化',intents:{
