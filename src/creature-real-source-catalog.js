@@ -6,7 +6,7 @@
  */
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {loadExternalCreature,prepareExternalGLTF} from './creature-external-runtime.js';
-import {applyGreyFangWolfFinish} from './grey-fang-wolf-finish.js';
+import {applyGreyFangWolfFinish} from './grey-fang-wolf-finish.js?v=white-surface-fix-2';
 
 export const REAL_CREATURE_MESH_SOURCES=Object.freeze({
  'r-wolf':Object.freeze({
