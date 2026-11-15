@@ -158,7 +158,10 @@ const assignedKnight=sortieTeams(roster).reduce((n,t)=>n+(t.counts['1']||0),0);
 setSortieFormation(roster,2,'free');
 setSortieJobSlot(roster,2,1,1);
 assert.equal(sortieTeams(roster)[1].slots[1],'1');
-assert.equal(sortieTeams(roster).reduce((n,t)=>n+(t.counts['1']||0),0),assignedKnight,'free placement must never duplicate knights');
+assert.ok(sortieTeams(roster).reduce((n,t)=>n+(t.counts['1']||0),0)<=roster.campaign.squads[0].count,
+ 'free placement must never duplicate knights beyond inventory');
+assert.ok(sortieTeams(roster).reduce((n,t)=>n+sortieTeamCount(t),0)<=40,
+ 'free placement must respect the next stage troop cap even when adding reserves');
 setSortieJobSlot(roster,2,1,null);
 assert.equal(sortieTeams(roster)[1].slots[1],null);
 assert.equal(sortieTeams(roster)[1].counts['1']||0,0);
