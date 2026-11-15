@@ -423,6 +423,10 @@ function metrics(){
   cameraTarget:orbit.target.toArray(),femaleControls:{...modelChanges},
   maleControls:{...maleChanges},
   wigVisible:wigOn,wigReport:wigs.get(gender)?.getReport()||null,
+  v65IrisOptics:model?.parts?.getObjectByName('LEFT_CURVED_IRIS')
+   ?.userData?.v65MultiscaleIrisFibers===true,
+  v65MoistSclera:model?.parts?.getObjectByName('LEFT_ORBITAL_EYEBALL')
+   ?.userData?.v65MoistScleraPBR===true,
   wigStyleId,wigStyles:listWigStyles(),
   v33HairColor:v32PartMode?v32Parts[gender].hairColor:wigColor,
   wigIsSeparateAsset:wigs.get('female')?.root?.userData?.assetType==='independent-wig',
