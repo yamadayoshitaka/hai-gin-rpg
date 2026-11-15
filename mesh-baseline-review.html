@@ -94,7 +94,8 @@ import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {MONSTER_CATALOG,MONSTER_FAMILIES} from './src/monster-catalog.js';
 import {MONSTER_SUMMON_ENTRIES} from './src/monster-summon-registry.js';
-import {loadPersonalGLB} from './src/creature-external-runtime.js';
+import {loadPersonalGLB,prepareExternalGLTF} from './src/creature-external-runtime.js';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 const $=id=>document.getElementById(id);
 const SKETCH='https://sketchfab.com/models/';
 const SOURCE=Object.freeze({
@@ -143,7 +144,7 @@ const items=[
  ...summonIds.map((id,i)=>({id,name:UNIQUE_LABELS[i],family:id==='wolf'?'beast':id==='forest_archer'||id==='seraph_guardian'||id==='dragon_lord'?'fiend':'reptile',kind:'summon'})),
  {id:'horse',name:'軍馬',family:'beast',kind:'summon'}];
 const protectedIds=new Set(['m005','m006','summon_m005','summon_m006']);
-let filter='monster',selected='m001',sourceIndex=0,showing=false,localHandle=null;
+let filter='monster',selected='m001',sourceIndex=0,showing=false,localHandle=null,loadVersion=0;
 const KEY='hai-gin-real-mesh-selection-v1';
 let saved={};try{saved=JSON.parse(localStorage.getItem(KEY)||'{}')||{}}catch{saved={}}
 function candidateFor(item){
@@ -205,7 +206,7 @@ function render(){
   const name=document.createElement('b');name.textContent=(index===sourceIndex?'◉ ':'○ ')+s.name;el.appendChild(name);
   const desc=document.createElement('small');desc.textContent=s.license+' / '+s.tris+' / '+s.quality;el.appendChild(desc);
   const b=document.createElement('button');b.textContent='この候補を比較';b.onclick=()=>{
-   sourceIndex=index;showing=true;renderCandidate();listRender();};el.appendChild(b);
+   sourceIndex=index;showing=true;render();};el.appendChild(b);
   const a=document.createElement('a');a.textContent=' 配布元';a.href=s.url;a.target='_blank';a.rel='noopener noreferrer';el.appendChild(a);
   cards.appendChild(el);
  });
@@ -215,6 +216,7 @@ function render(){
  listRender();
 }
 function renderCandidate(){
+ const version=++loadVersion;
  const item=items.find(x=>x.id===selected),c=candidateFor(item)[sourceIndex];
  $('candidateTitle').textContent=c.name;
  $('candidateLink').href=c.url;$('candidateLink').textContent=c.kind==='search'?'検索結果を開く':'配布元・3Dビューアを開く';
@@ -223,7 +225,24 @@ function renderCandidate(){
  if(localHandle){localHandle.dispose();localHandle=null;}
  $('localBox').style.display='none';
  $('candidateFrame').src='about:blank';
- if(c.embed&&showing){
+ if(c.glb&&showing){
+  $('candidatePlaceholder').textContent='CC BY原GLBを読み込み中。取得できない場合は3D参照に切替。';
+  new GLTFLoader().loadAsync(c.glb).then(gltf=>{
+   if(version!==loadVersion)return;
+   const handle=prepareExternalGLTF(gltf,{id:item.id,name:c.name,targetHeight:2.5});
+   localHandle=handle;previewScene.add(handle.root);
+   $('candidateFrame').style.display='none';$('candidatePlaceholder').style.display='none';
+   $('previewCanvas').style.display='block';
+   previewCamera.position.set(3.4,2.4,5.2);
+   previewControls.target.set(0,1.3,0);previewControls.update();
+   $('status').textContent='原GLB直接読込：'+c.name+' / '+(c.author||'')+' / '+c.license+'。現行の装飾パーツとリグの接続、本編置換は未完了。';
+  }).catch(error=>{
+   if(version!==loadVersion)return;
+   $('status').textContent='GLB直接読込不可：'+error.message+'。3D参照ビューアに切替。';
+   if(c.embed){$('candidateFrame').src=SKETCH+c.embed+'/embed?autostart=0&ui_infos=0&ui_controls=1';$('candidateFrame').style.display='block';$('candidatePlaceholder').style.display='none';}
+   else $('candidatePlaceholder').textContent='配布元を開いて確認してください。';
+  });
+ }else if(c.embed&&showing){
   $('candidateFrame').src=SKETCH+c.embed+'/embed?autostart=0&ui_infos=0&ui_controls=1';
   $('candidateFrame').style.display='block';$('candidatePlaceholder').style.display='none';
  }else if(showing){
@@ -236,6 +255,7 @@ $('showSource').onclick=()=>{showing=true;renderCandidate();};
 $('backToSource').onclick=()=>{renderCandidate();};
 $('file').onchange=async event=>{
  const file=event.target.files?.[0];if(!file)return;
+ loadVersion++;
  try{
   if(localHandle){localHandle.dispose();localHandle=null;}
   const handle=await loadPersonalGLB(file,{id:selected,targetHeight:2.5});localHandle=handle;
