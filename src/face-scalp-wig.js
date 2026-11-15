@@ -358,7 +358,7 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
   // Lower only the front *scalp-colored* underlay across the upper
   // forehead, closing the triangular skin void under parted bangs.
   // Eyelids remain far below this threshold and are never overpainted.
-  const yCut=box.min.y+d.y*(zNorm>.10?.815:
+  const yCut=box.min.y+d.y*(zNorm>.10?.802:
    zNorm<-.035?.58:
    Math.abs((mid.x-center.x)/d.x)>.19?.68:.71);
   // v64: do not DISCARD a whole scalp triangle if only one vertex
