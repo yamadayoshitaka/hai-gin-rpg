@@ -25,14 +25,28 @@
       ],
       "commitSha": "df0660762cb29f16f59293ce053029eef37570ad",
       "qa": "unverified"
+    },
+    {
+      "id": "cottage_shelf_001",
+      "sourceFiles": [
+        "src/object-catalog.js"
+      ],
+      "commitSha": "41719e6bbdcae852d06ebc8ecb77d84f1f761e28",
+      "qa": "unverified"
+    },
+    {
+      "id": "cottage_stairs_001",
+      "sourceFiles": [
+        "src/object-catalog.js"
+      ],
+      "commitSha": "41719e6bbdcae852d06ebc8ecb77d84f1f761e28",
+      "qa": "unverified"
     }
   ],
   "remainingIds": [
-    "cottage_shelf_001",
     "cottage_fireplace_001",
     "cottage_barrel_001",
     "treasure_chest_001",
-    "cottage_stairs_001",
     "spiral_stairs_2f_001",
     "spiral_stairs_castle_3f_001",
     "entry_door_lv1_001",
@@ -79,5 +93,5 @@
     "timber_bridge_broken_001",
     "stone_bridge_broken_001"
   ],
-  "nextAction": "木製食卓・椅子・寝台のThree.js構文/実メッシュ検証とWebGL三方向比較。続いてcottage_shelf_001とcottage_stairs_001の荷重支持・接合構造を実改修。"
+  "nextAction": "棚・木製階段の構文/Three.js実描画とLOD検証。次に暖炉・宝箱の開口と荷重支持を実改修。"
 }
