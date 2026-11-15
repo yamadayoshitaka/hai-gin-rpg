@@ -39,7 +39,7 @@ export function renderThreeTeamPlanner({game,teamId=1,cellIndex=5,view='setup',j
   const source=byId.get(String(team.grid?.[i])),count=source?team.counts[String(source.id)]||0:0;
   const available=allowedCells.includes(i),jobs=sortieCellJobs(game,team.id,i);
   const label=source?esc(source.job):!available?'🔒':'＋';
-  return button('data-sortie-cell="'+i+'" class="sortieCell '+(!available?'locked':team.formation==='free'?'free':'formation')+'" '+(!available?'disabled':'')+
+  return button('data-sortie-cell="'+i+'" data-sortie-state="'+(!available?'locked':team.formation==='free'?'free':'formation')+'" '+(!available?'disabled':'')+
     ' aria-label="'+(Math.floor(i/4)+1)+'行'+(i%4+1)+'列 '+(!available?'陣形枠外':source?esc(source.job)+' '+count+'人':'配置可能・'+(jobs?jobs.join('・'):'自由'))+'"',
     '<span>'+label+'</span>'+(source?'<small>'+count+'人</small>':available&&jobs?'<small>'+esc(jobs.slice(0,2).join('/'))+'</small>':''),
     i===pos&&view!=='setup' );
