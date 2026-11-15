@@ -370,6 +370,12 @@ function focusCamera(){
  if(model?.userData?.beastfolkSource)
   controls.minPolarAngle=HUMAN_INSPECT_MIN_POLAR;
  const bounds=new THREE.Box3().setFromObject(model);
+ // No retired mannequin during an asynchronous humanoid GLB load:
+ // an empty Box3 must never produce NaN camera coordinates.
+ if(bounds.isEmpty()&&HUMAN_MONSTER_IDS.includes(selected)){
+  controls.target.set(0,1.12,0);camera.position.set(.75,1.8,4.5);
+  controls.update();return;
+ }
  const center=bounds.getCenter(new THREE.Vector3()),size=bounds.getSize(new THREE.Vector3());
  controls.target.set(center.x,Math.max(.7,center.y),center.z);
  const dist=Math.max(4,size.length()/(2*Math.tan(THREE.MathUtils.degToRad(camera.fov/2)))*.70);
@@ -410,7 +416,8 @@ function selectSpecies(id){
    const remembered=modelAssignments[id];
    byId('externalAsset').value=externalRegistry.entries[remembered]?remembered:
      externalRegistry.entries[id]?id:'';
-   if(externalRegistry.entries[remembered])byId('assetSource').value='licensed';
+   if(externalRegistry.entries[remembered]&&!HUMAN_MONSTER_IDS.includes(id))byId('assetSource').value='licensed';
+   else if(HUMAN_MONSTER_IDS.includes(id))byId('assetSource').value='procedural';
  }
  const m=specimen(id),detail=byId('quality').value;
  byId('vampireSexControl').style.display=id==='m034'?'block':'none';
@@ -428,7 +435,8 @@ function selectSpecies(id){
  }else if(cosplay){
    costumeHandle=createCosplayedHumanoidMonster(m,{
      detail,genderVariant:id==='m034'?byId('vampireSex').value:null,
-     profileOverride:withDemonColorTheme(cosplay,byId('demonTone').value)
+     profileOverride:withDemonColorTheme(cosplay,byId('demonTone').value),
+     withoutFallback:true
    });
    model=costumeHandle.root;
  }else model=createMonsterModel(m,{detail});
@@ -447,7 +455,7 @@ function selectSpecies(id){
  if(mode==='procedural'){
    if(costumeHandle){
      const pending=costumeHandle;
-     byId('assetStatus').textContent='人物GLB＋写実系衣装を読込中（従来モデルを一時表示）';
+     byId('assetStatus').textContent='人型人物GLB＋種族衣装を読込中（旧造形モデルは非表示）';
      pending.ready.then(result=>{
        if(ticket!==requestSerial||costumeHandle!==pending||selected!==id)return;
        if(result.source==='canonical-character-cosplay'){
@@ -455,10 +463,10 @@ function selectSpecies(id){
          byId('assetStatus').textContent='人型モンスター16種：人外肌色＋人物GLB＋種族別衣装 '+result.modelId+' / 肌色 #'+(pending.profile.skin>>>0).toString(16).padStart(6,'0');
          notice('人型の顔・体・アニメーションを既存キャラ素体へ切替済み：'+id);
        }else if(result.source!=='cancelled'){
-         byId('assetStatus').textContent='人物GLBを読込めないため旧モデルを表示：'+(result.reason||'不明');
+         byId('assetStatus').textContent='人型GLB読込失敗・旧造形モデルは停止中：'+(result.reason||'不明');
        }
      }).catch(error=>{
-       if(ticket===requestSerial)byId('assetStatus').textContent='人物GLBの読み込み失敗：'+error.message;
+       if(ticket===requestSerial)byId('assetStatus').textContent='人物GLB読込失敗・旧モデル非表示：'+error.message;
      });
    }else if(model?.userData?.beastfolkSource)
      byId('assetStatus').textContent=
