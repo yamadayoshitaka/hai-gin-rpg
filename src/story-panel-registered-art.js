@@ -46,9 +46,29 @@ export function storySheetCrop(shot,pageCellCount){
   leftPercent:-(cell%2)*100,topPercent:-Math.floor(cell/2)*100});
 }
 
-/** Version specific C01-S01 artwork URLs keep mobile browsers from showing older cached image bytes. */
+/**
+ * Source-of-truth for the public manga UI and the actual RPG.
+ * The Pages publishing step replaces the SHA placeholder in its output ONLY.
+ * The git source keeps local asset URLs for source tests and local development.
+ *
+ * Large provisional WebPs are deliberately not bundled into the 83+ MiB Pages
+ * archive. Use the EXACT Pages release commit's verified GitHub raw art instead
+ * of depending on an asynchronous service worker and falling back to old art.
+ */
+export const STORY_PAGES_COMMIT='__HAI_GIN_STORY_RELEASE_SHA__';
+export function isPublishedStoryRevision(){
+ return /^[a-f0-9]{40}$/.test(STORY_PAGES_COMMIT);
+}
 export function storyArtDisplayUrl(url){
  if(typeof url!=='string'||!url)return url;
+ if(isPublishedStoryRevision()){
+  if(url.startsWith('./assets/story/chapter1-provisional-live/'))
+   return 'https://raw.githubusercontent.com/yamadayoshitaka/hai-gin-rpg/'+
+    STORY_PAGES_COMMIT+'/'+url.slice(2);
+  // Existing stage sheets are published inside Pages: pin their cache identity.
+  if(url.startsWith('./assets/story/'))
+   return url+(url.includes('?')?'&':'?')+'release='+STORY_PAGES_COMMIT.slice(0,12);
+ }
  if(url.includes('/assets/story/chapter-drafts/c01/mobile-5x5-20261113/'))
   return url+(url.includes('?')?'&':'?')+'artrev=c01s02female20261113';
  if(!/\/assets\/story\/chapters\/c01\/(?:panels\/)?c01-s01-/.test(url))return url;

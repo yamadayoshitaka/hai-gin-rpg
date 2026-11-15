@@ -69,6 +69,8 @@ jobs:
           node qa/story-art-coverage.test.mjs
       - name: Assemble compact game website without master asset archives
         run: python scripts/prepare-pages-site.py --out pages-dist
+      - name: Require same latest provisional artwork in game, chapter review and deployed release
+        run: node qa/pages-story-live-parity.test.mjs
       # GitHub Pages can leave the deployment lock active even after the
       # original deploy-pages job times out. Release the known orphan from
       # the 2026-11-10 09:53 UTC attempt before creating a new deployment.
@@ -143,7 +145,22 @@ jobs:
           done
           echo "::error::Pages artifact not visible after upload; aborting deploy safely"
           exit 1
+      - name: Refuse to publish an older commit after main advances
+        id: latest
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          newest=$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/heads/main" --jq '.object.sha')
+          if [[ "${newest}" != "${GITHUB_SHA}" ]]; then
+            echo "publish=false" >> "${GITHUB_OUTPUT}"
+            echo "::notice::Skipping stale Pages release ${GITHUB_SHA}; newer main is ${newest}"
+          else
+            echo "publish=true" >> "${GITHUB_OUTPUT}"
+          fi
       - id: deployment
+        if: steps.latest.outputs.publish == 'true'
         uses: actions/deploy-pages@v5
         with:
           artifact_name: github-pages-${{ github.run_id }}-${{ github.run_attempt }}

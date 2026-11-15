@@ -22,7 +22,11 @@ assert.equal(Object.keys(REGISTERED_C01_S02_REVIEWED).length,0);
 assert(report.rows.every(r=>r.minNativePixels[0]===768&&r.minNativePixels[1]===320));
 assert.equal(new Set(report.rows.map(r=>r.shotKey)).size,25);
 assert.equal(new Set(report.rows.map(r=>r.individualAsset)).size,25);
-assert(report.rows.every(r=>r.gameRegistered===false));
+assert(report.rows.every(r=>r.gameRegistered===Boolean(r.provisionalGameAsset)));
+assert(report.rows.every(r=>!r.gameRegistered||r.provisionalGameAsset.startsWith('./assets/story/chapter1-provisional-live/')));
+assert(report.existingProvisionalGameRegistrations>=0);
+assert(report.rows.every(r=>r.status!=='REVIEWED_REAL_ART_READY_FOR_REGISTRATION'));
+// Provisional in-game display and formal P0 human approval are separate gates.
 const accepted=[
  ['pre','male',{protagonistGender:'male'},8],
  ['pre','female',{protagonistGender:'female'},8],

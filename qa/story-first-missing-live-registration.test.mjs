@@ -5,6 +5,7 @@ import {createHash} from 'node:crypto';
 import {fileURLToPath} from 'node:url';
 import {comicForStage} from '../src/story-chapter-comic.js';
 import {registeredStoryPanelAsset} from '../src/story-panel-registered-art.js';
+import {chapter1ProvisionalLivePanel} from '../src/story-chapter1-provisional-live.js';
 import {provisionalRegisteredStoryPanel,PROVISIONAL_STORY_SHOT_COUNT} from '../src/story-provisional-registered-art.js';
 const ROOT=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const root=path.join(ROOT,'assets/story/chapter-drafts/c01/mobile-5x5-20261113');
@@ -27,7 +28,9 @@ for(const shot of females){
  assert.equal(draft.textAndCharacterHumanQAComplete,false);
  assert.equal(draft.mustNotPromoteAsFinal,true);
  assert(draft.asset.startsWith('./assets/story/chapter-drafts/c01/mobile-5x5-20261113/'));
- assert.equal(registeredStoryPanelAsset(shot),draft.asset);
+ const live=chapter1ProvisionalLivePanel(shot);
+ assert.equal(registeredStoryPanelAsset(shot),live?.asset||draft.asset,
+  'An exact latest reversible game WebP always supersedes the older mobile draft');
  assert(!names.has(draft.sourceName),'No different live shots may borrow the same draft');
  names.add(draft.sourceName);usedPaths.add(draft.asset);
  const matched=manifest.panels.find(x=>x.path===draft.asset.slice(2));
@@ -50,5 +53,5 @@ assert.equal(firstStagePre.length,10);
 assert(firstStagePre.every(x=>registeredStoryPanelAsset(x)?.includes('assets/story/chapters/c01/panels/c01-s01-')));
 assert(males.every(x=>registeredStoryPanelAsset(x)?.includes('assets/story/chapters/c01/panels/c01-s02-')));
 const gameViewer=fs.readFileSync(path.join(ROOT,'src/story-manga-viewer.js'),'utf8');
-assert(gameViewer.includes('仮原画（人物・台本の品質承認前）'));
+assert(gameViewer.includes('仮承認・ゲーム反映中（正式品質審査前／差し戻し可能）'));
 console.log('PASS: stage1 preserved, first missing c01-s02 female PRE all 8 real SHA-checked mobile crops bound in actual manga player; NO cross-gender/outcome reuse; labels remain unapproved.');

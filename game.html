@@ -106,7 +106,9 @@ function showIntroPage(){
  img.hidden=true;notice.hidden=false;notice.textContent='現在の1コマの原画を確認しています…';
  const missing=()=>{if(ticket!==introImageRequest)return;
   img.hidden=true;notice.hidden=false;
-  notice.textContent='この性別のオープニング原画は未登録です。別の絵は使いません。';
+  notice.textContent=cut?.includes('/chapter1-provisional-live/')?
+   '最新の仮登録原画を取得できません。古い原画へ戻さず再読込してください。':
+   'この性別のオープニング原画は未登録です。別の絵は使いません。';
  };
  const load=(asset,type)=>{
   if(!asset){missing();return;}
@@ -121,7 +123,7 @@ function showIntroPage(){
    img.hidden=false;notice.hidden=true;
   };
   img.onerror=()=>{if(ticket!==introImageRequest)return;
-   if(type==='single')load(sheet,'sheet');else missing();
+   if(type==='single'&&!cut?.includes('/chapter1-provisional-live/'))load(sheet,'sheet');else missing();
   };
   img.alt='第1章イベント前 '+(shot.protagonistGender==='female'?'女性':'男性')+'の第'+(index+1)+'コマ';
   img.src=storyArtDisplayUrl(asset);
