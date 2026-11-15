@@ -1,4 +1,5 @@
 import {applyMonsterBiologicalMotion} from './monster-joint-motion.js';
+import {animateNonhumanSpeciesDetails} from './nonhuman-species-animation.js';
 import {monsterLeapPose,applyMonsterLeapMotion} from './monster-leap-kinematics.js?v=1';
 /** Per-species, per-part procedural animation for bestiary inspection.
  * Separate head, jaws, limbs, wings and tentacles keep animation readable.
@@ -100,6 +101,10 @@ export function animateMonsterModel(model,time=0){
    time:motionTime,phase:gait,action,pulse:Math.max(strike,special,leaping),
    locomotion,run:action==='run'
  });
+ // Species-specific secondary motion runs after primary anatomical pivots.
+ // No animated motion is applied after the terminal defeat pose.
+ if(action!=='defeat')animateNonhumanSpeciesDetails(model,motionTime,action,
+   Math.max(strike,special,leaping));
  // Existing jaw pivot continues its action animation; speech adds a
  // bounded jaw opening after the usual pose (no bones duplicated).
  if(leap)applyMonsterLeapMotion(p,leap,model.userData.surfaceFamily);
