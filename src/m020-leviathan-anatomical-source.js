@@ -95,11 +95,42 @@ export function buildLeviathanAnatomicalSource(THREE,{segments=56,radial=18}={})
     [[q.x-.40,q.y-.62,side*1.45],[q.x-1.03,q.y-.82,side*1.66],[q.x-.60,q.y-.28,side*q.rz]]);
  }
  const tail=new THREE.Group();tail.position.set(-5.4,0,0);body.add(tail);
+ // Caudal fin is a swept, rib-supported membrane with real camber and thickness,
+ // rather than a pair of flat triangles. Rays taper from the caudal peduncle.
  function tailLobe(name,sign){
+  const span=12,chord=8,vertices=[],indices=[];
+  for(let i=0;i<=span;i++){
+   const u=i/span,spread=sign*(.08+1.55*u),sweep=-.12-1.75*u;
+   for(let j=0;j<=chord;j++){
+    const v=j/chord,edge=Math.sin(Math.PI*v);
+    const x=sweep+(.62*(1-u))*Math.cos(Math.PI*v);
+    const y=spread+sign*.14*edge*Math.sin(Math.PI*u);
+    const z=.16*edge*Math.sin(Math.PI*u)+.055*Math.sin(v*Math.PI*7)*u;
+    vertices.push(x,y,z);
+   }
+  }
+  for(let i=0;i<span;i++)for(let j=0;j<chord;j++){
+   const a=i*(chord+1)+j,b=a+chord+1;
+   indices.push(a,b,a+1,b,b+1,a+1);
+  }
   const g=new THREE.BufferGeometry();
-  g.setAttribute('position',new THREE.Float32BufferAttribute([0,0,0,-.45,sign*.95,0,-1.75,sign*1.45,0,-1.22,sign*.28,0],3));
-  g.setIndex([0,1,3,1,2,3]);g.computeVertexNormals();
-  const m=new THREE.Mesh(g,finMat);m.name=name;tail.add(m);
+  g.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));
+  g.setIndex(indices);g.computeVertexNormals();
+  const membrane=new THREE.Mesh(g,finMat);membrane.name=name+'-cambered-membrane';tail.add(membrane);
+  const rayMaterial=bone;
+  for(let j=0;j<=chord;j+=2){
+   const path=[];
+   for(let i=0;i<=span;i++){
+    const u=i/span,v=j/chord,edge=Math.sin(Math.PI*v);
+    path.push(new THREE.Vector3(
+     -.12-1.75*u+(.62*(1-u))*Math.cos(Math.PI*v),
+     sign*(.08+1.55*u)+sign*.14*edge*Math.sin(Math.PI*u),
+     .16*edge*Math.sin(Math.PI*u)+.055*Math.sin(v*Math.PI*7)*u+.012));
+   }
+   const ray=new THREE.Mesh(new THREE.TubeGeometry(
+    new THREE.CatmullRomCurve3(path),24,.018,5,false),rayMaterial);
+   ray.name=name+'-support-ray-'+j;tail.add(ray);
+  }
  }
  tailLobe('caudal-upper',1);tailLobe('caudal-lower',-1);
  root.userData={creatureId:'m020',source:'original-anatomical-prototype',certified:false,
