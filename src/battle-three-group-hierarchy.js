@@ -10,7 +10,7 @@ export function threeGroupOverview(units,groupBySquad,initialUnits=[]){
  const initialSource=initialUnits.length?initialUnits:units.filter(u=>u.team===0&&!u.isStrategist);
  const visited=new Map();
  for(const u of initialSource){
-  if(u.team!==0)continue;
+  if(u.team!==undefined&&u.team!==0)continue; // Campaign request units omit team; all are allies.
   const group=Number((u.armyGroupId??groupBySquad[String(u.squadId)]??1));
   if(group>=1&&group<=3)output[group-1].initial++;
  }
