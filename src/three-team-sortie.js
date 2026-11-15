@@ -301,13 +301,10 @@ export function availableSortieOrders(game,teamId){
  // A healer needs a neighboring unit to issue group support; a scout needs
  // a neighboring unit to cover a building search. Moving the same jobs
  // apart changes command availability without consuming personnel.
- if(links.some(link=>(link.a==='僧侶'&&link.b!=='僧侶')||(link.b==='僧侶'&&link.a!=='僧侶')))
-  orders.push('support');
- if(links.some(link=>['忍者','シーフ'].includes(link.a)||['忍者','シーフ'].includes(link.b)))
-  orders.push('explore');
+ if(jobs.has('僧侶')||jobs.has('召喚士'))orders.push('support');
+ if(['忍者','シーフ','召喚士'].some(job=>jobs.has(job)))orders.push('explore');
  if([...jobs].some(j=>['魔法使い','忍者'].includes(j)))orders.push('destroy');
- if(links.some(link=>[link.a,link.b].some(j=>['忍者','シーフ','魔法使い'].includes(j))))
-  orders.push('weaken');
+ if(['忍者','シーフ','魔法使い'].some(job=>jobs.has(job)))orders.push('weaken');
  return orders;
 }
 export function setSortieOrder(game,teamId,order){
@@ -324,7 +321,8 @@ export function sortieDebuffTypes(game,teamId){
  return [
   ...(jobs.has('忍者')?[{job:'忍者',stat:'speed',amount:.18,name:'機動力低下'}]:[]),
   ...(jobs.has('シーフ')?[{job:'シーフ',stat:'defense',amount:.15,name:'防御力低下'}]:[]),
-  ...(jobs.has('魔法使い')?[{job:'魔法使い',stat:'attack',amount:.2,name:'攻撃力低下'}]:[])
+  ...(jobs.has('魔法使い')?[{job:'魔法使い',stat:'attack',amount:.2,name:'攻撃力低下'},{job:'魔法使い',stat:'heal_block',amount:1,name:'回復阻止'}]:[]),
+  ...(jobs.has('シーフ')||jobs.has('忍者')?[{job:jobs.has('シーフ')?'シーフ':'忍者',stat:'buff_block',amount:1,name:'強化阻止'}]:[])
  ];
 }
 /** Convert assigned inventory into at most 50 actual battle participants. */
