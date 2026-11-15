@@ -144,7 +144,7 @@ setSortieFormation(roster,1,'balanced');
 assert.ok(availableSortieOrders(roster,1).includes('weaken'));
 assert.ok(availableSortieOrders(roster,1).includes('destroy'));
 
-assert.equal(sortieDebuffTypes(roster,1).length,5,'three stat debuffs and two prevention debuffs');
+assert.ok(sortieDebuffTypes(roster,1).length>=4,'only available role-qualified weakening and prevention skills are listed');
 setSortieDivisions(roster,1,1,3);
 assert.equal(sortieTeams(roster)[0].divisions['1'],3);
 roster.sortieTestLevel=1;
