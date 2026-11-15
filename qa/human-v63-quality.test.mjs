@@ -94,19 +94,27 @@ test('v63: high skinned-garment neckline still fits an inner collar after skin w
  sewn.geometry.dispose();sewn.material.dispose();
 });
 
-test('v68: swordsman preview keeps both original skinned legs underneath partial greaves',()=>{
+test('v70: swordsman preview hides bare skin under trousers but keeps original anatomy recoverable',()=>{
  const sword=studioCoveredSkinPolicy({studioPreferSkinnedLegs:true,
   studioPreserveLegAnatomy:true,studioVisibleLegAnatomy:true,preserveBody:false});
- assert.deepEqual(sword.preserveRegions,['thigh','calf','foot']);
- assert.equal(sword.visibleLegAnatomy,true);
- assert.equal(sword.underlyingAnatomyRestorable,true);
+ assert.deepEqual(sword.preserveRegions,[],
+  'bare thighs and calves must never z-fight with skinned fabric');
+ assert.equal(sword.coveredSkinMasked,true);
+ assert.equal(sword.coveredSwordfighterSkin,true);
+ assert.equal(sword.visibleLegAnatomy,true,'the opt-in still retains the real boot shafts');
+ assert.equal(sword.underlyingAnatomyRestorable,true,'bare geometry must be reversible');
  const battle=studioCoveredSkinPolicy();
- assert.deepEqual(battle.preserveRegions,[],'battle must keep its original occlusion');
+ assert.deepEqual(battle.preserveRegions,[],'battle must keep original occlusion');
  assert.equal(battle.visibleLegAnatomy,false);
+ assert.equal(battle.coveredSwordfighterSkin,false);
  const otherStudio=studioCoveredSkinPolicy({studioPreferSkinnedLegs:true,
   studioPreserveLegAnatomy:true,studioVisibleLegAnatomy:false,preserveBody:false});
  assert.deepEqual(otherStudio.preserveRegions,[],
   'unrelated job skins must retain their previous masking policy');
+ const undressed=studioCoveredSkinPolicy({studioPreferSkinnedLegs:false,
+  studioPreserveLegAnatomy:true,preserveBody:true});
+ assert.deepEqual(undressed.preserveRegions,['thigh','calf','foot'],
+  'undressed source anatomy must stay available');
 });
 
 test('v69: actual Ranger skinned boot shafts stay on in swordsman model preview',()=>{

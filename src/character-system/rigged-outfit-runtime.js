@@ -30,16 +30,19 @@ export function studioRetainSourceBoot({jobId='',studioVisibleLegAnatomy=false,m
 }
 export function studioCoveredSkinPolicy({studioPreferSkinnedLegs=false,
  studioPreserveLegAnatomy=false,studioVisibleLegAnatomy=false,preserveBody=false}={}){
- // Preview-only opt-in: preserve actual thigh, calf and foot skinned triangles
- // beneath the swordsman's source trousers. The battle renderer is unchanged.
+ // A skinned body still exists and remains reversible, but its bare legs
+ // MUST NOT render through the fitted skinned trousers. The v68 "preserve
+ // thighs/calves/feet" choice caused patchy torn fabric in the Android v69
+ // screenshot. The flag still retains source Ranger Feet boot SHAFTS below.
  const visibleLegs=!!studioVisibleLegAnatomy&&!!studioPreserveLegAnatomy;
  const masked=!!studioPreferSkinnedLegs&&!!studioPreserveLegAnatomy&&!preserveBody;
+ const exposeBareLegs=!!studioPreserveLegAnatomy&&!masked;
  return Object.freeze({
-  preserveRegions:visibleLegs||studioPreserveLegAnatomy&&!masked?['thigh','calf','foot']:[],
-  // Torso/arms remain covered even when the shin/foot regions are preserved.
+  preserveRegions:exposeBareLegs?['thigh','calf','foot']:[],
   coveredSkinMasked:masked,
   underlyingAnatomyRestorable:!!studioPreserveLegAnatomy,
   visibleLegAnatomy:visibleLegs,
+  coveredSwordfighterSkin:visibleLegs&&masked,
   faceNeckHandsProtected:true
  });
 }
@@ -939,6 +942,7 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
       v63CoveredSkinMasked:studioSkinPolicy.coveredSkinMasked,
       v63BareAnatomyRestorable:studioSkinPolicy.underlyingAnatomyRestorable,
       studioVisibleLegAnatomy:studioSkinPolicy.visibleLegAnatomy,
+      coveredSwordfighterSkin:studioSkinPolicy.coveredSwordfighterSkin,
       armorDepthOffsets:armor?.depthOffsets||{helmet:0,chest:0},
       armorPartAxes:armor?.diagnostics.partAxes||{},
       suppressedBaseLegMeshes,retainedSkinnedLegMeshes,retainedSkinnedBootMeshes,useSourceSkinnedLegs,studioPreferSkinnedLegs,
@@ -976,6 +980,7 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
     v63CoveredSkinMasked:studioSkinPolicy.coveredSkinMasked,
     v63BareAnatomyRestorable:studioSkinPolicy.underlyingAnatomyRestorable,
       studioVisibleLegAnatomy:studioSkinPolicy.visibleLegAnatomy,
+      coveredSwordfighterSkin:studioSkinPolicy.coveredSwordfighterSkin,
     preservedUnderGarmentLegRegions:coverageHandle?.diagnostics.preservedRegions||[],
     garmentSurfaceSamples:coverageHandle?.diagnostics.garmentSurfaceSamples||0,
     compactedSkinVertices:Math.max(0,(coverageHandle?.diagnostics.sourceVertices||0)-(coverageHandle?.diagnostics.keptVertices||0)),
