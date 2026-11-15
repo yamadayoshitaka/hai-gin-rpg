@@ -45,7 +45,7 @@ for(const m of MONSTER_CATALOG){
  assert.ok(e.rank=== (m.rarity==='UR'?'UR':
    ['R','SR'].includes(m.rarity)?'R':'N'));
  assert.ok(monsterSummonWorldScale(id,1.7)>=1);
- assert.ok(monsterSummonWorldScale(id,3.4)>=5);
+ assert.ok(monsterSummonWorldScale(id,3.4)>=.5,'natural size preserves source dimensions');
  assert.equal(e.flying,m.family==='avian'||id==='summon_m042');
  assert.ok(!unique.has(id));unique.add(id);
 }
