@@ -46,6 +46,14 @@ const manifest={schema:'hai-gin/battle-lod-candidate/v1',id:'knight-pilot',
  }]))};
 assert.equal(inspectGlb(files['assets/characters/Knight.glb']).triangles,1000);
 assert.equal(verifyLodCandidate(manifest,read).status,'GEOMETRY_PASS_VISUAL_PENDING');
+const checkLostRig=(wrong,name)=>{
+ const badFiles={...files,[base+'mid.glb']:wrong};
+ const badManifest={...manifest,tiers:{...manifest.tiers,
+   mid:{...manifest.tiers.mid,sha256:hash(wrong)}}};
+ assert.throws(()=>verifyLodCandidate(badManifest,p=>badFiles[p]||read(p)),new RegExp(name));
+};
+checkLostRig(fakeGlb(400,0,1,2),'skin count changed');
+checkLostRig(fakeGlb(400,1,0,2),'animation count changed');
 assert.throws(()=>inspectGlb(Buffer.from('wrong GLB')),/Invalid GLB/);
 assert.throws(()=>verifyLodCandidate({...manifest,tiers:{
  ...manifest.tiers,mid:{...manifest.tiers.mid,triangles:200}}},read),/scene stats/);
