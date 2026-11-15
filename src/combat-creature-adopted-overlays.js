@@ -5,9 +5,9 @@
  * A small pool protects 1000v1000 scenes from per-instance GLTF costs.
  */
 import * as THREE from 'three';
-import {NONHUMAN_EXTRA_SUMMON_IDS,adoptedCreatureMesh} from './creature-mesh-adoption.js';
+import {NONHUMAN_EXTRA_SUMMON_IDS,adoptedCreatureMesh} from './creature-mesh-adoption.js?v=web-mesh-26-v1';
 import {fetchCreatureRegistry} from './creature-external-runtime.js';
-import {loadCreatureMeshSource} from './creature-real-source-catalog.js?v=wolf-actions-v3';
+import {loadCreatureMeshSource} from './creature-real-source-catalog.js?v=web-mesh-26-v1';
 const eligible=new Set(NONHUMAN_EXTRA_SUMMON_IDS);
 const MAX_REAL_SOURCE_INSTANCES=8;
 export function createAdoptedSpecialSummonRenderer(scene){
