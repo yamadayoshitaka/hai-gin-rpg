@@ -109,7 +109,9 @@ function showCatalogSelection(){
  buildingTour=null;
  structureDemo.reset();
  if(catalogPreview){scene.remove(catalogPreview);catalogPreview.traverse(o=>{if(o.geometry&&!o.userData.sharedGeometry)o.geometry.dispose();if(o.material&&o.material.userData?.effectMaterial)o.material.dispose()});catalogPreview=null}
- tree.visible=!catalogItem;floor.visible=!catalogItem;$('season').disabled=catalogItem;$('effect').disabled=catalogItem&&!destructible;
+ // The tree's fire, ice and splinter particles live in a separate scene group.
+  // Hide them with the tree, otherwise they float over a selected building.
+  tree.visible=!catalogItem;effectRoot.visible=!catalogItem;floor.visible=!catalogItem;$('season').disabled=catalogItem;$('effect').disabled=catalogItem&&!destructible;
  for(const opt of $('effect').options)opt.disabled=destructible&&opt.value==='freeze';
  if(catalogItem){
   try{catalogPreview=createCatalogObject(selected);scene.add(catalogPreview)}catch(err){$('status').textContent='生成エラー: '+err.message;console.error(err);return}
