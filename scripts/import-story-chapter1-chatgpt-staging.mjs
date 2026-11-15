@@ -26,7 +26,9 @@ const active=JSON.parse(found[1]),ledger=JSON.parse(bytes(ledgerPath));
 const shots=chapterOneReviewPages().flatMap(p=>p.shots);
 const keys=new Map(shots.map(s=>[s.key,s]));
 const mode=process.argv[2];
-if(process.argv.length!==3||!['--plan','--apply'].includes(mode))throw Error('Usage: --plan|--apply');
+const onlyShot=process.argv[3];
+if(![3,4].includes(process.argv.length)||!['--plan','--apply'].includes(mode)||
+ (onlyShot&&!keys.has(onlyShot)))throw Error('Usage: --plan|--apply [canonical-shot-key]');
 function webpSize(b){
  if(b.length<30||b.toString('ascii',0,4)!=='RIFF'||b.toString('ascii',8,12)!=='WEBP')throw Error('Not a WebP');
  const type=b.toString('ascii',12,16);
@@ -45,11 +47,12 @@ const seen=new Set(Object.values(active).map(v=>v.sha256));
 for(const file of proofs){
  try{
   const reviewPath=inbox+'/'+file,review=JSON.parse(bytes(reviewPath));
+  if(onlyShot&&review.shotKey!==onlyShot)continue;
   const isStrictP0=review.qaStatus==='PASS';
   const isOwnerProvisional=review.qaStatus==='OWNER_PROVISIONAL'&&
     review.ownerAuthorized===true&&review.humanVisualQAConfirmed===false&&
     review.finalP0Approved===false&&review.reviewedBy==='assistant-visual-inspection'&&
-    review.generationReferencesAttached===false;
+    typeof review.generationReferencesAttached==='boolean';
   if(!isStrictP0&&!isOwnerProvisional){skipped.push(file);continue;}
   const shot=keys.get(review.shotKey);
   if(!shot||!['c01-s01','c01-s02','c01-s03','c01-s04','c01-s05'].includes(shot.stageId))throw Error('Not canonical stage1-3 shot');
@@ -63,8 +66,8 @@ for(const file of proofs){
     throw Error('Verified human QA provenance missing');
   if((isStrictP0?p0Required:visualRequired).some(k=>review.quality?.[k]!==true))
     throw Error('Required visual/canonical gate not passed');
-  if(isOwnerProvisional&&review.quality?.realReferenceBytesAttachedToImageGenerator!==false)
-    throw Error('Provisional reference gap must remain explicit');
+  if(isOwnerProvisional&&review.quality?.realReferenceBytesAttachedToImageGenerator!==review.generationReferencesAttached)
+    throw Error('Provisional reference attachment provenance must remain explicit');
   if(!Array.isArray(review.referenceImagesAttached)||review.referenceImagesAttached.length>5||
      (isStrictP0&&!review.referenceImagesAttached.length))
     throw Error('Reference proof missing/invalid');
@@ -72,6 +75,12 @@ for(const file of proofs){
    if(!/^assets\/[-a-zA-Z0-9_/.]+\.webp$/.test(ref.path)||ref.path.includes('..')||
      !fs.existsSync(abs(ref.path))||hash(bytes(ref.path))!==ref.sha256)
      throw Error('Actor reference image not physically verified');
+  }
+  if(isOwnerProvisional&&review.generationReferencesAttached){
+   const actorIds=[shot.characterId,shot.secondaryId].filter(Boolean);
+   if(actorIds.some(id=>!review.referenceImagesAttached.some(r=>r.id===id))||
+      !review.referenceImagesAttached.some(r=>r.role==='style'&&r.gender===shot.gender))
+    throw Error('Attached provisional references must cover exact cast and same-gender style');
   }
   const slug=shot.key.replaceAll('|','__');
   if(file!==slug+'.review.json')throw Error('Review filename differs from canonical key');
@@ -108,4 +117,4 @@ if(mode==='--apply'&&changes.length){
 }
 console.log(JSON.stringify({mode,eligible:changes.length,skipped:skipped.length,
  invalid:failures.length,applied:mode==='--apply'?changes.length:0,
- finalApprovalsGranted:0,realReferenceBytesCheckedForStrictP0Only:true}));
+ finalApprovalsGranted:0,attachedReferenceBytesVerified:true}));
