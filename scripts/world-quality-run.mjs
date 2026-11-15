@@ -34,10 +34,12 @@ const progress=readProgress(dataPath);
 const now=()=>new Date().toISOString();
 const save=()=>fs.writeFileSync(dataPath,JSON.stringify(progress,null,2)+'\n');
 const previous=new Set(Object.keys(progress.assets));
-const pendingCapture=inventory.filter(x=>progress.assets[x.key]?.referenceSha256 &&
+const manualRefinement=!!(manual?.target&&optionalBrief);
+const pendingCapture=inventory.filter(x=>!(manualRefinement&&manual.target===x.key)&&progress.assets[x.key]?.referenceSha256 &&
  !progress.assets[x.key]?.gameScreenshot &&
  (progress.assets[x.key]?.captureAttempts||0)<3);
-const candidates=inventory.filter(x=>!progress.assets[x.key]?.referenceSha256&&
+const candidates=inventory.filter(x=>(!progress.assets[x.key]?.referenceSha256||
+ (manualRefinement&&manual.target===x.key))&&
  !progress.assets[x.key]?.providerSafetyBlocked);
 const run={id:process.env.GITHUB_RUN_ID||'manual',startedAt:now(),mode,requested:maxCount,
  requestedTarget:manual?.target||null,requestedKind:manual?.kind||'all',
@@ -135,6 +137,15 @@ for(const target of candidates.slice(0,maxCount-run.targetIds.length)){
   const temp=dir('qa-reports/world-quality/reference-raw-'+target.id+'.bin');
   const dest=dir(filename);
   fs.mkdirSync(path.dirname(dest),{recursive:true});
+  // Preserve the last AI reference before a manual refinement overwrites it.
+  if(manualRefinement&&target.key===manual.target&&fs.existsSync(dest)){
+   const oldSha=progress.assets[target.key]?.referenceSha256||hash(fs.readFileSync(dest));
+   const history=dir(directory+'history/'+target.id+'-'+oldSha.slice(0,16)+'.webp');
+   fs.mkdirSync(path.dirname(history),{recursive:true});
+   if(!fs.existsSync(history))fs.copyFileSync(dest,history);
+   if(fs.existsSync(dest+'.generation.json')&&!fs.existsSync(history+'.generation.json'))
+    fs.copyFileSync(dest+'.generation.json',history+'.generation.json');
+  }
   fs.writeFileSync(temp,bytes);
   const py='from PIL import Image\nimport sys\na=Image.open(sys.argv[1]); a.load()\nif a.width<800 or a.height<450:raise SystemExit(3)\na.convert("RGB").save(sys.argv[2],format="WEBP",quality=92,method=6)\nprint(str(a.width)+"x"+str(a.height))';
   const conv=spawnSync('python3',['-c',py,temp,dest],{encoding:'utf8',timeout:60000});
@@ -150,6 +161,7 @@ for(const target of candidates.slice(0,maxCount-run.targetIds.length)){
   progress.assets[target.key]={...(progress.assets[target.key]||{}),name:target.name,
    type:target.type,referenceFile:filename,referenceSha256:proof.referenceSha256,
    referencePromptHash:proof.promptHash,referenceCreatedAt:now(),
+   gameScreenshot:null,comparisonReport:null,roughnessProposal:1,
    review:'REFERENCE_CREATED_GAME_CAPTURE_PENDING',productionApplied:false};
   run.targetIds.push(target.key);run.generated++;
   save();
