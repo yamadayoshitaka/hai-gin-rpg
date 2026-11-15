@@ -215,7 +215,7 @@ export function repairRealCrownScalpHoles(vertices,normals,box){
  const d=box.getSize(new THREE.Vector3()),c=box.getCenter(new THREE.Vector3());
  const tol=Math.max(d.x*.00025,1e-7),byKey=new Map(),edges=new Map();
  const key=p=>[p[0],p[1],p[2]].map(v=>Math.round(v/tol)).join(':');
- const threshold=box.min.y+d.y*.79;
+ const threshold=box.min.y+d.y*.87;
  const point=(array,i)=>array.slice(i*3,i*3+3);
  for(let i=0;i+8<vertices.length;i+=9){
   const tri=[0,1,2].map(j=>point(vertices,i/3+j));
@@ -290,7 +290,7 @@ export function repairRealCrownScalpHoles(vertices,normals,box){
 function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile='natural'}={}){
  const src=geo.getAttribute('position'),idx=geo.index;
  const n=idx?idx.count:src.count,d=box.getSize(new THREE.Vector3());
- const normals=geo.getAttribute('normal'),verts=[],smoothNormals=[];
+ const normals=geo.getAttribute('normal'),verts=[],smoothNormals=[],sourceScalpVerts=[];
  const center=box.getCenter(new THREE.Vector3());
  const sample=i=>f3(src.getX(i),src.getY(i),src.getZ(i));
  for(let i=0;i+2<n;i+=3){
@@ -338,12 +338,25 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
   for(let j=1;j+1<clipped.length;j++)for(const node of
    [clipped[0],clipped[j],clipped[j+1]]){
    const v=node.p.clone(),n=node.n;
+   sourceScalpVerts.push(v.x,v.y,v.z);
    v.addScaledVector(n,d.x*.0015+wigVolumeLiftAt(v,box,volumeProfile));
    verts.push(v.x,v.y,v.z);
    smoothNormals.push(n.x,n.y,n.z);
   }
  }
- const crownRepair=repairRealCrownScalpHoles(verts,smoothNormals,box);
+ // Detect holes in the untouched donor topology BEFORE volume lift.
+ // All three studio volume presets now share exactly the same topology.
+ const originalScalpCount=verts.length/3;
+ const donorNormals=smoothNormals.slice();
+ const crownRepair=repairRealCrownScalpHoles(sourceScalpVerts,donorNormals,box);
+ for(let i=originalScalpCount;i<sourceScalpVerts.length/3;i++){
+  const p=f3(sourceScalpVerts[i*3],sourceScalpVerts[i*3+1],
+   sourceScalpVerts[i*3+2]);
+  const n=f3(donorNormals[i*3],donorNormals[i*3+1],
+   donorNormals[i*3+2]);
+  p.addScaledVector(n,d.x*.0015+wigVolumeLiftAt(p,box,volumeProfile));
+  verts.push(p.x,p.y,p.z);smoothNormals.push(n.x,n.y,n.z);
+ }
  // 52 independent tapered underlocks: rooted on actual posterior head
  // vertices, rather than a rectangular curtain hanging across the neck.
  const rearCandidates=[];
