@@ -43,7 +43,9 @@ concurrency:
 jobs:
   mobile-battle:
     runs-on: ubuntu-24.04
-    timeout-minutes: 18
+    # Software WebGL runs serially and visual evidence collection can exceed
+    # 18 minutes; do not prematurely cancel the screenshot/recording job.
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
