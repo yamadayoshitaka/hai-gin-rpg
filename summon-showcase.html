@@ -159,7 +159,7 @@
   </header>
   <nav id="summonMotionStrip" aria-label="モンスターの基本モーションを直接再生">
     <button type="button" data-pose="idle" aria-pressed="true">待機</button>
-    <button id="walk" type="button" aria-pressed="false">移動</button>
+    <button id="walk" type="button" aria-pressed="false">歩行</button><button id="runButton" type="button" aria-pressed="false">走行</button>
     <button id="attack" type="button" aria-pressed="false">攻撃</button>
     <button type="button" data-pose="special" aria-pressed="false">魔法・固有技</button>
     <button type="button" data-pose="guard" aria-pressed="false">防御</button>
@@ -380,7 +380,7 @@
         document.getElementById('metrics').textContent='GLBを読み込めません：'+error.message;
       }
     });
-    let walking=false,nextStepAt=0,routeStep=0;
+    let walking=false,running=false,nextStepAt=0,routeStep=0;
     const travelRoute=[{x:0,z:0},{x:1,z:0},{x:2,z:0},{x:2,z:1},{x:1,z:1},
       {x:0,z:1},{x:-1,z:1},{x:-2,z:1},{x:-2,z:0},{x:-1,z:0}];
     let previewObject={id:'gallery-creature',type:selected,x:0,z:0,alive:true,team:0,flying:false,mountedBy:null};
@@ -443,8 +443,9 @@
         (!femaleAvailable||femaleMode.value==='original');
       previewObject={id:'gallery-'+selected,type:selected,x:0,z:0,alive:true,team:0,
         flying:!!COMBAT_OBJECT_SPECS[selected].flying,mountedBy:null,cryStartedAt:clock.getElapsedTime()};
-      walking=false;routeStep=0;
-      document.getElementById('walk').textContent='移動';
+      walking=false;running=false;routeStep=0;
+      document.getElementById('walk').textContent='歩行';
+      document.getElementById('runButton').textContent='走行';
       document.querySelectorAll('#summonMotionStrip button').forEach(button=>
         button.setAttribute('aria-pressed',String(button.dataset.pose==='idle')));
       document.getElementById('species').textContent=COMBAT_OBJECT_SPECS[selected].name+
@@ -605,8 +606,9 @@
         document.querySelectorAll('#summonMotionStrip button').forEach(other=>
           other.setAttribute('aria-pressed',String(other===button)));
         if(button.dataset.pose==='idle'){
-          walking=false;
-          document.getElementById('walk').textContent='移動';
+          walking=false;running=false;
+          document.getElementById('walk').textContent='歩行';
+          document.getElementById('runButton').textContent='走行';
         }
       });
     });
@@ -616,7 +618,7 @@
         if(pose==='idle'){
           // Creature pose runtime only accepts finite actions. Clear its
           // envelope rather than passing an unsupported 'idle' action.
-          walking=false;previewObject.poseAction=null;
+          walking=false;running=false;previewObject.poseAction=null;
           previewObject.poseStartedAt=null;
           previewObject.attackStartedAt=-Infinity;
         }else startCreaturePose(previewObject,pose,t);
@@ -640,11 +642,20 @@
         }
       };
     });
-    document.getElementById('walk').onclick=()=>{
-      walking=!walking;routeStep=0;
-      nextStepAt=clock.getElapsedTime();
+    const updateMoveLabels=()=>{
+      document.getElementById('walk').textContent=walking&&!running?'歩行停止':'歩行';
+      document.getElementById('runButton').textContent=walking&&running?'走行停止':'走行';
+      previewObject.moving=walking;
+      previewObject.previewWalk=walking&&!running;
       femaleSummonHandle?.start(walking?'run':'idle',clock.getElapsedTime());
-      document.getElementById('walk').textContent=walking?'停止':'移動';
+    };
+    document.getElementById('walk').onclick=()=>{
+      walking=running?true:!walking;running=false;routeStep=0;
+      nextStepAt=clock.getElapsedTime();updateMoveLabels();
+    };
+    document.getElementById('runButton').onclick=()=>{
+      walking=!walking||!running;running=walking;routeStep=0;
+      nextStepAt=clock.getElapsedTime();updateMoveLabels();
     };
     let polygonInspection=false;
     document.getElementById('wireframe').onclick=()=>{
@@ -662,9 +673,11 @@
       if(walking&&t>=nextStepAt){
         routeStep=(routeStep+1)%travelRoute.length;
         Object.assign(previewObject,travelRoute[routeStep]);
-        nextStepAt=t+1/spec.speed;
+        nextStepAt=t+1/(spec.speed*(running?1.8:1));
       }
       const isFemaleReady=femaleSummonHandle?.source==='canonical-character-cosplay';
+      previewObject.moving=walking;
+      previewObject.previewWalk=walking&&!running;
       objects.sync(externalPreview||isFemaleReady?[]:[previewObject],t);
       // Camera framing derives from the real monster sculpture, including
       // Leviathan's long body and Kraken's tentacles. Fitting one source once
