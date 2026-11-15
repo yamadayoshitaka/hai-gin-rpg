@@ -212,6 +212,61 @@ export function createSculpture(spec,detail='high'){
    geo.setIndex(indices);geo.computeVertexNormals();
    return own(attach(parent,geo,shade));
  };
+ /**
+  * Axially continuous organic source surface with independently authored
+  * anatomical cross-sections (not sphere subdivision). The source geometry
+  * changes actual shoulder/rib/pelvis volumes before LOD is derived.
+  * Station order is nose (+Z) -> tail (-Z). Animated parts remain separate.
+  */
+ const axialLoft=(parent,shade,stations,{name='axial-anatomical-source',
+   rough=.78,ribbing=.012}={})=>{
+   if(!Array.isArray(stations)||stations.length<3||
+     !stations.every(p=>Number.isFinite(p.z)&&Number.isFinite(p.y)&&
+       Number.isFinite(p.rx)&&p.rx>0&&Number.isFinite(p.ry)&&p.ry>0))
+     throw Error('Axial sculpt needs at least three finite positive anatomical stations');
+   for(let i=1;i<stations.length;i++)
+     if(stations[i-1].z<=stations[i].z)
+       throw Error('Axial stations must run from head (+Z) to tail (-Z)');
+   const radial=detail==='source'?64:detail==='high'?36:
+     detail==='medium'?24:12;
+   const steps=detail==='source'?8:detail==='high'?4:
+     detail==='medium'?3:2;
+   const count=(stations.length-1)*steps+1;
+   const vertex=[],uv=[],indices=[];
+   const cubic=(a,b,c,d,t)=>.5*((2*b)+(-a+c)*t+
+     (2*a-5*b+4*c-d)*t*t+(-a+3*b-3*c+d)*t*t*t);
+   for(let i=0;i<count;i++){
+     const band=Math.min(stations.length-2,Math.floor(i/steps));
+     const t=i===count-1?1:(i-band*steps)/steps;
+     const p0=stations[Math.max(0,band-1)],p1=stations[band],
+       p2=stations[band+1],p3=stations[Math.min(stations.length-1,band+2)];
+     const interpolate=key=>cubic(p0[key],p1[key],p2[key],p3[key],t);
+     const z=interpolate('z'),y=interpolate('y'),
+       rx=Math.max(.012,interpolate('rx')),ry=Math.max(.012,interpolate('ry'));
+     for(let j=0;j<=radial;j++){
+       const a=j/radial*Math.PI*2;
+       const organic=1+(detail==='low'?0:ribbing)*
+         Math.sin(a*5+z*3.1)*Math.sin(Math.PI*i/(count-1));
+       vertex.push(Math.cos(a)*rx*organic,y+Math.sin(a)*ry*organic,z);
+       uv.push(j/radial,i/(count-1));
+     }
+   }
+   for(let i=0;i<count-1;i++)for(let j=0;j<radial;j++){
+     const a=i*(radial+1)+j,b=a+radial+1;
+     indices.push(a,b,a+1,a+1,b,b+1);
+   }
+   const geo=new THREE.BufferGeometry();
+   geo.setAttribute('position',new THREE.Float32BufferAttribute(vertex,3));
+   geo.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
+   geo.setIndex(indices);
+   geo.computeVertexNormals();
+   geo.computeBoundingSphere();
+   const mesh=own(attach(parent,geo,shade,{name,rough,metal:0}));
+   mesh.userData.axialAnatomy=true;
+   mesh.userData.anatomicalStations=stations.length;
+   mesh.userData.proceduralSource=true;
+   return mesh;
+ };
  const anatomicalLoft=(parent,shade,rings,{name='realistic-anatomical-mesh',
    kind='torso',asymmetry=0}={})=>{
    const mesh=own(attach(parent,createMonsterAnatomicalLoft(rings,
@@ -399,7 +454,7 @@ export function createSculpture(spec,detail='high'){
  };
  root.userData.detail=detail;
  return {root,pivots,group,sphere,rock,bone,spike,rootedSpike,seamHem,tube,bridge,
-   anatomicalLoft,fur,skinnedFur,bandage,fin,eyes,claws,ring,fine,colors};
+   axialLoft,anatomicalLoft,fur,skinnedFur,bandage,fin,eyes,claws,ring,fine,colors};
 }
 export function disposeMonsterSculpture(model){
  if(!model)return;
