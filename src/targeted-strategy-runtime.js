@@ -46,7 +46,8 @@ export function createTargetedStrategyUi({getPlan,getEnemyTargets,getObjects,onE
  const availableMethods=(plan)=>Object.values(STRATEGY_METHODS).filter(method=>
   (plan.allowed||[]).includes(method.mode)&&
   (plan.squads||[]).some(s=>(s.allowed||plan.allowed||[]).includes(method.mode)&&
-   (!method.jobs.length||method.jobs.some(job=>(s.jobs||[]).includes(job)))));
+   (!method.jobs.length||method.jobs.some(job=>(s.jobs||[]).includes(job)))&&
+   (!method.requiresSummon||s.hasSummon)));
  function selectedType(){
   const types=new Set([...selectedMethods].map(id=>STRATEGY_METHODS[id]?.type).filter(Boolean));
   return types.size===1?[...types][0]:types.size>1?'mixed':null;
