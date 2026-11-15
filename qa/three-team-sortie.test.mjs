@@ -65,7 +65,7 @@ const jobs=renderThreeTeamPlanner({game,teamId:2,cellIndex:9,view:'jobs'});
 assert.match(jobs,/data-sortie-job="/);assert.match(jobs,/data-sortie-view="setup"/);
 assert.ok(!jobs.includes('data-sortie-cell="'),'job chooser replaces the board, not stacked below it');
 const templates=renderThreeTeamPlanner({game,teamId:2,view:'templates'});
-assert.equal((templates.match(/data-sortie-formation="/g)||[]).length,6,'template page fits without scrolling');
+assert.equal((templates.match(/data-sortie-formation="/g)||[]).length,7,'six preset cards plus the persistent free-formation switch');
 const lateTemplates=renderThreeTeamPlanner({game,teamId:2,view:'templates',templatePage:2});
 assert.match(lateTemplates,/星鐘陣形/);
 assert.match(lateTemplates,/data-sortie-formation="constellation"/);
