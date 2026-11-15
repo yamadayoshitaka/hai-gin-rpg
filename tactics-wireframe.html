@@ -9631,6 +9631,27 @@ async function finishBattleLoading(){
   await new Promise(resolve=>requestAnimationFrame(resolve));
   refreshCommanderOrderOptions();
   const startButton=$('loadingStart'),silentButton=$('loadingSkipAudio');
+  // Story mode has already locked its initial positions on the FULL radar
+  // at world-map launch. Never show the old formation / initial-order wizard.
+  // Start real-time autonomous combat immediately after loading. Manual
+  // tactics and items now live only in the pause-and-command center.
+  if(storyRequest?.sortieTeamCount){
+   for(const id of squadIds){
+    squadStrategies.set(id,'eliminate');
+    setStartingSquadOrder(0,id,'charge'); // Default AI, not a user-selected opening order.
+   }
+   for(const id of enemySquadIds)setStartingSquadOrder(1,id,'charge');
+   followSelectedCommander();
+   battleReady=true;loading.hidden=true;
+   battleAudio.unlock().catch(()=>{}); // Autoplay may be blocked; BGM can be enabled on tap.
+   initialCommanderCinematicPending=squadIds.find(id=>hasSquadCommander(id))??null;
+   battleCeremony.startIntro({stageName:selectedStage.name,stageFeature:stageCharacter.feature});
+   battleDialogue.push({key:'start',speaker:'軍師',kind:'info',priority:5,
+    text:'戦闘開始！ 各隊の消耗・敵の接近・任務完遂を監視して報告します。'});
+   clock.getDelta();
+   log(storyRequest.territoryName+' 攻略戦を開始 · 出撃'+storyRequest.units.length+'人');
+   updateUI();animate();return;
+  }
   // The opening screen owns strategy selection. There is no in-battle
   // strategy dropdown: after launch the chosen assignments are immutable.
   const openingPlan=document.createElement('section');
