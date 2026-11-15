@@ -68,11 +68,19 @@ export function createAdoptedSpecialSummonRenderer(scene){
   const elapsed=Math.max(0,Math.min(.1,time-node.lastTime));node.lastTime=time;
   const attack=Number.isFinite(object.attackStartedAt)&&
     actionTime-object.attackStartedAt>=0&&actionTime-object.attackStartedAt<.8;
-  const action=attack?'attack':
-    object.poseAction==='defeat'?'defeat':
-    object.poseAction==='special'?'special':
-    object.poseAction==='leap'?'leap':
-    (object.moveElapsed>0||object.moving)?'run':'idle';
+  const eventAction=actionTime-(object.poseStartedAt??-100)<2?
+    object.poseAction:null;
+  const moved=object.moveElapsed>0||object.moving||
+   Math.hypot((object.x??0)-(node.lastX??object.x??0),
+    (object.z??0)-(node.lastZ??object.z??0))>.001;
+  const action=eventAction==='defeat'?'defeat':
+    eventAction==='hit'?'hit':
+    eventAction==='roar'?'roar':
+    eventAction==='special'?'special':
+    eventAction==='leap'?'leap':
+    attack?'attack':
+    moved?(object.previewWalk?'walk':'run'):'idle';
+  node.lastX=object.x;node.lastZ=object.z;
   if(action!==node.lastAction){
    node.handle.play(action);node.lastAction=action;
   }
