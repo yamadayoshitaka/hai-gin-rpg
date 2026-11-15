@@ -452,13 +452,23 @@ export function createObjectById(id,{cellSize=2.2}={}){
    roof.position.y=3.2*c;roof.rotation.y=Math.PI/4;root.add(roof);
   }
   if(id==='town_planter_001'){
-   box(3*c,.5*c,1.8*c,0,.25*c,0,stone);
+   // Hollow stone planter: bonded courses, interior soil bed and a projecting cap.
    const soil=new THREE.MeshStandardMaterial({color:0x463827,roughness:1});
-   box(2.7*c,.07*c,1.5*c,0,.54*c,0,soil);
+   box(3.02*c,.16*c,1.82*c,0,.08*c,0,stone);
+   for(const y of [.27,.46]){
+    for(const z of [-.81,.81]){
+     for(let i=0;i<6;i++)box(.49*c,.18*c,.18*c,(-1.25+i*.5+(y>.3?.12:0))*c,y*c,z*c,stone);
+    }
+    for(const x of [-1.4,1.4])for(let i=0;i<3;i++)
+     box(.2*c,.18*c,.52*c,x*c,y*c,(-.53+i*.53)*c,stone);
+   }
+   for(const z of [-.81,.81])box(3.15*c,.12*c,.24*c,0,.59*c,z*c,stone);
+   for(const x of [-1.4,1.4])box(.24*c,.12*c,1.75*c,x*c,.59*c,0,stone);
+   box(2.65*c,.11*c,1.42*c,0,.47*c,0,soil);
    const petals=[0xf1a0a7,0xffd05c,0xb68ce5,0xf5f1dc].map(color=>new THREE.MeshStandardMaterial({color,roughness:1}));
    const stem=new THREE.MeshStandardMaterial({color:0x3b793b,roughness:1});
    for(let i=0;i<22;i++){
-    const x=((i*7)%23/23-.5)*2.5*c,z=((i*11)%19/19-.5)*1.3*c;
+    const x=((i*7)%23/23-.5)*2.4*c,z=((i*11)%19/19-.5)*1.2*c;
     const stalk=new THREE.Mesh(new THREE.CylinderGeometry(.025*c,.04*c,.3*c,5),stem);
     stalk.position.set(x,.73*c,z);root.add(stalk);
     const bloom=new THREE.Mesh(new THREE.IcosahedronGeometry(.13*c,1),petals[i%4]);
@@ -466,16 +476,30 @@ export function createObjectById(id,{cellSize=2.2}={}){
    }
   }
   if(id==='town_crate_001'){
-   box(.95*c,.85*c,.95*c,0,.43*c,0,wood);
-   for(const x of [-.39,.39])box(.1*c,.88*c,1.02*c,x*c,.44*c,0,iron);
-   for(const z of [-.39,.39])box(1.02*c,.12*c,.1*c,0,.8*c,z*c,iron);
+   // Openable-looking timber box assembled from separate planks and corner posts.
+   box(.96*c,.09*c,.96*c,0,.075*c,0,wood);
+   for(const x of [-.4,.4])for(const z of [-.4,.4])box(.12*c,.83*c,.12*c,x*c,.45*c,z*c,wood);
+   for(const y of [.23,.43,.63,.83]){
+    for(const z of [-.45,.45])box(.78*c,.17*c,.075*c,0,y*c,z*c,wood);
+    for(const x of [-.45,.45])box(.075*c,.17*c,.78*c,x*c,y*c,0,wood);
+   }
+   for(const z of [-.45,.45])box(.95*c,.08*c,.12*c,0,.86*c,z*c,iron);
+   for(const x of [-.45,.45])box(.12*c,.08*c,.95*c,x*c,.86*c,0,iron);
+   for(const x of [-.3,.3])box(.12*c,.09*c,1.03*c,x*c,.055*c,0,wood);
   }
   if(id==='town_notice_001'){
-   for(const x of [-.8,.8])box(.16*c,2.5*c,.18*c,x*c,1.25*c,0,wood);
-   box(2.1*c,1.25*c,.16*c,0,1.85*c,0,wood);
+   // Posts transfer the board weight into ground; rafters carry a timber roof.
+   for(const x of [-.78,.78]){
+    box(.2*c,2.65*c,.22*c,x*c,1.325*c,0,wood);
+    box(.42*c,.16*c,.42*c,x*c,.08*c,0,stone);
+    box(.18*c,.19*c,.62*c,x*c,2.55*c,0,wood);
+   }
+   for(const y of [1.25,2.4])box(1.82*c,.16*c,.18*c,0,y*c,0,wood);
+   for(let i=0;i<7;i++)box(.245*c,1.05*c,.095*c,(i-3)*.255*c,1.83*c,0,wood);
    const paper=new THREE.MeshStandardMaterial({color:0xe2d3aa,roughness:1});
-   for(let i=0;i<3;i++)box(.48*c,.68*c,.025*c,(i-1)*.58*c,1.85*c,.11*c,paper);
-   box(2.35*c,.15*c,.55*c,0,2.58*c,0,stone);
+   for(let i=0;i<3;i++)box(.45*c,.65*c,.025*c,(i-1)*.53*c,1.82*c,.067*c,paper);
+   for(const z of [-.27,.27])box(2.12*c,.12*c,.3*c,0,2.72*c,z*c,wood);
+   box(2.2*c,.08*c,.68*c,0,2.83*c,0,wood);
   }
   if(id==='town_trash_bin_001'){
    const metalMat=new THREE.MeshStandardMaterial({color:0x55564f,metalness:.68,roughness:.42});
