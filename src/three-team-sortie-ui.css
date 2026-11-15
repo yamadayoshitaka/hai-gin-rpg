@@ -76,7 +76,11 @@
 .sortieMiniGrid i.occupied{font:700 8px/9px system-ui;text-align:center;color:#261b0c}
 .sortieGridFooter small{max-width:65%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
-/* Three-stage strategy editor: compact mobile selection and physical troop shares. */
+.sortieQuotaSummary{display:grid;gap:3px;margin:4px 0;padding:4px 6px;border:1px solid #677e8b;border-radius:6px;font-size:11px}
+.sortieQuotaSummary b{color:#f6e3b3}
+.sortieQuotaSummary small{font-size:10px;line-height:1.35;color:#d9e9ed;white-space:normal}
+.sortieTemplateChoices button small{white-space:normal;line-height:1.3}
+ /* Three-stage strategy editor: compact mobile selection and physical troop shares. */
 .sortieStep{font-size:11px;color:#ffdda1}
 .sortieStrategyGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}
 .sortieStrategyGrid button{font-size:11px!important;padding:6px 3px!important;min-height:36px!important}

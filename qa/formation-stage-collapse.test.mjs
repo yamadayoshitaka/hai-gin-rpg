@@ -36,11 +36,17 @@ const extended=createNewGame('五隊陣形');
 extended.campaign.squads.push(
  {id:3,job:'魔法使い',rarity:'N',count:8,commanderId:'player'},
  {id:4,job:'忍者',rarity:'N',count:8,commanderId:'player'},
- {id:5,job:'シーフ',rarity:'N',count:8,commanderId:'player'});
+ {id:5,job:'シーフ',rarity:'N',count:8,commanderId:'player'},
+ {id:6,job:'盾騎士',rarity:'N',count:8,commanderId:'player'},
+ {id:7,job:'格闘家',rarity:'N',count:8,commanderId:'player'});
 extended.sortieTestLevel=7;
 ensureSortiePlan(extended);
 assert.equal(sortieSquadCap(extended),5);
-assert.equal(sortieTeams(extended)[0].slots.filter(Boolean).length,5);
+assert.equal(sortieTeams(extended)[0].slots.filter(Boolean).length,4,
+ 'the default four-slot preset never auto-expands at higher levels');
+setSortieFormation(extended,1,'spear');
+assert.equal(sortieTeams(extended)[0].slots.filter(Boolean).length,5,
+ 'the fixed Lv7 spear preset has exactly five job-role cells');
 assert.equal(sortieAllowedCells(extended,1).length,5,
  'at level 7 a filled four-role preset opens its fifth deployment cell');
 assert.equal(sortieFormationStatus(extended,1).valid,true,
@@ -70,6 +76,9 @@ assert.equal(deployment.formationIntegrity['3'].active,false);
 
 const large=createNewGame('ステージ別出撃数');
 large.campaign.squads[0].count=100;
+large.campaign.squads.push(
+ {id:3,job:'魔法使い',rarity:'N',count:10,commanderId:'player'},
+ {id:4,job:'忍者',rarity:'N',count:10,commanderId:'player'});
 ensureSortiePlan(large);
 assert.equal(allocateThreeTeamSortie(large,stage2).reduce((n,x)=>n+x.count,0),40);
 assert.equal(allocateThreeTeamSortie(large,stage3).reduce((n,x)=>n+x.count,0),40,
@@ -79,7 +88,7 @@ const req=makeCoreBattleRequest(large,stage2.id,'stage-limit');
 assert.equal(req.units.length,40,'stage cap must be applied before battle request generation');
 assert.equal(req.formationIntegrity['1'].active,true);
 const fragile=makeCoreBattleRequest(large,stage2.id,'understaffed');
-assert.equal(fragile.formationIntegrity['1'].requiredSources.length,2);
+assert.equal(fragile.formationIntegrity['1'].requiredSources.length,4);
 const spec=fragile.formationIntegrity['1'];
 const live=fragile.units.map(u=>({...u,team:0,alive:true,defeated:false,hp:1}));
 assert.equal(formationStillIntact({...spec,groupId:'1'},live),true);

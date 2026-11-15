@@ -28,8 +28,11 @@ const LEADS=Object.freeze({
  dragon:['front','ranged','scout','support'],
  constellation:['front','support','ranged','scout']
 });
+// Every unlocked reinforcement position is also a fixed role of its preset.
+const REINFORCEMENT_ROLES=Object.freeze(['front','guard','ranged','support','scout']);
 export const FORMATION_ROLES=Object.freeze(Object.fromEntries(Object.entries(LEADS)
- .map(([id,roles])=>[id,Object.freeze([...roles,...Array(12).fill('any')])])));
+ .map(([id,roles],formationIndex)=>[id,Object.freeze([...roles,
+  ...Array.from({length:12},(_,i)=>REINFORCEMENT_ROLES[(formationIndex+i)%REINFORCEMENT_ROLES.length])])])));
 export function formationStatus(team,ownedSquads,positions,capacity=16){
  if(team?.formation===FREE_FORMATION)return {id:'free',valid:false,reason:'自由陣形：全16マス配置可能・バフなし'};
  const roles=FORMATION_ROLES[team?.formation],cells=positions?.[team?.formation],ids=(team?.slots||[]).filter(Boolean);
