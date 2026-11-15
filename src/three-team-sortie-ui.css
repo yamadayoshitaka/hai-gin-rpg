@@ -58,3 +58,15 @@
 @media(max-width:450px){#panel.formation-command-ui{padding:6px 8px}.sortiePlanner{gap:5px}.sortieTeams button{min-height:45px!important;padding:4px!important}.sortieTeams strong{font-size:11px}.sortieFormationGrid{grid-template-rows:repeat(4,clamp(39px,7dvh,48px))}.sortieCaptainButtons{grid-template-columns:repeat(2,minmax(0,1fr))}.sortieJobChoices{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-height:620px){.sortieCaptains>.sortieCaptainButtons{display:none}.sortieCaptains>[data-sortie-view="captains"]{display:block;font-size:11px!important;padding:6px!important;min-height:29px!important}}
 @media(max-height:680px){#panel.formation-command-ui{max-height:98dvh;padding:4px 7px;gap:2px}.sortiePlanner{gap:3px}.sortieFormationGrid{grid-template-rows:repeat(4,34px);gap:3px}.sortieTeams button{min-height:36px!important;padding:3px!important}.sortieTeams strong{font-size:11px}.sortieTeams small{font-size:9px;margin-top:1px}.sortieBar button{min-height:29px!important;padding:4px!important}.sortieCaptainButtons button{min-height:27px!important;padding:3px!important}}
+
+/* Level99 progressive formations and selected squad subdivisions. */
+.sortieTemplateChoices button small{font-size:10px;color:#d8e1ec}
+.sortieTemplateChoices button:disabled{opacity:.45;filter:grayscale(.9)}
+.sortieTemplateChoices button{padding:6px 3px!important;gap:3px}
+.sortieMiniGrid{grid-template-columns:repeat(4,7px);grid-template-rows:repeat(4,7px);gap:2px}
+.sortieDivisions{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px}
+.sortieDivisions button{padding:9px 5px!important;min-height:65px!important}
+.sortieDivisions strong{display:block;font-size:13px;color:#ffe0a0}
+.sortieDivisions small{display:block;font-size:10px;color:#d1e2e7}
+.sortieGridFooter button{padding:5px 9px!important}
+@media(max-width:450px){.sortieGridFooter button{padding:4px!important;font-size:10px!important}.sortieTemplateChoices button{min-height:87px!important}.sortieDivisions{grid-template-columns:repeat(2,minmax(0,1fr))}}
