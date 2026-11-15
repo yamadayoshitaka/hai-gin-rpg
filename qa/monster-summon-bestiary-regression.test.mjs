@@ -1,4 +1,17 @@
 import assert from 'node:assert/strict';
+// Three.js FileLoader dispatches browser ProgressEvent when GLB fetches complete.
+// Node 22 does not expose it; provide only the platform event, not fake GLB data.
+if(typeof globalThis.ProgressEvent==='undefined'){
+  globalThis.ProgressEvent=class ProgressEvent extends Event{
+    constructor(type,options={}){
+      super(type);
+      this.lengthComputable=Boolean(options.lengthComputable);
+      this.loaded=Number(options.loaded||0);
+      this.total=Number(options.total||0);
+    }
+  };
+}
+
 import {readFileSync} from 'node:fs';
 import {MONSTER_CATALOG,MONSTER_BY_ID} from '../src/monster-catalog.js';
 import {COMBAT_OBJECT_SPECS,COMBAT_JOB_SPECS,availableCombatSkills,COMBAT_RULES}
