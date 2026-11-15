@@ -9,8 +9,8 @@ export const TACTICAL_STRATEGIES=Object.freeze({
  objective:Object.freeze({name:'目的遂行',effect:'ステージ固有の勝利目標を優先。到達・防衛・拠点制圧など戦場により異なる。'})
 });
 export const TACTICAL_ORDERS=Object.freeze({
- charge:Object.freeze({name:'突撃',effect:'敵部隊を1つ以上選択。分隊がある場合は複数目標へ同時突撃。移動速度+25%。'}),
- defend:Object.freeze({name:'守備',effect:'地図で防衛地点を指定し、複数分隊へ別々の防衛地点を割当て。被ダメージ軽減。'}),
+ charge:Object.freeze({name:'突撃',effect:'敵部隊を1つ以上選択。分隊がある場合は複数目標へ同時突撃。移動速度+25%（大軍戦+30%）。'}),
+ defend:Object.freeze({name:'守備',effect:'地図で防衛地点を指定し、複数分隊へ別々の防衛地点を割当て。被ダメージ軽減（物理9〜24%・属性12〜32%）。'}),
  hold:Object.freeze({name:'待機',effect:'マップ上の指定地点で待機。追加の数値強化なし。'}),
  retreat:Object.freeze({name:'退却',effect:'マップ上の退却先へ後退。追加の数値強化なし。'}),
  support:Object.freeze({name:'支援',effect:'地図で支援先を指定し、僧侶などの分隊が救護。'}),
