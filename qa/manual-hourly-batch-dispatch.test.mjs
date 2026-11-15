@@ -53,3 +53,22 @@ test('all four manual QA workflows receive origin Issue id without changing inst
  }
  assert.throws(()=>buildWorkflowArgs(parseRequest(issue('human'),'yamadayoshitaka'),0),/Issue/);
 });
+
+test('all four QA workflows report back to the authenticated owner Issue without self-merging',()=>{
+  for(const [name,category] of [
+    ['human-v65-quality.yml','human'],
+    ['monster-anatomy-qa.yml','monster'],
+    ['world-quality-photoreal.yml','world'],
+    ['story-cinematic-qa.yml','anime']
+  ]){
+    const yaml=fs.readFileSync('.github/workflows/'+name,'utf8');
+    assert(yaml.includes('batch_issue:'));
+    assert(yaml.includes('issues: write'));
+    assert(yaml.includes('BATCH_CATEGORY: '+category));
+    assert(yaml.includes('run: node scripts/batch-qa-report.mjs'));
+    assert(yaml.includes('if: always()'));
+  }
+  const dispatcher=fs.readFileSync('.github/workflows/hourly-batch-manual.yml','utf8');
+  assert(dispatcher.includes('qa/batch-qa-report.test.mjs'));
+  assert(dispatcher.includes('node --check scripts/batch-qa-report.mjs'));
+});
