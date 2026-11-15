@@ -35,7 +35,7 @@ for(const plan of COMPACT_TWENTY_CHAPTER_PLAN)for(const id of plan.stageIds)for(
 }
 if(stats.total!==1760)throw Error('20 chapters x two sexes must be 1760 conservative slots');
 const shared=[
- {id:'shared-defeat-1',kind:'defeat',status:'PENDING_ORIGINAL_GENDER_NEUTRAL_ART'},
+ {id:'shared-defeat-1',kind:'defeat',status:'REAL_ORIGINAL_WEBP_REGISTERED_PENDING_P0',asset:'./assets/story/shared/shared-defeat-01.webp'},
  {id:'shared-defeat-2',kind:'defeat',status:'PENDING_ORIGINAL_GENDER_NEUTRAL_ART'},
  {id:'shared-gameover-1',kind:'gameover',status:'PENDING_NO_CROSS_OUTCOME_REUSE'},
  {id:'shared-gameover-2',kind:'gameover',status:'PENDING_NO_CROSS_OUTCOME_REUSE'}
