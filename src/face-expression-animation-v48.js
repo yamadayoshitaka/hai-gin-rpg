@@ -182,6 +182,24 @@ function buildMouth(face,parts,headSize){
  return {upper,lower,cavity,restU:upper.position.y,restL:lower.position.y,
   height:headSize.y,width:Math.max(.0001,b.max.x-b.min.x)};
 }
+/** Smooth low-frequency facial muscle fields: real cheek, nasal ala,
+ * and glabella motion coupled to existing 22 expressions. No etched lines. */
+export function v65ExpressionMuscleDelta({ax,ny,front,expression={}}={}){
+ const fall=(x,c,w)=>Math.exp(-.5*Math.pow((x-c)/w,2));
+ const smile=Math.max(0,Number(expression.smile)||0);
+ const anger=Math.max(0,-(Number(expression.brow)||0));
+ const opening=Math.max(0,Number(expression.open)||0);
+ const squint=Math.max(0,Number(expression.squint)||0);
+ const cheek=fall(ax,.32,.12)*fall(ny,.57,.075)*front;
+ const nasalWing=fall(ax,.077,.039)*fall(ny,.557,.038)*front;
+ const glabella=fall(ax,.085,.066)*fall(ny,.740,.047)*front;
+ const corner=fall(ax,.23,.075)*fall(ny,.502,.047)*front;
+ return {dy:.0034*smile*cheek+.0015*squint*cheek+
+   .0020*anger*nasalWing-.0012*opening*corner,
+  dz:.0033*smile*cheek+.0018*opening*nasalWing+
+   .0011*anger*glabella};
+}
+
 export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=false}={}){
  const face=model?.face,parts=model?.parts;
  if(!face?.geometry||!parts?.getObjectByName)throw Error('Real anatomical face model required');
@@ -216,12 +234,13 @@ export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=fals
    const brow=fall(ax,.31,.14)*fall(ny,.745,.057)*front;
    const jaw=fall(ax,.12,.23)*fall(ny,.28,.095)*front;
    const inner=fall(ax,.16,.10)*fall(ny,.745,.05)*front;
+   const muscle=v65ExpressionMuscleDelta({ax,ny,front,expression:e});
    facialAttr.array[k]=x;
    facialAttr.array[k+1]=y+yd*(.018*e.smile*lipCorner+
     .012*e.cheek*cheek+.008*e.brow*brow+
-    .013*e.tilt*inner-.020*e.open*jaw);
+    .013*e.tilt*inner-.020*e.open*jaw+muscle.dy);
    facialAttr.array[k+2]=z+depth*(.009*e.cheek*cheek+
-    .008*Math.max(0,e.smile)*lipCorner);
+    .008*Math.max(0,e.smile)*lipCorner+muscle.dz);
   }
   facialAttr.needsUpdate=true;
   face.geometry.computeVertexNormals();face.geometry.computeBoundingSphere();
@@ -313,6 +332,7 @@ export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=fals
    expression:state.expression,
    blink:Number(blink.toFixed(3)),mouthOpen:Number(mouthOpen.toFixed(3)),
    blinkEyes:sides.length,mouthIs3D:!!mouth,sourceMeshUnchanged:true,
+   v65NasalCheekMuscleCoupling:true,
    elapsed:Number(elapsed.toFixed(3))})
  };
 }

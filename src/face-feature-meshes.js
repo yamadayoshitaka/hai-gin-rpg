@@ -200,6 +200,28 @@ export function v63IrisOpticalTones(r,angle,{female=true}={}){
  return [value*(1+warm),value*(.979+.15*warm),value*(.944-.11*warm)];
 }
 
+/** v65: additional iris crypts and fiber microstructure on curved optics,
+ * without floating highlights, new discs, or per-frame GPU allocations. */
+export function v65IrisOpticalTones(r,angle,{female=true}={}){
+ const base=v63IrisOpticalTones(r,angle,{female});
+ const rr=THREE.MathUtils.clamp(r,0,1);
+ const annulus=Math.exp(-Math.pow((rr-.69)/.26,2));
+ const radial=1+.026*annulus*
+  Math.sin(angle*89+rr*28)*Math.cos(angle*31-rr*62);
+ const crypt=1-.042*Math.exp(-Math.pow((rr-.36)/.095,2))*
+  Math.pow(Math.sin(angle*22+rr*8),2);
+ const pupilRim=1-.072*(1-THREE.MathUtils.smoothstep(rr,.06,.20));
+ const final=THREE.MathUtils.clamp(radial*crypt*pupilRim,.82,1.09);
+ return base.map((v,i)=>THREE.MathUtils.clamp(v*final*(i===2?.995:1),.30,1.25));
+}
+export function v65ScleralShading(u,v){
+ const top=Math.pow(THREE.MathUtils.smoothstep(v,.67,1),2);
+ const corners=Math.pow(Math.abs(u-.5)*2,5);
+ const lower=Math.pow(1-THREE.MathUtils.smoothstep(v,0,.25),2);
+ const shade=THREE.MathUtils.clamp(1-.19*top-.046*corners-.022*lower,.67,1);
+ return [shade,shade*.987,shade*.974];
+}
+
 export function updateRealFacePigment(face,controls={},mode='color',gender='female'){
  if(!face?.isMesh)throw Error('Sculpted head required for cosmetics');
  const settings=gender==='male'?normalizeMaleFaceControls(controls):
@@ -476,12 +498,12 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
  });
  const eyeMat=new THREE.MeshPhysicalMaterial({
   // Slightly warm white, natural wet sclera sheen rather than a bright disk.
-  color:0xe6e3df,roughness:.30,metalness:0,
-  clearcoat:.29,clearcoatRoughness:.15
+  color:0xe6e3df,roughness:.27,metalness:0,
+  clearcoat:.35,clearcoatRoughness:.12
  });
  const irisMat=new THREE.MeshPhysicalMaterial({
-  color:0x747a83,roughness:.27,metalness:0,
-  clearcoat:.34,clearcoatRoughness:.16
+  color:0x747a83,roughness:.24,metalness:0,
+  clearcoat:.39,clearcoatRoughness:.13
  });
  const pupilMat=new THREE.MeshPhysicalMaterial({
   color:0x161719,roughness:.15,metalness:0,
@@ -661,15 +683,13 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   const whiteShading=[];
   for(let j=0;j<=18;j++)for(let i=0;i<=48;i++){
    const u=i/48,v=j/18;
-   const top=Math.pow(THREE.MathUtils.smoothstep(v,.67,1),2);
-   const corners=Math.pow(Math.abs(u-.5)*2,5);
-   const shade=Math.max(.68,1-.18*top-.045*corners);
-   whiteShading.push(shade,shade*.985,shade*.973);
+   whiteShading.push(...v65ScleralShading(u,v));
   }
   eyePatch.geometry.setAttribute('color',
    new THREE.Float32BufferAttribute(whiteShading,3));
   eyeMat.vertexColors=true;eyeMat.needsUpdate=true;
   eyePatch.userData.scleralLidOcclusion=true;
+   eyePatch.userData.v65MoistScleraPBR=true;
   root.add(eyePatch);
   // Both pupils and colored contacts are sections of the same real skin-
   // fitting eye opening. Their radius and colors remain slider-controlled.
@@ -711,14 +731,15 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   const fiberColors=[];
   for(let j=0;j<=20;j++)for(let i=0;i<=64;i++){
    const r=j/20,angle=i/64*Math.PI*2;
-   fiberColors.push(...v63IrisOpticalTones(r,angle,{female}));
+   fiberColors.push(...v65IrisOpticalTones(r,angle,{female}));
   }
   iris.geometry.setAttribute('color',
    new THREE.Float32BufferAttribute(fiberColors,3));
   irisMat.vertexColors=true;
   iris.userData.circularProjected=true;
   iris.userData.radialFibers=true;
-  iris.userData.opticalDetailVersion='v63-iris-optics-both-sexes';
+  iris.userData.opticalDetailVersion='v65-radial-crypts-limbal-moisture';
+   iris.userData.v65MultiscaleIrisFibers=true;
   iris.userData.v63RadialCrypts=true;
   iris.userData.v63DualGlints=true;
   iris.userData.limbalDarkening=female?.43:.37;
@@ -1028,6 +1049,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   lashThicknessFactor:settings.lashThickness,lashCurlFactor:settings.lashCurl,
   noStandaloneEyeSphere:true,noUnderEyeBags:true,
   irisNotSquashedAtLids:true,
+  v65CurvedIrisOpticalDetail:true,v65NoExtraEyeDrawCalls:true,
   irisGeometry:'true-round-circular-disk-fitted-inside-almond-opening',
   eyeBulgeStartsAtEyeliner:true,eyeBulgeFraction:anteriorGlobeRatio,
   anteriorEyeGlobeReconstructed:true,

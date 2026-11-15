@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import {createFastFaceSurfaceSampler} from './face-feature-meshes.js';
 import {getWigStyle,DEFAULT_WIG_STYLE_ID,WIG_BASE_VOLUME_PROFILES,WIG_SILHOUETTE_PROFILES} from './face-wig-styles.js?v=44';
-import {makeStyleSpecificHair} from './face-wig-ornaments-v49.js?v=64';
+import {makeStyleSpecificHair} from './face-wig-ornaments-v49.js?v=66';
 import {catalogHairGroom,groomGuideOffset} from './face-hair-groom-v50.js?v=50';
 
 /**
@@ -197,8 +197,12 @@ export function v63WigScalpTone(x,y,z,box){
  const u=(x-c.x)/Math.max(d.x,.001),v=(y-box.min.y)/Math.max(d.y,.001);
  const w=(z-c.z)/Math.max(d.z,.001);
  const growth=.89+.07*THREE.MathUtils.smoothstep(v,.52,.96);
- const fibers=.029*Math.sin(u*91+w*39+v*16)*Math.sin(u*53-w*24);
- return THREE.MathUtils.clamp(growth+fibers,.83,1.04);
+ // Hair-root melanin should not form near-black pixel clusters at the crown.
+ // Use two low-amplitude, spatially coherent frequencies instead of
+ // multiplying high-frequency waves into isolated dark dots.
+ const flow=.010*Math.sin(u*43+w*22+v*12)+
+  .007*Math.sin(u*17-w*13+v*29);
+ return THREE.MathUtils.clamp(growth+flow,.87,1.03);
 }
 export function v63WigLockTone(t,seed,layer=0){
  const u=THREE.MathUtils.clamp(t,0,1);
@@ -208,10 +212,136 @@ export function v63WigLockTone(t,seed,layer=0){
  return THREE.MathUtils.clamp(growth+strands-layer*.022,.80,1.09);
 }
 
+/** v65 crown repair: identify and triangulate ONLY compact closed
+ * boundaries in actual scalp triangles. Never cover the full head with a
+ * fake wig hemisphere: intact anatomy remains unchanged. */
+export function repairRealCrownScalpHoles(vertices,normals,box){
+ const d=box.getSize(new THREE.Vector3()),c=box.getCenter(new THREE.Vector3());
+ const tol=Math.max(d.x*.00025,1e-7),byKey=new Map(),edges=new Map();
+ const key=p=>[p[0],p[1],p[2]].map(v=>Math.round(v/tol)).join(':');
+ const threshold=box.min.y+d.y*.87;
+ const point=(array,i)=>array.slice(i*3,i*3+3);
+ for(let i=0;i+8<vertices.length;i+=9){
+  const tri=[0,1,2].map(j=>point(vertices,i/3+j));
+  for(let j=0;j<3;j++){
+   const p=tri[j],q=tri[(j+1)%3];
+   if(Math.min(p[1],q[1])<threshold)continue;
+   const a=key(p),b=key(q);if(a===b)continue;
+   if(!byKey.has(a))byKey.set(a,p);if(!byKey.has(b))byKey.set(b,q);
+   const k=a<b?a+'|'+b:b+'|'+a;
+   const data=edges.get(k)||{a,b,count:0};data.count++;edges.set(k,data);
+  }
+ }
+ const graph=new Map();
+ for(const {a,b,count} of edges.values()){
+  if(count!==1)continue;
+  if(!graph.has(a))graph.set(a,new Set());
+  if(!graph.has(b))graph.set(b,new Set());
+  graph.get(a).add(b);graph.get(b).add(a);
+ }
+ let repairs=0,addedTriangles=0;
+ const seen=new Set();
+ for(const start of graph.keys()){
+  if(seen.has(start))continue;
+  const group=new Set(),pending=[start];
+  while(pending.length){
+   const k=pending.pop();if(group.has(k))continue;
+   group.add(k);
+   for(const n of graph.get(k)||[])if(!group.has(n))pending.push(n);
+  }
+  for(const v of group)seen.add(v);
+  if(group.size<3||group.size>28||
+   [...group].some(v=>graph.get(v)?.size!==2))continue;
+  const ordered=[start],first=[...graph.get(start)][0];
+  let prev=start,current=first;
+  for(let i=0;i<group.size;i++){
+   if(current===start)break;
+   ordered.push(current);
+   const next=[...graph.get(current)].find(v=>v!==prev);
+   prev=current;current=next;
+   if(!current)break;
+  }
+  if(current!==start||ordered.length!==group.size)continue;
+  const positions=ordered.map(k=>byKey.get(k));
+  const xs=positions.map(p=>p[0]),zs=positions.map(p=>p[2]);
+  const sizeX=Math.max(...xs)-Math.min(...xs);
+  const sizeZ=Math.max(...zs)-Math.min(...zs);
+  if(sizeX>d.x*.22||sizeZ>d.z*.22||
+   sizeX+sizeZ<d.x*.003)continue;
+  const center=positions.reduce((v,p)=>{
+   v[0]+=p[0]/positions.length;v[1]+=p[1]/positions.length;
+   v[2]+=p[2]/positions.length;return v;
+  },[0,0,0]);
+  if(Math.abs(center[0]-c.x)>d.x*.23||
+   Math.abs(center[2]-c.z)>d.z*.28)continue;
+  const normal=new THREE.Vector3(
+   (center[0]-c.x)/Math.max(.0001,d.x*.5),
+   1,(center[2]-c.z)/Math.max(.0001,d.z*.5)).normalize();
+  const capCenter=[center[0],center[1]+d.y*.00055,center[2]];
+  for(let j=0;j<positions.length;j++){
+   const a=positions[j],b=positions[(j+1)%positions.length];
+   for(const p of [capCenter,a,b]){
+    vertices.push(...p);normals.push(normal.x,normal.y,normal.z);
+   }
+   addedTriangles++;
+  }
+  repairs++;
+ }
+ return {repairCount:repairs,triangles:addedTriangles,
+  scopedToRealScalp:true,noFullWigCap:true};
+}
+
+/** v66: the donor head has intact top triangles even when the clipped
+ * colored cap loses an isolated group of faces. Place a SECOND, slightly
+ * deeper layer ONLY across the anatomical upper crown. It uses the EXACT
+ * donor triangles and normals, so no flat disk or helmet-shaped fake scalp
+ * can appear above the existing hairstyle. It shares the cap draw mesh. */
+export function uniqueHairFibreStations(segments=11){
+ const last=Math.max(1,Math.floor(segments));
+ return [...new Set([0,1,2,4,6,8,10,last].filter(x=>x<=last))]
+  .sort((a,b)=>a-b);
+}
+
+export function appendRealCrownUnderlay(geo,box,vertices,normals,volumeProfile='natural'){
+ const attr=geo?.getAttribute?.('position'),normal=geo?.getAttribute?.('normal');
+ if(!attr)throw Error('True 3D source head required');
+ const idx=geo.getIndex?.(),n=idx?idx.count:attr.count;
+ const d=box.getSize(new THREE.Vector3()),c=box.getCenter(new THREE.Vector3());
+ const minHeight=box.min.y+d.y*.82;
+ let triangles=0;
+ for(let t=0;t+2<n;t+=3){
+  const ids=[0,1,2].map(k=>idx?idx.getX(t+k):t+k);
+  const points=ids.map(i=>f3(attr.getX(i),attr.getY(i),attr.getZ(i)));
+  const mid=points[0].clone().add(points[1]).add(points[2]).multiplyScalar(1/3);
+  if(mid.y<minHeight||
+   Math.abs(mid.x-c.x)>d.x*.27||
+   Math.abs(mid.z-c.z)>d.z*.25)continue;
+  // Never extend this cover over the forehead or brows. Intact donor
+  // triangles entirely above the upper hairline are the only source.
+  if(points.some(p=>p.y<box.min.y+d.y*.74))continue;
+  for(let k=0;k<3;k++){
+   const raw=points[k],v=raw.clone();
+   const fallback=raw.clone().sub(c).normalize();
+   const dir=normal?f3(normal.getX(ids[k]),normal.getY(ids[k]),
+    normal.getZ(ids[k])):fallback;
+   if(dir.dot(fallback)<0)dir.negate();
+   dir.normalize();
+   // Keep below the primary shell by one contact clearance. If the
+   // shell has a gap this shows hair, otherwise the primary wins z-test.
+   v.addScaledVector(dir,d.x*.0009+
+    wigVolumeLiftAt(raw,box,volumeProfile)*.88);
+   vertices.push(v.x,v.y,v.z);
+   normals.push(dir.x,dir.y,dir.z);
+  }
+  triangles++;
+ }
+ return {triangles,source:'real-source-head',sameDrawMesh:true};
+}
+
 function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile='natural'}={}){
  const src=geo.getAttribute('position'),idx=geo.index;
  const n=idx?idx.count:src.count,d=box.getSize(new THREE.Vector3());
- const normals=geo.getAttribute('normal'),verts=[],smoothNormals=[];
+ const normals=geo.getAttribute('normal'),verts=[],smoothNormals=[],sourceScalpVerts=[];
  const center=box.getCenter(new THREE.Vector3());
  const sample=i=>f3(src.getX(i),src.getY(i),src.getZ(i));
  for(let i=0;i+2<n;i+=3){
@@ -259,11 +389,27 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
   for(let j=1;j+1<clipped.length;j++)for(const node of
    [clipped[0],clipped[j],clipped[j+1]]){
    const v=node.p.clone(),n=node.n;
+   sourceScalpVerts.push(v.x,v.y,v.z);
    v.addScaledVector(n,d.x*.0015+wigVolumeLiftAt(v,box,volumeProfile));
    verts.push(v.x,v.y,v.z);
    smoothNormals.push(n.x,n.y,n.z);
   }
  }
+ // Detect holes in the untouched donor topology BEFORE volume lift.
+ // All three studio volume presets now share exactly the same topology.
+ const originalScalpCount=verts.length/3;
+ const donorNormals=smoothNormals.slice();
+ const crownRepair=repairRealCrownScalpHoles(sourceScalpVerts,donorNormals,box);
+ for(let i=originalScalpCount;i<sourceScalpVerts.length/3;i++){
+  const p=f3(sourceScalpVerts[i*3],sourceScalpVerts[i*3+1],
+   sourceScalpVerts[i*3+2]);
+  const n=f3(donorNormals[i*3],donorNormals[i*3+1],
+   donorNormals[i*3+2]);
+  p.addScaledVector(n,d.x*.0015+wigVolumeLiftAt(p,box,volumeProfile));
+  verts.push(p.x,p.y,p.z);smoothNormals.push(n.x,n.y,n.z);
+ }
+ const crownUnderlay=appendRealCrownUnderlay(
+  geo,box,verts,smoothNormals,volumeProfile);
  // 52 independent tapered underlocks: rooted on actual posterior head
  // vertices, rather than a rectangular curtain hanging across the neck.
  const rearCandidates=[];
@@ -321,7 +467,8 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
  }
  const material=new THREE.MeshPhysicalMaterial({
   color:new THREE.Color(color),vertexColors:true,
-  roughness:.73,metalness:0,clearcoat:.045,clearcoatRoughness:.59,
+  roughness:.80,metalness:0,clearcoat:.023,clearcoatRoughness:.76,
+  sheen:.12,sheenRoughness:.75,sheenColor:new THREE.Color(color).multiplyScalar(.50),
   side:THREE.DoubleSide,
   transparent:false,opacity:1,depthWrite:true
  });
@@ -340,6 +487,9 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
  mesh.userData.scalpSource='sculpted-real-head-triangles';
  mesh.userData.hairColoredOpaqueRoot=true;
  mesh.userData.v63RootMelaninShading=true;
+ mesh.userData.v65CrownTopologyRepairCount=crownRepair.repairCount;
+ mesh.userData.v65CrownTopologyRepairTriangles=crownRepair.triangles;
+ mesh.userData.v66RealCrownUnderlayTriangles=crownUnderlay.triangles;
  mesh.userData.v63VertexColorCount=melanin.length/3;
  mesh.userData.hairRootColor='#'+new THREE.Color(color).getHexString();
  mesh.userData.v33RaisedWigBase=true;
@@ -688,8 +838,10 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  geo.setAttribute('color',new THREE.BufferAttribute(colors,3));
  geo.setIndex(indices);
  const mat=new THREE.MeshPhysicalMaterial({
-  color:0xffffff,vertexColors:true,roughness:.56,metalness:0,
-  clearcoat:.075,clearcoatRoughness:.49,side:THREE.DoubleSide
+  color:0xffffff,vertexColors:true,roughness:.70,metalness:0,
+  clearcoat:.035,clearcoatRoughness:.68,
+  sheen:.22,sheenRoughness:.65,sheenColor:new THREE.Color(color).multiplyScalar(.42),
+  side:THREE.DoubleSide
  });
  const locks=new THREE.Mesh(geo,mat);
  locks.name='REAL_ROOTED_SWEPT_HAIR_LOCKS';
@@ -964,10 +1116,11 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  let microFibreCount=0,microFibreTriangles=0;
  if(fiberMultiplier>1){
   const extra=fiberMultiplier-1,coords=[],shades=[],tris=[];
-  // 7 interpolation stations are enough for thin static filaments; the
-  // original moving guide still uses all 12 points. This nearly halves
+  // Unique coarse hair stations avoid zero-area tip triangles from an
+  // accidentally repeated last point. Moving guides still use 12 points;
+  // the static sample retains the low mobile geometry budget.
   // the render geometry cost on mobile at 10x density.
-  const fineSteps=[0,1,2,4,6,8,10,11,segments];
+  const fineSteps=uniqueHairFibreStations(segments);
   const colorSeed=rootColor.clone();
   for(let i=0;i<strands.length;i++){
    const strand=strands[i],first=strand.points[0];
@@ -1012,8 +1165,10 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   fineGeo.setIndex(tris);
   fineGeo.computeVertexNormals();fineGeo.computeBoundingSphere();
   const fineMat=new THREE.MeshPhysicalMaterial({
-   color:0xffffff,vertexColors:true,roughness:.57,metalness:0,
-   clearcoat:.055,clearcoatRoughness:.48,side:THREE.DoubleSide
+   color:0xffffff,vertexColors:true,roughness:.69,metalness:0,
+   clearcoat:.025,clearcoatRoughness:.70,
+   sheen:.16,sheenRoughness:.63,sheenColor:new THREE.Color(color).multiplyScalar(.44),
+   side:THREE.DoubleSide
   });
   const fineMesh=new THREE.Mesh(fineGeo,fineMat);
   fineMesh.name='DETACHABLE_WIG_FINE_FIBRES';
@@ -1029,6 +1184,13 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  styled.meshes.forEach(mesh=>root.add(mesh));
  root.userData.v49StyledHair=styled.type;
  root.userData.v49StyledHairTriangles=styled.triangleCount;
+ // Keep the measured scalp anchor before consolidation removes source meshes.
+ // Never infer attachment success merely from the selected hairstyle ID.
+ const tiedRoot=styled.meshes.find(node=>node.name==='PONYTAIL_TIED_ROOT');
+ const tiedRootRealScalp=!!tiedRoot &&
+  tiedRoot.userData.v64AnchorSource==='real-scalp-vertex' &&
+  Number.isFinite(tiedRoot.userData.v64AnchorDistance) &&
+  tiedRoot.userData.v64AnchorDistance<=d.x*.02;
  // In static studios, fold the fitted hair cap, all strands and fine
  // filaments into ONE Three.js Mesh. The same strand shape is duplicated
  // along its own outward vertex normals with small, progressive offsets;
@@ -1114,9 +1276,19 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   v50SideCutFloor:catalogGroom.templeFloor,
   v49StyledHairType:styled.type,
   v49StyledHairMeshCount:styled.meshes.length,
+  v64RealScalpTiedRoot:tiedRootRealScalp,
+  v64TiedRootSource:tiedRoot?.userData.v64AnchorSource||null,
+  v64TiedRootAttachmentDistance:tiedRoot?.userData.v64AnchorDistance??null,
   v49StyledHairTriangles:styled.triangleCount,
+  v65BatchedPonytailFiberCount:styled.meshes.find(m=>
+   m.name==='PONYTAIL_MICROFIBER_BUNDLE_V65')?.userData?.v65FiberCount||0,
+  v65BatchedPonytailDrawMeshes:styled.meshes.some(m=>
+   m.name==='PONYTAIL_MICROFIBER_BUNDLE_V65')?1:0,
   silhouette3dProfile:{...silhouette},
   hairColoredOpaqueRoot:cap.userData.hairColoredOpaqueRoot,
+  v65CrownTopologyRepairCount:cap.userData.v65CrownTopologyRepairCount,
+  v65CrownTopologyRepairTriangles:cap.userData.v65CrownTopologyRepairTriangles,
+  v66RealCrownUnderlayTriangles:cap.userData.v66RealCrownUnderlayTriangles,
   frontRootCoverage:'lower-scalp-cap-and-overlapping-hair-cards',
   fringeCardWidthFactor:.43,
   maleLongFringeMinimumScale:.86,
