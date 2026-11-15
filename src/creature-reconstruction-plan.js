@@ -78,7 +78,8 @@ const anatomicalReferences=Object.freeze({
  m028:['s-spider','s-spider-rig'],
  m029:['s-spider','s-spider-rig'],
  m030:['s-spider','s-spider-rig'],
-  m047:['s-octopus','s-octopus-ccby'],
+ m046:['s-slime-cc0'],
+ m047:['s-octopus','s-octopus-ccby'],
  m048:['s-snake'],
  m049:['s-octopus'],
  m050:['g-shark','g-sturgeon']
