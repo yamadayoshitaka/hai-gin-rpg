@@ -23,6 +23,7 @@ import {STUDIO_BATTLE_ACTIONS,effectRecipeForHeroineAction,createHeroineBattleAc
  from '../src/heroine-battle-action-vfx.js';
 import {clipBodyToGarment} from '../src/character-system/garment-coverage-runtime.js';
 import {applyHeroineSkinMaterial} from '../src/heroine-skin-material.js';
+import {createFaceExpressionAnimator} from '../src/face-expression-animation-v48.js';
 import {HEROINE_FACE_STUDIO_KEY,loadHeroineFacePreset,saveHeroineFacePreset}
  from '../src/heroine-face-preset-store.js';
 import {MALE_FACE_STUDIO_KEY,loadMaleFacePreset,saveMaleFacePreset} from '../src/male-face-preset-store.js';
@@ -2370,4 +2371,53 @@ test('v43 larger heroine iris preserves edited presets while upgrading only unto
  assert.match(maleBody,/persistStudioHair/);
  assert.match(femaleBody,/body\.costume-only label\[for="heroAction"\]/);
  assert.doesNotMatch(femaleBody,/body\.costume-only label\[for="heroHairStyle"\]/);
+});
+
+test('v68: makeup selection repaints real head, cheeks and lip geometry without remodeling',()=>{
+ const female=makeIndependentFaceMaster(fixture().source,'female');
+ const beforePositions=female.face.geometry.getAttribute('position').array.slice();
+ applyFaceColorMode(female.face,'color',{makeupType:0,contactColor:'#514139'});
+ const baseColors=female.face.geometry.getAttribute('color').array.slice();
+ const lip=female.parts.getObjectByName('UPPER_3D_VERMILION_LIP');
+ const firstLip=Array.from(lip.geometry.getAttribute('color').array);
+ applyFaceColorMode(female.face,'color',{makeupType:8,contactColor:'#514139'});
+ const nextColors=female.face.geometry.getAttribute('color').array;
+ const nextLip=lip.geometry.getAttribute('color').array;
+ assert.equal(female.face.userData.activeMakeupType,8);
+ assert.ok(nextColors.some((x,i)=>Math.abs(x-baseColors[i])>1e-5),
+  'selected cosmetic must reach anatomical face, not only labels');
+ assert.ok(nextLip.some((x,i)=>Math.abs(x-firstLip[i])>1e-5),
+  'selected lipstick must recolor real lip surface');
+ assert.deepEqual(female.face.geometry.getAttribute('position').array,beforePositions);
+ const male=makeIndependentFaceMaster(fixture().source,'male');
+ applyFaceColorMode(male.face,'color',{makeupType:8});
+ assert.equal(male.face.userData.activeMakeupType,null);
+ assert.equal(male.parts.getObjectByName('LEFT_UPPER_EYESHADOW'),undefined);
+});
+test('v68: expression strength moves actual face vertices and keeps neutral pose',()=>{
+ const face=makeIndependentFaceMaster(fixture().source,'female');
+ const resting=Array.from(face.face.geometry.getAttribute('position').array);
+ const animator=createFaceExpressionAnimator(face,{autoBlink:false,
+  speaking:false,expressionIntensity:1.3});
+ animator.setExpression('smile');
+ const smiling=Array.from(face.face.geometry.getAttribute('position').array);
+ assert.ok(smiling.some((x,i)=>Math.abs(x-resting[i])>1e-6));
+ assert.equal(animator.getState().expressionIntensity,1.3);
+ animator.setExpression('neutral');
+ const returned=Array.from(face.face.geometry.getAttribute('position').array);
+ assert.deepEqual(returned,resting,'expression must not accumulate after switching');
+ animator.dispose();
+});
+test('v68: model viewer exposes hero makeup and facial expression close-up',()=>{
+ const female=readFileSync('face-body-studio.html','utf8');
+ const male=readFileSync('male-body-studio.html','utf8');
+ assert.match(female,/id="makeupStyle"/);
+ assert.match(female,/applyFaceColorMode\(model\.face,'color'/);
+ for(const page of [female,male]){
+  assert.match(page,/id="expressionStrength"/);
+  assert.match(page,/expressionIntensity:expressionPrefs\.intensity/);
+  assert.match(page,/zoomMode='portrait';fitCamera\(\)/);
+ }
+ const bridge=readFileSync('src/heroine-battle-costume-bridge.js','utf8');
+ assert.match(bridge,/studioVisibleLegAnatomy:chosen\.heroJob==='swordsman'/);
 });
