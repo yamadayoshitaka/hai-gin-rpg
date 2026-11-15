@@ -87,7 +87,9 @@ export function setSortieFormation(game,teamId,formation){
  ensureSortiePlan(game);
  const team=teamOf(game,teamId);
  if(!team||!Object.hasOwn(SORTIE_FORMATIONS,formation))throw Error('有効な隊列を選んでください。');
- team.formation=formation;return team;
+ team.formation=formation;
+ if(!availableSortieOrders(game,teamId).includes(team.initialOrder))team.initialOrder='hold';
+ return team;
 }
 export function setSortieSlot(game,stage,teamId,slot){
  ensureSortiePlan(game);
@@ -106,10 +108,11 @@ export function resolvedSortieSlot(game,stage,team){
 }
 export function availableSortieOrders(game,teamId){
  const jobs=new Set(sortieTeamSquads(game,teamId).map(s=>s.job));
+ const formation=teamOf(game,teamId)?.formation||'balanced';
  if(!jobs.size)return [];
  const orders=['charge','defend','hold','retreat'];
- if(jobs.has('僧侶'))orders.push('support');
- if(jobs.has('忍者')||jobs.has('シーフ'))orders.push('explore');
+ if(jobs.has('僧侶')&&formation!=='attack')orders.push('support');
+ if((jobs.has('忍者')||jobs.has('シーフ'))&&formation!=='support')orders.push('explore');
  return orders;
 }
 export function setSortieOrder(game,teamId,order){
@@ -147,9 +150,18 @@ export function allocateThreeTeamSortie(game,stage,limit=SORTIE_TOTAL_RENDER_LIM
    if(reserve&&receiver){reserve.count--;receiver.count++;}
   }
  }
+ // Normalize duplicate saved cells when a formerly empty team gains soldiers.
+ const occupied=new Set(),positions=new Map();
+ for(const team of active){
+  const valid=allowedSortieSlots(game,stage);
+  const wanted=resolvedSortieSlot(game,stage,team);
+  const slot=!occupied.has(wanted)?wanted:valid.find(x=>!occupied.has(x));
+  if(slot===undefined)throw Error('出撃可能な場所が不足しています。');
+  positions.set(team.id,slot);occupied.add(slot);
+ }
  return allocations.filter(x=>x.count>0).map(x=>({
   teamId:x.team.id,squad:x.squad,count:x.count,
-  deploymentSlot:resolvedSortieSlot(game,stage,x.team),
+  deploymentSlot:positions.get(x.team.id),
   captain:sources.get(String(x.team.captainId))||null,
   formation:x.team.formation,
   initialOrder:availableSortieOrders(game,x.team.id).includes(x.team.initialOrder)?x.team.initialOrder:'hold'
