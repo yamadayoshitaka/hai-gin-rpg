@@ -37,6 +37,10 @@ export function createMonsterSummonRenderer(scene,{
   scene.remove(node.anchor);
   if(node.costumeHandle)node.costumeHandle.dispose();
   else disposeMonsterSculpture(node.actor);
+  if(node.statusMarker){
+   node.statusMarker.geometry.dispose();
+   node.statusMarker.material.dispose();
+  }
   active.delete(id);
   stats.disposed++;
  }
@@ -52,11 +56,20 @@ export function createMonsterSummonRenderer(scene,{
    detail,withoutFallback:true
   }):null;
   const actor=costumeHandle?.root||createMonsterModel(spec,{detail});
+  let statusMarker=null;
   if(isHumanoid){
    actor.userData.speciesId=spec.id;
    actor.userData.modelPending=true;
    actor.userData.legacyGeometryDisabled=true;
    actor.userData.sourceKind='canonical-character-cosplay';
+   // While a skinned actor streams in, keep a non-humanoid loading marker
+   // visible. An invisible enemy/summon would be a gameplay regression.
+   // The marker is NOT the retired monster model and costs one small mesh.
+   statusMarker=new THREE.Mesh(new THREE.OctahedronGeometry(.15,0),
+     new THREE.MeshBasicMaterial({color:0xd7ab66}));
+   statusMarker.name='canonical-human-loading-marker';
+   statusMarker.position.y=1;
+   actor.add(statusMarker);
   }
   // Measure the actual source's visible height, not its item rarity or an
   // estimated sphere. Leviathan retains its native sea-serpent proportions.
@@ -90,6 +103,7 @@ export function createMonsterSummonRenderer(scene,{
     actor.userData.modelPending=false;
     if(result.source!=='canonical-character-cosplay'){
      actor.userData.modelError=result.reason||'canonical-actor-unavailable';
+     if(statusMarker)statusMarker.material.color.setHex(0xcf5964);
      // A failed GLB must NEVER fall back to a legacy humanlike sculpt.
      return;
     }
@@ -105,13 +119,21 @@ export function createMonsterSummonRenderer(scene,{
     const corrected=new THREE.Box3().setFromObject(actor);
     position.position.y+=(anchor.position.y-corrected.min.y)/
       Math.max(.00001,fitting.scale.y);
+    if(statusMarker?.parent)statusMarker.parent.remove(statusMarker);
+    if(statusMarker){
+     statusMarker.geometry.dispose();statusMarker.material.dispose();
+     statusMarker=null;
+    }
     actor.userData.productionHumanoidReady=true;
     anchor.updateWorldMatrix(true,true);
    }).catch(error=>{actor.userData.modelPending=false;
-    actor.userData.modelError=String(error?.message||error)});
+    actor.userData.modelError=String(error?.message||error);
+    if(statusMarker)statusMarker.material.color.setHex(0xcf5964);
+   });
   }else startMonsterAction(actor,'idle',0);
   stats.created++;
   return {actor,anchor,detail,type:object.type,size,costumeHandle,
+   statusMarker,
    lastX:object.x,lastZ:object.z,lastT:0,lastAttack:-Infinity,
    lastPose:null,lastAction:'idle'};
  }
