@@ -18,6 +18,9 @@ on:
       - 'src/monster-joint-motion.js'
       - 'src/monster-animation.js'
       - 'src/monster-geometry.js'
+      - 'src/creature-real-source-audit.js'
+      - 'qa/creature-real-source-audit.test.mjs'
+      - 'creature-master-studio.html'
       - 'src/monster-source-composite.js'
       - 'qa/monster-source-composite-regression.test.mjs'
       - 'src/monster-beastfolk-manifest.js'
@@ -83,6 +86,11 @@ jobs:
       - name: Run every-monster anatomy / action / reference test and baseline mesh contracts
         run: |
           node --test qa/monster-anatomy-motion.test.mjs qa/monster-bestiary.test.mjs qa/monster-realism-progress.test.mjs qa/monster-m002-flame-wolf-rig.test.mjs qa/monster-m003-fenrir-rig.test.mjs qa/monster-m004-thunderwolf-gallop.test.mjs
+      - name: Reject fake photoreal certification, cover all 108 source anatomy baselines
+        run: |
+          node --check src/monster-shape-kit.js
+          node --check src/creature-real-source-audit.js
+          node --test qa/creature-real-source-audit.test.mjs qa/creature-master-studio.test.mjs qa/creature-reconstruction-plan.test.mjs
       - name: Regress all humanoid instances, cloak, hair, skeleton and fitted outfit geometry
         run: |
           npm run test:humanoid-monster-cosplay
