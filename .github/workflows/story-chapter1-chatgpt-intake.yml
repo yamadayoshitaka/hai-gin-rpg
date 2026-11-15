@@ -33,6 +33,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Verify per-stage native geometry policy
+        run: node qa/story-chatgpt-panel-geometry.test.mjs
       - name: Audit canonical unresolved scenes, cast, and outcome per branch
         run: |
           node --input-type=module <<'NODE'
