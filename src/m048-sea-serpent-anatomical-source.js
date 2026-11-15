@@ -11,7 +11,7 @@ export function buildSeaSerpentAnatomicalSource(THREE,{rings=112,sides=16}={}){
  const eyeMat=new THREE.MeshPhysicalMaterial({color:0xc7d79a,roughness:.17,clearcoat:.85});
  const pupil=new THREE.MeshStandardMaterial({color:0x071014,roughness:.12});
  const spineMat=new THREE.MeshStandardMaterial({color:0x356f72,roughness:.64,side:THREE.DoubleSide});
- const segments=[],joints=[];
+ const animatedFins=[];
  const radius=t=>.09+.57*Math.pow(Math.sin(Math.PI*Math.min(.999,t)),.7)+.17*Math.exp(-Math.pow((t-.79)/.11,2));
  const center=t=>new THREE.Vector3(-7.8+15.6*t,.28*Math.sin(t*8.4),.34*Math.sin(t*9.2));
  const verts=[],uv=[],idx=[],ventralIdx=[];
@@ -68,14 +68,16 @@ export function buildSeaSerpentAnatomicalSource(THREE,{rings=112,sides=16}={}){
   g.setAttribute('position',new THREE.Float32BufferAttribute(points,3));
   g.setIndex([0,1,2,0,2,3]);g.computeVertexNormals();
   const fin=new THREE.Mesh(g,spineMat);fin.name='axial-crest-finlet-'+k;root.add(fin);
+  animatedFins.push({mesh:fin,base:Float32Array.from(g.getAttribute('position').array),t});
  }
  // Axial undulation uses actual per-ring vertex deformation, not whole-object rotation.
  const original=Float32Array.from(geometry.getAttribute('position').array);
  const bellyOriginal=Float32Array.from(bellyGeo.getAttribute('position').array);
+ const swimOffset=(t,seconds)=>.22*(1-t)*Math.sin(seconds*2.2-t*13);
  function deform(mesh,base,seconds){
   const a=mesh.geometry.getAttribute('position');
   for(let i=0;i<=rings;i++){
-   const t=i/rings,offset=.22*(1-t)*Math.sin(seconds*2.2-t*13);
+   const t=i/rings,offset=swimOffset(t,seconds);
    for(let j=0;j<=sides;j++){
     const n=3*(i*(sides+1)+j);
     a.array[n]=base[n];a.array[n+1]=base[n+1];a.array[n+2]=base[n+2]+offset;
@@ -86,7 +88,12 @@ export function buildSeaSerpentAnatomicalSource(THREE,{rings=112,sides=16}={}){
  root.userData={creatureId:'m048',source:'original-anatomical-prototype',certified:false,
   anatomicalParts:['continuous-axial-trunk','ventral-keel-scales','flattened-serpentine-cranium','mobile-dentary','axial-crest-finlets'],
   update(seconds){deform(body,original,seconds);deform(bellyMesh,bellyOriginal,seconds);
-   head.position.copy(center(.992));head.position.z+=.22*.008*Math.sin(seconds*2.2-12.9);
+   for(const {mesh,base,t} of animatedFins){
+    const p=mesh.geometry.getAttribute('position'),offset=swimOffset(t,seconds);
+    for(let n=0;n<base.length;n+=3){p.array[n]=base[n];p.array[n+1]=base[n+1];p.array[n+2]=base[n+2]+offset;}
+    p.needsUpdate=true;mesh.geometry.computeVertexNormals();
+   }
+   head.position.copy(center(.992));head.position.z+=swimOffset(.992,seconds);
    head.rotation.y=.08*Math.sin(seconds*2.2);jaw.rotation.z=-.06-.16*(.5+.5*Math.sin(seconds*.8));
   }};
  return root;
