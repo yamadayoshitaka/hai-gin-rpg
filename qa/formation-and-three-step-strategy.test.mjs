@@ -14,6 +14,9 @@ import {STRATEGY_TREE,STRATEGY_METHODS} from '../src/three-step-strategy-catalog
 import {planStrategyDistribution} from '../src/targeted-strategy-runtime.js';
 
 const game=createNewGame('正確な陣形回帰');
+game.campaign.squads.push(
+ {id:3,job:'魔法使い',rarity:'N',count:10,commanderId:'player'},
+ {id:4,job:'忍者',rarity:'N',count:10,commanderId:'player'});
 ensureSortiePlan(game);
 assert.equal(sortieTeamCount(game.sortiePlan.teams[0]),40);
 assert.equal(sortieFormationStatus(game,1).valid,true,'initial knight and priest occupy their matching roles');
@@ -52,8 +55,8 @@ setSortieFormation(game,1,'balanced');
 setSortieTactics(game,1,['melee_focus','heal_wounded']);
 assert.deepEqual(game.sortiePlan.teams[0].tactics,['melee_focus','heal_wounded'],
  'inn saves multiple compatible methods without assigning targets');
-assert.throws(()=>setSortieTactics(game,1,['cut_attack']),/職業|条件/,
- 'unowned mage skills cannot be planned');
+assert.throws(()=>setSortieTactics(game,1,['scout_summon']),/職業|条件/,
+ 'unowned summoner skills cannot be planned');
 const innOrders=renderThreeTeamPlanner({game,teamId:1,view:'orders',strategyFamily:'support',strategyIntent:'heal'});
 assert.match(innOrders,/data-sortie-strategy-method="heal_wounded"/);
 assert.match(innOrders,/設定済み作戦・兵員配分率/);
