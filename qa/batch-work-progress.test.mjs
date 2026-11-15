@@ -31,3 +31,21 @@ test('management page distinguishes QA from implementation progress and pulls th
  assert.match(html,/次回引継ぎ/);
  assert.match(html,/最終記録/);
 });
+
+test('all four batches declare realistic cohort targets without claiming those targets as actual outputs',()=>{
+ const cfg=JSON.parse(fs.readFileSync('data/hourly-batch-dashboard.json','utf8'));
+ const expected={human:[5,10],monster:[3,5],world:[5,10],anime:[5,20]};
+ assert.deepEqual(cfg.groups.map(x=>x.id),Object.keys(expected));
+ for(const group of cfg.groups){
+  const goal=group.batchTarget;
+  assert.equal(goal.min,expected[group.id][0]);
+  assert.equal(goal.max,expected[group.id][1]);
+  assert(goal.grouping.length>=15);
+  assert(group.goal.includes('コミットSHA'));
+  assert(group.goal.includes('対象ID別'));
+ }
+ const html=fs.readFileSync('batch-monitor.html','utf8');
+ assert(html.includes('一括処理の目標'));
+ assert(html.includes('目標値であり実績ではありません'));
+ assert(html.includes('data.batchTarget'));
+});
