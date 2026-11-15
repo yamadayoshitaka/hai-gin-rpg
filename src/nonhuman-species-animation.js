@@ -41,7 +41,7 @@ export const NONHUMAN_SPECIES_ANIMATION=Object.freeze(Object.fromEntries(
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
 /** Bounded secondary pose on actual existing joint groups.
  * Never touch the root transform, scale, or any source GLB bones.
- * Idempotent per timestamp (repeated render passes cannot accumulate pose).
+ * Called after primary pose resets each frame by animateMonsterModel.
  */
 export function animateNonhumanSpeciesDetails(model,time,action='idle',pulse=0){
  const id=model?.userData?.speciesId;
