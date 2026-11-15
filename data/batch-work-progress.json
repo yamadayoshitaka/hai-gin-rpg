@@ -71,8 +71,8 @@
       "status": "work_incomplete",
       "carryover": true,
       "subject": "100×100城・大型橋の影が切れる固定シャドーフラスタムを改善",
-      "summary": "worldスイッチON・所有者world手動Issueなし。前回の樹木エフェクト残留修正をPR #409から継続。src/tree-seasons.jsで太陽影の投影範囲が樹木用26m固定のため大型建造物に影が届かない欠陥を修正。オブジェクト境界から動的に影範囲を拡張し、樹木に戻った時は小範囲へ戻して影精細度を維持。実ソースコミットe9d54eaと回帰テストコミット478e49bを同PRに追加。GitHub CIは実行中で、WebGL/Android実画面は未確認。",
-      "nextAction": "PR #409の新コミット478e49bのCI結果を確認。tree-seasons.jsの100×100城・大型橋の正面/斜め影と樹木へ戻った際の影品質をWebGL実機で比較。影のにじみ・fps低下があれば光源/シャドーマップ解像度を調整。mainマージは実描画品質ゲート後。",
+      "summary": "worldスイッチON・所有者world手動Issueなし。前回の樹木エフェクト残留修正をPR #409から継続。src/tree-seasons.jsで太陽影の投影範囲が樹木用26m固定のため大型建造物に影が届かない欠陥を修正。オブジェクト境界から動的に影範囲を拡張し、樹木に戻った時は小範囲へ戻して影精細度を維持。実ソースコミットe9d54eaと回帰テストコミット478e49bを同PRに追加。GitHub CIは実行中で、WebGL/Android実画面は未確認。 PRのRPG data architecture checksが召喚獣鑑賞画面のrendererキャッシュキー不一致で失敗したため、同じPR内でバージョンとimportキーを一致させる修正bc693e8を追加。再CIは結果待ち。",
+      "nextAction": "PR #409の最新bc693e8のRPG architecture QA・Battle visual E2E結果を確認。WebGLで100×100城・橋の影範囲、樹木へ戻した影品質、炎・氷残留解消を正面/斜めから検証。Android FPSと影の粗さを確認後にマージ判断。",
       "steps": {
         "launch": "done",
         "code": "done",
@@ -94,6 +94,10 @@
         {
           "label": "継続PR #409",
           "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/409"
+        },
+        {
+          "label": "CIで検出した召喚獣描画キャッシュキー不整合の修正 bc693e8",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/bc693e80ba2ed3f3093caf70f92f6c7620f85778"
         }
       ]
     },
