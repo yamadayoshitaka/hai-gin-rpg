@@ -43,7 +43,7 @@ export function renderThreeTeamPlanner({game,teamId=1,cellIndex=5,view='setup',j
   '</div><div class="sortieGridHint"><b>配置盤 4×4</b><small>敵陣 ↑　マスをタップしてジョブ選択</small></div>'+
   '<div class="sortieFormationGrid" role="group" aria-label="4×4のジョブ配置盤">'+cells+'</div>'+
   '<div class="sortieGridFooter"><small>上限'+cap+'隊 · 隣接'+links.length+'組</small>'+
-  button('data-sortie-view="count"','人数変更 ▸')+'</div>'+captainPanel;
+  button('data-sortie-view="count"','人数 ▸')+button('data-sortie-view="divisions"','分隊 ▸')+'</div>'+captainPanel;
  const templateIds=Object.keys(SORTIE_FORMATIONS);
  const pageCap=6,templatePages=Math.ceil(templateIds.length/pageCap);
  const tPage=Math.max(0,Math.min(templatePages-1,Number(templatePage)||0));
@@ -70,7 +70,7 @@ export function renderThreeTeamPlanner({game,teamId=1,cellIndex=5,view='setup',j
   '<small>'+(page+1)+' / '+pages+'</small>'+
   button('data-sortie-job-page="'+(page+1)+'" '+(page===pages-1?'disabled':''),'次 ▶')+'</div>':'')+
   '<div class="sortieSubActions">'+button('data-sortie-job=""'+(!selectedSid?' disabled':''),'このマスを空ける')+
-  (selectedSid?button('data-sortie-view="count"','人数を変更する'):'')+'</div>';
+  (selectedSid?button('data-sortie-view="count"','人数を変更する')+button('data-sortie-view="divisions"','分隊を設定する'):'')+'</div>';
  const maxCount=selectedSource?selectedSource.count-elsewhere:0;
  const countPanel='<div class="sortieSubHead"><b>人数を変更</b>'+back+'</div>'+
   '<p class="sortieSelectedLabel">'+(selectedSource?esc(selectedSource.job)+' · '+squadCount+'人':'マスを選択してジョブを配置してください')+'</p>'+
@@ -80,12 +80,18 @@ export function renderThreeTeamPlanner({game,teamId=1,cellIndex=5,view='setup',j
    button('data-sortie-step="1"','＋1')+button('data-sortie-step="10"','＋10')+
    '</div><small class="sortieHint">この隊に配属可能な人数：'+maxCount+'人。0人にする場合はジョブ選択でマスを空けてください。</small>':
    button('data-sortie-view="jobs"','ジョブを選択する')) ;
+ const divisionParts=selectedSource?Math.max(1,team.divisions?.[String(selectedSource.id)]||1):1;
+ const divisionPanel='<div class="sortieSubHead"><b>分隊を設定（最大4分隊）</b>'+back+'</div>'+
+  '<p class="sortieSelectedLabel">'+(selectedSource?esc(selectedSource.job)+'・'+squadCount+'人':'まず配置盤のマスにジョブを配置してください')+'</p>'+
+  '<div class="sortieDivisions">'+(selectedSource?[1,2,3,4].map(n=>button('data-sortie-division="'+n+'" '+(n>squadCount?'disabled':''),
+   '<strong>'+n+'分隊</strong><small>各隊 約'+Math.ceil(squadCount/n)+'人</small>',divisionParts===n)).join(''):'')+'</div>'+
+  '<small class="sortieHint">戦闘では本隊が隊長を保持し、すべての分隊は所属班の陣形バフを受けます。分隊ごとに敵・地点・オブジェクトを狙えます。</small>';
  const orderPanel='<div class="sortieSubHead"><b>第'+team.id+'班の作戦</b>'+back+'</div>'+
   '<div class="sortieOrders">'+orders.map(id=>button('data-sortie-order="'+esc(id)+'"',
     '<strong>'+esc(TACTICAL_ORDERS[id]?.name||id)+'</strong><small>'+esc(TACTICAL_ORDERS[id]?.effect||'')+'</small>',team.initialOrder===id)).join('')+'</div>'+
   '<small class="sortieHint">作戦は戦場で目標を指定します。突撃は敵を複数指定可能、守備・支援・退却・待機は地図、探索・破壊はオブジェクトを指定。弱体は忍者・シーフ・魔法使いが担当します。</small>'+
   '<div class="sortieAdjacency"><b>隣接ジョブ</b><small>'+(links.map(x=>esc(x.a)+' × '+esc(x.b)).join(' ／ ')||'なし（マスを移動して隣接させてください）')+'</small></div>';
- const pagesByView={setup:main,templates,jobs,count:countPanel,orders:orderPanel,captains:captainPage};
+ const pagesByView={setup:main,templates,jobs,count:countPanel,orders:orderPanel,captains:captainPage,divisions:divisionPanel};
  return '<section class="sortiePlanner" aria-label="最大3班・Lvに応じた隊数・4×4配置">'+
   '<div class="sortieTop"><b>⚑ 最大3班・Lv.'+level+'（仮）</b><small>各班上限'+cap+'隊</small></div>'+
   groupButtons+(pagesByView[view]||main)+
