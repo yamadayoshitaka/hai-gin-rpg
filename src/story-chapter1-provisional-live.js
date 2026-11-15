@@ -1632,6 +1632,50 @@ export const CHAPTER1_PROVISIONAL_LIVE=Object.freeze({
     "stageId": "c01-s04",
     "edition": "post-gameover",
     "gender": "female"
+  },
+  "c01-s04|post-victory|female|c01-s04-m9": {
+    "asset": "./assets/story/chapter1-provisional-live/c01-s04__post-victory__female__c01-s04-m9.webp",
+    "sha256": "29e7c2bf247bc92d581c59416e811136965cbfc48f559ba3a5711c1624b3bac9",
+    "provenance": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-post-victory-female/p01/c01-s04-m09-post-victory-female.webp.generation.json",
+    "sourceDraft": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-post-victory-female/p01/c01-s04-m09-post-victory-female.webp",
+    "status": "PROVISIONAL_OWNER_AUTHORIZED_PENDING_P0",
+    "originalLivePath": null,
+    "stageId": "c01-s04",
+    "edition": "post-victory",
+    "gender": "female"
+  },
+  "c01-s04|post-victory|female|c01-s04-m16": {
+    "asset": "./assets/story/chapter1-provisional-live/c01-s04__post-victory__female__c01-s04-m16.webp",
+    "sha256": "da33b4da919259246188bfb06b2594e879290bbe1dab9ded536c211f5321985d",
+    "provenance": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-post-victory-female/p01/c01-s04-m16-post-victory-female.webp.generation.json",
+    "sourceDraft": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-post-victory-female/p01/c01-s04-m16-post-victory-female.webp",
+    "status": "PROVISIONAL_OWNER_AUTHORIZED_PENDING_P0",
+    "originalLivePath": null,
+    "stageId": "c01-s04",
+    "edition": "post-victory",
+    "gender": "female"
+  },
+  "c01-s04|post-victory|female|c01-s04-m10": {
+    "asset": "./assets/story/chapter1-provisional-live/c01-s04__post-victory__female__c01-s04-m10.webp",
+    "sha256": "1fb867124dfced2943d416bbaaab0114a523d61e2f5d01629f8dc8e9f7f7a23a",
+    "provenance": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-post-victory-female/p02/c01-s04-m10-post-victory-female.webp.generation.json",
+    "sourceDraft": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-post-victory-female/p02/c01-s04-m10-post-victory-female.webp",
+    "status": "PROVISIONAL_OWNER_AUTHORIZED_PENDING_P0",
+    "originalLivePath": null,
+    "stageId": "c01-s04",
+    "edition": "post-victory",
+    "gender": "female"
+  },
+  "c01-s04|post-defeat|female|c01-s04-m10": {
+    "asset": "./assets/story/chapter1-provisional-live/c01-s04__post-defeat__female__c01-s04-m10.webp",
+    "sha256": "b1d09bf72a82063a8dc7ce23e3f2140345819879e8c1eba985f04c289187078e",
+    "provenance": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-post-defeat-female/p02/c01-s04-m10-post-defeat-female.webp.generation.json",
+    "sourceDraft": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-post-defeat-female/p02/c01-s04-m10-post-defeat-female.webp",
+    "status": "PROVISIONAL_OWNER_AUTHORIZED_PENDING_P0",
+    "originalLivePath": null,
+    "stageId": "c01-s04",
+    "edition": "post-defeat",
+    "gender": "female"
   }
 });
 export function chapter1ProvisionalLivePanel(shot){
