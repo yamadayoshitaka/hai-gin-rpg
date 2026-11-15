@@ -62,6 +62,9 @@ const groups={ 'g1-main':1,'g1-part':1,'g1-reserve':1,'g2-main':2 };
 let summary=threeGroupOverview(units,groups,initial);
 assert.equal(summary.length,3);
 assert.deepEqual(summary.map(g=>g.alive),[9,1,0]);
+const requestForm=initial.map(({team,...u})=>u);
+assert.deepEqual(threeGroupOverview(units,groups,requestForm).map(g=>g.initial),[9,1,0],
+ 'story battle requests omit team=0 yet must still report correct initial counts');
 assert.ok(summary[0].divisions.some(x=>x.id==='g1-part'));
 const identity=units.filter(u=>u.team===0).map(u=>u.id).sort().join(',');
 const result=reinforceDivision(units,groups,'g1-part',{fromId:'g1-reserve',amount:2});
