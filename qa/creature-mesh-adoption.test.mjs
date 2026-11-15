@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {applyGreyFangWolfFinish} from '../src/grey-fang-wolf-finish.js';
+import {WOLF_ACTION_NAMES,resolveWolfAction,WOLF_ACTION_LIMITS}
+ from '../src/grey-wolf-action-contract.js';
 import {MONSTER_CATALOG} from '../src/monster-catalog.js';
 import {HUMAN_MONSTER_IDS} from '../src/monster-character-cosplay-manifest.js';
 import {NONHUMAN_MONSTER_IDS,NONHUMAN_EXTRA_SUMMON_IDS,
@@ -124,4 +126,26 @@ test('wolf finish keeps source mesh count, UV/material maps and rig, hides only 
  // No added geometry on re-entry or cross-scene repeated updates.
  applyGreyFangWolfFinish(handle,{creatureId:'summon_m001'});
  assert.equal(nodes.length,4);
+});
+
+test('licensed wolf uses real IDLE / RRAR / SLEEP clips and authored limb movement for missing walk/run',()=>{
+ const clips=['metarig.002|eating','metarig.002|IDLE',
+  'metarig.002|RRAR','metarig.002|SLEEP'];
+ const expectations={
+  idle:'idle',walk:'idle',run:'idle',
+  attack:'roar',roar:'roar',special:'roar',
+  hit:'idle',defeat:'defeat'
+ };
+ for(const [action,sourceAction] of Object.entries(expectations)){
+  assert.equal(resolveWolfAction(clips,action).sourceAction,sourceAction,action);
+  assert.ok(WOLF_ACTION_NAMES.includes(action));
+ }
+ assert.equal(resolveWolfAction(clips,'walk').procedural,'walk');
+ assert.equal(resolveWolfAction(clips,'run').procedural,'run');
+ assert.equal(resolveWolfAction(['idle','walk','run','attack','death'],'walk').sourceAction,'walk');
+ assert.equal(resolveWolfAction(['idle','walk','run','attack','death'],'run').sourceAction,'run');
+ assert.equal(resolveWolfAction(['idle','walk','run','attack','death'],'defeat').sourceAction,'defeat');
+ assert.ok(Number.isFinite(WOLF_ACTION_LIMITS.hit));
+ assert.equal(WOLF_ACTION_LIMITS.defeat,Infinity);
+ assert.equal(resolveWolfAction(clips,'invalid').action,'idle');
 });
