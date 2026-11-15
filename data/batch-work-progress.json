@@ -14,26 +14,34 @@
   "groups": {
     "human": {
       "source": "ChatGPT 定期タスクの実行結果",
-      "lastRunAt": "2026-11-15T12:58:00Z",
-      "status": "work_incomplete",
+      "lastRunAt": "2026-11-15T14:04:32Z",
+      "status": "in_review",
       "carryover": true,
       "issueNumber": 399,
-      "subject": "男女剣士背面・踵の板状／石状異物",
-      "summary": "22時台：スイッチON、所有者Issue #399と前回未完了を確認。実コード改修・QA・PR・公開は未実施。",
-      "nextAction": "Issue #399の男女剣士背面・踵の表面メッシュ／スキニング原因を特定し、実コード修正→WebGL比較→QA→Draft PR。完了まで処理済みコメント禁止。",
+      "subject": "Issue #399 男女剣士背面・踵の板状／石状異物",
+      "summary": "剣士背面鎧の広域Zサンプリングを局所X/Yサンプリングに変更。実ソースコミット2e87b869、Draft PR #414作成。静的ソース確認成功、ローカルgit cloneはDNS失敗、実WebGL/Android/CI未検証。踵は未修正。",
+      "nextAction": "PR #414でCI・ブラウザWebGL正面/背面/踵比較を実行し、背面の突起が減るか検証。踵の別原因を調査し追加修正。失敗時はブランチで修正継続しmainへマージしない。",
       "steps": {
         "launch": "done",
-        "code": "pending",
-        "qa": "pending",
-        "commit": "pending",
-        "pr": "pending",
+        "code": "done",
+        "qa": "failed",
+        "commit": "done",
+        "pr": "done",
         "merge": "pending",
         "deploy": "pending"
       },
       "evidence": [
         {
-          "label": "未処理 Issue #399",
+          "label": "Issue #399",
           "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/issues/399"
+        },
+        {
+          "label": "実コード修正コミット",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/2e87b869b3829d81fb0bf282de244a3858b34d61"
+        },
+        {
+          "label": "Draft PR #414",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/414"
         }
       ]
     },
