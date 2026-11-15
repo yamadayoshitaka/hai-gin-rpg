@@ -45,6 +45,10 @@ assert.equal(defeatMale.panels[1].sharedArtAsset,defeatFemale.panels[1].sharedAr
 assert.notEqual(defeatFemale.panels[0].sharedArtAsset,defeatFemale.panels[1].sharedArtAsset,'Two distinct common-defeat CG images');
 const common=fs.readFileSync('assets/story/shared/shared-defeat-01.webp');
 assert.equal(common.toString('ascii',0,4),'RIFF');assert.equal(common.toString('ascii',8,12),'WEBP');
+const common2=fs.readFileSync('assets/story/shared/shared-defeat-02.webp');
+assert.equal(common2.toString('ascii',0,4),'RIFF');assert.equal(common2.toString('ascii',8,12),'WEBP');
+assert(common.length>100000&&common2.length>50000,'real native WebP files are required');
+assert.notDeepEqual(common,common2,'The two defeat shots must be independent raster files');
 const pages=['game.html','town-hub.html','world-map.html','src/story-manga-viewer.js'];
 for(const p of pages){
  const s=fs.readFileSync(p,'utf8');
