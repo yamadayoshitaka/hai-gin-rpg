@@ -109,6 +109,39 @@ test('forest spirit has green real clothing in the 3D viewer, not black velvet',
  expect(errors).toEqual([]);
 });
 
+test('all 50 original monster summons: independently selectable giant models',async({page})=>{
+ const errors=[];page.on('pageerror',e=>errors.push(String(e)));
+ await page.goto('/summon-showcase.html?v=4.5.22&summon=summon_m020',
+   {waitUntil:'domcontentloaded',timeout:65000});
+ await expect(page.locator('#type')).toHaveValue('summon_m020');
+ await expect(page.locator('#type option[value^="summon_m"]')).toHaveCount(50);
+ const picker=page.locator('#type');
+ for(const [id,name] of [
+   ['summon_m020','リヴァイアサン'],
+   ['summon_m018','ヒュドラ'],
+   ['summon_m017','バジリスク']
+ ]){
+   await picker.selectOption(id);
+   await expect.poll(()=>page.evaluate(()=>({
+     id:window.__summonGalleryLayoutQA?.()?.monsterSourceType,
+     rendered:window.__summonGalleryLayoutQA?.()?.monsterRendered,
+     framed:window.__summonGalleryLayoutQA?.()?.monsterFramed
+   })),{timeout:110000}).toEqual({
+     id:id.slice('summon_'.length),rendered:true,framed:true
+   });
+   await expect(page.locator('#species')).toContainText(name);
+   await expect(page.locator('#summonMotionStrip [data-pose="special"]'))
+     .toBeVisible();
+   await page.locator('#summonMotionStrip [data-pose="special"]').click();
+   await page.locator('#summonMotionStrip [data-pose="idle"]').click();
+ }
+ await page.screenshot({
+   path:'test-results/bestiary-basilisk-giant-10x-v4.5.22.png',
+   animations:'disabled',timeout:20000
+ });
+ expect(errors).toEqual([]);
+});
+
 test('female seraph: original wing pair and animated airborne preview',async({page})=>{
  const errors=[];page.on('pageerror',e=>errors.push(String(e)));
  await page.goto('/summon-showcase.html?v=4.5.13',

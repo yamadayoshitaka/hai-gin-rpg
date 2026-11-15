@@ -3,6 +3,9 @@
  * No Three.js dependency: battle AI, WebGPU workers, and WebGL renderer use
  * identical timings and object IDs.
  */
+import {MONSTER_SUMMON_ENTRIES,MONSTER_SUMMON_BY_TYPE}
+ from './monster-summon-registry.js?v=1';
+
 export const CREATURE_PERFORMANCE = Object.freeze({
   // Seat is soldier-root elevation, not saddle Y: pelvis is ~0.95 above root.
   wolf: Object.freeze({attack:'bite',windup:.19,duration:.58,voice:'bark/howl',seat:1.12,scaleWhenMounted:1.42,voiceLength:.72}),
@@ -32,7 +35,8 @@ export function creatureInstancePhase(id){
 export const SUMMON_WORLD_SCALE=10;
 export const LARGE_SUMMON_IDS=Object.freeze([
  'wolf','wyvern','dragon','elder_dragon','dragon_lord',
- 'forest_archer','seraph_guardian'
+ 'forest_archer','seraph_guardian',
+ ...MONSTER_SUMMON_ENTRIES.map(item=>item.id)
 ]);
 const isColossalSummon=type=>LARGE_SUMMON_IDS.includes(type);
 
@@ -46,8 +50,9 @@ export function creatureFlightHeight(object,time=0){
 export function creatureSize(type,mounted=false){
  const base={wolf:1,wyvern:1.05,dragon:1.35,elder_dragon:1.55,
   dragon_lord:1.70,forest_archer:1,seraph_guardian:1,horse:1};
- const original=mounted?(CREATURE_PERFORMANCE[type]?.scaleWhenMounted??base[type]??1):
-  (base[type]??1);
+ const catalogBase=MONSTER_SUMMON_BY_TYPE[type]?.size;
+ const original=mounted?(CREATURE_PERFORMANCE[type]?.scaleWhenMounted??catalogBase??base[type]??1):
+  (catalogBase??base[type]??1);
  return original*(isColossalSummon(type)?SUMMON_WORLD_SCALE:1);
 }
 

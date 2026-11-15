@@ -1,8 +1,8 @@
 /** Deterministic, renderer-independent job actions and battlefield objects. */
-import { COMBAT_OBJECT_SPECS, COMBAT_RULES, availableCombatSkills, combatJobId } from './combat-action-spec.js?v=4.6.50';
+import { COMBAT_OBJECT_SPECS, COMBAT_RULES, availableCombatSkills, combatJobId } from './combat-action-spec.js?v=4.6.51';
 import { elevatedRangedStats } from './elevation-combat.js';
 import {defensiveDamageMultiplier} from './battle-defensive-doctrine.js';
-import { CREATURE_PERFORMANCE, FLYING_CREATURE_ATTACK_RATE, mountableCreature } from './combat-creature-performance.js?v=4.4.74';
+import { CREATURE_PERFORMANCE, FLYING_CREATURE_ATTACK_RATE, mountableCreature } from './combat-creature-performance.js?v=4.6.39';
 
 const distance = (a, b) => Math.hypot(a.x - b.x, a.z - b.z);
 /** Closest distance to an actual footprint, not merely its centre tile. */
@@ -712,8 +712,13 @@ export class CombatActionRuntime {
         o.pendingAttack=null;
         if(isAlive(target)&&target.team!==o.team&&distance(target,o)<=o.spec.range+1){
           const attackRate=o.flying?FLYING_CREATURE_ATTACK_RATE:1;
-          const element=o.type.includes('dragon')?'fire':o.type==='forest_archer'?'nature':
-            o.type==='seraph_guardian'?'arcane':'physical';
+          // Native monster descendants keep their own fire, water, frost,
+          // lightning or nature attribute rather than becoming generic physical
+          // slashes. Leviathan -> water, Hydra -> nature, Basilisk -> earth.
+          const element=o.spec.element??(
+            o.type.includes('dragon')?'fire':o.type==='forest_archer'?'nature':
+            o.type==='seraph_guardian'?'arcane':'physical'
+          );
           // An independent summon is a real area attacker, not a fake wide
           // visual effect that still only reduces one target's HP.
           const radius=Math.max(1,o.spec.radius||1);
@@ -722,9 +727,15 @@ export class CombatActionRuntime {
           this.damageStructures(target.x,target.z,Math.max(.8,o.spec.radius||1),
             o.spec.attack/attackRate*(o.type.includes('dragon')?2:.7),element);
           o.lastAttackHitAt=this.time;
-          this.event('objectAttack',{objectId:o.id,objectType:o.type,attackType:CREATURE_PERFORMANCE[o.type]?.attack,
-            x:o.x,z:o.z,targetX:target.x,targetZ:target.z,radius:o.spec.radius,effect:o.type.includes('dragon')?'fire':o.type==='seraph_guardian'?'arcane':
-             o.type==='forest_archer'?'nature':o.type==='wyvern'?'arcane':'slash'});
+          this.event('objectAttack',{objectId:o.id,objectType:o.type,
+            attackType:CREATURE_PERFORMANCE[o.type]?.attack??
+              (o.spec.sourceMonsterId?'native_'+o.spec.element:null),
+            sourceSkill:o.spec.sourceSkill??null,sourceMonsterId:o.spec.sourceMonsterId??null,
+            x:o.x,z:o.z,targetX:target.x,targetZ:target.z,radius:o.spec.radius,
+            effect:o.spec.element??(
+              o.type.includes('dragon')?'fire':o.type==='seraph_guardian'?'arcane':
+              o.type==='forest_archer'?'nature':o.type==='wyvern'?'arcane':'slash')
+          });
         }
       }
       // The angel supports nearby friends regardless of enemy line of sight.

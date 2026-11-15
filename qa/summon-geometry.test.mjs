@@ -1,9 +1,14 @@
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {COMBAT_OBJECT_SPECS} from '../src/combat-action-spec.js';
+import {isMonsterSummonType,MONSTER_SUMMON_ENTRIES} from '../src/monster-summon-registry.js';
 
 // The repository is a static browser site; Three.js is loaded through an
 // import map, so this smoke test must not require npm dependencies in CI.
+assert.equal(MONSTER_SUMMON_ENTRIES.length,50);
+for(const e of MONSTER_SUMMON_ENTRIES)
+ assert.ok(COMBAT_OBJECT_SPECS[e.id]?.sourceMonsterId,
+  'All bestiary species use the original monster renderer, not a fake dragon mesh');
 const source=readFileSync(new URL('../src/combat-creature-geometry.js',import.meta.url),'utf8');
 for(const name of ['wolf','wyvern','dragon','elder_dragon','dragon_lord','forest_archer','seraph_guardian','horse']){
   assert.ok(source.includes(name+': Object.freeze('),name+' の外観定義');
@@ -17,7 +22,7 @@ if(threeAvailable){
   const THREE=await import('three');
   const {buildCombatObjectGeometry}=await import('../src/combat-creature-geometry.js');
   const {createCombatWorldObjectRenderer}=await import('../src/combat-world-object-renderer.js');
-  for(const type of Object.keys(COMBAT_OBJECT_SPECS)){
+  for(const type of Object.keys(COMBAT_OBJECT_SPECS).filter(x=>!isMonsterSummonType(x))){
     const detailed=buildCombatObjectGeometry(type,{detail:'high'});
     const distant=buildCombatObjectGeometry(type,{detail:'low'});
     const vertices=parts=>Object.values(parts).reduce((sum,g)=>sum+g.getAttribute('position').count,0);

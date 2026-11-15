@@ -2,6 +2,9 @@
  * Real-time army combat contract v1.0. Pure data: no renderer, skeleton or
  * wardrobe dependencies. One tile is a human step. Values are design baselines.
  */
+import {MONSTER_SUMMON_SPECS,MONSTER_SUMMON_SKILLS}
+ from './monster-summon-registry.js?v=1';
+
 export const RARITY_RANK = Object.freeze({ N: 0, R: 1, UR: 2 });
 export const COMBAT_RULES = Object.freeze({
   tickSeconds: 0.1, maxMp: 100, mpRecoveryPerSecond: 0.45,
@@ -73,6 +76,10 @@ export const COMBAT_JOB_SPECS = Object.freeze({
     ]) }),
   summoner: Object.freeze({ name: '召喚士', aliases: [], role: 'support',
     skills: Object.freeze([
+      // Catalog alternatives come first. Auto-cast iterates in reverse:
+      // retain the established 7 default choices, while explicit summon
+      // commands can still select any of these 50 independent monsters.
+      ...MONSTER_SUMMON_SKILLS,
       skill('call_wolf', 'N', 'summon', 15, 16, 3, { name: '灰狼召喚', objectType: 'wolf', animation: 'cast', effect: 'nature' }),
       skill('call_forest_archer', 'R', 'summon', 26, 24, 3, { name: '森の精霊弓士召喚', objectType: 'forest_archer', animation: 'cast', effect: 'nature' }),
        skill('call_wyvern', 'R', 'summon', 25, 24, 3, { name: '飛竜召喚', objectType: 'wyvern', animation: 'cast', effect: 'arcane' }),
@@ -91,6 +98,7 @@ export const COMBAT_JOB_SPECS = Object.freeze({
 
 /** Summons, mounts and timed explosives are world objects, never soldiers. */
 export const COMBAT_OBJECT_SPECS = Object.freeze({
+  ...MONSTER_SUMMON_SPECS,
   wolf: Object.freeze({ name: '灰狼', category: 'summon', hp: 95, speed: 14, attack: 22, interval: 1.6, range: 2, radius: 4, flying: false, duration: 45 }),
   wyvern: Object.freeze({ name: '飛竜', category: 'summon', hp: 175, speed: 15, attack: 40, interval: 2.3, range: 4, radius: 5, flying: true, duration: 45 }),
   dragon: Object.freeze({ name: '古竜', category: 'summon', hp: 400, speed: 15, attack: 62, interval: 3.0, range: 5, radius: 7, flying: true, duration: 45 }),

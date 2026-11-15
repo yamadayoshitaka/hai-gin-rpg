@@ -2,6 +2,13 @@
  * Radius is always in grid tiles; damage/healing remains simulation-owned. */
 export function combatEffectDirective(event){
   if(!event)return null;
+  // Native bestiary summons keep their original elemental identities:
+  // Leviathan's sea surge is water, Hydra's toxic flora is nature and
+  // Basilisk's stony gaze is earth, instead of generic sword slashes.
+  if(event.type==='objectAttack'&&/^summon_m\d{3}$/.test(event.objectType||'')){
+    const element=event.effect==='physical'?'heavy':event.effect||'arcane';
+    return {kind:'area',element,radius:Math.min(2.4,Math.max(.5,(event.radius||2)*.3))};
+  }
   if(event.type==='objectAttack'&&['dragon','elder_dragon','dragon_lord'].includes(event.objectType))
     return {kind:'breath',element:event.objectType==='elder_dragon'?'arcane':'fire',
       radius:event.objectType==='dragon_lord'?1.65:.9};
