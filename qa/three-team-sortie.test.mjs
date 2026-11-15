@@ -81,7 +81,7 @@ assert.match(splits,/data-sortie-division="4"/);
 assert.ok(!html.includes('軍師雇用'));
 const commands=renderThreeTeamPlanner({game,stage,stages:[stage],teamId:2,view:'orders'});
 assert.match(commands,/data-sortie-order="support"/);
-assert.match(commands,/data-sortie-order="destroy"/,'destructive strategy unlocked by knight?');
+assert.ok(!commands.includes('data-sortie-order="destroy"'),'destruction requires an eligible job');
 
 assert.ok(!commands.includes('data-sortie-order="explore"'));
 const assignments=allocateThreeTeamSortie(game,stage);
@@ -137,6 +137,8 @@ setSortieGridCell(roster,1,15,3);
 assert.ok(!availableSortieOrders(roster,1).includes('explore')||sortieAdjacentJobs(roster,1).some(link=>['忍者','シーフ'].includes(link.a)||['忍者','シーフ'].includes(link.b)),
  'scout order tracks remaining adjacent scouts');
 assert.ok(availableSortieOrders(roster,1).includes('weaken'));
+assert.ok(availableSortieOrders(roster,1).includes('destroy'));
+
 assert.equal(sortieDebuffTypes(roster,1).length,3,'three roles reduce enemy stats');
 setSortieDivisions(roster,1,1,3);
 assert.equal(sortieTeams(roster)[0].divisions['1'],3);
