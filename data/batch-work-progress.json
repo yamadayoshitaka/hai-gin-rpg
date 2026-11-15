@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "asOf": "2026-11-15T16:19:45.754Z",
+  "asOf": "2026-11-15T16:21:28.912Z",
   "description": "工程別の実作業証跡。GitHub Actionsの成功や定期タスクの実行完了を、3D改修・PR・デプロイの完了と混同しない。これはGitHubに最後に記録されたスナップショットであり、ChatGPTサービスのライブ状態ではない。",
   "stageOrder": [
     "launch",
@@ -83,11 +83,11 @@
     },
     "world": {
       "source": "ChatGPT手動回帰（GitHub実コード・CI証跡）",
-      "lastRunAt": "2026-11-15T16:19:45.754Z",
+      "lastRunAt": "2026-11-15T16:21:28.912Z",
       "status": "in_review",
       "carryover": true,
       "subject": "実写方向の全53種3Dオブジェクト品質回帰：田畑2種を実改修、残51種未着手",
-      "summary": "world実行スイッチON。mainに53件の対象別受入台帳を作成（承認済0、コード改修候補2、未確認51）。rice_paddy_001とvegetable_field_001の100個の円錐植物を種別の先細り葉群InstancedMeshに置換し、専用QAとGitHub Actionsチェックを追加、Draft PR #427へコミット。リアル3D品質のWebGL画像・Android性能は未検証でmain未マージ・Pages未公開。既存PR #409大型建造物影改善も未マージ。定期タスクは全件承認・公開まで継続。",
+      "summary": "world実行スイッチON。全53対象の受入台帳を作成（最終承認0、実3D改善候補2、未確認51）。稲・野菜の円錐型株を湾曲した複数葉のInstancedMeshへ置換し、専用QAとCIを追加してDraft PR #427に実コミット。世界専用CI #43734700827はsuccess（対象QA通過）。Architecture / Battle CIは変更対象外の qa/battle-unified-voice-and-intent.test.mjs:58 にある固定作戦表示の文字列期待不一致でfailure。WebGL画面・Android実機は未検証、main未マージ、Pages未公開。PR #409も未マージ。carryoverを維持。",
       "nextAction": "PR #427でworld-qualityのCI・正面側面俯瞰WebGL・Android FPSを実検証し、崩れ・浮遊・密度や株幅の違和感を修正。既存PR #409の陰影QA/マージ可否も確認。同時にobject-realism-acceptance.jsonの未確認51種から構造的欠陥を優先して実3Dメッシュ改修し、個別にPR/QA/公開まで進める。53件の全通過までcarryoverを維持。",
       "steps": {
         "launch": "done",
@@ -116,8 +116,12 @@
           "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/409"
         },
         {
-          "label": "新規World品質CI",
+          "label": "World専用CI通過（run 43734700827）",
           "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/43734700827"
+        },
+        {
+          "label": "全体CI（戦闘固定作戦の既存テストで失敗）",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/43734700856"
         }
       ]
     },
