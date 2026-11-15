@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {qualityInventory,objectCount,stageCount,referencePrompt} from '../scripts/world-quality-catalog.mjs';
+import {normalizeRequest,parseIssueBody,makeIssueBody} from '../scripts/world-quality-manual-command.mjs';
 assert.equal(stageCount,200,'All 20 x 10 campaign stages included');
 assert.equal(objectCount,53,'Every catalog object should be included');
 assert.equal(qualityInventory.length,253);
@@ -33,4 +34,16 @@ const preview=fs.readFileSync('world-quality-preview.html','utf8');
 assert(preview.includes('createCatalogObject'));
 assert(preview.includes('roughnessScale'));
 assert(preview.includes("dataset.qaReady='true'"));
+const testManual=normalizeRequest({kind:'stage',target:'stage:c01-s04',
+ instruction:'湿った石畳と自然な光の陰影を丁寧に',maxReferences:2});
+assert.deepEqual(parseIssueBody(makeIssueBody(testManual)),testManual);
+assert.throws(()=>normalizeRequest({kind:'object',target:'stage:c01-s04'}),/Target/);
+assert.throws(()=>normalizeRequest({kind:'all',maxReferences:4}),/maximum/);
+assert.throws(()=>parseIssueBody('untrusted issue'),/Not a quality request/);
+assert(html.includes('id="manualForm"'));
+assert(html.includes("issues/new?"));
+const worldWorkflow=fs.readFileSync('.github/workflows/world-quality-photoreal.yml','utf8');
+assert(worldWorkflow.includes('issues:'));
+assert(worldWorkflow.includes('world-quality-manual-command.mjs'));
+assert(worldWorkflow.includes("github.event.issue.user.login == github.repository_owner"));
 console.log('PASS: 53 objects + 200 campaign stages; references, capture, bounded tuning, dashboard QA gates');
