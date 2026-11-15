@@ -194,8 +194,8 @@ function renderSpec(s){
   styleRef
  }):prompt;
  const submittedRefs=styleRef?[...refs,styleRef]:refs;
- const width=s.stage.id==='c01-s02'||stage45?1024:1536;
- const height=s.stage.id==='c01-s02'||stage45?576:864;
+ const width=s.stage.id==='c01-s02'||s.stage.id>='c01-s04'?1024:1536;
+ const height=s.stage.id==='c01-s02'||s.stage.id>='c01-s04'?576:864;
  return {actors,refs:submittedRefs,prompt:guardedPrompt,width,height,
   estimate:Math.ceil(width/512)*Math.ceil(height/512)*26.05+submittedRefs.length*5.37};
 }
