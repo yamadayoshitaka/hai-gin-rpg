@@ -5,8 +5,8 @@
     "object:cottage_bed_001"
   ],
   "run": {
-    "id": "43692690503",
-    "startedAt": "2026-11-15T08:08:37.264Z",
+    "id": "43695454991",
+    "startedAt": "2026-11-15T08:40:31.842Z",
     "mode": "results",
     "requested": 3,
     "requestedTarget": null,
@@ -19,11 +19,11 @@
       "object:cottage_chair_001",
       "object:cottage_bed_001"
     ],
-    "generated": 3,
+    "generated": 0,
     "failed": [],
-    "providerCalls": 3,
+    "providerCalls": 0,
     "stopReason": "REVIEW_PROPOSALS_RECORDED_NOT_MERGED",
-    "referenceStopReason": "REFERENCE_GENERATED_VISUAL_QA_PENDING",
-    "completedAt": "2026-11-15T08:08:37.265Z"
+    "referenceStopReason": "REVIEW_EXISTING_REFERENCE_ONLY",
+    "completedAt": "2026-11-15T08:40:31.842Z"
   }
 }
