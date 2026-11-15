@@ -458,7 +458,7 @@
         (originalMonster?
           '図鑑 '+originalMonster.id+' の既存3Dモデルを直接召喚。'+
           originalMonster.description+
-          ' 人間の約10倍の身長。召喚専用サイズで通常の敵図鑑は変更しない。':
+          ' 人間基準の従来サイズに復帰。通常の敵図鑑は変更しない。':
           descriptions[selected])+
         (femaleAvailable&&femaleMode.value==='female'?
           ' 女性キャラクター素体を使用した別の姿。戦闘用の元の召喚獣は維持。':
@@ -471,14 +471,14 @@
       const worldScale=sourceMonster?1:
         LARGE_SUMMON_IDS.includes(selected)?SUMMON_WORLD_SCALE:1;
       controls.target.set(0,focus*worldScale,0);
-      // The bat wings are about 15 world units wide at summon scale. Fit
+      // Fit original-size wings to the portrait viewport. Fit
       // their entire span even on narrow portrait phone displays.
-      const dragonDistance=Math.max(37,17/(2*Math.tan(THREE.MathUtils.degToRad(camera.fov/2))*camera.aspect));
+      const dragonDistance=Math.max(6,8/(2*Math.tan(THREE.MathUtils.degToRad(camera.fov/2))*camera.aspect));
       // Previously every small creature started too far from the camera:
       // an elf occupied only a tiny fraction of a portrait mobile screen.
-      // Magnify regular creatures, while fitting the giant dragon's full wings.
+      // Magnify restored original-sized creatures without clipping their wings.
       const phone=phoneLayout.matches;
-      const distance=sourceMonster?(phone?66:48):
+      const distance=sourceMonster?(phone?Math.max(7,6*sourceMonster.size):Math.max(8,8*sourceMonster.size)):
         selected==='seraph_guardian'?(phone?11:15):
         selected==='elder_dragon'?(phone?12:15):
         selected==='wyvern'?(phone?9:12):
