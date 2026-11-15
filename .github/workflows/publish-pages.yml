@@ -47,6 +47,7 @@ jobs:
       - name: Verify new game core, town save, shops and 200-stage transitions
         run: |
           node --experimental-vm-modules qa/game-core-contract.test.mjs
+          node qa/army-groups.test.mjs
       - name: Verify continents, gacha, NPC models and fences/flowers
         run: node qa/continent-town-gacha-regression.test.mjs
       - name: Verify registered Chapter 1 character-art references and 3D viewer linkage

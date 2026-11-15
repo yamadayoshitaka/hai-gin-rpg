@@ -50,7 +50,7 @@ for(const file of ['town-hub.html','story-mode.html','tactics-wireframe.html']){
 const battle=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
 assert.match(battle,/battleTacticalUi\.onSquadSums\(sums\)/);
 assert.match(battle,/battleTacticalUi\.renderFor\(id\)/);
-assert.match(battle,/commanderOrderInterval\(id\)-elapsed/);
+assert.match(battle,/commanderOrderInterval\(sid\)-elapsed/);
 assert.match(battle,/openingTacticalSummary\.refresh\(\)/);
 const inn=readFileSync(new URL('../town-hub.html',import.meta.url),'utf8');
 assert.match(inn,/innSpecialtySelect/);

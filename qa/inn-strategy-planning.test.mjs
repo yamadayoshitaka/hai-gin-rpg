@@ -47,19 +47,20 @@ assert.equal(restored.innActiveStrategyTemplateId,plan.id);
 assert.equal(restored.innCommanderInitialOrders.player,'defend');
 leaveTown(restored);
 const request=makeCoreBattleRequest(restored,'c01-s02','inn-template-qa');
-assert.equal(request.tacticalTemplate.strategy,'recovery');
-assert.equal(request.tacticalTemplate.name,'中央橋の防衛');
-assert.ok(Object.values(request.initialSquadOrders).includes('defend'));
-assert.ok(request.units.every(unit=>request.initialSquadOrders[String(unit.squadId)]==='defend'));
+assert.equal(request.tacticalTemplate,null,'old strategy templates remain archived and do not affect sorties');
+assert.ok(request.units.every(unit=>request.initialSquadOrders[String(unit.squadId)]==='charge'),'old per-commander orders are retired');
+restored.armyGroupOrders={1:'defend'};
+const groupRequest=makeCoreBattleRequest(restored,'c01-s02','inn-groups-qa');
+assert.ok(groupRequest.units.every(unit=>groupRequest.initialSquadOrders[String(unit.squadId)]==='defend'));
 const inn=readFileSync(new URL('../town-hub.html',import.meta.url),'utf8');
 const battle=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
-assert.match(inn,/innPage='strategies'/);
-assert.match(inn,/\[\['strategies','作戦'\],\['deployment','配置'\],\['overview','号令'\]/);
-assert.match(inn,/pages\.deployment\.append\(commander,auto\)/);
-assert.match(inn,/data-inn-template-save/);
+assert.match(inn,/innPage='deployment'/);
+assert.match(inn,/\[\['strategies','班・隊長'\],\['deployment','配置'\],\['overview','号令'\]/);
+assert.match(inn,/pages\.deployment\.append\(auto\)/);
+assert.match(inn,/data-army-captain/);
 assert.match(inn,/registerInnStrategyTemplate\(game/);
 assert.match(inn,/setInnCommanderInitialOrder\(game/);
-assert.match(battle,/const innStoryStrategy=storyRequest\?\.tacticalTemplate\?\.strategy/);
+assert.match(battle,/const innStoryStrategy=null/);
 assert.match(battle,/storyRequest\?\.initialSquadOrders\?\.\[String\(id\)\]/);
 assert.equal(Object.keys(TACTICAL_STRATEGIES).length,4);
 for(const [name,markup] of [['inn',inn],['battle',battle]]){
@@ -67,4 +68,4 @@ for(const [name,markup] of [['inn',inn],['battle',battle]]){
  assert.ok(modules.length,name+' module was missing');
  new SourceTextModule(modules.at(-1)[1],{identifier:name});
 }
-console.log('Inn strategy templates, commander deployment, initial orders and sortie bridge PASS');
+console.log('Archived strategy migration, group initial orders and sortie bridge PASS');

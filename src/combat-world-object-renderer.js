@@ -8,8 +8,9 @@ import * as THREE from 'three';
 import { COMBAT_OBJECT_SPECS } from './combat-action-spec.js?v=4.6.51';
 import {isMonsterSummonType} from './monster-summon-registry.js?v=1';
 import {createAdoptedSpecialSummonRenderer} from './combat-creature-adopted-overlays.js?v=web-mesh-26-v1';
-import {createMonsterSummonRenderer} from './monster-summon-renderer.js?v=masters-v1';
+import {createMonsterSummonRenderer} from './monster-summon-renderer.js?v=masters-v2';
 import { buildCombatObjectGeometry, CREATURE_VISUAL_SPECS } from './combat-creature-geometry.js?v=4.5.20';
+import {subdivideDedicatedSource} from './creature-source-subdivision.js?v=masters-v1';
 import {creatureInstancePhase,creatureFlightHeight,creatureSize,creatureAttackProgress,mountedFlightSway,mountedFlightBaseHeight} from './combat-creature-performance.js?v=4.6.37';
 import {createCreatureLocomotion,advanceCreatureLocomotion,creatureLegSwing} from './combat-creature-locomotion.js?v=4.4.59';
 import {createCreatureFootfallFx} from './combat-creature-footfall-fx.js?v=4.4.23';
@@ -270,6 +271,31 @@ export function createCombatWorldObjectRenderer(scene,{cellSize=1.12,offset=6,te
     }
     species.set(type,lods);
   }
+  // The medium LOD only allocates geometry for the on-screen type. The
+  // costly authoring/source master remains in the separate 108-model studio.
+  function ensureMediumLod(type){
+    const lods=species.get(type);
+    if(!lods)return null;
+    if(lods.medium)return lods.medium;
+    const parts=buildCombatObjectGeometry(type,{detail:'low'});
+    const meshes=new Map();
+    for(const [part,original] of Object.entries(parts)){
+      const geometry=subdivideDedicatedSource(original,{maxTriangles:90000});
+      if(geometry!==original)original.dispose();
+      const surface=part==='eyes'?eyeMaterial:
+        part==='equipment'?equipmentMaterial:
+        ['forest_archer','seraph_guardian'].includes(type)?humanoidMaterial:
+        coats.get(type)?.material??distantMaterial;
+      const mesh=new THREE.InstancedMesh(geometry,surface,MAX_PER_TYPE);
+      mesh.name='CombatWorldObject_'+type+'_medium_'+part;
+      mesh.count=0;mesh.visible=false;mesh.frustumCulled=false;
+      mesh.castShadow=true;mesh.receiveShadow=true;
+      mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+      meshes.set(part,mesh);scene.add(mesh);
+    }
+    lods.medium={meshes,count:0};
+    return lods.medium;
+  }
   // The CC0 Quaternius face is loaded once for both human-shaped summons.
   // The low-detail procedural face remains as an instant and offline fallback.
   let disposed=false;
@@ -317,6 +343,7 @@ export function createCombatWorldObjectRenderer(scene,{cellSize=1.12,offset=6,te
     for(const [type,lods] of species){
       counts[type]=0;
       lods.high.count=0;lods.low.count=0;
+      if(lods.medium)lods.medium.count=0;
     }
     for(const o of objects){
       const pose=creaturePoseFrame(o,actionTime);
@@ -431,8 +458,11 @@ export function createCombatWorldObjectRenderer(scene,{cellSize=1.12,offset=6,te
       // 10x physical scale should NOT force every summon into heavy
       // near-LOD across hundreds of grid cells. Per-species geometry is
       // instanced, but source skins still need camera-distance LOD.
-      const detail=distance<highDetailDistance*Math.sqrt(scale)?'high':'low';
-      const lod=species.get(o.type)[detail],slot=lod.count++;
+      const cutoff=highDetailDistance*Math.sqrt(scale);
+      const detail=distance<cutoff*.55?'high':distance<cutoff?'medium':'low';
+      const lod=detail==='medium'?ensureMediumLod(o.type):
+        species.get(o.type)[detail];
+      const slot=lod.count++;
       counts[o.type]++;
       for(const [part,mesh] of lod.meshes){
         // Each part shares the same base instance transform and ID slot.

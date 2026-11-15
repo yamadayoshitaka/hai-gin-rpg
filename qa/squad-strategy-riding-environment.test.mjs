@@ -97,9 +97,11 @@ assert.match(formatSquadIntent({strategy:'environment_prepare'}).purpose,/作戦
 const html=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
 assert.match(html,/id='openingSquadStrategies'/);
 assert.match(html,/STRATEGY_LABELS/);
-assert.match(html,/massWorker\?\.setSquadFormationTypes\(types,team,plan\.assignments,jobs\)/,
- 'Every chosen squad formation reaches the authoritative Worker');
+assert.match(html,/armyGroupBySquad\[id\]=group/,
+ 'Group membership is independent of each soldier profession');
+assert.doesNotMatch(html,/massWorker\?\.setSquadFormationTypes\(types,team,plan\.assignments,jobs\)/,
+ 'Launching must preserve jobs, captain passives and original casualty identities');
 assert.match(html,/battleReady=true;loading\.hidden=true/);
 assert.match(html,/add\('⚔ 突撃','charge',\(\)=>beginCircleTargetSelection\('attack'\),\{effect:orderEffect\('charge'\)\}\)/);
 assert.match(html,/add\('↘ 退却','retreat',\(\)=>issue\('retreat'\),\{effect:orderEffect\('retreat'\)\}\)/);
-console.log('PASS: fixed pre-battle squad strategies, survivor fallback, environment repair, riding bones, elevated ranged AI');
+console.log('PASS: archived strategy engine, three-group setup, environment repair, riding bones and elevated ranged AI');

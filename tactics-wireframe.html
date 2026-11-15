@@ -12,7 +12,7 @@ body.town-mode #stageViewport{position:fixed!important;inset:0!important;width:1
 body.town-mode #stageViewport canvas{width:100%!important;height:100%!important}
 body.town-mode #battleLoading[hidden]{display:none!important}
 </style><link rel="stylesheet" href="./src/tactical-command-ui.css?v=2.1"><link rel="stylesheet" href="./src/battle-ui-refinement.css?v=2.4"></head>
-<body><div id="hud"><b>灰銀戦記 ― 沈黙の星鐘 — リアルタイム軍団戦 v4.6.69</b><small>自動戦闘・階段移動 / 開戦時固定作戦と部隊号令 / ドラッグで視点回転</small><div id="selected">軍団配置中…</div><div id="log"></div><div id="jobTools" style="display:none"><select id="jobSelect"></select><select id="motionSelect"></select><button id="playMotion">動作再生</button></div><small><a style="color:#9adfff" href="./motion-external-test.html">外部モーション検証</a></small></div><div id="stageViewport"></div><div id="battleStatus" aria-live="polite"><div class="unit" id="allyStats">味方 HP -- / MP --</div><div class="unit enemy" id="enemyStats">敵 HP -- / MP --</div></div><button id="menuToggle" style="position:fixed;top:68px;left:10px;z-index:25;background:#203c55;color:white;padding:9px 15px;border:1px solid #9bb4c7;border-radius:8px">☰ メニュー</button><div id="commands"><label>全軍作戦<select id="strategy"><option value="eliminate">全滅</option><option value="environment_prepare">環境整備</option><option value="recovery">回復</option></select></label><label hidden aria-hidden="true">個別命令<select id="unitOrder" disabled><option value="inherit">全軍に従う</option><option value="charge">突撃</option><option value="defend">防御</option><option value="hold">陣地維持</option><option value="retreat">後退</option></select></label><button id="pause">一時停止</button><button id="igniteBridge" disabled style="position:fixed;right:8px;bottom:157px;z-index:12;background:#9b4026;color:white;border-radius:7px;padding:9px">🔥 木橋を燃やす</button><span id="unitInfo">味方をタップして個別指示</span><a id="specShortcut" href="./battle-specifications.html" target="_blank" rel="noopener" aria-label="ゲーム仕様一覧を別タブで開く">📖 仕様</a></div>
+<body><div id="hud"><b>灰銀戦記 ― 沈黙の星鐘 — リアルタイム軍団戦 v4.6.69</b><small>自動戦闘・階段移動 / 最大3班・班単位の号令 / ドラッグで視点回転</small><div id="selected">軍団配置中…</div><div id="log"></div><div id="jobTools" style="display:none"><select id="jobSelect"></select><select id="motionSelect"></select><button id="playMotion">動作再生</button></div><small><a style="color:#9adfff" href="./motion-external-test.html">外部モーション検証</a></small></div><div id="stageViewport"></div><div id="battleStatus" aria-live="polite"><div class="unit" id="allyStats">味方 HP -- / MP --</div><div class="unit enemy" id="enemyStats">敵 HP -- / MP --</div></div><button id="menuToggle" style="position:fixed;top:68px;left:10px;z-index:25;background:#203c55;color:white;padding:9px 15px;border:1px solid #9bb4c7;border-radius:8px">☰ メニュー</button><div id="commands"><label>全軍作戦<select id="strategy"><option value="eliminate">全滅</option><option value="environment_prepare">環境整備</option><option value="recovery">回復</option></select></label><label hidden aria-hidden="true">個別命令<select id="unitOrder" disabled><option value="inherit">全軍に従う</option><option value="charge">突撃</option><option value="defend">防御</option><option value="hold">陣地維持</option><option value="retreat">後退</option></select></label><button id="pause">一時停止</button><button id="igniteBridge" disabled style="position:fixed;right:8px;bottom:157px;z-index:12;background:#9b4026;color:white;border-radius:7px;padding:9px">🔥 木橋を燃やす</button><span id="unitInfo">味方をタップして個別指示</span><a id="specShortcut" href="./battle-specifications.html" target="_blank" rel="noopener" aria-label="ゲーム仕様一覧を別タブで開く">📖 仕様</a></div>
 <style>
 #commands,#menuToggle{display:none!important}#allySquadRibbon[hidden],#enemySquadRibbon[hidden]{display:none!important}
 #battleStatus{bottom:0!important;min-height:106px;display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:8px;padding:8px 10px calc(8px + env(safe-area-inset-bottom,0px));pointer-events:auto;align-items:stretch}
@@ -318,7 +318,7 @@ body[data-circle-target] #destinationPrompt{border:2px solid #ffed9c;box-shadow:
 <button id="battleMenuToggle" aria-expanded="false">☰ メニュー</button>
 <div id="teamLegend" aria-label="陣地識別色"><span class="ally">■ 味方陣地・西</span><span class="enemy">■ 敵陣地・東</span><span>▣ 中立帯</span></div>
 <div id="battleTopDock" aria-label="戦況・戦死者・性能計測"><div id="topRadarSlot"></div><div id="topBattleInfo"><div id="battleTopRow"><div id="topMenuSlot"></div><div id="topTeamsSlot"></div><div id="topQuickActions"><button id="topBgm" aria-label="BGMと効果音を切り替える">♪ BGM</button><button id="topSurrender" aria-label="降参を確認する">🏳 降参</button></div></div><div id="battleCasualties" aria-live="polite"><span class="allyLoss">味方戦闘不能 <b id="allyCasualties">0/50</b>人</span><span class="enemyLoss">敵戦闘不能 <b id="enemyCasualties">0/50</b>人</span></div><div id="topPerformanceSlot"></div><div id="topStructureSlot"></div></div></div>
-<div id="battleMenu" hidden aria-label="ゲームメニュー"><strong>戦闘メニュー</strong><div class="menuLine" id="armyScaleSlot"></div><div class="menuLine" id="menuSoundSlot"></div><div class="menuLine" id="menuPauseSlot"></div><div class="menuLine" id="lockedSquadStrategies" aria-label="現在の隊列作戦（開戦後変更不可）"></div><div class="menuLine menuDisplayOptions retiredRibbonSettings"><strong>左右の隊列ラベル</strong><label><input id="showAllySquadRibbon" type="checkbox" checked> 味方ラベル</label><label><input id="showEnemySquadRibbon" type="checkbox" checked> 敵ラベル</label></div><div class="menuLine menuDisplayOptions"><label><input id="showAllSquadLeaderLines" type="checkbox"> 全隊の引き出し線を表示（通常は選択した隊のみ）</label></div><div class="menuLine menuDisplayOptions"><strong>上部ボタンの表示</strong><label><input id="showTopBgm" type="checkbox" checked> BGM</label><label><input id="showTopSurrender" type="checkbox" checked> 降参</label></div><div class="menuLine"><label for="corpseLifetime">死体の表示（最大100体）</label><select id="corpseLifetime" aria-label="死体が消えるまでの時間"><option value="30">30秒</option><option value="60" selected>60秒</option><option value="120">120秒</option><option value="never">消滅しない</option></select></div><small>号令は青い部隊名をタップして選択できます。部隊タイプは編成時から固定です。</small><div class="menuLine" id="menuBridgeSlot"></div><div class="menuLine"><button id="surrender">🏳 降参する</button></div></div>
+<div id="battleMenu" hidden aria-label="ゲームメニュー"><strong>戦闘メニュー</strong><div class="menuLine" id="armyScaleSlot"></div><div class="menuLine" id="menuSoundSlot"></div><div class="menuLine" id="menuPauseSlot"></div><div class="menuLine" id="lockedSquadStrategies" aria-label="現在の隊列作戦（開戦後変更不可）"></div><div class="menuLine menuDisplayOptions retiredRibbonSettings"><strong>左右の隊列ラベル</strong><label><input id="showAllySquadRibbon" type="checkbox" checked> 味方ラベル</label><label><input id="showEnemySquadRibbon" type="checkbox" checked> 敵ラベル</label></div><div class="menuLine menuDisplayOptions"><label><input id="showAllSquadLeaderLines" type="checkbox"> 全隊の引き出し線を表示（通常は選択した隊のみ）</label></div><div class="menuLine menuDisplayOptions"><strong>上部ボタンの表示</strong><label><input id="showTopBgm" type="checkbox" checked> BGM</label><label><input id="showTopSurrender" type="checkbox" checked> 降参</label></div><div class="menuLine"><label for="corpseLifetime">死体の表示（最大100体）</label><select id="corpseLifetime" aria-label="死体が消えるまでの時間"><option value="30">30秒</option><option value="60" selected>60秒</option><option value="120">120秒</option><option value="never">消滅しない</option></select></div><small>号令は青い部隊名をタップして選択できます。軍師が同じ班の全隊へ号令を出します。</small><div class="menuLine" id="menuBridgeSlot"></div><div class="menuLine"><button id="surrender">🏳 降参する</button></div></div>
 <div id="squadTactics" hidden aria-label="部隊の号令・行き先"><div class="tacticsHeading"><strong id="squadTacticsName">部隊を選択</strong><button id="squadInspect">🔍 近景</button><button id="squadTacticsClose">✕ 戻る</button></div><div id="squadTypeStatus">編成タイプは固定</div>
 <div id="squadActiveOrder" style="font-weight:800;color:#8be0ff;margin-top:6px">現在の号令：自動行動</div>
 <small id="squadOrderStatus">現在の目的：自動迎撃</small><div class="tacticsActions"><button id="squadOrderChoice">📯 号令</button><button id="squadDestination" hidden aria-hidden="true" tabindex="-1">📍 行き先</button><button id="squadStrategistWarp" hidden>✨ 軍師ワープ</button><button id="squadMissionChoice" hidden aria-hidden="true" tabindex="-1">⚑ 命令</button><button id="squadDetails">📊 HP</button></div><div id="squadTacticsOrders" hidden><strong>一時的な号令（編成は変更されません）</strong><select id="squadTacticalCommand" aria-label="部隊への号令"><option value="">号令を選択</option><option value="charge">⚔ 突撃</option><option value="defend">🛡 守備</option><option value="hold">⏸ 待機</option><option value="retreat">↘ 退却</option></select><div id="squadTacticsCommanderSlot"></div></div><div id="squadTacticsMissions" hidden aria-hidden="true"><strong>部隊ごとの作戦目標</strong><select id="squadMission" aria-label="作戦命令"><option value="">命令を選択</option><option value="destroy_bridge">🌉 橋を破壊</option><option value="burn_tree">🔥 木を焼き払う</option><option value="burn_building">🔥 建物を焼き払う</option><option value="demolish_structure">🧨 障害物を破壊</option><option value="repair_structure">🛠 建物・橋を修理</option><option value="extinguish_fire">💧 火災を消火</option><option value="eliminate_squad">⚔ 指定敵部隊の全滅</option><option value="eliminate_commander">♟ 敵軍師を打ち取れ</option><option value="retreat">↩ 後退</option><option value="clear">× 命令解除</option></select><small>対象をタップして輪郭を表示し、「確定」を押すと命令します。</small></div></div>
@@ -741,6 +741,7 @@ body.compact-command-dock.compact-explore-open .exploreBuildingList button{
 <div id="cameraTools"><button id="soundToggle" aria-label="BGMと音声を再生">♪ BGM再生</button><button id="camGesture" aria-pressed="false">操作：回転</button><button id="camOverview">見渡す</button><button id="camFollow">キャラ中心</button><button id="camReset">視点戻す</button></div><div id="endScreen"><h1 id="outcome"></h1><div id="resultDetail"></div><section id="victoryRewards" hidden aria-label="勝利報酬"><h2>戦闘報酬</h2></section><button onclick="location.reload()">もう一度戦う</button></div><div id="battleLoading" role="status" aria-live="polite"><div id="loadingCard"><h1>灰銀戦記 ― 沈黙の星鐘</h1><p>戦場と装備を最適化しています</p><div id="loadingStage">描画エンジンを起動中…</div><div id="loadingBar" role="progressbar" aria-label="ゲーム起動準備" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div id="loadingFill"></div></div><div id="loadingPercent">0%</div><p style="font-size:12px;color:#97b3ca">完了するまで戦闘とキャラの移動は開始しません</p><div id="loadingError" hidden></div><button id="loadingRetry" hidden onclick="location.reload()">再読み込み</button>
 <button id="loadingStart" type="button" hidden style="font:bold 17px system-ui;padding:13px 17px;border:2px solid #eacb87;background:#245d7a;color:#fff;border-radius:10px;margin:12px auto;min-height:54px">♪ 音楽を有効にして開戦</button>
 <button id="loadingSkipAudio" type="button" hidden style="font:12px system-ui;padding:9px;border:1px solid #92a5bb;background:#132a3b;color:#c9d8e5;border-radius:8px;margin:4px auto">音声なしで開戦</button></div></div><div id="runtimeError" style="display:none;position:fixed;top:65px;left:8px;right:8px;z-index:30;padding:10px;background:#631f28;color:#fff;border:1px solid #ff9d9d;border-radius:8px;font-size:12px;white-space:pre-wrap"></div><script>function showRuntimeError(message){const el=document.getElementById('runtimeError');if(el){el.style.display='block';el.textContent='実行エラー: '+message}const loading=document.getElementById('battleLoading');if(loading&&!loading.hidden){document.getElementById('loadingStage').textContent='ゲームの準備に失敗しました';const detail=document.getElementById('loadingError');detail.hidden=false;detail.textContent=String(message);document.getElementById('loadingRetry').hidden=false}}window.addEventListener('error',e=>showRuntimeError((e.message||'スクリプトの読み込みに失敗')+'\n'+(e.filename||'')+':'+(e.lineno||'')));window.addEventListener('unhandledrejection',e=>showRuntimeError(e.reason?.stack||e.reason?.message||String(e.reason)));</script><script type="module">
+import {normalizeArmyGroup,battleGroupMembers} from './src/army-groups.js';
 import * as THREE from 'three';
 import {createGamePageAudio} from './src/game-page-audio.js';
 import {layoutSquadCallouts,squadCalloutLeader} from './src/battle-squad-callout-layout.js?v=2';
@@ -756,7 +757,7 @@ import {TACTICAL_STRATEGIES,TACTICAL_ORDERS,orderEffect,strategyEffect} from './
 import {coreVictoryReward,territoryVictoryReward,verifiedBattleLoot} from './src/battle-victory-rewards.js?v=2.2';
 import {CAMPAIGN_STAGE_BY_ID} from './src/campaign-stage-plan.js';
 import {TERRITORIES} from './src/story-campaign.js';
-import {installBattleTacticalUI,createPreBattleTacticalSummary} from './src/tactical-command-battle-ui.js?v=2.4';
+import {installBattleTacticalUI,createPreBattleTacticalSummary} from './src/tactical-command-battle-ui.js?v=army-groups-1';
 import {describeSquadOrder,describeCommanderBuff} from './src/battle-order-message.js?v=4.6.40';
 import {recommendBattleTactics} from './src/battle-quick-recommendation.js?v=4.6.43';
 import {chooseAutoSquadItem} from './src/battle-auto-item-policy.js?v=1';
@@ -941,7 +942,7 @@ import {ConfirmedHitOverlay,selectConfirmedHitEvents} from './src/confirmed-hit-
 import {combatEffectDirective} from './src/combat-effect-directives.js?v=4.6.16';
  import {CombatActionRuntime} from './src/combat-action-runtime.js?v=4.6.51';
  import {COMBAT_RULES,combatJobId,availableCombatSkills} from './src/combat-action-spec.js?v=4.6.51';
- import {createCombatWorldObjectRenderer} from './src/combat-world-object-renderer.js?v=masters-v1';
+ import {createCombatWorldObjectRenderer} from './src/combat-world-object-renderer.js?v=masters-v2';
 import {describeDestructibleWorld} from './src/destructible-world.js?v=4.6.15';
 import {StructureCollapseVfx} from './src/structure-collapse-vfx.js?v=4.4.34';
  import {createCreatureSoundRuntime} from './src/combat-creature-sounds.js?v=creature-voices-2';
@@ -2179,9 +2180,7 @@ function commanderOrderInterval(id){
 let lastGlobalOrderAt=null;
 function squadOrderCooldownSeconds(id){
  if(id==null)return 0;
- const usedAt=lastSquadOrderAt.get(String(id));
- return Number.isFinite(usedAt)?Math.max(0,Math.ceil(usedAt+
-  commanderOrderInterval(id)-elapsed)):0;
+ return Math.max(0,...commandGroupIds(id).map(sid=>{const usedAt=lastSquadOrderAt.get(String(sid));return Number.isFinite(usedAt)?Math.max(0,Math.ceil(usedAt+commanderOrderInterval(sid)-elapsed)):0;}));
 }
 function canChangeSquadOrder(id){
  const remain=squadOrderCooldownSeconds(id);
@@ -2251,8 +2250,7 @@ function refreshCommanderOrderOptions(){
  battleOrderSelect.innerHTML='<option value="">号令を選択</option>'+(leader?.orders||[]).map(b=>'<option value="'+escapeOrderHtml(b.id)+'">'+escapeOrderHtml(b.name)+'（'+Number(b.duration)+'秒）</option>').join('');
  const active=activeCommanderOrder(battleCommanderSelect.value);
  const leaderSquad=storyRequest.units.find(u=>String(u.commanderId)===battleCommanderSelect.value)?.squadId;
- const blockReason=leader?.active===false?'☠ 軍師戦死：命令不可（自動行動）':
-  leaderSquad!=null?squadCommanderUnavailableReason(leaderSquad):'軍師未配置：命令不可';
+ const blockReason=leaderSquad!=null?squadCommanderUnavailableReason(leaderSquad):'軍師未配置：命令不可';
  const cooldown=leaderSquad!=null?squadOrderCooldownSeconds(leaderSquad):0;
  battleOrderSelect.disabled=Boolean(blockReason)||cooldown>0;
  battleOrderStatus.textContent=blockReason||(cooldown?'⏳'+cooldown+'秒 命令・アイテム不可':
@@ -2267,12 +2265,13 @@ if(storyRequest){
  battleCommanderSelect.innerHTML=storyRequest.commanders.map(c=>'<option value="'+escapeOrderHtml(c.id)+'">'+escapeOrderHtml(c.name)+' Lv.'+Number(c.level)+'</option>').join('');
  battleCommanderSelect.onchange=refreshCommanderOrderOptions;
  battleOrderSelect.onchange=()=>{const leader=storyRequest.commanders.find(c=>String(c.id)===battleCommanderSelect.value),order=leader?.orders?.find(o=>o.id===battleOrderSelect.value);if(!order)return;
-  if(leader.active===false)return;
   const squad=storyRequest.units.find(u=>String(u.commanderId)===String(leader.id))?.squadId;
   if(squad!=null&&!hasSquadCommander(squad)){log(squadCommanderUnavailableReason(squad));return;}
   if(squad!=null&&!canChangeSquadOrder(squad)){battleOrderSelect.value='';return;}
-  liveCommanderOrders.set(String(leader.id),{order,until:elapsed+order.duration});
-  if(squad!=null)markRibbonOrderIssued(String(squad));
+  for(const sid of commandGroupIds(squad)){
+   liveCommanderOrders.set(String(squadCommanderId(sid)),{order,until:elapsed+order.duration});
+   markRibbonOrderIssued(String(sid));
+  }
   battleCeremony.showOrder(leader.name+'：'+order.name,describeCommanderBuff(order));
   if(squad!=null){beginCommanderCinematic(String(squad));emitSquadBuffEffect(String(squad),'arcane');}
   battleAudio.orderFanfare();
@@ -2281,7 +2280,7 @@ if(storyRequest){
    speaker:'軍師',kind:'success',priority:98,forceDisplay:true,squadId:squad??null,
    text:leader.name+'：'+order.name+' 発令！ '+buff});
   log(leader.name+'の号令：'+order.name+'／'+buff);refreshCommanderOrderOptions();};
- refreshCommanderOrderOptions();
+ // Options are refreshed after group membership is initialized.
  const replay=$('endScreen').querySelector('button');if(replay)replay.hidden=true;
  const back=document.createElement('button');back.id='returnStory';back.textContent='📜 ストーリーへ戻る';back.onclick=()=>{location.href=storyRequest?.origin==='game-core'?'./world-map.html?v=core-1':'./story-mode.html?v=story-1.5#map'};$('endScreen').append(back);
 }else{
@@ -5297,8 +5296,8 @@ function refreshVitals(force=false){
   '　HP '+Math.floor(groupHp)+' / '+Math.floor(groupMaxHp)+'（'+vitalPct(groupHp,groupMaxHp)+'%）';
  $('vitalsHealing').disabled=teamIndex!==0||displaySquad==='all'||!hasSquadCommander(displaySquad)||
   !filteredRoster.some(u=>u.alive&&u.hp>0&&u.hp<u.maxHp)||
-  !(massSim?massSim.units.some(u=>u.team===0&&u.alive&&u.formationType==='support'&&u.jobId==='priest'&&hasSquadCommander(String(u.squadId))):
-   actors.some(u=>u.team===0&&u.hp>0&&selectedSquadType(u.squadId)==='support'&&u.jobId==='priest'&&hasSquadCommander(String(u.squadId))));
+  !(massSim?massSim.units.some(u=>u.team===0&&u.alive&&u.jobId==='priest'&&hasSquadCommander(String(u.squadId))):
+   actors.some(u=>u.team===0&&u.hp>0&&u.jobId==='priest'&&hasSquadCommander(String(u.squadId))));
  const jobOptions=['all',...Array.from(selectedJobs.keys()).sort()];
  if($('vitalsJob').options.length!==jobOptions.length||jobOptions.some((job,i)=>$('vitalsJob').options[i]?.value!==job)){
   $('vitalsJob').replaceChildren(...jobOptions.map(job=>{const option=document.createElement('option');option.value=job;option.textContent=job==='all'?'全職業':job;return option}));
@@ -5344,7 +5343,7 @@ $('vitalsHealing').onclick=()=>{
  const targetId=$('vitalsSquad').value;if(targetId==='all'||!hasSquadCommander(targetId))return;
  let request;
  if(massSim){
-  const eligible=[...new Set(massSim.units.filter(u=>u.team===0&&u.alive&&u.jobId==='priest'&&u.formationType==='support'&&hasSquadCommander(String(u.squadId)))
+  const eligible=[...new Set(massSim.units.filter(u=>u.team===0&&u.alive&&u.jobId==='priest'&&hasSquadCommander(String(u.squadId)))
    .map(u=>String(u.squadId)))];
   const patients=massSim.units.filter(u=>u.team===0&&u.alive&&String(u.squadId)===targetId&&u.hp<u.maxHp);
   eligible.sort((a,b)=>{
@@ -5356,7 +5355,7 @@ $('vitalsHealing').onclick=()=>{
   if(request)massWorker?.requestSquadHealing(targetId,request.supportId);
  }else{
   const wounded=actors.find(a=>a.team===0&&a.hp>0&&a.hp<a.maxHp&&String(a.squadId)===targetId);
-  const support=actors.filter(a=>a.team===0&&a.hp>0&&a.jobId==='priest'&&selectedSquadType(a.squadId)==='support'&&hasSquadCommander(String(a.squadId)))
+  const support=actors.filter(a=>a.team===0&&a.hp>0&&a.jobId==='priest'&&hasSquadCommander(String(a.squadId)))
    .sort((a,b)=>a.root.position.distanceToSquared(wounded?.root.position??a.root.position)-b.root.position.distanceToSquared(wounded?.root.position??b.root.position))[0];
   if(wounded&&support){request={supportId:String(support.squadId),targetId,x:wounded.cell.x,z:wounded.cell.z};skirmishHealingRequests.set(request.supportId,targetId)}
  }
@@ -5401,7 +5400,7 @@ const lockedStrategyPanel=$('lockedSquadStrategies');
 lockedStrategyPanel.hidden=true; // No strategy section in the battle menu; view fixed strategy by tapping a circle.
 lockedStrategyPanel.style.cssText='display:grid;gap:5px;font-size:12px;line-height:1.5';
 const strategyReadOnlyTitle=document.createElement('strong');
-strategyReadOnlyTitle.textContent='隊列の作戦（開戦後は変更不可）';
+strategyReadOnlyTitle.textContent='所属班と号令';
 const lockedStrategyList=document.createElement('div');
 lockedStrategyList.id='lockedSquadStrategyList';
 lockedStrategyList.style.cssText='display:grid;gap:3px;max-height:120px;overflow:auto;color:#cee8f7';
@@ -5691,6 +5690,10 @@ const selectedSquadFormations=new Map();
 const selectedSquadType=(id,team=0)=>selectedSquadFormations.get(team+':'+String(id))||normalizeFormationType(squadTypeOf(id));
 const squadIds=[...new Set(squadRoster.filter(u=>u.team===0).map(u=>String(u.squadId)))];
 squadIds.sort((a,b)=>Number(a)-Number(b)||a.localeCompare(b,'ja'));
+const armyGroupBySquad={...storyRequest?.armyGroupBySquad};
+for(const [index,id] of squadIds.entries())armyGroupBySquad[id]=normalizeArmyGroup(armyGroupBySquad[id]??(storyRequest?1:Math.min(3,Math.floor(index*3/Math.max(1,squadIds.length))+1)));
+const commandGroupIds=id=>battleGroupMembers(id,squadIds,armyGroupBySquad);
+const commandGroupName=id=>'第'+normalizeArmyGroup(armyGroupBySquad[String(id)])+'班';
 // Item spending is manual until the user opts each squad into automation.
 const squadItemPolicies=new Map(squadIds.map(id=>[id,'manual']));
 // Finite tutorial supplies let the squad buffs be tested immediately.
@@ -5707,16 +5710,8 @@ enemySquadIds.sort((a,b)=>Number(a)-Number(b)||a.localeCompare(b,'ja'));
 for(const team of [0,1])for(const id of team===0?squadIds:enemySquadIds)
  selectedSquadFormations.set(team+':'+id,squadJobComposition(squadRoster.filter(u=>u.team===team&&String(u.squadId)===id)).type);
 // Opening-screen defaults use the SAME capabilities as the Worker simulation.
-const innStoryStrategy=storyRequest?.tacticalTemplate?.strategy;
-for(const id of squadIds){
- if(innStoryStrategy&&TACTICAL_STRATEGIES[innStoryStrategy]){
-  squadStrategies.set(id,innStoryStrategy);
- }else if(!squadStrategies.has(id)){
-  const members=squadRoster.filter(u=>u.team===0&&String(u.squadId)===id&&u.hp>0);
-  squadStrategies.set(id,members.some(u=>u.jobId==='priest')?'recovery':
-   members.some(u=>['mage','ninja','thief'].includes(u.jobId))?'environment_prepare':'eliminate');
- }
-}
+const innStoryStrategy=null;
+for(const id of squadIds)squadStrategies.set(id,'eliminate');
 const STRATEGY_LABELS={eliminate:'全滅',environment_prepare:'環境整備',recovery:'支援',mission:'目的遂行',objective:'目的遂行'};
 function squadFixedStrategyLabel(id,team=0){
  if(team===1)return '敵AI・全滅';
@@ -6064,7 +6059,7 @@ function checkCompletedExplorations(){
 function refreshLockedSquadStrategyList(){
  if(lockedStrategyPanel.hidden)return;
  const names=squadIds.map(id=>{
-  return squadName(id)+'：編成'+FORMATION_NAMES[selectedSquadType(id)]+'（固定）';
+  return squadName(id)+'：'+commandGroupName(id)+'へ号令';
  });
  // Preserve the menu list's scroll position; avoid rebuilding live DOM if
  // the lone-survivor fallback has not changed the read-only strategy texts.
@@ -6092,7 +6087,7 @@ function updateSkirmishSquadStrategies(){
    continue;
   }
   if(!fighters.length||directive&&!directive.autoStrategy)continue;
-  const objective=squadStrategies.get(id);
+  const objective=['defend','hold','retreat'].includes(squadEffectiveOrder(id).mode)?'recovery':'eliminate';
   if(objective==='recovery'){
    if(!fighters.some(u=>u.jobId==='priest'))continue;
    const wounded=actors.filter(u=>u.team===0&&u.hp>0&&u.hp<u.maxHp);
@@ -6143,9 +6138,7 @@ function updateSkirmishSquadStrategies(){
   squadOrderRegistry.set(id,{mode:'mission',type,targetId:target.id,x:target.x,z:target.z,autoStrategy:true});
  }
 }
-const squadName=(id,team=0)=>(team===0?'第':'敵第')+
- ((team===0?squadIds:enemySquadIds).indexOf(String(id))+1)+'隊・'+
- FORMATION_NAMES[selectedSquadType(id,team)];
+const squadName=(id,team=0)=>(team===0?commandGroupName(id)+'・第':'敵第')+((team===0?squadIds:enemySquadIds).indexOf(String(id))+1)+'隊';
 let dialogueCameraReturn=null,commanderCinematic=null;
 const cinematicFocusQueue=[];
 let lastAutomaticFocusAt=-Infinity,lastUltimateFocusAt=-Infinity;
@@ -6225,7 +6218,7 @@ let pendingSquadMission=null,missionPreviewBox=null,pendingCircleTarget=null;
 let lastCircleTargetResolvedAt=-Infinity;
 const orderedSquad=()=>selectedSquadId;
 function squadCommanderId(id){return storyRequest?.units.find(u=>String(u.squadId)===String(id))?.commanderId??'provisional';}
-function squadCommanderUnavailableReason(id){
+function individualCommanderUnavailableReason(id){
  if(id==null)return '部隊未選択';
  if(massSim){
   const strategist=massSim.units.find(u=>u.team===0&&u.isStrategist&&String(u.squadId)===String(id));
@@ -6239,6 +6232,10 @@ function squadCommanderUnavailableReason(id){
   if(leader.active===false)return '☠ 軍師戦死：命令不可（自動行動）';
  }
  return '';
+}
+function squadCommanderUnavailableReason(id){
+ if(id==null)return '班未選択';
+ return commandGroupIds(id).some(sid=>!individualCommanderUnavailableReason(sid))?'':'班に指揮可能な軍師がいません';
 }
 function hasSquadCommander(id){return squadCommanderUnavailableReason(id)==='';}
 const MISSION_LABELS={unlock_door:'敵門の解錠',roof_unlock:'屋上からの解錠',fortify_lock:'味方門の施錠強化',destroy_bridge:'橋破壊',burn_tree:'樹木の焼却',burn_building:'建物の焼却',demolish_structure:'障害物破壊',repair_structure:'施設の修復',extinguish_fire:'火災の消火',eliminate_squad:'敵部隊殲滅',eliminate_commander:'敵軍師討伐'};
@@ -6488,6 +6485,7 @@ function battleTerritoryWorld(){
 const battleTacticalUi=installBattleTacticalUI({
  getUnits:()=>squadRoster,
  getSquadIds:()=>squadIds,
+ getCommandSquadIds:id=>commandGroupIds(id),
  getCommander:id=>storyRequest?.commanders?.find(c=>String(c.id)===String(squadCommanderId(id)))||
   squadStrategist(id)||null,
  getSquadName:id=>squadName(id),
@@ -6506,7 +6504,7 @@ function queueDirectOrder(mode,id=orderedSquad()){
  if(id==null||!hasSquadCommander(id)||squadOrderCooldownSeconds(id)>0)return false;
  pendingDirectOrder={mode,id:String(id)};
  $('battleOrderConfirm').querySelector('small').textContent=orderEffect(mode);
- $('battleOrderConfirmTitle').textContent=squadPrimaryJob(id)+'隊に「'+
+ $('battleOrderConfirmTitle').textContent=commandGroupName(id)+'の全'+commandGroupIds(id).length+'隊に「'+
   ({charge:'突撃',defend:'守備',hold:'待機',retreat:'退却'}[mode]||mode)+'」を発令しますか？';
  $('battleOrderConfirm').hidden=false;
  $('squadTactics').hidden=true;
@@ -6541,7 +6539,7 @@ function refreshSquadOrderLabel(){
  $('squadTacticsName').textContent=squadName(id);
  const commanderReason=squadCommanderUnavailableReason(id);
  $('squadTypeStatus').dataset.commandReason=commanderReason;
- $('squadTypeStatus').textContent='編成：'+FORMATION_NAMES[selectedSquadType(id)]+'／作戦：'+squadFixedStrategyLabel(id)+'（固定）｜'+
+ $('squadTypeStatus').textContent=commandGroupName(id)+'・'+commandGroupIds(id).length+'隊へ号令｜'+
   (commanderReason||'軍師：指揮可能');
  $('squadTypeStatus').style.color=commanderReason?'#ffd0a0':'';
  const currentIntent=squadIntent(id,0,false,commanderReason);
@@ -6572,6 +6570,19 @@ function issueSquadOrder(mode,point=null){
  const unavailable=squadCommanderUnavailableReason(id);
  if(unavailable){log(unavailable);return false;}
  if(!canChangeSquadOrder(id))return false;
+ const targets=commandGroupIds(id);
+ const speaker=targets.find(sid=>!individualCommanderUnavailableReason(sid))||String(id);
+ let accepted=false;
+ for(const sid of targets){
+  selectedSquadId=String(sid);
+  accepted=issueIndividualSquadOrder(mode,point,String(sid)!==String(speaker))||accepted;
+ }
+ selectedSquadId=String(id);refreshSquadOrderLabel();
+ return accepted;
+}
+function issueIndividualSquadOrder(mode,point=null,silent=false){
+ const id=orderedSquad();if(id==null)return false;
+
  let accepted=true;
  if(massSim){
   if(mode==='move')accepted=massSim.setSquadDestination(id,point.x,point.z);
@@ -6604,6 +6615,7 @@ function issueSquadOrder(mode,point=null){
  if(mode==='clear')squadOrderRegistry.delete(id);
  else squadOrderRegistry.set(id,{mode,...point});
  updateSquadTarget(id,mode==='move'||mode==='mission'?point:null);
+ if(silent)return true;
  refreshSquadOrderLabel();drawSquadMiniMap();log(squadOrderText(id));
  if(['charge','defend','hold','retreat'].includes(mode)){
   const effect=describeSquadOrder(mode,{massBattle:Boolean(massSim)});
@@ -6738,7 +6750,7 @@ function isSquadCircleTargetActionable(id,team,action){
   if(!hasSquadCommander(id)||squadOrderCooldownSeconds(id)>0||
      !soldiers.some(u=>u.hp<u.maxHp))return false;
   return all.some(u=>u.team===0&&u.hp>0&&u.alive!==false&&u.jobId==='priest'&&
-    hasSquadCommander(String(u.squadId))&&(!massSim||u.formationType==='support'));
+    hasSquadCommander(String(u.squadId)));
  }
  if(action.kind==='item'){
   const kind=ROOM_ITEM_TYPES[action.itemId]?.kind;
@@ -6890,7 +6902,7 @@ function requestSquadRecovery(targetId){
  let request=null;
  if(massSim){
   const eligible=[...new Set(massSim.units.filter(u=>u.alive&&u.team===0&&u.jobId==='priest'&&
-    u.formationType==='support'&&hasSquadCommander(String(u.squadId))).map(u=>String(u.squadId)))];
+    hasSquadCommander(String(u.squadId))).map(u=>String(u.squadId)))];
   if(!eligible.length){log('回復要請：指揮可能な僧侶部隊がいません');return false}
   const target=wounded.reduce((a,u)=>!a||u.hp/u.maxHp<a.hp/a.maxHp?u:a,null);
   eligible.sort((a,b)=>{
@@ -7467,7 +7479,7 @@ function refreshSquadCircleInfo(){
   [squadName(id,team),''],
   ['残存 '+alive+'/'+members+'名',''],
   ['戦死 '+fallen+'名','squadLoss'],
-  ['作戦 '+fixedStrategy,'squadFixedStrategy'],
+  [team===0?commandGroupName(id):'敵班','squadFixedStrategy'],
   [intent.order,''],
   [intent.purpose,'']
  ];
@@ -9245,6 +9257,7 @@ async function finishBattleLoading(){
   loadingProgress((recordingLoaded?'音楽・描画準備完了':'内蔵BGMで再生準備完了')+
    '：タップして開戦',100);
   await new Promise(resolve=>requestAnimationFrame(resolve));
+  refreshCommanderOrderOptions();
   const startButton=$('loadingStart'),silentButton=$('loadingSkipAudio');
   // The opening screen owns strategy selection. There is no in-battle
   // strategy dropdown: after launch the chosen assignments are immutable.
@@ -9254,15 +9267,16 @@ async function finishBattleLoading(){
   const planHeading=document.createElement('strong');
   planHeading.textContent='⚑ 開戦前の隊列編成';
   const planHint=document.createElement('p');
-  planHint.textContent=(storyRequest?.tacticalTemplate?'宿屋の登録作戦「'+storyRequest.tacticalTemplate.name+'」を適用中。ルート：'+storyRequest.tacticalTemplate.route+'。':'')+'3ボタンは自動編成。職業は手動指定もできます。アイテムは部隊ごとに自動／手動を設定（初期値は手動）。実際の職業構成から部隊タイプを判定します。固定作戦の効果は各隊に表示します。';
+  planHint.textContent='最大3班へ隊を割り当てます。号令は班全体へ届き、職業に応じて攻撃・守備・支援を行います。宿屋で隊長を選定できます。';
   planHint.style.cssText='font:11px/1.55 system-ui;color:#c3dcea;margin:5px 0 8px';
   const planList=document.createElement('div');planList.id='openingPlanList';
   planList.style.cssText='overflow:hidden;display:grid;gap:6px';
+  let initialOrderPager=null;
   const formationRows=new Map(),initialOrderInputs=[],manualJobs={},formationPlanTypes=new Map(squadIds.map(id=>[id,selectedSquadType(id)]));
   const formationTypes=()=>Object.fromEntries(squadIds.map(id=>[id,formationPlanTypes.get(id)||'balanced']));
   const classifySquad=detail=>detail.heal/Math.max(1,detail.total)>=.30?'support':
    detail.front/Math.max(1,detail.total)>=.55?'attack':'balanced';
-  const previewFormationPlan=()=>recomposeSquadAssignments(squadRoster,formationTypes(),0,{},manualJobs);
+  const previewFormationPlan=()=>({summaries:squadIds.map(squadId=>{const detail=squadJobComposition(squadRoster.filter(u=>u.team===0&&String(u.squadId)===squadId));return {...detail,squadId};})});
   const refreshFormationPreview=()=>{
    const plan=previewFormationPlan();
    for(const detail of plan.summaries){
@@ -9272,12 +9286,9 @@ async function finishBattleLoading(){
     refs.name.textContent=squadName(detail.squadId)+'（'+detail.total+'人）';
     const assigned=Object.values(manualJobs[detail.squadId]||{}).reduce((n,v)=>n+v,0);
     const strategy=squadStrategies.get(String(detail.squadId))||'eliminate';
-    refs.preview.textContent='固定作戦：'+(TACTICAL_STRATEGIES[strategy]?.name||'全滅')+
-     ' ／効果：'+strategyEffect(strategy)+'\n'+
-     '職業：前衛'+detail.front+'／遠距離'+detail.range+'／回復'+detail.heal+
-     ' · '+FORMATION_NAMES[actualType]+(assigned?'（手動'+assigned+'人・残り自動）':'（自動編成）');
+    refs.preview.textContent='職業：前衛'+detail.front+'／遠距離'+detail.range+'／回復'+detail.heal+' · '+commandGroupName(detail.squadId);
     for(const btn of refs.buttons.querySelectorAll('button')){
-     const active=btn.dataset.type===selectedSquadType(detail.squadId);
+     const active=Number(btn.dataset.group)===normalizeArmyGroup(armyGroupBySquad[detail.squadId]);
      btn.style.background=active?'#4386a4':'#1d3951';
      btn.style.borderColor=active?'#ffe49a':'#7494aa';
     }
@@ -9297,11 +9308,11 @@ async function finishBattleLoading(){
    preview.style.cssText='grid-column:1/-1;color:#b8d7e8;font:10px/1.4 system-ui';
    const buttons=document.createElement('div');
    buttons.style.cssText='display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:3px;min-width:0';
-   for(const type of FORMATION_TYPES){
-    const button=document.createElement('button');button.type='button';button.dataset.type=type;
-    button.textContent=FORMATION_ICONS[type]+FORMATION_NAMES[type];
-    button.style.cssText='font:10px system-ui;padding:7px 1px;min-height:34px;color:white;border:1px solid #7799b0;border-radius:5px';
-    button.onclick=()=>{if(battleReady)return;delete manualJobs[id];formationPlanTypes.set(id,type);selectedSquadFormations.set('0:'+id,type);refreshFormationPreview();};
+   for(const group of [1,2,3]){
+    const button=document.createElement('button');button.type='button';button.dataset.group=group;
+    button.textContent='第'+group+'班';
+    button.style.cssText='font:11px system-ui;padding:7px;min-height:34px;color:white;border:1px solid #7799b0;border-radius:5px';
+    button.onclick=()=>{if(battleReady)return;armyGroupBySquad[id]=group;refreshFormationPreview();refreshGroupInitialOrderRows();};
     buttons.append(button);
    }
    const manual=document.createElement('button');manual.type='button';
@@ -9321,6 +9332,7 @@ async function finishBattleLoading(){
    itemMode.onchange=()=>{if(!battleReady)squadItemPolicies.set(id,itemMode.value);};
    itemModeLine.append(itemModeText,itemMode);
    formationRows.set(id,{name,preview,buttons,manual,itemMode});
+   manual.hidden=true;
    row.append(name,buttons,preview,manual,itemModeLine);planList.append(row);
   }
   // Full-screen profession editor: one tap reserves actual soldiers of that
@@ -9442,6 +9454,28 @@ async function finishBattleLoading(){
     initialOrderInputs.push({team,id,orderSelect,buildingPicker,name});
    }
   }
+  function refreshGroupInitialOrderRows(){
+   const seen=new Set();
+   for(const entry of initialOrderInputs){
+    if(entry.team!==0)continue;
+    const group=normalizeArmyGroup(armyGroupBySquad[entry.id]);
+    entry.orderSelect.parentElement.dataset.groupDuplicate=String(seen.has(group));seen.add(group);
+    entry.name.textContent=commandGroupName(entry.id)+'・全'+commandGroupIds(entry.id).length+'隊の初期号令';
+    if(entry.groupBound)continue;
+    entry.groupBound=true;
+    const original=entry.orderSelect.onchange;
+    entry.orderSelect.onchange=()=>{
+     for(const other of initialOrderInputs){
+      if(other.team!==0||!commandGroupIds(entry.id).includes(other.id))continue;
+      other.orderSelect.value=entry.orderSelect.value;
+      other.buildingPicker.element.hidden=true;
+     }
+     original?.();
+    };
+   }
+   initialOrderPager?.();
+  }
+  refreshGroupInitialOrderRows();
   orderPlan.append(orderTitle,orderHint,orderList);
   // No vertical lists: both army setup screens expose button-based pages.
   function openingPager(container,items,pageSize=1){
@@ -9450,26 +9484,28 @@ async function finishBattleLoading(){
    const left=document.createElement('button');left.type='button';left.textContent='◀ 前の部隊';
    const text=document.createElement('span');
    const right=document.createElement('button');right.type='button';right.textContent='次の部隊 ▶';
-   const max=Math.max(0,Math.ceil(items.length/pageSize)-1);
    const render=()=>{
+    const visible=items.filter(item=>item.dataset.groupDuplicate!=='true');
+    const max=Math.max(0,Math.ceil(visible.length/pageSize)-1);
     page=Math.min(max,Math.max(0,page));
-    items.forEach((item,i)=>item.hidden=i<page*pageSize||i>=(page+1)*pageSize);
+    items.forEach(item=>item.hidden=true);
+    visible.forEach((item,i)=>item.hidden=i<page*pageSize||i>=(page+1)*pageSize);
     text.textContent=(page+1)+' / '+(max+1);
     left.disabled=page===0;right.disabled=page===max;
    };
    left.onclick=()=>{page--;render()};right.onclick=()=>{page++;render()};
-   bar.append(left,text,right);container.parentElement.append(bar);render();
+   bar.append(left,text,right);container.parentElement.append(bar);render();return render;
   }
   openingPager(planList,[...planList.children],1);
   // Team subtitles are redundant when each item already has a coloured side.
   for(const node of [...orderList.children])if(node.tagName==='STRONG')node.hidden=true;
-  openingPager(orderList,[...orderList.children].filter(node=>node.tagName!=='STRONG'),1);
+  initialOrderPager=openingPager(orderList,[...orderList.children].filter(node=>node.tagName!=='STRONG'),1);
   $('loadingCard').insertBefore(openingPlan,startButton);
   $('loadingCard').insertBefore(orderPlan,startButton);
   const wizardTabs=document.createElement('div');wizardTabs.className='openingWizardTabs';
   const intro=document.createElement('div');intro.id='openingLaunchSummary';
   intro.style.cssText='text-align:left;margin:12px 0;padding:12px;color:#e2f2ff;border:1px solid #86a9c3;border-radius:9px;background:#122c43;font:12px/1.7 system-ui';
-  intro.textContent='編成・初期号令の確認が済んだら開戦してください。編成は職業数に応じて自動判定されます。';
+  intro.textContent='編成・初期号令の確認が済んだら開戦してください。号令は班の全隊へ発令します。';
   const openingTacticalSummary=createPreBattleTacticalSummary({
    getStageName:()=>selectedStage.name,
    getUnits:()=>squadRoster,
@@ -9507,25 +9543,7 @@ async function finishBattleLoading(){
   const launch=()=>{
    if(battleLaunched)return;
    battleLaunched=true;startButton.disabled=true;silentButton.disabled=true;
-   // Apply the selected profession MIX to actual soldiers, not just titles.
-   // A job and its preloaded 3D outfit remain attached to the same soldier.
-   for(const team of [0,1]){
-    const ids=team===0?squadIds:enemySquadIds;
-    const types=Object.fromEntries(ids.map(id=>[id,selectedSquadType(id,team)]));
-    if(massSim){
-     const preferred=recomposeSquadAssignments(massSim.units,types,team,{},team===0?manualJobs:{});
-     const plan=massSim.setSquadFormationTypes(types,team,preferred.assignments);
-     if(!plan)throw new Error('部隊編成に失敗しました（陣営'+team+'）');
-     const jobs=massSim.units.filter(u=>u.team===team&&!u.isStrategist).map(u=>({
-      id:u.id,jobIndex:u.jobIndex,maxHp:u.maxHp,hp:u.hp
-     }));
-     massWorker?.setSquadFormationTypes(types,team,plan.assignments,jobs);
-    }else{
-     const plan=recomposeSquadAssignments(actors,types,team,{},team===0?manualJobs:{});
-     if(!applySquadRecomposition(actors,plan,{team}))
-      throw new Error('部隊編成に失敗しました（陣営'+team+'）');
-    }
-   }
+   // Keep each soldier's job, equipment, captain bonus and original squad identity.
    if(!massSim){
     occupiedCells.clear();reservedCells.clear();
     for(const soldier of actors){
@@ -9533,12 +9551,14 @@ async function finishBattleLoading(){
     }
     for(const id of squadIds){
      squadStrategies.set(id,innStoryStrategy&&TACTICAL_STRATEGIES[innStoryStrategy]?innStoryStrategy:
-      selectedSquadType(id)==='support'?'recovery':'eliminate');
+      'eliminate');
     }
    }
    for(const {team,id,orderSelect,buildingPicker} of initialOrderInputs){
+    const representative=team===0?initialOrderInputs.find(e=>e.team===0&&armyGroupBySquad[e.id]===armyGroupBySquad[id]):null;
+    if(representative)orderSelect.value=representative.orderSelect.value;
     const selected=orderSelect.value==='explore'
-     ?queueSquadExplorations(team,id,buildingPicker.getIds(),{beforeBattle:true})
+     ?queueSquadExplorations(team,id,(representative?.buildingPicker||buildingPicker).getIds(),{beforeBattle:true})
      :setStartingSquadOrder(team,id,orderSelect.value);
     if(!selected){
      orderSelect.value='charge';setStartingSquadOrder(team,id,'charge');

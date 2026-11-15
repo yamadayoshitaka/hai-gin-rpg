@@ -137,6 +137,7 @@ header nav button,header nav a{min-width:0;padding:7px 2px;white-space:nowrap;fo
 <small id="townGuideHint">町全域の真上からの地図です。青い印が軍師です。施設名をタップすると選択した建物の室内へ直接入れます。</small><div id="townGuideBoard"><canvas id="townGuideCanvas" width="464" height="464" aria-label="町の地形・川・道路・屋根の俯瞰マップ"></canvas><div id="townPlayerPin">軍師</div></div><div id="townGuideActions"><button id="townOverhead" type="button">3Dで町全体を俯瞰</button><button id="townReturnCamera" type="button">軍師視点に戻る</button></div><div id="townGuideList"></div></div></section>
 <section id="opening" aria-label="紙芝居・オープニング" hidden><div class="sceneCard"><div class="eyebrow">第1章・紙芝居　灰の勅命</div><div id="eventSceneArt"><img id="eventSceneImage" alt="物語の現在の1コマ" hidden><div id="eventSheetMissing" role="status">漫画原画を制作・確認中</div></div><h1>レヴナの町</h1><div id="eventSpeaker" aria-live="polite">語り手</div><p id="eventText">星鐘が鳴った。</p><div class="controls"><button id="eventVoice" type="button" aria-label="漫画の音声のオン・オフ">音声 ON</button><button id="eventNext">次へ ▶</button></div><button id="skipPaper" type="button">物語を閉じて町へ進む</button></div></section>
 <script type="module">
+import {armyGroups,armyGroupFor,setArmyGroup,captainCandidates,armyCaptain,setArmyCaptain,captainBonus} from './src/army-groups.js';
 import {STORY_CHAPTERS,storyVoiceKey} from './src/story-chapters.js';
 import {STORY_KEY_PEOPLE} from './src/story-cinematic.js';
 import {mangaForStage} from './src/story-stage-manga.js';
@@ -177,7 +178,7 @@ persistSession(game,sessionStorage);
 const townFrame=$('townScene');
 const currentPreset=CAMPAIGN_STAGE_BY_ID[game.townStage]?.scenePreset||'royal-castle';
 // The hub is a single illustration; no nested 3D runtime is loaded.
-let panel='',page=0,shopCategory='道具',armyPriority='均衡',innCommanderId='player',innPage='strategies',innSquadPage=0,innDeploymentSelected=null,innTemplateEditorOpen=false,narration=null,selectedSquadId=game.campaign.squads[0]?.id||0;
+let panel='',page=0,shopCategory='道具',armyPriority='均衡',innCommanderId='player',innPage='deployment',innSquadPage=0,innDeploymentSelected=null,innTemplateEditorOpen=false,narration=null,selectedSquadId=game.campaign.squads[0]?.id||0;
 let activeTalk=null,activeTalkIndex=0;
 let currentStoryPanelVoiceId=null;
 const townVoices=createStoryVoiceDirector({onPlaying:value=>townAudio.setNarrationActive(value)});
@@ -235,7 +236,7 @@ $('townDialogueNext').onclick=()=>{
 };
 $('townDialogueService').onclick=()=>{if(!activeTalk?.panel)return;const service=activeTalk.panel;hideTownDialogue();openPanel(service);};
 $('townDialogueClose').onclick=()=>{hideTownDialogue();stopNarration();};
-function openPanel(which){if(!townReady)return;hideTownDialogue();resetTownMovement();panel=which;if(which==='formation')innPage='strategies';
+function openPanel(which){if(!townReady)return;hideTownDialogue();resetTownMovement();panel=which;if(which==='formation')innPage='deployment';
  townAudio.effect('open');page=0;shopCategory=which==='weapons'?'武器':'道具';notice('');$('panel').hidden=false;$('panelBackdrop').hidden=false;renderPanel();}
 function closePanel(){$('panel').hidden=true;$('panelBackdrop').hidden=true;panel='';townAudio.effect('cancel');townAudio.setScene('town');}
 $('panelClose').onclick=closePanel;$('panelBackdrop').onclick=closePanel;
@@ -324,8 +325,8 @@ function renderInnDeploymentBoard(){
  const leaders=commanderList(game.campaign),slots=resolvedCommanderDeployment(game.campaign);
  const occupants=new Map(leaders.filter(c=>slots.has(String(c.id))).map(c=>[slots.get(String(c.id)),c]));
  const source=leaders.find(c=>String(c.id)===String(innDeploymentSelected));
- let html='<div class="innDeploymentGuide"><strong>⚑ 1軍師＝1部隊の全軍配置</strong>'+
-  '<small>各マスは軍師1人の部隊です。騎士・僧侶等は部隊内の兵種です。敵陣 ↑ ／ 本陣 ↓</small>'+
+ let html='<div class="innDeploymentGuide"><strong>⚑ 最大3班・各隊の配置</strong>'+
+  '<small>各マスは1隊です。班・隊長タブで所属班と隊長を選べます。騎士・僧侶等は部隊内の兵種です。敵陣 ↑ ／ 本陣 ↓</small>'+
   '<small id="innDeploymentStatus">'+(source?escapeHtml(source.name)+'を選択中。移動先をタップして配置交換。':
   '軍師をタップ→配置先をタップ。空欄タップで軍師を雇用（費用が必要）。')+'</small></div>';
  html+='<div class="innDeploymentBoard" role="group" aria-label="軍師と部隊の配置">';
@@ -349,57 +350,17 @@ function renderInnDeploymentBoard(){
  return html;
 }
 function renderInnCommanderOrder(){
- const initial=innSquadInitialOrder(game,innCommanderId);
- const commander=commanderList(game.campaign).find(c=>String(c.id)===String(innCommanderId));
- return '<div class="innStrategyGuide"><strong>📯 '+escapeHtml(commander?.name||'軍師')+' の初期号令</strong>'+
-  '<small>配置で軍師を選ぶと対象が切り替わります。開戦後の変更はクールダウンに従います。</small></div>'+
-  '<div class="innTapOptions" role="group" aria-label="号令をタップして選択">'+INN_START_ORDERS.map(id=>
-   '<button type="button" data-inn-initial-order="'+id+'" class="'+(id===initial?'selected':'')+'">'+
-   escapeHtml(TACTICAL_ORDERS[id].name)+'</button>').join('')+'</div>'+
-  '<small class="innStrategyFoot">'+escapeHtml(TACTICAL_ORDERS[initial].effect)+'</small>';
+ const group=armyGroupFor(game.campaign,innCommanderId),initial=game.armyGroupOrders?.[group]||'charge';
+ return '<strong>📯 第'+group+'班の初期号令</strong>'+innCommanderButtons(commanderList(game.campaign))+
+  '<small>同じ班の全隊へ発令します。各職業は号令に応じて役割を実行します。</small><div class="innTapOptions">'+INN_START_ORDERS.map(id=>'<button type="button" data-inn-initial-order="'+id+'" class="'+(id===initial?'selected':'')+'">'+escapeHtml(TACTICAL_ORDERS[id].name)+'</button>').join('')+'</div>';
 }
 function renderInnStrategies(){
- const nextStage=stagesInChapter(CAMPAIGN_STAGE_BY_ID[game.townStage].chapter)
-  .find(s=>s.kind!=='town'&&!game.completedStages.includes(s.id))||
-  stagesInChapter(CAMPAIGN_STAGE_BY_ID[game.townStage].chapter).find(s=>s.kind!=='town');
- const active=activeInnStrategyTemplate(game),templates=innStrategyTemplates(game);
- const selectedStrategy=active?.strategy|| (nextStage?.kind==='defend'?'recovery':
-  ['siege','capture'].includes(nextStage?.kind)?'objective':'eliminate');
- const field=(id,label,value,placeholder='')=>'<label for="'+id+'">'+label+
-  '<input id="'+id+'" type="text" maxlength="160" value="'+escapeHtml(value||'')+
-  '" placeholder="'+escapeHtml(placeholder)+'"></label>';
- const strategyOptions=Object.entries(TACTICAL_STRATEGIES).map(([id,s])=>
-  '<button type="button" data-inn-strategy-choice="'+id+'" class="'+(id===selectedStrategy?'selected':'')+'">'+escapeHtml(s.name)+'</button>').join('');
- return '<div class="innStrategyGuide"><strong>📜 作戦・テンプレート登録</strong>'+
-  '<small>① 勝利条件 → ② 進軍・防衛ルート → ③ 戦況と対応策を登録。開戦前に呼び出し、開戦後は変更不可。</small>'+
-  '<small>次の戦場：'+escapeHtml(nextStage?.name||'未決定')+'</small></div>'+
-  '<div class="innTapOptions"><button type="button" class="primary" data-inn-template-auto>テンプレート作戦を自動作成</button>'+
- '<button type="button" data-inn-template-toggle>✎ 詳細を設定して作成</button></div>'+
- '<div class="innTemplateEditor" role="group" aria-label="作戦テンプレート編集" '+(innTemplateEditorOpen?'':'hidden')+'>'+
-  field('innTemplateName','テンプレート名',active?.name||'','例：橋を守る防衛戦')+
-  '<label>固定作戦<input type="hidden" id="innTemplateStrategy" value="'+selectedStrategy+'"></label><div class="innTapOptions">'+strategyOptions+'</div>'+
-  field('innTemplateVictory','勝利条件',active?.victoryCondition||nextStage?.winCondition||'')+
-  field('innTemplateRoute','進軍・防衛ルート',active?.route||'','例：中央の橋を確保')+
-  field('innTemplateSituation','発生する戦況',active?.situation||'','例：敵騎兵が橋へ突撃')+
-  field('innTemplateResponse','味方の対応策',active?.allyResponse||'','例：盾騎士で防ぎ僧侶が支援')+
-  '<label>担当ジョブ<input type="hidden" id="innTemplateJob" value="'+escapeHtml(active?.allyJob||'')+'"></label><div class="innTapOptions"><button type="button" data-inn-job-choice="" class="'+(!active?.allyJob?'selected':'')+'">全ジョブ</button>'+
-   JOBS.map(job=>'<button type="button" data-inn-job-choice="'+escapeHtml(job)+'" class="'+(active?.allyJob===job?'selected':'')+'">'+escapeHtml(job)+'</button>').join('')+
-  '</div>'+
-  field('innTemplateCounter','敵の再対応策',active?.enemyCounter||'','例：魔法使いが橋を攻撃')+
-  field('innTemplateReResponse','味方の再対応策',active?.allyReResponse||'','例：忍者が敵魔法使いを妨害')+
-  '<button type="button" class="primary" data-inn-template-save>＋ 作戦テンプレートを登録</button>'+
-  '<small>登録済み：'+templates.length+'/20件。登録時に次の出撃で使う作戦として選択されます。</small></div>'+
-  '<div class="innStrategyGuide"><strong>登録したテンプレート</strong><small>選択したテンプレートを次の出撃に適用できます。</small></div>'+
-  '<div class="innSavedPlans">'+(templates.length?templates.map(t=>
-   '<article class="innSavedPlan"><strong>'+escapeHtml(t.name)+(active?.id===t.id?' · 適用中':'')+'</strong>'+
-   '<small>'+escapeHtml(TACTICAL_STRATEGIES[t.strategy]?.name||'全滅')+' ／ '+escapeHtml(t.route)+'</small>'+
-   '<small>勝利条件：'+escapeHtml(t.victoryCondition)+'</small>'+
-   '<div class="controls"><button type="button" data-inn-template-apply="'+escapeHtml(t.id)+'" '+
-    (active?.id===t.id?'disabled':'')+'>この作戦を適用</button>'+
-    '<button type="button" data-inn-template-delete="'+escapeHtml(t.id)+'">削除</button></div></article>'
-  ).join(''):'<small class="innStrategyFoot">テンプレートはまだありません。</small>')+'</div>'+
-  '<div class="innStrategyList">'+Object.values(TACTICAL_STRATEGIES).map(s=>
-  '<article><strong>'+escapeHtml(s.name)+'</strong><small>'+escapeHtml(s.effect)+'</small></article>').join('')+'</div>';
+ const state=game.campaign,captain=armyCaptain(state,innCommanderId),bonus=captainBonus(captain);
+ return '<strong>最大3班・軍師から班へ号令</strong><small>隊を班へ割り当てます。各隊は1班に所属し、隊長は1人です。固定作戦・固定の攻撃／守備／支援タイプは使いません。</small>'+innCommanderButtons(commanderList(state))+
+  '<strong>この隊の所属班</strong><div class="innTapOptions">'+[1,2,3].map(id=>'<button type="button" data-army-group="'+id+'" class="'+(armyGroupFor(state,innCommanderId)===id?'selected':'')+'">第'+id+'班</button>').join('')+'</div>'+
+  armyGroups(state).map(g=>'<small>'+g.name+'：'+escapeHtml(g.commanders.map(c=>c.name).join('／')||'未配属')+'</small>').join('')+
+  '<strong>隊長を1人選ぶ</strong><div class="innTapOptions"><button type="button" data-army-captain="">選定なし</button>'+captainCandidates(state,innCommanderId).map(c=>'<button type="button" data-army-captain="'+c.id+'" class="'+(captain?.id===c.id?'selected':'')+'">'+escapeHtml(c.name)+' '+escapeHtml(c.rarity)+'</button>').join('')+'</div>'+
+  '<small>隊長：'+escapeHtml(captain?.name||'未選定')+' ／ この隊の攻撃+'+Math.round(bonus.attack*100)+'%・HP+'+Math.round(bonus.defense*100)+'%</small><small>固有特性＋レアリティ補正（R +5%、UR +15%）を所属隊へ加算します。名前のない兵士は職業代表から選びます。</small>';
 }
 // Fixed pages avoid scrolling through the inn's entire army.
 function renderInnPages(){
@@ -412,7 +373,7 @@ function renderInnPages(){
  for(const [key,section] of Object.entries(pages)){section.className='innPage';section.dataset.innPage=key;}
  pages.overview.insertAdjacentHTML('beforeend',renderInnCommanderOrder());
  pages.overview.append(metrics,effects,explanation);
- pages.deployment.append(commander,auto);
+ pages.deployment.append(auto);
  pages.deployment.insertAdjacentHTML('beforeend',renderInnDeploymentBoard());
  pages.strategies.innerHTML=renderInnStrategies();
  pages.squads.append(titleSquads,squads);
@@ -426,7 +387,7 @@ function renderInnPages(){
  const next=document.createElement('button');next.textContent='次 ▶';next.type='button';next.dataset.innSquadStep='1';next.disabled=innSquadPage>=maxSquadPage;
  const status=document.createElement('span');status.textContent=(innSquadPage+1)+' / '+(maxSquadPage+1)+'ページ';
  squadPager.append(prev,status,next);pages.squads.append(squadPager);
- for(const [key,title] of [['strategies','作戦'],['deployment','配置'],['overview','号令'],['squads','部隊'],['recruit','雇用']]){
+ for(const [key,title] of [['strategies','班・隊長'],['deployment','配置'],['overview','号令'],['squads','部隊'],['recruit','雇用']]){
   const button=document.createElement('button');button.type='button';button.dataset.innPage=key;
   button.textContent=title;button.classList.toggle('active',key===innPage);nav.append(button);
   pages[key].hidden=key!==innPage;
@@ -487,7 +448,7 @@ function renderPanel(){
    '<strong>⚑ 軍師と隊列の編成</strong>'+
     '<small>次の戦場：'+escapeHtml(nextStage?.name||'未決定')+'</small>'+
     '<small>勝利目的：'+escapeHtml(nextStage?.winCondition||'ステージ選択後に表示')+'</small>'+
-    '<small>推奨作戦：'+escapeHtml(suggestedStrategy)+'（開戦前に確定）</small></div>'+
+    '<small>各隊を最大3班へ編成。軍師が班へ号令します。</small></div>'+
    '<div class="innCommanderRow"><strong>指揮する軍師</strong>'+innCommanderButtons(leaders)+
    '<strong>軍師の得意分野</strong><div class="innTapOptions">'+Object.entries(STRATEGIST_SPECIALTIES).map(([value,label])=>
     '<button type="button" data-inn-specialty="'+value+'" class="'+(commanderSpecialty===value?'selected':'')+'">'+escapeHtml(label)+'</button>').join('')+'</div>'+
@@ -501,7 +462,7 @@ function renderPanel(){
     '<div class="innMetric"><small>軍資金</small><b>'+game.campaign.treasury+'G</b></div></div>'+
    '<small>号令の効果は無抵抗時の戦術評価値です。実戦の成功見込みは敵抵抗や地形を含めて再計算します。</small>'+
    '<div class="entry"><div><b>✦ 星鐘の召喚・仲間ガチャ</b><small>1回 '+RECRUIT_GACHA.cost+'G ／ N 78%・R 20%・UR 2% ／ 10回以内R以上・40回以内UR保証。獲得兵は予備隊へ。</small><small>累計 '+(game.recruitGacha?.total||0)+'回'+(game.recruitGacha?.last?' · 前回：'+escapeHtml(game.recruitGacha.last.job)+'（'+game.recruitGacha.last.rarity+'）':'')+'</small></div><button type="button" class="primary" data-gacha-draw>召喚</button></div>'+
-   '<div class="innAutoControls"><strong>オート配置方針</strong><div class="innTapOptions">'+['均衡','攻撃重視','防御重視','機動重視','支援重視'].map(x=>
+   '<div class="innAutoControls"><strong>オート配置方針</strong><div class="innTapOptions">'+['均衡'].map(x=>
     '<button type="button" data-inn-priority="'+x+'" class="'+(armyPriority===x?'selected':'')+'">'+x+'</button>').join('')+'</div>'+
     '<button type="button" class="primary" data-inn-auto-place>全軍オート配置＋空き枠の軍師雇用</button>'+
     '<small>軍師の雇用600G、必要な兵士は通常の雇用費。最大10軍師・軍師レベルによる解放上限まで。</small></div>'+
@@ -539,6 +500,12 @@ $('panelContent').addEventListener('change',event=>{if(event.target.id==='equipS
  }});
 $('panelContent').onclick=event=>{
  const target=event.target.closest('button');if(!target)return;
+ if(target.hasAttribute('data-army-group')){
+  setArmyGroup(game.campaign,innCommanderId,Number(target.dataset.armyGroup));persist();renderPanel();return;
+ }
+ if(target.hasAttribute('data-army-captain')){
+  setArmyCaptain(game.campaign,innCommanderId,target.dataset.armyCaptain||null);persist();renderPanel();return;
+ }
  if(target.hasAttribute('data-inn-page')){
   innPage=target.dataset.innPage;renderPanel();return;
  }
@@ -558,7 +525,7 @@ $('panelContent').onclick=event=>{
   return;
  }
  if(target.hasAttribute('data-inn-initial-order')){
-  setInnCommanderInitialOrder(game,innCommanderId,target.dataset.innInitialOrder);
+  game.armyGroupOrders??={};game.armyGroupOrders[armyGroupFor(game.campaign,innCommanderId)]=target.dataset.innInitialOrder;
   persist();renderPanel();return;
  }
  if(target.hasAttribute('data-inn-priority')){
@@ -977,8 +944,13 @@ function startPaperStory(phase='pre'){
  if(phase==='pre'){
   game.storyFlags.stageMangaSeen??={};
   game.storyFlags.stageMangaSeen[game.townStage]=true;
-  persistSession(game,sessionStorage);
+ }else if(phase==='post'){
+  // Remember the first departure as soon as its comic opens, including
+  // skips/reloads. Revisiting the same town must never restart this event.
+  game.storyFlags.stagePostMangaSeen??={};
+  game.storyFlags.stagePostMangaSeen[game.townStage]=true;
  }
+ persistSession(game,sessionStorage);
  eventComic=comicForStage(game.townStage,phase,storyStageContext(game,game.townStage));
  eventScenes=eventComic.panels;
  hideTownDialogue();

@@ -1,3 +1,4 @@
+import {armyGroupFor,armyCaptain,captainBonus} from './army-groups.js';
 /**
  * Adapter from the 20x10 campaign to the existing 3D 50-person battle.
  * The battle remains authoritative for wins, unit casualties and monster clears.
@@ -7,7 +8,6 @@ import {coreVictoryReward,verifiedBattleLoot} from './battle-victory-rewards.js'
 import {allocateSortieSlots,STORY_JOB_TO_BATTLE,STORY_SPAWN_LANES} from './story-battle-bridge.js';
 import {CAMPAIGN_STAGE_BY_ID} from './campaign-stage-plan.js';
 import {deploymentForSquad,slotLane,slotRank} from './inn-deployment.js';
-import {activeInnStrategyTemplate,innSquadInitialOrder} from './inn-strategy-templates.js';
 import {commandSquadIds,resolvedCommanderDeployment} from './inn-commander-formation.js';
 import {storyStageContext} from './story-narrative-flow.js';
 import {markStageVictory,squadEquipmentBonus} from './game-core-flow.js';
@@ -50,14 +50,19 @@ export function makeCoreBattleRequest(game,stageId,battleId=String(Date.now())){
  const commandIds=commandSquadIds(squads);
  const commanderPositions=resolvedCommanderDeployment(game.campaign);
  const strategistIncluded=new Set();
- const initialSquadOrders=Object.fromEntries(allotment.map(({squad})=>
-  [String(commandIds.get(String(squadCommanderId(squad)))),innSquadInitialOrder(game,squadCommanderId(squad))]));
- const activePlan=activeInnStrategyTemplate(game);
- const tacticalTemplate=activePlan?{...activePlan}:null;
+ const tacticalTemplate=null;
+ const armyGroupBySquad=Object.fromEntries([...commandIds].map(([id,sid])=>[String(sid),armyGroupFor(game.campaign,id)]));
+ const groupInitialOrders=game.armyGroupOrders||{};
+ const allowedOrders=new Set(['charge','defend','hold','retreat','explore']);
+ const initialSquadOrders=Object.fromEntries([...commandIds.values()].map(sid=>{
+  const selected=groupInitialOrders[armyGroupBySquad[String(sid)]];
+  return [String(sid),allowedOrders.has(selected)?selected:'charge'];
+ }));
  const units=allotment.flatMap(({squad,count},i)=>{
   const commanderId=String(squadCommanderId(squad));
   const slot=commanderPositions.get(commanderId)??deploymentForSquad(squad,i,deploymentSquads);
   const commandSquadId=commandIds.get(commanderId);
+  const captain=armyCaptain(game.campaign,commanderId),bonus=captainBonus(captain),equipment=squadEquipmentBonus(squad);
   return Array.from({length:count},()=>{
    const isStrategist=!strategistIncluded.has(commanderId);
    strategistIncluded.add(commanderId);
@@ -65,7 +70,8 @@ export function makeCoreBattleRequest(game,stageId,battleId=String(Date.now())){
     squadId:commandSquadId,sourceSquadId:squad.id,commanderId,
     isStrategist,isPlayerHero:isStrategist&&commanderId==='player',
     job:STORY_JOB_TO_BATTLE[squad.job]||'剣士',rarity:squad.rarity,
-    equipmentBuff:squadEquipmentBonus(squad),
+    equipmentBuff:{...equipment,attack:equipment.attack+bonus.attack,defense:equipment.defense+bonus.defense},
+    armyGroupId:armyGroupFor(game.campaign,commanderId),captain,
     spawnLane:slotLane(slot),spawnRank:slotRank(slot),deploymentSlot:slot
    };
   });
@@ -82,7 +88,7 @@ export function makeCoreBattleRequest(game,stageId,battleId=String(Date.now())){
   enemyMonsterIds:monsterBattle?[...stage.monsters]:[],
   enemyName:monsterBattle?'魔物群':storyContext?.enemy||'紅炎軍',
   enemyCount:monsterBattle?Math.min(20,Math.max(4,stage.monsters.length*3)):Math.min(50,12+stage.difficulty),
-  units,commanders,initialSquadOrders,tacticalTemplate,totalReserves:reserveTroops(game.campaign)
+  units,commanders,armyGroupBySquad,initialSquadOrders,tacticalTemplate,totalReserves:reserveTroops(game.campaign)
  };
 }
 export function settleCoreBattle(game,request,result){
