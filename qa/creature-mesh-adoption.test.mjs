@@ -60,7 +60,14 @@ test('human-shaped monsters never accept an animal donor',()=>{
  assert.equal(adoptedCreatureMesh('m001',storage),'r-wolf');
  assert.ok(recommendedMeshSources('m001').includes('r-wolf'));
  assert.ok(recommendedMeshSources('m011').includes('r-eagle'));
- assert.ok(recommendedMeshSources('m016').includes('r-crocodile'));
+ assert.ok(!recommendedMeshSources('m016').includes('r-crocodile'));
+ assert.ok(recommendedMeshSources('m021').includes('g-hercules'));
+ assert.ok(recommendedMeshSources('m023').includes('g-mantis'));
+ assert.ok(recommendedMeshSources('m008').includes('g-lion'));
+ assert.ok(recommendedMeshSources('m014').includes('g-owl'));
+ assert.ok(recommendedMeshSources('horse').includes('g-horse'));
+ setAdoptedCreatureMesh('horse','g-horse',storage);
+ assert.equal(adoptedCreatureMesh('horse',storage),'g-horse');
 });
 test('existing protected original animal geometry is not modified by candidate metadata',()=>{
  assert.equal(baseMonsterId('summon_m005'),'m005');
