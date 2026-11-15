@@ -14,9 +14,9 @@ const generateWorkflow=read('.github/workflows/story-chapter1-free-complete-draf
 const registrationWorkflow=read('.github/workflows/story-chapter1-provisional-game-register.yml');
 const ui=read('src/story-chapter1-approval-ui.js');
 const html=read('story-chapter1-approval.html');
-for(const text of ['FREE_QUOTA_EXHAUSTED_RESUME_NEXT_SCHEDULE',
- 'FREE_API_STOP_NO_RETRY_HTTP_429 4006:',"noPaidFallback:true",
- 'git','CLOUDFLARE_FREE_PLAN_CONFIRMED']){
+for(const text of ['FREE_QUOTA_EXHAUSTED_CHATGPT_MANUAL_HANDOFF',
+ 'queueChatGPTHandoff(', 'classifyCloudflareFailure(',
+ "noPaidFallback:true", 'git','CLOUDFLARE_FREE_PLAN_CONFIRMED']){
  assert(generation.includes(text),'Missing Free-only safe stop / provenance '+text);
 }
 assert(generation.includes('if(blockers.some(s=>status(s)!=='), 'Blocked safety scenes must not stop unrelated scenes');
