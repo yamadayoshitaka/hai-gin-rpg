@@ -18,6 +18,8 @@ on:
       - 'src/monster-joint-motion.js'
       - 'src/monster-animation.js'
       - 'src/monster-geometry.js'
+      - 'src/monster-source-composite.js'
+      - 'qa/monster-source-composite-regression.test.mjs'
       - 'src/monster-beastfolk-manifest.js'
       - 'src/monster-beastfolk-geometry.js'
       - 'qa/monster-beastfolk-wolf-regression.test.mjs'
