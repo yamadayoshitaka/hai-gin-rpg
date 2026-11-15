@@ -35,6 +35,8 @@ export function formationStatus(team,ownedSquads,positions,capacity=16){
  const roles=FORMATION_ROLES[team?.formation],cells=positions?.[team?.formation],ids=(team?.slots||[]).filter(Boolean);
  if(!roles||!cells||!ids.length||!Array.isArray(team.grid))
   return {id:'free',valid:false,reason:'自由配置：陣形未成立'};
+ if(ids.length>=4&&cells.slice(0,4).some(cell=>!team.grid[cell]))
+  return {id:'free',valid:false,reason:'陣形不成立：基本4枠に必要な職業隊が不足'};
  const jobs=new Map(ownedSquads.map(s=>[String(s.id),s.job]));
  for(const sid of ids){
   const cell=team.grid.indexOf(String(sid)),rank=cells.slice(0,Math.max(4,Math.min(ids.length,Number(capacity)||4))).indexOf(cell);
