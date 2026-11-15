@@ -17,11 +17,11 @@ const path=require('node:path');
  try{
   await page.goto('http://127.0.0.1:8765/tactics-wireframe.html?stage='+encodeURIComponent(target.scenePreset)+'&army=50&worldQualityQA=1',
    {waitUntil:'domcontentloaded',timeout:60000});
-  await page.waitForFunction(()=>typeof window.getCurrentStage==='function',{timeout:55000});
+  await page.waitForFunction(()=>typeof window.getCurrentStage==='function',null,{timeout:55000});
   await page.waitForTimeout(4500);
   const loaded=await page.evaluate(()=>window.getCurrentStage());
   if(loaded.id!==target.scenePreset)throw Error('Wrong stage: requested '+target.scenePreset+', got '+loaded.id);
-  const canvas=page.locator('canvas').filter({visible:true});
+  const canvas=page.locator('canvas:visible');
   const sizes=await canvas.evaluateAll(xs=>xs.map((e,i)=>({i,area:e.getBoundingClientRect().width*e.getBoundingClientRect().height})));
   const best=sizes.sort((a,b)=>b.area-a.area)[0];
   if(!best||best.area<50000)throw Error('No usable 3D canvas');
