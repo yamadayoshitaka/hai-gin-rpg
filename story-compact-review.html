@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>灰銀｜20章コンパクトイベントCG確認</title>
+<style>
+:root{color-scheme:dark;--fg:#f4ead7;--muted:#b8c3d0;--gold:#ddbf83;--bg:#0b1320}
+*{box-sizing:border-box}html,body{height:100%;height:100dvh;margin:0;overflow:hidden}body{display:flex;flex-direction:column;color:var(--fg);background:var(--bg);font:12px/1.45 system-ui,'Noto Sans JP',sans-serif}
+header{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 10px;border-bottom:1px solid #657185;flex:none}header strong{font-size:13px}header a{color:var(--gold);font-size:11px}
+.toolbar{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;padding:6px;flex:none}
+select{width:100%;padding:7px 3px;background:#1b2a40;color:var(--fg);border:1px solid #7b86a0;border-radius:6px;font:inherit;min-width:0}
+.summary{padding:2px 10px;color:var(--gold);font-size:11px;display:flex;justify-content:space-between;gap:10px;flex:none}
+.main{min-height:0;flex:1;display:flex;flex-direction:column;padding:5px 9px;gap:7px}
+.art{min-height:0;flex:1;display:grid;place-items:center;position:relative;border-radius:8px;border:1px solid #99866b;background:#101a29;overflow:hidden}
+.art img{width:100%;height:100%;object-fit:contain}.art img[hidden]{display:none}
+.art .missing{padding:15px;max-width:370px;color:var(--muted);text-align:center}
+.meta{display:grid;gap:3px;flex:none}.tag{color:var(--gold);font-weight:700}
+.speech{display:flex;gap:8px;padding:7px 9px;background:#192b42;border:1px solid #8891a7;border-radius:7px;min-height:72px;max-height:102px;overflow:hidden}
+.speech .face{width:55px;height:58px;flex:none;object-fit:cover;object-position:center 20%;border:1px solid #bc9b6a;border-radius:4px}.face[hidden]{display:none}
+.speech>div{min-width:0;overflow:auto}.speech strong{display:block;font-size:12px;color:var(--gold)}.speech p{margin:3px 0;line-height:1.45}.speech rt{font-size:8px}
+.buttons{display:grid;grid-template-columns:1fr 1.5fr 1fr;gap:5px;flex:none}.buttons button{padding:9px 2px;border:1px solid #a58e6e;background:#344960;color:var(--fg);border-radius:6px;font:inherit}.buttons button:disabled{opacity:.3}
+footer{display:flex;justify-content:space-between;gap:6px;color:var(--muted);font-size:10px;padding:3px 10px 7px;flex:none}
+@media(max-height:620px){.toolbar{padding:3px}.speech{min-height:50px;max-height:70px}.speech .face{width:41px;height:43px}.buttons button{padding:5px}.main{gap:4px}}
+</style></head><body>
+<header><strong>灰銀・20章CG＋会話UI品質確認</strong><a href="./story-maintenance.html">ストーリー管理へ</a></header>
+<div class="toolbar"><select id="chapter" aria-label="章"></select><select id="stage" aria-label="ステージ"></select><select id="gender" aria-label="主人公性別"><option value="male">男性</option><option value="female">女性</option></select><select id="outcome" aria-label="イベント"><option value="pre">イベント前</option><option value="victory">勝利／町の後</option><option value="defeat">敗戦（共通）</option><option value="gameover">軍師死亡</option></select></div>
+<div class="summary"><span id="summary">200ステージを読み込み中</span><span id="position"></span></div>
+<div class="main"><div class="art"><img id="image" alt="選択されたイベント原画" hidden><div class="missing" id="missing">現在の原画を確認中</div></div>
+<div class="meta"><span id="type" class="tag"></span><span id="identity"></span></div>
+<div class="speech"><img class="face" id="portrait" hidden alt="話者の顔"><div><strong id="speaker">語り手</strong><p id="dialogue"></p></div></div>
+<div class="buttons"><button id="prev">◀ 戻る</button><button id="next">次のセリフ ▶</button><button id="game">本編を開く</button></div></div>
+<footer><span>4/2/2構成・原画は文字なし・台詞はUI表示</span><span id="approval">仮素材は正式P0未承認</span></footer>
+<script type="module">
+import {compactComicForStage,COMPACT_TWENTY_CHAPTER_PLAN} from './src/story-compact-comic.js';
+import {registeredStoryPanelAsset,storyArtDisplayUrl} from './src/story-panel-registered-art.js';
+import {renderStoryRubyText} from './src/story-ruby-display.js';
+import {STORY_KEY_PEOPLE} from './src/story-cinematic.js';
+import {CAMPAIGN_STAGE_BY_ID} from './src/campaign-stage-plan.js';
+const $=x=>document.getElementById(x),cast=new Set(STORY_KEY_PEOPLE.map(x=>x.id));
+let scenes=[],sceneIndex=0,lineIndex=0,version=0,mode='pre';
+for(const plan of COMPACT_TWENTY_CHAPTER_PLAN){const o=document.createElement('option');o.value=plan.chapter;o.textContent='第'+plan.chapter+'章';$('chapter').append(o)}
+function stages(){const ch=Number($('chapter').value)||1;$('stage').replaceChildren();for(const id of COMPACT_TWENTY_CHAPTER_PLAN[ch-1].stageIds){const o=document.createElement('option');o.value=id;o.textContent='S'+id.slice(-2);$('stage').append(o)}render()}
+function render(){
+ const id=$('stage').value||'c01-s01',gender=$('gender').value;mode=$('outcome').value;
+ const context={protagonistGender:gender,chapterOpeningSeen:false,...(mode==='victory'?{battleOutcome:{victory:true}}:mode==='defeat'?{battleOutcome:{victory:false}}:mode==='gameover'?{battleOutcome:{victory:false,playerCommanderDead:true}}:{})};
+ const comic=compactComicForStage(id,mode==='pre'?'pre':'post',context);
+ scenes=comic.panels;sceneIndex=0;lineIndex=0;show();
+}
+function show(){
+ if(!scenes.length)return;
+ const s=scenes[sceneIndex],talk=s.dialogueTurns?.[lineIndex]||s,cut=registeredStoryPanelAsset(s);
+ const img=$('image'),missing=$('missing'),v=++version;
+ img.hidden=true;img.removeAttribute('src');missing.hidden=false;
+ const stage=CAMPAIGN_STAGE_BY_ID[s.stageId];
+ $('summary').textContent='20章 × 10ステージ｜'+stage.name;
+ $('position').textContent=(sceneIndex+1)+'/'+scenes.length+'CG · '+(lineIndex+1)+'/'+(s.dialogueTurns?.length||1)+'台詞';
+ $('type').textContent=s.isChapterOpening?'章冒頭（4CG）':s.sharedSceneKind==='defeat'?'共通敗戦（2CG）':s.sharedSceneKind==='gameover'?'共通軍師死亡（2CG）':mode==='pre'?'イベント前（2CG）':'イベント後（2CG）';
+ $('identity').textContent=s.id+'／'+s.comicEdition+'／'+(s.protagonistGender==='female'?'女性':'男性');
+ $('speaker').textContent=talk.speaker||'語り手';renderStoryRubyText($('dialogue'),talk);
+ const portrait=$('portrait');
+ const portraitPath=cast.has(talk.characterId)?'./assets/story-cinema/cast/'+talk.characterId+'.webp':talk.speaker==='軍師'&&s.protagonistGender==='female'?'./assets/story/characters/commander/female-master.webp':null;
+ portrait.hidden=!portraitPath;
+ if(portraitPath){portrait.onerror=()=>{if(portrait.getAttribute('src')===portraitPath)portrait.hidden=true};portrait.src=portraitPath}
+ else portrait.removeAttribute('src');
+ $('approval').textContent=cut?'既存原画を使用（P0品質は別確認）':'このコマの原画は未登録';
+ $('prev').disabled=sceneIndex===0&&lineIndex===0;
+ $('next').textContent=sceneIndex===scenes.length-1&&lineIndex===(s.dialogueTurns?.length||1)-1?'最終セリフ ▶':'次のセリフ ▶';
+ if(!cut){missing.textContent='未登録。別の性別・ステージ・勝敗の絵は代用しません。';return}
+ missing.textContent='原画読込中';
+ img.onload=()=>{if(v!==version)return;img.hidden=false;missing.hidden=true};
+ img.onerror=()=>{if(v!==version)return;missing.textContent='画像の取得に失敗しました。'};
+ img.src=storyArtDisplayUrl(cut);
+}
+$('prev').onclick=()=>{if(lineIndex>0){lineIndex--;show();return}if(sceneIndex>0){sceneIndex--;lineIndex=(scenes[sceneIndex].dialogueTurns?.length||1)-1;show()}};
+$('next').onclick=()=>{if(lineIndex<(scenes[sceneIndex].dialogueTurns?.length||1)-1){lineIndex++;show();return}if(sceneIndex<scenes.length-1){sceneIndex++;lineIndex=0;show()}};
+$('game').onclick=()=>location.href='./game.html';
+$('chapter').onchange=stages;
+for(const id of ['stage','gender','outcome'])$(id).onchange=render;
+$('chapter').value='1';stages();
+</script></body></html>
