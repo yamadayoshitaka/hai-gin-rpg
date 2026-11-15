@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
+import {applyHeroineSkinMaterial} from '../src/heroine-skin-material.js';
 import {v65NasalCartilageDelta,femaleInnerFeatureDelta} from '../src/independent-face-masters.js';
 import {v65IrisOpticalTones,v65ScleralShading,v63IrisOpticalTones,v67NaturalEyeMakeup}
  from '../src/face-feature-meshes.js';
@@ -214,4 +215,21 @@ test('v67: rooted 3D hair shades start at true scalp tone and fade without hair-
    }
   }
  }
+});
+
+test('v67: natural real skin highlights avoid plastic shine without mutating sculpt',()=>{
+ const geometry=new THREE.SphereGeometry(.22,16,12);
+ const face=new THREE.Mesh(geometry,new THREE.MeshStandardMaterial({
+  color:0xf0d9cb,roughness:.94,metalness:0
+ }));
+ const original=Array.from(geometry.getAttribute('position').array);
+ const result=applyHeroineSkinMaterial(face);
+ assert.equal(result.applied,true);
+ assert.equal(face.material.roughness,.74);
+ assert.equal(face.material.metalness,0);
+ assert.ok(face.material.clearcoat<=.04);
+ assert.ok(face.material.sheen<=.08);
+ assert.equal(face.userData.v67SoftSkinSpecular,true);
+ assert.deepEqual(Array.from(geometry.getAttribute('position').array),original);
+ face.material.dispose();geometry.dispose();
 });
