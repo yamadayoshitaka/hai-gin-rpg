@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "category": "anime",
+  "saved": [
+    {
+      "id": "compact-chapter-opening-replay",
+      "sourceFiles": [
+        "src/story-compact-comic.js"
+      ],
+      "commitSha": "33eadbbc7c22e7b0437292fcf770937e22114d4e",
+      "qa": "unverified"
+    }
+  ],
+  "remainingIds": [
+    "compact-c01-s01..c20-s10-CG-audit",
+    "compact-portrait-dialogue-QA",
+    "compact-outcome-branch-QA"
+  ],
+  "nextAction": "PR #458の章1→章2遷移・同章再入室をブラウザで回帰検証。20章正本のCG実WebP/SHA/人物/性別を監査し、既存CGの安全な再利用を実装。無料生成器の接続確認後のみ新規生成。"
+}
