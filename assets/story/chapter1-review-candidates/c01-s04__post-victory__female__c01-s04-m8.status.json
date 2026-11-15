@@ -1,0 +1,15 @@
+{
+  "shotKey": "c01-s04|post-victory|female|c01-s04-m8",
+  "status": "REJECTED_SCENE_UNDER_SPECIFIED_NOT_REGISTERED",
+  "sourceModel": "ChatGPT Images",
+  "candidateSha256": "ee6add2200b73f3078e54400ad9f76356f52e7190b142f8406eef056659b17d2",
+  "nativePixels": [
+    1664,
+    936
+  ],
+  "note": "Actual candidate has Lucia and Iris inspecting geometric seal. Original script mentions route across graves and farm; this is only a partial illustration. Do not promote to live without better canonical scene and actual character reference QA.",
+  "referenceMasterBytesAttached": false,
+  "finalP0Approved": false,
+  "ownerAuthorizedProvisionalPromotion": false,
+  "requiredNextAction": "Redraw exact grave-and-field path with Lucia + Iris, no text, 16:9 native, check true references and SHA."
+}
