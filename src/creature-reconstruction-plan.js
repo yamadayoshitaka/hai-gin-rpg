@@ -9,9 +9,15 @@
 import {MONSTER_CATALOG,MONSTER_BY_ID} from './monster-catalog.js';
 import {HUMAN_MONSTER_IDS} from './monster-character-cosplay-manifest.js';
 import {MONSTER_SUMMON_ENTRIES} from './monster-summon-registry.js';
+import {WEB_CREATURE_MESH_SOURCES} from './creature-web-mesh-catalog.js';
+import {WEB_CREATURE_ANATOMY_REFERENCES} from './creature-research-reference-catalog.js';
 // Keep the manifest pure-data: loading a planning table must not fetch a
 // Three.js renderer or third-party 3D assets.
-const VERIFIED_CATALOG_KEYS=new Set(['r-wolf','r-tiger','r-jaguar','r-eagle','r-crocodile']);
+const VERIFIED_CATALOG_KEYS=new Set([
+ 'r-wolf','r-tiger','r-jaguar','r-eagle','r-crocodile',
+ ...Object.keys(WEB_CREATURE_MESH_SOURCES),
+ ...Object.keys(WEB_CREATURE_ANATOMY_REFERENCES)
+]);
 
 export const RECONSTRUCTION_PLAN_SCHEMA='hai-gin/creature-reconstruction-plan/v1';
 export const MESH_STAGE=Object.freeze({
@@ -51,12 +57,32 @@ export const FAMILY_MESH_STRATEGY=Object.freeze({
 });
 const candidates=Object.freeze({
  m001:['r-wolf'], m002:['r-wolf'],m003:['r-wolf'],m004:['r-wolf'],
- m007:['r-tiger'],m009:['r-jaguar'],m010:['r-tiger'],
- m011:['r-eagle']
+ m007:['r-tiger'],m008:['g-lion'],m009:['r-jaguar'],m010:['r-tiger'],
+ m011:['r-eagle'],m014:['g-owl'],
+ m021:['g-hercules'],m022:['g-atlas'],m023:['g-mantis'],
+ m024:['g-scarab'],m025:['g-goldstag']
 });
 const anatomicalReferences=Object.freeze({
- m008:['r-tiger'],m012:['r-eagle'],m013:['r-eagle'],m014:['r-eagle'],
- m016:['r-crocodile']
+ m008:['r-tiger'],
+ m012:['r-eagle','g-lion'],m013:['r-eagle','g-seagull'],
+ m014:['r-eagle'],
+ m016:['r-crocodile','g-anky'],
+ m017:['g-anky','b-trex'],
+ m018:['s-dragon-rig','b-trex'],
+ m019:['g-plesio'],m020:['g-plesio','s-snake'],
+ m021:['s-beetle-male'],m022:['s-beetle-male'],
+ m023:['s-beetle-flight'],m024:['s-beetle-male'],
+ m025:['s-beetle-flight'],
+ m026:['s-spider','s-spider-rig'],
+ m027:['s-spider','s-spider-rig'],
+ m028:['s-spider','s-spider-rig'],
+ m029:['s-spider','s-spider-rig'],
+ m030:['s-spider','s-spider-rig'],
+ m046:['g-jellyfish'],
+ m047:['s-octopus','s-octopus-ccby'],
+ m048:['s-snake'],
+ m049:['s-octopus'],
+ m050:['g-shark','g-sturgeon']
 });
 const shapes=Object.freeze({
  m001:'large-wolf',m002:'large-wolf',m003:'large-wolf',m004:'large-wolf',m005:'forest-wolf',
@@ -142,19 +168,20 @@ const summoned=MONSTER_SUMMON_ENTRIES.map(s=>{
 });
 const dedicatedDefs=[
  ['wolf','専用召喚狼','beast','large-wolf','r-wolf',['r-wolf'],[],1,false],
- ['wyvern','飛竜','reptile','wyvern','legacy',[],[],3,false],
- ['dragon','古竜','reptile','ancient-dragon','legacy',[],[],3,false],
- ['elder_dragon','天竜','reptile','celestial-dragon','legacy',[],[],3,false],
- ['dragon_lord','竜王・ドラゴン形態','reptile','dragon-lord','legacy',[],[],3,false],
+ ['wyvern','飛竜','reptile','wyvern','legacy',[],['g-ptero','s-dragon-low'],3,false],
+ ['dragon','古竜','reptile','ancient-dragon','legacy',[],['s-dragon-rig','b-trex'],3,false],
+ ['elder_dragon','天竜','reptile','celestial-dragon','legacy',[],['s-dragon-rig','s-dragon-low'],3,false],
+ ['dragon_lord','竜王・ドラゴン形態','reptile','dragon-lord','legacy',[],['s-dragon-rig'],3,false],
  ['forest_archer','森の精霊弓士','fiend','humanoid-archer','current-human-rig',[],[],4,true],
  ['seraph_guardian','光翼の守護天使','fiend','humanoid-angel','current-human-rig',[],[],4,true],
- ['horse','軍馬','beast','horse','legacy',[],[],3,false]
+ ['horse','軍馬','beast','horse','legacy',['g-horse'],[],3,false]
 ];
 const dedicated=dedicatedDefs.map(([id,name,family,archetype,baseMesh,source,reference,priority,humanoid])=>
  Object.freeze({
   id,name,kind:'dedicated-summon',monsterId:null,family,archetype,
   baseMesh,candidateSources:source,anatomyReferences:reference,priority,
-  stage:id==='wolf'?'default':humanoid?'human':'missing',
+  stage:id==='wolf'?'default':humanoid?'human':
+   source.length?'candidate':reference.length?'anatomy':'missing',
   canModify:true,modelSelectable:!humanoid,
   reusedParts:FAMILY_REUSE_PARTS[family],
   strategy:FAMILY_MESH_STRATEGY[family],
@@ -195,6 +222,9 @@ export function validateReconstructionPlan(){
    throw Error('Unverified reconstruction declared complete: '+x.id);
   for(const donor of [...x.candidateSources,...x.anatomyReferences])
    if(!VERIFIED_CATALOG_KEYS.has(donor))throw Error('Unknown 3D donor: '+donor);
+  for(const donor of x.candidateSources)
+   if(Object.hasOwn(WEB_CREATURE_ANATOMY_REFERENCES,donor))
+    throw Error('Non-playable scan promoted to GLB candidate: '+x.id+'/'+donor);
   if(x.stage==='protected'&&x.canModify)throw Error('Protected source modified');
   if(x.kind==='summon'&&!byMonster[x.monsterId])
    throw Error('Summon lacking canonical parent');
