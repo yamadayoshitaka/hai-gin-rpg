@@ -10,7 +10,7 @@ export const MESH_ADOPTION_STORAGE_KEY='hai-gin.creature-mesh-adoption.v1';
 export const NONHUMAN_MONSTER_IDS=Object.freeze(
  MONSTER_CATALOG.filter(m=>!HUMAN_MONSTER_IDS.includes(m.id)).map(m=>m.id));
 export const NONHUMAN_EXTRA_SUMMON_IDS=Object.freeze([
- 'wolf','wyvern','dragon','elder_dragon','horse'
+ 'wolf','wyvern','dragon','elder_dragon','dragon_lord','horse'
 ]);
 const allowed=new Set([
  ...NONHUMAN_MONSTER_IDS,
@@ -43,7 +43,7 @@ export function baseMonsterId(id){
 export function recommendedMeshSources(id){
  const m=MONSTER_BY_ID[baseMonsterId(id)];
  if(!m)return id==='wolf'?['r-wolf','q022']:
-   ['wyvern','dragon','elder_dragon'].includes(id)?['q040','q039']:[];
+   ['wyvern','dragon','elder_dragon','dragon_lord'].includes(id)?['q040','q039']:[];
  const base=exceptions[m.id]??recommend[m.family]??[];
  const real=m.id==='m011'?['r-eagle']:
    m.id==='m016'?['r-crocodile']:
