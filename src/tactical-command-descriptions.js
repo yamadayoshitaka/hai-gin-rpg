@@ -13,10 +13,10 @@ export const TACTICAL_ORDERS=Object.freeze({
  defend:Object.freeze({name:'守備',effect:'地図で防衛地点を指定し、複数分隊へ別々の防衛地点を割当て。被ダメージ軽減（物理9〜24%・属性12〜32%）。'}),
  hold:Object.freeze({name:'待機',effect:'マップ上の指定地点で待機。追加の数値強化なし。'}),
  retreat:Object.freeze({name:'退却',effect:'マップ上の退却先へ後退。追加の数値強化なし。'}),
- support:Object.freeze({name:'支援',effect:'地図で支援先を指定し、僧侶などの分隊が救護。'}),
- explore:Object.freeze({name:'探索',effect:'指定した建物・宝箱などのオブジェクトを探索。'}),
+ support:Object.freeze({name:'支援',effect:'3段階で回復・攻撃強化・防御強化・機動強化を選び、地図で支援先を指定。'}),
+ explore:Object.freeze({name:'探索',effect:'徒歩または実召喚獣による偵察を選び、建物・宝箱などを探索。'}),
  destroy:Object.freeze({name:'破壊',effect:'指定した門・橋・木・建物などのオブジェクトを破壊。忍者・魔法使いが担当。'}),
- weaken:Object.freeze({name:'弱体',effect:'忍者は機動-18%、シーフは防御-15%、魔法使いは攻撃-20%。狙った敵に時間制のデバフ。'}),
+ weaken:Object.freeze({name:'弱体',effect:'攻撃-20%・防御-15%・機動-18%の低下、回復阻止・強化阻止を3段階で選択。職業により利用制限。'}),
  warp:Object.freeze({name:'軍師ワープ',effect:'UR軍師のみ、味方陣地の空き地点へ戦闘中1回移動。'})
 });
 export function strategyEffect(id){return TACTICAL_STRATEGIES[id]?.effect??'状況に応じた自動行動を優先。';}
