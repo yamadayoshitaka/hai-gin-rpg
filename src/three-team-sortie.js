@@ -5,6 +5,7 @@
  */
 import {formationStatus,arrangeFormation,formationCellsAtLevel,FREE_FORMATION,FORMATION_ROLES,ROLE_JOBS} from './sortie-formation-logic.js';
 import {STRATEGY_METHODS,STORY_JOB_TO_STRATEGY_JOB} from './three-step-strategy-catalog.js';
+import {CAMPAIGN_STAGES,CAMPAIGN_STAGE_BY_ID} from './campaign-stage-plan.js';
 export const SORTIE_TEAM_IDS=Object.freeze([1,2,3]);
 export const SORTIE_SQUADS_PER_GROUP=16;
 /** Temporary level-99 battle/formation test without rewriting career XP. */
@@ -70,6 +71,37 @@ export function sortieFormationBuff(game,teamId){
 }
 export const SORTIE_ENTRY_SLOTS=Object.freeze([9,10,11]);
 export const SORTIE_TOTAL_RENDER_LIMIT=50; // The current campaign battle renderer.
+/** This is the next battle's real cap, not the total number in the army inventory. */
+export function sortiePlanningStage(game){
+ const current=CAMPAIGN_STAGE_BY_ID[game?.townStage]||CAMPAIGN_STAGE_BY_ID[game?.stage];
+ const completed=new Set(game?.completedStages||[]);
+ const future=CAMPAIGN_STAGES.filter(stage=>stage.kind!=='town'&&stage.number>(current?.number||0));
+ return future.find(stage=>!completed.has(stage.id))||future[0]||CAMPAIGN_STAGES.find(stage=>stage.kind!=='town');
+}
+export const sortiePlanningLimit=game=>Math.min(SORTIE_TOTAL_RENDER_LIMIT,sortiePlanningStage(game)?.deploymentLimit||SORTIE_TOTAL_RENDER_LIMIT);
+/** Shrink only planned deployment, never the underlying inventory. */
+function clampPlannedHeadcount(teams,limit){
+ const entries=teams.flatMap(team=>Object.entries(team.counts).map(([id,count])=>({team,id,count:Number(count)||0}))).filter(x=>x.count>0);
+ const total=entries.reduce((n,x)=>n+x.count,0);
+ if(total<=limit)return false;
+ const limitCount=Math.max(0,Math.floor(limit));
+ const allotments=entries.map((x,index)=>({...x,index,amount:index<limitCount?1:0,weight:x.count}));
+ let remaining=limitCount-allotments.reduce((n,x)=>n+x.amount,0);
+ while(remaining>0){
+  const best=allotments.filter(x=>x.amount<x.count).sort((a,b)=>
+   (b.weight/(b.amount+1))-(a.weight/(a.amount+1))||a.index-b.index)[0];
+  if(!best)break;best.amount++;remaining--;
+ }
+ for(const x of allotments){
+  if(x.amount>0){x.team.counts[x.id]=x.amount;x.team.divisions[x.id]=Math.min(x.team.divisions[x.id]||1,4,x.amount)}
+  else{
+   delete x.team.counts[x.id];delete x.team.divisions[x.id];
+   x.team.slots=x.team.slots.map(s=>String(s)===x.id?null:s);
+   x.team.grid=x.team.grid.map(s=>String(s)===x.id?null:s);
+  }
+ }
+ return true;
+}
 const ACTIVE_ORDER_IDS=Object.freeze(['charge','defend','hold','retreat','support','explore','destroy','weaken']);
 const allSlots=Object.freeze(Array.from({length:12},(_,i)=>i));
 const clamp=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
@@ -141,11 +173,82 @@ export function ensureSortiePlan(game){
    team.captainId=[...candidates].sort((a,b)=>rarityScore(b)-rarityScore(a))[0]?.id??null;
   });
  }
+ clampPlannedHeadcount(teams,sortiePlanningLimit(game));
+ for(const team of teams)if(team.formation!==FREE_FORMATION&&sortieTeamCount(team)){
+  // Older saves may contain job swaps; fixed presets always reconstruct the layout.
+  rebuildNamedFormation(game,teams,team,team.formation,team.slots.filter(Boolean).length);
+ }
  game.sortiePlan={version:1,teams};
  return game.sortiePlan;
 }
 export const sortieTeams=game=>ensureSortiePlan(game).teams;
 export const sortieTeamCount=team=>Object.values(team?.counts||{}).reduce((a,b)=>a+Number(b||0),0);
+
+/** A named formation owns its job-to-cell mapping. Rebuild from inventory
+ * rather than preserving user-swapped cells or incompatible old-save jobs.
+ */
+function rebuildNamedFormation(game,teams,team,formation,desired){
+ const candidates=ownSquads(game),other=new Map();
+ for(const t of teams)if(t!==team)for(const [id,count] of Object.entries(t.counts))
+  other.set(id,(other.get(id)||0)+Number(count||0));
+ const current={...team.counts},currentTotal=Object.values(current).reduce((n,x)=>n+Number(x||0),0);
+ const maxRows=Math.min(sortieSquadCap(game),Math.max(4,Math.floor(desired)||4));
+ const slots=Array(SORTIE_SQUADS_PER_GROUP).fill(null),chosen=[],used=new Set();
+ for(let i=0;i<maxRows;i++){
+  const role=FORMATION_ROLES[formation][i],jobs=ROLE_JOBS[role]||[];
+  const eligible=candidates.filter(item=>{
+   const id=String(item.id);
+   return !used.has(id)&&jobs.includes(item.job)&&item.count>(other.get(id)||0);
+  });
+  eligible.sort((a,b)=>{
+   const av=Number(current[String(a.id)]||0),bv=Number(current[String(b.id)]||0);
+   return (bv>0?1:0)-(av>0?1:0)||bv-av||
+    (b.count-(other.get(String(b.id))||0))-(a.count-(other.get(String(a.id))||0));
+  });
+  const candidate=eligible[0];if(!candidate)continue;
+  const id=String(candidate.id);used.add(id);slots[i]=id;
+  chosen.push({id,capacity:candidate.count-(other.get(id)||0),
+   weight:Math.max(1,Number(current[id]||Math.min(10,candidate.count)))});
+ }
+ const maxTotal=Math.max(0,sortiePlanningLimit(game)-teams.filter(t=>t!==team)
+  .reduce((n,t)=>n+sortieTeamCount(t),0));
+ const target=Math.min(currentTotal,maxTotal,chosen.reduce((n,x)=>n+x.capacity,0));
+ const counts={},divisions={},shares=chosen.map(x=>({...x,count:0}));
+ if(target>0){
+  for(const x of shares.slice(0,target))x.count=1;
+  let left=target-shares.reduce((n,x)=>n+x.count,0);
+  while(left>0){
+   const best=shares.filter(x=>x.count<x.capacity).sort((a,b)=>
+    b.weight/(b.count+1)-a.weight/(a.count+1)||a.id.localeCompare(b.id))[0];
+   if(!best)break;best.count++;left--;
+  }
+ }
+ for(const x of shares)if(x.count){
+  counts[x.id]=x.count;divisions[x.id]=Math.max(1,Math.min(team.divisions[x.id]||1,x.count,4));
+ }
+ team.formation=formation;team.slots=slots;team.counts=counts;team.divisions=divisions;
+ arrangeFormation(team,candidates,formation,SORTIE_FORMATION_CELLS,sortieSquadCap(game));
+ if(!counts[String(team.captainId)]){
+  const people=candidates.filter(x=>counts[String(x.id)]);
+  team.captainId=[...people].sort((a,b)=>rarityScore(b)-rarityScore(a))[0]?.id??null;
+ }
+ return team;
+}
+export function setSortieFormationSize(game,teamId,desired){
+ ensureSortiePlan(game);
+ const team=teamOf(game,teamId),n=Number(desired);
+ if(!team||team.formation===FREE_FORMATION)
+  throw Error('通常陣形の部隊数を変更する場合は、先に陣形を選んでください。');
+ if(!Number.isInteger(n)||n<4||n>sortieSquadCap(game))
+  throw Error('陣形の部隊数はレベルで解放される4～'+sortieSquadCap(game)+'隊です。');
+ const before=team.slots.filter(Boolean).length;
+ if(n>before&&ownSquads(game).filter(x=>(x.count-game.sortiePlan.teams
+  .filter(t=>t!==team).reduce((sum,t)=>sum+(t.counts[String(x.id)]||0),0))>0).length<=before)
+  throw Error('追加可能な職業の隊がありません。');
+ rebuildNamedFormation(game,game.sortiePlan.teams,team,team.formation,n);
+ return team;
+}
+
 export function sortieTeamSquads(game,teamId){
  const team=teamOf(game,teamId);
  if(!team)return [];
@@ -159,8 +262,14 @@ export function setSortieCount(game,teamId,squadId,count){
  const elsewhere=game.sortiePlan.teams.filter(t=>t!==team)
   .reduce((sum,t)=>sum+(Number(t.counts[String(source.id)])||0),0);
  if(n+elsewhere>source.count)throw Error('他隊に配属済みです。利用可能人数は'+(source.count-elsewhere)+'人です。');
+ const budget=sortiePlanningLimit(game);
+ const assigned=game.sortiePlan.teams.reduce((sum,t)=>sum+sortieTeamCount(t),0);
+ if(assigned-(team.counts[String(source.id)]||0)+n>budget)
+  throw Error('このステージの出撃上限は'+budget+'人です。他の隊の人数を減らしてから割り当ててください。');
  const sid=String(source.id);
  if(n){
+  if(!team.slots.includes(sid)&&team.formation!==FREE_FORMATION)
+   throw Error('通常陣形の職業とマスは固定です。別の陣形か自由陣形を選んでください。');
   if(!team.slots.includes(sid)){
    const empty=team.slots.indexOf(null);
    if(empty<0||empty>=sortieSquadCap(game))throw Error('軍師レベルの隊数上限です（最大'+sortieSquadCap(game)+'隊）。');
@@ -186,6 +295,7 @@ export function setSortieCount(game,teamId,squadId,count){
 export function setSortieJobSlot(game,teamId,slotIndex,squadId){
  ensureSortiePlan(game);
  const team=teamOf(game,teamId),index=Number(slotIndex);
+ if(team?.formation!==FREE_FORMATION)throw Error('通常陣形は固定配置です。自由陣形でのみ職業を変更できます。');
  if(!team||!Number.isInteger(index)||index<0||index>=SORTIE_SQUADS_PER_GROUP)
   throw Error('班の配置枠を選択してください。');
  const previous=team.slots[index],sid=squadId==null||squadId===''?null:String(squadId);
@@ -197,8 +307,12 @@ export function setSortieJobSlot(game,teamId,slotIndex,squadId){
  const elsewhere=sid?game.sortiePlan.teams.filter(t=>t!==team)
   .reduce((n,t)=>n+(t.counts[sid]||0),0):0;
  let available=source?source.count-elsewhere:0;
- if(sid&&available<=0&&!game.sortiePlan.teams.some(t=>t!==team&&(t.counts[sid]||0)>0))
-  throw Error('このジョブの配属可能人数がありません。');
+ const assignedTotal=game.sortiePlan.teams.reduce((n,t)=>n+sortieTeamCount(t),0);
+ const replacing=previous?Number(team.counts[previous]||0):0;
+ const budget=Math.max(0,sortiePlanningLimit(game)-assignedTotal+replacing);
+ const donorAvailable=sid?game.sortiePlan.teams.some(t=>t!==team&&(t.counts[sid]||0)>0):false;
+ if(sid&&Math.min(available,budget)<=0&&!donorAvailable)
+  throw Error('ステージ出撃上限または保有兵数に空きがありません。先に人数を減らしてください。');
  if(previous){
   delete team.counts[previous];delete team.divisions[previous];team.slots[index]=null;
   team.grid=team.grid.map(id=>id===previous?null:id);
@@ -206,7 +320,9 @@ export function setSortieJobSlot(game,teamId,slotIndex,squadId){
  if(sid){
   // From the default all-in-first-group formation, move ten soldiers to
   // another group on a job tap; never duplicate real people.
-  if(available<=0){
+  // Reserve troops only fill the remaining stage budget. If none fits,
+  // transfer soldiers out of another group rather than cloning them.
+  if(Math.min(available,budget)<=0){
    const donor=game.sortiePlan.teams.find(t=>t!==team&&(t.counts[sid]||0)>0);
    const moved=Math.min(10,donor.counts[sid]);
    donor.counts[sid]-=moved;
@@ -216,7 +332,7 @@ export function setSortieJobSlot(game,teamId,slotIndex,squadId){
     donor.grid=donor.grid.map(v=>v===sid?null:v);
    }
    available=moved;
-  }
+  }else available=Math.min(available,budget);
   team.slots[index]=sid;
   team.counts[sid]=Math.min(10,available);team.divisions[sid]=1;
   const legal=sortieAllowedCells(game,teamId),target=legal.find(c=>team.grid[c]===null);
@@ -235,6 +351,7 @@ export function setSortieGridCell(game,teamId,cellIndex,squadId){
  if(!team||!Number.isInteger(index)||index<0||index>=SORTIE_GRID_CELLS)
   throw Error('4×4の有効なマスを選んでください。');
  const here=team.grid[index],sid=squadId===null||squadId===undefined||squadId===''?null:String(squadId);
+ if(team.formation!==FREE_FORMATION)throw Error('通常陣形は固定配置です。自由陣形を選んだときだけマスを編集できます。');
  const allowedCells=sortieAllowedCells(game,teamId);
  if(!allowedCells.includes(index))throw Error('陣形の指定マス以外には配置できません。');
  const roles=team.formation===FREE_FORMATION?null:FORMATION_ROLE_CELL_JOBS(team.formation,index);
@@ -300,9 +417,9 @@ export function setSortieFormation(game,teamId,formation){
  ensureSortiePlan(game);
  const team=teamOf(game,teamId);
  if(!team||(formation!==FREE_FORMATION&&(!Object.hasOwn(SORTIE_FORMATIONS,formation)||SORTIE_FORMATIONS[formation].level>sortieLevel(game))))throw Error('この陣形は軍師レベルが不足しています。');
- team.formation=formation;
- // Auto-position by actual roles, not just by arbitrary unit order.
- arrangeFormation(team,ownSquads(game),formation,SORTIE_FORMATION_CELLS,sortieSquadCap(game));
+ if(formation===FREE_FORMATION){team.formation=formation;}
+ else rebuildNamedFormation(game,game.sortiePlan.teams,team,formation,
+  Math.max(4,team.slots.filter(Boolean).length));
  if(!availableSortieOrders(game,teamId).includes(team.initialOrder))team.initialOrder='hold';
  return team;
 }

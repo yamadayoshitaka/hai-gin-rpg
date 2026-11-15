@@ -314,6 +314,7 @@ body[data-circle-target] #destinationPrompt{border:2px solid #ffed9c;box-shadow:
   }
 }
 </style>
+<link rel="stylesheet" href="./src/battle-three-group-panel.css?v=1">
 <div id="vitalsPanel" hidden role="region" aria-label="戦況HP・MP一覧"><div class="vitalsHead"><strong>部隊別 HP / MP（⏸ 一時停止中）</strong><button id="vitalsClose" aria-label="戦況を閉じる">✕ 閉じる</button></div><div id="vitalsOverview"></div><div class="vitalsFilters"><label>軍<select id="vitalsTeam"><option value="0">味方</option><option value="1">敵</option></select></label><label>部隊<select id="vitalsSquad"><option value="all">全部隊</option></select></label><label>職業<select id="vitalsJob"><option value="all">全職業</option></select></label></div><div class="squadHelp" id="vitalsSquadStatus">部隊を選ぶと個人のHPとMPを確認できます。</div><button id="vitalsHealing" disabled>✚ この部隊へ回復支援を要請</button><div id="vitalsJobSummary"></div><div id="vitalsIndividuals"></div><div class="vitalsPages"><button id="vitalsPrev">◀ 前</button><span id="vitalsPageLabel">1 / 1</span><button id="vitalsNext">次 ▶</button></div></div>
 <button id="battleMenuToggle" aria-expanded="false">☰ メニュー</button>
 <div id="teamLegend" aria-label="陣地識別色"><span class="ally">■ 味方陣地・西</span><span class="enemy">■ 敵陣地・東</span><span>▣ 中立帯</span></div>
@@ -745,6 +746,7 @@ import {normalizeArmyGroup,battleGroupMembers} from './src/army-groups.js';
 import {createTargetedStrategyUi} from './src/targeted-strategy-runtime.js';
 import {STRATEGY_METHODS} from './src/three-step-strategy-catalog.js';
 import {brokenFormationGroups} from './src/battle-formation-integrity.js';
+import {createBattleThreeGroupPanel} from './src/battle-three-group-panel.js';
 import * as THREE from 'three';
 import {createGamePageAudio} from './src/game-page-audio.js';
 import {layoutSquadCallouts,squadCalloutLeader} from './src/battle-squad-callout-layout.js?v=2';
@@ -945,13 +947,13 @@ import {ConfirmedHitOverlay,selectConfirmedHitEvents} from './src/confirmed-hit-
 import {combatEffectDirective} from './src/combat-effect-directives.js?v=4.6.16';
  import {CombatActionRuntime} from './src/combat-action-runtime.js?v=4.6.51';
  import {COMBAT_RULES,combatJobId,availableCombatSkills} from './src/combat-action-spec.js?v=4.6.51';
- import {createCombatWorldObjectRenderer} from './src/combat-world-object-renderer.js?v=masters-v2';
+ import {createCombatWorldObjectRenderer} from './src/combat-world-object-renderer.js?v=natural-size-20261116';
 import {describeDestructibleWorld} from './src/destructible-world.js?v=4.6.15';
 import {StructureCollapseVfx} from './src/structure-collapse-vfx.js?v=4.4.34';
  import {createCreatureSoundRuntime} from './src/combat-creature-sounds.js?v=creature-voices-2';
 import {MONSTER_CATALOG} from './src/monster-catalog.js';
 import {createMonsterModel} from './src/monster-geometry.js';
- import {CREATURE_PERFORMANCE,riderSeatHeight,riderSeatLocalOffset,creatureFlightHeight,creatureSize,mountedFlightSway} from './src/combat-creature-performance.js?v=4.6.39';
+ import {CREATURE_PERFORMANCE,riderSeatHeight,riderSeatLocalOffset,creatureFlightHeight,creatureSize,mountedFlightSway} from './src/combat-creature-performance.js?v=natural-size-20261116';
 const $=id=>document.getElementById(id);
 // Audio controls stay inside the existing battle menu; no new overlay buttons.
 const voiceMenu=document.createElement('div');
@@ -1025,6 +1027,14 @@ const storyRequest=(()=>{
  }catch(e){console.warn('Story battle request unavailable',e)}
  showRuntimeError('出撃データが見つかりません。ストーリー画面から攻略戦を開始してください。');return null;
 })();
+// Display the true story sortie, not the generic 50-vs-50 demo default.
+if(storyRequest){
+ $('allyCasualties').textContent='0/'+storyRequest.units.length;
+ $('enemyCasualties').textContent='0/'+storyRequest.enemyCount;
+ $('squadTactics').setAttribute('aria-label','部隊の3段階作戦');
+ $('squadActiveOrder').textContent='現在の作戦：自動対応';
+ document.querySelector('#squadDockIdle small').textContent='味方の部隊を選択して作戦を指定';
+}
 const requestedArmy=storyRequest?50:Number(battleParams.get('army'));
 const selectedStage=activeStage(localStorage,battleParams.get('stage')||(storyRequest?stageForTerritory(storyRequest.territoryId,storyRequest.terrain):null));
 const stageHasRiver=stageWaterway(selectedStage)==='river',stageCrossingRows=stageBridgeRows(selectedStage);
@@ -6611,12 +6621,12 @@ function refreshSquadOrderLabel(){
  $('squadTacticsName').textContent=squadName(id);
  const commanderReason=squadCommanderUnavailableReason(id);
  $('squadTypeStatus').dataset.commandReason=commanderReason;
- $('squadTypeStatus').textContent=commandGroupName(id)+'・'+commandGroupIds(id).length+'隊へ号令｜'+
+ $('squadTypeStatus').textContent=commandGroupName(id)+'・'+commandGroupIds(id).length+(storyRequest?.sortieTeamCount?'隊の作戦｜':'隊へ号令｜')+
   (commanderReason||'軍師：指揮可能');
  $('squadTypeStatus').style.color=commanderReason?'#ffd0a0':'';
  const currentIntent=squadIntent(id,0,false,commanderReason);
  const seconds=squadOrderCooldownSeconds(id);
- $('squadActiveOrder').textContent='現在の'+currentIntent.order+
+ $('squadActiveOrder').textContent=(storyRequest?.sortieTeamCount?'現在の作戦：':'現在の')+currentIntent.order+
   (seconds?' ｜ ⏳'+seconds+'秒 命令・アイテム不可':'');
  $('squadOrderStatus').textContent='現在の'+squadOrderText(id);
  for(const name of ['squadOrderChoice','squadDestination','squadMissionChoice'])
@@ -7069,6 +7079,16 @@ function buildSquadQuickCommands(){
   button.onclick=()=>{if(!button.disabled)action()};
   (quickActionRow||squadQuickList).append(button);return button;
  };
+ if(storyRequest?.sortieTeamCount){
+  const groupId=normalizeArmyGroup(armyGroupBySquad[String(id)]);
+  heading('第'+groupId+'班の作戦 · 系統 → 目的 → 方法（複数選択）');
+  add('🎯 3段階作戦を選ぶ','three_step_strategy',()=>{
+   closeSquadTactics();targetedStrategyUi.open(groupId);
+  },{effect:'攻撃・守備・支援・探索・弱体・環境利用を組み合わせる'});
+  add('🎒 道具を使う','item_picker',()=>{closeSquadTactics();openBattleItemsForSquad(id)},{needsCommander:false});
+  add('📊 戦力・詳細','details',()=>{closeSquadTactics();openVitals(id)},{needsCommander:false});
+  return;
+ }
  if(squadQuickPage==='home'){
   const home=document.createElement('div');home.className='circleHomeButtons';
   for(const [label,page] of [['📯 号令','orders'],['🎒 アイテム','items']]){
@@ -8019,6 +8039,24 @@ for(const team of [0,1]){
  bar.append(previous,status,next);list.parentNode.append(bar);
  ribbonPageNodes.set(team,{previous,status,next});
 }
+const threeGroupPanel=storyRequest?.sortieTeamCount?createBattleThreeGroupPanel({
+ alliedNav:$('allySquadRibbon'),enemyNav:$('enemySquadRibbon'),
+ actors,groupBySquad:armyGroupBySquad,initialUnits:storyRequest.units,
+ enemyInitial:storyRequest.enemyCount,
+ onSquadSelect:id=>{trackedAllySquadId=String(id);refreshBattleTargetSummary(lastRibbonSums);},
+ onStrategy:groupId=>{if(battleReady&&!finished)targetedStrategyUi.open(groupId);},
+ onInspect:id=>openVitals(id),
+ onReinforce:result=>{
+  const point=squadCenter(result.toId,0);
+  if(point)issueTargetedPlatoon(result.toId,'defend',{x:Math.round(point.x),z:Math.round(point.z)});
+ },
+ onMerge:result=>{
+  squadOrderRegistry.delete(result.fromId);
+  targetedArrivalOrders.delete(result.fromId);
+  targetedEnemyQueues.delete(result.fromId);
+ },
+ onLog:log
+}):null;
 function markRibbonOrderIssued(id){
  lastSquadOrderAt.set(String(id),elapsed);
  lastRibbonOrderAt.set(squadKey(0,String(id)),elapsed*1000);
@@ -8103,6 +8141,7 @@ function refreshBattleTargetSummary(sums){
 }
 function renderSquadRibbons(sums){
  lastRibbonSums=sums;
+ threeGroupPanel?.render(false,Boolean(pendingCircleTarget));
  battleTacticalUi.onSquadSums(sums);
  refreshBattleTargetSummary(sums);
  // The only live controls are now 3D squad circles; do not reflow invisible sidebars.
@@ -8490,13 +8529,14 @@ function updateUI(){
    if($('squadTactics').dataset.panel==='main')showSquadTacticsPanel('main');
    else $('squadTactics').dataset.cooldownBlocked=String(seconds>0);
   }
-  const newStatus='現在の'+liveIntent.order+(seconds?' ｜ ⏳'+seconds+'秒 命令・アイテム不可':'');
+  const newStatus=(storyRequest?.sortieTeamCount?'現在の作戦：':'現在の')+liveIntent.order+(seconds?' ｜ ⏳'+seconds+'秒 操作不可':'');
   if($('squadActiveOrder').textContent!==newStatus)$('squadActiveOrder').textContent=newStatus;
   const newPurpose='現在の'+squadOrderText(selectedSquadId);
   if($('squadOrderStatus').textContent!==newPurpose)$('squadOrderStatus').textContent=newPurpose;
  }
  const aliveCounts=teamCounts();
- const initialCounts=massSim?[massSim.sideCount,massSim.sideCount]:[
+ const initialCounts=massSim?[massSim.sideCount,massSim.sideCount]:storyRequest?
+  [storyRequest.units.length,storyRequest.enemyCount]:[
   actors.filter(a=>a.team===0).length,actors.filter(a=>a.team===1).length];
 $('allyCasualties').textContent=Math.max(0,initialCounts[0]-aliveCounts[0])+'/'+initialCounts[0];
 $('enemyCasualties').textContent=Math.max(0,initialCounts[1]-aliveCounts[1])+'/'+initialCounts[1];
@@ -9556,7 +9596,7 @@ async function finishBattleLoading(){
   const planHeading=document.createElement('strong');
   planHeading.textContent='⚑ 開戦前の隊列編成';
   const planHint=document.createElement('p');
-  planHint.textContent=storyRequest?.sortieTeamCount?'宿屋の最大3班・レベル依存隊数、4×4配置と隊長を引き継ぎます。分隊も同じ班の全体バフを保持します。作戦は敵・地図・オブジェクトを指定します。':'最大3班へ隊を割り当てます。号令は班全体へ届き、職業に応じて攻撃・守備・支援を行います。宿屋で隊長を選定できます。';
+  planHint.textContent=storyRequest?.sortieTeamCount?'宿屋の最大3班・レベル依存隊数、4×4固定陣形と隊長を引き継ぎます。出撃人数はステージ上限内です。作戦は系統・目的・方法の3段階で、敵・地図・オブジェクトを指定します。':'最大3班へ隊を割り当てます。号令は班全体へ届き、職業に応じて攻撃・守備・支援を行います。宿屋で隊長を選定できます。';
   planHint.style.cssText='font:11px/1.55 system-ui;color:#c3dcea;margin:5px 0 8px';
   const planList=document.createElement('div');planList.id='openingPlanList';
   planList.style.cssText='overflow:hidden;display:grid;gap:6px';

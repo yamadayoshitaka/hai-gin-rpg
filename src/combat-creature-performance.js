@@ -4,7 +4,7 @@
  * identical timings and object IDs.
  */
 import {MONSTER_SUMMON_ENTRIES,MONSTER_SUMMON_BY_TYPE}
- from './monster-summon-registry.js?v=1';
+ from './monster-summon-registry.js?v=natural-size-20261116';
 
 export const CREATURE_PERFORMANCE = Object.freeze({
   // Seat is soldier-root elevation, not saddle Y: pelvis is ~0.95 above root.
@@ -29,10 +29,9 @@ export function creatureInstancePhase(id){
   return (hash>>>0)%628/100;
 }
 
-// Summon monsters are colossal relative to the human rig (1 unit).
-// The horse remains a rideable mount rather than a summoned monster.
-// This governs actual rendered scale, not just the preview camera.
-export const SUMMON_WORLD_SCALE=10;
+// Restore species-native presentation rather than the experimental 10x enlargement.
+// Horses, mount seats, animation and flight altitude continue sharing this scale.
+export const SUMMON_WORLD_SCALE=1;
 export const LARGE_SUMMON_IDS=Object.freeze([
  'wolf','wyvern','dragon','elder_dragon','dragon_lord',
  'forest_archer','seraph_guardian',

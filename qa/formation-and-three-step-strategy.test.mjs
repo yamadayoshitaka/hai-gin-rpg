@@ -43,10 +43,11 @@ assert.equal(sortieTeamCount(game.sortiePlan.teams[0]),40,'moving does not dupli
 setSortieFormation(game,1,'balanced');
 assert.equal(sortieFormationStatus(game,1).valid,true);
 assert.equal(sortieFormationBuff(game,1).attack,originalAttack);
-assert.throws(()=>setSortieGridCell(game,1,6,1),/陣形|職業/,
+assert.throws(()=>setSortieGridCell(game,1,6,1),/固定配置/,
  'a frontline knight cannot occupy a support slot');
 setSortieFormation(game,1,'attack');
-assert.equal(sortieFormationStatus(game,1).valid,false,'priest cannot occupy a front/scout/ranged role');
+assert.ok(!game.sortiePlan.teams[0].slots.filter(Boolean).includes('2'),
+ 'auto-selected attack formation excludes priests rather than placing them in invalid front/scout/ranged cells');
 setSortieFormation(game,1,'balanced');
 setSortieTactics(game,1,['melee_focus','heal_wounded']);
 assert.deepEqual(game.sortiePlan.teams[0].tactics,['melee_focus','heal_wounded'],

@@ -23,9 +23,9 @@ assert.equal(sortieSquadCap(game),4);
 assert.equal(sortieAllowedCells(game,1).length,4);
 assert.equal((renderThreeTeamPlanner({game,teamId:1}).match(/data-sortie-state="locked"/g)||[]).length,12,
  'preset formation at level 1 must lock twelve cells');
-assert.throws(()=>setSortieGridCell(game,1,15,1),/指定マス/,
+assert.throws(()=>setSortieGridCell(game,1,15,1),/固定配置/,
  'manual job placement outside a preset formation is prohibited');
-assert.throws(()=>setSortieGridCell(game,1,6,1),/職業/,
+assert.throws(()=>setSortieGridCell(game,1,6,1),/固定配置/,
  'a knight cannot be assigned to a support role');
 game.sortieTestLevel=7;
 assert.equal(sortieSquadCap(game),5,'seventh level unlocks fifth contingent');
@@ -72,7 +72,8 @@ const large=createNewGame('ステージ別出撃数');
 large.campaign.squads[0].count=100;
 ensureSortiePlan(large);
 assert.equal(allocateThreeTeamSortie(large,stage2).reduce((n,x)=>n+x.count,0),40);
-assert.equal(allocateThreeTeamSortie(large,stage3).reduce((n,x)=>n+x.count,0),41);
+assert.equal(allocateThreeTeamSortie(large,stage3).reduce((n,x)=>n+x.count,0),40,
+ 'stage 3 allows 41 but must not fabricate one soldier absent from the existing 40-person deployment plan');
 large.location='map';
 const req=makeCoreBattleRequest(large,stage2.id,'stage-limit');
 assert.equal(req.units.length,40,'stage cap must be applied before battle request generation');

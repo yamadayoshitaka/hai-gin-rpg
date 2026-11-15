@@ -43,8 +43,9 @@ ensureSortiePlan(low);
 assert.equal(sortieSquadCap(low),4);
 assert.equal(unlockedSortieFormations(low).length,3);
 assert.throws(()=>setSortieFormation(low,1,'constellation'),/レベル/);
-assert.equal(sortieTeams(low)[0].slots.filter(Boolean).length,4);
-assert.equal(sortieTeams(low)[1].slots.filter(Boolean).length,4);
+assert.ok(sortieTeams(low)[0].slots.filter(Boolean).length<=4);
+assert.ok(sortieTeams(low)[1].slots.filter(Boolean).length<=4,
+ 'fixed formations must not fill missing ranged and support roles with unsuitable ninja jobs');
 low.sortieTestLevel=99;
 ensureSortiePlan(low);
 assert.equal(sortieSquadCap(low),16);

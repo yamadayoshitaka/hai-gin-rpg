@@ -12,8 +12,8 @@ import {MONSTER_SUMMON_ENTRIES,MONSTER_SUMMON_BY_TYPE,MONSTER_SUMMON_SPECS,
  isMonsterSummonType,monsterSummonSource,monsterSummonWorldScale}
  from '../src/monster-summon-registry.js';
 
-assert.equal(SUMMON_WORLD_SCALE,10);
-assert.equal(MONSTER_SUMMON_MODEL_HEIGHT,17);
+assert.equal(SUMMON_WORLD_SCALE,1);
+assert.equal(MONSTER_SUMMON_MODEL_HEIGHT,1.7);
 assert.equal(MONSTER_CATALOG.length,50);
 assert.equal(MONSTER_SUMMON_ENTRIES.length,50);
 assert.equal(MONSTER_SUMMON_SKILLS.length,50);
@@ -40,12 +40,12 @@ for(const m of MONSTER_CATALOG){
  assert.ok(COMBAT_JOB_SPECS.summoner.skills.some(skill=>
    skill.id===e.skillSpec.id&&skill.objectType===id),
   'Actual summoner skill must refer to original monster '+id);
- assert.ok(creatureSize(id)>=10);
+ assert.ok(creatureSize(id)>=1);
  assert.ok(e.size>=1);
  assert.ok(e.rank=== (m.rarity==='UR'?'UR':
    ['R','SR'].includes(m.rarity)?'R':'N'));
- assert.ok(monsterSummonWorldScale(id,1.7)>=10);
- assert.ok(monsterSummonWorldScale(id,3.4)>=5);
+ assert.ok(monsterSummonWorldScale(id,1.7)>=1);
+ assert.ok(monsterSummonWorldScale(id,3.4)>=.5,'natural size preserves source dimensions');
  assert.equal(e.flying,m.family==='avian'||id==='summon_m042');
  assert.ok(!unique.has(id));unique.add(id);
 }
@@ -152,7 +152,7 @@ if(THREE){
   bb.getSize(sz);
   const reference=MONSTER_SUMMON_MODEL_HEIGHT*MONSTER_SUMMON_BY_TYPE[type].size;
   assert.ok(Math.abs(sz.y-reference)<reference*.06,
-   id+' must appear about 10 human heights; actual '+sz.y+' expected '+reference);
+   id+' must retain its source species height; actual '+sz.y+' expected '+reference);
   const pivots=actor.userData.pivots;
   assert.ok(Object.keys(pivots).length>0,'Original joint rig missing '+id);
   o.attackStartedAt=0.15;
@@ -166,4 +166,4 @@ if(THREE){
  renderer.dispose();
  assert.equal(scene.children.length,0);
 }
-console.log('50 independently summonable source monsters, 57 catalog species, 10x sizes and no eager 50-mesh scene: PASS');
+console.log('50 independently summonable source monsters, 57 catalog species, restored natural sizes and no eager 50-mesh scene: PASS');

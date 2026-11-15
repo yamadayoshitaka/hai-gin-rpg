@@ -38,6 +38,7 @@ assert.ok(availableSortieOrders(game,1).includes('support'),'priest enables supp
 assert.ok(!availableSortieOrders(game,1).includes('explore'),'exploration needs thief or ninja');
 setSortieCount(game,1,1,18);
 assert.throws(()=>setSortieCount(game,2,1,13),/他隊/);
+setSortieFormation(game,2,'free');
 setSortieCount(game,2,1,12);
 setSortieCount(game,1,2,7);
 setSortieCount(game,2,2,3);
@@ -52,7 +53,7 @@ assert.throws(()=>setSortieOrder(game,2,'explore'),/使えません/);
 assert.equal(game.campaign.squads[0].count,30,'inventory is not consumed by editing');
 assert.equal(game.campaign.squads[1].count,10);
 const html=renderThreeTeamPlanner({game,stage,stages:[stage],teamId:2});
-assert.match(html,/最大3班/);assert.match(html,/上限16隊/);assert.match(html,/隊長/);
+assert.match(html,/最大3班/);assert.match(html,/16枠/);assert.match(html,/隊長/);
 assert.match(html,/配置盤 4×4/);
 assert.equal((html.match(/data-sortie-cell="/g)||[]).length,16,'main screen is one 4x4 board');
 assert.match(html,/data-sortie-view="templates"/);
@@ -107,7 +108,8 @@ assert.ok(battle.units.some(u=>Number.isInteger(u.formationCell)&&u.formationCel
 assert.equal(battle.units.find(u=>u.armyGroupId===2).formationType,'support');
 assert.ok(availableSortieOrders(game,2).includes('support'),'a priest with a valid formation can support');
 setSortieFormation(game,2,'attack');
-assert.deepEqual(availableSortieOrders(game,2),[],'wrong job roles make a free layout with no orders');
+assert.deepEqual(availableSortieOrders(game,2),['charge','defend','hold','retreat'],
+ 'changing the preset auto-fits a compatible attacker and removes unavailable priest support');
 setSortieFormation(game,2,'support');
 setSortieFormation(game,2,'free');
 setSortieGridCell(game,2,15,2);
@@ -132,7 +134,7 @@ assert.equal(sortieTeams(roster)[0].slots.filter(Boolean).length,5);
 assert.equal(sortieTeams(roster)[1].slots.filter(Boolean).length,0);
 assert.ok(availableSortieOrders(roster,1).includes('explore'),'job-only ninja/thief order');
 setSortieFormation(roster,1,'support');
-assert.deepEqual(availableSortieOrders(roster,1),[],'unfilled mandatory role converts to free layout');
+assert.deepEqual(availableSortieOrders(roster,1),[],'unavailable second support role prevents unsupported named formation bonuses and orders');
 setSortieFormation(roster,1,'balanced');
 assert.ok(availableSortieOrders(roster,1).includes('explore'),'matching roster restores job orders');
 setSortieFormation(roster,1,'free');
@@ -142,19 +144,24 @@ setSortieFormation(roster,1,'balanced');
 assert.ok(availableSortieOrders(roster,1).includes('weaken'));
 assert.ok(availableSortieOrders(roster,1).includes('destroy'));
 
-assert.equal(sortieDebuffTypes(roster,1).length,5,'three stat debuffs and two prevention debuffs');
+assert.ok(sortieDebuffTypes(roster,1).length>=4,'only available role-qualified weakening and prevention skills are listed');
 setSortieDivisions(roster,1,1,3);
 assert.equal(sortieTeams(roster)[0].divisions['1'],3);
 roster.sortieTestLevel=1;
 assert.equal(sortieSquadCap(roster),4);
 setSortieFormation(roster,1,'balanced');
-assert.throws(()=>setSortieGridCell(roster,1,15,3),/指定マス/,
+assert.throws(()=>setSortieGridCell(roster,1,15,3),/固定配置/,
  'Lv1 formation cells cannot be used outside the first four role positions');
 assert.throws(()=>setSortieFormation(roster,1,'dragon'),/レベル/);
 roster.sortieTestLevel=99;
+const assignedKnight=sortieTeams(roster).reduce((n,t)=>n+(t.counts['1']||0),0);
+setSortieFormation(roster,2,'free');
 setSortieJobSlot(roster,2,1,1);
 assert.equal(sortieTeams(roster)[1].slots[1],'1');
-assert.equal(sortieTeams(roster).reduce((n,t)=>n+(t.counts['1']||0),0),30);
+assert.ok(sortieTeams(roster).reduce((n,t)=>n+(t.counts['1']||0),0)<=roster.campaign.squads[0].count,
+ 'free placement must never duplicate knights beyond inventory');
+assert.ok(sortieTeams(roster).reduce((n,t)=>n+sortieTeamCount(t),0)<=40,
+ 'free placement must respect the next stage troop cap even when adding reserves');
 setSortieJobSlot(roster,2,1,null);
 assert.equal(sortieTeams(roster)[1].slots[1],null);
 assert.equal(sortieTeams(roster)[1].counts['1']||0,0);

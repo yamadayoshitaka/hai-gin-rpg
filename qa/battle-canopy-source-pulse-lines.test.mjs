@@ -28,7 +28,7 @@ for(const token of [
  "selectCanopiesAroundCamera(camera.position,defaultCandidates)",
  "for(const [sx,sy] of [[-.65,-.5],[.65,-.5],[-.65,.5],[.65,.5]])",
  'if(TOWN_MODE)setBattleCamera(cameraHome,cameraCloseOffset);',
- 'else setBattleCamera(new THREE.Vector3(openingOverviewCenter',
+ 'setBattleCamera(new THREE.Vector3(openingOverviewCenter',
  'document.body.classList.add(\'battle-command-active\')',
  'document.body.classList.remove(\'battle-command-active\')',
  "label.classList.toggle('command-source',Boolean(commandOverviewLocked&&",

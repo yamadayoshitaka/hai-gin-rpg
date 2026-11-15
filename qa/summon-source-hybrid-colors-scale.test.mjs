@@ -60,17 +60,17 @@ for(const [type,donor] of Object.entries(expectedDonors)){
   <vertices*.70,type+' lacks low-detail LOD');
  for(const geo of Object.values(high).concat(Object.values(low)))geo.dispose();
 }
-assert.equal(SUMMON_WORLD_SCALE,10);
+assert.equal(SUMMON_WORLD_SCALE,1,'restore the original pre-giant summon scale');
 assert.equal(LARGE_SUMMON_IDS.length,57);
-for(const id of LARGE_SUMMON_IDS)assert.ok(creatureSize(id)>=10,
- 'Summon is not ten times a human '+id);
+for(const id of LARGE_SUMMON_IDS)assert.ok(creatureSize(id)>=1,
+ 'Summon must retain its source species natural proportions '+id);
 assert.equal(creatureSize('horse'),1,'A horse is not a summoned monster');
 assert.equal(creatureSize('horse',true),1,'Mounted horses must stay rideable');
-assert.ok(creatureSize('wolf',true)>=14,'Mounted summoned wolf remains colossal');
+assert.ok(creatureSize('wolf',true)>=1.4,'Mounted wolf has its original rider clearance');
 const wolf={id:'summoned-wolf',type:'wolf',flying:false};
-assert.ok(riderSeatHeight(wolf)>=10,'Human rider must not merge into enlarged wolf');
-assert.ok(Math.abs(riderSeatLocalOffset(wolf).z)>1,
- 'Giant mount saddle must follow its new torso size');
+assert.ok(riderSeatHeight(wolf)>=1,'Human rider retains original saddle clearance');
+assert.ok(Math.abs(riderSeatLocalOffset(wolf).z)>.2,
+ 'Mounted wolf seat offset follows restored natural size');
 
 assert.equal(FEMALE_SUMMON_FORMS.seraph_guardian.skin,0xf8f9f8);
 assert.equal(FEMALE_SUMMON_FORMS.seraph_guardian.faceOpenHair,true);
@@ -107,4 +107,4 @@ assert.match(forest,/0x3d9d4d/,
  'Procedural forest costume must contain emerald leaf surfaces');
 assert.match(gallery,/summonWorldScale:SUMMON_WORLD_SCALE/,
  'Showcase and combat should share one world-scale contract');
-console.log('Summon source hybrid, forest complexion, white angel, face-open hair and 10x world scale: PASS');
+console.log('Summon source hybrid, forest complexion, white angel, face-open hair and natural-scale restitution: PASS');

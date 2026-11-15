@@ -5,6 +5,9 @@ on:
       - 'src/three-team-sortie*.js'
       - 'src/sortie-formation-logic.js'
       - 'src/battle-formation-integrity.js'
+      - 'src/battle-three-group-hierarchy.js'
+      - 'src/battle-three-group-panel.js'
+      - 'src/battle-three-group-panel.css'
       - 'src/campaign-stage-plan.js'
       - 'world-map.html'
       - 'src/three-step-strategy-catalog.js'
@@ -21,6 +24,7 @@ on:
       - 'qa/level99-targeted-strategy.test.mjs'
       - 'qa/formation-and-three-step-strategy.test.mjs'
       - 'qa/formation-stage-collapse.test.mjs'
+      - 'qa/strict-formation-three-group-summon-size.test.mjs'
       - '.github/workflows/three-team-sortie.yml'
   workflow_dispatch:
 permissions:
@@ -37,6 +41,8 @@ jobs:
       - name: Check new module syntax
         run: |
           node --check src/battle-formation-integrity.js
+          node --check src/battle-three-group-hierarchy.js
+          node --check src/battle-three-group-panel.js
           node --check src/campaign-stage-plan.js
           node --check src/sortie-formation-logic.js
           node --check src/three-step-strategy-catalog.js
@@ -54,5 +60,6 @@ jobs:
           node --experimental-vm-modules qa/level99-targeted-strategy.test.mjs
           node --experimental-vm-modules qa/formation-and-three-step-strategy.test.mjs
           node --experimental-vm-modules qa/formation-stage-collapse.test.mjs
+          node --experimental-vm-modules qa/strict-formation-three-group-summon-size.test.mjs
           node --experimental-vm-modules qa/inn-deployment-command-effects.test.mjs
           node --experimental-vm-modules qa/inn-commander-autoplace-gameover.test.mjs
