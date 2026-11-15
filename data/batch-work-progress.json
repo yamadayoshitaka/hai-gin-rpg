@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "asOf": "2026-11-15T12:14:00Z",
+  "asOf": "2026-11-15T12:58:00Z",
   "description": "工程別の実作業証跡。GitHub Actionsの成功や定期タスクの実行完了を、3D改修・PR・デプロイの完了と混同しない。これはGitHubに最後に記録されたスナップショットであり、ChatGPTサービスのライブ状態ではない。",
   "stageOrder": [
     "launch",
@@ -14,13 +14,13 @@
   "groups": {
     "human": {
       "source": "ChatGPT 定期タスクの実行結果",
-      "lastRunAt": "2026-11-15T11:55:55.616502Z",
+      "lastRunAt": "2026-11-15T12:58:00Z",
       "status": "work_incomplete",
       "carryover": true,
       "issueNumber": 399,
-      "subject": "男女剣士の背面・踵の板状／石状異物",
-      "summary": "21時台の定期処理は実行されたが、ソース修正・回帰QA・コミット・公開は行われていない。",
-      "nextAction": "Issue #399の男女剣士の背面・踵メッシュの異物を最優先に原因特定→実コード修正→WebGL比較→QA→PRへ。未対応Issueを処理済みにしない。",
+      "subject": "男女剣士背面・踵の板状／石状異物",
+      "summary": "22時台：スイッチON、所有者Issue #399と前回未完了を確認。実コード改修・QA・PR・公開は未実施。",
+      "nextAction": "Issue #399の男女剣士背面・踵の表面メッシュ／スキニング原因を特定し、実コード修正→WebGL比較→QA→Draft PR。完了まで処理済みコメント禁止。",
       "steps": {
         "launch": "done",
         "code": "pending",
