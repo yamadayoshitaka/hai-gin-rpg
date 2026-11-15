@@ -1,0 +1,36 @@
+{
+  "kind": "CLOUDFLARE_REAL_WEBP_REVIEW_CANDIDATE_NOT_APPROVED",
+  "shotKey": "c01-s04|post-victory|female|c01-s04-m6",
+  "stageId": "c01-s04",
+  "edition": "post-victory",
+  "gender": "female",
+  "panelId": "c01-s04-m6",
+  "screenplayText": "勝利が確認された。遺構の周囲の危険を除き、封蝋の出所へ調査を進める。",
+  "visibleActorIds": [],
+  "actualReferenceImagesAttached": [
+    {
+      "actorId": "style_benchmark",
+      "source": "assets/story/chapters/c01/panels/c01-s01-m02-female.webp",
+      "originalSha256": "e16731b753237f0aa88e2c906d7ff46a929df1300728292d878eb1a27272ec6f",
+      "submittedSha256": "5dff1346198612a31753d68aeac379ae7510cae8ff84d930192ff1ee67f988d3",
+      "actualBytes": 274348,
+      "pixels": [
+        480,
+        270
+      ]
+    }
+  ],
+  "imageSha256": "70d1fb3213e39a827f9438dd89b7d2d5aa5ef6d0cdce65a1f7abfab328f1ee4d",
+  "nativePixels": [
+    1024,
+    576
+  ],
+  "imageBytes": 160648,
+  "model": "@cf/black-forest-labs/flux-2-klein-4b",
+  "seed": 1253915078,
+  "promptSha256": "81470cf314602535d09e5f29dea74efd259883d80972a9782bd534e943e27da4",
+  "estimatedNeurons": 109.57,
+  "visuallyApproved": false,
+  "formallyRegistered": false,
+  "gameDeployed": false
+}
