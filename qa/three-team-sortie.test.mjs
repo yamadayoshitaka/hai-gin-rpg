@@ -6,7 +6,7 @@ import {makeCoreBattleRequest} from '../src/core-battle-bridge.js';
 import {
  ensureSortiePlan,sortieTeams,sortieTeamCount,sortieTeamSquads,
  allowedSortieSlots,availableSortieOrders,setSortieCount,setSortieCaptain,
- setSortieFormation,setSortieSlot,setSortieOrder,setSortieJobSlot,allocateThreeTeamSortie
+ setSortieFormation,setSortieSlot,setSortieOrder,setSortieJobSlot,setSortieGridCell,sortieAdjacentJobs,SORTIE_GRID_CELLS,allocateThreeTeamSortie
 } from '../src/three-team-sortie.js';
 import {renderThreeTeamPlanner} from '../src/three-team-sortie-ui.js';
 import {CAMPAIGN_STAGE_BY_ID} from '../src/campaign-stage-plan.js';
@@ -17,6 +17,11 @@ assert.equal(plan.version,1);
 assert.equal(sortieTeams(game).length,3);
 assert.deepEqual(sortieTeams(game).map(sortieTeamCount),[40,0,0]);
 assert.equal(sortieTeams(game)[0].slots.length,4);
+assert.equal(SORTIE_GRID_CELLS,16);
+assert.equal(sortieTeams(game)[0].grid.length,16);
+assert.deepEqual(sortieTeams(game)[0].grid.filter(Boolean).length,2);
+assert.deepEqual(sortieTeams(game)[0].grid.filter(Boolean),['1','2']);
+assert.ok(sortieAdjacentJobs(game,1).some(x=>[x.a,x.b].includes('僧侶')));
 assert.deepEqual(sortieTeams(game)[0].slots.slice(0,2),['1','2']);
 assert.equal(sortieTeams(game)[0].slots.filter(Boolean).length,2);
 assert.deepEqual(allowedSortieSlots(game,stage),[9,10,11]);
@@ -41,10 +46,21 @@ assert.equal(game.campaign.squads[0].count,30,'inventory is not consumed by edit
 assert.equal(game.campaign.squads[1].count,10);
 const html=renderThreeTeamPlanner({game,stage,stages:[stage],teamId:2});
 assert.match(html,/最大3班/);assert.match(html,/最大4隊/);assert.match(html,/隊長/);
-assert.match(html,/陣形テンプレート/);assert.match(html,/data-sortie-count/);
+assert.match(html,/配置盤 4×4/);
+assert.equal((html.match(/data-sortie-cell="/g)||[]).length,16,'main screen is one 4x4 board');
+assert.match(html,/data-sortie-view="templates"/);
+assert.match(html,/data-sortie-view="count"/);
 assert.ok(!html.includes('data-sortie-stage')&&!html.includes('data-sortie-position')&&!html.includes('data-sortie-slot='));
 assert.ok(!html.includes('<select'),'宿屋の編成UIではプルダウンを使わない');
-assert.match(html,/data-sortie-job/);assert.match(html,/data-sortie-formation/);
+assert.ok(!html.includes('data-sortie-job="'),'job picker is hidden until tapping a cell');
+assert.ok(!html.includes('data-sortie-formation="'),'preset choices hidden until tapping the template button');
+const jobs=renderThreeTeamPlanner({game,teamId:2,cellIndex:9,view:'jobs'});
+assert.match(jobs,/data-sortie-job="/);assert.match(jobs,/data-sortie-view="setup"/);
+assert.ok(!jobs.includes('data-sortie-cell="'),'job chooser replaces the board, not stacked below it');
+const templates=renderThreeTeamPlanner({game,teamId:2,view:'templates'});
+assert.equal((templates.match(/data-sortie-formation="/g)||[]).length,3);
+const counts=renderThreeTeamPlanner({game,teamId:2,cellIndex:9,view:'count'});
+assert.match(counts,/data-sortie-count/);
 assert.ok(!html.includes('軍師雇用'));
 const commands=renderThreeTeamPlanner({game,stage,stages:[stage],teamId:2,view:'orders'});
 assert.match(commands,/data-sortie-order="support"/);
@@ -62,11 +78,17 @@ assert.equal(battle.units.filter(u=>u.isPlayerHero).length,1);
 assert.equal(battle.units.filter(u=>u.isStrategist).length,1);
 assert.deepEqual(new Set(battle.units.filter(u=>u.squadId===2).map(u=>u.spawnRank)),new Set([3]));
 assert.equal(battle.initialSquadOrders['2'],'support');
+assert.ok(battle.availableSquadOrders['2'].includes('support'));
+assert.ok(battle.units.some(u=>Number.isInteger(u.formationCell)&&u.formationCell>=0&&u.formationCell<16));
 assert.equal(battle.units.find(u=>u.squadId===2).formationType,'support');
 assert.ok(availableSortieOrders(game,2).includes('support'),'a priest keeps support in any formation');
 setSortieFormation(game,2,'attack');
 assert.ok(availableSortieOrders(game,2).includes('support'),'job, not formation, determines command unlock');
 setSortieFormation(game,2,'support');
+setSortieGridCell(game,2,15,2);
+assert.ok(!availableSortieOrders(game,2).includes('support'),'separating a priest removes the adjacent support order');
+setSortieGridCell(game,2,10,2);
+assert.ok(availableSortieOrders(game,2).includes('support'),'neighboring priest restores the support order');
 assert.ok(battle.units.some(u=>u.sourceSquadId===2),'each job source persists');
 game.completedStages.push(stage.id);
 assert.equal(allowedSortieSlots(game,stage).length,12);
@@ -86,6 +108,9 @@ assert.equal(sortieTeams(roster)[1].slots.filter(Boolean).length,1);
 assert.ok(availableSortieOrders(roster,1).includes('explore'),'job-only ninja/thief order');
 setSortieFormation(roster,1,'support');
 assert.ok(availableSortieOrders(roster,1).includes('explore'),'rear formation does not lock exploration');
+setSortieGridCell(roster,1,15,3);
+assert.ok(!availableSortieOrders(roster,1).includes('explore')||sortieAdjacentJobs(roster,1).some(link=>['忍者','シーフ'].includes(link.a)||['忍者','シーフ'].includes(link.b)),
+ 'scout order tracks remaining adjacent scouts');
 setSortieCount(roster,2,5,0);
 assert.throws(()=>setSortieCount(roster,1,5,1),/最大4隊/);
 setSortieJobSlot(roster,2,1,1);
@@ -108,6 +133,8 @@ assert.match(world,/setSortieSlot\(game,stage,deploymentTeamId/);
 assert.match(world,/stage\.kind!=='town'/);
 const battleHtml=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
 assert.match(battleHtml,/storyRequest\?\.sortieTeamCount/);
+assert.match(battleHtml,/formationCell/);
+assert.match(battleHtml,/availableSquadOrders/);
 for(const [name,content] of [['town',town],['battle',battleHtml],['world',world]]){
  const scripts=[...content.matchAll(/<script type="module">([\s\S]*?)<\/script>/g)];
  assert.ok(scripts.length);
