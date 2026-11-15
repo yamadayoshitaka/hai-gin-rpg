@@ -3,7 +3,7 @@
  * variants change horns, crests, armour, wings, limb lengths, weapons and fins.
  * Each specimen is real 3D geometry, never an image billboard.
  */
-import {createSculpture,disposeMonsterSculpture} from './monster-shape-kit.js?v=4.5.03';
+import {createSculpture,disposeMonsterSculpture} from './monster-shape-kit.js?v=4.5.04';
 import {attachMonsterFaceControls} from './facial-feature-runtime.js?v=1';
 import {generateCanineFurGuides} from './canine-fur-guides.js?v=4.4.92';
 import {monsterEvidenceFor} from './monster-anatomy-reference.js';
@@ -112,7 +112,20 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
        [.072,.145,.165],{name:'m002-scapular-muscle'});
    }
  }
- g.sphere(torso,'skin',[0,1.30,0],[.43+(v%2)*.06,.43,.72+v*.06]);
+ // Individual shoulder, ribcage and pelvis stations replace a rescaled ball.
+ // The moving limb pivots and species-specific head/coat are unchanged.
+ const bodyWidth=.43+(v%2)*.06,bodyLength=.72+v*.06;
+ if(s.id==='m005'||s.id==='m006')
+  g.sphere(torso,'skin',[0,1.30,0],[bodyWidth,.43,bodyLength]);
+ else g.axialLoft(torso,'skin',[
+  {z:bodyLength*.96,y:1.34,rx:.12,ry:.17},
+  {z:bodyLength*.71,y:1.32,rx:bodyWidth*.84,ry:.365},
+  {z:bodyLength*.25,y:1.30,rx:bodyWidth*1.04,ry:.430},
+  {z:-bodyLength*.36,y:1.29,rx:bodyWidth*.94,ry:.400},
+  {z:-bodyLength*.83,y:1.28,rx:bodyWidth*.52,ry:.29},
+  {z:-bodyLength*1.03,y:1.27,rx:.10,ry:.13}
+ ],{name:'species-shoulder-rib-pelvis-'+s.id,
+    rough:reptile?.64:.85,ribbing:reptile?.025:.012});
  g.sphere(torso,'light',[0,1.48,.22],[.31,.25,.45]);
  // Continuous neck transitions from the shoulder mass into the skull,
  // avoiding the visible "two spheres glued together" silhouette.
@@ -563,7 +576,14 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
 function bird(g,s){
  const v=s.variant;
  const torso=g.group('torso');
- g.sphere(torso,'skin',[0,1.44,0],[.36,.55,.44]);
+ if(s.id==='m015')g.sphere(torso,'skin',[0,1.44,0],[.36,.55,.44]);
+ else g.axialLoft(torso,'skin',[
+   {z:.47,y:1.56,rx:.10,ry:.20},
+   {z:.33,y:1.47,rx:.29,ry:.46},
+   {z:.08,y:1.44,rx:.37,ry:.55},
+   {z:-.28,y:1.43,rx:.31,ry:.43},
+   {z:-.48,y:1.39,rx:.09,ry:.15}
+  ],{name:'avian-keel-rib-cavity-'+s.id,rough:.9,ribbing:.008});
  g.sphere(torso,'light',[0,1.26,.31],[.27,.26,.26]);
  g.bridge(torso,'skin',[0,1.58,.18],[0,2.04,.30],.24,.18);
  const head=g.group('head',[0,2.00,.31]);
@@ -634,7 +654,14 @@ function insect(g,s,{spider=false}={}){
  const v=s.variant;
  const torso=g.group('torso');
  g.sphere(torso,'shadow',[0,1.03,-.16],[.50,.38,.63],{metal:.38,rough:.49});
- g.sphere(torso,'skin',[0,1.34,-.23],[.52,.31,.65],{metal:.45,rough:.38});
+ g.axialLoft(torso,'skin',[
+   {z:.46,y:1.35,rx:.10,ry:.12},
+   {z:.28,y:1.35,rx:.39,ry:.29},
+   {z:-.18,y:1.34,rx:.53,ry:.33},
+   {z:-.56,y:1.33,rx:.45,ry:.28},
+   {z:-.89,y:1.31,rx:.11,ry:.11}
+  ],{name:(spider?'arachnid':'insect')+'-segmented-thorax-'+s.id,
+     rough:.46,ribbing:.023});
  g.sphere(torso,'light',[0,1.53,-.35],[.39,.15,.50],{metal:.42,rough:.40});
  for(let i=0;i<7+v;i++)g.ring(torso,i%3?'accent':'shadow',[0,1.38,-.37+i*.13],.12+(i%2)*.035,.020);
  const head=g.group('head',[0,1.31,.64]);
@@ -919,14 +946,39 @@ function upright(g,s,{rock=false,undead=false,demon=false}={}){
  */
 function seaSerpent(g,s){
  const v=s.variant,torso=g.group('torso');
- g.sphere(torso,'skin',[0,1.0,.35],[.39,.36,.77],{rough:.48});
- g.bridge(torso,'skin',[0,1.05,-.12],[0,1.0,.63],.37,.25);
+ // An eel / sea-dragon axial body: tapered cranial base, branchial swell,
+ // abdomen and caudal peduncle. Section dimensions, not subdivision count,
+ // now control the original creature silhouette.
+ g.axialLoft(torso,'skin',[
+   {z:1.05,y:1.06,rx:.12,ry:.12},
+   {z:.81,y:1.04,rx:.24,ry:.22},
+   {z:.46,y:1.01,rx:.39,ry:.34},
+   {z:.04,y:1.00,rx:.43,ry:.35},
+   {z:-.35,y:1.02,rx:.34,ry:.29},
+   {z:-.63,y:1.02,rx:.25,ry:.22}
+  ],{name:'marine-axial-cranial-abdominal-'+s.id,
+     rough:.51,ribbing:.031});
  const spine=g.group('spineRear',[0,1.02,-.28],torso);
- g.tube(spine,'skin',[[0,0,0],[0,.07,-.32],[0,-.06,-.75]],.27);
+ g.axialLoft(spine,'skin',[
+   {z:.16,y:0,rx:.275,ry:.245},
+   {z:-.08,y:.02,rx:.28,ry:.23},
+   {z:-.39,y:.065,rx:.235,ry:.197},
+   {z:-.77,y:-.055,rx:.195,ry:.157}
+  ],{name:'marine-posterior-spine-'+s.id,rough:.51,ribbing:.024});
  const tail=g.group('tail',[0,-.06,-.73],spine);
- g.tube(tail,'skin',[[0,0,0],[0,.04,-.28],[0,-.08,-.63]],.195);
+ g.axialLoft(tail,'skin',[
+   {z:.17,y:0,rx:.212,ry:.168},
+   {z:-.09,y:.013,rx:.19,ry:.147},
+   {z:-.36,y:.038,rx:.155,ry:.112},
+   {z:-.67,y:-.08,rx:.119,ry:.092}
+  ],{name:'marine-caudal-muscle-'+s.id,rough:.50,ribbing:.019});
  const mid=g.group('tailMid',[0,-.08,-.63],tail);
- g.tube(mid,'skin',[[0,0,0],[0,.04,-.25],[0,-.10,-.52]],.125);
+ g.axialLoft(mid,'skin',[
+   {z:.15,y:0,rx:.133,ry:.103},
+   {z:-.12,y:.028,rx:.122,ry:.095},
+   {z:-.36,y:.012,rx:.096,ry:.079},
+   {z:-.59,y:-.105,rx:.057,ry:.045}
+  ],{name:'marine-tail-tip-muscle-'+s.id,rough:.50,ribbing:.013});
  const tip=g.group('tailTip',[0,-.10,-.52],mid);
  g.fin(tip,'accent',[0,0,0],[0,.42,-.35],.18);
  const head=g.group('head',[0,1.11,.78]);
@@ -1096,5 +1148,5 @@ export function createMonsterModel(spec,{detail='high'}={}){
 export {disposeMonsterSculpture};
 // All renderer metrics share this module's exact shape/material instance.
 // Never independently import a differently versioned shape-kit into the UI.
-export {MONSTER_DETAIL_LEVELS,monsterSculptCacheStats} from './monster-shape-kit.js?v=4.5.03';
+export {MONSTER_DETAIL_LEVELS,monsterSculptCacheStats} from './monster-shape-kit.js?v=4.5.04';
 export {monsterPhotoCacheStats} from './monster-photo-pbr.js?v=4.4.81';

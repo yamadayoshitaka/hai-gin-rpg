@@ -21,6 +21,7 @@ label{display:block;font-size:12px;color:#c7d9e5}label select,label input{displa
 #actionButtons{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
 #actionButtons button{font-size:11px;min-width:0;padding:8px 2px}
 #sourceNote{font-size:12px;color:#e0cda8;line-height:1.55;background:#2a3c48;border-radius:7px;padding:9px}
+#realismGate{font-size:12px;line-height:1.55;background:#243443;border:1px solid #756d56;border-radius:7px;padding:9px;color:#f0d2a4}
 #status{font-size:12px;color:#d7e8ed;line-height:1.6;min-height:34px}
 #metrics{font-size:12px;display:grid;grid-template-columns:1fr 1fr;gap:6px}
 .metric{border:1px solid #42677d;padding:9px;border-radius:7px;background:#132e41}
@@ -43,7 +44,7 @@ label{display:block;font-size:12px;color:#c7d9e5}label select,label input{displa
  main{padding:5px;display:flex;flex-direction:column;gap:6px}
  aside{padding:8px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
  aside label{font-size:11px}
- #tierButtons,#actionButtons,#sourceNote,#status,#metrics,#exportNote,#exportButton,#qualityLink{grid-column:1/-1}
+ #tierButtons,#actionButtons,#sourceNote,#realismGate,#status,#metrics,#exportNote,#exportButton,#qualityLink{grid-column:1/-1}
  #tierButtons{grid-template-columns:repeat(4,minmax(0,1fr))}
  #tierButtons button{font-size:11px;padding:8px 3px}
  #actionButtons{grid-template-columns:repeat(7,minmax(0,1fr));gap:3px}
@@ -82,6 +83,7 @@ label{display:block;font-size:12px;color:#c7d9e5}label select,label input{displa
   <button type="button" data-motion="defeat" aria-pressed="false">死亡</button>
  </div>
  <div id="sourceNote">3Dの原型メッシュをオンデマンド生成します。全108体のGLBファイルが保存済みという意味ではありません。</div>
+ <div id="realismGate" role="note">原型の品質ゲートを照合中</div>
  <div id="status" role="status">3D描画を準備中</div>
  <div id="metrics">
   <div class="metric"><small>三角形</small><strong id="triangles">—</strong></div>
@@ -89,7 +91,7 @@ label{display:block;font-size:12px;color:#c7d9e5}label select,label input{displa
   <div class="metric"><small>メッシュ</small><strong id="meshes">—</strong></div>
   <div class="metric"><small>骨</small><strong id="bones">—</strong></div>
  </div>
- <button id="exportButton" type="button" disabled>現在の3D母体をGLB書き出し</button>
+ <button id="exportButton" type="button" disabled>暫定3D原型をGLB書き出し（写実未認定）</button>
  <div id="exportNote">原型と近中遠は別々に書き出せます。現状のGLB書き出しは形状・材質中心で、実行時の7動作をGLBアニメーションとして保存する機能は未実装です。</div>
  <a id="qualityLink" href="./monster-quality-review.html">この個体の品質KPIを見る</a>
  <a id="originalLink" href="./monster-manager.html" target="_blank" rel="noopener">ゲーム内の現行モデルと比較する</a>
@@ -108,7 +110,8 @@ import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {CREATURE_MASTER_ENTRIES,CREATURE_MASTER_BY_ID,MASTER_RENDER_TIERS,
  CREATURE_MASTER_COUNTS} from './src/creature-master-library.js?v=masters-v2';
-import {createCreatureMaster} from './src/creature-master-runtime.js?v=masters-v2';
+import {createCreatureMaster} from './src/creature-master-runtime.js?v=masters-v3-real-sources';
+import {realSourceAuditFor} from './src/creature-real-source-audit.js?v=masters-v3-real-sources';
 const $=id=>document.getElementById(id);
 const groups=[['monster','敵モンスター50種'],['summon','召喚版モンスター50種'],
  ['dedicated','専用召喚獣・軍馬8種']];
@@ -198,6 +201,15 @@ function updateInfo(entry,loaded){
   '既存の種族別3D形状を高精細な source で生成。新しい写真スキャンGLBではありません。';
  $('sourceNote').textContent=MASTER_RENDER_TIERS[tier].label+'：'+warning+
   ' 母体は画面表示で検証でき、GLBとして書き出せます。写実品質90点への到達はまだ未認定。';
+ const audit=realSourceAuditFor(entry.id);
+ $('realismGate').textContent=audit?.protected?
+  '写実原型の審査：既存モデル保護対象。変更・採用切替を実施しません。':
+  '写実原型の審査：未認定。'+
+  (audit?.currentSource==='sectional-procedural-source'?
+   '骨格に沿った断面形状は改修済み。ただし実測/スカルプトGLB完成ではありません。':
+   '現在は暫定素体。実写ベースのスカルプトGLBが必要です。')+
+  ' 必須：'+(audit?.criteria.anatomy||'種族固有の解剖構造')+
+  '／出所・PBR・動作・4方向比較・LODベイクの承認待ち。';
  $('status').textContent=loaded;
  $('qualityLink').href='./monster-quality-review.html?species='+encodeURIComponent(entry.id);
  $('originalLink').href=entry.kind==='dedicated'?
@@ -230,7 +242,7 @@ async function load(){
   else $('status').textContent='原型モデルを生成しました。三角形と実際の形状を確認できます。';
   fit();updateMetrics();
   const next=new URLSearchParams(location.search);
-  next.set('species',id);next.set('tier',tier);next.set('v','master-108-v2');
+  next.set('species',id);next.set('tier',tier);next.set('v','master-108-real-source-v3');
   history.replaceState(null,'','?'+next.toString());
  }catch(e){
   if(serial===ticket){$('status').textContent='生成エラー：'+String(e.message||e);$('exportButton').disabled=true;}
