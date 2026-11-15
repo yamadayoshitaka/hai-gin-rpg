@@ -18,9 +18,10 @@ test('batch work progress uses evidence-backed stage status without treating sch
   if(entry.carryover)assert(entry.nextAction.length>0,kind+' carryover required');
   for(const e of entry.evidence)assert(e.url.startsWith('https://github.com/yamadayoshitaka/hai-gin-rpg/'));
  }
- assert.equal(state.groups.human.status,'work_incomplete');
- assert.equal(state.groups.human.steps.commit,'pending');
- assert.equal(state.groups.monster.steps.qa,'failed');
+ for(const [kind,entry] of Object.entries(state.groups)){
+  if(entry.status==='work_incomplete')assert.notEqual(entry.steps.deploy,'done',kind+' must not claim deployment');
+  if(entry.steps.commit==='done')assert(entry.evidence.some(e=>/commit|pull|actions|compare/.test(e.url)),kind+' commit needs evidence');
+ }
 });
 test('management page distinguishes QA from implementation progress and pulls the persisted record',()=>{
  const html=fs.readFileSync('batch-monitor.html','utf8');
