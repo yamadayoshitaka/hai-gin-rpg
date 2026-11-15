@@ -32,13 +32,18 @@ export function parseRequest(issue,owner){
   throw Error('Invalid world object/stage key');
  return {category:data.category,target,instruction,max:count,workflow:allowed[data.category]};
 }
-function execute(command){
- const args=['workflow','run',command.workflow,'--ref','main'];
+export function buildWorkflowArgs(command,issueNumber){
+ if(!Number.isSafeInteger(issueNumber)||issueNumber<1)throw Error('Invalid originating Issue number');
+ const args=['workflow','run',command.workflow,'--ref','main','-f','batch_issue='+issueNumber];
  if(command.category==='world'){
   const type=command.target.startsWith('object:')?'object':command.target.startsWith('stage:')?'stage':'all';
   args.push('-f','target_type='+type,'-f','target_key='+command.target,
     '-f','next_instruction='+command.instruction,'-f','max_references='+command.max);
  }
+ return args;
+}
+function execute(command,issueNumber){
+ const args=buildWorkflowArgs(command,issueNumber);
  const child=spawnSync('gh',args,{stdio:'inherit',encoding:'utf8',timeout:30000,
   env:{...process.env,GH_REPO:process.env.GITHUB_REPOSITORY}});
  if(child.status!==0)throw Error('Workflow dispatch failed: '+command.workflow);
@@ -47,7 +52,7 @@ function execute(command){
 if(process.argv[1]?.endsWith('manual-hourly-batch-dispatch.mjs')){
  const event=JSON.parse(fs.readFileSync(process.env.GITHUB_EVENT_PATH,'utf8'));
  const cmd=parseRequest(event.issue,process.env.GITHUB_REPOSITORY_OWNER);
- const args=execute(cmd);
+ const args=execute(cmd,event.issue.number);
  const summary=[
   '# Manual batch request accepted',
   'Category: '+cmd.category,
