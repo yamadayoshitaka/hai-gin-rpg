@@ -7,7 +7,7 @@
       "sourceFiles": [
         "src/m020-leviathan-anatomical-source.js"
       ],
-      "commitSha": "d558e55c50378e77b9e64cfc9c8fd4384d163013",
+      "commitSha": "96a566965cb03c13a1b94aa2559c39f9937ceba2",
       "qa": "unverified"
     }
   ],
@@ -61,5 +61,5 @@
     "m049",
     "m050"
   ],
-  "nextAction": "m020 pectoral fins Node/Three geometry and WebGL front/back/side test; integrate viewer, then m048 sea snake distinct axial anatomy. Protected m005/m006 unchanged."
+  "nextAction": "m020 pectoral chord topology math QA passed (192 triangles, 0 degenerates); run actual Three/WebGL front/back/side and connect to game/master. Then create m048 distinct axial sea snake anatomy. Audit remaining 108 IDs from canonical manifest."
 }
