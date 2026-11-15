@@ -132,6 +132,8 @@ if(mode==='--return-issue'){
 const available=sourceManifest();
 const already=new Set();
 for(const s of shots){
+ // Current owner scope: continue Chapter 1 from Stage 4; preserve all earlier scenes.
+ if(s.stageId<'c01-s04'||s.stageId>'c01-s10')continue;
  if(!canActOn(s))continue;
  // Output rejected by provider safety filters must NEVER be published.
  if(available.has(s.draftPath+'.provider-blocked.json')){providerBlocked++;continue;}
