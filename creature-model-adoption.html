@@ -76,7 +76,7 @@ const groups=[
  {title:'召喚獣（上記モンスターの召喚版）',ids:NONHUMAN_MONSTER_IDS.map(id=>'summon_'+id)},
  {title:'専用召喚獣・軍馬',ids:NONHUMAN_EXTRA_SUMMON_IDS}
 ];
-const specials={wolf:'灰狼',wyvern:'飛竜',dragon:'古竜',elder_dragon:'天竜',horse:'軍馬'};
+const specials={wolf:'灰狼',wyvern:'飛竜',dragon:'古竜',elder_dragon:'天竜',dragon_lord:'竜王（竜本体）',horse:'軍馬'};
 function speciesName(id){
  return specials[id]||MONSTER_BY_ID[id.replace(/^summon_/,'')]?.name||id;
 }
