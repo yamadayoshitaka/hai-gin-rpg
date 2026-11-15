@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
 import crypto from 'node:crypto';
 import {validateSource,planLodBatch} from '../scripts/battle-lod-batch.mjs';
 import {inspectGlb,verifyLodCandidate} from '../scripts/battle-lod-gate.mjs';
@@ -18,6 +19,11 @@ function fakeGlb(triangles,skins=1,animations=1,morphs=0){
  bytes.writeUInt32LE(chunk.length,12);bytes.write('JSON',16);chunk.copy(bytes,20);
  return bytes;
 }
+const builder=readFileSync(new URL('../scripts/build-battle-lods.py',import.meta.url),'utf8');
+assert.match(builder,/bpy\.ops\.wm\.read_factory_settings\(use_empty=True\)/,
+ 'Each tier must reset all Blender datablocks including orphaned glTF animations');
+assert.match(builder,/int\.from_bytes\(raw\[12:16\]/,
+ 'Triangle and mesh budgets are extracted from the serialized GLB, not Blender preexport counts');
 const base='assets/battle-lod-candidates/knight-pilot/';
 const files={'assets/characters/Knight.glb':fakeGlb(1000,1,1,2),
  [base+'near.glb']:fakeGlb(1000,1,1,2),
