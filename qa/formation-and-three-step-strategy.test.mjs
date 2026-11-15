@@ -88,6 +88,6 @@ for(const path of ['src/sortie-formation-logic.js','src/three-step-strategy-cata
  new SourceTextModule(readFileSync(new URL('../'+path,import.meta.url),'utf8'),{identifier:path});
 }
 const html=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
-assert.match(html,/tacticId/);assert.match(html,/plans:shares.rows/);
+assert.match(html,/tacticId/);assert.match(html,/plan\\.plans\\?\\.find/);
 assert.match(html,/massWorker\?\.buffSquadItem/);
 console.log('PASS: distinct formation silhouettes, real job-role matching, free layout, 3-stage multi-target methods, 100% physical allocations, active prevention buffs');
