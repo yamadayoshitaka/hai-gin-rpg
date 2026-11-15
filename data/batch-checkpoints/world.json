@@ -41,12 +41,26 @@
       ],
       "commitSha": "41719e6bbdcae852d06ebc8ecb77d84f1f761e28",
       "qa": "unverified"
+    },
+    {
+      "id": "cottage_fireplace_001",
+      "sourceFiles": [
+        "src/object-catalog.js"
+      ],
+      "commitSha": "b0b1f1d77e8d58210b1814f294d4371b14fabb19",
+      "qa": "unverified"
+    },
+    {
+      "id": "treasure_chest_001",
+      "sourceFiles": [
+        "src/object-catalog.js"
+      ],
+      "commitSha": "b0b1f1d77e8d58210b1814f294d4371b14fabb19",
+      "qa": "unverified"
     }
   ],
   "remainingIds": [
-    "cottage_fireplace_001",
     "cottage_barrel_001",
-    "treasure_chest_001",
     "spiral_stairs_2f_001",
     "spiral_stairs_castle_3f_001",
     "entry_door_lv1_001",
@@ -93,5 +107,5 @@
     "timber_bridge_broken_001",
     "stone_bridge_broken_001"
   ],
-  "nextAction": "棚・木製階段の構文/Three.js実描画とLOD検証。次に暖炉・宝箱の開口と荷重支持を実改修。"
+  "nextAction": "暖炉・宝箱のNode構文/WebGL実描画/開閉挙動を検証。次は螺旋階段2種の支持構造を実改修。"
 }
