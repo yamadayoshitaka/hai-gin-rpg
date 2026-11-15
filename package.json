@@ -76,6 +76,7 @@
     "test:regal-humanoid-wardrobe": "node qa/monster-regal-wardrobe-batch.test.mjs",
     "test:humanoid-spell-motion": "node qa/monster-humanoid-combat-poses.test.mjs",
     "test:nonhuman-monster-outfits": "node qa/nonhuman-monster-wardrobe.test.mjs",
+    "test:monster-source-rebuild": "node qa/monster-source-composite-regression.test.mjs",
     "test:summon-source-hybrid": "node qa/summon-source-hybrid-colors-scale.test.mjs",
     "test:forest-spirit-emerald": "node qa/forest-spirit-emerald-regression.test.mjs",
     "test:monster-summon-catalog": "node qa/monster-summon-bestiary-regression.test.mjs"
