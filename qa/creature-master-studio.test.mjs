@@ -45,7 +45,7 @@ test('source master is independently exportable in the viewer, and photoreal suc
  assert.deepEqual(kinds,['master','near','mid','far']);
  assert.equal(MASTER_RENDER_TIERS.master.geometry,'source');
  assert.equal(MASTER_RENDER_TIERS.near.geometry,'high');
- assert.equal(MASTER_RENDER_TIERS.mid.geometry,'high');
+ assert.equal(MASTER_RENDER_TIERS.mid.geometry,'medium');
  assert.equal(MASTER_RENDER_TIERS.far.geometry,'low');
  assert.equal(CREATURE_MASTER_COUNTS.exportedFiles,0);
  assert.equal(CREATURE_MASTER_COUNTS.photorealCertified,0);
