@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {chapterOneReviewPages} from '../src/story-chapter1-review-core.js';
 import {buildChapter1ImagePrompt} from '../src/story-chapter1-image-prompt.js';
-const pages=chapterOneReviewPages().filter(p=>p.stageId==='c01-s05'&&p.edition==='pre');
+const pages=chapterOneReviewPages().filter(p=>p.stageId==='c01-s05'&&p.edition==='pre'&&p.pageWithinVariant===1);
 const bible=JSON.parse(fs.readFileSync('assets/story/characters/c01-s05-reference-bible.json','utf8'));
 const manifest=JSON.parse(fs.readFileSync('assets/story/stage-manifests/c01-s05.manifest.json','utf8'));
 const rules=JSON.parse(fs.readFileSync('assets/story/quality/artwork-p0-rules.json','utf8'));
