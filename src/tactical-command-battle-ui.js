@@ -12,7 +12,7 @@ const fragment=(tag,cls,text)=>{
 
 /** Compact actionable tactical panel tied to the authoritative battle order handler. */
 export function installBattleTacticalUI({
- getUnits,getSquadIds,getCommander,getSquadName,getCurrentStage,
+ getUnits,getSquadIds,getCommandSquadIds=id=>[id],getCommander,getSquadName,getCurrentStage,
  getCommanderReason,getCooldown,getSquadCenter,getMarkerLabel,issueOrder,openSquad,closeSquad,isReady
 }){
  const preview=fragment('section','','');
@@ -36,7 +36,7 @@ export function installBattleTacticalUI({
  }
  function renderFor(id){
   if(id==null||!isReady()){preview.hidden=true;return;}
-  const roster=getUnits(),members=roster.filter(u=>u.team===0&&String(u.squadId)===String(id)&&
+  const roster=getUnits(),commandIds=new Set(getCommandSquadIds(id).map(String)),members=roster.filter(u=>u.team===0&&commandIds.has(String(u.squadId))&&
    !u.isStrategist&&(u.hp??1)>0&&u.alive!==false);
   const center=getSquadCenter(id),commander=getCommander(id),reason=getCommanderReason(id);
   const remaining=getCooldown(id);
@@ -48,7 +48,7 @@ export function installBattleTacticalUI({
   const options=rankTacticalOrders(null,{units:members,opponents:nearby,commander});
   preview.replaceChildren(fragment('div','tacticalPreviewHeading',''));
   const heading=preview.firstElementChild;
-  heading.append(fragment('strong','','⚑ 戦術の効果と成功見込み'),
+  heading.append(fragment('strong','','⚑ 班全体の効果と成功見込み'),
    fragment('span','','戦力 '+squadPower(members).toFixed(1)));
   const cards=fragment('div','tacticalPreviewCards','');
   options.forEach((option,index)=>{
@@ -126,7 +126,7 @@ export function createPreBattleTacticalSummary({getStageName,getUnits,getOrders,
   for(const [name,value] of [
    ['戦場',getStageName()],
    ['勝利目的',getObjective()||'敵を制圧'],
-   ['固定作戦',getStrategies().join('／')||'全滅（初期）'],
+   ['指揮単位','最大3班・軍師から班へ号令'],
    ['出撃戦力',squadPower(friendly).toFixed(1)+'／'+friendly.length+'名'],
    ['無抵抗時の最大効果',COMMAND_LABELS[best.mode]+' '+best.effect+'/100'],
    ['統率による号令間隔',tacticalCooldownSeconds(leader?.level||1)+'秒'],
@@ -136,7 +136,7 @@ export function createPreBattleTacticalSummary({getStageName,getUnits,getOrders,
    line.append(fragment('span','',name),fragment('b','',value));element.append(line);
   }
   element.append(fragment('small','',
-   '出撃後は作戦と隊列編成を固定。戦況変化時には対応可能隊を強調し、号令を選択できます。'));
+   '班への号令に応じて、所属する隊が職業ごとの役割を実行します。'));
  }
  return {element,refresh};
 }
