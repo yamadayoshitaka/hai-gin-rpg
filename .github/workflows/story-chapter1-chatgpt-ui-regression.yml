@@ -15,6 +15,17 @@ on:
       - '.github/workflows/story-chapter1-free-complete-draft-production.yml'
       - '.github/workflows/story-chapter1-provisional-game-register.yml'
       - '.github/workflows/story-chapter1-chatgpt-ui-regression.yml'
+      - 'src/story-generation-fallback.js'
+      - 'qa/story-generation-fallback.test.mjs'
+      - 'batch-monitor.html'
+  pull_request:
+    paths:
+      - 'src/story-generation-fallback.js'
+      - 'qa/story-generation-fallback.test.mjs'
+      - 'scripts/generate-story-chapter1-free-batch.mjs'
+      - 'src/story-chapter1-approval-ui.js'
+      - 'batch-monitor.html'
+      - '.github/workflows/story-chapter1-chatgpt-ui-regression.yml'
   workflow_dispatch:
 permissions:
   contents: read
@@ -32,6 +43,8 @@ jobs:
           node --check src/story-chapter1-review-core.js
           node --check src/story-chapter1-image-prompt.js
           node --check src/story-chapter1-approval-ui.js
+          node --check src/story-generation-fallback.js
+          node qa/story-generation-fallback.test.mjs
       - name: Verify 132 manga pages, 462 story shots, exact screenplay and ChatGPT prompt handoff
         run: node qa/story-chapter1-chatgpt-image-handoff.test.mjs
       - name: Verify complete free-only 462-scene generation-to-game pipeline and reversible no-approval mode
