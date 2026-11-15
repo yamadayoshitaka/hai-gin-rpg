@@ -142,7 +142,7 @@ export function addSpeciesCosplayWardrobe(g,spec){
   }
   for(const key of joints){
    const joint=g.pivots[key];
-   if(!joint)continue;
+   if(!joint)throw Error('Species costume missing animated limb pivot: '+spec.id+' '+key);
    const side=key.includes('L')?-1:1;
    const isWing=family==='avian';
    // Keep flight feathers and the wing hinge exposed: the old bulky cuff
