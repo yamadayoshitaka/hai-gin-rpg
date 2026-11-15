@@ -1269,6 +1269,193 @@ export const CHAPTER1_PROVISIONAL_LIVE=Object.freeze({
       "Formal P0 visual approval is pending",
       "Canonical script refers to the commander nodding; commander not clearly visible in frame. Future correction needed"
     ]
+  },
+  "c01-s04|pre|male|c01-s04-m5": {
+    "asset": "./assets/story/chapter1-provisional-live/c01-s04__pre__male__c01-s04-m5.webp",
+    "sha256": "8253c481861d0c230d332e36c3c4ebd2a2a874f7c3b0bcd0189566ff86529d80",
+    "provenance": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-pre-male/p01/c01-s04-m05-pre-male.webp.generation.json",
+    "sourceDraft": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-pre-male/p01/c01-s04-m05-pre-male.webp",
+    "status": "PROVISIONAL_OWNER_AUTHORIZED_PENDING_P0",
+    "originalLivePath": null,
+    "stageId": "c01-s04",
+    "edition": "pre",
+    "gender": "male"
+  },
+  "c01-s04|pre|male|c01-s04-m11": {
+    "asset": "./assets/story/chapter1-provisional-live/c01-s04__pre__male__c01-s04-m11.webp",
+    "sha256": "4fd9797e2e751c031e2835843c06991fdac34284b0a503524d38aa916d53bdf2",
+    "provenance": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-pre-male/p02/c01-s04-m11-pre-male.webp.generation.json",
+    "sourceDraft": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-pre-male/p02/c01-s04-m11-pre-male.webp",
+    "status": "PROVISIONAL_OWNER_AUTHORIZED_PENDING_P0",
+    "originalLivePath": null,
+    "stageId": "c01-s04",
+    "edition": "pre",
+    "gender": "male"
+  },
+  "c01-s04|pre|male|c01-s04-m13": {
+    "asset": "./assets/story/chapter1-provisional-live/c01-s04__pre__male__c01-s04-m13.webp",
+    "sha256": "311c6c0878e5309374db4042acd6964df9cec5edf243bbf7cf0a7e0b01ec318b",
+    "provenance": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-pre-male/p02/c01-s04-m13-pre-male.webp.generation.json",
+    "sourceDraft": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-pre-male/p02/c01-s04-m13-pre-male.webp",
+    "status": "PROVISIONAL_OWNER_AUTHORIZED_PENDING_P0",
+    "originalLivePath": null,
+    "stageId": "c01-s04",
+    "edition": "pre",
+    "gender": "male"
+  },
+  "c01-s04|pre|female|c01-s04-m2": {
+    "asset": "./assets/story/chapter1-provisional-live/c01-s04__pre__female__c01-s04-m2.webp",
+    "sha256": "5594de3f2cbeadb09db666a26201fe0710b1a44a9e1ab91d1b9b86bc8621a425",
+    "provenance": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-pre-female/p01/c01-s04-m02-pre-female.webp.generation.json",
+    "sourceDraft": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-pre-female/p01/c01-s04-m02-pre-female.webp",
+    "status": "PROVISIONAL_OWNER_AUTHORIZED_PENDING_P0",
+    "originalLivePath": null,
+    "stageId": "c01-s04",
+    "edition": "pre",
+    "gender": "female"
+  },
+  "c01-s04|pre|female|c01-s04-m4": {
+    "asset": "./assets/story/chapter1-provisional-live/c01-s04__pre__female__c01-s04-m4.webp",
+    "sha256": "b02551c3ee10cb10b5832022ef3831ca1f32622d1e03483997325f688b4e5f75",
+    "provenance": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-pre-female/p01/c01-s04-m04-pre-female.webp.generation.json",
+    "sourceDraft": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-pre-female/p01/c01-s04-m04-pre-female.webp",
+    "status": "PROVISIONAL_OWNER_AUTHORIZED_PENDING_P0",
+    "originalLivePath": null,
+    "stageId": "c01-s04",
+    "edition": "pre",
+    "gender": "female"
+  },
+  "c01-s04|pre|female|c01-s04-m11": {
+    "asset": "./assets/story/chapter1-provisional-live/c01-s04__pre__female__c01-s04-m11.webp",
+    "sha256": "3e58a14ea85af94cb678b29bb3fc08af35501e8d5e943ecbc0c628cb2226106b",
+    "provenance": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-pre-female/p02/c01-s04-m11-pre-female.webp.generation.json",
+    "sourceDraft": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-pre-female/p02/c01-s04-m11-pre-female.webp",
+    "status": "PROVISIONAL_OWNER_AUTHORIZED_PENDING_P0",
+    "originalLivePath": null,
+    "stageId": "c01-s04",
+    "edition": "pre",
+    "gender": "female"
+  },
+  "c01-s04|pre|female|c01-s04-m13": {
+    "asset": "./assets/story/chapter1-provisional-live/c01-s04__pre__female__c01-s04-m13.webp",
+    "sha256": "726114ccef3411917d26711d660b36aaa75a6be9289e93a1b97cf5ff7d16942b",
+    "provenance": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-pre-female/p02/c01-s04-m13-pre-female.webp.generation.json",
+    "sourceDraft": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-pre-female/p02/c01-s04-m13-pre-female.webp",
+    "status": "PROVISIONAL_OWNER_AUTHORIZED_PENDING_P0",
+    "originalLivePath": null,
+    "stageId": "c01-s04",
+    "edition": "pre",
+    "gender": "female"
+  },
+  "c01-s04|pre|female|c01-s04-m15": {
+    "asset": "./assets/story/chapter1-provisional-live/c01-s04__pre__female__c01-s04-m15.webp",
+    "sha256": "57c12fefbfe715583ee9efb62d861461e361b83d7980a4f3a6808985027f1bfd",
+    "provenance": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-pre-female/p02/c01-s04-m15-pre-female.webp.generation.json",
+    "sourceDraft": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-pre-female/p02/c01-s04-m15-pre-female.webp",
+    "status": "PROVISIONAL_OWNER_AUTHORIZED_PENDING_P0",
+    "originalLivePath": null,
+    "stageId": "c01-s04",
+    "edition": "pre",
+    "gender": "female"
+  },
+  "c01-s04|post-victory|male|c01-s04-m6": {
+    "asset": "./assets/story/chapter1-provisional-live/c01-s04__post-victory__male__c01-s04-m6.webp",
+    "sha256": "4229e3cd3bed5f63454a56adfe3884d896e9c21dd13ff720b30b3195c1f731eb",
+    "provenance": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-post-victory-male/p01/c01-s04-m06-post-victory-male.webp.generation.json",
+    "sourceDraft": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-post-victory-male/p01/c01-s04-m06-post-victory-male.webp",
+    "status": "PROVISIONAL_OWNER_AUTHORIZED_PENDING_P0",
+    "originalLivePath": null,
+    "stageId": "c01-s04",
+    "edition": "post-victory",
+    "gender": "male"
+  },
+  "c01-s04|post-victory|male|c01-s04-m7": {
+    "asset": "./assets/story/chapter1-provisional-live/c01-s04__post-victory__male__c01-s04-m7.webp",
+    "sha256": "c4dd162bc2675fd99e45875a91035a1b444ed3c2fa23a0c3e3599e94c7e8d665",
+    "provenance": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-post-victory-male/p01/c01-s04-m07-post-victory-male.webp.generation.json",
+    "sourceDraft": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-post-victory-male/p01/c01-s04-m07-post-victory-male.webp",
+    "status": "PROVISIONAL_OWNER_AUTHORIZED_PENDING_P0",
+    "originalLivePath": null,
+    "stageId": "c01-s04",
+    "edition": "post-victory",
+    "gender": "male"
+  },
+  "c01-s04|post-victory|male|c01-s04-m8": {
+    "asset": "./assets/story/chapter1-provisional-live/c01-s04__post-victory__male__c01-s04-m8.webp",
+    "sha256": "555e3549c1d95898c935e1079fdce426d39229c3b93843651ff4691a25f34d3f",
+    "provenance": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-post-victory-male/p01/c01-s04-m08-post-victory-male.webp.generation.json",
+    "sourceDraft": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-post-victory-male/p01/c01-s04-m08-post-victory-male.webp",
+    "status": "PROVISIONAL_OWNER_AUTHORIZED_PENDING_P0",
+    "originalLivePath": null,
+    "stageId": "c01-s04",
+    "edition": "post-victory",
+    "gender": "male"
+  },
+  "c01-s04|post-victory|male|c01-s04-m9": {
+    "asset": "./assets/story/chapter1-provisional-live/c01-s04__post-victory__male__c01-s04-m9.webp",
+    "sha256": "1323ed0a7231be6d4f247686a4fcfdc461ee7992d717d1e1e4a44d5166051a52",
+    "provenance": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-post-victory-male/p01/c01-s04-m09-post-victory-male.webp.generation.json",
+    "sourceDraft": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-post-victory-male/p01/c01-s04-m09-post-victory-male.webp",
+    "status": "PROVISIONAL_OWNER_AUTHORIZED_PENDING_P0",
+    "originalLivePath": null,
+    "stageId": "c01-s04",
+    "edition": "post-victory",
+    "gender": "male"
+  },
+  "c01-s04|post-victory|male|c01-s04-m16": {
+    "asset": "./assets/story/chapter1-provisional-live/c01-s04__post-victory__male__c01-s04-m16.webp",
+    "sha256": "d179ad10c6f5cd953a75f0aa1529e72f41e16b3bd2675ce11db92b0914224ff1",
+    "provenance": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-post-victory-male/p01/c01-s04-m16-post-victory-male.webp.generation.json",
+    "sourceDraft": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-post-victory-male/p01/c01-s04-m16-post-victory-male.webp",
+    "status": "PROVISIONAL_OWNER_AUTHORIZED_PENDING_P0",
+    "originalLivePath": null,
+    "stageId": "c01-s04",
+    "edition": "post-victory",
+    "gender": "male"
+  },
+  "c01-s04|post-victory|male|c01-s04-m19": {
+    "asset": "./assets/story/chapter1-provisional-live/c01-s04__post-victory__male__c01-s04-m19.webp",
+    "sha256": "33fb0e454f7624e528b7433a11bc7b46b41a5113d91e6407749958547ad86e5c",
+    "provenance": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-post-victory-male/p02/c01-s04-m19-post-victory-male.webp.generation.json",
+    "sourceDraft": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-post-victory-male/p02/c01-s04-m19-post-victory-male.webp",
+    "status": "PROVISIONAL_OWNER_AUTHORIZED_PENDING_P0",
+    "originalLivePath": null,
+    "stageId": "c01-s04",
+    "edition": "post-victory",
+    "gender": "male"
+  },
+  "c01-s04|post-victory|male|c01-s04-m10": {
+    "asset": "./assets/story/chapter1-provisional-live/c01-s04__post-victory__male__c01-s04-m10.webp",
+    "sha256": "1a9de9f8c6cea705913c524da679f0111ee836b5877f109a9d08be9af420dc75",
+    "provenance": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-post-victory-male/p02/c01-s04-m10-post-victory-male.webp.generation.json",
+    "sourceDraft": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-post-victory-male/p02/c01-s04-m10-post-victory-male.webp",
+    "status": "PROVISIONAL_OWNER_AUTHORIZED_PENDING_P0",
+    "originalLivePath": null,
+    "stageId": "c01-s04",
+    "edition": "post-victory",
+    "gender": "male"
+  },
+  "c01-s04|post-victory|female|c01-s04-m6": {
+    "asset": "./assets/story/chapter1-provisional-live/c01-s04__post-victory__female__c01-s04-m6.webp",
+    "sha256": "70d1fb3213e39a827f9438dd89b7d2d5aa5ef6d0cdce65a1f7abfab328f1ee4d",
+    "provenance": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-post-victory-female/p01/c01-s04-m06-post-victory-female.webp.generation.json",
+    "sourceDraft": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-post-victory-female/p01/c01-s04-m06-post-victory-female.webp",
+    "status": "PROVISIONAL_OWNER_AUTHORIZED_PENDING_P0",
+    "originalLivePath": null,
+    "stageId": "c01-s04",
+    "edition": "post-victory",
+    "gender": "female"
+  },
+  "c01-s04|post-victory|female|c01-s04-m7": {
+    "asset": "./assets/story/chapter1-provisional-live/c01-s04__post-victory__female__c01-s04-m7.webp",
+    "sha256": "bcf87bddf083e1f240d8dd4b027ae634e88248acd6abd14fe83483b1384a0876",
+    "provenance": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-post-victory-female/p01/c01-s04-m07-post-victory-female.webp.generation.json",
+    "sourceDraft": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-post-victory-female/p01/c01-s04-m07-post-victory-female.webp",
+    "status": "PROVISIONAL_OWNER_AUTHORIZED_PENDING_P0",
+    "originalLivePath": null,
+    "stageId": "c01-s04",
+    "edition": "post-victory",
+    "gender": "female"
   }
 });
 export function chapter1ProvisionalLivePanel(shot){
