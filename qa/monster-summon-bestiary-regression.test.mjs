@@ -37,7 +37,9 @@ for(const m of MONSTER_CATALOG){
  assert.ok(COMBAT_OBJECT_SPECS[id].hp>0);
  assert.ok(e.skillSpec.name.includes(m.name));
  assert.ok(e.skillSpec.objectType===id);
- assert.ok(COMBAT_JOB_SPECS.summoner.skills.includes(e.skillSpec));
+ assert.ok(COMBAT_JOB_SPECS.summoner.skills.some(skill=>
+   skill.id===e.skillSpec.id&&skill.objectType===id),
+  'Actual summoner skill must refer to original monster '+id);
  assert.ok(creatureSize(id)>=10);
  assert.ok(e.size>=1);
  assert.ok(e.rank=== (m.rarity==='UR'?'UR':
