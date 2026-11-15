@@ -17,9 +17,9 @@ import {humanoidMonsterCostumeFor}
 import {startMonsterAction,animateMonsterModel}
  from './monster-animation.js?v=4.5.18';
 import {creatureFlightHeight} from './combat-creature-performance.js?v=4.6.39';
-import {adoptedCreatureMesh} from './creature-mesh-adoption.js';
+import {adoptedCreatureMesh} from './creature-mesh-adoption.js?v=web-mesh-26-v1';
 import {fetchCreatureRegistry} from './creature-external-runtime.js';
-import {loadCreatureMeshSource} from './creature-real-source-catalog.js?v=wolf-actions-v3';
+import {loadCreatureMeshSource} from './creature-real-source-catalog.js?v=web-mesh-26-v1';
 import {isMonsterSummonType,monsterSummonSource,
  monsterSummonWorldScale,MONSTER_SUMMON_MAX_HIGH_DETAIL,
  MONSTER_SUMMON_MAX_ACTIVE,MONSTER_SUMMON_BY_TYPE}
