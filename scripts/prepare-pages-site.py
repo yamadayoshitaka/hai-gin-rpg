@@ -200,7 +200,7 @@ def pin_public_story_images(out: Path, sha: str) -> None:
         return
     registry = out / "src" / "story-panel-registered-art.js"
     source = registry.read_text(encoding="utf-8")
-    if source.count(STORY_RELEASE_PLACEHOLDER) != 2:
+    if source.count(STORY_RELEASE_PLACEHOLDER) != 1:
         raise RuntimeError("Cannot pin the shared manga game/review URL resolver")
     registry.write_text(source.replace(STORY_RELEASE_PLACEHOLDER, sha), encoding="utf-8")
     suffix = sha[:12]
@@ -208,8 +208,8 @@ def pin_public_story_images(out: Path, sha: str) -> None:
     # Only rewrite actual JS module imports or script src attributes.
     # Leave image URLs, external packages and source repository files untouched.
     pattern = re.compile(
-        r"(?P<lead>\\bfrom\\s*|\\bimport\\s*\\(\\s*|\\bimport\\s+|\\bsrc=)"
-        r"(?P<q>['\\\"])(?P<path>\\./[^'\\\"\\n]+?\\.(?:m?js)(?:\\?[^'\\\"\\n]*)?)(?P=q)"
+        r"(?P<lead>\bfrom\s*|\bimport\s*\(\s*|\bimport\s+|\bsrc=)"
+        r"(?P<q>['\"])(?P<path>\./[^'\"\n]+?\.(?:m?js)(?:\?[^'\"\n]*)?)(?P=q)"
     )
     def version_import(match):
         url = match.group("path")
