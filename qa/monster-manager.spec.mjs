@@ -251,7 +251,7 @@ test('source animal canine real-GLB PBR pilot and legacy-free humanoid preview',
  // retired procedural humanoid while loading or after GLB failure.
  await page.locator('#assetSource').selectOption('procedural');
  await page.evaluate(()=>window.__monsterBeastfolkQA?.());
- await page.locator('#monsterList button[data-id="m031"]').first().click().catch(()=>{});
+ await selectMonster(page,'m031');
  // Prefer the existing selected species QA endpoint rather than treating
  // visible body part mesh counts as proof of canonical actor identity.
  await expect.poll(()=>page.evaluate(()=>
