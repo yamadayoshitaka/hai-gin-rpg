@@ -16,7 +16,7 @@ import {humanoidMonsterCostumeFor}
  from './monster-character-cosplay-manifest.js?v=4.5.03';
 import {startMonsterAction,animateMonsterModel}
  from './monster-animation.js?v=4.5.18';
-import {creatureFlightHeight} from './combat-creature-performance.js?v=4.6.39';
+import {creatureFlightHeight} from './combat-creature-performance.js?v=natural-size-20261116';
 import {adoptedCreatureMesh} from './creature-mesh-adoption.js?v=web-mesh-26-v1';
 import {fetchCreatureRegistry} from './creature-external-runtime.js';
 import {loadCreatureMeshSource} from './creature-real-source-catalog.js?v=real-body-only-v4';
@@ -25,7 +25,7 @@ import {protectedCreature} from './creature-mesh-adoption.js?v=real-bodies-v3';
 import {isMonsterSummonType,monsterSummonSource,
  monsterSummonWorldScale,MONSTER_SUMMON_MAX_HIGH_DETAIL,
  MONSTER_SUMMON_MAX_ACTIVE,MONSTER_SUMMON_BY_TYPE,MONSTER_SUMMON_MODEL_HEIGHT}
- from './monster-summon-registry.js';
+ from './monster-summon-registry.js?v=natural-size-20261116';
 
 const safe=(x,fallback=0)=>Number.isFinite(x)?x:fallback;
 
