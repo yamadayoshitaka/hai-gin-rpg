@@ -102,7 +102,9 @@ function frame(){
  const img=$('art'),empty=$('empty'),ticket=++serial;
  img.hidden=true;empty.hidden=false;empty.textContent='この場面の画像を確認しています…';
  const fail=()=>{if(ticket!==serial)return;img.hidden=true;empty.hidden=false;
-  empty.textContent='この'+(context.protagonistGender==='female'?'女性':'男性')+'版・'+labels[outcome]+'は原画未登録です';
+  empty.textContent=single?.includes('/chapter1-provisional-live/')?
+   '最新の仮登録原画を取得できません。古い原画には戻しません。':
+   'この'+(context.protagonistGender==='female'?'女性':'男性')+'版・'+labels[outcome]+'は原画未登録です';
   $('artStatus').textContent='未登録 — 他の性別や勝敗の画像には置き換えません';
  };
  const load=(url,kind)=>{
