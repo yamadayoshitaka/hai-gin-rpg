@@ -1,14 +1,15 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
+import {applyHeroineSkinMaterial} from '../src/heroine-skin-material.js';
 import {v65NasalCartilageDelta,femaleInnerFeatureDelta} from '../src/independent-face-masters.js';
-import {v65IrisOpticalTones,v65ScleralShading,v63IrisOpticalTones}
+import {v65IrisOpticalTones,v65ScleralShading,v63IrisOpticalTones,v67NaturalEyeMakeup}
  from '../src/face-feature-meshes.js';
 import {v65ExpressionMuscleDelta,FACE_EXPRESSIONS}
  from '../src/face-expression-animation-v48.js';
 import {makePonytailMicrofibers,makeStyleSpecificHair}
  from '../src/face-wig-ornaments-v49.js';
-import {repairRealCrownScalpHoles,appendRealCrownUnderlay,uniqueHairFibreStations} from '../src/face-scalp-wig.js';
+import {repairRealCrownScalpHoles,appendRealCrownUnderlay,uniqueHairFibreStations,v63WigScalpTone,v67ScalpMatchedLockTone} from '../src/face-scalp-wig.js';
 
 test('v65: nose cartilage never touches cheeks, eye sockets or rear skull',()=>{
  for(const xn of [-1,-.9,-.4,-.28,.28,.35,.75,1]){
@@ -183,4 +184,52 @@ test('v67: true crown underlay also covers the upper side roots, without false f
  assert.equal(v.length,9);
  assert.equal(normals.length,9);
  geo.dispose();
+});
+
+test('v67: subtle eyeshadow hugs upper eyelid and avoids male or back-of-head pigment',()=>{
+ const at=v67NaturalEyeMakeup({nx:.346,ny:.725,front:1,lidY:.695,gender:'female'});
+ const away=v67NaturalEyeMakeup({nx:.02,ny:.89,front:1,lidY:.695,gender:'female'});
+ const rear=v67NaturalEyeMakeup({nx:.346,ny:.725,front:0,lidY:.695,gender:'female'});
+ const male=v67NaturalEyeMakeup({nx:.346,ny:.725,front:1,lidY:.695,gender:'male'});
+ assert.ok(at.shadow>.1&&at.shadow<=.13);
+ assert.ok(away.shadow<.00001);
+ assert.equal(rear.shadow,0);
+ assert.deepEqual(male,{shadow:0,lowerLift:0});
+ const lower=v67NaturalEyeMakeup({nx:.346,ny:.640,front:1,lidY:.695,gender:'female'});
+ assert.ok(lower.lowerLift>.018&&lower.lowerLift<.020);
+ assert.ok(lower.shadow<.018,'lower eyelid must not become a smoky under-eye bag');
+});
+test('v67: rooted 3D hair shades start at true scalp tone and fade without hair-root bands',()=>{
+ const box=new THREE.Box3(new THREE.Vector3(-.5,0,-.5),new THREE.Vector3(.5,1,.5));
+ const points=[new THREE.Vector3(-.11,.89,.12),
+  new THREE.Vector3(.12,.92,-.10)];
+ for(const point of points){
+  const scalp=v63WigScalpTone(point.x,point.y,point.z,box);
+  for(const layer of [0,1,2,3]){
+   assert.equal(v67ScalpMatchedLockTone(point,box,0,33,layer),scalp);
+   const next=v67ScalpMatchedLockTone(point,box,.015,33,layer);
+   assert.ok(Math.abs(next-scalp)<.01,'hair root would reveal a dark seam');
+   for(const t of [.10,.25,.50,.90]){
+    const tone=v67ScalpMatchedLockTone(point,box,t,33,layer);
+    assert.ok(Number.isFinite(tone)&&tone>=.78&&tone<=1.11);
+   }
+  }
+ }
+});
+
+test('v67: natural real skin highlights avoid plastic shine without mutating sculpt',()=>{
+ const geometry=new THREE.SphereGeometry(.22,16,12);
+ const face=new THREE.Mesh(geometry,new THREE.MeshStandardMaterial({
+  color:0xf0d9cb,roughness:.94,metalness:0
+ }));
+ const original=Array.from(geometry.getAttribute('position').array);
+ const result=applyHeroineSkinMaterial(face);
+ assert.equal(result.applied,true);
+ assert.equal(face.material.roughness,.74);
+ assert.equal(face.material.metalness,0);
+ assert.ok(face.material.clearcoat<=.04);
+ assert.ok(face.material.sheen<=.08);
+ assert.equal(face.userData.v67SoftSkinSpecular,true);
+ assert.deepEqual(Array.from(geometry.getAttribute('position').array),original);
+ face.material.dispose();geometry.dispose();
 });

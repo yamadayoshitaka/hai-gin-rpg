@@ -39,6 +39,14 @@ function pigmentFactor(base,tint,opacity){
  return new THREE.Vector3(1+(tint.r/base.r-1)*opacity,
   1+(tint.g/base.g-1)*opacity,1+(tint.b/base.b-1)*opacity);
 }
+/** Natural eye makeup follows the existing sculpted skin, not a detached decal. */
+export function v67NaturalEyeMakeup({nx,ny,front,lidY,gender='female'}){
+ if(gender!=='female')return {shadow:0,lowerLift:0};
+ const visibility=clamp(front,0,1);
+ const shadow=.13*bell(nx,.346,.115)*bell(ny,lidY+.030,.031)*visibility;
+ const lowerLift=.019*bell(nx,.346,.118)*bell(ny,lidY-.055,.022)*visibility;
+ return {shadow,lowerLift};
+}
 function buildGrid(name,columns,rows,point,material){
  const vertices=[],uv=[],indices=[];
  for(let j=0;j<=rows;j++){
@@ -234,6 +242,7 @@ export function updateRealFacePigment(face,controls={},mode='color',gender='fema
  const skin=new THREE.Color(FACE_V7_PALETTE.skin);
  const blush=new THREE.Color(FACE_V7_PALETTE.blush);
  const lipstick=new THREE.Color(FACE_V7_PALETTE.lipstick);
+ const softEyeshadow=new THREE.Color(0xa48087);
  const age=resolveAgeBand(settings.ageBand);
  const positions=geometry.getAttribute('position'),colors=[];
  let actualLipTintVertices=0,actualCheekTintVertices=0;
@@ -268,6 +277,7 @@ export function updateRealFacePigment(face,controls={},mode='color',gender='fema
   const upperLidOcclusion=bell(nx,.346,.112)*bell(ny,lidY+.017,.018)*front;
   const lowerLidOcclusion=bell(nx,.346,.115)*bell(ny,lidY-.043,.029)*front;
   const innerCanthus=bell(nx,.245,.046)*bell(ny,lidY-.014,.028)*front;
+   const naturalEyeMakeup=v67NaturalEyeMakeup({nx,ny,front,lidY,gender});
   const noseWing=bell(nx,.115,.045)*bell(ny,.551,.025)*front;
   const philtrum=bell(nx,0,.075)*bell(ny,.528,.015)*front;
   const lipShade=bell(nx,0,.18)*bell(ny,.468,.026)*front;
@@ -290,7 +300,8 @@ export function updateRealFacePigment(face,controls={},mode='color',gender='fema
   const s=Math.max(.55,1-contactShade);
   const rgb=pigmentFactor(skin,blush,cheek)
    .multiply(pigmentFactor(skin,lipstick,.30*lipMask))
-   .multiplyScalar(s);
+   .multiply(pigmentFactor(skin,softEyeshadow,naturalEyeMakeup.shadow))
+   .multiplyScalar(s*(1+naturalEyeMakeup.lowerLift));
   colors.push(rgb.x,rgb.y,rgb.z);
  }
  setVertexMakeup(face,colors);
@@ -302,6 +313,7 @@ export function updateRealFacePigment(face,controls={},mode='color',gender='fema
  face.userData.v50YouthShadowScale=skinAgeShadowFactor(age.id);
  face.userData.v63AnatomicalEyelidContactShadow=true;
  face.userData.v64EyeShadowFollowsAnatomicalEyes=true;
+  face.userData.v67NaturalEyeMakeupOnRealSkin=gender==='female';
  face.userData.v64AgeWrinkleIntensity=age.wrinkles;
  for(const name of ['UPPER','LOWER']){
   const lip=face.getObjectByName(name+'_3D_VERMILION_LIP');
@@ -772,8 +784,8 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
    if(female){
     // Eyeliner shares the eye lid's actual surface and transformation.
     const linerMat=new THREE.MeshBasicMaterial({
-     color:0x251a24,side:THREE.DoubleSide,transparent:true,
-     opacity:upper?1:.92,depthWrite:false,depthTest:true,
+     color:0x3b2b35,side:THREE.DoubleSide,transparent:true,
+     opacity:upper?1:.55,depthWrite:false,depthTest:true,
      polygonOffset:true,polygonOffsetFactor:-5,polygonOffsetUnits:-5
     });
     const liner=buildGrid(label+'_EYELINER',28,3,(u,v)=>{
@@ -809,7 +821,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
    // RGBA mesh vertices feather at the edges; no floating decal card.
    const upperEyelid=root.getObjectByName(eyeLabel+'_UPPER_ANATOMICAL_EYELID');
    const shadowMaterial=new THREE.MeshBasicMaterial({
-    color:0x865b7d,transparent:true,opacity:.79,
+    color:0xa48087,transparent:true,opacity:.79,
     side:THREE.DoubleSide,depthWrite:false,vertexColors:true
    });
    const upperShadow=buildGrid(eyeLabel+'_UPPER_EYESHADOW',28,6,(u,v)=>{
@@ -820,7 +832,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
    const pigment=[];
    for(let j=0;j<=6;j++)for(let i=0;i<=28;i++){
     const u=i/28,v=j/6,outer=side===-1?1-u:u;
-    pigment.push(1,1,1,.81*Math.pow(Math.sin(Math.PI*u),.6)*
+    pigment.push(1,1,1,.30*Math.pow(Math.sin(Math.PI*u),.6)*
      Math.pow(Math.sin(Math.PI*v),.72)*(.70+.30*outer));
    }
    upperShadow.geometry.setAttribute('color',

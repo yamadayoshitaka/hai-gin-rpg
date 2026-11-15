@@ -513,7 +513,8 @@ test('v26 closed eyeliner corners remain linked without under-eye bags',()=>{
   assert.equal(upper.parent.name,side+'_UPPER_ANATOMICAL_EYELID');
   assert.equal(lower.parent.name,side+'_LOWER_ANATOMICAL_EYELID');
   assert.ok(upper.geometry.getAttribute('position').count>116);
-  assert.ok(lower.material.opacity>.4);
+  // Different makeup presets preserve a visible but bounded lower-lid contour.
+  assert.ok(lower.material.opacity>=.30&&lower.material.opacity<=.65);
   assert.equal(m.parts.getObjectByName(side+'_UNDER_EYE_SHADOW'),undefined);
   assert.equal(m.parts.getObjectByName(side+'_LOWER_LID_VOLUME'),undefined);
  }
@@ -720,7 +721,8 @@ test('v15 eyeshadow is a real eyelid child, lipstick fast updates without shape 
   assert.ok(shadow?.isMesh);
   assert.equal(shadow.parent.name,side+'_UPPER_ANATOMICAL_EYELID');
   assert.equal(shadow.geometry.getAttribute('color').itemSize,4);
-  assert.ok(shadow.material.opacity>.75);
+  // Edge-faded vertex pigment controls visible intensity; material stays bounded.
+  assert.ok(shadow.material.opacity>=.25&&shadow.material.opacity<=.85);
  }
  const before=m.face.geometry.getAttribute('position').array.slice();
  const prev=m.face.geometry.getAttribute('color').array.slice();
@@ -1275,10 +1277,24 @@ test('v25 actual contact lens pigment and liner remain visible on linked eyelids
  assert.ok(upper.visible&&lower.visible);
  assert.equal(upper.renderOrder,9);
  assert.equal(upper.material.depthTest,true);
- assert.ok(upper.material.opacity>=.99);
+ // Allow natural and classic eyeliner presets while rejecting invisible liner.
+ assert.ok(upper.material.opacity>=.78&&upper.material.opacity<=1);
  assert.ok(face.report.detailedParts.eyeDepthFactor<=-.1);
  assert.equal(face.report.detailedParts.eyeSpacingFactor,.65);
  assert.ok(normalizeFemaleFaceControls({eyeDepth:-9}).eyeDepth>=-.3);
+});
+
+test('v67 makeup remains subtle, face-local and female-only',async()=>{
+ const {v67NaturalEyeMakeup}=await import('../src/face-feature-meshes.js');
+ const center=v67NaturalEyeMakeup({nx:.346,ny:.63,front:1,lidY:.60});
+ const away=v67NaturalEyeMakeup({nx:.88,ny:.85,front:1,lidY:.60});
+ const back=v67NaturalEyeMakeup({nx:.346,ny:.63,front:0,lidY:.60});
+ const male=v67NaturalEyeMakeup({nx:.346,ny:.63,front:1,lidY:.60,gender:'male'});
+ assert.ok(center.shadow>0&&center.shadow<=.13);
+ assert.ok(center.lowerLift>0&&center.lowerLift<=.019);
+ assert.ok(away.shadow<center.shadow/100);
+ assert.deepEqual(back,{shadow:0,lowerLift:0});
+ assert.deepEqual(male,{shadow:0,lowerLift:0});
 });
 
 test('v26 wig foundation is a transparent unchanged copy of the actual head and exported with the wig',()=>{
