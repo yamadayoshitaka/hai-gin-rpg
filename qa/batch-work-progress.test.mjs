@@ -20,7 +20,12 @@ test('batch work progress uses evidence-backed stage status without treating sch
  }
  for(const [kind,entry] of Object.entries(state.groups)){
   if(entry.status==='work_incomplete')assert.notEqual(entry.steps.deploy,'done',kind+' must not claim deployment');
-  if(entry.steps.commit==='done')assert(entry.evidence.some(e=>/commit|pull|actions|compare/.test(e.url)),kind+' commit needs evidence');
+  if(entry.steps.commit==='done'){
+    assert.equal(entry.steps.code,'done',kind+' quality commit requires genuine source/artwork change');
+    assert(entry.evidence.some(e=>/\/commit\/[0-9a-f]{40}(?:$|[?#])/.test(e.url)),kind+' requires a genuine commit SHA URL');
+  }
+  if(entry.steps.pr==='done')assert(entry.evidence.some(e=>/\/pull\/\d+/.test(e.url)),kind+' PR completion needs PR evidence');
+  if(entry.steps.deploy==='done')assert.equal(entry.status,'deployed',kind+' deployment and status must agree');
  }
 });
 test('management page distinguishes QA from implementation progress and pulls the persisted record',()=>{
@@ -30,4 +35,16 @@ test('management page distinguishes QA from implementation progress and pulls th
  assert.match(html,/実作業進捗/);
  assert.match(html,/次回引継ぎ/);
  assert.match(html,/最終記録/);
+});
+
+test('all four groups require meaningful regression fixes and commit, not report-only work',()=>{
+ const state=JSON.parse(fs.readFileSync('data/hourly-batch-dashboard.json','utf8'));
+ assert.equal(state.groups.length,4);
+ for(const group of state.groups){
+  assert.equal(group.schedulerEnabled,true,group.id+' must be scheduled');
+  assert.match(group.goal,/実ソース|3Dモデル|実アセット|アセット/);
+  assert.match(group.goal,/QA/);
+  assert.match(group.goal,/コミット/);
+  assert.match(group.goal,/未完了/);
+ }
 });

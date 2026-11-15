@@ -39,6 +39,7 @@ small{font-size:11px}strong{font-weight:700}
 <header><a href="./dev-menu.html">← メンテナンス</a><strong>⚙ 灰銀｜毎時バッチ管理</strong><a href="./monster-quality-review.html">モンスター品質KPI</a><a href="./creature-reconstruction-plan.html">108体再構成計画</a><button class="refresh" id="refresh" type="button">状況を更新</button></header>
 <main><h1>品質改善バッチ：4系統</h1>
 <p>確認する対象を4つに整理しました。各カードから<strong>いまのゲーム画面を見る</strong>、実行状況を開く、次の指示を送る操作ができます。</p>
+<p class="panel"><strong>4系統共通の品質回帰目標：</strong>実際のソース／3Dモデル／画像アセットを改善 → 回帰QA → 作業ブランチへコミット（SHA記録）→ PR。調査・台帳更新・空コミットだけでは達成とせず、未完了は次回引継ぎ。マージ・公開は別の品質検証後。</p>
 <div class="summary" aria-live="polite"><span id="groupCount">4系統</span><span id="enabledCount">自動実行を確認中</span><span id="activeCount">GitHub実行状況を照合中</span><span id="schedulerCount">ChatGPT実行予約を確認中</span></div>
 <p id="fresh" class="muted">GitHub Actionsは画面表示時・更新時に確認します。ChatGPTの実行中判定はこのページから取得できません。</p>
 <p class="panel"><strong>第1章漫画（ゲーム本編との照合）：</strong><span id="chapter4status">各ステージの本編原画を照合中</span>　<a href="./story-chapter1-approval.html?stage=c01-s04">漫画確認・差し戻し</a></p>
@@ -88,7 +89,7 @@ function createCard(data){
  t.append(title,badge);c.appendChild(t);c.appendChild(paragraph(data.subtitle,'muted'));
  const schedule=tag('div','panel');
  const source=tag('strong','',data.time+' ｜ '+data.source);schedule.appendChild(source);
- const detail=paragraph(data.source.includes('ChatGPT')?'直近の定期実行：'+TIME(data.last)+' （記録時点）':'直近の実行：取得中','muted');
+ const detail=paragraph(data.source.includes('ChatGPT')?'ChatGPT直近：'+(data.last?TIME(data.last):'初回実行待ち')+' ／ 次回予定：'+TIME(data.next)+'（記録時点）':'直近の実行：取得中','muted');
  schedule.appendChild(detail);c.appendChild(schedule);
  if(data.schedulerEnabled===false&&data.source.includes('ChatGPT'))
   c.appendChild(paragraph('ChatGPT定期タスク：停止中。漫画のCloudflare無料生成は別途GitHub Actionsで毎日09:20（日本時間）に最大1回実行。Cloudflare上限時のChatGPT画像生成は手動で開始します。','status'));
@@ -226,7 +227,7 @@ async function updateProgress(){
    const entry=data.groups[g.id];
    if(!entry||!entry.steps)throw Error(g.id+' の実作業記録なし');
    const displayed=PROGRESS_LABELS[entry.status]||'状況未確認';
-   view.current.textContent='直近：'+displayed;
+   view.current.textContent='直近：'+displayed+(g.schedulerEnabled===true&&entry.status==='paused'?'（定期再開設定済み・実行待ち）':'');
    view.current.className='progress-status'+(entry.status==='deployed'?' ok':'');
    view.stageGrid.replaceChildren();
    for(const [step,label] of PROGRESS_STAGES){
@@ -314,7 +315,7 @@ async function updateRuns(){
     const result=await fetchJSON(API+'/actions/workflows/'+wf.id+'/runs?per_page=5');
     const run=result.workflow_runs?.[0];view.activity.textContent='GitHub QA：'+statusLabel(run)+(run?' ／ '+TIME(run.created_at):'');
     if(run)view.log.href=run.html_url;
-    if(g.id==='world')view.detail.textContent=run?'最新の実行：'+TIME(run.created_at)+' ／ '+statusLabel(run):'実行履歴なし';
+    if(g.id==='world')view.detail.textContent='ChatGPT品質回帰 毎時50分 ／ GitHub QA：'+(run?TIME(run.created_at)+' '+statusLabel(run):'履歴なし')+'（最新実作業は下の工程記録を参照）';
   }));
   $('activeCount').textContent='GitHub実行状況：更新済み';
   $('fresh').textContent='GitHubの直近実行を更新：'+TIME(new Date().toISOString())+' ／ ChatGPTの状態は記録時点の情報です';
