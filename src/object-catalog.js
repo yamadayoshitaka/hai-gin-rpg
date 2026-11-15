@@ -219,6 +219,48 @@ export function createObjectById(id,{cellSize=2.2}={}){
   return root;
  }
 
+ if(id==='spiral_stairs_2f_001'||id==='spiral_stairs_castle_3f_001'){
+  // Radial wedge treads bear on a continuous masonry core and outer stringer.
+  // Two-storey timber stairs and three-storey castle stone stairs use distinct dimensions.
+  const castle=id==='spiral_stairs_castle_3f_001';
+  const root=new THREE.Group();root.name=id;
+  const c=cellSize, radius=(castle?3.15:1.32)*c, core=(castle?.48:.24)*c;
+  const height=(castle?7.2:3.8)*c, steps=castle?54:28;
+  const stone=cottageMaterial('stone'), wood=cottageMaterial('wood',0x9b8162);
+  const iron=new THREE.MeshStandardMaterial({color:0x494944,metalness:.65,roughness:.53});
+  const mat=castle?stone:wood;
+  const add=(geometry,material,x=0,y=0,z=0,name='')=>{
+   const mesh=new THREE.Mesh(geometry,material);mesh.position.set(x,y,z);
+   mesh.castShadow=true;mesh.receiveShadow=true;mesh.name=name;root.add(mesh);return mesh;
+  };
+  add(new THREE.CylinderGeometry(core,core,height,24),castle?stone:wood,0,height/2,0,'continuous_load_bearing_spindle');
+  const riser=height/steps, sweep=castle?Math.PI*5:Math.PI*3.5;
+  const wedge=(inner,outer,a0,a1,thick)=>{
+   const vertices=[],indices=[];
+   for(const y of [0,thick])for(const a of [a0,a1])for(const r of [inner,outer])
+    vertices.push(Math.cos(a)*r,y,Math.sin(a)*r);
+   for(const quad of [[0,1,3,2],[4,6,7,5],[0,4,5,1],[2,3,7,6],[0,2,6,4],[1,5,7,3]]){
+    const [a,b,c,d]=quad;indices.push(a,b,c,a,c,d);
+   }
+   const g=new THREE.BufferGeometry();
+   g.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));
+   g.setIndex(indices);g.computeVertexNormals();return g;
+  };
+  for(let i=0;i<steps;i++){
+   const a=i*sweep/steps, next=(i+1)*sweep/steps;
+   const tread=add(wedge(core*.96,radius,a,next,riser*.19),mat,0,(i+1)*riser-riser*.19,0,'supported_wedge_tread_'+i);
+   tread.material.side=THREE.DoubleSide;
+   const railA=next-.045, postRadius=radius*.94;
+   if(i%2===0){
+    const x=Math.cos(railA)*postRadius,z=Math.sin(railA)*postRadius;
+    add(new THREE.CylinderGeometry(.035*c,.042*c,.92*c,8),castle?stone:iron,x,(i+1)*riser+.46*c,z,'outer_guard_post_'+i);
+   }
+  }
+  add(new THREE.CylinderGeometry(radius*1.04,radius*1.04,.18*c,32),mat,0,.09*c,0,'grounded_footing');
+  root.userData.catalogId=id;root.userData.footprint={lengthCells:OBJECT_CATALOG[id].widthCells,widthCells:OBJECT_CATALOG[id].depthCells};
+  root.userData.passable=false;root.userData.stairFloors=castle?3:2;
+  return root;
+ }
  if(OBJECT_CATALOG[id].kind==='furniture'){
   const root=new THREE.Group();root.name=id;
   const timber=cottageMaterial('wood',0xffffff);
