@@ -365,6 +365,6 @@ async function start(){
   await updateSwitches();await updateProgress();await updateChapter4();await updateStoryBudget();await updateRelease();await updateRuns();await updateIssueHandoff();
  }catch(e){$('cards').textContent='管理データを読み込めませんでした：'+e.message}
 }
-$('refresh').addEventListener('click',async()=>{await updateSwitches();await updateProgress();await updateChapter4();await updateStoryBudget();await updateRelease();await updateRuns()});
+$('refresh').addEventListener('click',async()=>{await updateSwitches();await updateProgress();await updateChapter4();await updateStoryBudget();await updateRelease();await updateRuns();await updateIssueHandoff()});
 start();setInterval(()=>{if(!document.hidden&&groups.length){updateSwitches();updateProgress();updateRuns()}},90000);
 </script></body></html>
