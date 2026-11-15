@@ -37,7 +37,7 @@ function scene(flags={}){
  const nodes=new Map();const node=id=>{if(!nodes.has(id))nodes.set(id,{});return nodes.get(id);};
  const context={game:{townStage:stage.id,storyFlags:structuredClone(flags)},townReady:true,townChapter:1,paperPending:false,
   townManga:{stageName:'町'},STORY_CHAPTERS:[{title:'第1章'}],$:node,
-  comicForStage:()=>({panels:[]}),storyStageContext:()=>({}),
+  comicForStage:()=>({panels:[]}),compactComicForStage:()=>({panels:[]}),storyStageContext:()=>({}),
   document:{querySelector:node},townAudio:{effect(){},setScene(){}},
   hideTownDialogue(){},resetTownMovement(){},closePanel(){},speakCurrentScene(){},
   persistSession(g){receipt=structuredClone(g.storyFlags);},sessionStorage:{},

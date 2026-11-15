@@ -38,7 +38,7 @@ const viewer=await readFile(new URL('../src/story-manga-viewer.js',import.meta.u
 const importer=await readFile(new URL('../scripts/slice-story-art-batch.py',import.meta.url),'utf8');
 const workflow=await readFile(new URL('../.github/workflows/story-sheet-import.yml',import.meta.url),'utf8');
 assert.match(viewer,/loadPanelArt\(shot,pagePanels\)/);
-assert.match(viewer,/storySheetCrop\(shot,pagePanels.length\)/);
+assert.match(viewer,/storySheetCrop\(shot,shot\.sourceSheetCount\|\|pagePanels\.length\)/);
 assert.doesNotMatch(viewer,/manga-hotspots/);
 assert.match(viewer,/原画未登録/);
 assert.doesNotMatch(viewer,/stageMangaImage\(shot\)/);

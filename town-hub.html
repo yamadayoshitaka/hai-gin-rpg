@@ -71,6 +71,9 @@ body.town-loading #townRadar,body:has(#opening:not([hidden])) #townRadar,body:ha
 #eventSceneArt:after{content:'';position:absolute;inset:0;border:6px solid #e8d4a021;pointer-events:none;box-shadow:inset 0 0 35px #081021}
 #eventVoice{border:1px solid #526477!important;background:#243648!important;color:#c7d4db!important;font:11px system-ui!important;min-height:30px!important;padding:5px 9px!important}#eventSpeaker{font:700 clamp(13px,3vw,17px) Georgia,'Noto Serif JP',serif;text-align:left;color:#ffe2ac;letter-spacing:.05em;border-left:3px solid #cdb17a;padding:5px 11px;background:#0c2033c9}
 #eventSpeaker small{display:block;font:10px system-ui;color:#c0d6e4}
+#eventSpeakerRow{display:flex;align-items:center;gap:10px;text-align:left}#eventSpeakerRow #eventSpeaker{flex:1;min-width:0}
+#eventPortrait{width:64px;height:64px;flex:none;object-fit:cover;object-position:center 20%;border-radius:5px;border:1px solid #b6a078}
+#eventPortrait[hidden]{display:none!important}
 .sceneCard{max-height:96dvh;overflow:auto}
 .sceneCard p#eventText{min-height:0;margin:0;text-align:left;line-height:1.7;font-size:clamp(14px,3.5vw,17px);padding:7px 4px}
 @media(max-height:680px){#eventSceneArt{max-height:45dvh}.sceneCard{gap:6px!important;padding:12px!important}}
@@ -135,7 +138,7 @@ header nav button,header nav a{min-width:0;padding:7px 2px;white-space:nowrap;fo
 </section>
 <section id="townGuide" aria-label="町の施設案内地図" hidden><div id="townGuideCard"><div class="toprow"><h2>レヴナ施設案内</h2><button id="closeTownGuide" type="button">閉じる ✕</button></div>
 <small id="townGuideHint">町全域の真上からの地図です。青い印が軍師です。施設名をタップすると選択した建物の室内へ直接入れます。</small><div id="townGuideBoard"><canvas id="townGuideCanvas" width="464" height="464" aria-label="町の地形・川・道路・屋根の俯瞰マップ"></canvas><div id="townPlayerPin">軍師</div></div><div id="townGuideActions"><button id="townOverhead" type="button">3Dで町全体を俯瞰</button><button id="townReturnCamera" type="button">軍師視点に戻る</button></div><div id="townGuideList"></div></div></section>
-<section id="opening" aria-label="紙芝居・オープニング" hidden><div class="sceneCard"><div class="eyebrow">第1章・紙芝居　灰の勅命</div><div id="eventSceneArt"><img id="eventSceneImage" alt="物語の現在の1コマ" hidden><div id="eventSheetMissing" role="status">漫画原画を制作・確認中</div></div><h1>レヴナの町</h1><div id="eventSpeaker" aria-live="polite">語り手</div><p id="eventText">星鐘が鳴った。</p><div class="controls"><button id="eventVoice" type="button" aria-label="漫画の音声のオン・オフ">音声 ON</button><button id="eventNext">次へ ▶</button></div><button id="skipPaper" type="button">物語を閉じて町へ進む</button></div></section>
+<section id="opening" aria-label="紙芝居・オープニング" hidden><div class="sceneCard"><div class="eyebrow">第1章・紙芝居　灰の勅命</div><div id="eventSceneArt"><img id="eventSceneImage" alt="物語の現在の1コマ" hidden><div id="eventSheetMissing" role="status">漫画原画を制作・確認中</div></div><h1>レヴナの町</h1><div id="eventSpeakerRow"><img id="eventPortrait" hidden alt="話者の顔"><div id="eventSpeaker" aria-live="polite">語り手</div></div><p id="eventText">星鐘が鳴った。</p><div class="controls"><button id="eventVoice" type="button" aria-label="漫画の音声のオン・オフ">音声 ON</button><button id="eventNext">次へ ▶</button></div><button id="skipPaper" type="button">物語を閉じて町へ進む</button></div></section>
 <script type="module">
 import {armyGroups,armyGroupFor,setArmyGroup,captainCandidates,armyCaptain,setArmyCaptain,captainBonus} from './src/army-groups.js';
 import {renderThreeTeamPlanner} from './src/three-team-sortie-ui.js';
@@ -144,7 +147,8 @@ import {STORY_CHAPTERS,storyVoiceKey} from './src/story-chapters.js';
 import {STORY_KEY_PEOPLE} from './src/story-cinematic.js';
 import {mangaForStage} from './src/story-stage-manga.js';
 import {storyStageContext} from './src/story-narrative-flow.js';
-import {comicForStage,comicPageAsset} from './src/story-chapter-comic.js';
+import {comicPageAsset} from './src/story-chapter-comic.js';
+import {compactComicForStage} from './src/story-compact-comic.js';
 import {registeredStoryPanelAsset,storySheetCrop,storyArtDisplayUrl} from './src/story-panel-registered-art.js';
 
 import {fantasyCueForMangaPanel} from './src/fantasy-scene-score.js';
@@ -863,9 +867,21 @@ async function speakChapter(number,{autoplay=false}={}){
 // Every town stop uses the exact same serial-manga identity and panel order
 // as the other 180 combat/exploration stages.
 const townManga=mangaForStage(game.townStage);
-let eventComic=comicForStage(game.townStage,'pre',storyStageContext(game,game.townStage));
+let eventComic=compactComicForStage(game.townStage,'pre',storyStageContext(game,game.townStage));
 let eventScenes=eventComic.panels;
-let eventIndex=0,paperPhase='pre',leaveAfterPaper=false,renderedTownFrame=null,eventArtRequest=0;
+let eventIndex=0,eventTalkIndex=0,paperPhase='pre',leaveAfterPaper=false,renderedTownFrame=null,eventArtRequest=0;
+const storyCastIds=new Set(STORY_KEY_PEOPLE.map(p=>p.id));
+function currentTownTurn(){const shot=eventScenes[eventIndex];return shot?.dialogueTurns?.[eventTalkIndex]||shot}
+function showTownPortrait(talk){
+ const img=$('eventPortrait');
+ const src=storyCastIds.has(talk?.characterId)?'./assets/story-cinema/cast/'+talk.characterId+'.webp':
+  talk?.speaker==='軍師'&&game.campaign?.commander?.gender==='female'?'./assets/story/characters/commander/female-master.webp':null;
+ img.hidden=!src;
+ if(!src){img.removeAttribute('src');return}
+ img.onerror=()=>{if(img.getAttribute('src')===src)img.hidden=true};
+ if(img.getAttribute('src')!==src)img.src=src;
+ img.alt=talk.speaker+'の顔';
+}
 const voiceIsOn=()=>{
  try{return JSON.parse(localStorage.getItem('hai-gin-core-settings-v1')||'{}')?.voice!==false;}
  catch{return true;}
@@ -878,11 +894,11 @@ function setVoiceEnabled(value){
  $('eventVoice').textContent=value?'音声 ON':'音声 OFF';
 };
 function eventRender(){
- const shot=eventScenes[eventIndex],context=storyStageContext(game,game.townStage);
- $('eventText').textContent=shot.text;
- const cut=registeredStoryPanelAsset(shot);
+ const shot=eventScenes[eventIndex],talk=currentTownTurn(),context=storyStageContext(game,game.townStage);
+ $('eventText').textContent=talk.text;
+ const cut=shot.sharedArtAsset||registeredStoryPanelAsset(shot);
  const sheet=comicPageAsset(game.townStage,paperPhase,context,shot.comicPage,shot.protagonistGender);
- const cells=eventComic.pages.find(p=>p.number===shot.comicPage)?.cellCount||1;
+ const cells=shot.sourceSheetCount||eventComic.pages.find(p=>p.number===shot.comicPage)?.cellCount||1;
  const frameKey=[shot.id,shot.comicEdition,shot.protagonistGender,cut||'',sheet||''].join('|');
  $('eventSceneArt').style.aspectRatio='16 / 9';
  if(renderedTownFrame!==frameKey){
@@ -921,17 +937,18 @@ function eventRender(){
  $('eventSceneImage').alt='第'+townChapter+'章 '+townManga.stageName+' の'+
   (paperPhase==='pre'?'イベント前':'イベント後')+
   '（'+(shot.protagonistGender==='female'?'女性版':'男性版')+'）第'+(eventIndex+1)+'コマ';
- $('eventSpeaker').textContent=shot.characterId?
-  shot.speaker+'　／　'+shot.faction+'・'+shot.role:'語り手　／　'+townManga.chapterTitle;
+ $('eventSpeaker').textContent=talk.characterId?
+  talk.speaker+'　／　'+talk.faction+'・'+talk.role:'語り手　／　'+townManga.chapterTitle;
+ showTownPortrait(talk);
  $('eventText').style.animation='none';void $('eventText').offsetWidth;$('eventText').style.animation='';
- $('eventNext').textContent=eventIndex===eventScenes.length-1?
+ $('eventNext').textContent=eventIndex===eventScenes.length-1&&eventTalkIndex===(shot.dialogueTurns?.length||1)-1?
   (paperPhase==='post'?'地図へ進む ▶':'町へ進む ▶'):'次のセリフ ▶';
  setVoiceEnabled(voiceIsOn());
  const cue=fantasyCueForMangaPanel({id:townManga.id,number:townManga.number,kind:'town'},eventIndex);
  townAudio.setScene('paper',cue.url);
 }
 function speakCurrentScene(){
- const shot=eventScenes[eventIndex];
+ const shot=currentTownTurn();
  stopNarration();
  currentStoryPanelVoiceId=shot.id;
  if(voiceIsOn())speakTownLine(shot.text,shot.characterId);
@@ -939,8 +956,11 @@ function speakCurrentScene(){
 }
 $('eventNext').onclick=()=>{
  townAudio.effect('paper');
+ if(eventTalkIndex<(eventScenes[eventIndex].dialogueTurns?.length||1)-1){
+  stopNarration();eventTalkIndex++;eventRender();speakCurrentScene();return;
+ }
  if(eventIndex<eventScenes.length-1){
-  stopNarration();eventIndex++;eventRender();speakCurrentScene();return;
+  stopNarration();eventIndex++;eventTalkIndex=0;eventRender();speakCurrentScene();return;
  }
  closePaperStory();
 };
@@ -979,7 +999,7 @@ function startPaperStory(phase='pre'){
   game.storyFlags.stagePostMangaSeen[game.townStage]=true;
  }
  persistSession(game,sessionStorage);
- eventComic=comicForStage(game.townStage,phase,storyStageContext(game,game.townStage));
+ eventComic=compactComicForStage(game.townStage,phase,storyStageContext(game,game.townStage));
  eventScenes=eventComic.panels;
  hideTownDialogue();
  townAudio.effect('paper');townAudio.setScene('paper');
@@ -987,7 +1007,7 @@ function startPaperStory(phase='pre'){
  const chapterData=STORY_CHAPTERS[townChapter-1];
  document.querySelector('#opening .eyebrow').textContent='第'+townChapter+'章・'+(phase==='post'?'町の後日談':'連続漫画')+'　'+chapterData.title;
  document.querySelector('#opening .sceneCard h1').textContent=townManga.stageName;
- eventIndex=0;renderedTownFrame=null;eventRender();$('opening').hidden=false;
+ eventIndex=0;eventTalkIndex=0;renderedTownFrame=null;eventRender();$('opening').hidden=false;
  speakCurrentScene();
 }
 $('skipPaper').onclick=closePaperStory;

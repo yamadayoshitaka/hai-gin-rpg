@@ -342,6 +342,10 @@ function beginSortie(stage){
  mangaViewer.open(stage.id,{onFinish:()=>{
   game.storyFlags??={};game.storyFlags.stageMangaSeen??={};
   game.storyFlags.stageMangaSeen[stage.id]=true;
+  if(stage.slot===1){
+   game.storyFlags.chapterOpenings??={};
+   game.storyFlags.chapterOpenings[stage.chapter]=true;
+  }
   saveSession();launchSelectedStage(stage.id);
  },context:storyStageContext(game,stage.id),phase:'pre'});
 }

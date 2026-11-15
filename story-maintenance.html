@@ -36,14 +36,15 @@ table{width:100%;border-collapse:collapse}th,td{border-bottom:1px solid #43586c;
 <main>
 <h1>ストーリーフローと画面一覧</h1>
 <p class="info">このページは<strong>確認・プレビュー専用</strong>です。ロックされた章の内容も確認できますが、ゲームの進行、分岐、セーブは変更しません。人物の3Dモデルは別工程です。</p>
+<p class="info">ゲーム本編は<strong>20章すべて章冒頭4コマ・各ステージ前後2コマ・敗戦は共通2コマ</strong>のCG＋話者別顔ポートレート会話方式です。従来の漫画462コマなどのレビューは素材庫として残しています。<a href="./story-compact-review.html">新CG構成を確認</a></p>
 <div class="chips" id="nav">
-<a class="chip" href="./story-chapter1-approval.html">第一章・漫画確認／ChatGPT修正（全462コマ・承認操作不要）</a><a class="chip" href="./story-art-review.html">第1章1〜3：原画を1コマずつ確認</a><a class="chip" href="./story-first-three-art-status.html">第1章1〜3：男女別原画20種類の実ファイル確認</a><a class="chip" href="#flow">20章フロー</a><a class="chip" href="#artInventory">原画の制作数</a><a class="chip" href="#panels">分岐別の場面確認</a><a class="chip" href="#chapterProduction">章ごと一括処理</a><a class="chip" href="#cast">人物・国</a><a class="chip" href="#screens">現行画面リンク</a><a class="chip" href="#voice">音声・原画</a>
+<a class="chip" href="./story-compact-review.html">新方式：20章・200ステージ／4+2+2 CG確認</a><a class="chip" href="./story-chapter1-approval.html">第一章・漫画確認／ChatGPT修正（全462コマ・承認操作不要）</a><a class="chip" href="./story-art-review.html">第1章1〜3：原画を1コマずつ確認</a><a class="chip" href="./story-first-three-art-status.html">第1章1〜3：男女別原画20種類の実ファイル確認</a><a class="chip" href="#flow">20章フロー</a><a class="chip" href="#artInventory">原画の制作数</a><a class="chip" href="#panels">分岐別の場面確認</a><a class="chip" href="#chapterProduction">章ごと一括処理</a><a class="chip" href="#cast">人物・国</a><a class="chip" href="#screens">現行画面リンク</a><a class="chip" href="#voice">音声・原画</a>
 </div>
 <section><h2>ゲーム進行状況</h2><div id="saveSummary" class="panels"></div></section>
 <section id="flow"><h2>物語の全体像</h2>
 <p class="flow-track">第1〜12章：灰銀王国の軍師 → 第13章：灰銀継続／紅炎協力／翠嵐協力／独立調停 → 第14〜15章：勢力別協力 → 第16〜19章：三国共同戦線 → 第20章：解放／封印／忘却</p>
 <div id="chapterButtons" class="chips" aria-label="20章選択"></div>
-<div class="toolbar" style="margin-top:12px"><label for="chapterSelect">章</label><select id="chapterSelect"></select><label for="stageSelect">ステージ</label><select id="stageSelect"></select><button class="btn" id="readPanel">戦闘前後10コマを再生</button></div>
+<div class="toolbar" style="margin-top:12px"><label for="chapterSelect">章</label><select id="chapterSelect"></select><label for="stageSelect">ステージ</label><select id="stageSelect"></select><button class="btn" id="readPanel">旧方式のコマ／台本を確認</button></div>
 <div id="flowDetails" class="card" style="margin-top:10px"></div>
 <div id="routeDetails"></div></section>
 <section id="chapterProduction"><h2>漫画を1章単位で一括準備・公開</h2>
