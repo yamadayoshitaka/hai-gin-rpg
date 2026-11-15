@@ -244,11 +244,11 @@ export function createMonsterSummonRenderer(scene,{
    // a working neck, griffons real wings, and arachnids real articulated legs.
    const pulse=Number.isFinite(o.attackStartedAt)&&
     actionTime-o.attackStartedAt>=0&&actionTime-o.attackStartedAt<.95;
-   const moving=Math.hypot(safe(o.x)-safe(node.lastX),safe(o.z)-safe(node.lastZ))>.001;
+   const moving=!!o.moving||Math.hypot(safe(o.x)-safe(node.lastX),safe(o.z)-safe(node.lastZ))>.001;
    let action=o.poseAction;
    if(!['guard','dodge','hit','leap','defeat','special','roar'].includes(action)||
       actionTime-safe(o.poseStartedAt,-Infinity)>2)action=null;
-   action=action||(pulse?'attack':moving?'run':'idle');
+   action=action||(pulse?'attack':moving?(o.previewWalk?'walk':'run'):'idle');
    const actionAt=action===o.poseAction?o.poseStartedAt:
      action==='attack'?o.attackStartedAt:time;
    if(node.lastAction!==action||(
