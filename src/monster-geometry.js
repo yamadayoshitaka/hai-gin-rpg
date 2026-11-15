@@ -7,6 +7,7 @@ import {createSculpture,disposeMonsterSculpture} from './monster-shape-kit.js?v=
 import {attachMonsterFaceControls} from './facial-feature-runtime.js?v=1';
 import {generateCanineFurGuides} from './canine-fur-guides.js?v=4.4.92';
 import {monsterEvidenceFor} from './monster-anatomy-reference.js';
+import {creatureSpeciesBlueprint} from './creature-species-blueprints.js';
 import {MORTAL_HEAD_RINGS,MORTAL_TORSO_RINGS} from './monster-realistic-loft.js';
 import {sculptBloodMoonVampire,sculptVampireHand} from './monster-vampire-sculpt.js';
 /** Organic cranium sections shared by wolves, cats and reptiles.
@@ -1085,6 +1086,15 @@ export function createMonsterModel(spec,{detail='high'}={}){
    default:throw Error('Unknown anatomy: '+spec.family);
  }
  addNonhumanMonsterWardrobe(g,spec);
+ const blueprint=creatureSpeciesBlueprint(spec.id);
+ if(blueprint&&!blueprint.protectedAsset){
+  // Species-specific anatomical geometry survives missing external donors.
+  g.root.userData.speciesBlueprint={
+   anatomy:blueprint.anatomy,feature:blueprint.feature,
+   source:'native-procedural',qualityApproved:false,
+   actionSlots:[...blueprint.actionSlots]
+  };
+ }
  g.root.userData.speciesId=spec.id;
  g.root.userData.pivots=g.pivots;
  g.root.userData.homeScale=g.root.scale.x;
