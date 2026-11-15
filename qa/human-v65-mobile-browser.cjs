@@ -51,6 +51,14 @@ const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
     view,{timeout:15000});
    await sleep(300);
    await captureChromiumScreenshot(page,out+'/'+file,{selector:'#faceCanvas'});
+   if(view==='crown'){
+    const probe=await page.evaluate(()=>window.__v65PickRenderedSurface?.(.49,.47));
+    const state=await page.evaluate(()=>window.__faceMasterQA?.());
+    console.log('HUMAN_V65_CROWN_SURFACE '+JSON.stringify({
+     picks:probe,repairCount:state?.wigReport?.v65CrownTopologyRepairCount,
+     repairTriangles:state?.wigReport?.v65CrownTopologyRepairTriangles
+    }));
+   }
   }
   await page.evaluate(()=>document.getElementById('front')?.click());
   for(const expression of ['smile','angry','surprised','tearful']){
