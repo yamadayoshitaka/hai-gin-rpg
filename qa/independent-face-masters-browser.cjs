@@ -1,6 +1,18 @@
 const {chromium}=require('playwright');
 const fs=require('node:fs'),path=require('node:path');
 const {captureChromiumScreenshot}=require('./chromium-webgl-screenshot.cjs');
+// Avoid Playwright locator.screenshot's 'element stability' wait for animated
+// WebGL canvases. It can stall even after the scene and GLB export succeed.
+// CDP captures the actual Chromium compositor and retains PNG evidence.
+async function captureFaceCanvas(page,options){
+ return captureChromiumScreenshot(page,options.path,{selector:'#faceCanvas'});
+}
+async function captureBodyCanvas(page,options){
+ return captureChromiumScreenshot(page,options.path,{selector:'#bodyCanvas'});
+}
+async function captureBrowserPage(page,options){
+ return captureChromiumScreenshot(page,options.path);
+}
 const out='qa-screenshots/independent-faces';
 fs.mkdirSync(out,{recursive:true});
 // Verify displayed controls, not only the internally stored 3D parameter
@@ -155,7 +167,7 @@ async function expectCenteredFaceSliders(page,gender){
     const report=await page.evaluate(()=>window.__faceMasterQA());
     if(report.gender!==g||report.view!==view||report.visibleFaceMeshes!==1||report.visiblePartMeshes!==(g==='female'?28:19))
      throw Error('Face viewer controls failed '+JSON.stringify(report));
-    await canvas.screenshot({path:path.join(out,g+'-'+view+'.png'),
+    await captureFaceCanvas(page,{path:path.join(out,g+'-'+view+'.png'),
      timeout:90000,animations:'disabled'});
    }
    // Each gender exports a standalone binary GLB with real mesh triangles.
@@ -217,13 +229,13 @@ async function expectCenteredFaceSliders(page,gender){
      !wigQA.wigReport?.collisionTypes.includes('chest'))
    throw Error('Scalp wig and collision proxy not initialized '+JSON.stringify(wigQA.wigReport));
   await page.locator('#front').click();
-  await canvas.screenshot({path:path.join(out,'female-v16-salon-hair-front.png')});
+  await captureFaceCanvas(page,{path:path.join(out,'female-v16-salon-hair-front.png')});
   await page.locator('#back').click();
-  await canvas.screenshot({path:path.join(out,'female-v16-real-rear-scalp-hair.png')});
+  await captureFaceCanvas(page,{path:path.join(out,'female-v16-real-rear-scalp-hair.png')});
   await page.locator('#side').click();
-  await canvas.screenshot({path:path.join(out,'female-v18-scalp-follow-side.png')});
+  await captureFaceCanvas(page,{path:path.join(out,'female-v18-scalp-follow-side.png')});
   await page.locator('#crown').click();
-  await canvas.screenshot({path:path.join(out,'female-v18-true-crown-and-hair-roots.png')});
+  await captureFaceCanvas(page,{path:path.join(out,'female-v18-true-crown-and-hair-roots.png')});
   if((await page.locator('#crown').getAttribute('aria-pressed'))!=='true')
    throw Error('Crown inspection mode is not active');
   await page.locator('#front').click();
@@ -251,22 +263,22 @@ async function expectCenteredFaceSliders(page,gender){
    if(angles?.eyeAngle!==Number(value)||angles?.eyelinerMeshesRefitted!==4)
     throw Error('Eye tilt did not refit eyeliner to both eyelids '+JSON.stringify(angles));
    await page.locator('#front').click();
-   await canvas.screenshot({path:path.join(out,
+   await captureFaceCanvas(page,{path:path.join(out,
     'female-v16-eyeliner-angle-'+value.replace('-','minus')+'.png')});
   }
   await page.locator('#eyeAngle').evaluate(el=>{
    el.value='0';el.dispatchEvent(new Event('input',{bubbles:true}));
   });
   await page.locator('#side').click();
-  await canvas.screenshot({path:path.join(out,'female-v15-actual-eyes-side.png')});
+  await captureFaceCanvas(page,{path:path.join(out,'female-v15-actual-eyes-side.png')});
   await page.locator('#threeQuarter').click();
-  await canvas.screenshot({path:path.join(out,'female-v15-actual-eyes-45deg.png')});
+  await captureFaceCanvas(page,{path:path.join(out,'female-v15-actual-eyes-45deg.png')});
   await page.locator('#front').click();
-  await canvas.screenshot({path:path.join(out,'female-v15-makeup-no-wig-front.png')});
+  await captureFaceCanvas(page,{path:path.join(out,'female-v15-makeup-no-wig-front.png')});
   await page.locator('#parts').click();
   if((await page.evaluate(()=>window.__faceMasterQA())).visiblePartMeshes!==0)
    throw Error('Facial mesh parts cannot be hidden independently');
-  await canvas.screenshot({path:path.join(out,'female-face-only-no-parts.png')});
+  await captureFaceCanvas(page,{path:path.join(out,'female-face-only-no-parts.png')});
   // Face-only export remains available when evaluating the base surface.
   {
    const next=page.waitForEvent('download',{timeout:45000});
@@ -285,15 +297,15 @@ async function expectCenteredFaceSliders(page,gender){
   await page.locator('#wire').click();
   if((await page.evaluate(()=>window.__faceMasterQA())).wire!==true)
    throw Error('Wireframe is not active');
-  await canvas.screenshot({path:path.join(out,'female-wire.png')});
+  await captureFaceCanvas(page,{path:path.join(out,'female-wire.png')});
   await page.locator('#wire').click();
   await page.locator('#color').click();
   const colorQA=await page.evaluate(()=>window.__faceMasterQA());
   if(colorQA.faceMode!=='color')throw Error('Color mode was not activated');
   await page.locator('#front').click();
-  await canvas.screenshot({path:path.join(out,'female-color-v12-hair-front.png')});
+  await captureFaceCanvas(page,{path:path.join(out,'female-color-v12-hair-front.png')});
   await page.locator('#threeQuarter').click();
-  await canvas.screenshot({path:path.join(out,'female-color-v7-threeQuarter.png')});
+  await captureFaceCanvas(page,{path:path.join(out,'female-color-v7-threeQuarter.png')});
   // Real eyebrow/lash angle control and front nasal tip sculpt.
   await page.locator('#contactPreset').selectOption('blue');
   for(const [control,value] of [['eyeAngle','12'],['eyeWidth','1.2'],['eyeHeight','1.2'],
@@ -321,7 +333,7 @@ async function expectCenteredFaceSliders(page,gender){
      changed.visiblePartMeshes!==28)
    throw Error('Live nose/eyebrow/lash controls do not affect the displayed 3D: '+JSON.stringify(changed));
   await page.locator('#front').click();
-  await canvas.screenshot({path:path.join(out,'female-color-nose-brow-adjusted.png')});
+  await captureFaceCanvas(page,{path:path.join(out,'female-color-nose-brow-adjusted.png')});
   // The GLB must retain actual v7 colored face, eyebrow and lash geometry.
   {
    const next=page.waitForEvent('download',{timeout:45000});
@@ -348,7 +360,7 @@ async function expectCenteredFaceSliders(page,gender){
      reset.femaleControls.noseBridgeSharpness!==2.5||
      reset.contactColor!=='#514139'||reset.faceMode!=='color')
     throw Error('Screenshot standard preset was not restored '+JSON.stringify(reset));
-  await canvas.screenshot({path:path.join(out,'female-default-v9-lip-eye-blush.png')});
+  await captureFaceCanvas(page,{path:path.join(out,'female-default-v9-lip-eye-blush.png')});
   const makeupQA=await page.evaluate(()=>window.__faceMasterQA());
   if(makeupQA.female.detailedParts.upperEyeshadowMeshCount!==2||
      !makeupQA.female.detailedParts.shadowOnRealEyelids||
@@ -368,7 +380,7 @@ async function expectCenteredFaceSliders(page,gender){
      afterPaint.performanceMetrics.wigRebuilds!==beforePerf.wigRebuilds||
      afterPaint.performanceMetrics.fastLipstickRepaints-beforePerf.fastLipstickRepaints!==4)
    throw Error('Dragging lipstick rebuilt heavy face/wig '+JSON.stringify(afterPaint.performanceMetrics));
-  await canvas.screenshot({path:path.join(out,'female-v15-real-lipstick-and-eyeshadow.png')});
+  await captureFaceCanvas(page,{path:path.join(out,'female-v15-real-lipstick-and-eyeshadow.png')});
   await page.locator('#resetPreset').click();
   if(!reset.savedNoseJawApplied||
      reset.female?.detailedParts.eyelinerMeshCount!==4||
@@ -388,7 +400,7 @@ async function expectCenteredFaceSliders(page,gender){
    throw Error('Jaw control incorrectly regenerated 1440-strand wig');
   if(strongerJaw.femaleControls.jawSharpness!==4.5)
    throw Error('Female jaw extension above 2.5 is not operational');
-  await canvas.screenshot({path:path.join(out,'female-v9-jaw-4-5.png')});
+  await captureFaceCanvas(page,{path:path.join(out,'female-v9-jaw-4-5.png')});
   await page.locator('#resetPreset').click();
   // Simulate a real pinch/zoom before changing a sculpt slider.
   // The rebuilt face mesh must not reset OrbitControls.
@@ -416,7 +428,7 @@ async function expectCenteredFaceSliders(page,gender){
   await page.locator('#eyeAngle').evaluate(el=>{
    el.value='20';el.dispatchEvent(new Event('input',{bubbles:true}));
   });
-  await canvas.screenshot({path:path.join(out,'female-eye-angle-plus20-brows.png')});
+  await captureFaceCanvas(page,{path:path.join(out,'female-eye-angle-plus20-brows.png')});
   const beforeHairControls=await page.evaluate(()=>window.__faceMasterQA().femaleControls);
   await page.locator('#faceGroupTabs button').filter({hasText:'髪'}).click();
   for(const [id,value] of [['wigDensity','480'],['wigLength','1.5']]){
@@ -464,7 +476,7 @@ async function expectCenteredFaceSliders(page,gender){
    if((await page.evaluate(()=>window.__faceMasterQA())).wigReport?.centerPart!==true)
     throw Error('Restoring crown center-part wig failed');
   }
-  await canvas.screenshot({path:path.join(out,'female-v13-wig-480-long.png')});
+  await captureFaceCanvas(page,{path:path.join(out,'female-v13-wig-480-long.png')});
   for(const [id,value] of [['wigDensity','1440'],['wigLength','1']]){
    await page.locator('#'+id).evaluate((el,v)=>{
     el.value=v;el.dispatchEvent(new Event('input',{bubbles:true}));
@@ -474,7 +486,7 @@ async function expectCenteredFaceSliders(page,gender){
   await page.locator('#eyeAngle').evaluate(el=>{
    el.value='-20';el.dispatchEvent(new Event('input',{bubbles:true}));
   });
-  await canvas.screenshot({path:path.join(out,'female-eye-angle-minus20-brows.png')});
+  await captureFaceCanvas(page,{path:path.join(out,'female-eye-angle-minus20-brows.png')});
   await page.locator('#resetPreset').click();
   // Browser state must initialize BOTH genders from the exported GLB
   // settings, not merely display the old hard-coded slider defaults.
@@ -518,7 +530,7 @@ async function expectCenteredFaceSliders(page,gender){
      adjustedMale.visiblePartMeshes!==19)
    throw Error('Male jaw/eye/beard sliders do not change actual 3D '+JSON.stringify(adjustedMale));
   await page.locator('#front').click();
-  await canvas.screenshot({path:path.join(out,'male-v9-beard-high-jaw.png')});
+  await captureFaceCanvas(page,{path:path.join(out,'male-v9-beard-high-jaw.png')});
   // The modified male 3D beard/jaw must survive independent GLB export.
   {
    const next=page.waitForEvent('download',{timeout:45000});
@@ -540,7 +552,7 @@ async function expectCenteredFaceSliders(page,gender){
      Math.abs(maleQA.male.detailedParts.eyeScale-
       maleQA.female.detailedParts.eyeScale)>1e-8)
    throw Error('Male must match the saved female eye scale without any cosmetics');
-  await canvas.screenshot({path:path.join(out,'male-v11-library-no-makeup.png')});
+  await captureFaceCanvas(page,{path:path.join(out,'male-v11-library-no-makeup.png')});
   // The NEW right half of the female and male nose/chin sliders must
   // rebuild real geometry, then reset to exactly the saved center.
   await page.locator('#maleJawSharpness').evaluate(el=>{
@@ -561,7 +573,7 @@ async function expectCenteredFaceSliders(page,gender){
      high.maleControls.noseBridgeSharpness!==4.5||
      high.male.sourceGeometryIndependent!==true)
    throw Error('Extended right half did not modify independent male mesh');
-  await canvas.screenshot({path:path.join(out,'male-v14-beyond-saved-standard.png')});
+  await captureFaceCanvas(page,{path:path.join(out,'male-v14-beyond-saved-standard.png')});
   await page.locator('#resetMalePreset').click();
   await expectCenteredFaceSliders(page,'male');
 
@@ -632,7 +644,7 @@ async function expectCenteredFaceSliders(page,gender){
    if(!Object.values(onlyHair).every(Boolean))
     throw Error('Hair-only transparency did not keep the wig visible '+
      JSON.stringify(onlyHair));
-   await hero.locator('#bodyCanvas').screenshot({
+   await captureBodyCanvas(hero,{
     path:path.join(out,'heroine-v27-hair-only-transparent-body.png')});
    await hero.locator('#hairOnly').click();
    const restored=await hero.evaluate(()=>{
@@ -723,7 +735,7 @@ async function expectCenteredFaceSliders(page,gender){
    if(visibleBase.shown<.1||!visibleBase.ui)
     throw Error('Transparent wig-base inspection toggle failed');
    await hero.locator('#crown').click();
-   await hero.locator('#bodyCanvas').screenshot({
+   await captureBodyCanvas(hero,{
     path:path.join(out,'heroine-v26-visible-wig-base-crown.png')
    });
    await hero.locator('#toggleWigBase').click();
@@ -836,18 +848,18 @@ async function expectCenteredFaceSliders(page,gender){
       zoomBefore.mode!==zoomAfter.mode||
       zoomBefore.zoom!==zoomAfter.zoom)
     throw Error('Face slider changed view or zoom '+JSON.stringify(zoomAfter));
-   await hero.locator('#bodyCanvas').screenshot({
+   await captureBodyCanvas(hero,{
     path:path.join(out,'heroine-v23-preserved-slider-zoom.png')});
    const c=hero.locator('#bodyCanvas');
-   await c.screenshot({path:path.join(out,'heroine-v19-front-body.png')});
+   await captureBodyCanvas(hero,{path:path.join(out,'heroine-v19-front-body.png')});
    await hero.locator('#portrait').click();
-   await c.screenshot({path:path.join(out,'heroine-v19-round-eyes-closeup.png')});
+   await captureBodyCanvas(hero,{path:path.join(out,'heroine-v19-round-eyes-closeup.png')});
    // Isolate eye geometry from wig strands and verify the actual face
    // remains visible when the head decoration is hidden.
    await hero.locator('#toggleWig').click();
-   await c.screenshot({path:path.join(out,'heroine-v19-eyes-no-hair.png')});
+   await captureBodyCanvas(hero,{path:path.join(out,'heroine-v19-eyes-no-hair.png')});
    await hero.locator('#toggleWig').click();
-   await hero.screenshot({path:path.join(out,'heroine-v19-art-versus-3d.png')});
+   await captureBrowserPage(hero,{path:path.join(out,'heroine-v19-art-versus-3d.png')});
    await hero.locator('#side').click();
    await captureChromiumScreenshot(hero,path.join(out,'heroine-v19-hair-body-side.png'),{selector:'#bodyCanvas'});
    await captureChromiumScreenshot(hero,path.join(out,'heroine-v22-thicker-shoulder-hair-side.png'),{selector:'#bodyCanvas'});
@@ -940,7 +952,7 @@ async function expectCenteredFaceSliders(page,gender){
       selectedMale.wigReport?.v33WigVolumeProfile!=='lifted')
     throw Error('v32 male selected face or static 4-layer wig missing');
    if(modernErrors.length)throw Error('v32 face browser exceptions '+modernErrors.join(';'));
-   await modern.screenshot({path:path.join(out,'v32-male-ten-parts.png')});
+   await captureBrowserPage(modern,{path:path.join(out,'v32-male-ten-parts.png')});
    await modern.close();
   }
   {
@@ -986,10 +998,10 @@ async function expectCenteredFaceSliders(page,gender){
      JSON.stringify(outfit.v36RealBattleCostume));
    await modern.locator('#full').click();
    await modern.locator('#front').click();
-   await modern.locator('#bodyCanvas').screenshot({
+   await captureBodyCanvas(modern,{
     path:path.join(out,'v41-heroine-anatomical-legs-front.png')});
    await modern.locator('#side').click();
-   await modern.locator('#bodyCanvas').screenshot({
+   await captureBodyCanvas(modern,{
     path:path.join(out,'v41-heroine-anatomical-legs-side.png')});
    await modern.locator('#heroActionButtons [data-command="通常斬り"]').click();
    await modern.waitForFunction(()=>window.__heroineBodyQA?.()
@@ -997,7 +1009,7 @@ async function expectCenteredFaceSliders(page,gender){
      null,{timeout:30000});
    await modern.waitForFunction(()=>window.__heroineBodyQA?.()
      .v36RealBattleCostume?.vfx?.triggered>=1,null,{timeout:10000});
-   await modern.locator('#bodyCanvas').screenshot({
+   await captureBodyCanvas(modern,{
     path:path.join(out,'v41-heroine-sword-actual-slice-vfx.png')});
    await modern.locator('#heroActionButtons [data-command="防御"]').click();
    await modern.waitForFunction(()=>window.__heroineBodyQA?.()
