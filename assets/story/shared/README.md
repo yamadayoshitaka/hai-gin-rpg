@@ -1,5 +1,5 @@
-# Shared outcome CG assets
+# Shared outcome CGs
 
-`shared-defeat-01.webp` is an original text-free native 1664×936 WebP showing a defeated army retreat. It has no named protagonist and may be reused for male/female and all stages. It is **not** a formally P0-approved artwork.
+The two original non-character defeat illustrations are separate 16:9 WebP frames cut without upscaling from one original wide battlefield composition: frame 1 is the full retreat landscape (1664×936), and frame 2 is a materially different close-up of abandoned arms and banners (960×540). Both contain no protagonist and no embedded text, so they may be shared by all stages and genders.
 
-The second universal defeat image and the two game-over images are still missing. Never claim all shared outcomes are complete or reuse victory art for defeat.
+Game-over visuals remain a different outcome and must not use these defeat frames. Neither defeat image has formal P0 character-art approval.
