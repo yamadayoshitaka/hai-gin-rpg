@@ -1,0 +1,93 @@
+/**
+ * m048 abyssal sea serpent - independent axial anatomy prototype.
+ * +X headward, Y dorsal, Z lateral. NOT an approved game asset.
+ * No shared humanoid/leviathan geometry, no donor asset dependencies.
+ */
+export function buildSeaSerpentAnatomicalSource(THREE,{rings=112,sides=16}={}){
+ if(!THREE?.BufferGeometry||rings<32||sides<8)throw Error('Invalid THREE or topology');
+ const root=new THREE.Group();root.name='m048-sea-serpent-anatomical-source';
+ const skin=new THREE.MeshStandardMaterial({color:0x174c57,roughness:.58,metalness:.04,side:THREE.DoubleSide});
+ const ventral=new THREE.MeshStandardMaterial({color:0x9cae9a,roughness:.79,metalness:0,side:THREE.DoubleSide});
+ const eyeMat=new THREE.MeshPhysicalMaterial({color:0xc7d79a,roughness:.17,clearcoat:.85});
+ const pupil=new THREE.MeshStandardMaterial({color:0x071014,roughness:.12});
+ const spineMat=new THREE.MeshStandardMaterial({color:0x356f72,roughness:.64,side:THREE.DoubleSide});
+ const segments=[],joints=[];
+ const radius=t=>.09+.57*Math.pow(Math.sin(Math.PI*Math.min(.999,t)),.7)+.17*Math.exp(-Math.pow((t-.79)/.11,2));
+ const center=t=>new THREE.Vector3(-7.8+15.6*t,.28*Math.sin(t*8.4),.34*Math.sin(t*9.2));
+ const verts=[],uv=[],idx=[],ventralIdx=[];
+ for(let i=0;i<=rings;i++){
+  const t=i/rings,c=center(t),ahead=center(Math.min(1,t+.001)),behind=center(Math.max(0,t-.001));
+  const tangent=ahead.sub(behind).normalize();
+  const lateral=new THREE.Vector3(0,0,1),up=new THREE.Vector3().crossVectors(lateral,tangent).normalize();
+  const transverse=new THREE.Vector3().crossVectors(tangent,up).normalize();
+  const r=radius(t);
+  for(let j=0;j<=sides;j++){
+   const a=j/sides*Math.PI*2;
+   const p=c.clone().addScaledVector(up,Math.cos(a)*r*.78).addScaledVector(transverse,Math.sin(a)*r);
+   verts.push(p.x,p.y,p.z);uv.push(t*7,j/sides);
+  }
+ }
+ for(let i=0;i<rings;i++)for(let j=0;j<sides;j++){
+  const a=i*(sides+1)+j,b=a+sides+1;
+  idx.push(a,b,a+1,b,b+1,a+1);
+  if(Math.cos((j+.5)/sides*Math.PI*2)<-.40)ventralIdx.push(a,b,a+1,b,b+1,a+1);
+ }
+ const geometry=new THREE.BufferGeometry();
+ geometry.setAttribute('position',new THREE.Float32BufferAttribute(verts,3));
+ geometry.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
+ geometry.setIndex(idx);geometry.computeVertexNormals();
+ const body=new THREE.Mesh(geometry,skin);body.name='continuous-axial-trunk';root.add(body);
+ const bellyGeo=geometry.clone();bellyGeo.setIndex(ventralIdx);
+ const bellyMesh=new THREE.Mesh(bellyGeo,ventral);bellyMesh.name='ventral-keel-scales';bellyMesh.scale.set(1,1.012,1.012);root.add(bellyMesh);
+ const head=new THREE.Group();head.name='skull-and-hinged-mandible';head.position.copy(center(.992));root.add(head);
+ const ellipsoid=(parent,name,mat,x,y,z,sx,sy,sz)=>{
+  const m=new THREE.Mesh(new THREE.SphereGeometry(1,24,16),mat);m.name=name;
+  m.position.set(x,y,z);m.scale.set(sx,sy,sz);parent.add(m);return m;
+ };
+ ellipsoid(head,'flattened-serpentine-cranium',skin,.35,0,0,.72,.33,.51);
+ ellipsoid(head,'elongated-maxilla',skin,1.04,-.12,0,.76,.17,.37);
+ const jaw=new THREE.Group();jaw.position.set(.26,-.27,0);head.add(jaw);
+ ellipsoid(jaw,'mobile-dentary',ventral,.78,-.06,0,.93,.12,.36);
+ for(const side of [-1,1]){
+  ellipsoid(head,'supraorbital-brow-'+side,skin,.25,.21,side*.38,.28,.18,.20);
+  ellipsoid(head,'eye-'+side,eyeMat,.37,.15,side*.49,.14,.13,.065);
+  ellipsoid(head,'slit-pupil-'+side,pupil,.41,.15,side*.55,.038,.10,.018);
+  ellipsoid(head,'nostril-'+side,pupil,1.56,-.06,side*.20,.045,.025,.03);
+  for(let k=0;k<11;k++){
+   const tooth=new THREE.Mesh(new THREE.ConeGeometry(.025,.12,6),ventral);
+   tooth.position.set(.55+k*.11,-.24,side*(.27-.04*k/11));tooth.rotation.z=Math.PI;
+   tooth.name='recurved-maxillary-fang-'+side+'-'+k;head.add(tooth);
+  }
+ }
+ // Distinct webbed dorsal crest grows from axial body, with independently shaped finlets.
+ for(let k=0;k<18;k++){
+  const t=.12+k*.042,c=center(t),r=radius(t),h=.18+.29*Math.sin(Math.PI*k/18);
+  const points=[c.x-.15,c.y+r*.78,c.z,c.x-.30,c.y+r*.78+h,c.z,
+    c.x+.09,c.y+r*.78+h*.65,c.z,c.x+.20,c.y+r*.78,c.z];
+  const g=new THREE.BufferGeometry();
+  g.setAttribute('position',new THREE.Float32BufferAttribute(points,3));
+  g.setIndex([0,1,2,0,2,3]);g.computeVertexNormals();
+  const fin=new THREE.Mesh(g,spineMat);fin.name='axial-crest-finlet-'+k;root.add(fin);
+ }
+ // Axial undulation uses actual per-ring vertex deformation, not whole-object rotation.
+ const original=Float32Array.from(geometry.getAttribute('position').array);
+ const bellyOriginal=Float32Array.from(bellyGeo.getAttribute('position').array);
+ function deform(mesh,base,seconds){
+  const a=mesh.geometry.getAttribute('position');
+  for(let i=0;i<=rings;i++){
+   const t=i/rings,offset=.22*(1-t)*Math.sin(seconds*2.2-t*13);
+   for(let j=0;j<=sides;j++){
+    const n=3*(i*(sides+1)+j);
+    a.array[n]=base[n];a.array[n+1]=base[n+1];a.array[n+2]=base[n+2]+offset;
+   }
+  }
+  a.needsUpdate=true;mesh.geometry.computeVertexNormals();
+ }
+ root.userData={creatureId:'m048',source:'original-anatomical-prototype',certified:false,
+  anatomicalParts:['continuous-axial-trunk','ventral-keel-scales','flattened-serpentine-cranium','mobile-dentary','axial-crest-finlets'],
+  update(seconds){deform(body,original,seconds);deform(bellyMesh,bellyOriginal,seconds);
+   head.position.copy(center(.992));head.position.z+=.22*.008*Math.sin(seconds*2.2-12.9);
+   head.rotation.y=.08*Math.sin(seconds*2.2);jaw.rotation.z=-.06-.16*(.5+.5*Math.sin(seconds*.8));
+  }};
+ return root;
+}
