@@ -53,7 +53,7 @@ concurrency:
 jobs:
   static-contracts:
     if: github.event_name != 'issues' || (startsWith(github.event.issue.title, '[world-quality]') && github.event.issue.user.login == github.repository_owner)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 9
     steps:
       - uses: actions/checkout@v4
@@ -73,7 +73,7 @@ jobs:
   generate-and-regress-one-batch:
     if: github.event_name != 'pull_request'
     needs: static-contracts
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 50
     env:
       REVIEW_BRANCH: world/photoreal-regression-review
