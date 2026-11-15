@@ -21,6 +21,28 @@ const smooth=(a,b,v)=>{
  * It cannot change cheek edges, jaw width or the outer silhouette.
  * Exported for regression tests against real head vertices.
  */
+/** v65: low-amplitude nasal cartilage shaping on the ACTUAL source face.
+ * This deliberately vanishes before the outer cheek boundary and cannot
+ * create a detached nostril blob or alter the ear / jaw silhouette. */
+export function v65NasalCartilageDelta({xn,yn,zn,depth,height=0,controls=FEMALE_V7_DEFAULTS}={}){
+ const ax=Math.abs(xn),front=smooth(.30,.68,zn);
+ if(ax>=.28||front===0)return {dy:0,dz:0,alar:0,tip:0,columella:0};
+ const cutoff=1-smooth(.22,.28,ax);
+ const alar=bell(ax,.150,.058)*bell(yn,.544,.034)*front*cutoff;
+ const tip=bell(xn,0,.085)*bell(yn,.564,.038)*front*cutoff;
+ const columella=bell(xn,0,.052)*bell(yn,.523,.022)*front*cutoff;
+ const sulcus=bell(ax,.109,.033)*bell(yn,.537,.025)*front*cutoff;
+ const lift=THREE.MathUtils.clamp(Number(controls?.noseTipLift)||0,-2,2);
+ const nostril=THREE.MathUtils.clamp(Number(controls?.nostrilCover)||0,0,4);
+ return {
+  dy:height*(.00115*tip+.0009*alar-.00085*columella+
+   .00048*lift*tip-.00018*nostril*alar),
+  dz:depth*(.0038*alar+.0022*tip+.00135*columella-.0017*sulcus+
+   .00046*lift*tip),
+  alar,tip,columella
+ };
+}
+
 export function femaleInnerFeatureDelta({xn,yn,zn,offsetX,depth,height=0,controls=FEMALE_V7_DEFAULTS}){
  const ax=Math.abs(xn),front=smooth(.30,.68,zn);
  // Exact no-op at and beyond the facial-feature boundary, including
@@ -38,14 +60,15 @@ export function femaleInnerFeatureDelta({xn,yn,zn,offsetX,depth,height=0,control
  const tipLift=central*bell(yn,.566,.036);
  const rimMask=bell(ax,.18,.068)*bell(yn,.530,.026)*front;
  const bridgeRidge=bell(ax,0,.092)*bell(yn,.653,.098)*front;
+ const cartilage=v65NasalCartilageDelta({xn,yn,zn,depth,height,controls});
  return {
   dx:-offsetX*(.35*noseSupport+.29*mouthSupport),
   dy:height*(.020*controls.noseTipLift*tipLift
     -.012*central*bell(yn,.572,.018)
-    -.009*controls.nostrilCover*rimMask),
+    -.009*controls.nostrilCover*rimMask)+cartilage.dy,
   dz:depth*(.023*bridgeSupport+.014*tipSupport-.016*mouthSupport
    +.020*controls.noseBridgeSharpness*bridgeRidge
-   +.004*controls.nostrilCover*rimMask+.004*tipLift),
+   +.004*controls.nostrilCover*rimMask+.004*tipLift)+cartilage.dz,
   noseSupport,mouthSupport
  };
 }
