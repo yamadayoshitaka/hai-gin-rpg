@@ -9,7 +9,9 @@
 import {MONSTER_CATALOG,MONSTER_BY_ID} from './monster-catalog.js';
 import {HUMAN_MONSTER_IDS} from './monster-character-cosplay-manifest.js';
 import {MONSTER_SUMMON_ENTRIES} from './monster-summon-registry.js';
-import {REAL_CREATURE_MESH_SOURCES} from './creature-real-source-catalog.js';
+// Keep the manifest pure-data: loading a planning table must not fetch a
+// Three.js renderer or third-party 3D assets.
+const VERIFIED_CATALOG_KEYS=new Set(['r-wolf','r-tiger','r-jaguar','r-eagle','r-crocodile']);
 
 export const RECONSTRUCTION_PLAN_SCHEMA='hai-gin/creature-reconstruction-plan/v1';
 export const MESH_STAGE=Object.freeze({
@@ -112,7 +114,7 @@ const shared=monster=>{
   modelSelectable:!humanoid&&!protectedModel,
   baselineRequired:true,
   originalPreserved:true,
-  sourceRigValidated:monster.id==='m001'?false:false,
+  sourceRigValidated:false,
   rebuiltGLBComplete:false,
   kpiPass:false
  };
@@ -192,7 +194,7 @@ export function validateReconstructionPlan(){
   if(!x.originalPreserved||x.kpiPass||x.rebuiltGLBComplete)
    throw Error('Unverified reconstruction declared complete: '+x.id);
   for(const donor of [...x.candidateSources,...x.anatomyReferences])
-   if(!REAL_CREATURE_MESH_SOURCES[donor])throw Error('Unknown 3D donor: '+donor);
+   if(!VERIFIED_CATALOG_KEYS.has(donor))throw Error('Unknown 3D donor: '+donor);
   if(x.stage==='protected'&&x.canModify)throw Error('Protected source modified');
   if(x.kind==='summon'&&!byMonster[x.monsterId])
    throw Error('Summon lacking canonical parent');
