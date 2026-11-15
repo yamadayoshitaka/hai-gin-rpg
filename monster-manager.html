@@ -363,8 +363,12 @@ function refreshGeometry(){
   ' / 写真材質 '+(meshStats.photoSurfaces.join('・')||'未割当');
 }
 function focusCamera(){
- controls.minPolarAngle=(HUMAN_MONSTER_IDS.includes(selected)||
-   !!model?.userData?.beastfolkSource)?HUMAN_INSPECT_MIN_POLAR:0;
+ controls.minPolarAngle=HUMAN_MONSTER_IDS.includes(selected)?
+   HUMAN_INSPECT_MIN_POLAR:0;
+ // Keep the existing 16-human protection contract unchanged, while
+ // applying the same top-down scalp limit to the optional wolfman preview.
+ if(model?.userData?.beastfolkSource)
+  controls.minPolarAngle=HUMAN_INSPECT_MIN_POLAR;
  const bounds=new THREE.Box3().setFromObject(model);
  const center=bounds.getCenter(new THREE.Vector3()),size=bounds.getSize(new THREE.Vector3());
  controls.target.set(center.x,Math.max(.7,center.y),center.z);
