@@ -124,6 +124,59 @@ function taperedLock(label,points,radius,material){
  mesh.name=label;mesh.userData.styledHairGeometry=true;
  mesh.userData.v64TaperedLock=true;return mesh;
 }
+/** v65: forty-eight sub-lock fibres in ONE indexed draw mesh.
+ * No individual tube draw calls; the real tied-root node owns all fibres.
+ * Fibres emerge INSIDE the tie, taper into the end and share 3D geometry. */
+export function makePonytailMicrofibers(origin,d,side=1,half=false,color=0x80604e){
+ const count=48,steps=18,sides=4,vertices=[],indices=[],colors=[];
+ const base=new THREE.Color(color);
+ const length=half?.39:.55;
+ for(let strand=0;strand<count;strand++){
+  const az=strand*Math.PI*(3-Math.sqrt(5));
+  const ring=(.003+Math.sqrt((strand+.5)/count)*.020)*d.x;
+  const offset=vertices.length/3;
+  for(let i=0;i<=steps;i++){
+   const t=i/steps,flow=side===0?0:side;
+   const center=origin.clone().add(V(
+    flow*d.x*(.026*t+.059*t*t)+ring*Math.cos(az)*(1-.45*t)+
+      d.x*.006*Math.sin(t*5+strand*.71)*t*t,
+    -d.y*length*(.035*t+.965*t*t),
+    -d.z*.015*t+ring*Math.sin(az)*(1-.48*t)+
+      d.z*.006*Math.sin(t*7+strand*1.09)*t*t
+   ));
+   const width=d.x*.00225*(1-.89*Math.pow(t,3));
+   const tone=.84+.11*(.5+.5*Math.sin(strand*2.39996))+.045*t;
+   for(let k=0;k<sides;k++){
+    const theta=k/sides*Math.PI*2;
+    const v=center.clone().add(V(
+     Math.cos(theta)*width,0,Math.sin(theta)*width));
+    vertices.push(v.x,v.y,v.z);
+    colors.push(base.r*tone,base.g*tone,base.b*tone);
+   }
+  }
+  for(let i=0;i<steps;i++)for(let j=0;j<sides;j++){
+   const v=offset+i*sides+j,n=offset+i*sides+(j+1)%sides;
+   const w=v+sides,m=n+sides;
+   indices.push(v,w,n,n,w,m);
+  }
+ }
+ const geometry=new THREE.BufferGeometry();
+ geometry.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));
+ geometry.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));
+ geometry.setIndex(indices);geometry.computeVertexNormals();geometry.computeBoundingSphere();
+ const material=new THREE.MeshStandardMaterial({
+  color:0xffffff,vertexColors:true,roughness:.68,metalness:0,
+  side:THREE.DoubleSide
+ });
+ const fibers=new THREE.Mesh(geometry,material);
+ fibers.name='PONYTAIL_MICROFIBER_BUNDLE_V65';
+ fibers.userData.styledHairGeometry=true;
+ fibers.userData.v65FiberCount=count;
+ fibers.userData.v65DrawMeshCount=1;
+ fibers.userData.v65RootAttached=true;
+ fibers.userData.v65StaticGroom=true;
+ return fibers;
+}
 function ponytail(box,material,side=1,half=false,scalpCandidates=[]){
  const d=box.getSize(new THREE.Vector3()),c=box.getCenter(new THREE.Vector3());
  const resolved=resolveTiedHairScalpAnchor(box,side,scalpCandidates);
@@ -150,6 +203,9 @@ function ponytail(box,material,side=1,half=false,scalpCandidates=[]){
    [source.clone(),middle,tip],d.x*.010,material));
  }
  const length=half?.39:.55;
+ // High-frequency cuticle detail is batched in one mesh, rather than 48
+ // separate meshes that would degrade Android draw-call performance.
+ nodes.push(makePonytailMicrofibers(origin,d,side,half,material.color));
  for(let k=0;k<14;k++){
   const angle=(k/14)*Math.PI*2;
   const radius=d.x*(.020+.005*Math.sin(k*2.3));
@@ -167,7 +223,7 @@ function ponytail(box,material,side=1,half=false,scalpCandidates=[]){
     -d.y*length*(.97+.06*Math.sin(k*2.4)),-d.z*.008))
   ];
   nodes.push(taperedLock('PONYTAIL_FALLING_LOCK_'+k,pts,
-   d.x*.0135,fiberMaterial(material.color,.93+(k%3)*.027)));
+   d.x*.0120,fiberMaterial(material.color,.93+(k%3)*.027)));
  }
  nodes.forEach(m=>{m.userData.v64ScalpAnchored=resolved.source==='real-scalp-vertex';});
  return nodes;
