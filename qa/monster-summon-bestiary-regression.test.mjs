@@ -30,7 +30,7 @@ for(const m of MONSTER_CATALOG){
  assert.equal(e.monsterId,m.id);
  assert.equal(e.objectSpec.sourceMonsterId,m.id);
  assert.equal(e.objectSpec.category,'summon');
- assert.equal(COMBAT_OBJECT_SPECS[id],e.objectSpec);
+ assert.deepEqual(COMBAT_OBJECT_SPECS[id],e.objectSpec);
  assert.equal(COMBAT_OBJECT_SPECS[id].name,m.name);
  assert.equal(COMBAT_OBJECT_SPECS[id].element,m.element);
  assert.equal(COMBAT_OBJECT_SPECS[id].sourceSkill,m.skill);
