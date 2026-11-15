@@ -1,6 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import vm from 'node:vm';
 import {MARKER,parseRequest} from '../scripts/manual-hourly-batch-dispatch.mjs';
 function issue(category,target='',instruction='Quality improvement',max=1){
  return {title:'[hai-gin-batch] '+category,user:{login:'yamadayoshitaka'},body:MARKER+'\n```json\n'+JSON.stringify({category,target,instruction,max})+'\n```'};
@@ -36,4 +37,7 @@ test('dashboard always shows exactly four task groups with existing previews',()
  assert(html.includes('次の手動指示'));
  assert(html.includes('issues/new?'));
  assert(html.includes('daily')===false);
+ const script=html.match(/<script>([\\s\\S]*?)<\\/script>/)?.[1];
+ assert(script,'Dashboard JavaScript must exist');
+ assert.doesNotThrow(()=>new vm.Script(script),'Inline batch control JavaScript must parse');
 });
