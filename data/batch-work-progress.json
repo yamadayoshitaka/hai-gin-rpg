@@ -14,13 +14,13 @@
   "groups": {
     "human": {
       "source": "ChatGPT 定期タスクの実行結果",
-      "lastRunAt": "2026-11-15T19:03:19Z",
-      "subject": "Issue #431 鎧下端リムの法線反転修正・全人物品質回帰は継続",
-      "summary": "humanスイッチON。PR #418の既存生成器から鎧上端と下端で同じ三角面向きが使われていた問題を修正し、下端リムの面向きを反転。実ソースcommit d835229、Draft PR #451、チェックポイント保存。静的条件4件成立。ただしNode/ブラウザWebGL/Androidと全人物ID走査は未実施。実描画品質は未承認。",
+      "lastRunAt": "2026-11-15T19:55:48Z",
+      "subject": "全人物一括品質回帰未完了・鎧PBR鋼材微細凹凸の実コード修正",
+      "summary": "humanスイッチON。前回PR #451とIssue #431、最新手動Issue #438を引継ぎ。実ゲーム用src/outfit-maintenance-model.jsで鋼材アルベド補正後も元の写真鋼材テクスチャをbumpMapに使う修正を専用ブランチにコミット2e47b18、Draft PR #456作成。静的4条件確認。全人物ID列挙、対象別再生成、Node/ブラウザ/Android/WebGL実描画比較は未実施。品質合格・公開は未承認。手動指示未反映（背中異物の実修正未達）。",
       "status": "in_review",
       "carryover": true,
-      "issueNumber": 431,
-      "nextAction": "全人物プリセットの正本IDを列挙し全件走査。PR #451で鎧の上下法線をNode/Three.jsとWebGL正面・背面・上面で検証、男女job01/job05の衣装比較、顔髪表情の共通生成器を追加修正。CIと実描画合格までマージ禁止。",
+      "issueNumber": 438,
+      "nextAction": "PR #456のWebGL鋼材材質を正面・背面・左右・頭頂で実描画確認し、Issue #438の背中異物と#431の鎧後面を共通生成器で根本修正。全人物IDを正本から列挙し全件走査、男女・全衣装・22表情・4体型・髪型の回帰QAを実施。CI/描画承認までmainマージ禁止。",
       "steps": {
         "launch": "done",
         "code": "done",
@@ -33,19 +33,15 @@
       "evidence": [
         {
           "label": "実コード変更コミット",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/d83522926ed49dac1fce2c71052a7f05e114a301"
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/2e47b18bc7e728fa2ee89cf357bb6709f320abf7"
         },
         {
-          "label": "Draft PR #451",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/451"
+          "label": "Draft PR #456",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/456"
         },
         {
-          "label": "チェックポイント保存コミット",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/ed55a87c26d45cc0f4e6289ce3d04a1d9631f79a"
-        },
-        {
-          "label": "未完了指示 Issue #431",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/issues/431"
+          "label": "未完了手動Issue #438",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/issues/438"
         }
       ]
     },
