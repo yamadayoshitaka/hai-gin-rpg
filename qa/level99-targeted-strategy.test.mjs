@@ -5,37 +5,47 @@ import {createNewGame} from '../src/game-core-flow.js';
 import {CAMPAIGN_STAGE_BY_ID} from '../src/campaign-stage-plan.js';
 import {makeCoreBattleRequest} from '../src/core-battle-bridge.js';
 import {MassBattleGridSimulation} from '../src/mass-battle-grid-sim.js';
+import {FORMATION_ROLES,ROLE_JOBS} from '../src/sortie-formation-logic.js';
 import {ensureSortiePlan,sortieSquadCap,unlockedSortieFormations,setSortieFormation,
  sortieFormationBuff,setSortieDivisions,sortieTeams,sortieTeamSquads,
  SORTIE_FORMATIONS,sortieLevel} from '../src/three-team-sortie.js';
+
 const stage=CAMPAIGN_STAGE_BY_ID['c01-s02'],game=createNewGame('99級作戦');
+game.campaign.squads=FORMATION_ROLES.constellation.map((role,i)=>({
+ id:i+1,job:ROLE_JOBS[role][0],rarity:'N',count:10,commanderId:'player'
+}));
 ensureSortiePlan(game);
 assert.equal(sortieLevel(game),99,'battle preview uses temporary level 99');
 assert.equal(sortieSquadCap(game),16);
 assert.equal(unlockedSortieFormations(game).length,14);
+assert.equal(sortieTeams(game)[0].slots.filter(Boolean).length,4,'standard template always stays four-slot');
 setSortieFormation(game,1,'constellation');
+assert.equal(sortieTeams(game)[0].slots.filter(Boolean).length,16,
+ 'a fully staffed Lv99 formation assigns all 16 preset jobs');
 assert.equal(sortieFormationBuff(game,1).attack,.25);
 assert.equal(sortieFormationBuff(game,1).defense,.22);
-setSortieDivisions(game,1,1,3);
+const principal=sortieTeams(game)[0],leaderSid=String(principal.captainId);
+const firstAssigned=principal.counts[leaderSid];
+assert.ok(firstAssigned>=1,'formation has a captain with living soldiers');
+const split=Math.min(3,firstAssigned);
+setSortieDivisions(game,1,Number(leaderSid),split);
 game.location='map';
 const req=makeCoreBattleRequest(game,stage.id,'preview-99');
 assert.equal(req.sortieLevel,99);
 assert.equal(req.commanders[0].level,99);
-assert.equal(req.units.length,40,'dividing does not duplicate soldiers');
-const divided=req.units.filter(u=>u.sourceSquadId===1);
-assert.equal(new Set(divided.map(u=>u.squadId)).size,3);
-assert.equal(divided.length,30);
+assert.equal(req.units.length,40,'real stage headcount stays forty after splitting');
+const divided=req.units.filter(u=>String(u.sourceSquadId)===leaderSid);
+assert.equal(new Set(divided.map(u=>u.squadId)).size,split);
+assert.equal(divided.length,firstAssigned);
 assert.ok(divided.every(u=>u.formationBuff.attack===.25));
 assert.ok(divided.every(u=>u.armyGroupId===1));
-assert.equal(divided.filter(u=>u.isStrategist).length,1,'only the main retains the protagonist');
-assert.equal(new Set(req.units.filter(u=>u.teamMainLeader).map(u=>u.squadId)).size,1,
- 'a group has precisely one main squad even across several jobs');
-assert.ok(req.units.find(u=>u.isStrategist).teamMainLeader,'the protagonist stays with the main');
+assert.equal(req.units.filter(u=>u.isStrategist).length,1,'only the main retains protagonist');
+assert.equal(new Set(req.units.filter(u=>u.teamMainLeader).map(u=>u.squadId)).size,1);
+assert.ok(req.units.find(u=>u.isStrategist).teamMainLeader);
 assert.equal(Object.values(req.subdivisionMap).filter(row=>row.leaderHeldInMain).length,1);
-assert.equal(Object.keys(req.subdivisionMap).length,4,'3 knight platoons and 1 priest platoon');
-const strong=req.units.find(u=>u.sourceSquadId===1);
-assert.ok(strong.equipmentBuff.attack>=.25,'formation bonus is applied in the authoritative battle request');
-
+assert.equal(Object.keys(req.subdivisionMap).length,16+split-1,
+ 'the entire 16-role template remains directly addressable after splitting');
+assert.ok(req.units.find(u=>String(u.sourceSquadId)===leaderSid).equipmentBuff.attack>=.25);
 const low=createNewGame('初級');
 low.sortieTestLevel=1;
 for(let i=3;i<=19;i++)low.campaign.squads.push({id:i,job:'忍者',rarity:'N',count:2,commanderId:'player'});
