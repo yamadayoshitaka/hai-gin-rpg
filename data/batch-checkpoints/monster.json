@@ -7,7 +7,7 @@
       "sourceFiles": [
         "src/m020-leviathan-anatomical-source.js"
       ],
-      "commitSha": "36ca8657a3505268e3ddc07b769dac2f50679b70",
+      "commitSha": "2a80e3f2dbe78b6fddd6d7eaeb0502db8b7a931a",
       "qa": "unverified"
     }
   ],
@@ -57,9 +57,8 @@
     "m045",
     "m046",
     "m047",
-    "m048",
     "m049",
     "m050"
   ],
-  "nextAction": "Verify new m020 opercular gill grooves from four camera angles in Three/WebGL; connect source to game/master, validate mobile FPS; then m048 independent sea-snake anatomy. Canonical 108-ID audit still pending."
+  "nextAction": "Run node --check and Three.js four-view WebGL render on m020 respiratory chambers; validate anatomical arch position, then integrate game/master and audit all 108 canonical IDs. m048 next."
 }
