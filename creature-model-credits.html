@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>灰銀のレゾナンス｜3Dモデルの著作者・ライセンス</title>
+<style>
+:root{color-scheme:dark;font-family:system-ui,"Noto Sans JP",sans-serif}
+*{box-sizing:border-box}body{background:#081522;color:#eaf3fa;margin:0;padding:18px;line-height:1.7}
+main{max-width:780px;margin:auto}h1{font-size:22px;color:#f7d99b}
+h2{font-size:16px;margin:0}p{font-size:13px;color:#bacbdb}
+article{padding:14px;background:#122a3f;border:1px solid #466d80;border-radius:10px;margin:12px 0}
+a{color:#9ed8f0}dl{font-size:12px;display:grid;grid-template-columns:7em 1fr;gap:6px}
+dt{color:#b6d0df}dd{margin:0;overflow-wrap:anywhere}
+</style></head><body><main>
+<a href="./game.html">← ゲームへ戻る</a>
+<h1>3Dモデルの著作者・ライセンス</h1>
+<p>外部の3Dモデルの著作権はそれぞれの制作者に帰属します。下記は灰銀のレゾナンスで候補または採用モデルとして扱うCC BY 4.0素材です。既存のCC0素材は配布元Quaterniusの利用条件を保持します。</p>
+<div id="credits">読み込み中…</div>
+<p>Wolf animatedのゲーム内変更：原作のテクスチャ・UV・骨格・アニメーションを保持し、狼王用の暗色調整、首毛の装飾、牙、目の発光、傷紋様を追加します。召喚版には色と発光の差分があります。追加要素は灰銀のレゾナンス側の制作物であり、元の作者による承認・推奨を意味しません。</p>
+<p>CC BY 4.0の全文は <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">Creative Commons Attribution 4.0 International</a> を参照してください。</p>
+<script type="module">
+import {REAL_CREATURE_MESH_SOURCES} from './src/creature-real-source-catalog.js';
+const area=document.getElementById('credits');area.replaceChildren();
+for(const [id,m] of Object.entries(REAL_CREATURE_MESH_SOURCES)){
+ const card=document.createElement('article'),h=document.createElement('h2');
+ h.textContent=m.name+' ['+id+']';card.appendChild(h);
+ const dl=document.createElement('dl');
+ for(const [key,value] of [['著作者',m.author],['利用条件',m.license],['原作モデル',m.sourceUrl],['ライセンス本文',m.licenseUrl]]){
+  const dt=document.createElement('dt'),dd=document.createElement('dd');dt.textContent=key;
+  if(String(value).startsWith('https://')){const a=document.createElement('a');a.href=value;a.textContent=value;a.target='_blank';a.rel='noopener noreferrer';dd.appendChild(a);}
+  else dd.textContent=value;
+  dl.append(dt,dd);
+ }
+ card.appendChild(dl);area.appendChild(card);
+}
+</script></main></body></html>
