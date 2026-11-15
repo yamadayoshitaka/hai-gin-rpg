@@ -14,13 +14,13 @@
   "groups": {
     "human": {
       "source": "ChatGPT 定期タスクの実行結果",
-      "lastRunAt": "2026-11-15T19:55:48Z",
-      "subject": "全人物一括品質回帰未完了・鎧PBR鋼材微細凹凸の実コード修正",
-      "summary": "humanスイッチON。前回PR #451とIssue #431、最新手動Issue #438を引継ぎ。実ゲーム用src/outfit-maintenance-model.jsで鋼材アルベド補正後も元の写真鋼材テクスチャをbumpMapに使う修正を専用ブランチにコミット2e47b18、Draft PR #456作成。静的4条件確認。全人物ID列挙、対象別再生成、Node/ブラウザ/Android/WebGL実描画比較は未実施。品質合格・公開は未承認。手動指示未反映（背中異物の実修正未達）。",
+      "lastRunAt": "2026-11-15T21:04:10Z",
+      "subject": "後部胸甲の実メッシュ深度制限WIP・全人物回帰未完了",
+      "summary": "human ON確認。PR #456の実ゲーム用src/outfit-maintenance-model.jsの後部胸甲を実人体表面深度で制限し、前後逆転・板状突出を抑制するコード差分を専用ブランチにコミット594df102。チェックポイント9c720408を保存。WebGL/Node/Android対象別QA未実施、全人物ID列挙と再生成未実施。Issue #438未解決。実写級・公開は未承認。",
       "status": "in_review",
       "carryover": true,
       "issueNumber": 438,
-      "nextAction": "PR #456のWebGL鋼材材質を正面・背面・左右・頭頂で実描画確認し、Issue #438の背中異物と#431の鎧後面を共通生成器で根本修正。全人物IDを正本から列挙し全件走査、男女・全衣装・22表情・4体型・髪型の回帰QAを実施。CI/描画承認までmainマージ禁止。",
+      "nextAction": "PR #456の後部胸甲を男女剣士/盾戦士のWebGL背面・側面で比較し、#438背面異物を根本修正。Node構文/CI確認、全人物ID列挙と再生成・対象別QAを実施。mainマージ禁止。",
       "steps": {
         "launch": "done",
         "code": "done",
@@ -32,15 +32,19 @@
       },
       "evidence": [
         {
-          "label": "実コード変更コミット",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/2e47b18bc7e728fa2ee89cf357bb6709f320abf7"
+          "label": "今回の実ソース修正",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/594df102d49e57757383ce824f77f157067a440d"
         },
         {
           "label": "Draft PR #456",
           "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/456"
         },
         {
-          "label": "未完了手動Issue #438",
+          "label": "WIPチェックポイント",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/9c720408b19fd0831e25dca5d51f7f9bf18c1e37"
+        },
+        {
+          "label": "未完了 Issue #438",
           "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/issues/438"
         }
       ]
