@@ -46,7 +46,7 @@ function render(){
 }
 function show(){
  if(!scenes.length)return;
- const s=scenes[sceneIndex],talk=s.dialogueTurns?.[lineIndex]||s,cut=registeredStoryPanelAsset(s);
+ const s=scenes[sceneIndex],talk=s.dialogueTurns?.[lineIndex]||s,cut=s.sharedArtAsset||registeredStoryPanelAsset(s);
  const img=$('image'),missing=$('missing'),v=++version;
  img.hidden=true;img.removeAttribute('src');missing.hidden=false;
  const stage=CAMPAIGN_STAGE_BY_ID[s.stageId];
