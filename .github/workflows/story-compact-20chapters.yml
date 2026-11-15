@@ -39,6 +39,13 @@ jobs:
         run: node qa/story-compact-20-chapters.test.mjs
       - name: Verify compact CG reuse of 40 existing first-four-stage gender/outcome original assets
         run: node qa/story-compact-art-reuse.test.mjs
+      - name: Build full 200-stage CG reuse/missing queue for next manga batch
+        run: node scripts/build-story-compact-production-queue.mjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: story-compact-200-stage-cg-production-queue
+          path: qa-reports/story-compact-production-queue.json
+          if-no-files-found: error
       - name: Preserve old individual registered artwork and 462-cut review archive
         run: |
           node qa/story-panel-one-at-a-time.test.mjs
