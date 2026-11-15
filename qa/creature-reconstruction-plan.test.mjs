@@ -72,7 +72,8 @@ test('free GLB candidates never replace species-specialized skeletons or CC0 sca
  assert.ok(CREATURE_RECONSTRUCTION_BY_ID.m047.anatomyReferences.includes('s-octopus'));
  assert.ok(CREATURE_RECONSTRUCTION_BY_ID.m019.anatomyReferences.includes('s-salamander'));
  assert.ok(CREATURE_RECONSTRUCTION_BY_ID.m016.anatomyReferences.includes('s-lizard'));
- assert.equal(CREATURE_RECONSTRUCTION_BY_ID.m046.stage,'missing');
+ assert.equal(CREATURE_RECONSTRUCTION_BY_ID.m046.stage,'anatomy');
+ assert.ok(CREATURE_RECONSTRUCTION_BY_ID.m046.anatomyReferences.includes('s-slime-cc0'));
  for(let n=21;n<=25;n++){
   const id='m'+String(n).padStart(3,'0');
   assert.ok(CREATURE_RECONSTRUCTION_BY_ID[id].reusedParts.includes('節'),id);
