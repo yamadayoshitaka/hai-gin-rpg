@@ -173,9 +173,18 @@ export function createDetailedOutfit(job, sex, body, textures, {quality='preview
     // chest. The old centerline-only Z estimate suspended plates at the ribs
     // while cutting into the pectorals when the character turned sideways.
     const band=torsoSamples.filter(([px,py])=>Math.abs(py-y)<H*.069&&Math.abs(px-x)<sx*.20);
-    const eligible=band.length>=9?band:torsoSamples.filter(([,py])=>Math.abs(py-y)<H*.077);
-    const z=eligible.map(p=>p[2]).sort((a,b)=>a-b);
-    return z.length>10?z[Math.floor((z.length-1)*(back?.08:.92))]:mz+(back?-1:1)*sz*.69;
+    // Do not fall back to the entire chest width when an edge/heel-adjacent
+    // slice is sparse. Mixing the far flank with the centre produces sharp
+    // rear-plate spikes and the apparent stone/board behind the swordsman.
+    const nearby=band.length>=9?band:torsoSamples
+      .filter(([px,py])=>Math.abs(py-y)<H*.11&&Math.abs(px-x)<sx*.42)
+      .sort((a,b)=>{
+        const da=Math.pow((a[0]-x)/sx,2)+Math.pow((a[1]-y)/H,2);
+        const db=Math.pow((b[0]-x)/sx,2)+Math.pow((b[1]-y)/H,2);
+        return da-db;
+      }).slice(0,32);
+    const z=nearby.map(p=>p[2]).sort((a,b)=>a-b);
+    return z.length>=9?z[Math.floor((z.length-1)*(back?.08:.92))]:mz+(back?-1:1)*sz*.69;
   }
   // The Superhero face points +Z; decorations must remain against that skin.
   const front=surfaceAt(cy-H*.09)+H*.008;
