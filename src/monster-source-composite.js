@@ -72,6 +72,34 @@ export async function loadSpeciesSourceComposite(spec,registry,{
   const center=bounds.getCenter(new THREE.Vector3());
   if(Math.min(size.x,size.y,size.z)<=0)
    throw Error('Invalid source body bounds');
+  // The imported CC0 animal is the underlying geometry. Reapply the
+  // existing monster's fur/scales/element identity to per-instance cloned
+  // PBR materials while retaining the donor's UVs, albedo/normal maps and
+  // native animation/skeleton. Never tint eyes or transparent wing membranes.
+  let pigmentedMeshes=0;
+  const clonedMaterials=new Map();
+  root.traverse(node=>{
+   if(!node.isMesh||!node.material)return;
+   const sourceName=(node.name||'')+' '+(node.material.name||'');
+   if(/iris|pupil|eyeball|eyes|cornea|teeth|tooth|mouth|wing|feather/i.test(sourceName))
+    return;
+   const tint=material=>{
+    if(!material?.color)return material;
+    if(clonedMaterials.has(material))return clonedMaterials.get(material);
+    const copy=material.clone();
+    copy.color.lerp(new THREE.Color(spec.colors.base),.30);
+    if(Number.isFinite(copy.roughness))copy.roughness=
+     Math.max(spec.family==='insect'?.47:.66,copy.roughness);
+    copy.userData={...copy.userData,
+     speciesSourcePigmentId:spec.id,sourceMaterialUnmodified:true};
+    clonedMaterials.set(material,copy);
+    return copy;
+   };
+   node.material=Array.isArray(node.material)?
+    node.material.map(tint):tint(node.material);
+   node.userData.speciesSourcePigmented=true;
+   pigmentedMeshes++;
+  });
   // Retain the species' existing colors/elements as PBR accessory material
   // instead of discarding its identity when the new animal base is loaded.
   const shell=sourceMaterial(spec,recipe.feature==='collar'?'cloth':'metal');
@@ -118,6 +146,7 @@ export async function loadSpeciesSourceComposite(spec,registry,{
    license:'CC0-1.0',originalSpeciesId:spec.id,
    anatomy:recipe.anatomy,material:'catalog-colors-PBR',
    overlay:piece.name,anchor:target?.name||'source-root',
+   pigmentedMeshes,donorMaterialsPreserved:true,
    visuallyApproved:false,gameReplacementEnabled:false,
    stillStylized:true
   };
