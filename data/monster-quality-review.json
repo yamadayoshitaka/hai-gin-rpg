@@ -1,0 +1,6 @@
+{
+  "schema": "hai-gin/monster-quality-review/v1",
+  "updatedAt": null,
+  "note": "No monster is automatically approved: records are populated only after verified 2D/3D evidence, animations, measured Android FPS and license checks.",
+  "records": {}
+}
