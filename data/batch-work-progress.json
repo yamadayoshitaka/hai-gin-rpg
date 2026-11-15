@@ -47,29 +47,33 @@
     },
     "monster": {
       "source": "ChatGPT 定期タスクの実行結果",
-      "lastRunAt": "2026-11-15T13:04:08Z",
-      "status": "work_incomplete",
+      "lastRunAt": "2026-11-15T14:07:51Z",
+      "subject": "PR #382 鳥類の翼カフを小型化し羽根のシルエット干渉を低減",
+      "summary": "実処理ON。非人間型衣装src/monster-species-wardrobe.jsの鳥類翼カフを[.105,.067,.094]から[.075,.043,.068]へ縮小しPR #382の既存ブランチに実コミット1c756f3c。GitHub再取得で差分の静的確認成功。ただし単体テスト・CI・WebGL画像・Android FPS未実行。PR #385 E2E photoSurfaces/source-composite不整合は引継ぎ未解消。品質未承認・mainマージ/公開なし。",
+      "status": "in_review",
       "carryover": true,
-      "subject": "PR #385 WebGL E2E不整合と非人間型衣装の実画像検証",
-      "summary": "22時台：実処理ON、monster手動Issue該当なし。PR #385のBattle visual E2EでReal browser battle recording失敗を再確認。mainのqa/monster-manager.spec.mjs:171でprocedural固定期待値を確認。実画像未確認のため期待値変更せず。ソース修正・コミット・PR更新・マージ・公開は未実施。",
-      "nextAction": "PR #385のphotoSurfacesとCC0 source-compositeの期待仕様を実WebGL画像と照合し、E2E失敗箇所を修正してQA再実行。Pixel 7相当の龍王3形態・天使・犬GLB・衣装貫通・FPSを検証。保護ファイル・m005/m006・元GLBは変更しない。",
+      "nextAction": "PR #382の衣装単体QAとブラウザ前後左右・翼羽ばたき画像を実行し貫通を比較。PR #385のphotoSurfaces/source-composite E2E不整合を修正して再実行。Pixel 7相当とAndroid FPS確認までマージ・公開禁止。",
       "steps": {
         "launch": "done",
-        "code": "pending",
-        "qa": "failed",
-        "commit": "pending",
-        "pr": "pending",
+        "code": "done",
+        "qa": "pending",
+        "commit": "done",
+        "pr": "done",
         "merge": "pending",
         "deploy": "pending"
       },
       "evidence": [
         {
-          "label": "PR #385 Battle visual E2E失敗",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/43692535840"
+          "label": "翼カフ実修正コミット",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/1c756f3c9fc76c506af35803cae3c9afec4ad48c"
         },
         {
-          "label": "PR #385",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/385"
+          "label": "既存Draft PR #382",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/382"
+        },
+        {
+          "label": "PR #385 E2E失敗",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/43692535840"
         }
       ]
     },
