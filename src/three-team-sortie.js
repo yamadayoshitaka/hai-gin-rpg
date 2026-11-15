@@ -41,7 +41,7 @@ const FORMATION_BASE=Object.freeze({
  balanced:Object.freeze({name:'標準陣形',level:1,attack:.04,defense:.04,mobility:0}),
  support:Object.freeze({name:'後衛陣形',level:1,attack:0,defense:.06,mobility:.04,healing:.1}),
  wall:Object.freeze({name:'防壁陣形',level:5,attack:0,defense:.12,mobility:-.05}),
- spear:Object.freeze({name:'槍衾陣形',level:10,attack:.1,defense:.08,mobility:-.04}),
+ spear:Object.freeze({name:'槍衾陣形',level:7,attack:.1,defense:.08,mobility:-.04}),
  arrow:Object.freeze({name:'弓月陣形',level:15,attack:.1,defense:.04,mobility:.04}),
  wedge:Object.freeze({name:'楔形陣形',level:20,attack:.16,defense:-.04,mobility:.08}),
  pincer:Object.freeze({name:'包囲陣形',level:30,attack:.12,defense:0,mobility:.12}),
@@ -231,7 +231,7 @@ function rebuildNamedFormation(game,teams,team,formation,desired){
  }
  const maxTotal=Math.max(0,sortiePlanningLimit(game)-teams.filter(t=>t!==team)
   .reduce((n,t)=>n+sortieTeamCount(t),0));
- const target=Math.min(currentTotal||Math.min(maxTotal,spec.slots*5),maxTotal,spec.maxTroops,
+ const target=Math.min(Math.max(currentTotal,spec.slots),maxTotal,spec.maxTroops,
   chosen.reduce((n,x)=>n+x.capacity,0));
  const counts={},divisions={},shares=chosen.map(x=>({...x,count:0})),
   rarityUsed={N:0,R:0,SR:0,SSR:0,UR:0};
