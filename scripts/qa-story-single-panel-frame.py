@@ -17,6 +17,8 @@ def inspect(path):
         source.load()
         im = source.convert("RGB")
     w, h = im.size
+    aspect_ok = abs(w * 9 - h * 16) <= max(9, round(h * 16 * .01))
+    dimensions_ok = w >= 800 and h >= 450 and aspect_ok
     pixels = im.load()
     ys = range(max(0, h // 10), max(1, h * 9 // 10), max(1, h // 256))
     xs = range(max(0, w // 10), max(1, w * 9 // 10), max(1, w // 256))
@@ -36,11 +38,13 @@ def inspect(path):
     return {
         "path": str(p),
         "nativePixels": [w, h],
+        "nativeResolutionAndAspectPass": dimensions_ok,
         "possibleVerticalGutterColumns": vertical[:20],
         "possibleHorizontalGutterRows": horizontal[:20],
         "collageOrHardGutterSuspected": bool(vertical or horizontal),
-        "status": "REJECTED_MULTI_PANEL_SUSPECTED"
-        if vertical or horizontal else "RASTER_GUTTER_GATE_PASS_HUMAN_QA_PENDING",
+        "status": ("REJECTED_NATIVE_DIMENSIONS_OR_ASPECT" if not dimensions_ok else
+                   "REJECTED_MULTI_PANEL_SUSPECTED" if vertical or horizontal else
+                   "RASTER_GUTTER_GATE_PASS_HUMAN_QA_PENDING"),
         "humanSemanticAndIdentityQA": "NOT_PERFORMED",
         "automaticallyApproved": False
     }
@@ -52,7 +56,7 @@ def main():
     args = parser.parse_args()
     verdicts = [inspect(name) for name in args.frames]
     print(json.dumps(verdicts, ensure_ascii=False, indent=2))
-    if any(v["collageOrHardGutterSuspected"] for v in verdicts):
+    if any(v["collageOrHardGutterSuspected"] or not v["nativeResolutionAndAspectPass"] for v in verdicts):
         raise SystemExit(1)
 
 
