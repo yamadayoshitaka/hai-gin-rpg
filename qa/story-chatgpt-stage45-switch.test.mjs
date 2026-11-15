@@ -29,7 +29,7 @@ assert.equal(verified,96);
 const importer=fs.readFileSync('scripts/import-story-chapter1-chatgpt-staging.mjs','utf8');
 assert(importer.includes("'c01-s04','c01-s05'"));
 assert(importer.includes("if(!fs.existsSync(abs(imagePath)))throw Error('Real image bytes missing')"));
-assert(importer.includes("if(w<min[0]||h<min[1]||w*9!==h*16)"));
+assert(importer.includes("validChatGPTPanelGeometry(shot.stageId,w,h)"));
 const ui=fs.readFileSync('src/story-chapter1-approval-ui.js','utf8');
 assert(ui.includes("prepared.stageManifest?.qualityReferenceByGender?.[shot.gender]"));
 assert(ui.includes("new File([blob]"));
