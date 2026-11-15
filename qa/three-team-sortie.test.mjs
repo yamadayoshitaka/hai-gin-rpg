@@ -134,7 +134,7 @@ assert.equal(sortieTeams(roster)[0].slots.filter(Boolean).length,5);
 assert.equal(sortieTeams(roster)[1].slots.filter(Boolean).length,0);
 assert.ok(availableSortieOrders(roster,1).includes('explore'),'job-only ninja/thief order');
 setSortieFormation(roster,1,'support');
-assert.ok(availableSortieOrders(roster,1).includes('support'),'fixed support preset auto-assigns compatible jobs');
+assert.deepEqual(availableSortieOrders(roster,1),[],'unavailable second support role prevents unsupported named formation bonuses and orders');
 setSortieFormation(roster,1,'balanced');
 assert.ok(availableSortieOrders(roster,1).includes('explore'),'matching roster restores job orders');
 setSortieFormation(roster,1,'free');
