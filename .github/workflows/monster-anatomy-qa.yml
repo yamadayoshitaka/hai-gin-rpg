@@ -92,6 +92,8 @@ jobs:
           node --check src/creature-real-source-audit.js
           node --test qa/creature-real-source-audit.test.mjs qa/creature-master-studio.test.mjs qa/creature-reconstruction-plan.test.mjs
       - name: Regress all humanoid instances, cloak, hair, skeleton and fitted outfit geometry
+        env:
+          NODE_OPTIONS: '--import=./qa/node-progress-event-polyfill.mjs'
         run: |
           npm run test:humanoid-monster-cosplay
           npm run test:monster-studio-base-intake
@@ -104,7 +106,7 @@ jobs:
           npm run test:monster-source-rebuild
           npm run test:summon-source-hybrid
           npm run test:monster-summon-catalog
-          node --import ./qa/node-progress-event-polyfill.mjs qa/monster-beastfolk-wolf-regression.test.mjs
+          node qa/monster-beastfolk-wolf-regression.test.mjs
           npm run test:forest-spirit-emerald
           node qa/dragonkin-native-scalp-regression.test.mjs
           node qa/female-summon-scalp-cut-regression.test.mjs
