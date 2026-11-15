@@ -55,7 +55,11 @@ const FORMATION_ROLE_CELL_JOBS=(formation,cell)=>{
  return rank>=0?ROLE_JOBS[FORMATION_ROLES[formation]?.[rank]]||null:null;
 };
 export const sortieCellJobs=(game,teamId,cell)=>teamOf(game,teamId)?.formation===FREE_FORMATION?null:FORMATION_ROLE_CELL_JOBS(teamOf(game,teamId)?.formation,cell);
-export const sortieAllowedCells=(game,teamId)=>formationCellsAtLevel(teamOf(game,teamId)?.formation,SORTIE_FORMATION_CELLS,sortieSquadCap(game));
+export const sortieAllowedCells=(game,teamId)=>{
+ const team=teamOf(game,teamId),occupied=team?.slots?.filter(Boolean).length||0;
+ return formationCellsAtLevel(team?.formation,SORTIE_FORMATION_CELLS,
+  Math.min(sortieSquadCap(game),Math.max(4,occupied+1)));
+};
 export const sortieFormationStatus=(game,teamId)=>formationStatus(teamOf(game,teamId),ownSquads(game),SORTIE_FORMATION_CELLS,sortieSquadCap(game));
 export const unlockedSortieFormations=game=>Object.entries(SORTIE_FORMATIONS)
  .filter(([,x])=>sortieLevel(game)>=x.level).map(([id])=>id);
@@ -118,6 +122,8 @@ export function ensureSortiePlan(game){
   const captain=candidates.find(s=>String(s.id)===String(old.captainId))||
    [...candidates].sort((a,b)=>rarityScore(b)-rarityScore(a))[0];
   team.captainId=captain?.id??null;
+  if(team.formation!==FREE_FORMATION&&!formationStatus(team,sources,SORTIE_FORMATION_CELLS,sortieSquadCap(game)).valid)
+   arrangeFormation(team,sources,team.formation,SORTIE_FORMATION_CELLS,sortieSquadCap(game));
   team.initialOrder=ACTIVE_ORDER_IDS.includes(old.initialOrder)?old.initialOrder:'charge';
   team.tactics=Array.isArray(old.tactics)?old.tactics.filter((id,index,arr)=>STRATEGY_METHODS[id]&&arr.indexOf(id)===index).slice(0,16):[];
   return team;
