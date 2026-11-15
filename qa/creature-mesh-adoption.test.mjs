@@ -109,7 +109,7 @@ test('wolf finish keeps source mesh count, UV/material maps and rig, hides only 
  const handle={root};
  const oldGeometry=nodes.map(n=>n.geometry);
  applyGreyFangWolfFinish(handle,{creatureId:'summon_m001'});
- assert.equal(root.userData.greyFangWolfFinish.mode,'shader-only-v2');
+ assert.equal(root.userData.greyFangWolfFinish.mode,'shader-only-v3');
  assert.equal(root.userData.greyFangWolfFinish.addedMeshes,0);
  assert.equal(root.userData.greyFangWolfFinish.hiddenOutline,2);
  assert.equal(nodes.length,4);
@@ -119,8 +119,8 @@ test('wolf finish keeps source mesh count, UV/material maps and rig, hides only 
  assert.equal(nodes[2].visible,false);
  assert.equal(nodes[3].visible,true);
  assert.equal(nodes[0].material.map.id,'source-PBR-map');
- assert.equal(nodes[0].material.color.factor,0.93);
- assert.equal(nodes[3].material.emissive.hex,0x9fd6ee);
+ assert.equal(nodes[0].material.color.factor,0.83);
+ assert.equal(nodes[3].material.emissive.hex,0x8bceef);
  // No added geometry on re-entry or cross-scene repeated updates.
  applyGreyFangWolfFinish(handle,{creatureId:'summon_m001'});
  assert.equal(nodes.length,4);
