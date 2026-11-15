@@ -47,12 +47,12 @@
     },
     "monster": {
       "source": "ChatGPT 定期タスクの実行結果",
-      "lastRunAt": "2026-11-15T19:06:07Z",
-      "subject": "m020胸鰭メッシュの縮退三角形対策・全108体監査は未完了",
-      "summary": "スイッチON。PR #426ブランチで胸鰭膜の弦方向座標が重なる問題を修正し、実レンダリングに影響する頂点座標を変更。実ソースcommit 96a5669。独立数式QAは192三角形中退化0で成功。ただしThree/WebGL/Android、正本108 ID全件監査、実ゲーム・マスター反映は未実施。チェックポイント保存。mainマージ・公開なし。",
+      "lastRunAt": "2026-11-15T20:10:27Z",
+      "subject": "m020頭蓋の左右鰓裂を実メッシュ追加・全108体監査未完了",
+      "summary": "monsterスイッチON。Draft PR #426作業ブランチのm020頭蓋に左右4本ずつの湾曲鰓裂TubeGeometryを追加し実ソースコミット36ca8657を保存。チェックポイント95ba64fを保存。全108体の正本ID監査・Three/WebGL実描画・Android・ゲーム/マスターへの組込みは未実施。今回実造形変更1ID、再生成0、描画QA合格0、ゲーム反映0。品質未承認。",
       "status": "work_incomplete",
       "carryover": true,
-      "nextAction": "正本108 IDマニフェストを特定して全件監査。m020のThree/WebGL前後左右・法線・アニメQAとゲーム/マスター接続を行い、m048海蛇の独立骨格生成へ進む。PR #382/#385 E2Eも継続。",
+      "nextAction": "PR #426のm020鰓裂をThree/WebGLで正面・左右・背面確認し、ゲームとマスターへ試験接続。正本108ID全件監査を実施し、m048海蛇の独立メッシュを追加。保護m005/m006と召喚版、元GLBは変更しない。",
       "steps": {
         "launch": "done",
         "code": "done",
@@ -64,16 +64,16 @@
       },
       "evidence": [
         {
-          "label": "m020胸鰭メッシュ実ソースコミット",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/96a566965cb03c13a1b94aa2559c39f9937ceba2"
+          "label": "m020鰓裂実メッシュコミット",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/36ca8657a3505268e3ddc07b769dac2f50679b70"
         },
         {
           "label": "Draft PR #426",
           "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/426"
         },
         {
-          "label": "チェックポイント更新",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/b5ffd93a9402170c2de23e672a422eadb9a7862c"
+          "label": "チェックポイント",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/95ba64f36347b072fda304e3cfaa26ed914664ea"
         }
       ]
     },
