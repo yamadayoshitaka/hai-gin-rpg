@@ -40,7 +40,7 @@ const calls=[],groups={'1':1,'2':1,'3':3};
 const context={selectedSquadId:'1',orderedSquad:()=>context.selectedSquadId,
  squadCommanderUnavailableReason:()=>'',individualCommanderUnavailableReason:()=>'',canChangeSquadOrder:()=>true,
  commandGroupIds:id=>battleGroupMembers(id,['1','2','3'],groups),
- issueIndividualSquadOrder:(mode,point)=>{calls.push([context.selectedSquadId,mode,point]);return true;},refreshSquadOrderLabel:()=>{}};
+ issueIndividualSquadOrder:(mode,point)=>{calls.push([context.selectedSquadId,mode,point]);return true;},refreshSquadOrderLabel:()=>{},log:()=>{}};
 vm.createContext(context);vm.runInContext(wrapper,context);
 for(const mode of ['charge','defend','hold','retreat']){
  calls.length=0;assert.equal(context.issueSquadOrder(mode),true);

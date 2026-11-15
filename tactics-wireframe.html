@@ -6567,7 +6567,9 @@ function updateSquadTarget(id,point){
 }
 function issueSquadOrder(mode,point=null){
  const id=orderedSquad();if(id==null)return false;
- if(squadCommanderUnavailableReason(id)||!canChangeSquadOrder(id))return false;
+ const unavailable=squadCommanderUnavailableReason(id);
+ if(unavailable){log(unavailable);return false;}
+ if(!canChangeSquadOrder(id))return false;
  const targets=commandGroupIds(id);
  const speaker=targets.find(sid=>!individualCommanderUnavailableReason(sid))||String(id);
  let accepted=false;

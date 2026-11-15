@@ -57,15 +57,15 @@ for(const count of [50,1000]){
 }
 const html=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
 assert.match(html,/openingPlan\.id='openingSquadStrategies'/);
-assert.match(html,/for\(const type of FORMATION_TYPES\)/);
-assert.match(html,/selectedSquadFormations\.set\('0:'\+id,type\)/);
+assert.match(html,/for\(const group of \[1,2,3\]\)/);
+assert.match(html,/armyGroupBySquad\[id\]=group/);
 assert.match(html,/manualJobs\[id\]/);
 assert.match(html,/function openManualJobEditor\(id\)/);
 assert.doesNotMatch(html,/range\.type='range'/,'Job counts use buttons rather than sliders');
 assert.match(html,/refs\.buttons\.querySelectorAll\('button'\)/);
 assert.match(html,/refreshFormationPreview\(\)/);
-assert.match(html,/massWorker\?\.setSquadFormationTypes\(types,team,plan\.assignments,jobs\)/);
-assert.match(html,/applySquadRecomposition\(actors,plan,\{team\}\)/);
+assert.doesNotMatch(html,/massWorker\?\.setSquadFormationTypes\(types,team,plan\.assignments,jobs\)/);
+assert.doesNotMatch(html,/applySquadRecomposition\(actors,plan,\{team\}\)/);
 assert.match(html,/formation:selectedSquadType\(key,team\)/);
 assert.match(html,/開戦前の隊列編成/);
 const moduleCode=html.match(/<script type="module">([\s\S]*?)<\/script>/)?.[1];
@@ -74,4 +74,4 @@ const syntax=spawnSync(process.execPath,['--check','--input-type=module'],{
  input:moduleCode,encoding:'utf8',timeout:15000
 });
 assert.equal(syntax.status,0,syntax.stderr||'Game module must compile without syntax errors');
-console.log('PASS three-type squad selection, real role redistribution, model-safe Worker synchronization and script syntax');
+console.log('PASS legacy formation engine, three-group setup, preserved professions and script syntax');
