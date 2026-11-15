@@ -30,7 +30,7 @@ export function renderThreeTeamPlanner({game,teamId=1,cellIndex=5,view='setup',j
  const capSummary=(quota.total+'/'+quota.capacity+'人 · '+tierSummary);
  const groupButtons='<div class="sortieTeams" role="group" aria-label="班の選択">'+teams.map(t=>{
   const total=sortieTeamCount(t),count=sortieTeamSquads(game,t.id).length;
-  return button('data-sortie-team="'+t.id+'"','<strong>第'+t.id+'班 · '+total+'人</strong><small>'+count+'/'+cap+'隊</small>',t.id===team.id);
+  return button('data-sortie-team="'+t.id+'"','<strong>第'+t.id+'班 · '+total+'人</strong><small>'+count+'/'+(SORTIE_FORMATIONS[t.formation]?.slots||cap)+'隊</small>',t.id===team.id);
  }).join('')+'</div>';
  const back=button('data-sortie-view="setup"','◀ 配置へ戻る');
  const captainChoices=assigned.map(s=>button('data-sortie-captain="'+esc(s.id)+'"',
