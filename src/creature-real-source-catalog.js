@@ -6,6 +6,7 @@
  */
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {loadExternalCreature,prepareExternalGLTF} from './creature-external-runtime.js';
+import {applyGreyFangWolfFinish} from './grey-fang-wolf-finish.js';
 
 export const REAL_CREATURE_MESH_SOURCES=Object.freeze({
  'r-wolf':Object.freeze({
@@ -49,7 +50,7 @@ export const REAL_CREATURE_MESH_SOURCES=Object.freeze({
   caution:'未リグ。ワニ以外の爬虫類へそのまま適用しない'
  })
 });
-export async function loadCreatureMeshSource(sourceId,registry,detail='high'){
+export async function loadCreatureMeshSource(sourceId,registry,detail='high',{creatureId=null}={}){
  const real=REAL_CREATURE_MESH_SOURCES[sourceId];
  if(real){
   const gltf=await new GLTFLoader().loadAsync(real.downloadUrl);
@@ -58,6 +59,8 @@ export async function loadCreatureMeshSource(sourceId,registry,detail='high'){
    author:real.author,license:real.license,licenseUrl:real.licenseUrl,
    sourceUrl:real.sourceUrl,sourceId
   };
+  if(sourceId==='r-wolf'&&['m001','summon_m001','wolf'].includes(creatureId))
+   applyGreyFangWolfFinish(handle,{creatureId});
   return handle;
  }
  const entry=registry?.entries?.[sourceId];
