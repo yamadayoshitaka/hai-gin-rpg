@@ -227,7 +227,9 @@ function shotGenerationPrompt(context){
   'Produce exactly ONE independent original fantasy RPG cinematic story illustration.',
   context.stageId==='c01-s02'?
    'CANVAS: smartphone native source >=768px wide and >=320px high; preserve the original source aspect ratio in the 740px manga viewer; prefer the highest supported original image dimensions; no upscale; save WebP.':
-   'CANVAS: landscape 16:9; native detail at 1536x864 pixels minimum, prefer 2048x1152; save WebP.',
+   ['c01-s03','c01-s04'].includes(context.stageId)?
+    'CANVAS: landscape 16:9; native detail at 800x450 pixels minimum, prefer 1024x576; save WebP, no upscale.':
+    'CANVAS: landscape 16:9; native detail at 1536x864 pixels minimum, prefer 2048x1152; save WebP.',
   'SAFE COMPOSITION: preserve critical faces/hands/objects at least 5% inside every edge.',
   'SHOOT: '+context.shotKey+'. Chapter/stage: '+context.stageName+'.',
   'CANONICAL STAGE SETUP: '+context.stageSetup,
