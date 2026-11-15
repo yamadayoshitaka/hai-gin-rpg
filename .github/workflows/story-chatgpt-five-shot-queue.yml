@@ -1,0 +1,34 @@
+name: ChatGPT Plus five-shot storyboard queue (no API)
+on:
+  push:
+    branches:
+      - feature/chatgpt-five-shot-queue-20261116
+  pull_request:
+    paths:
+      - 'story-chatgpt-five.html'
+      - 'story-chapter1-approval.html'
+      - 'src/story-chatgpt-five-shot-queue.js'
+      - 'qa/story-chatgpt-five-shot-queue.test.mjs'
+      - '.github/workflows/story-chatgpt-five-shot-queue.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validate-manual-five-shot-queue:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check syntax
+        run: |
+          node --check src/story-chatgpt-five-shot-queue.js
+          node --check qa/story-chatgpt-five-shot-queue.test.mjs
+      - name: Validate canonical shot ids, full ChatGPT prompts, gender/outcome, zero paid API
+        run: node qa/story-chatgpt-five-shot-queue.test.mjs
+      - name: Verify existing ChatGPT intake QA, stage4/5 prompts and mobile one-panel viewer
+        run: |
+          node qa/story-chatgpt-stage45-switch.test.mjs
+          node qa/story-panel-one-at-a-time.test.mjs
