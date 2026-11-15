@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import {tuneWorldQualityMaterial} from './world-quality-pbr.js';
+import {addFieldPlants} from './world-field-vegetation.js';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {createCatalogBuildingStructure,renderCatalogBuildingStructure,renderSpiralStairBOM} from './building-structure.js?v=4.6.28';
 
@@ -273,13 +274,9 @@ export function createObjectById(id,{cellSize=2.2}={}){
     box(8.1*c,.3*c,.35*c,0,.15*c,side*4*c,border);
    }
    if(rice)box(7.55*c,.025*c,7.55*c,0,.15*c,0,irrigation);
-   const stalkGeo=new THREE.ConeGeometry((rice?.13:.23)*c,(rice?.7:.5)*c,5);
-   for(let row=0;row<10;row++)for(let col=0;col<10;col++){
-    const plant=new THREE.Mesh(stalkGeo,leaf);
-    plant.position.set((col-4.5)*.73*c,(rice?.55:.45)*c,(row-4.5)*.73*c);
-    plant.rotation.z=((row*17+col*13)%9-4)*.025;
-    root.add(plant);
-   }
+   // Rice has narrow, drooping blades; vegetables have broad, low rosettes.
+   // A single instanced crop field replaces 100 conical meshes/draw calls.
+   addFieldPlants(THREE,root,{species:rice?'rice':'vegetable',cellSize:c,material:leaf});
    root.userData.farmland=true;root.userData.passable=true;
   }
   if(id==='town_bench_001'){
