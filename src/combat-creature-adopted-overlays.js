@@ -6,7 +6,8 @@
  */
 import * as THREE from 'three';
 import {NONHUMAN_EXTRA_SUMMON_IDS,adoptedCreatureMesh} from './creature-mesh-adoption.js';
-import {fetchCreatureRegistry,loadExternalCreature} from './creature-external-runtime.js';
+import {fetchCreatureRegistry} from './creature-external-runtime.js';
+import {loadCreatureMeshSource} from './creature-real-source-catalog.js';
 const eligible=new Set(NONHUMAN_EXTRA_SUMMON_IDS);
 const MAX_REAL_SOURCE_INSTANCES=8;
 export function createAdoptedSpecialSummonRenderer(scene){
@@ -37,13 +38,11 @@ export function createAdoptedSpecialSummonRenderer(scene){
     lastAction:'idle',lastTime:time,error:null,originalHeight:2.4};
    active.set(id,node);
    metrics.requested++;
-   registryRequest??=fetchCreatureRegistry();
+   if(chosen.startsWith('q'))registryRequest??=fetchCreatureRegistry();
+   const registryTask=chosen.startsWith('q')?registryRequest:
+     Promise.resolve({entries:{}});
    const pending=node;
-   registryRequest.then(reg=>{
-    const donor=reg.entries[chosen];
-    if(!donor||!chosen.startsWith('q'))throw Error('Invalid adopted model '+chosen);
-    return loadExternalCreature(donor,'low');
-   }).then(handle=>{
+   registryTask.then(reg=>loadCreatureMeshSource(chosen,reg,'low')).then(handle=>{
     if(disposed||pending.expired||active.get(id)!==pending){
      handle.dispose();return;
     }
