@@ -8,7 +8,7 @@ import {v65ExpressionMuscleDelta,FACE_EXPRESSIONS}
  from '../src/face-expression-animation-v48.js';
 import {makePonytailMicrofibers,makeStyleSpecificHair}
  from '../src/face-wig-ornaments-v49.js';
-import {repairRealCrownScalpHoles} from '../src/face-scalp-wig.js';
+import {repairRealCrownScalpHoles,appendRealCrownUnderlay} from '../src/face-scalp-wig.js';
 
 test('v65: nose cartilage never touches cheeks, eye sockets or rear skull',()=>{
  for(const xn of [-1,-.9,-.4,-.28,.28,.35,.75,1]){
@@ -131,4 +131,31 @@ test('v65: small topological crown hole is repaired from its true scalp boundary
   ...Array.from({length:4},(_,k)=>{
    const j=(k+1)%4;return [outer[k],outer[j],inner[j],outer[k],inner[j],inner[k]].flat();
   }).flat()][i]),'existing donor head triangles must remain untouched');
+});
+
+test('v66: underlay copies real donor top triangles without changing source geometry',()=>{
+ const g=new THREE.BufferGeometry();
+ const positions=[0,.97,0,-.08,.89,-.08,.08,.89,-.08,
+  0,.97,0,.08,.89,-.08,.08,.89,.08,
+  0,.97,0,.08,.89,.08,-.08,.89,.08,
+  0,.97,0,-.08,.89,.08,-.08,.89,-.08];
+ g.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
+ g.computeVertexNormals();
+ const original=g.getAttribute('position').array.slice();
+ const box=new THREE.Box3(new THREE.Vector3(-.5,0,-.5),
+  new THREE.Vector3(.5,1,.5));
+ const counts=[];
+ for(const style of ['natural','flat','full']){
+  const v=[],n=[];
+  const report=appendRealCrownUnderlay(g,box,v,n,style);
+  assert.ok(report.triangles>=4);
+  assert.equal(v.length,n.length);
+  assert.equal(v.length,report.triangles*9);
+  counts.push(report.triangles);
+  for(const number of v)assert.ok(Number.isFinite(number));
+ }
+ assert.equal(new Set(counts).size,1);
+ assert.deepEqual(Array.from(g.getAttribute('position').array),Array.from(original),
+  'real donor head must be untouched');
+ g.dispose();
 });
