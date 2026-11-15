@@ -16,11 +16,12 @@ for(const spec of nonhuman){
  const profile=SPECIES_COSPLAY_WARDROBE[spec.id];
  assert.equal(profile.baseFamily,spec.family);
  assert.equal(profile.source,'native-species-anatomy');
- for(const detail of (['m001','m006','m011','m016','m021','m026',
-   'm046','m047','m048','m050'].includes(spec.id)?['low','high']:['low'])){
+ for(const detail of ['low','high']){
   const model=createMonsterModel(spec,{detail});
-  assert.ok(model.userData.nonhumanOutfit,'Missing costume: '+spec.id);
+  assert.ok(model.userData.nonhumanOutfit,'Missing costume: '+spec.id+' '+detail);
   assert.equal(model.userData.speciesCosplay.id,spec.id);
+  if(!profile.legacy)assert.equal(model.userData.speciesCosplay.detail,detail,
+   'Incorrect wardrobe LOD: '+spec.id);
   assert.ok(model.userData.pivots.torso);
   assert.ok(model.userData.pivots.head,
    'Original species head must be preserved: '+spec.id);
