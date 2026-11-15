@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {applyGreyFangWolfFinish} from '../src/grey-fang-wolf-finish.js';
 import {MONSTER_CATALOG} from '../src/monster-catalog.js';
 import {HUMAN_MONSTER_IDS} from '../src/monster-character-cosplay-manifest.js';
 import {NONHUMAN_MONSTER_IDS,NONHUMAN_EXTRA_SUMMON_IDS,
@@ -85,4 +86,42 @@ test('shipped r-wolf defaults yield to deliberate legacy choices, including acro
  const persisted=JSON.parse(storage.getItem(MESH_ADOPTION_STORAGE_KEY));
  assert.equal(persisted.wolf,'legacy');
  assert.equal(persisted.summon_m001,'legacy');
+});
+
+test('wolf finish keeps source mesh count, UV/material maps and rig, hides only known white shells',()=>{
+ const createMaterial=(name,map=null)=>({
+  isMaterial:true,name,map,color:{multiplyScalar(n){this.factor=n;return this;}},
+  emissive:{setHex(v){this.hex=v}},
+  roughness:.8,
+  clone(){return createMaterial(name,map)}
+ });
+ const nodes=[
+  {isMesh:true,name:'Object_9',visible:true,geometry:{id:'original-wolf-skin'},
+   material:createMaterial('Wolf coat',{id:'source-PBR-map'})},
+  {isMesh:true,name:'Object_74',visible:true,geometry:{id:'duplicate-white-outline'},
+   material:createMaterial('white outline')},
+  {isMesh:true,name:'Object_76',visible:true,geometry:{id:'overlapping-textured-shell'},
+   material:createMaterial('duplicate shell')},
+  {isMesh:true,name:'Eye_left',visible:true,geometry:{id:'original-eye'},
+   material:createMaterial('eye original')}
+ ];
+ const root={userData:{},traverse(fn){nodes.forEach(fn)}};
+ const handle={root};
+ const oldGeometry=nodes.map(n=>n.geometry);
+ applyGreyFangWolfFinish(handle,{creatureId:'summon_m001'});
+ assert.equal(root.userData.greyFangWolfFinish.mode,'shader-only-v2');
+ assert.equal(root.userData.greyFangWolfFinish.addedMeshes,0);
+ assert.equal(root.userData.greyFangWolfFinish.hiddenOutline,2);
+ assert.equal(nodes.length,4);
+ assert.deepEqual(nodes.map(n=>n.geometry),oldGeometry);
+ assert.equal(nodes[0].visible,true);
+ assert.equal(nodes[1].visible,false);
+ assert.equal(nodes[2].visible,false);
+ assert.equal(nodes[3].visible,true);
+ assert.equal(nodes[0].material.map.id,'source-PBR-map');
+ assert.equal(nodes[0].material.color.factor,0.93);
+ assert.equal(nodes[3].material.emissive.hex,0x9fd6ee);
+ // No added geometry on re-entry or cross-scene repeated updates.
+ applyGreyFangWolfFinish(handle,{creatureId:'summon_m001'});
+ assert.equal(nodes.length,4);
 });
