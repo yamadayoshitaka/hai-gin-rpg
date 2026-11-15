@@ -32,6 +32,19 @@ assert.equal(sortieSquadCap(game),5,'seventh level unlocks fifth contingent');
 assert.equal(sortieAllowedCells(game,1).length,4,'four primary cells are selectable until the fifth contingent is needed');
 game.sortieTestLevel=99;
 assert.equal(sortieSquadCap(game),16);
+const extended=createNewGame('五隊陣形');
+extended.campaign.squads.push(
+ {id:3,job:'魔法使い',rarity:'N',count:8,commanderId:'player'},
+ {id:4,job:'忍者',rarity:'N',count:8,commanderId:'player'},
+ {id:5,job:'シーフ',rarity:'N',count:8,commanderId:'player'});
+extended.sortieTestLevel=7;
+ensureSortiePlan(extended);
+assert.equal(sortieSquadCap(extended),5);
+assert.equal(sortieTeams(extended)[0].slots.filter(Boolean).length,5);
+assert.equal(sortieAllowedCells(extended,1).length,5,
+ 'at level 7 a filled four-role preset opens its fifth deployment cell');
+assert.equal(sortieFormationStatus(extended,1).valid,true,
+ 'the fifth contingent may use an unlocked reinforcement cell while retaining the four role anchors');
 
 for(const teamId of [2,3]){
  setSortieFormation(game,teamId,'free');
