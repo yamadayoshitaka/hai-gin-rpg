@@ -287,6 +287,47 @@ export function repairRealCrownScalpHoles(vertices,normals,box){
   scopedToRealScalp:true,noFullWigCap:true};
 }
 
+/** v66: the donor head has intact top triangles even when the clipped
+ * colored cap loses an isolated group of faces. Place a SECOND, slightly
+ * deeper layer ONLY across the anatomical upper crown. It uses the EXACT
+ * donor triangles and normals, so no flat disk or helmet-shaped fake scalp
+ * can appear above the existing hairstyle. It shares the cap draw mesh. */
+export function appendRealCrownUnderlay(geo,box,vertices,normals,volumeProfile='natural'){
+ const attr=geo?.getAttribute?.('position'),normal=geo?.getAttribute?.('normal');
+ if(!attr)throw Error('True 3D source head required');
+ const idx=geo.getIndex?.(),n=idx?idx.count:attr.count;
+ const d=box.getSize(new THREE.Vector3()),c=box.getCenter(new THREE.Vector3());
+ const minHeight=box.min.y+d.y*.82;
+ let triangles=0;
+ for(let t=0;t+2<n;t+=3){
+  const ids=[0,1,2].map(k=>idx?idx.getX(t+k):t+k);
+  const points=ids.map(i=>f3(attr.getX(i),attr.getY(i),attr.getZ(i)));
+  const mid=points[0].clone().add(points[1]).add(points[2]).multiplyScalar(1/3);
+  if(mid.y<minHeight||
+   Math.abs(mid.x-c.x)>d.x*.17||
+   Math.abs(mid.z-c.z)>d.z*.19)continue;
+  // Never extend this cover over the forehead or brows. Intact donor
+  // triangles entirely above the upper hairline are the only source.
+  if(points.some(p=>p.y<box.min.y+d.y*.74))continue;
+  for(let k=0;k<3;k++){
+   const raw=points[k],v=raw.clone();
+   const fallback=raw.clone().sub(c).normalize();
+   const dir=normal?f3(normal.getX(ids[k]),normal.getY(ids[k]),
+    normal.getZ(ids[k])):fallback;
+   if(dir.dot(fallback)<0)dir.negate();
+   dir.normalize();
+   // Keep below the primary shell by one contact clearance. If the
+   // shell has a gap this shows hair, otherwise the primary wins z-test.
+   v.addScaledVector(dir,d.x*.0009+
+    wigVolumeLiftAt(raw,box,volumeProfile)*.88);
+   vertices.push(v.x,v.y,v.z);
+   normals.push(dir.x,dir.y,dir.z);
+  }
+  triangles++;
+ }
+ return {triangles,source:'real-source-head',sameDrawMesh:true};
+}
+
 function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile='natural'}={}){
  const src=geo.getAttribute('position'),idx=geo.index;
  const n=idx?idx.count:src.count,d=box.getSize(new THREE.Vector3());
@@ -357,6 +398,8 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
   p.addScaledVector(n,d.x*.0015+wigVolumeLiftAt(p,box,volumeProfile));
   verts.push(p.x,p.y,p.z);smoothNormals.push(n.x,n.y,n.z);
  }
+ const crownUnderlay=appendRealCrownUnderlay(
+  geo,box,verts,smoothNormals,volumeProfile);
  // 52 independent tapered underlocks: rooted on actual posterior head
  // vertices, rather than a rectangular curtain hanging across the neck.
  const rearCandidates=[];
@@ -436,6 +479,7 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
  mesh.userData.v63RootMelaninShading=true;
  mesh.userData.v65CrownTopologyRepairCount=crownRepair.repairCount;
  mesh.userData.v65CrownTopologyRepairTriangles=crownRepair.triangles;
+ mesh.userData.v66RealCrownUnderlayTriangles=crownUnderlay.triangles;
  mesh.userData.v63VertexColorCount=melanin.length/3;
  mesh.userData.hairRootColor='#'+new THREE.Color(color).getHexString();
  mesh.userData.v33RaisedWigBase=true;
@@ -1223,6 +1267,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   hairColoredOpaqueRoot:cap.userData.hairColoredOpaqueRoot,
   v65CrownTopologyRepairCount:cap.userData.v65CrownTopologyRepairCount,
   v65CrownTopologyRepairTriangles:cap.userData.v65CrownTopologyRepairTriangles,
+  v66RealCrownUnderlayTriangles:cap.userData.v66RealCrownUnderlayTriangles,
   frontRootCoverage:'lower-scalp-cap-and-overlapping-hair-cards',
   fringeCardWidthFactor:.43,
   maleLongFringeMinimumScale:.86,
