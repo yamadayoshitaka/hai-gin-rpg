@@ -315,10 +315,11 @@ body[data-circle-target] #destinationPrompt{border:2px solid #ffed9c;box-shadow:
 }
 </style>
 <link rel="stylesheet" href="./src/battle-three-group-panel.css?v=1">
+<link rel="stylesheet" href="./src/central-battle-orders.css?v=20261116">
 <div id="vitalsPanel" hidden role="region" aria-label="戦況HP・MP一覧"><div class="vitalsHead"><strong>部隊別 HP / MP（⏸ 一時停止中）</strong><button id="vitalsClose" aria-label="戦況を閉じる">✕ 閉じる</button></div><div id="vitalsOverview"></div><div class="vitalsFilters"><label>軍<select id="vitalsTeam"><option value="0">味方</option><option value="1">敵</option></select></label><label>部隊<select id="vitalsSquad"><option value="all">全部隊</option></select></label><label>職業<select id="vitalsJob"><option value="all">全職業</option></select></label></div><div class="squadHelp" id="vitalsSquadStatus">部隊を選ぶと個人のHPとMPを確認できます。</div><button id="vitalsHealing" disabled>✚ この部隊へ回復支援を要請</button><div id="vitalsJobSummary"></div><div id="vitalsIndividuals"></div><div class="vitalsPages"><button id="vitalsPrev">◀ 前</button><span id="vitalsPageLabel">1 / 1</span><button id="vitalsNext">次 ▶</button></div></div>
 <button id="battleMenuToggle" aria-expanded="false">☰ メニュー</button>
 <div id="teamLegend" aria-label="陣地識別色"><span class="ally">■ 味方陣地・西</span><span class="enemy">■ 敵陣地・東</span><span>▣ 中立帯</span></div>
-<div id="battleTopDock" aria-label="戦況・戦死者・性能計測"><div id="topRadarSlot"></div><div id="topBattleInfo"><div id="battleTopRow"><div id="topMenuSlot"></div><div id="topTeamsSlot"></div><div id="topQuickActions"><button id="topBgm" aria-label="BGMと効果音を切り替える">♪ BGM</button><button id="topSurrender" aria-label="降参を確認する">🏳 降参</button></div></div><div id="battleCasualties" aria-live="polite"><span class="allyLoss">味方戦闘不能 <b id="allyCasualties">0/50</b>人</span><span class="enemyLoss">敵戦闘不能 <b id="enemyCasualties">0/50</b>人</span></div><div id="topPerformanceSlot"></div><div id="topStructureSlot"></div></div></div>
+<div id="battleTopDock" aria-label="戦況・戦死者・性能計測"><div id="topRadarSlot"></div><div id="topBattleInfo"><div id="battleTopRow"><div id="topMenuSlot"></div><div id="topTeamsSlot"></div><div id="topQuickActions"><button id="topStrategy" type="button" aria-label="戦闘を停止して班・個別の作戦を指示">⚔ 作戦</button><button id="topBgm" aria-label="BGMと効果音を切り替える">♪ BGM</button><button id="topSurrender" aria-label="降参を確認する">🏳 降参</button></div></div><div id="battleCasualties" aria-live="polite"><span class="allyLoss">味方戦闘不能 <b id="allyCasualties">0/50</b>人</span><span class="enemyLoss">敵戦闘不能 <b id="enemyCasualties">0/50</b>人</span></div><div id="topPerformanceSlot"></div><div id="topStructureSlot"></div></div></div>
 <div id="battleMenu" hidden aria-label="ゲームメニュー"><strong>戦闘メニュー</strong><div class="menuLine" id="armyScaleSlot"></div><div class="menuLine" id="menuSoundSlot"></div><div class="menuLine" id="menuPauseSlot"></div><div class="menuLine" id="lockedSquadStrategies" aria-label="現在の隊列作戦（開戦後変更不可）"></div><div class="menuLine menuDisplayOptions retiredRibbonSettings"><strong>左右の隊列ラベル</strong><label><input id="showAllySquadRibbon" type="checkbox" checked> 味方ラベル</label><label><input id="showEnemySquadRibbon" type="checkbox" checked> 敵ラベル</label></div><div class="menuLine menuDisplayOptions"><label><input id="showAllSquadLeaderLines" type="checkbox"> 全隊の引き出し線を表示（通常は選択した隊のみ）</label></div><div class="menuLine menuDisplayOptions"><strong>上部ボタンの表示</strong><label><input id="showTopBgm" type="checkbox" checked> BGM</label><label><input id="showTopSurrender" type="checkbox" checked> 降参</label></div><div class="menuLine"><label for="corpseLifetime">死体の表示（最大100体）</label><select id="corpseLifetime" aria-label="死体が消えるまでの時間"><option value="30">30秒</option><option value="60" selected>60秒</option><option value="120">120秒</option><option value="never">消滅しない</option></select></div><small>作戦は青い部隊名から選択。分隊別に敵・地図・オブジェクトを指定できます。</small><div class="menuLine" id="menuBridgeSlot"></div><div class="menuLine"><button id="surrender">🏳 降参する</button></div></div>
 <div id="squadTactics" hidden aria-label="部隊の号令・行き先"><div class="tacticsHeading"><strong id="squadTacticsName">部隊を選択</strong><button id="squadInspect">🔍 近景</button><button id="squadTacticsClose">✕ 戻る</button></div><div id="squadTypeStatus">編成タイプは固定</div>
 <div id="squadActiveOrder" style="font-weight:800;color:#8be0ff;margin-top:6px">現在の号令：自動行動</div>
@@ -1029,6 +1030,7 @@ const storyRequest=(()=>{
 })();
 // Display the true story sortie, not the generic 50-vs-50 demo default.
 if(storyRequest){
+ document.body.classList.add('story-center-orders');
  $('allyCasualties').textContent='0/'+storyRequest.units.length;
  $('enemyCasualties').textContent='0/'+storyRequest.enemyCount;
  $('squadTactics').setAttribute('aria-label','部隊の3段階作戦');
@@ -6747,6 +6749,11 @@ function positionSquadMenuBelowLabel(id,force=false){
  if(popup.style.top!==nextY)popup.style.top=nextY;
 }
 function openSquadTactics(id){
+ if(storyRequest?.sortieTeamCount){
+  if(!battleReady||finished||battleCeremony.locked)return false;
+  const group=normalizeArmyGroup(armyGroupBySquad[String(id)]);
+  return targetedStrategyUi.open(group,{squadId:String(id)});
+ }
  closeSquadCircleInfo();
  if(!battleReady||finished||!squadIds.includes(String(id))||pendingCircleTarget)return false;
  const remaining=squadOrderCooldownSeconds(id);
@@ -7486,9 +7493,48 @@ function issueTargetedMapCommand(point){
  pendingTargetedMap=null;
  log('🗺 '+count+'分隊に地図作戦を設定：地点('+point.x+','+point.z+')');
  refreshSquadOrderLabel();drawSquadMiniMap();
+ if(storyRequest?.sortieTeamCount&&targetedStrategyUi.isOpen())return true;
  finishSquadDestination(true);return true;
 }
+let centralStrategyPreviousPause=null;
+$('topStrategy').onclick=()=>{
+ if(!battleReady||finished||battleCeremony.locked)return;
+ targetedStrategyUi.open();
+};
 const targetedStrategyUi=createTargetedStrategyUi({
+ onOpen:()=>{
+  if(!battleReady||finished||battleCeremony.locked)return false;
+  centralStrategyPreviousPause=paused;
+  if(!paused)setBattlePaused(true);
+  commandOverviewLocked=true;controls.enabled=false;
+  commanderCinematic=null;cinematicFocusQueue.length=0;dialogueCameraReturn=null;
+  document.body.classList.add('battle-command-active');
+  return true;
+ },
+ onClose:()=>{
+  const wasPaused=centralStrategyPreviousPause;centralStrategyPreviousPause=null;
+  pendingTargetedMap=null;commandOverviewLocked=false;controls.enabled=true;
+  document.body.classList.remove('battle-command-active');
+  if(wasPaused===false&&!finished)setBattlePaused(false);
+ },
+ getRadarCanvas:()=>miniCanvas,
+ getMapSize:()=>WORLD_SIZE,
+ getItems:()=>{
+  const byId=new Map();
+  for(const item of allyItemStocks()){
+   const info=ROOM_ITEM_TYPES[item.itemId];
+   if(!info||!['heal','squad_buff'].includes(info.kind))continue;
+   const row=byId.get(String(item.itemId))||{id:String(item.itemId),label:info.name||item.name||'アイテム',quantity:0};
+   row.quantity+=item.quantity;byId.set(String(item.itemId),row);
+  }
+  return [...byId.values()];
+ },
+ onItemExecute:({issuerSquadId,targetSquadId,itemId})=>{
+  return useSquadBattleItemForSource(itemId,targetSquadId,issuerSquadId)||'所持数・対象のHP・使用条件を確認してください';
+ },
+ onMapPick:point=>{
+  return issueTargetedMapCommand(point)||'移動可能な地点と対応職業を指定してください';
+ },
  getPlan:groupId=>{
   const ids=squadIds.filter(id=>normalizeArmyGroup(armyGroupBySquad[id])===Number(groupId));
   return {squads:ids.map(id=>{
@@ -7513,11 +7559,7 @@ const targetedStrategyUi=createTargetedStrategyUi({
  onExecute:issueTargetedPlan,
  onMapRequest:plan=>{
   pendingTargetedMap=plan;
-  pickingSquadDestination=true;pickingSquadMission=null;pickingStrategistWarp=false;
-  enterCommandOverview();$('squadTactics').hidden=true;
-  $('destinationPrompt').hidden=false;
-  $('destinationPrompt').textContent='🗺 '+plan.mode+'：マップ／戦場の地面をタップ。選択した分隊だけに適用します。';
-  drawSquadMiniMap();return true;
+  return true; // The enlarged radar in the central dialog owns the target selection.
  }
 });
 // Orders to defend/hold/retreat are executed on arrival, not immediately.
@@ -8588,7 +8630,8 @@ $('pause').onclick=()=>{if(pickingSquadDestination){finishSquadDestination(false
 const centralAlly=actors.filter(a=>a.team===0).sort((a,b)=>
  Math.abs(a.cell.z-116)-Math.abs(b.cell.z-116)||Math.abs(a.cell.x-111)-Math.abs(b.cell.x-111))[0];
 const cameraHome=(centralAlly?.root.position||openingFocus).clone();
-const cameraCloseOffset=new THREE.Vector3(3.5,3.8,7);
+// Slightly pulled back from the western rear, looking diagonally east.
+const cameraCloseOffset=new THREE.Vector3(-8,6.2,10.5);
 // Three-quarter overview: keep horizon and upper floors visible, unlike true bird's-eye.
 // Approximately 45 degrees above the horizon while retaining a full
 // battlefield view on narrow portrait phones (avoid the former top-down map).
