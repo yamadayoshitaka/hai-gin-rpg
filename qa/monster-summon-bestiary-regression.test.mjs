@@ -134,6 +134,18 @@ if(THREE){
   const actor=renderer.actualModel(o.id);
   assert.ok(actor?.isGroup,'No real original sculpture for '+id);
   assert.equal(actor.userData.speciesId,id);
+  if(id==='m045'){
+   assert.equal(actor.userData.sourceKind,'canonical-character-cosplay');
+   assert.equal(actor.userData.legacyGeometryDisabled,true);
+   assert.equal(actor.userData.speciesId,id);
+   // An asynchronous humanoid GLB must NOT temporarily show the old
+   // pre-cosplay body. Rendering resumes when the skinned actor is ready.
+   assert.equal(actor.children.filter(c=>c.isMesh).length,0);
+   renderer.sync([o],.32);
+   renderer.sync([],1);
+   assert.equal(renderer.activeCount(),0);
+   continue;
+  }
   const bb=new THREE.Box3().setFromObject(actor),sz=new THREE.Vector3();
   bb.getSize(sz);
   const reference=MONSTER_SUMMON_MODEL_HEIGHT*MONSTER_SUMMON_BY_TYPE[type].size;
