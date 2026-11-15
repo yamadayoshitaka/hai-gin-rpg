@@ -16,6 +16,20 @@ const bell=(x,c,w)=>Math.exp(-.5*((x-c)/w)**2);
 const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
 const smoothstep=t=>{const q=clamp(t,0,1);return q*q*(3-2*q)};
 const vertexMakeup=new WeakMap();
+/** Consistent cosmetic palettes for eyelids, lips and actual head vertex pigment.
+ * Indices stay compatible with the existing saved 10-piece makeup catalog. */
+export const FACE_MAKEUP_PALETTES=Object.freeze([
+ [0xc07c82,0x865b7d,0xcf8383,0x30252b],
+ [0xc28289,0xaa828e,0xcd9290,0x403037],
+ [0xda93a4,0xb38b9e,0xe59ba7,0x403039],
+ [0xb37b70,0x947565,0xbd8b7f,0x332b28],
+ [0xd09ca8,0xb5a4b6,0xc8abb3,0x514451],
+ [0xdf8698,0xc18d9f,0xda8d9d,0x352633],
+ [0xa56c7b,0x776b93,0xaf8890,0x252334],
+ [0xd55c86,0xaa6388,0xcf819e,0x271e30],
+ [0xb54b67,0x8b5168,0xb47c80,0x24212a],
+ [0x9f4e66,0x6c4c76,0xb16a83,0x281b32]
+].map(row=>Object.freeze(row)));
 /** Age is the sole source of old-looking under-eye pigment. */
 export function skinAgeShadowFactor(ageBand='twenties'){
  const id=resolveAgeBand(ageBand).id;
@@ -168,9 +182,9 @@ function stitchLinerCorners(upper,lower,faceWidth,depth){
 /** Color is embedded in each actual surface-conforming lip mesh itself.
  * This is not a separate plane: the 3D vermilion vertices move with the
  * user-edited head, and only their existing triangle colors are changed. */
-function tintRealLipSurface(lip,settings,mode='color'){
+function tintRealLipSurface(lip,settings,mode='color',lipColor=FACE_V7_PALETTE.lipstick){
  const natural=new THREE.Color(0xd9a699);
- const tint=new THREE.Color(FACE_V7_PALETTE.lipstick);
+ const tint=new THREE.Color(lipColor);
  const shiftU=clamp(settings.lipstickX/.12,-1,1)*.23;
  const shiftV=clamp(settings.lipstickY/.12,-1,1)*.23;
  const width=settings.lipstickWidth*.5,height=settings.lipstickHeight*.5;
@@ -230,7 +244,7 @@ export function v65ScleralShading(u,v){
  return [shade,shade*.987,shade*.974];
 }
 
-export function updateRealFacePigment(face,controls={},mode='color',gender='female'){
+export function updateRealFacePigment(face,controls={},mode='color',gender='female',makeupType=0){
  if(!face?.isMesh)throw Error('Sculpted head required for cosmetics');
  const settings=gender==='male'?normalizeMaleFaceControls(controls):
   normalizeFemaleFaceControls(controls);
@@ -240,9 +254,10 @@ export function updateRealFacePigment(face,controls={},mode='color',gender='fema
  const cx=(box.min.x+box.max.x)*.5;
  const lipCenter=face.userData.actualMouthCreaseY??box.min.y+d.y*.509;
  const skin=new THREE.Color(FACE_V7_PALETTE.skin);
- const blush=new THREE.Color(FACE_V7_PALETTE.blush);
- const lipstick=new THREE.Color(FACE_V7_PALETTE.lipstick);
- const softEyeshadow=new THREE.Color(0xa48087);
+ const makeup=FACE_MAKEUP_PALETTES[Math.max(0,Math.min(9,Math.round(Number(makeupType)||0)))];
+ const blush=new THREE.Color(gender==='female'?makeup[2]:FACE_V7_PALETTE.blush);
+ const lipstick=new THREE.Color(gender==='female'?makeup[0]:FACE_V7_PALETTE.lipstick);
+ const softEyeshadow=new THREE.Color(gender==='female'?makeup[1]:0xa48087);
  const age=resolveAgeBand(settings.ageBand);
  const positions=geometry.getAttribute('position'),colors=[];
  let actualLipTintVertices=0,actualCheekTintVertices=0;
@@ -306,6 +321,8 @@ export function updateRealFacePigment(face,controls={},mode='color',gender='fema
  }
  setVertexMakeup(face,colors);
  colorizedMakeup(face,mode==='color');
+ face.userData.facePigmentControls={...settings};
+ face.userData.activeMakeupType=gender==='female'?Math.max(0,Math.min(9,Math.round(Number(makeupType)||0))):null;
  face.userData.mouthPigmentSource='sculpted-head-vertices';
  face.userData.softNaturalLipTint=true;
  face.userData.lipTintVertexCount=actualLipTintVertices;
@@ -317,7 +334,7 @@ export function updateRealFacePigment(face,controls={},mode='color',gender='fema
  face.userData.v64AgeWrinkleIntensity=age.wrinkles;
  for(const name of ['UPPER','LOWER']){
   const lip=face.getObjectByName(name+'_3D_VERMILION_LIP');
-  if(lip)tintRealLipSurface(lip,settings,mode);
+  if(lip)tintRealLipSurface(lip,settings,mode,lipstick);
  }
  return {lip:actualLipTintVertices,cheek:actualCheekTintVertices};
 }
@@ -1222,22 +1239,17 @@ export function applyFaceColorMode(face,mode='clay',{contactColor,makeupType=0}=
   brow:0xa2a6ac,lashes:0x8c929a
  };
  // Selected makeup recolors actual 3D lip and lid geometry; no decals.
- const makeupChoices=[
-  [0xc07c82,0x865b7d,0xcf8383,0x30252b],
-  [0xc28289,0xaa828e,0xcd9290,0x403037],
-  [0xda93a4,0xb38b9e,0xe59ba7,0x403039],
-  [0xb37b70,0x947565,0xbd8b7f,0x332b28],
-  [0xd09ca8,0xb5a4b6,0xc8abb3,0x514451],
-  [0xdf8698,0xc18d9f,0xda8d9d,0x352633],
-  [0xa56c7b,0x776b93,0xaf8890,0x252334],
-  [0xd55c86,0xaa6388,0xcf819e,0x271e30],
-  [0xb54b67,0x8b5168,0xb47c80,0x24212a],
-  [0x9f4e66,0x6c4c76,0xb16a83,0x281b32]
- ];
- const makeup=makeupChoices[Math.min(9,Math.max(0,Math.round(makeupType)))];
+ const styleIndex=Math.max(0,Math.min(9,Math.round(Number(makeupType)||0)));
+ const makeup=FACE_MAKEUP_PALETTES[styleIndex];
+ // Retint source head vertices as well: the old menu only changed two eyelid
+ // meshes, so cheek blush and the lip tint stayed the same for all ten styles.
+ if(face.userData.facePigmentControls){
+  updateRealFacePigment(face,face.userData.facePigmentControls,mode,
+   male?'male':'female',styleIndex);
+ }
  const palette={
-  ...FACE_V7_PALETTE,lipBase:male?(makeupType===0?0xc9998b:makeup[0]):
-   (makeupType===0?0xd9a699:makeup[0]),
+  ...FACE_V7_PALETTE,lipBase:male?(styleIndex===0?0xc9998b:makeup[0]):
+   (styleIndex===0?0xd9a699:makeup[0]),
   upperShadow:makeup[1],blush:makeup[2],eyeliner:makeup[3],
   lipstick:makeup[0],
   iris:male?0x50413b:parseInt(safeContactColor(contactColor).slice(1),16)
@@ -1257,5 +1269,6 @@ export function applyFaceColorMode(face,mode='clay',{contactColor,makeupType=0}=
  });
  face.userData.faceColorMode=colored?'color':'clay';
  face.userData.contactColor=male?null:safeContactColor(contactColor);
+ face.userData.activeMakeupType=male?null:styleIndex;
  return face.userData.faceColorMode;
 }

@@ -92,3 +92,18 @@ test('v63: high skinned-garment neckline still fits an inner collar after skin w
  result.mesh.geometry.dispose();result.mesh.material.dispose();
  sewn.geometry.dispose();sewn.material.dispose();
 });
+
+test('v68: swordsman preview keeps both original skinned legs underneath partial greaves',()=>{
+ const sword=studioCoveredSkinPolicy({studioPreferSkinnedLegs:true,
+  studioPreserveLegAnatomy:true,studioVisibleLegAnatomy:true,preserveBody:false});
+ assert.deepEqual(sword.preserveRegions,['thigh','calf','foot']);
+ assert.equal(sword.visibleLegAnatomy,true);
+ assert.equal(sword.underlyingAnatomyRestorable,true);
+ const battle=studioCoveredSkinPolicy();
+ assert.deepEqual(battle.preserveRegions,[],'battle must keep its original occlusion');
+ assert.equal(battle.visibleLegAnatomy,false);
+ const otherStudio=studioCoveredSkinPolicy({studioPreferSkinnedLegs:true,
+  studioPreserveLegAnatomy:true,studioVisibleLegAnatomy:false,preserveBody:false});
+ assert.deepEqual(otherStudio.preserveRegions,[],
+  'unrelated job skins must retain their previous masking policy');
+});

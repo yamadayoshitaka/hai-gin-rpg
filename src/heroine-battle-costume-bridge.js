@@ -6,7 +6,7 @@ import {clipStudioFaceBustPreservingSurface,restoreStudioFaceSurfaceQuality,
  sampleStudioFacePigment,smoothStudioFaceNormals,
  studioAnatomicalSeamY,taperStudioLowerBustBelowChin} from './studio-face-quality-v56.js?v=60';
 import {createCharacter} from './character-system/shared-character-runtime.js?v=4.6.36';
-import {buildRiggedJobOutfit} from './character-system/rigged-outfit-runtime.js?v=63';
+import {buildRiggedJobOutfit} from './character-system/rigged-outfit-runtime.js?v=68';
 import {loadJobMotionMap} from './character-system/job-motion-source.js?v=4.6.36';
 import {measureHeadLocalBounds} from './character-system/hair-attachment-runtime.js?v=4.4.89';
 import {createHeroineBattleActionVfx} from './heroine-battle-action-vfx.js?v=40';
@@ -940,7 +940,9 @@ export async function createRealBattleOutfitStudio({scene,faceModel,getFaceModel
    clothing=await buildRiggedJobOutfit({characterModel:fresh.model,
     parent:fresh.object3D,job:chosen.name,sex:gender,quality:'preview',
     preserveBody:false,rarity:'N',studioPreferSkinnedLegs:true,
-    studioPreserveLegAnatomy:true});
+    studioPreserveLegAnatomy:true,
+    // Keep anatomically skinned calves/feet in the swordsman preview only.
+    studioVisibleLegAnatomy:chosen.heroJob==='swordsman'});
    if(serial!==request||disposed){
     clothing.dispose();fresh.dispose();return;
    }
@@ -1128,6 +1130,7 @@ export async function createRealBattleOutfitStudio({scene,faceModel,getFaceModel
   headReport,headFit,proportions,finishReport,
   sourceTrousers:outfit?.presentation?.().useSourceSkinnedLegs||false,
   retainedLegAnatomy:outfit?.diagnostics?.studioPreserveLegAnatomy||false,
+  swordsmanVisibleLegAnatomy:outfit?.diagnostics?.studioVisibleLegAnatomy||false,
   v63CoveredSkinMasked:outfit?.diagnostics?.v63CoveredSkinMasked||false,
   v63BareAnatomyRestorable:outfit?.diagnostics?.v63BareAnatomyRestorable||false,
   preservedLegRegions:outfit?.diagnostics?.preservedUnderGarmentLegRegions||[],

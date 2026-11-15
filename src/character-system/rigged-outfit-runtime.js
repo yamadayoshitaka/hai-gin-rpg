@@ -24,11 +24,16 @@ import {deriveGarmentCoverage,clipBodyToGarment,originalSkinGeometry} from './ga
 // The original humanoid is preserved in the reversible skin cache, but
 // opaque trousers must hide the covered visible skin while worn.
 export function studioCoveredSkinPolicy({studioPreferSkinnedLegs=false,
- studioPreserveLegAnatomy=false,preserveBody=false}={}){
+ studioPreserveLegAnatomy=false,studioVisibleLegAnatomy=false,preserveBody=false}={}){
+ // Preview-only opt-in: preserve actual thigh, calf and foot skinned triangles
+ // beneath the swordsman's source trousers. The battle renderer is unchanged.
+ const visibleLegs=!!studioVisibleLegAnatomy&&!!studioPreserveLegAnatomy;
  const masked=!!studioPreferSkinnedLegs&&!!studioPreserveLegAnatomy&&!preserveBody;
  return Object.freeze({
-  preserveRegions:studioPreserveLegAnatomy&&!masked?['thigh','calf','foot']:[],
-  coveredSkinMasked:masked,underlyingAnatomyRestorable:masked,
+  preserveRegions:visibleLegs||studioPreserveLegAnatomy&&!masked?['thigh','calf','foot']:[],
+  coveredSkinMasked:masked&&!visibleLegs,
+  underlyingAnatomyRestorable:!!studioPreserveLegAnatomy,
+  visibleLegAnatomy:visibleLegs,
   faceNeckHandsProtected:true
  });
 }
@@ -431,7 +436,7 @@ async function attachGear(dressed,outfitBones,profile,textures,quality){
   return items;
 }
 
-export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male',quality='preview',rarity='N',weaponOverride=null,preserveBody=false,hairStyle=null,hairColor=null,studioPreferSkinnedLegs=false,studioPreserveLegAnatomy=false}={}){
+export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male',quality='preview',rarity='N',weaponOverride=null,preserveBody=false,hairStyle=null,hairColor=null,studioPreferSkinnedLegs=false,studioPreserveLegAnatomy=false,studioVisibleLegAnatomy=false}={}){
   if(!characterModel||!parent)throw Error('人物モデルと配置先が必要です');
   // Different preview and battle entry points share the same head-surface
   // correction. The calibrated mesh is cached for all copies of each sex.
@@ -600,7 +605,7 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
   const bodyFitBox=lowDetail?null:skinnedBounds(characterModel,bodyMeshStats);
   const bodyBindBox=lowDetail?null:bindGeometryBounds(characterModel);
   const studioSkinPolicy=studioCoveredSkinPolicy({studioPreferSkinnedLegs,
-   studioPreserveLegAnatomy,preserveBody});
+   studioPreserveLegAnatomy,studioVisibleLegAnatomy,preserveBody});
   let coverageHandle=preserveBody?null:clipBodyToGarment(characterModel,garmentCoverage,{surfaceCheck:true,
     preserveRegions:studioSkinPolicy.preserveRegions});
   let bodyMasked=!preserveBody;
@@ -917,6 +922,7 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
       helmetPieces:helm.length,shieldFrontDot,bodyMasked,
       v63CoveredSkinMasked:studioSkinPolicy.coveredSkinMasked,
       v63BareAnatomyRestorable:studioSkinPolicy.underlyingAnatomyRestorable,
+      studioVisibleLegAnatomy:studioSkinPolicy.visibleLegAnatomy,
       armorDepthOffsets:armor?.depthOffsets||{helmet:0,chest:0},
       armorPartAxes:armor?.diagnostics.partAxes||{},
       suppressedBaseLegMeshes,retainedSkinnedLegMeshes,useSourceSkinnedLegs,studioPreferSkinnedLegs,
@@ -953,6 +959,7 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
     studioPreserveLegAnatomy,
     v63CoveredSkinMasked:studioSkinPolicy.coveredSkinMasked,
     v63BareAnatomyRestorable:studioSkinPolicy.underlyingAnatomyRestorable,
+      studioVisibleLegAnatomy:studioSkinPolicy.visibleLegAnatomy,
     preservedUnderGarmentLegRegions:coverageHandle?.diagnostics.preservedRegions||[],
     garmentSurfaceSamples:coverageHandle?.diagnostics.garmentSurfaceSamples||0,
     compactedSkinVertices:Math.max(0,(coverageHandle?.diagnostics.sourceVertices||0)-(coverageHandle?.diagnostics.keptVertices||0)),

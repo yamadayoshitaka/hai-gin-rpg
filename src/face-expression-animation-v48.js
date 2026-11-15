@@ -200,7 +200,7 @@ export function v65ExpressionMuscleDelta({ax,ny,front,expression={}}={}){
    .0011*anger*glabella};
 }
 
-export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=false}={}){
+export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=false,expressionIntensity=1}={}){
  const face=model?.face,parts=model?.parts;
  if(!face?.geometry||!parts?.getObjectByName)throw Error('Real anatomical face model required');
  face.geometry.computeBoundingBox();
@@ -208,6 +208,7 @@ export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=fals
  const sides=['LEFT','RIGHT'].map(side=>buildSide(parts,side,size)).filter(Boolean);
  const mouth=buildMouth(face,parts,size);
  let elapsed=0,blink=0,mouthOpen=0,manualMouth=null,forcedBlink=null,disposed=false;
+ const strength=clamp(Number(expressionIntensity)||1,.6,1.35);
  const state={autoBlink:!!autoBlink,speaking:!!speaking,expression:'neutral'};
  const facialAttr=face.geometry.getAttribute('position');
  const facialRest=facialAttr.array.slice();
@@ -219,7 +220,10 @@ export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=fals
   lower:mouth.lower.geometry.getAttribute('position').array.slice()
  }:null;
  function applyExpression(){
-  const e=FACE_EXPRESSIONS[state.expression];
+  const preset=FACE_EXPRESSIONS[state.expression];
+  const e=Object.fromEntries(Object.entries(preset).map(([k,v])=>[
+   k,typeof v==='number'?v*strength:v
+  ]));
   // Face sculpt uses its ORIGINAL sampled head vertices as the baseline.
   // No expression accumulates when selections are toggled 100+ times.
   const xd=Math.max(.000001,faceSize.x),yd=Math.max(.000001,faceSize.y);
@@ -268,7 +272,7 @@ export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=fals
  }
  const setBlink=value=>{
   blink=clamp(value);
-  const squint=FACE_EXPRESSIONS[state.expression].squint;
+  const squint=FACE_EXPRESSIONS[state.expression].squint*strength;
   const closure=clamp(blink+(1-blink)*squint,0,1);
   for(const side of sides){
    moveGrid(side.a,side.b.rest,closure,true);
@@ -283,7 +287,7 @@ export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=fals
   }
  };
  const setMouthOpen=value=>{
-  mouthOpen=clamp(Math.max(value,FACE_EXPRESSIONS[state.expression].open));
+  mouthOpen=clamp(Math.max(value,FACE_EXPRESSIONS[state.expression].open*strength));
   if(!mouth)return;
   const delta=mouth.height*.027*mouthOpen;
   mouth.upper.position.y=mouth.restU+delta*.22;
@@ -333,6 +337,7 @@ export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=fals
    blink:Number(blink.toFixed(3)),mouthOpen:Number(mouthOpen.toFixed(3)),
    blinkEyes:sides.length,mouthIs3D:!!mouth,sourceMeshUnchanged:true,
    v65NasalCheekMuscleCoupling:true,
+   expressionIntensity:strength,
    elapsed:Number(elapsed.toFixed(3))})
  };
 }
