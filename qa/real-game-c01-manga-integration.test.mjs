@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {existsSync,readFileSync} from 'node:fs';
 import {spawnSync} from 'node:child_process';
 import {comicForStage} from '../src/story-chapter-comic.js';
+import {compactComicForStage} from '../src/story-compact-comic.js';
 import {registeredStoryPanelAsset,storySheetCrop} from '../src/story-panel-registered-art.js';
 
 const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
@@ -9,7 +10,7 @@ const title=read('game.html'),town=read('town-hub.html'),map=read('world-map.htm
 
 for(const [name,source] of [['title',title],['town',town]]){
  assert.match(source,/registeredStoryPanelAsset\(shot\)/,name+' must prioritize single-cut WebP');
- assert.match(source,/storySheetCrop\(shot,cells\)/,name+' must crop correct cell as fallback');
+ assert.match(source,/storySheetCrop\(shot,(?:shot\.sourceSheetCount\|\|)?cells\)/,name+' must crop the original source-sheet cell as fallback');
  assert.match(source,/style\.aspectRatio='16 \/ 9'/,name+' must show 16:9 panel only');
  assert.match(source,/import \{registeredStoryPanelAsset,storySheetCrop(?:,storyArtDisplayUrl)?\} from '\.\/src\/story-panel-registered-art\.js'/);
  assert.doesNotMatch(source,/10コマを1ページにした漫画|2列5行の10コマ漫画/);
@@ -18,11 +19,11 @@ for(const [name,source] of [['title',title],['town',town]]){
  const parsed=spawnSync(process.execPath,['--input-type=module','--check'],{input:script,encoding:'utf8'});
  assert.equal(parsed.status,0,name+' module syntax: '+parsed.stderr);
 }
-assert.match(title,/introFrames=comicForStage\('c01-s01','pre',introContext\)\.panels/);
+assert.match(title,/introFrames=compactComicForStage\('c01-s01','pre',introContext\)\.panels\.filter\(x=>x\.isChapterOpening\)/);
 assert.match(title,/id="introPanelImage"/);
 assert.match(title,/introContext=\{protagonistGender:introGender\(\)\}/);
 assert.match(town,/startPaperStory\('post'\)/,'Town exit must display event after');
-assert.match(town,/eventIndex\+\+;eventRender\(\)/,'Every next-line changes the image too');
+assert.match(town,/eventIndex\+\+;eventTalkIndex=0;eventRender\(\)/,'After the last dialogue turn, advance the image scene');
 assert.match(town,/renderedTownFrame!==frameKey/,'Image cache must be panel-specific');
 assert.match(map,/createMangaViewer/,'Map combat story viewer retained');
 
@@ -48,4 +49,10 @@ for(const gender of ['male','female']){
  }
 }
 assert.equal(n,30);
+for(const gender of ['male','female']){
+ const compact=compactComicForStage('c01-s01','pre',{protagonistGender:gender});
+ assert.equal(compact.panels.length,6,'Four chapter-opening CGs plus two stage-pre CGs');
+ assert(compact.panels.slice(0,4).every(p=>p.isChapterOpening));
+ assert(compact.panels.every(p=>registeredStoryPanelAsset(p)),'Selected compact scene reuses real exact-gender artwork');
+}
 console.log('PASS game title & town: 30 exact Stage 1 male/female pre/post images; single-panel display; event-after trigger; module syntax');
