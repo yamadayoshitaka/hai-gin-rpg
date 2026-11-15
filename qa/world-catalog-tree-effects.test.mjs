@@ -26,3 +26,20 @@ test('large catalog buildings expand the directional shadow camera beyond tree-s
 test('tree selection restores the smaller shadow map projection for better detail',()=>{
  assert.match(source,/sun\.shadow\.camera\.left=-18;sun\.shadow\.camera\.right=18;sun\.shadow\.camera\.top=18;sun\.shadow\.camera\.bottom=-18/);
 });
+
+test('large off-centre structures recenter the sun shadow target and keep light outside geometry',()=>{
+ assert.match(source,/sun\.target\.position\.copy\(center\)/,'shadow target follows catalog world bounds');
+ assert.match(source,/const sunOffset=Math\.max\(24,shadowHalf\*1\.4\)/,'sun distance scales with large objects');
+ assert.match(source,/sun\.position\.copy\(center\)\.add\(new THREE\.Vector3/,'light moves with preview');
+ assert.match(source,/sun\.shadow\.camera\.far=Math\.max\(500,sunOffset\*4\)/,'shadow depth range scales with preview');
+ assert.match(source,/sun\.target\.updateMatrixWorld\(\);sun\.updateMatrixWorld\(\)/,'light matrices refreshed');
+ const center={x:65,y:12,z:-35},half=Math.max(18,Math.hypot(100,100)*.6+24*.45);
+ const offset=Math.max(24,half*1.4);
+ const light={x:center.x+offset*.5,y:center.y+offset,z:center.z+offset*.4};
+ assert.equal(light.x-center.x,offset*.5);
+ assert.equal(light.z-center.z,offset*.4);
+ assert(light.y>center.y+24,'light sits beyond top of tall castle');
+});
+test('returning to trees restores the original sun direction and target',()=>{
+ assert.match(source,/sun\.target\.position\.set\(0,0,0\);sun\.position\.set\(10,20,8\);sun\.shadow\.camera\.far=500/);
+});
