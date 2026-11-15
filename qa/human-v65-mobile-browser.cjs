@@ -52,7 +52,11 @@ const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
    await sleep(300);
    await captureChromiumScreenshot(page,out+'/'+file,{selector:'#faceCanvas'});
    if(view==='crown'){
-    const probe=await page.evaluate(()=>window.__v65PickRenderedSurface?.(.49,.47));
+    const probe=await page.evaluate(()=>{
+     const positions=[[.49,.47],[.50,.476],[.49,.49],[.50,.45],[.52,.48],
+      [.50,.52],[.50,.41],[.44,.48]];
+     return positions.map(([u,v])=>({u,v,hits:window.__v65PickRenderedSurface?.(u,v)}));
+    });
     const state=await page.evaluate(()=>window.__faceMasterQA?.());
     console.log('HUMAN_V65_CROWN_SURFACE '+JSON.stringify({
      picks:probe,repairCount:state?.wigReport?.v65CrownTopologyRepairCount,
