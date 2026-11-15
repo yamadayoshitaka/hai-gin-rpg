@@ -20,7 +20,7 @@ export function applyGreyFangWolfFinish(handle,{creatureId='m001'}={}){
  const root=handle?.root,config=VARIANTS[creatureId];
  if(!root||!config||root.userData?.greyFangWolfFinish)return handle;
  const materialCopies=new WeakMap();
- let originalMeshes=0,hiddenOutline=0,coated=0,eyes=0;
+ let originalMeshes=0,hiddenOutline=0,coated=0,eyes=0,fangMaterials=0;
  root.traverse(node=>{
   if(!node.isMesh)return;
   originalMeshes++;
@@ -36,7 +36,8 @@ export function applyGreyFangWolfFinish(handle,{creatureId='m001'}={}){
    const label=nameKey((mat.name||'')+' '+(node.name||''));
    if(!mat.color)return mat;
    const ocular=/eye|iris|pupil/.test(label);
-   const role=ocular?'eye':'coat';
+   const fang=/fang|tooth|teeth|claw/.test(label);
+   const role=ocular?'eye':fang?'fang':'coat';
    const variants=materialCopies.get(mat)||new Map();
    if(variants.has(role))return variants.get(role);
    const copy=mat.clone();
@@ -50,6 +51,14 @@ export function applyGreyFangWolfFinish(handle,{creatureId='m001'}={}){
      copy.userData={...copy.userData,greyFangWolfEye:true};
     }
     eyes++;
+   }else if(fang){
+    // Sharpen the visual contrast of existing teeth and claws only.
+    // Do not add real or floating fang geometry to a skinned source.
+    copy.color.multiplyScalar(creatureId==='m001'?.85:.94);
+    copy.roughness=Math.min(copy.roughness??.7,.55);
+    copy.metalness=Math.min(.06,copy.metalness||0);
+    copy.userData={...copy.userData,greyFangWolfFang:true};
+    fangMaterials++;
    }else if(copy.map&&(body||!/(?:teeth|tongue|mouth|nose|claw|tooth)/.test(label))){
     copy.color.multiplyScalar(config.coat);
     copy.roughness=Math.max(config.roughness,copy.roughness||.7);
@@ -72,7 +81,7 @@ export function applyGreyFangWolfFinish(handle,{creatureId='m001'}={}){
  root.userData.greyFangWolfFinish={
   creatureId,kind:config.name,baseSource:'r-wolf',
   mode:'shader-only-v3',originalMeshes,hiddenOutline,
-  coatedMaterials:coated,eyeMaterials:eyes,addedMeshes:0,
+  coatedMaterials:coated,eyeMaterials:eyes,fangMaterials,addedMeshes:0,
   originalSkeletonPreserved:true,nativeAnimationsPreserved:true,
   originalTexturePreserved:true,
   variantAppearance:'darkened-photo-coat/roughness/eye-glow/soft-magic-emission',
