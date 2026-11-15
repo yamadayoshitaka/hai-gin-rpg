@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "asOf": "2026-11-15T14:48:00Z",
+  "asOf": "2026-11-15T15:52:00Z",
   "description": "工程別の実作業証跡。GitHub Actionsの成功や定期タスクの実行完了を、3D改修・PR・デプロイの完了と混同しない。これはGitHubに最後に記録されたスナップショットであり、ChatGPTサービスのライブ状態ではない。",
   "stageOrder": [
     "launch",
@@ -67,12 +67,12 @@
     },
     "world": {
       "source": "ChatGPT 定期タスク実品質回帰",
-      "lastRunAt": "2026-11-15T14:48:00Z",
+      "lastRunAt": "2026-11-15T15:52:00Z",
       "status": "work_incomplete",
       "carryover": true,
-      "subject": "100×100城・大型橋の影が切れる固定シャドーフラスタムを改善",
-      "summary": "worldスイッチON・所有者world手動Issueなし。前回の樹木エフェクト残留修正をPR #409から継続。src/tree-seasons.jsで太陽影の投影範囲が樹木用26m固定のため大型建造物に影が届かない欠陥を修正。オブジェクト境界から動的に影範囲を拡張し、樹木に戻った時は小範囲へ戻して影精細度を維持。実ソースコミットe9d54eaと回帰テストコミット478e49bを同PRに追加。GitHub CIは実行中で、WebGL/Android実画面は未確認。 PRのRPG data architecture checksが召喚獣鑑賞画面のrendererキャッシュキー不一致で失敗したため、同じPR内でバージョンとimportキーを一致させる修正bc693e8を追加。再CIは結果待ち。",
-      "nextAction": "PR #409の最新bc693e8のRPG architecture QA・Battle visual E2E結果を確認。WebGLで100×100城・橋の影範囲、樹木へ戻した影品質、炎・氷残留解消を正面/斜めから検証。Android FPSと影の粗さを確認後にマージ判断。",
+      "subject": "大型建造物のオフセット位置で影が欠落する光源ターゲット固定を修正",
+      "summary": "mainのworldスイッチON、world手動Issueなしを確認。前回PR #409の大型影範囲改善を継続。シャドーフラスタムを広げても太陽ライトのtargetが元の樹木原点に固定されていたため、中心が原点からずれた城・橋の影が欠落する欠陥を修正。カタログ3DのBox3中心へDirectionalLight.targetを移動し、ライト位置・シャドー深度をサイズに応じ調整。樹木に戻す際に原点・既定ライト位置・深度を復元。実ソース修正bbf5fa0と回帰テストb4c2468をPR #409へコミット。WebGL実画像/Android FPS未確認、最新GitHub CI結果未確認のためQAはpending、mainマージなし。",
+      "nextAction": "PR #409の最新b4c2468のCIを確認し、城/橋を原点外へ配置した場合のシャドーの向き・カメラfrustumと樹木復帰後の品質を実WebGLで確認。Android影の精細度・FPSを測定し、CI不合格なら修正。",
       "steps": {
         "launch": "done",
         "code": "done",
@@ -84,20 +84,16 @@
       },
       "evidence": [
         {
-          "label": "大型城の動的シャドーフラスタム修正 e9d54ea",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/e9d54ea357418473807653dff63c9b8b6163ea7d"
+          "label": "太陽ライトtarget追従・影深度修正 bbf5fa0",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/bbf5fa0f47fe84a0ce92fe2b087d23a417e42dd7"
         },
         {
-          "label": "影範囲回帰テスト追加 478e49b",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/478e49bb7091152d5cdccbfe4ca18e98f084798d"
+          "label": "追加回帰テスト b4c2468",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/b4c2468c67d9f35486ad28af2cc1cafd61e93298"
         },
         {
-          "label": "継続PR #409",
+          "label": "継続Draft PR #409",
           "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/409"
-        },
-        {
-          "label": "CIで検出した召喚獣描画キャッシュキー不整合の修正 bc693e8",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/bc693e80ba2ed3f3093caf70f92f6c7620f85778"
         }
       ]
     },
