@@ -3,6 +3,8 @@
  * inventory remains in campaign.squads, while this plan assigns actual people.
  * A source squad may be split between teams but never duplicated.
  */
+import {formationStatus,arrangeFormation} from './sortie-formation-logic.js';
+import {STRATEGY_METHODS,STORY_JOB_TO_STRATEGY_JOB} from './three-step-strategy-catalog.js';
 export const SORTIE_TEAM_IDS=Object.freeze([1,2,3]);
 export const SORTIE_SQUADS_PER_GROUP=16;
 /** Temporary level-99 battle/formation test without rewriting career XP. */
@@ -48,11 +50,12 @@ export const SORTIE_FORMATIONS=Object.freeze({
  dragon:Object.freeze({name:'龍牙陣形',level:85,attack:.23,defense:.12,mobility:.09}),
  constellation:Object.freeze({name:'星鐘陣形',level:99,attack:.25,defense:.22,mobility:.14,healing:.12})
 });
+export const sortieFormationStatus=(game,teamId)=>formationStatus(game?.sortiePlan?.teams?.find(t=>t.id===Number(teamId)),ownSquads(game),SORTIE_FORMATION_CELLS);
 export const unlockedSortieFormations=game=>Object.entries(SORTIE_FORMATIONS)
  .filter(([,x])=>sortieLevel(game)>=x.level).map(([id])=>id);
 export function sortieFormationBuff(game,teamId){
  const t=game?.sortiePlan?.teams?.find(x=>x.id===Number(teamId));
- const f=SORTIE_FORMATIONS[t?.formation]||SORTIE_FORMATIONS.balanced;
+ const f=SORTIE_FORMATIONS[sortieFormationStatus(game,teamId).id]||{};
  return {attack:f.attack||0,defense:f.defense||0,mobility:f.mobility||0,healing:f.healing||0};
 }
 export const SORTIE_ENTRY_SLOTS=Object.freeze([9,10,11]);
@@ -63,7 +66,7 @@ const clamp=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
 const ownSquads=game=>(game?.campaign?.squads||[]).filter(s=>s.count>0&&String(s.commanderId??'player')!=='reserve');
 export const stageIsControlled=(game,stage)=>Boolean(stage?.id&&game?.completedStages?.includes(stage.id));
 export const allowedSortieSlots=(game,stage)=>stageIsControlled(game,stage)?allSlots:SORTIE_ENTRY_SLOTS;
-const blankTeam=id=>({id,slots:Array(SORTIE_SQUADS_PER_GROUP).fill(null),grid:Array(SORTIE_GRID_CELLS).fill(null),counts:{},divisions:{},captainId:null,formation:'balanced',deploymentSlot:SORTIE_ENTRY_SLOTS[id-1],initialOrder:'charge'});
+const blankTeam=id=>({id,slots:Array(SORTIE_SQUADS_PER_GROUP).fill(null),grid:Array(SORTIE_GRID_CELLS).fill(null),counts:{},divisions:{},captainId:null,formation:'balanced',tactics:[],deploymentSlot:SORTIE_ENTRY_SLOTS[id-1],initialOrder:'charge'});
 const teamOf=(game,id)=>game.sortiePlan?.teams?.find(t=>t.id===Number(id));
 const rarityScore=s=>({N:0,R:1,SR:2,SSR:3,UR:4})[s?.rarity]??0;
 
@@ -107,6 +110,7 @@ export function ensureSortiePlan(game){
    [...candidates].sort((a,b)=>rarityScore(b)-rarityScore(a))[0];
   team.captainId=captain?.id??null;
   team.initialOrder=ACTIVE_ORDER_IDS.includes(old.initialOrder)?old.initialOrder:'charge';
+  team.tactics=Array.isArray(old.tactics)?old.tactics.filter((id,index,arr)=>STRATEGY_METHODS[id]&&arr.indexOf(id)===index).slice(0,16):[];
   return team;
  });
  if(!saved?.length){
@@ -117,7 +121,7 @@ export function ensureSortiePlan(game){
    team.counts[String(s.id)]=s.count;team.divisions[String(s.id)]=1;
   });
   teams.forEach(team=>{
-   team.slots.filter(Boolean).forEach((sid,index)=>{team.grid[SORTIE_FORMATION_CELLS.balanced[index]]=sid;});
+   arrangeFormation(team,sources,'balanced',SORTIE_FORMATION_CELLS);
    const candidates=sources.filter(s=>team.counts[String(s.id)]);
    team.captainId=[...candidates].sort((a,b)=>rarityScore(b)-rarityScore(a))[0]?.id??null;
   });
@@ -271,10 +275,8 @@ export function setSortieFormation(game,teamId,formation){
  const team=teamOf(game,teamId);
  if(!team||!Object.hasOwn(SORTIE_FORMATIONS,formation)||SORTIE_FORMATIONS[formation].level>sortieLevel(game))throw Error('この陣形は軍師レベルが不足しています。');
  team.formation=formation;
- // A chosen preset rearranges current contingents on the same 4x4 board.
- const order=team.slots.filter(Boolean);
- team.grid=Array(SORTIE_GRID_CELLS).fill(null);
- order.forEach((sid,index)=>{team.grid[SORTIE_FORMATION_CELLS[formation][index]]=sid;});
+ // Auto-position by actual roles, not just by arbitrary unit order.
+ arrangeFormation(team,ownSquads(game),formation,SORTIE_FORMATION_CELLS);
  if(!availableSortieOrders(game,teamId).includes(team.initialOrder))team.initialOrder='hold';
  return team;
 }
@@ -295,20 +297,31 @@ export function resolvedSortieSlot(game,stage,team){
 }
 export function availableSortieOrders(game,teamId){
  const jobs=new Set(sortieTeamSquads(game,teamId).map(s=>s.job));
- if(!jobs.size)return [];
+ if(!jobs.size||!sortieFormationStatus(game,teamId).valid)return [];
  const orders=['charge','defend','hold','retreat'];
  const links=sortieAdjacentJobs(game,teamId);
  // A healer needs a neighboring unit to issue group support; a scout needs
  // a neighboring unit to cover a building search. Moving the same jobs
  // apart changes command availability without consuming personnel.
- if(links.some(link=>(link.a==='僧侶'&&link.b!=='僧侶')||(link.b==='僧侶'&&link.a!=='僧侶')))
-  orders.push('support');
- if(links.some(link=>['忍者','シーフ'].includes(link.a)||['忍者','シーフ'].includes(link.b)))
-  orders.push('explore');
+ if(jobs.has('僧侶')||jobs.has('召喚士'))orders.push('support');
+ if(['忍者','シーフ','召喚士'].some(job=>jobs.has(job)))orders.push('explore');
  if([...jobs].some(j=>['魔法使い','忍者'].includes(j)))orders.push('destroy');
- if(links.some(link=>[link.a,link.b].some(j=>['忍者','シーフ','魔法使い'].includes(j))))
-  orders.push('weaken');
+ if(['忍者','シーフ','魔法使い'].some(job=>jobs.has(job)))orders.push('weaken');
  return orders;
+}
+/** Store several battle methods during inn planning. Targets are chosen in battle. */
+export function setSortieTactics(game,teamId,tacticIds){
+ ensureSortiePlan(game);
+ const team=teamOf(game,teamId),allowed=availableSortieOrders(game,teamId);
+ if(!team||!Array.isArray(tacticIds))throw Error('作戦を選択してください。');
+ const jobs=new Set(sortieTeamSquads(game,teamId).map(s=>STORY_JOB_TO_STRATEGY_JOB[s.job]).filter(Boolean));
+ const unique=[...new Set(tacticIds)];
+ if(unique.length>16||unique.some(id=>{
+  const method=STRATEGY_METHODS[id];
+  return !method||!allowed.includes(method.mode)||
+   (method.jobs.length>0&&!method.jobs.some(job=>jobs.has(job)));
+ }))throw Error('配置陣形・職業の条件を満たさない作戦があります。');
+ team.tactics=unique;return team;
 }
 export function setSortieOrder(game,teamId,order){
  ensureSortiePlan(game);
@@ -319,11 +332,13 @@ export function setSortieOrder(game,teamId,order){
 }
 /** Job-specific suppression effects; activated only by a real planned debuff order. */
 export function sortieDebuffTypes(game,teamId){
+ if(!sortieFormationStatus(game,teamId).valid)return [];
  const jobs=new Set(sortieTeamSquads(game,teamId).map(s=>s.job));
  return [
   ...(jobs.has('忍者')?[{job:'忍者',stat:'speed',amount:.18,name:'機動力低下'}]:[]),
   ...(jobs.has('シーフ')?[{job:'シーフ',stat:'defense',amount:.15,name:'防御力低下'}]:[]),
-  ...(jobs.has('魔法使い')?[{job:'魔法使い',stat:'attack',amount:.2,name:'攻撃力低下'}]:[])
+  ...(jobs.has('魔法使い')?[{job:'魔法使い',stat:'attack',amount:.2,name:'攻撃力低下'},{job:'魔法使い',stat:'heal_block',amount:1,name:'回復阻止'}]:[]),
+  ...(jobs.has('シーフ')||jobs.has('忍者')?[{job:jobs.has('シーフ')?'シーフ':'忍者',stat:'buff_block',amount:1,name:'強化阻止'}]:[])
  ];
 }
 /** Convert assigned inventory into at most 50 actual battle participants. */
@@ -369,7 +384,7 @@ export function allocateThreeTeamSortie(game,stage,limit=SORTIE_TOTAL_RENDER_LIM
   divisionCount:Math.min(x.count,Math.max(1,x.team.divisions?.[String(x.squad.id)]||1)),
   deploymentSlot:positions.get(x.team.id),
   captain:sources.get(String(x.team.captainId))||null,
-  formation:x.team.formation,
+  formation:sortieFormationStatus(game,x.team.id).id,
   initialOrder:availableSortieOrders(game,x.team.id).includes(x.team.initialOrder)?x.team.initialOrder:'hold'
  }));
 }

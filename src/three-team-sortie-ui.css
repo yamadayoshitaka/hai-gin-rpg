@@ -70,3 +70,18 @@
 .sortieDivisions small{display:block;font-size:10px;color:#d1e2e7}
 .sortieGridFooter button{padding:5px 9px!important}
 @media(max-width:450px){.sortieGridFooter button{padding:4px!important;font-size:10px!important}.sortieTemplateChoices button{min-height:87px!important}.sortieDivisions{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* Distinguish occupied tactical roles from empty positions on the 4x4 board. */
+.sortieMiniGrid{grid-template-columns:repeat(4,10px);grid-template-rows:repeat(4,10px)}
+.sortieMiniGrid i.occupied{font:700 8px/9px system-ui;text-align:center;color:#261b0c}
+.sortieGridFooter small{max-width:65%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* Three-stage strategy editor: compact mobile selection and physical troop shares. */
+.sortieStep{font-size:11px;color:#ffdda1}
+.sortieStrategyGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}
+.sortieStrategyGrid button{font-size:11px!important;padding:6px 3px!important;min-height:36px!important}
+.sortieStrategyGrid button:disabled{opacity:.38}
+.sortieStrategyShares{display:grid;gap:3px;font-size:10px}
+.sortieStrategyShares>div{display:flex;justify-content:space-between;align-items:center;gap:6px;color:#dceaf2}
+.sortieStrategyShares b{color:#ffe1a0}
+@media(max-height:680px){.sortieStrategyGrid{gap:3px}.sortieStrategyGrid button{min-height:29px!important;padding:4px 2px!important}.sortieStrategyShares{gap:2px}}

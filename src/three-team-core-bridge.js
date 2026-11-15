@@ -82,6 +82,7 @@ export function makeThreeTeamBattleRequest(game,stage,battleId){
   availableSquadOrders:allowed,subdivisionMap,sortieLevel:level,
   formationBonuses:Object.fromEntries(teams.map(t=>[String(t.id),sortieFormationBuff(game,t.id)])),
   squadDebuffProfiles:Object.fromEntries(teams.map(t=>[String(t.id),sortieDebuffTypes(game,t.id)])),
+  sortieTacticTemplate:Object.fromEntries(teams.map(t=>[String(t.id),t.tactics||[]])),
   tacticalTemplate:null,
   totalReserves:reserveTroops(game.campaign),sortieTeamCount:teams.length
  };

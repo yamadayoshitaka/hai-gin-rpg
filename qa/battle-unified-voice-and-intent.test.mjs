@@ -55,7 +55,8 @@ assert.ok(battle.includes("label.classList.toggle('defeated',sum.n===0)"));
 assert.ok(battle.includes('function refreshSquadCircleInfo()'));
 assert.ok(battle.includes('function positionSquadCircleInfo(label)'));
 assert.ok(battle.includes("['戦死 '+fallen+'名','squadLoss']"));
-assert.ok(battle.includes("['作戦 '+fixedStrategy,'squadFixedStrategy']"));
+assert.ok(battle.includes("[team===0?commandGroupName(id):'敵班','squadFixedStrategy']"),
+ 'circle status labels the actual allied group and identifies enemy AI');
 assert.ok(battle.includes('[intent.order,\'\']'));
 assert.ok(battle.includes('[intent.purpose,\'\']'));
 assert.ok(battle.includes('else openSquadTactics(id);'),
