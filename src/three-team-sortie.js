@@ -305,7 +305,7 @@ export function availableSortieOrders(game,teamId){
   orders.push('support');
  if(links.some(link=>['忍者','シーフ'].includes(link.a)||['忍者','シーフ'].includes(link.b)))
   orders.push('explore');
- if([...jobs].some(j=>['魔法使い','忍者','召喚士','格闘家'].includes(j)))orders.push('destroy');
+ if([...jobs].some(j=>['魔法使い','忍者'].includes(j)))orders.push('destroy');
  if(links.some(link=>[link.a,link.b].some(j=>['忍者','シーフ','魔法使い'].includes(j))))
   orders.push('weaken');
  return orders;
