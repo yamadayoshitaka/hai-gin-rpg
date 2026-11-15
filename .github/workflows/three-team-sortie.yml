@@ -4,6 +4,9 @@ on:
     paths:
       - 'src/three-team-sortie*.js'
       - 'src/sortie-formation-logic.js'
+      - 'src/battle-formation-integrity.js'
+      - 'src/campaign-stage-plan.js'
+      - 'world-map.html'
       - 'src/three-step-strategy-catalog.js'
       - 'src/three-team-sortie-ui.css'
       - 'src/three-team-core-bridge.js'
@@ -17,6 +20,7 @@ on:
       - 'qa/three-team-sortie.test.mjs'
       - 'qa/level99-targeted-strategy.test.mjs'
       - 'qa/formation-and-three-step-strategy.test.mjs'
+      - 'qa/formation-stage-collapse.test.mjs'
       - '.github/workflows/three-team-sortie.yml'
   workflow_dispatch:
 permissions:
@@ -32,6 +36,8 @@ jobs:
           node-version: '22'
       - name: Check new module syntax
         run: |
+          node --check src/battle-formation-integrity.js
+          node --check src/campaign-stage-plan.js
           node --check src/sortie-formation-logic.js
           node --check src/three-step-strategy-catalog.js
           node --check src/three-team-sortie.js
@@ -47,5 +53,6 @@ jobs:
           node --experimental-vm-modules qa/three-team-sortie.test.mjs
           node --experimental-vm-modules qa/level99-targeted-strategy.test.mjs
           node --experimental-vm-modules qa/formation-and-three-step-strategy.test.mjs
+          node --experimental-vm-modules qa/formation-stage-collapse.test.mjs
           node --experimental-vm-modules qa/inn-deployment-command-effects.test.mjs
           node --experimental-vm-modules qa/inn-commander-autoplace-gameover.test.mjs
