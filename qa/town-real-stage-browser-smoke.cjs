@@ -39,6 +39,14 @@ const fs=require('node:fs');
   if(await page.locator('#opening').isVisible())await page.locator('#skipPaper').click();
   await page.waitForURL(/world-map\.html/);
   await page.locator('#mapBoard .pin').first().waitFor();
+  // Re-enter and leave the town: both comics were already seen/skipped.
+  await page.locator('#stageGrid [data-stage="c01-s01"]').click();
+  await page.locator('#sortie').click();
+  await page.waitForURL(/town-hub\.html/);
+  assert.equal(await page.locator('#opening').isVisible(),false,'town arrival comic plays only once');
+  await page.locator('#leaveTown').click();
+  await page.waitForURL(/world-map\.html/);
+  await page.locator('#mapBoard .pin').first().waitFor();
   const locationBefore=await page.locator('.map-caption').innerText();
   assert.ok(locationBefore.includes('現在地')&&locationBefore.includes('レヴナ'));
   assert.equal(await page.locator('.current-location').count(),1);
