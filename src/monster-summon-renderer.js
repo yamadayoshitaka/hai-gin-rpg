@@ -58,6 +58,12 @@ export function createMonsterSummonRenderer(scene,{
   position.position.y=-bounds.min.y;
   position.add(actor);fitting.add(position);anchor.add(fitting);
   scene.add(anchor);
+  // Box3.setFromObject(actor) (gallery framing and the scale QA) does not
+  // update the ANCESTOR world matrices. Finalize the native donor rig's
+  // parent chain immediately, before the first renderer.render call.
+  // Otherwise it appears 1.7m to the camera fitter despite having a
+  // 17m parent scale, cropping the giant in mobile gallery.
+  anchor.updateMatrixWorld(true);
   startMonsterAction(actor,'idle',0);
   stats.created++;
   return {actor,anchor,detail,type:object.type,size,
