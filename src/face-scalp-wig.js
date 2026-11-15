@@ -414,7 +414,8 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
  }
  const material=new THREE.MeshPhysicalMaterial({
   color:new THREE.Color(color),vertexColors:true,
-  roughness:.73,metalness:0,clearcoat:.045,clearcoatRoughness:.59,
+  roughness:.80,metalness:0,clearcoat:.023,clearcoatRoughness:.76,
+  sheen:.12,sheenRoughness:.75,sheenColor:new THREE.Color(color).multiplyScalar(.50),
   side:THREE.DoubleSide,
   transparent:false,opacity:1,depthWrite:true
  });
@@ -783,8 +784,10 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  geo.setAttribute('color',new THREE.BufferAttribute(colors,3));
  geo.setIndex(indices);
  const mat=new THREE.MeshPhysicalMaterial({
-  color:0xffffff,vertexColors:true,roughness:.56,metalness:0,
-  clearcoat:.075,clearcoatRoughness:.49,side:THREE.DoubleSide
+  color:0xffffff,vertexColors:true,roughness:.70,metalness:0,
+  clearcoat:.035,clearcoatRoughness:.68,
+  sheen:.22,sheenRoughness:.65,sheenColor:new THREE.Color(color).multiplyScalar(.42),
+  side:THREE.DoubleSide
  });
  const locks=new THREE.Mesh(geo,mat);
  locks.name='REAL_ROOTED_SWEPT_HAIR_LOCKS';
@@ -1107,8 +1110,10 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   fineGeo.setIndex(tris);
   fineGeo.computeVertexNormals();fineGeo.computeBoundingSphere();
   const fineMat=new THREE.MeshPhysicalMaterial({
-   color:0xffffff,vertexColors:true,roughness:.57,metalness:0,
-   clearcoat:.055,clearcoatRoughness:.48,side:THREE.DoubleSide
+   color:0xffffff,vertexColors:true,roughness:.69,metalness:0,
+   clearcoat:.025,clearcoatRoughness:.70,
+   sheen:.16,sheenRoughness:.63,sheenColor:new THREE.Color(color).multiplyScalar(.44),
+   side:THREE.DoubleSide
   });
   const fineMesh=new THREE.Mesh(fineGeo,fineMat);
   fineMesh.name='DETACHABLE_WIG_FINE_FIBRES';
