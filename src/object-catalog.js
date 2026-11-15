@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {tuneWorldQualityMaterial} from './world-quality-pbr.js';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {createCatalogBuildingStructure,renderCatalogBuildingStructure,renderSpiralStairBOM} from './building-structure.js?v=4.6.28';
 
@@ -1302,8 +1303,8 @@ export function createCatalogObject(id,options={}){
   if(!node.isMesh)return;
   node.castShadow=true;
   node.receiveShadow=true;
-  if(Array.isArray(node.material))node.material=node.material.map(m=>catalogMaterialUpgrade(m,id));
-  else node.material=catalogMaterialUpgrade(node.material,id);
+  if(Array.isArray(node.material))node.material=node.material.map(m=>tuneWorldQualityMaterial(catalogMaterialUpgrade(m,id),id));
+  else node.material=tuneWorldQualityMaterial(catalogMaterialUpgrade(node.material,id),id);
  });
  return object;
 }

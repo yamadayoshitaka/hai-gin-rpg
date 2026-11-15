@@ -1,0 +1,192 @@
+name: World photoreal references and 3D QA regression (53 objects + 200 stages)
+# Cloudflare Free only. No paid fallback. No unattended destructive edits.
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/world-quality-photoreal.yml'
+      - 'scripts/world-quality-*.mjs'
+      - 'scripts/world-quality-manual-command.mjs'
+      - 'scripts/world-quality-*.cjs'
+      - 'scripts/world-quality-compare.py'
+      - 'src/world-quality-pbr.js'
+      - 'world-quality-preview.html'
+      - 'batch-monitor.html'
+      - 'qa/world-quality-contract.test.mjs'
+  issues:
+    types: [opened]
+  workflow_dispatch:
+    inputs:
+      target_type:
+        description: 'Targets to run: all, object, or stage'
+        required: true
+        default: 'all'
+        type: choice
+        options: ['all','object','stage']
+      target_key:
+        description: 'Optional exact key, e.g. object:castle_001 or stage:c01-s04'
+        required: false
+        type: string
+      next_instruction:
+        description: 'Optional per-run visual direction; 1000 characters max (no secrets)'
+        required: false
+        type: string
+      max_references:
+        description: 'Maximum independent reference images, 1-3; Cloudflare Free only'
+        required: true
+        default: '3'
+        type: choice
+        options: ['1','2','3']
+  schedule:
+    - cron: '41 * * * *'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/world-quality-photoreal.yml'
+      - 'ops/world-photoreal-quality-start-20261115.trigger'
+permissions:
+  contents: write
+  pull-requests: write
+  actions: read
+concurrency:
+  group: world-photoreal-reference-quality-review
+  cancel-in-progress: false
+jobs:
+  static-contracts:
+    if: github.event_name != 'issues' || (startsWith(github.event.issue.title, '[world-quality]') && github.event.issue.user.login == github.repository_owner)
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Confirm all 253 targets, prompt guards and dashboard links
+        run: |
+          node --check scripts/world-quality-catalog.mjs
+          node --check scripts/world-quality-run.mjs
+          node --check scripts/world-quality-manual-command.mjs
+          node --check scripts/world-quality-postprocess.mjs
+          node --check scripts/world-quality-capture.cjs
+          node --check scripts/world-quality-stage-capture.cjs
+          python3 -m py_compile scripts/world-quality-compare.py
+          node qa/world-quality-contract.test.mjs
+  generate-and-regress-one-batch:
+    if: github.event_name != 'pull_request'
+    needs: static-contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    env:
+      REVIEW_BRANCH: world/photoreal-regression-review
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install open-source pixel and native-WebGL capture dependencies
+        run: |
+          python -m pip install --disable-pip-version-check Pillow==11.3.0
+          npm install --no-save --package-lock=false playwright@1.58.2
+          npx playwright install --with-deps chromium
+      - name: Use persistent quality branch; incorporate latest game main
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          if git fetch origin "$REVIEW_BRANCH"; then
+            git switch -c "$REVIEW_BRANCH" --track "origin/$REVIEW_BRANCH"
+            git merge --no-edit origin/main
+          else
+            git switch -c "$REVIEW_BRANCH" origin/main
+          fi
+          node qa/world-quality-contract.test.mjs
+      - name: Load optional owner-authenticated next-batch instruction
+        run: node scripts/world-quality-manual-command.mjs
+      - name: Create genuine isolated Cloudflare 2D references only on Free
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_WORKERS_AI_API_TOKEN: ${{ secrets.CLOUDFLARE_WORKERS_AI_API_TOKEN }}
+          CLOUDFLARE_FREE_PLAN_CONFIRMED: ${{ vars.CLOUDFLARE_FREE_PLAN_CONFIRMED }}
+          MAX_REFERENCES: ${{ inputs.max_references || '3' }}
+        run: |
+          node scripts/world-quality-run.mjs --mode reference --max "$MAX_REFERENCES"
+      - name: Serve current real 3D catalog and stages
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/world-quality-web.log 2>&1 &
+          sleep 3
+      - name: Render actual WebGL, compare 2D masters, propose conservative PBR candidates
+        run: node scripts/world-quality-postprocess.mjs
+      - name: Record no-false-approval quality regressions and review-only candidates
+        run: |
+          node scripts/world-quality-run.mjs --mode results
+          node qa/world-quality-contract.test.mjs
+      - name: Commit real references, proof and candidate code to separate branch
+        id: save
+        shell: bash
+        run: |
+          set -euo pipefail
+          git add -A -- assets/world-quality data/world-quality src/world-quality-pbr.js qa-reports/world-quality
+          if git diff --cached --quiet; then
+            echo 'No new reference/candidate; no empty commit'
+            echo 'changed=false' >> "$GITHUB_OUTPUT"
+          else
+            git commit -m 'art(world-quality): real reference, WebGL QA and review-only PBR proposals'
+            git push origin "HEAD:$REVIEW_BRANCH"
+            echo 'changed=true' >> "$GITHUB_OUTPUT"
+          fi
+      - name: Open one DRAFT review PR only if a bounded PBR patch exists
+        if: steps.save.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git diff origin/main...HEAD -- src/world-quality-pbr.js | grep -q '^+.*roughnessScale:'; then
+            EXISTING=$(gh pr list --head "$REVIEW_BRANCH" --state open --json number --jq length)
+            if [ "$EXISTING" = "0" ]; then
+              gh pr create --draft --base main --head "$REVIEW_BRANCH" \
+               --title 'quality(review): 3D PBR refinement proposals with real baseline captures' \
+               --body 'Object and stage 2D references are design targets only. Bounded roughness proposals are based on pixel statistics and real WebGL captures; the numerical proxy is NOT proof of photorealism. Review each object identity, shape, lighting, materials and 50/100/1000 battle performance before marking ready or merging. Never auto-merge this PR.'
+            fi
+          fi
+      - name: Report truthful counts and links to GitHub
+        if: always()
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          const f='data/world-quality/progress.json';
+          const p=fs.existsSync(f)?JSON.parse(fs.readFileSync(f,'utf8')):{};
+          const arr=Object.values(p.assets||{});
+          const n=arr.filter(x=>x.referenceSha256).length;
+          const screenshots=arr.filter(x=>x.gameScreenshot).length;
+          const proposals=arr.filter(x=>x.roughnessProposal&&x.roughnessProposal!==1).length;
+          const lines=['# World quality review batch','',
+            '| Metric | Verified |','|---|---:|',
+            '| Canonical targets | 253 (53 catalog objects + 200 campaign stages) |',
+            '| Real 2D references with hashes | '+n+' |',
+            '| Real captured game views | '+screenshots+' |',
+            '| Review-only PBR proposals | '+proposals+' |',
+            '| Approved photoreal 3D builds by this job | 0 |',
+            '| Last stop reason | '+(p.lastRun?.stopReason||'UNAVAILABLE')+' |',
+            '','No character, collision, story, gameplay or monster batch is modified.',
+            'No paid API, no automatic merge, no claim of photoreal quality.'];
+          const text=lines.join('\n')+'\n';console.log(text);
+          if(process.env.GITHUB_STEP_SUMMARY)fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY,text);
+          NODE
+      - name: Upload unapproved reference and screenshot evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: world-quality-qa-${{ github.run_id }}
+          path: |
+            qa-reports/world-quality/
+            data/world-quality/progress.json
+          retention-days: 14
+          if-no-files-found: warn
