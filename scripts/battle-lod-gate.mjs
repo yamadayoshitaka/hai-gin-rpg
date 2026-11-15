@@ -40,8 +40,8 @@ export function verifyLodCandidate(manifest,read=p=>fs.readFileSync(p)){
   const current=inspectGlb(bytes);
   if(current.triangles!==v.triangles||current.meshParts!==v.meshParts)
    throw Error(tier+' scene stats differ from exported GLB');
-  if(original.skins&&!current.skins)throw Error(tier+' lost skin');
-  if(original.animations&&!current.animations)throw Error(tier+' lost animation');
+  if(current.skins!==original.skins)throw Error(tier+' skin count changed');
+  if(current.animations!==original.animations)throw Error(tier+' animation count changed');
   if(original.morphs&&current.morphs<original.morphs)throw Error(tier+' lost morph');
   stats[tier]=current;
  }

@@ -15,7 +15,7 @@
 
 GitHub Actionsの `battle-lod-candidates.yml` はマスターGLBの変更、毎日03:17（日本時間）の差分照合、手動実行で起動する。マスターSHAと3出力のSHAが一致した場合は何も再生成しない。`data/batch-center-switches.json` でhuman/monsterが無効ならその分類は処理しない。スイッチの形式が不明なら失敗として停止する。無料のBlenderを使用し、有料AI APIは呼ばない。
 
-生成した候補GLBは `assets/battle-lod-candidates/<id>/` のみに保存し、固定ブランチ `quality/battle-lod-candidates` のDraft PRとして提示する。本番ゲームのモデル登録は変更しない。
+生成した候補GLBは `assets/battle-lod-candidates/<id>/` のみに保存し、固定ブランチ `quality/battle-lod-candidates` に格納する。GitHub ActionsのPR作成権限が許可されている場合のみ自動でDraft PRを開く。権限がない場合は検査済みブランチを保持して警告とレビューURLを記録する。初回Draft PRは #412。本番ゲームのモデル登録は変更しない。
 
 ## 自動品質ゲート
 
@@ -29,4 +29,8 @@ GitHub Actionsの `battle-lod-candidates.yml` はマスターGLBの変更、毎�
 4. 中景モデルを既存 `mass-battle-real-army.js` へ安全に接続し、遠景の画像アトラスとの切替を測定する（現時点では未接続）。
 5. Pixel実機で50対50と1000対1000のFPS p95・メモリ・発熱・10分連続試験に合格してから昇格する。
 
-**このPRが追加するのは候補の自動生成と静的品質ゲートまで。実モデル変換のGitHub Actions結果、実写品質、FPS、本番差し替えは別途検証する。**
+## 初回実出力と検査（2026-11-15）
+
+GitHub Actions #43721657314 にてBlenderを実行し、騎士とドラゴンの近中遠GLB6個を生成、GLB実バイナリの三角形・部品・材質・骨格・アニメーション検査に合格した。騎士は 6952 → 2919 → 1042 面（15 → 2メッシュ）、ドラゴンは 7440 → 3124 → 1116 面（1メッシュ維持）。ファイルを `quality/battle-lod-candidates` にコミットし、Draft PR #412 を開いた。Actions自体はGitHubのPR作成権限で最後の工程だけ失敗したため、権限拒否を警告へ切り替える回復策を実装した。
+
+**候補の自動生成・静的ゲートは実行済み。ただし実写品質の画像評価、FPS、近中遠の本番戦闘への切替接続は未完了であり、このPRではライブモデルを変更しない。**
