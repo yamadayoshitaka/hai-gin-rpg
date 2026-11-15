@@ -184,15 +184,18 @@ function renderSpec(s){
   ...refs.map((r,i)=>'Reference input '+i+' is actor '+r.id+', enforce reference face/age/silhouette/attire: '+r.rule),
   'If documents or maps occur, show entirely BLANK undecorated papers. Do NOT repeat appearance of female commander as Lucia, or Iris as an armored knight.'
  ].join('\n');
+ const stageArtManifest=stage45?read('assets/story/stage-manifests/'+s.stage.id+'.manifest.json'):null;
+ const shotDirection=stageArtManifest?.perShotCameraDirections?.[s.shot.id];
+ const shotWithDirection=shotDirection?{...s.shot,visualDirection:shotDirection}:s.shot;
  const guardedPrompt=stage45?buildStage45ArtPrompt({
-  stageId:s.stage.id,stageName:s.stage.name||s.stage.id,edition:s.edition,gender:s.gender,shot:s.shot,
+  stageId:s.stage.id,stageName:s.stage.name||s.stage.id,edition:s.edition,gender:s.gender,shot:shotWithDirection,
   actorRefs:refs.map(r=>({id:r.id,path:r.rel,sha:r.sha,rule:r.rule})),
   stageStory:read('assets/story/characters/'+s.stage.id+'-reference-bible.json').scene,
   styleRef
  }):prompt;
  const submittedRefs=styleRef?[...refs,styleRef]:refs;
- const width=s.stage.id==='c01-s02'?1024:1536;
- const height=s.stage.id==='c01-s02'?576:864;
+ const width=s.stage.id==='c01-s02'||stage45?1024:1536;
+ const height=s.stage.id==='c01-s02'||stage45?576:864;
  return {actors,refs:submittedRefs,prompt:guardedPrompt,width,height,
   estimate:Math.ceil(width/512)*Math.ceil(height/512)*26.05+submittedRefs.length*5.37};
 }
