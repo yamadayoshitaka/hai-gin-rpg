@@ -36,6 +36,13 @@ assert.equal(required,40,'4 stages with 4 opening panels, 2 before and 2 after, 
 assert.equal(reused,40,'All chosen first-four-stage main-path CGs already have correct registered artwork');
 assert.equal(new Set(reusedMap.map(x=>x.key)).size,40);
 assert.equal(new Set(reusedMap.map(x=>x.art)).size,40,'Existing selected visuals remain gender/branch specific');
+const defeatMale=compactComicForStage('c01-s04','post',{protagonistGender:'male',battleOutcome:{victory:false}});
+const defeatFemale=compactComicForStage('c20-s10','post',{protagonistGender:'female',battleOutcome:{victory:false}});
+assert.equal(defeatMale.panels[0].sharedArtAsset,'./assets/story/shared/shared-defeat-01.webp');
+assert.equal(defeatFemale.panels[0].sharedArtAsset,defeatMale.panels[0].sharedArtAsset);
+assert.equal(defeatFemale.panels[1].sharedArtAsset,null,'Do not fake a second completed defeat CG');
+const common=fs.readFileSync('assets/story/shared/shared-defeat-01.webp');
+assert.equal(common.toString('ascii',0,4),'RIFF');assert.equal(common.toString('ascii',8,12),'WEBP');
 const pages=['game.html','town-hub.html','world-map.html','src/story-manga-viewer.js'];
 for(const p of pages){
  const s=fs.readFileSync(p,'utf8');
