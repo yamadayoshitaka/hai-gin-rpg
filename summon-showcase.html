@@ -357,9 +357,19 @@
       }
       select.append(group);
     }
+    // Shareable direct links for the 50 new monster summons, e.g.
+    // ?summon=summon_m020 opens Leviathan without navigating 57 options.
+    const requested=new URLSearchParams(location.search).get('summon');
+    if(requested&&Array.from(select.options).some(o=>o.value===requested)){
+      select.value=requested;selected=requested;
+    }
     let frameMonsterType=null;
     // Species selection stays accessible while display settings are folded.
     select.addEventListener('change',()=>{
+      // Keep the currently inspected original monster in the share URL.
+      const url=new URL(location.href);
+      url.searchParams.set('summon',select.value);
+      history.replaceState(null,'',url);
       document.getElementById('controlsDrawer').open=false;
     });
     function changeType(preserveMode=false){
