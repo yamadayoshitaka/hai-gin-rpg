@@ -133,9 +133,19 @@ jobs:
           set -euo pipefail
           existing=$(gh pr list --state open --head "$REVIEW_BRANCH" --json number --jq length)
           if [[ "$existing" == '0' ]]; then
-            gh pr create --draft --base main --head "$REVIEW_BRANCH" \
+            if gh pr create --draft --base main --head "$REVIEW_BRANCH" \
               --title 'quality(review): near-mid-far candidates generated from masters' \
-              --body 'Candidate only: masters and production actor mappings unchanged. Binary geometry/rig gates passed. Pixel similarity, animation and sustained Android 1000v1000 FPS remain unverified; do not promote automatically.'
+              --body 'Candidate only: masters and production actor mappings unchanged. Binary geometry/rig gates passed. Pixel similarity, animation and sustained Android 1000v1000 FPS remain unverified; do not promote automatically.' 2>/tmp/battle-lod-pr-error.log; then
+              echo 'Review PR opened' >> "$GITHUB_STEP_SUMMARY"
+            else
+              cat /tmp/battle-lod-pr-error.log >&2
+              if grep -Fq 'GitHub Actions is not permitted to create or approve pull requests' /tmp/battle-lod-pr-error.log; then
+                echo "::warning::GitHub Actions lacks PR creation permission. Verified GLBs remain safe on $REVIEW_BRANCH."
+                echo "Draft PR must be opened from https://github.com/$GITHUB_REPOSITORY/compare/main...$REVIEW_BRANCH?expand=1" >> "$GITHUB_STEP_SUMMARY"
+              else
+                exit 1
+              fi
+            fi
           fi
       - name: Upload real topology and resource reports
         if: always()
