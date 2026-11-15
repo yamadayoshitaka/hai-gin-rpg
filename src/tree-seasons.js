@@ -109,7 +109,9 @@ function showCatalogSelection(){
  buildingTour=null;
  structureDemo.reset();
  if(catalogPreview){scene.remove(catalogPreview);catalogPreview.traverse(o=>{if(o.geometry&&!o.userData.sharedGeometry)o.geometry.dispose();if(o.material&&o.material.userData?.effectMaterial)o.material.dispose()});catalogPreview=null}
- tree.visible=!catalogItem;floor.visible=!catalogItem;$('season').disabled=catalogItem;$('effect').disabled=catalogItem&&!destructible;
+ // The tree's fire, ice and splinter particles live in a separate scene group.
+  // Hide them with the tree, otherwise they float over a selected building.
+  tree.visible=!catalogItem;effectRoot.visible=!catalogItem;floor.visible=!catalogItem;$('season').disabled=catalogItem;$('effect').disabled=catalogItem&&!destructible;
  for(const opt of $('effect').options)opt.disabled=destructible&&opt.value==='freeze';
  if(catalogItem){
   try{catalogPreview=createCatalogObject(selected);scene.add(catalogPreview)}catch(err){$('status').textContent='生成エラー: '+err.message;console.error(err);return}
@@ -119,6 +121,13 @@ function showCatalogSelection(){
   // Every building and loose component must fit in view, including the 100×100 castle.
   const bounds=new THREE.Box3().setFromObject(catalogPreview);
   const center=bounds.getCenter(new THREE.Vector3()),size=bounds.getSize(new THREE.Vector3());
+   // Large castles and bridges extend far outside the tree-sized 26 m shadow
+   // frustum. Fit the sun's orthographic shadow to the selected object bounds.
+   // The diagonal accounts for the angled light direction and tall structures.
+   const shadowHalf=Math.max(18,Math.hypot(size.x,size.z)*.6+size.y*.45);
+   sun.shadow.camera.left=-shadowHalf;sun.shadow.camera.right=shadowHalf;
+   sun.shadow.camera.top=shadowHalf;sun.shadow.camera.bottom=-shadowHalf;
+   sun.shadow.camera.updateProjectionMatrix();sun.shadow.needsUpdate=true;
   const vfov=THREE.MathUtils.degToRad(camera.fov/2),hfov=Math.atan(Math.tan(vfov)*camera.aspect);
   const distance=Math.max(12,Math.max(size.y/(2*Math.tan(vfov)),Math.max(size.x,size.z)/(2*Math.tan(hfov)))*1.2);
   orbit.target.copy(center);
@@ -144,7 +153,7 @@ function showCatalogSelection(){
     '外観 → '+levels+'を約6秒ごとに自動表示 / ドラッグで一時停止';
   }else $('stats').textContent='回転：ドラッグ / 拡大：ピンチ'+(destructible?' / 下のボタンで火災・爆破を試せます':'');
   if(destructible)structureDemo.show(selected,definition,catalogPreview,state);
- }else{orbit.target.set(0,5.2,0);camera.position.set(14,11,20);camera.far=350;camera.updateProjectionMatrix();orbit.maxDistance=180;scene.fog.near=110;scene.fog.far=240;$('status').textContent='樹木モデル';$('stats').textContent='回転：ドラッグ / 拡大：ピンチ'}
+ }else{sun.shadow.camera.left=-18;sun.shadow.camera.right=18;sun.shadow.camera.top=18;sun.shadow.camera.bottom=-18;sun.shadow.camera.updateProjectionMatrix();sun.shadow.needsUpdate=true;orbit.target.set(0,5.2,0);camera.position.set(14,11,20);camera.far=350;camera.updateProjectionMatrix();orbit.maxDistance=180;scene.fog.near=110;scene.fog.far=240;$('status').textContent='樹木モデル';$('stats').textContent='回転：ドラッグ / 拡大：ピンチ'}
  orbit.update();
 }
 $('effect').onchange=()=>{if(isCatalogItem())showCatalogSelection();else setEffect($('effect').value)};
