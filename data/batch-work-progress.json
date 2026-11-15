@@ -14,13 +14,13 @@
   "groups": {
     "human": {
       "source": "ChatGPT 定期タスクの実行結果",
-      "lastRunAt": "2026-11-15T15:57:40Z",
-      "subject": "Issue #417 / #399 剣士背面鎧の局所サーフェス推定異常",
-      "summary": "既存Draft PR #418の実コードsrc/outfit-maintenance-model.jsで、サンプル不足時に胴体全幅のZ極値を採用し背面鎧が板状に飛び出す可能性を修正。最寄り24頂点かつ局所距離制限で補間し、コミットa9ab8c6を専用ブランチへ保存。GitHub再取得・静的4条件は成功。ただし実行単体/ブラウザQAはGitHub DNS解決不能で未実施、CIステータス未登録、WebGL画像とAndroid未検証。踵異物は未解決。",
+      "lastRunAt": "2026-11-15T17:04:20Z",
+      "subject": "Issue #431 / #417 / #399 剣士背面鎧の未閉鎖リムと残存サーフェス",
+      "summary": "最新owner Issue #431の背面鎧未完成指示を反映。既存Draft PR #418に胸甲の肩・腰の開放端を既存backplateジオメトリ内の閉鎖ストリップで塞ぐ実コード変更をコミットf1fcb17。静的6条件の確認成功。ただしNode実行/Chromium WebGLはローカルGitHub DNS解決不能で未実施、CIとAndroid未検証。残存サーフェス・踵・顔髪品質は未完了。",
       "status": "in_review",
       "carryover": true,
-      "issueNumber": 417,
-      "nextAction": "PR #418のa9ab8c6でNode単体/Chromium WebGL男女剣士背面・左右斜め・踵比較、CI確認。近傍サンプリングの穴・衣装貫通・保存互換を確認し、#399の踵メッシュ原因修正。未達ならmainマージ・公開禁止。",
+      "issueNumber": 431,
+      "nextAction": "PR #418 commit f1fcb17のNode/Chromium実WebGLで男女剣士背面・肩上・腰下・踵の開放端/貫通を比較。新規閉鎖ストリップの法線と裏面、衣装スキニングを確認し、残存サーフェスと踵を修正。Issue #431の顔表情・陰影・顔パーツも継続。品質未達ならmainマージ禁止。",
       "steps": {
         "launch": "done",
         "code": "done",
@@ -32,19 +32,23 @@
       },
       "evidence": [
         {
-          "label": "所有者指示 Issue #417",
+          "label": "所有者の最新指示 Issue #431",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/issues/431"
+        },
+        {
+          "label": "前回のIssue #417",
           "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/issues/417"
         },
         {
-          "label": "継続Issue #399",
+          "label": "背面・踵の継続Issue #399",
           "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/issues/399"
         },
         {
-          "label": "今回の実コード修正 commit a9ab8c6",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/a9ab8c6756b48db9549054dc02b4c0ac31eea76a"
+          "label": "今回の実ソース変更 f1fcb17",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/f1fcb17574a389dbad5857cfa7c40bd08862ae6b"
         },
         {
-          "label": "既存Draft PR #418",
+          "label": "Draft PR #418",
           "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/418"
         }
       ]
