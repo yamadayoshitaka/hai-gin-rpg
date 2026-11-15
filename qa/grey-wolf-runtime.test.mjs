@@ -67,7 +67,7 @@ test('RRAR powers attack/roar, hit has short pose, SLEEP terminates defeat',()=>
  assert.ok(Math.abs(root.children[0].rotation.x)>.001);
  for(let i=0;i<15;i++)handle.update(.05);
  assert.equal(root.userData.greyWolfRuntimeState.action,'idle');
- handle.play('defeat');handle.update(.3);
+ handle.play('defeat');for(let i=0;i<4;i++)handle.update(.1);
  assert.equal(root.userData.greyWolfRuntimeState.sourceAction,'defeat');
  assert.ok(root.children[0].rotation.z>.1);
  for(let i=0;i<50;i++)handle.update(.05);
