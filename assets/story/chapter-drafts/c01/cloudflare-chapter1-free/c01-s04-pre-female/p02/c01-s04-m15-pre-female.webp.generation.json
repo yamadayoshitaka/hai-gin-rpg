@@ -1,0 +1,61 @@
+{
+  "kind": "CLOUDFLARE_REAL_WEBP_REVIEW_CANDIDATE_NOT_APPROVED",
+  "shotKey": "c01-s04|pre|female|c01-s04-m15",
+  "stageId": "c01-s04",
+  "edition": "pre",
+  "gender": "female",
+  "panelId": "c01-s04-m15",
+  "screenplayText": "合図を待つ兵士たちに、軍師は静かに頷いた。いよいよ「灰銀の本城・森と遺構の調査」での戦いが始まる。",
+  "visibleActorIds": [
+    "lucia",
+    "garan"
+  ],
+  "actualReferenceImagesAttached": [
+    {
+      "actorId": "lucia",
+      "source": "assets/story/characters/lucia/master.webp",
+      "originalSha256": "87005a46d3b4a23714a25f1f9b2d46fee9a1ce3c6b5af0be78f85a1f1fd2b411",
+      "submittedSha256": "91344ba790293c03406ca1804f0360d135b0015aa75cc5b68d7904fc72de1173",
+      "actualBytes": 322498,
+      "pixels": [
+        439,
+        480
+      ]
+    },
+    {
+      "actorId": "garan",
+      "source": "assets/story-cinema/cast/garan.webp",
+      "originalSha256": "aeb457957485f89244eb0b4f270b72e4bf0670341f2444ac7f43299222075a8b",
+      "submittedSha256": "30c17f9c9f97f0f7a5f66ce2e6f03a711d2ebfb697de0c6a8a84545f9c96cc3c",
+      "actualBytes": 262661,
+      "pixels": [
+        329,
+        480
+      ]
+    },
+    {
+      "actorId": "style_benchmark",
+      "source": "assets/story/chapters/c01/panels/c01-s01-m02-female.webp",
+      "originalSha256": "e16731b753237f0aa88e2c906d7ff46a929df1300728292d878eb1a27272ec6f",
+      "submittedSha256": "5dff1346198612a31753d68aeac379ae7510cae8ff84d930192ff1ee67f988d3",
+      "actualBytes": 274348,
+      "pixels": [
+        480,
+        270
+      ]
+    }
+  ],
+  "imageSha256": "57c12fefbfe715583ee9efb62d861461e361b83d7980a4f3a6808985027f1bfd",
+  "nativePixels": [
+    1024,
+    576
+  ],
+  "imageBytes": 214168,
+  "model": "@cf/black-forest-labs/flux-2-klein-4b",
+  "seed": 1065632093,
+  "promptSha256": "3a2d66073e1ae24f49ed6067a8107653ad33d85031701cd6078abbc8b8e985b3",
+  "estimatedNeurons": 120.31,
+  "visuallyApproved": false,
+  "formallyRegistered": false,
+  "gameDeployed": false
+}

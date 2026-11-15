@@ -1,0 +1,61 @@
+{
+  "kind": "CLOUDFLARE_REAL_WEBP_REVIEW_CANDIDATE_NOT_APPROVED",
+  "shotKey": "c01-s04|pre|female|c01-s04-m11",
+  "stageId": "c01-s04",
+  "edition": "pre",
+  "gender": "female",
+  "panelId": "c01-s04-m11",
+  "screenplayText": "「灰銀の本城」の通りを進むと、古い遺構に、地図から削除された道がある。そこを通れば戦を短くできる。。仲間たちは現場に残された手掛かりを確かめた。",
+  "visibleActorIds": [
+    "garan",
+    "lucia"
+  ],
+  "actualReferenceImagesAttached": [
+    {
+      "actorId": "garan",
+      "source": "assets/story-cinema/cast/garan.webp",
+      "originalSha256": "aeb457957485f89244eb0b4f270b72e4bf0670341f2444ac7f43299222075a8b",
+      "submittedSha256": "30c17f9c9f97f0f7a5f66ce2e6f03a711d2ebfb697de0c6a8a84545f9c96cc3c",
+      "actualBytes": 262661,
+      "pixels": [
+        329,
+        480
+      ]
+    },
+    {
+      "actorId": "lucia",
+      "source": "assets/story/characters/lucia/master.webp",
+      "originalSha256": "87005a46d3b4a23714a25f1f9b2d46fee9a1ce3c6b5af0be78f85a1f1fd2b411",
+      "submittedSha256": "91344ba790293c03406ca1804f0360d135b0015aa75cc5b68d7904fc72de1173",
+      "actualBytes": 322498,
+      "pixels": [
+        439,
+        480
+      ]
+    },
+    {
+      "actorId": "style_benchmark",
+      "source": "assets/story/chapters/c01/panels/c01-s01-m02-female.webp",
+      "originalSha256": "e16731b753237f0aa88e2c906d7ff46a929df1300728292d878eb1a27272ec6f",
+      "submittedSha256": "5dff1346198612a31753d68aeac379ae7510cae8ff84d930192ff1ee67f988d3",
+      "actualBytes": 274348,
+      "pixels": [
+        480,
+        270
+      ]
+    }
+  ],
+  "imageSha256": "3e58a14ea85af94cb678b29bb3fc08af35501e8d5e943ecbc0c628cb2226106b",
+  "nativePixels": [
+    1024,
+    576
+  ],
+  "imageBytes": 255736,
+  "model": "@cf/black-forest-labs/flux-2-klein-4b",
+  "seed": 841854868,
+  "promptSha256": "cd2b36ddc5db5b753f98e79872eea52256dd294a499dd9839a9e2e951b9663f5",
+  "estimatedNeurons": 120.31,
+  "visuallyApproved": false,
+  "formallyRegistered": false,
+  "gameDeployed": false
+}
