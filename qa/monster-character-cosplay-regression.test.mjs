@@ -79,13 +79,15 @@ assert.match(runtime,/lateVisual\.parent\.remove\(lateVisual\)/,
  'A late loaded skinned character must not remain attached to an orphaned host');
 assert.match(gallery,/createCosplayedHumanoidMonster\(m,\{[\s\S]*?detail,[\s\S]*?genderVariant:/,
  'Viewer must actually select character-base monster models');
-assert.match(gallery,/mode==='procedural'\?humanoidMonsterCostumeFor\(m,\{/,
- 'User-selected external GLB overrides must retain priority');
+assert.match(gallery,/const cosplay=humanoidMonsterCostumeFor\(m,\{/,
+ 'Human-shaped monsters must use the canonical skinned actor in every source mode');
+assert.match(gallery,/withoutFallback:true/,
+ 'Old procedural humanoid sculpt may never appear while a new actor loads');
 assert.match(gallery,/pending\.ready\.then/,
  'Async canonical source must update preview only after load');
 assert.match(gallery,/__monsterCosplayQA/,
  'Live visual source should be auditable on user device');
-assert.ok(gallery.includes('monster-character-cosplay.js?v=4.5.21'),
+assert.ok(gallery.includes('monster-character-cosplay.js?v=4.6.91'),
  'Viewer must bust cached humanoid costume bundle');
 assert.match(runtime,/measureRegalShoulderFit\(joints\.arms\[0\],joints\.arms\[1\]\)/,
  'Monster-only outfits must measure native shoulder pivots, not use generic dress size');

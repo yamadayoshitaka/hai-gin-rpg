@@ -18,6 +18,8 @@ on:
       - 'src/monster-joint-motion.js'
       - 'src/monster-animation.js'
       - 'src/monster-geometry.js'
+      - 'src/monster-source-composite.js'
+      - 'qa/monster-source-composite-regression.test.mjs'
       - 'src/monster-beastfolk-manifest.js'
       - 'src/monster-beastfolk-geometry.js'
       - 'qa/monster-beastfolk-wolf-regression.test.mjs'
@@ -91,6 +93,7 @@ jobs:
           npm run test:creature-variants-mobile-viewer
           npm run test:humanoid-spell-motion
           npm run test:nonhuman-monster-outfits
+          npm run test:monster-source-rebuild
           npm run test:summon-source-hybrid
           npm run test:monster-summon-catalog
           node qa/monster-beastfolk-wolf-regression.test.mjs

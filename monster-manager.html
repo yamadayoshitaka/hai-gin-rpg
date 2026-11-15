@@ -142,6 +142,7 @@ legend{font-size:12px;color:#e8d9b6;padding:0 6px}
      <label>3Dモデルの入手元
       <select id="assetSource"><option value="procedural">標準3D（人型は人物GLB＋ゴシック衣装）</option>
        <option value="licensed">CC0外部モデル（低密度素材を含む）</option>
+       <option value="source-composite">実物GLB＋既存装飾（6種の品質試作）</option>
        <option value="personal">手元のGLB（非公開）</option></select>
      </label>
      <label>登録済み外部モデル（50体から選択）
@@ -190,7 +191,7 @@ import {MONSTER_CATALOG,MONSTER_BY_ID,MONSTER_FAMILIES,MONSTER_ELEMENTS,monsterL
 import {createMonsterModel,disposeMonsterSculpture,MONSTER_DETAIL_LEVELS,
   monsterSculptCacheStats,monsterPhotoCacheStats} from './src/monster-geometry.js?v=4.5.18';
 import {MONSTER_ACTIONS,startMonsterAction,animateMonsterModel} from './src/monster-animation.js?v=4.5.18';
-import {createCosplayedHumanoidMonster} from './src/monster-character-cosplay.js?v=4.5.21';
+import {createCosplayedHumanoidMonster} from './src/monster-character-cosplay.js?v=4.6.91';
 import {createBeastfolkMonsterModel,disposeBeastfolkMonsterModel}
  from './src/monster-beastfolk-geometry.js?v=4.5.23';
 import {beastfolkRecipeFor,BEASTFOLK_PROTOTYPE_IDS}
@@ -199,6 +200,8 @@ import {humanoidMonsterCostumeFor,HUMAN_MONSTER_IDS} from './src/monster-charact
 import {hasDemonCosmetics,withDemonColorTheme}
  from './src/monster-demon-cosmetics.js?v=4.5.04';
 import {fetchCreatureRegistry,loadExternalCreature,loadPersonalGLB} from './src/creature-external-runtime.js?v=4.4.92';
+import {loadSpeciesSourceComposite,isSpeciesSourcePilot,SPECIES_SOURCE_REBUILD_PILOTS}
+ from './src/monster-source-composite.js?v=4.6.90';
 const byId=id=>document.getElementById(id);
 const isPhone=()=>matchMedia('(max-width:730px)').matches;
 const mainPanel=byId('bestiaryMain');
@@ -370,6 +373,12 @@ function focusCamera(){
  if(model?.userData?.beastfolkSource)
   controls.minPolarAngle=HUMAN_INSPECT_MIN_POLAR;
  const bounds=new THREE.Box3().setFromObject(model);
+ // No retired mannequin during an asynchronous humanoid GLB load:
+ // an empty Box3 must never produce NaN camera coordinates.
+ if(bounds.isEmpty()&&HUMAN_MONSTER_IDS.includes(selected)){
+  controls.target.set(0,1.12,0);camera.position.set(.75,1.8,4.5);
+  controls.update();return;
+ }
  const center=bounds.getCenter(new THREE.Vector3()),size=bounds.getSize(new THREE.Vector3());
  controls.target.set(center.x,Math.max(.7,center.y),center.z);
  const dist=Math.max(4,size.length()/(2*Math.tan(THREE.MathUtils.degToRad(camera.fov/2)))*.70);
@@ -410,7 +419,12 @@ function selectSpecies(id){
    const remembered=modelAssignments[id];
    byId('externalAsset').value=externalRegistry.entries[remembered]?remembered:
      externalRegistry.entries[id]?id:'';
-   if(externalRegistry.entries[remembered])byId('assetSource').value='licensed';
+   if(externalRegistry.entries[remembered]&&!HUMAN_MONSTER_IDS.includes(id))
+     byId('assetSource').value='licensed';
+   else if(id==='m001'&&new URLSearchParams(location.search).get('form')!=='beastfolk'
+       &&new URLSearchParams(location.search).get('source')!=='legacy')
+     byId('assetSource').value='source-composite';
+   else byId('assetSource').value='procedural';
  }
  const m=specimen(id),detail=byId('quality').value;
  byId('vampireSexControl').style.display=id==='m034'?'block':'none';
@@ -418,9 +432,13 @@ function selectSpecies(id){
  byId('demonToneControl').style.display=hasDemonCosmetics({id})?'block':'none';
  disposeCurrent();
  const mode=byId('assetSource').value;
- const cosplay=mode==='procedural'?humanoidMonsterCostumeFor(m,{
+ // All 16 humanoid species must render the skinned actor, even when a
+ // curator temporarily selects a different source to compare. An external
+ // GLB may replace the actor on success; the old procedural humanoid must
+ // never appear before, during or after the request.
+ const cosplay=humanoidMonsterCostumeFor(m,{
    genderVariant:id==='m034'?byId('vampireSex').value:null
- }):null;
+ });
  const showBeastfolk=mode==='procedural'&&!!beastfolkRecipeFor(m)&&
    byId('beastfolkForm').value==='beastfolk';
  if(showBeastfolk){
@@ -428,7 +446,8 @@ function selectSpecies(id){
  }else if(cosplay){
    costumeHandle=createCosplayedHumanoidMonster(m,{
      detail,genderVariant:id==='m034'?byId('vampireSex').value:null,
-     profileOverride:withDemonColorTheme(cosplay,byId('demonTone').value)
+     profileOverride:withDemonColorTheme(cosplay,byId('demonTone').value),
+     withoutFallback:true
    });
    model=costumeHandle.root;
  }else model=createMonsterModel(m,{detail});
@@ -447,7 +466,7 @@ function selectSpecies(id){
  if(mode==='procedural'){
    if(costumeHandle){
      const pending=costumeHandle;
-     byId('assetStatus').textContent='人物GLB＋写実系衣装を読込中（従来モデルを一時表示）';
+     byId('assetStatus').textContent='人型人物GLB＋種族衣装を読込中（旧造形モデルは非表示）';
      pending.ready.then(result=>{
        if(ticket!==requestSerial||costumeHandle!==pending||selected!==id)return;
        if(result.source==='canonical-character-cosplay'){
@@ -455,10 +474,10 @@ function selectSpecies(id){
          byId('assetStatus').textContent='人型モンスター16種：人外肌色＋人物GLB＋種族別衣装 '+result.modelId+' / 肌色 #'+(pending.profile.skin>>>0).toString(16).padStart(6,'0');
          notice('人型の顔・体・アニメーションを既存キャラ素体へ切替済み：'+id);
        }else if(result.source!=='cancelled'){
-         byId('assetStatus').textContent='人物GLBを読込めないため旧モデルを表示：'+(result.reason||'不明');
+         byId('assetStatus').textContent='人型GLB読込失敗・旧造形モデルは停止中：'+(result.reason||'不明');
        }
      }).catch(error=>{
-       if(ticket===requestSerial)byId('assetStatus').textContent='人物GLBの読み込み失敗：'+error.message;
+       if(ticket===requestSerial)byId('assetStatus').textContent='人物GLB読込失敗・旧モデル非表示：'+error.message;
      });
    }else if(model?.userData?.beastfolkSource)
      byId('assetStatus').textContent=
@@ -476,8 +495,18 @@ function selectSpecies(id){
    byId('assetStatus').textContent='GLBを選択してください。';
    return;
  }
+ if(mode==='source-composite'&&!isSpeciesSourcePilot(m)){
+   byId('assetStatus').textContent='この個体に適合するCC0実物モデルは未承認です。既存3Dを維持します。';
+   return;
+ }
+ if(mode==='source-composite'&&!externalRegistry.entries[
+    SPECIES_SOURCE_REBUILD_PILOTS[id].donor]){
+   byId('assetStatus').textContent='オオカミ新モデル用のCC0素材一覧を読込中…';
+   return;
+ }
  byId('assetStatus').textContent='高品質GLBを読み込み中...';
  const pending=mode==='licensed'?loadExternalCreature(entry,detail):
+   mode==='source-composite'?loadSpeciesSourceComposite(m,externalRegistry,{detail}):
    loadPersonalGLB(file,{id,targetHeight:2.4*m.size});
  pending.then(handle=>{
    if(ticket!==requestSerial||id!==selected||byId('assetSource').value!==mode){
@@ -488,10 +517,12 @@ function selectSpecies(id){
    refreshGeometry();focusCamera();
    startMonsterAction(model,'idle',clock.getElapsedTime());
    byId('assetStatus').textContent=(mode==='licensed'?'CC0候補 '+entry.name:
-      'この端末内 '+file.name)+' / 内蔵動作 '+handle.clips.length+
-      '種類 / 戦闘は未置換';
-   byId('assignmentStatus').textContent=modelAssignments[id]===chosenId?
-      'この個体に割当済み（鑑賞用）':'未保存の比較表示';
+      mode==='source-composite'?'CC0実物GLB '+handle.sourceComposite.donorName+
+      ' ＋種族配色・装飾（品質試作・戦闘未置換）':
+      'この端末内 '+file.name)+' / 内蔵動作 '+handle.clips.length+'種類 / 戦闘は未置換';
+   byId('assignmentStatus').textContent=mode==='source-composite'?
+      '既存の装飾をGLB実体へ追加・見た目要検証':
+      modelAssignments[id]===chosenId?'この個体に割当済み（鑑賞用）':'未保存の比較表示';
    notice('GLB外観・アニメーションの比較表示を開始しました');
  }).catch(error=>{
    if(ticket===requestSerial)
@@ -609,13 +640,15 @@ fetchCreatureRegistry().then(reg=>{
  picker.append(old);
  const saved=modelAssignments[selected];
  picker.value=reg.entries[saved]?saved:reg.entries[selected]?selected:'';
- if(reg.entries[saved])byId('assetSource').value='licensed';
+ if(reg.entries[saved]&&!HUMAN_MONSTER_IDS.includes(selected))
+   byId('assetSource').value='licensed';
  byId('assignmentStatus').textContent=reg.entries[saved]?'前回のGLB割当を復元':'未割当（従来モデル）';
  renderList();
  byId('assetStatus').textContent='Quaterniusオリジナル '+reg.all50Count+
    ' / 50体、既存比較 '+(Object.keys(reg.entries).length-reg.all50Count)+
    '体。外部GLBは任意で選択できます。';
- if(byId('assetSource').value==='licensed')selectSpecies(selected);
+ if(['licensed','source-composite'].includes(byId('assetSource').value))
+   selectSpecies(selected);
 }).catch(error=>{
  byId('assetStatus').textContent='外部モデルは未配信（従来モデルは利用できます）：'+error.message;
 });
@@ -718,6 +751,8 @@ window.__monsterImportQA=()=>({
  all50Ready:!!externalRegistry.all50Ready,
  externalAsset:byId('externalAsset').value,
  externalActive:!!externalHandle,
+ sourceComposite:model?.userData?.sourceComposite??null,
+ sourcePilot:SPECIES_SOURCE_REBUILD_PILOTS[selected]?.donor??null,
  clips:externalHandle?.clips||[],
  selected
 });
@@ -768,7 +803,11 @@ window.__monsterQualityQA=()=>({
 setCatalogOpen(!isPhone());
 const requestedMonster=new URLSearchParams(location.search).get('monster');
 if(requestedMonster&&MONSTER_BY_ID[requestedMonster])selected=requestedMonster;
-if(new URLSearchParams(location.search).get('form')==='beastfolk'&&
-   beastfolkRecipeFor(selected))byId('beastfolkForm').value='beastfolk';
+const launchOptions=new URLSearchParams(location.search);
+if(launchOptions.get('form')==='beastfolk'&&beastfolkRecipeFor(selected))
+ byId('beastfolkForm').value='beastfolk';
+else if(selected==='m001'&&launchOptions.get('source')!=='legacy'&&
+ !modelAssignments[selected])
+ byId('assetSource').value='source-composite';
 selectSpecies(selected);resize();frame();
 </script></body></html>

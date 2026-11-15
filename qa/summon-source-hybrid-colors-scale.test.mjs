@@ -7,7 +7,7 @@ import {DRAGON_SOURCE_HYBRIDS,blendSummonDragonBlueprint}
  from '../src/creature-dragon-hybrids.js';
 import {CREATURE_VISUAL_SPECS,buildCombatObjectGeometry}
  from '../src/combat-creature-geometry.js';
-import {FEMALE_SUMMON_FORMS,MALE_DRAGON_LORD_FORM}
+import {FEMALE_SUMMON_FORMS,MALE_DRAGON_LORD_FORM,MALE_DRAGON_LORD_HUMAN_FORM}
  from '../src/female-summon-forms.js';
 import {creatureSize,SUMMON_WORLD_SCALE,LARGE_SUMMON_IDS,
  riderSeatHeight,riderSeatLocalOffset} from '../src/combat-creature-performance.js';
@@ -72,12 +72,24 @@ assert.ok(riderSeatHeight(wolf)>=10,'Human rider must not merge into enlarged wo
 assert.ok(Math.abs(riderSeatLocalOffset(wolf).z)>1,
  'Giant mount saddle must follow its new torso size');
 
-assert.equal(FEMALE_SUMMON_FORMS.seraph_guardian.skin,0xf4f4f2);
+assert.equal(FEMALE_SUMMON_FORMS.seraph_guardian.skin,0xf8f9f8);
 assert.equal(FEMALE_SUMMON_FORMS.seraph_guardian.faceOpenHair,true);
 assert.equal(FEMALE_SUMMON_FORMS.forest_archer.skin,0xe1b496);
 assert.equal(FEMALE_SUMMON_FORMS.forest_archer.forestGreen,true);
 assert.ok(FEMALE_SUMMON_FORMS.forest_archer.leaf===0x39be67);
 assert.equal(MALE_DRAGON_LORD_FORM.sex,'male');
+assert.equal(MALE_DRAGON_LORD_FORM.formKind,'dragonkin');
+assert.equal(MALE_DRAGON_LORD_HUMAN_FORM.formKind,'human');
+assert.equal(MALE_DRAGON_LORD_HUMAN_FORM.costume,'human_royal');
+assert.equal(MALE_DRAGON_LORD_HUMAN_FORM.sex,'male');
+assert.equal(MALE_DRAGON_LORD_HUMAN_FORM.sourceSpecies,'dragon_lord');
+assert.equal(MALE_DRAGON_LORD_HUMAN_FORM.horns,false);
+assert.equal(MALE_DRAGON_LORD_HUMAN_FORM.wings,false);
+assert.equal(MALE_DRAGON_LORD_FORM.horns,true);
+assert.equal(MALE_DRAGON_LORD_FORM.wings,true);
+assert.equal(FEMALE_SUMMON_FORMS.seraph_guardian.noBeard,true);
+assert.equal(FEMALE_SUMMON_FORMS.seraph_guardian.skin,0xf8f9f8);
+
 
 const source=readFileSync(new URL('../src/combat-creature-geometry.js',import.meta.url),'utf8');
 const hair=readFileSync(new URL('../src/monster-humanoid-hair.js',import.meta.url),'utf8');

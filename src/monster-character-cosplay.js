@@ -246,7 +246,14 @@ function buildMonsterCostume(THREE,model,profile,detail){
  // only hero meshes explicitly named "skin|face|body" changed color, leaving
  // some healthy pink limbs/heads visible among undead costume parts.
  // Original source materials remain untouched and maps/normals are retained.
+ let suppressedFacialHair=0;
  model.traverse(node=>{
+  // The seraph is explicitly beardless. Do not hide scalp hair, eyelashes,
+  // eyebrows or the whole face; only named moustache/beard meshes.
+  if(profile.noBeard===true&&/(?:^|[_\\s-])(?:beard|moustache|mustache|goatee|stubble|facialhair)(?:$|[_\\s-])/i.test(node.name||'')){
+   node.visible=false;suppressedFacialHair++;
+   return;
+  }
   if(!node.isMesh||!node.material)return;
   const recolor=m=>{
    const role=classifyCosplaySurface(node.name,m.name,{
@@ -441,6 +448,8 @@ function buildMonsterCostume(THREE,model,profile,detail){
   gothicSculptEdition:gothic?'gothic-horror-2026-11':null,
   constructSculptEdition:construct?'human-rigged-construct-2026-11':null,
   skinColor:profile.skin,skinMaterialIsolation:true,
+  noBeard:profile.noBeard===true,beardSourceMeshesSuppressed:suppressedFacialHair,
+  skinTone:profile.skinTone??null,
   demonCosmeticsEdition:demonic?'horns-makeup-runes-v1':null,
   femaleSummonCostumeEdition:femaleSummon?
    (profile.costume==='dragonkin_male'?'male-dragon-sovereign-plate-wings-v1':

@@ -226,3 +226,42 @@ test('Quaternius all fifty-model registration: catalog, 3D animation and saved a
  await expect.poll(()=>page.evaluate(()=>window.__monsterImportQA()?.externalActive)).toBe(false);
  expect(errors).toEqual([]);
 });
+
+
+test('source animal canine real-GLB PBR pilot and legacy-free humanoid preview',async({page})=>{
+ test.setTimeout(180000);
+ const errors=[];
+ page.on('pageerror',e=>errors.push(String(e)));
+ await page.goto('/monster-manager.html?monster=m001&v=4.6.91',
+  {waitUntil:'domcontentloaded',timeout:65000});
+ await page.locator('#toggleTools').click();
+ await page.locator('#assetSource').selectOption('source-composite');
+ await expect.poll(()=>page.evaluate(()=>
+  window.__monsterImportQA?.()?.sourceComposite?.originalSpeciesId),
+  {timeout:90000}).toBe('m001');
+ const pilot=await page.evaluate(()=>window.__monsterImportQA());
+ expect(pilot.sourceComposite).toMatchObject({
+  originalSpeciesId:'m001',donor:'q022',license:'CC0-1.0',
+  gameReplacementEnabled:false,visuallyApproved:false
+ });
+ expect(pilot.sourceComposite.pigmentedMeshes).toBeGreaterThan(0);
+ await page.screenshot({path:'test-results/wolf-cc0-source-native-pbr-outfit.png',
+  animations:'disabled',timeout:25000});
+ // Every human-shaped species renders only canonical GLB, never the
+ // retired procedural humanoid while loading or after GLB failure.
+ await page.locator('#assetSource').selectOption('procedural');
+ await page.evaluate(()=>window.__monsterBeastfolkQA?.());
+ await selectMonster(page,'m031');
+ // Prefer the existing selected species QA endpoint rather than treating
+ // visible body part mesh counts as proof of canonical actor identity.
+ await expect.poll(()=>page.evaluate(()=>
+  window.__monsterCosplayQA?.()?.eligible),{timeout:25000}).toBe(true);
+ await expect.poll(()=>page.evaluate(()=>
+  window.__monsterCosplayQA?.()?.loaded),{timeout:110000}).toBe(true);
+ const human=await page.evaluate(()=>window.__monsterCosplayQA());
+ expect(human.source).toBe('canonical-character-cosplay');
+ expect(human.canonicalModel).toBeTruthy();
+ await page.screenshot({path:'test-results/m031-skinned-humanoid-no-legacy.png',
+  animations:'disabled',timeout:25000});
+ expect(errors).toEqual([]);
+});

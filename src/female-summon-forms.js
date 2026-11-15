@@ -18,8 +18,9 @@ export const FEMALE_SUMMON_FORMS=Object.freeze({
    forestGreen:true,forestMint:0x92de69,forestDeep:0x197540
   }),
  seraph_guardian:make('seraph_guardian','royal','tall','noble','long','paladin','staff',
-  'seraph_female',[0xf4f4f2,0xf3f0e7,0xd8c89a,0xffe9b3],{
-   hairColor:0xe8d7a8,leaf:0xe9e3d9,feather:0xffffff,makeup:0xaaa5af,lip:0xcbb9bc,faceOpenHair:true
+  'seraph_female',[0xf8f9f8,0xf3f0e7,0xd8c89a,0xffe9b3],{
+   hairColor:0xe8d7a8,leaf:0xe9e3d9,feather:0xffffff,makeup:0xaaa5af,
+   lip:0xcbb9bc,faceOpenHair:true,noBeard:true,skinTone:'porcelain-white'
   }),
  dragon_lord:make('dragon_lord','guard','sturdy','stern','long','paladin','sword',
   'dragonkin_female',[0x925e51,0x342a3b,0xc5a682,0xc77369],{
@@ -30,12 +31,24 @@ export const FEMALE_SUMMON_FORMS=Object.freeze({
  * prototype. Keep that legacy prototype as an internal asset for comparison,
  * but do not offer it as the default 3D gallery appearance. */
 export const MALE_DRAGON_LORD_FORM=Object.freeze({
+ formKind:'dragonkin',
  id:'dragon_lord',sourceSpecies:'dragon_lord',sex:'male',
  role:'guard',body:'sturdy',face:'stern',hair:'swept',
  outfit:'knight',equipment:'sword',costume:'dragonkin_male',
  modelId:MODEL_IDS[0],skin:0x765d59,cloth:0x302733,
  metal:0x85777a,accent:0xb78d63,hairColor:0x30232a,
  horns:true,wings:true,makeup:0x34252c,lip:0x583d3f
+});
+/** Separate dragonkin (horns/scales/wings) from an ordinary human
+ * royal form. Neither is the original upright dragon monster. All three
+ * retain the same dragon_lord summon ID and battle rules. */
+export const MALE_DRAGON_LORD_HUMAN_FORM=Object.freeze({
+ ...MALE_DRAGON_LORD_FORM,costume:'human_royal',
+ role:'royal',body:'sturdy',face:'noble',hair:'swept',
+ outfit:'noble',equipment:'sword',
+ skin:0xd9b49f,cloth:0x302b44,metal:0xc0ac88,accent:0xd9be82,
+ hairColor:0x32272a,horns:false,wings:false,makeup:0x392d32,
+ lip:0x996f68,formKind:'human'
 });
 export const FEMALE_SUMMON_FORM_IDS=Object.freeze(Object.keys(FEMALE_SUMMON_FORMS));
 export const femaleSummonCosplayFor=id=>FEMALE_SUMMON_FORMS[id]??null;
@@ -44,6 +57,13 @@ export function validateFemaleSummonForms(){
    MALE_DRAGON_LORD_FORM.modelId!=='Superhero_Male_FullBody'||
    MALE_DRAGON_LORD_FORM.costume!=='dragonkin_male')
   throw Error('Dragon Lord must use canonical male anatomy');
+ if(MALE_DRAGON_LORD_HUMAN_FORM.costume!=='human_royal'||
+   MALE_DRAGON_LORD_HUMAN_FORM.horns||MALE_DRAGON_LORD_HUMAN_FORM.wings||
+   MALE_DRAGON_LORD_HUMAN_FORM.modelId!==MALE_DRAGON_LORD_FORM.modelId)
+  throw Error('Dragon Lord human form must exclude dragonkin geometry');
+ if(FEMALE_SUMMON_FORMS.seraph_guardian.noBeard!==true||
+   FEMALE_SUMMON_FORMS.seraph_guardian.skin!==0xf8f9f8)
+  throw Error('Angel requires white, beardless canonical female skin');
  if(FEMALE_SUMMON_FORM_IDS.length!==3)throw Error('Expected 3 existing humanoid summon forms');
  for(const [id,form] of Object.entries(FEMALE_SUMMON_FORMS)){
   if(form.sex!=='female'||form.sourceSpecies!==id||

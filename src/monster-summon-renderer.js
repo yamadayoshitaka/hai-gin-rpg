@@ -10,6 +10,10 @@
 import * as THREE from 'three';
 import {createMonsterModel,disposeMonsterSculpture}
  from './monster-geometry.js?v=4.5.21';
+import {createCosplayedHumanoidMonster}
+ from './monster-character-cosplay.js?v=4.6.90';
+import {humanoidMonsterCostumeFor}
+ from './monster-character-cosplay-manifest.js?v=4.5.03';
 import {startMonsterAction,animateMonsterModel}
  from './monster-animation.js?v=4.5.18';
 import {creatureFlightHeight} from './combat-creature-performance.js?v=4.6.39';
@@ -31,23 +35,51 @@ export function createMonsterSummonRenderer(scene,{
   const node=active.get(id);
   if(!node)return;
   scene.remove(node.anchor);
-  disposeMonsterSculpture(node.actor);
+  if(node.costumeHandle)node.costumeHandle.dispose();
+  else disposeMonsterSculpture(node.actor);
+  if(node.statusMarker){
+   node.statusMarker.geometry.dispose();
+   node.statusMarker.material.dispose();
+  }
   active.delete(id);
   stats.disposed++;
  }
  function spawn(object,detail){
   const spec=monsterSummonSource(object.type);
   if(!spec)return null;
-  const actor=createMonsterModel(spec,{detail});
+  const isHumanoid=!!humanoidMonsterCostumeFor(spec);
+  // Human-shaped monsters no longer display their retired procedural
+  // sculpture in battle. Keep the independently skinned canonical actor
+  // and original ID/stats/actions. In-flight GLB loading leaves a blank
+  // visual rather than falsely claiming the old sculpt is the new model.
+  const costumeHandle=isHumanoid?createCosplayedHumanoidMonster(spec,{
+   detail,withoutFallback:true
+  }):null;
+  const actor=costumeHandle?.root||createMonsterModel(spec,{detail});
+  let statusMarker=null;
+  if(isHumanoid){
+   actor.userData.speciesId=spec.id;
+   actor.userData.modelPending=true;
+   actor.userData.legacyGeometryDisabled=true;
+   actor.userData.sourceKind='canonical-character-cosplay';
+   // While a skinned actor streams in, keep a non-humanoid loading marker
+   // visible. An invisible enemy/summon would be a gameplay regression.
+   // The marker is NOT the retired monster model and costs one small mesh.
+   statusMarker=new THREE.Mesh(new THREE.OctahedronGeometry(.15,0),
+     new THREE.MeshBasicMaterial({color:0xd7ab66}));
+   statusMarker.name='canonical-human-loading-marker';
+   statusMarker.position.y=1;
+   actor.add(statusMarker);
+  }
   // Measure the actual source's visible height, not its item rarity or an
   // estimated sphere. Leviathan retains its native sea-serpent proportions.
   actor.updateMatrixWorld(true);
   const bounds=new THREE.Box3().setFromObject(actor);
   const h=bounds.max.y-bounds.min.y;
-  if(!Number.isFinite(h)||h<=0){
+  if(!isHumanoid&&(!Number.isFinite(h)||h<=0)){
    disposeMonsterSculpture(actor);return null;
   }
-  const size=monsterSummonWorldScale(object.type,h);
+  const size=monsterSummonWorldScale(object.type,isHumanoid?1.7:h);
   const anchor=new THREE.Group();
   anchor.name='SummonedBestiary_'+spec.id;
   const fitting=new THREE.Group();
@@ -55,7 +87,7 @@ export function createMonsterSummonRenderer(scene,{
   // All articulation is authored relative to the unmodified monster root.
   // Avoid translating the actor directly, as animations reset position.
   const position=new THREE.Group();
-  position.position.y=-bounds.min.y;
+  position.position.y=isHumanoid?0:-bounds.min.y;
   position.add(actor);fitting.add(position);anchor.add(fitting);
   scene.add(anchor);
   // Box3.setFromObject(actor) (gallery framing and the scale QA) does not
@@ -64,9 +96,44 @@ export function createMonsterSummonRenderer(scene,{
   // Otherwise it appears 1.7m to the camera fitter despite having a
   // 17m parent scale, cropping the giant in mobile gallery.
   anchor.updateMatrixWorld(true);
-  startMonsterAction(actor,'idle',0);
+  if(costumeHandle){
+   costumeHandle.start('idle',0);
+   costumeHandle.ready.then(result=>{
+    if(removed||!actor.parent||result.source==='cancelled')return;
+    actor.userData.modelPending=false;
+    if(result.source!=='canonical-character-cosplay'){
+     actor.userData.modelError=result.reason||'canonical-actor-unavailable';
+     if(statusMarker)statusMarker.material.color.setHex(0xcf5964);
+     // A failed GLB must NEVER fall back to a legacy humanlike sculpt.
+     return;
+    }
+    anchor.updateWorldMatrix(true,true);
+    const finalBox=new THREE.Box3().setFromObject(actor);
+    const finalHeight=finalBox.max.y-finalBox.min.y;
+    if(!Number.isFinite(finalHeight)||finalHeight<=.01){
+     actor.userData.modelError='empty-loaded-skin';return;
+    }
+    const targetHeight=MONSTER_SUMMON_BY_TYPE[object.type].size*17;
+    fitting.scale.multiplyScalar(targetHeight/finalHeight);
+    anchor.updateWorldMatrix(true,true);
+    const corrected=new THREE.Box3().setFromObject(actor);
+    position.position.y+=(anchor.position.y-corrected.min.y)/
+      Math.max(.00001,fitting.scale.y);
+    if(statusMarker?.parent)statusMarker.parent.remove(statusMarker);
+    if(statusMarker){
+     statusMarker.geometry.dispose();statusMarker.material.dispose();
+     statusMarker=null;
+    }
+    actor.userData.productionHumanoidReady=true;
+    anchor.updateWorldMatrix(true,true);
+   }).catch(error=>{actor.userData.modelPending=false;
+    actor.userData.modelError=String(error?.message||error);
+    if(statusMarker)statusMarker.material.color.setHex(0xcf5964);
+   });
+  }else startMonsterAction(actor,'idle',0);
   stats.created++;
-  return {actor,anchor,detail,type:object.type,size,
+  return {actor,anchor,detail,type:object.type,size,costumeHandle,
+   statusMarker,
    lastX:object.x,lastZ:object.z,lastT:0,lastAttack:-Infinity,
    lastPose:null,lastAction:'idle'};
  }
@@ -133,12 +200,14 @@ export function createMonsterSummonRenderer(scene,{
    if(node.lastAction!==action||(
       action==='attack'&&node.lastAttack!==o.attackStartedAt)||
       (action===o.poseAction&&node.lastPose!==o.poseStartedAt)){
-    startMonsterAction(node.actor,action,Number.isFinite(actionAt)?actionAt:time);
+    if(node.costumeHandle)node.costumeHandle.start(action,Number.isFinite(actionAt)?actionAt:time);
+    else startMonsterAction(node.actor,action,Number.isFinite(actionAt)?actionAt:time);
     node.lastAction=action;
     node.lastAttack=o.attackStartedAt;
     node.lastPose=o.poseStartedAt;
    }
-   animateMonsterModel(node.actor,time);
+   if(node.costumeHandle)node.costumeHandle.update(time);
+   else animateMonsterModel(node.actor,time);
    node.lastX=o.x;node.lastZ=o.z;node.lastT=time;
    stats.peak=Math.max(stats.peak,active.size);
   }
