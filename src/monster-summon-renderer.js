@@ -146,7 +146,12 @@ export function createMonsterSummonRenderer(scene,{
   // No implicit replacement: keep the existing monster visible and
   // animated until an explicitly adopted licensed source has loaded.
   // Human-shaped monster rigs stay on the established character path.
-  if(!isHumanoid&&node.sourceChoice!=='legacy'){
+  // Keep expensive high-resolution skin rigs limited to the two nearest
+  // high-LOD summoned actors. Distant wolves preserve the original source
+  // silhouette/animation until camera proximity warrants the detailed GLB.
+  const useHeavyWolf=node.sourceChoice==='r-wolf';
+  if(!isHumanoid&&node.sourceChoice!=='legacy'&&
+     (!useHeavyWolf||detail==='high')){
    const sourceId=node.sourceChoice;
    if(sourceId.startsWith('q'))licensedRegistryRequest??=fetchCreatureRegistry();
    const registryTask=sourceId.startsWith('q')?licensedRegistryRequest:
