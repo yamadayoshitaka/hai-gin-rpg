@@ -132,6 +132,7 @@ footer{padding:15px;text-align:center;color:#b9cfdd;font-size:12px}
   <div class="controls">
    <button id="save" type="button" style="background:#8b7040">この評価を保存</button>
    <button id="export" type="button">全評価をJSON出力</button>
+   <label style="flex:1;min-width:140px">評価JSONを読み込む<input id="import" type="file" accept="application/json,.json"></label>
    <button id="reset" type="button">この評価を初期化</button>
   </div>
   <p class="hint">保存先はこの端末のブラウザです。別端末共有・正式採用にはJSONをレビューしてGitHubへ取り込みます。</p>
@@ -330,6 +331,23 @@ $('reset').onclick=()=>{
  if(records[selected])delete records[selected][stage];
  saveAll();fillEditor();showList();
 };
+$('import').onchange=async event=>{
+ const file=event.target.files?.[0];event.target.value='';
+ if(!file)return;
+ try{
+  if(file.size>3_000_000)throw Error('評価JSONは3MB以下にしてください');
+  const incoming=JSON.parse(await file.text());
+  if(incoming?.schema!==MONSTER_QUALITY_SCHEMA||!incoming.records||
+     Array.isArray(incoming.records)||typeof incoming.records!=='object')
+   throw Error('品質KPIのJSON形式ではありません');
+  const allowed=new Set(creatures.map(c=>c.id));
+  for(const id of Object.keys(incoming.records)){
+   if(!allowed.has(id))throw Error('登録対象外のID: '+id);
+  }
+  if(!confirm('現在の端末内の評価を読み込んだJSONで上書きしますか？'))return;
+  records=incoming.records;saveAll();fillEditor();showList();
+ }catch(error){$('summaryReasons').textContent='評価JSONを読み込めません：'+error.message;}
+};
 $('export').onclick=()=>{
  writeRecord();
  const blob=new Blob([JSON.stringify({schema:MONSTER_QUALITY_SCHEMA,
@@ -358,4 +376,15 @@ if(qp.get('kind')==='summon'||current().kind==='summon')kindFilter='summon';
 document.querySelectorAll('[data-filter]').forEach(b=>b.setAttribute('aria-pressed',
  String(b.dataset.filter===kindFilter)));
 fillEditor();showList();
+// Committed, reviewed records are optional baseline data; local user edits
+// always take precedence and cannot silently overwrite saved assessments.
+if(Object.keys(records).length===0){
+ fetch('./data/monster-quality-review.json',{cache:'no-store'})
+  .then(r=>r.ok?r.json():null)
+  .then(p=>{
+   if(p?.schema!==MONSTER_QUALITY_SCHEMA||!p.records||
+      Object.keys(records).length>0)return;
+   records=p.records;fillEditor();showList();
+  }).catch(()=>{});
+}
 </script></body></html>
