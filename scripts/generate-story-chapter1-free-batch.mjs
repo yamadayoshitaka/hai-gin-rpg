@@ -363,7 +363,7 @@ for(const pg of pages){
    committed++;
   }
   const http=error.match(/FREE_API_STOP_NO_RETRY_HTTP_(\d{3})/);
-  const codes=[...error.matchAll(/\\b(\\d{4}):/g)].map(m=>({code:m[1]}));
+  const codes=[...error.matchAll(/\b(\d{4}):/g)].map(m=>({code:m[1]}));
   const stopReason=classifyCloudflareFailure({status:http?Number(http[1]):null,errors:codes});
   if(canOfferChatGPTHandoff(stopReason)){
    // The provider may use HTTP 400 or 429 for free-quota enforcement.
