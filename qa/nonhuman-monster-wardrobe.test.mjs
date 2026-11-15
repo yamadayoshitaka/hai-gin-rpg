@@ -40,6 +40,20 @@ for(const spec of nonhuman){
    assert.ok(piece.parent,'Outfit piece detached: '+spec.id);
    assert.ok(piece.geometry?.getAttribute('position')?.count>10);
    assert.ok(piece.geometry.getAttribute('position').array.every(Number.isFinite));
+   // Material values must remain physically meaningful at both LODs.
+   const materials=Array.isArray(piece.material)?piece.material:[piece.material];
+   assert.ok(materials.length>0&&materials.every(Boolean),
+    'Missing outfit material: '+piece.name);
+   for(const material of materials){
+    if(material.metalness!==undefined)assert.ok(
+     Number.isFinite(material.metalness)&&material.metalness>=0&&material.metalness<=1,
+     'Invalid PBR metalness: '+piece.name);
+    if(material.roughness!==undefined)assert.ok(
+     Number.isFinite(material.roughness)&&material.roughness>=0&&material.roughness<=1,
+     'Invalid PBR roughness: '+piece.name);
+    assert.ok(Number.isFinite(material.opacity)&&material.opacity>=0&&material.opacity<=1,
+     'Invalid outfit opacity: '+piece.name);
+   }
    if(!profile.legacy){
     assert.equal(piece.userData.costumeSpeciesId,spec.id);
     assert.ok(piece.parent===model.userData.pivots.torso||
