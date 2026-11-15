@@ -1,4 +1,5 @@
 import {armyGroupFor,armyCaptain,captainBonus} from './army-groups.js';
+import {makeThreeTeamBattleRequest} from './three-team-core-bridge.js';
 /**
  * Adapter from the 20x10 campaign to the existing 3D 50-person battle.
  * The battle remains authoritative for wins, unit casualties and monster clears.
@@ -17,6 +18,7 @@ const validStageId=id=>Boolean(CAMPAIGN_STAGE_BY_ID[id]);
 export function makeCoreBattleRequest(game,stageId,battleId=String(Date.now())){
  const stage=CAMPAIGN_STAGE_BY_ID[stageId];
  if(!stage||stage.kind==='town'||game?.location!=='map')throw Error('地図上の出撃ステージを選んでください。');
+  if(game.sortiePlan?.version===1)return makeThreeTeamBattleRequest(game,stage,battleId);
  const squads=game.campaign.squads.filter(s=>s.count>0&&String(squadCommanderId(s))!=='reserve');
  const allotment=allocateSortieSlots(squads);
  // When more than 50 soldiers exist, proportional selection can omit a
