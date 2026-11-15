@@ -36,7 +36,8 @@ export function studioCoveredSkinPolicy({studioPreferSkinnedLegs=false,
  const masked=!!studioPreferSkinnedLegs&&!!studioPreserveLegAnatomy&&!preserveBody;
  return Object.freeze({
   preserveRegions:visibleLegs||studioPreserveLegAnatomy&&!masked?['thigh','calf','foot']:[],
-  coveredSkinMasked:masked&&!visibleLegs,
+  // Torso/arms remain covered even when the shin/foot regions are preserved.
+  coveredSkinMasked:masked,
   underlyingAnatomyRestorable:!!studioPreserveLegAnatomy,
   visibleLegAnatomy:visibleLegs,
   faceNeckHandsProtected:true
