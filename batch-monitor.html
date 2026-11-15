@@ -12,9 +12,18 @@ main{max-width:1280px;margin:auto;padding:18px 14px 60px}.meta{color:var(--muted
 .tile strong{font-size:28px;display:block;line-height:1.3}.tile small{color:var(--muted)}
 h2{font-size:17px;color:var(--gold);margin:0 0 12px}.pane{margin-bottom:16px}
 .toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0 0 12px}
-input,select,button{font:inherit;background:#102335;border:1px solid #56788d;border-radius:8px;color:var(--txt);padding:9px 11px;min-height:40px}
+input,select,textarea,button{font:inherit;background:#102335;border:1px solid #56788d;border-radius:8px;color:var(--txt);padding:9px 11px;min-height:40px}
 button{cursor:pointer}button:hover{background:#2c5169}#refresh{background:#5e4a29;border-color:#bda56f}
-input{flex:1 1 180px}.status{display:inline-flex;align-items:center;border-radius:20px;padding:3px 8px;border:1px solid #647789;background:#273949;color:#edf4fa;font-size:12px;white-space:nowrap}
+input{flex:1 1 180px}
+.manual-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.manual-grid label,.manual-instruction{display:grid;gap:6px;font-weight:600;color:#dbe9f5}
+.manual-grid input,.manual-grid select{width:100%;min-width:0}
+textarea{width:100%;min-height:100px;resize:vertical}
+.manual-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:12px}
+.manual-actions button{background:#355d76;border-color:#83b3cb;font-weight:700}
+#manualStatus{font-size:12px;color:#d9dfca}
+@media(max-width:700px){.manual-grid{grid-template-columns:1fr}}
+.status{display:inline-flex;align-items:center;border-radius:20px;padding:3px 8px;border:1px solid #647789;background:#273949;color:#edf4fa;font-size:12px;white-space:nowrap}
 .status.running{border-color:#529fc6;color:#b2e6ff;background:#16394e}.status.success{border-color:#57967a;color:#bbf1d5;background:#17392d}
 .status.failed{border-color:#b07a7a;color:#ffd1c9;background:#4b262e}.status.paused{opacity:.76}.status.waiting{border-color:#ac9761;color:#ffe7a4;background:#463c24}
 table{border-collapse:collapse;width:100%}th,td{text-align:left;padding:10px 8px;border-bottom:1px solid #324c5a;vertical-align:middle}th{color:#c1d5e3;font-size:12px}td:first-child{font-weight:650}
@@ -39,6 +48,24 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{ou
  <p class="meta"><a id="qualityActions" href="https://github.com/yamadayoshitaka/hai-gin-rpg/actions/workflows/world-quality-photoreal.yml" target="_blank" rel="noopener noreferrer">品質回帰ワークフローを開く</a> ・<a href="./object-list.html">3Dオブジェクト一覧</a> ・<a href="./stage-manager.html">ステージ一覧</a></p>
  <p class="note">「生成済み基準画」「3D撮影済み」「PBR候補」「レビュー待ち」「ゲーム反映済み」は別の状態です。自動画像比較の点数だけでは実写品質合格にしません。</p>
 </section>
+<section class="pane" id="next-command"><h2>次のバッチを手動指示（1回限定）</h2>
+ <p class="meta">対象と修正指示を自由に変更できます。送信するとGitHubの新規Issue作成画面が開きます。GitHubにログインして「Submit new issue」を押すと、所有者からの依頼として品質バッチが起動します。画面を開いただけでは起動しません。</p>
+ <form id="manualForm">
+ <div class="manual-grid">
+  <label>対象範囲<select id="manualKind"><option value="all">オブジェクトとステージ両方</option><option value="object">オブジェクトだけ</option><option value="stage">ステージだけ</option></select></label>
+  <label>対象ID（任意）<input id="manualTarget" type="text" placeholder="例：object:castle_001" maxlength="80" autocomplete="off"></label>
+  <label>1回の生成上限<select id="manualMax"><option value="1" selected>1件（無料枠優先）</option><option value="2">2件</option><option value="3">3件</option></select></label>
+ </div>
+ <label class="manual-instruction" style="margin-top:12px">次回だけの追加指示<textarea id="manualInstruction" maxlength="500" placeholder="例：城壁の石積みと目地、木製扉の傷・金具を細かく。材質は自然で、地面への接地と影を重視。"></textarea></label>
+ <div class="manual-actions">
+  <button id="manualSend" type="submit">GitHubで手動実行を依頼</button>
+  <a class="link" href="https://github.com/yamadayoshitaka/hai-gin-rpg/actions/workflows/world-quality-photoreal.yml" target="_blank" rel="noopener noreferrer">Actionsから直接手動実行</a>
+  <span id="manualStatus" role="status"></span>
+ </div>
+ </form>
+ <p class="note">セキュリティ上、GitHub認証情報は入力・保存しません。指示は生成する2D基準画の見た目にだけ適用され、元の3D・ステージ・ゲームは書き換えません。追加課金や自動マージも行いません。未処理の対象がない場合は生成0件となります。</p>
+ <p id="manualRecent" class="meta"></p>
+</section>
 <section class="pane"><div class="toolbar"><h2 style="margin:0">GitHub Actions｜実行・結果一覧</h2><button id="refresh" type="button">更新</button></div>
  <div class="toolbar"><input id="search" type="search" placeholder="バッチ名・ワークフロー名を検索" aria-label="バッチを検索">
  <select id="filter" aria-label="状態で絞る"><option value="all">すべて</option><option value="running">実行中・待機</option><option value="failed">直近失敗</option><option value="success">直近成功</option><option value="paused">停止中</option><option value="unknown">履歴未取得</option></select></div>
@@ -53,6 +80,23 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{ou
 <script>
 'use strict';
 const repo='yamadayoshitaka/hai-gin-rpg',api='https://api.github.com/repos/'+repo+'/actions/';
+const ISSUE_MARKER='<!-- hai-gin-world-quality-request-v1 -->';
+function submitManual(e){
+ e.preventDefault();
+ const kind=$('manualKind').value,target=$('manualTarget').value.trim(),instruction=$('manualInstruction').value.trim(),max=Number($('manualMax').value);
+ if(target&&(!/^(object:[a-z][\\w-]*|stage:c\\d{2}-s\\d{2})$/.test(target)||target.split(':')[0]!==kind)){
+  $('manualStatus').textContent='対象IDが範囲と一致しません。「対象範囲」を選び直してください。';return;
+ }
+ if(instruction.length>500){$('manualStatus').textContent='指示は500文字以内にしてください。';return;}
+ const request={schemaVersion:1,kind,target,instruction,maxReferences:max};
+ const body=ISSUE_MARKER+'\\n```json\\n'+JSON.stringify(request,null,2)+'\\n```\\n\\n'
+  +'これは無料枠での1回の品質バッチ依頼です。基準画像の候補と品質検査のみ行い、ゲームを自動変更しません。';
+ const label=target||kind,params=new URLSearchParams({title:'[world-quality] '+label+' next reference review',body});
+ const url='https://github.com/'+repo+'/issues/new?'+params.toString();
+ $('manualStatus').textContent='GitHub側で内容を確認し、「Submit new issue」を押すと依頼されます。';
+ window.open(url,'_blank','noopener,noreferrer');
+}
+
 const $=id=>document.getElementById(id),jp=v=>v?new Date(v).toLocaleString('ja-JP',{timeZone:'Asia/Tokyo',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}):'—';
 const req=async url=>{const r=await fetch(url,{cache:'no-store',headers:{Accept:'application/vnd.github+json'}});if(!r.ok)throw Error('GitHub '+r.status+' '+(r.status===403?'API利用上限の可能性':'取得失敗'));return r.json()};
 const label=(w,run)=>{if(w.state!=='active')return {s:'paused',text:'無効'};
@@ -123,6 +167,8 @@ async function loadWorld(){
   holder.appendChild(element('p','最終状態：'+(j.lastRun?.stopReason||'未取得')+' ／ 最終実行：'+jp(j.lastRun?.completedAt),'meta'));
  }catch{$('workSummary').textContent='品質回帰の初回実行前、またはGitHubレビュー用ブランチの記録を取得できません。未生成を完成扱いにはしません。'}
 }
+$('manualForm').addEventListener('submit',submitManual);
+$('manualKind').addEventListener('change',()=>{$('manualTarget').placeholder=$('manualKind').value==='stage'?'例：stage:c01-s04':$('manualKind').value==='object'?'例：object:castle_001':'対象IDを使う場合は範囲を選択'});
 $('refresh').addEventListener('click',()=>{loadGithub();loadWorld()});
 $('search').addEventListener('input',display);
 $('filter').addEventListener('change',display);
