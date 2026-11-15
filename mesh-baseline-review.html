@@ -204,7 +204,7 @@ function render(){
  choices.forEach((s,index)=>{
   const el=document.createElement('div');el.className='source';
   const name=document.createElement('b');name.textContent=(index===sourceIndex?'◉ ':'○ ')+s.name;el.appendChild(name);
-  const desc=document.createElement('small');desc.textContent=s.license+' / '+s.tris+' / '+s.quality;el.appendChild(desc);
+  const desc=document.createElement('small');desc.textContent=(s.author?'作者：'+s.author+' / ':'')+s.license+' / '+s.tris+' / '+s.quality;el.appendChild(desc);
   const b=document.createElement('button');b.textContent='この候補を比較';b.onclick=()=>{
    sourceIndex=index;showing=true;render();};el.appendChild(b);
   const a=document.createElement('a');a.textContent=' 配布元';a.href=s.url;a.target='_blank';a.rel='noopener noreferrer';el.appendChild(a);
@@ -269,7 +269,7 @@ $('file').onchange=async event=>{
 $('save').onclick=()=>{
  const item=items.find(x=>x.id===selected),c=candidateFor(item)[sourceIndex];
  if(protectedIds.has(item.id)){ $('status').textContent='PR保護対象は変更・選定登録せず閲覧のみ可能です。';return;}
- saved[selected]={id:selected,sourceName:c.name,url:c.url,license:c.license,kind:c.kind,
+ saved[selected]={id:selected,sourceName:c.name,url:c.url,license:c.license,author:c.author||null,kind:c.kind,
   state:'candidate-review-only',savedAt:new Date().toISOString(),partsTransferred:false,battleEnabled:false};
  localStorage.setItem(KEY,JSON.stringify(saved));$('status').textContent='候補を端末内に記録しました。本編やGitHubへの反映ではありません。';
  render();
