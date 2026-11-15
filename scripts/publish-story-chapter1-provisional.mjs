@@ -68,7 +68,7 @@ function sourceReviewable(s,available){
  const meta=JSON.parse(sourceBytes(proof).toString('utf8'));
  const original=sourceBytes(s.draftPath);
  const sum=sha(original),[w,h]=expectedPixels(original);
- const min=s.stageId==='c01-s02'?[768,320]:[1536,864];
+ const min=s.stageId==='c01-s02'?[768,320]:(s.stageId>='c01-s04'?[800,450]:[1536,864]);
  if(w<min[0]||h<min[1]||w*9!==h*16)throw Error('Low native geometry '+s.key);
  if(meta.shotKey!==s.key||meta.imageSha256!==sum||
   meta.screenplayText!==s.scriptText||meta.visuallyApproved!==false||
