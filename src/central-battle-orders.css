@@ -1,3 +1,4 @@
+#topStrategy{display:none}
 /* Only story campaigns use the pause-and-command center. Old side command UIs
    remain mounted for compatibility, but cannot obscure or capture taps. */
 body.story-center-orders #allySquadRibbon,
