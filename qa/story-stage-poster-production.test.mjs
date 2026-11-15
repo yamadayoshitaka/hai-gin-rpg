@@ -66,9 +66,10 @@ for(const stage of report.stages){
    assert.equal(page.posterSpec.rows,Math.ceil(page.panels.length/2));
    assert(page.posterSpec.rows<=Math.ceil(maxCells/2));
    assert.equal(page.posterSpec.blankCells,page.posterSpec.rows*2-page.panels.length);
-   assert.deepEqual(page.posterSpec.minNativePixels,stage.stageId==='c01-s02'?
-    [1536,page.posterSpec.rows*320]:[3072,page.posterSpec.rows*864]);
-   assert.deepEqual(page.posterSpec.preferredNativePixels,[4096,page.posterSpec.rows*1152]);
+   const [minW,minH]=stage.nativeImageProfile.minimumNativePixels;
+   const [prefW,prefH]=stage.nativeImageProfile.preferredNativePixels;
+   assert.deepEqual(page.posterSpec.minNativePixels,[minW*2,page.posterSpec.rows*minH]);
+   assert.deepEqual(page.posterSpec.preferredNativePixels,[prefW*2,page.posterSpec.rows*prefH]);
    assert.equal(page.posterSpec.reviewOnlyNotGameArtwork,true);
    assert.equal(page.posterSpec.previewCannotBeRegisteredAsFinalArt,true);
    assert(!posters.has(page.posterAsset),'No duplicated review sheet '+page.posterAsset);
@@ -90,7 +91,8 @@ for(const stage of report.stages){
     assert(panel.generationPrompt.startsWith('P0_ABSOLUTE_MUST_FOLLOW.'));
     for(const token of ['P0_REFERENCE_IMAGE_BYTES','P0_NO_TEXT_UI_IN_ART',
       'P0_FINAL_DOUBLE_CHECK','CURRENT EXACT SCREENPLAY BEAT: '+panel.scriptText,
-      '2048x1152',stage.stageId==='c01-s02'?'768x320':'1536x864',
+      stage.nativeImageProfile.preferredNativePixels.join('x'),
+      stage.nativeImageProfile.minimumNativePixels.join('x'),
       'NO text, Japanese letters, numbers'])
      assert(panel.generationPrompt.includes(token),'Missing '+token);
     assert.equal(panel.narrative.currentScene.shotKey,panel.shotKey);
