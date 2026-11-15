@@ -54,15 +54,13 @@ export function renderThreeTeamPlanner({game,teamId=1,cellIndex=5,view='setup',j
  const templateIds=Object.keys(SORTIE_FORMATIONS);
  const pageCap=6,templatePages=Math.ceil(templateIds.length/pageCap);
  const tPage=Math.max(0,Math.min(templatePages-1,Number(templatePage)||0));
- const templates='<div class="sortieSubHead"><b>陣形テンプレートを選択 · Lv.'+level+'</b>'+back+'</div>'+
+ const templates='<div class="sortieSubHead"><b>陣形テンプレート · Lv.'+level+'</b>'+button('data-sortie-formation="free"','自由陣形',team.formation==='free')+back+'</div>'+
   '<div class="sortieTemplateChoices">'+templateIds.slice(tPage*pageCap,tPage*pageCap+pageCap).map(id=>{const entry=SORTIE_FORMATIONS[id],unlocked=entry.level<=level;
    const preview=Object.fromEntries(SORTIE_FORMATION_CELLS[id].slice(0,4).map((cell,index)=>[cell,FORMATION_ROLES[id][index]]));
    const extra=new Set(SORTIE_FORMATION_CELLS[id].slice(4,cap));
    const grid=Array.from({length:16},(_,i)=>'<i class="'+(preview[i]?'occupied':extra.has(i)?'extra':'')+'" title="'+esc(ROLE_NAMES[preview[i]]|| (extra.has(i)?'Lvで追加解放':'空き'))+'">'+(preview[i]?esc((ROLE_NAMES[preview[i]]||'').slice(0,1)):extra.has(i)?'＋':'')+'</i>').join('');
    return button('data-sortie-formation="'+id+'" '+(!unlocked?'disabled':'') ,'<b>'+esc(entry.name)+'</b><small>Lv.'+entry.level+'解放'+(unlocked?'':' 🔒')+'</small><span class="sortieMiniGrid">'+grid+'</span><small>'+esc(FORMATION_ROLES[id].slice(0,4).map(x=>ROLE_NAMES[x]).join('/'))+'</small><small>攻撃'+Math.round((entry.attack||0)*100)+'% / 防御'+Math.round((entry.defense||0)*100)+'%</small>',team.formation===id);
-  }).join('')+
-  (tPage===templatePages-1?button('data-sortie-formation="free"','<b>自由陣形</b><small>全レベル</small><span class="sortieMiniGrid freePreview">'+
-    Array.from({length:16},()=>'<i class="extra">＋</i>').join('')+'</span><small>第1〜3班で自由配置</small><small>陣形バフなし</small>',team.formation==='free'):'')+'</div>'+
+  }).join('')+'</div>'+
  '<div class="sortiePager">'+button('data-sortie-template-page="'+(tPage-1)+'" '+(!tPage?'disabled':''),'◀ 前')+
  '<small>'+(tPage+1)+' / '+templatePages+'</small>'+
  button('data-sortie-template-page="'+(tPage+1)+'" '+(tPage>=templatePages-1?'disabled':''),'次 ▶')+'</div>'+
