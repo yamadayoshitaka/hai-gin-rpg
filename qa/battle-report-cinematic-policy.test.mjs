@@ -16,15 +16,14 @@ assert.doesNotMatch(html,/elapsed-\(marker\.userData\.lastHealReportAt\?\?-Infin
 assert.match(html,/if\(mode!=='charge'\)battleDialogue\.push/);
 assert.match(html,/if\(mode!=='charge'\)battleCeremony\.showOrder/);
 assert.match(html,/queueBattleResultCutin\(defeatedEnemy\?'⚔ 敵部隊撃破':'☠ 味方部隊壊滅'/);
-// Every strategic event has a brief camera highlight, followed by complete
-// overhead view. 1000-person raids must throttle automatic UR highlights.
+// Strategic highlights preserve the explicitly selected commander/overview mode.
 assert.match(html,/function queueBattleFocusCinematic\(x,z/);
 assert.match(html,/kind==='ultimate'\|\|kind==='result'/);
 assert.match(html,/stamp-lastAutomaticFocusAt<6500/);
 assert.match(html,/cinematicFocusQueue\.push\(entry\)/);
-assert.match(html,/overPosition:overTarget\.clone\(\)\.add\(cameraOverviewOffset\)/);
-assert.match(html,/commanderCinematic=null;\s*setBattleCamera\(shot\.overTarget,cameraOverviewOffset\);\s*setCameraActive\('camOverview'\)/,
- 'End of a commander cinematic must restore the true map overview camera, not just toggle its button');
+assert.match(html,/overPosition:battleViewMode==='overview'\?overTarget\.clone\(\)\.add\(cameraOverviewOffset\):camera\.position\.clone\(\)/);
+assert.match(html,/if\(battleViewMode==='commander'\)followSelectedCommander\(\)/,
+ 'Cinematic must return to the selected squad commander in the default mode');
 assert.match(html,/if\(next\.squadId!=null&&/);
 assert.match(html,/beginSquadFocusCinematic\(next\.squadId,next\.cameraTeam\?\?0,'result'\)/);
 assert.match(html,/queueBattleFocusCinematic\(\(target\.x-6\)\*CELL,\(target\.z-6\)\*CELL/);
@@ -39,4 +38,4 @@ const syntax=spawnSync(process.execPath,['--check','--input-type=module'],{
  input:script,encoding:'utf8',timeout:15000
 });
 assert.equal(syntax.status,0,syntax.stderr||'inline module parses');
-console.log('PASS: one heal report, charge-annihilation milestones, full-map cinematics, UR cast-only zoom');
+console.log('PASS: one heal report, charge-annihilation milestones, camera-mode preserving cinematics, UR cast-only zoom');

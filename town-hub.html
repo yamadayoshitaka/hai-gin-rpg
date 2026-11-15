@@ -86,11 +86,37 @@ body.town-loading #townRadar,body:has(#opening:not([hidden])) #townRadar,body:ha
 
 body:has(#panel:not([hidden])) #townExplorerControls *,body:has(#opening:not([hidden])) #townExplorerControls *{pointer-events:none!important}
 @media(max-height:620px){#townExplorerActions button{min-height:34px;padding:6px}#townStick{width:102px;height:102px}#townExplorerMessage{bottom:120px}}
+
+/* The illustrated hub owns its viewport; facilities never start a 3D scene. */
+body{display:grid;grid-template-rows:auto auto minmax(0,1fr);height:100dvh}
+body>header{position:relative;grid-row:1;padding:8px;gap:8px;flex-wrap:wrap}
+header .label{max-width:100%;width:100%}header .label small{overflow:hidden;text-overflow:ellipsis}
+header nav{max-width:100%;width:100%;gap:5px;overflow:visible;display:grid;grid-template-columns:repeat(5,minmax(0,1fr))}
+header nav button,header nav a{min-width:0;padding:7px 2px;white-space:nowrap;font-size:11px;min-height:36px}
+#townStatus{position:relative;grid-row:2;top:auto;left:auto;max-width:none;margin:0;padding:7px 10px;border:0;border-radius:0;font-size:11px;background:#102234}
+#townScene{position:relative;grid-row:3;inset:auto;width:100%;height:100%;min-height:0;overflow:hidden;background:#182a32}
+#townArtwork{position:absolute;width:100%;height:100%;inset:0;object-fit:fill}
+#townFacilityPins{position:absolute;inset:0}
+#townFacilityPins button{position:absolute;left:var(--x);top:var(--y);transform:translate(-50%,-50%);min-width:76px;min-height:48px;padding:7px 10px;border:1px solid #f1d59b;border-radius:8px;background:#112538eb;box-shadow:0 4px 14px #0009;color:#fff1c9;font-weight:bold;font-size:14px;touch-action:manipulation}
+#townFacilityPins button small{display:block;font-size:10px;color:#d4e2ea;font-weight:normal}
+#townFacilityPins button:hover,#townFacilityPins button:focus-visible{background:#775c30;outline:2px solid #ffe1a1}
+#townSelectHint{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);margin:0;padding:7px 15px;border-radius:20px;background:#0b1b2cdb;font-size:12px;white-space:nowrap;pointer-events:none}
+#townExplorerControls,#townRadar,#townGuide,#veil{display:none!important}
+@media(min-aspect-ratio:1/1){body{grid-template-rows:auto auto minmax(0,1fr)}body>header{flex-wrap:nowrap}header .label{width:auto;max-width:38%}header nav{max-width:60%}#townScene{max-width:760px;justify-self:center}}
 </style>
 <link rel="stylesheet" href="./src/tactical-command-ui.css?v=2.1"><link rel="stylesheet" href="./src/battle-ui-refinement.css?v=2.4"></head><body class="town-loading">
-<iframe id="townScene" src="about:blank" title="既存の城・町ステージと7頭身人物モデルで探索" allow="autoplay"></iframe><div id="veil"></div>
+<main id="townScene" aria-label="町の施設を選択">
+<img id="townArtwork" src="./assets/town/royal-town-hub-v1.webp" alt="城、教会、宿屋、武器屋、酒場、道具屋が並ぶ王都" fetchpriority="high">
+<div id="townFacilityPins">
+<button data-facility="story" style="--x:50%;--y:20%">♛ 城<small>物語・謁見</small></button>
+<button data-facility="save" style="--x:20%;--y:36%">✚ 教会<small>セーブ</small></button>
+<button data-facility="formation" style="--x:25%;--y:56%">⌂ 宿屋<small>編成・配置</small></button>
+<button data-facility="weapons" style="--x:77%;--y:48%">⚔ 武器屋<small>武器・防具</small></button>
+<button data-facility="tavern" style="--x:74%;--y:70%">♜ 酒場<small>雇用・依頼</small></button>
+<button data-facility="items" style="--x:39%;--y:78%">▣ 道具屋<small>買い物</small></button>
+</div><p id="townSelectHint">行きたい施設をタップ</p></main><div id="veil"></div>
 <header><div class="label"><strong id="townHeading">レヴナの町</strong><small id="chapterStatus">第1章・町ステージ</small></div>
-<nav aria-label="町の操作"><button type="button" id="showTownGuide">全体マップ</button><button type="button" id="townBgmToggle" aria-label="町BGMのオン・オフ">BGM ♪</button><button type="button" id="showPaperStory">漫画</button><a href="./story-maintenance.html">物語フロー</a><a id="leaveTown" href="./world-map.html?v=town-exit-2">外へ ▶</a></nav></header>
+<nav aria-label="町の操作"><button type="button" id="showTownGuide">施設一覧</button><button type="button" id="townBgmToggle" aria-label="町BGMのオン・オフ">BGM ♪</button><button type="button" id="showPaperStory">漫画</button><a href="./story-maintenance.html">物語フロー</a><a id="leaveTown" href="./world-map.html?v=town-exit-2">外へ ▶</a></nav></header>
 <div id="townStatus">読み込み中 · 操作はロード完了後に表示します</div>
 <div id="townExplorerControls" aria-label="町の移動と施設操作">
  <div id="townExplorerActions"><button id="townInteract" type="button">話す・施設</button><button id="townCameraView" type="button">視点変更</button><button id="townExitBuilding" type="button" hidden>建物から出る</button><button id="townSwapControls" type="button" aria-label="移動レバーと操作ボタンの左右を入れ替える">左右入替 ⇄</button></div>
@@ -150,10 +176,7 @@ persistSession(game,sessionStorage);
 // The displayed town must be the chapter's registered stage, never the older standalone action demo.
 const townFrame=$('townScene');
 const currentPreset=CAMPAIGN_STAGE_BY_ID[game.townStage]?.scenePreset||'royal-castle';
-const townSceneUrl='./tactics-wireframe.html?town=1&stage='+encodeURIComponent(currentPreset)+'&townStage='+encodeURIComponent(game.townStage)+
- '&gender='+encodeURIComponent(game.campaign.commander.gender||'male')+'&faceId='+encodeURIComponent(game.campaign.commander.faceId||0)+
- '&commanderName='+encodeURIComponent(game.playerName)+'&v=town-visit-20261110';
-if(townFrame.getAttribute('src')!==townSceneUrl)townFrame.src=townSceneUrl;
+// The hub is a single illustration; no nested 3D runtime is loaded.
 let panel='',page=0,shopCategory='道具',armyPriority='均衡',innCommanderId='player',innPage='strategies',innSquadPage=0,innDeploymentSelected=null,innTemplateEditorOpen=false,narration=null,selectedSquadId=game.campaign.squads[0]?.id||0;
 let activeTalk=null,activeTalkIndex=0;
 let currentStoryPanelVoiceId=null;
@@ -176,7 +199,7 @@ function openTownDialogue(data){
  if(!townReady)return;
  showTownDialogue();
 }
-let townReady=false,insideFacility=null,townFacilities=[],townPlayerPosition=null,townMapImage=null;
+let townReady=true,insideFacility=null,townFacilities=[],townPlayerPosition=null,townMapImage=null;
 game.storyFlags??={};
 const townChapter=CAMPAIGN_STAGE_BY_ID[game.townStage]?.chapter||1;
 const chapterOpeningCompleted=Boolean(game.storyFlags.chapterOpenings?.[townChapter]||
@@ -214,7 +237,7 @@ $('townDialogueService').onclick=()=>{if(!activeTalk?.panel)return;const service
 $('townDialogueClose').onclick=()=>{hideTownDialogue();stopNarration();};
 function openPanel(which){if(!townReady)return;hideTownDialogue();resetTownMovement();panel=which;if(which==='formation')innPage='strategies';
  townAudio.effect('open');page=0;shopCategory=which==='weapons'?'武器':'道具';notice('');$('panel').hidden=false;$('panelBackdrop').hidden=false;renderPanel();}
-function closePanel(){$('panel').hidden=true;$('panelBackdrop').hidden=true;panel='';townAudio.effect('cancel');}
+function closePanel(){$('panel').hidden=true;$('panelBackdrop').hidden=true;panel='';townAudio.effect('cancel');townAudio.setScene('town');}
 $('panelClose').onclick=closePanel;$('panelBackdrop').onclick=closePanel;
 // Direct buying from the top navigation is intentionally disabled.
 function facilityLabel(kind){return ({weapon:'武具屋',shop:'道具屋',inn:'宿屋',tavern:'酒場',church:'教会',castle:'王城'})[kind]||kind;}
@@ -274,7 +297,8 @@ function updateTownPlayerPin(){
  $('townRadarPlayer').style.top=mapCoord(townPlayerPosition.z)+'%';
 }
 function openTownGuide(){if(!townReady)return;resetTownMovement();$('townGuide').hidden=false;renderTownGuide();}
-$('showTownGuide').onclick=()=>{townAudio.effect('open');openTownGuide();};
+$('showTownGuide').onclick=()=>{townAudio.effect('open');$('townFacilityPins').querySelector('button').focus();};
+$('townFacilityPins').addEventListener('click',event=>{const button=event.target.closest('[data-facility]');if(button){townAudio.setScene(({story:'castle',save:'church',formation:'inn',tavern:'tavern'})[button.dataset.facility]||'shop');openPanel(button.dataset.facility);}});
 $('townRadarHeader').onclick=()=>{townAudio.effect('open');openTownGuide();};
 $('townOverhead').onclick=()=>{
  $('townGuide').hidden=true;
@@ -673,8 +697,10 @@ function finishMapTransition(){
  catch(error){console.warn('[Town] Session persistence failed, using map navigation fallback:',error);}
  window.location.assign('./world-map.html?v=town-exit-2');
 }
+let mapTransitionPending=false;
 function goMap(event){
  if(event?.preventDefault)event.preventDefault();
+ if(mapTransitionPending)return;mapTransitionPending=true;
  const alreadySeen=Boolean(game.storyFlags?.stagePostMangaSeen?.[game.townStage]);
  if(townReady&&!alreadySeen){
   leaveAfterPaper=true;
@@ -966,5 +992,6 @@ function startPaperStory(phase='pre'){
 }
 $('skipPaper').onclick=closePaperStory;
 window.addEventListener('pagehide',()=>{stopNarration();townAudio.dispose();});
-renderState();
+document.body.classList.remove('town-loading');
+renderState();townAudio.setScene('town');if(paperPending)startPaperStory();
 </script></body></html>

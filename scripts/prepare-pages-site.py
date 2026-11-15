@@ -108,21 +108,28 @@ self.addEventListener('fetch', (event) => {
                     .replace("__EXTRA_PREFIXES__", json.dumps(REMOTE_ONLY_PREFIXES)))
     (out / ASSET_RELAY_NAME).write_text(worker, encoding="utf-8")
     # Self-install on all standalone game/preview routes, including deep links.
-    # Existing visitors get one reload after the new worker claims the page;
-    # subsequent loads remain controlled and use normal browser caching.
+    # Wait for the asset relay before starting module runtimes. Claiming or
+    # updating a worker must never reload an active game or replay its opening.
     boot = """<script id="pages-asset-relay-bootstrap">
-(function () {
-  if (!('serviceWorker' in navigator)) return;
-  const version = '__COMMIT__';
-  const key = 'hai-gin-pages-relay-reload';
-  navigator.serviceWorker.addEventListener('controllerchange', function () {
-    if (sessionStorage.getItem(key) === version) return;
-    sessionStorage.setItem(key, version);
-    location.reload();
-  });
-  navigator.serviceWorker.register('./pages-asset-relay-sw.js', {scope: './'})
-    .catch(function (error) { console.warn('Pages asset relay unavailable', error); });
-})();
+window.__haiGinAssetRelayReady = new Promise(function (resolve) {
+  if (!('serviceWorker' in navigator)) { resolve(); return; }
+  let complete = false;
+  const finish = function () {
+    if (complete) return;
+    complete = true;
+    clearTimeout(timer);
+    navigator.serviceWorker.removeEventListener('controllerchange', finish);
+    resolve();
+  };
+  const timer = setTimeout(finish, 15000);
+  navigator.serviceWorker.addEventListener('controllerchange', finish);
+  const revision = '__COMMIT__';
+  navigator.serviceWorker.register('./pages-asset-relay-sw.js?rev=' + revision, {scope: './'})
+    .then(function (registration) {
+      if (navigator.serviceWorker.controller && !registration.installing && !registration.waiting) finish();
+    })
+    .catch(function (error) { console.warn('Pages asset relay unavailable', error); finish(); });
+});
 </script>
 """.replace("__COMMIT__", commit_sha)
     changed = 0
@@ -138,6 +145,8 @@ self.addEventListener('fetch', (event) => {
                               flags=re.IGNORECASE)
         else:
             continue
+        contents = re.sub(r'(<script\s+type=["\']module["\']\s*>)',
+                          r'\1\nawait window.__haiGinAssetRelayReady;\n', contents)
         html.write_text(contents, encoding="utf-8")
         changed += 1
     if changed < 5:
