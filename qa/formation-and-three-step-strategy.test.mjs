@@ -3,8 +3,9 @@ import {readFileSync} from 'node:fs';
 import {SourceTextModule} from 'node:vm';
 import {createNewGame} from '../src/game-core-flow.js';
 import {MassBattleGridSimulation} from '../src/mass-battle-grid-sim.js';
+import {makeCoreBattleRequest} from '../src/core-battle-bridge.js';
 import {
- ensureSortiePlan,setSortieFormation,setSortieGridCell,sortieFormationStatus,sortieFormationBuff,
+ ensureSortiePlan,setSortieFormation,setSortieGridCell,setSortieTactics,sortieFormationStatus,sortieFormationBuff,
  availableSortieOrders,sortieTeamCount,sortieDebuffTypes,SORTIE_FORMATION_CELLS
 } from '../src/three-team-sortie.js';
 import {FORMATION_ROLES,ROLE_JOBS} from '../src/sortie-formation-logic.js';
@@ -44,6 +45,18 @@ assert.equal(sortieFormationBuff(game,1).attack,originalAttack);
 setSortieFormation(game,1,'attack');
 assert.equal(sortieFormationStatus(game,1).valid,false,'priest cannot occupy a front/scout/ranged role');
 setSortieFormation(game,1,'balanced');
+setSortieTactics(game,1,['melee_focus','heal_wounded']);
+assert.deepEqual(game.sortiePlan.teams[0].tactics,['melee_focus','heal_wounded'],
+ 'inn saves multiple compatible methods without assigning targets');
+assert.throws(()=>setSortieTactics(game,1,['cut_attack']),/職業|条件/,
+ 'unowned mage skills cannot be planned');
+const innOrders=renderThreeTeamPlanner({game,teamId:1,view:'orders',strategyFamily:'support',strategyIntent:'heal'});
+assert.match(innOrders,/data-sortie-strategy-method="heal_wounded"/);
+assert.match(innOrders,/設定済み作戦・兵員配分率/);
+game.location='map';
+const request=makeCoreBattleRequest(game,'c01-s02','three-level-inn-planning');
+assert.deepEqual(request.sortieTacticTemplate['1'],['melee_focus','heal_wounded'],
+ 'the real battle request carries the inn template forward');
 
 assert.equal(Object.keys(STRATEGY_TREE).length,6);
 for(const [family,x] of Object.entries(STRATEGY_TREE)){
