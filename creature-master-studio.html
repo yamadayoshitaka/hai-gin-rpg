@@ -92,6 +92,7 @@ label{display:block;font-size:12px;color:#c7d9e5}label select,label input{displa
  <button id="exportButton" type="button" disabled>現在の3D母体をGLB書き出し</button>
  <div id="exportNote">原型と近中遠は別々に書き出せます。現状のGLB書き出しは形状・材質中心で、実行時の7動作をGLBアニメーションとして保存する機能は未実装です。</div>
  <a id="qualityLink" href="./monster-quality-review.html">この個体の品質KPIを見る</a>
+ <a id="originalLink" href="./monster-manager.html" target="_blank" rel="noopener">ゲーム内の現行モデルと比較する</a>
 </aside>
 <section class="stage">
  <canvas id="stage" aria-label="全108体の回転・ズーム可能な3Dモデル"></canvas>
@@ -199,6 +200,9 @@ function updateInfo(entry,loaded){
   ' 母体は画面表示で検証でき、GLBとして書き出せます。写実品質90点への到達はまだ未認定。';
  $('status').textContent=loaded;
  $('qualityLink').href='./monster-quality-review.html?species='+encodeURIComponent(entry.id);
+ $('originalLink').href=entry.kind==='dedicated'?
+  './summon-showcase.html?summon='+encodeURIComponent(entry.id):
+  './monster-manager.html?monster='+encodeURIComponent(entry.baseId);
 }
 async function load(){
  const serial=++ticket;const id=$('actor').value;
@@ -282,15 +286,17 @@ $('exportButton').onclick=async()=>{
  }
 };
 const timer=new THREE.Clock();
+let lastWidth=0,lastHeight=0;
 function animate(){
  requestAnimationFrame(animate);
  const delta=Math.min(.065,timer.getDelta()),t=clock.getElapsedTime();
  if(current&&!loading&&!exporting)current.update(t);
  controls.update();
  const w=$('stage').clientWidth,h=$('stage').clientHeight;
- if(w>0&&h>0&&(renderer.domElement.width!==Math.round(w*renderer.getPixelRatio())||
-   renderer.domElement.height!==Math.round(h*renderer.getPixelRatio()))){
-  renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();
+ if(w>0&&h>0&&(w!==lastWidth||h!==lastHeight)){
+  renderer.setSize(w,h,false);
+  camera.aspect=w/h;camera.updateProjectionMatrix();
+  lastWidth=w;lastHeight=h;
  }
  renderer.render(scene,camera);
 }
