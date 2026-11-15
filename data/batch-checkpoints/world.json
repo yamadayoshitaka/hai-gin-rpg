@@ -73,6 +73,30 @@
       ],
       "commitSha": "8bdcb58d866ba90e8a15a2293c46292e736e4bf6",
       "qa": "unverified"
+    },
+    {
+      "id": "town_bench_001",
+      "sourceFiles": [
+        "src/object-catalog.js"
+      ],
+      "commitSha": "6d4700bab22e7df643c1cbd4bfd18babcdf4b5fe",
+      "qa": "unverified"
+    },
+    {
+      "id": "market_stall_001",
+      "sourceFiles": [
+        "src/object-catalog.js"
+      ],
+      "commitSha": "6d4700bab22e7df643c1cbd4bfd18babcdf4b5fe",
+      "qa": "unverified"
+    },
+    {
+      "id": "street_lamp_001",
+      "sourceFiles": [
+        "src/object-catalog.js"
+      ],
+      "commitSha": "6d4700bab22e7df643c1cbd4bfd18babcdf4b5fe",
+      "qa": "unverified"
     }
   ],
   "remainingIds": [
@@ -83,9 +107,6 @@
     "entry_door_lv4_001",
     "entry_door_lv5_001",
     "fountain_001",
-    "market_stall_001",
-    "street_lamp_001",
-    "town_bench_001",
     "town_well_001",
     "town_planter_001",
     "town_crate_001",
@@ -121,5 +142,5 @@
     "timber_bridge_broken_001",
     "stone_bridge_broken_001"
   ],
-  "nextAction": "螺旋階段2種の構文・WebGL実描画・衝突・LOD・Android QAを検証。次に街路設備の共通荷重支持構造を改修。"
+  "nextAction": "今回のベンチ・露店・街灯のNode構文/Three WebGL正面側面俯瞰とAndroid実機を検証し、次に花壇・荷箱・掲示板の実メッシュを改修する。"
 }
