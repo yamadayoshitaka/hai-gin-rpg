@@ -48,6 +48,7 @@ jobs:
           node qa/story-chapter1-stage-priority.test.mjs
           node qa/story-stage3-owner-provisional-completion.test.mjs
           node qa/story-c01-stage45-generation-guard.test.mjs
+          node qa/story-generation-fallback.test.mjs
       - name: Fail before generation unless Free confirmed and both secrets available
         shell: bash
         env:
@@ -72,6 +73,7 @@ jobs:
         run: |
           set -euo pipefail
           git show origin/main:scripts/generate-story-chapter1-free-batch.mjs > scripts/generate-story-chapter1-free-batch.mjs
+          git show origin/main:src/story-generation-fallback.js > src/story-generation-fallback.js
           git show origin/main:src/story-c01-stage45-art-guard.js > src/story-c01-stage45-art-guard.js
           git show origin/main:qa/story-chapter1-draft-regression.mjs > qa/story-chapter1-draft-regression.mjs
           git show origin/main:assets/story/stage-manifests/c01-s04.manifest.json > assets/story/stage-manifests/c01-s04.manifest.json
@@ -113,7 +115,7 @@ jobs:
               git push origin HEAD:story/chapter1-free-actual-art
             fi
           fi
-      - name: Publish verified image counts and quota status
+      - name: Publish verified image counts and Cloudflare to ChatGPT fallback status
         if: always()
         shell: bash
         run: |
@@ -133,6 +135,8 @@ jobs:
             '| New page commits in THIS run | '+show(run?.newDraftPageCommits)+' |',
             '| Cloudflare API requests in THIS run | '+show(run?.apiRequests)+' |',
             '| Run stop reason | '+show(run?.stopReason)+' |',
+            '| ChatGPT manual handoff | '+show(run?.chatGPTManualHandoff)+' |',
+            '| Handoff shot (not rendered) | '+show(run?.chatGPTHandoffShotKey)+' |',
             '| Canonical shots | '+show(counts.expected)+' |',
             '| Native real draft images (not visually approved) | '+show(counts.validRealReviewDraft)+' |',
             '| Pre-existing registered art (P0 not certified) | '+show(counts.existingRegistrationNotP0Approved)+' |',
@@ -141,7 +145,7 @@ jobs:
             '| Provider safety-blocked shots | '+show(counts.providerBlocked)+' |',
             '',
             'A green workflow run does NOT mean all artwork is generated, approved, or published.',
-            'On Cloudflare Free quota exhaustion there is no paid fallback and no automatic retry in that run.',
+            'On Cloudflare Free quota exhaustion there is no paid API switch and no automatic retry. A ChatGPT Plus handoff link is issued for manual image creation, not an automatically generated image.',
             ''
           ];
           if(qa?.stages?.length){
