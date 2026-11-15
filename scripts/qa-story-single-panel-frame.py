@@ -17,7 +17,7 @@ def inspect(path):
         source.load()
         im = source.convert("RGB")
     w, h = im.size
-    pixels = im.load()
+    # Native pixel gate: no resize/upscale is performed. Allow 0.5% aspect tolerance.\n    dimension_ok = w >= 800 and h >= 450 and abs(w * 9 - h * 16) <= max(w * 9, h * 16) * 0.005\n    pixels = im.load()
     ys = range(max(0, h // 10), max(1, h * 9 // 10), max(1, h // 256))
     xs = range(max(0, w // 10), max(1, w * 9 // 10), max(1, w // 256))
 
@@ -52,7 +52,7 @@ def main():
     args = parser.parse_args()
     verdicts = [inspect(name) for name in args.frames]
     print(json.dumps(verdicts, ensure_ascii=False, indent=2))
-    if any(v["collageOrHardGutterSuspected"] for v in verdicts):
+    if any(not v["nativeDimensionsValid"] or v["collageOrHardGutterSuspected"] for v in verdicts):
         raise SystemExit(1)
 
 
