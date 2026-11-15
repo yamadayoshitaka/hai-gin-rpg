@@ -43,7 +43,11 @@ concurrency:
 jobs:
   mobile-battle:
     runs-on: ubuntu-24.04
-    timeout-minutes: 18
+    # The serial mobile software-WebGL suite has several heavy scenes.
+    # At 18 minutes GitHub cancelled the browser recording mid-test, even
+    # though deterministic battles and creature quality tests had passed.
+    # Preserve the same E2E coverage and allow screenshots/videos to finish.
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
