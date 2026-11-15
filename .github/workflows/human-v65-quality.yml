@@ -1,0 +1,57 @@
+name: Human v65 photoreal face and hair quality regression
+on:
+  pull_request:
+    paths:
+      - 'src/face-feature-meshes.js'
+      - 'src/independent-face-masters.js'
+      - 'src/face-expression-animation-v48.js'
+      - 'src/face-wig-ornaments-v49.js'
+      - 'src/face-scalp-wig.js'
+      - 'face-mesh-studio.html'
+      - 'face-body-studio.html'
+      - 'male-body-studio.html'
+      - 'qa/human-v65-*'
+      - '.github/workflows/human-v65-quality.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'src/face-feature-meshes.js'
+      - 'src/independent-face-masters.js'
+      - 'src/face-expression-animation-v48.js'
+      - 'src/face-wig-ornaments-v49.js'
+      - 'qa/human-v65-*'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  anatomical-eyes-hair-nose-and-expression:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install head and browser runtime
+        run: npm install --no-save --package-lock=false three@0.160.1 playwright@1.56.0
+      - name: Validate v65 nose, iris, expression and hair geometry
+        run: |
+          node --test qa/human-v65-photoreal-quality.test.mjs qa/human-v64-catalog-and-hair.test.mjs qa/human-v63-quality.test.mjs
+      - name: Validate existing independent face geometry and expression
+        run: |
+          node --test qa/independent-face-masters.test.mjs qa/face-v49-regression.test.mjs
+      - name: Install mobile Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Start local application
+        run: |
+          python3 -m http.server 8766 --bind 127.0.0.1 > /tmp/human-v65-server.log 2>&1 &
+          sleep 2
+      - name: Capture real male female front profile eyes scalp and facial muscles
+        run: node qa/human-v65-mobile-browser.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: human-v65-real-chromium-webgl-face-hair-evidence
+          path: qa-screenshots/human-v65/
+          retention-days: 14
+          if-no-files-found: warn
