@@ -3053,7 +3053,7 @@ for(let team=0;team<2;team++)for(let i=0;i<TEAM_SIZE;i++){
  const passive=storyUnit?.equipmentBuff||{};
  const attackBuff=Math.max(0,Math.min(.6,Number(passive.attack)||0));
  const defenseBuff=Math.max(0,Math.min(.6,Number(passive.defense)||0));
- const job=storyUnit?{...baseJob,damage:Math.round(baseJob.damage*(1+attackBuff)),hp:Math.round(baseJob.hp*(1+defenseBuff))}:baseJob;
+ const job=storyUnit?{...baseJob,damage:Math.round(baseJob.damage*(1+attackBuff)),hp:Math.round(baseJob.hp*(1+defenseBuff)),speed:Math.max(.5,baseJob.speed*(1+(Number(storyUnit.formationBuff?.mobility)||0)))}:baseJob;
  const monsterId=storyRequest?.enemyMode==='monsters'&&team===1?storyRequest.enemyMonsterIds?.[i%storyRequest.enemyMonsterIds.length]:null;
  const monsterSpec=monsterId?MONSTER_CATALOG.find(m=>m.id===monsterId)||null:null;
  const root=createSoldier(job,team),formation=TOWN_MODE?
@@ -4771,7 +4771,7 @@ function updateUpperFloorRangedCombat(a,dt){
  const firingOrigin=slot?.aperture??{x:a.root.position.x,y:a.root.position.y+1.5,z:a.root.position.z};
  const hit=()=>{
   if(target.hp<=0||paused||finished)return;
-  const actualDamage=localEnemy===target?a.job.damage:stats.damage;
+  const actualDamage=strategicDamage(a,target,localEnemy===target?a.job.damage:stats.damage);
   if(skirmishActions)skirmishActions.damageUnit(target,actualDamage,a);
   else target.hp=Math.max(0,target.hp-Math.max(1,Math.round(actualDamage*.5)));
   if(a.jobId==='ninja'){
@@ -4780,7 +4780,7 @@ function updateUpperFloorRangedCombat(a,dt){
     for(const victim of actors){
       if(victim===target||victim.hp<=0||victim.team===a.team||
          victim.root.position.distanceToSquared(point)>(2*CELL)**2)continue;
-      const amount=Math.max(1,Math.round(stats.damage*.6));
+      const amount=strategicDamage(a,victim,Math.max(1,Math.round(stats.damage*.6)));
       if(skirmishActions)skirmishActions.damageUnit(victim,amount,a);
       else victim.hp=Math.max(0,victim.hp-Math.max(1,Math.round(amount*.5)));
       if(victim.hp<=0)defeatActor(victim);
@@ -7288,6 +7288,40 @@ function resolveMissionTarget(type,x,z){
  */
 let pendingTargetedMap=null;
 const targetedArrivalOrders=new Map(),targetedEnemyQueues=new Map();
+const skirmishStrategicDebuffs=new Map();
+function applySkirmishDebuff(targetSquadId,stat,amount,duration=24){
+ if(!['attack','defense','speed'].includes(stat)||!Number.isFinite(amount)||amount<=0)return false;
+ const found=actors.filter(a=>a.team===1&&String(a.squadId)===String(targetSquadId)&&a.hp>0);
+ if(!found.length)return false;
+ const key=String(targetSquadId),old=skirmishStrategicDebuffs.get(key)||{},
+  debuff={...old,[stat]:Math.min(.4,Math.max(old[stat]||0,amount)),
+   until:Math.max(old.until||0,elapsed+duration)};
+ skirmishStrategicDebuffs.set(key,debuff);
+ for(const actor of found){
+  if(actor.strategicBaseSpeed===undefined)actor.strategicBaseSpeed=actor.speed;
+  actor.speed=actor.strategicBaseSpeed*(1-(debuff.speed||0));
+ }
+ return true;
+}
+function skirmishDebuff(actor,stat){
+ const d=actor?.team===1?skirmishStrategicDebuffs.get(String(actor.squadId)):null;
+ return d?.until>elapsed?(d[stat]||0):0;
+}
+function strategicDamage(attacker,defender,damage){
+ return Math.max(1,Math.round(damage*(1-skirmishDebuff(attacker,'attack'))*
+  (1+skirmishDebuff(defender,'defense'))));
+}
+function expireSkirmishDebuffs(){
+ for(const [id,d] of skirmishStrategicDebuffs){
+  if(d.until>elapsed)continue;
+  skirmishStrategicDebuffs.delete(id);
+  for(const actor of actors){
+   if(actor.team===1&&String(actor.squadId)===id&&actor.strategicBaseSpeed!==undefined){
+    actor.speed=actor.strategicBaseSpeed;delete actor.strategicBaseSpeed;
+   }
+  }
+ }
+}
 function issueTargetedPlatoon(squadId,mode,target=null){
  const original=selectedSquadId;selectedSquadId=String(squadId);
  let accepted=false;
@@ -7324,10 +7358,13 @@ function issueTargetedPlan({groupId,mode,squadIds:members,targetIds}){
   }else if(mode==='weaken'){
    const jobs=targetedSubSquadJobs(id);
    const stat=jobs.has('mage')?'attack':jobs.has('thief')?'defense':jobs.has('ninja')?'speed':null;
-   if(!stat||!massSim)continue;
+   if(!stat)continue;
    const amount=stat==='attack'?.20:stat==='defense'?.15:.18;
-   if(massSim.applySquadDebuff(targetId,stat,amount,24,1)){
-    massWorker?.applySquadDebuff?.(targetId,stat,amount,24,1);count++;
+   const applied=massSim?massSim.applySquadDebuff(targetId,stat,amount,24,1):
+    applySkirmishDebuff(targetId,stat,amount,24);
+   if(applied){
+    if(massSim)massWorker?.applySquadDebuff?.(targetId,stat,amount,24,1);
+    count++;
    }
   }else if(mode==='destroy'){
    const object=(massSim?.actions.objects||skirmishActions?.objects||[]).find(o=>String(o.id)===targetId&&o.alive);
@@ -7408,6 +7445,7 @@ const targetedStrategyUi=createTargetedStrategyUi({
 // Moving and defending on the same frame would erase the destination.
 const targetedOrderWatcher=setInterval(()=>{
  if(!battleReady||finished||paused)return;
+ expireSkirmishDebuffs();
  for(const [id,plan] of targetedArrivalOrders){
   const center=squadCenter(id,0);
   if(!center||Math.hypot(center.x-plan.point.x,center.z-plan.point.z)>5)continue;
