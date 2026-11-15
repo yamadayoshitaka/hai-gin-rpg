@@ -2,8 +2,8 @@
 export const STRATEGY_TREE=Object.freeze({
  attack:{name:'攻撃',intents:{
   melee:{name:'近距離',methods:[
-   {id:'melee_focus',name:'集中突破',mode:'charge',type:'enemy',jobs:['knight','shield_knight','fighter']},
-   {id:'melee_split',name:'複数敵へ分進',mode:'charge',type:'enemy',jobs:['knight','shield_knight','fighter','ninja']}
+   {id:'melee_focus',name:'集中突破',mode:'charge',type:'enemy',jobs:['sword','shield','fighter']},
+   {id:'melee_split',name:'複数敵へ分進',mode:'charge',type:'enemy',jobs:['sword','shield','fighter','ninja']}
   ]},
   ranged:{name:'遠距離',methods:[
    {id:'ranged_focus',name:'遠距離集中',mode:'charge',type:'enemy',jobs:['mage','summoner','archer']},
@@ -15,8 +15,8 @@ export const STRATEGY_TREE=Object.freeze({
  }},
  defense:{name:'守備',intents:{
   block:{name:'阻止',methods:[
-   {id:'block_passage',name:'進路を封鎖',mode:'defend',type:'map',jobs:['knight','shield_knight','fighter']},
-   {id:'block_advance',name:'前進を阻止',mode:'defend',type:'map',jobs:['knight','shield_knight','ninja']}
+   {id:'block_passage',name:'進路を封鎖',mode:'defend',type:'map',jobs:['sword','shield','fighter']},
+   {id:'block_advance',name:'前進を阻止',mode:'defend',type:'map',jobs:['sword','shield','ninja']}
   ]},
   escape:{name:'逃走',methods:[
    {id:'withdraw',name:'後方へ退避',mode:'retreat',type:'map',jobs:[]},
