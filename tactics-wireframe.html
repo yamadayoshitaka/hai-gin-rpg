@@ -7443,7 +7443,8 @@ const targetedStrategyUi=createTargetedStrategyUi({
   return {squads:ids.map(id=>{
    const spec=storyRequest?.subdivisionMap?.[id];
    return {id,label:spec?'第'+spec.part+'/'+spec.parts+'分隊・'+squadPrimaryJob(id):squadPrimaryJob(id)+'隊',
-    jobs:[...targetedSubSquadJobs(id)],allowed:storyRequest?.availableSquadOrders?.[id]||['charge','defend','hold','retreat'],
+    jobs:[...targetedSubSquadJobs(id)],soldiers:squadRoster.filter(u=>u.team===0&&String(u.squadId)===String(id)&&u.hp>0).length,
+    allowed:storyRequest?.availableSquadOrders?.[id]||['charge','defend','hold','retreat'],
     hasSummon:squadRoster.some(u=>String(u.squadId)===String(id)&&u.isSummon&&u.hp>0)};
   }),allowed:[...new Set(ids.flatMap(id=>storyRequest?.availableSquadOrders?.[id]||['charge','defend','hold','retreat']))]};
  },
