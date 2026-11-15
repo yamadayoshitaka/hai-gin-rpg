@@ -24,7 +24,7 @@ import {chooseCreatureLod} from './creature-master-library.js?v=masters-v1';
 import {protectedCreature} from './creature-mesh-adoption.js?v=real-bodies-v3';
 import {isMonsterSummonType,monsterSummonSource,
  monsterSummonWorldScale,MONSTER_SUMMON_MAX_HIGH_DETAIL,
- MONSTER_SUMMON_MAX_ACTIVE,MONSTER_SUMMON_BY_TYPE}
+ MONSTER_SUMMON_MAX_ACTIVE,MONSTER_SUMMON_BY_TYPE,MONSTER_SUMMON_MODEL_HEIGHT}
  from './monster-summon-registry.js';
 
 const safe=(x,fallback=0)=>Number.isFinite(x)?x:fallback;
