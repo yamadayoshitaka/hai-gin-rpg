@@ -39,12 +39,12 @@
     },
     "monster": {
       "source": "ChatGPT 定期タスクの実行結果",
-      "lastRunAt": "2026-11-15T12:12:22.230167Z",
+      "lastRunAt": "2026-11-15T13:04:08Z",
       "status": "work_incomplete",
       "carryover": true,
-      "subject": "PR #385 既存E2E不整合と非人間型の品質回帰",
-      "summary": "21時台の定期処理は実行されたが、実コード修正・新規コミット・マージ・公開なし。関連PR #385のE2Eは失敗中。",
-      "nextAction": "PR #385のphotoSurfaces/CC0 source判定を実表示と照合して修正し、再QA・Artifacts実画像を確認。PR #345/#346とm005/m006は変更しない。",
+      "subject": "PR #385 WebGL E2E不整合と非人間型衣装の実画像検証",
+      "summary": "22時台：実処理ON、monster手動Issue該当なし。PR #385のBattle visual E2EでReal browser battle recording失敗を再確認。mainのqa/monster-manager.spec.mjs:171でprocedural固定期待値を確認。実画像未確認のため期待値変更せず。ソース修正・コミット・PR更新・マージ・公開は未実施。",
+      "nextAction": "PR #385のphotoSurfacesとCC0 source-compositeの期待仕様を実WebGL画像と照合し、E2E失敗箇所を修正してQA再実行。Pixel 7相当の龍王3形態・天使・犬GLB・衣装貫通・FPSを検証。保護ファイル・m005/m006・元GLBは変更しない。",
       "steps": {
         "launch": "done",
         "code": "pending",
@@ -56,8 +56,12 @@
       },
       "evidence": [
         {
-          "label": "PR #385の失敗したE2E",
+          "label": "PR #385 Battle visual E2E失敗",
           "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/43692535840"
+        },
+        {
+          "label": "PR #385",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/385"
         }
       ]
     },
