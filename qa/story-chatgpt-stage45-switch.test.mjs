@@ -36,7 +36,19 @@ assert(ui.includes("new File([blob]"));
 assert(ui.includes('ChatGPT Plusの画像生成を利用'));
 
 const registered=Object.entries(CHAPTER1_PROVISIONAL_LIVE).filter(([key])=>key.startsWith('c01-s04|'));
-assert.equal(registered.length,7,'Only seven individually uploaded ChatGPT stage4 WebPs are registered, never rejected collages');
+// Do not freeze the repository at its old seven-frame milestone: Cloudflare and
+// owner-authorized later additions are valid provisional registrations too.
+assert(registered.length>=7&&registered.length<=48,'Stage4 live entries must be bounded by the canonical 48');
+const canon=new Set(pages.filter(p=>p.stageId==='c01-s04').flatMap(p=>p.shots.map(s=>s.key)));
+for(const [key,item] of registered){
+ assert(canon.has(key),'Unrecognized stage4 shot key '+key);
+ assert.equal(item.status,'PROVISIONAL_OWNER_AUTHORIZED_PENDING_P0');
+ const filePath=item.asset.startsWith('./')?item.asset.slice(2):item.asset;
+ const bytes=fs.readFileSync(filePath);
+ assert.equal(bytes.toString('ascii',0,4),'RIFF',key);
+ assert.equal(bytes.toString('ascii',8,12),'WEBP',key);
+ assert.equal(crypto.createHash('sha256').update(bytes).digest('hex'),item.sha256,key+' image differs from registry');
+}
 const liveS05=Object.keys(CHAPTER1_PROVISIONAL_LIVE).filter(key=>key.startsWith('c01-s05|'));
 assert.equal(liveS05.length,0,'No image may be fabricated or counted as stage5 completed');
 for(const gender of ['male','female']){
