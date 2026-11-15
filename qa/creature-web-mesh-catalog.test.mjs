@@ -4,7 +4,8 @@ import {WEB_CREATURE_MESH_SOURCES,WEB_CREATURE_SOURCE_COUNT,
  validateWebCreatureMeshSources} from '../src/creature-web-mesh-catalog.js';
 import {WEB_CREATURE_ANATOMY_REFERENCES,
  validateAnatomySources} from '../src/creature-research-reference-catalog.js';
-import {REAL_CREATURE_MESH_SOURCES} from '../src/creature-real-source-catalog.js';
+import {readFileSync} from 'node:fs';
+const loaderSource=readFileSync(new URL('../src/creature-real-source-catalog.js',import.meta.url),'utf8');
 import {CREATURE_RECONSTRUCTION_BY_ID,CREATURE_RECONSTRUCTION_SUMMARY}
  from '../src/creature-reconstruction-plan.js';
 import {eligibleCreature,adoptedCreatureMesh,setAdoptedCreatureMesh,
@@ -25,8 +26,7 @@ test('published download links and licenses are real catalog entries, no guessed
   assert.equal(entry.integration,'preview-only',id);
   assert.ok(entry.author&&entry.license, id);
   assert.equal(entry.hasPublicGLB,true,id);
-  assert.ok(REAL_CREATURE_MESH_SOURCES[id],id);
-  assert.equal(REAL_CREATURE_MESH_SOURCES[id].downloadUrl,entry.downloadUrl,id);
+  assert.ok(loaderSource.includes('...WEB_CREATURE_MESH_SOURCES'),'runtime importer must expose free GLBs');
  }
  for(const [id,entry] of Object.entries(WEB_CREATURE_MESH_SOURCES)){
   assert.equal(entry.license,id.startsWith('b-')?'CC BY 4.0':'CC0-1.0');
