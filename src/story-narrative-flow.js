@@ -113,6 +113,9 @@ export function storyStageContext(game,id){
  const route=currentStoryRoute(game);
  return {
   stageId:id,chapter:stage.chapter,kind:stage.kind,
+  // Chapter openings are shown only once per save, never every time a town is revisited.
+  chapterOpeningSeen:Boolean(flags(game).chapterOpenings?.[stage.chapter] ||
+    (stage.chapter===1&&flags(game).openingEventCompleted)),
   protagonistGender:game?.campaign?.commander?.gender==='female'?'female':'male',
   origin:'silver',route:route?.id||'silver',routeName:route?.name||'灰銀軍師',
   coalition:stage.chapter>=16,
