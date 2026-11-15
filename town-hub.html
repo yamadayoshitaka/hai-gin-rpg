@@ -104,7 +104,7 @@ header nav button,header nav a{min-width:0;padding:7px 2px;white-space:nowrap;fo
 #townExplorerControls,#townRadar,#townGuide,#veil{display:none!important}
 @media(min-aspect-ratio:1/1){body{grid-template-rows:auto auto minmax(0,1fr)}body>header{flex-wrap:nowrap}header .label{width:auto;max-width:38%}header nav{max-width:60%}#townScene{max-width:760px;justify-self:center}}
 </style>
-<link rel="stylesheet" href="./src/tactical-command-ui.css?v=2.1"><link rel="stylesheet" href="./src/battle-ui-refinement.css?v=2.4"><link rel="stylesheet" href="./src/three-team-sortie-ui.css?v=1"></head><body class="town-loading">
+<link rel="stylesheet" href="./src/tactical-command-ui.css?v=2.1"><link rel="stylesheet" href="./src/battle-ui-refinement.css?v=2.4"><link rel="stylesheet" href="./src/three-team-sortie-ui.css?v=2"></head><body class="town-loading">
 <main id="townScene" aria-label="町の施設を選択">
 <img id="townArtwork" src="./assets/town/royal-town-hub-v1.webp" alt="城、教会、宿屋、武器屋、酒場、道具屋が並ぶ王都" fetchpriority="high">
 <div id="townFacilityPins">
@@ -139,7 +139,7 @@ header nav button,header nav a{min-width:0;padding:7px 2px;white-space:nowrap;fo
 <script type="module">
 import {armyGroups,armyGroupFor,setArmyGroup,captainCandidates,armyCaptain,setArmyCaptain,captainBonus} from './src/army-groups.js';
 import {renderThreeTeamPlanner} from './src/three-team-sortie-ui.js';
-import {setSortieCount,setSortieCaptain,setSortieFormation,setSortieSlot,setSortieOrder} from './src/three-team-sortie.js';
+import {setSortieCount,setSortieCaptain,setSortieFormation,setSortieJobSlot,setSortieOrder} from './src/three-team-sortie.js';
 import {STORY_CHAPTERS,storyVoiceKey} from './src/story-chapters.js';
 import {STORY_KEY_PEOPLE} from './src/story-cinematic.js';
 import {mangaForStage} from './src/story-stage-manga.js';
@@ -238,7 +238,7 @@ $('townDialogueNext').onclick=()=>{
 };
 $('townDialogueService').onclick=()=>{if(!activeTalk?.panel)return;const service=activeTalk.panel;hideTownDialogue();openPanel(service);};
 $('townDialogueClose').onclick=()=>{hideTownDialogue();stopNarration();};
-function openPanel(which){if(!townReady)return;hideTownDialogue();resetTownMovement();panel=which;if(which==='formation'){sortieView='setup';sortieTeamId=1;sortieSourceId=null;}
+function openPanel(which){if(!townReady)return;hideTownDialogue();resetTownMovement();panel=which;if(which==='formation'){sortieView='setup';sortieTeamId=1;sortieSlotIndex=0;}
  townAudio.effect('open');page=0;shopCategory=which==='weapons'?'武器':'道具';notice('');$('panel').hidden=false;$('panelBackdrop').hidden=false;renderPanel();}
 function closePanel(){$('panel').hidden=true;$('panelBackdrop').hidden=true;panel='';townAudio.effect('cancel');townAudio.setScene('town');}
 $('panelClose').onclick=closePanel;$('panelBackdrop').onclick=closePanel;
@@ -396,16 +396,11 @@ function renderInnPages(){
  }
  root.replaceChildren(heading,nav,pages.strategies,pages.deployment,pages.overview,pages.squads,pages.recruit);
 }
-let sortieView='setup',sortieTeamId=1,sortieSourceId=null,sortieStageId=null;
-function sortieTargetStages(){return stagesInChapter(CAMPAIGN_STAGE_BY_ID[game.townStage].chapter).filter(s=>s.kind!=='town');}
-function sortieTargetStage(){
- const stages=sortieTargetStages();
- return stages.find(s=>s.id===sortieStageId)||stages.find(s=>!game.completedStages.includes(s.id))||stages[0];
-}
+let sortieView='setup',sortieTeamId=1,sortieSlotIndex=0;
 function renderPanel(){
  if(!panel)return;
  $('panel').classList.toggle('formation-command-ui',panel==='formation');
- $('panelTitle').textContent=({weapons:'武具屋・隊列装備',items:'道具屋・消耗品',formation:'宿屋・3隊の配列',tavern:'酒場・イベント請負',save:'教会・旅の記録',story:'王城・物語',dialogue:activeTalk?.name||'町人との会話'})[panel]||'町の施設';
+ $('panelTitle').textContent=({weapons:'武具屋・隊列装備',items:'道具屋・消耗品',formation:'宿屋・3班の陣形テンプレート',tavern:'酒場・イベント請負',save:'教会・旅の記録',story:'王城・物語',dialogue:activeTalk?.name||'町人との会話'})[panel]||'町の施設';
  $('panelSummary').innerHTML='<div class="stat">軍師：<strong>'+escapeHtml(game.playerName)+'</strong></div><div class="stat">現在：<strong>第'+CAMPAIGN_STAGE_BY_ID[game.townStage].chapter+'章・町</strong></div>';
  if(panel==='dialogue'){
    const talk=activeTalk;
@@ -427,7 +422,7 @@ function renderPanel(){
    '<div class="entries">'+rowsHtml(stock,item=>'<div class="entry"><div><b>'+escapeHtml(item.name)+'</b><small>'+item.price+'G · 所持 '+(game.inventory[item.id]||0)+' · '+escapeHtml(item.description)+'</small></div><div><button type="button" data-buy="'+item.id+'" '+(game.wallet<item.price?'disabled':'')+'>購入</button> '+(armory?'<button type="button" data-equip="'+item.id+'" '+(!(game.inventory[item.id]>0)||!squads.length?'disabled':'')+'>隊列に装備</button>':'')+'</div></div>')+'</div>'+
    '<p>所持金：'+game.wallet+'G'+(armory?'　※同じ装備を複数隊列に使うには人数分ではなく隊列数分の在庫が必要です。':'')+'</p>';
  }else if(panel==='formation'){
-   $('panelContent').innerHTML=renderThreeTeamPlanner({game,stage:sortieTargetStage(),stages:sortieTargetStages(),teamId:sortieTeamId,sourceId:sortieSourceId,view:sortieView});
+   $('panelContent').innerHTML=renderThreeTeamPlanner({game,teamId:sortieTeamId,slotIndex:sortieSlotIndex,view:sortieView});
   }else if(panel==='tavern'){
   game.acceptedEvents??=[];game.claimedEvents??=[];
   $('panelContent').innerHTML='<p>酒場の依頼掲示板。受注後はワールドマップで指定ステージを攻略し、酒場に戻って報酬を受け取ります。</p>'+
@@ -449,20 +444,17 @@ function renderPanel(){
 $('panelContent').addEventListener('change',event=>{
  if(panel==='formation'){
   const field=event.target;
+  if(!field.hasAttribute('data-sortie-count'))return;
   try{
-   if(field.hasAttribute('data-sortie-stage')){sortieStageId=field.value;renderPanel();return;}
-   if(field.hasAttribute('data-sortie-source')){sortieSourceId=field.value;renderPanel();return;}
-   if(field.hasAttribute('data-sortie-count')){
-    const first=field.closest('.sortiePlanner')?.querySelector('[data-sortie-source]');
-    setSortieCount(game,sortieTeamId,first?.value,Number(field.value));
-   }else if(field.hasAttribute('data-sortie-captain'))setSortieCaptain(game,sortieTeamId,field.value);
-   else if(field.hasAttribute('data-sortie-formation'))setSortieFormation(game,sortieTeamId,field.value);
-   else if(field.hasAttribute('data-sortie-slot'))setSortieSlot(game,sortieTargetStage(),sortieTeamId,field.value);
-   else return;
+   const team=game.sortiePlan?.teams?.find(t=>t.id===sortieTeamId);
+   const sid=team?.slots?.[sortieSlotIndex];
+   if(!sid)throw Error('ジョブを選んでから人数を設定してください。');
+   setSortieCount(game,sortieTeamId,sid,Number(field.value));
    persist();renderPanel();
   }catch(error){notice(error.message||String(error));renderPanel();}
   return;
  }
+
 if(event.target.id==='equipSquadSelect')selectedSquadId=Number(event.target.value)||0;
  if(event.target.id==='innCommanderSelect'){innCommanderId=event.target.value;page=0;innDeploymentSelected=null;renderPanel();}
  if(event.target.id==='innInitialOrderSelect'){
@@ -478,12 +470,26 @@ $('panelContent').onclick=event=>{
  if(panel==='formation'){
   const target=event.target.closest('button');
   if(!target)return;
-  if(target.hasAttribute('data-sortie-team')){sortieTeamId=Number(target.dataset.sortieTeam);sortieSourceId=null;renderPanel();return;}
+  if(target.hasAttribute('data-sortie-team')){sortieTeamId=Number(target.dataset.sortieTeam);sortieSlotIndex=0;renderPanel();return;}
   if(target.hasAttribute('data-sortie-view')){sortieView=target.dataset.sortieView;renderPanel();return;}
-  if(target.hasAttribute('data-sortie-order')){
-   try{setSortieOrder(game,sortieTeamId,target.dataset.sortieOrder);persist();renderPanel();}
-   catch(error){notice(error.message||String(error));}
-  }
+  if(target.hasAttribute('data-sortie-slot-index')){sortieSlotIndex=Number(target.dataset.sortieSlotIndex);renderPanel();return;}
+  try{
+   if(target.hasAttribute('data-sortie-job'))
+    setSortieJobSlot(game,sortieTeamId,sortieSlotIndex,target.dataset.sortieJob||null);
+   else if(target.hasAttribute('data-sortie-formation'))
+    setSortieFormation(game,sortieTeamId,target.dataset.sortieFormation);
+   else if(target.hasAttribute('data-sortie-captain'))
+    setSortieCaptain(game,sortieTeamId,target.dataset.sortieCaptain);
+   else if(target.hasAttribute('data-sortie-step')){
+    const team=game.sortiePlan?.teams?.find(t=>t.id===sortieTeamId);
+    const sid=team?.slots?.[sortieSlotIndex];
+    if(!sid)throw Error('ジョブを選んでください。');
+    setSortieCount(game,sortieTeamId,sid,(team.counts[sid]||0)+Number(target.dataset.sortieStep));
+   }else if(target.hasAttribute('data-sortie-order'))
+    setSortieOrder(game,sortieTeamId,target.dataset.sortieOrder);
+   else return;
+   persist();renderPanel();
+  }catch(error){notice(error.message||String(error));}
   return;
  }
 
