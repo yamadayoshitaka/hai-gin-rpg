@@ -82,8 +82,8 @@ function createCard(data){
  switchRow.append(swText,swBtn);c.appendChild(switchRow);
  swBtn.addEventListener('click',()=>{
   const cmd={category:data.id,enabled:!data.autoEnabled};
-  const body='<!-- hai-gin-batch-switch-v1 -->\\n```json\\n'
-    +JSON.stringify(cmd,null,2)+'\\n```\\n\\n'
+  const body='<!-- hai-gin-batch-switch-v1 -->\n```json\n'
+    +JSON.stringify(cmd,null,2)+'\n```\n\n'
     +'バッチ作業の実行制御を変更してください。';
   const link=GH+'/issues/new?'+new URLSearchParams({title:'[hai-gin-switch] '+data.name+' '+(cmd.enabled?'ON':'OFF'),body});
   const win=window.open(link,'_blank','noopener,noreferrer');if(!win)location.assign(link);
@@ -151,7 +151,7 @@ function createCard(data){
   if(data.id==='world'&&cmd.target&&!/^(object:[a-z][\w-]*|stage:c\d{2}-s\d{2})$/.test(cmd.target)){feedback.textContent='対象は object:... または stage:c01-s04 の形式で指定してください。';return}
   if(!cmd.instruction){feedback.textContent='まず次の指示を入力してください。';instruction.focus();return}
   const content='<!-- hai-gin-hourly-batch-v1 -->\n```json\n'+JSON.stringify(cmd,null,2)+'\n```\n\n'
-   +'毎時品質改善の手動依頼。Issue作成後にカテゴリ別のQAを起動。実際のモデル変更は成果物の検証後に行う。'+(attachment?'\\n\\n参考画像：'+attachment.name+'（画像をGitHub Issue本文に貼り付けてください）':'');
+   +'毎時品質改善の手動依頼。Issue作成後にカテゴリ別のQAを起動。実際のモデル変更は成果物の検証後に行う。'+(attachment?'\n\n参考画像：'+attachment.name+'（画像をGitHub Issue本文に貼り付けてください）':'');
   const params=new URLSearchParams({title:'[hai-gin-batch] '+data.name+'：次の指示',body:content});
   const link=GH+'/issues/new?'+params.toString();
   feedback.textContent=attachment?'参考画像をGitHub Issue本文に添付し、Submit new issueで確定してください。':'GitHub画面でSubmit new issueを押すと指示を送れます。';
