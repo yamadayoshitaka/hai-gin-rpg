@@ -32,6 +32,8 @@ jobs:
         run: node --experimental-vm-modules qa/pages-publication-integrity.cjs
       - name: Verify opt-in monster mesh adoption, nonhuman scope and rollback
         run: node --test qa/creature-mesh-adoption.test.mjs
+      - name: Verify 50 monster and summon reference prompts plus evidence-based 100-point KPI
+        run: node --test qa/monster-quality-kpi.test.mjs
       - name: Verify 20 chapters, story progression and recorded AI voice contract
         run: node qa/story-chronicle.test.mjs
       - name: Verify new game core, town save, shops and 200-stage transitions
