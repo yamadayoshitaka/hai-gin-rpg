@@ -70,3 +70,8 @@
 .sortieDivisions small{display:block;font-size:10px;color:#d1e2e7}
 .sortieGridFooter button{padding:5px 9px!important}
 @media(max-width:450px){.sortieGridFooter button{padding:4px!important;font-size:10px!important}.sortieTemplateChoices button{min-height:87px!important}.sortieDivisions{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* Distinguish occupied tactical roles from empty positions on the 4x4 board. */
+.sortieMiniGrid{grid-template-columns:repeat(4,10px);grid-template-rows:repeat(4,10px)}
+.sortieMiniGrid i.occupied{font:700 8px/9px system-ui;text-align:center;color:#261b0c}
+.sortieGridFooter small{max-width:65%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
