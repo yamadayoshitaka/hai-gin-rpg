@@ -201,6 +201,7 @@ import {hasDemonCosmetics,withDemonColorTheme}
  from './src/monster-demon-cosmetics.js?v=4.5.04';
 import {fetchCreatureRegistry,loadExternalCreature,loadPersonalGLB} from './src/creature-external-runtime.js?v=4.4.92';
 import {adoptedCreatureMesh} from './src/creature-mesh-adoption.js';
+import {REAL_CREATURE_MESH_SOURCES,loadCreatureMeshSource} from './src/creature-real-source-catalog.js';
 import {loadSpeciesSourceComposite,isSpeciesSourcePilot,SPECIES_SOURCE_REBUILD_PILOTS}
  from './src/monster-source-composite.js?v=4.6.90';
 const byId=id=>document.getElementById(id);
@@ -298,7 +299,7 @@ const clock=new THREE.Clock();
 let selected='m001',model=null,currentAction='idle',meshStats=null,frames=0;
 let nextActionReplay=Infinity;
 let costumeHandle=null;
-let externalRegistry={entries:{}},externalHandle=null,requestSerial=0;
+let externalRegistry={entries:{...REAL_CREATURE_MESH_SOURCES}},externalHandle=null,requestSerial=0;
 const localFiles=new Map(),assignmentKey='hai-gin.monster-external-assignment.v1';
 let modelAssignments={};
 try{
@@ -485,7 +486,8 @@ function selectSpecies(id){
    else byId('assetStatus').textContent='非人型：専用3Dメッシュを表示中';
    return;
  }
- const chosenId=byId('externalAsset').value||id;
+ const chosenId=byId('externalAsset').value||
+    (adoptedCreatureMesh(id)!=='legacy'?adoptedCreatureMesh(id):id);
  const entry=externalRegistry.entries[chosenId],file=localFiles.get(id);
  if(mode==='licensed'&&!entry){
    byId('assetStatus').textContent='外部モデル50体の一覧から個体を選んでください。従来モデルを表示します。';
@@ -505,7 +507,7 @@ function selectSpecies(id){
    return;
  }
  byId('assetStatus').textContent='高品質GLBを読み込み中...';
- const pending=mode==='licensed'?loadExternalCreature(entry,detail):
+ const pending=mode==='licensed'?loadCreatureMeshSource(chosenId,externalRegistry,detail):
    mode==='source-composite'?loadSpeciesSourceComposite(m,externalRegistry,{detail}):
    loadPersonalGLB(file,{id,targetHeight:2.4*m.size});
  pending.then(handle=>{
@@ -516,7 +518,7 @@ function selectSpecies(id){
    model=handle.root;externalHandle=handle;scene.add(model);
    refreshGeometry();focusCamera();
    startMonsterAction(model,'idle',clock.getElapsedTime());
-   byId('assetStatus').textContent=(mode==='licensed'?'CC0候補 '+entry.name:
+   byId('assetStatus').textContent=(mode==='licensed'?entry.license+'候補 '+entry.name:
       mode==='source-composite'?'CC0実物GLB '+handle.sourceComposite.donorName+
       ' ＋種族配色・装飾（品質試作・戦闘未置換）':
       'この端末内 '+file.name)+' / 内蔵動作 '+handle.clips.length+'種類 / 戦闘は未置換';
@@ -614,7 +616,7 @@ byId('personalGlb').addEventListener('change',event=>{
  byId('assetSource').value='personal';selectSpecies(selected);
 });
 fetchCreatureRegistry().then(reg=>{
- externalRegistry=reg;
+ externalRegistry={...reg,entries:{...reg.entries,...REAL_CREATURE_MESH_SOURCES}};
  const picker=byId('externalAsset');
  picker.replaceChildren();
  const placeholder=document.createElement('option');
@@ -632,19 +634,19 @@ fetchCreatureRegistry().then(reg=>{
    picker.append(section);
  }
  // Keep the original seven preview mappings for backwards compatibility.
- const old=document.createElement('optgroup');old.label='既存のCC0比較モデル';
- for(const [id,e] of Object.entries(reg.entries).filter(([id])=>!id.startsWith('q'))){
+ const old=document.createElement('optgroup');old.label='既存比較＋リアル外部モデル（CC BY）';
+ for(const [id,e] of Object.entries(externalRegistry.entries).filter(([id])=>!id.startsWith('q'))){
    const opt=document.createElement('option');opt.value=id;opt.textContent=e.name;
    old.append(opt);
  }
  picker.append(old);
  const saved=modelAssignments[selected];
  const approved=adoptedCreatureMesh(selected);
- picker.value=reg.entries[approved]?approved:reg.entries[saved]?saved:
-   reg.entries[selected]?selected:'';
- byId('assetSource').value=reg.entries[approved]&&
+ picker.value=externalRegistry.entries[approved]?approved:externalRegistry.entries[saved]?saved:
+   externalRegistry.entries[selected]?selected:'';
+ byId('assetSource').value=externalRegistry.entries[approved]&&
    !HUMAN_MONSTER_IDS.includes(selected)?'licensed':'procedural';
- byId('assignmentStatus').textContent=reg.entries[approved]?
+ byId('assignmentStatus').textContent=externalRegistry.entries[approved]?
    '採用済み：'+approved:reg.entries[saved]?
    '旧画面の比較候補（未採用）':'採用なし（現行モデル）';
  renderList();
