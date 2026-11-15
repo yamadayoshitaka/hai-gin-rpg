@@ -47,12 +47,12 @@
     },
     "monster": {
       "source": "ChatGPT 定期タスクの実行結果",
-      "lastRunAt": "2026-11-15T17:08:31Z",
-      "subject": "m020深海リヴァイアサン尾鰭の立体膜・支持条の実造形（PR #426）",
-      "summary": "スイッチON、手動monster Issueなし。m020の平面三角形尾鰭を曲面グリッド膜と湾曲支持条へ実造形変更。実コードコミットeec905eをPR #426ブランチへ反映。静的差分条件確認済み、Node/Three.js/WebGL実行・ゲーム/マスター接続・Android FPS未確認。旧PR #382/#385のE2E課題も継続。mainマージ/公開なし。",
+      "lastRunAt": "2026-11-15T18:08:35Z",
+      "subject": "m020深海リヴァイアサン胸鰭の立体膜・軟骨支持条・可動ピボット",
+      "summary": "スイッチON。PR #426作業ブランチで平面胸鰭を曲面膜・支持条・可動関節に実改修しコミットd558e55。静的5条件確認成功。Node/Three.js実行、WebGL実描画、ゲーム/マスター画面、Android FPS未検証。チェックポイントを同ブランチへ保存。全108体完成ではなくm020試作継続。mainマージ/公開なし。",
       "status": "in_review",
       "carryover": true,
-      "nextAction": "PR #426のm020造形コードをNode+Three.jsで構文・メッシュ法線/インデックス/ジオメトリ検査し、前後左右WebGL画像を取得。尾鰭の膜/支持条・遊泳を比較し、ゲーム/マスターに試作表示を接続。Android FPS確認後にのみマージ判断。PR #382/#385 E2E未完了も継続。",
+      "nextAction": "PR #426 m020をNode/Three.jsで実行し胸鰭法線・三角形退化・可動ピボットを検査、WebGL正面側面背面比較後にゲーム/マスター試作接続。m048海蛇は別種骨格で実造形着手。PR #382/#385 E2Eも継続。",
       "steps": {
         "launch": "done",
         "code": "done",
@@ -64,12 +64,16 @@
       },
       "evidence": [
         {
-          "label": "m020尾鰭実造形変更 eec905e",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/eec905ec6db44ec2469c6542bcfb16569e76effc"
+          "label": "胸鰭実改修コミット",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/d558e55c50378e77b9e64cfc9c8fd4384d163013"
         },
         {
           "label": "Draft PR #426",
           "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/426"
+        },
+        {
+          "label": "作業ブランチチェックポイント",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/5e6b6b72faac5e00ddca51e2c7633b295f72e75f"
         }
       ]
     },
