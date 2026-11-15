@@ -37,6 +37,8 @@ jobs:
           node --check src/story-narrative-flow.js
       - name: Verify all twenty chapters, 200 stages and distinct defeat/gameover
         run: node qa/story-compact-20-chapters.test.mjs
+      - name: Verify compact CG reuse of 40 existing first-four-stage gender/outcome original assets
+        run: node qa/story-compact-art-reuse.test.mjs
       - name: Preserve old individual registered artwork and 462-cut review archive
         run: |
           node qa/story-panel-one-at-a-time.test.mjs
