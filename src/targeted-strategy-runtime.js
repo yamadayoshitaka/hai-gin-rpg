@@ -66,8 +66,15 @@ export function createTargetedStrategyUi({
   }));
  const type=()=>{const t=new Set([...selectedMethods].map(id=>STRATEGY_METHODS[id]?.type).filter(Boolean));return t.size===1?[...t][0]:t.size>1?'mixed':null};
  const distribution=()=>planStrategyDistribution(planFor(),[...selectedSquads],[...selectedMethods]);
- const targets=()=>type()==='enemy'?getEnemyTargets():
-  type()==='object'?[...new Map([...getObjects('explore'),...getObjects('destroy')].map(x=>[String(x.id),x])).values()]:[];
+ // Every command exposes only targets which can execute that mode.
+ // A destroy command must not advertise treasure chests, for example.
+ const targets=()=>{
+  if(type()==='enemy')return getEnemyTargets();
+  if(type()!=='object')return [];
+  const modes=[...new Set([...selectedMethods].map(id=>STRATEGY_METHODS[id]?.mode)
+   .filter(mode=>mode==='explore'||mode==='destroy'))];
+  return [...new Map(modes.flatMap(mode=>getObjects(mode)).map(x=>[String(x.id),x])).values()];
+ };
  const stepText={scope:'① 指示する単位',family:'② 作戦を選択',intent:'③ 目的を選択',method:'④ 実行方法を選択',target:'⑤ 対象を選択',confirm:'⑥ 作戦内容の確認',items:'③ アイテムを選択'};
  const controls=(back,next,nextLabel='次へ',disable=false)=>
   '<div class="centerActions">'+b('data-strategy-back',back)+
@@ -141,7 +148,8 @@ export function createTargetedStrategyUi({
     '<div>'+(isItem?'🎒 '+esc(getItems().find(x=>String(x.id)===chosenItem)?.label||chosenItem):
       activeMethod.map(m=>esc(m.name)).join('・'))+'</div>'+
     '<div>'+kindName+'：'+(mapPoint?'('+mapPoint.x+', '+mapPoint.z+')':
-       [...selectedTargets].map(id=>esc(id)).join('、'))+'</div></div>'+
+       [...selectedTargets].map(id=>esc((chosenItem?
+       grouped().flatMap(g=>liveSquads(g.plan)):targets()).find(x=>String(x.id)===id)?.label||id)).join('、'))+'</div></div>'+
     '<small class="centerHelp">確定後に指示を発行し、戦闘を再開します。</small>'+
     controls('◀ 対象を選び直す','作戦を実行','✓ 確定して再開',false);
   }
