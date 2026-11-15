@@ -1,0 +1,49 @@
+{
+  "qaStatus": "OWNER_PROVISIONAL",
+  "shotKey": "c01-s04|pre|female|c01-s04-m5",
+  "scriptText": "この勅命に記された王印は、本物ではありません。",
+  "sourceModel": "ChatGPT Images",
+  "ownerAuthorized": true,
+  "humanVisualQAConfirmed": false,
+  "finalP0Approved": false,
+  "reviewedBy": "assistant-visual-inspection",
+  "reviewedAt": "2026-11-15T18:29:00Z",
+  "generationReferencesAttached": false,
+  "referenceImagesAttached": [],
+  "quality": {
+    "exactCanonicalScene": true,
+    "exactCast": true,
+    "genderAndOutcomeCorrect": true,
+    "noTextUI": true,
+    "original3DCinematicStyle": true,
+    "nativeDetail": true,
+    "realReferenceBytesAttachedToImageGenerator": false
+  },
+  "provisionalOnly": true,
+  "missingP0Requirements": [
+    "Original cast master image bytes were not attached to the generation request",
+    "Formal P0 human visual approval has not been granted"
+  ],
+  "provisionalVisualBrief": "Lucia confronts Vess about the suspect royal seal in the forest ruin archive before battle; only the two canonical characters, no letters or game UI.",
+  "imageSha256": "7affff5b006ee3314fcf6aa8eb167a3854a340736dbac5df1bf462fd2922e67b",
+  "nativePixels": [
+    1664,
+    936
+  ],
+  "provenance": {
+    "sourceFileName": "a_cinematic_highly_detailed_realistic_fantasy_sce.png",
+    "sourceResolution": [
+      1672,
+      941
+    ],
+    "unscaledCenterCrop": [
+      4,
+      2,
+      1668,
+      938
+    ],
+    "noUpscaling": true,
+    "generationId": "d4e12c42-bfed-4f07-b120-116594af5840"
+  },
+  "rollback": "Remove the live registry entry and restore previous art from the revision ledger"
+}
