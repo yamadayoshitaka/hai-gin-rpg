@@ -8,7 +8,7 @@ import {v65ExpressionMuscleDelta,FACE_EXPRESSIONS}
  from '../src/face-expression-animation-v48.js';
 import {makePonytailMicrofibers,makeStyleSpecificHair}
  from '../src/face-wig-ornaments-v49.js';
-import {repairRealCrownScalpHoles,appendRealCrownUnderlay} from '../src/face-scalp-wig.js';
+import {repairRealCrownScalpHoles,appendRealCrownUnderlay,uniqueHairFibreStations} from '../src/face-scalp-wig.js';
 
 test('v65: nose cartilage never touches cheeks, eye sockets or rear skull',()=>{
  for(const xn of [-1,-.9,-.4,-.28,.28,.35,.75,1]){
@@ -145,7 +145,7 @@ test('v66: underlay copies real donor top triangles without changing source geom
  const box=new THREE.Box3(new THREE.Vector3(-.5,0,-.5),
   new THREE.Vector3(.5,1,.5));
  const counts=[];
- for(const style of ['natural','flat','full']){
+ for(const style of ['natural','soft','full']){
   const v=[],n=[];
   const report=appendRealCrownUnderlay(g,box,v,n,style);
   assert.ok(report.triangles>=4);
@@ -158,4 +158,29 @@ test('v66: underlay copies real donor top triangles without changing source geom
  assert.deepEqual(Array.from(g.getAttribute('position').array),Array.from(original),
   'real donor head must be untouched');
  g.dispose();
+});
+
+
+test('v67: static microhair stations are strictly increasing with no degenerate hair-tip segments',()=>{
+ for(const n of [4,6,8,11,13]){
+  const stations=uniqueHairFibreStations(n);
+  assert.equal(stations[0],0);
+  assert.equal(stations.at(-1),n);
+  assert.ok(stations.every((v,i)=>i===0||v>stations[i-1]));
+ }
+});
+test('v67: true crown underlay also covers the upper side roots, without false full-sphere cap',()=>{
+ const geo=new THREE.BufferGeometry();
+ geo.setAttribute('position',new THREE.Float32BufferAttribute([
+  .195,.96,.01, .215,.91,.00, .18,.91,.07
+ ],3));
+ geo.computeVertexNormals();
+ const box=new THREE.Box3(new THREE.Vector3(-.5,0,-.5),
+  new THREE.Vector3(.5,1,.5));
+ const v=[],normals=[];
+ const result=appendRealCrownUnderlay(geo,box,v,normals,'natural');
+ assert.equal(result.triangles,1);
+ assert.equal(v.length,9);
+ assert.equal(normals.length,9);
+ geo.dispose();
 });
