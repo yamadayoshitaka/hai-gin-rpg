@@ -69,6 +69,12 @@ assert.match(world,/setSortieSlot\(game,stage,deploymentTeamId/);
 assert.match(world,/prebattle-deployment-radar\.css/);
 assert.doesNotMatch(world,/id="deploymentPositions"/,'no legacy text-only position grid');
 assert.match(world,/ここでは初期号令・作戦は選びません/);
+const battleHtml=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
+assert.match(battleHtml,/Story mode has already locked its initial positions on the FULL radar/);
+assert.match(battleHtml,/if\(storyRequest\?\.sortieTeamCount\)\{\s*for\(const id of squadIds\)/);
+assert.ok(battleHtml.indexOf('Start real-time autonomous combat immediately after loading')<
+ battleHtml.indexOf("openingPlan.id='openingSquadStrategies'"),
+ 'story battle must bypass the old three-screen launch wizard before it exists');
 const inn=readFileSync(new URL('../src/three-team-sortie-ui.js',import.meta.url),'utf8');
 assert.match(inn,/各ジョブの最低配置人数/);
 assert.match(inn,/最低人数/);
