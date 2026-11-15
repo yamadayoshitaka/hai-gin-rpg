@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "source": "ChatGPT automations snapshot (not live)",
-  "asOf": "2026-11-15T09:02:23Z",
+  "asOf": "2026-11-15T14:44:00Z",
   "items": [
     {
       "title": "灰銀・人モデル実写品質回帰",
@@ -25,13 +25,13 @@
     },
     {
       "title": "灰銀・漫画ステージ4から順次制作",
-      "enabled": false,
+      "enabled": true,
       "source": "ChatGPT 定期タスク",
       "schedule": "毎時",
-      "lastRunAt": "2026-11-15T09:01:20.385653Z",
-      "nextRunAt": null,
-      "lastRunResult": "BLOCKED_GENERATOR_NOT_CONNECTED: Cloudflare実行環境に無料枠確認フラグ・アカウントID・Workers AIトークンが見つからず画像生成0件。ChatGPTタスクは停止中。",
-      "note": "GitHubのgroups.anime.enabledはtrueだが、ChatGPTの定期スケジュールは停止中。これは生成器の接続問題であり、既存の仮登録画像の公開に影響しない。"
+      "lastRunAt": "2026-11-15T14:23:18.309261Z",
+      "nextRunAt": "2026-11-16T00:20:00+09:00",
+      "lastRunResult": "実ソース修正 PR #415・commit f07fd637e3e9dbeb1542b40b9f51896ac8a00fcb / 画像生成0枚・仮承認0枚。GitHub Cloudflare無料制作は別系統で2026-11-15T14:44:01Z起動、結果はActionsで確認。",
+      "note": "ChatGPT定期タスクは毎時20分で有効（2026-11-15T14:44:00Z照合）。画像生成器自体はChatGPTタスクから自動実行できないためGitHub Actions無料生成を利用。実成果はActionsで確認。"
     },
     {
       "title": "灰銀 第1章画像生成チェック",
