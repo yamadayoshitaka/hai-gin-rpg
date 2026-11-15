@@ -517,7 +517,7 @@ function selectSpecies(id){
    disposeCurrent();
    model=handle.root;externalHandle=handle;scene.add(model);
    refreshGeometry();focusCamera();
-   startMonsterAction(model,'idle',clock.getElapsedTime());
+   // Native GLB pose is controlled by externalHandle, not MonsterAnimation.
    byId('assetStatus').textContent=(mode==='licensed'?entry.license+'候補 '+entry.name:
       mode==='source-composite'?'CC0実物GLB '+handle.sourceComposite.donorName+
       ' ＋種族配色・装飾（品質試作・戦闘未置換）':
@@ -691,8 +691,8 @@ function playPreviewAction(action){
  if(!model)return;
  const time=clock.getElapsedTime();
  if(costumeHandle)costumeHandle.start(action,time);
- else startMonsterAction(model,action,time);
- externalHandle?.play(action);
+ else if(!externalHandle)startMonsterAction(model,action,time);
+ externalHandle?.play(action,{restart:true});
  currentAction=action;
  // Auto-replay finite gestures for hands-free inspection; defeat is terminal.
  nextActionReplay=Number.isFinite(actionDurations[action])?
@@ -733,10 +733,12 @@ function frame(){
    if(time>=nextActionReplay&&Number.isFinite(nextActionReplay)){
      playPreviewAction(currentAction);
    }
-   const state=costumeHandle?
-     (costumeHandle.update(time),{action:model.userData.action||'idle'}):
-     animateMonsterModel(model,time);
-   externalHandle?.update(delta);
+   const state=externalHandle?
+     (externalHandle.update(delta),{action:
+       externalHandle.root.userData.greyWolfRuntimeState?.action||currentAction}):
+     costumeHandle?
+       (costumeHandle.update(time),{action:model.userData.action||'idle'}):
+       animateMonsterModel(model,time);
    const entry=specimen(selected);
    if((frames++%15)===0){
      byId('hud').textContent='ID '+entry.id+' · Lv'+entry.level+
