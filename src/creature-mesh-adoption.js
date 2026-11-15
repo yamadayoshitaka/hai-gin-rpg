@@ -5,13 +5,21 @@
  */
 import {MONSTER_CATALOG,MONSTER_BY_ID} from './monster-catalog.js';
 import {HUMAN_MONSTER_IDS} from './monster-character-cosplay-manifest.js';
+import {NONHUMAN_REBUILD_IDS,defaultCreatureSource}
+ from './creature-species-blueprints.js';
 
 export const MESH_ADOPTION_STORAGE_KEY='hai-gin.creature-mesh-adoption.v1';
 // Shipped visual baseline. These three distinct actors share the same source
 // mesh, but keep separate reversible local overrides.
-export const DEFAULT_CREATURE_MESHES=Object.freeze({
- m001:'r-wolf',summon_m001:'r-wolf',wolf:'r-wolf'
-});
+export const DEFAULT_CREATURE_MESHES=Object.freeze(Object.fromEntries([
+ // Per-species source selection: never force a wolf skeleton on a bird,
+ // insect, spider or fish. No default switch for protected m005/m006.
+ ...NONHUMAN_REBUILD_IDS.flatMap(id=>{
+  const source=defaultCreatureSource(id);
+  return source?[[id,source],['summon_'+id,source]]:[];
+ }),
+ ['wolf','r-wolf']
+]));
 export const NONHUMAN_MONSTER_IDS=Object.freeze(
  MONSTER_CATALOG.filter(m=>!HUMAN_MONSTER_IDS.includes(m.id)).map(m=>m.id));
 export const NONHUMAN_EXTRA_SUMMON_IDS=Object.freeze([
