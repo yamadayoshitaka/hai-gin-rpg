@@ -111,8 +111,9 @@ test('forest spirit has green real clothing in the 3D viewer, not black velvet',
 
 test('all 50 original monster summons: independently selectable giant models',async({page})=>{
  const errors=[];page.on('pageerror',e=>errors.push(String(e)));
- await page.goto('/summon-showcase.html?v=4.5.22',
+ await page.goto('/summon-showcase.html?v=4.5.22&summon=summon_m020',
    {waitUntil:'domcontentloaded',timeout:65000});
+ await expect(page.locator('#type')).toHaveValue('summon_m020');
  await expect(page.locator('#type option[value^="summon_m"]')).toHaveCount(50);
  const picker=page.locator('#type');
  for(const [id,name] of [
