@@ -114,6 +114,12 @@ legend{font-size:12px;color:#e8d9b6;padding:0 6px}
       </select>
      </label>
      <span id="geometryStats" role="status"></span>
+     <label id="beastfolkFormControl" style="display:none">獣系モデルの姿
+       <select id="beastfolkForm" aria-label="四足型と獣人型を切り替える">
+         <option value="original" selected>元の四足型</option>
+         <option value="beastfolk">獣人型・二足（試作）</option>
+       </select>
+     </label>
      <label id="vampireSexControl" style="display:none">吸血鬼の姿
        <select id="vampireSex" aria-label="吸血鬼の男性女性モデル切替">
          <option value="male">男性（貴族ヴァンパイア）</option>
@@ -185,6 +191,10 @@ import {createMonsterModel,disposeMonsterSculpture,MONSTER_DETAIL_LEVELS,
   monsterSculptCacheStats,monsterPhotoCacheStats} from './src/monster-geometry.js?v=4.5.18';
 import {MONSTER_ACTIONS,startMonsterAction,animateMonsterModel} from './src/monster-animation.js?v=4.5.18';
 import {createCosplayedHumanoidMonster} from './src/monster-character-cosplay.js?v=4.5.21';
+import {createBeastfolkMonsterModel,disposeBeastfolkMonsterModel}
+ from './src/monster-beastfolk-geometry.js?v=4.5.23';
+import {beastfolkRecipeFor,BEASTFOLK_PROTOTYPE_IDS}
+ from './src/monster-beastfolk-manifest.js?v=4.5.23';
 import {humanoidMonsterCostumeFor,HUMAN_MONSTER_IDS} from './src/monster-character-cosplay-manifest.js?v=4.5.04';
 import {hasDemonCosmetics,withDemonColorTheme}
  from './src/monster-demon-cosmetics.js?v=4.5.04';
@@ -339,7 +349,10 @@ function disposeCurrent(){
  const wasExternal=!!externalHandle;
  if(externalHandle){externalHandle.dispose();externalHandle=null;}
  if(costumeHandle){costumeHandle.dispose();costumeHandle=null;}
- else if(model&&!wasExternal)disposeMonsterSculpture(model);
+ else if(model&&!wasExternal){
+   if(model.userData?.beastfolkSource)disposeBeastfolkMonsterModel(model);
+   else disposeMonsterSculpture(model);
+ }
  model=null;
 }
 function refreshGeometry(){
@@ -350,14 +363,14 @@ function refreshGeometry(){
   ' / 写真材質 '+(meshStats.photoSurfaces.join('・')||'未割当');
 }
 function focusCamera(){
- controls.minPolarAngle=HUMAN_MONSTER_IDS.includes(selected)?
-   HUMAN_INSPECT_MIN_POLAR:0;
+ controls.minPolarAngle=(HUMAN_MONSTER_IDS.includes(selected)||
+   !!model?.userData?.beastfolkSource)?HUMAN_INSPECT_MIN_POLAR:0;
  const bounds=new THREE.Box3().setFromObject(model);
  const center=bounds.getCenter(new THREE.Vector3()),size=bounds.getSize(new THREE.Vector3());
  controls.target.set(center.x,Math.max(.7,center.y),center.z);
  const dist=Math.max(4,size.length()/(2*Math.tan(THREE.MathUtils.degToRad(camera.fov/2)))*.70);
  // Favor the real +Z-facing actor's face and torso.
- if(HUMAN_MONSTER_IDS.includes(selected))
+ if(HUMAN_MONSTER_IDS.includes(selected)||model?.userData?.beastfolkSource)
   camera.position.set(center.x+dist*.17,center.y+dist*.14,center.z+dist*.85);
  else camera.position.set(center.x+dist*.30,center.y+dist*.22,center.z+dist*.78);
  controls.update();
@@ -397,13 +410,18 @@ function selectSpecies(id){
  }
  const m=specimen(id),detail=byId('quality').value;
  byId('vampireSexControl').style.display=id==='m034'?'block':'none';
+ byId('beastfolkFormControl').style.display=beastfolkRecipeFor(m)?'block':'none';
  byId('demonToneControl').style.display=hasDemonCosmetics({id})?'block':'none';
  disposeCurrent();
  const mode=byId('assetSource').value;
  const cosplay=mode==='procedural'?humanoidMonsterCostumeFor(m,{
    genderVariant:id==='m034'?byId('vampireSex').value:null
  }):null;
- if(cosplay){
+ const showBeastfolk=mode==='procedural'&&!!beastfolkRecipeFor(m)&&
+   byId('beastfolkForm').value==='beastfolk';
+ if(showBeastfolk){
+   model=createBeastfolkMonsterModel(m,{detail});
+ }else if(cosplay){
    costumeHandle=createCosplayedHumanoidMonster(m,{
      detail,genderVariant:id==='m034'?byId('vampireSex').value:null,
      profileOverride:withDemonColorTheme(cosplay,byId('demonTone').value)
@@ -438,7 +456,10 @@ function selectSpecies(id){
      }).catch(error=>{
        if(ticket===requestSerial)byId('assetStatus').textContent='人物GLBの読み込み失敗：'+error.message;
      });
-   }else byId('assetStatus').textContent='非人型：専用3Dメッシュを表示中';
+   }else if(model?.userData?.beastfolkSource)
+     byId('assetStatus').textContent=
+       '獣人型試作：元の狼の頭・顎・目・耳・顔の毛・四肢の先・尻尾を継承した二足モデル';
+   else byId('assetStatus').textContent='非人型：専用3Dメッシュを表示中';
    return;
  }
  const chosenId=byId('externalAsset').value||id;
@@ -599,6 +620,17 @@ byId('demonTone').addEventListener('change',()=>{
   selectSpecies(selected);
   notice('悪魔系の肌・目元・唇・角の配色を変更しました');
 });
+byId('beastfolkForm').addEventListener('change',()=>{
+ if(!beastfolkRecipeFor(selected))return;
+ const url=new URL(location.href);
+ url.searchParams.set('monster',selected);
+ url.searchParams.set('form',byId('beastfolkForm').value);
+ history.replaceState(null,'',url);
+ selectSpecies(selected);
+ notice(byId('beastfolkForm').value==='beastfolk'?
+   '元の狼モデルをベースにした二足獣人型を表示しました':
+   '元の四足型に戻しました');
+});
 byId('vampireSex').addEventListener('change',()=>{
   if(selected!=='m034')return;
   selectSpecies(selected);
@@ -685,6 +717,18 @@ window.__monsterImportQA=()=>({
  clips:externalHandle?.clips||[],
  selected
 });
+window.__monsterBeastfolkQA=()=>({
+ selected,eligible:BEASTFOLK_PROTOTYPE_IDS.includes(selected),
+ modelForm:byId('beastfolkForm').value,
+ active:!!model?.userData?.beastfolkSource,
+ sourceId:model?.userData?.beastfolkSource??null,
+ originParts:model?.userData?.beastfolkOriginalParts??null,
+ faceSource:!!model?.userData?.pivots?.head,
+ jawSource:!!model?.userData?.pivots?.jaw,
+ tailSource:!!model?.userData?.pivots?.tail,
+ action:currentAction,
+ meshCount:meshStats?.meshes??0,
+});
 window.__monsterCosplayQA=()=>({
  selected,eligible:HUMAN_MONSTER_IDS.includes(selected),
  source:costumeHandle?.source||'native-monster',
@@ -718,5 +762,9 @@ window.__monsterQualityQA=()=>({
  cache:monsterSculptCacheStats()
 });
 setCatalogOpen(!isPhone());
+const requestedMonster=new URLSearchParams(location.search).get('monster');
+if(requestedMonster&&MONSTER_BY_ID[requestedMonster])selected=requestedMonster;
+if(new URLSearchParams(location.search).get('form')==='beastfolk'&&
+   beastfolkRecipeFor(selected))byId('beastfolkForm').value='beastfolk';
 selectSpecies(selected);resize();frame();
 </script></body></html>
