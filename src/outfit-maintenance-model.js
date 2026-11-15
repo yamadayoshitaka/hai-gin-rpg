@@ -246,8 +246,12 @@ export function createDetailedOutfit(job, sex, body, textures, {quality='preview
   // Under-tunic back coverage is mandatory for EVERY job. Some imported
   // Ranger/Peasant clothes have only thin front surfaces, while the old
   // underlying-body occlusion removed the anatomical back completely.
-  // This panel is skinned with the spine like the rest of the clothing.
-  {
+  // Cloth jobs need the back lining, but armored jobs already have the
+  // fitted heroic-cuirass-backplate below. Rendering both surfaces at nearly
+  // the same depth produced a stone-like, flickering sheet behind the swordsmans'
+  // armor. Keep the cloth panel only where no plate covers it; this also
+  // removes one draw call from armored characters.
+  if(!style.armor){
     const columns=battle?14:24,rows=battle?10:18;
     const points=[],uv=[],faces=[];
     const yTop=cy+H*.045,yBottom=hips+H*.024;
