@@ -14,13 +14,13 @@
   "groups": {
     "human": {
       "source": "ChatGPT 定期タスクの実行結果",
-      "lastRunAt": "2026-11-15T17:04:20Z",
-      "subject": "Issue #431 / #417 / #399 剣士背面鎧の未閉鎖リムと残存サーフェス",
-      "summary": "最新owner Issue #431の背面鎧未完成指示を反映。既存Draft PR #418に胸甲の肩・腰の開放端を既存backplateジオメトリ内の閉鎖ストリップで塞ぐ実コード変更をコミットf1fcb17。静的6条件の確認成功。ただしNode実行/Chromium WebGLはローカルGitHub DNS解決不能で未実施、CIとAndroid未検証。残存サーフェス・踵・顔髪品質は未完了。",
+      "lastRunAt": "2026-11-15T17:58:00Z",
+      "subject": "Issue #431/#399 鎧側面閉鎖メッシュの一体化（男女剣士・盾戦士4組）",
+      "summary": "スイッチON。既存Draft PR #418に側面閉鎖メッシュを背面胸甲の同一BufferGeometryへ統合する実コード変更をコミット80ca95b。4組に共通の生成経路を変更し、鎧キャラ1体当たり追加2ドローコールを削減する設計。静的5条件確認成功。ただし実行時Node/Chromium WebGL/Android/CI未検証で実描画の改善は未承認。mainマージ・公開なし。",
       "status": "in_review",
       "carryover": true,
       "issueNumber": 431,
-      "nextAction": "PR #418 commit f1fcb17のNode/Chromium実WebGLで男女剣士背面・肩上・腰下・踵の開放端/貫通を比較。新規閉鎖ストリップの法線と裏面、衣装スキニングを確認し、残存サーフェスと踵を修正。Issue #431の顔表情・陰影・顔パーツも継続。品質未達ならmainマージ禁止。",
+      "nextAction": "PR #418 head 80ca95bの男女job01/job05を実WebGLで背面・踵・上面比較し、法線/メッシュインデックス/衣装スキニング/描画コールを測定。Issue #431の顔髪と残存サーフェスを引き続き改修。",
       "steps": {
         "launch": "done",
         "code": "done",
@@ -32,20 +32,12 @@
       },
       "evidence": [
         {
-          "label": "所有者の最新指示 Issue #431",
+          "label": "所有者指示 Issue #431",
           "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/issues/431"
         },
         {
-          "label": "前回のIssue #417",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/issues/417"
-        },
-        {
-          "label": "背面・踵の継続Issue #399",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/issues/399"
-        },
-        {
-          "label": "今回の実ソース変更 f1fcb17",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/f1fcb17574a389dbad5857cfa7c40bd08862ae6b"
+          "label": "今回の実ソース変更",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/80ca95ba1c2390996086e8ff6d6fd585ae477728"
         },
         {
           "label": "Draft PR #418",
