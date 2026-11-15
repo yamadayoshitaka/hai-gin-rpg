@@ -85,3 +85,14 @@
 .sortieStrategyShares>div{display:flex;justify-content:space-between;align-items:center;gap:6px;color:#dceaf2}
 .sortieStrategyShares b{color:#ffe1a0}
 @media(max-height:680px){.sortieStrategyGrid{gap:3px}.sortieStrategyGrid button{min-height:29px!important;padding:4px 2px!important}.sortieStrategyShares{gap:2px}}
+
+/* Preset formation geometry: only level-unlocked cells can be tapped. */
+.sortieFormationGrid button.sortieCell.locked{opacity:.38!important;filter:grayscale(.7);background:#132437!important;border:1px dashed #607387!important;cursor:not-allowed}
+.sortieFormationGrid button.sortieCell.formation:not(.locked){background:#2b4357!important;border:1px solid #cfad72!important}
+.sortieFormationGrid button.sortieCell.free:not(.locked){border:1px dashed #7ab8da!important}
+.sortieFormationGrid button.sortieCell span{white-space:normal}
+.sortieFormationGrid button.sortieCell small{font-size:9px;line-height:1.13}
+.sortieMiniGrid i.extra{background:#275c70;border-color:#8ac4de;color:#e3f8ff;font:700 8px/9px system-ui;text-align:center}
+.sortieMiniGrid.freePreview i.extra{background:#284656;border-color:#6fa6bd}
+.sortieTemplateChoices button:has(.freePreview){border-style:dashed}
+.sortieJobChoices button:disabled{opacity:.36;cursor:not-allowed}
