@@ -1,0 +1,29 @@
+name: Chapter1 stage5 gender-safe manga prompt fixes
+on:
+  push:
+    branches: [fix/story-c01s05-female-shot-identity-20261116]
+    paths:
+      - 'src/story-chapter1-image-prompt.js'
+      - 'assets/story/characters/c01-s05-reference-bible.json'
+      - 'qa/story-c01-s05-reference-and-scene-fixes.test.mjs'
+      - '.github/workflows/story-stage5-cast-qa.yml'
+  pull_request:
+    paths:
+      - 'src/story-chapter1-image-prompt.js'
+      - 'assets/story/characters/c01-s05-reference-bible.json'
+      - 'qa/story-c01-s05-reference-and-scene-fixes.test.mjs'
+      - '.github/workflows/story-stage5-cast-qa.yml'
+  workflow_dispatch:
+permissions: {contents: read}
+jobs:
+  stage5-scene-lock:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --check src/story-chapter1-image-prompt.js
+      - run: node qa/story-c01-s05-reference-and-scene-fixes.test.mjs
+      - run: node qa/story-chatgpt-stage45-switch.test.mjs
