@@ -80,10 +80,9 @@ assert.match(splits,/分隊を設定/);
 assert.match(splits,/data-sortie-division="4"/);
 assert.ok(!html.includes('軍師雇用'));
 const commands=renderThreeTeamPlanner({game,stage,stages:[stage],teamId:2,view:'orders'});
-assert.match(commands,/data-sortie-order="support"/);
-assert.ok(!commands.includes('data-sortie-order="destroy"'),'destruction requires an eligible job');
-
-assert.ok(!commands.includes('data-sortie-order="explore"'));
+assert.match(commands,/data-sortie-strategy-family="support"/);
+assert.match(commands,/data-sortie-strategy-method="melee_focus"/);
+assert.ok(!commands.includes('data-sortie-strategy-method="destroy_path"'),'only the chosen category has methods');
 const assignments=allocateThreeTeamSortie(game,stage);
 assert.equal(assignments.reduce((n,x)=>n+x.count,0),40);
 assert.equal(new Set(assignments.map(x=>x.teamId)).size,2);
