@@ -1,0 +1,83 @@
+{
+  "schemaVersion": 1,
+  "category": "world",
+  "saved": [
+    {
+      "id": "cottage_table_001",
+      "sourceFiles": [
+        "src/object-catalog.js"
+      ],
+      "commitSha": "df0660762cb29f16f59293ce053029eef37570ad",
+      "qa": "unverified"
+    },
+    {
+      "id": "cottage_chair_001",
+      "sourceFiles": [
+        "src/object-catalog.js"
+      ],
+      "commitSha": "df0660762cb29f16f59293ce053029eef37570ad",
+      "qa": "unverified"
+    },
+    {
+      "id": "cottage_bed_001",
+      "sourceFiles": [
+        "src/object-catalog.js"
+      ],
+      "commitSha": "df0660762cb29f16f59293ce053029eef37570ad",
+      "qa": "unverified"
+    }
+  ],
+  "remainingIds": [
+    "cottage_shelf_001",
+    "cottage_fireplace_001",
+    "cottage_barrel_001",
+    "treasure_chest_001",
+    "cottage_stairs_001",
+    "spiral_stairs_2f_001",
+    "spiral_stairs_castle_3f_001",
+    "entry_door_lv1_001",
+    "entry_door_lv2_001",
+    "entry_door_lv3_001",
+    "entry_door_lv4_001",
+    "entry_door_lv5_001",
+    "fountain_001",
+    "market_stall_001",
+    "street_lamp_001",
+    "town_bench_001",
+    "town_well_001",
+    "town_planter_001",
+    "town_crate_001",
+    "town_notice_001",
+    "town_fence_001",
+    "stone_fence_001",
+    "town_trash_bin_001",
+    "town_handcart_001",
+    "stone_archway_001",
+    "stone_steps_001",
+    "wooden_watchtower_001",
+    "stone_column_001",
+    "wall_torch_001",
+    "haystack_001",
+    "inn_sign_001",
+    "rice_paddy_001",
+    "vegetable_field_001",
+    "castle_001",
+    "church_001",
+    "weapon_shop_001",
+    "inn_001",
+    "item_shop_001",
+    "town_house_001",
+    "manor_noble_001",
+    "manor_merchant_001",
+    "manor_garden_001",
+    "small_hill_001",
+    "stone_hut_001",
+    "swamp_001",
+    "rocky_mountain_001",
+    "timber_bridge_001",
+    "stone_bridge_001",
+    "timber_bridge_broken_001",
+    "stone_bridge_broken_001"
+  ],
+  "nextAction": "木製食卓・椅子・寝台のThree.js構文/実メッシュ検証とWebGL三方向比較。続いてcottage_shelf_001とcottage_stairs_001の荷重支持・接合構造を実改修。"
+}
