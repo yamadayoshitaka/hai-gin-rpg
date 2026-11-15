@@ -11,12 +11,12 @@ export function threeGroupOverview(units,groupBySquad,initialUnits=[]){
  const visited=new Map();
  for(const u of initialSource){
   if(u.team!==0)continue;
-  const group=Number(u.armyGroupId??groupBySquad[String(u.squadId)]||1);
+  const group=Number((u.armyGroupId??groupBySquad[String(u.squadId)]??1));
   if(group>=1&&group<=3)output[group-1].initial++;
  }
  for(const u of units){
   if(!squadAlive(u))continue;
-  const group=Number(u.armyGroupId??groupBySquad[String(u.squadId)]||1);
+  const group=Number((u.armyGroupId??groupBySquad[String(u.squadId)]??1));
   if(group<1||group>3)continue;
   const item=output[group-1];item.alive++;item.hp+=u.hp;item.maxHp+=u.maxHp||u.hp;
   const key=group+':'+String(u.squadId);
