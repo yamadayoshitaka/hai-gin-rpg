@@ -743,6 +743,7 @@ body.compact-command-dock.compact-explore-open .exploreBuildingList button{
 <button id="loadingSkipAudio" type="button" hidden style="font:12px system-ui;padding:9px;border:1px solid #92a5bb;background:#132a3b;color:#c9d8e5;border-radius:8px;margin:4px auto">音声なしで開戦</button></div></div><div id="runtimeError" style="display:none;position:fixed;top:65px;left:8px;right:8px;z-index:30;padding:10px;background:#631f28;color:#fff;border:1px solid #ff9d9d;border-radius:8px;font-size:12px;white-space:pre-wrap"></div><script>function showRuntimeError(message){const el=document.getElementById('runtimeError');if(el){el.style.display='block';el.textContent='実行エラー: '+message}const loading=document.getElementById('battleLoading');if(loading&&!loading.hidden){document.getElementById('loadingStage').textContent='ゲームの準備に失敗しました';const detail=document.getElementById('loadingError');detail.hidden=false;detail.textContent=String(message);document.getElementById('loadingRetry').hidden=false}}window.addEventListener('error',e=>showRuntimeError((e.message||'スクリプトの読み込みに失敗')+'\n'+(e.filename||'')+':'+(e.lineno||'')));window.addEventListener('unhandledrejection',e=>showRuntimeError(e.reason?.stack||e.reason?.message||String(e.reason)));</script><script type="module">
 import {normalizeArmyGroup,battleGroupMembers} from './src/army-groups.js';
 import {createTargetedStrategyUi} from './src/targeted-strategy-runtime.js';
+import {STRATEGY_METHODS} from './src/three-step-strategy-catalog.js';
 import * as THREE from 'three';
 import {createGamePageAudio} from './src/game-page-audio.js';
 import {layoutSquadCallouts,squadCalloutLeader} from './src/battle-squad-callout-layout.js?v=2';
@@ -7334,19 +7335,23 @@ function targetedSubSquadJobs(id){
  return new Set(squadRoster.filter(u=>u.team===0&&String(u.squadId)===String(id)&&u.hp>0)
   .map(u=>u.jobId));
 }
-function issueTargetedPlan({groupId,mode,squadIds:members,targetIds}){
+function issueTargetedPlan({groupId,mode,squadIds:members,targetIds,tacticId=null}){
  if(!battleReady||finished)return '戦闘開始後に選択してください。';
+ const method=tacticId?STRATEGY_METHODS[tacticId]:null;
+ if(tacticId&&(!method||method.mode!==mode))return '未対応の作戦です。';
  const valid=members.filter(id=>squadIds.includes(String(id))&&
   normalizeArmyGroup(armyGroupBySquad[String(id)])===Number(groupId)&&
-  !individualCommanderUnavailableReason(id));
- if(!valid.length)return '選択中の分隊に命令できません。';
+  !individualCommanderUnavailableReason(id)&&
+  (!method||!method.jobs.length||method.jobs.some(job=>targetedSubSquadJobs(id).has(job)))&&
+  (!method?.requiresSummon||squadRoster.some(u=>String(u.squadId)===String(id)&&u.isSummon&&u.hp>0)));
+ if(!valid.length)return '選択中の分隊に対応職業・召喚獣がいません。';
  if(!['charge','weaken','destroy','explore'].includes(mode))return 'この作戦はマップを指定してください。';
  let count=0;
  for(let n=0;n<valid.length;n++){
   const id=String(valid[n]);
   const allowed=storyRequest?.availableSquadOrders?.[id]||['charge','defend','hold','retreat'];
   if(!allowed.includes(mode))continue;
-  const targetId=String(targetIds[n%targetIds.length]);
+  const targetId=String(targetIds[tacticId?.endsWith('focus')?0:n%targetIds.length]);
   if(mode==='charge'){
    const center=squadCenter(targetId,1);
    if(!center)continue;
@@ -7358,9 +7363,9 @@ function issueTargetedPlan({groupId,mode,squadIds:members,targetIds}){
    }
   }else if(mode==='weaken'){
    const jobs=targetedSubSquadJobs(id);
-   const stat=jobs.has('mage')?'attack':jobs.has('thief')?'defense':jobs.has('ninja')?'speed':null;
+   const stat=method?.debuff?.stat||(jobs.has('mage')?'attack':jobs.has('thief')?'defense':jobs.has('ninja')?'speed':null);
    if(!stat)continue;
-   const amount=stat==='attack'?.20:stat==='defense'?.15:.18;
+   const amount=method?.debuff?.amount??(stat==='attack'?.20:stat==='defense'?.15:.18);
    const applied=massSim?massSim.applySquadDebuff(targetId,stat,amount,24,1):
     applySkirmishDebuff(targetId,stat,amount,24);
    if(applied){
@@ -7391,9 +7396,22 @@ function issueTargetedMapCommand(point){
  if(!traversableCell(point.x,point.z)){log('通行できない地点です。');return false;}
  let count=0;
  for(const id of plan.squadIds){
+  const assigned=plan.plans?.find(entry=>entry.squadIds.includes(String(id)));
+  const orderMode=assigned?.mode||plan.mode,tactic=STRATEGY_METHODS[assigned?.tacticId];
   const allowed=storyRequest?.availableSquadOrders?.[String(id)]||[];
-  if(!allowed.includes(plan.mode)||individualCommanderUnavailableReason(id))continue;
-  if(plan.mode==='support'&&targetedSubSquadJobs(id).has('priest')){
+  if(!allowed.includes(orderMode)||individualCommanderUnavailableReason(id))continue;
+  if(tactic?.buff){
+   const recipient=squadIds.map(s=>({id:s,center:squadCenter(s,0)}))
+    .filter(x=>x.center).sort((a,b)=>Math.hypot(a.center.x-point.x,a.center.z-point.z)-
+     Math.hypot(b.center.x-point.x,b.center.z-point.z))[0];
+   if(!recipient||!massSim)continue;
+   const buffId='tactical-'+tactic.id;
+   if(massSim.applySquadItemBuff(recipient.id,buffId,tactic.buff,24,0)){
+    massWorker?.buffSquadItem?.(recipient.id,buffId,tactic.buff,24,0);
+    count++;continue;
+   }
+  }
+  if(orderMode==='support'&&targetedSubSquadJobs(id).has('priest')){
    const patient=squadIds.filter(x=>x!==String(id)).map(x=>({id:x,center:squadCenter(x,0)}))
     .filter(x=>x.center).sort((a,b)=>Math.hypot(a.center.x-point.x,a.center.z-point.z)-
      Math.hypot(b.center.x-point.x,b.center.z-point.z))[0];
@@ -7410,12 +7428,12 @@ function issueTargetedMapCommand(point){
    }
   }
   if(issueTargetedPlatoon(id,'move',point)){
-   targetedArrivalOrders.set(String(id),{mode:plan.mode,point});count++;
+   targetedArrivalOrders.set(String(id),{mode:orderMode,point});count++;
   }
  }
  if(!count){log('作戦を実行できる分隊がありません。');return false;}
  pendingTargetedMap=null;
- log('🗺 '+count+'分隊の'+plan.mode+'目標を地点('+point.x+','+point.z+')に設定');
+ log('🗺 '+count+'分隊に地図作戦を設定：地点('+point.x+','+point.z+')');
  refreshSquadOrderLabel();drawSquadMiniMap();
  finishSquadDestination(true);return true;
 }
@@ -7424,7 +7442,9 @@ const targetedStrategyUi=createTargetedStrategyUi({
   const ids=squadIds.filter(id=>normalizeArmyGroup(armyGroupBySquad[id])===Number(groupId));
   return {squads:ids.map(id=>{
    const spec=storyRequest?.subdivisionMap?.[id];
-   return {id,label:spec?'第'+spec.part+'/'+spec.parts+'分隊・'+squadPrimaryJob(id):squadPrimaryJob(id)+'隊'};
+   return {id,label:spec?'第'+spec.part+'/'+spec.parts+'分隊・'+squadPrimaryJob(id):squadPrimaryJob(id)+'隊',
+    jobs:[...targetedSubSquadJobs(id)],allowed:storyRequest?.availableSquadOrders?.[id]||['charge','defend','hold','retreat'],
+    hasSummon:squadRoster.some(u=>String(u.squadId)===String(id)&&u.isSummon&&u.hp>0)};
   }),allowed:[...new Set(ids.flatMap(id=>storyRequest?.availableSquadOrders?.[id]||['charge','defend','hold','retreat']))]};
  },
  getEnemyTargets:()=>enemySquadIds.filter(id=>(massSim?.units??actors)
