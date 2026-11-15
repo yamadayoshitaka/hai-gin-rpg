@@ -4,6 +4,7 @@
  * A source squad may be split between teams but never duplicated.
  */
 import {formationStatus,arrangeFormation} from './sortie-formation-logic.js';
+import {STRATEGY_METHODS,STORY_JOB_TO_STRATEGY_JOB} from './three-step-strategy-catalog.js';
 export const SORTIE_TEAM_IDS=Object.freeze([1,2,3]);
 export const SORTIE_SQUADS_PER_GROUP=16;
 /** Temporary level-99 battle/formation test without rewriting career XP. */
@@ -65,7 +66,7 @@ const clamp=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
 const ownSquads=game=>(game?.campaign?.squads||[]).filter(s=>s.count>0&&String(s.commanderId??'player')!=='reserve');
 export const stageIsControlled=(game,stage)=>Boolean(stage?.id&&game?.completedStages?.includes(stage.id));
 export const allowedSortieSlots=(game,stage)=>stageIsControlled(game,stage)?allSlots:SORTIE_ENTRY_SLOTS;
-const blankTeam=id=>({id,slots:Array(SORTIE_SQUADS_PER_GROUP).fill(null),grid:Array(SORTIE_GRID_CELLS).fill(null),counts:{},divisions:{},captainId:null,formation:'balanced',deploymentSlot:SORTIE_ENTRY_SLOTS[id-1],initialOrder:'charge'});
+const blankTeam=id=>({id,slots:Array(SORTIE_SQUADS_PER_GROUP).fill(null),grid:Array(SORTIE_GRID_CELLS).fill(null),counts:{},divisions:{},captainId:null,formation:'balanced',tactics:[],deploymentSlot:SORTIE_ENTRY_SLOTS[id-1],initialOrder:'charge'});
 const teamOf=(game,id)=>game.sortiePlan?.teams?.find(t=>t.id===Number(id));
 const rarityScore=s=>({N:0,R:1,SR:2,SSR:3,UR:4})[s?.rarity]??0;
 
@@ -109,6 +110,7 @@ export function ensureSortiePlan(game){
    [...candidates].sort((a,b)=>rarityScore(b)-rarityScore(a))[0];
   team.captainId=captain?.id??null;
   team.initialOrder=ACTIVE_ORDER_IDS.includes(old.initialOrder)?old.initialOrder:'charge';
+  team.tactics=Array.isArray(old.tactics)?old.tactics.filter((id,index,arr)=>STRATEGY_METHODS[id]&&arr.indexOf(id)===index).slice(0,16):[];
   return team;
  });
  if(!saved?.length){
@@ -306,6 +308,20 @@ export function availableSortieOrders(game,teamId){
  if([...jobs].some(j=>['魔法使い','忍者'].includes(j)))orders.push('destroy');
  if(['忍者','シーフ','魔法使い'].some(job=>jobs.has(job)))orders.push('weaken');
  return orders;
+}
+/** Store several battle methods during inn planning. Targets are chosen in battle. */
+export function setSortieTactics(game,teamId,tacticIds){
+ ensureSortiePlan(game);
+ const team=teamOf(game,teamId),allowed=availableSortieOrders(game,teamId);
+ if(!team||!Array.isArray(tacticIds))throw Error('作戦を選択してください。');
+ const jobs=new Set(sortieTeamSquads(game,teamId).map(s=>STORY_JOB_TO_STRATEGY_JOB[s.job]).filter(Boolean));
+ const unique=[...new Set(tacticIds)];
+ if(unique.length>16||unique.some(id=>{
+  const method=STRATEGY_METHODS[id];
+  return !method||!allowed.includes(method.mode)||
+   (method.jobs.length>0&&!method.jobs.some(job=>jobs.has(job)));
+ }))throw Error('配置陣形・職業の条件を満たさない作戦があります。');
+ team.tactics=unique;return team;
 }
 export function setSortieOrder(game,teamId,order){
  ensureSortiePlan(game);
