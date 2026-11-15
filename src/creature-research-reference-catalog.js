@@ -60,6 +60,30 @@ export const WEB_CREATURE_ANATOMY_REFERENCES=Object.freeze({
   downloadMethod:'Sketchfab原作品から取得',
   caution:'鱗と長胴の参考。海竜の鰭・ブレス・水中移動は別途追加'
  }),
+ 's-salamander':Object.freeze({
+  id:'s-salamander',name:'Tsushima Salamander / ツシマサンショウウオの形状',
+  sourceUrl:'https://sketchfab.com/3d-models/cc0-tsuhima-salamander-8f44452b86964f849cbd361c357b8587',
+  author:'ffish.asia / floraZia.com',license:'CC0-1.0',triangles:363600,
+  form:'four-leg-amphibian',rigVerified:false,
+  downloadMethod:'Sketchfab原作品から取得',
+  caution:'生きた両生類の四肢・長い尾を造形参考に。約36万三角形の再トポロジーとリグが必要'
+ }),
+ 's-lizard':Object.freeze({
+  id:'s-lizard',name:'Japanese Grass Lizard / ニホンカナヘビ',
+  sourceUrl:'https://sketchfab.com/3d-models/cc0-japanese-grass-lizard-18012190e6a84e74b4444119e2a1cf0f',
+  author:'ffish.asia / floraZia.com',license:'CC0-1.0',triangles:191100,
+  form:'four-leg-lizard',rigVerified:false,
+  downloadMethod:'Sketchfab原作品から取得',
+  caution:'四肢・指・長尾・鱗の自然な基準。約19万三角形、アニメと低LODは未制作'
+ }),
+ 's-gecko':Object.freeze({
+  id:'s-gecko',name:'Japanese Gecko / ニホンヤモリ',
+  sourceUrl:'https://sketchfab.com/3d-models/cc0-japanese-gecko-lizard-f6d71f41fb80426f80f9e54758123635',
+  author:'ffish.asia / floraZia.com',license:'CC0-1.0',triangles:262400,
+  form:'four-leg-lizard',rigVerified:false,
+  downloadMethod:'Sketchfab原作品から取得',
+  caution:'脚・指の付き方と皮膚凹凸の参考。約26万三角形、リグ・低LOD未完成'
+ }),
  's-dragon-rig':Object.freeze({
   id:'s-dragon-rig',name:'Dragon Rigged / 無料ドラゴン',
   sourceUrl:'https://sketchfab.com/3d-models/dragon-rigged-eb958a6e66f542cbb1cbabc4d36f34d9',
