@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#211d1a">
+<title>灰銀のレゾナンス｜ChatGPT Plus・5コマ制作</title>
+<style>
+:root{color-scheme:dark;--bg:#1b1c23;--pane:#282932;--ink:#faf3e8;--muted:#d5cabc;--gold:#eac381;--line:#80745f}
+*{box-sizing:border-box}html,body{height:100%;height:100dvh;overflow:hidden;margin:0}
+body{font:14px/1.5 system-ui,"Noto Sans JP",sans-serif;background:var(--bg);color:var(--ink);display:flex;flex-direction:column}
+a{color:var(--gold)}button,select{font:inherit;color:var(--ink);background:#3a3541;border:1px solid var(--line);border-radius:7px;min-height:38px;padding:5px 8px;cursor:pointer}
+button:disabled{opacity:.45;cursor:default}button:focus-visible,select:focus-visible,a:focus-visible{outline:3px solid var(--gold)}
+header{min-height:46px;flex:none;padding:7px 11px;border-bottom:2px solid var(--gold);display:flex;align-items:center;justify-content:space-between;gap:8px}
+header strong{font-size:15px}header a{font-size:12px;white-space:nowrap}
+main{flex:1;min-height:0;width:min(940px,100%);margin:auto;display:flex;flex-direction:column;padding:7px 9px 10px;gap:7px}
+.filter{display:grid;grid-template-columns:1fr 0.7fr 1fr 0.55fr;gap:5px;flex:none}
+label{display:flex;flex-direction:column;gap:2px;font-size:11px;color:var(--muted);min-width:0}
+select{width:100%;font-size:12px;padding:5px 2px;min-width:0}
+.summary{flex:none;display:flex;align-items:center;justify-content:space-between;gap:7px}
+.summary h1{font-size:14px;margin:0;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.summary span{font-size:11px;white-space:nowrap;color:var(--gold)}
+.shots{flex:none;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:5px}
+.shots button{min-height:56px;font-size:11px;padding:4px 2px;display:flex;flex-direction:column;gap:2px;align-items:center;justify-content:center}
+.shots button[aria-pressed=true]{background:#715739;border:2px solid var(--gold)}
+.shots small{display:block;font-size:9px;color:var(--muted)}
+.content{flex:1;min-height:0;border:1px solid var(--line);border-radius:9px;background:var(--pane);padding:10px;display:flex;flex-direction:column;justify-content:center;gap:7px}
+.id{font-weight:bold;color:var(--gold);font-size:12px}
+#script{font-size:clamp(13px,3.6vw,20px);white-space:pre-wrap;overflow:auto;max-height:38vh}
+#actors{color:var(--muted);font-size:12px;line-height:1.4}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:6px;flex:none}
+.actions button{font-weight:bold;font-size:12px}
+.actions .primary{background:#247558;border-color:#65c1a1;color:#fff}
+.note{font-size:10px;color:var(--muted);flex:none;line-height:1.5}
+#status{color:var(--gold);min-height:18px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:none;font-size:11px}
+#fallback[hidden]{display:none}
+#fallback{position:fixed;inset:6px;z-index:20;background:#20222a;border:2px solid var(--gold);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:10px}
+#fallback textarea{width:100%;flex:1;min-height:0;background:#10151c;color:#fff;padding:12px;border:1px solid #888;white-space:pre-wrap}
+#fallback button{align-self:flex-end}
+@media(max-height:610px){header{min-height:34px;padding:3px 10px}main{gap:4px;padding:3px 8px 5px}.filter select{min-height:31px}.shots button{min-height:43px}.content{padding:6px}.note{font-size:9px}.actions button{min-height:33px}}
+</style>
+</head>
+<body>
+<header><strong>灰銀のレゾナンス｜ChatGPT Plus・5コマ制作</strong><a href="./story-chapter1-approval.html">原画確認画面</a></header>
+<main>
+<div class="filter">
+<label>ステージ<select id="stage"></select></label>
+<label>主人公<select id="gender"><option value="male">男性</option><option value="female">女性</option></select></label>
+<label>分岐<select id="edition"></select></label>
+<label>ページ<select id="page"></select></label>
+</div>
+<div class="summary"><h1 id="heading">制作ページを読み込み中</h1><span id="count"></span></div>
+<div class="shots" id="shots" aria-label="このページの5コマ"></div>
+<section class="content" aria-live="polite">
+<div class="id" id="shotId">コマを選択</div>
+<div id="script">正式台本を読み込み中…</div>
+<div id="actors"></div>
+</section>
+<div class="actions">
+<button id="copyOne" class="primary">この1コマをコピー</button>
+<button id="copyFive">ページ5コマ分をコピー</button>
+<button id="references">人物画像付きの制作画面</button>
+<button id="openChat">ChatGPTを開く</button>
+</div>
+<div class="note">1コマ＝独立した1枚絵。プロンプトのコピーは生成ではありません。人物と画風の<strong>実画像を添付</strong>して手動送信してください。完成画像は既存の<a href="https://github.com/yamadayoshitaka/hai-gin-rpg/tree/main/assets/story/chapter1-chatgpt-inbox">画像取り込み口</a>から検査・仮登録します。Work・有料APIは使用しません。</div>
+<div id="status" role="status"></div>
+</main>
+<section id="fallback" hidden>
+<div>クリップボードへコピーできません。以下の指示を長押しで選択してください。</div>
+<textarea id="fallbackText" aria-label="コピー用生成プロンプト"></textarea>
+<button type="button" id="closeFallback">閉じる</button>
+</section>
+<script type="module">
+import {chapterOneReviewPages,EDITION_LABELS} from './src/story-chapter1-review-core.js';
+import {buildChapter1ImagePrompt,CHATGPT_IMAGES_URL} from './src/story-chapter1-image-prompt.js';
+import {CHAPTER1_PROVISIONAL_LIVE} from './src/story-chapter1-provisional-live.js';
+import {validateFiveShotPage,chooseFirstPage,buildFiveShotPacket,reviewUrl} from './src/story-chatgpt-five-shot-queue.js';
+const $=id=>document.getElementById(id);
+const all=chapterOneReviewPages().filter(p=>['c01-s04','c01-s05'].includes(p.stageId)).map(validateFiveShotPage);
+const params=new URLSearchParams(location.search);
+let current=chooseFirstPage(all,{
+ stageId:params.get('stage')||'c01-s05',
+ gender:params.get('gender')||'male',
+ edition:params.get('edition')||'pre'
+});
+let selected=0,ticket=0;
+const statusCache=new Map(),contractCache=new Map();
+function status(s){$('status').textContent=s;}
+const unique=a=>[...new Set(a)];
+const getJSON=path=>{
+ if(!contractCache.has(path))contractCache.set(path,fetch(path).then(r=>{
+  if(!r.ok)throw Error('必須マニフェストを取得できません: '+path);
+  return r.json();
+ }).catch(e=>{contractCache.delete(path);throw e;}));
+ return contractCache.get(path);
+};
+async function promptFor(shot,p=current){
+ const [bible,manifest,rules]=await Promise.all([
+  getJSON('./assets/story/characters/'+shot.stageId+'-reference-bible.json'),
+  getJSON('./assets/story/stage-manifests/'+shot.stageId+'.manifest.json'),
+  getJSON('./assets/story/quality/artwork-p0-rules.json')
+ ]);
+ return buildChapter1ImagePrompt({
+  shot,page:p,bible,stageManifest:manifest,qualityRules:rules,
+  sourceKind:statusCache.get(shot.key)==='candidate'?'candidate':'missing'
+ });
+}
+function setOptions(select,items,label){
+ const prev=select.value;
+ select.replaceChildren(...items.map(item=>{
+  const o=document.createElement('option');o.value=item;o.textContent=label(item);return o;
+ }));
+ if(items.includes(prev))select.value=prev;
+}
+function options(p=current){
+ setOptions($('stage'),unique(all.map(x=>x.stageId)),v=>v==='c01-s04'?'第4ステージ':'第5ステージ');
+ $('stage').value=p.stageId;$('gender').value=p.gender;
+ setOptions($('edition'),unique(all.filter(x=>x.stageId===p.stageId&&x.gender===p.gender).map(x=>x.edition)),v=>EDITION_LABELS[v]||v);
+ $('edition').value=p.edition;
+ setOptions($('page'),all.filter(x=>x.stageId===p.stageId&&x.gender===p.gender&&x.edition===p.edition).map(x=>String(x.pageWithinVariant)),v=>v);
+ $('page').value=String(p.pageWithinVariant);
+}
+function choose(){
+ const p=all.find(x=>x.stageId===$('stage').value&&x.gender===$('gender').value&&
+  x.edition===$('edition').value&&String(x.pageWithinVariant)===$('page').value);
+ if(p){current=p;selected=0;draw();}
+}
+function filter(){
+ const stage=$('stage').value,gender=$('gender').value;
+ const editions=unique(all.filter(x=>x.stageId===stage&&x.gender===gender).map(x=>x.edition));
+ const edition=editions.includes($('edition').value)?$('edition').value:editions[0];
+ const page=all.find(x=>x.stageId===stage&&x.gender===gender&&x.edition===edition);
+ if(page){current=page;selected=0;draw();}
+}
+async function readCandidate(shot,version){
+ if(CHAPTER1_PROVISIONAL_LIVE[shot.key]||shot.legacyPath)return;
+ try{
+  const root='https://raw.githubusercontent.com/yamadayoshitaka/hai-gin-rpg/story/chapter1-free-actual-art/';
+  const res=await fetch(root+shot.draftPath+'.generation.json',{cache:'no-store'});
+  if(!res.ok)return;
+  const data=await res.json();
+  if(data.shotKey===shot.key&&data.formallyRegistered===false&&
+     /^[a-f0-9]{64}$/i.test(data.imageSha256)){
+   statusCache.set(shot.key,'candidate');
+   if(version===ticket)drawShots();
+  }
+ }catch{}
+}
+function drawShots(){
+ const strip=$('shots');strip.replaceChildren();
+ current.shots.forEach((shot,i)=>{
+  const b=document.createElement('button');b.type='button';b.setAttribute('aria-pressed',i===selected?'true':'false');
+  const state=(shot.legacyPath||CHAPTER1_PROVISIONAL_LIVE[shot.key])?'仮登録済':
+   statusCache.get(shot.key)==='candidate'?'候補あり':'未登録';
+  const title=document.createElement('strong');title.textContent='コマ'+(i+1);
+  const desc=document.createElement('small');desc.textContent=state;
+  b.append(title,desc);b.title=shot.shotId;
+  b.addEventListener('click',()=>{selected=i;drawShots();drawFocus();});
+  strip.append(b);
+ });
+}
+function drawFocus(){
+ const shot=current.shots[selected];
+ $('shotId').textContent=shot.shotId+'｜'+current.stageId+'｜'+current.edition+'｜'+current.gender;
+ $('script').textContent=shot.scriptText||shot.displayText||'台詞のない情景';
+ $('actors').textContent='登場人物ID：'+[shot.characterId,shot.secondaryId].filter(Boolean).join('、')+
+  '　※必ずマニフェスト・人物原画を照合';
+ $('count').textContent=(selected+1)+' / '+current.shots.length+'コマ';
+}
+function draw(){
+ const version=++ticket;
+ options();
+ $('heading').textContent=current.stageName+'｜'+(EDITION_LABELS[current.edition]||current.edition)+
+  '｜'+(current.gender==='male'?'男性':'女性')+'｜ページ'+current.pageWithinVariant;
+ drawShots();drawFocus();
+ status('このページの5コマを台本に沿って制作します。実画像添付は制作画面から行います。');
+ for(const shot of current.shots)readCandidate(shot,version);
+}
+async function copy(text){
+ try{
+  if(!navigator.clipboard?.writeText)throw Error('clipboard missing');
+  await navigator.clipboard.writeText(text);
+  status('生成指示をコピーしました。参照原画の実ファイルを添付しChatGPTに貼り付けてください。');
+ }catch{
+  $('fallbackText').value=text;$('fallback').hidden=false;
+  $('fallbackText').focus();$('fallbackText').select();
+  status('コピーできなかったため、選択可能なプロンプトを表示しました。');
+ }
+}
+async function withBusy(button,fn){
+ button.disabled=true;
+ try{await fn();}catch(e){status('生成指示の準備に失敗：'+e.message);}
+ finally{button.disabled=false;}
+}
+$('copyOne').addEventListener('click',()=>withBusy($('copyOne'),async()=>{
+ const prompt=await promptFor(current.shots[selected]);
+ await copy(prompt);
+}));
+$('copyFive').addEventListener('click',()=>withBusy($('copyFive'),async()=>{
+ const p=current;
+ const list=await Promise.all(p.shots.map(async shot=>({
+  shotKey:shot.key,prompt:await promptFor(shot,p)
+ })));
+ await copy(buildFiveShotPacket(p,list));
+}));
+$('references').addEventListener('click',()=>{
+ location.assign(reviewUrl(current.shots[selected]));
+});
+$('openChat').addEventListener('click',()=>{location.assign(CHATGPT_IMAGES_URL);});
+$('closeFallback').addEventListener('click',()=>{$('fallback').hidden=true;});
+$('stage').addEventListener('change',filter);
+$('gender').addEventListener('change',filter);
+$('edition').addEventListener('change',filter);
+$('page').addEventListener('change',choose);
+draw();
+</script>
+</body></html>
