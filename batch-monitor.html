@@ -35,6 +35,7 @@ small{font-size:11px}strong{font-weight:700}
 <div class="summary" aria-live="polite"><span id="groupCount">4系統</span><span id="enabledCount">自動実行を確認中</span><span id="activeCount">GitHub実行状況を照合中</span><span id="schedulerCount">ChatGPT実行予約を確認中</span></div>
 <p id="fresh" class="muted">GitHub Actionsは画面表示時・更新時に確認します。ChatGPTの実行中判定はこのページから取得できません。</p>
 <p class="panel"><strong>第1章漫画（ゲーム本編との照合）：</strong><span id="chapter4status">各ステージの本編原画を照合中</span>　<a href="./story-chapter1-approval.html?stage=c01-s04">漫画確認・差し戻し</a></p>
+<p class="panel"><strong>画像生成ルート：</strong>Cloudflare既設API（無料・1日1回の利用枠）を優先。上限時は追加課金せずChatGPT Plusの手動生成へ引き継ぎます。<a id="fallbackLink" href="./story-chapter1-approval.html?stage=c01-s04&provider=chatgpt">未生成コマをChatGPTで制作する</a> （自動API呼出しではありません）</p>
 <p id="releaseStatus" class="muted">公開コミットを照合中…</p>
 <div class="grid" id="cards"><p>バッチ情報を読み込み中…</p></div>
 <footer>
@@ -210,6 +211,16 @@ async function updateChapter4(){
    ' 本編'+t.game+'/'+t.required+'・仮登録'+t.provisional);
   $('chapter4status').textContent=names.join(' ／ ')+
    ' （新しい画像がない旧原画は旧登録のまま。正式P0品質承認とは別）';
+  const missing=chapterOneReviewPages().flatMap(p=>p.shots).find(s=>
+   s.stageId==='c01-s04'&&!CHAPTER1_PROVISIONAL_LIVE[s.key]&&!s.legacyPath);
+  const link=$('fallbackLink');
+  if(missing){
+   link.href='./story-chapter1-approval.html?'+new URLSearchParams({
+    stage:missing.stageId,edition:missing.edition,gender:missing.gender,
+    shot:missing.shotId,provider:'chatgpt'}).toString();
+   link.textContent='第4ステージの次の未生成コマ '+missing.shotId+' をChatGPTで制作';
+  }else link.textContent='第1章の漫画をChatGPTで制作';
+
  }catch(e){$('chapter4status').textContent='漫画実登録の照合に失敗：'+e.message}
 }
 async function updateRelease(){
