@@ -51,12 +51,12 @@
     },
     "monster": {
       "source": "ChatGPT 定期タスクの実行結果",
-      "lastRunAt": "2026-11-15T15:10:59Z",
-      "subject": "PR #382 非人間型34種の可動関節欠落時の衣装欠損を明示的エラー化",
-      "summary": "monsterスイッチON。PR #382のsrc/monster-species-wardrobe.jsで、可動関節が存在しないと衣装カフを無言で省略していた不具合を例外化し、専用ブランチに実コードコミット435b7d4。GitHub再取得で差分確認済み。単体/ブラウザQA実行なし、コミット対応CIランなし、WebGL画像/Android FPS未確認。PR #385 E2E photoSurfaces/source-composite未解消。mainマージ・公開なし。",
-      "status": "in_review",
+      "lastRunAt": "2026-11-15T16:14:46Z",
+      "subject": "m020深海リヴァイアサン新規解剖メッシュ原型・Draft PR #426",
+      "summary": "monsterスイッチON。m020専用の新規3D造形ソースを作業ブランチに追加（軸骨格的胴体・腹板・頭蓋/顎/眼・胸鰭/腹鰭・尾鰭・遊泳/開口アニメ）。品質ソース実コミットa0113e8、Draft PR #426。ゲーム/マスター未接続、GLB未生成、単体/ブラウザQA未実施、前後左右画像・Android FPS未確認。既存#382と#385 E2E未完了を引継ぎ。mainマージ・公開なし。",
+      "status": "work_incomplete",
       "carryover": true,
-      "nextAction": "PR #382で node qa/nonhuman-monster-wardrobe.test.mjs を実行し関節ピボット欠落がないか確認、ブラウザ翼/脚カフ前後左右と動作貫通検証。PR #385 photoSurfaces/source-composite E2E修正とPixel 7/Android FPS検証。未達ならmainマージ禁止。",
+      "nextAction": "PR #426のJS構文とThree.jsジオメトリ検査を実行し、m020ゲーム/マスター双方へ明示的な試作切替を接続。前後左右WebGL画像、遊泳/顎の可動・法線・貫通、Android FPSを検証。既存PR #382/#385の未完了QAも保持。未承認のmainマージ禁止。",
       "steps": {
         "launch": "done",
         "code": "done",
@@ -68,16 +68,16 @@
       },
       "evidence": [
         {
-          "label": "今回の可動関節欠落修正コミット",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/435b7d42365016d6b48a0b83f920b92c72409e2f"
+          "label": "m020造形実コードcommit a0113e8",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/a0113e8acf3aea8280752a1efc6357d0d1aca81c"
         },
         {
-          "label": "既存Draft PR #382",
+          "label": "m020原型Draft PR #426",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/426"
+        },
+        {
+          "label": "前回未完了PR #382",
           "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/382"
-        },
-        {
-          "label": "PR #385 E2E失敗",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/43692535840"
         }
       ]
     },
