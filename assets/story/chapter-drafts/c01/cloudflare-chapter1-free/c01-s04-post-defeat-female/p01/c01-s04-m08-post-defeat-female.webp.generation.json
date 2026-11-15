@@ -1,0 +1,61 @@
+{
+  "kind": "CLOUDFLARE_REAL_WEBP_REVIEW_CANDIDATE_NOT_APPROVED",
+  "shotKey": "c01-s04|post-defeat|female|c01-s04-m8",
+  "stageId": "c01-s04",
+  "edition": "post-defeat",
+  "gender": "female",
+  "panelId": "c01-s04-m8",
+  "screenplayText": "しかし、その道は住民の墓と畑を横切っていた。近道には誰かの生活の重さがある。 鐘が鳴った夜、礼拝堂の死者名簿から文字が消えました。",
+  "visibleActorIds": [
+    "iris",
+    "lucia"
+  ],
+  "actualReferenceImagesAttached": [
+    {
+      "actorId": "iris",
+      "source": "assets/story-cinema/cast/iris.webp",
+      "originalSha256": "6b9b49a242f75b39abd8c6ab2084ce50592b8d98c73443a360ab06e041ceadea",
+      "submittedSha256": "1393acc01d44b7907169c469d36fc47844e5ccc1b305c5b4f67f0501470d6741",
+      "actualBytes": 193906,
+      "pixels": [
+        329,
+        480
+      ]
+    },
+    {
+      "actorId": "lucia",
+      "source": "assets/story/characters/lucia/master.webp",
+      "originalSha256": "87005a46d3b4a23714a25f1f9b2d46fee9a1ce3c6b5af0be78f85a1f1fd2b411",
+      "submittedSha256": "91344ba790293c03406ca1804f0360d135b0015aa75cc5b68d7904fc72de1173",
+      "actualBytes": 322498,
+      "pixels": [
+        439,
+        480
+      ]
+    },
+    {
+      "actorId": "style_benchmark",
+      "source": "assets/story/chapters/c01/panels/c01-s01-m02-female.webp",
+      "originalSha256": "e16731b753237f0aa88e2c906d7ff46a929df1300728292d878eb1a27272ec6f",
+      "submittedSha256": "5dff1346198612a31753d68aeac379ae7510cae8ff84d930192ff1ee67f988d3",
+      "actualBytes": 274348,
+      "pixels": [
+        480,
+        270
+      ]
+    }
+  ],
+  "imageSha256": "230f4319a7eb65c0a8f91188c63fd6930d7844fa44c0e14c13774a2acda1c60b",
+  "nativePixels": [
+    1024,
+    576
+  ],
+  "imageBytes": 203898,
+  "model": "@cf/black-forest-labs/flux-2-klein-4b",
+  "seed": 1608686217,
+  "promptSha256": "c87ee549d0f8b0612aa80ff0804363a3e34829b973b0e37e393639714643d28c",
+  "estimatedNeurons": 120.31,
+  "visuallyApproved": false,
+  "formallyRegistered": false,
+  "gameDeployed": false
+}
