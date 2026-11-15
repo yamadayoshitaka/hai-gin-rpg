@@ -66,7 +66,7 @@ function buildWings(g,detail){
 }
 
 function addFace(g,{angel,detail}){
-  const skin=angel?0xe9cfc1:0xe4b9a1,shade=angel?0xc8a99d:0xb48a76;
+  const skin=angel?0xf8f9f8:0xe4b9a1,shade=angel?0xe0e3e6:0xb48a76;
   const hair=angel?0xc99e63:0xd7b04d,highlight=angel?0xe6ca9c:0xffdd81;
   const eyes=angel?0x667d9c:0x388a65;
   const {sphere,curved,segment,horn}=g;
@@ -186,9 +186,9 @@ function addClothing(g,{angel,detail}){
     sphere(name,angel?0xefebe4:0x384a37,x,1.84,.03,.145,.18,.16);
     segment(name,angel?0xe5dfd8:0x5b6146,
       [x,1.81,.035],[side*.51,1.40,.19],.105,.070);
-    sphere(name,angel?0xe8cfbe:0xcba88c,side*.52,1.34,.21,.074,.13,.076);
+    sphere(name,angel?0xf8f9f8:0xcba88c,side*.52,1.34,.21,.074,.13,.076);
     for(let j=0;j<4;j++){
-      segment(name,angel?0xe8cfbe:0xcba88c,
+      segment(name,angel?0xf8f9f8:0xcba88c,
         [side*(.48+j*.027),1.27,.245],[side*(.49+j*.027),1.16,.32],
         .015,.01);
     }
@@ -202,7 +202,7 @@ function addLegs(g,{angel}){
     sphere(part,angel?0xe5e2df:0x5b563c,x,1.03,-.045,.16,.24,.18);
     segment(part,angel?0xd9d5cf:0x615a41,[x,1.0,-.025],
       [side*.18,.54,.015],.123,.092);
-    joint(part,angel?0xd6c4b1:0x675b49,side*.18,.54,.03,.112,.12,.12);
+    joint(part,angel?0xe1e2e4:0x675b49,side*.18,.54,.03,.112,.12,.12);
     segment(part,angel?0xe5e1de:0x654e39,
       [side*.18,.52,.01],[side*.17,.11,.075],.095,.065);
     sphere(part,angel?0xf0e8df:0x3d342c,side*.17,.11,.20,.115,.09,.21);
