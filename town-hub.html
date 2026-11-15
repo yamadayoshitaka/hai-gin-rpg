@@ -870,7 +870,9 @@ function eventRender(){
   img.hidden=true;missing.hidden=false;missing.textContent='現在の1コマの原画を確認しています…';
   const unavailable=()=>{if(ticket!==eventArtRequest)return;
    img.hidden=true;missing.hidden=false;
-   missing.textContent='この'+(paperPhase==='pre'?'イベント前':'イベント後')+
+   missing.textContent=cut?.includes('/chapter1-provisional-live/')?
+    '最新の仮登録原画を取得できません。古い原画へ戻さず再読込してください。':
+    'この'+(paperPhase==='pre'?'イベント前':'イベント後')+
     '（'+(shot.protagonistGender==='female'?'女性版':'男性版')+'）の原画は未登録です。';
   };
   const load=(asset,type)=>{
@@ -888,7 +890,7 @@ function eventRender(){
     img.hidden=false;missing.hidden=true;
    };
    img.onerror=()=>{if(ticket!==eventArtRequest)return;
-    if(type==='single')load(sheet,'sheet');else unavailable();
+    if(type==='single'&&!cut?.includes('/chapter1-provisional-live/'))load(sheet,'sheet');else unavailable();
    };
    img.src=storyArtDisplayUrl(asset);
    if(img.complete&&img.naturalWidth>0)img.onload();
