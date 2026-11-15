@@ -145,7 +145,9 @@ export function addSpeciesCosplayWardrobe(g,spec){
    if(!joint)continue;
    const side=key.includes('L')?-1:1;
    const isWing=family==='avian';
-   const scale=isWing?[.105,.067,.094]:
+   // Keep flight feathers and the wing hinge exposed: the old bulky cuff
+   // covered the root feathers during flapping and silhouette inspection.
+   const scale=isWing?[.075,.043,.068]:
      family==='insect'||family==='arachnid'?[.12,.055,.11]:
        [.19,.058,.18];
    add(joint,body,'joint-'+key,
