@@ -16,6 +16,49 @@ async function openSettings(page){
 // Keep mesh churn and saved-settings reload in different browser contexts.
  // Running ten heavy WebGL families then reloading on the same page can
  // retain GPU pressure and stall mobile control event processing.
+test('animal-source wolfman model: original wolf skull, paws, tail and biped toggle',async({page})=>{
+ const errors=[];page.on('pageerror',e=>errors.push(String(e)));
+ await page.goto('/monster-manager.html?monster=m001&form=beastfolk&v=4.5.23',
+  {waitUntil:'domcontentloaded',timeout:65000});
+ await expect.poll(()=>page.evaluate(()=>window.__monsterBeastfolkQA?.()?.active),
+  {timeout:30000}).toBe(true);
+ const actual=await page.evaluate(()=>window.__monsterBeastfolkQA?.());
+ expect(actual).toMatchObject({
+   selected:'m001',eligible:true,modelForm:'beastfolk',active:true,
+   sourceId:'m001',
+   originParts:{head:true,jaw:true,tail:true,sourcePaws:4},
+   faceSource:true,jawSource:true,tailSource:true
+ });
+ expect(actual.meshCount).toBeGreaterThan(65);
+ await expect(page.locator('#name')).toContainText('灰牙の狼王');
+ await page.locator('#actions button[title="walk"]').click();
+ await expect.poll(()=>page.evaluate(()=>window.__monsterBeastfolkQA?.()?.action))
+  .toBe('walk');
+ await page.locator('#actions button[title="roar"]').click();
+ await expect.poll(()=>page.evaluate(()=>window.__monsterBeastfolkQA?.()?.action))
+  .toBe('roar');
+ await page.locator('#portraitCamera').click();
+ await page.screenshot({path:'test-results/beastfolk-m001-biped-wolf-head.png',
+  animations:'disabled',timeout:30000});
+ await openSettings(page);
+ await expect(page.locator('#beastfolkFormControl')).toBeVisible();
+ await page.locator('#beastfolkForm').selectOption('original');
+ await expect.poll(()=>page.evaluate(()=>window.__monsterBeastfolkQA?.()?.active))
+  .toBe(false);
+ await expect(page.locator('#beastfolkForm')).toHaveValue('original');
+ await page.locator('#beastfolkForm').selectOption('beastfolk');
+ await expect.poll(()=>page.evaluate(()=>window.__monsterBeastfolkQA?.()?.active))
+  .toBe(true);
+ await page.goto('/monster-manager.html?monster=m003&form=beastfolk&v=4.5.23',
+  {waitUntil:'domcontentloaded',timeout:65000});
+ await expect.poll(()=>page.evaluate(()=>window.__monsterBeastfolkQA?.()?.sourceId),
+  {timeout:30000}).toBe('m003');
+ await expect(page.locator('#name')).toContainText('氷霜フェンリル');
+ await page.screenshot({path:'test-results/beastfolk-m003-fenrir-head.png',
+  animations:'disabled',timeout:30000});
+ expect(errors).toEqual([]);
+});
+
 test('mobile bestiary: 50 unique 3D monsters across ten families',async({page})=>{
  const errors=[];page.on('pageerror',error=>errors.push(String(error)));
  await page.goto('/monster-manager.html?v=4.4.85',
