@@ -62,8 +62,12 @@ export function setAdoptedCreatureMesh(id,source,storage=globalThis.localStorage
  if(source!=='legacy'&&!sourceId.test(source))throw Error('未登録の外部モデル: '+source);
  if(!storage?.setItem)throw Error('端末ストレージへ保存できません');
  const map=stored(storage);
- if(source==='legacy')delete map[id];
- else map[id]=source;
+ // A summoned copy can explicitly keep its ORIGINAL form even when its
+ // parent bestiary species has a different adopted appearance.
+ if(source==='legacy'){
+  if(String(id).startsWith('summon_'))map[id]='legacy';
+  else delete map[id];
+ }else map[id]=source;
  storage.setItem(MESH_ADOPTION_STORAGE_KEY,JSON.stringify(map));
  try{globalThis.dispatchEvent?.(new CustomEvent('hai-gin-creature-mesh-adopted',{detail:{id,source}}));}catch{}
  return source;
