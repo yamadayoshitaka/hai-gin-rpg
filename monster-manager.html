@@ -510,7 +510,7 @@ function selectSpecies(id){
    byId('assetStatus').textContent=(mode==='licensed'?'CC0候補 '+entry.name:
       mode==='source-composite'?'CC0実物GLB '+handle.sourceComposite.donorName+
       ' ＋種族配色・装飾（品質試作・戦闘未置換）':
-      'この端末内 '+file.name)+' / 内蔵動作 '+handle.clips.length+'種類';
+      'この端末内 '+file.name)+' / 内蔵動作 '+handle.clips.length+'種類 / 戦闘は未置換';
    byId('assignmentStatus').textContent=mode==='source-composite'?
       '既存の装飾をGLB実体へ追加・見た目要検証':
       modelAssignments[id]===chosenId?'この個体に割当済み（鑑賞用）':'未保存の比較表示';
