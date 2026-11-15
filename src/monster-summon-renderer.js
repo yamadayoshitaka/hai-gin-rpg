@@ -5,7 +5,7 @@
  * preallocating 50 x high/low high-poly meshes at battle startup. The actual
  * existing bestiary geometry, articulation, materials and PBR are reused.
  * No changes to enemy bestiary scale, m005/m006 donor assets, grid AI or
- * soldier skeletons. A normal human (1.7m) is 1/10 visual height.
+ * soldier skeletons. Summoned species have their normal human-relative height.
  */
 import * as THREE from 'three';
 import {createMonsterModel,disposeMonsterSculpture}
@@ -102,7 +102,7 @@ export function createMonsterSummonRenderer(scene,{
   // update the ANCESTOR world matrices. Finalize the native donor rig's
   // parent chain immediately, before the first renderer.render call.
   // Otherwise it appears 1.7m to the camera fitter despite having a
-  // 17m parent scale, cropping the giant in mobile gallery.
+  // parent scale, clipping the model in mobile gallery.
   anchor.updateMatrixWorld(true);
   if(costumeHandle){
    costumeHandle.start('idle',0);
@@ -121,7 +121,7 @@ export function createMonsterSummonRenderer(scene,{
     if(!Number.isFinite(finalHeight)||finalHeight<=.01){
      actor.userData.modelError='empty-loaded-skin';return;
     }
-    const targetHeight=MONSTER_SUMMON_BY_TYPE[object.type].size*17;
+    const targetHeight=MONSTER_SUMMON_BY_TYPE[object.type].size*MONSTER_SUMMON_MODEL_HEIGHT;
     fitting.scale.multiplyScalar(targetHeight/finalHeight);
     anchor.updateWorldMatrix(true,true);
     const corrected=new THREE.Box3().setFromObject(actor);
