@@ -228,8 +228,41 @@ export function createObjectById(id,{cellSize=2.2}={}){
   const fire=new THREE.MeshStandardMaterial({color:0xff9e31,emissive:0xe65a0c,emissiveIntensity:2});
   const b=(w,h,d,x,y,z,m=timber)=>{const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);o.position.set(x,y,z);o.castShadow=true;o.receiveShadow=true;root.add(o);return o};
   const c=cellSize;
-  if(id==='cottage_table_001'){b(2*c,.13*c,1.25*c,0,.85*c,0);for(const x of [-.82,.82])for(const z of [-.46,.46])b(.14*c,.78*c,.14*c,x*c,.4*c,z*c,dark);for(let i=0;i<6;i++)b(.018*c,.015*c,1.23*c,(i-2.5)*.3*c,.92*c,0,dark)}
-  if(id==='cottage_chair_001'){b(.7*c,.11*c,.65*c,0,.48*c,0);b(.7*c,.83*c,.11*c,0,.88*c,-.29*c);for(const x of [-.27,.27])for(const z of [-.23,.23])b(.1*c,.47*c,.1*c,x*c,.23*c,z*c,dark)}
+  if(id==='cottage_table_001'){
+   // Load path: edge-jointed solid planks -> cross battens/apron -> four mortised legs.
+   // Each top plank is an actual thick board with a visible joint, not a decal.
+   const plankWidths=[.38,.42,.40,.42,.38],topY=.85*c;
+   let edge=-1*c;
+   for(let i=0;i<plankWidths.length;i++){
+    const w=plankWidths[i];b(w*c,.12*c,1.25*c,(edge+w/2)*c,topY,0,i%2?timber:dark);
+    edge+=w;
+   }
+   // End grain battens and longitudinal aprons sit directly beneath the top.
+   for(const z of [-.52,.52])b(1.78*c,.15*c,.10*c,0,.735*c,z*c,dark);
+   for(const x of [-.82,.82])b(.10*c,.16*c,1.05*c,x*c,.735*c,0,dark);
+   for(const x of [-.82,.82])for(const z of [-.46,.46]){
+    b(.15*c,.72*c,.15*c,x*c,.36*c,z*c,dark);
+    // Short triangular knee braces: weight transfers from apron to leg.
+    const brace=b(.095*c,.31*c,.095*c,(x-Math.sign(x)*.10)*c,.61*c,z*c,timber);
+    brace.rotation.z=-Math.sign(x)*.57;
+   }
+   // Four end-grain pegs, recessed visually into the top near each leg.
+   for(const x of [-.82,.82])for(const z of [-.46,.46])b(.055*c,.012*c,.055*c,x*c,.918*c,z*c,dark);
+  }
+  if(id==='cottage_chair_001'){
+   // Four grounded legs, open slatted back and stretchers replace the solid slab.
+   for(const x of [-.27,.27])for(const z of [-.23,.23]){
+    const rear=z<0;
+    b(.105*c,(rear?1.32:.48)*c,.105*c,x*c,(rear?.66:.24)*c,z*c,dark);
+   }
+   // Separate seat boards and their support rails.
+   for(let i=0;i<3;i++)b(.70*c,.085*c,.205*c,0,.49*c,(-.22+i*.22)*c,timber);
+   for(const x of [-.27,.27])b(.09*c,.15*c,.52*c,x*c,.40*c,0,dark);
+   for(const z of [-.23,.23])b(.55*c,.10*c,.08*c,0,.22*c,z*c,dark);
+   // A backrest with open gaps: upper/lower rails and three vertical spindles.
+   for(const y of [.84,1.25])b(.69*c,.12*c,.10*c,0,y*c,-.23*c,timber);
+   for(const x of [-.18,0,.18])b(.075*c,.35*c,.075*c,x*c,1.045*c,-.23*c,dark);
+  }
   if(id==='cottage_bed_001'){b(1.6*c,.28*c,2.5*c,0,.38*c,0,dark);b(1.5*c,.22*c,2.25*c,0,.6*c,0,linen);b(1.6*c,1.1*c,.16*c,0,.65*c,-1.2*c);b(1.1*c,.14*c,.5*c,0,.76*c,-.78*c,linen)}
   if(id==='cottage_shelf_001'){for(const x of [-.8,.8])b(.14*c,2.8*c,.7*c,x*c,1.4*c,0);for(let y=.3;y<2.8;y+=.62){b(1.8*c,.12*c,.8*c,0,y*c,0);for(let i=0;i<5;i++)b(.17*c,.36*c,.36*c,(i-2)*.31*c,(y+.23)*c,0,i%2?dark:linen)}}
   if(id==='cottage_fireplace_001'){b(2.6*c,.3*c,1*c,0,.15*c,0,stone);for(const x of [-1.1,1.1])b(.42*c,2.5*c,.9*c,x*c,1.25*c,0,stone);b(2.65*c,.4*c,1.05*c,0,2.5*c,0,stone);b(1.2*c,.45*c,.4*c,0,.48*c,.1*c,fire)}
