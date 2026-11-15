@@ -222,6 +222,8 @@ const summary=reason=>{
  const o={mode:'generate',stopReason:reason,runRequestedPages:maxPages,
   estimatedNeuronsReserved:Number(reserved.toFixed(2)),apiRequests:requests,
   newRealDraftImages:created,newDraftPageCommits:committed,blockedPages:blocked,
+  chatGPTManualHandoff:handoff?.chatGPTReviewUrl||null,
+  chatGPTHandoffShotKey:handoff?.shotKey||null,
   freeOnly:true,noPaidFallback:true,noAutoApproval:true};
  save(o);return o;
 };
@@ -253,7 +255,10 @@ for(const pg of pages){
  try{todo=pending.map(s=>({s,info:renderSpec(s)}));}
  catch(e){blocked.push({page:pg.num,reason:String(e.message)});continue;}
  const cost=todo.reduce((total,t)=>total+t.info.estimate,0);
- if(cost+reserved>limit){summary('DAILY_FREE_ESTIMATE_CAP');break;}
+ if(cost+reserved>limit){
+  queueChatGPTHandoff('FREE_ESTIMATE_CAP',todo[0]?.s,requests);
+  summary('DAILY_FREE_ESTIMATE_CAP_CHATGPT_MANUAL_HANDOFF');break;
+ }
  const files=[];
  let activeShot=null;
  try{
@@ -357,17 +362,21 @@ for(const pg of pages){
    exec('git',['push','origin','HEAD:'+branch]);
    committed++;
   }
-  if(error.includes('FREE_API_STOP_NO_RETRY_HTTP_429 4006:')){
-   // Cloudflare Free allocation exhausted, NOT a production defect.
-   // Do not retry or switch to a paid provider. Resume on next scheduled day.
+  const http=error.match(/FREE_API_STOP_NO_RETRY_HTTP_(\d{3})/);
+  const codes=[...error.matchAll(/\\b(\\d{4}):/g)].map(m=>({code:m[1]}));
+  const stopReason=classifyCloudflareFailure({status:http?Number(http[1]):null,errors:codes});
+  if(canOfferChatGPTHandoff(stopReason)){
+   // The provider may use HTTP 400 or 429 for free-quota enforcement.
+   // No automatic ChatGPT image call is attempted: the Plus tool is interactive.
    freeLimitReached=true;
-   summary('FREE_QUOTA_EXHAUSTED_RESUME_NEXT_SCHEDULE');
-   console.log('FREE_QUOTA_EXHAUSTED: no paid fallback, no retry; preserved all complete real images');
+   queueChatGPTHandoff(stopReason,activeShot,requests);
+   summary('FREE_QUOTA_EXHAUSTED_CHATGPT_MANUAL_HANDOFF');
+   console.log('FREE_ONLY_STOP: existing verified image+proof pairs saved; no paid calls');
    break;
   }
   summary('STOPPED_NO_RETRIES_'+error);
   console.error('P0 FREE ONLY STOP: '+error);process.exitCode=2;break;
  }
 }
-const state=summary(process.exitCode?'ERROR':freeLimitReached?'FREE_QUOTA_EXHAUSTED_RESUME_NEXT_SCHEDULE':stageGateStopped?'STAGE_INCOMPLETE_DO_NOT_ADVANCE':committed===maxPages?'PAGE_CAP_OR_DAILY_CAP':'BATCH_LIMIT_OR_ALL_DONE');
+const state=summary(process.exitCode?'ERROR':handoff?'CLOUDFLARE_STOP_CHATGPT_MANUAL_HANDOFF':freeLimitReached?'FREE_QUOTA_EXHAUSTED':stageGateStopped?'STAGE_INCOMPLETE_DO_NOT_ADVANCE':committed===maxPages?'PAGE_CAP_OR_DAILY_CAP':'BATCH_LIMIT_OR_ALL_DONE');
 console.log(JSON.stringify({status:'REAL_DRAFTS_ONLY',...state,imagesMissing:progress().missing,reviewRequired:true}));
