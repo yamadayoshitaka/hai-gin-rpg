@@ -28,6 +28,13 @@ small{font-size:11px}strong{font-weight:700}
 .image-drop input{max-width:100%}
 .image-drop img{max-width:100%;max-height:180px;object-fit:contain;justify-self:center}
 .image-drop img[hidden]{display:none}
+.work-progress{display:grid;gap:8px}.progress-head{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.progress-status{font-size:12px;font-weight:750;color:#f6d7af}.progress-status.ok{color:#b5ecd3}
+.stage-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(112px,1fr));gap:5px}
+.stage{font-size:12px;padding:6px 7px;border:1px solid #4c6070;border-radius:7px;background:#22384b}
+.stage.done{border-color:#548b74;color:#b5ecd3}.stage.failed{border-color:#a66b65;color:#ffd1c9}
+.stage.pending{color:#e0d3b4}.stage.unknown,.stage.skipped{color:#aebdcd}
+.progress-evidence{display:flex;gap:10px;flex-wrap:wrap;font-size:12px}
 </style></head><body>
 <header><a href="./dev-menu.html">← メンテナンス</a><strong>⚙ 灰銀｜毎時バッチ管理</strong><a href="./monster-quality-review.html">モンスター品質KPI</a><a href="./creature-reconstruction-plan.html">108体再構成計画</a><button class="refresh" id="refresh" type="button">状況を更新</button></header>
 <main><h1>品質改善バッチ：4系統</h1>
@@ -44,6 +51,7 @@ small{font-size:11px}strong{font-weight:700}
  <p>「毎時有効」はスケジュールが有効という意味で、いま処理しているという意味ではありません。ChatGPT側は取得時点の記録を表示し、GitHub側は最新のActions履歴を取得します。</p>
  <p><strong>有効／無効：</strong>バッチの作業実行を切り替えるには各カードのボタンからGitHub Issueを開き、所有者が「Submit new issue」で確定します。ChatGPTの定期タスクそのもののON/OFF操作とは別です。人・モンスターの既存定期タスクは実行前に切替設定を確認するよう変更が必要です。</p>
  <p><strong>参考画像：</strong>ここに画像を選択・貼り付けて確認し、画像をコピーしてGitHub Issue本文へ貼り付けてください。画像はPagesから直接アップロードされません。</p>
+ <p><strong>実作業の工程別進捗：</strong>起動・ソース修正・QA・コミット・PR・マージ・公開を別々に表示します。「実作業未完了」は完了扱いにせず、次回引継ぎを表示します。この情報はGitHubへ最後に保存された記録で、ChatGPTタスクの生の実行状態ではありません。</p>
  <p><strong>手動指示の送り方：</strong>各カードに修正内容を入力 →「手動指示を送る」→ GitHubのIssue画面で「Submit new issue」を押してください。これは1回限りの依頼で、GitHub認証情報をこのサイトに入力する必要はありません。</p>
  <p class="note">人モデル・モンスター・漫画のChatGPT定期タスクはGitHubの切替設定を毎回確認します。現在のスケジュール有効/無効はこのサイトから直接取得できず、最新のChatGPT実行日時は記録時点の情報です。GitHub ActionsのQA成功だけで画像生成・3D修正・本編反映の完了とは判断しません。追加の有料API課金は行いません。</p>
  <div class="links"><a href="https://github.com/yamadayoshitaka/hai-gin-rpg/actions" target="_blank" rel="noopener noreferrer">全GitHub Actionsを見る</a><a href="https://github.com/yamadayoshitaka/hai-gin-rpg/issues?q=is%3Aissue+is%3Aopen+%22hai-gin-batch%22" target="_blank" rel="noopener noreferrer">手動指示の履歴を見る</a></div>
@@ -55,6 +63,10 @@ const REPO='yamadayoshitaka/hai-gin-rpg',GH='https://github.com/'+REPO,API='http
 const $=id=>document.getElementById(id);
 const TIME=v=>v?new Date(v).toLocaleString('ja-JP',{timeZone:'Asia/Tokyo',month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}):'取得なし';
 const groups=[];const elements=new Map();
+const PROGRESS_STAGES=[['launch','起動'],['code','ソース修正'],['qa','QA'],['commit','コミット'],['pr','PR'],['merge','マージ'],['deploy','公開']];
+const STEP_LABELS={done:'完了',pending:'未完了',failed:'失敗',skipped:'未実行',unknown:'未確認'};
+const PROGRESS_LABELS={work_incomplete:'実作業未完了',in_review:'検証・審査待ち',deployed:'公開完了',paused:'定期停止',unverified:'状況未確認'};
+
 function tag(t,cls,content){const e=document.createElement(t);if(cls)e.className=cls;if(content!==undefined)e.textContent=content;return e}
 function makeLink(text,url,external){const a=tag('a','',text);a.href=url;if(external){a.target='_blank';a.rel='noopener noreferrer'}return a}
 function paragraph(text,cls){return tag('p',cls||'',text)}
@@ -83,6 +95,18 @@ function createCard(data){
  if(data.blockedReason)c.appendChild(paragraph('直近の停止理由：'+data.blockedReason,'note'));
  if(data.details)c.appendChild(paragraph('主な作業：'+data.details,'muted'));
  if(data.goal)c.appendChild(paragraph('完了判定：'+data.goal,'note'));
+ const progressBox=tag('section','panel work-progress');
+ const head=tag('div','progress-head');
+ const heading=tag('strong','','実作業進捗（スケジュールとは別）');
+ const current=tag('span','progress-status','実作業の記録を確認中');
+ head.append(heading,current);
+ const stageGrid=tag('div','stage-grid');
+ const progressTime=paragraph('最終記録：取得中','muted');
+ const progressSummary=paragraph('実際のソース修正とQAを照合中','status');
+ const nextAction=paragraph('次回引継ぎ：照合中','note');
+ const progressEvidence=tag('div','progress-evidence');
+ progressBox.append(head,stageGrid,progressTime,progressSummary,nextAction,progressEvidence);
+ c.appendChild(progressBox);
 
  const switchRow=tag('div','batch-switch');
  const swText=tag('span','muted','実行制御：取得中');
@@ -166,7 +190,7 @@ function createCard(data){
   const win=window.open(link,'_blank','noopener,noreferrer');
   if(!win)window.location.assign(link);
  });
- $('cards').appendChild(c);elements.set(data.id,{detail,activity,log,swText,swBtn,badge});
+ $('cards').appendChild(c);elements.set(data.id,{detail,activity,log,swText,swBtn,badge,progress:{current,stageGrid,progressTime,progressSummary,nextAction,progressEvidence}});
 }
 async function fetchJSON(url){const r=await fetch(url,{cache:'no-store',headers:{Accept:'application/vnd.github+json'}});if(!r.ok)throw Error('HTTP '+r.status);return r.json()}
 
@@ -189,6 +213,44 @@ async function updateSwitches(){
   $('enabledCount').textContent='実行制御：'+groups.filter(g=>g.autoEnabled).length+'有効・'+groups.filter(g=>!g.autoEnabled).length+'停止';
  }catch(error){
   for(const g of groups){const v=elements.get(g.id);if(v){v.swText.textContent='切替設定の取得に失敗：'+error.message;v.swBtn.disabled=true}}
+ }
+}
+async function updateProgress(){
+ try{
+  const data=await fetchJSON('./data/batch-work-progress.json?ts='+Date.now());
+  if(data.schemaVersion!==1||!data.groups||!Array.isArray(data.stageOrder)
+   ||PROGRESS_STAGES.some(([key])=>!data.stageOrder.includes(key)))throw Error('工程記録の形式が不正');
+  for(const g of groups){
+   const view=elements.get(g.id)?.progress;
+   if(!view)continue;
+   const entry=data.groups[g.id];
+   if(!entry||!entry.steps)throw Error(g.id+' の実作業記録なし');
+   const displayed=PROGRESS_LABELS[entry.status]||'状況未確認';
+   view.current.textContent='直近：'+displayed;
+   view.current.className='progress-status'+(entry.status==='deployed'?' ok':'');
+   view.stageGrid.replaceChildren();
+   for(const [step,label] of PROGRESS_STAGES){
+    const result=Object.hasOwn(STEP_LABELS,entry.steps[step])?entry.steps[step]:'unknown';
+    view.stageGrid.appendChild(tag('span','stage '+result,label+'：'+STEP_LABELS[result]));
+   }
+   view.progressTime.textContent='最終記録：'+TIME(entry.lastRunAt||data.asOf)+' ／ '+(entry.source||'記録元未確認')+'（GitHub保存時点）';
+   view.progressSummary.textContent=entry.summary||'結果の詳細なし';
+   view.nextAction.textContent=entry.carryover?'次回引継ぎ：'+entry.nextAction:'次回確認：'+(entry.nextAction||'なし');
+   view.progressEvidence.replaceChildren();
+   for(const ev of (Array.isArray(entry.evidence)?entry.evidence:[])){
+    if(typeof ev?.url!=='string'||!ev.url.startsWith(GH+'/'))continue;
+    view.progressEvidence.appendChild(makeLink(ev.label||'証跡を開く',ev.url,true));
+   }
+  }
+ }catch(e){
+  for(const g of groups){
+   const p=elements.get(g.id)?.progress;if(!p)continue;
+   p.current.textContent='工程記録を確認できません';
+   p.progressTime.textContent='最新の工程記録を取得できません：'+e.message;
+   p.progressSummary.textContent='定期タスクONやGitHub QA成功のみでは実改修完了と判定しません。';
+   p.nextAction.textContent='次回引継ぎ：記録確認が必要';
+   p.stageGrid.replaceChildren();p.progressEvidence.replaceChildren();
+  }
  }
 }
 async function updateChapter4(){
@@ -267,9 +329,9 @@ async function start(){
   $('enabledCount').textContent='GitHub作業許可：'+groups.filter(g=>g.autoEnabled).length+'有効・'+groups.filter(g=>!g.autoEnabled).length+'停止';
   $('schedulerCount').textContent='ChatGPT定期タスク：'+groups.filter(g=>g.schedulerEnabled===true&&g.source.includes('ChatGPT')).length+'有効・'+groups.filter(g=>g.schedulerEnabled===false&&g.source.includes('ChatGPT')).length+'停止（記録時点）';
   $('fresh').textContent='ChatGPTタスク最終確認：'+TIME(j.asOf)+' ／ 現在処理中かはGitHub Actionsのみ取得可能';
-  await updateSwitches();await updateChapter4();await updateStoryBudget();await updateRelease();await updateRuns();
+  await updateSwitches();await updateProgress();await updateChapter4();await updateStoryBudget();await updateRelease();await updateRuns();
  }catch(e){$('cards').textContent='管理データを読み込めませんでした：'+e.message}
 }
-$('refresh').addEventListener('click',async()=>{await updateSwitches();await updateChapter4();await updateStoryBudget();await updateRelease();await updateRuns()});
-start();setInterval(()=>{if(!document.hidden&&groups.length){updateSwitches();updateRuns()}},90000);
+$('refresh').addEventListener('click',async()=>{await updateSwitches();await updateProgress();await updateChapter4();await updateStoryBudget();await updateRelease();await updateRuns()});
+start();setInterval(()=>{if(!document.hidden&&groups.length){updateSwitches();updateProgress();updateRuns()}},90000);
 </script></body></html>
