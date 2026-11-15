@@ -92,7 +92,8 @@ jobs:
         if: steps.plan.outputs.count != '0'
         run: |
           sudo apt-get update -qq
-          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y blender
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y blender python3-numpy
+          blender --background --factory-startup --python-expr "import numpy; print('glTF importer NumPy:', numpy.__version__)"
       - name: Build near/mid/far candidates from unmodified master GLB
         if: steps.plan.outputs.count != '0'
         run: node scripts/battle-lod-batch.mjs --target="$TARGET_ID" --execute
