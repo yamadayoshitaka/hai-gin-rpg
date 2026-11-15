@@ -9,10 +9,17 @@
       ],
       "commitSha": "2a80e3f2dbe78b6fddd6d7eaeb0502db8b7a931a",
       "qa": "unverified"
+    },
+    {
+      "id": "m048",
+      "sourceFiles": [
+        "src/m048-sea-serpent-anatomical-source.js"
+      ],
+      "commitSha": "f27f98f09c62d01b8c01fe2225245a5f0b9caf9c",
+      "qa": "unverified"
     }
   ],
   "remainingIds": [
-    "m048",
     "m001",
     "m002",
     "m003",
@@ -60,5 +67,5 @@
     "m049",
     "m050"
   ],
-  "nextAction": "Run node --check and Three.js four-view WebGL render on m020 respiratory chambers; validate anatomical arch position, then integrate game/master and audit all 108 canonical IDs. m048 next."
+  "nextAction": "Validate m048 mesh index winding and swim deformation with Node/Three and four-view WebGL; connect m020/m048 prototype to game/master only after visual review; enumerate canonical 108 IDs and continue species-specific meshes."
 }
