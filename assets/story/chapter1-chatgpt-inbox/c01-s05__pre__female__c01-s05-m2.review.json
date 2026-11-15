@@ -1,0 +1,31 @@
+{
+  "shotKey": "c01-s05|pre|female|c01-s05-m2",
+  "scriptText": "命令は紙一枚だ。だが戦場の命は、一枚では数え切れん。",
+  "sourceModel": "ChatGPT Images",
+  "reviewedAt": "2026-11-15T17:10:50Z",
+  "reviewedBy": "assistant-visual-inspection",
+  "reviewer": null,
+  "qaStatus": "OWNER_PROVISIONAL",
+  "ownerAuthorized": true,
+  "humanVisualQAConfirmed": false,
+  "finalP0Approved": false,
+  "generationReferencesAttached": false,
+  "referenceImagesAttached": [],
+  "quality": {
+    "exactCanonicalScene": true,
+    "exactCast": true,
+    "genderAndOutcomeCorrect": true,
+    "noTextUI": true,
+    "original3DCinematicStyle": true,
+    "nativeDetail": true,
+    "realReferenceBytesAttachedToImageGenerator": false
+  },
+  "nativePixels": [
+    1664,
+    936
+  ],
+  "imageSha256": "4df9b9d13abb9da5e73de3906974a7ce91b7927a411af576b5201d5d16146a2c",
+  "provisionalNotes": "Owner authorized reversible provisional. Image generated through normal ChatGPT Images. Image references were available as GitHub file references in conversation but were NOT provably attached as generator image inputs; not P0 approved. Stage5 female pre single frame m2.",
+  "originalSource": "c01-s05__pre__female__c01-s05-m2.webp",
+  "rollback": "Remove corresponding entry from CHAPTER1_PROVISIONAL_LIVE and revert art using revisions ledger."
+}

@@ -1,0 +1,31 @@
+{
+  "shotKey": "c01-s05|pre|female|c01-s05-m3",
+  "scriptText": "鐘が鳴った夜、礼拝堂の死者名簿から文字が消えました。",
+  "sourceModel": "ChatGPT Images",
+  "reviewedAt": "2026-11-15T17:10:50Z",
+  "reviewedBy": "assistant-visual-inspection",
+  "reviewer": null,
+  "qaStatus": "OWNER_PROVISIONAL",
+  "ownerAuthorized": true,
+  "humanVisualQAConfirmed": false,
+  "finalP0Approved": false,
+  "generationReferencesAttached": false,
+  "referenceImagesAttached": [],
+  "quality": {
+    "exactCanonicalScene": true,
+    "exactCast": true,
+    "genderAndOutcomeCorrect": true,
+    "noTextUI": true,
+    "original3DCinematicStyle": true,
+    "nativeDetail": true,
+    "realReferenceBytesAttachedToImageGenerator": false
+  },
+  "nativePixels": [
+    1664,
+    936
+  ],
+  "imageSha256": "9c3b1811adeb0458a45115969675263c547e9853d71e4a8af8334970559cd64f",
+  "provisionalNotes": "Owner authorized reversible provisional. Image generated through normal ChatGPT Images. Image references were available as GitHub file references in conversation but were NOT provably attached as generator image inputs; not P0 approved. Stage5 female pre single frame m3.",
+  "originalSource": "c01-s05__pre__female__c01-s05-m3.webp",
+  "rollback": "Remove corresponding entry from CHAPTER1_PROVISIONAL_LIVE and revert art using revisions ledger."
+}

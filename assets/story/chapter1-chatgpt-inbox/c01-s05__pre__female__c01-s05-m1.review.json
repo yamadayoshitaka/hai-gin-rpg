@@ -1,0 +1,31 @@
+{
+  "shotKey": "c01-s05|pre|female|c01-s05-m1",
+  "scriptText": "町へ迫る軍勢の気配に、リュシアが住民の退避を指示する。",
+  "sourceModel": "ChatGPT Images",
+  "reviewedAt": "2026-11-15T17:10:50Z",
+  "reviewedBy": "assistant-visual-inspection",
+  "reviewer": null,
+  "qaStatus": "OWNER_PROVISIONAL",
+  "ownerAuthorized": true,
+  "humanVisualQAConfirmed": false,
+  "finalP0Approved": false,
+  "generationReferencesAttached": false,
+  "referenceImagesAttached": [],
+  "quality": {
+    "exactCanonicalScene": true,
+    "exactCast": true,
+    "genderAndOutcomeCorrect": true,
+    "noTextUI": true,
+    "original3DCinematicStyle": true,
+    "nativeDetail": true,
+    "realReferenceBytesAttachedToImageGenerator": false
+  },
+  "nativePixels": [
+    1664,
+    936
+  ],
+  "imageSha256": "4d18726a63ffc77a4d7a8ef7fbea979094e8e4237e4973f56cf5e9bda699754d",
+  "provisionalNotes": "Owner authorized reversible provisional. Image generated through normal ChatGPT Images. Image references were available as GitHub file references in conversation but were NOT provably attached as generator image inputs; not P0 approved. Stage5 female pre single frame m1.",
+  "originalSource": "c01-s05__pre__female__c01-s05-m1.webp",
+  "rollback": "Remove corresponding entry from CHAPTER1_PROVISIONAL_LIVE and revert art using revisions ledger."
+}
