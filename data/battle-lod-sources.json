@@ -1,0 +1,16 @@
+{
+  "schema": "hai-gin/battle-lod-sources/v1",
+  "description": "Allowlisted masters. Review-only GLBs, never automatically remap live actors.",
+  "targets": [
+    {
+      "id": "knight-pilot",
+      "group": "human",
+      "source": "assets/characters/Knight.glb"
+    },
+    {
+      "id": "dragon-pilot",
+      "group": "monster",
+      "source": "assets/creatures/external/dragon/source.glb"
+    }
+  ]
+}

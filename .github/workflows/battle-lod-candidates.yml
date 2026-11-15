@@ -1,0 +1,146 @@
+name: Battle master near-mid-far LOD candidates (review only)
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: 'One allowlisted master or all'
+        required: true
+        default: all
+        type: choice
+        options: [all, knight-pilot, dragon-pilot]
+  schedule:
+    - cron: '17 18 * * *' # 03:17 JST; skips unchanged GLB masters
+  push:
+    branches: [main]
+    paths:
+      - 'assets/characters/*.glb'
+      - 'assets/creatures/external/**/source.glb'
+      - 'data/battle-lod-sources.json'
+      - 'scripts/build-battle-lods.py'
+      - 'scripts/battle-lod-batch.mjs'
+      - 'scripts/battle-lod-gate.mjs'
+      - 'qa/battle-lod-pipeline.test.mjs'
+      - '.github/workflows/battle-lod-candidates.yml'
+  pull_request:
+    paths:
+      - 'data/battle-lod-sources.json'
+      - 'scripts/build-battle-lods.py'
+      - 'scripts/battle-lod-batch.mjs'
+      - 'scripts/battle-lod-gate.mjs'
+      - 'qa/battle-lod-pipeline.test.mjs'
+      - '.github/workflows/battle-lod-candidates.yml'
+permissions:
+  contents: write
+  pull-requests: write
+concurrency:
+  group: battle-lod-review-branch
+  cancel-in-progress: false
+jobs:
+  contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check source gate, topology contract, and Python syntax
+        run: |
+          node --check scripts/battle-lod-batch.mjs
+          node --check scripts/battle-lod-gate.mjs
+          python3 -m py_compile scripts/build-battle-lods.py
+          node qa/battle-lod-pipeline.test.mjs
+  generate:
+    needs: contract
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    env:
+      REVIEW_BRANCH: quality/battle-lod-candidates
+      TARGET_ID: \${{ inputs.target || 'all' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Pull latest main into persistent review branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          if git fetch origin "$REVIEW_BRANCH"; then
+            git switch -c "$REVIEW_BRANCH" --track "origin/$REVIEW_BRANCH"
+            git merge --no-edit origin/main
+          else
+            git switch -c "$REVIEW_BRANCH" origin/main
+          fi
+      - name: Check human/monster switches and find changed master GLBs
+        id: plan
+        run: |
+          set -euo pipefail
+          node qa/battle-lod-pipeline.test.mjs
+          node scripts/battle-lod-batch.mjs --target="$TARGET_ID" > /tmp/battle-lod-plan.json
+          cat /tmp/battle-lod-plan.json
+          COUNT=$(node -p "JSON.parse(require('fs').readFileSync('/tmp/battle-lod-plan.json','utf8')).count")
+          echo "count=$COUNT" >> "$GITHUB_OUTPUT"
+      - name: Install free Blender only if changes exist
+        if: steps.plan.outputs.count != '0'
+        run: |
+          sudo apt-get update -qq
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y blender
+      - name: Build near/mid/far candidates from unmodified master GLB
+        if: steps.plan.outputs.count != '0'
+        run: node scripts/battle-lod-batch.mjs --target="$TARGET_ID" --execute
+      - name: Verify actual GLB triangle reductions, parts and rig preservation
+        if: steps.plan.outputs.count != '0'
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          import {verifyLodCandidate} from './scripts/battle-lod-gate.mjs';
+          const plan=JSON.parse(fs.readFileSync('/tmp/battle-lod-plan.json','utf8'));
+          const reports=plan.pending.map(({id})=>verifyLodCandidate(JSON.parse(
+            fs.readFileSync('assets/battle-lod-candidates/'+id+'/manifest.json','utf8'))));
+          fs.mkdirSync('qa-reports/battle-lod',{recursive:true});
+          fs.writeFileSync('qa-reports/battle-lod/gate.json',JSON.stringify(reports,null,2)+'\n');
+          console.log(JSON.stringify(reports));
+          NODE
+      - name: Commit verified GLBs only to candidate branch
+        id: publish
+        if: steps.plan.outputs.count != '0'
+        run: |
+          set -euo pipefail
+          git add -- assets/battle-lod-candidates
+          git diff --cached --check
+          if git diff --cached --quiet; then
+            echo 'changed=false' >> "$GITHUB_OUTPUT"
+          else
+            git commit -m 'quality(lod): regenerate verified near-mid-far candidate models'
+            git push origin "HEAD:$REVIEW_BRANCH"
+            echo 'changed=true' >> "$GITHUB_OUTPUT"
+          fi
+      - name: Open a single DRAFT review PR (no live actor replacement)
+        if: steps.publish.outputs.changed == 'true'
+        env:
+          GH_TOKEN: \${{ github.token }}
+        run: |
+          set -euo pipefail
+          existing=$(gh pr list --state open --head "$REVIEW_BRANCH" --json number --jq length)
+          if [[ "$existing" == '0' ]]; then
+            gh pr create --draft --base main --head "$REVIEW_BRANCH" \
+              --title 'quality(review): near-mid-far candidates generated from masters' \
+              --body 'Candidate only: masters and production actor mappings unchanged. Binary geometry/rig gates passed. Pixel similarity, animation and sustained Android 1000v1000 FPS remain unverified; do not promote automatically.'
+          fi
+      - name: Upload real topology and resource reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: battle-lod-gate-\${{ github.run_id }}
+          path: qa-reports/battle-lod/
+          retention-days: 14
+          if-no-files-found: warn
