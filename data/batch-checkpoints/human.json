@@ -9,6 +9,14 @@
       ],
       "commitSha": "2e47b18bc7e728fa2ee89cf357bb6709f320abf7",
       "qa": "unverified"
+    },
+    {
+      "id": "shared-rear-cuirass-depth",
+      "sourceFiles": [
+        "src/outfit-maintenance-model.js"
+      ],
+      "commitSha": "594df102d49e57757383ce824f77f157067a440d",
+      "qa": "unverified"
     }
   ],
   "remainingIds": [
@@ -18,5 +26,5 @@
     "job05-male",
     "job05-female"
   ],
-  "nextAction": "Enumerate authoritative all-character preset IDs and generator routes; run Node/WebGL visual comparison for armor grain and back/heel artifacts #438; inspect PR #451; preserve all unresolved IDs."
+  "nextAction": "Run Node syntax and WebGL front/back comparison for rear cuirass depth; fix #438 back artifact; enumerate all authoritative human IDs and audit all presets."
 }
