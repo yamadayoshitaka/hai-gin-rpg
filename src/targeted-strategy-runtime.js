@@ -103,7 +103,7 @@ export function createTargetedStrategyUi({getPlan,getEnemyTargets,getObjects,onE
  }
  function open(id){
   groupId=String(id);const plan=getPlan(groupId)||{squads:[],allowed:[]};
-  selectedSquads=new Set(plan.squads.map(x=>String(x.id)));selectedMethods.clear();
+  selectedSquads=new Set(plan.squads.map(x=>String(x.id)));selectedMethods=new Set((plan.preselectedTactics||[]).filter(id=>availableMethods(plan).some(m=>m.id===id)));
   selectedTargets.clear();family='attack';intent='melee';page=0;squadPage=0;error='';panel.hidden=false;render();
  }
  function close(){panel.hidden=true;groupId=null;selectedMethods.clear();selectedTargets.clear();}
