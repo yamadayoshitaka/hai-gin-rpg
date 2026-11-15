@@ -132,7 +132,14 @@ function fittedScalpSurface(model,bone,headBounds){
  for(let i=0;i<indices.length;i+=3){
   const a=indices[i],b=indices[i+1],c=indices[i+2];
   if(!eligible[a]||!eligible[b]||!eligible[c])continue;
-  for(const v of [a,b,c]){
+  // Imported skin triangles can have reversed winding. Orient the scalp
+  // outward before computing normals, otherwise dark crown patches appear.
+  const ax=local[a*3],ay=local[a*3+1],az=local[a*3+2];
+  const ux=local[b*3]-ax,uy=local[b*3+1]-ay,uz=local[b*3+2]-az;
+  const vx=local[c*3]-ax,vy=local[c*3+1]-ay,vz=local[c*3+2]-az;
+  const nx=uy*vz-uz*vy,ny=uz*vx-ux*vz,nz=ux*vy-uy*vx;
+  const outward=nx*(ax-center.x)+ny*(ay-center.y)+nz*(az-center.z);
+  for(const v of (outward<0?[a,c,b]:[a,b,c])){
    const x=local[v*3],y=local[v*3+1],z=local[v*3+2];
    triangles.push(x,y,z);
    uv.push(.5+Math.atan2(x-center.x,z-center.z)/(Math.PI*2),
