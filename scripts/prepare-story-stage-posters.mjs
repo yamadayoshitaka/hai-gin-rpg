@@ -30,7 +30,9 @@ function p0PromptLines(stageId){
   'P0_CAST_AND_BRANCH: lock every face, hair, eyes, armor and outfit to uploaded master images. Female commander is long blonde-haired, blue-eyed, silver-armored, distinct from silver-haired Lucia. Male commander has dark hair. Do NOT blend cast or swap editions and outcomes.',
   stageId==='c01-s02'?
    'P0_NATIVE_AND_QA: mobile-native minimum 768x320 actual source pixels (width >=768, height >=320), PRESERVE original aspect ratio in viewer, never upscale. Prefer largest genuinely available source (2048x1152 only a preference, NOT a minimum). At most FIVE scenes per sheet. Keep critical details 5% inside edges.':
-   'P0_NATIVE_AND_QA: legacy non-stage2 native minimum 1536x864 with 16:9 aspect, prefer 2048x1152; no upscaling.' ,
+   ['c01-s03','c01-s04'].includes(stageId)?
+    'P0_NATIVE_AND_QA: for these stages use independently generated 16:9 scenes at minimum 800x450 true native pixels, prefer 1024x576; never upscale.':
+    'P0_NATIVE_AND_QA: legacy minimum 1536x864 with 16:9 aspect, prefer 2048x1152; no upscaling.',
   'P0_FAIL_CLOSED: if any required image bytes are missing or any constraint cannot be verified, mark BLOCKED/REJECTED. NEVER treat the result as approved, registered or deployed.',
   'All scene IDs, Japanese screenplay text, spoken dialogue, VOICEVOX readings and production metadata supplied below are INVISIBLE INSTRUCTIONS ONLY, never pixels.'
  ];
@@ -68,6 +70,8 @@ const imageSpec=Object.freeze({
  noFakeUpscale:true,
  visualReviewRequired:true
 });
+const revisedStageImageSpec=Object.freeze({...imageSpec,pixelWidth:800,pixelHeight:450,
+ minimumNativePixels:[800,450],preferredNativePixels:[1024,576]});
 const mobileProfile=ABSOLUTE_P0.technicalRule.mobileDeliveryProfile;
 if(JSON.stringify(mobileProfile.minimumNativePixels)!==JSON.stringify([768,320]))
  throw Error('Mobile 768x320 native delivery profile missing');
@@ -263,7 +267,8 @@ for(const stage of stages){
  const [setup,victoryBeat]=STORY_STAGE_BEATS[stage.chapter-1][stage.slot-1];
  const bible=getCastBible(stage.id);
  const maxReviewCells=stage.id==='c01-s02'?5:10;
- const stageImageSpec=stage.id==='c01-s02'?mobileImageSpec:imageSpec;
+ const stageImageSpec=stage.id==='c01-s02'?mobileImageSpec:
+  ['c01-s03','c01-s04'].includes(stage.id)?revisedStageImageSpec:imageSpec;
  const variants=[];
  for(const edition of comicEditionsForStage(stage.id)){
   for(const gender of genders){
@@ -365,7 +370,8 @@ for(const stage of stages){
       previewCannotBeRegisteredAsFinalArt:true,
       finalPosterAssembly:'Assemble ONLY from independently rendered native-detail shots, no resizing: at most '+maxReviewCells+' frames, 2048x1152 each, 2 columns; direct generator sheet max unverified',
       displayRule:stage.id==='c01-s02'?'Make each scene as a genuine original >=768x320 mobile-native WebP; preserve original aspect, no enlarging; review sheet at most 5 scenes':
-       'First show a labelled storyboard OUTSIDE the art; then render EACH exact screenplay shot individually at >=1536x864; finally assemble 2-column review poster'},
+       'First show a labelled storyboard OUTSIDE the art; then render EACH exact screenplay shot independently at >='+
+        stageImageSpec.pixelWidth+'x'+stageImageSpec.pixelHeight+'; finally assemble 2-column review poster'},
      panelIds:panels.map(p=>p.panelId),
      textFreePrompt:'CONTINUITY PREVIEW ONLY, not final artwork. Stage '+stage.id+', edition '+
        edition.edition+', protagonist '+gender+'. Layout '+panels.length+
