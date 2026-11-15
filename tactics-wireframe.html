@@ -7392,14 +7392,19 @@ function issueTargetedMapCommand(point){
  for(const id of plan.squadIds){
   const allowed=storyRequest?.availableSquadOrders?.[String(id)]||[];
   if(!allowed.includes(plan.mode)||individualCommanderUnavailableReason(id))continue;
-  if(plan.mode==='support'&&massSim){
-   const priest=targetedSubSquadJobs(id).has('priest');
-   if(priest){
-    const patient=squadIds.filter(x=>x!==String(id)).map(x=>({id:x,center:squadCenter(x,0)}))
-     .filter(x=>x.center).sort((a,b)=>Math.hypot(a.center.x-point.x,a.center.z-point.z)-
-      Math.hypot(b.center.x-point.x,b.center.z-point.z))[0];
-    if(patient&&massSim.requestSquadHealing(patient.id,String(id))){
-     massWorker?.requestSquadHealing?.(patient.id,String(id));count++;continue;
+  if(plan.mode==='support'&&targetedSubSquadJobs(id).has('priest')){
+   const patient=squadIds.filter(x=>x!==String(id)).map(x=>({id:x,center:squadCenter(x,0)}))
+    .filter(x=>x.center).sort((a,b)=>Math.hypot(a.center.x-point.x,a.center.z-point.z)-
+     Math.hypot(b.center.x-point.x,b.center.z-point.z))[0];
+   if(patient&&massSim?.requestSquadHealing(patient.id,String(id))){
+    massWorker?.requestSquadHealing?.(patient.id,String(id));count++;continue;
+   }
+   if(patient&&!massSim){
+    const injured=actors.some(a=>a.team===0&&String(a.squadId)===String(patient.id)&&a.hp>0&&a.hp<a.maxHp);
+    if(injured){
+     skirmishHealingRequests.set(String(id),String(patient.id));
+     squadOrderRegistry.set(String(id),{mode:'heal',targetId:String(patient.id),x:point.x,z:point.z});
+     count++;continue;
     }
    }
   }
@@ -7453,7 +7458,7 @@ const targetedOrderWatcher=setInterval(()=>{
   issueTargetedPlatoon(id,plan.mode==='support'?'hold':plan.mode==='retreat'?'hold':plan.mode);
  }
  for(const [id,queue] of targetedEnemyQueues){
-  const mission=massSim?.squadMissions?.get(String(id));
+  const mission=massSim?.squadMissions?.get(String(id))||squadOrderRegistry.get(String(id));
   if(mission?.targetSquadId&&
      (massSim?.units??actors).some(u=>u.team===1&&String(u.squadId)===String(mission.targetSquadId)&&u.hp>0))continue;
   const next=queue.shift();
