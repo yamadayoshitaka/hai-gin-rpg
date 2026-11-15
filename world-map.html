@@ -84,10 +84,10 @@ import {createGamePageAudio} from './src/game-page-audio.js';
 import {continentForChapter,continentMapUrl,continentStagePoints} from './src/continent-campaign.js';
 import {narrativeForStage} from './src/chapter-story-events.js';
 import {TERRITORIES,FACTIONS} from './src/story-campaign.js';
-import {CAMPAIGN_STAGES,CAMPAIGN_STAGE_BY_ID,STAGE_KINDS,chapterAvailable,stagesInChapter,stageUnlocked} from './src/campaign-stage-plan.js';
+import {CAMPAIGN_STAGES,CAMPAIGN_STAGE_BY_ID,STAGE_KINDS,chapterAvailable,stagesInChapter,stageUnlocked,stageDeploymentLimit} from './src/campaign-stage-plan.js';
 import {loadGame,persistSession,stageAtTown,selectCampaignStage,validGame} from './src/game-core-flow.js';
 import {makeCoreBattleRequest,settleCoreBattle,CORE_BATTLE_PENDING_KEY,CORE_BATTLE_RESULT_KEY} from './src/core-battle-bridge.js?v=army-groups-1';
-import {ensureSortiePlan,sortieTeams,sortieTeamCount,setSortieSlot,allowedSortieSlots,resolvedSortieSlot,stageIsControlled} from './src/three-team-sortie.js';
+import {ensureSortiePlan,sortieTeams,sortieTeamCount,sortieSquadCap,setSortieSlot,allowedSortieSlots,resolvedSortieSlot,stageIsControlled} from './src/three-team-sortie.js';
 import {storyDecisionForStage,setStoryDecision,availableStoryRoutes,selectStoryRoute,currentStoryRoute,storyStageContext,availableStoryEndings,chooseStoryEnding} from './src/story-narrative-flow.js';
 import {storyVoiceText} from './src/story-pronunciations.js';
 const $=id=>document.getElementById(id),escapeHtml=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
@@ -238,7 +238,7 @@ function render(){
  const stage=CAMPAIGN_STAGE_BY_ID[selected]||stages[0];
  const unlocked=stageUnlocked(stage,game.completedStages);
  $('stageTitle').textContent=stage.id.toUpperCase()+' '+stage.name;
- $('stageRequirement').textContent=STAGE_KINDS[stage.kind]+' · '+stage.winCondition+(unlocked?'':' · 前のステージをクリアすると解放');
+ $('stageRequirement').textContent=STAGE_KINDS[stage.kind]+' · '+stage.winCondition+(stage.kind==='town'?'':' · 出撃上限 '+stageDeploymentLimit(stage)+'人')+(unlocked?'':' · 前のステージをクリアすると解放');
  $('sortie').textContent=stage.kind==='town'?'町に入る ▶':game.completedStages.includes(stage.id)?'再出撃 ▶':'出撃 ▶';
  $('sortie').disabled=!unlocked||Boolean(game.campaign.gameOver);
  renderStoryBranchControls(stage,unlocked);
@@ -291,12 +291,12 @@ function renderDeploymentPicker(stage){
  deploymentTeamId=active.id;
  const allowed=allowedSortieSlots(game,stage);
  $('deploymentTitle').textContent='戦闘前の出撃位置 · '+stage.name;
- $('deploymentHelp').textContent=stageIsControlled(game,stage)?
-  '制圧済み：全12か所に配置可能。班を選択して位置をタップ。':
-  '未制圧：入口3か所のみ。班を選択して入口をタップ。';
+ const planned=teams.reduce((n,t)=>n+sortieTeamCount(t),0);
+ $('deploymentHelp').textContent='このステージの出撃上限 '+stageDeploymentLimit(stage)+'人（編成 '+planned+'人から上限まで配分）。'+(stageIsControlled(game,stage)?
+  '制圧済み：全12か所から選択。':'未制圧：入口3か所から選択。')+' 必要な陣形枠の部隊が欠けるとバフ無効。';
  $('deploymentGroups').innerHTML=teams.map(t=>
   '<button type="button" data-deployment-group="'+t.id+'" class="'+(t.id===active.id?'selected':'')+'">'+
-  '第'+t.id+'班<small>'+sortieTeamCount(t)+'人・'+(t.slots?.filter(Boolean).length||0)+'/4隊</small></button>').join('');
+  '第'+t.id+'班<small>'+sortieTeamCount(t)+'人・'+(t.slots?.filter(Boolean).length||0)+'/'+sortieSquadCap(game)+'隊</small></button>').join('');
  $('deploymentPositions').innerHTML=Array.from({length:12},(_,i)=>{
   const holder=teams.find(t=>t.id!==active.id&&resolvedSortieSlot(game,stage,t)===i);
   const blocked=!allowed.includes(i)||Boolean(holder);
