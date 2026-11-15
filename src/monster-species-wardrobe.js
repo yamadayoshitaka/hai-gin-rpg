@@ -19,6 +19,16 @@ const ARCHETYPES=Object.freeze({
  aquatic:Object.freeze({type:'marine-mantle',w:.44,y:1.40,z:.00,depth:.30}),
 });
 const LEGACY_BOSSES=new Set(['m008','m012','m017','m050']);
+/** Match real coat, keratin and marine surfaces; do not wrap wolves or
+ * spider abdomens in the same bright metal cuirass used by beetles. */
+const outfitMaterialFor=spec=>{
+ if(spec.family==='beast'||spec.family==='feline'||spec.family==='avian')
+  return 'leather';
+ if(spec.family==='arachnid')return 'fabric';
+ if(spec.family==='aquatic')
+  return ['m020','m048'].includes(spec.id)?'metal':'fabric';
+ return 'metal'; // insects and scaled reptiles can support a fitted carapace
+};
 const normalizedBody=spec=>{
  const base=ARCHETYPES[spec.family];
  if(spec.id==='m020'||spec.id==='m048')
@@ -37,7 +47,7 @@ export const SPECIES_COSPLAY_WARDROBE=Object.freeze(Object.fromEntries(
    type:base.type,rarity:spec.rarity,element:spec.element,
    style:spec.rarity==='UR'?'royal':spec.rarity==='SR'?'ceremonial':
      spec.rarity==='R'?'armoured':'traveller',
-   role:spec.rarity==='N'?'leather':'metal',
+   role:outfitMaterialFor(spec),
    w:base.w,y:base.y,z:base.z,depth:base.depth,
    legacy:LEGACY_BOSSES.has(spec.id),
   })];
@@ -102,6 +112,25 @@ export function addSpeciesCosplayWardrobe(g,spec){
    [0,y+.22,z-depth*.38],[w*.49,.052,depth*.68]);
   // Upper limb cuffs follow limb rotation instead of staying on torso.
   const family=spec.family;
+  // Spider abdomen is a separate animated joint, not the thorax. The
+  // cloth saddle must travel with abdomen motion instead of floating at
+  // the original torso position; leave spinnerets and legs uncovered.
+  if(family==='arachnid'&&g.pivots.abdomen){
+   add(g.pivots.abdomen,'fabric','abdomen-saddle',
+    [0,.475,-.25],[.35,.047,.31]);
+  }
+  // Beetle carapace has an upper shell. Make its costume visibly beetle-
+  // specific instead of using the canine chest harness geometry alone.
+  if(family==='insect'){
+   add(torso,'metal','elytra-crown',[0,1.59,-.34],
+    [.245,.043,.24]);
+  }
+  // For wolves/dogs, position a soft collar at the anatomical nape.
+  // This remains on the torso/neck pivot, clear of muzzle and paws.
+  if(family==='beast'){
+   add(torso,'leather','nape-collar',[0,1.565,.52],
+    [.235,.050,.09]);
+  }
   let joints=[];
   if(['beast','feline','reptile'].includes(family)&&
       !['m020','m048'].includes(spec.id)){
