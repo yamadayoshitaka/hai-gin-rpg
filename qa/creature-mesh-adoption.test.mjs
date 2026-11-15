@@ -61,13 +61,20 @@ test('human-shaped monsters never accept an animal donor',()=>{
  assert.ok(recommendedMeshSources('m001').includes('r-wolf'));
  assert.ok(recommendedMeshSources('m011').includes('r-eagle'));
  assert.ok(!recommendedMeshSources('m016').includes('r-crocodile'));
- assert.ok(recommendedMeshSources('m021').includes('g-hercules'));
- assert.ok(recommendedMeshSources('m023').includes('g-mantis'));
- assert.ok(recommendedMeshSources('m008').includes('g-lion'));
- assert.ok(recommendedMeshSources('m014').includes('g-owl'));
- assert.ok(recommendedMeshSources('horse').includes('g-horse'));
- setAdoptedCreatureMesh('horse','g-horse',storage);
- assert.equal(adoptedCreatureMesh('horse',storage),'g-horse');
+ assert.deepEqual(recommendedMeshSources('m021'),[]);
+ assert.deepEqual(recommendedMeshSources('m023'),[]);
+ assert.deepEqual(recommendedMeshSources('m014'),[]);
+ assert.deepEqual(recommendedMeshSources('horse'),[]);
+ assert.ok(recommendedMeshSources('m008').includes('w-lion'));
+ assert.ok(recommendedMeshSources('m010').includes('w-tiger'));
+ assert.throws(()=>setAdoptedCreatureMesh('horse','g-horse',storage));
+ assert.throws(()=>setAdoptedCreatureMesh('m008','w-lion',storage));
+ assert.throws(()=>setAdoptedCreatureMesh('m023','g-mantis',storage));
+ assert.equal(adoptedCreatureMesh('horse',storage),'legacy');
+ const old=memoryStorage();
+ old.setItem(MESH_ADOPTION_STORAGE_KEY,JSON.stringify({m023:'g-mantis',horse:'g-horse'}));
+ assert.equal(adoptedCreatureMesh('m023',old),'legacy');
+ assert.equal(adoptedCreatureMesh('horse',old),'legacy');
 });
 test('existing protected original animal geometry is not modified by candidate metadata',()=>{
  assert.equal(baseMonsterId('summon_m005'),'m005');
