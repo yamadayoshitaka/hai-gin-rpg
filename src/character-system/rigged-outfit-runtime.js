@@ -556,15 +556,15 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
           jobId,studioVisibleLegAnatomy,meshName:part.name,
           isSkinnedMesh:part.isSkinnedMesh
         });
-        if((useSourceSkinnedLegs&&isTrouser)||retainSourceBoot){
-          // Source Feet contains full shin-to-ankle leather, not just a shoe.
-          // Its actual 65-bone skin weights follow the Ranger trouser skeleton;
-          // the original metal sabatons can continue to cover its toe region.
-          part.visible=true;
-          part.userData.retainedAsSkinnedTrouser=!!isTrouser;
-          part.userData.retainedAsSkinnedBoot=retainSourceBoot;
+        if(useSourceSkinnedLegs&&isTrouser){
+          // Retain the established battle trouser branch and its QA contract.
+          part.visible=true;part.userData.retainedAsSkinnedTrouser=true;
           retainedSkinnedLegMeshes++;
-          if(retainSourceBoot)retainedSkinnedBootMeshes++;
+        }else if(retainSourceBoot){
+          // Source Feet contains the actual shin-to-ankle boot, not merely a toe.
+          // Keep real 65-bone skin weights; steel sabatons cover its lower foot.
+          part.visible=true;part.userData.retainedAsSkinnedBoot=true;
+          retainedSkinnedLegMeshes++;retainedSkinnedBootMeshes++;
         }else{
           part.visible=false;part.userData.replacedByPlateArmor=true;
           suppressedBaseLegMeshes++;
