@@ -1248,8 +1248,8 @@ export function applyFaceColorMode(face,mode='clay',{contactColor,makeupType=0}=
    male?'male':'female',styleIndex);
  }
  const palette={
-  ...FACE_V7_PALETTE,lipBase:male?0xc9998b:
-   new THREE.Color(0xd9a699).lerp(new THREE.Color(makeup[0]),.32).getHex(),
+  ...FACE_V7_PALETTE,lipBase:male?(styleIndex===0?0xc9998b:makeup[0]):
+   (styleIndex===0?0xd9a699:makeup[0]),
   upperShadow:makeup[1],blush:makeup[2],eyeliner:makeup[3],
   lipstick:makeup[0],
   iris:male?0x50413b:parseInt(safeContactColor(contactColor).slice(1),16)
