@@ -32,7 +32,7 @@ small{font-size:11px}strong{font-weight:700}
 <header><a href="./dev-menu.html">← メンテナンス</a><strong>⚙ 灰銀｜毎時バッチ管理</strong><button class="refresh" id="refresh" type="button">状況を更新</button></header>
 <main><h1>品質改善バッチ：4系統</h1>
 <p>確認する対象を4つに整理しました。各カードから<strong>いまのゲーム画面を見る</strong>、実行状況を開く、次の指示を送る操作ができます。</p>
-<div class="summary" aria-live="polite"><span id="groupCount">4系統</span><span id="enabledCount">自動実行を確認中</span><span id="activeCount">GitHub実行状況を照合中</span></div>
+<div class="summary" aria-live="polite"><span id="groupCount">4系統</span><span id="enabledCount">自動実行を確認中</span><span id="activeCount">GitHub実行状況を照合中</span><span id="schedulerCount">ChatGPT実行予約を確認中</span></div>
 <p id="fresh" class="muted">GitHub Actionsは画面表示時・更新時に確認します。ChatGPTの実行中判定はこのページから取得できません。</p>
 <p class="panel"><strong>第1章漫画（ゲーム本編との照合）：</strong><span id="chapter4status">各ステージの本編原画を照合中</span>　<a href="./story-chapter1-approval.html?stage=c01-s04">漫画確認・差し戻し</a></p>
 <p id="releaseStatus" class="muted">公開コミットを照合中…</p>
@@ -76,6 +76,9 @@ function createCard(data){
  const source=tag('strong','',data.time+' ｜ '+data.source);schedule.appendChild(source);
  const detail=paragraph(data.source.includes('ChatGPT')?'直近の定期実行：'+TIME(data.last)+' （記録時点）':'直近の実行：取得中','muted');
  schedule.appendChild(detail);c.appendChild(schedule);
+ if(data.schedulerEnabled===false&&data.source.includes('ChatGPT'))
+  c.appendChild(paragraph('ChatGPT定期タスク：停止中。GitHub作業許可がONでも漫画の新規生成は始まりません。','status'));
+ if(data.blockedReason)c.appendChild(paragraph('直近の停止理由：'+data.blockedReason,'note'));
  if(data.details)c.appendChild(paragraph('主な作業：'+data.details,'muted'));
  if(data.goal)c.appendChild(paragraph('完了判定：'+data.goal,'note'));
 
@@ -176,8 +179,10 @@ async function updateSwitches(){
    g.autoEnabled=value.enabled;
    v.swText.textContent='品質改善の実行制御：'+(g.autoEnabled?'ON':'OFF')+(value.updatedAt?' ／ 更新 '+TIME(value.updatedAt):'');
    v.swBtn.textContent=g.autoEnabled?'一時停止を依頼':'有効化を依頼';
-   v.badge.textContent=g.autoEnabled?'実行制御：有効':'実行制御：停止';
-   v.badge.className='badge '+(g.autoEnabled?'on':'off');
+   const pausedScheduler=g.schedulerEnabled===false&&g.source.includes('ChatGPT');
+   v.badge.textContent=pausedScheduler?(g.autoEnabled?'作業許可ON・定期停止':'作業許可OFF・定期停止'):
+    g.autoEnabled?'実行制御：有効':'実行制御：停止';
+   v.badge.className='badge '+(pausedScheduler||!g.autoEnabled?'off':'on');
   }
   $('enabledCount').textContent='実行制御：'+groups.filter(g=>g.autoEnabled).length+'有効・'+groups.filter(g=>!g.autoEnabled).length+'停止';
  }catch(error){
@@ -237,7 +242,8 @@ async function start(){
   if(!Array.isArray(j.groups)||j.groups.length!==4)throw Error('4系統の設定が不正');
   $('cards').replaceChildren();groups.push(...j.groups);
   for(const g of groups)createCard(g);
-  $('enabledCount').textContent='毎時設定：'+groups.filter(g=>g.autoEnabled).length+'有効・'+groups.filter(g=>!g.autoEnabled).length+'停止';
+  $('enabledCount').textContent='GitHub作業許可：'+groups.filter(g=>g.autoEnabled).length+'有効・'+groups.filter(g=>!g.autoEnabled).length+'停止';
+  $('schedulerCount').textContent='ChatGPT定期タスク：'+groups.filter(g=>g.schedulerEnabled===true&&g.source.includes('ChatGPT')).length+'有効・'+groups.filter(g=>g.schedulerEnabled===false&&g.source.includes('ChatGPT')).length+'停止（記録時点）';
   $('fresh').textContent='ChatGPTタスク最終確認：'+TIME(j.asOf)+' ／ 現在処理中かはGitHub Actionsのみ取得可能';
   await updateSwitches();await updateChapter4();await updateRelease();await updateRuns();
  }catch(e){$('cards').textContent='管理データを読み込めませんでした：'+e.message}
