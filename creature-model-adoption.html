@@ -24,6 +24,10 @@ button{cursor:pointer;min-height:40px}button:disabled{opacity:.5;cursor:not-allo
 #actionGroup{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}#actionGroup button{font-size:12px;padding:8px 4px;min-width:0}#actionGroup button[aria-pressed=true]{border-color:#f8d892;background:#315e74}
 #external{display:block;margin-top:3px;font-size:12px}
 #notice{font-size:11px;color:#b5cdd9}
+#newBanner{grid-column:1/-1;background:#284759;color:#fce0ab;border-radius:8px;padding:8px;font-size:12px}
+#newOnly{background:#345d72;border-color:#dabf8d;font-size:12px;font-weight:800;margin:0}
+#newOnly[aria-pressed=false]{background:#18394f;font-weight:400}
+#sourceKind{grid-column:1/-1;font-size:12px;color:#f3d9a0;font-weight:700}
 @media(max-width:720px){
  header{padding:5px 9px;gap:8px}header h1{font-size:13px}header small{display:none}
  main{flex-direction:column}
@@ -31,7 +35,7 @@ button{cursor:pointer;min-height:40px}button:disabled{opacity:.5;cursor:not-allo
  label{font-size:11px}select,button{padding:7px;min-height:35px;font-size:12px;margin-top:2px}
  #adopt{min-height:37px}
  #warning,#status,#current,#notice{font-size:10px;line-height:1.45;margin:0}
- #warning,#status,#current,#actionGroup,#notice{grid-column:1/-1}
+ #warning,#status,#current,#newBanner,#newOnly,#sourceKind,#actionGroup,#notice{grid-column:1/-1}
  #status{padding:5px}
  section{min-height:150px}
  #viewToolbar{bottom:5px}
@@ -43,8 +47,11 @@ button{cursor:pointer;min-height:40px}button:disabled{opacity:.5;cursor:not-allo
 <header><a href="./dev-menu.html">← メニュー</a><h1>モンスター・召喚獣 モデル採用</h1><a href="./creature-reconstruction-plan.html">108体再構成計画</a><small>①キャラ → ②モデル → ③確認 → ④採用</small><a href="./monster-quality-review.html?monster=m001">品質KPI判定</a></header>
 <main><form id="controls" onsubmit="return false">
  <label>① モンスター・召喚獣<select id="species" aria-label="種類を選択"></select></label>
+ <div id="newBanner">🆕 今回追加したGLBは26件（CC0動作確認用24・高精細候補2）。以前のリアル狼などとは別です。</div>
+ <button id="newOnly" type="button" aria-pressed="true">🆕 新しい26件だけ表示中（押すと全モデル）</button>
  <label>② モデルの選択<select id="modelChoice" aria-label="使用するメッシュを選択">
   <option value="legacy">現行モデル（保持）</option></select></label>
+ <div id="sourceKind" role="status">候補の区分：確認中</div>
  <div id="current" role="status">現在の採用：確認中</div>
  <div id="warning">既存モデルは削除しません。選択するだけでは反映されません。</div>
  <button id="adopt" type="button" disabled>④ このモデルを採用</button>
@@ -75,7 +82,8 @@ import {createMonsterModel,disposeMonsterSculpture} from './src/monster-geometry
 import {startMonsterAction,animateMonsterModel} from './src/monster-animation.js';
 import {buildCombatObjectGeometry} from './src/combat-creature-geometry.js';
 import {fetchCreatureRegistry} from './src/creature-external-runtime.js';
-import {REAL_CREATURE_MESH_SOURCES,loadCreatureMeshSource} from './src/creature-real-source-catalog.js?v=web-mesh-26-v1';
+import {REAL_CREATURE_MESH_SOURCES,loadCreatureMeshSource} from './src/creature-real-source-catalog.js?v=web-mesh-26-ui-v2';
+import {WEB_CREATURE_MESH_SOURCES} from './src/creature-web-mesh-catalog.js';
 import {NONHUMAN_MONSTER_IDS,NONHUMAN_EXTRA_SUMMON_IDS,recommendedMeshSources,adoptedCreatureMesh,setAdoptedCreatureMesh,compatibleSourceWarning,protectedCreature} from './src/creature-mesh-adoption.js?v=web-mesh-26-v1';
 const $=id=>document.getElementById(id);
 const creatureIds=new Set(NONHUMAN_MONSTER_IDS);
@@ -101,6 +109,15 @@ const requested=query.get('monster')||query.get('summon')||query.get('species')|
 if(Array.from($('species').options).some(o=>o.value===requested))$('species').value=requested;
 let registry={entries:{...REAL_CREATURE_MESH_SOURCES}},handle=null,legacyActor=null,serial=0,ready=false,activeChoice='legacy',currentAction='idle';
 let frameLast=performance.now(),lastMotionRead=0;
+let newOnly=true;
+const newIds=Object.keys(WEB_CREATURE_MESH_SOURCES);
+const isNew=id=>Object.hasOwn(WEB_CREATURE_MESH_SOURCES,id);
+function labelKind(id){
+ return id==='legacy'?'旧モデル（NEWではありません）':
+ isNew(id)?'🆕 今回追加：'+(WEB_CREATURE_MESH_SOURCES[id].style==='low-poly'?'低ポリ・動作比較用':'高精細候補'):
+ id.startsWith('r-')?'以前のリアル候補（NEWではありません）':
+ '従来CC0モデル（NEWではありません）';
+}
 const scene=new THREE.Scene();scene.background=new THREE.Color(0x0c1d2b);
 const camera=new THREE.PerspectiveCamera(43,1,.01,2000);
 const renderer=new THREE.WebGLRenderer({canvas:$('stage'),antialias:true,powerPreference:'high-performance'});
@@ -188,19 +205,25 @@ function chooseSpecies(){
   $('adopt').disabled=true;
   $('status').textContent='PR #345/#346保護対象。旧モデルは保持し、採用・再検証対象から除外します。';
  }else options.disabled=false;
- if(!protectedCreature(id))for(const [name,keys] of [
-  ['種族別GLB候補（適合確認が必要）',[...rec]],
-  ['写実・外部GLB候補',Object.keys(REAL_CREATURE_MESH_SOURCES).filter(k=>!rec.has(k)&&!k.startsWith('g-')&&REAL_CREATURE_MESH_SOURCES[k].style!=='low-poly')],
-  ['無料CC0の動作比較用・低ポリGLB',Object.keys(REAL_CREATURE_MESH_SOURCES).filter(k=>!rec.has(k)&&REAL_CREATURE_MESH_SOURCES[k].style==='low-poly')],
-  ['従来のCC0素材50種',Object.keys(registry.entries).filter(k=>k.startsWith('q')&&!rec.has(k))]
- ]){
-  const group=document.createElement('optgroup');group.label=name;
-  for(const key of keys){
-   const entry=registry.entries[key];if(!entry)continue;
-   const op=new Option(entry.name+' ['+key+']'+(rec.has(key)?'・暫定推奨':''),key);
-   group.append(op);
+ if(!protectedCreature(id)){
+  function addGroup(name,keys){
+   const grp=document.createElement('optgroup');grp.label=name;
+   for(const key of keys){
+    const e=registry.entries[key];if(!e)continue;
+    const prefix=isNew(key)?'🆕 NEW ':key.startsWith('r-')?'以前のリアル ':'旧CC0 ';
+    grp.append(new Option(prefix+e.name+' ['+key+']'+(rec.has(key)?' ★この種族の候補':''),key));
+   }
+   if(grp.children.length)options.appendChild(grp);
   }
-  if(group.children.length)options.appendChild(group);
+  if(newOnly&&chosen!=='legacy'&&!isNew(chosen))
+   addGroup('現在採用中（新着ではありません）',[chosen]);
+  addGroup('🆕 今回追加・種族別おすすめ',newIds.filter(k=>rec.has(k)));
+  addGroup('🆕 今回追加・高精細候補（2件）',newIds.filter(k=>!rec.has(k)&&WEB_CREATURE_MESH_SOURCES[k].style==='realistic'));
+  addGroup('🆕 今回追加・無料動作比較モデル',newIds.filter(k=>!rec.has(k)&&WEB_CREATURE_MESH_SOURCES[k].style==='low-poly'));
+  if(!newOnly){
+   addGroup('以前のリアル候補5件',Object.keys(REAL_CREATURE_MESH_SOURCES).filter(k=>k.startsWith('r-')));
+   addGroup('従来のCC0メッシュ50件',Object.keys(registry.entries).filter(k=>k.startsWith('q')));
+  }
  }
  options.value=Array.from(options.options).some(o=>o.value===chosen)?chosen:'legacy';
  $('external').href=creatureIds.has(id)||id.startsWith('summon_')?
@@ -212,11 +235,12 @@ function chooseSpecies(){
 function previewChoice(){
  const id=$('species').value,source=$('modelChoice').value;
  activeChoice=source;
+ $('sourceKind').textContent='候補の区分：'+labelKind(source);
  disposePreview();
  $('sourceCredit').style.display='none';
  $('warning').textContent=compatibleSourceWarning(id,source)||
   '既存の造形データ・装飾・アニメーションは保持。採用しても元モデルを削除しません。';
- $('modelName').textContent=speciesName(id)+' / '+(source==='legacy'?'現行モデル':registry.entries[source]?.name||source);
+ $('modelName').textContent=(isNew(source)?'🆕 NEW / ':'')+speciesName(id)+' / '+(source==='legacy'?'現行モデル':registry.entries[source]?.name||source);
  const ticket=serial;
  if(source==='legacy'){
   showOriginal(id);
@@ -259,6 +283,7 @@ function previewChoice(){
   $('adopt').disabled=true;
  });
 }
+$('newOnly').onclick=()=>{newOnly=!newOnly;$('newOnly').setAttribute('aria-pressed',String(newOnly));$('newOnly').textContent=newOnly?'🆕 新しい26件だけ表示中（押すと全モデル）':'全モデル表示中（押すと新規26件のみ）';chooseSpecies();};
 $('species').onchange=chooseSpecies;
 $('modelChoice').onchange=()=>{previewChoice();savedStatus();};
 $('adopt').onclick=()=>{
@@ -312,7 +337,7 @@ function loop(time){
 fetchCreatureRegistry().then(result=>{
  registry={...result,entries:{...result.entries,...REAL_CREATURE_MESH_SOURCES}};
  $('status').textContent='登録済みCC0メッシュ '+result.all50Count+
-  '件＋外部リアル候補 '+Object.keys(REAL_CREATURE_MESH_SOURCES).length+'件。';
+  '件＋外部GLB '+Object.keys(REAL_CREATURE_MESH_SOURCES).length+'件（今回新着26件）。';
  chooseSpecies();
 }).catch(error=>{
  $('status').textContent='GLB登録一覧の取得失敗：'+error.message+'（現行モデルは使用できます）';
