@@ -60,9 +60,12 @@ function distribute(lines,num){
  });
 }
 function chapterSeen(context,chapter){
- return context.chapterOpeningSeen===true||
-  context?.storyFlags?.chapterOpenings?.[chapter]===true||
-  context?.storyFlags?.chapterOpenings?.[String(chapter)]===true;
+ // A global boolean cannot identify which chapter was seen. Respect only
+ // chapter-scoped persistence so finishing chapter 1 never suppresses chapter 2.
+ const seen=context?.storyFlags?.chapterOpenings;
+ return seen?.[chapter]===true||
+  seen?.[String(chapter)]===true||
+  (context.chapterOpeningSeen===true&&Number(context.chapterOpeningSeenForChapter)===chapter);
 }
 export function compactComicForStage(stageId,phase,context={}){
  const stage=CAMPAIGN_STAGE_BY_ID[stageId];
