@@ -12,6 +12,7 @@ import {CAMPAIGN_STAGES} from '../src/campaign-stage-plan.js';
 import {comicEditionsForStage,comicForStage} from '../src/story-chapter-comic.js';
 import {registeredStoryPanelAsset} from '../src/story-panel-registered-art.js';
 import {buildStage45ArtPrompt,STAGE45_IDS} from '../src/story-c01-stage45-art-guard.js';
+import {classifyCloudflareFailure,canOfferChatGPTHandoff,makeChatGPTHandoff} from '../src/story-generation-fallback.js';
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const p=rel=>path.join(root,rel),read=rel=>JSON.parse(fs.readFileSync(p(rel),'utf8'));
@@ -113,6 +114,18 @@ function progress(){
 }
 const out='qa-reports/story-stage-production/chapter1-free-render/';
 fs.mkdirSync(p(out),{recursive:true});
+let handoff=null;
+function queueChatGPTHandoff(reason,s,attemptedRequests=0){
+ if(!s||!canOfferChatGPTHandoff(reason))return null;
+ const queue=makeChatGPTHandoff({reason,attemptedRequests,shot:{
+  stageId:s.stage.id,edition:s.edition,gender:s.gender,shotId:s.shot.id}});
+ handoff=queue;
+ // This report is not a ChatGPT API call or proof of rendered art.
+ fs.writeFileSync(p(out+'chatgpt-handoff.json'),JSON.stringify(queue,null,2)+'\n');
+ console.log(JSON.stringify({chatGPTManualHandoff:queue.chatGPTReviewUrl,
+  shotKey:queue.shotKey,reason,requiresUserAction:true,actualChatGPTImagesGenerated:0}));
+ return queue;
+}
 function save(meta){fs.writeFileSync(p(out+'last-run.json'),JSON.stringify({...progress(),...meta},null,2)+'\n');}
 if(mode==='plan'){
  const result=progress();save({mode:'plan',apiRequests:0,imagesRendered:0});
@@ -123,8 +136,12 @@ if(mode==='plan'){
  process.exit(0);
 }
 const acct=process.env.CLOUDFLARE_ACCOUNT_ID||'',token=process.env.CLOUDFLARE_WORKERS_AI_API_TOKEN||'';
-if(process.env.CLOUDFLARE_FREE_PLAN_CONFIRMED!=='true'||!/^[a-f0-9]{32}$/i.test(acct)||token.length<20)
- throw Error('FREE_ONLY: Variable and two secrets required; no API call attempted');
+if(process.env.CLOUDFLARE_FREE_PLAN_CONFIRMED!=='true'||!/^[a-f0-9]{32}$/i.test(acct)||token.length<20){
+ const first=pages.filter(pg=>pg.stage>=startStage&&pg.stage<=throughStage)
+  .flatMap(pg=>pg.shots).find(s=>['MISSING','LEGACY_NATIVE_DEFECT_NEEDS_REGEN'].includes(status(s)));
+ queueChatGPTHandoff('CLOUDFLARE_NOT_CONFIGURED',first,0);
+ throw Error('FREE_ONLY: Missing GitHub Actions Free configuration; no API calls. ChatGPT manual queue emitted if an unregistered shot exists');
+}
 const api='https://api.cloudflare.com/client/v4/accounts/'+acct+'/ai/run/@cf/black-forest-labs/flux-2-klein-4b';
 const exec=(program,items)=>{
  const v=spawnSync(program,items,{cwd:root,encoding:'utf8'});
