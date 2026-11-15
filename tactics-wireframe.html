@@ -2982,6 +2982,18 @@ function placeStoryFormation(team,unit){
  const lane=['north','center','south'].includes(unit.spawnLane)?unit.spawnLane:'center';
  const stageRank=Math.max(0,Math.min(3,Math.floor(Number(unit.spawnRank)||0)));
  const rowByLane={north:55,center:116,south:177};
+ const cell=Number(unit.formationCell);
+ if(team===0&&unit.formationCell!=null&&Number.isInteger(cell)&&cell>=0&&cell<16){
+  // Contingents occupy their authored 4x4 positions on the actual battlefield.
+  // Troops from the same source form a compact cluster inside that cell.
+  const cellKey=lane+':'+stageRank+':cell:'+cell;
+  const n=storyLaneCounters.get(cellKey)||0;
+  storyLaneCounters.set(cellKey,n+1);
+  const depth=stageRank*5.5+Math.floor(cell/4)*4.1+Math.floor(n/4)*1.85;
+  const x=109-depth;
+  const z=rowByLane[lane]+((cell%4)-1.5)*8+(n%4-1.5)*1.65;
+  return new THREE.Vector3((x-6)*CELL,0,(z-6)*CELL);
+ }
  const key=lane+':'+stageRank;
  const idx=storyLaneCounters.get(key)||0;
  storyLaneCounters.set(key,idx+1);
@@ -5874,6 +5886,8 @@ function selectedExplorationLoot(buildingId){
 }
 function issueBuildingExploration(team,squadId,buildingId,{beforeBattle=false}={}){
  const id=String(squadId),side=Number(team);
+ if(side===0&&storyRequest?.availableSquadOrders?.[id]&&
+  !storyRequest.availableSquadOrders[id].includes('explore'))return false;
  if(!beforeBattle&&side===0&&(!hasSquadCommander(id)||!canChangeSquadOrder(id)))return false;
  const target=selectedExplorationLoot(buildingId);
  if(!target)return false;
@@ -5901,6 +5915,8 @@ function issueBuildingExploration(team,squadId,buildingId,{beforeBattle=false}={
 }
 function setStartingSquadOrder(team,squadId,mode,buildingId=null){
  const id=String(squadId),side=Number(team),key=squadOrderKey(side,id);
+ if(side===0&&storyRequest?.availableSquadOrders?.[id]&&
+  !storyRequest.availableSquadOrders[id].includes(mode))return false;
  if(mode==='explore')return issueBuildingExploration(side,id,buildingId,{beforeBattle:true});
   // Support stance is a valid priest-dependent prebattle command. A resting
   // position leaves healing AI free to treat casualties once combat starts.
@@ -9289,7 +9305,7 @@ async function finishBattleLoading(){
   const planHeading=document.createElement('strong');
   planHeading.textContent='⚑ 開戦前の隊列編成';
   const planHint=document.createElement('p');
-  planHint.textContent=storyRequest?.sortieTeamCount?'宿屋で確定した最大3隊の人数・隊長・隊列・出撃位置を引き継ぎます。号令は隊ごとに設定できます。':'最大3班へ隊を割り当てます。号令は班全体へ届き、職業に応じて攻撃・守備・支援を行います。宿屋で隊長を選定できます。';
+  planHint.textContent=storyRequest?.sortieTeamCount?'宿屋の最大3班×各4隊・4×4配置と隊長を引き継ぎます。出撃位置は戦闘前に設定済みです。号令は隣接するジョブで変わります。':'最大3班へ隊を割り当てます。号令は班全体へ届き、職業に応じて攻撃・守備・支援を行います。宿屋で隊長を選定できます。';
   planHint.style.cssText='font:11px/1.55 system-ui;color:#c3dcea;margin:5px 0 8px';
   const planList=document.createElement('div');planList.id='openingPlanList';
   planList.style.cssText='overflow:hidden;display:grid;gap:6px';
@@ -9462,14 +9478,20 @@ async function finishBattleLoading(){
     for(const [value,label] of Object.entries(INITIAL_ORDER_LABELS)){
      const option=document.createElement('option');option.value=value;option.textContent=label;
       if(team===0&&storyRequest?.sortieTeamCount){
-       const jobs=storyRequest.units.filter(u=>String(u.squadId)===String(id)).map(u=>u.job);
-       if(value==='support'&&!jobs.includes('僧侶'))option.disabled=true;
-       if(value==='explore'&&!jobs.some(j=>j==='忍者'||j==='盗賊'))option.disabled=true;
+       const allowed=storyRequest.availableSquadOrders?.[String(id)];
+       if(allowed){if(!allowed.includes(value))option.disabled=true;}
+       else{
+        const jobs=storyRequest.units.filter(u=>String(u.squadId)===String(id)).map(u=>u.job);
+        if(value==='support'&&!jobs.includes('僧侶'))option.disabled=true;
+        if(value==='explore'&&!jobs.some(j=>j==='忍者'||j==='盗賊'))option.disabled=true;
+       }
       }
       orderSelect.append(option);
     }
     const innOrder=team===0?storyRequest?.initialSquadOrders?.[String(id)]:null;
-     orderSelect.value=innOrder&&Object.hasOwn(INITIAL_ORDER_LABELS,innOrder)&&innOrder!=='explore'?innOrder:'charge';
+     const validInn=innOrder&&Object.hasOwn(INITIAL_ORDER_LABELS,innOrder)&&innOrder!=='explore'&&
+      !orderSelect.querySelector('option[value="'+innOrder+'"]')?.disabled;
+     orderSelect.value=validInn?innOrder:(team===0&&storyRequest?.sortieTeamCount?'hold':'charge');
     const effectLabel=document.createElement('small');
     effectLabel.className='openingCommandEffect';effectLabel.textContent=orderEffect(orderSelect.value);
     const buildingPicker=createExplorationPicker();

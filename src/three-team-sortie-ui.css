@@ -1,35 +1,60 @@
-#panel.formation-command-ui{width:min(97vw,940px);max-height:97dvh;padding:8px 12px;gap:5px}
-#panel.formation-command-ui #panelContent{overflow:hidden!important;gap:4px}
-.sortiePlanner{display:grid;gap:6px;min-height:0;align-content:start}
-.sortieTop{display:flex;align-items:center;gap:8px;justify-content:space-between;font-size:12px}
-.sortieTop small{font-size:11px;color:#c4d7dc}
-.sortieModes,.sortieFormations{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}
-.sortieModes{grid-template-columns:repeat(2,minmax(0,1fr))}
-.sortiePlanner button{min-width:0!important;white-space:normal;line-height:1.25}
-.sortieModes button,.sortieFormations button{min-height:36px!important;padding:5px!important;font-size:12px!important}
+#panel.formation-command-ui{width:min(96vw,800px);max-height:min(95dvh,820px);padding:8px 11px;gap:5px}
+#panel.formation-command-ui .toprow{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:start;gap:7px}
+#panel.formation-command-ui .toprow h2{font-size:clamp(16px,3.7vw,23px)!important;line-height:1.18;overflow-wrap:anywhere;margin:0;min-width:0}
+#panel.formation-command-ui #panelClose{min-width:70px;min-height:36px;font-size:12px!important;white-space:nowrap;padding:6px 8px}
+#panel.formation-command-ui #panelContent{overflow:hidden!important;min-height:0;gap:4px}
+.sortiePlanner{display:grid;gap:8px;min-height:0;align-content:start;min-width:0}
+.sortiePlanner button{min-width:0!important;white-space:normal;line-height:1.25;touch-action:manipulation}
 .sortiePlanner .selected{background:#644725!important;border-color:#ffe1a0!important;box-shadow:inset 0 0 0 1px #d7b879}
-.sortieTeams{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}
-.sortieTeams button{min-height:62px!important;text-align:left;padding:5px 7px!important;display:grid;gap:2px;font-size:11px!important;overflow:hidden}
-.sortieTeams strong{font-size:13px;color:#ffe0a0}
-.sortieTeams small{font-size:10px;white-space:nowrap;text-overflow:ellipsis;overflow:hidden}
-.sortieFormationTitle,.sortieSection{display:flex;align-items:center;gap:8px;justify-content:space-between;font-size:12px}
-.sortieFormationTitle small,.sortieSection small{color:#bfd3d9;font-size:10px}
-.sortieFormationGrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}
-.sortieFormationGrid button{display:grid;min-height:71px!important;padding:5px!important;gap:2px;align-content:center;text-align:center}
-.sortieFormationGrid strong{font-size:13px;color:#ffe3ac}
-.sortieFormationGrid small{font-size:10px;color:#d5e3e8}
-.sortieJobs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}
-.sortieJobs button{min-height:40px!important;padding:4px!important;font-size:11px!important}
-.sortieJobs small,.sortieCaptains small{display:block;font-size:9px;color:#d1e0e8}
-.sortieBottom{display:grid;grid-template-columns:1fr 1.5fr;gap:8px}
-.sortieCounts,.sortieCaptains{display:flex;align-items:center;flex-wrap:wrap;gap:4px;font-size:11px;min-width:0}
-.sortieCounts span,.sortieCaptains span{width:100%;font-size:11px;color:#e6cb99}
-.sortieCounts button{min-width:31px!important;min-height:35px!important;font-size:16px!important;padding:3px!important}
-.sortieCounts input{min-width:0;width:60px;max-width:70px;min-height:35px;padding:5px;background:#10273b;color:#fff0d3;border:1px solid #8da8b7;border-radius:5px;text-align:center}
-.sortieCaptains button{min-height:35px!important;padding:4px 7px!important;font-size:10px!important}
-.sortieOrders{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
-.sortieOrders button{min-height:61px!important;font-size:12px!important;padding:7px!important;text-align:left}
-.sortieOrders small{display:block;font-size:10px;color:#d1e0e8;margin-top:5px}
-.sortieHint{font-size:10px;color:#c6d6dd;line-height:1.4}
-@media(max-width:530px){.sortieTeams button{padding:4px!important}.sortieTeams strong{font-size:11px}.sortieFormationGrid strong{font-size:11px}.sortieFormationGrid small{font-size:9px}.sortieBottom{grid-template-columns:1fr}.sortieOrders{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media(max-height:620px){#panel.formation-command-ui{padding:5px 9px;gap:3px}.sortiePlanner{gap:3px}.sortieTeams button{min-height:47px!important}.sortieFormationGrid button{min-height:48px!important}.sortieJobs button{min-height:32px!important}.sortieModes button,.sortieFormations button{min-height:29px!important}.sortieHint{font-size:9px}}
+.sortieTop{display:flex;justify-content:space-between;align-items:center;gap:7px;font-size:12px}
+.sortieTop small{color:#c6dae1;font-size:10px;text-align:right}
+.sortieTeams{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.sortieTeams button{text-align:left;padding:7px!important;min-height:53px!important}
+.sortieTeams strong{display:block;font-size:13px;color:#ffdda0}
+.sortieTeams small{display:block;font-size:11px;margin-top:4px}
+.sortieBar{display:grid;grid-template-columns:1.6fr 1fr;gap:6px}
+.sortieBar button{padding:8px 7px!important;min-height:37px!important;font-size:12px!important}
+.sortieGridHint{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:12px}
+.sortieGridHint small{font-size:10px;color:#c1d6de}
+.sortieFormationGrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-template-rows:repeat(4,clamp(42px,7.4dvh,57px));gap:5px}
+.sortieFormationGrid button{display:grid;align-content:center;justify-content:center;gap:2px;padding:4px 1px!important;overflow:hidden;border-radius:6px}
+.sortieFormationGrid button span{font-size:clamp(11px,2.8vw,14px);font-weight:700;color:#ffe3ad;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sortieFormationGrid button small{font-size:10px;color:#cde0e7}
+.sortieGridFooter{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.sortieGridFooter small{font-size:10px;color:#d2e0e4}
+.sortieGridFooter button{padding:6px 12px!important;font-size:11px!important;min-height:30px!important}
+.sortieCaptains b{display:block;font-size:12px;margin-bottom:4px}
+.sortieCaptainButtons{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}
+.sortieCaptainButtons button{font-size:11px!important;padding:7px 4px!important;min-height:34px!important}
+.sortieCaptainButtons small{font-size:10px;color:#cbe1e8}
+.sortieCaptains>[data-sortie-view="captains"]{display:none}
+.sortieCaptainChoices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+.sortieCaptainChoices button{min-height:47px!important;padding:8px!important;font-size:12px!important}
+.sortieCaptainChoices button small{display:block;color:#c6dbe2;font-size:10px}
+.sortieSubHead{display:flex;justify-content:space-between;align-items:center;gap:6px}
+.sortieSubHead b{font-size:13px}
+.sortieSubHead button{padding:7px 11px!important;font-size:11px!important;min-height:36px!important}
+.sortieTemplateChoices{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.sortieTemplateChoices button{padding:10px 5px!important;display:grid;justify-items:center;gap:9px;font-size:12px!important}
+.sortieMiniGrid{display:grid;grid-template-columns:repeat(4,9px);grid-template-rows:repeat(4,9px);gap:3px}
+.sortieMiniGrid i{display:block;border:1px solid #698999;border-radius:2px;background:#102638}
+.sortieMiniGrid i.occupied{background:#dfb468;border-color:#f5dcaa}
+.sortieJobChoices{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+.sortieJobChoices button{min-height:58px!important;padding:8px 4px!important}
+.sortieJobChoices strong{display:block;font-size:13px;color:#ffe4b2}
+.sortieJobChoices small{display:block;font-size:10px;color:#cbdfe6}
+.sortiePager,.sortieSubActions{display:flex;justify-content:center;gap:8px;align-items:center}
+.sortiePager button,.sortieSubActions button{padding:8px!important;font-size:12px!important}
+.sortieCountControl{display:grid;grid-template-columns:repeat(2,minmax(0,1fr)) 76px repeat(2,minmax(0,1fr));gap:5px}
+.sortieCountControl button{min-height:45px!important}
+.sortieCountControl input{width:100%;min-width:0;border:1px solid #7e9bab;border-radius:7px;background:#122a40;color:#fff0d3;font:inherit;text-align:center}
+.sortieSelectedLabel{margin:0;color:#ffe1a4}
+.sortieOrders{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}
+.sortieOrders button{text-align:left;padding:8px!important;font-size:12px!important}
+.sortieOrders strong{display:block;color:#ffe2a6;font-size:12px}
+.sortieOrders small{display:block;font-size:10px;color:#d0e1e6}
+.sortieAdjacency{display:grid;gap:2px;font-size:11px}
+.sortieAdjacency small,.sortieHint{font-size:10px;color:#bdcfd5;line-height:1.4}
+@media(max-width:450px){#panel.formation-command-ui{padding:6px 8px}.sortiePlanner{gap:5px}.sortieTeams button{min-height:45px!important;padding:4px!important}.sortieTeams strong{font-size:11px}.sortieFormationGrid{grid-template-rows:repeat(4,clamp(39px,7dvh,48px))}.sortieCaptainButtons{grid-template-columns:repeat(2,minmax(0,1fr))}.sortieJobChoices{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-height:620px){.sortieCaptains>.sortieCaptainButtons{display:none}.sortieCaptains>[data-sortie-view="captains"]{display:block;font-size:11px!important;padding:6px!important;min-height:29px!important}}
+@media(max-height:680px){#panel.formation-command-ui{max-height:98dvh;padding:4px 7px;gap:2px}.sortiePlanner{gap:3px}.sortieFormationGrid{grid-template-rows:repeat(4,34px);gap:3px}.sortieTeams button{min-height:36px!important;padding:3px!important}.sortieTeams strong{font-size:11px}.sortieTeams small{font-size:9px;margin-top:1px}.sortieBar button{min-height:29px!important;padding:4px!important}.sortieCaptainButtons button{min-height:27px!important;padding:3px!important}}

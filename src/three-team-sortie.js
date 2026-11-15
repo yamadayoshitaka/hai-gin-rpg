@@ -5,6 +5,13 @@
  */
 export const SORTIE_TEAM_IDS=Object.freeze([1,2,3]);
 export const SORTIE_SQUADS_PER_GROUP=4;
+export const SORTIE_GRID_EDGE=4;
+export const SORTIE_GRID_CELLS=SORTIE_GRID_EDGE*SORTIE_GRID_EDGE;
+export const SORTIE_FORMATION_CELLS=Object.freeze({
+ attack:Object.freeze([1,2,5,6]),
+ balanced:Object.freeze([5,6,9,10]),
+ support:Object.freeze([9,10,13,14])
+});
 export const SORTIE_FORMATIONS=Object.freeze({
  attack:'前進陣形',balanced:'標準陣形',support:'後衛陣形'
 });
@@ -16,7 +23,7 @@ const clamp=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
 const ownSquads=game=>(game?.campaign?.squads||[]).filter(s=>s.count>0&&String(s.commanderId??'player')!=='reserve');
 export const stageIsControlled=(game,stage)=>Boolean(stage?.id&&game?.completedStages?.includes(stage.id));
 export const allowedSortieSlots=(game,stage)=>stageIsControlled(game,stage)?allSlots:SORTIE_ENTRY_SLOTS;
-const blankTeam=id=>({id,slots:Array(SORTIE_SQUADS_PER_GROUP).fill(null),counts:{},captainId:null,formation:'balanced',deploymentSlot:SORTIE_ENTRY_SLOTS[id-1],initialOrder:'charge'});
+const blankTeam=id=>({id,slots:Array(SORTIE_SQUADS_PER_GROUP).fill(null),grid:Array(SORTIE_GRID_CELLS).fill(null),counts:{},captainId:null,formation:'balanced',deploymentSlot:SORTIE_ENTRY_SLOTS[id-1],initialOrder:'charge'});
 const teamOf=(game,id)=>game.sortiePlan?.teams?.find(t=>t.id===Number(id));
 const rarityScore=s=>({N:0,R:1,SR:2,SSR:3,UR:4})[s?.rarity]??0;
 
@@ -45,6 +52,13 @@ export function ensureSortiePlan(game){
    if(valid){team.slots[index]=sid;team.counts[sid]=valid;remaining.set(sid,available-valid);seen.add(sid);}
   });
   team.formation=Object.hasOwn(SORTIE_FORMATIONS,old.formation)?old.formation:'balanced';
+  const oldGrid=Array.isArray(old.grid)&&old.grid.length===SORTIE_GRID_CELLS?old.grid:null;
+  team.slots.filter(Boolean).forEach((sid,index)=>{
+   const savedIndex=oldGrid?.findIndex(v=>String(v)===sid);
+   const desired=Number.isInteger(savedIndex)&&savedIndex>=0&&!team.grid[savedIndex]?savedIndex:SORTIE_FORMATION_CELLS[team.formation][index];
+   const cell=!team.grid[desired]?desired:team.grid.indexOf(null);
+   if(cell>=0)team.grid[cell]=sid;
+  });
   team.deploymentSlot=Number.isInteger(old.deploymentSlot)&&allSlots.includes(old.deploymentSlot)?old.deploymentSlot:SORTIE_ENTRY_SLOTS[id-1];
   const candidates=Object.keys(team.counts).map(sid=>byId.get(sid)).filter(Boolean);
   const captain=candidates.find(s=>String(s.id)===String(old.captainId))||
@@ -61,6 +75,7 @@ export function ensureSortiePlan(game){
    team.counts[String(s.id)]=s.count;
   });
   teams.forEach(team=>{
+   team.slots.filter(Boolean).forEach((sid,index)=>{team.grid[SORTIE_FORMATION_CELLS.balanced[index]]=sid;});
    const candidates=sources.filter(s=>team.counts[String(s.id)]);
    team.captainId=[...candidates].sort((a,b)=>rarityScore(b)-rarityScore(a))[0]?.id??null;
   });
@@ -89,11 +104,14 @@ export function setSortieCount(game,teamId,squadId,count){
    const empty=team.slots.indexOf(null);
    if(empty<0)throw Error('1班に配置できる隊は最大4隊です。');
    team.slots[empty]=sid;
+   const preferred=SORTIE_FORMATION_CELLS[team.formation][empty];
+   team.grid[team.grid[preferred]===null?preferred:team.grid.indexOf(null)]=sid;
   }
   team.counts[sid]=n;
  }else{
   delete team.counts[sid];
   team.slots=team.slots.map(id=>id===sid?null:id);
+  team.grid=team.grid.map(id=>id===sid?null:id);
  }
  const candidates=sortieTeamSquads(game,teamId);
  if(!candidates.some(s=>String(s.id)===String(team.captainId))){
@@ -119,7 +137,10 @@ export function setSortieJobSlot(game,teamId,slotIndex,squadId){
  let available=source?source.count-elsewhere:0;
  if(sid&&available<=0&&!game.sortiePlan.teams.some(t=>t!==team&&(t.counts[sid]||0)>0))
   throw Error('このジョブの配属可能人数がありません。');
- if(previous){delete team.counts[previous];team.slots[index]=null;}
+ if(previous){
+  delete team.counts[previous];team.slots[index]=null;
+  team.grid=team.grid.map(id=>id===previous?null:id);
+ }
  if(sid){
   // From the default all-in-first-group formation, move ten soldiers to
   // another group on a job tap; never duplicate real people.
@@ -130,14 +151,63 @@ export function setSortieJobSlot(game,teamId,slotIndex,squadId){
    if(!donor.counts[sid]){
     delete donor.counts[sid];
     donor.slots=donor.slots.map(v=>v===sid?null:v);
+    donor.grid=donor.grid.map(v=>v===sid?null:v);
    }
    available=moved;
   }
   team.slots[index]=sid;
   team.counts[sid]=Math.min(10,available);
+  const target=SORTIE_FORMATION_CELLS[team.formation][index];
+  team.grid[team.grid[target]===null?target:team.grid.indexOf(null)]=sid;
  }
  ensureSortiePlan(game);
  return teamOf(game,teamId);
+}
+/** Assign or move a real troop contingent on the 4x4 board.
+ * One contingent occupies one cell and each group still holds at most four.
+ */
+export function setSortieGridCell(game,teamId,cellIndex,squadId){
+ ensureSortiePlan(game);
+ const team=teamOf(game,teamId),index=Number(cellIndex);
+ if(!team||!Number.isInteger(index)||index<0||index>=SORTIE_GRID_CELLS)
+  throw Error('4×4の有効なマスを選んでください。');
+ const here=team.grid[index],sid=squadId===null||squadId===undefined||squadId===''?null:String(squadId);
+ if(here===sid)return team;
+ // Moving a deployed squad into another cell swaps with the occupant.
+ if(sid&&team.slots.includes(sid)){
+  const origin=team.grid.indexOf(sid);
+  if(origin>=0)team.grid[origin]=here;
+  team.grid[index]=sid;
+ }else{
+  let slot=here?team.slots.indexOf(here):team.slots.indexOf(null);
+  if(slot<0)throw Error('1班に配置できる隊は最大4隊です。');
+  setSortieJobSlot(game,teamId,slot,sid);
+  const updated=teamOf(game,teamId);
+  updated.grid=updated.grid.map(value=>value===sid||value===here?null:value);
+  if(sid)updated.grid[index]=sid;
+ }
+ const refreshed=ensureSortiePlan(game).teams.find(t=>t.id===Number(teamId));
+ if(!availableSortieOrders(game,teamId).includes(refreshed.initialOrder))refreshed.initialOrder='hold';
+ return refreshed;
+}
+/** Orthogonal adjacency (up/down/left/right) of different jobs within a group. */
+export function sortieAdjacentJobs(game,teamId){
+ const team=teamOf(game,teamId);
+ if(!team)return [];
+ const squadMap=new Map(ownSquads(game).map(s=>[String(s.id),s]));
+ const links=[];
+ for(let i=0;i<SORTIE_GRID_CELLS;i++){
+  const left=team.grid?.[i],a=squadMap.get(String(left));
+  if(!left||!a)continue;
+  const neighbors=[];
+  if(i%SORTIE_GRID_EDGE<SORTIE_GRID_EDGE-1)neighbors.push(i+1);
+  if(i+SORTIE_GRID_EDGE<SORTIE_GRID_CELLS)neighbors.push(i+SORTIE_GRID_EDGE);
+  for(const other of neighbors){
+   const right=team.grid[other],b=squadMap.get(String(right));
+   if(right&&left!==right&&b)links.push({a:a.job,b:b.job,first:i,second:other});
+  }
+ }
+ return links;
 }
 export function setSortieCaptain(game,teamId,squadId){
  ensureSortiePlan(game);
@@ -151,6 +221,10 @@ export function setSortieFormation(game,teamId,formation){
  const team=teamOf(game,teamId);
  if(!team||!Object.hasOwn(SORTIE_FORMATIONS,formation))throw Error('有効な隊列を選んでください。');
  team.formation=formation;
+ // A chosen preset rearranges current contingents on the same 4x4 board.
+ const order=team.slots.filter(Boolean);
+ team.grid=Array(SORTIE_GRID_CELLS).fill(null);
+ order.forEach((sid,index)=>{team.grid[SORTIE_FORMATION_CELLS[formation][index]]=sid;});
  if(!availableSortieOrders(game,teamId).includes(team.initialOrder))team.initialOrder='hold';
  return team;
 }
@@ -173,8 +247,14 @@ export function availableSortieOrders(game,teamId){
  const jobs=new Set(sortieTeamSquads(game,teamId).map(s=>s.job));
  if(!jobs.size)return [];
  const orders=['charge','defend','hold','retreat'];
- if(jobs.has('僧侶'))orders.push('support');
- if(jobs.has('忍者')||jobs.has('シーフ'))orders.push('explore');
+ const links=sortieAdjacentJobs(game,teamId);
+ // A healer needs a neighboring unit to issue group support; a scout needs
+ // a neighboring unit to cover a building search. Moving the same jobs
+ // apart changes command availability without consuming personnel.
+ if(links.some(link=>(link.a==='僧侶'&&link.b!=='僧侶')||(link.b==='僧侶'&&link.a!=='僧侶')))
+  orders.push('support');
+ if(links.some(link=>['忍者','シーフ'].includes(link.a)||['忍者','シーフ'].includes(link.b)))
+  orders.push('explore');
  return orders;
 }
 export function setSortieOrder(game,teamId,order){
@@ -223,6 +303,7 @@ export function allocateThreeTeamSortie(game,stage,limit=SORTIE_TOTAL_RENDER_LIM
  }
  return allocations.filter(x=>x.count>0).map(x=>({
   teamId:x.team.id,squad:x.squad,count:x.count,
+  formationCell:x.team.grid.indexOf(String(x.squad.id)),
   deploymentSlot:positions.get(x.team.id),
   captain:sources.get(String(x.team.captainId))||null,
   formation:x.team.formation,

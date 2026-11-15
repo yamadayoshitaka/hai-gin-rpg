@@ -4,7 +4,7 @@ import {slotLane,slotRank} from './inn-deployment.js';
 import {captainBonus} from './army-groups.js';
 import {squadEquipmentBonus} from './game-core-flow.js';
 import {storyStageContext} from './story-narrative-flow.js';
-import {allocateThreeTeamSortie,sortieTeamCount,sortieTeams} from './three-team-sortie.js';
+import {allocateThreeTeamSortie,availableSortieOrders,sortieTeamCount,sortieTeams} from './three-team-sortie.js';
 
 /** Battle-compatible adaptation of the three user-defined sortie teams.
  * Strategists are never assigned a deployment cell: the protagonist is carried
@@ -21,7 +21,7 @@ export function makeThreeTeamBattleRequest(game,stage,battleId){
  const armyGroupBySquad=Object.fromEntries(teams.map(t=>[String(t.id),t.id]));
  const heroTeamId=teams[0]?.id;
  let heroIncluded=false;
- const units=chosen.flatMap(({teamId,squad,count,deploymentSlot,formation})=>{
+ const units=chosen.flatMap(({teamId,squad,count,deploymentSlot,formation,formationCell})=>{
   const captain=captainById.get(teamId),bonus=captainBonus(captain),
    equipment=squadEquipmentBonus(squad);
   return Array.from({length:count},()=>{
@@ -36,7 +36,7 @@ export function makeThreeTeamBattleRequest(game,stage,battleId){
      id:captain.id,name:captain.characterName||captain.name||captain.job+'代表',
      rarity:captain.rarity,job:captain.job
     }:null,
-    formationType:formation,
+    formationType:formation,formationCell,
     spawnLane:slotLane(deploymentSlot),spawnRank:slotRank(deploymentSlot),deploymentSlot
    };
   });
@@ -61,7 +61,9 @@ export function makeThreeTeamBattleRequest(game,stage,battleId){
   enemyMonsterIds:monsterBattle?[...stage.monsters]:[],
   enemyName:monsterBattle?'魔物群':storyContext?.enemy||'紅炎軍',
   enemyCount:monsterBattle?Math.min(20,Math.max(4,stage.monsters.length*3)):Math.min(50,12+stage.difficulty),
-  units,commanders,armyGroupBySquad,initialSquadOrders:orders,tacticalTemplate:null,
+  units,commanders,armyGroupBySquad,initialSquadOrders:orders,
+  availableSquadOrders:Object.fromEntries(teams.map(t=>[String(t.id),availableSortieOrders(game,t.id)])),
+  tacticalTemplate:null,
   totalReserves:reserveTroops(game.campaign),sortieTeamCount:teams.length
  };
 }
