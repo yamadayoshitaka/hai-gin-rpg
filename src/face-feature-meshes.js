@@ -784,8 +784,8 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
    if(female){
     // Eyeliner shares the eye lid's actual surface and transformation.
     const linerMat=new THREE.MeshBasicMaterial({
-     color:0x251a24,side:THREE.DoubleSide,transparent:true,
-     opacity:upper?.86:.40,depthWrite:false,depthTest:true,
+     color:0x3b2b35,side:THREE.DoubleSide,transparent:true,
+     opacity:upper?1:.55,depthWrite:false,depthTest:true,
      polygonOffset:true,polygonOffsetFactor:-5,polygonOffsetUnits:-5
     });
     const liner=buildGrid(label+'_EYELINER',28,3,(u,v)=>{
@@ -821,7 +821,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
    // RGBA mesh vertices feather at the edges; no floating decal card.
    const upperEyelid=root.getObjectByName(eyeLabel+'_UPPER_ANATOMICAL_EYELID');
    const shadowMaterial=new THREE.MeshBasicMaterial({
-    color:0xa48087,transparent:true,opacity:.35,
+    color:0xa48087,transparent:true,opacity:.79,
     side:THREE.DoubleSide,depthWrite:false,vertexColors:true
    });
    const upperShadow=buildGrid(eyeLabel+'_UPPER_EYESHADOW',28,6,(u,v)=>{
@@ -832,7 +832,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
    const pigment=[];
    for(let j=0;j<=6;j++)for(let i=0;i<=28;i++){
     const u=i/28,v=j/6,outer=side===-1?1-u:u;
-    pigment.push(1,1,1,.81*Math.pow(Math.sin(Math.PI*u),.6)*
+    pigment.push(1,1,1,.30*Math.pow(Math.sin(Math.PI*u),.6)*
      Math.pow(Math.sin(Math.PI*v),.72)*(.70+.30*outer));
    }
    upperShadow.geometry.setAttribute('color',
