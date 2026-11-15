@@ -158,7 +158,9 @@ jobs:
           done
           echo "::error::Pages artifact not visible after upload; aborting deploy safely"
           exit 1
-      - name: Refuse to publish an older commit after main advances
+      # Serialized releases may trail active editing, but must never roll back
+      # a successful release or publish a commit outside main's history.
+      - name: Publish source in order without starving active development
         id: latest
         shell: bash
         env:
@@ -166,12 +168,26 @@ jobs:
         run: |
           set -euo pipefail
           newest=$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/heads/main" --jq '.object.sha')
-          if [[ "${newest}" != "${GITHUB_SHA}" ]]; then
-            echo "publish=false" >> "${GITHUB_OUTPUT}"
-            echo "::notice::Skipping stale Pages release ${GITHUB_SHA}; newer main is ${newest}"
-          else
-            echo "publish=true" >> "${GITHUB_OUTPUT}"
+          relation=$(gh api "repos/${GITHUB_REPOSITORY}/compare/${GITHUB_SHA}...${newest}" --jq '.status')
+          case "${relation}" in
+            ahead|identical) ;;
+            *)
+              echo "publish=false" >> "${GITHUB_OUTPUT}"
+              echo "::notice::Skipping source outside current main history"
+              exit 0 ;;
+          esac
+          previous=$(gh api "repos/${GITHUB_REPOSITORY}/actions/workflows/publish-pages.yml/runs?status=success&branch=main&per_page=1" --jq '.workflow_runs[0].head_sha // ""')
+          if [[ -n "${previous}" && "${previous}" != "${GITHUB_SHA}" ]]; then
+            order=$(gh api "repos/${GITHUB_REPOSITORY}/compare/${previous}...${GITHUB_SHA}" --jq '.status')
+            case "${order}" in
+              ahead|identical) ;;
+              *)
+                echo "publish=false" >> "${GITHUB_OUTPUT}"
+                echo "::notice::Skipping source older than the last successful release"
+                exit 0 ;;
+            esac
           fi
+          echo "publish=true" >> "${GITHUB_OUTPUT}"
       - id: deployment
         if: steps.latest.outputs.publish == 'true'
         uses: actions/deploy-pages@v5
