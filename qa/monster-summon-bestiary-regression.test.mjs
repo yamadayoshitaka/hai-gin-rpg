@@ -140,7 +140,9 @@ if(THREE){
    assert.equal(actor.userData.speciesId,id);
    // An asynchronous humanoid GLB must NOT temporarily show the old
    // pre-cosplay body. Rendering resumes when the skinned actor is ready.
-   assert.equal(actor.children.filter(c=>c.isMesh).length,0);
+   const placeholder=actor.children.filter(c=>c.isMesh);
+   assert.equal(placeholder.length,1,'Only the non-character status marker is allowed');
+   assert.equal(placeholder[0].name,'canonical-human-loading-marker');
    renderer.sync([o],.32);
    renderer.sync([],1);
    assert.equal(renderer.activeCount(),0);
