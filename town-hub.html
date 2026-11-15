@@ -142,7 +142,7 @@ header nav button,header nav a{min-width:0;padding:7px 2px;white-space:nowrap;fo
 <script type="module">
 import {armyGroups,armyGroupFor,setArmyGroup,captainCandidates,armyCaptain,setArmyCaptain,captainBonus} from './src/army-groups.js';
 import {renderThreeTeamPlanner} from './src/three-team-sortie-ui.js';
-import {ensureSortiePlan,setSortieCount,setSortieCaptain,setSortieFormation,setSortieFormationSize,setSortieGridCell,setSortieOrder,setSortieTactics,setSortieDivisions} from './src/three-team-sortie.js';
+import {ensureSortiePlan,setSortieCount,setSortieCaptain,setSortieFormation,setSortieGridCell,setSortieOrder,setSortieTactics,setSortieDivisions} from './src/three-team-sortie.js';
 import {STORY_CHAPTERS,storyVoiceKey} from './src/story-chapters.js';
 import {STORY_KEY_PEOPLE} from './src/story-cinematic.js';
 import {mangaForStage} from './src/story-stage-manga.js';
@@ -505,11 +505,7 @@ $('panelContent').onclick=event=>{
    }else if(target.hasAttribute('data-sortie-formation')){
     setSortieFormation(game,sortieTeamId,target.dataset.sortieFormation);
     sortieView='setup';
-   }else if(target.hasAttribute('data-sortie-size')){
-    const chosen=game.sortiePlan?.teams?.find(t=>t.id===sortieTeamId);
-    const current=chosen?.slots?.filter(Boolean)?.length||0;
-    setSortieFormationSize(game,sortieTeamId,current+Number(target.dataset.sortieSize));
-    sortieView='setup';
+
    }else if(target.hasAttribute('data-sortie-division')){
     const team=game.sortiePlan?.teams?.find(t=>t.id===sortieTeamId);
     const sid=team?.grid?.[sortieCellIndex];
