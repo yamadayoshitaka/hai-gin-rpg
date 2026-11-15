@@ -104,12 +104,12 @@ export function subdivideDedicatedSource(geometry,{maxTriangles=480000}={}){
  return newGeo;
 }
 function fromDedicatedMeshes(id,tier){
- const detail=tier==='far'?'low':'high';
+ const detail=tier==='far'||tier==='mid'?'low':'high';
  const chunks=buildCombatObjectGeometry(id,{detail});
  const root=new THREE.Group();root.name=id+'-dedicated-original-master';
  let refined=0;
  for(const [part,geo] of Object.entries(chunks)){
-  const geometry=tier==='master'?subdivideDedicatedSource(geo):geo;
+  const geometry=tier==='master'||tier==='mid'?subdivideDedicatedSource(geo,{maxTriangles:tier==='mid'?90000:1600000}):geo;
   if(geometry!==geo){geo.dispose();refined++;}
   const mesh=new THREE.Mesh(geometry,new THREE.MeshStandardMaterial({
    color:0xffffff,vertexColors:!!geometry.getAttribute('color'),
