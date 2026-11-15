@@ -3,7 +3,7 @@
  * inventory remains in campaign.squads, while this plan assigns actual people.
  * A source squad may be split between teams but never duplicated.
  */
-import {formationStatus,arrangeFormation} from './sortie-formation-logic.js';
+import {formationStatus,arrangeFormation,formationCellsAtLevel,FREE_FORMATION,FORMATION_ROLES,ROLE_JOBS} from './sortie-formation-logic.js';
 import {STRATEGY_METHODS,STORY_JOB_TO_STRATEGY_JOB} from './three-step-strategy-catalog.js';
 export const SORTIE_TEAM_IDS=Object.freeze([1,2,3]);
 export const SORTIE_SQUADS_PER_GROUP=16;
@@ -50,7 +50,13 @@ export const SORTIE_FORMATIONS=Object.freeze({
  dragon:Object.freeze({name:'龍牙陣形',level:85,attack:.23,defense:.12,mobility:.09}),
  constellation:Object.freeze({name:'星鐘陣形',level:99,attack:.25,defense:.22,mobility:.14,healing:.12})
 });
-export const sortieFormationStatus=(game,teamId)=>formationStatus(game?.sortiePlan?.teams?.find(t=>t.id===Number(teamId)),ownSquads(game),SORTIE_FORMATION_CELLS);
+const FORMATION_ROLE_CELL_JOBS=(formation,cell)=>{
+ const rank=SORTIE_FORMATION_CELLS[formation]?.indexOf(cell);
+ return rank>=0?ROLE_JOBS[FORMATION_ROLES[formation]?.[rank]]||null:null;
+};
+export const sortieCellJobs=(game,teamId,cell)=>teamOf(game,teamId)?.formation===FREE_FORMATION?null:FORMATION_ROLE_CELL_JOBS(teamOf(game,teamId)?.formation,cell);
+export const sortieAllowedCells=(game,teamId)=>formationCellsAtLevel(teamOf(game,teamId)?.formation,SORTIE_FORMATION_CELLS,sortieSquadCap(game));
+export const sortieFormationStatus=(game,teamId)=>formationStatus(teamOf(game,teamId),ownSquads(game),SORTIE_FORMATION_CELLS,sortieSquadCap(game));
 export const unlockedSortieFormations=game=>Object.entries(SORTIE_FORMATIONS)
  .filter(([,x])=>sortieLevel(game)>=x.level).map(([id])=>id);
 export function sortieFormationBuff(game,teamId){
@@ -95,14 +101,17 @@ export function ensureSortiePlan(game){
    const valid=clamp(Number.isFinite(Number(count))?Math.trunc(Number(count)):0,0,available);
    if(valid){team.slots[index]=sid;team.counts[sid]=valid;team.divisions[sid]=clamp(Math.trunc(Number(old.divisions?.[sid])||1),1,Math.min(4,valid));remaining.set(sid,available-valid);seen.add(sid);}
   });
-  team.formation=Object.hasOwn(SORTIE_FORMATIONS,old.formation)&&
+  team.formation=old.formation===FREE_FORMATION?FREE_FORMATION:
+   Object.hasOwn(SORTIE_FORMATIONS,old.formation)&&
    SORTIE_FORMATIONS[old.formation].level<=sortieLevel(game)?old.formation:'balanced';
   const oldGrid=Array.isArray(old.grid)&&old.grid.length===SORTIE_GRID_CELLS?old.grid:null;
   team.slots.filter(Boolean).forEach((sid,index)=>{
    const savedIndex=oldGrid?.findIndex(v=>String(v)===sid);
-   const desired=Number.isInteger(savedIndex)&&savedIndex>=0&&!team.grid[savedIndex]?savedIndex:SORTIE_FORMATION_CELLS[team.formation][index];
-   const cell=!team.grid[desired]?desired:team.grid.indexOf(null);
-   if(cell>=0)team.grid[cell]=sid;
+   const legal=formationCellsAtLevel(team.formation,SORTIE_FORMATION_CELLS,sortieSquadCap(game));
+   const desired=Number.isInteger(savedIndex)&&legal.includes(savedIndex)&&!team.grid[savedIndex]?
+    savedIndex:legal[index%legal.length];
+   const cell=legal.includes(desired)&&!team.grid[desired]?desired:legal.find(c=>team.grid[c]===null);
+   if(cell!==undefined&&cell>=0)team.grid[cell]=sid;
   });
   team.deploymentSlot=Number.isInteger(old.deploymentSlot)&&allSlots.includes(old.deploymentSlot)?old.deploymentSlot:SORTIE_ENTRY_SLOTS[id-1];
   const candidates=Object.keys(team.counts).map(sid=>byId.get(sid)).filter(Boolean);
@@ -121,7 +130,7 @@ export function ensureSortiePlan(game){
    team.counts[String(s.id)]=s.count;team.divisions[String(s.id)]=1;
   });
   teams.forEach(team=>{
-   arrangeFormation(team,sources,'balanced',SORTIE_FORMATION_CELLS);
+   arrangeFormation(team,sources,'balanced',SORTIE_FORMATION_CELLS,sortieSquadCap(game));
    const candidates=sources.filter(s=>team.counts[String(s.id)]);
    team.captainId=[...candidates].sort((a,b)=>rarityScore(b)-rarityScore(a))[0]?.id??null;
   });
@@ -150,8 +159,9 @@ export function setSortieCount(game,teamId,squadId,count){
    const empty=team.slots.indexOf(null);
    if(empty<0||empty>=sortieSquadCap(game))throw Error('軍師レベルの隊数上限です（最大'+sortieSquadCap(game)+'隊）。');
    team.slots[empty]=sid;
-   const preferred=SORTIE_FORMATION_CELLS[team.formation][empty];
-   team.grid[team.grid[preferred]===null?preferred:team.grid.indexOf(null)]=sid;
+   const legal=sortieAllowedCells(game,teamId),preferred=legal.find(c=>team.grid[c]===null);
+   if(preferred===undefined)throw Error('陣形に空き枠がありません。');
+   team.grid[preferred]=sid;
   }
   team.counts[sid]=n;team.divisions[sid]=Math.min(team.divisions[sid]||1,Math.min(4,n));
  }else{
@@ -203,8 +213,9 @@ export function setSortieJobSlot(game,teamId,slotIndex,squadId){
   }
   team.slots[index]=sid;
   team.counts[sid]=Math.min(10,available);team.divisions[sid]=1;
-  const target=SORTIE_FORMATION_CELLS[team.formation][index];
-  team.grid[team.grid[target]===null?target:team.grid.indexOf(null)]=sid;
+  const legal=sortieAllowedCells(game,teamId),target=legal.find(c=>team.grid[c]===null);
+  if(target===undefined)throw Error('陣形の配置枠が不足しています。');
+  team.grid[target]=sid;
  }
  ensureSortiePlan(game);
  return teamOf(game,teamId);
@@ -218,10 +229,19 @@ export function setSortieGridCell(game,teamId,cellIndex,squadId){
  if(!team||!Number.isInteger(index)||index<0||index>=SORTIE_GRID_CELLS)
   throw Error('4×4の有効なマスを選んでください。');
  const here=team.grid[index],sid=squadId===null||squadId===undefined||squadId===''?null:String(squadId);
+ const allowedCells=sortieAllowedCells(game,teamId);
+ if(!allowedCells.includes(index))throw Error('陣形の指定マス以外には配置できません。');
+ const roles=team.formation===FREE_FORMATION?null:FORMATION_ROLE_CELL_JOBS(team.formation,index);
+ const source=sid?ownSquads(game).find(s=>String(s.id)===sid):null;
+ if(sid&&roles&&!roles.includes(source?.job))throw Error('このマスに配置できる職業は '+roles.join('・')+' です。');
  if(here===sid)return team;
  // Moving a deployed squad into another cell swaps with the occupant.
  if(sid&&team.slots.includes(sid)){
   const origin=team.grid.indexOf(sid);
+  const originRoles=team.formation===FREE_FORMATION?null:FORMATION_ROLE_CELL_JOBS(team.formation,origin);
+  const displaced=here?ownSquads(game).find(s=>String(s.id)===here):null;
+  if(here&&originRoles&&!originRoles.includes(displaced?.job))
+   throw Error('交換先の職業が陣形条件に一致しません。');
   if(origin>=0)team.grid[origin]=here;
   team.grid[index]=sid;
  }else{
@@ -273,10 +293,10 @@ export function setSortieCaptain(game,teamId,squadId){
 export function setSortieFormation(game,teamId,formation){
  ensureSortiePlan(game);
  const team=teamOf(game,teamId);
- if(!team||!Object.hasOwn(SORTIE_FORMATIONS,formation)||SORTIE_FORMATIONS[formation].level>sortieLevel(game))throw Error('この陣形は軍師レベルが不足しています。');
+ if(!team||(formation!==FREE_FORMATION&&(!Object.hasOwn(SORTIE_FORMATIONS,formation)||SORTIE_FORMATIONS[formation].level>sortieLevel(game))))throw Error('この陣形は軍師レベルが不足しています。');
  team.formation=formation;
  // Auto-position by actual roles, not just by arbitrary unit order.
- arrangeFormation(team,ownSquads(game),formation,SORTIE_FORMATION_CELLS);
+ arrangeFormation(team,ownSquads(game),formation,SORTIE_FORMATION_CELLS,sortieSquadCap(game));
  if(!availableSortieOrders(game,teamId).includes(team.initialOrder))team.initialOrder='hold';
  return team;
 }
@@ -350,13 +370,22 @@ export function allocateThreeTeamSortie(game,stage,limit=SORTIE_TOTAL_RENDER_LIM
  }))).filter(x=>x.squad&&x.available>0);
  const total=entries.reduce((sum,x)=>sum+x.available,0);
  if(!total)throw Error('出撃する隊に兵士を編成してください。');
- const target=Math.min(Math.trunc(limit),total);
+ const stageCap=Number.isInteger(stage?.deploymentLimit)?stage.deploymentLimit:limit;
+ const target=Math.min(Math.trunc(limit),Math.max(0,stageCap),total);
+ if(!target)throw Error('このステージは兵士を出撃させられません。');
  const allocations=entries.map(x=>({...x,count:Math.floor(x.available*target/total),
   fraction:(x.available*target/total)%1}));
  let rest=target-allocations.reduce((sum,x)=>sum+x.count,0);
  for(const item of [...allocations].sort((a,b)=>b.fraction-a.fraction||a.team.id-b.team.id)){
   if(!rest)break;
   if(item.count<item.available){item.count++;rest--;}
+ }
+ // Preserve one soldier per occupied role if the stage deployment limit permits.
+ if(target>=entries.length){
+  for(const missing of allocations.filter(a=>a.count===0)){
+   const donor=allocations.filter(a=>a.count>1).sort((a,b)=>b.count-a.count)[0];
+   if(donor){donor.count--;missing.count++;}
+  }
  }
  // Each nonempty team must exist on the field (if the renderer has capacity).
  const active=teams.filter(t=>sortieTeamCount(t)>0);
