@@ -40,9 +40,10 @@ small{font-size:11px;color:#aec4d3}
  <div><strong>Pages公開</strong><span id="pageStatus">照合中</span></div>
 </div>
 <div id="qa" role="status"></div>
+<p id="checkpoint" class="summary">途中保存（チェックポイント）：このPR内の記録を確認中…</p>
 <p class="row"><a id="prLink" class="link" href="#" target="_blank" rel="noopener noreferrer">PRの実差分・コミットを確認</a><a id="mainLink" class="link" href="#" target="_blank" rel="noopener noreferrer">本編の画面を別タブで開く</a><a id="draftLink" class="link" href="#" target="_blank" rel="noopener noreferrer">PR版の画面を別タブで開く</a></p>
 <div class="row"><button id="published" type="button" aria-pressed="true">本編・公開版</button><button id="candidate" type="button" aria-pressed="false">PR・改修版（試験用）</button><span id="which">本編を表示中</span></div>
-<p id="warning" class="warn">PR版は第三者の静的ホスト（raw.githack.com）による試験的表示です。未公開の秘密情報や私物GLBは送らないでください。表示失敗時は「別タブで開く」をお試しください。</p>
+<p id="warning" class="warn">PR版は第三者の静的ホスト（raw.githack.com）による試験的表示です。初回は確認ページが表示される場合があります。未公開の秘密情報や私物GLBは送らないでください。表示失敗時は「別タブで開く」をお試しください。</p>
 <iframe id="viewer" title="3Dプレビュー" loading="lazy" referrerpolicy="no-referrer" allow="fullscreen"></iframe>
 <p class="summary" id="worldSummary" hidden>53種の品質受入状況を照合中…</p>
 <p><small>GitHub APIは閲覧時に公開PR・Actionsの状態を読みます。サービスが取得不能な場合は「未確認」と表示します。Pages公開SHAはゲームと同じrelease.jsonで判定し、PRがマージされた事実だけで公開済みにはしません。モデル原画・実ソースは別々に検証してください。</small></p>
@@ -88,11 +89,27 @@ async function verifyRelease(p,token){
   $('pageStatus').textContent=published?'Pagesに含まれる（公開SHA '+short(releaseSha)+'）':'Pages未反映（公開SHA '+short(releaseSha)+'）';
  }catch(e){if(token===seq)$('pageStatus').textContent='公開SHA比較不可・未確認（'+e.message+'）'}
 }
+async function readCheckpoint(p,category,token){
+ const display=$('checkpoint');
+ if(!p?.head?.sha)return;
+ try{
+  const location=API+'/contents/data/batch-checkpoints/'+encodeURIComponent(category)+'.json?ref='+encodeURIComponent(p.head.sha);
+  const response=await getJSON(location);
+  if(token!==seq)return;
+  if(response.encoding!=='base64'||typeof response.content!=='string')throw Error('形式不正');
+  const binary=atob(response.content.replace(/\s/g,''));
+  const bytes=Uint8Array.from(binary,x=>x.charCodeAt(0));
+  const state=JSON.parse(new TextDecoder().decode(bytes));
+  if(state.schemaVersion!==1||state.category!==category||!Array.isArray(state.saved))throw Error('工程記録の形式不正');
+  const ok=state.saved.filter(item=>item.commitSha&&Array.isArray(item.sourceFiles)&&item.sourceFiles.length).length;
+  display.textContent='途中保存：実ソース変更 '+ok+'件 / 保存記録 '+state.saved.length+'件 ／ 残件 '+(state.remainingIds?.length??'不明')+' ／ 次回：'+(state.nextAction||'未記録');
+ }catch(e){if(token===seq)display.textContent='途中保存：このPRに対象別チェックポイントが未記録、または取得不可（'+e.message+'）。PRのコミットは上のリンクで確認できます。'}
+}
 async function refresh(){
  const token=++seq;row=data?.groups?.[$('group').value]?.find(x=>x.pr===Number($('target').value));
  if(!row)return;
  pr=null;$('commit').textContent='PRを照合中';$('checks').textContent='照合中';
- $('mainStatus').textContent='照合中';$('pageStatus').textContent='照合中';$('qa').textContent='GitHubから最新情報を読み込み中';
+ $('mainStatus').textContent='照合中';$('pageStatus').textContent='照合中';$('qa').textContent='GitHubから最新情報を読み込み中';$('checkpoint').textContent='途中保存：GitHub PR内の記録を照合中';
  setLink('prLink',GH+'/pull/'+row.pr);show();
  const [p,c]=await Promise.allSettled([getJSON(API+'/pulls/'+row.pr),getJSON(API+'/commits/main')]);
  if(token!==seq)return;
@@ -104,6 +121,7 @@ async function refresh(){
  $('commit').textContent=(pr.draft?'Draft PR':'PR')+' #'+row.pr+' / '+short(pr.head?.sha);
  $('qa').textContent='最新main '+short(mainSha)+' ／ '+row.title+' ／ 対象 '+(row.ids?.join(', ')||'共通描画');
  show();
+ void readCheckpoint(pr,$('group').value,token);
  await verifyRelease(pr,token);
  try{
   const checks=await getJSON(API+'/commits/'+escapePart(pr.head.sha)+'/check-runs?per_page=100');
