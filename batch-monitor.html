@@ -119,7 +119,7 @@ async function loadWorld(){
   const references=entries.filter(x=>x.referenceSha256).length,captures=entries.filter(x=>x.gameScreenshot).length;
   const proposals=entries.filter(x=>x.roughnessProposal&&x.roughnessProposal!==1).length;
   const holder=$('workSummary');holder.replaceChildren();
-  holder.appendChild(element('p','基準画 '+references+' / 254件の中心対象（54オブジェクト＋200ステージ） ｜ 3D撮影 '+captures+' ｜ PBR修正候補 '+proposals));
+  holder.appendChild(element('p','基準画 '+references+' / 253件の中心対象（53オブジェクト＋200ステージ） ｜ 3D撮影 '+captures+' ｜ PBR修正候補 '+proposals));
   holder.appendChild(element('p','最終状態：'+(j.lastRun?.stopReason||'未取得')+' ／ 最終実行：'+jp(j.lastRun?.completedAt),'meta'));
  }catch{$('workSummary').textContent='品質回帰の初回実行前、またはGitHubレビュー用ブランチの記録を取得できません。未生成を完成扱いにはしません。'}
 }
