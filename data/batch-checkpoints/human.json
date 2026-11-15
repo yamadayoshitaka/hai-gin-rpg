@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "category": "human",
+  "saved": [
+    {
+      "id": "shared-armor-steel-pbr",
+      "sourceFiles": [
+        "src/outfit-maintenance-model.js"
+      ],
+      "commitSha": "2e47b18bc7e728fa2ee89cf357bb6709f320abf7",
+      "qa": "unverified"
+    }
+  ],
+  "remainingIds": [
+    "all-human-character-preset-ids-unenumerated",
+    "job01-male",
+    "job01-female",
+    "job05-male",
+    "job05-female"
+  ],
+  "nextAction": "Enumerate authoritative all-character preset IDs and generator routes; run Node/WebGL visual comparison for armor grain and back/heel artifacts #438; inspect PR #451; preserve all unresolved IDs."
+}
