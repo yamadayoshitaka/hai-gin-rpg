@@ -12,18 +12,18 @@ dt{color:#b6d0df}dd{margin:0;overflow-wrap:anywhere}
 </style></head><body><main>
 <a href="./game.html">← ゲームへ戻る</a>
 <h1>3Dモデルの著作者・ライセンス</h1>
-<p>外部の3Dモデルの著作権はそれぞれの制作者に帰属します。下記は灰銀のレゾナンスで候補または採用モデルとして扱うCC BY 4.0素材です。既存のCC0素材は配布元Quaterniusの利用条件を保持します。</p>
+<p>外部の3Dモデルの著作権はそれぞれの制作者に帰属します。下記は灰銀のレゾナンスで比較候補または採用モデルとして扱うCC BY 4.0 / CC0 1.0素材です。Gobkit・Bake3Dなど外部配布元の権利条件を個別に保持します。モデルを候補登録しただけではゲーム本編への正式採用や実写品質の完成を意味しません。</p>
 <div id="credits">読み込み中…</div>
-<p>Wolf animatedのゲーム内変更：原作のテクスチャ・UV・骨格・アニメーションを保持し、狼王用の暗色調整、首毛の装飾、牙、目の発光、傷紋様を追加します。召喚版には色と発光の差分があります。追加要素は灰銀のレゾナンス側の制作物であり、元の作者による承認・推奨を意味しません。</p>
+<p>Wolf animatedの現行安全仕上げは、元のテクスチャ・UV・骨格・アニメーションを保持して毛色と眼の発光を調整したものです。白化再発を避けるため首毛・牙などの未検証追加ポリゴンは停止しています。追加要素は灰銀のレゾナンス側の制作物であり、元の作者による承認・推奨を意味しません。</p>
 <p>CC BY 4.0の全文は <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">Creative Commons Attribution 4.0 International</a> を参照してください。</p>
 <script type="module">
-import {REAL_CREATURE_MESH_SOURCES} from './src/creature-real-source-catalog.js';
+import {REAL_CREATURE_MESH_SOURCES} from './src/creature-real-source-catalog.js?v=web-mesh-26-v1';
 const area=document.getElementById('credits');area.replaceChildren();
 for(const [id,m] of Object.entries(REAL_CREATURE_MESH_SOURCES)){
  const card=document.createElement('article'),h=document.createElement('h2');
  h.textContent=m.name+' ['+id+']';card.appendChild(h);
  const dl=document.createElement('dl');
- for(const [key,value] of [['著作者',m.author],['利用条件',m.license],['原作モデル',m.sourceUrl],['ライセンス本文',m.licenseUrl]]){
+ for(const [key,value] of [['著作者',m.author],['利用条件',m.license],['原作モデル',m.sourceUrl],['ライセンス本文',m.licenseUrl],['GLBダウンロード先',m.downloadUrl]]){
   const dt=document.createElement('dt'),dd=document.createElement('dd');dt.textContent=key;
   if(String(value).startsWith('https://')){const a=document.createElement('a');a.href=value;a.textContent=value;a.target='_blank';a.rel='noopener noreferrer';dd.appendChild(a);}
   else dd.textContent=value;
