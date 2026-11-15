@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="ja"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>灰銀のレゾナンス｜全108体 高精細母体マスタースタジオ</title>
+<style>
+:root{font-family:system-ui,-apple-system,"Noto Sans JP",sans-serif;color-scheme:dark}
+*{box-sizing:border-box}body{margin:0;background:#071522;color:#eaf2f8}
+header{padding:9px 14px;background:#102a3c;border-bottom:1px solid #42677d;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+h1{font-size:16px;margin:0;color:#f4d7a0}h2{font-size:14px;margin:0 0 7px}
+a{color:#b7deed;text-decoration:underline}button,select,input{font:inherit;background:#193b53;color:#f4f6fb;border:1px solid #6b95ac;border-radius:8px;padding:9px}
+button{cursor:pointer}button:disabled{opacity:.45;cursor:wait}
+button[aria-pressed=true]{background:#366780;border-color:#e6c88d;color:#fff3d5;font-weight:700}
+main{max-width:1540px;margin:auto;padding:11px;display:grid;grid-template-columns:310px minmax(0,1fr);gap:11px}
+aside,.panel{border:1px solid #45647a;background:#0e2638;border-radius:10px;padding:12px}
+aside{min-width:0;align-self:start;display:grid;gap:10px}
+label{display:block;font-size:12px;color:#c7d9e5}label select,label input{display:block;width:100%;margin-top:5px}
+#modelCount{font-size:12px;color:#b7d2db}
+#tierButtons{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+#tierButtons button{font-size:12px;padding:10px 4px}
+#actionButtons{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+#actionButtons button{font-size:11px;min-width:0;padding:8px 2px}
+#sourceNote{font-size:12px;color:#e0cda8;line-height:1.55;background:#2a3c48;border-radius:7px;padding:9px}
+#status{font-size:12px;color:#d7e8ed;line-height:1.6;min-height:34px}
+#metrics{font-size:12px;display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.metric{border:1px solid #42677d;padding:9px;border-radius:7px;background:#132e41}
+.metric strong{display:block;font-size:20px}
+.metric small{color:#acc8d8;font-size:11px}
+.stage{position:relative;min-height:500px;border:1px solid #466a7c;border-radius:10px;overflow:hidden;background:linear-gradient(#162c3d,#081423)}
+#stage{width:100%;height:100%;position:absolute;inset:0;display:block;touch-action:none}
+#stageCaption{position:absolute;left:10px;top:10px;right:10px;pointer-events:none;text-shadow:0 1px 5px #000;font-size:12px;z-index:2}
+#stageCaption b{color:#f7d49e;font-size:16px;display:block;margin-bottom:5px}
+#viewTools{position:absolute;bottom:12px;left:10px;right:10px;display:flex;gap:6px;flex-wrap:wrap}
+#viewTools button{width:auto;font-size:12px;background:#19384edc}
+#stageLoading{position:absolute;top:42%;left:13%;width:74%;text-align:center;padding:16px 9px;background:#0b2037ed;border:1px solid #759db1;border-radius:10px;font-size:13px}
+#stageLoading[hidden]{display:none}
+.note{font-size:12px;line-height:1.6;color:#bcd2dd;margin:4px 0}
+#exportButton{width:100%;background:#77613d;border-color:#e2c382;font-weight:700}
+#qualityLink{display:block;text-align:center;padding:9px;font-size:12px}
+#exportNote{font-size:11px;color:#cddde5;line-height:1.5}
+@media(max-width:760px){
+ header{padding:6px 8px;gap:8px}h1{font-size:13px}
+ main{padding:5px;display:flex;flex-direction:column;gap:6px}
+ aside{padding:8px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+ aside label{font-size:11px}
+ #tierButtons,#actionButtons,#sourceNote,#status,#metrics,#exportNote,#exportButton,#qualityLink{grid-column:1/-1}
+ #tierButtons{grid-template-columns:repeat(4,minmax(0,1fr))}
+ #tierButtons button{font-size:11px;padding:8px 3px}
+ #actionButtons{grid-template-columns:repeat(7,minmax(0,1fr));gap:3px}
+ #actionButtons button{padding:8px 1px;font-size:10px;min-width:0}
+ #status{min-height:0}
+ .stage{height:48dvh;min-height:260px;order:-1}
+ #stageCaption b{font-size:14px}
+ #sourceNote{font-size:11px}
+ #metrics{grid-template-columns:repeat(4,minmax(0,1fr));gap:4px}
+ .metric{padding:5px}.metric strong{font-size:14px}.metric small{font-size:9px}
+}
+</style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
+</head><body>
+<header><a href="./dev-menu.html">← メニュー</a><h1>全108体 高精細母体マスタースタジオ</h1>
+<a href="./creature-reconstruction-plan.html">再構成一覧</a><a href="./monster-quality-review.html">品質KPI</a></header>
+<main>
+<aside>
+ <label>① 対象（50敵＋50召喚版＋8専用）<select id="actor"></select></label>
+ <label>種別を絞る<select id="kind"><option value="">全108体</option>
+  <option value="monster">モンスター50種</option><option value="summon">召喚獣版50種</option>
+  <option value="dedicated">専用召喚獣8種</option></select></label>
+ <div id="tierButtons" aria-label="原型・LOD切替">
+  <button type="button" data-tier="master" aria-pressed="true">原型マスター</button>
+  <button type="button" data-tier="near" aria-pressed="false">近距離</button>
+  <button type="button" data-tier="mid" aria-pressed="false">中距離</button>
+  <button type="button" data-tier="far" aria-pressed="false">遠距離</button>
+ </div>
+ <div id="actionButtons">
+  <button type="button" data-motion="idle" aria-pressed="true">待機</button>
+  <button type="button" data-motion="walk" aria-pressed="false">歩行</button>
+  <button type="button" data-motion="run" aria-pressed="false">走行</button>
+  <button type="button" data-motion="attack" aria-pressed="false">攻撃</button>
+  <button type="button" data-motion="roar" aria-pressed="false">咆哮</button>
+  <button type="button" data-motion="hit" aria-pressed="false">被弾</button>
+  <button type="button" data-motion="defeat" aria-pressed="false">死亡</button>
+ </div>
+ <div id="sourceNote">3Dの原型メッシュをオンデマンド生成します。全108体のGLBファイルが保存済みという意味ではありません。</div>
+ <div id="status" role="status">3D描画を準備中</div>
+ <div id="metrics">
+  <div class="metric"><small>三角形</small><strong id="triangles">—</strong></div>
+  <div class="metric"><small>頂点</small><strong id="vertices">—</strong></div>
+  <div class="metric"><small>メッシュ</small><strong id="meshes">—</strong></div>
+  <div class="metric"><small>骨</small><strong id="bones">—</strong></div>
+ </div>
+ <button id="exportButton" type="button" disabled>現在の3D母体をGLB書き出し</button>
+ <div id="exportNote">原型と近中遠は別々に書き出せます。現状のGLB書き出しは形状・材質中心で、実行時の7動作をGLBアニメーションとして保存する機能は未実装です。</div>
+ <a id="qualityLink" href="./monster-quality-review.html">この個体の品質KPIを見る</a>
+</aside>
+<section class="stage">
+ <canvas id="stage" aria-label="全108体の回転・ズーム可能な3Dモデル"></canvas>
+ <div id="stageCaption"><b id="name">モデル読み込み中</b><span id="profile"></span></div>
+ <div id="stageLoading" role="status">3Dモデルを生成中</div>
+ <div id="viewTools"><button id="resetCamera">全身表示</button><button id="leftView">左横</button>
+  <button id="frontView">正面</button><button id="backView">背面</button>
+  <button id="rotate" aria-pressed="false">自動回転</button></div>
+</section>
+</main>
+<script type="module">
+import * as THREE from 'three';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+import {CREATURE_MASTER_ENTRIES,CREATURE_MASTER_BY_ID,MASTER_RENDER_TIERS,
+ CREATURE_MASTER_COUNTS} from './src/creature-master-library.js?v=masters-v1';
+import {createCreatureMaster} from './src/creature-master-runtime.js?v=masters-v1';
+const $=id=>document.getElementById(id);
+const groups=[['monster','敵モンスター50種'],['summon','召喚版モンスター50種'],
+ ['dedicated','専用召喚獣・軍馬8種']];
+const entries=CREATURE_MASTER_ENTRIES;
+function refreshActors(){
+ const previous=$('actor').value;
+ const kind=$('kind').value;
+ $('actor').replaceChildren();
+ for(const [value,label] of groups){
+  if(kind&&kind!==value)continue;
+  const group=document.createElement('optgroup');group.label=label;
+  for(const e of entries.filter(x=>x.kind===value))
+   group.appendChild(new Option(e.name+' ['+e.id+']',e.id));
+  $('actor').appendChild(group);
+ }
+ if(Array.from($('actor').options).some(o=>o.value===previous))$('actor').value=previous;
+}
+refreshActors();
+const query=new URLSearchParams(location.search);
+const requested=query.get('species')||query.get('id');
+if(CREATURE_MASTER_BY_ID[requested])$('actor').value=requested;
+let tier=MASTER_RENDER_TIERS[query.get('tier')]?query.get('tier'):'master';
+let current=null,ticket=0,currentAction='idle',loading=false,exporting=false,rotate=false;
+const clock=new THREE.Clock();
+const scene=new THREE.Scene();
+scene.background=new THREE.Color(0x0c1c2a);
+const camera=new THREE.PerspectiveCamera(42,1,.025,3000);
+camera.position.set(5,3,8);
+const renderer=new THREE.WebGLRenderer({canvas:$('stage'),antialias:true,powerPreference:'high-performance'});
+renderer.outputColorSpace=THREE.SRGBColorSpace;
+renderer.toneMapping=THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure=1.20;
+renderer.setPixelRatio(Math.min(1.5,window.devicePixelRatio||1));
+const controls=new OrbitControls(camera,$('stage'));
+controls.enableDamping=true;controls.minDistance=.4;controls.maxDistance=160;
+controls.autoRotateSpeed=1.2;
+scene.add(new THREE.HemisphereLight(0xe9edff,0x405066,2.3));
+const key=new THREE.DirectionalLight(0xffecd4,3.4);key.position.set(-3,7,6);scene.add(key);
+const rim=new THREE.DirectionalLight(0x96c8ec,2.6);rim.position.set(5,5,-5);scene.add(rim);
+const soft=new THREE.DirectionalLight(0xffffff,.85);soft.position.set(0,2,9);scene.add(soft);
+const floor=new THREE.GridHelper(18,18,0x41687b,0x243e50);floor.position.y=-.04;
+scene.add(floor);
+let bounds=null,lastCameraDistance=8;
+function fit(angle=0){
+ if(!current?.root)return;
+ current.root.updateWorldMatrix(true,true);
+ bounds=new THREE.Box3().setFromObject(current.root);
+ if(bounds.isEmpty())return;
+ const center=bounds.getCenter(new THREE.Vector3());
+ const size=bounds.getSize(new THREE.Vector3());
+ const h=Math.max(.3,size.y),w=Math.max(size.x,size.z),distance=Math.max(2.1,h*1.25,w*1.75);
+ controls.target.copy(center);
+ lastCameraDistance=distance;
+ camera.position.set(center.x+Math.sin(angle)*distance*.78,
+   center.y+distance*.22,center.z+Math.cos(angle)*distance);
+ camera.near=Math.max(.001,distance*.0005);camera.far=Math.max(100,distance*20);
+ camera.updateProjectionMatrix();controls.update();
+}
+function updateMetrics(){
+ const m=current?.stats();
+ if(!m)return;
+ const fmt=n=>n.toLocaleString('ja-JP');
+ $('triangles').textContent=fmt(m.triangles);
+ $('vertices').textContent=fmt(m.vertices);
+ $('meshes').textContent=fmt(m.meshes);
+ $('bones').textContent=fmt(m.bones);
+ $('profile').textContent='使用素材 '+m.textureMaps+' / 材質 '+m.materials+
+  ' / '+(current.entry.kind==='summon'?'召喚版':current.entry.kind==='monster'?'モンスター':'専用召喚獣');
+}
+function setAction(next){
+ currentAction=next;
+ document.querySelectorAll('[data-motion]').forEach(b=>
+  b.setAttribute('aria-pressed',String(b.dataset.motion===next)));
+ current?.start(next,clock.getElapsedTime());
+}
+function setTier(next){
+ tier=next;
+ document.querySelectorAll('[data-tier]').forEach(b=>
+  b.setAttribute('aria-pressed',String(b.dataset.tier===next)));
+}
+function updateInfo(entry,loaded){
+ const physical=entry.engine==='canonical-human-rig'||entry.engine==='canonical-female-rig';
+ $('name').textContent=entry.name+' ['+entry.id+']';
+ const warning=entry.protected?'保護対象：旧モデルを表示するだけで本編は変更しません。':
+  physical?'人型の既存共通GLBを使用。人物固有の顔・衣装品質と骨格は別途検査が必要。':
+  entry.kind==='dedicated'?'専用召喚獣の3D形状。原型は高精細化した生成器の造形。':
+  '既存の種族別3D形状を高精細な source で生成。新しい写真スキャンGLBではありません。';
+ $('sourceNote').textContent=MASTER_RENDER_TIERS[tier].label+'：'+warning+
+  ' 母体は画面表示で検証でき、GLBとして書き出せます。写実品質90点への到達はまだ未認定。';
+ $('status').textContent=loaded;
+ $('qualityLink').href='./monster-quality-review.html?species='+encodeURIComponent(entry.id);
+}
+async function load(){
+ const serial=++ticket;const id=$('actor').value;
+ $('stageLoading').hidden=false;$('stageLoading').textContent='原型モデルを生成中：'+id;
+ $('exportButton').disabled=true;loading=true;
+ if(current){scene.remove(current.root);current.dispose();current=null;}
+ for(const name of ['triangles','vertices','meshes','bones'])$(name).textContent='—';
+ // Let mobile browser paint the progress notice before expensive source sculpt.
+ await new Promise(resolve=>requestAnimationFrame(resolve));
+ if(serial!==ticket)return;
+ let model;
+ try{
+  model=createCreatureMaster(id,{tier});
+  if(serial!==ticket){model.dispose();return;}
+  current=model;scene.add(model.root);setAction(currentAction);fit();
+  updateInfo(model.entry,'造形生成済み。人物GLBは読み込み完了まで現行造形を表示します。');
+  updateMetrics();
+  $('exportButton').disabled=false;
+  const outcome=await model.ready;
+  if(serial!==ticket)return;
+  if(outcome?.source==='procedural-fallback')
+   $('status').textContent='実人型GLBを取得できず暫定3Dにフォールバック：'+outcome.reason;
+  else if(outcome?.source==='canonical-character-cosplay')
+   $('status').textContent='人型の既存スキン付き3Dを読み込みました。';
+  else $('status').textContent='原型モデルを生成しました。三角形と実際の形状を確認できます。';
+  fit();updateMetrics();
+  const next=new URLSearchParams(location.search);
+  next.set('species',id);next.set('tier',tier);next.set('v','master-108-v1');
+  history.replaceState(null,'','?'+next.toString());
+ }catch(e){
+  if(serial===ticket){$('status').textContent='生成エラー：'+String(e.message||e);$('exportButton').disabled=true;}
+ }finally{
+  if(serial===ticket){$('stageLoading').hidden=true;loading=false;}
+ }
+}
+$('actor').onchange=load;
+$('kind').onchange=()=>{refreshActors();load();};
+for(const b of document.querySelectorAll('[data-tier]'))
+ b.onclick=()=>{if(tier!==b.dataset.tier){setTier(b.dataset.tier);load();}};
+for(const b of document.querySelectorAll('[data-motion]'))b.onclick=()=>setAction(b.dataset.motion);
+$('resetCamera').onclick=()=>fit();
+$('frontView').onclick=()=>fit(0);
+$('leftView').onclick=()=>fit(-Math.PI/2);
+$('backView').onclick=()=>fit(Math.PI);
+$('rotate').onclick=()=>{rotate=!rotate;controls.autoRotate=rotate;
+ $('rotate').setAttribute('aria-pressed',String(rotate));};
+$('exportButton').onclick=async()=>{
+ if(!current||loading||exporting)return;
+ exporting=true;$('exportButton').disabled=true;
+ const model=current;const name=model.entry.id+'-'+model.tier+'-source.glb';
+ $('status').textContent='GLBを書き出し中。大きな原型は容量が増えます。';
+ const backup=[];
+ try{
+  const {GLTFExporter}=await import('three/addons/exporters/GLTFExporter.js');
+  if(model!==current)throw Error('別モデルへ変更されました');
+  const ready=await model.ready;
+  if(ready?.source==='procedural-fallback'&&model.mode.includes('canonical'))
+   throw Error('人型の正式GLBが読み込めないため、暫定フォールバックは書き出し対象外です');
+  // Source userData can contain live Three.js pivots and animations with
+  // circular references; only metadata needed by GLTF is serialized.
+  model.root.traverse(node=>{
+   backup.push([node,node.userData]);
+   node.userData=node===model.root?{
+    masterId:model.entry.id,tier:model.tier,
+    originalMaster:true,animationExportReady:false
+   }:{};
+  });
+  const bin=await new GLTFExporter().parseAsync(model.root,{
+   binary:true,onlyVisible:true,trs:true
+  });
+  const blob=new Blob([bin],{type:'model/gltf-binary'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download=name;a.click();
+  setTimeout(()=>URL.revokeObjectURL(url),6000);
+  $('status').textContent='GLB書き出し要求：'+name+'（静止状態の原型／モーション未埋込）';
+ }catch(error){
+  $('status').textContent='GLB出力エラー：'+String(error.message||error);
+ }finally{
+  for(const [node,userData] of backup)node.userData=userData;
+  exporting=false;$('exportButton').disabled=!current||loading;
+ }
+};
+const timer=new THREE.Clock();
+function animate(){
+ requestAnimationFrame(animate);
+ const delta=Math.min(.065,timer.getDelta()),t=clock.getElapsedTime();
+ if(current&&!loading&&!exporting)current.update(t);
+ controls.update();
+ const w=$('stage').clientWidth,h=$('stage').clientHeight;
+ if(w>0&&h>0&&(renderer.domElement.width!==Math.round(w*renderer.getPixelRatio())||
+   renderer.domElement.height!==Math.round(h*renderer.getPixelRatio()))){
+  renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();
+ }
+ renderer.render(scene,camera);
+}
+setTier(tier);animate();load();
+</script>
+</body></html>
