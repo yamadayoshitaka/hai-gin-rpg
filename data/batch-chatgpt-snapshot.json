@@ -1,0 +1,139 @@
+{
+  "schemaVersion": 1,
+  "source": "ChatGPT automations snapshot (not live)",
+  "asOf": "2026-11-15T07:00:00Z",
+  "items": [
+    {
+      "id": "6af908a740ac8191bc2fc8e9e999c578",
+      "title": "灰銀・人モデル実写品質回帰",
+      "enabled": true,
+      "source": "ChatGPT 定期タスク",
+      "schedule": "毎時",
+      "lastRunAt": "2026-11-15T06:57:00.953057+00:00",
+      "nextRunAt": "2026-11-15T17:00:00+09:00",
+      "lastRunResult": "未取得",
+      "note": "状態はスナップショットです。Webページからリアルタイム取得・実行操作はできません。"
+    },
+    {
+      "id": "Automation_ddd2667642f881919c36dbdfcbb552e0",
+      "title": "灰銀・全種族モンスター衣装品質回帰",
+      "enabled": true,
+      "source": "ChatGPT 定期タスク",
+      "schedule": "毎時",
+      "lastRunAt": "2026-11-15T06:13:01.910296+00:00",
+      "nextRunAt": "2026-11-15T16:08:36+09:00",
+      "lastRunResult": "未取得",
+      "note": "状態はスナップショットです。Webページからリアルタイム取得・実行操作はできません。"
+    },
+    {
+      "id": "6af8e09654d881918c86196af8efb312",
+      "title": "灰銀・漫画ステージ4から順次制作",
+      "enabled": false,
+      "source": "ChatGPT 定期タスク",
+      "schedule": "毎時",
+      "lastRunAt": "2026-11-15T03:59:02.241459+00:00",
+      "nextRunAt": null,
+      "lastRunResult": "未取得",
+      "note": "状態はスナップショットです。Webページからリアルタイム取得・実行操作はできません。"
+    },
+    {
+      "id": "6af734ec93c08191b588c2dbfc193555",
+      "title": "灰銀 第1章画像生成チェック",
+      "enabled": false,
+      "source": "ChatGPT 定期タスク",
+      "schedule": "単発",
+      "lastRunAt": "2026-11-13T23:37:50.463322+00:00",
+      "nextRunAt": null,
+      "lastRunResult": "未取得",
+      "note": "状態はスナップショットです。Webページからリアルタイム取得・実行操作はできません。"
+    },
+    {
+      "id": "6af48f6b0d0c81919714ed58cf7926b5",
+      "title": "灰銀モンスター個別3Dリアル化（1回1体）",
+      "enabled": false,
+      "source": "ChatGPT 定期タスク",
+      "schedule": "毎時",
+      "lastRunAt": "2026-11-12T03:51:45.369529+00:00",
+      "nextRunAt": null,
+      "lastRunResult": "未取得",
+      "note": "状態はスナップショットです。Webページからリアルタイム取得・実行操作はできません。"
+    },
+    {
+      "id": "Automation_c62d935653688191a83dc1047f5cb725",
+      "title": "灰銀・男女顔モデル継続制作",
+      "enabled": false,
+      "source": "ChatGPT 定期タスク",
+      "schedule": "毎時",
+      "lastRunAt": "2026-11-12T03:36:25.149175+00:00",
+      "nextRunAt": null,
+      "lastRunResult": "未取得",
+      "note": "状態はスナップショットです。Webページからリアルタイム取得・実行操作はできません。"
+    },
+    {
+      "id": "6af0396b18088191b9130d00486e48ff",
+      "title": "灰銀モデルQA進捗",
+      "enabled": false,
+      "source": "ChatGPT 定期タスク",
+      "schedule": "毎時",
+      "lastRunAt": "2026-11-12T04:00:44.020050+00:00",
+      "nextRunAt": null,
+      "lastRunResult": "未取得",
+      "note": "状態はスナップショットです。Webページからリアルタイム取得・実行操作はできません。"
+    },
+    {
+      "id": "Automation_3967f036ca8c819192abde0a7f719b97",
+      "title": "灰銀・20章ストーリー完成作業",
+      "enabled": false,
+      "source": "ChatGPT 定期タスク",
+      "schedule": "毎時",
+      "lastRunAt": "2026-11-12T04:28:37.073151+00:00",
+      "nextRunAt": null,
+      "lastRunResult": "未取得",
+      "note": "状態はスナップショットです。Webページからリアルタイム取得・実行操作はできません。"
+    },
+    {
+      "id": "Automation_a34daadc5870819193a687270e319096",
+      "title": "灰銀・CI監視と安全マージ",
+      "enabled": false,
+      "source": "ChatGPT 定期タスク",
+      "schedule": "毎時",
+      "lastRunAt": "2026-11-12T04:32:22.562845+00:00",
+      "nextRunAt": null,
+      "lastRunResult": "未取得",
+      "note": "状態はスナップショットです。Webページからリアルタイム取得・実行操作はできません。"
+    },
+    {
+      "id": "6af45632319481918c31066163d13a17",
+      "title": "リュシア3D完成リンク",
+      "enabled": false,
+      "source": "ChatGPT 定期タスク",
+      "schedule": "毎時",
+      "lastRunAt": "2026-11-11T23:26:39.887849+00:00",
+      "nextRunAt": null,
+      "lastRunResult": "未取得",
+      "note": "状態はスナップショットです。Webページからリアルタイム取得・実行操作はできません。"
+    },
+    {
+      "id": "Automation_e64751eded408191bc420ed1283c5c77",
+      "title": "灰銀20章・夜間実装",
+      "enabled": false,
+      "source": "ChatGPT 定期タスク",
+      "schedule": "毎時",
+      "lastRunAt": "2026-11-11T22:57:31.214133+00:00",
+      "nextRunAt": null,
+      "lastRunResult": "未取得",
+      "note": "状態はスナップショットです。Webページからリアルタイム取得・実行操作はできません。"
+    },
+    {
+      "id": "Automation_485583a55dfc8191bccc5a5f2534a868",
+      "title": "灰銀ストーリー実装・18時確認",
+      "enabled": false,
+      "source": "ChatGPT 定期タスク",
+      "schedule": "毎時",
+      "lastRunAt": "2026-11-11T09:03:54.562951+00:00",
+      "nextRunAt": null,
+      "lastRunResult": "未取得",
+      "note": "状態はスナップショットです。Webページからリアルタイム取得・実行操作はできません。"
+    }
+  ]
+}
