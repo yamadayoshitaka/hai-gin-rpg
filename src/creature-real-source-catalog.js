@@ -8,6 +8,7 @@ import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {loadExternalCreature,prepareExternalGLTF} from './creature-external-runtime.js?v=wolf-actions-v3';
 import {applyGreyFangWolfFinish} from './grey-fang-wolf-finish.js?v=wolf-actions-v3';
 import {installGreyWolfActions} from './grey-wolf-action-runtime.js?v=wolf-actions-v3';
+import {refineNonhumanCreatureHandle} from './creature-species-refinement.js';
 
 export const REAL_CREATURE_MESH_SOURCES=Object.freeze({
  'r-wolf':Object.freeze({
@@ -64,10 +65,10 @@ export async function loadCreatureMeshSource(sourceId,registry,detail='high',{cr
    applyGreyFangWolfFinish(handle,{creatureId});
    installGreyWolfActions(handle);
   }
-  return handle;
+  return refineNonhumanCreatureHandle(handle,creatureId);
  }
  const entry=registry?.entries?.[sourceId];
  if(!entry||!/^q(?:00[1-9]|0[1-4][0-9]|050)$/.test(sourceId))
   throw Error('未登録のGLB: '+sourceId);
- return loadExternalCreature(entry,detail);
+ return refineNonhumanCreatureHandle(await loadExternalCreature(entry,detail),creatureId);
 }
