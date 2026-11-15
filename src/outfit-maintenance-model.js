@@ -324,8 +324,16 @@ export function createDetailedOutfit(job, sex, body, textures, {quality='preview
     const backPoints=[],backUv=[],backFaces=[];
     const backEdge=(x,y)=>{
       const frontPoint=edge(x,y);
+      // A narrow rear silhouette must follow the same anatomical slice as
+      // the front. Clamp the rear offset inside the actual torso depth so
+      // missing/skipped back samples cannot invert the cuirass into a stone-
+      // like slab protruding through the front at the shoulders.
+      const rearSurface=surfaceAt(frontPoint.y,true,frontPoint.x);
+      const frontSurface=surfaceAt(frontPoint.y,false,frontPoint.x);
+      const depth=Math.max(H*.012,frontSurface-rearSurface);
+      const rearOffset=Math.min(H*(heavy?.013:.010),depth*.16);
       return v(frontPoint.x,frontPoint.y,
-        surfaceAt(frontPoint.y,true,frontPoint.x)-H*(heavy?.013:.010));
+        Math.min(rearSurface-rearOffset,frontPoint.z-H*.012));
     };
     for(let row=0;row<=rows;row++){
       const y=top+(bottom-top)*row/rows;
