@@ -42,7 +42,8 @@ test('all 50 monster species and 50 summons have species-specific baseline promp
   if(HUMAN_MONSTER_IDS.includes(m.id))assert.ok(before.includes('人体骨格'),m.id);
   else assert.ok(before.includes('非人型'),m.id);
  }
- assert.ok(monsterDesignPrompt('m001').includes('赤い魔力'));
+ assert.ok(monsterDesignPrompt('m001').includes(WOLF_QUALITY_REFERENCE.m001.visual),
+  'Enemy wolf prompt should use the current specifically approved reference rather than an obsolete magic-color phrase');
  assert.equal(WOLF_QUALITY_REFERENCE.m001.role,'enemy');
  assert.equal(WOLF_QUALITY_REFERENCE.summon_m001.role,'summon');
  assert.equal(WOLF_QUALITY_REFERENCE.wolf.role,'summon');
