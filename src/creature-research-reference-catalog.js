@@ -5,6 +5,14 @@
  * Do not register these as already imported or completed game-ready rigs.
  */
 export const WEB_CREATURE_ANATOMY_REFERENCES=Object.freeze({
+ 's-slime-cc0':Object.freeze({
+  id:'s-slime-cc0',name:'3D Creatures - Slimes（3種のGLB+Blenderファイル）',
+  sourceUrl:'https://dawn-to-dusk-games.itch.io/3d-creatures-slimes',
+  author:'Dawn to Dusk Games',license:'CC0-1.0',triangles:null,
+  form:'animated-slime',rigVerified:false,
+  downloadMethod:'itch.ioの無料ダウンロード（name your own price）で5.1 MB ZIPを取得。3体のGLBとFBX、Blender元ファイルを含む',
+  caution:'3体のスライムとアニメーションが含まれるが、無認証の直GLB URL未確認。手動取得・形状・リグ・材質の実地確認が必要'
+ }),
  's-spider':Object.freeze({
   id:'s-spider',name:'Golden Spider / コガネグモ 3Dスキャン',
   sourceUrl:'https://sketchfab.com/3d-models/cc0-golden-spider-argiope-amoena-d2668ce3243941399688d329069b3bf3',
