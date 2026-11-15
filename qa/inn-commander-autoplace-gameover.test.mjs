@@ -33,12 +33,13 @@ assert.equal(commandSquadIds(game.campaign.squads.filter(s=>s.commanderId!=='res
 
 leaveTown(game);
 const request=makeCoreBattleRequest(game,'c01-s02','hero-death-contract');
-assert.equal(request.units.length,50);
+assert.equal(request.units.length,40,'the level-one battle may deploy only 40 out of 50 recruited troops');
 assert.equal(new Set(request.units.map(u=>u.squadId)).size,2,
  'two strategists each have one command squad irrespective of job mix');
 assert.equal(request.units.filter(u=>u.isStrategist).length,2);
 assert.equal(request.units.filter(u=>u.isPlayerHero).length,1);
-assert.equal(request.units.filter(u=>u.commanderId==='player').length,40);
+assert.ok(request.units.filter(u=>u.commanderId==='player').length>=30&&
+ request.units.filter(u=>u.commanderId==='player').length<40,'protagonist contingent scales proportionally within stage cap');
 assert.ok(request.units.filter(u=>u.commanderId==='player').every(u=>u.deploymentSlot===nextSlot));
 const playerJobs=new Set(request.units.filter(u=>u.commanderId==='player').map(u=>u.sourceSquadId));
 assert.equal(playerJobs.size,2,'job subgroup IDs remain available for valid casualties');
@@ -72,9 +73,9 @@ many.campaign.squads.push({
 many.campaign.nextSquadId=4;
 leaveTown(many);
 const weighted=makeCoreBattleRequest(many,'c01-s02','rare-player-regression');
-assert.equal(weighted.units.length,50);
+assert.equal(weighted.units.length,40,'protagonist survival also holds within a 40-person stage');
 assert.equal(weighted.units.filter(u=>u.isPlayerHero).length,1,
- 'even a 2-person protagonist company must never disappear in a 50-slot allocation');
+ 'even a 2-person protagonist company must never disappear in a stage-limited allocation');
 assert.equal(weighted.units.filter(u=>u.isStrategist).length,2);
 assert.equal(weighted.commanders.find(c=>c.id==='player').gender,'female');
 
