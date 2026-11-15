@@ -14,13 +14,13 @@
   "groups": {
     "human": {
       "source": "ChatGPT 定期タスクの実行結果",
-      "lastRunAt": "2026-11-15T22:04:31Z",
-      "subject": "側面胸甲の疎サンプル時の深度推定を実修正・全人物監査未完了",
-      "summary": "human ON。PR #456のsrc/outfit-maintenance-model.jsで、体幹表面推定のサンプル不足時に全横幅へフォールバックして側面装甲が浮く問題を、横方向を維持した段階的近傍探索に修正。実ソースSHA b64fd123、チェックポイント923e917。Node/WebGL/Android QA未実施、全人物ID列挙・再生成未実施、品質承認0。mainマージ・公開なし。",
+      "lastRunAt": "2026-11-15T23:05:08Z",
+      "subject": "頭皮メッシュ三角面の外向き法線補正を作業PRへ保存（全件監査未完）",
+      "summary": "human ON。髪取付共通生成器の実ソースを変更し、逆向き頭皮三角形の頂点順を外向きに補正。実ソースSHA 7346c571、チェックポイント b63d3c70。Node/WebGL/Android QA・全人物ID列挙・再生成未実施、品質承認0。mainマージ・公開なし。",
       "status": "in_review",
       "carryover": true,
       "issueNumber": 438,
-      "nextAction": "PR #456のNode構文・男女剣士/盾戦士の正面左右背面WebGL QAを実行。全人物IDと生成経路を列挙して全件走査・再生成・対象別QAへ進む。Issue #438を継続し未承認mainマージ禁止。",
+      "nextAction": "PR #456の頭頂・後頭WebGLとNode構文を検証し、男女全髪型・顔・衣装・表情のID列挙と全件回帰を継続。Issue #438も保持。",
       "steps": {
         "launch": "done",
         "code": "done",
@@ -32,20 +32,16 @@
       },
       "evidence": [
         {
-          "label": "実ソース改修",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/b64fd12308664debb41d14ba76d0ffe7d4da669c"
+          "label": "頭皮メッシュ実改修",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/7346c5714f5ad266721c8d7cd8ba58a9b101714b"
         },
         {
-          "label": "Draft PR #456",
+          "label": "既存Draft PR #456",
           "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/456"
         },
         {
           "label": "WIPチェックポイント",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/923e917278c9ee262741c89020dc7498076d55d4"
-        },
-        {
-          "label": "未完了 Issue #438",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/issues/438"
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/b63d3c70dc15cf976865c2bae174931cbd716af1"
         }
       ]
     },
