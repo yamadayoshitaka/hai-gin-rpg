@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#101f31"><title>バッチ管理センター｜灰銀のレゾナンス</title>
+<style>
+:root{color-scheme:dark;--bg:#0c1522;--panel:#17283a;--line:#345064;--txt:#eaf3f9;--muted:#a9c0d3;--gold:#e4ca96}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 28% 0,#284052 0,#0c1522 67%);color:var(--txt);font:14px/1.5 system-ui,'Noto Sans JP',sans-serif}
+header{padding:14px max(14px,calc((100% - 1280px)/2));display:flex;align-items:center;flex-wrap:wrap;gap:12px;border-bottom:1px solid #43596a;background:#101f31ee}
+header a,.link{color:#a9d6f5;text-decoration:none}header h1{font:700 22px Georgia,'Noto Serif JP',serif;color:var(--gold);margin:0}
+main{max-width:1280px;margin:auto;padding:18px 14px 60px}.meta{color:var(--muted);font-size:12px}
+.summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:17px 0}
+.tile,.pane{background:#15283adf;border:1px solid #3c5969;border-radius:12px;padding:14px}
+.tile strong{font-size:28px;display:block;line-height:1.3}.tile small{color:var(--muted)}
+h2{font-size:17px;color:var(--gold);margin:0 0 12px}.pane{margin-bottom:16px}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0 0 12px}
+input,select,button{font:inherit;background:#102335;border:1px solid #56788d;border-radius:8px;color:var(--txt);padding:9px 11px;min-height:40px}
+button{cursor:pointer}button:hover{background:#2c5169}#refresh{background:#5e4a29;border-color:#bda56f}
+input{flex:1 1 180px}.status{display:inline-flex;align-items:center;border-radius:20px;padding:3px 8px;border:1px solid #647789;background:#273949;color:#edf4fa;font-size:12px;white-space:nowrap}
+.status.running{border-color:#529fc6;color:#b2e6ff;background:#16394e}.status.success{border-color:#57967a;color:#bbf1d5;background:#17392d}
+.status.failed{border-color:#b07a7a;color:#ffd1c9;background:#4b262e}.status.paused{opacity:.76}.status.waiting{border-color:#ac9761;color:#ffe7a4;background:#463c24}
+table{border-collapse:collapse;width:100%}th,td{text-align:left;padding:10px 8px;border-bottom:1px solid #324c5a;vertical-align:middle}th{color:#c1d5e3;font-size:12px}td:first-child{font-weight:650}
+.sub{display:block;font-size:11px;color:var(--muted);font-weight:400;margin-top:3px}td a{color:#a7dcfc}
+#message{min-height:24px;color:#c4d6e4;margin:0 0 10px}#workSummary{color:#d3e2ed}
+#chatTable th,#chatTable td{font-size:12px}.table-wrap{overflow-x:auto}
+a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #dfbf79;outline-offset:2px}
+.note{border-left:3px solid #b89b68;padding-left:10px;color:#cbd8df;font-size:12px}
+@media(max-width:700px){.summary{grid-template-columns:repeat(2,1fr)}header h1{font-size:18px}main{padding:10px 8px}.tile{padding:10px}.tile strong{font-size:25px}th,td{padding:9px 5px;font-size:12px}th:nth-child(3),td:nth-child(3){display:none}}
+</style></head>
+<body><header><a href="./dev-menu.html">← メンテナンス</a><h1>⚙ バッチ管理センター</h1><span class="meta">GitHub Actionsの実行状況・品質改善・ChatGPTタスク</span></header>
+<main>
+<p class="meta">実行中・直近結果はGitHub Actionsから取得します。ChatGPT定期タスクは更新時点の一覧のみで、こちらから実行・停止はできません。</p>
+<div class="summary" role="group" aria-label="全バッチ集計">
+ <div class="tile"><strong id="allCount">—</strong><small>登録されたバッチ</small></div>
+ <div class="tile"><strong id="runningCount">—</strong><small>現在実行中／待機</small></div>
+ <div class="tile"><strong id="failedCount">—</strong><small>直近失敗</small></div>
+ <div class="tile"><strong id="pausedCount">—</strong><small>無効・停止中</small></div>
+</div>
+<section class="pane"><h2>世界・オブジェクトの実写品質回帰</h2>
+ <div id="workSummary">まだ品質バッチの進捗記録を取得できていません。</div>
+ <p class="meta"><a id="qualityActions" href="https://github.com/yamadayoshitaka/hai-gin-rpg/actions/workflows/world-quality-photoreal.yml" target="_blank" rel="noopener noreferrer">品質回帰ワークフローを開く</a> ・<a href="./object-list.html">3Dオブジェクト一覧</a> ・<a href="./stage-manager.html">ステージ一覧</a></p>
+ <p class="note">「生成済み基準画」「3D撮影済み」「PBR候補」「レビュー待ち」「ゲーム反映済み」は別の状態です。自動画像比較の点数だけでは実写品質合格にしません。</p>
+</section>
+<section class="pane"><div class="toolbar"><h2 style="margin:0">GitHub Actions｜実行・結果一覧</h2><button id="refresh" type="button">更新</button></div>
+ <div class="toolbar"><input id="search" type="search" placeholder="バッチ名・ワークフロー名を検索" aria-label="バッチを検索">
+ <select id="filter" aria-label="状態で絞る"><option value="all">すべて</option><option value="running">実行中・待機</option><option value="failed">直近失敗</option><option value="success">直近成功</option><option value="paused">停止中</option><option value="unknown">履歴未取得</option></select></div>
+ <p id="message" role="status">GitHubの実行状況を取得しています…</p>
+ <div class="table-wrap"><table><thead><tr><th>バッチ・ワークフロー</th><th>現在/直近の状態</th><th>最終実行（日本時間）</th><th>詳細</th></tr></thead><tbody id="workflowRows"></tbody></table></div>
+ <p id="lastUpdated" class="meta"></p><p class="note">無効＝ワークフロー自体が停止。直近成功＝今動いている意味ではありません。取得範囲に実行が見つからない場合は「履歴未取得」と表示します。</p>
+</section>
+<section class="pane"><h2>ChatGPT 定期タスク（同期時点の状態）</h2>
+<p id="chatAsOf" class="meta"></p><div class="table-wrap"><table id="chatTable"><thead><tr><th>タスク</th><th>設定</th><th>直近実行</th><th>結果</th></tr></thead><tbody id="chatRows"></tbody></table></div>
+<p class="note">ここはリアルタイム連携ではありません。最新の実行結果や有効/無効はChatGPT側のタスク画面で確認してください。GitHub側のCIとは別システムです。</p></section>
+</main>
+<script>
+'use strict';
+const repo='yamadayoshitaka/hai-gin-rpg',api='https://api.github.com/repos/'+repo+'/actions/';
+const $=id=>document.getElementById(id),jp=v=>v?new Date(v).toLocaleString('ja-JP',{timeZone:'Asia/Tokyo',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}):'—';
+const req=async url=>{const r=await fetch(url,{cache:'no-store',headers:{Accept:'application/vnd.github+json'}});if(!r.ok)throw Error('GitHub '+r.status+' '+(r.status===403?'API利用上限の可能性':'取得失敗'));return r.json()};
+const label=(w,run)=>{if(w.state!=='active')return {s:'paused',text:'無効'};
+if(!run)return {s:'unknown',text:'履歴未取得'};
+if(['queued','in_progress','waiting','requested','pending'].includes(run.status))return {s:run.status==='in_progress'?'running':'waiting',text:run.status==='in_progress'?'実行中':'待機中'};
+if(run.conclusion==='success')return {s:'success',text:'直近成功'};
+if(['failure','timed_out','action_required'].includes(run.conclusion))return {s:'failed',text:'直近失敗'};
+return {s:'paused',text:run.conclusion==='cancelled'?'直近取消':run.conclusion||'完了'};
+};
+let workflows=[],runs=[],chat=[];
+function element(tag,text,cls){const e=document.createElement(tag);if(text!==undefined)e.textContent=text;if(cls)e.className=cls;return e}
+function row(cells){const tr=document.createElement('tr');for(const cell of cells){const td=document.createElement('td');if(cell instanceof Node)td.appendChild(cell);else td.textContent=String(cell);tr.appendChild(td)}return tr}
+function statusNode(state){return element('span',state.text,'status '+state.s)}
+function display(){
+const last=new Map();for(const run of runs){const key=run.path||'';if(key&&!last.has(key))last.set(key,run)}
+const filtered=workflows.map(w=>({...w,run:last.get(w.path),display:label(w,last.get(w.path))}))
+ .sort((a,b)=>{const rank={running:0,waiting:1,failed:2,success:3,paused:4,unknown:5};return rank[a.display.s]-rank[b.display.s]||new Date(b.run?.created_at||0)-new Date(a.run?.created_at||0)});
+const txt=$('search').value.trim().toLowerCase(),filter=$('filter').value,body=$('workflowRows');body.replaceChildren();
+let shown=0;for(const w of filtered){
+ if(txt&&!((w.name+' '+w.path).toLowerCase().includes(txt)))continue;
+ if(filter!=='all'&&w.display.s!==filter&&(filter!=='running'||w.display.s!=='waiting'))continue;
+ const name=element('span',w.name);name.appendChild(element('small',w.path,'sub'));
+ const link=element('a','ログ');link.href=w.run?.html_url||'https://github.com/'+repo+'/actions/workflows/'+encodeURIComponent(w.path.split('/').at(-1));link.target='_blank';link.rel='noopener noreferrer';
+ body.appendChild(row([name,statusNode(w.display),jp(w.run?.run_started_at||w.run?.created_at),link]));shown++;
+}
+if(!shown)body.appendChild(row(['該当するバッチはありません','—','—','—']));
+$('allCount').textContent=String(workflows.length+chat.length);
+$('runningCount').textContent=String(filtered.filter(x=>['running','waiting'].includes(x.display.s)).length);
+$('failedCount').textContent=String(filtered.filter(x=>x.display.s==='failed').length);
+$('pausedCount').textContent=String(filtered.filter(x=>x.display.s==='paused').length+chat.filter(x=>!x.enabled).length);
+$('lastUpdated').textContent='GitHub最新取得：'+jp(new Date().toISOString())+' ／ 履歴を最大300件まで照合';
+}
+async function loadGithub(){
+ $('message').textContent='実行履歴を取得中…';
+ try{
+  const [wf1,wf2,r1,r2,r3]=await Promise.all([
+   req(api+'workflows?per_page=100&page=1'),
+   req(api+'workflows?per_page=100&page=2').catch(()=>({workflows:[]})),
+   req(api+'runs?per_page=100&page=1'),
+   req(api+'runs?per_page=100&page=2').catch(()=>({workflow_runs:[]})),
+   req(api+'runs?per_page=100&page=3').catch(()=>({workflow_runs:[]}))
+  ]);
+  workflows=[...(wf1.workflows||[]),...(wf2.workflows||[])].filter(w=>w.path?.startsWith('.github/workflows/'));
+  runs=[...(r1.workflow_runs||[]),...(r2.workflow_runs||[]),...(r3.workflow_runs||[])];
+  $('message').textContent='ワークフロー '+workflows.length+'件、直近履歴 '+runs.length+'件を照合しました。';
+  display();
+ }catch(e){$('message').textContent='取得できません：'+e.message+'。GitHub Actionsページも確認できます。';display()}
+}
+async function loadChat(){
+ try{const p=await fetch('./data/batch-chatgpt-snapshot.json',{cache:'no-store'});if(!p.ok)throw Error();const j=await p.json();
+ chat=j.items||[];$('chatAsOf').textContent='スナップショット時刻：'+jp(j.asOf)+'（実行中のリアルタイム判定ではありません）';
+ const body=$('chatRows');body.replaceChildren();
+ for(const t of chat){const v=element('span',t.title);
+ v.appendChild(element('small','ChatGPT / '+t.schedule,'sub'));
+ body.appendChild(row([v,statusNode({s:t.enabled?'success':'paused',text:t.enabled?'有効（同期時点）':'停止中（同期時点）'}),jp(t.lastRunAt),t.lastRunResult||'未取得']))}
+ display();
+ }catch{$('chatAsOf').textContent='ChatGPTタスクのスナップショット未取得'}
+}
+async function loadWorld(){
+ try{
+  const url='https://raw.githubusercontent.com/'+repo+'/world/photoreal-regression-review/data/world-quality/progress.json?nocache='+Date.now();
+  const r=await fetch(url,{cache:'no-store'});if(!r.ok)throw Error('初回実行の記録なし');
+  const j=await r.json(),entries=Object.values(j.assets||{});
+  const references=entries.filter(x=>x.referenceSha256).length,captures=entries.filter(x=>x.gameScreenshot).length;
+  const proposals=entries.filter(x=>x.roughnessProposal&&x.roughnessProposal!==1).length;
+  const holder=$('workSummary');holder.replaceChildren();
+  holder.appendChild(element('p','基準画 '+references+' / 254件の中心対象（54オブジェクト＋200ステージ） ｜ 3D撮影 '+captures+' ｜ PBR修正候補 '+proposals));
+  holder.appendChild(element('p','最終状態：'+(j.lastRun?.stopReason||'未取得')+' ／ 最終実行：'+jp(j.lastRun?.completedAt),'meta'));
+ }catch{$('workSummary').textContent='品質回帰の初回実行前、またはGitHubレビュー用ブランチの記録を取得できません。未生成を完成扱いにはしません。'}
+}
+$('refresh').addEventListener('click',()=>{loadGithub();loadWorld()});
+$('search').addEventListener('input',display);
+$('filter').addEventListener('change',display);
+Promise.allSettled([loadGithub(),loadChat(),loadWorld()]);
+setInterval(()=>{if(!document.hidden){loadGithub();loadWorld()}},90000);
+</script></body></html>
