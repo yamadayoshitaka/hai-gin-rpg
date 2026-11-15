@@ -7,7 +7,7 @@
 import * as THREE from 'three';
 import {NONHUMAN_EXTRA_SUMMON_IDS,adoptedCreatureMesh} from './creature-mesh-adoption.js';
 import {fetchCreatureRegistry} from './creature-external-runtime.js';
-import {loadCreatureMeshSource} from './creature-real-source-catalog.js';
+import {loadCreatureMeshSource} from './creature-real-source-catalog.js?v=white-surface-fix-2';
 const eligible=new Set(NONHUMAN_EXTRA_SUMMON_IDS);
 const MAX_REAL_SOURCE_INSTANCES=8;
 export function createAdoptedSpecialSummonRenderer(scene){
