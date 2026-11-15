@@ -78,7 +78,7 @@ legend{font-size:12px;color:#e8d9b6;padding:0 6px}
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
 </head><body>
 <header><a href="./index.html">← メニュー</a><h1>魔物図鑑・モンスター管理 <small>50種 / v4.5.21</small></h1>
- <a href="./summon-showcase.html?v=4.5.18">召喚獣一覧</a></header>
+ <a href="./summon-showcase.html?v=4.5.18">召喚獣一覧</a><a href="./creature-model-adoption.html">モデルを選択・採用（簡単）</a></header>
 <main id="bestiaryMain">
  <aside id="catalogPanel" aria-label="モンスター一覧">
   <div class="search">
@@ -200,6 +200,7 @@ import {humanoidMonsterCostumeFor,HUMAN_MONSTER_IDS} from './src/monster-charact
 import {hasDemonCosmetics,withDemonColorTheme}
  from './src/monster-demon-cosmetics.js?v=4.5.04';
 import {fetchCreatureRegistry,loadExternalCreature,loadPersonalGLB} from './src/creature-external-runtime.js?v=4.4.92';
+import {adoptedCreatureMesh} from './src/creature-mesh-adoption.js';
 import {loadSpeciesSourceComposite,isSpeciesSourcePilot,SPECIES_SOURCE_REBUILD_PILOTS}
  from './src/monster-source-composite.js?v=4.6.90';
 const byId=id=>document.getElementById(id);
@@ -416,15 +417,14 @@ function selectSpecies(id){
  const changed=id!==selected;
  selected=id;
  if(changed){
+   const approved=adoptedCreatureMesh(id);
    const remembered=modelAssignments[id];
-   byId('externalAsset').value=externalRegistry.entries[remembered]?remembered:
+   byId('externalAsset').value=externalRegistry.entries[approved]?approved:
+     externalRegistry.entries[remembered]?remembered:
      externalRegistry.entries[id]?id:'';
-   if(externalRegistry.entries[remembered]&&!HUMAN_MONSTER_IDS.includes(id))
-     byId('assetSource').value='licensed';
-   else if(id==='m001'&&new URLSearchParams(location.search).get('form')!=='beastfolk'
-       &&new URLSearchParams(location.search).get('source')!=='legacy')
-     byId('assetSource').value='source-composite';
-   else byId('assetSource').value='procedural';
+   // Only the new Adopt button makes a choice active by default.
+   byId('assetSource').value=externalRegistry.entries[approved]&&
+     !HUMAN_MONSTER_IDS.includes(id)?'licensed':'procedural';
  }
  const m=specimen(id),detail=byId('quality').value;
  byId('vampireSexControl').style.display=id==='m034'?'block':'none';
@@ -639,16 +639,19 @@ fetchCreatureRegistry().then(reg=>{
  }
  picker.append(old);
  const saved=modelAssignments[selected];
- picker.value=reg.entries[saved]?saved:reg.entries[selected]?selected:'';
- if(reg.entries[saved]&&!HUMAN_MONSTER_IDS.includes(selected))
-   byId('assetSource').value='licensed';
- byId('assignmentStatus').textContent=reg.entries[saved]?'前回のGLB割当を復元':'未割当（従来モデル）';
+ const approved=adoptedCreatureMesh(selected);
+ picker.value=reg.entries[approved]?approved:reg.entries[saved]?saved:
+   reg.entries[selected]?selected:'';
+ byId('assetSource').value=reg.entries[approved]&&
+   !HUMAN_MONSTER_IDS.includes(selected)?'licensed':'procedural';
+ byId('assignmentStatus').textContent=reg.entries[approved]?
+   '採用済み：'+approved:reg.entries[saved]?
+   '旧画面の比較候補（未採用）':'採用なし（現行モデル）';
  renderList();
  byId('assetStatus').textContent='Quaterniusオリジナル '+reg.all50Count+
    ' / 50体、既存比較 '+(Object.keys(reg.entries).length-reg.all50Count)+
    '体。外部GLBは任意で選択できます。';
- if(['licensed','source-composite'].includes(byId('assetSource').value))
-   selectSpecies(selected);
+ if(byId('assetSource').value==='licensed')selectSpecies(selected);
 }).catch(error=>{
  byId('assetStatus').textContent='外部モデルは未配信（従来モデルは利用できます）：'+error.message;
 });
@@ -806,8 +809,6 @@ if(requestedMonster&&MONSTER_BY_ID[requestedMonster])selected=requestedMonster;
 const launchOptions=new URLSearchParams(location.search);
 if(launchOptions.get('form')==='beastfolk'&&beastfolkRecipeFor(selected))
  byId('beastfolkForm').value='beastfolk';
-else if(selected==='m001'&&launchOptions.get('source')!=='legacy'&&
- !modelAssignments[selected])
- byId('assetSource').value='source-composite';
+// Never select an unapproved experimental wolf source automatically.
 selectSpecies(selected);resize();frame();
 </script></body></html>
