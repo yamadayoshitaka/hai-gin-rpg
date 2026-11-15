@@ -6,6 +6,8 @@ on:
     paths:
       - '.github/workflows/hourly-batch-manual.yml'
       - 'scripts/manual-hourly-batch-dispatch.mjs'
+      - 'scripts/batch-qa-report.mjs'
+      - 'qa/batch-qa-report.test.mjs'
       - 'qa/manual-hourly-batch-dispatch.test.mjs'
       - 'scripts/batch-center-toggle.mjs'
       - 'qa/batch-center-toggle.test.mjs'
@@ -30,6 +32,8 @@ jobs:
         run: |
           node --check scripts/manual-hourly-batch-dispatch.mjs
           node --test qa/manual-hourly-batch-dispatch.test.mjs
+          node --check scripts/batch-qa-report.mjs
+          node --test qa/batch-qa-report.test.mjs
           node --test qa/batch-work-progress.test.mjs
           node --check scripts/batch-center-toggle.mjs
           node --test qa/batch-center-toggle.test.mjs
