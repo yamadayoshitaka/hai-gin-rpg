@@ -16,6 +16,7 @@ import {femaleSummonCosplayFor} from './female-summon-forms.js';
 import {buildCombatObjectGeometry} from './combat-creature-geometry.js';
 import {CREATURE_MASTER_BY_ID,MASTER_RENDER_TIERS} from './creature-master-library.js';
 import {subdivideDedicatedSource} from './creature-source-subdivision.js';
+import {loadCreatureMeshSource} from './creature-real-source-catalog.js?v=original-m020-v1';
 export {subdivideDedicatedSource} from './creature-source-subdivision.js';
 
 const SUPPORTED_ACTIONS=new Set(['idle','walk','run','attack','roar','hit','defeat']);
@@ -105,8 +106,50 @@ export function createCreatureMaster(id,{tier='master'}={}){
  if(!entry)throw Error('Unknown master creature ID: '+id);
  if(!MASTER_RENDER_TIERS[tier])throw Error('Unknown master tier: '+tier);
  const detail=entry.protected?'high':MASTER_RENDER_TIERS[tier].geometry;
- let root,cosplayHandle=null,mode='source-sculpt',ready=Promise.resolve();
- if(entry.engine==='canonical-human-rig'){
+ let root,cosplayHandle=null,originalHandle=null,originalFallback=null,
+  mode='source-sculpt',ready=Promise.resolve();
+ let disposed=false,lastOriginalTime=0;
+ if(entry.baseId==='m020'){
+  // The first separately authored sea-dragon GLB has actual PBR maps, skin
+  // joints and named motion clips. Never re-label the old subdivided source
+  // as photoreal while it is serving as the reversible load fallback.
+  const base=MONSTER_BY_ID.m020;
+  originalFallback=createMonsterModel(
+   entry.kind==='summon'?elementLightenedSpec(base):base,{detail:'high'});
+  root=new THREE.Group();
+  root.add(originalFallback);
+  const wantedTier=tier==='master'?'source':tier==='near'?'high':
+    tier==='mid'?'high':'low';
+  mode='original-m020-pending';
+  ready=loadCreatureMeshSource('original-m020',{},wantedTier,{
+   creatureId:entry.id
+  }).then(handle=>{
+   if(disposed){handle.dispose();return {source:'cancelled'};}
+   root.remove(originalFallback);
+   disposeMonsterSculpture(originalFallback);
+   originalFallback=null;
+   originalHandle=handle;
+   if(entry.kind==='summon'){
+    // Attribute-safe finishing, without altering the enemy's skin/joints.
+    handle.root.traverse(node=>{
+     if(!node.isMesh)return;
+     const mats=Array.isArray(node.material)?node.material:[node.material];
+     for(const mat of mats)
+      if(mat?.color&&/skin|fin|jaw/i.test(mat.name||''))
+       mat.color.lerp(new THREE.Color('#75b1c1'),.14);
+    });
+   }
+   root.add(handle.root);
+   root.userData.masterEngine='original-m020-rigged-glb';
+   root.userData.originalMeshLoaded=true;
+   root.userData.photorealCertified=false;
+   handle.play('idle');
+   return {source:'original-m020-glb',bones:4,animations:7};
+  }).catch(error=>{
+   root.userData.sourceError=String(error?.message||error);
+   return {source:'procedural-fallback',reason:root.userData.sourceError};
+  });
+ }else if(entry.engine==='canonical-human-rig'){
   const spec=MONSTER_BY_ID[entry.baseId];
   cosplayHandle=createCosplayedHumanoidMonster(spec,{
    detail:'high',withoutFallback:false
@@ -138,17 +181,21 @@ export function createCreatureMaster(id,{tier='master'}={}){
  root.userData.photorealCertified=false;
  root.userData.gameOptimized=tier==='far';
  if(entry.kind==='summon')root.userData.variant='summon';
- let disposed=false,action='idle',actionAt=0;
+ let action='idle',actionAt=0;
  const start=(next,time=0)=>{
   if(disposed)return;
   action=SUPPORTED_ACTIONS.has(next)?next:'idle';
   actionAt=time;
+  if(originalHandle){originalHandle.play(action,{restart:true});return;}
+  if(originalFallback){startMonsterAction(originalFallback,action,time);return;}
   if(cosplayHandle)cosplayHandle.start(action,time);
   else if(!root.userData.isMasterDedicated)startMonsterAction(root,action,time);
  };
  start('idle',0);
  const update=time=>{
   if(disposed)return;
+  if(originalHandle){originalHandle.update(Math.max(0,time-lastOriginalTime));lastOriginalTime=time;return;}
+  if(originalFallback){animateMonsterModel(originalFallback,time);return;}
   if(cosplayHandle){cosplayHandle.update(time);return;}
   if(root.userData.isMasterDedicated){
    // Separate originals are static source meshes with individual wing,
@@ -170,6 +217,8 @@ export function createCreatureMaster(id,{tier='master'}={}){
  };
  const dispose=()=>{
   if(disposed)return;disposed=true;
+  if(originalHandle){originalHandle.dispose();root.parent?.remove(root);return;}
+  if(originalFallback){disposeMonsterSculpture(originalFallback);root.parent?.remove(root);return;}
   if(cosplayHandle){cosplayHandle.dispose();return;}
   if(root.userData.isMasterDedicated){
    root.traverse(node=>{if(node.isMesh){node.geometry?.dispose();
