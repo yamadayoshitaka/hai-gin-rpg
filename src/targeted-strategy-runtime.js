@@ -20,7 +20,8 @@ export function planStrategyDistribution(plan,selectedSquads,methodIds){
   const squad=squadById.get(String(id));
   if(!squad)continue;
   const possible=allocations.filter(x=>(squad.allowed||plan?.allowed||[]).includes(x.method.mode)&&
-   (!x.method.jobs.length||x.method.jobs.some(job=>(squad.jobs||[]).includes(job))));
+   (!x.method.jobs.length||x.method.jobs.some(job=>(squad.jobs||[]).includes(job)))&&
+   (!x.method.requiresSummon||squad.hasSummon));
   if(!possible.length){unmatched.push(String(id));continue;}
   possible.sort((a,b)=>a.squadIds.length-b.squadIds.length);
   possible[0].squadIds.push(String(id));
