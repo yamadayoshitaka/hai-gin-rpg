@@ -1,0 +1,103 @@
+{
+  "schemaVersion": 1,
+  "asOf": "2026-11-15T12:14:00Z",
+  "description": "工程別の実作業証跡。GitHub Actionsの成功や定期タスクの実行完了を、3D改修・PR・デプロイの完了と混同しない。これはGitHubに最後に記録されたスナップショットであり、ChatGPTサービスのライブ状態ではない。",
+  "stageOrder": [
+    "launch",
+    "code",
+    "qa",
+    "commit",
+    "pr",
+    "merge",
+    "deploy"
+  ],
+  "groups": {
+    "human": {
+      "source": "ChatGPT 定期タスクの実行結果",
+      "lastRunAt": "2026-11-15T11:55:55.616502Z",
+      "status": "work_incomplete",
+      "carryover": true,
+      "issueNumber": 399,
+      "subject": "男女剣士の背面・踵の板状／石状異物",
+      "summary": "21時台の定期処理は実行されたが、ソース修正・回帰QA・コミット・公開は行われていない。",
+      "nextAction": "Issue #399の男女剣士の背面・踵メッシュの異物を最優先に原因特定→実コード修正→WebGL比較→QA→PRへ。未対応Issueを処理済みにしない。",
+      "steps": {
+        "launch": "done",
+        "code": "pending",
+        "qa": "pending",
+        "commit": "pending",
+        "pr": "pending",
+        "merge": "pending",
+        "deploy": "pending"
+      },
+      "evidence": [
+        {
+          "label": "未処理 Issue #399",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/issues/399"
+        }
+      ]
+    },
+    "monster": {
+      "source": "ChatGPT 定期タスクの実行結果",
+      "lastRunAt": "2026-11-15T12:12:22.230167Z",
+      "status": "work_incomplete",
+      "carryover": true,
+      "subject": "PR #385 既存E2E不整合と非人間型の品質回帰",
+      "summary": "21時台の定期処理は実行されたが、実コード修正・新規コミット・マージ・公開なし。関連PR #385のE2Eは失敗中。",
+      "nextAction": "PR #385のphotoSurfaces/CC0 source判定を実表示と照合して修正し、再QA・Artifacts実画像を確認。PR #345/#346とm005/m006は変更しない。",
+      "steps": {
+        "launch": "done",
+        "code": "pending",
+        "qa": "failed",
+        "commit": "pending",
+        "pr": "pending",
+        "merge": "pending",
+        "deploy": "pending"
+      },
+      "evidence": [
+        {
+          "label": "PR #385の失敗したE2E",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/43692535840"
+        }
+      ]
+    },
+    "world": {
+      "source": "GitHub Actions（状態未照合）",
+      "lastRunAt": null,
+      "status": "unverified",
+      "carryover": false,
+      "subject": "オブジェクト・ステージ品質回帰",
+      "summary": "実作業の工程別証跡はまだ取得していない。スイッチONは実装完了を意味しない。",
+      "nextAction": "次回の実行後、実画像・コード変更・QA・PR・公開を個別に確認し、この履歴に記録する。",
+      "steps": {
+        "launch": "unknown",
+        "code": "unknown",
+        "qa": "unknown",
+        "commit": "unknown",
+        "pr": "unknown",
+        "merge": "unknown",
+        "deploy": "unknown"
+      },
+      "evidence": []
+    },
+    "anime": {
+      "source": "ChatGPTタスクのスケジュール確認",
+      "lastRunAt": "2026-11-15T09:01:20.385653Z",
+      "status": "paused",
+      "carryover": true,
+      "subject": "漫画制作の定期タスクは停止中",
+      "summary": "GitHub実行制御がONでもChatGPT漫画定期タスクは停止中。Cloudflare日次無料生成は別の実行経路。",
+      "nextAction": "漫画の実登録・QA・公開の結果を日次GitHub Actionsの成果物と照合する。ChatGPT自動生成が稼働中とは表示しない。",
+      "steps": {
+        "launch": "skipped",
+        "code": "unknown",
+        "qa": "unknown",
+        "commit": "unknown",
+        "pr": "unknown",
+        "merge": "unknown",
+        "deploy": "unknown"
+      },
+      "evidence": []
+    }
+  }
+}
