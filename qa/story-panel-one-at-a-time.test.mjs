@@ -7,7 +7,7 @@ import {registeredStoryPanelAsset,storySheetCrop} from '../src/story-panel-regis
 const read=p=>readFileSync(new URL('../'+p,import.meta.url),'utf8');
 const viewer=read('src/story-manga-viewer.js'),review=read('story-art-review.html');
 assert.match(viewer,/loadPanelArt\(shot,pagePanels\)/);
-assert.match(viewer,/storySheetCrop\(shot,pagePanels.length\)/);
+assert.match(viewer,/storySheetCrop\\(shot,shot\\.sourceSheetCount\\|\\|pagePanels\\.length\\)/);
 assert.doesNotMatch(viewer,/loadApprovedPage/);
 assert.match(review,/registeredStoryPanelAsset\(shot\)/);
 assert.match(review,/storySheetCrop\(shot,count\)/);
