@@ -1,0 +1,43 @@
+name: Story compact 20-chapter runtime regression
+on:
+  pull_request:
+    paths:
+      - 'src/story-compact-comic.js'
+      - 'src/story-manga-viewer.js'
+      - 'src/story-narrative-flow.js'
+      - 'game.html'
+      - 'town-hub.html'
+      - 'world-map.html'
+      - 'data/story-compact-20chapters.json'
+      - 'story-compact-review.html'
+      - 'qa/story-compact-20-chapters.test.mjs'
+      - '.github/workflows/story-compact-20chapters.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'src/story-compact-comic.js'
+      - 'src/story-manga-viewer.js'
+      - 'data/story-compact-20chapters.json'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  story-compact:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify syntax of compact event runtime
+        run: |
+          node --check src/story-compact-comic.js
+          node --check src/story-manga-viewer.js
+          node --check src/story-narrative-flow.js
+      - name: Verify all twenty chapters, 200 stages and distinct defeat/gameover
+        run: node qa/story-compact-20-chapters.test.mjs
+      - name: Preserve old individual registered artwork and 462-cut review archive
+        run: |
+          node qa/story-panel-one-at-a-time.test.mjs
+          node qa/story-stage1-4-backlog.test.mjs
