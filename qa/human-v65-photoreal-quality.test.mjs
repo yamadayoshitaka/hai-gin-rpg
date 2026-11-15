@@ -8,6 +8,7 @@ import {v65ExpressionMuscleDelta,FACE_EXPRESSIONS}
  from '../src/face-expression-animation-v48.js';
 import {makePonytailMicrofibers,makeStyleSpecificHair}
  from '../src/face-wig-ornaments-v49.js';
+import {repairRealCrownScalpHoles} from '../src/face-scalp-wig.js';
 
 test('v65: nose cartilage never touches cheeks, eye sockets or rear skull',()=>{
  for(const xn of [-1,-.9,-.4,-.28,.28,.35,.75,1]){
@@ -104,4 +105,30 @@ test('v65: side ponytail owns 48 fine 3D hairs in only one additional draw mesh'
  assert.equal(hair.meshes.filter(m=>m.name.startsWith('PONYTAIL_FALLING_LOCK')).length,14);
  assert.equal(hair.meshes.filter(m=>m.name.startsWith('PONYTAIL_SCALP_FEED')).length,7);
  for(const mesh of hair.meshes){mesh.geometry.dispose();mesh.material.dispose();}
+});
+
+
+test('v65: small topological crown hole is repaired from its true scalp boundary only',()=>{
+ const box=new THREE.Box3(new THREE.Vector3(-.4,0,-.4),
+  new THREE.Vector3(.4,1,.4));
+ const outer=[[-.24,.94,-.24],[.24,.94,-.24],[.24,.94,.24],[-.24,.94,.24]];
+ const inner=[[-.024,.94,-.024],[.024,.94,-.024],[.024,.94,.024],[-.024,.94,.024]];
+ const verts=[],normals=[];
+ for(let i=0;i<4;i++){
+  const j=(i+1)%4;
+  for(const p of [outer[i],outer[j],inner[j],outer[i],inner[j],inner[i]]){
+   verts.push(...p);normals.push(0,1,0);
+  }
+ }
+ const original=verts.length;
+ const repair=repairRealCrownScalpHoles(verts,normals,box);
+ assert.equal(repair.repairCount,1,'center crown hole closed with real boundary');
+ assert.equal(repair.triangles,4);
+ assert.equal(verts.length,original+repair.triangles*9);
+ assert.equal(normals.length,verts.length);
+ assert.equal(repair.noFullWigCap,true);
+ assert.ok(verts.slice(0,original).every((x,i)=>x===[
+  ...Array.from({length:4},(_,k)=>{
+   const j=(k+1)%4;return [outer[k],outer[j],inner[j],outer[k],inner[j],inner[k]].flat();
+  }).flat()][i]),'existing donor head triangles must remain untouched');
 });
