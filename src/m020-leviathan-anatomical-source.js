@@ -86,10 +86,42 @@ export function buildLeviathanAnatomicalSource(THREE,{segments=56,radial=18}={})
   const t=.21+n*.115,p=profile(t),x=p.x;
   fin('dorsal-spine-'+n,[x,p.y+p.ry*.93,0],[[x-.30,p.y+p.ry+(.50-n*.055),0],[x+.21,p.y+p.ry+(.74-n*.075),0],[x+.50,p.y+p.ry*.96,0]]);
  }
+ // Pectoral fins have a swept cambered web, cartilage rays and independent pivots.
+ const pectoralPivots=[];
  for(const side of [-1,1]){
   const p=profile(.65);
-  fin('pectoral-fin-'+side,[p.x,p.y-.10,side*p.rz*.85],
-    [[p.x-.50,p.y-.30,side*2.05],[p.x-1.35,p.y-.47,side*2.65],[p.x-.96,p.y-.23,side*p.rz]]);
+  const pivot=new THREE.Group();pivot.name='pectoral-articulation-'+side;
+  pivot.position.set(p.x,p.y-.10,side*p.rz*.85);body.add(pivot);pectoralPivots.push({pivot,side});
+  const verts=[],uv=[],idx=[],span=12,chord=8;
+  for(let i=0;i<=span;i++){
+   const u=i/span;
+   for(let j=0;j<=chord;j++){
+    const v=j/chord;
+    verts.push(-1.48*u+.30*u*Math.sin(Math.PI*v),
+      -.22*u-.18*Math.sin(Math.PI*u)*Math.sin(Math.PI*v),
+      side*(1.83*u+.14*Math.sin(Math.PI*u)*Math.sin(Math.PI*v)));
+    uv.push(u,v);
+   }
+  }
+  for(let i=0;i<span;i++)for(let j=0;j<chord;j++){
+   const a=i*(chord+1)+j,b=a+chord+1;idx.push(a,b,a+1,b,b+1,a+1);
+  }
+  const wingGeometry=new THREE.BufferGeometry();
+  wingGeometry.setAttribute('position',new THREE.Float32BufferAttribute(verts,3));
+  wingGeometry.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
+  wingGeometry.setIndex(idx);wingGeometry.computeVertexNormals();
+  const web=new THREE.Mesh(wingGeometry,finMat);web.name='pectoral-cambered-web-'+side;pivot.add(web);
+  for(let rayIndex=0;rayIndex<=chord;rayIndex+=2){
+   const v=rayIndex/chord,path=[];
+   for(let i=0;i<=span;i++){
+    const u=i/span;
+    path.push(new THREE.Vector3(-1.48*u+.30*u*Math.sin(Math.PI*v),
+     -.22*u-.18*Math.sin(Math.PI*u)*Math.sin(Math.PI*v),
+     side*(1.83*u+.14*Math.sin(Math.PI*u)*Math.sin(Math.PI*v))+.014));
+   }
+   const ray=new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(path),18,.012,5,false),bone);
+   ray.name='pectoral-cartilage-ray-'+side+'-'+rayIndex;pivot.add(ray);
+  }
   const q=profile(.32);
   fin('pelvic-fin-'+side,[q.x,q.y-.20,side*q.rz*.82],
     [[q.x-.40,q.y-.62,side*1.45],[q.x-1.03,q.y-.82,side*1.66],[q.x-.60,q.y-.28,side*q.rz]]);
@@ -139,6 +171,7 @@ export function buildLeviathanAnatomicalSource(THREE,{segments=56,radial=18}={})
    const phase=seconds*1.6;
    body.rotation.y=.045*Math.sin(phase);
    tail.rotation.y=.29*Math.sin(phase-.9);
+   for(const {pivot,side} of pectoralPivots)pivot.rotation.x=side*(.10+.14*Math.sin(phase-.55));
    head.rotation.y=.035*Math.sin(phase+.4);
    jaw.rotation.z=-.08-.08*(.5+.5*Math.sin(seconds*.7));
    body.position.y=.12*Math.sin(seconds*.85);
