@@ -41,7 +41,7 @@ for(const c of [1,2.2]){
  assert(Math.max(...xs)>c*.52,'actual barrel belly is wider than both wooden ends');
  const root=createRoot();
  addRealisticWoodBarrel(THREE,root,{cellSize:c,wood,dark,metal:iron});
- assert.equal(root.children.find(x=>x.name==='barrel_18_closed_wood_staves')?.geometry,g.constructor===BufferGeometry?root.children.find(x=>x.name==='barrel_18_closed_wood_staves').geometry:undefined);
+ assert(root.children.find(x=>x.name==='barrel_18_closed_wood_staves')?.geometry instanceof BufferGeometry);
  assert.equal(root.children.filter(x=>x.name?.startsWith('barrel_iron_hoop_')).length,3);
  assert(root.children.find(x=>x.name==='barrel_solid_recessed_head'));
  assert(root.children.find(x=>x.name==='barrel_head_bung'));
