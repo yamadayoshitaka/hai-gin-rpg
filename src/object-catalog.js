@@ -228,9 +228,41 @@ export function createObjectById(id,{cellSize=2.2}={}){
   const fire=new THREE.MeshStandardMaterial({color:0xff9e31,emissive:0xe65a0c,emissiveIntensity:2});
   const b=(w,h,d,x,y,z,m=timber)=>{const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);o.position.set(x,y,z);o.castShadow=true;o.receiveShadow=true;root.add(o);return o};
   const c=cellSize;
-  if(id==='cottage_table_001'){b(2*c,.13*c,1.25*c,0,.85*c,0);for(const x of [-.82,.82])for(const z of [-.46,.46])b(.14*c,.78*c,.14*c,x*c,.4*c,z*c,dark);for(let i=0;i<6;i++)b(.018*c,.015*c,1.23*c,(i-2.5)*.3*c,.92*c,0,dark)}
-  if(id==='cottage_chair_001'){b(.7*c,.11*c,.65*c,0,.48*c,0);b(.7*c,.83*c,.11*c,0,.88*c,-.29*c);for(const x of [-.27,.27])for(const z of [-.23,.23])b(.1*c,.47*c,.1*c,x*c,.23*c,z*c,dark)}
-  if(id==='cottage_bed_001'){b(1.6*c,.28*c,2.5*c,0,.38*c,0,dark);b(1.5*c,.22*c,2.25*c,0,.6*c,0,linen);b(1.6*c,1.1*c,.16*c,0,.65*c,-1.2*c);b(1.1*c,.14*c,.5*c,0,.76*c,-.78*c,linen)}
+  if(id==='cottage_table_001'){
+   // Four grounded legs, mortise-and-tenon aprons, and separate edge-jointed top planks.
+   for(let i=0;i<5;i++)b(.394*c,.105*c,1.25*c,(i-2)*.4*c,.855*c,0,i%2?dark:undefined);
+   for(const x of [-.82,.82])for(const z of [-.46,.46]){
+    b(.14*c,.79*c,.14*c,x*c,.395*c,z*c,dark);
+    b(.19*c,.045*c,.19*c,x*c,.765*c,z*c,dark);
+   }
+   for(const z of [-.46,.46])b(1.61*c,.19*c,.065*c,0,.69*c,z*c,dark);
+   for(const x of [-.82,.82])b(.065*c,.19*c,.82*c,x*c,.69*c,0,dark);
+   b(.085*c,.13*c,1.0*c,0,.66*c,0,dark);
+  }
+  if(id==='cottage_chair_001'){
+   // Continuous rear uprights support the back; rails brace the seat against racking.
+   for(let i=0;i<4;i++)b(.167*c,.085*c,.65*c,(i-1.5)*.175*c,.485*c,0,i%2?dark:undefined);
+   for(const x of [-.27,.27]){
+    b(.105*c,.48*c,.105*c,x*c,.24*c,.23*c,dark);
+    b(.105*c,1.24*c,.105*c,x*c,.62*c,-.23*c,dark);
+   }
+   for(const z of [-.23,.23])b(.54*c,.12*c,.07*c,0,.375*c,z*c,dark);
+   for(const x of [-.27,.27])b(.065*c,.12*c,.4*c,x*c,.375*c,0,dark);
+   for(const y of [.85,1.12])b(.53*c,.12*c,.065*c,0,y*c,-.23*c);
+   b(.54*c,.065*c,.07*c,0,.2*c,-.23*c,dark);
+  }
+  if(id==='cottage_bed_001'){
+   // Bed frame: grounded corner posts, longitudinal side rails, transverse slats and headboard.
+   for(const x of [-.73,.73])for(const z of [-1.16,1.16])
+    b(.14*c,(z<0?1.08:.62)*c,.14*c,x*c,(z<0?.54:.31)*c,z*c,dark);
+   for(const x of [-.73,.73])b(.11*c,.2*c,2.32*c,x*c,.43*c,0,dark);
+   for(const z of [-1.16,1.16])b(1.45*c,.19*c,.12*c,0,.43*c,z*c,dark);
+   for(let i=0;i<11;i++)b(1.36*c,.055*c,.135*c,0,.53*c,(i-5)*.205*c,dark);
+   for(let i=0;i<7;i++)b(1.36*c,.085*c,.105*c,0,(.54+i*.078)*c,-1.16*c);
+   b(1.42*c,.19*c,.13*c,0,1.1*c,-1.16*c,dark);
+   b(1.46*c,.18*c,2.22*c,0,.69*c,0,linen);
+   b(1.12*c,.13*c,.47*c,0,.85*c,-.77*c,linen);
+  }
   if(id==='cottage_shelf_001'){for(const x of [-.8,.8])b(.14*c,2.8*c,.7*c,x*c,1.4*c,0);for(let y=.3;y<2.8;y+=.62){b(1.8*c,.12*c,.8*c,0,y*c,0);for(let i=0;i<5;i++)b(.17*c,.36*c,.36*c,(i-2)*.31*c,(y+.23)*c,0,i%2?dark:linen)}}
   if(id==='cottage_fireplace_001'){b(2.6*c,.3*c,1*c,0,.15*c,0,stone);for(const x of [-1.1,1.1])b(.42*c,2.5*c,.9*c,x*c,1.25*c,0,stone);b(2.65*c,.4*c,1.05*c,0,2.5*c,0,stone);b(1.2*c,.45*c,.4*c,0,.48*c,.1*c,fire)}
   if(id==='cottage_barrel_001'){const o=new THREE.Mesh(new THREE.CylinderGeometry(.48*c,.52*c,1.15*c,24,3),timber);o.position.y=.58*c;o.castShadow=true;root.add(o);for(const y of [.2,.94]){const ring=new THREE.Mesh(new THREE.TorusGeometry(.49*c,.045*c,7,28),dark);ring.rotation.x=Math.PI/2;ring.position.y=y*c;root.add(ring)}}
