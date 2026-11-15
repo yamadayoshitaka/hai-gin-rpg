@@ -10,9 +10,10 @@ export function classifyCloudflareFailure({status,errors=[],localCap=false,crede
  if(credentialsMissing)return 'CLOUDFLARE_NOT_CONFIGURED';
  const codeSet=new Set((Array.isArray(errors)?errors:[]).map(x=>String(x?.code??'')));
  if(codeSet.has('3030'))return 'SAFETY_REVIEW_REQUIRED';
+ if((status===400||status===429)&&[...codeSet].some(c=>LIMIT_CODES.has(c)))
+  return 'FREE_QUOTA_EXHAUSTED';
  if(status===429){
   if([...codeSet].some(c=>CAPACITY_CODES.has(c)))return 'TEMPORARY_CAPACITY_LIMIT';
-  if([...codeSet].some(c=>LIMIT_CODES.has(c)))return 'FREE_QUOTA_EXHAUSTED';
   return 'API_RATE_LIMITED';
  }
  return 'CLOUDFLARE_ERROR';
