@@ -1,0 +1,31 @@
+name: Four-group manual batch instructions (owner only)
+on:
+  issues:
+    types: [opened]
+  pull_request:
+    paths:
+      - '.github/workflows/hourly-batch-manual.yml'
+      - 'scripts/manual-hourly-batch-dispatch.mjs'
+      - 'qa/manual-hourly-batch-dispatch.test.mjs'
+permissions:
+  contents: read
+  actions: write
+jobs:
+  verify-request:
+    if: github.event_name == 'pull_request' || (startsWith(github.event.issue.title, '[hai-gin-batch]') && github.event.issue.user.login == github.repository_owner)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate instruction routing and strict owner/type controls
+        run: |
+          node --check scripts/manual-hourly-batch-dispatch.mjs
+          node --test qa/manual-hourly-batch-dispatch.test.mjs
+      - name: Dispatch selected one-shot workflow
+        if: github.event_name == 'issues'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/manual-hourly-batch-dispatch.mjs
