@@ -426,7 +426,8 @@
       femaleMode.querySelector('[value="male"]').hidden=selected!=='dragon_lord';
       femaleMode.querySelector('[value="human"]').hidden=selected!=='dragon_lord';
       if(!preserveMode||previousSpecies!==selected)
-        femaleMode.value=selected==='dragon_lord'?'male':'female';
+        femaleMode.value=selected==='dragon_lord'?
+          (adoptedCreatureMesh('dragon_lord')!=='legacy'?'original':'male'):'female';
       femaleModeLabel.hidden=!femaleAvailable;
       femaleMode.disabled=!femaleAvailable;
       compareDragon.disabled=selected!=='dragon'||!licensedRegistry.entries.dragon;
