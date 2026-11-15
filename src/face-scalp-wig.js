@@ -208,6 +208,85 @@ export function v63WigLockTone(t,seed,layer=0){
  return THREE.MathUtils.clamp(growth+strands-layer*.022,.80,1.09);
 }
 
+/** v65 crown repair: identify and triangulate ONLY compact closed
+ * boundaries in actual scalp triangles. Never cover the full head with a
+ * fake wig hemisphere: intact anatomy remains unchanged. */
+export function repairRealCrownScalpHoles(vertices,normals,box){
+ const d=box.getSize(new THREE.Vector3()),c=box.getCenter(new THREE.Vector3());
+ const tol=Math.max(d.x*.00025,1e-7),byKey=new Map(),edges=new Map();
+ const key=p=>[p[0],p[1],p[2]].map(v=>Math.round(v/tol)).join(':');
+ const threshold=box.min.y+d.y*.79;
+ const point=(array,i)=>array.slice(i*3,i*3+3);
+ for(let i=0;i+8<vertices.length;i+=9){
+  const tri=[0,1,2].map(j=>point(vertices,i/3+j));
+  for(let j=0;j<3;j++){
+   const p=tri[j],q=tri[(j+1)%3];
+   if(Math.min(p[1],q[1])<threshold)continue;
+   const a=key(p),b=key(q);if(a===b)continue;
+   if(!byKey.has(a))byKey.set(a,p);if(!byKey.has(b))byKey.set(b,q);
+   const k=a<b?a+'|'+b:b+'|'+a;
+   const data=edges.get(k)||{a,b,count:0};data.count++;edges.set(k,data);
+  }
+ }
+ const graph=new Map();
+ for(const {a,b,count} of edges.values()){
+  if(count!==1)continue;
+  if(!graph.has(a))graph.set(a,new Set());
+  if(!graph.has(b))graph.set(b,new Set());
+  graph.get(a).add(b);graph.get(b).add(a);
+ }
+ let repairs=0,addedTriangles=0;
+ const seen=new Set();
+ for(const start of graph.keys()){
+  if(seen.has(start))continue;
+  const group=new Set(),pending=[start];
+  while(pending.length){
+   const k=pending.pop();if(group.has(k))continue;
+   group.add(k);
+   for(const n of graph.get(k)||[])if(!group.has(n))pending.push(n);
+  }
+  for(const v of group)seen.add(v);
+  if(group.size<3||group.size>28||
+   [...group].some(v=>graph.get(v)?.size!==2))continue;
+  const ordered=[start],first=[...graph.get(start)][0];
+  let prev=start,current=first;
+  for(let i=0;i<group.size;i++){
+   if(current===start)break;
+   ordered.push(current);
+   const next=[...graph.get(current)].find(v=>v!==prev);
+   prev=current;current=next;
+   if(!current)break;
+  }
+  if(current!==start||ordered.length!==group.size)continue;
+  const positions=ordered.map(k=>byKey.get(k));
+  const xs=positions.map(p=>p[0]),zs=positions.map(p=>p[2]);
+  const sizeX=Math.max(...xs)-Math.min(...xs);
+  const sizeZ=Math.max(...zs)-Math.min(...zs);
+  if(sizeX>d.x*.22||sizeZ>d.z*.22||
+   sizeX+sizeZ<d.x*.003)continue;
+  const center=positions.reduce((v,p)=>{
+   v[0]+=p[0]/positions.length;v[1]+=p[1]/positions.length;
+   v[2]+=p[2]/positions.length;return v;
+  },[0,0,0]);
+  if(Math.abs(center[0]-c.x)>d.x*.23||
+   Math.abs(center[2]-c.z)>d.z*.28)continue;
+  const normal=new THREE.Vector3(
+   (center[0]-c.x)/Math.max(.0001,d.x*.5),
+   1,(center[2]-c.z)/Math.max(.0001,d.z*.5)).normalize();
+  const capCenter=[center[0],center[1]+d.y*.00055,center[2]];
+  for(let j=0;j<positions.length;j++){
+   const a=positions[j],b=positions[(j+1)%positions.length];
+   for(const p of [capCenter,a,b]){
+    vertices.push(...p);normals.push(normal.x,normal.y,normal.z);
+   }
+   addedTriangles++;
+  }
+  repairs++;
+ }
+ return {repairCount:repairs,triangles:addedTriangles,
+  scopedToRealScalp:true,noFullWigCap:true};
+}
+
 function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile='natural'}={}){
  const src=geo.getAttribute('position'),idx=geo.index;
  const n=idx?idx.count:src.count,d=box.getSize(new THREE.Vector3());
@@ -264,6 +343,7 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
    smoothNormals.push(n.x,n.y,n.z);
   }
  }
+ const crownRepair=repairRealCrownScalpHoles(verts,smoothNormals,box);
  // 52 independent tapered underlocks: rooted on actual posterior head
  // vertices, rather than a rectangular curtain hanging across the neck.
  const rearCandidates=[];
@@ -340,6 +420,8 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
  mesh.userData.scalpSource='sculpted-real-head-triangles';
  mesh.userData.hairColoredOpaqueRoot=true;
  mesh.userData.v63RootMelaninShading=true;
+ mesh.userData.v65CrownTopologyRepairCount=crownRepair.repairCount;
+ mesh.userData.v65CrownTopologyRepairTriangles=crownRepair.triangles;
  mesh.userData.v63VertexColorCount=melanin.length/3;
  mesh.userData.hairRootColor='#'+new THREE.Color(color).getHexString();
  mesh.userData.v33RaisedWigBase=true;
@@ -1121,6 +1203,8 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    m.name==='PONYTAIL_MICROFIBER_BUNDLE_V65')?1:0,
   silhouette3dProfile:{...silhouette},
   hairColoredOpaqueRoot:cap.userData.hairColoredOpaqueRoot,
+  v65CrownTopologyRepairCount:cap.userData.v65CrownTopologyRepairCount,
+  v65CrownTopologyRepairTriangles:cap.userData.v65CrownTopologyRepairTriangles,
   frontRootCoverage:'lower-scalp-cap-and-overlapping-hair-cards',
   fringeCardWidthFactor:.43,
   maleLongFringeMinimumScale:.86,
