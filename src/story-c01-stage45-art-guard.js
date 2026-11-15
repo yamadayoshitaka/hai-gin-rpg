@@ -25,6 +25,13 @@ export function buildStage45ArtPrompt({stageId,stageName,edition,gender,shot,act
   'post-defeat':'After DEFEAT. No victory, no claimed achievement, no joyful return.',
   'post-gameover':'After commander DEATH. Do not portray the commander alive, returning or speaking.'
  }[edition];
+ const mandatorySceneDirections={
+  'c01-s04-m2':'A dialogue-only pre-battle consultation: silver-haired regent Lucia urgently asks older knight Garan what purpose the campaign serves. TWO people ONLY, no action battle, no swords raised. DISTINCT camera: medium two-shot across a plain unlettered planning table in a small temporary command canopy at the edge of the forest ruins.',
+  'c01-s04-m4':'A revelation, NOT an action battle or a forest-ruin bell-carving close-up: healer Iris in a cream hood shows regent Lucia an OPEN, COMPLETELY BLANK death registry in the ruined chapel, where written names have mysteriously vanished. TWO women ONLY (Iris and Lucia); no Garan, no commander or duplicate cast. DISTINCT camera: close over Iris shoulder toward the open blank registry and Lucia shocked expression, inside shadowy chapel stone arches.',
+  'c01-s04-m11':'A pre-battle lost-road investigation: older knight Garan kneels to study an overgrown stone route omitted from the map, while regent Lucia searches ahead. TWO people ONLY, sunlit forest ruin pathway, wide establishing composition, NO combat and NO close-up pointing at bell relief.',
+  'c01-s04-m13':'A pre-battle clue inspection: regent Lucia and cream-hooded healer Iris study a bell-keeper emblem and traces of ancient wax seal on a weathered ruin. TWO women ONLY, intimate diagonal two-shot, NO armored older knight, and NOT the preceding lost-road scene.'
+ };
+ const specialDirection=stageId==='c01-s04'?mandatorySceneDirections[shot.id]:null;
  const scenes={
   'c01-s04':'Ancient overgrown stone ruins deep in a forest; an executed bell-keeper\'s emblem, old wax seal traces and the investigation. Forest moss, broken columns, mysterious late medieval stonework. Do not invent results of the investigation before a confirmed victory.',
   'c01-s05':'A besieged medieval town at the defensive perimeter: intact civilian evacuation routes, stone walls, guard barricades, retreating villagers and military formations appropriate to the specific shot. Do not depict defence as successful before confirmed victory.'
@@ -38,6 +45,7 @@ export function buildStage45ArtPrompt({stageId,stageName,edition,gender,shot,act
   'P0 STAGE BACKGROUND = '+scenes[stageId],
   'P0 STAGE CANONICAL STORY CONTEXT (never print): '+stageStory,
   'P0 THIS SHOT ONLY = '+script,
+  ...(specialDirection?['P0 UNIQUE SHOT DIRECTION, OVERRIDES REUSED GENERIC COMPOSITIONS = '+specialDirection]:[]),
   'P0 SHOT ACTUAL DIRECTING = scene kind '+(shot.kind||'unknown')+', scenery '+(shot.scenery||'stage-specific')+', expression '+(shot.expression||'script-consistent')+', mood '+(shot.mood||'script-consistent')+'. Depict THIS beat rather than a generic fantasy battle.',
   'P0 HERO IDENTITY = '+(gender==='female'?
    'female commander with long golden blonde hair, blue eyes, refined female face, silver armor and violet/gold-edged cloak; distinct from silver-haired regent Lucia.':
@@ -46,7 +54,8 @@ export function buildStage45ArtPrompt({stageId,stageName,edition,gender,shot,act
   ...actorRefs.map((ref,i)=>'P0 CHARACTER REFERENCE ATTACHMENT #'+i+' physically supplied: '+ref.id+' / '+ref.path+' / SHA256 '+ref.sha+'. Preserve exactly this actor\'s face, age, hairstyle, costume, body proportions and '+ref.rule+'. Do not swap persons or garments.'),
   'P0 STYLE REFERENCE ATTACHMENT physically supplied (not an additional character): '+styleRef.path+' / SHA256 '+styleRef.sha+'. Use it for quality/lighting/detail only, never copy its people into the scene.',
   'P0 CINEMA: one intentional dramatic camera angle with clear focal subject, plausible depth, controlled lighting, coherent shadows, cloth/armor continuity and readable action WITHOUT WORDS. Hands have anatomically correct fingers; armor does not float or intersect skin. Hair roots connect to scalp. No impossible faces.',
+  'P0 NO REFERENCE SCENE REUSE: attached pictures are FACE/CLOTHING references only. Never repeat their scenery, poses or narrative. Do not turn a one-frame shot into a diptych, triptych, collage or multiple panels. Only the exact requested scene may appear.',
   'P0 BRANCH ISOLATION: keep male and female assets separate; keep victory, defeat, gameover separate. Never repurpose a prior unrelated outcome. The exact script and actors override any generic model style preference.',
-  'P0 VALIDATION: save native original frame at >=1536x864 EXACT 16:9, do not upscale. Save sceneId, screenshot/image hash, real attached reference hashes, prompt hash and required human visual QA separately; DO NOT claim formal approval without it.'
+  'P0 VALIDATION: native original >=800x450 (16:9) WITHOUT UPSCALING; preferred 1024x576 or larger. 1536x864 IS NOT required. Verify actual native pixels, correct visible cast and exact unique scene, prompt and source hashes, textual artifacts and human visual QA. Any wrong narrative/scene reuse = REJECTED; do not auto-approve.'
  ].join('\n');
 }
