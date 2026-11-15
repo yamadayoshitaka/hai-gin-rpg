@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "category": "anime",
+  "saved": [
+    {
+      "id": "c01-s04/native-frame-geometry-gate",
+      "sourceFiles": [
+        "scripts/qa-story-single-panel-frame.py"
+      ],
+      "commitSha": "bdbc2a814804931bbb10e8ded4f49c7666481b91",
+      "qa": "unverified"
+    }
+  ],
+  "remainingIds": [
+    "c01-s04/remaining-unregistered-shots",
+    "c01-s04/reference-byte-delivery",
+    "c01-s04/real-WebP-Pillow-QA"
+  ],
+  "nextAction": "Run Pillow-backed fixture tests for 800x450, 1024x576, undersize, wrong ratio, and hard gutter; inspect PR #444 against #421/#428/#435 before merge; verify actual free generator and stage4 manifest before any image registration."
+}
