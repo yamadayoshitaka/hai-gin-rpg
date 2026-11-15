@@ -23,6 +23,11 @@ import {deriveGarmentCoverage,clipBodyToGarment,originalSkinGeometry} from './ga
 
 // The original humanoid is preserved in the reversible skin cache, but
 // opaque trousers must hide the covered visible skin while worn.
+/** Retain the real animated boot shafts for swordsman 3D inspection only. */
+export function studioRetainSourceBoot({jobId='',studioVisibleLegAnatomy=false,meshName='',isSkinnedMesh=false}={}){
+ return !!studioVisibleLegAnatomy&&jobId==='job01'&&!!isSkinnedMesh&&
+  /^(?:male|female)_(?:ranger|peasant)_feet(?:_boots)?(?:_|$)/i.test(String(meshName));
+}
 export function studioCoveredSkinPolicy({studioPreferSkinnedLegs=false,
  studioPreserveLegAnatomy=false,studioVisibleLegAnatomy=false,preserveBody=false}={}){
  // Preview-only opt-in: preserve actual thigh, calf and foot skinned triangles
@@ -464,7 +469,7 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
   if(linked.length<60)throw Error('関節名の一致が不足: '+linked.length+'/65');
   let gambesonMeshes=0,commanderUniformMeshes=0,thiefSourceBeltsHidden=0;
   let correctedLimbMeshes=0,preservedSkinMaterials=0;
-  let suppressedBaseLegMeshes=0,retainedSkinnedLegMeshes=0;
+  let suppressedBaseLegMeshes=0,retainedSkinnedLegMeshes=0,retainedSkinnedBootMeshes=0;
   // One imported skinned trouser mesh already contains both animated legs.
   // Use it in tactical battles instead of overlaying pipe-shaped cylinders.
   let sourceTrouserMeshCount=0;
@@ -547,9 +552,19 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
       dressed.traverse(part=>{
         if(!part.isMesh||!replacedPlateBaseLegMesh(part.name))return;
         const isTrouser=/^(?:male|female)_(?:ranger|peasant)_legs(?:_|$)/i.test(part.name);
-        if(useSourceSkinnedLegs&&isTrouser){
-          part.visible=true;part.userData.retainedAsSkinnedTrouser=true;
+        const retainSourceBoot=studioRetainSourceBoot({
+          jobId,studioVisibleLegAnatomy,meshName:part.name,
+          isSkinnedMesh:part.isSkinnedMesh
+        });
+        if((useSourceSkinnedLegs&&isTrouser)||retainSourceBoot){
+          // Source Feet contains full shin-to-ankle leather, not just a shoe.
+          // Its actual 65-bone skin weights follow the Ranger trouser skeleton;
+          // the original metal sabatons can continue to cover its toe region.
+          part.visible=true;
+          part.userData.retainedAsSkinnedTrouser=!!isTrouser;
+          part.userData.retainedAsSkinnedBoot=retainSourceBoot;
           retainedSkinnedLegMeshes++;
+          if(retainSourceBoot)retainedSkinnedBootMeshes++;
         }else{
           part.visible=false;part.userData.replacedByPlateArmor=true;
           suppressedBaseLegMeshes++;
@@ -925,7 +940,7 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
       studioVisibleLegAnatomy:studioSkinPolicy.visibleLegAnatomy,
       armorDepthOffsets:armor?.depthOffsets||{helmet:0,chest:0},
       armorPartAxes:armor?.diagnostics.partAxes||{},
-      suppressedBaseLegMeshes,retainedSkinnedLegMeshes,useSourceSkinnedLegs,studioPreferSkinnedLegs,
+      suppressedBaseLegMeshes,retainedSkinnedLegMeshes,retainedSkinnedBootMeshes,useSourceSkinnedLegs,studioPreferSkinnedLegs,
       sourceTrouserLegMeshesSkipped:armor?.diagnostics.sourceTrouserLegMeshesSkipped||0,
       sourceBootShaftsSkipped:armor?.diagnostics.sourceBootShaftsSkipped||0,
       consolidatedArmorPieces:armor?.diagnostics.consolidatedArmorPieces||0,
@@ -950,7 +965,7 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
     commanderPieces:jobId==='strategist'?detail.children.filter(o=>
       /^(command-|military-standing-collar|strategist-seal)/.test(o.name)).length:0,
     tunicPanels:detail.userData.tunicPanels,gambesonMeshes,commanderUniformMeshes,thiefSourceBeltsHidden,
-    correctedLimbMeshes,preservedSkinMaterials,suppressedBaseLegMeshes,retainedSkinnedLegMeshes,useSourceSkinnedLegs,studioPreferSkinnedLegs,
+    correctedLimbMeshes,preservedSkinMaterials,suppressedBaseLegMeshes,retainedSkinnedLegMeshes,retainedSkinnedBootMeshes,useSourceSkinnedLegs,studioPreferSkinnedLegs,
     gear:gear.length,weaponKinds:gear.map(g=>g.userData.equipmentKind),
     clothPieces:cloth.objects.length,clothFit:cloth.diagnostics.fittedRadii,
     garmentCoverage:garmentCoverage.regions,coverageSources:garmentCoverage.sources,
