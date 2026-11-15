@@ -5,14 +5,31 @@ on:
     paths:
       - '.github/workflows/world-quality-photoreal.yml'
       - 'scripts/world-quality-*.mjs'
+      - 'scripts/world-quality-manual-command.mjs'
       - 'scripts/world-quality-*.cjs'
       - 'scripts/world-quality-compare.py'
       - 'src/world-quality-pbr.js'
       - 'world-quality-preview.html'
       - 'batch-monitor.html'
       - 'qa/world-quality-contract.test.mjs'
+  issues:
+    types: [opened]
   workflow_dispatch:
     inputs:
+      target_type:
+        description: 'Targets to run: all, object, or stage'
+        required: true
+        default: 'all'
+        type: choice
+        options: ['all','object','stage']
+      target_key:
+        description: 'Optional exact key, e.g. object:castle_001 or stage:c01-s04'
+        required: false
+        type: string
+      next_instruction:
+        description: 'Optional per-run visual direction; 1000 characters max (no secrets)'
+        required: false
+        type: string
       max_references:
         description: 'Maximum independent reference images, 1-3; Cloudflare Free only'
         required: true
@@ -35,6 +52,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   static-contracts:
+    if: github.event_name != 'issues' || (startsWith(github.event.issue.title, '[world-quality]') && github.event.issue.user.login == github.repository_owner)
     runs-on: ubuntu-latest
     timeout-minutes: 9
     steps:
@@ -46,6 +64,7 @@ jobs:
         run: |
           node --check scripts/world-quality-catalog.mjs
           node --check scripts/world-quality-run.mjs
+          node --check scripts/world-quality-manual-command.mjs
           node --check scripts/world-quality-postprocess.mjs
           node --check scripts/world-quality-capture.cjs
           node --check scripts/world-quality-stage-capture.cjs
@@ -88,6 +107,8 @@ jobs:
             git switch -c "$REVIEW_BRANCH" origin/main
           fi
           node qa/world-quality-contract.test.mjs
+      - name: Load optional owner-authenticated next-batch instruction
+        run: node scripts/world-quality-manual-command.mjs
       - name: Create genuine isolated Cloudflare 2D references only on Free
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
