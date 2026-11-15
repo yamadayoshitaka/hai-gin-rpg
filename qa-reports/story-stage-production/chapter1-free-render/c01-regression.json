@@ -4,14 +4,14 @@
   "canonicalPages": 132,
   "counts": {
     "expected": 462,
-    "existingRegistrationNotP0Approved": 44,
-    "liveOriginalRegistrations": 126,
+    "existingRegistrationNotP0Approved": 51,
+    "liveOriginalRegistrations": 133,
     "legacyNativeRegenerationRequired": 0,
     "validRealReviewDraft": 79,
-    "missing": 336,
-    "providerBlocked": 3,
+    "missing": 292,
+    "providerBlocked": 7,
     "incorrectNativePixels": 0,
-    "invalidProof": 0,
+    "invalidProof": 33,
     "duplicate": 0,
     "formallyApprovedNew": 0
   },
@@ -27,7 +27,140 @@
     "distinct real frame per distinct canonical shot",
     "human verification STILL REQUIRED: appearance, anatomy, unwanted text, scene interpretation"
   ],
-  "rejected": [],
+  "rejected": [
+    {
+      "key": "c01-s04|pre|male|c01-s04-m5",
+      "reason": "actor identity/attachment mismatch"
+    },
+    {
+      "key": "c01-s04|pre|male|c01-s04-m11",
+      "reason": "actor identity/attachment mismatch"
+    },
+    {
+      "key": "c01-s04|pre|male|c01-s04-m13",
+      "reason": "actor identity/attachment mismatch"
+    },
+    {
+      "key": "c01-s04|pre|female|c01-s04-m2",
+      "reason": "actor identity/attachment mismatch"
+    },
+    {
+      "key": "c01-s04|pre|female|c01-s04-m4",
+      "reason": "actor identity/attachment mismatch"
+    },
+    {
+      "key": "c01-s04|pre|female|c01-s04-m11",
+      "reason": "actor identity/attachment mismatch"
+    },
+    {
+      "key": "c01-s04|pre|female|c01-s04-m13",
+      "reason": "actor identity/attachment mismatch"
+    },
+    {
+      "key": "c01-s04|pre|female|c01-s04-m15",
+      "reason": "actor identity/attachment mismatch"
+    },
+    {
+      "key": "c01-s04|post-victory|male|c01-s04-m6",
+      "reason": "actor identity/attachment mismatch"
+    },
+    {
+      "key": "c01-s04|post-victory|male|c01-s04-m7",
+      "reason": "actor identity/attachment mismatch"
+    },
+    {
+      "key": "c01-s04|post-victory|male|c01-s04-m8",
+      "reason": "actor identity/attachment mismatch"
+    },
+    {
+      "key": "c01-s04|post-victory|male|c01-s04-m9",
+      "reason": "actor identity/attachment mismatch"
+    },
+    {
+      "key": "c01-s04|post-victory|male|c01-s04-m16",
+      "reason": "actor identity/attachment mismatch"
+    },
+    {
+      "key": "c01-s04|post-victory|male|c01-s04-m19",
+      "reason": "actor identity/attachment mismatch"
+    },
+    {
+      "key": "c01-s04|post-victory|male|c01-s04-m10",
+      "reason": "actor identity/attachment mismatch"
+    },
+    {
+      "key": "c01-s04|post-victory|female|c01-s04-m6",
+      "reason": "actor identity/attachment mismatch"
+    },
+    {
+      "key": "c01-s04|post-victory|female|c01-s04-m7",
+      "reason": "actor identity/attachment mismatch"
+    },
+    {
+      "key": "c01-s04|post-defeat|male|c01-s04-m6",
+      "reason": "actor identity/attachment mismatch"
+    },
+    {
+      "key": "c01-s04|post-defeat|male|c01-s04-m7",
+      "reason": "actor identity/attachment mismatch"
+    },
+    {
+      "key": "c01-s04|post-defeat|male|c01-s04-m8",
+      "reason": "actor identity/attachment mismatch"
+    },
+    {
+      "key": "c01-s04|post-defeat|male|c01-s04-m9",
+      "reason": "actor identity/attachment mismatch"
+    },
+    {
+      "key": "c01-s04|post-defeat|male|c01-s04-m16",
+      "reason": "actor identity/attachment mismatch"
+    },
+    {
+      "key": "c01-s04|post-defeat|male|c01-s04-m19",
+      "reason": "actor identity/attachment mismatch"
+    },
+    {
+      "key": "c01-s04|post-defeat|male|c01-s04-m10",
+      "reason": "actor identity/attachment mismatch"
+    },
+    {
+      "key": "c01-s04|post-defeat|female|c01-s04-m6",
+      "reason": "actor identity/attachment mismatch"
+    },
+    {
+      "key": "c01-s04|post-defeat|female|c01-s04-m7",
+      "reason": "actor identity/attachment mismatch"
+    },
+    {
+      "key": "c01-s04|post-defeat|female|c01-s04-m8",
+      "reason": "actor identity/attachment mismatch"
+    },
+    {
+      "key": "c01-s04|post-defeat|female|c01-s04-m9",
+      "reason": "actor identity/attachment mismatch"
+    },
+    {
+      "key": "c01-s04|post-defeat|female|c01-s04-m16",
+      "reason": "actor identity/attachment mismatch"
+    },
+    {
+      "key": "c01-s04|post-gameover|male|c01-s04-death-1",
+      "reason": "actor identity/attachment mismatch"
+    },
+    {
+      "key": "c01-s04|post-gameover|male|c01-s04-death-2",
+      "reason": "actor identity/attachment mismatch"
+    },
+    {
+      "key": "c01-s04|post-gameover|female|c01-s04-death-1",
+      "reason": "actor identity/attachment mismatch"
+    },
+    {
+      "key": "c01-s04|post-gameover|female|c01-s04-death-2",
+      "reason": "actor identity/attachment mismatch"
+    }
+  ],
   "stages": [
     {
       "stageId": "c01-s01",
@@ -1502,32 +1635,36 @@
           "panelId": "c01-s04-m1",
           "gender": "male",
           "edition": "pre",
+          "originalLiveSource": "./assets/story/chapter1-provisional-live/c01-s04__pre__male__c01-s04-m1.webp",
           "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-pre-male/p01/c01-s04-m01-pre-male.webp",
-          "status": "MISSING_REAL_ART"
+          "status": "EXISTING_REGISTERED_NOT_P0_CERTIFIED"
         },
         {
           "key": "c01-s04|pre|male|c01-s04-m2",
           "panelId": "c01-s04-m2",
           "gender": "male",
           "edition": "pre",
+          "originalLiveSource": "./assets/story/chapter1-provisional-live/c01-s04__pre__male__c01-s04-m2.webp",
           "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-pre-male/p01/c01-s04-m02-pre-male.webp",
-          "status": "MISSING_REAL_ART"
+          "status": "EXISTING_REGISTERED_NOT_P0_CERTIFIED"
         },
         {
           "key": "c01-s04|pre|male|c01-s04-m3",
           "panelId": "c01-s04-m3",
           "gender": "male",
           "edition": "pre",
+          "originalLiveSource": "./assets/story/chapter1-provisional-live/c01-s04__pre__male__c01-s04-m3.webp",
           "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-pre-male/p01/c01-s04-m03-pre-male.webp",
-          "status": "MISSING_REAL_ART"
+          "status": "EXISTING_REGISTERED_NOT_P0_CERTIFIED"
         },
         {
           "key": "c01-s04|pre|male|c01-s04-m4",
           "panelId": "c01-s04-m4",
           "gender": "male",
           "edition": "pre",
+          "originalLiveSource": "./assets/story/chapter1-provisional-live/c01-s04__pre__male__c01-s04-m4.webp",
           "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-pre-male/p01/c01-s04-m04-pre-male.webp",
-          "status": "MISSING_REAL_ART"
+          "status": "EXISTING_REGISTERED_NOT_P0_CERTIFIED"
         },
         {
           "key": "c01-s04|pre|male|c01-s04-m5",
@@ -1535,7 +1672,8 @@
           "gender": "male",
           "edition": "pre",
           "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-pre-male/p01/c01-s04-m05-pre-male.webp",
-          "status": "MISSING_REAL_ART"
+          "status": "INVALID_PROOF",
+          "reason": "actor identity/attachment mismatch"
         },
         {
           "key": "c01-s04|pre|male|c01-s04-m11",
@@ -1543,7 +1681,8 @@
           "gender": "male",
           "edition": "pre",
           "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-pre-male/p02/c01-s04-m11-pre-male.webp",
-          "status": "MISSING_REAL_ART"
+          "status": "INVALID_PROOF",
+          "reason": "actor identity/attachment mismatch"
         },
         {
           "key": "c01-s04|pre|male|c01-s04-m13",
@@ -1551,23 +1690,26 @@
           "gender": "male",
           "edition": "pre",
           "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-pre-male/p02/c01-s04-m13-pre-male.webp",
-          "status": "MISSING_REAL_ART"
+          "status": "INVALID_PROOF",
+          "reason": "actor identity/attachment mismatch"
         },
         {
           "key": "c01-s04|pre|male|c01-s04-m15",
           "panelId": "c01-s04-m15",
           "gender": "male",
           "edition": "pre",
+          "originalLiveSource": "./assets/story/chapter1-provisional-live/c01-s04__pre__male__c01-s04-m15.webp",
           "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-pre-male/p02/c01-s04-m15-pre-male.webp",
-          "status": "MISSING_REAL_ART"
+          "status": "EXISTING_REGISTERED_NOT_P0_CERTIFIED"
         },
         {
           "key": "c01-s04|pre|female|c01-s04-m1",
           "panelId": "c01-s04-m1",
           "gender": "female",
           "edition": "pre",
+          "originalLiveSource": "./assets/story/chapter1-provisional-live/c01-s04__pre__female__c01-s04-m1.webp",
           "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-pre-female/p01/c01-s04-m01-pre-female.webp",
-          "status": "MISSING_REAL_ART"
+          "status": "EXISTING_REGISTERED_NOT_P0_CERTIFIED"
         },
         {
           "key": "c01-s04|pre|female|c01-s04-m2",
@@ -1575,15 +1717,17 @@
           "gender": "female",
           "edition": "pre",
           "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-pre-female/p01/c01-s04-m02-pre-female.webp",
-          "status": "MISSING_REAL_ART"
+          "status": "INVALID_PROOF",
+          "reason": "actor identity/attachment mismatch"
         },
         {
           "key": "c01-s04|pre|female|c01-s04-m3",
           "panelId": "c01-s04-m3",
           "gender": "female",
           "edition": "pre",
+          "originalLiveSource": "./assets/story/chapter1-provisional-live/c01-s04__pre__female__c01-s04-m3.webp",
           "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-pre-female/p01/c01-s04-m03-pre-female.webp",
-          "status": "MISSING_REAL_ART"
+          "status": "EXISTING_REGISTERED_NOT_P0_CERTIFIED"
         },
         {
           "key": "c01-s04|pre|female|c01-s04-m4",
@@ -1591,7 +1735,8 @@
           "gender": "female",
           "edition": "pre",
           "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-pre-female/p01/c01-s04-m04-pre-female.webp",
-          "status": "MISSING_REAL_ART"
+          "status": "INVALID_PROOF",
+          "reason": "actor identity/attachment mismatch"
         },
         {
           "key": "c01-s04|pre|female|c01-s04-m5",
@@ -1599,7 +1744,7 @@
           "gender": "female",
           "edition": "pre",
           "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-pre-female/p01/c01-s04-m05-pre-female.webp",
-          "status": "MISSING_REAL_ART"
+          "status": "PROVIDER_SAFETY_BLOCKED"
         },
         {
           "key": "c01-s04|pre|female|c01-s04-m11",
@@ -1607,7 +1752,8 @@
           "gender": "female",
           "edition": "pre",
           "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-pre-female/p02/c01-s04-m11-pre-female.webp",
-          "status": "MISSING_REAL_ART"
+          "status": "INVALID_PROOF",
+          "reason": "actor identity/attachment mismatch"
         },
         {
           "key": "c01-s04|pre|female|c01-s04-m13",
@@ -1615,7 +1761,8 @@
           "gender": "female",
           "edition": "pre",
           "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-pre-female/p02/c01-s04-m13-pre-female.webp",
-          "status": "MISSING_REAL_ART"
+          "status": "INVALID_PROOF",
+          "reason": "actor identity/attachment mismatch"
         },
         {
           "key": "c01-s04|pre|female|c01-s04-m15",
@@ -1623,7 +1770,8 @@
           "gender": "female",
           "edition": "pre",
           "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-pre-female/p02/c01-s04-m15-pre-female.webp",
-          "status": "MISSING_REAL_ART"
+          "status": "INVALID_PROOF",
+          "reason": "actor identity/attachment mismatch"
         },
         {
           "key": "c01-s04|post-victory|male|c01-s04-m6",
@@ -1631,7 +1779,8 @@
           "gender": "male",
           "edition": "post-victory",
           "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-post-victory-male/p01/c01-s04-m06-post-victory-male.webp",
-          "status": "MISSING_REAL_ART"
+          "status": "INVALID_PROOF",
+          "reason": "actor identity/attachment mismatch"
         },
         {
           "key": "c01-s04|post-victory|male|c01-s04-m7",
@@ -1639,7 +1788,8 @@
           "gender": "male",
           "edition": "post-victory",
           "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-post-victory-male/p01/c01-s04-m07-post-victory-male.webp",
-          "status": "MISSING_REAL_ART"
+          "status": "INVALID_PROOF",
+          "reason": "actor identity/attachment mismatch"
         },
         {
           "key": "c01-s04|post-victory|male|c01-s04-m8",
@@ -1647,7 +1797,8 @@
           "gender": "male",
           "edition": "post-victory",
           "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-post-victory-male/p01/c01-s04-m08-post-victory-male.webp",
-          "status": "MISSING_REAL_ART"
+          "status": "INVALID_PROOF",
+          "reason": "actor identity/attachment mismatch"
         },
         {
           "key": "c01-s04|post-victory|male|c01-s04-m9",
@@ -1655,7 +1806,8 @@
           "gender": "male",
           "edition": "post-victory",
           "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-post-victory-male/p01/c01-s04-m09-post-victory-male.webp",
-          "status": "MISSING_REAL_ART"
+          "status": "INVALID_PROOF",
+          "reason": "actor identity/attachment mismatch"
         },
         {
           "key": "c01-s04|post-victory|male|c01-s04-m16",
@@ -1663,7 +1815,8 @@
           "gender": "male",
           "edition": "post-victory",
           "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-post-victory-male/p01/c01-s04-m16-post-victory-male.webp",
-          "status": "MISSING_REAL_ART"
+          "status": "INVALID_PROOF",
+          "reason": "actor identity/attachment mismatch"
         },
         {
           "key": "c01-s04|post-victory|male|c01-s04-m19",
@@ -1671,7 +1824,8 @@
           "gender": "male",
           "edition": "post-victory",
           "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-post-victory-male/p02/c01-s04-m19-post-victory-male.webp",
-          "status": "MISSING_REAL_ART"
+          "status": "INVALID_PROOF",
+          "reason": "actor identity/attachment mismatch"
         },
         {
           "key": "c01-s04|post-victory|male|c01-s04-m10",
@@ -1679,7 +1833,8 @@
           "gender": "male",
           "edition": "post-victory",
           "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-post-victory-male/p02/c01-s04-m10-post-victory-male.webp",
-          "status": "MISSING_REAL_ART"
+          "status": "INVALID_PROOF",
+          "reason": "actor identity/attachment mismatch"
         },
         {
           "key": "c01-s04|post-victory|female|c01-s04-m6",
@@ -1687,7 +1842,8 @@
           "gender": "female",
           "edition": "post-victory",
           "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-post-victory-female/p01/c01-s04-m06-post-victory-female.webp",
-          "status": "MISSING_REAL_ART"
+          "status": "INVALID_PROOF",
+          "reason": "actor identity/attachment mismatch"
         },
         {
           "key": "c01-s04|post-victory|female|c01-s04-m7",
@@ -1695,7 +1851,8 @@
           "gender": "female",
           "edition": "post-victory",
           "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-post-victory-female/p01/c01-s04-m07-post-victory-female.webp",
-          "status": "MISSING_REAL_ART"
+          "status": "INVALID_PROOF",
+          "reason": "actor identity/attachment mismatch"
         },
         {
           "key": "c01-s04|post-victory|female|c01-s04-m8",
@@ -1703,7 +1860,7 @@
           "gender": "female",
           "edition": "post-victory",
           "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-post-victory-female/p01/c01-s04-m08-post-victory-female.webp",
-          "status": "MISSING_REAL_ART"
+          "status": "PROVIDER_SAFETY_BLOCKED"
         },
         {
           "key": "c01-s04|post-victory|female|c01-s04-m9",
@@ -1727,7 +1884,7 @@
           "gender": "female",
           "edition": "post-victory",
           "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-post-victory-female/p02/c01-s04-m19-post-victory-female.webp",
-          "status": "MISSING_REAL_ART"
+          "status": "PROVIDER_SAFETY_BLOCKED"
         },
         {
           "key": "c01-s04|post-victory|female|c01-s04-m10",
@@ -1743,7 +1900,8 @@
           "gender": "male",
           "edition": "post-defeat",
           "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-post-defeat-male/p01/c01-s04-m06-post-defeat-male.webp",
-          "status": "MISSING_REAL_ART"
+          "status": "INVALID_PROOF",
+          "reason": "actor identity/attachment mismatch"
         },
         {
           "key": "c01-s04|post-defeat|male|c01-s04-m7",
@@ -1751,7 +1909,8 @@
           "gender": "male",
           "edition": "post-defeat",
           "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-post-defeat-male/p01/c01-s04-m07-post-defeat-male.webp",
-          "status": "MISSING_REAL_ART"
+          "status": "INVALID_PROOF",
+          "reason": "actor identity/attachment mismatch"
         },
         {
           "key": "c01-s04|post-defeat|male|c01-s04-m8",
@@ -1759,7 +1918,8 @@
           "gender": "male",
           "edition": "post-defeat",
           "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-post-defeat-male/p01/c01-s04-m08-post-defeat-male.webp",
-          "status": "MISSING_REAL_ART"
+          "status": "INVALID_PROOF",
+          "reason": "actor identity/attachment mismatch"
         },
         {
           "key": "c01-s04|post-defeat|male|c01-s04-m9",
@@ -1767,7 +1927,8 @@
           "gender": "male",
           "edition": "post-defeat",
           "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-post-defeat-male/p01/c01-s04-m09-post-defeat-male.webp",
-          "status": "MISSING_REAL_ART"
+          "status": "INVALID_PROOF",
+          "reason": "actor identity/attachment mismatch"
         },
         {
           "key": "c01-s04|post-defeat|male|c01-s04-m16",
@@ -1775,7 +1936,8 @@
           "gender": "male",
           "edition": "post-defeat",
           "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-post-defeat-male/p01/c01-s04-m16-post-defeat-male.webp",
-          "status": "MISSING_REAL_ART"
+          "status": "INVALID_PROOF",
+          "reason": "actor identity/attachment mismatch"
         },
         {
           "key": "c01-s04|post-defeat|male|c01-s04-m19",
@@ -1783,7 +1945,8 @@
           "gender": "male",
           "edition": "post-defeat",
           "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-post-defeat-male/p02/c01-s04-m19-post-defeat-male.webp",
-          "status": "MISSING_REAL_ART"
+          "status": "INVALID_PROOF",
+          "reason": "actor identity/attachment mismatch"
         },
         {
           "key": "c01-s04|post-defeat|male|c01-s04-m10",
@@ -1791,7 +1954,8 @@
           "gender": "male",
           "edition": "post-defeat",
           "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-post-defeat-male/p02/c01-s04-m10-post-defeat-male.webp",
-          "status": "MISSING_REAL_ART"
+          "status": "INVALID_PROOF",
+          "reason": "actor identity/attachment mismatch"
         },
         {
           "key": "c01-s04|post-defeat|female|c01-s04-m6",
@@ -1799,7 +1963,8 @@
           "gender": "female",
           "edition": "post-defeat",
           "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-post-defeat-female/p01/c01-s04-m06-post-defeat-female.webp",
-          "status": "MISSING_REAL_ART"
+          "status": "INVALID_PROOF",
+          "reason": "actor identity/attachment mismatch"
         },
         {
           "key": "c01-s04|post-defeat|female|c01-s04-m7",
@@ -1807,7 +1972,8 @@
           "gender": "female",
           "edition": "post-defeat",
           "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-post-defeat-female/p01/c01-s04-m07-post-defeat-female.webp",
-          "status": "MISSING_REAL_ART"
+          "status": "INVALID_PROOF",
+          "reason": "actor identity/attachment mismatch"
         },
         {
           "key": "c01-s04|post-defeat|female|c01-s04-m8",
@@ -1815,7 +1981,8 @@
           "gender": "female",
           "edition": "post-defeat",
           "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-post-defeat-female/p01/c01-s04-m08-post-defeat-female.webp",
-          "status": "MISSING_REAL_ART"
+          "status": "INVALID_PROOF",
+          "reason": "actor identity/attachment mismatch"
         },
         {
           "key": "c01-s04|post-defeat|female|c01-s04-m9",
@@ -1823,7 +1990,8 @@
           "gender": "female",
           "edition": "post-defeat",
           "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-post-defeat-female/p01/c01-s04-m09-post-defeat-female.webp",
-          "status": "MISSING_REAL_ART"
+          "status": "INVALID_PROOF",
+          "reason": "actor identity/attachment mismatch"
         },
         {
           "key": "c01-s04|post-defeat|female|c01-s04-m16",
@@ -1831,7 +1999,8 @@
           "gender": "female",
           "edition": "post-defeat",
           "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-post-defeat-female/p01/c01-s04-m16-post-defeat-female.webp",
-          "status": "MISSING_REAL_ART"
+          "status": "INVALID_PROOF",
+          "reason": "actor identity/attachment mismatch"
         },
         {
           "key": "c01-s04|post-defeat|female|c01-s04-m19",
@@ -1839,7 +2008,7 @@
           "gender": "female",
           "edition": "post-defeat",
           "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-post-defeat-female/p02/c01-s04-m19-post-defeat-female.webp",
-          "status": "MISSING_REAL_ART"
+          "status": "PROVIDER_SAFETY_BLOCKED"
         },
         {
           "key": "c01-s04|post-defeat|female|c01-s04-m10",
@@ -1855,7 +2024,8 @@
           "gender": "male",
           "edition": "post-gameover",
           "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-post-gameover-male/p01/c01-s04-death-1-post-gameover-male.webp",
-          "status": "MISSING_REAL_ART"
+          "status": "INVALID_PROOF",
+          "reason": "actor identity/attachment mismatch"
         },
         {
           "key": "c01-s04|post-gameover|male|c01-s04-death-2",
@@ -1863,7 +2033,8 @@
           "gender": "male",
           "edition": "post-gameover",
           "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-post-gameover-male/p01/c01-s04-death-2-post-gameover-male.webp",
-          "status": "MISSING_REAL_ART"
+          "status": "INVALID_PROOF",
+          "reason": "actor identity/attachment mismatch"
         },
         {
           "key": "c01-s04|post-gameover|female|c01-s04-death-1",
@@ -1871,7 +2042,8 @@
           "gender": "female",
           "edition": "post-gameover",
           "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-post-gameover-female/p01/c01-s04-death-1-post-gameover-female.webp",
-          "status": "MISSING_REAL_ART"
+          "status": "INVALID_PROOF",
+          "reason": "actor identity/attachment mismatch"
         },
         {
           "key": "c01-s04|post-gameover|female|c01-s04-death-2",
@@ -1879,7 +2051,8 @@
           "gender": "female",
           "edition": "post-gameover",
           "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-post-gameover-female/p01/c01-s04-death-2-post-gameover-female.webp",
-          "status": "MISSING_REAL_ART"
+          "status": "INVALID_PROOF",
+          "reason": "actor identity/attachment mismatch"
         }
       ]
     },
