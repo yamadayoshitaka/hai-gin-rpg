@@ -1,0 +1,38 @@
+name: Chapter1 stages 1-4 real-art inventory and native quality audit
+on:
+  pull_request:
+    paths:
+      - 'scripts/audit-story-stage1-4-art.mjs'
+      - 'story-stage1-4-pending.html'
+      - 'data/story-stage1-4-p0-backlog.json'
+      - 'qa/story-stage1-4-backlog.test.mjs'
+      - 'assets/story/chapter1-review-candidates/**'
+      - '.github/workflows/story-stage1-4-art-audit.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'src/story-chapter1-provisional-live.js'
+      - 'assets/story/chapter1-provisional-live/**'
+      - 'data/story-stage1-4-p0-backlog.json'
+      - 'scripts/audit-story-stage1-4-art.mjs'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Confirm 174 canonical shot keys and honest provisional state
+        run: node qa/story-stage1-4-backlog.test.mjs
+      - name: Read native WebP headers, real SHA, and 16:9/minimum resolution for all 174
+        run: node scripts/audit-story-stage1-4-art.mjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: story-stage1-4-native-art-audit
+          path: qa-reports/story-stage1-4-asset-audit.json
+          if-no-files-found: error
