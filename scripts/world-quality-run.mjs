@@ -51,7 +51,8 @@ if(mode==='results'){
    row.lastReviewedAt=now();row.comparisonReport=item.comparisonReport;
    row.gameScreenshot=item.gameScreenshot;
    row.roughnessProposal=item.chosenRoughnessScale;
-   row.review='PBR_CANDIDATE_HUMAN_APPROVAL_PENDING';
+   row.review=item.review||'WEBGL_EVIDENCE_HUMAN_QA_PENDING';
+   if(item.error)row.error=item.error;
    row.productionApplied=false;
   }
   run.targetIds=updates.map(x=>x.key);
