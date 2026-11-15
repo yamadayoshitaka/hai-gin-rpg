@@ -79,6 +79,24 @@ test('source-level geometry is not generated for every summoned mob on scene sta
  assert.match(code,/\.slice\(\)\.sort\(\(a,b\)=>distSq/);
  assert.match(code,/createMonsterModel\(spec,\{detail\}\)/);
 });
+test('dedicated creatures receive a lazy third GPU LOD without eager 108 asset instantiation',()=>{
+ const code=read('../src/combat-world-object-renderer.js');
+ assert.match(code,/ensureMediumLod\(type\)/);
+ assert.match(code,/subdivideDedicatedSource\(original,\{maxTriangles:90000\}\)/);
+ assert.match(code,/lods\.medium/);
+ assert.match(code,/distance<cutoff\*\.55\?'high':distance<cutoff\?'medium':'low'/);
+ assert.match(code,/if\(lods\.medium\)lods\.medium\.count=0/);
+ assert.match(code,/buildCombatObjectGeometry\(type,\{detail:'low'\}\)/);
+});
+test('source geometry is deliberately finer than near and mid and preserves data-driven materials',()=>{
+ const sculpt=read('../src/monster-shape-kit.js');
+ assert.match(sculpt,/source:Object\.freeze\(\{sphere:\[112,80\]/);
+ assert.match(sculpt,/high:Object\.freeze\(\{sphere:\[38,26\]/);
+ assert.match(sculpt,/medium:Object\.freeze\(\{sphere:\[27,19\]/);
+ assert.match(sculpt,/low:Object\.freeze\(\{sphere:\[14,10\]/);
+ assert.match(read('../src/creature-master-runtime.js'),/creature-source-subdivision/);
+ assert.match(read('../src/creature-source-subdivision.js'),/export function subdivideDedicatedSource/);
+});
 test('LOD thresholds are deterministic and protect distant army scenes',()=>{
  assert.equal(MASTER_LOD_DISTANCES.near,16);
  assert.equal(MASTER_LOD_DISTANCES.mid,52);
