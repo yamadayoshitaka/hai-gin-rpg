@@ -5220,8 +5220,9 @@ function tickAI(dt){
  a.root.rotation.y=Math.atan2(target.root.position.x-p.x,target.root.position.z-p.z);
  const resolveHit=()=>{
    if(paused||finished||target.hp<=0)return;
-   if(skirmishActions)skirmishActions.damageUnit(target,a.job.damage,a);
-   else target.hp=Math.max(0,target.hp-Math.max(1,Math.round(a.job.damage*.5)));
+   const actualDamage=strategicDamage(a,target,a.job.damage);
+   if(skirmishActions)skirmishActions.damageUnit(target,actualDamage,a);
+   else target.hp=Math.max(0,target.hp-Math.max(1,Math.round(actualDamage*.5)));
    if(target.hp>0){battleAudio.cue('hit',target);actionVfx.emit('hit',{position:target.root.position,job:target.job.name})}
    if(target.hp>0&&target.character){target.hitPoseUntil=elapsed+.45;requestMotion(target,'hit')}
    if(target.hp===0)defeatActor(target);
