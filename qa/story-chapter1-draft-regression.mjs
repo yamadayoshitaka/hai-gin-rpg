@@ -128,17 +128,26 @@ for(const stage of CAMPAIGN_STAGES.filter(x=>x.chapter===1)){
     const assignment=stage2[ed.edition+'|'+gender+'|'+shot.id];
     if(assignment && JSON.stringify(m.visibleActorIds)!==JSON.stringify(assignment.visibleActorIds))
       throw Error('stage2 canonical visible actors differ');
-    const refIDs=refs.map(ref=>ref.actorId);
-    if(JSON.stringify(refIDs)!==JSON.stringify(m.visibleActorIds)||new Set(refIDs).size!==refs.length)
+    // A style benchmark is an attached visual reference, never a visible actor.
+    const actorRefs=refs.filter(ref=>ref.actorId!=='style_benchmark');
+    const styleRefs=refs.filter(ref=>ref.actorId==='style_benchmark');
+    const refIDs=actorRefs.map(ref=>ref.actorId);
+    if(JSON.stringify(refIDs)!==JSON.stringify(m.visibleActorIds)||new Set(refIDs).size!==actorRefs.length)
       throw Error('actor identity/attachment mismatch');
+    if(['c01-s04','c01-s05'].includes(stage.id) &&
+       (styleRefs.length!==1 || styleRefs[0].source!==
+        'assets/story/chapters/c01/panels/c01-s01-m02-'+gender+'.webp'))
+      throw Error('missing or wrong-gender physical style reference');
     if(refIDs.includes('commander_'+(gender==='male'?'female':'male')))
       throw Error('wrong-gender hero attached');
     for(const ref of refs){
-     const source=bible.get(ref.actorId)||(ref.actorId==='commander_female'
+     const source=ref.actorId==='style_benchmark'?
+      'assets/story/chapters/c01/panels/c01-s01-m02-'+gender+'.webp':
+      (bible.get(ref.actorId)||(ref.actorId==='commander_female'
       ?'assets/story/characters/commander/female-master.webp':
        ref.actorId==='commander_male'?'assets/story/panels/c01-s01-m01.webp':
        ref.actorId==='lucia'?'assets/story/characters/lucia/master.webp':
-       'assets/story-cinema/cast/'+ref.actorId+'.webp');
+       'assets/story-cinema/cast/'+ref.actorId+'.webp'));
      if(!exists(source)||ref.source!==source||ref.originalSha256!==sha(fs.readFileSync(path.join(root,source)))||
         !Number.isInteger(ref.actualBytes)||ref.actualBytes<1000||
         typeof ref.submittedSha256!=='string'||ref.submittedSha256.length!==64)
