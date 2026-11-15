@@ -59,6 +59,14 @@
       "path": "assets/story-cinema/cast/iris.webp",
       "masterQuality": "PROVISIONAL_CAST_CROP_NEEDS_REVIEW",
       "requiredForGender": "both"
+    },
+    {
+      "id": "vess",
+      "role": "ヴェス・記録院長",
+      "visualRule": "長い銀白髪と灰色の髭、深い皺のある年長の男性記録院長。暗色の重厚な儀礼衣装。ガラン（老騎士）とは別人。",
+      "path": "assets/story-cinema/cast/vess.webp",
+      "masterQuality": "PROVISIONAL_CAST_CROP_NEEDS_REVIEW",
+      "requiredForGender": "both"
     }
   ],
   "rulesPerShot": [
