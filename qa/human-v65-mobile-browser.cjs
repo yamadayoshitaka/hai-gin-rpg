@@ -60,8 +60,14 @@ const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
     const state=await page.evaluate(()=>window.__faceMasterQA?.());
     console.log('HUMAN_V65_CROWN_SURFACE '+JSON.stringify({
      picks:probe,repairCount:state?.wigReport?.v65CrownTopologyRepairCount,
-     repairTriangles:state?.wigReport?.v65CrownTopologyRepairTriangles
+     repairTriangles:state?.wigReport?.v65CrownTopologyRepairTriangles,
+     v66SourceUnderlay:state?.wigReport?.v66RealCrownUnderlayTriangles
     }));
+    const center=probe.find(p=>p.u===.5&&p.v===.476);
+    if(!center?.hits?.some(h=>h.name==='SINGLE_MESH_NORMAL_LAYERED_HAIR'))
+     throw Error('v66 scalp uncovered at center '+JSON.stringify(center));
+    if(!(state?.wigReport?.v66RealCrownUnderlayTriangles>0))
+     throw Error('v66 donor-top scalp underlay not generated');
    }
   }
   await page.evaluate(()=>document.getElementById('front')?.click());
