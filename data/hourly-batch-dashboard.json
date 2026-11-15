@@ -67,7 +67,7 @@
       "subtitle": "漫画コマ・イベント演出・ストーリー",
       "source": "ChatGPT定期タスク／GitHub Actions",
       "autoEnabled": true,
-      "time": "毎時00分（ChatGPTタスクは18:01停止）",
+      "time": "Cloudflare無料原画：毎日09:20 JST（最大1回）／ChatGPT定期タスク停止",
       "next": null,
       "last": "2026-11-15T09:01:20.385653Z",
       "preview": "story-chapter1-approval.html?stage=c01-s04",
@@ -75,12 +75,12 @@
       "secondaryName": "漫画の確認",
       "workflow": "story-cinematic-qa.yml",
       "workflowName": "ストーリー映像・演出QA",
-      "issueRole": "手動指示はGitHub Issueに保存し、ChatGPTの毎時漫画タスクが次回確認。実行設定はON。",
+      "issueRole": "CloudflareはGitHub Actionsで日次実行、上限到達時はChatGPT画像生成画面へコマ単位で手動引継ぎ。ChatGPTの自動生成APIは使用しない。",
       "details": "第1章ステージ4の未登録4コマを最優先に、男女・勝敗分岐の台本と人物を照合して独立16:9原画生成→QA→可逆仮登録→PR→Pagesへ反映。",
-      "goal": "無料の生成経路が利用可能なときにのみ新規作成。QAだけ・プロンプトだけで画像生成完了扱いにしない。ゲームと漫画確認画面の同一画像を確認。",
+      "goal": "追加有料API予算0円。無料枠で実生成できたものだけ検査・仮登録・Pages公開。ChatGPT Plus内の画像作成は画面から開始。",
       "schedulerEnabled": false,
       "lastResult": "BLOCKED_GENERATOR_NOT_CONNECTED",
-      "blockedReason": "18時の実行でCloudflare画像生成の実行環境変数3件を取得できず、実生成0枚・QA0枚・新規仮登録0枚。ChatGPTの定期タスクは停止中。GitHubのanime作業許可だけON。"
+      "blockedReason": "過去のChatGPT定期タスクはCloudflareのシークレットを取得できず18:01に停止。Cloudflare実生成はGitHubの日次ワークフローへ分離（毎日09:20 JST）。ChatGPT画像生成は手動操作が必要。"
     }
   ]
 }

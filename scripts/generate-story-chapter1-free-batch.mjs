@@ -22,7 +22,15 @@ const maxPages=Number(args.includes('--max-pages')?args[args.indexOf('--max-page
 const startStage=args.includes('--start-stage')?args[args.indexOf('--start-stage')+1]:'c01-s01';
 const throughStage=args.includes('--through-stage')?args[args.indexOf('--through-stage')+1]:'c01-s10';
 const isStageId=id=>/^c01-s(?:0[1-9]|10)$/.test(id);
+const budget=read('data/story-generation-spend-policy.json');
+if(budget.policyId!=='HAI_GIN_CHATGPT_SUBSCRIPTION_ONLY_NO_PAID_API_V1'||
+   budget.allowedAdditionalPaidApiSpendJpy!==0||
+   budget.cloudflare?.paidTierOrTopUpsAllowed!==false||
+   budget.chatGPTImageGeneration?.automaticPaidApiFallback!==false)
+ throw Error('BUDGET_POLICY_FAIL_CLOSED: Additional paid APIs are forbidden');
 const limit=Number(process.env.CLOUDFLARE_CHAPTER1_DAILY_ESTIMATE_CAP||'7500');
+if(limit>budget.cloudflare.cloudflareDailyEstimatedNeuronCap)
+ throw Error('BUDGET_POLICY_FAIL_CLOSED: Neuron cap exceeded');
 const branch='story/chapter1-free-actual-art';
 function webpPixels(b){
  if(b.length<30||b.toString('ascii',0,4)!=='RIFF'||b.toString('ascii',8,12)!=='WEBP')throw Error('not WebP');

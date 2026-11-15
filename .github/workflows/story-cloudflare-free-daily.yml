@@ -1,0 +1,64 @@
+name: Chapter 1 Cloudflare Free daily image production (subscription-only budget)
+
+# UTC 00:20 = Japan 09:20. Only one actual workflow_dispatch on a UTC
+# calendar day (check previous manually triggered production too).
+# Use the same existing Cloudflare Free workflow and GitHub secrets.
+on:
+  schedule:
+    - cron: '20 0 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: write
+
+concurrency:
+  group: hai-gin-cloudflare-free-daily-dispatch
+  cancel-in-progress: false
+
+jobs:
+  once-a-day:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify existing no-extra-charge policy and 4-group owner switch
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          const budget=JSON.parse(fs.readFileSync('data/story-generation-spend-policy.json','utf8'));
+          const switches=JSON.parse(fs.readFileSync('data/batch-center-switches.json','utf8'));
+          if(budget.policyId!=='HAI_GIN_CHATGPT_SUBSCRIPTION_ONLY_NO_PAID_API_V1'||
+             budget.allowedAdditionalPaidApiSpendJpy!==0||
+             budget.cloudflare?.dailyWorkflowDispatchesMax!==1||
+             budget.cloudflare?.paidTierOrTopUpsAllowed!==false||
+             budget.chatGPTImageGeneration?.automaticPaidApiFallback!==false)
+           throw Error('No-charge policy changed: refuse Cloudflare dispatch');
+          if(switches.groups?.anime?.enabled!==true){
+           fs.appendFileSync(process.env.GITHUB_ENV,'STORY_FREE_DAILY_SKIP=1\n');
+           console.log('Manga batch switch is OFF; no requests');
+          }
+          NODE
+      - name: Dispatch existing Free generation once per UTC date only
+        if: env.STORY_FREE_DAILY_SKIP != '1'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Also count a manually started production batch, so a schedule
+          # cannot inadvertently consume a second daily Cloudflare allocation.
+          today=$(date -u +%Y-%m-%d)
+          raw=$(gh api "repos/${GITHUB_REPOSITORY}/actions/workflows/story-chapter1-free-complete-draft-production.yml/runs?per_page=100")
+          prior=$(printf '%s' "$raw" | jq --arg today "$today"             '[.workflow_runs[] | select(.event=="workflow_dispatch" or .event=="push") |
+             select(.created_at | startswith($today))] | length')
+          if [ "$prior" -gt 0 ]; then
+            echo "Cloudflare production already attempted today ($prior times); skip additional request." | tee -a "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          # Free-only generation itself checks vars/secrets and enforces 7500
+          # estimated Neurons, with no paid provider fallback.
+          gh workflow run story-chapter1-free-complete-draft-production.yml --ref main
+          echo "Started one Cloudflare Free generation run today. No OpenAI paid API calls." | tee -a "$GITHUB_STEP_SUMMARY"

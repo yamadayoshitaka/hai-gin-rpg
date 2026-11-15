@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "policyId": "HAI_GIN_CHATGPT_SUBSCRIPTION_ONLY_NO_PAID_API_V1",
+  "planningCurrency": "JPY",
+  "chatGPTSubscriptionMonthlyPlanningBudgetJpy": 3000,
+  "allowedAdditionalPaidApiSpendJpy": 0,
+  "chatGPTImageGeneration": {
+    "channel": "user-initiated ChatGPT subscription interface",
+    "automaticPaidApiFallback": false,
+    "requiresUserInteraction": true
+  },
+  "cloudflare": {
+    "existingConfiguredFreePlanOnly": true,
+    "dailyWorkflowDispatchesMax": 1,
+    "cloudflareDailyEstimatedNeuronCap": 7500,
+    "paidTierOrTopUpsAllowed": false
+  },
+  "githubActions": {
+    "existingPublicRepositoryWorkflow": true,
+    "costMustRemainWithinIncludedFreeAllowance": true,
+    "paidRunnerOrExtraStorageAllowed": false
+  },
+  "stopConditions": [
+    "Cloudflare free quota reached",
+    "unverified free plan",
+    "missing auth",
+    "would incur any additional charge"
+  ],
+  "note": "3,000 JPY is an upper planning allowance for the existing ChatGPT subscription, not a claim about exact invoiced price. No OpenAI API or other billable API can be used automatically."
+}
