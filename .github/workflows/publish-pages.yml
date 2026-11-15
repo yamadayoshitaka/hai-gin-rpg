@@ -67,6 +67,8 @@ jobs:
           node qa/story-art-coverage.test.mjs
       - name: Assemble compact game website without master asset archives
         run: python scripts/prepare-pages-site.py --out pages-dist
+      - name: Require same latest provisional artwork in game, chapter review and deployed release
+        run: node qa/pages-story-live-parity.test.mjs
       # GitHub Pages can leave the deployment lock active even after the
       # original deploy-pages job times out. Release the known orphan from
       # the 2026-11-10 09:53 UTC attempt before creating a new deployment.
