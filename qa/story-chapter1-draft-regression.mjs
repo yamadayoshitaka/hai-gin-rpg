@@ -102,7 +102,7 @@ for(const stage of CAMPAIGN_STAGES.filter(x=>x.chapter===1)){
     try{
      const url=legacy.slice(2).split(/[?#]/)[0];
      const [w,h]=webpDimensions(fs.readFileSync(path.join(root,url)));
-     const [mw,mh]=stage.id==='c01-s02'?[768,320]:[1536,864];
+     const [mw,mh]=stage.id==='c01-s02'?[768,320]:(stage.id>='c01-s04'?[800,450]:[1536,864]);
      if(w<mw||h<mh||w*9!==h*16)
       mark(stageReport,row,'LEGACY_NATIVE_REGEN_REQUIRED','Original '+w+'x'+h+' below '+mw+'x'+mh);
      else mark(stageReport,row,'EXISTING_REGISTERED_NOT_P0_CERTIFIED');
@@ -113,7 +113,7 @@ for(const stage of CAMPAIGN_STAGES.filter(x=>x.chapter===1)){
    try{
     const bytes=fs.readFileSync(path.join(root,file)),m=read(proof);
     const dims=webpDimensions(bytes);
-    const expectedMin=stage.id==='c01-s02'?[768,320]:[1536,864];
+    const expectedMin=stage.id==='c01-s02'?[768,320]:(stage.id>='c01-s04'?[800,450]:[1536,864]);
     if(dims[0]<expectedMin[0]||dims[1]<expectedMin[1]||dims[0]*9!==dims[1]*16){
      mark(stageReport,row,'LOW_NATIVE_PIXELS','Got '+dims.join('x')+', min '+expectedMin.join('x')+' native 16:9');continue;
     }
