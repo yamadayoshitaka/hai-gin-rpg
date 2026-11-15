@@ -1731,6 +1731,39 @@ export const CHAPTER1_PROVISIONAL_LIVE=Object.freeze({
     "stageId": "c01-s05",
     "edition": "pre",
     "gender": "female"
+  },
+  "c01-s04|post-defeat|female|c01-s04-m19": {
+    "asset": "./assets/story/chapter1-provisional-live/c01-s04__post-defeat__female__c01-s04-m19.webp",
+    "sha256": "80aa6555932f563fa81d3c7c3012fa6c5e8f5665385476252bce1b46c115342e",
+    "provenance": "assets/story/chapter1-chatgpt-inbox/c01-s04__post-defeat__female__c01-s04-m19.review.json",
+    "sourceDraft": "assets/story/chapter1-chatgpt-inbox/c01-s04__post-defeat__female__c01-s04-m19.webp",
+    "status": "PROVISIONAL_OWNER_AUTHORIZED_PENDING_P0",
+    "originalLivePath": null,
+    "stageId": "c01-s04",
+    "edition": "post-defeat",
+    "gender": "female"
+  },
+  "c01-s04|post-victory|female|c01-s04-m19": {
+    "asset": "./assets/story/chapter1-provisional-live/c01-s04__post-victory__female__c01-s04-m19.webp",
+    "sha256": "7ab782ebc45f240c806efc50f07261723ab75deb6c85315477989f69d88b3f56",
+    "provenance": "assets/story/chapter1-chatgpt-inbox/c01-s04__post-victory__female__c01-s04-m19.review.json",
+    "sourceDraft": "assets/story/chapter1-chatgpt-inbox/c01-s04__post-victory__female__c01-s04-m19.webp",
+    "status": "PROVISIONAL_OWNER_AUTHORIZED_PENDING_P0",
+    "originalLivePath": null,
+    "stageId": "c01-s04",
+    "edition": "post-victory",
+    "gender": "female"
+  },
+  "c01-s04|pre|female|c01-s04-m5": {
+    "asset": "./assets/story/chapter1-provisional-live/c01-s04__pre__female__c01-s04-m5.webp",
+    "sha256": "7affff5b006ee3314fcf6aa8eb167a3854a340736dbac5df1bf462fd2922e67b",
+    "provenance": "assets/story/chapter1-chatgpt-inbox/c01-s04__pre__female__c01-s04-m5.review.json",
+    "sourceDraft": "assets/story/chapter1-chatgpt-inbox/c01-s04__pre__female__c01-s04-m5.webp",
+    "status": "PROVISIONAL_OWNER_AUTHORIZED_PENDING_P0",
+    "originalLivePath": null,
+    "stageId": "c01-s04",
+    "edition": "pre",
+    "gender": "female"
   }
 });
 export function chapter1ProvisionalLivePanel(shot){
