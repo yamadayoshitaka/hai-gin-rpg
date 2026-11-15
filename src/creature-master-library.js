@@ -12,7 +12,7 @@ export const MASTER_LIBRARY_SCHEMA='hai-gin/creature-master-library/v1';
 export const MASTER_RENDER_TIERS=Object.freeze({
  master:Object.freeze({label:'原型マスター',geometry:'source',purpose:'造形・高精細確認・GLB書き出し'}),
  near:Object.freeze({label:'近距離',geometry:'high',purpose:'接近時の実ゲーム表示'}),
- mid:Object.freeze({label:'中距離',geometry:'high',purpose:'ゲーム用の通常表示。後で最適化'}),
+ mid:Object.freeze({label:'中距離',geometry:'medium',purpose:'ゲーム用の中程度の形状。後で最適化'}),
  far:Object.freeze({label:'遠距離',geometry:'low',purpose:'遠方のゲーム用軽量造形'})
 });
 export const MASTER_LOD_DISTANCES=Object.freeze({near:16,mid:52});
