@@ -84,12 +84,12 @@ const ISSUE_MARKER='<!-- hai-gin-world-quality-request-v1 -->';
 function submitManual(e){
  e.preventDefault();
  const kind=$('manualKind').value,target=$('manualTarget').value.trim(),instruction=$('manualInstruction').value.trim(),max=Number($('manualMax').value);
- if(target&&(!/^(object:[a-z][\\w-]*|stage:c\\d{2}-s\\d{2})$/.test(target)||target.split(':')[0]!==kind)){
+ if(target&&(!/^(object:[a-z][\w-]*|stage:c\d{2}-s\d{2})$/.test(target)||target.split(':')[0]!==kind)){
   $('manualStatus').textContent='対象IDが範囲と一致しません。「対象範囲」を選び直してください。';return;
  }
  if(instruction.length>500){$('manualStatus').textContent='指示は500文字以内にしてください。';return;}
  const request={schemaVersion:1,kind,target,instruction,maxReferences:max};
- const body=ISSUE_MARKER+'\\n```json\\n'+JSON.stringify(request,null,2)+'\\n```\\n\\n'
+ const body=ISSUE_MARKER+'\n```json\n'+JSON.stringify(request,null,2)+'\n```\n\n'
   +'これは無料枠での1回の品質バッチ依頼です。基準画像の候補と品質検査のみ行い、ゲームを自動変更しません。';
  const label=target||kind,params=new URLSearchParams({title:'[world-quality] '+label+' next reference review',body});
  const url='https://github.com/'+repo+'/issues/new?'+params.toString();
