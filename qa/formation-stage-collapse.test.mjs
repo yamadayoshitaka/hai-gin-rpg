@@ -29,7 +29,7 @@ assert.throws(()=>setSortieGridCell(game,1,6,1),/職業/,
  'a knight cannot be assigned to a support role');
 game.sortieTestLevel=7;
 assert.equal(sortieSquadCap(game),5,'seventh level unlocks fifth contingent');
-assert.equal(sortieAllowedCells(game,1).length,5);
+assert.equal(sortieAllowedCells(game,1).length,4,'four primary cells are selectable until the fifth contingent is needed');
 game.sortieTestLevel=99;
 assert.equal(sortieSquadCap(game),16);
 
