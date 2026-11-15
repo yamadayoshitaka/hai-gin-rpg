@@ -6,6 +6,7 @@
 import {MONSTER_CATALOG,MONSTER_BY_ID} from './monster-catalog.js';
 import {HUMAN_MONSTER_IDS} from './monster-character-cosplay-manifest.js';
 import {WEB_CREATURE_MESH_SOURCES} from './creature-web-mesh-catalog.js';
+import {REAL_BODY_CANDIDATES,REAL_BODY_SUGGESTIONS} from './creature-real-body-candidates.js';
 
 export const MESH_ADOPTION_STORAGE_KEY='hai-gin.creature-mesh-adoption.v1';
 // Shipped visual baseline. These three distinct actors share the same source
@@ -26,26 +27,23 @@ const allowed=new Set([
 const protectedIds=new Set(['m005','m006','summon_m005','summon_m006']);
 export const protectedCreature=id=>protectedIds.has(String(id));
 const sourceId=/^(?:q(?:00[1-9]|0[1-4][0-9]|050)|r-(?:wolf|tiger|jaguar|eagle|crocodile))$/;
-const knownSource=source=>sourceId.test(source)||Object.hasOwn(WEB_CREATURE_MESH_SOURCES,source);
-const recommend=Object.freeze({
- beast:['q022'], feline:['q020'], avian:['q048','q030','q002'],
- reptile:['q007','q040','q039'], insect:['q037','q036'],
- arachnid:[],aquatic:['q049','q008','q023','q024']
-});
-const newlyResearched=Object.freeze({
- m008:['g-lion'],m014:['g-owl'],
- m021:['g-hercules'],m022:['g-atlas'],m023:['g-mantis'],
- m024:['g-scarab'],m025:['g-goldstag']
-});
-const realRecommendations=Object.freeze({
- beast:['r-wolf'],feline:['r-tiger','r-jaguar'],
- avian:[],reptile:[],insect:[],arachnid:[],aquatic:[]
-});
-const exceptions=Object.freeze({
- m012:['q040','q048'],m013:['q048','q040'],m018:['q039'],
- m020:['q039'],m023:['q036'],m024:['q037'],
- m026:[],m027:[],m028:[],m029:[],m030:[],
- m046:['q024','q031'],m047:['q049'],m048:[],m049:['q049'],m050:['q008']
+const knownSource=source=>sourceId.test(source)||
+ Object.hasOwn(WEB_CREATURE_MESH_SOURCES,source)||
+ Object.hasOwn(REAL_BODY_CANDIDATES,source);
+// Only previously established 3D sources can be adopted. Newly researched
+// low-poly or static bodies are for comparison only until fully validated.
+export const referenceOnlySource=source=>
+ Object.hasOwn(WEB_CREATURE_MESH_SOURCES,source)||
+ Object.hasOwn(REAL_BODY_CANDIDATES,source);
+// Species-linked realism choices only: never show a fish, gobkit
+// low-poly, or wrong-anatomy animal as an apparent improvement.
+const realisticRecommendations=Object.freeze({
+ m001:['r-wolf'],m002:['r-wolf'],m003:['r-wolf'],m004:['r-wolf'],
+ m007:['r-tiger',...(REAL_BODY_SUGGESTIONS.m007||[])],
+ m008:[...(REAL_BODY_SUGGESTIONS.m008||[])],
+ m009:['r-jaguar',...(REAL_BODY_SUGGESTIONS.m009||[])],
+ m010:['r-tiger',...(REAL_BODY_SUGGESTIONS.m010||[])],
+ m011:['r-eagle']
 });
 export function eligibleCreature(id){
  return allowed.has(id)&&!protectedCreature(id);
@@ -57,15 +55,8 @@ export function baseMonsterId(id){
 export function recommendedMeshSources(id){
  if(protectedCreature(id))return [];
  const m=MONSTER_BY_ID[baseMonsterId(id)];
- if(!m)return id==='wolf'?['r-wolf','q022']:
-   id==='horse'?['g-horse']:
-   ['wyvern','dragon','elder_dragon','dragon_lord'].includes(id)?['q040','q039']:[];
- const base=exceptions[m.id]??recommend[m.family]??[];
- const specific=newlyResearched[m.id]||[];
- const real=m.id==='m011'?['r-eagle']:
-   m.id==='m016'?[]:
-   (realRecommendations[m.family]??[]);
- return [...specific,...real,...base];
+ if(!m)return id==='wolf'?['r-wolf']:[];
+ return [...(realisticRecommendations[m.id]||[])];
 }
 function stored(storage){
  try{
@@ -85,11 +76,12 @@ export function adoptedCreatureMesh(id,storage=globalThis.localStorage){
  const parent=String(id).startsWith('summon_')?id.slice(7):null;
  const inherited=parent&&Object.hasOwn(map,parent)?map[parent]:undefined;
  const choice=own??inherited??DEFAULT_CREATURE_MESHES[id]??'legacy';
- return typeof choice==='string'&&knownSource(choice)?choice:'legacy';
+ return typeof choice==='string'&&knownSource(choice)&&!referenceOnlySource(choice)?choice:'legacy';
 }
 export function setAdoptedCreatureMesh(id,source,storage=globalThis.localStorage){
  if(!eligibleCreature(id))throw Error('人間タイプ・保護対象・未知の種族は切り替えできません: '+id);
  if(source!=='legacy'&&!knownSource(source))throw Error('未登録の外部モデル: '+source);
+ if(referenceOnlySource(source))throw Error('この素材は比較用であり、現行モデルより高品質・ゲーム動作を確認するまで採用できません: '+source);
  if(!storage?.setItem)throw Error('端末ストレージへ保存できません');
  const map=stored(storage);
  // Explicit rollback persists even when a future build ships r-wolf
@@ -107,7 +99,7 @@ export function compatibleSourceWarning(id,source){
  if(protectedCreature(id))return 'PR #345/#346の保護対象です。モデルの変更と再検証を行いません。';
  if(source==='legacy')return '';
  if(!knownSource(source))return '未登録のGLB';
- if(Object.hasOwn(WEB_CREATURE_MESH_SOURCES,source))return 'Webから入手できる無料GLBの比較候補です。低ポリ素材は最終品質ではありません。歩行・骨格・装飾・商用権利とAndroid実機を確認してから採用してください。';
+ if(referenceOnlySource(source))return '比較専用の未検証素材です。現行より高品質と確認できるまで採用不可。ローポリと未リグのGLBは母体として正式採用しません。';
  if(source.startsWith('r-'))return 'CC BY 4.0の外部リアル候補。著作者表示必須。アニメーション・既存パーツの移植は未完了のため動作を確認してください。';
  if(recommendedMeshSources(id).includes(source))return '系統から選んだ暫定候補です。外観と骨格の適合を必ず確認してください。';
  return '注意：系統外のメッシュです。角・羽・脚などの接続やシルエットが崩れる可能性があります。';
