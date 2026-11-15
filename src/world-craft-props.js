@@ -60,9 +60,10 @@ export function addRealisticWoodBarrel(THREE,root,{cellSize=2.2,wood,dark,metal}
  }
  mesh(THREE,root,new THREE.LatheGeometry(profile,48),dark,'barrel_inner_lining');
  mesh(THREE,root,createBarrelStaveGeometry(THREE,{cellSize:c}),wood,'barrel_18_closed_wood_staves');
- for(const [name,y,r] of [['lower',.17,.462],['belly',.575,.535],['upper',.98,.466]]){
-  // Sheet-iron hoops have visible band width, rather than floating torus wires.
-  mesh(THREE,root,new THREE.CylinderGeometry((r+.016)*c,(r+.016)*c,.072*c,48,1,true),
+ for(const [name,y] of [['lower',.17],['belly',.575],['upper',.98]]){
+  // Place each hoop against the bulging stave radius, not in empty space.
+  const r=barrelProfile(y/1.15,c).r/c;
+  mesh(THREE,root,new THREE.CylinderGeometry((r+.009)*c,(r+.009)*c,.072*c,48,1,true),
    metal,'barrel_iron_hoop_'+name,0,y*c,0);
  }
  const top=mesh(THREE,root,new THREE.CircleGeometry(.417*c,48),dark,
@@ -89,9 +90,12 @@ export function addWellConstructionDetails(THREE,root,{cellSize=2.2,stone,wood,i
  const coping=mesh(THREE,root,new THREE.RingGeometry(1.055*c,1.255*c,48),
   stone,'well_structural_thick_coping',0,.97*c,0);
  coping.rotation.x=-Math.PI/2;
+ const mortar=stone.clone();
+ mortar.metalness=0;mortar.roughness=1;
+ mortar.color?.multiplyScalar?.(.65);
  for(const t of [.20,.52,.82]){
   const course=mesh(THREE,root,new THREE.TorusGeometry(1.205*c,.025*c,6,48),
-   iron,'well_masonry_course_joint',0,t*c,0);
+   mortar,'well_masonry_course_joint',0,t*c,0);
   course.rotation.x=Math.PI/2;
  }
  // Axle spans the two real posts; the drum is braced by two metal collars.
