@@ -4,6 +4,8 @@ import {WEB_CREATURE_MESH_SOURCES,WEB_CREATURE_SOURCE_COUNT,
  validateWebCreatureMeshSources} from '../src/creature-web-mesh-catalog.js';
 import {WEB_CREATURE_ANATOMY_REFERENCES,
  validateAnatomySources} from '../src/creature-research-reference-catalog.js';
+import {REAL_BODY_CANDIDATES,REAL_BODY_SUGGESTIONS}
+ from '../src/creature-real-body-candidates.js';
 import {readFileSync} from 'node:fs';
 const loaderSource=readFileSync(new URL('../src/creature-real-source-catalog.js',import.meta.url),'utf8');
 import {CREATURE_RECONSTRUCTION_BY_ID,CREATURE_RECONSTRUCTION_SUMMARY}
@@ -47,23 +49,28 @@ test('high-poly anatomical scans stay references: never direct GLB imports',()=>
   assert.ok(WEB_CREATURE_ANATOMY_REFERENCES[id]);
  }
 });
-test('108 actors are never auto-promoted by a web donor link',()=>{
+test('low-poly, mismatched and unrigged assets cannot silently replace existing game models',()=>{
  assert.equal(CREATURE_RECONSTRUCTION_SUMMARY.total,108);
  assert.equal(CREATURE_RECONSTRUCTION_SUMMARY.completed,0);
  assert.equal(CREATURE_RECONSTRUCTION_SUMMARY.qualityPassed,0);
- for(const id of ['m008','m014','m021','m022','m023','m024','m025','horse']){
+ const s=storage();
+ for(const id of ['m008','m021','m022','m023','m024','m025','horse']){
   const item=CREATURE_RECONSTRUCTION_BY_ID[id];
-  assert.ok(item.candidateSources.some(key=>key.startsWith('g-')),id);
+  assert.deepEqual(item.candidateSources,[],id);
   assert.equal(item.rebuiltGLBComplete,false,id);
   assert.equal(item.kpiPass,false,id);
-  assert.equal(adoptedCreatureMesh(id,storage()),'legacy',id);
+  assert.equal(adoptedCreatureMesh(id,s),'legacy',id);
  }
- const s=storage();
- setAdoptedCreatureMesh('m023','g-mantis',s);
- assert.equal(adoptedCreatureMesh('m023',s),'g-mantis');
- assert.equal(adoptedCreatureMesh('summon_m023',s),'g-mantis');
- setAdoptedCreatureMesh('m023','legacy',s);
- assert.equal(adoptedCreatureMesh('m023',s),'legacy');
+ assert.equal(Object.keys(REAL_BODY_CANDIDATES).length,5);
+ assert.ok(REAL_BODY_SUGGESTIONS.m008.includes('w-lion'));
+ assert.ok(CREATURE_RECONSTRUCTION_BY_ID.m008.anatomyReferences.includes('w-lion'));
+ assert.ok(CREATURE_RECONSTRUCTION_BY_ID.m021.anatomyReferences.includes('s-beetle-male'));
+ for(const source of ['g-mantis','g-lion','g-horse','b-trex','b-fox','w-lion','w-tiger']){
+  assert.throws(()=>setAdoptedCreatureMesh('m023',source,s),source);
+ }
+ s.setItem('hai-gin.creature-mesh-adoption.v1',
+  JSON.stringify({m023:'g-mantis',horse:'g-horse',m008:'w-lion'}));
+ for(const id of ['m023','horse','m008'])assert.equal(adoptedCreatureMesh(id,s),'legacy');
  for(const id of ['m005','m006','summon_m005','summon_m006']){
   assert.ok(!eligibleCreature(id));
   assert.deepEqual(recommendedMeshSources(id),[]);
