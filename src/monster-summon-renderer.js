@@ -153,7 +153,7 @@ export function createMonsterSummonRenderer(scene,{
   // silhouette/animation until camera proximity warrants the detailed GLB.
   const useHeavyWolf=node.sourceChoice==='r-wolf';
   if(!isHumanoid&&node.sourceChoice!=='legacy'&&
-     (!useHeavyWolf||detail==='high'||detail==='source')){
+     (!useHeavyWolf||detail==='high'||detail==='medium'||detail==='source')){
    const sourceId=node.sourceChoice;
    if(sourceId.startsWith('q'))licensedRegistryRequest??=fetchCreatureRegistry();
    const registryTask=sourceId.startsWith('q')?licensedRegistryRequest:
@@ -228,7 +228,7 @@ export function createMonsterSummonRenderer(scene,{
     near:highDetailDistance*.72,mid:highDetailDistance*Math.sqrt(10)
    });
    if(target==='near'&&(!sourceAllowed||sourceCount>=1))target='mid';
-   let detail=target==='near'?'source':target==='mid'?'high':'low';
+   let detail=target==='near'?'source':target==='mid'?(human?'high':'medium'):'low';
    if(detail!=='low'&&detailedCount>=MONSTER_SUMMON_MAX_HIGH_DETAIL)
     detail='low';
    // Avoid reallocating intricate models when the zoom hovers over a
@@ -300,7 +300,8 @@ export function createMonsterSummonRenderer(scene,{
   stats:()=>Object.freeze({...stats,active:active.size}),
   detailStats:()=>Object.fromEntries([...active.entries()].map(([id,m])=>[
    id,{type:m.type,source:m.detail==='source'?1:0,
-    high:m.detail==='high'?1:0,low:m.detail==='low'?1:0,
+    high:m.detail==='high'?1:0,medium:m.detail==='medium'?1:0,
+    low:m.detail==='low'?1:0,
     selectedMesh:m.sourceChoice,loadedMesh:m.externalHandle?.root.userData.externalSourceId||'legacy',
     error:m.sourceError}
   ])),
