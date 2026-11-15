@@ -49,6 +49,11 @@ test('human-shaped monsters never accept an animal donor',()=>{
  }
  assert.throws(()=>setAdoptedCreatureMesh('m001','../../oops.glb',storage));
  assert.throws(()=>setAdoptedCreatureMesh('m001','q999',storage));
+ setAdoptedCreatureMesh('m001','r-wolf',storage);
+ assert.equal(adoptedCreatureMesh('m001',storage),'r-wolf');
+ assert.ok(recommendedMeshSources('m001').includes('r-wolf'));
+ assert.ok(recommendedMeshSources('m011').includes('r-eagle'));
+ assert.ok(recommendedMeshSources('m016').includes('r-crocodile'));
 });
 test('existing protected original animal geometry is not modified by candidate metadata',()=>{
  assert.equal(baseMonsterId('summon_m005'),'m005');
