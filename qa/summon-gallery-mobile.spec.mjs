@@ -259,3 +259,22 @@ test('dragon lord three distinct canonical forms and white beardless seraph visu
   animations:'disabled',timeout:20000});
  expect(errors).toEqual([]);
 });
+
+
+test('showroom default CC0 wolf source uses licensed canine mesh and original monster colors',async({page})=>{
+ test.setTimeout(120000);
+ const errors=[];
+ page.on('pageerror',e=>errors.push(String(e)));
+ await page.goto('/summon-showcase.html?summon=wolf&v=4.6.92',
+  {waitUntil:'domcontentloaded',timeout:65000});
+ await expect(page.locator('#type')).toHaveValue('wolf');
+ await expect.poll(()=>page.evaluate(()=>({
+  active:window.__summonGalleryLayoutQA?.()?.wolfSourceActive,
+  donor:window.__summonGalleryLayoutQA?.()?.wolfSourceDonor
+ })),{timeout:80000}).toEqual({active:true,donor:'q022'});
+ await page.screenshot({
+  path:'test-results/wolf-cc0-source-summon-pbr-front.png',
+  animations:'disabled',timeout:25000
+ });
+ expect(errors).toEqual([]);
+});
