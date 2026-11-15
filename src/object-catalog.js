@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import {tuneWorldQualityMaterial} from './world-quality-pbr.js';
+import {addRealisticWoodBarrel,addWellConstructionDetails} from './world-craft-props.js';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {createCatalogBuildingStructure,renderCatalogBuildingStructure,renderSpiralStairBOM} from './building-structure.js?v=4.6.28';
 
@@ -233,7 +234,7 @@ export function createObjectById(id,{cellSize=2.2}={}){
   if(id==='cottage_bed_001'){b(1.6*c,.28*c,2.5*c,0,.38*c,0,dark);b(1.5*c,.22*c,2.25*c,0,.6*c,0,linen);b(1.6*c,1.1*c,.16*c,0,.65*c,-1.2*c);b(1.1*c,.14*c,.5*c,0,.76*c,-.78*c,linen)}
   if(id==='cottage_shelf_001'){for(const x of [-.8,.8])b(.14*c,2.8*c,.7*c,x*c,1.4*c,0);for(let y=.3;y<2.8;y+=.62){b(1.8*c,.12*c,.8*c,0,y*c,0);for(let i=0;i<5;i++)b(.17*c,.36*c,.36*c,(i-2)*.31*c,(y+.23)*c,0,i%2?dark:linen)}}
   if(id==='cottage_fireplace_001'){b(2.6*c,.3*c,1*c,0,.15*c,0,stone);for(const x of [-1.1,1.1])b(.42*c,2.5*c,.9*c,x*c,1.25*c,0,stone);b(2.65*c,.4*c,1.05*c,0,2.5*c,0,stone);b(1.2*c,.45*c,.4*c,0,.48*c,.1*c,fire)}
-  if(id==='cottage_barrel_001'){const o=new THREE.Mesh(new THREE.CylinderGeometry(.48*c,.52*c,1.15*c,24,3),timber);o.position.y=.58*c;o.castShadow=true;root.add(o);for(const y of [.2,.94]){const ring=new THREE.Mesh(new THREE.TorusGeometry(.49*c,.045*c,7,28),dark);ring.rotation.x=Math.PI/2;ring.position.y=y*c;root.add(ring)}}
+  if(id==='cottage_barrel_001')addRealisticWoodBarrel(THREE,root,{cellSize:c,wood:timber,dark,metal:new THREE.MeshStandardMaterial({color:0x555457,metalness:.68,roughness:.49})});
   if(id==='treasure_chest_001'){
    const metal=new THREE.MeshStandardMaterial({color:0xa1874c,metalness:.70,roughness:.36});
    const body=b(.88*c,.38*c,.70*c,0,.30*c,0,dark);body.name='treasure_chest_body';
@@ -296,6 +297,8 @@ export function createObjectById(id,{cellSize=2.2}={}){
    box(2.4*c,.19*c,.2*c,0,2.75*c,0,wood);
    const roof=new THREE.Mesh(new THREE.ConeGeometry(1.8*c,1.1*c,4),wood);
    roof.position.y=3.2*c;roof.rotation.y=Math.PI/4;root.add(roof);
+   // Hollow well courses and a load-supported winding assembly.
+   addWellConstructionDetails(THREE,root,{cellSize:c,stone,wood,iron});
   }
   if(id==='town_planter_001'){
    box(3*c,.5*c,1.8*c,0,.25*c,0,stone);
