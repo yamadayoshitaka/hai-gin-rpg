@@ -1,4 +1,17 @@
 import assert from 'node:assert/strict';
+// Node 22 exposes Event but not ProgressEvent; Three.js FileLoader requires it.
+// This matches browser read-only progress fields without stubbing fetch/GLB parsing.
+if(typeof globalThis.ProgressEvent==='undefined'){
+  globalThis.ProgressEvent=class ProgressEvent extends Event{
+    constructor(type,options={}){
+      super(type);
+      this.lengthComputable=Boolean(options.lengthComputable);
+      this.loaded=Number(options.loaded||0);
+      this.total=Number(options.total||0);
+    }
+  };
+}
+
 import {readFileSync} from 'node:fs';
 import * as THREE from 'three';
 import {MONSTER_BY_ID,MONSTER_CATALOG} from '../src/monster-catalog.js';
