@@ -127,6 +127,15 @@ function showCatalogSelection(){
    const shadowHalf=Math.max(18,Math.hypot(size.x,size.z)*.6+size.y*.45);
    sun.shadow.camera.left=-shadowHalf;sun.shadow.camera.right=shadowHalf;
    sun.shadow.camera.top=shadowHalf;sun.shadow.camera.bottom=-shadowHalf;
+   // An expanded frustum alone still clips off-centre buildings: the light's
+   // target remains at the original tree unless it follows the preview bounds.
+   // Keep the light outside the complete model so its near plane cannot slice
+   // the upper floors of tall castles.
+   sun.target.position.copy(center);
+   const sunOffset=Math.max(24,shadowHalf*1.4);
+   sun.position.copy(center).add(new THREE.Vector3(sunOffset*.5,sunOffset,sunOffset*.4));
+   sun.shadow.camera.far=Math.max(500,sunOffset*4);
+   sun.target.updateMatrixWorld();sun.updateMatrixWorld();
    sun.shadow.camera.updateProjectionMatrix();sun.shadow.needsUpdate=true;
   const vfov=THREE.MathUtils.degToRad(camera.fov/2),hfov=Math.atan(Math.tan(vfov)*camera.aspect);
   const distance=Math.max(12,Math.max(size.y/(2*Math.tan(vfov)),Math.max(size.x,size.z)/(2*Math.tan(hfov)))*1.2);
@@ -153,7 +162,7 @@ function showCatalogSelection(){
     '外観 → '+levels+'を約6秒ごとに自動表示 / ドラッグで一時停止';
   }else $('stats').textContent='回転：ドラッグ / 拡大：ピンチ'+(destructible?' / 下のボタンで火災・爆破を試せます':'');
   if(destructible)structureDemo.show(selected,definition,catalogPreview,state);
- }else{sun.shadow.camera.left=-18;sun.shadow.camera.right=18;sun.shadow.camera.top=18;sun.shadow.camera.bottom=-18;sun.shadow.camera.updateProjectionMatrix();sun.shadow.needsUpdate=true;orbit.target.set(0,5.2,0);camera.position.set(14,11,20);camera.far=350;camera.updateProjectionMatrix();orbit.maxDistance=180;scene.fog.near=110;scene.fog.far=240;$('status').textContent='樹木モデル';$('stats').textContent='回転：ドラッグ / 拡大：ピンチ'}
+ }else{sun.target.position.set(0,0,0);sun.position.set(10,20,8);sun.shadow.camera.far=500;sun.target.updateMatrixWorld();sun.updateMatrixWorld();sun.shadow.camera.left=-18;sun.shadow.camera.right=18;sun.shadow.camera.top=18;sun.shadow.camera.bottom=-18;sun.shadow.camera.updateProjectionMatrix();sun.shadow.needsUpdate=true;orbit.target.set(0,5.2,0);camera.position.set(14,11,20);camera.far=350;camera.updateProjectionMatrix();orbit.maxDistance=180;scene.fog.near=110;scene.fog.far=240;$('status').textContent='樹木モデル';$('stats').textContent='回転：ドラッグ / 拡大：ピンチ'}
  orbit.update();
 }
 $('effect').onchange=()=>{if(isCatalogItem())showCatalogSelection();else setEffect($('effect').value)};
