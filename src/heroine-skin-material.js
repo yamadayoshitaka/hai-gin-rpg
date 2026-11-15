@@ -50,7 +50,7 @@ export function applyHeroineSkinMaterial(face){
   roughnessMap:source.roughnessMap||null,aoMap:source.aoMap||null,
   vertexColors:!!source.vertexColors,
   side:source.side,transparent:source.transparent,opacity:source.opacity,
-  roughness:.69,metalness:0,clearcoat:.052,clearcoatRoughness:.78,
+  roughness:.72,metalness:0,clearcoat:.052,clearcoatRoughness:.78,
   sheen:.095,sheenRoughness:.83,sheenColor:new THREE.Color(0xc98978),
   bumpMap:source.bumpMap||(face.geometry?.getAttribute('uv')?getHeroineMicroSkinTexture():null),
   bumpScale:source.bumpMap?source.bumpScale:.00010
