@@ -11,6 +11,7 @@
  */
 import * as THREE from 'three';
 import {loadExternalCreature} from './creature-external-runtime.js';
+import {refineNonhumanCreatureHandle} from './creature-species-refinement.js';
 
 export const SPECIES_SOURCE_REBUILD_PILOTS=Object.freeze({
  m001:Object.freeze({donor:'q022',name:'dog-to-wolf',family:'beast',
@@ -150,13 +151,13 @@ export async function loadSpeciesSourceComposite(spec,registry,{
    visuallyApproved:false,gameReplacementEnabled:false,
    stillStylized:true
   };
-  return {
+  return refineNonhumanCreatureHandle({
    root,clips:handle.clips,
    play:handle.play,update:handle.update,
    sourceComposite:root.userData.sourceComposite,
    dispose(){for(const item of owned){
     item.geometry.dispose();item.material.dispose();
    }handle.dispose();}
-  };
+  },spec.id);
  }catch(error){handle.dispose();throw error;}
 }
