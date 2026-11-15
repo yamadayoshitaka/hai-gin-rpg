@@ -185,7 +185,8 @@
     import {femaleSummonCosplayFor,FEMALE_SUMMON_FORM_IDS,MALE_DRAGON_LORD_FORM,MALE_DRAGON_LORD_HUMAN_FORM} from './src/female-summon-forms.js?v=4.6.91';
     import {createCosplayedHumanoidMonster} from './src/monster-character-cosplay.js?v=4.6.91';
     import {COMBAT_OBJECT_SPECS} from './src/combat-action-spec.js?v=4.6.51';
-    import {MONSTER_CATALOG,MONSTER_FAMILIES} from './src/monster-catalog.js';
+    import {MONSTER_CATALOG,MONSTER_BY_ID,MONSTER_FAMILIES} from './src/monster-catalog.js';
+    import {loadSpeciesSourceComposite} from './src/monster-source-composite.js?v=4.6.92';
     import {MONSTER_SUMMON_BY_TYPE,isMonsterSummonType,MONSTER_SUMMON_MODEL_HEIGHT}
       from './src/monster-summon-registry.js?v=1';
     import {creatureSize,SUMMON_WORLD_SCALE,LARGE_SUMMON_IDS} from './src/combat-creature-performance.js?v=4.6.39';
@@ -293,9 +294,45 @@
       externalPreviewMode='licensed';
       compareDragon.textContent='CC0外部ドラゴンを比較';
     };
+    // CC0 donor GLBs in the source registry are opt-in for the original
+    // battle renderer; the summon showroom can display the same source
+    // composite as the newly published bestiary without allocating it in
+    // every 50v50/1000v1000 battlefield.
+    async function showNewWolfSource(){
+      if(selected!=='wolf'||!licensedRegistry.entries.q022||
+         new URLSearchParams(location.search).get('source')==='legacy')return;
+      const ticket=++externalRequest;
+      try{
+        const handle=await loadSpeciesSourceComposite(
+          MONSTER_BY_ID.m001,licensedRegistry,{detail:'high'});
+        if(ticket!==externalRequest||selected!=='wolf'){
+          handle.dispose();return;
+        }
+        // The base CC0 dog GLB is a normal-sized source. Match the existing
+        // giant summon scale (17m) without changing its anatomical nodes.
+        const bounds=new THREE.Box3().setFromObject(handle.root);
+        const height=bounds.getSize(new THREE.Vector3()).y;
+        if(!Number.isFinite(height)||height<=0){
+          handle.dispose();throw Error('Empty canine model');
+        }
+        handle.root.scale.multiplyScalar(
+          MONSTER_SUMMON_MODEL_HEIGHT/height);
+        handle.root.userData.summonWolfSource='m001';
+        externalPreview=handle;
+        externalPreviewMode='source-composite';
+        scene.add(handle.root);
+        controls.target.set(0,MONSTER_SUMMON_MODEL_HEIGHT*.43,0);
+        camera.position.set(7,11,43);
+        controls.update();
+      }catch(error){
+        if(ticket!==externalRequest)return;
+        console.warn('CC0 wolf source unavailable, retain proven summon wolf',error);
+      }
+    }
     fetchCreatureRegistry().then(reg=>{
       licensedRegistry=reg;
       compareDragon.disabled=!reg.entries.dragon||selected!=='dragon';
+      if(selected==='wolf')showNewWolfSource();
     }).catch(()=>{compareDragon.disabled=true;});
     compareDragon.onclick=async()=>{
       if(selected!=='dragon')return;
@@ -449,6 +486,7 @@
         (selected==='dragon_lord'?dragonDistance:distance)*worldScale);
       controls.update();
       if(femaleAvailable)selectFemaleSummonForm();
+      else if(selected==='wolf')showNewWolfSource();
     }
     femaleMode.addEventListener('change',()=>{
       closeExternalPreview();
@@ -669,7 +707,9 @@
         ' / 描画 '+(lod.high?'精細':'軽量')+'LOD / GPUインスタンス'+
         (selected==='forest_archer'||selected==='seraph_guardian'?
         ' / 顔 '+(objects.faceLibraryReady(selected)?'Quaternius CC0実物':'軽量モデル（読込中・代替）'):'')+
-        (externalPreview?' / '+(externalPreviewMode==='local'?'手元GLB':'CC0外部候補')+'・独立3Dアニメ':'')+
+        (externalPreview?' / '+(externalPreviewMode==='local'?'手元GLB':
+         externalPreviewMode==='source-composite'?'CC0犬型GLB＋狼王のPBR外観':
+         'CC0外部候補')+'・独立3Dアニメ':'')+
         (femaleSummonHandle?' / '+(femaleSummonHandle.profile.sex==='male'?'男性竜王':'女性人型')+
           ' '+(isFemaleReady?'キャラGLB・骨格連動':'読み込み中・元の姿'):'')+
         (femaleFlightAltitude>0?' / 空中飛行 '+femaleFlightAltitude.toFixed(2)+'m・羽ばたき':'');
@@ -742,6 +782,9 @@
       monsterRendered:!!objects.monsterSourceModel(previewObject.id),
       monsterFramed:frameMonsterType===selected,
       wolfHybridPrimary:'combat-summon-wolf',
+      wolfSourceActive:selected==='wolf'&&externalPreviewMode==='source-composite'
+        &&!!externalPreview,
+      wolfSourceDonor:externalPreview?.sourceComposite?.donor??null,
       wolfHybridSecondary:'m001',
       cameraDistance:camera.position.distanceTo(controls.target)
     });
