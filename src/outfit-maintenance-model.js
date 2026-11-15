@@ -363,25 +363,26 @@ export function createDetailedOutfit(job, sex, body, textures, {quality='preview
         }
       }
     }
+    // Weld the two flank closures into the existing backplate geometry.
+    // Separate meshes previously added two draw calls per armored character
+    // and could show lighting discontinuities at the rear side seams.
+    for(const side of [-1,1]){
+      const seamStart=backPoints.length/3;
+      for(let row=0;row<=rows;row++){
+        const y=top+(bottom-top)*row/rows;
+        const frontPoint=edge(side,y),rearPoint=backEdge(side,y);
+        for(const p of [frontPoint,rearPoint])backPoints.push(p.x,p.y,p.z);
+        backUv.push(0,row/rows,1,row/rows);
+        if(row<rows){
+          const i=seamStart+row*2;
+          backFaces.push(i,i+2,i+1,i+1,i+2,i+3);
+        }
+      }
+    }
     backGeometry.setAttribute('position',new THREE.Float32BufferAttribute(backPoints,3));
     backGeometry.setAttribute('uv',new THREE.Float32BufferAttribute(backUv,2));
     backGeometry.setIndex(backFaces);backGeometry.computeVertexNormals();
     add('heroic-cuirass-backplate',backGeometry,plate);
-    for(const side of [-1,1]){
-      const seamPoints=[],seamUv=[],seamFaces=[];
-      for(let row=0;row<=rows;row++){
-        const y=top+(bottom-top)*row/rows;
-        const frontPoint=edge(side,y),rearPoint=backEdge(side,y);
-        for(const p of [frontPoint,rearPoint])seamPoints.push(p.x,p.y,p.z);
-        seamUv.push(0,row/rows,1,row/rows);
-        if(row<rows){const i=row*2;seamFaces.push(i,i+2,i+1,i+1,i+2,i+3)}
-      }
-      const seam=new THREE.BufferGeometry();
-      seam.setAttribute('position',new THREE.Float32BufferAttribute(seamPoints,3));
-      seam.setAttribute('uv',new THREE.Float32BufferAttribute(seamUv,2));
-      seam.setIndex(seamFaces);seam.computeVertexNormals();
-      add(`${side<0?'l':'r'}-cuirass-closed-flank`,seam,plate);
-    }
     const edgeMaterial=precious||(heavy?gold:steel);
     // Metal piping follows the actual V neckline, not an impossible flat
     // top edge across the wearer's throat. The curved pectoral stamping
