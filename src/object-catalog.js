@@ -278,21 +278,56 @@ export function createObjectById(id,{cellSize=2.2}={}){
    }
    for(const x of [-.68,.68])b(.095*c,.13*c,.72*c,x*c,.26*c,0,dark);
   }
-  if(id==='cottage_fireplace_001'){b(2.6*c,.3*c,1*c,0,.15*c,0,stone);for(const x of [-1.1,1.1])b(.42*c,2.5*c,.9*c,x*c,1.25*c,0,stone);b(2.65*c,.4*c,1.05*c,0,2.5*c,0,stone);b(1.2*c,.45*c,.4*c,0,.48*c,.1*c,fire)}
+  if(id==='cottage_fireplace_001'){
+   // Open masonry firebox: solid jambs carry the lintel and chimney; no solid block masks the opening.
+   const mortar=new THREE.MeshStandardMaterial({color:0x776d61,roughness:.98});
+   b(2.8*c,.22*c,1.2*c,0,.11*c,0,stone);
+   for(const x of [-1.14,1.14]){
+    b(.46*c,2.12*c,.94*c,x*c,1.28*c,-.08*c,stone);
+    for(let i=0;i<6;i++)b(.035*c,.022*c,.96*c,(x+Math.sign(x)*.235)*c,(.39+i*.34)*c,-.08*c,mortar);
+   }
+   b(2.75*c,.42*c,1.12*c,0,2.55*c,-.08*c,stone);
+   b(2.18*c,.12*c,.85*c,0,.35*c,-.08*c,dark);
+   b(2.15*c,1.58*c,.10*c,0,1.19*c,-.49*c,dark);
+   for(let i=0;i<5;i++)b(2.8*c,.18*c,.72*c,0,(2.83+i*.17)*c,-.17*c,stone);
+   for(const x of [-.65,.65])b(.14*c,.13*c,.78*c,x*c,.43*c,-.02*c,fire);
+   root.userData.fireboxOpening={width:1.82*c,height:1.83*c};
+  }
   if(id==='cottage_barrel_001'){const o=new THREE.Mesh(new THREE.CylinderGeometry(.48*c,.52*c,1.15*c,24,3),timber);o.position.y=.58*c;o.castShadow=true;root.add(o);for(const y of [.2,.94]){const ring=new THREE.Mesh(new THREE.TorusGeometry(.49*c,.045*c,7,28),dark);ring.rotation.x=Math.PI/2;ring.position.y=y*c;root.add(ring)}}
   if(id==='treasure_chest_001'){
-   const metal=new THREE.MeshStandardMaterial({color:0xa1874c,metalness:.70,roughness:.36});
-   const body=b(.88*c,.38*c,.70*c,0,.30*c,0,dark);body.name='treasure_chest_body';
-   for(const x of [-.35,.35])b(.08*c,.46*c,.73*c,x*c,.32*c,0,metal);
-   const lid=new THREE.Group();lid.name='treasure_chest_lid';lid.position.set(0,.54*c,-.34*c);
-   const cap=new THREE.Mesh(new THREE.BoxGeometry(.92*c,.16*c,.73*c),timber);
-   cap.position.set(0,.03*c,.35*c);cap.castShadow=true;lid.add(cap);
-   for(const x of [-.34,.34]){
-    const band=new THREE.Mesh(new THREE.BoxGeometry(.07*c,.19*c,.75*c),metal);
-    band.position.set(x*c,.03*c,.35*c);lid.add(band);
+   // Hollow boarded carcass with four bearing feet, hinge knuckles and a hinged curved lid.
+   const metal=new THREE.MeshStandardMaterial({color:0x796747,metalness:.72,roughness:.38});
+   const body=new THREE.Group();body.name='treasure_chest_body';root.add(body);
+   const plank=(parent,w,h,d,x,y,z,mat=timber)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(w*c,h*c,d*c),mat);m.position.set(x*c,y*c,z*c);m.castShadow=true;m.receiveShadow=true;parent.add(m);return m;};
+   plank(body,.92,.10,.73,0,.16,0);
+   for(let i=0;i<4;i++){
+    plank(body,.92,.105,.075,0,.27+i*.105,-.33);
+    plank(body,.92,.105,.075,0,.27+i*.105,.33);
    }
-   root.add(lid);root.userData.openable=true;root.userData.opened=false;
-   root.userData.lidName='treasure_chest_lid';
+   for(const x of [-.425,.425]){
+    plank(body,.085,.42,.68,x,.40,0);
+    for(const z of [-.25,.25])plank(body,.12,.16,.13,x,.075,z,dark);
+   }
+   for(const x of [-.35,.35])plank(body,.075,.48,.75,x,.40,0,metal);
+   const lid=new THREE.Group();lid.name='treasure_chest_lid';lid.position.set(0,.62*c,-.35*c);
+   for(let i=0;i<7;i++){
+    const a=(i+.5)*Math.PI/7;
+    const z=.35-.34*Math.cos(a),y=.08+.25*Math.sin(a);
+    const board=plank(lid,.96,.075,.18,0,y,z);
+    board.rotation.x=-Math.PI/2+a;
+   }
+   for(const x of [-.34,.34]){
+    for(let i=0;i<7;i++){
+     const a=(i+.5)*Math.PI/7;
+     const z=.35-.35*Math.cos(a),y=.08+.27*Math.sin(a);
+     const band=plank(lid,.065,.09,.19,x,y,z,metal);
+     band.rotation.x=-Math.PI/2+a;
+    }
+    const hinge=new THREE.Mesh(new THREE.CylinderGeometry(.065*c,.065*c,.13*c,12),metal);
+    hinge.rotation.z=Math.PI/2;hinge.position.set(x*c,0,0);lid.add(hinge);
+   }
+   plank(body,.15,.18,.055,0,.50,.37,metal);
+   root.add(lid);root.userData.openable=true;root.userData.opened=false;root.userData.lidName='treasure_chest_lid';
   }
   if(id==='cottage_stairs_001'){
    // Continuous inclined stringers support every tread; closed risers block open gaps.
