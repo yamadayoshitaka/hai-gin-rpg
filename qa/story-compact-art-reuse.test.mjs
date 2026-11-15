@@ -40,7 +40,9 @@ const defeatMale=compactComicForStage('c01-s04','post',{protagonistGender:'male'
 const defeatFemale=compactComicForStage('c20-s10','post',{protagonistGender:'female',battleOutcome:{victory:false}});
 assert.equal(defeatMale.panels[0].sharedArtAsset,'./assets/story/shared/shared-defeat-01.webp');
 assert.equal(defeatFemale.panels[0].sharedArtAsset,defeatMale.panels[0].sharedArtAsset);
-assert.equal(defeatFemale.panels[1].sharedArtAsset,null,'Do not fake a second completed defeat CG');
+assert.equal(defeatFemale.panels[1].sharedArtAsset,'./assets/story/shared/shared-defeat-02.webp');
+assert.equal(defeatMale.panels[1].sharedArtAsset,defeatFemale.panels[1].sharedArtAsset);
+assert.notEqual(defeatFemale.panels[0].sharedArtAsset,defeatFemale.panels[1].sharedArtAsset,'Two distinct common-defeat CG images');
 const common=fs.readFileSync('assets/story/shared/shared-defeat-01.webp');
 assert.equal(common.toString('ascii',0,4),'RIFF');assert.equal(common.toString('ascii',8,12),'WEBP');
 const pages=['game.html','town-hub.html','world-map.html','src/story-manga-viewer.js'];
