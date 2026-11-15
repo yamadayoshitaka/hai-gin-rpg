@@ -5717,7 +5717,7 @@ function squadFixedStrategyLabel(id,team=0){
  if(team===1)return '敵AI・全滅';
  return STRATEGY_LABELS[squadStrategies.get(String(id))]||'全滅';
 }
-const INITIAL_ORDER_LABELS={charge:'⚔ 突撃',defend:'🛡 守備',hold:'⏸ 待機',retreat:'↘ 退却',explore:'🔎 探索'};
+const INITIAL_ORDER_LABELS={charge:'⚔ 突撃',defend:'🛡 守備',hold:'⏸ 待機',retreat:'↘ 退却',support:'✚ 支援',explore:'🔎 探索'};
 const startingSquadOrders=new Map(),activeBuildingExplorations=new Map(),explorationQueues=new Map();
 const exploreRangeBySquad=new Map(); // 0 means unrestricted, measured in map cells.
 let lastEnemyItemDecisionAt=-Infinity,lastEnemyTacticalDecisionAt=-Infinity,lastAllyItemDecisionAt=-Infinity;
@@ -5902,6 +5902,19 @@ function issueBuildingExploration(team,squadId,buildingId,{beforeBattle=false}={
 function setStartingSquadOrder(team,squadId,mode,buildingId=null){
  const id=String(squadId),side=Number(team),key=squadOrderKey(side,id);
  if(mode==='explore')return issueBuildingExploration(side,id,buildingId,{beforeBattle:true});
+  // Support stance is a valid priest-dependent prebattle command. A resting
+  // position leaves healing AI free to treat casualties once combat starts.
+  if(mode==='support'){
+   const hasPriest=squadRoster.some(u=>u.team===side&&String(u.squadId)===id&&
+    (u.jobId==='priest'||u.job?.name==='僧侶'));
+   if(!hasPriest)return false;
+   if(massSim&&!massSim.setSquadCommand(id,'hold',side))return false;
+   if(massWorker?.active)massWorker.setSquadCommand(id,'hold',side);
+   activeBuildingExplorations.delete(key);
+   startingSquadOrders.set(key,{mode:'hold',supportPriority:true});
+   if(side===0)squadOrderRegistry.set(id,{mode:'hold',supportPriority:true});
+   return true;
+  }
  if(!['charge','defend','hold','retreat'].includes(mode))return false;
  if(massSim&&!massSim.setSquadCommand(id,mode,side))return false;
  if(massWorker?.active)massWorker.setSquadCommand(id,mode,side);
@@ -6219,7 +6232,16 @@ let lastCircleTargetResolvedAt=-Infinity;
 const orderedSquad=()=>selectedSquadId;
 function squadCommanderId(id){return storyRequest?.units.find(u=>String(u.squadId)===String(id))?.commanderId??'provisional';}
 function individualCommanderUnavailableReason(id){
- if(id==null)return '部隊未選択';
+  if(id==null)return '部隊未選択';
+  // One strategist commands all three sortie teams; no per-team general.
+  if(storyRequest?.sortieTeamCount){
+   const leader=(massSim?.units??actors).find(u=>u.team===0&&u.isStrategist);
+   if(!leader)return '軍師不在：命令不可（自動行動）';
+   if(leader.alive===false||leader.hp<=0)return '☠ 軍師戦死：命令不可（自動行動）';
+   if(storyRequest.commanders?.find(c=>String(c.id)==='player')?.active===false)
+    return '☠ 軍師戦死：命令不可（自動行動）';
+   return '';
+  }
  if(massSim){
   const strategist=massSim.units.find(u=>u.team===0&&u.isStrategist&&String(u.squadId)===String(id));
   if(!strategist)return '軍師不在：命令不可（自動行動）';
@@ -9267,7 +9289,7 @@ async function finishBattleLoading(){
   const planHeading=document.createElement('strong');
   planHeading.textContent='⚑ 開戦前の隊列編成';
   const planHint=document.createElement('p');
-  planHint.textContent='最大3班へ隊を割り当てます。号令は班全体へ届き、職業に応じて攻撃・守備・支援を行います。宿屋で隊長を選定できます。';
+  planHint.textContent=storyRequest?.sortieTeamCount?'宿屋で確定した最大3隊の人数・隊長・隊列・出撃位置を引き継ぎます。号令は隊ごとに設定できます。':'最大3班へ隊を割り当てます。号令は班全体へ届き、職業に応じて攻撃・守備・支援を行います。宿屋で隊長を選定できます。';
   planHint.style.cssText='font:11px/1.55 system-ui;color:#c3dcea;margin:5px 0 8px';
   const planList=document.createElement('div');planList.id='openingPlanList';
   planList.style.cssText='overflow:hidden;display:grid;gap:6px';
@@ -9281,7 +9303,8 @@ async function finishBattleLoading(){
    const plan=previewFormationPlan();
    for(const detail of plan.summaries){
     const refs=formationRows.get(detail.squadId);if(!refs)continue;
-    const actualType=classifySquad(detail);
+    const savedType=storyRequest?.sortieTeamCount?storyRequest.units.find(u=>String(u.squadId)===String(detail.squadId))?.formationType:null;
+     const actualType=['attack','balanced','support'].includes(savedType)?savedType:classifySquad(detail);
     selectedSquadFormations.set('0:'+detail.squadId,actualType);
     refs.name.textContent=squadName(detail.squadId)+'（'+detail.total+'人）';
     const assigned=Object.values(manualJobs[detail.squadId]||{}).reduce((n,v)=>n+v,0);
@@ -9319,6 +9342,7 @@ async function finishBattleLoading(){
    manual.textContent='✎ 職業を選んで手動編成';
    manual.style.cssText='grid-column:1/-1;min-height:38px;color:#fff;background:#30577b;border:1px solid #94b5d1;border-radius:7px';
    manual.onclick=()=>openManualJobEditor(id);
+    if(storyRequest?.sortieTeamCount){buttons.hidden=true;manual.hidden=true;}
    const itemModeLine=document.createElement('label');
    itemModeLine.style.cssText='grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:7px;color:#bde7f9;font:11px system-ui';
    const itemModeText=document.createElement('span');itemModeText.textContent='🎒 アイテム使用';
@@ -9436,7 +9460,13 @@ async function finishBattleLoading(){
     const orderSelect=document.createElement('select');orderSelect.setAttribute('aria-label',squadName(id,team)+'の初期号令');
     orderSelect.style.cssText='width:100%;padding:7px;color:white;background:#193852;border:1px solid #6b90ac;border-radius:6px';
     for(const [value,label] of Object.entries(INITIAL_ORDER_LABELS)){
-     const option=document.createElement('option');option.value=value;option.textContent=label;orderSelect.append(option);
+     const option=document.createElement('option');option.value=value;option.textContent=label;
+      if(team===0&&storyRequest?.sortieTeamCount){
+       const jobs=storyRequest.units.filter(u=>String(u.squadId)===String(id)).map(u=>u.job);
+       if(value==='support'&&!jobs.includes('僧侶'))option.disabled=true;
+       if(value==='explore'&&!jobs.some(j=>j==='忍者'||j==='盗賊'))option.disabled=true;
+      }
+      orderSelect.append(option);
     }
     const innOrder=team===0?storyRequest?.initialSquadOrders?.[String(id)]:null;
      orderSelect.value=innOrder&&Object.hasOwn(INITIAL_ORDER_LABELS,innOrder)&&innOrder!=='explore'?innOrder:'charge';
@@ -9505,7 +9535,7 @@ async function finishBattleLoading(){
   const wizardTabs=document.createElement('div');wizardTabs.className='openingWizardTabs';
   const intro=document.createElement('div');intro.id='openingLaunchSummary';
   intro.style.cssText='text-align:left;margin:12px 0;padding:12px;color:#e2f2ff;border:1px solid #86a9c3;border-radius:9px;background:#122c43;font:12px/1.7 system-ui';
-  intro.textContent='編成・初期号令の確認が済んだら開戦してください。号令は班の全隊へ発令します。';
+  intro.textContent=storyRequest?.sortieTeamCount?'宿屋の3隊編成を反映しました。初期号令を確認して開戦してください。':'編成・初期号令の確認が済んだら開戦してください。号令は班の全隊へ発令します。';
   const openingTacticalSummary=createPreBattleTacticalSummary({
    getStageName:()=>selectedStage.name,
    getUnits:()=>squadRoster,

@@ -1,0 +1,20 @@
+#panel.formation-command-ui{width:min(97vw,920px);max-height:97dvh;padding:8px 12px;gap:5px}
+#panel.formation-command-ui #panelContent{overflow:hidden!important;gap:4px}
+.sortiePlanner{display:grid;gap:5px;min-height:0}
+.sortieTop{display:flex;align-items:center;gap:8px;justify-content:space-between;font-size:11px}
+.sortieTop select{max-width:57%;min-height:30px!important;padding:4px!important;font-size:11px!important}
+.sortieModes{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.sortieModes button{min-height:30px!important;padding:3px!important;font-size:12px!important}
+.sortieModes .selected,.sortieTeams .selected,.sortieOrders .selected{background:#644725!important;border-color:#ffe1a0!important}
+.sortieTeams{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}
+.sortieTeams button{min-height:59px!important;text-align:left;padding:4px 6px!important;display:grid;gap:1px;font-size:11px!important;min-width:0;overflow:hidden}
+.sortieTeams strong{font-size:13px;color:#ffe0a0}
+.sortieTeams small{font-size:10px;white-space:nowrap;text-overflow:ellipsis;overflow:hidden}
+.sortieEdit{display:grid;grid-template-columns:1.4fr .65fr 1.3fr 1.1fr 1fr;gap:5px;align-items:end}
+.sortieEdit label{display:grid;gap:2px;font-size:10px;color:#e8d5aa;min-width:0}
+.sortieEdit select,.sortieEdit input{width:100%;min-width:0;min-height:33px!important;padding:4px!important;font-size:11px!important}
+.sortieHint{font-size:10px;color:#c6d6dd;line-height:1.35}
+.sortieOrders{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:5px}
+.sortieOrders button{min-height:39px!important;font-size:12px!important;padding:4px!important}
+@media(max-width:620px){.sortieEdit{grid-template-columns:repeat(3,minmax(0,1fr))}.sortieOrders{grid-template-columns:repeat(3,1fr)}.sortieTeams button{min-height:52px!important;font-size:10px!important}.sortieTeams strong{font-size:11px}}
+@media(max-height:450px){#panel.formation-command-ui{padding:5px 9px;gap:3px}#panel.formation-command-ui h2{font-size:15px}.sortieTeams button{min-height:47px!important}.sortieEdit select,.sortieEdit input{min-height:28px!important}.sortieModes button{min-height:28px!important}}

@@ -1,0 +1,83 @@
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {SourceTextModule} from 'node:vm';
+import {createNewGame} from '../src/game-core-flow.js';
+import {makeCoreBattleRequest} from '../src/core-battle-bridge.js';
+import {
+ ensureSortiePlan,sortieTeams,sortieTeamCount,sortieTeamSquads,
+ allowedSortieSlots,availableSortieOrders,setSortieCount,setSortieCaptain,
+ setSortieFormation,setSortieSlot,setSortieOrder,allocateThreeTeamSortie
+} from '../src/three-team-sortie.js';
+import {renderThreeTeamPlanner} from '../src/three-team-sortie-ui.js';
+import {CAMPAIGN_STAGE_BY_ID} from '../src/campaign-stage-plan.js';
+
+const game=createNewGame('三隊配置テスト'),stage=CAMPAIGN_STAGE_BY_ID['c01-s02'];
+const plan=ensureSortiePlan(game);
+assert.equal(plan.version,1);
+assert.equal(sortieTeams(game).length,3);
+assert.deepEqual(sortieTeams(game).map(sortieTeamCount),[40,0,0]);
+assert.deepEqual(allowedSortieSlots(game,stage),[9,10,11]);
+assert.throws(()=>setSortieSlot(game,1===2?null:stage,1,1),/入口/);
+assert.deepEqual(availableSortieOrders(game,2),[]);
+assert.ok(availableSortieOrders(game,1).includes('support'),'priest enables support');
+assert.ok(!availableSortieOrders(game,1).includes('explore'),'exploration needs thief or ninja');
+setSortieCount(game,1,1,18);
+assert.throws(()=>setSortieCount(game,2,1,13),/他隊/);
+setSortieCount(game,2,1,12);
+setSortieCount(game,1,2,7);
+setSortieCount(game,2,2,3);
+assert.deepEqual(sortieTeams(game).map(sortieTeamCount),[25,15,0]);
+assert.deepEqual(sortieTeamSquads(game,2).map(s=>s.job),['騎士','僧侶']);
+setSortieCaptain(game,2,2);
+setSortieFormation(game,2,'support');
+setSortieSlot(game,stage,2,11);
+assert.throws(()=>setSortieSlot(game,stage,2,9),/別の隊/);
+setSortieOrder(game,2,'support');
+assert.throws(()=>setSortieOrder(game,2,'explore'),/使えません/);
+assert.equal(game.campaign.squads[0].count,30,'inventory is not consumed by editing');
+assert.equal(game.campaign.squads[1].count,10);
+const html=renderThreeTeamPlanner({game,stage,stages:[stage],teamId:2});
+assert.match(html,/最大3隊/);assert.match(html,/出撃位置/);assert.match(html,/隊長/);
+assert.match(html,/入口3か所のみ/);assert.match(html,/data-sortie-count/);
+assert.ok(!html.includes('軍師雇用'));
+const commands=renderThreeTeamPlanner({game,stage,stages:[stage],teamId:2,view:'orders'});
+assert.match(commands,/data-sortie-order="support"/);
+assert.ok(!commands.includes('data-sortie-order="explore"'));
+const assignments=allocateThreeTeamSortie(game,stage);
+assert.equal(assignments.reduce((n,x)=>n+x.count,0),40);
+assert.equal(new Set(assignments.map(x=>x.teamId)).size,2);
+assert.equal(new Set(assignments.map(x=>x.deploymentSlot)).size,2);
+game.location='map';
+const battle=makeCoreBattleRequest(game,stage.id,'three-team-battle');
+assert.equal(battle.sortieTeamCount,2);
+assert.equal(battle.units.length,40);
+assert.deepEqual([...new Set(battle.units.map(u=>u.squadId))],[1,2]);
+assert.equal(battle.units.filter(u=>u.isPlayerHero).length,1);
+assert.equal(battle.units.filter(u=>u.isStrategist).length,1);
+assert.deepEqual(new Set(battle.units.filter(u=>u.squadId===2).map(u=>u.spawnRank)),new Set([3]));
+assert.equal(battle.initialSquadOrders['2'],'support');
+assert.equal(battle.units.find(u=>u.squadId===2).formationType,'support');
+assert.ok(battle.units.some(u=>u.sourceSquadId===2),'each job source persists');
+game.completedStages.push(stage.id);
+assert.equal(allowedSortieSlots(game,stage).length,12);
+setSortieSlot(game,stage,2,0);
+assert.equal(makeCoreBattleRequest(game,stage.id,'cleared').units.find(u=>u.squadId===2).spawnRank,0);
+game.campaign.squads[0].count=20;
+ensureSortiePlan(game);
+assert.equal(sortieTeams(game).reduce((n,t)=>n+(t.counts['1']||0),0),20,'casualties cannot leave duplicated assignment');
+const many=createNewGame('50人上限');
+many.campaign.squads[0].count=80;
+ensureSortiePlan(many);
+assert.equal(allocateThreeTeamSortie(many,stage).reduce((n,a)=>n+a.count,0),50);
+const town=readFileSync(new URL('../town-hub.html',import.meta.url),'utf8');
+assert.match(town,/renderThreeTeamPlanner/);
+assert.match(town,/setSortieCount/);
+assert.match(town,/three-team-sortie-ui.css/);
+const battleHtml=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
+assert.match(battleHtml,/storyRequest\?\.sortieTeamCount/);
+for(const [name,content] of [['town',town],['battle',battleHtml]]){
+ const scripts=[...content.matchAll(/<script type="module">([\s\S]*?)<\/script>/g)];
+ assert.ok(scripts.length);
+ new SourceTextModule(scripts.at(-1)[1],{identifier:name});
+}
+console.log('Three-team sortie: count conservation, captain, formation, spawn locks, orders, bridge, inline syntax PASS');
