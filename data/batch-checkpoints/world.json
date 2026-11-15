@@ -121,6 +121,30 @@
       ],
       "commitSha": "692d250edc653b6f28b74ebd3ac8612a997102fa",
       "qa": "unverified"
+    },
+    {
+      "id": "town_fence_001",
+      "sourceFiles": [
+        "src/object-catalog.js"
+      ],
+      "commitSha": "beac4f4ef9366cb1c81c46a2ef58fe481cec89c0",
+      "qa": "unverified"
+    },
+    {
+      "id": "stone_fence_001",
+      "sourceFiles": [
+        "src/object-catalog.js"
+      ],
+      "commitSha": "beac4f4ef9366cb1c81c46a2ef58fe481cec89c0",
+      "qa": "unverified"
+    },
+    {
+      "id": "town_handcart_001",
+      "sourceFiles": [
+        "src/object-catalog.js"
+      ],
+      "commitSha": "beac4f4ef9366cb1c81c46a2ef58fe481cec89c0",
+      "qa": "unverified"
     }
   ],
   "remainingIds": [
@@ -132,10 +156,7 @@
     "entry_door_lv5_001",
     "fountain_001",
     "town_well_001",
-    "town_fence_001",
-    "stone_fence_001",
     "town_trash_bin_001",
-    "town_handcart_001",
     "stone_archway_001",
     "stone_steps_001",
     "wooden_watchtower_001",
@@ -163,5 +184,5 @@
     "timber_bridge_broken_001",
     "stone_bridge_broken_001"
   ],
-  "nextAction": "花壇・荷箱・掲示板の構文とWebGL三方向描画、Android負荷を検証し、次に木柵・石柵・荷車の支持構造を改修する。"
+  "nextAction": "木柵・石柵・荷車のNode構文・WebGL三方向描画・Android性能を確認し、街のゴミ箱・石造アーチ門・石造玄関階段の実造形を続行する。"
 }
