@@ -130,23 +130,32 @@
       ]
     },
     "anime": {
-      "source": "ChatGPTタスクのスケジュール確認",
-      "lastRunAt": "2026-11-15T09:01:20.385653Z",
-      "status": "paused",
+      "source": "ChatGPT scheduled quality regression",
+      "lastRunAt": "2026-11-15T17:16:58Z",
+      "status": "in_review",
       "carryover": true,
-      "subject": "漫画制作の定期タスクは停止中",
-      "summary": "GitHub実行制御がONでもChatGPT漫画定期タスクは停止中。Cloudflare日次無料生成は別の実行経路。",
-      "nextAction": "漫画の実登録・QA・公開の結果を日次GitHub Actionsの成果物と照合する。ChatGPT自動生成が稼働中とは表示しない。",
+      "subject": "Single panel native dimension/aspect QA fix",
+      "summary": "Main lacked native size/aspect checks in scripts/qa-story-single-panel-frame.py. Added minimum 800x450, 16:9 tolerance and rejection exit. Six arithmetic boundary tests passed; Pillow integration/CI and visual QA pending. No images generated or registered.",
+      "nextAction": "Run Pillow image integration tests, review overlap with PR #421/#428, check CI, then fix any issues on branch; do not merge until verified. Confirm free generator before stage4 production.",
       "steps": {
-        "launch": "skipped",
-        "code": "unknown",
-        "qa": "unknown",
-        "commit": "unknown",
-        "pr": "unknown",
-        "merge": "unknown",
-        "deploy": "unknown"
+        "launch": "done",
+        "code": "done",
+        "qa": "pending",
+        "commit": "done",
+        "pr": "done",
+        "merge": "pending",
+        "deploy": "pending"
       },
-      "evidence": []
+      "evidence": [
+        {
+          "label": "Source commit 7eea0af",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/7eea0af91e85610c66f5db18ba625f0c099afb8f"
+        },
+        {
+          "label": "Draft PR #435",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/435"
+        }
+      ]
     }
   }
 }
