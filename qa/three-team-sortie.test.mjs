@@ -161,7 +161,7 @@ assert.equal(sortieTeams(roster)[1].counts['1']||0,0);
 const many=createNewGame('50人上限');
 many.campaign.squads[0].count=80;
 ensureSortiePlan(many);
-assert.equal(allocateThreeTeamSortie(many,stage).reduce((n,a)=>n+a.count,0),50);
+assert.equal(allocateThreeTeamSortie(many,stage).reduce((n,a)=>n+a.count,0),stage.deploymentLimit,'stage-specific deployment capacity replaces the old fixed 50 cap');
 const town=readFileSync(new URL('../town-hub.html',import.meta.url),'utf8');
 assert.match(town,/renderThreeTeamPlanner/);
 assert.match(town,/setSortieCount/);
