@@ -3,7 +3,8 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 const map=fs.readFileSync('world-map.html','utf8'),town=fs.readFileSync('town-hub.html','utf8');
 const stage={id:'c01-s01',kind:'town',chapter:1};
-const handler=map.slice(map.indexOf("$('sortie').onclick=()=>{"),map.indexOf('function completeReturnedBattle()'));
+const handler=map.slice(map.indexOf('function beginSortie(stage){'),map.indexOf('function completeReturnedBattle()'));
+assert.ok(handler.includes("$('sortie').onclick=()=>{"),'the stage sortie handler remains wired');
 for(const legacy of [null,'chapter','opening']){
  const game={campaign:{},storyFlags:{}};let opened=0,launched=0,saved=null;
  if(legacy==='chapter')game.storyFlags.chapterOpenings={1:true};
