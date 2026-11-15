@@ -153,7 +153,7 @@ footer #submit{font-size:12px;min-width:132px}
 <main class="content">
 <div class="eyebrow">CHAPTER 01 · VISUAL REVIEW</div>
 <h1>第一章・漫画を読んで確認・修正</h1>
-<p class="lead">1画面1コマ・前後ボタンで切替。画像は生成・技術検査後に自動でゲームへ反映し、問題があれば差し戻せます。</p>
+<p class="lead">ゲーム本編が参照する公開済みの仮登録台帳から同じ原画を表示します。画像生成だけでは本編に反映されず、登録コミットとPages公開が必要です。</p>
 <div class="progress" role="progressbar" aria-label="表示したページの確認状況" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="progressBar"></span></div>
 <div class="progress-info"><span id="progressLabel">読み込み中…</span><span id="globalCount">第一章 132ページ</span></div>
 <div class="filters">
@@ -162,11 +162,11 @@ footer #submit{font-size:12px;min-width:132px}
 <label for="edition">展開<select id="edition"></select></label>
 </div>
 <div class="page-nav"><button type="button" id="prevPage">◀ 前のコマ</button><div><div id="pageTitle">第一章</div><div id="pageSub"></div></div><button type="button" id="nextPage">次のコマ ▶</button></div>
-<div class="how">承認操作不要。生成済みの実画像を自動検証してゲームに反映します。問題があれば「このコマを差し戻す」で修正理由を記入しGitHubへ送信。元画像へ復帰できます。</div>
+<div class="how">本編と同じ登録済みの原画を表示します。未登録候補・過去の制作ブランチは優先しません。「このコマを差し戻す」で修正理由をGitHubに送信できます。正式P0品質承認とは別です。</div>
 <div id="panels" class="panels" aria-live="polite"></div>
 <p id="info" role="status"></p>
 
-<p class="lead">承認は不要です。ChatGPTで生成した画像のゲームへの自動取り込みは未接続です。Cloudflareで生成済みの実絵は自動反映します。</p>
+<p class="lead">表示は公開済みの本編仮登録を優先。画像生成・仮登録・Pages公開はそれぞれ別の段階です。未公開の画像を本編画像と誤認させません。</p>
 <div class="page-nav"><button type="button" id="prevBottom">◀ 前のページ</button><button type="button" id="nextBottom">次のページ ▶</button></div>
 </main>
 <footer><div class="foot-inner"><div><strong id="draftCount">1コマずつ表示</strong><small>承認操作なし・差し戻し時のみGitHubへ送信</small></div><button id="submit" disabled type="button">差し戻しを登録</button></div></footer>
