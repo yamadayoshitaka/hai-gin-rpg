@@ -92,12 +92,13 @@ export function buildLeviathanAnatomicalSource(THREE,{segments=56,radial=18}={})
   const p=profile(.65);
   const pivot=new THREE.Group();pivot.name='pectoral-articulation-'+side;
   pivot.position.set(p.x,p.y-.10,side*p.rz*.85);body.add(pivot);pectoralPivots.push({pivot,side});
+  // Chord-wise spread prevents collapsed web strips and gives the cartilage rays distinct attachment paths.
   const verts=[],uv=[],idx=[],span=12,chord=8;
   for(let i=0;i<=span;i++){
    const u=i/span;
    for(let j=0;j<=chord;j++){
     const v=j/chord;
-    verts.push(-1.48*u+.30*u*Math.sin(Math.PI*v),
+    verts.push(-1.48*u+(.40-.18*u)*(v-.5)+.18*u*Math.sin(Math.PI*v),
       -.22*u-.18*Math.sin(Math.PI*u)*Math.sin(Math.PI*v),
       side*(1.83*u+.14*Math.sin(Math.PI*u)*Math.sin(Math.PI*v)));
     uv.push(u,v);
@@ -115,7 +116,7 @@ export function buildLeviathanAnatomicalSource(THREE,{segments=56,radial=18}={})
    const v=rayIndex/chord,path=[];
    for(let i=0;i<=span;i++){
     const u=i/span;
-    path.push(new THREE.Vector3(-1.48*u+.30*u*Math.sin(Math.PI*v),
+    path.push(new THREE.Vector3(-1.48*u+(.40-.18*u)*(v-.5)+.18*u*Math.sin(Math.PI*v),
      -.22*u-.18*Math.sin(Math.PI*u)*Math.sin(Math.PI*v),
      side*(1.83*u+.14*Math.sin(Math.PI*u)*Math.sin(Math.PI*v))+.014));
    }
