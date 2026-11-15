@@ -5,8 +5,8 @@
     "object:cottage_barrel_001"
   ],
   "run": {
-    "id": "43732283817",
-    "startedAt": "2026-11-15T15:54:51.238Z",
+    "id": "43762653541",
+    "startedAt": "2026-11-15T21:17:45.813Z",
     "mode": "results",
     "requested": 3,
     "requestedTarget": null,
@@ -19,11 +19,11 @@
       "object:cottage_fireplace_001",
       "object:cottage_barrel_001"
     ],
-    "generated": 3,
+    "generated": 0,
     "failed": [],
-    "providerCalls": 3,
+    "providerCalls": 0,
     "stopReason": "REVIEW_PROPOSALS_RECORDED_NOT_MERGED",
-    "referenceStopReason": "REFERENCE_GENERATED_VISUAL_QA_PENDING",
-    "completedAt": "2026-11-15T15:54:51.238Z"
+    "referenceStopReason": "REVIEW_EXISTING_REFERENCE_ONLY",
+    "completedAt": "2026-11-15T21:17:45.813Z"
   }
 }
