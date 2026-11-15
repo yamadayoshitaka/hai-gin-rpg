@@ -78,6 +78,7 @@ export const CAMPAIGN_STAGES=Object.freeze(STORY_CHAPTERS.flatMap(chapter=>
    storyEvent:slot===1||slot===5||slot===10,
    canSave:town,
    difficulty:Math.min(100,Math.max(1,chapter.id*3+slot)),
+   deploymentLimit:stageDeploymentLimit({kind,slot,chapter:chapter.id}),
    lockedAfter:chapter.id===1&&slot===1?null:
     'c'+String(i===0?chapter.id-1:chapter.id).padStart(2,'0')+'-s'+String(i===0?10:i).padStart(2,'0')
   });
