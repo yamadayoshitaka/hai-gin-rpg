@@ -19,16 +19,28 @@ footer{margin-top:18px;padding:16px;border:1px solid var(--border);border-radius
 button.refresh{border:1px solid #567990;background:#1d3a50;border-radius:8px;padding:8px 12px;color:#eaf3fb;cursor:pointer}
 small{font-size:11px}strong{font-weight:700}
 @media(max-width:740px){.grid{grid-template-columns:1fr}header strong{font-size:17px}main{padding:12px 10px 55px}.card{padding:14px}.name{font-size:18px}h1{font-size:21px}}
+
+.batch-switch{display:flex;align-items:center;justify-content:space-between;gap:9px;padding:8px 10px;border:1px solid #526b7d;border-radius:9px;background:#102335}
+.batch-switch button,.image-copy{min-height:40px;padding:7px 12px;background:#355a72;border:1px solid #9ab3c6;border-radius:8px;color:white;font-weight:700;cursor:pointer}
+.batch-switch button:disabled,.image-copy:disabled{opacity:.5}
+.image-drop{border:2px dashed #60849b;border-radius:10px;padding:10px;display:grid;gap:6px;background:#102335;font-size:12px}
+.image-drop.drag{background:#225068}
+.image-drop input{max-width:100%}
+.image-drop img{max-width:100%;max-height:180px;object-fit:contain;justify-self:center}
+.image-drop img[hidden]{display:none}
 </style></head><body>
 <header><a href="./dev-menu.html">← メンテナンス</a><strong>⚙ 灰銀｜毎時バッチ管理</strong><button class="refresh" id="refresh" type="button">状況を更新</button></header>
 <main><h1>品質改善バッチ：4系統</h1>
 <p>確認する対象を4つに整理しました。各カードから<strong>いまのゲーム画面を見る</strong>、実行状況を開く、次の指示を送る操作ができます。</p>
 <div class="summary" aria-live="polite"><span id="groupCount">4系統</span><span id="enabledCount">自動実行を確認中</span><span id="activeCount">GitHub実行状況を照合中</span></div>
 <p id="fresh" class="muted">GitHub Actionsは画面表示時・更新時に確認します。ChatGPTの実行中判定はこのページから取得できません。</p>
+<p class="panel"><strong>第1章漫画：</strong><span id="chapter4status">ステージ4の原画登録状況を取得中</span>　<a href="./story-chapter1-approval.html?stage=c01-s04">ステージ4の漫画を確認・差し戻す</a></p>
 <div class="grid" id="cards"><p>バッチ情報を読み込み中…</p></div>
 <footer>
  <h2>表示と手動指示について</h2>
  <p>「毎時有効」はスケジュールが有効という意味で、いま処理しているという意味ではありません。ChatGPT側は取得時点の記録を表示し、GitHub側は最新のActions履歴を取得します。</p>
+ <p><strong>有効／無効：</strong>バッチの作業実行を切り替えるには各カードのボタンからGitHub Issueを開き、所有者が「Submit new issue」で確定します。ChatGPTの定期タスクそのもののON/OFF操作とは別です。人・モンスターの既存定期タスクは実行前に切替設定を確認するよう変更が必要です。</p>
+ <p><strong>参考画像：</strong>ここに画像を選択・貼り付けて確認し、画像をコピーしてGitHub Issue本文へ貼り付けてください。画像はPagesから直接アップロードされません。</p>
  <p><strong>手動指示の送り方：</strong>各カードに修正内容を入力 →「手動指示を送る」→ GitHubのIssue画面で「Submit new issue」を押してください。これは1回限りの依頼で、GitHub認証情報をこのサイトに入力する必要はありません。</p>
  <p class="note">人モデル・モンスターの指示はIssueに保存され、定期タスク側が次回確認します。GitHubのQA検査も起動しますが、その成功だけで3Dモデルが修正されるわけではありません。オブジェクト／ステージは指示をCloudflareの2D基準画生成へ渡します。アニメ・漫画の毎時タスクは現在停止中で、手動指示では自動復旧しません。追加課金・自動マージは行いません。</p>
  <div class="links"><a href="https://github.com/yamadayoshitaka/hai-gin-rpg/actions" target="_blank" rel="noopener noreferrer">全GitHub Actionsを見る</a><a href="https://github.com/yamadayoshitaka/hai-gin-rpg/issues?q=is%3Aissue+is%3Aopen+%22hai-gin-batch%22" target="_blank" rel="noopener noreferrer">手動指示の履歴を見る</a></div>
@@ -63,6 +75,20 @@ function createCard(data){
  const source=tag('strong','',data.time+' ｜ '+data.source);schedule.appendChild(source);
  const detail=paragraph(data.source.includes('ChatGPT')?'直近の定期実行：'+TIME(data.last)+' （記録時点）':'直近の実行：取得中','muted');
  schedule.appendChild(detail);c.appendChild(schedule);
+
+ const switchRow=tag('div','batch-switch');
+ const swText=tag('span','muted','実行制御：取得中');
+ const swBtn=tag('button','','切替を依頼');swBtn.type='button';
+ switchRow.append(swText,swBtn);c.appendChild(switchRow);
+ swBtn.addEventListener('click',()=>{
+  const cmd={category:data.id,enabled:!data.autoEnabled};
+  const body='<!-- hai-gin-batch-switch-v1 -->\n```json\n'
+    +JSON.stringify(cmd,null,2)+'\n```\n\n'
+    +'バッチ作業の実行制御を変更してください。';
+  const link=GH+'/issues/new?'+new URLSearchParams({title:'[hai-gin-switch] '+data.name+' '+(cmd.enabled?'ON':'OFF'),body});
+  const win=window.open(link,'_blank','noopener,noreferrer');if(!win)location.assign(link);
+  swText.textContent='GitHub Issue画面で「Submit new issue」を押して確定してください';
+ });
  const links=tag('div','links');
  links.append(makeLink('現在の画面を見る', './'+data.preview,false),makeLink(data.secondaryName,'./'+data.secondary,false));
  const log=makeLink('実行ログを見る',GH+'/actions/workflows/'+data.workflow,true);links.appendChild(log);c.appendChild(links);
@@ -79,6 +105,44 @@ function createCard(data){
  const target=field('対象ID（省略すると次の未処理）',
  data.id==='world'?'例：object:castle_001 / stage:c01-s04':data.id==='monster'?'例：m031':data.id==='human'?'例：female':'例：c01-s04',false);
  c.appendChild(target.wrapper);
+
+ const drop=tag('div','image-drop');drop.tabIndex=0;
+ const help=tag('span','','参考画像を選択・ここに貼り付け（PNG/JPEG/WebP、10MBまで）');
+ const chooser=document.createElement('input');chooser.type='file';chooser.accept='image/png,image/jpeg,image/webp';
+ const preview=document.createElement('img');preview.hidden=true;preview.alt='参考画像プレビュー';
+ const imgStatus=tag('span','note','画像はまだアップロードされていません');
+ const copy=tag('button','image-copy','画像をコピーしてGitHubに貼る');copy.type='button';copy.disabled=true;
+ let attachment=null,objectUrl=null;
+ function useImage(f){
+  if(!f||!['image/png','image/jpeg','image/webp'].includes(f.type)||f.size>10*1024*1024){
+   imgStatus.textContent='画像はPNG/JPEG/WebP、10MB以下で選んでください';return;
+  }
+  if(objectUrl)URL.revokeObjectURL(objectUrl);attachment=f;objectUrl=URL.createObjectURL(f);
+  preview.src=objectUrl;preview.hidden=false;copy.disabled=false;
+  imgStatus.textContent=f.name+' のプレビュー（未送信）';
+ }
+ chooser.addEventListener('change',()=>useImage(chooser.files?.[0]));
+ drop.addEventListener('dragover',e=>{e.preventDefault();drop.classList.add('drag')});
+ drop.addEventListener('dragleave',()=>drop.classList.remove('drag'));
+ drop.addEventListener('drop',e=>{e.preventDefault();drop.classList.remove('drag');useImage(e.dataTransfer?.files?.[0])});
+ drop.addEventListener('paste',e=>{
+  const file=[...(e.clipboardData?.items||[])].find(x=>x.type.startsWith('image/'))?.getAsFile();
+  if(file){e.preventDefault();useImage(file)}
+ });
+ copy.addEventListener('click',async()=>{
+  if(!attachment)return;
+  try{
+   if(!navigator.clipboard?.write||typeof ClipboardItem==='undefined')throw Error('unsupported');
+   const bmp=await createImageBitmap(attachment);
+   const canvas=document.createElement('canvas');canvas.width=bmp.width;canvas.height=bmp.height;
+   canvas.getContext('2d').drawImage(bmp,0,0);bmp.close?.();
+   const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));
+   if(!blob)throw Error('conversion');
+   await navigator.clipboard.write([new ClipboardItem({'image/png':blob})]);
+   imgStatus.textContent='コピーしました。GitHubのIssue本文に貼り付けて送信してください';
+  }catch{imgStatus.textContent='コピー非対応。GitHubのIssue本文にこの画像ファイルを直接添付してください'}
+ });
+ drop.append(help,chooser,preview,imgStatus,copy);c.appendChild(drop);
  const button=tag('button','submit','次の指示を手動で送る');button.type='button';c.appendChild(button);
  const feedback=paragraph('GitHubで内容の確認・送信が必要です。','note');feedback.setAttribute('role','status');c.appendChild(feedback);
  button.addEventListener('click',()=>{
@@ -87,16 +151,43 @@ function createCard(data){
   if(data.id==='world'&&cmd.target&&!/^(object:[a-z][\w-]*|stage:c\d{2}-s\d{2})$/.test(cmd.target)){feedback.textContent='対象は object:... または stage:c01-s04 の形式で指定してください。';return}
   if(!cmd.instruction){feedback.textContent='まず次の指示を入力してください。';instruction.focus();return}
   const content='<!-- hai-gin-hourly-batch-v1 -->\n```json\n'+JSON.stringify(cmd,null,2)+'\n```\n\n'
-   +'毎時品質改善の手動依頼。Issue作成後にカテゴリ別のQAを起動。実際のモデル変更は成果物の検証後に行う。';
+   +'毎時品質改善の手動依頼。Issue作成後にカテゴリ別のQAを起動。実際のモデル変更は成果物の検証後に行う。'+(attachment?'\n\n参考画像：'+attachment.name+'（画像をGitHub Issue本文に貼り付けてください）':'');
   const params=new URLSearchParams({title:'[hai-gin-batch] '+data.name+'：次の指示',body:content});
   const link=GH+'/issues/new?'+params.toString();
-  feedback.textContent='GitHubの画面で「Submit new issue」を押すと指示を送れます。';
+  feedback.textContent=attachment?'参考画像をGitHub Issue本文に添付し、Submit new issueで確定してください。':'GitHub画面でSubmit new issueを押すと指示を送れます。';
   const win=window.open(link,'_blank','noopener,noreferrer');
   if(!win)window.location.assign(link);
  });
- $('cards').appendChild(c);elements.set(data.id,{detail,activity,log});
+ $('cards').appendChild(c);elements.set(data.id,{detail,activity,log,swText,swBtn,badge});
 }
 async function fetchJSON(url){const r=await fetch(url,{cache:'no-store',headers:{Accept:'application/vnd.github+json'}});if(!r.ok)throw Error('HTTP '+r.status);return r.json()}
+
+async function updateSwitches(){
+ try{
+  const cfg=await fetchJSON('./data/batch-center-switches.json');
+  if(cfg.schemaVersion!==1||!cfg.groups)throw Error('設定不正');
+  for(const g of groups){
+   const value=cfg.groups[g.id];
+   if(typeof value?.enabled!=='boolean')throw Error(g.id+' 設定欠落');
+   const v=elements.get(g.id);if(!v)continue;
+   g.autoEnabled=value.enabled;
+   v.swText.textContent='品質改善の実行制御：'+(g.autoEnabled?'ON':'OFF')+(value.updatedAt?' ／ 更新 '+TIME(value.updatedAt):'');
+   v.swBtn.textContent=g.autoEnabled?'一時停止を依頼':'有効化を依頼';
+   v.badge.textContent=g.autoEnabled?'実行制御：有効':'実行制御：停止';
+   v.badge.className='badge '+(g.autoEnabled?'on':'off');
+  }
+  $('enabledCount').textContent='実行制御：'+groups.filter(g=>g.autoEnabled).length+'有効・'+groups.filter(g=>!g.autoEnabled).length+'停止';
+ }catch(error){
+  for(const g of groups){const v=elements.get(g.id);if(v){v.swText.textContent='切替設定の取得に失敗：'+error.message;v.swBtn.disabled=true}}
+ }
+}
+async function updateChapter4(){
+ try{
+  const {CHAPTER1_PROVISIONAL_LIVE}=await import('./src/story-chapter1-provisional-live.js');
+  const n=Object.keys(CHAPTER1_PROVISIONAL_LIVE).filter(k=>k.startsWith('c01-s04|')).length;
+  $('chapter4status').textContent='ステージ4：'+n+'/48コマをゲームに仮登録（正式品質承認ではありません）';
+ }catch(e){$('chapter4status').textContent='ステージ4の画像登録数を取得できませんでした'}
+}
 async function updateRuns(){
  try{
   const workflows=await fetchJSON(API+'/actions/workflows?per_page=100');
@@ -121,9 +212,9 @@ async function start(){
   for(const g of groups)createCard(g);
   $('enabledCount').textContent='毎時設定：'+groups.filter(g=>g.autoEnabled).length+'有効・'+groups.filter(g=>!g.autoEnabled).length+'停止';
   $('fresh').textContent='ChatGPTタスク最終確認：'+TIME(j.asOf)+' ／ 現在処理中かはGitHub Actionsのみ取得可能';
-  await updateRuns();
+  await updateSwitches();await updateChapter4();await updateRuns();
  }catch(e){$('cards').textContent='管理データを読み込めませんでした：'+e.message}
 }
-$('refresh').addEventListener('click',updateRuns);
-start();setInterval(()=>{if(!document.hidden&&groups.length)updateRuns()},90000);
+$('refresh').addEventListener('click',async()=>{await updateSwitches();await updateChapter4();await updateRuns()});
+start();setInterval(()=>{if(!document.hidden&&groups.length){updateSwitches();updateRuns()}},90000);
 </script></body></html>

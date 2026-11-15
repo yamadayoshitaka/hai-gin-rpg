@@ -7,12 +7,16 @@ on:
       - '.github/workflows/hourly-batch-manual.yml'
       - 'scripts/manual-hourly-batch-dispatch.mjs'
       - 'qa/manual-hourly-batch-dispatch.test.mjs'
+      - 'scripts/batch-center-toggle.mjs'
+      - 'qa/batch-center-toggle.test.mjs'
+      - 'batch-monitor.html'
 permissions:
-  contents: read
+  contents: write
   actions: write
+  issues: write
 jobs:
   verify-request:
-    if: github.event_name == 'pull_request' || (startsWith(github.event.issue.title, '[hai-gin-batch]') && github.event.issue.user.login == github.repository_owner)
+    if: github.event_name == 'pull_request' || ((startsWith(github.event.issue.title, '[hai-gin-batch]') || startsWith(github.event.issue.title, '[hai-gin-switch]')) && github.event.issue.user.login == github.repository_owner)
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
@@ -24,8 +28,15 @@ jobs:
         run: |
           node --check scripts/manual-hourly-batch-dispatch.mjs
           node --test qa/manual-hourly-batch-dispatch.test.mjs
+          node --check scripts/batch-center-toggle.mjs
+          node --test qa/batch-center-toggle.test.mjs
       - name: Dispatch selected one-shot workflow
-        if: github.event_name == 'issues'
+        if: github.event_name == 'issues' && startsWith(github.event.issue.title, '[hai-gin-batch]')
         env:
           GH_TOKEN: ${{ github.token }}
         run: node scripts/manual-hourly-batch-dispatch.mjs
+      - name: Apply owner-confirmed batch on/off switch
+        if: github.event_name == 'issues' && startsWith(github.event.issue.title, '[hai-gin-switch]')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/batch-center-toggle.mjs
