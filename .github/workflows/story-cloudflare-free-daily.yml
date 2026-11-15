@@ -52,7 +52,7 @@ jobs:
           # cannot inadvertently consume a second daily Cloudflare allocation.
           today=$(date -u +%Y-%m-%d)
           raw=$(gh api "repos/${GITHUB_REPOSITORY}/actions/workflows/story-chapter1-free-complete-draft-production.yml/runs?per_page=100")
-          prior=$(printf '%s' "$raw" | jq --arg today "$today"             '[.workflow_runs[] | select(.event=="workflow_dispatch") |
+          prior=$(printf '%s' "$raw" | jq --arg today "$today"             '[.workflow_runs[] | select(.event=="workflow_dispatch" or .event=="push") |
              select(.created_at | startswith($today))] | length')
           if [ "$prior" -gt 0 ]; then
             echo "Cloudflare production already attempted today ($prior times); skip additional request." | tee -a "$GITHUB_STEP_SUMMARY"
