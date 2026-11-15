@@ -62,6 +62,7 @@ export function buildLeviathanAnatomicalSource(THREE,{segments=56,radial=18}={})
  ellipsoid(head,'tapered-rostrum',skin,[1.22,-.13,0],[1.05,.34,.50]);
  const jaw=new THREE.Group();jaw.position.set(.20,-.30,0);head.add(jaw);
  ellipsoid(jaw,'articulated-mandible',belly,[.84,-.19,0],[1.33,.22,.51]);
+ const branchialPivots=[];
  for(const side of [-1,1]){
   ellipsoid(head,'orbital-ridge-'+side,skin,[.35,.29,side*.66],[.41,.29,.20]);
   ellipsoid(head,'cornea-'+side,iris,[.52,.25,side*.80],[.19,.18,.085]);
@@ -81,6 +82,22 @@ export function buildLeviathanAnatomicalSource(THREE,{segments=56,radial=18}={})
    const slit=new THREE.Mesh(new THREE.TubeGeometry(
     new THREE.CatmullRomCurve3(curve),20,.018,5,false),black);
    slit.name='opercular-gill-slit-'+side+'-'+gill;head.add(slit);
+  }
+  // A paired branchial chamber is a hinged anatomical volume, not a painted slit.
+  // Each chamber has four curved support arches with independent respiratory motion.
+  const chamber=new THREE.Group();chamber.name='branchial-chamber-'+side;
+  chamber.position.set(-.48,-.10,side*.55);head.add(chamber);
+  branchialPivots.push({chamber,side});
+  for(let arch=0;arch<4;arch++){
+   const curve=[];
+   for(let k=0;k<=16;k++){
+    const t=k/16,angle=-1.12+2.24*t;
+    curve.push(new THREE.Vector3(-.27+arch*.18-.045*Math.sin(Math.PI*t),
+     .43*Math.sin(angle),side*(.08+.13*Math.cos(angle))));
+   }
+   const archMesh=new THREE.Mesh(new THREE.TubeGeometry(
+    new THREE.CatmullRomCurve3(curve),24,.033,7,false),belly);
+   archMesh.name='branchial-support-arch-'+side+'-'+arch;chamber.add(archMesh);
   }
   for(let i=0;i<9;i++){
    const x=.12+i*.19;
@@ -189,6 +206,10 @@ export function buildLeviathanAnatomicalSource(THREE,{segments=56,radial=18}={})
    tail.rotation.y=.29*Math.sin(phase-.9);
    for(const {pivot,side} of pectoralPivots)pivot.rotation.x=side*(.10+.14*Math.sin(phase-.55));
    head.rotation.y=.035*Math.sin(phase+.4);
+   for(const {chamber,side} of branchialPivots){
+    chamber.rotation.y=side*(.045+.055*Math.sin(seconds*1.35));
+    chamber.scale.z=1+.09*Math.sin(seconds*1.35);
+   }
    jaw.rotation.z=-.08-.08*(.5+.5*Math.sin(seconds*.7));
    body.position.y=.12*Math.sin(seconds*.85);
   }};
