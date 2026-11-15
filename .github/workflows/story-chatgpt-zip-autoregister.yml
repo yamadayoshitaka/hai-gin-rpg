@@ -1,0 +1,116 @@
+name: ChatGPT ZIP -> verify -> auto provisional game registration
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'assets/story/chapter1-chatgpt-queue/*.zip'
+  pull_request:
+    paths:
+      - 'scripts/ingest-story-chatgpt-zip.py'
+      - 'qa/test_story_chatgpt_zip_autoregister.py'
+      - '.github/workflows/story-chatgpt-zip-autoregister.yml'
+  workflow_dispatch:
+
+# Match existing ChatGPT inbox intake concurrency: never write two revisions at once.
+concurrency:
+  group: chapter1-live-provisional-safe-revisions
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  archive-preflight:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: No API, archive safety and irreversible overwrite regression
+        run: |
+          python3 -m py_compile scripts/ingest-story-chatgpt-zip.py
+          python3 -m unittest discover -s qa -p test_story_chatgpt_zip_autoregister.py -v
+
+  register:
+    name: Import valid real images, commit reversible binding, deploy
+    if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch'
+    needs: archive-preflight
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    permissions:
+      contents: write
+      actions: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate every queued ZIP before extracting ANY image
+        run: python3 scripts/ingest-story-chatgpt-zip.py --mode plan
+      - name: Extract only validated canonical WebP and review sidecar pairs
+        run: python3 scripts/ingest-story-chatgpt-zip.py --mode apply
+      - name: Verify original WebP geometry, SHA, canonical script and reversible P0 provenance
+        run: |
+          node --check scripts/import-story-chapter1-chatgpt-staging.mjs
+          node scripts/import-story-chapter1-chatgpt-staging.mjs --plan
+      - name: Automatically bind only valid provisional images to the REAL game
+        id: bind
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/import-story-chapter1-chatgpt-staging.mjs --apply | tee /tmp/story-import-status.json
+          python3 - <<'PY'
+          import json,os
+          obj=json.load(open('/tmp/story-import-status.json',encoding='utf-8'))
+          if obj.get('invalid') or obj.get('finalApprovalsGranted') != 0:
+              raise SystemExit('Invalid canonical import or accidental final P0 approval')
+          with open(os.environ['GITHUB_OUTPUT'],'a',encoding='utf-8') as f:
+              f.write('registered='+str(obj['applied'])+'\n')
+          PY
+      - name: Regression test main game renderer and chapter-1 gender / outcome isolation
+        run: |
+          node qa/story-chapter1-chatgpt-image-handoff.test.mjs
+          node qa/story-chatgpt-stage45-switch.test.mjs
+          node qa/story-panel-one-at-a-time.test.mjs
+          node qa/story-c01-s05-reference-and-scene-fixes.test.mjs
+      - name: Commit accepted bytes and real game binding atomically; archive ZIP as a receipt
+        id: save
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A -- src/story-chapter1-provisional-live.js assets/story/chapter1-provisional-revisions.json
+          for folder in assets/story/chapter1-chatgpt-inbox assets/story/chapter1-provisional-live assets/story/chapter1-chatgpt-upload-receipts; do
+            if [ -d "$folder" ]; then git add -A -- "$folder"; fi
+          done
+          shopt -s nullglob
+          zips=(assets/story/chapter1-chatgpt-queue/*.zip)
+          if (( ${#zips[@]} )); then git rm -f -- "${zips[@]}"; fi
+          if git diff --cached --quiet; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "No new valid art / no files to commit" >> "$GITHUB_STEP_SUMMARY"
+          else
+            git commit -m 'art(provisional): validate ZIP, auto-register reversible ChatGPT frames'
+            git fetch origin main
+            git rebase origin/main
+            git push origin HEAD:main
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "### Automatic provisional registration" >> "$GITHUB_STEP_SUMMARY"
+            echo "Newly registered frames: ${{ steps.bind.outputs.registered }}" >> "$GITHUB_STEP_SUMMARY"
+            echo "Not formally P0 approved. Original ZIP retained in git history, receipt and input hash recorded." >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Automatically publish game after new real provisional images were committed
+        if: steps.save.outputs.changed == 'true' && steps.bind.outputs.registered != '0'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run publish-pages.yml --ref main
