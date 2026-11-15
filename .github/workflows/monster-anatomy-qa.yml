@@ -132,7 +132,15 @@ jobs:
             FILES="$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${GH_PR_NUMBER}/files?per_page=100" --paginate --jq '.[].filename')"
             echo "PR changed files:"
             printf '%s\n' "$FILES"
-            if grep -E '(^src/(master-heroine|character-|humanoid|facial-|combat-humanoid)|\.glb$|^assets/humans/)' <<<"$FILES"; then
+            # Original creature-only GLBs are a legitimate result of this job.
+            # Continue to block all human/unknown binary mesh rewrites.
+            MODEL_FILES="$(printf '%s\n' "$FILES" | grep -vE '^assets/creatures/original/[a-z0-9_]+/(source|high|low)\.glb
+              echo 'Forbidden human model or mesh change' >&2
+              exit 1
+            fi
+          fi
+ || true)"
+            if grep -E '(^src/(master-heroine|character-|humanoid|facial-|combat-humanoid)|\.glb$|^assets/humans/)' <<<"$MODEL_FILES"; then
               echo 'Forbidden human model or mesh change' >&2
               exit 1
             fi
