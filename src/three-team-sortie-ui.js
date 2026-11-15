@@ -25,7 +25,7 @@ export function renderThreeTeamPlanner({game,teamId=1,cellIndex=5,view='setup',j
  const captainChoices=assigned.map(s=>button('data-sortie-captain="'+esc(s.id)+'"',
    esc(s.characterName||s.name||s.job+'代表')+' <small>'+esc(s.job)+'</small>',String(s.id)===String(team.captainId))).join('');
  const captainPanel='<div class="sortieCaptains"><b>班の隊長</b>'+
-  button('data-sortie-view="captains" class="sortieCaptainOpen"','隊長を選ぶ ▸')+
+  button('data-sortie-view="captains"','隊長を選ぶ ▸')+
   '<div class="sortieCaptainButtons">'+
   (captainChoices||'<small>ジョブを配置すると隊長を選べます</small>')+'</div></div>';
  const captainPage='<div class="sortieSubHead"><b>班の隊長を選択</b>'+back+'</div>'+
