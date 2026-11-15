@@ -42,7 +42,7 @@ export function createAdoptedSpecialSummonRenderer(scene){
    const registryTask=chosen.startsWith('q')?registryRequest:
      Promise.resolve({entries:{}});
    const pending=node;
-   registryTask.then(reg=>loadCreatureMeshSource(chosen,reg,'low')).then(handle=>{
+   registryTask.then(reg=>loadCreatureMeshSource(chosen,reg,'low',{creatureId:object.type})).then(handle=>{
     if(disposed||pending.expired||active.get(id)!==pending){
      handle.dispose();return;
     }
