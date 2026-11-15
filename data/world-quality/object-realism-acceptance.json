@@ -2,12 +2,12 @@
   "schemaVersion": 1,
   "goal": "All registered catalog objects have real 3D geometry and physically plausible structure/materials, are visually inspected, merged and deployed.",
   "sourceCatalog": "src/object-catalog.js",
-  "sourceCatalogBlobSha": "b6567ef92616b56aa6813bd1691048bc81e2fb32",
+  "sourceCatalogBlobSha": "4bc37b9bb0ff760d9ebaafd9b3eb7e6b08ae7b3c",
   "versionDate": "2026-11-16",
   "total": 53,
   "accepted": 0,
-  "inReview": 4,
-  "unreviewed": 49,
+  "inReview": 6,
+  "unreviewed": 47,
   "acceptanceGates": [
     "credible_real_world_structure",
     "real_game_3d_geometry",
@@ -30,14 +30,18 @@
       "kind": "furniture",
       "order": 1,
       "physicalTarget": "木材の板厚・荷重支持・接合構造・床接地、布や金属との材質差",
-      "phase": "pending_physical_review",
-      "geometryChanged": false,
+      "phase": "3d_code_in_review",
+      "geometryChanged": true,
       "webglQA": "unverified",
       "androidQA": "unverified",
       "mainMerged": false,
       "pagesDeployed": false,
       "accepted": false,
-      "evidence": []
+      "evidence": [
+        "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/434",
+        "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/ca8d8147d4265f2586706b88605efec47455cacf"
+      ],
+      "lastCodeChange": "2026-11-16 PR #434: physical timber joinery, support rails, leg braces and open spindle geometry"
     },
     {
       "id": "cottage_chair_001",
@@ -46,14 +50,18 @@
       "kind": "furniture",
       "order": 2,
       "physicalTarget": "木材の板厚・荷重支持・接合構造・床接地、布や金属との材質差",
-      "phase": "pending_physical_review",
-      "geometryChanged": false,
+      "phase": "3d_code_in_review",
+      "geometryChanged": true,
       "webglQA": "unverified",
       "androidQA": "unverified",
       "mainMerged": false,
       "pagesDeployed": false,
       "accepted": false,
-      "evidence": []
+      "evidence": [
+        "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/434",
+        "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/ca8d8147d4265f2586706b88605efec47455cacf"
+      ],
+      "lastCodeChange": "2026-11-16 PR #434: physical timber joinery, support rails, leg braces and open spindle geometry"
     },
     {
       "id": "cottage_bed_001",
