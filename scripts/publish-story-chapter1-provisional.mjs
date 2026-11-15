@@ -78,6 +78,18 @@ function sourceReviewable(s,available){
   throw Error('Draft metadata mismatch '+s.key);
  if(!Array.isArray(meta.actualReferenceImagesAttached)||meta.actualReferenceImagesAttached.length>4)
   throw Error('Missing real character references '+s.key);
+ const actualActors=meta.actualReferenceImagesAttached.filter(ref=>ref.actorId!=='style_benchmark').map(ref=>ref.actorId);
+ const styleSources=meta.actualReferenceImagesAttached.filter(ref=>ref.actorId==='style_benchmark');
+ if(JSON.stringify(actualActors)!==JSON.stringify(meta.visibleActorIds)||
+    new Set(actualActors).size!==actualActors.length||
+    actualActors.includes('commander_'+(s.gender==='male'?'female':'male')))
+  throw Error('Actual referenced actors do not match shot cast '+s.key);
+ if(['c01-s04','c01-s05'].includes(s.stageId)&&
+    (styleSources.length!==1||
+     styleSources[0].source!=='assets/story/chapters/c01/panels/c01-s01-m02-'+s.gender+'.webp'))
+  throw Error('Missing or wrong gender stage1 style-reference bytes '+s.key);
+ if(s.stageId>='c01-s06'&&styleSources.length)
+  throw Error('Unexpected stage1 style benchmark on stage 6+ '+s.key);
  for(const ref of meta.actualReferenceImagesAttached){
   if(typeof ref.source!=='string'||!fs.existsSync(toAbs(ref.source))||
    sha(fs.readFileSync(toAbs(ref.source)))!==ref.originalSha256)
