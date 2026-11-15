@@ -142,6 +142,7 @@ legend{font-size:12px;color:#e8d9b6;padding:0 6px}
      <label>3Dモデルの入手元
       <select id="assetSource"><option value="procedural">標準3D（人型は人物GLB＋ゴシック衣装）</option>
        <option value="licensed">CC0外部モデル（低密度素材を含む）</option>
+       <option value="source-composite">実物GLB＋既存装飾（6種の品質試作）</option>
        <option value="personal">手元のGLB（非公開）</option></select>
      </label>
      <label>登録済み外部モデル（50体から選択）
@@ -199,6 +200,8 @@ import {humanoidMonsterCostumeFor,HUMAN_MONSTER_IDS} from './src/monster-charact
 import {hasDemonCosmetics,withDemonColorTheme}
  from './src/monster-demon-cosmetics.js?v=4.5.04';
 import {fetchCreatureRegistry,loadExternalCreature,loadPersonalGLB} from './src/creature-external-runtime.js?v=4.4.92';
+import {loadSpeciesSourceComposite,isSpeciesSourcePilot,SPECIES_SOURCE_REBUILD_PILOTS}
+ from './src/monster-source-composite.js?v=4.6.90';
 const byId=id=>document.getElementById(id);
 const isPhone=()=>matchMedia('(max-width:730px)').matches;
 const mainPanel=byId('bestiaryMain');
@@ -484,8 +487,13 @@ function selectSpecies(id){
    byId('assetStatus').textContent='GLBを選択してください。';
    return;
  }
+ if(mode==='source-composite'&&!isSpeciesSourcePilot(m)){
+   byId('assetStatus').textContent='この個体に適合するCC0実物モデルは未承認です。既存3Dを維持します。';
+   return;
+ }
  byId('assetStatus').textContent='高品質GLBを読み込み中...';
  const pending=mode==='licensed'?loadExternalCreature(entry,detail):
+   mode==='source-composite'?loadSpeciesSourceComposite(m,externalRegistry,{detail}):
    loadPersonalGLB(file,{id,targetHeight:2.4*m.size});
  pending.then(handle=>{
    if(ticket!==requestSerial||id!==selected||byId('assetSource').value!==mode){
@@ -496,10 +504,12 @@ function selectSpecies(id){
    refreshGeometry();focusCamera();
    startMonsterAction(model,'idle',clock.getElapsedTime());
    byId('assetStatus').textContent=(mode==='licensed'?'CC0候補 '+entry.name:
-      'この端末内 '+file.name)+' / 内蔵動作 '+handle.clips.length+
-      '種類 / 戦闘は未置換';
-   byId('assignmentStatus').textContent=modelAssignments[id]===chosenId?
-      'この個体に割当済み（鑑賞用）':'未保存の比較表示';
+      mode==='source-composite'?'CC0実物GLB '+handle.sourceComposite.donorName+
+      ' ＋種族配色・装飾（品質試作・戦闘未置換）':
+      'この端末内 '+file.name)+' / 内蔵動作 '+handle.clips.length+'種類';
+   byId('assignmentStatus').textContent=mode==='source-composite'?
+      '既存の装飾をGLB実体へ追加・見た目要検証':
+      modelAssignments[id]===chosenId?'この個体に割当済み（鑑賞用）':'未保存の比較表示';
    notice('GLB外観・アニメーションの比較表示を開始しました');
  }).catch(error=>{
    if(ticket===requestSerial)
@@ -726,6 +736,8 @@ window.__monsterImportQA=()=>({
  all50Ready:!!externalRegistry.all50Ready,
  externalAsset:byId('externalAsset').value,
  externalActive:!!externalHandle,
+ sourceComposite:model?.userData?.sourceComposite??null,
+ sourcePilot:SPECIES_SOURCE_REBUILD_PILOTS[selected]?.donor??null,
  clips:externalHandle?.clips||[],
  selected
 });
