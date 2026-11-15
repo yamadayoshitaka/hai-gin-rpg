@@ -20,8 +20,9 @@ test('nonhuman species and summon mirrors cover every nonhuman catalog entry',()
  assert.equal(NONHUMAN_MONSTER_IDS.length,34);
  assert.equal(new Set(NONHUMAN_MONSTER_IDS).size,34);
  for(const m of MONSTER_CATALOG){
-  assert.equal(eligibleCreature(m.id),!HUMAN_MONSTER_IDS.includes(m.id));
-  assert.equal(eligibleCreature('summon_'+m.id),!HUMAN_MONSTER_IDS.includes(m.id));
+  const permitted=!HUMAN_MONSTER_IDS.includes(m.id)&&!['m005','m006'].includes(m.id);
+  assert.equal(eligibleCreature(m.id),permitted);
+  assert.equal(eligibleCreature('summon_'+m.id),permitted);
  }
  assert.equal(NONHUMAN_EXTRA_SUMMON_IDS.length,6);
 });
@@ -64,8 +65,13 @@ test('human-shaped monsters never accept an animal donor',()=>{
 test('existing protected original animal geometry is not modified by candidate metadata',()=>{
  assert.equal(baseMonsterId('summon_m005'),'m005');
  assert.equal(baseMonsterId('summon_m006'),'m006');
- assert.ok(Array.isArray(recommendedMeshSources('m005')));
- assert.ok(Array.isArray(recommendedMeshSources('m006')));
+ assert.deepEqual(recommendedMeshSources('m005'),[]);
+ assert.deepEqual(recommendedMeshSources('m006'),[]);
+ assert.equal(adoptedCreatureMesh('m005',memoryStorage()),'legacy');
+ assert.throws(()=>setAdoptedCreatureMesh('m005','r-wolf',memoryStorage()));
+ assert.throws(()=>setAdoptedCreatureMesh('summon_m005','r-wolf',memoryStorage()));
+ assert.throws(()=>setAdoptedCreatureMesh('m006','r-jaguar',memoryStorage()));
+ assert.throws(()=>setAdoptedCreatureMesh('summon_m006','r-jaguar',memoryStorage()));
  assert.equal(recommendedMeshSources('m026').length,0);
 });
 
