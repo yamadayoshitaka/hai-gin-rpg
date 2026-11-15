@@ -25,7 +25,7 @@ textarea{width:100%;min-height:100px;resize:vertical}
 @media(max-width:700px){.manual-grid{grid-template-columns:1fr}}
 .status{display:inline-flex;align-items:center;border-radius:20px;padding:3px 8px;border:1px solid #647789;background:#273949;color:#edf4fa;font-size:12px;white-space:nowrap}
 .status.running{border-color:#529fc6;color:#b2e6ff;background:#16394e}.status.success{border-color:#57967a;color:#bbf1d5;background:#17392d}
-.status.failed{border-color:#b07a7a;color:#ffd1c9;background:#4b262e}.status.paused{opacity:.76}.status.waiting{border-color:#ac9761;color:#ffe7a4;background:#463c24}
+.status.failed{border-color:#b07a7a;color:#ffd1c9;background:#4b262e}.status.cancelled{border-color:#8b91a5;color:#dfdfef;background:#303344}.status.paused{opacity:.76}.status.waiting{border-color:#ac9761;color:#ffe7a4;background:#463c24}
 table{border-collapse:collapse;width:100%}th,td{text-align:left;padding:10px 8px;border-bottom:1px solid #324c5a;vertical-align:middle}th{color:#c1d5e3;font-size:12px}td:first-child{font-weight:650}
 .sub{display:block;font-size:11px;color:var(--muted);font-weight:400;margin-top:3px}td a{color:#a7dcfc}
 #message{min-height:24px;color:#c4d6e4;margin:0 0 10px}#workSummary{color:#d3e2ed}
@@ -68,10 +68,10 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{ou
 </section>
 <section class="pane"><div class="toolbar"><h2 style="margin:0">GitHub Actions｜実行・結果一覧</h2><button id="refresh" type="button">更新</button></div>
  <div class="toolbar"><input id="search" type="search" placeholder="バッチ名・ワークフロー名を検索" aria-label="バッチを検索">
- <select id="filter" aria-label="状態で絞る"><option value="all">すべて</option><option value="running">実行中・待機</option><option value="failed">直近失敗</option><option value="success">直近成功</option><option value="paused">停止中</option><option value="unknown">履歴未取得</option></select></div>
+ <select id="filter" aria-label="状態で絞る"><option value="all">すべて</option><option value="running">実行中・待機</option><option value="failed">直近失敗</option><option value="success">直近成功</option><option value="paused">停止中</option><option value="cancelled">直近取消</option><option value="unknown">履歴未取得</option></select></div>
  <p id="message" role="status">GitHubの実行状況を取得しています…</p>
  <div class="table-wrap"><table><thead><tr><th>バッチ・ワークフロー</th><th>現在/直近の状態</th><th>最終実行（日本時間）</th><th>詳細</th></tr></thead><tbody id="workflowRows"></tbody></table></div>
- <p id="lastUpdated" class="meta"></p><p class="note">無効＝ワークフロー自体が停止。直近成功＝今動いている意味ではありません。取得範囲に実行が見つからない場合は「履歴未取得」と表示します。</p>
+ <p id="lastUpdated" class="meta"></p><p class="note">「無効」はワークフロー停止、「直近キャンセル」はその実行が取消された状態です（全バッチの停止ではありません）。直近成功＝今動いている意味ではありません。取得範囲に実行が見つからない場合は「履歴未取得」と表示します。</p>
 </section>
 <section class="pane"><h2>ChatGPT 定期タスク（同期時点の状態）</h2>
 <p id="chatAsOf" class="meta"></p><div class="table-wrap"><table id="chatTable"><thead><tr><th>タスク</th><th>設定</th><th>直近実行</th><th>結果</th></tr></thead><tbody id="chatRows"></tbody></table></div>
@@ -103,8 +103,9 @@ const label=(w,run)=>{if(w.state!=='active')return {s:'paused',text:'無効'};
 if(!run)return {s:'unknown',text:'履歴未取得'};
 if(['queued','in_progress','waiting','requested','pending'].includes(run.status))return {s:run.status==='in_progress'?'running':'waiting',text:run.status==='in_progress'?'実行中':'待機中'};
 if(run.conclusion==='success')return {s:'success',text:'直近成功'};
+if(run.conclusion==='cancelled')return {s:'cancelled',text:'直近キャンセル'};
 if(['failure','timed_out','action_required'].includes(run.conclusion))return {s:'failed',text:'直近失敗'};
-return {s:'paused',text:run.conclusion==='cancelled'?'直近取消':run.conclusion||'完了'};
+return {s:'unknown',text:run.conclusion||'完了'};
 };
 let workflows=[],runs=[],chat=[];
 function element(tag,text,cls){const e=document.createElement(tag);if(text!==undefined)e.textContent=text;if(cls)e.className=cls;return e}
@@ -113,7 +114,7 @@ function statusNode(state){return element('span',state.text,'status '+state.s)}
 function display(){
 const last=new Map();for(const run of runs){const key=run.path||'';if(key&&!last.has(key))last.set(key,run)}
 const filtered=workflows.map(w=>({...w,run:last.get(w.path),display:label(w,last.get(w.path))}))
- .sort((a,b)=>{const rank={running:0,waiting:1,failed:2,success:3,paused:4,unknown:5};return rank[a.display.s]-rank[b.display.s]||new Date(b.run?.created_at||0)-new Date(a.run?.created_at||0)});
+ .sort((a,b)=>{const rank={running:0,waiting:1,failed:2,cancelled:3,success:4,paused:5,unknown:6};return rank[a.display.s]-rank[b.display.s]||new Date(b.run?.created_at||0)-new Date(a.run?.created_at||0)});
 const txt=$('search').value.trim().toLowerCase(),filter=$('filter').value,body=$('workflowRows');body.replaceChildren();
 let shown=0;for(const w of filtered){
  if(txt&&!((w.name+' '+w.path).toLowerCase().includes(txt)))continue;
