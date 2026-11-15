@@ -2,7 +2,7 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
-import {MARKER,parseRequest} from '../scripts/manual-hourly-batch-dispatch.mjs';
+import {MARKER,parseRequest,buildWorkflowArgs} from '../scripts/manual-hourly-batch-dispatch.mjs';
 function issue(category,target='',instruction='Quality improvement',max=1){
  return {title:'[hai-gin-batch] '+category,user:{login:'yamadayoshitaka'},body:MARKER+'\n```json\n'+JSON.stringify({category,target,instruction,max})+'\n```'};
 }
@@ -42,4 +42,14 @@ test('dashboard always shows exactly four task groups with existing previews',()
  const script=start>7&&end>start?html.slice(start,end):null;
  assert(script,'Dashboard JavaScript must exist');
  assert.doesNotThrow(()=>new vm.Script(script),'Inline batch control JavaScript must parse');
+});
+
+test('all four manual QA workflows receive origin Issue id without changing instructions',()=>{
+ for(const category of ['human','monster','world','anime']){
+   const cmd=parseRequest(issue(category),'yamadayoshitaka');
+   const args=buildWorkflowArgs(cmd,399);
+   assert(args.includes('batch_issue=399'));
+   if(category==='world')assert(args.includes('next_instruction=Quality improvement'));
+ }
+ assert.throws(()=>buildWorkflowArgs(parseRequest(issue('human'),'yamadayoshitaka'),0),/Issue/);
 });
