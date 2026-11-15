@@ -12,7 +12,8 @@ export const MESH_ADOPTION_STORAGE_KEY='hai-gin.creature-mesh-adoption.v1';
 // Shipped visual baseline. These three distinct actors share the same source
 // mesh, but keep separate reversible local overrides.
 export const DEFAULT_CREATURE_MESHES=Object.freeze({
- m001:'r-wolf',summon_m001:'r-wolf',wolf:'r-wolf'
+ m001:'r-wolf',summon_m001:'r-wolf',wolf:'r-wolf',
+ m020:'original-m020',summon_m020:'original-m020'
 });
 export const NONHUMAN_MONSTER_IDS=Object.freeze(
  MONSTER_CATALOG.filter(m=>!HUMAN_MONSTER_IDS.includes(m.id)).map(m=>m.id));
@@ -26,7 +27,7 @@ const allowed=new Set([
 ]);
 const protectedIds=new Set(['m005','m006','summon_m005','summon_m006']);
 export const protectedCreature=id=>protectedIds.has(String(id));
-const sourceId=/^(?:q(?:00[1-9]|0[1-4][0-9]|050)|r-(?:wolf|tiger|jaguar|eagle|crocodile))$/;
+const sourceId=/^(?:q(?:00[1-9]|0[1-4][0-9]|050)|r-(?:wolf|tiger|jaguar|eagle|crocodile)|original-m020)$/;
 const knownSource=source=>sourceId.test(source)||
  Object.hasOwn(WEB_CREATURE_MESH_SOURCES,source)||
  Object.hasOwn(REAL_BODY_CANDIDATES,source);
@@ -76,12 +77,15 @@ export function adoptedCreatureMesh(id,storage=globalThis.localStorage){
  const parent=String(id).startsWith('summon_')?id.slice(7):null;
  const inherited=parent&&Object.hasOwn(map,parent)?map[parent]:undefined;
  const choice=own??inherited??DEFAULT_CREATURE_MESHES[id]??'legacy';
+ if(choice==='original-m020'&&baseMonsterId(id)!=='m020')return 'legacy';
  return typeof choice==='string'&&knownSource(choice)&&!referenceOnlySource(choice)?choice:'legacy';
 }
 export function setAdoptedCreatureMesh(id,source,storage=globalThis.localStorage){
  if(!eligibleCreature(id))throw Error('人間タイプ・保護対象・未知の種族は切り替えできません: '+id);
  if(source!=='legacy'&&!knownSource(source))throw Error('未登録の外部モデル: '+source);
  if(referenceOnlySource(source))throw Error('この素材は比較用であり、現行モデルより高品質・ゲーム動作を確認するまで採用できません: '+source);
+ if(source==='original-m020'&&baseMonsterId(id)!=='m020')
+  throw Error('海竜専用の原型を別種族に適用できません');
  if(!storage?.setItem)throw Error('端末ストレージへ保存できません');
  const map=stored(storage);
  // Explicit rollback persists even when a future build ships r-wolf
@@ -100,6 +104,7 @@ export function compatibleSourceWarning(id,source){
  if(source==='legacy')return '';
  if(!knownSource(source))return '未登録のGLB';
  if(referenceOnlySource(source))return '比較専用の未検証素材です。現行より高品質と確認できるまで採用不可。ローポリと未リグのGLBは母体として正式採用しません。';
+ if(source==='original-m020')return 'オリジナル海竜の再設計試作：PBR・4関節・7動作。写実品質は未認定で旧版に戻せます。';
  if(source.startsWith('r-'))return 'CC BY 4.0の外部リアル候補。著作者表示必須。アニメーション・既存パーツの移植は未完了のため動作を確認してください。';
  if(recommendedMeshSources(id).includes(source))return '系統から選んだ暫定候補です。外観と骨格の適合を必ず確認してください。';
  return '注意：系統外のメッシュです。角・羽・脚などの接続やシルエットが崩れる可能性があります。';
