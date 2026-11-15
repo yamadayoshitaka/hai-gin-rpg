@@ -13,6 +13,7 @@ assert.deepEqual(SPECIES_COSPLAY_IDS,nonhuman.map(s=>s.id));
 assert.deepEqual(Object.keys(NONHUMAN_MONSTER_WARDROBE),
  ['m008','m012','m017','m050']);
 for(const spec of nonhuman){
+ let lowCostumeCount=0;
  const profile=SPECIES_COSPLAY_WARDROBE[spec.id];
  assert.equal(profile.baseFamily,spec.family);
  assert.equal(profile.source,'native-species-anatomy');
@@ -30,6 +31,11 @@ for(const spec of nonhuman){
    if(mesh.isMesh&&mesh.name.startsWith('monster-outfit-'))costume.push(mesh);
   });
   assert.ok(costume.length>=3,'Missing fitted outfit meshes: '+spec.id);
+  assert.equal(new Set(costume.map(piece=>piece.name)).size,costume.length,
+   'Duplicate outfit mesh names: '+spec.id+' '+detail);
+  if(detail==='low')lowCostumeCount=costume.length;
+  else if(!profile.legacy)assert.ok(costume.length>lowCostumeCount,
+   'High LOD must add outfit detail: '+spec.id);
   for(const piece of costume){
    assert.ok(piece.parent,'Outfit piece detached: '+spec.id);
    assert.ok(piece.geometry?.getAttribute('position')?.count>10);
