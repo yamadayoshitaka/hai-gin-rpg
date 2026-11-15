@@ -472,3 +472,15 @@ const wantedStage=query.get('stage'),wantedGender=query.get('gender'),wantedEdit
 const match=wantedStage?all.find(p=>p.stageId===wantedStage&&p.edition===wantedEdition&&(!wantedGender||p.gender===wantedGender)):null;
 const start=Number(query.get('page')||(match?.number||1));
 go(pages.has(start)?start:1,false);
+const wantedShot=query.get('shot');
+if(wantedShot){
+ const i=current.shots.findIndex(s=>s.shotId===wantedShot);
+ if(i>=0){activeShotIndex=i;showCurrentShot();}
+}
+if(query.get('provider')==='chatgpt'){
+ // This only prepares a human-initiated Plus image request. No browser/API
+ // can silently call ChatGPT's image generator on behalf of the visitor.
+ $('info').textContent='Cloudflare無料枠を使い切ったコマの手動引き継ぎです。台本・マニフェストを確認し、人物・画風の実画像を添付してChatGPTで生成してください。自動生成・自動登録は行いません。';
+ const handoff=document.querySelector('#panels .panel.is-active details.generator');
+ if(handoff)handoff.open=true;
+}
