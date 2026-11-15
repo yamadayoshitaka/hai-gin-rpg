@@ -6,7 +6,8 @@
  */
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {loadExternalCreature,prepareExternalGLTF} from './creature-external-runtime.js';
-import {applyGreyFangWolfFinish} from './grey-fang-wolf-finish.js?v=white-surface-fix-2';
+import {applyGreyFangWolfFinish} from './grey-fang-wolf-finish.js?v=wolf-actions-v3';
+import {installGreyWolfActions} from './grey-wolf-action-runtime.js?v=wolf-actions-v3';
 
 export const REAL_CREATURE_MESH_SOURCES=Object.freeze({
  'r-wolf':Object.freeze({
@@ -59,8 +60,10 @@ export async function loadCreatureMeshSource(sourceId,registry,detail='high',{cr
    author:real.author,license:real.license,licenseUrl:real.licenseUrl,
    sourceUrl:real.sourceUrl,sourceId
   };
-  if(sourceId==='r-wolf'&&['m001','summon_m001','wolf'].includes(creatureId))
+  if(sourceId==='r-wolf'&&['m001','summon_m001','wolf'].includes(creatureId)){
    applyGreyFangWolfFinish(handle,{creatureId});
+   installGreyWolfActions(handle);
+  }
   return handle;
  }
  const entry=registry?.entries?.[sourceId];
