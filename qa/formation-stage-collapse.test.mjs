@@ -21,7 +21,7 @@ ensureSortiePlan(game);
 game.sortieTestLevel=1;
 assert.equal(sortieSquadCap(game),4);
 assert.equal(sortieAllowedCells(game,1).length,4);
-assert.equal((renderThreeTeamPlanner({game,teamId:1}).match(/class="sortieCell locked"/g)||[]).length,12,
+assert.equal((renderThreeTeamPlanner({game,teamId:1}).match(/data-sortie-state="locked"/g)||[]).length,12,
  'preset formation at level 1 must lock twelve cells');
 assert.throws(()=>setSortieGridCell(game,1,15,1),/指定マス/,
  'manual job placement outside a preset formation is prohibited');
