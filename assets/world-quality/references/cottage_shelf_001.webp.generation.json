@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "kind": "AI_2D_REFERENCE_NOT_GAME_3D",
+  "targetKey": "object:cottage_shelf_001",
+  "model": "@cf/black-forest-labs/flux-2-klein-4b",
+  "promptHash": "e3d6b98488b29902c2519a09670d04491ff45da24cc3fecd6a3ebae00d20ed60",
+  "referenceSha256": "83e802e9a4b75691c2551e17b7aee90121df743528df41a0ddabb4bdc7172ed2",
+  "referenceFile": "assets/world-quality/references/cottage_shelf_001.webp",
+  "widthRequest": 1024,
+  "heightRequest": 576,
+  "originalPixels": "1024x576",
+  "byteSize": 52116,
+  "humanVisualQA": "PENDING",
+  "game3DQuality": "NOT_TESTED",
+  "generatedAt": "2026-11-15T15:54:01.688Z"
+}

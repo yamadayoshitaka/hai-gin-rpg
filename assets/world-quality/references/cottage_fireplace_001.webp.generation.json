@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "kind": "AI_2D_REFERENCE_NOT_GAME_3D",
+  "targetKey": "object:cottage_fireplace_001",
+  "model": "@cf/black-forest-labs/flux-2-klein-4b",
+  "promptHash": "52557a40c08585d97f15e875d9b89f4ed7ec091c3d57b5f1b37a1a1548210e8d",
+  "referenceSha256": "41518d12a29c3cce70aa2c4d302f43b673bbb8af84349a8f9a1078fdd6c527d2",
+  "referenceFile": "assets/world-quality/references/cottage_fireplace_001.webp",
+  "widthRequest": 1024,
+  "heightRequest": 576,
+  "originalPixels": "1024x576",
+  "byteSize": 67248,
+  "humanVisualQA": "PENDING",
+  "game3DQuality": "NOT_TESTED",
+  "generatedAt": "2026-11-15T15:54:12.346Z"
+}

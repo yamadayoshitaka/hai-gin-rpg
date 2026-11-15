@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "kind": "AI_2D_REFERENCE_NOT_GAME_3D",
+  "targetKey": "object:cottage_barrel_001",
+  "model": "@cf/black-forest-labs/flux-2-klein-4b",
+  "promptHash": "8d171c22a628ca47627e62745adb9e32d0269ef2aa6d350cbcfc9bb6c9a74721",
+  "referenceSha256": "29b6bdac6c93ab5387be76673890f44120e27049e739a3d17de21bcc806ffc0f",
+  "referenceFile": "assets/world-quality/references/cottage_barrel_001.webp",
+  "widthRequest": 1024,
+  "heightRequest": 576,
+  "originalPixels": "1024x576",
+  "byteSize": 67370,
+  "humanVisualQA": "PENDING",
+  "game3DQuality": "NOT_TESTED",
+  "generatedAt": "2026-11-15T15:54:22.645Z"
+}
