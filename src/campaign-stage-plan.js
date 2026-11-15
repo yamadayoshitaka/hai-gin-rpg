@@ -10,6 +10,12 @@ import {continentForChapter} from './continent-campaign.js';
 export const TOTAL_CHAPTERS=20;
 export const STAGES_PER_CHAPTER=10;
 export const TOTAL_STAGES=TOTAL_CHAPTERS*STAGES_PER_CHAPTER;
+/** Stage-specific deployment budget, independent of unlocked formation cells.
+ * Stage 1 is a noncombat hub; first battles start at 40, scaling to the current 50-person renderer.
+ */
+export const stageDeploymentLimit=stage=>stage?.kind==='town'?0:
+ Math.max(1,Math.min(50,38+(Number(stage?.slot)||1)+2*((Number(stage?.chapter)||1)-1)));
+
 export const STAGE_KINDS=Object.freeze({
  town:'町・拠点', explore:'開拓・魔物討伐', capture:'陣地制圧',
  defend:'拠点防衛', siege:'攻城戦', boss:'章決戦'
