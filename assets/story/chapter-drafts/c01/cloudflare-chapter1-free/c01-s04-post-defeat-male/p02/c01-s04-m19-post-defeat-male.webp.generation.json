@@ -1,0 +1,61 @@
+{
+  "kind": "CLOUDFLARE_REAL_WEBP_REVIEW_CANDIDATE_NOT_APPROVED",
+  "shotKey": "c01-s04|post-defeat|male|c01-s04-m19",
+  "stageId": "c01-s04",
+  "edition": "post-defeat",
+  "gender": "male",
+  "panelId": "c01-s04-m19",
+  "screenplayText": "失敗を無かったことにはできない。仲間を休ませ、次の判断に備えよう。",
+  "visibleActorIds": [
+    "lucia",
+    "vess"
+  ],
+  "actualReferenceImagesAttached": [
+    {
+      "actorId": "lucia",
+      "source": "assets/story/characters/lucia/master.webp",
+      "originalSha256": "87005a46d3b4a23714a25f1f9b2d46fee9a1ce3c6b5af0be78f85a1f1fd2b411",
+      "submittedSha256": "91344ba790293c03406ca1804f0360d135b0015aa75cc5b68d7904fc72de1173",
+      "actualBytes": 322498,
+      "pixels": [
+        439,
+        480
+      ]
+    },
+    {
+      "actorId": "vess",
+      "source": "assets/story-cinema/cast/vess.webp",
+      "originalSha256": "c4b0a92f75cad6f4b4682d4c8eb1b4bb70779271ba3673651a159bf4f9adfd1d",
+      "submittedSha256": "6c51eee922dad5f3a2f67b0809807476fb4a32da4acf3ee3a48f9fc5eaa45e3f",
+      "actualBytes": 324362,
+      "pixels": [
+        329,
+        480
+      ]
+    },
+    {
+      "actorId": "style_benchmark",
+      "source": "assets/story/chapters/c01/panels/c01-s01-m02-male.webp",
+      "originalSha256": "e70901415a751b576a00dcac34f93065051b3513b875f58546533f59ccfee71d",
+      "submittedSha256": "a6602427e7fde9cda0e99dd5511998682513154a72c029a190abd5e74786eca2",
+      "actualBytes": 247193,
+      "pixels": [
+        480,
+        270
+      ]
+    }
+  ],
+  "imageSha256": "d33b687247fa2f8c04897ad791c231cf4c7088521b4769d263227f5459a46e2e",
+  "nativePixels": [
+    1024,
+    576
+  ],
+  "imageBytes": 202512,
+  "model": "@cf/black-forest-labs/flux-2-klein-4b",
+  "seed": 572088199,
+  "promptSha256": "45a40d1b08311d26875ed24503ef8bc02e19dbcf7a848b76906ad0a2c226b72f",
+  "estimatedNeurons": 120.31,
+  "visuallyApproved": false,
+  "formallyRegistered": false,
+  "gameDeployed": false
+}
