@@ -70,6 +70,7 @@ export function createMassBattleWorkerClient(sim,{width,height,walkable,water,op
     setSquadStrategy(squadId,strategy){if(!failed)worker.postMessage({type:'squadStrategy',squadId,strategy});},
     setSquadFormationTypes(types,team=0,assignments=null,jobSnapshots=null){if(!failed)worker.postMessage({type:'squadFormationTypes',types,team,assignments,jobSnapshots});},
     setSquadCommand(squadId,command,team=0){if(!failed)worker.postMessage({type:'squadCommand',squadId,command,team});},
+    applySquadDebuff(squadId,stat,amount,duration=20,team=1){if(!failed)worker.postMessage({type:'squadDebuff',squadId,stat,amount,duration,team});},
     setSquadExploration(squadId,buildingId,x,z,team=0){if(!failed)worker.postMessage({type:'squadExplore',squadId,buildingId,x,z,team});},
     setSquadMission(squadId,missionType,target){if(!failed)worker.postMessage({type:'squadMission',squadId,missionType,target});},
     requestSquadHealing(targetSquadId,supportSquadId){if(!failed)worker.postMessage({type:'squadHealing',targetSquadId,supportSquadId});},
