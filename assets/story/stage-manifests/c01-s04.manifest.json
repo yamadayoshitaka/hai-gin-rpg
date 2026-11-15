@@ -651,5 +651,41 @@
   "canonicalStageKind": "explore",
   "variantCountSource": "comicEditionsForStage/c01 chapter1; canonical panel IDs and outcome verified by qa",
   "referenceCharacterBible": "assets/story/characters/c01-s04-reference-bible.json",
-  "productionStatus": "SCRIPTED_LOCKED_NO_ART_IMAGES_GENERATED_OR_APPROVED"
+  "productionStatus": "SCRIPTED_LOCKED_NO_ART_IMAGES_GENERATED_OR_APPROVED",
+  "generatorRequestSizing": {
+    "nativeFramePreferred": [
+      1024,
+      576
+    ],
+    "nativeFrameMinimum": [
+      800,
+      450
+    ],
+    "perShotAspect": "16:9",
+    "separateGenerationPerShot": true,
+    "packReviewOnlyAfterIndependentVisualQA": true,
+    "sheetPreferred": [
+      2048,
+      576
+    ],
+    "sheetCapacity": 2,
+    "legacy1536Required": false,
+    "noUpscaling": true,
+    "generatedOriginalNotReplacedByReviewSheet": true
+  },
+  "perShotCameraDirections": {
+    "c01-s04-m2": "ONLY a before-battle planning conversation: regent Lucia with silver updo and navy/silver fur-trimmed robes leans over an entirely blank tactical map, addressing the older gray-bearded armored knight Garan. Two characters, at the forest-ruin forward command pavilion, strong eyeline exchange, medium two-shot, absolutely no combat.",
+    "c01-s04-m4": "ONLY Iris, cream-hooded healer with honey-brown hair, opens a COMPLETELY BLANK missing-names death registry and shows it to silver-haired regent Lucia inside an old ruined chapel, both troubled; two women only, NO Garan, no battle, no stone-bell pointing, over-shoulder focus on open blank book, entirely different composition from m2/m11/m13.",
+    "c01-s04-m11": "Only knight Garan kneeling over a hidden overgrown stone route, while regent Lucia scouts the forest ruins beyond. Wide, ancient pathway discovery, two named characters only, no battle.",
+    "c01-s04-m13": "Only regent Lucia and healer Iris inspecting an engraved bell-keeper seal on ruin stone and old sealing-wax traces. Two women, close detail shot, not the preceding m11 route investigation."
+  },
+  "manualQARequirements": {
+    "verifyDistinctSceneVsPreviousShot": true,
+    "rejectUnexpectedMultiPanelOutput": true,
+    "verifyActualCharacterReferenceBytes": true,
+    "requireNativeSizeAndSha": true,
+    "checkNoVisibleText": true,
+    "permitOnlyHumanReviewedCandidate": true,
+    "prohibitsAutoApproval": true
+  }
 }
