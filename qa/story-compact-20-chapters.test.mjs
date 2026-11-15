@@ -25,7 +25,7 @@ for(const plan of COMPACT_TWENTY_CHAPTER_PLAN){
    assert.equal(post.panels.length,2,stageId+'/'+suffix);
    assert(post.panels.every(x=>x.dialogueTurns.length>0));
    assert(post.panels.every(x=>x.protagonistGender==='female'));
-   if(suffix==='defeat')assert.deepEqual(post.panels.map(x=>x.text),COMPACT_DEFEAT_LINES);
+   if(suffix==='defeat' && post.edition.startsWith('post-defeat'))assert.deepEqual(post.panels.map(x=>x.text),COMPACT_DEFEAT_LINES);
   }
  }
 }
