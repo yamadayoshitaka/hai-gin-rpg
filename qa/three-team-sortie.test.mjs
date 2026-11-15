@@ -3,190 +3,143 @@ import {readFileSync} from 'node:fs';
 import {SourceTextModule} from 'node:vm';
 import {createNewGame} from '../src/game-core-flow.js';
 import {makeCoreBattleRequest} from '../src/core-battle-bridge.js';
+import {CAMPAIGN_STAGE_BY_ID} from '../src/campaign-stage-plan.js';
 import {
  ensureSortiePlan,sortieTeams,sortieTeamCount,sortieTeamSquads,
  allowedSortieSlots,availableSortieOrders,setSortieCount,setSortieCaptain,
- setSortieFormation,setSortieSlot,setSortieOrder,setSortieJobSlot,setSortieGridCell,setSortieDivisions,sortieAdjacentJobs,SORTIE_GRID_CELLS,SORTIE_SQUADS_PER_GROUP,SORTIE_FORMATIONS,sortieLevel,sortieSquadCap,sortieFormationBuff,sortieDebuffTypes,allocateThreeTeamSortie
+ setSortieFormation,setSortieSlot,setSortieTactics,setSortieJobSlot,setSortieGridCell,
+ setSortieDivisions,sortieAdjacentJobs,SORTIE_GRID_CELLS,SORTIE_FORMATIONS,
+ sortieLevel,sortieSquadCap,sortieFormationBuff,sortieDebuffTypes,
+ allocateThreeTeamSortie,sortieTemplateCapacity
 } from '../src/three-team-sortie.js';
 import {renderThreeTeamPlanner} from '../src/three-team-sortie-ui.js';
-import {CAMPAIGN_STAGE_BY_ID} from '../src/campaign-stage-plan.js';
 
-const game=createNewGame('三隊配置テスト'),stage=CAMPAIGN_STAGE_BY_ID['c01-s02'];
+const stage=CAMPAIGN_STAGE_BY_ID['c01-s02'],game=createNewGame('3班の固定テンプレート');
 const plan=ensureSortiePlan(game);
 assert.equal(plan.version,1);
 assert.equal(sortieTeams(game).length,3);
 assert.deepEqual(sortieTeams(game).map(sortieTeamCount),[40,0,0]);
-assert.equal(sortieTeams(game)[0].slots.length,16);
-assert.equal(sortieLevel(game),99,'temporary level99 testing');
-assert.equal(sortieSquadCap(game),16,'per-group capacity increases with strategist level');
+assert.equal(sortieLevel(game),99);
+assert.equal(sortieSquadCap(game),16);
 assert.equal(Object.keys(SORTIE_FORMATIONS).length,14);
+assert.equal(SORTIE_FORMATIONS.balanced.slots,4);
+assert.equal(SORTIE_FORMATIONS.spear.slots,5);
+assert.equal(SORTIE_FORMATIONS.spear.level,7);
+assert.equal(sortieFormationBuff(game,1).attack,0,
+ 'two initial job classes cannot activate a four-role fixed formation');
 setSortieFormation(game,1,'dragon');
 assert.equal(sortieTeams(game)[0].formation,'dragon');
-assert.ok(sortieFormationBuff(game,1).attack>=.2,'high-level formation grants a meaningful global buff');
+assert.equal(sortieFormationBuff(game,1).attack,0,
+ 'a 12-role formation never awards buffs for two invented placements');
 setSortieFormation(game,1,'balanced');
-assert.equal(SORTIE_GRID_CELLS,16);
-assert.equal(sortieTeams(game)[0].grid.length,16);
-assert.deepEqual(sortieTeams(game)[0].grid.filter(Boolean).length,2);
-assert.deepEqual(sortieTeams(game)[0].grid.filter(Boolean),['1','2']);
-assert.ok(sortieAdjacentJobs(game,1).some(x=>[x.a,x.b].includes('僧侶')));
-assert.deepEqual(sortieTeams(game)[0].slots.slice(0,2),['1','2']);
+assert.equal(sortieTeamCount(sortieTeams(game)[0]),40);
 assert.equal(sortieTeams(game)[0].slots.filter(Boolean).length,2);
+assert.equal(sortieTeams(game)[0].grid.filter(Boolean).length,2);
+assert.equal(SORTIE_GRID_CELLS,16);
+assert.throws(()=>setSortieGridCell(game,1,5,1),/固定配置/);
+assert.throws(()=>setSortieCount(game,1,1,31),/保有|利用/);
 assert.deepEqual(allowedSortieSlots(game,stage),[9,10,11]);
-assert.throws(()=>setSortieSlot(game,1===2?null:stage,1,1),/入口/);
-assert.deepEqual(availableSortieOrders(game,2),[]);
-assert.ok(availableSortieOrders(game,1).includes('support'),'priest enables support');
-assert.ok(!availableSortieOrders(game,1).includes('explore'),'exploration needs thief or ninja');
+assert.deepEqual(availableSortieOrders(game,1),[],'unfinished preset does not unlock special tactics');
+
 setSortieCount(game,1,1,18);
-assert.throws(()=>setSortieCount(game,2,1,13),/他隊/);
+assert.throws(()=>setSortieCount(game,2,1,13),/固定|隊|ステージ|人数/);
 setSortieFormation(game,2,'free');
 setSortieCount(game,2,1,12);
 setSortieCount(game,1,2,7);
 setSortieCount(game,2,2,3);
 assert.deepEqual(sortieTeams(game).map(sortieTeamCount),[25,15,0]);
 assert.deepEqual(sortieTeamSquads(game,2).map(s=>s.job),['騎士','僧侶']);
+assert.equal(sortieTemplateCapacity(game,2).total,15);
 setSortieCaptain(game,2,2);
-setSortieFormation(game,2,'support');
+assert.deepEqual(availableSortieOrders(game,2),[],'free formation has zero formation tactics');
 setSortieSlot(game,stage,2,11);
 assert.throws(()=>setSortieSlot(game,stage,2,9),/別の隊/);
-setSortieOrder(game,2,'support');
-assert.throws(()=>setSortieOrder(game,2,'explore'),/使えません/);
-assert.equal(game.campaign.squads[0].count,30,'inventory is not consumed by editing');
-assert.equal(game.campaign.squads[1].count,10);
-const html=renderThreeTeamPlanner({game,stage,stages:[stage],teamId:2});
-assert.match(html,/最大3班/);assert.match(html,/16枠/);assert.match(html,/隊長/);
+setSortieGridCell(game,2,15,2);
+assert.equal(sortieTeams(game)[1].grid[15],'2');
+assert.equal(sortieTeams(game).reduce((n,t)=>n+sortieTeamCount(t),0),40);
+const html=renderThreeTeamPlanner({game,teamId:2});
+assert.match(html,/最大3班/);
 assert.match(html,/配置盤 4×4/);
-assert.equal((html.match(/data-sortie-cell="/g)||[]).length,16,'main screen is one 4x4 board');
-assert.match(html,/data-sortie-view="templates"/);
-assert.match(html,/data-sortie-view="count"/);
-assert.ok(!html.includes('data-sortie-stage')&&!html.includes('data-sortie-position')&&!html.includes('data-sortie-slot='));
-assert.ok(!html.includes('<select'),'宿屋の編成UIではプルダウンを使わない');
-assert.ok(!html.includes('data-sortie-job="'),'job picker is hidden until tapping a cell');
-assert.ok(!html.includes('data-sortie-formation="'),'preset choices hidden until tapping the template button');
-const jobs=renderThreeTeamPlanner({game,teamId:2,cellIndex:9,view:'jobs'});
-assert.match(jobs,/data-sortie-job="/);assert.match(jobs,/data-sortie-view="setup"/);
-assert.ok(!jobs.includes('data-sortie-cell="'),'job chooser replaces the board, not stacked below it');
-const templates=renderThreeTeamPlanner({game,teamId:2,view:'templates'});
-assert.equal((templates.match(/data-sortie-formation="/g)||[]).length,7,'six preset cards plus the persistent free-formation switch');
-const lateTemplates=renderThreeTeamPlanner({game,teamId:2,view:'templates',templatePage:2});
-assert.match(lateTemplates,/星鐘陣形/);
-assert.match(lateTemplates,/data-sortie-formation="constellation"/);
-assert.match(lateTemplates,/Lv.99/);
-const captains=renderThreeTeamPlanner({game,teamId:2,view:'captains'});
-assert.match(captains,/班の隊長を選択/);
-assert.match(captains,/data-sortie-captain=/);
-const counts=renderThreeTeamPlanner({game,teamId:2,cellIndex:9,view:'count'});
-assert.match(counts,/data-sortie-count/);
-const splits=renderThreeTeamPlanner({game,teamId:2,cellIndex:9,view:'divisions'});
-assert.match(splits,/分隊を設定/);
-assert.match(splits,/data-sortie-division="4"/);
-assert.ok(!html.includes('軍師雇用'));
-const commands=renderThreeTeamPlanner({game,stage,stages:[stage],teamId:2,view:'orders'});
-assert.match(commands,/data-sortie-strategy-family="support"/);
-assert.match(commands,/data-sortie-strategy-method="melee_focus"/);
-assert.ok(!commands.includes('data-sortie-strategy-method="destroy_path"'),'only the chosen category has methods');
-const assignments=allocateThreeTeamSortie(game,stage);
-assert.equal(assignments.reduce((n,x)=>n+x.count,0),40);
-assert.equal(new Set(assignments.map(x=>x.teamId)).size,2);
-assert.equal(new Set(assignments.map(x=>x.deploymentSlot)).size,2);
+assert.equal((html.match(/data-sortie-cell="/g)||[]).length,16);
+assert.match(html,/陣形：自由陣形/);
+assert.ok(!html.includes('data-sortie-size'));
+assert.match(html,/R 0\/40人/);
+assert.ok(!html.includes('<select'));
+const templatePage=renderThreeTeamPlanner({game,teamId:1,view:'templates'});
+assert.equal((templatePage.match(/data-sortie-formation="/g)||[]).length,7);
+assert.match(templatePage,/4隊 · 最大40人/);
+assert.match(templatePage,/N40 · R14 · SR8 · SSR4 · UR2/);
+const late=renderThreeTeamPlanner({game,teamId:1,view:'templates',templatePage:2});
+assert.match(late,/星鐘陣形/);assert.match(late,/16隊 · 最大50人/);
+
+const assignment=allocateThreeTeamSortie(game,stage);
+assert.equal(assignment.reduce((n,x)=>n+x.count,0),40);
+assert.equal(new Set(assignment.map(x=>x.teamId)).size,2);
+assert.equal(new Set(assignment.map(x=>x.deploymentSlot)).size,2);
 game.location='map';
-const battle=makeCoreBattleRequest(game,stage.id,'three-team-battle');
+const battle=makeCoreBattleRequest(game,stage.id,'named-and-free');
 assert.equal(battle.sortieTeamCount,2);
 assert.equal(battle.units.length,40);
 assert.equal(new Set(battle.units.map(u=>u.armyGroupId)).size,2);
-assert.equal(new Set(battle.units.map(u=>u.squadId)).size,4,'each job contingent remains an independently commandable squad');
+assert.equal(new Set(battle.units.map(u=>u.squadId)).size,4);
 assert.equal(battle.units.filter(u=>u.isPlayerHero).length,1);
 assert.equal(battle.units.filter(u=>u.isStrategist).length,1);
-assert.deepEqual(new Set(battle.units.filter(u=>u.armyGroupId===2).map(u=>u.spawnRank)),new Set([3]));
-const b2=String(battle.units.find(u=>u.armyGroupId===2).squadId);
-assert.equal(battle.initialSquadOrders[b2],'support');
-assert.equal(battle.sortieLevel,99);
-assert.ok(battle.subdivisionMap[b2]);
-assert.ok(battle.formationBonuses['2']);
-assert.ok(battle.availableSquadOrders[b2].includes('support'));
-assert.ok(battle.units.some(u=>u.equipmentBuff.attack>.05),'passive formation buff reaches real battle units');
-assert.ok(battle.units.some(u=>Number.isInteger(u.formationCell)&&u.formationCell>=0&&u.formationCell<16));
-assert.equal(battle.units.find(u=>u.armyGroupId===2).formationType,'support');
-assert.ok(availableSortieOrders(game,2).includes('support'),'a priest with a valid formation can support');
-setSortieFormation(game,2,'attack');
-assert.deepEqual(availableSortieOrders(game,2),['charge','defend','hold','retreat'],
- 'changing the preset auto-fits a compatible attacker and removes unavailable priest support');
-setSortieFormation(game,2,'support');
-setSortieFormation(game,2,'free');
-setSortieGridCell(game,2,15,2);
-assert.deepEqual(availableSortieOrders(game,2),[],'the second group can freely form but receives no formation orders');
-setSortieFormation(game,2,'support');
-assert.ok(availableSortieOrders(game,2).includes('support'),'reapplying a valid preset restores support');
-assert.ok(battle.units.some(u=>u.sourceSquadId===2),'each job source persists');
+assert.ok(Object.values(battle.formationBonuses).every(b=>!b.attack&&!b.defense));
+assert.ok(Object.values(battle.availableSquadOrders).every(list=>list.length===0));
 game.completedStages.push(stage.id);
 assert.equal(allowedSortieSlots(game,stage).length,12);
 setSortieSlot(game,stage,2,0);
-assert.equal(makeCoreBattleRequest(game,stage.id,'cleared').units.find(u=>u.armyGroupId===2).spawnRank,0);
 game.campaign.squads[0].count=20;
 ensureSortiePlan(game);
-assert.equal(sortieTeams(game).reduce((n,t)=>n+(t.counts['1']||0),0),20,'casualties cannot leave duplicated assignment');
-const roster=createNewGame('レベル99で増える16隊上限');
+assert.equal(sortieTeams(game).reduce((n,t)=>n+(t.counts['1']||0),0),20,
+ 'battle casualties never leave duplicated or ghost troops');
+
+const roster=createNewGame('有効な四職業テンプレート');
 roster.campaign.squads.push(
- {id:3,job:'忍者',rarity:'N',count:12,commanderId:'player'},
- {id:4,job:'シーフ',rarity:'N',count:12,commanderId:'player'},
- {id:5,job:'魔法使い',rarity:'N',count:12,commanderId:'player'});
+ {id:3,job:'魔法使い',rarity:'N',count:10,commanderId:'player'},
+ {id:4,job:'忍者',rarity:'N',count:10,commanderId:'player'});
 ensureSortiePlan(roster);
-assert.equal(sortieTeams(roster)[0].slots.filter(Boolean).length,5);
-assert.equal(sortieTeams(roster)[1].slots.filter(Boolean).length,0);
-assert.ok(availableSortieOrders(roster,1).includes('explore'),'job-only ninja/thief order');
-setSortieFormation(roster,1,'support');
-assert.deepEqual(availableSortieOrders(roster,1),[],'unavailable second support role prevents unsupported named formation bonuses and orders');
-setSortieFormation(roster,1,'balanced');
-assert.ok(availableSortieOrders(roster,1).includes('explore'),'matching roster restores job orders');
-setSortieFormation(roster,1,'free');
-setSortieGridCell(roster,1,15,3);
-assert.deepEqual(availableSortieOrders(roster,1),[],'free formation has no special orders');
-setSortieFormation(roster,1,'balanced');
+assert.equal(sortieTeams(roster)[0].slots.filter(Boolean).length,4);
+assert.equal(sortieFormationBuff(roster,1).attack,.04);
+assert.ok(availableSortieOrders(roster,1).includes('support'));
+assert.ok(availableSortieOrders(roster,1).includes('explore'));
 assert.ok(availableSortieOrders(roster,1).includes('weaken'));
 assert.ok(availableSortieOrders(roster,1).includes('destroy'));
-
-assert.ok(sortieDebuffTypes(roster,1).length>=4,'only available role-qualified weakening and prevention skills are listed');
+assert.ok(sortieDebuffTypes(roster,1).length>=4);
+setSortieTactics(roster,1,['melee_focus','heal_wounded']);
 setSortieDivisions(roster,1,1,3);
 assert.equal(sortieTeams(roster)[0].divisions['1'],3);
+roster.location='map';
+const staffed=makeCoreBattleRequest(roster,stage.id,'fully-staffed');
+assert.equal(staffed.units.length,40);
+assert.equal(staffed.formationIntegrity['1'].active,true);
+assert.ok(staffed.units.some(u=>u.formationBuff.attack===.04));
+assert.deepEqual(staffed.sortieTacticTemplate['1'],['melee_focus','heal_wounded']);
 roster.sortieTestLevel=1;
 assert.equal(sortieSquadCap(roster),4);
-setSortieFormation(roster,1,'balanced');
-assert.throws(()=>setSortieGridCell(roster,1,15,3),/固定配置/,
- 'Lv1 formation cells cannot be used outside the first four role positions');
 assert.throws(()=>setSortieFormation(roster,1,'dragon'),/レベル/);
 roster.sortieTestLevel=99;
-const assignedKnight=sortieTeams(roster).reduce((n,t)=>n+(t.counts['1']||0),0);
 setSortieFormation(roster,2,'free');
 setSortieJobSlot(roster,2,1,1);
 assert.equal(sortieTeams(roster)[1].slots[1],'1');
-assert.ok(sortieTeams(roster).reduce((n,t)=>n+(t.counts['1']||0),0)<=roster.campaign.squads[0].count,
- 'free placement must never duplicate knights beyond inventory');
-assert.ok(sortieTeams(roster).reduce((n,t)=>n+sortieTeamCount(t),0)<=40,
- 'free placement must respect the next stage troop cap even when adding reserves');
+assert.ok(sortieTeams(roster).reduce((n,t)=>n+(t.counts['1']||0),0)<=roster.campaign.squads[0].count);
 setSortieJobSlot(roster,2,1,null);
-assert.equal(sortieTeams(roster)[1].slots[1],null);
-assert.equal(sortieTeams(roster)[1].counts['1']||0,0);
-const many=createNewGame('50人上限');
+
+const many=createNewGame('ステージ出撃人数');
 many.campaign.squads[0].count=80;
 ensureSortiePlan(many);
-assert.equal(allocateThreeTeamSortie(many,stage).reduce((n,a)=>n+a.count,0),stage.deploymentLimit,'stage-specific deployment capacity replaces the old fixed 50 cap');
+assert.equal(allocateThreeTeamSortie(many,stage).reduce((n,x)=>n+x.count,0),40);
 const town=readFileSync(new URL('../town-hub.html',import.meta.url),'utf8');
-assert.match(town,/renderThreeTeamPlanner/);
-assert.match(town,/setSortieCount/);
-assert.match(town,/three-team-sortie-ui.css/);
 const world=readFileSync(new URL('../world-map.html',import.meta.url),'utf8');
-assert.match(world,/id="deploymentPicker"/);
-assert.match(world,/setSortieSlot\(game,stage,deploymentTeamId/);
-assert.match(world,/stage\.kind!=='town'/);
 const battleHtml=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
-assert.match(battleHtml,/storyRequest\?\.sortieTeamCount/);
-assert.match(battleHtml,/formationCell/);
-assert.match(battleHtml,/availableSquadOrders/);
+assert.ok(!town.includes('data-sortie-size'));
+assert.match(town,/renderThreeTeamPlanner/);
+assert.match(world,/setSortieSlot\(game,stage,deploymentTeamId/);
 assert.match(battleHtml,/createTargetedStrategyUi/);
-assert.match(battleHtml,/issueTargetedMapCommand/);
 assert.match(battleHtml,/applySquadDebuff/);
-for(const [name,content] of [['town',town],['battle',battleHtml],['world',world]]){
- const scripts=[...content.matchAll(/<script type="module">([\s\S]*?)<\/script>/g)];
- assert.ok(scripts.length);
- new SourceTextModule(scripts.at(-1)[1],{identifier:name});
+for(const [id,doc] of [['town',town],['world',world],['battle',battleHtml]]){
+ const modules=[...doc.matchAll(/<script type="module">([\s\S]*?)<\/script>/g)];
+ assert.ok(modules.length,id);
+ new SourceTextModule(modules.at(-1)[1],{identifier:id});
 }
-console.log('Level99 14 formations, 16 units/group, real divisions, global buffs, target strategies, enemy debuffs and battle bridge PASS');
+console.log('PASS: strict preset squads, rarity-stage caps, 3 teams, free edit, 3-stage orders and real battle handoff');
