@@ -51,10 +51,11 @@ export function buildPilotPlan(){
  const actors=['lucia','vess'];
  const actualRefs=actors.map(id=>{
   const actor=bible.actors.find(a=>a.id===id);
-  if(!actor?.path)throw Error('MISSING_CAST_MASTER '+id);
-  const bytes=fs.readFileSync(path.join(root,actor.path));
+  const refPath=actor?.path||(id==='vess'?'assets/story-cinema/cast/vess.webp':null);
+  if(!refPath)throw Error('MISSING_CAST_MASTER '+id);
+  const bytes=fs.readFileSync(path.join(root,refPath));
   imagePixels(bytes);
-  return {id,path:actor.path,sha:hash(bytes),rule:actor.visualRule||id};
+  return {id,path:refPath,sha:hash(bytes),rule:actor?.visualRule||id};
  });
  const stylePath='assets/story/chapters/c01/panels/c01-s01-m02-male.webp';
  const styleBytes=fs.readFileSync(path.join(root,stylePath));
