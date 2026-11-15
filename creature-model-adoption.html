@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>灰銀のレゾナンス | モンスター・召喚獣モデル採用</title>
+<style>
+:root{font-family:system-ui,"Noto Sans JP",sans-serif;color-scheme:dark}*{box-sizing:border-box}
+body{margin:0;background:#081522;color:#eef3f5;height:100dvh;display:flex;flex-direction:column;overflow:hidden}
+a{color:#b8e5f7}header{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:#112c40;padding:9px 13px;border-bottom:1px solid #4a6c82;flex-shrink:0}
+h1{margin:0;font-size:16px;color:#f8dc9d}small{font-size:11px;color:#b6cddb}
+main{display:flex;min-height:0;flex:1}
+form{width:330px;max-width:42vw;display:flex;flex-direction:column;gap:9px;padding:12px;border-right:1px solid #496a7d;overflow:auto;background:#102436}
+section{position:relative;flex:1;min-width:0;min-height:0}
+canvas{display:block;width:100%;height:100%;touch-action:none;background:#0b1b2a}
+label{font-size:13px;font-weight:600;display:block}
+select,button{font:inherit;background:#1c3c53;color:#fff;border:1px solid #658da4;border-radius:8px;padding:11px;width:100%;margin-top:4px}
+button{cursor:pointer;min-height:40px}button:disabled{opacity:.5;cursor:not-allowed}
+#adopt{background:#8c6c36;border-color:#d6b879;color:#fff9e8;font-weight:800}
+#status{font-size:12px;line-height:1.6;padding:9px;border:1px solid #476d7f;background:#172f42;border-radius:8px}
+#warning{font-size:11px;line-height:1.5;color:#f2d5a7}
+#current{font-size:12px;color:#bfe3d0}
+#modelName{position:absolute;left:12px;top:10px;background:#071525d8;border-radius:8px;padding:9px;font-size:12px;pointer-events:none}
+#viewToolbar{position:absolute;bottom:12px;left:12px;right:12px;display:flex;gap:7px;max-width:430px}
+#viewToolbar button{width:auto;font-size:12px;padding:8px 12px;background:#173348e8}
+#actionGroup{display:flex;gap:7px}#actionGroup button{font-size:12px;padding:7px;flex:1}
+#external{display:block;margin-top:3px;font-size:12px}
+#notice{font-size:11px;color:#b5cdd9}
+@media(max-width:720px){
+ header{padding:5px 9px;gap:8px}header h1{font-size:13px}header small{display:none}
+ main{flex-direction:column}
+ form{width:100%;max-width:none;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);padding:6px 9px;gap:5px;max-height:55dvh;overflow:auto;border-right:0;border-bottom:1px solid #496a7d}
+ label{font-size:11px}select,button{padding:7px;min-height:35px;font-size:12px;margin-top:2px}
+ #adopt{min-height:37px}
+ #warning,#status,#current,#notice{font-size:10px;line-height:1.45;margin:0}
+ #warning,#status,#current,#actionGroup,#notice{grid-column:1/-1}
+ #status{padding:5px}
+ section{min-height:150px}
+ #viewToolbar{bottom:5px}
+ #modelName{top:5px;left:5px;font-size:10px;padding:5px}
+}
+</style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
+</head><body>
+<header><a href="./dev-menu.html">← メニュー</a><h1>モンスター・召喚獣 モデル採用</h1><small>①キャラ → ②モデル → ③確認 → ④採用</small></header>
+<main><form id="controls" onsubmit="return false">
+ <label>① モンスター・召喚獣<select id="species" aria-label="種類を選択"></select></label>
+ <label>② モデルの選択<select id="modelChoice" aria-label="使用するメッシュを選択">
+  <option value="legacy">現行モデル（保持）</option></select></label>
+ <div id="current" role="status">現在の採用：確認中</div>
+ <div id="warning">既存モデルは削除しません。選択するだけでは反映されません。</div>
+ <button id="adopt" type="button" disabled>④ このモデルを採用</button>
+ <div id="status" role="status">モデル一覧を読み込み中</div>
+ <div id="actionGroup"><button data-action="idle" type="button">待機</button><button data-action="walk" type="button">歩行</button><button data-action="attack" type="button">攻撃</button></div>
+ <a id="external" href="./monster-manager.html" target="_blank" rel="noopener">現行モデルを別画面で確認</a>
+ <div id="notice">採用結果はこの端末のゲーム・召喚表示へ保存。別端末／他ユーザーへの公開は別途反映が必要です。</div>
+</form>
+<section id="viewport"><canvas id="stage"></canvas>
+ <div id="modelName">現行3D（プレビュー）</div>
+ <div id="viewToolbar"><button id="reset" type="button">全身に戻す</button><button id="zoomIn" type="button">＋拡大</button><button id="zoomOut" type="button">－縮小</button></div>
+</section></main>
+<script type="module">
+import * as THREE from 'three';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+import {MONSTER_CATALOG,MONSTER_BY_ID} from './src/monster-catalog.js';
+import {MONSTER_SUMMON_ENTRIES} from './src/monster-summon-registry.js';
+import {createMonsterModel,disposeMonsterSculpture} from './src/monster-geometry.js';
+import {startMonsterAction,animateMonsterModel} from './src/monster-animation.js';
+import {fetchCreatureRegistry,loadExternalCreature} from './src/creature-external-runtime.js';
+import {NONHUMAN_MONSTER_IDS,NONHUMAN_EXTRA_SUMMON_IDS,recommendedMeshSources,adoptedCreatureMesh,setAdoptedCreatureMesh,compatibleSourceWarning} from './src/creature-mesh-adoption.js';
+const $=id=>document.getElementById(id);
+const creatureIds=new Set(NONHUMAN_MONSTER_IDS);
+const groups=[
+ {title:'モンスター（人間タイプ以外）',ids:NONHUMAN_MONSTER_IDS},
+ {title:'召喚獣（上記モンスターの召喚版）',ids:NONHUMAN_MONSTER_IDS.map(id=>'summon_'+id)},
+ {title:'専用召喚獣・軍馬',ids:NONHUMAN_EXTRA_SUMMON_IDS}
+];
+const specials={wolf:'灰狼',wyvern:'飛竜',dragon:'古竜',elder_dragon:'天竜',horse:'軍馬'};
+function speciesName(id){
+ return specials[id]||MONSTER_BY_ID[id.replace(/^summon_/,'')]?.name||id;
+}
+for(const group of groups){
+ const optgroup=document.createElement('optgroup');optgroup.label=group.title;
+ for(const id of group.ids){
+  const option=document.createElement('option');option.value=id;
+  option.textContent=speciesName(id)+' ['+id+']';optgroup.appendChild(option);
+ }
+ $('species').appendChild(optgroup);
+}
+const query=new URLSearchParams(location.search);
+const requested=query.get('monster')||query.get('summon')||query.get('species')||'m001';
+if(Array.from($('species').options).some(o=>o.value===requested))$('species').value=requested;
+let registry={entries:{}},handle=null,legacyActor=null,serial=0,ready=false,activeChoice='legacy',currentAction='idle';
+let frameLast=performance.now();
+const scene=new THREE.Scene();scene.background=new THREE.Color(0x0c1d2b);
+const camera=new THREE.PerspectiveCamera(43,1,.01,2000);
+const renderer=new THREE.WebGLRenderer({canvas:$('stage'),antialias:true,powerPreference:'high-performance'});
+renderer.outputColorSpace=THREE.SRGBColorSpace;
+renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.15;
+renderer.setPixelRatio(Math.min(1.5,devicePixelRatio||1));
+const controls=new OrbitControls(camera,$('stage'));
+controls.enableDamping=true;controls.minDistance=.8;controls.maxDistance=65;
+scene.add(new THREE.HemisphereLight(0xe9eeff,0x41536b,2.1));
+const sun=new THREE.DirectionalLight(0xffe7bd,3);sun.position.set(-4,8,6);scene.add(sun);
+const fill=new THREE.DirectionalLight(0x94cfff,1.4);fill.position.set(5,4,-5);scene.add(fill);
+const ground=new THREE.GridHelper(12,12,0x456979,0x294455);scene.add(ground);
+function disposePreview(){
+ ++serial;
+ if(handle){scene.remove(handle.root);handle.dispose();handle=null;}
+ if(legacyActor){scene.remove(legacyActor);disposeMonsterSculpture(legacyActor);legacyActor=null;}
+ ready=false;$('adopt').disabled=true;
+}
+function focus(){
+ const root=handle?.root||legacyActor;if(!root)return;
+ const box=new THREE.Box3().setFromObject(root);
+ if(box.isEmpty())return;
+ const center=box.getCenter(new THREE.Vector3()),size=box.getSize(new THREE.Vector3());
+ const d=Math.max(3,size.length()*1.25);
+ controls.target.copy(center);
+ camera.position.set(center.x+d*.28,center.y+d*.25,center.z+d*.75);
+ camera.far=Math.max(100,d*8);camera.updateProjectionMatrix();controls.update();
+}
+function savedStatus(){
+ const id=$('species').value;
+ const s=adoptedCreatureMesh(id);
+ const inherited=id.startsWith('summon_')&&s!=='legacy'?
+  (adoptedCreatureMesh(id.slice(7))===s?'（元モンスターから継承）':''):'';
+ $('current').textContent='現在の採用：'+(s==='legacy'?'現行モデル':(registry.entries[s]?.name||s)+' ['+s+']')+inherited;
+ const isSaved=$('modelChoice').value===s;
+ $('adopt').textContent=isSaved?'現在採用中（再採用できます）':'④ このモデルを採用';
+}
+function chooseSpecies(){
+ const id=$('species').value;
+ const chosen=adoptedCreatureMesh(id);
+ const options=$('modelChoice');options.replaceChildren();
+ options.add(new Option('現行モデル（保持・いつでも戻せる）','legacy'));
+ const rec=new Set(recommendedMeshSources(id));
+ for(const [name,keys] of [['おすすめの既存GLB',[...rec]],['その他の登録済みGLB（50種）',Object.keys(registry.entries).filter(k=>k.startsWith('q')&&!rec.has(k))]]){
+  const group=document.createElement('optgroup');group.label=name;
+  for(const key of keys){
+   const entry=registry.entries[key];if(!entry||!key.startsWith('q'))continue;
+   const op=new Option(entry.name+' ['+key+']'+(rec.has(key)?'・暫定推奨':''),key);
+   group.append(op);
+  }
+  if(group.children.length)options.appendChild(group);
+ }
+ options.value=Array.from(options.options).some(o=>o.value===chosen)?chosen:'legacy';
+ $('external').href=creatureIds.has(id)||id.startsWith('summon_')?
+  './monster-manager.html?monster='+id.replace(/^summon_/,''):
+  './summon-showcase.html?summon='+id;
+ history.replaceState(null,'','?species='+encodeURIComponent(id));
+ previewChoice();savedStatus();
+}
+function previewChoice(){
+ const id=$('species').value,source=$('modelChoice').value;
+ activeChoice=source;
+ disposePreview();
+ $('warning').textContent=compatibleSourceWarning(id,source)||
+  '既存の造形データ・装飾・アニメーションは保持。採用しても元モデルを削除しません。';
+ $('modelName').textContent=speciesName(id)+' / '+(source==='legacy'?'現行モデル':registry.entries[source]?.name||source);
+ const ticket=serial;
+ if(source==='legacy'){
+  const m=MONSTER_BY_ID[id.replace(/^summon_/,'')];
+  if(m){
+   legacyActor=createMonsterModel(m,{detail:'high'});
+   scene.add(legacyActor);startMonsterAction(legacyActor,'idle',0);focus();
+   ready=true;$('adopt').disabled=false;
+   $('status').textContent='現行3Dを表示中。採用すると新モデルの選択を解除します。';
+  }else{
+   ready=true;$('adopt').disabled=false;
+   $('status').textContent='専用召喚獣の現行モデルは下のリンクから確認できます。新GLBはここで比較できます。';
+  }
+  savedStatus();return;
+ }
+ const entry=registry.entries[source];
+ if(!entry){$('status').textContent='登録済みのGLBではありません';return;}
+ $('status').textContent='GLBを読み込み中：'+entry.name+'（画面が表示できるまで採用できません）';
+ loadExternalCreature(entry,'high').then(loaded=>{
+  if(ticket!==serial){loaded.dispose();return;}
+  handle=loaded;scene.add(handle.root);focus();
+  ready=true;$('adopt').disabled=false;
+  $('status').textContent='GLB表示成功：'+entry.name+' / '+entry.license+
+   ' / アニメ '+handle.clips.length+'種類。採用は未確定です。';
+  savedStatus();
+ }).catch(e=>{
+  if(ticket!==serial)return;
+  $('status').textContent='GLB読み込み失敗：'+e.message+'。採用できません。';
+  $('adopt').disabled=true;
+ });
+}
+$('species').onchange=chooseSpecies;
+$('modelChoice').onchange=()=>{previewChoice();savedStatus();};
+$('adopt').onclick=()=>{
+ if(!ready||$('modelChoice').value!==activeChoice)return;
+ try{
+  const id=$('species').value,source=$('modelChoice').value;
+  setAdoptedCreatureMesh(id,source);
+  $('status').textContent=(source==='legacy'?'現行モデルに戻しました。':'選択したGLBを採用しました。')+
+   ' 同じ端末のゲームに反映されます。別端末へは自動同期しません。';
+  savedStatus();
+ }catch(error){$('status').textContent='保存エラー：'+error.message;}
+};
+$('reset').onclick=focus;
+for(const [id,factor] of [['zoomIn',.74],['zoomOut',1.34]]){
+ $(id).onclick=()=>{const offset=camera.position.clone().sub(controls.target);
+  offset.setLength(Math.max(.8,Math.min(65,offset.length()*factor)));
+  camera.position.copy(controls.target).add(offset);controls.update();};
+}
+for(const b of document.querySelectorAll('[data-action]')){
+ b.onclick=()=>{
+  currentAction=b.dataset.action;
+  if(handle)handle.play(currentAction);
+  if(legacyActor)startMonsterAction(legacyActor,currentAction,performance.now()/1000);
+ };
+}
+function loop(time){
+ requestAnimationFrame(loop);
+ const dt=Math.min(.1,Math.max(0,(time-frameLast)/1000));frameLast=time;
+ if(handle)handle.update(dt);
+ if(legacyActor)animateMonsterModel(legacyActor,time/1000);
+ const rect=$('stage').getBoundingClientRect();
+ const w=Math.floor(rect.width),h=Math.floor(rect.height);
+ if(w>0&&h>0&&(renderer.domElement.width!==Math.round(w*renderer.getPixelRatio())||renderer.domElement.height!==Math.round(h*renderer.getPixelRatio()))){
+  renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();
+ }
+ controls.update();renderer.render(scene,camera);
+}
+fetchCreatureRegistry().then(result=>{
+ registry=result;
+ $('status').textContent='登録済みCC0メッシュ '+result.all50Count+'件を読み込みました。';
+ chooseSpecies();
+}).catch(error=>{
+ $('status').textContent='GLB登録一覧の取得失敗：'+error.message+'（現行モデルは使用できます）';
+ chooseSpecies();
+});
+window.__creatureMeshAdoptionQA=()=>({
+ species:$('species').value,selected:$('modelChoice').value,adopted:adoptedCreatureMesh($('species').value),
+ registryCount:registry.all50Count??0,previewReady:ready,modelLoaded:!!handle
+});
+requestAnimationFrame(loop);
+</script></body></html>
