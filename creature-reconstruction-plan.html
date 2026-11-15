@@ -112,6 +112,8 @@ import {CREATURE_RECONSTRUCTION_WORK,CREATURE_RECONSTRUCTION_BY_ID,
  CREATURE_RECONSTRUCTION_SUMMARY,MESH_STAGE} from './src/creature-reconstruction-plan.js';
 import {MONSTER_FAMILIES} from './src/monster-catalog.js';
 import {monsterDesignPrompt} from './src/monster-reference-design.js';
+import {WEB_CREATURE_MESH_SOURCES} from './src/creature-web-mesh-catalog.js';
+import {WEB_CREATURE_ANATOMY_REFERENCES} from './src/creature-research-reference-catalog.js';
 const $=id=>document.getElementById(id);
 const urlArgs=new URLSearchParams(location.search);
 let selected=CREATURE_RECONSTRUCTION_BY_ID[urlArgs.get('species')]?urlArgs.get('species'):'m001';
@@ -149,18 +151,37 @@ function pick(item){
  const anatomy=item.anatomyReferences;
  if(!candidates.length&&!anatomy.length)
   sources.textContent='採用可能な高精細メッシュは未確定（現行メッシュ保全）。';
- for(const [ids,prefix] of [[candidates,'3D候補'],[anatomy,'解剖学参考のみ']]){
+ const oldReal={
+  'r-wolf':'https://sketchfab.com/3d-models/wolf-animated-79bd16a8c36a45c78ccd13b84b7ca99c',
+  'r-tiger':'https://sketchfab.com/3d-models/running-tiger-fc2c7fd74dd04e39935803b884c77258',
+  'r-jaguar':'https://sketchfab.com/3d-models/none-91c61c329d2a4668816f81f08dfcd492',
+  'r-eagle':'https://sketchfab.com/3d-models/american-bald-eagle-ae252eac5e2e4299be268aa0b320cd8a',
+  'r-crocodile':'https://sketchfab.com/3d-models/crocodile-49c9823cddcd4d1fb2ecae8395a46bd0'
+ };
+ for(const [ids,prefix] of [[candidates,'GLB候補'],[anatomy,'解剖学参考']]){
   for(const id of ids){
+   const web=WEB_CREATURE_MESH_SOURCES[id];
+   const scanned=WEB_CREATURE_ANATOMY_REFERENCES[id];
    const link=document.createElement('a');
-   const links={
-    'r-wolf':'https://sketchfab.com/3d-models/wolf-animated-79bd16a8c36a45c78ccd13b84b7ca99c',
-    'r-tiger':'https://sketchfab.com/3d-models/running-tiger-fc2c7fd74dd04e39935803b884c77258',
-    'r-jaguar':'https://sketchfab.com/3d-models/none-91c61c329d2a4668816f81f08dfcd492',
-    'r-eagle':'https://sketchfab.com/3d-models/american-bald-eagle-ae252eac5e2e4299be268aa0b320cd8a',
-    'r-crocodile':'https://sketchfab.com/3d-models/crocodile-49c9823cddcd4d1fb2ecae8395a46bd0'
-   };
-   link.href=links[id]||'#';link.target='_blank';link.rel='noopener noreferrer';
-   link.textContent=prefix+'：'+id+'（Sketchfabで確認）';sources.append(link);
+   link.href=web?.sourceUrl||scanned?.sourceUrl||oldReal[id]||'#';
+   link.target='_blank';link.rel='noopener noreferrer';
+   const license=web?.license||scanned?.license||(id.startsWith('r-')?'CC BY 4.0':'');
+   const modelName=web?.name||scanned?.name||id;
+   const label=(web?.style==='low-poly'?'［動作確認用・低ポリ］':web?.style==='realistic'?
+    '［写実候補・負荷高］':scanned?'［高精細スキャン・未リグ］':'［外部候補］');
+   link.textContent=prefix+' '+id+'：'+modelName+' '+label+' / '+license;
+   sources.append(link);
+   if(web?.downloadUrl){
+    const asset=document.createElement('a');
+    asset.href=web.downloadUrl;asset.target='_blank';asset.rel='noopener noreferrer';
+    asset.textContent='GLB実ファイルの配布元へ：'+id;
+    sources.append(asset);
+   }
+   if(scanned?.caution||web?.qualityCaution){
+    const note=document.createElement('div');
+    note.textContent=scanned?.caution||web.qualityCaution;
+    sources.append(note);
+   }
   }
  }
  $('licenseInfo').textContent=candidates.length?
