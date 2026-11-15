@@ -1,0 +1,75 @@
+name: Story AI Horde free one-shot img2img comparison
+on:
+  push:
+    branches: [feature/aihorde-c01s04-pilot-20261116]
+    paths: ['.github/workflows/story-ai-horde-pilot.yml']
+  pull_request:
+    paths:
+      - '.github/workflows/story-ai-horde-pilot.yml'
+      - 'scripts/pilot-story-ai-horde.mjs'
+      - 'qa/story-ai-horde-pilot.test.mjs'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: story-ai-horde-one-shot-pilot
+  cancel-in-progress: false
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: |
+          node --check scripts/pilot-story-ai-horde.mjs
+          node --test qa/story-ai-horde-pilot.test.mjs
+          node scripts/pilot-story-ai-horde.mjs --mode plan
+  generate:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/feature/aihorde-c01s04-pilot-20261116'
+    needs: verify
+    runs-on: ubuntu-24.04
+    timeout-minutes: 13
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0, persist-credentials: true}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: python3 -m pip install --disable-pip-version-check Pillow==11.3.0
+      - name: Load real Cloudflare review image and SHA proof, never approved
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .pilot-input
+          git fetch --depth=1 origin refs/heads/story/chapter1-free-actual-art
+          src="assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-pre-male/p01/c01-s04-m05-pre-male.webp"
+          git show "FETCH_HEAD:$src" > .pilot-input/cloudflare.webp
+          git show "FETCH_HEAD:$src.generation.json" > .pilot-input/cloudflare.generation.json
+          test -s .pilot-input/cloudflare.webp
+      - name: Make exactly one free AI Horde img2img request
+        env:
+          AI_HORDE_API_KEY: ${{ secrets.AI_HORDE_API_KEY }}
+        run: node scripts/pilot-story-ai-horde.mjs --mode generate
+      - name: Commit actual independent review candidate only; never game art
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- assets/story/chapter-drafts/c01/ai-horde-pilot/
+          git diff --cached --quiet && exit 2
+          git commit -m 'art(review): one real AI Horde img2img comparison; manual QA required'
+          git push origin HEAD:feature/aihorde-c01s04-pilot-20261116
+      - name: Upload real image and metadata when present
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-horde-stage4-single-review
+          path: |
+            assets/story/chapter-drafts/c01/ai-horde-pilot/**/*.webp
+            assets/story/chapter-drafts/c01/ai-horde-pilot/**/*.generation.json
+          if-no-files-found: warn
+          retention-days: 14
