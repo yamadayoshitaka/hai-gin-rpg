@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "category": "anime",
+  "saved": [
+    {
+      "id": "compact-chapter-opening-replay",
+      "sourceFiles": [
+        "src/story-compact-comic.js"
+      ],
+      "commitSha": "33eadbbc7c22e7b0437292fcf770937e22114d4e",
+      "qa": "unverified"
+    },
+    {
+      "id": "compact-shared-defeat-second-art-fail-closed",
+      "sourceFiles": [
+        "src/story-compact-comic.js"
+      ],
+      "commitSha": "321a1a9d48dff83de7a689e60dfeab27f9e66713",
+      "qa": "unverified"
+    }
+  ],
+  "remainingIds": [
+    "compact-c01-s01..c20-s10-CG-audit",
+    "compact-portrait-dialogue-QA",
+    "compact-outcome-branch-QA",
+    "compact-shared-defeat-second-art-visual-verification"
+  ],
+  "nextAction": "第2敗戦共通CGの実WebPと人物不在・性別・SHAを視覚監査してから共通登録。PR #458の章遷移QAも未実施。"
+}

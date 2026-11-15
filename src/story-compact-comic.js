@@ -41,7 +41,8 @@ function scene(base,turns,{opening=false,sharedKind=null}={}){
   sharedSceneKind:sharedKind,
   // Only the first defeat CG has a physically verified character-free shared original.
   // Other outcome images remain per-stage or unregistered until safely replaced.
-  sharedArtAsset:sharedKind==='defeat' ? (/-m6$/.test(base.id)?'./assets/story/shared/shared-defeat-01.webp':'./assets/story/shared/shared-defeat-02.webp') : null,
+  sharedArtAsset:sharedKind==='defeat'&&/-m6$/.test(base.id)
+   ? './assets/story/shared/shared-defeat-01.webp' : null,
   protagonistAssetPolicy:'exact-gender-or-proven-neutral-only',
   originalSceneId:base.id,originalComicCell:base.comicCell,
   originalSheetCount:base.sourceSheetCount??null,
@@ -60,9 +61,12 @@ function distribute(lines,num){
  });
 }
 function chapterSeen(context,chapter){
- return context.chapterOpeningSeen===true||
-  context?.storyFlags?.chapterOpenings?.[chapter]===true||
-  context?.storyFlags?.chapterOpenings?.[String(chapter)]===true;
+ // A global boolean cannot identify which chapter was seen. Respect only
+ // chapter-scoped persistence so finishing chapter 1 never suppresses chapter 2.
+ const seen=context?.storyFlags?.chapterOpenings;
+ return seen?.[chapter]===true||
+  seen?.[String(chapter)]===true||
+  (context.chapterOpeningSeen===true&&Number(context.chapterOpeningSeenForChapter)===chapter);
 }
 export function compactComicForStage(stageId,phase,context={}){
  const stage=CAMPAIGN_STAGE_BY_ID[stageId];
