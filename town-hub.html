@@ -977,8 +977,13 @@ function startPaperStory(phase='pre'){
  if(phase==='pre'){
   game.storyFlags.stageMangaSeen??={};
   game.storyFlags.stageMangaSeen[game.townStage]=true;
-  persistSession(game,sessionStorage);
+ }else if(phase==='post'){
+  // Remember the first departure as soon as its comic opens, including
+  // skips/reloads. Revisiting the same town must never restart this event.
+  game.storyFlags.stagePostMangaSeen??={};
+  game.storyFlags.stagePostMangaSeen[game.townStage]=true;
  }
+ persistSession(game,sessionStorage);
  eventComic=comicForStage(game.townStage,phase,storyStageContext(game,game.townStage));
  eventScenes=eventComic.panels;
  hideTownDialogue();
