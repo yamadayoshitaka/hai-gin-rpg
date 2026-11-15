@@ -307,8 +307,12 @@ export function setSortieJobSlot(game,teamId,slotIndex,squadId){
  const elsewhere=sid?game.sortiePlan.teams.filter(t=>t!==team)
   .reduce((n,t)=>n+(t.counts[sid]||0),0):0;
  let available=source?source.count-elsewhere:0;
- if(sid&&available<=0&&!game.sortiePlan.teams.some(t=>t!==team&&(t.counts[sid]||0)>0))
-  throw Error('このジョブの配属可能人数がありません。');
+ const assignedTotal=game.sortiePlan.teams.reduce((n,t)=>n+sortieTeamCount(t),0);
+ const replacing=previous?Number(team.counts[previous]||0):0;
+ const budget=Math.max(0,sortiePlanningLimit(game)-assignedTotal+replacing);
+ const donorAvailable=sid?game.sortiePlan.teams.some(t=>t!==team&&(t.counts[sid]||0)>0):false;
+ if(sid&&Math.min(available,budget)<=0&&!donorAvailable)
+  throw Error('ステージ出撃上限または保有兵数に空きがありません。先に人数を減らしてください。');
  if(previous){
   delete team.counts[previous];delete team.divisions[previous];team.slots[index]=null;
   team.grid=team.grid.map(id=>id===previous?null:id);
@@ -316,7 +320,9 @@ export function setSortieJobSlot(game,teamId,slotIndex,squadId){
  if(sid){
   // From the default all-in-first-group formation, move ten soldiers to
   // another group on a job tap; never duplicate real people.
-  if(available<=0){
+  // Reserve troops only fill the remaining stage budget. If none fits,
+  // transfer soldiers out of another group rather than cloning them.
+  if(Math.min(available,budget)<=0){
    const donor=game.sortiePlan.teams.find(t=>t!==team&&(t.counts[sid]||0)>0);
    const moved=Math.min(10,donor.counts[sid]);
    donor.counts[sid]-=moved;
@@ -326,7 +332,7 @@ export function setSortieJobSlot(game,teamId,slotIndex,squadId){
     donor.grid=donor.grid.map(v=>v===sid?null:v);
    }
    available=moved;
-  }
+  }else available=Math.min(available,budget);
   team.slots[index]=sid;
   team.counts[sid]=Math.min(10,available);team.divisions[sid]=1;
   const legal=sortieAllowedCells(game,teamId),target=legal.find(c=>team.grid[c]===null);
