@@ -42,7 +42,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Confirm all 254 targets, prompt guards and dashboard links
+      - name: Confirm all 253 targets, prompt guards and dashboard links
         run: |
           node --check scripts/world-quality-catalog.mjs
           node --check scripts/world-quality-run.mjs
