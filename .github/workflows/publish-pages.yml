@@ -45,7 +45,6 @@ jobs:
       - name: Verify new game core, town save, shops and 200-stage transitions
         run: |
           node --experimental-vm-modules qa/game-core-contract.test.mjs
-          node qa/scene-navigation-startup.test.mjs
       - name: Verify continents, gacha, NPC models and fences/flowers
         run: node qa/continent-town-gacha-regression.test.mjs
       - name: Verify registered Chapter 1 character-art references and 3D viewer linkage
@@ -73,6 +72,8 @@ jobs:
           cache-dependency-path: scripts/requirements-pages.txt
       - name: Install image optimizer for slim Pages artifact
         run: python -m pip install --disable-pip-version-check -r scripts/requirements-pages.txt
+      - name: Verify relay startup without duplicate page reloads
+        run: node qa/scene-navigation-startup.test.mjs
       - name: Inventory all 1400 real chapter-panel pictures and validate gender-safe fallbacks
         run: |
           node scripts/build-story-art-coverage.mjs
