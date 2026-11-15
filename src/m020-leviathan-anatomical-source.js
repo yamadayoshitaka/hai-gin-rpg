@@ -16,8 +16,8 @@ export function buildLeviathanAnatomicalSource(THREE,{segments=56,radial=18}={})
  const body=new THREE.Group();root.add(body);
  const profile=t=>{
    const x=-5.4+11.4*t;
-   const neck=Math.exp(-((t-.70)/.13)**2);
-   const chest=Math.exp(-((t-.53)/.24)**2);
+   const neck=Math.exp(-(((t-.70)/.13)**2));
+   const chest=Math.exp(-(((t-.53)/.24)**2));
    const tail=Math.max(.07,Math.pow(Math.sin(Math.PI*Math.min(.98,t)),.8));
    return {x,y:.25*Math.sin(t*Math.PI*1.4),ry:.16+1.15*tail+.34*chest-.15*neck,rz:.14+.92*tail+.20*chest};
  };
