@@ -12,6 +12,21 @@ export const formationCellsAtLevel=(formation,positions,capacity)=>{
  return formation===FREE_FORMATION?Array.from({length:16},(_,i)=>i):positions?.[formation]?.slice(0,count)||[];
 };
 export const ROLE_NAMES=Object.freeze({front:'前衛',guard:'盾役',scout:'遊撃',ranged:'遠隔',support:'支援',any:'増援'});
+/** Minimum living soldiers in EACH fixed formation cell, not only each role type.
+ * Different cells may use the same job; both cells must independently qualify. */
+export const FORMATION_MINIMUM_SOLDIERS=Object.freeze({front:3,guard:3,scout:2,ranged:2,support:2});
+export const formationMinimumForRole=role=>FORMATION_MINIMUM_SOLDIERS[role]||1;
+export function formationJobMinimums(team,ownedSquads,positions,slots=null){
+ const ids=positions?.[team?.formation]?.slice(0,Number(slots)||team?.slots?.filter(Boolean).length||4)||[];
+ const sources=new Map(ownedSquads.map(s=>[String(s.id),s]));
+ return ids.map((cell,rank)=>{
+  const sid=team?.grid?.[cell],squad=sources.get(String(sid)),role=FORMATION_ROLES[team.formation]?.[rank];
+  const min=formationMinimumForRole(role),current=Number(team?.counts?.[String(sid)]||0);
+  return {cell,rank,role,job:squad?.job||null,options:ROLE_JOBS[role]||[],sourceId:squad?String(squad.id):null,
+   min,current,valid:Boolean(squad)&&current>=min};
+ });
+}
+
 const LEADS=Object.freeze({
  attack:['front','front','scout','ranged'],
  balanced:['front','support','ranged','scout'],
