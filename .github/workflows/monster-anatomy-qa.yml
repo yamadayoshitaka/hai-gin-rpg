@@ -104,7 +104,7 @@ jobs:
           npm run test:monster-source-rebuild
           npm run test:summon-source-hybrid
           npm run test:monster-summon-catalog
-          node qa/monster-beastfolk-wolf-regression.test.mjs
+          node --import ./qa/node-progress-event-polyfill.mjs qa/monster-beastfolk-wolf-regression.test.mjs
           npm run test:forest-spirit-emerald
           node qa/dragonkin-native-scalp-regression.test.mjs
           node qa/female-summon-scalp-cut-regression.test.mjs
