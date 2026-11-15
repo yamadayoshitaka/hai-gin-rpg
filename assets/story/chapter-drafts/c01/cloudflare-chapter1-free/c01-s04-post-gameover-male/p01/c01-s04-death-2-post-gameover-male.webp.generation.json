@@ -1,0 +1,36 @@
+{
+  "kind": "CLOUDFLARE_REAL_WEBP_REVIEW_CANDIDATE_NOT_APPROVED",
+  "shotKey": "c01-s04|post-gameover|male|c01-s04-death-2",
+  "stageId": "c01-s04",
+  "edition": "post-gameover",
+  "gender": "male",
+  "panelId": "c01-s04-death-2",
+  "screenplayText": "この時間線では次へ進まない。生還や帰還を偽って描かない。",
+  "visibleActorIds": [],
+  "actualReferenceImagesAttached": [
+    {
+      "actorId": "style_benchmark",
+      "source": "assets/story/chapters/c01/panels/c01-s01-m02-male.webp",
+      "originalSha256": "e70901415a751b576a00dcac34f93065051b3513b875f58546533f59ccfee71d",
+      "submittedSha256": "a6602427e7fde9cda0e99dd5511998682513154a72c029a190abd5e74786eca2",
+      "actualBytes": 247193,
+      "pixels": [
+        480,
+        270
+      ]
+    }
+  ],
+  "imageSha256": "82ef4843f9dece2afeb22b2ede35ca33219b218f3202e3fa3da726fdacf68dd0",
+  "nativePixels": [
+    1024,
+    576
+  ],
+  "imageBytes": 175814,
+  "model": "@cf/black-forest-labs/flux-2-klein-4b",
+  "seed": 585742664,
+  "promptSha256": "95bd624bcdd4f66cf63b4b2cb88a268b2fe37a1dc85093db10ee7403666ee4f3",
+  "estimatedNeurons": 109.57,
+  "visuallyApproved": false,
+  "formallyRegistered": false,
+  "gameDeployed": false
+}

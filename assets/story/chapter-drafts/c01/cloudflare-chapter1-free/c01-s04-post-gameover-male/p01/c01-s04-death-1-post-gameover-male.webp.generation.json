@@ -1,0 +1,36 @@
+{
+  "kind": "CLOUDFLARE_REAL_WEBP_REVIEW_CANDIDATE_NOT_APPROVED",
+  "shotKey": "c01-s04|post-gameover|male|c01-s04-death-1",
+  "stageId": "c01-s04",
+  "edition": "post-gameover",
+  "gender": "male",
+  "panelId": "c01-s04-death-1",
+  "screenplayText": "主人公の軍師が戦死した。指揮を失い、物語はゲームオーバーとなる。",
+  "visibleActorIds": [],
+  "actualReferenceImagesAttached": [
+    {
+      "actorId": "style_benchmark",
+      "source": "assets/story/chapters/c01/panels/c01-s01-m02-male.webp",
+      "originalSha256": "e70901415a751b576a00dcac34f93065051b3513b875f58546533f59ccfee71d",
+      "submittedSha256": "a6602427e7fde9cda0e99dd5511998682513154a72c029a190abd5e74786eca2",
+      "actualBytes": 247193,
+      "pixels": [
+        480,
+        270
+      ]
+    }
+  ],
+  "imageSha256": "861cee7da7b347a8208282de99f6468e9bdfe2ab63356f98e0a3fdf13f88d056",
+  "nativePixels": [
+    1024,
+    576
+  ],
+  "imageBytes": 195240,
+  "model": "@cf/black-forest-labs/flux-2-klein-4b",
+  "seed": 99845005,
+  "promptSha256": "ade36b1c1b02535907176f2a376125871605e048b1e1f81d3b8fc18f7af2dabc",
+  "estimatedNeurons": 109.57,
+  "visuallyApproved": false,
+  "formallyRegistered": false,
+  "gameDeployed": false
+}
