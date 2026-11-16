@@ -908,7 +908,8 @@ import {selectTownNpcClip,createTownNpcProceduralPose} from './src/town-npc-moti
 import {attachTownCivilianHead,townHeadSourceForSex} from './src/town-civilian-head.js';
 import {TOWN_ADULT_HEIGHT,TOWN_BODY_RADIUS,TOWN_HEIGHT_LIMIT,TOWN_SCENE_MODE,townVisualCorrection,townCapsuleClear,townCameraOccluders} from './src/town-scene-policy.js';
 import {STARTER_TOWN} from './src/starter-town.js';
-import {createCharacter} from './src/character-system/shared-character-runtime.js?v=4.6.36';
+import {createCharacter} from './src/character-system/shared-character-runtime.js?v=20261116-skills';
+import {createHeroProductionRecipe,heroProductionActionCue,HERO_VARIANT_COUNT} from './src/hero-production-character-factory.js?v=20261116-swap1';
 import {buildRiggedJobOutfit} from './src/character-system/rigged-outfit-runtime.js?v=4.6.15';
 import {batchStaticStageDecorations} from './src/stage-static-instancing.js?v=4.6.36';
 import {batchStaticBuildingShells} from './src/stage-building-instancing.js?v=2';
@@ -2460,6 +2461,17 @@ function motionDiagnosticReport(){
  }
  return 'T字・モーション・衣装診断（'+BATTLE_SIZE+'体）\n'+[...byJob].map(([job,v])=>job+'：正常再生 '+v.active+'/'+v.total+'、衣装 '+v.dressed+'/'+v.total+'、モデル未準備 '+v.missing).join('\n')+'\n\n問題候補（最大30件）\n'+(issues.slice(0,30).join('\n')||'再生状態・衣装読み込みの異常は未検出')+'\n※姿勢と衣装のフィット具合は別途目視確認が必要';
 }
+window.getHeroProductionSwapStatus=()=>({
+ recipeVersion:'hero-production-v1',availableVariants:HERO_VARIANT_COUNT,
+ riggedActors:actors.filter(a=>!!a.masterRecipe&&!!a.character).length,
+ dressedActors:actors.filter(a=>!!a.masterRecipe&&!!a.outfit).length,
+ faceHeroPrototypeRigged:false,photoMasterGeometrySwapped:false,
+ jobs:[...new Set(actors.map(a=>a.masterRecipe?.jobId).filter(Boolean))],
+ rarities:[...new Set(actors.map(a=>a.masterRecipe?.rarity).filter(Boolean))],
+ sexes:[...new Set(actors.map(a=>a.masterRecipe?.sex).filter(Boolean))],
+ ages:[...new Set(actors.map(a=>a.masterRecipe?.ageBand).filter(Boolean))],
+ outfitFailures:actors.filter(a=>a.outfitError).map(a=>({id:a.id,error:a.outfitError}))
+});
 window.getBattleWardrobeReport=()=>({
  version:'4.6.69',total:massSim?.units.length||actors.length,riggedActors:actors.length,equipped:actors.filter(a=>a.outfit).length,realInstancedGroups:massRenderer?.drawMeshes||0,sourceParts:massRenderer?.sourceParts||0,
  failures:actors.filter(a=>a.outfitError).map(a=>({id:a.id,job:a.job.name,error:a.outfitError})),
@@ -2507,8 +2519,16 @@ function requestMotion(a,state,visualOnly=false){
  if(!massSim&&!TOWN_MODE)state=skirmishTravelMotion(state,{
   floorPhase:a.floorTravel?.phase,stealth:a.stealthMovement===true});
  const prior=motionState.get(a.id);if(prior===state)return;
- if(!visualOnly&&['jump','guard','hit','dead','skill'].includes(state))actionVfx.emit(state==='dead'?'death':state==='skill'?'magic':state,
-  {position:a.root.position,job:a.job.name,magic:a.job.name==='魔法使い'?'fire':'arcane'});
+ if(!visualOnly&&['jump','guard','hit','dead','skill'].includes(state)){
+  const cue=heroProductionActionCue(a.masterRecipe,state);
+  // Transplanted studio action cues use the EXISTING bounded VFX pool:
+  // spells/heals, sword ultimates, fist combos, guards and ranged aim.
+  actionVfx.emit(cue?.action??(state==='dead'?'death':state==='skill'?'magic':state),
+   {position:a.root.position,job:a.job.name,
+    magic:cue?.element==='physical'?'arcane':cue?.element||
+     (a.job.name==='魔法使い'?'fire':'arcane'),
+    scale:cue?.scale||1});
+ }
  if(!visualOnly&&state==='run'&&prior!=='run')battleAudio.cue('run',a);
  if(!visualOnly&&state==='idle'&&prior!=='idle')battleAudio.speakAction(a,'待機');
  if(!visualOnly&&state==='walk'&&prior!=='walk')battleAudio.speakAction(a,'歩行');
@@ -3135,7 +3155,10 @@ for(let team=0;team<2;team++)for(let i=0;i<TEAM_SIZE;i++){
  const actor={id:team*TEAM_SIZE+i,team,job,monsterSpec,jobId:combatJobId(job.name),rarity:storyUnit?.rarity||(i%13===0?'UR':i%3===0?'R':'N'),root,cell,nextCell:null,defeated:false,hp:job.hp,maxHp:job.hp,mp:COMBAT_RULES.maxMp,maxMp:COMBAT_RULES.maxMp,speed:job.speed,jumpY:job.jumpY,jumping:false,attackTimer:Math.random()*2,thinkTimer:Math.random()*.4,order:null,targetId:null,home:pos.clone(),velocity:new THREE.Vector3(),walkPhase:0,
   squadId:storyUnit?.squadId??Math.floor(i/Math.max(10,Math.ceil(TEAM_SIZE/5))),sourceSquadId:storyUnit?.sourceSquadId??storyUnit?.squadId,
   commanderId:storyUnit?.commanderId??'provisional',armyGroupId:storyUnit?.armyGroupId??null,
-  formationBaseStats:withoutFormation,isStrategist:Boolean(storyUnit?.isStrategist),isPlayerHero:Boolean(storyUnit?.isPlayerHero)};
+  formationBaseStats:withoutFormation,isStrategist:Boolean(storyUnit?.isStrategist),isPlayerHero:Boolean(storyUnit?.isPlayerHero),
+  appearanceOptions:storyUnit?{gender:storyUnit.gender,ageBand:storyUnit.ageBand,
+   bodyType:storyUnit.bodyType,faceId:storyUnit.faceId,hairStyle:storyUnit.hairStyle,
+   hairColor:storyUnit.hairColor}:null};
  if(storyUnit?.isStrategist){
   actor.displayName=storyRequest?.commanders?.find(c=>String(c.id)===String(actor.commanderId))?.name||'軍師';
   actor.job={...job,name:'軍師',role:'support',damage:0};
