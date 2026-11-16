@@ -146,6 +146,38 @@ for(const id of remeshed){
     assert.ok(Math.abs(limb.position.y-(id==='m004'&&key.startsWith('rear')?-.54:.55))<.0001,
       id+' hip height must be adjusted along with limb length');
   }
+  if(id==='m001'){
+    const front=model.userData.pivots.legfrontL;
+    const rear=model.userData.pivots.legrearL;
+    assert.ok(Math.abs(front.position.x)>=.39,
+      'm001 forelegs must attach to the shoulder flank, not front underside');
+    assert.ok(Math.abs(rear.position.x)>=.31,
+      'm001 hind legs must emerge from the lateral waist');
+    assert.ok(front.position.x*rear.position.x>0,
+      'm001 legs must preserve left/right side axes with no outward twist');
+    const top=meshes.find(m=>m.name==='beast-upper-limb-frontL');
+    const lower=meshes.find(m=>m.name==='beast-shin-frontL');
+    const crossWidth=mesh=>{
+      const a=mesh.geometry.getAttribute('position');let max=0;
+      for(let k=0;k<a.count;k++)max=Math.max(max,Math.abs(a.getX(k)));
+      return max;
+    };
+    assert.ok(crossWidth(top)<.16,
+      'm001 upper forelegs must be visibly slimmer than the old bulky legs');
+    assert.ok(crossWidth(lower)<.125,
+      'm001 shins must taper without bloated fur cuffs');
+    const eyes=meshes.filter(m=>m.name==='eye');
+    assert.equal(eyes.length,2);
+    assert.ok(eyes.every(m=>Math.abs(m.position.x)<.27&&m.position.z>.30),
+      'm001 pupils/irises must be close-set on the skull front, not far apart');
+    assert.equal(meshes.filter(m=>m.name.startsWith('m001-eyebrow-ridge-')).length,2,
+      'm001 needs two anatomical brow ridges');
+    const mane=model.userData.pivots.head.children.filter(
+      m=>m.isMesh&&m.userData.wolfKingMane);
+    assert.ok(mane.length>=2,'m001 dense mane must follow its animated skull');
+    assert.ok(mane.reduce((n,m)=>n+(m.userData.furStrands||0),0)>1000,
+      'm001 lion-like under-jaw and cheek mane needs dense, longer fur');
+  }
   const keratin=meshes.filter(m=>m.userData.rootedKeratin);
   assert.ok(keratin.length>=11,id+' must have physically curved dorsal horns and canines');
   assert.equal(meshes.filter(m=>m.name==='beast-pupil').length,2,
