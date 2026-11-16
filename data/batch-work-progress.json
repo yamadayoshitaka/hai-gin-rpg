@@ -61,16 +61,16 @@
     },
     "monster": {
       "source": "ChatGPT 定期タスクの実行結果",
-      "lastRunAt": "2026-11-16T03:07:22Z",
-      "subject": "m020海竜の左右感覚ヒゲを新規実メッシュ・可動構造で追加（WIP）",
-      "summary": "monster ON。PR #426ブランチでm020に左右のテーパー付き感覚ヒゲの独立BufferGeometryと揺動ピボットを追加。実ソースSHA 6b1f3c41、チェックポイント64d9def8。今回実造形ソース改修1ID、再生成GLB0、WebGL描画QA合格0、ゲーム反映0。108ID全数監査・Node構文/Android実測は未実施。保護対象変更なし。mainマージ・公開なし。",
+      "lastRunAt": "2026-11-16T13:12:44+09:00",
+      "subject": "m048海蛇の独立した左右鰓弓メッシュ追加・既存PRのCI失敗原因確認",
+      "summary": "monster ON。PR #426作業ブランチにm048の左右4対の湾曲鰓弓・独立可動鰓室を実ソース追加し4a660de8コミット。m020/m048はV8構文コンパイル合格（実描画QAではない）。既存PR headのBattle visual E2E run 43796313538はfailure、8ケース失敗（photoSurfaces fur、CC0 source procedural期待、UIタイムアウト等）。GLB再生成0、対象別WebGL描画QA合格0、Android未計測、ゲーム採用0。全108ID正本照合未完了。mainマージ・公開なし。",
       "status": "work_incomplete",
       "carryover": true,
-      "nextAction": "m020感覚ヒゲとm048側線の構文/前後左右WebGL QAを実施。正本108IDの全数監査、原型GLB/LOD生成、Android計測、ゲーム・マスター画面接続を進める。未検証のためマージ禁止。",
+      "nextAction": "PR #426 Battle visual E2Eの8失敗を原因別に修正（photoSurfaces・source・UIタイムアウト）、m020/m048の前後左右WebGL実画像とAndroid FPSを検証。正本108ID全件走査、GLB/LOD生成・ゲーム採用を別途検証。保護対象不変更。",
       "steps": {
         "launch": "done",
         "code": "done",
-        "qa": "pending",
+        "qa": "failed",
         "commit": "done",
         "pr": "done",
         "merge": "pending",
@@ -78,31 +78,36 @@
       },
       "evidence": [
         {
-          "label": "m020実造形ソース修正",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/6b1f3c414d522da7892e0e16407b5a675eaad7f9"
+          "label": "m048湾曲鰓弓の実ソースコミット",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/4a660de80f36528937ae7f6ea1c837cb889e61a6"
         },
         {
           "label": "Draft PR #426",
           "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/426"
         },
         {
-          "label": "途中チェックポイント",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/64d9def84cc135854b1bcc34bcc66df8b7489edd"
+          "label": "チェックポイント",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/0bc3dcf638e50ec982c06c4638042132803ac656"
+        },
+        {
+          "label": "Battle visual E2E失敗",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/43796313538"
         }
       ],
       "operational": {
+        "blockers": [
+          "Battle visual E2E 8件失敗。fur photoSurfaces期待、CC0 source判定、UI/ロード待機タイムアウト等",
+          "m020/m048の前後左右WebGL実画像とAndroid性能未検証",
+          "正本108ID全数監査・原型GLB/LOD再生成・ゲーム採用未完了"
+        ],
+        "speedPlan": "既存PR #426のCI失敗8件を先に修正し、m020/m048の実描画・Android QAを通す。新しい同族IDの実メッシュ再構成は品質ゲートに合わせて追加する。",
         "lastRunOutcome": {
           "newSourceChangedIds": 1,
           "newQAPassed": 0,
           "newGameAppliedIds": 0,
+          "newSourceCommits": 1,
           "newGeneratedGLBs": 0
-        },
-        "blockers": [
-          "m020のソース造形変更のみで実GLB再生成0",
-          "m020・m048のWebGL前後左右確認とAndroid計測未実施",
-          "旧 nonhuman-3d-refinement-15m.yml の自動造形ジョブが if:false で無効。別のChatGPT定期回帰とは別経路"
-        ],
-        "speedPlan": "m020・m048を同じ族群QAでまとめて確認→同系統数体を1つのメッシュ生成器で更新→原型/LOD・ゲーム/マスター反映を別カウント。旧無効ジョブの成功を成果に数えない。保護m005/m006は改変禁止。"
+        }
       }
     },
     "world": {
