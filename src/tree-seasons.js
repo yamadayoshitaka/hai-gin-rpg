@@ -1,4 +1,4 @@
-import {OBJECT_CATALOG,createCatalogObject} from './object-catalog.js?v=castle-pillars-45';
+import {OBJECT_CATALOG,createCatalogObject} from './object-catalog.js?v=world60-20261117';
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {GLTFExporter} from 'three/addons/exporters/GLTFExporter.js';
