@@ -15,6 +15,12 @@ on:
       - 'src/building-structure.js'
       - 'src/room-item-registry.js'
       - 'src/battle-squad-intent.js'
+      - 'src/targeted-strategy-runtime.js'
+      - 'src/battle-ai-decision-index.js'
+      - 'src/battle-zoom-squad-badge.js'
+      - 'src/battle-target-highlight.js'
+      - 'qa/battle-ai-target-highlight-zoom.test.mjs'
+      - 'qa/central-battle-orders.test.mjs'
       - 'qa/battle-riding-chest-floor-ui.test.mjs'
       - 'qa/mass-battle-parity-diagonal.test.mjs'
       - 'qa/mass-interior-unified-command-effects.test.mjs'
@@ -68,6 +74,8 @@ jobs:
           node qa/gpu-run-grounding-regression.test.mjs
           node qa/skirmish-dash-default.test.mjs
           node qa/skirmish-realtime-tempo.test.mjs
+          node qa/battle-ai-target-highlight-zoom.test.mjs
+          node qa/central-battle-orders.test.mjs
           node qa/mass-dash-parity.test.mjs
           node qa/damage-number-distance-gait.test.mjs
           node qa/mass-upper-floor-pursuit-quality.test.mjs
