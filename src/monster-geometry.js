@@ -531,28 +531,19 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
      [.145,.045,.088],{name:'m002-rhinarium'});
  }
  if(s.id==='m001'){
-   // Species m001 cranial remesh: cheek musculature, brow, nasal cartilage.
-   // The beard and lion-like mane grow from a tapered real under-jaw mass,
-   // not a loose collection of hair ribbons floating below a bare skull.
-   g.bridge(faceCore,'skin',[0,.062,-.18],[0,-.03,.38],.188,.113);
-   g.bridge(head,'skin',[0,-.118,-.138],[0,-.325,-.218],.229,.158);
-   for(const side of [-1,1])
-     g.bridge(head,'skin',[side*.168,-.080,-.091],
-       [side*.174,-.284,-.157],.135,.088);
-   for(const side of [-1,1]){
-     g.bridge(faceCore,'skin',[side*.19,-.035,-.055],[side*.27,-.125,.24],.142,.082);
-     if(!beastRemesh)g.sphere(head,'shadow',[side*.308,.092,.277],[.023,.017,.090],{rough:.78});
-     // Temporal fascia narrows toward the new closer-set eyebrow.
-     g.tube(faceCore,'skin',[[side*.21,.12,-.055],[side*.255,.155,.105],
-        [side*.268,.169,.213]],.021);
-     for(let j=0;j<3;j++)
-       g.sphere(head,'shadow',[side*(.149+j*.025),-.191,muzzle+.12+j*.035],
-         [.006,.006,.008],{rough:.82});
-   }
-   // The m001 nose cartilage is now sculpted into the single continuous
-   // rhinarium loft above; suppress the former oversized spherical overlay.
+   // Skull, cheeks and forehead are now ONE sculpted axial shell above.
+   // The only supplemental mass is the *rear* throat/mane anchor, hidden
+   // beneath the fur. No extra face sphere or tubular cheek shell.
+   g.axialLoft(head,'skin',[
+     {z:.13,y:-.115,rx:.126,ry:.112},
+     {z:-.08,y:-.158,rx:.233,ry:.184},
+     {z:-.27,y:-.214,rx:.277,ry:.246},
+     {z:-.49,y:-.252,rx:.214,ry:.189},
+     {z:-.63,y:-.266,rx:.081,ry:.089}
+   ],{name:'m001-ruff-root-tissue',rough:.97,ribbing:.012});
  }
- const jaw=g.group('jaw',[0,beastRemesh?1.160:1.42,beastRemesh?1.046:.96]);
+ const jaw=g.group('jaw',[0,beastRemesh?1.160:1.42,
+   s.id==='m001'?.915:beastRemesh?1.046:.96]);
  if(s.id==='m002'){
    // An independently opening lower mandible, with the canine teeth
    // mounted on the same jaw pivot (not left floating in the skull).
@@ -566,7 +557,14 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
  }
  if(beastRemesh){
    // Continuous lower mandible with chin narrowing, not two stacked spheres.
-   g.axialLoft(jaw,'skin',[
+   g.axialLoft(jaw,'skin',s.id==='m001'?[
+     // Real short muzzle: moving lower jaw matches the compact nose.
+     {z:.212,y:-.061,rx:.037,ry:.026},
+     {z:.173,y:-.053,rx:.082,ry:.041},
+     {z:.117,y:-.044,rx:.115,ry:.057},
+     {z:.036,y:-.031,rx:.132,ry:.070},
+     {z:-.108,y:-.012,rx:.083,ry:.066}
+   ]:[
      {z:.335,y:-.066,rx:.077,ry:.042},
      {z:.279,y:-.057,rx:.148,ry:.057},
      {z:.186,y:-.045,rx:.184,ry:.065},
@@ -582,20 +580,35 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
  // Keep both surfaces slightly overlapping in the idle pose.
  const jawOffsetZ=.26-v*.06;
  for(const side of [-1,1]){
-   g.tube(head,'shadow',[
+   g.tube(head,'shadow',s.id==='m001'?[
+     [side*.112,-.149,.11],
+     [side*.106,-.176,.260],
+     [side*.068,-.184,.377]
+   ]:[
      [side*.205,-.192,.135],
      [side*.204,-.200,muzzle+.025],
-     [side*.155,-.214,muzzle+.263]],.012);
-   g.tube(jaw,'shadow',[
+     [side*.155,-.214,muzzle+.263]
+   ],s.id==='m001'?.007:.012);
+   g.tube(jaw,'shadow',s.id==='m001'?[
+     [side*.117,-.030,-.074],
+     [side*.103,-.055,.057],
+     [side*.067,-.059,.205]
+   ]:[
      [side*.200,-.052,.135-jawOffsetZ],
      [side*.198,-.061,muzzle+.025-jawOffsetZ],
-     [side*.153,-.065,muzzle+.263-jawOffsetZ]],.013);
+     [side*.153,-.065,muzzle+.263-jawOffsetZ]
+   ],s.id==='m001'?.007:.013);
  }
  g.sphere(jaw,'shadow',[0,-.035,muzzle-.18+v*.06],
-   [.136,.018,.145],{name:'quadruped-oral-cavity'});
+   s.id==='m001'?[.096,.012,.067]:[.136,.018,.145],
+   {name:'quadruped-oral-cavity'});
  g.sphere(jaw,'light',[0,-.044,muzzle-.12+v*.06],
-   [.084,.014,.098],{name:'quadruped-tongue'});
- for(let i=0;i<4;i++)g.spike(jaw,'bone',[(i-1.5)*.12,.01,.27],[(i-1.5)*.12,-.10,.29],.025);
+   s.id==='m001'?[.060,.010,.058]:[.084,.014,.098],
+   {name:'quadruped-tongue'});
+ for(let i=0;i<4;i++)g.spike(jaw,'bone',
+   [(i-1.5)*(s.id==='m001'?.066:.12),.01,s.id==='m001'?.16:.27],
+   [(i-1.5)*(s.id==='m001'?.066:.12),-.10,s.id==='m001'?.175:.29],
+   s.id==='m001'?.019:.025);
  for(const side of [-1,1])for(const fore of [-1,1]){
    const name=(fore===1?'front':'rear')+(side<0?'L':'R');
    // Former limb pivot at y=1.13 kept all four feet half a metre above
