@@ -9,6 +9,7 @@ import {nonhumanMonsterStage} from './nonhuman-model-quality.js';
 import {realismPaletteFor} from './monster-realistic-palettes.js?v=4.5.03';
 import {createMonsterAnatomicalLoft} from './monster-realistic-loft.js?v=4.4.99';
 import {createCreatureGumSocketGeometry,createCreatureFittedHemGeometry} from './creature-seam-geometry.js';
+import {createRootedCreatureHornGeometry} from './creature-anatomy-mesh.js';
 import {creatureFaceVolume} from './creature-face-volume.js';
 import {buildCanineFurRibbonGeometry} from './canine-fur-ribbons.js?v=4.4.89';
 import {decorateMonsterPhotoMaterial,detachMonsterPhotoMaterial} from './monster-photo-pbr.js?v=4.4.95';
@@ -267,6 +268,56 @@ export function createSculpture(spec,detail='high'){
    mesh.userData.proceduralSource=true;
    return mesh;
  };
+ /** Anatomical quadruped muscle surface, in existing articulated joint space.
+  * No disconnected sphere at the elbow, hock or shoulder. Each mesh is a
+  * continuous variable-section skin shell and follows its owning pivot.
+  */
+ const limbLoft=(parent,shade,stations,{name='beast-anatomical-limb'}={})=>{
+   if(!Array.isArray(stations)||stations.length<3||stations.some((p,i)=>
+     !['x','y','z','rx','rz'].every(k=>Number.isFinite(p[k]))||
+     p.rx<=0||p.rz<=0||(i&&stations[i-1].y<=p.y)))
+     throw Error('Malformed anatomical limb cross sections');
+   const radial=detail==='source'?48:detail==='high'?28:detail==='medium'?20:10;
+   const rows=detail==='source'?8:detail==='high'?5:3;
+   const vertices=[],uv=[],idx=[];
+   for(let i=0;i<stations.length-1;i++)for(let row=0;row<rows;row++){
+     const a=stations[i],b=stations[i+1],t=row/rows,
+       u=t*t*(3-2*t),mix=k=>a[k]*(1-u)+b[k]*u;
+     const x=mix('x'),y=mix('y'),z=mix('z'),rx=mix('rx'),rz=mix('rz');
+     for(let j=0;j<=radial;j++){
+       const theta=j/radial*Math.PI*2;
+       const muscle=1+.035*Math.cos(theta*3)*Math.sin(Math.PI*(i+u)/(stations.length-1));
+       vertices.push(x+Math.cos(theta)*rx*muscle,y,z+Math.sin(theta)*rz*muscle);
+       uv.push(j/radial,(i+u)/(stations.length-1));
+     }
+   }
+   const last=stations[stations.length-1];
+   for(let j=0;j<=radial;j++){
+     const a=j/radial*Math.PI*2;
+     vertices.push(last.x+Math.cos(a)*last.rx,last.y,last.z+Math.sin(a)*last.rz);
+     uv.push(j/radial,1);
+   }
+   for(let i=0;i<(stations.length-1)*rows;i++)for(let j=0;j<radial;j++){
+     const a=i*(radial+1)+j,b=a+radial+1;
+     idx.push(a,b,a+1,a+1,b,b+1);
+   }
+   const geo=new THREE.BufferGeometry();
+   geo.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));
+   geo.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
+   geo.setIndex(idx);geo.computeVertexNormals();geo.computeBoundingSphere();
+   const mesh=own(attach(parent,geo,shade,{name,rough:.86,metal:0}));
+   mesh.userData.anatomicalLimb=true;
+   return mesh;
+ };
+ /** Buried curved horn/ivory root with continuous ridged tapered skin. */
+ const curvedHorn=(parent,shade,rootPoint,elbow,tip,radius,{name='beast-keratin'}={})=>{
+   const geo=createRootedCreatureHornGeometry({
+     root:rootPoint,elbow,tip,radius,detail:detail==='low'?'low':'high'
+   });
+   const mesh=own(attach(parent,geo,shade,{name,rough:.49,metal:0}));
+   mesh.userData.rootedKeratin=true;
+   return mesh;
+ };
  const anatomicalLoft=(parent,shade,rings,{name='realistic-anatomical-mesh',
    kind='torso',asymmetry=0}={})=>{
    const mesh=own(attach(parent,createMonsterAnatomicalLoft(rings,
@@ -454,7 +505,7 @@ export function createSculpture(spec,detail='high'){
  };
  root.userData.detail=detail;
  return {root,pivots,group,sphere,rock,bone,spike,rootedSpike,seamHem,tube,bridge,
-   axialLoft,anatomicalLoft,fur,skinnedFur,bandage,fin,eyes,claws,ring,fine,colors};
+   axialLoft,limbLoft,curvedHorn,anatomicalLoft,fur,skinnedFur,bandage,fin,eyes,claws,ring,fine,colors};
 }
 export function disposeMonsterSculpture(model){
  if(!model)return;
