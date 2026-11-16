@@ -86,7 +86,7 @@ import {storyCastForChapter} from './src/story-cinematic.js';
 import {createMangaViewer} from './src/story-manga-viewer.js';
 import {createGamePageAudio} from './src/game-page-audio.js';
 import {continentForChapter,continentMapUrl,continentStagePoints} from './src/continent-campaign.js';
-import {narrativeForStage} from './src/chapter-story-events.js';
+import {STORY_STAGE_BEATS} from './src/story-stage-beats-v2.js';
 import {TERRITORIES,FACTIONS} from './src/story-campaign.js';
 import {CAMPAIGN_STAGES,CAMPAIGN_STAGE_BY_ID,STAGE_KINDS,chapterAvailable,stagesInChapter,stageUnlocked,stageDeploymentLimit} from './src/campaign-stage-plan.js';
 import {loadGame,persistSession,stageAtTown,selectCampaignStage,validGame} from './src/game-core-flow.js';
@@ -234,8 +234,9 @@ function render(){
  $('clearCount').textContent=game.completedStages.length+' / 200';
  $('summary').textContent=game.playerName+'の軍団　'+game.campaign.squads.reduce((n,s)=>n+s.count,0)+'人';
  const continent=continentForChapter(chapter);
- const sceneNarrative=narrativeForStage(CAMPAIGN_STAGE_BY_ID[selected]);
- $('continentLore').textContent='【'+continent.name+'・'+continent.regionName+'／'+continent.arc+'】'+sceneNarrative.scene+'　'+sceneNarrative.consequence+'　主要人物：'+storyCastForChapter(chapter).map(p=>p.name).join('・');
+ const selectedBeatStage=CAMPAIGN_STAGE_BY_ID[selected];
+ const currentSceneSetup=STORY_STAGE_BEATS[chapter-1][Math.max(0,(selectedBeatStage?.slot||1)-1)][0];
+ $('continentLore').textContent='【'+continent.name+'・'+continent.regionName+'／'+continent.arc+'】'+currentSceneSetup+'　主要人物：'+storyCastForChapter(chapter).map(p=>p.name).join('・');
  const stages=stagesInChapter(chapter);
  $('stageGrid').innerHTML=stages.map(stage=>{
   const cleared=game.completedStages.includes(stage.id),unlocked=stageUnlocked(stage,game.completedStages);
