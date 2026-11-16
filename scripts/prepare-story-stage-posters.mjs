@@ -153,7 +153,7 @@ function shotAssignmentFor(stageId,edition,gender,panel){
   assignment.scriptText!==(panel.subtitleText||panel.text)||
   assignment.speaker!==(panel.speaker||'語り手')||
   assignment.noInImageText!==true||assignment.requiresRealReferenceImageBytes!==true)
-  throw Error('P0 screenplay/cast assignment mismatched: '+key);
+  throw Error('P0 screenplay/cast assignment mismatched: '+key+' '+JSON.stringify({expectedText:assignment.scriptText,actualText:panel.subtitleText||panel.text,expectedSpeaker:assignment.speaker,actualSpeaker:panel.speaker,expectedPanelId:assignment.panelId,actualPanelId:panel.id,expectedEdition:assignment.edition,actualEdition:edition,expectedGender:assignment.gender,actualGender:gender}));
  const visible=assignment.visibleActorIds;
  if(!Array.isArray(visible)||!Array.isArray(assignment.supportActorIds)||
   !Array.isArray(assignment.mustNotAppearActorIds)||
