@@ -169,12 +169,19 @@ function fittedScalpSurface(model,bone,headBounds){
   // Preserve outward winding without allocating a temporary index array for
   // every scalp triangle (all hairstyles share this hot regeneration path).
   const reverse=outward<0;
+  // Unwrap the cylindrical UV seam within each triangle. Otherwise a
+  // triangle crossing -PI/+PI interpolates across the entire fiber texture,
+  // leaving a conspicuous dark streak on the rear crown.
+  const corners=reverse?[a,c,b]:[a,b,c];
+  const u0=.5+Math.atan2(local[corners[0]*3]-center.x,local[corners[0]*3+2]-center.z)/(Math.PI*2);
   for(let corner=0;corner<3;corner++){
-   const v=corner===0?a:corner===1?(reverse?c:b):(reverse?b:c);
+   const v=corners[corner];
    const x=local[v*3],y=local[v*3+1],z=local[v*3+2];
    triangles.push(x,y,z);
-   uv.push(.5+Math.atan2(x-center.x,z-center.z)/(Math.PI*2),
-    Math.max(0,Math.min(1,(y-threshold)/Math.max(.01,headBounds.max.y-threshold))));
+   let u=.5+Math.atan2(x-center.x,z-center.z)/(Math.PI*2);
+   if(u-u0>.5)u-=1;
+   else if(u-u0<-.5)u+=1;
+   uv.push(u,Math.max(0,Math.min(1,(y-threshold)/Math.max(.01,headBounds.max.y-threshold))));
   }
  }
  if(triangles.length<90)return null;
