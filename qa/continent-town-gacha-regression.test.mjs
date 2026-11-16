@@ -83,14 +83,23 @@ assert.match(hubHtml,/hai-gin-town-npc/);
 assert.match(worldHtml,/continentMapUrl\(chapter\)/);
 assert.match(worldHtml,/const current=CAMPAIGN_STAGE_BY_ID\[selected\]/,
  'Current location label must follow chapter-selected stage rather than old saved stage');
-assert.match(worldHtml,/CAMPAIGN_STAGE_BY_ID\[selected\]\?\.territoryId===t\.id/,
- 'Chapter 1 territory location marker must use the currently selected stage');
-assert.match(worldHtml,/selected===stage\.id\?'current-location '/,
- 'Chapter 2 onward current location marker must be visible on the selected stage');
+const worldPins=worldHtml.slice(worldHtml.indexOf('function renderPins(){'),
+ worldHtml.indexOf('function renderStoryEndingControls(){'));
+assert.ok(worldPins.startsWith('function renderPins(){'),'Shared 20-chapter map pin function must exist');
+assert.match(worldPins,/TERRITORIES\.map\(t=>/,
+ 'Every chapter renders all 12 canonical location labels, not ten map-stage numbers');
+assert.match(worldPins,/const focus=CAMPAIGN_STAGE_BY_ID\[selected\]\?\.territoryId/,
+ 'Current chapter and selected region determine the location highlight');
+assert.match(worldPins,/focus===t\.id\?'current-location'/,
+ 'Chapter focus must highlight its matching named territory');
+assert.doesNotMatch(worldPins,/chapter===1|data-stage-pin|stage-pin|🔒|\.map\(stage|locked/,
+ 'No chapter-specific branch, stage numbers or padlock pins are allowed on the world map');
+assert.equal(new Set(Array.from({length:20},(_,i)=>continentMapUrl(i+1))).size,1,
+ 'World map artwork is identical in all 20 chapters');
 assert.match(worldHtml,/renderPins\(\);\s*updateCurrentLocation\(\);/,
  'Changing chapters and stage selections must refresh the location banner');
 assert.doesNotMatch(worldHtml,/const current=CAMPAIGN_STAGE_BY_ID\[game\.stage\]\|\|/,
  'Do not leave the old, fixed Chapter 1 location label in place');
 assert.ok(MODEL_FIRST_CATALOG.civilianMale.url);
 assert.ok(MODEL_FIRST_CATALOG.civilianFemale.url);
-console.log('20 continents, 200 stages, gacha, citizens, dialogue, fences/flowers: PASS');
+console.log('1 continent, 12 always-visible location labels in 20 chapters, 200 stages, gacha, citizens and props: PASS');
