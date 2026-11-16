@@ -22,7 +22,7 @@ import {fitShieldAheadOfForearm,SHIELD_FOREARM_CLEARANCE_METERS}
  from './shield-forearm-fit.js?v=20261116-armclear1';
 import {normalizeOutfitRarity,outfitRarityFinish} from './outfit-rarity-policy.js?v=4.4.47';
 import {protectFaceSkin} from './skin-face-protection.js?v=4.4.89';
-import {deriveGarmentCoverage,clipBodyToGarment,originalSkinGeometry} from './garment-coverage-runtime.js?v=41';
+import {deriveGarmentCoverage,clipBodyToGarment,originalSkinGeometry} from './garment-coverage-runtime.js?v=20261117-closedtorso2';
 
 // The original humanoid is preserved in the reversible skin cache, but
 // opaque trousers must hide the covered visible skin while worn.
