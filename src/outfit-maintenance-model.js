@@ -173,9 +173,15 @@ export function createDetailedOutfit(job, sex, body, textures, {quality='preview
     // chest. The old centerline-only Z estimate suspended plates at the ribs
     // while cutting into the pectorals when the character turned sideways.
     const band=torsoSamples.filter(([px,py])=>Math.abs(py-y)<H*.069&&Math.abs(px-x)<sx*.20);
-    const eligible=band.length>=9?band:torsoSamples.filter(([,py])=>Math.abs(py-y)<H*.077);
+    // When the slice is sparse, sample nearest X/Y points, not an entire
+    // torso-width band. The former fallback produced plate-size rear slabs.
+    // This runs only once during garment construction, never in the frame loop.
+    const eligible=band.length>=9?band:torsoSamples
+      .map(p=>({p,d:Math.hypot((p[0]-x)/sx,(p[1]-y)/(H*.18))}))
+      .sort((a,b)=>a.d-b.d).slice(0,24)
+      .filter(entry=>entry.d<1.25).map(entry=>entry.p);
     const z=eligible.map(p=>p[2]).sort((a,b)=>a-b);
-    return z.length>10?z[Math.floor((z.length-1)*(back?.08:.92))]:mz+(back?-1:1)*sz*.69;
+    return z.length>=9?z[Math.floor((z.length-1)*(back?.08:.92))]:mz+(back?-1:1)*sz*.69;
   }
   // The Superhero face points +Z; decorations must remain against that skin.
   const front=surfaceAt(cy-H*.09)+H*.008;
