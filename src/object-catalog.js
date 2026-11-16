@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import {tuneWorldQualityMaterial} from './world-quality-pbr.js';
+import {constructGradedEntryDoor} from './world-graded-entry-doors.js';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {createCatalogBuildingStructure,renderCatalogBuildingStructure,renderSpiralStairBOM} from './building-structure.js?v=4.6.28';
 
@@ -198,19 +199,10 @@ export function createObjectById(id,{cellSize=2.2}={}){
    root.userData.floorCount=structure.floors.length;
   }else{
    const level=definition.lockLevel,c=cellSize;
-   const width=(level===5?2.5:1.65)*c,height=(level===5?2.8:2.05)*c;
-   const darkWood=new THREE.MeshStandardMaterial({color:level>=4?0x48392c:0x765038,roughness:.85});
-   const iron=new THREE.MeshStandardMaterial({color:level>=4?0x313c4a:0x55545a,metalness:.7,roughness:.38});
-   const ornament=new THREE.MeshStandardMaterial({color:level===5?0xd6bd7a:0x9f8e6c,metalness:.65,roughness:.4});
-   const add=(w,h,d,x,y,z,material,name)=>{const mesh=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material);mesh.position.set(x,y,z);mesh.castShadow=true;mesh.receiveShadow=true;mesh.name=name;root.add(mesh);return mesh};
-   add(width,height,.17*c,0,height/2,0,darkWood,'door_leaf');
-   for(const sign of [-1,1])add(.16*c,height+.16*c,.27*c,sign*(width/2+.07*c),(height+.16*c)/2,0,iron,'door_frame');
-   add(width+.36*c,.18*c,.30*c,0,height+.06*c,0,iron,'door_lintel');
-   for(let i=0;i<level;i++)add(width*.90,.055*c,.095*c,0,height*(i+1)/(level+1),.13*c,iron,'reinforcing_bar');
-   const ring=new THREE.Mesh(new THREE.TorusGeometry(.12*c,.03*c,8,20),ornament);
-   ring.name='door_handle';ring.position.set(width*.26,height*.51,.22*c);root.add(ring);
-   const keyhole=new THREE.Mesh(new THREE.CylinderGeometry(.048*c,.048*c,.028*c,12),ornament);
-   keyhole.name='key_level_'+level;keyhole.rotation.x=Math.PI/2;keyhole.position.set(width*.26,height*.39,.21*c);root.add(keyhole);
+   const wood=cottageMaterial('wood',level>=4?0xa58e76:0xffffff);
+   const iron=new THREE.MeshStandardMaterial({color:level>=4?0x343941:0x55545a,metalness:.72,roughness:.42});
+   const ornament=new THREE.MeshStandardMaterial({color:level===5?0xd6bd7a:0x9f8e6c,metalness:.68,roughness:.39});
+   constructGradedEntryDoor(THREE,root,{level,cellSize:c,wood,iron,ornament});
    root.userData.entryDoor={lockLevel:level,side:'south',entranceOnly:true};
   }
   root.userData.catalogId=id;
