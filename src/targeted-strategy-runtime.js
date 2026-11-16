@@ -3,6 +3,7 @@
  * Multiple methods can be combined and physical squads are shared without duplication.
  */
 import {STRATEGY_TREE,STRATEGY_METHODS} from './three-step-strategy-catalog.js';
+import {makeSelectableMapOverlay,isSelectableMapPoint} from './battle-target-highlight.js?v=20261116-map1';
 export const TARGETED_STRATEGY_KINDS=Object.freeze({
  charge:{label:'攻撃',type:'enemy'},defend:{label:'守備',type:'map'},
  hold:{label:'待機',type:'map'},retreat:{label:'退却',type:'map'},
@@ -44,6 +45,7 @@ export function createTargetedStrategyUi({
  getPlan,getEnemyTargets,getObjects,onExecute,onMapRequest,
  getAllyTargets=()=>[],getRadarTargets=()=>[],
  onMapPick=()=>false,getRadarCanvas=()=>null,getMapSize=()=>232,
+ getMapCellEligible=()=>true,
  getItems=()=>[],getTemplates=()=>[],onItemExecute=()=>false,onOpen=()=>{},onClose=()=>{}
 }){
  const panel=document.createElement('section');
@@ -54,7 +56,7 @@ export function createTargetedStrategyUi({
  let groupId='1',scope='group',step='scope',family='attack',intent='melee';
  let selectedSquads=new Set(),selectedMethods=new Set(),selectedTargets=new Set(),
   chosenItem=null,mapPoint=null,error='',preferredSquad=null;
- let radarHotspots=[];
+ let radarHotspots=[],mapTileOverlay=null;
  const b=(attr,label,active=false,disabled=false)=>button(attr,label,active,disabled);
  const planFor=(id=groupId)=>getPlan(String(id))||{squads:[],allowed:[]};
  const liveSquads=(p=planFor())=>(p.squads||[]).filter(s=>Number(s.soldiers)>0);
@@ -202,6 +204,9 @@ export function createTargetedStrategyUi({
    '<small class="centerMapCoords">'+esc(hint)+'</small>'+
    (mapPoint&&type()==='map'?'<small class="centerMapCoords">📍 指定地点 ('+mapPoint.x+', '+mapPoint.z+')</small>':'')+
    '<small class="centerMapLegend"><span class="g1">● 第1班（水色）</span><span class="g2">● 第2班（紫）</span><span class="g3">● 第3班（緑）</span> 🔴 敵　🟡 物　◎ 選択</small>'+
+    '<small class="centerMapCoords">'+(step==='target'&&!chosenItem&&type()==='map'?
+     '🟢 選択可能な地面　🔴 選択不可（水・崖・建物・障害物）':
+     '金色の二重輪＝今回の作戦で選択可能な対象')+'</small>'+
     '<small class="centerMapCoords">数字：班番号-分隊番号（例 2-3＝第2班の第3分隊）</small></div>';
  }
  function drawLargeRadar(){
@@ -212,6 +217,19 @@ export function createTargetedStrategyUi({
   const width=canvas.width,height=canvas.height,size=Math.max(1,Number(getMapSize())||232);
   ctx.fillStyle='#19394c';ctx.fillRect(0,0,width,height);
   if(radar)ctx.drawImage(radar,0,0,width,height);
+  // Paint actual selectable WALKABLE ground from the authoritative map.
+  // This is a single cached 232x232 CPU bitmap used only while paused.
+  if(step==='target'&&!chosenItem&&type()==='map'){
+   if(!mapTileOverlay){
+    const data=makeSelectableMapOverlay(size,getMapCellEligible);
+    const layer=document.createElement('canvas');layer.width=size;layer.height=size;
+    const layerCtx=layer.getContext('2d'),pixels=layerCtx.createImageData(size,size);
+    pixels.data.set(data.pixels);layerCtx.putImageData(pixels,0,0);
+    mapTileOverlay=layer;
+   }
+   ctx.save();ctx.imageSmoothingEnabled=false;
+   ctx.drawImage(mapTileOverlay,0,0,width,height);ctx.restore();
+  }
   const options=selectableRadarTargets(),eligible=new Set(options.map(x=>String(x.id)));
   const allyMeta=new Map(allSquadGroups().map(x=>[String(x.id),x]));
   const enemyMeta=new Map(getEnemyTargets().map((x,i)=>[String(x.id),i+1]));
@@ -253,9 +271,17 @@ export function createTargetedStrategyUi({
     ctx.strokeStyle='#a8c5d788';ctx.lineWidth=1;ctx.beginPath();
     ctx.moveTo(baseX,baseY);ctx.lineTo(px,py);ctx.stroke();
    }
+   // On the PAUSED radar, eligibility is more prominent than the team hue:
+   // gold concentric halo for valid targets, muted badges for unavailable.
+   ctx.save();ctx.globalAlpha=selectable?1:.42;
+   if(selectable){ctx.shadowColor='#ffe36d';ctx.shadowBlur=13;}
    ctx.fillStyle=color;ctx.beginPath();ctx.arc(px,py,selectable?13:9,0,Math.PI*2);ctx.fill();
-   ctx.strokeStyle=selected?'#fff6bc':selectable?'#edf8ff':'#173041';
-   ctx.lineWidth=selected?5:2;ctx.beginPath();ctx.arc(px,py,selected?16:selectable?14:10,0,Math.PI*2);ctx.stroke();
+   ctx.shadowBlur=0;ctx.strokeStyle=selected?'#fff6bc':selectable?'#ffed89':'#173041';
+   ctx.lineWidth=selected?5:selectable?3.5:2;ctx.beginPath();
+   ctx.arc(px,py,selected?17:selectable?16:10,0,Math.PI*2);ctx.stroke();
+   if(selectable){ctx.lineWidth=1.5;ctx.strokeStyle='#fff5c5';ctx.beginPath();
+    ctx.arc(px,py,21,0,Math.PI*2);ctx.stroke();}
+   ctx.restore();
    const n=group==='enemy'?'敵'+(enemyMeta.get(String(t.id))||''):
     group==='ally'?(meta?meta.groupId+'-'+meta.rank:'味'):'物';
    ctx.fillStyle='#09202d';ctx.font='bold 10px system-ui';ctx.textAlign='center';
@@ -296,12 +322,14 @@ export function createTargetedStrategyUi({
   scope=squadId==null?'group':'squad';preferredSquad=squadId==null?null:String(squadId);
   selectGroup(groupId);step='scope';family='attack';intent='melee';
   selectedMethods=new Set();selectedTargets=new Set();chosenItem=null;mapPoint=null;error='';
+  mapTileOverlay=null;
   if(onOpen()===false)return false;
   panel.hidden=false;render();return true;
  }
  function close(){
   if(panel.hidden)return;
   panel.hidden=true;selectedMethods.clear();selectedTargets.clear();mapPoint=null;
+  mapTileOverlay=null;
   onClose();
  }
  function back(){
@@ -403,9 +431,13 @@ export function createTargetedStrategyUi({
    py=(event.clientY-rect.top)/rect.height*canvas.height;
   if(step==='target'&&!chosenItem&&type()==='map'){
    const size=Number(getMapSize())||232;
-   mapPoint={x:Math.max(0,Math.min(size-1,Math.round(px/canvas.width*size))),
+   const point={x:Math.max(0,Math.min(size-1,Math.round(px/canvas.width*size))),
     z:Math.max(0,Math.min(size-1,Math.round(py/canvas.height*size)))};
-   error='';render();return;
+   if(!isSelectableMapPoint(point,size,getMapCellEligible)){
+    error='この赤い地点は指定できません。緑色の通行可能な地点をタップしてください';
+    render();return;
+   }
+   mapPoint=point;error='';render();return;
   }
   const nearest=radarHotspots.map(h=>({...h,distance:Math.hypot(h.x-px,h.y-py)}))
    .filter(h=>h.distance<=h.radius).sort((a,b)=>a.distance-b.distance)[0];

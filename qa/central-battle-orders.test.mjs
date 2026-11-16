@@ -5,15 +5,18 @@ import {createTargetedStrategyUi,planStrategyDistribution} from '../src/targeted
 
 class FakeNode {
  constructor(){this.id='';this.hidden=true;this.innerHTML='';this.listeners={};this.attrs={};this.style={};}
+ getContext(){return {fillRect(){},drawImage(){},beginPath(){},arc(){},stroke(){},fill(){},fillText(){},moveTo(){},lineTo(){},
+  save(){},restore(){},createImageData:(width,height)=>({data:new Uint8ClampedArray(width*height*4)}),putImageData(){},
+  set fillStyle(v){},set strokeStyle(v){},set lineWidth(v){},set font(v){},
+  set textAlign(v){},set textBaseline(v){},set imageSmoothingEnabled(v){},set shadowColor(v){},set shadowBlur(v){},set globalAlpha(v){}
+ };}
  setAttribute(name,value){this.attrs[name]=value;}
  append(){}
  addEventListener(name,handler){this.listeners[name]=handler;}
  querySelector(name){
   if(name!=='#centralCommandMap')return null;
-  return {width:464,height:464,getContext:()=>({
-   fillRect(){},drawImage(){},beginPath(){},arc(){},stroke(){},fill(){},fillText(){},moveTo(){},lineTo(){},
-   set fillStyle(v){},set strokeStyle(v){},set lineWidth(v){},set font(v){},set textAlign(v){},set textBaseline(v){}
-  }),getBoundingClientRect:()=>({left:0,top:0,width:464,height:464})};
+  return {width:464,height:464,getContext:()=>this.getContext(),
+   getBoundingClientRect:()=>({left:0,top:0,width:464,height:464})};
  }
 }
 const panel=new FakeNode();
@@ -27,7 +30,8 @@ const squads=[
 const secondarySquads=[
  {id:'2001',label:'第1分隊・弓使い',jobs:['archer'],soldiers:3,allowed:['charge','defend','hold','retreat']}
 ];
-const make=()=>createTargetedStrategyUi({
+const make=(getMapCellEligible=()=>true)=>createTargetedStrategyUi({
+ getMapCellEligible,
  getPlan:id=>({squads:String(id)==='1'?squads:String(id)==='2'?secondarySquads:[],allowed:['charge','defend','hold','retreat']}),
  getTemplates:()=>[{id:'assault',name:'集中殲滅',methodId:'melee_focus',score:92,reason:'目的に一致'}],
  getEnemyTargets:()=>[{id:'enemy1',label:'敵剣士隊',team:'enemy',x:30,z:40},
@@ -139,6 +143,20 @@ assert.match(battle,/setBattlePaused\(true\)/);
 assert.match(battle,/if\(wasPaused===false&&!finished\)setBattlePaused\(false\)/);
 assert.match(battle,/const cameraCloseOffset=new THREE\.Vector3\(-8,6\.2,10\.5\)/);
 assert.match(battle,/id="topStrategy"/);
+// Invalid ground must not become an actual order target even if tapped.
+const guarded=make((x,z)=>x!==116||z!==116);
+guarded.open('1',{squadId:'1002'});
+click('next');click('family','defense');click('intent','block');
+click('method','block_passage');click('next');
+const oldMapOrders=mapPositions.length;
+radarTap(116,116);
+assert.match(panel.innerHTML,/緑色の通行可能な地点/,
+ 'red invalid terrain gives an actionable explanation without accepting it');
+assert.doesNotMatch(panel.innerHTML,/📍 指定地点 \(116, 116\)/);
+radarTap(117,116);
+click('next');click('next');
+assert.equal(mapPositions.length,oldMapOrders+1);
+assert.deepEqual(mapPositions.at(-1),{x:117,z:116});
 const css=readFileSync(new URL('../src/central-battle-orders.css',import.meta.url),'utf8');
 assert.match(css,/body\.story-center-orders #allySquadRibbon/);
 assert.match(css,/body\.story-center-orders #enemySquadRibbon/);
