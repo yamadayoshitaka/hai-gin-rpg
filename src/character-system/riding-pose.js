@@ -37,8 +37,24 @@ export const DRAGON_SEATED_TORSO_JOINTS=Object.freeze({
  spine_01:Object.freeze({pitch:.075,splay:0}),
  spine_02:Object.freeze({pitch:.04,splay:0}),
 });
+// Wolves are low/narrow living saddles, and must not inherit the broad
+// horse or winged-dragon posture.
+export const WOLF_SEATED_JOINTS=Object.freeze({
+ thigh_l:Object.freeze({pitch:-1.12,splay:-.18}),
+ thigh_r:Object.freeze({pitch:-1.12,splay:.18}),
+ calf_l:Object.freeze({pitch:1.66,splay:0}),
+ calf_r:Object.freeze({pitch:1.66,splay:0}),
+ foot_l:Object.freeze({pitch:-.32,splay:0}),
+ foot_r:Object.freeze({pitch:-.32,splay:0}),
+});
+export const WOLF_SEATED_TORSO_JOINTS=Object.freeze({
+ pelvis:Object.freeze({pitch:-.24,splay:0}),
+ spine_01:Object.freeze({pitch:.14,splay:0}),
+ spine_02:Object.freeze({pitch:.07,splay:0}),
+});
 export const ridingStyleForCreature=type=>
-  ['wyvern','dragon','elder_dragon'].includes(type)?'throne':'straddle';
+  ['wyvern','dragon','elder_dragon'].includes(type)?'throne':
+   type==='wolf'?'low-straddle':'straddle';
 
 /**
  * External humanoid GLBs are not guaranteed to use the internal thigh_l
@@ -89,7 +105,9 @@ export function createRidingPoseController(model){
     for(const entry of bones){
       const {node,before,delta}=entry;
       const joint=style==='throne'?
-       (DRAGON_SEATED_JOINTS[entry.name]||DRAGON_SEATED_TORSO_JOINTS[entry.name]):entry.joint;
+       (DRAGON_SEATED_JOINTS[entry.name]||DRAGON_SEATED_TORSO_JOINTS[entry.name]):
+       style==='low-straddle'?
+       (WOLF_SEATED_JOINTS[entry.name]||WOLF_SEATED_TORSO_JOINTS[entry.name]):entry.joint;
       before.copy(node.quaternion);
       node.quaternion.multiply(delta.setFromAxisAngle(X,joint.pitch));
       if(joint.splay)node.quaternion.multiply(delta.setFromAxisAngle(Z,joint.splay));
