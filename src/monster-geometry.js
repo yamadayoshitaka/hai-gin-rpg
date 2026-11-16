@@ -3,7 +3,7 @@
  * variants change horns, crests, armour, wings, limb lengths, weapons and fins.
  * Each specimen is real 3D geometry, never an image billboard.
  */
-import {createSculpture,disposeMonsterSculpture} from './monster-shape-kit.js?v=beast-fox-face-v4-20261116';
+import {createSculpture,disposeMonsterSculpture} from './monster-shape-kit.js?v=wolf-king-almond-eye-v6-20261116';
 import {attachMonsterFaceControls} from './facial-feature-runtime.js?v=1';
 import {generateCanineFurGuides,generateCanineAxialFurGuides} from './canine-fur-guides.js?v=beast-coat-20261116';
 import {monsterEvidenceFor} from './monster-anatomy-reference.js';
@@ -158,11 +158,12 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
  // Rigid reptilian wedge instead of the same spherical skull as a cat.
  const skullWidth=reptile?.905:feline?.95:1;
  const skullDepth=reptile?1.065:feline?.965:1;
- g.anatomicalLoft(head,'skin',
+ const cranium=g.anatomicalLoft(head,'skin',
    QUADRUPED_CRANIUM_RINGS.map(r=>({
      ...r,rx:r.rx*skullWidth,rz:r.rz*skullDepth,
    })),{name:'organic-cranium-'+s.id,kind:'face',
      asymmetry:reptile?.10:.04});
+ if(s.id==='m001')g.recessCanineEyeSockets(cranium);
  if(reptile){
    g.bridge(head,'skin',[0,.045,-.19],[0,-.085,.55],.257,.128);
  }else if(feline){
@@ -216,25 +217,16 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    // divided nostrils. Oversized glowing button eyes looked like toys.
    for(const side of [-1,1]){
      if(s.id==='m001'&&beastRemesh){
-      // Wolf-king's eyes sit on the FRONT of the skull, not on the lateral
-      // cheeks. Closer-set amber irises have an inset orbit and projecting
-      // eyebrow ridge; the pupil follows the eye, never floats sideways.
-      const cx=side*.246;
-      g.sphere(head,'shadow',[cx,.113,.293],[.025,.045,.051],
-       {name:'beast-orbit'});
-      g.sphere(head,'eye',[side*.252,.115,.323],[.017,.047,.035],
-       {name:'eye',rough:.18});
-      g.sphere(head,'shadow',[side*.253,.112,.351],[.0065,.025,.012],
-       {name:'beast-pupil'});
-      g.sphere(head,'bone',[side*.246,.135,.359],[.002,.005,.004],
-       {name:'beast-corneal-glint',rough:.11});
+      // Apply the generator's key idea: a sunken socket and optical almond
+      // fitted BEHIND the upper eyelid. This is a mesh aperture rather than
+      // spherical eyes mounted on the forehead/cheeks.
+      g.recessedCanineAlmondEye(head,{side,name:'wolf-king'});
+      // The brow is an overhanging facial ridge, distinct from lid eyeliner.
       const brow=g.tube(head,'skin',[
-       [side*.169,.179,.253],[side*.222,.194,.306],
-       [side*.281,.178,.347]],.023);
+        [side*.135,.160,.261],[side*.222,.190,.306],
+        [side*.329,.174,.319]],.023);
       brow.name='m001-eyebrow-ridge-'+(side<0?'L':'R');
-      g.tube(head,'shadow',[
-       [side*.181,.081,.278],[side*.253,.077,.322],
-       [side*.284,.101,.354]],.009);
+      brow.userData.orbitalBrow=true;
      }else if(beastRemesh){
       // Real amber iris and a distinct black pupil, partially under the lids.
       // Larger visible limbus replaces the former pin-sized "eye dot".
