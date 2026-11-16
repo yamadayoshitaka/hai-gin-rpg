@@ -164,6 +164,22 @@ export function correctBattleFaceSkinTone(face,{sex='male'}={}){
    m.needsUpdate=true;
   }
  });
+ // Combat's bright hemisphere/sun stack overexposed sclera relative to
+ // the newly corrected skin. Tone the EXISTING orbital patch as well, with
+ // the same shader key, no extra geometry/texture/draw or per-frame CPU.
+ const scleraMaterials=new Set();
+ face.traverse(node=>{
+  if(!node.isMesh||!/(?:SCLERA|ORBITAL_EYEBALL)/i.test(node.name))return;
+  for(const eyeMaterial of Array.isArray(node.material)?node.material:[node.material]){
+   if(!eyeMaterial?.isMeshStandardMaterial||scleraMaterials.has(eyeMaterial))continue;
+   scleraMaterials.add(eyeMaterial);
+   eyeMaterial.roughness=Math.max(.42,eyeMaterial.roughness);
+   if('clearcoat' in eyeMaterial)eyeMaterial.clearcoat=Math.min(.16,eyeMaterial.clearcoat);
+   installBattleFaceLightResponse(eyeMaterial);
+   eyeMaterial.needsUpdate=true;
+  }
+ });
+ face.userData.battleScleraPhotometricMaterials=scleraMaterials.size;
  material.userData.battleSkinToneVersion=BATTLE_FACE_SKIN_TONE_VERSION;
  face.userData.battleSkinToneHex='#'+skinHex.toString(16).padStart(6,'0');
  face.userData.battleSkinToneVersion=BATTLE_FACE_SKIN_TONE_VERSION;
