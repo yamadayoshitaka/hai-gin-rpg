@@ -5,15 +5,15 @@
     "object:spiral_stairs_2f_001"
   ],
   "run": {
-    "id": "43933525593",
-    "startedAt": "2026-11-16T18:55:40.511Z",
+    "id": "43981327152",
+    "startedAt": "2026-11-16T23:43:07.849Z",
     "mode": "results",
     "requested": 3,
     "requestedTarget": null,
     "requestedKind": "all",
     "customInstructionHash": null,
     "stageCount": 200,
-    "objectCount": 53,
+    "objectCount": 60,
     "targetIds": [
       "object:treasure_chest_001",
       "object:cottage_stairs_001",
@@ -24,6 +24,6 @@
     "providerCalls": 0,
     "stopReason": "REVIEW_PROPOSALS_RECORDED_NOT_MERGED",
     "referenceStopReason": "REVIEW_EXISTING_REFERENCE_ONLY",
-    "completedAt": "2026-11-16T18:55:40.511Z"
+    "completedAt": "2026-11-16T23:43:07.849Z"
   }
 }
