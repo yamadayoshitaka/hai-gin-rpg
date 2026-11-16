@@ -44,14 +44,14 @@ for(const sex of ['male','female']){
  assert.equal(face.material.userData.battleFaceLightResponseVersion,
   BATTLE_FACE_LIGHT_RESPONSE_VERSION);
  assert.equal(face.material.userData.battleFaceLightResponseScale,.58);
- const shader={fragmentShader:'vec3 outgoingLight=vec3(4.0);\\n#include <opaque_fragment>'};
+ const shader={fragmentShader:'vec3 outgoingLight=vec3(4.0);\n#include <opaque_fragment>'};
  face.material.onBeforeCompile(shader,{});
  assert.match(shader.fragmentShader,
-  /outgoingLight = \\(outgoingLight \\* 0\\.58\\) \\/ \\(vec3\\(1\\.0\\)/,
+  /outgoingLight = \(outgoingLight \* 0\.58\) \/ \(vec3\(1\.0\)/,
   'Real PBR fragment must dim reflected battlefield light, not only set color');
- assert.ok(shader.fragmentShader.includes('\\n#include <opaque_fragment>'),
+ assert.ok(shader.fragmentShader.includes('\n#include <opaque_fragment>'),
   'Shader injects a legal GLSL newline');
- assert.doesNotMatch(shader.fragmentShader,/\\\\n#include/,
+ assert.doesNotMatch(shader.fragmentShader,/\\n#include/,
   'Do not emit a raw backslash-n token into GLSL shader code');
 
  assert.equal(correctBattleFaceSkinTone(face,{sex}).skinHex,first.skinHex,
@@ -72,7 +72,7 @@ assert.throws(()=>correctBattleFaceSkinTone(clay),/colorized/);
 const master=readFileSync(new URL('../assets/master-sources/blender/realistic-head-animation.glb',import.meta.url));
 assert.equal(master.toString('ascii',0,4),'glTF');
 const jsonLength=master.readUInt32LE(12),json=JSON.parse(master.toString('utf8',20,20+jsonLength));
-const mainMesh=json.meshes.find(m=>/head_animation_realistic\\.001/.test(m.name));
+const mainMesh=json.meshes.find(m=>/head_animation_realistic\.001/.test(m.name));
 assert.ok(mainMesh?.primitives[0]?.attributes?.TEXCOORD_0!==undefined,
  'Real head must retain original UVs for skin albedo');
 const masterSkin=json.materials[mainMesh.primitives[0].material];
