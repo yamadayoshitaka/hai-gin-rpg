@@ -106,11 +106,21 @@ function fittedScalpSurface(model,bone,headBounds){
   if(index<0)return;
   const joints=mesh.geometry.getAttribute('skinIndex'),weights=mesh.geometry.getAttribute('skinWeight');
   if(!joints||!weights)return;
-  // The largest skinned mesh is the actual body; tiny eyebrow/eye meshes
-  // cannot be mistaken for scalp geometry.
-  candidates.push({mesh,index,joints,weights,vertices:mesh.geometry.attributes.position.count});
+  // Rank by actual head-influenced skin vertices, not total mesh size:
+  // a high-poly coat can otherwise displace the anatomical head entirely.
+  // Exclude separate facial details, which are not continuous scalp skin.
+  if(/eyebrow|brow|eyelash|iris|pupil|cornea|teeth|tongue|hair|helmet|hat/i.test(mesh.name))return;
+  const vertices=mesh.geometry.attributes.position.count;
+  let headVertices=0;
+  const stride=Math.max(1,Math.floor(vertices/12000));
+  for(let i=0;i<vertices;i+=stride){
+   let influence=0;
+   for(let k=0;k<4;k++)if(joints.getComponent(i,k)===index)influence+=weights.getComponent(i,k);
+   if(influence>=.56)headVertices++;
+  }
+  if(headVertices>=30)candidates.push({mesh,index,joints,weights,vertices,headVertices});
  });
- candidates.sort((a,b)=>b.vertices-a.vertices);
+ candidates.sort((a,b)=>b.headVertices-a.headVertices);
  const candidate=candidates[0];if(!candidate)return null;
  const {mesh,index,joints,weights,vertices}=candidate;
  const threshold=headBounds.max.y-(headBounds.max.y-headBounds.min.y)*.46;
@@ -126,17 +136,52 @@ function fittedScalpSurface(model,bone,headBounds){
   if(point.y<threshold)continue;
   radial.copy(point).sub(center).normalize().multiplyScalar(.0045);
   point.add(radial);
-  local.set([point.x,point.y,point.z],i*3);eligible[i]=1;
+  const offset=i*3;
+  local[offset]=point.x;local[offset+1]=point.y;local[offset+2]=point.z;
+  eligible[i]=1;
  }
+ // Compute the scalp span once; repeated Box3/Vector3 allocations per triangle
+ // caused avoidable GC stalls during hairstyle/preset regeneration on Android.
+ const headSpanSq=headBounds.getSize(new THREE.Vector3()).lengthSq();
  const triangles=[],uv=[],indices=mesh.geometry.index.array;
  for(let i=0;i<indices.length;i+=3){
   const a=indices[i],b=indices[i+1],c=indices[i+2];
   if(!eligible[a]||!eligible[b]||!eligible[c])continue;
-  for(const v of [a,b,c]){
+  // Imported skin triangles can have reversed winding. Orient the scalp
+  // outward before computing normals, otherwise dark crown patches appear.
+  const ax=local[a*3],ay=local[a*3+1],az=local[a*3+2];
+  const ux=local[b*3]-ax,uy=local[b*3+1]-ay,uz=local[b*3+2]-az;
+  const vx=local[c*3]-ax,vy=local[c*3+1]-ay,vz=local[c*3+2]-az;
+  const nx=uy*vz-uz*vy,ny=uz*vx-ux*vz,nz=ux*vy-uy*vx;
+  // Zero-area or collapsed skin triangles produce undefined normals and
+  // dark needle-like crown artifacts after displacement and rasterization.
+  // Discard them before building the scalp/fiber meshes for every hairstyle.
+  const area2=nx*nx+ny*ny+nz*nz;
+  if(!Number.isFinite(area2)||area2<1e-14)continue;
+  // A malformed skin triangle spanning the crown can become a floating dark
+  // plate even when its area is nonzero. Reject edges exceeding the measured
+  // cranium's diagonal, while retaining normal broad forehead polygons.
+  const edgeAB=ux*ux+uy*uy+uz*uz;
+  const edgeAC=vx*vx+vy*vy+vz*vz;
+  const wx=local[c*3]-local[b*3],wy=local[c*3+1]-local[b*3+1],wz=local[c*3+2]-local[b*3+2];
+  if(Math.max(edgeAB,edgeAC,wx*wx+wy*wy+wz*wz)>headSpanSq)continue;
+  const outward=nx*(ax-center.x)+ny*(ay-center.y)+nz*(az-center.z);
+  // Preserve outward winding without allocating a temporary index array for
+  // every scalp triangle (all hairstyles share this hot regeneration path).
+  const reverse=outward<0;
+  // Unwrap the cylindrical UV seam within each triangle. Otherwise a
+  // triangle crossing -PI/+PI interpolates across the entire fiber texture,
+  // leaving a conspicuous dark streak on the rear crown.
+  const corners=reverse?[a,c,b]:[a,b,c];
+  const u0=.5+Math.atan2(local[corners[0]*3]-center.x,local[corners[0]*3+2]-center.z)/(Math.PI*2);
+  for(let corner=0;corner<3;corner++){
+   const v=corners[corner];
    const x=local[v*3],y=local[v*3+1],z=local[v*3+2];
    triangles.push(x,y,z);
-   uv.push(.5+Math.atan2(x-center.x,z-center.z)/(Math.PI*2),
-    Math.max(0,Math.min(1,(y-threshold)/Math.max(.01,headBounds.max.y-threshold))));
+   let u=.5+Math.atan2(x-center.x,z-center.z)/(Math.PI*2);
+   if(u-u0>.5)u-=1;
+   else if(u-u0<-.5)u+=1;
+   uv.push(u,Math.max(0,Math.min(1,(y-threshold)/Math.max(.01,headBounds.max.y-threshold))));
   }
  }
  if(triangles.length<90)return null;

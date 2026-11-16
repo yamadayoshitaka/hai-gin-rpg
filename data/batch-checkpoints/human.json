@@ -1,0 +1,102 @@
+{
+  "schemaVersion": 1,
+  "category": "human",
+  "saved": [
+    {
+      "id": "shared-armor-steel-pbr",
+      "sourceFiles": [
+        "src/outfit-maintenance-model.js"
+      ],
+      "commitSha": "2e47b18bc7e728fa2ee89cf357bb6709f320abf7",
+      "qa": "unverified"
+    },
+    {
+      "id": "shared-rear-cuirass-depth",
+      "sourceFiles": [
+        "src/outfit-maintenance-model.js"
+      ],
+      "commitSha": "594df102d49e57757383ce824f77f157067a440d",
+      "qa": "unverified"
+    },
+    {
+      "id": "shared-lateral-torso-depth",
+      "sourceFiles": [
+        "src/outfit-maintenance-model.js"
+      ],
+      "commitSha": "b64fd12308664debb41d14ba76d0ffe7d4da669c",
+      "qa": "unverified"
+    },
+    {
+      "id": "shared-scalp-outward-winding",
+      "sourceFiles": [
+        "src/character-system/hair-attachment-runtime.js"
+      ],
+      "commitSha": "7346c5714f5ad266721c8d7cd8ba58a9b101714b",
+      "qa": "unverified"
+    },
+    {
+      "id": "shared-scalp-head-weight-selection",
+      "sourceFiles": [
+        "src/character-system/hair-attachment-runtime.js"
+      ],
+      "commitSha": "f3e43d18c12e5f141cb783a01626565341060aea",
+      "qa": "unverified"
+    },
+    {
+      "id": "shared-scalp-degenerate-triangle-filter",
+      "sourceFiles": [
+        "src/character-system/hair-attachment-runtime.js"
+      ],
+      "commitSha": "45d806a3df64b86d5c6addc1de6fe3ef0d4b8a6a",
+      "qa": "unverified"
+    },
+    {
+      "id": "shared-scalp-stretched-triangle-filter",
+      "sourceFiles": [
+        "src/character-system/hair-attachment-runtime.js"
+      ],
+      "commitSha": "1a564c056d5b895f689ee072e1b6cf3e9b1633a1",
+      "qa": "unverified"
+    },
+    {
+      "id": "shared-scalp-triangle-allocation-optimization",
+      "sourceFiles": [
+        "src/character-system/hair-attachment-runtime.js"
+      ],
+      "commitSha": "64f8cbda2313ffe3732cad1db7b393650a04baf6",
+      "qa": "unverified"
+    },
+    {
+      "id": "shared-scalp-allocation-free-vertex-and-winding",
+      "sourceFiles": [
+        "src/character-system/hair-attachment-runtime.js"
+      ],
+      "commitSha": "83b3366a582882d1b2389f47190344754940d97d",
+      "qa": "unverified"
+    },
+    {
+      "id": "shared-sparse-lateral-rear-cuirass-sampling",
+      "sourceFiles": [
+        "src/outfit-maintenance-model.js"
+      ],
+      "commitSha": "c107b633dc5de54f55e432451d421da17b321a20",
+      "qa": "unverified"
+    },
+    {
+      "id": "shared-scalp-rear-uv-seam",
+      "sourceFiles": [
+        "src/character-system/hair-attachment-runtime.js"
+      ],
+      "commitSha": "148d9ca14d6fbfa73808d5da76d0c72deaccd822",
+      "qa": "unverified"
+    }
+  ],
+  "remainingIds": [
+    "all-human-character-preset-ids-unenumerated",
+    "job01-male",
+    "job01-female",
+    "job05-male",
+    "job05-female"
+  ],
+  "nextAction": "Run Node --check and WebGL rear/top hair UV screenshots for male/female styles, inspect Issue #438 armor and heel, Android GPU and catalog ID inventory before merge."
+}

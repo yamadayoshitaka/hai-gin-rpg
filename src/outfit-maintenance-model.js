@@ -173,9 +173,23 @@ export function createDetailedOutfit(job, sex, body, textures, {quality='preview
     // chest. The old centerline-only Z estimate suspended plates at the ribs
     // while cutting into the pectorals when the character turned sideways.
     const band=torsoSamples.filter(([px,py])=>Math.abs(py-y)<H*.069&&Math.abs(px-x)<sx*.20);
-    const eligible=band.length>=9?band:torsoSamples.filter(([,py])=>Math.abs(py-y)<H*.077);
+    // Preserve the requested lateral position even for sparse shoulder/waist
+    // slices. Falling back to every X in the torso selected the center chest
+    // depth for flank armor and created suspended rear/side plates.
+    const wider=torsoSamples.filter(([px,py])=>Math.abs(py-y)<H*.10&&Math.abs(px-x)<sx*.34);
+    const eligible=band.length>=9?band:wider.length>=5?wider:band;
     const z=eligible.map(p=>p[2]).sort((a,b)=>a-b);
-    return z.length>10?z[Math.floor((z.length-1)*(back?.08:.92))]:mz+(back?-1:1)*sz*.69;
+    // A sparse lateral strip with 5-10 valid skin samples is still more
+    // anatomically faithful than the fixed elliptical torso fallback.
+    // The old >10 gate discarded those strips and left rear/side armor
+    // hovering over the actual skinned body, especially at narrow waists.
+    // Use a conservative inner percentile for sparse strips so a single
+    // cloth fold cannot push a metal plate away from the skin.
+    if(z.length>=5){
+      const quantile=z.length<11?(back?.20:.80):(back?.08:.92);
+      return z[Math.floor((z.length-1)*quantile)];
+    }
+    return mz+(back?-1:1)*sz*.69;
   }
   // The Superhero face points +Z; decorations must remain against that skin.
   const front=surfaceAt(cy-H*.09)+H*.008;
@@ -186,7 +200,8 @@ export function createDetailedOutfit(job, sex, body, textures, {quality='preview
     // crushed the fabric details to near-black on mobile ACES tonemapping.
     const color=new THREE.Color(tint).lerp(new THREE.Color(0xffffff),.57);
     const m=new THREE.MeshStandardMaterial({map:t,color,metalness,roughness,
-      bumpMap:t,bumpScale:type==='steel'?.0013:.0027,side:THREE.DoubleSide});
+      bumpMap:type==='steel'?(textures['steel-grain']||t):t,
+      bumpScale:type==='steel'?.0013:.0027,side:THREE.DoubleSide});
     mats.push(m);return m;
   }
   const cloth=material(style.fabric,fabricTint,style.fabric==='steel'?.67:0,style.fabric==='steel'?.34:.84);
@@ -323,8 +338,16 @@ export function createDetailedOutfit(job, sex, body, textures, {quality='preview
     const backPoints=[],backUv=[],backFaces=[];
     const backEdge=(x,y)=>{
       const frontPoint=edge(x,y);
+      // A narrow rear silhouette must follow the same anatomical slice as
+      // the front. Clamp the rear offset inside the actual torso depth so
+      // missing/skipped back samples cannot invert the cuirass into a stone-
+      // like slab protruding through the front at the shoulders.
+      const rearSurface=surfaceAt(frontPoint.y,true,frontPoint.x);
+      const frontSurface=surfaceAt(frontPoint.y,false,frontPoint.x);
+      const depth=Math.max(H*.012,frontSurface-rearSurface);
+      const rearOffset=Math.min(H*(heavy?.013:.010),depth*.16);
       return v(frontPoint.x,frontPoint.y,
-        surfaceAt(frontPoint.y,true,frontPoint.x)-H*(heavy?.013:.010));
+        Math.min(rearSurface-rearOffset,frontPoint.z-H*.012));
     };
     for(let row=0;row<=rows;row++){
       const y=top+(bottom-top)*row/rows;
