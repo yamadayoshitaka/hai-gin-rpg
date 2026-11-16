@@ -36,6 +36,8 @@ on:
       - 'src/mass-visual-motion.js'
       - 'src/mass-dash-parity.js'
       - 'src/character-system/battle-motion-policy.js'
+      - 'src/character-system/battle-artist-head-graft.js'
+      - 'qa/hero-actual-3d-head-swap.test.mjs'
       - 'src/hero-production-character-factory.js'
       - 'src/character-system/job-motion-source.js'
       - 'src/character-system/shared-character-runtime.js'
@@ -79,6 +81,7 @@ jobs:
           node qa/skirmish-dash-default.test.mjs
           node qa/skirmish-realtime-tempo.test.mjs
           node qa/hero-production-battle-swap.test.mjs
+          node qa/hero-actual-3d-head-swap.test.mjs
           node qa/battle-ai-target-highlight-zoom.test.mjs
           node --experimental-vm-modules qa/central-battle-orders.test.mjs
           node qa/mass-dash-parity.test.mjs
