@@ -64,10 +64,50 @@ for(const id of remeshed){
   const rearWidth=spanAt(-(.72+MONSTER_BY_ID[id].variant*.06)*.56);
   assert.ok(frontWidth>rearWidth*1.32,
     id+' must narrow visibly from chest/shoulder toward the croup');
-  assert.ok(model.userData.pivots.head.position.y<1.49,
-    id+' needs the lower forward hunting head pose');
-  assert.ok(model.userData.pivots.jaw.position.y<1.34,
-    id+' mandible should follow the lowered head');
+  assert.ok(model.userData.pivots.head.position.y<=1.301,
+    id+' hunting head must be down near shoulder height');
+  assert.ok(model.userData.pivots.jaw.position.y<=1.161,
+    id+' mandible must align below lowered head');
+  // The prior walk-action assertion intentionally compressed the support
+  // limb. Reset to idle BEFORE asserting the clean neutral bind scale.
+  startMonsterAction(model,'idle',0);
+  animateMonsterModel(model,0);
+  const beforeMotion=[...['frontL','frontR','rearL','rearR'].map(key=>
+    model.userData.pivots['leg'+key].scale.y)];
+  assert.ok(beforeMotion.every(n=>n===1),id+' uncompressed idle pose');
+  assert.ok(Math.abs(model.userData.pivots.legrearL.rotation.x)>.12,
+    id+' needs a bent rear leg even when not moving');
+  assert.ok(Math.abs(model.userData.pivots.lowerfrontL.rotation.x)>.12,
+    id+' elbow remains flexed in idle');
+  assert.ok(model.position.y<0,id+' lower resting centre of gravity');
+  startMonsterAction(model,'run',0);
+  const bodyHeights=[];
+  const compressed=[];
+  for(const t of [.10,.17,.24,.31,.38,.46,.53]){
+    animateMonsterModel(model,t);
+    bodyHeights.push(model.position.y);
+    compressed.push(...['frontL','frontR','rearL','rearR'].map(key=>
+      model.userData.pivots['leg'+key].scale.y));
+  }
+  assert.ok(Math.max(...bodyHeights)-Math.min(...bodyHeights)<.019,
+    id+' running body must not pogo bounce off the ground');
+  assert.ok(Math.min(...compressed)<.97,id+' stance requires spring compression');
+  assert.ok(Math.max(...compressed)<=1,
+    id+' no elongating forelegs to fake a jump');
+  startMonsterAction(model,'idle',.54);
+  animateMonsterModel(model,.55);
+  for(const key of ['frontL','frontR','rearL','rearR'])
+    assert.equal(model.userData.pivots['leg'+key].scale.y,1,
+      id+' compression must reset after running');
+  const chestProfile=trunk.geometry.getAttribute('position');
+  let frontBottom=Infinity,rearBottom=Infinity;
+  for(let i=0;i<chestProfile.count;i++){
+    const z=chestProfile.getZ(i),y=chestProfile.getY(i);
+    if(z>.13&&z<.5)frontBottom=Math.min(frontBottom,y);
+    if(z<-.2&&z>-.55)rearBottom=Math.min(rearBottom,y);
+  }
+  assert.ok(frontBottom<rearBottom,
+    id+' shoulder/chest underside should be lower than narrow waist');
   for(const [segment,pivot] of [
     ['root',model.userData.pivots.tail],
     ['middle',model.userData.pivots.tailMid],
