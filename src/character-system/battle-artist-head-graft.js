@@ -70,7 +70,7 @@ export function installBattleFaceLightResponse(material){
   if(!shader.fragmentShader?.includes(marker))
    throw Error('Battle face PBR light gate: expected opaque_fragment not found');
   shader.fragmentShader=shader.fragmentShader.replace(marker,
-   'outgoingLight = (outgoingLight * 0.58) / (vec3(1.0) + 0.55 * max(outgoingLight - vec3(0.50), vec3(0.0)));\\n'+marker);
+   'outgoingLight = (outgoingLight * 0.58) / (vec3(1.0) + 0.55 * max(outgoingLight - vec3(0.50), vec3(0.0)));\n'+marker);
  };
  material.customProgramCacheKey=()=>previousProgramKey()+'|'+BATTLE_FACE_LIGHT_RESPONSE_VERSION;
  material.userData.battleFaceLightResponseVersion=BATTLE_FACE_LIGHT_RESPONSE_VERSION;
