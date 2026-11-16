@@ -318,6 +318,69 @@ export function createSculpture(spec,detail='high'){
    mesh.userData.rootedKeratin=true;
    return mesh;
  };
+ /**
+  * Fox-like cartilage pinna: a tapered 3D ear leaf with a recessed inner
+  * surface. Unlike the previous cone-with-cone ear, both surfaces share
+  * the same cartilage centre-line and continuously narrowing silhouette.
+  */
+ const foxPinna=(parent,{side=1,height=.435,width=.119,
+   spread=.090,name='fox-pinna'}={})=>{
+   if(![side,height,width,spread].every(Number.isFinite)||Math.abs(side)!==1||
+     height<=0||width<=0)throw Error('Invalid canine pinna proportions');
+   const sections=detail==='source'?24:detail==='high'?17:9;
+   const radial=detail==='source'?24:detail==='high'?16:10;
+   const positions=[],uv=[],index=[];
+   const shape=t=>Math.max(.012,
+     t<.12?.73+t*2.25:Math.pow(1-t,.73)*1.12);
+   for(let row=0;row<=sections;row++){
+     const t=row/sections,hw=width*shape(t);
+     for(let col=0;col<=radial;col++){
+       const a=col/radial*Math.PI*2;
+       positions.push(side*spread*t+Math.cos(a)*hw,
+         height*t,
+         -.032*t+Math.sin(a)*(.029*(1-t*.65)));
+       uv.push(col/radial,t);
+     }
+   }
+   for(let i=0;i<sections;i++)for(let j=0;j<radial;j++){
+     const a=i*(radial+1)+j,b=a+radial+1;
+     index.push(a,b,a+1,a+1,b,b+1);
+   }
+   const geo=new THREE.BufferGeometry();
+   geo.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
+   geo.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
+   geo.setIndex(index);geo.computeVertexNormals();geo.computeBoundingSphere();
+   const outer=own(attach(parent,geo,'skin',{name,rough:.92,metal:0}));
+   outer.userData.foxPinna=true;
+   // Interior cartilage is a gently concave two-dimensional patch lying
+   // just forward of the ear leaf. It does not float as a separate cone.
+   const innerPos=[],innerUv=[],innerIndices=[],steps=detail==='source'?12:8;
+   for(let i=0;i<=steps;i++){
+     const t=.12+.77*i/steps,hw=width*shape(t)*.67;
+     for(let j=0;j<=4;j++){
+       const across=(j-2)/2;
+       innerPos.push(side*spread*t+hw*across,height*t,
+         -.032*t+.031*(1-t*.65)+.005-.009*(1-across*across));
+       innerUv.push(j/4,t);
+     }
+   }
+   for(let i=0;i<steps;i++)for(let j=0;j<4;j++){
+     const a=i*5+j,b=a+5;
+     // Two-sided triangles without mutating shared cached PBR materials.
+     innerIndices.push(a,a+1,b,a+1,b+1,b,
+       b,a+1,a,b,b+1,a+1);
+   }
+   const innerGeo=new THREE.BufferGeometry();
+   innerGeo.setAttribute('position',new THREE.Float32BufferAttribute(innerPos,3));
+   innerGeo.setAttribute('uv',new THREE.Float32BufferAttribute(innerUv,2));
+   innerGeo.setIndex(innerIndices);
+   innerGeo.computeVertexNormals();innerGeo.computeBoundingSphere();
+   const inner=own(attach(parent,innerGeo,'shadow',
+     {name:name+'-inner-cartilage',rough:.94,metal:0}));
+   // Shared material cache stays untouched; the inner ear is double-sided geometry.
+   inner.userData.foxPinnaInner=true;
+   return outer;
+ };
  const anatomicalLoft=(parent,shade,rings,{name='realistic-anatomical-mesh',
    kind='torso',asymmetry=0}={})=>{
    const mesh=own(attach(parent,createMonsterAnatomicalLoft(rings,
@@ -505,7 +568,7 @@ export function createSculpture(spec,detail='high'){
  };
  root.userData.detail=detail;
  return {root,pivots,group,sphere,rock,bone,spike,rootedSpike,seamHem,tube,bridge,
-   axialLoft,limbLoft,curvedHorn,anatomicalLoft,fur,skinnedFur,bandage,fin,eyes,claws,ring,fine,colors};
+   axialLoft,limbLoft,curvedHorn,foxPinna,anatomicalLoft,fur,skinnedFur,bandage,fin,eyes,claws,ring,fine,colors};
 }
 export function disposeMonsterSculpture(model){
  if(!model)return;

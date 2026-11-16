@@ -1,4 +1,4 @@
-import {applyMonsterBiologicalMotion} from './monster-joint-motion.js?v=beast-spring-gait-v3-20261116';
+import {applyMonsterBiologicalMotion} from './monster-joint-motion.js?v=beast-fox-face-v4-20261116';
 import {monsterLeapPose,applyMonsterLeapMotion} from './monster-leap-kinematics.js?v=1';
 /** Per-species, per-part procedural animation for bestiary inspection.
  * Separate head, jaws, limbs, wings and tentacles keep animation readable.
@@ -63,7 +63,8 @@ export function animateMonsterModel(model,time=0){
    part.rotation.set(0,0,0);
    // Joint lengths must be reversible when switching run -> idle.
    // Otherwise the previous compressed foot pose persists permanently.
-   if(springBeast&&name.startsWith('leg'))part.scale.y=1;
+   if(springBeast&&name.startsWith('leg'))
+     part.scale.y=part.userData.restLengthScale??1;
    if(name.startsWith('eyelid')){
      part.position.y=(part.userData.restY??part.position.y)-
        (part.userData.blinkTravel??0)*blink;
