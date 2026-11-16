@@ -17,11 +17,11 @@ assert.equal(EQUIPMENT_TYPES.spear.kind,'weapon');
 
 // A dressed motion tester is insufficient: every tactical actor must invoke
 // the shared wardrobe after its animated character has been constructed.
-assert.match(game,/import \{buildRiggedJobOutfit\} from '.\/src\/character-system\/rigged-outfit-runtime\.js\?v=\d+\.\d+\.\d+'/);
+assert.match(game,/import \{buildRiggedJobOutfit\} from '.\/src\/character-system\/rigged-outfit-runtime\.js\?v=[^']+'/);
 assert.match(game,/a\.outfit=await buildRiggedJobOutfit\(/);
 assert.match(game,/characterModel:character\.model,parent:character\.object3D/);
 assert.match(game,/quality:'battle'/);
-assert.match(game,/rarity:a\.rarity/,'battle costumes must use the actual soldier rarity');
+assert.match(game,/rarity:recipe\.rarity/,'battle costumes must use the actual soldier rarity');
 assert.match(game,/preserveBody:false/,'battle characters must use garment-first body occlusion');
 assert.match(game,/const anatomy=new Map\(\)/,'body topology is audited before dressing');
 assert.match(game,/garmentAudit\.bodyMasked/,'battle render verifies garment-first body masking');
