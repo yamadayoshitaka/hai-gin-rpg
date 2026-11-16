@@ -660,7 +660,8 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
      {z:.085,y:-.043,rx:.081,ry:.012},
      {z:-.015,y:-.036,rx:.092,ry:.011},
      {z:-.090,y:-.026,rx:.030,ry:.006}
-   ],{name:'m001-recessed-oral-slit',rough:.93,ribbing:0});
+   ],{name:'quadruped-oral-cavity',rough:.93,ribbing:0});
+   mouthSlit.userData.m001RecessedOralSlit=true;
  }else g.sphere(jaw,'shadow',[0,-.035,muzzle-.18+v*.06],
    [.136,.018,.145],{name:'quadruped-oral-cavity'});
  g.sphere(jaw,'light',[0,-.044,muzzle-.12+v*.06],
