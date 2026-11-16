@@ -46,6 +46,26 @@ export function buildSeaSerpentAnatomicalSource(THREE,{rings=112,sides=16}={}){
  };
  ellipsoid(head,'flattened-serpentine-cranium',skin,.35,0,0,.72,.33,.51);
  ellipsoid(head,'elongated-maxilla',skin,1.04,-.12,0,.76,.17,.37);
+ // Paired branchial folds are curved, independently articulated gill membranes.
+ // These sit behind the skull and oscillate subtly during respiration.
+ const gillPivots=[];
+ const gillMaterial=new THREE.MeshPhysicalMaterial({color:0x285b62,roughness:.44,metalness:0,side:THREE.DoubleSide,clearcoat:.28});
+ for(const side of [-1,1]){
+  const chamber=new THREE.Group();chamber.name='branchial-operculum-'+side;
+  chamber.position.set(-.28,-.04,side*.30);head.add(chamber);
+  gillPivots.push({chamber,side});
+  for(let arch=0;arch<4;arch++){
+   const samples=[];
+   for(let j=0;j<=12;j++){
+    const u=j/12,theta=-.95+1.9*u;
+    samples.push(new THREE.Vector3(-.28+arch*.13-.045*Math.sin(Math.PI*u),
+      .26*Math.sin(theta),side*(.13+.075*Math.cos(theta))));
+   }
+   const archMesh=new THREE.Mesh(new THREE.TubeGeometry(
+     new THREE.CatmullRomCurve3(samples),24,.019,6,false),gillMaterial);
+   archMesh.name='curved-gill-fold-'+side+'-'+arch;chamber.add(archMesh);
+  }
+ }
  const jaw=new THREE.Group();jaw.position.set(.26,-.27,0);head.add(jaw);
  ellipsoid(jaw,'mobile-dentary',ventral,.78,-.06,0,.93,.12,.36);
  for(const side of [-1,1]){
@@ -117,7 +137,7 @@ export function buildSeaSerpentAnatomicalSource(THREE,{rings=112,sides=16}={}){
   a.needsUpdate=true;mesh.geometry.computeVertexNormals();
  }
  root.userData={creatureId:'m048',source:'original-anatomical-prototype',certified:false,
-  anatomicalParts:['continuous-axial-trunk','ventral-keel-scales','flattened-serpentine-cranium','mobile-dentary','axial-crest-finlets','continuous-lateral-sensory-ridges'],
+  anatomicalParts:['continuous-axial-trunk','ventral-keel-scales','flattened-serpentine-cranium','mobile-dentary','axial-crest-finlets','continuous-lateral-sensory-ridges','paired-branchial-opercula'],
   update(seconds){deform(body,original,seconds);deform(bellyMesh,bellyOriginal,seconds);
    for(const {mesh,base,t} of animatedFins){
     const p=mesh.geometry.getAttribute('position'),offset=swimOffset(t,seconds);
@@ -134,7 +154,9 @@ export function buildSeaSerpentAnatomicalSource(THREE,{rings=112,sides=16}={}){
     p.needsUpdate=true;mesh.geometry.computeVertexNormals();
    }
    head.position.copy(center(.992));head.position.z+=swimOffset(.992,seconds);
-   head.rotation.y=.08*Math.sin(seconds*2.2);jaw.rotation.z=-.06-.16*(.5+.5*Math.sin(seconds*.8));
+   head.rotation.y=.08*Math.sin(seconds*2.2);
+   for(const {chamber,side} of gillPivots){chamber.rotation.y=side*(.045+.04*Math.sin(seconds*1.4));}
+   jaw.rotation.z=-.06-.16*(.5+.5*Math.sin(seconds*.8));
   }};
  return root;
 }
