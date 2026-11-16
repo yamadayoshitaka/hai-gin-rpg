@@ -47,7 +47,9 @@ function quadrupedMotion(p,phase,locomotion,run,actionPulse,spine,speciesId){
     // Compression raises the sole relative to the lowered trunk, leaving
     // supporting toes close to the floor instead of a pogo-stick bounce.
     const upperJoint=p['leg'+name];
-    if(upperJoint)upperJoint.scale.y=1-(run?.048:.026)*support;
+    if(upperJoint)upperJoint.scale.y=
+      (upperJoint.userData.restLengthScale??1)*
+      (1-(run?.048:.026)*support);
     if(p['beastHock'+name]){
       apply(p,'beastHock'+name,'x',(front?-.095:-.285)+
         power*(.260*swing-.205*support));
