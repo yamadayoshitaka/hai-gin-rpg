@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "category": "anime",
+  "saved": [
+    {
+      "id": "compact-shared-defeat-m10",
+      "sourceFiles": [
+        "src/story-compact-comic.js"
+      ],
+      "commitSha": "6c862cc18078fb28704255b1eeef2723e453ac02",
+      "qa": "unverified"
+    }
+  ],
+  "remainingIds": [
+    "compact-shared-defeat-m10-art-review",
+    "c01-s01-to-c01-s04-compact-visual-audit",
+    "compact-all-chapters-asset-audit"
+  ],
+  "nextAction": "Visually inspect the m10 defeat image per gender and outcome; validate real WebP SHA and native resolution; only register verified art, then run browser QA and CI."
+}
