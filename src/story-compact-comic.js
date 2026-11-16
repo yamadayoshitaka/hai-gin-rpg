@@ -35,28 +35,32 @@ function turn(p,forcedText=null){
   rubyTokens:screenplayRubyTokens(text),hasVoice:true});
 }
 function scene(base,turns,{opening=false,sharedKind=null}={}){
- if(!base||!turns.length)throw Error('Compact scene missing art identity or dialogue');
+ if(!base)throw Error('Compact scene missing art identity');
  const first=turns[0];
  return freeze({...base,compactStory:true,isChapterOpening:opening,
   sharedSceneKind:sharedKind,
   // Only the first defeat CG has a physically verified character-free shared original.
   // Other outcome images remain per-stage or unregistered until safely replaced.
-  sharedArtAsset:sharedKind==='defeat' ? (/-m6$/.test(base.id)?'./assets/story/shared/shared-defeat-01.webp':'./assets/story/shared/shared-defeat-02.webp') : null,
+  sharedArtAsset:sharedKind==='defeat' && /-m6$/.test(base.id)
+   ? './assets/story/shared/shared-defeat-01.webp' : null,
   protagonistAssetPolicy:'exact-gender-or-proven-neutral-only',
   originalSceneId:base.id,originalComicCell:base.comicCell,
   originalSheetCount:base.sourceSheetCount??null,
   dialogueTurns:freeze(turns),
-  speaker:first.speaker,characterId:first.characterId,text:first.text,
-  subtitleText:first.text,voiceText:first.voiceText,rubyTokens:first.rubyTokens});
+  speaker:first?.speaker??null,characterId:first?.characterId??null,text:first?.text??'',
+  subtitleText:first?.text??'',voiceText:first?.voiceText??'',rubyTokens:first?.rubyTokens??[]});
 }
 function selectBySuffix(list,token){
  return list.find(p=>p.id.endsWith('-'+token))||null;
 }
 function distribute(lines,num){
- const n=Math.ceil(lines.length/num);
+ // Allocate each authored turn exactly once. Empty CGs remain silent instead
+ // of repeating the last spoken line or fabricating dialogue.
+ const count=lines.length;
  return Array.from({length:num},(_,i)=>{
-  const a=lines.slice(i*n,(i+1)*n);
-  return a.length?a:lines.slice(-1);
+  const start=Math.floor(i*count/num);
+  const end=Math.floor((i+1)*count/num);
+  return lines.slice(start,end);
  });
 }
 function chapterSeen(context,chapter){
@@ -90,11 +94,19 @@ export function compactComicForStage(stageId,phase,context={}){
  const base=baseIds.map(x=>selectBySuffix(src,x));
  if(phase==='post'&&original.edition.startsWith('post-gameover')){
   const deaths=src.filter(p=>/-death-[12]$/.test(p.id));
-  if(deaths.length===2)base.splice(0,2,...deaths);
+  // Never silently substitute victory art for the protagonist's death.
+  if(deaths.length!==2)throw Error('Missing gameover-specific art identities '+stageId);
+  base.splice(0,2,...deaths);
  }
  if(base.some(x=>!x))throw Error('Missing compact source art identity '+stageId+' '+original.edition);
  const withCount=p=>({...p,sourceSheetCount:original.pages.find(q=>q.number===p.comicPage)?.cellCount||1});
- const scenes=openingArt.map(p=>scene(withCount(p),[turn(p)],{opening:true}));
+ // Chapter opening dialogue comes from the canonical screenplay, not the
+ // archived artwork captions. Keep all opening turns on four CGs.
+ const openingLines=opening?script.pre.filter(p=>
+  ['chapter-opening','canonical-dialogue'].includes(p.kind)):[];
+ const openingBatches=opening?distribute(openingLines,4):[];
+ const scenes=openingArt.map((p,i)=>scene(withCount(p),
+  openingBatches[i].map(line=>turn(line)),{opening:true}));
  let batches=distribute(lines,2).map(group=>group.map(p=>turn(p)));
  let sharedKind=null;
  if(phase==='post'&&original.edition.startsWith('post-defeat')){
