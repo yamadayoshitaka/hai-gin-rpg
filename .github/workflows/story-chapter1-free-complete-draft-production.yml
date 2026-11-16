@@ -91,6 +91,9 @@ jobs:
           git show origin/main:scripts/generate-story-chapter1-free-batch.mjs > scripts/generate-story-chapter1-free-batch.mjs
           git show origin/main:src/story-generation-fallback.js > src/story-generation-fallback.js
           git show origin/main:data/story-generation-spend-policy.json > data/story-generation-spend-policy.json
+          # The review branch predates the compact format: always restore its
+          # canonical scene selection manifest from main before any provider call.
+          git show origin/main:data/story-compact-20chapters.json > data/story-compact-20chapters.json
           git show origin/main:src/story-c01-stage45-art-guard.js > src/story-c01-stage45-art-guard.js
           git show origin/main:qa/story-chapter1-draft-regression.mjs > qa/story-chapter1-draft-regression.mjs
           git show origin/main:assets/story/stage-manifests/c01-s04.manifest.json > assets/story/stage-manifests/c01-s04.manifest.json
