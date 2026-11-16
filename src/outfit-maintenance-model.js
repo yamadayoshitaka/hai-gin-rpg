@@ -243,11 +243,11 @@ export function createDetailedOutfit(job, sex, body, textures, {quality='preview
   // the existing natural cloth silhouette instead of covering it with a box.
   // Battle instances use the same recognizable shapes at a far smaller cost.
   const chestFront=front+H*.009;
-  // Under-tunic back coverage is mandatory for EVERY job. Some imported
-  // Ranger/Peasant clothes have only thin front surfaces, while the old
-  // underlying-body occlusion removed the anatomical back completely.
-  // This panel is skinned with the spine like the rest of the clothing.
-  {
+  // Non-armored clothes need a skinned back lining, but armored jobs already
+  // have heroic-cuirass-backplate. Two coplanar rear surfaces produced
+  // z-fighting and a large square patch when seen from behind.
+  // Use the existing backplate with no added mesh or draw call.
+  if(!style.armor){
     const columns=battle?14:24,rows=battle?10:18;
     const points=[],uv=[],faces=[];
     // A rogue's split leather back exposed the scapulae because the
