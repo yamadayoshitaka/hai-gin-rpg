@@ -37,6 +37,10 @@ on:
       - 'src/mass-dash-parity.js'
       - 'src/character-system/battle-motion-policy.js'
       - 'src/character-system/battle-artist-head-graft.js'
+      - 'src/character-system/shield-forearm-fit.js'
+      - 'src/character-system/rigged-outfit-runtime.js'
+      - 'src/character-system/action-vfx-runtime.js'
+      - 'qa/battle-face-hair-shield-recovery.test.mjs'
       - 'src/character-system/battle-generator-appearance.js'
       - 'qa/battle-studio-pattern-parity.test.mjs'
       - 'qa/hero-actual-3d-head-swap.test.mjs'
@@ -84,6 +88,8 @@ jobs:
           node qa/skirmish-realtime-tempo.test.mjs
           node qa/hero-production-battle-swap.test.mjs
           node qa/hero-actual-3d-head-swap.test.mjs
+          node qa/battle-face-hair-shield-recovery.test.mjs
+          node qa/battle-face-color-regression.test.mjs
           node qa/battle-studio-pattern-parity.test.mjs
           node qa/battle-ai-target-highlight-zoom.test.mjs
           node --experimental-vm-modules qa/central-battle-orders.test.mjs
