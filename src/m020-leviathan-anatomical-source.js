@@ -166,6 +166,17 @@ export function buildLeviathanAnatomicalSource(THREE,{segments=56,radial=18}={})
   const g=new THREE.BufferGeometry(),v=[...base,...points.flat()],idx=[];
   for(let i=0;i<points.length-1;i++)idx.push(0,i+1,i+2);
   g.setAttribute('position',new THREE.Float32BufferAttribute(v,3));
+  // Fin membrane requires its own non-degenerate UVs for baked PBR maps.
+  // U follows the leading-to-trailing fin edge; V follows distance from root.
+  const span=Math.max(1e-6,...points.map(p=>Math.hypot(
+   p[0]-base[0],p[1]-base[1],p[2]-base[2])));
+  const finUV=[.5,0];
+  for(let i=0;i<points.length;i++){
+   const p=points[i];
+   finUV.push(points.length===1?.5:i/(points.length-1),
+    Math.hypot(p[0]-base[0],p[1]-base[1],p[2]-base[2])/span);
+  }
+  g.setAttribute('uv',new THREE.Float32BufferAttribute(finUV,2));
   g.setIndex(idx);g.computeVertexNormals();
   const mesh=new THREE.Mesh(g,material);mesh.name=name;body.add(mesh);return mesh;
  }
