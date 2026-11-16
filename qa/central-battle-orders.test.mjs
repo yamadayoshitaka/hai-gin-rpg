@@ -11,8 +11,8 @@ class FakeNode {
  querySelector(name){
   if(name!=='#centralCommandMap')return null;
   return {width:464,height:464,getContext:()=>({
-   fillRect(){},drawImage(){},beginPath(){},arc(){},stroke(){},moveTo(){},lineTo(){},
-   set fillStyle(v){},set strokeStyle(v){},set lineWidth(v){}
+   fillRect(){},drawImage(){},beginPath(){},arc(){},stroke(){},fill(){},fillText(){},moveTo(){},lineTo(){},
+   set fillStyle(v){},set strokeStyle(v){},set lineWidth(v){},set font(v){},set textAlign(v){},set textBaseline(v){}
   }),getBoundingClientRect:()=>({left:0,top:0,width:464,height:464})};
  }
 }
@@ -26,7 +26,12 @@ const squads=[
 ];
 const make=()=>createTargetedStrategyUi({
  getPlan:id=>({squads:String(id)==='1'?squads:[],allowed:['charge','defend','hold','retreat']}),
- getEnemyTargets:()=>[{id:'enemy1',label:'敵剣士隊'},{id:'enemy2',label:'敵弓隊'}],
+ getEnemyTargets:()=>[{id:'enemy1',label:'敵剣士隊',team:'enemy',x:30,z:40},
+  {id:'enemy2',label:'敵弓隊',team:'enemy',x:185,z:190}],
+ getAllyTargets:()=>[{id:'1001',label:'第1分隊',team:'ally',groupId:1,x:60,z:140},
+  {id:'1002',label:'第2分隊',team:'ally',groupId:1,x:150,z:180}],
+ getRadarTargets:()=>[{id:'enemy1',team:'enemy',x:30,z:40},{id:'enemy2',team:'enemy',x:185,z:190},
+  {id:'1001',team:'ally',x:60,z:140},{id:'1002',team:'ally',x:150,z:180}],
  getObjects:()=>[{id:'obj1',label:'橋'}],
  getItems:()=>[{id:'potion',label:'治癒の薬',quantity:2}],
  onExecute:plan=>{commands.push(plan);return true;},
@@ -48,6 +53,10 @@ function click(name,value=''){
  const b=button(attr,String(value));
  panel.listeners.click({target:{closest:()=>b}});
 }
+function radarTap(x,z){
+ panel.listeners.pointerup({target:{closest:sel=>sel==='#centralCommandMap'?panel.querySelector(sel):null},
+  clientX:x*2,clientY:z*2});
+}
 assert.equal(ui.open(1),true);
 assert.equal(ui.currentStep(),'scope');
 assert.match(panel.innerHTML,/班単位の作戦/);
@@ -59,7 +68,8 @@ click('intent','melee');assert.equal(ui.currentStep(),'method');
 click('method','melee_focus');
 click('next');assert.equal(ui.currentStep(),'target');
 assert.match(panel.innerHTML,/敵部隊を選択/);
-click('target','enemy1');click('target','enemy2');click('next');
+assert.match(panel.innerHTML,/centralCommandMap/,'enemy selection uses the enlarged radar');
+radarTap(30,40);radarTap(185,190);click('next');
 assert.equal(ui.currentStep(),'confirm');assert.match(panel.innerHTML,/作戦の内容を確認/);
 click('next');assert.equal(ui.isOpen(),false);
 assert.equal(resume,1);
@@ -76,8 +86,7 @@ click('next');click('family','defense');click('intent','block');
 click('method','block_passage');click('next');
 assert.equal(ui.currentStep(),'target');
 assert.match(panel.innerHTML,/centralCommandMap/);
-panel.listeners.pointerup({target:{closest:sel=>sel==='#centralCommandMap'?panel.querySelector(sel):null},
- clientX:232,clientY:232});
+radarTap(116,116);
 assert.match(panel.innerHTML,/116, 116/);
 click('next');click('next');
 assert.equal(ui.isOpen(),false);
@@ -90,7 +99,8 @@ click('family','item');assert.equal(ui.currentStep(),'items');
 assert.match(panel.innerHTML,/治癒の薬/);
 click('item','potion');assert.equal(ui.currentStep(),'target');
 assert.match(panel.innerHTML,/味方分隊を選択/);
-click('target','1002');click('next');click('next');
+assert.match(panel.innerHTML,/centralCommandMap/,'ally item targeting uses the same radar');
+radarTap(150,180);click('next');click('next');
 assert.equal(items.length,1);
 assert.deepEqual(items[0],{groupId:'1',issuerSquadId:'1001',targetSquadId:'1002',itemId:'potion'});
 assert.equal(pause,3);assert.equal(resume,3);
@@ -99,6 +109,10 @@ ui.open();click('close');assert.equal(ui.isOpen(),false);
 assert.equal(pause,4);assert.equal(resume,4,'cancel restores prior battle pause exactly once');
 const battle=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
 assert.match(battle,/story-center-orders/);
+assert.match(battle,/if\(!TOWN_MODE\)document.body.classList.add\('story-center-orders'\)/,
+ 'the public direct battle link gets the new UI even without storyBattle=1');
+assert.match(battle,/directBattlePreview/,'the standalone battle loads into the new UI');
+assert.match(battle,/getRadarTargets:/,'live radar gets both armies');
 assert.match(battle,/central-battle-orders\.css/);
 assert.match(battle,/onMapPick:point/);
 assert.match(battle,/setBattlePaused\(true\)/);
