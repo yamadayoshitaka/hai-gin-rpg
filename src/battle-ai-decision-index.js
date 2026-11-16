@@ -14,7 +14,8 @@ export function indexBattleDecisionUnits(units){
   const id=String(unit.squadId);
   const alive=unit.hp>0&&unit.alive!==false;
   if(unit.isStrategist){
-   if(alive)livingStrategists[team].add(id);
+   // Mass AI previously requires an explicitly alive strategist.
+   if(unit.alive===true&&unit.hp>0)livingStrategists[team].add(id);
    continue;
   }
   let roster=allFightersBySquad[team].get(id);
