@@ -9,8 +9,8 @@ permissions:
   contents: write
   pull-requests: write
 concurrency:
-  group: world-six-lane
-  cancel-in-progress: false
+  group: world-six-lane-${{ github.event_name }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
   enabled:
     runs-on: ubuntu-latest
