@@ -109,12 +109,12 @@
     },
     "world": {
       "source": "ChatGPT定期品質回帰の実行結果＋GitHub証跡",
-      "lastRunAt": "2026-11-16T19:22:46.053+09:00",
+      "lastRunAt": "2026-11-16T19:55:06.699+09:00",
       "status": "work_incomplete",
       "carryover": true,
-      "subject": "world 53種：既存21件QA滞留・実造形変更なし",
-      "summary": "2026-11-16T19:22:46.053+09:00 GitHub main world.enabled=true確認。今回の新規実ソース変更0件、新規実ソースSHAなし、原型/GLB再生成0件、対象別QA合格0件、ゲーム反映0件、mainマージ0件、Pages公開0件。PR #441作業ブランチ保存21件（QA未確認）、未保存32件。main正本53件、審査中11件、承認0件、未承認53件。両者は別集計。GitHub上の静的/WebGL/Android QAは今回未実行。",
-      "nextAction": "PR #441の保存21件の静的構文/回帰QAを実行し不合格修正。WebGL・Android確認後、未保存の共通構造5〜10件を実改修。",
+      "subject": "53種：PR #441未検証21件、静的・実描画QA未完了",
+      "summary": "2026-11-16T19:55:06.699+09:00 main world.enabled=true確認。今回の実ソース改修0件、実ソースSHAなし、原型/GLB再生成0件、対象別QA合格0件、ゲーム反映0件、マージ0件、Pages公開0件。main正本53件、審査中11件、承認0件、未承認53件。PR #441作業ブランチ保存21件（全QA unverified）、未保存32件。mainと作業ブランチは別集計。",
+      "nextAction": "PR #441のsrc/object-catalog.jsをローカル構文検査し、既存21件の実描画差分を確認して不合格修正。その後未保存の同群複数IDを実改修。",
       "steps": {
         "launch": "done",
         "code": "pending",
@@ -180,10 +180,17 @@
       },
       "operational": {
         "blockers": [
-          "今回の実ソース修正・静的QA実行・WebGL/Android実測の証跡なし",
-          "既存21件の対象別QAはunverified"
+          "GitHub経由で既存21件のNode構文・WebGL・Android実測QAを完了できていない",
+          "今回の新規実造形ソースコミットなし"
         ],
-        "speedPlan": "PR #441既存実造形の構文QA→不具合修正→WebGL/Android確認→未保存対象の実ソース小分けコミット"
+        "speedPlan": "PR #441静的構文QA→対象別WebGL比較→不合格修正を優先。次に未保存の共通構造5〜10件へ進む。",
+        "lastRunOutcome": {
+          "newSourceChangedIds": 0,
+          "newQAPassed": 0,
+          "newGameAppliedIds": 0,
+          "newSourceCommits": 0,
+          "newGeneratedGLBs": 0
+        }
       }
     },
     "anime": {
