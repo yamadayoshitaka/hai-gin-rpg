@@ -47,12 +47,12 @@
     },
     "monster": {
       "source": "ChatGPT 定期タスクの実行結果",
-      "lastRunAt": "2026-11-16T02:08:56Z",
-      "subject": "m048海蛇の連続側線感覚隆起を実メッシュ追加（WebGL QA未検証）",
-      "summary": "monster ON。PR #426作業ブランチでm048の左右連続側線をTubeGeometry実メッシュと独立PBR材質で追加し、泳動に追従する頂点変形を実装。実ソースSHA fe9bbed3、チェックポイント9b57dd7a。今回実造形ソース改修1ID、GLB再生成0、描画QA合格0、実ゲーム反映0。正本108ID全数監査・Node/WebGL/Android QA未実施。保護対象変更なし。mainマージ・公開なし。",
+      "lastRunAt": "2026-11-16T03:07:22Z",
+      "subject": "m020海竜の左右感覚ヒゲを新規実メッシュ・可動構造で追加（WIP）",
+      "summary": "monster ON。PR #426ブランチでm020に左右のテーパー付き感覚ヒゲの独立BufferGeometryと揺動ピボットを追加。実ソースSHA 6b1f3c41、チェックポイント64d9def8。今回実造形ソース改修1ID、再生成GLB0、WebGL描画QA合格0、ゲーム反映0。108ID全数監査・Node構文/Android実測は未実施。保護対象変更なし。mainマージ・公開なし。",
       "status": "work_incomplete",
       "carryover": true,
-      "nextAction": "PR #426のm048側線変形をNode構文・Three/WebGL前後左右で検証。m020/m048の原型/LOD/ゲーム接続と正本108IDの全数監査を進める。未検証のためmainマージ禁止。",
+      "nextAction": "m020感覚ヒゲとm048側線の構文/前後左右WebGL QAを実施。正本108IDの全数監査、原型GLB/LOD生成、Android計測、ゲーム・マスター画面接続を進める。未検証のためマージ禁止。",
       "steps": {
         "launch": "done",
         "code": "done",
@@ -64,8 +64,8 @@
       },
       "evidence": [
         {
-          "label": "m048側線実ソースコミット",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/fe9bbed3c6eba06e284785536b110adb872e7567"
+          "label": "m020実造形ソース修正",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/6b1f3c414d522da7892e0e16407b5a675eaad7f9"
         },
         {
           "label": "Draft PR #426",
@@ -73,7 +73,7 @@
         },
         {
           "label": "途中チェックポイント",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/9b57dd7a6989841cbf5fe32792c56b30f252a36c"
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/64d9def84cc135854b1bcc34bcc66df8b7489edd"
         }
       ]
     },
