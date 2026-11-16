@@ -20,7 +20,7 @@ import {FEMALE_V7_DEFAULTS,MALE_REFERENCE_DEFAULT} from '../face-v7-controls.js'
 import {hideBattleDonorFace,attachIndependentFaceToBattleHead,enhanceHeroineFaceSurface}
  from '../heroine-battle-costume-bridge.js?v=70';
 import {createFaceExpressionAnimator} from '../face-expression-animation-v48.js?v=68';
-import {createScalpAnchoredWig} from '../face-scalp-wig.js?v=20261116-middlelod1';
+import {createScalpAnchoredWig} from '../face-scalp-wig.js?v=20261116-scalpfill1';
 
 export const BATTLE_HEAD_MASTER_VERSION='real-sculpt-head-graft-v1';
 export const BATTLE_HEAD_MASTER_ASSET='assets/master-sources/blender/realistic-head-animation.glb';
