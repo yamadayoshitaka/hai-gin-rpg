@@ -46,11 +46,15 @@ export class FramePerformanceMonitor{
     }catch{try{this.gl.deleteQuery(query)}catch{}this.queries.shift();this.ext=null;}
   }
   getStats(){
-    if(!this.count)return {fps:0,frameP95Ms:0,frameAvgMs:0,gpuFrameMs:this.gpuMs};
+    if(!this.count)return {fps:0,frameP95Ms:0,frameP99Ms:0,frameMaxMs:0,frameAvgMs:0,longFrames50:0,longFrames80:0,gpuFrameMs:this.gpuMs};
     const all=Array.from(this.samples.subarray(0,this.count)).sort((a,b)=>a-b);
     const sum=all.reduce((a,b)=>a+b,0),average=sum/this.count;
     return {fps:Math.round(1000/average),frameAvgMs:+average.toFixed(2),
       frameP95Ms:+all[Math.min(all.length-1,Math.floor(all.length*.95))].toFixed(2),
+      frameP99Ms:+all[Math.min(all.length-1,Math.floor(all.length*.99))].toFixed(2),
+      frameMaxMs:+all[all.length-1].toFixed(2),
+      longFrames50:all.filter(ms=>ms>50).length,
+      longFrames80:all.filter(ms=>ms>80).length,
       gpuFrameMs:this.gpuMs==null?null:+this.gpuMs.toFixed(2),
       meets60fps:all[Math.min(all.length-1,Math.floor(all.length*.95))]<=1000/60};
   }
