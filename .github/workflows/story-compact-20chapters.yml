@@ -10,6 +10,7 @@ on:
       - 'world-map.html'
       - 'data/story-compact-20chapters.json'
       - 'scripts/generate-story-chapter1-free-batch.mjs'
+      - 'scripts/build-story-compact-production-queue.mjs'
       - 'qa/story-chapter1-stage-priority.test.mjs'
       - 'story-compact-review.html'
       - 'qa/story-compact-20-chapters.test.mjs'
@@ -21,6 +22,7 @@ on:
       - 'src/story-manga-viewer.js'
       - 'data/story-compact-20chapters.json'
       - 'scripts/generate-story-chapter1-free-batch.mjs'
+      - 'scripts/build-story-compact-production-queue.mjs'
       - 'qa/story-chapter1-stage-priority.test.mjs'
   workflow_dispatch:
 permissions:
@@ -47,8 +49,33 @@ jobs:
           node qa/story-chapter1-stage-priority.test.mjs
       - name: Verify compact CG reuse of 40 existing first-four-stage gender/outcome original assets
         run: node qa/story-compact-art-reuse.test.mjs
-      - name: Build full 200-stage CG reuse/missing queue for next manga batch
-        run: node scripts/build-story-compact-production-queue.mjs
+      - name: Build and verify 880-scene minimum-first CG queue (no paid or free API calls)
+        run: |
+          node --check scripts/build-story-compact-production-queue.mjs
+          node scripts/build-story-compact-production-queue.mjs
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          import fs from 'node:fs';
+          const q=JSON.parse(fs.readFileSync('qa-reports/story-compact-production-queue.json'));
+          assert.equal(q.schemaVersion,2);
+          assert.equal(q.kind,'COMPACT_20_CHAPTER_MINIMUM_FIRST_CG_QUEUE');
+          assert.equal(q.entries.length,880);
+          assert.equal(q.result.total,880);
+          assert.equal(q.result.genderVariantsObserved,1760);
+          assert.equal(q.result.exactGenderReuse+q.result.missingExactGenderArt,1760);
+          assert.equal(q.result.reused+q.result.missing,880);
+          assert.equal(q.result.provenNeutralShares,0);
+          assert.equal(new Set(q.entries.map(row=>row.key)).size,880);
+          for(const row of q.entries){
+            assert.deepEqual(Object.keys(row.genderVariants).sort(),['female','male']);
+            assert.equal(row.sharedApprovedArt,null);
+            for(const v of Object.values(row.genderVariants)){
+              assert.equal(v.reuseOtherGenderForbiddenUntilApproved,true);
+              assert.equal(v.formalP0Approved,false);
+            }
+          }
+          console.log('PASS: minimum-first 880 unique scenes with 1760 optional guarded gender variants');
+          NODE
       - uses: actions/upload-artifact@v4
         with:
           name: story-compact-200-stage-cg-production-queue
