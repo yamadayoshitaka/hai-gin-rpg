@@ -24,6 +24,15 @@ const {chromium}=require('playwright');
   assert.equal(audit.expected,audit.renderVersion);
   assert.equal(audit.sharedAlbedo,'battle-original-uv-warm-skin-albedo-v1');
   assert.ok(audit.shaderPrograms>0,'Real PBR shader was not compiled');
+  assert.ok(audit.actualDonorRigHead?.samples>=30,'True skinned donor has no head vertices');
+  assert.ok(audit.actualDonorRigHead?.sourceMeshTransformApplied,
+   'Source GLB nested transforms must be applied');
+  assert.ok(audit.actualDonorRigHead?.cranialHeightRatio>.80,
+   'The human skull must not be shrunken to a tiny mask');
+  assert.ok(audit.actualDonorRigHead?.widthRatio>.80,
+   'Face must occupy most of its true animated head width');
+  console.log('REAL_RIG_BATTLE_HEAD_PROPORTIONS',JSON.stringify(audit.actualDonorRigHead));
+
   assert.ok(audit.sample.occupied>350,'No real skin pixels visible in the frame');
   assert.ok(audit.sample.changed>200,'RGB pixels did not visibly respond to skin correction');
   assert.ok(audit.sample.after[0]<audit.sample.before[0]-6,
