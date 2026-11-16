@@ -31,7 +31,7 @@ assert.match(graft,/prototype\.root\.clone\(true\)/,
  'No expensive duplicate geometry per soldier with the same sculpt');
 assert.match(graft,/createFaceExpressionAnimator\(master/,
  'The protagonist/strategist keeps real eyelid and lip motion');
-assert.match(graft,/part\.node\.visible=desired&&part\.initialVisible/,
+assert.match(graft,/part\.node\.visible=part\.initialVisible&&\(desired\|\|\/EYELINER\/i\.test\(part\.node\.name\)\)/,
  'LOD cannot resurrect invisible donor facial cosmetics');
 assert.match(game,/loadBattleHeadMaster\(\)/);
 assert.match(game,/a\.masterHead=attachBattleArtistHead\(/);
