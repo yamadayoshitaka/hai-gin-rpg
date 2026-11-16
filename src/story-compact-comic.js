@@ -35,7 +35,7 @@ function turn(p,forcedText=null){
   rubyTokens:screenplayRubyTokens(text),hasVoice:true});
 }
 function scene(base,turns,{opening=false,sharedKind=null}={}){
- if(!base||!turns.length)throw Error('Compact scene missing art identity or dialogue');
+ if(!base||(!opening&&!turns.length))throw Error('Compact scene missing art identity or dialogue');
  const first=turns[0];
  return freeze({...base,compactStory:true,isChapterOpening:opening,
   sharedSceneKind:sharedKind,
@@ -46,8 +46,8 @@ function scene(base,turns,{opening=false,sharedKind=null}={}){
   originalSceneId:base.id,originalComicCell:base.comicCell,
   originalSheetCount:base.sourceSheetCount??null,
   dialogueTurns:freeze(turns),
-  speaker:first.speaker,characterId:first.characterId,text:first.text,
-  subtitleText:first.text,voiceText:first.voiceText,rubyTokens:first.rubyTokens});
+  speaker:first?.speaker??null,characterId:first?.characterId??null,text:first?.text??'',
+  subtitleText:first?.text??'',voiceText:first?.voiceText??'',rubyTokens:first?.rubyTokens??[]});
 }
 function selectBySuffix(list,token){
  return list.find(p=>p.id.endsWith('-'+token))||null;
