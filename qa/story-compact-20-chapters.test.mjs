@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {comicForStage} from '../src/story-chapter-comic.js';
 import {compactComicForStage,compactChapterPlan,COMPACT_TWENTY_CHAPTER_PLAN,COMPACT_DEFEAT_LINES} from '../src/story-compact-comic.js';
 import {CAMPAIGN_STAGES} from '../src/campaign-stage-plan.js';
+import {screenplayForStage} from '../src/story-screenplay-v2.js';
 assert.equal(COMPACT_TWENTY_CHAPTER_PLAN.length,20);
 assert.equal(CAMPAIGN_STAGES.length,200);
 for(const plan of COMPACT_TWENTY_CHAPTER_PLAN){
@@ -35,5 +36,22 @@ const compact=compactComicForStage(s,'pre',{protagonistGender:'female'});
 assert.deepEqual(compact.panels.map(x=>x.id),[s+'-m1',s+'-m15']);
 assert(legacy.panels.length>compact.panels.length);
 assert(compact.panels.every(x=>x.originalSceneId===x.id));
-assert.equal(compact.dialogueCount,legacy.panels.length,'All dialogue survives as multi-turn messages');
-console.log('PASS: all 200 stages, opening 4, pre 2, outcome 2, unified defeat/gameover, original art IDs and dialogue kept');
+const originalScript=screenplayForStage(s,{protagonistGender:'female'});
+assert.deepEqual(compact.panels.flatMap(p=>p.dialogueTurns.map(t=>t.text)),
+ originalScript.pre.map(t=>t.text),
+ 'Compact images must play all current stage-specific dialogue, not obsolete repeated legacy lines');
+assert.equal(compact.dialogueCount,originalScript.pre.length);
+assert.equal(new Set(compact.panels.flatMap(p=>p.dialogueTurns.map(t=>t.text))).size,
+ compact.dialogueCount,'Do not repeat the same line in one stage');
+for(const chapter of COMPACT_TWENTY_CHAPTER_PLAN){
+ const first=chapter.stageIds[0];
+ const intro=compactComicForStage(first,'pre',{protagonistGender:'male'});
+ const oneTimeOpening=intro.panels.slice(0,4).map(p=>p.text);
+ for(const otherId of chapter.stageIds.slice(1)){
+  const story=compactComicForStage(otherId,'pre',{protagonistGender:'male'});
+  const dialogue=story.panels.flatMap(p=>p.dialogueTurns.map(t=>t.text));
+  assert(dialogue.every(t=>!oneTimeOpening.includes(t)),
+   'Chapter opening text must not recur across stages: '+otherId);
+ }
+}
+console.log('PASS: all 200 stages, unchanged CG IDs, per-stage dialogue, no repeated chapter-openers, outcome-specific audio turns');
