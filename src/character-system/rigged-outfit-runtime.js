@@ -14,6 +14,7 @@ import {attachCharacterHair} from './hair-attachment-runtime.js?v=20261116-silho
 import {attachArmorHeraldry} from './armor-heraldry-runtime.js?v=4.4.61';
 import {attachFittedCloth} from './fitted-cloth-runtime.js?v=4.5.2';
 import {outfitSurfaceRole,cleanOutfitPhotoKind} from './outfit-surface-policy.js?v=4.4.43';
+import {shouldClothLineBattleTorso,applyBattleTorsoLining} from './battle-torso-lining.js?v=20261116-torso1';
 import {fitEyebrowMeshesToFace} from './eyebrow-fit-runtime.js?v=4.4.61';
 import {attachRealisticFace} from './facial-blink-runtime.js?v=1';
 import {sourceGripFromBounds} from './equipment-grip-policy.js?v=4.4.41';
@@ -481,6 +482,7 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
   const linked=[];for(const [name,bone] of outfitBones){const target=targetBones.get(name);if(target)linked.push([bone,target])}
   if(linked.length<60)throw Error('関節名の一致が不足: '+linked.length+'/65');
   let gambesonMeshes=0,commanderUniformMeshes=0,thiefSourceBeltsHidden=0;
+  let opaqueTorsoLiningMaterials=0;
   let correctedLimbMeshes=0,preservedSkinMaterials=0;
   let suppressedBaseLegMeshes=0,retainedSkinnedLegMeshes=0,retainedSkinnedBootMeshes=0;
   // One imported skinned trouser mesh already contains both animated legs.
@@ -509,6 +511,18 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
       // Preserve source PBR normal/ORM maps. Light tint retains material detail.
       const copy=m.clone();
       const role=outfitSurfaceRole(n,m.name);
+      // Some source Ranger/Peasant body material slots are naked chest/back
+      // skin in what should be a closed battle tunic. Repurpose only these
+      // slots as opaque, photographed woven lining. Same mesh + material
+      // group; no additional draw or skinned rig. Keep actual hands/neck.
+      if(shouldClothLineBattleTorso({quality,meshName:n,materialName:m.name,role})){
+       applyBattleTorsoLining(copy,{
+        texture:textures['linen-fine']||textures.linen,
+        tint:style.armor?0x718095:dressedStyle.tint,side:THREE.DoubleSide
+       });
+       opaqueTorsoLiningMaterials++;
+       return copy;
+      }
       // Imported clothing occasionally has inward-facing winding on the back.
       // Two-sided cloth makes its rear visible without double-siding skin.
       if(['body','arms','legs'].includes(role))copy.side=THREE.DoubleSide;
@@ -1006,7 +1020,8 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
     triangles:detail.userData.triangles,detailMotif:detail.userData.motif,
     commanderPieces:jobId==='strategist'?detail.children.filter(o=>
       /^(command-|military-standing-collar|strategist-seal)/.test(o.name)).length:0,
-    tunicPanels:detail.userData.tunicPanels,gambesonMeshes,commanderUniformMeshes,thiefSourceBeltsHidden,
+    tunicPanels:detail.userData.tunicPanels,gambesonMeshes,commanderUniformMeshes,
+    opaqueTorsoLiningMaterials,thiefSourceBeltsHidden,
     correctedLimbMeshes,preservedSkinMaterials,suppressedBaseLegMeshes,retainedSkinnedLegMeshes,retainedSkinnedBootMeshes,useSourceSkinnedLegs,studioPreferSkinnedLegs,
     gear:gear.length,weaponKinds:gear.map(g=>g.userData.equipmentKind),
     clothPieces:cloth.objects.length,clothFit:cloth.diagnostics.fittedRadii,
