@@ -17,7 +17,16 @@ const scene=new THREE.Mesh(new THREE.SphereGeometry(.18,12,10),
 scene.userData.faceColorMode='color';
 for(const sex of ['male','female']){
  const face=scene.clone();face.material=scene.material.clone();
+ const sclera=new THREE.Mesh(new THREE.SphereGeometry(.04,8,6),
+  new THREE.MeshPhysicalMaterial({color:0xe6e3df,roughness:.27,clearcoat:.35}));
+ sclera.name='LEFT_ORBITAL_EYEBALL';
+ face.add(sclera);
  const fixed=correctBattleFaceSkinTone(face,{sex});
+ assert.equal(face.userData.battleScleraPhotometricMaterials,1);
+ assert.ok(sclera.material.roughness>=.42);
+ assert.ok(sclera.material.clearcoat<=.16);
+ assert.equal(sclera.material.userData.battleFaceLightResponseVersion,
+  BATTLE_FACE_LIGHT_RESPONSE_VERSION);
  assert.ok(fixed.corrected);
  assert.equal(face.material.userData.battleFaceLightResponseScale,.86);
  assert.equal(face.material.userData.battleFaceLightResponseVersion,
