@@ -171,6 +171,16 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
   g.bridge(torso,'skin',[0,1.152,.23],[0,1.305,.69],.304,.173);
   for(const side of [-1,1])
    g.bridge(torso,'skin',[side*.24,1.158,.18],[side*.175,1.302,.56],.116,.069);
+  if(s.id==='m001'&&coatDetail!=='low'){
+    // Buried scapular musculature joins the wolf king's thick forelimbs
+    // to its chest; no exposed shoulder button or distant-LOD draw call.
+    for(const side of [-1,1]){
+      const blade=g.bridge(torso,'skin',
+        [side*.338,1.172,.319],[side*.266,1.364,.519],.139,.080);
+      blade.name='m001-scapular-muscle-'+(side<0?'L':'R');
+      blade.userData.buriedScapula=true;
+    }
+  }
  }else g.sphere(torso,'light',[0,1.48,.22],[.31,.25,.45]);
  // Continuous neck transitions from the shoulder mass into the skull,
  // avoiding the visible "two spheres glued together" silhouette.
