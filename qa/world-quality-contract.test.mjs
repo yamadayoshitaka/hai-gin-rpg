@@ -5,7 +5,7 @@ import {normalizeRequest,parseIssueBody,makeIssueBody} from '../scripts/world-qu
 assert.equal(stageCount,200,'All 20 x 10 campaign stages included');
 assert.equal(objectCount,60,'Every shared game-catalog object should be included');
 assert.equal(qualityInventory.length,260);
-assert.equal(new Set(qualityInventory.map(x=>x.key)).size,253);
+assert.equal(new Set(qualityInventory.map(x=>x.key)).size,260);
 assert(qualityInventory.find(x=>x.key==='object:timber_bridge_001'));
 assert(qualityInventory.find(x=>x.key==='object:castle_001'));
 assert(qualityInventory.find(x=>x.key==='stage:c20-s10'));
