@@ -65,6 +65,14 @@
       ],
       "commitSha": "64f8cbda2313ffe3732cad1db7b393650a04baf6",
       "qa": "unverified"
+    },
+    {
+      "id": "shared-scalp-allocation-free-vertex-and-winding",
+      "sourceFiles": [
+        "src/character-system/hair-attachment-runtime.js"
+      ],
+      "commitSha": "83b3366a582882d1b2389f47190344754940d97d",
+      "qa": "unverified"
     }
   ],
   "remainingIds": [
@@ -74,5 +82,5 @@
     "job05-male",
     "job05-female"
   ],
-  "nextAction": "Run syntax and WebGL scalp crown/rear comparison; enumerate actual preset IDs and generator routes; fix Issue #438 armor artifact. No individual ID marked complete."
+  "nextAction": "Validate scalp generator with Node syntax and WebGL front/crown/rear captures; enumerate all actual human preset IDs; address Issue #438 rear armor and heel artifacts; keep unverified changes off main."
 }
