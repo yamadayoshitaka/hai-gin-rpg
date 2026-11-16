@@ -23,9 +23,9 @@ export const STAGE_IDENTITIES = Object.freeze({
  highland:{feature:'尾根の石砦・監視塔・岩の関門',tactics:'斜面と狭い通路を守り、迂回を封じる',sky:0x243448,fog:.0013,
   landmarks:[['wooden_watchtower_001',45,86],['wooden_watchtower_001',83,87],['stone_archway_001',62,109],['stone_column_001',51,129],['stone_column_001',72,129]]},
  forest:{feature:'樹海の獣道・古い石門・巨木の群落',tactics:'樹木で視線を遮り、森の小道から奇襲',sky:0x102b24,fog:.0022,
-  landmarks:[['stone_archway_001',53,108],['stone_column_001',48,104],['stone_column_001',60,104],['town_well_001',67,149]]},
+  landmarks:[['stone_archway_001',53,108],['stone_column_001',48,104],['stone_column_001',60,104],['town_well_001',67,149],['town_stone_pile_001',149,82]]},
  village:{feature:'畑の区画・農家・大河に架かる橋',tactics:'集落を守りながら橋を確保する',sky:0x253d48,fog:.0006,
-  landmarks:[['town_well_001',53,142],['haystack_001',184,71],['haystack_001',198,83],['town_handcart_001',162,147]]},
+  landmarks:[['town_well_001',53,142],['haystack_001',184,71],['haystack_001',198,83],['town_handcart_001',162,147],['town_water_trough_001',143,155],['town_firewood_001',175,159]]},
  marsh:{feature:'泥の小島・浅い池・半ば沈んだ遺構',tactics:'池に足を取られない経路を選ぶ',sky:0x21353c,fog:.0030,
   landmarks:[['stone_archway_001',53,103],['stone_column_001',48,113],['stone_column_001',59,113],['wooden_watchtower_001',179,140]]},
  snow:{feature:'雪の峠道・岩壁・吹雪の関門',tactics:'唯一の峠道と高所を押さえる',sky:0x465968,fog:.0022,
@@ -33,13 +33,13 @@ export const STAGE_IDENTITIES = Object.freeze({
  desert:{feature:'砂丘・乾いたオアシス・埋没した石柱',tactics:'遮蔽物の少ない砂丘で射線を確保',sky:0x644b36,fog:.0011,
   landmarks:[['stone_column_001',50,90],['stone_column_001',59,90],['stone_column_001',69,90],['stone_archway_001',60,99],['town_well_001',180,151]]},
  ruins:{feature:'焼けた街路・崩れた門・廃墟の広場',tactics:'残った石柱と廃屋を盾に包囲',sky:0x322d38,fog:.0019,
-  landmarks:[['stone_archway_001',60,110],['stone_column_001',50,137],['stone_column_001',60,137],['stone_column_001',70,137],['stone_archway_001',175,157]]},
+  landmarks:[['stone_archway_001',60,110],['stone_column_001',50,137],['stone_column_001',60,137],['stone_column_001',70,137],['stone_archway_001',175,157],['town_brazier_001',164,122]]},
  coast:{feature:'入り江・波打ち際・港の見張り台',tactics:'海岸線と防波地形を使い、陸路で展開',sky:0x24516a,fog:.0010,
   landmarks:[['wooden_watchtower_001',57,84],['wooden_watchtower_001',54,181],['town_well_001',178,133],['stone_archway_001',181,178]]},
  plains:{feature:'草原・花畑・なだらかな起伏',tactics:'広い射線と開けた平野で機動力を生かす',sky:0x46758b,fog:.0004,
-  landmarks:[['stone_column_001',51,82],['town_well_001',68,172],['stone_archway_001',180,151]]},
+  landmarks:[['stone_column_001',51,82],['town_well_001',68,172],['town_herb_garden_001',73,183],['stone_archway_001',180,151]]},
  urban:{feature:'石畳の街路・広場・城門',tactics:'街路で分断し、建物の高所を確保する',sky:0x334957,fog:.0009,
-  landmarks:[['stone_archway_001',51,92],['stone_column_001',64,137],['town_well_001',180,138],['wooden_watchtower_001',183,173]]},
+  landmarks:[['stone_archway_001',51,92],['stone_column_001',64,137],['town_well_001',180,138],['wooden_watchtower_001',183,173],['town_signpost_001',128,138],['town_sacks_001',160,145]]},
 });
 // Territory stages override the biome ambience, landmarks and tactical role.
 // All landmarks reference registered catalog objects, not one-off 3D meshes.
