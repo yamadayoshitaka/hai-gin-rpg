@@ -215,7 +215,27 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    // Small almond eyes set INTO the bone, heavy brows, wet nose and
    // divided nostrils. Oversized glowing button eyes looked like toys.
    for(const side of [-1,1]){
-     if(beastRemesh){
+     if(s.id==='m001'&&beastRemesh){
+      // Wolf-king's eyes sit on the FRONT of the skull, not on the lateral
+      // cheeks. Closer-set amber irises have an inset orbit and projecting
+      // eyebrow ridge; the pupil follows the eye, never floats sideways.
+      const cx=side*.246;
+      g.sphere(head,'shadow',[cx,.113,.293],[.025,.045,.051],
+       {name:'beast-orbit'});
+      g.sphere(head,'eye',[side*.252,.115,.323],[.017,.047,.035],
+       {name:'eye',rough:.18});
+      g.sphere(head,'shadow',[side*.253,.112,.351],[.0065,.025,.012],
+       {name:'beast-pupil'});
+      g.sphere(head,'bone',[side*.246,.135,.359],[.002,.005,.004],
+       {name:'beast-corneal-glint',rough:.11});
+      const brow=g.tube(head,'skin',[
+       [side*.169,.179,.253],[side*.222,.194,.306],
+       [side*.281,.178,.347]],.023);
+      brow.name='m001-eyebrow-ridge-'+(side<0?'L':'R');
+      g.tube(head,'shadow',[
+       [side*.181,.081,.278],[side*.253,.077,.322],
+       [side*.284,.101,.354]],.009);
+     }else if(beastRemesh){
       // Real amber iris and a distinct black pupil, partially under the lids.
       // Larger visible limbus replaces the former pin-sized "eye dot".
       g.sphere(head,'shadow',[side*.288,.112,.266],[.032,.046,.074],
@@ -437,8 +457,9 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    for(const side of [-1,1]){
      g.bridge(head,'skin',[side*.19,-.035,-.055],[side*.27,-.125,.24],.142,.082);
      if(!beastRemesh)g.sphere(head,'shadow',[side*.308,.092,.277],[.023,.017,.090],{rough:.78});
-     g.tube(head,'skin',[[side*.23,.12,-.055],[side*.30,.13,.105],
-        [side*.325,.099,.205]],.029);
+     // Temporal fascia narrows toward the new closer-set eyebrow.
+     g.tube(head,'skin',[[side*.21,.12,-.055],[side*.255,.155,.105],
+        [side*.268,.169,.213]],.021);
      for(let j=0;j<3;j++)
        g.sphere(head,'shadow',[side*(.149+j*.025),-.191,muzzle+.12+j*.035],
          [.006,.006,.008],{rough:.82});
@@ -497,10 +518,15 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    // Only the thunder wolf's rear legs follow the lumbar/pelvic hinge.
    // Local coordinates preserve the original hip world-space placement.
    const pelvisMounted=s.id==='m004'&&fore<0;
+   // Wolf king: shoulder limbs originate laterally from the scapula, not
+   // under the midline of the chest; hips follow the narrower rear flanks.
+   // Both toe and hock stay on the SAME lateral axis, no toe-out rotation.
+   const lateralX=s.id==='m001'?
+     (fore>0?.402:.317):.29;
    const leg=g.group('leg'+name,
      pelvisMounted?
-       [side*.29,beastRemesh?-.540:-.42,.03]:
-       [side*.29,beastRemesh?.550:.67,fore*.49],
+       [side*lateralX,beastRemesh?-.540:-.42,.03]:
+       [side*lateralX,beastRemesh?.550:.67,fore*.49],
      pelvisMounted?g.pivots.pelvis:g.root);
    // Anatomical limb shortening keeps paw clearance at the ground by
    // lowering its hip pivot by the same amount. Distal pivots remain real
@@ -511,7 +537,7 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    }
    // Distal motion is independent from shoulder/hip rotation, retaining
    // the original limb and ground-contact positions.
-   if(beastRemesh)g.limbLoft(leg,'skin',fore>0?[
+   if(beastRemesh)g.limbLoft(leg,'skin',(fore>0?[
      // Forelimb: scapula -> humerus -> elbow. Elbow lies BEHIND the wrist.
      {x:0,y:.55,z:.025,rx:.133,rz:.154},
      {x:0,y:.34,z:.042,rx:.193,rz:.213},
@@ -525,12 +551,13 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
      {x:0,y:.14,z:.050,rx:.189,rz:.174},
      {x:0,y:-.080,z:.177,rx:.125,rz:.119},
      {x:0,y:-.25,z:.166,rx:.105,rz:.112}
-   ],{name:'beast-upper-limb-'+name});
+   ]).map(p=>s.id==='m001'?{...p,rx:p.rx*.79,rz:p.rz*.82}:p),
+   {name:'beast-upper-limb-'+name});
    else g.sphere(leg,'skin',[0,.17,0],
      [reptile?.18:.21,.40,reptile?.18:.21]);
    const distal=g.group('lower'+name,[0,-.065,.015],leg);
    if(beastRemesh){
-    g.limbLoft(distal,'skin',fore>0?[
+    g.limbLoft(distal,'skin',(fore>0?[
       // Forearm bends forward again from elbow through carpal joint.
       {x:0,y:.15,z:-.091,rx:.130,rz:.129},
       {x:0,y:.04,z:-.103,rx:.138,rz:.142},
@@ -544,7 +571,8 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
       {x:0,y:-.14,z:-.015,rx:.112,rz:.118},
       {x:0,y:-.28,z:-.159,rx:.086,rz:.090},
       {x:0,y:-.38,z:-.172,rx:.091,rz:.091}
-    ],{name:'beast-shin-'+name});
+    ]).map(p=>s.id==='m001'?{...p,rx:p.rx*.83,rz:p.rz*.84}:p),
+    {name:'beast-shin-'+name});
    }else{
     g.sphere(distal,'skin',[0,-.16,0],[reptile?.13:.15,.27,reptile?.13:.15]);
     g.sphere(distal,'shadow',[0,0,0],[.144,.125,.14],{name:'joint-'+name});
@@ -610,13 +638,14 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
      // from the moving lower/hock/toe joints during a trot or gallop.
      const source=coatDetail==='source',near=fore===1;
      const upper=generateCanineFurGuides({
-       center:[0,.17,0],radii:[.215,.395,.215],
+       center:[0,.17,0],radii:s.id==='m001'?[.169,.395,.178]:[.215,.395,.215],
        rows:source?29:18,around:source?30:21,
-       length:near?.083:.101,width:.014,seed:v*19+side*5+fore*7+31,
+       length:s.id==='m001'?(near?.102:.110):(near?.083:.101),
+       width:.014,seed:v*19+side*5+fore*7+31,
        minVertical:-.85,axis:'y',gravity:.20,
      });
      const lower=generateCanineFurGuides({
-       center:[0,-.28,0],radii:[.145,.29,.156],
+       center:[0,-.28,0],radii:s.id==='m001'?[.123,.29,.130]:[.145,.29,.156],
        rows:source?24:15,around:source?26:18,
        length:.064,width:.011,seed:v*13+side*7+fore*11+43,
        minVertical:-.72,axis:'y',gravity:.21,
@@ -723,8 +752,50 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
       seed:v*33+241,gravity:.42,minVertical:-.84,maxVertical:.22
     }).filter(h=>h.root[2]<.02)
    ]:[];
-   addFur(head,beastRemesh?[...faceGuides,...groomed].filter(h=>
-      !(Math.abs(h.root[0])>.258&&h.root[1]>.077&&h.root[2]>.166&&h.root[2]<.38)):faceGuides);
+   // m001 has a lion-like, layered throat/cheek ruff: the bone remains a
+   // wolf skull and the mane is entirely groomed on the moving head.
+   // Ear / eyebrow / eye clearances are cut out of the hair root mask.
+   const wolfKingMane=s.id==='m001'?[
+     ...[-1,1].flatMap(side=>generateCanineFurGuides({
+       center:[side*.176,-.148,-.082],radii:[.138,.195,.203],
+       rows:source?37:25,around:source?50:34,
+       length:.267,width:.027,seed:v*37+281+side,
+       minVertical:-.99,maxVertical:.29,gravity:.51
+     }).filter(h=>side*h.root[0]>.145&&h.root[1]<.023&&h.root[2]<.15)),
+     ...generateCanineFurGuides({
+       center:[0,-.260,-.158],radii:[.229,.158,.195],
+       rows:source?39:27,around:source?52:36,
+       length:.302,width:.030,seed:v*41+317,
+       minVertical:-.99,maxVertical:-.02,gravity:.67
+     }).filter(h=>h.root[1]<-.232&&h.root[2]<.08),
+     ...generateCanineFurGuides({
+       center:[0,-.128,-.245],radii:[.255,.186,.194],
+       rows:source?30:20,around:source?44:30,
+       length:.241,width:.027,seed:v*47+379,
+       minVertical:-.99,maxVertical:.28,gravity:.55
+     }).filter(h=>h.root[1]<-.05&&h.root[2]<-.085)
+   ]:[];
+   const browHairs=s.id==='m001'?
+     [-1,1].flatMap(side=>generateCanineFurGuides({
+       center:[side*.221,.203,.278],radii:[.076,.029,.063],
+       rows:source?16:10,around:source?28:20,
+       length:.066,width:.009,seed:v*61+407+side,
+       minVertical:.18,maxVertical:1,gravity:.21
+     }).filter(h=>side*h.root[0]>.15&&h.root[1]>.206&&
+       h.root[2]<.335)):[];
+
+   const headGuides=beastRemesh?[...faceGuides,...groomed,...wolfKingMane,
+     ...browHairs].filter(h=>!(Math.abs(h.root[0])>.258&&h.root[1]>.077&&
+       h.root[2]>.166&&h.root[2]<.38)):faceGuides;
+   addFur(head,headGuides);
+   if(s.id==='m001'){
+     // Head-attached mane is batched by material; this small name-only
+     // marker allows CI to audit actual moving beard follicles.
+     for(const mesh of head.children)
+       if(mesh.userData.furStrands&&mesh.name.startsWith('canine-coat-')){
+         mesh.userData.wolfKingMane=true;
+       }
+   }
  }
  // Drive the thunder wolf tail from its living pelvis; for other species
  // preserve the original root-space animation and coordinates exactly.
