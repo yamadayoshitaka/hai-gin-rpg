@@ -917,6 +917,7 @@ import {registerSquadCircleTap,chooseSquadZoomTarget,SQUAD_CIRCLE_DOUBLE_TAP_MS,
 import {createBattleActorVisibility} from './src/battle-render-visibility.js?v=zoom-human-1';
 import {enableBattleRigidFrustumCulling,countBattleRigCulling} from './src/battle-rigid-frustum-optimization.js?v=20261116-rigid1';
 import {interpolatedSkirmishCameraAnchor,createVisibilityWorkPacer} from './src/battle-frame-pacing.js?v=20261116-p95';
+import {BattlePhaseProfiler} from './src/battle-phase-profiler.js?v=20261116-gpu1';
 import {shouldShowOverheadSquadCallouts,closestAliveBattleFocus} from './src/battle-zoom-visibility-policy.js?v=1';
 import {createSkirmishDistanceLod} from './src/skirmish-distance-impostors.js?v=4.6.15';
 import {createCatalogObject} from './src/object-catalog.js?v=4.6.36';
@@ -1079,17 +1080,36 @@ window.getActionEffectsStats=()=>actionVfx.stats;
 // Restore almost all of the original perceived resolution. GPU FXAA keeps
 // thin armour silhouettes smooth in large battles without 4x MSAA samples.
 const BATTLE_RESOLUTION_SCALE=.92;
+// Android's WebGL multisample buffers are expensive for 100 dressed actors.
+// An output-preserving GPU FXAA pass keeps silhouettes smooth with a single
+// pixel sample, while all original models, PBR materials and shaders remain.
+// ?gpuFxaa=0 preserves the older MSAA path for side-by-side visual QA.
+const useGpuFxaa=!TOWN_MODE&&(MASS_SIZE>0||battleParams.get('gpuFxaa')!=='0');
 const battleViewportSize=()=>({width:Math.max(1,$('stageViewport').clientWidth||innerWidth),height:Math.max(200,$('stageViewport').clientHeight||innerHeight-196)});
 const initialView=battleViewportSize();
-const nativeBattlePixelRatio=Math.min(devicePixelRatio,MASS_SIZE?1.1:1.5)*BATTLE_RESOLUTION_SCALE;
+// Initialize 50v50 at its measured steady-state pixel ratio rather than
+// allocating 1.38x targets, repeatedly discarding them down to ~0.93x
+// during the first few seconds of fighting. Fixed during active skirmishes
+// to prevent Android black flashes from reallocating the drawing buffer.
+const nativeBattlePixelRatio=Math.min(devicePixelRatio,MASS_SIZE?1.1:TOWN_MODE?1.5:1.0)*BATTLE_RESOLUTION_SCALE;
 const adaptiveBattleResolution=new AdaptiveBattleResolution({
  maxRatio:nativeBattlePixelRatio,minRatio:Math.max(.72,nativeBattlePixelRatio*.65),targetFps:45
 });
-const renderer=new THREE.WebGLRenderer({antialias:!MASS_SIZE});renderer.setPixelRatio(nativeBattlePixelRatio);renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.05;renderer.setSize(initialView.width,initialView.height);$('stageViewport').append(renderer.domElement);
+const renderer=new THREE.WebGLRenderer({antialias:!MASS_SIZE&&!useGpuFxaa});renderer.setPixelRatio(nativeBattlePixelRatio);renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.05;renderer.setSize(initialView.width,initialView.height);$('stageViewport').append(renderer.domElement);
 // Composer has multiple render passes. Count the complete scene rather than
 // reporting only the last output pass as "描画 1" in the performance HUD.
 renderer.info.autoReset=false;
+const gpuLifecycle={contextLosses:0,contextRestores:0,bufferResizes:0,lastContextLossAt:0};
+// WebGL can be evicted by Android under memory pressure. Count the actual
+// events so a blackout can be distinguished from a >200ms CPU/GPU stall.
+renderer.domElement.addEventListener('webglcontextlost',event=>{
+ event.preventDefault();gpuLifecycle.contextLosses++;gpuLifecycle.lastContextLossAt=Date.now();
+},false);
+renderer.domElement.addEventListener('webglcontextrestored',()=>{
+ gpuLifecycle.contextRestores++;
+},false);
 const framePerformance=new FramePerformanceMonitor(renderer);
+const battleCpuProfiler=new BattlePhaseProfiler();
 const skirmishPerformancePanel=!MASS_SIZE?document.createElement('div'):null;
 if(skirmishPerformancePanel){
  skirmishPerformancePanel.id='massGamePerf';
@@ -1100,6 +1120,9 @@ if(skirmishPerformancePanel){
 window.getBattleResourceHistory=()=>resourceSamples.slice();
 window.getSkirmishPerformanceStats=()=>({
  version:'4.6.69',...framePerformance.getStats(),
+ cpuPhases:battleCpuProfiler.getStats(),gpuLifecycle:{...gpuLifecycle},
+ gpuContextLost:renderer.getContext().isContextLost?.()??false,
+ gpuAntialias:useGpuFxaa?'GPU FXAA':'WebGL MSAA',
  drawCalls:renderer.info.render.calls,
  adaptiveRenderQuality:adaptiveBattleResolution.getStats(),
  totalActors:actors.length,
@@ -1135,8 +1158,8 @@ window.getConfirmedHitFeedbackStats=()=>({active:confirmedHitOverlay.activeCount
   confirmed3D:actionVfx.stats.confirmedHitMarkers,version:'4.6.69'});
 // Small battles use WebGL MSAA. Large battles use a lightweight GPU FXAA pass
 // with a real drawing-buffer-sized reciprocal texel uniform.
-const fxaaComposer=MASS_SIZE?new EffectComposer(renderer):null;
-const fxaaPass=MASS_SIZE?new ShaderPass(FXAAShader):null;
+const fxaaComposer=useGpuFxaa?new EffectComposer(renderer):null;
+const fxaaPass=useGpuFxaa?new ShaderPass(FXAAShader):null;
 if(fxaaComposer){
  fxaaComposer.addPass(new RenderPass(scene,camera));
  fxaaComposer.addPass(fxaaPass);
@@ -1145,6 +1168,7 @@ if(fxaaComposer){
  fxaaComposer.addPass(new OutputPass());
 }
 function resizeBattleRenderer(width,height){
+ gpuLifecycle.bufferResizes++;
  renderer.setSize(width,height);
  if(fxaaComposer){
   fxaaComposer.setSize(width,height);
@@ -1154,6 +1178,9 @@ function resizeBattleRenderer(width,height){
 }
 function renderBattleFrame(){renderer.info.reset();if(fxaaComposer)fxaaComposer.render();else renderer.render(scene,camera)}
 function setAdaptiveBattlePixelRatio(ratio){
+ // Deliberately fixed for detailed 50vs50, including the long battle.
+ // GPU framebuffer reallocations on mobile can briefly clear the canvas.
+ if(!MASS_SIZE&&!TOWN_MODE)return;
  if(Math.abs(renderer.getPixelRatio()-ratio)<.005)return;
  renderer.setPixelRatio(ratio);
  if(fxaaComposer)fxaaComposer.setPixelRatio(ratio);
@@ -9374,6 +9401,7 @@ function animateTown(){
 }
 function animate(){
  framePerformance.begin();
+ const cpuFrameStart=performance.now();
  requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),.05);
  const now=performance.now(),bankDelta=Math.max(0,(now-tacticalFrameAt)/1000);tacticalFrameAt=now;
  if(tacticalPlanningActive&&!finished){
@@ -9401,6 +9429,8 @@ function animate(){
  if(!paused)creatureVisualTime+=worldDt;
  if(TOWN_MODE){elapsed+=dt;updateTownAvatar(dt);simAccumulator=0;}
  else while(simAccumulator>=.05){tickAI(.05);simAccumulator-=.05}
+ let cpuPhaseAt=performance.now();
+ battleCpuProfiler.record('ai',cpuPhaseAt-cpuFrameStart);
  updateBattleFormationIntegrity();
  if(!paused){updateActiveSquadBuffVfx();actionVfx.update(worldDt);}
  updateSquadMarkerPositions(dt);
@@ -9458,6 +9488,7 @@ function animate(){
     Math.min(1,massAccumulator/.1)):0;
   const corpseTime=massSim?massSim.time+massEndElapsed:elapsed;
   const visibleCorpseIds=massSim?corpsePolicy.visibleIds(massSim.units,corpseTime,massSim.tickCount+Math.floor(massEndElapsed*10)):null;
+  let cpuPhaseNow=performance.now();battleCpuProfiler.record('scene',cpuPhaseNow-cpuPhaseAt);cpuPhaseAt=cpuPhaseNow;
   for(const a of actors){
    const massUnit=massSim?massSim.units[a.massUnitId]:null;
    if(massSim&&!a.defeated){
@@ -9578,6 +9609,7 @@ function animate(){
     a.poseMoving=false;
    }else if(visual.update){if(a.mixer)a.mixer.update(visual.delta*cinematicPlaybackScale);else updateBattlePose(a,visual.delta*cinematicPlaybackScale)}
   }
+  cpuPhaseNow=performance.now();battleCpuProfiler.record('rig',cpuPhaseNow-cpuPhaseAt);cpuPhaseAt=cpuPhaseNow;
   if(followCamera){
    let tracked=focusedHumanUnitId!=null?massSim?.units?.find(u=>u.id===focusedHumanUnitId):null;
    if(massSim&&battleViewMode==='commander'&&(!tracked?.alive||tracked.hp<=0)){
@@ -9608,6 +9640,7 @@ function animate(){
    massRenderer.update(massAlpha,massEndElapsed,creatureVisualTime);
   }
   combatObjectRenderer?.sync(massSim?.objects||skirmishActions?.objects||[],creatureVisualTime,massSim?.units||actors,elapsed,massSim?massAlpha:0,massRenderFrame);
+ cpuPhaseNow=performance.now();battleCpuProfiler.record('objects',cpuPhaseNow-cpuPhaseAt);cpuPhaseAt=cpuPhaseNow;
  // Keep the camera above the target and terrain even during drag, zoom and follow.
  const groundCameraY=terrainY(camera.position.x,camera.position.z)+1.7;
  const minCameraY=Math.max(groundCameraY,controls.target.y+Math.max(1.8,Math.hypot(camera.position.x-controls.target.x,camera.position.z-controls.target.z)*.18));
@@ -9633,7 +9666,9 @@ function animate(){
   sun.shadow.needsUpdate=true;
   lastShadowFocus.copy(focus);shadowRefreshTimer=0;
  }
+ cpuPhaseNow=performance.now();battleCpuProfiler.record('hud',cpuPhaseNow-cpuPhaseAt);cpuPhaseAt=cpuPhaseNow;
  renderBattleFrame();
+ cpuPhaseNow=performance.now();battleCpuProfiler.record('submit',cpuPhaseNow-cpuPhaseAt);
  confirmedHitOverlay.render(dt,{paused});
  framePerformance.end();
  // GPU fill-rate adapts slowly to sustained frame-time pressure. Do not
@@ -9664,6 +9699,9 @@ function animate(){
     '｜画質 '+renderer.getPixelRatio().toFixed(2)+'x'+
     '｜衣装 '+report.dressed+'/'+report.totalActors+
     '｜可視 '+(report.visibility?.visible??0)+'｜GPU '+(perf.gpuFrameMs??'--')+'ms'+
+    '｜CPU AI '+report.cpuPhases.ai.p95+' 肢 '+report.cpuPhases.rig.p95+
+    ' 場 '+report.cpuPhases.objects.p95+' 描 '+report.cpuPhases.submit.p95+'ms'+
+    '｜黒 '+report.gpuLifecycle.contextLosses+' 再配 '+report.gpuLifecycle.bufferResizes+
     '｜鎧 '+report.armorOriginalPieces+'→'+report.armorDrawPieces+
     '｜遠景 '+(report.distantSoldiers?.visible??0)+'｜死体 '+report.visibleCorpses+
     '｜GPU形状 '+report.memory.gpuGeometries+'｜JS '+(report.memory.jsHeapMB??'--')+'MB';
@@ -9756,7 +9794,10 @@ async function finishBattleLoading(){
   }
   loadingProgress('GPUシェーダーと地形・モデルを最終準備中…',98);
   await new Promise(resolve=>requestAnimationFrame(resolve));
-  renderer.compile(scene,camera);
+  // Load time is intentionally spent preparing GPU programs before combat.
+  // compileAsync uses parallel shader compilation where supported.
+  if(typeof renderer.compileAsync==='function')await renderer.compileAsync(scene,camera);
+  else renderer.compile(scene,camera);
   renderBattleFrame();
   loadingProgress('ステージBGMを読み込み中…',99);
   const recordingLoaded=await stageBgmReady;
