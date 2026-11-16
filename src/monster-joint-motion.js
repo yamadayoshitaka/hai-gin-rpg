@@ -55,6 +55,12 @@ function quadrupedMotion(p,phase,locomotion,run,actionPulse,spine,speciesId){
         power*(.260*swing-.205*support));
       apply(p,'beastToe'+name,'x',.045+
         power*(.260*swing-.140*support));
+      if(speciesId==='m001'){
+        // Distinct carpal/metatarsal flexion separates the wrist/ankle
+        // from the digit pad. Small angles preserve planted-paw contact.
+        apply(p,'beastPastern'+name,'x',(front?-.052:.088)+
+          power*((front?.13:.19)*swing-(front?.07:.10)*support));
+      }
     }
   }else{
     apply(p,'leg'+name,'x',strength*sine+(front?-.12:.10)*actionPulse);

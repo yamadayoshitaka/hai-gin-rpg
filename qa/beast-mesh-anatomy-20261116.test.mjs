@@ -37,8 +37,10 @@ for(const id of remeshed){
     }
     assert.ok(p.beastHockrearL.position.z<-.11,
       'Hind hock must sit behind the knee in the bind pose');
-    assert.ok(p.beastToerearL.position.z>.16,
-      'Hind foot needs a forward-projecting metatarsal');
+    const hindMetatarsalZ=p.beastToerearL.position.z+
+      (p.beastPasternrearL?.position.z??0);
+    assert.ok(hindMetatarsalZ>.16,
+      'Hind foot must keep its total forward metatarsal projection after joint split');
     startMonsterAction(model,'walk',0);
     animateMonsterModel(model,.19);
     const first=p.beastHockrearL.rotation.x;
@@ -213,6 +215,20 @@ for(const id of remeshed){
     for(const side of ['L','R']){
       assert.equal(p['legrear'+side].parent,p.torso,
         'm001 hind thigh must follow the rotating torso at the hip');
+      assert.equal(p['legfront'+side].parent,p.torso,
+        'm001 foreleg must follow the rotating chest at the shoulder');
+      for(const segment of ['front','rear']){
+        const key=segment+side;
+        const carpus=p['beastPastern'+key];
+        assert.ok(carpus?.isGroup,'m001 extra carpal/metatarsal joint missing '+key);
+        assert.equal(carpus.parent,p['beastHock'+key],
+          'm001 additional foot joint must follow wrist/hock');
+        assert.equal(p['beastToe'+key].parent,carpus,
+          'm001 toe must articulate below pastern '+key);
+        assert.equal(p['lower'+key].userData.anatomicalJoint,
+          segment==='front'?'elbow':'stifle',
+          'm001 elbows/stifles must have actual pivot identity');
+      }
       const knee=p['lowerrear'+side];
       assert.equal(knee.parent,p['legrear'+side]);
       assert.equal(knee.userData.anatomicalJoint,'stifle');
@@ -221,6 +237,11 @@ for(const id of remeshed){
       assert.ok(Math.abs(p['beastHockrear'+side].position.y+.505)<.00001,
         'm001 hock must be re-based to keep the rest paw in place');
     }
+    const sleeves=meshes.filter(m=>m.userData.jointSeamSleeve);
+    assert.equal(sleeves.length,4,
+      'm001 needs four moving proximal muscle seals without changing low LOD');
+    assert.ok(sleeves.every(m=>m.parent===p['leg'+m.name.split('-').at(-1)]),
+      'proximal sleeves must follow their actual limb pivot');
     const hipSeals=meshes.filter(m=>m.userData.hipSocketSeal);
     assert.equal(hipSeals.length,2,
       'm001 moving hind hips require continuous torso-owned fascia');
@@ -228,14 +249,18 @@ for(const id of remeshed){
       'hip socket geometry must follow the rotating body, not the swinging leg');
     // Exercise multiple stride phases, not only the static idle pose.
     startMonsterAction(model,'walk',0);
+    const jointAngles=[];
     for(const time of [.08,.19,.32,.45,.57]){
       animateMonsterModel(model,time);
       model.updateMatrixWorld(true);
       assert.ok(p.lowerrearL.rotation.x!==0,
         'anatomical stifle must flex through the walking gait');
-      assert.ok(p.legrearL.parent===p.torso,
-        'walking may not detach rear limb from body hierarchy');
+      assert.ok(p.legrearL.parent===p.torso&&p.legfrontL.parent===p.torso,
+        'walking must not detach front or rear limb from body hierarchy');
+      jointAngles.push(p.beastPasternrearL.rotation.x);
     }
+    assert.ok(Math.max(...jointAngles)-Math.min(...jointAngles)>.01,
+      'metatarsal joint needs real cyclic gait flexion, not an inert hierarchy');
     startMonsterAction(model,'idle',.57);
     animateMonsterModel(model,.58);
     assert.ok(Math.abs(front.position.x)>=.39,
@@ -258,9 +283,9 @@ for(const id of remeshed){
     const eyes=meshes.filter(m=>m.name==='eye');
     assert.equal(eyes.length,2);
     const irisSpacing=Math.abs(eyes[0].position.x-eyes[1].position.x);
-    assert.ok(irisSpacing>.35&&irisSpacing<.40,
-      'm001 eyes must be inset from the old wide 0.444 eye spacing');
-    assert.ok(eyes.every(m=>Math.abs(m.position.x)<.27&&m.position.z>.27),
+    assert.ok(irisSpacing>.315&&irisSpacing<.345,
+      'm001 paired eyes must sit inside the previous 0.364 iris spacing');
+    assert.ok(eyes.every(m=>Math.abs(m.position.x)<.175&&m.position.z>.27),
       'm001 fitted irises must remain inset on the forward cranium');
     const skull=meshes.find(m=>m.name==='organic-cranium-m001');
     assert.ok(skull?.userData.canineEyeSocketsRecessed,
@@ -289,8 +314,17 @@ for(const id of remeshed){
       'm001 near/source sculpt needs buried left/right shoulder musculature');
     const lids=meshes.filter(m=>m.userData.anatomicalAlmondEyelid);
     assert.equal(lids.length,2,'both eye sockets need continuous almond eyelids');
-    assert.ok(lids.every(m=>m.userData.flushSkinLid),
-      'm001 must use flush skin-integrated lids rather than raised eyeliner');
+    assert.ok(lids.every(m=>m.userData.flushSkinLid&&m.userData.opticsRecessedBehindLid),
+      'm001 must have flush lids in front of the recessed optic surfaces');
+    assert.ok(eyes.every(m=>m.userData.recessedOpticDepth<.005),
+      'm001 eyes must no longer pop forward from the skin plane');
+    const pupilMeshes=meshes.filter(m=>m.userData.roundCanidPupil);
+    assert.ok(pupilMeshes.every(m=>m.geometry.getAttribute('position').count>20),
+      'm001 eyes retain actual inset pupil geometry, not spherical beads');
+    assert.equal(meshes.filter(m=>m.userData.fangRootCover).length,2,
+      'the protruding ivory tooth roots must remain covered by labial tissue');
+    assert.equal(meshes.filter(m=>m.userData.m001RecessedOralSlit).length,1,
+      'm001 oral slit must replace the former mouth button');
     for(const lid of lids){
       const p=lid.geometry.getAttribute('position');
       let loX=Infinity,hiX=-Infinity,hiZ=-Infinity;
@@ -410,6 +444,18 @@ for(const id of remeshed){
       }
     }
     assert.ok(allRoots>1500,'perimeter should have body-like follicle coverage');
+    const browRootCount=headCoats.reduce((total,coat)=>{
+      const a=coat.geometry.getAttribute('position');let n=0;
+      for(let i=0;i+4<a.count;i+=5){
+        const x=(a.getX(i)+a.getX(i+1))*.5;
+        const y=(a.getY(i)+a.getY(i+1))*.5;
+        const z=(a.getZ(i)+a.getZ(i+1))*.5;
+        if(Math.abs(x)<.325&&y>.08&&z>.10)n++;
+      }
+      return total+n;
+    },0);
+    assert.equal(browRootCount,0,
+      'no pale bristly hair roots may sit over either m001 orbital brow');
     assert.equal(blockedRoots,0,
       'no fur roots on the exposed tiny eyes/nose/mouth face mask');
   }

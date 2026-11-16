@@ -411,12 +411,12 @@ export function createSculpture(spec,detail='high'){
    for(let i=0;i<p.count;i++){
      const x=p.getX(i),y=p.getY(i),z=p.getZ(i);
      if(z<.07)continue;
-     const nx=(Math.abs(x)-.198)/.132;
+     const nx=(Math.abs(x)-.174)/.118;
      const ny=(y-.115)/.095;
      const q=nx*nx+ny*ny;
      if(q>2.65)continue;
      const front=Math.min(1,Math.max(0,(z-.07)/.21));
-     const inset=.045*Math.exp(-2.4*q)*front;
+     const inset=.056*Math.exp(-2.4*q)*front;
      if(inset<.00002)continue;
      p.setZ(i,z-inset);sculpted++;maxInset=Math.max(maxInset,inset);
    }
@@ -436,7 +436,9 @@ export function createSculpture(spec,detail='high'){
    if(Math.abs(side)!==1)throw Error('Invalid wolf eye side');
    // The earlier +/-0.230 placed eyes near the outer cheek silhouette.
    // Inset both paired sockets toward the frontal skull by ~14%.
-   const center=[side*.198,.116,.285];
+   // The m001 eyes must sit in the cranium, not on its cheek outline.
+   // Both optics, lid and recess use exactly one medial canid center.
+   const center=[side*.174,.116,.278];
    const slices=detail==='source'?40:detail==='high'?32:20;
    const bands=detail==='source'?5:3;
    // Shape follows the inner/outer canthus; the outside corner sits higher.
@@ -478,17 +480,18 @@ export function createSculpture(spec,detail='high'){
    // actual visible dark patch IN FRONT of the amber iris, not hidden
    // behind the heavy eyelid rim as in the earlier revision.
    // A slim shadowed eye fissure, not an externally projecting liner.
-   const orbital=patch('shadow','beast-orbit',.071,.025,.002,.001);
-   orbital.userData.socketApertureHalfWidth=.071;
-   orbital.userData.socketApertureHalfHeight=.025;
-   const iris=patch('eye','eye',.0295,.0245,.010,.003,[-.008,0,0]);
+   const orbital=patch('shadow','beast-orbit',.064,.024,.001,.0005);
+   orbital.userData.socketApertureHalfWidth=.064;
+   orbital.userData.socketApertureHalfHeight=.024;
+   const iris=patch('eye','eye',.0295,.023,.0035,.0015,[-.008,0,0]);
    iris.userData.generatorFittedIris=true;
-   iris.userData.openingHeight=.049;
+   iris.userData.openingHeight=.046;
+   iris.userData.recessedOpticDepth=.0035;
    // Wolves have rounded pupils, not a cat's vertical slit.
-   const pupil=patch('shadow','beast-pupil',.012,.014,.021,.002,[-.008,0,0]);
+   const pupil=patch('shadow','beast-pupil',.011,.013,.006,.001,[-.008,0,0]);
    pupil.userData.roundCanidPupil=true;
    pupil.userData.blackPupilVisible=true;
-   const glint=patch('bone','beast-corneal-glint',.002,.003,.026,.001,
+   const glint=patch('bone','beast-corneal-glint',.0016,.0025,.007,.0005,
      [-.016,.010,0]);
    glint.userData.corneaWetHighlight=true;
    // Inset the lid beneath the anterior iris/pupil instead of wrapping the
@@ -497,8 +500,8 @@ export function createSculpture(spec,detail='high'){
    const eyelidPos=[],eyelidUv=[],eyelidIndex=[];
    for(let row=0;row<=2;row++){
      const t=row/2;
-     const rx=.071+(.002*t),ry=.025+(.001*t);
-     const rz=.003+(.0005*t);
+     const rx=.064+(.0015*t),ry=.024+(.001*t);
+     const rz=.0075+(.0005*t);
      for(let col=0;col<=slices;col++){
        const a=col/slices*2*Math.PI,cx=rx*Math.cos(a);
        eyelidPos.push(center[0]+side*cx,
@@ -522,6 +525,7 @@ export function createSculpture(spec,detail='high'){
    lid.userData.socketContactRim=true;
    lid.userData.anatomicalAlmondEyelid=true;
    lid.userData.flushSkinLid=true;
+   lid.userData.opticsRecessedBehindLid=true;
    return {orbital,iris,pupil,glint,lid};
  };
  const anatomicalLoft=(parent,shade,rings,{name='realistic-anatomical-mesh',
