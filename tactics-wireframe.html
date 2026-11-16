@@ -2602,6 +2602,10 @@ async function installBattleModels(){
      a.appearanceOptions?.gender==='male'?'male':
      TOWN_MODE&&a.id===0?(battleParams.get('gender')==='female'?'female':'male'):
      a.id%5===0?'female':'male';
+    const studioFaceOwner=a.isPlayerHero||TOWN_MODE&&a.id===0||
+     !storyRequest&&!TOWN_MODE&&a.team===0&&a.id===0;
+    const studioSavedDemo=studioFaceOwner&&sex==='female'?
+     activeHeroinePreset?.parts:null;
     const defaultAge=(a.isPlayerHero||TOWN_MODE&&a.id===0)?'twenties':a.isStrategist?'forties':
      ['twenties','twenties','thirties','twenties','forties','twenties','thirties','sixties'][a.id%8];
     const townFace=storyLeader?Number(storyLeader.faceId):
@@ -2609,18 +2613,20 @@ async function installBattleModels(){
     const recipe=createHeroProductionRecipe({
      id:a.id,jobId:a.isStrategist?'strategist':a.jobId,jobName:appearanceJob,
      sex,rarity:a.rarity,role:a.isPlayerHero?'protagonist':a.isStrategist?'strategist':'soldier',
-     ageBand:a.appearanceOptions?.ageBand||storyLeader?.ageBand||defaultAge,
-     bodyType:a.appearanceOptions?.bodyType||storyLeader?.bodyType||'normal',
+     ageBand:a.appearanceOptions?.ageBand||storyLeader?.ageBand||
+      studioSavedDemo?.ageBand||defaultAge,
+     bodyType:a.appearanceOptions?.bodyType||storyLeader?.bodyType||
+      studioSavedDemo?.bodyType||'normal',
      faceId:Number.isInteger(townFace)?townFace:a.appearanceOptions?.faceId,
      hairStyle:a.appearanceOptions?.hairStyle,hairColor:a.appearanceOptions?.hairColor
     });
     a.sex=recipe.sex;a.masterRecipe=recipe;
     const studioPattern=resolveBattleStudioPattern(recipe,{
      preset:activeHeroinePreset,
-     lead:a.isPlayerHero||a.isStrategist||TOWN_MODE&&a.id===0,
+     lead:studioFaceOwner,
      // In bare 50v50, provide one controllable female exemplar matching
      // the generator even when there is no story protagonist.
-     previewFemale:!storyRequest&&!TOWN_MODE&&a.team===0&&a.id===0
+     previewFemale:studioFaceOwner&&!storyRequest
     });
     a.studioPattern=studioPattern;
     // The detailed authoring prototype is not yet a playable rig; transfer
@@ -9934,6 +9940,7 @@ function animate(){
     '｜生成器パターン '+actors.filter(a=>a.studioPattern?.version).length+'/'+
       actors.filter(a=>!a.monsterSpec).length+
     '｜生成器実髪 '+actors.filter(a=>a.masterHead?.studioWig).length+
+    '｜保存顔 '+actors.filter(a=>a.studioPattern?.source==='saved-heroine-editor').length+
     '｜頭部LOD '+actors.filter(a=>a.masterHead?.nearDetail).length+
     '｜可視 '+(report.visibility?.visible??0)+'｜GPU '+(perf.gpuFrameMs??'--')+'ms'+
     '｜移動 '+SKIRMISH_DASH_TEMPO.toFixed(2)+'倍'+
