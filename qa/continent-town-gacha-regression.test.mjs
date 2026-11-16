@@ -100,6 +100,16 @@ assert.match(worldHtml,/renderPins\(\);\s*updateCurrentLocation\(\);/,
  'Changing chapters and stage selections must refresh the location banner');
 assert.doesNotMatch(worldHtml,/const current=CAMPAIGN_STAGE_BY_ID\[game\.stage\]\|\|/,
  'Do not leave the old, fixed Chapter 1 location label in place');
+assert.match(worldHtml,/12地域共通マップ/,
+ 'Map revision must be recognizable in the displayed location banner');
+assert.match(worldHtml,/dataset\.mapRevision='20261116-region-labels-2'/,
+ 'Ensure map build revision is explicit for live-page diagnostics');
+assert.doesNotMatch(worldHtml,/\[data-stage-pin\]/,
+ 'Do not register a legacy numeric lock-pin click handler');
+assert.match(worldHtml,/stagesInChapter\(chapter\)\.filter\(s=>s\.territoryId===territory\)/,
+ 'Clicking a named region must never secretly jump to a different chapter');
+assert.match(hubHtml,/world-map\.html\?v=region-labels-20261116-r2/,
+ 'Returning from town must request the newly versioned world-map URL');
 assert.ok(MODEL_FIRST_CATALOG.civilianMale.url);
 assert.ok(MODEL_FIRST_CATALOG.civilianFemale.url);
 console.log('1 continent, 12 always-visible location labels in 20 chapters, 200 stages, gacha, citizens and props: PASS');
