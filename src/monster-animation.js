@@ -141,8 +141,12 @@ export function animateMonsterModel(model,time=0){
    // segments in sagittal space; this never moves the hip socket, scales
    // bones, runs a full scene-graph traversal or allocates GPU geometry.
    // It gives the bent idle legs a grounded forward-weight crouch.
-   let targetSettle=-.060;
-   if(model.userData.detail!=='low'){
+   const prevSettle=model.userData.m001BodySettleY;
+   // Gallop uses level body suspension, not a full ground-planted
+   // correction each airborne phase (which looks like pogo bouncing).
+   let targetSettle=action==='run'?
+     (Number.isFinite(prevSettle)?prevSettle:-.070):-.060;
+   if(action!=='run'&&model.userData.detail!=='low'){
      const alongY=(joint,angle)=>joint.position.y*Math.cos(angle)-
        joint.position.z*Math.sin(angle);
      let lowest=Infinity;
@@ -160,9 +164,8 @@ export function animateMonsterModel(model,time=0){
        lowest=Math.min(lowest,height);
      }
      if(Number.isFinite(lowest))
-       targetSettle=Math.max(-.155,Math.min(.012,.016-lowest));
+       targetSettle=Math.max(-.096,Math.min(-.043,.016-lowest));
    }
-   const prevSettle=model.userData.m001BodySettleY;
    const settleAlpha=dt==null?1:1-Math.exp(-11*dt);
    const settle=Number.isFinite(prevSettle)?
      prevSettle+(targetSettle-prevSettle)*settleAlpha:targetSettle;
