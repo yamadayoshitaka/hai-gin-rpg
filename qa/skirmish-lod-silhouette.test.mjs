@@ -33,9 +33,9 @@ assert.match(game,/prewarmedStudioGrooms/);
 assert.match(game,/hairNow-lastStudioHairSelectionAt>=280/);
 assert.match(game,/bakeInterval=p95>33\?1400:p95>25\?850:350/);
 assert.match(hair,/lod\.addLevel\(scene,index===0\?0:index===1\?14:80\)/);
-assert.match(hair,/const firstAvailable=loaded\\.find\\(Boolean\\)/,
+assert.match(hair,/const firstAvailable=loaded\.find\(Boolean\)/,
  'A missing optional LOD must not leave a character bald');
-assert.match(hair,/const resources=loaded\\.map\\(/);
+assert.match(hair,/const resources=loaded\.map\(/);
 assert.match(outfit,/useSourceSkinnedLegs=\(lowDetail\|\|studioPreferSkinnedLegs\)/,
  'Keep imported 65-bone legs instead of pipe-shaped LOD placeholders');
 assert.match(outfit,/retainedAsSkinnedTrouser=true/);
