@@ -44,15 +44,27 @@ export function buildLeviathanAnatomicalSource(THREE,{segments=56,radial=18}={})
  }
  body.add(tube(skin,0,1));
  // Lower ventral surface is an independent anatomical plate, not a recolored whole body.
- const ventral=tube(belly,.22,.91);ventral.scale.set(1,.985,.985);
- // Restrict ventral material to lower hemisphere with explicit separate mesh.
+ const ventral=tube(belly,.22,.91);
+ // Lift the underside plate *outward* along each elliptical cross-section.
+ // Scaling it below 1 buried the entire PBR plate inside the opaque trunk.
+ // Keep a shallow 2 cm clearance and preserve its axial anatomical curvature.
  const vpos=ventral.geometry.getAttribute('position');
  const vind=ventral.geometry.index.array;const keep=[];
  for(let k=0;k<vind.length;k+=3){
   const ids=[vind[k],vind[k+1],vind[k+2]];
-  if(ids.every(id=>vpos.getY(id)<profile((vpos.getX(id)+5.4)/11.4).y+.08))keep.push(...ids);
+  if(ids.every(id=>vpos.getY(id)<profile((vpos.getX(id)+5.4)/11.4).y-.025))keep.push(...ids);
  }
- ventral.geometry.setIndex(keep);ventral.geometry.computeVertexNormals();ventral.name='ventral-scutes';body.add(ventral);
+ for(let i=0;i<vpos.count;i++){
+  const t=(vpos.getX(i)+5.4)/11.4,p=profile(t);
+  const dy=vpos.getY(i)-p.y,dz=vpos.getZ(i);
+  const ny=dy/Math.max(.01,p.ry*p.ry),nz=dz/Math.max(.01,p.rz*p.rz);
+  const norm=Math.hypot(ny,nz)||1;
+  vpos.setXYZ(i,vpos.getX(i),vpos.getY(i)+.025*ny/norm,vpos.getZ(i)+.025*nz/norm);
+ }
+ ventral.geometry.setIndex(keep);
+ ventral.geometry.computeVertexNormals();
+ ventral.geometry.computeBoundingSphere();
+ ventral.name='ventral-scutes';body.add(ventral);
  const head=new THREE.Group();head.position.set(5.95,.13,0);body.add(head);
  function ellipsoid(parent,name,material,pos,scale){
   const m=new THREE.Mesh(new THREE.SphereGeometry(1,24,16),material);
