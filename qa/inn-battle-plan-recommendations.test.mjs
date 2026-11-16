@@ -37,6 +37,8 @@ assert.match(inn,/sortieModeTabs/);
 assert.match(inn,/battleTeamParameters/);
 assert.match(inn,/recommendBattlePlans/);
 assert.match(css,/overflow-y:auto!important/);
+assert.match(css,/#panel\.formation-command-ui\[hidden\]\{display:none!important;pointer-events:none!important\}/,
+ 'a closed inn panel must never block other town facility touches');
 assert.match(css,/\.sortieModeTabs/);
 assert.match(score,/town:'heartfelt',inn:'whispers'/);
 assert.match(battle,/numberedPin\(center,group\+'-'\+/);

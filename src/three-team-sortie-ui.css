@@ -160,3 +160,6 @@
 .sortieCompactStatus .sortieRarityCompact{display:block;font-size:9px;line-height:1.25;color:#d5e8f3;overflow-wrap:anywhere}
 .sortieMinimumDisclosure summary{font-size:11px;color:#f4d9aa;cursor:pointer;padding:4px 5px;border:1px solid #6e8797;border-radius:6px}
 .sortieMinimumDisclosure:not([open]) .sortieMinimumSummary{display:none}
+
+/* Closed inn must never intercept town taps; specificity beats active flex layout. */
+#panel.formation-command-ui[hidden]{display:none!important;pointer-events:none!important}
