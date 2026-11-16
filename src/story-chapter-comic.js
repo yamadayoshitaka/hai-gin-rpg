@@ -66,6 +66,10 @@ export function comicForStage(stageId,phase,context={}){
  // openings/outcomes with the STAGE-SPECIFIC situation and verified result.
  if(stage.chapter<=5){
   const script=screenplayForStage(stageId,{...safeContext,
+   // Original locked P0 actor/scene manifests were authored against this
+   // exact historical wording. The playable game uses the independently
+   // revised dialogue in story-compact-comic.js instead.
+   artManifestCompatible:true,
    protagonistGender:context.protagonistGender==='female'?'female':'male'});
   const retell=(reference,line)=>Object.freeze({...reference,
    speaker:line.speaker,characterId:line.characterId,secondaryId:null,
