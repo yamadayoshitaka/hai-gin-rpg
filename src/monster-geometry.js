@@ -1694,7 +1694,14 @@ export function createMonsterModel(spec,{detail='high'}={}){
  g.root.userData.homeScale=g.root.scale.x;
  g.root.userData.surfaceFamily=spec.family;
  g.root.userData.anatomyEvidence=monsterEvidenceFor(spec);
- attachMonsterFaceControls(g.root,{id:spec.id});
+ // The identity randomizer used to shift the "eye" iris alone while the
+ // pupil, orbital aperture and lids stayed at their sculpted coordinates.
+ // Lock m001's eye / jaw profile to the anatomical source instead.
+ attachMonsterFaceControls(g.root,{id:spec.id,
+   overrides:spec.id==='m001'?{
+     eyesType:'almond',eyeSpacing:1,eyeSize:1,
+     mouthType:'neutral',mouthWidth:1,mouthFullness:1
+   }:{} });
  return g.root;
 }
 export {disposeMonsterSculpture};
