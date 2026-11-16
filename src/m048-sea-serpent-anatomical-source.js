@@ -53,6 +53,17 @@ export function buildSeaSerpentAnatomicalSource(THREE,{rings=112,sides=16}={}){
   ellipsoid(head,'eye-'+side,eyeMat,.37,.15,side*.49,.14,.13,.065);
   ellipsoid(head,'slit-pupil-'+side,pupil,.41,.15,side*.55,.038,.10,.018);
   ellipsoid(head,'nostril-'+side,pupil,1.56,-.06,side*.20,.045,.025,.03);
+  // Independent dentary tooth row is parented to the mobile jaw, not the skull.
+  // Recurved fangs follow the jaw pivot during strike and gape animations.
+  for(let k=0;k<10;k++){
+   const u=k/9;
+   const height=.075+.055*Math.sin(Math.PI*u);
+   const fang=new THREE.Mesh(new THREE.ConeGeometry(.022*(1-.25*u),height,8),ventral);
+   fang.name='mobile-dentary-fang-'+side+'-'+k;
+   fang.position.set(.28+1.08*u,.055+height*.38,side*(.29-.095*u));
+   fang.rotation.z=-.20*(1-u);
+   jaw.add(fang);
+  }
   for(let k=0;k<11;k++){
    const tooth=new THREE.Mesh(new THREE.ConeGeometry(.025,.12,6),ventral);
    tooth.position.set(.55+k*.11,-.24,side*(.27-.04*k/11));tooth.rotation.z=Math.PI;
