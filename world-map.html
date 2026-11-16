@@ -160,31 +160,24 @@ function setPan(amount){
  pan=Math.max(-extra,Math.min(extra,amount));board.style.setProperty('--pan',pan+'px');
 }
 function renderPins(){
+ // The same twelve named territories appear across all twenty chapters.
+ // Chapter selection changes only the highlighted destination; stage locks
+ // remain in the ten-slot stage list, never as icons covering the world map.
  const board=$('mapBoard');
- if(chapter===1){
-  board.style.backgroundImage="url('./assets/story-world-map-v0.5.webp')";
-  board.setAttribute('aria-label','第1章・灰銀大陸の領土');
-  board.innerHTML=TERRITORIES.map(t=>{
-   const owner=game.campaign.owners[t.id]||t.owner;
-   const color=({player:'#68c7ee',crimson:'#f58a78',verdant:'#94d7a1',neutral:'#8d98a5'})[owner]||'#8d98a5';
-   return '<button type="button" class="pin '+(CAMPAIGN_STAGE_BY_ID[selected]?.territoryId===t.id?'current-location':'')+'" data-territory="'+t.id+'" style="left:'+t.mapX+'%;top:'+t.mapY+'%;--faction:'+color+'" aria-pressed="'+(territory===t.id)+'" title="'+escapeHtml(FACTIONS[owner]?.name||'領地')+'">'+escapeHtml(t.name)+'</button>';
-  }).join('');
-  return;
- }
+ const focus=CAMPAIGN_STAGE_BY_ID[selected]?.territoryId||
+  continentForChapter(chapter).regionId;
+ const region=continentForChapter(chapter);
  board.style.backgroundImage=continentMapUrl(chapter);
- board.setAttribute('aria-label','灰銀大陸・'+continentForChapter(chapter).nation+'・'+continentForChapter(chapter).regionName+'・第'+chapter+'章');
- const stages=stagesInChapter(chapter),spots=continentStagePoints(chapter);
- board.innerHTML=stages.map((stage,i)=>{
-  const spot=spots[i],unlocked=stageUnlocked(stage,game.completedStages),done=game.completedStages.includes(stage.id);
-  // The full stage name remains in the bottom ten-slot selector and tooltip.
-  // Tiny numbered geographic markers do not overlap on narrow phone screens.
-  const label=String(stage.slot).padStart(2,'0');
-  return '<button type="button" class="pin stage-pin '+(selected===stage.id?'current-location ':'')+(unlocked?'':'locked ')+(selected===stage.id?'selected':'')+'" data-stage-pin="'+stage.id+
-   '" style="left:'+spot.x.toFixed(2)+'%;top:'+spot.y.toFixed(2)+'%;--faction:'+(done?'#8bd9a6':unlocked?'#e9c989':'#7b8b95')+
-   '" aria-pressed="'+(selected===stage.id)+'" aria-label="'+escapeHtml('第'+stage.slot+'ステージ '+stage.name+(done?' クリア済み':unlocked?' 出撃可能':' 未解放'))+'" title="'+escapeHtml(stage.name)+'">'+(done?'✓':unlocked?escapeHtml(label):'🔒')+'</button>';
+ board.setAttribute('aria-label','灰銀大陸・第'+chapter+'章・'+region.regionName+'の12地域');
+ board.innerHTML=TERRITORIES.map(t=>{
+  const owner=game.campaign.owners[t.id]||t.owner;
+  const color=({player:'#68c7ee',crimson:'#f58a78',verdant:'#94d7a1',neutral:'#8d98a5'})[owner]||'#8d98a5';
+  return '<button type="button" class="pin '+(focus===t.id?'current-location':'')+
+   '" data-territory="'+t.id+'" style="left:'+t.mapX+'%;top:'+t.mapY+'%;--faction:'+color+
+   '" aria-pressed="'+(focus===t.id)+'" title="'+escapeHtml(FACTIONS[owner]?.name||'領地')+'">'+
+   escapeHtml(t.name)+'</button>';
  }).join('');
 }
-
 
 function renderStoryEndingControls(){
  const bar=$('storyEndingBar');
