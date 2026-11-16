@@ -138,6 +138,9 @@ function fittedScalpSurface(model,bone,headBounds){
   point.add(radial);
   local.set([point.x,point.y,point.z],i*3);eligible[i]=1;
  }
+ // Compute the scalp span once; repeated Box3/Vector3 allocations per triangle
+ // caused avoidable GC stalls during hairstyle/preset regeneration on Android.
+ const headSpanSq=headBounds.getSize(new THREE.Vector3()).lengthSq();
  const triangles=[],uv=[],indices=mesh.geometry.index.array;
  for(let i=0;i<indices.length;i+=3){
   const a=indices[i],b=indices[i+1],c=indices[i+2];
@@ -156,11 +159,10 @@ function fittedScalpSurface(model,bone,headBounds){
   // A malformed skin triangle spanning the crown can become a floating dark
   // plate even when its area is nonzero. Reject edges exceeding the measured
   // cranium's diagonal, while retaining normal broad forehead polygons.
-  const headSpan=headBounds.getSize(new THREE.Vector3()).length();
   const edgeAB=ux*ux+uy*uy+uz*uz;
   const edgeAC=vx*vx+vy*vy+vz*vz;
   const wx=local[c*3]-local[b*3],wy=local[c*3+1]-local[b*3+1],wz=local[c*3+2]-local[b*3+2];
-  if(Math.max(edgeAB,edgeAC,wx*wx+wy*wy+wz*wz)>headSpan*headSpan)continue;
+  if(Math.max(edgeAB,edgeAC,wx*wx+wy*wy+wz*wz)>headSpanSq)continue;
   const outward=nx*(ax-center.x)+ny*(ay-center.y)+nz*(az-center.z);
   for(const v of (outward<0?[a,c,b]:[a,b,c])){
    const x=local[v*3],y=local[v*3+1],z=local[v*3+2];
