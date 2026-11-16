@@ -7,7 +7,7 @@
       "sourceFiles": [
         "src/m020-leviathan-anatomical-source.js"
       ],
-      "commitSha": "6b1f3c414d522da7892e0e16407b5a675eaad7f9",
+      "commitSha": "d22c5622c487f5f860dbafa2325aa06477feddfd",
       "qa": "unverified"
     },
     {
@@ -67,5 +67,5 @@
     "m049",
     "m050"
   ],
-  "nextAction": "m048 animated skull tangent alignment committed; run syntax/static and front/side/rear WebGL + Android QA, resolve PR #426 mobile-battle E2E failure; verify m020 before merge."
+  "nextAction": "Run Node syntax and WebGL front/side/rear for m020 ventral scute visibility and m048 skull tangent; check Android FPS and cancelled Battle visual E2E before merging."
 }
