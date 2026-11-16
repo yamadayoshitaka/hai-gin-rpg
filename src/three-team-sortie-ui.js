@@ -6,6 +6,7 @@ import {FORMATION_ROLES,ROLE_NAMES,FREE_FORMATION_NAME,formationJobMinimums,form
 import {SORTIE_RARITIES,rarityOf} from './sortie-formation-template-rules.js';
 import {STRATEGY_TREE,STRATEGY_METHODS,STORY_JOB_TO_STRATEGY_JOB} from './three-step-strategy-catalog.js';
 import {planStrategyDistribution} from './targeted-strategy-runtime.js';
+import {battleTeamParameters,BATTLE_TRAIT_LABELS,recommendBattlePlans,battleStageContext} from './battle-plan-recommendations.js';
 import {TACTICAL_ORDERS} from './tactical-command-descriptions.js';
 const esc=s=>String(s??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 const button=(attr,title,selected=false)=>'<button type="button" '+attr+' class="'+(selected?'selected':'')+'">'+title+'</button>';
@@ -68,9 +69,8 @@ export function renderThreeTeamPlanner({game,teamId=1,cellIndex=5,view='setup',j
   '<div class="sortieFormationGrid" role="group" aria-label="4×4のジョブ配置盤">'+cells+'</div>'+
   '<div class="sortieGridFooter"><small>固定テンプレート '+(quota.spec.slots)+'隊 · '+esc(status.reason)+'</small>'+
   button('data-sortie-view="count"','人数 ▸')+button('data-sortie-view="divisions"','分隊 ▸')+'</div>'+
-  '<div class="sortieMinimumSummary"><b>各ジョブの最低配置人数（未達成はバフなし）</b><div>'+
-  (minSummary||'<small>自由陣形：職業別最低人数なし・陣形バフなし</small>')+'</div></div>'+
-  '<div class="sortieQuotaSummary"><b>この陣形 '+quota.total+'/'+quota.capacity+'人</b><small>'+esc(tierSummary)+'</small></div>'+captainPanel;
+  '<div class="sortieCompactStatus">'+(status.valid?'✓ 陣形成立':'⚠ '+esc(status.reason))+
+  '　'+quota.total+'/'+quota.capacity+'人　'+esc(SORTIE_FORMATIONS[team.formation]?.name||'自由配置')+'</div>';
  const templateIds=Object.keys(SORTIE_FORMATIONS);
  const pageCap=6,templatePages=Math.ceil(templateIds.length/pageCap);
  const tPage=Math.max(0,Math.min(templatePages-1,Number(templatePage)||0));
@@ -151,9 +151,40 @@ export function renderThreeTeamPlanner({game,teamId=1,cellIndex=5,view='setup',j
     '<small class="sortieHint">③から作戦を1つ以上選んでください。</small>')+'</div>'+
   (distribution.unmatched.length?'<small class="sortieHint">役割不一致で未配属 '+distribution.unmatched.length+'隊</small>':'')+
   '<small class="sortieHint">'+esc(status.reason)+'。配分率は人数に基づく計画値で、成功率ではありません。陣形が成立しない自由配置は作戦を実行できません。</small>';
- const pagesByView={setup:main,templates,jobs,count:countPanel,orders:orderPanel,captains:captainPage,divisions:divisionPanel};
+ const stage=battleStageContext(sortiePlanningStage(game));
+ const params=battleTeamParameters(game,team.id);
+ const recommendations=recommendBattlePlans(game,stage,team.id,{limit:9});
+ const activePlan=game.activeBattlePlanByTeam?.[String(team.id)]||'';
+ const assessment='<div class="sortieSubHead"><b>第'+team.id+'班：得意分野の評価</b>'+back+'</div>'+
+ '<small class="sortieHint">配置済み兵士の職業構成から算出する編成適性（0〜100）。勝率ではありません。</small>'+
+ '<div class="sortieTraitBars">'+Object.entries(params.parameters).map(([key,value])=>
+ '<div><span>'+esc(BATTLE_TRAIT_LABELS[key])+'</span><meter min="0" max="100" value="'+value+'"></meter><b>'+value+'</b></div>').join('')+'</div>'+
+ '<div class="sortieCompactStatus">得意：'+esc(params.highlights.join('・')||'未編成')+
+ ' ／ 編成人数：'+params.people+' ／ 陣形：'+esc(params.formation)+'</div>'+
+ '<div class="sortieMinimumSummary"><b>陣形成立条件</b><div>'+
+ (minSummary||'<small>自由陣形：人数制限なし／バフなし</small>')+'</div></div>'+
+ '<div class="sortieQuotaSummary"><b>'+quota.total+'/'+quota.capacity+'人</b><small>'+esc(tierSummary)+'</small></div>'+
+ captainPanel;
+ const battlePlans='<div class="sortieSubHead"><b>次戦に合う作戦テンプレート</b>'+back+'</div>'+
+ '<small class="sortieHint">目的：'+esc(stage.winCondition||stage.name)+' ／ 地形：'+esc(stage.biome)+
+ '。適合度は作戦との相性を示す参考スコアです。</small>'+
+ '<div class="sortieBattlePlanList">'+recommendations.map((plan,i)=>
+ '<div class="sortieBattlePlan"><strong>'+(i===0?'★ 推奨 ':'')+esc(plan.name)+
+ ' <small>適合 '+plan.score+'/100</small></strong><small>'+esc(plan.reason)+'</small>'+
+ button('data-sortie-battle-plan="'+esc(plan.id)+'" '+(!plan.eligible?'disabled':''),
+  activePlan===plan.id?'✓ 選択中':'この班へ採用',activePlan===plan.id)+'</div>').join('')+'</div>'+
+ '<div class="sortiePlanSave"><b>独自テンプレートを保存</b>'+
+ '<input data-battle-plan-name maxlength="28" aria-label="新しいテンプレート名" placeholder="例：橋頭堡防衛A">'+
+ '<select data-battle-plan-method aria-label="実行方法">'+
+ Object.values(STRATEGY_METHODS).map(m=>'<option value="'+esc(m.id)+'">'+esc(m.name)+'</option>').join('')+
+ '</select><button type="button" data-sortie-battle-save>現在のステージ目的で保存</button></div>';
+ const tabList=[['setup','配置'],['templates','陣形'],['orders','作戦'],['battlePlans','テンプレ'],['assessment','評価'],['captains','隊長']];
+ const tabBar='<nav class="sortieModeTabs" aria-label="宿屋の機能">'+tabList.map(([key,label])=>
+ button('data-sortie-view="'+key+'"',esc(label),view===key)).join('')+'</nav>';
+ const pagesByView={setup:main,templates,jobs,count:countPanel,orders:orderPanel,captains:captainPage,divisions:divisionPanel,battlePlans,assessment};
  return '<section class="sortiePlanner" aria-label="最大3班・Lvに応じた隊数・4×4配置">'+
   '<div class="sortieTop"><b>⚑ 最大3班・Lv.'+level+'（仮）</b><small>予定出撃 '+plannedTotal+'/'+battleCap+'人 · 予備'+Math.max(0,inventoryTotal-plannedTotal)+'人</small></div>'+
-  groupButtons+(pagesByView[view]||main)+
-  '<small class="sortieHint">次戦「'+esc(stageName)+'」の出撃上限'+battleCap+'人（所持兵'+inventoryTotal+'人、超過は予備）。選択陣形 '+quota.spec.slots+'隊・最大'+quota.spec.maxTroops+'人。各レアリティの定員も適用。'+esc(status.reason)+'。有効バフ：攻撃'+Math.round(formBuff.attack*100)+'%／防御'+Math.round(formBuff.defense*100)+'%。分隊後も隊長の班に所属する限り維持。出撃地点は戦闘前に選択。</small></section>';
+  groupButtons+tabBar+'<div class="sortieViewBody">'+(pagesByView[view]||main)+'</div>'+
+  '<small class="sortieHint sortiePlannerFoot">次戦「'+esc(stageName)+'」 上限'+battleCap+'人。'+
+    '陣形：攻撃+'+Math.round(formBuff.attack*100)+'%／防御+'+Math.round(formBuff.defense*100)+'%。</small></section>';
 }
