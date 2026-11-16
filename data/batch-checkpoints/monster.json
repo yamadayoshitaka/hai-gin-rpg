@@ -15,7 +15,7 @@
       "sourceFiles": [
         "src/m048-sea-serpent-anatomical-source.js"
       ],
-      "commitSha": "6ba9ba1db4f35d2cad9c597b54df0db12e9f2caa",
+      "commitSha": "8a009ccd5959efc31956d77ab0c5c6907901da65",
       "qa": "unverified"
     }
   ],
@@ -67,5 +67,5 @@
     "m049",
     "m050"
   ],
-  "nextAction": "Run Node syntax and WebGL front/side/rear for m020 ventral scute visibility and m048 skull tangent; check Android FPS and cancelled Battle visual E2E before merging."
+  "nextAction": "Run Node syntax, WebGL four-view belly seam and neck alignment tests for m020/m048; then Android FPS and E2E before merging."
 }
