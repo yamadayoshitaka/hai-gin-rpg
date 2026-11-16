@@ -47,12 +47,12 @@
     },
     "monster": {
       "source": "ChatGPT 定期タスクの実行結果",
-      "lastRunAt": "2026-11-16T01:06:48Z",
-      "subject": "m048海蛇の可動下顎に独立牙列20本を実メッシュ追加（全108体監査未完）",
-      "summary": "monster ON。既存Draft PR #426のm048専用ソースで、左右10本ずつの独立下顎牙を可動jawへ追加。実ソースSHA db7abed7、チェックポイントbf043e76。今回実造形改修1ID、GLB再生成0、実描画QA合格0、ゲーム反映0。全108件の個別監査未完。Node/WebGL/Android QA未実施につきmainマージ・公開なし。m005/m006・召喚版・元GLB保護維持。",
+      "lastRunAt": "2026-11-16T02:08:56Z",
+      "subject": "m048海蛇の連続側線感覚隆起を実メッシュ追加（WebGL QA未検証）",
+      "summary": "monster ON。PR #426作業ブランチでm048の左右連続側線をTubeGeometry実メッシュと独立PBR材質で追加し、泳動に追従する頂点変形を実装。実ソースSHA fe9bbed3、チェックポイント9b57dd7a。今回実造形ソース改修1ID、GLB再生成0、描画QA合格0、実ゲーム反映0。正本108ID全数監査・Node/WebGL/Android QA未実施。保護対象変更なし。mainマージ・公開なし。",
       "status": "work_incomplete",
       "carryover": true,
-      "nextAction": "PR #426でm020/m048のNode/Three形状と顎・牙アニメーション、WebGL前後左右、Android性能、正本108IDの全数監査、GLB/LOD再生成とゲーム/マスター接続を順に実施。",
+      "nextAction": "PR #426のm048側線変形をNode構文・Three/WebGL前後左右で検証。m020/m048の原型/LOD/ゲーム接続と正本108IDの全数監査を進める。未検証のためmainマージ禁止。",
       "steps": {
         "launch": "done",
         "code": "done",
@@ -64,16 +64,16 @@
       },
       "evidence": [
         {
-          "label": "m048実造形ソース改修",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/db7abed7336da84487b0d54870d7310a2f7538e6"
+          "label": "m048側線実ソースコミット",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/fe9bbed3c6eba06e284785536b110adb872e7567"
         },
         {
-          "label": "既存Draft PR #426",
+          "label": "Draft PR #426",
           "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/426"
         },
         {
-          "label": "途中再開チェックポイント",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/bf043e76aff90e9735364e41a09eba125cd407dd"
+          "label": "途中チェックポイント",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/9b57dd7a6989841cbf5fe32792c56b30f252a36c"
         }
       ]
     },
