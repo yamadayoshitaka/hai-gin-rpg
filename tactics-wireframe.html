@@ -910,8 +910,11 @@ import {TOWN_ADULT_HEIGHT,TOWN_BODY_RADIUS,TOWN_HEIGHT_LIMIT,TOWN_SCENE_MODE,tow
 import {STARTER_TOWN} from './src/starter-town.js';
 import {createCharacter} from './src/character-system/shared-character-runtime.js?v=20261116-skills';
 import {createHeroProductionRecipe,heroProductionActionCue,HERO_VARIANT_COUNT} from './src/hero-production-character-factory.js?v=20261116-swap1';
-import {loadBattleHeadMaster,attachBattleArtistHead,battleHeadMasterStats,BATTLE_HEAD_MASTER_VERSION}
- from './src/character-system/battle-artist-head-graft.js?v=20261116-real-sculpt1';
+import {loadBattleHeadMaster,attachBattleArtistHead,battleHeadMasterStats,
+ equipBattleStudioHair,releaseBattleStudioHair,BATTLE_HEAD_MASTER_VERSION}
+ from './src/character-system/battle-artist-head-graft.js?v=20261116-studio-pattern2';
+import {currentHeroineStudioPreset,resolveBattleStudioPattern}
+ from './src/character-system/battle-generator-appearance.js?v=20261116-studio-pattern1';
 import {enhanceStudioCombatMaterials,refineHeroineCostumeSilhouette}
  from './src/heroine-battle-costume-bridge.js?v=70';
 import {applySkinnedBuildMorph} from './src/body-build-morph-v48.js?v=60';
@@ -2467,6 +2470,16 @@ function motionDiagnosticReport(){
  return 'T字・モーション・衣装診断（'+BATTLE_SIZE+'体）\n'+[...byJob].map(([job,v])=>job+'：正常再生 '+v.active+'/'+v.total+'、衣装 '+v.dressed+'/'+v.total+'、モデル未準備 '+v.missing).join('\n')+'\n\n問題候補（最大30件）\n'+(issues.slice(0,30).join('\n')||'再生状態・衣装読み込みの異常は未検出')+'\n※姿勢と衣装のフィット具合は別途目視確認が必要';
 }
 window.getBattleArtistHeadReport=()=>battleHeadMasterStats(actors);
+window.getBattleStudioPatternReport=()=>({
+ ...battleHeadMasterStats(actors),
+ specimens:actors.filter(a=>a.studioPattern).slice(0,20).map(a=>({
+  id:a.id,team:a.team,job:a.job?.name,sex:a.studioPattern.sex,
+  age:a.studioPattern.ageBand,rarity:a.masterRecipe?.rarity,
+  patternSource:a.studioPattern.source,faceParts:a.studioPattern.partIds,
+  hairStyleId:a.studioPattern.hairStyleId,hairColor:a.studioPattern.hairHex,
+  actualScalpWig:!!a.masterHead?.studioWig
+ }))
+});
 window.getHeroProductionSwapStatus=()=>({
  sculptedHead:battleHeadMasterStats(actors),
  recipeVersion:'hero-production-v1',availableVariants:HERO_VARIANT_COUNT,
@@ -2560,6 +2573,10 @@ async function installBattleModels(){
  loadingProgress('主人公の高精細3D頭部原本を読み込み中…',38);
  const artistHeadSource=actors.some(a=>!a.monsterSpec)?
   await loadBattleHeadMaster():null;
+ // The generator's same-origin saved hairstyle/face changes were previously
+ // ignored completely. Read only once at startup; keep ordinary enemy/ally
+ // variants deterministic from the common studio catalog.
+ const activeHeroinePreset=currentHeroineStudioPreset();
  let installed=0,animated=0,dressed=0,outfitFailures=0,sculpted=0;
   // Stagger asynchronous creation to avoid overwhelming mobile memory.
   for(let i=0;i<actors.length;i+=5){
@@ -2598,6 +2615,14 @@ async function installBattleModels(){
      hairStyle:a.appearanceOptions?.hairStyle,hairColor:a.appearanceOptions?.hairColor
     });
     a.sex=recipe.sex;a.masterRecipe=recipe;
+    const studioPattern=resolveBattleStudioPattern(recipe,{
+     preset:activeHeroinePreset,
+     lead:a.isPlayerHero||a.isStrategist||TOWN_MODE&&a.id===0,
+     // In bare 50v50, provide one controllable female exemplar matching
+     // the generator even when there is no story protagonist.
+     previewFemale:!storyRequest&&!TOWN_MODE&&a.team===0&&a.id===0
+    });
+    a.studioPattern=studioPattern;
     // The detailed authoring prototype is not yet a playable rig; transfer
     // appearance controls to the SAME 65-bone skinned model as the hero studio.
     const character=await createCharacter({
@@ -2610,7 +2635,7 @@ async function installBattleModels(){
     // the garment/body-occlusion pass uses that source geometry.
     try{
      a.masterHead=attachBattleArtistHead({
-      character,recipe,source:artistHeadSource,
+      character,recipe,source:artistHeadSource,pattern:studioPattern,
       animatedFace:a.isPlayerHero||a.isStrategist||TOWN_MODE&&a.id===0
      });
      sculpted++;
@@ -2644,8 +2669,14 @@ async function installBattleModels(){
      try{
       a.outfit=await buildRiggedJobOutfit({characterModel:character.model,parent:character.object3D,
        job:recipe.outfitJob,sex:recipe.sex,quality:'battle',rarity:recipe.rarity,
-       hairStyle:recipe.hairStyle,hairColor:recipe.hairColor,
+       hairStyle:1+studioPattern.hairIndex%(recipe.sex==='female'?12:14),
+       hairColor:studioPattern.hairColor,
        preserveBody:false,weaponOverride:a.job.name==='槍兵'?'spear':null});
+      // The authoring preview shows sculpted heads without floating helmets
+      // or green hood masks. Expose the studio-aligned fitted middle-LOD hair
+      // until an actual scalp-grown near-LOD wig has been fitted.
+      a.outfit.setHelmetVisible(false);
+      a.outfit.setHairVisible(true);
       // Original anatomy is retained in the source rig for restoring and fit;
       // the displayed body keeps only skin not covered by real clothes.
       a.bodyVerticesAfter=[...anatomy].reduce((sum,[part])=>
@@ -2710,10 +2741,13 @@ async function installBattleModels(){
     '体 / 実モーション衣装 '+Math.min(i+5,actors.length)+'/'+actors.length+'体',
     42+36*Math.min(1,(i+5)/Math.max(1,actors.length)));
  }
-  log('実造形原本による頭部交換 '+sculpted+'/'+actors.filter(a=>!a.monsterSpec).length+
-   '体（'+BATTLE_HEAD_MASTER_VERSION+'） / 実人体 '+installed+'/'+actors.length+
-   '体・実衣装 '+dressed+'体・モーション '+animated+'体を準備完了');
+  log('主人公ジェネレータの顔・髪パターン '+actors.filter(a=>a.studioPattern).length+
+   '/'+actors.filter(a=>!a.monsterSpec).length+
+   '体（保存済み編集値 '+actors.filter(a=>a.studioPattern?.source==='saved-heroine-editor').length+
+   '体） / 実頭部 '+sculpted+'体・実衣装 '+dressed+'体・動作 '+animated+'体');
   if(outfitFailures)console.warn('衣装の読み込み失敗 '+outfitFailures+'体\n'+motionDiagnosticReport());
+  if(actors.filter(a=>!!a.studioPattern).length!==actors.filter(a=>!a.monsterSpec).length)
+   throw Error('ジェネレータの顔・髪パターンが戦闘用モデルへ反映されていません');
   if(sculpted!==actors.filter(a=>!a.monsterSpec).length)
    throw Error('高精細頭部の置換が未完了: '+sculpted+'/'+actors.filter(a=>!a.monsterSpec).length+
     '体。旧人体を新モデルと報告しません。');
@@ -9882,11 +9916,13 @@ function animate(){
    if(skirmishPerformancePanel){
     const highestDetail=actors.filter(a=>a.masterHead&&a.root.visible)
       .map(a=>({a,d:a.root.position.distanceToSquared(camera.position)}))
-      .sort((x,y)=>x.d-y.d)
-      .slice(0,18);
-    const detailed=new Set(highestDetail.map(x=>x.a));
+      .sort((x,y)=>x.d-y.d);
+    const detailed=new Set(highestDetail.slice(0,18).map(x=>x.a));
     for(const a of actors)if(a.masterHead)a.masterHead.setNearDetail(
      detailed.has(a)||a.isPlayerHero&&a.root.visible);
+    // Only SIX animated close-up people get the real 3D scalp-based groom.
+    // It does not run per frame and never allocates 100 heavy studio wigs.
+    refreshBattleStudioGroom(highestDetail,adaptiveAt);
    }
    if(skirmishPerformancePanel)skirmishPerformancePanel.textContent=
     'FPS '+perf.fps+'｜P95 '+perf.frameP95Ms+'ms｜50ms超 '+(perf.longFrames50??0)+
@@ -9895,6 +9931,9 @@ function animate(){
     '｜衣装 '+report.dressed+'/'+report.totalActors+
     '｜高精細頭部 '+actors.filter(a=>a.masterHead?.attached).length+'/'+
       actors.filter(a=>!a.monsterSpec).length+
+    '｜生成器パターン '+actors.filter(a=>a.studioPattern?.version).length+'/'+
+      actors.filter(a=>!a.monsterSpec).length+
+    '｜生成器実髪 '+actors.filter(a=>a.masterHead?.studioWig).length+
     '｜頭部LOD '+actors.filter(a=>a.masterHead?.nearDetail).length+
     '｜可視 '+(report.visibility?.visible??0)+'｜GPU '+(perf.gpuFrameMs??'--')+'ms'+
     '｜移動 '+SKIRMISH_DASH_TEMPO.toFixed(2)+'倍'+
@@ -9927,6 +9966,41 @@ function animate(){
      massSim.units.filter(u=>u.alive&&u.upperPursuitTargetId>=0).length+
      '｜AI '+massSim.lastAiMs.toFixed(1)+'ms':
    '実物衣装ロード中｜'+actors.filter(a=>a.outfit).length+'/'+actors.length+'種類の元モデル';}}
+}
+
+const STUDIO_GROOM_MAX=6;
+let lastStudioGroomAt=0;
+/** The expensive sculpt-to-hair bake executes max one time per 4s tick,
+ * only for visible nearest faces. All distant people retain the variant-
+ * matched optimized GLB hair with the old hood hidden.
+ */
+function refreshBattleStudioGroom(distanceSorted,now){
+ if(now-lastStudioGroomAt<4000||!battleReady||TOWN_MODE)return;
+ lastStudioGroomAt=now;
+ const desired=new Set(distanceSorted.slice(0,STUDIO_GROOM_MAX).map(x=>x.a));
+ const currently=actors.filter(a=>a.masterHead?.studioWig);
+ // Avoid rebuilding every frame as soldiers exchange positions.
+ for(const a of currently){
+  if(desired.has(a))continue;
+  releaseBattleStudioHair(a.masterHead);
+  a.outfit?.setHairVisible(true);
+ }
+ if(actors.filter(a=>a.masterHead?.studioWig).length>=STUDIO_GROOM_MAX)return;
+ const next=distanceSorted.map(x=>x.a).find(a=>
+  desired.has(a)&&a.studioPattern&&a.outfit&&!a.masterHead?.studioWig);
+ if(!next)return;
+ try{
+  equipBattleStudioHair(next.masterHead,next.studioPattern,{
+   hero:!!next.isPlayerHero||!!next.isStrategist||next.team===0&&next.id===0
+  });
+  next.outfit.setHairVisible(false);
+  next.outfit.setHelmetVisible(false);
+  next.studioHairError=null;
+ }catch(e){
+  next.studioHairError=String(e?.message||e);
+  console.warn('ジェネレーターと同じ髪形の近景メッシュ生成に失敗',next.id,e);
+  next.outfit?.setHairVisible(true);
+ }
 }
 window.getBattleStartupStats=()=>({ready:battleReady,error:loadingFailure?String(loadingFailure):null,
  resolutionScale:BATTLE_RESOLUTION_SCALE,adaptiveQuality:adaptiveBattleResolution.getStats(),
