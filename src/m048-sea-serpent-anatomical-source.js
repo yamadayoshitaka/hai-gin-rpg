@@ -141,8 +141,18 @@ export function buildSeaSerpentAnatomicalSource(THREE,{rings=112,sides=16}={}){
  // Distinct webbed dorsal crest grows from axial body, with independently shaped finlets.
  for(let k=0;k<18;k++){
   const t=.12+k*.042,c=center(t),r=radius(t),h=.18+.29*Math.sin(Math.PI*k/18);
-  const points=[c.x-.15,c.y+r*.78,c.z,c.x-.30,c.y+r*.78+h,c.z,
-    c.x+.09,c.y+r*.78+h*.65,c.z,c.x+.20,c.y+r*.78,c.z];
+  // Anchor the crest to the bent spine's dorsal normal, not world Y.
+  // The four fin corners share the trunk's local axial/tangential frame.
+  const tangent=center(Math.min(1,t+.001)).sub(center(Math.max(0,t-.001))).normalize();
+  const up=new THREE.Vector3().crossVectors(new THREE.Vector3(0,0,1),tangent).normalize();
+  const anchor=c.clone().addScaledVector(up,r*.78);
+  const corners=[
+   anchor.clone().addScaledVector(tangent,-.15),
+   anchor.clone().addScaledVector(tangent,-.30).addScaledVector(up,h),
+   anchor.clone().addScaledVector(tangent,.09).addScaledVector(up,h*.65),
+   anchor.clone().addScaledVector(tangent,.20)
+  ];
+  const points=corners.flatMap(p=>[p.x,p.y,p.z]);
   const g=new THREE.BufferGeometry();
   g.setAttribute('position',new THREE.Float32BufferAttribute(points,3));
   g.setIndex([0,1,2,0,2,3]);g.computeVertexNormals();
