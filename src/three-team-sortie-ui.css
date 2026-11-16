@@ -100,3 +100,21 @@
 .sortieMiniGrid.freePreview i.extra{background:#284656;border-color:#6fa6bd}
 .sortieTemplateChoices button:has(.freePreview){border-style:dashed}
 .sortieJobChoices button:disabled{opacity:.36;cursor:not-allowed}
+
+/* Fixed-template job minimums are shown as real assigned job counts, with
+   missing jobs highlighted independently of rarity/headcount maxima. */
+.sortieMinimumSummary{display:grid;gap:4px;margin:3px 0;padding:5px 6px;
+ border:1px solid #a29061;border-radius:7px;background:#142b3b;color:#f6dfa9;
+ max-height:103px;overflow-y:auto;overscroll-behavior:contain}
+.sortieMinimumSummary>b{font:800 11px/1.25 system-ui}
+.sortieMinimumSummary>div{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+ gap:3px 6px;min-height:0}
+.sortieMinimumSummary span{font:11px/1.35 system-ui;border:1px solid #4c7880;
+ background:#1d4050;border-radius:4px;padding:3px 5px;overflow-wrap:anywhere}
+.sortieMinimumSummary span.missing{color:#ffbfad;background:#4b252e;border-color:#c27e6e}
+.sortieMinimumSummary span.ok{color:#dcf4ce}
+#panel.formation-command-ui #panelContent:has(.sortieMinimumSummary){overflow-y:auto!important}
+.sortieFormationGrid button small{line-height:1.1;white-space:normal!important}
+.sortieTemplateChoices button small{overflow-wrap:anywhere}
+@media(max-height:720px){.sortieMinimumSummary{max-height:70px;padding:3px}
+ .sortieMinimumSummary span{font-size:10px;padding:1px 3px}}

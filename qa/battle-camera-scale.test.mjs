@@ -22,7 +22,7 @@ assert.doesNotMatch(game,/createCharacter\(\{job:appearanceJob,sex,height:1\.02,
 assert.match(game,/const centralAlly=actors\.filter\(a=>a\.team===0\)\.sort\(/);
 assert.match(game,/Math\.abs\(a\.cell\.z-116\)-Math\.abs\(b\.cell\.z-116\)/);
 assert.match(game,/const cameraHome=\(centralAlly\?\.root\.position\|\|openingFocus\)\.clone\(\)/);
-assert.match(game,/const cameraCloseOffset=new THREE\.Vector3\(3\.5,3\.8,7\)/);
+assert.match(game,/const cameraCloseOffset=new THREE\.Vector3\(-8,6\.2,10\.5\)/);
 assert.match(game,/const cameraOverviewOffset=new THREE\.Vector3\(310,310,310\)/,
   '真上ではなく角度を付けた俯瞰で戦場を見渡す');
 assert.match(game,/setBattleCamera\(new THREE\.Vector3\(openingOverviewCenter,terrainY\(openingOverviewCenter,openingOverviewCenter\),openingOverviewCenter\),cameraOverviewOffset\)/);
@@ -38,7 +38,7 @@ assert.ok(game.includes('リアルタイム軍団戦 v'+runtimeVersion));
 
 // One step per grid tile: adult body ~1.7-1.8 tiles tall and camera shows
 // much more of each anatomical character at the normal battle starting view.
-const distance=Math.hypot(3.5,3.8,7),heightAtDistance=2*distance*Math.tan(48*Math.PI/360);
+const distance=Math.hypot(-8,6.2,10.5),heightAtDistance=2*distance*Math.tan(48*Math.PI/360);
 assert.ok(1.78/heightAtDistance>.12);
 assert.ok(1.68/1.0>1.6&&1.78/1.0<1.85);
-console.log('PASS battle camera scale: 1m footstep grid, adult rigs, close opening view and overview');
+console.log('PASS battle camera scale: 1m footstep grid, adult rigs, rear oblique view and overview');
