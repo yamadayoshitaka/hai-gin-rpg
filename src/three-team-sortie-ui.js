@@ -70,7 +70,11 @@ export function renderThreeTeamPlanner({game,teamId=1,cellIndex=5,view='setup',j
   '<div class="sortieGridFooter"><small>固定テンプレート '+(quota.spec.slots)+'隊 · '+esc(status.reason)+'</small>'+
   button('data-sortie-view="count"','人数 ▸')+button('data-sortie-view="divisions"','分隊 ▸')+'</div>'+
   '<div class="sortieCompactStatus">'+(status.valid?'✓ 陣形成立':'⚠ '+esc(status.reason))+
-  '　'+quota.total+'/'+quota.capacity+'人　'+esc(SORTIE_FORMATIONS[team.formation]?.name||'自由配置')+'</div>';
+  '<div>この陣形 '+quota.total+'/'+quota.capacity+'人　'+esc(SORTIE_FORMATIONS[team.formation]?.name||'自由配置')+'</div>'+
+  '<small class="sortieRarityCompact">'+esc(tierSummary)+'</small></div>'+
+  '<details class="sortieMinimumDisclosure"><summary>各ジョブの最低配置人数と条件</summary>'+
+  '<div class="sortieMinimumSummary"><b>各ジョブの最低配置人数（未達成はバフなし）</b><div>'+
+  (minSummary||'<small>自由陣形：職業別最低人数なし・陣形バフなし</small>')+'</div></div></details>';
  const templateIds=Object.keys(SORTIE_FORMATIONS);
  const pageCap=6,templatePages=Math.ceil(templateIds.length/pageCap);
  const tPage=Math.max(0,Math.min(templatePages-1,Number(templatePage)||0));
