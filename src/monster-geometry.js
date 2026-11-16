@@ -697,7 +697,7 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
      const tooth=g.rootedSpike(jaw,'bone','skin',
        [x,-.047,.148],[x*1.04,-.012,.169],.009,
        {name:'m001-lower-incisor-'+i});
-     tooth.userData.m001DentalArch='mandible';
+     tooth.tooth.userData.m001DentalArch='mandible';
    }
    // Opposing upper incisors stay fixed to the upper muzzle and reveal
    // their crowns naturally when the mandible opens.
@@ -706,7 +706,7 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
      const tooth=g.rootedSpike(head,'bone','skin',
        [x,-.176,.285],[x*1.02,-.202,.297],.0085,
        {name:'m001-upper-incisor-'+i});
-     tooth.userData.m001DentalArch='maxilla';
+     tooth.tooth.userData.m001DentalArch='maxilla';
    }
  }else for(let i=0;i<4;i++)g.spike(jaw,'bone',
    [(i-1.5)*.12,.01,.27],
