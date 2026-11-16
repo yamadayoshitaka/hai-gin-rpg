@@ -89,7 +89,9 @@ assert.match(game,/source:artistHeadSource,pattern:studioPattern/);
 assert.match(graft,/makeIndependentFaceMaster\(source,recipe\.sex,args\)/);
 assert.match(graft,/pattern\?\.faceControls\|\|artistControls\(recipe\)/);
 assert.match(graft,/partSelection:pattern\?\.partIds\|\|null/);
-assert.match(graft,/createScalpAnchoredWig\(artistHead\.face,\{/);
+assert.match(graft,/cranialScalpSurface\(artistHead\.face,\{/,
+ 'Hair cap must use real cranium triangles, never full neck/bust bounds');
+assert.match(graft,/createScalpAnchoredWig\(scalp\.proxy,\{/);
 assert.match(graft,/staticGroom:true,normalLayeredSingleMesh:true/);
 assert.match(game,/a\.outfit\.setHelmetVisible\(false\)/);
 assert.match(game,/a\.outfit\.setHairVisible\(true\)/);
