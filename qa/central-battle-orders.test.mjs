@@ -5,15 +5,18 @@ import {createTargetedStrategyUi,planStrategyDistribution} from '../src/targeted
 
 class FakeNode {
  constructor(){this.id='';this.hidden=true;this.innerHTML='';this.listeners={};this.attrs={};this.style={};}
+ getContext(){return {fillRect(){},drawImage(){},beginPath(){},arc(){},stroke(){},fill(){},fillText(){},moveTo(){},lineTo(){},
+  save(){},restore(){},createImageData:(width,height)=>({data:new Uint8ClampedArray(width*height*4)}),putImageData(){},
+  set fillStyle(v){},set strokeStyle(v){},set lineWidth(v){},set font(v){},
+  set textAlign(v){},set textBaseline(v){},set imageSmoothingEnabled(v){},set shadowColor(v){},set shadowBlur(v){},set globalAlpha(v){}
+ };}
  setAttribute(name,value){this.attrs[name]=value;}
  append(){}
  addEventListener(name,handler){this.listeners[name]=handler;}
  querySelector(name){
   if(name!=='#centralCommandMap')return null;
-  return {width:464,height:464,getContext:()=>({
-   fillRect(){},drawImage(){},beginPath(){},arc(){},stroke(){},fill(){},fillText(){},moveTo(){},lineTo(){},
-   set fillStyle(v){},set strokeStyle(v){},set lineWidth(v){},set font(v){},set textAlign(v){},set textBaseline(v){}
-  }),getBoundingClientRect:()=>({left:0,top:0,width:464,height:464})};
+  return {width:464,height:464,getContext:()=>this.getContext(),
+   getBoundingClientRect:()=>({left:0,top:0,width:464,height:464})};
  }
 }
 const panel=new FakeNode();
