@@ -5,14 +5,20 @@ import {registerSquadCircleTap,chooseSquadZoomTarget,SQUAD_CIRCLE_DOUBLE_TAP_MS,
 
 const html=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
 const dialogue=readFileSync(new URL('../src/battle-strategist-dialogue.js',import.meta.url),'utf8');
-assert.match(dialogue,/#battleDialogue\{[^}]*inset:auto 0 0 0!important/,
- 'The whole military report is docked flush to the screen bottom');
+assert.match(dialogue,/#battleDialogue\{[^}]*inset:auto 7px calc\(28px \+ env\(safe-area-inset-bottom,0px\)\) 7px!important/,
+ 'The military report is raised above the Android bottom navigation area');
 assert.match(dialogue,/padding:7px 9px calc\(8px \+ env\(safe-area-inset-bottom,0px\)\)/,
  'The bottom dialogue respects Android gesture safe-area padding');
 assert.match(dialogue,/#battleReportHistory\{[^}]*--battleReportHeight/,
  'Report history is always directly above the actual dialogue height');
-assert.match(dialogue,/box\.getBoundingClientRect\(\)\.height/,
- 'Report history follows changing speech bubble heights');
+assert.match(dialogue,/window\.innerHeight-box\.getBoundingClientRect\(\)\.top/,
+ 'Report history and command dock follow the raised speech bubble top edge');
+assert.match(dialogue,/id='topPerformanceToggle'/,
+ 'The FPS visibility toggle appears in the battlefield top action bar');
+assert.match(dialogue,/performanceSlot\.hidden=!visible/,
+ 'The performance panel can be collapsed without stopping performance sampling');
+assert.match(dialogue,/localStorage\.setItem\(settingKey,String\(visible\)\)/,
+ 'The FPS visibility choice persists across battle reloads');
 assert.match(html,/const squadQuickList=document\.createElement\('div'\)/);
 assert.match(html,/function buildSquadQuickCommands\(\)/);
 assert.match(html,/const cooldown=squadOrderCooldownSeconds\(id\)/,'Orders respect the live two-minute lock');
