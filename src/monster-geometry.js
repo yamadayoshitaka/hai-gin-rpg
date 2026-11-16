@@ -816,8 +816,10 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
       const x=Math.abs(h.root[0]),y=h.root[1],z=h.root[2];
       // The face window is bounded by the mane: NO follicles on the
       // actual small eyes, nose bridge, lips or front muzzle.
-      if(z>.105&&x<.153&&y>-.195&&y<.266)return false;
-      return !(z>.285&&x<.190&&y>-.185&&y<.266);
+      // Fur guide doubling adds a ~0.01 tangential offset. Leave an
+      // additional safety margin so no shifted strand enters the bare mask.
+      if(z>.078&&x<.186&&y>-.223&&y<.293)return false;
+      return !(z>.264&&x<.203&&y>-.209&&y<.287);
    }):[];
    // Long lion mane is exactly five times the original guide length.
    // A backward-weighted curved sweep prevents straight porcupine spikes.
@@ -873,9 +875,9 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
        if(Math.abs(h.root[0])>.258&&h.root[1]>.077&&
           h.root[2]>.166&&h.root[2]<.38)return false;
        // Keep only the small frontal face patch bare; fur surrounds it.
-       if(s.id==='m001'&&h.root[2]>.105&&
-          Math.abs(h.root[0])<.153&&h.root[1]>-.195&&
-          h.root[1]<.266)return false;
+       if(s.id==='m001'&&h.root[2]>.078&&
+          Math.abs(h.root[0])<.186&&h.root[1]>-.223&&
+          h.root[1]<.293)return false;
        return true;
      }):faceGuides;
    // Both the short face-frame coat and the long mane share the same
@@ -883,8 +885,8 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    // the hard 14-draw-call / 1000-vs-1000 near-LOD batching contract.
    const maneStart=head.children.length;
    const mantle=s.id==='m001'?wolfKingMane.filter(h=>!(
-     h.root[2]>.105&&Math.abs(h.root[0])<.153&&
-     h.root[1]>-.195&&h.root[1]<.266)):[];
+     h.root[2]>.078&&Math.abs(h.root[0])<.186&&
+     h.root[1]>-.223&&h.root[1]<.293)):[];
    const fullHeadCoat=s.id==='m001'?
      [...headGuides,...fivefoldWindsweptMane(mantle)]:headGuides;
    addFur(head,fullHeadCoat);
