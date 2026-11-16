@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "kind": "AI_2D_REFERENCE_NOT_GAME_3D",
+  "targetKey": "object:treasure_chest_001",
+  "model": "@cf/black-forest-labs/flux-2-klein-4b",
+  "promptHash": "e5bd4cb02aa0c8e9a00312b39cdc187fce366ef49542fc89187f5f7c1337af00",
+  "referenceSha256": "aa4d11647dd43c046cab9ae3f807bf13e10813b69938971552e330418fabe09b",
+  "referenceFile": "assets/world-quality/references/treasure_chest_001.webp",
+  "widthRequest": 1024,
+  "heightRequest": 576,
+  "originalPixels": "1024x576",
+  "byteSize": 67958,
+  "humanVisualQA": "PENDING",
+  "game3DQuality": "NOT_TESTED",
+  "generatedAt": "2026-11-16T08:36:02.255Z"
+}

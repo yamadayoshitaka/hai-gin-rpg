@@ -97,6 +97,54 @@
       "lastReviewedAt": "2026-11-16T01:24:54.711Z",
       "error": "python3 scripts/world-quality-compare.py: Traceback (most recent call last):\n  File \"/home/runner/work/hai-gin-rpg/hai-gin-rpg/scripts/world-quality-compare.py\", line 70, in <module>\n    output=run(Path(args.reference),json.loads(Path(args.capture_json).read_text()))\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/hai-gin-rpg/hai-gin-rpg/scripts/world-quality-compare.py\", line 41, in run\n    ref=features(ref_path)\n        ^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/hai-gin-rpg/hai-gin-rpg/scripts/world-quality-compare.py\", line 25",
       "captureAttempts": 3
+    },
+    "object:treasure_chest_001": {
+      "name": "宝箱（開閉式）",
+      "type": "object",
+      "referenceFile": "assets/world-quality/references/treasure_chest_001.webp",
+      "referenceSha256": "aa4d11647dd43c046cab9ae3f807bf13e10813b69938971552e330418fabe09b",
+      "referencePromptHash": "e5bd4cb02aa0c8e9a00312b39cdc187fce366ef49542fc89187f5f7c1337af00",
+      "referenceCreatedAt": "2026-11-16T08:36:02.255Z",
+      "gameScreenshot": null,
+      "comparisonReport": null,
+      "roughnessProposal": 1,
+      "review": "WEBGL_CAPTURE_OR_COMPARE_BLOCKED",
+      "productionApplied": false,
+      "lastReviewedAt": "2026-11-16T08:36:58.357Z",
+      "error": "python3 scripts/world-quality-compare.py: Traceback (most recent call last):\n  File \"/home/runner/work/hai-gin-rpg/hai-gin-rpg/scripts/world-quality-compare.py\", line 70, in <module>\n    output=run(Path(args.reference),json.loads(Path(args.capture_json).read_text()))\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/hai-gin-rpg/hai-gin-rpg/scripts/world-quality-compare.py\", line 41, in run\n    ref=features(ref_path)\n        ^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/hai-gin-rpg/hai-gin-rpg/scripts/world-quality-compare.py\", line 25",
+      "captureAttempts": 1
+    },
+    "object:cottage_stairs_001": {
+      "name": "木製階段",
+      "type": "object",
+      "referenceFile": "assets/world-quality/references/cottage_stairs_001.webp",
+      "referenceSha256": "46ca0e00a70170b502fe67f2d062582ab0be3e5d26810015d925a156ddfed4e1",
+      "referencePromptHash": "0bde02630f86796e05ea5063b87d6104f82814980b68cd58b4d9b32adf417737",
+      "referenceCreatedAt": "2026-11-16T08:36:14.028Z",
+      "gameScreenshot": null,
+      "comparisonReport": null,
+      "roughnessProposal": 1,
+      "review": "WEBGL_CAPTURE_OR_COMPARE_BLOCKED",
+      "productionApplied": false,
+      "lastReviewedAt": "2026-11-16T08:36:58.357Z",
+      "error": "python3 scripts/world-quality-compare.py: Traceback (most recent call last):\n  File \"/home/runner/work/hai-gin-rpg/hai-gin-rpg/scripts/world-quality-compare.py\", line 70, in <module>\n    output=run(Path(args.reference),json.loads(Path(args.capture_json).read_text()))\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/hai-gin-rpg/hai-gin-rpg/scripts/world-quality-compare.py\", line 41, in run\n    ref=features(ref_path)\n        ^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/hai-gin-rpg/hai-gin-rpg/scripts/world-quality-compare.py\", line 25",
+      "captureAttempts": 1
+    },
+    "object:spiral_stairs_2f_001": {
+      "name": "螺旋階段（2階建て用）",
+      "type": "object",
+      "referenceFile": "assets/world-quality/references/spiral_stairs_2f_001.webp",
+      "referenceSha256": "3eff39b3574602c94bb21bc46fd09b272213a015eef90184ce2c42239ccf89d8",
+      "referencePromptHash": "a16e8f9270ea1f2bb994f00c73ce363b96562bcb235f2ff93532e3efbe9593e7",
+      "referenceCreatedAt": "2026-11-16T08:36:23.552Z",
+      "gameScreenshot": null,
+      "comparisonReport": null,
+      "roughnessProposal": 1,
+      "review": "WEBGL_CAPTURE_OR_COMPARE_BLOCKED",
+      "productionApplied": false,
+      "lastReviewedAt": "2026-11-16T08:36:58.357Z",
+      "error": "python3 scripts/world-quality-compare.py: Traceback (most recent call last):\n  File \"/home/runner/work/hai-gin-rpg/hai-gin-rpg/scripts/world-quality-compare.py\", line 70, in <module>\n    output=run(Path(args.reference),json.loads(Path(args.capture_json).read_text()))\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/hai-gin-rpg/hai-gin-rpg/scripts/world-quality-compare.py\", line 41, in run\n    ref=features(ref_path)\n        ^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/hai-gin-rpg/hai-gin-rpg/scripts/world-quality-compare.py\", line 25",
+      "captureAttempts": 1
     }
   },
   "runs": [
@@ -357,11 +405,54 @@
       "stopReason": "REVIEW_PROPOSALS_RECORDED_NOT_MERGED",
       "referenceStopReason": "REVIEW_EXISTING_REFERENCE_ONLY",
       "completedAt": "2026-11-16T01:24:54.711Z"
+    },
+    {
+      "id": "43832267657",
+      "startedAt": "2026-11-16T08:35:52.487Z",
+      "mode": "reference",
+      "requested": 3,
+      "requestedTarget": null,
+      "requestedKind": "all",
+      "customInstructionHash": null,
+      "stageCount": 200,
+      "objectCount": 53,
+      "targetIds": [
+        "object:treasure_chest_001",
+        "object:cottage_stairs_001",
+        "object:spiral_stairs_2f_001"
+      ],
+      "generated": 3,
+      "failed": [],
+      "providerCalls": 3,
+      "stopReason": "REFERENCE_GENERATED_VISUAL_QA_PENDING",
+      "completedAt": "2026-11-16T08:36:23.553Z"
+    },
+    {
+      "id": "43832267657",
+      "startedAt": "2026-11-16T08:36:58.357Z",
+      "mode": "results",
+      "requested": 3,
+      "requestedTarget": null,
+      "requestedKind": "all",
+      "customInstructionHash": null,
+      "stageCount": 200,
+      "objectCount": 53,
+      "targetIds": [
+        "object:treasure_chest_001",
+        "object:cottage_stairs_001",
+        "object:spiral_stairs_2f_001"
+      ],
+      "generated": 3,
+      "failed": [],
+      "providerCalls": 3,
+      "stopReason": "REVIEW_PROPOSALS_RECORDED_NOT_MERGED",
+      "referenceStopReason": "REFERENCE_GENERATED_VISUAL_QA_PENDING",
+      "completedAt": "2026-11-16T08:36:58.357Z"
     }
   ],
   "lastRun": {
-    "id": "43785891351",
-    "startedAt": "2026-11-16T01:24:54.711Z",
+    "id": "43832267657",
+    "startedAt": "2026-11-16T08:36:58.357Z",
     "mode": "results",
     "requested": 3,
     "requestedTarget": null,
@@ -370,15 +461,15 @@
     "stageCount": 200,
     "objectCount": 53,
     "targetIds": [
-      "object:cottage_shelf_001",
-      "object:cottage_fireplace_001",
-      "object:cottage_barrel_001"
+      "object:treasure_chest_001",
+      "object:cottage_stairs_001",
+      "object:spiral_stairs_2f_001"
     ],
-    "generated": 0,
+    "generated": 3,
     "failed": [],
-    "providerCalls": 0,
+    "providerCalls": 3,
     "stopReason": "REVIEW_PROPOSALS_RECORDED_NOT_MERGED",
-    "referenceStopReason": "REVIEW_EXISTING_REFERENCE_ONLY",
-    "completedAt": "2026-11-16T01:24:54.711Z"
+    "referenceStopReason": "REFERENCE_GENERATED_VISUAL_QA_PENDING",
+    "completedAt": "2026-11-16T08:36:58.357Z"
   }
 }

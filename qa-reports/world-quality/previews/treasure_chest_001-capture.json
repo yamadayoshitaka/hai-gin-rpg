@@ -1,0 +1,34 @@
+{
+  "assetId": "treasure_chest_001",
+  "kind": "REAL_WEBGL_CAPTURE_CANDIDATES_NOT_APPROVED",
+  "captures": [
+    {
+      "roughnessScale": 1,
+      "filename": "qa-reports/world-quality/previews/treasure_chest_001-rough-1.png",
+      "bytes": 374016,
+      "materials": 6,
+      "status": "CAPTURED_QA_PENDING"
+    },
+    {
+      "roughnessScale": 0.83,
+      "filename": "qa-reports/world-quality/previews/treasure_chest_001-rough-0_83.png",
+      "bytes": 374620,
+      "materials": 6,
+      "status": "CAPTURED_QA_PENDING"
+    },
+    {
+      "roughnessScale": 0.92,
+      "filename": "qa-reports/world-quality/previews/treasure_chest_001-rough-0_92.png",
+      "bytes": 373264,
+      "materials": 6,
+      "status": "CAPTURED_QA_PENDING"
+    },
+    {
+      "roughnessScale": 1.08,
+      "filename": "qa-reports/world-quality/previews/treasure_chest_001-rough-1_08.png",
+      "bytes": 374747,
+      "materials": 6,
+      "status": "CAPTURED_QA_PENDING"
+    }
+  ]
+}

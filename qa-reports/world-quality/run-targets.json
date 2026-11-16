@@ -1,12 +1,12 @@
 {
   "targets": [
-    "object:cottage_shelf_001",
-    "object:cottage_fireplace_001",
-    "object:cottage_barrel_001"
+    "object:treasure_chest_001",
+    "object:cottage_stairs_001",
+    "object:spiral_stairs_2f_001"
   ],
   "run": {
-    "id": "43785891351",
-    "startedAt": "2026-11-16T01:24:54.711Z",
+    "id": "43832267657",
+    "startedAt": "2026-11-16T08:36:58.357Z",
     "mode": "results",
     "requested": 3,
     "requestedTarget": null,
@@ -15,15 +15,15 @@
     "stageCount": 200,
     "objectCount": 53,
     "targetIds": [
-      "object:cottage_shelf_001",
-      "object:cottage_fireplace_001",
-      "object:cottage_barrel_001"
+      "object:treasure_chest_001",
+      "object:cottage_stairs_001",
+      "object:spiral_stairs_2f_001"
     ],
-    "generated": 0,
+    "generated": 3,
     "failed": [],
-    "providerCalls": 0,
+    "providerCalls": 3,
     "stopReason": "REVIEW_PROPOSALS_RECORDED_NOT_MERGED",
-    "referenceStopReason": "REVIEW_EXISTING_REFERENCE_ONLY",
-    "completedAt": "2026-11-16T01:24:54.711Z"
+    "referenceStopReason": "REFERENCE_GENERATED_VISUAL_QA_PENDING",
+    "completedAt": "2026-11-16T08:36:58.357Z"
   }
 }

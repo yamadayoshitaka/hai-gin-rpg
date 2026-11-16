@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "kind": "AI_2D_REFERENCE_NOT_GAME_3D",
+  "targetKey": "object:spiral_stairs_2f_001",
+  "model": "@cf/black-forest-labs/flux-2-klein-4b",
+  "promptHash": "a16e8f9270ea1f2bb994f00c73ce363b96562bcb235f2ff93532e3efbe9593e7",
+  "referenceSha256": "3eff39b3574602c94bb21bc46fd09b272213a015eef90184ce2c42239ccf89d8",
+  "referenceFile": "assets/world-quality/references/spiral_stairs_2f_001.webp",
+  "widthRequest": 1024,
+  "heightRequest": 576,
+  "originalPixels": "1024x576",
+  "byteSize": 39856,
+  "humanVisualQA": "PENDING",
+  "game3DQuality": "NOT_TESTED",
+  "generatedAt": "2026-11-16T08:36:23.552Z"
+}
