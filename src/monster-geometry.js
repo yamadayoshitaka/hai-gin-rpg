@@ -3,7 +3,7 @@
  * variants change horns, crests, armour, wings, limb lengths, weapons and fins.
  * Each specimen is real 3D geometry, never an image billboard.
  */
-import {createSculpture,disposeMonsterSculpture} from './monster-shape-kit.js?v=beast-mesh-20261116';
+import {createSculpture,disposeMonsterSculpture} from './monster-shape-kit.js?v=beast-joints-snout-v2-20261116';
 import {attachMonsterFaceControls} from './facial-feature-runtime.js?v=1';
 import {generateCanineFurGuides} from './canine-fur-guides.js?v=4.4.92';
 import {monsterEvidenceFor} from './monster-anatomy-reference.js';
@@ -150,9 +150,8 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
  }else if(feline){
    g.bridge(head,'skin',[0,-.028,.10],[0,-.12,.36],.209,.131);
  }
- if(canine){
-   // Muzzle grows out of the cranium as a continuous tapered nasal bridge,
-   // not a second round sphere pasted onto the face.
+ if(canine&&!beastRemesh){
+   // Legacy protected m005: preserve its original muzzle topology.
    g.bridge(head,'skin',[0,-.02,.13],[0,-.10,.54],.245,.125);
  }
  const muzzle=reptile?.57:feline?.32:.43;
@@ -160,11 +159,36 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    g.bridge(head,'skin',[0,-.115,.245],[0,-.152,.82],.203,.116);
    g.sphere(head,'light',[0,-.162,.684],[.145,.064,.226]);
  }else if(beastRemesh){
-  g.bridge(head,'light',[0,-.12,.225],[0,-.148,.67],.189,.12);
-  g.bridge(head,'skin',[0,-.045,.095],[0,-.108,.51],.206,.132);
+   // Skull -> brow -> bridge -> nose is one authored continuous axial shell,
+   // not two intersecting cylindrical tubes and a separate muzzle oval.
+   g.axialLoft(head,'light',[
+     {z:.762,y:-.139,rx:.071,ry:.067},
+     {z:.706,y:-.130,rx:.148,ry:.092},
+     {z:.584,y:-.113,rx:.164,ry:.111},
+     {z:.448,y:-.084,rx:.190,ry:.125},
+     {z:.304,y:-.048,rx:.231,ry:.154},
+     {z:.125,y:-.024,rx:.236,ry:.183}
+   ],{name:'beast-continuous-nasal-bridge-'+s.id,rough:.72,ribbing:.004});
  }else g.sphere(head,'light',[0,-.13,muzzle],
    feline?[.204,.126,.259]:[.23,.15,.31]);
- g.sphere(head,'shadow',[0,-.17,muzzle+.19],[.18,.057,.12],{name:'nose'});
+ if(beastRemesh){
+   // Anatomically tapered rhinarium; alae overlap the bridge and have
+   // distinct cut-in nostrils, rather than an inflated black nose sphere.
+   g.axialLoft(head,'shadow',[
+     {z:.812,y:-.169,rx:.025,ry:.032},
+     {z:.793,y:-.164,rx:.099,ry:.064},
+     {z:.758,y:-.170,rx:.137,ry:.078},
+     {z:.686,y:-.165,rx:.135,ry:.069},
+     {z:.633,y:-.152,rx:.087,ry:.045}
+   ],{name:s.id==='m001'?'wolf-nasal-cartilage':'beast-rhinarium-'+s.id,
+      rough:.29,ribbing:0});
+   for(const side of [-1,1]){
+     g.bridge(head,'shadow',[side*.092,-.139,.700],
+       [side*.104,-.180,.767],.034,.019);
+     g.sphere(head,'shadow',[side*.101,-.189,.789],[.016,.011,.008],
+       {name:'beast-nostril-'+(side<0?'L':'R'),rough:.21});
+   }
+ }else g.sphere(head,'shadow',[0,-.17,muzzle+.19],[.18,.057,.12],{name:'nose'});
  if(canine){
    // Small almond eyes set INTO the bone, heavy brows, wet nose and
    // divided nostrils. Oversized glowing button eyes looked like toys.
@@ -181,7 +205,8 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
       g.sphere(head,'eye',[side*.320,.112,.31],[.013,.018,.041],{rough:.17});
       g.sphere(head,'skin',[side*.297,.167,.29],[.047,.041,.096]);
      }
-     g.sphere(head,'shadow',[side*.083,-.164,muzzle+.288],[.027,.019,.011]);
+     if(!beastRemesh)g.sphere(head,'shadow',
+       [side*.083,-.164,muzzle+.288],[.027,.019,.011]);
      g.tube(head,'shadow',[[side*.08,-.23,.53],[side*.13,-.235,.58],
        [side*.16,-.213,.62]],.009);
    }
@@ -366,8 +391,8 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
        g.sphere(head,'shadow',[side*(.149+j*.025),-.191,muzzle+.12+j*.035],
          [.006,.006,.008],{rough:.82});
    }
-   g.sphere(head,'shadow',[0,-.171,muzzle+.295],[.155,.048,.09],
-     {name:'wolf-nasal-cartilage'});
+   // The m001 nose cartilage is now sculpted into the single continuous
+   // rhinarium loft above; suppress the former oversized spherical overlay.
  }
  const jaw=g.group('jaw',[0,1.42,.96]);
  if(s.id==='m002'){
@@ -381,8 +406,19 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
        [side*.127,.094,.347],.041);
    }
  }
- g.sphere(jaw,'shadow',[0,-.03,.12],[.24,.045,.29]);
- if(canine)g.sphere(jaw,'skin',[0,-.054,.155],[.22,.060,.27]);
+ if(beastRemesh){
+   // Continuous lower mandible with chin narrowing, not two stacked spheres.
+   g.axialLoft(jaw,'skin',[
+     {z:.392,y:-.071,rx:.073,ry:.039},
+     {z:.321,y:-.058,rx:.148,ry:.056},
+     {z:.205,y:-.047,rx:.184,ry:.065},
+     {z:.071,y:-.030,rx:.177,ry:.072},
+     {z:-.108,y:-.012,rx:.092,ry:.065}
+   ],{name:'beast-integrated-mandible-'+s.id,rough:.81,ribbing:.002});
+ }else{
+   g.sphere(jaw,'shadow',[0,-.03,.12],[.24,.045,.29]);
+   if(canine)g.sphere(jaw,'skin',[0,-.054,.155],[.22,.060,.27]);
+ }
  // Actual mouth split: upper lip belongs to the cranium, lower labial
  // margin and a recessed oral cavity follow the opening jaw pivot.
  // Keep both surfaces slightly overlapping in the idle pose.
@@ -414,25 +450,40 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
      pelvisMounted?g.pivots.pelvis:g.root);
    // Distal motion is independent from shoulder/hip rotation, retaining
    // the original limb and ground-contact positions.
-   if(beastRemesh)g.limbLoft(leg,'skin',[
-     {x:0,y:.55,z:-.06,rx:.11,rz:.15},
-     {x:0,y:.36,z:fore>0?.01:-.06,rx:fore>0?.205:.22,rz:.23},
-     {x:0,y:.12,z:fore>0?0:-.09,rx:.19,rz:.195},
-     {x:0,y:-.12,z:0,rx:.13,rz:.145},
-     {x:0,y:-.25,z:.017,rx:.115,rz:.128}
+   if(beastRemesh)g.limbLoft(leg,'skin',fore>0?[
+     // Forelimb: scapula -> humerus -> elbow. Elbow lies BEHIND the wrist.
+     {x:0,y:.55,z:.025,rx:.133,rz:.154},
+     {x:0,y:.34,z:.042,rx:.193,rz:.213},
+     {x:0,y:.16,z:-.065,rx:.176,rz:.169},
+     {x:0,y:-.085,z:-.120,rx:.116,rz:.118},
+     {x:0,y:-.25,z:-.097,rx:.103,rz:.111}
+   ]:[
+     // Hindlimb: iliac crest -> thigh -> projected stifle. No vertical column.
+     {x:0,y:.55,z:-.208,rx:.137,rz:.178},
+     {x:0,y:.32,z:-.138,rx:.221,rz:.238},
+     {x:0,y:.14,z:.050,rx:.189,rz:.174},
+     {x:0,y:-.080,z:.177,rx:.125,rz:.119},
+     {x:0,y:-.25,z:.166,rx:.105,rz:.112}
    ],{name:'beast-upper-limb-'+name});
    else g.sphere(leg,'skin',[0,.17,0],
      [reptile?.18:.21,.40,reptile?.18:.21]);
    const distal=g.group('lower'+name,[0,-.065,.015],leg);
    if(beastRemesh){
-    g.limbLoft(distal,'skin',[
-      {x:0,y:.15,z:0,rx:.126,rz:.143},
-      {x:0,y:.02,z:.006,rx:.141,rz:.153},
-      {x:0,y:-.18,z:.025,rx:.11,rz:.122},
-      {x:0,y:-.35,z:.062,rx:.092,rz:.108},
-      {x:0,y:-.53,z:.10,rx:.11,rz:.126}
+    g.limbLoft(distal,'skin',fore>0?[
+      // Forearm bends forward again from elbow through carpal joint.
+      {x:0,y:.15,z:-.091,rx:.130,rz:.129},
+      {x:0,y:.04,z:-.103,rx:.138,rz:.142},
+      {x:0,y:-.15,z:-.046,rx:.114,rz:.112},
+      {x:0,y:-.31,z:.027,rx:.093,rz:.106},
+      {x:0,y:-.41,z:.054,rx:.107,rz:.118}
+    ]:[
+      // Angled crus reaches BACK from stifle to elevated hock.
+      {x:0,y:.15,z:.161,rx:.136,rz:.147},
+      {x:0,y:.02,z:.139,rx:.146,rz:.144},
+      {x:0,y:-.14,z:-.015,rx:.112,rz:.118},
+      {x:0,y:-.28,z:-.159,rx:.086,rz:.090},
+      {x:0,y:-.38,z:-.172,rx:.091,rz:.091}
     ],{name:'beast-shin-'+name});
-    g.bridge(distal,'skin',[0,.075,0],[0,-.095,.012],.136,.122);
    }else{
     g.sphere(distal,'skin',[0,-.16,0],[reptile?.13:.15,.27,reptile?.13:.15]);
     g.sphere(distal,'shadow',[0,0,0],[.144,.125,.14],{name:'joint-'+name});
@@ -454,15 +505,23 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
        g.rootedSpike(toe,'bone','skin',[x,-.054,.192],
          [x,-.090,.262],.021,{name:'rooted-claw-m004-'+digit});
      }
-   }else if(beastRemesh&&s.id!=='m003'){
-     const paw=g.group('paw'+name,[0,-.53,.12],distal);
-     g.bridge(paw,'skin',[0,.045,-.08],[0,-.025,.062],.130,.128);
+   }else if(beastRemesh&&(s.id==='m001'||s.id==='m002')){
+     // The raised hind hock / front wrist and toes are separate animated
+     // groups. Keeping the ankle away from the ground creates digitigrade
+     // silhouette even in the idle bind pose.
+     const ankle=g.group('beastHock'+name,
+       [0,fore>0?-.40:-.34,fore>0?.050:-.168],distal);
+     g.bridge(ankle,'skin',[0,.06,0],
+       [0,-.142,fore>0?.053:.173],fore>0?.103:.092,.083);
+     const paw=g.group('beastToe'+name,
+       [0,fore>0?-.125:-.205,fore>0?.115:.213],ankle);
+     g.bridge(paw,'skin',[0,.045,-.071],[0,-.018,.058],.136,.115);
      for(let digit=0;digit<4;digit++){
       const x=(digit-1.5)*.070;
-      g.sphere(paw,'skin',[x,-.034,.09],[.039,.043,.082],{name:'beast-toe-'+digit});
+      g.sphere(paw,'skin',[x,-.020,.088],[.039,.037,.078],{name:'beast-toe-'+digit});
       g.rootedSpike(paw,'bone','skin',
-       [x,-.028,.148],[x*1.11,-.071,.260],.020,
-       {name:'rooted-claw-beast-'+digit});
+        [x,-.016,.146],[x*1.11,-.058,.251],.019,
+        {name:'rooted-claw-beast-'+digit});
      }
    }else if(s.id!=='m003'){
      // Fenrir owns a separate articulated toe assembly below. Rendering
@@ -502,7 +561,7 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
        minVertical:-.72,axis:'y',gravity:.21,
      });
      const toeParent=(s.id==='m003'||s.id==='m004')?
-       g.pivots['toe'+name]:distal;
+       g.pivots['toe'+name]:(beastRemesh?g.pivots['beastToe'+name]:distal);
      const paw=generateCanineFurGuides({
        center:[0,-.53,.125],radii:[.136,.083,.195],
        rows:source?12:8,around:source?20:14,
@@ -1224,5 +1283,5 @@ export function createMonsterModel(spec,{detail='high'}={}){
 export {disposeMonsterSculpture};
 // All renderer metrics share this module's exact shape/material instance.
 // Never independently import a differently versioned shape-kit into the UI.
-export {MONSTER_DETAIL_LEVELS,monsterSculptCacheStats} from './monster-shape-kit.js?v=beast-mesh-20261116';
+export {MONSTER_DETAIL_LEVELS,monsterSculptCacheStats} from './monster-shape-kit.js?v=beast-joints-snout-v2-20261116';
 export {monsterPhotoCacheStats} from './monster-photo-pbr.js?v=4.4.81';
