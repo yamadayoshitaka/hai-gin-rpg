@@ -110,7 +110,7 @@ export function attachBattleArtistHead({character,recipe,source,animatedFace=fal
  master.root.traverse(o=>{
   if(!o.isMesh)return;
   if(/(?:LASH|EYESHADOW|EYELINER|BLUSH|FRECKLE|WRINKLE|AGE_)/i.test(o.name))
-   cosmetic.push(o);
+   cosmetic.push({node:o,initialVisible:o.visible});
  });
  let near=true,expression=null;
  if(special){
@@ -120,7 +120,7 @@ export function attachBattleArtistHead({character,recipe,source,animatedFace=fal
   const desired=!!value;
   if(desired===near)return;
   near=desired;
-  for(const part of cosmetic)part.visible=desired;
+  for(const part of cosmetic)part.node.visible=desired&&part.initialVisible;
  }
  const result={
   version:BATTLE_HEAD_MASTER_VERSION,attached:true,
