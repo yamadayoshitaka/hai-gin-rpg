@@ -35,7 +35,7 @@ function turn(p,forcedText=null){
   rubyTokens:screenplayRubyTokens(text),hasVoice:true});
 }
 function scene(base,turns,{opening=false,sharedKind=null}={}){
- if(!base||(!opening&&!turns.length))throw Error('Compact scene missing art identity or dialogue');
+ if(!base)throw Error('Compact scene missing art identity');
  const first=turns[0];
  return freeze({...base,compactStory:true,isChapterOpening:opening,
   sharedSceneKind:sharedKind,
@@ -53,10 +53,13 @@ function selectBySuffix(list,token){
  return list.find(p=>p.id.endsWith('-'+token))||null;
 }
 function distribute(lines,num){
- const n=Math.ceil(lines.length/num);
+ // Allocate each authored turn exactly once. Empty CGs remain silent instead
+ // of repeating the last spoken line or fabricating dialogue.
+ const count=lines.length;
  return Array.from({length:num},(_,i)=>{
-  const a=lines.slice(i*n,(i+1)*n);
-  return a.length?a:lines.slice(-1);
+  const start=Math.floor(i*count/num);
+  const end=Math.floor((i+1)*count/num);
+  return lines.slice(start,end);
  });
 }
 function chapterSeen(context,chapter){
