@@ -235,7 +235,7 @@ export function createTargetedStrategyUi({
    }
    placements.push({x:px,y:py});
    const selectable=eligible.has(String(t.id))&&(
-    step==='scope'&&scope==='squad'?group==='ally':
+    step==='scope'?group==='ally':
     chosenItem?group==='ally':
     type()==='enemy'?group==='enemy':
     type()==='object'?group==='object':false);
@@ -256,10 +256,10 @@ export function createTargetedStrategyUi({
    ctx.textBaseline='middle';ctx.fillText(n,px,py);
    if(selectable)hotspots.push({id:String(t.id),groupId:meta?.groupId,
     x:px,y:py,team:group,radius:21});
-   if(selected&&group==='ally'&&meta){
+   if(selected&&group==='ally'&&meta&&scope==='squad'){
     const name='第'+meta.groupId+'班 '+String(meta.job||meta.label||'分隊').replace(/^.*・/,'');
     ctx.font='bold 11px system-ui';
-    const labelW=Math.min(width-12,Math.max(72,ctx.measureText(name).width+12));
+    const labelW=Math.min(width-12,Math.max(72,name.length*11+12));
     const lx=Math.min(width-labelW-3,Math.max(3,px-labelW/2));
     const ly=py<height-34?py+19:py-34;
     ctx.fillStyle='#091b2eea';ctx.fillRect(lx,ly,labelW,16);
