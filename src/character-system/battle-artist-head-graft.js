@@ -17,6 +17,7 @@ import {FEMALE_V7_DEFAULTS,MALE_REFERENCE_DEFAULT} from '../face-v7-controls.js'
 import {hideBattleDonorFace,attachIndependentFaceToBattleHead,enhanceHeroineFaceSurface}
  from '../heroine-battle-costume-bridge.js?v=70';
 import {createFaceExpressionAnimator} from '../face-expression-animation-v48.js?v=68';
+import {createScalpAnchoredWig} from '../face-scalp-wig.js?v=67';
 
 export const BATTLE_HEAD_MASTER_VERSION='real-sculpt-head-graft-v1';
 export const BATTLE_HEAD_MASTER_ASSET='assets/master-sources/blender/realistic-head-animation.glb';
@@ -57,14 +58,20 @@ function artistControls(recipe){
   beardDensity:recipe.sex==='male'&&['sixties','seventies','eightyPlus'].includes(recipe.ageBand)?0.20:0
  };
 }
-function buildArtistMaster(source,recipe){
- const controls=artistControls(recipe);
- const args=recipe.sex==='female'?{femaleControls:controls}:{maleControls:controls};
+function buildArtistMaster(source,recipe,pattern=null){
+ // The saved artist/heroine generator owns the SAME controls and v32
+ // geometry parts for both views. A generic soldier uses the catalog's
+ // deterministic job/age/gender pattern, never a random donor face.
+ const controls=pattern?.faceControls||artistControls(recipe);
+ const args=recipe.sex==='female'?
+  {femaleControls:controls,partSelection:pattern?.partIds||null}:
+  {maleControls:controls,partSelection:pattern?.partIds||null};
  const result=makeIndependentFaceMaster(source,recipe.sex,args);
  applyFaceColorMode(result.face,'color',{
-  contactColor:recipe.sex==='male'?'#514139':
-   ['#514139','#467fa7','#5c886b','#927953','#7e858d'][recipe.faceIndex%5],
-  makeupType:recipe.sex==='female'?(recipe.faceIndex%3):0
+  contactColor:pattern?.contactColor||
+   (recipe.sex==='male'?'#514139':
+    ['#514139','#467fa7','#5c886b','#927953','#7e858d'][recipe.faceIndex%5]),
+  makeupType:pattern?.makeupType??(recipe.sex==='female'?(recipe.faceIndex%3):0)
  });
  // This is the same PBR skin finish used by the artist's actual hero preview,
  // not the flat clay material of the source-head geometry.
@@ -81,18 +88,20 @@ function findSculptFace(root,sex){
 /** The atlas is shared for ordinary troops (no hundreds of duplicate meshes);
  * player/strategist faces own independent geometry for blink/lip expression.
  */
-export function attachBattleArtistHead({character,recipe,source,animatedFace=false}={}){
+export function attachBattleArtistHead({character,recipe,source,pattern=null,animatedFace=false}={}){
  if(!character?.model?.traverse||!recipe||!source?.traverse)
   throw Error('Live rigged actor, hero recipe and actual head GLB required');
  const special=!!animatedFace;
- const key=[recipe.sex,recipe.ageBand,recipe.bodyType,recipe.faceIndex].join('|');
+ const key=[recipe.sex,recipe.ageBand,recipe.bodyType,recipe.faceIndex,
+  pattern?.source||'legacy',JSON.stringify(pattern?.partIds||{}),
+  JSON.stringify(pattern?.faceControls||{})].join('|');
  let master,prototypeReused=false;
  if(special){
-  master=buildArtistMaster(source,recipe);
+  master=buildArtistMaster(source,recipe,pattern);
  }else{
   let prototype=facePrototypes.get(key);
   if(!prototype){
-   prototype=buildArtistMaster(source,recipe);
+   prototype=buildArtistMaster(source,recipe,pattern);
    facePrototypes.set(key,prototype);
   }else prototypeReused=true;
   const root=prototype.root.clone(true);
@@ -100,6 +109,12 @@ export function attachBattleArtistHead({character,recipe,source,animatedFace=fal
    parts:root.getObjectByName(prototype.parts.name)};
  }
  const cut=hideBattleDonorFace(character.model);
+ // The old Quaternius controller created detachable eyelids on the SAME
+ // Head bone. They can appear in front of a real new eye even after the
+ // old skinned face triangle is deleted. Use only studio eyelids/blinks.
+ character.face?.setAutoBlink?.(false);
+ character.face?.holdBlink?.(0);
+ for(const donorLid of character.face?.lids||[])donorLid.visible=false;
  const fit=attachIndependentFaceToBattleHead({
   faceRoot:master.root,faceMesh:master.face,
   characterModel:character.model,headBounds:cut.headBounds
@@ -130,6 +145,9 @@ export function attachBattleArtistHead({character,recipe,source,animatedFace=fal
   realGeometry:master.face.geometry,
   headRoot:master.root,face:master.face,
   sourceAsset:BATTLE_HEAD_MASTER_ASSET,
+  generatorPattern:pattern?.version||'none',
+  patternSource:pattern?.source||'legacy',
+  hairPatternId:pattern?.hairStyleId||null,
   removedDonorTriangles:cut.removedTriangles,
   headFit:fit,nearDetail:true,cosmeticMeshes:cosmetic.length,
   reusedSculptGeometry:prototypeReused,
@@ -148,12 +166,50 @@ export function attachBattleArtistHead({character,recipe,source,animatedFace=fal
  };
  return result;
 }
+
+/**
+ * Head-only studio hair at CLOSE camera distances. Constructed only for the
+ * nearest N screen-space characters; far and intermediate units retain the
+ * existing optimized fitted GLB hair with exactly the same gender/age
+ * identity. Studio groom is a ONE-TIME static construction, not a CPU
+ * hair-physics simulation on all 100 actors.
+ */
+export function equipBattleStudioHair(artistHead,pattern,{hero=false}={}){
+ if(!artistHead?.attached||!artistHead.face?.geometry||!pattern?.hairStyleId)
+  throw Error('Physical artist head and compatible v43 hair pattern required');
+ if(artistHead.studioWig)return artistHead.studioWig;
+ const count=hero?360:112;
+ const wig=createScalpAnchoredWig(artistHead.face,{
+  count,styleId:pattern.hairStyleId,color:pattern.hairColor,
+  gender:pattern.sex,lengthScale:pattern.hairLengthScale,
+  volumeProfile:pattern.hairVolume||'natural',
+  fineFringeMultiplier:hero?2:1.25,visualFiberMultiplier:1,
+  staticGroom:true,normalLayeredSingleMesh:true
+ });
+ artistHead.face.add(wig.root);
+ artistHead.studioWig=wig;
+ artistHead.studioWigStyleId=pattern.hairStyleId;
+ artistHead.studioWigCount=count;
+ artistHead.studioHairSource='heroine-real-scalp-generator';
+ return wig;
+}
+export function releaseBattleStudioHair(artistHead){
+ if(!artistHead?.studioWig)return false;
+ artistHead.studioWig.root.removeFromParent();
+ artistHead.studioWig.dispose();
+ artistHead.studioWig=null;artistHead.studioHairSource=null;
+ return true;
+}
 export function battleHeadMasterStats(actors=[]){
  const human=actors.filter(a=>!a.monsterSpec);
  return Object.freeze({
   version:BATTLE_HEAD_MASTER_VERSION,total:human.length,
   attached:human.filter(a=>a.masterHead?.attached).length,
   nearDetail:human.filter(a=>a.masterHead?.nearDetail).length,
+  generatorPatterns:human.filter(a=>!!a.studioPattern?.version).length,
+  savedGeneratorPatterns:human.filter(a=>a.studioPattern?.source==='saved-heroine-editor').length,
+  fullStudioWigs:human.filter(a=>!!a.masterHead?.studioWig).length,
+  studioHairSources:[...new Set(human.map(a=>a.masterHead?.studioHairSource).filter(Boolean))],
   originalHeadTrianglesRemoved:human.reduce((n,a)=>n+(a.masterHead?.removedDonorTriangles||0),0),
   failures:human.filter(a=>a.character&&!a.masterHead).map(a=>({id:a.id,reason:a.masterHeadError||'not installed'})),
   actualNewHeadMesh:true,sourceAsset:BATTLE_HEAD_MASTER_ASSET
