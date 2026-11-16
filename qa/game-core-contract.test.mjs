@@ -119,9 +119,9 @@ for(const facility of ['story','save','formation','weapons','tavern','items']){
  assert.ok(townHtml.includes('data-facility="'+facility+'"'),'Every facility opens from the illustration');
 }
 assert.ok(townHtml.includes('openPanel(button.dataset.facility)'),'Facility selection opens existing services');
-assert.match(townHtml,/<a id="leaveTown" href="\.\/world-map\.html\?v=town-exit-2"/,
+assert.match(townHtml,/<a id="leaveTown" href="\.\/world-map\.html\?v=region-labels-20261116-r2"/,
  'A real navigable map exit anchor must exist even if JS fails');
-assert.ok(townHtml.includes("window.location.assign('./world-map.html?v=town-exit-2')"),
+assert.ok(townHtml.includes("window.location.assign('./world-map.html?v=region-labels-20261116-r2')"),
  'Town menu must navigate to map even when storage fails');
 assert.ok(townHtml.includes("data.type==='hai-gin-town-exit'"),'Stage gate must notify town parent');
 assert.ok(sceneHtml.includes("location.replace(dest)"),'Old duplicate renderer URL must only redirect');
