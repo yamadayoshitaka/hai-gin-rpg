@@ -47,12 +47,12 @@
     },
     "monster": {
       "source": "ChatGPT 定期タスクの実行結果",
-      "lastRunAt": "2026-11-16T00:12:16Z",
-      "subject": "m020海竜の可動下顎に独立した下歯列を追加（全108体監査未完）",
-      "summary": "monster ON。m020の可動下顎に左右10本ずつの独立歯列を実メッシュ追加し、顎アニメーションに追従する構造へ変更。実ソースコミット9749c906、チェックポイント6783e337。対象1ID、GLB再生成0、Node/Three・WebGL・Android QA未実施、ゲーム/マスター反映0。108全件監査未完。mainマージ/公開なし。",
+      "lastRunAt": "2026-11-16T01:06:48Z",
+      "subject": "m048海蛇の可動下顎に独立牙列20本を実メッシュ追加（全108体監査未完）",
+      "summary": "monster ON。既存Draft PR #426のm048専用ソースで、左右10本ずつの独立下顎牙を可動jawへ追加。実ソースSHA db7abed7、チェックポイントbf043e76。今回実造形改修1ID、GLB再生成0、実描画QA合格0、ゲーム反映0。全108件の個別監査未完。Node/WebGL/Android QA未実施につきmainマージ・公開なし。m005/m006・召喚版・元GLB保護維持。",
       "status": "work_incomplete",
       "carryover": true,
-      "nextAction": "PR #426でm020/m048のNode/Three形状・動作検証、前後左右WebGL、Android性能、ゲーム/マスター接続、正本108ID全件監査を実施。",
+      "nextAction": "PR #426でm020/m048のNode/Three形状と顎・牙アニメーション、WebGL前後左右、Android性能、正本108IDの全数監査、GLB/LOD再生成とゲーム/マスター接続を順に実施。",
       "steps": {
         "launch": "done",
         "code": "done",
@@ -64,16 +64,16 @@
       },
       "evidence": [
         {
-          "label": "m020実メッシュ改修",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/9749c906af2d228ca04a9e67f314d9438fe0caea"
+          "label": "m048実造形ソース改修",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/db7abed7336da84487b0d54870d7310a2f7538e6"
         },
         {
-          "label": "Draft PR #426",
+          "label": "既存Draft PR #426",
           "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/426"
         },
         {
-          "label": "WIPチェックポイント",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/6783e337697fac23bdd33d9fb9303d99b2892a78"
+          "label": "途中再開チェックポイント",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/bf043e76aff90e9735364e41a09eba125cd407dd"
         }
       ]
     },
