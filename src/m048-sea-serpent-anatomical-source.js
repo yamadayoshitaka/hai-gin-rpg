@@ -155,6 +155,9 @@ export function buildSeaSerpentAnatomicalSource(THREE,{rings=112,sides=16}={}){
   const points=corners.flatMap(p=>[p.x,p.y,p.z]);
   const g=new THREE.BufferGeometry();
   g.setAttribute('position',new THREE.Float32BufferAttribute(points,3));
+  // Explicit membrane UVs keep the crest compatible with baked normal/roughness maps.
+  // The root and distal edges occupy distinct V coordinates, avoiding degenerate UV triangles.
+  g.setAttribute('uv',new THREE.Float32BufferAttribute([0,0,.15,1,.85,1,1,0],2));
   g.setIndex([0,1,2,0,2,3]);g.computeVertexNormals();
   const fin=new THREE.Mesh(g,spineMat);fin.name='axial-crest-finlet-'+k;root.add(fin);
   animatedFins.push({mesh:fin,base:Float32Array.from(g.getAttribute('position').array),t});
@@ -172,7 +175,7 @@ export function buildSeaSerpentAnatomicalSource(THREE,{rings=112,sides=16}={}){
     a.array[n]=base[n];a.array[n+1]=base[n+1];a.array[n+2]=base[n+2]+offset;
    }
   }
-  a.needsUpdate=true;mesh.geometry.computeVertexNormals();
+  a.needsUpdate=true;mesh.geometry.computeVertexNormals();mesh.geometry.computeBoundingSphere();
  }
  root.userData={creatureId:'m048',source:'original-anatomical-prototype',certified:false,
   anatomicalParts:['continuous-axial-trunk','ventral-keel-scales','flattened-serpentine-cranium','mobile-dentary','axial-crest-finlets','continuous-lateral-sensory-ridges','paired-branchial-opercula'],
@@ -180,7 +183,7 @@ export function buildSeaSerpentAnatomicalSource(THREE,{rings=112,sides=16}={}){
    for(const {mesh,base,t} of animatedFins){
     const p=mesh.geometry.getAttribute('position'),offset=swimOffset(t,seconds);
     for(let n=0;n<base.length;n+=3){p.array[n]=base[n];p.array[n+1]=base[n+1];p.array[n+2]=base[n+2]+offset;}
-    p.needsUpdate=true;mesh.geometry.computeVertexNormals();
+    p.needsUpdate=true;mesh.geometry.computeVertexNormals();mesh.geometry.computeBoundingSphere();
    }
    for(const {mesh,base} of animatedLateralLines){
     const p=mesh.geometry.getAttribute('position');
@@ -189,7 +192,7 @@ export function buildSeaSerpentAnatomicalSource(THREE,{rings=112,sides=16}={}){
      p.array[n]=base[n];p.array[n+1]=base[n+1];
      p.array[n+2]=base[n+2]+swimOffset(t,seconds);
     }
-    p.needsUpdate=true;mesh.geometry.computeVertexNormals();
+    p.needsUpdate=true;mesh.geometry.computeVertexNormals();mesh.geometry.computeBoundingSphere();
    }
    // Align the skull to the deformed axial tangent; the head must follow the
    // swimming spine rather than yaw independently through the neck junction.
