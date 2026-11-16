@@ -153,8 +153,16 @@ export function buildSeaSerpentAnatomicalSource(THREE,{rings=112,sides=16}={}){
     }
     p.needsUpdate=true;mesh.geometry.computeVertexNormals();
    }
-   head.position.copy(center(.992));head.position.z+=swimOffset(.992,seconds);
-   head.rotation.y=.08*Math.sin(seconds*2.2);
+   // Align the skull to the deformed axial tangent; the head must follow the
+   // swimming spine rather than yaw independently through the neck junction.
+   const neckT=.992,delta=.006;
+   const neckBase=center(neckT),behind=center(neckT-delta);
+   neckBase.z+=swimOffset(neckT,seconds);
+   behind.z+=swimOffset(neckT-delta,seconds);
+   head.position.copy(neckBase);
+   const direction=neckBase.sub(behind);
+   head.rotation.y=-Math.atan2(direction.z,direction.x);
+   head.rotation.z=Math.atan2(direction.y,Math.hypot(direction.x,direction.z));
    for(const {chamber,side} of gillPivots){chamber.rotation.y=side*(.045+.04*Math.sin(seconds*1.4));}
    jaw.rotation.z=-.06-.16*(.5+.5*Math.sin(seconds*.8));
   }};
