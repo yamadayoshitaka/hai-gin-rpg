@@ -4,11 +4,11 @@
   "canonicalPages": 132,
   "counts": {
     "expected": 462,
-    "existingRegistrationNotP0Approved": 51,
-    "liveOriginalRegistrations": 166,
+    "existingRegistrationNotP0Approved": 56,
+    "liveOriginalRegistrations": 178,
     "legacyNativeRegenerationRequired": 0,
     "validRealReviewDraft": 116,
-    "missing": 288,
+    "missing": 283,
     "providerBlocked": 7,
     "incorrectNativePixels": 0,
     "invalidProof": 0,
@@ -1630,6 +1630,7 @@
           "panelId": "c01-s04-m5",
           "gender": "female",
           "edition": "pre",
+          "originalLiveSource": "./assets/story/chapter1-provisional-live/c01-s04__pre__female__c01-s04-m5.webp",
           "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-pre-female/p01/c01-s04-m05-pre-female.webp",
           "status": "PROVIDER_SAFETY_BLOCKED"
         },
@@ -1802,6 +1803,7 @@
           "panelId": "c01-s04-m9",
           "gender": "female",
           "edition": "post-victory",
+          "originalLiveSource": "./assets/story/chapter1-provisional-live/c01-s04__post-victory__female__c01-s04-m9.webp",
           "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-post-victory-female/p01/c01-s04-m09-post-victory-female.webp",
           "dimensions": [
             1024,
@@ -1814,6 +1816,7 @@
           "panelId": "c01-s04-m16",
           "gender": "female",
           "edition": "post-victory",
+          "originalLiveSource": "./assets/story/chapter1-provisional-live/c01-s04__post-victory__female__c01-s04-m16.webp",
           "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-post-victory-female/p01/c01-s04-m16-post-victory-female.webp",
           "dimensions": [
             1024,
@@ -1826,6 +1829,7 @@
           "panelId": "c01-s04-m19",
           "gender": "female",
           "edition": "post-victory",
+          "originalLiveSource": "./assets/story/chapter1-provisional-live/c01-s04__post-victory__female__c01-s04-m19.webp",
           "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-post-victory-female/p02/c01-s04-m19-post-victory-female.webp",
           "status": "PROVIDER_SAFETY_BLOCKED"
         },
@@ -1834,6 +1838,7 @@
           "panelId": "c01-s04-m10",
           "gender": "female",
           "edition": "post-victory",
+          "originalLiveSource": "./assets/story/chapter1-provisional-live/c01-s04__post-victory__female__c01-s04-m10.webp",
           "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-post-victory-female/p02/c01-s04-m10-post-victory-female.webp",
           "dimensions": [
             1024,
@@ -2002,6 +2007,7 @@
           "panelId": "c01-s04-m19",
           "gender": "female",
           "edition": "post-defeat",
+          "originalLiveSource": "./assets/story/chapter1-provisional-live/c01-s04__post-defeat__female__c01-s04-m19.webp",
           "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-post-defeat-female/p02/c01-s04-m19-post-defeat-female.webp",
           "status": "PROVIDER_SAFETY_BLOCKED"
         },
@@ -2010,6 +2016,7 @@
           "panelId": "c01-s04-m10",
           "gender": "female",
           "edition": "post-defeat",
+          "originalLiveSource": "./assets/story/chapter1-provisional-live/c01-s04__post-defeat__female__c01-s04-m10.webp",
           "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s04-post-defeat-female/p02/c01-s04-m10-post-defeat-female.webp",
           "dimensions": [
             1024,
@@ -2143,40 +2150,45 @@
           "panelId": "c01-s05-m1",
           "gender": "female",
           "edition": "pre",
+          "originalLiveSource": "./assets/story/chapter1-provisional-live/c01-s05__pre__female__c01-s05-m1.webp",
           "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s05-pre-female/p01/c01-s05-m01-pre-female.webp",
-          "status": "MISSING_REAL_ART"
+          "status": "EXISTING_REGISTERED_NOT_P0_CERTIFIED"
         },
         {
           "key": "c01-s05|pre|female|c01-s05-m2",
           "panelId": "c01-s05-m2",
           "gender": "female",
           "edition": "pre",
+          "originalLiveSource": "./assets/story/chapter1-provisional-live/c01-s05__pre__female__c01-s05-m2.webp",
           "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s05-pre-female/p01/c01-s05-m02-pre-female.webp",
-          "status": "MISSING_REAL_ART"
+          "status": "EXISTING_REGISTERED_NOT_P0_CERTIFIED"
         },
         {
           "key": "c01-s05|pre|female|c01-s05-m3",
           "panelId": "c01-s05-m3",
           "gender": "female",
           "edition": "pre",
+          "originalLiveSource": "./assets/story/chapter1-provisional-live/c01-s05__pre__female__c01-s05-m3.webp",
           "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s05-pre-female/p01/c01-s05-m03-pre-female.webp",
-          "status": "MISSING_REAL_ART"
+          "status": "EXISTING_REGISTERED_NOT_P0_CERTIFIED"
         },
         {
           "key": "c01-s05|pre|female|c01-s05-m4",
           "panelId": "c01-s05-m4",
           "gender": "female",
           "edition": "pre",
+          "originalLiveSource": "./assets/story/chapter1-provisional-live/c01-s05__pre__female__c01-s05-m4.webp",
           "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s05-pre-female/p01/c01-s05-m04-pre-female.webp",
-          "status": "MISSING_REAL_ART"
+          "status": "EXISTING_REGISTERED_NOT_P0_CERTIFIED"
         },
         {
           "key": "c01-s05|pre|female|c01-s05-m5",
           "panelId": "c01-s05-m5",
           "gender": "female",
           "edition": "pre",
+          "originalLiveSource": "./assets/story/chapter1-provisional-live/c01-s05__pre__female__c01-s05-m5.webp",
           "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s05-pre-female/p01/c01-s05-m05-pre-female.webp",
-          "status": "MISSING_REAL_ART"
+          "status": "EXISTING_REGISTERED_NOT_P0_CERTIFIED"
         },
         {
           "key": "c01-s05|pre|female|c01-s05-m11",
