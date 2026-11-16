@@ -353,8 +353,8 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
       // Keep only a shallow, fitted skin crease. The former elevated
       // brow tube projected past both canthi like a thick eyeliner wing.
       const brow=g.tube(faceCore,'skin',[
-        [side*.087,.137,.214],[side*.129,.145,.232],
-        [side*.176,.133,.229]],.0035);
+        [side*.087,.137,.160],[side*.129,.145,.182],
+        [side*.176,.133,.166]],.0035);
       brow.name='m001-eyebrow-ridge-'+(side<0?'L':'R');
       brow.userData.orbitalBrow=true;
      }else if(beastRemesh){
@@ -1064,9 +1064,18 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
      const throat=h.root[1]<-.19;
      // Shear broad side fans toward the shoulder; throat guard hair
      // falls under the mandible rather than forming rigid hanging blades.
-     const wind=[base[0]*(throat?.27:.32),
-       -Math.abs(base[1])*(throat?.90:.48)-len*(throat?.42:.22),
-       base[2]*.46-len*(throat?.23:.39)];
+     const crown=h.root[1]>.19&&h.root[2]<-.04;
+     const temple=!crown&&Math.abs(h.root[0])>.18&&
+       h.root[1]>-.06;
+     const wind=crown?
+       [base[0]*.55,Math.abs(base[1])*.76+len*.14,
+         base[2]*.33-len*.36]:
+       temple?
+       [base[0]*.67,base[1]*.48-len*.14,
+         base[2]*.43-len*.37]:
+       [base[0]*(throat?.27:.32),
+         -Math.abs(base[1])*(throat?.90:.48)-len*(throat?.42:.22),
+         base[2]*.46-len*(throat?.23:.39)];
      const n=Math.hypot(...wind)||1;
      const delta=wind.map(v=>v*target/n);
      const tip=h.root.map((v,k)=>v+delta[k]);
@@ -1079,6 +1088,22 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    // wolf skull and the mane is entirely groomed on the moving head.
    // Ear / eyebrow / eye clearances are cut out of the hair root mask.
    const wolfKingMane=s.id==='m001'?[
+     // Upper crown and both side-manes now approach throat-ruff volume
+     // while the true eye/nose opening stays exposed; they share the
+     // same 3 head material batches (no extra face draw calls).
+     ...generateCanineFurGuides({
+       center:[0,.260,-.240],radii:[.247,.119,.194],
+       rows:source?38:25,around:source?50:35,
+       length:.242,width:.012,seed:v*103+881,
+       minVertical:-.80,maxVertical:.98,gravity:.24
+     }).filter(h=>h.root[1]>.211&&h.root[2]<-.055),
+     ...[-1,1].flatMap(side=>generateCanineFurGuides({
+       center:[side*.224,.112,-.176],radii:[.165,.178,.189],
+       rows:source?43:29,around:source?56:38,
+       length:.249,width:.013,seed:v*107+907+side,
+       minVertical:-.98,maxVertical:.96,gravity:.42
+     }).filter(h=>side*h.root[0]>.191&&h.root[2]<.092&&
+       h.root[1]>-.132)),
      // A tapered facial mask is framed by a single continuous ruff over
      // the temples, cheeks and throat; the eye/muzzle window stays bare.
      ...[-1,1].flatMap(side=>generateCanineFurGuides({
