@@ -195,7 +195,7 @@ for(const id of remeshed){
     const blackPupils=meshes.filter(m=>m.name==='beast-pupil'&&
       m.userData.blackPupilVisible);
     assert.equal(blackPupils.length,2,
-      'm001 requires two visually exposed solid black slit pupils');
+      'm001 requires two visible dark rounded pupils');
     const rims=meshes.filter(m=>m.userData.anatomicalAlmondEyelid);
     assert.equal(rims.length,2);
     assert.ok(rims.every(m=>{
@@ -230,6 +230,28 @@ for(const id of remeshed){
     const skull=meshes.find(m=>m.name==='organic-cranium-m001');
     assert.ok(skull?.userData.canineEyeSocketsRecessed,
       'wolf-king source skull must be physically recessed, not padded with spheres');
+    assert.ok(skull.userData.anatomicalStations>=9,
+      'photo-wolf wedge skull needs additional orbital/zygoma cross sections');
+    const pinnae=meshes.filter(m=>m.userData.foxPinna);
+    assert.equal(pinnae.length,2,'m001 must keep two independent wolf ear leaves');
+    for(const ear of pinnae){
+      const pos=ear.geometry.getAttribute('position');let maxY=-Infinity,minX=Infinity,maxX=-Infinity;
+      for(let i=0;i<pos.count;i++){
+        maxY=Math.max(maxY,pos.getY(i));
+        minX=Math.min(minX,pos.getX(i));maxX=Math.max(maxX,pos.getX(i));
+      }
+      assert.ok(maxY>.33&&maxY<.36,'wolf ears must be 15-25% shorter than old fox pinnae');
+      assert.ok(maxX-minX>.25,'wolf pinna base needs broad tapered real cartilage');
+    }
+    assert.equal(meshes.filter(m=>m.name==='m001-pinna-root-cartilage').length,2,
+      'photo-wolf pinnae must be seated in thick head tissue');
+    const canines=meshes.filter(m=>m.name==='beast-upper-fang');
+    assert.equal(canines.length,2);
+    assert.ok(canines.every(m=>m.userData.rootedKeratin&&m.userData.wolfGumEmbedded),
+      'both m001 fangs must curve backward from embedded upper gums');
+    const scapula=meshes.filter(m=>m.userData.buriedScapula);
+    assert.equal(scapula.length,2,
+      'm001 near/source sculpt needs buried left/right shoulder musculature');
     const lids=meshes.filter(m=>m.userData.anatomicalAlmondEyelid);
     assert.equal(lids.length,2,'both eye sockets need continuous almond eyelids');
     assert.ok(lids.every(m=>m.userData.flushSkinLid),
@@ -256,8 +278,10 @@ for(const id of remeshed){
       'pigmented optics must use generator-style fitted sclera/iris geometry');
     assert.ok(eyes.every(m=>m.userData.recessedCanineEye),
       'eyes must sit behind the lid, not protrude as eyeball spheres');
-    assert.ok(meshes.filter(m=>m.userData.verticalSlit).length===2,
-      'deep-set wolf eyes need narrow animal pupils');
+    assert.equal(meshes.filter(m=>m.userData.roundCanidPupil).length,2,
+      'photo-wolf eyes must have two round canid pupils, not feline slits');
+    assert.equal(meshes.filter(m=>m.userData.verticalSlit).length,0,
+      'm001 must not inherit the old cat-like vertical pupils');
     for(const iris of eyes){
       const positions=iris.geometry.getAttribute('position');
       let xMin=Infinity,xMax=-Infinity,yMin=Infinity,yMax=-Infinity,zMin=Infinity,zMax=-Infinity;
