@@ -756,7 +756,7 @@ import {layoutSquadCallouts,squadCalloutLeader} from './src/battle-squad-callout
 import {createBattleCeremony} from './src/battle-ceremony.js?v=4.6.69';
 import {updateDefensivePosture} from './src/battle-defensive-doctrine.js?v=4.6.15';
 import {chooseBlockedMovementDetour} from './src/battle-movement-recovery.js?v=4.6.15';
-import {findStableGridPath,stableGridNext,sameNavigationCell} from './src/battle-stable-grid-route.js?v=4.6.36';
+import {findStableGridPath,stableGridNext,incrementalStableGridNext,createGridRoutingBudget,sameNavigationCell} from './src/battle-stable-grid-route.js?v=20261116-routebudget';
 import {formatSquadIntent} from './src/battle-squad-intent.js?v=4.6.45';
 import {sortSquadRibbon,squadRibbonStatus,ORDER_COOLDOWN_SECONDS} from './src/battle-command-roster.js?v=4.6.69';
 import {tacticalCooldownSeconds} from './src/tactical-command-evaluation.js?v=2.1';
@@ -3800,25 +3800,40 @@ function recordStoryBattleOutcome(victory){
  try{sessionStorage.setItem('hai-gin-story-result-v1',JSON.stringify(result));}
  catch(e){showRuntimeError('戦闘結果を保存できませんでした：'+e.message);}
 }
+// Reset once per SIMULATION tick, not per actor: prevents 100 simultaneous
+// route requests from all expanding 8000 A* nodes on the main thread.
+let skirmishGridRoutingBudget=createGridRoutingBudget(320);
+window.getSkirmishRoutingBudget=()=>({...skirmishGridRoutingBudget});
 // Cache a collision-safe route across AI ticks for bridge and building exits.
 // Rebuilding an 8,000-node A* for every soldier every 50ms caused P95 hitches
 // while the 50v50 bridge queue was stationary. Congestion is not a new goal;
 // wait briefly and replan only if the planned next tile remains occupied.
 // This does not alter collision, targeting, mesh detail or animation fidelity.
 function exitPathStep(actor,target){
- const result=stableGridNext(actor._exitRoute,actor.cell,target,{
+ // Open corridors and uninterrupted bridge lanes need no A* tree search.
+ // The first step is still validated with the actual dynamic occupancies.
+ if(!routeOccludedByTerrain(actor.cell,target,actor)){
+  const dx=Math.sign(target.x-actor.cell.x),dz=Math.sign(target.z-actor.cell.z);
+  if((dx||dz)&&availableCell(actor.cell.x+dx,actor.cell.z+dz,actor)&&
+     (!dx||!dz||(availableCell(actor.cell.x+dx,actor.cell.z,actor)&&
+       availableCell(actor.cell.x,actor.cell.z+dz,actor)))){
+   actor._exitRoute=null;
+   return {x:actor.cell.x+dx,z:actor.cell.z+dz};
+  }
+ }
+ const result=incrementalStableGridNext(actor._exitRoute,actor.cell,target,{
   walkable:(x,z)=>traversableCell(x,z,actor),
   occupied:(x,z)=>!availableCell(x,z,actor),
-  now:elapsed,waitSeconds:.7,maxExpanded:8000
+  now:elapsed,waitSeconds:.7,maxExpanded:8000,budget:skirmishGridRoutingBudget
  });
  actor._exitRoute=result.state;
  return result.next;
 }
 function stableActorRouteStep(a,goal,maxExpanded=6500){
- const result=stableGridNext(a._stableMovementPath,a.cell,goal,{
+ const result=incrementalStableGridNext(a._stableMovementPath,a.cell,goal,{
   walkable:(x,z)=>traversableCell(x,z,a),
   occupied:(x,z)=>!availableCell(x,z,a),
-  now:elapsed,maxExpanded
+  now:elapsed,maxExpanded,budget:skirmishGridRoutingBudget
  });
  a._stableMovementPath=result.state;
  return result;
@@ -4035,7 +4050,9 @@ function moveActor(a,goal,dt,stop){
     for(const [dx,dz] of [[0,-1],[0,1],[-1,0],[1,0]]){
      const nx=a.cell.x+dx,nz=a.cell.z+dz;
      if(!availableCell(nx,nz,a))continue;
-     const alternate=exitPathStep({...a,_exitRoute:null,cell:{x:nx,z:nz}},target);
+     // No throwaway 8000-node A* for a hypothetical actor every tick.
+     // Only take a detour whose direct line is terrain-clear.
+     const alternate=!routeOccludedByTerrain({x:nx,z:nz},target,a);
      if(alternate&&startCellMove(a,nx,nz)){a.jumping=false;return}
     }
    }
@@ -5076,7 +5093,11 @@ function pursueEnemyOnAnotherFloor(a){
  return routed;
 }
 function tickAI(dt){
- if(!battleReady||battleCeremony.locked||paused||finished)return;elapsed+=dt;updateBridgeFires();
+ if(!battleReady||battleCeremony.locked||paused||finished)return;
+ // A shared per-tick expansion budget preserves combat/animation updates
+ // while the A* frontier of each waiting soldier is resumed next tick.
+ skirmishGridRoutingBudget=createGridRoutingBudget(320);
+ elapsed+=dt;updateBridgeFires();
  if(!massSim)updateSkirmishSquadStrategies();
  updateEnemyItemDecisions();
  updateAllyAutoItemDecisions();
@@ -9699,6 +9720,7 @@ function animate(){
     '｜画質 '+renderer.getPixelRatio().toFixed(2)+'x'+
     '｜衣装 '+report.dressed+'/'+report.totalActors+
     '｜可視 '+(report.visibility?.visible??0)+'｜GPU '+(perf.gpuFrameMs??'--')+'ms'+
+    '｜経路 '+skirmishGridRoutingBudget.expanded+'節 待 '+skirmishGridRoutingBudget.deferred+
     '｜CPU AI '+report.cpuPhases.ai.p95+' 肢 '+report.cpuPhases.rig.p95+
     ' 場 '+report.cpuPhases.objects.p95+' 描 '+report.cpuPhases.submit.p95+'ms'+
     '｜黒 '+report.gpuLifecycle.contextLosses+' 再配 '+report.gpuLifecycle.bufferResizes+
