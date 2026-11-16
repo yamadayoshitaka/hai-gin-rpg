@@ -27,10 +27,16 @@ const {chromium}=require('playwright');
   assert.ok(audit.actualDonorRigHead?.samples>=30,'True skinned donor has no head vertices');
   assert.ok(audit.actualDonorRigHead?.sourceMeshTransformApplied,
    'Source GLB nested transforms must be applied');
-  assert.ok(audit.actualDonorRigHead?.cranialHeightRatio>.80,
-   'The human skull must not be shrunken to a tiny mask');
-  assert.ok(audit.actualDonorRigHead?.widthRatio>.80,
-   'Face must occupy most of its true animated head width');
+  assert.ok(audit.actualDonorRigHead?.shoulderWidthExcludedFromFit,
+   'Wide neck/shoulder mesh must not determine face dimensions');
+  assert.ok(audit.actualDonorRigHead?.sourceShoulderToSkullWidthRatio>1.45,
+   'Master GLB should show measurable shoulder-width inflation');
+  assert.ok(audit.actualDonorRigHead?.cranialSamples>3000,
+   'Skull must be measured from actual source vertices');
+  assert.ok(audit.actualDonorRigHead?.cranialHeightRatio>=.99,
+   'True head height must fill the animated human skull');
+  assert.ok(audit.actualDonorRigHead?.widthRatio>=.99,
+   'Face must occupy its actual animated head width, not tiny clay mask');
   console.log('REAL_RIG_BATTLE_HEAD_PROPORTIONS',JSON.stringify(audit.actualDonorRigHead));
 
   assert.ok(audit.sample.occupied>350,'No real skin pixels visible in the frame');
