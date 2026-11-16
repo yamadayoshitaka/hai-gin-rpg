@@ -87,3 +87,9 @@ body.story-center-orders #topQuickActions{display:flex;gap:5px}
 #targetedStrategyCard .centerMapLegend .g1{color:#59dcfa}
 #targetedStrategyCard .centerMapLegend .g2{color:#c7a0ff}
 #targetedStrategyCard .centerMapLegend .g3{color:#93e5a1}
+
+/* Recommended inn plans are compact, not another scrollable side menu. */
+#targetedStrategyCard .centerBattleRecommendations{display:grid;grid-template-columns:1fr 1fr;gap:6px;max-height:32dvh;overflow-y:auto}
+#targetedStrategyCard .centerBattleRecommendations button{min-height:50px;text-align:left;line-height:1.35;padding:7px!important;font-size:11px!important}
+#targetedStrategyCard .centerBattleRecommendations button:first-child{grid-column:1/-1;border-color:#d7b167;background:#51412b;color:#fff2c2}
+@media(max-width:375px){#targetedStrategyCard .centerBattleRecommendations{grid-template-columns:1fr}}
