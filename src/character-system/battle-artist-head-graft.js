@@ -50,7 +50,34 @@ const clamp=(x,min,max)=>Math.min(max,Math.max(min,x));
  * creator face geometry, eye pigments, make-up, textures and hair are untouched.
  * Keep this independent of camera distance and rarity so LOD cannot bleach it.
  */
-export const BATTLE_FACE_SKIN_TONE_VERSION='battle-skin-no-whitewash-v1';
+export const BATTLE_FACE_SKIN_TONE_VERSION='battle-skin-photometric-v2';
+export const BATTLE_FACE_LIGHT_RESPONSE_VERSION='battle-face-light-response-v2';
+/** Reduce excessive facial radiance before the global ACES/output pass.
+ * Adjust the actual fragment's PBR outgoingLight, NOT just the UI pigment.
+ * A flat material.color change cannot guard against the 2.5+2.2 battlefield
+ * light stack, especially on mobile where FXAA blurs the cheek contours.
+ * This program is shared by prototype-cloned crowds; zero per-frame work.
+ */
+export function installBattleFaceLightResponse(material){
+ if(!material?.isMeshStandardMaterial)return {applied:false,reason:'not-standard-pbr'};
+ if(material.userData?.battleFaceLightResponseVersion===BATTLE_FACE_LIGHT_RESPONSE_VERSION)
+  return {applied:true,reused:true};
+ const beforeCompile=material.onBeforeCompile.bind(material);
+ const previousProgramKey=material.customProgramCacheKey.bind(material);
+ material.onBeforeCompile=function(shader,renderer){
+  beforeCompile(shader,renderer);
+  const marker='#include <opaque_fragment>';
+  if(!shader.fragmentShader?.includes(marker))
+   throw Error('Battle face PBR light gate: expected opaque_fragment not found');
+  shader.fragmentShader=shader.fragmentShader.replace(marker,
+   'outgoingLight = (outgoingLight * 0.58) / (vec3(1.0) + 0.55 * max(outgoingLight - vec3(0.50), vec3(0.0)));\\n'+marker);
+ };
+ material.customProgramCacheKey=()=>previousProgramKey()+'|'+BATTLE_FACE_LIGHT_RESPONSE_VERSION;
+ material.userData.battleFaceLightResponseVersion=BATTLE_FACE_LIGHT_RESPONSE_VERSION;
+ material.userData.battleFaceLightResponseScale=.58;
+ material.needsUpdate=true;
+ return {applied:true,version:BATTLE_FACE_LIGHT_RESPONSE_VERSION,scale:.58};
+}
 export function correctBattleFaceSkinTone(face,{sex='male'}={}){
  if(!face?.isMesh||!face.material||face.userData?.faceColorMode!=='color')
   throw Error('A colorized, real battle face mesh is required');
@@ -68,6 +95,7 @@ export function correctBattleFaceSkinTone(face,{sex='male'}={}){
  if('sheen' in material)material.sheen=.025;
  if('specularIntensity' in material)material.specularIntensity=.48;
  material.toneMapped=true;
+ installBattleFaceLightResponse(material);
  material.needsUpdate=true;
  // Keep eyelids contiguous with the new cheek/forehead tone. Do NOT recolour
  // eyelashes, iris, sclera, lips, blusher or other cosmetic colour roles.
@@ -78,6 +106,7 @@ export function correctBattleFaceSkinTone(face,{sex='male'}={}){
    m.color.setHex(skinHex);
    m.metalness=0;
    m.roughness=.86;
+   installBattleFaceLightResponse(m);
    m.needsUpdate=true;
   }
  });
@@ -184,7 +213,11 @@ export function attachBattleArtistHead({character,recipe,source,pattern=null,ani
   const desired=!!value;
   if(desired===near)return;
   near=desired;
-  for(const part of cosmetic)part.node.visible=desired&&part.initialVisible;
+  // Eyeliner outlines must remain at middle/far distances; removing them
+  // made the skin look like a blank white clay mask even with correct tint.
+  // Keep only tiny lashes/wrinkles/freckles range-gated for GPU efficiency.
+  for(const part of cosmetic)
+   part.node.visible=part.initialVisible&&(desired||/EYELINER/i.test(part.node.name));
  }
  const result={
   version:BATTLE_HEAD_MASTER_VERSION,attached:true,
@@ -195,6 +228,7 @@ export function attachBattleArtistHead({character,recipe,source,pattern=null,ani
   patternSource:pattern?.source||'legacy',
   skinTone:master.face.userData.battleSkinToneHex||null,
   skinToneVersion:master.face.userData.battleSkinToneVersion||null,
+  skinLightResponseVersion:master.face.material?.userData?.battleFaceLightResponseVersion||null,
   hairPatternId:pattern?.hairStyleId||null,
   removedDonorTriangles:cut.removedTriangles,
   headFit:fit,nearDetail:true,cosmeticMeshes:cosmetic.length,
@@ -207,6 +241,7 @@ export function attachBattleArtistHead({character,recipe,source,pattern=null,ani
  character.object3D.userData.battleHeadMaster={
   version:result.version,source:result.sourceAsset,
   skinTone:result.skinTone,skinToneVersion:result.skinToneVersion,
+  skinLightResponseVersion:result.skinLightResponseVersion,
   originalHeadRemoved:cut.removedTriangles,
   artistHeadAttached:true,
   headBone:fit.bone,
@@ -259,6 +294,24 @@ export function battleHeadMasterStats(actors=[]){
   savedGeneratorPatterns:human.filter(a=>a.studioPattern?.source==='saved-heroine-editor').length,
   fullStudioWigs:human.filter(a=>!!a.masterHead?.studioWig).length,
   studioHairSources:[...new Set(human.map(a=>a.masterHead?.studioHairSource).filter(Boolean))],
+  faceLightCorrected:human.filter(a=>a.masterHead?.skinLightResponseVersion===BATTLE_FACE_LIGHT_RESPONSE_VERSION).length,
+  faceMaterialFailures:human.filter(a=>a.masterHead?.attached&&(
+   !a.masterHead.face?.visible||
+   a.masterHead.face.material?.userData?.battleFaceLightResponseVersion!==BATTLE_FACE_LIGHT_RESPONSE_VERSION||
+   a.masterHead.face.material?.roughness<.8||
+   a.masterHead.face.userData?.faceColorMode!=='color'
+  )).map(a=>({id:a.id,problem:'battle-face-pbr-incomplete'})),
+  exemplarSkinMaterial:human.filter(a=>a.masterHead?.attached).slice(0,4).map(a=>({
+   id:a.id,sex:a.sex||a.masterRecipe?.sex,
+   mesh:a.masterHead.face?.name,
+   pbr:a.masterHead.face?.material?.type,
+   color:a.masterHead.face?.material?.color?.getHexString?.(),
+   vertexColors:a.masterHead.face?.material?.vertexColors,
+   poreTexture:!!a.masterHead.face?.material?.bumpMap,
+   lightResponse:a.masterHead.skinLightResponseVersion,
+   faceVisible:a.masterHead.face?.visible,
+   eyeOutlineVisible:a.masterHead.face?.children?.filter(n=>/EYELINER/i.test(n.name)).some(n=>n.visible)
+  })),
   originalHeadTrianglesRemoved:human.reduce((n,a)=>n+(a.masterHead?.removedDonorTriangles||0),0),
   failures:human.filter(a=>a.character&&!a.masterHead).map(a=>({id:a.id,reason:a.masterHeadError||'not installed'})),
   actualNewHeadMesh:true,sourceAsset:BATTLE_HEAD_MASTER_ASSET
