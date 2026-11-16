@@ -38,7 +38,28 @@ export function buildSeaSerpentAnatomicalSource(THREE,{rings=112,sides=16}={}){
  geometry.setIndex(idx);geometry.computeVertexNormals();
  const body=new THREE.Mesh(geometry,skin);body.name='continuous-axial-trunk';root.add(body);
  const bellyGeo=geometry.clone();bellyGeo.setIndex(ventralIdx);
- const bellyMesh=new THREE.Mesh(bellyGeo,ventral);bellyMesh.name='ventral-keel-scales';bellyMesh.scale.set(1,1.012,1.012);root.add(bellyMesh);
+ // Offset each belly vertex in the LOCAL axial cross-section, not by scaling
+ // world coordinates: world scaling displaced the curved spine and opened seams.
+ // The same ring basis used for the skin is retained through animation.
+ const bellyPosition=bellyGeo.getAttribute('position');
+ for(let i=0;i<=rings;i++){
+  const t=i/rings,c=center(t);
+  const ahead=center(Math.min(1,t+.001)),behind=center(Math.max(0,t-.001));
+  const tangent=ahead.sub(behind).normalize();
+  const up=new THREE.Vector3().crossVectors(new THREE.Vector3(0,0,1),tangent).normalize();
+  const transverse=new THREE.Vector3().crossVectors(tangent,up).normalize();
+  for(let j=0;j<=sides;j++){
+   const n=i*(sides+1)+j,a=j/sides*Math.PI*2;
+   const outward=up.clone().multiplyScalar(Math.cos(a)/.78)
+    .addScaledVector(transverse,Math.sin(a)).normalize();
+   bellyPosition.setXYZ(n,
+    bellyPosition.getX(n)+outward.x*.018,
+    bellyPosition.getY(n)+outward.y*.018,
+    bellyPosition.getZ(n)+outward.z*.018);
+  }
+ }
+ bellyGeo.computeVertexNormals();bellyGeo.computeBoundingSphere();
+ const bellyMesh=new THREE.Mesh(bellyGeo,ventral);bellyMesh.name='ventral-keel-scales';root.add(bellyMesh);
  const head=new THREE.Group();head.name='skull-and-hinged-mandible';head.position.copy(center(.992));root.add(head);
  const ellipsoid=(parent,name,mat,x,y,z,sx,sy,sz)=>{
   const m=new THREE.Mesh(new THREE.SphereGeometry(1,24,16),mat);m.name=name;
