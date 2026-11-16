@@ -1,0 +1,99 @@
+name: World six-lane hourly parity
+on:
+  schedule:
+    - cron: '12 * * * *'
+  workflow_dispatch:
+  pull_request:
+    paths: ['.github/workflows/world-six-lane.yml','scripts/world-six-batch.mjs','src/object-catalog.js','src/stage-library.js','src/stage-static-instancing.js','batch-monitor.html','qa/world-quality-contract.test.mjs']
+permissions:
+  contents: write
+  pull-requests: write
+concurrency:
+  group: world-six-lane
+  cancel-in-progress: false
+jobs:
+  enabled:
+    runs-on: ubuntu-latest
+    outputs:
+      run: ${{ steps.check.outputs.run }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: check
+        run: |
+          value=$(node -e "const s=require('./data/batch-center-switches.json');process.stdout.write(String(s.groups.world.enabled===true))")
+          if [ "$value" = true ] || [ "${{ github.event_name }}" != schedule ]; then echo 'run=true' >> "$GITHUB_OUTPUT"; else echo 'run=false' >> "$GITHUB_OUTPUT"; fi
+  six-batches:
+    needs: enabled
+    if: needs.enabled.outputs.run == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        lane: [catalog, geometry, materials, interaction, lod, visual]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 28
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Browser setup
+        if: matrix.lane == 'visual'
+        run: |
+          npm install --no-save --package-lock=false playwright@1.57.0 three@0.160.1
+          npx playwright install --with-deps chromium
+      - name: Actual WebGL screenshots of real catalog
+        if: matrix.lane == 'visual'
+        run: |
+          mkdir -p qa-reports/world-six-lane
+          python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/world-http.log 2>&1 &
+          ID=$(node --input-type=module -e "import {qualityInventory} from './scripts/world-quality-catalog.mjs';const a=qualityInventory.filter(x=>x.type==='object');process.stdout.write(a[Math.floor(Date.now()/3600000)%a.length].id)")
+          node scripts/world-quality-capture.cjs "$ID" qa-reports/world-six-lane/previews
+          cp "qa-reports/world-six-lane/previews/$ID-capture.json" qa-reports/world-six-lane/visual-capture.json
+      - name: Independent gate
+        run: |
+          node scripts/world-six-batch.mjs --lane "${{ matrix.lane }}"
+          if [ "${{ matrix.lane }}" = interaction ]; then node qa/world-quality-contract.test.mjs; fi
+          if [ "${{ matrix.lane }}" = lod ]; then node --test qa/stage-static-instancing.test.mjs; fi
+          if [ "${{ matrix.lane }}" = geometry ]; then node --test qa/object-list-catalog.test.mjs; fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: world-six-${{ matrix.lane }}
+          path: qa-reports/world-six-lane/${{ matrix.lane }}.json
+          retention-days: 7
+          if-no-files-found: error
+  integrate:
+    needs: [enabled, six-batches]
+    if: needs.enabled.outputs.run == 'true' && needs.six-batches.result == 'success'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: world-six-*
+          path: qa-reports/world-six-lane
+          merge-multiple: true
+      - run: node scripts/world-six-batch.mjs --integrate
+      - uses: actions/upload-artifact@v4
+        with:
+          name: world-six-integrated
+          path: data/world-quality/live-batch-report.json
+      - name: Safe report-only PR and squash merge to main
+        if: github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- data/world-quality/live-batch-report.json
+          if git diff --cached --quiet; then echo 'No catalog change; no redundant deployment' >> "$GITHUB_STEP_SUMMARY"; exit 0; fi
+          BRANCH="world/six-parity-$GITHUB_RUN_ID"
+          git switch -c "$BRANCH"
+          git commit -m 'chore(world): six-gate live catalog report'
+          git push origin "$BRANCH"
+          URL=$(gh pr create --base main --head "$BRANCH" --title 'chore(world): six-lane catalog report' --body 'Six independent QA gates passed. Only deterministic source parity data is merged; artwork and Android visual performance still require manual QA.')
+          echo "Integration PR $URL" >> "$GITHUB_STEP_SUMMARY"
+          gh pr merge "$URL" --squash --delete-branch
