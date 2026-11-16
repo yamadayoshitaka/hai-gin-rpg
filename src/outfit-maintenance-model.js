@@ -179,7 +179,17 @@ export function createDetailedOutfit(job, sex, body, textures, {quality='preview
     const wider=torsoSamples.filter(([px,py])=>Math.abs(py-y)<H*.10&&Math.abs(px-x)<sx*.34);
     const eligible=band.length>=9?band:wider.length>=5?wider:band;
     const z=eligible.map(p=>p[2]).sort((a,b)=>a-b);
-    return z.length>10?z[Math.floor((z.length-1)*(back?.08:.92))]:mz+(back?-1:1)*sz*.69;
+    // A sparse lateral strip with 5-10 valid skin samples is still more
+    // anatomically faithful than the fixed elliptical torso fallback.
+    // The old >10 gate discarded those strips and left rear/side armor
+    // hovering over the actual skinned body, especially at narrow waists.
+    // Use a conservative inner percentile for sparse strips so a single
+    // cloth fold cannot push a metal plate away from the skin.
+    if(z.length>=5){
+      const quantile=z.length<11?(back?.20:.80):(back?.08:.92);
+      return z[Math.floor((z.length-1)*quantile)];
+    }
+    return mz+(back?-1:1)*sz*.69;
   }
   // The Superhero face points +Z; decorations must remain against that skin.
   const front=surfaceAt(cy-H*.09)+H*.008;
