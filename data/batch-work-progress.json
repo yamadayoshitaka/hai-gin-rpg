@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "asOf": "2026-11-16T02:50:00+09:00",
+  "asOf": "2026-11-16T09:53:53+09:00",
   "description": "工程別の実作業証跡。GitHub Actionsの成功や定期タスクの実行完了を、3D改修・PR・デプロイの完了と混同しない。これはGitHubに最後に記録されたスナップショットであり、ChatGPTサービスのライブ状態ではない。",
   "stageOrder": [
     "launch",
@@ -78,13 +78,13 @@
       ]
     },
     "world": {
-      "source": "GitHub実ソース+World専用CIでの対象群一括回帰",
-      "lastRunAt": "2026-11-16T02:50:00+09:00",
+      "source": "ChatGPT定期回帰の実行記録＋GitHub証跡（mainへの今回の同期）",
+      "lastRunAt": "2026-11-16T09:53:53+09:00",
       "status": "in_review",
       "carryover": true,
-      "subject": "全53種中11種の実3D改善PR審査中（扉5種を新規一括改修）",
-      "summary": "53件全てを一度に写実完成させるのではなく、共通構造を持つ対象群ごとに実3D生成器を共有して一括改善する方針へ切替。今回entry_door_lv1_001〜entry_door_lv5_001の5件について木の有厚8〜10枚板、木製支柱・まぐさ・敷居、レベル別2〜3本の補強・蝶番/鉄鋲・鍵座・取手を実メッシュとして追加、src/object-catalog.jsのゲーム用経路に反映、Draft PR #442に実コミット。専用Node QAをGitHub world-quality CIへ導入しCI #43743734541成功。並走バッチで木製食卓/椅子2件をPR #434に実改修したこともGitHub差分で確認。進捗台帳は11件実3D候補・42件未着手・品質承認0。全体Architecture CI失敗、実WebGL正面側面俯瞰・Android FPS未確認なのでmainマージ/本編公開は未実施。",
-      "nextAction": "PR #442の実WebGL/Android画面・キャラ/衝突整合性を確認し、不具合があれば修正。PR #434、#430、#427、#409と順次QA/マージ条件を確認。残42種は建造物9、街路小物など構造が共通する群をまとめて5〜10種類ずつ一括生成器で実改修。承認済み53/53かつmain反映・Pages公開の全件検証が終わるまでcarryover=trueを維持。",
+      "subject": "最新定期実行09:53確認／PR #441作業ブランチ21件保存・main審査中11件／最終承認0",
+      "summary": "2026-11-16 09:53 JSTの定期実行を確認。直近のタスク報告は「新規実ソースコミット0・新規QA成功なし」。PR #441 の作業ブランチにある data/batch-checkpoints/world.json は21/53件の保存記録・32件が未保存、ただし全21件ともQA=unverifiedで、実機・実描画合格ではない。一方、mainの受入台帳には11/53件が実3D改善審査中と記録されている。21と11は別ブランチの別集計（食卓・椅子など重複を含む）なので足し算しない。main受入承認済み0/53。作業ブランチはmain未マージ・Pages未公開、過去の進捗記録02:50は定期実行時刻と連動していなかった。管理画面は今回GitHub mainの工程記録を09:53の検証済み実行結果に同期した。",
+      "nextAction": "次回以降の実行では、新規コミット0でもmainのdata/batch-work-progress.jsonのgroups.world.lastRunAt/実作業結果/保存PRの件数を必ず更新し、管理画面の最終記録が停止して見えない問題を再発させない。PR #441に保存された21件の未検証QAと、main台帳の11件のPR #442/#434/#430/#427を照合し、共通生成器ごとの実3D品質・WebGL/Android検証後に安全なマージ/Pages公開を進める。完了53件までcarryover継続。",
       "steps": {
         "launch": "done",
         "code": "done",
@@ -95,6 +95,18 @@
         "deploy": "pending"
       },
       "evidence": [
+        {
+          "label": "作業ブランチ21件の保存記録（全QA unverified）",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/blob/396f3e4d655c4fb6f230b09384b11a39fe38d0d7/data/batch-checkpoints/world.json"
+        },
+        {
+          "label": "作業継続 PR #441",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/441"
+        },
+        {
+          "label": "mainの全53種受入台帳（審査中11、承認0）",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/blob/main/data/world-quality/object-realism-acceptance.json"
+        },
         {
           "label": "扉5種類の一括実3D造形 PR #442",
           "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/442"
@@ -123,7 +135,15 @@
           "label": "53件の個別承認台帳",
           "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/blob/main/data/world-quality/object-realism-acceptance.json"
         }
-      ]
+      ],
+      "lastRunOutcome": {
+        "kind": "verification_only",
+        "newSourceCommits": 0,
+        "branchSavedCount": 21,
+        "branchSavedQA": "unverified",
+        "mainInReviewCount": 11,
+        "mainAcceptedCount": 0
+      }
     },
     "anime": {
       "source": "ChatGPTタスクのスケジュール確認",
