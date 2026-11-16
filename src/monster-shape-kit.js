@@ -366,7 +366,9 @@ export function createSculpture(spec,detail='high'){
    }
    for(let i=0;i<steps;i++)for(let j=0;j<4;j++){
      const a=i*5+j,b=a+5;
-     innerIndices.push(a,a+1,b,a+1,b+1,b);
+     // Two-sided triangles without mutating shared cached PBR materials.
+     innerIndices.push(a,a+1,b,a+1,b+1,b,
+       b,a+1,a,b,b+1,a+1);
    }
    const innerGeo=new THREE.BufferGeometry();
    innerGeo.setAttribute('position',new THREE.Float32BufferAttribute(innerPos,3));
@@ -375,7 +377,7 @@ export function createSculpture(spec,detail='high'){
    innerGeo.computeVertexNormals();innerGeo.computeBoundingSphere();
    const inner=own(attach(parent,innerGeo,'shadow',
      {name:name+'-inner-cartilage',rough:.94,metal:0}));
-   inner.material.side=THREE.DoubleSide;
+   // Shared material cache stays untouched; the inner ear is double-sided geometry.
    inner.userData.foxPinnaInner=true;
    return outer;
  };
