@@ -111,8 +111,8 @@ assert.match(game,/#squadTactics\[data-panel="orders"\] \.tacticsActions/,
   '号令選択時は4択メニューを隠して画面領域を確保する');
 assert.match(game,/\$\('topPerformanceSlot'\)\.appendChild\(perf\)/,
   'FPSなどの計測パネルを下部指揮欄の外、統一上部パネルへ移動する');
-assert.match(game,/createCharacter\(\{job:motionJob,sex,height:sex==='female'\?1\.68:1\.78,jobs/,
-  '共有7頭身人体はモーション互換の職業リグと正しい身長を使う');
+assert.match(game,/job:recipe\.motionJob,sex:recipe\.sex,height:recipe\.height,jobs/,
+  '共有65骨人体は主人公方式の年代・性別に対応する身長と実モーションを使う');
 assert.match(game,/a\.outfit=await buildRiggedJobOutfit/,
   '共有衣装を使い、別のダミー衣装に置き換えない');
 console.log('PASS contextual mobile squad popup, page transitions, top performance HUD, 1-/2-finger gestures, 5x VFX and outfit integrity');

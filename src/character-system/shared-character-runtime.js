@@ -5,7 +5,7 @@ import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {clone} from 'three/addons/utils/SkeletonUtils.js';
 import {CHARACTER_MODEL_REGISTRY} from '../character-model-registry.js';
 import {buildRigPairs,applyRigPairs} from './retarget-adapter.js';
-import {resolveJobMotion} from './job-motion-source.js?v=4.6.33';
+import {resolveJobMotion} from './job-motion-source.js?v=20261116-hero-skills';
 import {clipTimeForStepPhase,groundedModelY,footfallAtPhase,footPlantWeight} from './locomotion-sync.js';
 import {fitEyebrowMeshesToFace} from './eyebrow-fit-runtime.js?v=4.4.56';
 import {attachRealisticFace} from './facial-blink-runtime.js?v=1';
@@ -106,7 +106,7 @@ export async function createCharacter({job='剣士',sex='male',height=.95,jobs,j
   if(id!==request)return false;
   const clip=b.clips.find(c=>c.name===row.clip);if(!clip)throw Error('Missing clip '+row.clip);
   for(const prev of bindings.values())prev.mixer.stopAllAction();
-  active=b;stateName=state;if(state==='jump'){jumpTime=0;jumpDuration=Math.max(.55,clip.duration)}current=b.mixer.clipAction(clip);current.reset().setLoop(['attack','jump','dead','death','hit'].includes(state)?THREE.LoopOnce:THREE.LoopRepeat);current.clampWhenFinished=true;
+  active=b;stateName=state;if(state==='jump'){jumpTime=0;jumpDuration=Math.max(.55,clip.duration)}current=b.mixer.clipAction(clip);current.reset().setLoop(['attack','skill','cast','jump','dead','death','hit'].includes(state)?THREE.LoopOnce:THREE.LoopRepeat);current.clampWhenFinished=true;
   // Keep one-shot impact clips responsive without changing their skeletal
   // retargeting or the travelled-distance footfall synchronization.
   current.setEffectiveTimeScale(['attack','skill','hit'].includes(state)?1.2:1);
