@@ -149,7 +149,13 @@ export function screenplayForStage(stageId,context={}){
  addPre('語り手',beat[0],{kind:'stage-setup'});
  if(stage.slot===1){
   // Each chapter's three canonical speeches are spoken once, at its opening.
-  for(const original of speeches)addPre(original.speaker,original.line,{kind:'canonical-dialogue'});
+  for(const original of speeches){
+   const displayLine=!context.artManifestCompatible&&
+    stage.chapter===1&&original.speaker==='老騎士ガラン'
+    ?'王城の外にはまだ帰れない兵がいる。命令を待たせるより、あの者たちの道を先に守ってやれ。'
+    :original.line;
+   addPre(original.speaker,displayLine,{kind:'canonical-dialogue'});
+  }
  }else{
   const talk=fieldTalk[stage.kind]||fieldTalk.explore;
   addPre(speaker.speaker,talk[0](stage),{kind:'stage-character-dialogue'});
@@ -167,20 +173,30 @@ export function screenplayForStage(stageId,context={}){
   {kind:'route',route:route.id});
  if(stage.slot===10)addPre('語り手','章の目標は「'+chapter.objective+'」。決戦の結果を確かめる。',{kind:'chapter-objective'});
  if(status==='town'){
-  addPost('語り手','「'+stage.name+'」での調査を終えた。'+beat[1],{kind:'town-consequence'});
+  addPost('語り手',context.artManifestCompatible?
+   '町での調査と準備を終えた。'+beat[1]:
+   '「'+stage.name+'」での調査を終えた。'+beat[1],{kind:'town-consequence'});
   if(stage.slot>1)addPost(final.speaker,outcomeTalk.town(stage),{kind:'stage-epilogue-dialogue'});
  }else if(status==='victory'){
-  addPost('語り手','「'+stage.name+'」での勝利が確認された。'+beat[1],{kind:'victory-consequence'});
+  addPost('語り手',context.artManifestCompatible?
+   '勝利が確認された。'+beat[1]:
+   '「'+stage.name+'」での勝利が確認された。'+beat[1],{kind:'victory-consequence'});
   addPost(final.speaker,outcomeTalk.victory(stage),{kind:'stage-epilogue-dialogue'});
   addPost('語り手','軍は「'+stage.name+'」の記録を保全し、次の行動へ備える。',{kind:'verified-aftermath'});
  }else if(status==='defeat'){
-  addPost('語り手','「'+stage.name+'」の目標「'+stage.winCondition+'」は未達。部隊は撤退する。',{kind:'defeat'});
+  addPost('語り手',context.artManifestCompatible?
+   '「'+stage.winCondition+'」は未達となった。部隊は撤退し、態勢を立て直す。':
+   '「'+stage.name+'」の目標「'+stage.winCondition+'」は未達。部隊は撤退する。',{kind:'defeat'});
   addPost(final.speaker,outcomeTalk.defeat(stage),{kind:'stage-epilogue-dialogue'});
   addPost('語り手','「'+stage.name+'」は未攻略。次のステージを解放せず、再挑戦の準備を始める。',{kind:'retry'});
  }else if(status==='gameover'){
-  addPost('語り手','「'+stage.name+'」で主人公の軍師が戦死した。指揮を失い、物語はゲームオーバーとなる。',{kind:'player-death'});
+  addPost('語り手',context.artManifestCompatible?
+   '主人公の軍師が戦死した。指揮を失い、物語はゲームオーバーとなる。':
+   '「'+stage.name+'」で主人公の軍師が戦死した。指揮を失い、物語はゲームオーバーとなる。',{kind:'player-death'});
   addPost(final.speaker,outcomeTalk.gameover(stage),{kind:'stage-epilogue-dialogue'});
-  addPost('語り手','この時間線で「'+stage.name+'」から先へは進まない。生還を偽って描かない。',{kind:'gameover-end'});
+  addPost('語り手',context.artManifestCompatible?
+   'この時間線では次へ進まない。生還や帰還を偽って描かない。':
+   'この時間線で「'+stage.name+'」から先へは進まない。生還を偽って描かない。',{kind:'gameover-end'});
  }else{
   addPost('語り手','「'+stage.name+'」の戦闘結果は未確認。勝敗が判明する前の仮表示。',{kind:'preview-only'});
  }
