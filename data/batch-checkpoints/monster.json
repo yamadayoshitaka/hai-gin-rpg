@@ -7,7 +7,7 @@
       "sourceFiles": [
         "src/m020-leviathan-anatomical-source.js"
       ],
-      "commitSha": "9749c906af2d228ca04a9e67f314d9438fe0caea",
+      "commitSha": "6b1f3c414d522da7892e0e16407b5a675eaad7f9",
       "qa": "unverified"
     },
     {
@@ -67,5 +67,5 @@
     "m049",
     "m050"
   ],
-  "nextAction": "Run Node syntax and Three/WebGL visual regression for m048 lateral-line ridge deformation and jaw; inspect m020, enumerate all 108 IDs, build GLB LOD and Android QA. No merge before verified."
+  "nextAction": "Run Node syntax and actual WebGL front/side/rear render QA for m020 barbels and m048 lateral-line, then build GLB/LOD and Android FPS verification; enumerate 108 canonical IDs. No main merge without all gates."
 }
