@@ -634,13 +634,21 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
   const bodyBindBox=lowDetail?null:bindGeometryBounds(characterModel);
   const studioSkinPolicy=studioCoveredSkinPolicy({studioPreferSkinnedLegs,
    studioPreserveLegAnatomy,studioVisibleLegAnatomy,preserveBody});
+  // Keep the EXISTING animated torso behind garment back/hip seams. A
+  // partial skinned robe or missing rear triangle must not expose an empty
+  // hollow where bone-region culling previously deleted the entire torso.
+  // No second mesh, material or draw call: the body is already skinned.
+  const battleBackUnderlay=quality==='battle'?['torso']:[];
+  const occlusionPreserveRegions=[...new Set([
+   ...studioSkinPolicy.preserveRegions,...battleBackUnderlay
+  ])];
   let coverageHandle=preserveBody?null:clipBodyToGarment(characterModel,garmentCoverage,{surfaceCheck:true,
-    preserveRegions:studioSkinPolicy.preserveRegions});
+    preserveRegions:occlusionPreserveRegions});
   let bodyMasked=!preserveBody;
   function setBodyOcclusion(enabled){
     if(preserveBody)return;
     if(enabled&&!bodyMasked){coverageHandle=clipBodyToGarment(characterModel,garmentCoverage,{surfaceCheck:true,
-    preserveRegions:studioSkinPolicy.preserveRegions});bodyMasked=true}
+    preserveRegions:occlusionPreserveRegions});bodyMasked=true}
     else if(!enabled&&bodyMasked){coverageHandle?.restore();coverageHandle=null;bodyMasked=false}
   }
   let disposed=false;

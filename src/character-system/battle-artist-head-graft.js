@@ -20,7 +20,7 @@ import {FEMALE_V7_DEFAULTS,MALE_REFERENCE_DEFAULT} from '../face-v7-controls.js'
 import {hideBattleDonorFace,attachIndependentFaceToBattleHead,enhanceHeroineFaceSurface}
  from '../heroine-battle-costume-bridge.js?v=70';
 import {createFaceExpressionAnimator} from '../face-expression-animation-v48.js?v=68';
-import {createScalpAnchoredWig} from '../face-scalp-wig.js?v=67';
+import {createScalpAnchoredWig} from '../face-scalp-wig.js?v=20261116-middlelod1';
 
 export const BATTLE_HEAD_MASTER_VERSION='real-sculpt-head-graft-v1';
 export const BATTLE_HEAD_MASTER_ASSET='assets/master-sources/blender/realistic-head-animation.glb';
@@ -164,6 +164,22 @@ export function correctBattleFaceSkinTone(face,{sex='male'}={}){
    m.needsUpdate=true;
   }
  });
+ // Combat's bright hemisphere/sun stack overexposed sclera relative to
+ // the newly corrected skin. Tone the EXISTING orbital patch as well, with
+ // the same shader key, no extra geometry/texture/draw or per-frame CPU.
+ const scleraMaterials=new Set();
+ face.traverse(node=>{
+  if(!node.isMesh||!/(?:SCLERA|ORBITAL_EYEBALL)/i.test(node.name))return;
+  for(const eyeMaterial of Array.isArray(node.material)?node.material:[node.material]){
+   if(!eyeMaterial?.isMeshStandardMaterial||scleraMaterials.has(eyeMaterial))continue;
+   scleraMaterials.add(eyeMaterial);
+   eyeMaterial.roughness=Math.max(.42,eyeMaterial.roughness);
+   if('clearcoat' in eyeMaterial)eyeMaterial.clearcoat=Math.min(.16,eyeMaterial.clearcoat);
+   installBattleFaceLightResponse(eyeMaterial);
+   eyeMaterial.needsUpdate=true;
+  }
+ });
+ face.userData.battleScleraPhotometricMaterials=scleraMaterials.size;
  material.userData.battleSkinToneVersion=BATTLE_FACE_SKIN_TONE_VERSION;
  face.userData.battleSkinToneHex='#'+skinHex.toString(16).padStart(6,'0');
  face.userData.battleSkinToneVersion=BATTLE_FACE_SKIN_TONE_VERSION;
@@ -345,14 +361,33 @@ export function cranialScalpSurface(face,{cranialFraction=.65}={}){
  const geometry=face.geometry;
  geometry.computeBoundingBox();
  const box=geometry.boundingBox,vertices=geometry.getAttribute('position');
- const cutoff=box.min.y+(box.max.y-box.min.y)*(1-cranialFraction);
+ // Size the scalp from the real upper skull but retain its rear hairline.
+ // The old double cutoff removed all roots below ~84% of the full head.
+ const height=box.max.y-box.min.y;
+ const upperCutoff=box.min.y+height*(1-cranialFraction);
+ const lowerCutoff=box.min.y+height*.18;
+ const skull=new THREE.Box3().makeEmpty();
+ const point=new THREE.Vector3();
+ for(let i=0;i<vertices.count;i++){
+  point.fromBufferAttribute(vertices,i);
+  if(point.y>=upperCutoff)skull.expandByPoint(point);
+ }
+ if(skull.isEmpty())throw Error('Real upper skull bounds not found');
+ const xPadding=(skull.max.x-skull.min.x)*.045;
+ const zPadding=(skull.max.z-skull.min.z)*.08;
+ const usable=i=>vertices.getY(i)>=lowerCutoff&&
+  vertices.getX(i)>=skull.min.x-xPadding&&
+  vertices.getX(i)<=skull.max.x+xPadding&&
+  vertices.getZ(i)>=skull.min.z-zPadding&&
+  vertices.getZ(i)<=skull.max.z+zPadding;
  const sourceIndex=geometry.getIndex(),triangles=sourceIndex?
   sourceIndex.count/3:vertices.count/3;
  const positions=[];
  for(let triangle=0;triangle<triangles;triangle++){
   const ids=[0,1,2].map(i=>sourceIndex?
    sourceIndex.getX(triangle*3+i):triangle*3+i);
-  if(ids.some(i=>vertices.getY(i)<cutoff))continue;
+  // Reject shoulder/bust triangles without discarding legitimate nape roots.
+  if(ids.some(i=>!usable(i)))continue;
   for(const id of ids)positions.push(vertices.getX(id),vertices.getY(id),vertices.getZ(id));
  }
  if(positions.length<900)throw Error('No usable real scalp triangle surface');
@@ -365,16 +400,18 @@ export function cranialScalpSurface(face,{cranialFraction=.65}={}){
  return {
   proxy,geometry:cropped,
   triangles:positions.length/9,
-  cutoffY:cutoff,
+  cutoffY:lowerCutoff,upperCutoffY:upperCutoff,
   originalHeadHeight:box.max.y-box.min.y,
   croppedHeadHeight:cropped.boundingBox.max.y-cropped.boundingBox.min.y
  };
 }
-export function equipBattleStudioHair(artistHead,pattern,{hero=false}={}){
+export function equipBattleStudioHair(artistHead,pattern,{hero=false,quality='near'}={}){
  if(!artistHead?.attached||!artistHead.face?.geometry||!pattern?.hairStyleId)
   throw Error('Physical artist head and compatible v43 hair pattern required');
- if(artistHead.studioWig)return artistHead.studioWig;
- const count=hero?360:112;
+ if(!['near','middle'].includes(quality))throw Error('Invalid battle hair LOD');
+ if(artistHead.studioWig&&artistHead.studioWigQuality===quality)return artistHead.studioWig;
+ if(artistHead.studioWig)releaseBattleStudioHair(artistHead);
+ const count=quality==='middle'?72:hero?360:112;
  const scalp=cranialScalpSurface(artistHead.face,{
   cranialFraction:artistHead.cranialFit?.cranialFraction??.65
  });
@@ -384,7 +421,8 @@ export function equipBattleStudioHair(artistHead,pattern,{hero=false}={}){
    count,styleId:pattern.hairStyleId,color:pattern.hairColor,
    gender:pattern.sex,lengthScale:pattern.hairLengthScale,
    volumeProfile:pattern.hairVolume||'natural',
-   fineFringeMultiplier:hero?2:1.25,visualFiberMultiplier:1,
+   fineFringeMultiplier:quality==='middle'?1.25:hero?2:1.25,
+   visualFiberMultiplier:1,normalLayerCount:quality==='middle'?1:3,
    staticGroom:true,normalLayeredSingleMesh:true
   });
  }finally{
@@ -398,6 +436,7 @@ export function equipBattleStudioHair(artistHead,pattern,{hero=false}={}){
  artistHead.face.add(wig.root);
  artistHead.studioWig=wig;
  artistHead.studioWigStyleId=pattern.hairStyleId;
+ artistHead.studioWigQuality=quality;
  artistHead.studioWigCount=count;
  artistHead.studioHairSource='heroine-real-scalp-generator';
  return wig;
@@ -407,6 +446,7 @@ export function releaseBattleStudioHair(artistHead){
  artistHead.studioWig.root.removeFromParent();
  artistHead.studioWig.dispose();
  artistHead.studioWig=null;artistHead.studioHairSource=null;
+ artistHead.studioWigQuality=null;
  return true;
 }
 export function battleHeadMasterStats(actors=[]){

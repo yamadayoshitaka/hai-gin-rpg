@@ -17,7 +17,16 @@ const scene=new THREE.Mesh(new THREE.SphereGeometry(.18,12,10),
 scene.userData.faceColorMode='color';
 for(const sex of ['male','female']){
  const face=scene.clone();face.material=scene.material.clone();
+ const sclera=new THREE.Mesh(new THREE.SphereGeometry(.04,8,6),
+  new THREE.MeshPhysicalMaterial({color:0xe6e3df,roughness:.27,clearcoat:.35}));
+ sclera.name='LEFT_ORBITAL_EYEBALL';
+ face.add(sclera);
  const fixed=correctBattleFaceSkinTone(face,{sex});
+ assert.equal(face.userData.battleScleraPhotometricMaterials,1);
+ assert.ok(sclera.material.roughness>=.42);
+ assert.ok(sclera.material.clearcoat<=.16);
+ assert.equal(sclera.material.userData.battleFaceLightResponseVersion,
+  BATTLE_FACE_LIGHT_RESPONSE_VERSION);
  assert.ok(fixed.corrected);
  assert.equal(face.material.userData.battleFaceLightResponseScale,.86);
  assert.equal(face.material.userData.battleFaceLightResponseVersion,
@@ -52,7 +61,8 @@ const after=scalp.geometry.boundingBox.getSize(new THREE.Vector3());
 assert.ok(scalp.triangles>100,'real usable scalp triangles must survive');
 assert.ok(after.x<before.x*.60,'shoulder width must not inflate the scalp cap');
 assert.ok(after.y<before.y*.60,'long neck/bust must not drive wig length');
-assert.ok(scalp.cutoffY>-.15);
+assert.ok(scalp.cutoffY>source.boundingBox.min.y);
+assert.ok(scalp.cutoffY<scalp.upperCutoffY,'nape survives the cranial sizing cutoff');
 scalp.geometry.dispose();skull.dispose();bust.dispose();source.dispose();
 
 const elbow=new THREE.Vector3(-.25,1.15,.05),wrist=new THREE.Vector3(-.15,1,.12);
@@ -97,7 +107,13 @@ assert.match(rig,/shieldHandBone\?\.getWorldPosition\(shieldWrist\)/);
 assert.match(rig,/item\.position\.copy\(item\.parent\.worldToLocal\(fitted\.center\)\)/);
 assert.match(rig,/shieldBackClearanceM=fitted\.forwardClearance/);
 assert.match(rig,/shieldBackClearanceM:shield\?\.userData\.shieldBackClearanceM/);
-assert.match(game,/face-wig-v5/);
+assert.match(game,/face-wig-v6/);
+assert.match(game,/STUDIO_GROOM_MIDDLE_MAX=6/);
+assert.match(game,/bakeInterval=p95>33\?3800/);
+assert.match(game,/quality,/);
+assert.match(rig,/battleBackUnderlay=quality==='battle'\?\['torso'\]/);
+const wigSource=readFileSync(new URL('../src/face-scalp-wig.js',import.meta.url),'utf8');
+assert.match(wigSource,/normalLayers=clamp\(Math\.trunc\(normalLayerCount\),1,3\)/);
 assert.match(game,/shieldclear1/);
 assert.match(game,/vfxvisibility2/);
 assert.match(fx,/kind==='punch'\?1\.08/);
