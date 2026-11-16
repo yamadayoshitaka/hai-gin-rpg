@@ -3,7 +3,7 @@ import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {captureCrowdImpostorAtlas} from './crowd-impostor-atlas.js?v=4.6.37';
 import {crowdCardinalView,crowdProjectedHeight,useCrowdImpostor,crowdRequires3DFromOverhead} from './crowd-lod-policy.js?v=4.6.36';
 import {BattleCorpsePolicy} from './battle-corpse-policy.js';
-import {createRidingPoseController} from './character-system/riding-pose.js?v=20261117-seated-pelvis-v2';
+import {createRidingPoseController} from './character-system/riding-pose.js?v=20261117-three-seats-v3';
 import {applyCapturedRunArmSwing} from './character-system/rig-arm-dash-correction.js?v=4.6.38';
 import {massGaitActive} from './mass-visual-motion.js?v=4.6.35';
 import {massLocomotionKind,massGpuMotionCode} from './mass-dash-parity.js?v=4.6.34';
