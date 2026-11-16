@@ -62,6 +62,20 @@ export function buildLeviathanAnatomicalSource(THREE,{segments=56,radial=18}={})
  ellipsoid(head,'tapered-rostrum',skin,[1.22,-.13,0],[1.05,.34,.50]);
  const jaw=new THREE.Group();jaw.position.set(.20,-.30,0);head.add(jaw);
  ellipsoid(jaw,'articulated-mandible',belly,[.84,-.19,0],[1.33,.22,.51]);
+ // Lower dental arcade is attached to the articulated jaw pivot, so the teeth
+ // open with the mandible instead of remaining suspended in the upper skull.
+ for(const side of [-1,1])for(let tooth=0;tooth<10;tooth++){
+  const u=tooth/9;
+  const rootX=.13+1.86*u;
+  const rootZ=side*(.43-.18*u);
+  const height=.11+.075*Math.sin(Math.PI*u);
+  const fang=new THREE.Mesh(new THREE.ConeGeometry(.037*(1-.3*u),height,8),bone);
+  fang.name='mandibular-tooth-'+side+'-'+tooth;
+  fang.position.set(rootX,-.005+height*.45,rootZ);
+  fang.rotation.z=-.18*(1-u);
+  jaw.add(fang);
+ }
+
  const branchialPivots=[];
  for(const side of [-1,1]){
   ellipsoid(head,'orbital-ridge-'+side,skin,[.35,.29,side*.66],[.41,.29,.20]);
