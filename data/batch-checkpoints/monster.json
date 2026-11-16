@@ -7,7 +7,7 @@
       "sourceFiles": [
         "src/m020-leviathan-anatomical-source.js"
       ],
-      "commitSha": "d22c5622c487f5f860dbafa2325aa06477feddfd",
+      "commitSha": "a67a42415ea34a55500b82d0ddd43f76d59a854c",
       "qa": "unverified"
     },
     {
@@ -67,5 +67,5 @@
     "m049",
     "m050"
   ],
-  "nextAction": "Run Node syntax and m048 fin UV / animated bounding sphere regression; validate four-view WebGL, m020/m048 and Android FPS. Resolve PR #426 mobile-battle failure before merge; audit 108 IDs."
+  "nextAction": "m020 dorsal fin UV source patch a67a424: run Node syntax, WebGL four-view/PBR UV and Android FPS; m048 QA and E2E remain unverified. Do not merge before gates."
 }
