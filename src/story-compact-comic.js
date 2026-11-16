@@ -39,9 +39,10 @@ function scene(base,turns,{opening=false,sharedKind=null}={}){
  const first=turns[0];
  return freeze({...base,compactStory:true,isChapterOpening:opening,
   sharedSceneKind:sharedKind,
-  // Only the first defeat CG has a physically verified character-free shared original.
-  // Other outcome images remain per-stage or unregistered until safely replaced.
-  sharedArtAsset:sharedKind==='defeat' ? (/-m6$/.test(base.id)?'./assets/story/shared/shared-defeat-01.webp':'./assets/story/shared/shared-defeat-02.webp') : null,
+  // Do not force an unverified global defeat image over the stage/gender art.
+  // Shared assets require a separate byte/SHA and actor-free visual QA gate.
+  // Until that evidence is registered, preserve the exact original art identity.
+  sharedArtAsset:null,
   protagonistAssetPolicy:'exact-gender-or-proven-neutral-only',
   originalSceneId:base.id,originalComicCell:base.comicCell,
   originalSheetCount:base.sourceSheetCount??null,
