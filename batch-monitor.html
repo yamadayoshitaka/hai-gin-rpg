@@ -35,6 +35,11 @@ small{font-size:11px}strong{font-weight:700}
 .stage.done{border-color:#548b74;color:#b5ecd3}.stage.failed{border-color:#a66b65;color:#ffd1c9}
 .stage.pending{color:#e0d3b4}.stage.unknown,.stage.skipped{color:#aebdcd}
 .progress-evidence{display:flex;gap:10px;flex-wrap:wrap;font-size:12px}
+.batch-health{display:grid;gap:7px;border-color:#756a55;background:#192b38}
+.batch-health .health-metrics{font-weight:750;font-variant-numeric:tabular-nums}
+.batch-health .health-alert{color:#ffd29d;font-size:12px}
+.batch-health .health-next{color:#d9ebfb;font-size:12px}
+.batch-health strong{color:#f0d7a5}
 </style></head><body>
 <header><a href="./dev-menu.html">← メンテナンス</a><strong>⚙ 灰銀｜毎時バッチ管理</strong><a href="./monster-quality-review.html">モンスター品質KPI</a><a href="./creature-reconstruction-plan.html">108体再構成計画</a><button class="refresh" id="refresh" type="button">状況を更新</button></header>
 <main><h1>品質改善バッチ：4系統</h1>
@@ -113,7 +118,19 @@ function createCard(data){
  const progressEvidence=tag('div','progress-evidence');
  progressBox.append(head,stageGrid,progressTime,progressSummary,nextAction,progressEvidence);
  c.appendChild(progressBox);
-
+ // Quality improvement throughput is distinct from scheduled runs or static QA.
+ let health=null;
+ if(data.id!=='anime'){
+  const healthBox=tag('section','panel batch-health');
+  const healthHeading=tag('strong','','実造形の停滞診断・処理速度');
+  const metrics=paragraph('実改修数と対象別QAを確認中','health-metrics');
+  const blocker=paragraph('原因を取得中','health-alert');
+  const speed=paragraph('改善方針を取得中','health-next');
+  healthBox.append(healthHeading,metrics,blocker,speed);
+  c.appendChild(healthBox);
+  health={metrics,blocker,speed};
+ }
+ 
  const switchRow=tag('div','batch-switch');
  const swText=tag('span','muted','実行制御：取得中');
  const swBtn=tag('button','','切替を依頼');swBtn.type='button';
@@ -196,7 +213,7 @@ function createCard(data){
   const win=window.open(link,'_blank','noopener,noreferrer');
   if(!win)window.location.assign(link);
  });
- $('cards').appendChild(c);elements.set(data.id,{detail,activity,log,swText,swBtn,badge,previewStatus,previewLink,progress:{current,stageGrid,progressTime,progressSummary,nextAction,progressEvidence}});
+ $('cards').appendChild(c);elements.set(data.id,{detail,activity,log,swText,swBtn,badge,previewStatus,previewLink,progress:{current,stageGrid,progressTime,progressSummary,nextAction,progressEvidence},health});
 }
 async function fetchJSON(url){const r=await fetch(url,{cache:'no-store',headers:{Accept:'application/vnd.github+json'}});if(!r.ok)throw Error('HTTP '+r.status);return r.json()}
 
@@ -241,6 +258,27 @@ async function updateProgress(){
    }
    view.progressTime.textContent='最終記録：'+TIME(entry.lastRunAt||data.asOf)+' ／ '+(entry.source||'記録元未確認')+'（GitHub保存時点）';
    view.progressSummary.textContent=entry.summary||'結果の詳細なし';
+   const health=elements.get(g.id)?.health;
+   if(health){
+    const op=entry.operational||{},m=entry.lastRunOutcome||op.lastRunOutcome||{};
+    const count=k=>Number.isSafeInteger(m[k])?String(m[k]):'未計測';
+    const checked=Number.isSafeInteger(m.newQAPassed)&&m.newQAPassed>0;
+    const last=Date.parse(entry.lastRunAt||'');
+    const stale=Number.isFinite(last)&&Date.now()-last>120*60*1000;
+    health.metrics.textContent='直近1回：実モデル改修ID '+count('newSourceChangedIds')+
+     ' ／ 実描画QA合格 '+count('newQAPassed')+
+     ' ／ 本番反映 '+count('newGameAppliedIds')+'（スケジュール実行・PR保存とは別）';
+    health.blocker.textContent=(stale?'【最終記録から2時間超・更新停滞】 ':'')+
+     '停止・未達原因：'+(Array.isArray(op.blockers)&&op.blockers.length?op.blockers.join(' ／ '):
+     '最新の詳細な原因記録なし。QA未確認は成功扱いしません');
+    health.speed.textContent='改善・高速化：'+(op.speedPlan||entry.nextAction||'次回の実改修を確認')+
+     (checked?' ／ 対象別QA合格の証跡を要確認':' ／ 直近の対象別QA合格0件または未計測');
+    if(g.id==='world'&&Number.isSafeInteger(m.branchSavedCount))
+     health.metrics.textContent+=' ／ 別枠：作業ブランチ保存'+m.branchSavedCount+
+       '件・main承認'+(m.mainAcceptedCount??'未確認')+'件';
+    if(g.id==='world'&&Number.isSafeInteger(m.mainUnacceptedCount))
+     health.speed.textContent+=' ／ 未承認'+m.mainUnacceptedCount+'件';
+   }
    view.nextAction.textContent=entry.carryover?'次回引継ぎ：'+entry.nextAction:'次回確認：'+(entry.nextAction||'なし');
    view.progressEvidence.replaceChildren();
    for(const ev of (Array.isArray(entry.evidence)?entry.evidence:[])){
@@ -250,6 +288,8 @@ async function updateProgress(){
   }
  }catch(e){
   for(const g of groups){
+   const health=elements.get(g.id)?.health;
+   if(health){health.metrics.textContent='実改修の証跡を取得できません';health.blocker.textContent='データ取得失敗：'+e.message;health.speed.textContent='GitHubの工程台帳を確認してください'}
    const p=elements.get(g.id)?.progress;if(!p)continue;
    p.current.textContent='工程記録を確認できません';
    p.progressTime.textContent='最新の工程記録を取得できません：'+e.message;
