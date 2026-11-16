@@ -1,7 +1,9 @@
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
-import {correctBattleFaceSkinTone,BATTLE_FACE_SKIN_TONE_VERSION}
+import {correctBattleFaceSkinTone,BATTLE_FACE_SKIN_TONE_VERSION,
+ BATTLE_FACE_LIGHT_RESPONSE_VERSION,getBattleSkinAlbedoTexture}
  from '../src/character-system/battle-artist-head-graft.js';
+import {readFileSync} from 'node:fs';
 
 function faceFixture(sex='male'){
  const face=new THREE.Mesh(new THREE.SphereGeometry(.25,8,6),
@@ -34,6 +36,24 @@ for(const sex of ['male','female']){
  assert.ok(face.material.clearcoat<=.015);
  assert.equal(face.material.vertexColors,true,'sculpted cheek/lip pigments survive');
  assert.equal(face.material.toneMapped,true);
+ assert.equal(face.material.map,getBattleSkinAlbedoTexture(),
+  'All 100 battle faces share one UV-based skin detail atlas');
+ assert.equal(face.material.map.colorSpace,THREE.SRGBColorSpace);
+ assert.equal(face.material.map.image.width,256);
+ assert.equal(face.material.map.image.height,256);
+ assert.equal(face.material.userData.battleFaceLightResponseVersion,
+  BATTLE_FACE_LIGHT_RESPONSE_VERSION);
+ assert.equal(face.material.userData.battleFaceLightResponseScale,.58);
+ const shader={fragmentShader:'vec3 outgoingLight=vec3(4.0);\\n#include <opaque_fragment>'};
+ face.material.onBeforeCompile(shader,{});
+ assert.match(shader.fragmentShader,
+  /outgoingLight = \\(outgoingLight \\* 0\\.58\\) \\/ \\(vec3\\(1\\.0\\)/,
+  'Real PBR fragment must dim reflected battlefield light, not only set color');
+ assert.ok(shader.fragmentShader.includes('\\n#include <opaque_fragment>'),
+  'Shader injects a legal GLSL newline');
+ assert.doesNotMatch(shader.fragmentShader,/\\\\n#include/,
+  'Do not emit a raw backslash-n token into GLSL shader code');
+
  assert.equal(correctBattleFaceSkinTone(face,{sex}).skinHex,first.skinHex,
   'LOD/refresh calls cannot change skin tone');
 }
@@ -47,4 +67,15 @@ assert.equal(textured.material.color.getHex(),snapshot);
 const {face:clay}=faceFixture();
 clay.userData.faceColorMode='clay';
 assert.throws(()=>correctBattleFaceSkinTone(clay),/colorized/);
-console.log('PASS: battle faces have warm anti-whitewash PBR, matching eyelids, preserved irises and photo textures');
+// Verify the MASTER source rather than assuming it already has photographic
+// skin textures. Prior tests only checked CSS/material hex and missed whitewash.
+const master=readFileSync(new URL('../assets/master-sources/blender/realistic-head-animation.glb',import.meta.url));
+assert.equal(master.toString('ascii',0,4),'glTF');
+const jsonLength=master.readUInt32LE(12),json=JSON.parse(master.toString('utf8',20,20+jsonLength));
+const mainMesh=json.meshes.find(m=>/head_animation_realistic\\.001/.test(m.name));
+assert.ok(mainMesh?.primitives[0]?.attributes?.TEXCOORD_0!==undefined,
+ 'Real head must retain original UVs for skin albedo');
+const masterSkin=json.materials[mainMesh.primitives[0].material];
+assert.equal(masterSkin.pbrMetallicRoughness.baseColorTexture,undefined,
+ 'Master head is an untextured source; combat must not claim a photographic face map');
+console.log('PASS: 100 heads share one UV albedo, face shader actually attenuates PBR light, eyes stay distinct; source geometry is untextured');
