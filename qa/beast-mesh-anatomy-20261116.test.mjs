@@ -37,8 +37,10 @@ for(const id of remeshed){
     }
     assert.ok(p.beastHockrearL.position.z<-.11,
       'Hind hock must sit behind the knee in the bind pose');
-    assert.ok(p.beastToerearL.position.z>.16,
-      'Hind foot needs a forward-projecting metatarsal');
+    const hindMetatarsalZ=p.beastToerearL.position.z+
+      (p.beastPasternrearL?.position.z??0);
+    assert.ok(hindMetatarsalZ>.16,
+      'Hind foot must keep its total forward metatarsal projection after joint split');
     startMonsterAction(model,'walk',0);
     animateMonsterModel(model,.19);
     const first=p.beastHockrearL.rotation.x;
