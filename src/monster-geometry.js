@@ -3,7 +3,7 @@
  * variants change horns, crests, armour, wings, limb lengths, weapons and fins.
  * Each specimen is real 3D geometry, never an image billboard.
  */
-import {createSculpture,disposeMonsterSculpture} from './monster-shape-kit.js?v=m001-small-face-windswept-v8-20261116';
+import {createSculpture,disposeMonsterSculpture} from './monster-shape-kit.js?v=m001-anatomical-reference-v9-20261116';
 import {attachMonsterFaceControls} from './facial-feature-runtime.js?v=1';
 import {generateCanineFurGuides,generateCanineAxialFurGuides} from './canine-fur-guides.js?v=beast-coat-20261116';
 import {monsterEvidenceFor} from './monster-anatomy-reference.js';
@@ -205,7 +205,7 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
      {z:-.335,y:.042,rx:.240,ry:.205},
      {z:-.520,y:-.006,rx:.170,ry:.145},
      {z:-.635,y:-.032,rx:.050,ry:.062}
-   ],{name:'organic-cranium-m001',rough:.91,ribbing:.003}):
+   ],{name:'organic-cranium-m001',rough:.91,ribbing:.003,faceSculpt:true}):
    g.anatomicalLoft(faceCore,'skin',
      QUADRUPED_CRANIUM_RINGS.map(r=>({
        ...r,rx:r.rx*skullWidth,rz:r.rz*skullDepth,
@@ -1643,5 +1643,5 @@ export function createMonsterModel(spec,{detail='high'}={}){
 export {disposeMonsterSculpture};
 // All renderer metrics share this module's exact shape/material instance.
 // Never independently import a differently versioned shape-kit into the UI.
-export {MONSTER_DETAIL_LEVELS,monsterSculptCacheStats} from './monster-shape-kit.js?v=m001-small-face-windswept-v8-20261116';
+export {MONSTER_DETAIL_LEVELS,monsterSculptCacheStats} from './monster-shape-kit.js?v=m001-anatomical-reference-v9-20261116';
 export {monsterPhotoCacheStats} from './monster-photo-pbr.js?v=4.4.81';
