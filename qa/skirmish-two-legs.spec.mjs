@@ -45,6 +45,7 @@ test('50v50 armored soldiers have only two visible legs and keep full-detail dra
     legs:window.getBattleLegAssemblyReport?.(),
     perf:window.getSkirmishPerformanceStats?.(),
     artistHeads:window.getBattleArtistHeadReport?.(),
+    faceRender:window.getBattleFaceRenderAudit?.(),
     runtimeError:document.querySelector('#runtimeError')?.textContent||''
   }));
   expect(result.startup?.ready,JSON.stringify(result.runtimeError)).toBe(true);
@@ -53,6 +54,17 @@ test('50v50 armored soldiers have only two visible legs and keep full-detail dra
   expect(result.artistHeads?.total).toBe(100);
   expect(result.artistHeads?.attached).toBe(100);
   expect(result.artistHeads?.originalHeadTrianglesRemoved).toBeGreaterThan(0);
+  expect(result.faceRender?.faceLightCorrected).toBe(100);
+  expect(result.faceRender?.faceMaterialFailures).toEqual([]);
+  expect(result.faceRender?.missingPbrCorrection).toBe(0);
+  expect(result.faceRender?.missingSkinTextures).toBe(0);
+  expect(result.faceRender?.exemplarSkinMaterial?.length).toBeGreaterThan(0);
+  for(const face of result.faceRender.exemplarSkinMaterial){
+   expect(face.albedoMap).toBe('battle-original-uv-warm-skin-albedo-v1');
+   expect(face.lightResponse).toBe('battle-face-light-response-v2');
+   expect(face.pbr).toBe('MeshPhysicalMaterial');
+  }
+
   expect(result.artistHeads?.sourceAsset).toBe(
    'assets/master-sources/blender/realistic-head-animation.glb');
   expect(result.legs?.actors?.length).toBeGreaterThanOrEqual(10);
