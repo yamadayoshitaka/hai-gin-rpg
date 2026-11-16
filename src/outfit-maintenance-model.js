@@ -250,12 +250,18 @@ export function createDetailedOutfit(job, sex, body, textures, {quality='preview
   {
     const columns=battle?14:24,rows=battle?10:18;
     const points=[],uv=[],faces=[];
-    const yTop=cy+H*.045,yBottom=hips+H*.024;
+    // A rogue's split leather back exposed the scapulae because the
+    // inner coverage started too low and stopped at 83% torso width.
+    // Extend the EXISTING skinned panel; no additional mesh or triangles.
+    const rogueBack=job==='job06';
+    const yTop=cy+H*(rogueBack?.135:.045);
+    const yBottom=hips+H*(rogueBack?-.014:.024);
     for(let row=0;row<=rows;row++)for(let col=0;col<=columns;col++){
       const t=row/rows,u=col/columns*2-1;
       const y=yTop+(yBottom-yTop)*t;
-      const x=mx+u*sx*(.83-.13*t)*Math.sqrt(Math.max(.03,1-.10*u*u));
-      const z=surfaceAt(y,true,x)-H*.006;
+      const width=rogueBack?(1.04-.13*t):(.83-.13*t);
+      const x=mx+u*sx*width*Math.sqrt(Math.max(.03,1-.10*u*u));
+      const z=surfaceAt(y,true,x)-H*(rogueBack?.012:.006);
       points.push(x,y,z);uv.push(col/columns,t);
       if(row<rows&&col<columns){const i=row*(columns+1)+col;
         faces.push(i,i+1,i+columns+1,i+1,i+columns+2,i+columns+1);
