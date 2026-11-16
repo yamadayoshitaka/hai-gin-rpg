@@ -17,6 +17,9 @@ on:
       - 'src/targeted-strategy-runtime.js'
       - 'src/battle-objective-checkpoints.js'
       - 'src/battle-plan-recommendations.js'
+      - 'src/battle-frame-pacing.js'
+      - 'src/frame-performance.js'
+      - 'qa/battle-frame-pacing.test.mjs'
       - 'src/mass-battle-grid-sim.js'
       - 'src/mass-battle-worker-client.js'
       - 'src/mass-battle-worker-runtime.js'
@@ -64,6 +67,8 @@ jobs:
           node --check src/targeted-strategy-runtime.js
           node --check src/battle-objective-checkpoints.js
           node --check src/battle-plan-recommendations.js
+          node --check src/battle-frame-pacing.js
+          node --check src/frame-performance.js
           node --check src/mass-battle-grid-sim.js
           node --check src/mass-battle-worker-client.js
           node --check src/mass-battle-worker-runtime.js
@@ -77,6 +82,7 @@ jobs:
           node --experimental-vm-modules qa/formation-template-rarity-quotas.test.mjs
           node --experimental-vm-modules qa/central-battle-orders.test.mjs
           node qa/battle-objective-checkpoints.test.mjs
+          node qa/battle-frame-pacing.test.mjs
           node qa/inn-battle-plan-recommendations.test.mjs
           node --experimental-vm-modules qa/formation-minimum-deployment-radar.test.mjs
           node --experimental-vm-modules qa/strict-formation-three-group-summon-size.test.mjs
