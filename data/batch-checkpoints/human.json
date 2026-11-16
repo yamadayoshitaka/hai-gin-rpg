@@ -41,6 +41,14 @@
       ],
       "commitSha": "f3e43d18c12e5f141cb783a01626565341060aea",
       "qa": "unverified"
+    },
+    {
+      "id": "shared-scalp-degenerate-triangle-filter",
+      "sourceFiles": [
+        "src/character-system/hair-attachment-runtime.js"
+      ],
+      "commitSha": "45d806a3df64b86d5c6addc1de6fe3ef0d4b8a6a",
+      "qa": "unverified"
     }
   ],
   "remainingIds": [
@@ -50,5 +58,5 @@
     "job05-male",
     "job05-female"
   ],
-  "nextAction": "Validate head-weight scalp candidate ranking against male/female skinned meshes, run Node syntax and WebGL crown/rear screenshots; enumerate all human IDs, retain #438 armor issue; no main merge without visual QA."
+  "nextAction": "Run Node syntax and male/female WebGL crown/front/rear QA for collapsed triangle filter; enumerate all human preset IDs and validate armor #438. No main merge before QA."
 }
