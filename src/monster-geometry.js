@@ -178,10 +178,20 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
   g.bridge(torso,'skin',[0,1.152,.33],[0,1.307,.77+v*.055],.295,.181);
  else g.bridge(torso,'skin',[0,1.35,.32],[0,1.57,.76+v*.055],.325,.215);
  const head=g.group('head',[0,beastRemesh?1.300:1.56,.70+v*.06+(beastRemesh?.086:0)]);
+ // Exposed head anatomy is 1/3 scale while nose, jaw, teeth, ears and
+ // surrounding fur remain unchanged. The tiny skull is framed by the mane.
+ const faceCore=s.id==='m001'?
+   g.group('m001-face-core',[0,.125,.225],head):head;
+ if(s.id==='m001'){
+   faceCore.scale.setScalar(1/3);
+   faceCore.userData.anatomicalFaceScale=1/3;
+   g.root.userData.wolfKingExposedFaceScale=1/3;
+   g.root.userData.wolfKingManeLengthMultiplier=5;
+ }
  // Rigid reptilian wedge instead of the same spherical skull as a cat.
  const skullWidth=reptile?.905:feline?.95:1;
  const skullDepth=reptile?1.065:feline?.965:1;
- const cranium=g.anatomicalLoft(head,'skin',
+ const cranium=g.anatomicalLoft(faceCore,'skin',
    QUADRUPED_CRANIUM_RINGS.map(r=>({
      ...r,rx:r.rx*skullWidth,rz:r.rz*skullDepth,
    })),{name:'organic-cranium-'+s.id,kind:'face',
@@ -263,9 +273,9 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
       // Apply the generator's key idea: a sunken socket and optical almond
       // fitted BEHIND the upper eyelid. This is a mesh aperture rather than
       // spherical eyes mounted on the forehead/cheeks.
-      g.recessedCanineAlmondEye(head,{side,name:'wolf-king'});
+      g.recessedCanineAlmondEye(faceCore,{side,name:'wolf-king'});
       // The brow is an overhanging facial ridge, distinct from lid eyeliner.
-      const brow=g.tube(head,'skin',[
+      const brow=g.tube(faceCore,'skin',[
         [side*.149,.151,.258],[side*.225,.168,.306],
         [side*.313,.153,.322]],.010);
       brow.name='m001-eyebrow-ridge-'+(side<0?'L':'R');
@@ -491,16 +501,16 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    // Species m001 cranial remesh: cheek musculature, brow, nasal cartilage.
    // The beard and lion-like mane grow from a tapered real under-jaw mass,
    // not a loose collection of hair ribbons floating below a bare skull.
-   g.bridge(head,'skin',[0,.062,-.18],[0,-.03,.38],.188,.113);
+   g.bridge(faceCore,'skin',[0,.062,-.18],[0,-.03,.38],.188,.113);
    g.bridge(head,'skin',[0,-.118,-.138],[0,-.325,-.218],.229,.158);
    for(const side of [-1,1])
      g.bridge(head,'skin',[side*.168,-.080,-.091],
        [side*.174,-.284,-.157],.135,.088);
    for(const side of [-1,1]){
-     g.bridge(head,'skin',[side*.19,-.035,-.055],[side*.27,-.125,.24],.142,.082);
+     g.bridge(faceCore,'skin',[side*.19,-.035,-.055],[side*.27,-.125,.24],.142,.082);
      if(!beastRemesh)g.sphere(head,'shadow',[side*.308,.092,.277],[.023,.017,.090],{rough:.78});
      // Temporal fascia narrows toward the new closer-set eyebrow.
-     g.tube(head,'skin',[[side*.21,.12,-.055],[side*.255,.155,.105],
+     g.tube(faceCore,'skin',[[side*.21,.12,-.055],[side*.255,.155,.105],
         [side*.268,.169,.213]],.021);
      for(let j=0;j<3;j++)
        g.sphere(head,'shadow',[side*(.149+j*.025),-.191,muzzle+.12+j*.035],
