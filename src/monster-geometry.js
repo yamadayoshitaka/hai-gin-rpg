@@ -689,7 +689,7 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
        [side*lateralX,beastRemesh?-.540:-.42,.03]:
        [side*lateralX,beastRemesh?.550:.67,fore*.49],
      pelvisMounted?g.pivots.pelvis:
-       (s.id==='m001'&&fore<0?torso:g.root));
+       (s.id==='m001'?torso:g.root));
    // Anatomical limb shortening keeps paw clearance at the ground by
    // lowering its hip pivot by the same amount. Distal pivots remain real
    // joints and are not replaced with stretched mesh tubes.
@@ -699,6 +699,20 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    }
    // Distal motion is independent from shoulder/hip rotation, retaining
    // the original limb and ground-contact positions.
+   if(s.id==='m001'){
+     leg.userData.proximalSocket=fore>0?'shoulder':'hip';
+     // A small overlapped moving proximal sleeve follows the limb's
+     // rotation and disappears beneath its torso-mounted fascia.
+     // Only the near/source mesh needs it; low LOD remains unchanged.
+     if(coatDetail!=='low'){
+       const sleeve=g.bridge(leg,'skin',
+         [0,.34,fore>0?-.018:-.054],
+         [0,.575,fore>0?-.020:-.050],
+         fore>0?.146:.138,fore>0?.168:.151);
+       sleeve.name='m001-proximal-sleeve-'+name;
+       sleeve.userData.jointSeamSleeve=true;
+     }
+   }
    if(beastRemesh)g.limbLoft(leg,'skin',(fore>0?[
      // Forelimb: scapula -> humerus -> elbow. Elbow lies BEHIND the wrist.
      {x:0,y:.55,z:.025,rx:.133,rz:.154},
@@ -723,7 +737,8 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    const photoWolfStifle=s.id==='m001'&&fore<0;
    const distal=g.group('lower'+name,
      photoWolfStifle?[0,.100,.015]:[0,-.065,.015],leg);
-   if(photoWolfStifle)distal.userData.anatomicalJoint='stifle';
+   if(s.id==='m001')distal.userData.anatomicalJoint=
+     fore>0?'elbow':'stifle';
    if(beastRemesh){
     g.limbLoft(distal,'skin',(fore>0?[
       // Forearm bends forward again from elbow through carpal joint.
@@ -774,8 +789,17 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
          fore>0?.050:-.168],distal);
      g.bridge(ankle,'skin',[0,.06,0],
        [0,-.142,fore>0?.053:.173],fore>0?.103:.092,.083);
+     // m001 has a separately movable metacarpal/metatarsal pad joint.
+     // Splitting the former ankle->toe offset preserves bind placement:
+     // pastern + toe equals old [-.125/.115, -.205/.213].
+     const pastern=s.id==='m001'?g.group('beastPastern'+name,
+       [0,fore>0?-.075:-.120,fore>0?.065:.130],ankle):null;
+     if(pastern)pastern.userData.anatomicalJoint=
+       fore>0?'metacarpal':'metatarsal';
      const paw=g.group('beastToe'+name,
-       [0,fore>0?-.125:-.205,fore>0?.115:.213],ankle);
+       s.id==='m001'?[0,fore>0?-.050:-.085,fore>0?.050:.083]:
+         [0,fore>0?-.125:-.205,fore>0?.115:.213],
+       pastern||ankle);
      g.bridge(paw,'skin',[0,.045,-.071],[0,-.018,.058],.136,.115);
      for(let digit=0;digit<4;digit++){
       const x=(digit-1.5)*.070;
