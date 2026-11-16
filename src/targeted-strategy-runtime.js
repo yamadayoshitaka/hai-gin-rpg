@@ -366,7 +366,7 @@ export function createTargetedStrategyUi({
   }else if(t.hasAttribute('data-strategy-group')){selectGroup(t.dataset.strategyGroup);}
   else if(t.hasAttribute('data-strategy-template')){
    const chosen=getTemplates(String(groupId)).find(x=>String(x.id)===String(t.dataset.strategyTemplate));
-   if(!chosen||!eligible.has(chosen.methodId)){error='この班ではテンプレートの作戦を実行できません';render();return;}
+   if(!chosen||!available().some(m=>m.id===chosen.methodId)){error='この班ではテンプレートの作戦を実行できません';render();return;}
    const chosenBranch=Object.entries(STRATEGY_TREE).flatMap(([f,x])=>
     Object.entries(x.intents).map(([intent,y])=>({f,intent,methods:y.methods})))
     .find(x=>x.methods.some(m=>m.id===chosen.methodId));
