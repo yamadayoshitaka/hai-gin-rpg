@@ -14,13 +14,13 @@
   "groups": {
     "human": {
       "source": "ChatGPT 定期タスクの実行結果",
-      "lastRunAt": "2026-11-16T02:56:42Z",
-      "subject": "頭皮三角形の全髪型共通再生成時のGC負荷軽減WIP",
-      "summary": "human ON。PR #456作業ブランチで頭皮三角形ごとのBox3/Vector3生成を除去する実ソース変更64f8cbda、チェックポイント00863007。共通生成器1件変更。全ID走査・実個体改修・再生成・対象別QA成功は未確認/0。WebGL描画比較・Android計測未実施。mainマージ・公開なし。",
+      "lastRunAt": "2026-11-16T03:56:28Z",
+      "subject": "頭皮共通生成器の頂点・三角形単位GC割当削減（WIP）",
+      "summary": "human ON。PR #456ブランチで頭皮再生成時の頂点配列と三角形インデックス配列の一時割当を除去。実ソースSHA 83b3366a、チェックポイントc7106427。ソース文字列不変条件3件は確認、Node構文/WebGL/Androidは未検証。個別人物ID実改修0、再生成0、対象別QA成功0。全ID列挙未完了。mainマージ・公開なし。",
       "status": "work_incomplete",
       "carryover": true,
       "issueNumber": 438,
-      "nextAction": "全人物IDと生成経路を列挙し、Node構文・男女WebGL頭頂/背面比較とAndroid GC負荷を確認。Issue #438背面異物を実修正。未検証のためマージ禁止。",
+      "nextAction": "全人物・全プリセットIDと生成経路の列挙、Node構文・男女WebGL頭頂/背面/衣装比較、Issue #438の背面異物と踵の実修正。QA未確認のためmainマージ禁止。",
       "steps": {
         "launch": "done",
         "code": "done",
@@ -32,16 +32,16 @@
       },
       "evidence": [
         {
-          "label": "今回の共通頭皮生成器実ソース修正",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/64f8cbda2313ffe3732cad1db7b393650a04baf6"
+          "label": "今回の頭皮共通生成器実ソースコミット",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/83b3366a582882d1b2389f47190344754940d97d"
         },
         {
           "label": "Draft PR #456",
           "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/456"
         },
         {
-          "label": "チェックポイント",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/00863007543d434787a83a026f1f46268c4b98bc"
+          "label": "今回のチェックポイント",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/c7106427544e1b3c6358f2cda5e172a25e19e200"
         }
       ]
     },
