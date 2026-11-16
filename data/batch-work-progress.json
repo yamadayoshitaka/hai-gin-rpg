@@ -111,12 +111,12 @@
     },
     "world": {
       "source": "ChatGPT定期品質回帰の実行結果＋GitHub証跡",
-      "lastRunAt": "2026-11-16T20:57:20.844+09:00",
+      "lastRunAt": "2026-11-17T01:20:16+09:00",
       "status": "work_incomplete",
       "carryover": true,
-      "subject": "53種：既存21件のQA滞留、実行環境不足で新規実造形未着手",
-      "summary": "2026-11-16T20:57:20.844+09:00 main world.enabled=true確認。今回実ソース改修0件、実ソースコミット0件(SHAなし)、原型/GLB再生成0件、対象別QA合格0件、ゲーム反映0件、mainマージ0件、Pages公開0件。main受入台帳53件/審査中11件/承認0件/未承認53件。PR #441保存21件（全QA unverified）/未保存32件。GitHub経由で受入台帳・チェックポイントを再照合したが、Node/WebGL/Android実行QAは未実施。",
-      "nextAction": "PR #441の実ソースをNode環境で構文・対象回帰QAし、WebGL/Android確認後、未保存の同系統5〜10IDの実造形を小分けコミット。",
+      "subject": "53種：PR #441既存21件QA未確認、実ソース改修未実施",
+      "summary": "2026-11-17T01:20:16+09:00 main world.enabled=true確認。今回実ソース変更0件、実ソースコミット0件（SHAなし）、原型/GLB0件、対象別QA合格0件、ゲーム反映0件、マージ0件、公開0件。main受入台帳53件・審査中11件・承認0件・未承認53件。PR #441の過去保存スナップショット21件（全QA unverified）、未保存32件。現行PR headの検証と実行QAは未実施。",
+      "nextAction": "PR #441最新headを取得し21件のNode構文・対象別回帰QA、WebGL/Android検証を進め、不合格修正と未保存群の実3D造形へ。",
       "steps": {
         "launch": "done",
         "code": "pending",
@@ -182,11 +182,11 @@
       },
       "operational": {
         "blockers": [
-          "GitHubリポジトリのローカルcloneがDNS解決不可（github.com）で失敗",
-          "Node/WebGL/Android実行環境へのソース取得ができず対象別QA未実施",
-          "今回の実ソース変更および実ソースコミットなし"
+          "PR #441の最新headおよびWebGL/Android実行QA未検証",
+          "既存21件の対象別QAはunverified",
+          "今回実ソース変更と実ソースコミットなし"
         ],
-        "speedPlan": "PR #441の既存21件の静的QAを先行し、失敗修正後に共通生成器を共有する未保存IDへ移る。",
+        "speedPlan": "既存21件のQA解消を先行し、未保存の同系統5〜10IDの共通生成器を小分け実改修",
         "lastRunOutcome": {
           "newSourceChangedIds": 0,
           "newQAPassed": 0,
