@@ -200,13 +200,17 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
      // Old scaled skull tip projected ahead of the black nose (z=.416
      // after faceCore scaling, versus nose z=.366), making a grey round
      // button float above the real rhinarium. Terminate bone BEHIND nose.
+     // Wedge-shaped wolf muzzle: the nose root is narrow, the orbital
+     // ridge opens into the zygoma and the rear skull closes at the nape.
+     // The terminal ring remains behind the head-parented black nose.
      {z:.355,y:-.160,rx:.026,ry:.030},
-     {z:.320,y:-.116,rx:.132,ry:.090},
-     {z:.270,y:-.040,rx:.232,ry:.146},
-     {z:.110,y:.048,rx:.278,ry:.210},
-     {z:-.120,y:.073,rx:.278,ry:.233},
-     {z:-.335,y:.042,rx:.240,ry:.205},
-     {z:-.520,y:-.006,rx:.170,ry:.145},
+     {z:.320,y:-.116,rx:.099,ry:.078},
+     {z:.270,y:-.040,rx:.196,ry:.127},
+     {z:.175,y:.012,rx:.250,ry:.164},
+     {z:.060,y:.051,rx:.286,ry:.192},
+     {z:-.120,y:.056,rx:.289,ry:.199},
+     {z:-.335,y:.025,rx:.243,ry:.176},
+     {z:-.520,y:-.016,rx:.174,ry:.126},
      {z:-.635,y:-.032,rx:.050,ry:.062}
    ],{name:'organic-cranium-m001',rough:.91,ribbing:.003,faceSculpt:true}):
    g.anatomicalLoft(faceCore,'skin',
@@ -255,9 +259,9 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
      {z:.315,y:-.133,rx:.018,ry:.017},
      {z:.300,y:-.130,rx:.046,ry:.035},
      {z:.281,y:-.120,rx:.072,ry:.054},
-     {z:.255,y:-.101,rx:.105,ry:.077},
-     {z:.192,y:-.047,rx:.136,ry:.103},
-     {z:.115,y:-.019,rx:.159,ry:.126}
+     {z:.255,y:-.101,rx:.097,ry:.065},
+     {z:.192,y:-.047,rx:.132,ry:.090},
+     {z:.115,y:-.019,rx:.160,ry:.118}
    ]:[
      {z:.664,y:-.134,rx:.078,ry:.069},
      {z:.635,y:-.125,rx:.154,ry:.092},
@@ -317,8 +321,8 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
       // Keep only a shallow, fitted skin crease. The former elevated
       // brow tube projected past both canthi like a thick eyeliner wing.
       const brow=g.tube(faceCore,'skin',[
-        [side*.158,.140,.263],[side*.212,.148,.281],
-        [side*.268,.139,.278]],.0045);
+        [side*.158,.137,.254],[side*.210,.145,.274],
+        [side*.257,.134,.267]],.0035);
       brow.name='m001-eyebrow-ridge-'+(side<0?'L':'R');
       brow.userData.orbitalBrow=true;
      }else if(beastRemesh){
@@ -395,10 +399,14 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    if(canine){
      if(beastRemesh){
        const suffix=side<0?'L':'R';
-       const ear=g.group('ear'+suffix,[side*.215,.208,-.075],head);
+       const ear=g.group('ear'+suffix,
+         s.id==='m001'?[side*.223,.172,-.087]:[side*.215,.208,-.075],head);
+       // m001's former long hollow fox pinnae read as thin horns.
+       // Shorter broad cartilage makes a seated, real-wolf ear silhouette.
        g.foxPinna(ear,{
-         side,height:s.id==='m003'?.465:.435,
-         width:s.id==='m003'?.120:.112,spread:.090,
+         side,height:s.id==='m001'?.342:s.id==='m003'?.465:.435,
+         width:s.id==='m001'?.145:s.id==='m003'?.120:.112,
+         spread:s.id==='m001'?.056:.090,
          name:'beast-fox-pinna-'+s.id+'-'+suffix
        });
        // Preserve dedicated cartilage identity used by species QA, but
@@ -412,6 +420,9 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
        else if(s.id==='m002')
          g.sphere(ear,'skin',[0,.021,.012],[.088,.051,.070],
            {name:'m002-ear-cartilage-base'});
+       else if(s.id==='m001')g.sphere(ear,'skin',
+         [0,.019,.012],[.093,.060,.068],
+         {name:'m001-pinna-root-cartilage'});
        else g.sphere(ear,'light',[0,.024,.024],[.066,.039,.050]);
      }else if(s.id==='m004'){
        const ear=g.group('ear'+(side<0?'L':'R'),
@@ -468,7 +479,14 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
      g.bridge(head,v===2?'accent':'bone',root,elbow,.102,.059);
      g.spike(head,v===2?'accent':'bone',elbow,tip,.059);
    }else g.sphere(head,'skin',[side*.24,.24,-.09],[.10,.19,.07]);
-   if(beastRemesh)g.curvedHorn(head,'bone',
+   if(beastRemesh&&s.id==='m001'){
+     // The fang roots disappear into the labial tissue, curving backward
+     // instead of two oversized ivory cones hanging below a flat face.
+     const fang=g.curvedHorn(head,'bone',
+       [side*.115,-.172,.214],[side*.130,-.224,.249],
+       [side*.101,-.293,.227],.034,{name:'beast-upper-fang'});
+     fang.userData.wolfGumEmbedded=true;
+   }else if(beastRemesh)g.curvedHorn(head,'bone',
       [side*.13,-.17,muzzle+.05],[side*.146,-.265,muzzle+.14],
       [side*.115,-.335,muzzle+.23],.046,{name:'beast-upper-fang'});
    else g.spike(head,'bone',[side*.13,-.20,muzzle+.08],[side*.13,-.31,muzzle+.22],.046);
@@ -658,7 +676,7 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
      {x:0,y:.14,z:.050,rx:.189,rz:.174},
      {x:0,y:-.080,z:.177,rx:.125,rz:.119},
      {x:0,y:-.25,z:.166,rx:.105,rz:.112}
-   ]).map(p=>s.id==='m001'?{...p,rx:p.rx*.79,rz:p.rz*.82}:p),
+   ]).map(p=>s.id==='m001'?{...p,rx:p.rx*.84,rz:p.rz*.86}:p),
    {name:'beast-upper-limb-'+name});
    else g.sphere(leg,'skin',[0,.17,0],
      [reptile?.18:.21,.40,reptile?.18:.21]);
@@ -877,9 +895,11 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    // The compact skull has an exposed face window, framed by shorter
    // cheek foliage rather than long spikes growing from the nasal bridge.
    const wolfKingFaceCoat=s.id==='m001'?generateCanineFurGuides({
-      center:[0,.105,.065],radii:[.307,.238,.277],
+      // Short face underfur seated close to the compact cranial shell,
+      // not an oversized fuzzy halo hanging off its sides.
+      center:[0,.101,.091],radii:[.237,.186,.230],
       rows:source?42:29,around:source?56:40,
-      length:.118,width:.019,seed:v*71+509,
+      length:.052,width:.009,seed:v*71+509,
       minVertical:-.94,maxVertical:1,gravity:.27,
    }).filter(h=>{
       const x=Math.abs(h.root[0]),y=h.root[1],z=h.root[2];
@@ -897,7 +917,7 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
      const base=h.tip.map((v,k)=>v-h.root[k]);
      const len=Math.hypot(...base)||.001;
      const tier=.88+.20*((i*17%19)/18);
-     const target=Math.min(.405,Math.max(.14,len*1.20*tier));
+     const target=Math.min(.34,Math.max(.095,len*1.20*tier));
      const throat=h.root[1]<-.19;
      const wind=[base[0]*(throat?.73:.48),
        base[1]*(throat?1.15:.78)-(throat?.20:.045)*len,
@@ -917,19 +937,19 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
      ...[-1,1].flatMap(side=>generateCanineFurGuides({
        center:[side*.176,-.148,-.082],radii:[.138,.195,.203],
        rows:source?37:25,around:source?50:34,
-       length:.267,width:.027,seed:v*37+281+side,
+       length:.251,width:.018,seed:v*37+281+side,
        minVertical:-.99,maxVertical:.29,gravity:.51
      }).filter(h=>side*h.root[0]>.145&&h.root[1]<.023&&h.root[2]<.15)),
      ...generateCanineFurGuides({
        center:[0,-.260,-.158],radii:[.229,.158,.195],
        rows:source?39:27,around:source?52:36,
-       length:.302,width:.030,seed:v*41+317,
+       length:.289,width:.020,seed:v*41+317,
        minVertical:-.99,maxVertical:-.02,gravity:.67
      }).filter(h=>h.root[1]<-.232&&h.root[2]<.08),
      ...generateCanineFurGuides({
        center:[0,-.128,-.245],radii:[.255,.186,.194],
        rows:source?30:20,around:source?44:30,
-       length:.241,width:.027,seed:v*47+379,
+       length:.227,width:.018,seed:v*47+379,
        minVertical:-.99,maxVertical:.28,gravity:.55
      }).filter(h=>h.root[1]<-.05&&h.root[2]<-.085)
    ]:[];
@@ -937,7 +957,7 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
      [-1,1].flatMap(side=>generateCanineFurGuides({
        center:[side*.221,.203,.278],radii:[.076,.029,.063],
        rows:source?16:10,around:source?28:20,
-       length:.066,width:.009,seed:v*61+407+side,
+       length:.036,width:.006,seed:v*61+407+side,
        minVertical:.18,maxVertical:1,gravity:.21
      }).filter(h=>side*h.root[0]>.15&&h.root[1]>.206&&
        h.root[2]<.335)):[];
