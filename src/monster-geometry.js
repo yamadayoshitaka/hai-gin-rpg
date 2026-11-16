@@ -795,9 +795,29 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
       {x:0,y:-.38,z:-.172,rx:.091,rz:.091}
     ]).map(p=>s.id==='m001'?{
       ...p,y:photoWolfStifle?p.y-.165:p.y,
+      // The former proximal shin point z=.161 missed the thigh-knee
+      // at z≈.07. Match both segment envelopes at the stifle.
+      z:photoWolfStifle&&p.y>.14?.075:p.z,
       rx:p.rx*.83,rz:p.rz*.84
     }:p),
     {name:'beast-shin-'+name});
+    if(s.id==='m001'&&coatDetail!=='low'){
+      // A small overlapping fascia above/below the actual hinge keeps
+      // the silhouette continuous while two joint rotations stay free.
+      const rear=fore<0;
+      const upperFold=g.bridge(leg,'skin',
+        rear?[0,.165,.069]:[0,.090,-.090],
+        rear?[0,.015,.111]:[0,-.095,-.102],
+        rear?.136:.130,rear?.122:.113);
+      upperFold.name='m001-upper-knee-fascia-'+name;
+      upperFold.userData.kneeUpperCover=true;
+      const lowerFold=g.bridge(distal,'skin',
+        rear?[0,-.055,.065]:[0,.096,-.100],
+        rear?[0,-.168,.126]:[0,-.105,-.045],
+        rear?.120:.115,rear?.111:.107);
+      lowerFold.name='m001-lower-knee-fascia-'+name;
+      lowerFold.userData.kneeLowerCover=true;
+    }
    }else{
     g.sphere(distal,'skin',[0,-.16,0],[reptile?.13:.15,.27,reptile?.13:.15]);
     g.sphere(distal,'shadow',[0,0,0],[.144,.125,.14],{name:'joint-'+name});
