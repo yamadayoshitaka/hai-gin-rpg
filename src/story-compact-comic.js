@@ -80,7 +80,10 @@ export function compactComicForStage(stageId,phase,context={}){
  const base=baseIds.map(x=>selectBySuffix(src,x));
  if(phase==='post'&&original.edition.startsWith('post-gameover')){
   const deaths=src.filter(p=>/-death-[12]$/.test(p.id));
-  if(deaths.length===2)base.splice(0,2,...deaths);
+  // Never substitute victory/retreat artwork for a commander-death ending.
+  // A missing dedicated frame is a blocking asset error, not permission to reuse it.
+  if(deaths.length!==2)throw Error('Missing dedicated gameover art identities '+stageId);
+  base.splice(0,2,...deaths);
  }
  if(base.some(x=>!x))throw Error('Missing compact source art identity '+stageId+' '+original.edition);
  const withCount=p=>({...p,sourceSheetCount:original.pages.find(q=>q.number===p.comicPage)?.cellCount||1});
