@@ -1048,6 +1048,21 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    // wolf skull and the mane is entirely groomed on the moving head.
    // Ear / eyebrow / eye clearances are cut out of the hair root mask.
    const wolfKingMane=s.id==='m001'?[
+     // A tapered facial mask is framed by a single continuous ruff over
+     // the temples, cheeks and throat; the eye/muzzle window stays bare.
+     ...[-1,1].flatMap(side=>generateCanineFurGuides({
+       center:[side*.196,.015,-.132],radii:[.125,.157,.189],
+       rows:source?31:22,around:source?44:31,
+       length:.183,width:.012,seed:v*79+611+side,
+       minVertical:-.99,maxVertical:.72,gravity:.58
+     }).filter(h=>side*h.root[0]>.169&&h.root[2]<.135&&
+       h.root[1]<.158)),
+     ...generateCanineFurGuides({
+       center:[0,.155,-.215],radii:[.270,.118,.179],
+       rows:source?24:16,around:source?37:26,
+       length:.134,width:.010,seed:v*89+733,
+       minVertical:-.90,maxVertical:.72,gravity:.35
+     }).filter(h=>h.root[2]<-.095&&h.root[1]>.113)),
      ...[-1,1].flatMap(side=>generateCanineFurGuides({
        center:[side*.176,-.148,-.082],radii:[.138,.195,.203],
        rows:source?37:25,around:source?50:34,
@@ -1067,12 +1082,31 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
        minVertical:-.99,maxVertical:.28,gravity:.55
      }).filter(h=>h.root[1]<-.05&&h.root[2]<-.085)
    ]:[];
-   // White bristly supraorbital patches looked like a fake furry eyebrow.
-   // Leave skin over the eye; fine forehead coat terminates behind it.
-   const browHairs=[];
+   // The user wants silver-white eyebrows made of the SAME kind of fine
+   // wolf-mane strands, not the previous chunky white spikes. Root hairs
+   // in the skin above each eye; sweep out/back and keep iris clearance.
+   const browHairs=s.id==='m001'?[-1,1].flatMap(side=>
+     generateCanineFurGuides({
+       center:[side*.133,.172,.211],radii:[.063,.023,.049],
+       rows:source?19:12,around:source?33:24,
+       length:.065,width:.007,seed:v*97+821+side,
+       minVertical:-.20,maxVertical:.96,gravity:.12
+     }).filter(h=>side*h.root[0]>.105&&side*h.root[0]<.207&&
+       h.root[1]>.170&&h.root[2]>.165&&h.root[2]<.273)
+       .map(h=>{
+         const root=h.root,tip=[
+           h.tip[0]+side*.021,
+           Math.max(root[1]+.018,h.tip[1]+.012),
+           h.tip[2]-.025
+         ];
+         const mid=root.map((v,k)=>v+(tip[k]-v)*.49);
+         return {...h,tip,mid,shade:'light',m001SilverBrow:true};
+       })
+   ):[];
 
    const headGuides=beastRemesh?[...faceGuides,...groomed,
      ...wolfKingFaceCoat,...browHairs].filter(h=>{
+       if(h.m001SilverBrow)return true; // separately groomed above the lids
        // Avoid cheeks/temples from spreading across the eyes.
        if(Math.abs(h.root[0])>.258&&h.root[1]>.077&&
           h.root[2]>.166&&h.root[2]<.38)return false;
