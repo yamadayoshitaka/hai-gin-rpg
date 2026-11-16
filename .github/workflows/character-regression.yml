@@ -31,6 +31,8 @@ jobs:
         run: node qa/face-skin-protection.test.mjs
       - name: Verify battle sculpted-face tint and studio cosmetic integrity
         run: node qa/battle-face-color-regression.test.mjs
+      - name: Verify full-size battle cranium and proper Head bone placement
+        run: node qa/battle-head-proportion-regression.test.mjs
       - name: Verify garment-driven body and boot occlusion
         run: node qa/garment-coverage-regression.test.mjs
       - name: Verify real male helmet fringe fills the forehead
