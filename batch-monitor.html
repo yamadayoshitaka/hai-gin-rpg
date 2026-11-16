@@ -42,7 +42,7 @@ small{font-size:11px}strong{font-weight:700}
 .batch-health strong{color:#f0d7a5}
 </style></head><body>
 <header><a href="./dev-menu.html">← メンテナンス</a><strong>⚙ 灰銀｜毎時バッチ管理</strong><a href="./monster-quality-review.html">モンスター品質KPI</a><a href="./creature-reconstruction-plan.html">108体再構成計画</a><button class="refresh" id="refresh" type="button">状況を更新</button></header>
-<main><h1>品質改善バッチ：4系統</h1>
+<main><h1>品質改善バッチ：4系統＋ワールド6担当</h1>
 <p>各バッチの<strong>作業ブランチ・PR・QA・mainマージ・Pages公開</strong>を区別して確認できます。改修中の3Dモデルと本編の表示は、下の「PR版と本編を比較」から切り替えます。</p>
 <div class="summary" aria-live="polite"><span id="groupCount">4系統</span><span id="enabledCount">自動実行を確認中</span><span id="activeCount">GitHub実行状況を照合中</span><span id="schedulerCount">ChatGPT実行予約を確認中</span></div>
 <p id="fresh" class="muted">GitHub Actionsは画面表示時・更新時に確認します。ChatGPTの実行中判定はこのページから取得できません。</p>
@@ -50,6 +50,16 @@ small{font-size:11px}strong{font-weight:700}
 <p class="panel"><strong>予算ルール：</strong><span id="storySpendPolicy">追加の有料APIは使用しません</span></p>
 <p class="panel"><strong>画像生成ルート：</strong>Cloudflare既設API（無料、毎日09:20に最大1回の制作バッチ）を優先。上限時は追加課金せずChatGPT Plusの手動生成へ引き継ぎます。<a id="fallbackLink" href="./story-chapter1-approval.html?stage=c01-s04&provider=chatgpt">未生成コマをChatGPTで制作する</a> （自動API呼出しではありません）</p>
 <p id="releaseStatus" class="muted">公開コミットを照合中…</p>
+<section class="panel" aria-label="ワールド6担当バッチ">
+ <h2>🏰 ワールド・オブジェクト6担当（毎時）</h2>
+ <p>ゲームと同じ <code>createCatalogObject()</code> を基準に、台帳・造形・PBR材質・衝突/配置・LOD・WebGL実撮影を6本並列で確認します。6本合格後に結果を統合します。自動マージは安全な台帳・QA結果に限定し、3D品質やAndroid FPSの合格は別判定です。</p>
+ <p id="worldSixStatus" class="muted">6担当の統合証跡を確認中…</p>
+ <div class="links"><a href="https://github.com/yamadayoshitaka/hai-gin-rpg/actions/workflows/world-six-lane.yml" target="_blank" rel="noopener noreferrer">6担当の実行ログ</a><a href="./game.html">本編の実画面</a></div>
+ <label for="worldObjectPicker">対象オブジェクト（同一3D生成関数で確認）</label>
+ <select id="worldObjectPicker" style="max-width:100%;width:100%;margin:8px 0;padding:10px;color:#fff;background:#1e354b;border:1px solid #476379;border-radius:8px"><option value="">60種類の台帳を読み込み中…</option></select>
+ <div class="links"><a href="./world-quality-preview.html?object=castle_001" id="worldObjectPreview">選択モデルを3D確認</a><a href="./object-editor.html">試作用オブジェクト作成（本編とは別）</a></div>
+ <p id="worldObjectNote" class="muted">試作用エディタの出力は本編へ自動登録されません。正本カタログへの登録とQA・マージが必要です。</p>
+ </section>
 <div class="grid" id="cards"><p>バッチ情報を読み込み中…</p></div>
 <footer>
  <h2>表示と手動指示について</h2>
@@ -390,6 +400,28 @@ async function updateRuns(){
   $('fresh').textContent='GitHubの直近実行を更新：'+TIME(new Date().toISOString())+' ／ ChatGPTの状態は記録時点の情報です';
  }catch(e){$('activeCount').textContent='GitHubの情報取得に失敗';$('fresh').textContent='GitHub情報を取得できませんでした（'+e.message+'）。「実行ログを見る」で直接確認できます。'}
 }
+async function updateWorldSix(){
+ try{
+  const catalog=await fetchJSON('./data/world-quality/catalog-targets.json?ts='+Date.now());
+  if(catalog.schemaVersion!==1||!Array.isArray(catalog.objects)||catalog.count!==catalog.objects.length)throw Error('台帳不一致');
+  const sel=$('worldObjectPicker'),current=sel.value;
+  sel.replaceChildren();
+  for(const o of catalog.objects){
+   const opt=document.createElement('option');opt.value=o.id;opt.textContent=o.category+'｜'+o.name+'（'+o.id+'）';sel.appendChild(opt);
+  }
+  if(catalog.objects.some(o=>o.id===current))sel.value=current;
+  const setLink=()=>{$('worldObjectPreview').href='./world-quality-preview.html?object='+encodeURIComponent(sel.value)};
+  sel.onchange=setLink;setLink();
+  $('worldObjectNote').textContent='正本 '+catalog.count+'種類を参照（ゲーム本体の造形を共通利用）。試作エディタの保存は別工程です。';
+ }catch(e){$('worldObjectNote').textContent='正本取得に失敗：'+e.message}
+ try{
+  const data=await fetchJSON('./data/world-quality/live-batch-report.json?ts='+Date.now());
+  const names={catalog:'台帳',geometry:'造形',materials:'材質',interaction:'配置・衝突',lod:'LOD',visual:'WebGL'};
+  const items=Object.entries(names).map(([id,name])=>name+' '+(data.lanes?.[id]?.status==='gate_passed'?'合格':'未確認'));
+  $('worldSixStatus').textContent='最新統合証跡：'+data.objectCount+'種類＋ステージ'+data.stageCount+
+    ' ／ '+items.join('・')+' ／ Android性能・外観承認は未了';
+ }catch(e){$('worldSixStatus').textContent='統合レポート未公開／未完了：6担当の実行ログを確認してください';}
+}
 async function start(){
  try{
   const j=await fetchJSON('./data/hourly-batch-dashboard.json');
@@ -399,9 +431,9 @@ async function start(){
   $('enabledCount').textContent='GitHub作業許可：'+groups.filter(g=>g.autoEnabled).length+'有効・'+groups.filter(g=>!g.autoEnabled).length+'停止';
   $('schedulerCount').textContent='ChatGPT定期タスク：'+groups.filter(g=>g.schedulerEnabled===true&&g.source.includes('ChatGPT')).length+'有効・'+groups.filter(g=>g.schedulerEnabled===false&&g.source.includes('ChatGPT')).length+'停止（記録時点）';
   $('fresh').textContent='ChatGPTタスク最終確認：'+TIME(j.asOf)+' ／ 現在処理中かはGitHub Actionsのみ取得可能';
-  await updateSwitches();await updateProgress();await updatePreviewStatus();await updateChapter4();await updateStoryBudget();await updateRelease();await updateRuns();
+  await updateWorldSix();await updateSwitches();await updateProgress();await updatePreviewStatus();await updateChapter4();await updateStoryBudget();await updateRelease();await updateRuns();
  }catch(e){$('cards').textContent='管理データを読み込めませんでした：'+e.message}
 }
-$('refresh').addEventListener('click',async()=>{await updateSwitches();await updateProgress();await updatePreviewStatus();await updateChapter4();await updateStoryBudget();await updateRelease();await updateRuns()});
+$('refresh').addEventListener('click',async()=>{await updateWorldSix();await updateSwitches();await updateProgress();await updatePreviewStatus();await updateChapter4();await updateStoryBudget();await updateRelease();await updateRuns()});
 start();setInterval(()=>{if(!document.hidden&&groups.length){updateSwitches();updateProgress();updateRuns()}},90000);
 </script></body></html>
