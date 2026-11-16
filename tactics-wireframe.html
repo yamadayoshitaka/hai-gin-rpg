@@ -8221,6 +8221,8 @@ function renderSquadRibbons(sums){
  threeGroupPanel?.render(false,Boolean(pendingCircleTarget));
  battleTacticalUi.onSquadSums(sums);
  refreshBattleTargetSummary(sums);
+ // Hidden legacy ribbons must not measure or rearrange DOM during live combat.
+ if(document.body.classList.contains('story-center-orders'))return;
  // The only live controls are now 3D squad circles; do not reflow invisible sidebars.
  /* Target rosters enabled. */
  // Top telemetry grows or shrinks with DPI, so anchor both side ribbons
@@ -8328,6 +8330,7 @@ function renderSquadRibbons(sums){
  }
 }
 function updateSquadMarkerPositions(dt){
+ if(paused&&commandOverviewLocked)return; // frozen positions are already cached
  squadMarkerClock+=dt;
  if(squadMarkerClock>=.25){
   squadMarkerClock=0;
@@ -8418,7 +8421,7 @@ let squadScreenClock=0;
 let squadScreenLayout=new Map();
 const squadScreenPoint=new THREE.Vector3();
 function updateSquadScreenLabels(dt){
- if(squadCloseupLabelsHidden)return;
+ if(squadCloseupLabelsHidden||document.body.classList.contains('battle-command-active'))return;
  squadScreenClock+=dt;if(squadScreenClock<.1)return;squadScreenClock=0;
  // Freeze both the bubbles and their connecting lines while tapping; moving
  // the hit target between pointerdown and pointerup loses Android clicks.
@@ -8948,6 +8951,7 @@ window.getBattleCameraStats=()=>({
 });
 addEventListener('resize',()=>{const {width,height}=battleViewportSize();camera.aspect=width/height;camera.updateProjectionMatrix();resizeBattleRenderer(width,height)});
 let fpsStart=performance.now(),fpsFrames=0;
+let lastCheckpointWatchAt=0,lastPausedCommandFrameAt=0;
 // The AI/Worker clock advances only once per simulation tick. Ground creature
 // movement, hoof/paw poses and turning need a true per-display-frame clock.
 let lastMassSnapshotMs=performance.now();
@@ -9343,6 +9347,10 @@ function animate(){
   }
   uiTimer=0;
  }
+ if(!TOWN_MODE&&!paused&&!finished&&now-lastCheckpointWatchAt>=1000){
+  lastCheckpointWatchAt=now;
+  objectiveCheckpoints.update();
+ }
  battleDialogue.update(squadRoster,paused,finished);
  reportSpeech.update();
  refreshBattleVoiceHealth();
@@ -9351,7 +9359,16 @@ function animate(){
   camera.position.copy(old.position);controls.target.copy(old.target);
   controls.update();followCamera=old.follow;
  }
-  actorVisibility.beginFrame(performance.now()/1000);
+  // The central strategy modal freezes the world. Keep full quality static rigs,
+   // materials, actions and shadows; resubmit the still GPU scene only at 10Hz.
+   if(paused&&commandOverviewLocked){
+    if(now-lastPausedCommandFrameAt>=100){
+     lastPausedCommandFrameAt=now;renderBattleFrame();
+    }
+    framePerformance.end();
+    return;
+   }
+   actorVisibility.beginFrame(performance.now()/1000);
   if(skirmishDistanceLod&&!TOWN_MODE)skirmishDistanceLod.update(camera,elapsed,paused);
   if(!massSim&&elapsed-lastCorpseVisibilityAt>=.8){
    lastCorpseVisibilityAt=elapsed;
