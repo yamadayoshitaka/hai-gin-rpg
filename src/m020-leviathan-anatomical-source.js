@@ -76,6 +76,35 @@ export function buildLeviathanAnatomicalSource(THREE,{segments=56,radial=18}={})
   jaw.add(fang);
  }
 
+ // Paired mechanosensory barbels: tapered, segmented swept anatomy attached to the rostrum.
+ // The filaments are independent articulated chains, not painted lines or sphere subdivisions.
+ const barbelPivots=[];
+ for(const side of [-1,1]){
+  const pivot=new THREE.Group();pivot.name='rostral-barbel-pivot-'+side;
+  pivot.position.set(1.63,-.25,side*.36);head.add(pivot);
+  barbelPivots.push({pivot,side});
+  const rings=20,sides=7,vertices=[],indices=[],uv=[];
+  for(let i=0;i<=rings;i++){
+   const u=i/rings,rad=.052*Math.pow(1-u,.8)+.002;
+   const centerX=.18+1.30*u,centerY=-.10-.48*u*u;
+   const centerZ=side*(.10+.43*u+.12*Math.sin(u*Math.PI));
+   for(let j=0;j<=sides;j++){
+    const a=j/sides*Math.PI*2;
+    vertices.push(centerX,centerY+rad*Math.cos(a),centerZ+rad*Math.sin(a));
+    uv.push(u,j/sides);
+   }
+  }
+  for(let i=0;i<rings;i++)for(let j=0;j<sides;j++){
+   const a=i*(sides+1)+j,b=a+sides+1;
+   indices.push(a,b,a+1,b,b+1,a+1);
+  }
+  const geometry=new THREE.BufferGeometry();
+  geometry.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));
+  geometry.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
+  geometry.setIndex(indices);geometry.computeVertexNormals();
+  const filament=new THREE.Mesh(geometry,skin);
+  filament.name='tapered-mechanosensory-barbel-'+side;pivot.add(filament);
+ }
  const branchialPivots=[];
  for(const side of [-1,1]){
   ellipsoid(head,'orbital-ridge-'+side,skin,[.35,.29,side*.66],[.41,.29,.20]);
@@ -220,6 +249,10 @@ export function buildLeviathanAnatomicalSource(THREE,{segments=56,radial=18}={})
    tail.rotation.y=.29*Math.sin(phase-.9);
    for(const {pivot,side} of pectoralPivots)pivot.rotation.x=side*(.10+.14*Math.sin(phase-.55));
    head.rotation.y=.035*Math.sin(phase+.4);
+   for(const {pivot,side} of barbelPivots){
+    pivot.rotation.y=side*.09*Math.sin(phase*.75+side);
+    pivot.rotation.z=.07*Math.sin(phase*.55+side);
+   }
    for(const {chamber,side} of branchialPivots){
     chamber.rotation.y=side*(.045+.055*Math.sin(seconds*1.35));
     chamber.scale.z=1+.09*Math.sin(seconds*1.35);
