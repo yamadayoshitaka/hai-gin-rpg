@@ -16,5 +16,5 @@ export function realtimeBattleCinematicScale({
  town=false,mass=false,paused=false,commander=false,ceremony='idle'
 }={}){
  if(town||paused||!mass)return 1;
- return commander||ceremony==='order'||ceremony==='result'?.32:1;
+ return commander||ceremony==='order'||ceremony==='result'?0.32:1;
 }
