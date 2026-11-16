@@ -74,7 +74,6 @@ export function compactComicForStage(stageId,phase,context={}){
  const openIds=['m1','m2','m3','m4'];
  const openingArt=opening?openIds.map(id=>selectBySuffix(src,id)):[];
  if(opening&&openingArt.some(x=>!x))throw Error('Missing chapter opening canonical frame '+stageId);
- const omitOpening=phase==='pre'&&stage.slot===1?new Set(openIds.map(n=>stageId+'-'+n)):new Set();
  // Artwork IDs still come from the original image manifests. Spoken dialogue
  // is instead authored per-stage so a three-line chapter quote is not replayed
  // through every scene, and dialogue cannot get out of sync with the event.
@@ -82,7 +81,8 @@ export function compactComicForStage(stageId,phase,context={}){
   ...context,protagonistGender:context.protagonistGender==='female'?'female':'male'
  });
  const lines=(phase==='pre'?script.pre:script.post).filter(line=>
-  !(opening&&['chapter-opening','canonical-dialogue'].includes(line.kind)));
+  !(phase==='pre'&&stage.slot===1&&
+   ['chapter-opening','canonical-dialogue'].includes(line.kind)));
  // The canonical opening quote is already spoken on its own four opening CGs.
  // Re-entering an opened chapter still receives fresh setup/objective dialogue.
 
