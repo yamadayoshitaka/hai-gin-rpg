@@ -169,8 +169,33 @@ for(const id of remeshed){
       'm001 shins must taper without bloated fur cuffs');
     const eyes=meshes.filter(m=>m.name==='eye');
     assert.equal(eyes.length,2);
-    assert.ok(eyes.every(m=>Math.abs(m.position.x)<.27&&m.position.z>.30),
-      'm001 pupils/irises must be close-set on the skull front, not far apart');
+    assert.ok(eyes.every(m=>Math.abs(m.position.x)<.27&&m.position.z>.27),
+      'm001 fitted irises must remain inset on the forward cranium');
+    const skull=meshes.find(m=>m.name==='organic-cranium-m001');
+    assert.ok(skull?.userData.canineEyeSocketsRecessed,
+      'wolf-king source skull must be physically recessed, not padded with spheres');
+    const lids=meshes.filter(m=>m.userData.anatomicalAlmondEyelid);
+    assert.equal(lids.length,2,'both eye sockets need continuous almond eyelids');
+    assert.ok(eyes.every(m=>m.userData.generatorFittedIris),
+      'pigmented optics must use generator-style fitted sclera/iris geometry');
+    assert.ok(eyes.every(m=>m.userData.recessedCanineEye),
+      'eyes must sit behind the lid, not protrude as eyeball spheres');
+    assert.ok(meshes.filter(m=>m.userData.verticalSlit).length===2,
+      'deep-set wolf eyes need narrow animal pupils');
+    for(const iris of eyes){
+      const positions=iris.geometry.getAttribute('position');
+      let xMin=Infinity,xMax=-Infinity,yMin=Infinity,yMax=-Infinity,zMin=Infinity,zMax=-Infinity;
+      for(let j=0;j<positions.count;j++){
+        xMin=Math.min(xMin,positions.getX(j));
+        xMax=Math.max(xMax,positions.getX(j));
+        yMin=Math.min(yMin,positions.getY(j));
+        yMax=Math.max(yMax,positions.getY(j));
+        zMin=Math.min(zMin,positions.getZ(j));
+        zMax=Math.max(zMax,positions.getZ(j));
+      }
+      assert.ok(xMax-xMin<=.06&&yMax-yMin<.08&&zMax-zMin<.008,
+        'wolf optics must be narrow and flat, not a bulky sphere');
+    }
     assert.equal(meshes.filter(m=>m.name.startsWith('m001-eyebrow-ridge-')).length,2,
       'm001 needs two anatomical brow ridges');
     const mane=model.userData.pivots.head.children.filter(
