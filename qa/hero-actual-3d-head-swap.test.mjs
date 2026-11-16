@@ -22,8 +22,9 @@ assert.match(graft,/loadAsync\(masterHeadSourceUrl\(\)\)/,
 assert.ok(graft.includes(asset),'Reference the exact 785k Blender GLB from heroine studio');
 assert.ok(studio.includes('export function hideBattleDonorFace('));
 assert.ok(studio.includes('export function attachIndependentFaceToBattleHead('));
-assert.match(graft,/if\(!fit\.attachedToRealHeadBone\|\|cut\.removedTriangles<=0\)/,
+assert.match(graft,/if\(!donorFit\.attachedToRealHeadBone\|\|cut\.removedTriangles<=0\)/,
  'Do not report replacement when the old head has not been removed');
+assert.match(graft,/fitBattleArtistFaceToHead\(\{/, 'True cranium fitting must follow donor face removal');
 assert.match(graft,/facePrototypes\.set\(key,prototype\)/,
  'Share authored geometry across generic soldiers');
 assert.match(graft,/prototype\.root\.clone\(true\)/,
