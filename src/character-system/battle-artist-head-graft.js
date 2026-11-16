@@ -405,56 +405,96 @@ export function cranialScalpSurface(face,{cranialFraction=.65}={}){
   croppedHeadHeight:cropped.boundingBox.max.y-cropped.boundingBox.min.y
  };
 }
+/**
+ * Keep a complete, fitted studio haircut for EVERY camera distance.
+ * Near detail is a second *cached* variant of the same authored style.
+ * Moving the camera only toggles visibility; it never frees the underlying
+ * middle groom or re-fetches the original donor model.
+ */
 export function equipBattleStudioHair(artistHead,pattern,{hero=false,quality='near'}={}){
  if(!artistHead?.attached||!artistHead.face?.geometry||!pattern?.hairStyleId)
   throw Error('Physical artist head and compatible v43 hair pattern required');
  if(!['near','middle'].includes(quality))throw Error('Invalid battle hair LOD');
- if(artistHead.studioWig&&artistHead.studioWigQuality===quality&&
-  artistHead.studioWigStyleId===pattern.hairStyleId)return artistHead.studioWig;
- // Keep the old visible hair until a complete replacement has baked.
+ const styleKey=JSON.stringify([pattern.hairStyleId,pattern.hairColor,
+  pattern.sex,pattern.hairLengthScale,pattern.hairVolume||'natural']);
+ const variants=artistHead.studioWigVariants??new Map();
+ const variantKey=quality+(quality==='near'&&hero?':hero':'');
+ const unchanged=artistHead.studioHairStyleKey===styleKey;
+ let wig=unchanged?variants.get(variantKey):null;
+ // Old variant stays visible throughout construction, including a failed bake.
  const previousWig=artistHead.studioWig||null;
- const count=quality==='middle'?112:hero?360:168;
- const scalp=cranialScalpSurface(artistHead.face,{
-  cranialFraction:artistHead.cranialFit?.cranialFraction??.65
- });
- let wig;
- try{
-  wig=createScalpAnchoredWig(scalp.proxy,{
-   count,styleId:pattern.hairStyleId,color:pattern.hairColor,
-   gender:pattern.sex,lengthScale:pattern.hairLengthScale,
-   volumeProfile:pattern.hairVolume||'natural',
-   fineFringeMultiplier:quality==='middle'?1.25:hero?2:1.25,
-   visualFiberMultiplier:1,normalLayerCount:quality==='middle'?1:2,
-   staticGroom:true,normalLayeredSingleMesh:true,
-   battleStableCoverage:true
+ if(!wig){
+  const count=quality==='middle'?112:hero?360:168;
+  const scalp=cranialScalpSurface(artistHead.face,{
+   cranialFraction:artistHead.cranialFit?.cranialFraction??.65
   });
- }finally{
-  // Hair is static; all cap and strand triangles have been baked into
-  // independent geometry. Never keep another copy of the head on the GPU.
-  scalp.geometry.dispose();
+  try{
+   wig=createScalpAnchoredWig(scalp.proxy,{
+    count,styleId:pattern.hairStyleId,color:pattern.hairColor,
+    gender:pattern.sex,lengthScale:pattern.hairLengthScale,
+    volumeProfile:pattern.hairVolume||'natural',
+    fineFringeMultiplier:quality==='middle'?1.25:hero?2:1.25,
+    visualFiberMultiplier:1,normalLayerCount:quality==='middle'?1:2,
+    staticGroom:true,normalLayeredSingleMesh:true,
+    battleStableCoverage:true
+   });
+  }finally{
+   scalp.geometry.dispose();
+  }
+  wig.root.userData.battleGroomCount=count;
+  artistHead.face.add(wig.root);
+  artistHead.studioWigCranialScalpTriangles=scalp.triangles;
+  artistHead.studioWigCranialHeightRatio=
+   +(scalp.croppedHeadHeight/scalp.originalHeadHeight).toFixed(3);
+  // A genuinely different hairstyle invalidates both old cached variants.
+  // Remove the old visible groom only AFTER the replacement is attached.
+  if(!unchanged){
+   for(const stale of variants.values()){
+    stale.root.removeFromParent();stale.dispose();
+   }
+   variants.clear();
+  }
+  variants.set(variantKey,wig);
  }
- artistHead.studioWigCranialScalpTriangles=scalp.triangles;
- artistHead.studioWigCranialHeightRatio=
-  +(scalp.croppedHeadHeight/scalp.originalHeadHeight).toFixed(3);
- // Atomic swap: a failed near/middle bake never leaves a bald character.
- artistHead.face.add(wig.root);
- if(previousWig){
-  previousWig.root.removeFromParent();
-  previousWig.dispose();
- }
+ // Instant (zero-bake) distance transition; the middle hairstyle is NEVER
+ // dropped in favor of a different-looking sparse GLB at long range.
+ for(const cached of variants.values())cached.root.visible=(cached===wig);
+ artistHead.studioWigVariants=variants;
+ artistHead.studioHairStyleKey=styleKey;
  artistHead.studioWig=wig;
  artistHead.studioWigStyleId=pattern.hairStyleId;
  artistHead.studioWigQuality=quality;
- artistHead.studioWigCount=count;
+ artistHead.studioWigCount=wig.root.userData.battleGroomCount;
  artistHead.studioHairSource='heroine-real-scalp-generator';
  return wig;
 }
+/** Recycle only an INACTIVE near cache entry; keep the complete middle hair. */
+export function discardBattleStudioNearHair(artistHead){
+ const variants=artistHead?.studioWigVariants;
+ if(!variants||artistHead.studioWigQuality!=='middle')return false;
+ let removed=0;
+ for(const [key,wig] of variants){
+  if(!key.startsWith('near'))continue;
+  wig.root.removeFromParent();wig.dispose();variants.delete(key);removed++;
+ }
+ return removed>0;
+}
 export function releaseBattleStudioHair(artistHead){
  if(!artistHead?.studioWig)return false;
- artistHead.studioWig.root.removeFromParent();
- artistHead.studioWig.dispose();
+ const variants=artistHead.studioWigVariants;
+ if(variants?.size){
+  for(const wig of variants.values()){
+   wig.root.removeFromParent();wig.dispose();
+  }
+  variants.clear();
+ }else{
+  artistHead.studioWig.root.removeFromParent();
+  artistHead.studioWig.dispose();
+ }
  artistHead.studioWig=null;artistHead.studioHairSource=null;
  artistHead.studioWigQuality=null;
+ artistHead.studioWigVariants=null;
+ artistHead.studioHairStyleKey=null;
  return true;
 }
 export function battleHeadMasterStats(actors=[]){
