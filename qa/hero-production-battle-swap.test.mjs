@@ -35,7 +35,7 @@ for(const recipe of variants){
   'do not claim the unrigged static prototype is an animated in-game mesh');
  assert.equal(recipe.donorSkinnedRig,'quaternius-65-bone');
  const cue=heroProductionActionCue(recipe,'skill');
- assert.ok(cue&&cue.scale>0&&cue.scale<=1.2);
+ assert.ok(cue&&cue.scale>=1.22&&cue.scale<=1.65);
  assert.equal(heroProductionActionCue(recipe,'run'),null,
   'no per-frame particle emission on running soldiers');
 }
@@ -45,7 +45,7 @@ assert.equal(heroProductionActionCue(createHeroProductionRecipe({jobId:'guardian
 assert.equal(heroProductionActionCue(createHeroProductionRecipe({jobId:'fighter'}),'skill').action,'punch');
 assert.equal(heroProductionActionCue(createHeroProductionRecipe({jobId:'swordsman'}),'skill').action,'heavy');
 assert.equal(heroProductionActionCue(createHeroProductionRecipe({jobId:'archer'}),'skill').action,'aim');
-assert.equal(heroProductionActionCue(createHeroProductionRecipe({jobId:'ninja',rarity:'UR'}),'skill').scale,1.20);
+assert.equal(heroProductionActionCue(createHeroProductionRecipe({jobId:'ninja',rarity:'UR'}),'skill').scale,1.65);
 
 const selected={id:'hero-player',jobId:'mage',sex:'female',rarity:'UR',
  ageBand:'seventies',bodyType:'fat',faceId:7,hairStyle:9,hairColor:0xb1aa91};
