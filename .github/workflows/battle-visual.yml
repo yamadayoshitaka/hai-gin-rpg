@@ -42,6 +42,10 @@ concurrency:
 
 jobs:
   mobile-battle:
+    strategy:
+      fail-fast: false
+      matrix:
+        spec: [battle-visual.spec.mjs, skirmish-two-legs.spec.mjs, monster-manager.spec.mjs, summon-gallery-mobile.spec.mjs]
     runs-on: ubuntu-24.04
     # Software WebGL runs serially and visual evidence collection can exceed
     # 18 minutes; do not prematurely cancel the screenshot/recording job.
@@ -58,11 +62,11 @@ jobs:
       - name: High-density monster/PBR/LOD quality regression
         run: npm run test:creature-master-quality
       - name: Real browser battle recording
-        run: npx playwright test -c playwright.config.mjs
+        run: npx playwright test -c playwright.config.mjs qa/${{ matrix.spec }}
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: battle-visual-evidence
+          name: battle-visual-evidence-${{ matrix.spec }}
           path: |
             test-results/
             playwright-report/
