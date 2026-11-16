@@ -78,18 +78,18 @@
       ]
     },
     "world": {
-      "source": "ChatGPT定期回帰の実行記録＋GitHub証跡（mainへの今回の同期）",
-      "lastRunAt": "2026-11-16T09:53:53+09:00",
-      "status": "in_review",
+      "source": "ChatGPT定期品質回帰の実行結果＋GitHub証跡",
+      "lastRunAt": "2026-11-16T10:46:09+09:00",
+      "status": "work_incomplete",
       "carryover": true,
-      "subject": "最新定期実行09:53確認／PR #441作業ブランチ21件保存・main審査中11件／最終承認0",
-      "summary": "2026-11-16 09:53 JSTの定期実行を確認。直近のタスク報告は「新規実ソースコミット0・新規QA成功なし」。PR #441 の作業ブランチにある data/batch-checkpoints/world.json は21/53件の保存記録・32件が未保存、ただし全21件ともQA=unverifiedで、実機・実描画合格ではない。一方、mainの受入台帳には11/53件が実3D改善審査中と記録されている。21と11は別ブランチの別集計（食卓・椅子など重複を含む）なので足し算しない。main受入承認済み0/53。作業ブランチはmain未マージ・Pages未公開、過去の進捗記録02:50は定期実行時刻と連動していなかった。管理画面は今回GitHub mainの工程記録を09:53の検証済み実行結果に同期した。",
-      "nextAction": "次回以降の実行では、新規コミット0でもmainのdata/batch-work-progress.jsonのgroups.world.lastRunAt/実作業結果/保存PRの件数を必ず更新し、管理画面の最終記録が停止して見えない問題を再発させない。PR #441に保存された21件の未検証QAと、main台帳の11件のPR #442/#434/#430/#427を照合し、共通生成器ごとの実3D品質・WebGL/Android検証後に安全なマージ/Pages公開を進める。完了53件までcarryover継続。",
+      "subject": "world実行時刻同期／PR #441保存21件・main審査中11件・承認0件",
+      "summary": "2026-11-16T10:46:09+09:00 実行。新規実ソース変更0件、実ソースコミットSHAなし、対象別QA新規合格0件。作業ブランチPR #441 checkpoint saved=21/53件、remaining=32件（QA未確認）。main受入台帳は審査中11件、未審査42件、承認0/53件、未承認53件。両集計は重複し合算しない。今回mainマージ0、Pages公開0。既存の実ソースSHAはチェックポイントを参照。",
+      "nextAction": "PR #441の既存21件を再改修扱いせず、未保存32件の優先対象を実造形修正。各対象の静的QA・WebGL・Android検証後にのみマージ公開。毎回main工程記録を同期。",
       "steps": {
         "launch": "done",
-        "code": "done",
+        "code": "pending",
         "qa": "pending",
-        "commit": "done",
+        "commit": "pending",
         "pr": "done",
         "merge": "pending",
         "deploy": "pending"
@@ -139,10 +139,13 @@
       "lastRunOutcome": {
         "kind": "verification_only",
         "newSourceCommits": 0,
+        "newSourceChangedIds": 0,
+        "newQAPassed": 0,
         "branchSavedCount": 21,
-        "branchSavedQA": "unverified",
+        "branchRemainingCount": 32,
         "mainInReviewCount": 11,
-        "mainAcceptedCount": 0
+        "mainAcceptedCount": 0,
+        "mainUnacceptedCount": 53
       }
     },
     "anime": {
