@@ -58,7 +58,7 @@ assert.equal(zoomedSquadMember([a,e,dead],focus,{maxDistance:4}),e,
 assert.equal(zoomedSquadMember([a,e,dead],focus,{preferredId:1,maxDistance:4}),a);
 assert.equal(zoomedSquadMember([a,e,dead],{x:250,z:250},{maxDistance:10}),null);
 assert.equal(zoomedSquadMember([{id:4,team:1,squadId:'m',hp:80,alive:true,x:12,z:8}],
- {x:12,z:8},{cellSize:2,offset:6}),null);
+ {x:100,z:100},{cellSize:2,offset:6}),null);
 assert.equal(zoomedSquadMember([{id:4,team:1,squadId:'m',hp:80,alive:true,x:12,z:8}],
  {x:12,z:4},{cellSize:2,offset:6})?.id,4);
 
