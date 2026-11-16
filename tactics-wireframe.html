@@ -915,6 +915,7 @@ import {batchStaticBuildingShells} from './src/stage-building-instancing.js?v=2'
 import {cameraSegmentHitsBox,selectCameraOccluders,selectCanopiesAroundCamera,chooseClearBattleCameraOffset,shouldRevealBuildingInterior,safeSelectedInteriorFloor} from './src/battle-camera-occlusion.js?v=4.6.69';
 import {registerSquadCircleTap,chooseSquadZoomTarget,SQUAD_CIRCLE_DOUBLE_TAP_MS,shouldHideSquadLabelsAtDistance} from './src/battle-squad-circle-tap.js?v=4.6.36';
 import {createBattleActorVisibility} from './src/battle-render-visibility.js?v=zoom-human-1';
+import {enableBattleRigidFrustumCulling,countBattleRigCulling} from './src/battle-rigid-frustum-optimization.js?v=20261116-rigid1';
 import {interpolatedSkirmishCameraAnchor,createVisibilityWorkPacer} from './src/battle-frame-pacing.js?v=20261116-p95';
 import {shouldShowOverheadSquadCallouts,closestAliveBattleFocus} from './src/battle-zoom-visibility-policy.js?v=1';
 import {createSkirmishDistanceLod} from './src/skirmish-distance-impostors.js?v=4.6.15';
@@ -2124,6 +2125,8 @@ let crowdVfxCursor=0;
 let prepareMassRenderer=async()=>{};
 const actors=[],clock=new THREE.Clock(),raycaster=new THREE.Raycaster(),pointer=new THREE.Vector2();
 const actorVisibility=createBattleActorVisibility(THREE,camera);
+const RIGID_CULLING_ENABLED=battleParams.get('rigCull')!=='0';
+window.getBattleRigCullingQA=()=>({...countBattleRigCulling(actors),enabled:RIGID_CULLING_ENABLED});
 window.getBattleHumanVisibilityQA=()=>({
  townMode:TOWN_MODE,alive:(massSim?.units??actors).filter(u=>u.alive!==false&&u.hp>0).length,
  detailedInView:actors.filter(a=>a.hp>0&&a.root.visible&&a.character?.object3D?.visible).length,
@@ -2563,7 +2566,13 @@ async function installBattleModels(){
         throw Error('衣装基準の人体フィット・露出部保護に失敗');
       a.bodyClippedTriangles=garmentAudit.skinCutTriangles;
       a.garmentSurfaceSamples=garmentAudit.garmentSurfaceSamples;
-      a.outfit.sync();a.outfitError=null;dressed++;
+      a.outfit.sync();
+      // The original full-quality armor/cloth stays untouched. Only rigid
+      // parts entirely outside the camera/shadow frustum are not submitted.
+      // Keep deforming body/hair/animation meshes on their original path.
+      if(!TOWN_MODE&&!massSim&&RIGID_CULLING_ENABLED)
+       a.rigidCullStats=enableBattleRigidFrustumCulling(a.character.object3D);
+      a.outfitError=null;dressed++;
       if(aiSteelTrialRequested&&!aiSteelTrial&&sex==='male'&&a.job.name==='剣士'){
        aiSteelTrial={id:a.id,root:a.outfit.root,active:false};
        const btn=document.getElementById('aiSteelTrialToggle');
@@ -9638,6 +9647,7 @@ function animate(){
     '｜80ms超 '+(perf.longFrames80??0)+'｜描画 '+report.drawCalls+
     '｜画質 '+renderer.getPixelRatio().toFixed(2)+'x'+
     '｜衣装 '+report.dressed+'/'+report.totalActors+
+    '｜可視 '+(report.visibility?.visible??0)+'｜GPU '+(perf.gpuFrameMs??'--')+'ms'+
     '｜鎧 '+report.armorOriginalPieces+'→'+report.armorDrawPieces+
     '｜遠景 '+(report.distantSoldiers?.visible??0)+'｜死体 '+report.visibleCorpses+
     '｜GPU形状 '+report.memory.gpuGeometries+'｜JS '+(report.memory.jsHeapMB??'--')+'MB';
