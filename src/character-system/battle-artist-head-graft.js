@@ -11,6 +11,8 @@
  * success with the same old head. The battle screen exposes the exact count.
  */
 import * as THREE from 'three';
+import {fitBattleArtistFaceToHead,BATTLE_FACE_PROPORTION_VERSION}
+ from './battle-head-proportion-fit.js?v=20261116-cranial1';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {makeIndependentFaceMaster} from '../independent-face-masters.js?v=68';
 import {applyFaceColorMode} from '../face-feature-meshes.js?v=68';
@@ -240,12 +242,23 @@ export function attachBattleArtistHead({character,recipe,source,pattern=null,ani
  character.face?.setAutoBlink?.(false);
  character.face?.holdBlink?.(0);
  for(const donorLid of character.face?.lids||[])donorLid.visible=false;
- const fit=attachIndependentFaceToBattleHead({
+ const donorFit=attachIndependentFaceToBattleHead({
   faceRoot:master.root,faceMesh:master.face,
   characterModel:character.model,headBounds:cut.headBounds
  });
- if(!fit.attachedToRealHeadBone||cut.removedTriangles<=0)
+ if(!donorFit.attachedToRealHeadBone||cut.removedTriangles<=0)
   throw Error('Head-bone skin swap could not be validated');
+ // Mandatory second stage: the donor fitter ignored the GLB mesh node's
+ // 0.9 scale/-0.207m translation and mistook its neck skirt for the skull.
+ // Use true transformed cranial bounds instead of artificially shrinking it.
+ const proportionFit=fitBattleArtistFaceToHead({
+  faceRoot:master.root,faceMesh:master.face,headBounds:cut.headBounds
+ });
+ const fit={...donorFit,...proportionFit};
+ if(!proportionFit.sourceMeshTransformApplied||
+    !proportionFit.cervicalSkirtExcludedFromHeightFit||
+    proportionFit.widthRatio<.80)
+  throw Error('3D顔と骨格の大きさが適合していません');
  // Cosmetic meshes are near-only; the actual adult sculpt, eye volumes and
  // irises remain at every distance. Far variants are still real new heads,
  // never the previous character GLTF face.
@@ -281,7 +294,7 @@ export function attachBattleArtistHead({character,recipe,source,pattern=null,ani
   skinLightResponseVersion:master.face.material?.userData?.battleFaceLightResponseVersion||null,
   hairPatternId:pattern?.hairStyleId||null,
   removedDonorTriangles:cut.removedTriangles,
-  headFit:fit,nearDetail:true,cosmeticMeshes:cosmetic.length,
+  headFit:fit,cranialFit:proportionFit,nearDetail:true,cosmeticMeshes:cosmetic.length,
   reusedSculptGeometry:prototypeReused,
   expressions:!!expression,
   setNearDetail(value){setNearDetail(value);result.nearDetail=near;},
@@ -292,6 +305,9 @@ export function attachBattleArtistHead({character,recipe,source,pattern=null,ani
   version:result.version,source:result.sourceAsset,
   skinTone:result.skinTone,skinToneVersion:result.skinToneVersion,
   skinLightResponseVersion:result.skinLightResponseVersion,
+  cranialFitVersion:result.cranialFit.version,
+  cranialHeadWidthRatio:result.cranialFit.widthRatio,
+  cranialHeadHeightRatio:result.cranialFit.cranialHeightRatio,
   originalHeadRemoved:cut.removedTriangles,
   artistHeadAttached:true,
   headBone:fit.bone,
@@ -363,6 +379,20 @@ export function battleHeadMasterStats(actors=[]){
    faceVisible:a.masterHead.face?.visible,
    eyeOutlineVisible:a.masterHead.face?.children?.filter(n=>/EYELINER/i.test(n.name)).some(n=>n.visible)
   })),
+  cranialFits:human.filter(a=>a.masterHead?.cranialFit?.version===BATTLE_FACE_PROPORTION_VERSION).length,
+  undersizedHeads:human.filter(a=>a.masterHead?.attached&&
+    (a.masterHead?.cranialFit?.widthRatio<.94||
+     a.masterHead?.cranialFit?.cranialHeightRatio<.94))
+   .map(a=>({id:a.id,job:a.job?.name,
+    width:a.masterHead?.cranialFit?.widthRatio,
+    height:a.masterHead?.cranialFit?.cranialHeightRatio})),
+  headProportionSamples:human.filter(a=>a.masterHead?.cranialFit).slice(0,10)
+   .map(a=>({id:a.id,job:a.job?.name,
+    widthRatio:a.masterHead.cranialFit.widthRatio,
+    heightRatio:a.masterHead.cranialFit.cranialHeightRatio,
+    scale:a.masterHead.cranialFit.scale,
+    priorScale:a.masterHead.cranialFit.previousScale,
+    sourceMeshTransformApplied:true})),
   originalHeadTrianglesRemoved:human.reduce((n,a)=>n+(a.masterHead?.removedDonorTriangles||0),0),
   failures:human.filter(a=>a.character&&!a.masterHead).map(a=>({id:a.id,reason:a.masterHeadError||'not installed'})),
   actualNewHeadMesh:true,sourceAsset:BATTLE_HEAD_MASTER_ASSET
