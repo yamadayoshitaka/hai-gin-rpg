@@ -744,7 +744,8 @@ body.compact-command-dock.compact-explore-open .exploreBuildingList button{
 <button id="loadingStart" type="button" hidden style="font:bold 17px system-ui;padding:13px 17px;border:2px solid #eacb87;background:#245d7a;color:#fff;border-radius:10px;margin:12px auto;min-height:54px">♪ 音楽を有効にして開戦</button>
 <button id="loadingSkipAudio" type="button" hidden style="font:12px system-ui;padding:9px;border:1px solid #92a5bb;background:#132a3b;color:#c9d8e5;border-radius:8px;margin:4px auto">音声なしで開戦</button></div></div><div id="runtimeError" style="display:none;position:fixed;top:65px;left:8px;right:8px;z-index:30;padding:10px;background:#631f28;color:#fff;border:1px solid #ff9d9d;border-radius:8px;font-size:12px;white-space:pre-wrap"></div><script>function showRuntimeError(message){const el=document.getElementById('runtimeError');if(el){el.style.display='block';el.textContent='実行エラー: '+message}const loading=document.getElementById('battleLoading');if(loading&&!loading.hidden){document.getElementById('loadingStage').textContent='ゲームの準備に失敗しました';const detail=document.getElementById('loadingError');detail.hidden=false;detail.textContent=String(message);document.getElementById('loadingRetry').hidden=false}}window.addEventListener('error',e=>showRuntimeError((e.message||'スクリプトの読み込みに失敗')+'\n'+(e.filename||'')+':'+(e.lineno||'')));window.addEventListener('unhandledrejection',e=>showRuntimeError(e.reason?.stack||e.reason?.message||String(e.reason)));</script><script type="module">
 import {normalizeArmyGroup,battleGroupMembers} from './src/army-groups.js';
-import {createTargetedStrategyUi} from './src/targeted-strategy-runtime.js?v=20261116-radar2';
+import {createTargetedStrategyUi} from './src/targeted-strategy-runtime.js?v=20261116-team3';
+import {createBattleObjectiveCheckpoints} from './src/battle-objective-checkpoints.js?v=20261116-team3';
 import {STRATEGY_METHODS} from './src/three-step-strategy-catalog.js';
 import {brokenFormationGroups} from './src/battle-formation-integrity.js';
 import {createBattleThreeGroupPanel} from './src/battle-three-group-panel.js';
@@ -7497,6 +7498,20 @@ function issueTargetedMapCommand(point){
  if(targetedStrategyUi.isOpen())return true;
  finishSquadDestination(true);return true;
 }
+const missionCheckpointHud=document.createElement('div');
+missionCheckpointHud.id='battleObjectiveCheckpoints';
+missionCheckpointHud.setAttribute('aria-live','polite');
+missionCheckpointHud.style.cssText='max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:700 11px/1.45 system-ui;color:#ffe7ac;border:1px solid #758ba5;border-radius:5px;padding:4px 7px;background:#10283ad9';
+missionCheckpointHud.textContent='📍 作戦チェックポイント：発令待ち';
+$('topPerformanceSlot').appendChild(missionCheckpointHud);
+const objectiveCheckpoints=createBattleObjectiveCheckpoints({
+ getUnits:()=>squadRoster,
+ getObjects:()=>massSim?.actions.objects||skirmishActions?.objects||[],
+ getSquadCenter:id=>squadCenter(id,0),
+ onReport:message=>log(message),
+ onChange:message=>{missionCheckpointHud.textContent=message||'📍 作戦チェックポイント：発令待ち';}
+});
+window.getBattleObjectiveCheckpoints=()=>objectiveCheckpoints.snapshot();
 let centralStrategyPreviousPause=null;
 $('topStrategy').onclick=()=>{
  if(!battleReady||finished||battleCeremony.locked)return;
@@ -7530,11 +7545,18 @@ const targetedStrategyUi=createTargetedStrategyUi({
   }
   return [...byId.values()];
  },
- onItemExecute:({issuerSquadId,targetSquadId,itemId})=>{
-  return useSquadBattleItemForSource(itemId,targetSquadId,issuerSquadId)||'所持数・対象のHP・使用条件を確認してください';
+ onItemExecute:({groupId,issuerSquadId,targetSquadId,itemId})=>{
+  const accepted=useSquadBattleItemForSource(itemId,targetSquadId,issuerSquadId);
+  if(accepted===true)objectiveCheckpoints.register({groupId,mode:'item',squadIds:[issuerSquadId],
+   targetIds:[targetSquadId],itemId});
+  return accepted||'所持数・対象のHP・使用条件を確認してください';
  },
  onMapPick:point=>{
-  return issueTargetedMapCommand(point)||'移動可能な地点と対応職業を指定してください';
+  const plan=pendingTargetedMap;
+  const accepted=issueTargetedMapCommand(point);
+  if(accepted===true&&plan)objectiveCheckpoints.register({groupId:plan.groupId,
+   mode:plan.mode,squadIds:plan.squadIds,point});
+  return accepted||'移動可能な地点と対応職業を指定してください';
  },
  getPlan:groupId=>{
   const ids=squadIds.filter(id=>normalizeArmyGroup(armyGroupBySquad[id])===Number(groupId));
@@ -7565,7 +7587,11 @@ const targetedStrategyUi=createTargetedStrategyUi({
    .filter(o=>o.alive&&o.category==='structure'&&['bridge','tree','building','door'].includes(o.type))
    .map(o=>({id:String(o.id),team:'object',x:Number(o.x),z:Number(o.z),label:(o.type==='bridge'?'橋':o.type==='tree'?'木':o.type==='door'?'扉':'建物')+' #'+String(o.id).slice(-5)}));
  },
- onExecute:issueTargetedPlan,
+ onExecute:plan=>{
+  const accepted=issueTargetedPlan(plan);
+  if(accepted===true)objectiveCheckpoints.register(plan);
+  return accepted;
+ },
  onMapRequest:plan=>{
   pendingTargetedMap=plan;
   return true; // The enlarged radar in the central dialog owns the target selection.
