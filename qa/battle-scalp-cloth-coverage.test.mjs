@@ -31,6 +31,12 @@ assert.equal(shouldClothLineBattleTorso({
  quality:'preview',meshName:'Male_Ranger_Body',
  materialName:'MI_Regular_01',role:'skin',jobId:'job01'
 }),false);
+// Armored backs must have exactly one fitted rear surface.
+const modelSource=readFileSync(new URL('../src/outfit-maintenance-model.js',import.meta.url),'utf8');
+assert.match(modelSource,/if\(!style\.armor\)\{[\s\S]*?add\('complete-back-tunic-lining'/,
+ 'Only non-armored jobs create a separate back-tunic panel');
+assert.match(modelSource,/const eligible=band\.length>=9\?band:torsoSamples/,
+ 'Rear plate sampling remains local in X and Y to avoid a rectangular slab');
 const texture=new THREE.Texture();
 const source=new THREE.MeshPhysicalMaterial({
  transparent:true,opacity:.20,alphaTest:.45,depthWrite:false,
