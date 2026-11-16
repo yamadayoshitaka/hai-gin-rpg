@@ -31,6 +31,37 @@ function quadrupedMotion(p,phase,locomotion,run,actionPulse,spine,speciesId){
   const sine=Math.sin(q),lift=Math.max(0,Math.cos(q));
   const name=names[i];
   const front=name.startsWith('front');
+  if(speciesId==='m001'){
+    // A separately articulated hip/shoulder and knee/elbow spring.
+    // Keep the actual limb segment lengths fixed: scaling the thigh each
+    // support phase opens a geometry/coat seam at the knee. Swing folds
+    // the stifle while stance extends the hock, without rigid-column gait.
+    const power=locomotion?(run?1:.68):0;
+    const swing=Math.pow(Math.max(0,sine),2);
+    const stance=Math.pow(Math.max(0,-sine),2);
+    const hipRest=front?.115:-.185;
+    const kneeRest=front?-.165:.225;
+    const hip=hipRest+power*(front?.21:.19)*sine+
+      (front?-.065:.055)*actionPulse;
+    const knee=kneeRest+power*((front?.255:.34)*swing-
+      (front?.095:.135)*stance);
+    apply(p,'leg'+name,'x',hip);
+    apply(p,'leg'+name,'z',(i%2?1:-1)*power*.025*lift);
+    apply(p,'lower'+name,'x',knee);
+    apply(p,'lower'+name,'z',(i%2?1:-1)*power*.018*lift);
+    apply(p,'beastHock'+name,'x',(front?-.095:-.285)+
+      power*((front?.20:.29)*swing-(front?.08:.16)*stance));
+    apply(p,'beastPastern'+name,'x',(front?-.052:.088)+
+      power*((front?.12:.17)*swing-(front?.05:.10)*stance));
+    apply(p,'beastToe'+name,'x',.045+
+      power*(.15*swing-.065*stance));
+    // Preserve original rest-length in both locomotion and idle; the
+    // visual spring comes from the independent joint angles, not scaling.
+    const upperJoint=p['leg'+name];
+    if(upperJoint)upperJoint.scale.y=
+      upperJoint.userData.restLengthScale??1;
+    continue;
+  }
   if(springBeast){
     // Bent canine ready pose persists even in IDLE. In a stride, the
     // swing leg folds while the stance leg compresses then pushes off.

@@ -1,4 +1,4 @@
-import {applyMonsterBiologicalMotion} from './monster-joint-motion.js?v=m001-pastern-gait-v5-20261117';
+import {applyMonsterBiologicalMotion} from './monster-joint-motion.js?v=m001-soft-knee-v6-20261117';
 import {monsterLeapPose,applyMonsterLeapMotion} from './monster-leap-kinematics.js?v=1';
 /** Per-species, per-part procedural animation for bestiary inspection.
  * Separate head, jaws, limbs, wings and tentacles keep animation readable.
@@ -112,6 +112,36 @@ export function animateMonsterModel(model,time=0){
    time:motionTime,phase:gait,action,pulse:Math.max(strike,special,leaping),
    locomotion,run:action==='run'
  });
+ // Independent upper and lower joints must not visually snap from a
+ // planted stride into the ready crouch. Exponential time-step smoothing
+ // preserves frame-rate independence while retaining actual knee flex.
+ // The solver never scales the bones to fake a mechanical spring.
+ if(model.userData.speciesId==='m001'&&(locomotion||action==='idle')){
+   const prev=model.userData.m001GaitAngles||{};
+   const last=model.userData.m001GaitTime;
+   const dt=Number.isFinite(last)&&time>last?
+     Math.min(.16,time-last):null;
+   const stiffness=locomotion?(action==='run'?24:19):11;
+   const alpha=dt==null?1:1-Math.exp(-stiffness*dt);
+   const next={};
+   for(const side of ['L','R'])for(const limb of ['front','rear']){
+     const suffix=limb+side;
+     for(const stem of ['leg','lower','beastHock','beastPastern','beastToe']){
+       const key=stem+suffix,node=p[key];
+       if(!node)continue;
+       const target=node.rotation.x;
+       const old=prev[key];
+       const angle=Number.isFinite(old)?
+         old+(target-old)*alpha:target;
+       node.rotation.x=angle;next[key]=angle;
+     }
+   }
+   model.userData.m001GaitAngles=next;
+   model.userData.m001GaitTime=time;
+ }else if(model.userData.speciesId==='m001'){
+   model.userData.m001GaitAngles=null;
+   model.userData.m001GaitTime=null;
+ }
  // Existing jaw pivot continues its action animation; speech adds a
  // bounded jaw opening after the usual pose (no bones duplicated).
  if(leap)applyMonsterLeapMotion(p,leap,model.userData.surfaceFamily);
