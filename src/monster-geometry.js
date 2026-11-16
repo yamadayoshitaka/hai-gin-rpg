@@ -197,6 +197,18 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    })),{name:'organic-cranium-'+s.id,kind:'face',
      asymmetry:reptile?.10:.04});
  if(s.id==='m001')g.recessCanineEyeSockets(cranium);
+ if(s.id==='m001'&&coatDetail==='low'){
+   // In massive battles use one coarse sculpted ruff silhouette instead of
+   // tens of thousands of guard hairs. It frames the same tiny face with
+   // zero expensive coat blades or additional skinned draw calls.
+   g.axialLoft(head,'skin',[
+     {z:.27,y:.12,rx:.118,ry:.135},
+     {z:.08,y:.035,rx:.272,ry:.294},
+     {z:-.22,y:-.092,rx:.366,ry:.418},
+     {z:-.55,y:-.168,rx:.275,ry:.328},
+     {z:-.78,y:-.215,rx:.115,ry:.135},
+   ],{name:'m001-low-mane-silhouette',rough:.97,ribbing:.036});
+ }
  if(reptile){
    g.bridge(head,'skin',[0,.045,-.19],[0,-.085,.55],.257,.128);
  }else if(feline){
