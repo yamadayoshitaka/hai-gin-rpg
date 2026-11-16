@@ -41,6 +41,7 @@ assert.equal(source.side,THREE.DoubleSide);
 assert.equal(source.transmission,0);
 assert.equal(source.vertexColors,false);
 assert.equal(source.userData.battleOpaqueTorsoLining,true);
+assert.match(source.name,/linen-battle-opaque-lining/,'new torso fabric participates in coverage sampling');
 
 const battle=readFileSync(new URL('../src/character-system/battle-artist-head-graft.js',import.meta.url),'utf8');
 const hair=readFileSync(new URL('../src/face-scalp-wig.js',import.meta.url),'utf8');
