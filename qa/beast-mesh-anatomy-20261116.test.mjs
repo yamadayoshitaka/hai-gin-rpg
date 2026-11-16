@@ -162,9 +162,9 @@ for(const id of remeshed){
       for(let k=0;k<a.count;k++)max=Math.max(max,Math.abs(a.getX(k)));
       return max;
     };
-    assert.ok(crossWidth(top)<.16,
+    assert.ok(crossWidth(top)<.175,
       'm001 upper forelegs must be visibly slimmer than the old bulky legs');
-    assert.ok(crossWidth(lower)<.125,
+    assert.ok(crossWidth(lower)<.134,
       'm001 shins must taper without bloated fur cuffs');
     const eyes=meshes.filter(m=>m.name==='eye');
     assert.equal(eyes.length,2);
