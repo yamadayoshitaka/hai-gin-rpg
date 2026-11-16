@@ -944,6 +944,7 @@ import {territoryAt,NEUTRAL_HALF_WIDTH} from './src/battle-territory.js?v=4.6.15
 import {squadTypeOf,SQUAD_TYPE_NAMES} from './src/mass-battle-formations.js?v=4.6.45';
 import {recomposeSquadAssignments,applySquadRecomposition,FORMATION_TYPES,FORMATION_NAMES,FORMATION_ICONS,normalizeFormationType} from './src/battle-squad-recomposition.js?v=4.6.49';
 import {squadJobComposition,chooseEnemyOrder,enemyOrderRefreshSeconds,TACTICAL_TIME_BANK_SECONDS} from './src/battle-tactical-policy.js?v=4.6.69';
+import {indexBattleDecisionUnits} from './src/battle-ai-decision-index.js?v=20261116-ai1';
 import {createMassBattleRealArmy} from './src/mass-battle-real-army.js?v=4.6.39';
 import {BattleCorpsePolicy,corpseOpacity} from './src/battle-corpse-policy.js?v=4.4.35';
 import {CrowdPerformanceBudget} from './src/crowd-performance-budget.js?v=4.6.36';
@@ -6085,15 +6086,18 @@ function setStartingSquadOrder(team,squadId,mode,buildingId=null){
 function updateEnemyTacticalDecisions(){
  if(!battleReady||finished||elapsed-lastEnemyTacticalDecisionAt<6)return;
  lastEnemyTacticalDecisionAt=elapsed;
- const units=massSim?.units??actors,allies=units.filter(u=>u.team===0&&u.hp>0&&u.alive!==false&&!u.isStrategist);
+ // One exact snapshot of both armies per decision. Keep every enemy squad's
+ // fallen members in its doctrine input; only living actors participate in
+ // strength, item and commander-availability checks.
+ const indexed=indexBattleDecisionUnits(massSim?.units??actors);
+ const allies=indexed.allies,friendlyArmy=indexed.enemies;
  if(!allies.length)return;
+ let availableBuildings=null;
  for(const id of enemySquadIds){
-  const own=units.filter(u=>u.team===1&&String(u.squadId)===id&&!u.isStrategist);
-  const living=own.filter(u=>u.hp>0&&u.alive!==false);
+  const own=indexed.roster(1,id),living=indexed.living(1,id);
   if(!living.length)continue;
-  if(massSim&&!units.some(u=>u.team===1&&String(u.squadId)===id&&u.isStrategist&&u.alive&&u.hp>0))continue;
+  if(massSim&&!indexed.livingStrategists[1].has(id))continue;
   const previous=startingSquadOrders.get(squadOrderKey(1,id))?.mode||'charge';
-  const friendlyArmy=units.filter(u=>u.team===1&&u.hp>0&&u.alive!==false&&!u.isStrategist);
   // The ordinary command cooldown is preserved except for defending squads
   // whose whole army now decisively outnumbers the opponent.
   const secondsUntilReissue=enemyOrderRefreshSeconds(previous,friendlyArmy.length,allies.length);
@@ -6106,13 +6110,17 @@ function updateEnemyTacticalDecisions(){
    const pz=living.reduce((v,u)=>v+(u.z??u.cell?.z??0),0)/living.length;
    const nearEnemy=allies.some(u=>Math.hypot((u.x??u.cell?.x??0)-px,(u.z??u.cell?.z??0)-pz)<38);
    if(!nearEnemy){
-    const candidates=availableExplorationBuildings().filter(b=>{
-     const d=b.building.data;return Math.hypot(d.x-px,d.z-pz)<40&&d.x>WORLD_SIZE*.45;
-    }).sort((a,b)=>{
-     const aPos=a.building.data,bPos=b.building.data;
-     return Math.hypot(aPos.x-px,aPos.z-pz)-Math.hypot(bPos.x-px,bPos.z-pz);
-    });
-    if(candidates.length){mode='explore';buildingId=candidates[0].id;}
+    // Buildings do not change within this paused AI decision pass. One
+    // nearest-candidate scan replaces repeated filtering and array sorts.
+    availableBuildings??=availableExplorationBuildings();
+    let nearest=null,bestDistance=Infinity;
+    for(const candidate of availableBuildings){
+     const d=candidate.building.data,dist=Math.hypot(d.x-px,d.z-pz);
+     if(dist<40&&d.x>WORLD_SIZE*.45&&dist<bestDistance){
+      bestDistance=dist;nearest=candidate;
+     }
+    }
+    if(nearest){mode='explore';buildingId=nearest.id;}
    }
   }
   if(mode===previous)continue;
@@ -6130,14 +6138,14 @@ function updateEnemyTacticalDecisions(){
 function updateEnemyItemDecisions(){
  if(!battleReady||finished||elapsed-lastEnemyItemDecisionAt<7)return;
  lastEnemyItemDecisionAt=elapsed;
- const units=massSim?.units??actors;
- const enemies=units.filter(u=>u.team===1&&u.hp>0&&u.alive!==false&&!u.isStrategist);
+ const indexed=indexBattleDecisionUnits(massSim?.units??actors);
+ const enemies=indexed.enemies;
  if(!enemies.length)return;
  const ownerIds=new Set(enemies.map(u=>String(u.id)));
  const stocks=roomItemRegistry.owned().filter(s=>s.quantity>0&&ownerIds.has(String(s.ownerId)));
  if(!stocks.length)return;
  for(const id of enemySquadIds){
-  const members=enemies.filter(u=>String(u.squadId)===id);
+  const members=indexed.living(1,id);
   if(!members.length)continue;
   const wounded=members.reduce((sum,u)=>sum+Math.max(0,u.maxHp-u.hp),0);
   const healing=stocks.find(s=>ROOM_ITEM_TYPES[s.itemId]?.kind==='heal');
@@ -6149,7 +6157,7 @@ function updateEnemyItemDecisions(){
   if(!stack)continue;
   const type=roomItemRegistry.consumeSquad(stack.ownerId,stack.itemId);
   if(!type)continue;
-  const owner=enemies.find(u=>String(u.id)===String(stack.ownerId));
+  const owner=indexed.aliveById.get(String(stack.ownerId));
   if(owner)owner.inventory=roomItemRegistry.owned(owner.id).map(item=>({
     id:item.itemId,name:item.name,quantity:item.quantity
   }));
@@ -7626,6 +7634,8 @@ const targetedStrategyUi=createTargetedStrategyUi({
  },
  getRadarCanvas:()=>miniBase,
  getMapSize:()=>WORLD_SIZE,
+ // The highlight uses the very same terrain test as issuing the map order.
+ getMapCellEligible:(x,z)=>traversableCell(x,z),
  getTemplates:groupId=>{
   const configured=storyRequest?.battlePlanRecommendations?.[String(groupId)];
   if(configured?.length){
