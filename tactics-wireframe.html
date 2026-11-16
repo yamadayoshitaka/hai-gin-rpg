@@ -9644,7 +9644,8 @@ async function finishBattleLoading(){
   // at world-map launch. Never show the old formation / initial-order wizard.
   // Start real-time autonomous combat immediately after loading. Manual
   // tactics and items now live only in the pause-and-command center.
-  const directBattlePreview=!TOWN_MODE&&!storyRequest&&!battleParams.has('army')&&
+  const directBattlePreview=!TOWN_MODE&&!storyRequest&&battleParams.get('storyBattle')!=='1'&&
+   (!battleParams.has('army')||Number(battleParams.get('army'))===50)&&
    !battleParams.has('legacySetup');
   if(storyRequest?.sortieTeamCount||directBattlePreview){
    for(const id of squadIds){
