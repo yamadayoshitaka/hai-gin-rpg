@@ -190,9 +190,13 @@ export function clipBodyToGarment(characterModel,coverage,{surfaceCheck=false,pr
   if(!variants){variants=new Map();maskCache.set(original,variants)}
   // The actual garment surface is instance-specific: avoid reusing a
   // front-only plate mask for another outfit with the same slot names.
+  // Each verified closed-tunic policy needs an isolated cached mask.
+  // Otherwise a bare source mesh can reuse an incompatible earlier mask.
   const cacheKey=surfaceCheck?
-   (preserved.size?{coverage,preserved:[...preserved]}:coverage):
-   coverage.signature+'|preserve:'+([...preserved].sort().join(','));
+   (preserved.size||forceCoveredRegions.length?
+     {coverage,preserved:[...preserved],forced:[...forceCoveredRegions]}:coverage):
+   coverage.signature+'|preserve:'+([...preserved].sort().join(','))+
+     '|force:'+([...forceCoveredRegions].sort().join(','));
   let record=variants.get(cacheKey);
   if(!record){
    const cut=new Uint8Array(positions.count);
