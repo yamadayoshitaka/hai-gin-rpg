@@ -33,6 +33,14 @@
       ],
       "commitSha": "7346c5714f5ad266721c8d7cd8ba58a9b101714b",
       "qa": "unverified"
+    },
+    {
+      "id": "shared-scalp-head-weight-selection",
+      "sourceFiles": [
+        "src/character-system/hair-attachment-runtime.js"
+      ],
+      "commitSha": "f3e43d18c12e5f141cb783a01626565341060aea",
+      "qa": "unverified"
     }
   ],
   "remainingIds": [
@@ -42,5 +50,5 @@
     "job05-male",
     "job05-female"
   ],
-  "nextAction": "Run Node syntax/WebGL crown and rear views for both sexes and all hairstyles; enumerate full character catalog and validate each preset, then resolve #438 rear armor artifacts."
+  "nextAction": "Validate head-weight scalp candidate ranking against male/female skinned meshes, run Node syntax and WebGL crown/rear screenshots; enumerate all human IDs, retain #438 armor issue; no main merge without visual QA."
 }
