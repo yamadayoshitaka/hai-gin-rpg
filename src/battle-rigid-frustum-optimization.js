@@ -16,6 +16,12 @@ export function enableBattleRigidFrustumCulling(root){
  const stats={eligible:0,enabled:0,alreadyEnabled:0,unchanged:0};
  if(!root||typeof root.traverse!=='function')return stats;
  root.traverse(mesh=>{
+  // Facial microgeometry and authored hair can move through shape/shader
+  // offsets that do not enlarge the static bind-pose bounds. Keep them fully
+  // visible, including at the edge of the camera view.
+  if(/(?:hair|lash|brow|iris|pupil|eyeball|eyelid|teeth|tongue|face|lip)(?:[-_ ]|$)/i.test(mesh?.name||'')){
+   stats.unchanged++;return;
+  }
   if(!mesh?.isMesh||mesh.isSkinnedMesh||mesh.isInstancedMesh||
      mesh.isBatchedMesh||mesh.userData?.forceFrustumVisible){
    stats.unchanged++;return;
