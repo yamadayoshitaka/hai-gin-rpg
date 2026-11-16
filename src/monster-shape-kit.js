@@ -112,6 +112,12 @@ export function createSculpture(spec,detail='high'){
      spec.family==='reptile'?'#b18f4d':
      spec.family==='avian'?'#b99955':'#a68b51'};
  if(realism)Object.assign(tone,realism);
+ if(spec.id==='m001'){
+   // Wolf king: earthy rust/amber irises, subdued ivory keratin and no
+   // emissive circular stickers. All other species retain their palettes.
+   tone.eye='#b66d43';
+   tone.bone='#ddd0b5';
+ }
  const V=v=>new THREE.Vector3(...v);
  const attach=(parent,geo,shade,opt={})=>{
    const isRole=typeof shade==='string'&&Object.hasOwn(tone,shade);
@@ -428,7 +434,7 @@ export function createSculpture(spec,detail='high'){
   */
  const recessedCanineAlmondEye=(parent,{side=1,name='beast'}={})=>{
    if(Math.abs(side)!==1)throw Error('Invalid wolf eye side');
-   const center=[side*.225,.118,.285];
+   const center=[side*.230,.116,.278];
    const slices=detail==='source'?40:detail==='high'?32:20;
    const bands=detail==='source'?5:3;
    // Shape follows the inner/outer canthus; the outside corner sits higher.
@@ -470,14 +476,15 @@ export function createSculpture(spec,detail='high'){
    // actual visible dark patch IN FRONT of the amber iris, not hidden
    // behind the heavy eyelid rim as in the earlier revision.
    // A slim shadowed eye fissure, not an externally projecting liner.
-   const orbital=patch('shadow','beast-orbit',.069,.024,.002,.001);
-   orbital.userData.socketApertureHalfWidth=.069;
-   orbital.userData.socketApertureHalfHeight=.024;
-   const iris=patch('eye','eye',.030,.023,.010,.003,[-.008,0,0]);
+   const orbital=patch('shadow','beast-orbit',.071,.025,.002,.001);
+   orbital.userData.socketApertureHalfWidth=.071;
+   orbital.userData.socketApertureHalfHeight=.025;
+   const iris=patch('eye','eye',.0295,.0245,.010,.003,[-.008,0,0]);
    iris.userData.generatorFittedIris=true;
-   iris.userData.openingHeight=.046;
-   const pupil=patch('shadow','beast-pupil',.011,.020,.021,.002,[-.008,0,0]);
-   pupil.userData.verticalSlit=true;
+   iris.userData.openingHeight=.049;
+   // Wolves have rounded pupils, not a cat's vertical slit.
+   const pupil=patch('shadow','beast-pupil',.012,.014,.021,.002,[-.008,0,0]);
+   pupil.userData.roundCanidPupil=true;
    pupil.userData.blackPupilVisible=true;
    const glint=patch('bone','beast-corneal-glint',.002,.003,.026,.001,
      [-.016,.010,0]);
@@ -488,7 +495,7 @@ export function createSculpture(spec,detail='high'){
    const eyelidPos=[],eyelidUv=[],eyelidIndex=[];
    for(let row=0;row<=2;row++){
      const t=row/2;
-     const rx=.069+(.002*t),ry=.024+(.002*t);
+     const rx=.071+(.002*t),ry=.025+(.001*t);
      const rz=.003+(.0005*t);
      for(let col=0;col<=slices;col++){
        const a=col/slices*2*Math.PI,cx=rx*Math.cos(a);
