@@ -42,6 +42,8 @@ on:
       - 'src/skirmish-distance-impostors.js'
       - 'qa/skirmish-lod-silhouette.test.mjs'
       - 'qa/battle-scalp-cloth-coverage.test.mjs'
+      - 'qa/thief-scalp-summon-rider-regression.test.mjs'
+      - 'src/character-system/riding-pose.js'
       - 'src/character-system/battle-torso-lining.js'
       - 'src/character-system/shield-forearm-fit.js'
       - 'src/character-system/rigged-outfit-runtime.js'
@@ -87,6 +89,7 @@ jobs:
         run: |
           node --check src/mass-battle-grid-sim.js
           node --check src/face-scalp-wig.js
+          node --check src/character-system/riding-pose.js
           node --check src/character-system/battle-torso-lining.js
           node --check src/skirmish-distance-impostors.js
           node --check src/character-system/hair-attachment-runtime.js
@@ -104,6 +107,7 @@ jobs:
           node qa/battle-face-hair-shield-recovery.test.mjs
           node qa/skirmish-lod-silhouette.test.mjs
           node qa/battle-scalp-cloth-coverage.test.mjs
+          node qa/thief-scalp-summon-rider-regression.test.mjs
           node qa/battle-face-color-regression.test.mjs
           node qa/battle-studio-pattern-parity.test.mjs
           node qa/battle-ai-target-highlight-zoom.test.mjs
