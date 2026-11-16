@@ -113,12 +113,12 @@
     },
     "world": {
       "source": "ChatGPT定期品質回帰の実行結果＋GitHub証跡",
-      "lastRunAt": "2026-11-16T14:50:59.218+09:00",
+      "lastRunAt": "2026-11-16T15:48:17.459+09:00",
       "status": "work_incomplete",
       "carryover": true,
-      "subject": "world 53種実品質回帰：main承認0件、PR #441保存21件、QA未検証",
-      "summary": "2026-11-16T14:50:59.218+09:00 実行。新規実ソース変更0件、新規実ソースSHAなし、対象別QA合格0件、ゲーム反映0件。PR #441保存21件・未保存32件、main受入台帳53件・審査中11件・承認0件・未承認53件（重複合算なし）。mainマージ0件、Pages公開0件。",
-      "nextAction": "PR #441の実ソース差分について構文・対象回帰・WebGL・Android QAを検証し、合格証拠が得られたものだけ承認。続いて未保存32件から共通生成器の5〜10件を実改修。",
+      "subject": "world 53種：既存PR QA滞留・品質承認0件",
+      "summary": "2026-11-16T15:48:17.459+09:00 実行。main world.enabled=trueを確認。新規実ソース改修0件・新規実ソースSHAなし・原型/GLB再生成0件・対象別QA合格0件・ゲーム反映0件。PR #441作業ブランチ保存21件/未保存32件（QA unverified）、main受入台帳53件/審査中11件/承認0件/未承認53件。別集計・合算なし。mainマージ0件・Pages公開0件。",
+      "nextAction": "PR #441保存21件の静的QAとWebGL/Android実測を先行し、未確認を承認しない。次に未保存IDの共有生成器を実改修して小刻みコミット。",
       "steps": {
         "launch": "done",
         "code": "pending",
@@ -184,10 +184,10 @@
       },
       "operational": {
         "blockers": [
-          "本実行では実3Dソース修正と対象別QAを実施できず、新規実ソースコミット0件",
-          "PR #441保存21件のWebGL実描画・Android実機性能検証が未確認"
+          "今回の実行ではソース修正とWebGL/Android実機QAの実施証跡を取得できず、新規実ソース変更0件",
+          "PR #441保存21件の対象別QAはunverified"
         ],
-        "speedPlan": "PR #441の未検証差分QAを先行→同一生成器の5〜10件を小刻み実改修コミット→合格対象のみマージ"
+        "speedPlan": "既存21件の静的QA→WebGL/Android確認→未保存の共通構造5〜10件を実改修コミット"
       }
     },
     "anime": {
