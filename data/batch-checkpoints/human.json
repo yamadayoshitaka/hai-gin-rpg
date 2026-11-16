@@ -73,6 +73,14 @@
       ],
       "commitSha": "83b3366a582882d1b2389f47190344754940d97d",
       "qa": "unverified"
+    },
+    {
+      "id": "shared-sparse-lateral-rear-cuirass-sampling",
+      "sourceFiles": [
+        "src/outfit-maintenance-model.js"
+      ],
+      "commitSha": "c107b633dc5de54f55e432451d421da17b321a20",
+      "qa": "unverified"
     }
   ],
   "remainingIds": [
@@ -82,5 +90,5 @@
     "job05-male",
     "job05-female"
   ],
-  "nextAction": "Validate scalp generator with Node syntax and WebGL front/crown/rear captures; enumerate all actual human preset IDs; address Issue #438 rear armor and heel artifacts; keep unverified changes off main."
+  "nextAction": "Run Node syntax and WebGL male/female rear, side, crown screenshots for PR #456; verify sparse-strip cuirass clearance, heel artifacts and Android GPU; enumerate canonical IDs."
 }
