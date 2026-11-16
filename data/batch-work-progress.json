@@ -62,12 +62,12 @@
     },
     "monster": {
       "source": "ChatGPT 定期タスクの実行結果",
-      "lastRunAt": "2026-11-16T16:31:03+09:00",
-      "subject": "PR #426 m020 腹側鱗板の埋没を実メッシュ法線オフセットで修正",
-      "summary": "monster enabled=true確認。m020腹側PBR鱗板が体幹内部に埋まる問題を、楕円断面の外向き法線に沿う頂点オフセットと腹側面選別に修正し、作業ブランチに実ソースSHA d22c5622保存。チェックポイントb86d47d更新。直近m048ソースSHA 6ba9ba1に対するRPG data architecture CI成功、Battle visual E2E cancelled。今回Node構文・WebGL実画像・Androidは未検証。全108ID走査未完了。GLB0、ゲーム反映0、対象別QA0。mainマージ/公開なし。",
+      "lastRunAt": "2026-11-16T17:22:30+09:00",
+      "subject": "PR #426 m048腹側鱗板の世界座標スケーリングを局所断面法線オフセットに修正",
+      "summary": "monster enabled=true確認。m048腹側鱗板のワールド座標スケーリングによる湾曲体幹の継ぎ目変位を、各リングの局所軸方向断面法線オフセットへ実ソース修正。SHA 8a009ccd、チェックポイントbaf04e9c。静的構文/WebGL/Android QA未実施、全108ID詳細走査未実施、GLB0、ゲーム反映0、mainマージ/公開なし。",
       "status": "work_incomplete",
       "carryover": true,
-      "nextAction": "PR #426の最新headでm020腹側鱗板とm048頭頸接合のNode構文・WebGL四方向・Android FPSを検証。cancelled E2Eを再実行し不合格修正後に次の種族群を実改修。",
+      "nextAction": "PR #426最新headでm048腹側鱗板の前後左右WebGLとm020鱗板・頭頸接合、Node構文、Android FPS、E2Eを確認。不合格修正後に他IDの実造形へ進む。",
       "steps": {
         "launch": "done",
         "code": "done",
@@ -79,33 +79,25 @@
       },
       "evidence": [
         {
-          "label": "m020腹側鱗板実ソースコミット",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/d22c5622c487f5f860dbafa2325aa06477feddfd"
+          "label": "m048局所断面法線実ソースコミット",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/8a009ccd5959efc31956d77ab0c5c6907901da65"
         },
         {
           "label": "Draft PR #426",
           "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/426"
         },
         {
-          "label": "作業チェックポイント",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/b86d47dcc9ef9098dceb84349ffa02cb2d233607"
-        },
-        {
-          "label": "RPG data CI成功",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/43814473254"
-        },
-        {
-          "label": "Battle visual E2E cancelled",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/43814473173"
+          "label": "チェックポイントコミット",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/baf04e9c4ce392700ac98d890b82e4374fe7114b"
         }
       ],
       "operational": {
         "blockers": [
-          "最新PR headのNode構文・WebGL前後左右・Android実測未検証",
-          "Battle visual E2E cancelledで描画QA合格を確認できない",
-          "正本108ID全件分類未完了"
+          "m048最新差分のNode構文とWebGL四方向実描画未検証",
+          "Android実測未検証、Battle visual E2E未合格",
+          "全108IDの今回の実アセット/ゲーム採用分類は未完了"
         ],
-        "speedPlan": "m020腹側PBR可視性とm048頭頸接合の実描画→E2E再実行→同骨格群の改修",
+        "speedPlan": "PR #426の最新headの静的QA→WebGL m020/m048四方向→Android/E2E→不合格修正→次の種族群",
         "lastRunOutcome": {
           "newSourceChangedIds": 1,
           "newQAPassed": 0,
