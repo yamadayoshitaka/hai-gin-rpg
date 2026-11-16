@@ -62,12 +62,12 @@
     },
     "monster": {
       "source": "ChatGPT 定期タスクの実行結果",
-      "lastRunAt": "2026-11-16T21:25:48+09:00",
-      "subject": "PR #426 m048背びれを曲がる脊柱の局所フレームに接合",
-      "summary": "monster.enabled=trueを確認。m048背びれ18枚の基点/頂点を世界Y固定から曲がる脊柱の接線と背側法線へ変更。実ソースコミット53dd216b、チェックポイントddf5a6e7。Node/WebGL/Android実測未実施、GLB0、ゲーム反映0、マージ公開なし。全108件監査未完了。",
+      "lastRunAt": "2026-11-16T23:17:38+09:00",
+      "subject": "PR #426 m048 背びれUVと遊泳メッシュ描画境界の実修正",
+      "summary": "monster.enabled=true確認。m048背びれ膜へ非退化UVを追加しPBRテクスチャ適用可能にした。遊泳で変形する胴体・腹側・背びれ・側線のboundingSphereを再計算し視錐台カリング誤判定を防止。実ソースSHA fd0cb86f。ソース再取得で静的文字列確認のみ成功。Node構文/WebGL/Android QAは未実施。GLB0、ゲーム反映0、マージ/公開なし。全108件監査未完了。",
       "status": "work_incomplete",
       "carryover": true,
-      "nextAction": "PR #426 m048背びれ・側線の前後左右WebGLとm020の実描画、Node構文、Android FPS、Battle visual E2Eを確認・修正し、108IDの正本全数監査を実施。",
+      "nextAction": "PR #426最新headのNode構文、m048 UV/animated boundsの描画回帰、m020/m048四方向WebGLとAndroid FPS、mobile-battle E2E失敗を修正。108ID全数監査後、同系統へ拡張。",
       "steps": {
         "launch": "done",
         "code": "done",
@@ -79,25 +79,27 @@
       },
       "evidence": [
         {
-          "label": "m048 dorsal crest source commit",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/53dd216bf5968b7a472b104b4b2ee3284cfbc5f1"
+          "label": "m048 UV/bounds実ソースコミット",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/fd0cb86f864f22f189c39266bb3544ca75b38896"
         },
         {
           "label": "Draft PR #426",
           "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/426"
         },
         {
-          "label": "Checkpoint",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/ddf5a6e7f16029705e895a7659d992f8e1e0b3ad"
+          "label": "m048再開チェックポイント",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/648ce05f1ade3df1e4b777ad9744be6c03fb41b0"
         }
       ],
       "operational": {
         "blockers": [
-          "Node/WebGL/Android実行QA未実施",
-          "PR #426 Battle visual E2Eの合格未確認",
-          "正本108IDの全数監査未完了"
+          "Node実行による構文・対象別テスト未実施（GitHubソースの静的文字列確認のみ）",
+          "m020/m048前後左右WebGL画像未確認",
+          "Android FPS未実測",
+          "PR #426 mobile-battle E2E未合格",
+          "正本108IDの全数分類未完了"
         ],
-        "speedPlan": "m048 dorsal crestの局所フレーム接合を構文/4方向WebGLで検証し、E2E不合格修正後に同種群の次IDへ進む",
+        "speedPlan": "m048最新差分のNode/ブラウザQAを先に解消し、m020と併せて描画合格後に海棲骨格群へ展開",
         "lastRunOutcome": {
           "newSourceChangedIds": 1,
           "newQAPassed": 0,
