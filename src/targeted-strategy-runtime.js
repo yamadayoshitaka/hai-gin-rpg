@@ -192,10 +192,10 @@ export function createTargetedStrategyUi({
   ctx.fillStyle='#19394c';ctx.fillRect(0,0,width,height);
   if(radar)ctx.drawImage(radar,0,0,width,height);
   const options=selectableRadarTargets(),eligible=new Set(options.map(x=>String(x.id)));
-  const radarAll=[...getRadarTargets(),...options];
+  const side=step==='scope'||chosenItem?'ally':type()==='enemy'?'enemy':type()==='object'?'object':'none';
+  const radarAll=[...getRadarTargets(),...options.map(x=>({...x,team:x.team??side}))];
   const combined=[...new Map(radarAll.map(x=>[String(x.team??'object')+':'+String(x.id),x])).values()];
   const placements=[],hotspots=[];
-  const drawn=[];
   for(const t of combined){
    const group=String(t.team??(chosenItem?'ally':type()==='enemy'?'enemy':'object'));
    const x=Number(t.x),z=Number(t.z);
@@ -222,7 +222,7 @@ export function createTargetedStrategyUi({
     chosenItem?group==='ally':
     type()==='enemy'?group==='enemy':
     type()==='object'?group==='object':false);
-   const selected=(step==='scope'?selectedSquads:selectedTargets).has(String(t.id));
+   const selected=selectable&&(step==='scope'?selectedSquads:selectedTargets).has(String(t.id));
    const color=group==='enemy'?'#f56d6e':group==='ally'?'#59dcfa':'#f6cd75';
    if(Math.hypot(px-baseX,py-baseY)>4){
     ctx.strokeStyle='#a8c5d788';ctx.lineWidth=1;ctx.beginPath();
@@ -237,7 +237,6 @@ export function createTargetedStrategyUi({
     ctx.textBaseline='middle';ctx.fillText(n,px,py);
     hotspots.push({id:String(t.id),x:px,y:py,team:group,radius:21});
    }
-   drawn.push(t);
   }
   radarHotspots=hotspots;
   if(mapPoint&&type()==='map'){
