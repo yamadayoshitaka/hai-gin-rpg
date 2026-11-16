@@ -469,23 +469,27 @@ export function createSculpture(spec,detail='high'){
    // Thin socket, no thick painted-on black eyeliner. The pupil is an
    // actual visible dark patch IN FRONT of the amber iris, not hidden
    // behind the heavy eyelid rim as in the earlier revision.
-   const orbital=patch('shadow','beast-orbit',.081,.027,.002,.001);
-   orbital.userData.socketApertureHalfWidth=.081;
-   orbital.userData.socketApertureHalfHeight=.027;
-   const iris=patch('eye','eye',.030,.027,.010,.003,[-.008,0,0]);
+   // A slim shadowed eye fissure, not an externally projecting liner.
+   const orbital=patch('shadow','beast-orbit',.069,.024,.002,.001);
+   orbital.userData.socketApertureHalfWidth=.069;
+   orbital.userData.socketApertureHalfHeight=.024;
+   const iris=patch('eye','eye',.030,.023,.010,.003,[-.008,0,0]);
    iris.userData.generatorFittedIris=true;
-   iris.userData.openingHeight=.054;
+   iris.userData.openingHeight=.046;
    const pupil=patch('shadow','beast-pupil',.011,.020,.021,.002,[-.008,0,0]);
    pupil.userData.verticalSlit=true;
    pupil.userData.blackPupilVisible=true;
    const glint=patch('bone','beast-corneal-glint',.002,.003,.026,.001,
      [-.016,.010,0]);
    glint.userData.corneaWetHighlight=true;
+   // Inset the lid beneath the anterior iris/pupil instead of wrapping the
+   // eye with a 0.015-wide, elevated, outward-facing skin wall. Two very
+   // narrow bands preserve a closed anatomical rim with negligible relief.
    const eyelidPos=[],eyelidUv=[],eyelidIndex=[];
-   for(let row=0;row<=3;row++){
-     const t=row/3;
-     const rx=.084+(.015*t),ry=.027+(.012*t);
-     const rz=.014+(.003*t);
+   for(let row=0;row<=2;row++){
+     const t=row/2;
+     const rx=.069+(.002*t),ry=.024+(.002*t);
+     const rz=.003+(.0005*t);
      for(let col=0;col<=slices;col++){
        const a=col/slices*2*Math.PI,cx=rx*Math.cos(a);
        eyelidPos.push(center[0]+side*cx,
@@ -494,7 +498,7 @@ export function createSculpture(spec,detail='high'){
        eyelidUv.push(col/slices,t);
      }
    }
-   for(let i=0;i<3;i++)for(let j=0;j<slices;j++){
+   for(let i=0;i<2;i++)for(let j=0;j<slices;j++){
      const a=i*(slices+1)+j,b=a+slices+1;
      eyelidIndex.push(a,b,a+1,a+1,b,b+1,a+1,b,a,b+1,b,a+1);
    }
@@ -508,6 +512,7 @@ export function createSculpture(spec,detail='high'){
      {name:'beast-almond-eyelid-'+(side<0?'L':'R'),rough:.89,metal:0}));
    lid.userData.socketContactRim=true;
    lid.userData.anatomicalAlmondEyelid=true;
+   lid.userData.flushSkinLid=true;
    return {orbital,iris,pupil,glint,lid};
  };
  const anatomicalLoft=(parent,shade,rings,{name='realistic-anatomical-mesh',
