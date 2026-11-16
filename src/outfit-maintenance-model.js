@@ -173,9 +173,15 @@ export function createDetailedOutfit(job, sex, body, textures, {quality='preview
     // chest. The old centerline-only Z estimate suspended plates at the ribs
     // while cutting into the pectorals when the character turned sideways.
     const band=torsoSamples.filter(([px,py])=>Math.abs(py-y)<H*.069&&Math.abs(px-x)<sx*.20);
-    const eligible=band.length>=9?band:torsoSamples.filter(([,py])=>Math.abs(py-y)<H*.077);
-    const z=eligible.map(p=>p[2]).sort((a,b)=>a-b);
-    return z.length>10?z[Math.floor((z.length-1)*(back?.08:.92))]:mz+(back?-1:1)*sz*.69;
+    // Never substitute the entire torso's extreme Z for a missing local slice:
+    // the opposite flank can become a large flat, stone-like armor facet.
+    // Expand the search around this X/Y position, not across the whole body.
+    const nearby=band.length>=9?band:torsoSamples
+      .map(p=>({p,d:Math.hypot((p[0]-x)/sx,(p[1]-y)/(H*.18))}))
+      .sort((a,b)=>a.d-b.d).slice(0,24)
+      .filter(entry=>entry.d<1.25).map(entry=>entry.p);
+    const z=nearby.map(p=>p[2]).sort((a,b)=>a-b);
+    return z.length>=9?z[Math.floor((z.length-1)*(back?.08:.92))]:mz+(back?-1:1)*sz*.69;
   }
   // The Superhero face points +Z; decorations must remain against that skin.
   const front=surfaceAt(cy-H*.09)+H*.008;
@@ -246,8 +252,12 @@ export function createDetailedOutfit(job, sex, body, textures, {quality='preview
   // Under-tunic back coverage is mandatory for EVERY job. Some imported
   // Ranger/Peasant clothes have only thin front surfaces, while the old
   // underlying-body occlusion removed the anatomical back completely.
-  // This panel is skinned with the spine like the rest of the clothing.
-  {
+  // Cloth jobs need the back lining, but armored jobs already have the
+  // fitted heroic-cuirass-backplate below. Rendering both surfaces at nearly
+  // the same depth produced a stone-like, flickering sheet behind the swordsmans'
+  // armor. Keep the cloth panel only where no plate covers it; this also
+  // removes one draw call from armored characters.
+  if(!style.armor){
     const columns=battle?14:24,rows=battle?10:18;
     const points=[],uv=[],faces=[];
     // A rogue's split leather back exposed the scapulae because the
@@ -343,25 +353,42 @@ export function createDetailedOutfit(job, sex, body, textures, {quality='preview
       }
     }
     const backGeometry=new THREE.BufferGeometry();
+    // Close the exposed shoulder and waist rims using the existing backplate
+    // geometry/material. Separate front/back sheets previously ended as open
+    // edges, making the cuirass appear unfinished from elevated rear views.
+    // Reuse the same draw call; do not alter the skinned source garment.
+    for(const y of [top,bottom]){
+      const start=backPoints.length/3;
+      for(let col=0;col<=cols;col++){
+        const u=col/cols*2-1,frontPoint=edge(u,y),rearPoint=backEdge(u,y);
+        backPoints.push(frontPoint.x,frontPoint.y,frontPoint.z,
+          rearPoint.x,rearPoint.y,rearPoint.z);
+        backUv.push(col/cols,0,col/cols,1);
+        if(col<cols){const i=start+col*2;
+          backFaces.push(i,i+1,i+2,i+1,i+3,i+2);
+        }
+      }
+    }
+    // Weld the two flank closures into the existing backplate geometry.
+    // Separate meshes previously added two draw calls per armored character
+    // and could show lighting discontinuities at the rear side seams.
+    for(const side of [-1,1]){
+      const seamStart=backPoints.length/3;
+      for(let row=0;row<=rows;row++){
+        const y=top+(bottom-top)*row/rows;
+        const frontPoint=edge(side,y),rearPoint=backEdge(side,y);
+        for(const p of [frontPoint,rearPoint])backPoints.push(p.x,p.y,p.z);
+        backUv.push(0,row/rows,1,row/rows);
+        if(row<rows){
+          const i=seamStart+row*2;
+          backFaces.push(i,i+2,i+1,i+1,i+2,i+3);
+        }
+      }
+    }
     backGeometry.setAttribute('position',new THREE.Float32BufferAttribute(backPoints,3));
     backGeometry.setAttribute('uv',new THREE.Float32BufferAttribute(backUv,2));
     backGeometry.setIndex(backFaces);backGeometry.computeVertexNormals();
     add('heroic-cuirass-backplate',backGeometry,plate);
-    for(const side of [-1,1]){
-      const seamPoints=[],seamUv=[],seamFaces=[];
-      for(let row=0;row<=rows;row++){
-        const y=top+(bottom-top)*row/rows;
-        const frontPoint=edge(side,y),rearPoint=backEdge(side,y);
-        for(const p of [frontPoint,rearPoint])seamPoints.push(p.x,p.y,p.z);
-        seamUv.push(0,row/rows,1,row/rows);
-        if(row<rows){const i=row*2;seamFaces.push(i,i+2,i+1,i+1,i+2,i+3)}
-      }
-      const seam=new THREE.BufferGeometry();
-      seam.setAttribute('position',new THREE.Float32BufferAttribute(seamPoints,3));
-      seam.setAttribute('uv',new THREE.Float32BufferAttribute(seamUv,2));
-      seam.setIndex(seamFaces);seam.computeVertexNormals();
-      add(`${side<0?'l':'r'}-cuirass-closed-flank`,seam,plate);
-    }
     const edgeMaterial=precious||(heavy?gold:steel);
     // Metal piping follows the actual V neckline, not an impossible flat
     // top edge across the wearer's throat. The curved pectoral stamping

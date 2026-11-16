@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "category": "human",
+  "saved": [
+    {
+      "id": "job01-female-cuirass-flanks",
+      "sourceFiles": [
+        "src/outfit-maintenance-model.js"
+      ],
+      "commitSha": "80ca95ba1c2390996086e8ff6d6fd585ae477728",
+      "qa": "unverified"
+    },
+    {
+      "id": "job01-male-cuirass-flanks",
+      "sourceFiles": [
+        "src/outfit-maintenance-model.js"
+      ],
+      "commitSha": "80ca95ba1c2390996086e8ff6d6fd585ae477728",
+      "qa": "unverified"
+    },
+    {
+      "id": "job05-female-cuirass-flanks",
+      "sourceFiles": [
+        "src/outfit-maintenance-model.js"
+      ],
+      "commitSha": "80ca95ba1c2390996086e8ff6d6fd585ae477728",
+      "qa": "unverified"
+    },
+    {
+      "id": "job05-male-cuirass-flanks",
+      "sourceFiles": [
+        "src/outfit-maintenance-model.js"
+      ],
+      "commitSha": "80ca95ba1c2390996086e8ff6d6fd585ae477728",
+      "qa": "unverified"
+    }
+  ],
+  "remainingIds": [
+    "job01-female-heel",
+    "job01-male-heel",
+    "job05-female-heel",
+    "job05-male-heel",
+    "face-hair-catalog"
+  ],
+  "nextAction": "Run Node geometry QA and Chromium/WebGL front/rear/top views for four armor variants; verify index bounds/normals and heel artifacts; then fix remaining geometry without merging main."
+}
