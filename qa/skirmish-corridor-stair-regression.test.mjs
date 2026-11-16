@@ -96,7 +96,7 @@ const released=stableGridNext(bridgeQueueState,{x:1,z:1},{x:12,z:1},{
 });
 assert.deepEqual(released.next,{x:2,z:1},
  'the queued soldier resumes immediately when the legal tile clears');
-assert.match(game,/function exitPathStep\(actor,target\)\{\s*const result=stableGridNext\(actor\._exitRoute/,
+assert.match(game,/const result=incrementalStableGridNext\(actor\._exitRoute/,
  '50v50 bridge and doorway routing must use a persistent collision-safe cache');
 assert.match(game,/if\(\(a\.cell\.x-center\)\*a\.crossing\.fromSide<=-10\)/,
  'land-side bridge traffic may move into a legal side lane, not the river');
