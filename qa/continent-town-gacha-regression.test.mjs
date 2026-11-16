@@ -67,7 +67,7 @@ for(const panel of ['weapons','items','formation','tavern','save','story']){
  assert.ok(talk.modelId.startsWith('Superhero_'));
 }
 const villager=resolveTownConversation({npcId:'street-1',chapter:20});
-assert.ok(villager.lines.some(x=>x.includes(continentForChapter(20).name)));
+assert.ok(villager.lines.some(x=>x.includes(continentForChapter(20).regionName)));
 assert.ok(villager.lines.length>=3);
 const stageHtml=fs.readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
 const hubHtml=fs.readFileSync(new URL('../town-hub.html',import.meta.url),'utf8');
