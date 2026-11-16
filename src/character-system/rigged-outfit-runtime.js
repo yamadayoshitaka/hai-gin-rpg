@@ -523,12 +523,11 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
        opaqueTorsoLiningMaterials++;
        return copy;
       }
-      // Rogue/Thief Ranger body primitives were still using a partly
-      // transparent source material, so back muscles showed through the
-      // tunic even at close camera distance. Cloth and opaque lining must
-      // be enforced on BOTH sides of the existing skinned body surface.
-      // This reuses the material slot: zero added meshes/draw calls.
-      if(quality==='battle'&&jobId==='job06'&&role==='body'){
+      // The Ranger source has semi-transparent green-black fabric segments.
+      // Both the thief wardrobe studio and battle must use the same opaque
+      // leather material; otherwise the exposed anatomical torso appears
+      // skin-coloured in battle. Reuse the skinned slot: zero extra draw calls.
+      if(jobId==='job06'&&role==='body'){
        const leather=textures.leather||textures['linen-fine']||textures.linen;
        if(leather){copy.map=leather;copy.bumpMap=leather;copy.bumpScale=.0006}
        copy.alphaMap=null;copy.transparent=false;copy.opacity=1;
