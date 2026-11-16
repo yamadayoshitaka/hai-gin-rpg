@@ -158,13 +158,17 @@ function compactMaskedGeometry(original,kept){
  geometry.setIndex(indices);
  return {geometry,vertices:used.length};
 }
-export function clipBodyToGarment(characterModel,coverage,{surfaceCheck=false,preserveRegions=[]}={}){
+export function clipBodyToGarment(characterModel,coverage,{surfaceCheck=false,preserveRegions=[],forceCoveredRegions=[]}={}){
  // Studio previews must preserve a REAL skinned anatomical leg below pants,
  // boots and metal, even if the garment hides all its pixels. Otherwise
  // removing leg plates can reveal an empty hollow or missing flesh.
  const preserved=new Set(preserveRegions);
  const hidden=new Set((coverage?.regions||[]).filter(zone=>!preserved.has(zone)));
- const enclosed=new Set((coverage?.enclosedRegions||[]).filter(zone=>!preserved.has(zone)));
+ // Closed battle tunics must not let bare chest/back skin protrude during
+ // motion. Only the specified proven-opaque zones bypass spatial sampling;
+ // all uncovered fingers, face and forearms remain conservative.
+ const enclosed=new Set([...(coverage?.enclosedRegions||[]),
+  ...forceCoveredRegions].filter(zone=>!preserved.has(zone)));
  const sampler=surfaceCheck?buildGarmentSurfaceCoverage(coverage?.surfaceMeshes):null;
  const entries=[],measure={sourceTriangles:0,keptTriangles:0,removedTriangles:0,
   surfaceChecked:surfaceCheck,garmentSurfaceSamples:sampler?.samples||0,
