@@ -9,13 +9,22 @@
       ],
       "commitSha": "d4224839e030f92495235a2a9de1fb475a469b26",
       "qa": "unverified"
+    },
+    {
+      "id": "compact-chapter-opening-scoped-replay",
+      "sourceFiles": [
+        "src/story-compact-comic.js"
+      ],
+      "commitSha": "cbba38cc5f039f056117f1b1253a28c1d994f96e",
+      "qa": "unverified"
     }
   ],
   "remainingIds": [
     "compact-c01-s01-to-s04-visual-qa",
     "compact-verified-webp-reuse",
     "compact-shared-defeat-art-verification",
-    "compact-dialogue-portrait-voice-qa"
+    "compact-dialogue-portrait-voice-qa",
+    "compact-chapter-opening-regression-qa"
   ],
-  "nextAction": "Verify actual rendered CGs and SHA/actor-free proof for shared defeat art; run JS regression and browser QA before PR merge."
+  "nextAction": "Run chapter 1/2 saved-flag replay tests and browser QA; verify CG asset bytes and gender/outcome before any merge."
 }
