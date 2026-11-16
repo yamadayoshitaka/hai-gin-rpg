@@ -37,7 +37,7 @@ header{display:flex;align-items:center;justify-content:space-between;gap:8px;bac
 .map-caption{top:4px;left:6px;right:6px;padding:4px 6px;font-size:10px;text-align:center}
 .pan{display:none}
 .pin{font-size:clamp(8px,2.2vw,12px);min-width:43px;max-width:84px;padding:4px 3px;line-height:1.2}
-.pin.stage-pin{min-width:48px;font-size:10px}
+.pin.stage-pin{min-width:26px;max-width:26px;width:26px;height:26px;border-radius:50%;font-size:10px;padding:3px 0;white-space:nowrap;line-height:16px}
 .pin.current-location{outline:2px solid #78f2ff;outline-offset:2px;z-index:4}
 .pin.current-location:after{content:'● 現在地';display:block;color:#8af5ff;font-size:9px;white-space:nowrap;margin-top:3px}
 header nav{gap:4px}header nav button{padding:7px 5px;min-height:35px;font-size:11px}
@@ -170,10 +170,12 @@ function renderPins(){
  const stages=stagesInChapter(chapter),spots=continentStagePoints(chapter);
  board.innerHTML=stages.map((stage,i)=>{
   const spot=spots[i],unlocked=stageUnlocked(stage,game.completedStages),done=game.completedStages.includes(stage.id);
-  const label=String(stage.slot).padStart(2,'0')+' '+(stage.slot===1?'拠点':stage.slot===10?'決戦':stage.storyBeat);
+  // The full stage name remains in the bottom ten-slot selector and tooltip.
+  // Tiny numbered geographic markers do not overlap on narrow phone screens.
+  const label=String(stage.slot).padStart(2,'0');
   return '<button type="button" class="pin stage-pin '+(game.stage===stage.id?'current-location ':'')+(unlocked?'':'locked ')+(selected===stage.id?'selected':'')+'" data-stage-pin="'+stage.id+
    '" style="left:'+spot.x.toFixed(2)+'%;top:'+spot.y.toFixed(2)+'%;--faction:'+(done?'#8bd9a6':unlocked?'#e9c989':'#7b8b95')+
-   '" aria-pressed="'+(selected===stage.id)+'" title="'+escapeHtml(stage.name)+'">'+(done?'✓ ':unlocked?'':'🔒 ')+escapeHtml(label)+'</button>';
+   '" aria-pressed="'+(selected===stage.id)+'" aria-label="'+escapeHtml('第'+stage.slot+'ステージ '+stage.name+(done?' クリア済み':unlocked?' 出撃可能':' 未解放'))+'" title="'+escapeHtml(stage.name)+'">'+(done?'✓':unlocked?escapeHtml(label):'🔒')+'</button>';
  }).join('');
 }
 
