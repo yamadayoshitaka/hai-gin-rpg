@@ -13,8 +13,9 @@
  */
 import * as THREE from 'three';
 
-export const BATTLE_FACE_PROPORTION_VERSION='true-transform-cranial-head-v1';
-export const BATTLE_CRANIAL_HEIGHT_FRACTION=0.78;
+export const BATTLE_FACE_PROPORTION_VERSION='true-vertex-skull-v2';
+// Real Blender source: lower 35% includes neck and wider shoulder/bust skirt.
+export const BATTLE_CRANIAL_HEIGHT_FRACTION=0.65;
 
 export function fitBattleArtistFaceToHead({
  faceRoot,faceMesh,headBounds,cranialFraction=BATTLE_CRANIAL_HEIGHT_FRACTION
@@ -23,7 +24,7 @@ export function fitBattleArtistFaceToHead({
     !Array.isArray(headBounds?.min)||!Array.isArray(headBounds?.max)||
     !faceRoot.parent?.isBone)
   throw Error('Real battle face, animated head bone and donor head bounds required');
- if(!(cranialFraction>=.7&&cranialFraction<=.85))
+ if(!(cranialFraction>=.58&&cranialFraction<=.78))
   throw Error('Invalid cranial head fraction');
  faceMesh.geometry.computeBoundingBox();
  const sourceGeometry=faceMesh.geometry.boundingBox;
@@ -40,15 +41,32 @@ export function fitBattleArtistFaceToHead({
  const b=target.getSize(new THREE.Vector3());
  if([a.x,a.y,a.z,b.x,b.y,b.z].some(x=>!Number.isFinite(x)||x<=.01))
   throw Error('Invalid battle source/donor cranial bounds');
- // The source bottom is a neck/bust skirt. The skull itself occupies the
- // upper ~78% of source head height. Using the whole 100% artificially
- // constrains the scale through the (unrelated) cervical region.
- const cranialHeight=a.y*cranialFraction;
- const srcCenter=source.getCenter(new THREE.Vector3());
- const cranialCenter=new THREE.Vector3(
-  srcCenter.x,source.max.y-cranialHeight*.5,srcCenter.z);
+ // Critical: this CC0 source has a 30.4cm FULL mesh width, but only
+ // ~19.9cm above the neck/bust band. Using the full width kept the face
+ // 25-35% too small even after correcting its vertical transform.
+ // Inspect REAL transformed vertices above the cervical cutoff; do not
+ // approximate the cranium from the full mesh AABB.
+ const cutoffY=source.min.y+a.y*(1-cranialFraction);
+ const positions=faceMesh.geometry.getAttribute('position');
+ if(!positions)throw Error('No actual sculpted facial vertices');
+ const cranialBounds=new THREE.Box3().makeEmpty();
+ const vertex=new THREE.Vector3();
+ let cranialSamples=0;
+ for(let i=0;i<positions.count;i++){
+  vertex.fromBufferAttribute(positions,i).applyMatrix4(toRoot);
+  if(vertex.y<cutoffY)continue;
+  cranialBounds.expandByPoint(vertex);
+  cranialSamples++;
+ }
+ if(cranialSamples<100||cranialBounds.isEmpty())
+  throw Error('No real cranial surface above the neck band');
+ const cranialSize=cranialBounds.getSize(new THREE.Vector3());
+ if(Math.min(cranialSize.x,cranialSize.y,cranialSize.z)<=.01)
+  throw Error('Invalid actual skull vertex bounds');
+ const cranialHeight=cranialSize.y;
+ const cranialCenter=cranialBounds.getCenter(new THREE.Vector3());
  const dstCenter=target.getCenter(new THREE.Vector3());
- const widthFit=b.x/a.x;
+ const widthFit=b.x/cranialSize.x;
  const heightFit=b.y/cranialHeight;
  // A real human head can be moderately wider than the older Quaternius
  // donor. Preserve natural proportions; never make the face a giant mask.
@@ -70,10 +88,12 @@ export function fitBattleArtistFaceToHead({
   attachedToRealHeadBone:true,
   sourceMeshTransformApplied:true,
   cervicalSkirtExcludedFromHeightFit:true,
-  cranialFraction,scale,previousScale:before,
-  widthRatio:+((a.x*scale)/b.x).toFixed(4),
+  shoulderWidthExcludedFromFit:true,
+  cranialFraction,cranialSamples,scale,previousScale:before,
+  widthRatio:+((cranialSize.x*scale)/b.x).toFixed(4),
   cranialHeightRatio:+((cranialHeight*scale)/b.y).toFixed(4),
-  sourceSize:a.toArray(),targetSize:b.toArray(),
+  sourceSize:a.toArray(),cranialSourceSize:cranialSize.toArray(),targetSize:b.toArray(),
+  sourceShoulderToSkullWidthRatio:+(a.x/cranialSize.x).toFixed(4),
   sourceCranialCenter:cranialCenter.toArray(),
   targetCenter:dstCenter.toArray(),
   lift,forward,
