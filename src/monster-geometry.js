@@ -881,7 +881,12 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    addFur(head,headGuides);
    if(s.id==='m001'){
      const maneStart=head.children.length;
-     addFur(head,fivefoldWindsweptMane(wolfKingMane));
+     // Extra root-mask pass on long guard hairs: no follicle on
+     // the visible eyes/nose/mouth, only on mane-supporting cheeks.
+     const mantle=wolfKingMane.filter(h=>!(
+       h.root[2]>.105&&Math.abs(h.root[0])<.153&&
+       h.root[1]>-.195&&h.root[1]<.266));
+     addFur(head,fivefoldWindsweptMane(mantle));
      // Mark the actual 5x geometry batches, not unrelated short face fur.
      for(const mesh of head.children.slice(maneStart)){
        if(!mesh.isMesh||!mesh.userData.furStrands)continue;
