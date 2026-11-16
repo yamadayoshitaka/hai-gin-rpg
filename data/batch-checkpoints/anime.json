@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "category": "anime",
+  "saved": [
+    {
+      "id": "shared-defeat-unverified-second-art",
+      "sourceFiles": [
+        "src/story-compact-comic.js"
+      ],
+      "commitSha": "a1fb254c72812b8c9c9900bf07998272c40e5b4a",
+      "qa": "unverified"
+    },
+    {
+      "id": "gameover-missing-death-art-fallback",
+      "sourceFiles": [
+        "src/story-compact-comic.js"
+      ],
+      "commitSha": "a1fb254c72812b8c9c9900bf07998272c40e5b4a",
+      "qa": "unverified"
+    }
+  ],
+  "remainingIds": [
+    "c01-s01..c01-s04 exact-gender WebP visual QA",
+    "200-stage compact canonical slot audit",
+    "shared-defeat-02 artwork verification",
+    "gameover two-image artwork verification"
+  ],
+  "nextAction": "Inspect actual death-art ID conventions and run gameplay rendering regression; verify first four stages' WebP bytes, dimensions, SHA and gender before reuse. Keep PR draft and do not merge without runtime QA."
+}
