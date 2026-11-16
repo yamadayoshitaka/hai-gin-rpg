@@ -49,6 +49,14 @@
       ],
       "commitSha": "45d806a3df64b86d5c6addc1de6fe3ef0d4b8a6a",
       "qa": "unverified"
+    },
+    {
+      "id": "shared-scalp-stretched-triangle-filter",
+      "sourceFiles": [
+        "src/character-system/hair-attachment-runtime.js"
+      ],
+      "commitSha": "1a564c056d5b895f689ee072e1b6cf3e9b1633a1",
+      "qa": "unverified"
     }
   ],
   "remainingIds": [
@@ -58,5 +66,5 @@
     "job05-male",
     "job05-female"
   ],
-  "nextAction": "Run Node syntax and male/female WebGL crown/front/rear QA for collapsed triangle filter; enumerate all human preset IDs and validate armor #438. No main merge before QA."
+  "nextAction": "Run syntax and WebGL crown/rear comparison on both sexes; enumerate all registered IDs; verify stretched-triangle threshold against real GLBs; continue Issue #438 armor rear plate. Do not merge without visual QA."
 }
