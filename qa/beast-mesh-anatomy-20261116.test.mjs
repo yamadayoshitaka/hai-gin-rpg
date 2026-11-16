@@ -68,11 +68,13 @@ for(const id of remeshed){
     id+' hunting head must be down near shoulder height');
   assert.ok(model.userData.pivots.jaw.position.y<=1.161,
     id+' mandible must align below lowered head');
-  const beforeMotion=[...['frontL','frontR','rearL','rearR'].map(key=>
-    model.userData.pivots['leg'+key].scale.y)];
-  assert.ok(beforeMotion.every(n=>n===1),id+' uncompressed bind pose');
+  // The prior walk-action assertion intentionally compressed the support
+  // limb. Reset to idle BEFORE asserting the clean neutral bind scale.
   startMonsterAction(model,'idle',0);
   animateMonsterModel(model,0);
+  const beforeMotion=[...['frontL','frontR','rearL','rearR'].map(key=>
+    model.userData.pivots['leg'+key].scale.y)];
+  assert.ok(beforeMotion.every(n=>n===1),id+' uncompressed idle pose');
   assert.ok(Math.abs(model.userData.pivots.legrearL.rotation.x)>.12,
     id+' needs a bent rear leg even when not moving');
   assert.ok(Math.abs(model.userData.pivots.lowerfrontL.rotation.x)>.12,
