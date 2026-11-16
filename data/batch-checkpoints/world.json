@@ -151,7 +151,7 @@
       "sourceFiles": [
         "src/object-catalog.js"
       ],
-      "commitSha": "1a40b8b998c814568e82493453afde3f265200fd",
+      "commitSha": "be2b0d89a14673eb2e48307b62918191668b668d",
       "qa": "unverified"
     },
     {
@@ -159,7 +159,7 @@
       "sourceFiles": [
         "src/object-catalog.js"
       ],
-      "commitSha": "1a40b8b998c814568e82493453afde3f265200fd",
+      "commitSha": "be2b0d89a14673eb2e48307b62918191668b668d",
       "qa": "unverified"
     },
     {
@@ -167,7 +167,7 @@
       "sourceFiles": [
         "src/object-catalog.js"
       ],
-      "commitSha": "1a40b8b998c814568e82493453afde3f265200fd",
+      "commitSha": "be2b0d89a14673eb2e48307b62918191668b668d",
       "qa": "unverified"
     }
   ],
@@ -205,5 +205,5 @@
     "timber_bridge_broken_001",
     "stone_bridge_broken_001"
   ],
-  "nextAction": "ゴミ箱/アーチ/石段のNode構文・3方向WebGL・Android FPSを確認する。残り木製見張り塔・石柱・松明・干し草等へ回帰を続行する。"
+  "nextAction": "新增3件は構文・カタログ回帰CIを監視し、失敗時は実ソースと旧テストの不一致を修正。WebGL前側上とAndroid FPSは未検証。残り見張り塔・石柱・松明等32件へ続行。"
 }
