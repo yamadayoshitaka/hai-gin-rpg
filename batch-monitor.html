@@ -223,7 +223,7 @@ function createCard(data){
   const win=window.open(link,'_blank','noopener,noreferrer');
   if(!win)window.location.assign(link);
  });
- $('cards').appendChild(c);elements.set(data.id,{detail,activity,log,swText,swBtn,badge,previewStatus,previewLink,progress:{current,stageGrid,progressTime,progressSummary,nextAction,progressEvidence},health});
+ $('cards').appendChild(c);elements.set(data.id,{detail,activity,log,swText,swBtn,badge,previewStatus,previewLink,targetInput:target.el,progress:{current,stageGrid,progressTime,progressSummary,nextAction,progressEvidence},health});
 }
 async function fetchJSON(url){const r=await fetch(url,{cache:'no-store',headers:{Accept:'application/vnd.github+json'}});if(!r.ok)throw Error('HTTP '+r.status);return r.json()}
 
@@ -410,7 +410,9 @@ async function updateWorldSix(){
    const opt=document.createElement('option');opt.value=o.id;opt.textContent=o.category+'｜'+o.name+'（'+o.id+'）';sel.appendChild(opt);
   }
   if(catalog.objects.some(o=>o.id===current))sel.value=current;
-  const setLink=()=>{$('worldObjectPreview').href='./world-quality-preview.html?object='+encodeURIComponent(sel.value)};
+  const setLink=()=>{ $('worldObjectPreview').href='./world-quality-preview.html?object='+encodeURIComponent(sel.value);
+   const world=elements.get('world');if(world?.targetInput)world.targetInput.value='object:'+sel.value;
+  };
   sel.onchange=setLink;setLink();
   $('worldObjectNote').textContent='正本 '+catalog.count+'種類を参照（ゲーム本体の造形を共通利用）。試作エディタの保存は別工程です。';
  }catch(e){$('worldObjectNote').textContent='正本取得に失敗：'+e.message}
