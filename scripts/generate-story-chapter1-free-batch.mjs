@@ -58,6 +58,21 @@ if(abs.priority!=='P0_ABSOLUTE_MUST_FOLLOW'||!abs.failClosed)throw Error('P0 con
 const stages=CAMPAIGN_STAGES.filter(s=>s.chapter===1);
 if(stages.length!==10)throw Error('Chapter 1 stage count drift');
 const assign=read('assets/story/stage-manifests/c01-s02-shot-assignments.json').entries;
+// Real production follows the 20-chapter compact game CG identity, not the
+// full archived 462-panel storyboard. Legacy images are retained for rollback.
+const compactManifest=read('data/story-compact-20chapters.json');
+if(compactManifest.kind!=='STORY_COMPACT_20_CHAPTERS_V1'||
+   compactManifest.stageCount!==200||compactManifest.expectedNormalImageSlots!==880)
+ throw Error('Compact production source mismatch; refuse to call Free provider');
+const chapterOne=compactManifest.chapters.find(ch=>ch.chapter===1);
+if(!chapterOne||chapterOne.stages.length!==10)throw Error('Expected ten compact Chapter 1 stages');
+const compactStages=new Map(chapterOne.stages.map(stage=>{
+ if(stage.beforeIds.length!==2||stage.afterIds.length!==2||
+    !Array.isArray(stage.chapterOpeningIds)||stage.chapterOpeningIds.length>(stage.slot===1?4:0))
+  throw Error('Invalid compact scene quotas '+stage.stageId);
+ return [stage.stageId,{pre:new Set([...stage.chapterOpeningIds,...stage.beforeIds]),
+  post:new Set(stage.afterIds)}];
+}));
 const masters=new Map(),pages=[],keys=new Set();
 for(const stage of stages){
  const man=read('assets/story/stage-manifests/'+stage.id+'.manifest.json');
@@ -88,6 +103,17 @@ for(const stage of stages){
  }
 }
 if(pages.length!==132||keys.size!==462)throw Error('Expected EXACTLY 132 pages and 462 canonical shots');
+function compactRequired(s){
+ const stage=compactStages.get(s.stage.id);
+ if(!stage)throw Error('Missing compact stage mapping '+s.stage.id);
+ if(s.edition==='pre')return stage.pre.has(s.shot.id);
+ if(s.edition==='post-victory'||s.edition==='post-town')return stage.post.has(s.shot.id);
+ // Shared defeat/gameover scenes, never unnecessary gendered legacy variants.
+ return false;
+}
+const compactQueue=pages.flatMap(pg=>pg.shots).filter(compactRequired);
+if(!compactQueue.length||!compactQueue.some(s=>s.stage.id==='c01-s04'))
+ throw Error('Compact queue missing canonical scenes');
 function status(s){
  // A separately owner-accepted, native and physically present live image supersedes
  // an old Cloudflare safety-block marker for the SAME scene. Never re-call a
@@ -117,8 +143,14 @@ function progress(){
   missing:all.filter(s=>['MISSING','LOW_NATIVE_RESOLUTION_REGENERATE','LEGACY_NATIVE_DEFECT_NEEDS_REGEN'].includes(status(s))).length,
   blocked:all.filter(s=>status(s).startsWith('BLOCKED')).map(s=>s.key),
   gameRegistrationsByThisTool:0,approvedByThisTool:0,
+  compactTargets:compactQueue.length,
+  compactSatisfiedUnapproved:compactQueue.filter(s=>
+    ['REGISTERED_NOT_P0_CERTIFIED','REAL_DRAFT_UNAPPROVED'].includes(status(s))).length,
+  compactStillMissing:compactQueue.filter(s=>![
+    'REGISTERED_NOT_P0_CERTIFIED','REAL_DRAFT_UNAPPROVED'].includes(status(s))).length,
   pageStates:pages.map(pg=>({pageTask:pg.num,stage:pg.stage,edition:pg.edition,gender:pg.gender,
-    shotKeys:pg.shots.map(s=>s.key),states:pg.shots.map(status)}))};
+    shotKeys:pg.shots.map(s=>s.key),states:pg.shots.map(status),
+    compactRequiredKeys:pg.shots.filter(compactRequired).map(s=>s.key)}))};
 }
 const out='qa-reports/story-stage-production/chapter1-free-render/';
 fs.mkdirSync(p(out),{recursive:true});
@@ -140,13 +172,18 @@ if(mode==='plan'){
  console.log(JSON.stringify({pages:132,scenes:462,registered:result.existingRegisteredUnapproved,
   drafts:result.generatedDraftUnapproved,missing:result.missing,blocked:result.blocked.length,
   startStage,throughStage,
-  nextTask:result.pageStates.find(pg=>pg.stage>=startStage&&pg.stage<=throughStage&&pg.states.some(s=>['MISSING','LEGACY_NATIVE_DEFECT_NEEDS_REGEN'].includes(s)))?.pageTask,apiRequests:0}));
+  compactTargets:result.compactTargets,compactMissing:result.compactStillMissing,
+  nextTask:result.pageStates.find(pg=>pg.stage>=startStage&&pg.stage<=throughStage&&pg.shotKeys.some(
+   (key,i)=>pg.compactRequiredKeys.includes(key)&&
+    !['REGISTERED_NOT_P0_CERTIFIED','REAL_DRAFT_UNAPPROVED'].includes(pg.states[i])))?.pageTask,
+  apiRequests:0}));
  process.exit(0);
 }
 const acct=process.env.CLOUDFLARE_ACCOUNT_ID||'',token=process.env.CLOUDFLARE_WORKERS_AI_API_TOKEN||'';
 if(process.env.CLOUDFLARE_FREE_PLAN_CONFIRMED!=='true'||!/^[a-f0-9]{32}$/i.test(acct)||token.length<20){
  const first=pages.filter(pg=>pg.stage>=startStage&&pg.stage<=throughStage)
-  .flatMap(pg=>pg.shots).find(s=>['MISSING','LEGACY_NATIVE_DEFECT_NEEDS_REGEN'].includes(status(s)));
+  .flatMap(pg=>pg.shots).find(s=>compactRequired(s)&&
+   ['MISSING','LEGACY_NATIVE_DEFECT_NEEDS_REGEN'].includes(status(s)));
  queueChatGPTHandoff('CLOUDFLARE_NOT_CONFIGURED',first,0);
  throw Error('FREE_ONLY: Missing GitHub Actions Free configuration; no API calls. ChatGPT manual queue emitted if an unregistered shot exists');
 }
@@ -239,10 +276,12 @@ summary('STARTED');
 let activeStage=null,stageGateStopped=false;
 for(const pg of pages){
  if(pg.stage<startStage||pg.stage>throughStage)continue;
- // Stage order is strict: unfinished, blocked or low-native Stage N prevents Stage N+1.
+ if(!pg.shots.some(compactRequired))continue;
+ // Stage-order gating applies only to CG identities that the game displays.
  if(activeStage!==null&&activeStage!==pg.stage){
   const incomplete=pages.filter(page=>page.stage===activeStage).flatMap(page=>page.shots)
-   .filter(shot=>!['REGISTERED_NOT_P0_CERTIFIED','REAL_DRAFT_UNAPPROVED'].includes(status(shot)));
+   .filter(shot=>compactRequired(shot)&&
+    !['REGISTERED_NOT_P0_CERTIFIED','REAL_DRAFT_UNAPPROVED'].includes(status(shot)));
   if(incomplete.length){
    stageGateStopped=true;
    console.log(JSON.stringify({stageGate:'STOP_BEFORE_NEXT_STAGE',stage:activeStage,
@@ -252,9 +291,10 @@ for(const pg of pages){
  }
  activeStage=pg.stage;
  if(committed>=maxPages){summary('PAGE_CAP');break;}
- const pending=pg.shots.filter(s=>['MISSING','LOW_NATIVE_RESOLUTION_REGENERATE','LEGACY_NATIVE_DEFECT_NEEDS_REGEN'].includes(status(s)));
+ const pending=pg.shots.filter(s=>compactRequired(s)&&
+  ['MISSING','LOW_NATIVE_RESOLUTION_REGENERATE','LEGACY_NATIVE_DEFECT_NEEDS_REGEN'].includes(status(s)));
  if(!pending.length)continue;
- const blockers=pg.shots.filter(s=>status(s).startsWith('BLOCKED'));
+ const blockers=pg.shots.filter(s=>compactRequired(s)&&status(s).startsWith('BLOCKED'));
  if(blockers.length)blocked.push(...blockers.map(s=>({page:pg.num,shotKey:s.key,reason:status(s)})));
  // A provider-blocked shot needs its own reviewed revision, but must not
  // prevent completing the OTHER distinct scenes on this review page.
