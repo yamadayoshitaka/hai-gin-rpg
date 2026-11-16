@@ -530,7 +530,7 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
  * @param {THREE.Mesh} head  owned sculpted female head
  * @param {{count?:number,color?:number,externalColliders?:Array}} options
  */
-export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalColliders=[],bodyCollisionResolver=null,lengthScale=1,styleId=DEFAULT_WIG_STYLE_ID,fineFringeMultiplier=1,visualFiberMultiplier=1,staticGroom=true,volumeProfile='natural',normalLayeredSingleMesh=false,gender='female'}={}){
+export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalColliders=[],bodyCollisionResolver=null,lengthScale=1,styleId=DEFAULT_WIG_STYLE_ID,fineFringeMultiplier=1,visualFiberMultiplier=1,staticGroom=true,volumeProfile='natural',normalLayeredSingleMesh=false,normalLayerCount=3,gender='female'}={}){
  if(!WIG_BASE_VOLUME_PROFILES[volumeProfile])
   throw Error('Unknown wig volume profile: '+volumeProfile);
  const style=getWigStyle(styleId);
@@ -1226,7 +1226,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   const nodes=[cap,locks,...root.children.filter(node=>
    node.name==='DETACHABLE_WIG_FINE_FIBRES'||node.userData?.styledHairGeometry)];
   const positions=[],normals=[],colors=[],indices=[],materials=[];
-  const normalLayers=3,normalStep=d.x*.0018;
+  const normalLayers=clamp(Math.trunc(normalLayerCount),1,3),normalStep=d.x*.0018;
   let vertexOffset=0;
   for(const node of nodes){
    const src=node.geometry;
