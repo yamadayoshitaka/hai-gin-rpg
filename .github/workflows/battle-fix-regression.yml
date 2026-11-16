@@ -67,6 +67,7 @@ jobs:
           node qa/mass-interior-unified-command-effects.test.mjs
           node qa/gpu-run-grounding-regression.test.mjs
           node qa/skirmish-dash-default.test.mjs
+          node qa/skirmish-realtime-tempo.test.mjs
           node qa/mass-dash-parity.test.mjs
           node qa/damage-number-distance-gait.test.mjs
           node qa/mass-upper-floor-pursuit-quality.test.mjs
