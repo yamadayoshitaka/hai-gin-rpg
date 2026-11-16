@@ -153,6 +153,14 @@ function fittedScalpSurface(model,bone,headBounds){
   // Discard them before building the scalp/fiber meshes for every hairstyle.
   const area2=nx*nx+ny*ny+nz*nz;
   if(!Number.isFinite(area2)||area2<1e-14)continue;
+  // A malformed skin triangle spanning the crown can become a floating dark
+  // plate even when its area is nonzero. Reject edges exceeding the measured
+  // cranium's diagonal, while retaining normal broad forehead polygons.
+  const headSpan=headBounds.getSize(new THREE.Vector3()).length();
+  const edgeAB=ux*ux+uy*uy+uz*uz;
+  const edgeAC=vx*vx+vy*vy+vz*vz;
+  const wx=local[c*3]-local[b*3],wy=local[c*3+1]-local[b*3+1],wz=local[c*3+2]-local[b*3+2];
+  if(Math.max(edgeAB,edgeAC,wx*wx+wy*wy+wz*wz)>headSpan*headSpan)continue;
   const outward=nx*(ax-center.x)+ny*(ay-center.y)+nz*(az-center.z);
   for(const v of (outward<0?[a,c,b]:[a,b,c])){
    const x=local[v*3],y=local[v*3+1],z=local[v*3+2];
