@@ -39,9 +39,10 @@ function scene(base,turns,{opening=false,sharedKind=null}={}){
  const first=turns[0];
  return freeze({...base,compactStory:true,isChapterOpening:opening,
   sharedSceneKind:sharedKind,
-  // Only the first defeat CG has a physically verified character-free shared original.
-  // Other outcome images remain per-stage or unregistered until safely replaced.
-  sharedArtAsset:sharedKind==='defeat' ? (/-m6$/.test(base.id)?'./assets/story/shared/shared-defeat-01.webp':'./assets/story/shared/shared-defeat-02.webp') : null,
+  // Do not force an unverified global defeat image over the stage/gender art.
+  // Shared assets require a separate byte/SHA and actor-free visual QA gate.
+  // Until that evidence is registered, preserve the exact original art identity.
+  sharedArtAsset:null,
   protagonistAssetPolicy:'exact-gender-or-proven-neutral-only',
   originalSceneId:base.id,originalComicCell:base.comicCell,
   originalSheetCount:base.sourceSheetCount??null,
@@ -60,8 +61,9 @@ function distribute(lines,num){
  });
 }
 function chapterSeen(context,chapter){
- return context.chapterOpeningSeen===true||
-  context?.storyFlags?.chapterOpenings?.[chapter]===true||
+ // Chapter-scoped persisted flags are authoritative. A global boolean would
+ // suppress the opening of every subsequent chapter after chapter one.
+ return context?.storyFlags?.chapterOpenings?.[chapter]===true||
   context?.storyFlags?.chapterOpenings?.[String(chapter)]===true;
 }
 export function compactComicForStage(stageId,phase,context={}){
@@ -99,11 +101,14 @@ export function compactComicForStage(stageId,phase,context={}){
  let sharedKind=null;
  if(phase==='post'&&original.edition.startsWith('post-defeat')){
    sharedKind='defeat';
-   batches=COMPACT_DEFEAT_LINES.map((str,i)=>[turn(base[i],str)]);
+   // Keep the canonical stage/branch dialogue in the UI; shared lines only
+   // introduce the common outcome. Never discard authored turns to save CGs.
+   batches=COMPACT_DEFEAT_LINES.map((str,i)=>[turn(base[i],str),...batches[i]]);
  }
  if(phase==='post'&&original.edition.startsWith('post-gameover')){
    sharedKind='gameover';
-   batches=COMPACT_GAMEOVER_LINES.map((str,i)=>[turn(base[i],str)]);
+   // The common death narration must not erase the original death screenplay.
+   batches=COMPACT_GAMEOVER_LINES.map((str,i)=>[turn(base[i],str),...batches[i]]);
  }
  for(let i=0;i<2;i++)scenes.push(scene(withCount(base[i]),batches[i],{sharedKind}));
  if(scenes.length!==(opening?6:2))throw Error('Compact frame quota violated');
