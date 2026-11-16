@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "asOf": "2026-11-16T09:53:53+09:00",
+  "asOf": "2026-11-16T09:40:32.562Z",
   "description": "工程別の実作業証跡。GitHub Actionsの成功や定期タスクの実行完了を、3D改修・PR・デプロイの完了と混同しない。これはGitHubに最後に記録されたスナップショットであり、ChatGPTサービスのライブ状態ではない。 追加のoperational欄は直近の証跡から特定した滞留原因と次の改善策であり、実行成功や品質達成の認定ではない。",
   "stageOrder": [
     "launch",
@@ -187,23 +187,53 @@
       }
     },
     "anime": {
-      "source": "ChatGPTタスクのスケジュール確認",
-      "lastRunAt": "2026-11-15T09:01:20.385653Z",
-      "status": "paused",
+      "source": "ChatGPT手動漫画バッチ検証＋GitHub Actions実測",
+      "lastRunAt": "2026-11-16T09:40:32.562Z",
+      "status": "work_incomplete",
       "carryover": true,
-      "subject": "漫画制作の定期タスクは停止中",
-      "summary": "GitHub実行制御がONでもChatGPT漫画定期タスクは停止中。Cloudflare日次無料生成は別の実行経路。",
-      "nextAction": "漫画の実登録・QA・公開の結果を日次GitHub Actionsの成果物と照合する。ChatGPT自動生成が稼働中とは表示しない。",
+      "subject": "Cloudflare無料APIは未到達：旧ステージ4女性m8の完了ゲートを新コンパクト仕様で修正",
+      "summary": "2026-11-16 15:49 JSTのCloudflare Free実ジョブ #43819432395：設定・認証の存在確認PASS、API実呼び出し0、新規画像0、停止理由STAGE_INCOMPLETE_DO_NOT_ADVANCE。旧第1章ステージ4女性勝利後m8が未登録で次ステージを阻止していたが、最新の20章/200ステージ・各ステージ前2＋後2コンパクト仕様ではm8は不要。生成器をコンパクト対象IDだけ処理する方式へ修正しmainにコミット（95196405c6）。追加のQAテストコミット（4ab5de7315）、CIの実行経路修正（0839339238,4b82310e91）。現在のCloudflare無料枠残数はAPI未呼出のため未確認。本日は1回/日制限により追加有料/無料生成リクエストを実施しない。旧462画像QA台帳の不足283・実未承認候補116は新コンパクト必要枠とは別の数であり合算しない。",
+      "nextAction": "無料バッチ次回許可日に、修正後のコンパクト専用キューのplan結果・QA成功を確認し、第1章ステージ5以降の不足CGでCloudflare APIを初回実呼出し→HTTP/生成画像/失敗理由を記録。無料枠429/4006/3036なら追加APIに切替えず、ユーザー主導ChatGPT画像制作へ引継ぐ。現行の再使用済CGを重複生成しない。",
       "steps": {
-        "launch": "skipped",
-        "code": "unknown",
-        "qa": "unknown",
-        "commit": "unknown",
-        "pr": "unknown",
-        "merge": "unknown",
-        "deploy": "unknown"
+        "launch": "done",
+        "code": "done",
+        "qa": "pending",
+        "commit": "done",
+        "pr": "skipped",
+        "merge": "skipped",
+        "deploy": "pending"
       },
-      "evidence": []
+      "evidence": [
+        {
+          "label": "15:49 Cloudflare無料画像生成バッチ（実API0、新画像0）",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/43819432395"
+        },
+        {
+          "label": "コンパクトCG限定キューの実コード修正",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/95196405c61a900803a6944f989545be0e5ac5ed"
+        },
+        {
+          "label": "ステージ4 m8除外とコンパクト選定QA",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/4ab5de73159b2f171c7cac3656e0707f15342485"
+        },
+        {
+          "label": "QA起動ワークフロー更新",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/4b82310e9160b8f3cd7f5ed9baa673d09b381e11"
+        }
+      ],
+      "operational": {
+        "lastRunOutcome": {
+          "newImages": 0,
+          "cloudflareApiRequests": 0,
+          "newRegistration": 0
+        },
+        "blockers": [
+          "旧ステージ4女性post-victory m8がコンパクト仕様では不要にもかかわらずステージゲートを阻害した（15:49バッチ）",
+          "無料APIへの実呼出0回。認証設定は存在するが現在の無料枠利用可否は未確認",
+          "旧462コマ生成器と新882枠（全20章）コンパクト表示の正本が不一致だった"
+        ],
+        "speedPlan": "旧コマを生成対象から除外し、既存のWebPは正しい性別・分岐に限り再利用。まず不足のコンパクトCGに限定し、無料1日1回の範囲で生成する。"
+      }
     }
   }
 }
