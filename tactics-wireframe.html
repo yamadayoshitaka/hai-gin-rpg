@@ -7742,10 +7742,39 @@ function drawSquadMiniMap(){
  }
  miniCtx.restore();
  battleHotspots.draw(miniCtx,{limit:24});
- const marker=(p,color,r=4)=>{miniCtx.fillStyle=color;miniCtx.beginPath();miniCtx.arc(p.x,p.z,r,0,Math.PI*2);miniCtx.fill()};
- for(const id of enemySquadIds){const center=squadCenter(id,1);if(center)marker(center,'#ff5d67',4.8)}
+ // The top-left HUD uses the same 1-1, 2-1 identifiers as the full radar.
+ const teamPinColors=['#59dcfa','#c7a0ff','#93e5a1'];
+ const squadNumberByGroup=new Map(),usedPinCenters=[];
+ for(const id of squadIds){
+  const group=normalizeArmyGroup(armyGroupBySquad[id]);
+  const row=squadNumberByGroup.get(group)||new Map();
+  row.set(String(id),row.size+1);squadNumberByGroup.set(group,row);
+ }
+ const numberedPin=(point,label,color,selected=false)=>{
+  let x=point.x,z=point.z;
+  // A small displacement prevents overlapping badges without moving real units.
+  for(let k=0;k<8&&usedPinCenters.some(p=>Math.hypot(p.x-x,p.z-z)<19);k++){
+   const angle=(k*137.5)*Math.PI/180,dist=11+Math.floor(k/4)*7;
+   x=Math.max(11,Math.min(WORLD_SIZE-11,point.x+Math.cos(angle)*dist));
+   z=Math.max(11,Math.min(WORLD_SIZE-11,point.z+Math.sin(angle)*dist));
+  }
+  usedPinCenters.push({x,z});
+  const w=Math.max(21,Math.min(37,label.length*8+8));
+  miniCtx.fillStyle=color;miniCtx.fillRect(x-w/2,z-9,w,18);
+  miniCtx.strokeStyle=selected?'#ffe38b':'#10283c';
+  miniCtx.lineWidth=selected?3:1.5;miniCtx.strokeRect(x-w/2,z-9,w,18);
+  miniCtx.fillStyle='#0b2031';miniCtx.font='bold 13px system-ui';
+  miniCtx.textAlign='center';miniCtx.textBaseline='middle';miniCtx.fillText(label,x,z);
+ };
+ for(const [i,id] of enemySquadIds.entries()){
+  const center=squadCenter(id,1);
+  if(center)numberedPin(center,'敵'+(i+1),'#f56d6e');
+ }
  const ordered=[...squadOrderRegistry].filter(([,value])=>Number.isFinite(value.x)&&Number.isFinite(value.z));
- $('miniMapCurrent').textContent=selectedSquadId?`${squadName(selectedSquadId)}　${squadOrderText(selectedSquadId)}`:
+ $('miniMapCurrent').textContent=selectedSquadId?
+  '第'+normalizeArmyGroup(armyGroupBySquad[selectedSquadId])+'班-'+
+  (squadNumberByGroup.get(normalizeArmyGroup(armyGroupBySquad[selectedSquadId]))?.get(String(selectedSquadId))||1)+
+  ' '+squadName(selectedSquadId)+'　'+squadOrderText(selectedSquadId):
   '指示中 '+ordered.length+'隊 / '+squadIds.length+'隊（ほかは自動行動）';
  for(const id of squadIds){
   const center=squadCenter(id);if(!center)continue;
@@ -7755,7 +7784,9 @@ function drawSquadMiniMap(){
    miniCtx.strokeStyle=id===selectedSquadId?'#ffe78a':'#83d7f0';miniCtx.lineWidth=id===selectedSquadId?2.4:1.25;miniCtx.stroke();
    miniCtx.strokeStyle='#ffdf75';miniCtx.lineWidth=2.2;miniCtx.beginPath();miniCtx.arc(target.x,target.z,7,0,Math.PI*2);miniCtx.stroke();
   }
-  marker(center,id===selectedSquadId?'#ffe47b':'#56dcff',id===selectedSquadId?7:4.6);
+  const group=normalizeArmyGroup(armyGroupBySquad[id]);
+  numberedPin(center,group+'-'+(squadNumberByGroup.get(group)?.get(String(id))||1),
+   teamPinColors[Math.max(0,Math.min(2,group-1))],id===selectedSquadId);
  }
  // A bright crosshair indicates the part of the battlefield at the centre
  // of the 3D camera, even when the full scene cannot fit on the phone.
