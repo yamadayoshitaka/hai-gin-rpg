@@ -1,8 +1,11 @@
 // Close exposed imported Ranger/Peasant torso skin with a photographed cloth
 // lining IN THE EXISTING source material slot. No new mesh, draw call, rig
 // or repeated CPU work. Hands, face and neck meshes remain untouched.
-export function shouldClothLineBattleTorso({quality='',meshName='',materialName='',role=''}={}){
- return quality==='battle'&&role==='skin'&&
+export function shouldClothLineBattleTorso({quality='',meshName='',materialName='',role='',jobId=''}={}){
+ // Thief studio and battle must agree on the same opaque skinned back surface.
+ // Other studio occupations retain their own original material mapping.
+ const closedBack=quality==='battle'||(quality==='preview'&&jobId==='job06');
+ return closedBack&&role==='skin'&&
   /(?:^|_)(?:ranger|peasant)_body(?:_|$)/i.test(String(meshName))&&
   /(?:mi_regular|skin|flesh|nude)/i.test(String(materialName));
 }

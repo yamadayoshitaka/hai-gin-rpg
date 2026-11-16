@@ -250,7 +250,14 @@ export async function attachCharacterHair({model,job,sex='male',style=null,color
  const tint=color==null?HAIR_COLORS[Number(id)%HAIR_COLORS.length]:Number(color);
  const prefix=sex==='female'?'female':'male';
  const paths=[0,1,2].map(lod=>`./assets/characters/hair-fitted-v1/${prefix}_hair_${id}_lod${lod}.glb`);
- const resources=await Promise.all(paths.map(load));
+ // Failure of an optional medium/far GLB must not erase the whole hairstyle.
+ // Reuse the nearest successfully loaded authored geometry for that LOD.
+ // A THREE.LOD displays only one level, so draw-call count is unchanged.
+ const loaded=await Promise.all(paths.map(path=>load(path).catch(()=>null)));
+ const firstAvailable=loaded.find(Boolean);
+ if(!firstAvailable)throw Error('髪モデルの全LOD読み込みに失敗: '+id);
+ const resources=loaded.map((resource,index)=>resource||
+   loaded.slice(0,index).reverse().find(Boolean)||firstAvailable);
  const bone=headBone(model),size=measureHeadLocalBounds(model,bone);
  const lod=new THREE.LOD(),assetBox=new THREE.Box3(),hairMeshes=[];
  resources.forEach((resource,index)=>{

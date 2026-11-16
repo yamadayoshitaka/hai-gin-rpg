@@ -5,16 +5,16 @@
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {clone} from 'three/addons/utils/SkeletonUtils.js';
-import {JOBS,outfitStyle,loadPhotoMaterials,createDetailedOutfit} from '../outfit-maintenance-model.js?v=20261117-rogue-backpanel2';
+import {JOBS,outfitStyle,loadPhotoMaterials,createDetailedOutfit} from '../outfit-maintenance-model.js?v=20261117-armored-backfix3';
 import {EQUIPMENT_TYPES,equipmentForJob} from './equipment-catalog.js?v=4.4.41';
 import {attachSegmentedArmor} from './segmented-armor-runtime.js?v=4.5.2';
 import {consolidateBattleArmor} from './armor-batch-runtime.js?v=4.5.0';
 import {replacedPlateBaseLegMesh} from './armor-mesh-classification.js?v=4.5.0';
-import {attachCharacterHair} from './hair-attachment-runtime.js?v=20261116-silhouette-lod1';
+import {attachCharacterHair} from './hair-attachment-runtime.js?v=20261117-lod-load-fallback2';
 import {attachArmorHeraldry} from './armor-heraldry-runtime.js?v=4.4.61';
 import {attachFittedCloth} from './fitted-cloth-runtime.js?v=4.5.2';
 import {outfitSurfaceRole,cleanOutfitPhotoKind} from './outfit-surface-policy.js?v=4.4.43';
-import {shouldClothLineBattleTorso,applyBattleTorsoLining} from './battle-torso-lining.js?v=20261116-torso1';
+import {shouldClothLineBattleTorso,applyBattleTorsoLining} from './battle-torso-lining.js?v=20261117-studio-thief-lining2';
 import {fitEyebrowMeshesToFace} from './eyebrow-fit-runtime.js?v=4.4.61';
 import {attachRealisticFace} from './facial-blink-runtime.js?v=1';
 import {sourceGripFromBounds} from './equipment-grip-policy.js?v=4.4.41';
@@ -515,7 +515,7 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
       // skin in what should be a closed battle tunic. Repurpose only these
       // slots as opaque, photographed woven lining. Same mesh + material
       // group; no additional draw or skinned rig. Keep actual hands/neck.
-      if(shouldClothLineBattleTorso({quality,meshName:n,materialName:m.name,role})){
+      if(shouldClothLineBattleTorso({quality,meshName:n,materialName:m.name,role,jobId})){
        applyBattleTorsoLining(copy,{
         texture:textures['linen-fine']||textures.linen,
         tint:style.armor?0x718095:dressedStyle.tint,side:THREE.DoubleSide
@@ -523,12 +523,11 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
        opaqueTorsoLiningMaterials++;
        return copy;
       }
-      // Rogue/Thief Ranger body primitives were still using a partly
-      // transparent source material, so back muscles showed through the
-      // tunic even at close camera distance. Cloth and opaque lining must
-      // be enforced on BOTH sides of the existing skinned body surface.
-      // This reuses the material slot: zero added meshes/draw calls.
-      if(quality==='battle'&&jobId==='job06'&&role==='body'){
+      // The Ranger source has semi-transparent green-black fabric segments.
+      // Both the thief wardrobe studio and battle must use the same opaque
+      // leather material; otherwise the exposed anatomical torso appears
+      // skin-coloured in battle. Reuse the skinned slot: zero extra draw calls.
+      if(jobId==='job06'&&role==='body'){
        const leather=textures.leather||textures['linen-fine']||textures.linen;
        if(leather){copy.map=leather;copy.bumpMap=leather;copy.bumpScale=.0006}
        copy.alphaMap=null;copy.transparent=false;copy.opacity=1;

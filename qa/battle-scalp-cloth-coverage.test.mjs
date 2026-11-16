@@ -21,6 +21,22 @@ for(const [quality,meshName,materialName,role] of [
 ]){
  assert.equal(shouldClothLineBattleTorso({quality,meshName,materialName,role}),false);
 }
+// The studio must not show the thief's skin-coloured source torso behind
+// the same closed leather garment that the battle renderer uses.
+assert.equal(shouldClothLineBattleTorso({
+ quality:'preview',meshName:'Male_Ranger_Body',
+ materialName:'MI_Regular_01',role:'skin',jobId:'job06'
+}),true);
+assert.equal(shouldClothLineBattleTorso({
+ quality:'preview',meshName:'Male_Ranger_Body',
+ materialName:'MI_Regular_01',role:'skin',jobId:'job01'
+}),false);
+// Armored backs must have exactly one fitted rear surface.
+const modelSource=readFileSync(new URL('../src/outfit-maintenance-model.js',import.meta.url),'utf8');
+assert.match(modelSource,/if\(!style\.armor\)\{[\s\S]*?add\('complete-back-tunic-lining'/,
+ 'Only non-armored jobs create a separate back-tunic panel');
+assert.match(modelSource,/const eligible=band\.length>=9\?band:torsoSamples/,
+ 'Rear plate sampling remains local in X and Y to avoid a rectangular slab');
 const texture=new THREE.Texture();
 const source=new THREE.MeshPhysicalMaterial({
  transparent:true,opacity:.20,alphaTest:.45,depthWrite:false,
@@ -62,7 +78,10 @@ assert.match(hair,/shortLength=cutKind==='buzz'\?\(battleStableCoverage\?\.088:\
 assert.match(hair,/mesh\.userData\.shortBackCoverageStripCount=shortBackStrips/);
 assert.match(rig,/applyBattleTorsoLining\(copy/);
 assert.match(rig,/opaqueTorsoLiningMaterials\+\+/);
+assert.match(rig,/if\(jobId==='job06'&&role==='body'\)/,
+ 'Thief must retain the same opaque skinned leather in studio and battle');
+
 assert.match(game,/battle-artist-head-graft\.js\?v=20261117-thief-scalp-v8/);
-assert.match(game,/rigged-outfit-runtime\.js\?v=20261117-real-back-v5/);
+assert.match(game,/rigged-outfit-runtime\.js\?v=20261117-backhair-v6/);
 source.dispose();texture.dispose();
 console.log('PASS: atomic wig upgrades, short scalp coverage and opaque torso from same source draw slots');

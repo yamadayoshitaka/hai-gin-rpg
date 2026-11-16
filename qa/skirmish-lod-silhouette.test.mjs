@@ -33,10 +33,13 @@ assert.match(game,/prewarmedStudioGrooms/);
 assert.match(game,/hairNow-lastStudioHairSelectionAt>=280/);
 assert.match(game,/bakeInterval=p95>33\?1400:p95>25\?850:350/);
 assert.match(hair,/lod\.addLevel\(scene,index===0\?0:index===1\?14:80\)/);
+assert.match(hair,/const firstAvailable=loaded\.find\(Boolean\)/,
+ 'A missing optional LOD must not leave a character bald');
+assert.match(hair,/const resources=loaded\.map\(/);
 assert.match(outfit,/useSourceSkinnedLegs=\(lowDetail\|\|studioPreferSkinnedLegs\)/,
  'Keep imported 65-bone legs instead of pipe-shaped LOD placeholders');
 assert.match(outfit,/retainedAsSkinnedTrouser=true/);
-assert.match(game,/rigged-outfit-runtime\.js\?v=20261117-real-back-v5/);
+assert.match(game,/rigged-outfit-runtime\.js\?v=20261117-backhair-v6/);
 assert.match(game,/skirmish-distance-impostors\.js\?v=20261116-screenpx1/);
-assert.match(outfit,/hair-attachment-runtime\.js\?v=20261116-silhouette-lod1/);
+assert.match(outfit,/hair-attachment-runtime\.js\?v=20261117-lod-load-fallback2/);
 console.log('PASS: 50v50 projected-size photo gate, stable identical hairstyles, skinned legs and FPS-aware prewarm');
