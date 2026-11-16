@@ -12,7 +12,8 @@ const skinned=make({isSkinnedMesh:true});
 const morph=make({morphTargetInfluences:[0,.6]});
 const shaderDeform=make({material:{displacementMap:{}}});
 const forced=make({userData:{forceFrustumVisible:true}});
-const root={traverse(fn){[armor,weapon,cloth,skinned,morph,shaderDeform,forced].forEach(fn)}};
+const eyelashes=make({name:'eyelash-root'});
+const root={traverse(fn){[armor,weapon,cloth,skinned,morph,shaderDeform,forced,eyelashes].forEach(fn)}};
 const before={geometry:armor.geometry,material:armor.material};
 const stats=enableBattleRigidFrustumCulling(root);
 assert.equal(stats.eligible,3);
@@ -25,6 +26,7 @@ assert.equal(skinned.frustumCulled,false,'skinned body must preserve existing an
 assert.equal(morph.frustumCulled,false,'morphed hair/face stays in original rendering path');
 assert.equal(shaderDeform.frustumCulled,false,'displaced materials cannot be culled on bind bounds');
 assert.equal(forced.frustumCulled,false);
+assert.equal(eyelashes.frustumCulled,false,'facial microgeometry remains unconditionally visible');
 assert.equal(armor.geometry,before.geometry);
 assert.equal(armor.material,before.material);
 assert.equal(armor.castShadow,true,'shadow fidelity preserved');
@@ -34,7 +36,8 @@ assert.equal(geometry.computations,1,'only one geometry bound computation for sh
 assert.deepEqual(countBattleRigCulling([{rigidCullStats:stats},{}]),{...stats,rigs:1});
 const game=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
 assert.match(game,/a\.rigidCullStats=enableBattleRigidFrustumCulling\(a\.character\.object3D\)/);
-assert.match(game,/if\(!TOWN_MODE&&!massSim\)/,'1000vs1000 and town renderers remain unchanged');
+assert.match(game,/if\\(!TOWN_MODE&&!massSim&&RIGID_CULLING_ENABLED\\)/,'1000vs1000 and town renderers remain unchanged');
+assert.match(game,/battleParams\\.get\\('rigCull'\\)!=='0'/,'An A/B control can explicitly disable rigid culling');
 assert.match(game,/if\(visual\.update\)\{a\.character\.update/,'original rig actions preserved');
 assert.match(game,/GPU '\+\(perf\.gpuFrameMs/,'GPU timing visible to diagnose WebGL bottlenecks');
 assert.match(game,/getBattleRigCullingQA/);
