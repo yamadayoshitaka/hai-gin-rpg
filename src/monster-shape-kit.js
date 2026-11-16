@@ -411,12 +411,12 @@ export function createSculpture(spec,detail='high'){
    for(let i=0;i<p.count;i++){
      const x=p.getX(i),y=p.getY(i),z=p.getZ(i);
      if(z<.07)continue;
-     const nx=(Math.abs(x)-.174)/.118;
+     const nx=(Math.abs(x)-.146)/.110;
      const ny=(y-.115)/.095;
      const q=nx*nx+ny*ny;
      if(q>2.65)continue;
      const front=Math.min(1,Math.max(0,(z-.07)/.21));
-     const inset=.056*Math.exp(-2.4*q)*front;
+     const inset=.067*Math.exp(-2.4*q)*front;
      if(inset<.00002)continue;
      p.setZ(i,z-inset);sculpted++;maxInset=Math.max(maxInset,inset);
    }
@@ -438,7 +438,9 @@ export function createSculpture(spec,detail='high'){
    // Inset both paired sockets toward the frontal skull by ~14%.
    // The m001 eyes must sit in the cranium, not on its cheek outline.
    // Both optics, lid and recess use exactly one medial canid center.
-   const center=[side*.174,.116,.278];
+   // Place both optical sockets on the forward muzzle wedge, rather than
+   // the separated left/right outer surface. Fit the optic closer to skin.
+   const center=[side*.146,.116,.232];
    const slices=detail==='source'?40:detail==='high'?32:20;
    const bands=detail==='source'?5:3;
    // Shape follows the inner/outer canthus; the outside corner sits higher.
@@ -482,11 +484,13 @@ export function createSculpture(spec,detail='high'){
    // A slim shadowed eye fissure, not an externally projecting liner.
    const orbital=patch('shadow','beast-orbit',.064,.024,.001,.0005);
    orbital.userData.socketApertureHalfWidth=.064;
+   orbital.userData.m001OrbitalCenterX=center[0];
    orbital.userData.socketApertureHalfHeight=.024;
    const iris=patch('eye','eye',.0295,.023,.0035,.0015,[-.008,0,0]);
    iris.userData.generatorFittedIris=true;
    iris.userData.openingHeight=.046;
    iris.userData.recessedOpticDepth=.0035;
+   iris.userData.m001OrbitalCenterX=center[0];
    // Wolves have rounded pupils, not a cat's vertical slit.
    const pupil=patch('shadow','beast-pupil',.011,.013,.006,.001,[-.008,0,0]);
    pupil.userData.roundCanidPupil=true;
