@@ -148,6 +148,38 @@ for(const id of remeshed){
       id+' hip height must be adjusted along with limb length');
   }
   if(id==='m001'){
+    // Compare the real geometry widths, not the website's screenshot.
+    const profile=snout[0].geometry.getAttribute('position');
+    const nose=nasal[0].geometry.getAttribute('position');
+    const halfWidthAt=(a,z,tolerance)=>{
+      let max=0,count=0;
+      for(let n=0;n<a.count;n++)if(Math.abs(a.getZ(n)-z)<=tolerance){
+        max=Math.max(max,Math.abs(a.getX(n)));count++;
+      }
+      assert.ok(count>5,'missing anatomical nose cross-section z='+z);
+      return max;
+    };
+    assert.ok(halfWidthAt(profile,.125,.009)<.14,
+      'm001 muzzle root must be close to half of former 0.237 width');
+    assert.ok(halfWidthAt(nose,.608,.01)<.085,
+      'm001 black rhinarium must shrink to nearly half its 0.145 half-width');
+    assert.ok(model.userData.wolfKingFurDensityMultiplier===2,
+      'm001 must have user-approved 2x, not 10x, coat');
+    const allCoats=meshes.filter(m=>m.userData.furStrands);
+    assert.ok(allCoats.every(m=>m.userData.furStrands%2===0),
+      '2x growth must pair each strand in every near-LOD coat region');
+    const blackPupils=meshes.filter(m=>m.name==='beast-pupil'&&
+      m.userData.blackPupilVisible);
+    assert.equal(blackPupils.length,2,
+      'm001 requires two visually exposed solid black slit pupils');
+    const rims=meshes.filter(m=>m.userData.anatomicalAlmondEyelid);
+    assert.equal(rims.length,2);
+    assert.ok(rims.every(m=>{
+      const p=m.geometry.getAttribute('position');let w=0;
+      for(let k=0;k<p.count;k++)
+        w=Math.max(w,Math.abs(p.getX(k)-m.parent?.position?.x));
+      return p.count>=64;
+    }), 'm001 must keep thin sculpted almond eyelids');
     const front=model.userData.pivots.legfrontL;
     const rear=model.userData.pivots.legrearL;
     assert.ok(Math.abs(front.position.x)>=.39,
