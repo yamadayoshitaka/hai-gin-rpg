@@ -48,6 +48,10 @@ function runLane(lane){
   details.push('PBR overrides are bounded and shared with production mesh factory');
  }
  if(lane==='interaction'){
+  const game=file('tactics-wireframe.html');
+  assert(game.includes('OBJECT_CATALOG,createCatalogObject'),'Game must import the same runtime model catalog as studio');
+  assert(game.includes('const meta=OBJECT_CATALOG[id]'),'Game placement must read authoritative footprint dimensions');
+  assert(game.includes('batchStaticStageDecorations(stageObjects'),'Game must instantiate the same optimized catalog meshes');
   let count=0;
   for(const identity of Object.values({...STAGE_IDENTITIES,...TERRITORY_IDENTITIES})){
    for(const [id,x,z] of identity.landmarks){
@@ -95,7 +99,7 @@ function integrate(){
   objectIds:objects.map(x=>x.id),newObjectIds:newIds,
   lanes:Object.fromEntries(results.map(r=>[r.lane,{status:r.status,details:r.details}])),
   runtimeSource:'src/object-catalog.js',
-  gameIntegration:'src/stage-library.js + src/stage-static-instancing.js',
+  gameIntegration:'tactics-wireframe.html + src/stage-library.js + src/stage-static-instancing.js',
   automaticMergeScope:'deterministic index and QA report only',
   visualQualityApproved:false,androidFpsVerified:false,
   note:'A 2D reference, WebGL screenshot or passing source audit does not prove game fidelity, visual quality or Android 1000v1000 FPS.'};
