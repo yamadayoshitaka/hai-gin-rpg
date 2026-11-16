@@ -3990,12 +3990,17 @@ function moveActor(a,goal,dt,stop){
    // Units pursuing a goal OUTSIDE the room use the real doorway.
    const doorwayCandidates=[Math.floor(b.center),Math.ceil(b.center)];
    let step=null;
+   // Maintain one doorway target until its incremental A* completes.
+   // Switching to the next door (or to staging) in the same AI tick would
+   // destroy the saved frontier and strand units forever at a busy entrance.
+   doorwayCandidates.sort((x,y)=>Number(y===a._exitRoute?.goalX)-Number(x===a._exitRoute?.goalX));
    for(const x of doorwayCandidates){
-    // Path to the door threshold; occupied exits are retried when cleared.
     const candidate=exitPathStep(a,{x,z:b.bounds.maxZ+1});
     if(candidate&&availableCell(candidate.x,candidate.z,a)){step=candidate;break}
+    if(a._exitRoute?.search)break;
    }
    if(step&&startCellMove(a,step.x,step.z)){a.jumping=false;return}
+   if(a._exitRoute?.search){a.poseMoving=false;return;}
    // If the doorway is occupied, stage units near it without overlapping.
    const staging={x:Math.round(b.center),z:b.bounds.maxZ-1};
    if(a.cell.x!==staging.x||a.cell.z!==staging.z){
@@ -4044,6 +4049,9 @@ function moveActor(a,goal,dt,stop){
    if(path&&availableCell(path.x,path.z,a)){
     if(startCellMove(a,path.x,path.z)){a.jumping=false;return}
    }
+   // If the path is still being planned, keep its frontier alive.
+   // Do not initiate an unrelated recovery A* that steals the shared budget.
+   if(a._exitRoute?.search){a.poseMoving=false;return;}
    // Congested bridge: allow a short detour around the blocked first tile.
    // Do not send actors onto the river or teleport through other units.
    if(path){
