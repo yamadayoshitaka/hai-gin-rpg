@@ -207,6 +207,8 @@ export function createTargetedStrategyUi({
   ctx.fillStyle='#19394c';ctx.fillRect(0,0,width,height);
   if(radar)ctx.drawImage(radar,0,0,width,height);
   const options=selectableRadarTargets(),eligible=new Set(options.map(x=>String(x.id)));
+  const allyMeta=new Map(allSquadGroups().map(x=>[String(x.id),x]));
+  const enemyMeta=new Map(getEnemyTargets().map((x,i)=>[String(x.id),i+1]));
   const side=step==='scope'||chosenItem?'ally':type()==='enemy'?'enemy':type()==='object'?'object':'none';
   const radarAll=[...getRadarTargets(),...options.map(x=>({...x,team:x.team??side}))];
   const combined=[...new Map(radarAll.map(x=>[String(x.team??'object')+':'+String(x.id),x])).values()];
@@ -237,8 +239,10 @@ export function createTargetedStrategyUi({
     chosenItem?group==='ally':
     type()==='enemy'?group==='enemy':
     type()==='object'?group==='object':false);
-   const selected=selectable&&(step==='scope'?selectedSquads:selectedTargets).has(String(t.id));
-   const color=group==='enemy'?'#f56d6e':group==='ally'?'#59dcfa':'#f6cd75';
+   const meta=allyMeta.get(String(t.id));
+   const selected=selectable&&(step==='scope'?(scope==='group'?
+     String(meta?.groupId)===String(groupId):selectedSquads.has(String(t.id))):selectedTargets.has(String(t.id)));
+   const color=group==='enemy'?'#f56d6e':group==='ally'?groupColor(meta?.groupId??t.groupId):'#f6cd75';
    if(Math.hypot(px-baseX,py-baseY)>4){
     ctx.strokeStyle='#a8c5d788';ctx.lineWidth=1;ctx.beginPath();
     ctx.moveTo(baseX,baseY);ctx.lineTo(px,py);ctx.stroke();
@@ -246,13 +250,22 @@ export function createTargetedStrategyUi({
    ctx.fillStyle=color;ctx.beginPath();ctx.arc(px,py,selectable?13:9,0,Math.PI*2);ctx.fill();
    ctx.strokeStyle=selected?'#fff6bc':selectable?'#edf8ff':'#173041';
    ctx.lineWidth=selected?5:2;ctx.beginPath();ctx.arc(px,py,selected?16:selectable?14:10,0,Math.PI*2);ctx.stroke();
-   const n=group==='enemy'?'敵':group==='ally'?'味':'物';
-   if(selectable){
-    ctx.fillStyle='#09202d';ctx.font='bold 12px system-ui';ctx.textAlign='center';
-    ctx.textBaseline='middle';ctx.fillText(n,px,py);
-    hotspots.push({id:String(t.id),x:px,y:py,team:group,radius:21});
+   const n=group==='enemy'?'敵'+(enemyMeta.get(String(t.id))||''):
+    group==='ally'?(meta?meta.groupId+'-'+meta.rank:'味'):'物';
+   ctx.fillStyle='#09202d';ctx.font='bold 10px system-ui';ctx.textAlign='center';
+   ctx.textBaseline='middle';ctx.fillText(n,px,py);
+   if(selectable)hotspots.push({id:String(t.id),groupId:meta?.groupId,
+    x:px,y:py,team:group,radius:21});
+   if(selected&&group==='ally'&&meta){
+    const name='第'+meta.groupId+'班 '+String(meta.job||meta.label||'分隊').replace(/^.*・/,'');
+    ctx.font='bold 11px system-ui';
+    const labelW=Math.min(width-12,Math.max(72,ctx.measureText(name).width+12));
+    const lx=Math.min(width-labelW-3,Math.max(3,px-labelW/2));
+    const ly=py<height-34?py+19:py-34;
+    ctx.fillStyle='#091b2eea';ctx.fillRect(lx,ly,labelW,16);
+    ctx.fillStyle='#fff5d1';ctx.fillText(name,lx+labelW/2,ly+8);
    }
-  }
+   }
   radarHotspots=hotspots;
   if(mapPoint&&type()==='map'){
    const x=mapPoint.x/size*width,y=mapPoint.z/size*height;
@@ -382,7 +395,9 @@ export function createTargetedStrategyUi({
    .filter(h=>h.distance<=h.radius).sort((a,b)=>a.distance-b.distance)[0];
   if(!nearest){error='赤または青の部隊マーカーを直接タップしてください';render();return;}
   if(step==='scope'){
-   selectedSquads=new Set([nearest.id]);preferredSquad=nearest.id;
+   const source=allSquadGroups().find(s=>String(s.id)===nearest.id);
+   if(source&&String(source.groupId)!==String(groupId))selectGroup(source.groupId);
+   if(scope==='squad'){selectedSquads=new Set([nearest.id]);preferredSquad=nearest.id;}
   }else if(chosenItem)selectedTargets=new Set([nearest.id]);
   else if(selectedTargets.has(nearest.id))selectedTargets.delete(nearest.id);
   else selectedTargets.add(nearest.id);
