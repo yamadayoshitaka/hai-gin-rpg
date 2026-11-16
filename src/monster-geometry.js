@@ -954,8 +954,10 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
       // actual small eyes, nose bridge, lips or front muzzle.
       // Fur guide doubling adds a ~0.01 tangential offset. Leave an
       // additional safety margin so no shifted strand enters the bare mask.
-      if(z>.078&&x<.186&&y>-.223&&y<.293)return false;
-      return !(z>.264&&x<.203&&y>-.209&&y<.287);
+      if(z>.078&&x<.222&&y>-.223&&y<.293)return false;
+      // No pale root tufts above the recessed orbital line.
+      if(z>.105&&y>.075&&x<.315)return false;
+      return !(z>.248&&x<.255&&y>-.209&&y<.287);
    }):[];
    // Groomed layers follow the reference coat: short underfur, medium
    // body guard hairs and a fuller lion-like but compact cheek/throat ruff.
@@ -964,11 +966,13 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
      const base=h.tip.map((v,k)=>v-h.root[k]);
      const len=Math.hypot(...base)||.001;
      const tier=.88+.20*((i*17%19)/18);
-     const target=Math.min(.34,Math.max(.095,len*1.20*tier));
+     const target=Math.min(.293,Math.max(.085,len*1.06*tier));
      const throat=h.root[1]<-.19;
-     const wind=[base[0]*(throat?.73:.48),
-       base[1]*(throat?1.15:.78)-(throat?.20:.045)*len,
-       base[2]*.80-len*(throat?.09:.32)];
+     // Shear broad side fans toward the shoulder; throat guard hair
+     // falls under the mandible rather than forming rigid hanging blades.
+     const wind=[base[0]*(throat?.27:.32),
+       -Math.abs(base[1])*(throat?.90:.48)-len*(throat?.42:.22),
+       base[2]*.46-len*(throat?.23:.39)];
      const n=Math.hypot(...wind)||1;
      const delta=wind.map(v=>v*target/n);
      const tip=h.root.map((v,k)=>v+delta[k]);
@@ -984,39 +988,36 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
      ...[-1,1].flatMap(side=>generateCanineFurGuides({
        center:[side*.176,-.148,-.082],radii:[.138,.195,.203],
        rows:source?37:25,around:source?50:34,
-       length:.251,width:.018,seed:v*37+281+side,
+       length:.176,width:.012,seed:v*37+281+side,
        minVertical:-.99,maxVertical:.29,gravity:.51
      }).filter(h=>side*h.root[0]>.145&&h.root[1]<.023&&h.root[2]<.15)),
      ...generateCanineFurGuides({
        center:[0,-.260,-.158],radii:[.229,.158,.195],
        rows:source?39:27,around:source?52:36,
-       length:.289,width:.020,seed:v*41+317,
+       length:.264,width:.014,seed:v*41+317,
        minVertical:-.99,maxVertical:-.02,gravity:.67
      }).filter(h=>h.root[1]<-.232&&h.root[2]<.08),
      ...generateCanineFurGuides({
        center:[0,-.128,-.245],radii:[.255,.186,.194],
        rows:source?30:20,around:source?44:30,
-       length:.227,width:.018,seed:v*47+379,
+       length:.205,width:.014,seed:v*47+379,
        minVertical:-.99,maxVertical:.28,gravity:.55
      }).filter(h=>h.root[1]<-.05&&h.root[2]<-.085)
    ]:[];
-   const browHairs=s.id==='m001'?
-     [-1,1].flatMap(side=>generateCanineFurGuides({
-       center:[side*.221,.203,.278],radii:[.076,.029,.063],
-       rows:source?16:10,around:source?28:20,
-       length:.036,width:.006,seed:v*61+407+side,
-       minVertical:.18,maxVertical:1,gravity:.21
-     }).filter(h=>side*h.root[0]>.15&&h.root[1]>.206&&
-       h.root[2]<.335)):[];
+   // White bristly supraorbital patches looked like a fake furry eyebrow.
+   // Leave skin over the eye; fine forehead coat terminates behind it.
+   const browHairs=[];
 
    const headGuides=beastRemesh?[...faceGuides,...groomed,
      ...wolfKingFaceCoat,...browHairs].filter(h=>{
        // Avoid cheeks/temples from spreading across the eyes.
        if(Math.abs(h.root[0])>.258&&h.root[1]>.077&&
           h.root[2]>.166&&h.root[2]<.38)return false;
+       if(s.id==='m001'&&h.root[1]>.073&&h.root[2]>.090&&
+          Math.abs(h.root[0])<.325)return false;
        // Keep only the small frontal face patch bare; fur surrounds it.
        if(s.id==='m001'&&h.root[2]>.078&&
-          Math.abs(h.root[0])<.186&&h.root[1]>-.223&&
+          Math.abs(h.root[0])<.224&&h.root[1]>-.223&&
           h.root[1]<.293)return false;
        return true;
      }):faceGuides;
