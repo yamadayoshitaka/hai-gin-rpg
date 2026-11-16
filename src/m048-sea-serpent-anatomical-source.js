@@ -122,7 +122,14 @@ export function buildSeaSerpentAnatomicalSource(THREE,{rings=112,sides=16}={}){
   const samples=[];
   for(let k=0;k<=88;k++){
    const t=.08+.84*k/88,c=center(t),r=radius(t);
-   samples.push(new THREE.Vector3(c.x,c.y+r*.13,c.z+side*r*.985));
+   // Project the sensory canal onto the same moving cross-section as the trunk.
+   // A world-Z offset detached the ridge wherever the spine bends in 3D.
+   const tangent=center(Math.min(1,t+.001)).sub(center(Math.max(0,t-.001))).normalize();
+   const up=new THREE.Vector3().crossVectors(new THREE.Vector3(0,0,1),tangent).normalize();
+   const transverse=new THREE.Vector3().crossVectors(tangent,up).normalize();
+   const a=side*(Math.PI/2-.13);
+   samples.push(c.addScaledVector(up,Math.cos(a)*r*.78*1.025)
+    .addScaledVector(transverse,Math.sin(a)*r*1.025));
   }
   const curve=new THREE.CatmullRomCurve3(samples);
   const ridge=new THREE.Mesh(new THREE.TubeGeometry(curve,176,.017,6,false),lateralLineMaterial);
