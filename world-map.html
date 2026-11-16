@@ -118,8 +118,14 @@ document.addEventListener('click',event=>{
 });
 window.addEventListener('pagehide',()=>mapAudio.dispose());
 let chapter=CAMPAIGN_STAGE_BY_ID[game.stage]?.chapter||1,selected=game.stage||'c01-s01',territory=null,pan=0;
-function updateCurrentLocation(){const current=CAMPAIGN_STAGE_BY_ID[game.stage]||CAMPAIGN_STAGE_BY_ID[game.lastTown];document.querySelector('.map-caption').textContent='● 現在地：'+(current?.name||'不明')+' · 地図から行き先を選択';}
-updateCurrentLocation();
+// Current map focus follows the selected chapter and stage, without changing
+// the saved commander location or unlocking a stage.
+function updateCurrentLocation(){
+ const current=CAMPAIGN_STAGE_BY_ID[selected]||stagesInChapter(chapter)[0];
+ const area=continentForChapter(chapter);
+ document.querySelector('.map-caption').textContent=
+  '● 現在地：'+area.regionName+' · '+(current?.name||'不明')+' · 地図から行き先を選択';
+}
 function narrateSelection(){
  const stage=CAMPAIGN_STAGE_BY_ID[selected],story=narrativeForStage(stage);
  if(!('speechSynthesis' in window)){message('この端末では日本語読み上げを利用できません。');return;}
@@ -161,7 +167,7 @@ function renderPins(){
   board.innerHTML=TERRITORIES.map(t=>{
    const owner=game.campaign.owners[t.id]||t.owner;
    const color=({player:'#68c7ee',crimson:'#f58a78',verdant:'#94d7a1',neutral:'#8d98a5'})[owner]||'#8d98a5';
-   return '<button type="button" class="pin '+(CAMPAIGN_STAGE_BY_ID[game.stage]?.territoryId===t.id?'current-location':'')+'" data-territory="'+t.id+'" style="left:'+t.mapX+'%;top:'+t.mapY+'%;--faction:'+color+'" aria-pressed="'+(territory===t.id)+'" title="'+escapeHtml(FACTIONS[owner]?.name||'領地')+'">'+escapeHtml(t.name)+'</button>';
+   return '<button type="button" class="pin '+(CAMPAIGN_STAGE_BY_ID[selected]?.territoryId===t.id?'current-location':'')+'" data-territory="'+t.id+'" style="left:'+t.mapX+'%;top:'+t.mapY+'%;--faction:'+color+'" aria-pressed="'+(territory===t.id)+'" title="'+escapeHtml(FACTIONS[owner]?.name||'領地')+'">'+escapeHtml(t.name)+'</button>';
   }).join('');
   return;
  }
@@ -173,7 +179,7 @@ function renderPins(){
   // The full stage name remains in the bottom ten-slot selector and tooltip.
   // Tiny numbered geographic markers do not overlap on narrow phone screens.
   const label=String(stage.slot).padStart(2,'0');
-  return '<button type="button" class="pin stage-pin '+(game.stage===stage.id?'current-location ':'')+(unlocked?'':'locked ')+(selected===stage.id?'selected':'')+'" data-stage-pin="'+stage.id+
+  return '<button type="button" class="pin stage-pin '+(selected===stage.id?'current-location ':'')+(unlocked?'':'locked ')+(selected===stage.id?'selected':'')+'" data-stage-pin="'+stage.id+
    '" style="left:'+spot.x.toFixed(2)+'%;top:'+spot.y.toFixed(2)+'%;--faction:'+(done?'#8bd9a6':unlocked?'#e9c989':'#7b8b95')+
    '" aria-pressed="'+(selected===stage.id)+'" aria-label="'+escapeHtml('第'+stage.slot+'ステージ '+stage.name+(done?' クリア済み':unlocked?' 出撃可能':' 未解放'))+'" title="'+escapeHtml(stage.name)+'">'+(done?'✓':unlocked?escapeHtml(label):'🔒')+'</button>';
  }).join('');
@@ -251,6 +257,7 @@ function render(){
  renderStoryBranchControls(stage,unlocked);
  renderStoryEndingControls();
  renderPins();
+ updateCurrentLocation();
 }
 $('mapBoard').addEventListener('click',event=>{
  const stagePin=event.target.closest('[data-stage-pin]');
