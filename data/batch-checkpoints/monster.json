@@ -15,7 +15,7 @@
       "sourceFiles": [
         "src/m048-sea-serpent-anatomical-source.js"
       ],
-      "commitSha": "4a660de80f36528937ae7f6ea1c837cb889e61a6",
+      "commitSha": "6ba9ba1db4f35d2cad9c597b54df0db12e9f2caa",
       "qa": "unverified"
     }
   ],
@@ -67,5 +67,5 @@
     "m049",
     "m050"
   ],
-  "nextAction": "V8 syntax passed m020/m048, but Battle visual E2E run 43796313538 failed (8 cases); inspect and fix photoSurfaces/source expectations and browser timeouts, then verify actual front/side/rear WebGL and Android. New m048 branchial folds require visual QA. No main merge."
+  "nextAction": "m048 animated skull tangent alignment committed; run syntax/static and front/side/rear WebGL + Android QA, resolve PR #426 mobile-battle E2E failure; verify m020 before merge."
 }
