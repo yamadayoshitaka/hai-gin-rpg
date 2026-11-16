@@ -75,7 +75,7 @@ jobs:
           node qa/skirmish-dash-default.test.mjs
           node qa/skirmish-realtime-tempo.test.mjs
           node qa/battle-ai-target-highlight-zoom.test.mjs
-          node qa/central-battle-orders.test.mjs
+          node --experimental-vm-modules qa/central-battle-orders.test.mjs
           node qa/mass-dash-parity.test.mjs
           node qa/damage-number-distance-gait.test.mjs
           node qa/mass-upper-floor-pursuit-quality.test.mjs
