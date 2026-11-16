@@ -508,8 +508,8 @@ export function createObjectById(id,{cellSize=2.2}={}){
    const darkSteel=new THREE.MeshStandardMaterial({color:0x3c4744,metalness:.7,roughness:.46});
    const addBin=(geometry,mat,x,y,z,name)=>{const mesh=new THREE.Mesh(geometry,mat);
     mesh.position.set(x*c,y*c,z*c);mesh.name=name;mesh.castShadow=true;mesh.receiveShadow=true;root.add(mesh);return mesh};
-   addBin(new THREE.CylinderGeometry(.43*c,.355*c,1.12*c,24,1,true),galvanised,0,.64,0,'galvanized_open_wall');
-   addBin(new THREE.CylinderGeometry(.36*c,.36*c,.075*c,24),darkSteel,0,.075,0,'pressed_grounded_floor');
+   addBin(new THREE.CylinderGeometry(.43*c,.355*c,1.12*c,24,1,true),galvanised,0,.635,0,'galvanized_open_wall');
+   addBin(new THREE.CylinderGeometry(.36*c,.36*c,.075*c,24),darkSteel,0,.0375,0,'pressed_grounded_floor');
    // Reinforcement hoops wrap the wall with correct circular profile and radius.
    for(const [radius,y] of [[.366,.20],[.434,1.20]]){
     const band=addBin(new THREE.TorusGeometry(radius*c,.024*c,8,32),darkSteel,0,y,0,'rolled_support_band');
