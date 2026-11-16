@@ -2158,6 +2158,7 @@ function applyCreatureRidingPose(actor){
  if(!actor?.character?.model)return;
  if(!actor._ridingPose)actor._ridingPose=createRidingPoseController(actor.character.model);
  if(actor.mountId)actor._ridingPose.apply(ridingStyleForCreature(mountedCreatureOf(actor)?.type));
+ else actor._ridingPose.restore();
 }
 let massWorker=null;
 let massRenderer=null,massWorldPositionFn=null,massAccumulator=0,massEndElapsed=0;
@@ -10091,7 +10092,9 @@ function refreshBattleStudioGroom(distanceSorted,now){
  }catch(e){
   next.studioHairError=String(e?.message||e);
   console.warn('実頭皮ベース髪LOD生成に失敗',next.id,e);
-  next.outfit?.setHairVisible(true);
+  // The old studio groom remains intact on a failed LOD promotion.
+  // Do not overlay the alternate fitted hairstyle on top of it.
+  next.outfit?.setHairVisible(!next.masterHead?.studioWig);
  }
 }
 window.getBattleStartupStats=()=>({ready:battleReady,error:loadingFailure?String(loadingFailure):null,
