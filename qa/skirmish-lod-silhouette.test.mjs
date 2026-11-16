@@ -36,7 +36,7 @@ assert.match(hair,/lod\.addLevel\(scene,index===0\?0:index===1\?14:80\)/);
 assert.match(outfit,/useSourceSkinnedLegs=\(lowDetail\|\|studioPreferSkinnedLegs\)/,
  'Keep imported 65-bone legs instead of pipe-shaped LOD placeholders');
 assert.match(outfit,/retainedAsSkinnedTrouser=true/);
-assert.match(game,/rigged-outfit-runtime\.js\?v=20261116-thief-back-v4/);
+assert.match(game,/rigged-outfit-runtime\.js\?v=20261117-real-back-v5/);
 assert.match(game,/skirmish-distance-impostors\.js\?v=20261116-screenpx1/);
 assert.match(outfit,/hair-attachment-runtime\.js\?v=20261116-silhouette-lod1/);
 console.log('PASS: 50v50 projected-size photo gate, stable identical hairstyles, skinned legs and FPS-aware prewarm');

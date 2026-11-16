@@ -22,7 +22,7 @@ assert.equal(resolveRidingJointName('spine_01'),'spine_01');
 assert.equal(resolveRidingJointName('Spine2'),'spine_02');
 assert.equal(resolveRidingJointName('mixamorigHips'),'pelvis');
 assert.equal(ridingStyleForCreature('dragon'),'throne');
-assert.equal(ridingStyleForCreature('wolf'),'straddle');
+assert.equal(ridingStyleForCreature('wolf'),'low-straddle');
 assert.ok(DRAGON_SEATED_TORSO_JOINTS.pelvis.pitch!==RIDING_TORSO_JOINTS.pelvis.pitch);
 const names=[...Object.keys(RIDING_JOINTS),'pelvis','spine_01','spine_02'];
 const bones=names.map(name=>({name,isBone:true,quaternion:new Quaternion()}));
@@ -34,7 +34,7 @@ for(let frame=0;frame<180;frame++){
  const q=bones[0].quaternion;
  q.setFromAxisAngle({x:0,y:1,z:0},frame*.005);
  const before=bones.map(b=>qValues(b.quaternion));
- controller.apply(frame%2===0?'straddle':'throne');
+ controller.apply(['straddle','throne','low-straddle'][frame%3]);
  const pose=bones.map(b=>qValues(b.quaternion));
  assert.notDeepEqual(pose[6],before[6],'pelvis must not remain upright');
  assert.notDeepEqual(pose[7],before[7],'spine must counterbalance seated hips');
@@ -55,8 +55,8 @@ assert.match(battle,/else actor\._ridingPose\.restore\(\)/,
  'dismounted soldiers restore standing pose');
 assert.match(battle,/next\.outfit\?\.setHairVisible\(!next\.masterHead\?\.studioWig\)/,
  'a failed middle/near hair bake must not overlay an incorrect GLB wig');
-assert.match(battle,/riding-pose\.js\?v=20261117-seated-pelvis-v2/);
-assert.match(army,/riding-pose\.js\?v=20261117-seated-pelvis-v2/,
+assert.match(battle,/riding-pose\.js\?v=20261117-three-seats-v3/);
+assert.match(army,/riding-pose\.js\?v=20261117-three-seats-v3/,
  'GPU crowd ride capture must use the same seated pose');
 assert.match(rig,/jobId==='job06'&&role==='body'/);
 assert.match(rig,/battleThiefClosedBack:true/);
@@ -64,5 +64,5 @@ assert.match(rig,/copy\.alphaTest=0;copy\.depthWrite=true;copy\.depthTest=true/)
 assert.match(hair,/rearShortCover=shortHair&&battleStableCoverage&&zNorm<-.025/);
 assert.match(graft,/face-scalp-wig\.js\?v=20261117-nape-silhouette-v2/);
 assert.match(battle,/battle-artist-head-graft\.js\?v=20261117-thief-scalp-v8/);
-assert.match(battle,/rigged-outfit-runtime\.js\?v=20261117-thief-back-v4/);
+assert.match(battle,/rigged-outfit-runtime\.js\?v=20261117-real-back-v5/);
 console.log('PASS: 180 seated frame restores, 3 torso bones, GPU mount capture, thief-back opacity and short rear scalp coverage');
