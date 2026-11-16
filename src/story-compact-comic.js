@@ -91,11 +91,14 @@ export function compactComicForStage(stageId,phase,context={}){
  let sharedKind=null;
  if(phase==='post'&&original.edition.startsWith('post-defeat')){
    sharedKind='defeat';
-   batches=COMPACT_DEFEAT_LINES.map((str,i)=>[turn(base[i],str)]);
+   // Keep the canonical stage/branch dialogue in the UI; shared lines only
+   // introduce the common outcome. Never discard authored turns to save CGs.
+   batches=COMPACT_DEFEAT_LINES.map((str,i)=>[turn(base[i],str),...batches[i]]);
  }
  if(phase==='post'&&original.edition.startsWith('post-gameover')){
    sharedKind='gameover';
-   batches=COMPACT_GAMEOVER_LINES.map((str,i)=>[turn(base[i],str)]);
+   // The common death narration must not erase the original death screenplay.
+   batches=COMPACT_GAMEOVER_LINES.map((str,i)=>[turn(base[i],str),...batches[i]]);
  }
  for(let i=0;i<2;i++)scenes.push(scene(withCount(base[i]),batches[i],{sharedKind}));
  if(scenes.length!==(opening?6:2))throw Error('Compact frame quota violated');
