@@ -94,7 +94,13 @@ export function compactComicForStage(stageId,phase,context={}){
  }
  if(base.some(x=>!x))throw Error('Missing compact source art identity '+stageId+' '+original.edition);
  const withCount=p=>({...p,sourceSheetCount:original.pages.find(q=>q.number===p.comicPage)?.cellCount||1});
- const scenes=openingArt.map(p=>scene(withCount(p),[turn(p)],{opening:true}));
+ // Chapter opening dialogue comes from the canonical screenplay, not the
+ // archived artwork captions. Keep all opening turns on four CGs.
+ const openingLines=opening?script.pre.filter(p=>
+  ['chapter-opening','canonical-dialogue'].includes(p.kind)):[];
+ const openingBatches=opening?distribute(openingLines,4):[];
+ const scenes=openingArt.map((p,i)=>scene(withCount(p),
+  openingBatches[i].map(line=>turn(line)),{opening:true}));
  let batches=distribute(lines,2).map(group=>group.map(p=>turn(p)));
  let sharedKind=null;
  if(phase==='post'&&original.edition.startsWith('post-defeat')){
