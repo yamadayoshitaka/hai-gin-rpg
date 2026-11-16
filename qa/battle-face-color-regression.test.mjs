@@ -43,11 +43,11 @@ for(const sex of ['male','female']){
  assert.equal(face.material.map.image.height,256);
  assert.equal(face.material.userData.battleFaceLightResponseVersion,
   BATTLE_FACE_LIGHT_RESPONSE_VERSION);
- assert.equal(face.material.userData.battleFaceLightResponseScale,.58);
+ assert.equal(face.material.userData.battleFaceLightResponseScale,.86);
  const shader={fragmentShader:'vec3 outgoingLight=vec3(4.0);\n#include <opaque_fragment>'};
  face.material.onBeforeCompile(shader,{});
  assert.match(shader.fragmentShader,
-  /outgoingLight = \(outgoingLight \* 0\.58\) \/ \(vec3\(1\.0\)/,
+  /outgoingLight = \(outgoingLight \* 0\.86\) \/ \(vec3\(1\.0\)/,
   'Real PBR fragment must dim reflected battlefield light, not only set color');
  assert.ok(shader.fragmentShader.includes('\n#include <opaque_fragment>'),
   'Shader injects a legal GLSL newline');
@@ -78,4 +78,4 @@ assert.ok(mainMesh?.primitives[0]?.attributes?.TEXCOORD_0!==undefined,
 const masterSkin=json.materials[mainMesh.primitives[0].material];
 assert.equal(masterSkin.pbrMetallicRoughness.baseColorTexture,undefined,
  'Master head is an untextured source; combat must not claim a photographic face map');
-console.log('PASS: 100 heads share one UV albedo, face shader actually attenuates PBR light, eyes stay distinct; source geometry is untextured');
+console.log('PASS: 100 heads share one UV albedo, face preserves 86% diffuse light, eyes stay distinct; source geometry is untextured');
