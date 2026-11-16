@@ -3,7 +3,7 @@
  * variants change horns, crests, armour, wings, limb lengths, weapons and fins.
  * Each specimen is real 3D geometry, never an image billboard.
  */
-import {createSculpture,disposeMonsterSculpture} from './monster-shape-kit.js?v=m001-anatomical-reference-v11-20261116';
+import {createSculpture,disposeMonsterSculpture} from './monster-shape-kit.js?v=m001-anatomical-reference-v12-20261117';
 import {attachMonsterFaceControls} from './facial-feature-runtime.js?v=1';
 import {generateCanineFurGuides,generateCanineAxialFurGuides} from './canine-fur-guides.js?v=beast-coat-20261116';
 import {monsterEvidenceFor} from './monster-anatomy-reference.js';
@@ -1700,5 +1700,5 @@ export function createMonsterModel(spec,{detail='high'}={}){
 export {disposeMonsterSculpture};
 // All renderer metrics share this module's exact shape/material instance.
 // Never independently import a differently versioned shape-kit into the UI.
-export {MONSTER_DETAIL_LEVELS,monsterSculptCacheStats} from './monster-shape-kit.js?v=m001-anatomical-reference-v11-20261116';
+export {MONSTER_DETAIL_LEVELS,monsterSculptCacheStats} from './monster-shape-kit.js?v=m001-anatomical-reference-v12-20261117';
 export {monsterPhotoCacheStats} from './monster-photo-pbr.js?v=4.4.81';
