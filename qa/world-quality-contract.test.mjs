@@ -3,8 +3,8 @@ import fs from 'node:fs';
 import {qualityInventory,objectCount,stageCount,referencePrompt} from '../scripts/world-quality-catalog.mjs';
 import {normalizeRequest,parseIssueBody,makeIssueBody} from '../scripts/world-quality-manual-command.mjs';
 assert.equal(stageCount,200,'All 20 x 10 campaign stages included');
-assert.equal(objectCount,53,'Every catalog object should be included');
-assert.equal(qualityInventory.length,253);
+assert.equal(objectCount,60,'Every shared game-catalog object should be included');
+assert.equal(qualityInventory.length,260);
 assert.equal(new Set(qualityInventory.map(x=>x.key)).size,253);
 assert(qualityInventory.find(x=>x.key==='object:timber_bridge_001'));
 assert(qualityInventory.find(x=>x.key==='object:castle_001'));
@@ -46,4 +46,4 @@ const worldWorkflow=fs.readFileSync('.github/workflows/world-quality-photoreal.y
 assert(worldWorkflow.includes('issues:'));
 assert(worldWorkflow.includes('world-quality-manual-command.mjs'));
 assert(worldWorkflow.includes("github.event.issue.user.login == github.repository_owner"));
-console.log('PASS: 53 objects + 200 campaign stages; references, capture, bounded tuning, dashboard QA gates');
+console.log('PASS: 60 objects + 200 campaign stages; references, capture, bounded tuning, dashboard QA gates');
