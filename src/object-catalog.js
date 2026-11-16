@@ -502,18 +502,34 @@ export function createObjectById(id,{cellSize=2.2}={}){
    box(2.2*c,.08*c,.68*c,0,2.83*c,0,wood);
   }
   if(id==='town_trash_bin_001'){
-   const metalMat=new THREE.MeshStandardMaterial({color:0x55564f,metalness:.68,roughness:.42});
-   const body=new THREE.Mesh(new THREE.CylinderGeometry(.4*c,.34*c,1.15*c,12,1,true),metalMat);
-   body.position.y=.61*c;body.castShadow=true;root.add(body);
-   const bottom=new THREE.Mesh(new THREE.CylinderGeometry(.35*c,.35*c,.07*c,12),metalMat);
-   bottom.position.y=.06*c;root.add(bottom);
-   const rim=new THREE.Mesh(new THREE.TorusGeometry(.4*c,.065*c,6,16),iron);
-   rim.rotation.x=Math.PI/2;rim.position.y=1.19*c;root.add(rim);
-   for(let i=0;i<12;i++){const a=i*Math.PI/6;
-    const slot=new THREE.Mesh(new THREE.BoxGeometry(.035*c,.8*c,.025*c),wood);
-    slot.position.set(Math.cos(a)*.386*c,.62*c,Math.sin(a)*.386*c);
-    slot.rotation.y=-a;root.add(slot);
+   // Galvanised open-top municipal bin: rolled steel wall, grounded pressed floor,
+   // two structural hoop bands and fixed lifting grips (no floating wooden slats).
+   const galvanised=new THREE.MeshStandardMaterial({color:0x66736d,metalness:.65,roughness:.55,side:THREE.DoubleSide});
+   const darkSteel=new THREE.MeshStandardMaterial({color:0x3c4744,metalness:.7,roughness:.46});
+   const addBin=(geometry,mat,x,y,z,name)=>{const mesh=new THREE.Mesh(geometry,mat);
+    mesh.position.set(x*c,y*c,z*c);mesh.name=name;mesh.castShadow=true;mesh.receiveShadow=true;root.add(mesh);return mesh};
+   addBin(new THREE.CylinderGeometry(.43*c,.355*c,1.12*c,24,1,true),galvanised,0,.64,0,'galvanized_open_wall');
+   addBin(new THREE.CylinderGeometry(.36*c,.36*c,.075*c,24),darkSteel,0,.075,0,'pressed_grounded_floor');
+   // Reinforcement hoops wrap the wall with correct circular profile and radius.
+   for(const [radius,y] of [[.366,.20],[.434,1.20]]){
+    const band=addBin(new THREE.TorusGeometry(radius*c,.024*c,8,32),darkSteel,0,y,0,'rolled_support_band');
+    band.rotation.x=Math.PI/2;
    }
+   // Twelve riveted vertical steel ribs sit on the tapered cone, not tangential wood blocks.
+   for(let i=0;i<12;i++){
+    const a=i*Math.PI/6;
+    const rib=addBin(new THREE.BoxGeometry(.048*c,.89*c,.025*c),darkSteel,
+     Math.sin(a)*.396,.65,Math.cos(a)*.396,'steel_stiffener');
+    rib.rotation.y=a;
+   }
+   for(const sign of [-1,1]){
+    const bracket=addBin(new THREE.BoxGeometry(.08*c,.22*c,.17*c),darkSteel,
+     sign*.425,.95,0,'lifting_handle_mount');
+    const grip=addBin(new THREE.TorusGeometry(.135*c,.03*c,8,18,Math.PI),darkSteel,
+     sign*.52,.98,0,'hinged_lifting_handle');
+    grip.rotation.z=sign*Math.PI/2;
+   }
+   root.userData.openTop=true;
   }
   if(id==='town_handcart_001'){
    // Longitudinal chassis bears the bed; wheel hubs and axle connect the rolling assembly.
@@ -571,22 +587,58 @@ export function createObjectById(id,{cellSize=2.2}={}){
    }
   }
   if(id==='stone_archway_001'){
+   // True load-bearing semicircular voussoirs. This is a segmented extruded ring,
+   // not rectangular boxes distributed around a curve with large air gaps.
+   const innerR=1.7*c,outerR=2.22*c,springY=3.1*c,depth=.95*c;
+   const masonry=new THREE.MeshStandardMaterial({color:0x888580,roughness:.93});
+   const keystoneMat=new THREE.MeshStandardMaterial({color:0xa6a198,roughness:.91});
    for(const sign of [-1,1]){
-    box(.68*c,3.5*c,.9*c,sign*2*c,1.75*c,0,stone);
-    box(.93*c,.3*c,1.1*c,sign*2*c,3.5*c,0,stone);
+    box(.95*c,.24*c,1.25*c,sign*2*c,.12*c,0,stone).name='pier_spread_footing';
+    // Staggered ashlar courses expose visible construction joints.
+    for(let row=0;row<8;row++){
+     const height=.38*c,centerY=.24*c+(row+.5)*height;
+     const x=sign*(2.0+(row%2?.025:-.025))*c;
+     box(.74*c,height*.96,depth,x,centerY,0,row%3?stone:masonry).name='pier_ashlar_course';
+    }
+    box(.94*c,.15*c,1.1*c,sign*2*c,3.15*c,0,stone).name='springing_capital';
    }
-   for(let i=0;i<=10;i++){
-    const theta=Math.PI-i*Math.PI/10;
-    const arch=new THREE.Mesh(new THREE.BoxGeometry(.56*c,.48*c,1.0*c),stone);
-    arch.position.set(Math.cos(theta)*2*c,3.4*c+Math.sin(theta)*2*c,0);
-    arch.rotation.z=theta-Math.PI/2;arch.castShadow=true;arch.receiveShadow=true;
-    root.add(arch);
+   const count=13;
+   for(let i=0;i<count;i++){
+    const start=i*Math.PI/count,end=(i+1)*Math.PI/count;
+    const shape=new THREE.Shape();
+    // Inner face: angle 0 on right spring, PI on left spring.
+    const at=(r,a)=>[Math.cos(a)*r,springY+Math.sin(a)*r];
+    let point=at(innerR,start);shape.moveTo(point[0],point[1]);
+    for(let j=1;j<=3;j++){point=at(innerR,start+(end-start)*j/3);shape.lineTo(point[0],point[1]);}
+    for(let j=3;j>=0;j--){point=at(outerR,start+(end-start)*j/3);shape.lineTo(point[0],point[1]);}
+    shape.closePath();
+    const wedge=new THREE.Mesh(new THREE.ExtrudeGeometry(shape,{depth,bevelEnabled:false,curveSegments:4}),
+     i===6?keystoneMat:(i%3===0?masonry:stone));
+    wedge.position.z=-depth/2;wedge.name=i===6?'arch_keystone':'arch_radial_voussoir';
+    wedge.castShadow=true;wedge.receiveShadow=true;root.add(wedge);
    }
-   box(.65*c,.68*c,1.1*c,0,5.45*c,0,stone).name='arch_keystone';
+   root.userData.archClearSpan=innerR*2;
   }
   if(id==='stone_steps_001'){
-   for(let i=0;i<7;i++)box(3.8*c,(i+1)*.16*c,.46*c,0,(i+1)*.08*c,(i-3)*.40*c,stone);
-   for(const x of [-1.95,1.95])box(.23*c,1.25*c,3*c,x*c,.65*c,0,stone);
+   // Seven solid stepped masonry courses with split tread slabs and real joints.
+   // Each course bears on the ground; the tread rises by .16c per step.
+   const tread=new THREE.MeshStandardMaterial({color:0xaaa69c,roughness:.91});
+   const mortar=new THREE.MeshStandardMaterial({color:0x68645f,roughness:1});
+   for(let i=0;i<7;i++){
+    const rise=(i+1)*.16,z=(i-3)*.43;
+    box(3.82*c,rise*c,.45*c,0,rise*c/2,z*c,stone).name='ground_bearing_riser';
+    for(let j=0;j<4;j++){
+     const x=(j-1.5)*.95;
+     box(.94*c,.075*c,.47*c,x*c,(rise+.0375)*c,z*c,j%2?tread:stone).name='individual_tread_slab';
+    }
+    // Visible joint between neighbouring tread slabs, recessed below walking surface.
+    for(let j=1;j<4;j++)box(.013*c,.014*c,.47*c,(j-2)*.95*c,(rise+.077)*c,z*c,mortar);
+    for(const sign of [-1,1]){
+     box(.25*c,rise*c,.45*c,sign*2.02*c,rise*c/2,z*c,stone).name='stepped_cheek_wall';
+     box(.32*c,.08*c,.45*c,sign*2.02*c,(rise+.04)*c,z*c,tread).name='cheek_cap';
+    }
+   }
+   root.userData.stairRisers=7;
   }
   if(id==='wooden_watchtower_001'){
    for(const x of [-1.65,1.65])for(const z of [-1.65,1.65])box(.28*c,5.1*c,.28*c,x*c,2.55*c,z*c,wood);
