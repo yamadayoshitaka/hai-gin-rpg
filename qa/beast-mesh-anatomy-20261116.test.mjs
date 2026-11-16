@@ -323,7 +323,7 @@ for(const id of remeshed){
       'm001 eyes retain actual inset pupil geometry, not spherical beads');
     assert.equal(meshes.filter(m=>m.userData.fangRootCover).length,2,
       'the protruding ivory tooth roots must remain covered by labial tissue');
-    assert.equal(meshes.filter(m=>m.name==='m001-recessed-oral-slit').length,1,
+    assert.equal(meshes.filter(m=>m.userData.m001RecessedOralSlit).length,1,
       'm001 oral slit must replace the former mouth button');
     for(const lid of lids){
       const p=lid.geometry.getAttribute('position');
