@@ -41,7 +41,7 @@ const walkable=(x,z)=>x!==3&&z<6;
 const overlay=makeSelectableMapOverlay(8,walkable);
 assert.equal(overlay.size,8);
 assert.equal(overlay.total,64);
-assert.equal(overlay.selectable,58);
+assert.equal(overlay.selectable,42);
 assert.deepEqual([...overlay.pixels.slice(0,4)],[24,240,139,68]);
 assert.deepEqual([...overlay.pixels.slice((2*8+3)*4,(2*8+3)*4+4)],[108,17,26,98]);
 assert.equal(isSelectableMapPoint({x:3,z:2},8,walkable),false);
