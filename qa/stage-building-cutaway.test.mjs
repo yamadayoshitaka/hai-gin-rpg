@@ -81,6 +81,9 @@ assert.match(game,/buildingBatchStats\.setBuildingRoofVisible\(b\.model,showRoof
  'The visible roof state must also reach GPU instances and remain solid for rooftop soldiers');
 assert.match(game,/groundFurnishings\.visible=cutaway/,
  'The castle first-floor rooms and pillars must appear when its walls become translucent');
-assert.match(game,/interiorVisibilityTimer>=\(commanderCinematic\|\|followCamera\?\.10:\.24\)/,
- 'Refresh cutaways at 10Hz near a focused camera and 4Hz in normal overview');
+assert.match(game,/sceneVisibilityPacer\.pick\(now,\{near:Boolean\(commanderCinematic\|\|followCamera\)\}\)/,
+ 'Keep cutaways at their near/far cadence while spreading the three passes over distinct frames');
+const pacing=readFileSync(new URL('../src/battle-frame-pacing.js',import.meta.url),'utf8');
+assert.match(pacing,/nearIntervalMs=100,farIntervalMs=240/,
+ 'Preserve the original 10Hz near camera and approximately 4Hz overview refresh intervals');
 console.log('House and castle translucent cutaways restore originals, preserve shared draw batches and collapsed buildings');

@@ -74,4 +74,33 @@ assert.match(game,/function stairStageHasClearIngress\(/);
 assert.match(game,/sameNavigationCell\(a\.cell,gridFromWorld\(target\)\)/);
 assert.match(game,/if\(!paused&&!finished&&!a\.floorTravel\)moveActor\(a,goal,0,stop\)/,
  'stair controller must not accidentally call ordinary greedy movement');
+
+// Bridge congestion must reuse an established route instead of running a
+// full A* every 50ms while the same legal first cell remains occupied.
+let routeChecks=0,bridgeQueueState=null,bridgeNext=null;
+const bridgeLane=(x,z)=>{routeChecks++;return z===1&&x>=0&&x<=14;};
+for(let t=0;t<12;t++){
+ const result=stableGridNext(bridgeQueueState,{x:1,z:1},{x:12,z:1},{
+  walkable:bridgeLane,occupied:(x,z)=>x===2&&z===1,
+  now:t*.05,waitSeconds:.7,maxExpanded:8000
+ });
+ bridgeQueueState=result.state;bridgeNext=result.next;
+ assert.equal(bridgeNext,null,'occupied bridge tile must never be crossed');
+ if(t===0)assert.ok(routeChecks>0,'first request plans a real route');
+ if(t===1)var firstRouteChecks=routeChecks;
+}
+assert.ok(routeChecks<=firstRouteChecks+3,
+ 'one stationary bridge queue must not rebuild A* every AI tick');
+const released=stableGridNext(bridgeQueueState,{x:1,z:1},{x:12,z:1},{
+ walkable:bridgeLane,occupied:()=>false,now:.65,waitSeconds:.7
+});
+assert.deepEqual(released.next,{x:2,z:1},
+ 'the queued soldier resumes immediately when the legal tile clears');
+assert.match(game,/const result=incrementalStableGridNext\(actor\._exitRoute/,
+ '50v50 bridge and doorway routing must use a persistent collision-safe cache');
+assert.match(game,/if\(\(a\.cell\.x-center\)\*a\.crossing\.fromSide<=-10\)/,
+ 'land-side bridge traffic may move into a legal side lane, not the river');
+assert.match(game,/if\(!traversableCell\(a\.cell\.x,nz,a\)\|\|!availableCell\(a\.cell\.x,nz,a\)\)continue/,
+ 'far-bank side-step must validate traversability and occupancy');
+
 console.log('PASS: corridors, stable bottleneck waiting, fractional stair entry, no reverse wandering');

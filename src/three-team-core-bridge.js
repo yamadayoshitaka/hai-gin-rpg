@@ -5,6 +5,7 @@ import {formationJobMinimums} from './sortie-formation-logic.js';
 import {captainBonus} from './army-groups.js';
 import {squadEquipmentBonus} from './game-core-flow.js';
 import {storyStageContext} from './story-narrative-flow.js';
+import {recommendBattlePlans,battleStageContext} from './battle-plan-recommendations.js';
 import {allocateThreeTeamSortie,availableSortieOrders,sortieDebuffTypes,sortieFormationBuff,sortieLevel,sortieTeamCount,sortieTeams,SORTIE_FORMATION_CELLS,SORTIE_FORMATIONS} from './three-team-sortie.js';
 
 /** Battle-compatible adaptation of the three user-defined sortie teams.
@@ -107,6 +108,9 @@ export function makeThreeTeamBattleRequest(game,stage,battleId){
   formationBonuses:Object.fromEntries(teams.map(t=>[String(t.id),formationIntegrity[String(t.id)].bonus])),
   squadDebuffProfiles:Object.fromEntries(teams.map(t=>[String(t.id),formationIntegrity[String(t.id)].active?sortieDebuffTypes(game,t.id):[]])),
   sortieTacticTemplate:Object.fromEntries(teams.map(t=>[String(t.id),formationIntegrity[String(t.id)].active?t.tactics||[]:[]])),
+  battlePlanStage:battleStageContext(stage),
+  battlePlanRecommendations:Object.fromEntries(teams.map(t=>[String(t.id),recommendBattlePlans(game,stage,t.id,{limit:7})])),
+  battlePlanSelected:Object.fromEntries(teams.map(t=>[String(t.id),game.activeBattlePlanByTeam?.[String(t.id)]||null])),
   tacticalTemplate:null,
   totalReserves:reserveTroops(game.campaign),sortieTeamCount:teams.length
  };

@@ -18,7 +18,9 @@ assert.ok(ledgerStart>0&&ledgerEnd>ledgerStart,'Battle treasure ledger is define
 const ledgerSection=html.slice(ledgerStart,ledgerEnd);
 assert.match(ledgerSection,/function recordBattleTreasure\(actor,loot\)/);
 assert.match(section,/function collectNearbyRoomItems\s*\(/);
-assert.match(html.slice(end,end+400),/collectNearbyRoomItems\(\)/);
+// Inspect the complete early AI preamble, not a fragile 400-character window.
+// Route-budget instrumentation may add comments before the pickup call.
+assert.match(html.slice(end,end+1800),/collectNearbyRoomItems\(\)/);
 const reg=new RoomItemRegistry();
 const marker={visible:true};
 const building={

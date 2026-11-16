@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "asOf": "2026-11-16T02:50:00+09:00",
-  "description": "工程別の実作業証跡。GitHub Actionsの成功や定期タスクの実行完了を、3D改修・PR・デプロイの完了と混同しない。これはGitHubに最後に記録されたスナップショットであり、ChatGPTサービスのライブ状態ではない。",
+  "asOf": "2026-11-16T09:53:53+09:00",
+  "description": "工程別の実作業証跡。GitHub Actionsの成功や定期タスクの実行完了を、3D改修・PR・デプロイの完了と混同しない。これはGitHubに最後に記録されたスナップショットであり、ChatGPTサービスのライブ状態ではない。 追加のoperational欄は直近の証跡から特定した滞留原因と次の改善策であり、実行成功や品質達成の認定ではない。",
   "stageOrder": [
     "launch",
     "code",
@@ -14,13 +14,13 @@
   "groups": {
     "human": {
       "source": "ChatGPT 定期タスクの実行結果",
-      "lastRunAt": "2026-11-16T01:02:55Z",
-      "subject": "頭皮の退化三角形を排除する共通メッシュ生成器修正（実描画未検証）",
-      "summary": "human ON。PR #456作業ブランチの頭皮メッシュ生成で面積ゼロ/非有限の退化三角形を除外し、法線・毛束生成に悪影響を及ぼす可能性を低減。実ソースコミット45d806a3、チェックポイントb06b1c70。全人物ID列挙・対象別QA・WebGL・Android未実施。個別再生成0、mainマージ・公開なし。",
+      "lastRunAt": "2026-11-16T14:56:34+09:00",
+      "subject": "PR #456: 頭皮後頭UV継ぎ目の実ソース修正（描画QA保留）",
+      "summary": "human ON確認。作業ブランチのhair-attachment-runtime.jsで頭皮の円筒UVが±π境界を跨ぐとテクスチャが全幅補間される不具合を修正。実ソースSHA 148d9ca1、チェックポイントda0a87f2。実WebGL/Android/Node構文QA未実施。個別人物ID改修0、GLB再生成0、対象別QA0、ゲーム反映0。main未マージ・未公開。",
       "status": "work_incomplete",
       "carryover": true,
       "issueNumber": 438,
-      "nextAction": "PR #456でNode構文、男女実WebGL頭頂/正面/背面、全ID列挙と生成経路監査、Issue #438の背面異物修正を継続。",
+      "nextAction": "PR #456でNode構文と男女の後頭/頭頂WebGL UV比較、Issue #438背面・踵、Android計測、正本全ID分類を実施し不合格を修正。",
       "steps": {
         "launch": "done",
         "code": "done",
@@ -32,27 +32,42 @@
       },
       "evidence": [
         {
-          "label": "退化三角形の実ソース修正",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/45d806a3df64b86d5c6addc1de6fe3ef0d4b8a6a"
+          "label": "後頭UVシーム実ソースコミット",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/148d9ca14d6fbfa73808d5da76d0c72deaccd822"
         },
         {
-          "label": "Draft PR #456",
+          "label": "作業PR #456",
           "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/456"
         },
         {
-          "label": "チェックポイント",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/b06b1c705a74bd75f2c3cae8312ebac298501be5"
+          "label": "保存チェックポイント",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/da0a87f2a1839feef9e29e55ebf963456be97970"
         }
-      ]
+      ],
+      "operational": {
+        "blockers": [
+          "Node構文・WebGL前後比較・Android実測が未実施",
+          "全人物正本ID数と対象別QAが未確定",
+          "Issue #438背面異物・踵の実描画未確認"
+        ],
+        "speedPlan": "PR #456最新headのNode構文と男女後頭WebGL UV継ぎ目を最優先検証し、背面/踵とAndroidを検査。",
+        "lastRunOutcome": {
+          "newSourceChangedIds": 0,
+          "newQAPassed": 0,
+          "newGameAppliedIds": 0,
+          "newSourceCommits": 1,
+          "newGeneratedGLBs": 0
+        }
+      }
     },
     "monster": {
       "source": "ChatGPT 定期タスクの実行結果",
-      "lastRunAt": "2026-11-16T01:06:48Z",
-      "subject": "m048海蛇の可動下顎に独立牙列20本を実メッシュ追加（全108体監査未完）",
-      "summary": "monster ON。既存Draft PR #426のm048専用ソースで、左右10本ずつの独立下顎牙を可動jawへ追加。実ソースSHA db7abed7、チェックポイントbf043e76。今回実造形改修1ID、GLB再生成0、実描画QA合格0、ゲーム反映0。全108件の個別監査未完。Node/WebGL/Android QA未実施につきmainマージ・公開なし。m005/m006・召喚版・元GLB保護維持。",
+      "lastRunAt": "2026-11-16T17:22:30+09:00",
+      "subject": "PR #426 m048腹側鱗板の世界座標スケーリングを局所断面法線オフセットに修正",
+      "summary": "monster enabled=true確認。m048腹側鱗板のワールド座標スケーリングによる湾曲体幹の継ぎ目変位を、各リングの局所軸方向断面法線オフセットへ実ソース修正。SHA 8a009ccd、チェックポイントbaf04e9c。静的構文/WebGL/Android QA未実施、全108ID詳細走査未実施、GLB0、ゲーム反映0、mainマージ/公開なし。",
       "status": "work_incomplete",
       "carryover": true,
-      "nextAction": "PR #426でm020/m048のNode/Three形状と顎・牙アニメーション、WebGL前後左右、Android性能、正本108IDの全数監査、GLB/LOD再生成とゲーム/マスター接続を順に実施。",
+      "nextAction": "PR #426最新headでm048腹側鱗板の前後左右WebGLとm020鱗板・頭頸接合、Node構文、Android FPS、E2Eを確認。不合格修正後に他IDの実造形へ進む。",
       "steps": {
         "launch": "done",
         "code": "done",
@@ -64,37 +79,64 @@
       },
       "evidence": [
         {
-          "label": "m048実造形ソース改修",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/db7abed7336da84487b0d54870d7310a2f7538e6"
+          "label": "m048局所断面法線実ソースコミット",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/8a009ccd5959efc31956d77ab0c5c6907901da65"
         },
         {
-          "label": "既存Draft PR #426",
+          "label": "Draft PR #426",
           "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/426"
         },
         {
-          "label": "途中再開チェックポイント",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/bf043e76aff90e9735364e41a09eba125cd407dd"
+          "label": "チェックポイントコミット",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/baf04e9c4ce392700ac98d890b82e4374fe7114b"
         }
-      ]
+      ],
+      "operational": {
+        "blockers": [
+          "m048最新差分のNode構文とWebGL四方向実描画未検証",
+          "Android実測未検証、Battle visual E2E未合格",
+          "全108IDの今回の実アセット/ゲーム採用分類は未完了"
+        ],
+        "speedPlan": "PR #426の最新headの静的QA→WebGL m020/m048四方向→Android/E2E→不合格修正→次の種族群",
+        "lastRunOutcome": {
+          "newSourceChangedIds": 1,
+          "newQAPassed": 0,
+          "newGameAppliedIds": 0,
+          "newSourceCommits": 1,
+          "newGeneratedGLBs": 0
+        }
+      }
     },
     "world": {
-      "source": "GitHub実ソース+World専用CIでの対象群一括回帰",
-      "lastRunAt": "2026-11-16T02:50:00+09:00",
-      "status": "in_review",
+      "source": "ChatGPT定期品質回帰の実行結果＋GitHub証跡",
+      "lastRunAt": "2026-11-16T15:48:17.459+09:00",
+      "status": "work_incomplete",
       "carryover": true,
-      "subject": "全53種中11種の実3D改善PR審査中（扉5種を新規一括改修）",
-      "summary": "53件全てを一度に写実完成させるのではなく、共通構造を持つ対象群ごとに実3D生成器を共有して一括改善する方針へ切替。今回entry_door_lv1_001〜entry_door_lv5_001の5件について木の有厚8〜10枚板、木製支柱・まぐさ・敷居、レベル別2〜3本の補強・蝶番/鉄鋲・鍵座・取手を実メッシュとして追加、src/object-catalog.jsのゲーム用経路に反映、Draft PR #442に実コミット。専用Node QAをGitHub world-quality CIへ導入しCI #43743734541成功。並走バッチで木製食卓/椅子2件をPR #434に実改修したこともGitHub差分で確認。進捗台帳は11件実3D候補・42件未着手・品質承認0。全体Architecture CI失敗、実WebGL正面側面俯瞰・Android FPS未確認なのでmainマージ/本編公開は未実施。",
-      "nextAction": "PR #442の実WebGL/Android画面・キャラ/衝突整合性を確認し、不具合があれば修正。PR #434、#430、#427、#409と順次QA/マージ条件を確認。残42種は建造物9、街路小物など構造が共通する群をまとめて5〜10種類ずつ一括生成器で実改修。承認済み53/53かつmain反映・Pages公開の全件検証が終わるまでcarryover=trueを維持。",
+      "subject": "world 53種：既存PR QA滞留・品質承認0件",
+      "summary": "2026-11-16T15:48:17.459+09:00 実行。main world.enabled=trueを確認。新規実ソース改修0件・新規実ソースSHAなし・原型/GLB再生成0件・対象別QA合格0件・ゲーム反映0件。PR #441作業ブランチ保存21件/未保存32件（QA unverified）、main受入台帳53件/審査中11件/承認0件/未承認53件。別集計・合算なし。mainマージ0件・Pages公開0件。",
+      "nextAction": "PR #441保存21件の静的QAとWebGL/Android実測を先行し、未確認を承認しない。次に未保存IDの共有生成器を実改修して小刻みコミット。",
       "steps": {
         "launch": "done",
-        "code": "done",
+        "code": "pending",
         "qa": "pending",
-        "commit": "done",
+        "commit": "pending",
         "pr": "done",
         "merge": "pending",
         "deploy": "pending"
       },
       "evidence": [
+        {
+          "label": "作業ブランチ21件の保存記録（全QA unverified）",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/blob/396f3e4d655c4fb6f230b09384b11a39fe38d0d7/data/batch-checkpoints/world.json"
+        },
+        {
+          "label": "作業継続 PR #441",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/441"
+        },
+        {
+          "label": "mainの全53種受入台帳（審査中11、承認0）",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/blob/main/data/world-quality/object-realism-acceptance.json"
+        },
         {
           "label": "扉5種類の一括実3D造形 PR #442",
           "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/442"
@@ -123,7 +165,26 @@
           "label": "53件の個別承認台帳",
           "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/blob/main/data/world-quality/object-realism-acceptance.json"
         }
-      ]
+      ],
+      "lastRunOutcome": {
+        "kind": "verification_only",
+        "newSourceChangedIds": 0,
+        "newQAPassed": 0,
+        "newGameAppliedIds": 0,
+        "newSourceCommits": 0,
+        "branchSavedCount": 21,
+        "branchRemainingCount": 32,
+        "mainInReviewCount": 11,
+        "mainAcceptedCount": 0,
+        "mainUnacceptedCount": 53
+      },
+      "operational": {
+        "blockers": [
+          "今回の実行ではソース修正とWebGL/Android実機QAの実施証跡を取得できず、新規実ソース変更0件",
+          "PR #441保存21件の対象別QAはunverified"
+        ],
+        "speedPlan": "既存21件の静的QA→WebGL/Android確認→未保存の共通構造5〜10件を実改修コミット"
+      }
     },
     "anime": {
       "source": "ChatGPTタスクのスケジュール確認",

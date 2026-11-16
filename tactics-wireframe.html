@@ -315,7 +315,7 @@ body[data-circle-target] #destinationPrompt{border:2px solid #ffed9c;box-shadow:
 }
 </style>
 <link rel="stylesheet" href="./src/battle-three-group-panel.css?v=1">
-<link rel="stylesheet" href="./src/central-battle-orders.css?v=20261116-radar2">
+<link rel="stylesheet" href="./src/central-battle-orders.css?v=20261116-templates">
 <div id="vitalsPanel" hidden role="region" aria-label="戦況HP・MP一覧"><div class="vitalsHead"><strong>部隊別 HP / MP（⏸ 一時停止中）</strong><button id="vitalsClose" aria-label="戦況を閉じる">✕ 閉じる</button></div><div id="vitalsOverview"></div><div class="vitalsFilters"><label>軍<select id="vitalsTeam"><option value="0">味方</option><option value="1">敵</option></select></label><label>部隊<select id="vitalsSquad"><option value="all">全部隊</option></select></label><label>職業<select id="vitalsJob"><option value="all">全職業</option></select></label></div><div class="squadHelp" id="vitalsSquadStatus">部隊を選ぶと個人のHPとMPを確認できます。</div><button id="vitalsHealing" disabled>✚ この部隊へ回復支援を要請</button><div id="vitalsJobSummary"></div><div id="vitalsIndividuals"></div><div class="vitalsPages"><button id="vitalsPrev">◀ 前</button><span id="vitalsPageLabel">1 / 1</span><button id="vitalsNext">次 ▶</button></div></div>
 <button id="battleMenuToggle" aria-expanded="false">☰ メニュー</button>
 <div id="teamLegend" aria-label="陣地識別色"><span class="ally">■ 味方陣地・西</span><span class="enemy">■ 敵陣地・東</span><span>▣ 中立帯</span></div>
@@ -744,7 +744,9 @@ body.compact-command-dock.compact-explore-open .exploreBuildingList button{
 <button id="loadingStart" type="button" hidden style="font:bold 17px system-ui;padding:13px 17px;border:2px solid #eacb87;background:#245d7a;color:#fff;border-radius:10px;margin:12px auto;min-height:54px">♪ 音楽を有効にして開戦</button>
 <button id="loadingSkipAudio" type="button" hidden style="font:12px system-ui;padding:9px;border:1px solid #92a5bb;background:#132a3b;color:#c9d8e5;border-radius:8px;margin:4px auto">音声なしで開戦</button></div></div><div id="runtimeError" style="display:none;position:fixed;top:65px;left:8px;right:8px;z-index:30;padding:10px;background:#631f28;color:#fff;border:1px solid #ff9d9d;border-radius:8px;font-size:12px;white-space:pre-wrap"></div><script>function showRuntimeError(message){const el=document.getElementById('runtimeError');if(el){el.style.display='block';el.textContent='実行エラー: '+message}const loading=document.getElementById('battleLoading');if(loading&&!loading.hidden){document.getElementById('loadingStage').textContent='ゲームの準備に失敗しました';const detail=document.getElementById('loadingError');detail.hidden=false;detail.textContent=String(message);document.getElementById('loadingRetry').hidden=false}}window.addEventListener('error',e=>showRuntimeError((e.message||'スクリプトの読み込みに失敗')+'\n'+(e.filename||'')+':'+(e.lineno||'')));window.addEventListener('unhandledrejection',e=>showRuntimeError(e.reason?.stack||e.reason?.message||String(e.reason)));</script><script type="module">
 import {normalizeArmyGroup,battleGroupMembers} from './src/army-groups.js';
-import {createTargetedStrategyUi} from './src/targeted-strategy-runtime.js?v=20261116-radar2';
+import {createTargetedStrategyUi} from './src/targeted-strategy-runtime.js?v=20261116-templates';
+import {createBattleObjectiveCheckpoints} from './src/battle-objective-checkpoints.js?v=20261116-team3';
+import {BATTLE_PLAN_PRESETS} from './src/battle-plan-recommendations.js?v=20261116';
 import {STRATEGY_METHODS} from './src/three-step-strategy-catalog.js';
 import {brokenFormationGroups} from './src/battle-formation-integrity.js';
 import {createBattleThreeGroupPanel} from './src/battle-three-group-panel.js';
@@ -754,7 +756,7 @@ import {layoutSquadCallouts,squadCalloutLeader} from './src/battle-squad-callout
 import {createBattleCeremony} from './src/battle-ceremony.js?v=4.6.69';
 import {updateDefensivePosture} from './src/battle-defensive-doctrine.js?v=4.6.15';
 import {chooseBlockedMovementDetour} from './src/battle-movement-recovery.js?v=4.6.15';
-import {findStableGridPath,stableGridNext,sameNavigationCell} from './src/battle-stable-grid-route.js?v=4.6.36';
+import {findStableGridPath,stableGridNext,incrementalStableGridNext,createGridRoutingBudget,sameNavigationCell} from './src/battle-stable-grid-route.js?v=20261116-routebudget';
 import {formatSquadIntent} from './src/battle-squad-intent.js?v=4.6.45';
 import {sortSquadRibbon,squadRibbonStatus,ORDER_COOLDOWN_SECONDS} from './src/battle-command-roster.js?v=4.6.69';
 import {tacticalCooldownSeconds} from './src/tactical-command-evaluation.js?v=2.1';
@@ -913,6 +915,9 @@ import {batchStaticBuildingShells} from './src/stage-building-instancing.js?v=2'
 import {cameraSegmentHitsBox,selectCameraOccluders,selectCanopiesAroundCamera,chooseClearBattleCameraOffset,shouldRevealBuildingInterior,safeSelectedInteriorFloor} from './src/battle-camera-occlusion.js?v=4.6.69';
 import {registerSquadCircleTap,chooseSquadZoomTarget,SQUAD_CIRCLE_DOUBLE_TAP_MS,shouldHideSquadLabelsAtDistance} from './src/battle-squad-circle-tap.js?v=4.6.36';
 import {createBattleActorVisibility} from './src/battle-render-visibility.js?v=zoom-human-1';
+import {enableBattleRigidFrustumCulling,countBattleRigCulling} from './src/battle-rigid-frustum-optimization.js?v=20261116-rigid1';
+import {interpolatedSkirmishCameraAnchor,createVisibilityWorkPacer} from './src/battle-frame-pacing.js?v=20261116-p95';
+import {BattlePhaseProfiler} from './src/battle-phase-profiler.js?v=20261116-gpu1';
 import {shouldShowOverheadSquadCallouts,closestAliveBattleFocus} from './src/battle-zoom-visibility-policy.js?v=1';
 import {createSkirmishDistanceLod} from './src/skirmish-distance-impostors.js?v=4.6.15';
 import {createCatalogObject} from './src/object-catalog.js?v=4.6.36';
@@ -942,7 +947,7 @@ import {createMassBattleRealArmy} from './src/mass-battle-real-army.js?v=4.6.39'
 import {BattleCorpsePolicy,corpseOpacity} from './src/battle-corpse-policy.js?v=4.4.35';
 import {CrowdPerformanceBudget} from './src/crowd-performance-budget.js?v=4.6.36';
 import {createMassBattleWorkerClient} from './src/mass-battle-worker-client.js?v=4.6.70';
-import {FramePerformanceMonitor} from './src/frame-performance.js?v=4.4.34';
+import {FramePerformanceMonitor} from './src/frame-performance.js?v=20261116-p95';
 import {ActionVfxRuntime} from './src/character-system/action-vfx-runtime.js?v=4.6.15';
 import {ConfirmedHitOverlay,selectConfirmedHitEvents} from './src/confirmed-hit-overlay.js?v=4.6.36';
 import {combatEffectDirective} from './src/combat-effect-directives.js?v=4.6.16';
@@ -1075,17 +1080,36 @@ window.getActionEffectsStats=()=>actionVfx.stats;
 // Restore almost all of the original perceived resolution. GPU FXAA keeps
 // thin armour silhouettes smooth in large battles without 4x MSAA samples.
 const BATTLE_RESOLUTION_SCALE=.92;
+// Android's WebGL multisample buffers are expensive for 100 dressed actors.
+// An output-preserving GPU FXAA pass keeps silhouettes smooth with a single
+// pixel sample, while all original models, PBR materials and shaders remain.
+// ?gpuFxaa=0 preserves the older MSAA path for side-by-side visual QA.
+const useGpuFxaa=!TOWN_MODE&&(MASS_SIZE>0||battleParams.get('gpuFxaa')!=='0');
 const battleViewportSize=()=>({width:Math.max(1,$('stageViewport').clientWidth||innerWidth),height:Math.max(200,$('stageViewport').clientHeight||innerHeight-196)});
 const initialView=battleViewportSize();
-const nativeBattlePixelRatio=Math.min(devicePixelRatio,MASS_SIZE?1.1:1.5)*BATTLE_RESOLUTION_SCALE;
+// Initialize 50v50 at its measured steady-state pixel ratio rather than
+// allocating 1.38x targets, repeatedly discarding them down to ~0.93x
+// during the first few seconds of fighting. Fixed during active skirmishes
+// to prevent Android black flashes from reallocating the drawing buffer.
+const nativeBattlePixelRatio=Math.min(devicePixelRatio,MASS_SIZE?1.1:TOWN_MODE?1.5:1.0)*BATTLE_RESOLUTION_SCALE;
 const adaptiveBattleResolution=new AdaptiveBattleResolution({
  maxRatio:nativeBattlePixelRatio,minRatio:Math.max(.72,nativeBattlePixelRatio*.65),targetFps:45
 });
-const renderer=new THREE.WebGLRenderer({antialias:!MASS_SIZE});renderer.setPixelRatio(nativeBattlePixelRatio);renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.05;renderer.setSize(initialView.width,initialView.height);$('stageViewport').append(renderer.domElement);
+const renderer=new THREE.WebGLRenderer({antialias:!MASS_SIZE&&!useGpuFxaa});renderer.setPixelRatio(nativeBattlePixelRatio);renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.05;renderer.setSize(initialView.width,initialView.height);$('stageViewport').append(renderer.domElement);
 // Composer has multiple render passes. Count the complete scene rather than
 // reporting only the last output pass as "描画 1" in the performance HUD.
 renderer.info.autoReset=false;
+const gpuLifecycle={contextLosses:0,contextRestores:0,bufferResizes:0,lastContextLossAt:0};
+// WebGL can be evicted by Android under memory pressure. Count the actual
+// events so a blackout can be distinguished from a >200ms CPU/GPU stall.
+renderer.domElement.addEventListener('webglcontextlost',event=>{
+ event.preventDefault();gpuLifecycle.contextLosses++;gpuLifecycle.lastContextLossAt=Date.now();
+},false);
+renderer.domElement.addEventListener('webglcontextrestored',()=>{
+ gpuLifecycle.contextRestores++;
+},false);
 const framePerformance=new FramePerformanceMonitor(renderer);
+const battleCpuProfiler=new BattlePhaseProfiler();
 const skirmishPerformancePanel=!MASS_SIZE?document.createElement('div'):null;
 if(skirmishPerformancePanel){
  skirmishPerformancePanel.id='massGamePerf';
@@ -1096,6 +1120,9 @@ if(skirmishPerformancePanel){
 window.getBattleResourceHistory=()=>resourceSamples.slice();
 window.getSkirmishPerformanceStats=()=>({
  version:'4.6.69',...framePerformance.getStats(),
+ cpuPhases:battleCpuProfiler.getStats(),gpuLifecycle:{...gpuLifecycle},
+ gpuContextLost:renderer.getContext().isContextLost?.()??false,
+ gpuAntialias:useGpuFxaa?'GPU FXAA':'WebGL MSAA',
  drawCalls:renderer.info.render.calls,
  adaptiveRenderQuality:adaptiveBattleResolution.getStats(),
  totalActors:actors.length,
@@ -1131,8 +1158,8 @@ window.getConfirmedHitFeedbackStats=()=>({active:confirmedHitOverlay.activeCount
   confirmed3D:actionVfx.stats.confirmedHitMarkers,version:'4.6.69'});
 // Small battles use WebGL MSAA. Large battles use a lightweight GPU FXAA pass
 // with a real drawing-buffer-sized reciprocal texel uniform.
-const fxaaComposer=MASS_SIZE?new EffectComposer(renderer):null;
-const fxaaPass=MASS_SIZE?new ShaderPass(FXAAShader):null;
+const fxaaComposer=useGpuFxaa?new EffectComposer(renderer):null;
+const fxaaPass=useGpuFxaa?new ShaderPass(FXAAShader):null;
 if(fxaaComposer){
  fxaaComposer.addPass(new RenderPass(scene,camera));
  fxaaComposer.addPass(fxaaPass);
@@ -1141,6 +1168,7 @@ if(fxaaComposer){
  fxaaComposer.addPass(new OutputPass());
 }
 function resizeBattleRenderer(width,height){
+ gpuLifecycle.bufferResizes++;
  renderer.setSize(width,height);
  if(fxaaComposer){
   fxaaComposer.setSize(width,height);
@@ -1150,6 +1178,9 @@ function resizeBattleRenderer(width,height){
 }
 function renderBattleFrame(){renderer.info.reset();if(fxaaComposer)fxaaComposer.render();else renderer.render(scene,camera)}
 function setAdaptiveBattlePixelRatio(ratio){
+ // Deliberately fixed for detailed 50vs50, including the long battle.
+ // GPU framebuffer reallocations on mobile can briefly clear the canvas.
+ if(!MASS_SIZE&&!TOWN_MODE)return;
  if(Math.abs(renderer.getPixelRatio()-ratio)<.005)return;
  renderer.setPixelRatio(ratio);
  if(fxaaComposer)fxaaComposer.setPixelRatio(ratio);
@@ -2121,6 +2152,8 @@ let crowdVfxCursor=0;
 let prepareMassRenderer=async()=>{};
 const actors=[],clock=new THREE.Clock(),raycaster=new THREE.Raycaster(),pointer=new THREE.Vector2();
 const actorVisibility=createBattleActorVisibility(THREE,camera);
+const RIGID_CULLING_ENABLED=battleParams.get('rigCull')!=='0';
+window.getBattleRigCullingQA=()=>({...countBattleRigCulling(actors),enabled:RIGID_CULLING_ENABLED});
 window.getBattleHumanVisibilityQA=()=>({
  townMode:TOWN_MODE,alive:(massSim?.units??actors).filter(u=>u.alive!==false&&u.hp>0).length,
  detailedInView:actors.filter(a=>a.hp>0&&a.root.visible&&a.character?.object3D?.visible).length,
@@ -2560,7 +2593,13 @@ async function installBattleModels(){
         throw Error('衣装基準の人体フィット・露出部保護に失敗');
       a.bodyClippedTriangles=garmentAudit.skinCutTriangles;
       a.garmentSurfaceSamples=garmentAudit.garmentSurfaceSamples;
-      a.outfit.sync();a.outfitError=null;dressed++;
+      a.outfit.sync();
+      // The original full-quality armor/cloth stays untouched. Only rigid
+      // parts entirely outside the camera/shadow frustum are not submitted.
+      // Keep deforming body/hair/animation meshes on their original path.
+      if(!TOWN_MODE&&!massSim&&RIGID_CULLING_ENABLED)
+       a.rigidCullStats=enableBattleRigidFrustumCulling(a.character.object3D);
+      a.outfitError=null;dressed++;
       if(aiSteelTrialRequested&&!aiSteelTrial&&sex==='male'&&a.job.name==='剣士'){
        aiSteelTrial={id:a.id,root:a.outfit.root,active:false};
        const btn=document.getElementById('aiSteelTrialToggle');
@@ -3761,22 +3800,40 @@ function recordStoryBattleOutcome(victory){
  try{sessionStorage.setItem('hai-gin-story-result-v1',JSON.stringify(result));}
  catch(e){showRuntimeError('戦闘結果を保存できませんでした：'+e.message);}
 }
-// Bounded A* for building exits; avoid oscillation at doorframes.
-// Route around walls even when other units temporarily occupy the doorway.
+// Reset once per SIMULATION tick, not per actor: prevents 100 simultaneous
+// route requests from all expanding 8000 A* nodes on the main thread.
+let skirmishGridRoutingBudget=createGridRoutingBudget(320);
+window.getSkirmishRoutingBudget=()=>({...skirmishGridRoutingBudget});
+// Cache a collision-safe route across AI ticks for bridge and building exits.
+// Rebuilding an 8,000-node A* for every soldier every 50ms caused P95 hitches
+// while the 50v50 bridge queue was stationary. Congestion is not a new goal;
+// wait briefly and replan only if the planned next tile remains occupied.
+// This does not alter collision, targeting, mesh detail or animation fidelity.
 function exitPathStep(actor,target){
- // Heap A* replaces repeatedly sorting a 16,000-node open list.
- const path=findStableGridPath(actor.cell,target,{
+ // Open corridors and uninterrupted bridge lanes need no A* tree search.
+ // The first step is still validated with the actual dynamic occupancies.
+ if(!routeOccludedByTerrain(actor.cell,target,actor)){
+  const dx=Math.sign(target.x-actor.cell.x),dz=Math.sign(target.z-actor.cell.z);
+  if((dx||dz)&&availableCell(actor.cell.x+dx,actor.cell.z+dz,actor)&&
+     (!dx||!dz||(availableCell(actor.cell.x+dx,actor.cell.z,actor)&&
+       availableCell(actor.cell.x,actor.cell.z+dz,actor)))){
+   actor._exitRoute=null;
+   return {x:actor.cell.x+dx,z:actor.cell.z+dz};
+  }
+ }
+ const result=incrementalStableGridNext(actor._exitRoute,actor.cell,target,{
   walkable:(x,z)=>traversableCell(x,z,actor),
   occupied:(x,z)=>!availableCell(x,z,actor),
-  maxExpanded:8000
+  now:elapsed,waitSeconds:.7,maxExpanded:8000,budget:skirmishGridRoutingBudget
  });
- return path?.[0]??null;
+ actor._exitRoute=result.state;
+ return result.next;
 }
 function stableActorRouteStep(a,goal,maxExpanded=6500){
- const result=stableGridNext(a._stableMovementPath,a.cell,goal,{
+ const result=incrementalStableGridNext(a._stableMovementPath,a.cell,goal,{
   walkable:(x,z)=>traversableCell(x,z,a),
   occupied:(x,z)=>!availableCell(x,z,a),
-  now:elapsed,maxExpanded
+  now:elapsed,maxExpanded,budget:skirmishGridRoutingBudget
  });
  a._stableMovementPath=result.state;
  return result;
@@ -3933,12 +3990,17 @@ function moveActor(a,goal,dt,stop){
    // Units pursuing a goal OUTSIDE the room use the real doorway.
    const doorwayCandidates=[Math.floor(b.center),Math.ceil(b.center)];
    let step=null;
+   // Maintain one doorway target until its incremental A* completes.
+   // Switching to the next door (or to staging) in the same AI tick would
+   // destroy the saved frontier and strand units forever at a busy entrance.
+   doorwayCandidates.sort((x,y)=>Number(y===a._exitRoute?.goalX)-Number(x===a._exitRoute?.goalX));
    for(const x of doorwayCandidates){
-    // Path to the door threshold; occupied exits are retried when cleared.
     const candidate=exitPathStep(a,{x,z:b.bounds.maxZ+1});
     if(candidate&&availableCell(candidate.x,candidate.z,a)){step=candidate;break}
+    if(a._exitRoute?.search)break;
    }
    if(step&&startCellMove(a,step.x,step.z)){a.jumping=false;return}
+   if(a._exitRoute?.search){a.poseMoving=false;return;}
    // If the doorway is occupied, stage units near it without overlapping.
    const staging={x:Math.round(b.center),z:b.bounds.maxZ-1};
    if(a.cell.x!==staging.x||a.cell.z!==staging.z){
@@ -3963,9 +4025,22 @@ function moveActor(a,goal,dt,stop){
      if(nextX>=laneStart&&nextX<=laneEnd&&availableCell(nextX,a.cell.z,a)){
       if(startCellMove(a,nextX,a.cell.z)){a.jumping=false;return}
      }
-     // The bridge is a queue: if the next stair is occupied, wait
-     // rather than choosing a sideways step or declaring no route.
-     if(nextX>=laneStart&&nextX<=laneEnd)return;
+     // Never sidestep into river water. But a soldier already on the
+     // opposite BANK may exit the congested bridge lane onto a legal
+     // adjacent land cell, leaving room for the following soldiers.
+     if(nextX>=laneStart&&nextX<=laneEnd){
+      if((a.cell.x-center)*a.crossing.fromSide<=-10){
+       const sideOrder=a.id%2?[1,-1]:[-1,1];
+       for(const dz of sideOrder){
+        const nz=a.cell.z+dz;
+        if(!traversableCell(a.cell.x,nz,a)||!availableCell(a.cell.x,nz,a))continue;
+        if(startCellMove(a,a.cell.x,nz)){
+         a.crossing=null;a._exitRoute=null;a.jumping=false;return;
+        }
+       }
+      }
+      return;
+     }
     }
    }
    // Search through the actual bridge and stair cells; never take a greedy
@@ -3974,13 +4049,18 @@ function moveActor(a,goal,dt,stop){
    if(path&&availableCell(path.x,path.z,a)){
     if(startCellMove(a,path.x,path.z)){a.jumping=false;return}
    }
+   // If the path is still being planned, keep its frontier alive.
+   // Do not initiate an unrelated recovery A* that steals the shared budget.
+   if(a._exitRoute?.search){a.poseMoving=false;return;}
    // Congested bridge: allow a short detour around the blocked first tile.
    // Do not send actors onto the river or teleport through other units.
    if(path){
     for(const [dx,dz] of [[0,-1],[0,1],[-1,0],[1,0]]){
      const nx=a.cell.x+dx,nz=a.cell.z+dz;
      if(!availableCell(nx,nz,a))continue;
-     const alternate=exitPathStep({...a,cell:{x:nx,z:nz}},target);
+     // No throwaway 8000-node A* for a hypothetical actor every tick.
+     // Only take a detour whose direct line is terrain-clear.
+     const alternate=!routeOccludedByTerrain({x:nx,z:nz},target,a);
      if(alternate&&startCellMove(a,nx,nz)){a.jumping=false;return}
     }
    }
@@ -5021,7 +5101,11 @@ function pursueEnemyOnAnotherFloor(a){
  return routed;
 }
 function tickAI(dt){
- if(!battleReady||battleCeremony.locked||paused||finished)return;elapsed+=dt;updateBridgeFires();
+ if(!battleReady||battleCeremony.locked||paused||finished)return;
+ // A shared per-tick expansion budget preserves combat/animation updates
+ // while the A* frontier of each waiting soldier is resumed next tick.
+ skirmishGridRoutingBudget=createGridRoutingBudget(320);
+ elapsed+=dt;updateBridgeFires();
  if(!massSim)updateSkirmishSquadStrategies();
  updateEnemyItemDecisions();
  updateAllyAutoItemDecisions();
@@ -7497,6 +7581,20 @@ function issueTargetedMapCommand(point){
  if(targetedStrategyUi.isOpen())return true;
  finishSquadDestination(true);return true;
 }
+const missionCheckpointHud=document.createElement('div');
+missionCheckpointHud.id='battleObjectiveCheckpoints';
+missionCheckpointHud.setAttribute('aria-live','polite');
+missionCheckpointHud.style.cssText='max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:700 11px/1.45 system-ui;color:#ffe7ac;border:1px solid #758ba5;border-radius:5px;padding:4px 7px;background:#10283ad9';
+missionCheckpointHud.textContent='📍 作戦チェックポイント：発令待ち';
+$('topPerformanceSlot').appendChild(missionCheckpointHud);
+const objectiveCheckpoints=createBattleObjectiveCheckpoints({
+ getUnits:()=>squadRoster,
+ getObjects:()=>massSim?.actions.objects||skirmishActions?.objects||[],
+ getSquadCenter:id=>squadCenter(id,0),
+ onReport:message=>log(message),
+ onChange:message=>{missionCheckpointHud.textContent=message||'📍 作戦チェックポイント：発令待ち';}
+});
+window.getBattleObjectiveCheckpoints=()=>objectiveCheckpoints.snapshot();
 let centralStrategyPreviousPause=null;
 $('topStrategy').onclick=()=>{
  if(!battleReady||finished||battleCeremony.locked)return;
@@ -7520,6 +7618,14 @@ const targetedStrategyUi=createTargetedStrategyUi({
  },
  getRadarCanvas:()=>miniBase,
  getMapSize:()=>WORLD_SIZE,
+ getTemplates:groupId=>{
+  const configured=storyRequest?.battlePlanRecommendations?.[String(groupId)];
+  if(configured?.length){
+   const selected=storyRequest?.battlePlanSelected?.[String(groupId)];
+   return [...configured].sort((a,b)=>Number(b.id===selected)-Number(a.id===selected));
+  }
+  return BATTLE_PLAN_PRESETS.map(x=>({...x,score:50,reason:'模擬戦向け参考テンプレート'}));
+ },
  getItems:()=>{
   const byId=new Map();
   for(const item of allyItemStocks()){
@@ -7530,11 +7636,18 @@ const targetedStrategyUi=createTargetedStrategyUi({
   }
   return [...byId.values()];
  },
- onItemExecute:({issuerSquadId,targetSquadId,itemId})=>{
-  return useSquadBattleItemForSource(itemId,targetSquadId,issuerSquadId)||'所持数・対象のHP・使用条件を確認してください';
+ onItemExecute:({groupId,issuerSquadId,targetSquadId,itemId})=>{
+  const accepted=useSquadBattleItemForSource(itemId,targetSquadId,issuerSquadId);
+  if(accepted===true)objectiveCheckpoints.register({groupId,mode:'item',squadIds:[issuerSquadId],
+   targetIds:[targetSquadId],itemId});
+  return accepted||'所持数・対象のHP・使用条件を確認してください';
  },
  onMapPick:point=>{
-  return issueTargetedMapCommand(point)||'移動可能な地点と対応職業を指定してください';
+  const plan=pendingTargetedMap;
+  const accepted=issueTargetedMapCommand(point);
+  if(accepted===true&&plan)objectiveCheckpoints.register({groupId:plan.groupId,
+   mode:plan.mode,squadIds:plan.squadIds,point});
+  return accepted||'移動可能な地点と対応職業を指定してください';
  },
  getPlan:groupId=>{
   const ids=squadIds.filter(id=>normalizeArmyGroup(armyGroupBySquad[id])===Number(groupId));
@@ -7565,7 +7678,11 @@ const targetedStrategyUi=createTargetedStrategyUi({
    .filter(o=>o.alive&&o.category==='structure'&&['bridge','tree','building','door'].includes(o.type))
    .map(o=>({id:String(o.id),team:'object',x:Number(o.x),z:Number(o.z),label:(o.type==='bridge'?'橋':o.type==='tree'?'木':o.type==='door'?'扉':'建物')+' #'+String(o.id).slice(-5)}));
  },
- onExecute:issueTargetedPlan,
+ onExecute:plan=>{
+  const accepted=issueTargetedPlan(plan);
+  if(accepted===true)objectiveCheckpoints.register(plan);
+  return accepted;
+ },
  onMapRequest:plan=>{
   pendingTargetedMap=plan;
   return true; // The enlarged radar in the central dialog owns the target selection.
@@ -7707,10 +7824,39 @@ function drawSquadMiniMap(){
  }
  miniCtx.restore();
  battleHotspots.draw(miniCtx,{limit:24});
- const marker=(p,color,r=4)=>{miniCtx.fillStyle=color;miniCtx.beginPath();miniCtx.arc(p.x,p.z,r,0,Math.PI*2);miniCtx.fill()};
- for(const id of enemySquadIds){const center=squadCenter(id,1);if(center)marker(center,'#ff5d67',4.8)}
+ // The top-left HUD uses the same 1-1, 2-1 identifiers as the full radar.
+ const teamPinColors=['#59dcfa','#c7a0ff','#93e5a1'];
+ const squadNumberByGroup=new Map(),usedPinCenters=[];
+ for(const id of squadIds){
+  const group=normalizeArmyGroup(armyGroupBySquad[id]);
+  const row=squadNumberByGroup.get(group)||new Map();
+  row.set(String(id),row.size+1);squadNumberByGroup.set(group,row);
+ }
+ const numberedPin=(point,label,color,selected=false)=>{
+  let x=point.x,z=point.z;
+  // A small displacement prevents overlapping badges without moving real units.
+  for(let k=0;k<8&&usedPinCenters.some(p=>Math.hypot(p.x-x,p.z-z)<19);k++){
+   const angle=(k*137.5)*Math.PI/180,dist=11+Math.floor(k/4)*7;
+   x=Math.max(11,Math.min(WORLD_SIZE-11,point.x+Math.cos(angle)*dist));
+   z=Math.max(11,Math.min(WORLD_SIZE-11,point.z+Math.sin(angle)*dist));
+  }
+  usedPinCenters.push({x,z});
+  const w=Math.max(21,Math.min(37,label.length*8+8));
+  miniCtx.fillStyle=color;miniCtx.fillRect(x-w/2,z-9,w,18);
+  miniCtx.strokeStyle=selected?'#ffe38b':'#10283c';
+  miniCtx.lineWidth=selected?3:1.5;miniCtx.strokeRect(x-w/2,z-9,w,18);
+  miniCtx.fillStyle='#0b2031';miniCtx.font='bold 13px system-ui';
+  miniCtx.textAlign='center';miniCtx.textBaseline='middle';miniCtx.fillText(label,x,z);
+ };
+ for(const [i,id] of enemySquadIds.entries()){
+  const center=squadCenter(id,1);
+  if(center)numberedPin(center,'敵'+(i+1),'#f56d6e');
+ }
  const ordered=[...squadOrderRegistry].filter(([,value])=>Number.isFinite(value.x)&&Number.isFinite(value.z));
- $('miniMapCurrent').textContent=selectedSquadId?`${squadName(selectedSquadId)}　${squadOrderText(selectedSquadId)}`:
+ $('miniMapCurrent').textContent=selectedSquadId?
+  '第'+normalizeArmyGroup(armyGroupBySquad[selectedSquadId])+'班-'+
+  (squadNumberByGroup.get(normalizeArmyGroup(armyGroupBySquad[selectedSquadId]))?.get(String(selectedSquadId))||1)+
+  ' '+squadName(selectedSquadId)+'　'+squadOrderText(selectedSquadId):
   '指示中 '+ordered.length+'隊 / '+squadIds.length+'隊（ほかは自動行動）';
  for(const id of squadIds){
   const center=squadCenter(id);if(!center)continue;
@@ -7720,7 +7866,9 @@ function drawSquadMiniMap(){
    miniCtx.strokeStyle=id===selectedSquadId?'#ffe78a':'#83d7f0';miniCtx.lineWidth=id===selectedSquadId?2.4:1.25;miniCtx.stroke();
    miniCtx.strokeStyle='#ffdf75';miniCtx.lineWidth=2.2;miniCtx.beginPath();miniCtx.arc(target.x,target.z,7,0,Math.PI*2);miniCtx.stroke();
   }
-  marker(center,id===selectedSquadId?'#ffe47b':'#56dcff',id===selectedSquadId?7:4.6);
+  const group=normalizeArmyGroup(armyGroupBySquad[id]);
+  numberedPin(center,group+'-'+(squadNumberByGroup.get(group)?.get(String(id))||1),
+   teamPinColors[Math.max(0,Math.min(2,group-1))],id===selectedSquadId);
  }
  // A bright crosshair indicates the part of the battlefield at the centre
  // of the 3D camera, even when the full scene cannot fit on the phone.
@@ -8195,6 +8343,8 @@ function renderSquadRibbons(sums){
  threeGroupPanel?.render(false,Boolean(pendingCircleTarget));
  battleTacticalUi.onSquadSums(sums);
  refreshBattleTargetSummary(sums);
+ // Hidden legacy ribbons must not measure or rearrange DOM during live combat.
+ if(document.body.classList.contains('story-center-orders'))return;
  // The only live controls are now 3D squad circles; do not reflow invisible sidebars.
  /* Target rosters enabled. */
  // Top telemetry grows or shrinks with DPI, so anchor both side ribbons
@@ -8302,6 +8452,7 @@ function renderSquadRibbons(sums){
  }
 }
 function updateSquadMarkerPositions(dt){
+ if(paused&&commandOverviewLocked)return; // frozen positions are already cached
  squadMarkerClock+=dt;
  if(squadMarkerClock>=.25){
   squadMarkerClock=0;
@@ -8392,7 +8543,7 @@ let squadScreenClock=0;
 let squadScreenLayout=new Map();
 const squadScreenPoint=new THREE.Vector3();
 function updateSquadScreenLabels(dt){
- if(squadCloseupLabelsHidden)return;
+ if(squadCloseupLabelsHidden||document.body.classList.contains('battle-command-active'))return;
  squadScreenClock+=dt;if(squadScreenClock<.1)return;squadScreenClock=0;
  // Freeze both the bubbles and their connecting lines while tapping; moving
  // the hit target between pointerdown and pointerup loses Android clicks.
@@ -8922,10 +9073,14 @@ window.getBattleCameraStats=()=>({
 });
 addEventListener('resize',()=>{const {width,height}=battleViewportSize();camera.aspect=width/height;camera.updateProjectionMatrix();resizeBattleRenderer(width,height)});
 let fpsStart=performance.now(),fpsFrames=0;
+let lastCheckpointWatchAt=0,lastPausedCommandFrameAt=0;
 // The AI/Worker clock advances only once per simulation tick. Ground creature
 // movement, hoof/paw poses and turning need a true per-display-frame clock.
 let lastMassSnapshotMs=performance.now();
-let interiorVisibilityTimer=0;
+// Distribute the three independent occlusion/indoor maintenance passes across
+// separate display frames. Do not reduce the amount of geometry or VFX.
+const sceneVisibilityPacer=createVisibilityWorkPacer();
+const skirmishCameraAnchor=new THREE.Vector3(),cameraFollowShift=new THREE.Vector3();
 let shadowRefreshTimer=0;
 const lastShadowFocus=new THREE.Vector3(Infinity,Infinity,Infinity);
 // Camera-facing cutaway is computed only four times per second. Never fade the
@@ -9275,6 +9430,7 @@ function animateTown(){
 }
 function animate(){
  framePerformance.begin();
+ const cpuFrameStart=performance.now();
  requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),.05);
  const now=performance.now(),bankDelta=Math.max(0,(now-tacticalFrameAt)/1000);tacticalFrameAt=now;
  if(tacticalPlanningActive&&!finished){
@@ -9302,12 +9458,18 @@ function animate(){
  if(!paused)creatureVisualTime+=worldDt;
  if(TOWN_MODE){elapsed+=dt;updateTownAvatar(dt);simAccumulator=0;}
  else while(simAccumulator>=.05){tickAI(.05);simAccumulator-=.05}
+ let cpuPhaseAt=performance.now();
+ battleCpuProfiler.record('ai',cpuPhaseAt-cpuFrameStart);
  updateBattleFormationIntegrity();
  if(!paused){updateActiveSquadBuffVfx();actionVfx.update(worldDt);}
  updateSquadMarkerPositions(dt);
  if(riverFlow)riverFlow.offset.y-=worldDt*.07;
- interiorVisibilityTimer+=dt;
- if(interiorVisibilityTimer>=(commanderCinematic||followCamera?.10:.24)){updateCameraObstructions();updateTownInteriorVisibility();updateGoalIndoorOcclusion();interiorVisibilityTimer=0}
+ // Each pass retains its usual 100/240ms refresh, but they no longer all
+ // occupy one unlucky Android frame.  This does not affect simulation ticks.
+ const visibilityTask=sceneVisibilityPacer.pick(now,{near:Boolean(commanderCinematic||followCamera)});
+ if(visibilityTask===0)updateCameraObstructions();
+ else if(visibilityTask===1)updateTownInteriorVisibility();
+ else if(visibilityTask===2)updateGoalIndoorOcclusion();
  uiTimer+=dt;if(uiTimer>.25){
   updateUI();
   if(MASS_SIZE){
@@ -9317,6 +9479,10 @@ function animate(){
   }
   uiTimer=0;
  }
+ if(!TOWN_MODE&&!paused&&!finished&&now-lastCheckpointWatchAt>=1000){
+  lastCheckpointWatchAt=now;
+  objectiveCheckpoints.update();
+ }
  battleDialogue.update(squadRoster,paused,finished);
  reportSpeech.update();
  refreshBattleVoiceHealth();
@@ -9325,7 +9491,16 @@ function animate(){
   camera.position.copy(old.position);controls.target.copy(old.target);
   controls.update();followCamera=old.follow;
  }
-  actorVisibility.beginFrame(performance.now()/1000);
+  // The central strategy modal freezes the world. Keep full quality static rigs,
+   // materials, actions and shadows; resubmit the still GPU scene only at 10Hz.
+   if(paused&&commandOverviewLocked){
+    if(now-lastPausedCommandFrameAt>=100){
+     lastPausedCommandFrameAt=now;renderBattleFrame();
+    }
+    framePerformance.end();
+    return;
+   }
+   actorVisibility.beginFrame(performance.now()/1000);
   if(skirmishDistanceLod&&!TOWN_MODE)skirmishDistanceLod.update(camera,elapsed,paused);
   if(!massSim&&elapsed-lastCorpseVisibilityAt>=.8){
    lastCorpseVisibilityAt=elapsed;
@@ -9342,6 +9517,7 @@ function animate(){
     Math.min(1,massAccumulator/.1)):0;
   const corpseTime=massSim?massSim.time+massEndElapsed:elapsed;
   const visibleCorpseIds=massSim?corpsePolicy.visibleIds(massSim.units,corpseTime,massSim.tickCount+Math.floor(massEndElapsed*10)):null;
+  let cpuPhaseNow=performance.now();battleCpuProfiler.record('scene',cpuPhaseNow-cpuPhaseAt);cpuPhaseAt=cpuPhaseNow;
   for(const a of actors){
    const massUnit=massSim?massSim.units[a.massUnitId]:null;
    if(massSim&&!a.defeated){
@@ -9462,17 +9638,25 @@ function animate(){
     a.poseMoving=false;
    }else if(visual.update){if(a.mixer)a.mixer.update(visual.delta*cinematicPlaybackScale);else updateBattlePose(a,visual.delta*cinematicPlaybackScale)}
   }
+  cpuPhaseNow=performance.now();battleCpuProfiler.record('rig',cpuPhaseNow-cpuPhaseAt);cpuPhaseAt=cpuPhaseNow;
   if(followCamera){
    let tracked=focusedHumanUnitId!=null?massSim?.units?.find(u=>u.id===focusedHumanUnitId):null;
    if(massSim&&battleViewMode==='commander'&&(!tracked?.alive||tracked.hp<=0)){
     const replacement=squadCommandFocus(trackedAllySquadId);
     tracked=replacement?.unit??null;focusedHumanUnitId=tracked?.id??null;
    }
+   const followed=automaticFloorGuide||selected||actors[0];
+   // In 50v50 the authoritative grid advances at 20Hz, while the visible
+   // outfit/rig is eased between ticks at display frequency. Following the
+   // discrete root caused a 20Hz rooftop/background judder even at stable FPS.
+   const skirmishFollow=followed&&(massSim?followed.root.position:
+     interpolatedSkirmishCameraAnchor(followed,skirmishCameraAnchor));
    const anchor=tracked?.alive&&(tracked._visualMotion?
      new THREE.Vector3(tracked._visualMotion.x,tracked._visualMotion.y+1.05,tracked._visualMotion.z):
      new THREE.Vector3((tracked.x-6)*CELL,unitGroundY(tracked,(tracked.x-6)*CELL,(tracked.z-6)*CELL)+1.05,(tracked.z-6)*CELL))||
-     automaticFloorGuide?.root.position||selected?.root.position||actors[0]?.root.position;
-   if(anchor){const shift=anchor.clone().sub(controls.target);controls.target.add(shift);camera.position.add(shift)}
+     skirmishFollow;
+   if(anchor){cameraFollowShift.copy(anchor).sub(controls.target);
+    controls.target.add(cameraFollowShift);camera.position.add(cameraFollowShift);}
   }
   updateCommanderCinematic();
   controls.update();
@@ -9485,6 +9669,7 @@ function animate(){
    massRenderer.update(massAlpha,massEndElapsed,creatureVisualTime);
   }
   combatObjectRenderer?.sync(massSim?.objects||skirmishActions?.objects||[],creatureVisualTime,massSim?.units||actors,elapsed,massSim?massAlpha:0,massRenderFrame);
+ cpuPhaseNow=performance.now();battleCpuProfiler.record('objects',cpuPhaseNow-cpuPhaseAt);cpuPhaseAt=cpuPhaseNow;
  // Keep the camera above the target and terrain even during drag, zoom and follow.
  const groundCameraY=terrainY(camera.position.x,camera.position.z)+1.7;
  const minCameraY=Math.max(groundCameraY,controls.target.y+Math.max(1.8,Math.hypot(camera.position.x-controls.target.x,camera.position.z-controls.target.z)*.18));
@@ -9510,7 +9695,9 @@ function animate(){
   sun.shadow.needsUpdate=true;
   lastShadowFocus.copy(focus);shadowRefreshTimer=0;
  }
+ cpuPhaseNow=performance.now();battleCpuProfiler.record('hud',cpuPhaseNow-cpuPhaseAt);cpuPhaseAt=cpuPhaseNow;
  renderBattleFrame();
+ cpuPhaseNow=performance.now();battleCpuProfiler.record('submit',cpuPhaseNow-cpuPhaseAt);
  confirmedHitOverlay.render(dt,{paused});
  framePerformance.end();
  // GPU fill-rate adapts slowly to sustained frame-time pressure. Do not
@@ -9536,9 +9723,15 @@ function animate(){
     if(resourceSamples.length>36)resourceSamples.splice(1,1);
    }
    if(skirmishPerformancePanel)skirmishPerformancePanel.textContent=
-    'FPS '+perf.fps+'｜P95 '+perf.frameP95Ms+'ms｜描画 '+report.drawCalls+
+    'FPS '+perf.fps+'｜P95 '+perf.frameP95Ms+'ms｜50ms超 '+(perf.longFrames50??0)+
+    '｜80ms超 '+(perf.longFrames80??0)+'｜描画 '+report.drawCalls+
     '｜画質 '+renderer.getPixelRatio().toFixed(2)+'x'+
     '｜衣装 '+report.dressed+'/'+report.totalActors+
+    '｜可視 '+(report.visibility?.visible??0)+'｜GPU '+(perf.gpuFrameMs??'--')+'ms'+
+    '｜経路 '+skirmishGridRoutingBudget.expanded+'節 待 '+skirmishGridRoutingBudget.deferred+
+    '｜CPU AI '+report.cpuPhases.ai.p95+' 肢 '+report.cpuPhases.rig.p95+
+    ' 場 '+report.cpuPhases.objects.p95+' 描 '+report.cpuPhases.submit.p95+'ms'+
+    '｜黒 '+report.gpuLifecycle.contextLosses+' 再配 '+report.gpuLifecycle.bufferResizes+
     '｜鎧 '+report.armorOriginalPieces+'→'+report.armorDrawPieces+
     '｜遠景 '+(report.distantSoldiers?.visible??0)+'｜死体 '+report.visibleCorpses+
     '｜GPU形状 '+report.memory.gpuGeometries+'｜JS '+(report.memory.jsHeapMB??'--')+'MB';
@@ -9557,7 +9750,7 @@ function animate(){
   }
   $('massGamePerf').textContent=massRenderer?'FPS '+fps+'｜視点 '+camera.position.distanceTo(controls.target).toFixed(1)+'m｜画質 '+renderer.getPixelRatio().toFixed(2)+'x｜P95 '+perf.frameP95Ms+'ms｜描画 '+renderer.info.render.calls+
    '｜実体 '+massRenderer.fullMeshVisibleSoldiers+' 写真 '+massRenderer.impostorVisibleSoldiers+
-   '｜GPU形状 '+resources.gpuGeometries+' 画像 '+resources.gpuTextures+
+   '｜遅延 '+(perf.longFrames50??0)+'回｜GPU形状 '+resources.gpuGeometries+' 画像 '+resources.gpuTextures+
    '｜JS '+(resources.jsHeapMB??'--')+'MB｜FX '+fx.activeEffects+'/'+actionVfx.maxEffects+
    ' 命中 '+confirmedHitOverlay.activeCount+
    '｜LOD '+massRenderer.screenLodThresholdPx+'px｜走 '+massRenderer.dashPercent+'%｜上階追 '+
@@ -9631,7 +9824,10 @@ async function finishBattleLoading(){
   }
   loadingProgress('GPUシェーダーと地形・モデルを最終準備中…',98);
   await new Promise(resolve=>requestAnimationFrame(resolve));
-  renderer.compile(scene,camera);
+  // Load time is intentionally spent preparing GPU programs before combat.
+  // compileAsync uses parallel shader compilation where supported.
+  if(typeof renderer.compileAsync==='function')await renderer.compileAsync(scene,camera);
+  else renderer.compile(scene,camera);
   renderBattleFrame();
   loadingProgress('ステージBGMを読み込み中…',99);
   const recordingLoaded=await stageBgmReady;

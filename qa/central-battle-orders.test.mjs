@@ -24,14 +24,20 @@ const squads=[
  {id:'1001',label:'第1分隊・騎士',jobs:['sword'],soldiers:6,allowed:['charge','defend','hold','retreat']},
  {id:'1002',label:'第2分隊・騎士',jobs:['sword'],soldiers:4,allowed:['charge','defend','hold','retreat']}
 ];
+const secondarySquads=[
+ {id:'2001',label:'第1分隊・弓使い',jobs:['archer'],soldiers:3,allowed:['charge','defend','hold','retreat']}
+];
 const make=()=>createTargetedStrategyUi({
- getPlan:id=>({squads:String(id)==='1'?squads:[],allowed:['charge','defend','hold','retreat']}),
+ getPlan:id=>({squads:String(id)==='1'?squads:String(id)==='2'?secondarySquads:[],allowed:['charge','defend','hold','retreat']}),
+ getTemplates:()=>[{id:'assault',name:'集中殲滅',methodId:'melee_focus',score:92,reason:'目的に一致'}],
  getEnemyTargets:()=>[{id:'enemy1',label:'敵剣士隊',team:'enemy',x:30,z:40},
   {id:'enemy2',label:'敵弓隊',team:'enemy',x:185,z:190}],
  getAllyTargets:()=>[{id:'1001',label:'第1分隊',team:'ally',groupId:1,x:60,z:140},
-  {id:'1002',label:'第2分隊',team:'ally',groupId:1,x:150,z:180}],
+  {id:'1002',label:'第2分隊',team:'ally',groupId:1,x:150,z:180},
+  {id:'2001',label:'第1分隊',team:'ally',groupId:2,x:200,z:20}],
  getRadarTargets:()=>[{id:'enemy1',team:'enemy',x:30,z:40},{id:'enemy2',team:'enemy',x:185,z:190},
-  {id:'1001',team:'ally',x:60,z:140},{id:'1002',team:'ally',x:150,z:180}],
+  {id:'1001',team:'ally',x:60,z:140},{id:'1002',team:'ally',x:150,z:180},
+  {id:'2001',team:'ally',x:200,z:20}],
  getObjects:()=>[{id:'obj1',label:'橋'}],
  getItems:()=>[{id:'potion',label:'治癒の薬',quantity:2}],
  onExecute:plan=>{commands.push(plan);return true;},
@@ -107,6 +113,18 @@ assert.equal(pause,3);assert.equal(resume,3);
 
 ui.open();click('close');assert.equal(ui.isOpen(),false);
 assert.equal(pause,4);assert.equal(resume,4,'cancel restores prior battle pause exactly once');
+ui.open();
+assert.match(panel.innerHTML,/第2班（紫）/,'teams have distinct radar colours and legend');
+assert.match(panel.innerHTML,/弓使い3人/,'team card identifies job and headcount');
+radarTap(200,20); // group mode: tap the second team by its radar pin
+assert.match(panel.innerHTML,/<span>第2班<\/span>/,'tap switches the selected group');
+click('close');
+ui.open('1');click('next');
+assert.match(panel.innerHTML,/集中殲滅/,'inn plans appear in the battle command panel');
+click('template','assault');
+assert.equal(ui.currentStep(),'method','template fills in the correct method and still requires target confirmation');
+assert.match(panel.innerHTML,/集中突破/);
+click('close');
 const battle=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
 assert.match(battle,/story-center-orders/);
 assert.match(battle,/if\(!TOWN_MODE\)document.body.classList.add\('story-center-orders'\)/,
@@ -114,6 +132,8 @@ assert.match(battle,/if\(!TOWN_MODE\)document.body.classList.add\('story-center-
 assert.match(battle,/directBattlePreview/,'the standalone battle loads into the new UI');
 assert.match(battle,/getRadarTargets:/,'live radar gets both armies');
 assert.match(battle,/central-battle-orders\.css/);
+assert.match(battle,/objectiveCheckpoints\.update\(\)/);
+assert.match(battle,/if\(document\.body\.classList\.contains\('story-center-orders'\)\)return/);
 assert.match(battle,/onMapPick:point/);
 assert.match(battle,/setBattlePaused\(true\)/);
 assert.match(battle,/if\(wasPaused===false&&!finished\)setBattlePaused\(false\)/);

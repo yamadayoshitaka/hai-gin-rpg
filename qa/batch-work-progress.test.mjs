@@ -40,7 +40,13 @@ test('visual PR preview entries are anchored to valid public GitHub routes and k
  assert.deepEqual(Object.keys(cfg.groups).sort(),[...kinds].sort());
  const expected={world:[434,430,427,409],human:[418],monster:[426],anime:[415,424]};
  for(const [category,entries] of Object.entries(cfg.groups)){
-  assert.deepEqual(entries.map(x=>x.pr),expected[category]);
+  // New, real review PRs must not break Pages merely because a hardcoded
+  // historical PR list became stale. Retain the original baseline links.
+  const actual=entries.map(x=>x.pr);
+  assert.equal(new Set(actual).size,actual.length,category+' duplicate PR');
+  for(const pr of expected[category]){
+   assert(actual.includes(pr),category+' lost baseline preview PR #'+pr);
+  }
   for(const entry of entries){
    assert(Number.isSafeInteger(entry.pr)&&entry.pr>0);
    assert(/^[a-z0-9-]+\.html$/.test(entry.page));

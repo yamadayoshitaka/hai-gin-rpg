@@ -44,7 +44,7 @@ export function createTargetedStrategyUi({
  getPlan,getEnemyTargets,getObjects,onExecute,onMapRequest,
  getAllyTargets=()=>[],getRadarTargets=()=>[],
  onMapPick=()=>false,getRadarCanvas=()=>null,getMapSize=()=>232,
- getItems=()=>[],onItemExecute=()=>false,onOpen=()=>{},onClose=()=>{}
+ getItems=()=>[],getTemplates=()=>[],onItemExecute=()=>false,onOpen=()=>{},onClose=()=>{}
 }){
  const panel=document.createElement('section');
  panel.id='targetedStrategyPanel';panel.hidden=true;
@@ -59,6 +59,19 @@ export function createTargetedStrategyUi({
  const planFor=(id=groupId)=>getPlan(String(id))||{squads:[],allowed:[]};
  const liveSquads=(p=planFor())=>(p.squads||[]).filter(s=>Number(s.soldiers)>0);
  const grouped=()=>[1,2,3].map(id=>({id,plan:planFor(id)}));
+ const allSquadGroups=()=>grouped().flatMap(g=>liveSquads(g.plan).map((s,i)=>({
+  ...s,id:String(s.id),groupId:g.id,rank:i+1
+ })));
+ const groupSummary=g=>{
+  const jobs=new Map();
+  for(const s of liveSquads(g.plan)){
+   const job=String(s.job||s.label||'兵士').replace(/^.*・/,'').replace(/隊$/,'');
+   jobs.set(job,(jobs.get(job)||0)+Number(s.soldiers||0));
+  }
+  return [...jobs].sort((a,b)=>b[1]-a[1]).slice(0,2)
+   .map(([job,count])=>job+count+'人').join('・')||'未編成';
+ };
+ const groupColor=id=>({'1':'#59dcfa','2':'#c7a0ff','3':'#93e5a1'}[String(id)]||'#59dcfa');
  const available=()=>Object.values(STRATEGY_METHODS).filter(m=>
   [...selectedSquads].some(sid=>{
    const s=liveSquads().find(x=>String(x.id)===String(sid));
@@ -80,12 +93,12 @@ export function createTargetedStrategyUi({
  const allyTargets=()=>getAllyTargets().filter(t=>liveSquads(grouped().find(g=>
    String(g.id)===String(t.groupId))?.plan||{}).some(s=>String(s.id)===String(t.id)));
  const selectableRadarTargets=()=>{
-  if(step==='scope'&&scope==='squad'){
+  if(step==='scope'){
    const details=new Map(getAllyTargets().map(x=>[String(x.id),x]));
-   return liveSquads().map(s=>({...details.get(String(s.id)),id:String(s.id),
-    label:s.label||details.get(String(s.id))?.label||'味方分隊'}));
+   return allSquadGroups().map(s=>({...details.get(String(s.id)),...s,
+    team:'ally',label:'第'+s.groupId+'班 '+(s.label||details.get(String(s.id))?.label||'味方分隊')}));
   }
-  if(chosenItem)return allyTargets();
+   if(chosenItem)return allyTargets();
   return targets();
  };
  const stepText={scope:'① 指示する単位',family:'② 作戦を選択',intent:'③ 目的を選択',method:'④ 実行方法を選択',target:'⑤ 対象を選択',confirm:'⑥ 作戦内容の確認',items:'③ アイテムを選択'};
@@ -101,17 +114,24 @@ export function createTargetedStrategyUi({
    html='<div class="centerStep">① 班単位か個別の作戦を選択</div>'+
     '<div class="centerScopeGrid">'+b('data-strategy-scope="group"','🛡 班単位の作戦',scope==='group')+
     b('data-strategy-scope="squad"','⚔ 個別の作戦（分隊）',scope==='squad')+'</div>'+
-    '<div class="centerStep">指示する班（最大3班）</div><div class="centerGrid">'+groupInfo.map(g=>
-     b('data-strategy-group="'+g.id+'"','第'+g.id+'班　'+liveSquads(g.plan).reduce((n,x)=>n+x.soldiers,0)+'人',
+    '<div class="centerStep">指示する班（色・職業・人数で識別）</div><div class="centerGrid centerGroupCards">'+groupInfo.map(g=>
+     b('data-strategy-group="'+g.id+'"','● 第'+g.id+'班 · '+liveSquads(g.plan).reduce((n,x)=>n+Number(x.soldiers||0),0)+'人 / '+
+      liveSquads(g.plan).length+'分隊 / '+groupSummary(g),
        String(g.id)===String(groupId),!liveSquads(g.plan).length)).join('')+'</div>'+
-    (scope==='squad'?'<div class="centerStep">味方レーダーで分隊を選択</div>'+
-     radarMarkup('味方の分隊を選択')+
-     '<div class="centerSquadGrid">'+liveSquads(plan).map(s=>b('data-strategy-squad="'+esc(s.id)+'"',
-       s.label+' · '+s.soldiers+'人',selectedSquads.has(String(s.id)))).join('')+'</div>':
-    '<small class="centerHelp">班の全分隊へ作戦を指示します。実行可能な職業だけが行動します。</small>')+
-    controls('キャンセル','次へ','作戦を選ぶ',!selectedSquads.size);
+    '<div class="centerStep">'+(scope==='squad'?'味方レーダーで分隊を選択':'味方の点をタップして班を切替')+'</div>'+
+    radarMarkup(scope==='squad'?'別の班もタップして切り替えられます':'色と数字で班を選択')+
+    (scope==='squad'?'<div class="centerSquadGrid">'+liveSquads(plan).map(s=>b('data-strategy-squad="'+esc(s.id)+'"',
+       '第'+groupId+'班 '+s.label+' · '+s.soldiers+'人',selectedSquads.has(String(s.id)))).join('')+'</div>':
+       '<small class="centerHelp">選択班の全分隊へ指示します。実行可能な職業だけが行動します。</small>')+
+     controls('キャンセル','次へ','作戦を選ぶ',!selectedSquads.size);
   }else if(step==='family'){
-   html='<div class="centerStep">② 作戦の系統を選択</div><div class="centerGrid">'+
+   const recommended=getTemplates(String(groupId)).filter(x=>STRATEGY_METHODS[x.methodId]);
+   html='<div class="centerStep">② 戦場に合う宿屋テンプレート</div>'+
+    '<div class="centerBattleRecommendations">'+recommended.slice(0,5).map((x,i)=>
+      b('data-strategy-template="'+esc(x.id)+'"',(i===0?'★ 推奨 ':'')+x.name+
+      ' · 適合'+x.score+'/100'+(x.reason?' · '+x.reason:''),false,!eligible.has(x.methodId))).join('')+
+    (recommended.length?'':'<small class="centerHelp">利用できるテンプレートなし。通常作戦を選択してください。</small>')+
+    '</div><div class="centerStep">または作戦の系統を選択</div><div class="centerGrid">'+
     Object.entries(STRATEGY_TREE).map(([id,x])=>b('data-strategy-family="'+id+'"',x.name,
      family===id,!Object.values(x.intents).some(y=>y.methods.some(m=>eligible.has(m.id))))).join('')+
     b('data-strategy-family="item"','🎒 アイテム',false,!getItems().length)+'</div>'+
@@ -174,14 +194,15 @@ export function createTargetedStrategyUi({
    '<div class="centerTopRow"><span>第'+esc(groupId)+'班</span><span>'+
    (scope==='group'?'班単位':'個別分隊')+'</span><span>'+esc(stepText[step])+'</span></div>'+
    html+(error?'<small class="centerDanger" role="alert">'+esc(error)+'</small>':'')+'</div>';
-  if(step==='target'||step==='scope'&&scope==='squad')drawLargeRadar();
+  if(step==='target'||step==='scope')drawLargeRadar();
  }
  function radarMarkup(hint){
   return '<div class="centerMapBoard"><canvas id="centralCommandMap" width="464" height="464" '+
    'aria-label="拡大戦場レーダー・赤が敵、青が味方、タップで対象選択" role="img"></canvas>'+
    '<small class="centerMapCoords">'+esc(hint)+'</small>'+
    (mapPoint&&type()==='map'?'<small class="centerMapCoords">📍 指定地点 ('+mapPoint.x+', '+mapPoint.z+')</small>':'')+
-   '<small class="centerMapLegend">🔴 敵　🔵 味方　🟡 オブジェクト　◯ 選択済み</small></div>';
+   '<small class="centerMapLegend"><span class="g1">● 第1班（水色）</span><span class="g2">● 第2班（紫）</span><span class="g3">● 第3班（緑）</span> 🔴 敵　🟡 物　◎ 選択</small>'+
+    '<small class="centerMapCoords">数字：班番号-分隊番号（例 2-3＝第2班の第3分隊）</small></div>';
  }
  function drawLargeRadar(){
   const canvas=panel.querySelector('#centralCommandMap'),radar=getRadarCanvas();
@@ -192,6 +213,8 @@ export function createTargetedStrategyUi({
   ctx.fillStyle='#19394c';ctx.fillRect(0,0,width,height);
   if(radar)ctx.drawImage(radar,0,0,width,height);
   const options=selectableRadarTargets(),eligible=new Set(options.map(x=>String(x.id)));
+  const allyMeta=new Map(allSquadGroups().map(x=>[String(x.id),x]));
+  const enemyMeta=new Map(getEnemyTargets().map((x,i)=>[String(x.id),i+1]));
   const side=step==='scope'||chosenItem?'ally':type()==='enemy'?'enemy':type()==='object'?'object':'none';
   const radarAll=[...getRadarTargets(),...options.map(x=>({...x,team:x.team??side}))];
   const combined=[...new Map(radarAll.map(x=>[String(x.team??'object')+':'+String(x.id),x])).values()];
@@ -218,12 +241,14 @@ export function createTargetedStrategyUi({
    }
    placements.push({x:px,y:py});
    const selectable=eligible.has(String(t.id))&&(
-    step==='scope'&&scope==='squad'?group==='ally':
+    step==='scope'?group==='ally':
     chosenItem?group==='ally':
     type()==='enemy'?group==='enemy':
     type()==='object'?group==='object':false);
-   const selected=selectable&&(step==='scope'?selectedSquads:selectedTargets).has(String(t.id));
-   const color=group==='enemy'?'#f56d6e':group==='ally'?'#59dcfa':'#f6cd75';
+   const meta=allyMeta.get(String(t.id));
+   const selected=selectable&&(step==='scope'?(scope==='group'?
+     String(meta?.groupId)===String(groupId):selectedSquads.has(String(t.id))):selectedTargets.has(String(t.id)));
+   const color=group==='enemy'?'#f56d6e':group==='ally'?groupColor(meta?.groupId??t.groupId):'#f6cd75';
    if(Math.hypot(px-baseX,py-baseY)>4){
     ctx.strokeStyle='#a8c5d788';ctx.lineWidth=1;ctx.beginPath();
     ctx.moveTo(baseX,baseY);ctx.lineTo(px,py);ctx.stroke();
@@ -231,13 +256,22 @@ export function createTargetedStrategyUi({
    ctx.fillStyle=color;ctx.beginPath();ctx.arc(px,py,selectable?13:9,0,Math.PI*2);ctx.fill();
    ctx.strokeStyle=selected?'#fff6bc':selectable?'#edf8ff':'#173041';
    ctx.lineWidth=selected?5:2;ctx.beginPath();ctx.arc(px,py,selected?16:selectable?14:10,0,Math.PI*2);ctx.stroke();
-   const n=group==='enemy'?'敵':group==='ally'?'味':'物';
-   if(selectable){
-    ctx.fillStyle='#09202d';ctx.font='bold 12px system-ui';ctx.textAlign='center';
-    ctx.textBaseline='middle';ctx.fillText(n,px,py);
-    hotspots.push({id:String(t.id),x:px,y:py,team:group,radius:21});
+   const n=group==='enemy'?'敵'+(enemyMeta.get(String(t.id))||''):
+    group==='ally'?(meta?meta.groupId+'-'+meta.rank:'味'):'物';
+   ctx.fillStyle='#09202d';ctx.font='bold 10px system-ui';ctx.textAlign='center';
+   ctx.textBaseline='middle';ctx.fillText(n,px,py);
+   if(selectable)hotspots.push({id:String(t.id),groupId:meta?.groupId,
+    x:px,y:py,team:group,radius:21});
+   if(selected&&group==='ally'&&meta&&scope==='squad'){
+    const name='第'+meta.groupId+'班 '+String(meta.job||meta.label||'分隊').replace(/^.*・/,'');
+    ctx.font='bold 11px system-ui';
+    const labelW=Math.min(width-12,Math.max(72,name.length*11+12));
+    const lx=Math.min(width-labelW-3,Math.max(3,px-labelW/2));
+    const ly=py<height-34?py+19:py-34;
+    ctx.fillStyle='#091b2eea';ctx.fillRect(lx,ly,labelW,16);
+    ctx.fillStyle='#fff5d1';ctx.fillText(name,lx+labelW/2,ly+8);
    }
-  }
+   }
   radarHotspots=hotspots;
   if(mapPoint&&type()==='map'){
    const x=mapPoint.x/size*width,y=mapPoint.z/size*height;
@@ -330,6 +364,16 @@ export function createTargetedStrategyUi({
   if(t.hasAttribute('data-strategy-scope')){
    scope=t.dataset.strategyScope;selectGroup(groupId);
   }else if(t.hasAttribute('data-strategy-group')){selectGroup(t.dataset.strategyGroup);}
+  else if(t.hasAttribute('data-strategy-template')){
+   const chosen=getTemplates(String(groupId)).find(x=>String(x.id)===String(t.dataset.strategyTemplate));
+   if(!chosen||!available().some(m=>m.id===chosen.methodId)){error='この班ではテンプレートの作戦を実行できません';render();return;}
+   const chosenBranch=Object.entries(STRATEGY_TREE).flatMap(([f,x])=>
+    Object.entries(x.intents).map(([intent,y])=>({f,intent,methods:y.methods})))
+    .find(x=>x.methods.some(m=>m.id===chosen.methodId));
+   if(!chosenBranch){error='テンプレートの作戦が見つかりません';render();return;}
+   family=chosenBranch.f;intent=chosenBranch.intent;selectedMethods=new Set([chosen.methodId]);
+   selectedTargets.clear();mapPoint=null;chosenItem=null;step='method';
+  }
   else if(t.hasAttribute('data-strategy-squad')){
    const id=String(t.dataset.strategySquad);selectedSquads=new Set([id]);preferredSquad=id;
   }else if(t.hasAttribute('data-strategy-family')){
@@ -352,7 +396,7 @@ export function createTargetedStrategyUi({
  panel.addEventListener('pointerup',event=>{
   const canvas=event.target.closest('#centralCommandMap');
   if(!canvas)return;
-  if(step!=='target'&&!(step==='scope'&&scope==='squad'))return;
+  if(step!=='target'&&step!=='scope')return;
   const rect=canvas.getBoundingClientRect();
   if(!rect.width||!rect.height)return;
   const px=(event.clientX-rect.left)/rect.width*canvas.width,
@@ -367,7 +411,9 @@ export function createTargetedStrategyUi({
    .filter(h=>h.distance<=h.radius).sort((a,b)=>a.distance-b.distance)[0];
   if(!nearest){error='赤または青の部隊マーカーを直接タップしてください';render();return;}
   if(step==='scope'){
-   selectedSquads=new Set([nearest.id]);preferredSquad=nearest.id;
+   const source=allSquadGroups().find(s=>String(s.id)===nearest.id);
+   if(source&&String(source.groupId)!==String(groupId))selectGroup(source.groupId);
+   if(scope==='squad'){selectedSquads=new Set([nearest.id]);preferredSquad=nearest.id;}
   }else if(chosenItem)selectedTargets=new Set([nearest.id]);
   else if(selectedTargets.has(nearest.id))selectedTargets.delete(nearest.id);
   else selectedTargets.add(nearest.id);

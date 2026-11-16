@@ -116,3 +116,143 @@ export function stableGridNext(state,current,goal,{
  }else route.blockedAt=null;
  return {state:route,next,arrived:false,blocked:false};
 }
+
+
+/**
+ * Incremental A* for the 50v50 main-thread simulation. Planning consumes a
+ * shared, explicit expansion budget instead of doing up to 8,000 nodes for
+ * every soldier in a single rendered frame.
+ *
+ * Only the route PLANNING is spread over AI ticks. Combat, existing motion,
+ * real collision checks and completed route playback remain unchanged.
+ * A* frontier and parent links are retained rather than restarted each tick.
+ */
+function createIncrementalGridSearch(start,goal,walkable,occupied,maxExpanded){
+ const heap=[],best=new Map(),parents=new Map(),points=new Map();
+ const startKey=key(start.x,start.z);
+ const heuristic=(x,z)=>{
+  const dx=Math.abs(x-goal.x),dz=Math.abs(z-goal.z);
+  return dx+dz+(Math.SQRT2-2)*Math.min(dx,dz);
+ };
+ const push=node=>{
+  let i=heap.length;heap.push(node);
+  while(i>0){const p=(i-1)>>1;if(heap[p].f<=node.f)break;heap[i]=heap[p];i=p;}
+  heap[i]=node;
+ };
+ const pop=()=>{
+  const top=heap[0],last=heap.pop();
+  if(!heap.length)return top;
+  let i=0;
+  while(i*2+1<heap.length){
+   let j=i*2+1;
+   if(j+1<heap.length&&heap[j+1].f<heap[j].f)j++;
+   if(last.f<=heap[j].f)break;
+   heap[i]=heap[j];i=j;
+  }
+  heap[i]=last;return top;
+ };
+ best.set(startKey,0);
+ push({x:start.x,z:start.z,g:0,f:heuristic(start.x,start.z)});
+ let expanded=0,done=false,steps=null;
+ return {
+  advance(maxNodes){
+   if(done)return {done,steps,expanded:0};
+   let used=0;
+   while(heap.length&&expanded<maxExpanded&&used<maxNodes){
+    used++;expanded++;
+    const cur=pop(),curKey=key(cur.x,cur.z);
+    if(cur.g!==best.get(curKey))continue;
+    if(equals(cur,goal)){
+     steps=[];let cursor=curKey;
+     while(cursor!==startKey){
+      const point=points.get(cursor),from=parents.get(cursor);
+      if(!point||!from){steps=null;break;}
+      steps.push(point);cursor=from;
+     }
+     if(steps)steps.reverse();
+     done=true;break;
+    }
+    for(const [dx,dz] of DIRS){
+     const x=cur.x+dx,z=cur.z+dz;
+     if(!walkable(x,z))continue;
+     if(dx&&dz&&(!walkable(cur.x+dx,cur.z)||!walkable(cur.x,cur.z+dz)||
+       occupied(cur.x+dx,cur.z)||occupied(cur.x,cur.z+dz)))continue;
+     const k=key(x,z);
+     const g=cur.g+Math.hypot(dx,dz)+(occupied(x,z)?9:0);
+     if(g>=(best.get(k)??Infinity))continue;
+     best.set(k,g);parents.set(k,curKey);points.set(k,{x,z});
+     push({x,z,g,f:g+heuristic(x,z)});
+    }
+   }
+   if(!heap.length||expanded>=maxExpanded)done=true;
+   return {done,steps,expanded:used};
+  }
+ };
+}
+/** Budget is shared by ALL route requests in an AI tick. */
+export function createGridRoutingBudget(limit=320){
+ return {remaining:Math.max(0,Math.floor(limit)),expanded:0,plans:0,deferred:0};
+}
+export function incrementalStableGridNext(state,current,goal,{
+ walkable,occupied=()=>false,now=0,waitSeconds=2,maxExpanded=8000,
+ budget=createGridRoutingBudget()
+}={}){
+ if(!current||!goal||typeof walkable!=='function')
+  return {state:null,next:null,arrived:false,blocked:true};
+ if(equals(current,goal))
+  return {state:null,next:null,arrived:true,blocked:false};
+ let route=state;
+ if(route&&(route.goalX!==goal.x||route.goalZ!==goal.z||
+   (!equals(current,route.from)&&!equals(current,route.steps?.[0]))))
+   route=null;
+ if(route&&route.steps?.length&&equals(current,route.steps[0])){
+  route.steps.shift();route.from={x:current.x,z:current.z};route.blockedAt=null;
+ }
+ if(!route)route={goalX:goal.x,goalZ:goal.z,from:{x:current.x,z:current.z},
+  steps:[],search:null,blockedAt:null,retryAt:0};
+ const plan=()=>{
+  route.steps=[];route.search=createIncrementalGridSearch(
+   current,goal,walkable,occupied,maxExpanded);
+  route.from={x:current.x,z:current.z};route.blockedAt=null;
+  budget.plans++;
+ };
+ if(route.search===null&&!route.steps.length&&now>=route.retryAt)plan();
+ if(route.search){
+  if(budget.remaining>0){
+   const {done,steps,expanded}=route.search.advance(Math.min(96,budget.remaining));
+   budget.remaining-=expanded;budget.expanded+=expanded;
+   if(done){
+    route.search=null;
+    route.steps=steps??[];
+    if(!steps)route.retryAt=now+1.5;
+   }
+  }else budget.deferred++;
+  if(route.search||!route.steps.length)
+   return {state:route,next:null,arrived:false,blocked:true};
+ }
+ if(!route.steps.length)
+  return {state:route,next:null,arrived:false,blocked:true};
+ const next=route.steps[0];
+ const isBlocked=()=>{
+  if(!walkable(next.x,next.z)||occupied(next.x,next.z))return true;
+  const dx=next.x-current.x,dz=next.z-current.z;
+  return Math.abs(dx)===1&&Math.abs(dz)===1&&
+   (!walkable(current.x+dx,current.z)||!walkable(current.x,current.z+dz)||
+    occupied(current.x+dx,current.z)||occupied(current.x,current.z+dz));
+ };
+ if(isBlocked()){
+  route.blockedAt??=now;
+  if(now-route.blockedAt>=waitSeconds&&budget.remaining>0){
+   plan();
+   const {done,steps,expanded}=route.search.advance(Math.min(96,budget.remaining));
+   budget.remaining-=expanded;budget.expanded+=expanded;
+   if(done){
+    route.search=null;route.steps=steps??[];
+    route.retryAt=steps?0:now+1.5;
+   }
+  }
+  return {state:route,next:null,arrived:false,blocked:true};
+ }
+ route.blockedAt=null;
+ return {state:route,next,arrived:false,blocked:false};
+}

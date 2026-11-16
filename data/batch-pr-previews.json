@@ -4,6 +4,30 @@
   "groups": {
     "world": [
       {
+        "pr": 442,
+        "title": "鍵付き入口扉5種：写実木組み・開口構造（QA審査中）",
+        "page": "object-list.html",
+        "object": "entry_door_lv1_001",
+        "ids": [
+          "entry_door_lv1_001",
+          "entry_door_lv2_001",
+          "entry_door_lv3_001",
+          "entry_door_lv4_001",
+          "entry_door_lv5_001"
+        ]
+      },
+      {
+        "pr": 441,
+        "title": "世界3D：家具の荷重支持と接合部（QA未確認）",
+        "page": "object-list.html",
+        "object": "cottage_table_001",
+        "ids": [
+          "cottage_table_001",
+          "cottage_chair_001",
+          "cottage_bed_001"
+        ]
+      },
+      {
         "pr": 434,
         "title": "木製食卓・椅子：木組み実造形",
         "page": "object-list.html",
@@ -42,6 +66,12 @@
       }
     ],
     "human": [
+      {
+        "pr": 456,
+        "title": "人物：鎧PBR/頭皮共通生成器（Draft・実描画QA未確認）",
+        "page": "face-body-studio.html",
+        "ids": []
+      },
       {
         "pr": 418,
         "title": "男女剣士：背面と鎧の接合",

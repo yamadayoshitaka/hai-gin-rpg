@@ -16,7 +16,7 @@ export const FANTASY_SCORE_LIBRARY=Object.freeze([
 // The early story is a solemn war drama, not a light arcade adventure.
 export const FANTASY_SCORE_LOCATIONS=Object.freeze({
  title:'whispers',opening:'heartfelt',map:'whispers',
- town:'heartfelt',inn:'heartfelt',shop:'heartfelt',
+ town:'heartfelt',inn:'whispers',shop:'heartfelt',
  tavern:'heartfelt',church:'whispers',castle:'heartfelt',
  paper:'whispers',battle:'battle'
 });
