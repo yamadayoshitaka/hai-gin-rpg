@@ -1029,8 +1029,9 @@ const storyRequest=(()=>{
  showRuntimeError('出撃データが見つかりません。ストーリー画面から攻略戦を開始してください。');return null;
 })();
 // Display the true story sortie, not the generic 50-vs-50 demo default.
+// The directly opened battle preview must use the same center command UI.
+if(!TOWN_MODE)document.body.classList.add('story-center-orders');
 if(storyRequest){
- document.body.classList.add('story-center-orders');
  $('allyCasualties').textContent='0/'+storyRequest.units.length;
  $('enemyCasualties').textContent='0/'+storyRequest.enemyCount;
  $('squadTactics').setAttribute('aria-label','部隊の3段階作戦');
@@ -6749,7 +6750,7 @@ function positionSquadMenuBelowLabel(id,force=false){
  if(popup.style.top!==nextY)popup.style.top=nextY;
 }
 function openSquadTactics(id){
- if(storyRequest?.sortieTeamCount){
+ if(!TOWN_MODE){
   if(!battleReady||finished||battleCeremony.locked)return false;
   const group=normalizeArmyGroup(armyGroupBySquad[String(id)]);
   return targetedStrategyUi.open(group,{squadId:String(id)});
@@ -7493,7 +7494,7 @@ function issueTargetedMapCommand(point){
  pendingTargetedMap=null;
  log('🗺 '+count+'分隊に地図作戦を設定：地点('+point.x+','+point.z+')');
  refreshSquadOrderLabel();drawSquadMiniMap();
- if(storyRequest?.sortieTeamCount&&targetedStrategyUi.isOpen())return true;
+ if(targetedStrategyUi.isOpen())return true;
  finishSquadDestination(true);return true;
 }
 let centralStrategyPreviousPause=null;
@@ -7517,7 +7518,7 @@ const targetedStrategyUi=createTargetedStrategyUi({
   document.body.classList.remove('battle-command-active');
   if(wasPaused===false&&!finished)setBattlePaused(false);
  },
- getRadarCanvas:()=>miniCanvas,
+ getRadarCanvas:()=>miniBase,
  getMapSize:()=>WORLD_SIZE,
  getItems:()=>{
   const byId=new Map();
@@ -7548,13 +7549,21 @@ const targetedStrategyUi=createTargetedStrategyUi({
  },
  getEnemyTargets:()=>enemySquadIds.filter(id=>(massSim?.units??actors)
   .some(u=>u.team===1&&String(u.squadId)===id&&u.hp>0&&u.alive!==false))
-  .map(id=>({id,label:squadName(id,1)})),
+  .map(id=>({id,label:squadName(id,1),team:'enemy',...squadCenter(id,1)})),
+ getAllyTargets:()=>squadIds.filter(id=>(massSim?.units??actors)
+  .some(u=>u.team===0&&String(u.squadId)===id&&u.hp>0&&u.alive!==false))
+  .map(id=>({id,label:squadName(id,0),team:'ally',
+   groupId:normalizeArmyGroup(armyGroupBySquad[id]),...squadCenter(id,0)})),
+ getRadarTargets:()=>[
+  ...squadIds.map(id=>({id,team:'ally',label:squadName(id,0),...squadCenter(id,0)})),
+  ...enemySquadIds.map(id=>({id,team:'enemy',label:squadName(id,1),...squadCenter(id,1)}))
+ ].filter(x=>Number.isFinite(x.x)&&Number.isFinite(x.z)),
  getObjects:mode=>{
   if(mode==='explore')return availableExplorationBuildings({all:true})
-   .map(x=>({id:x.id,label:x.name}));
+   .map(x=>({id:x.id,label:x.name,team:'object',x:Number(x.building?.data?.x),z:Number(x.building?.data?.z)}));
   return (massSim?.actions.objects||skirmishActions?.objects||[])
    .filter(o=>o.alive&&o.category==='structure'&&['bridge','tree','building','door'].includes(o.type))
-   .map(o=>({id:String(o.id),label:(o.type==='bridge'?'橋':o.type==='tree'?'木':o.type==='door'?'扉':'建物')+' #'+String(o.id).slice(-5)}));
+   .map(o=>({id:String(o.id),team:'object',x:Number(o.x),z:Number(o.z),label:(o.type==='bridge'?'橋':o.type==='tree'?'木':o.type==='door'?'扉':'建物')+' #'+String(o.id).slice(-5)}));
  },
  onExecute:issueTargetedPlan,
  onMapRequest:plan=>{
@@ -9635,7 +9644,9 @@ async function finishBattleLoading(){
   // at world-map launch. Never show the old formation / initial-order wizard.
   // Start real-time autonomous combat immediately after loading. Manual
   // tactics and items now live only in the pause-and-command center.
-  if(storyRequest?.sortieTeamCount){
+  const directBattlePreview=!TOWN_MODE&&!storyRequest&&!battleParams.has('army')&&
+   !battleParams.has('legacySetup');
+  if(storyRequest?.sortieTeamCount||directBattlePreview){
    for(const id of squadIds){
     squadStrategies.set(id,'eliminate');
     setStartingSquadOrder(0,id,'charge'); // Default AI, not a user-selected opening order.
@@ -9649,7 +9660,8 @@ async function finishBattleLoading(){
    battleDialogue.push({key:'start',speaker:'軍師',kind:'info',priority:5,
     text:'戦闘開始！ 各隊の消耗・敵の接近・任務完遂を監視して報告します。'});
    clock.getDelta();
-   log(storyRequest.territoryName+' 攻略戦を開始 · 出撃'+storyRequest.units.length+'人');
+   log(storyRequest?storyRequest.territoryName+' 攻略戦を開始 · 出撃'+storyRequest.units.length+'人':
+    '公開戦闘プレビュー開始：中央作戦パネルの「作戦」から操作できます');
    updateUI();animate();return;
   }
   // The opening screen owns strategy selection. There is no in-battle
