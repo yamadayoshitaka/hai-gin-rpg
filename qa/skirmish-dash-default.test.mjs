@@ -66,6 +66,6 @@ assert.match(game,/else if\(a\.floorTravel\?\.phase==='climb'\)requestMotion\(a,
 assert.match(game,/window\.getSkirmishDashReport/,'query actual run/walk ratio during battle');
 assert.match(game,/else if\(a\.nextCell\|\|\(a\.lastMovedAt!=null/);
 assert.match(game,/from '\.\/src\/character-system\/job-motion-source\.js\?v=4\.6\.36'/);
-assert.match(rig,/from '\.\/job-motion-source\.js\?v=4\.6\.33'/,
+assert.match(rig,/from '\.\/job-motion-source\.js\?v=20261116-hero-skills'/,
  'fresh motion resolver loads after the static browser cache');
 console.log('PASS: every 50v50 job uses actual dash clip; only stair/stealth are walk; screen reports real animated dash coverage');
