@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import {MONSTER_BY_ID} from '../src/monster-catalog.js';
 import {createMonsterModel,disposeMonsterSculpture} from '../src/monster-geometry.js';
+import {startMonsterAction,animateMonsterModel} from '../src/monster-animation.js';
 
 const remeshed=['m001','m002','m003','m004'];
 for(const id of remeshed){
@@ -10,6 +11,41 @@ for(const id of remeshed){
   model.traverse(node=>{if(node.isMesh)meshes.push(node);});
   const limbs=meshes.filter(m=>m.userData.anatomicalLimb);
   assert.equal(limbs.length,8,id+' must have continuous upper and lower muscle shells');
+  // The reference target is a long wolf snout and flexed digitigrade limbs,
+  // never an attached white muzzle sphere or straight tubular legs.
+  const snout=meshes.filter(m=>m.name==='beast-continuous-nasal-bridge-'+id);
+  const jaw=meshes.filter(m=>m.name==='beast-integrated-mandible-'+id);
+  assert.equal(snout.length,1,id+' must have a continuous authored nose bridge');
+  assert.equal(jaw.length,1,id+' must have one shaped lower jaw instead of stacked balls');
+  assert.ok(snout[0].userData.axialAnatomy,id+' snout must contain real cross-section geometry');
+  const nasal=meshes.filter(m=>m.name===(id==='m001'?'wolf-nasal-cartilage':'beast-rhinarium-'+id));
+  assert.equal(nasal.length,1,id+' rhinarium must not duplicate a round nose cap');
+  for(const limb of limbs){
+    const a=limb.geometry.getAttribute('position');
+    let zMin=Infinity,zMax=-Infinity;
+    for(let j=2;j<a.array.length;j+=3){
+      zMin=Math.min(zMin,a.array[j]);zMax=Math.max(zMax,a.array[j]);
+    }
+    assert.ok(zMax-zMin>.12,id+' limb must contain a visible bend, not a straight column');
+  }
+  if(id==='m001'||id==='m002'){
+    const p=model.userData.pivots;
+    for(const side of ['L','R'])for(const segment of ['front','rear']){
+      const name=segment+side;
+      assert.ok(p['beastHock'+name]?.isGroup,id+' real hock/wrist missing '+name);
+      assert.ok(p['beastToe'+name]?.isGroup,id+' metatarsal toe pivot missing '+name);
+    }
+    assert.ok(p.beastHockrearL.position.z<-.11,
+      'Hind hock must sit behind the knee in the bind pose');
+    assert.ok(p.beastToerearL.position.z>.16,
+      'Hind foot needs a forward-projecting metatarsal');
+    startMonsterAction(model,'walk',0);
+    animateMonsterModel(model,.19);
+    const first=p.beastHockrearL.rotation.x;
+    animateMonsterModel(model,.49);
+    assert.notEqual(p.beastHockrearL.rotation.x,first,
+      id+' rear hock must flex during locomotion');
+  }
   const keratin=meshes.filter(m=>m.userData.rootedKeratin);
   assert.ok(keratin.length>=11,id+' must have physically curved dorsal horns and canines');
   assert.equal(meshes.filter(m=>m.name==='beast-pupil').length,2,
