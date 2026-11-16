@@ -452,8 +452,13 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
  }
  if(s.id==='m001'){
    // Species m001 cranial remesh: cheek musculature, brow, nasal cartilage.
-   // These intersect the existing skull to avoid disconnected sphere seams.
+   // The beard and lion-like mane grow from a tapered real under-jaw mass,
+   // not a loose collection of hair ribbons floating below a bare skull.
    g.bridge(head,'skin',[0,.062,-.18],[0,-.03,.38],.188,.113);
+   g.bridge(head,'skin',[0,-.118,-.138],[0,-.325,-.218],.229,.158);
+   for(const side of [-1,1])
+     g.bridge(head,'skin',[side*.168,-.080,-.091],
+       [side*.174,-.284,-.157],.135,.088);
    for(const side of [-1,1]){
      g.bridge(head,'skin',[side*.19,-.035,-.055],[side*.27,-.125,.24],.142,.082);
      if(!beastRemesh)g.sphere(head,'shadow',[side*.308,.092,.277],[.023,.017,.090],{rough:.78});
