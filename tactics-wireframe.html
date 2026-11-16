@@ -7733,7 +7733,8 @@ missionCheckpointHud.id='battleObjectiveCheckpoints';
 missionCheckpointHud.setAttribute('aria-live','polite');
 missionCheckpointHud.style.cssText='max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:700 11px/1.45 system-ui;color:#ffe7ac;border:1px solid #758ba5;border-radius:5px;padding:4px 7px;background:#10283ad9';
 missionCheckpointHud.textContent='📍 作戦チェックポイント：発令待ち';
-$('topPerformanceSlot').appendChild(missionCheckpointHud);
+// Objective progress stays visible even when optional FPS diagnostics are hidden.
+$('topStructureSlot').appendChild(missionCheckpointHud);
 const objectiveCheckpoints=createBattleObjectiveCheckpoints({
  getUnits:()=>squadRoster,
  getObjects:()=>massSim?.actions.objects||skirmishActions?.objects||[],
