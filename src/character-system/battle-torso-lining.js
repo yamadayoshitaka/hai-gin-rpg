@@ -28,7 +28,7 @@ export function applyBattleTorsoLining(material,{texture,tint,side}={}){
  if(side!==undefined)material.side=side;
  material.color?.setHex(tint);
  material.userData={...material.userData,battleOpaqueTorsoLining:true};
- material.name=(material.name||'torso')+'-battle-opaque-lining';
+ material.name=(material.name||'torso')+'-linen-battle-opaque-lining';
  material.needsUpdate=true;
  return material;
 }
