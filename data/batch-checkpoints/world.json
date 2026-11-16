@@ -145,6 +145,30 @@
       ],
       "commitSha": "beac4f4ef9366cb1c81c46a2ef58fe481cec89c0",
       "qa": "unverified"
+    },
+    {
+      "id": "town_trash_bin_001",
+      "sourceFiles": [
+        "src/object-catalog.js"
+      ],
+      "commitSha": "1a40b8b998c814568e82493453afde3f265200fd",
+      "qa": "unverified"
+    },
+    {
+      "id": "stone_archway_001",
+      "sourceFiles": [
+        "src/object-catalog.js"
+      ],
+      "commitSha": "1a40b8b998c814568e82493453afde3f265200fd",
+      "qa": "unverified"
+    },
+    {
+      "id": "stone_steps_001",
+      "sourceFiles": [
+        "src/object-catalog.js"
+      ],
+      "commitSha": "1a40b8b998c814568e82493453afde3f265200fd",
+      "qa": "unverified"
     }
   ],
   "remainingIds": [
@@ -156,9 +180,6 @@
     "entry_door_lv5_001",
     "fountain_001",
     "town_well_001",
-    "town_trash_bin_001",
-    "stone_archway_001",
-    "stone_steps_001",
     "wooden_watchtower_001",
     "stone_column_001",
     "wall_torch_001",
@@ -184,5 +205,5 @@
     "timber_bridge_broken_001",
     "stone_bridge_broken_001"
   ],
-  "nextAction": "木柵・石柵・荷車のNode構文・WebGL三方向描画・Android性能を確認し、街のゴミ箱・石造アーチ門・石造玄関階段の実造形を続行する。"
+  "nextAction": "ゴミ箱/アーチ/石段のNode構文・3方向WebGL・Android FPSを確認する。残り木製見張り塔・石柱・松明・干し草等へ回帰を続行する。"
 }
