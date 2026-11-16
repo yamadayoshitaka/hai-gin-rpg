@@ -197,9 +197,12 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    g.axialLoft(faceCore,'skin',[
      // One uninterrupted small lupine skull: inset brow, tapered nose root,
      // strong but compact temples, narrowing into the mane at the nape.
-     {z:.440,y:-.085,rx:.060,ry:.064},
-     {z:.355,y:-.046,rx:.178,ry:.110},
-     {z:.270,y:-.010,rx:.252,ry:.157},
+     // Old scaled skull tip projected ahead of the black nose (z=.416
+     // after faceCore scaling, versus nose z=.366), making a grey round
+     // button float above the real rhinarium. Terminate bone BEHIND nose.
+     {z:.355,y:-.160,rx:.026,ry:.030},
+     {z:.320,y:-.116,rx:.132,ry:.090},
+     {z:.270,y:-.040,rx:.232,ry:.146},
      {z:.110,y:.048,rx:.278,ry:.210},
      {z:-.120,y:.073,rx:.278,ry:.233},
      {z:-.335,y:.042,rx:.240,ry:.205},
