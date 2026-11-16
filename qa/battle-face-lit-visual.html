@@ -8,6 +8,8 @@ import {makeIndependentFaceMaster} from '../src/independent-face-masters.js';
 import {applyFaceColorMode} from '../src/face-feature-meshes.js';
 import {applyHeroineSkinMaterial} from '../src/heroine-skin-material.js';
 import {correctBattleFaceSkinTone,BATTLE_FACE_LIGHT_RESPONSE_VERSION} from '../src/character-system/battle-artist-head-graft.js';
+import {fitBattleArtistFaceToHead} from '../src/character-system/battle-head-proportion-fit.js';
+import {measureHeadLocalBounds} from '../src/character-system/hair-attachment-runtime.js';
 try{
  const W=512,H=512;
  const glb=await new GLTFLoader().loadAsync('../assets/master-sources/blender/realistic-head-animation.glb');
@@ -60,8 +62,21 @@ try{
   diagnostics.before=[br,bg,bb].map(x=>+(x/diagnostics.occupied).toFixed(1));
   diagnostics.after=[ar,ag,ab].map(x=>+(x/diagnostics.occupied).toFixed(1));
  }
+ // Compare against the REAL 65-bone donor's measured head bounds.
+ const donor=(await new GLTFLoader().loadAsync(
+  '../assets/characters/quaternius-base/Superhero_Male_FullBody.gltf')).scene;
+ const donorHead=donor.getObjectByName('Head');
+ const donorBounds=measureHeadLocalBounds(donor,donorHead);
+ const trueFace=head.root.clone(true);
+ donorHead.add(trueFace);
+ const trueFaceMesh=trueFace.getObjectByName('MALE_INDEPENDENT_CLAY_FACE');
+ const liveCranialFit=fitBattleArtistFaceToHead({
+  faceRoot:trueFace,faceMesh:trueFaceMesh,headBounds:{
+   min:donorBounds.bounds.min.toArray(),max:donorBounds.bounds.max.toArray()
+  }
+ });
  window.__battleFaceVisualQA={
-  ready:true,sourceUv:!!face.geometry.getAttribute('uv'),
+  ready:true,actualDonorRigHead:{samples:donorBounds.samples,...liveCranialFit},sourceUv:!!face.geometry.getAttribute('uv'),
   sample:diagnostics,
   renderVersion:face.material.userData.battleFaceLightResponseVersion,
   expected:BATTLE_FACE_LIGHT_RESPONSE_VERSION,
