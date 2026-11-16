@@ -4,7 +4,7 @@ on:
     - cron: '12 * * * *'
   workflow_dispatch:
   pull_request:
-    paths: ['.github/workflows/world-six-lane.yml','scripts/world-six-batch.mjs','src/object-catalog.js','src/stage-library.js','src/stage-static-instancing.js','batch-monitor.html','qa/world-quality-contract.test.mjs']
+    paths: ['.github/workflows/world-six-lane.yml','scripts/world-six-batch.mjs','src/object-catalog.js','src/stage-library.js','src/stage-static-instancing.js','tactics-wireframe.html','batch-monitor.html','qa/world-quality-contract.test.mjs']
 permissions:
   contents: write
   pull-requests: write
