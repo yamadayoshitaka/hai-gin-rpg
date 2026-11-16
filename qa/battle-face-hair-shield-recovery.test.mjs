@@ -95,7 +95,7 @@ const fx=readFileSync(new URL('../src/character-system/action-vfx-runtime.js',im
 assert.match(rig,/fitShieldAheadOfForearm\(\{/);
 assert.match(rig,/shieldHandBone\?\.getWorldPosition\(shieldWrist\)/);
 assert.match(rig,/item\.position\.copy\(item\.parent\.worldToLocal\(fitted\.center\)\)/);
-assert.match(rig,/shieldBackClearanceM:fitted\.forwardClearance/);
+assert.match(rig,/shieldBackClearanceM=fitted\.forwardClearance/);
 assert.match(rig,/shieldBackClearanceM:shield\?\.userData\.shieldBackClearanceM/);
 assert.match(game,/face-wig-v5/);
 assert.match(game,/shieldclear1/);
