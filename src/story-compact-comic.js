@@ -61,8 +61,9 @@ function distribute(lines,num){
  });
 }
 function chapterSeen(context,chapter){
- return context.chapterOpeningSeen===true||
-  context?.storyFlags?.chapterOpenings?.[chapter]===true||
+ // Chapter-scoped persisted flags are authoritative. A global boolean would
+ // suppress the opening of every subsequent chapter after chapter one.
+ return context?.storyFlags?.chapterOpenings?.[chapter]===true||
   context?.storyFlags?.chapterOpenings?.[String(chapter)]===true;
 }
 export function compactComicForStage(stageId,phase,context={}){
