@@ -178,25 +178,44 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
   g.bridge(torso,'skin',[0,1.152,.33],[0,1.307,.77+v*.055],.295,.181);
  else g.bridge(torso,'skin',[0,1.35,.32],[0,1.57,.76+v*.055],.325,.215);
  const head=g.group('head',[0,beastRemesh?1.300:1.56,.70+v*.06+(beastRemesh?.086:0)]);
- // Exposed head anatomy is 1/3 scale while nose, jaw, teeth, ears and
- // surrounding fur remain unchanged. The tiny skull is framed by the mane.
+ // The earlier 1/3-scale inner "ball face" floated in front of the muzzle.
+ // The new compact anatomical skull is a surface loft with directly fitted
+ // eye sockets. Nose, jaw and the moving mane retain independent pivots.
  const faceCore=s.id==='m001'?
-   g.group('m001-face-core',[0,.125,.225],head):head;
+   g.group('m001-face-core',[0,.025,.055],head):head;
  if(s.id==='m001'){
-   faceCore.scale.setScalar(1/3);
-   faceCore.userData.anatomicalFaceScale=1/3;
-   g.root.userData.wolfKingExposedFaceScale=1/3;
-   g.root.userData.wolfKingManeLengthMultiplier=5;
+   faceCore.scale.setScalar(.82);
+   faceCore.userData.anatomicalFaceScale=.82;
+   g.root.userData.wolfKingExposedFaceScale=.82;
+   g.root.userData.wolfKingManeLengthMultiplier=1.35;
+   g.root.userData.wolfKingReferenceRemesh=true;
  }
  // Rigid reptilian wedge instead of the same spherical skull as a cat.
  const skullWidth=reptile?.905:feline?.95:1;
  const skullDepth=reptile?1.065:feline?.965:1;
- const cranium=g.anatomicalLoft(faceCore,'skin',
-   QUADRUPED_CRANIUM_RINGS.map(r=>({
-     ...r,rx:r.rx*skullWidth,rz:r.rz*skullDepth,
-   })),{name:'organic-cranium-'+s.id,kind:'face',
-     asymmetry:reptile?.10:.04});
- if(s.id==='m001')g.recessCanineEyeSockets(cranium);
+ const cranium=s.id==='m001'?
+   g.axialLoft(faceCore,'skin',[
+     // One uninterrupted small lupine skull: inset brow, tapered nose root,
+     // strong but compact temples, narrowing into the mane at the nape.
+     {z:.440,y:-.085,rx:.060,ry:.064},
+     {z:.355,y:-.046,rx:.178,ry:.110},
+     {z:.270,y:-.010,rx:.252,ry:.157},
+     {z:.110,y:.048,rx:.278,ry:.210},
+     {z:-.120,y:.073,rx:.278,ry:.233},
+     {z:-.335,y:.042,rx:.240,ry:.205},
+     {z:-.520,y:-.006,rx:.170,ry:.145},
+     {z:-.635,y:-.032,rx:.050,ry:.062}
+   ],{name:'organic-cranium-m001',rough:.91,ribbing:.003}):
+   g.anatomicalLoft(faceCore,'skin',
+     QUADRUPED_CRANIUM_RINGS.map(r=>({
+       ...r,rx:r.rx*skullWidth,rz:r.rz*skullDepth,
+     })),{name:'organic-cranium-'+s.id,kind:'face',
+       asymmetry:reptile?.10:.04});
+ if(s.id==='m001'){
+   cranium.userData.anatomyLoft=true;
+   cranium.userData.continuousWolfSkull=true;
+   g.recessCanineEyeSockets(cranium);
+ }
  if(s.id==='m001'&&coatDetail==='low'){
    // In massive battles use one coarse sculpted ruff silhouette instead of
    // tens of thousands of guard hairs. It frames the same tiny face with
@@ -218,7 +237,7 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    // Legacy protected m005: preserve its original muzzle topology.
    g.bridge(head,'skin',[0,-.02,.13],[0,-.10,.54],.245,.125);
  }
- const muzzle=beastRemesh?.34:reptile?.57:feline?.32:.43;
+ const muzzle=s.id==='m001'?.16:beastRemesh?.34:reptile?.57:feline?.32:.43;
  if(reptile){
    g.bridge(head,'skin',[0,-.115,.245],[0,-.152,.82],.203,.116);
    g.sphere(head,'light',[0,-.162,.684],[.145,.064,.226]);
@@ -226,13 +245,14 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    // Skull -> brow -> bridge -> nose is one authored continuous axial shell,
    // not two intersecting cylindrical tubes and a separate muzzle oval.
    const muzzleRings=s.id==='m001'?[
-     // Half-width anatomical base for small face / enormous surrounding mane.
-     {z:.597,y:-.133,rx:.040,ry:.044},
-     {z:.572,y:-.124,rx:.077,ry:.058},
-     {z:.500,y:-.108,rx:.086,ry:.069},
-     {z:.382,y:-.078,rx:.098,ry:.079},
-     {z:.262,y:-.047,rx:.116,ry:.092},
-     {z:.125,y:-.024,rx:.1185,ry:.117},
+     // The original protrusion (.597) is reduced to a short bridge (.382).
+     // The rear section overlaps the sculpted face, without a white tube.
+     {z:.382,y:-.127,rx:.027,ry:.033},
+     {z:.361,y:-.125,rx:.065,ry:.050},
+     {z:.327,y:-.112,rx:.084,ry:.064},
+     {z:.268,y:-.073,rx:.113,ry:.082},
+     {z:.198,y:-.044,rx:.136,ry:.104},
+     {z:.115,y:-.019,rx:.159,ry:.126}
    ]:[
      {z:.664,y:-.134,rx:.078,ry:.069},
      {z:.635,y:-.125,rx:.154,ry:.092},
@@ -249,11 +269,11 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    // Anatomically tapered rhinarium; alae overlap the bridge and have
    // distinct cut-in nostrils, rather than an inflated black nose sphere.
    const noseRings=s.id==='m001'?[
-     {z:.634,y:-.160,rx:.015,ry:.018},
-     {z:.624,y:-.155,rx:.052,ry:.037},
-     {z:.608,y:-.161,rx:.073,ry:.045},
-     {z:.573,y:-.153,rx:.069,ry:.041},
-     {z:.536,y:-.145,rx:.045,ry:.029}
+     {z:.418,y:-.152,rx:.013,ry:.017},
+     {z:.408,y:-.148,rx:.047,ry:.031},
+     {z:.392,y:-.149,rx:.064,ry:.039},
+     {z:.359,y:-.147,rx:.062,ry:.037},
+     {z:.328,y:-.136,rx:.041,ry:.025}
    ]:[
      {z:.706,y:-.161,rx:.027,ry:.029},
      {z:.685,y:-.158,rx:.104,ry:.060},
@@ -268,12 +288,12 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    for(const side of [-1,1]){
      const tight=s.id==='m001';
      g.bridge(head,'shadow',
-       [side*(tight?.048:.094),-.143,tight?.568:.605],
-       [side*(tight?.054:.110),-.171,tight?.603:.662],
-       tight?.013:.028,tight?.008:.015);
+       [side*(tight?.042:.094),-.143,tight?.343:.605],
+       [side*(tight?.048:.110),-.166,tight?.395:.662],
+       tight?.011:.028,tight?.008:.015);
      g.sphere(head,'shadow',
-       [side*(tight?.055:.108),tight?-.173:-.182,tight?.620:.681],
-       tight?[.008,.006,.005]:[.014,.010,.008],
+       [side*(tight?.048:.108),tight?-.165:-.182,tight?.409:.681],
+       tight?[.007,.005,.004]:[.014,.010,.008],
        {name:'beast-nostril-'+(side<0?'L':'R'),rough:.21});
    }
  }else g.sphere(head,'shadow',[0,-.17,muzzle+.19],[.18,.057,.12],{name:'nose'});
@@ -288,8 +308,8 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
       g.recessedCanineAlmondEye(faceCore,{side,name:'wolf-king'});
       // The brow is an overhanging facial ridge, distinct from lid eyeliner.
       const brow=g.tube(faceCore,'skin',[
-        [side*.149,.151,.258],[side*.225,.168,.306],
-        [side*.313,.153,.322]],.010);
+        [side*.145,.143,.255],[side*.221,.164,.307],
+        [side*.302,.144,.326]],.011);
       brow.name='m001-eyebrow-ridge-'+(side<0?'L':'R');
       brow.userData.orbitalBrow=true;
      }else if(beastRemesh){
@@ -316,12 +336,13 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
      }
      if(!beastRemesh)g.sphere(head,'shadow',
        [side*.083,-.164,muzzle+.288],[.027,.019,.011]);
-     g.tube(head,'shadow',[[side*.08,-.23,.53],[side*.13,-.235,.58],
-       [side*.16,-.213,.62]],.009);
+     if(s.id!=='m001')g.tube(head,'shadow',
+       [[side*.08,-.23,.53],[side*.13,-.235,.58],
+        [side*.16,-.213,.62]],.009);
    }
    // Compact philtrum following the small rhinarium instead of a black seam.
    g.tube(head,'shadow',s.id==='m001'?
-      [[0,-.169,.576],[0,-.198,.558],[0,-.221,.521]]:
+      [[0,-.159,.370],[0,-.178,.350],[0,-.193,.323]]:
       [[0,-.195,muzzle+.285],[0,-.235,muzzle+.275],
        [0,-.26,muzzle+.22]],s.id==='m001'?.005:.009);
  }else if(reptile){
