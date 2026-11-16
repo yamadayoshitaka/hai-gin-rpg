@@ -90,7 +90,10 @@ assert.match(game,/createHeroProductionRecipe\(\{/);
 assert.match(game,/a\.sex=recipe\.sex;a\.masterRecipe=recipe/);
 assert.match(game,/faceId:recipe\.faceIndex,faceProfile:recipe\.faceProfile/);
 assert.match(game,/job:recipe\.outfitJob,sex:recipe\.sex,quality:'battle',rarity:recipe\.rarity/);
-assert.match(game,/hairStyle:recipe\.hairStyle,hairColor:recipe\.hairColor/);
+assert.match(game,/hairStyle:1\+studioPattern\.hairIndex%\(recipe\.sex==='female'\?12:14\)/,
+ 'mid/far hair must use the generator catalogue style instead of unrelated random job GLB');
+assert.match(game,/hairColor:studioPattern\.hairColor/,
+ 'generator hair pigment must drive the real fitted-hair material');
 assert.match(game,/character\.object3D\.scale\.set\(recipe\.visualScaleX,1,recipe\.visualScaleZ\)/);
 assert.match(game,/heroProductionActionCue\(a\.masterRecipe,state\)/);
 assert.match(game,/window\.getHeroProductionSwapStatus/);
