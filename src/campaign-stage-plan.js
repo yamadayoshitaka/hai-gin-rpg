@@ -71,6 +71,7 @@ export const CAMPAIGN_STAGES=Object.freeze(STORY_CHAPTERS.flatMap(chapter=>
    id,number:(chapter.id-1)*10+slot,chapter:chapter.id,slot,
    chapterTitle:chapter.title,act:chapter.act,name,kind,
    territoryId,scenePreset,biome,continentId:continent.id,continentName:continent.name,
+   regionId:continent.regionId,regionName:continent.regionName,regionNation:continent.nation,
    chapterConflict:continent.conflict,storyBeat:chapterBeats[i],
    winCondition:STAGE_WIN_CONDITIONS[kind],
    monsters:kind==='explore'||kind==='boss'?Object.freeze(chooseMonsters(chapter.id,slot)):Object.freeze([]),
