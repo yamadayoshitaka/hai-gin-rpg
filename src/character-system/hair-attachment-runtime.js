@@ -136,7 +136,9 @@ function fittedScalpSurface(model,bone,headBounds){
   if(point.y<threshold)continue;
   radial.copy(point).sub(center).normalize().multiplyScalar(.0045);
   point.add(radial);
-  local.set([point.x,point.y,point.z],i*3);eligible[i]=1;
+  const offset=i*3;
+  local[offset]=point.x;local[offset+1]=point.y;local[offset+2]=point.z;
+  eligible[i]=1;
  }
  // Compute the scalp span once; repeated Box3/Vector3 allocations per triangle
  // caused avoidable GC stalls during hairstyle/preset regeneration on Android.
@@ -164,7 +166,11 @@ function fittedScalpSurface(model,bone,headBounds){
   const wx=local[c*3]-local[b*3],wy=local[c*3+1]-local[b*3+1],wz=local[c*3+2]-local[b*3+2];
   if(Math.max(edgeAB,edgeAC,wx*wx+wy*wy+wz*wz)>headSpanSq)continue;
   const outward=nx*(ax-center.x)+ny*(ay-center.y)+nz*(az-center.z);
-  for(const v of (outward<0?[a,c,b]:[a,b,c])){
+  // Preserve outward winding without allocating a temporary index array for
+  // every scalp triangle (all hairstyles share this hot regeneration path).
+  const reverse=outward<0;
+  for(let corner=0;corner<3;corner++){
+   const v=corner===0?a:corner===1?(reverse?c:b):(reverse?b:c);
    const x=local[v*3],y=local[v*3+1],z=local[v*3+2];
    triangles.push(x,y,z);
    uv.push(.5+Math.atan2(x-center.x,z-center.z)/(Math.PI*2),
