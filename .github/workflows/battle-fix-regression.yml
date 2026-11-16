@@ -76,6 +76,7 @@ jobs:
           node qa/room-item-proximity-runtime.test.mjs
           node qa/room-item-inventory-ui.test.mjs
           node qa/skirmish-corridor-stair-regression.test.mjs
+          node qa/battle-incremental-routing.test.mjs
           node qa/battle-phase-profiler.test.mjs
           node qa/long-battle-navigation-zoom-riding.test.mjs
           node qa/battle-message-oneclick.test.mjs
