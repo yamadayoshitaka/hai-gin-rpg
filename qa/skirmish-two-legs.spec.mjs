@@ -54,6 +54,13 @@ test('50v50 armored soldiers have only two visible legs and keep full-detail dra
   expect(result.artistHeads?.total).toBe(100);
   expect(result.artistHeads?.attached).toBe(100);
   expect(result.artistHeads?.originalHeadTrianglesRemoved).toBeGreaterThan(0);
+  expect(result.artistHeads?.cranialFits).toBe(100);
+  expect(result.artistHeads?.undersizedHeads).toEqual([]);
+  for(const head of result.artistHeads.headProportionSamples||[]){
+   expect(head.widthRatio).toBeGreaterThanOrEqual(.94);
+   expect(head.heightRatio).toBeGreaterThanOrEqual(.94);
+   expect(head.sourceShoulderToSkullWidthRatio).toBeGreaterThan(1.35);
+  }
   expect(result.faceRender?.faceLightCorrected).toBe(100);
   expect(result.faceRender?.faceMaterialFailures).toEqual([]);
   expect(result.faceRender?.missingPbrCorrection).toBe(0);
