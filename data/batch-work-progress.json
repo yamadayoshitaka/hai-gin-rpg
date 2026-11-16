@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "asOf": "2026-11-16T09:53:53+09:00",
-  "description": "工程別の実作業証跡。GitHub Actionsの成功や定期タスクの実行完了を、3D改修・PR・デプロイの完了と混同しない。これはGitHubに最後に記録されたスナップショットであり、ChatGPTサービスのライブ状態ではない。",
+  "description": "工程別の実作業証跡。GitHub Actionsの成功や定期タスクの実行完了を、3D改修・PR・デプロイの完了と混同しない。これはGitHubに最後に記録されたスナップショットであり、ChatGPTサービスのライブ状態ではない。 追加のoperational欄は直近の証跡から特定した滞留原因と次の改善策であり、実行成功や品質達成の認定ではない。",
   "stageOrder": [
     "launch",
     "code",
@@ -43,7 +43,21 @@
           "label": "今回のチェックポイント",
           "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/c7106427544e1b3c6358f2cda5e172a25e19e200"
         }
-      ]
+      ],
+      "operational": {
+        "lastRunOutcome": {
+          "newSourceChangedIds": 0,
+          "newQAPassed": 0,
+          "newGameAppliedIds": 0,
+          "newSourceCommits": 1
+        },
+        "blockers": [
+          "頭皮共通生成器のコード変更は保存済みだが個別人物メッシュ再生成0",
+          "Node構文・男女WebGL正面/側面/背面・Android QA未実施",
+          "PR #456はDraftでmain未マージ"
+        ],
+        "speedPlan": "PR #456の共通生成器を先に構文・描画QA→合格なら男女複数プリセット一括再生成→頭頂/髪/衣装を同一撮影バッチで比較。未検証WIPを積み増す前に既存差分をQAへ通す。"
+      }
     },
     "monster": {
       "source": "ChatGPT 定期タスクの実行結果",
@@ -75,7 +89,21 @@
           "label": "途中チェックポイント",
           "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/64d9def84cc135854b1bcc34bcc66df8b7489edd"
         }
-      ]
+      ],
+      "operational": {
+        "lastRunOutcome": {
+          "newSourceChangedIds": 1,
+          "newQAPassed": 0,
+          "newGameAppliedIds": 0,
+          "newGeneratedGLBs": 0
+        },
+        "blockers": [
+          "m020のソース造形変更のみで実GLB再生成0",
+          "m020・m048のWebGL前後左右確認とAndroid計測未実施",
+          "旧 nonhuman-3d-refinement-15m.yml の自動造形ジョブが if:false で無効。別のChatGPT定期回帰とは別経路"
+        ],
+        "speedPlan": "m020・m048を同じ族群QAでまとめて確認→同系統数体を1つのメッシュ生成器で更新→原型/LOD・ゲーム/マスター反映を別カウント。旧無効ジョブの成功を成果に数えない。保護m005/m006は改変禁止。"
+      }
     },
     "world": {
       "source": "ChatGPT定期品質回帰の実行結果＋GitHub証跡",
@@ -146,6 +174,14 @@
         "mainInReviewCount": 11,
         "mainAcceptedCount": 0,
         "mainUnacceptedCount": 53
+      },
+      "operational": {
+        "blockers": [
+          "12:50実行は新規実3D改修0・対象別QA合格0",
+          "GitHub World reference workflowは参考画像生成/WebGL撮影/PBR候補が主体で全53種の実形状を自動生成する工程ではない",
+          "PR #441保存21件とmain審査中11件は重複の可能性があり合算不可。承認0/53"
+        ],
+        "speedPlan": "未承認の同形状群5〜10件を共通3D生成器で一括改修→対象別の構文・WebGL・Androidをまとめて確認→通った変更のみ既存PRでマージ。参考画像/PBR候補のみの反復は実改修数0と報告。"
       }
     },
     "anime": {
