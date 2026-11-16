@@ -220,9 +220,9 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
       // Larger visible limbus replaces the former pin-sized "eye dot".
       g.sphere(head,'shadow',[side*.288,.112,.266],[.032,.046,.074],
        {name:'beast-orbit'});
-      g.sphere(head,'eye',[side*.319,.113,.278],[.016,.034,.052],
+      g.sphere(head,'eye',[side*.319,.113,.278],[.0185,.047,.052],
        {name:'eye',rough:.17});
-      g.sphere(head,'shadow',[side*.334,.110,.291],[.0045,.019,.021],
+      g.sphere(head,'shadow',[side*.334,.110,.291],[.005,.023,.021],
        {name:'beast-pupil'});
       g.sphere(head,'bone',[side*.339,.130,.307],[.0019,.0045,.006],
        {name:'beast-corneal-glint',rough:.10});
