@@ -43,6 +43,8 @@ const {chromium}=require('playwright');
   assert.ok(audit.sample.changed>200,'RGB pixels did not visibly respond to skin correction');
   assert.ok(audit.sample.after[0]<audit.sample.before[0]-6,
    'Corrected battle skin must visibly reduce red-channel whitewash');
+  assert.ok(audit.sample.after[0]>100&&audit.sample.after[1]>65,
+   'Never darken faces into nearly black skin in the actual WebGL lit scene');
   assert.ok(audit.sample.after[0]>audit.sample.after[1]+4,
    'Skin should retain warm complexion instead of grayscale clay');
   assert.equal(audit.sample.rgbaOutliers,0,'No bright-white clipped skin pixels');

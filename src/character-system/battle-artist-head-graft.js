@@ -53,8 +53,8 @@ const clamp=(x,min,max)=>Math.min(max,Math.max(min,x));
  * creator face geometry, eye pigments, make-up, textures and hair are untouched.
  * Keep this independent of camera distance and rarity so LOD cannot bleach it.
  */
-export const BATTLE_FACE_SKIN_TONE_VERSION='battle-skin-photometric-v2';
-export const BATTLE_FACE_LIGHT_RESPONSE_VERSION='battle-face-light-response-v2';
+export const BATTLE_FACE_SKIN_TONE_VERSION='battle-skin-photometric-v3';
+export const BATTLE_FACE_LIGHT_RESPONSE_VERSION='battle-face-light-response-v3';
 let battleSkinAlbedoTexture=null;
 /** The real realistic-head-animation.glb has UVs but an UNTEXTURED skin
  * preview material (baseColor 0.65/0.44/0.34). The old studio converter
@@ -98,11 +98,11 @@ export function getBattleSkinAlbedoTexture(){
  return tex;
 }
 
-/** Reduce excessive facial radiance before the global ACES/output pass.
- * Adjust the actual fragment's PBR outgoingLight, NOT just the UI pigment.
- * A flat material.color change cannot guard against the 2.5+2.2 battlefield
- * light stack, especially on mobile where FXAA blurs the cheek contours.
- * This program is shared by prototype-cloned crowds; zero per-frame work.
+/** Soft-shoulder the overbright PBR highlights under the battlefield sun.
+ * Keep 86% of the original diffuse light: the previous 58% shader combined
+ * with dark copper albedo made ordinary humans look black. This affects only
+ * the real face skin mesh, not lashes, iris, makeup, or armor.
+ * Shared across instances, zero per-frame work.
  */
 export function installBattleFaceLightResponse(material){
  if(!material?.isMeshStandardMaterial)return {applied:false,reason:'not-standard-pbr'};
@@ -116,13 +116,13 @@ export function installBattleFaceLightResponse(material){
   if(!shader.fragmentShader?.includes(marker))
    throw Error('Battle face PBR light gate: expected opaque_fragment not found');
   shader.fragmentShader=shader.fragmentShader.replace(marker,
-   'outgoingLight = (outgoingLight * 0.58) / (vec3(1.0) + 0.55 * max(outgoingLight - vec3(0.50), vec3(0.0)));\n'+marker);
+   'outgoingLight = (outgoingLight * 0.86) / (vec3(1.0) + 0.40 * max(outgoingLight - vec3(0.68), vec3(0.0)));\n'+marker);
  };
  material.customProgramCacheKey=()=>previousProgramKey()+'|'+BATTLE_FACE_LIGHT_RESPONSE_VERSION;
  material.userData.battleFaceLightResponseVersion=BATTLE_FACE_LIGHT_RESPONSE_VERSION;
- material.userData.battleFaceLightResponseScale=.58;
+ material.userData.battleFaceLightResponseScale=.86;
  material.needsUpdate=true;
- return {applied:true,version:BATTLE_FACE_LIGHT_RESPONSE_VERSION,scale:.58};
+ return {applied:true,version:BATTLE_FACE_LIGHT_RESPONSE_VERSION,scale:.86};
 }
 export function correctBattleFaceSkinTone(face,{sex='male'}={}){
  if(!face?.isMesh||!face.material||face.userData?.faceColorMode!=='color')
@@ -136,7 +136,11 @@ export function correctBattleFaceSkinTone(face,{sex='male'}={}){
  // Never replace imported photo/painted material maps. The actual battle
  // sculpt is untextured but has original UVs, so it receives a tiny shared map.
  if(material.map)return {corrected:false,reason:'textured-skin-preserved'};
- const skinHex=sex==='female'?0xc99582:0xb9816b;
+ // Older battle-only overrides hard-coded dark copper skin for *everyone*,
+ // then dimmed it to 58% in the fragment shader. With a camera closeup,
+ // even fair-skinned creator presets appeared almost black. Restore the
+ // original warm studio palette and compress only pathological highlights.
+ const skinHex=sex==='female'?0xeac9b8:0xe2bda9;
  material.color.setHex(skinHex);
  if(face.geometry?.getAttribute('uv'))material.map=getBattleSkinAlbedoTexture();
  material.metalness=0;
@@ -326,18 +330,71 @@ export function attachBattleArtistHead({character,recipe,source,pattern=null,ani
  * identity. Studio groom is a ONE-TIME static construction, not a CPU
  * hair-physics simulation on all 100 actors.
  */
+/**
+ * The Blender head mesh includes a broad neck/shoulder skirt below the
+ * cranium. A scalp groom computed from the ENTIRE bounds produces a huge
+ * synthetic wig cap that floats beside or above the actual skull.
+ * Hair positions stay in the original head mesh's LOCAL coordinates,
+ * but scalp candidates are derived only from the upper true cranial
+ * triangles, so the wig is fitted against the same head as the studio.
+ */
+export function cranialScalpSurface(face,{cranialFraction=.65}={}){
+ if(!face?.isMesh||!face.geometry?.getAttribute('position'))
+  throw Error('Real sculpted face required for cranial wig fitting');
+ if(cranialFraction<.58||cranialFraction>.78)throw Error('Invalid cranial fraction');
+ const geometry=face.geometry;
+ geometry.computeBoundingBox();
+ const box=geometry.boundingBox,vertices=geometry.getAttribute('position');
+ const cutoff=box.min.y+(box.max.y-box.min.y)*(1-cranialFraction);
+ const sourceIndex=geometry.getIndex(),triangles=sourceIndex?
+  sourceIndex.count/3:vertices.count/3;
+ const positions=[];
+ for(let triangle=0;triangle<triangles;triangle++){
+  const ids=[0,1,2].map(i=>sourceIndex?
+   sourceIndex.getX(triangle*3+i):triangle*3+i);
+  if(ids.some(i=>vertices.getY(i)<cutoff))continue;
+  for(const id of ids)positions.push(vertices.getX(id),vertices.getY(id),vertices.getZ(id));
+ }
+ if(positions.length<900)throw Error('No usable real scalp triangle surface');
+ const cropped=new THREE.BufferGeometry();
+ cropped.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
+ cropped.computeVertexNormals();
+ cropped.computeBoundingBox();
+ const proxy=new THREE.Mesh(cropped,face.material);
+ proxy.name='CRANIAL_SCALP_HAIR_SAMPLING_PROXY';
+ return {
+  proxy,geometry:cropped,
+  triangles:positions.length/9,
+  cutoffY:cutoff,
+  originalHeadHeight:box.max.y-box.min.y,
+  croppedHeadHeight:cropped.boundingBox.max.y-cropped.boundingBox.min.y
+ };
+}
 export function equipBattleStudioHair(artistHead,pattern,{hero=false}={}){
  if(!artistHead?.attached||!artistHead.face?.geometry||!pattern?.hairStyleId)
   throw Error('Physical artist head and compatible v43 hair pattern required');
  if(artistHead.studioWig)return artistHead.studioWig;
  const count=hero?360:112;
- const wig=createScalpAnchoredWig(artistHead.face,{
-  count,styleId:pattern.hairStyleId,color:pattern.hairColor,
-  gender:pattern.sex,lengthScale:pattern.hairLengthScale,
-  volumeProfile:pattern.hairVolume||'natural',
-  fineFringeMultiplier:hero?2:1.25,visualFiberMultiplier:1,
-  staticGroom:true,normalLayeredSingleMesh:true
+ const scalp=cranialScalpSurface(artistHead.face,{
+  cranialFraction:artistHead.cranialFit?.cranialFraction??.65
  });
+ let wig;
+ try{
+  wig=createScalpAnchoredWig(scalp.proxy,{
+   count,styleId:pattern.hairStyleId,color:pattern.hairColor,
+   gender:pattern.sex,lengthScale:pattern.hairLengthScale,
+   volumeProfile:pattern.hairVolume||'natural',
+   fineFringeMultiplier:hero?2:1.25,visualFiberMultiplier:1,
+   staticGroom:true,normalLayeredSingleMesh:true
+  });
+ }finally{
+  // Hair is static; all cap and strand triangles have been baked into
+  // independent geometry. Never keep another copy of the head on the GPU.
+  scalp.geometry.dispose();
+ }
+ artistHead.studioWigCranialScalpTriangles=scalp.triangles;
+ artistHead.studioWigCranialHeightRatio=
+  +(scalp.croppedHeadHeight/scalp.originalHeadHeight).toFixed(3);
  artistHead.face.add(wig.root);
  artistHead.studioWig=wig;
  artistHead.studioWigStyleId=pattern.hairStyleId;
@@ -362,6 +419,7 @@ export function battleHeadMasterStats(actors=[]){
   savedGeneratorPatterns:human.filter(a=>a.studioPattern?.source==='saved-heroine-editor').length,
   fullStudioWigs:human.filter(a=>!!a.masterHead?.studioWig).length,
   studioHairSources:[...new Set(human.map(a=>a.masterHead?.studioHairSource).filter(Boolean))],
+  cranialScalpWigs:human.filter(a=>a.masterHead?.studioWigCranialScalpTriangles>0&&a.masterHead?.studioWig).length,
   faceLightCorrected:human.filter(a=>a.masterHead?.skinLightResponseVersion===BATTLE_FACE_LIGHT_RESPONSE_VERSION).length,
   faceMaterialFailures:human.filter(a=>a.masterHead?.attached&&(
    !a.masterHead.face?.visible||

@@ -22,15 +22,16 @@ assert.match(graft,/loadAsync\(masterHeadSourceUrl\(\)\)/,
 assert.ok(graft.includes(asset),'Reference the exact 785k Blender GLB from heroine studio');
 assert.ok(studio.includes('export function hideBattleDonorFace('));
 assert.ok(studio.includes('export function attachIndependentFaceToBattleHead('));
-assert.match(graft,/if\(!fit\.attachedToRealHeadBone\|\|cut\.removedTriangles<=0\)/,
+assert.match(graft,/if\(!donorFit\.attachedToRealHeadBone\|\|cut\.removedTriangles<=0\)/,
  'Do not report replacement when the old head has not been removed');
+assert.match(graft,/fitBattleArtistFaceToHead\(\{/, 'True cranium fitting must follow donor face removal');
 assert.match(graft,/facePrototypes\.set\(key,prototype\)/,
  'Share authored geometry across generic soldiers');
 assert.match(graft,/prototype\.root\.clone\(true\)/,
  'No expensive duplicate geometry per soldier with the same sculpt');
 assert.match(graft,/createFaceExpressionAnimator\(master/,
  'The protagonist/strategist keeps real eyelid and lip motion');
-assert.match(graft,/part\.node\.visible=desired&&part\.initialVisible/,
+assert.match(graft,/part\.node\.visible=part\.initialVisible&&\(desired\|\|\/EYELINER\/i\.test\(part\.node\.name\)\)/,
  'LOD cannot resurrect invisible donor facial cosmetics');
 assert.match(game,/loadBattleHeadMaster\(\)/);
 assert.match(game,/a\.masterHead=attachBattleArtistHead\(/);

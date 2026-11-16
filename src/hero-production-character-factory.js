@@ -125,6 +125,6 @@ export function heroProductionActionCue(recipe,state){
   job==='fighter'?'punch':job==='farmer'?'guard':'heavy';
  return Object.freeze({
   action,element:recipe.element,
-  scale:recipe.rarity==='UR'?1.20:recipe.rarity==='R'?1.10:1
+  scale:recipe.rarity==='UR'?1.65:recipe.rarity==='R'?1.42:1.22
  });
 }
