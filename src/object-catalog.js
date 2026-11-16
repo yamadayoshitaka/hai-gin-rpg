@@ -228,7 +228,8 @@ export function createObjectById(id,{cellSize=2.2}={}){
   const height=(castle?7.2:3.8)*c, steps=castle?54:28;
   const stone=cottageMaterial('stone'), wood=cottageMaterial('wood',0x9b8162);
   const iron=new THREE.MeshStandardMaterial({color:0x494944,metalness:.65,roughness:.53});
-  const mat=castle?stone:wood;
+  const mat=(castle?stone:wood).clone();
+  mat.side=THREE.DoubleSide;
   const add=(geometry,material,x=0,y=0,z=0,name='')=>{
    const mesh=new THREE.Mesh(geometry,material);mesh.position.set(x,y,z);
    mesh.castShadow=true;mesh.receiveShadow=true;mesh.name=name;root.add(mesh);return mesh;
@@ -249,7 +250,7 @@ export function createObjectById(id,{cellSize=2.2}={}){
   for(let i=0;i<steps;i++){
    const a=i*sweep/steps, next=(i+1)*sweep/steps;
    const tread=add(wedge(core*.96,radius,a,next,riser*.19),mat,0,(i+1)*riser-riser*.19,0,'supported_wedge_tread_'+i);
-   tread.material.side=THREE.DoubleSide;
+   // Double-sided wedge material is local to this staircase; shared catalog materials stay unchanged.
    const railA=next-.045, postRadius=radius*.94;
    if(i%2===0){
     const x=Math.cos(railA)*postRadius,z=Math.sin(railA)*postRadius;
