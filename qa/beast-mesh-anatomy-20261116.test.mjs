@@ -272,6 +272,25 @@ for(const id of remeshed){
       'fivefold trailing mane should measure well over one model unit');
     assert.ok(Math.min(...mane.map(maxLength))>.65,
       'every mane material group should contain extended trailing hairs');
+    // The exposed face opening must remain bare even after the 5x sweep;
+    // follicle roots outside the mask can flow backwards without hiding eyes.
+    const headCoats=model.userData.pivots.head.children.filter(m=>
+      m.isMesh&&m.userData.furStrands);
+    let blockedRoots=0,allRoots=0;
+    for(const coat of headCoats){
+      const p=coat.geometry.getAttribute('position');
+      for(let j=0;j+4<p.count;j+=5){
+        const x=(p.getX(j)+p.getX(j+1))*.5;
+        const y=(p.getY(j)+p.getY(j+1))*.5;
+        const z=(p.getZ(j)+p.getZ(j+1))*.5;
+        allRoots++;
+        if(z>.105&&Math.abs(x)<.153&&y>-.195&&y<.266)
+          blockedRoots++;
+      }
+    }
+    assert.ok(allRoots>1500,'perimeter should have body-like follicle coverage');
+    assert.equal(blockedRoots,0,
+      'no fur roots on the exposed tiny eyes/nose/mouth face mask');
   }
   const keratin=meshes.filter(m=>m.userData.rootedKeratin);
   assert.ok(keratin.length>=11,id+' must have physically curved dorsal horns and canines');
