@@ -29,6 +29,7 @@ const secondarySquads=[
 ];
 const make=()=>createTargetedStrategyUi({
  getPlan:id=>({squads:String(id)==='1'?squads:String(id)==='2'?secondarySquads:[],allowed:['charge','defend','hold','retreat']}),
+ getTemplates:()=>[{id:'assault',name:'集中殲滅',methodId:'melee_focus',score:92,reason:'目的に一致'}],
  getEnemyTargets:()=>[{id:'enemy1',label:'敵剣士隊',team:'enemy',x:30,z:40},
   {id:'enemy2',label:'敵弓隊',team:'enemy',x:185,z:190}],
  getAllyTargets:()=>[{id:'1001',label:'第1分隊',team:'ally',groupId:1,x:60,z:140},
@@ -117,6 +118,12 @@ assert.match(panel.innerHTML,/第2班（紫）/,'teams have distinct radar colou
 assert.match(panel.innerHTML,/弓使い3人/,'team card identifies job and headcount');
 radarTap(200,20); // group mode: tap the second team by its radar pin
 assert.match(panel.innerHTML,/<span>第2班<\/span>/,'tap switches the selected group');
+click('close');
+ui.open('1');click('next');
+assert.match(panel.innerHTML,/集中殲滅/,'inn plans appear in the battle command panel');
+click('template','assault');
+assert.equal(ui.currentStep(),'method','template fills in the correct method and still requires target confirmation');
+assert.match(panel.innerHTML,/集中突破/);
 click('close');
 const battle=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
 assert.match(battle,/story-center-orders/);
