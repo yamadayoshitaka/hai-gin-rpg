@@ -247,9 +247,9 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    const muzzleRings=s.id==='m001'?[
      // The original protrusion (.597) is reduced to a short bridge (.382).
      // The rear section overlaps the sculpted face, without a white tube.
-     {z:.382,y:-.127,rx:.027,ry:.033},
-     {z:.361,y:-.125,rx:.065,ry:.050},
-     {z:.327,y:-.112,rx:.084,ry:.064},
+     {z:.324,y:-.127,rx:.027,ry:.033},
+     {z:.313,y:-.125,rx:.065,ry:.050},
+     {z:.284,y:-.112,rx:.084,ry:.064},
      {z:.268,y:-.073,rx:.113,ry:.082},
      {z:.198,y:-.044,rx:.136,ry:.104},
      {z:.115,y:-.019,rx:.159,ry:.126}
@@ -269,11 +269,11 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    // Anatomically tapered rhinarium; alae overlap the bridge and have
    // distinct cut-in nostrils, rather than an inflated black nose sphere.
    const noseRings=s.id==='m001'?[
-     {z:.418,y:-.152,rx:.013,ry:.017},
-     {z:.408,y:-.148,rx:.047,ry:.031},
-     {z:.392,y:-.149,rx:.064,ry:.039},
-     {z:.359,y:-.147,rx:.062,ry:.037},
-     {z:.328,y:-.136,rx:.041,ry:.025}
+     {z:.366,y:-.152,rx:.013,ry:.017},
+     {z:.358,y:-.148,rx:.047,ry:.031},
+     {z:.346,y:-.149,rx:.064,ry:.039},
+     {z:.321,y:-.147,rx:.062,ry:.037},
+     {z:.288,y:-.136,rx:.041,ry:.025}
    ]:[
      {z:.706,y:-.161,rx:.027,ry:.029},
      {z:.685,y:-.158,rx:.104,ry:.060},
@@ -288,11 +288,11 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    for(const side of [-1,1]){
      const tight=s.id==='m001';
      g.bridge(head,'shadow',
-       [side*(tight?.042:.094),-.143,tight?.343:.605],
-       [side*(tight?.048:.110),-.166,tight?.395:.662],
+       [side*(tight?.042:.094),-.143,tight?.293:.605],
+       [side*(tight?.048:.110),-.166,tight?.350:.662],
        tight?.011:.028,tight?.008:.015);
      g.sphere(head,'shadow',
-       [side*(tight?.048:.108),tight?-.165:-.182,tight?.409:.681],
+       [side*(tight?.048:.108),tight?-.165:-.182,tight?.358:.681],
        tight?[.007,.005,.004]:[.014,.010,.008],
        {name:'beast-nostril-'+(side<0?'L':'R'),rough:.21});
    }
@@ -342,7 +342,7 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    }
    // Compact philtrum following the small rhinarium instead of a black seam.
    g.tube(head,'shadow',s.id==='m001'?
-      [[0,-.159,.370],[0,-.178,.350],[0,-.193,.323]]:
+      [[0,-.159,.325],[0,-.178,.308],[0,-.193,.284]]:
       [[0,-.195,muzzle+.285],[0,-.235,muzzle+.275],
        [0,-.26,muzzle+.22]],s.id==='m001'?.005:.009);
  }else if(reptile){
@@ -583,7 +583,7 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    g.tube(head,'shadow',s.id==='m001'?[
      [side*.112,-.149,.11],
      [side*.106,-.176,.260],
-     [side*.068,-.184,.377]
+     [side*.068,-.184,.329]
    ]:[
      [side*.205,-.192,.135],
      [side*.204,-.200,muzzle+.025],
