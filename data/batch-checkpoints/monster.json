@@ -15,7 +15,7 @@
       "sourceFiles": [
         "src/m048-sea-serpent-anatomical-source.js"
       ],
-      "commitSha": "5f63efb6077052693cbe56bdd01573c443baaabd",
+      "commitSha": "53dd216bf5968b7a472b104b4b2ee3284cfbc5f1",
       "qa": "unverified"
     }
   ],
@@ -67,5 +67,5 @@
     "m049",
     "m050"
   ],
-  "nextAction": "Validate m048 sensory ridge local-frame attachment and m020/m048 four-view WebGL, Node syntax and Android FPS; repair PR #426 E2E before merge. Audit 108 IDs from canonical manifest."
+  "nextAction": "Validate m048 dorsal crest local-frame anchoring and prior lateral line, m020/m048 four-view WebGL, Node syntax and Android FPS; repair E2E before merge. Audit all 108 IDs."
 }
