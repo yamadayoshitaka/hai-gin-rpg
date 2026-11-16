@@ -1,0 +1,41 @@
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {enableBattleRigidFrustumCulling,countBattleRigCulling} from '../src/battle-rigid-frustum-optimization.js';
+const geometry={boundingSphere:null,getAttribute:key=>key==='position'?{count:300}:undefined,
+ morphAttributes:{},computeBoundingSphere(){this.boundingSphere={radius:3};this.computations=(this.computations||0)+1;}};
+const mat={metalness:.45,roughness:.25};
+const make=(extras={})=>({isMesh:true,isSkinnedMesh:false,isInstancedMesh:false,
+ isBatchedMesh:false,geometry,material:mat,frustumCulled:false,
+ castShadow:true,receiveShadow:true,userData:{},...extras});
+const armor=make(),weapon=make(),cloth=make({frustumCulled:true});
+const skinned=make({isSkinnedMesh:true});
+const morph=make({morphTargetInfluences:[0,.6]});
+const shaderDeform=make({material:{displacementMap:{}}});
+const forced=make({userData:{forceFrustumVisible:true}});
+const root={traverse(fn){[armor,weapon,cloth,skinned,morph,shaderDeform,forced].forEach(fn)}};
+const before={geometry:armor.geometry,material:armor.material};
+const stats=enableBattleRigidFrustumCulling(root);
+assert.equal(stats.eligible,3);
+assert.equal(stats.enabled,2);
+assert.equal(stats.alreadyEnabled,1);
+assert.equal(armor.frustumCulled,true);
+assert.equal(weapon.frustumCulled,true);
+assert.equal(cloth.frustumCulled,true);
+assert.equal(skinned.frustumCulled,false,'skinned body must preserve existing animation bounds');
+assert.equal(morph.frustumCulled,false,'morphed hair/face stays in original rendering path');
+assert.equal(shaderDeform.frustumCulled,false,'displaced materials cannot be culled on bind bounds');
+assert.equal(forced.frustumCulled,false);
+assert.equal(armor.geometry,before.geometry);
+assert.equal(armor.material,before.material);
+assert.equal(armor.castShadow,true,'shadow fidelity preserved');
+assert.equal(armor.receiveShadow,true,'shadow receiving preserved');
+assert.equal(mat.metalness,.45,'PBR materials never replaced');
+assert.equal(geometry.computations,1,'only one geometry bound computation for shared shapes');
+assert.deepEqual(countBattleRigCulling([{rigidCullStats:stats},{}]),{...stats,rigs:1});
+const game=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
+assert.match(game,/a\.rigidCullStats=enableBattleRigidFrustumCulling\(a\.character\.object3D\)/);
+assert.match(game,/if\(!TOWN_MODE&&!massSim\)/,'1000vs1000 and town renderers remain unchanged');
+assert.match(game,/if\(visual\.update\)\{a\.character\.update/,'original rig actions preserved');
+assert.match(game,/GPU '\+\(perf\.gpuFrameMs/,'GPU timing visible to diagnose WebGL bottlenecks');
+assert.match(game,/getBattleRigCullingQA/);
+console.log('PASS: exact rigid geometry visibility, unchanged PBR/shadows, original skeletal actions and QA counters');
