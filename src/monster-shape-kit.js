@@ -10,7 +10,7 @@ import {realismPaletteFor} from './monster-realistic-palettes.js?v=4.5.03';
 import {createMonsterAnatomicalLoft} from './monster-realistic-loft.js?v=4.4.99';
 import {createCreatureGumSocketGeometry,createCreatureFittedHemGeometry} from './creature-seam-geometry.js';
 import {createRootedCreatureHornGeometry} from './creature-anatomy-mesh.js';
-import {creatureFaceVolume} from './creature-face-volume.js';
+import {creatureFaceVolume,sculptAxialFacePoint} from './creature-face-volume.js';
 import {buildCanineFurRibbonGeometry} from './canine-fur-ribbons.js?v=4.4.89';
 import {decorateMonsterPhotoMaterial,detachMonsterPhotoMaterial} from './monster-photo-pbr.js?v=4.4.95';
 
@@ -220,7 +220,7 @@ export function createSculpture(spec,detail='high'){
   * Station order is nose (+Z) -> tail (-Z). Animated parts remain separate.
   */
  const axialLoft=(parent,shade,stations,{name='axial-anatomical-source',
-   rough=.78,ribbing=.012}={})=>{
+   rough=.78,ribbing=.012,faceSculpt=false}={})=>{
    if(!Array.isArray(stations)||stations.length<3||
      !stations.every(p=>Number.isFinite(p.z)&&Number.isFinite(p.y)&&
        Number.isFinite(p.rx)&&p.rx>0&&Number.isFinite(p.ry)&&p.ry>0))
@@ -234,6 +234,7 @@ export function createSculpture(spec,detail='high'){
      detail==='medium'?3:2;
    const count=(stations.length-1)*steps+1;
    const vertex=[],uv=[],indices=[];
+   const facialVolume=faceSculpt?creatureFaceVolume(spec.id,spec.family):null;
    const cubic=(a,b,c,d,t)=>.5*((2*b)+(-a+c)*t+
      (2*a-5*b+4*c-d)*t*t+(-a+3*b-3*c+d)*t*t*t);
    for(let i=0;i<count;i++){
@@ -248,7 +249,11 @@ export function createSculpture(spec,detail='high'){
        const a=j/radial*Math.PI*2;
        const organic=1+(detail==='low'?0:ribbing)*
          Math.sin(a*5+z*3.1)*Math.sin(Math.PI*i/(count-1));
-       vertex.push(Math.cos(a)*rx*organic,y+Math.sin(a)*ry*organic,z);
+       const x=Math.cos(a)*rx*organic,yy=y+Math.sin(a)*ry*organic;
+       const point=facialVolume?
+         sculptAxialFacePoint(x,yy,z,1-i/(count-1),a,facialVolume):
+         [x,yy,z];
+       vertex.push(...point);
        uv.push(j/radial,i/(count-1));
      }
    }
@@ -262,7 +267,12 @@ export function createSculpture(spec,detail='high'){
    geo.setIndex(indices);
    geo.computeVertexNormals();
    geo.computeBoundingSphere();
+   if(facialVolume){
+     geo.userData.anatomy='face';
+     geo.userData.faceVolumeApplied=true;
+   }
    const mesh=own(attach(parent,geo,shade,{name,rough,metal:0}));
+   if(facialVolume)mesh.userData.anatomyLoft=true;
    mesh.userData.axialAnatomy=true;
    mesh.userData.anatomicalStations=stations.length;
    mesh.userData.proceduralSource=true;
