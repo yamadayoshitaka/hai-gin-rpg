@@ -206,6 +206,38 @@ for(const id of remeshed){
     }), 'm001 must keep thin sculpted almond eyelids');
     const front=model.userData.pivots.legfrontL;
     const rear=model.userData.pivots.legrearL;
+    const p=model.userData.pivots;
+    // The canine stifle is ABOVE the tibia, with a true rotating knee
+    // whose distal geometry and raised hock retain their original rest
+    // alignment. The coxal socket is welded to the torso joint space.
+    for(const side of ['L','R']){
+      assert.equal(p['legrear'+side].parent,p.torso,
+        'm001 hind thigh must follow the rotating torso at the hip');
+      const knee=p['lowerrear'+side];
+      assert.equal(knee.parent,p['legrear'+side]);
+      assert.equal(knee.userData.anatomicalJoint,'stifle');
+      assert.ok(Math.abs(knee.position.y-.100)<.00001,
+        'm001 rear knee must pivot at the anatomical stifle');
+      assert.ok(Math.abs(p['beastHockrear'+side].position.y+.505)<.00001,
+        'm001 hock must be re-based to keep the rest paw in place');
+    }
+    const hipSeals=meshes.filter(m=>m.userData.hipSocketSeal);
+    assert.equal(hipSeals.length,2,
+      'm001 moving hind hips require continuous torso-owned fascia');
+    assert.ok(hipSeals.every(m=>m.parent===p.torso),
+      'hip socket geometry must follow the rotating body, not the swinging leg');
+    // Exercise multiple stride phases, not only the static idle pose.
+    startMonsterAction(model,'walk',0);
+    for(const time of [.08,.19,.32,.45,.57]){
+      animateMonsterModel(model,time);
+      model.updateMatrixWorld(true);
+      assert.ok(p.lowerrearL.rotation.x!==0,
+        'anatomical stifle must flex through the walking gait');
+      assert.ok(p.legrearL.parent===p.torso,
+        'walking may not detach rear limb from body hierarchy');
+    }
+    startMonsterAction(model,'idle',.57);
+    animateMonsterModel(model,.58);
     assert.ok(Math.abs(front.position.x)>=.39,
       'm001 forelegs must attach to the shoulder flank, not front underside');
     assert.ok(Math.abs(rear.position.x)>=.31,
@@ -225,6 +257,9 @@ for(const id of remeshed){
       'm001 shins must taper without bloated fur cuffs');
     const eyes=meshes.filter(m=>m.name==='eye');
     assert.equal(eyes.length,2);
+    const irisSpacing=Math.abs(eyes[0].position.x-eyes[1].position.x);
+    assert.ok(irisSpacing>.35&&irisSpacing<.40,
+      'm001 eyes must be inset from the old wide 0.444 eye spacing');
     assert.ok(eyes.every(m=>Math.abs(m.position.x)<.27&&m.position.z>.27),
       'm001 fitted irises must remain inset on the forward cranium');
     const skull=meshes.find(m=>m.name==='organic-cranium-m001');
