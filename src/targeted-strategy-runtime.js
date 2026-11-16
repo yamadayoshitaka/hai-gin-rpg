@@ -44,7 +44,7 @@ export function createTargetedStrategyUi({
  getPlan,getEnemyTargets,getObjects,onExecute,onMapRequest,
  getAllyTargets=()=>[],getRadarTargets=()=>[],
  onMapPick=()=>false,getRadarCanvas=()=>null,getMapSize=()=>232,
- getItems=()=>[],onItemExecute=()=>false,onOpen=()=>{},onClose=()=>{}
+ getItems=()=>[],getTemplates=()=>[],onItemExecute=()=>false,onOpen=()=>{},onClose=()=>{}
 }){
  const panel=document.createElement('section');
  panel.id='targetedStrategyPanel';panel.hidden=true;
@@ -125,7 +125,13 @@ export function createTargetedStrategyUi({
        '<small class="centerHelp">選択班の全分隊へ指示します。実行可能な職業だけが行動します。</small>')+
      controls('キャンセル','次へ','作戦を選ぶ',!selectedSquads.size);
   }else if(step==='family'){
-   html='<div class="centerStep">② 作戦の系統を選択</div><div class="centerGrid">'+
+   const recommended=getTemplates(String(groupId)).filter(x=>STRATEGY_METHODS[x.methodId]);
+   html='<div class="centerStep">② 戦場に合う宿屋テンプレート</div>'+
+    '<div class="centerBattleRecommendations">'+recommended.slice(0,5).map((x,i)=>
+      b('data-strategy-template="'+esc(x.id)+'"',(i===0?'★ 推奨 ':'')+x.name+
+      ' · 適合'+x.score+'/100'+(x.reason?' · '+x.reason:''),false,!eligible.has(x.methodId))).join('')+
+    (recommended.length?'':'<small class="centerHelp">利用できるテンプレートなし。通常作戦を選択してください。</small>')+
+    '</div><div class="centerStep">または作戦の系統を選択</div><div class="centerGrid">'+
     Object.entries(STRATEGY_TREE).map(([id,x])=>b('data-strategy-family="'+id+'"',x.name,
      family===id,!Object.values(x.intents).some(y=>y.methods.some(m=>eligible.has(m.id))))).join('')+
     b('data-strategy-family="item"','🎒 アイテム',false,!getItems().length)+'</div>'+
@@ -358,6 +364,16 @@ export function createTargetedStrategyUi({
   if(t.hasAttribute('data-strategy-scope')){
    scope=t.dataset.strategyScope;selectGroup(groupId);
   }else if(t.hasAttribute('data-strategy-group')){selectGroup(t.dataset.strategyGroup);}
+  else if(t.hasAttribute('data-strategy-template')){
+   const chosen=getTemplates(String(groupId)).find(x=>String(x.id)===String(t.dataset.strategyTemplate));
+   if(!chosen||!available().some(m=>m.id===chosen.methodId)){error='この班ではテンプレートの作戦を実行できません';render();return;}
+   const chosenBranch=Object.entries(STRATEGY_TREE).flatMap(([f,x])=>
+    Object.entries(x.intents).map(([intent,y])=>({f,intent,methods:y.methods})))
+    .find(x=>x.methods.some(m=>m.id===chosen.methodId));
+   if(!chosenBranch){error='テンプレートの作戦が見つかりません';render();return;}
+   family=chosenBranch.f;intent=chosenBranch.intent;selectedMethods=new Set([chosen.methodId]);
+   selectedTargets.clear();mapPoint=null;chosenItem=null;step='method';
+  }
   else if(t.hasAttribute('data-strategy-squad')){
    const id=String(t.dataset.strategySquad);selectedSquads=new Set([id]);preferredSquad=id;
   }else if(t.hasAttribute('data-strategy-family')){

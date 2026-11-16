@@ -118,3 +118,45 @@
 .sortieTemplateChoices button small{overflow-wrap:anywhere}
 @media(max-height:720px){.sortieMinimumSummary{max-height:70px;padding:3px}
  .sortieMinimumSummary span{font-size:10px;padding:1px 3px}}
+
+/* 2026-11-16 compact phone-safe inn UI. Never clip the lower controls. */
+#panel.formation-command-ui{height:min(calc(100dvh - 14px),900px);max-height:calc(100dvh - 14px);
+ display:flex;flex-direction:column;overflow:hidden}
+#panel.formation-command-ui #panelContent,
+#panel.formation-command-ui #panelContent:has(.sortieMinimumSummary){
+ overflow-y:auto!important;overflow-x:hidden!important;min-height:0;flex:1;
+ scrollbar-gutter:stable;overscroll-behavior:contain}
+#panel.formation-command-ui #panelSummary{flex-shrink:0}
+.sortiePlanner{display:flex;flex-direction:column;gap:6px;min-height:0}
+.sortieTop,.sortieTeams,.sortieModeTabs{flex-shrink:0}
+.sortieModeTabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}
+.sortieModeTabs button{min-height:39px!important;font-size:12px!important;padding:5px 2px!important}
+.sortieViewBody{display:grid;gap:7px;min-height:0;align-content:start}
+.sortiePlannerFoot{display:block;line-height:1.35}
+.sortieCompactStatus{font-size:11px;font-weight:700;color:#ffe3ae;padding:6px;
+ background:#132c41;border:1px solid #6687a0;border-radius:6px}
+.sortieTraitBars{display:grid;gap:7px}
+.sortieTraitBars>div{display:grid;grid-template-columns:62px 1fr 32px;gap:7px;
+ align-items:center;font-size:12px;font-weight:700}
+.sortieTraitBars meter{width:100%;height:15px;min-width:0}
+.sortieTraitBars b{color:#ffe4a2;text-align:right;font-variant-numeric:tabular-nums}
+.sortieBattlePlanList{display:grid;gap:6px;max-height:40dvh;overflow:auto}
+.sortieBattlePlan{display:grid;grid-template-columns:1fr auto;gap:4px 8px;
+ align-items:center;border:1px solid #627f99;border-radius:7px;background:#10283c;padding:7px}
+.sortieBattlePlan>strong{font-size:12px;color:#ffe1a9}
+.sortieBattlePlan>strong small{color:#b8e1f0;font-size:11px}
+.sortieBattlePlan>small{grid-column:1;font-size:10px;color:#cfdfef}
+.sortieBattlePlan>button{grid-column:2;grid-row:1/3;font-size:11px!important;padding:5px!important}
+.sortiePlanSave{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:7px;border:1px solid #7a8d88;border-radius:7px}
+.sortiePlanSave>b,.sortiePlanSave>button{grid-column:1/-1}
+.sortiePlanSave input,.sortiePlanSave select{width:100%;min-width:0;color:#fff0ce;background:#0f293e;border:1px solid #849baf;padding:7px;border-radius:6px;font:12px system-ui}
+@media(max-height:700px){#panel.formation-command-ui{height:calc(100dvh - 8px);padding:4px 7px!important}
+ .sortieModeTabs button{min-height:33px!important}
+ .sortieViewBody .sortieFormationGrid{grid-template-rows:repeat(4,31px)}
+ .sortieGridHint{font-size:10px}
+ .sortiePlanner{gap:3px}}
+
+.sortieCompactStatus{display:grid;gap:3px}
+.sortieCompactStatus .sortieRarityCompact{display:block;font-size:9px;line-height:1.25;color:#d5e8f3;overflow-wrap:anywhere}
+.sortieMinimumDisclosure summary{font-size:11px;color:#f4d9aa;cursor:pointer;padding:4px 5px;border:1px solid #6e8797;border-radius:6px}
+.sortieMinimumDisclosure:not([open]) .sortieMinimumSummary{display:none}
