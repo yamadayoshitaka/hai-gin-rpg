@@ -655,7 +655,7 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
  if(s.id==='m001'){
    // Replace the exposed black mouth button with a shallow tapered oral
    // opening that is entirely inside the opening lower mandible.
-   g.axialLoft(jaw,'shadow',[
+   const mouthSlit=g.axialLoft(jaw,'shadow',[
      {z:.160,y:-.050,rx:.020,ry:.005},
      {z:.085,y:-.043,rx:.081,ry:.012},
      {z:-.015,y:-.036,rx:.092,ry:.011},
