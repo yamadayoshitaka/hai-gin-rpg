@@ -75,6 +75,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Install head-and-shield geometry test runtime
+        run: npm install --no-save --ignore-scripts --no-audit --no-fund three@0.180.0
       - name: JavaScript syntax and late-battle state tests
         run: |
           node --check src/mass-battle-grid-sim.js
