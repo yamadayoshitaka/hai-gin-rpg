@@ -112,12 +112,12 @@
     },
     "world": {
       "source": "ChatGPT定期品質回帰の実行結果＋GitHub証跡",
-      "lastRunAt": "2026-11-16T12:50:54.258+09:00",
+      "lastRunAt": "2026-11-16T13:46:22.488+09:00",
       "status": "work_incomplete",
       "carryover": true,
-      "subject": "world進捗同期／PR #441保存21件・main審査中11件・承認0件",
-      "summary": "2026-11-16T12:50:54.258+09:00 実行。今回新規実ソース変更0件、実ソースコミットSHAなし、対象別QA新規合格0件。PR #441作業ブランチsaved=21件、remaining=32件（QA未確認）。main受入台帳は審査中11件、承認0/53件、未承認53件。両集計は合算しない。今回mainマージ0件、Pages公開0件。",
-      "nextAction": "実ソースの未保存対象を複数件改修して作業ブランチへチェックポイント保存。既存対象のWebGL/Android QAを実施し、合格までmainマージしない。",
+      "subject": "world 53種実品質回帰：main承認0件、PR #441保存21件、未検証QA継続",
+      "summary": "2026-11-16T13:46:22.488+09:00 実行。今回新規実ソース変更0件、新規実ソースコミットSHAなし、新規QA合格0件、ゲーム新規反映0件。PR #441作業ブランチsaved=21件、remaining=32件。main受入台帳total=53、inReview=11、accepted=0、未承認=53。両件数は重複の可能性があり合算しない。mainマージ0件、Pages公開0件。",
+      "nextAction": "PR #441既存21件の構文・WebGL・Android対象別QAを実行し、合格証拠を取得。続いて未保存32件のうち共通骨格群5〜10件を実ソース改修し小刻みにコミットする。",
       "steps": {
         "launch": "done",
         "code": "pending",
@@ -171,9 +171,10 @@
       ],
       "lastRunOutcome": {
         "kind": "verification_only",
-        "newSourceCommits": 0,
         "newSourceChangedIds": 0,
         "newQAPassed": 0,
+        "newGameAppliedIds": 0,
+        "newSourceCommits": 0,
         "branchSavedCount": 21,
         "branchRemainingCount": 32,
         "mainInReviewCount": 11,
@@ -182,11 +183,10 @@
       },
       "operational": {
         "blockers": [
-          "12:50実行は新規実3D改修0・対象別QA合格0",
-          "GitHub World reference workflowは参考画像生成/WebGL撮影/PBR候補が主体で全53種の実形状を自動生成する工程ではない",
-          "PR #441保存21件とmain審査中11件は重複の可能性があり合算不可。承認0/53"
+          "本実行では実3Dソース変更・対象別QA合格を作成できていない",
+          "既存PR #441の21件は全QA unverified。WebGL実描画とAndroid実機計測の合格証拠なし"
         ],
-        "speedPlan": "未承認の同形状群5〜10件を共通3D生成器で一括改修→対象別の構文・WebGL・Androidをまとめて確認→通った変更のみ既存PRでマージ。参考画像/PBR候補のみの反復は実改修数0と報告。"
+        "speedPlan": "既存21件のQAを優先して滞留解消→同一生成器の未保存5〜10件を小刻みコミット→合格対象だけmainマージ・Pages検証"
       }
     },
     "anime": {
