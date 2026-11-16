@@ -18,6 +18,10 @@ jobs:
         run: npm run test:full-replacement
       - name: Syntax and imports
         run: npm run test:syntax
+      - name: Verify compact manga Free generation plan without calling Cloudflare
+        run: |
+          node --check scripts/generate-story-chapter1-free-batch.mjs
+          node qa/story-chapter1-stage-priority.test.mjs
       - name: Architecture and blueprint
         run: npm run test:comprehensive && npm run test:architecture && npm run test:blueprints && npm run test:actors && npm run test:components
       - name: Rules and object systems
