@@ -3,7 +3,7 @@
  * variants change horns, crests, armour, wings, limb lengths, weapons and fins.
  * Each specimen is real 3D geometry, never an image billboard.
  */
-import {createSculpture,disposeMonsterSculpture} from './monster-shape-kit.js?v=beast-crouch-coat-20261116';
+import {createSculpture,disposeMonsterSculpture} from './monster-shape-kit.js?v=beast-spring-crouch-v3-20261116';
 import {attachMonsterFaceControls} from './facial-feature-runtime.js?v=1';
 import {generateCanineFurGuides,generateCanineAxialFurGuides} from './canine-fur-guides.js?v=beast-coat-20261116';
 import {monsterEvidenceFor} from './monster-anatomy-reference.js';
@@ -47,7 +47,7 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    // Grey wolf gallop: independent lumbar and pelvic segments allow hind
    // limbs and tail to flex with the axial spine. Keep only this animal's
    // hind limbs parented to the pelvis; all other species retain old rigs.
-   const lumbar=g.group('lumbar',[0,1.30,-.36],torso);
+   const lumbar=g.group('lumbar',[0,1.15,-.36],torso);
    g.bridge(lumbar,'skin',[0,.020,.30],[0,-.020,-.29],.295,.245);
    for(const side of [-1,1]){
      g.sphere(lumbar,'skin',[side*.235,.038,-.03],
@@ -62,13 +62,13 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    // forelimb braces and the neck counterbalances the moving hips.
    for(const side of [-1,1]){
      const shoulder=g.group('scapula'+(side<0?'L':'R'),
-       [side*.33,1.42,.36],torso);
+       [side*.33,1.29,.36],torso);
      g.bridge(shoulder,'skin',[0,-.165,-.13],
        [side*.035,.160,.10],.144,.079);
      g.sphere(shoulder,'light',[0,.025,-.025],
        [.113,.184,.173],{name:'m004-scapular-shoulder'});
    }
-   const neck=g.group('neckCollar',[0,1.43,.49],torso);
+   const neck=g.group('neckCollar',[0,1.30,.49],torso);
    for(const side of [-1,1]){
      g.bridge(neck,'skin',[side*.197,-.075,-.11],
        [side*.165,.125,.24],.099,.065);
@@ -81,7 +81,7 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    // guard hair is a solid layered silhouette even at distant LOD.
    for(const side of [-1,1]){
      const scapula=g.group('scapula'+(side<0?'L':'R'),
-       [side*.332,1.46,.30],torso);
+       [side*.332,1.33,.30],torso);
      g.bridge(scapula,'skin',[0,-.12,-.17],
        [side*.045,.17,.13],.145,.098);
      g.sphere(scapula,'light',[side*.023,.055,-.015],
@@ -93,7 +93,7 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    }
    for(const side of [-1,1]){
      const ruff=g.group('ruff'+(side<0?'L':'R'),
-       [side*.21,1.55,.50],torso);
+       [side*.21,1.42,.50],torso);
      g.bridge(ruff,'skin',[0,-.05,-.10],
        [side*.05,-.19,.26],.145,.105);
      for(let i=0;i<7;i++)
@@ -107,7 +107,7 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    // the proximal forelimb, rather than a stationary textured oval.
    for(const side of [-1,1]){
      const scapula=g.group('scapula'+(side<0?'L':'R'),
-       [side*.335,1.43,.25],torso);
+       [side*.335,1.30,.25],torso);
      g.bridge(scapula,'skin',[0,-.14,-.13],
        [side*.027,.155,.19],.126,.075);
      g.sphere(scapula,'light',[side*.018,.066,-.010],
@@ -121,14 +121,16 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
  // narrow lifted waist and tapered croup instead of a cylindrical trunk.
  // Both torso source geometry and the coat below use these SAME sections.
  const bodyStations=beastRemesh?[
-  {z:bodyLength*1.01,y:1.31,rx:.115,ry:.155},
-  {z:bodyLength*.77,y:1.275,rx:bodyWidth*1.07,ry:.410},
-  {z:bodyLength*.46,y:1.263,rx:bodyWidth*1.17,ry:.455},
-  {z:bodyLength*.13,y:1.272,rx:bodyWidth*1.03,ry:.397},
-  {z:-bodyLength*.24,y:1.290,rx:bodyWidth*.88,ry:.343},
-  {z:-bodyLength*.56,y:1.307,rx:bodyWidth*.74,ry:.300},
-  {z:-bodyLength*.84,y:1.320,rx:bodyWidth*.58,ry:.249},
-  {z:-bodyLength*1.03,y:1.318,rx:.095,ry:.113}
+  // Shoulder carries mass; chest and abdominal undersides are NOT a
+  // circular drum. The forequarter hangs lower while the rear tapers.
+  {z:bodyLength*1.01,y:1.235,rx:.110,ry:.140},
+  {z:bodyLength*.77,y:1.190,rx:bodyWidth*1.08,ry:.348},
+  {z:bodyLength*.46,y:1.158,rx:bodyWidth*1.20,ry:.374},
+  {z:bodyLength*.13,y:1.147,rx:bodyWidth*1.02,ry:.330},
+  {z:-bodyLength*.24,y:1.142,rx:bodyWidth*.83,ry:.288},
+  {z:-bodyLength*.56,y:1.141,rx:bodyWidth*.64,ry:.249},
+  {z:-bodyLength*.84,y:1.151,rx:bodyWidth*.52,ry:.217},
+  {z:-bodyLength*1.03,y:1.161,rx:.087,ry:.100}
  ]:[
   {z:bodyLength*.96,y:1.34,rx:.12,ry:.17},
   {z:bodyLength*.71,y:1.32,rx:bodyWidth*.84,ry:.365},
@@ -143,16 +145,16 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
   {name:'species-shoulder-rib-pelvis-'+s.id,
    rough:reptile?.64:.85,ribbing:reptile?.025:.012});
  if(beastRemesh){
-  g.bridge(torso,'skin',[0,1.265,.23],[0,1.435,.69],.33,.185);
+  g.bridge(torso,'skin',[0,1.152,.23],[0,1.305,.69],.304,.173);
   for(const side of [-1,1])
-   g.bridge(torso,'skin',[side*.24,1.29,.18],[side*.175,1.435,.56],.126,.070);
+   g.bridge(torso,'skin',[side*.24,1.158,.18],[side*.175,1.302,.56],.116,.069);
  }else g.sphere(torso,'light',[0,1.48,.22],[.31,.25,.45]);
  // Continuous neck transitions from the shoulder mass into the skull,
  // avoiding the visible "two spheres glued together" silhouette.
  if(beastRemesh)
-  g.bridge(torso,'skin',[0,1.275,.33],[0,1.435,.77+v*.055],.32,.198);
+  g.bridge(torso,'skin',[0,1.152,.33],[0,1.307,.77+v*.055],.295,.181);
  else g.bridge(torso,'skin',[0,1.35,.32],[0,1.57,.76+v*.055],.325,.215);
- const head=g.group('head',[0,beastRemesh?1.43:1.56,.70+v*.06+(beastRemesh?.065:0)]);
+ const head=g.group('head',[0,beastRemesh?1.300:1.56,.70+v*.06+(beastRemesh?.086:0)]);
  // Rigid reptilian wedge instead of the same spherical skull as a cat.
  const skullWidth=reptile?.905:feline?.95:1;
  const skullDepth=reptile?1.065:feline?.965:1;
@@ -410,7 +412,7 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    // The m001 nose cartilage is now sculpted into the single continuous
    // rhinarium loft above; suppress the former oversized spherical overlay.
  }
- const jaw=g.group('jaw',[0,beastRemesh?1.29:1.42,beastRemesh?1.025:.96]);
+ const jaw=g.group('jaw',[0,beastRemesh?1.160:1.42,beastRemesh?1.046:.96]);
  if(s.id==='m002'){
    // An independently opening lower mandible, with the canine teeth
    // mounted on the same jaw pivot (not left floating in the skull).
@@ -462,7 +464,7 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    // Local coordinates preserve the original hip world-space placement.
    const pelvisMounted=s.id==='m004'&&fore<0;
    const leg=g.group('leg'+name,
-     pelvisMounted?[side*.29,-.57,.03]:[side*.29,.67,fore*.49],
+     pelvisMounted?[side*.29,-.42,.03]:[side*.29,.67,fore*.49],
      pelvisMounted?g.pivots.pelvis:g.root);
    // Distal motion is independent from shoulder/hip rotation, retaining
    // the original limb and ground-contact positions.
@@ -619,11 +621,24 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
      length:.104,width:.023,seed:v*3+1,
      minVertical:-.99,maxVertical:.98,
    });
-   const chest=generateCanineFurGuides({
-     center:[0,beastRemesh?1.335:1.43,beastRemesh?.43:.39],
-     radii:[beastRemesh?.36:.32,beastRemesh?.345:.29,.36],
+   const chest=beastRemesh?generateCanineAxialFurGuides({
+     // The former circular chest coat made the model look like an egg.
+     // Guard hairs now begin ON the existing front-chest loft surface.
+     stations:bodyStations,rows:source?30:21,around:source?42:30,
+     lengthProfile:[
+       {z:bodyLength*1.01,length:.13},
+       {z:bodyLength*.77,length:.185},
+       {z:bodyLength*.46,length:.167},
+       {z:bodyLength*.13,length:.083},
+       {z:-bodyLength*.24,length:.058},
+       {z:-bodyLength*1.03,length:.038},
+     ],
+     width:.023,seed:v*11+19,
+     minVertical:-.97,maxVertical:.40,gravity:.32,
+   }).filter(h=>h.root[2]>bodyLength*.18):generateCanineFurGuides({
+     center:[0,1.43,.39],radii:[.32,.29,.36],
      rows:source?23:14,around:source?32:23,
-     length:beastRemesh?.175:.15,width:.024,seed:v*11+19,
+     length:.15,width:.024,seed:v*11+19,
      minVertical:-.94,maxVertical:.79,gravity:.28,
    });
    addFur(torso,[...flank,...chest]);
@@ -671,7 +686,7 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
  // Drive the thunder wolf tail from its living pelvis; for other species
  // preserve the original root-space animation and coordinates exactly.
  const tail=g.group('tail',
-   s.id==='m004'?[0,.11,-.03]:[0,beastRemesh?1.285:1.35,beastRemesh?-.68:-.55],
+   s.id==='m004'?[0,.11,-.03]:[0,beastRemesh?1.176:1.35,beastRemesh?-.68:-.55],
    s.id==='m004'?g.pivots.pelvis:g.root);
  g.tube(tail,'skin',[[0,0,.05],[0,.17,-.34],[0,.08,-.50]],reptile?.14:.085);
  const tailMid=g.group('tailMid',[0,.08,-.50],tail);
@@ -743,7 +758,7 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
     for(let i=0;i<count;i++){
      const t=i/(count-1),z=.48-.99*t;
      const growth=Math.sin(Math.PI*(.12+.83*t)),height=.13+.19*growth;
-     const spineY=1.665-.14*t;
+     const spineY=1.525-.165*t;
      g.curvedHorn(torso,i%4===0?'bone':'light',
        [0,spineY-.04,z],[.014,spineY+.07+height*.49,z-.038],
        [.025,spineY+.095+height,z-.105],.04+.017*growth,
@@ -1347,5 +1362,5 @@ export function createMonsterModel(spec,{detail='high'}={}){
 export {disposeMonsterSculpture};
 // All renderer metrics share this module's exact shape/material instance.
 // Never independently import a differently versioned shape-kit into the UI.
-export {MONSTER_DETAIL_LEVELS,monsterSculptCacheStats} from './monster-shape-kit.js?v=beast-crouch-coat-20261116';
+export {MONSTER_DETAIL_LEVELS,monsterSculptCacheStats} from './monster-shape-kit.js?v=beast-spring-crouch-v3-20261116';
 export {monsterPhotoCacheStats} from './monster-photo-pbr.js?v=4.4.81';
