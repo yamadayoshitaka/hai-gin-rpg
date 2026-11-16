@@ -247,11 +247,13 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    const muzzleRings=s.id==='m001'?[
      // The original protrusion (.597) is reduced to a short bridge (.382).
      // The rear section overlaps the sculpted face, without a white tube.
-     {z:.324,y:-.127,rx:.027,ry:.033},
-     {z:.313,y:-.125,rx:.065,ry:.050},
-     {z:.284,y:-.112,rx:.084,ry:.064},
-     {z:.268,y:-.073,rx:.113,ry:.082},
-     {z:.198,y:-.044,rx:.136,ry:.104},
+     // The bridge's visible end must tuck BEHIND the wet nose rather than
+     // appearing as a separate grey circular button above the nostrils.
+     {z:.315,y:-.133,rx:.018,ry:.017},
+     {z:.300,y:-.130,rx:.046,ry:.035},
+     {z:.281,y:-.120,rx:.072,ry:.054},
+     {z:.255,y:-.101,rx:.105,ry:.077},
+     {z:.192,y:-.047,rx:.136,ry:.103},
      {z:.115,y:-.019,rx:.159,ry:.126}
    ]:[
      {z:.664,y:-.134,rx:.078,ry:.069},
@@ -269,11 +271,14 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    // Anatomically tapered rhinarium; alae overlap the bridge and have
    // distinct cut-in nostrils, rather than an inflated black nose sphere.
    const noseRings=s.id==='m001'?[
-     {z:.366,y:-.152,rx:.013,ry:.017},
-     {z:.358,y:-.148,rx:.047,ry:.031},
-     {z:.346,y:-.149,rx:.064,ry:.039},
-     {z:.321,y:-.147,rx:.062,ry:.037},
-     {z:.288,y:-.136,rx:.041,ry:.025}
+     // All rhinarium rings share the short muzzle's vertical midline.
+     // Overlap the grey bridge tip so a detached lower black button
+     // cannot render beneath an exposed circular grey end-cap.
+     {z:.366,y:-.131,rx:.012,ry:.014},
+     {z:.358,y:-.130,rx:.048,ry:.034},
+     {z:.346,y:-.130,rx:.065,ry:.043},
+     {z:.321,y:-.131,rx:.064,ry:.041},
+     {z:.288,y:-.131,rx:.043,ry:.028}
    ]:[
      {z:.706,y:-.161,rx:.027,ry:.029},
      {z:.685,y:-.158,rx:.104,ry:.060},
@@ -288,11 +293,11 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    for(const side of [-1,1]){
      const tight=s.id==='m001';
      g.bridge(head,'shadow',
-       [side*(tight?.042:.094),-.143,tight?.293:.605],
-       [side*(tight?.048:.110),-.166,tight?.350:.662],
+       [side*(tight?.042:.094),tight?-.130:-.143,tight?.293:.605],
+       [side*(tight?.048:.110),tight?-.139:-.166,tight?.350:.662],
        tight?.011:.028,tight?.008:.015);
      g.sphere(head,'shadow',
-       [side*(tight?.048:.108),tight?-.165:-.182,tight?.358:.681],
+       [side*(tight?.048:.108),tight?-.139:-.182,tight?.358:.681],
        tight?[.007,.005,.004]:[.014,.010,.008],
        {name:'beast-nostril-'+(side<0?'L':'R'),rough:.21});
    }
@@ -306,10 +311,11 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
       // fitted BEHIND the upper eyelid. This is a mesh aperture rather than
       // spherical eyes mounted on the forehead/cheeks.
       g.recessedCanineAlmondEye(faceCore,{side,name:'wolf-king'});
-      // The brow is an overhanging facial ridge, distinct from lid eyeliner.
+      // Keep only a shallow, fitted skin crease. The former elevated
+      // brow tube projected past both canthi like a thick eyeliner wing.
       const brow=g.tube(faceCore,'skin',[
-        [side*.145,.143,.255],[side*.221,.164,.307],
-        [side*.302,.144,.326]],.011);
+        [side*.158,.140,.263],[side*.212,.148,.281],
+        [side*.268,.139,.278]],.0045);
       brow.name='m001-eyebrow-ridge-'+(side<0?'L':'R');
       brow.userData.orbitalBrow=true;
      }else if(beastRemesh){
@@ -342,7 +348,7 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    }
    // Compact philtrum following the small rhinarium instead of a black seam.
    g.tube(head,'shadow',s.id==='m001'?
-      [[0,-.159,.325],[0,-.178,.308],[0,-.193,.284]]:
+      [[0,-.148,.325],[0,-.163,.308],[0,-.178,.284]]:
       [[0,-.195,muzzle+.285],[0,-.235,muzzle+.275],
        [0,-.26,muzzle+.22]],s.id==='m001'?.005:.009);
  }else if(reptile){
