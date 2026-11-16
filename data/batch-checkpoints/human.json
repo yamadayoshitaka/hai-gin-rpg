@@ -57,6 +57,14 @@
       ],
       "commitSha": "1a564c056d5b895f689ee072e1b6cf3e9b1633a1",
       "qa": "unverified"
+    },
+    {
+      "id": "shared-scalp-triangle-allocation-optimization",
+      "sourceFiles": [
+        "src/character-system/hair-attachment-runtime.js"
+      ],
+      "commitSha": "64f8cbda2313ffe3732cad1db7b393650a04baf6",
+      "qa": "unverified"
     }
   ],
   "remainingIds": [
@@ -66,5 +74,5 @@
     "job05-male",
     "job05-female"
   ],
-  "nextAction": "Run syntax and WebGL crown/rear comparison on both sexes; enumerate all registered IDs; verify stretched-triangle threshold against real GLBs; continue Issue #438 armor rear plate. Do not merge without visual QA."
+  "nextAction": "Run syntax and WebGL scalp crown/rear comparison; enumerate actual preset IDs and generator routes; fix Issue #438 armor artifact. No individual ID marked complete."
 }
