@@ -281,6 +281,20 @@ for(const id of remeshed){
       Math.abs(tinyFace.scale.z-.82)<1e-7,
       'm001 must have compact but connected facial proportions');
     assert.equal(skull.parent,tinyFace,'cranium and eyes share facial group');
+    // The previous 0.82-scaled skull tip was still in FRONT of the head-
+    // parented black nose. This produced the floating grey nose button.
+    const foremostZ=m=>{
+      const a=m.geometry.getAttribute('position');let max=-Infinity;
+      for(let i=0;i<a.count;i++)max=Math.max(max,a.getZ(i));
+      return max;
+    };
+    const scaledSkullTip=tinyFace.position.z+
+      tinyFace.scale.z*foremostZ(skull);
+    assert.ok(foremostZ(nasal[0])-scaledSkullTip>.012,
+      'm001 black nose must project in front of the scaled cranium tip');
+    assert.ok(Math.abs(tinyFace.position.y+
+      tinyFace.scale.y*axialYAt(skull,.355)-axialYAt(nasal[0],.358))<.035,
+      'm001 scaled cranium tip must not form a grey button above the nose');
     assert.ok(skull.userData.continuousWolfSkull&&skull.userData.axialAnatomy,
       'm001 face must be one continuous ring loft, NOT a spherical cranium');
     assert.equal(meshes.filter(m=>m.name==='m001-ruff-root-tissue').length,1,
