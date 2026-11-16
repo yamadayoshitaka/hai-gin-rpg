@@ -107,7 +107,7 @@ header nav button,header nav a{min-width:0;padding:7px 2px;white-space:nowrap;fo
 #townExplorerControls,#townRadar,#townGuide,#veil{display:none!important}
 @media(min-aspect-ratio:1/1){body{grid-template-rows:auto auto minmax(0,1fr)}body>header{flex-wrap:nowrap}header .label{width:auto;max-width:38%}header nav{max-width:60%}#townScene{max-width:760px;justify-self:center}}
 </style>
-<link rel="stylesheet" href="./src/tactical-command-ui.css?v=2.1"><link rel="stylesheet" href="./src/battle-ui-refinement.css?v=2.4"><link rel="stylesheet" href="./src/three-team-sortie-ui.css?v=inncompact-20261116b"></head><body class="town-loading">
+<link rel="stylesheet" href="./src/town-tavern-gacha.css?v=20261116a"><link rel="stylesheet" href="./src/tactical-command-ui.css?v=2.1"><link rel="stylesheet" href="./src/battle-ui-refinement.css?v=2.4"><link rel="stylesheet" href="./src/three-team-sortie-ui.css?v=inncompact-20261116b"></head><body class="town-loading">
 <main id="townScene" aria-label="町の施設を選択">
 <img id="townArtwork" src="./assets/town/royal-town-hub-v1.webp" alt="城、教会、宿屋、武器屋、酒場、道具屋が並ぶ王都" fetchpriority="high">
 <div id="townFacilityPins">
@@ -115,7 +115,7 @@ header nav button,header nav a{min-width:0;padding:7px 2px;white-space:nowrap;fo
 <button data-facility="save" style="--x:20%;--y:36%">✚ 教会<small>セーブ</small></button>
 <button data-facility="formation" style="--x:25%;--y:56%">⌂ 宿屋<small>編成・号令</small></button>
 <button data-facility="weapons" style="--x:77%;--y:48%">⚔ 武器屋<small>武器・防具</small></button>
-<button data-facility="tavern" style="--x:74%;--y:70%">♜ 酒場<small>雇用・依頼</small></button>
+<button data-facility="tavern" style="--x:74%;--y:70%">♜ 酒場<small>仲間ガチャ</small></button>
 <button data-facility="items" style="--x:39%;--y:78%">▣ 道具屋<small>買い物</small></button>
 </div><p id="townSelectHint">行きたい施設をタップ</p></main><div id="veil"></div>
 <header><div class="label"><strong id="townHeading">レヴナの町</strong><small id="chapterStatus">第1章・町ステージ</small></div>
@@ -155,6 +155,7 @@ import {registeredStoryPanelAsset,storySheetCrop,storyArtDisplayUrl} from './src
 import {fantasyCueForMangaPanel} from './src/fantasy-scene-score.js';
 import {continentForChapter} from './src/continent-campaign.js';
 import {drawRecruitGacha,RECRUIT_GACHA} from './src/town-recruit-gacha.js';
+import {drawTavernGacha,renderTavernGacha,renderTavernGachaResult} from './src/town-tavern-gacha.js?v=20261116a';
 import {resolveTownConversation} from './src/town-dialogue-catalog.js';
 import {createTownAudioDirector} from './src/town-audio-director.js';
 import {createStoryVoiceDirector} from './src/story-voice-director.js';
@@ -185,6 +186,7 @@ persistSession(game,sessionStorage);
 const townFrame=$('townScene');
 const currentPreset=CAMPAIGN_STAGE_BY_ID[game.townStage]?.scenePreset||'royal-castle';
 // The hub is a single illustration; no nested 3D runtime is loaded.
+let tavernGachaResults=null;
 let panel='',page=0,shopCategory='道具',armyPriority='均衡',innCommanderId='player',innPage='deployment',innSquadPage=0,innDeploymentSelected=null,innTemplateEditorOpen=false,narration=null,selectedSquadId=game.campaign.squads[0]?.id||0;
 let activeTalk=null,activeTalkIndex=0;
 let currentStoryPanelVoiceId=null;
@@ -243,10 +245,10 @@ $('townDialogueNext').onclick=()=>{
 };
 $('townDialogueService').onclick=()=>{if(!activeTalk?.panel)return;const service=activeTalk.panel;hideTownDialogue();openPanel(service);};
 $('townDialogueClose').onclick=()=>{hideTownDialogue();stopNarration();};
-function openPanel(which){if(!townReady)return;hideTownDialogue();resetTownMovement();panel=which;
+function openPanel(which){if(!townReady)return;hideTownDialogue();resetTownMovement();tavernGachaResults=null;panel=which;
  townAudio.setScene(which==='formation'?'inn':which==='weapons'||which==='items'?'shop':which==='save'?'church':which==='story'?'castle':which==='tavern'?'tavern':'town');if(which==='formation'){sortieView='setup';sortieTeamId=1;sortieCellIndex=5;sortieJobPage=0;sortieTemplatePage=0;sortieStrategyFamily='attack';sortieStrategyIntent='melee';ensureSortiePlan(game);persistSession(game,sessionStorage);}
  townAudio.effect('open');page=0;shopCategory=which==='weapons'?'武器':'道具';notice('');$('panel').hidden=false;$('panelBackdrop').hidden=false;renderPanel();}
-function closePanel(){$('panel').hidden=true;$('panelBackdrop').hidden=true;panel='';townAudio.effect('cancel');
+function closePanel(){tavernGachaResults=null;$('panel').classList.remove('has-gacha-result','tavern-gacha-ui');$('panel').hidden=true;$('panelBackdrop').hidden=true;panel='';townAudio.effect('cancel');
  townAudio.setScene(insideFacility==='formation'?'inn':insideFacility==='save'?'church':insideFacility==='story'?'castle':insideFacility==='tavern'?'tavern':insideFacility?'shop':'town');}
 $('panelClose').onclick=closePanel;$('panelBackdrop').onclick=closePanel;
 // Direct buying from the top navigation is intentionally disabled.
@@ -407,7 +409,9 @@ let sortieView='setup',sortieTeamId=1,sortieCellIndex=5,sortieJobPage=0,sortieTe
 function renderPanel(){
  if(!panel)return;
  $('panel').classList.toggle('formation-command-ui',panel==='formation');
- $('panelTitle').textContent=({weapons:'武具屋・隊列装備',items:'道具屋・消耗品',formation:'宿屋・編成と作戦',tavern:'酒場・イベント請負',save:'教会・旅の記録',story:'王城・物語',dialogue:activeTalk?.name||'町人との会話'})[panel]||'町の施設';
+ $('panel').classList.toggle('tavern-gacha-ui',panel==='tavern');
+ $('panel').classList.toggle('has-gacha-result',panel==='tavern'&&Boolean(tavernGachaResults));
+ $('panelTitle').textContent=({weapons:'武具屋・隊列装備',items:'道具屋・消耗品',formation:'宿屋・編成と作戦',tavern:'酒場・ガチャ',save:'教会・旅の記録',story:'王城・物語',dialogue:activeTalk?.name||'町人との会話'})[panel]||'町の施設';
  $('panelSummary').innerHTML='<div class="stat">軍師：<strong>'+escapeHtml(game.playerName)+'</strong></div><div class="stat">現在：<strong>第'+CAMPAIGN_STAGE_BY_ID[game.townStage].chapter+'章・町</strong></div>';
  if(panel==='dialogue'){
    const talk=activeTalk;
@@ -431,15 +435,9 @@ function renderPanel(){
  }else if(panel==='formation'){
    $('panelContent').innerHTML=renderThreeTeamPlanner({game,teamId:sortieTeamId,cellIndex:sortieCellIndex,jobPage:sortieJobPage,templatePage:sortieTemplatePage,strategyFamily:sortieStrategyFamily,strategyIntent:sortieStrategyIntent,view:sortieView});
   }else if(panel==='tavern'){
-  game.acceptedEvents??=[];game.claimedEvents??=[];
-  $('panelContent').innerHTML='<p>酒場の依頼掲示板。受注後はワールドマップで指定ステージを攻略し、酒場に戻って報酬を受け取ります。</p>'+
-   '<div class="entries">'+TOWN_EVENTS.map(entry=>{
-    const accepted=game.acceptedEvents.includes(entry.id),claimed=game.claimedEvents.includes(entry.id),cleared=game.completedStages.includes(entry.stageId);
-    return '<div class="entry"><div><b>'+escapeHtml(entry.title)+'</b><small>'+escapeHtml(entry.description)+' · 対象 '+entry.stageId.toUpperCase()+' · 報酬 '+entry.rewardGold+'G</small></div>'+
-     (claimed?'<span>完了 ✓</span>':!accepted?'<button type="button" data-event-accept="'+entry.id+'">受注</button>':cleared?'<button type="button" data-event-claim="'+entry.id+'">報酬受取</button>':'<span>受注中</span>')+'</div>';
-   }).join('')+'</div><div class="controls"><button type="button" id="openMap">依頼先へ向かう ▶</button><button type="button" id="keepWalking">町へ戻る</button></div>';
+  $('panelContent').innerHTML=renderTavernGacha(game)+(tavernGachaResults?renderTavernGachaResult(tavernGachaResults):'');
  }else if(panel==='save'){
-  $('panelContent').innerHTML='<p>教会は正式なセーブ地点です。道具屋の購入、宿屋の編成、酒場の受注状態も保存します。</p>'+
+  $('panelContent').innerHTML='<p>教会は正式なセーブ地点です。道具屋の購入、宿屋の編成、酒場ガチャで仲間になった兵士も保存します。</p>'+
    '<div class="entry"><div><b>セーブスロット 1</b><small>最終保存：'+(game.savedAt?new Date(game.savedAt).toLocaleString('ja-JP'):'未保存')+'</small></div><button class="primary" type="button" id="confirmSave">保存する</button></div>'+
    '<div class="controls"><button type="button" id="backTitle">タイトルに戻る</button><button type="button" id="keepWalking">町を探索する</button></div>';
  }else if(panel==='story'){
@@ -683,6 +681,21 @@ $('panelContent').onclick=event=>{
   if(target.hasAttribute('data-talk-voice')){speakTownLine(activeTalk.lines[activeTalkIndex]);return;}
   if(target.hasAttribute('data-talk-service')){openPanel(target.dataset.talkService);return;}
   if(target.hasAttribute('data-talk-close')){window.speechSynthesis?.cancel();closePanel();return;}
+  if(target.hasAttribute('data-gacha-skip')){
+   $('panelContent').querySelector('.gachaRevealOverlay')?.classList.add('skip-motion');return;
+  }
+  if(target.hasAttribute('data-gacha-close')){
+   tavernGachaResults=null;renderPanel();return;
+  }
+  if(target.hasAttribute('data-tavern-gacha')){
+   if(tavernGachaResults)return;
+   const draw=drawTavernGacha(game,target.dataset.tavernGacha);
+   tavernGachaResults=draw;
+   persist();renderPanel();
+   townAudio.effect(draw.highestRarity==='UR'?'gachaUR':draw.highestRarity==='R'?'gachaRare':'gacha');
+   notice(draw.entries.length+'人が予備隊に加わりました。宿屋で編成できます。');
+   return;
+  }
   if(target.hasAttribute('data-gacha-draw')){
    const draw=drawRecruitGacha(game);
    persist();renderPanel();townAudio.effect('buy');
