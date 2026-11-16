@@ -523,6 +523,23 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
        opaqueTorsoLiningMaterials++;
        return copy;
       }
+      // Rogue/Thief Ranger body primitives were still using a partly
+      // transparent source material, so back muscles showed through the
+      // tunic even at close camera distance. Cloth and opaque lining must
+      // be enforced on BOTH sides of the existing skinned body surface.
+      // This reuses the material slot: zero added meshes/draw calls.
+      if(quality==='battle'&&jobId==='job06'&&role==='body'){
+       const leather=textures.leather||textures['linen-fine']||textures.linen;
+       if(leather){copy.map=leather;copy.bumpMap=leather;copy.bumpScale=.0006}
+       copy.alphaMap=null;copy.transparent=false;copy.opacity=1;
+       copy.alphaTest=0;copy.depthWrite=true;copy.depthTest=true;
+       copy.side=THREE.DoubleSide;copy.metalness=0;copy.roughness=.86;
+       if('transmission' in copy)copy.transmission=0;
+       copy.color.setHex(dressedStyle.tint);
+       copy.userData={...copy.userData,battleThiefClosedBack:true};
+       copy.needsUpdate=true;
+       return copy;
+      }
       // Imported clothing occasionally has inward-facing winding on the back.
       // Two-sided cloth makes its rear visible without double-siding skin.
       if(['body','arms','legs'].includes(role))copy.side=THREE.DoubleSide;

@@ -89,7 +89,8 @@ for(const [external,internal] of Object.entries({
  'mixamorigRightLeg':'calf_r','LeftFoot':'foot_l','J_Bip_L_UpperLeg':'thigh_l',
  'RightLowerLeg':'calf_r','DEF-thigh.L':'thigh_l'
 }))assert.equal(resolveRidingJointName(external),internal,external);
-assert.equal(resolveRidingJointName('spine'),null);
+assert.equal(resolveRidingJointName('spine'),'spine_01');
+assert.equal(resolveRidingJointName('pelvis'),'pelvis');
 for(const id of ['archer','mage','priest','summoner','ninja','thief'])
  assert.equal(isHeightTactician(id),true,id+' seeks a legal upper firing position');
 assert.match(formatSquadIntent({strategy:'environment_prepare'}).purpose,/作戦：環境整備/);
