@@ -1082,7 +1082,7 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
        rows:source?24:16,around:source?37:26,
        length:.134,width:.010,seed:v*89+733,
        minVertical:-.90,maxVertical:.72,gravity:.35
-     }).filter(h=>h.root[2]<-.095&&h.root[1]>.113)),
+     }).filter(h=>h.root[2]<-.095&&h.root[1]>.113),
      ...[-1,1].flatMap(side=>generateCanineFurGuides({
        center:[side*.176,-.148,-.082],radii:[.138,.195,.203],
        rows:source?37:25,around:source?50:34,
