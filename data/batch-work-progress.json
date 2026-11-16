@@ -111,12 +111,12 @@
     },
     "world": {
       "source": "ChatGPT定期品質回帰の実行結果＋GitHub証跡",
-      "lastRunAt": "2026-11-17T01:47:37.068+09:00",
+      "lastRunAt": "2026-11-17T02:56:55+09:00",
       "status": "work_incomplete",
       "carryover": true,
-      "subject": "53種：専用ブランチ乖離とチェックポイント欠落を検出、実3D QA未完了",
-      "summary": "2026-11-17T01:47:37.068+09:00 world.enabled=true確認。今回新規実ソース変更0ID・実ソースコミット0・GLB0・対象別QA合格0・ゲーム反映0・mainマージ0・Pages公開0。main受入53件・審査中11件・承認0件。PR #441の21件保存は過去コミット396f3e4dのスナップショットにのみ確認（全QA unverified）。現行world/photoreal-regression-reviewにはチェックポイントが存在しない(404)。mainとの比較はahead13/behind110で、差分にsrc/object-catalog.jsは含まれず参考画像・レポート中心。過去21件とmain11件は別集計。",
-      "nextAction": "PR #441の実headを確認し、過去チェックポイント21件のソースSHAと現行作業ブランチを照合。専用実改修ブランチを特定後、静的QAを実行し、実描画/Androidはunverifiedのまま保留。安全な実ソース修正を小刻みにコミット。",
+      "subject": "53種：過去21件の実ソースSHAを復元、現行作業ブランチ欠落の照合継続",
+      "summary": "world.enabled=true確認。main正本53件・審査中11件・承認0件。過去コミット396f3e4dのチェックポイント21件について実ソースSHAを読み取り確認（全qa=unverified）。現行world/photoreal-regression-reviewのチェックポイントは404。過去保存21件とmain審査11件は別集計。今回新規実3Dソース変更0・GLB0・QA合格0・ゲーム反映0・ソースコミット0・mainマージ0・Pages公開0。",
+      "nextAction": "PR #441の実head/ブランチと過去保存SHAの祖先関係を検証し、現行実ソースとの差分の静的QAを行う。WebGL/Android未実測はunverifiedを維持し、合格前のマージ禁止。",
       "steps": {
         "launch": "done",
         "code": "pending",
@@ -128,20 +128,16 @@
       },
       "evidence": [
         {
-          "label": "過去21件の保存チェックポイント",
+          "label": "過去21件の実ソースSHA記録",
           "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/blob/396f3e4d655c4fb6f230b09384b11a39fe38d0d7/data/batch-checkpoints/world.json"
         },
         {
-          "label": "既存PR #441",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/441"
-        },
-        {
-          "label": "main受入台帳",
+          "label": "main正本53件",
           "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/blob/main/data/world-quality/object-realism-acceptance.json"
         },
         {
-          "label": "参考画像用ブランチ",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/tree/world/photoreal-regression-review"
+          "label": "PR #441",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/441"
         }
       ],
       "lastRunOutcome": {
@@ -151,18 +147,16 @@
         "newSourceCommits": 0,
         "newGeneratedGLBs": 0,
         "branchSavedCount": 21,
-        "branchRemainingCount": 32,
         "mainInReviewCount": 11,
-        "mainAcceptedCount": 0,
-        "mainUnacceptedCount": 53
+        "mainAcceptedCount": 0
       },
       "operational": {
         "blockers": [
-          "現行world/photoreal-regression-reviewのdata/batch-checkpoints/world.jsonが404。21件は過去SHAでのみ確認",
-          "参考画像ブランチがmainより110コミット遅れ、比較差分に実3Dソースがない",
-          "PR #441の実head、Node構文、WebGL画像、Android FPSが未確認"
+          "現行作業ブランチのチェックポイントが404で、過去21件の保存記録との連続性が未確認",
+          "PR #441実headと各保存ソースSHAの対応未確認",
+          "Node/WebGL/Androidの対象別実行QA未完了"
         ],
-        "speedPlan": "PR #441の実headと実ソースSHAを優先照合。作業用ブランチを特定し、21件の静的QA→同系統5件の実メッシュ修正を段階コミット。",
+        "speedPlan": "PR #441実headの特定→過去21件のSHAとの比較→実3D差分の静的QA。QA未合格ならマージしない。",
         "lastRunOutcome": {
           "newSourceChangedIds": 0,
           "newQAPassed": 0,
