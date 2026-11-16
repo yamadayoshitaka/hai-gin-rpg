@@ -5,8 +5,8 @@
     "object:spiral_stairs_2f_001"
   ],
   "run": {
-    "id": "43832267657",
-    "startedAt": "2026-11-16T08:36:58.357Z",
+    "id": "43933525593",
+    "startedAt": "2026-11-16T18:55:40.511Z",
     "mode": "results",
     "requested": 3,
     "requestedTarget": null,
@@ -19,11 +19,11 @@
       "object:cottage_stairs_001",
       "object:spiral_stairs_2f_001"
     ],
-    "generated": 3,
+    "generated": 0,
     "failed": [],
-    "providerCalls": 3,
+    "providerCalls": 0,
     "stopReason": "REVIEW_PROPOSALS_RECORDED_NOT_MERGED",
-    "referenceStopReason": "REFERENCE_GENERATED_VISUAL_QA_PENDING",
-    "completedAt": "2026-11-16T08:36:58.357Z"
+    "referenceStopReason": "REVIEW_EXISTING_REFERENCE_ONLY",
+    "completedAt": "2026-11-16T18:55:40.511Z"
   }
 }
