@@ -12,7 +12,7 @@
  */
 import * as THREE from 'three';
 import {fitBattleArtistFaceToHead,BATTLE_FACE_PROPORTION_VERSION}
- from './battle-head-proportion-fit.js?v=20261116-cranial1';
+ from './battle-head-proportion-fit.js?v=20261116-real-cranium-v2';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {makeIndependentFaceMaster} from '../independent-face-masters.js?v=68';
 import {applyFaceColorMode} from '../face-feature-meshes.js?v=68';
@@ -256,8 +256,10 @@ export function attachBattleArtistHead({character,recipe,source,pattern=null,ani
  });
  const fit={...donorFit,...proportionFit};
  if(!proportionFit.sourceMeshTransformApplied||
+    !proportionFit.shoulderWidthExcludedFromFit||
     !proportionFit.cervicalSkirtExcludedFromHeightFit||
-    proportionFit.widthRatio<.80)
+    proportionFit.widthRatio<.88||
+    proportionFit.cranialHeightRatio<.88)
   throw Error('3D顔と骨格の大きさが適合していません');
  // Cosmetic meshes are near-only; the actual adult sculpt, eye volumes and
  // irises remain at every distance. Far variants are still real new heads,
@@ -392,7 +394,8 @@ export function battleHeadMasterStats(actors=[]){
     heightRatio:a.masterHead.cranialFit.cranialHeightRatio,
     scale:a.masterHead.cranialFit.scale,
     priorScale:a.masterHead.cranialFit.previousScale,
-    sourceMeshTransformApplied:true})),
+    sourceMeshTransformApplied:true,
+    sourceShoulderToSkullWidthRatio:a.masterHead.cranialFit.sourceShoulderToSkullWidthRatio})),
   originalHeadTrianglesRemoved:human.reduce((n,a)=>n+(a.masterHead?.removedDonorTriangles||0),0),
   failures:human.filter(a=>a.character&&!a.masterHead).map(a=>({id:a.id,reason:a.masterHeadError||'not installed'})),
   actualNewHeadMesh:true,sourceAsset:BATTLE_HEAD_MASTER_ASSET
