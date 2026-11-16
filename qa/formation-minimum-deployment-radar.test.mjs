@@ -71,7 +71,8 @@ assert.doesNotMatch(world,/id="deploymentPositions"/,'no legacy text-only positi
 assert.match(world,/ここでは初期号令・作戦は選びません/);
 const battleHtml=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
 assert.match(battleHtml,/Story mode has already locked its initial positions on the FULL radar/);
-assert.match(battleHtml,/if\(storyRequest\?\.sortieTeamCount\)\{\s*for\(const id of squadIds\)/);
+assert.match(battleHtml,/if\(storyRequest\?\.sortieTeamCount\|\|directBattlePreview\)\{\s*for\(const id of squadIds\)/,
+ 'both story sorties and the public 50v50 battle preview skip the old initial orders wizard');
 assert.ok(battleHtml.indexOf('Start real-time autonomous combat immediately after loading')<
  battleHtml.indexOf("openingPlan.id='openingSquadStrategies'"),
  'story battle must bypass the old three-screen launch wizard before it exists');

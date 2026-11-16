@@ -60,3 +60,18 @@ body.story-center-orders #topQuickActions{display:flex;gap:5px}
  #targetedStrategyCard .centerGrid{gap:4px}#targetedStrategyCard button{font-size:11px;min-height:39px;padding:6px 4px}}
 @media(max-height:650px){#targetedStrategyCard{max-height:96dvh;gap:5px}
  #targetedStrategyCard canvas#centralCommandMap{width:min(100%,45dvh,440px)}}
+
+/* Full-board target picking: the battlefield coordinates are drawn onto the
+   cached radar, with tappable enemy (red), ally (blue) and object (gold) pins. */
+#targetedStrategyCard .centerMapLegend{
+ display:flex;justify-content:center;gap:8px;flex-wrap:wrap;
+ color:#e3efee;font:750 11px/1.25 system-ui;text-align:center}
+#targetedStrategyCard .centerMapBoard{touch-action:manipulation}
+#targetedStrategyCard #centralCommandMap{border:2px solid #d3bc78;border-radius:8px;
+ box-shadow:0 0 0 2px #091823,inset 0 0 12px #163a52;
+ touch-action:none;display:block;cursor:crosshair}
+#targetedStrategyCard .centerTargetGrid button.selected{background:#66512f;border:2px solid #ffe4a4}
+#targetedStrategyCard .centerTargetGrid{max-height:17dvh}
+#targetedStrategyCard .centerMapCoords{text-align:center}
+@media(max-height:640px){#targetedStrategyCard #centralCommandMap{
+ width:min(100%,44dvh,430px)}#targetedStrategyCard .centerTargetGrid{max-height:10dvh}}
