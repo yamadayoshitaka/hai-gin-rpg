@@ -271,9 +271,11 @@ export async function attachCharacterHair({model,job,sex='male',style=null,color
   scene.traverse(child=>{if(child.isMesh)hairMeshes.push({mesh:child,
     original:child.geometry,sourceMatrix:child.matrixWorld.clone()})});
   if(index===0){scene.updateMatrixWorld(true);assetBox.setFromObject(scene)}
-  // Keep the best real hairstyle through close and medium battle views.
-  // Switching to low-detail hair at 2.4 m made soldiers look shaved.
-  lod.addLevel(scene,index===0?0:index===1?4:12);
+  // Preserve the same fitted haircut at legible camera distances.
+  // The original 12m downgrade changed hair volume long before the whole
+  // soldier became small; far GLB hair often looked like a bare scalp.
+  // Only LOD thresholds change: no new geometry or draw calls are added.
+  lod.addLevel(scene,index===0?0:index===1?14:80);
  });
  if(assetBox.isEmpty())throw Error('髪モデルにメッシュがありません: '+id);
  const bodySize=size.dimensions;

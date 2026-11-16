@@ -1,4 +1,4 @@
-import {applyMonsterBiologicalMotion} from './monster-joint-motion.js';
+import {applyMonsterBiologicalMotion} from './monster-joint-motion.js?v=beast-fox-face-v4-20261116';
 import {monsterLeapPose,applyMonsterLeapMotion} from './monster-leap-kinematics.js?v=1';
 /** Per-species, per-part procedural animation for bestiary inspection.
  * Separate head, jaws, limbs, wings and tentacles keep animation readable.
@@ -39,6 +39,7 @@ export function animateMonsterModel(model,time=0){
  const leaping=action==='leap'?pulse:0;
  const leap=action==='leap'?monsterLeapPose(progress,model.userData.surfaceFamily):null;
  const dying=action==='defeat'?progress:0;
+ const springBeast=['m001','m002','m003','m004'].includes(model.userData.speciesId);
  const sway=Math.sin(motionTime*2.1)*.027*(1-dying);
  // Rare, brief eye closure with a per-species offset. No random state,
  // material allocations or extra draw calls during the animation loop.
@@ -48,11 +49,22 @@ export function animateMonsterModel(model,time=0){
    Math.max(0,1-Math.abs(blinkClock-4.50)/.13);
  model.rotation.set(-(strike*.23+special*.12+hit*.16)+dying*.19+(leap?.pitch??0),
    dodge*Math.sin(progress*Math.PI)*.95,dying*.98+dodge*.25);
- model.position.set(dodge*Math.sin(progress*Math.PI)*1.3,Math.abs(Math.sin(gait))*(locomotion?.055:0)+
+ // A canine's spine stays close to the ground when the paws are in
+ // contact. Only genuine leap actions get full airborne displacement.
+ // The former abs(sin)*.055 made every RUN look like floating in midair.
+ const springLift=locomotion?
+   (springBeast?(action==='run'?.014:.009)*(1-Math.cos(gait*2))*.5:
+     Math.abs(Math.sin(gait))*.055):0;
+ model.position.set(dodge*Math.sin(progress*Math.PI)*1.3,
+   springLift-(springBeast&&action!=='leap'?.014:0)+
    (leap?.height??0)-dying*.48,0);
  model.scale.setScalar((model.userData.homeScale??1)*(1-.16*dying));
  for(const [name,part] of Object.entries(p)){
    part.rotation.set(0,0,0);
+   // Joint lengths must be reversible when switching run -> idle.
+   // Otherwise the previous compressed foot pose persists permanently.
+   if(springBeast&&name.startsWith('leg'))
+     part.scale.y=part.userData.restLengthScale??1;
    if(name.startsWith('eyelid')){
      part.position.y=(part.userData.restY??part.position.y)-
        (part.userData.blinkTravel??0)*blink;

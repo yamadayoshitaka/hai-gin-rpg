@@ -41,6 +41,10 @@ export const CREATURE_FACE_VOLUME_PRESETS=Object.freeze({
  aquatic:make({craniumDepth:.031,browDepth:.019,orbitalDepth:.024,cheekDepth:.040,snoutDepth:.033,jawDepth:.023,occipitalDepth:.029}),
 });
 const overrides=Object.freeze({
+ // A photo-wolf head needs deeper orbits, cheekbones and a flatter brow
+ // than the shared beast mask. Keep the smooth skull source mesh.
+ m001:Object.freeze({browDepth:.014,orbitalDepth:.031,
+   cheekDepth:.049,snoutDepth:.022,occipitalDepth:.025}),
  m032:Object.freeze({orbitalDepth:.049,cheekDepth:.060,occipitalDepth:.035}),
  m034:Object.freeze({orbitalDepth:.029,cheekDepth:.044,snoutDepth:.033}),
  m031:Object.freeze({cheekDepth:.061,jawDepth:.036}),

@@ -10,6 +10,26 @@ export const COMMAND_BY_STATE=Object.freeze({
  idle:['待機','盾構え','照準','忍び歩き','歩行','ダッシュ'],jump:['ジャンプ'],walk:['歩行','忍び歩き','弓を持って走る','ダッシュ'],run:['ダッシュ','走行','弓を持って走る'],attack:['通常斬り','正拳突き','ナイフ斬り','二刀斬り','射撃','魔法発射','魔法攻撃','盾構え','通常攻撃','攻撃','突き','蹴り'],
  guard:['防御','ガード'],hit:['被弾'],dead:['戦闘不能'],death:['戦闘不能'],skill:['袈裟斬り','突き','強連撃','蹴り','魔法詠唱','魔法発射','技']
 });
+// Exact commands recorded in the source manifest. Previously '魔法詠唱'
+// and '強連撃' were looked up by generic names that do not exist for most
+// jobs, leaving their skill poses at idle or on a frozen last frame.
+export const JOB_SKILL_MOTION_COMMANDS=Object.freeze({
+ '剣士':['袈裟斬り','突き'],
+ '格闘家':['蹴り','正拳突き'],
+ '魔法使い':['長詠唱','詠唱','魔法発射'],
+ '弓使い':['上方射撃','弓を引く','射撃'],
+ '盾戦士':['盾構え','防御'],
+ '盗賊':['ナイフ連撃','ナイフ突き'],
+ '忍者':['二刀突き','二刀斬り'],
+ '農民・職人':['防御','鍛冶作業'],
+ '僧侶':['範囲回復・長詠唱','祈り・回復詠唱','回復魔法発動'],
+ '召喚士':['召喚詠唱','召喚発動','魔法攻撃']
+});
+export const JOB_CAST_MOTION_COMMANDS=Object.freeze({
+ '魔法使い':['詠唱','長詠唱'],
+ '僧侶':['祈り・回復詠唱','範囲回復・長詠唱'],
+ '召喚士':['召喚詠唱','召喚発動']
+});
 let mapPromise;
 export function loadJobMotionMap(){
  return mapPromise??=fetch('./job-command-motion-map.json').then(r=>{
@@ -20,7 +40,9 @@ export function loadJobMotionMap(){
 export function resolveJobMotion(jobs,job,state){
  const name=jobs[job]?job:JOB_NAME_BY_ID[job]||job;
  const rows=(jobs[name]||[]).filter(x=>x.available===true);
- const labels=COMMAND_BY_STATE[state]||[state];
+ const labels=state==='skill'?JOB_SKILL_MOTION_COMMANDS[name]||COMMAND_BY_STATE.skill:
+  state==='cast'?JOB_CAST_MOTION_COMMANDS[name]||JOB_SKILL_MOTION_COMMANDS[name]||COMMAND_BY_STATE.skill:
+  COMMAND_BY_STATE[state]||[state];
  const selected=labels.map(label=>rows.find(x=>x.command===label)).find(Boolean);
  if(selected)return selected;
  if(state==='run'){

@@ -37,7 +37,7 @@ header{display:flex;align-items:center;justify-content:space-between;gap:8px;bac
 .map-caption{top:4px;left:6px;right:6px;padding:4px 6px;font-size:10px;text-align:center}
 .pan{display:none}
 .pin{font-size:clamp(8px,2.2vw,12px);min-width:43px;max-width:84px;padding:4px 3px;line-height:1.2}
-.pin.stage-pin{min-width:48px;font-size:10px}
+.pin.stage-pin{min-width:26px;max-width:26px;width:26px;height:26px;border-radius:50%;font-size:10px;padding:3px 0;white-space:nowrap;line-height:16px}
 .pin.current-location{outline:2px solid #78f2ff;outline-offset:2px;z-index:4}
 .pin.current-location:after{content:'● 現在地';display:block;color:#8af5ff;font-size:9px;white-space:nowrap;margin-top:3px}
 header nav{gap:4px}header nav button{padding:7px 5px;min-height:35px;font-size:11px}
@@ -86,7 +86,7 @@ import {storyCastForChapter} from './src/story-cinematic.js';
 import {createMangaViewer} from './src/story-manga-viewer.js';
 import {createGamePageAudio} from './src/game-page-audio.js';
 import {continentForChapter,continentMapUrl,continentStagePoints} from './src/continent-campaign.js';
-import {narrativeForStage} from './src/chapter-story-events.js';
+import {STORY_STAGE_BEATS} from './src/story-stage-beats-v2.js';
 import {TERRITORIES,FACTIONS} from './src/story-campaign.js';
 import {CAMPAIGN_STAGES,CAMPAIGN_STAGE_BY_ID,STAGE_KINDS,chapterAvailable,stagesInChapter,stageUnlocked,stageDeploymentLimit} from './src/campaign-stage-plan.js';
 import {loadGame,persistSession,stageAtTown,selectCampaignStage,validGame} from './src/game-core-flow.js';
@@ -118,8 +118,15 @@ document.addEventListener('click',event=>{
 });
 window.addEventListener('pagehide',()=>mapAudio.dispose());
 let chapter=CAMPAIGN_STAGE_BY_ID[game.stage]?.chapter||1,selected=game.stage||'c01-s01',territory=null,pan=0;
-function updateCurrentLocation(){const current=CAMPAIGN_STAGE_BY_ID[game.stage]||CAMPAIGN_STAGE_BY_ID[game.lastTown];document.querySelector('.map-caption').textContent='● 現在地：'+(current?.name||'不明')+' · 地図から行き先を選択';}
-updateCurrentLocation();
+// Current map focus follows the selected chapter and stage, without changing
+// the saved commander location or unlocking a stage.
+function updateCurrentLocation(){
+ const current=CAMPAIGN_STAGE_BY_ID[selected]||stagesInChapter(chapter)[0];
+ const area=continentForChapter(chapter);
+ document.querySelector('.map-caption').textContent=
+  '● 現在地：'+area.regionName+'（第'+chapter+'章） · 12地域共通マップ';
+ document.getElementById('world').dataset.mapRevision='20261116-region-labels-2';
+}
 function narrateSelection(){
  const stage=CAMPAIGN_STAGE_BY_ID[selected],story=narrativeForStage(stage);
  if(!('speechSynthesis' in window)){message('この端末では日本語読み上げを利用できません。');return;}
@@ -154,29 +161,24 @@ function setPan(amount){
  pan=Math.max(-extra,Math.min(extra,amount));board.style.setProperty('--pan',pan+'px');
 }
 function renderPins(){
+ // The same twelve named territories appear across all twenty chapters.
+ // Chapter selection changes only the highlighted destination; stage locks
+ // remain in the ten-slot stage list, never as icons covering the world map.
  const board=$('mapBoard');
- if(chapter===1){
-  board.style.backgroundImage="url('./assets/story-world-map-v0.5.webp')";
-  board.setAttribute('aria-label','第1章・灰銀大陸の領土');
-  board.innerHTML=TERRITORIES.map(t=>{
-   const owner=game.campaign.owners[t.id]||t.owner;
-   const color=({player:'#68c7ee',crimson:'#f58a78',verdant:'#94d7a1',neutral:'#8d98a5'})[owner]||'#8d98a5';
-   return '<button type="button" class="pin '+(CAMPAIGN_STAGE_BY_ID[game.stage]?.territoryId===t.id?'current-location':'')+'" data-territory="'+t.id+'" style="left:'+t.mapX+'%;top:'+t.mapY+'%;--faction:'+color+'" aria-pressed="'+(territory===t.id)+'" title="'+escapeHtml(FACTIONS[owner]?.name||'領地')+'">'+escapeHtml(t.name)+'</button>';
-  }).join('');
-  return;
- }
+ const focus=CAMPAIGN_STAGE_BY_ID[selected]?.territoryId||
+  continentForChapter(chapter).regionId;
+ const region=continentForChapter(chapter);
  board.style.backgroundImage=continentMapUrl(chapter);
- board.setAttribute('aria-label','第'+chapter+'章・'+continentForChapter(chapter).name);
- const stages=stagesInChapter(chapter),spots=continentStagePoints(chapter);
- board.innerHTML=stages.map((stage,i)=>{
-  const spot=spots[i],unlocked=stageUnlocked(stage,game.completedStages),done=game.completedStages.includes(stage.id);
-  const label=String(stage.slot).padStart(2,'0')+' '+(stage.slot===1?'拠点':stage.slot===10?'決戦':stage.storyBeat);
-  return '<button type="button" class="pin stage-pin '+(game.stage===stage.id?'current-location ':'')+(unlocked?'':'locked ')+(selected===stage.id?'selected':'')+'" data-stage-pin="'+stage.id+
-   '" style="left:'+spot.x.toFixed(2)+'%;top:'+spot.y.toFixed(2)+'%;--faction:'+(done?'#8bd9a6':unlocked?'#e9c989':'#7b8b95')+
-   '" aria-pressed="'+(selected===stage.id)+'" title="'+escapeHtml(stage.name)+'">'+(done?'✓ ':unlocked?'':'🔒 ')+escapeHtml(label)+'</button>';
+ board.setAttribute('aria-label','灰銀大陸・第'+chapter+'章・'+region.regionName+'の12地域');
+ board.innerHTML=TERRITORIES.map(t=>{
+  const owner=game.campaign.owners[t.id]||t.owner;
+  const color=({player:'#68c7ee',crimson:'#f58a78',verdant:'#94d7a1',neutral:'#8d98a5'})[owner]||'#8d98a5';
+  return '<button type="button" class="pin '+(focus===t.id?'current-location':'')+
+   '" data-territory="'+t.id+'" style="left:'+t.mapX+'%;top:'+t.mapY+'%;--faction:'+color+
+   '" aria-pressed="'+(focus===t.id)+'" title="'+escapeHtml(FACTIONS[owner]?.name||'領地')+'">'+
+   escapeHtml(t.name)+'</button>';
  }).join('');
 }
-
 
 function renderStoryEndingControls(){
  const bar=$('storyEndingBar');
@@ -228,12 +230,13 @@ function render(){
  $('prevChapter').disabled=chapter===1;$('nextChapter').disabled=chapter===20;
  const ch=STORY_CHAPTERS[chapter-1],available=chapterAvailable(chapter,game.completedStages);
  $('chapterTitle').textContent='第'+chapter+'章　'+ch.title;
- $('chapterSubtitle').textContent=(available?'作戦可能':'未解放')+' · '+continentForChapter(chapter).name+' · 10ステージ';
+ $('chapterSubtitle').textContent=(available?'作戦可能':'未解放')+' · '+continentForChapter(chapter).regionName+' / '+continentForChapter(chapter).nation+' · 10ステージ';
  $('clearCount').textContent=game.completedStages.length+' / 200';
  $('summary').textContent=game.playerName+'の軍団　'+game.campaign.squads.reduce((n,s)=>n+s.count,0)+'人';
  const continent=continentForChapter(chapter);
- const sceneNarrative=narrativeForStage(CAMPAIGN_STAGE_BY_ID[selected]);
- $('continentLore').textContent='【'+continent.arc+'】'+sceneNarrative.scene+'　'+sceneNarrative.consequence+'　'+sceneNarrative.speaker+'「'+sceneNarrative.line+'」　主要人物：'+storyCastForChapter(chapter).map(p=>p.name).join('・');
+ const selectedBeatStage=CAMPAIGN_STAGE_BY_ID[selected];
+ const currentSceneSetup=STORY_STAGE_BEATS[chapter-1][Math.max(0,(selectedBeatStage?.slot||1)-1)][0];
+ $('continentLore').textContent='【'+continent.name+'・'+continent.regionName+'／'+continent.arc+'】'+currentSceneSetup+'　主要人物：'+storyCastForChapter(chapter).map(p=>p.name).join('・');
  const stages=stagesInChapter(chapter);
  $('stageGrid').innerHTML=stages.map(stage=>{
   const cleared=game.completedStages.includes(stage.id),unlocked=stageUnlocked(stage,game.completedStages);
@@ -248,19 +251,20 @@ function render(){
  renderStoryBranchControls(stage,unlocked);
  renderStoryEndingControls();
  renderPins();
+ updateCurrentLocation();
 }
 $('mapBoard').addEventListener('click',event=>{
- const stagePin=event.target.closest('[data-stage-pin]');
- if(stagePin){selected=stagePin.dataset.stagePin;render();message(CAMPAIGN_STAGE_BY_ID[selected].name+'を選択しました。');return;}
  const el=event.target.closest('[data-territory]');if(!el)return;
  territory=el.dataset.territory;
- const matches=CAMPAIGN_STAGES.filter(s=>s.territoryId===territory);
- if(matches.length){
-  const chosen=matches.find(s=>stageUnlocked(s,game.completedStages)&&!game.completedStages.includes(s.id))||
-   matches.find(s=>stageUnlocked(s,game.completedStages))||matches[0];
-  chapter=chosen.chapter;selected=chosen.id;render();
-  message('領地「'+TERRITORIES.find(t=>t.id===territory)?.name+'」を選択しました。');
+ const clicked=TERRITORIES.find(t=>t.id===territory);
+ const matches=stagesInChapter(chapter).filter(s=>s.territoryId===territory);
+ if(!matches.length){
+  message('「'+(clicked?.name||'地域')+'」は第'+chapter+'章の進行地域ではありません。前章・次章で訪問先を切り替えてください。');
+  return;
  }
+ // Stage progression is controlled by the ten slots below. A region tap must
+ // never jump back to a different chapter that shares this location.
+ message('第'+chapter+'章の地域「'+(clicked?.name||'不明')+'」です。下の10ステージから行動を選んでください。');
 });
 $('stageGrid').addEventListener('click',event=>{
  const el=event.target.closest('[data-stage]');if(!el)return;

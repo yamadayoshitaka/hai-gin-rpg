@@ -9,7 +9,7 @@ export function createBattleStrategistDialogue({
 }={}){
  const css=document.createElement('style');
  css.textContent=`
- #battleDialogue{position:fixed;z-index:31;inset:auto 0 0 0!important;width:100%;max-width:none;display:flex;align-items:stretch;gap:8px;padding:7px 9px calc(8px + env(safe-area-inset-bottom,0px));min-height:69px;border:1px solid #bea570;border-bottom:0;border-radius:10px 10px 0 0;background:#0d233bf4;color:#f6f4eb;box-shadow:0 -3px 22px #0009;pointer-events:auto}
+ #battleDialogue{position:fixed;z-index:31;inset:auto 7px calc(28px + env(safe-area-inset-bottom,0px)) 7px!important;width:auto;max-width:none;display:flex;align-items:stretch;gap:8px;padding:7px 9px calc(8px + env(safe-area-inset-bottom,0px));min-height:69px;border:1px solid #bea570;border-radius:11px;background:#0d233bf4;color:#f6f4eb;box-shadow:0 -3px 22px #0009;pointer-events:auto}
  #battleDialogue[hidden],#battleReportHistory[hidden]{display:none!important}
  #battleDialogue.right{flex-direction:row-reverse}
  #battleDialogue.critical{border-color:#ff777e;background:#441c2aef}
@@ -23,6 +23,10 @@ export function createBattleStrategistDialogue({
  #battleReportHistoryToggle{margin-left:auto;padding:2px 6px;color:#e9efff;background:#1d3a54;border:1px solid #7297b0;border-radius:5px;font:10px system-ui;cursor:pointer}
  #battleReportHistory{position:fixed;z-index:33;left:8px;right:8px;bottom:calc(var(--battleReportHeight,88px) + 5px);max-height:min(230px,38dvh);overflow:auto;border:1px solid #7299b5;border-radius:9px;padding:9px;background:#0a1d32f6;color:#f3f6fb;font:11px/1.45 system-ui}
  #battleReportHistory p{margin:0;padding:5px 2px;border-bottom:1px solid #405e77}
+ #topPerformanceSlot[hidden]{display:none!important}
+ #topQuickActions #topPerformanceToggle{min-width:39px;padding:4px 5px!important;background:#214766;border-color:#729fb8;color:#eef7ff;white-space:nowrap}
+ #topQuickActions #topPerformanceToggle[aria-pressed="true"]{background:#466783;border-color:#efd494;color:#fff1c6}
+ @media(max-width:390px){#topQuickActions #topPerformanceToggle{font-size:10px!important;min-width:35px;padding:3px!important}#battleDialogue{left:5px!important;right:5px!important}}
  @media(max-width:390px){#battleDialogue{gap:5px;padding:5px 6px}#battleReportFace{min-width:51px;width:51px;min-height:55px}#battleReportText{font-size:12px}}
  `;
  document.head.append(css);
@@ -32,6 +36,37 @@ export function createBattleStrategistDialogue({
  const history=document.createElement('section');history.id='battleReportHistory';
  history.hidden=true;history.setAttribute('aria-label','戦況の報告履歴');
  document.body.append(box,history);
+ // The live performance metrics are optional; simulation, LOD pacing and
+ // performance sampling continue unchanged when their DOM is collapsed.
+ // This is attached to the existing top action row (before the gear button).
+ const performanceSlot=document.getElementById('topPerformanceSlot');
+ const topActions=document.getElementById('topQuickActions');
+ if(performanceSlot&&topActions&&!document.getElementById('topPerformanceToggle')){
+  const toggle=document.createElement('button');
+  toggle.type='button';
+  toggle.id='topPerformanceToggle';
+  toggle.setAttribute('aria-controls','topPerformanceSlot');
+  const settingKey='hai-gin-battle-performance-visible';
+  let visible=false;
+  try{visible=localStorage.getItem(settingKey)==='true';}catch{}
+  const apply=()=>{
+   performanceSlot.hidden=!visible;
+   document.body.classList.toggle('battle-performance-visible',visible);
+   toggle.textContent=visible?'FPS 閉':'FPS';
+   toggle.setAttribute('aria-label',visible?'FPS・性能計測を非表示':'FPS・性能計測を表示');
+   toggle.setAttribute('aria-pressed',String(visible));
+   toggle.setAttribute('aria-expanded',String(visible));
+   toggle.title=visible?'FPS・P95・GPU・LOD情報を閉じる':'FPS・P95・GPU・LOD情報を開く';
+  };
+  toggle.addEventListener('click',()=>{
+   visible=!visible;
+   try{localStorage.setItem(settingKey,String(visible));}catch{}
+   apply();
+  });
+  const gear=document.getElementById('battleMenuToggle');
+  topActions.insertBefore(toggle,gear?.parentElement===topActions?gear:null);
+  apply();
+ }
  const nameEl=box.querySelector('#battleReportName'),timeEl=box.querySelector('#battleReportTime');
  const textEl=box.querySelector('#battleReportText'),faceEl=box.querySelector('#battleReportFace');
  box.querySelector('#battleReportHistoryToggle').onclick=e=>{
@@ -56,7 +91,7 @@ export function createBattleStrategistDialogue({
   currentEvent=event;
   box.hidden=false;box.className='';
   // Keep history immediately ABOVE the real bottom dialogue on all phones.
-  document.documentElement.style.setProperty('--battleReportHeight',Math.ceil(box.getBoundingClientRect().height)+'px');
+  document.documentElement.style.setProperty('--battleReportHeight',Math.ceil(window.innerHeight-box.getBoundingClientRect().top)+'px');
   box.classList.add(event.speaker==='軍師'?'left':'right',event.kind||'info');
   const commander=event.speaker==='軍師'?getCommander(event.squadId):null;
   const name=commander?.name?commander.name+'・軍師':event.speaker;
@@ -66,7 +101,7 @@ export function createBattleStrategistDialogue({
   faceEl.style.backgroundPosition=(face%4*100/3)+'% '+(row*100/3)+'%';
   nameEl.textContent=name;timeEl.textContent='戦闘 '+Math.floor(getTime())+'秒';
   textEl.textContent=event.text;
-  document.documentElement.style.setProperty('--battleReportHeight',Math.ceil(box.getBoundingClientRect().height)+'px');
+  document.documentElement.style.setProperty('--battleReportHeight',Math.ceil(window.innerHeight-box.getBoundingClientRect().top)+'px');
   lastShown=getTime();currentReadUntil=lastShown+readableDuration(event.text);first=false;
   onDisplay({...event,speakerName:name});
   if(event.focus)onFocus(event);

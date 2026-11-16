@@ -2205,7 +2205,11 @@ test('v41 real female anatomical legs remain after studio armor coverage across 
  const bridge=readFileSync('src/heroine-battle-costume-bridge.js','utf8');
  assert.match(source,/studioPreserveLegAnatomy=false/);
  assert.match(source,/studioCoveredSkinPolicy/);
- assert.match(source,/preserveRegions:studioSkinPolicy\.preserveRegions/);
+ // The studio preserves its leg anatomy; battle additionally keeps the
+ // existing core torso lining behind partial robe-back geometry.
+ assert.match(source,/\.\.\.studioSkinPolicy\.preserveRegions/);
+ assert.match(source,/preserveRegions:occlusionPreserveRegions/);
+ assert.match(source,/battleBackUnderlay=quality==='battle'&&opaqueTorsoLiningMaterials===0/);
  assert.match(coverage,/const preserved=new Set\(preserveRegions\)/);
  assert.match(bridge,/studioPreserveLegAnatomy:true/);
  const actor=new THREE.Group();

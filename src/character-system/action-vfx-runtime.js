@@ -362,7 +362,14 @@ export class ActionVfxRuntime{
       this.flash(element,at(.06),{ground:true,scale:2.4*scale,life:.85});
       this.emitAccents(element,at(1.3),{scale:1.6*scale,life:.65});
     }else if(kind==='guard'||kind==='hit'||kind==='punch'||kind==='aim'){
-      this.flash(kind==='guard'?'guard':'spark',at(1.08),{scale:kind==='aim'?.35:.65*scale,life:.28});
+      // Real special-action poses previously received tiny 0.35m flashes
+      // (archer aim even ignored the rarity scale entirely). Improve the
+      // existing single pooled flash rather than adding expensive particles.
+      const radius=kind==='aim'?.78:kind==='punch'?1.08:
+       kind==='guard'?.94:.65;
+      this.flash(kind==='guard'?'guard':'spark',at(1.08),{
+       scale:radius*scale,life:kind==='punch'||kind==='guard'?.38:.30
+      });
     }else if(kind==='death'){
       this.flash('dust',at(.12),{ground:true,scale:2.0*scale,life:.85});
     }else this.flash('arcane',at(.8),{scale:.35*scale,life:.24});

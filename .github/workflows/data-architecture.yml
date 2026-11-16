@@ -18,6 +18,23 @@ jobs:
         run: npm run test:full-replacement
       - name: Syntax and imports
         run: npm run test:syntax
+      - name: Verify compact manga Free generation plan without calling Cloudflare
+        run: |
+          node --check scripts/generate-story-chapter1-free-batch.mjs
+          node qa/story-chapter1-stage-priority.test.mjs
+          node scripts/build-story-compact-production-queue.mjs
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          import fs from 'node:fs';
+          const q=JSON.parse(fs.readFileSync('qa-reports/story-compact-production-queue.json','utf8'));
+          assert.equal(q.result.total,880);
+          assert.equal(q.entries.length,880);
+          assert.equal(q.result.genderVariantsObserved,1760);
+          assert.equal(q.result.exactGenderReuse+q.result.missingExactGenderArt,1760);
+          assert.equal(q.result.reused+q.result.missing,880);
+          assert.equal(q.result.provenNeutralShares,0);
+          console.log('PASS: 880 minimum scene IDs; gender variants remain audit-protected');
+          NODE
       - name: Architecture and blueprint
         run: npm run test:comprehensive && npm run test:architecture && npm run test:blueprints && npm run test:actors && npm run test:components
       - name: Rules and object systems

@@ -13,8 +13,12 @@ for(const module of ['../src/mass-battle-real-army.js','../src/mass-battle-grid-
 // One full-footprint tactical tile is a human STEP (~1 metre). Body height
 // must remain a realistic 1.7-1.8m rather than being reduced to one tile.
 assert.match(game,/const SIZE=13,CELL=1\.0/);
-assert.match(game,/createCharacter\(\{job:motionJob,sex,height:sex==='female'\?1\.68:1\.78,jobs,faceId:Number\.isInteger\(townFace\)\?townFace:a\.id\}\)/,
- 'Each soldier preserves its stable face ID; the town avatar may select a custom face');
+assert.match(game,/faceId:Number\.isInteger\(townFace\)\?townFace:a\.appearanceOptions\?\.faceId/,
+ 'Story protagonist and town avatar preserve the configured face ID in the generated hero recipe');
+assert.match(game,/job:recipe\.motionJob,sex:recipe\.sex,height:recipe\.height,jobs/,
+ 'Age/sex-aware height preserves the shared animated humanoid rig');
+assert.match(game,/faceId:recipe\.faceIndex,faceProfile:recipe\.faceProfile/,
+ 'The real skinned face receives the deterministic hero recipe rather than a replacement dummy mesh');
 assert.doesNotMatch(game,/createCharacter\(\{job:appearanceJob,sex,height:1\.02,jobs\}\)/);
 
 // Start at the central bridge with no northern castle wall blocking the view,

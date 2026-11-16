@@ -1,0 +1,48 @@
+name: Battle face actual pixel and UV/PBR verification
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'src/character-system/battle-artist-head-graft.js'
+      - 'src/character-system/battle-head-proportion-fit.js'
+      - 'qa/battle-head-proportion-regression.test.mjs'
+      - 'src/face-feature-meshes.js'
+      - 'src/independent-face-masters.js'
+      - 'src/heroine-skin-material.js'
+      - 'qa/battle-face-lit-visual.html'
+      - 'qa/battle-face-lit-visual.cjs'
+      - 'qa/battle-face-color-regression.test.mjs'
+      - '.github/workflows/battle-face-light-visual.yml'
+permissions:
+  contents: read
+jobs:
+  real-face-gpu-pixels:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install real Three.js and Chromium test dependencies
+        run: npm install --no-save --package-lock=false three@0.160.1 playwright@1.56.0
+      - name: Verify source GLB UVs, material shader and cosmetics
+        run: node qa/battle-face-color-regression.test.mjs
+      - name: Verify real Blender face transform and cranial proportions
+        run: node qa/battle-head-proportion-regression.test.mjs
+      - name: Install headless GPU-capable Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Serve actual app assets and head GLB
+        run: |
+          python3 -m http.server 4177 --bind 127.0.0.1 > /tmp/battle-face-visual-server.log 2>&1 &
+          sleep 2
+      - name: Read back real skin-colour pixels under the live battle lights
+        run: node qa/battle-face-lit-visual.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: battle-face-actual-webgl-before-after-qa
+          path: qa-screenshots/battle-face/
+          if-no-files-found: warn
+          retention-days: 14

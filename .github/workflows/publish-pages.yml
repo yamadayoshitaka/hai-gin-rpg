@@ -87,6 +87,19 @@ jobs:
           node qa/story-art-coverage.test.mjs
       - name: Assemble compact game website without master asset archives
         run: python scripts/prepare-pages-site.py --out pages-dist
+      - name: Verify published world map contains the 12 named regions (no stale lock overlay)
+        shell: bash
+        run: |
+          set -euo pipefail
+          file=pages-dist/world-map.html
+          test -s "${file}"
+          grep -Fq '12地域共通マップ' "${file}"
+          grep -Fq 'TERRITORIES.map(t=>' "${file}"
+          if grep -Fq '[data-stage-pin]' "${file}"; then
+            echo '::error::Old numeric stage-pin overlay was copied into the Pages archive'
+            exit 1
+          fi
+          echo "PASS: release archive contains the refreshed 12-region map"
       - name: Require same latest provisional artwork in game, chapter review and deployed release
         run: node qa/pages-story-live-parity.test.mjs
       # GitHub Pages can leave the deployment lock active even after the
@@ -198,3 +211,26 @@ jobs:
         uses: actions/deploy-pages@v5
         with:
           artifact_name: github-pages-${{ github.run_id }}-${{ github.run_attempt }}
+      - name: Verify public Pages actually serves the refreshed world map
+        if: steps.latest.outputs.publish == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          # A successful Actions deployment is insufficient if a prior asset
+          # remains visible through the CDN. Use a unique URL per attempt.
+          for attempt in $(seq 1 18); do
+            url="https://yamadayoshitaka.github.io/hai-gin-rpg/world-map.html?verify=${GITHUB_SHA:0:12}-${attempt}"
+            if curl -fsSL --connect-timeout 8 --max-time 18 \
+              -H 'Cache-Control: no-cache' "${url}" -o /tmp/world-map-public.html; then
+              if grep -Fq '12地域共通マップ' /tmp/world-map-public.html &&
+                 grep -Fq 'TERRITORIES.map(t=>' /tmp/world-map-public.html &&
+                 ! grep -Fq '[data-stage-pin]' /tmp/world-map-public.html; then
+                echo "PASS: public GitHub Pages is serving the latest 12-region map"
+                exit 0
+              fi
+            fi
+            echo "::notice::Pages not yet serving refreshed 12-region map (attempt ${attempt}/18)"
+            sleep 5
+          done
+          echo '::error::Deployment completed but live Pages still served an old map'
+          exit 1

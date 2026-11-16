@@ -15,6 +15,12 @@ on:
       - 'src/building-structure.js'
       - 'src/room-item-registry.js'
       - 'src/battle-squad-intent.js'
+      - 'src/targeted-strategy-runtime.js'
+      - 'src/battle-ai-decision-index.js'
+      - 'src/battle-zoom-squad-badge.js'
+      - 'src/battle-target-highlight.js'
+      - 'qa/battle-ai-target-highlight-zoom.test.mjs'
+      - 'qa/central-battle-orders.test.mjs'
       - 'qa/battle-riding-chest-floor-ui.test.mjs'
       - 'qa/mass-battle-parity-diagonal.test.mjs'
       - 'qa/mass-interior-unified-command-effects.test.mjs'
@@ -30,6 +36,26 @@ on:
       - 'src/mass-visual-motion.js'
       - 'src/mass-dash-parity.js'
       - 'src/character-system/battle-motion-policy.js'
+      - 'src/character-system/battle-artist-head-graft.js'
+      - 'src/face-scalp-wig.js'
+      - 'src/character-system/hair-attachment-runtime.js'
+      - 'src/skirmish-distance-impostors.js'
+      - 'qa/skirmish-lod-silhouette.test.mjs'
+      - 'qa/battle-scalp-cloth-coverage.test.mjs'
+      - 'qa/thief-scalp-summon-rider-regression.test.mjs'
+      - 'src/character-system/riding-pose.js'
+      - 'src/character-system/battle-torso-lining.js'
+      - 'src/character-system/shield-forearm-fit.js'
+      - 'src/character-system/rigged-outfit-runtime.js'
+      - 'src/character-system/action-vfx-runtime.js'
+      - 'qa/battle-face-hair-shield-recovery.test.mjs'
+      - 'src/character-system/battle-generator-appearance.js'
+      - 'qa/battle-studio-pattern-parity.test.mjs'
+      - 'qa/hero-actual-3d-head-swap.test.mjs'
+      - 'src/hero-production-character-factory.js'
+      - 'src/character-system/job-motion-source.js'
+      - 'src/character-system/shared-character-runtime.js'
+      - 'qa/hero-production-battle-swap.test.mjs'
       - 'src/skirmish-dash-policy.js'
       - 'src/character-system/job-motion-source.js'
       - 'src/crowd-run-grounding.js'
@@ -57,9 +83,17 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Install head-and-shield geometry test runtime
+        run: npm install --no-save --ignore-scripts --no-audit --no-fund three@0.180.0
       - name: JavaScript syntax and late-battle state tests
         run: |
           node --check src/mass-battle-grid-sim.js
+          node --check src/face-scalp-wig.js
+          node --check src/character-system/riding-pose.js
+          node --check src/character-system/battle-torso-lining.js
+          node --check src/skirmish-distance-impostors.js
+          node --check src/character-system/hair-attachment-runtime.js
+          node --check src/character-system/battle-artist-head-graft.js
           node --check src/combat-world-object-renderer.js
           node --check src/mass-battle-worker-runtime.js
           node qa/battle-riding-chest-floor-ui.test.mjs
@@ -67,6 +101,17 @@ jobs:
           node qa/mass-interior-unified-command-effects.test.mjs
           node qa/gpu-run-grounding-regression.test.mjs
           node qa/skirmish-dash-default.test.mjs
+          node qa/skirmish-realtime-tempo.test.mjs
+          node qa/hero-production-battle-swap.test.mjs
+          node qa/hero-actual-3d-head-swap.test.mjs
+          node qa/battle-face-hair-shield-recovery.test.mjs
+          node qa/skirmish-lod-silhouette.test.mjs
+          node qa/battle-scalp-cloth-coverage.test.mjs
+          node qa/thief-scalp-summon-rider-regression.test.mjs
+          node qa/battle-face-color-regression.test.mjs
+          node qa/battle-studio-pattern-parity.test.mjs
+          node qa/battle-ai-target-highlight-zoom.test.mjs
+          node --experimental-vm-modules qa/central-battle-orders.test.mjs
           node qa/mass-dash-parity.test.mjs
           node qa/damage-number-distance-gait.test.mjs
           node qa/mass-upper-floor-pursuit-quality.test.mjs

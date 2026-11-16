@@ -2,6 +2,9 @@ import {test,expect} from '@playwright/test';
 
 test('50v50 armored soldiers have only two visible legs and keep full-detail draws efficient',
  async ({page})=>{
+  // The user explicitly accepts a longer initial loading phase to construct
+  // genuine high-detail head geometry before the first combat frame.
+  test.setTimeout(300000);
   const pageErrors=[];
   page.on('pageerror',error=>pageErrors.push(error.message));
   await page.goto('/tactics-wireframe.html?army=50&v=4.5.2',
@@ -27,7 +30,7 @@ test('50v50 armored soldiers have only two visible legs and keep full-detail dra
     const failed=document.querySelector('#runtimeError')?.style.display==='block';
     const silent=document.querySelector('#loadingSkipAudio');
     return ready||failed||Boolean(silent&&!silent.hidden);
-  },null,{timeout:25000,polling:250});
+  },null,{timeout:150000,polling:250});
   // CI's headless browser may deny audio playback. Follow the visible
   // fallback button rather than invoking private launch code.
   if(await page.locator('#loadingSkipAudio').isVisible())
@@ -36,16 +39,41 @@ test('50v50 armored soldiers have only two visible legs and keep full-detail dra
     const ready=window.getBattleStartupStats?.()?.ready;
     const failed=document.querySelector('#runtimeError')?.style.display==='block';
     return ready||failed;
-  },null,{timeout:25000,polling:250});
+  },null,{timeout:150000,polling:250});
   const result=await page.evaluate(()=>({
     startup:window.getBattleStartupStats?.(),
     legs:window.getBattleLegAssemblyReport?.(),
     perf:window.getSkirmishPerformanceStats?.(),
+    artistHeads:window.getBattleArtistHeadReport?.(),
+    faceRender:window.getBattleFaceRenderAudit?.(),
     runtimeError:document.querySelector('#runtimeError')?.textContent||''
   }));
   expect(result.startup?.ready,JSON.stringify(result.runtimeError)).toBe(true);
   expect(result.startup?.actors).toBe(100);
   expect(result.startup?.dressed).toBe(100);
+  expect(result.artistHeads?.total).toBe(100);
+  expect(result.artistHeads?.attached).toBe(100);
+  expect(result.artistHeads?.originalHeadTrianglesRemoved).toBeGreaterThan(0);
+  expect(result.artistHeads?.cranialFits).toBe(100);
+  expect(result.artistHeads?.undersizedHeads).toEqual([]);
+  for(const head of result.artistHeads.headProportionSamples||[]){
+   expect(head.widthRatio).toBeGreaterThanOrEqual(.94);
+   expect(head.heightRatio).toBeGreaterThanOrEqual(.94);
+   expect(head.sourceShoulderToSkullWidthRatio).toBeGreaterThan(1.35);
+  }
+  expect(result.faceRender?.faceLightCorrected).toBe(100);
+  expect(result.faceRender?.faceMaterialFailures).toEqual([]);
+  expect(result.faceRender?.missingPbrCorrection).toBe(0);
+  expect(result.faceRender?.missingSkinTextures).toBe(0);
+  expect(result.faceRender?.exemplarSkinMaterial?.length).toBeGreaterThan(0);
+  for(const face of result.faceRender.exemplarSkinMaterial){
+   expect(face.albedoMap).toBe('battle-original-uv-warm-skin-albedo-v1');
+   expect(face.lightResponse).toBe('battle-face-light-response-v2');
+   expect(face.pbr).toBe('MeshPhysicalMaterial');
+  }
+
+  expect(result.artistHeads?.sourceAsset).toBe(
+   'assets/master-sources/blender/realistic-head-animation.glb');
   expect(result.legs?.actors?.length).toBeGreaterThanOrEqual(10);
   for(const actor of result.legs.actors){
    expect(actor.broken,JSON.stringify(actor)).toBe(false);
@@ -64,7 +92,7 @@ test('50v50 armored soldiers have only two visible legs and keep full-detail dra
   expect(pageErrors).toEqual([]);
   // Real mobile GPU evidence: screenshot failure is reported separately from
   // mechanical correctness, since CI SwiftShader can time out on readback.
-  try{await page.screenshot({path:'test-results/50v50-fitted-plate-legs.png',timeout:10000});}
+  try{await page.screenshot({path:'test-results/50v50-artist-head-swap-fitted-armor.png',timeout:10000});}
   catch(error){console.warn('50v50 visual capture unavailable:',error.message);}
   console.log('50v50 two-leg render + real GLB consolidation PASS',
     JSON.stringify({actors:result.startup.actors,perf:result.perf,

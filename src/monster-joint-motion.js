@@ -15,11 +15,14 @@ const apply=(p,key,axis,value)=>{
   const node=pivot(p,key);
   if(node)node.rotation[axis]=value;
 };
-function quadrupedMotion(p,phase,locomotion,run,actionPulse,spine){
+function quadrupedMotion(p,phase,locomotion,run,actionPulse,spine,speciesId){
  // Dogs walk lateral sequence and trot diagonally; felines at high speeds
  // gather and extend fore/hind pairs and flex their lumbar column.
  const strength=locomotion?(run?.65:.38):0;
  const names=['frontL','frontR','rearL','rearR'];
+ // Only the four unprotected sculpted wolves. The legacy generic gait
+ // over-swung all four straight-looking limbs and left feet airborne.
+ const springBeast=['m001','m002','m003','m004'].includes(speciesId);
  const phases=run&&spine==='feline'
    ?[0,.38*PI,1.02*PI,1.4*PI]
    :run?[0,PI,PI,0]:[0,PI,PI*.52,PI*1.52];
@@ -28,16 +31,46 @@ function quadrupedMotion(p,phase,locomotion,run,actionPulse,spine){
   const sine=Math.sin(q),lift=Math.max(0,Math.cos(q));
   const name=names[i];
   const front=name.startsWith('front');
-  apply(p,'leg'+name,'x',strength*sine+(front?-.12:.10)*actionPulse);
-  apply(p,'leg'+name,'z',(i%2?1:-1)*strength*.13*lift);
-  // Elbow/hock folds in swing and extends when weight-bearing; the
-  // distal paw is no longer welded to the proximal bone.
-  apply(p,'lower'+name,'x',-strength*.30+strength*.62*lift);
-  apply(p,'lower'+name,'z',(i%2?1:-1)*strength*.05*lift);
+  if(springBeast){
+    // Bent canine ready pose persists even in IDLE. In a stride, the
+    // swing leg folds while the stance leg compresses then pushes off.
+    const power=locomotion?(run?1:.60):0;
+    const swing=locomotion?Math.max(0,sine):0;
+    const support=locomotion?Math.max(0,-sine):0;
+    const upper=front?.115:-.185;
+    apply(p,'leg'+name,'x',upper+power*.255*sine+
+      (front?-.065:.055)*actionPulse);
+    apply(p,'leg'+name,'z',(i%2?1:-1)*power*.038*lift);
+    apply(p,'lower'+name,'x',(front?-.165:.225)+
+      power*(.205*swing-.155*support));
+    apply(p,'lower'+name,'z',(i%2?1:-1)*power*.028*lift);
+    // Compression raises the sole relative to the lowered trunk, leaving
+    // supporting toes close to the floor instead of a pogo-stick bounce.
+    const upperJoint=p['leg'+name];
+    if(upperJoint)upperJoint.scale.y=
+      (upperJoint.userData.restLengthScale??1)*
+      (1-(run?.048:.026)*support);
+    if(p['beastHock'+name]){
+      apply(p,'beastHock'+name,'x',(front?-.095:-.285)+
+        power*(.260*swing-.205*support));
+      apply(p,'beastToe'+name,'x',.045+
+        power*(.260*swing-.140*support));
+    }
+  }else{
+    apply(p,'leg'+name,'x',strength*sine+(front?-.12:.10)*actionPulse);
+    apply(p,'leg'+name,'z',(i%2?1:-1)*strength*.13*lift);
+    // Protected m005 and other quadrupeds retain previous joint motion.
+    apply(p,'lower'+name,'x',-strength*.30+strength*.62*lift);
+    apply(p,'lower'+name,'z',(i%2?1:-1)*strength*.05*lift);
+    if(p['beastHock'+name]){
+      apply(p,'beastHock'+name,'x',(front?-.025:-.105)+strength*.43*lift);
+      apply(p,'beastToe'+name,'x',-.035+strength*(.21*lift-.14*(1-lift)));
+    }
+  }
  }
  const travel=locomotion?1:0;
  const flex=run&&spine==='feline'?.13*Math.sin(phase*2+.25):.023*Math.sin(phase);
- apply(p,'torso','x',travel*flex);
+ apply(p,'torso','x',springBeast?-.042+travel*.018*Math.sin(phase*2):travel*flex);
  apply(p,'torso','y',spine==='reptile'?travel*.07*Math.sin(phase):0);
  apply(p,'tail','y',Math.sin(phase*.55)*.18+actionPulse*.20);
  apply(p,'tailMid','y',Math.sin(phase*.55-.55)*.22+actionPulse*.09);
@@ -109,7 +142,7 @@ export function applyMonsterBiologicalMotion(model,{time=0,phase=0,action='idle'
  const movement=locomotion;
  if(['canine','feline','reptile'].includes(study.source)||
    (study.source==='serpent'&&p.legfrontL)){
-  quadrupedMotion(p,phase,movement,run,pulse,study.source);
+  quadrupedMotion(p,phase,movement,run,pulse,study.source,study.id);
  }
  if(study.source==='serpent'&&p.spineRear){
   const amount=movement?.23:.10;

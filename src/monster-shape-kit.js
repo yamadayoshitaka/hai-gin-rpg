@@ -9,7 +9,8 @@ import {nonhumanMonsterStage} from './nonhuman-model-quality.js';
 import {realismPaletteFor} from './monster-realistic-palettes.js?v=4.5.03';
 import {createMonsterAnatomicalLoft} from './monster-realistic-loft.js?v=4.4.99';
 import {createCreatureGumSocketGeometry,createCreatureFittedHemGeometry} from './creature-seam-geometry.js';
-import {creatureFaceVolume} from './creature-face-volume.js';
+import {createRootedCreatureHornGeometry} from './creature-anatomy-mesh.js';
+import {creatureFaceVolume,sculptAxialFacePoint} from './creature-face-volume.js?v=m001-photo-wolf-v11-20261116';
 import {buildCanineFurRibbonGeometry} from './canine-fur-ribbons.js?v=4.4.89';
 import {decorateMonsterPhotoMaterial,detachMonsterPhotoMaterial} from './monster-photo-pbr.js?v=4.4.95';
 
@@ -111,6 +112,12 @@ export function createSculpture(spec,detail='high'){
      spec.family==='reptile'?'#b18f4d':
      spec.family==='avian'?'#b99955':'#a68b51'};
  if(realism)Object.assign(tone,realism);
+ if(spec.id==='m001'){
+   // Wolf king: earthy rust/amber irises, subdued ivory keratin and no
+   // emissive circular stickers. All other species retain their palettes.
+   tone.eye='#b66d43';
+   tone.bone='#ddd0b5';
+ }
  const V=v=>new THREE.Vector3(...v);
  const attach=(parent,geo,shade,opt={})=>{
    const isRole=typeof shade==='string'&&Object.hasOwn(tone,shade);
@@ -219,7 +226,7 @@ export function createSculpture(spec,detail='high'){
   * Station order is nose (+Z) -> tail (-Z). Animated parts remain separate.
   */
  const axialLoft=(parent,shade,stations,{name='axial-anatomical-source',
-   rough=.78,ribbing=.012}={})=>{
+   rough=.78,ribbing=.012,faceSculpt=false}={})=>{
    if(!Array.isArray(stations)||stations.length<3||
      !stations.every(p=>Number.isFinite(p.z)&&Number.isFinite(p.y)&&
        Number.isFinite(p.rx)&&p.rx>0&&Number.isFinite(p.ry)&&p.ry>0))
@@ -233,6 +240,7 @@ export function createSculpture(spec,detail='high'){
      detail==='medium'?3:2;
    const count=(stations.length-1)*steps+1;
    const vertex=[],uv=[],indices=[];
+   const facialVolume=faceSculpt?creatureFaceVolume(spec.id,spec.family):null;
    const cubic=(a,b,c,d,t)=>.5*((2*b)+(-a+c)*t+
      (2*a-5*b+4*c-d)*t*t+(-a+3*b-3*c+d)*t*t*t);
    for(let i=0;i<count;i++){
@@ -247,7 +255,11 @@ export function createSculpture(spec,detail='high'){
        const a=j/radial*Math.PI*2;
        const organic=1+(detail==='low'?0:ribbing)*
          Math.sin(a*5+z*3.1)*Math.sin(Math.PI*i/(count-1));
-       vertex.push(Math.cos(a)*rx*organic,y+Math.sin(a)*ry*organic,z);
+       const x=Math.cos(a)*rx*organic,yy=y+Math.sin(a)*ry*organic;
+       const point=facialVolume?
+         sculptAxialFacePoint(x,yy,z,1-i/(count-1),a,facialVolume):
+         [x,yy,z];
+       vertex.push(...point);
        uv.push(j/radial,i/(count-1));
      }
    }
@@ -261,11 +273,256 @@ export function createSculpture(spec,detail='high'){
    geo.setIndex(indices);
    geo.computeVertexNormals();
    geo.computeBoundingSphere();
+   if(facialVolume){
+     geo.userData.anatomy='face';
+     geo.userData.faceVolumeApplied=true;
+   }
    const mesh=own(attach(parent,geo,shade,{name,rough,metal:0}));
+   if(facialVolume)mesh.userData.anatomyLoft=true;
    mesh.userData.axialAnatomy=true;
    mesh.userData.anatomicalStations=stations.length;
    mesh.userData.proceduralSource=true;
    return mesh;
+ };
+ /** Anatomical quadruped muscle surface, in existing articulated joint space.
+  * No disconnected sphere at the elbow, hock or shoulder. Each mesh is a
+  * continuous variable-section skin shell and follows its owning pivot.
+  */
+ const limbLoft=(parent,shade,stations,{name='beast-anatomical-limb'}={})=>{
+   if(!Array.isArray(stations)||stations.length<3||stations.some((p,i)=>
+     !['x','y','z','rx','rz'].every(k=>Number.isFinite(p[k]))||
+     p.rx<=0||p.rz<=0||(i&&stations[i-1].y<=p.y)))
+     throw Error('Malformed anatomical limb cross sections');
+   const radial=detail==='source'?48:detail==='high'?28:detail==='medium'?20:10;
+   const rows=detail==='source'?8:detail==='high'?5:3;
+   const vertices=[],uv=[],idx=[];
+   for(let i=0;i<stations.length-1;i++)for(let row=0;row<rows;row++){
+     const a=stations[i],b=stations[i+1],t=row/rows,
+       u=t*t*(3-2*t),mix=k=>a[k]*(1-u)+b[k]*u;
+     const x=mix('x'),y=mix('y'),z=mix('z'),rx=mix('rx'),rz=mix('rz');
+     for(let j=0;j<=radial;j++){
+       const theta=j/radial*Math.PI*2;
+       const muscle=1+.035*Math.cos(theta*3)*Math.sin(Math.PI*(i+u)/(stations.length-1));
+       vertices.push(x+Math.cos(theta)*rx*muscle,y,z+Math.sin(theta)*rz*muscle);
+       uv.push(j/radial,(i+u)/(stations.length-1));
+     }
+   }
+   const last=stations[stations.length-1];
+   for(let j=0;j<=radial;j++){
+     const a=j/radial*Math.PI*2;
+     vertices.push(last.x+Math.cos(a)*last.rx,last.y,last.z+Math.sin(a)*last.rz);
+     uv.push(j/radial,1);
+   }
+   for(let i=0;i<(stations.length-1)*rows;i++)for(let j=0;j<radial;j++){
+     const a=i*(radial+1)+j,b=a+radial+1;
+     idx.push(a,b,a+1,a+1,b,b+1);
+   }
+   const geo=new THREE.BufferGeometry();
+   geo.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));
+   geo.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
+   geo.setIndex(idx);geo.computeVertexNormals();geo.computeBoundingSphere();
+   const mesh=own(attach(parent,geo,shade,{name,rough:.86,metal:0}));
+   mesh.userData.anatomicalLimb=true;
+   return mesh;
+ };
+ /** Buried curved horn/ivory root with continuous ridged tapered skin. */
+ const curvedHorn=(parent,shade,rootPoint,elbow,tip,radius,{name='beast-keratin'}={})=>{
+   const geo=createRootedCreatureHornGeometry({
+     root:rootPoint,elbow,tip,radius,detail:detail==='low'?'low':'high'
+   });
+   const mesh=own(attach(parent,geo,shade,{name,rough:.49,metal:0}));
+   mesh.userData.rootedKeratin=true;
+   return mesh;
+ };
+ /**
+  * Fox-like cartilage pinna: a tapered 3D ear leaf with a recessed inner
+  * surface. Unlike the previous cone-with-cone ear, both surfaces share
+  * the same cartilage centre-line and continuously narrowing silhouette.
+  */
+ const foxPinna=(parent,{side=1,height=.435,width=.119,
+   spread=.090,name='fox-pinna'}={})=>{
+   if(![side,height,width,spread].every(Number.isFinite)||Math.abs(side)!==1||
+     height<=0||width<=0)throw Error('Invalid canine pinna proportions');
+   const sections=detail==='source'?24:detail==='high'?17:9;
+   const radial=detail==='source'?24:detail==='high'?16:10;
+   const positions=[],uv=[],index=[];
+   const shape=t=>Math.max(.012,
+     t<.12?.73+t*2.25:Math.pow(1-t,.73)*1.12);
+   for(let row=0;row<=sections;row++){
+     const t=row/sections,hw=width*shape(t);
+     for(let col=0;col<=radial;col++){
+       const a=col/radial*Math.PI*2;
+       positions.push(side*spread*t+Math.cos(a)*hw,
+         height*t,
+         -.032*t+Math.sin(a)*(.029*(1-t*.65)));
+       uv.push(col/radial,t);
+     }
+   }
+   for(let i=0;i<sections;i++)for(let j=0;j<radial;j++){
+     const a=i*(radial+1)+j,b=a+radial+1;
+     index.push(a,b,a+1,a+1,b,b+1);
+   }
+   const geo=new THREE.BufferGeometry();
+   geo.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
+   geo.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
+   geo.setIndex(index);geo.computeVertexNormals();geo.computeBoundingSphere();
+   const outer=own(attach(parent,geo,'skin',{name,rough:.92,metal:0}));
+   outer.userData.foxPinna=true;
+   // Interior cartilage is a gently concave two-dimensional patch lying
+   // just forward of the ear leaf. It does not float as a separate cone.
+   const innerPos=[],innerUv=[],innerIndices=[],steps=detail==='source'?12:8;
+   for(let i=0;i<=steps;i++){
+     const t=.12+.77*i/steps,hw=width*shape(t)*.67;
+     for(let j=0;j<=4;j++){
+       const across=(j-2)/2;
+       innerPos.push(side*spread*t+hw*across,height*t,
+         -.032*t+.031*(1-t*.65)+.005-.009*(1-across*across));
+       innerUv.push(j/4,t);
+     }
+   }
+   for(let i=0;i<steps;i++)for(let j=0;j<4;j++){
+     const a=i*5+j,b=a+5;
+     // Two-sided triangles without mutating shared cached PBR materials.
+     innerIndices.push(a,a+1,b,a+1,b+1,b,
+       b,a+1,a,b,b+1,a+1);
+   }
+   const innerGeo=new THREE.BufferGeometry();
+   innerGeo.setAttribute('position',new THREE.Float32BufferAttribute(innerPos,3));
+   innerGeo.setAttribute('uv',new THREE.Float32BufferAttribute(innerUv,2));
+   innerGeo.setIndex(innerIndices);
+   innerGeo.computeVertexNormals();innerGeo.computeBoundingSphere();
+   const inner=own(attach(parent,innerGeo,'shadow',
+     {name:name+'-inner-cartilage',rough:.94,metal:0}));
+   // Shared material cache stays untouched; the inner ear is double-sided geometry.
+   inner.userData.foxPinnaInner=true;
+   return outer;
+ };
+ /**
+  * Canine adaptation of the model generator's eye fitting:
+  * first recess the head source topology, then fit a narrow optical almond
+  * UNDER its surrounding skin eyelid. No orbiting colored sphere is used.
+  * This mutates only the owned monster cranium, never a shared GLB mesh.
+  */
+ const recessCanineEyeSockets=(cranium)=>{
+   if(!cranium?.geometry?.getAttribute?.('position')||
+      !cranium.userData.ownedGeometry)throw Error('Owned cranium required');
+   const p=cranium.geometry.getAttribute('position');
+   let sculpted=0,maxInset=0;
+   for(let i=0;i<p.count;i++){
+     const x=p.getX(i),y=p.getY(i),z=p.getZ(i);
+     if(z<.07)continue;
+     const nx=(Math.abs(x)-.198)/.132;
+     const ny=(y-.115)/.095;
+     const q=nx*nx+ny*ny;
+     if(q>2.65)continue;
+     const front=Math.min(1,Math.max(0,(z-.07)/.21));
+     const inset=.045*Math.exp(-2.4*q)*front;
+     if(inset<.00002)continue;
+     p.setZ(i,z-inset);sculpted++;maxInset=Math.max(maxInset,inset);
+   }
+   if(sculpted){p.needsUpdate=true;cranium.geometry.computeVertexNormals();
+     cranium.geometry.computeBoundingSphere();}
+   cranium.userData.canineEyeSocketsRecessed=true;
+   cranium.userData.canineEyeSocketSculptedVertices=sculpted;
+   cranium.userData.canineEyeSocketMaxInset=maxInset;
+   return cranium;
+ };
+ /**
+  * A genuine almond-shaped eye opening, with a shadowed socket, thin
+  * partially covered iris, slit pupil and wet corneal catchlight.
+  * One specialized wolf-king eye uses 5 small meshes, not spherical globes.
+  */
+ const recessedCanineAlmondEye=(parent,{side=1,name='beast'}={})=>{
+   if(Math.abs(side)!==1)throw Error('Invalid wolf eye side');
+   // The earlier +/-0.230 placed eyes near the outer cheek silhouette.
+   // Inset both paired sockets toward the frontal skull by ~14%.
+   const center=[side*.198,.116,.285];
+   const slices=detail==='source'?40:detail==='high'?32:20;
+   const bands=detail==='source'?5:3;
+   // Shape follows the inner/outer canthus; the outside corner sits higher.
+   const tilt=.195;
+   const geometryDisk=(rx,ry,depth,bulge=0)=>{
+     const pos=[],uv=[],indices=[];
+     for(let row=0;row<=bands;row++){
+       const r=row/bands;
+       for(let col=0;col<=slices;col++){
+         const a=col/slices*2*Math.PI;
+         const cx=rx*r*Math.cos(a),cy=ry*r*Math.sin(a);
+         pos.push(side*cx,cy+tilt*cx,depth+bulge*(1-r*r));
+         uv.push(.5+.5*r*Math.cos(a),.5+.5*r*Math.sin(a));
+       }
+     }
+     for(let i=0;i<bands;i++)for(let j=0;j<slices;j++){
+       const a=i*(slices+1)+j,b=a+slices+1;
+       // Both windings keep the fitted optical patch visible from side.
+       indices.push(a,b,a+1,a+1,b,b+1,a+1,b,a,b+1,b,a+1);
+     }
+     const geo=new THREE.BufferGeometry();
+     geo.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));
+     geo.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
+     geo.setIndex(indices);geo.computeVertexNormals();geo.computeBoundingSphere();
+     return geo;
+   };
+   const patch=(shade,id,rx,ry,depth,bulge,shift=[0,0,0])=>{
+     const m=own(attach(parent,geometryDisk(rx,ry,depth,bulge),shade,
+       {name:id,rough:shade==='eye'?.24:.73,metal:0}));
+     m.position.set(center[0]+side*shift[0],center[1]+shift[1],
+       center[2]+shift[2]);
+     m.userData.recessedCanineEye=true;
+     m.userData.almondAperture=shade==='eye';
+     return m;
+   };
+   // Eyelid contact ring must be in front of optic centre; pigmented
+   // eye is recessed, so its specular highlight cannot bulge from skull.
+   // Thin socket, no thick painted-on black eyeliner. The pupil is an
+   // actual visible dark patch IN FRONT of the amber iris, not hidden
+   // behind the heavy eyelid rim as in the earlier revision.
+   // A slim shadowed eye fissure, not an externally projecting liner.
+   const orbital=patch('shadow','beast-orbit',.071,.025,.002,.001);
+   orbital.userData.socketApertureHalfWidth=.071;
+   orbital.userData.socketApertureHalfHeight=.025;
+   const iris=patch('eye','eye',.0295,.0245,.010,.003,[-.008,0,0]);
+   iris.userData.generatorFittedIris=true;
+   iris.userData.openingHeight=.049;
+   // Wolves have rounded pupils, not a cat's vertical slit.
+   const pupil=patch('shadow','beast-pupil',.012,.014,.021,.002,[-.008,0,0]);
+   pupil.userData.roundCanidPupil=true;
+   pupil.userData.blackPupilVisible=true;
+   const glint=patch('bone','beast-corneal-glint',.002,.003,.026,.001,
+     [-.016,.010,0]);
+   glint.userData.corneaWetHighlight=true;
+   // Inset the lid beneath the anterior iris/pupil instead of wrapping the
+   // eye with a 0.015-wide, elevated, outward-facing skin wall. Two very
+   // narrow bands preserve a closed anatomical rim with negligible relief.
+   const eyelidPos=[],eyelidUv=[],eyelidIndex=[];
+   for(let row=0;row<=2;row++){
+     const t=row/2;
+     const rx=.071+(.002*t),ry=.025+(.001*t);
+     const rz=.003+(.0005*t);
+     for(let col=0;col<=slices;col++){
+       const a=col/slices*2*Math.PI,cx=rx*Math.cos(a);
+       eyelidPos.push(center[0]+side*cx,
+         center[1]+ry*Math.sin(a)+tilt*cx,
+         center[2]+rz);
+       eyelidUv.push(col/slices,t);
+     }
+   }
+   for(let i=0;i<2;i++)for(let j=0;j<slices;j++){
+     const a=i*(slices+1)+j,b=a+slices+1;
+     eyelidIndex.push(a,b,a+1,a+1,b,b+1,a+1,b,a,b+1,b,a+1);
+   }
+   const lidGeo=new THREE.BufferGeometry();
+   lidGeo.setAttribute('position',
+     new THREE.Float32BufferAttribute(eyelidPos,3));
+   lidGeo.setAttribute('uv',new THREE.Float32BufferAttribute(eyelidUv,2));
+   lidGeo.setIndex(eyelidIndex);
+   lidGeo.computeVertexNormals();lidGeo.computeBoundingSphere();
+   const lid=own(attach(parent,lidGeo,'skin',
+     {name:'beast-almond-eyelid-'+(side<0?'L':'R'),rough:.89,metal:0}));
+   lid.userData.socketContactRim=true;
+   lid.userData.anatomicalAlmondEyelid=true;
+   lid.userData.flushSkinLid=true;
+   return {orbital,iris,pupil,glint,lid};
  };
  const anatomicalLoft=(parent,shade,rings,{name='realistic-anatomical-mesh',
    kind='torso',asymmetry=0}={})=>{
@@ -454,7 +711,7 @@ export function createSculpture(spec,detail='high'){
  };
  root.userData.detail=detail;
  return {root,pivots,group,sphere,rock,bone,spike,rootedSpike,seamHem,tube,bridge,
-   axialLoft,anatomicalLoft,fur,skinnedFur,bandage,fin,eyes,claws,ring,fine,colors};
+   axialLoft,limbLoft,curvedHorn,foxPinna,recessCanineEyeSockets,recessedCanineAlmondEye,anatomicalLoft,fur,skinnedFur,bandage,fin,eyes,claws,ring,fine,colors};
 }
 export function disposeMonsterSculpture(model){
  if(!model)return;

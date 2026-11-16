@@ -1,0 +1,94 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Battle face actual pixel QA</title>
+<style>body{margin:0;background:#151922}canvas{display:block}</style>
+<script type="importmap">{"imports":{"three":"/node_modules/three/build/three.module.js","three/addons/":"/node_modules/three/examples/jsm/"}}</script>
+</head><body><script type="module">
+import * as THREE from 'three';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {makeIndependentFaceMaster} from '../src/independent-face-masters.js';
+import {applyFaceColorMode} from '../src/face-feature-meshes.js';
+import {applyHeroineSkinMaterial} from '../src/heroine-skin-material.js';
+import {correctBattleFaceSkinTone,BATTLE_FACE_LIGHT_RESPONSE_VERSION} from '../src/character-system/battle-artist-head-graft.js';
+import {fitBattleArtistFaceToHead} from '../src/character-system/battle-head-proportion-fit.js';
+import {measureHeadLocalBounds} from '../src/character-system/hair-attachment-runtime.js';
+try{
+ const W=512,H=512;
+ const glb=await new GLTFLoader().loadAsync('../assets/master-sources/blender/realistic-head-animation.glb');
+ const head=makeIndependentFaceMaster(glb.scene,'male');
+ const face=head.face;
+ applyFaceColorMode(face,'color',{contactColor:'#514139',makeupType:0});
+ applyHeroineSkinMaterial(face);
+ const scene=new THREE.Scene();
+ scene.background=new THREE.Color(0x151922);
+ scene.add(new THREE.HemisphereLight(0xe6f3ff,0x50617b,2.5));
+ const sun=new THREE.DirectionalLight(0xffffff,2.2);
+ sun.position.set(-130,260,95);scene.add(sun);
+ scene.add(head.root);
+ const renderer=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true});
+ renderer.setPixelRatio(1);renderer.setSize(W,H);
+ renderer.outputColorSpace=THREE.SRGBColorSpace;
+ renderer.toneMapping=THREE.ACESFilmicToneMapping;
+ renderer.toneMappingExposure=1.05;
+ document.body.appendChild(renderer.domElement);
+ const bounds=new THREE.Box3().setFromObject(head.root),size=bounds.getSize(new THREE.Vector3());
+ const center=bounds.getCenter(new THREE.Vector3());
+ const camera=new THREE.PerspectiveCamera(39,1,.001,20);
+ camera.position.set(center.x,center.y,center.z+Math.max(size.y*1.68,size.z*3.2));
+ camera.lookAt(center);
+ camera.updateProjectionMatrix();
+ const ctx=renderer.getContext();
+ function snapshot(){
+  renderer.render(scene,camera);
+  ctx.finish();
+  const p=new Uint8Array(W*H*4);
+  ctx.readPixels(0,0,W,H,ctx.RGBA,ctx.UNSIGNED_BYTE,p);
+  return p;
+ }
+ const before=snapshot();
+ const skinChange=correctBattleFaceSkinTone(face,{sex:'male'});
+ const after=snapshot();
+ const diagnostics={before:[],after:[],changed:0,occupied:0,rgbaOutliers:0};
+ let br=0,ar=0,bg=0,ag=0,bb=0,ab=0;
+ for(let y=Math.floor(H*.23);y<Math.floor(H*.78);y++)for(let x=Math.floor(W*.22);x<Math.floor(W*.78);x++){
+  const i=(y*W+x)*4;
+  const r0=before[i],g0=before[i+1],b0=before[i+2];
+  const r1=after[i],g1=after[i+1],b1=after[i+2];
+  if(r0>60&&r0>g0*.95&&g0>b0*.9){
+   diagnostics.occupied++;br+=r0;bg+=g0;bb+=b0;ar+=r1;ag+=g1;ab+=b1;
+   if(Math.abs(r0-r1)+Math.abs(g0-g1)+Math.abs(b0-b1)>20)diagnostics.changed++;
+   if(r1>246&&g1>246&&b1>246)diagnostics.rgbaOutliers++;
+  }
+ }
+ if(diagnostics.occupied){
+  diagnostics.before=[br,bg,bb].map(x=>+(x/diagnostics.occupied).toFixed(1));
+  diagnostics.after=[ar,ag,ab].map(x=>+(x/diagnostics.occupied).toFixed(1));
+ }
+ // Compare against the REAL 65-bone donor's measured head bounds.
+ const donor=(await new GLTFLoader().loadAsync(
+  '../assets/characters/quaternius-base/Superhero_Male_FullBody.gltf')).scene;
+ const donorHead=donor.getObjectByName('Head');
+ const donorBounds=measureHeadLocalBounds(donor,donorHead);
+ const trueFace=head.root.clone(true);
+ donorHead.add(trueFace);
+ const trueFaceMesh=trueFace.getObjectByName('MALE_INDEPENDENT_CLAY_FACE');
+ const liveCranialFit=fitBattleArtistFaceToHead({
+  faceRoot:trueFace,faceMesh:trueFaceMesh,headBounds:{
+   min:donorBounds.bounds.min.toArray(),max:donorBounds.bounds.max.toArray()
+  }
+ });
+ window.__battleFaceVisualQA={
+  ready:true,actualDonorRigHead:{samples:donorBounds.samples,...liveCranialFit},sourceUv:!!face.geometry.getAttribute('uv'),
+  sample:diagnostics,
+  renderVersion:face.material.userData.battleFaceLightResponseVersion,
+  expected:BATTLE_FACE_LIGHT_RESPONSE_VERSION,
+  corrected:skinChange.corrected,
+  materialColor:face.material.color.getHexString(),
+  sharedAlbedo:face.material.map?.name||null,
+  shaderPrograms:renderer.info.programs?.length||0,
+  sceneLights:{hemisphere:2.5,sun:2.2,exposure:renderer.toneMappingExposure}
+ };
+ console.log('REAL_BATTLE_FACE_PIXEL_QA',JSON.stringify(window.__battleFaceVisualQA));
+}catch(error){
+ window.__battleFaceVisualQA={error:String(error?.stack||error)};
+ console.error('FACE_VISUAL_QA_FAILED',error);
+}
+</script></body></html>

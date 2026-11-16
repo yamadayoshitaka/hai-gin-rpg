@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import {CONTINENTS,continentForChapter,continentMapSvg,continentStagePoints} from '../src/continent-campaign.js';
+import {CONTINENTS,MAINLAND_ID,MAINLAND_REGIONS,continentForChapter,
+ continentMapUrl,continentMapSvg,continentStagePoints} from '../src/continent-campaign.js';
 import {CAMPAIGN_STAGES,stagesInChapter} from '../src/campaign-stage-plan.js';
 import {STAGE_PRESETS,selectStageObjects} from '../src/stage-library.js';
 import {createNewGame} from '../src/game-core-flow.js';
@@ -10,9 +11,16 @@ import {CHARACTER_MODEL_REGISTRY} from '../src/character-model-registry.js';
 import {MODEL_FIRST_CATALOG} from '../src/model-first-catalog.js';
 
 assert.equal(CONTINENTS.length,20);
-assert.equal(new Set(CONTINENTS.map(c=>c.id)).size,20);
-assert.equal(new Set(CONTINENTS.map(c=>c.name)).size,20);
-assert.equal(new Set(CONTINENTS.map(c=>continentMapSvg(c.chapter))).size,20);
+// World-map architecture: 20 chapters revisit ONE continuous mainland.
+ // Chapter locations and region pins differ without inventing twenty islands.
+assert.equal(new Set(CONTINENTS.map(c=>c.id)).size,1);
+assert.ok(CONTINENTS.every(c=>c.id===MAINLAND_ID));
+assert.equal(new Set(CONTINENTS.map(c=>c.name)).size,1);
+assert.ok(new Set(CONTINENTS.map(c=>c.regionId)).size>=10);
+assert.equal(new Set(CONTINENTS.map(c=>continentMapUrl(c.chapter))).size,1);
+assert.equal(Object.keys(MAINLAND_REGIONS).length,12);
+assert.ok(CONTINENTS.every(c=>continentMapSvg(c.chapter).includes(c.regionName)),
+ 'the shared mainland overlay should identify each chapters focus region');
 assert.equal(CAMPAIGN_STAGES.length,200);
 assert.equal(new Set(CAMPAIGN_STAGES.map(s=>s.scenePreset)).size,200);
 const sceneIds=new Set(STAGE_PRESETS.map(s=>s.id));
@@ -59,7 +67,7 @@ for(const panel of ['weapons','items','formation','tavern','save','story']){
  assert.ok(talk.modelId.startsWith('Superhero_'));
 }
 const villager=resolveTownConversation({npcId:'street-1',chapter:20});
-assert.ok(villager.lines.some(x=>x.includes(continentForChapter(20).name)));
+assert.ok(villager.lines.some(x=>x.includes(continentForChapter(20).regionName)));
 assert.ok(villager.lines.length>=3);
 const stageHtml=fs.readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
 const hubHtml=fs.readFileSync(new URL('../town-hub.html',import.meta.url),'utf8');
@@ -73,6 +81,35 @@ assert.match(stageHtml,/townCameraOccluders\(stageBatchStats\.occlusionCandidate
 assert.match(hubHtml,/data-gacha-draw/);
 assert.match(hubHtml,/hai-gin-town-npc/);
 assert.match(worldHtml,/continentMapUrl\(chapter\)/);
+assert.match(worldHtml,/const current=CAMPAIGN_STAGE_BY_ID\[selected\]/,
+ 'Current location label must follow chapter-selected stage rather than old saved stage');
+const worldPins=worldHtml.slice(worldHtml.indexOf('function renderPins(){'),
+ worldHtml.indexOf('function renderStoryEndingControls(){'));
+assert.ok(worldPins.startsWith('function renderPins(){'),'Shared 20-chapter map pin function must exist');
+assert.match(worldPins,/TERRITORIES\.map\(t=>/,
+ 'Every chapter renders all 12 canonical location labels, not ten map-stage numbers');
+assert.match(worldPins,/const focus=CAMPAIGN_STAGE_BY_ID\[selected\]\?\.territoryId/,
+ 'Current chapter and selected region determine the location highlight');
+assert.match(worldPins,/focus===t\.id\?'current-location'/,
+ 'Chapter focus must highlight its matching named territory');
+assert.doesNotMatch(worldPins,/chapter===1|data-stage-pin|stage-pin|🔒|\.map\(stage|locked/,
+ 'No chapter-specific branch, stage numbers or padlock pins are allowed on the world map');
+assert.equal(new Set(Array.from({length:20},(_,i)=>continentMapUrl(i+1))).size,1,
+ 'World map artwork is identical in all 20 chapters');
+assert.match(worldHtml,/renderPins\(\);\s*updateCurrentLocation\(\);/,
+ 'Changing chapters and stage selections must refresh the location banner');
+assert.doesNotMatch(worldHtml,/const current=CAMPAIGN_STAGE_BY_ID\[game\.stage\]\|\|/,
+ 'Do not leave the old, fixed Chapter 1 location label in place');
+assert.match(worldHtml,/12地域共通マップ/,
+ 'Map revision must be recognizable in the displayed location banner');
+assert.match(worldHtml,/dataset\.mapRevision='20261116-region-labels-2'/,
+ 'Ensure map build revision is explicit for live-page diagnostics');
+assert.doesNotMatch(worldHtml,/\[data-stage-pin\]/,
+ 'Do not register a legacy numeric lock-pin click handler');
+assert.match(worldHtml,/stagesInChapter\(chapter\)\.filter\(s=>s\.territoryId===territory\)/,
+ 'Clicking a named region must never secretly jump to a different chapter');
+assert.match(hubHtml,/world-map\.html\?v=region-labels-20261116-r2/,
+ 'Returning from town must request the newly versioned world-map URL');
 assert.ok(MODEL_FIRST_CATALOG.civilianMale.url);
 assert.ok(MODEL_FIRST_CATALOG.civilianFemale.url);
-console.log('20 continents, 200 stages, gacha, citizens, dialogue, fences/flowers: PASS');
+console.log('1 continent, 12 always-visible location labels in 20 chapters, 200 stages, gacha, citizens and props: PASS');

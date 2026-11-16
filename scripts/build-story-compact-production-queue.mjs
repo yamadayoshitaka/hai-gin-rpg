@@ -1,7 +1,11 @@
 #!/usr/bin/env node
-/** Export next-generation 20-chapter image production queue.
- * Reuses only registered exact scene/gender/outcome originals; never calls an
- * image provider, never stamps P0 approval, and never assumes faces are neutral.
+/**
+ * Build the minimum-first CG production queue: 880 story identities, not
+ * 1760 pre-committed image purchases. Each identity carries two independently
+ * verifiable gender variants; never share an existing image just because its
+ * story text omits the player or the filename looks neutral.
+ *
+ * This is a planning/audit tool. It cannot render or approve images.
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -9,45 +13,90 @@ import {fileURLToPath} from 'node:url';
 import {COMPACT_TWENTY_CHAPTER_PLAN,compactComicForStage} from '../src/story-compact-comic.js';
 import {registeredStoryPanelAsset} from '../src/story-panel-registered-art.js';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
-const entries=[],stats={total:0,reused:0,missing:0,formalP0Approved:0};
-for(const plan of COMPACT_TWENTY_CHAPTER_PLAN)for(const id of plan.stageIds)for(const gender of ['male','female']){
- const ctx={protagonistGender:gender,chapterOpeningSeen:false};
- for(const [phase,outcome] of [['pre',null],['post','victory']]){
-  const context=outcome?{...ctx,battleOutcome:{victory:true}}:ctx;
-  const comic=compactComicForStage(id,phase,context);
-  for(const shot of comic.panels){
-   const url=registeredStoryPanelAsset(shot);
-   const relative=typeof url==='string'?url.replace(/^\.\//,''):null;
-   const file=relative&&!relative.includes('..')?path.resolve(root,relative):null;
-   const validFile=!!(file&&file.startsWith(root+path.sep)&&fs.existsSync(file));
-   const key=[id,shot.comicEdition,gender,shot.id].join('|');
-   entries.push({key,stageId:id,chapter:plan.chapter,gender,phase,
-    shotId:shot.id,chapterOpening:shot.isChapterOpening,
-    imageStatus:validFile?'REUSE_EXISTING_PROVISIONAL_NOT_P0':'NEEDS_ORIGINAL_CG',
-    sourceArt:validFile?url:null,sceneTurnCount:shot.dialogueTurns.length,
-    actualSceneText:shot.dialogueTurns.map(x=>x.text),
-    exactProtagonistAppearanceRequired:gender,
-    shareAcrossGendersOnlyAfterHumanNoProtagonistProof:true,
-    formalP0Approved:false});
-   stats.total++;if(validFile)stats.reused++;else stats.missing++;
+const byIdentity=new Map();
+const genders=['male','female'];
+let exactGenderReuse=0;
+for(const plan of COMPACT_TWENTY_CHAPTER_PLAN){
+ for(const id of plan.stageIds){
+  for(const gender of genders){
+   const ctx={protagonistGender:gender,chapterOpeningSeen:false};
+   for(const [phase,outcome] of [['pre',null],['post','victory']]){
+    const context=outcome?{...ctx,battleOutcome:{victory:true}}:ctx;
+    const comic=compactComicForStage(id,phase,context);
+    for(const shot of comic.panels){
+     const identity=[id,shot.comicEdition,shot.id].join('|');
+     let row=byIdentity.get(identity);
+     if(!row){
+      row={key:identity,stageId:id,chapter:plan.chapter,phase,
+       shotId:shot.id,edition:shot.comicEdition,
+       chapterOpening:shot.isChapterOpening,sceneTurnCount:shot.dialogueTurns.length,
+       actualSceneText:shot.dialogueTurns.map(turn=>turn.text),
+       productionPlan:'ONE_SCENE_FIRST_THEN_GENDER_REVIEW',
+       shareAcrossGenders:'REQUIRES_HUMAN_VISUAL_PROOF_OF_NO_PROTAGONIST',
+       sharedApprovedArt:null,formalP0Approved:false,genderVariants:{}};
+      byIdentity.set(identity,row);
+     }
+     if(row.genderVariants[gender])throw Error('Duplicate gender scene '+identity+'/'+gender);
+     if(row.phase!==phase||row.chapterOpening!==shot.isChapterOpening||
+       row.sceneTurnCount!==shot.dialogueTurns.length)
+      throw Error('Gender scene identities or dialogue diverged '+identity);
+     const url=registeredStoryPanelAsset(shot);
+     const relative=typeof url==='string'?url.replace(/^\.\//,''):null;
+     const file=relative&&!relative.includes('..')?path.resolve(root,relative):null;
+     const verified=!!(file&&file.startsWith(root+path.sep)&&fs.existsSync(file));
+     if(verified)exactGenderReuse++;
+     row.genderVariants[gender]={
+      key:identity+'|'+gender,
+      protagonistGender:gender,
+      status:verified?'REUSE_EXACT_GENDER_PROVISIONAL_NOT_P0':'MISSING_EXACT_GENDER_ART',
+      sourceArt:verified?url:null,
+      requiresDistinctArtUnlessProvenNeutral:true,
+      visibleProtagonistVisuallyAudited:false,
+      reuseOtherGenderForbiddenUntilApproved:true,
+      formalP0Approved:false
+     };
+    }
+   }
   }
  }
 }
-if(stats.total!==1760)throw Error('20 chapters x two sexes must be 1760 conservative slots');
+const entries=[...byIdentity.values()];
+if(entries.length!==880||entries.some(row=>!genders.every(g=>row.genderVariants[g])))
+ throw Error('Minimum-first CG contract violated: exactly 880 identities x 2 gender reviews');
+const stats={
+ // Physical production decision count starts at 880; unresolved gender art
+ // may bring the maximum back to 1760 after visual review.
+ total:entries.length,
+ reused:entries.filter(row=>genders.some(g=>row.genderVariants[g].sourceArt)).length,
+ missing:entries.filter(row=>genders.every(g=>!row.genderVariants[g].sourceArt)).length,
+ fullyExactGenderReused:entries.filter(row=>genders.every(g=>row.genderVariants[g].sourceArt)).length,
+ genderVariantsObserved:entries.length*2,
+ exactGenderReuse,
+ missingExactGenderArt:entries.length*2-exactGenderReuse,
+ provenNeutralShares:0,
+ genderReviewPending:entries.filter(row=>!genders.every(g=>row.genderVariants[g].sourceArt)).length,
+ formalP0Approved:0
+};
 const shared=[
  {id:'shared-defeat-1',kind:'defeat',status:'REAL_ORIGINAL_WEBP_REGISTERED_PENDING_P0',asset:'./assets/story/shared/shared-defeat-01.webp'},
  {id:'shared-defeat-2',kind:'defeat',status:'REAL_ORIGINAL_WEBP_REGISTERED_PENDING_P0',asset:'./assets/story/shared/shared-defeat-02.webp'},
  {id:'shared-gameover-1',kind:'gameover',status:'PENDING_NO_CROSS_OUTCOME_REUSE'},
  {id:'shared-gameover-2',kind:'gameover',status:'PENDING_NO_CROSS_OUTCOME_REUSE'}
 ];
-const output={schemaVersion:1,kind:'COMPACT_20_CHAPTER_REAL_ART_CANDIDATES',chapters:20,stages:200,
+const output={
+ schemaVersion:2,kind:'COMPACT_20_CHAPTER_MINIMUM_FIRST_CG_QUEUE',chapters:20,stages:200,
  plannedPrimaryCGSlots:880,maximumGenderConservativeSlots:1760,
+ countPolicy:'880 scene identities; second gender output only after independent appearance check',
  result:stats,shared,
- safety:['Only exact stage, gender and outcome registered WebP may be reused',
-  'Protagonist neutral/background sharing requires explicit visual proof',
-  'Missing CG means missing, not a generated placeholder',
-  'No outside paid API, no actual generation, no automatic P0 approval'],
- entries};
+ safety:[
+  'Never treat a merely unmentioned protagonist as visually absent',
+  'No automatic sharing of male and female art without verified absence of protagonist',
+  'Existing registered WebPs may only be reused for exact stage, gender and outcome',
+  'Unverified neutral candidates are REVIEW_PENDING, never game-ready',
+  'Additional gender-specific images must still be made when a character is visible',
+  'No paid provider, no generation in this planning tool and no P0 auto approval'
+ ],entries
+};
 const out=process.argv[2]||'qa-reports/story-compact-production-queue.json';
 const file=path.resolve(root,out);
 if(!file.startsWith(root+path.sep))throw Error('Unsafe output path');

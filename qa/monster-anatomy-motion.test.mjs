@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import './beast-mesh-anatomy-20261116.test.mjs';
 // Run the same visual-anatomy contracts in CI's fixed 50-species suite.
 import './monster-leap-mummy-quality.test.mjs';
 import './monster-realistic-remesh.test.mjs';
