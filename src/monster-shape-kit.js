@@ -440,7 +440,10 @@ export function createSculpture(spec,detail='high'){
    // Both optics, lid and recess use exactly one medial canid center.
    // Place both optical sockets on the forward muzzle wedge, rather than
    // the separated left/right outer surface. Fit the optic closer to skin.
-   const center=[side*.146,.116,.232];
+   // Both lids and pigments are thin surface patches INSIDE a carved
+   // orbital bowl, not separate protruding eye globes. The former z=.232
+   // sat visibly in front of the cranium at this x/y station.
+   const center=[side*.146,.116,.182];
    const slices=detail==='source'?40:detail==='high'?32:20;
    const bands=detail==='source'?5:3;
    // Shape follows the inner/outer canthus; the outside corner sits higher.
@@ -452,7 +455,11 @@ export function createSculpture(spec,detail='high'){
        for(let col=0;col<=slices;col++){
          const a=col/slices*2*Math.PI;
          const cx=rx*r*Math.cos(a),cy=ry*r*Math.sin(a);
-         pos.push(side*cx,cy+tilt*cx,depth+bulge*(1-r*r));
+         // Drape the aperture onto the curvature of the cranial wedge:
+         // the canthi return behind the brow, not a planar floating disc.
+         const inset=.033*Math.pow(Math.abs(cx)/.064,2)+
+           .007*r*r*Math.pow(Math.sin(a),2);
+         pos.push(side*cx,cy+tilt*cx,depth+bulge*(1-r*r)-inset);
          uv.push(.5+.5*r*Math.cos(a),.5+.5*r*Math.sin(a));
        }
      }
@@ -485,6 +492,7 @@ export function createSculpture(spec,detail='high'){
    const orbital=patch('shadow','beast-orbit',.064,.024,.001,.0005);
    orbital.userData.socketApertureHalfWidth=.064;
    orbital.userData.m001OrbitalCenterX=center[0];
+   orbital.userData.curvedSkullAperture=true;
    orbital.userData.socketApertureHalfHeight=.024;
    const iris=patch('eye','eye',.0295,.023,.0035,.0015,[-.008,0,0]);
    iris.userData.generatorFittedIris=true;
@@ -508,9 +516,11 @@ export function createSculpture(spec,detail='high'){
      const rz=.0075+(.0005*t);
      for(let col=0;col<=slices;col++){
        const a=col/slices*2*Math.PI,cx=rx*Math.cos(a);
+       const inset=.033*Math.pow(Math.abs(cx)/.064,2)+
+         .007*Math.pow(Math.sin(a),2);
        eyelidPos.push(center[0]+side*cx,
          center[1]+ry*Math.sin(a)+tilt*cx,
-         center[2]+rz);
+         center[2]+rz-inset);
        eyelidUv.push(col/slices,t);
      }
    }
@@ -530,6 +540,8 @@ export function createSculpture(spec,detail='high'){
    lid.userData.anatomicalAlmondEyelid=true;
    lid.userData.flushSkinLid=true;
    lid.userData.opticsRecessedBehindLid=true;
+   lid.userData.curvedSkullAperture=true;
+   lid.userData.solidEyeballRequired=false;
    return {orbital,iris,pupil,glint,lid};
  };
  const anatomicalLoft=(parent,shade,rings,{name='realistic-anatomical-mesh',
