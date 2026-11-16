@@ -50,4 +50,8 @@ assert(generatorSource.indexOf(registeredGuard)>0&&generatorSource.indexOf(regis
 assert(generatorSource.includes("if(incomplete.length)"),'Stage cannot skip missing compact images');
 assert(generatorSource.includes('if(!pg.shots.some(compactRequired))continue;'));
 assert(generatorSource.includes('compactRequired(shot)'), 'Legacy shots cannot block later stages');
+const productionWorkflow=readFileSync(path.join(root,
+ '.github/workflows/story-chapter1-free-complete-draft-production.yml'),'utf8');
+assert(productionWorkflow.includes('git show origin/main:data/story-compact-20chapters.json'),
+ 'Persistent old review branch must receive latest canonical compact shot IDs');
 console.log('story stage-priority plan: PASS (no generation, no registration)');
