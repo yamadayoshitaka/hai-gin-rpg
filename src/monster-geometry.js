@@ -3,7 +3,7 @@
  * variants change horns, crests, armour, wings, limb lengths, weapons and fins.
  * Each specimen is real 3D geometry, never an image billboard.
  */
-import {createSculpture,disposeMonsterSculpture} from './monster-shape-kit.js?v=wolf-king-almond-eye-v6-20261116';
+import {createSculpture,disposeMonsterSculpture} from './monster-shape-kit.js?v=m001-clean-snout-eye-v7-20261116';
 import {attachMonsterFaceControls} from './facial-feature-runtime.js?v=1';
 import {generateCanineFurGuides,generateCanineAxialFurGuides} from './canine-fur-guides.js?v=beast-coat-20261116';
 import {monsterEvidenceFor} from './monster-anatomy-reference.js';
@@ -34,12 +34,35 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
  const beastRemesh=canine&&s.id!=='m005'; // PR #345 protected
 
  const coatDetail=g.root.userData.detail;
+ // Exactly two offset follicles per m001 source/near guide, with NO
+ // identical/copanar ribbons or extra draw calls. LOD low stays economical.
+ const wolfKingDoubleCoat=s.id==='m001'&&coatDetail!=='low';
+ const doubleFurGuides=guides=>{
+   if(!wolfKingDoubleCoat)return guides;
+   const pairs=[];
+   for(const strand of guides){
+     const normal=strand.normal||[0,1,0];
+     const tangent=[normal[2],0,-normal[0]];
+     const n=Math.hypot(...tangent)||1;
+     const d=Math.max(.002,Math.min(.010,strand.width*.43));
+     const offset=tangent.map(v=>v*d/n);
+     for(const side of [-1,1]){
+       const shift=(point,tipFactor)=>point.map((v,k)=>
+         v+side*offset[k]+(k===2&&side>0?-d*.70*tipFactor:0));
+       pairs.push({...strand,width:strand.width*.85,
+         root:shift(strand.root,0),mid:shift(strand.mid,.45),
+         tip:shift(strand.tip,1)});
+     }
+   }
+   return pairs;
+ };
+ if(wolfKingDoubleCoat)g.root.userData.wolfKingFurDensityMultiplier=2;
  const addFur=(parent,guides)=>{
    // Material groups are batched: three draw calls instead of hundreds of
    // individual cones. The original fur photo/normal maps remain intact.
    for(const shade of ['skin','light','shadow']){
      const strands=guides.filter(a=>a.shade===shade);
-     if(strands.length)g.fur(parent,shade,strands);
+     if(strands.length)g.fur(parent,shade,doubleFurGuides(strands));
    }
  };
  const torso=g.group('torso');
@@ -659,9 +682,9 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
      // moving limb: stable four draw calls across all legs, GPU deformation,
      // and no coat detachment at the elbow/hock/toe joint.
      g.skinnedFur(leg,'skin',[
-       {joint:leg,region:'upper',guides:upper},
-       {joint:distal,region:'lower',guides:lower},
-       {joint:toeParent,region:'paw',guides:paw},
+       {joint:leg,region:'upper',guides:doubleFurGuides(upper)},
+       {joint:distal,region:'lower',guides:doubleFurGuides(lower)},
+       {joint:toeParent,region:'paw',guides:doubleFurGuides(paw)},
      ],{name:'canine-coat-leg'+name});
    }
  }
@@ -849,7 +872,7 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
          minVertical:-.99,maxVertical:1,
          seed:v*31+i*17+21,gravity:.21,
        });
-       const coat=g.fur(segment.parent,'skin',guides);
+       const coat=g.fur(segment.parent,'skin',doubleFurGuides(guides));
        if(coat){
          coat.name='beast-tail-coat-'+segment.label;
          coat.userData.furRegion='tail';
