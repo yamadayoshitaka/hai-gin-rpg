@@ -14,13 +14,13 @@
   "groups": {
     "human": {
       "source": "ChatGPT 定期タスクの実行結果",
-      "lastRunAt": "2026-11-16T03:56:28Z",
-      "subject": "頭皮共通生成器の頂点・三角形単位GC割当削減（WIP）",
-      "summary": "human ON。PR #456ブランチで頭皮再生成時の頂点配列と三角形インデックス配列の一時割当を除去。実ソースSHA 83b3366a、チェックポイントc7106427。ソース文字列不変条件3件は確認、Node構文/WebGL/Androidは未検証。個別人物ID実改修0、再生成0、対象別QA成功0。全ID列挙未完了。mainマージ・公開なし。",
+      "lastRunAt": "2026-11-16T14:04:21+09:00",
+      "subject": "Issue #438 背面・側面鎧の疎なスキン表面サンプルを実修正（Draft PR #456）",
+      "summary": "human ON。既存PR #456のsrc/outfit-maintenance-model.jsで、背面・側面の5〜10点の有効な皮膚/衣装表面サンプルを捨てて楕円近似に戻す不具合を修正。実ソースSHA c107b633、チェックポイント35020cfd。静的文字列不変条件4件確認のみ。個別人物ID変更0、GLB再生成0、対象別WebGL QA合格0、ゲーム反映0。Node構文・WebGL・Androidは未検証。main未マージ・未公開。",
       "status": "work_incomplete",
       "carryover": true,
       "issueNumber": 438,
-      "nextAction": "全人物・全プリセットIDと生成経路の列挙、Node構文・男女WebGL頭頂/背面/衣装比較、Issue #438の背面異物と踵の実修正。QA未確認のためmainマージ禁止。",
+      "nextAction": "PR #456のNode構文と男女正面/側面/背面/頭頂WebGL比較を実行。Issue #438の背面異物・踵を確認し追加修正。全ID正本列挙とAndroid QA後にマージ判断。",
       "steps": {
         "launch": "done",
         "code": "done",
@@ -32,31 +32,33 @@
       },
       "evidence": [
         {
-          "label": "今回の頭皮共通生成器実ソースコミット",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/83b3366a582882d1b2389f47190344754940d97d"
+          "label": "背面・側面鎧の実ソースコミット",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/c107b633dc5de54f55e432451d421da17b321a20"
         },
         {
           "label": "Draft PR #456",
           "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/456"
         },
         {
-          "label": "今回のチェックポイント",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/c7106427544e1b3c6358f2cda5e172a25e19e200"
+          "label": "チェックポイント",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/35020cfdd453cc8a6d27912fd3c1c91c36d13d96"
         }
       ],
       "operational": {
+        "blockers": [
+          "全人物・プリセット正本ID数と全件監査未確定",
+          "Node構文・男女WebGL視覚比較・Android GPU計測未実施",
+          "Issue #438の背面異物・踵の実描画未確認",
+          "PR #456はDraft、main未マージ"
+        ],
+        "speedPlan": "PR #456の最新headでNode構文/対象別WebGL画像を最優先で通し、背面/踵を実画面で検査。全ID列挙と再生成を次に実施。",
         "lastRunOutcome": {
           "newSourceChangedIds": 0,
           "newQAPassed": 0,
           "newGameAppliedIds": 0,
-          "newSourceCommits": 1
-        },
-        "blockers": [
-          "頭皮共通生成器のコード変更は保存済みだが個別人物メッシュ再生成0",
-          "Node構文・男女WebGL正面/側面/背面・Android QA未実施",
-          "PR #456はDraftでmain未マージ"
-        ],
-        "speedPlan": "PR #456の共通生成器を先に構文・描画QA→合格なら男女複数プリセット一括再生成→頭頂/髪/衣装を同一撮影バッチで比較。未検証WIPを積み増す前に既存差分をQAへ通す。"
+          "newSourceCommits": 1,
+          "newGeneratedGLBs": 0
+        }
       }
     },
     "monster": {
