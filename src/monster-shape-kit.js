@@ -10,7 +10,7 @@ import {realismPaletteFor} from './monster-realistic-palettes.js?v=4.5.03';
 import {createMonsterAnatomicalLoft} from './monster-realistic-loft.js?v=4.4.99';
 import {createCreatureGumSocketGeometry,createCreatureFittedHemGeometry} from './creature-seam-geometry.js';
 import {createRootedCreatureHornGeometry} from './creature-anatomy-mesh.js';
-import {creatureFaceVolume,sculptAxialFacePoint} from './creature-face-volume.js';
+import {creatureFaceVolume,sculptAxialFacePoint} from './creature-face-volume.js?v=m001-photo-wolf-v11-20261116';
 import {buildCanineFurRibbonGeometry} from './canine-fur-ribbons.js?v=4.4.89';
 import {decorateMonsterPhotoMaterial,detachMonsterPhotoMaterial} from './monster-photo-pbr.js?v=4.4.95';
 
