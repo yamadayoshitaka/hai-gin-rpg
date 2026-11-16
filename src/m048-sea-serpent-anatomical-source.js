@@ -70,6 +70,26 @@ export function buildSeaSerpentAnatomicalSource(THREE,{rings=112,sides=16}={}){
    tooth.name='recurved-maxillary-fang-'+side+'-'+k;head.add(tooth);
   }
  }
+ // Paired lateral-line sensory ridges: continuous curved geometry following the
+ // sea serpent's axial body, rather than isolated spherical ornaments.
+ // Each ridge is a narrow tube with an independent normal and wet PBR surface.
+ const lateralLineMaterial=new THREE.MeshPhysicalMaterial({
+  color:0x79b7a6,roughness:.27,metalness:.02,clearcoat:.8,clearcoatRoughness:.18
+ });
+ const animatedLateralLines=[];
+ for(const side of [-1,1]){
+  const samples=[];
+  for(let k=0;k<=88;k++){
+   const t=.08+.84*k/88,c=center(t),r=radius(t);
+   samples.push(new THREE.Vector3(c.x,c.y+r*.13,c.z+side*r*.985));
+  }
+  const curve=new THREE.CatmullRomCurve3(samples);
+  const ridge=new THREE.Mesh(new THREE.TubeGeometry(curve,176,.017,6,false),lateralLineMaterial);
+  ridge.name='continuous-lateral-sensory-ridge-'+side;
+  root.add(ridge);
+  const position=ridge.geometry.getAttribute('position');
+  animatedLateralLines.push({mesh:ridge,base:Float32Array.from(position.array)});
+ }
  // Distinct webbed dorsal crest grows from axial body, with independently shaped finlets.
  for(let k=0;k<18;k++){
   const t=.12+k*.042,c=center(t),r=radius(t),h=.18+.29*Math.sin(Math.PI*k/18);
@@ -97,11 +117,20 @@ export function buildSeaSerpentAnatomicalSource(THREE,{rings=112,sides=16}={}){
   a.needsUpdate=true;mesh.geometry.computeVertexNormals();
  }
  root.userData={creatureId:'m048',source:'original-anatomical-prototype',certified:false,
-  anatomicalParts:['continuous-axial-trunk','ventral-keel-scales','flattened-serpentine-cranium','mobile-dentary','axial-crest-finlets'],
+  anatomicalParts:['continuous-axial-trunk','ventral-keel-scales','flattened-serpentine-cranium','mobile-dentary','axial-crest-finlets','continuous-lateral-sensory-ridges'],
   update(seconds){deform(body,original,seconds);deform(bellyMesh,bellyOriginal,seconds);
    for(const {mesh,base,t} of animatedFins){
     const p=mesh.geometry.getAttribute('position'),offset=swimOffset(t,seconds);
     for(let n=0;n<base.length;n+=3){p.array[n]=base[n];p.array[n+1]=base[n+1];p.array[n+2]=base[n+2]+offset;}
+    p.needsUpdate=true;mesh.geometry.computeVertexNormals();
+   }
+   for(const {mesh,base} of animatedLateralLines){
+    const p=mesh.geometry.getAttribute('position');
+    for(let n=0;n<base.length;n+=3){
+     const t=Math.max(0,Math.min(1,(base[n]+7.8)/15.6));
+     p.array[n]=base[n];p.array[n+1]=base[n+1];
+     p.array[n+2]=base[n+2]+swimOffset(t,seconds);
+    }
     p.needsUpdate=true;mesh.geometry.computeVertexNormals();
    }
    head.position.copy(center(.992));head.position.z+=swimOffset(.992,seconds);
