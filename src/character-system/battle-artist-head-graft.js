@@ -14,7 +14,7 @@ import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {makeIndependentFaceMaster} from '../independent-face-masters.js?v=68';
 import {applyFaceColorMode} from '../face-feature-meshes.js?v=68';
 import {FEMALE_V7_DEFAULTS,MALE_REFERENCE_DEFAULT} from '../face-v7-controls.js';
-import {hideBattleDonorFace,attachIndependentFaceToBattleHead}
+import {hideBattleDonorFace,attachIndependentFaceToBattleHead,enhanceHeroineFaceSurface}
  from '../heroine-battle-costume-bridge.js?v=70';
 import {createFaceExpressionAnimator} from '../face-expression-animation-v48.js?v=68';
 
@@ -66,6 +66,9 @@ function buildArtistMaster(source,recipe){
    ['#514139','#467fa7','#5c886b','#927953','#7e858d'][recipe.faceIndex%5],
   makeupType:recipe.sex==='female'?(recipe.faceIndex%3):0
  });
+ // This is the same PBR skin finish used by the artist's actual hero preview,
+ // not the flat clay material of the source-head geometry.
+ enhanceHeroineFaceSurface(result.face);
  return result;
 }
 function findSculptFace(root,sex){
