@@ -15,7 +15,7 @@
       "sourceFiles": [
         "src/m048-sea-serpent-anatomical-source.js"
       ],
-      "commitSha": "fe9bbed3c6eba06e284785536b110adb872e7567",
+      "commitSha": "4a660de80f36528937ae7f6ea1c837cb889e61a6",
       "qa": "unverified"
     }
   ],
@@ -67,5 +67,5 @@
     "m049",
     "m050"
   ],
-  "nextAction": "Run Node syntax and actual WebGL front/side/rear render QA for m020 barbels and m048 lateral-line, then build GLB/LOD and Android FPS verification; enumerate 108 canonical IDs. No main merge without all gates."
+  "nextAction": "V8 syntax passed m020/m048, but Battle visual E2E run 43796313538 failed (8 cases); inspect and fix photoSurfaces/source expectations and browser timeouts, then verify actual front/side/rear WebGL and Android. New m048 branchial folds require visual QA. No main merge."
 }
