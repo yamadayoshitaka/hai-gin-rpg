@@ -10,6 +10,7 @@
  * Loading failures are fatal to actor installation, never an invisible
  * success with the same old head. The battle screen exposes the exact count.
  */
+import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {makeIndependentFaceMaster} from '../independent-face-masters.js?v=68';
 import {applyFaceColorMode} from '../face-feature-meshes.js?v=68';
@@ -52,6 +53,49 @@ const clamp=(x,min,max)=>Math.min(max,Math.max(min,x));
  */
 export const BATTLE_FACE_SKIN_TONE_VERSION='battle-skin-photometric-v2';
 export const BATTLE_FACE_LIGHT_RESPONSE_VERSION='battle-face-light-response-v2';
+let battleSkinAlbedoTexture=null;
+/** The real realistic-head-animation.glb has UVs but an UNTEXTURED skin
+ * preview material (baseColor 0.65/0.44/0.34). The old studio converter
+ * discarded even that warm source pigment and substituted gray clay.
+ * One shared sRGB albedo adds subdued multi-scale skin variation without
+ * a second mesh, paid texture or per-soldier allocations.
+ */
+export function getBattleSkinAlbedoTexture(){
+ if(battleSkinAlbedoTexture)return battleSkinAlbedoTexture;
+ const size=256,data=new Uint8Array(size*size*4);
+ const hash=(x,y)=>{
+  let a=Math.imul(x+1327,374761393)^Math.imul(y+97,668265263);
+  a=Math.imul(a^(a>>>13),1274126177);
+  return ((a^(a>>>16))>>>0)/4294967296;
+ };
+ const noise=(x,y,step)=>{
+  const ix=Math.floor(x/step),iy=Math.floor(y/step);
+  const fx=x/step-ix,fy=y/step-iy;
+  const u=fx*fx*(3-2*fx),v=fy*fy*(3-2*fy);
+  const a=hash(ix,iy),b=hash(ix+1,iy),c=hash(ix,iy+1),d=hash(ix+1,iy+1);
+  return (a*(1-u)+b*u)*(1-v)+(c*(1-u)+d*u)*v-.5;
+ };
+ for(let y=0;y<size;y++)for(let x=0;x<size;x++){
+  const broad=noise(x,y,48),fine=noise(x,y,8),pores=hash(x,y)-.5;
+  const tint=broad*17+fine*8+pores*2.4;
+  const i=(y*size+x)*4;
+  data[i]=Math.max(0,Math.min(255,Math.round(248+tint)));
+  data[i+1]=Math.max(0,Math.min(255,Math.round(240+tint*.87)));
+  data[i+2]=Math.max(0,Math.min(255,Math.round(231+tint*.92)));
+  data[i+3]=255;
+ }
+ const tex=new THREE.DataTexture(data,size,size,THREE.RGBAFormat);
+ tex.colorSpace=THREE.SRGBColorSpace;
+ tex.wrapS=tex.wrapT=THREE.RepeatWrapping;
+ tex.magFilter=THREE.LinearFilter;
+ tex.minFilter=THREE.LinearMipmapLinearFilter;
+ tex.generateMipmaps=true;
+ tex.needsUpdate=true;
+ tex.name='battle-original-uv-warm-skin-albedo-v1';
+ battleSkinAlbedoTexture=tex;
+ return tex;
+}
+
 /** Reduce excessive facial radiance before the global ACES/output pass.
  * Adjust the actual fragment's PBR outgoingLight, NOT just the UI pigment.
  * A flat material.color change cannot guard against the 2.5+2.2 battlefield
@@ -84,11 +128,15 @@ export function correctBattleFaceSkinTone(face,{sex='male'}={}){
  const material=Array.isArray(face.material)?face.material[0]:face.material;
  if(!material?.color||!material.isMeshStandardMaterial)
   throw Error('Battle face must retain its actual PBR skin material');
- // Only synthetic, untextured sculpt colours require a correction: never
- // overwrite a donor skin photo, diffuse atlas, face painting or saved map.
+ // Repeated QA/reconfigure calls must retain the first shared albedo.
+ if(material.userData?.battleSkinToneVersion===BATTLE_FACE_SKIN_TONE_VERSION)
+  return {corrected:true,reused:true,skinHex:face.userData?.battleSkinToneHex};
+ // Never replace imported photo/painted material maps. The actual battle
+ // sculpt is untextured but has original UVs, so it receives a tiny shared map.
  if(material.map)return {corrected:false,reason:'textured-skin-preserved'};
  const skinHex=sex==='female'?0xc99582:0xb9816b;
  material.color.setHex(skinHex);
+ if(face.geometry?.getAttribute('uv'))material.map=getBattleSkinAlbedoTexture();
  material.metalness=0;
  material.roughness=.86;
  if('clearcoat' in material)material.clearcoat=.012;
@@ -110,8 +158,10 @@ export function correctBattleFaceSkinTone(face,{sex='male'}={}){
    m.needsUpdate=true;
   }
  });
+ material.userData.battleSkinToneVersion=BATTLE_FACE_SKIN_TONE_VERSION;
  face.userData.battleSkinToneHex='#'+skinHex.toString(16).padStart(6,'0');
  face.userData.battleSkinToneVersion=BATTLE_FACE_SKIN_TONE_VERSION;
+ face.userData.battleAlbedoMap=material.map?.name||'source-map-preserved';
  return {corrected:true,skinHex:face.userData.battleSkinToneHex,
   skinMaterial:material.name,materialMapPreserved:true};
 }
@@ -308,6 +358,7 @@ export function battleHeadMasterStats(actors=[]){
    color:a.masterHead.face?.material?.color?.getHexString?.(),
    vertexColors:a.masterHead.face?.material?.vertexColors,
    poreTexture:!!a.masterHead.face?.material?.bumpMap,
+   albedoMap:a.masterHead.face?.material?.map?.name||null,
    lightResponse:a.masterHead.skinLightResponseVersion,
    faceVisible:a.masterHead.face?.visible,
    eyeOutlineVisible:a.masterHead.face?.children?.filter(n=>/EYELINER/i.test(n.name)).some(n=>n.visible)
