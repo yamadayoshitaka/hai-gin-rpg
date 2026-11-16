@@ -2573,7 +2573,7 @@ async function installBattleModels(){
      a.appearanceOptions?.gender==='male'?'male':
      TOWN_MODE&&a.id===0?(battleParams.get('gender')==='female'?'female':'male'):
      a.id%5===0?'female':'male';
-    const defaultAge=a.isPlayerHero?'twenties':a.isStrategist?'forties':
+    const defaultAge=(a.isPlayerHero||TOWN_MODE&&a.id===0)?'twenties':a.isStrategist?'forties':
      ['twenties','twenties','thirties','twenties','forties','twenties','thirties','sixties'][a.id%8];
     const townFace=storyLeader?Number(storyLeader.faceId):
      TOWN_MODE&&a.id===0?Number(battleParams.get('faceId')):null;
