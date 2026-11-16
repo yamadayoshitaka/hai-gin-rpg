@@ -411,7 +411,7 @@ export function createSculpture(spec,detail='high'){
    for(let i=0;i<p.count;i++){
      const x=p.getX(i),y=p.getY(i),z=p.getZ(i);
      if(z<.07)continue;
-     const nx=(Math.abs(x)-.225)/.135;
+     const nx=(Math.abs(x)-.198)/.132;
      const ny=(y-.115)/.095;
      const q=nx*nx+ny*ny;
      if(q>2.65)continue;
@@ -434,7 +434,9 @@ export function createSculpture(spec,detail='high'){
   */
  const recessedCanineAlmondEye=(parent,{side=1,name='beast'}={})=>{
    if(Math.abs(side)!==1)throw Error('Invalid wolf eye side');
-   const center=[side*.230,.116,.278];
+   // The earlier +/-0.230 placed eyes near the outer cheek silhouette.
+   // Inset both paired sockets toward the frontal skull by ~14%.
+   const center=[side*.198,.116,.285];
    const slices=detail==='source'?40:detail==='high'?32:20;
    const bands=detail==='source'?5:3;
    // Shape follows the inner/outer canthus; the outside corner sits higher.

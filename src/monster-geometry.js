@@ -3,7 +3,7 @@
  * variants change horns, crests, armour, wings, limb lengths, weapons and fins.
  * Each specimen is real 3D geometry, never an image billboard.
  */
-import {createSculpture,disposeMonsterSculpture} from './monster-shape-kit.js?v=m001-anatomical-reference-v11-20261116';
+import {createSculpture,disposeMonsterSculpture} from './monster-shape-kit.js?v=m001-anatomical-reference-v12-20261117';
 import {attachMonsterFaceControls} from './facial-feature-runtime.js?v=1';
 import {generateCanineFurGuides,generateCanineAxialFurGuides} from './canine-fur-guides.js?v=beast-coat-20261116';
 import {monsterEvidenceFor} from './monster-anatomy-reference.js';
@@ -179,6 +179,13 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
         [side*.338,1.172,.319],[side*.266,1.364,.519],.139,.080);
       blade.name='m001-scapular-muscle-'+(side<0?'L':'R');
       blade.userData.buriedScapula=true;
+      // The coxal-to-thigh fascia belongs to the torso/pelvis, not to
+      // the swinging leg. It overlaps the femoral head under the fur
+      // throughout walking, so no empty wedge opens at the hip.
+      const hip=g.bridge(torso,'skin',
+        [side*.267,1.151,-.355],[side*.313,.968,-.526],.160,.125);
+      hip.name='m001-hip-fascia-'+(side<0?'L':'R');
+      hip.userData.hipSocketSeal=true;
     }
   }
  }else g.sphere(torso,'light',[0,1.48,.22],[.31,.25,.45]);
@@ -331,8 +338,8 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
       // Keep only a shallow, fitted skin crease. The former elevated
       // brow tube projected past both canthi like a thick eyeliner wing.
       const brow=g.tube(faceCore,'skin',[
-        [side*.158,.137,.254],[side*.210,.145,.274],
-        [side*.257,.134,.267]],.0035);
+        [side*.130,.137,.261],[side*.180,.145,.282],
+        [side*.228,.134,.277]],.0035);
       brow.name='m001-eyebrow-ridge-'+(side<0?'L':'R');
       brow.userData.orbitalBrow=true;
      }else if(beastRemesh){
@@ -662,7 +669,8 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
      pelvisMounted?
        [side*lateralX,beastRemesh?-.540:-.42,.03]:
        [side*lateralX,beastRemesh?.550:.67,fore*.49],
-     pelvisMounted?g.pivots.pelvis:g.root);
+     pelvisMounted?g.pivots.pelvis:
+       (s.id==='m001'&&fore<0?torso:g.root));
    // Anatomical limb shortening keeps paw clearance at the ground by
    // lowering its hip pivot by the same amount. Distal pivots remain real
    // joints and are not replaced with stretched mesh tubes.
@@ -681,8 +689,8 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
      {x:0,y:-.25,z:-.097,rx:.103,rz:.111}
    ]:[
      // Hindlimb: iliac crest -> thigh -> projected stifle. No vertical column.
-     {x:0,y:.55,z:-.208,rx:.137,rz:.178},
-     {x:0,y:.32,z:-.138,rx:.221,rz:.238},
+     {x:0,y:.55,z:s.id==='m001'?-.038:-.208,rx:.137,rz:.178},
+     {x:0,y:.32,z:s.id==='m001'?-.083:-.138,rx:.221,rz:.238},
      {x:0,y:.14,z:.050,rx:.189,rz:.174},
      {x:0,y:-.080,z:.177,rx:.125,rz:.119},
      {x:0,y:-.25,z:.166,rx:.105,rz:.112}
@@ -690,7 +698,13 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    {name:'beast-upper-limb-'+name});
    else g.sphere(leg,'skin',[0,.17,0],
      [reptile?.18:.21,.40,reptile?.18:.21]);
-   const distal=g.group('lower'+name,[0,-.065,.015],leg);
+   // m001 hind "lower" is the true stifle/knee pivot, not a hinge
+   // beneath the whole thigh. Preserve the initial foot position by
+   // offsetting shin vertices and hock bind coordinates equally.
+   const photoWolfStifle=s.id==='m001'&&fore<0;
+   const distal=g.group('lower'+name,
+     photoWolfStifle?[0,.100,.015]:[0,-.065,.015],leg);
+   if(photoWolfStifle)distal.userData.anatomicalJoint='stifle';
    if(beastRemesh){
     g.limbLoft(distal,'skin',(fore>0?[
       // Forearm bends forward again from elbow through carpal joint.
@@ -706,7 +720,10 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
       {x:0,y:-.14,z:-.015,rx:.112,rz:.118},
       {x:0,y:-.28,z:-.159,rx:.086,rz:.090},
       {x:0,y:-.38,z:-.172,rx:.091,rz:.091}
-    ]).map(p=>s.id==='m001'?{...p,rx:p.rx*.83,rz:p.rz*.84}:p),
+    ]).map(p=>s.id==='m001'?{
+      ...p,y:photoWolfStifle?p.y-.165:p.y,
+      rx:p.rx*.83,rz:p.rz*.84
+    }:p),
     {name:'beast-shin-'+name});
    }else{
     g.sphere(distal,'skin',[0,-.16,0],[reptile?.13:.15,.27,reptile?.13:.15]);
@@ -734,7 +751,8 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
      // groups. Keeping the ankle away from the ground creates digitigrade
      // silhouette even in the idle bind pose.
      const ankle=g.group('beastHock'+name,
-       [0,fore>0?-.40:-.34,fore>0?.050:-.168],distal);
+       [0,fore>0?-.40:photoWolfStifle?-.505:-.34,
+         fore>0?.050:-.168],distal);
      g.bridge(ankle,'skin',[0,.06,0],
        [0,-.142,fore>0?.053:.173],fore>0?.103:.092,.083);
      const paw=g.group('beastToe'+name,
@@ -1676,11 +1694,18 @@ export function createMonsterModel(spec,{detail='high'}={}){
  g.root.userData.homeScale=g.root.scale.x;
  g.root.userData.surfaceFamily=spec.family;
  g.root.userData.anatomyEvidence=monsterEvidenceFor(spec);
- attachMonsterFaceControls(g.root,{id:spec.id});
+ // The identity randomizer used to shift the "eye" iris alone while the
+ // pupil, orbital aperture and lids stayed at their sculpted coordinates.
+ // Lock m001's eye / jaw profile to the anatomical source instead.
+ attachMonsterFaceControls(g.root,{id:spec.id,
+   overrides:spec.id==='m001'?{
+     eyesType:'almond',eyeSpacing:1,eyeSize:1,
+     mouthType:'neutral',mouthWidth:1,mouthFullness:1
+   }:{} });
  return g.root;
 }
 export {disposeMonsterSculpture};
 // All renderer metrics share this module's exact shape/material instance.
 // Never independently import a differently versioned shape-kit into the UI.
-export {MONSTER_DETAIL_LEVELS,monsterSculptCacheStats} from './monster-shape-kit.js?v=m001-anatomical-reference-v11-20261116';
+export {MONSTER_DETAIL_LEVELS,monsterSculptCacheStats} from './monster-shape-kit.js?v=m001-anatomical-reference-v12-20261117';
 export {monsterPhotoCacheStats} from './monster-photo-pbr.js?v=4.4.81';
