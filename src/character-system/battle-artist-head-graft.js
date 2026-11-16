@@ -330,18 +330,71 @@ export function attachBattleArtistHead({character,recipe,source,pattern=null,ani
  * identity. Studio groom is a ONE-TIME static construction, not a CPU
  * hair-physics simulation on all 100 actors.
  */
+/**
+ * The Blender head mesh includes a broad neck/shoulder skirt below the
+ * cranium. A scalp groom computed from the ENTIRE bounds produces a huge
+ * synthetic wig cap that floats beside or above the actual skull.
+ * Hair positions stay in the original head mesh's LOCAL coordinates,
+ * but scalp candidates are derived only from the upper true cranial
+ * triangles, so the wig is fitted against the same head as the studio.
+ */
+export function cranialScalpSurface(face,{cranialFraction=.65}={}){
+ if(!face?.isMesh||!face.geometry?.getAttribute('position'))
+  throw Error('Real sculpted face required for cranial wig fitting');
+ if(cranialFraction<.58||cranialFraction>.78)throw Error('Invalid cranial fraction');
+ const geometry=face.geometry;
+ geometry.computeBoundingBox();
+ const box=geometry.boundingBox,vertices=geometry.getAttribute('position');
+ const cutoff=box.min.y+(box.max.y-box.min.y)*(1-cranialFraction);
+ const sourceIndex=geometry.getIndex(),triangles=sourceIndex?
+  sourceIndex.count/3:vertices.count/3;
+ const positions=[];
+ for(let triangle=0;triangle<triangles;triangle++){
+  const ids=[0,1,2].map(i=>sourceIndex?
+   sourceIndex.getX(triangle*3+i):triangle*3+i);
+  if(ids.some(i=>vertices.getY(i)<cutoff))continue;
+  for(const id of ids)positions.push(vertices.getX(id),vertices.getY(id),vertices.getZ(id));
+ }
+ if(positions.length<900)throw Error('No usable real scalp triangle surface');
+ const cropped=new THREE.BufferGeometry();
+ cropped.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
+ cropped.computeVertexNormals();
+ cropped.computeBoundingBox();
+ const proxy=new THREE.Mesh(cropped,face.material);
+ proxy.name='CRANIAL_SCALP_HAIR_SAMPLING_PROXY';
+ return {
+  proxy,geometry:cropped,
+  triangles:positions.length/9,
+  cutoffY:cutoff,
+  originalHeadHeight:box.max.y-box.min.y,
+  croppedHeadHeight:cropped.boundingBox.max.y-cropped.boundingBox.min.y
+ };
+}
 export function equipBattleStudioHair(artistHead,pattern,{hero=false}={}){
  if(!artistHead?.attached||!artistHead.face?.geometry||!pattern?.hairStyleId)
   throw Error('Physical artist head and compatible v43 hair pattern required');
  if(artistHead.studioWig)return artistHead.studioWig;
  const count=hero?360:112;
- const wig=createScalpAnchoredWig(artistHead.face,{
-  count,styleId:pattern.hairStyleId,color:pattern.hairColor,
-  gender:pattern.sex,lengthScale:pattern.hairLengthScale,
-  volumeProfile:pattern.hairVolume||'natural',
-  fineFringeMultiplier:hero?2:1.25,visualFiberMultiplier:1,
-  staticGroom:true,normalLayeredSingleMesh:true
+ const scalp=cranialScalpSurface(artistHead.face,{
+  cranialFraction:artistHead.cranialFit?.cranialFraction??.65
  });
+ let wig;
+ try{
+  wig=createScalpAnchoredWig(scalp.proxy,{
+   count,styleId:pattern.hairStyleId,color:pattern.hairColor,
+   gender:pattern.sex,lengthScale:pattern.hairLengthScale,
+   volumeProfile:pattern.hairVolume||'natural',
+   fineFringeMultiplier:hero?2:1.25,visualFiberMultiplier:1,
+   staticGroom:true,normalLayeredSingleMesh:true
+  });
+ }finally{
+  // Hair is static; all cap and strand triangles have been baked into
+  // independent geometry. Never keep another copy of the head on the GPU.
+  scalp.geometry.dispose();
+ }
+ artistHead.studioWigCranialScalpTriangles=scalp.triangles;
+ artistHead.studioWigCranialHeightRatio=
+  +(scalp.croppedHeadHeight/scalp.originalHeadHeight).toFixed(3);
  artistHead.face.add(wig.root);
  artistHead.studioWig=wig;
  artistHead.studioWigStyleId=pattern.hairStyleId;
@@ -366,6 +419,7 @@ export function battleHeadMasterStats(actors=[]){
   savedGeneratorPatterns:human.filter(a=>a.studioPattern?.source==='saved-heroine-editor').length,
   fullStudioWigs:human.filter(a=>!!a.masterHead?.studioWig).length,
   studioHairSources:[...new Set(human.map(a=>a.masterHead?.studioHairSource).filter(Boolean))],
+  cranialScalpWigs:human.filter(a=>a.masterHead?.studioWigCranialScalpTriangles>0&&a.masterHead?.studioWig).length,
   faceLightCorrected:human.filter(a=>a.masterHead?.skinLightResponseVersion===BATTLE_FACE_LIGHT_RESPONSE_VERSION).length,
   faceMaterialFailures:human.filter(a=>a.masterHead?.attached&&(
    !a.masterHead.face?.visible||
