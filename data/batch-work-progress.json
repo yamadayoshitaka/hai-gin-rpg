@@ -62,12 +62,12 @@
     },
     "monster": {
       "source": "ChatGPT 定期タスクの実行結果",
-      "lastRunAt": "2026-11-16T23:17:38+09:00",
-      "subject": "PR #426 m048 背びれUVと遊泳メッシュ描画境界の実修正",
-      "summary": "monster.enabled=true確認。m048背びれ膜へ非退化UVを追加しPBRテクスチャ適用可能にした。遊泳で変形する胴体・腹側・背びれ・側線のboundingSphereを再計算し視錐台カリング誤判定を防止。実ソースSHA fd0cb86f。ソース再取得で静的文字列確認のみ成功。Node構文/WebGL/Android QAは未実施。GLB0、ゲーム反映0、マージ/公開なし。全108件監査未完了。",
+      "lastRunAt": "2026-11-17T08:10:00+09:00",
+      "subject": "PR #426 m020 dorsal fin UV実修正・描画QA保留",
+      "summary": "monster.enabled=true。m020背びれ膜のprocedural fin生成器にUVを追加し、bake/PBRに必要なUV欠落を修正。実ソースSHA a67a424、チェックポイントSHA 6d7505c。Node/WebGL/Android未検証。m048も未検証。GLB0、ゲーム採用0、mainマージ/Pages公開なし。",
       "status": "work_incomplete",
       "carryover": true,
-      "nextAction": "PR #426最新headのNode構文、m048 UV/animated boundsの描画回帰、m020/m048四方向WebGLとAndroid FPS、mobile-battle E2E失敗を修正。108ID全数監査後、同系統へ拡張。",
+      "nextAction": "m020 fin UVのNode構文・WebGL前後左右/UV/PBRとm048の動的境界を確認。E2E 3失敗ジョブ修正、Android FPS測定、108ID全数分類。",
       "steps": {
         "launch": "done",
         "code": "done",
@@ -79,27 +79,30 @@
       },
       "evidence": [
         {
-          "label": "m048 UV/bounds実ソースコミット",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/fd0cb86f864f22f189c39266bb3544ca75b38896"
+          "label": "m020 dorsal fin UV source",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/a67a42415ea34a55500b82d0ddd43f76d59a854c"
         },
         {
-          "label": "Draft PR #426",
+          "label": "checkpoint",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/6d7505c6ac2b99d011ce30e077f6ea2737e9d163"
+        },
+        {
+          "label": "PR #426",
           "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/426"
         },
         {
-          "label": "m048再開チェックポイント",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/648ce05f1ade3df1e4b777ad9744be6c03fb41b0"
+          "label": "split E2E failures",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/43946658821"
         }
       ],
       "operational": {
         "blockers": [
-          "Node実行による構文・対象別テスト未実施（GitHubソースの静的文字列確認のみ）",
-          "m020/m048前後左右WebGL画像未確認",
-          "Android FPS未実測",
-          "PR #426 mobile-battle E2E未合格",
-          "正本108IDの全数分類未完了"
+          "m020/m048 Node構文・四方向WebGL描画QA未完了",
+          "Android FPS未計測",
+          "monster-manager/skirmish-two-legs/summon-gallery-mobile E2E失敗",
+          "正本108ID全数分類未完了"
         ],
-        "speedPlan": "m048最新差分のNode/ブラウザQAを先に解消し、m020と併せて描画合格後に海棲骨格群へ展開",
+        "speedPlan": "m020 fin UVとm048の静的・WebGL検証を優先し、失敗ジョブを個別修正。合格前はマージしない。",
         "lastRunOutcome": {
           "newSourceChangedIds": 1,
           "newQAPassed": 0,
@@ -111,29 +114,29 @@
     },
     "world": {
       "source": "ChatGPT定期品質回帰の実行結果＋GitHub証跡",
-      "lastRunAt": "2026-11-17T02:56:55+09:00",
+      "lastRunAt": "2026-11-17T04:47:31+09:00",
       "status": "work_incomplete",
       "carryover": true,
-      "subject": "53種：過去21件の実ソースSHAを復元、現行作業ブランチ欠落の照合継続",
-      "summary": "world.enabled=true確認。main正本53件・審査中11件・承認0件。過去コミット396f3e4dのチェックポイント21件について実ソースSHAを読み取り確認（全qa=unverified）。現行world/photoreal-regression-reviewのチェックポイントは404。過去保存21件とmain審査11件は別集計。今回新規実3Dソース変更0・GLB0・QA合格0・ゲーム反映0・ソースコミット0・mainマージ0・Pages公開0。",
-      "nextAction": "PR #441の実head/ブランチと過去保存SHAの祖先関係を検証し、現行実ソースとの差分の静的QAを行う。WebGL/Android未実測はunverifiedを維持し、合格前のマージ禁止。",
+      "subject": "PR #441 螺旋階段2種の共有PBR材質副作用を実修正",
+      "summary": "world.enabled=true確認。PR #441の正規作業ブランチにある21件のcheckpointを確認。螺旋階段2種でtread.material.sideを共有stone/woodへ書き込んでいたため、専用clone材質へ切替。実ソースSHA 52b27b32、checkpoint SHA 3c90ce8e。Node/WebGL/Android未実行のためQA合格0、GLB0、ゲーム反映0、mainマージ0、Pages公開0。main審査11件・承認0件は別集計。",
+      "nextAction": "PR #441のNode構文・対象別WebGL画面比較・Android FPSを実行し、螺旋階段2種の材質と他オブジェクトへの副作用を確認。合格までmainマージ禁止。",
       "steps": {
         "launch": "done",
-        "code": "pending",
+        "code": "done",
         "qa": "pending",
-        "commit": "pending",
+        "commit": "done",
         "pr": "done",
         "merge": "pending",
         "deploy": "pending"
       },
       "evidence": [
         {
-          "label": "過去21件の実ソースSHA記録",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/blob/396f3e4d655c4fb6f230b09384b11a39fe38d0d7/data/batch-checkpoints/world.json"
+          "label": "実ソース修正",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/52b27b32e8b31fdcc3b0f0efa37882c5559da289"
         },
         {
-          "label": "main正本53件",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/blob/main/data/world-quality/object-realism-acceptance.json"
+          "label": "21件チェックポイント更新",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/3c90ce8e3449e8b9185329a3277773b76c2042ad"
         },
         {
           "label": "PR #441",
@@ -141,10 +144,10 @@
         }
       ],
       "lastRunOutcome": {
-        "newSourceChangedIds": 0,
+        "newSourceChangedIds": 2,
         "newQAPassed": 0,
         "newGameAppliedIds": 0,
-        "newSourceCommits": 0,
+        "newSourceCommits": 1,
         "newGeneratedGLBs": 0,
         "branchSavedCount": 21,
         "mainInReviewCount": 11,
@@ -152,17 +155,15 @@
       },
       "operational": {
         "blockers": [
-          "現行作業ブランチのチェックポイントが404で、過去21件の保存記録との連続性が未確認",
-          "PR #441実headと各保存ソースSHAの対応未確認",
-          "Node/WebGL/Androidの対象別実行QA未完了"
+          "Node構文・WebGL画面比較・Android実測未実施",
+          "FF15級の視覚品質とFPSの受入未確認"
         ],
-        "speedPlan": "PR #441実headの特定→過去21件のSHAとの比較→実3D差分の静的QA。QA未合格ならマージしない。",
+        "speedPlan": "螺旋階段2IDの実描画QA→材質共有副作用の回帰→次の同系統5件を改修",
         "lastRunOutcome": {
-          "newSourceChangedIds": 0,
+          "newSourceChangedIds": 2,
           "newQAPassed": 0,
           "newGameAppliedIds": 0,
-          "newSourceCommits": 0,
-          "newGeneratedGLBs": 0
+          "newSourceCommits": 1
         }
       }
     },

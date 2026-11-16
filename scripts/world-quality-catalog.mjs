@@ -5,7 +5,7 @@ import {CAMPAIGN_STAGES} from '../src/campaign-stage-plan.js';
 const src=fs.readFileSync(new URL('../src/object-catalog.js',import.meta.url),'utf8');
 const objects=[...src.matchAll(/^[ \t]+([a-z][\w]*):\{id:'([^']+)',name:'([^']+)',category:'([^']+)',kind:'([^']+)'/gm)]
  .map(([,key,id,name,category,kind])=>({key:'object:'+id,id,name,category,kind,type:'object'}));
-if(objects.length<45||new Set(objects.map(x=>x.id)).size!==objects.length)
+if(objects.length<60||new Set(objects.map(x=>x.id)).size!==objects.length)
  throw Error('Object catalog changed; adjust parser instead of silently losing objects.');
 if(CAMPAIGN_STAGES.length!==200||new Set(CAMPAIGN_STAGES.map(x=>x.id)).size!==200)
  throw Error('Campaign catalog is not 20x10 stages.');

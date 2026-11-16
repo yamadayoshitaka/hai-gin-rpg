@@ -158,13 +158,18 @@ function compactMaskedGeometry(original,kept){
  geometry.setIndex(indices);
  return {geometry,vertices:used.length};
 }
-export function clipBodyToGarment(characterModel,coverage,{surfaceCheck=false,preserveRegions=[]}={}){
+export function clipBodyToGarment(characterModel,coverage,{surfaceCheck=false,preserveRegions=[],forceCoveredRegions=[]}={}){
  // Studio previews must preserve a REAL skinned anatomical leg below pants,
  // boots and metal, even if the garment hides all its pixels. Otherwise
  // removing leg plates can reveal an empty hollow or missing flesh.
  const preserved=new Set(preserveRegions);
- const hidden=new Set((coverage?.regions||[]).filter(zone=>!preserved.has(zone)));
- const enclosed=new Set((coverage?.enclosedRegions||[]).filter(zone=>!preserved.has(zone)));
+ const hidden=new Set([...(coverage?.regions||[]),...forceCoveredRegions]
+  .filter(zone=>!preserved.has(zone)));
+ // Closed battle tunics must not let bare chest/back skin protrude during
+ // motion. Only the specified proven-opaque zones bypass spatial sampling;
+ // all uncovered fingers, face and forearms remain conservative.
+ const enclosed=new Set([...(coverage?.enclosedRegions||[]),
+  ...forceCoveredRegions].filter(zone=>!preserved.has(zone)));
  const sampler=surfaceCheck?buildGarmentSurfaceCoverage(coverage?.surfaceMeshes):null;
  const entries=[],measure={sourceTriangles:0,keptTriangles:0,removedTriangles:0,
   surfaceChecked:surfaceCheck,garmentSurfaceSamples:sampler?.samples||0,
@@ -185,9 +190,13 @@ export function clipBodyToGarment(characterModel,coverage,{surfaceCheck=false,pr
   if(!variants){variants=new Map();maskCache.set(original,variants)}
   // The actual garment surface is instance-specific: avoid reusing a
   // front-only plate mask for another outfit with the same slot names.
+  // Each verified closed-tunic policy needs an isolated cached mask.
+  // Otherwise a bare source mesh can reuse an incompatible earlier mask.
   const cacheKey=surfaceCheck?
-   (preserved.size?{coverage,preserved:[...preserved]}:coverage):
-   coverage.signature+'|preserve:'+([...preserved].sort().join(','));
+   (preserved.size||forceCoveredRegions.length?
+     {coverage,preserved:[...preserved],forced:[...forceCoveredRegions]}:coverage):
+   coverage.signature+'|preserve:'+([...preserved].sort().join(','))+
+     '|force:'+([...forceCoveredRegions].sort().join(','));
   let record=variants.get(cacheKey);
   if(!record){
    const cut=new Uint8Array(positions.count);
