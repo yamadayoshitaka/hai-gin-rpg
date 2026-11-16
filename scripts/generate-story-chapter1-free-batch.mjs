@@ -112,7 +112,20 @@ function compactRequired(s){
  return false;
 }
 const compactQueue=pages.flatMap(pg=>pg.shots).filter(compactRequired);
-if(!compactQueue.length||!compactQueue.some(s=>s.stage.id==='c01-s04'))
+// Minimum-first policy counts each scene once, not automatically twice for
+// the player's gender. Distinct assets are still mandatory unless human
+// visual QA proves the candidate contains no protagonist.
+const minimumCGIdentities=new Map();
+for(const s of compactQueue){
+ const key=[s.stage.id,s.edition,s.shot.id].join('|');
+ if(!minimumCGIdentities.has(key))minimumCGIdentities.set(key,[]);
+ minimumCGIdentities.get(key).push(s);
+}
+if(minimumCGIdentities.size!==44||compactQueue.length!==88||
+ [...minimumCGIdentities.values()].some(variants=>variants.length!==2||
+  !variants.some(v=>v.gender==='male')||!variants.some(v=>v.gender==='female')))
+ throw Error('Chapter 1 minimum-first contract: 44 scenes x 2 protected gender variants');
+if(!compactQueue.some(s=>s.stage.id==='c01-s04'))
  throw Error('Compact queue missing canonical scenes');
 function status(s){
  // A separately owner-accepted, native and physically present live image supersedes
@@ -144,6 +157,11 @@ function progress(){
   blocked:all.filter(s=>status(s).startsWith('BLOCKED')).map(s=>s.key),
   gameRegistrationsByThisTool:0,approvedByThisTool:0,
   compactTargets:compactQueue.length,
+  minimumPrimaryCGSlots:minimumCGIdentities.size,
+  minimumPrimaryMissing:([...minimumCGIdentities.values()]).filter(variants=>
+    variants.every(s=>!['REGISTERED_NOT_P0_CERTIFIED','REAL_DRAFT_UNAPPROVED'].includes(status(s)))).length,
+  genderVariants:compactQueue.length,
+  provenGenderNeutralArtShares:0,
   compactSatisfiedUnapproved:compactQueue.filter(s=>
     ['REGISTERED_NOT_P0_CERTIFIED','REAL_DRAFT_UNAPPROVED'].includes(status(s))).length,
   compactStillMissing:compactQueue.filter(s=>![
@@ -172,6 +190,9 @@ if(mode==='plan'){
  console.log(JSON.stringify({pages:132,scenes:462,registered:result.existingRegisteredUnapproved,
   drafts:result.generatedDraftUnapproved,missing:result.missing,blocked:result.blocked.length,
   startStage,throughStage,
+  minimumPrimaryCGSlots:result.minimumPrimaryCGSlots,
+  minimumPrimaryMissing:result.minimumPrimaryMissing,
+  genderVariants:result.genderVariants,
   compactTargets:result.compactTargets,compactMissing:result.compactStillMissing,
   nextTask:result.pageStates.find(pg=>pg.stage>=startStage&&pg.stage<=throughStage&&pg.shotKeys.some(
    (key,i)=>pg.compactRequiredKeys.includes(key)&&
