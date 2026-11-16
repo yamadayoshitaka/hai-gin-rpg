@@ -111,12 +111,12 @@
     },
     "world": {
       "source": "ChatGPT定期品質回帰の実行結果＋GitHub証跡",
-      "lastRunAt": "2026-11-17T01:20:16+09:00",
+      "lastRunAt": "2026-11-17T01:47:37.068+09:00",
       "status": "work_incomplete",
       "carryover": true,
-      "subject": "53種：PR #441既存21件QA未確認、実ソース改修未実施",
-      "summary": "2026-11-17T01:20:16+09:00 main world.enabled=true確認。今回実ソース変更0件、実ソースコミット0件（SHAなし）、原型/GLB0件、対象別QA合格0件、ゲーム反映0件、マージ0件、公開0件。main受入台帳53件・審査中11件・承認0件・未承認53件。PR #441の過去保存スナップショット21件（全QA unverified）、未保存32件。現行PR headの検証と実行QAは未実施。",
-      "nextAction": "PR #441最新headを取得し21件のNode構文・対象別回帰QA、WebGL/Android検証を進め、不合格修正と未保存群の実3D造形へ。",
+      "subject": "53種：専用ブランチ乖離とチェックポイント欠落を検出、実3D QA未完了",
+      "summary": "2026-11-17T01:47:37.068+09:00 world.enabled=true確認。今回新規実ソース変更0ID・実ソースコミット0・GLB0・対象別QA合格0・ゲーム反映0・mainマージ0・Pages公開0。main受入53件・審査中11件・承認0件。PR #441の21件保存は過去コミット396f3e4dのスナップショットにのみ確認（全QA unverified）。現行world/photoreal-regression-reviewにはチェックポイントが存在しない(404)。mainとの比較はahead13/behind110で、差分にsrc/object-catalog.jsは含まれず参考画像・レポート中心。過去21件とmain11件は別集計。",
+      "nextAction": "PR #441の実headを確認し、過去チェックポイント21件のソースSHAと現行作業ブランチを照合。専用実改修ブランチを特定後、静的QAを実行し、実描画/Androidはunverifiedのまま保留。安全な実ソース修正を小刻みにコミット。",
       "steps": {
         "launch": "done",
         "code": "pending",
@@ -128,44 +128,20 @@
       },
       "evidence": [
         {
-          "label": "作業ブランチ21件の保存記録（全QA unverified）",
+          "label": "過去21件の保存チェックポイント",
           "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/blob/396f3e4d655c4fb6f230b09384b11a39fe38d0d7/data/batch-checkpoints/world.json"
         },
         {
-          "label": "作業継続 PR #441",
+          "label": "既存PR #441",
           "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/441"
         },
         {
-          "label": "mainの全53種受入台帳（審査中11、承認0）",
+          "label": "main受入台帳",
           "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/blob/main/data/world-quality/object-realism-acceptance.json"
         },
         {
-          "label": "扉5種類の一括実3D造形 PR #442",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/442"
-        },
-        {
-          "label": "扉5種の実ソース最終コミット",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/5fc214ae4b79fcd651ee22a73004a720f188be31"
-        },
-        {
-          "label": "World品質CI成功",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/43743734541"
-        },
-        {
-          "label": "食卓・椅子の木組み PR #434",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/434"
-        },
-        {
-          "label": "田畑2種 PR #427",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/427"
-        },
-        {
-          "label": "木樽・井戸 PR #430",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/430"
-        },
-        {
-          "label": "53件の個別承認台帳",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/blob/main/data/world-quality/object-realism-acceptance.json"
+          "label": "参考画像用ブランチ",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/tree/world/photoreal-regression-review"
         }
       ],
       "lastRunOutcome": {
@@ -182,11 +158,11 @@
       },
       "operational": {
         "blockers": [
-          "PR #441の最新headおよびWebGL/Android実行QA未検証",
-          "既存21件の対象別QAはunverified",
-          "今回実ソース変更と実ソースコミットなし"
+          "現行world/photoreal-regression-reviewのdata/batch-checkpoints/world.jsonが404。21件は過去SHAでのみ確認",
+          "参考画像ブランチがmainより110コミット遅れ、比較差分に実3Dソースがない",
+          "PR #441の実head、Node構文、WebGL画像、Android FPSが未確認"
         ],
-        "speedPlan": "既存21件のQA解消を先行し、未保存の同系統5〜10IDの共通生成器を小分け実改修",
+        "speedPlan": "PR #441の実headと実ソースSHAを優先照合。作業用ブランチを特定し、21件の静的QA→同系統5件の実メッシュ修正を段階コミット。",
         "lastRunOutcome": {
           "newSourceChangedIds": 0,
           "newQAPassed": 0,
