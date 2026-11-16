@@ -20,7 +20,7 @@ import {FEMALE_V7_DEFAULTS,MALE_REFERENCE_DEFAULT} from '../face-v7-controls.js'
 import {hideBattleDonorFace,attachIndependentFaceToBattleHead,enhanceHeroineFaceSurface}
  from '../heroine-battle-costume-bridge.js?v=70';
 import {createFaceExpressionAnimator} from '../face-expression-animation-v48.js?v=68';
-import {createScalpAnchoredWig} from '../face-scalp-wig.js?v=20261116-middlelod1';
+import {createScalpAnchoredWig} from '../face-scalp-wig.js?v=20261116-scalpfill1';
 
 export const BATTLE_HEAD_MASTER_VERSION='real-sculpt-head-graft-v1';
 export const BATTLE_HEAD_MASTER_ASSET='assets/master-sources/blender/realistic-head-animation.glb';
@@ -409,9 +409,11 @@ export function equipBattleStudioHair(artistHead,pattern,{hero=false,quality='ne
  if(!artistHead?.attached||!artistHead.face?.geometry||!pattern?.hairStyleId)
   throw Error('Physical artist head and compatible v43 hair pattern required');
  if(!['near','middle'].includes(quality))throw Error('Invalid battle hair LOD');
- if(artistHead.studioWig&&artistHead.studioWigQuality===quality)return artistHead.studioWig;
- if(artistHead.studioWig)releaseBattleStudioHair(artistHead);
- const count=quality==='middle'?72:hero?360:112;
+ if(artistHead.studioWig&&artistHead.studioWigQuality===quality&&
+  artistHead.studioWigStyleId===pattern.hairStyleId)return artistHead.studioWig;
+ // Keep the old visible hair until a complete replacement has baked.
+ const previousWig=artistHead.studioWig||null;
+ const count=quality==='middle'?112:hero?360:168;
  const scalp=cranialScalpSurface(artistHead.face,{
   cranialFraction:artistHead.cranialFit?.cranialFraction??.65
  });
@@ -422,8 +424,9 @@ export function equipBattleStudioHair(artistHead,pattern,{hero=false,quality='ne
    gender:pattern.sex,lengthScale:pattern.hairLengthScale,
    volumeProfile:pattern.hairVolume||'natural',
    fineFringeMultiplier:quality==='middle'?1.25:hero?2:1.25,
-   visualFiberMultiplier:1,normalLayerCount:quality==='middle'?1:3,
-   staticGroom:true,normalLayeredSingleMesh:true
+   visualFiberMultiplier:1,normalLayerCount:quality==='middle'?1:2,
+   staticGroom:true,normalLayeredSingleMesh:true,
+   battleStableCoverage:true
   });
  }finally{
   // Hair is static; all cap and strand triangles have been baked into
@@ -433,7 +436,12 @@ export function equipBattleStudioHair(artistHead,pattern,{hero=false,quality='ne
  artistHead.studioWigCranialScalpTriangles=scalp.triangles;
  artistHead.studioWigCranialHeightRatio=
   +(scalp.croppedHeadHeight/scalp.originalHeadHeight).toFixed(3);
+ // Atomic swap: a failed near/middle bake never leaves a bald character.
  artistHead.face.add(wig.root);
+ if(previousWig){
+  previousWig.root.removeFromParent();
+  previousWig.dispose();
+ }
  artistHead.studioWig=wig;
  artistHead.studioWigStyleId=pattern.hairStyleId;
  artistHead.studioWigQuality=quality;

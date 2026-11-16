@@ -2209,7 +2209,7 @@ test('v41 real female anatomical legs remain after studio armor coverage across 
  // existing core torso lining behind partial robe-back geometry.
  assert.match(source,/\.\.\.studioSkinPolicy\.preserveRegions/);
  assert.match(source,/preserveRegions:occlusionPreserveRegions/);
- assert.match(source,/battleBackUnderlay=quality==='battle'\?\['torso'\]/);
+ assert.match(source,/battleBackUnderlay=quality==='battle'&&opaqueTorsoLiningMaterials===0/);
  assert.match(coverage,/const preserved=new Set\(preserveRegions\)/);
  assert.match(bridge,/studioPreserveLegAnatomy:true/);
  const actor=new THREE.Group();

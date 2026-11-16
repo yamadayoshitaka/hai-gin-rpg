@@ -361,7 +361,7 @@ export function appendRealCrownUnderlay(geo,box,vertices,normals,volumeProfile='
  return {triangles,source:'real-source-head',sameDrawMesh:true};
 }
 
-function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile='natural'}={}){
+function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile='natural',battleStableCoverage=false}={}){
  const src=geo.getAttribute('position'),idx=geo.index;
  const n=idx?idx.count:src.count,d=box.getSize(new THREE.Vector3());
  const normals=geo.getAttribute('normal'),verts=[],smoothNormals=[],sourceScalpVerts=[];
@@ -488,6 +488,29 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
    }
   }
  }
+ // Short-haired battle models had NO rear undercoat: sparse dark cap plus
+ // 1.3%-head-height buzz lines became a bald polygon at normal distances.
+ // These tiny staggered strips are baked INTO the existing cap draw mesh.
+ const shortBackStrips=shortHair&&battleStableCoverage&&rearCandidates.length?96:0;
+ for(let k=0;k<shortBackStrips;k++){
+  const sampleIndex=Math.min(rearCandidates.length-1,
+   Math.floor(fract((k+1)*.61803398875)*rearCandidates.length));
+  const p=rearCandidates[sampleIndex],hw=d.x*.014;
+  const yTip=p.y-d.y*(.06+.035*fract(k*.38196601125));
+  const zTip=p.z-d.z*(.018+.014*fract(k*.754877666));
+  const shift=(fract(k*.5698403)-.5)*d.x*.015;
+  for(const v of [
+   f3(p.x-hw,p.y,p.z-d.z*.002),
+   f3(p.x+shift-hw*.7,yTip,zTip),
+   f3(p.x+hw,p.y,p.z-d.z*.002),
+   f3(p.x+hw,p.y,p.z-d.z*.002),
+   f3(p.x+shift-hw*.7,yTip,zTip),
+   f3(p.x+shift+hw*.7,yTip,zTip)
+  ]){
+   verts.push(v.x,v.y,v.z);
+   smoothNormals.push(0,0,-1);
+  }
+ }
  const material=new THREE.MeshPhysicalMaterial({
   color:new THREE.Color(color),vertexColors:true,
   roughness:.80,metalness:0,clearcoat:.023,clearcoatRoughness:.76,
@@ -520,6 +543,7 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
  mesh.userData.rearUndercoatAnchoredToRealScalp=rearCandidates.length>0;
  mesh.userData.rearUndercoatTriangleCount=undercoatStrips*stripSegments*2;
  mesh.userData.rearUndercoatStripCount=undercoatStrips;
+ mesh.userData.shortBackCoverageStripCount=shortBackStrips;
  mesh.userData.rearUndercoatMaxStripWidth=stripWidths.length?Math.max(...stripWidths):0;
  mesh.userData.rearUndercoatTipHeightRange=tipHeights.length?
   Math.max(...tipHeights)-Math.min(...tipHeights):0;
@@ -530,7 +554,7 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
  * @param {THREE.Mesh} head  owned sculpted female head
  * @param {{count?:number,color?:number,externalColliders?:Array}} options
  */
-export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalColliders=[],bodyCollisionResolver=null,lengthScale=1,styleId=DEFAULT_WIG_STYLE_ID,fineFringeMultiplier=1,visualFiberMultiplier=1,staticGroom=true,volumeProfile='natural',normalLayeredSingleMesh=false,normalLayerCount=3,gender='female'}={}){
+export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalColliders=[],bodyCollisionResolver=null,lengthScale=1,styleId=DEFAULT_WIG_STYLE_ID,fineFringeMultiplier=1,visualFiberMultiplier=1,staticGroom=true,volumeProfile='natural',normalLayeredSingleMesh=false,normalLayerCount=3,gender='female',battleStableCoverage=false}={}){
  if(!WIG_BASE_VOLUME_PROFILES[volumeProfile])
   throw Error('Unknown wig volume profile: '+volumeProfile);
  const style=getWigStyle(styleId);
@@ -591,7 +615,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  root.userData.whorlPosition=whorl.toArray();
  const cap=scalpShell(head.geometry,box,color,{
   fullBody:!!bodyCollisionResolver,shortHair:!!style.shortCutKind,
-  volumeProfile});root.add(cap);
+  battleStableCoverage,volumeProfile});root.add(cap);
  const baseCount=clamp(Math.round(count),48,2400),segments=11;
  // Allocate EXTRA fine roots at the forehead without removing the existing
  // crown, rear and nape locks. Legacy face-test count stays unchanged at 1x.
@@ -727,8 +751,10 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    // halfway up the forehead. Only shortCutKind may remain cropped.
    Math.max(.86,clamp(lengthScale,minLengthScale,1.5));
   const cutKind=style.shortCutKind||null;
-  const shortLength=cutKind==='buzz'?.013:
-   cutKind==='very-short'?.060:.15;
+  // Do not make all battle buzz cuts visually bald. Actual crop length
+  // remains short, without changing studio/editor style definitions.
+  const shortLength=cutKind==='buzz'?(battleStableCoverage?.088:.013):
+   cutKind==='very-short'?(battleStableCoverage?.115:.060):.15;
   const length=cutKind?d.y*shortLength*(.84+.26*fract(i*.618)):
    (fringe||overFace)?
     Math.max(d.y*.008,Math.min(bangLength,wigRoot.y-browLimit)):
@@ -1314,6 +1340,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   v65CrownTopologyRepairCount:cap.userData.v65CrownTopologyRepairCount,
   v65CrownTopologyRepairTriangles:cap.userData.v65CrownTopologyRepairTriangles,
   v66RealCrownUnderlayTriangles:cap.userData.v66RealCrownUnderlayTriangles,
+  battleStableCoverage,shortBackCoverageStripCount:cap.userData.shortBackCoverageStripCount,
   frontRootCoverage:'lower-scalp-cap-and-overlapping-hair-cards',
   fringeCardWidthFactor:.43,
   maleLongFringeMinimumScale:.86,
