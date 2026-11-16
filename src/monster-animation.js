@@ -137,10 +137,42 @@ export function animateMonsterModel(model,time=0){
      }
    }
    model.userData.m001GaitAngles=next;
+   // Foot planting is solved from the same four fixed-length joint
+   // segments in sagittal space; this never moves the hip socket, scales
+   // bones, runs a full scene-graph traversal or allocates GPU geometry.
+   // It gives the bent idle legs a grounded forward-weight crouch.
+   let targetSettle=-.060;
+   if(model.userData.detail!=='low'){
+     const alongY=(joint,angle)=>joint.position.y*Math.cos(angle)-
+       joint.position.z*Math.sin(angle);
+     let lowest=Infinity;
+     for(const side of ['L','R'])for(const limb of ['front','rear']){
+       const id=limb+side;
+       const upper=p['leg'+id],knee=p['lower'+id],
+         hock=p['beastHock'+id],pastern=p['beastPastern'+id],
+         toe=p['beastToe'+id];
+       if(!upper||!knee||!hock||!pastern||!toe)continue;
+       const a=upper.rotation.x,b=a+knee.rotation.x,
+         c=b+hock.rotation.x,d=c+pastern.rotation.x;
+       const height=upper.position.y+upper.scale.y*(
+         alongY(knee,a)+alongY(hock,b)+alongY(pastern,c)+
+         alongY(toe,d)-.034);
+       lowest=Math.min(lowest,height);
+     }
+     if(Number.isFinite(lowest))
+       targetSettle=Math.max(-.155,Math.min(.012,.016-lowest));
+   }
+   const prevSettle=model.userData.m001BodySettleY;
+   const settleAlpha=dt==null?1:1-Math.exp(-11*dt);
+   const settle=Number.isFinite(prevSettle)?
+     prevSettle+(targetSettle-prevSettle)*settleAlpha:targetSettle;
+   model.userData.m001BodySettleY=settle;
+   model.position.y+=settle;
    model.userData.m001GaitTime=time;
  }else if(model.userData.speciesId==='m001'){
    model.userData.m001GaitAngles=null;
    model.userData.m001GaitTime=null;
+   model.userData.m001BodySettleY=null;
  }
  // Existing jaw pivot continues its action animation; speech adds a
  // bounded jaw opening after the usual pose (no bones duplicated).
