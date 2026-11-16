@@ -42,6 +42,50 @@ export function loadBattleHeadMaster(){
  return headSourcePromise;
 }
 const clamp=(x,min,max)=>Math.min(max,Math.max(min,x));
+
+/**
+ * The generic face catalogue's pale #ebc5b7 skin becomes nearly white under
+ * the battlefield's intense hemisphere + sun lights (2.5 + 2.2).
+ * This battle-only PBR finish matches the warmer exposed hands. The saved
+ * creator face geometry, eye pigments, make-up, textures and hair are untouched.
+ * Keep this independent of camera distance and rarity so LOD cannot bleach it.
+ */
+export const BATTLE_FACE_SKIN_TONE_VERSION='battle-skin-no-whitewash-v1';
+export function correctBattleFaceSkinTone(face,{sex='male'}={}){
+ if(!face?.isMesh||!face.material||face.userData?.faceColorMode!=='color')
+  throw Error('A colorized, real battle face mesh is required');
+ const material=Array.isArray(face.material)?face.material[0]:face.material;
+ if(!material?.color||!material.isMeshStandardMaterial)
+  throw Error('Battle face must retain its actual PBR skin material');
+ // Only synthetic, untextured sculpt colours require a correction: never
+ // overwrite a donor skin photo, diffuse atlas, face painting or saved map.
+ if(material.map)return {corrected:false,reason:'textured-skin-preserved'};
+ const skinHex=sex==='female'?0xc99582:0xb9816b;
+ material.color.setHex(skinHex);
+ material.metalness=0;
+ material.roughness=.86;
+ if('clearcoat' in material)material.clearcoat=.012;
+ if('sheen' in material)material.sheen=.025;
+ if('specularIntensity' in material)material.specularIntensity=.48;
+ material.toneMapped=true;
+ material.needsUpdate=true;
+ // Keep eyelids contiguous with the new cheek/forehead tone. Do NOT recolour
+ // eyelashes, iris, sclera, lips, blusher or other cosmetic colour roles.
+ face.traverse(node=>{
+  if(node===face||!node.isMesh||node.userData?.colorRole!=='eyelid')return;
+  const mats=Array.isArray(node.material)?node.material:[node.material];
+  for(const m of mats)if(m?.color&&!m.map){
+   m.color.setHex(skinHex);
+   m.metalness=0;
+   m.roughness=.86;
+   m.needsUpdate=true;
+  }
+ });
+ face.userData.battleSkinToneHex='#'+skinHex.toString(16).padStart(6,'0');
+ face.userData.battleSkinToneVersion=BATTLE_FACE_SKIN_TONE_VERSION;
+ return {corrected:true,skinHex:face.userData.battleSkinToneHex,
+  skinMaterial:material.name,materialMapPreserved:true};
+}
 function artistControls(recipe){
  const fp=recipe.faceProfile||{},f=recipe.faceIndex||0;
  const base=recipe.sex==='female'?FEMALE_V7_DEFAULTS:MALE_REFERENCE_DEFAULT;
@@ -76,6 +120,8 @@ function buildArtistMaster(source,recipe,pattern=null){
  // This is the same PBR skin finish used by the artist's actual hero preview,
  // not the flat clay material of the source-head geometry.
  enhanceHeroineFaceSurface(result.face);
+ // The face editor is allowed to be bright; combat light cannot bleach skin.
+ correctBattleFaceSkinTone(result.face,{sex:recipe.sex});
  return result;
 }
 function findSculptFace(root,sex){
@@ -147,6 +193,8 @@ export function attachBattleArtistHead({character,recipe,source,pattern=null,ani
   sourceAsset:BATTLE_HEAD_MASTER_ASSET,
   generatorPattern:pattern?.version||'none',
   patternSource:pattern?.source||'legacy',
+  skinTone:master.face.userData.battleSkinToneHex||null,
+  skinToneVersion:master.face.userData.battleSkinToneVersion||null,
   hairPatternId:pattern?.hairStyleId||null,
   removedDonorTriangles:cut.removedTriangles,
   headFit:fit,nearDetail:true,cosmeticMeshes:cosmetic.length,
@@ -158,6 +206,7 @@ export function attachBattleArtistHead({character,recipe,source,pattern=null,ani
  };
  character.object3D.userData.battleHeadMaster={
   version:result.version,source:result.sourceAsset,
+  skinTone:result.skinTone,skinToneVersion:result.skinToneVersion,
   originalHeadRemoved:cut.removedTriangles,
   artistHeadAttached:true,
   headBone:fit.bone,
