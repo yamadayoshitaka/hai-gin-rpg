@@ -74,8 +74,8 @@ assert.match(game,/function updateGoalIndoorOcclusion\(\)/,
  'Room furniture is considered when shielding the camera from the active goal');
 assert.match(game,/indoorGhostMaterials=new WeakMap\(\)/,
  'Only blocking interior material groups are rendered transparently');
-assert.match(game,/updateTownInteriorVisibility\(\);updateGoalIndoorOcclusion\(\)/,
- 'Furniture cutaways run after floor visibility is established');
+assert.match(game,/if\(visibilityTask===0\)updateCameraObstructions\(\);\s*else if\(visibilityTask===1\)updateTownInteriorVisibility\(\);\s*else if\(visibilityTask===2\)updateGoalIndoorOcclusion\(\);/,
+ 'Camera obstructions, floor visibility, and then furniture cutaways run in distinct ordered frames');
 assert.match(game,/routeOccludedByTerrain\(a.cell,finalGoalCell,a\)/,
  'Skirmish movement detects intervening obstacles rather than guessing at directions');
 console.log('Camera tree/building occlusion, GPU batching and restoration regression PASS');
