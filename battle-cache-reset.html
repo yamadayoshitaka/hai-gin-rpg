@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>灰銀のレゾナンス | 表示キャッシュ一時リセット</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;min-height:100dvh;background:#0c1928;color:#e9f2fb;font:15px/1.7 system-ui,"Noto Sans JP",sans-serif;display:grid;place-items:center;padding:18px}
+main{width:min(470px,100%);background:#162d45;border:1px solid #6b94b5;border-radius:16px;padding:22px;box-shadow:0 10px 28px #0008}
+h1{font-size:19px;margin:0 0 10px;color:#f4dfac}
+p{margin:8px 0}#status{white-space:pre-line;color:#cde5f5;min-height:3.4em}
+small{display:block;color:#a8bed0;margin-top:14px}
+a{display:inline-block;background:#28587c;border:1px solid #a3c8e7;border-radius:9px;padding:9px 15px;color:white;text-decoration:none;font-weight:700;margin-top:10px}
+</style>
+</head>
+<body>
+<main>
+<h1>表示用キャッシュを更新</h1>
+<p id="status" role="status" aria-live="polite">ゲームの最新コードを確認しています…</p>
+<a id="openBattle" href="./tactics-wireframe.html?army=50&amp;mode=cpu&amp;fresh=manual">戦闘画面を開く</a>
+<small>セーブデータ、編成、設定、localStorage、IndexedDBは消去しません。削除対象はこのゲーム配下のCacheStorageとService Workerだけです。ブラウザ全体のHTTPキャッシュはサイト側から削除できないため、最新URLで再取得します。</small>
+</main>
+<script>
+(async()=>{
+ const root=new URL('./',location.href),status=document.getElementById('status');
+ const dest=new URL('./tactics-wireframe.html',root);
+ dest.searchParams.set('army','50');
+ dest.searchParams.set('mode','cpu');
+ dest.searchParams.set('fresh','reset-20261116-'+Date.now());
+ document.getElementById('openBattle').href=dest.href;
+ const write=(message)=>{status.textContent=message;};
+ let removed=0,unregistered=0,refreshed=0,errors=0;
+ write('このゲームの一時キャッシュを削除しています…');
+ try{
+  if('caches' in window){
+   for(const name of await caches.keys()){
+    const cache=await caches.open(name);
+    for(const req of await cache.keys()){
+     let uri;try{uri=new URL(req.url)}catch{continue}
+     if(uri.origin===location.origin&&uri.pathname.startsWith(root.pathname)){
+      if(await cache.delete(req))removed++;
+     }
+    }
+    if((await cache.keys()).length===0)await caches.delete(name);
+   }
+  }
+ }catch(e){errors++;console.warn('CacheStorage reset:',e)}
+ try{
+  if('serviceWorker' in navigator){
+   for(const registration of await navigator.serviceWorker.getRegistrations()){
+    const scope=new URL(registration.scope);
+    if(scope.origin===location.origin&&scope.pathname.startsWith(root.pathname)){
+     if(await registration.unregister())unregistered++;
+    }
+   }
+  }
+ }catch(e){errors++;console.warn('Service worker reset:',e)}
+ write('旧キャッシュ '+removed+' 件を削除。最新版の戦闘コードを確認しています…');
+ let html='';
+ try{
+  const response=await fetch(dest.href,{cache:'reload'});
+  if(!response.ok)throw Error('戦闘画面 HTTP '+response.status);
+  html=await response.text();
+  if(!html.includes('face-wig-v7')||!html.includes('backliner3'))
+   throw Error('公開されている戦闘画面が旧版です');
+  refreshed++;
+ }catch(e){
+  write('公開版の確認に失敗しました。'+String(e.message||e)+'\nデプロイ完了後に、下のボタンを押してください。');
+  return;
+ }
+ const critical=[
+  './src/character-system/battle-artist-head-graft.js',
+  './src/character-system/rigged-outfit-runtime.js',
+  './src/character-system/hair-attachment-runtime.js',
+  './src/skirmish-distance-impostors.js'
+ ];
+ const matched=[...html.matchAll(/['"](\.\/src\/[^'"\n]+?\.js(?:\?[^'"\n]*)?)['"]/g)]
+  .map(m=>m[1]);
+ const selected=critical.map(path=>matched.find(item=>item.split('?')[0]===path)).filter(Boolean);
+ // Release builds rewrite these URLs with ?release=<commit>, so fetch the
+ // exact versions the freshly downloaded HTML will import.
+ await Promise.allSettled(selected.map(async path=>{
+  try{
+   const response=await fetch(new URL(path,root),{cache:'reload'});
+   if(!response.ok)throw Error('HTTP '+response.status);
+   refreshed++;
+  }catch(e){errors++;console.warn('Asset revalidate:',path,e)}
+ }));
+ write('ゲームの表示キャッシュを更新しました。\n旧エントリ削除: '+removed+
+  ' / SW解除: '+unregistered+' / 新規取得: '+refreshed+
+  (errors?' / 一部再確認不可: '+errors:'')+'\n最新版の戦闘画面を開きます。');
+ location.replace(dest.href);
+})().catch(error=>{
+ document.getElementById('status').textContent='一部のキャッシュ更新に失敗: '+String(error)+'\n下のボタンで新しいURLを開けます。';
+});
+</script>
+</body>
+</html>
