@@ -311,6 +311,19 @@ for(const id of remeshed){
    assert.ok(model.userData.pivots['lower'+leg],id+' missing animated lower joint '+leg);
  }finally{disposeMonsterSculpture(model);}
 }
+// Preserve visual silhouette in 1000-vs-1000 low LOD without hair blades.
+const lowKing=createMonsterModel(MONSTER_BY_ID.m001,{detail:'low'});
+try{
+ let hair=0,lowMane=0;
+ lowKing.traverse(n=>{
+   hair+=n.userData.furStrands||0;
+   if(n.name==='m001-low-mane-silhouette')lowMane++;
+ });
+ assert.equal(hair,0,'low LOD must not allocate any long fur ribbons');
+ assert.equal(lowMane,1,'low LOD needs one inexpensive volumetric mane');
+ assert.equal(lowKing.userData.pivots['m001-face-core'].scale.x,1/3,
+   'low LOD must keep the same 1/3 exposed face proportion');
+}finally{disposeMonsterSculpture(lowKing);}
 // PR #345 protects the old ancient wolf; the mesh upgrade must not touch it.
 const protectedWolf=createMonsterModel(MONSTER_BY_ID.m005,{detail:'high'});
 try{
