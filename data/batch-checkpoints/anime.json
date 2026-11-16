@@ -17,14 +17,22 @@
       ],
       "commitSha": "cbba38cc5f039f056117f1b1253a28c1d994f96e",
       "qa": "unverified"
+    },
+    {
+      "id": "compact-outcome-canonical-dialogue-retention",
+      "sourceFiles": [
+        "src/story-compact-comic.js"
+      ],
+      "commitSha": "1b426319ce6cc8bb942882c352f6ffc226b3668e",
+      "qa": "unverified"
     }
   ],
   "remainingIds": [
     "compact-c01-s01-to-s04-visual-qa",
     "compact-verified-webp-reuse",
     "compact-shared-defeat-art-verification",
-    "compact-dialogue-portrait-voice-qa",
-    "compact-chapter-opening-regression-qa"
+    "compact-chapter-opening-regression-qa",
+    "compact-outcome-dialogue-runtime-qa"
   ],
-  "nextAction": "Run chapter 1/2 saved-flag replay tests and browser QA; verify CG asset bytes and gender/outcome before any merge."
+  "nextAction": "Run outcome-specific regression for defeat/gameover dialogue and stage-specific portraits, then verify first four stage WebP bytes and browser playback before merge."
 }
