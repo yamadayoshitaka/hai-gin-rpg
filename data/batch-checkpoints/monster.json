@@ -15,7 +15,7 @@
       "sourceFiles": [
         "src/m048-sea-serpent-anatomical-source.js"
       ],
-      "commitSha": "db7abed7336da84487b0d54870d7310a2f7538e6",
+      "commitSha": "fe9bbed3c6eba06e284785536b110adb872e7567",
       "qa": "unverified"
     }
   ],
@@ -67,5 +67,5 @@
     "m049",
     "m050"
   ],
-  "nextAction": "Validate m020/m048 actual THREE mesh, articulated teeth and animation in Node/WebGL; enumerate canonical 108 IDs; generate GLB/LOD and test Android before game/master integration."
+  "nextAction": "Run Node syntax and Three/WebGL visual regression for m048 lateral-line ridge deformation and jaw; inspect m020, enumerate all 108 IDs, build GLB LOD and Android QA. No merge before verified."
 }
