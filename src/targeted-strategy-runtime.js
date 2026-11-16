@@ -59,6 +59,19 @@ export function createTargetedStrategyUi({
  const planFor=(id=groupId)=>getPlan(String(id))||{squads:[],allowed:[]};
  const liveSquads=(p=planFor())=>(p.squads||[]).filter(s=>Number(s.soldiers)>0);
  const grouped=()=>[1,2,3].map(id=>({id,plan:planFor(id)}));
+ const allSquadGroups=()=>grouped().flatMap(g=>liveSquads(g.plan).map((s,i)=>({
+  ...s,id:String(s.id),groupId:g.id,rank:i+1
+ })));
+ const groupSummary=g=>{
+  const jobs=new Map();
+  for(const s of liveSquads(g.plan)){
+   const job=String(s.job||s.label||'兵士').replace(/^.*・/,'').replace(/隊$/,'');
+   jobs.set(job,(jobs.get(job)||0)+Number(s.soldiers||0));
+  }
+  return [...jobs].sort((a,b)=>b[1]-a[1]).slice(0,2)
+   .map(([job,count])=>job+count+'人').join('・')||'未編成';
+ };
+ const groupColor=id=>({'1':'#59dcfa','2':'#c7a0ff','3':'#93e5a1'}[String(id)]||'#59dcfa');
  const available=()=>Object.values(STRATEGY_METHODS).filter(m=>
   [...selectedSquads].some(sid=>{
    const s=liveSquads().find(x=>String(x.id)===String(sid));
@@ -80,12 +93,12 @@ export function createTargetedStrategyUi({
  const allyTargets=()=>getAllyTargets().filter(t=>liveSquads(grouped().find(g=>
    String(g.id)===String(t.groupId))?.plan||{}).some(s=>String(s.id)===String(t.id)));
  const selectableRadarTargets=()=>{
-  if(step==='scope'&&scope==='squad'){
+  if(step==='scope'){
    const details=new Map(getAllyTargets().map(x=>[String(x.id),x]));
-   return liveSquads().map(s=>({...details.get(String(s.id)),id:String(s.id),
-    label:s.label||details.get(String(s.id))?.label||'味方分隊'}));
+   return allSquadGroups().map(s=>({...details.get(String(s.id)),...s,
+    team:'ally',label:'第'+s.groupId+'班 '+(s.label||details.get(String(s.id))?.label||'味方分隊')}));
   }
-  if(chosenItem)return allyTargets();
+   if(chosenItem)return allyTargets();
   return targets();
  };
  const stepText={scope:'① 指示する単位',family:'② 作戦を選択',intent:'③ 目的を選択',method:'④ 実行方法を選択',target:'⑤ 対象を選択',confirm:'⑥ 作戦内容の確認',items:'③ アイテムを選択'};
@@ -101,15 +114,16 @@ export function createTargetedStrategyUi({
    html='<div class="centerStep">① 班単位か個別の作戦を選択</div>'+
     '<div class="centerScopeGrid">'+b('data-strategy-scope="group"','🛡 班単位の作戦',scope==='group')+
     b('data-strategy-scope="squad"','⚔ 個別の作戦（分隊）',scope==='squad')+'</div>'+
-    '<div class="centerStep">指示する班（最大3班）</div><div class="centerGrid">'+groupInfo.map(g=>
-     b('data-strategy-group="'+g.id+'"','第'+g.id+'班　'+liveSquads(g.plan).reduce((n,x)=>n+x.soldiers,0)+'人',
+    '<div class="centerStep">指示する班（色・職業・人数で識別）</div><div class="centerGrid centerGroupCards">'+groupInfo.map(g=>
+     b('data-strategy-group="'+g.id+'"','● 第'+g.id+'班 · '+liveSquads(g.plan).reduce((n,x)=>n+Number(x.soldiers||0),0)+'人 / '+
+      liveSquads(g.plan).length+'分隊 / '+groupSummary(g),
        String(g.id)===String(groupId),!liveSquads(g.plan).length)).join('')+'</div>'+
-    (scope==='squad'?'<div class="centerStep">味方レーダーで分隊を選択</div>'+
-     radarMarkup('味方の分隊を選択')+
-     '<div class="centerSquadGrid">'+liveSquads(plan).map(s=>b('data-strategy-squad="'+esc(s.id)+'"',
-       s.label+' · '+s.soldiers+'人',selectedSquads.has(String(s.id)))).join('')+'</div>':
-    '<small class="centerHelp">班の全分隊へ作戦を指示します。実行可能な職業だけが行動します。</small>')+
-    controls('キャンセル','次へ','作戦を選ぶ',!selectedSquads.size);
+    '<div class="centerStep">'+(scope==='squad'?'味方レーダーで分隊を選択':'味方の点をタップして班を切替')+'</div>'+
+    radarMarkup(scope==='squad'?'別の班もタップして切り替えられます':'色と数字で班を選択')+
+    (scope==='squad'?'<div class="centerSquadGrid">'+liveSquads(plan).map(s=>b('data-strategy-squad="'+esc(s.id)+'"',
+       '第'+groupId+'班 '+s.label+' · '+s.soldiers+'人',selectedSquads.has(String(s.id)))).join('')+'</div>':
+       '<small class="centerHelp">選択班の全分隊へ指示します。実行可能な職業だけが行動します。</small>')+
+     controls('キャンセル','次へ','作戦を選ぶ',!selectedSquads.size);
   }else if(step==='family'){
    html='<div class="centerStep">② 作戦の系統を選択</div><div class="centerGrid">'+
     Object.entries(STRATEGY_TREE).map(([id,x])=>b('data-strategy-family="'+id+'"',x.name,
@@ -174,14 +188,15 @@ export function createTargetedStrategyUi({
    '<div class="centerTopRow"><span>第'+esc(groupId)+'班</span><span>'+
    (scope==='group'?'班単位':'個別分隊')+'</span><span>'+esc(stepText[step])+'</span></div>'+
    html+(error?'<small class="centerDanger" role="alert">'+esc(error)+'</small>':'')+'</div>';
-  if(step==='target'||step==='scope'&&scope==='squad')drawLargeRadar();
+  if(step==='target'||step==='scope')drawLargeRadar();
  }
  function radarMarkup(hint){
   return '<div class="centerMapBoard"><canvas id="centralCommandMap" width="464" height="464" '+
    'aria-label="拡大戦場レーダー・赤が敵、青が味方、タップで対象選択" role="img"></canvas>'+
    '<small class="centerMapCoords">'+esc(hint)+'</small>'+
    (mapPoint&&type()==='map'?'<small class="centerMapCoords">📍 指定地点 ('+mapPoint.x+', '+mapPoint.z+')</small>':'')+
-   '<small class="centerMapLegend">🔴 敵　🔵 味方　🟡 オブジェクト　◯ 選択済み</small></div>';
+   '<small class="centerMapLegend"><span class="g1">● 第1班（水色）</span><span class="g2">● 第2班（紫）</span><span class="g3">● 第3班（緑）</span> 🔴 敵　🟡 物　◎ 選択</small>'+
+    '<small class="centerMapCoords">数字：班番号-分隊番号（例 2-3＝第2班の第3分隊）</small></div>';
  }
  function drawLargeRadar(){
   const canvas=panel.querySelector('#centralCommandMap'),radar=getRadarCanvas();
