@@ -878,21 +878,22 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
           h.root[1]<.266)return false;
        return true;
      }):faceGuides;
-   addFur(head,headGuides);
+   // Both the short face-frame coat and the long mane share the same
+   // THREE material batches. Three head fur meshes, never six: this holds
+   // the hard 14-draw-call / 1000-vs-1000 near-LOD batching contract.
+   const maneStart=head.children.length;
+   const mantle=s.id==='m001'?wolfKingMane.filter(h=>!(
+     h.root[2]>.105&&Math.abs(h.root[0])<.153&&
+     h.root[1]>-.195&&h.root[1]<.266)):[];
+   const fullHeadCoat=s.id==='m001'?
+     [...headGuides,...fivefoldWindsweptMane(mantle)]:headGuides;
+   addFur(head,fullHeadCoat);
    if(s.id==='m001'){
-     const maneStart=head.children.length;
-     // Extra root-mask pass on long guard hairs: no follicle on
-     // the visible eyes/nose/mouth, only on mane-supporting cheeks.
-     const mantle=wolfKingMane.filter(h=>!(
-       h.root[2]>.105&&Math.abs(h.root[0])<.153&&
-       h.root[1]>-.195&&h.root[1]<.266));
-     addFur(head,fivefoldWindsweptMane(mantle));
-     // Mark the actual 5x geometry batches, not unrelated short face fur.
      for(const mesh of head.children.slice(maneStart)){
        if(!mesh.isMesh||!mesh.userData.furStrands)continue;
        mesh.name='m001-windswept-mane-'+mesh.name;
        mesh.userData.wolfKingMane=true;
-       mesh.userData.maneLengthMultiplier=5;
+       mesh.userData.maneLengthMultiplier=5; // long hair subset
        mesh.userData.exposedFaceScale=1/3;
      }
    }
