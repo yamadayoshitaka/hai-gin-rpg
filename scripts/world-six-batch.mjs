@@ -15,7 +15,7 @@ const json=p=>JSON.parse(file(p));
 const lanes=Object.freeze(['catalog','geometry','materials','interaction','lod','visual']);
 const argv=process.argv.slice(2),value=key=>argv[argv.indexOf(key)+1];
 const sha=p=>crypto.createHash('sha256').update(file(p)).digest('hex');
-const sourcePaths=['src/object-catalog.js','src/stage-library.js','src/stage-static-instancing.js','src/world-quality-pbr.js'];
+const sourcePaths=['src/object-catalog.js','src/stage-library.js','src/stage-static-instancing.js','src/world-quality-pbr.js','tactics-wireframe.html','world-quality-preview.html','src/tree-seasons.js'];
 const fingerprint=crypto.createHash('sha256').update(sourcePaths.map(p=>p+':'+sha(p)).join('\n')).digest('hex');
 const objects=qualityInventory.filter(x=>x.type==='object');
 const unique=(x,label)=>{if(new Set(x).size!==x.length)throw Error('Duplicate '+label)};
