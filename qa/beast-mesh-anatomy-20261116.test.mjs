@@ -164,6 +164,23 @@ for(const id of remeshed){
     assert.ok(halfWidthAt(nose,.346,.012)<.075,
       'm001 tiny black nose must follow the newly compact .366 tip');
     assert.ok(muzzleTip<.35,'m001 shortened muzzle must finish before z=.35');
+    // Regression: the wet rhinarium must sit over the bridge's front tip,
+    // never below a separately exposed circular grey end-cap.
+    const bridgeMesh=snout[0],noseMesh=nasal[0];
+    const axialYAt=(mesh,z)=>{
+      const a=mesh.geometry.getAttribute('position');
+      let sum=0,count=0;
+      for(let n=0;n<a.count;n++)if(Math.abs(a.getZ(n)-z)<.004){
+        sum+=a.getY(n);count++;
+      }
+      assert.ok(count>10,'m001 axial ring sample missing at z='+z);
+      return sum/count;
+    };
+    assert.ok(Math.abs(axialYAt(noseMesh,.321)-axialYAt(bridgeMesh,.315))<.012,
+      'm001 nose and bridge tip must share their anatomical height');
+    assert.ok(halfWidthAt(noseMesh.geometry.getAttribute('position'),.346,.012)>
+      2*halfWidthAt(bridgeMesh.geometry.getAttribute('position'),.315,.004),
+      'm001 nose must visibly cover the narrow grey bridge end-cap');
     const jaw=meshes.find(m=>m.name==='beast-integrated-mandible-m001');
     assert.ok(jaw?.userData.axialAnatomy,
       'm001 mouth must use continuous short movable mandibular loft');
@@ -215,6 +232,26 @@ for(const id of remeshed){
       'wolf-king source skull must be physically recessed, not padded with spheres');
     const lids=meshes.filter(m=>m.userData.anatomicalAlmondEyelid);
     assert.equal(lids.length,2,'both eye sockets need continuous almond eyelids');
+    assert.ok(lids.every(m=>m.userData.flushSkinLid),
+      'm001 must use flush skin-integrated lids rather than raised eyeliner');
+    for(const lid of lids){
+      const p=lid.geometry.getAttribute('position');
+      let loX=Infinity,hiX=-Infinity,hiZ=-Infinity;
+      for(let j=0;j<p.count;j++){
+        loX=Math.min(loX,p.getX(j));hiX=Math.max(hiX,p.getX(j));
+        hiZ=Math.max(hiZ,p.getZ(j));
+      }
+      assert.ok(hiX-loX<.15&&hiZ<.292,
+        'm001 eyelid must not extend into a broad protruding eye wing');
+    }
+    const brows=meshes.filter(m=>m.userData.orbitalBrow);
+    assert.equal(brows.length,2);
+    for(const brow of brows){
+      const p=brow.geometry.getAttribute('position');
+      let outer=0;
+      for(let j=0;j<p.count;j++)outer=Math.max(outer,Math.abs(p.getX(j)));
+      assert.ok(outer<.286,'m001 eyebrow tubes must not flare beyond the eyes');
+    }
     assert.ok(eyes.every(m=>m.userData.generatorFittedIris),
       'pigmented optics must use generator-style fitted sclera/iris geometry');
     assert.ok(eyes.every(m=>m.userData.recessedCanineEye),
