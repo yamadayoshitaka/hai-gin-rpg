@@ -774,46 +774,56 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    // beneath the whole thigh. Preserve the initial foot position by
    // offsetting shin vertices and hock bind coordinates equally.
    const photoWolfStifle=s.id==='m001'&&fore<0;
+   // Natural canine elbow and stifle pivot BELOW the shoulder/hip.
+   // Counter-translate hock so the planted paw bind height is unchanged.
    const distal=g.group('lower'+name,
-     photoWolfStifle?[0,.100,.015]:[0,-.065,.015],leg);
+     s.id==='m001'?[0,fore>0?-.180:-.200,fore>0?-.038:.065]:
+       [0,-.065,.015],leg);
    if(s.id==='m001')distal.userData.anatomicalJoint=
      fore>0?'elbow':'stifle';
    if(beastRemesh){
-    g.limbLoft(distal,'skin',(fore>0?[
-      // Forearm bends forward again from elbow through carpal joint.
+    g.limbLoft(distal,'skin',(s.id==='m001'?(fore>0?[
+      // Forearm starts over elbow and tapers into elevated carpus.
+      {x:0,y:.135,z:-.075,rx:.130,rz:.128},
+      {x:0,y:.045,z:-.090,rx:.137,rz:.141},
+      {x:0,y:-.095,z:-.050,rx:.113,rz:.111},
+      {x:0,y:-.235,z:.023,rx:.094,rz:.105},
+      {x:0,y:-.325,z:.052,rx:.102,rz:.109}
+    ]:[
+      // Rear tibia tracks forward stifle -> back hock in a true dog S.
+      {x:0,y:.145,z:.105,rx:.138,rz:.145},
+      {x:0,y:.055,z:.121,rx:.140,rz:.144},
+      {x:0,y:-.095,z:-.025,rx:.111,rz:.118},
+      {x:0,y:-.225,z:-.140,rx:.088,rz:.092},
+      {x:0,y:-.310,z:-.168,rx:.092,rz:.091}
+    ]):(fore>0?[
       {x:0,y:.15,z:-.091,rx:.130,rz:.129},
       {x:0,y:.04,z:-.103,rx:.138,rz:.142},
       {x:0,y:-.15,z:-.046,rx:.114,rz:.112},
       {x:0,y:-.31,z:.027,rx:.093,rz:.106},
       {x:0,y:-.41,z:.054,rx:.107,rz:.118}
     ]:[
-      // Angled crus reaches BACK from stifle to elevated hock.
       {x:0,y:.15,z:.161,rx:.136,rz:.147},
       {x:0,y:.02,z:.139,rx:.146,rz:.144},
       {x:0,y:-.14,z:-.015,rx:.112,rz:.118},
       {x:0,y:-.28,z:-.159,rx:.086,rz:.090},
       {x:0,y:-.38,z:-.172,rx:.091,rz:.091}
-    ]).map(p=>s.id==='m001'?{
-      ...p,y:photoWolfStifle?p.y-.165:p.y,
-      // The former proximal shin point z=.161 missed the thigh-knee
-      // at z≈.07. Match both segment envelopes at the stifle.
-      z:photoWolfStifle&&p.y>.14?.075:p.z,
-      rx:p.rx*.83,rz:p.rz*.84
-    }:p),
-    {name:'beast-shin-'+name});
+    ])).map(p=>s.id==='m001'?{
+      ...p,rx:p.rx*.83,rz:p.rz*.84
+    }:p),{name:'beast-shin-'+name});
     if(s.id==='m001'&&coatDetail!=='low'){
       // A small overlapping fascia above/below the actual hinge keeps
       // the silhouette continuous while two joint rotations stay free.
       const rear=fore<0;
       const upperFold=g.bridge(leg,'skin',
-        rear?[0,.165,.069]:[0,.090,-.090],
-        rear?[0,.015,.111]:[0,-.095,-.102],
+        rear?[0,-.090,.106]:[0,-.070,-.090],
+        rear?[0,-.235,.140]:[0,-.225,-.102],
         rear?.136:.130,rear?.122:.113);
       upperFold.name='m001-upper-knee-fascia-'+name;
       upperFold.userData.kneeUpperCover=true;
       const lowerFold=g.bridge(distal,'skin',
-        rear?[0,-.055,.065]:[0,.096,-.100],
-        rear?[0,-.168,.126]:[0,-.105,-.045],
+        rear?[0,.090,.100]:[0,.110,-.091],
+        rear?[0,-.125,.124]:[0,-.130,-.047],
         rear?.120:.115,rear?.111:.107);
       lowerFold.name='m001-lower-knee-fascia-'+name;
       lowerFold.userData.kneeLowerCover=true;
@@ -844,8 +854,8 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
      // groups. Keeping the ankle away from the ground creates digitigrade
      // silhouette even in the idle bind pose.
      const ankle=g.group('beastHock'+name,
-       [0,fore>0?-.40:photoWolfStifle?-.505:-.34,
-         fore>0?.050:-.168],distal);
+       [0,s.id==='m001'?(fore>0?-.285:-.205):
+         (fore>0?-.40:-.34),fore>0?.050:-.168],distal);
      g.bridge(ankle,'skin',[0,.06,0],
        [0,-.142,fore>0?.053:.173],fore>0?.103:.092,.083);
      // m001 has a separately movable metacarpal/metatarsal pad joint.
@@ -900,7 +910,8 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
        minVertical:-.85,axis:'y',gravity:.20,
      });
      const lower=generateCanineFurGuides({
-       center:[0,-.28,0],radii:s.id==='m001'?[.123,.29,.130]:[.145,.29,.156],
+       center:[0,s.id==='m001'?-.115:-.28,0],
+       radii:s.id==='m001'?[.123,.242,.130]:[.145,.29,.156],
        rows:source?24:15,around:source?26:18,
        length:.064,width:.011,seed:v*13+side*7+fore*11+43,
        minVertical:-.72,axis:'y',gravity:.21,
