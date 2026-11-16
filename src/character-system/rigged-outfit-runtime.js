@@ -672,17 +672,22 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
   // Only preserve the entire bare torso when no opaque under-vest exists.
   // With linen lining, surfaceCheck clips skin hidden by actual clothing;
   // always preserving it made bare shoulder blades poke through moving coats.
-  const battleBackUnderlay=quality==='battle'&&opaqueTorsoLiningMaterials===0?['torso']:[];
+  const thiefHasClosedBack=quality==='battle'&&jobId==='job06'&&
+    !!detail.getObjectByName('complete-back-tunic-lining');
+  const battleBackUnderlay=quality==='battle'&&opaqueTorsoLiningMaterials===0&&
+    !thiefHasClosedBack?['torso']:[];
   const occlusionPreserveRegions=[...new Set([
    ...studioSkinPolicy.preserveRegions,...battleBackUnderlay
   ])];
   let coverageHandle=preserveBody?null:clipBodyToGarment(characterModel,garmentCoverage,{surfaceCheck:true,
-    preserveRegions:occlusionPreserveRegions});
+    preserveRegions:occlusionPreserveRegions,
+    forceCoveredRegions:thiefHasClosedBack?['torso']:[]});
   let bodyMasked=!preserveBody;
   function setBodyOcclusion(enabled){
     if(preserveBody)return;
     if(enabled&&!bodyMasked){coverageHandle=clipBodyToGarment(characterModel,garmentCoverage,{surfaceCheck:true,
-    preserveRegions:occlusionPreserveRegions});bodyMasked=true}
+    preserveRegions:occlusionPreserveRegions,
+    forceCoveredRegions:thiefHasClosedBack?['torso']:[]});bodyMasked=true}
     else if(!enabled&&bodyMasked){coverageHandle?.restore();coverageHandle=null;bodyMasked=false}
   }
   let disposed=false;
