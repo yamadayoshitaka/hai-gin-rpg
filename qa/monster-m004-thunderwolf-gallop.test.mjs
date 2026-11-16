@@ -27,14 +27,14 @@ for(const detail of ['low','high']){
    assert.equal(p['toe'+limb].parent,p['hock'+limb]);
  }
  model.updateMatrixWorld(true);
- // Original world-space hip and tail positions must be preserved on rig build.
+ // Rear feet must remain ground-registered; tail follows lowered lumbar/pelvis.
  const rearWorld=p.legrearL.getWorldPosition(new Vector3()).clone();
  const tailWorld=p.tail.getWorldPosition(new Vector3()).clone();
  const scale=model.userData.homeScale;
  assert.ok(rearWorld.distanceTo(new Vector3(-.29,.67,-.49).multiplyScalar(scale))<.002,
    'Pelvic reparent changed hindleg bind pose');
- assert.ok(tailWorld.distanceTo(new Vector3(0,1.35,-.55).multiplyScalar(scale))<.002,
-   'Pelvic reparent changed tail bind pose');
+ assert.ok(tailWorld.distanceTo(new Vector3(0,1.20,-.55).multiplyScalar(scale))<.002,
+   'Tail must follow lowered pelvic bind pose');
  const count=new Map();
  let triangles=0;
  model.traverse(n=>{
