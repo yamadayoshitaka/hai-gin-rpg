@@ -37,6 +37,7 @@ on:
       - 'src/mass-dash-parity.js'
       - 'src/character-system/battle-motion-policy.js'
       - 'src/character-system/battle-artist-head-graft.js'
+      - 'src/face-scalp-wig.js'
       - 'src/character-system/shield-forearm-fit.js'
       - 'src/character-system/rigged-outfit-runtime.js'
       - 'src/character-system/action-vfx-runtime.js'
@@ -80,6 +81,8 @@ jobs:
       - name: JavaScript syntax and late-battle state tests
         run: |
           node --check src/mass-battle-grid-sim.js
+          node --check src/face-scalp-wig.js
+          node --check src/character-system/battle-artist-head-graft.js
           node --check src/combat-world-object-renderer.js
           node --check src/mass-battle-worker-runtime.js
           node qa/battle-riding-chest-floor-ui.test.mjs
