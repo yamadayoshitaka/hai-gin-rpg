@@ -14,13 +14,13 @@
   "groups": {
     "human": {
       "source": "ChatGPT 定期タスクの実行結果",
-      "lastRunAt": "2026-11-15T23:05:08Z",
-      "subject": "頭皮メッシュ三角面の外向き法線補正を作業PRへ保存（全件監査未完）",
-      "summary": "human ON。髪取付共通生成器の実ソースを変更し、逆向き頭皮三角形の頂点順を外向きに補正。実ソースSHA 7346c571、チェックポイント b63d3c70。Node/WebGL/Android QA・全人物ID列挙・再生成未実施、品質承認0。mainマージ・公開なし。",
+      "lastRunAt": "2026-11-16T00:04:00Z",
+      "subject": "頭皮候補選択の共通生成器を実修正（全人物ID QA未完）",
+      "summary": "human ON。頭皮生成器で最大ポリゴン数の衣装メッシュを頭皮として誤選択し得る原因を修正し、頭骨ウェイトのある頂点数を基準に選択。実ソースコミット f3e43d18、チェックポイント aefe4adc。個別ID再生成0、対象別QA成功0、WebGL/Android未検証。全件ID走査未完。mainマージ・公開なし。",
       "status": "in_review",
       "carryover": true,
       "issueNumber": 438,
-      "nextAction": "PR #456の頭頂・後頭WebGLとNode構文を検証し、男女全髪型・顔・衣装・表情のID列挙と全件回帰を継続。Issue #438も保持。",
+      "nextAction": "PR #456で男女の実頭皮選択・Node/WebGL・Android QAを実施。全人物ID/生成経路を列挙して全件監査し、Issue #438の鎧背面異物も継続。",
       "steps": {
         "launch": "done",
         "code": "done",
@@ -32,16 +32,16 @@
       },
       "evidence": [
         {
-          "label": "頭皮メッシュ実改修",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/7346c5714f5ad266721c8d7cd8ba58a9b101714b"
+          "label": "頭皮候補選択の実ソース修正",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/f3e43d18c12e5f141cb783a01626565341060aea"
         },
         {
-          "label": "既存Draft PR #456",
+          "label": "Draft PR #456",
           "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/456"
         },
         {
-          "label": "WIPチェックポイント",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/b63d3c70dc15cf976865c2bae174931cbd716af1"
+          "label": "チェックポイント",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/aefe4adc2ac40a2e9bf878df51f74f11b2c3c463"
         }
       ]
     },
