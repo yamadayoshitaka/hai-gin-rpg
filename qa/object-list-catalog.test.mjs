@@ -26,4 +26,27 @@ assert.match(catalog,/renderSpiralStairBOM\(THREE,root,structure/);
 assert.match(catalog,/entryDoor=\{lockLevel:level,side:'south',entranceOnly:true\}/);
 assert.match(viewer,/!o\.userData\.sharedGeometry/);
 assert.match(structure,/mesh\.userData\.sharedGeometry=Boolean\(cacheKey\)/);
+
+
+// Real-world municipal and masonry geometry regression (source-level only).
+// WebGL image QA and Android performance are separate acceptance gates.
+const section=(id,next)=>{
+ const begin=catalog.indexOf("if(id==='"+id+"'){");
+ const finish=catalog.indexOf("if(id==='"+next+"'){");
+ assert(begin>=0&&finish>begin,'Expected geometry section for '+id);
+ return catalog.slice(begin,finish);
+};
+const refuse=section('town_trash_bin_001','town_handcart_001');
+for(const part of ['galvanized_open_wall','pressed_grounded_floor','rolled_support_band','steel_stiffener','lifting_handle_mount'])
+ assert(refuse.includes(part),'Municipal bin is missing '+part);
+assert.doesNotMatch(refuse,/slot.*wood/,'Metal bin cannot regress to floating timber slats');
+const arch=section('stone_archway_001','stone_steps_001');
+for(const part of ['arch_radial_voussoir','pier_spread_footing','pier_ashlar_course','arch_keystone'])
+ assert(arch.includes(part),'Masonry arch is missing '+part);
+assert.match(arch,/new THREE\.ExtrudeGeometry\(shape/,'Arch uses actual 3D wedge-shaped voussoirs');
+const steps=section('stone_steps_001','wooden_watchtower_001');
+for(const part of ['ground_bearing_riser','individual_tread_slab','stepped_cheek_wall','cheek_cap'])
+ assert(steps.includes(part),'Masonry steps are missing '+part);
+assert.match(steps,/i<7/,'Seven individually grounded risers');
+
 console.log('Object list registers 2F and 3F spiral staircases + graded entry doors and shows every catalogue item');
