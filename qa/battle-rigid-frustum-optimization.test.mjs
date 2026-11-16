@@ -36,8 +36,8 @@ assert.equal(geometry.computations,1,'only one geometry bound computation for sh
 assert.deepEqual(countBattleRigCulling([{rigidCullStats:stats},{}]),{...stats,rigs:1});
 const game=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
 assert.match(game,/a\.rigidCullStats=enableBattleRigidFrustumCulling\(a\.character\.object3D\)/);
-assert.match(game,/if\\(!TOWN_MODE&&!massSim&&RIGID_CULLING_ENABLED\\)/,'1000vs1000 and town renderers remain unchanged');
-assert.match(game,/battleParams\\.get\\('rigCull'\\)!=='0'/,'An A/B control can explicitly disable rigid culling');
+assert.match(game,/if\(!TOWN_MODE&&!massSim&&RIGID_CULLING_ENABLED\)/,'1000vs1000 and town renderers remain unchanged');
+assert.match(game,/battleParams\.get\('rigCull'\)!=='0'/,'An A/B control can explicitly disable rigid culling');
 assert.match(game,/if\(visual\.update\)\{a\.character\.update/,'original rig actions preserved');
 assert.match(game,/GPU '\+\(perf\.gpuFrameMs/,'GPU timing visible to diagnose WebGL bottlenecks');
 assert.match(game,/getBattleRigCullingQA/);
