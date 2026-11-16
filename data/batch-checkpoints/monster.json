@@ -7,7 +7,7 @@
       "sourceFiles": [
         "src/m020-leviathan-anatomical-source.js"
       ],
-      "commitSha": "2a80e3f2dbe78b6fddd6d7eaeb0502db8b7a931a",
+      "commitSha": "9749c906af2d228ca04a9e67f314d9438fe0caea",
       "qa": "unverified"
     },
     {
@@ -67,5 +67,5 @@
     "m049",
     "m050"
   ],
-  "nextAction": "m048 fin/body synchronized axial deformation committed; execute Node Three mesh validation and four-angle WebGL QA, then integrate into game/master. Audit all 108 canonical IDs; retain protected m005/m006 and summon counterparts."
+  "nextAction": "Run Node/Three geometry and articulated-jaw QA for m020, verify m048 fins; audit canonical 108 IDs and connect prototypes to game/master only after WebGL and Android QA."
 }
