@@ -187,7 +187,7 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    faceCore.scale.setScalar(.82);
    faceCore.userData.anatomicalFaceScale=.82;
    g.root.userData.wolfKingExposedFaceScale=.82;
-   g.root.userData.wolfKingManeLengthMultiplier=1.35;
+   g.root.userData.wolfKingManeLengthMultiplier=1.2;
    g.root.userData.wolfKingReferenceRemesh=true;
  }
  // Rigid reptilian wedge instead of the same spherical skull as a cat.
