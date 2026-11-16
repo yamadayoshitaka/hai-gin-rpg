@@ -2125,7 +2125,8 @@ let crowdVfxCursor=0;
 let prepareMassRenderer=async()=>{};
 const actors=[],clock=new THREE.Clock(),raycaster=new THREE.Raycaster(),pointer=new THREE.Vector2();
 const actorVisibility=createBattleActorVisibility(THREE,camera);
-window.getBattleRigCullingQA=()=>countBattleRigCulling(actors);
+const RIGID_CULLING_ENABLED=battleParams.get('rigCull')!=='0';
+window.getBattleRigCullingQA=()=>({...countBattleRigCulling(actors),enabled:RIGID_CULLING_ENABLED});
 window.getBattleHumanVisibilityQA=()=>({
  townMode:TOWN_MODE,alive:(massSim?.units??actors).filter(u=>u.alive!==false&&u.hp>0).length,
  detailedInView:actors.filter(a=>a.hp>0&&a.root.visible&&a.character?.object3D?.visible).length,
@@ -2569,7 +2570,7 @@ async function installBattleModels(){
       // The original full-quality armor/cloth stays untouched. Only rigid
       // parts entirely outside the camera/shadow frustum are not submitted.
       // Keep deforming body/hair/animation meshes on their original path.
-      if(!TOWN_MODE&&!massSim)
+      if(!TOWN_MODE&&!massSim&&RIGID_CULLING_ENABLED)
        a.rigidCullStats=enableBattleRigidFrustumCulling(a.character.object3D);
       a.outfitError=null;dressed++;
       if(aiSteelTrialRequested&&!aiSteelTrial&&sex==='male'&&a.job.name==='剣士'){
