@@ -230,11 +230,67 @@ for(const id of remeshed){
     }
     assert.equal(meshes.filter(m=>m.name.startsWith('m001-eyebrow-ridge-')).length,2,
       'm001 needs two anatomical brow ridges');
+    const tinyFace=model.userData.pivots['m001-face-core'];
+    assert.ok(tinyFace?.isGroup,'m001 must use an independent small-face group');
+    assert.ok(Math.abs(tinyFace.scale.x-1/3)<1e-7&&
+      Math.abs(tinyFace.scale.y-1/3)<1e-7&&
+      Math.abs(tinyFace.scale.z-1/3)<1e-7,
+      'm001 exposed face and eye sockets must be exactly 3x smaller');
+    assert.equal(skull.parent,tinyFace,'cranium should shrink with small-face group');
+    assert.ok(eyes.every(m=>m.parent===tinyFace),
+      'eyes must move with the small face, not remain outside the skull');
+    assert.ok(nasal.every(m=>m.parent===model.userData.pivots.head),
+      'the nose remains its original size OUTSIDE the small-face group');
+    assert.equal(model.userData.wolfKingManeLengthMultiplier,5,
+      'mane length must be 5x of original, not fur density 5x');
+    assert.equal(model.userData.wolfKingFurDensityMultiplier,2,
+      'retain previously approved 2x strand density');
+    const bareWindowMeshes=meshes.filter(m=>m.userData.wolfKingMane);
+    for(const coat of bareWindowMeshes)
+      assert.ok(coat.parent===model.userData.pivots.head,
+        'mane remains attached to the original full-size head group');
     const mane=model.userData.pivots.head.children.filter(
       m=>m.isMesh&&m.userData.wolfKingMane);
     assert.ok(mane.length>=2,'m001 dense mane must follow its animated skull');
     assert.ok(mane.reduce((n,m)=>n+(m.userData.furStrands||0),0)>1000,
       'm001 lion-like under-jaw and cheek mane needs dense, longer fur');
+    assert.ok(mane.every(m=>m.userData.maneLengthMultiplier===5),
+      'all long-mane material batches must use the new fivefold sweep');
+    const maxLength=mesh=>{
+      const p=mesh.geometry.getAttribute('position');
+      let max=0;
+      for(let i=0;i+4<p.count;i+=5){
+        const x=(p.getX(i)+p.getX(i+1))*.5,
+          y=(p.getY(i)+p.getY(i+1))*.5,
+          z=(p.getZ(i)+p.getZ(i+1))*.5;
+        max=Math.max(max,Math.hypot(
+          p.getX(i+4)-x,p.getY(i+4)-y,p.getZ(i+4)-z));
+      }
+      return max;
+    };
+    assert.ok(Math.max(...mane.map(maxLength))>1.10,
+      'fivefold trailing mane should measure well over one model unit');
+    assert.ok(Math.min(...mane.map(maxLength))>.65,
+      'every mane material group should contain extended trailing hairs');
+    // The exposed face opening must remain bare even after the 5x sweep;
+    // follicle roots outside the mask can flow backwards without hiding eyes.
+    const headCoats=model.userData.pivots.head.children.filter(m=>
+      m.isMesh&&m.userData.furStrands);
+    let blockedRoots=0,allRoots=0;
+    for(const coat of headCoats){
+      const p=coat.geometry.getAttribute('position');
+      for(let j=0;j+4<p.count;j+=5){
+        const x=(p.getX(j)+p.getX(j+1))*.5;
+        const y=(p.getY(j)+p.getY(j+1))*.5;
+        const z=(p.getZ(j)+p.getZ(j+1))*.5;
+        allRoots++;
+        if(z>.105&&Math.abs(x)<.153&&y>-.195&&y<.266)
+          blockedRoots++;
+      }
+    }
+    assert.ok(allRoots>1500,'perimeter should have body-like follicle coverage');
+    assert.equal(blockedRoots,0,
+      'no fur roots on the exposed tiny eyes/nose/mouth face mask');
   }
   const keratin=meshes.filter(m=>m.userData.rootedKeratin);
   assert.ok(keratin.length>=11,id+' must have physically curved dorsal horns and canines');
@@ -255,6 +311,19 @@ for(const id of remeshed){
    assert.ok(model.userData.pivots['lower'+leg],id+' missing animated lower joint '+leg);
  }finally{disposeMonsterSculpture(model);}
 }
+// Preserve visual silhouette in 1000-vs-1000 low LOD without hair blades.
+const lowKing=createMonsterModel(MONSTER_BY_ID.m001,{detail:'low'});
+try{
+ let hair=0,lowMane=0;
+ lowKing.traverse(n=>{
+   hair+=n.userData.furStrands||0;
+   if(n.name==='m001-low-mane-silhouette')lowMane++;
+ });
+ assert.equal(hair,0,'low LOD must not allocate any long fur ribbons');
+ assert.equal(lowMane,1,'low LOD needs one inexpensive volumetric mane');
+ assert.equal(lowKing.userData.pivots['m001-face-core'].scale.x,1/3,
+   'low LOD must keep the same 1/3 exposed face proportion');
+}finally{disposeMonsterSculpture(lowKing);}
 // PR #345 protects the old ancient wolf; the mesh upgrade must not touch it.
 const protectedWolf=createMonsterModel(MONSTER_BY_ID.m005,{detail:'high'});
 try{

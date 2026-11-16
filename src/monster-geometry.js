@@ -3,7 +3,7 @@
  * variants change horns, crests, armour, wings, limb lengths, weapons and fins.
  * Each specimen is real 3D geometry, never an image billboard.
  */
-import {createSculpture,disposeMonsterSculpture} from './monster-shape-kit.js?v=m001-clean-snout-eye-v7-20261116';
+import {createSculpture,disposeMonsterSculpture} from './monster-shape-kit.js?v=m001-small-face-windswept-v8-20261116';
 import {attachMonsterFaceControls} from './facial-feature-runtime.js?v=1';
 import {generateCanineFurGuides,generateCanineAxialFurGuides} from './canine-fur-guides.js?v=beast-coat-20261116';
 import {monsterEvidenceFor} from './monster-anatomy-reference.js';
@@ -178,15 +178,37 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
   g.bridge(torso,'skin',[0,1.152,.33],[0,1.307,.77+v*.055],.295,.181);
  else g.bridge(torso,'skin',[0,1.35,.32],[0,1.57,.76+v*.055],.325,.215);
  const head=g.group('head',[0,beastRemesh?1.300:1.56,.70+v*.06+(beastRemesh?.086:0)]);
+ // Exposed head anatomy is 1/3 scale while nose, jaw, teeth, ears and
+ // surrounding fur remain unchanged. The tiny skull is framed by the mane.
+ const faceCore=s.id==='m001'?
+   g.group('m001-face-core',[0,.125,.225],head):head;
+ if(s.id==='m001'){
+   faceCore.scale.setScalar(1/3);
+   faceCore.userData.anatomicalFaceScale=1/3;
+   g.root.userData.wolfKingExposedFaceScale=1/3;
+   g.root.userData.wolfKingManeLengthMultiplier=5;
+ }
  // Rigid reptilian wedge instead of the same spherical skull as a cat.
  const skullWidth=reptile?.905:feline?.95:1;
  const skullDepth=reptile?1.065:feline?.965:1;
- const cranium=g.anatomicalLoft(head,'skin',
+ const cranium=g.anatomicalLoft(faceCore,'skin',
    QUADRUPED_CRANIUM_RINGS.map(r=>({
      ...r,rx:r.rx*skullWidth,rz:r.rz*skullDepth,
    })),{name:'organic-cranium-'+s.id,kind:'face',
      asymmetry:reptile?.10:.04});
  if(s.id==='m001')g.recessCanineEyeSockets(cranium);
+ if(s.id==='m001'&&coatDetail==='low'){
+   // In massive battles use one coarse sculpted ruff silhouette instead of
+   // tens of thousands of guard hairs. It frames the same tiny face with
+   // zero expensive coat blades or additional skinned draw calls.
+   g.axialLoft(head,'skin',[
+     {z:.27,y:.12,rx:.118,ry:.135},
+     {z:.08,y:.035,rx:.272,ry:.294},
+     {z:-.22,y:-.092,rx:.366,ry:.418},
+     {z:-.55,y:-.168,rx:.275,ry:.328},
+     {z:-.78,y:-.215,rx:.115,ry:.135},
+   ],{name:'m001-low-mane-silhouette',rough:.97,ribbing:.036});
+ }
  if(reptile){
    g.bridge(head,'skin',[0,.045,-.19],[0,-.085,.55],.257,.128);
  }else if(feline){
@@ -263,9 +285,9 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
       // Apply the generator's key idea: a sunken socket and optical almond
       // fitted BEHIND the upper eyelid. This is a mesh aperture rather than
       // spherical eyes mounted on the forehead/cheeks.
-      g.recessedCanineAlmondEye(head,{side,name:'wolf-king'});
+      g.recessedCanineAlmondEye(faceCore,{side,name:'wolf-king'});
       // The brow is an overhanging facial ridge, distinct from lid eyeliner.
-      const brow=g.tube(head,'skin',[
+      const brow=g.tube(faceCore,'skin',[
         [side*.149,.151,.258],[side*.225,.168,.306],
         [side*.313,.153,.322]],.010);
       brow.name='m001-eyebrow-ridge-'+(side<0?'L':'R');
@@ -491,16 +513,16 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    // Species m001 cranial remesh: cheek musculature, brow, nasal cartilage.
    // The beard and lion-like mane grow from a tapered real under-jaw mass,
    // not a loose collection of hair ribbons floating below a bare skull.
-   g.bridge(head,'skin',[0,.062,-.18],[0,-.03,.38],.188,.113);
+   g.bridge(faceCore,'skin',[0,.062,-.18],[0,-.03,.38],.188,.113);
    g.bridge(head,'skin',[0,-.118,-.138],[0,-.325,-.218],.229,.158);
    for(const side of [-1,1])
      g.bridge(head,'skin',[side*.168,-.080,-.091],
        [side*.174,-.284,-.157],.135,.088);
    for(const side of [-1,1]){
-     g.bridge(head,'skin',[side*.19,-.035,-.055],[side*.27,-.125,.24],.142,.082);
+     g.bridge(faceCore,'skin',[side*.19,-.035,-.055],[side*.27,-.125,.24],.142,.082);
      if(!beastRemesh)g.sphere(head,'shadow',[side*.308,.092,.277],[.023,.017,.090],{rough:.78});
      // Temporal fascia narrows toward the new closer-set eyebrow.
-     g.tube(head,'skin',[[side*.21,.12,-.055],[side*.255,.155,.105],
+     g.tube(faceCore,'skin',[[side*.21,.12,-.055],[side*.255,.155,.105],
         [side*.268,.169,.213]],.021);
      for(let j=0;j<3;j++)
        g.sphere(head,'shadow',[side*(.149+j*.025),-.191,muzzle+.12+j*.035],
@@ -794,6 +816,39 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
       seed:v*33+241,gravity:.42,minVertical:-.84,maxVertical:.22
     }).filter(h=>h.root[2]<.02)
    ]:[];
+   // The exposed 1/3-scale facial mask is bare around pupils, nasal
+   // bridge and lips. Grow body-density fur on the cheek/forehead perimeter
+   // at the FULL mane size, not on the tiny exposed facial bone.
+   const wolfKingFaceCoat=s.id==='m001'?generateCanineFurGuides({
+      center:[0,.105,.065],radii:[.307,.238,.277],
+      rows:source?42:29,around:source?56:40,
+      length:.118,width:.019,seed:v*71+509,
+      minVertical:-.94,maxVertical:1,gravity:.27,
+   }).filter(h=>{
+      const x=Math.abs(h.root[0]),y=h.root[1],z=h.root[2];
+      // The face window is bounded by the mane: NO follicles on the
+      // actual small eyes, nose bridge, lips or front muzzle.
+      // Fur guide doubling adds a ~0.01 tangential offset. Leave an
+      // additional safety margin so no shifted strand enters the bare mask.
+      if(z>.078&&x<.186&&y>-.223&&y<.293)return false;
+      return !(z>.264&&x<.203&&y>-.209&&y<.287);
+   }):[];
+   // Long lion mane is exactly five times the original guide length.
+   // A backward-weighted curved sweep prevents straight porcupine spikes.
+   // Each guide still has only root/mid/tip; batching and mobile LOD hold.
+   const fivefoldWindsweptMane=guides=>guides.map(h=>{
+     const base=h.tip.map((v,i)=>v-h.root[i]);
+     const len=Math.hypot(...base)||.001;
+     const wind=[base[0]*.72,base[1]*.28,base[2]*1.36-len*.65];
+     const norm=Math.hypot(...wind)||1;
+     const delta=wind.map(v=>v*len*5/norm);
+     const tip=h.root.map((v,i)=>v+delta[i]);
+     const mid=h.root.map((v,i)=>v+delta[i]*(i===2?.21:.32)+
+       h.normal[i]*len*.16+(i===2?len*.07:0));
+     return {...h,mid,tip,
+       wolfKingManeLengthMultiplier:5,
+       originalHairLength:len};
+   });
    // m001 has a lion-like, layered throat/cheek ruff: the bone remains a
    // wolf skull and the mane is entirely groomed on the moving head.
    // Ear / eyebrow / eye clearances are cut out of the hair root mask.
@@ -826,17 +881,35 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
      }).filter(h=>side*h.root[0]>.15&&h.root[1]>.206&&
        h.root[2]<.335)):[];
 
-   const headGuides=beastRemesh?[...faceGuides,...groomed,...wolfKingMane,
-     ...browHairs].filter(h=>!(Math.abs(h.root[0])>.258&&h.root[1]>.077&&
-       h.root[2]>.166&&h.root[2]<.38)):faceGuides;
-   addFur(head,headGuides);
+   const headGuides=beastRemesh?[...faceGuides,...groomed,
+     ...wolfKingFaceCoat,...browHairs].filter(h=>{
+       // Avoid cheeks/temples from spreading across the eyes.
+       if(Math.abs(h.root[0])>.258&&h.root[1]>.077&&
+          h.root[2]>.166&&h.root[2]<.38)return false;
+       // Keep only the small frontal face patch bare; fur surrounds it.
+       if(s.id==='m001'&&h.root[2]>.078&&
+          Math.abs(h.root[0])<.186&&h.root[1]>-.223&&
+          h.root[1]<.293)return false;
+       return true;
+     }):faceGuides;
+   // Both the short face-frame coat and the long mane share the same
+   // THREE material batches. Three head fur meshes, never six: this holds
+   // the hard 14-draw-call / 1000-vs-1000 near-LOD batching contract.
+   const maneStart=head.children.length;
+   const mantle=s.id==='m001'?wolfKingMane.filter(h=>!(
+     h.root[2]>.078&&Math.abs(h.root[0])<.186&&
+     h.root[1]>-.223&&h.root[1]<.293)):[];
+   const fullHeadCoat=s.id==='m001'?
+     [...headGuides,...fivefoldWindsweptMane(mantle)]:headGuides;
+   addFur(head,fullHeadCoat);
    if(s.id==='m001'){
-     // Head-attached mane is batched by material; this small name-only
-     // marker allows CI to audit actual moving beard follicles.
-     for(const mesh of head.children)
-       if(mesh.userData.furStrands&&mesh.name.startsWith('canine-coat-')){
-         mesh.userData.wolfKingMane=true;
-       }
+     for(const mesh of head.children.slice(maneStart)){
+       if(!mesh.isMesh||!mesh.userData.furStrands)continue;
+       mesh.name='m001-windswept-mane-'+mesh.name;
+       mesh.userData.wolfKingMane=true;
+       mesh.userData.maneLengthMultiplier=5; // long hair subset
+       mesh.userData.exposedFaceScale=1/3;
+     }
    }
  }
  // Drive the thunder wolf tail from its living pelvis; for other species
@@ -1518,5 +1591,5 @@ export function createMonsterModel(spec,{detail='high'}={}){
 export {disposeMonsterSculpture};
 // All renderer metrics share this module's exact shape/material instance.
 // Never independently import a differently versioned shape-kit into the UI.
-export {MONSTER_DETAIL_LEVELS,monsterSculptCacheStats} from './monster-shape-kit.js?v=beast-spring-crouch-v3-20261116';
+export {MONSTER_DETAIL_LEVELS,monsterSculptCacheStats} from './monster-shape-kit.js?v=m001-small-face-windswept-v8-20261116';
 export {monsterPhotoCacheStats} from './monster-photo-pbr.js?v=4.4.81';
