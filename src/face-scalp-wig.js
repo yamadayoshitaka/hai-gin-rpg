@@ -381,8 +381,11 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
   // Lower only the front *scalp-colored* underlay across the upper
   // forehead, closing the triangular skin void under parted bangs.
   // Eyelids remain far below this threshold and are never overpainted.
+  // Short battle hair needs a full rear hairline through the nape. Keep
+  // the frontal threshold unchanged so skin around the eyes stays exposed.
+  const rearShortCover=shortHair&&battleStableCoverage&&zNorm<-.025;
   const yCut=box.min.y+d.y*(zNorm>.10?.815:
-   zNorm<-.035?.58:
+   zNorm<-.035?(rearShortCover?.515:.58):
    Math.abs((mid.x-center.x)/d.x)>.19?.68:.71);
   // v64: do not DISCARD a whole scalp triangle if only one vertex
   // falls below the hairline. That produced peppered scalp holes and
