@@ -13,9 +13,9 @@ const bones=['head','neck_01','pelvis','hand_l'].map(name=>{
 });
 for(let i=0;i<verts;i++){
  positions[i*3]=(i%11)*.004;
- positions[i*3+1]=i<18?1.63:.86;
+ positions[i*3+1]=i<600?1.63:.86;
  positions[i*3+2]=(i%17)*.003;
- joints[i*4]=i<18?0:2;
+ joints[i*4]=i<600?0:2;
  weights[i*4]=1;
 }
 for(let i=0;i+2<verts;i+=3)indices.push(i,i+1,i+2);
