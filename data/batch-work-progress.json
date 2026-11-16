@@ -79,12 +79,12 @@
     },
     "world": {
       "source": "ChatGPT定期品質回帰の実行結果＋GitHub証跡",
-      "lastRunAt": "2026-11-16T10:46:09+09:00",
+      "lastRunAt": "2026-11-16T11:52:46+09:00",
       "status": "work_incomplete",
       "carryover": true,
       "subject": "world実行時刻同期／PR #441保存21件・main審査中11件・承認0件",
-      "summary": "2026-11-16T10:46:09+09:00 実行。新規実ソース変更0件、実ソースコミットSHAなし、対象別QA新規合格0件。作業ブランチPR #441 checkpoint saved=21/53件、remaining=32件（QA未確認）。main受入台帳は審査中11件、未審査42件、承認0/53件、未承認53件。両集計は重複し合算しない。今回mainマージ0、Pages公開0。既存の実ソースSHAはチェックポイントを参照。",
-      "nextAction": "PR #441の既存21件を再改修扱いせず、未保存32件の優先対象を実造形修正。各対象の静的QA・WebGL・Android検証後にのみマージ公開。毎回main工程記録を同期。",
+      "summary": "2026-11-16T11:52:46+09:00 実行。今回新規実ソース変更0件、実ソースコミットSHAなし、新規QA合格0件。PR #441作業ブランチcheckpoint saved=21/53件、remaining=32件、QA未確認。main受入台帳は審査中11件、承認0/53件、未承認53件。mainとPRの集計は重複可能性があり合算しない。今回mainマージ0件、Pages公開0件。",
+      "nextAction": "未保存対象の実3D生成器改修を進め、1〜3件ごとに実ソースコミットとチェックポイント保存。QA・実描画合格までmainマージ禁止。",
       "steps": {
         "launch": "done",
         "code": "pending",
