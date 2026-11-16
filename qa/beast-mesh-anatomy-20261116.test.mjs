@@ -46,6 +46,40 @@ for(const id of remeshed){
     assert.notEqual(p.beastHockrearL.rotation.x,first,
       id+' rear hock must flex during locomotion');
   }
+  // Geometry, not rendered screenshots: the animal's shoulders taper to
+  // a smaller waist/croup and the head sits lower in its ready stance.
+  const trunk=meshes.find(m=>m.name==='species-shoulder-rib-pelvis-'+id);
+  assert.ok(trunk?.userData.axialAnatomy,id+' must use a real torso loft');
+  const torsoPositions=trunk.geometry.getAttribute('position');
+  const spanAt=z=>{
+    let span=0,samples=0;
+    for(let k=0;k<torsoPositions.count;k++){
+      if(Math.abs(torsoPositions.getZ(k)-z)>.043)continue;
+      span=Math.max(span,Math.abs(torsoPositions.getX(k)));samples++;
+    }
+    assert.ok(samples>6,'Missing torso cross section for '+id+' z='+z);
+    return span;
+  };
+  const frontWidth=spanAt(MONSTER_BY_ID[id].size*0+(.72+MONSTER_BY_ID[id].variant*.06)*.46);
+  const rearWidth=spanAt(-(.72+MONSTER_BY_ID[id].variant*.06)*.56);
+  assert.ok(frontWidth>rearWidth*1.32,
+    id+' must narrow visibly from chest/shoulder toward the croup');
+  assert.ok(model.userData.pivots.head.position.y<1.49,
+    id+' needs the lower forward hunting head pose');
+  assert.ok(model.userData.pivots.jaw.position.y<1.34,
+    id+' mandible should follow the lowered head');
+  for(const [segment,pivot] of [
+    ['root',model.userData.pivots.tail],
+    ['middle',model.userData.pivots.tailMid],
+    ['tip',model.userData.pivots.tailTip]
+  ]){
+    const patch=meshes.find(m=>m.name==='beast-tail-coat-'+segment);
+    assert.ok(patch?.userData.furStrands>=150,id+' missing '+segment+' tail hair');
+    assert.strictEqual(patch.parent,pivot,
+      id+' tail follicles must move with '+segment+' bone');
+  }
+  const tailCoats=meshes.filter(m=>m.userData.furRegion==='tail');
+  assert.equal(tailCoats.length,3,id+' should use one mesh per tail joint');
   const keratin=meshes.filter(m=>m.userData.rootedKeratin);
   assert.ok(keratin.length>=11,id+' must have physically curved dorsal horns and canines');
   assert.equal(meshes.filter(m=>m.name==='beast-pupil').length,2,
