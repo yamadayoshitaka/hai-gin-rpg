@@ -20,14 +20,14 @@ export function resolveTownConversation({npcId='',name='',role='',panel='',chapt
   const [speaker,intro,rumor,facility,sex]=keeper;
   return {id:'keeper-'+panel,name:speaker,role:'shopkeeper',panel:facility,
    modelId:CHARACTER_MODEL_REGISTRY[sex].id,
-   lines:[intro,rumor,'【'+continent.name+'】'+continent.conflict,
+   lines:[intro,rumor,'【'+continent.regionName+'・'+continent.nation+'】'+continent.conflict,
     story.dialogues[Math.min(1,story.dialogues.length-1)]?.line||story.narration]};
  }
  const index=/^street-(\d+)$/.test(npcId)?Number(npcId.slice(7)):0;
  const citizen=STARTER_TOWN.citizens[index%STARTER_TOWN.citizens.length];
  const speaker=citizen?.name||name||role||'村人';
  const lines=[citizen?.line||'この町にも多くの旅人が来ます。',
-  '大陸の外にも私たちの知らない暮らしがあります。'+continent.name+'は'+continent.climate+'の土地です。旅するなら気をつけて。',
+  'この道を越えると'+continent.nation+'の'+continent.regionName+'だ。'+continent.climate+'は天候が変わりやすい。旅支度を忘れずに。',
   '【'+story.title+'】'+continent.conflict,
   story.dialogues[index%story.dialogues.length]?.line||story.narration];
  return {id:npcId||'street-0',name:speaker,role:citizen?.role||role||'civilian',panel:null,
