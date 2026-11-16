@@ -107,7 +107,7 @@ header nav button,header nav a{min-width:0;padding:7px 2px;white-space:nowrap;fo
 #townExplorerControls,#townRadar,#townGuide,#veil{display:none!important}
 @media(min-aspect-ratio:1/1){body{grid-template-rows:auto auto minmax(0,1fr)}body>header{flex-wrap:nowrap}header .label{width:auto;max-width:38%}header nav{max-width:60%}#townScene{max-width:760px;justify-self:center}}
 </style>
-<link rel="stylesheet" href="./src/tactical-command-ui.css?v=2.1"><link rel="stylesheet" href="./src/battle-ui-refinement.css?v=2.4"><link rel="stylesheet" href="./src/three-team-sortie-ui.css?v=3"></head><body class="town-loading">
+<link rel="stylesheet" href="./src/tactical-command-ui.css?v=2.1"><link rel="stylesheet" href="./src/battle-ui-refinement.css?v=2.4"><link rel="stylesheet" href="./src/three-team-sortie-ui.css?v=inncompact-20261116"></head><body class="town-loading">
 <main id="townScene" aria-label="町の施設を選択">
 <img id="townArtwork" src="./assets/town/royal-town-hub-v1.webp" alt="城、教会、宿屋、武器屋、酒場、道具屋が並ぶ王都" fetchpriority="high">
 <div id="townFacilityPins">
@@ -141,7 +141,8 @@ header nav button,header nav a{min-width:0;padding:7px 2px;white-space:nowrap;fo
 <section id="opening" aria-label="紙芝居・オープニング" hidden><div class="sceneCard"><div class="eyebrow">第1章・紙芝居　灰の勅命</div><div id="eventSceneArt"><img id="eventSceneImage" alt="物語の現在の1コマ" hidden><div id="eventSheetMissing" role="status">漫画原画を制作・確認中</div></div><h1>レヴナの町</h1><div id="eventSpeakerRow"><img id="eventPortrait" hidden alt="話者の顔"><div id="eventSpeaker" aria-live="polite">語り手</div></div><p id="eventText">星鐘が鳴った。</p><div class="controls"><button id="eventVoice" type="button" aria-label="漫画の音声のオン・オフ">音声 ON</button><button id="eventNext">次へ ▶</button></div><button id="skipPaper" type="button">物語を閉じて町へ進む</button></div></section>
 <script type="module">
 import {armyGroups,armyGroupFor,setArmyGroup,captainCandidates,armyCaptain,setArmyCaptain,captainBonus} from './src/army-groups.js';
-import {renderThreeTeamPlanner} from './src/three-team-sortie-ui.js';
+import {renderThreeTeamPlanner} from './src/three-team-sortie-ui.js?v=inncompact-20261116';
+import {registerBattlePlan,selectBattlePlan,allBattlePlans} from './src/battle-plan-recommendations.js?v=20261116';
 import {ensureSortiePlan,setSortieCount,setSortieCaptain,setSortieFormation,setSortieGridCell,setSortieOrder,setSortieTactics,setSortieDivisions} from './src/three-team-sortie.js';
 import {STORY_CHAPTERS,storyVoiceKey} from './src/story-chapters.js';
 import {STORY_KEY_PEOPLE} from './src/story-cinematic.js';
@@ -242,9 +243,11 @@ $('townDialogueNext').onclick=()=>{
 };
 $('townDialogueService').onclick=()=>{if(!activeTalk?.panel)return;const service=activeTalk.panel;hideTownDialogue();openPanel(service);};
 $('townDialogueClose').onclick=()=>{hideTownDialogue();stopNarration();};
-function openPanel(which){if(!townReady)return;hideTownDialogue();resetTownMovement();panel=which;if(which==='formation'){sortieView='setup';sortieTeamId=1;sortieCellIndex=5;sortieJobPage=0;sortieTemplatePage=0;sortieStrategyFamily='attack';sortieStrategyIntent='melee';ensureSortiePlan(game);persistSession(game,sessionStorage);}
+function openPanel(which){if(!townReady)return;hideTownDialogue();resetTownMovement();panel=which;
+ townAudio.setScene(which==='formation'?'inn':which==='weapons'||which==='items'?'shop':which==='save'?'church':which==='story'?'castle':which==='tavern'?'tavern':'town');if(which==='formation'){sortieView='setup';sortieTeamId=1;sortieCellIndex=5;sortieJobPage=0;sortieTemplatePage=0;sortieStrategyFamily='attack';sortieStrategyIntent='melee';ensureSortiePlan(game);persistSession(game,sessionStorage);}
  townAudio.effect('open');page=0;shopCategory=which==='weapons'?'武器':'道具';notice('');$('panel').hidden=false;$('panelBackdrop').hidden=false;renderPanel();}
-function closePanel(){$('panel').hidden=true;$('panelBackdrop').hidden=true;panel='';townAudio.effect('cancel');townAudio.setScene('town');}
+function closePanel(){$('panel').hidden=true;$('panelBackdrop').hidden=true;panel='';townAudio.effect('cancel');
+ townAudio.setScene(insideFacility==='formation'?'inn':insideFacility==='save'?'church':insideFacility==='story'?'castle':insideFacility==='tavern'?'tavern':insideFacility?'shop':'town');}
 $('panelClose').onclick=closePanel;$('panelBackdrop').onclick=closePanel;
 // Direct buying from the top navigation is intentionally disabled.
 function facilityLabel(kind){return ({weapon:'武具屋',shop:'道具屋',inn:'宿屋',tavern:'酒場',church:'教会',castle:'王城'})[kind]||kind;}
@@ -474,6 +477,26 @@ $('panelContent').onclick=event=>{
  if(panel==='formation'){
   const target=event.target.closest('button');
   if(!target)return;
+  if(target.hasAttribute('data-sortie-battle-save')){
+   try{
+    const name=$('panelContent').querySelector('[data-battle-plan-name]')?.value;
+    const methodId=$('panelContent').querySelector('[data-battle-plan-method]')?.value;
+    const stage=sortiePlanningStage(game);
+    const plan=registerBattlePlan(game,{name,methodId,kind:stage?.kind,terrain:stage?.biome});
+    selectBattlePlan(game,sortieTeamId,plan.id);
+    try{setSortieTactics(game,sortieTeamId,[plan.methodId]);}catch{}
+    persist();sortieView='battlePlans';renderPanel();notice('作戦テンプレート「'+plan.name+'」を登録しました。');
+   }catch(error){notice(error.message||String(error));}
+   return;
+  }
+  if(target.hasAttribute('data-sortie-battle-plan')){
+   try{
+    const plan=selectBattlePlan(game,sortieTeamId,target.dataset.sortieBattlePlan);
+    try{setSortieTactics(game,sortieTeamId,[plan.methodId]);}catch{}
+    persist();renderPanel();notice('第'+sortieTeamId+'班へ「'+plan.name+'」を適用しました。戦闘時に対象を選択できます。');
+   }catch(error){notice(error.message||String(error));}
+   return;
+  }
   if(target.hasAttribute('data-sortie-team')){
    sortieTeamId=Number(target.dataset.sortieTeam);sortieCellIndex=5;sortieView='setup';sortieJobPage=0;sortieTemplatePage=0;renderPanel();return;
   }
