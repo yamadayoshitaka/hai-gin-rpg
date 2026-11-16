@@ -9,6 +9,22 @@ import {captureCrowdImpostorAtlas} from './crowd-impostor-atlas.js?v=4.6.2';
  * No synthetic low-poly human body is ever substituted.
  */
 const VIEW_STEPS=Math.PI/2;
+// A shared job/sex card has the WRONG personal haircut and boot shape. It
+// may only replace the genuine animated 3D rig once it is tiny on screen.
+export const DISTANT_CARD_ENTER_PX=48;
+export const DISTANT_CARD_EXIT_PX=62;
+export function projectedSoldierHeightPx(camera,canvasHeight,distance,height=3.1){
+ if(!(distance>0)||!(canvasHeight>0))return Infinity;
+ if(camera?.isPerspectiveCamera){
+  const fov=Number(camera.getEffectiveFOV?.()??camera.fov)||50;
+  return height*canvasHeight/(2*distance*Math.tan(fov*Math.PI/360));
+ }
+ if(camera?.isOrthographicCamera){
+  const zoom=Math.max(.001,Number(camera.zoom)||1);
+  return height*canvasHeight*zoom/Math.max(.001,camera.top-camera.bottom);
+ }
+ return Infinity;
+}
 export async function createSkirmishDistanceLod(scene,renderer,actors,{
   threshold=45,onProgress=()=>{}
 }={}){
@@ -52,6 +68,8 @@ export async function createSkirmishDistanceLod(scene,renderer,actors,{
  const scratch=new THREE.Object3D();
  let visible=0,eligible=0;
  const thresholdSq=threshold*threshold;
+ const canvasHeight=()=>renderer.domElement?.clientHeight||
+  (renderer.domElement?.height||0)/(renderer.getPixelRatio?.()||1);
  function update(camera,time=0,paused=false){
   visible=0;eligible=0;
   for(const bucket of buckets.values()){
@@ -59,6 +77,7 @@ export async function createSkirmishDistanceLod(scene,renderer,actors,{
    if(!mesh)continue;
    let count=0;
    for(const a of bucket.actors){
+    const wasCard=!!a._distantCard;
     a._distantCard=false;
     if(a.defeated||a.hp<=0||!a.root||!a.character||a.crowdSampling||
       a.floorTravel||(a.indoorFloor??1)>1||a.mountId||
@@ -69,10 +88,11 @@ export async function createSkirmishDistanceLod(scene,renderer,actors,{
     const distanceSq=p.distanceToSquared(camera.position);
     if(distanceSq<thresholdSq)continue;
     const range=Math.sqrt(distanceSq);
-    // Project a 3.1-metre source portrait; if smaller than 40px on screen,
-    // individual facial animation is not resolvable. Keep the true rig when
-    // the user zooms back in.
-    if(range<=0)continue;
+    // 45m is NOT a sufficient reason to replace a large visible 3D soldier.
+    // Preserve per-actor real hair, legs and armor down to 48 CSS pixels.
+    // Hysteresis retains the card until a returning actor is 62px tall.
+    const projected=projectedSoldierHeightPx(camera,canvasHeight(),range);
+    if(projected>(wasCard?DISTANT_CARD_EXIT_PX:DISTANT_CARD_ENTER_PX))continue;
     eligible++;
     const yaw=Math.atan2(camera.position.x-p.x,camera.position.z-p.z);
     const relative=Math.atan2(Math.sin(yaw-a.root.rotation.y),

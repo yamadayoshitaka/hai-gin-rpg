@@ -109,7 +109,7 @@ assert.match(rig,/shieldBackClearanceM=fitted\.forwardClearance/);
 assert.match(rig,/shieldBackClearanceM:shield\?\.userData\.shieldBackClearanceM/);
 assert.match(game,/face-wig-v6/);
 assert.match(game,/STUDIO_GROOM_MIDDLE_MAX=6/);
-assert.match(game,/bakeInterval=p95>33\?3800/);
+assert.match(game,/bakeInterval=p95>33\?1400:p95>25\?850:350/);
 assert.match(game,/quality,/);
 assert.match(rig,/battleBackUnderlay=quality==='battle'\?\['torso'\]/);
 const wigSource=readFileSync(new URL('../src/face-scalp-wig.js',import.meta.url),'utf8');
