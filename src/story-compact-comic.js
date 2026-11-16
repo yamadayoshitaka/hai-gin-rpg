@@ -94,7 +94,15 @@ export function compactComicForStage(stageId,phase,context={}){
  }
  if(base.some(x=>!x))throw Error('Missing compact source art identity '+stageId+' '+original.edition);
  const withCount=p=>({...p,sourceSheetCount:original.pages.find(q=>q.number===p.comicPage)?.cellCount||1});
- const scenes=openingArt.map(p=>scene(withCount(p),[turn(p)],{opening:true}));
+ // Preserve the authored chapter-opening screenplay (speaker, portrait and
+ // VOICEVOX text) rather than replaying legacy panel captions as dialogue.
+ // Four visual beats remain fixed even when the opening has fewer spoken turns.
+ const openingLines=opening?script.pre.filter(line=>
+  ['chapter-opening','canonical-dialogue'].includes(line.kind)):[];
+ const openingBatches=openingLines.length?distribute(openingLines,4):[];
+ const scenes=openingArt.map((p,i)=>scene(withCount(p),
+  openingBatches[i]?.length?openingBatches[i].map(line=>turn(line)):[turn(p)],
+  {opening:true}));
  let batches=distribute(lines,2).map(group=>group.map(p=>turn(p)));
  let sharedKind=null;
  if(phase==='post'&&original.edition.startsWith('post-defeat')){
