@@ -6,7 +6,9 @@ export function batchStaticStageDecorations(stageRoot,THREE,{sectorCells=32,cell
     'town_crate_001','town_bench_001','town_planter_001','town_trash_bin_001',
     'town_fence_001','stone_fence_001','cottage_barrel_001','street_lamp_001',
     'stone_column_001','stone_steps_001','town_handcart_001','town_notice_001',
-    'town_well_001','inn_sign_001','stone_archway_001','haystack_001']);
+    'town_well_001','inn_sign_001','stone_archway_001','haystack_001',
+    'town_firewood_001','town_water_trough_001','town_signpost_001',
+    'town_sacks_001','town_stone_pile_001','town_brazier_001','town_herb_garden_001']);
   stageRoot.updateWorldMatrix(true,true);
   const rootInverse=stageRoot.matrixWorld.clone().invert();
   const groups=new Map(),removable=[],instanceLocations=new Map(),originalByLocation=new Map();
