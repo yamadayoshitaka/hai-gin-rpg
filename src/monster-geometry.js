@@ -179,6 +179,13 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
         [side*.338,1.172,.319],[side*.266,1.364,.519],.139,.080);
       blade.name='m001-scapular-muscle-'+(side<0?'L':'R');
       blade.userData.buriedScapula=true;
+      // The coxal-to-thigh fascia belongs to the torso/pelvis, not to
+      // the swinging leg. It overlaps the femoral head under the fur
+      // throughout walking, so no empty wedge opens at the hip.
+      const hip=g.bridge(torso,'skin',
+        [side*.267,1.151,-.355],[side*.313,.968,-.526],.160,.125);
+      hip.name='m001-hip-fascia-'+(side<0?'L':'R');
+      hip.userData.hipSocketSeal=true;
     }
   }
  }else g.sphere(torso,'light',[0,1.48,.22],[.31,.25,.45]);
