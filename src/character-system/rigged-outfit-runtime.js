@@ -652,7 +652,10 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
   // partial skinned robe or missing rear triangle must not expose an empty
   // hollow where bone-region culling previously deleted the entire torso.
   // No second mesh, material or draw call: the body is already skinned.
-  const battleBackUnderlay=quality==='battle'?['torso']:[];
+  // Only preserve the entire bare torso when no opaque under-vest exists.
+  // With linen lining, surfaceCheck clips skin hidden by actual clothing;
+  // always preserving it made bare shoulder blades poke through moving coats.
+  const battleBackUnderlay=quality==='battle'&&opaqueTorsoLiningMaterials===0?['torso']:[];
   const occlusionPreserveRegions=[...new Set([
    ...studioSkinPolicy.preserveRegions,...battleBackUnderlay
   ])];
