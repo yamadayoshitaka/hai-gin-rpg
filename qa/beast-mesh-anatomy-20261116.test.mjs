@@ -74,7 +74,8 @@ for(const id of remeshed){
   animateMonsterModel(model,0);
   const beforeMotion=[...['frontL','frontR','rearL','rearR'].map(key=>
     model.userData.pivots['leg'+key].scale.y)];
-  assert.ok(beforeMotion.every(n=>n===1),id+' uncompressed idle pose');
+  assert.ok(beforeMotion.every(n=>Math.abs(n-.88)<.0001),
+   id+' idle pose must keep the anatomically shortened upper limb');
   assert.ok(Math.abs(model.userData.pivots.legrearL.rotation.x)>.12,
     id+' needs a bent rear leg even when not moving');
   assert.ok(Math.abs(model.userData.pivots.lowerfrontL.rotation.x)>.12,
@@ -92,12 +93,12 @@ for(const id of remeshed){
   assert.ok(Math.max(...bodyHeights)-Math.min(...bodyHeights)<.019,
     id+' running body must not pogo bounce off the ground');
   assert.ok(Math.min(...compressed)<.97,id+' stance requires spring compression');
-  assert.ok(Math.max(...compressed)<=1,
+  assert.ok(Math.max(...compressed)<=.8801,
     id+' no elongating forelegs to fake a jump');
   startMonsterAction(model,'idle',.54);
   animateMonsterModel(model,.55);
   for(const key of ['frontL','frontR','rearL','rearR'])
-    assert.equal(model.userData.pivots['leg'+key].scale.y,1,
+    assert.equal(model.userData.pivots['leg'+key].scale.y,.88,
       id+' compression must reset after running');
   const chestProfile=trunk.geometry.getAttribute('position');
   let frontBottom=Infinity,rearBottom=Infinity;
@@ -120,6 +121,30 @@ for(const id of remeshed){
   }
   const tailCoats=meshes.filter(m=>m.userData.furRegion==='tail');
   assert.equal(tailCoats.length,3,id+' should use one mesh per tail joint');
+  // Anatomical face is assessed through actual mesh dimensions, not a
+  // concept-art screenshot. Earlier variants used a long attached snout
+  // and tiny black dots instead of a visible iris.
+  const muzzlePosition=snout[0].geometry.getAttribute('position');
+  let muzzleTip=-Infinity;
+  for(let i=0;i<muzzlePosition.count;i++)
+    muzzleTip=Math.max(muzzleTip,muzzlePosition.getZ(i));
+  assert.ok(muzzleTip<.70,id+' muzzle must be shorter than the old .762 profile');
+  const eyes=meshes.filter(m=>m.name==='eye');
+  assert.equal(eyes.length,2,id+' should have two actual pigmented iris volumes');
+  assert.ok(eyes.every(m=>m.scale.y>=.033&&m.scale.z>=.05),
+    id+' iris should be visible at normal side-view camera distance');
+  const ears=meshes.filter(m=>m.userData.foxPinna);
+  const earLining=meshes.filter(m=>m.userData.foxPinnaInner);
+  assert.equal(ears.length,2,id+' should have paired sharp fox-shaped pinnae');
+  assert.equal(earLining.length,2,id+' needs an inner ear surface on both sides');
+  assert.ok(ears.every(m=>m.geometry.getAttribute('position').count>=100),
+    id+' fox cartilage requires a genuinely sculpted surface, not cones');
+  for(const key of ['frontL','frontR','rearL','rearR']){
+    const limb=model.userData.pivots['leg'+key];
+    assert.equal(limb.userData.restLengthScale,.88,id+' missing 12% limb shortening');
+    assert.ok(Math.abs(limb.position.y-(id==='m004'&&key.startsWith('rear')?-.54:.55))<.0001,
+      id+' hip height must be adjusted along with limb length');
+  }
   const keratin=meshes.filter(m=>m.userData.rootedKeratin);
   assert.ok(keratin.length>=11,id+' must have physically curved dorsal horns and canines');
   assert.equal(meshes.filter(m=>m.name==='beast-pupil').length,2,
