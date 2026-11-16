@@ -200,7 +200,7 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
      {z:.657,y:-.165,rx:.145,ry:.074},
      {z:.594,y:-.156,rx:.139,ry:.067},
      {z:.551,y:-.147,rx:.090,ry:.046}
-   ],{name:s.id==='m001'?'wolf-nasal-cartilage':'beast-rhinarium-'+s.id,
+   ],{name:s.id==='m001'?'wolf-nasal-cartilage':s.id==='m002'?'m002-rhinarium':'beast-rhinarium-'+s.id,
       rough:.29,ribbing:0});
    for(const side of [-1,1]){
      // Cut-in nostril alae follow the shortened rhinarium; neither sticks
