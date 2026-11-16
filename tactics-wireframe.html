@@ -2562,17 +2562,37 @@ async function installBattleModels(){
      installed++;dressed++;animated++;
      return;
     }
-    const storyLeader=a.isStrategist?storyRequest?.commanders?.find(x=>String(x.id)===String(a.commanderId)):null;
+    // Preserve the canonical commander look ONLY on its protagonist/leader.
+    // Squad members receive stable distinct identities, not cloned faces.
+    const storyLeader=(a.isStrategist||a.isPlayerHero)?
+     storyRequest?.commanders?.find(x=>String(x.id)===String(a.commanderId)):null;
+    const appearanceJob=(TOWN_MODE&&a.id===0||a.isStrategist)?'軍師':
+     a.job.name==='槍兵'?'剣士':a.job.name;
     const sex=storyLeader?(storyLeader.gender==='female'?'female':'male'):
-     TOWN_MODE&&a.id===0?(battleParams.get('gender')==='female'?'female':'male'):a.id%5===0?'female':'male';a.sex=sex;
-     const appearanceJob=(TOWN_MODE&&a.id===0||a.isStrategist)?'軍師':a.job.name==='槍兵'?'剣士':a.job.name;
-     // The strategist has a dedicated outfit; existing swordsman clips supply
-     // the motion-compatible body instead of attempting an unmapped job clip.
-     const motionJob=(TOWN_MODE&&a.id===0||a.isStrategist)?'剣士':appearanceJob;
-     // A human-sized map cell is one normal step, not one whole body height.
-     // Adults remain anatomically scaled; all outfits use this same skeleton.
-     const townFace=storyLeader?Number(storyLeader.faceId):TOWN_MODE&&a.id===0?Number(battleParams.get('faceId')):null;
-     const character=await createCharacter({job:motionJob,sex,height:sex==='female'?1.68:1.78,jobs,faceId:Number.isInteger(townFace)?townFace:a.id});
+     a.appearanceOptions?.gender==='female'?'female':
+     a.appearanceOptions?.gender==='male'?'male':
+     TOWN_MODE&&a.id===0?(battleParams.get('gender')==='female'?'female':'male'):
+     a.id%5===0?'female':'male';
+    const defaultAge=a.isPlayerHero?'twenties':a.isStrategist?'forties':
+     ['twenties','twenties','thirties','twenties','forties','twenties','thirties','sixties'][a.id%8];
+    const townFace=storyLeader?Number(storyLeader.faceId):
+     TOWN_MODE&&a.id===0?Number(battleParams.get('faceId')):null;
+    const recipe=createHeroProductionRecipe({
+     id:a.id,jobId:a.isStrategist?'strategist':a.jobId,jobName:appearanceJob,
+     sex,rarity:a.rarity,role:a.isPlayerHero?'protagonist':a.isStrategist?'strategist':'soldier',
+     ageBand:a.appearanceOptions?.ageBand||storyLeader?.ageBand||defaultAge,
+     bodyType:a.appearanceOptions?.bodyType||storyLeader?.bodyType||'normal',
+     faceId:Number.isInteger(townFace)?townFace:a.appearanceOptions?.faceId,
+     hairStyle:a.appearanceOptions?.hairStyle,hairColor:a.appearanceOptions?.hairColor
+    });
+    a.sex=recipe.sex;a.masterRecipe=recipe;
+    // The detailed authoring prototype is not yet a playable rig; transfer
+    // appearance controls to the SAME 65-bone skinned model as the hero studio.
+    const character=await createCharacter({
+     job:recipe.motionJob,sex:recipe.sex,height:recipe.height,jobs,
+     faceId:recipe.faceIndex,faceProfile:recipe.faceProfile,
+     faceQuality:a.isPlayerHero||a.isStrategist?'hero':'battle'
+    });
     for(const child of [...a.root.children])if(child!==a.root.userData.ring)a.root.remove(child);
     a.root.add(character.object3D);character.object3D.traverse(part=>{if(part.isMesh||part.isSkinnedMesh){part.castShadow=true;part.receiveShadow=true;part.frustumCulled=false;}});a.character=character;a.model=character.object3D;character.object3D.visible=false;
     // Audit the ORIGINAL full-body geometry before adding clothes. The
@@ -2597,7 +2617,9 @@ async function installBattleModels(){
      // Battle LOD omits inspection-only detail while all 100 actors are animated.
      try{
       a.outfit=await buildRiggedJobOutfit({characterModel:character.model,parent:character.object3D,
-       job:appearanceJob,sex,quality:'battle',rarity:a.rarity,preserveBody:false,weaponOverride:a.job.name==='槍兵'?'spear':null});
+       job:recipe.outfitJob,sex:recipe.sex,quality:'battle',rarity:recipe.rarity,
+       hairStyle:recipe.hairStyle,hairColor:recipe.hairColor,
+       preserveBody:false,weaponOverride:a.job.name==='槍兵'?'spear':null});
       // Original anatomy is retained in the source rig for restoring and fit;
       // the displayed body keeps only skin not covered by real clothes.
       a.bodyVerticesAfter=[...anatomy].reduce((sum,[part])=>
@@ -2619,6 +2641,11 @@ async function installBattleModels(){
       a.bodyClippedTriangles=garmentAudit.skinCutTriangles;
       a.garmentSurfaceSamples=garmentAudit.garmentSurfaceSamples;
       a.outfit.sync();
+      // Whole-rig width/depth proportions keep skin, knees, neck, boots,
+      // armor and weapons bone-aligned without changing world collision.
+      character.object3D.scale.set(recipe.visualScaleX,1,recipe.visualScaleZ);
+      character.object3D.userData.heroProductionRecipe=recipe;
+      a.root.userData.heroProductionVersion=recipe.recipeVersion;
       // The original full-quality armor/cloth stays untouched. Only rigid
       // parts entirely outside the camera/shadow frustum are not submitted.
       // Keep deforming body/hair/animation meshes on their original path.
@@ -2648,7 +2675,8 @@ async function installBattleModels(){
    loadingProgress('職業別の人体・衣装・武器・モーションを最適化中 '+Math.min(i+5,actors.length)+'/'+actors.length+'体',
     42+36*Math.min(1,(i+5)/Math.max(1,actors.length)));
  }
-  log('v4.6.69 人物 '+installed+'/'+actors.length+'体、衣装 '+dressed+'体、待機モーション '+animated+'体を準備完了');
+  log('主人公方式の共通リグ '+installed+'/'+actors.length+'体、職業別衣装 '+dressed+
+   '体、待機モーション '+animated+'体・外観レシピ母数 '+HERO_VARIANT_COUNT+'を準備完了');
   if(outfitFailures)console.warn('衣装の読み込み失敗 '+outfitFailures+'体\n'+motionDiagnosticReport());
   if(installed!==actors.length||dressed!==actors.length||animated!==actors.length)
    throw Error('人物の準備が完了していません（モデル '+installed+'/'+actors.length+'、衣装 '+dressed+'/'+actors.length+'、モーション '+animated+'/'+actors.length+'）。衣装失敗詳細: '+actors.filter(a=>a.outfitError).slice(0,4).map(a=>a.job.name+': '+a.outfitError).join('; ')+'。簡易モデルでは戦闘を開始しません。');
