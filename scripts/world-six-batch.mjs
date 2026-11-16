@@ -102,6 +102,9 @@ function integrate(){
  const dest=path.join(root,'data/world-quality/live-batch-report.json');
  fs.mkdirSync(path.dirname(dest),{recursive:true});
  fs.writeFileSync(dest,JSON.stringify(report,null,2)+'\n');
+ const targets={schemaVersion:1,source:'src/object-catalog.js',count:objectCount,
+  objects:objects.map(({id,name,category,kind})=>({id,name,category,kind}))};
+ fs.writeFileSync(path.join(root,'data/world-quality/catalog-targets.json'),JSON.stringify(targets,null,2)+'\n');
  console.log(JSON.stringify({integrated:6,objects:objectCount,output:'data/world-quality/live-batch-report.json'}));
 }
 if(argv.includes('--integrate'))integrate();
