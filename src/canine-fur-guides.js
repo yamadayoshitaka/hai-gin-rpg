@@ -86,3 +86,85 @@ export function canineFurGuideStats(guides){
  return {count:guides.length,shades:[...spread],
   invalid:guides.filter(v=>![...v.root,...v.mid,...v.tip,...v.normal,v.width].every(Number.isFinite)).length};
 }
+
+/**
+ * Anatomically anchored coat, using exactly the same shoulder/rib/waist
+ * stations as the real axial torso mesh. The old ellipsoid coat had hair
+ * hovering over a tapered body and the whole animal looked cylindrical.
+ * Stations and lengthProfile are nose(+Z)->tail(-Z), in model metres.
+ */
+export function generateCanineAxialFurGuides({
+ stations,lengthProfile,rows=28,around=36,seed=0,width=.018,
+ minVertical=-1,maxVertical=1,gravity=.17,
+}={}){
+ const ordered=arr=>Array.isArray(arr)&&arr.length>=3&&
+  arr.every((p,i)=>Number.isFinite(p.z)&&(!i||arr[i-1].z>p.z));
+ if(!ordered(stations)||!ordered(lengthProfile)||
+    stations.some(p=>!['y','rx','ry'].every(k=>Number.isFinite(p[k]))||
+      p.rx<=0||p.ry<=0)||
+    lengthProfile.some(p=>!Number.isFinite(p.length)||p.length<=0||p.length>.5)||
+    !Number.isInteger(rows)||rows<2||rows>50||
+    !Number.isInteger(around)||around<4||around>64||
+    !Number.isFinite(width)||width<=0||width>.2||
+    !Number.isFinite(minVertical)||!Number.isFinite(maxVertical)||
+    minVertical< -1||maxVertical>1||minVertical>maxVertical)
+  throw Error('Invalid anatomically anchored canine coat profile');
+ const interpolate=(nodes,z,key)=>{
+  for(let i=1;i<nodes.length;i++)if(z>=nodes[i].z||i===nodes.length-1){
+   const a=nodes[i-1],b=nodes[i],
+    t=Math.max(0,Math.min(1,(a.z-z)/(a.z-b.z)));
+   return a[key]+(b[key]-a[key])*t;
+  }
+  return nodes[0][key];
+ };
+ const guides=[];
+ const zNear=stations[0].z,zFar=stations[stations.length-1].z;
+ for(let row=0;row<rows;row++){
+  const z=zNear-(zNear-zFar)*(row+.5)/rows;
+  const y=interpolate(stations,z,'y');
+  const rx=interpolate(stations,z,'rx'),ry=interpolate(stations,z,'ry');
+  const localLength=interpolate(lengthProfile,z,'length');
+  // Surface slope enters the true geometric normal, so roots follow the
+  // taper and individual hair blades are not left inside the ribs or pelvis.
+  const eps=.018;
+  const dx=(interpolate(stations,z+eps,'rx')-
+    interpolate(stations,z-eps,'rx'))/(eps*2);
+  const dy=(interpolate(stations,z+eps,'y')-
+    interpolate(stations,z-eps,'y'))/(eps*2);
+  const dh=(interpolate(stations,z+eps,'ry')-
+    interpolate(stations,z-eps,'ry'))/(eps*2);
+  for(let col=0;col<around;col++){
+   const theta=2*Math.PI*(col+(row%2)*.5+noise(row,col,seed)*.23)/around;
+   const vertical=Math.sin(theta);
+   if(vertical<minVertical||vertical>maxVertical)continue;
+   const horizontal=Math.cos(theta);
+   const nx=horizontal/rx,ny=vertical/ry,
+     nz=-(nx*horizontal*dx+ny*(dy+vertical*dh));
+   const mag=Math.hypot(nx,ny,nz)||1;
+   const normal=[nx/mag,ny/mag,nz/mag];
+   const root=[horizontal*(rx+.012),y+vertical*(ry+.012),z];
+   // Guard hairs: longer below front chest, shorter atop the spines and
+   // around the narrow waist. No uniform porcupine-like radial carpet.
+   const region=vertical<-.30?(z>0?1.21:1.07):
+     vertical>.60?.80:1;
+   const strandLength=localLength*region*
+     (.80+.38*noise(row*7,col*11,seed));
+   const wobble=noise(row*19,col*7,seed)-.5;
+   const tip=[
+    root[0]+normal[0]*strandLength*.53+wobble*strandLength*.11,
+    root[1]+normal[1]*strandLength*.45-gravity*strandLength,
+    root[2]-strandLength*.90+normal[2]*strandLength*.10
+   ];
+   const mid=[
+    root[0]*.44+tip[0]*.56+normal[0]*strandLength*.11,
+    root[1]*.44+tip[1]*.56+normal[1]*strandLength*.11,
+    root[2]*.44+tip[2]*.56+normal[2]*strandLength*.11
+   ];
+   guides.push({root,mid,tip,normal,
+    width:width*(.68+.55*noise(row*11,col*13,seed)),
+    shade:((row*13+col*7+seed)%13===0)?'shadow':
+      ((row*7+col*5+seed)%7===0)?'light':'skin'});
+  }
+ }
+ return guides;
+}
