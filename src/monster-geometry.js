@@ -460,8 +460,9 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
      for(let digit=0;digit<4;digit++){
       const x=(digit-1.5)*.070;
       g.sphere(paw,'skin',[x,-.034,.09],[.039,.043,.082],{name:'beast-toe-'+digit});
-      g.curvedHorn(paw,'bone',[x,-.028,.148],[x*1.07,-.056,.209],
-       [x*1.11,-.071,.260],.020,{name:'beast-claw-'+digit});
+      g.rootedSpike(paw,'bone','skin',
+       [x,-.028,.148],[x*1.11,-.071,.260],.020,
+       {name:'rooted-claw-beast-'+digit});
      }
    }else if(s.id!=='m003'){
      // Fenrir owns a separate articulated toe assembly below. Rendering
