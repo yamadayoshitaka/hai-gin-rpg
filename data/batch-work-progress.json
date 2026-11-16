@@ -62,12 +62,12 @@
     },
     "monster": {
       "source": "ChatGPT 定期タスクの実行結果",
-      "lastRunAt": "2026-11-16T23:17:38+09:00",
-      "subject": "PR #426 m048 背びれUVと遊泳メッシュ描画境界の実修正",
-      "summary": "monster.enabled=true確認。m048背びれ膜へ非退化UVを追加しPBRテクスチャ適用可能にした。遊泳で変形する胴体・腹側・背びれ・側線のboundingSphereを再計算し視錐台カリング誤判定を防止。実ソースSHA fd0cb86f。ソース再取得で静的文字列確認のみ成功。Node構文/WebGL/Android QAは未実施。GLB0、ゲーム反映0、マージ/公開なし。全108件監査未完了。",
+      "lastRunAt": "2026-11-17T08:10:00+09:00",
+      "subject": "PR #426 m020 dorsal fin UV実修正・描画QA保留",
+      "summary": "monster.enabled=true。m020背びれ膜のprocedural fin生成器にUVを追加し、bake/PBRに必要なUV欠落を修正。実ソースSHA a67a424、チェックポイントSHA 6d7505c。Node/WebGL/Android未検証。m048も未検証。GLB0、ゲーム採用0、mainマージ/Pages公開なし。",
       "status": "work_incomplete",
       "carryover": true,
-      "nextAction": "PR #426最新headのNode構文、m048 UV/animated boundsの描画回帰、m020/m048四方向WebGLとAndroid FPS、mobile-battle E2E失敗を修正。108ID全数監査後、同系統へ拡張。",
+      "nextAction": "m020 fin UVのNode構文・WebGL前後左右/UV/PBRとm048の動的境界を確認。E2E 3失敗ジョブ修正、Android FPS測定、108ID全数分類。",
       "steps": {
         "launch": "done",
         "code": "done",
@@ -79,27 +79,30 @@
       },
       "evidence": [
         {
-          "label": "m048 UV/bounds実ソースコミット",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/fd0cb86f864f22f189c39266bb3544ca75b38896"
+          "label": "m020 dorsal fin UV source",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/a67a42415ea34a55500b82d0ddd43f76d59a854c"
         },
         {
-          "label": "Draft PR #426",
+          "label": "checkpoint",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/6d7505c6ac2b99d011ce30e077f6ea2737e9d163"
+        },
+        {
+          "label": "PR #426",
           "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/426"
         },
         {
-          "label": "m048再開チェックポイント",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/648ce05f1ade3df1e4b777ad9744be6c03fb41b0"
+          "label": "split E2E failures",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/43946658821"
         }
       ],
       "operational": {
         "blockers": [
-          "Node実行による構文・対象別テスト未実施（GitHubソースの静的文字列確認のみ）",
-          "m020/m048前後左右WebGL画像未確認",
-          "Android FPS未実測",
-          "PR #426 mobile-battle E2E未合格",
-          "正本108IDの全数分類未完了"
+          "m020/m048 Node構文・四方向WebGL描画QA未完了",
+          "Android FPS未計測",
+          "monster-manager/skirmish-two-legs/summon-gallery-mobile E2E失敗",
+          "正本108ID全数分類未完了"
         ],
-        "speedPlan": "m048最新差分のNode/ブラウザQAを先に解消し、m020と併せて描画合格後に海棲骨格群へ展開",
+        "speedPlan": "m020 fin UVとm048の静的・WebGL検証を優先し、失敗ジョブを個別修正。合格前はマージしない。",
         "lastRunOutcome": {
           "newSourceChangedIds": 1,
           "newQAPassed": 0,
