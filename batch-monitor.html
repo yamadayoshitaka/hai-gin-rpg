@@ -257,6 +257,10 @@ async function updateProgress(){
     view.stageGrid.appendChild(tag('span','stage '+result,label+'：'+STEP_LABELS[result]));
    }
    view.progressTime.textContent='最終記録：'+TIME(entry.lastRunAt||data.asOf)+' ／ '+(entry.source||'記録元未確認')+'（GitHub保存時点）';
+   // The scheduling metadata is an old static snapshot; show actual logged execution instead.
+   if(g.id!=='world'&&entry.lastRunAt){
+    elements.get(g.id).detail.textContent='直近の実行記録：'+TIME(entry.lastRunAt)+'（GitHub工程台帳の時刻・実行中判定ではない）';
+   }
    view.progressSummary.textContent=entry.summary||'結果の詳細なし';
    const health=elements.get(g.id)?.health;
    if(health){
