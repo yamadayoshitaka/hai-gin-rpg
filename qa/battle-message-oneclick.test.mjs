@@ -19,6 +19,10 @@ assert.match(dialogue,/performanceSlot\.hidden=!visible/,
  'The performance panel can be collapsed without stopping performance sampling');
 assert.match(dialogue,/localStorage\.setItem\(settingKey,String\(visible\)\)/,
  'The FPS visibility choice persists across battle reloads');
+assert.match(html,/\$\('topStructureSlot'\)\.appendChild\(missionCheckpointHud\)/,
+ 'Battle objective progress remains visible even when FPS diagnostics are collapsed');
+assert.doesNotMatch(html,/\$\('topPerformanceSlot'\)\.appendChild\(missionCheckpointHud\)/,
+ 'Objective checkpoints must never be hidden with performance diagnostics');
 assert.match(html,/const squadQuickList=document\.createElement\('div'\)/);
 assert.match(html,/function buildSquadQuickCommands\(\)/);
 assert.match(html,/const cooldown=squadOrderCooldownSeconds\(id\)/,'Orders respect the live two-minute lock');
