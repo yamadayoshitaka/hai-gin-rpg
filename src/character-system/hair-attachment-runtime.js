@@ -106,11 +106,21 @@ function fittedScalpSurface(model,bone,headBounds){
   if(index<0)return;
   const joints=mesh.geometry.getAttribute('skinIndex'),weights=mesh.geometry.getAttribute('skinWeight');
   if(!joints||!weights)return;
-  // The largest skinned mesh is the actual body; tiny eyebrow/eye meshes
-  // cannot be mistaken for scalp geometry.
-  candidates.push({mesh,index,joints,weights,vertices:mesh.geometry.attributes.position.count});
+  // Rank by actual head-influenced skin vertices, not total mesh size:
+  // a high-poly coat can otherwise displace the anatomical head entirely.
+  // Exclude separate facial details, which are not continuous scalp skin.
+  if(/eyebrow|brow|eyelash|iris|pupil|cornea|teeth|tongue|hair|helmet|hat/i.test(mesh.name))return;
+  const vertices=mesh.geometry.attributes.position.count;
+  let headVertices=0;
+  const stride=Math.max(1,Math.floor(vertices/12000));
+  for(let i=0;i<vertices;i+=stride){
+   let influence=0;
+   for(let k=0;k<4;k++)if(joints.getComponent(i,k)===index)influence+=weights.getComponent(i,k);
+   if(influence>=.56)headVertices++;
+  }
+  if(headVertices>=30)candidates.push({mesh,index,joints,weights,vertices,headVertices});
  });
- candidates.sort((a,b)=>b.vertices-a.vertices);
+ candidates.sort((a,b)=>b.headVertices-a.headVertices);
  const candidate=candidates[0];if(!candidate)return null;
  const {mesh,index,joints,weights,vertices}=candidate;
  const threshold=headBounds.max.y-(headBounds.max.y-headBounds.min.y)*.46;
