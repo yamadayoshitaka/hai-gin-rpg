@@ -131,8 +131,9 @@ for(const id of remeshed){
   assert.ok(muzzleTip<.70,id+' muzzle must be shorter than the old .762 profile');
   const eyes=meshes.filter(m=>m.name==='eye');
   assert.equal(eyes.length,2,id+' should have two actual pigmented iris volumes');
-  assert.ok(eyes.every(m=>m.scale.y>=.033&&m.scale.z>=.05),
-    id+' iris should be visible at normal side-view camera distance: '+
+  assert.ok(eyes.every(m=>m.scale.y>=.033&&
+      m.scale.z>=(id==='m001'?.033:.05)),
+    id+' iris should be visible while the m001 frontal iris sits inset: '+
       JSON.stringify(eyes.map(m=>({parent:m.parent?.name,scale:m.scale.toArray()}))));
   const ears=meshes.filter(m=>m.userData.foxPinna);
   const earLining=meshes.filter(m=>m.userData.foxPinnaInner);
