@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import {CONTINENTS,continentForChapter,continentMapSvg,continentStagePoints} from '../src/continent-campaign.js';
+import {CONTINENTS,MAINLAND_ID,MAINLAND_REGIONS,continentForChapter,
+ continentMapUrl,continentMapSvg,continentStagePoints} from '../src/continent-campaign.js';
 import {CAMPAIGN_STAGES,stagesInChapter} from '../src/campaign-stage-plan.js';
 import {STAGE_PRESETS,selectStageObjects} from '../src/stage-library.js';
 import {createNewGame} from '../src/game-core-flow.js';
@@ -10,9 +11,16 @@ import {CHARACTER_MODEL_REGISTRY} from '../src/character-model-registry.js';
 import {MODEL_FIRST_CATALOG} from '../src/model-first-catalog.js';
 
 assert.equal(CONTINENTS.length,20);
-assert.equal(new Set(CONTINENTS.map(c=>c.id)).size,20);
-assert.equal(new Set(CONTINENTS.map(c=>c.name)).size,20);
-assert.equal(new Set(CONTINENTS.map(c=>continentMapSvg(c.chapter))).size,20);
+// World-map architecture: 20 chapters revisit ONE continuous mainland.
+ // Chapter locations and region pins differ without inventing twenty islands.
+assert.equal(new Set(CONTINENTS.map(c=>c.id)).size,1);
+assert.ok(CONTINENTS.every(c=>c.id===MAINLAND_ID));
+assert.equal(new Set(CONTINENTS.map(c=>c.name)).size,1);
+assert.ok(new Set(CONTINENTS.map(c=>c.regionId)).size>=10);
+assert.equal(new Set(CONTINENTS.map(c=>continentMapUrl(c.chapter))).size,1);
+assert.equal(Object.keys(MAINLAND_REGIONS).length,12);
+assert.ok(CONTINENTS.every(c=>continentMapSvg(c.chapter).includes(c.regionName)),
+ 'the shared mainland overlay should identify each chapters focus region');
 assert.equal(CAMPAIGN_STAGES.length,200);
 assert.equal(new Set(CAMPAIGN_STAGES.map(s=>s.scenePreset)).size,200);
 const sceneIds=new Set(STAGE_PRESETS.map(s=>s.id));
