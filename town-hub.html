@@ -119,7 +119,7 @@ header nav button,header nav a{min-width:0;padding:7px 2px;white-space:nowrap;fo
 <button data-facility="items" style="--x:39%;--y:78%">▣ 道具屋<small>買い物</small></button>
 </div><p id="townSelectHint">行きたい施設をタップ</p></main><div id="veil"></div>
 <header><div class="label"><strong id="townHeading">レヴナの町</strong><small id="chapterStatus">第1章・町ステージ</small></div>
-<nav aria-label="町の操作"><button type="button" id="showTownGuide">施設一覧</button><button type="button" id="townBgmToggle" aria-label="町BGMのオン・オフ">BGM ♪</button><button type="button" id="showPaperStory">漫画</button><a href="./story-maintenance.html">物語フロー</a><a id="leaveTown" href="./world-map.html?v=town-exit-2">外へ ▶</a></nav></header>
+<nav aria-label="町の操作"><button type="button" id="showTownGuide">施設一覧</button><button type="button" id="townBgmToggle" aria-label="町BGMのオン・オフ">BGM ♪</button><button type="button" id="showPaperStory">漫画</button><a href="./story-maintenance.html">物語フロー</a><a id="leaveTown" href="./world-map.html?v=region-labels-20261116-r2">外へ ▶</a></nav></header>
 <div id="townStatus">読み込み中 · 操作はロード完了後に表示します</div>
 <div id="townExplorerControls" aria-label="町の移動と施設操作">
  <div id="townExplorerActions"><button id="townInteract" type="button">話す・施設</button><button id="townCameraView" type="button">視点変更</button><button id="townExitBuilding" type="button" hidden>建物から出る</button><button id="townSwapControls" type="button" aria-label="移動レバーと操作ボタンの左右を入れ替える">左右入替 ⇄</button></div>
@@ -734,7 +734,7 @@ function finishMapTransition(){
  resetTownMovement();
  try{leaveTown(game);persistSession(game,sessionStorage);}
  catch(error){console.warn('[Town] Session persistence failed, using map navigation fallback:',error);}
- window.location.assign('./world-map.html?v=town-exit-2');
+ window.location.assign('./world-map.html?v=region-labels-20261116-r2');
 }
 let mapTransitionPending=false;
 function goMap(event){
