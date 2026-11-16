@@ -124,7 +124,8 @@ function updateCurrentLocation(){
  const current=CAMPAIGN_STAGE_BY_ID[selected]||stagesInChapter(chapter)[0];
  const area=continentForChapter(chapter);
  document.querySelector('.map-caption').textContent=
-  '● 現在地：'+area.regionName+' · '+(current?.name||'不明')+' · 地図から行き先を選択';
+  '● 現在地：'+area.regionName+'（第'+chapter+'章） · 12地域共通マップ';
+ document.getElementById('world').dataset.mapRevision='20261116-region-labels-2';
 }
 function narrateSelection(){
  const stage=CAMPAIGN_STAGE_BY_ID[selected],story=narrativeForStage(stage);
@@ -253,17 +254,17 @@ function render(){
  updateCurrentLocation();
 }
 $('mapBoard').addEventListener('click',event=>{
- const stagePin=event.target.closest('[data-stage-pin]');
- if(stagePin){selected=stagePin.dataset.stagePin;render();message(CAMPAIGN_STAGE_BY_ID[selected].name+'を選択しました。');return;}
  const el=event.target.closest('[data-territory]');if(!el)return;
  territory=el.dataset.territory;
- const matches=CAMPAIGN_STAGES.filter(s=>s.territoryId===territory);
- if(matches.length){
-  const chosen=matches.find(s=>stageUnlocked(s,game.completedStages)&&!game.completedStages.includes(s.id))||
-   matches.find(s=>stageUnlocked(s,game.completedStages))||matches[0];
-  chapter=chosen.chapter;selected=chosen.id;render();
-  message('領地「'+TERRITORIES.find(t=>t.id===territory)?.name+'」を選択しました。');
+ const clicked=TERRITORIES.find(t=>t.id===territory);
+ const matches=stagesInChapter(chapter).filter(s=>s.territoryId===territory);
+ if(!matches.length){
+  message('「'+(clicked?.name||'地域')+'」は第'+chapter+'章の進行地域ではありません。前章・次章で訪問先を切り替えてください。');
+  return;
  }
+ // Stage progression is controlled by the ten slots below. A region tap must
+ // never jump back to a different chapter that shares this location.
+ message('第'+chapter+'章の地域「'+(clicked?.name||'不明')+'」です。下の10ステージから行動を選んでください。');
 });
 $('stageGrid').addEventListener('click',event=>{
  const el=event.target.closest('[data-stage]');if(!el)return;
