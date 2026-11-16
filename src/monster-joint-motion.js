@@ -34,6 +34,12 @@ function quadrupedMotion(p,phase,locomotion,run,actionPulse,spine){
   // distal paw is no longer welded to the proximal bone.
   apply(p,'lower'+name,'x',-strength*.30+strength*.62*lift);
   apply(p,'lower'+name,'z',(i%2?1:-1)*strength*.05*lift);
+   // Grey/fire wolf anatomical ankle and metatarsal pivots follow weight
+   // transfer independently; their default bend remains visible when idle.
+   if(p['beastHock'+name]){
+     apply(p,'beastHock'+name,'x',(front?-.025:-.105)+strength*.43*lift);
+     apply(p,'beastToe'+name,'x',-.035+strength*(.21*lift-.14*(1-lift)));
+   }
  }
  const travel=locomotion?1:0;
  const flex=run&&spine==='feline'?.13*Math.sin(phase*2+.25):.023*Math.sin(phase);
