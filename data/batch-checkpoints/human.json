@@ -81,6 +81,14 @@
       ],
       "commitSha": "c107b633dc5de54f55e432451d421da17b321a20",
       "qa": "unverified"
+    },
+    {
+      "id": "shared-scalp-rear-uv-seam",
+      "sourceFiles": [
+        "src/character-system/hair-attachment-runtime.js"
+      ],
+      "commitSha": "148d9ca14d6fbfa73808d5da76d0c72deaccd822",
+      "qa": "unverified"
     }
   ],
   "remainingIds": [
@@ -90,5 +98,5 @@
     "job05-male",
     "job05-female"
   ],
-  "nextAction": "Run Node syntax and WebGL male/female rear, side, crown screenshots for PR #456; verify sparse-strip cuirass clearance, heel artifacts and Android GPU; enumerate canonical IDs."
+  "nextAction": "Run Node --check and WebGL rear/top hair UV screenshots for male/female styles, inspect Issue #438 armor and heel, Android GPU and catalog ID inventory before merge."
 }
