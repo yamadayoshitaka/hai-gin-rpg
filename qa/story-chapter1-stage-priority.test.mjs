@@ -30,6 +30,12 @@ const eligible=progress.pageStates.filter(pg=>pg.stage>='c01-s03'&&pg.stage<='c0
 assert.equal(answer.nextTask,eligible[0]?.pageTask);
 assert.equal(answer.compactTargets,progress.compactTargets);
 assert.equal(answer.compactMissing,progress.compactStillMissing);
+assert.equal(answer.minimumPrimaryCGSlots,44,'One chapter = opening 4 plus 10 stages x 4');
+assert.equal(answer.genderVariants,88,'Gender is a guarded art variant, not a second basic scene');
+assert.equal(progress.minimumPrimaryCGSlots,44);
+assert.equal(progress.genderVariants,88);
+assert.equal(progress.provenGenderNeutralArtShares,0,
+ 'No unreviewed male/female source art may be counted as a safe shared scene');
 const stageFour=progress.pageStates.filter(pg=>pg.stage==='c01-s04');
 const activeFour=new Set(stageFour.flatMap(pg=>pg.compactRequiredKeys));
 assert(activeFour.has('c01-s04|post-victory|female|c01-s04-m6'));
