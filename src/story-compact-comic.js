@@ -99,8 +99,11 @@ export function compactComicForStage(stageId,phase,context={}){
  // Four visual beats remain fixed even when the opening has fewer spoken turns.
  const openingLines=opening?script.pre.filter(line=>
   ['chapter-opening','canonical-dialogue'].includes(line.kind)):[];
+ const openingPerScene=Math.max(1,Math.ceil(openingLines.length/4));
  const scenes=openingArt.map((p,i)=>scene(withCount(p),
-  openingLines[i]?[turn(openingLines[i])]:[turn(p)],
+  openingLines.slice(i*openingPerScene,(i+1)*openingPerScene).length
+   ?openingLines.slice(i*openingPerScene,(i+1)*openingPerScene).map(line=>turn(line))
+   :[turn(p)],
   {opening:true}));
  let batches=distribute(lines,2).map(group=>group.map(p=>turn(p)));
  let sharedKind=null;
