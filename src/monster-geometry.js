@@ -238,6 +238,21 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
  if(s.id==='m001'){
    cranium.userData.anatomyLoft=true;
    cranium.userData.continuousWolfSkull=true;
+   // Shape the exposed lower cheeks into a wolf's inverted triangle.
+   // Keep upper orbital width but narrow the lower, forward cheek surface;
+   // the mane will fill this negative space without another face sphere.
+   const faceVertices=cranium.geometry.getAttribute('position');
+   for(let i=0;i<faceVertices.count;i++){
+     const x=faceVertices.getX(i),y=faceVertices.getY(i),
+       z=faceVertices.getZ(i);
+     const under=Math.max(0,Math.min(1,(.045-y)/.225));
+     const forward=Math.max(0,Math.min(1,(z+.12)/.34));
+     faceVertices.setX(i,x*(1-.225*under*forward));
+   }
+   faceVertices.needsUpdate=true;
+   cranium.geometry.computeVertexNormals();
+   cranium.geometry.computeBoundingSphere();
+   cranium.userData.invertedTriangleWolfMask=true;
    g.recessCanineEyeSockets(cranium);
  }
  if(s.id==='m001'&&coatDetail==='low'){
@@ -338,8 +353,8 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
       // Keep only a shallow, fitted skin crease. The former elevated
       // brow tube projected past both canthi like a thick eyeliner wing.
       const brow=g.tube(faceCore,'skin',[
-        [side*.107,.137,.260],[side*.157,.145,.281],
-        [side*.205,.133,.277]],.0035);
+        [side*.087,.137,.214],[side*.129,.145,.232],
+        [side*.176,.133,.229]],.0035);
       brow.name='m001-eyebrow-ridge-'+(side<0?'L':'R');
       brow.userData.orbitalBrow=true;
      }else if(beastRemesh){
@@ -595,8 +610,15 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
      {z:-.63,y:-.266,rx:.081,ry:.089}
    ],{name:'m001-ruff-root-tissue',rough:.97,ribbing:.012});
  }
- const jaw=g.group('jaw',[0,beastRemesh?1.160:1.42,
-   s.id==='m001'?.915:beastRemesh?1.046:.96]);
+ // The old m001 lower jaw was a sibling of its turning head: head pitch
+ // opened an ugly physical seam even when the mouth was CLOSED. Nest the
+ // animated mandible under the skull and express its original world-space
+ // rest position in head-local coordinates (head 1.300 / .786).
+ const jaw=s.id==='m001'?
+   g.group('jaw',[0,-.140,.129],head):
+   g.group('jaw',[0,beastRemesh?1.160:1.42,
+     beastRemesh?1.046:.96]);
+ if(s.id==='m001')jaw.userData.skullMountedMandible=true;
  if(s.id==='m002'){
    // An independently opening lower mandible, with the canine teeth
    // mounted on the same jaw pivot (not left floating in the skull).
@@ -667,12 +689,28 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
  g.sphere(jaw,'light',[0,-.044,muzzle-.12+v*.06],
    s.id==='m001'?[.060,.010,.058]:[.084,.014,.098],
    {name:'quadruped-tongue'});
- for(let i=0;i<4;i++)g.spike(jaw,'bone',
-   [(i-1.5)*(s.id==='m001'?.052:.12),s.id==='m001'?-.022:.01,
-     s.id==='m001'?.155:.27],
-   [(i-1.5)*(s.id==='m001'?.052:.12),s.id==='m001'?-.069:-.10,
-     s.id==='m001'?.169:.29],
-   s.id==='m001'?.011:.025);
+ if(s.id==='m001'){
+   // Small lower incisors erupt UP from the gumline; the previous four
+   // downward spikes made the jaw look like disconnected hanging pieces.
+   for(let i=0;i<6;i++){
+     const x=(i-2.5)*.029;
+     const tooth=g.rootedSpike(jaw,'bone','skin',
+       [x,-.047,.148],[x*1.04,-.012,.169],.009,
+       {name:'m001-lower-incisor-'+i});
+     tooth.userData.m001DentalArch='mandible';
+   }
+   // Opposing upper incisors stay fixed to the upper muzzle and reveal
+   // their crowns naturally when the mandible opens.
+   for(let i=0;i<6;i++){
+     const x=(i-2.5)*.026;
+     const tooth=g.rootedSpike(head,'bone','skin',
+       [x,-.176,.285],[x*1.02,-.202,.297],.0085,
+       {name:'m001-upper-incisor-'+i});
+     tooth.userData.m001DentalArch='maxilla';
+   }
+ }else for(let i=0;i<4;i++)g.spike(jaw,'bone',
+   [(i-1.5)*.12,.01,.27],
+   [(i-1.5)*.12,-.10,.29],.025);
  for(const side of [-1,1])for(const fore of [-1,1]){
    const name=(fore===1?'front':'rear')+(side<0?'L':'R');
    // Former limb pivot at y=1.13 kept all four feet half a metre above
