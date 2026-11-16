@@ -166,7 +166,7 @@ function renderPins(){
   return;
  }
  board.style.backgroundImage=continentMapUrl(chapter);
- board.setAttribute('aria-label','第'+chapter+'章・'+continentForChapter(chapter).name);
+ board.setAttribute('aria-label','灰銀大陸・'+continentForChapter(chapter).nation+'・'+continentForChapter(chapter).regionName+'・第'+chapter+'章');
  const stages=stagesInChapter(chapter),spots=continentStagePoints(chapter);
  board.innerHTML=stages.map((stage,i)=>{
   const spot=spots[i],unlocked=stageUnlocked(stage,game.completedStages),done=game.completedStages.includes(stage.id);
@@ -228,12 +228,12 @@ function render(){
  $('prevChapter').disabled=chapter===1;$('nextChapter').disabled=chapter===20;
  const ch=STORY_CHAPTERS[chapter-1],available=chapterAvailable(chapter,game.completedStages);
  $('chapterTitle').textContent='第'+chapter+'章　'+ch.title;
- $('chapterSubtitle').textContent=(available?'作戦可能':'未解放')+' · '+continentForChapter(chapter).name+' · 10ステージ';
+ $('chapterSubtitle').textContent=(available?'作戦可能':'未解放')+' · '+continentForChapter(chapter).regionName+' / '+continentForChapter(chapter).nation+' · 10ステージ';
  $('clearCount').textContent=game.completedStages.length+' / 200';
  $('summary').textContent=game.playerName+'の軍団　'+game.campaign.squads.reduce((n,s)=>n+s.count,0)+'人';
  const continent=continentForChapter(chapter);
  const sceneNarrative=narrativeForStage(CAMPAIGN_STAGE_BY_ID[selected]);
- $('continentLore').textContent='【'+continent.arc+'】'+sceneNarrative.scene+'　'+sceneNarrative.consequence+'　'+sceneNarrative.speaker+'「'+sceneNarrative.line+'」　主要人物：'+storyCastForChapter(chapter).map(p=>p.name).join('・');
+ $('continentLore').textContent='【'+continent.name+'・'+continent.regionName+'／'+continent.arc+'】'+sceneNarrative.scene+'　'+sceneNarrative.consequence+'　主要人物：'+storyCastForChapter(chapter).map(p=>p.name).join('・');
  const stages=stagesInChapter(chapter);
  $('stageGrid').innerHTML=stages.map(stage=>{
   const cleared=game.completedStages.includes(stage.id),unlocked=stageUnlocked(stage,game.completedStages);
