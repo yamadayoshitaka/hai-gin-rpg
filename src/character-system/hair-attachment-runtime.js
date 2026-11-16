@@ -148,6 +148,11 @@ function fittedScalpSurface(model,bone,headBounds){
   const ux=local[b*3]-ax,uy=local[b*3+1]-ay,uz=local[b*3+2]-az;
   const vx=local[c*3]-ax,vy=local[c*3+1]-ay,vz=local[c*3+2]-az;
   const nx=uy*vz-uz*vy,ny=uz*vx-ux*vz,nz=ux*vy-uy*vx;
+  // Zero-area or collapsed skin triangles produce undefined normals and
+  // dark needle-like crown artifacts after displacement and rasterization.
+  // Discard them before building the scalp/fiber meshes for every hairstyle.
+  const area2=nx*nx+ny*ny+nz*nz;
+  if(!Number.isFinite(area2)||area2<1e-14)continue;
   const outward=nx*(ax-center.x)+ny*(ay-center.y)+nz*(az-center.z);
   for(const v of (outward<0?[a,c,b]:[a,b,c])){
    const x=local[v*3],y=local[v*3+1],z=local[v*3+2];
