@@ -315,7 +315,7 @@ body[data-circle-target] #destinationPrompt{border:2px solid #ffed9c;box-shadow:
 }
 </style>
 <link rel="stylesheet" href="./src/battle-three-group-panel.css?v=1">
-<link rel="stylesheet" href="./src/central-battle-orders.css?v=20261116-radar2">
+<link rel="stylesheet" href="./src/central-battle-orders.css?v=20261116-team3">
 <div id="vitalsPanel" hidden role="region" aria-label="戦況HP・MP一覧"><div class="vitalsHead"><strong>部隊別 HP / MP（⏸ 一時停止中）</strong><button id="vitalsClose" aria-label="戦況を閉じる">✕ 閉じる</button></div><div id="vitalsOverview"></div><div class="vitalsFilters"><label>軍<select id="vitalsTeam"><option value="0">味方</option><option value="1">敵</option></select></label><label>部隊<select id="vitalsSquad"><option value="all">全部隊</option></select></label><label>職業<select id="vitalsJob"><option value="all">全職業</option></select></label></div><div class="squadHelp" id="vitalsSquadStatus">部隊を選ぶと個人のHPとMPを確認できます。</div><button id="vitalsHealing" disabled>✚ この部隊へ回復支援を要請</button><div id="vitalsJobSummary"></div><div id="vitalsIndividuals"></div><div class="vitalsPages"><button id="vitalsPrev">◀ 前</button><span id="vitalsPageLabel">1 / 1</span><button id="vitalsNext">次 ▶</button></div></div>
 <button id="battleMenuToggle" aria-expanded="false">☰ メニュー</button>
 <div id="teamLegend" aria-label="陣地識別色"><span class="ally">■ 味方陣地・西</span><span class="enemy">■ 敵陣地・東</span><span>▣ 中立帯</span></div>
@@ -744,7 +744,8 @@ body.compact-command-dock.compact-explore-open .exploreBuildingList button{
 <button id="loadingStart" type="button" hidden style="font:bold 17px system-ui;padding:13px 17px;border:2px solid #eacb87;background:#245d7a;color:#fff;border-radius:10px;margin:12px auto;min-height:54px">♪ 音楽を有効にして開戦</button>
 <button id="loadingSkipAudio" type="button" hidden style="font:12px system-ui;padding:9px;border:1px solid #92a5bb;background:#132a3b;color:#c9d8e5;border-radius:8px;margin:4px auto">音声なしで開戦</button></div></div><div id="runtimeError" style="display:none;position:fixed;top:65px;left:8px;right:8px;z-index:30;padding:10px;background:#631f28;color:#fff;border:1px solid #ff9d9d;border-radius:8px;font-size:12px;white-space:pre-wrap"></div><script>function showRuntimeError(message){const el=document.getElementById('runtimeError');if(el){el.style.display='block';el.textContent='実行エラー: '+message}const loading=document.getElementById('battleLoading');if(loading&&!loading.hidden){document.getElementById('loadingStage').textContent='ゲームの準備に失敗しました';const detail=document.getElementById('loadingError');detail.hidden=false;detail.textContent=String(message);document.getElementById('loadingRetry').hidden=false}}window.addEventListener('error',e=>showRuntimeError((e.message||'スクリプトの読み込みに失敗')+'\n'+(e.filename||'')+':'+(e.lineno||'')));window.addEventListener('unhandledrejection',e=>showRuntimeError(e.reason?.stack||e.reason?.message||String(e.reason)));</script><script type="module">
 import {normalizeArmyGroup,battleGroupMembers} from './src/army-groups.js';
-import {createTargetedStrategyUi} from './src/targeted-strategy-runtime.js?v=20261116-radar2';
+import {createTargetedStrategyUi} from './src/targeted-strategy-runtime.js?v=20261116-team3';
+import {createBattleObjectiveCheckpoints} from './src/battle-objective-checkpoints.js?v=20261116-team3';
 import {STRATEGY_METHODS} from './src/three-step-strategy-catalog.js';
 import {brokenFormationGroups} from './src/battle-formation-integrity.js';
 import {createBattleThreeGroupPanel} from './src/battle-three-group-panel.js';
@@ -7497,6 +7498,20 @@ function issueTargetedMapCommand(point){
  if(targetedStrategyUi.isOpen())return true;
  finishSquadDestination(true);return true;
 }
+const missionCheckpointHud=document.createElement('div');
+missionCheckpointHud.id='battleObjectiveCheckpoints';
+missionCheckpointHud.setAttribute('aria-live','polite');
+missionCheckpointHud.style.cssText='max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:700 11px/1.45 system-ui;color:#ffe7ac;border:1px solid #758ba5;border-radius:5px;padding:4px 7px;background:#10283ad9';
+missionCheckpointHud.textContent='📍 作戦チェックポイント：発令待ち';
+$('topPerformanceSlot').appendChild(missionCheckpointHud);
+const objectiveCheckpoints=createBattleObjectiveCheckpoints({
+ getUnits:()=>squadRoster,
+ getObjects:()=>massSim?.actions.objects||skirmishActions?.objects||[],
+ getSquadCenter:id=>squadCenter(id,0),
+ onReport:message=>log(message),
+ onChange:message=>{missionCheckpointHud.textContent=message||'📍 作戦チェックポイント：発令待ち';}
+});
+window.getBattleObjectiveCheckpoints=()=>objectiveCheckpoints.snapshot();
 let centralStrategyPreviousPause=null;
 $('topStrategy').onclick=()=>{
  if(!battleReady||finished||battleCeremony.locked)return;
@@ -7530,11 +7545,18 @@ const targetedStrategyUi=createTargetedStrategyUi({
   }
   return [...byId.values()];
  },
- onItemExecute:({issuerSquadId,targetSquadId,itemId})=>{
-  return useSquadBattleItemForSource(itemId,targetSquadId,issuerSquadId)||'所持数・対象のHP・使用条件を確認してください';
+ onItemExecute:({groupId,issuerSquadId,targetSquadId,itemId})=>{
+  const accepted=useSquadBattleItemForSource(itemId,targetSquadId,issuerSquadId);
+  if(accepted===true)objectiveCheckpoints.register({groupId,mode:'item',squadIds:[issuerSquadId],
+   targetIds:[targetSquadId],itemId});
+  return accepted||'所持数・対象のHP・使用条件を確認してください';
  },
  onMapPick:point=>{
-  return issueTargetedMapCommand(point)||'移動可能な地点と対応職業を指定してください';
+  const plan=pendingTargetedMap;
+  const accepted=issueTargetedMapCommand(point);
+  if(accepted===true&&plan)objectiveCheckpoints.register({groupId:plan.groupId,
+   mode:plan.mode,squadIds:plan.squadIds,point});
+  return accepted||'移動可能な地点と対応職業を指定してください';
  },
  getPlan:groupId=>{
   const ids=squadIds.filter(id=>normalizeArmyGroup(armyGroupBySquad[id])===Number(groupId));
@@ -7565,7 +7587,11 @@ const targetedStrategyUi=createTargetedStrategyUi({
    .filter(o=>o.alive&&o.category==='structure'&&['bridge','tree','building','door'].includes(o.type))
    .map(o=>({id:String(o.id),team:'object',x:Number(o.x),z:Number(o.z),label:(o.type==='bridge'?'橋':o.type==='tree'?'木':o.type==='door'?'扉':'建物')+' #'+String(o.id).slice(-5)}));
  },
- onExecute:issueTargetedPlan,
+ onExecute:plan=>{
+  const accepted=issueTargetedPlan(plan);
+  if(accepted===true)objectiveCheckpoints.register(plan);
+  return accepted;
+ },
  onMapRequest:plan=>{
   pendingTargetedMap=plan;
   return true; // The enlarged radar in the central dialog owns the target selection.
@@ -8195,6 +8221,8 @@ function renderSquadRibbons(sums){
  threeGroupPanel?.render(false,Boolean(pendingCircleTarget));
  battleTacticalUi.onSquadSums(sums);
  refreshBattleTargetSummary(sums);
+ // Hidden legacy ribbons must not measure or rearrange DOM during live combat.
+ if(document.body.classList.contains('story-center-orders'))return;
  // The only live controls are now 3D squad circles; do not reflow invisible sidebars.
  /* Target rosters enabled. */
  // Top telemetry grows or shrinks with DPI, so anchor both side ribbons
@@ -8302,6 +8330,7 @@ function renderSquadRibbons(sums){
  }
 }
 function updateSquadMarkerPositions(dt){
+ if(paused&&commandOverviewLocked)return; // frozen positions are already cached
  squadMarkerClock+=dt;
  if(squadMarkerClock>=.25){
   squadMarkerClock=0;
@@ -8392,7 +8421,7 @@ let squadScreenClock=0;
 let squadScreenLayout=new Map();
 const squadScreenPoint=new THREE.Vector3();
 function updateSquadScreenLabels(dt){
- if(squadCloseupLabelsHidden)return;
+ if(squadCloseupLabelsHidden||document.body.classList.contains('battle-command-active'))return;
  squadScreenClock+=dt;if(squadScreenClock<.1)return;squadScreenClock=0;
  // Freeze both the bubbles and their connecting lines while tapping; moving
  // the hit target between pointerdown and pointerup loses Android clicks.
@@ -8922,6 +8951,7 @@ window.getBattleCameraStats=()=>({
 });
 addEventListener('resize',()=>{const {width,height}=battleViewportSize();camera.aspect=width/height;camera.updateProjectionMatrix();resizeBattleRenderer(width,height)});
 let fpsStart=performance.now(),fpsFrames=0;
+let lastCheckpointWatchAt=0,lastPausedCommandFrameAt=0;
 // The AI/Worker clock advances only once per simulation tick. Ground creature
 // movement, hoof/paw poses and turning need a true per-display-frame clock.
 let lastMassSnapshotMs=performance.now();
@@ -9317,6 +9347,10 @@ function animate(){
   }
   uiTimer=0;
  }
+ if(!TOWN_MODE&&!paused&&!finished&&now-lastCheckpointWatchAt>=1000){
+  lastCheckpointWatchAt=now;
+  objectiveCheckpoints.update();
+ }
  battleDialogue.update(squadRoster,paused,finished);
  reportSpeech.update();
  refreshBattleVoiceHealth();
@@ -9325,7 +9359,16 @@ function animate(){
   camera.position.copy(old.position);controls.target.copy(old.target);
   controls.update();followCamera=old.follow;
  }
-  actorVisibility.beginFrame(performance.now()/1000);
+  // The central strategy modal freezes the world. Keep full quality static rigs,
+   // materials, actions and shadows; resubmit the still GPU scene only at 10Hz.
+   if(paused&&commandOverviewLocked){
+    if(now-lastPausedCommandFrameAt>=100){
+     lastPausedCommandFrameAt=now;renderBattleFrame();
+    }
+    framePerformance.end();
+    return;
+   }
+   actorVisibility.beginFrame(performance.now()/1000);
   if(skirmishDistanceLod&&!TOWN_MODE)skirmishDistanceLod.update(camera,elapsed,paused);
   if(!massSim&&elapsed-lastCorpseVisibilityAt>=.8){
    lastCorpseVisibilityAt=elapsed;

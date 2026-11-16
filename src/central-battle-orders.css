@@ -75,3 +75,15 @@ body.story-center-orders #topQuickActions{display:flex;gap:5px}
 #targetedStrategyCard .centerMapCoords{text-align:center}
 @media(max-height:640px){#targetedStrategyCard #centralCommandMap{
  width:min(100%,44dvh,430px)}#targetedStrategyCard .centerTargetGrid{max-height:10dvh}}
+
+/* Team identity is never inferred from colour alone: each radar marker also
+   carries a team/division number and the selection cards list jobs and counts. */
+#targetedStrategyCard .centerGroupCards button{
+ min-width:0;white-space:normal;word-break:break-word;text-align:left;
+ font-size:11px;line-height:1.35;min-height:62px}
+#targetedStrategyCard .centerGroupCards button:nth-child(1){border-color:#59dcfa}
+#targetedStrategyCard .centerGroupCards button:nth-child(2){border-color:#c7a0ff}
+#targetedStrategyCard .centerGroupCards button:nth-child(3){border-color:#93e5a1}
+#targetedStrategyCard .centerMapLegend .g1{color:#59dcfa}
+#targetedStrategyCard .centerMapLegend .g2{color:#c7a0ff}
+#targetedStrategyCard .centerMapLegend .g3{color:#93e5a1}
