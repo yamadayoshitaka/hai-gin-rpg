@@ -1,10 +1,11 @@
 import {BUFFS,reserveTroops} from './story-campaign.js';
 import {STORY_JOB_TO_BATTLE} from './story-battle-bridge.js';
 import {slotLane,slotRank} from './inn-deployment.js';
+import {formationJobMinimums} from './sortie-formation-logic.js';
 import {captainBonus} from './army-groups.js';
 import {squadEquipmentBonus} from './game-core-flow.js';
 import {storyStageContext} from './story-narrative-flow.js';
-import {allocateThreeTeamSortie,availableSortieOrders,sortieDebuffTypes,sortieFormationBuff,sortieLevel,sortieTeamCount,sortieTeams} from './three-team-sortie.js';
+import {allocateThreeTeamSortie,availableSortieOrders,sortieDebuffTypes,sortieFormationBuff,sortieLevel,sortieTeamCount,sortieTeams,SORTIE_FORMATION_CELLS,SORTIE_FORMATIONS} from './three-team-sortie.js';
 
 /** Battle-compatible adaptation of the three user-defined sortie teams.
  * Strategists are never assigned a deployment cell: the protagonist is carried
@@ -20,10 +21,16 @@ export function makeThreeTeamBattleRequest(game,stage,battleId){
    livingSourceIds=new Set(deployed.map(item=>String(item.squad.id))),
    initialCount=deployed.reduce((sum,item)=>sum+item.count,0);
   const valid=sortieFormationBuff(game,team.id);
-  const complete=requiredSources.length>0&&requiredSources.every(id=>livingSourceIds.has(id))&&
+  const requirements=team.formation==='free'?[]:formationJobMinimums(team,
+   game.campaign.squads,SORTIE_FORMATION_CELLS,SORTIE_FORMATIONS[team.formation]?.slots);
+  const minBySource=Object.fromEntries(requirements.filter(x=>x.sourceId)
+   .map(x=>[x.sourceId,x.min]));
+  const complete=requiredSources.length>0&&requirements.length===requiredSources.length&&
+   requirements.every(x=>x.valid&&deployed.some(a=>String(a.squad.id)===x.sourceId&&a.count>=x.min))&&
+   requiredSources.every(id=>livingSourceIds.has(id))&&
    (valid.attack!==0||valid.defense!==0||valid.mobility!==0||valid.healing!==0);
   return [String(team.id),{
-   active:complete,requiredSources,initialCount,
+   active:complete,requiredSources,minBySource,initialCount,
    minSurvivors:Math.ceil(initialCount/2),
    formation:complete?team.formation:'free',
    bonus:complete?valid:{attack:0,defense:0,mobility:0,healing:0}
@@ -49,8 +56,9 @@ export function makeThreeTeamBattleRequest(game,stage,battleId){
    // independently; all its parts still inherit the parent's group buffs.
    const squadId=teamId*1000+Math.max(0,formationCell)*4+part+1;
    const key=String(squadId);
-   orders[key]=formationIntegrity[String(teamId)].active&&availableSortieOrders(game,teamId).includes(teams.find(t=>t.id===teamId)?.initialOrder)?
-     teams.find(t=>t.id===teamId).initialOrder:'hold';
+   // The initial order selection screen is retired: every team starts
+   // automatically, and only the central battle panel issues tactics.
+   orders[key]='hold';
    allowed[key]=formationIntegrity[String(teamId)].active?availableSortieOrders(game,teamId):[];
    armyGroupBySquad[key]=teamId;
    subdivisionMap[key]={parentGroup:teamId,sourceSquadId:squad.id,part:part+1,parts,formationCell,leaderHeldInMain:mainSource&&part===0};

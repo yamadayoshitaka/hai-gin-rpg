@@ -3,7 +3,7 @@
  * inventory remains in campaign.squads, while this plan assigns actual people.
  * A source squad may be split between teams but never duplicated.
  */
-import {formationStatus,arrangeFormation,formationCellsAtLevel,FREE_FORMATION,FORMATION_ROLES,ROLE_JOBS} from './sortie-formation-logic.js';
+import {formationStatus,arrangeFormation,formationCellsAtLevel,FREE_FORMATION,FORMATION_ROLES,ROLE_JOBS,formationJobMinimums,formationMinimumForRole} from './sortie-formation-logic.js';
 import {STRATEGY_METHODS,STORY_JOB_TO_STRATEGY_JOB} from './three-step-strategy-catalog.js';
 import {CAMPAIGN_STAGES,CAMPAIGN_STAGE_BY_ID} from './campaign-stage-plan.js';
 import {FORMATION_TEMPLATE_LIMITS,formationTemplate,rarityOf,formationCapacityStatus,formationRarityCounts} from './sortie-formation-template-rules.js';
@@ -76,6 +76,13 @@ export function sortieFormationStatus(game,teamId){
   return {id:'free',valid:false,reason:'陣形未完成：テンプレートの'+spec.slots+'隊を配置してください'};
  const budget=sortieTemplateCapacity(game,teamId);
  if(!budget.valid)return {id:'free',valid:false,reason:budget.error};
+ const missing=formationJobMinimums(team,ownSquads(game),SORTIE_FORMATION_CELLS,spec.slots)
+  .filter(entry=>!entry.valid);
+ if(missing.length){
+  const first=missing[0];
+  return {id:'free',valid:false,reason:'陣形の最低人数が不足：'+
+   (first.job||first.options.join('・'))+' '+first.current+'/'+first.min+'人'};
+ }
  return status;
 }
 export const unlockedSortieFormations=game=>Object.entries(SORTIE_FORMATIONS)
@@ -247,17 +254,25 @@ function rebuildNamedFormation(game,teams,team,formation,desired){
   const id=String(candidate.id),rarity=rarityOf(candidate);
   used.add(id);slots[i]=id;pickedRarity[rarity]++;
   chosen.push({id,rarity,capacity:candidate.count-(other.get(id)||0),
+   minimum:formationMinimumForRole(role),
    weight:Math.max(1,Number(current[id]||Math.min(10,candidate.count)))});
  }
  const maxTotal=Math.max(0,sortiePlanningLimit(game)-teams.filter(t=>t!==team)
   .reduce((n,t)=>n+sortieTeamCount(t),0));
- const target=Math.min(Math.max(currentTotal,spec.slots),maxTotal,spec.maxTroops,
+ const target=Math.min(Math.max(currentTotal,chosen.reduce((n,x)=>n+x.minimum,0)),maxTotal,spec.maxTroops,
   chosen.reduce((n,x)=>n+x.capacity,0));
  const counts={},divisions={},shares=chosen.map(x=>({...x,count:0})),
   rarityUsed={N:0,R:0,SR:0,SSR:0,UR:0};
  if(target>0){
-  for(const x of shares.slice(0,target)){
-   if(rarityUsed[x.rarity]<spec.rarityCaps[x.rarity]){x.count=1;rarityUsed[x.rarity]++;}
+  // Reserve the minimum headcount for each job cell first. If the stage or
+  // rarity cap cannot cover it, this template remains invalid (no buff).
+  let available=target;
+  for(const x of shares){
+   if(available<=0)break;
+   const minimum=Math.max(1,x.minimum);
+   const picked=Math.max(0,Math.min(minimum,x.capacity,
+    spec.rarityCaps[x.rarity]-rarityUsed[x.rarity],available));
+   x.count=picked;rarityUsed[x.rarity]+=picked;available-=picked;
   }
   let left=target-shares.reduce((n,x)=>n+x.count,0);
   while(left>0){
