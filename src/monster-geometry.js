@@ -3,7 +3,7 @@
  * variants change horns, crests, armour, wings, limb lengths, weapons and fins.
  * Each specimen is real 3D geometry, never an image billboard.
  */
-import {createSculpture,disposeMonsterSculpture} from './monster-shape-kit.js?v=m001-clean-snout-eye-v7-20261116';
+import {createSculpture,disposeMonsterSculpture} from './monster-shape-kit.js?v=m001-small-face-windswept-v8-20261116';
 import {attachMonsterFaceControls} from './facial-feature-runtime.js?v=1';
 import {generateCanineFurGuides,generateCanineAxialFurGuides} from './canine-fur-guides.js?v=beast-coat-20261116';
 import {monsterEvidenceFor} from './monster-anatomy-reference.js';
@@ -804,6 +804,37 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
       seed:v*33+241,gravity:.42,minVertical:-.84,maxVertical:.22
     }).filter(h=>h.root[2]<.02)
    ]:[];
+   // The exposed 1/3-scale facial mask is bare around pupils, nasal
+   // bridge and lips. Grow body-density fur on the cheek/forehead perimeter
+   // at the FULL mane size, not on the tiny exposed facial bone.
+   const wolfKingFaceCoat=s.id==='m001'?generateCanineFurGuides({
+      center:[0,.105,.065],radii:[.307,.238,.277],
+      rows:source?42:29,around:source?56:40,
+      length:.118,width:.019,seed:v*71+509,
+      minVertical:-.94,maxVertical:1,gravity:.27,
+   }).filter(h=>{
+      const x=Math.abs(h.root[0]),y=h.root[1],z=h.root[2];
+      // The face window is bounded by the mane: NO follicles on the
+      // actual small eyes, nose bridge, lips or front muzzle.
+      if(z>.105&&x<.153&&y>-.195&&y<.266)return false;
+      return !(z>.285&&x<.190&&y>-.185&&y<.266);
+   }):[];
+   // Long lion mane is exactly five times the original guide length.
+   // A backward-weighted curved sweep prevents straight porcupine spikes.
+   // Each guide still has only root/mid/tip; batching and mobile LOD hold.
+   const fivefoldWindsweptMane=guides=>guides.map(h=>{
+     const base=h.tip.map((v,i)=>v-h.root[i]);
+     const len=Math.hypot(...base)||.001;
+     const wind=[base[0]*.72,base[1]*.28,base[2]*1.36-len*.65];
+     const norm=Math.hypot(...wind)||1;
+     const delta=wind.map(v=>v*len*5/norm);
+     const tip=h.root.map((v,i)=>v+delta[i]);
+     const mid=h.root.map((v,i)=>v+delta[i]*(i===2?.21:.32)+
+       h.normal[i]*len*.16+(i===2?len*.07:0));
+     return {...h,mid,tip,
+       wolfKingManeLengthMultiplier:5,
+       originalHairLength:len};
+   });
    // m001 has a lion-like, layered throat/cheek ruff: the bone remains a
    // wolf skull and the mane is entirely groomed on the moving head.
    // Ear / eyebrow / eye clearances are cut out of the hair root mask.
@@ -836,17 +867,29 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
      }).filter(h=>side*h.root[0]>.15&&h.root[1]>.206&&
        h.root[2]<.335)):[];
 
-   const headGuides=beastRemesh?[...faceGuides,...groomed,...wolfKingMane,
-     ...browHairs].filter(h=>!(Math.abs(h.root[0])>.258&&h.root[1]>.077&&
-       h.root[2]>.166&&h.root[2]<.38)):faceGuides;
+   const headGuides=beastRemesh?[...faceGuides,...groomed,
+     ...wolfKingFaceCoat,...browHairs].filter(h=>{
+       // Avoid cheeks/temples from spreading across the eyes.
+       if(Math.abs(h.root[0])>.258&&h.root[1]>.077&&
+          h.root[2]>.166&&h.root[2]<.38)return false;
+       // Keep only the small frontal face patch bare; fur surrounds it.
+       if(s.id==='m001'&&h.root[2]>.105&&
+          Math.abs(h.root[0])<.153&&h.root[1]>-.195&&
+          h.root[1]<.266)return false;
+       return true;
+     }):faceGuides;
    addFur(head,headGuides);
    if(s.id==='m001'){
-     // Head-attached mane is batched by material; this small name-only
-     // marker allows CI to audit actual moving beard follicles.
-     for(const mesh of head.children)
-       if(mesh.userData.furStrands&&mesh.name.startsWith('canine-coat-')){
-         mesh.userData.wolfKingMane=true;
-       }
+     const maneStart=head.children.length;
+     addFur(head,fivefoldWindsweptMane(wolfKingMane));
+     // Mark the actual 5x geometry batches, not unrelated short face fur.
+     for(const mesh of head.children.slice(maneStart)){
+       if(!mesh.isMesh||!mesh.userData.furStrands)continue;
+       mesh.name='m001-windswept-mane-'+mesh.name;
+       mesh.userData.wolfKingMane=true;
+       mesh.userData.maneLengthMultiplier=5;
+       mesh.userData.exposedFaceScale=1/3;
+     }
    }
  }
  // Drive the thunder wolf tail from its living pelvis; for other species
