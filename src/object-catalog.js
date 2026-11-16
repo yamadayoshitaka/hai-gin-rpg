@@ -164,6 +164,13 @@ export const OBJECT_CATALOG=Object.freeze({
  inn_sign_001:{id:'inn_sign_001',name:'宿屋の吊り看板',category:'街の設備',kind:'town_prop',widthCells:2,depthCells:1,passable:false},
  rice_paddy_001:{id:'rice_paddy_001',name:'水田',category:'農地',kind:'town_prop',widthCells:8,depthCells:8,passable:true},
  vegetable_field_001:{id:'vegetable_field_001',name:'畑',category:'農地',kind:'town_prop',widthCells:8,depthCells:8,passable:true},
+ town_firewood_001:{id:'town_firewood_001',name:'薪の山',category:'街の設備',kind:'town_prop',widthCells:3,depthCells:2,passable:false},
+ town_water_trough_001:{id:'town_water_trough_001',name:'家畜用水槽',category:'街の設備',kind:'town_prop',widthCells:3,depthCells:2,passable:false},
+ town_signpost_001:{id:'town_signpost_001',name:'街道の道標',category:'街の設備',kind:'town_prop',widthCells:1,depthCells:1,passable:false},
+ town_sacks_001:{id:'town_sacks_001',name:'麻袋の積荷',category:'街の設備',kind:'town_prop',widthCells:2,depthCells:2,passable:false},
+ town_stone_pile_001:{id:'town_stone_pile_001',name:'石材の山',category:'地形',kind:'town_prop',widthCells:3,depthCells:2,passable:false},
+ town_brazier_001:{id:'town_brazier_001',name:'野営の火鉢',category:'街の設備',kind:'town_prop',widthCells:2,depthCells:2,passable:false},
+ town_herb_garden_001:{id:'town_herb_garden_001',name:'薬草園',category:'農地',kind:'town_prop',widthCells:4,depthCells:3,passable:true},
 
  castle_001:{id:'castle_001',name:'城',category:'建造物',kind:'town_building',enterable:true,widthCells:100,depthCells:100,passable:false},
  church_001:{id:'church_001',name:'教会',category:'建造物',kind:'town_building',enterable:true,widthCells:11,depthCells:13,passable:false},
@@ -447,10 +454,64 @@ export function createObjectById(id,{cellSize=2.2}={}){
    const lantern=new THREE.Mesh(new THREE.SphereGeometry(.43*cellSize,12,8),light.clone());lantern.name='street_lamp_bulb';lantern.position.y=4.65*cellSize;root.add(lantern);
    box(.95*cellSize,.17*cellSize,.95*cellSize,0,5.13*cellSize,0,iron);
   }
+
+  // New batch-center catalog assets are authored once for both preview and game.
+  if(id==='town_firewood_001'){
+   for(let row=0;row<3;row++)for(let i=0;i<5-row;i++){
+    const log=new THREE.Mesh(new THREE.CylinderGeometry(.17*c,.18*c,2.25*c,10),wood);
+    log.rotation.z=Math.PI/2;log.position.set(0,(.18+row*.3)*c,(i-(4-row)/2)*.36*c);root.add(log);
+   }
+  }
+  if(id==='town_water_trough_001'){
+   box(2.8*c,.15*c,1.4*c,0,.1*c,0,wood);
+   for(const z of [-.73,.73])box(2.9*c,.85*c,.13*c,0,.5*c,z*c,wood);
+   for(const x of [-1.4,1.4])box(.14*c,.85*c,1.5*c,x*c,.5*c,0,wood);
+   box(2.67*c,.035*c,1.3*c,0,.61*c,0,water);
+  }
+  if(id==='town_signpost_001'){
+   box(.22*c,3.6*c,.22*c,0,1.8*c,0,wood);
+   box(2.55*c,.45*c,.13*c,.45*c,2.75*c,0,wood);
+   box(1.9*c,.44*c,.13*c,-.4*c,2*c,0,wood);
+  }
+  if(id==='town_sacks_001'){
+   const burlap=new THREE.MeshStandardMaterial({color:0x9d8867,roughness:1});
+   for(let i=0;i<5;i++){
+    const sack=new THREE.Mesh(new THREE.SphereGeometry(.45*c,10,8),burlap);
+    sack.scale.set(1,.72,.85);sack.position.set(((i%2)*.86-.43)*c,(.36+Math.floor(i/2)*.58)*c,((i%3)-1)*.2*c);root.add(sack);
+   }
+  }
+  if(id==='town_stone_pile_001'){
+   for(let i=0;i<12;i++){
+    const rock=new THREE.Mesh(new THREE.DodecahedronGeometry((.3+(i%4)*.1)*c),stone);
+    rock.scale.set(1.2,.72,.94);rock.rotation.set(i*.11,i*.43,i*.09);
+    rock.position.set(((i*7)%11-5)*.25*c,(.25+Math.floor(i/7)*.45)*c,((i*3)%7-3)*.28*c);root.add(rock);
+   }
+  }
+  if(id==='town_brazier_001'){
+   for(const x of [-.58,.58])for(const z of [-.58,.58])box(.13*c,.9*c,.13*c,x*c,.45*c,z*c,iron);
+   const cup=new THREE.Mesh(new THREE.CylinderGeometry(.88*c,.6*c,.4*c,16),iron);
+   cup.position.y=1*c;root.add(cup);
+   const flame=new THREE.Mesh(new THREE.ConeGeometry(.38*c,.6*c,10),light);
+   flame.position.y=1.49*c;root.add(flame);
+  }
+  if(id==='town_herb_garden_001'){
+   const earth=new THREE.MeshStandardMaterial({color:0x58432e,roughness:1});
+   const leaves=new THREE.MeshStandardMaterial({color:0x468044,roughness:1});
+   box(3.8*c,.15*c,2.8*c,0,.09*c,0,earth);
+   for(const x of [-1.9,1.9])box(.15*c,.25*c,2.95*c,x*c,.2*c,0,wood);
+   for(const z of [-1.43,1.43])box(3.95*c,.25*c,.15*c,0,.2*c,z*c,wood);
+   for(let x=0;x<6;x++)for(let z=0;z<4;z++){
+    const herb=new THREE.Mesh(new THREE.ConeGeometry(.13*c,.54*c,6),leaves);
+    herb.position.set((x-2.5)*.58*c,.46*c,(z-1.5)*.58*c);root.add(herb);
+   }
+   root.userData.passable=true;
+  }
   // New detailed props are authored from many pieces but submitted as just a
   // few material batches. Geometry still comes from the physical object BOM.
   if(new Set(['stone_archway_001','stone_steps_001','wooden_watchtower_001',
-   'stone_column_001','wall_torch_001','haystack_001','inn_sign_001']).has(id)){
+   'stone_column_001','wall_torch_001','haystack_001','inn_sign_001',
+   'town_firewood_001','town_water_trough_001','town_signpost_001',
+   'town_sacks_001','town_stone_pile_001','town_brazier_001','town_herb_garden_001']).has(id)){
    const batches=new Map();
    for(const child of [...root.children]){
     if(!child.isMesh||Array.isArray(child.material))continue;

@@ -10,7 +10,7 @@ const structure=readFileSync(new URL('../src/building-structure.js',import.meta.
 assert.match(viewer,/Object\.values\(OBJECT_CATALOG\)/);
 assert.match(viewer,/catalogGroups\.get\(category\)\.appendChild\(option\)/);
 assert.doesNotMatch(viewer,/const bridgeIds=/);
-assert.match(html,/tree-seasons\.js\?v=4\.4\.32/);
+assert.match(html,/tree-seasons\.js\?v=world60-20261117/);
 assert.match(viewer,/new ObjectStructureDemo\(THREE,scene,view/);
 assert.match(viewer,/structureDemo\.show\(selected,definition,catalogPreview,state\)/);
 

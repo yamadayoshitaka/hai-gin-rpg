@@ -1,4 +1,4 @@
-name: World photoreal references and 3D QA regression (53 objects + 200 stages)
+name: World photoreal references and 3D QA regression (60 objects + 200 stages)
 # Cloudflare Free only. No paid fallback. No unattended destructive edits.
 on:
   pull_request:
@@ -72,7 +72,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Confirm all 253 targets, prompt guards and dashboard links
+      - name: Confirm all 260 targets, prompt guards and dashboard links
         run: |
           node --check scripts/world-quality-catalog.mjs
           node --check scripts/world-quality-run.mjs
@@ -181,7 +181,7 @@ jobs:
           const proposals=arr.filter(x=>x.roughnessProposal&&x.roughnessProposal!==1).length;
           const lines=['# World quality review batch','',
             '| Metric | Verified |','|---|---:|',
-            '| Canonical targets | 253 (53 catalog objects + 200 campaign stages) |',
+            '| Canonical targets | 260 (60 catalog objects + 200 campaign stages) |',
             '| Real 2D references with hashes | '+n+' |',
             '| Real captured game views | '+screenshots+' |',
             '| Review-only PBR proposals | '+proposals+' |',

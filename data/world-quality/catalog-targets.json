@@ -1,0 +1,367 @@
+{
+  "schemaVersion": 1,
+  "source": "src/object-catalog.js",
+  "count": 60,
+  "objects": [
+    {
+      "id": "cottage_table_001",
+      "name": "木製食卓",
+      "category": "室内家具",
+      "kind": "furniture"
+    },
+    {
+      "id": "cottage_chair_001",
+      "name": "木製椅子",
+      "category": "室内家具",
+      "kind": "furniture"
+    },
+    {
+      "id": "cottage_bed_001",
+      "name": "寝台",
+      "category": "室内家具",
+      "kind": "furniture"
+    },
+    {
+      "id": "cottage_shelf_001",
+      "name": "本棚",
+      "category": "室内家具",
+      "kind": "furniture"
+    },
+    {
+      "id": "cottage_fireplace_001",
+      "name": "石造暖炉",
+      "category": "室内家具",
+      "kind": "furniture"
+    },
+    {
+      "id": "cottage_barrel_001",
+      "name": "木樽",
+      "category": "室内家具",
+      "kind": "furniture"
+    },
+    {
+      "id": "treasure_chest_001",
+      "name": "宝箱（開閉式）",
+      "category": "宝箱・アイテム",
+      "kind": "furniture"
+    },
+    {
+      "id": "cottage_stairs_001",
+      "name": "木製階段",
+      "category": "室内家具",
+      "kind": "furniture"
+    },
+    {
+      "id": "spiral_stairs_2f_001",
+      "name": "螺旋階段（2階建て用）",
+      "category": "建築部品",
+      "kind": "building_component"
+    },
+    {
+      "id": "spiral_stairs_castle_3f_001",
+      "name": "城の螺旋階段（3階建て用）",
+      "category": "建築部品",
+      "kind": "building_component"
+    },
+    {
+      "id": "entry_door_lv1_001",
+      "name": "入口扉（鍵Lv.1）",
+      "category": "建築部品",
+      "kind": "building_component"
+    },
+    {
+      "id": "entry_door_lv2_001",
+      "name": "入口扉（鍵Lv.2）",
+      "category": "建築部品",
+      "kind": "building_component"
+    },
+    {
+      "id": "entry_door_lv3_001",
+      "name": "入口扉（鍵Lv.3）",
+      "category": "建築部品",
+      "kind": "building_component"
+    },
+    {
+      "id": "entry_door_lv4_001",
+      "name": "入口扉（鍵Lv.4）",
+      "category": "建築部品",
+      "kind": "building_component"
+    },
+    {
+      "id": "entry_door_lv5_001",
+      "name": "城門扉（鍵Lv.5）",
+      "category": "建築部品",
+      "kind": "building_component"
+    },
+    {
+      "id": "fountain_001",
+      "name": "石造噴水",
+      "category": "街の設備",
+      "kind": "town_prop"
+    },
+    {
+      "id": "market_stall_001",
+      "name": "市場の露店",
+      "category": "街の設備",
+      "kind": "town_prop"
+    },
+    {
+      "id": "street_lamp_001",
+      "name": "街灯",
+      "category": "街の設備",
+      "kind": "town_prop"
+    },
+    {
+      "id": "town_bench_001",
+      "name": "街のベンチ",
+      "category": "街の設備",
+      "kind": "town_prop"
+    },
+    {
+      "id": "town_well_001",
+      "name": "石造井戸",
+      "category": "街の設備",
+      "kind": "town_prop"
+    },
+    {
+      "id": "town_planter_001",
+      "name": "花壇",
+      "category": "街の設備",
+      "kind": "town_prop"
+    },
+    {
+      "id": "town_crate_001",
+      "name": "荷箱",
+      "category": "街の設備",
+      "kind": "town_prop"
+    },
+    {
+      "id": "town_notice_001",
+      "name": "掲示板",
+      "category": "街の設備",
+      "kind": "town_prop"
+    },
+    {
+      "id": "town_fence_001",
+      "name": "木柵",
+      "category": "街の設備",
+      "kind": "town_prop"
+    },
+    {
+      "id": "stone_fence_001",
+      "name": "石の柵",
+      "category": "街の設備",
+      "kind": "town_prop"
+    },
+    {
+      "id": "town_trash_bin_001",
+      "name": "街のゴミ箱",
+      "category": "街の設備",
+      "kind": "town_prop"
+    },
+    {
+      "id": "town_handcart_001",
+      "name": "木製荷車",
+      "category": "街の設備",
+      "kind": "town_prop"
+    },
+    {
+      "id": "stone_archway_001",
+      "name": "石造アーチ門",
+      "category": "建築部品",
+      "kind": "town_prop"
+    },
+    {
+      "id": "stone_steps_001",
+      "name": "石造玄関階段",
+      "category": "建築部品",
+      "kind": "town_prop"
+    },
+    {
+      "id": "wooden_watchtower_001",
+      "name": "木製見張り塔",
+      "category": "建造物",
+      "kind": "town_prop"
+    },
+    {
+      "id": "stone_column_001",
+      "name": "彫刻石柱",
+      "category": "建築部品",
+      "kind": "town_prop"
+    },
+    {
+      "id": "wall_torch_001",
+      "name": "鍛鉄の松明",
+      "category": "街の設備",
+      "kind": "town_prop"
+    },
+    {
+      "id": "haystack_001",
+      "name": "干し草の山",
+      "category": "農地",
+      "kind": "town_prop"
+    },
+    {
+      "id": "inn_sign_001",
+      "name": "宿屋の吊り看板",
+      "category": "街の設備",
+      "kind": "town_prop"
+    },
+    {
+      "id": "rice_paddy_001",
+      "name": "水田",
+      "category": "農地",
+      "kind": "town_prop"
+    },
+    {
+      "id": "vegetable_field_001",
+      "name": "畑",
+      "category": "農地",
+      "kind": "town_prop"
+    },
+    {
+      "id": "town_firewood_001",
+      "name": "薪の山",
+      "category": "街の設備",
+      "kind": "town_prop"
+    },
+    {
+      "id": "town_water_trough_001",
+      "name": "家畜用水槽",
+      "category": "街の設備",
+      "kind": "town_prop"
+    },
+    {
+      "id": "town_signpost_001",
+      "name": "街道の道標",
+      "category": "街の設備",
+      "kind": "town_prop"
+    },
+    {
+      "id": "town_sacks_001",
+      "name": "麻袋の積荷",
+      "category": "街の設備",
+      "kind": "town_prop"
+    },
+    {
+      "id": "town_stone_pile_001",
+      "name": "石材の山",
+      "category": "地形",
+      "kind": "town_prop"
+    },
+    {
+      "id": "town_brazier_001",
+      "name": "野営の火鉢",
+      "category": "街の設備",
+      "kind": "town_prop"
+    },
+    {
+      "id": "town_herb_garden_001",
+      "name": "薬草園",
+      "category": "農地",
+      "kind": "town_prop"
+    },
+    {
+      "id": "castle_001",
+      "name": "城",
+      "category": "建造物",
+      "kind": "town_building"
+    },
+    {
+      "id": "church_001",
+      "name": "教会",
+      "category": "建造物",
+      "kind": "town_building"
+    },
+    {
+      "id": "weapon_shop_001",
+      "name": "武器屋",
+      "category": "建造物",
+      "kind": "town_building"
+    },
+    {
+      "id": "inn_001",
+      "name": "宿屋",
+      "category": "建造物",
+      "kind": "town_building"
+    },
+    {
+      "id": "item_shop_001",
+      "name": "道具屋",
+      "category": "建造物",
+      "kind": "town_building"
+    },
+    {
+      "id": "town_house_001",
+      "name": "民家",
+      "category": "建造物",
+      "kind": "town_building"
+    },
+    {
+      "id": "manor_noble_001",
+      "name": "貴族の石造屋敷",
+      "category": "建造物",
+      "kind": "town_building"
+    },
+    {
+      "id": "manor_merchant_001",
+      "name": "豪商の屋敷",
+      "category": "建造物",
+      "kind": "town_building"
+    },
+    {
+      "id": "manor_garden_001",
+      "name": "庭園付き領主館",
+      "category": "建造物",
+      "kind": "town_building"
+    },
+    {
+      "id": "small_hill_001",
+      "name": "小山",
+      "category": "地形",
+      "kind": "hill"
+    },
+    {
+      "id": "stone_hut_001",
+      "name": "石小屋",
+      "category": "建造物",
+      "kind": "building"
+    },
+    {
+      "id": "swamp_001",
+      "name": "沼地",
+      "category": "地形",
+      "kind": "swamp"
+    },
+    {
+      "id": "rocky_mountain_001",
+      "name": "岩山",
+      "category": "地形",
+      "kind": "mountain"
+    },
+    {
+      "id": "timber_bridge_001",
+      "name": "木製の橋",
+      "category": "建造物",
+      "kind": "bridge"
+    },
+    {
+      "id": "stone_bridge_001",
+      "name": "石橋",
+      "category": "建造物",
+      "kind": "bridge"
+    },
+    {
+      "id": "timber_bridge_broken_001",
+      "name": "壊れた木橋",
+      "category": "建造物",
+      "kind": "bridge"
+    },
+    {
+      "id": "stone_bridge_broken_001",
+      "name": "崩れた石橋",
+      "category": "建造物",
+      "kind": "bridge"
+    }
+  ]
+}
