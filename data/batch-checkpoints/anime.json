@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "category": "anime",
+  "saved": [
+    {
+      "id": "compact-shared-defeat-second-frame",
+      "sourceFiles": [
+        "src/story-compact-comic.js"
+      ],
+      "commitSha": "d2e1f656303450236fe55bd87569b09370282cd2",
+      "qa": "unverified"
+    }
+  ],
+  "remainingIds": [
+    "c01-s01..c01-s04-compact-visual-audit",
+    "compact-defeat-second-frame-visual-qa",
+    "compact-20chapters-asset-audit"
+  ],
+  "nextAction": "Run stage/gender/outcome browser QA; verify actual second defeat artwork before assigning any shared asset; audit compact first four stages against physical WebP and canonical scripts."
+}
