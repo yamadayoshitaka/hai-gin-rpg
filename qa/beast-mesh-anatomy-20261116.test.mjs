@@ -161,9 +161,9 @@ for(const id of remeshed){
     };
     assert.ok(halfWidthAt(profile,.115,.010)<.18,
       'm001 short bridge should blend inside the narrow cranial front');
-    assert.ok(halfWidthAt(nose,.392,.012)<.075,
-      'm001 tiny black nose must follow the new .418 tip position');
-    assert.ok(muzzleTip<.43,'m001 shortened muzzle must finish before z=.43');
+    assert.ok(halfWidthAt(nose,.346,.012)<.075,
+      'm001 tiny black nose must follow the newly compact .366 tip');
+    assert.ok(muzzleTip<.35,'m001 shortened muzzle must finish before z=.35');
     const jaw=meshes.find(m=>m.name==='beast-integrated-mandible-m001');
     assert.ok(jaw?.userData.axialAnatomy,
       'm001 mouth must use continuous short movable mandibular loft');
