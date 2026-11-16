@@ -176,7 +176,7 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
     // to its chest; no exposed shoulder button or distant-LOD draw call.
     for(const side of [-1,1]){
       const blade=g.bridge(torso,'skin',
-        [side*.338,1.172,.319],[side*.266,1.364,.519],.139,.080);
+        [side*.343,1.058,.329],[side*.270,1.334,.518],.154,.093);
       blade.name='m001-scapular-muscle-'+(side<0?'L':'R');
       blade.userData.buriedScapula=true;
       // The coxal-to-thigh fascia belongs to the torso/pelvis, not to
@@ -338,8 +338,8 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
       // Keep only a shallow, fitted skin crease. The former elevated
       // brow tube projected past both canthi like a thick eyeliner wing.
       const brow=g.tube(faceCore,'skin',[
-        [side*.130,.137,.261],[side*.180,.145,.282],
-        [side*.228,.134,.277]],.0035);
+        [side*.107,.137,.260],[side*.157,.145,.281],
+        [side*.205,.133,.277]],.0035);
       brow.name='m001-eyebrow-ridge-'+(side<0?'L':'R');
       brow.userData.orbitalBrow=true;
      }else if(beastRemesh){
@@ -503,6 +503,15 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
        [side*.115,-.172,.214],[side*.130,-.224,.249],
        [side*.101,-.293,.227],.034,{name:'beast-upper-fang'});
      fang.userData.wolfGumEmbedded=true;
+     if(coatDetail!=='low'){
+       // The labial fold overlaps the keratin root and disappears into
+       // the lip tissue, rather than producing two detached ivory tusks.
+       const lip=g.bridge(head,'skin',
+         [side*.126,-.148,.169],[side*.114,-.182,.242],
+         .041,.023);
+       lip.name='m001-upper-labial-fold-'+(side<0?'L':'R');
+       lip.userData.fangRootCover=true;
+     }
    }else if(beastRemesh)g.curvedHorn(head,'bone',
       [side*.13,-.17,muzzle+.05],[side*.146,-.265,muzzle+.14],
       [side*.115,-.335,muzzle+.23],.046,{name:'beast-upper-fang'});
@@ -634,25 +643,35 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
      [side*.155,-.214,muzzle+.263]
    ],s.id==='m001'?.007:.012);
    g.tube(jaw,'shadow',s.id==='m001'?[
-     [side*.117,-.030,-.074],
-     [side*.103,-.055,.057],
-     [side*.067,-.059,.205]
+     [side*.108,-.028,-.069],
+     [side*.102,-.055,.057],
+     [side*.062,-.061,.202]
    ]:[
      [side*.200,-.052,.135-jawOffsetZ],
      [side*.198,-.061,muzzle+.025-jawOffsetZ],
      [side*.153,-.065,muzzle+.263-jawOffsetZ]
    ],s.id==='m001'?.007:.013);
  }
- g.sphere(jaw,'shadow',[0,-.035,muzzle-.18+v*.06],
-   s.id==='m001'?[.096,.012,.067]:[.136,.018,.145],
-   {name:'quadruped-oral-cavity'});
+ if(s.id==='m001'){
+   // Replace the exposed black mouth button with a shallow tapered oral
+   // opening that is entirely inside the opening lower mandible.
+   g.axialLoft(jaw,'shadow',[
+     {z:.160,y:-.050,rx:.020,ry:.005},
+     {z:.085,y:-.043,rx:.081,ry:.012},
+     {z:-.015,y:-.036,rx:.092,ry:.011},
+     {z:-.090,y:-.026,rx:.030,ry:.006}
+   ],{name:'m001-recessed-oral-slit',rough:.93,ribbing:0});
+ }else g.sphere(jaw,'shadow',[0,-.035,muzzle-.18+v*.06],
+   [.136,.018,.145],{name:'quadruped-oral-cavity'});
  g.sphere(jaw,'light',[0,-.044,muzzle-.12+v*.06],
    s.id==='m001'?[.060,.010,.058]:[.084,.014,.098],
    {name:'quadruped-tongue'});
  for(let i=0;i<4;i++)g.spike(jaw,'bone',
-   [(i-1.5)*(s.id==='m001'?.066:.12),.01,s.id==='m001'?.16:.27],
-   [(i-1.5)*(s.id==='m001'?.066:.12),-.10,s.id==='m001'?.175:.29],
-   s.id==='m001'?.019:.025);
+   [(i-1.5)*(s.id==='m001'?.052:.12),s.id==='m001'?-.022:.01,
+     s.id==='m001'?.155:.27],
+   [(i-1.5)*(s.id==='m001'?.052:.12),s.id==='m001'?-.069:-.10,
+     s.id==='m001'?.169:.29],
+   s.id==='m001'?.011:.025);
  for(const side of [-1,1])for(const fore of [-1,1]){
    const name=(fore===1?'front':'rear')+(side<0?'L':'R');
    // Former limb pivot at y=1.13 kept all four feet half a metre above
