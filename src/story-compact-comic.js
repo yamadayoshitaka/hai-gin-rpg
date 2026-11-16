@@ -10,7 +10,7 @@
  */
 import {CAMPAIGN_STAGES,CAMPAIGN_STAGE_BY_ID} from './campaign-stage-plan.js';
 import {comicForStage} from './story-chapter-comic.js';
-import {screenplayVoiceText,screenplayRubyTokens} from './story-screenplay-v2.js';
+import {screenplayForStage,screenplayVoiceText,screenplayRubyTokens} from './story-screenplay-v2.js';
 export const COMPACT_STORY_CONFIG=Object.freeze({
  schemaVersion:1, chapters:20, stagesPerChapter:10, chapterOpening:4,
  stagePre:2,stagePost:2,sharedDefeat:2,sharedGameover:2,
@@ -75,7 +75,17 @@ export function compactComicForStage(stageId,phase,context={}){
  const openingArt=opening?openIds.map(id=>selectBySuffix(src,id)):[];
  if(opening&&openingArt.some(x=>!x))throw Error('Missing chapter opening canonical frame '+stageId);
  const omitOpening=phase==='pre'&&stage.slot===1?new Set(openIds.map(n=>stageId+'-'+n)):new Set();
- const lines=src.filter(x=>!omitOpening.has(x.id));
+ // Artwork IDs still come from the original image manifests. Spoken dialogue
+ // is instead authored per-stage so a three-line chapter quote is not replayed
+ // through every scene, and dialogue cannot get out of sync with the event.
+ const script=screenplayForStage(stageId,{
+  ...context,protagonistGender:context.protagonistGender==='female'?'female':'male'
+ });
+ const lines=(phase==='pre'?script.pre:script.post).filter(line=>
+  !(opening&&['chapter-opening','canonical-dialogue'].includes(line.kind)));
+ // The canonical opening quote is already spoken on its own four opening CGs.
+ // Re-entering an opened chapter still receives fresh setup/objective dialogue.
+
  const baseIds=phase==='pre'?(stage.slot===1?['m5','m15']:['m1','m15']):['m6','m10'];
  const base=baseIds.map(x=>selectBySuffix(src,x));
  if(phase==='post'&&original.edition.startsWith('post-gameover')){
