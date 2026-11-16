@@ -915,6 +915,7 @@ import {batchStaticBuildingShells} from './src/stage-building-instancing.js?v=2'
 import {cameraSegmentHitsBox,selectCameraOccluders,selectCanopiesAroundCamera,chooseClearBattleCameraOffset,shouldRevealBuildingInterior,safeSelectedInteriorFloor} from './src/battle-camera-occlusion.js?v=4.6.69';
 import {registerSquadCircleTap,chooseSquadZoomTarget,SQUAD_CIRCLE_DOUBLE_TAP_MS,shouldHideSquadLabelsAtDistance} from './src/battle-squad-circle-tap.js?v=4.6.36';
 import {createBattleActorVisibility} from './src/battle-render-visibility.js?v=zoom-human-1';
+import {interpolatedSkirmishCameraAnchor,createVisibilityWorkPacer} from './src/battle-frame-pacing.js?v=20261116-p95';
 import {shouldShowOverheadSquadCallouts,closestAliveBattleFocus} from './src/battle-zoom-visibility-policy.js?v=1';
 import {createSkirmishDistanceLod} from './src/skirmish-distance-impostors.js?v=4.6.15';
 import {createCatalogObject} from './src/object-catalog.js?v=4.6.36';
@@ -8995,7 +8996,10 @@ let lastCheckpointWatchAt=0,lastPausedCommandFrameAt=0;
 // The AI/Worker clock advances only once per simulation tick. Ground creature
 // movement, hoof/paw poses and turning need a true per-display-frame clock.
 let lastMassSnapshotMs=performance.now();
-let interiorVisibilityTimer=0;
+// Distribute the three independent occlusion/indoor maintenance passes across
+// separate display frames. Do not reduce the amount of geometry or VFX.
+const sceneVisibilityPacer=createVisibilityWorkPacer();
+const skirmishCameraAnchor=new THREE.Vector3(),cameraFollowShift=new THREE.Vector3();
 let shadowRefreshTimer=0;
 const lastShadowFocus=new THREE.Vector3(Infinity,Infinity,Infinity);
 // Camera-facing cutaway is computed only four times per second. Never fade the
@@ -9376,8 +9380,12 @@ function animate(){
  if(!paused){updateActiveSquadBuffVfx();actionVfx.update(worldDt);}
  updateSquadMarkerPositions(dt);
  if(riverFlow)riverFlow.offset.y-=worldDt*.07;
- interiorVisibilityTimer+=dt;
- if(interiorVisibilityTimer>=(commanderCinematic||followCamera?.10:.24)){updateCameraObstructions();updateTownInteriorVisibility();updateGoalIndoorOcclusion();interiorVisibilityTimer=0}
+ // Each pass retains its usual 100/240ms refresh, but they no longer all
+ // occupy one unlucky Android frame.  This does not affect simulation ticks.
+ const visibilityTask=sceneVisibilityPacer.pick(now,{near:Boolean(commanderCinematic||followCamera)});
+ if(visibilityTask===0)updateCameraObstructions();
+ else if(visibilityTask===1)updateTownInteriorVisibility();
+ else if(visibilityTask===2)updateGoalIndoorOcclusion();
  uiTimer+=dt;if(uiTimer>.25){
   updateUI();
   if(MASS_SIZE){
@@ -9551,11 +9559,18 @@ function animate(){
     const replacement=squadCommandFocus(trackedAllySquadId);
     tracked=replacement?.unit??null;focusedHumanUnitId=tracked?.id??null;
    }
+   const followed=automaticFloorGuide||selected||actors[0];
+   // In 50v50 the authoritative grid advances at 20Hz, while the visible
+   // outfit/rig is eased between ticks at display frequency. Following the
+   // discrete root caused a 20Hz rooftop/background judder even at stable FPS.
+   const skirmishFollow=followed&&(massSim?followed.root.position:
+     interpolatedSkirmishCameraAnchor(followed,skirmishCameraAnchor));
    const anchor=tracked?.alive&&(tracked._visualMotion?
      new THREE.Vector3(tracked._visualMotion.x,tracked._visualMotion.y+1.05,tracked._visualMotion.z):
      new THREE.Vector3((tracked.x-6)*CELL,unitGroundY(tracked,(tracked.x-6)*CELL,(tracked.z-6)*CELL)+1.05,(tracked.z-6)*CELL))||
-     automaticFloorGuide?.root.position||selected?.root.position||actors[0]?.root.position;
-   if(anchor){const shift=anchor.clone().sub(controls.target);controls.target.add(shift);camera.position.add(shift)}
+     skirmishFollow;
+   if(anchor){cameraFollowShift.copy(anchor).sub(controls.target);
+    controls.target.add(cameraFollowShift);camera.position.add(cameraFollowShift);}
   }
   updateCommanderCinematic();
   controls.update();
@@ -9619,7 +9634,8 @@ function animate(){
     if(resourceSamples.length>36)resourceSamples.splice(1,1);
    }
    if(skirmishPerformancePanel)skirmishPerformancePanel.textContent=
-    'FPS '+perf.fps+'｜P95 '+perf.frameP95Ms+'ms｜描画 '+report.drawCalls+
+    'FPS '+perf.fps+'｜P95 '+perf.frameP95Ms+'ms｜50ms超 '+(perf.longFrames50??0)+
+    '｜80ms超 '+(perf.longFrames80??0)+'｜描画 '+report.drawCalls+
     '｜画質 '+renderer.getPixelRatio().toFixed(2)+'x'+
     '｜衣装 '+report.dressed+'/'+report.totalActors+
     '｜鎧 '+report.armorOriginalPieces+'→'+report.armorDrawPieces+
@@ -9640,7 +9656,7 @@ function animate(){
   }
   $('massGamePerf').textContent=massRenderer?'FPS '+fps+'｜視点 '+camera.position.distanceTo(controls.target).toFixed(1)+'m｜画質 '+renderer.getPixelRatio().toFixed(2)+'x｜P95 '+perf.frameP95Ms+'ms｜描画 '+renderer.info.render.calls+
    '｜実体 '+massRenderer.fullMeshVisibleSoldiers+' 写真 '+massRenderer.impostorVisibleSoldiers+
-   '｜GPU形状 '+resources.gpuGeometries+' 画像 '+resources.gpuTextures+
+   '｜遅延 '+(perf.longFrames50??0)+'回｜GPU形状 '+resources.gpuGeometries+' 画像 '+resources.gpuTextures+
    '｜JS '+(resources.jsHeapMB??'--')+'MB｜FX '+fx.activeEffects+'/'+actionVfx.maxEffects+
    ' 命中 '+confirmedHitOverlay.activeCount+
    '｜LOD '+massRenderer.screenLodThresholdPx+'px｜走 '+massRenderer.dashPercent+'%｜上階追 '+
