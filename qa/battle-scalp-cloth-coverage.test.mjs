@@ -62,7 +62,7 @@ assert.match(hair,/shortLength=cutKind==='buzz'\?\(battleStableCoverage\?\.088:\
 assert.match(hair,/mesh\.userData\.shortBackCoverageStripCount=shortBackStrips/);
 assert.match(rig,/applyBattleTorsoLining\(copy/);
 assert.match(rig,/opaqueTorsoLiningMaterials\+\+/);
-assert.match(game,/battle-artist-head-graft\.js\?v=20261116-face-wig-v7/);
+assert.match(game,/battle-artist-head-graft\.js\?v=20261116-thief-scalp-v8/);
 assert.match(game,/rigged-outfit-runtime\.js\?v=20261116-shieldclear1-backliner3/);
 source.dispose();texture.dispose();
 console.log('PASS: atomic wig upgrades, short scalp coverage and opaque torso from same source draw slots');
