@@ -3,7 +3,7 @@
  * variants change horns, crests, armour, wings, limb lengths, weapons and fins.
  * Each specimen is real 3D geometry, never an image billboard.
  */
-import {createSculpture,disposeMonsterSculpture} from './monster-shape-kit.js?v=beast-spring-crouch-v3-20261116';
+import {createSculpture,disposeMonsterSculpture} from './monster-shape-kit.js?v=beast-fox-face-v4-20261116';
 import {attachMonsterFaceControls} from './facial-feature-runtime.js?v=1';
 import {generateCanineFurGuides,generateCanineAxialFurGuides} from './canine-fur-guides.js?v=beast-coat-20261116';
 import {monsterEvidenceFor} from './monster-anatomy-reference.js';
@@ -172,7 +172,7 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    // Legacy protected m005: preserve its original muzzle topology.
    g.bridge(head,'skin',[0,-.02,.13],[0,-.10,.54],.245,.125);
  }
- const muzzle=reptile?.57:feline?.32:.43;
+ const muzzle=beastRemesh?.34:reptile?.57:feline?.32:.43;
  if(reptile){
    g.bridge(head,'skin',[0,-.115,.245],[0,-.152,.82],.203,.116);
    g.sphere(head,'light',[0,-.162,.684],[.145,.064,.226]);
@@ -180,30 +180,34 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    // Skull -> brow -> bridge -> nose is one authored continuous axial shell,
    // not two intersecting cylindrical tubes and a separate muzzle oval.
    g.axialLoft(head,'light',[
-     {z:.762,y:-.139,rx:.071,ry:.067},
-     {z:.706,y:-.130,rx:.148,ry:.092},
-     {z:.584,y:-.113,rx:.164,ry:.111},
-     {z:.448,y:-.084,rx:.190,ry:.125},
-     {z:.304,y:-.048,rx:.231,ry:.154},
-     {z:.125,y:-.024,rx:.236,ry:.183}
-   ],{name:'beast-continuous-nasal-bridge-'+s.id,rough:.72,ribbing:.004});
+     // Compact fox-wolf muzzle: the complete nose-to-skull taper now sits
+     // 13-17 percent nearer the eyes, with a broader but shorter tip.
+     {z:.664,y:-.134,rx:.078,ry:.069},
+     {z:.635,y:-.125,rx:.154,ry:.092},
+     {z:.532,y:-.110,rx:.172,ry:.112},
+     {z:.406,y:-.078,rx:.196,ry:.128},
+     {z:.283,y:-.045,rx:.232,ry:.152},
+     {z:.125,y:-.024,rx:.237,ry:.183}
+   ],{name:'beast-continuous-nasal-bridge-'+s.id,rough:.72,ribbing:.003});
  }else g.sphere(head,'light',[0,-.13,muzzle],
    feline?[.204,.126,.259]:[.23,.15,.31]);
  if(beastRemesh){
    // Anatomically tapered rhinarium; alae overlap the bridge and have
    // distinct cut-in nostrils, rather than an inflated black nose sphere.
    g.axialLoft(head,'shadow',[
-     {z:.812,y:-.169,rx:.025,ry:.032},
-     {z:.793,y:-.164,rx:.099,ry:.064},
-     {z:.758,y:-.170,rx:.137,ry:.078},
-     {z:.686,y:-.165,rx:.135,ry:.069},
-     {z:.633,y:-.152,rx:.087,ry:.045}
+     {z:.706,y:-.161,rx:.027,ry:.029},
+     {z:.685,y:-.158,rx:.104,ry:.060},
+     {z:.657,y:-.165,rx:.145,ry:.074},
+     {z:.594,y:-.156,rx:.139,ry:.067},
+     {z:.551,y:-.147,rx:.090,ry:.046}
    ],{name:s.id==='m001'?'wolf-nasal-cartilage':'beast-rhinarium-'+s.id,
       rough:.29,ribbing:0});
    for(const side of [-1,1]){
-     g.bridge(head,'shadow',[side*.092,-.139,.700],
-       [side*.104,-.180,.767],.034,.019);
-     g.sphere(head,'shadow',[side*.101,-.189,.789],[.016,.011,.008],
+     // Cut-in nostril alae follow the shortened rhinarium; neither sticks
+     // out like a bead at the end of an attached white barrel.
+     g.bridge(head,'shadow',[side*.094,-.143,.605],
+       [side*.110,-.176,.662],.028,.015);
+     g.sphere(head,'shadow',[side*.108,-.182,.681],[.014,.010,.008],
        {name:'beast-nostril-'+(side<0?'L':'R'),rough:.21});
    }
  }else g.sphere(head,'shadow',[0,-.17,muzzle+.19],[.18,.057,.12],{name:'nose'});
@@ -212,12 +216,22 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    // divided nostrils. Oversized glowing button eyes looked like toys.
    for(const side of [-1,1]){
      if(beastRemesh){
-      g.sphere(head,'shadow',[side*.294,.111,.269],[.024,.035,.069],{name:'beast-orbit'});
-      g.sphere(head,'eye',[side*.315,.112,.282],[.011,.023,.042],{name:'eye',rough:.19});
-      g.sphere(head,'shadow',[side*.324,.109,.296],[.004,.014,.015],{name:'beast-pupil'});
-      g.sphere(head,'bone',[side*.328,.122,.306],[.002,.0038,.005],{name:'beast-corneal-glint',rough:.09});
-      g.tube(head,'skin',[[side*.255,.144,.219],[side*.300,.163,.273],[side*.310,.145,.339]],.021);
-      g.tube(head,'shadow',[[side*.260,.082,.217],[side*.309,.078,.282],[side*.314,.099,.34]],.009);
+      // Real amber iris and a distinct black pupil, partially under the lids.
+      // Larger visible limbus replaces the former pin-sized "eye dot".
+      g.sphere(head,'shadow',[side*.288,.112,.266],[.032,.046,.074],
+       {name:'beast-orbit'});
+      g.sphere(head,'eye',[side*.319,.113,.278],[.016,.034,.052],
+       {name:'eye',rough:.17});
+      g.sphere(head,'shadow',[side*.334,.110,.291],[.0045,.019,.021],
+       {name:'beast-pupil'});
+      g.sphere(head,'bone',[side*.339,.130,.307],[.0019,.0045,.006],
+       {name:'beast-corneal-glint',rough:.10});
+      // Flattened upper lid and continuous lower lid contour the eyeball
+      // without covering the iris or projecting a button-like eyeball.
+      g.tube(head,'skin',[[side*.264,.153,.212],[side*.301,.162,.273],
+        [side*.319,.151,.343]],.015);
+      g.tube(head,'shadow',[[side*.266,.073,.214],[side*.315,.073,.280],
+        [side*.320,.098,.345]],.010);
      }else{
       g.sphere(head,'shadow',[side*.300,.110,.30],[.023,.037,.078]);
       g.sphere(head,'eye',[side*.320,.112,.31],[.013,.018,.041],{rough:.17});
@@ -270,7 +284,27 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
  for(const side of [-1,1]){
    const horn=v===2||reptile? .28:.12;
    if(canine){
-     if(s.id==='m004'){
+     if(beastRemesh){
+       const suffix=side<0?'L':'R';
+       const ear=g.group('ear'+suffix,[side*.215,.208,-.075],head);
+       g.foxPinna(ear,{
+         side,height:s.id==='m003'?.465:.435,
+         width:s.id==='m003'?.120:.112,spread:.090,
+         name:'beast-fox-pinna-'+s.id+'-'+suffix
+       });
+       // Preserve dedicated cartilage identity used by species QA, but
+       // eliminate their previous double cone silhouettes.
+       if(s.id==='m004')
+         g.sphere(ear,'light',[0,.027,.010],[.074,.047,.055],
+           {name:'m004-ear-cartilage'});
+       else if(s.id==='m003')
+         g.sphere(ear,'light',[0,.024,.012],[.073,.044,.058],
+           {name:'m003-pinna-cartilage'});
+       else if(s.id==='m002')
+         g.sphere(ear,'skin',[0,.021,.012],[.088,.051,.070],
+           {name:'m002-ear-cartilage-base'});
+       else g.sphere(ear,'light',[0,.024,.024],[.066,.039,.050]);
+     }else if(s.id==='m004'){
        const ear=g.group('ear'+(side<0?'L':'R'),
          [side*.215,.208,-.075],head);
        g.spike(ear,'skin',[0,0,0],
@@ -393,7 +427,7 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
          [.006,.006,.007],{rough:.85,name:'m002-vibrissa-root'});
      }
    }
-   g.sphere(head,'shadow',[0,-.164,muzzle+.294],
+   if(!beastRemesh)g.sphere(head,'shadow',[0,-.164,muzzle+.294],
      [.145,.045,.088],{name:'m002-rhinarium'});
  }
  if(s.id==='m001'){
@@ -402,7 +436,7 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    g.bridge(head,'skin',[0,.062,-.18],[0,-.03,.38],.188,.113);
    for(const side of [-1,1]){
      g.bridge(head,'skin',[side*.19,-.035,-.055],[side*.27,-.125,.24],.142,.082);
-     g.sphere(head,'shadow',[side*.308,.092,.277],[.023,.017,.090],{rough:.78});
+     if(!beastRemesh)g.sphere(head,'shadow',[side*.308,.092,.277],[.023,.017,.090],{rough:.78});
      g.tube(head,'skin',[[side*.23,.12,-.055],[side*.30,.13,.105],
         [side*.325,.099,.205]],.029);
      for(let j=0;j<3;j++)
@@ -427,9 +461,9 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
  if(beastRemesh){
    // Continuous lower mandible with chin narrowing, not two stacked spheres.
    g.axialLoft(jaw,'skin',[
-     {z:.392,y:-.071,rx:.073,ry:.039},
-     {z:.321,y:-.058,rx:.148,ry:.056},
-     {z:.205,y:-.047,rx:.184,ry:.065},
+     {z:.335,y:-.066,rx:.077,ry:.042},
+     {z:.279,y:-.057,rx:.148,ry:.057},
+     {z:.186,y:-.045,rx:.184,ry:.065},
      {z:.071,y:-.030,rx:.177,ry:.072},
      {z:-.108,y:-.012,rx:.092,ry:.065}
    ],{name:'beast-integrated-mandible-'+s.id,rough:.81,ribbing:.002});
@@ -464,8 +498,17 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    // Local coordinates preserve the original hip world-space placement.
    const pelvisMounted=s.id==='m004'&&fore<0;
    const leg=g.group('leg'+name,
-     pelvisMounted?[side*.29,-.42,.03]:[side*.29,.67,fore*.49],
+     pelvisMounted?
+       [side*.29,beastRemesh?-.540:-.42,.03]:
+       [side*.29,beastRemesh?.550:.67,fore*.49],
      pelvisMounted?g.pivots.pelvis:g.root);
+   // Anatomical limb shortening keeps paw clearance at the ground by
+   // lowering its hip pivot by the same amount. Distal pivots remain real
+   // joints and are not replaced with stretched mesh tubes.
+   if(beastRemesh){
+     leg.userData.restLengthScale=.88;
+     leg.scale.y=leg.userData.restLengthScale;
+   }
    // Distal motion is independent from shoulder/hip rotation, retaining
    // the original limb and ground-contact positions.
    if(beastRemesh)g.limbLoft(leg,'skin',fore>0?[
