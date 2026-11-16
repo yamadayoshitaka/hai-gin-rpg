@@ -17,6 +17,8 @@ import {outfitSurfaceRole,cleanOutfitPhotoKind} from './outfit-surface-policy.js
 import {fitEyebrowMeshesToFace} from './eyebrow-fit-runtime.js?v=4.4.61';
 import {attachRealisticFace} from './facial-blink-runtime.js?v=1';
 import {sourceGripFromBounds} from './equipment-grip-policy.js?v=4.4.41';
+import {fitShieldAheadOfForearm,SHIELD_FOREARM_CLEARANCE_METERS}
+ from './shield-forearm-fit.js?v=20261116-armclear1';
 import {normalizeOutfitRarity,outfitRarityFinish} from './outfit-rarity-policy.js?v=4.4.47';
 import {protectFaceSkin} from './skin-face-protection.js?v=4.4.89';
 import {deriveGarmentCoverage,clipBodyToGarment,originalSkinGeometry} from './garment-coverage-runtime.js?v=41';
@@ -395,12 +397,19 @@ async function attachGear(dressed,outfitBones,profile,textures,quality){
       const handBone=outfitBones.get('hand_l');
       if(!handBone)throw Error('盾の左手骨が見つかりません');
       handBone.getWorldPosition(hand);
-      const center=elbow.lerp(hand,mount.forearmBlend);
-      center.z+=mount.forwardOffset;
-      object.position.copy(bone.worldToLocal(center));
-      const base=new THREE.Quaternion();
+      const facing=new THREE.Vector3(0,0,1).applyQuaternion(
+       dressed.getWorldQuaternion(new THREE.Quaternion())).normalize();
+      const fitted=fitShieldAheadOfForearm({
+       elbow,wrist:hand,forward:facing,sourceBackZ:sourceBounds.min.z,
+       scale:mount.scale,blend:mount.forearmBlend
+      });
+      object.position.copy(bone.worldToLocal(fitted.center));
+      const base=dressed.getWorldQuaternion(new THREE.Quaternion());
       object.quaternion.copy(bone.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(base));
       object.scale.setScalar(mount.scale);
+      object.userData.shieldSourceBackZ=sourceBounds.min.z;
+      object.userData.shieldForearmBlend=mount.forearmBlend;
+      object.userData.shieldBackClearanceM=fitted.forwardClearance;
     }else{
       // The supplied weapon GLTFs are offset around their modeling origins.
       // Anchor the real grip (hilt or shaft) to the hand bone's palm, after
@@ -663,6 +672,9 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
   }
   const shieldFront=new THREE.Quaternion();
   const shieldTarget=new THREE.Quaternion(),shieldParent=new THREE.Quaternion();
+  const shieldElbow=new THREE.Vector3(),shieldWrist=new THREE.Vector3();
+  const shieldForward=new THREE.Vector3(),shieldCenter=new THREE.Vector3();
+  const shieldHandBone=outfitBones.get('hand_l');
   const gripWorld=new THREE.Vector3(),palmWorld=new THREE.Vector3(),gripParent=new THREE.Vector3();
   const fingerWorld=new THREE.Vector3(),handWorld=new THREE.Vector3();
   const gripAxis=new THREE.Vector3(0,1,0),handInverse=new THREE.Quaternion();
@@ -841,6 +853,20 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
     for(const item of gear){
       if(item.userData.equipmentKind!=='shield')continue;
       dressed.getWorldQuaternion(shieldTarget).multiply(shieldFront);
+      shieldForward.set(0,0,1).applyQuaternion(shieldTarget).normalize();
+      item.parent.getWorldPosition(shieldElbow);
+      shieldHandBone?.getWorldPosition(shieldWrist);
+      if(shieldHandBone){
+       const fitted=fitShieldAheadOfForearm({
+        elbow:shieldElbow,wrist:shieldWrist,forward:shieldForward,
+        sourceBackZ:item.userData.shieldSourceBackZ||0,
+        scale:item.scale.x,blend:item.userData.shieldForearmBlend??.48,
+        clearance:SHIELD_FOREARM_CLEARANCE_METERS,out:shieldCenter
+       });
+       item.position.copy(item.parent.worldToLocal(fitted.center));
+       item.userData.shieldBackClearanceM=fitted.forwardClearance;
+       item.userData.shieldForearmPoseVersion=fitted.version;
+      }
       item.parent.getWorldQuaternion(shieldParent).invert();
       item.quaternion.copy(shieldParent.multiply(shieldTarget));
     }
@@ -938,7 +964,10 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
       headwearSourceTriangles:hair?.diagnostics.headwearSourceTriangles||0,
       headwearKeptTriangles:hair?.diagnostics.headwearKeptTriangles||0,
       helmetVisible:helm.length>0&&helm.every(piece=>piece.visible),
-      helmetPieces:helm.length,shieldFrontDot,bodyMasked,
+      helmetPieces:helm.length,shieldFrontDot,
+      shieldBackClearanceM:shield?.userData.shieldBackClearanceM??null,
+      shieldForearmPoseVersion:shield?.userData.shieldForearmPoseVersion??null,
+      bodyMasked,
       v63CoveredSkinMasked:studioSkinPolicy.coveredSkinMasked,
       v63BareAnatomyRestorable:studioSkinPolicy.underlyingAnatomyRestorable,
       studioVisibleLegAnatomy:studioSkinPolicy.visibleLegAnatomy,
