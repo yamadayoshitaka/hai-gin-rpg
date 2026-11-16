@@ -456,22 +456,26 @@ export function createSculpture(spec,detail='high'){
    };
    // Eyelid contact ring must be in front of optic centre; pigmented
    // eye is recessed, so its specular highlight cannot bulge from skull.
-   const orbital=patch('shadow','beast-orbit',.101,.032,.002,.002);
-   orbital.userData.socketApertureHalfWidth=.101;
-   orbital.userData.socketApertureHalfHeight=.032;
-   const iris=patch('eye','eye',.025,.028,.009,.004,[-.008,0,0]);
+   // Thin socket, no thick painted-on black eyeliner. The pupil is an
+   // actual visible dark patch IN FRONT of the amber iris, not hidden
+   // behind the heavy eyelid rim as in the earlier revision.
+   const orbital=patch('shadow','beast-orbit',.081,.027,.002,.001);
+   orbital.userData.socketApertureHalfWidth=.081;
+   orbital.userData.socketApertureHalfHeight=.027;
+   const iris=patch('eye','eye',.030,.027,.010,.003,[-.008,0,0]);
    iris.userData.generatorFittedIris=true;
-   iris.userData.openingHeight=.064;
-   const pupil=patch('shadow','beast-pupil',.006,.020,.017,.002,[-.008,0,0]);
+   iris.userData.openingHeight=.054;
+   const pupil=patch('shadow','beast-pupil',.011,.020,.021,.002,[-.008,0,0]);
    pupil.userData.verticalSlit=true;
-   const glint=patch('bone','beast-corneal-glint',.003,.004,.021,.001,
-     [-.013,.011,0]);
+   pupil.userData.blackPupilVisible=true;
+   const glint=patch('bone','beast-corneal-glint',.002,.003,.026,.001,
+     [-.016,.010,0]);
    glint.userData.corneaWetHighlight=true;
    const eyelidPos=[],eyelidUv=[],eyelidIndex=[];
    for(let row=0;row<=3;row++){
      const t=row/3;
-     const rx=.101+(.026*t),ry=.032+(.021*t);
-     const rz=.014+(.007*t);
+     const rx=.084+(.015*t),ry=.027+(.012*t);
+     const rz=.014+(.003*t);
      for(let col=0;col<=slices;col++){
        const a=col/slices*2*Math.PI,cx=rx*Math.cos(a);
        eyelidPos.push(center[0]+side*cx,
