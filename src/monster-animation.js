@@ -1,4 +1,4 @@
-import {applyMonsterBiologicalMotion} from './monster-joint-motion.js';
+import {applyMonsterBiologicalMotion} from './monster-joint-motion.js?v=beast-joints-snout-v2-20261116';
 import {monsterLeapPose,applyMonsterLeapMotion} from './monster-leap-kinematics.js?v=1';
 /** Per-species, per-part procedural animation for bestiary inspection.
  * Separate head, jaws, limbs, wings and tentacles keep animation readable.
