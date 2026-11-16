@@ -911,8 +911,8 @@ import {STARTER_TOWN} from './src/starter-town.js';
 import {createCharacter} from './src/character-system/shared-character-runtime.js?v=20261116-skills';
 import {createHeroProductionRecipe,heroProductionActionCue,HERO_VARIANT_COUNT} from './src/hero-production-character-factory.js?v=20261116-swap1';
 import {loadBattleHeadMaster,attachBattleArtistHead,battleHeadMasterStats,
- equipBattleStudioHair,releaseBattleStudioHair,BATTLE_HEAD_MASTER_VERSION}
- from './src/character-system/battle-artist-head-graft.js?v=20261116-natural-skin-v1';
+ equipBattleStudioHair,releaseBattleStudioHair,BATTLE_HEAD_MASTER_VERSION,BATTLE_FACE_LIGHT_RESPONSE_VERSION}
+ from './src/character-system/battle-artist-head-graft.js?v=20261116-face-uv-pbr-v2';
 import {currentHeroineStudioPreset,resolveBattleStudioPattern}
  from './src/character-system/battle-generator-appearance.js?v=20261116-studio-pattern1';
 import {enhanceStudioCombatMaterials,refineHeroineCostumeSilhouette}
@@ -2470,6 +2470,30 @@ function motionDiagnosticReport(){
  return 'T字・モーション・衣装診断（'+BATTLE_SIZE+'体）\n'+[...byJob].map(([job,v])=>job+'：正常再生 '+v.active+'/'+v.total+'、衣装 '+v.dressed+'/'+v.total+'、モデル未準備 '+v.missing).join('\n')+'\n\n問題候補（最大30件）\n'+(issues.slice(0,30).join('\n')||'再生状態・衣装読み込みの異常は未検出')+'\n※姿勢と衣装のフィット具合は別途目視確認が必要';
 }
 window.getBattleArtistHeadReport=()=>battleHeadMasterStats(actors);
+window.getBattleFaceRenderAudit=()=>{
+ const audit=battleHeadMasterStats(actors);
+ const faceActors=actors.filter(a=>a.masterHead?.attached);
+ return {
+  ...audit,battleLighting:{hemisphere:TOWN_MODE?1.05:2.5,sun:TOWN_MODE?3.0:2.2,
+   exposure:renderer.toneMappingExposure,toneMapping:'ACESFilmic',
+   pixelRatio:renderer.getPixelRatio(),gpuFxaa:!!fxaaComposer},
+  requiredLightResponse:BATTLE_FACE_LIGHT_RESPONSE_VERSION,
+  visibleFaceInstances:faceActors.filter(a=>a.character?.object3D?.visible&&a.masterHead.face?.visible).length,
+  missingSkinTextures:faceActors.filter(a=>!a.masterHead.face?.material?.map).length,
+  missingPbrCorrection:faceActors.filter(a=>
+   a.masterHead.face?.material?.userData?.battleFaceLightResponseVersion!==BATTLE_FACE_LIGHT_RESPONSE_VERSION).length,
+  inspected:faceActors.slice(0,12).map(a=>({
+   id:a.id,team:a.team,sex:a.sex,job:a.job?.name,headVisible:a.masterHead.face?.visible,
+   rootVisible:a.character?.object3D?.visible,
+   materialType:a.masterHead.face?.material?.type,
+   materialColor:a.masterHead.face?.material?.color?.getHexString(),
+   shaderVersion:a.masterHead.face?.material?.userData?.battleFaceLightResponseVersion,
+   albedo:a.masterHead.face?.material?.map?.name||null,
+   highDetail:a.masterHead.nearDetail,
+   foreheadOutline:a.masterHead.face?.children?.filter(m=>/EYELINER/i.test(m.name)).some(m=>m.visible)
+  }))
+ };
+};
 window.getBattleStudioPatternReport=()=>({
  ...battleHeadMasterStats(actors),
  specimens:actors.filter(a=>a.studioPattern).slice(0,20).map(a=>({
