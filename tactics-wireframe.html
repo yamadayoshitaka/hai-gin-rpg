@@ -10010,8 +10010,9 @@ function animate(){
    '実物衣装ロード中｜'+actors.filter(a=>a.outfit).length+'/'+actors.length+'種類の元モデル';}}
 }
 
-const STUDIO_GROOM_NEAR_MAX=6;
-const STUDIO_GROOM_MIDDLE_MAX=6;
+// Reuse lightweight static groom across crowd camera movement.
+const STUDIO_GROOM_NEAR_MAX=8;
+const STUDIO_GROOM_MIDDLE_MAX=16;
 const STUDIO_GROOM_MAX=STUDIO_GROOM_NEAR_MAX+STUDIO_GROOM_MIDDLE_MAX;
 let lastStudioGroomAt=0,lastStudioHairSelectionAt=0;
 let prewarmedStudioGrooms=0;
@@ -10059,10 +10060,12 @@ function refreshBattleStudioGroom(distanceSorted,now){
  lastStudioGroomAt=now;
  const ranked=distanceSorted.map(x=>x.a);
  const preferred=ranked.slice(0,STUDIO_GROOM_MAX);
- const stable=new Set(ranked.slice(0,STUDIO_GROOM_MAX+4));
+ const stable=new Set(ranked.slice(0,STUDIO_GROOM_MAX+8));
  const rank=a=>ranked.indexOf(a);
  for(const a of actors.filter(a=>a.masterHead?.studioWig)){
-  if(stable.has(a))continue;
+  // A screen-visible soldier must not be stripped of their hair because
+  // another squad briefly ranks closer to the camera.
+  if(stable.has(a)||(a.root.visible&&rank(a)<STUDIO_GROOM_MAX*2))continue;
   releaseBattleStudioHair(a.masterHead);
   a.outfit?.setHairVisible(true);
  }
@@ -10070,7 +10073,8 @@ function refreshBattleStudioGroom(distanceSorted,now){
  let next=preferred.find(a=>a.studioPattern&&a.outfit&&!a.masterHead?.studioWig);
  if(next&&current.length>=STUDIO_GROOM_MAX){
   const farthest=current.slice().sort((a,b)=>rank(b)-rank(a))[0];
-  if(rank(farthest)>=rank(next)+4){
+  if(rank(farthest)>=rank(next)+8&&
+     (!farthest.root.visible||rank(farthest)>=STUDIO_GROOM_MAX*2)){
    releaseBattleStudioHair(farthest.masterHead);
    farthest.outfit?.setHairVisible(true);
    current=current.filter(a=>a!==farthest);
