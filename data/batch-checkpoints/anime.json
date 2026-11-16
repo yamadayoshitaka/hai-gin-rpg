@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "category": "anime",
+  "saved": [
+    {
+      "id": "compact-shared-defeat-asset-guard",
+      "sourceFiles": [
+        "src/story-compact-comic.js"
+      ],
+      "commitSha": "9cdd9dc06f614b54fe97355c44674527b577dd48",
+      "qa": "unverified"
+    },
+    {
+      "id": "compact-gameover-dedicated-frame-guard",
+      "sourceFiles": [
+        "src/story-compact-comic.js"
+      ],
+      "commitSha": "3fa17e426d1778d3835a583588e2417f64f3f04e",
+      "qa": "unverified"
+    }
+  ],
+  "remainingIds": [
+    "compact-c01-s01-s04-visual-qa",
+    "compact-20chapters-webp-sha-audit",
+    "compact-dialogue-portrait-voice-regression"
+  ],
+  "nextAction": "Run Node syntax and compact outcome regression, inspect actual WebP bytes and in-game rendering for c01-s01..s04; do not merge until verified."
+}
