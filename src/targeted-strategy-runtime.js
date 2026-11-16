@@ -380,7 +380,7 @@ export function createTargetedStrategyUi({
  panel.addEventListener('pointerup',event=>{
   const canvas=event.target.closest('#centralCommandMap');
   if(!canvas)return;
-  if(step!=='target'&&!(step==='scope'&&scope==='squad'))return;
+  if(step!=='target'&&step!=='scope')return;
   const rect=canvas.getBoundingClientRect();
   if(!rect.width||!rect.height)return;
   const px=(event.clientX-rect.left)/rect.width*canvas.width,
