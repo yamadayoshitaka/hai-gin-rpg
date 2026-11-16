@@ -62,12 +62,12 @@
     },
     "monster": {
       "source": "ChatGPT 定期タスクの実行結果",
-      "lastRunAt": "2026-11-16T17:22:30+09:00",
-      "subject": "PR #426 m048腹側鱗板の世界座標スケーリングを局所断面法線オフセットに修正",
-      "summary": "monster enabled=true確認。m048腹側鱗板のワールド座標スケーリングによる湾曲体幹の継ぎ目変位を、各リングの局所軸方向断面法線オフセットへ実ソース修正。SHA 8a009ccd、チェックポイントbaf04e9c。静的構文/WebGL/Android QA未実施、全108ID詳細走査未実施、GLB0、ゲーム反映0、mainマージ/公開なし。",
+      "lastRunAt": "2026-11-16T20:14:54+09:00",
+      "subject": "PR #426 m048側線を曲がる体幹の局所断面に追従させる実ソース修正",
+      "summary": "monster enabled=true確認。m048側線がワールドZ固定オフセットで湾曲体幹から浮く問題を、体幹と同じ局所接線・up・transverse座標でサンプリングする実レンダリングソース修正。実ソースSHA 5f63efb6、チェックポイント0cf9608d。Node/WebGL/Android QA未検証、108ID全数監査未完了、GLB0、ゲーム反映0、マージ/公開なし。",
       "status": "work_incomplete",
       "carryover": true,
-      "nextAction": "PR #426最新headでm048腹側鱗板の前後左右WebGLとm020鱗板・頭頸接合、Node構文、Android FPS、E2Eを確認。不合格修正後に他IDの実造形へ進む。",
+      "nextAction": "PR #426のm048側線の四方向WebGLとm020鱗板・頭頸接合、Node構文、Android FPS、Battle visual E2Eを検証。不合格修正後、正本108IDの全数分類と次の種族改修。",
       "steps": {
         "launch": "done",
         "code": "done",
@@ -79,25 +79,25 @@
       },
       "evidence": [
         {
-          "label": "m048局所断面法線実ソースコミット",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/8a009ccd5959efc31956d77ab0c5c6907901da65"
+          "label": "m048側線局所断面実ソース修正",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/5f63efb6077052693cbe56bdd01573c443baaabd"
         },
         {
           "label": "Draft PR #426",
           "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/426"
         },
         {
-          "label": "チェックポイントコミット",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/baf04e9c4ce392700ac98d890b82e4374fe7114b"
+          "label": "作業ブランチチェックポイント",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/0cf9608db235255af475732286776ebc3906f389"
         }
       ],
       "operational": {
         "blockers": [
-          "m048最新差分のNode構文とWebGL四方向実描画未検証",
-          "Android実測未検証、Battle visual E2E未合格",
-          "全108IDの今回の実アセット/ゲーム採用分類は未完了"
+          "Node/WebGL/Android実測QAを実行できていない（GitHubコード取得は可能だがローカルGitHub cloneはDNS解決不可）",
+          "PR #426のBattle visual E2E未合格",
+          "正本108IDの全数監査未完了"
         ],
-        "speedPlan": "PR #426の最新headの静的QA→WebGL m020/m048四方向→Android/E2E→不合格修正→次の種族群",
+        "speedPlan": "PR #426でm048局所断面側線をNode/四方向WebGL/Android検証し、E2E失敗を修正。次に正本108件を分類。",
         "lastRunOutcome": {
           "newSourceChangedIds": 1,
           "newQAPassed": 0,
