@@ -9,6 +9,8 @@ on:
       - 'town-hub.html'
       - 'world-map.html'
       - 'data/story-compact-20chapters.json'
+      - 'scripts/generate-story-chapter1-free-batch.mjs'
+      - 'qa/story-chapter1-stage-priority.test.mjs'
       - 'story-compact-review.html'
       - 'qa/story-compact-20-chapters.test.mjs'
       - '.github/workflows/story-compact-20chapters.yml'
@@ -18,6 +20,8 @@ on:
       - 'src/story-compact-comic.js'
       - 'src/story-manga-viewer.js'
       - 'data/story-compact-20chapters.json'
+      - 'scripts/generate-story-chapter1-free-batch.mjs'
+      - 'qa/story-chapter1-stage-priority.test.mjs'
   workflow_dispatch:
 permissions:
   contents: read
@@ -37,6 +41,10 @@ jobs:
           node --check src/story-narrative-flow.js
       - name: Verify all twenty chapters, 200 stages and distinct defeat/gameover
         run: node qa/story-compact-20-chapters.test.mjs
+      - name: Verify Cloudflare Free queue selects compact CGs only (plan mode; zero API calls)
+        run: |
+          node --check scripts/generate-story-chapter1-free-batch.mjs
+          node qa/story-chapter1-stage-priority.test.mjs
       - name: Verify compact CG reuse of 40 existing first-four-stage gender/outcome original assets
         run: node qa/story-compact-art-reuse.test.mjs
       - name: Build full 200-stage CG reuse/missing queue for next manga batch
