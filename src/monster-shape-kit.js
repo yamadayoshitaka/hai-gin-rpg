@@ -381,6 +381,121 @@ export function createSculpture(spec,detail='high'){
    inner.userData.foxPinnaInner=true;
    return outer;
  };
+ /**
+  * Canine adaptation of the model generator's eye fitting:
+  * first recess the head source topology, then fit a narrow optical almond
+  * UNDER its surrounding skin eyelid. No orbiting colored sphere is used.
+  * This mutates only the owned monster cranium, never a shared GLB mesh.
+  */
+ const recessCanineEyeSockets=(cranium)=>{
+   if(!cranium?.geometry?.getAttribute?.('position')||
+      !cranium.userData.ownedGeometry)throw Error('Owned cranium required');
+   const p=cranium.geometry.getAttribute('position');
+   let sculpted=0,maxInset=0;
+   for(let i=0;i<p.count;i++){
+     const x=p.getX(i),y=p.getY(i),z=p.getZ(i);
+     if(z<.07)continue;
+     const nx=(Math.abs(x)-.225)/.135;
+     const ny=(y-.115)/.095;
+     const q=nx*nx+ny*ny;
+     if(q>2.65)continue;
+     const front=Math.min(1,Math.max(0,(z-.07)/.21));
+     const inset=.045*Math.exp(-2.4*q)*front;
+     if(inset<.00002)continue;
+     p.setZ(i,z-inset);sculpted++;maxInset=Math.max(maxInset,inset);
+   }
+   if(sculpted){p.needsUpdate=true;cranium.geometry.computeVertexNormals();
+     cranium.geometry.computeBoundingSphere();}
+   cranium.userData.canineEyeSocketsRecessed=true;
+   cranium.userData.canineEyeSocketSculptedVertices=sculpted;
+   cranium.userData.canineEyeSocketMaxInset=maxInset;
+   return cranium;
+ };
+ /**
+  * A genuine almond-shaped eye opening, with a shadowed socket, thin
+  * partially covered iris, slit pupil and wet corneal catchlight.
+  * One specialized wolf-king eye uses 5 small meshes, not spherical globes.
+  */
+ const recessedCanineAlmondEye=(parent,{side=1,name='beast'}={})=>{
+   if(Math.abs(side)!==1)throw Error('Invalid wolf eye side');
+   const center=[side*.225,.118,.285];
+   const slices=detail==='source'?40:detail==='high'?32:20;
+   const bands=detail==='source'?5:3;
+   // Shape follows the inner/outer canthus; the outside corner sits higher.
+   const tilt=.195;
+   const geometryDisk=(rx,ry,depth,bulge=0)=>{
+     const pos=[],uv=[],indices=[];
+     for(let row=0;row<=bands;row++){
+       const r=row/bands;
+       for(let col=0;col<=slices;col++){
+         const a=col/slices*2*Math.PI;
+         const cx=rx*r*Math.cos(a),cy=ry*r*Math.sin(a);
+         pos.push(side*cx,cy+tilt*cx,depth+bulge*(1-r*r));
+         uv.push(.5+.5*r*Math.cos(a),.5+.5*r*Math.sin(a));
+       }
+     }
+     for(let i=0;i<bands;i++)for(let j=0;j<slices;j++){
+       const a=i*(slices+1)+j,b=a+slices+1;
+       // Both windings keep the fitted optical patch visible from side.
+       indices.push(a,b,a+1,a+1,b,b+1,a+1,b,a,b+1,b,a+1);
+     }
+     const geo=new THREE.BufferGeometry();
+     geo.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));
+     geo.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
+     geo.setIndex(indices);geo.computeVertexNormals();geo.computeBoundingSphere();
+     return geo;
+   };
+   const patch=(shade,id,rx,ry,depth,bulge,shift=[0,0,0])=>{
+     const m=own(attach(parent,geometryDisk(rx,ry,depth,bulge),shade,
+       {name:id,rough:shade==='eye'?.24:.73,metal:0}));
+     m.position.set(center[0]+side*shift[0],center[1]+shift[1],
+       center[2]+shift[2]);
+     m.userData.recessedCanineEye=true;
+     m.userData.almondAperture=shade==='eye';
+     return m;
+   };
+   // Eyelid contact ring must be in front of optic centre; pigmented
+   // eye is recessed, so its specular highlight cannot bulge from skull.
+   const orbital=patch('shadow','beast-orbit',.101,.032,.002,.002);
+   orbital.userData.socketApertureHalfWidth=.101;
+   orbital.userData.socketApertureHalfHeight=.032;
+   const iris=patch('eye','eye',.025,.028,.009,.004,[-.008,0,0]);
+   iris.userData.generatorFittedIris=true;
+   iris.userData.openingHeight=.064;
+   const pupil=patch('shadow','beast-pupil',.006,.020,.017,.002,[-.008,0,0]);
+   pupil.userData.verticalSlit=true;
+   const glint=patch('bone','beast-corneal-glint',.003,.004,.021,.001,
+     [-.013,.011,0]);
+   glint.userData.corneaWetHighlight=true;
+   const eyelidPos=[],eyelidUv=[],eyelidIndex=[];
+   for(let row=0;row<=3;row++){
+     const t=row/3;
+     const rx=.101+(.026*t),ry=.032+(.021*t);
+     const rz=.014+(.007*t);
+     for(let col=0;col<=slices;col++){
+       const a=col/slices*2*Math.PI,cx=rx*Math.cos(a);
+       eyelidPos.push(center[0]+side*cx,
+         center[1]+ry*Math.sin(a)+tilt*cx,
+         center[2]+rz);
+       eyelidUv.push(col/slices,t);
+     }
+   }
+   for(let i=0;i<3;i++)for(let j=0;j<slices;j++){
+     const a=i*(slices+1)+j,b=a+slices+1;
+     eyelidIndex.push(a,b,a+1,a+1,b,b+1,a+1,b,a,b+1,b,a+1);
+   }
+   const lidGeo=new THREE.BufferGeometry();
+   lidGeo.setAttribute('position',
+     new THREE.Float32BufferAttribute(eyelidPos,3));
+   lidGeo.setAttribute('uv',new THREE.Float32BufferAttribute(eyelidUv,2));
+   lidGeo.setIndex(eyelidIndex);
+   lidGeo.computeVertexNormals();lidGeo.computeBoundingSphere();
+   const lid=own(attach(parent,lidGeo,'skin',
+     {name:'beast-almond-eyelid-'+(side<0?'L':'R'),rough:.89,metal:0}));
+   lid.userData.socketContactRim=true;
+   lid.userData.anatomicalAlmondEyelid=true;
+   return {orbital,iris,pupil,glint,lid};
+ };
  const anatomicalLoft=(parent,shade,rings,{name='realistic-anatomical-mesh',
    kind='torso',asymmetry=0}={})=>{
    const mesh=own(attach(parent,createMonsterAnatomicalLoft(rings,
@@ -568,7 +683,7 @@ export function createSculpture(spec,detail='high'){
  };
  root.userData.detail=detail;
  return {root,pivots,group,sphere,rock,bone,spike,rootedSpike,seamHem,tube,bridge,
-   axialLoft,limbLoft,curvedHorn,foxPinna,anatomicalLoft,fur,skinnedFur,bandage,fin,eyes,claws,ring,fine,colors};
+   axialLoft,limbLoft,curvedHorn,foxPinna,recessCanineEyeSockets,recessedCanineAlmondEye,anatomicalLoft,fur,skinnedFur,bandage,fin,eyes,claws,ring,fine,colors};
 }
 export function disposeMonsterSculpture(model){
  if(!model)return;

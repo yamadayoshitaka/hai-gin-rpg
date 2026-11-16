@@ -131,8 +131,9 @@ for(const id of remeshed){
   assert.ok(muzzleTip<.70,id+' muzzle must be shorter than the old .762 profile');
   const eyes=meshes.filter(m=>m.name==='eye');
   assert.equal(eyes.length,2,id+' should have two actual pigmented iris volumes');
-  assert.ok(eyes.every(m=>m.scale.y>=.033&&m.scale.z>=.05),
-    id+' iris should be visible at normal side-view camera distance: '+
+  assert.ok(eyes.every(m=>m.scale.y>=.033&&
+      m.scale.z>=(id==='m001'?.033:.05)),
+    id+' iris should be visible while the m001 frontal iris sits inset: '+
       JSON.stringify(eyes.map(m=>({parent:m.parent?.name,scale:m.scale.toArray()}))));
   const ears=meshes.filter(m=>m.userData.foxPinna);
   const earLining=meshes.filter(m=>m.userData.foxPinnaInner);
@@ -145,6 +146,63 @@ for(const id of remeshed){
     assert.equal(limb.userData.restLengthScale,.88,id+' missing 12% limb shortening');
     assert.ok(Math.abs(limb.position.y-(id==='m004'&&key.startsWith('rear')?-.54:.55))<.0001,
       id+' hip height must be adjusted along with limb length');
+  }
+  if(id==='m001'){
+    const front=model.userData.pivots.legfrontL;
+    const rear=model.userData.pivots.legrearL;
+    assert.ok(Math.abs(front.position.x)>=.39,
+      'm001 forelegs must attach to the shoulder flank, not front underside');
+    assert.ok(Math.abs(rear.position.x)>=.31,
+      'm001 hind legs must emerge from the lateral waist');
+    assert.ok(front.position.x*rear.position.x>0,
+      'm001 legs must preserve left/right side axes with no outward twist');
+    const top=meshes.find(m=>m.name==='beast-upper-limb-frontL');
+    const lower=meshes.find(m=>m.name==='beast-shin-frontL');
+    const crossWidth=mesh=>{
+      const a=mesh.geometry.getAttribute('position');let max=0;
+      for(let k=0;k<a.count;k++)max=Math.max(max,Math.abs(a.getX(k)));
+      return max;
+    };
+    assert.ok(crossWidth(top)<.175,
+      'm001 upper forelegs must be visibly slimmer than the old bulky legs');
+    assert.ok(crossWidth(lower)<.134,
+      'm001 shins must taper without bloated fur cuffs');
+    const eyes=meshes.filter(m=>m.name==='eye');
+    assert.equal(eyes.length,2);
+    assert.ok(eyes.every(m=>Math.abs(m.position.x)<.27&&m.position.z>.27),
+      'm001 fitted irises must remain inset on the forward cranium');
+    const skull=meshes.find(m=>m.name==='organic-cranium-m001');
+    assert.ok(skull?.userData.canineEyeSocketsRecessed,
+      'wolf-king source skull must be physically recessed, not padded with spheres');
+    const lids=meshes.filter(m=>m.userData.anatomicalAlmondEyelid);
+    assert.equal(lids.length,2,'both eye sockets need continuous almond eyelids');
+    assert.ok(eyes.every(m=>m.userData.generatorFittedIris),
+      'pigmented optics must use generator-style fitted sclera/iris geometry');
+    assert.ok(eyes.every(m=>m.userData.recessedCanineEye),
+      'eyes must sit behind the lid, not protrude as eyeball spheres');
+    assert.ok(meshes.filter(m=>m.userData.verticalSlit).length===2,
+      'deep-set wolf eyes need narrow animal pupils');
+    for(const iris of eyes){
+      const positions=iris.geometry.getAttribute('position');
+      let xMin=Infinity,xMax=-Infinity,yMin=Infinity,yMax=-Infinity,zMin=Infinity,zMax=-Infinity;
+      for(let j=0;j<positions.count;j++){
+        xMin=Math.min(xMin,positions.getX(j));
+        xMax=Math.max(xMax,positions.getX(j));
+        yMin=Math.min(yMin,positions.getY(j));
+        yMax=Math.max(yMax,positions.getY(j));
+        zMin=Math.min(zMin,positions.getZ(j));
+        zMax=Math.max(zMax,positions.getZ(j));
+      }
+      assert.ok(xMax-xMin<=.06&&yMax-yMin<.08&&zMax-zMin<.008,
+        'wolf optics must be narrow and flat, not a bulky sphere');
+    }
+    assert.equal(meshes.filter(m=>m.name.startsWith('m001-eyebrow-ridge-')).length,2,
+      'm001 needs two anatomical brow ridges');
+    const mane=model.userData.pivots.head.children.filter(
+      m=>m.isMesh&&m.userData.wolfKingMane);
+    assert.ok(mane.length>=2,'m001 dense mane must follow its animated skull');
+    assert.ok(mane.reduce((n,m)=>n+(m.userData.furStrands||0),0)>1000,
+      'm001 lion-like under-jaw and cheek mane needs dense, longer fur');
   }
   const keratin=meshes.filter(m=>m.userData.rootedKeratin);
   assert.ok(keratin.length>=11,id+' must have physically curved dorsal horns and canines');
