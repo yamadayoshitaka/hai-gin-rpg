@@ -163,7 +163,8 @@ export function clipBodyToGarment(characterModel,coverage,{surfaceCheck=false,pr
  // boots and metal, even if the garment hides all its pixels. Otherwise
  // removing leg plates can reveal an empty hollow or missing flesh.
  const preserved=new Set(preserveRegions);
- const hidden=new Set((coverage?.regions||[]).filter(zone=>!preserved.has(zone)));
+ const hidden=new Set([...(coverage?.regions||[]),...forceCoveredRegions]
+  .filter(zone=>!preserved.has(zone)));
  // Closed battle tunics must not let bare chest/back skin protrude during
  // motion. Only the specified proven-opaque zones bypass spatial sampling;
  // all uncovered fingers, face and forearms remain conservative.
