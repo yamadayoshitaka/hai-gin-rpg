@@ -78,6 +78,9 @@ assert.match(hair,/shortLength=cutKind==='buzz'\?\(battleStableCoverage\?\.088:\
 assert.match(hair,/mesh\.userData\.shortBackCoverageStripCount=shortBackStrips/);
 assert.match(rig,/applyBattleTorsoLining\(copy/);
 assert.match(rig,/opaqueTorsoLiningMaterials\+\+/);
+assert.match(rig,/if\(jobId==='job06'&&role==='body'\)/,
+ 'Thief must retain the same opaque skinned leather in studio and battle');
+
 assert.match(game,/battle-artist-head-graft\.js\?v=20261117-thief-scalp-v8/);
 assert.match(game,/rigged-outfit-runtime\.js\?v=20261117-backhair-v6/);
 source.dispose();texture.dispose();
