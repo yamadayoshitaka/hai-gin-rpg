@@ -775,14 +775,22 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    // around, keeping hair under the paws short but the chest fuller.
    const flank=beastRemesh?generateCanineAxialFurGuides({
      stations:bodyStations,rows:source?43:29,around:source?52:38,
-     lengthProfile:[
+     lengthProfile:s.id==='m001'?[
+       {z:bodyLength*1.01,length:.065},
+       {z:bodyLength*.77,length:.175},
+       {z:bodyLength*.46,length:.208},
+       {z:bodyLength*.13,length:.176},
+       {z:-bodyLength*.24,length:.139},
+       {z:-bodyLength*.56,length:.122},
+       {z:-bodyLength*1.03,length:.085}
+     ]:[
        {z:bodyLength*1.01,length:.060},
        {z:bodyLength*.77,length:.139},
        {z:bodyLength*.46,length:.155},
        {z:bodyLength*.13,length:.099},
        {z:-bodyLength*.24,length:.080},
        {z:-bodyLength*.56,length:.066},
-       {z:-bodyLength*1.03,length:.047},
+       {z:-bodyLength*1.03,length:.047}
      ],
      width:.019,seed:v*3+1,minVertical:-.99,maxVertical:.98,gravity:.19,
    }):generateCanineFurGuides({
@@ -795,13 +803,20 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
      // The former circular chest coat made the model look like an egg.
      // Guard hairs now begin ON the existing front-chest loft surface.
      stations:bodyStations,rows:source?30:21,around:source?42:30,
-     lengthProfile:[
+     lengthProfile:s.id==='m001'?[
+       {z:bodyLength*1.01,length:.126},
+       {z:bodyLength*.77,length:.198},
+       {z:bodyLength*.46,length:.216},
+       {z:bodyLength*.13,length:.139},
+       {z:-bodyLength*.24,length:.087},
+       {z:-bodyLength*1.03,length:.048}
+     ]:[
        {z:bodyLength*1.01,length:.13},
        {z:bodyLength*.77,length:.185},
        {z:bodyLength*.46,length:.167},
        {z:bodyLength*.13,length:.083},
        {z:-bodyLength*.24,length:.058},
-       {z:-bodyLength*1.03,length:.038},
+       {z:-bodyLength*1.03,length:.038}
      ],
      width:.023,seed:v*11+19,
      minVertical:-.97,maxVertical:.40,gravity:.32,
@@ -814,7 +829,7 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    addFur(torso,[...flank,...chest]);
    // Merge the long ruff with short skull and cheek hairs, preserving
    // the original three material batches and keeping eyes unobstructed.
-   const faceGuides=[
+   const faceGuides=s.id==='m001'?[]:[
      ...generateCanineFurGuides({
        center:[0,.035,-.095],radii:[.31,.255,.232],
        rows:source?19:13,around:source?36:25,
@@ -835,7 +850,7 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
        hair.root[1]<.042 && hair.root[2]<.36)),
    ];
    // Grown facial hair: short nose/eye, medium cheeks and long throat ruff.
-   const groomed=beastRemesh?[
+   const groomed=beastRemesh&&s.id!=='m001'?[
     ...generateCanineFurGuides({center:[0,-.13,.39],radii:[.174,.087,.22],
       rows:source?21:14,around:source?33:22,length:.019,width:.005,
       seed:v*13+203,gravity:.11,minVertical:-.6,maxVertical:.5
@@ -850,9 +865,8 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
       seed:v*33+241,gravity:.42,minVertical:-.84,maxVertical:.22
     }).filter(h=>h.root[2]<.02)
    ]:[];
-   // The exposed 1/3-scale facial mask is bare around pupils, nasal
-   // bridge and lips. Grow body-density fur on the cheek/forehead perimeter
-   // at the FULL mane size, not on the tiny exposed facial bone.
+   // The compact skull has an exposed face window, framed by shorter
+   // cheek foliage rather than long spikes growing from the nasal bridge.
    const wolfKingFaceCoat=s.id==='m001'?generateCanineFurGuides({
       center:[0,.105,.065],radii:[.307,.238,.277],
       rows:source?42:29,around:source?56:40,
@@ -867,21 +881,25 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
       if(z>.078&&x<.186&&y>-.223&&y<.293)return false;
       return !(z>.264&&x<.203&&y>-.209&&y<.287);
    }):[];
-   // Long lion mane is exactly five times the original guide length.
-   // A backward-weighted curved sweep prevents straight porcupine spikes.
-   // Each guide still has only root/mid/tip; batching and mobile LOD hold.
-   const fivefoldWindsweptMane=guides=>guides.map(h=>{
-     const base=h.tip.map((v,i)=>v-h.root[i]);
+   // Groomed layers follow the reference coat: short underfur, medium
+   // body guard hairs and a fuller lion-like but compact cheek/throat ruff.
+   // Capping the real 3D length fixes 5x horizontal hair curtains.
+   const referenceLayeredMane=guides=>guides.map((h,i)=>{
+     const base=h.tip.map((v,k)=>v-h.root[k]);
      const len=Math.hypot(...base)||.001;
-     const wind=[base[0]*.72,base[1]*.28,base[2]*1.36-len*.65];
-     const norm=Math.hypot(...wind)||1;
-     const delta=wind.map(v=>v*len*5/norm);
-     const tip=h.root.map((v,i)=>v+delta[i]);
-     const mid=h.root.map((v,i)=>v+delta[i]*(i===2?.21:.32)+
-       h.normal[i]*len*.16+(i===2?len*.07:0));
+     const tier=.88+.20*((i*17%19)/18);
+     const target=Math.min(.405,Math.max(.14,len*1.20*tier));
+     const throat=h.root[1]<-.19;
+     const wind=[base[0]*(throat?.73:.48),
+       base[1]*(throat?1.15:.78)-(throat?.20:.045)*len,
+       base[2]*.80-len*(throat?.09:.32)];
+     const n=Math.hypot(...wind)||1;
+     const delta=wind.map(v=>v*target/n);
+     const tip=h.root.map((v,k)=>v+delta[k]);
+     const mid=h.root.map((v,k)=>v+delta[k]*(.42+(k===2?.02:0))+
+       h.normal[k]*len*.085);
      return {...h,mid,tip,
-       wolfKingManeLengthMultiplier:5,
-       originalHairLength:len};
+       wolfKingManeLengthMultiplier:1.2,originalHairLength:len};
    });
    // m001 has a lion-like, layered throat/cheek ruff: the bone remains a
    // wolf skull and the mane is entirely groomed on the moving head.
@@ -934,14 +952,14 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
      h.root[2]>.078&&Math.abs(h.root[0])<.186&&
      h.root[1]>-.223&&h.root[1]<.293)):[];
    const fullHeadCoat=s.id==='m001'?
-     [...headGuides,...fivefoldWindsweptMane(mantle)]:headGuides;
+     [...headGuides,...referenceLayeredMane(mantle)]:headGuides;
    addFur(head,fullHeadCoat);
    if(s.id==='m001'){
      for(const mesh of head.children.slice(maneStart)){
        if(!mesh.isMesh||!mesh.userData.furStrands)continue;
        mesh.name='m001-windswept-mane-'+mesh.name;
        mesh.userData.wolfKingMane=true;
-       mesh.userData.maneLengthMultiplier=5; // long hair subset
+       mesh.userData.maneLengthMultiplier=1.2; // groomed layered coat
        mesh.userData.exposedFaceScale=1/3;
      }
    }
