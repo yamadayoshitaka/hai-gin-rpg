@@ -3773,16 +3773,19 @@ function recordStoryBattleOutcome(victory){
  try{sessionStorage.setItem('hai-gin-story-result-v1',JSON.stringify(result));}
  catch(e){showRuntimeError('戦闘結果を保存できませんでした：'+e.message);}
 }
-// Bounded A* for building exits; avoid oscillation at doorframes.
-// Route around walls even when other units temporarily occupy the doorway.
+// Cache a collision-safe route across AI ticks for bridge and building exits.
+// Rebuilding an 8,000-node A* for every soldier every 50ms caused P95 hitches
+// while the 50v50 bridge queue was stationary. Congestion is not a new goal;
+// wait briefly and replan only if the planned next tile remains occupied.
+// This does not alter collision, targeting, mesh detail or animation fidelity.
 function exitPathStep(actor,target){
- // Heap A* replaces repeatedly sorting a 16,000-node open list.
- const path=findStableGridPath(actor.cell,target,{
+ const result=stableGridNext(actor._exitRoute,actor.cell,target,{
   walkable:(x,z)=>traversableCell(x,z,actor),
   occupied:(x,z)=>!availableCell(x,z,actor),
-  maxExpanded:8000
+  now:elapsed,waitSeconds:.7,maxExpanded:8000
  });
- return path?.[0]??null;
+ actor._exitRoute=result.state;
+ return result.next;
 }
 function stableActorRouteStep(a,goal,maxExpanded=6500){
  const result=stableGridNext(a._stableMovementPath,a.cell,goal,{
@@ -3975,9 +3978,22 @@ function moveActor(a,goal,dt,stop){
      if(nextX>=laneStart&&nextX<=laneEnd&&availableCell(nextX,a.cell.z,a)){
       if(startCellMove(a,nextX,a.cell.z)){a.jumping=false;return}
      }
-     // The bridge is a queue: if the next stair is occupied, wait
-     // rather than choosing a sideways step or declaring no route.
-     if(nextX>=laneStart&&nextX<=laneEnd)return;
+     // Never sidestep into river water. But a soldier already on the
+     // opposite BANK may exit the congested bridge lane onto a legal
+     // adjacent land cell, leaving room for the following soldiers.
+     if(nextX>=laneStart&&nextX<=laneEnd){
+      if((a.cell.x-center)*a.crossing.fromSide<=-10){
+       const sideOrder=a.id%2?[1,-1]:[-1,1];
+       for(const dz of sideOrder){
+        const nz=a.cell.z+dz;
+        if(!traversableCell(a.cell.x,nz,a)||!availableCell(a.cell.x,nz,a))continue;
+        if(startCellMove(a,a.cell.x,nz)){
+         a.crossing=null;a._exitRoute=null;a.jumping=false;return;
+        }
+       }
+      }
+      return;
+     }
     }
    }
    // Search through the actual bridge and stair cells; never take a greedy
@@ -3992,7 +4008,7 @@ function moveActor(a,goal,dt,stop){
     for(const [dx,dz] of [[0,-1],[0,1],[-1,0],[1,0]]){
      const nx=a.cell.x+dx,nz=a.cell.z+dz;
      if(!availableCell(nx,nz,a))continue;
-     const alternate=exitPathStep({...a,cell:{x:nx,z:nz}},target);
+     const alternate=exitPathStep({...a,_exitRoute:null,cell:{x:nx,z:nz}},target);
      if(alternate&&startCellMove(a,nx,nz)){a.jumping=false;return}
     }
    }
