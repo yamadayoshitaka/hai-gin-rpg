@@ -162,7 +162,7 @@ function setupDisplaySelector(){
 }
 const PROGRESS_STAGES=[['launch','起動'],['code','ソース修正'],['qa','QA'],['commit','コミット'],['pr','PR'],['merge','マージ'],['deploy','公開']];
 const STEP_LABELS={done:'完了',pending:'未完了',failed:'失敗',skipped:'未実行',unknown:'未確認'};
-const PROGRESS_LABELS={work_incomplete:'実作業未完了',in_review:'検証・審査待ち',deployed:'公開完了',paused:'定期停止',unverified:'状況未確認'};
+const PROGRESS_LABELS={blocked:'停止要因あり',work_incomplete:'実作業未完了',in_review:'検証・審査待ち',deployed:'公開完了',paused:'定期停止',unverified:'状況未確認'};
 
 function tag(t,cls,content){const e=document.createElement(t);if(cls)e.className=cls;if(content!==undefined)e.textContent=content;return e}
 function makeLink(text,url,external){const a=tag('a','',text);a.href=url;if(external){a.target='_blank';a.rel='noopener noreferrer'}return a}
@@ -531,7 +531,9 @@ async function start(){
   for(const g of groups)createCard(g);
   setupExpressionSelector();setupDisplaySelector();
   $('enabledCount').textContent='GitHub作業許可：'+groups.filter(g=>g.autoEnabled).length+'有効・'+groups.filter(g=>!g.autoEnabled).length+'停止';
-  $('schedulerCount').textContent='ChatGPT定期タスク：'+groups.filter(g=>g.schedulerEnabled===true&&g.source.includes('ChatGPT')).length+'有効・'+groups.filter(g=>g.schedulerEnabled===false&&g.source.includes('ChatGPT')).length+'停止（記録時点）';
+  const activeTasks=new Set(groups.filter(g=>g.schedulerEnabled===true&&g.source.includes('ChatGPT')).map(g=>g.automationId||g.id));
+  const pausedGroups=groups.filter(g=>g.schedulerEnabled===false&&g.source.includes('ChatGPT')).length;
+  $('schedulerCount').textContent='ChatGPT定期タスク：'+activeTasks.size+'件有効・'+pausedGroups+'系統停止（共有タスクは1件と計算、記録時点）';
   $('fresh').textContent='ChatGPTタスク最終確認：'+TIME(j.asOf)+' ／ 現在処理中かはGitHub Actionsのみ取得可能';
   await updateWorldSix();await updateSwitches();await updateProgress();await updatePreviewStatus();await updateChapter4();await updateStoryBudget();await updateRelease();await updateRuns();
  }catch(e){$('cards').textContent='管理データを読み込めませんでした：'+e.message}
