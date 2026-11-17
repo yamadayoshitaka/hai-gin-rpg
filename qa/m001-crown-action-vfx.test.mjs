@@ -32,6 +32,49 @@ try{
    'crown must be densely rooted from brow to rear scalp, no bald ridge: '+JSON.stringify(scalp));
  assert.ok(Math.abs(scalp.left-scalp.right)<(scalp.left+scalp.right)*.28,
    'symmetric crown must not have a sparse side');
+ assert.equal(model.userData.m001CrownSweepDirection,'backward',
+   'crown fibres should be styled as a rear-swept mane');
+ assert.ok(model.userData.m001CrownLongHairBase>=.235,
+   'long guard fibres need meaningful sweep length');
+ const longBackSweep={count:0,left:0,right:0,rootFront:0,rootRear:0};
+ for(const coat of headFur){
+   const v=coat.geometry.getAttribute('position');
+   for(let i=0;i+4<v.count;i+=5){
+     const x=(v.getX(i)+v.getX(i+1))*.5;
+     const y=(v.getY(i)+v.getY(i+1))*.5;
+     const z=(v.getZ(i)+v.getZ(i+1))*.5;
+     // The dense crown covers both its frontal and occipital portion.
+     if(Math.abs(x)>.175||y<.155||y>.29||z<-.30||z>.18)continue;
+     const swept=z-v.getZ(i+4);
+     if(swept>.095){
+       longBackSweep.count++;
+       if(x<0)longBackSweep.left++;else longBackSweep.right++;
+       if(z>0)longBackSweep.rootFront++;
+       else longBackSweep.rootRear++;
+     }
+   }
+ }
+ assert.ok(longBackSweep.count>80&&longBackSweep.rootFront>12&&
+   longBackSweep.rootRear>30,
+   'long crown hairs must sweep backward on BOTH front and rear scalp: '+
+   JSON.stringify(longBackSweep));
+ assert.ok(longBackSweep.left>25&&longBackSweep.right>25,
+   'slicked-back longer crown needs bilateral coverage');
+ const nasal=coats.find(m=>m.name==='wolf-nasal-cartilage');
+ assert.ok(nasal,'m001 must have its anatomical rhinarium');
+ let largestNoseHalfWidth=0,largestNoseHalfHeight=0;
+ const nosePos=nasal.geometry.getAttribute('position');
+ for(let i=0;i<nosePos.count;i++){
+   largestNoseHalfWidth=Math.max(largestNoseHalfWidth,Math.abs(nosePos.getX(i)));
+   largestNoseHalfHeight=Math.max(largestNoseHalfHeight,
+     Math.abs(nosePos.getY(i)+.131));
+ }
+ assert.ok(largestNoseHalfWidth>=.041&&largestNoseHalfWidth<=.048,
+   'nose should be smaller but still visible: '+largestNoseHalfWidth);
+ assert.ok(largestNoseHalfHeight<.040,
+   'black nose should not bulge vertically over the narrowed muzzle');
+ assert.equal(model.userData.m001NoseWidthScale,.80,
+   'nose-shrink setting must remain m001-only');
  const torsoCoats=coats.filter(m=>m.parent===p.torso&&m.userData.furStrands);
  let shoulderRoots=0;
  for(const coat of torsoCoats){
