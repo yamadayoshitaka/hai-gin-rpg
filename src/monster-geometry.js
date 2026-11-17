@@ -46,6 +46,13 @@ const M001_CRANIUM_RINGS=Object.freeze([
  {z:-.520,y:-.016,rx:.174,ry:.126},
  {z:-.635,y:-.032,rx:.050,ry:.062}
 ]);
+// The flame wolf is a genuine m001 anatomical source-derived actor.
+ // m001's source face rings and sculpted follicle map are transformed,
+ // not replaced by the old swollen generic canid cranium and oval muzzle.
+ const M002_REFERENCE_MORPH=Object.freeze({
+   faceX:.94,faceY:1.02,faceZ:1.20,faceAdvance:.040,
+   snoutWidth:1.20,snoutLength:1.32,noseWidth:1.30
+ });
 const clamp01=v=>Math.max(0,Math.min(1,v));
 const m001CheekContourX=(x,y,z)=>{
  const under=clamp01((.045-y)/.225);
@@ -478,12 +485,28 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
  const cranium=s.id==='m001'?
    g.axialLoft(faceCore,'skin',M001_CRANIUM_RINGS,
      {name:'organic-cranium-m001',rough:.91,ribbing:.003,faceSculpt:true}):
+   s.id==='m002'?
+   g.axialLoft(head,'skin',
+     M001_CRANIUM_RINGS.map(r=>({
+       ...r,z:r.z*M002_REFERENCE_MORPH.faceZ+
+         M002_REFERENCE_MORPH.faceAdvance,
+       y:r.y*M002_REFERENCE_MORPH.faceY,
+       rx:r.rx*M002_REFERENCE_MORPH.faceX,
+       ry:r.ry*M002_REFERENCE_MORPH.faceY
+     })),{name:'organic-cranium-m002',rough:.91,ribbing:.003,
+       faceSculpt:true}):
    g.anatomicalLoft(faceCore,'skin',
      felineMaster?felineFaceRings(felineMaster,QUADRUPED_CRANIUM_RINGS):
      QUADRUPED_CRANIUM_RINGS.map(r=>({
        ...r,rx:r.rx*skullWidth,rz:r.rz*skullDepth,
      })),{name:'organic-cranium-'+s.id,kind:'face',
        asymmetry:reptile?.10:.04});
+ if(s.id==='m002'){
+   cranium.userData.m001SourceDonor='M001_CRANIUM_RINGS';
+   cranium.userData.m002Morph=M002_REFERENCE_MORPH;
+   g.root.userData.m002FaceQualityDonor='m001';
+   g.root.userData.m002SkullIsPhysicalM001Morph=true;
+ }
  if(s.id==='m001'){
    cranium.userData.anatomyLoft=true;
    cranium.userData.continuousWolfSkull=true;
@@ -527,7 +550,7 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    // Legacy protected m005: preserve its original muzzle topology.
    g.bridge(head,'skin',[0,-.02,.13],[0,-.10,.54],.245,.125);
  }
- const muzzle=s.id==='m001'?.16:beastRemesh?.34:reptile?.57:
+ const muzzle=s.id==='m001'?.16:s.id==='m002'?.20:beastRemesh?.34:reptile?.57:
    felineMaster?felineMaster.muzzleFront:feline?.32:.43;
  if(reptile){
    g.bridge(head,'skin',[0,-.115,.245],[0,-.152,.82],.203,.116);
@@ -535,7 +558,7 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
  }else if(beastRemesh){
    // Skull -> brow -> bridge -> nose is one authored continuous axial shell,
    // not two intersecting cylindrical tubes and a separate muzzle oval.
-   const muzzleRings=s.id==='m001'?[
+   const muzzleRings=s.id==='m001'||s.id==='m002'?[
      // The original protrusion (.597) is reduced to a short bridge (.382).
      // The rear section overlaps the sculpted face, without a white tube.
      // The bridge's visible end must tuck BEHIND the wet nose rather than
@@ -555,7 +578,12 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
      {z:.283,y:-.045,rx:.232,ry:.152},
      {z:.125,y:-.024,rx:.237,ry:.183}
    ];
-   g.axialLoft(head,'light',muzzleRings,
+   const donorMuzzleRings=s.id==='m002'?
+     muzzleRings.map(r=>({...r,
+       z:r.z*M002_REFERENCE_MORPH.snoutLength+.055,
+       y:r.y*1.05,rx:r.rx*M002_REFERENCE_MORPH.snoutWidth,
+       ry:r.ry*1.12})):muzzleRings;
+   g.axialLoft(head,'light',donorMuzzleRings,
      {name:'beast-continuous-nasal-bridge-'+s.id,rough:.72,ribbing:.002});
  }else if(felineMaster){
    g.axialLoft(head,'light',felineMuzzleRings(felineMaster),
@@ -565,7 +593,7 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
  if(beastRemesh){
    // Anatomically tapered rhinarium; alae overlap the bridge and have
    // distinct cut-in nostrils, rather than an inflated black nose sphere.
-   const noseRings=s.id==='m001'?[
+   const noseRings=s.id==='m001'||s.id==='m002'?[
      // All rhinarium rings share the short muzzle's vertical midline.
      // Overlap the grey bridge tip so a detached lower black button
      // cannot render beneath an exposed circular grey end-cap.
@@ -584,18 +612,32 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
      {z:.594,y:-.156,rx:.139,ry:.067},
      {z:.551,y:-.147,rx:.090,ry:.046}
    ];
-   g.axialLoft(head,'shadow',noseRings,
+   const donorNoseRings=s.id==='m002'?
+     noseRings.map(r=>({...r,
+       z:r.z*M002_REFERENCE_MORPH.snoutLength+.055,
+       y:r.y*1.05,rx:r.rx*M002_REFERENCE_MORPH.noseWidth,
+       ry:r.ry*1.15})):noseRings;
+   g.axialLoft(head,'shadow',donorNoseRings,
      {name:s.id==='m001'?'wolf-nasal-cartilage':
        s.id==='m002'?'m002-rhinarium':'beast-rhinarium-'+s.id,
       rough:.31,ribbing:0});
    for(const side of [-1,1]){
-     const tight=s.id==='m001';
+     const tight=s.id==='m001'||s.id==='m002';
+     const scale=s.id==='m002'?M002_REFERENCE_MORPH.noseWidth:1;
+     const zShift=s.id==='m002'?.055:0;
+     const zMul=s.id==='m002'?M002_REFERENCE_MORPH.snoutLength:1;
+     const yMul=s.id==='m002'?1.05:1;
+     const mx=(v)=>v*scale;
+     const mz=(v)=>v*zMul+zShift;
      g.bridge(head,'shadow',
-       [side*(tight?.030:.094),tight?-.130:-.143,tight?.301:.605],
-       [side*(tight?.035:.110),tight?-.139:-.166,tight?.351:.662],
+       [side*mx(tight?.030:.094),yMul*(tight?-.130:-.143),
+        mz(tight?.301:.605)],
+       [side*mx(tight?.035:.110),yMul*(tight?-.139:-.166),
+        mz(tight?.351:.662)],
        tight?.009:.028,tight?.007:.015);
      g.sphere(head,'shadow',
-       [side*(tight?.035:.108),tight?-.137:-.182,tight?.358:.681],
+       [side*mx(tight?.035:.108),yMul*(tight?-.137:-.182),
+        mz(tight?.358:.681)],
        tight?[.0058,.0045,.0035]:[.014,.010,.008],
        {name:'beast-nostril-'+(side<0?'L':'R'),rough:.21});
    }
