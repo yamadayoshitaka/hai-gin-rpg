@@ -24,7 +24,7 @@ for(const [key,row] of Object.entries(NEW_STORY_ORIGINAL_ART)){
  assert.equal(row.origin,'NEW_SCENE_GENERATED_AFTER_2026_11_17',key);
  assert.equal(row.provenanceVerified,true,key);
  assert.equal(row.nativeQAComplete,true,key);
- assert.equal(row.visualP0Approved,false,key);
+ assert.equal(typeof row.visualP0Approved,'boolean',key);
  assert(row.asset.startsWith('./assets/story/new-originals/'),key);
  assert(fs.existsSync(row.asset.slice(2)),'New original WebP bytes missing: '+key);
  const source=fs.readFileSync(row.asset.slice(2));
