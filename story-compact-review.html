@@ -56,7 +56,9 @@ function show(){
  $('identity').textContent=showRecap?'語り手・男女共通の世界情勢':s.id+'／'+s.comicEdition+'／'+(s.protagonistGender==='female'?'女性':'男性');
  $('speaker').textContent=talk.speaker||'語り手';renderStoryRubyText($('dialogue'),talk);
  const portrait=$('portrait');
- const portraitPath=cast.has(talk.characterId)?'./assets/story-cinema/cast/'+talk.characterId+'.webp':talk.speaker==='軍師'&&s.protagonistGender==='female'?'./assets/story/characters/commander/female-master.webp':null;
+ const sceneFace=!showRecap&&['c01-s03-m1','c01-s05-m1'].includes(s.id)&&cut?storyArtDisplayUrl(cut):null;
+ const portraitPath=sceneFace||(cast.has(talk.characterId)?'./assets/story-cinema/cast/'+talk.characterId+'.webp':talk.speaker==='軍師'&&s.protagonistGender==='female'?'./assets/story/characters/commander/female-master.webp':null);
+ portrait.style.objectPosition=sceneFace?'30% 22%':'center 20%';
  portrait.hidden=!portraitPath;
  if(portraitPath){portrait.onerror=()=>{if(portrait.getAttribute('src')===portraitPath)portrait.hidden=true};portrait.src=portraitPath}
  else portrait.removeAttribute('src');
