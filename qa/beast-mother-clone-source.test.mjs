@@ -102,7 +102,7 @@ test('m007 is the feline physical mother; m008-m010 inherit nose and attached fe
    for(const name of limbs){
     const skin=find(model,'feline-continuous-skin-'+name);
     assert.equal(skin.parent,model.userData.pivots['leg'+name]);
-    assert.ok(skin.isSkinnedMesh&&skin.skeleton.bones.length===3);
+    assert.ok(skin.isSkinnedMesh&&skin.skeleton.bones.length===4);
    }
    assert.equal(model.userData.pivots.tail.parent,model.userData.pivots.torso,
      'animated tail should follow the moving cat torso');
