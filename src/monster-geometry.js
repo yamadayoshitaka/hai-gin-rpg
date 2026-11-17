@@ -1797,10 +1797,10 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    // m001 has a lion-like, layered throat/cheek ruff: the bone remains a
    // wolf skull and the mane is entirely groomed on the moving head.
    // Ear / eyebrow / eye clearances are cut out of the hair root mask.
-   const maneDonorCore=s.id==='m002'?{
+   const maneDonorCore=cloneCanine?{
  scale:WOLF_KING_FACE_SCALE,position:{x:0,y:.025,z:.055}
 }:faceCore;
-const wolfKingMane=(s.id==='m001'||s.id==='m002')?[
+const wolfKingMane=(s.id==='m001'||cloneCanine)?[
      // The first layer follows the actual narrow cranium loft, not an
      // ellipsoid displaced from the skull. This connects cheek and crown
      // hair continuously to the newly slimmed facial outline.
@@ -1883,7 +1883,7 @@ const wolfKingMane=(s.id==='m001'||s.id==='m002')?[
    // The user wants silver-white eyebrows made of the SAME kind of fine
    // wolf-mane strands, not the previous chunky white spikes. Root hairs
    // in the skin above each eye; sweep out/back and keep iris clearance.
-   const browHairs=(s.id==='m001'||s.id==='m002')?[-1,1].flatMap(side=>
+   const browHairs=(s.id==='m001'||cloneCanine)?[-1,1].flatMap(side=>
      generateCanineFurGuides({
        center:[side*.133,.172,.211],radii:[.063,.023,.049],
        rows:source?19:12,around:source?33:24,
@@ -1920,7 +1920,7 @@ const wolfKingMane=(s.id==='m001'||s.id==='m002')?[
    // THREE material batches. Three head fur meshes, never six: this holds
    // the hard 14-draw-call / 1000-vs-1000 near-LOD batching contract.
    const maneStart=head.children.length;
-   const mantle=(s.id==='m001'||s.id==='m002')?wolfKingMane.filter(h=>{
+   const mantle=(s.id==='m001'||cloneCanine)?wolfKingMane.filter(h=>{
      // The old generic bare-face mask deleted all roots within x=.186,
      // which is precisely why the mane began too far from the face.
      // Anterior scalp guides have their own eye/nose clearance masks.
@@ -1930,7 +1930,7 @@ const wolfKingMane=(s.id==='m001'||s.id==='m002')?[
      return !(h.root[2]>.078&&Math.abs(h.root[0])<.186&&
        h.root[1]>-.223&&h.root[1]<.293);
    }):[];
-   const waveOneCrown=s.id==='m002'?[]:fittedWolfFamilyCrown(s,source);
+   const waveOneCrown=cloneCanine?fittedWolfFamilyCrown(s,source):[];
     // A complete copy of the *same* m001 crown, cheek and throat groom.
     // Inverse-scale back to m002 head-local space: head.scale already
     // applies the wolf-donor face morph once during rendering.
@@ -1946,11 +1946,44 @@ const wolfKingMane=(s.id==='m001'||s.id==='m002')?[
         width:h.width/mean,m002SourceM001:true,m001DonorFullCoat:true
       }));
     };
+    // Both remaining wolf variants inherit the actual m001 face-framing
+    // groom, not only a thin patch of hair on the dorsal crown.
+    // Face-rooted fibres follow the per-species copy of m001 skull rings;
+    // outer throat/cheek ruff retains natural broader wolf proportions.
+    const donorToSiblingWolf=guides=>{
+      const morph=wolfKingCloneMorph(s.id);
+      const fullness=s.id==='m003'?1.13:1.09;
+      return guides.map(h=>{
+        const faceRoot=!!h.m001ContourGuide;
+        const point=p=>faceRoot?[
+          p[0]*morph.faceX/WOLF_KING_FACE_SCALE.x,
+          (p[1]-.025)*morph.faceY/WOLF_KING_FACE_SCALE.y,
+          (p[2]-.055)*morph.faceZ/WOLF_KING_FACE_SCALE.z+
+            morph.faceAdvance
+        ]:[
+          p[0]*fullness,p[1]*1.09,
+          p[2]*1.09+morph.faceAdvance
+        ];
+        return {...h,root:point(h.root),mid:point(h.mid),
+          tip:point(h.tip),width:h.width*(faceRoot?1.20:fullness),
+          donorWolfFullGroom:true,donorWolfId:'m001',
+          speciesGroomMorph:s.id};
+      });
+    };
+    const clonedSiblingCoat=cloneCanine&&s.id!=='m002'?
+      donorToSiblingWolf(referenceLayeredMane(mantle).concat(browHairs)):[];
     const clonedM001Coat=s.id==='m002'?
       donorToM002(referenceLayeredMane(mantle).concat(browHairs)):[];
+    if(clonedSiblingCoat.length){
+      g.root.userData.wolfKingDonorFullMane=true;
+      g.root.userData.wolfKingDonorSource='m001';
+      g.root.userData.wolfKingDonorStrands=clonedSiblingCoat.length;
+      g.root.userData.referenceGroomWave='m001-full-mane-'+s.id;
+    }
     const fullHeadCoat=s.id==='m001'?
       [...headGuides,...referenceLayeredMane(mantle)]:
       s.id==='m002'?clonedM001Coat:
+      cloneCanine?[...headGuides,...waveOneCrown,...clonedSiblingCoat]:
       [...headGuides,...waveOneCrown];
     if(s.id==='m002'){
       g.root.userData.m002OpticalHairClearance=true;
