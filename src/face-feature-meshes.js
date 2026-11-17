@@ -87,6 +87,27 @@ function buildGrid(name,columns,rows,point,material){
  mesh.name=name;mesh.renderOrder=2;
  return mesh;
 }
+/** Calibrate the visible eye from the EXISTING upper and lower liner mesh.
+ * Positive Z is in front of the face. Eye-depth slider retains a small,
+ * controlled artistic adjustment relative to the measured rim. This helper
+ * never moves eyeliner, brows or lashes to hide a badly fitted eyeball. */
+export function v71EyeDepthFromEyeliner({upperZ,lowerZ,corneaZ,eyeRadius,eyeDepth=0}={}){
+ const radius=Math.max(1e-7,Number(eyeRadius)||0);
+ const upper=Number(upperZ),lower=Number(lowerZ),cornea=Number(corneaZ);
+ if(![upper,lower,cornea].every(Number.isFinite))
+  throw Error('Finite real eyeliner and cornea depths required');
+ const deepest=Math.min(upper,lower),nearest=Math.max(upper,lower);
+ const eyelinerReferenceZ=deepest*.68+nearest*.32;
+ // Sclera is slightly inside the real liner; iris/pupil remain inset too.
+ const targetInsetRatio=.065-.056*clamp(Number(eyeDepth)||0,-.3,.85);
+ const targetCorneaZ=eyelinerReferenceZ-radius*targetInsetRatio;
+ // Limit regression to roughly one eyelid thickness on malformed GLBs.
+ const correctionZ=clamp(targetCorneaZ-cornea,-radius*.17,radius*.17);
+ return {correctionZ,eyelinerReferenceZ,targetCorneaZ,
+  signedDepthRatio:(cornea+correctionZ-eyelinerReferenceZ)/radius,
+  requestedInsetRatio:targetInsetRatio,
+  residualRatio:(targetCorneaZ-cornea-correctionZ)/radius};
+}
 /** Fine tapered eyelashes rooted on the ACTUAL cosmetic eyeliner contour.
  * Keep the legacy upper/lower mesh identities, so eye-angle joints and GLB
  * export still contain just four lash meshes rather than floating cards. */
@@ -615,6 +636,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
  const anteriorGlobeRatio=female?(settings.irisDiameter>=1.30?.105:.120):.130;
  const eyeAnteriorClearances=[];
  const irisUpperLidRecessRatios=[];
+  const eyelinerMeasuredFits=[];
  const originalIrisAngle=.585;
  // v33 enlarges the real circular IRIS without squashing its rim.
  const originalPupilAngle=.271;
@@ -855,6 +877,45 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
    }
   }
   if(female)stitchLinerCorners(upperEyeliner,lowerEyeliner,d.x,d.z);
+   // The eye and makeup were previously built independently, leading to
+   // protruding eyes despite accurate-looking eyeliner. Measure both
+   // actual liner meshes AFTER generation, then adjust the three optical
+   // surfaces together; lids and liner are stationary reference geometry.
+   const upperLinerPoint=female?
+    sampleGrid(upperEyeliner,28,3,.5,.33):
+    sampleGrid(root.getObjectByName(eyeLabel+'_UPPER_ANATOMICAL_EYELID'),28,4,.5,.03);
+   const lowerLinerPoint=female?
+    sampleGrid(lowerEyeliner,28,3,.5,.33):
+    sampleGrid(root.getObjectByName(eyeLabel+'_LOWER_ANATOMICAL_EYELID'),28,4,.5,.03);
+   const fit=v71EyeDepthFromEyeliner({
+    upperZ:upperLinerPoint.z,lowerZ:lowerLinerPoint.z,
+    corneaZ:z,eyeRadius,eyeDepth:settings.eyeDepth
+   });
+   for(const optic of [eyePatch,iris,pupil]){
+    optic.geometry.translate(0,0,fit.correctionZ);
+    optic.geometry.computeBoundingSphere();
+    optic.userData.eyelinerMeasuredDepthCorrection=fit.correctionZ;
+   }
+   eyeAnteriorClearances[eyeAnteriorClearances.length-1]+=
+    fit.correctionZ/eyeRadius;
+   irisUpperLidRecessRatios[irisUpperLidRecessRatios.length-1]-=
+    fit.correctionZ/eyeRadius;
+   eyePatch.userData.anteriorClearanceRatio=
+    (z+fit.correctionZ-faceZ)/eyeRadius;
+   eyePatch.userData.v71MeasuredAgainstRealEyeliner=true;
+   eyePatch.userData.v71SignedEyelinerDepthRatio=fit.signedDepthRatio;
+   eyePatch.userData.v71UpperLinerDistance3D=upperLinerPoint.distanceTo(
+    new THREE.Vector3(x,y,z+fit.correctionZ));
+   eyePatch.userData.v71LowerLinerDistance3D=lowerLinerPoint.distanceTo(
+    new THREE.Vector3(x,y,z+fit.correctionZ));
+   eyelinerMeasuredFits.push({
+    upperDistance3D:eyePatch.userData.v71UpperLinerDistance3D,
+    lowerDistance3D:eyePatch.userData.v71LowerLinerDistance3D,
+    signedDepthRatio:fit.signedDepthRatio,
+    requestedInsetRatio:fit.requestedInsetRatio,
+    residualRatio:fit.residualRatio,
+    correctionRatio:fit.correctionZ/eyeRadius
+   });
   if(female){
    // Two real 3D orbital surfaces per eye: a subtle upper-lid fold
    // (double eyelid) and a volume band directly under the lower lid.
@@ -1129,6 +1190,9 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   eyeSocketMaxInset:socketSculpt.maxInset,
   eyeSkinDepthClampRemoved:true,
   irisUpperLidRecessRatios:irisUpperLidRecessRatios.map(n=>Number(n.toFixed(3))),
+   eyeCalibrationMethod:'real-upper-and-lower-eyeliner-mesh-depth',
+   v71MeasuredEyelinerFits:eyelinerMeasuredFits.map(v=>Object.fromEntries(
+    Object.entries(v).map(([k,n])=>[k,Number(n.toFixed(5))]))),
   underEyeShadowMeshCount:0,
   doubleLidCreaseMeshCount:female?2:0,
   lowerOrbitalVolumeMeshCount:0,
