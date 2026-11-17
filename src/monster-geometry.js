@@ -334,6 +334,8 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    referenceDualCoat?referenceDoubleCoat(guides):guides;
  if(wolfKingDoubleCoat)g.root.userData.wolfKingFurDensityMultiplier=2;
  if(felineMaster&&coatDetail!=='low'){
+   g.root.userData.physicalCloneMother=felineMaster.physicalCloneMother;
+   g.root.userData.felineNasalPlate='visible-cartilage-and-inset-nares';
    g.root.userData.felineReferenceFurDensityMultiplier=2;
    g.root.userData.felineQualityInheritedFrom='m001';
    g.root.userData.referenceQualityRevision=BEAST_REFERENCE_QUALITY_REVISION;
@@ -681,7 +683,7 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    for(const side of [-1,1]){
      const x=side*felineMaster.noseWidth*.44;
      const nostril=g.sphere(head,'shadow',
-       [x,-.157,muzzle+.131],[.009,.005,.008],
+       [x,-.157,muzzle+.153],[.011,.006,.008],
        {name:'feline-master-nostril-'+(side<0?'L':'R')});
      nostril.userData.embeddedNasalAla=true;
    }
@@ -1415,6 +1417,13 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
      // cylindrical canine feet or claws are reused on m007-m010.
      const toe=g.group('toe'+name,[0,-.436,.144],distal);
      toe.userData.felinePad=true;
+     // Pastern and palm form an overlapping continuous foot silhouette.
+     // The original disconnected pad could hang below the tibia on turns.
+     const footRoot=g.bridge(toe,'skin',
+       [0,.075,-.103],[0,-.039,.059],
+       .120*felineMaster.pawWidth,.105*felineMaster.pawWidth);
+     footRoot.name='feline-ankle-to-toe-fascia-'+name;
+     footRoot.userData.donorSurfaceOverlap=true;
      g.sphere(toe,'skin',[0,-.033,.018],
        [.133*felineMaster.pawWidth,.055,.145],
        {name:'feline-master-metacarpal-pad'});
@@ -1860,7 +1869,8 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
  // preserve the original root-space animation and coordinates exactly.
  const tail=g.group('tail',
    s.id==='m004'?[0,.11,-.03]:[0,beastRemesh?1.176:1.35,beastRemesh?-.68:-.55],
-   s.id==='m004'?g.pivots.pelvis:g.root);
+   s.id==='m004'?g.pivots.pelvis:
+   (felineMaster||cloneCanine?torso:g.root));
  g.tube(tail,'skin',[[0,0,.05],[0,.17,-.34],[0,.08,-.50]],reptile?.14:.085);
  const tailMid=g.group('tailMid',[0,.08,-.50],tail);
  g.tube(tailMid,'skin',[[0,0,0],[0,.01,-.25-v*.05],[.09,-.11,-.49-v*.10]],reptile?.13:.078);
