@@ -74,7 +74,7 @@ assert(viewer.includes("const draftArt=oldStoryArtReuseAllowed(shot.stageId)?"),
  'Legacy provisional status is still available after stage4');
 assert(generator.includes("cloudflare-chapter1-new-originals"),
  'New stage5+ output must use an empty, separated production path');
-assert(workflow.includes('--mode generate --max-pages 12 --start-stage c01-s05 --through-stage c01-s10'));
+assert(workflow.includes('--mode generate --max-pages 12 --start-stage "$START_STAGE" --through-stage "$THROUGH_STAGE"') && workflow.includes("START_STAGE: \${{ inputs.start_stage || 'c01-s05' }}") && workflow.includes("THROUGH_STAGE: \${{ inputs.through_stage || 'c01-s10' }}"), 'Free generator defaults to stage5 and validates optional sequential stage1-10 input');
 assert(restore.includes('if(!oldStoryArtReuseAllowed(stageId))continue'));
 console.log(JSON.stringify({status:'PASS',scopeOld:'c01-s01..c01-s04',
  firstNew:'c01-s05',chapters:20,stages:200,checked,
