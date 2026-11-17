@@ -17,13 +17,19 @@ export function battleClosedBackCoverage({quality='battle',panel,opaqueLining=0,
 export function battleScalpCoverageState(actor){
  const head=actor?.masterHead;
  const wig=head?.studioWig;
+ // A visible Group containing only a scalp cap is still a bald soldier.
+ // The actual rooted-lock mesh must survive every model/LOD swap.
+ const locks=wig?.root?.getObjectByName?.('SINGLE_MESH_NORMAL_LAYERED_HAIR')||
+  wig?.root?.getObjectByName?.('REAL_ROOTED_SWEPT_HAIR_LOCKS');
+ const rootedVertices=Number(locks?.geometry?.getAttribute?.('position')?.count)||0;
  const studioReady=Boolean(head?.attached&&head.face?.visible!==false&&
-  wig?.root&&wig.root.visible!==false&&wig.root.parent);
+  wig?.root&&wig.root.visible!==false&&wig.root.parent&&
+  locks?.visible!==false&&rootedVertices>300);
  const fitted=actor?.outfit?.getHairState?.()??{attached:false,visible:false};
  const fallbackReady=Boolean(fitted.attached&&fitted.visible);
  return {
   source:studioReady?'studio-scalp':fallbackReady?'fitted-source':'missing',
-  studioReady,fallbackReady,attached:Boolean(fitted.attached),
+  studioReady,fallbackReady,rootedVertices,attached:Boolean(fitted.attached),
   fittedVisible:Boolean(fitted.visible),headAttached:Boolean(head?.attached),
   hairStyle:actor?.studioPattern?.hairStyleId||fitted.style||null,
   job:actor?.job?.name||null,actorId:actor?.id??null
