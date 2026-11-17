@@ -16,7 +16,7 @@ for(const name of forbidden){
 assert.match(source,/imported Ranger\/Peasant torso is already a real 65-bone garment/);
 assert.match(runtime,/panel\.removeFromParent\(\)/,'legacy panels removed from scene graph');
 for(const [s,label] of [[studio,'female studio'],[male,'male studio'],[game,'battle']]){
- assert.ok(s.includes('20261117-no-back-card-v2')||s.includes('72-no-back-card-v2'),
+ assert.ok(s.includes('20261117-rear-armor-mantle1')||s.includes('73-rear-armor-mantle1'),
   label+' must bust cached module URLs');
 }
 console.log('PASS no cardboard back meshes: female, male, battle, source geometry');
