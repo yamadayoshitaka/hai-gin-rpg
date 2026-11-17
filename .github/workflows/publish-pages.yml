@@ -87,6 +87,8 @@ jobs:
           node qa/story-art-coverage.test.mjs
       - name: Assemble compact game website without master asset archives
         run: python scripts/prepare-pages-site.py --out pages-dist
+      - name: Validate batch center and PR preview are shipped in the same Pages artifact
+        run: node --test qa/pages-batch-center-live-parity.test.mjs
       - name: Verify published world map contains the 12 named regions (no stale lock overlay)
         shell: bash
         run: |
@@ -254,4 +256,30 @@ jobs:
             sleep 5
           done
           echo '::error::Public battle page is stale or missing perspective controls'
+          exit 1
+
+      - name: Verify public batch center and PR preview are the latest deployment (HTTP 403 guard)
+        if: steps.latest.outputs.publish == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          for attempt in $(seq 1 18); do
+            batch_url="https://yamadayoshitaka.github.io/hai-gin-rpg/batch-monitor.html?verify=${GITHUB_SHA:0:12}-${attempt}"
+            preview_url="https://yamadayoshitaka.github.io/hai-gin-rpg/batch-pr-preview.html?verify=${GITHUB_SHA:0:12}-${attempt}"
+            batch_status=$(curl -sSL -o /tmp/batch-public.html -w '%{http_code}' --connect-timeout 8 --max-time 18 -H 'Cache-Control: no-cache' "${batch_url}" || true)
+            preview_status=$(curl -sSL -o /tmp/batch-pr-public.html -w '%{http_code}' --connect-timeout 8 --max-time 18 -H 'Cache-Control: no-cache' "${preview_url}" || true)
+            if [[ "${batch_status}" == 200 && "${preview_status}" == 200 ]] &&
+              grep -Fq "name=\"hai-gin-pages-sha\" content=\"${GITHUB_SHA}\"" /tmp/batch-public.html &&
+              grep -Fq "name=\"hai-gin-pages-sha\" content=\"${GITHUB_SHA}\"" /tmp/batch-pr-public.html &&
+              grep -Fq 'id="batchLaunchEvidence"' /tmp/batch-public.html &&
+              grep -Fq 'id="batchDisplaySelect"' /tmp/batch-public.html &&
+              grep -Fq 'id="worldObjectPicker"' /tmp/batch-public.html &&
+              grep -Fq 'getPrOnDemand(' /tmp/batch-pr-public.html; then
+              echo "PASS: public batch and PR comparison pages both serve exact source SHA ${GITHUB_SHA}"
+              exit 0
+            fi
+            echo "::warning::Batch UI Pages not ready: batch HTTP ${batch_status}, PR HTTP ${preview_status} (attempt ${attempt}/18)"
+            sleep 5
+          done
+          echo '::error::Deployed Pages did not serve verified batch center/PR preview. 403 or stale HTML persists.'
           exit 1
