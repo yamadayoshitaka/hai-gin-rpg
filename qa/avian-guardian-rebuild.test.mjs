@@ -105,7 +105,7 @@ test('phoenix has richer source geometry, warm feathers and long articulated tai
  assert.ok(counts.source<2_000_000,'source must fit the preview GPU limit');
  assert.ok(counts.high<500000,'near battle model must fit the FPS budget');
 });
-test('phoenix v4 has large anatomically fitted scales on broad torso, cheeks and crown',()=>{
+test('phoenix v5 has larger anatomical scales on broad torso, cheeks and crown',()=>{
  const p=avianProfile('m013');
  assert.ok(p.wing[0]>=1.2&&p.tail>=3.2&&p.body>=1.15&&p.head<.75);
  const m=build('m013','high');
@@ -121,11 +121,12 @@ test('phoenix v4 has large anatomically fitted scales on broad torso, cheeks and
   assert.equal(scales.userData.imbricatedKeratinScales,true);
   assert.equal(scales.userData.phoenixScuteType,'close-fitted-thorax-diamond-scales');
   assert.equal(scales.userData.mergedFeatherBatches,1);
-  assert.equal(scales.userData.scaleCount,17*17);
-  assert.equal(m.userData.phoenixDenseScaleCount,17*17);
-  assert.ok(scales.userData.phoenixAbdomenLargeScaleWidth>=.16);
-  assert.ok(scales.userData.phoenixScaleWidths.min>=.08);
-  assert.ok(scales.userData.phoenixScaleWidths.max>=.16);
+  assert.equal(scales.userData.scaleCount,15*14);
+  assert.equal(m.userData.phoenixDenseScaleCount,15*14);
+  assert.ok(scales.userData.phoenixAbdomenLargeScaleWidth>=.25);
+  assert.ok(scales.userData.phoenixScaleWidths.min>=.13);
+  assert.ok(scales.userData.phoenixScaleWidths.max>=.25);
+  assert.ok(scales.userData.phoenixBellyScaleMultiplier>=11);
   const skull=m.getObjectByName('avian-cranium-m013'),
    forehead=m.getObjectByName('phoenix-fine-head-scales'),
    neck=m.getObjectByName('phoenix-neck-fine-grading-scutes');
@@ -135,10 +136,14 @@ test('phoenix v4 has large anatomically fitted scales on broad torso, cheeks and
   assert.ok(forehead.userData.scaleCount>90,'face scales must be visible, not tiny dots');
   assert.equal(forehead.userData.phoenixVisibleFaceScales,true);
   assert.equal(forehead.parent,m.userData.pivots.head);
-  assert.ok(forehead.userData.phoenixScaleWidthMax>=.06);
+  assert.ok(forehead.userData.phoenixScaleWidthMax>=.09);
   assert.equal(neck.userData.phoenixScalesShrinkTowardsFace,true);
   assert.ok(neck.userData.phoenixScaleWidthBase>neck.userData.phoenixScaleWidthTip);
-  assert.equal(m.getObjectByName('avian-hooked-beak-m013').userData.phoenixLongNarrowBeak,true);
+  const beak=m.getObjectByName('avian-hooked-beak-m013');
+  assert.equal(beak.userData.phoenixShortBeak,true);
+  assert.equal(beak.userData.phoenixLipReduced,true);
+  assert.ok(beak.userData.phoenixBeakLength<.70);
+  assert.equal(beak.userData.phoenixLongNarrowBeak,true);
   assert.equal(m.getObjectByName('avian-articulated-crest-m013').userData.phoenixAllBackCrest,true);
   assert.equal(m.getObjectByName('avian-tail-rooted-streamers-m013').userData.curvedAvianFeathers,31);
  }finally{disposeMonsterSculpture(m);}
@@ -151,7 +156,7 @@ test('phoenix thigh is muscled and separate from slender bird knee, bare shank a
    const leg=p['leg'+side],knee=p['birdKnee'+side],
     shin=p['birdAnkle'+side],foot=p['avianFoot'+side];
    assert.equal(leg.userData.phoenixSeparateThigh,true);
-   assert.ok(leg.userData.phoenixThighRadius>.18);
+   assert.ok(leg.userData.phoenixThighRadius>.25);
    assert.equal(knee.parent,leg);
    assert.equal(knee.userData.phoenixRealKnee,true);
    assert.equal(shin.parent,knee);
@@ -161,12 +166,12 @@ test('phoenix thigh is muscled and separate from slender bird knee, bare shank a
    const femur=m.getObjectByName('phoenix-femur-muscle-'+side);
    assert.equal(femur.parent,leg);
    assert.equal(femur.userData.phoenixFemurContinuousSkin,true);
-   assert.ok(femur.userData.phoenixFemurMaxRadius>.18);
+   assert.ok(femur.userData.phoenixFemurMaxRadius>.25);
    const thigh=m.getObjectByName('phoenix-long-thigh-scutes-'+side);
    const shank=m.getObjectByName('phoenix-chicken-shank-scutes-'+side);
    const toes=m.getObjectByName('phoenix-foot-toe-scutes-'+side);
    for(const [part,bone,min] of [
-    [thigh,leg,.13],[shank,shin,.05],[toes,foot,.06]]){
+    [thigh,leg,.20],[shank,shin,.047],[toes,foot,.06]]){
     assert.equal(part.parent,bone);
     assert.equal(part.userData.phoenixAttachedScutes,true);
     assert.ok(part.userData.phoenixScaleWidth>=min);
@@ -208,6 +213,45 @@ test('phoenix arm scales are anchored to real guardian feathers, never floating 
    }
   }
  }finally{disposeMonsterSculpture(m);}
+});
+test('phoenix has independently articulated feather arms with three feather-digit hands on both sides',()=>{
+ for(const detail of ['source','high','medium','low']){
+  const m=build('m013',detail),p=m.userData.pivots;
+  try{
+   assert.equal(m.userData.phoenixFeatherHands,true);
+   for(const side of ['L','R']){
+    const arm=p['phoenixArm'+side],forearm=p['phoenixForearm'+side],
+      hand=p['phoenixFeatherHand'+side];
+    assert.equal(arm?.parent,p.torso,'arm must grow out of the chest');
+    assert.equal(arm.userData.phoenixIndependentFeatherArm,true);
+    assert.equal(forearm?.parent,arm);
+    assert.equal(forearm.userData.phoenixFeatherWrappedUlna,true);
+    assert.equal(hand?.parent,forearm);
+    assert.equal(hand.userData.phoenixAvianFeatherHand,true);
+    const sleeve=m.getObjectByName('phoenix-feather-arm-sleeve-'+side),
+     under=m.getObjectByName('phoenix-feather-forearm-sleeve-'+side),
+     fingers=m.getObjectByName('phoenix-feather-hand-vanes-'+side);
+    assert.equal(sleeve?.parent,arm);
+    assert.equal(under?.parent,forearm);
+    assert.equal(fingers?.parent,hand);
+    assert.equal(fingers.userData.phoenixFeatherHandDigits,3);
+    assert.equal(fingers.userData.phoenixNoHumanFingers,true);
+    assert.ok(fingers.userData.curvedAvianFeathers>=9);
+    assert.ok(m.getObjectByName('phoenix-feather-hand-palm-'+side));
+    for(let digit=0;digit<3;digit++)
+     assert.ok(m.getObjectByName('phoenix-feather-hand-digit-'+side+'-'+digit));
+   }
+   for(const action of ['idle','walk','run','attack']){
+    startMonsterAction(m,action,0);
+    animateMonsterModel(m,.20);
+    m.updateMatrixWorld(true);
+    for(const side of ['L','R']){
+     const hand=p['phoenixFeatherHand'+side];
+     assert.ok([hand.rotation.x,hand.rotation.y,hand.rotation.z].every(Number.isFinite));
+    }
+   }
+  }finally{disposeMonsterSculpture(m);}
+ }
 });
 test('phoenix feather waves travel across both wings, swept crest and tail without CPU rebuilding',()=>{
  const m=build('m013','high');
