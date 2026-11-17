@@ -743,7 +743,83 @@ body.compact-command-dock.compact-explore-open .exploreBuildingList button{
  border:1px solid #ebc87c;border-radius:9px;background:#52352c;color:#fff5cf;
  font:800 15px system-ui;pointer-events:auto}
 body[data-circle-target] #battleCancelCircleTarget{display:flex!important}
+/* The 3D overview IS the command map. Crisp DOM badges do not cost GPU meshes. */
+#overviewSquadHud[hidden],#overviewSquadInspector[hidden],.overviewSquadPin[hidden]{display:none!important}
+#overviewSquadHud{position:fixed;inset:0;z-index:22;pointer-events:none;font-family:system-ui}
+#overviewPins{position:absolute;inset:0;pointer-events:none}
+#overviewMapSummary{
+ position:fixed;left:50%;top:calc(var(--battleTopBottom,185px) + 7px);
+ transform:translateX(-50%);width:max-content;max-width:calc(100vw - 20px);
+ border-radius:8px;border:1px solid #7294ac;background:#0b2338e8;
+ padding:5px 10px;font:800 11px/1.2 system-ui;color:#eff8ff;
+ white-space:nowrap;pointer-events:none;text-align:center;
+ box-shadow:0 2px 7px #0008;z-index:2
+}
+#overviewPinLeaders{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
+.overviewSquadPin{
+ position:absolute;transform:translate(-50%,-50%);z-index:2;
+ display:flex;flex-direction:column;align-items:center;justify-content:center;
+ width:42px;height:40px;border:2px solid #5dc8f1;border-radius:11px;
+ padding:2px 3px;background:#0c3141f2;color:#f7fbff;
+ box-shadow:0 3px 7px #000d,0 0 0 1px #12202aa8;
+ font:800 13px/1.14 system-ui;white-space:nowrap;pointer-events:auto;
+ touch-action:manipulation;user-select:none;-webkit-tap-highlight-color:transparent;
+ font-variant-numeric:tabular-nums
+}
+.overviewSquadPin.enemy{border-color:#fd8792;background:#4a1a2cf2}
+.overviewSquadPin.group-2{border-color:#9ae1a7}
+.overviewSquadPin.group-3{border-color:#d8a5ff}
+.overviewSquadPin.selected{border:3px solid #ffe78b;background:#465129f5;
+ box-shadow:0 0 0 3px #f9d76880,0 4px 11px #000c;z-index:4}
+.overviewSquadPin.critical{border-color:#ff9966}
+.overviewSquadPin.defeated{opacity:.65;filter:grayscale(.7)}
+.overviewSquadPin .overviewPinCount{font:800 10px/1.05 system-ui;color:#dfeefa}
+.overviewSquadPin.enemy .overviewPinCount{color:#ffd9dc}
+.overviewSquadPin:focus-visible{outline:3px solid #ffe38b;outline-offset:3px}
+#overviewSquadInspector{
+ position:fixed;left:8px;right:8px;bottom:calc(var(--battleReportHeight,95px) + 10px);
+ z-index:27;pointer-events:auto;max-width:440px;margin:0 auto;
+ padding:8px 11px;background:#0c273cf5;border:1px solid #8cbcd5;border-radius:11px;
+ box-shadow:0 5px 18px #000c;color:#f1f9ff
+}
+#overviewSquadInspector.enemy{border-color:#ec929b;background:#321e2bf5}
+#overviewSquadInspector .overviewInspectorTitle{display:flex;align-items:center;justify-content:space-between;gap:8px}
+#overviewSquadInspector .overviewInspectorTitle strong{font:800 14px system-ui}
+#overviewSquadInspector .overviewInspectorTitle button{border:1px solid #7097b0;border-radius:6px;
+ background:#1c3a53;color:#f1f9ff;min-width:36px;min-height:30px}
+#overviewSquadInspector .overviewInspectorMeta{font:700 11px/1.5 system-ui;color:#d7e9f6;margin:4px 0}
+#overviewSquadInspector .overviewInspectorActions{display:flex;gap:7px;align-items:center}
+#overviewSquadInspector .overviewInspectorActions button,
+#overviewSquadInspector .overviewInspectorActions select{
+ min-height:40px;border:1px solid #83bddc;border-radius:7px;
+ background:#1c4967;color:white;font:800 12px system-ui;padding:5px 8px
+}
+#overviewSquadInspector .overviewInspectorActions select{flex:1;min-width:0}
+#overviewSquadInspector .overviewInspectorActions button{flex:1.25}
+#overviewSquadInspector .overviewInspectorActions[hidden]{display:none!important}
+body #allySquadRibbon,body #enemySquadRibbon,
+body.compact-command-dock #allySquadRibbon,body.compact-command-dock #enemySquadRibbon,
+body.compact-command-dock.squad-closeup #allySquadRibbon,
+body.compact-command-dock.squad-closeup #enemySquadRibbon{display:none!important}
+#dockSquadSelect,#dockSquadOpen,#squadDockIdle{display:none!important}
+@media(max-width:390px){.overviewSquadPin{width:38px;height:37px;font-size:12px}
+ #overviewSquadInspector{left:5px;right:5px;padding:6px 9px}}
 </style>
+<div id="overviewSquadHud" hidden aria-label="俯瞰戦場の味方と敵の部隊を選択">
+ <svg id="overviewPinLeaders" aria-hidden="true"></svg>
+ <div id="overviewPins"></div>
+ <div id="overviewMapSummary" role="status">味方・敵の部隊位置を表示中</div>
+ <section id="overviewSquadInspector" hidden aria-label="選択部隊の戦況と作戦情報">
+  <div class="overviewInspectorTitle"><strong id="overviewInspectorTitle">部隊情報</strong>
+   <button id="overviewInspectorClose" type="button" aria-label="部隊情報を閉じる">✕</button></div>
+  <div id="overviewInspectorMeta" class="overviewInspectorMeta"></div>
+  <div id="overviewInspectorPurpose" class="overviewInspectorMeta"></div>
+  <div id="overviewInspectorActions" class="overviewInspectorActions">
+   <select id="overviewDivisionSelect" aria-label="同じ班の分隊を選択するだけ（個別号令なし）"></select>
+   <button type="button" id="overviewRecommendPlan">★ 推奨作戦を選ぶ</button>
+  </div>
+ </section>
+</div>
 <div id="battleSelectedTargetBar" role="status" aria-live="off" hidden><div class="targetHalf left"><div class="targetHeading" id="battleSelectedAlly">味方 第1隊</div><div class="targetCount" id="battleSelectedAllyCount">--/--</div><div class="targetMode" id="battleSelectedAllyOrder">号令：自動</div></div><div class="targetDirection">➜</div><div class="targetHalf right"><div class="targetHeading" id="battleSelectedEnemy">索敵中</div><div class="targetCount" id="battleSelectedEnemyCount">--/--</div><div class="targetMode" id="battleSelectedTargetMode">攻撃対象（自動選択）</div></div></div><button id="battleCancelCircleTarget" type="button" aria-label="対象選択を取り消す">✕</button>
 <div id="squadScreenLabels" aria-label="全味方・敵部隊の接続線付き情報サークル"><svg id="squadCalloutLines" aria-hidden="true"></svg></div>
 <div id="squadCircleInfo" hidden role="status" aria-live="polite" aria-label="選択した部隊の情報・1行表示">
@@ -763,6 +839,7 @@ import {createBattleThreeGroupPanel} from './src/battle-three-group-panel.js';
 import * as THREE from 'three';
 import {createGamePageAudio} from './src/game-page-audio.js';
 import {layoutSquadCallouts,squadCalloutLeader} from './src/battle-squad-callout-layout.js?v=2';
+import {overviewPinLabel,placeOverviewSquadPins,recommendOverviewGroupPlans} from './src/battle-overview-squad-pins.js?v=20261117-map-pins2';
 import {createBattleCeremony} from './src/battle-ceremony.js?v=4.6.69';
 import {updateDefensivePosture} from './src/battle-defensive-doctrine.js?v=4.6.15';
 import {chooseBlockedMovementDetour} from './src/battle-movement-recovery.js?v=4.6.15';
@@ -7857,7 +7934,18 @@ const targetedStrategyUi=createTargetedStrategyUi({
    const selected=storyRequest?.battlePlanSelected?.[String(groupId)];
    return [...configured].sort((a,b)=>Number(b.id===selected)-Number(a.id===selected));
   }
-  return BATTLE_PLAN_PRESETS.map(x=>({...x,score:50,reason:'模擬戦向け参考テンプレート'}));
+  // Free battles also get REAL suitability scores from this group's
+  // living jobs, map terrain and current casualties, not seven fake 50s.
+  const own=squadRoster.filter(u=>u.team===0&&!u.isStrategist&&
+   u.hp>0&&u.alive!==false&&
+   normalizeArmyGroup(armyGroupBySquad[String(u.squadId)])===Number(groupId));
+  const lost=own.length?own.reduce((n,u)=>n+1-u.hp/Math.max(1,u.maxHp||u.hp),0)/own.length:0;
+  return recommendOverviewGroupPlans(BATTLE_PLAN_PRESETS,STRATEGY_METHODS,{
+   jobs:own.map(u=>u.jobId||u.job?.id||'sword'),
+   stageKind:selectedStage?.kind||'explore',
+   terrain:selectedStage?.biome||selectedStage?.terrain||'plains',
+   woundedRatio:lost
+  }).slice(0,5);
  },
  getItems:()=>{
   const byId=new Map();
@@ -8418,6 +8506,197 @@ function makeSquadLabel(id,team){
 }
 for(const id of squadIds)squadMarkers.set(squadKey(0,id),makeSquadLabel(id,0));
 for(const id of enemySquadIds)squadMarkers.set(squadKey(1,id),makeSquadLabel(id,1));
+/**
+ * Overview battlefield = tactical map. There is no second squad chooser:
+ * each real 3D squad centroid has a fixed, Android-readable pin.
+ * All 20 DOM nodes and SVG leader paths are allocated ONCE; updates run
+ * at 5Hz, independent of soldier animation and pixel-ratio/FPS adaptation.
+ */
+const overviewHud=$('overviewSquadHud'),overviewPins=$('overviewPins');
+const overviewPinLeaders=$('overviewPinLeaders');
+const overviewInspector=$('overviewSquadInspector');
+const overviewPinNodes=new Map();
+const overviewProjection=new THREE.Vector3();
+let overviewSelectedKey=null,overviewPinClock=0,overviewInspectorSignature='';
+const overviewSvgNS='http://www.w3.org/2000/svg';
+for(const team of [0,1]){
+ const ids=team===0?squadIds:enemySquadIds;
+ for(const [squadIndex,id] of ids.entries()){
+  const key=squadKey(team,id),pin=document.createElement('button');
+  pin.type='button';pin.className='overviewSquadPin'+(team?' enemy':'');
+  const title=document.createElement('span'),count=document.createElement('span');
+  count.className='overviewPinCount';count.textContent='--/--';
+  pin.append(title,count);
+  pin.dataset.squadKey=key;
+  pin.setAttribute('aria-label',(team?'敵':'味方')+squadName(id,team)+'の位置と作戦を表示');
+  pin.onclick=()=>selectOverviewSquad(team,id);
+  overviewPins.append(pin);
+  const line=document.createElementNS(overviewSvgNS,'path');
+  line.setAttribute('stroke',team?'#ffadbb':'#a2e4ff');
+  line.setAttribute('stroke-width','1.5');line.setAttribute('fill','none');
+  const dot=document.createElementNS(overviewSvgNS,'circle');
+  dot.setAttribute('r','3.5');dot.setAttribute('fill',team?'#ff9fac':'#a4eaff');
+  line.style.display='none';dot.style.display='none';
+  overviewPinLeaders.append(line,dot);
+  overviewPinNodes.set(key,{pin,title,count,line,dot,team,id,squadIndex});
+ }
+}
+function overviewSquadActive(){
+ const fullCamera=camera.position.distanceTo(controls.target)>
+  cameraOverviewOffset.length()*.65;
+ return battleReady&&!finished&&!TOWN_MODE&&!battleCeremony.locked&&
+  !commandOverviewLocked&&
+  (battleViewMode==='overview'||fullCamera)&&
+  !document.body.classList.contains('command-target-preview');
+}
+function selectOverviewSquad(team,id){
+ if(!overviewSquadActive())return false;
+ const key=squadKey(team,id),marker=squadMarkers.get(key);
+ if(!marker?.visible)return false;
+ overviewSelectedKey=key;overviewInspectorSignature='';
+ renderOverviewSquadInspector(true);
+ for(const [k,node] of overviewPinNodes)
+  node.pin.classList.toggle('selected',k===key);
+ return true;
+}
+function renderOverviewSquadInspector(force=false){
+ const node=overviewPinNodes.get(overviewSelectedKey);
+ if(!node||!squadMarkers.get(overviewSelectedKey)?.visible){
+  overviewInspector.hidden=true;return;
+ }
+ const {id,team}=node,marker=squadMarkers.get(overviewSelectedKey);
+ const alive=marker.userData.screenLabel.userDataStrength.textContent;
+ const defeated=alive.startsWith('0/'),intent=squadIntent(id,team,defeated);
+ const group=team===0?normalizeArmyGroup(armyGroupBySquad[String(id)]):null;
+ const leader=team===0?squadCommanderUnavailableReason(id):
+  ribbonCommanderAlive(1,id)?'敵軍師が指揮中':'軍師不在';
+ const sig=[id,team,alive,intent.order,intent.purpose,leader,group].join('|');
+ if(!force&&overviewInspectorSignature===sig)return;
+ overviewInspectorSignature=sig;
+ overviewInspector.hidden=false;
+ overviewInspector.classList.toggle('enemy',team===1);
+ $('overviewInspectorTitle').textContent=(team?'🔴 敵 ':'🔵 味方 ')+squadName(id,team);
+ $('overviewInspectorMeta').textContent=
+  '残存 '+alive+'人 ｜ '+intent.order+(leader?' ｜ '+leader:'');
+ $('overviewInspectorPurpose').textContent='目的：'+intent.purpose;
+ $('overviewInspectorActions').hidden=team!==0||defeated;
+ if(team===0){
+  const options=squadIds.filter(sid=>
+   normalizeArmyGroup(armyGroupBySquad[String(sid)])===group);
+  const select=$('overviewDivisionSelect');
+  const optionSignature=group+':'+options.join(',');
+  if(select.dataset.groupSignature!==optionSignature){
+   select.replaceChildren(...options.map(sid=>{
+    const item=document.createElement('option');
+    item.value=String(sid);item.textContent=squadName(sid);
+    return item;
+   }));
+   select.dataset.groupSignature=optionSignature;
+  }
+  select.value=String(id);
+  $('overviewRecommendPlan').disabled=!!leader||!hasSquadCommander(id);
+  $('overviewRecommendPlan').title=leader||'現在の地形・目的・職業に合う宿屋テンプレートを選択';
+ }
+}
+$('overviewInspectorClose').onclick=()=>{
+ overviewSelectedKey=null;overviewInspector.hidden=true;overviewInspectorSignature='';
+ for(const node of overviewPinNodes.values())node.pin.classList.remove('selected');
+};
+$('overviewDivisionSelect').onchange=event=>{
+ // Divisions only SELECT a position; individual commands remain unavailable.
+ selectOverviewSquad(0,event.target.value);
+};
+$('overviewRecommendPlan').onclick=()=>{
+ const node=overviewPinNodes.get(overviewSelectedKey);
+ if(!node||node.team!==0)return;
+ const group=normalizeArmyGroup(armyGroupBySquad[String(node.id)]);
+ const opened=targetedStrategyUi.open(group,{
+  startAtRecommendations:true,groupOnly:true
+ });
+ if(opened)overviewHud.hidden=true;
+};
+function updateOverviewSquadPins(dt){
+ overviewPinClock+=dt;
+ if(overviewPinClock<.16)return;
+ overviewPinClock=0;
+ const visible=overviewSquadActive();
+ if(overviewHud.hidden===visible)overviewHud.hidden=!visible;
+ document.body.classList.toggle('overview-squad-map',visible);
+ if(!visible)return;
+ const rect=renderer.domElement.getBoundingClientRect();
+ const report=$('battleDialogue'),topDock=$('battleTopDock');
+ const bounds={left:Math.max(7,rect.left+7),
+  right:Math.min(innerWidth-7,rect.right-7),
+  top:Math.max(rect.top+7,topDock.getBoundingClientRect().bottom+8),
+  bottom:Math.min(rect.bottom-7,
+   report&&!report.hidden?report.getBoundingClientRect().top-8:innerHeight-7)};
+ if(bounds.bottom-bounds.top<70)return;
+ const points=[];
+ camera.updateMatrixWorld();
+ for(const [key,node] of overviewPinNodes){
+  const marker=squadMarkers.get(key);
+  if(!marker?.visible){node.pin.hidden=true;continue}
+  overviewProjection.copy(marker.position).project(camera);
+  const x=rect.left+(overviewProjection.x+1)*rect.width/2;
+  const y=rect.top+(1-overviewProjection.y)*rect.height/2;
+  if(overviewProjection.z<=-1||overviewProjection.z>=1||
+   x<rect.left-8||x>rect.right+8||
+   y<bounds.top-24||y>bounds.bottom+24){
+   node.pin.hidden=true;node.line.style.display='none';node.dot.style.display='none';continue;
+  }
+  points.push({key,x,y,team:node.team,squadIndex:node.squadIndex});
+ }
+ const placements=placeOverviewSquadPins(points,bounds,{
+  width:innerWidth<=390?38:42,height:innerWidth<=390?37:40
+ });
+ overviewPinLeaders.setAttribute('viewBox','0 0 '+innerWidth+' '+innerHeight);
+ for(const [key,node] of overviewPinNodes){
+  const loc=placements.get(key);
+  if(!loc){node.pin.hidden=true;node.line.style.display='none';node.dot.style.display='none';continue}
+  const marker=squadMarkers.get(key),id=node.id;
+  const group=node.team?0:normalizeArmyGroup(armyGroupBySquad[String(id)]);
+  const number=node.team?node.squadIndex+1:
+   squadNumberByGroup.get(group)?.get(String(id))||node.squadIndex+1;
+  const caption=overviewPinLabel({team:node.team,squadIndex:node.squadIndex,
+   group,division:number});
+  if(node.title.textContent!==caption)node.title.textContent=caption;
+  const remaining=marker.userData.screenLabel.userDataStrength.textContent;
+  if(node.count.textContent!==remaining)node.count.textContent=remaining;
+  node.pin.classList.toggle('group-2',group===2);
+  node.pin.classList.toggle('group-3',group===3);
+  node.pin.classList.toggle('defeated',remaining.startsWith('0/'));
+  node.pin.classList.toggle('critical',Number(remaining.split('/')[0])<=
+   Number(remaining.split('/')[1])*.3);
+  node.pin.classList.toggle('selected',key===overviewSelectedKey);
+  node.pin.style.left=Math.round(loc.x)+'px';
+  node.pin.style.top=Math.round(loc.y)+'px';
+  node.pin.title=(node.team?'敵':'味方')+squadName(id,node.team)+
+   '　残存'+remaining+'名（タップして作戦情報）';
+  node.pin.hidden=false;
+  if(loc.displaced){
+   node.line.setAttribute('d','M'+loc.anchorX.toFixed(1)+','+loc.anchorY.toFixed(1)+
+    ' L'+loc.x.toFixed(1)+','+loc.y.toFixed(1));
+   node.dot.setAttribute('cx',String(loc.anchorX));
+   node.dot.setAttribute('cy',String(loc.anchorY));
+  }
+  node.line.style.display=loc.displaced?'':'none';
+  node.dot.style.display=loc.displaced?'':'none';
+ }
+ const aliveCount=team=>[...overviewPinNodes.values()].filter(node=>{
+  if(node.team!==team)return false;
+  const marker=squadMarkers.get(squadKey(team,node.id));
+  return marker?.visible&&!marker.userData.screenLabel.userDataStrength.textContent.startsWith('0/');
+ }).length;
+ const summary='🔵 味方 '+aliveCount(0)+'/'+squadIds.length+
+  '隊　🔴 敵 '+aliveCount(1)+'/'+enemySquadIds.length+'隊';
+ if($('overviewMapSummary').textContent!==summary)$('overviewMapSummary').textContent=summary;
+ renderOverviewSquadInspector();
+}
+window.getOverviewSquadQA=()=>({visible:!overviewHud.hidden,
+ markerCount:[...overviewPinNodes.values()].filter(n=>!n.pin.hidden).length,
+ totalSquads:overviewPinNodes.size,selectedKey:overviewSelectedKey,
+ groupOnlyRecommendations:true,divisionsSelectionOnly:true});
+
 // One selected source->target arrow, not ten crossing lines.
 const squadTargetSvg=$('squadCalloutLines'),squadTargetNS='http://www.w3.org/2000/svg';
 const arrowDefs=document.createElementNS(squadTargetNS,'defs');
@@ -9747,6 +10026,7 @@ function animate(){
  updateBattleFormationIntegrity();
  if(!paused){updateActiveSquadBuffVfx();actionVfx.update(worldDt);}
  updateSquadMarkerPositions(dt);
+ updateOverviewSquadPins(dt);
  if(riverFlow)riverFlow.offset.y-=worldDt*.07;
  // Each pass retains its usual 100/240ms refresh, but they no longer all
  // occupy one unlucky Android frame.  This does not affect simulation ticks.

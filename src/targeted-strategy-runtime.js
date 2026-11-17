@@ -56,7 +56,7 @@ export function createTargetedStrategyUi({
  let groupId='1',scope='group',step='scope',family='attack',intent='melee';
  let selectedSquads=new Set(),selectedMethods=new Set(),selectedTargets=new Set(),
   chosenItem=null,mapPoint=null,error='',preferredSquad=null;
- let radarHotspots=[],mapTileOverlay=null;
+ let radarHotspots=[],mapTileOverlay=null,overviewGroupOnly=false;
  const b=(attr,label,active=false,disabled=false)=>button(attr,label,active,disabled);
  const planFor=(id=groupId)=>getPlan(String(id))||{squads:[],allowed:[]};
  const liveSquads=(p=planFor())=>(p.squads||[]).filter(s=>Number(s.soldiers)>0);
@@ -109,6 +109,7 @@ export function createTargetedStrategyUi({
   b('data-strategy-next',nextLabel,false,disable)+'</div>';
  function render(){
   if(panel.hidden)return;
+  if(overviewGroupOnly&&step==='scope')step='family';
   const plan=planFor(),skills=available(),eligible=new Set(skills.map(x=>x.id));
   const dist=distribution(),kind=type(),groupInfo=grouped(),activeMethod=[...selectedMethods].map(id=>STRATEGY_METHODS[id]).filter(Boolean);
   let html='';
@@ -314,13 +315,14 @@ export function createTargetedStrategyUi({
    if(found)selectedSquads.add(String(found.id));
   }
  }
- function open(id=null,{squadId=null}={}){
+ function open(id=null,{squadId=null,groupOnly=false,startAtRecommendations=false}={}){
   if(!panel.hidden)return;
   const first=grouped().find(g=>liveSquads(g.plan).length);
   if(!first)return false;
   groupId=String(id&&liveSquads(planFor(id)).length?id:first.id);
-  scope=squadId==null?'group':'squad';preferredSquad=squadId==null?null:String(squadId);
-  selectGroup(groupId);step='scope';family='attack';intent='melee';
+  overviewGroupOnly=Boolean(groupOnly);
+  scope=overviewGroupOnly||squadId==null?'group':'squad';preferredSquad=squadId==null?null:String(squadId);
+  selectGroup(groupId);step=startAtRecommendations?'family':'scope';family='attack';intent='melee';
   selectedMethods=new Set();selectedTargets=new Set();chosenItem=null;mapPoint=null;error='';
   mapTileOverlay=null;
   if(onOpen()===false)return false;
@@ -329,11 +331,12 @@ export function createTargetedStrategyUi({
  function close(){
   if(panel.hidden)return;
   panel.hidden=true;selectedMethods.clear();selectedTargets.clear();mapPoint=null;
-  mapTileOverlay=null;
+  mapTileOverlay=null;overviewGroupOnly=false;
   onClose();
  }
  function back(){
   error='';
+  if(overviewGroupOnly&&step==='family'){close();return;}
   if(step==='scope'){close();return;}
   step={family:'scope',intent:'family',method:'intent',items:'family',target:chosenItem?'items':'method',confirm:'target'}[step]||'scope';
   render();
@@ -390,7 +393,8 @@ export function createTargetedStrategyUi({
   if(t.hasAttribute('data-strategy-back')){back();return;}
   if(t.hasAttribute('data-strategy-next')){next();return;}
   if(t.hasAttribute('data-strategy-scope')){
-   scope=t.dataset.strategyScope;selectGroup(groupId);
+   if(!overviewGroupOnly)scope=t.dataset.strategyScope;
+   selectGroup(groupId);
   }else if(t.hasAttribute('data-strategy-group')){selectGroup(t.dataset.strategyGroup);}
   else if(t.hasAttribute('data-strategy-template')){
    const chosen=getTemplates(String(groupId)).find(x=>String(x.id)===String(t.dataset.strategyTemplate));
@@ -403,6 +407,7 @@ export function createTargetedStrategyUi({
    selectedTargets.clear();mapPoint=null;chosenItem=null;step='method';
   }
   else if(t.hasAttribute('data-strategy-squad')){
+   if(overviewGroupOnly)return; // Overview divisions are inspection selections, never individual orders.
    const id=String(t.dataset.strategySquad);selectedSquads=new Set([id]);preferredSquad=id;
   }else if(t.hasAttribute('data-strategy-family')){
    if(t.dataset.strategyFamily==='item'){chosenItem=null;selectedTargets.clear();step='items';}

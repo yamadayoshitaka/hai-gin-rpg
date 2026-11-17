@@ -50,6 +50,9 @@ on:
       - 'src/battle-person-pov-camera.js'
       - 'src/battle-ceremony.js'
       - 'qa/battle-person-pov-compact-hud.test.mjs'
+      - 'qa/battle-overview-squad-strategy-pins.test.mjs'
+      - 'src/battle-overview-squad-pins.js'
+      - 'src/targeted-strategy-runtime.js'
       - 'qa/battle-face-microrelief.test.mjs'
       - 'src/face-scalp-wig.js'
       - 'src/character-system/hair-attachment-runtime.js'
@@ -115,6 +118,8 @@ jobs:
           node --check src/character-system/hair-attachment-runtime.js
           node --check src/character-system/battle-artist-head-graft.js
           node --check src/battle-person-pov-camera.js
+          node --check src/battle-overview-squad-pins.js
+          node --check src/targeted-strategy-runtime.js
           node --check src/battle-ceremony.js
           node --check src/combat-world-object-renderer.js
           node --check src/mass-battle-worker-runtime.js
@@ -138,6 +143,7 @@ jobs:
           node qa/battle-face-color-regression.test.mjs
           node qa/battle-face-microrelief.test.mjs
           node qa/battle-person-pov-compact-hud.test.mjs
+          node qa/battle-overview-squad-strategy-pins.test.mjs
           node qa/battle-cinematic-audio-regression.test.mjs
           node qa/battle-report-cinematic-policy.test.mjs
           node qa/battle-camera-scale.test.mjs
