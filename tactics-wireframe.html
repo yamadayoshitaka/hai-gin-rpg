@@ -7987,7 +7987,9 @@ window.getBattleObjectiveCheckpoints=()=>objectiveCheckpoints.snapshot();
 let centralStrategyPreviousPause=null;
 $('topStrategy').onclick=()=>{
  if(!battleReady||finished||battleCeremony.locked)return;
- targetedStrategyUi.open();
+ const focus=trackedAllySquadId??squadIds.find(id=>(massSim?.units??actors).some(u=>u.team===0&&String(u.squadId)===String(id)&&u.hp>0));
+ const group=focus==null?null:normalizeArmyGroup(armyGroupBySquad[String(focus)]);
+ targetedStrategyUi.open(group,{startAtRecommendations:true,groupOnly:true});
 };
 const targetedStrategyUi=createTargetedStrategyUi({
  onOpen:()=>{
@@ -8011,9 +8013,10 @@ const targetedStrategyUi=createTargetedStrategyUi({
  getMapCellEligible:(x,z)=>traversableCell(x,z),
  getTemplates:groupId=>{
   const configured=storyRequest?.battlePlanRecommendations?.[String(groupId)];
-  if(configured?.length){
+  const validConfigured=(configured||[]).filter(plan=>STRATEGY_METHODS[plan.methodId]);
+  if(validConfigured.length){
    const selected=storyRequest?.battlePlanSelected?.[String(groupId)];
-   return [...configured].sort((a,b)=>Number(b.id===selected)-Number(a.id===selected));
+   return [...validConfigured].sort((a,b)=>Number(b.id===selected)-Number(a.id===selected));
   }
   // Free battles also get REAL suitability scores from this group's
   // living jobs, map terrain and current casualties, not seven fake 50s.
