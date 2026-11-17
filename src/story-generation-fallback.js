@@ -20,7 +20,8 @@ export function classifyCloudflareFailure({status,errors=[],localCap=false,crede
 }
 export function canOfferChatGPTHandoff(reason){
  return ['FREE_QUOTA_EXHAUSTED','API_RATE_LIMITED','FREE_ESTIMATE_CAP',
-  'CLOUDFLARE_NOT_CONFIGURED','TEMPORARY_CAPACITY_LIMIT'].includes(reason);
+  'CLOUDFLARE_NOT_CONFIGURED','TEMPORARY_CAPACITY_LIMIT',
+  'FREE_DAILY_DISPATCH_ALREADY_USED','NO_VERIFIED_FREE_ADAPTER'].includes(reason);
 }
 export function chatGPTReviewLink({stageId,edition,gender,shotId}){
  if(!/^c01-s(?:0[1-9]|10)$/.test(String(stageId))||
@@ -35,17 +36,23 @@ export function makeChatGPTHandoff({reason,shot,attemptedRequests=0}){
  if(!canOfferChatGPTHandoff(reason))throw Error('Only quota/availability failures allow manual image handoff');
  if(!shot?.stageId||!shot?.edition||!shot?.gender||!shot?.shotId)
   throw Error('Missing canonical shot identity');
+ if(!/^c(?:0[1-9]|1[0-9]|20)-s(?:0[1-9]|10)$/.test(shot.stageId)||
+    !/^(pre|post-town|post-victory|post-defeat|post-gameover)$/.test(shot.edition)||
+    !['male','female'].includes(shot.gender)||
+    !/^c\d{2}-s\d{2}-(?:m\d+|death-\d+)$/.test(shot.shotId)||
+    !shot.shotId.startsWith(shot.stageId+'-'))
+  throw Error('Invalid 20-chapter exact scene identity');
  return {
   schemaVersion:STORY_HANDOFF_POLICY_VERSION,
   kind:'HAI_GIN_CHATGPT_USER_IMAGE_HANDOFF_NOT_GENERATION',
   reason,providerFrom:'Cloudflare Workers AI Free',
   providerTo:'ChatGPT Images (user-initiated; not OpenAI API)',
-  chatGPTReviewUrl:chatGPTReviewLink(shot),
+  chatGPTReviewUrl:shot.stageId.startsWith('c01-')?chatGPTReviewLink(shot):null,
   shotKey:[shot.stageId,shot.edition,shot.gender,shot.shotId].join('|'),
   stageId:shot.stageId,edition:shot.edition,gender:shot.gender,shotId:shot.shotId,
   apiRequestsAlreadyAttempted:attemptedRequests,
   requiresUserAction:true,actualChatGPTImagesGenerated:0,
   gameArtworkRegistered:0,formallyApproved:false,additionalPaidApiCalls:0,
-  nextSteps:'Open review URL, create the prompt for this exact shot and attach actual actor/style reference files in ChatGPT; export the real generated WebP for existing gated GitHub intake. Do not mark generated/registered until proven.'
+  nextSteps:'Open ChatGPT Images in the ChatGPT app, use the exact 16:9 image prompt and attach the real stage/cast reference artworks, then submit native image bytes for gated GitHub intake. GitHub Actions cannot automatically invoke subscription Images. Do not mark generated/registered until proven.'
  };
 }
