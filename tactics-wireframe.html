@@ -7956,12 +7956,32 @@ missionCheckpointHud.style.cssText='max-width:100%;overflow:hidden;text-overflow
 missionCheckpointHud.textContent='📍 作戦チェックポイント：発令待ち';
 // Objective progress stays visible even when optional FPS diagnostics are hidden.
 $('topStructureSlot').appendChild(missionCheckpointHud);
+const reportedCheckpointOutcomes=new Set();
 const objectiveCheckpoints=createBattleObjectiveCheckpoints({
  getUnits:()=>squadRoster,
  getObjects:()=>massSim?.actions.objects||skirmishActions?.objects||[],
  getSquadCenter:id=>squadCenter(id,0),
  onReport:message=>log(message),
- onChange:message=>{missionCheckpointHud.textContent=message||'📍 作戦チェックポイント：発令待ち';}
+ onChange:(message,rows)=>{
+  missionCheckpointHud.textContent=message||'📍 作戦チェックポイント：発令待ち';
+  for(const row of rows){
+   if(!['達成','地点到着','失敗'].includes(row.status)||reportedCheckpointOutcomes.has(row.id))continue;
+   reportedCheckpointOutcomes.add(row.id);
+   const id=row.squadIds[0]??squadIds.find(x=>
+    normalizeArmyGroup(armyGroupBySquad[x])===Number(row.groupId));
+   if(id==null)continue;
+   const failed=row.status==='失敗';
+   // Mission outcomes win the camera queue, not mere order confirmations.
+   beginSquadFocusCinematic(String(id),0,failed?'failure':'result');
+   battleDialogue.push({
+    key:'checkpoint-outcome:'+row.id,speaker:'伝令',
+    kind:failed?'warning':'success',priority:failed?99:97,forceDisplay:true,
+    squadId:String(id),focus:false,
+    text:'第'+row.groupId+'班：'+row.label+' '+(failed?'作戦失敗':'作戦成功')+'。'+
+     (failed?'担当部隊が全滅しました':'チェックポイント到達')
+   });
+  }
+ }
 });
 window.getBattleObjectiveCheckpoints=()=>objectiveCheckpoints.snapshot();
 let centralStrategyPreviousPause=null;
