@@ -5,6 +5,7 @@ on:
       - 'src/monster-shape-kit.js'
       - 'src/monster-geometry.js'
       - 'src/creature-game-model-routing.js'
+      - 'qa/monster-canine-quality-rollout.test.mjs'
       - 'qa/beast-m002-feline-gait-face-fx-regression.test.mjs'
       - 'qa/beast-mother-clone-source.test.mjs'
       - 'qa/beast-face-proportion-joint-contact.test.mjs'
@@ -114,7 +115,7 @@ jobs:
         run: npm install --no-save --package-lock=false three@0.180.0
       - name: Regression - actual wolf mane and four moving feline limbs
         run: |
-          node --test qa/beast-m002-feline-gait-face-fx-regression.test.mjs qa/beast-mother-clone-source.test.mjs qa/beast-face-proportion-joint-contact.test.mjs qa/feline-master-m007-m010.test.mjs qa/beast-face-visibility-regression.test.mjs
+          node --test qa/monster-canine-quality-rollout.test.mjs qa/beast-m002-feline-gait-face-fx-regression.test.mjs qa/beast-mother-clone-source.test.mjs qa/beast-face-proportion-joint-contact.test.mjs qa/feline-master-m007-m010.test.mjs qa/beast-face-visibility-regression.test.mjs
   geometry-and-motion:
     if: github.event_name != 'push'
     runs-on: ubuntu-24.04
