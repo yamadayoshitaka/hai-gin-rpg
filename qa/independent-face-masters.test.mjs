@@ -4,7 +4,7 @@ import {readFileSync,existsSync} from 'node:fs';
 import * as THREE from 'three';
 import {makeIndependentFaceMaster,FACE_MASTER_SPEC,femaleInnerFeatureDelta,femaleCheekJawDelta}
  from '../src/independent-face-masters.js';
-import {updateFaceFeatureAngles,applyFaceColorMode,createFastFaceSurfaceSampler,sculptEyeSocketsInFaceGeometry}
+import {updateFaceFeatureAngles,applyFaceColorMode,createFastFaceSurfaceSampler,sculptEyeSocketsInFaceGeometry,v71EyeDepthFromEyeliner}
  from '../src/face-feature-meshes.js';
 import {createScalpAnchoredWig,wigVolumeLiftAt} from '../src/face-scalp-wig.js';
 import {attachIndependentHeadToBody,buildBodyDepthCollision,removeHeadBustBelowNeck,createSealedNeckBridge,createClosedShoulderCaps} from '../src/face-body-assembly.js';
@@ -2434,4 +2434,55 @@ test('v68: model viewer exposes hero makeup and facial expression close-up',()=>
  }
  const bridge=readFileSync('src/heroine-battle-costume-bridge.js','utf8');
  assert.match(bridge,/studioVisibleLegAnatomy:chosen\.heroJob==='swordsman'/);
+});
+
+test('v71: actual eyeliner depths determine cornea fit and preserve shape across gaze',()=>{
+ const fitted=v71EyeDepthFromEyeliner({upperZ:.12,lowerZ:.10,corneaZ:.135,
+  eyeRadius:.05,eyeDepth:0});
+ assert.ok(fitted.correctionZ<0,'outward cornea must move back under liner');
+ assert.ok(Math.abs(fitted.correctionZ)<=.05*.17+1e-9);
+ assert.ok(Number.isFinite(fitted.signedDepthRatio));
+ const forward=v71EyeDepthFromEyeliner({upperZ:.12,lowerZ:.10,corneaZ:.106,
+  eyeRadius:.05,eyeDepth:.85});
+ const shallow=v71EyeDepthFromEyeliner({upperZ:.12,lowerZ:.10,corneaZ:.106,
+  eyeRadius:.05,eyeDepth:-.3});
+ assert.ok(forward.signedDepthRatio>shallow.signedDepthRatio);
+ const face=makeIndependentFaceMaster(fixture().source,'female');
+ const report=face.report.detailedParts;
+ assert.equal(report.eyeCalibrationMethod,'real-upper-and-lower-eyeliner-mesh-depth');
+ assert.equal(report.v71MeasuredEyelinerFits.length,2);
+ for(const side of ['LEFT','RIGHT']){
+  const eye=face.parts.getObjectByName(side+'_ORBITAL_EYEBALL');
+  const iris=face.parts.getObjectByName(side+'_CURVED_IRIS');
+  const pupil=face.parts.getObjectByName(side+'_CURVED_PUPIL');
+  const upper=face.parts.getObjectByName(side+'_UPPER_EYELINER');
+  const lower=face.parts.getObjectByName(side+'_LOWER_EYELINER');
+  assert.ok(eye.userData.v71MeasuredAgainstRealEyeliner);
+  assert.ok(Number.isFinite(eye.userData.v71UpperLinerDistance3D));
+  assert.ok(Number.isFinite(eye.userData.v71LowerLinerDistance3D));
+  assert.ok(upper.parent?.name?.includes('ANATOMICAL_EYELID'));
+  assert.ok(lower.parent?.name?.includes('ANATOMICAL_EYELID'));
+  assert.ok(Math.abs(iris.userData.eyelinerMeasuredDepthCorrection-
+    pupil.userData.eyelinerMeasuredDepthCorrection)<1e-8);
+  assert.ok(Math.abs(iris.userData.eyelinerMeasuredDepthCorrection-
+    eye.userData.eyelinerMeasuredDepthCorrection)<1e-8);
+ }
+});
+test('v72: studio preview builds tenfold scalp rooted high-density hair',()=>{
+ const faceStudio=readFileSync('face-mesh-studio.html','utf8');
+ const bodyStudio=readFileSync('face-body-studio.html','utf8');
+ assert.match(faceStudio,/visualFiberMultiplier:10,staticGroom:true/);
+ assert.match(bodyStudio,/<option value="10" selected>10倍/);
+ const face=makeIndependentFaceMaster(fixture().source,'female');
+ const wig=createScalpAnchoredWig(face.face,{count:96,staticGroom:true,
+  visualFiberMultiplier:10,normalLayeredSingleMesh:true});
+ const r=wig.getReport();
+ assert.equal(r.visualFiberMultiplier,10);
+ assert.ok(r.microFibreTriangles>r.rootCount*9*10);
+ assert.equal(r.runtimePhysicsCallsPerFrame,0);
+ assert.equal(r.hairStrandWidthFraction,.0100);
+ assert.equal(r.meshCount,1);
+ const root=wig.root.getObjectByName('SINGLE_MESH_NORMAL_LAYERED_HAIR');
+ assert.ok(root?.isMesh);
+ wig.dispose();
 });
