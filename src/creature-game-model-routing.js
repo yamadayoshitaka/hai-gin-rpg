@@ -9,8 +9,8 @@
  */
 import {MONSTER_BY_ID,MONSTER_CATALOG} from './monster-catalog.js';
 import {HUMAN_MONSTER_IDS} from './monster-character-cosplay-manifest.js';
-import {adoptedCreatureMesh,protectedCreature,baseMonsterId}
- from './creature-mesh-adoption.js';
+import {adoptedCreatureMesh,protectedCreature,baseMonsterId,
+ recommendedMeshSources} from './creature-mesh-adoption.js';
 
 const humanoids=new Set(HUMAN_MONSTER_IDS);
 export const MODEL_REFERENCE_REVISION='m001-sweptback-nose-v20-20261117';
@@ -58,7 +58,11 @@ export function resolveRegisteredMonsterModel(id,{
   protected:locked,selected,
   // Never allocate an independent GLB for the 1000v1000 low LOD crowd.
   externalSource:!locked&&allowExternal&&d!=='low'&&
-   !humanoids.has(record.speciesId)&&selected!=='legacy'?selected:null,
+   !humanoids.has(record.speciesId)&&selected!=='legacy'&&
+   // An editor-selected donor must match the same animal anatomy.
+   // Saved q IDs or reference-only, unrigged assets cannot replace a
+   // legitimate game actor simply because localStorage contains them.
+   recommendedMeshSources(id).includes(selected)?selected:null,
   model:record.model,
   kind:humanoids.has(record.speciesId)?'canonical-humanoid':'procedural-monster',
   fallback:record.gameplayFallback
