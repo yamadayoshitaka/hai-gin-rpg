@@ -29,7 +29,7 @@ export function recapForStage(stage,script,{chapterOpening=false}={}){
  const objective=script.pre.find(x=>x.kind==='stage-objective')?.text||'';
  const chapter=script.pre.find(x=>x.kind==='chapter-opening')?.text||'';
  const text=[chapterOpening?chapter:'ここまでのあらすじ。',setup,objective].filter(Boolean).join(' ');
- return Object.freeze({...voiced({id:stage.id+'-recap',speaker:'語り手',
+ return Object.freeze({stageId:stage.id,...voiced({id:stage.id+'-recap',speaker:'語り手',
   text}),kind:'recap',isNarrationRecap:true,artAsset:STORY_RECAP_ART,
   noPortrait:true,sharedAcrossGenders:true,extraCGSlot:false});
 }
