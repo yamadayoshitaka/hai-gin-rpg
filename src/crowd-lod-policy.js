@@ -3,8 +3,10 @@
 // texture captured from the actual dressed, animated seven-head human.
 // Use full geometry as soon as a soldier is large enough to inspect the
 // face/armour. The atlas is reserved for genuinely distant tiny silhouettes.
-// Keep a ten-pixel hysteresis
-// so camera movement cannot flicker between the full geometry and atlas.
+// Keep a ten-pixel hysteresis so camera movement cannot flicker between
+// full geometry and the real-rig atlas. The 1000v1000 pressure budget may
+// extend the photographic tier to ~100 screen pixels while retaining 3D
+// for close soldiers and using a 224px sampled source silhouette.
 export const CROWD_IMPOSTOR_ENTER_PX = 36;
 export const CROWD_IMPOSTOR_EXIT_PX = 46;
 
@@ -17,17 +19,20 @@ export function useCrowdImpostor(projectedHeightPixels,wasImpostor=false,enterPi
   // Under sustained GPU pressure the game may keep complete real-rig photo
   // atlases on slightly larger *distant* characters. A close-up always uses
   // the actual skin, hair and wardrobe geometry; never a primitive proxy.
-  const enter=Math.max(CROWD_IMPOSTOR_ENTER_PX,Math.min(60,enterPixels));
-  // Guarantee 3D silhouettes at inspectable sizes even after FPS pressure.
-  return projectedHeightPixels<Math.min(64,wasImpostor?enter+8:enter);
+  const enter=Math.max(CROWD_IMPOSTOR_ENTER_PX,Math.min(100,enterPixels));
+  // At 100px the source photograph is still supersampled (224px tile).
+  // Hysteresis never turns a zoomed-in, inspectable soldier into a card.
+  return projectedHeightPixels<Math.min(110,wasImpostor?enter+10:enter);
 }
 
 // A photographed character has no depth: even a camera-facing card looks
 // printed on the grass when the observer is almost directly overhead. At an
 // inspectable size choose the real skinned body regardless of FPS adaptation.
 // Truly tiny distant soldiers may keep the card to protect 1000v1000 FPS.
-export function crowdRequires3DFromOverhead(projectedHeightPixels,verticalViewRatio){
-  return verticalViewRatio>.6&&projectedHeightPixels>=28;
+export function crowdRequires3DFromOverhead(projectedHeightPixels,verticalViewRatio,minimum3dPixels=28){
+  // Only high-density 1000v1000 increases this cutoff. A normal 50v50
+  // overhead inspection keeps the original geometry threshold.
+  return verticalViewRatio>.6&&projectedHeightPixels>=minimum3dPixels;
 }
 
 // Frames are captured from +Z, +X, -Z, -X respectively. Relative heading,
