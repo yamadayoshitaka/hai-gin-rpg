@@ -25,6 +25,8 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -48,11 +50,19 @@ jobs:
             exit 0
           fi
           if [[ "$stage" =~ ^c01-s0[1-4]$ ]]; then
-            gh workflow run story-archive-reuse.yml --ref main
-            echo "Requested first-four-stage exact archive reuse, not fabricated generation." >> "$GITHUB_STEP_SUMMARY"
-            exit 0
+            # Reuse genuine exact historical art BEFORE spending a Free image call.
+            git fetch --no-tags origin refs/heads/story/chapter1-free-actual-art:refs/remotes/origin/story/chapter1-free-actual-art
+            git worktree add --detach "$RUNNER_TEMP/hai-gin-original-art" origin/story/chapter1-free-actual-art
+            node scripts/restore-existing-story-art.mjs --mode scan --archive "$RUNNER_TEMP/hai-gin-original-art"
+            available=$(jq -r '.eligibleExactUnused' qa-reports/story-archive-reuse-scan.json)
+            if [ "$available" -gt 0 ]; then
+              gh workflow run story-archive-reuse.yml --ref main
+              echo "Found $available exact old CGs: requested reversible original restoration first." >> "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+            echo "No further eligible exact original CGs; Free-only new review art can be attempted." >> "$GITHUB_STEP_SUMMARY"
           fi
-          if [[ "$stage" =~ ^c01-s(0[5-9]|10)$ ]]; then
+          if [[ "$stage" =~ ^c01-s(0[1-9]|10)$ ]]; then
             if [ "$CF_FREE" != true ]; then
               echo "Free-provider confirmation missing; real generation blocked." >> "$GITHUB_STEP_SUMMARY"
               exit 0
@@ -65,7 +75,7 @@ jobs:
               echo "Today already used the single Cloudflare Free production dispatch; no duplicate call." >> "$GITHUB_STEP_SUMMARY"
               exit 0
             fi
-            gh workflow run story-chapter1-free-complete-draft-production.yml --ref main
+            gh workflow run story-chapter1-free-complete-draft-production.yml --ref main -f start_stage="$stage" -f through_stage=c01-s10
             echo "Triggered existing FREE Chapter 1 real draft production; not approval/deployment." >> "$GITHUB_STEP_SUMMARY"
           else
             echo "Stage $stage: full 200-stage queue exists, but this chapter lacks a verified Free generator adapter; generation=0." >> "$GITHUB_STEP_SUMMARY"
