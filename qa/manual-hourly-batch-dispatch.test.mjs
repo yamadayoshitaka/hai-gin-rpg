@@ -12,7 +12,7 @@ test('owner can submit five active batch categories',()=>{
  ['outfit','character-six-lane.yml'],
  ['creatureMonster','creature-six-lane.yml'],
  ['creatureSummon','creature-six-lane.yml'],
- ['anime','story-cinematic-qa.yml']];
+ ['anime','story-sequential-missing-batch.yml']];
  for(const [kind,wf] of selected)assert.equal(parseRequest(issue(kind),'yamadayoshitaka').workflow,wf);
 });
 test('target and instruction are preserved without shell interpolation',()=>{

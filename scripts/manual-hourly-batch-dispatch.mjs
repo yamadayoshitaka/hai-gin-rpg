@@ -15,7 +15,7 @@ const allowed={
  creatureMonster:'creature-six-lane.yml',
  creatureSummon:'creature-six-lane.yml',
  world:'world-quality-photoreal.yml',
- anime:'story-cinematic-qa.yml'
+ anime:'story-sequential-missing-batch.yml'
 };
 export function parseRequest(issue,owner){
  if(!issue||issue.user?.login!==owner||!String(issue.title).startsWith('[hai-gin-batch]'))

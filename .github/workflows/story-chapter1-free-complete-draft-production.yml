@@ -12,6 +12,17 @@ on:
       - 'ops/resume-c01-stage3-through5-20261114.trigger'
       - 'ops/owner-request-stage4-through10-free-20261115.trigger'
   workflow_dispatch:
+    inputs:
+      start_stage:
+        description: 'First Chapter 1 stage (c01-s01 through c01-s10)'
+        type: string
+        required: false
+        default: c01-s05
+      through_stage:
+        description: 'Last Chapter 1 stage'
+        type: string
+        required: false
+        default: c01-s10
 
 permissions:
   contents: write
@@ -110,14 +121,19 @@ jobs:
       - name: Audit exact native-stage gaps for stages 1 through 4
         run: node scripts/audit-story-c01-s01-s04-compact.mjs
       - name: Count stage1 through later stage missing real artworks
-        run: node scripts/generate-story-chapter1-free-batch.mjs --mode plan --start-stage c01-s05 --through-stage c01-s10
+        env:
+          START_STAGE: ${{ inputs.start_stage || 'c01-s05' }}
+          THROUGH_STAGE: ${{ inputs.through_stage || 'c01-s10' }}
+        run: node scripts/generate-story-chapter1-free-batch.mjs --mode plan --start-stage "$START_STAGE" --through-stage "$THROUGH_STAGE"
       - name: Generate real review images with strict budget and page commits
         env:
+          START_STAGE: ${{ inputs.start_stage || 'c01-s05' }}
+          THROUGH_STAGE: ${{ inputs.through_stage || 'c01-s10' }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_WORKERS_AI_API_TOKEN: ${{ secrets.CLOUDFLARE_WORKERS_AI_API_TOKEN }}
           CLOUDFLARE_FREE_PLAN_CONFIRMED: ${{ vars.CLOUDFLARE_FREE_PLAN_CONFIRMED }}
           CLOUDFLARE_CHAPTER1_DAILY_ESTIMATE_CAP: '7500'
-        run: node scripts/generate-story-chapter1-free-batch.mjs --mode generate --max-pages 12 --start-stage c01-s05 --through-stage c01-s10
+        run: node scripts/generate-story-chapter1-free-batch.mjs --mode generate --max-pages 12 --start-stage "$START_STAGE" --through-stage "$THROUGH_STAGE"
       - name: Independently regress every canonical image and physical actor master (NO automatic visual approval)
         if: always()
         run: |
