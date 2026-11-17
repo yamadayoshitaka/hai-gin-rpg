@@ -55,9 +55,26 @@ assert.match(massDash,/if\(unit\.mountId\)return 'mounted'/,
  'mounted riders remain separate from active dash runners');
 assert.match(massDash,/if\(kind==='mounted'\)return striking\?5\.5:5/,
  'GPU rider must not keep walking through the horse');
-assert.match(outfit,/complete-back-tunic-lining/,'all jobs must have a closed back tunic');
-assert.match(outfit,/heroic-cuirass-backplate/,'swordsmen must have real rear armor');
-assert.match(outfit,/cuirass-closed-flank/,'chest plate cannot be open at both sides');
+// The imported 65-bone Ranger/Peasant garment is the opaque rear layer.
+ // The old flat back sheet and cardboard side panels were intentionally
+ // PHYSICALLY REMOVED: do not require their names to reappear in the model.
+const rig=read('src/character-system/rigged-outfit-runtime.js');
+assert.match(outfit,/imported Ranger\/Peasant torso is already a real 65-bone garment/,
+ 'natural skinned source cloth must cover the back on every light job');
+assert.doesNotMatch(outfit,/add\('complete-back-tunic-lining'/,
+ 'old flat tunic board must NOT be regenerated');
+assert.doesNotMatch(outfit,/add\('heroic-cuirass-backplate'/,
+ 'old rectangular rear armor must NOT return');
+assert.match(outfit,/add\('anatomically-curved-rear-cuirass-lames'/,
+ 'swordsmen and shield fighters require curved steel rear armor');
+assert.match(outfit,/cuirass-side-curved-fastening-/,
+ 'curved side fasteners must bridge the front and back shell');
+assert.match(rig,/const closedBack=battleClosedBackCoverage\(\{/,
+ 'shared battle+preview armor must derive actual garment and rear armor coverage');
+assert.match(rig,/forceCoveredRegions:forcedTorsoOcclusion/,
+ 'safely occluded skin is removed only after actual garment coverage');
+assert.match(rig,/panel\.removeFromParent\(\)/,
+ 'legacy cardboard back plates must be physically removed from the scene');
 assert.match(armor,/scalpCenterWorld\.clone\(\)/,'helmet must fit the anatomical scalp centre');
 assert.doesNotMatch(armor,/delta\.z=slot==='helmet'\?\.015/,'helmet depth cannot be pinned to chest axis');
 console.log('PASS: both-leg saddle posture, frame restoration, GPU riders, helmet placement and complete rear outfit coverage');
