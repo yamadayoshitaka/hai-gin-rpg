@@ -2,6 +2,7 @@ import {stage2ReviewedPanelAsset} from './story-stage2-reviewed-art.js';
 import {chapterReviewedPanelAsset} from './story-chapter-reviewed-art.js';
 import {chapter1ProvisionalLivePanel} from './story-chapter1-provisional-live.js';
 import {provisionalRegisteredStoryPanel} from './story-provisional-registered-art.js';
+import {restoredStoryArchivePanel} from './story-archive-restored-art.js';
 /**
  * Exactly registered and already sliced Chapter 1 manga panels.
  * A registered original is NOT an approved/quality-reviewed image.
@@ -25,6 +26,10 @@ export function registeredStoryPanelAsset(shot){
  // per-image human-reviewed final artwork. Removing entry restores old source.
  const draftLive=chapter1ProvisionalLivePanel(shot);
  if(draftLive)return draftLive.asset;
+ // Exact archived originals are playable as provisional scene assets; never
+ // supersede the existing owner-reviewed/provisional copy.
+ const restored=restoredStoryArchivePanel(shot);
+ if(restored)return restored.asset;
  const provisional=provisionalRegisteredStoryPanel(shot);
  if(provisional)return provisional.asset;
  const allowed=REGISTERED[shot.stageId+'|'+shot.comicEdition+'|'+shot.protagonistGender];

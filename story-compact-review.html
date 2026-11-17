@@ -31,6 +31,7 @@ footer{display:flex;justify-content:space-between;gap:6px;color:var(--muted);fon
 <script type="module">
 import {compactComicForStage,COMPACT_TWENTY_CHAPTER_PLAN} from './src/story-compact-comic.js?v=story-20261117-reader1';
 import {registeredStoryPanelAsset,storyArtDisplayUrl} from './src/story-panel-registered-art.js';
+import {restoredStoryArchivePanel} from './src/story-archive-restored-art.js';
 import {renderStoryRubyText} from './src/story-ruby-display.js';
 import {STORY_KEY_PEOPLE} from './src/story-cinematic.js';
 import {CAMPAIGN_STAGE_BY_ID} from './src/campaign-stage-plan.js';
@@ -56,13 +57,15 @@ function show(){
  $('identity').textContent=showRecap?'語り手・男女共通の世界情勢':s.id+'／'+s.comicEdition+'／'+(s.protagonistGender==='female'?'女性':'男性');
  $('speaker').textContent=talk.speaker||'語り手';renderStoryRubyText($('dialogue'),talk);
  const portrait=$('portrait');
- const sceneFace=!showRecap&&['c01-s03-m1','c01-s05-m1'].includes(s.id)&&cut?storyArtDisplayUrl(cut):null;
- const portraitPath=sceneFace||(cast.has(talk.characterId)?'./assets/story-cinema/cast/'+talk.characterId+'.webp':talk.speaker==='軍師'&&s.protagonistGender==='female'?'./assets/story/characters/commander/female-master.webp':null);
+ const archived=showRecap?null:restoredStoryArchivePanel(s);
+ const faceMatches=!archived||archived.visibleActorIds.includes(talk.characterId);
+ const sceneFace=faceMatches&&!showRecap&&['c01-s03-m1','c01-s05-m1'].includes(s.id)&&cut?storyArtDisplayUrl(cut):null;
+ const portraitPath=faceMatches?(sceneFace||(cast.has(talk.characterId)?'./assets/story-cinema/cast/'+talk.characterId+'.webp':talk.speaker==='軍師'&&s.protagonistGender==='female'?'./assets/story/characters/commander/female-master.webp':null)):null;
  portrait.style.objectPosition=sceneFace?'30% 22%':'center 20%';
  portrait.hidden=!portraitPath;
  if(portraitPath){portrait.onerror=()=>{if(portrait.getAttribute('src')===portraitPath)portrait.hidden=true};portrait.src=portraitPath}
  else portrait.removeAttribute('src');
- $('approval').textContent=showRecap?'ユーザー承認・専用あらすじ原画':cut?'既存原画を使用（P0品質は別確認）':'このコマの原画は未登録';
+ $('approval').textContent=showRecap?'ユーザー承認・専用あらすじ原画':archived?'過去原画を仮登録・人物品質審査前':cut?'既存原画を使用（P0品質は別確認）':'このコマの原画は未登録';
  $('prev').disabled=showRecap||(sceneIndex===0&&lineIndex===0&&!recap);
  $('next').textContent=showRecap?'人物の会話へ ▶':sceneIndex===scenes.length-1&&lineIndex===(s.dialogueTurns?.length||1)-1?'最終セリフ ▶':'次のセリフ ▶';
  if(!cut){missing.textContent='未登録。別の性別・ステージ・勝敗の絵は代用しません。';return}
