@@ -114,12 +114,12 @@
     },
     "world": {
       "source": "ChatGPTオブジェクト即時回帰＋GitHub六担当実WebGL QA",
-      "lastRunAt": "2026-11-18T00:52:25+09:00",
+      "lastRunAt": "2026-11-18T01:50:30+09:00",
       "status": "blocked",
       "carryover": true,
-      "subject": "扉5種の木工接合・鍛鉄蝶番の実造形改修、Draft PR #594",
-      "summary": "world.enabled=true確認。未完了のユーザー作成[hai-gin-batch] Issue検索でworld該当0件。入口扉Lv1〜5の共通生成器に7/9枚の独立木板、縁框、鍛鉄ストラップ蝶番、軸ピン・鋲を実装。SHA 36993dfb、Draft PR #594。Node構文・指定3QA・実WebGL・Android未実施。GLB0、採用0、公開0。",
-      "nextAction": "PR #594でnode --checkと指定3QA、createCatalogObjectによる5扉の近中遠新旧WebGL、実戦闘配置/衝突、1000vs1000 FPSを確認。既存Draft #441/#577との競合を解消し、合格したものだけmainマージ。",
+      "subject": "街設備5種の接合・木工・石材・鍛鉄実造形、Draft PR #605",
+      "summary": "world.enabled=true確認。正本60種のカテゴリと未完了[hai-gin-batch]を確認しworld対象Issue0。薪・家畜用水槽・道標・石材の山・火鉢の5種に実メッシュ接合/ディテールを追加。commit 88b9e743、Draft PR #605。Node構文・指定3QA・新旧WebGL・Android FPSは未実施。GLB0、本編採用0、公開0。",
+      "nextAction": "PR #605のnode --check・指定3QA・createCatalogObject実描画新旧比較・衝突/近中遠LOD/1000vs1000 FPSを実行。#441/#577/#594のQAと競合も確認し合格までDraft維持。",
       "steps": {
         "launch": "done",
         "code": "done",
@@ -131,12 +131,12 @@
       },
       "evidence": [
         {
-          "label": "扉5種実造形ソース",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/36993dfb40f463952423b07d13b299e69bbc2c1c"
+          "label": "5種実造形コミット",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/88b9e743865a4aba6234a981b4697cbf6819a4f5"
         },
         {
-          "label": "Draft PR #594",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/594"
+          "label": "Draft PR #605",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/605"
         }
       ],
       "lastRunOutcome": {
@@ -144,23 +144,32 @@
         "newQAPassed": 0,
         "newGameAppliedIds": 0,
         "newSourceCommits": 1,
-        "newGeneratedGLBs": 0
+        "newGeneratedGLBs": 0,
+        "newPublishedIds": 0
       },
       "operational": {
         "blockers": [
-          "Node/3QA/WebGL/Android実行証跡なし",
-          "Draft PR #441/#577のQA未完了",
-          "PR #594 mergeable=false (GitHub初期判定、再確認必要)"
+          "Node構文/指定3QA/実WebGL比較/Android FPSの合格証跡なし",
+          "Draft PR #441/#577/#594の品質確認未完了",
+          "PR #605はDraft、マージ未許可"
         ],
-        "speedPlan": "PR #594でnode --checkと指定3QA、createCatalogObjectによる5扉の近中遠新旧WebGL、実戦闘配置/衝突、1000vs1000 FPSを確認。既存Draft #441/#577との競合を解消し、合格したものだけmainマージ。",
+        "speedPlan": "PR #605のnode --check・指定3QA・createCatalogObject実描画新旧比較・衝突/近中遠LOD/1000vs1000 FPSを実行。#441/#577/#594のQAと競合も確認し合格までDraft維持。",
         "lastRunOutcome": {
           "newSourceChangedIds": 5,
           "newQAPassed": 0,
           "newGameAppliedIds": 0,
           "newSourceCommits": 1,
-          "newGeneratedGLBs": 0
+          "newGeneratedGLBs": 0,
+          "newPublishedIds": 0
         },
-        "qaBlocker": "実描画QA未実施"
+        "qaBlocker": "対象別実WebGL QA未実施",
+        "changedIds": [
+          "town_firewood_001",
+          "town_water_trough_001",
+          "town_signpost_001",
+          "town_stone_pile_001",
+          "town_brazier_001"
+        ]
       },
       "retiredFromCenter": false,
       "legacyRecord": false
