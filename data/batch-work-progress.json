@@ -114,12 +114,12 @@
     },
     "world": {
       "source": "ChatGPTオブジェクト即時回帰＋GitHub六担当実WebGL QA",
-      "lastRunAt": "2026-11-18T01:50:30+09:00",
+      "lastRunAt": "2026-11-18T02:49:00+09:00",
       "status": "blocked",
       "carryover": true,
-      "subject": "街設備5種の接合・木工・石材・鍛鉄実造形、Draft PR #605",
-      "summary": "world.enabled=true確認。正本60種のカテゴリと未完了[hai-gin-batch]を確認しworld対象Issue0。薪・家畜用水槽・道標・石材の山・火鉢の5種に実メッシュ接合/ディテールを追加。commit 88b9e743、Draft PR #605。Node構文・指定3QA・新旧WebGL・Android FPSは未実施。GLB0、本編採用0、公開0。",
-      "nextAction": "PR #605のnode --check・指定3QA・createCatalogObject実描画新旧比較・衝突/近中遠LOD/1000vs1000 FPSを実行。#441/#577/#594のQAと競合も確認し合格までDraft維持。",
+      "subject": "街設備5種の実接合・補強造形、Draft PR #614",
+      "summary": "world.enabled=true。正本60種。未完了手動Issueのworld対象0。木製荷車・街ゴミ箱・木柵・麻袋積荷・薬草園の5種に接合/補強の実メッシュを追加。commit 987194bb、Draft PR #614。Node指定QA・新旧WebGL・Android未検証、GLB0・本編採用0・公開0。",
+      "nextAction": "PR #614のnode --check、指定3QA、同一createCatalogObjectによる対象別新旧WebGL・衝突・LOD・1000vs1000 FPSを検証。既存Draft #441/#577/#594/#605との競合も確認。",
       "steps": {
         "launch": "done",
         "code": "done",
@@ -132,11 +132,11 @@
       "evidence": [
         {
           "label": "5種実造形コミット",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/88b9e743865a4aba6234a981b4697cbf6819a4f5"
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/987194bb6c8926b5f4d9bf94d0b687d6c388c39d"
         },
         {
-          "label": "Draft PR #605",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/605"
+          "label": "Draft PR #614",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/614"
         }
       ],
       "lastRunOutcome": {
@@ -149,11 +149,11 @@
       },
       "operational": {
         "blockers": [
-          "Node構文/指定3QA/実WebGL比較/Android FPSの合格証跡なし",
-          "Draft PR #441/#577/#594の品質確認未完了",
-          "PR #605はDraft、マージ未許可"
+          "node --checkと指定3QA未実行",
+          "実WebGL新旧比較・Android FPS未検証",
+          "Draft PR #614未マージ、旧Draftも未検証"
         ],
-        "speedPlan": "PR #605のnode --check・指定3QA・createCatalogObject実描画新旧比較・衝突/近中遠LOD/1000vs1000 FPSを実行。#441/#577/#594のQAと競合も確認し合格までDraft維持。",
+        "speedPlan": "PR #614のnode --check、指定3QA、同一createCatalogObjectによる対象別新旧WebGL・衝突・LOD・1000vs1000 FPSを検証。既存Draft #441/#577/#594/#605との競合も確認。",
         "lastRunOutcome": {
           "newSourceChangedIds": 5,
           "newQAPassed": 0,
@@ -164,11 +164,11 @@
         },
         "qaBlocker": "対象別実WebGL QA未実施",
         "changedIds": [
-          "town_firewood_001",
-          "town_water_trough_001",
-          "town_signpost_001",
-          "town_stone_pile_001",
-          "town_brazier_001"
+          "town_handcart_001",
+          "town_trash_bin_001",
+          "town_fence_001",
+          "town_sacks_001",
+          "town_herb_garden_001"
         ]
       },
       "retiredFromCenter": false,
