@@ -9,12 +9,21 @@
       ],
       "commitSha": "d2e1f656303450236fe55bd87569b09370282cd2",
       "qa": "unverified"
+    },
+    {
+      "id": "compact-gameover-dedicated-art-identity-guard",
+      "sourceFiles": [
+        "src/story-compact-comic.js"
+      ],
+      "commitSha": "42a3456c6bf24af39ca00e5379a06f5ee2a996ec",
+      "qa": "unverified"
     }
   ],
   "remainingIds": [
     "c01-s01..c01-s04-compact-visual-audit",
     "compact-defeat-second-frame-visual-qa",
-    "compact-20chapters-asset-audit"
+    "compact-20chapters-asset-audit",
+    "compact-gameover-branch-browser-qa"
   ],
-  "nextAction": "Run stage/gender/outcome browser QA; verify actual second defeat artwork before assigning any shared asset; audit compact first four stages against physical WebP and canonical scripts."
+  "nextAction": "Verify gameover source IDs and physical WebPs for both genders, run runtime/browser QA, then inspect c01-s01..s04 compact assets; do not merge until confirmed."
 }
