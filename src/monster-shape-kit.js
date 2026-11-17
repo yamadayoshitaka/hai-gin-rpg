@@ -335,14 +335,16 @@ export function createSculpture(spec,detail='high'){
    // The broad proximal rings remain inside the torso and the distal rings
    // continue into the paw. No separate seam cover geometry is required.
    const sections=fore?[
-     [.59,.022,.126,.158],[.43,.040,.185,.205],
+     // Narrow joint root is buried in the torso, not a visible open pipe.
+     [.72,.018,.062,.077],[.59,.022,.126,.158],[.43,.040,.185,.205],
      [.27,-.020,.184,.188],[.13,-.065,.150,.152],
      [.025,-.087,.129,.132],[-.115,-.083,.112,.115],
      [-.255,-.020,.097,.111],[-.380,.057,.099,.112],
      [-.479,.147,.112,.139],[-.551,.192,.119,.142],
      [-.587,.205,.070,.100]
    ]:[
-     [.59,-.208,.144,.182],[.43,-.153,.205,.223],
+     // Narrow hip root terminates under the closed croup geometry.
+     [.72,-.185,.062,.077],[.59,-.208,.144,.182],[.43,-.153,.205,.223],
      [.27,-.015,.204,.197],[.13,.128,.161,.152],
      [.025,.168,.137,.142],[-.115,.132,.115,.119],
      [-.255,.000,.099,.113],[-.380,-.109,.090,.106],
@@ -386,6 +388,19 @@ export function createSculpture(spec,detail='high'){
      const a=row*(radial+1)+j,b=a+radial+1;
      indices.push(a,b,a+1,a+1,b,b+1);
    }
+   // Close BOTH ends in the one skinned shell: a double-sided material
+   // cannot cover the missing triangles that looked like black pipes.
+   const rootCenter=vertices.length/3;
+   vertices.push(0,sections[0][0]+.026,sections[0][1]);
+   uv.push(.5,0);boneIndices.push(0,1,2,0);weights.push(1,0,0,0);
+   const pawCenter=vertices.length/3;
+   vertices.push(0,last[0]-.018,last[1]);
+   uv.push(.5,1);boneIndices.push(0,1,2,0);weights.push(0,0,1,0);
+   const lastStart=bands*(radial+1);
+   for(let j=0;j<radial;j++){
+     indices.push(rootCenter,j+1,j);
+     indices.push(pawCenter,lastStart+j,lastStart+j+1);
+   }
    const geo=new THREE.BufferGeometry();
    geo.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));
    geo.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
@@ -404,7 +419,11 @@ export function createSculpture(spec,detail='high'){
    skin.userData.anatomicalLimb=true;
    skin.userData.felineContinuousSurface=true;
    skin.userData.skinningBones=3;
-   skin.userData.jointTopology='welded-rings-smooth-three-bone-weights';
+   skin.userData.jointTopology='closed-rings-smooth-three-bone-weights';
+   skin.userData.felineSealedTop=true;
+   skin.userData.felineSealedBottom=true;
+   skin.userData.felineEndCapTriangles=radial*2;
+   skin.userData.felineRootBuriedInTorso=true;
    leg.add(skin);
    root.updateMatrixWorld(true);
    skin.bind(new THREE.Skeleton([bone0,bone1,bone2]));
