@@ -45,7 +45,7 @@ if(!row){
 }
 const m=/^c(0[1-9]|1[0-9]|20)-s(0[1-9]|10)$/.exec(row.stageId);
 if(!m||row.chapter!==Number(m[1])||
- !['pre','post-town','post-victory','post-defeat','post-gameover'].includes(row.edition)||
+ !/^(?:pre|post-(?:town|victory|defeat|gameover))(?:-(?:choice|route|ending)-[a-z0-9-]+)*$/.test(row.edition)||
  !['male','female'].includes(row.gender)||
  !/^c\d{2}-s\d{2}-m\d+$/.test(row.sceneId)||
  !row.sceneId.startsWith(row.stageId+'-')||
@@ -57,14 +57,16 @@ if(typeof before!=='string'||!before||typeof after!=='string'||!after)
  throw Error('No real stage screenplay for ChatGPT prompt');
 const shot={stageId:row.stageId,edition:row.edition,gender:row.gender,shotId:row.sceneId};
 const handoff=makeChatGPTHandoff({reason,shot,attemptedRequests:0});
-const target=row.edition==='pre'?'戦闘前':row.edition==='post-town'?'町イベント後':'勝利後';
+const isBefore=row.edition.startsWith('pre');
+const target=isBefore?'戦闘前':row.edition.startsWith('post-town')?'町イベント後':
+ row.edition.startsWith('post-defeat')?'敗北後':row.edition.startsWith('post-gameover')?'主人公死亡後':'勝利後';
 const sourceRule=chapter===1&&stage<=4
  ?'第1章ステージ1〜4のみ既存の正確に一致する同一人物・同一場面の原画を流用可能。'
  :'第1章ステージ5以降は旧原画を流用せず、この場面専用の完全新規原画を作成する。';
 const prompt=[
  'RPG「灰銀のレゾナンス」の正本漫画イベント用に、独立した新しいCG原画を1枚作成。',
  '章 '+chapter+'、ステージ '+stage+'、場面 '+row.sceneId+'、'+target+'、主人公 '+(row.gender==='male'?'男性':'女性')+'版。',
- 'この場面の物語：'+(row.edition==='pre'?before:after),
+ 'この場面の物語：'+(isBefore?before:after),
  '物語の前提：'+before,
  '勝利後の事実：'+after+'。戦闘前の絵に勝利結果を描かない。',
  '16:9横長、推奨1536×864px、最低800×450px。一画像一コマで、分割コマ・文字・吹き出し・UI・ロゴ・透かし禁止。',
