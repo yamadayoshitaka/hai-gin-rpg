@@ -149,6 +149,13 @@ function wingMotion(p,phase,action,actionPulse,reference){
   apply(p,'wingElbow'+suffix,'x',power*.26*Math.cos(phase-.40));
   apply(p,'wingWrist'+suffix,'y',side*(.09+power*.31*Math.sin(phase+1.04)));
   apply(p,'wingWrist'+suffix,'z',side*.21*power*Math.cos(phase-.73));
+  // Phoenix: muscular femur / actual knee / narrow chicken tarsus must
+  // articulate separately. A modest flex retains a planted foot in idle.
+  if(p['birdKnee'+suffix]){
+   const step=Math.sin(phase+(side<0?0:Math.PI));
+   apply(p,'birdKnee'+suffix,'x',
+    hasFlap?-.12+.20*step:.035+.09*Math.max(0,step));
+  }
   apply(p,'birdAnkle'+suffix,'x',hasFlap?-.20+.11*Math.sin(phase):-0.03);
  }
  apply(p,'tail','x',power*.075*Math.sin(phase+.31));
