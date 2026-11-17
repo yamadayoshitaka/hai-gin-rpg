@@ -8,7 +8,8 @@ import {formatSquadIntent} from '../src/battle-squad-intent.js';
 
 const horse={type:'horse',id:'horse-1',commanderMount:true,alive:true};
 assert.ok(riderSeatHeight(horse)>1.55,'horse rider is raised above the leather saddle');
-assert.ok(riderSeatLocalOffset(horse).z<-.25,'seat moves behind the shoulders');
+assert.ok(riderSeatLocalOffset(horse).z<-.15&&riderSeatLocalOffset(horse).z>-.3,
+ 'seat follows the real saddle near z=-0.18, not the horse rump');
 assert.ok(riderSeatHeight({type:'dragon',alive:true})>2.6,'broad dragon back has a higher throne');
 assert.ok(riderSeatHeight({type:'wolf',alive:true})>1,'wolf rider cannot be inside the spine');
 
