@@ -10,16 +10,20 @@ import {catalogHairGroom,groomGuideOffset} from '../src/face-hair-groom-v50.js';
 
 test('female cosmetics receive fivefold pigment without applying makeup to men',()=>{
  assert.equal(FEMALE_MAKEUP_STRENGTH,5);
- const params={nx:.346,ny:.725,lidY:.695,front:1};
+ const params={nx:.123,ny:.725,lidY:.695,front:1};
  const female=v67NaturalEyeMakeup({...params,gender:'female'});
  const male=v67NaturalEyeMakeup({...params,gender:'male'});
  const rear=v67NaturalEyeMakeup({...params,gender:'female',front:0});
- assert.ok(female.shadow>.64&&female.shadow<=.65);
+ assert.ok(female.shadow>.80&&female.shadow<=.94,'fivefold pigment must cover the actual upper eyelid');
+ const outer=v67NaturalEyeMakeup({...params,nx:.346,gender:'female'});
+ assert.ok(outer.shadow<female.shadow*.02,'eyeshadow must fade before the outer cheek');
  assert.equal(male.shadow,0);
  assert.equal(rear.shadow,0);
  const sculpt=readFileSync(new URL('../src/face-feature-meshes.js',import.meta.url),'utf8');
- assert.match(sculpt,/const halfWidth=d\.x\*\(female\?\.051:\.044\)/,'female lip surface must grow without changing male mouth');
+ assert.match(sculpt,/const halfWidth=d\.x\*\(female\?\.057:\.044\)/,'female lip surface must grow without changing male mouth');
  assert.match(sculpt,/cosmeticOpacity\(\.32\)\*fadeU\*fadeV/,'full vermilion tint');
+ assert.match(sculpt,/const mouthX=.*d\.x\*\.066\*settings\.lipstickWidth/,'lip pigment follows the widened mouth');
+ assert.match(sculpt,/const anatomicalLipX=.*d\.x\*\.073\*/s,'wider lip tint stays inside the anatomical mouth');
  assert.match(sculpt,/cosmeticOpacity\(\.64\)\*bell\(nx/,'cheek makeup must receive the same multiplier');
  assert.match(sculpt,/noseBridgeContour/,'nose contours are restricted to the real face skin');
 });
