@@ -257,6 +257,19 @@ export function createObjectById(id,{cellSize=2.2}={}){
     add(new THREE.CylinderGeometry(.035*c,.042*c,.92*c,8),castle?stone:iron,x,(i+1)*riser+.46*c,z,'outer_guard_post_'+i);
    }
   }
+  // Continuous handrail joins the guard posts into a load-bearing guard assembly.
+  // Follow the same helix as the treads; no disconnected floating rail segments.
+  const guardPath=[];
+  for(let j=1;j<=steps*2;j++){
+   const t=j/(steps*2), angle=t*sweep-.045;
+   guardPath.push(new THREE.Vector3(
+    Math.cos(angle)*radius*.94,
+    t*height+.92*c,
+    Math.sin(angle)*radius*.94
+   ));
+  }
+  add(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(guardPath),steps*4,.048*c,8,false),
+   castle?stone:iron,0,0,0,'continuous_outer_guard_rail');
   add(new THREE.CylinderGeometry(radius*1.04,radius*1.04,.18*c,32),mat,0,.09*c,0,'grounded_footing');
   root.userData.catalogId=id;root.userData.footprint={lengthCells:OBJECT_CATALOG[id].widthCells,widthCells:OBJECT_CATALOG[id].depthCells};
   root.userData.passable=false;root.userData.stairFloors=castle?3:2;
