@@ -167,6 +167,37 @@ function m001FittedFacialMane(faceCore,source){
  }
  return guides;
 }
+// Flame wolf inherits the ACTUAL m001 near-LOD facial follicles from
+// the same transformed skull rings, not the prior generic elliptical cap.
+function m002ReferenceMane(source){
+ const m=M002_REFERENCE_MORPH;
+ const proxy={
+   scale:{x:m.faceX,y:m.faceY,z:m.faceZ},
+   position:{x:0,y:0,z:m.faceAdvance}
+ };
+ const strands=m001FittedFacialMane(proxy,source);
+ const rows=source?38:27,across=source?22:16;
+ for(const side of [-1,1])for(let i=0;i<rows;i++){
+   const z=.10-.45*(i+.35)/rows,ring=m001RingAtZ(z);
+   for(let j=0;j<across;j++){
+     const u=.62+.36*(j+.39+(i%2)*.16)/across;
+     const x=side*ring.rx*u*m.faceX;
+     const vertical=-.66+.37*(j+.5)/across;
+     const y=(ring.y+ring.ry*vertical)*m.faceY;
+     const root=[x,y,z*m.faceZ+m.faceAdvance];
+     const len=(.138+.112*(i/rows))*(1+.08*Math.sin(i+j));
+     const tip=[x-side*len*.17,y-len*.68,root[2]+len*.31];
+     const mid=[root[0]+(tip[0]-root[0])*.51,
+       root[1]+(tip[1]-root[1])*.46+.014,
+       root[2]+(tip[2]-root[2])*.54];
+     strands.push({root,mid,tip,normal:[side*u,vertical,.32],
+       width:.0088,shade:(i+j)%11===0?'light':
+       (i+j)%7===0?'shadow':'skin',
+       m002SourceM001:true,m001ContourGuide:true});
+   }
+ }
+ return strands;
+}
 // Quality rollout wave 1: m002 flame wolf, m003 ice Fenrir and m004
 // thunder wolf. Roots follow the SAME upper skull elliptical sections
 // as the existing non-m001 anatomical loft. Never reuse a lion mane or
@@ -306,7 +337,7 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    g.root.userData.referenceQualityRevision=BEAST_REFERENCE_QUALITY_REVISION;
  }
  const m001Flow=guides=>
-   (s.id==='m001'||felineMaster)?
+   (s.id==='m001'||s.id==='m002'||felineMaster)?
      referenceBeastFlow(guides):guides;
  const addFur=(parent,guides)=>{
    // Material groups are batched: three draw calls instead of hundreds of
@@ -415,7 +446,7 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
   g.bridge(torso,'skin',[0,1.152,.23],[0,1.305,.69],.304,.173);
   for(const side of [-1,1])
    g.bridge(torso,'skin',[side*.24,1.158,.18],[side*.175,1.302,.56],.116,.069);
-  if(s.id==='m001'&&coatDetail!=='low'){
+  if((s.id==='m001'||s.id==='m002')&&coatDetail!=='low'){
     // Buried scapular musculature joins the wolf king's thick forelimbs
     // to its chest; no exposed shoulder button or distant-LOD draw call.
     for(const side of [-1,1]){
@@ -506,6 +537,7 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    cranium.userData.m002Morph=M002_REFERENCE_MORPH;
    g.root.userData.m002FaceQualityDonor='m001';
    g.root.userData.m002SkullIsPhysicalM001Morph=true;
+   g.root.userData.m002ModelQualityVersion='m001-face-and-follicles-v1';
  }
  if(s.id==='m001'){
    cranium.userData.anatomyLoft=true;
@@ -1161,7 +1193,7 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    }
    // Distal motion is independent from shoulder/hip rotation, retaining
    // the original limb and ground-contact positions.
-   if(s.id==='m001'){
+   if(s.id==='m001'||s.id==='m002'){
      leg.userData.proximalSocket=fore>0?'shoulder':'hip';
      // A small overlapped moving proximal sleeve follows the limb's
      // rotation and disappears beneath its torso-mounted fascia.
@@ -1358,7 +1390,8 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
      // Hair-covered shoulder socket follows the proximal bone while
      // trunk-owned guard hair covers the same seam from the other side.
      // The two coat layers overlap, but require NO additional limb mesh.
-     const shoulderOverlap=s.id==='m001'?generateCanineFurGuides({
+     const shoulderOverlap=(s.id==='m001'||s.id==='m002')?
+      generateCanineFurGuides({
        center:[0,.456,fore>0?.002:-.061],
        radii:[.151,.118,.158],
        rows:source?19:12,around:source?27:20,
@@ -1455,7 +1488,8 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    // A second layer is rooted on the actual torso loft directly over the
    // shoulder seam. Root positions align with the torso instead of
    // hovering on a generic ellipsoid. The leg sleeve is feathered into it.
-   const shoulderMantle=s.id==='m001'?generateCanineAxialFurGuides({
+   const shoulderMantle=(s.id==='m001'||s.id==='m002')?
+     generateCanineAxialFurGuides({
      stations:bodyStations,rows:source?24:15,around:source?42:30,
      lengthProfile:[
        {z:bodyLength*1.01,length:.085},
@@ -1721,10 +1755,17 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
      return !(h.root[2]>.078&&Math.abs(h.root[0])<.186&&
        h.root[1]>-.223&&h.root[1]<.293);
    }):[];
-   const waveOneCrown=fittedWolfFamilyCrown(s,source);
+   const waveOneCrown=s.id==='m002'?[]:fittedWolfFamilyCrown(s,source);
+   const m002Coat=s.id==='m002'?m002ReferenceMane(source):[];
    const fullHeadCoat=s.id==='m001'?
      [...headGuides,...referenceLayeredMane(mantle)]:
+     s.id==='m002'?referenceLayeredMane(m002Coat):
      [...headGuides,...waveOneCrown];
+   if(m002Coat.length){
+     g.root.userData.m002SourceM001Mane=true;
+     g.root.userData.m002M001ContourGuides=m002Coat.length;
+     g.root.userData.m002FaceCoatDensityMultiplier=2;
+   }
    if(waveOneCrown.length)
      g.root.userData.referenceGroomWave='canine-m002-m004';
    addFur(head,fullHeadCoat);
