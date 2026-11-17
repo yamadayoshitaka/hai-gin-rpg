@@ -613,13 +613,65 @@ export function createObjectById(id,{cellSize=2.2}={}){
    }
    root.userData.passable=true;
   }
+  // Physical joinery shared by five town props; retain original collision footprints.
+  if(id==='town_handcart_001'){
+   const tyre=new THREE.MeshStandardMaterial({color:0x34383a,metalness:.72,roughness:.46});
+   box(.13*c,.13*c,2.5*c,0,.58*c,0,iron);
+   for(const z of [-1.04,1.04]){
+    const ring=new THREE.Mesh(new THREE.TorusGeometry(.56*c,.055*c,6,20),tyre);
+    ring.position.set(0,.58*c,z*c);root.add(ring);
+    const hub=new THREE.Mesh(new THREE.CylinderGeometry(.17*c,.17*c,.22*c,12),iron);
+    hub.rotation.x=Math.PI/2;hub.position.set(0,.58*c,z*c);root.add(hub);
+   }
+   for(const x of [-1.12,0,1.12])box(.11*c,.18*c,1.65*c,x*c,.91*c,0,wood);
+  }
+  if(id==='town_trash_bin_001'){
+   for(const y of [.22,.97]){
+    const hoop=new THREE.Mesh(new THREE.TorusGeometry(.397*c,.034*c,5,16),iron);
+    hoop.rotation.x=Math.PI/2;hoop.position.y=y*c;root.add(hoop);
+   }
+   for(let i=0;i<8;i++){
+    const a=i*Math.PI/4;
+    const rivet=new THREE.Mesh(new THREE.SphereGeometry(.037*c,6,4),iron);
+    rivet.position.set(Math.cos(a)*.412*c,.97*c,Math.sin(a)*.412*c);root.add(rivet);
+   }
+  }
+  if(id==='town_fence_001'){
+   for(const x of [-.65,.65]){
+    const brace=new THREE.Mesh(new THREE.BoxGeometry(.10*c,.94*c,.10*c),wood);
+    brace.position.set(x*c,.66*c,-.015*c);brace.rotation.z=(x<0?-1:1)*.52;root.add(brace);
+   }
+   for(const x of [-1.3,0,1.3])for(const y of [.45,.95]){
+    const peg=new THREE.Mesh(new THREE.CylinderGeometry(.042*c,.042*c,.19*c,8),iron);
+    peg.rotation.x=Math.PI/2;peg.position.set(x*c,y*c,.105*c);root.add(peg);
+   }
+  }
+  if(id==='town_sacks_001'){
+   const fabric=new THREE.MeshStandardMaterial({color:0x9d8867,roughness:1});
+   const cord=new THREE.MeshStandardMaterial({color:0x6b5234,roughness:1});
+   for(let i=0;i<5;i++){
+    const x=((i%2)*.86-.43)*c,y=(.36+Math.floor(i/2)*.58)*c,z=((i%3)-1)*.2*c;
+    const neck=new THREE.Mesh(new THREE.CylinderGeometry(.105*c,.17*c,.15*c,9),fabric);
+    neck.position.set(x,y+.34*c,z);root.add(neck);
+    const tie=new THREE.Mesh(new THREE.TorusGeometry(.105*c,.023*c,4,10),cord);
+    tie.rotation.x=Math.PI/2;tie.position.set(x,y+.36*c,z);root.add(tie);
+   }
+  }
+  if(id==='town_herb_garden_001'){
+   for(const x of [-1.87,1.87])for(const z of [-1.4,1.4])box(.23*c,.38*c,.23*c,x*c,.25*c,z*c,wood);
+   for(const x of [-1.45,1.45]){
+    box(.075*c,.72*c,.075*c,x*c,.49*c,0,wood);
+    box(.07*c,.07*c,2.1*c,x*c,.72*c,0,wood);
+   }
+  }
   // New detailed props are authored from many pieces but submitted as just a
   // few material batches. Geometry still comes from the physical object BOM.
   if(new Set(['stone_archway_001','stone_steps_001','wooden_watchtower_001',
    'stone_column_001','wall_torch_001','haystack_001','inn_sign_001',
    'town_well_001','town_crate_001',
     'town_firewood_001','town_water_trough_001','town_signpost_001',
-   'town_sacks_001','town_stone_pile_001','town_brazier_001','town_herb_garden_001']).has(id)){
+   'town_sacks_001','town_stone_pile_001','town_brazier_001','town_herb_garden_001',
+   'town_handcart_001','town_trash_bin_001','town_fence_001']).has(id)){
    const batches=new Map();
    for(const child of [...root.children]){
     if(!child.isMesh||Array.isArray(child.material))continue;
