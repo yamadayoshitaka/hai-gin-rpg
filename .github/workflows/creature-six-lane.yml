@@ -1,9 +1,20 @@
 name: Creature family six-lane quality QA (monster and summons)
 on:
   schedule:
-    - cron: '5,15,25,35,45,55 * * * *'
+    - cron: '5 * * * *'
+    - cron: '15 * * * *'
+    - cron: '25 * * * *'
+    - cron: '35 * * * *'
+    - cron: '45 * * * *'
+    - cron: '55 * * * *'
   workflow_dispatch:
     inputs:
+      category:
+        description: 'Run only one domain (all for scheduled QA)'
+        required: false
+        default: 'all'
+        type: choice
+        options: [all, creatureMonster, creatureSummon]
       slot:
         description: 'Run one family lane 0-5; auto picks current 10-minute slot'
         required: false
@@ -42,9 +53,21 @@ jobs:
       - name: Verify all 108 canonical IDs, protected assets and game adoption route
         run: node --test qa/creature-six-lane-contract.test.mjs
       - name: Review one species family, retain protected ancestors
+        if: inputs.category == 'all' || inputs.category == matrix.category || github.event_name != 'workflow_dispatch'
         env:
           INPUT_SLOT: ${{ inputs.slot || 'auto' }}
+          SCHEDULED_CRON: ${{ github.event.schedule }}
         run: |
+          if [ "$INPUT_SLOT" = 'auto' ]; then
+            case "$SCHEDULED_CRON" in
+              '5 * * * *') INPUT_SLOT=0;;
+              '15 * * * *') INPUT_SLOT=1;;
+              '25 * * * *') INPUT_SLOT=2;;
+              '35 * * * *') INPUT_SLOT=3;;
+              '45 * * * *') INPUT_SLOT=4;;
+              '55 * * * *') INPUT_SLOT=5;;
+            esac
+          fi
           if [ "$INPUT_SLOT" = 'auto' ]; then
             node scripts/creature-six-batch.mjs --category '${{ matrix.category }}'
           else
