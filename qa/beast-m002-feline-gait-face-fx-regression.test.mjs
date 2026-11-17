@@ -77,8 +77,10 @@ test('m007 source has embedded feline teeth, no spherical hips and real walk/lea
   const all=meshes(m);
   assert.ok(first(m,'feline-master-rhinarium-m007')?.userData.felineTriangularRhinarium);
   assert.ok(first(m,'feline-philtrum-m007'));
-  assert.equal(all.filter(x=>x.name.startsWith('feline-upper-incisor-m007-')).length,6);
-  assert.equal(all.filter(x=>x.name.startsWith('feline-lower-incisor-m007-')).length,6);
+  assert.equal(all.filter(x=>x.userData.felineDentalRoot==='maxilla').length,6,
+    'six real upper teeth plus separate gum sockets, not twelve teeth');
+  assert.equal(all.filter(x=>x.userData.felineDentalRoot==='mandible').length,8,
+    'six lower incisors plus two small lower canines');
   assert.equal(all.filter(x=>x.name.startsWith('feline-upper-gum-socket-m007-')).length,2);
   assert.ok(first(m,'feline-master-upper-canine-m007-L')?.userData.gumCovered);
   assert.equal(p.jaw.parent,p.head);
