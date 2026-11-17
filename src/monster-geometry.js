@@ -1029,9 +1029,14 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
        skin.name='m002-fang-labial-root-'+(side<0?'L':'R');
        skin.userData.wolfGumEmbedded=true;
      }
-   }else if(beastRemesh)g.curvedHorn(head,'bone',
-      [side*.13,-.17,muzzle+.05],[side*.146,-.265,muzzle+.14],
-      [side*.115,-.335,muzzle+.23],.046,{name:'beast-upper-fang'});
+   }else if(beastRemesh){
+     // Fenrir/thunderwolf root the small upper canines INSIDE the lip.
+     // Previous .335 Y tip and .57 Z reach formed giant dangling tusks.
+     const fang=g.curvedHorn(head,'bone',
+       [side*.126,-.171,.335],[side*.131,-.212,.376],
+       [side*.095,-.268,.386],.027,{name:'beast-upper-fang'});
+     fang.userData.wolfShortEmbeddedCanine=true;
+   }
    else if(felineMaster){
      // Long sabertooth or small lion/panther tooth is part of the
      // MAXILLA. Place enamel root under a labial gum sleeve instead
@@ -1192,11 +1197,19 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
  // margin and a recessed oral cavity follow the opening jaw pivot.
  // Keep both surfaces slightly overlapping in the idle pose.
  const jawOffsetZ=.26-v*.06;
+ // Other m001 wolf descendants used generic mouth offsets and a protruding
+ // tongue/teeth, despite having a short source-derived skull. Keep all
+ // jaw parts in ONE local arch instead of applying offset twice.
+ const wolfSibling=cloneCanine&&s.id!=='m002';
  for(const side of [-1,1]){
    g.tube(head,'shadow',(s.id==='m001'||s.id==='m002')?[
      [side*.112,-.149,.11],
      [side*.106,-.176,.260],
      [side*.068,-.184,.329]
+   ]:wolfSibling?[
+     [side*.119,-.155,.10],
+     [side*.112,-.179,.264],
+     [side*.071,-.191,.420]
    ]:felineMaster?[
      [side*.117,-.163,.072],
      [side*.108,-.182,muzzle-.022],
@@ -1205,11 +1218,15 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
      [side*.205,-.192,.135],
      [side*.204,-.200,muzzle+.025],
      [side*.155,-.214,muzzle+.263]
-   ],(s.id==='m001'||s.id==='m002')?.007:felineMaster?.007:.012);
+   ],(s.id==='m001'||cloneCanine)?.0065:felineMaster?.007:.012);
    g.tube(jaw,'shadow',(s.id==='m001'||s.id==='m002')?[
      [side*.108,-.028,-.069],
      [side*.102,-.055,.057],
      [side*.062,-.061,.202]
+   ]:wolfSibling?[
+     [side*.109,-.027,-.083],
+     [side*.096,-.049,.035],
+     [side*.063,-.061,.175]
    ]:felineMaster?[
      [side*.107,-.025,-.072],
      [side*.097,-.049,.032],
@@ -1218,9 +1235,9 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
      [side*.200,-.052,.135-jawOffsetZ],
      [side*.198,-.061,muzzle+.025-jawOffsetZ],
      [side*.153,-.065,muzzle+.263-jawOffsetZ]
-   ],(s.id==='m001'||s.id==='m002')?.007:felineMaster?.008:.013);
+   ],(s.id==='m001'||cloneCanine)?.007:felineMaster?.008:.013);
  }
- if(s.id==='m001'||s.id==='m002'){
+ if(s.id==='m001'||cloneCanine){
    // Replace the exposed black mouth button with a shallow tapered oral
    // opening that is entirely inside the opening lower mandible.
    const mouthSlit=g.axialLoft(jaw,'shadow',[
@@ -1242,10 +1259,10 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    cavity.userData.felineMouthSocket=true;
  }else g.sphere(jaw,'shadow',[0,-.035,muzzle-.18+v*.06],
    [.136,.018,.145],{name:'quadruped-oral-cavity'});
- g.sphere(jaw,'light',[0,-.044,muzzle-.12+v*.06],
-   (s.id==='m001'||s.id==='m002')?[.060,.010,.058]:[.084,.014,.098],
+ g.sphere(jaw,'light',[0,-.044,wolfSibling?.116:muzzle-.12+v*.06],
+   (s.id==='m001'||cloneCanine)?[.060,.010,.058]:[.084,.014,.098],
    {name:'quadruped-tongue'});
- if(s.id==='m001'||s.id==='m002'){
+ if(s.id==='m001'||cloneCanine){
    // Small lower incisors erupt UP from the gumline; the previous four
    // downward spikes made the jaw look like disconnected hanging pieces.
    for(let i=0;i<6;i++){
@@ -1260,7 +1277,8 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    for(let i=0;i<6;i++){
      const x=(i-2.5)*.026;
      const tooth=g.rootedSpike(head,'bone','skin',
-       [x,-.176,.285],[x*1.02,-.202,.297],.0085,
+       [x,-.176,wolfSibling?.392:.285],
+       [x*1.02,-.202,wolfSibling?.405:.297],.0085,
        {name:s.id+'-upper-incisor-'+i});
      tooth.tooth.userData.m001DentalArch='maxilla';
    }
