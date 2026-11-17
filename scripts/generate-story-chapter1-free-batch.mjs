@@ -11,6 +11,7 @@ import {fileURLToPath} from 'node:url';
 import {CAMPAIGN_STAGES} from '../src/campaign-stage-plan.js';
 import {comicEditionsForStage,comicForStage} from '../src/story-chapter-comic.js';
 import {registeredStoryPanelAsset} from '../src/story-panel-registered-art.js';
+import {oldStoryArtReuseAllowed} from '../src/story-art-sourcing-policy.js';
 import {buildStage45ArtPrompt,STAGE45_IDS} from '../src/story-c01-stage45-art-guard.js';
 import {classifyCloudflareFailure,canOfferChatGPTHandoff,makeChatGPTHandoff} from '../src/story-generation-fallback.js';
 
@@ -92,7 +93,13 @@ for(const stage of stages){
     const key=[stage.id,ed.edition,gender,shot.id].join('|');
     if(keys.has(key))throw Error('Duplicate '+key); keys.add(key);
     const id=shot.id.replace(/-m(\d{1,2})$/,(_,n)=>'-m'+String(Number(n)).padStart(2,'0'));
-    const dir='assets/story/chapter-drafts/c01/cloudflare-chapter1-free/'+stage.id+'-'+ed.edition+'-'+gender+'/p'+String(Math.floor(i/5)+1).padStart(2,'0')+'/';
+    // Existing Cloudflare images for stage 5+ were created under the OLD path.
+     // They are archived, not eligible to fulfil the user's NEW-only request.
+     // Fresh post-decision images are written to a distinct, clean namespace.
+     const fresh=!oldStoryArtReuseAllowed(stage.id);
+     const dir='assets/story/chapter-drafts/c01/'+
+      (fresh?'cloudflare-chapter1-new-originals':'cloudflare-chapter1-free')+
+      '/'+stage.id+'-'+ed.edition+'-'+gender+'/p'+String(Math.floor(i/5)+1).padStart(2,'0')+'/';
     const img=dir+id+'-'+ed.edition+'-'+gender+'.webp';
     const live=registeredStoryPanelAsset(shot);
     return {key,shot,stage,gender,edition:ed.edition,img,proof:img+'.generation.json',registered:!!live,
