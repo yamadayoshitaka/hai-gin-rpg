@@ -114,12 +114,12 @@
     },
     "world": {
       "source": "ChatGPTオブジェクト即時回帰＋GitHub六担当実WebGL QA",
-      "lastRunAt": "2026-11-17T19:52:03+09:00",
+      "lastRunAt": "2026-11-17T21:47:25+09:00",
       "status": "blocked",
       "carryover": true,
-      "subject": "PR #441 未検証28件の滞留・実行QA取得経路BLOCKED",
-      "summary": "main world.enabled=true確認、正本catalog-targets 60件確認。PR #441 open/draft/mergeable=false、head 9439cf62、実ソース最終SHA 189571a3。GitHub connectorでmainとPRソースを読取れたがコンテナgit ls-remoteはgithub.com DNS解決失敗。Node構文・指定3QA・新旧WebGL・Android未実施。新規実改修0、GLB0、QA0、ゲーム採用0、実ソースコミット0。",
-      "nextAction": "品質バッチ再開：未検証PR #441等を再確認し、実造形の共通原因を修正→Node・WebGL・Android FPS→main採用/Pages検証。旧未合格モデルは未採用のまま維持。",
+      "subject": "PR #441 既存28件のQA滞留：分岐差異とローカル取得不能を再確認",
+      "summary": "main world.enabled=trueをGitHub connectorで確認。catalog-targets.jsonのcount=60、既存専用作業ブランチworld/furniture-structural-regression-20261116のcheckpointに保存28件（QA全件unverified）。mainとの比較はahead 34/behind 254でdiverged。実行コンテナgit ls-remoteはgithub.com DNS解決失敗。新規実造形0、Node/3QA/WebGL/Android未実施、GLB0、main採用0、公開0。未検証変更を増やさずPRマージ保留。",
+      "nextAction": "既存PR #441のhead/base差異を解消できるQA実行環境を確保し、Node構文・指定3テスト・createCatalogObjectでの新旧WebGL/Android描画を実行。合格後に5〜10種の実ソース改修を再開。",
       "steps": {
         "launch": "done",
         "code": "pending",
@@ -131,27 +131,28 @@
       },
       "evidence": [
         {
-          "label": "PR #441 draft/mergeable=false・head fda16e27",
+          "label": "既存Draft PR #441（未マージ）",
           "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/441"
         },
         {
-          "label": "井戸・噴水の石積み実ソース改修（QA未実施）",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/189571a34fef12603a927b428e136652ce559dd5"
+          "label": "作業ブランチのチェックポイント28件",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/blob/world/furniture-structural-regression-20261116/data/batch-checkpoints/world.json"
         }
       ],
       "lastRunOutcome": {
-        "newSourceChangedIds": 2,
+        "newSourceChangedIds": 0,
         "newQAPassed": 0,
         "newGameAppliedIds": 0,
-        "newSourceCommits": 1
+        "newSourceCommits": 0,
+        "newGeneratedGLBs": 0
       },
       "operational": {
         "blockers": [
-          "PR #441はdraftかつmergeable=false（2026-11-17 19:52 JST確認）",
-          "実行コンテナからgithub.comのDNS解決不可。Node/3QA/WebGL実行不可",
-          "既存28件の対象別WebGL・Android QA未検証"
+          "github.com DNS解決不可：実行コンテナでgit ls-remote失敗",
+          "作業ブランチはmainに対しahead 34/behind 254で分岐し、無検証マージ不可",
+          "checkpoint保存28件は対象別WebGL/Android QAすべてunverified"
         ],
-        "speedPlan": "PR #441でActions checkout/テストを実行できる経路を確立し、静的3QA→実WebGL比較→不具合修正。QA前のmainマージは禁止。",
+        "speedPlan": "PR #441差分のQA経路をGitHub Actions側で確保し、Node/3QAと本編同一生成器のWebGL比較を先に実施。失敗修正後に共通石工生成器5種へ進む。",
         "lastRunOutcome": {
           "newSourceChangedIds": 0,
           "newQAPassed": 0,
