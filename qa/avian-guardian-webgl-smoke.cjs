@@ -54,7 +54,7 @@ const ids=['m011','m012','m013','m014'];
        !shape.wingHandScales||!shape.chickenFeet||
        !shape.neckScaleFade||!shape.headMicroScales||
        !shape.noEars||!shape.smallHead||!shape.longBeak||
-       !shape.allBackCrest||shape.denseScales<250||
+       !shape.allBackCrest||shape.denseScales!==15*14||
        shape.tailLength<4.55||shape.waveMeshes!==4||state.tail!==31)
        throw Error('Phoenix requested remodel absent in actual WebGL viewer: '+
         JSON.stringify(shape));
