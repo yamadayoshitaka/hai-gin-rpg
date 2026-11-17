@@ -8,6 +8,7 @@ on:
       - 'src/story-art-sourcing-policy.js'
       - 'src/story-new-original-art.js'
       - 'qa/story-stage-art-sourcing-boundary.test.mjs'
+      - 'qa/story-panel-one-at-a-time.test.mjs'
       - 'src/story-draft-dialogue-identity.js'
       - 'qa/story-draft-dialogue-identity.test.mjs'
       - 'src/story-new-original-timestamp-guard.js'
