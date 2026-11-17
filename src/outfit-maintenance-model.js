@@ -605,9 +605,10 @@ export function createDetailedOutfit(job, sex, body, textures, {quality='preview
 
   if(style.cape){
     const top=cy+H*.07,bottom=Math.max(ankle+H*.05,hips-H*.42);
-    // CylinderGeometry -PI/2..PI creates its half shell at +Z (the face).
-    // PI/2..3PI/2 places the cape behind the shoulders at -Z instead.
-    const geom=new THREE.CylinderGeometry(sx*.90,sx*1.80,top-bottom,battle?20:96,battle?6:40,true,Math.PI/2,Math.PI);
+    // Three.js cylinder vertices use x=-r*cos(theta), z=r*sin(theta).
+    // PI..2PI is the REAL rear hemisphere (negative Z). The old
+    // PI/2..3PI/2 swept over the wearer's left/right side instead.
+    const geom=new THREE.CylinderGeometry(sx*.90,sx*1.80,top-bottom,battle?20:96,battle?6:40,true,Math.PI,Math.PI);
     geom.scale(1,1,sz/sx*.82);
     add('three-dimensional-back-and-side-cape',geom,style.crown?material('damask',0xc7aacd):cloth,v(mx,(top+bottom)*.5,mz+sz*.02));
     for(const s of [-1,1])orb('mantle-clasp',H*.027,mx+s*sx*.64,cy+H*.045,front,trim,32);
@@ -621,10 +622,10 @@ export function createDetailedOutfit(job, sex, body, textures, {quality='preview
     const top=cy+H*.075;
     const bottom=Math.max(ankle+H*.12,hips-H*.43);
     const cape=new THREE.CylinderGeometry(sx*.81,sx*1.60,top-bottom,
-      battle?20:48,battle?10:24,true,Math.PI/2,Math.PI);
+      battle?20:48,battle?10:24,true,Math.PI,Math.PI);
     const positions=cape.getAttribute('position'),uv=cape.getAttribute('uv');
     for(let i=0;i<positions.count;i++){
-      const t=THREE.MathUtils.clamp(1-uv.getY(i),0,1);
+      const t=THREE.MathUtils.clamp(uv.getY(i),0,1);
       const angle=Math.atan2(positions.getX(i),positions.getZ(i));
       const fold=1+(.015+.055*t)*Math.sin(9*angle+2*t);
       positions.setX(i,positions.getX(i)*fold);
