@@ -6,11 +6,11 @@
  */
 import * as THREE from 'three';
 import {createMonsterModel,disposeMonsterSculpture}
- from './monster-geometry.js?v=beast-feline-nose-tail-m005-v13-20261118';
+ from './monster-geometry.js?v=m001-m005-m006-small-cat-nose-v14-20261118';
 import {startMonsterAction,animateMonsterModel}
- from './monster-animation.js?v=beast-m001-m007-actions-v5-20261117';
+ from './monster-animation.js?v=m001-m005-canine-actions-v6-20261118';
 import {resolveRegisteredMonsterModel}
- from './creature-game-model-routing.js';
+ from './creature-game-model-routing.js?v=m001-m005-m006-v14-20261118';
 import {fetchCreatureRegistry} from './creature-external-runtime.js';
 import {loadCreatureMeshSource}
  from './creature-real-source-catalog.js?v=real-body-only-v4';
