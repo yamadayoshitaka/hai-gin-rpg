@@ -43,7 +43,7 @@ test('four actual 3D feline sculpts have narrow heads and continuous cat anatomy
    const rhinarium=get(model,'feline-master-rhinarium-'+id);
    const jaw=get(model,'feline-master-mandible-'+id);
    const earL=get(model,'feline-master-ear-root-L');
-   const eyeL=get(model,'feline-master-iris-L');
+   const eyeL=get(model,'feline-iris-L');
    const saber=get(model,'feline-master-upper-canine-'+id+'-L');
    const body=get(model,'species-shoulder-rib-pelvis-'+id);
    assert.ok(head&&bridge&&rhinarium&&jaw&&earL&&eyeL&&saber&&body,
