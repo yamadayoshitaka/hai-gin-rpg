@@ -20,9 +20,10 @@ for(const ceremony of ['idle','order','result','intro','outro']){
 }
 assert.equal(realtimeBattleCinematicScale({mass:false,paused:true,ceremony:'result'}),1);
 assert.equal(realtimeBattleCinematicScale({town:true,ceremony:'order'}),1);
-assert.equal(realtimeBattleCinematicScale({mass:true,ceremony:'result'}),0.32,
- 'existing large-battle dramatic slow motion remains unchanged');
-assert.equal(realtimeBattleCinematicScale({mass:true,commander:true}),0.32);
+assert.equal(realtimeBattleCinematicScale({mass:true,ceremony:'result'}),1,
+ '1000v1000 combat must share the same real-time clock during reports');
+assert.equal(realtimeBattleCinematicScale({mass:true,commander:true}),1,
+ 'camera cut-ins do not slow the mass Worker or soldier footfalls');
 assert.equal(realtimeBattleCinematicScale({mass:true,ceremony:'idle'}),1);
 
 const game=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
