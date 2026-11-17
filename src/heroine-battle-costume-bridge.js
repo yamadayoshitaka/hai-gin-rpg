@@ -6,7 +6,7 @@ import {clipStudioFaceBustPreservingSurface,restoreStudioFaceSurfaceQuality,
  sampleStudioFacePigment,smoothStudioFaceNormals,
  studioAnatomicalSeamY,taperStudioLowerBustBelowChin} from './studio-face-quality-v56.js?v=60';
 import {createCharacter} from './character-system/shared-character-runtime.js?v=4.6.36';
-import {buildRiggedJobOutfit} from './character-system/rigged-outfit-runtime.js?v=20261117-anatomical-shoulders-v77';
+import {buildRiggedJobOutfit} from './character-system/rigged-outfit-runtime.js?v=20261118-anatomical-shoulders-cape-v78';
 import {loadJobMotionMap} from './character-system/job-motion-source.js?v=4.6.36';
 import {measureHeadLocalBounds} from './character-system/hair-attachment-runtime.js?v=4.4.89';
 import {createHeroineBattleActionVfx} from './heroine-battle-action-vfx.js?v=40';
@@ -979,7 +979,7 @@ export async function createRealBattleOutfitStudio({scene,faceModel,getFaceModel
    nativeCommand=null;nativeClip=null;
    await playAction(currentAction);
    collarFitDirty=true;
-   onStatus('戦闘衣装 v77：'+chosen.label+'／旧肩鎧 '+(clothing.diagnostics.suppressedRigidShoulderMeshes||0)+'部品除去／肩関節フィット '+(clothing.diagnostics.fittedShoulderParts?'左右各2':'対象外')+'／主人公マント '+(clothing.diagnostics.heroMantlePresent?'あり':'なし')+'。');
+   onStatus('戦闘衣装 v78：'+chosen.label+'／旧肩鎧 '+(clothing.diagnostics.suppressedRigidShoulderMeshes||0)+'部品除去／肩関節フィット '+(clothing.diagnostics.fittedShoulderParts?'左右各2':'対象外')+'／主人公マント '+(clothing.diagnostics.heroMantlePresent?'あり':'なし')+'。');
   }catch(error){
    clothing?.dispose();fresh.dispose();
    throw error;
@@ -1128,7 +1128,7 @@ export async function createRealBattleOutfitStudio({scene,faceModel,getFaceModel
   nativeCommand,nativeClip,availableActionCount:availableActions().length,
   garment:chosenOutfit().label,bodyShapeId,ageBand:ageBandId,bodyType:bodyTypeId,
   headReport,headFit,proportions,finishReport,
-  wardrobeRevision:'v77-anatomical-shoulders',
+  wardrobeRevision:'v78-anatomical-shoulders',
   heroMantlePresent:!!outfit?.diagnostics?.heroMantlePresent,
   heroMantleMeshPresent:!!outfit?.root?.getObjectByName('hero-protagonist-draped-mantle'),
   heroMantleVisible:!!outfit?.root?.getObjectByName('hero-protagonist-draped-mantle')?.visible,
