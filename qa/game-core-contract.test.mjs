@@ -128,7 +128,14 @@ assert.ok(sceneHtml.includes("location.replace(dest)"),'Old duplicate renderer U
 assert.ok(!sceneHtml.includes('new THREE.WebGLRenderer'),'No replacement stage renderer remains in the legacy URL');
 const battleHtml=fs.readFileSync(path.join(base,'tactics-wireframe.html'),'utf8');
 assert.ok(battleHtml.includes("storyRequest?.origin==='game-core'"),'battle returns to new world map');
-assert.ok(battleHtml.includes("createMonsterModel(a.monsterSpec"),'3D monster integration present');
+// Registered model factory replaces the old direct procedural creation.
+assert.ok(battleHtml.includes('createRegisteredBattleMonster(a.monsterSpec'),
+ '3D monster must be loaded through the registry for real game encounters');
+const monsterLoader=fs.readFileSync(path.join(base,
+ 'src/battle-registered-monster-model.js'),'utf8');
+assert.ok(monsterLoader.includes('createMonsterModel(spec,{detail})')&&
+ monsterLoader.includes("modelLoadStatus='fallback-procedural'"),
+ 'registered battle model must retain actual 3D geometry and fail-safe fallback');
 assert.ok(battleHtml.includes('monstersRemaining'),'battle return tracks all surviving monsters');
 assert.ok(battleHtml.includes("const TOWN_MODE=battleParams.get('town')==='1'"),
  'Same battle renderer must support a peaceful town mode');
