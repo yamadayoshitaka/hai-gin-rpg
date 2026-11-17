@@ -153,6 +153,58 @@ function m001FittedFacialMane(faceCore,source){
  }
  return guides;
 }
+// Quality rollout wave 1: m002 flame wolf, m003 ice Fenrir and m004
+// thunder wolf. Roots follow the SAME upper skull elliptical sections
+// as the existing non-m001 anatomical loft. Never reuse a lion mane or
+// m001's tiny face scale for these species. Low LOD stays untouched.
+const CANINE_GROOM_WAVE_ONE=Object.freeze(['m002','m003','m004']);
+function fittedWolfFamilyCrown(spec,source){
+ if(!CANINE_GROOM_WAVE_ONE.includes(spec.id))return [];
+ const guides=[],winter=spec.id==='m003';
+ const rows=source?35:24,around=source?46:32;
+ for(let layer=0;layer<2;layer++){
+  for(let i=0;i<rows;i++){
+   const y=.195+.099*(i+.30+layer*.28)/rows;
+   let a=QUADRUPED_CRANIUM_RINGS[0],b=QUADRUPED_CRANIUM_RINGS.at(-1);
+   for(let k=1;k<QUADRUPED_CRANIUM_RINGS.length;k++){
+    if(QUADRUPED_CRANIUM_RINGS[k].y>=y){
+     a=QUADRUPED_CRANIUM_RINGS[k-1];
+     b=QUADRUPED_CRANIUM_RINGS[k];break;
+    }
+   }
+   const t=clamp01((y-a.y)/Math.max(.0001,b.y-a.y));
+   const rx=a.rx+(b.rx-a.rx)*t;
+   const rz=a.rz+(b.rz-a.rz)*t;
+   const centerZ=a.cz+(b.cz-a.cz)*t;
+   for(let j=0;j<around;j++){
+    const theta=Math.PI*2*(j+.36+(i%2)*.41+layer*.24)/around;
+    const x=rx*Math.cos(theta),z=centerZ+rz*Math.sin(theta);
+    // Leave the front orbital aperture exposed; this new crown
+    // begins ABOVE the eyes and follows the occipital hair stream.
+    if(z>.19&&y<.227&&Math.abs(x)<.171)continue;
+    const length=(layer===0?.078:winter?.190:.141)*
+      (1+.10*Math.sin(i*.59+j*.47));
+    const root=[x*.997,y,z*.997+centerZ*.003];
+    const tip=[x+Math.sign(x)*.012,y+length*.11,
+      z-length*(layer===0?.55:.80)];
+    const mid=[
+      root[0]+(tip[0]-root[0])*.49+
+        .007*Math.sin(i*.7+j*.9),
+      y+length*.12,
+      z+(tip[2]-z)*.45
+    ];
+    guides.push({root,mid,tip,
+      normal:[Math.cos(theta),.62,Math.sin(theta)],
+      width:layer===0?.008:.011,
+      shade:(i+j+layer)%11===0?'light':
+        (i+j+layer)%7===0?'shadow':'skin',
+      qualityWave:'m001-cranium-anchored-groom',
+      speciesId:spec.id});
+   }
+  }
+ }
+ return guides;
+}
 function feet(g,pivot,x,y,z,clawed=true,scale=1){
  g.sphere(pivot,'skin',[0,-.28,0],[.14*scale,.30*scale,.15*scale]);
  g.sphere(pivot,'shadow',[0,-.53,.13],[.13*scale,.08*scale,.22*scale]);
@@ -1410,8 +1462,12 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
      return !(h.root[2]>.078&&Math.abs(h.root[0])<.186&&
        h.root[1]>-.223&&h.root[1]<.293);
    }):[];
+   const waveOneCrown=fittedWolfFamilyCrown(s,source);
    const fullHeadCoat=s.id==='m001'?
-     [...headGuides,...referenceLayeredMane(mantle)]:headGuides;
+     [...headGuides,...referenceLayeredMane(mantle)]:
+     [...headGuides,...waveOneCrown];
+   if(waveOneCrown.length)
+     g.root.userData.referenceGroomWave='canine-m002-m004';
    addFur(head,fullHeadCoat);
    if(s.id==='m001'){
      for(const mesh of head.children.slice(maneStart)){
