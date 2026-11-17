@@ -9,7 +9,7 @@ import {registeredStoryPanelAsset,storySheetCrop,storyArtDisplayUrl} from './sto
 import {provisionalRegisteredStoryPanel} from './story-provisional-registered-art.js';
 import {chapter1ProvisionalLivePanel} from './story-chapter1-provisional-live.js';
 import {comicPageAsset} from './story-chapter-comic.js';
-import {compactComicForStage} from './story-compact-comic.js';
+import {compactComicForStage} from './story-compact-comic.js?v=story-20261117-reader1';
 import {STORY_KEY_PEOPLE} from './story-cinematic.js';
 import {renderStoryRubyText} from './story-ruby-display.js';
 import {fantasyCueForMangaPanel} from './fantasy-scene-score.js';
