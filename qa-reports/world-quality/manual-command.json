@@ -1,0 +1,7 @@
+{
+  "schemaVersion": 1,
+  "kind": "all",
+  "target": "",
+  "instruction": "未完了PRの造形・接合・材質・LOD/衝突QAを再開。実モデル生成器を修正してコミット・PR・QAまで。",
+  "maxReferences": 1
+}

@@ -193,52 +193,25 @@
       "lastReviewedAt": "2026-11-17T20:01:18.095Z",
       "error": "python3 scripts/world-quality-compare.py: Traceback (most recent call last):\n  File \"/home/runner/work/hai-gin-rpg/hai-gin-rpg/scripts/world-quality-compare.py\", line 70, in <module>\n    output=run(Path(args.reference),json.loads(Path(args.capture_json).read_text()))\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/hai-gin-rpg/hai-gin-rpg/scripts/world-quality-compare.py\", line 41, in run\n    ref=features(ref_path)\n        ^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/hai-gin-rpg/hai-gin-rpg/scripts/world-quality-compare.py\", line 25",
       "captureAttempts": 3
+    },
+    "object:entry_door_lv3_001": {
+      "name": "入口扉（鍵Lv.3）",
+      "type": "object",
+      "referenceFile": "assets/world-quality/references/entry_door_lv3_001.webp",
+      "referenceSha256": "0625c619997ec1a5c4c202ea29b4f00cf248014cc1eff16f795b8411a1e4ba30",
+      "referencePromptHash": "481a9d31cb28a5ad1ea05bd52450572fdaed044a093a43365e7ae30ed7b5ca47",
+      "referenceCreatedAt": "2026-11-17T23:52:20.350Z",
+      "gameScreenshot": null,
+      "comparisonReport": null,
+      "roughnessProposal": 1,
+      "review": "WEBGL_CAPTURE_OR_COMPARE_BLOCKED",
+      "productionApplied": false,
+      "lastReviewedAt": "2026-11-17T23:52:26.236Z",
+      "error": "python3 scripts/world-quality-compare.py: Traceback (most recent call last):\n  File \"/home/runner/work/hai-gin-rpg/hai-gin-rpg/scripts/world-quality-compare.py\", line 70, in <module>\n    output=run(Path(args.reference),json.loads(Path(args.capture_json).read_text()))\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/hai-gin-rpg/hai-gin-rpg/scripts/world-quality-compare.py\", line 41, in run\n    ref=features(ref_path)\n        ^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/hai-gin-rpg/hai-gin-rpg/scripts/world-quality-compare.py\", line 25",
+      "captureAttempts": 1
     }
   },
   "runs": [
-    {
-      "id": "43725937570",
-      "startedAt": "2026-11-15T14:45:46.168Z",
-      "mode": "reference",
-      "requested": 3,
-      "requestedTarget": null,
-      "requestedKind": "all",
-      "customInstructionHash": null,
-      "stageCount": 200,
-      "objectCount": 53,
-      "targetIds": [
-        "object:cottage_table_001",
-        "object:cottage_chair_001",
-        "object:cottage_bed_001"
-      ],
-      "generated": 0,
-      "failed": [],
-      "providerCalls": 0,
-      "stopReason": "REVIEW_EXISTING_REFERENCE_ONLY",
-      "completedAt": "2026-11-15T14:45:46.168Z"
-    },
-    {
-      "id": "43725937570",
-      "startedAt": "2026-11-15T14:46:30.482Z",
-      "mode": "results",
-      "requested": 3,
-      "requestedTarget": null,
-      "requestedKind": "all",
-      "customInstructionHash": null,
-      "stageCount": 200,
-      "objectCount": 53,
-      "targetIds": [
-        "object:cottage_table_001",
-        "object:cottage_chair_001",
-        "object:cottage_bed_001"
-      ],
-      "generated": 0,
-      "failed": [],
-      "providerCalls": 0,
-      "stopReason": "REVIEW_PROPOSALS_RECORDED_NOT_MERGED",
-      "referenceStopReason": "REVIEW_EXISTING_REFERENCE_ONLY",
-      "completedAt": "2026-11-15T14:46:30.482Z"
-    },
     {
       "id": "43732283817",
       "startedAt": "2026-11-15T15:53:51.929Z",
@@ -625,28 +598,65 @@
       "stopReason": "REVIEW_PROPOSALS_RECORDED_NOT_MERGED",
       "referenceStopReason": "REVIEW_EXISTING_REFERENCE_ONLY",
       "completedAt": "2026-11-17T20:01:18.095Z"
+    },
+    {
+      "id": "44202841936",
+      "startedAt": "2026-11-17T23:52:11.444Z",
+      "mode": "reference",
+      "requested": 1,
+      "requestedTarget": null,
+      "requestedKind": "all",
+      "customInstructionHash": "260e4ee09a64f706b89fb05e6fd68ce4937fd5434f997d5a0eff0e418cbac2d3",
+      "stageCount": 200,
+      "objectCount": 60,
+      "targetIds": [
+        "object:entry_door_lv3_001"
+      ],
+      "generated": 1,
+      "failed": [],
+      "providerCalls": 1,
+      "stopReason": "REFERENCE_GENERATED_VISUAL_QA_PENDING",
+      "completedAt": "2026-11-17T23:52:20.351Z"
+    },
+    {
+      "id": "44202841936",
+      "startedAt": "2026-11-17T23:52:26.235Z",
+      "mode": "results",
+      "requested": 1,
+      "requestedTarget": null,
+      "requestedKind": "all",
+      "customInstructionHash": "260e4ee09a64f706b89fb05e6fd68ce4937fd5434f997d5a0eff0e418cbac2d3",
+      "stageCount": 200,
+      "objectCount": 60,
+      "targetIds": [
+        "object:entry_door_lv3_001"
+      ],
+      "generated": 1,
+      "failed": [],
+      "providerCalls": 1,
+      "stopReason": "REVIEW_PROPOSALS_RECORDED_NOT_MERGED",
+      "referenceStopReason": "REFERENCE_GENERATED_VISUAL_QA_PENDING",
+      "completedAt": "2026-11-17T23:52:26.236Z"
     }
   ],
   "lastRun": {
-    "id": "44164511637",
-    "startedAt": "2026-11-17T20:01:18.095Z",
+    "id": "44202841936",
+    "startedAt": "2026-11-17T23:52:26.235Z",
     "mode": "results",
-    "requested": 3,
+    "requested": 1,
     "requestedTarget": null,
     "requestedKind": "all",
-    "customInstructionHash": null,
+    "customInstructionHash": "260e4ee09a64f706b89fb05e6fd68ce4937fd5434f997d5a0eff0e418cbac2d3",
     "stageCount": 200,
     "objectCount": 60,
     "targetIds": [
-      "object:spiral_stairs_castle_3f_001",
-      "object:entry_door_lv1_001",
-      "object:entry_door_lv2_001"
+      "object:entry_door_lv3_001"
     ],
-    "generated": 0,
+    "generated": 1,
     "failed": [],
-    "providerCalls": 0,
+    "providerCalls": 1,
     "stopReason": "REVIEW_PROPOSALS_RECORDED_NOT_MERGED",
-    "referenceStopReason": "REVIEW_EXISTING_REFERENCE_ONLY",
-    "completedAt": "2026-11-17T20:01:18.095Z"
+    "referenceStopReason": "REFERENCE_GENERATED_VISUAL_QA_PENDING",
+    "completedAt": "2026-11-17T23:52:26.236Z"
   }
 }

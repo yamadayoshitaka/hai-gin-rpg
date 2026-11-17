@@ -1,29 +1,25 @@
 {
   "targets": [
-    "object:spiral_stairs_castle_3f_001",
-    "object:entry_door_lv1_001",
-    "object:entry_door_lv2_001"
+    "object:entry_door_lv3_001"
   ],
   "run": {
-    "id": "44164511637",
-    "startedAt": "2026-11-17T20:01:18.095Z",
+    "id": "44202841936",
+    "startedAt": "2026-11-17T23:52:26.235Z",
     "mode": "results",
-    "requested": 3,
+    "requested": 1,
     "requestedTarget": null,
     "requestedKind": "all",
-    "customInstructionHash": null,
+    "customInstructionHash": "260e4ee09a64f706b89fb05e6fd68ce4937fd5434f997d5a0eff0e418cbac2d3",
     "stageCount": 200,
     "objectCount": 60,
     "targetIds": [
-      "object:spiral_stairs_castle_3f_001",
-      "object:entry_door_lv1_001",
-      "object:entry_door_lv2_001"
+      "object:entry_door_lv3_001"
     ],
-    "generated": 0,
+    "generated": 1,
     "failed": [],
-    "providerCalls": 0,
+    "providerCalls": 1,
     "stopReason": "REVIEW_PROPOSALS_RECORDED_NOT_MERGED",
-    "referenceStopReason": "REVIEW_EXISTING_REFERENCE_ONLY",
-    "completedAt": "2026-11-17T20:01:18.095Z"
+    "referenceStopReason": "REFERENCE_GENERATED_VISUAL_QA_PENDING",
+    "completedAt": "2026-11-17T23:52:26.236Z"
   }
 }
