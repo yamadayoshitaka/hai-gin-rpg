@@ -6,6 +6,7 @@ import {chapterOneReviewPages} from '../src/story-chapter1-review-core.js';
 import {buildChapter1ImagePrompt} from '../src/story-chapter1-image-prompt.js';
 import {registeredStoryPanelAsset} from '../src/story-panel-registered-art.js';
 import {oldStoryArtReuseAllowed} from '../src/story-art-sourcing-policy.js';
+import {NEW_STORY_ORIGINAL_ART} from '../src/story-new-original-art.js';
 
 const sameHistoricSetup=(oldScript,newScript)=>{
  // Historical stage-1..4 proof predates the current narrator-first,
@@ -69,36 +70,48 @@ const seenS05=new Set();
 for(const [key,item] of liveS05){
  const canonicalShot=stage5Canonical.get(key);
  assert(canonicalShot,'Noncanonical stage5 shot: '+key);
- assert.equal(item.status,'PROVISIONAL_OWNER_AUTHORIZED_PENDING_P0',key+' must remain provisional');
+ assert.equal(item.status,'PROVISIONAL_OWNER_AUTHORIZED_PENDING_P0',key+' remains provisional');
  assert.equal(item.stageId,canonicalShot.stageId);
  assert.equal(item.edition,canonicalShot.edition);
  assert.equal(item.gender,canonicalShot.gender);
- assert(!seenS05.has(item.sha256),'Same image registered for different stage5 shots');
+ assert(!seenS05.has(item.sha256),'Same image SHA registered for different stage5 shots');
  seenS05.add(item.sha256);
- assert(item.asset.startsWith('./assets/story/chapter1-provisional-live/'));
- const bytes=fs.readFileSync(item.asset.slice(2));
- assert.equal(bytes.toString('ascii',0,4),'RIFF',key);
- assert.equal(bytes.toString('ascii',8,12),'WEBP',key);
- assert.equal(crypto.createHash('sha256').update(bytes).digest('hex'),item.sha256,key+' actual image mismatch');
- const proof=JSON.parse(fs.readFileSync(item.provenance,'utf8'));
- assert.equal(proof.shotKey,key);
- assert(typeof proof.scriptText==='string'&&proof.scriptText.length>=8,
-  key+' archive must retain its original, historical script');
- // Script changed when narration was split from character dialogue; old script
- // should NOT be used to drive new illustration generation.
- if(proof.qaStatus==='OWNER_PROVISIONAL'){
-  assert.equal(proof.sourceModel,'ChatGPT Images');
-  assert.equal(proof.finalP0Approved,false);
-  assert.equal(proof.humanVisualQAConfirmed,false);
-  assert.equal(proof.quality?.realReferenceBytesAttachedToImageGenerator,false);
-  assert.equal(proof.imageSha256,item.sha256,'Image proof SHA mismatch');
- }
  assert.equal(oldStoryArtReuseAllowed(canonicalShot.stageId),false);
- assert.equal(registeredStoryPanelAsset({
+ const sourceBytes=fs.readFileSync(item.asset.slice(2));
+ assert.equal(sourceBytes.toString('ascii',0,4),'RIFF',key);
+ assert.equal(sourceBytes.toString('ascii',8,12),'WEBP',key);
+ assert.equal(crypto.createHash('sha256').update(sourceBytes).digest('hex'),item.sha256,key+' actual bytes differ');
+ const newOriginal=NEW_STORY_ORIGINAL_ART[key];
+ const rendered=registeredStoryPanelAsset({
   stageId:canonicalShot.stageId,comicEdition:canonicalShot.edition,
   protagonistGender:canonicalShot.gender,id:canonicalShot.shotId
- }),null,key+' historic original must not appear in the game');
+ });
+ if(item.asset.startsWith('./assets/story/new-originals/')){
+  assert(newOriginal,'Stage5 new image must have post-cutover provenance: '+key);
+  assert.equal(newOriginal.asset,item.asset,key);
+  assert.equal(newOriginal.sha256,item.sha256,key);
+  assert.equal(newOriginal.nativeQAComplete,true,key);
+  assert.equal(newOriginal.provenanceVerified,true,key);
+  assert.equal(newOriginal.visualP0Approved,false,key);
+  assert.equal(rendered,item.asset,'Approved new original registry must bind same verified bytes');
+ }else{
+  assert(item.asset.startsWith('./assets/story/chapter1-provisional-live/'),key);
+  const historicProof=JSON.parse(fs.readFileSync(item.provenance,'utf8'));
+  assert.equal(historicProof.shotKey,key);
+  assert(typeof historicProof.scriptText==='string'&&historicProof.scriptText.length>=8,
+   key+' old source must preserve its original screenplay for audit');
+  if(historicProof.qaStatus==='OWNER_PROVISIONAL'){
+   assert.equal(historicProof.sourceModel,'ChatGPT Images');
+   assert.equal(historicProof.finalP0Approved,false);
+   assert.equal(historicProof.humanVisualQAConfirmed,false);
+   assert.equal(historicProof.quality?.realReferenceBytesAttachedToImageGenerator,false);
+   assert.equal(historicProof.imageSha256,item.sha256);
+  }
+  assert.equal(rendered,newOriginal?.asset||null,
+   'Only separately verified stage5 NEW source may be live; archive is inactive');
+ }
 }
+
 for(const gender of ['male','female']){
  const key='c01-s04|pre|'+gender+'|c01-s04-m1';
  const item=CHAPTER1_PROVISIONAL_LIVE[key];

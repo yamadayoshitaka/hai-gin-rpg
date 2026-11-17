@@ -5,6 +5,22 @@
  * Never modify approved human-reviewed registries from this file.
  */
 export const CHAPTER1_PROVISIONAL_LIVE=Object.freeze({
+  "c01-s02|pre|male|c01-s02-m1": {
+    "asset": "./assets/story/chapter1-provisional-live/c01-s02__pre__male__c01-s02-m1.webp",
+    "sha256": "5f90fd72465ac45690e71cecda1aa369591da238de6f3a6e7817a964eb0befaa",
+    "provenance": "assets/story/chapter1-provisional-live/c01-s02__pre__male__c01-s02-m1.webp.generation.json",
+    "sourceDraft": "assets/story/chapter1-provisional-live/c01-s02__pre__male__c01-s02-m1.webp",
+    "status": "PROVISIONAL_OWNER_AUTHORIZED_PENDING_P0",
+    "originalLivePath": "./assets/story/chapters/c01/panels/c01-s02-m01-male.webp",
+    "stageId": "c01-s02",
+    "edition": "pre",
+    "gender": "male",
+    "provider": "ChatGPT Images",
+    "visibleHumanCast": [],
+    "characterIdentityVisuallyApproved": false,
+    "visualP0Approved": false,
+    "rollback": "Remove only this exact key to restore historical stage2 binding"
+  },
   "c01-s01|pre|male|c01-s01-m1": {
     "asset": "./assets/story/chapter1-provisional-live/c01-s01__pre__male__c01-s01-m1.webp",
     "sha256": "de58d985084b0ec85a20028d5e8baf6db9872c5c82d0296fcc7dbb36df0689e1",
