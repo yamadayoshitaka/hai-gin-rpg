@@ -50,7 +50,7 @@ small{font-size:11px}strong{font-weight:700}
 </style></head><body>
 <header><a href="./dev-menu.html">← メンテナンス</a><strong>⚙ 灰銀｜FF15品質バッチ管理</strong><a href="./monster-quality-review.html">モンスター品質KPI</a><a href="./creature-reconstruction-plan.html">108体再構成計画</a><button class="refresh" id="refresh" type="button">状況を更新</button></header>
 <main><h1>FF15級品質バッチ：顔・髪／衣装／オブジェクト／モンスター／召喚獣</h1>
-<p>顔・髪、衣装、モンスター、召喚獣は6つの検証テーマを10分ごとに巡回。オブジェクトは6担当を毎時並列検証。実際のモデル改修数と<strong>作業ブランチ・PR・QA・mainマージ・Pages公開</strong>を分けて確認できます。改修中の3Dモデルと本編の表示は、下の「PR版と本編を比較」から切り替えます。</p>
+<p>顔・髪、衣装、モンスター、召喚獣は各6テーマを10分間隔で実行する設定です（実際の実行頻度はGitHubの履歴で確認）。オブジェクトは6担当の毎時並列QAを設定しています。実際のモデル改修数と<strong>作業ブランチ・PR・QA・mainマージ・Pages公開</strong>を分けて確認できます。改修中の3Dモデルと本編の表示は、下の「PR版と本編を比較」から切り替えます。</p>
 <div class="summary" aria-live="polite"><span id="groupCount">6系統</span><span id="enabledCount">自動実行を確認中</span><span id="activeCount">GitHub実行状況を照合中</span><span id="schedulerCount">ChatGPT実行予約を確認中</span></div>
 <div class="select-area panel" aria-label="表示するバッチを選択">
  <label for="batchDisplaySelect">表示するバッチ
@@ -65,7 +65,15 @@ small{font-size:11px}strong{font-weight:700}
   </select>
  </label><span id="selectedBatchCount" class="muted" role="status">表示を準備中</span>
 </div>
-<p id="fresh" class="muted">GitHub Actionsは画面表示時・更新時に確認します。ChatGPTの実行中判定はこのページから取得できません。</p>
+<section class="panel" id="batchLaunchEvidence" aria-label="手動起動の検証結果">
+ <h2>起動とゲーム反映は別の工程</h2>
+ <p>11月17日23:35の実行確認：<a href="https://github.com/yamadayoshitaka/hai-gin-rpg/issues/575" target="_blank" rel="noopener noreferrer">Issue #575</a>
+ → <a href="https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44104676482" target="_blank" rel="noopener noreferrer">手動起動ワークフロー成功</a>
+ → <a href="https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44104745097" target="_blank" rel="noopener noreferrer">顔・髪QA成功</a>。
+ <strong>これは品質検査の成功であり、モデルのゲーム新規採用は確認されていません。</strong></p>
+ <p class="muted">GitHub Actionsの自動スケジュールが毎時6回実行された証拠ではありません。実行履歴は各カードから確認してください。手動指示にはGitHubでIssueを実際に作成する操作が必要です。403などでGitHubを開けない場合は各カードの「ChatGPT用指示をコピー」を使用できます。</p>
+</section>
+<p id="fresh" class="muted">GitHub Actionsの実行履歴は手動更新時だけ取得します。ChatGPTタスクの実行状況はここではリアルタイム判定できません。</p>
 <p class="panel"><strong>第1章漫画（ゲーム本編との照合）：</strong><span id="chapter4status">各ステージの本編原画を照合中</span>　<a href="./story-chapter1-approval.html?stage=c01-s04">漫画確認・差し戻し</a></p>
 <p class="panel"><strong>予算ルール：</strong><span id="storySpendPolicy">追加の有料APIは使用しません</span></p>
 <p class="panel"><strong>画像生成ルート：</strong>Cloudflare既設API（無料、毎日09:20に最大1回の制作バッチ）を優先。上限時は追加課金せずChatGPT Plusの手動生成へ引き継ぎます。<a id="fallbackLink" href="./story-chapter1-approval.html?stage=c01-s04&provider=chatgpt">未生成コマをChatGPTで制作する</a> （自動API呼出しではありません）</p>
@@ -104,7 +112,7 @@ small{font-size:11px}strong{font-weight:700}
  <p><strong>参考画像：</strong>ここに画像を選択・貼り付けて確認し、画像をコピーしてGitHub Issue本文へ貼り付けてください。画像はPagesから直接アップロードされません。</p>
  <p><strong>GitHub APIの403対策：</strong>ページ表示中は認証なしGitHub APIを自動連続呼出ししません。「状況を更新」を押した時だけ1回まとめて取得し、403・429時は再試行を抑制します。APIが403でもバッチ停止を意味するわけではありません。</p>
  <p><strong>実作業の工程別進捗：</strong>起動・ソース修正・QA・コミット・PR・マージ・公開を別々に表示します。「実作業未完了」は完了扱いにせず、次回引継ぎを表示します。工程台帳は最終保存時点、PRの最新コミットとマージ状態はGitHubから照会します。改修中の画面はPR版比較で開き、本編の公開SHAも別途照合します。</p>
- <p><strong>手動指示の送り方：</strong>各カードに修正内容を入力 →「手動指示を送る」→ GitHubのIssue画面で「Submit new issue」を押してください。これは1回限りの依頼で、GitHub認証情報をこのサイトに入力する必要はありません。</p>
+ <p><strong>手動指示の送り方：</strong>各カードに修正内容を入力 →「GitHubでIssueを作成して起動」→ GitHubのIssue画面で「Submit new issue」を押す必要があります。GitHubへ移動しただけではバッチは起動しません。GitHubが403の場合は「ChatGPT用指示をコピー」から、このチャットに貼り付けてください。これは1回限りの依頼で、GitHub認証情報をこのサイトに入力する必要はありません。</p>
  <p class="note">旧人モデル一括・旧モンスター一括は停止。新しい4系統は10分間隔、オブジェクトは既存の6担当を毎時並列でQA実行します。漫画は既存のChatGPT定期タスクを維持します。現在のスケジュール有効/無効はこのサイトから直接取得できず、最新のChatGPT実行日時は記録時点の情報です。GitHub ActionsのQA成功だけで画像生成・3D修正・本編反映の完了とは判断しません。追加の有料API課金は行いません。</p>
  <div class="links"><a href="https://github.com/yamadayoshitaka/hai-gin-rpg/actions" target="_blank" rel="noopener noreferrer">全GitHub Actionsを見る</a><a href="https://github.com/yamadayoshitaka/hai-gin-rpg/issues?q=is%3Aissue+is%3Aopen+%22hai-gin-batch%22" target="_blank" rel="noopener noreferrer">手動指示の履歴を見る</a></div>
 </footer>
@@ -234,7 +242,9 @@ function createCard(data){
     +JSON.stringify(cmd,null,2)+'\n```\n\n'
     +'バッチ作業の実行制御を変更してください。';
   const link=GH+'/issues/new?'+new URLSearchParams({title:'[hai-gin-switch] '+data.name+' '+(cmd.enabled?'ON':'OFF'),body});
-  const win=window.open(link,'_blank','noopener,noreferrer');if(!win)location.assign(link);
+  // Android popup return can be null even when a tab opened with noopener.
+  // Navigate the current tab exactly once; the user returns with Back.
+  window.location.assign(link);
   swText.textContent='GitHub Issue画面で「Submit new issue」を押して確定してください';
  });
  const links=tag('div','links');
@@ -293,20 +303,46 @@ function createCard(data){
   }catch{imgStatus.textContent='コピー非対応。GitHubのIssue本文にこの画像ファイルを直接添付してください'}
  });
  drop.append(help,chooser,preview,imgStatus,copy);c.appendChild(drop);
- const button=tag('button','submit','次の指示を手動で送る');button.type='button';c.appendChild(button);
- const feedback=paragraph('GitHubで内容の確認・送信が必要です。','note');feedback.setAttribute('role','status');c.appendChild(feedback);
+ const button=tag('button','submit','GitHubでIssueを作成して起動');button.type='button';c.appendChild(button);
+ const sendExplain=paragraph('このボタンだけでは起動しません。次のGitHub画面で「Submit new issue」を押すとQAが起動します。GitHubへのログインが必要です。','note');
+ c.appendChild(sendExplain);
+ const copyChat=tag('button','image-copy','ChatGPT用指示をコピー（GitHub 403時の代替）');
+ copyChat.type='button';c.appendChild(copyChat);
+ const manualText=tag('textarea','');manualText.readOnly=true;manualText.hidden=true;
+ manualText.setAttribute('aria-label','コピーできなかった場合のChatGPT用指示');c.appendChild(manualText);
+ const feedback=paragraph('実行未依頼：GitHub Issueを作成するか、指示をChatGPTへ貼り付けてください。','note');
+ feedback.setAttribute('role','status');c.appendChild(feedback);
+ copyChat.addEventListener('click',async()=>{
+  const cmd={category:data.id,target:target.el.value.trim(),instruction:instruction.value.trim(),max:1};
+  if(!cmd.instruction){feedback.textContent='先に改修指示を入力してください';instruction.focus();return}
+  if(cmd.target&&!/^[A-Za-z0-9:_-]{1,80}$/.test(cmd.target)){
+   feedback.textContent='対象IDは半角英数字と : _ - のみです';return;
+  }
+  const request='灰銀のレゾナンス：バッチセンターで指定した作業を、接続済みGitHub経由で実行してください。カテゴリ '+cmd.category+
+   '、対象 '+(cmd.target||'未完了の次対象')+'。指示：'+cmd.instruction+
+   '。無料条件・FF15級品質目標、実改修/QA/PR/本編採用を区別して結果を報告。';
+  try{
+   if(!navigator.clipboard?.writeText)throw Error('unsupported');
+   await navigator.clipboard.writeText(request);
+   manualText.hidden=true;feedback.textContent='ChatGPT用の指示をコピーしました。このチャットに貼り付けて送信してください。';
+  }catch{
+   manualText.hidden=false;manualText.value=request;manualText.select();
+   feedback.textContent='自動コピー不可。下のテキストを選択し、このチャットに貼り付けてください。';
+  }
+ });
  button.addEventListener('click',()=>{
   const cmd={category:data.id,target:target.el.value.trim(),instruction:instruction.value.trim(),max:1};
   if(cmd.target&&!/^[A-Za-z0-9:_-]{1,80}$/.test(cmd.target)){feedback.textContent='対象IDは半角英数字と : _ - で入力してください。';return}
   if(data.id==='world'&&cmd.target&&!/^(object:[a-z][\w-]*|stage:c\d{2}-s\d{2})$/.test(cmd.target)){feedback.textContent='対象は object:... または stage:c01-s04 の形式で指定してください。';return}
   if(!cmd.instruction){feedback.textContent='まず次の指示を入力してください。';instruction.focus();return}
   const content='<!-- hai-gin-hourly-batch-v1 -->\n```json\n'+JSON.stringify(cmd,null,2)+'\n```\n\n'
-   +'毎時品質改善の手動依頼。Issue作成後にカテゴリ別のQAを起動。実際のモデル変更は成果物の検証後に行う。'+(attachment?'\n\n参考画像：'+attachment.name+'（画像をGitHub Issue本文に貼り付けてください）':'');
+   +'毎時品質改善の手動依頼。Issue作成後にカテゴリ別QAのみ起動します。実際のモデル変更は別のChatGPT定期改修タスクがIssueを読み、実ソースを改善します。'+(attachment?'\n\n参考画像：'+attachment.name+'（画像をGitHub Issue本文に貼り付けてください）':'');
   const params=new URLSearchParams({title:'[hai-gin-batch] '+data.name+'：次の指示',body:content});
   const link=GH+'/issues/new?'+params.toString();
-  feedback.textContent=attachment?'参考画像をGitHub Issue本文に添付し、Submit new issueで確定してください。':'GitHub画面でSubmit new issueを押すと指示を送れます。';
-  const win=window.open(link,'_blank','noopener,noreferrer');
-  if(!win)window.location.assign(link);
+  feedback.textContent=attachment?'次のGitHub画面で画像を添付し、「Submit new issue」を押すまで未起動です。':'次のGitHub画面で「Submit new issue」を押すまで未起動です。';
+  // Always navigate exactly once. noopener popups can return null on Android
+  // even when opened, causing duplicate redirections and lost form state.
+  window.location.assign(link);
  });
  $('cards').appendChild(c);elements.set(data.id,{card:c,detail,activity,log,swText,swBtn,badge,previewStatus,previewLink,targetInput:target.el,progress:{current,stageGrid,progressTime,progressSummary,nextAction,progressEvidence},health});
 }
