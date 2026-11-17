@@ -17,6 +17,10 @@ on:
       - 'scripts/story-chatgpt-fallback-handoff.mjs'
       - 'src/story-generation-fallback.js'
       - 'qa/story-chatgpt-fallback-handoff.test.mjs'
+      - 'qa/story-chatgpt-stage2-intake.test.mjs'
+      - 'src/story-chapter1-provisional-live.js'
+      - 'assets/story/chapter1-provisional-live/c01-s02__pre__male__c01-s02-m1.webp'
+      - 'assets/story/chatgpt-candidates/c01-s02__pre__male__c01-s02-m15.webp'
 permissions:
   contents: read
   actions: write
@@ -45,6 +49,7 @@ jobs:
           node scripts/story-sequential-missing-batch.mjs --max 20
           node qa/story-sequential-missing-batch.test.mjs
           node qa/story-chatgpt-fallback-handoff.test.mjs
+          node qa/story-chatgpt-stage2-intake.test.mjs
       - name: Review first missing stage and safely reuse existing production paths
         if: github.event_name != 'pull_request'
         env:
