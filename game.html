@@ -62,6 +62,7 @@ import {comicPageAsset} from './src/story-chapter-comic.js';
 import {compactComicForStage} from './src/story-compact-comic.js?v=story-20261117-reader1';
 import {STORY_KEY_PEOPLE} from './src/story-cinematic.js';
 import {registeredStoryPanelAsset,storySheetCrop,storyArtDisplayUrl} from './src/story-panel-registered-art.js';
+import {oldStoryArtReuseAllowed} from './src/story-art-sourcing-policy.js';
 
 import {fantasyCueForMangaPanel} from './src/fantasy-scene-score.js';
 import {createGamePageAudio} from './src/game-page-audio.js';
@@ -112,7 +113,7 @@ function nextLine(){
 }
 function showIntroPage(){
  const shot=introFrames[index],cut=registeredStoryPanelAsset(shot);
- const sheet=comicPageAsset(introStory.id,'pre',introContext,shot.comicPage,shot.protagonistGender);
+ const sheet=oldStoryArtReuseAllowed(shot.stageId)?comicPageAsset(introStory.id,'pre',introContext,shot.comicPage,shot.protagonistGender):null;
  const cells=introFrames.filter(p=>p.comicPage===shot.comicPage).length;
  const display=$('introArt'),img=$('introPanelImage'),notice=$('introArtMissing'),ticket=++introImageRequest;
  display.style.aspectRatio='16 / 9';
@@ -136,7 +137,7 @@ function showIntroPage(){
    img.hidden=false;notice.hidden=true;
   };
   img.onerror=()=>{if(ticket!==introImageRequest)return;
-   if(type==='single'&&!cut?.includes('/chapter1-provisional-live/'))load(sheet,'sheet');else missing();
+   if(type==='single'&&sheet&&!cut?.includes('/chapter1-provisional-live/'))load(sheet,'sheet');else missing();
   };
   img.alt='第1章イベント前 '+(shot.protagonistGender==='female'?'女性':'男性')+'の第'+(index+1)+'コマ';
   img.src=storyArtDisplayUrl(asset);
