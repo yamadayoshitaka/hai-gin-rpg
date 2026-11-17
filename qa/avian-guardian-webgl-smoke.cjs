@@ -24,7 +24,7 @@ const ids=['m011','m012','m013','m014'];
    });
    try{
     await page.goto('http://127.0.0.1:8765/monster-manager.html?monster='+id+
-     '&v=phoenix-feather-hands-v19-20261118',
+     '&v=phoenix-eyeliner-keratin-v20-20261118',
      {waitUntil:'domcontentloaded',timeout:90000});
     await page.waitForFunction(expected=>{
      const v=window.__monsterQualityQA?.();
@@ -46,6 +46,8 @@ const ids=['m011','m012','m013','m014'];
        shape.faceScaleWidth<.09||!shape.thighSeparated||
        shape.thighRadius<.25||!shape.featherHands||!shape.independentArms||
        !shape.shortBeak||shape.beakLength>.70||
+        !shape.eyeliner||!shape.visiblePupils||
+        !shape.bareHandsHidden||!shape.raisedScutes||
        !Array.isArray(shape.featherHandDigits)||
        !shape.featherHandDigits.every(count=>count===3)||
        !shape.realKnees||!shape.thighMuscles||
