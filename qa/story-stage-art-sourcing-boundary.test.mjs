@@ -19,7 +19,20 @@ assert(requiresNewStoryArt('c01-s05'));
 assert(requiresNewStoryArt('c01-s10'));
 assert(requiresNewStoryArt('c02-s01'));
 assert(requiresNewStoryArt('c20-s10'));
-assert.deepEqual(NEW_STORY_ORIGINAL_ART,{},'New story images must not be falsely pre-registered');
+
+for(const [key,row] of Object.entries(NEW_STORY_ORIGINAL_ART)){
+ assert.equal(row.origin,'NEW_SCENE_GENERATED_AFTER_2026_11_17',key);
+ assert.equal(row.provenanceVerified,true,key);
+ assert.equal(row.nativeQAComplete,true,key);
+ assert.equal(row.visualP0Approved,false,key);
+ assert(row.asset.startsWith('./assets/story/new-originals/'),key);
+ assert(fs.existsSync(row.asset.slice(2)),'New original WebP bytes missing: '+key);
+ const source=fs.readFileSync(row.asset.slice(2));
+ assert.equal(source.toString('ascii',0,4),'RIFF',key);
+ assert.equal(source.toString('ascii',8,12),'WEBP',key);
+ assert.equal(row.sha256, (await import('node:crypto')).createHash('sha256').update(source).digest('hex'),key);
+}
+
 
 const historicalExamples=[
  ['c01-s05','pre','male','c01-s05-m1'],
@@ -33,7 +46,8 @@ for(const [stageId,comicEdition,gender,id] of historicalExamples){
  const key=[stageId,comicEdition,gender,id].join('|');
  assert(RESTORED_STORY_ARCHIVE[key], 'Prior restoration proof is preserved for rollback '+key);
  assert.equal(restoredStoryArchivePanel(shot),null,'Historical stage5 must not be playable');
- assert.equal(registeredStoryPanelAsset(shot),null,'Old stage5 image is blocked from game');
+ assert.equal(registeredStoryPanelAsset(shot),NEW_STORY_ORIGINAL_ART[key]?.asset||null,
+  'Only a NEW verified scene original can replace archived stage5 art');
 }
 const oldFemale=chapter1ProvisionalLivePanel({
  stageId:'c01-s05',comicEdition:'pre',protagonistGender:'female',id:'c01-s05-m1'
@@ -41,9 +55,10 @@ const oldFemale=chapter1ProvisionalLivePanel({
 assert(oldFemale,'The older female stage5 image archive must remain intact');
 assert.equal(registeredStoryPanelAsset({
  stageId:'c01-s05',comicEdition:'pre',protagonistGender:'female',id:'c01-s05-m1'
-}),null,'Prior owner provisional art must also be excluded');
+}),NEW_STORY_ORIGINAL_ART['c01-s05|pre|female|c01-s05-m1']?.asset||null,
+ 'Prior stage5 provisional art must be excluded unless separately replaced by a verified NEW source');
 
-let checked=0,oldRegistered=0,newMissing=0;
+let checked=0,oldRegistered=0,newMissing=0,newRegistered=0;
 for(const chapter of COMPACT_TWENTY_CHAPTER_PLAN)
  for(const stageId of chapter.stageIds)for(const gender of ['male','female']){
   const ctx={protagonistGender:gender,chapterOpeningSeen:false};
@@ -55,15 +70,17 @@ for(const chapter of COMPACT_TWENTY_CHAPTER_PLAN)
     if(oldStoryArtReuseAllowed(stageId)){
      if(asset)oldRegistered++;
     }else{
-     assert.equal(asset,null,'An old or unapproved CG leaked to stage5+: '+stageId+'/'+scene.id);
-     newMissing++;
+     const key=[stageId,scene.comicEdition,gender,scene.id].join('|');
+     assert.equal(asset,NEW_STORY_ORIGINAL_ART[key]?.asset||null,
+      'Old or unverified artwork leaked to stage5+: '+key);
+     if(asset)newRegistered++;else newMissing++;
     }
     checked++;
    }
   }
  }
 assert(oldRegistered>=30,'Previous stages 1-4 image reuse unexpectedly removed');
-assert(newMissing>1000);
+assert(newMissing+newRegistered>1000);
 const viewer=fs.readFileSync('src/story-manga-viewer.js','utf8');
 const generator=fs.readFileSync('scripts/generate-story-chapter1-free-batch.mjs','utf8');
 const workflow=fs.readFileSync('.github/workflows/story-chapter1-free-complete-draft-production.yml','utf8');
@@ -78,5 +95,5 @@ assert(workflow.includes('--mode generate --max-pages 12 --start-stage "$START_S
 assert(restore.includes('if(!oldStoryArtReuseAllowed(stageId))continue'));
 console.log(JSON.stringify({status:'PASS',scopeOld:'c01-s01..c01-s04',
  firstNew:'c01-s05',chapters:20,stages:200,checked,
- priorReused:oldRegistered,newOnlyPlaceholders:newMissing,
+ priorReused:oldRegistered,newOnlyPlaceholders:newMissing,newOriginalRegistered:newRegistered,
  stage5ArchivedButInactive:historicalExamples.length,paidGenerationCalls:0}));
