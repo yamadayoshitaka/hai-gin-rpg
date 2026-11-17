@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {overviewPinLabel,placeOverviewSquadPins} from '../src/battle-overview-squad-pins.js';
+import {overviewPinLabel,placeOverviewSquadPins,recommendOverviewGroupPlans} from '../src/battle-overview-squad-pins.js';
+import {BATTLE_PLAN_PRESETS} from '../src/battle-plan-recommendations.js';
+import {STRATEGY_METHODS} from '../src/three-step-strategy-catalog.js';
 
 assert.equal(overviewPinLabel({team:0,group:3,division:2,squadIndex:7}),'3-2');
 assert.equal(overviewPinLabel({team:1,group:0,division:0,squadIndex:4}),'敵5');
@@ -24,6 +26,18 @@ assert.deepEqual([...placed],[...placeOverviewSquadPins(points,bounds)],
 const empty=placeOverviewSquadPins([],{left:0,right:0,top:100,bottom:100});
 assert.equal(empty.size,0);
 
+const assault=recommendOverviewGroupPlans(BATTLE_PLAN_PRESETS,STRATEGY_METHODS,{
+ jobs:['sword','sword','fighter'],stageKind:'explore',terrain:'plains'
+});
+assert.equal(assault[0].id,'assault','Melee squad should prefer concentrated assault');
+assert.ok(assault[0].score>50,'Free battle recommendations cannot all be placeholder 50s');
+const rescue=recommendOverviewGroupPlans(BATTLE_PLAN_PRESETS,STRATEGY_METHODS,{
+ jobs:['priest','priest','summoner'],stageKind:'defend',terrain:'urban',woundedRatio:.7
+});
+assert.equal(rescue[0].id,'support','Wounded healers prioritize a restorative template');
+assert.ok(rescue[0].score>assault.find(p=>p.id==='support').score);
+assert.ok(!rescue.some(p=>p.score<0||p.score>100));
+
 const battle=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
 const strategy=readFileSync(new URL('../src/targeted-strategy-runtime.js',import.meta.url),'utf8');
 assert.match(battle,/id="overviewSquadHud" hidden/);
@@ -38,6 +52,7 @@ assert.match(battle,/body\.compact-command-dock #allySquadRibbon,body\.compact-c
 assert.match(battle,/id="overviewDivisionSelect".*個別号令なし/);
 assert.match(battle,/selectOverviewSquad\(0,event\.target\.value\)/);
 assert.match(battle,/targetedStrategyUi\.open\(group,\{\s*startAtRecommendations:true,groupOnly:true/);
+assert.match(battle,/recommendOverviewGroupPlans\(BATTLE_PLAN_PRESETS,STRATEGY_METHODS/);
 assert.match(strategy,/function open\(id=null,\{squadId=null,groupOnly=false,startAtRecommendations=false\}=\{\}\)/);
 assert.match(strategy,/step=startAtRecommendations\?'family':'scope'/);
 assert.match(strategy,/if\(overviewGroupOnly\)return; \/\/ Overview divisions are inspection selections/);
