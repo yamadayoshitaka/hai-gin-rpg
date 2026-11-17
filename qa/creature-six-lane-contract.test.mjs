@@ -27,11 +27,13 @@ test('Face hair and wardrobe and creature variants have independent batch switch
  for(const k of ['human','world','monster'])assert.equal(registry.groups[k].enabled,false);
  for(const k of ['anime'])assert.equal(registry.groups[k].enabled,true);
 });
-test('Monster adoption and real combat source are the same canonical routing graph',()=>{
- const code=fs.readFileSync('tactics-wireframe.html','utf8');
+test('Enemy and summoned battle renderer both resolve the canonical registered model',()=>{
+ const enemy=fs.readFileSync('src/battle-registered-monster-model.js','utf8');
+ const summon=fs.readFileSync('src/monster-summon-renderer.js','utf8');
  const route=fs.readFileSync('src/creature-game-model-routing.js','utf8');
  assert.match(route,/GAME_MONSTER_MODEL_REGISTRY/);
  assert.match(route,/resolveRegisteredMonsterModel/);
- assert(/creature-game-model-routing\.js|monster-summon-registry\.js|creature-game-model/i.test(code),
-   'Battle entrypoint needs registered creature routing');
+ assert.match(enemy,/creature-game-model-routing\.js/);
+ assert.match(summon,/creature-game-model-routing\.js/);
+ assert.match(summon,/monster-summon-registry\.js/);
 });
