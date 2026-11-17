@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
+import {readFileSync} from 'node:fs';
 import {createDetailedOutfit} from '../src/outfit-maintenance-model.js';
 
 // Exercise the REAL procedural geometry with a complete anatomical landmark
@@ -99,3 +100,21 @@ assert.ok(jobCape.geometry.boundingBox.min.x < -.1&&jobCape.geometry.boundingBox
 assert.ok(!summoned.getObjectByName('hero-protagonist-draped-mantle'),
  'hero cape must not duplicate an existing job cape');
 console.log('PASS: curved rear armor, light-job exclusion, hero-only cape, no duplicate capes at preview/battle quality');
+
+
+// Regression: the imported GLB's original rear-biased pauldron center
+// must NOT survive unchanged in the male hero's rear inspection view.
+const shoulderRuntime=readFileSync(new URL(
+ '../src/character-system/segmented-armor-runtime.js',import.meta.url),'utf8');
+assert.match(shoulderRuntime,/case 'shoulder':\s*\{[\s\S]*?upperarm[\s\S]*?clavicle/,
+ 'shoulder anchor must sit at the clavicle/upper-arm junction');
+assert.match(shoulderRuntime,/slot==='shoulder'\s*\?nearestArmorLegSide\(center,shoulderLeft,shoulderRight\)/,
+ 'pauldron left/right assignment must use shoulders, not legs');
+assert.match(shoulderRuntime,/slot==='shoulder'\)\s*\{[\s\S]*?delta\.addScaledVector\(bodyForward,\.035\)/,
+ 'pauldron must be moved forward to its anatomical anchor, not left on the back');
+assert.match(shoulderRuntime,/shoulderSideCounts,shoulderPlacement:/,
+ 'both sides and attachment revision must be inspectable in runtime diagnostics');
+const maleViewer=readFileSync(new URL('../male-body-studio.html',import.meta.url),'utf8');
+assert.match(maleViewer,/v76-pauldron-shoulder/,
+ 'male full-body viewer must bypass v75 cached equipment modules');
+console.log('PASS: hero shoulder plates fit the actual arms instead of the back');
