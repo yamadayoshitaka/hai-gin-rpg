@@ -741,7 +741,8 @@ export function disposeMonsterSculpture(model){
    if(!obj.isMesh)return;
    if(obj.userData.ownedGeometry)obj.geometry.dispose();
    if(obj.isSkinnedMesh)obj.skeleton?.dispose?.();
-   releaseMaterial(obj.material);
+   if(obj.userData.ownedEffectMaterial)obj.material?.dispose();
+   else releaseMaterial(obj.material);
  });
  model.parent?.remove(model);
 }
