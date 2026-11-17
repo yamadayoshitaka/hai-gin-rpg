@@ -27,7 +27,7 @@ assert.match(face,/BATTLE_FACE_LIGHT_RESPONSE_VERSION='battle-face-light-respons
 assert.match(contract,/sourceSteps:\[/);
 assert.match(pipeline,/getBattleCharacterPipelineReport/);
 assert.match(pipeline,/getBattleStartupStats/);
-assert.match(pipeline,/army=/' );
+assert.match(pipeline,/army=/);
 for(const target of ['master-model-manager.html','face-body-studio.html',
   'action-test.html','model-validation.html','tactics-wireframe.html'])
  assert.match(pipeline,new RegExp(target.replace('.','\\.')),'pipeline reference '+target);
