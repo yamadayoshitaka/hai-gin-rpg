@@ -2,13 +2,13 @@
   "schemaVersion": 3,
   "asOf": "2026-11-17T11:15:00Z",
   "tz": "Asia/Tokyo",
-  "description": "旧人モデル・旧オブジェクト・旧モンスターバッチを表示から外し、顔髪・衣装・モンスター・召喚獣のFF15目標各6担当に整理。旧履歴は別ファイル保存。1時間6回のGitHub Actionsで対象を分類/QA。モデル自動改善やゲーム適用済みの宣言とは区別。",
+  "description": "旧人モデル・旧オブジェクト・旧モンスターバッチを表示から外し、顔髪・衣装・モンスター・召喚獣のFF15目標各6担当に整理。旧履歴は別ファイル保存。1時間6回のGitHub Actionsで対象を分類/QA。モデル自動改善やゲーム適用済みの宣言とは区別。 FF15新4系統はChatGPT実改修タスクを各1時間に1回新規作成（旧人物・旧オブジェクト・旧モンスタータスクは停止）。GitHub Actionsは各系統6回/時間の独立QA。",
   "groups": [
     {
       "id": "faceHair",
       "name": "顔・髪 FF15品質回帰",
       "subtitle": "目・鼻・口・表情・髪の6群・LOD",
-      "source": "GitHub Actions（10分間隔QA）",
+      "source": "ChatGPT毎時実ソース回帰／GitHub Actions毎時6回QA",
       "autoEnabled": true,
       "time": "毎時03/13/23/33/43/53分（日本時間の実行開始は遅れる場合あり）",
       "last": null,
@@ -20,13 +20,17 @@
       "previewGroup": "human",
       "schedulerEnabled": true,
       "details": "承認済み顔・髪画像をFF15級品質の目標とし、眼・鼻・唇・表情・髪6分割・動作/LODを一時間で一巡。既存男女の全髪型IDを6担当に自動均等割当。顔・髪の実ソース修正と画面QAは別に記録。",
-      "goal": "実3D変更、男女・正面/側面/背面WebGL、アクション、Android FPS、PR/main/Pages公開を通過した場合だけ本編採用。"
+      "goal": "実3D変更、男女・正面/側面/背面WebGL、アクション、Android FPS、PR/main/Pages公開を通過した場合だけ本編採用。",
+      "automationId": "6afc3d0dbd548191acca034209d3c165",
+      "automationStart": "21:01 JST",
+      "automationSchedule": "毎時1回、担当6工程を巡回（ChatGPT側の実改修はGitHub QAとは別）",
+      "schedulerLastVerified": "2026-11-17"
     },
     {
       "id": "outfit",
       "name": "衣装 FF15品質回帰",
       "subtitle": "形状・PBR・接合・装飾・アクション・LOD",
-      "source": "GitHub Actions（10分間隔QA）",
+      "source": "ChatGPT毎時実ソース回帰／GitHub Actions毎時6回QA",
       "autoEnabled": true,
       "time": "毎時03/13/23/33/43/53分",
       "last": null,
@@ -38,13 +42,17 @@
       "previewGroup": "human",
       "schedulerEnabled": true,
       "details": "各職業/性別の衣装を一時間で6テーマ巡回。肌色の背面板、鎧の浮遊、踵/膝の破れ、騎乗/動作での貫通、低LODの欠損を分類してQA。",
-      "goal": "実衣装・マテリアル・リグ/LODを変更したSHAと対象別QAがなければ改善0。本編共通ランタイムへの差分が安全に公開された場合のみ適用。"
+      "goal": "実衣装・マテリアル・リグ/LODを変更したSHAと対象別QAがなければ改善0。本編共通ランタイムへの差分が安全に公開された場合のみ適用。",
+      "automationId": "6afc3d1062848191a139245ad86ba04b",
+      "automationStart": "21:16 JST",
+      "automationSchedule": "毎時1回、担当6工程を巡回（ChatGPT側の実改修はGitHub QAとは別）",
+      "schedulerLastVerified": "2026-11-17"
     },
     {
       "id": "creatureMonster",
       "name": "モンスター 6系統回帰",
       "subtitle": "敵50体・種族別の写実解剖/動作",
-      "source": "GitHub Actions（10分間隔QA）",
+      "source": "ChatGPT毎時実ソース回帰／GitHub Actions毎時6回QA",
       "autoEnabled": true,
       "time": "毎時05/15/25/35/45/55分",
       "last": null,
@@ -56,13 +64,17 @@
       "previewGroup": "monster",
       "schedulerEnabled": true,
       "details": "犬猫・鳥・竜水棲・虫蜘蛛・不死魔族・ゴーレムの6分類で50体を1時間に一巡。m001を共通品質基準とするが種の固有骨格を維持。m005/m006保護。",
-      "goal": "対象ID別の実メッシュ改善+WebGLとAndroid性能+ゲーム採用経路+権利QA必須。見本画像/QAのみでは実モデル採用しない。"
+      "goal": "対象ID別の実メッシュ改善+WebGLとAndroid性能+ゲーム採用経路+権利QA必須。見本画像/QAのみでは実モデル採用しない。",
+      "automationId": "6afc3d131abc81918e4895e04f1c82dd",
+      "automationStart": "21:31 JST",
+      "automationSchedule": "毎時1回、担当6工程を巡回（ChatGPT側の実改修はGitHub QAとは別）",
+      "schedulerLastVerified": "2026-11-17"
     },
     {
       "id": "creatureSummon",
       "name": "召喚獣 6系統回帰",
       "subtitle": "派生召喚50体＋専用8体・演出/リグ",
-      "source": "GitHub Actions（10分間隔QA）",
+      "source": "ChatGPT毎時実ソース回帰／GitHub Actions毎時6回QA",
       "autoEnabled": true,
       "time": "毎時05/15/25/35/45/55分",
       "last": null,
@@ -74,7 +86,11 @@
       "previewGroup": "monster",
       "schedulerEnabled": true,
       "details": "モンスター派生50体＋専用8体の解剖・衣装・召喚演出/飛行/騎乗・攻撃・LODを系統別に巡回。人型は人物母体から派生、獣型は動物本来の骨格。",
-      "goal": "敵版と召喚版の色・サイズ・動作/FX差分を検査し、採用モデルの同一性と50vs50/1000vs1000負荷を検証。"
+      "goal": "敵版と召喚版の色・サイズ・動作/FX差分を検査し、採用モデルの同一性と50vs50/1000vs1000負荷を検証。",
+      "automationId": "6afc3d15e0088191a58eed222e3434d6",
+      "automationStart": "21:46 JST",
+      "automationSchedule": "毎時1回、担当6工程を巡回（ChatGPT側の実改修はGitHub QAとは別）",
+      "schedulerLastVerified": "2026-11-17"
     },
     {
       "id": "anime",
