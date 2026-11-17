@@ -1,0 +1,17 @@
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {selectBattleFaceExpression as select,battleFaceExpressionHold as hold} from '../src/character-system/battle-face-action-policy.js';
+assert.equal(select({attacking:true,moving:true}),'shout');
+assert.equal(select({hit:true,attacking:true}),'startled');
+assert.equal(select({casting:true,moving:true}),'focused');
+assert.equal(select({moving:true}),'determined');
+assert.equal(select({}),'serious');
+assert.equal(select({defeated:true,hit:true}),'sad');
+assert.ok(hold('shout')>.2);
+const source=readFileSync(new URL('../src/character-system/battle-artist-head-graft.js',import.meta.url),'utf8');
+const battle=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
+assert.match(source,/setBattleExpression:id=>/);
+assert.match(battle,/selectBattleFaceExpression\(\{hit,casting,attacking,moving\}\)/);
+assert.match(battle,/a\.masterHead\.setBattleExpression\(expression\)/);
+assert.match(battle,/battleFaceExpressionHold\(expression\)/);
+console.log('PASS: action-aware protagonist expression with bounded vertex updates');

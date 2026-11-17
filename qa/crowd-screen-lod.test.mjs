@@ -25,7 +25,7 @@ const atlas=readFileSync(new URL('../src/crowd-impostor-atlas.js',import.meta.ur
 const game=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
 assert.match(atlas,/preview\.add\(person\)/,
   '遠景画像は近景と同じ、着衣済みの生きた実モデルから撮影する');
-assert.match(atlas,/actor\.character\.play\(state\)/,'実際のリターゲット済みモーションを撮影する');
+assert.match(atlas,/actor\.character\.play\(state,\{transition:false\}\)/,'補間を除いた元のリターゲット済みモーションを撮影する');
 assert.match(atlas,/actor\.outfit\.sync\(\)/,'衣装を人体に合わせた後でGPU撮影する');
 assert.match(atlas,/readRenderTargetPixels/,'生成した画像が空でないことをGPUから検査する');
 assert.match(atlas,/const TILE=224/,'遠景を224pxの実装備モデルで撮影して輪郭を保つ');

@@ -103,8 +103,8 @@ export async function captureCrowdImpostorAtlas(renderer,actor,{tileSize=TILE}={
     renderer.setScissorTest(true);
     for(let row=0;row<poses.length;row++){
       const [state,delta]=poses[row];
-      let played=await actor.character.play(state);
-      if(!played&&state==='skill')played=await actor.character.play('attack');
+      let played=await actor.character.play(state,{transition:false});
+      if(!played&&state==='skill')played=await actor.character.play('attack',{transition:false});
       if(state==='run'){
         const clip=actor.character.diagnostics?.()?.clip??'';
         // v4.6.33 supplies real Running_* to every job. A running atlas
@@ -115,7 +115,7 @@ export async function captureCrowdImpostorAtlas(renderer,actor,{tileSize=TILE}={
       }
       // A priest or summoner may have no independent skill clip. Non-run
       // gestures may use the recorded idle portrait; RUN may NEVER do so.
-      if(!played&&state!=='idle')played=await actor.character.play('idle');
+      if(!played&&state!=='idle')played=await actor.character.play('idle',{transition:false});
       if(!played)throw Error(`${actor.job.name}: 実モデルの${state}モーションを撮影できません`);
       // Match GPU's two genuine left/right footfall samples. The old atlas
       // advanced arbitrary clip seconds (.18/.55), so the distant 1000-person
@@ -152,7 +152,7 @@ export async function captureCrowdImpostorAtlas(renderer,actor,{tileSize=TILE}={
     renderer.setScissorTest(previousScissorTest);
     renderer.setClearColor(previousClearColor,previousClearAlpha);
     actor.character.syncLocomotionPhase(null);
-    await actor.character.play('idle');actor.character.update(.01);actor.outfit.sync();
+    await actor.character.play('idle',{transition:false});actor.character.update(.01);actor.outfit.sync();
   }
   return {target,material:createImpostorMaterial(target.texture),audit};
 }

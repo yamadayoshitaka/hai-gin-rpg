@@ -396,6 +396,11 @@ export function attachBattleArtistHead({character,recipe,source,pattern=null,ani
   headFit:fit,cranialFit:proportionFit,nearDetail:true,cosmeticMeshes:cosmetic.length,
   reusedSculptGeometry:prototypeReused,
   expressions:!!expression,
+  // Real mesh expressions change only when the combat action changes.
+  setBattleExpression:id=>{
+   if(!expression||expression.getState().expression===id)return false;
+   expression.setExpression(id);return true;
+  },
   setNearDetail(value){setNearDetail(value);result.nearDetail=near;},
   update(dt){if(result.nearDetail)expression?.update(dt);},
   dispose(){releaseBattleStudioHair(result);expression?.dispose();master.root.removeFromParent();}
@@ -501,7 +506,9 @@ export function equipBattleStudioHair(artistHead,pattern,{hero=false,quality='ne
  // Old variant stays visible throughout construction, including a failed bake.
  const previousWig=artistHead.studioWig||null;
  if(!wig){
-  const count=quality==='middle'?112:hero?360:168;
+  // Slightly denser middle silhouette, visibly fuller near hair. This is
+  // cached static geometry with zero additional hair-physics frame cost.
+  const count=quality==='middle'?120:hero?400:208;
   const scalp=cranialScalpSurface(artistHead.face,{
    cranialFraction:artistHead.cranialFit?.cranialFraction??.65
   });

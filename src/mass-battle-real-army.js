@@ -324,10 +324,10 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
     // or non-rigged proxy. Each soldier uses its own phase/action on the GPU.
     const ridingPose=createRidingPoseController(representative.character.model);
     async function capture(state,delta,attribute,fallback,{mounted=false}={}){
-      let ok=await representative.character.play(state);
+      let ok=await representative.character.play(state,{transition:false});
       // Run samples must NEVER quietly replace missing Running_A with the
       // much slower Walking_A. v4.6.33 resolves a shared real run for all jobs.
-      if(!ok&&fallback)ok=await representative.character.play(fallback);
+      if(!ok&&fallback)ok=await representative.character.play(fallback,{transition:false});
       const capturedClip=representative.character.diagnostics?.()?.clip??null;
       if((attribute==='crowdWalkA'||attribute==='crowdWalkB')&&
         (!ok||!/^Running(?:_|$)/.test(capturedClip||''))){

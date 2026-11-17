@@ -53,7 +53,7 @@ assert.match(battle,/for\(const cached of variants.values\(\)\)cached.root.visib
  'Switch near/middle by visibility, never by asynchronous detachment');
 assert.match(battle,/artistHead.studioWigQuality!=='middle'/,
  'Dense geometry may be recycled only when the normal haircut is active');
-assert.match(battle,/const count=quality==='middle'\?112:hero\?360:168/);
+assert.match(battle,/const count=quality==='middle'\?120:hero\?400:208/);
 assert.match(battle,/normalLayerCount:quality==='middle'\?1:2/);
 assert.match(battle,/battleStableCoverage:true/);
 assert.match(hair,/shortBackStrips=shortHair&&battleStableCoverage&&rearCandidates\.length\?96:0/);
@@ -61,7 +61,7 @@ assert.match(hair,/shortLength=cutKind==='buzz'\?\(battleStableCoverage\?\.088:\
 assert.match(hair,/mesh\.userData\.shortBackCoverageStripCount=shortBackStrips/);
 assert.match(rig,/applyBattleTorsoLining\(copy/);
 assert.match(rig,/opaqueTorsoLiningMaterials\+\+/);
-assert.match(game,/battle-artist-head-graft\.js\?v=20261117-stable-hair1/);
+assert.match(game,/battle-artist-head-graft\.js\?v=20261117-hero-face-groom2/);
 assert.match(game,/rigged-outfit-runtime\.js\?v=20261117-mount-hair1/);
 source.dispose();texture.dispose();
 console.log('PASS: atomic wig upgrades, short scalp coverage and opaque torso from same source draw slots');
