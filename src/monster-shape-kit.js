@@ -388,7 +388,8 @@ export function createSculpture(spec,detail='high'){
   * stacking cylinders at moving joints.
   */
  const felineContinuousLimb=(leg,distal,toe,{fore=true,side=1,name='feline-continuous-limb'}={})=>{
-   if(!leg||!distal||!toe)throw Error('Feline limb requires three moving joints');
+   if(!leg||!distal||!toe||!leg.parent)
+     throw Error('Feline limb requires torso, hip, knee and paw joints');
    // The broad proximal rings remain inside the torso and the distal rings
    // continue into the paw. No separate seam cover geometry is required.
    const sections=fore?[
@@ -420,9 +421,17 @@ export function createSculpture(spec,detail='high'){
        const y=a[0]+(b[0]-a[0])*t,z=a[1]+(b[1]-a[1])*t;
        const rx=(a[2]+(b[2]-a[2])*t)*.81;
        const rz=(a[3]+(b[3]-a[3])*t)*.80;
-       const lower=smooth((.17-y)/.29);
-       const paw=smooth((-.35-y)/.22);
-       const w0=1-lower,w1=lower*(1-paw),w2=lower*paw;
+       // The upper skin is ANCHORED TO THE TORSO, not to the rotating
+       // hip. The old three-leg-bone version rotated its cut edge out of
+       // the croup during a step, exposing a stump. Smooth shoulder/hip
+       // deform into thigh -> hock -> paw without independent joint tubes.
+       const torsoLock=smooth((y-.19)/.45);
+       const knee=smooth((.23-y)/.34);
+       const paw=smooth((-.34-y)/.23);
+       const w0=torsoLock;
+       const w1=(1-torsoLock)*(1-knee);
+       const w2=(1-torsoLock)*knee*(1-paw);
+       const w3=(1-torsoLock)*knee*paw;
        for(let j=0;j<=radial;j++){
          const theta=j/radial*2*Math.PI;
          const muscle=1+.028*Math.cos(theta*3)*
@@ -433,8 +442,8 @@ export function createSculpture(spec,detail='high'){
          vertices.push(Math.cos(theta)*rx*muscle-side*medial,y,
            z+Math.sin(theta)*rz*muscle);
          uv.push(j/radial,(row+t)/(sections.length-1));
-         boneIndices.push(0,1,2,0);
-         weights.push(w0,w1,w2,0);
+         boneIndices.push(0,1,2,3);
+         weights.push(w0,w1,w2,w3);
        }
      }
    const last=sections[sections.length-1];
@@ -443,7 +452,7 @@ export function createSculpture(spec,detail='high'){
      vertices.push(Math.cos(theta)*last[2]*.81,last[0],
        last[1]+Math.sin(theta)*last[3]*.80);
      uv.push(j/radial,1);
-     boneIndices.push(0,1,2,0);weights.push(0,0,1,0);
+     boneIndices.push(0,1,2,3);weights.push(0,0,0,1);
    }
    const bands=(sections.length-1)*steps;
    for(let row=0;row<bands;row++)for(let j=0;j<radial;j++){
@@ -455,10 +464,10 @@ export function createSculpture(spec,detail='high'){
    const rootCenter=vertices.length/3;
    // Cap centre shares the same medial blend as the first ring.
    vertices.push(-side*.100,sections[0][0]+.026,sections[0][1]);
-   uv.push(.5,0);boneIndices.push(0,1,2,0);weights.push(1,0,0,0);
+   uv.push(.5,0);boneIndices.push(0,1,2,3);weights.push(1,0,0,0);
    const pawCenter=vertices.length/3;
    vertices.push(0,last[0]-.018,last[1]);
-   uv.push(.5,1);boneIndices.push(0,1,2,0);weights.push(0,0,1,0);
+   uv.push(.5,1);boneIndices.push(0,1,2,3);weights.push(0,0,0,1);
    const lastStart=bands*(radial+1);
    for(let j=0;j<radial;j++){
      indices.push(rootCenter,j+1,j);
@@ -470,10 +479,14 @@ export function createSculpture(spec,detail='high'){
    geo.setAttribute('skinIndex',new THREE.Uint16BufferAttribute(boneIndices,4));
    geo.setAttribute('skinWeight',new THREE.Float32BufferAttribute(weights,4));
    geo.setIndex(indices);geo.computeVertexNormals();geo.computeBoundingSphere();
-   const bone0=new THREE.Bone(),bone1=new THREE.Bone(),bone2=new THREE.Bone();
-   bone0.name=name+'-scapula';bone1.name=name+'-elbow';
-   bone2.name=name+'-metapodial';
-   leg.add(bone0);distal.add(bone1);toe.add(bone2);
+   const bone0=new THREE.Bone(),bone1=new THREE.Bone(),
+     bone2=new THREE.Bone(),bone3=new THREE.Bone();
+   bone0.name=name+'-torso-anchor';
+   bone1.name=name+'-hip';bone2.name=name+'-stifle';
+   bone3.name=name+'-metapodial';
+   // Bone0 does NOT inherit hip rotation. This fixes the apparent
+   // shoulder/haunch separation in idle, walk, run and turn animations.
+   leg.parent.add(bone0);leg.add(bone1);distal.add(bone2);toe.add(bone3);
    const skin=new THREE.SkinnedMesh(geo,material(tone.skin,
      {rough:.86,metal:0},spec,'skin',detail));
    skin.name=name;skin.castShadow=true;skin.receiveShadow=true;
@@ -481,8 +494,9 @@ export function createSculpture(spec,detail='high'){
    skin.userData.ownedGeometry=true;
    skin.userData.anatomicalLimb=true;
    skin.userData.felineContinuousSurface=true;
-   skin.userData.skinningBones=3;
-   skin.userData.jointTopology='closed-rings-smooth-three-bone-weights';
+   skin.userData.skinningBones=4;
+   skin.userData.jointTopology='torso-anchored-closed-rings-four-bone-weights';
+   skin.userData.torsoAnchoredProximalSkin=true;
    skin.userData.felineSealedTop=true;
    skin.userData.felineSealedBottom=true;
    skin.userData.felineEndCapTriangles=radial*2;
@@ -491,7 +505,7 @@ export function createSculpture(spec,detail='high'){
    skin.userData.felineHipSculpt=fore?'scapular-fascia':'gluteal-femur-contour';
    leg.add(skin);
    root.updateMatrixWorld(true);
-   skin.bind(new THREE.Skeleton([bone0,bone1,bone2]));
+   skin.bind(new THREE.Skeleton([bone0,bone1,bone2,bone3]));
    return skin;
  };
  /** Buried curved horn/ivory root with continuous ridged tapered skin. */
