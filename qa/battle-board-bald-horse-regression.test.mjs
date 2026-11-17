@@ -38,9 +38,9 @@ const exposed=battleClosedBackCoverage({quality:'battle',
 assert.equal(exposed.closed,false,'never mask genuinely uncovered back skin');
 
 const outfit=read('src/character-system/rigged-outfit-runtime.js');
-assert.match(outfit,/if\(lowDetail&&opaqueTorsoLiningMaterials>0\)/,
+assert.match(outfit,/if\\(lowDetail&&\\(opaqueTorsoLiningMaterials\\+sourceOpaqueTorsoMaterials\\)>0\\)/,
  'only validated source-fabric costumes suppress redundant back plates');
-assert.match(outfit,/panel\.visible=false;panel\.userData\.replacedByOpaqueSourceBack=true/,
+assert.match(outfit,/panel\\.visible=false;panel\\.userData\\.replacedByOpaqueSourceBack=true/,
  'hide flat duplicate sheets, including in the captured GPU army');
 for(const name of ['complete-back-tunic-lining','heroic-cuirass-backplate',
  'l-cuirass-closed-flank','r-cuirass-closed-flank'])
