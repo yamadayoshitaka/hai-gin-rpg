@@ -1528,7 +1528,7 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
      const toe=g.group('toe'+name,[0,-.436,.144],distal);
      toe.userData.felinePad=true;
      const limbSkin=g.felineContinuousLimb(leg,distal,toe,{
-       fore:fore>0,name:'feline-continuous-skin-'+name
+       fore:fore>0,side,name:'feline-continuous-skin-'+name
      });
      limbSkin.userData.felinePhysicalMother='m007';
      g.sphere(toe,'skin',[0,-.033,.018],
@@ -2035,9 +2035,22 @@ const wolfKingMane=(s.id==='m001'||cloneCanine)?[
    s.id==='m004'?[0,.11,-.03]:[0,beastRemesh?1.176:1.35,beastRemesh?-.68:-.55],
    s.id==='m004'?g.pivots.pelvis:
    (felineMaster||cloneCanine?torso:g.root));
- g.tube(tail,'skin',[[0,0,.05],[0,.17,-.34],[0,.08,-.50]],reptile?.14:.085);
+ if(felineMaster){
+   // The screenshot's rear hole is the uncapped TAIL end, not an
+   // unsealed leg. Build a narrower tapered tail, seal both ends, and
+   // embed its root inside the actual torso.
+   const caudal=g.tube(tail,'skin',[
+     [0,0,.09],[0,.08,-.14],[0,.17,-.34],[0,.08,-.50]
+   ],.067,{name:'feline-rooted-tail-'+s.id,capEnds:true,taper:.79});
+   caudal.userData.felineTailClosedSource=true;
+ }else g.tube(tail,'skin',[[0,0,.05],[0,.17,-.34],[0,.08,-.50]],reptile?.14:.085);
  const tailMid=g.group('tailMid',[0,.08,-.50],tail);
- g.tube(tailMid,'skin',[[0,0,0],[0,.01,-.25-v*.05],[.09,-.11,-.49-v*.10]],reptile?.13:.078);
+ if(felineMaster){
+   const caudalMid=g.tube(tailMid,'skin',[
+     [0,0,.035],[0,.01,-.25-v*.05],[.09,-.11,-.49-v*.10]
+   ],.054,{name:'feline-tail-middle-'+s.id,capEnds:true,taper:.53});
+   caudalMid.userData.felineTailClosedSource=true;
+ }else g.tube(tailMid,'skin',[[0,0,0],[0,.01,-.25-v*.05],[.09,-.11,-.49-v*.10]],reptile?.13:.078);
  const tailTip=g.group('tailTip',[.09,-.11,-.49-v*.10],tailMid);
  g.sphere(tailTip,'skin',[0,0,-.025],[.044,.047,.085]);
  // Felines need short sleek directional fur instead of reusing a wolf
