@@ -50,6 +50,18 @@ for(const quality of ['preview','battle']){
  assert.ok(cape?.isMesh,'hero gets a draped cape in '+quality);
  assert.ok(cape.geometry.getAttribute('position').count>100,
   'hero cape must be curved real geometry, not a billboard');
+ // Previous code used PI/2..3PI/2 and put the entire cape on ONE side
+ // of the body. Check both X sides AND the negative-Z back hemisphere.
+ cape.geometry.computeBoundingBox();
+ const capeBounds=cape.geometry.boundingBox;
+ assert.ok(capeBounds.min.x < -.10 && capeBounds.max.x > .10,
+  'protagonist mantle must wrap symmetrically across BOTH shoulders');
+ assert.ok(capeBounds.min.z + cape.position.z < -.12,
+  'mantle must hang BEHIND real back armor in negative Z');
+ assert.ok(capeBounds.max.z <= .005,
+  'rear mantle must not wrap across the character face/front');
+ assert.ok(cape.geometry.getAttribute('position').count < (quality==='battle'?500:1800),
+  'hero mantle must keep mobile battle vertex budget bounded');
  const thief=make('job06',false,quality);
  assert.ok(!thief.getObjectByName('anatomically-curved-rear-cuirass-lames'),
   'light-armored thief does not get plate steel');
@@ -62,6 +74,10 @@ for(const quality of ['preview','battle']){
 const summoned=make('job10',true,'battle');
 assert.ok(summoned.getObjectByName('three-dimensional-back-and-side-cape'),
  'existing job-authored cape retained for summoner');
+const jobCape=summoned.getObjectByName('three-dimensional-back-and-side-cape');
+jobCape.geometry.computeBoundingBox();
+assert.ok(jobCape.geometry.boundingBox.min.x < -.1&&jobCape.geometry.boundingBox.max.x>.1,
+ 'existing job cape also uses a symmetrical negative-Z rear hemisphere');
 assert.ok(!summoned.getObjectByName('hero-protagonist-draped-mantle'),
  'hero cape must not duplicate an existing job cape');
 console.log('PASS: curved rear armor, light-job exclusion, hero-only cape, no duplicate capes at preview/battle quality');
