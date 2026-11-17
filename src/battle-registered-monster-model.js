@@ -6,9 +6,9 @@
  */
 import * as THREE from 'three';
 import {createMonsterModel,disposeMonsterSculpture}
- from './monster-geometry.js?v=m002-feline-joints-and-fx-v4-20261117';
+ from './monster-geometry.js?v=beast-m001-m007-copy-v5-20261117';
 import {startMonsterAction,animateMonsterModel}
- from './monster-animation.js?v=m002-feline-action-v4-20261117';
+ from './monster-animation.js?v=beast-m001-m007-actions-v5-20261117';
 import {resolveRegisteredMonsterModel}
  from './creature-game-model-routing.js';
 import {fetchCreatureRegistry} from './creature-external-runtime.js';

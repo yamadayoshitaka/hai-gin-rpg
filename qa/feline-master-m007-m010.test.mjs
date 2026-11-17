@@ -45,7 +45,7 @@ test('m007 is a lean cat master with independently generated lion/leopard/tiger 
   }),'cat torso must be a morphological transform of m001 eight stations');
   assert.ok(stations.every((x,i)=>i===0||stations[i-1].z>x.z));
   const record=registeredMonsterModel(p.id);
-  assert.equal(record.version,'m001-quality-derived-feline-v4-20261117');
+  assert.equal(record.version,'m007-physical-mother-m001-quality-v5-20261117');
   assert.equal(record.mobileVisualApproved,false,
    'Android visual signoff is not implied by geometry QA');
  }

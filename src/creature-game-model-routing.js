@@ -22,15 +22,14 @@ export const GAME_MONSTER_MODEL_REGISTRY=Object.freeze(Object.fromEntries(
   speciesId:spec.id,name:spec.name,family:spec.family,
   model:'procedural:'+spec.id,
   version:spec.id==='m001'?MODEL_REFERENCE_REVISION:
-   spec.id==='m002'?'m002-m001-face-source-v2-20261117':
-   firstWave.has(spec.id)?'canine-wave-one-20261117':
-   felineWave.has(spec.id)?'m001-quality-derived-feline-v4-20261117':
+   firstWave.has(spec.id)?'m001-physical-mother-clone-v5-20261117':
+   felineWave.has(spec.id)?'m007-physical-mother-m001-quality-v5-20261117':
    'catalog-baseline',
   stage:locked.has(spec.id)?'protected':
    humanoids.has(spec.id)?'separate-humanoid-pipeline':
    spec.id==='m001'?'reference-implementation':
-   firstWave.has(spec.id)?'wave-one-in-progress':
-   felineWave.has(spec.id)?'feline-master-wave-two-in-progress':
+   firstWave.has(spec.id)?'copied-wolf-king-geometry-in-review':
+   felineWave.has(spec.id)?'copied-m007-feline-geometry-in-review':
    'pending-review',
   // Releasing a model does not mean its visual QA has been approved.
   mobileVisualApproved:false,

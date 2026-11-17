@@ -81,14 +81,13 @@ function quadrupedMotion(p,phase,locomotion,run,actionPulse,spine,speciesId){
     apply(p,'lower'+name,'x',(front?-.165:.225)+
       power*(.205*swing-.155*support));
     apply(p,'lower'+name,'z',(i%2?1:-1)*power*.028*lift);
-    // Compression raises the sole relative to the lowered trunk, leaving
-    // supporting toes close to the floor instead of a pogo-stick bounce.
+    // The source m001 bone lengths are copied to m002/m003/m004.
+    // Changing their lengths each support frame opens gaps at the knee
+    // and moves the fur seam away from the distal pivot. Locomotion is
+    // articulated entirely by hip, knee, hock and toe rotations instead.
     const upperJoint=p['leg'+name];
-    // Scale motion on m002 broke the newly seamless reference donor.
-    // Keep its bone lengths physically constant at every support phase.
     if(upperJoint)upperJoint.scale.y=
-      (upperJoint.userData.restLengthScale??1)*
-      (speciesId==='m002'?1:1-(run?.048:.026)*support);
+      upperJoint.userData.restLengthScale??1;
     if(p['beastHock'+name]){
       apply(p,'beastHock'+name,'x',(front?-.095:-.285)+
         power*(.260*swing-.205*support));
