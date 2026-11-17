@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import {chapterOneReviewPages} from '../src/story-chapter1-review-core.js';
 import {registeredStoryPanelAsset} from '../src/story-panel-registered-art.js';
 import {CHAPTER1_PROVISIONAL_LIVE} from '../src/story-chapter1-provisional-live.js';
+import {NEW_STORY_ORIGINAL_ART} from '../src/story-new-original-art.js';
 const read=p=>fs.readFileSync(p,'utf8');
 const pages=chapterOneReviewPages(),shots=pages.flatMap(p=>p.shots);
 assert.equal(pages.length,132);
@@ -46,7 +47,17 @@ for(const key of provisional){
  assert.equal(image.status,'PROVISIONAL_OWNER_AUTHORIZED_PENDING_P0');
  assert.equal(typeof image.sha256,'string');
  assert.match(image.sha256,/^[0-9a-f]{64}$/);
- assert.equal(image.asset,'./assets/story/chapter1-provisional-live/'+key.replaceAll('|','__')+'.webp');
+ const originalPath='./assets/story/chapter1-provisional-live/'+key.replaceAll('|','__')+'.webp';
+ if(image.asset!==originalPath){
+  const newOriginal=NEW_STORY_ORIGINAL_ART[key];
+  assert(newOriginal,'Non-legacy live image requires verified NEW original registration: '+key);
+  assert.equal(newOriginal.asset,image.asset,'New image path mismatch: '+key);
+  assert.equal(newOriginal.sha256,image.sha256,'New image SHA mismatch: '+key);
+  assert.equal(newOriginal.provenanceVerified,true,'Unverified source: '+key);
+  assert.equal(newOriginal.nativeQAComplete,true,'Unverified WebP: '+key);
+  assert.equal(newOriginal.visualP0Approved,false,'Do not silently approve P0: '+key);
+  assert.equal(newOriginal.origin,'NEW_SCENE_GENERATED_AFTER_2026_11_17',key);
+ }
 }
 console.log(JSON.stringify({test:'PASS',chapter:1,scenes:462,reviewPages:132,
  registeredShots:registeredShots.length,

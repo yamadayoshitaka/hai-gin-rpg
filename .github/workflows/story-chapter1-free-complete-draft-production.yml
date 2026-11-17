@@ -27,6 +27,7 @@ on:
 permissions:
   contents: write
   actions: read
+  issues: write
 
 concurrency:
   group: chapter1-free-one-batch-per-day
@@ -105,6 +106,9 @@ jobs:
           git show origin/main:scripts/generate-story-chapter1-free-batch.mjs > scripts/generate-story-chapter1-free-batch.mjs
           git show origin/main:src/story-generation-fallback.js > src/story-generation-fallback.js
           git show origin/main:data/story-generation-spend-policy.json > data/story-generation-spend-policy.json
+          git show origin/main:data/batch-center-switches.json > data/batch-center-switches.json
+          git show origin/main:src/story-stage-beats-v2.js > src/story-stage-beats-v2.js
+          git show origin/main:scripts/story-chatgpt-fallback-handoff.mjs > scripts/story-chatgpt-fallback-handoff.mjs
           # The review branch predates the compact format: always restore its
           # canonical scene selection manifest from main before any provider call.
           git show origin/main:data/story-compact-20chapters.json > data/story-compact-20chapters.json
@@ -170,6 +174,36 @@ jobs:
           CLOUDFLARE_FREE_PLAN_CONFIRMED: ${{ vars.CLOUDFLARE_FREE_PLAN_CONFIRMED }}
           CLOUDFLARE_CHAPTER1_DAILY_ESTIMATE_CAP: '7500'
         run: node scripts/generate-story-chapter1-free-batch.mjs --mode generate --max-pages 12 --start-stage "$START_STAGE" --through-stage "$THROUGH_STAGE"
+      - name: Route Cloudflare Free quota or outage to ChatGPT Images (generation REQUEST only)
+        if: always()
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          handoff=qa-reports/story-stage-production/chapter1-free-render/chatgpt-handoff.json
+          if [ ! -s "$handoff" ]; then
+            echo "No Free quota/outage ChatGPT handoff in this batch"
+            exit 0
+          fi
+          reason=$(jq -r '.reason // empty' "$handoff")
+          shot=$(jq -r '.shotKey // empty' "$handoff")
+          # No safety-moderation bypass or paid fallback. The request only
+          # guides user-initiated ChatGPT Images through the ChatGPT app.
+          node scripts/story-chatgpt-fallback-handoff.mjs \
+            --reason "$reason" --shot-key "$shot" \
+            --output qa-reports/story-stage-production/chapter1-free-render/chatgpt-precise-handoff.json
+          title=$(jq -r '.issueTitle' qa-reports/story-stage-production/chapter1-free-render/chatgpt-precise-handoff.json)
+          existing=$(gh issue list --state open --limit 200 --json number,title |
+            jq -r --arg title "$title" '.[] | select(.title==$title) | .number' | head -n 1)
+          if [ -n "$existing" ]; then
+            echo "ChatGPT Images handoff already pending in issue #$existing" >> "$GITHUB_STEP_SUMMARY"
+          else
+            gh issue create --title "$title" \
+              --body-file qa-reports/story-stage-production/chapter1-free-render/chatgpt-precise-handoff.md
+            echo "ChatGPT Images generation request created: $title" >> "$GITHUB_STEP_SUMMARY"
+          fi
+          echo "No automatic ChatGPT API calls, image bytes or P0 approval." >> "$GITHUB_STEP_SUMMARY"
       - name: Independently regress every canonical image and physical actor master (NO automatic visual approval)
         if: always()
         run: |

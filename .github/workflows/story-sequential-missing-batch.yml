@@ -14,9 +14,13 @@ on:
       - 'qa/story-sequential-missing-batch.test.mjs'
       - '.github/workflows/story-sequential-missing-batch.yml'
       - 'scripts/manual-hourly-batch-dispatch.mjs'
+      - 'scripts/story-chatgpt-fallback-handoff.mjs'
+      - 'src/story-generation-fallback.js'
+      - 'qa/story-chatgpt-fallback-handoff.test.mjs'
 permissions:
   contents: read
   actions: write
+  issues: write
 concurrency:
   group: manga-sequential-missing-queue
   cancel-in-progress: false
@@ -40,6 +44,7 @@ jobs:
           node --check scripts/story-sequential-missing-batch.mjs
           node scripts/story-sequential-missing-batch.mjs --max 20
           node qa/story-sequential-missing-batch.test.mjs
+          node qa/story-chatgpt-fallback-handoff.test.mjs
       - name: Review first missing stage and safely reuse existing production paths
         if: github.event_name != 'pull_request'
         env:
@@ -50,6 +55,28 @@ jobs:
           set -euo pipefail
           enabled=$(jq -r .enabled qa-reports/story-sequential-missing/next.json)
           stage=$(jq -r '.selected[0].stageId // ""' qa-reports/story-sequential-missing/next.json)
+          # Auto-route to an exact ChatGPT Images generation REQUEST whenever
+          # Cloudflare Free is exhausted, disabled or has no safe chapter adapter.
+          # ChatGPT subscription Images cannot run inside GitHub Actions.
+          chatgpt_handoff() {
+            local reason="$1" title existing
+            node scripts/story-chatgpt-fallback-handoff.mjs --reason "$reason"
+            title=$(jq -r '.issueTitle // empty' qa-reports/story-sequential-missing/chatgpt-handoff.json)
+            if [ -z "$title" ]; then
+              echo "::warning::No verified ChatGPT scene to hand off" >> "$GITHUB_STEP_SUMMARY"
+              return 0
+            fi
+            existing=$(gh issue list --state open --limit 200 --json number,title |
+              jq -r --arg title "$title" '.[] | select(.title==$title) | .number' | head -n 1)
+            if [ -n "$existing" ]; then
+              echo "ChatGPT Images request already open: issue #$existing ($title)" >> "$GITHUB_STEP_SUMMARY"
+            else
+              gh issue create --title "$title" \
+                --body-file qa-reports/story-sequential-missing/chatgpt-handoff.md
+              echo "Created ChatGPT Images request: $title" >> "$GITHUB_STEP_SUMMARY"
+            fi
+            echo "Actual ChatGPT images generated automatically by GitHub Actions: 0; user must generate in ChatGPT." >> "$GITHUB_STEP_SUMMARY"
+          }
           if [ "$enabled" != true ] || [ -z "$stage" ]; then
             echo "Anime switch off or nothing pending; no generation" >> "$GITHUB_STEP_SUMMARY"
             exit 0
@@ -69,7 +96,7 @@ jobs:
           fi
           if [[ "$stage" =~ ^c01-s(0[1-9]|10)$ ]]; then
             if [ "$CF_FREE" != true ]; then
-              echo "Free-provider confirmation missing; real generation blocked." >> "$GITHUB_STEP_SUMMARY"
+              chatgpt_handoff CLOUDFLARE_NOT_CONFIGURED
               exit 0
             fi
             day=$(date -u +%Y-%m-%d)
@@ -78,12 +105,14 @@ jobs:
               select(.created_at | startswith($day))] | length')
             if [ "$prior" -gt 0 ]; then
               echo "Today already used the single Cloudflare Free production dispatch; no duplicate call." >> "$GITHUB_STEP_SUMMARY"
+              chatgpt_handoff FREE_DAILY_DISPATCH_ALREADY_USED
               exit 0
             fi
             gh workflow run story-chapter1-free-complete-draft-production.yml --ref main -f start_stage="$stage" -f through_stage=c01-s10
             echo "Triggered existing FREE Chapter 1 real draft production; not approval/deployment." >> "$GITHUB_STEP_SUMMARY"
           else
-            echo "Stage $stage: full 200-stage queue exists, but this chapter lacks a verified Free generator adapter; generation=0." >> "$GITHUB_STEP_SUMMARY"
+            echo "Stage $stage: no Cloudflare Free chapter adapter; requesting ChatGPT Images scene production instead." >> "$GITHUB_STEP_SUMMARY"
+            chatgpt_handoff NO_VERIFIED_FREE_ADAPTER
           fi
       - uses: actions/upload-artifact@v4
         if: always()
