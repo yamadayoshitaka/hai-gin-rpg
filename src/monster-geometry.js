@@ -3,7 +3,7 @@
  * variants change horns, crests, armour, wings, limb lengths, weapons and fins.
  * Each specimen is real 3D geometry, never an image billboard.
  */
-import {createSculpture,disposeMonsterSculpture} from './monster-shape-kit.js?v=m001-contour-eye-fit-v16-20261117';
+import {createSculpture,disposeMonsterSculpture} from './monster-shape-kit.js?v=m001-crown-motion-v17-20261117';
 import {attachMonsterFaceControls} from './facial-feature-runtime.js?v=1';
 import {generateCanineFurGuides,generateCanineAxialFurGuides} from './canine-fur-guides.js?v=beast-coat-20261116';
 import {monsterEvidenceFor} from './monster-anatomy-reference.js';
@@ -131,7 +131,7 @@ function m001FittedFacialMane(faceCore,source){
    const len=(layer===0?.105:.171)+
      (1-front)*(layer===0?.025:.055)+
      .012*Math.sin(i*.91+j*1.3);
-   const sweptZ=front?len*.45:-len*.55;
+   const sweptZ=len*(front*.45-(1-front)*.55);
    const tip=[
      root[0]+Math.sign(u)*(.010+.012*(1-front)),
      root[1]+(1-front)*len*.11-front*len*.30,
@@ -2096,5 +2096,5 @@ export function createMonsterModel(spec,{detail='high'}={}){
 export {disposeMonsterSculpture};
 // All renderer metrics share this module's exact shape/material instance.
 // Never independently import a differently versioned shape-kit into the UI.
-export {MONSTER_DETAIL_LEVELS,monsterSculptCacheStats} from './monster-shape-kit.js?v=m001-contour-eye-fit-v16-20261117';
+export {MONSTER_DETAIL_LEVELS,monsterSculptCacheStats} from './monster-shape-kit.js?v=m001-crown-motion-v17-20261117';
 export {monsterPhotoCacheStats} from './monster-photo-pbr.js?v=4.4.81';
