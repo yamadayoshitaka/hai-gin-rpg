@@ -11,6 +11,7 @@
 import {CAMPAIGN_STAGES,CAMPAIGN_STAGE_BY_ID} from './campaign-stage-plan.js';
 import {comicForStage} from './story-chapter-comic.js';
 import {screenplayForStage,screenplayVoiceText,screenplayRubyTokens} from './story-screenplay-v2.js';
+import {readerIntroForChapter} from './story-reader-intros.js';
 export const COMPACT_STORY_CONFIG=Object.freeze({
  schemaVersion:1, chapters:20, stagesPerChapter:10, chapterOpening:4,
  stagePre:2,stagePost:2,sharedDefeat:2,sharedGameover:2,
@@ -31,7 +32,7 @@ function turn(p,forcedText=null){
   characterId:forcedText===null?(p?.characterId||null):null,
   role:forcedText===null?(p?.role||'物語'):'物語',
   faction:forcedText===null?(p?.faction||''):'',
-  text,subtitleText:text,voiceText:forcedText===null?(p?.voiceText||screenplayVoiceText(text)):screenplayVoiceText(text),
+  text,subtitleText:text,voiceText:screenplayVoiceText(text),
   rubyTokens:screenplayRubyTokens(text),hasVoice:true});
 }
 function scene(base,turns,{opening=false,sharedKind=null}={}){
@@ -94,7 +95,10 @@ export function compactComicForStage(stageId,phase,context={}){
  }
  if(base.some(x=>!x))throw Error('Missing compact source art identity '+stageId+' '+original.edition);
  const withCount=p=>({...p,sourceSheetCount:original.pages.find(q=>q.number===p.comicPage)?.cellCount||1});
- const scenes=openingArt.map(p=>scene(withCount(p),[turn(p)],{opening:true}));
+ // Chapter introduction is a plain-language narration before character dialogue.
+ // Keep original CG IDs and counts for exact registered-image bindings.
+ const scenes=openingArt.map((p,i)=>scene(withCount(p),
+  [i===0?turn(p,readerIntroForChapter(stage.chapter)):turn(p)],{opening:true}));
  let batches=distribute(lines,2).map(group=>group.map(p=>turn(p)));
  let sharedKind=null;
  if(phase==='post'&&original.edition.startsWith('post-defeat')){
