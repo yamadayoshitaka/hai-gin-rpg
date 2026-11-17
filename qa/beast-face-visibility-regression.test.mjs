@@ -93,12 +93,18 @@ test('feline mother has visible eyes, cheek-root fur and head-following throat',
  }
 });
 
-test('protected m005/m006 and crowd low LOD do not gain heavy facial hair',()=>{
+test('m005 inherits donor ocular sculpt; m006 cat scalp, without low-LOD hair',()=>{
  for(const id of ['m005','m006']){
   const model=createMonsterModel(MONSTER_BY_ID[id],{detail:'high'});
   try{
-   assert.equal(model.userData.felineCheekFurRoots,undefined);
-   assert.equal(model.userData.clonedCanineEyeSocketsCarved,undefined);
+   if(id==='m005'){
+    assert.equal(model.userData.clonedFromSpecies,'m001');
+    assert.equal(model.userData.clonedCanineEyeSocketsCarved,true);
+   }else{
+    assert.equal(model.userData.clonedFromSpecies,'m001');
+    assert.ok(model.userData.felineCheekFurRoots>200);
+    assert.equal(model.userData.clonedCanineEyeSocketsCarved,undefined);
+   }
   }finally{disposeMonsterSculpture(model)}
  }
  for(const id of ['m002','m007']){
