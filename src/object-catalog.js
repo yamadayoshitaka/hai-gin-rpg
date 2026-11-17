@@ -551,12 +551,31 @@ export function createObjectById(id,{cellSize=2.2}={}){
 
   // New batch-center catalog assets are authored once for both preview and game.
   if(id==='town_firewood_001'){
+   // Split-log radial end grain and alternating courses prevent a cylindrical pipe silhouette.
+   const bark=new THREE.MeshStandardMaterial({color:0x55402c,roughness:.96});
+   const endGrain=new THREE.MeshStandardMaterial({color:0xb18a5d,roughness:.89});
+   for(let row=0;row<3;row++)for(let i=0;i<5-row;i++){
+    const z=(i-(4-row)/2)*.36*c,y=(.18+row*.3)*c;
+    for(const x of [-1.135,1.135]){
+     const end=new THREE.Mesh(new THREE.CylinderGeometry(.165*c,.165*c,.018*c,10),endGrain);
+     end.rotation.z=Math.PI/2;end.position.set(x*c,y,z);root.add(end);
+    }
+   }
+   for(const z of [-.76,.76])box(2.5*c,.095*c,.11*c,0,.11*c,z*c,bark);
    for(let row=0;row<3;row++)for(let i=0;i<5-row;i++){
     const log=new THREE.Mesh(new THREE.CylinderGeometry(.17*c,.18*c,2.25*c,10),wood);
     log.rotation.z=Math.PI/2;log.position.set(0,(.18+row*.3)*c,(i-(4-row)/2)*.36*c);root.add(log);
    }
   }
   if(id==='town_water_trough_001'){
+   // Raised wooden stave joints, cross braces and wrought-iron retaining straps.
+   for(const x of [-1.18,-.59,0,.59,1.18]){
+    for(const z of [-.81,.81])box(.055*c,.72*c,.035*c,x*c,.52*c,z*c,wood);
+   }
+   for(const x of [-1.36,1.36]){
+    for(const z of [-.75,.75])box(.16*c,.065*c,.17*c,x*c,.79*c,z*c,iron);
+    box(.1*c,.12*c,1.63*c,x*c,.37*c,0,iron);
+   }
    box(2.8*c,.15*c,1.4*c,0,.1*c,0,wood);
    for(const z of [-.73,.73]){
     box(2.9*c,.85*c,.13*c,0,.5*c,z*c,wood);
@@ -568,6 +587,13 @@ export function createObjectById(id,{cellSize=2.2}={}){
    box(2.67*c,.035*c,1.3*c,0,.61*c,0,water);
   }
   if(id==='town_signpost_001'){
+   // Weather cap, mortised arm collars and end-grain rings at exposed timber joints.
+   const darkWood=new THREE.MeshStandardMaterial({color:0x4c3526,roughness:.92});
+   box(.37*c,.12*c,.37*c,0,3.58*c,0,darkWood);
+   for(const y of [2,2.75]){
+    box(.31*c,.14*c,.28*c,0,y*c,0,darkWood);
+    for(const z of [-.095,.095])box(.19*c,.045*c,.025*c,0,(y-.13)*c,z*c,iron);
+   }
    box(.22*c,3.6*c,.22*c,0,1.8*c,0,wood);
    box(2.55*c,.45*c,.13*c,.45*c,2.75*c,0,wood);
    box(1.9*c,.44*c,.13*c,-.4*c,2*c,0,wood);
@@ -588,6 +614,14 @@ export function createObjectById(id,{cellSize=2.2}={}){
    }
   }
   if(id==='town_stone_pile_001'){
+   // Chipped smaller rubble fills the unrealistic voids between large quarried stones.
+   for(let i=0;i<18;i++){
+    const chip=new THREE.Mesh(new THREE.DodecahedronGeometry((.105+(i%3)*.025)*c,0),stone);
+    chip.scale.set(1.3,.58,.9);
+    chip.rotation.set(i*.41,i*.71,i*.23);
+    chip.position.set((((i*7)%19)-9)*.125*c,.10*c+Math.floor(i/10)*.17*c,(((i*11)%17)-8)*.12*c);
+    root.add(chip);
+   }
    for(let i=0;i<12;i++){
     const rock=new THREE.Mesh(new THREE.DodecahedronGeometry((.3+(i%4)*.1)*c),stone);
     rock.scale.set(1.2,.72,.94);rock.rotation.set(i*.11,i*.43,i*.09);
@@ -595,6 +629,17 @@ export function createObjectById(id,{cellSize=2.2}={}){
    }
   }
   if(id==='town_brazier_001'){
+   // Forged rim, ash bed and retaining rivets establish a plausible metal fire bowl.
+   const ash=new THREE.MeshStandardMaterial({color:0x403d38,roughness:1});
+   const rim=new THREE.Mesh(new THREE.TorusGeometry(.855*c,.065*c,6,20),iron);
+   rim.rotation.x=Math.PI/2;rim.position.y=1.205*c;root.add(rim);
+   const bed=new THREE.Mesh(new THREE.CylinderGeometry(.69*c,.69*c,.045*c,16),ash);
+   bed.position.y=1.235*c;root.add(bed);
+   for(let i=0;i<8;i++){
+    const a=i*Math.PI/4;
+    const rivet=new THREE.Mesh(new THREE.SphereGeometry(.045*c,6,4),iron);
+    rivet.position.set(Math.cos(a)*.84*c,1.205*c,Math.sin(a)*.84*c);root.add(rivet);
+   }
    for(const x of [-.58,.58])for(const z of [-.58,.58])box(.13*c,.9*c,.13*c,x*c,.45*c,z*c,iron);
    const cup=new THREE.Mesh(new THREE.CylinderGeometry(.88*c,.6*c,.4*c,16),iron);
    cup.position.y=1*c;root.add(cup);
