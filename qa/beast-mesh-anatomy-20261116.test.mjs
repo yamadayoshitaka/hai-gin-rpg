@@ -427,8 +427,8 @@ for(const id of remeshed){
       'm001 needs two anatomical brow ridges');
     const tinyFace=model.userData.pivots['m001-face-core'];
     assert.ok(tinyFace?.isGroup,'m001 must use an independent small-face group');
-    assert.ok(Math.abs(tinyFace.scale.x-.76)<1e-7&&
-      Math.abs(tinyFace.scale.y-.82)<1e-7&&
+    assert.ok(Math.abs(tinyFace.scale.x-.67)<1e-7&&
+      Math.abs(tinyFace.scale.y-.79)<1e-7&&
       Math.abs(tinyFace.scale.z-.82)<1e-7,
       'm001 must narrow the face laterally but retain orbital depth/height');
     assert.equal(tinyFace.position.x,0,
@@ -492,7 +492,8 @@ for(const id of remeshed){
     const headCoats=model.userData.pivots.head.children.filter(m=>
       m.isMesh&&m.userData.furStrands);
     let blockedRoots=0,allRoots=0,anteriorCheekRoots=0,
-      inwardCheekTips=0,foreheadRoots=0;
+      inwardCheekTips=0,foreheadRoots=0,scalpRoots=0,
+      scalpInwardTips=0,scalpLeft=0,scalpRight=0;
     for(const coat of headCoats){
       const p=coat.geometry.getAttribute('position');
       for(let j=0;j+4<p.count;j+=5){
@@ -500,7 +501,9 @@ for(const id of remeshed){
         const y=(p.getY(j)+p.getY(j+1))*.5;
         const z=(p.getZ(j)+p.getZ(j+1))*.5;
         allRoots++;
-        if(z>.105&&Math.abs(x)<.153&&y>-.195&&y<.151)
+        // Keep the innermost eye, nose and lip corridor bare while
+        // deliberately allowing hairline roots over the outer cheek.
+        if(z>.185&&Math.abs(x)<.111&&y>-.153&&y<.175)
           blockedRoots++;
         // Front cheek ruff must occupy real 3D space on BOTH sides
         // and turn inward in front of the muzzle, not just increase
@@ -513,15 +516,30 @@ for(const id of remeshed){
             Math.abs(tipX)>=.165&&tipZ>z+.025)
             inwardCheekTips++;
         }
-        if(y>.222&&z>.070&&Math.abs(x)>.098&&
-          Math.abs(x)<.258)foreheadRoots++;
+        if(Math.abs(x)>.125&&Math.abs(x)<.206&&
+          z>.138&&z<.275&&y>-.168&&y<.174){
+          scalpRoots++;
+          if(x<0)scalpLeft++;else scalpRight++;
+          const tipX=p.getX(j+4),tipZ=p.getZ(j+4);
+          if(Math.abs(tipX)<Math.abs(x)-.013&&
+             Math.abs(tipX)>.113&&tipZ>z+.018)
+            scalpInwardTips++;
+        }
+        if(y>.209&&z>.132&&Math.abs(x)>.071&&
+          Math.abs(x)<.219)foreheadRoots++;
       }
     }
     assert.ok(allRoots>1500,'perimeter should have body-like follicle coverage');
     assert.ok(anteriorCheekRoots>40&&inwardCheekTips>30,
       'front cheek curtains must grow forward and frame the centered face');
-    assert.ok(foreheadRoots>10,
-      'the top/front mane must cover the brow perimeter, not only the nape');
+    assert.ok(foreheadRoots>20,
+      'forelock follicles must grow from the brow perimeter, not the nape');
+    assert.ok(scalpRoots>55&&scalpInwardTips>20,
+      'm001 needs dense FACE-rooted underfur with inward guard hair');
+    assert.ok(scalpLeft>20&&scalpRight>20,
+      'left and right inner cheek roots must both be present');
+    assert.ok(Math.abs(scalpLeft-scalpRight)<scalpRoots*.30,
+      'facial ruff must frame the small mask roughly symmetrically');
     const browRootCount=headCoats.reduce((total,coat)=>{
       const a=coat.geometry.getAttribute('position');let n=0;
       for(let i=0;i+4<a.count;i+=5){
@@ -566,7 +584,7 @@ try{
  });
  assert.equal(hair,0,'low LOD must not allocate any long fur ribbons');
  assert.equal(lowMane,1,'low LOD needs one inexpensive volumetric mane');
- assert.equal(lowKing.userData.pivots['m001-face-core'].scale.x,.76,
+ assert.equal(lowKing.userData.pivots['m001-face-core'].scale.x,.67,
    'low LOD must retain compact connected face proportions');
 }finally{disposeMonsterSculpture(lowKing);}
 // PR #345 protects the old ancient wolf; the mesh upgrade must not touch it.
