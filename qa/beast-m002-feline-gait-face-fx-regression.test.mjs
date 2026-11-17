@@ -92,7 +92,7 @@ test('m007 source has embedded feline teeth, no spherical hips and real walk/lea
    const skin=first(m,'feline-continuous-skin-'+limb);
    assert.ok(skin?.isSkinnedMesh&&skin.userData.felineContinuousSurface,
     'cat must have a single full-length weighted limb, not tube fillers');
-   assert.equal(skin.skeleton.bones.length,3);
+   assert.equal(skin.skeleton.bones.length,4);
    assert.ok(!all.some(x=>/feline-(upper-knee|lower-knee|ankle-to-toe|continuous-hock)/.test(x.name)),
     'old filler joints must not be rendered');
   }
