@@ -12,5 +12,6 @@ test('scalp source is selected by actual head-bone skin weights, not body mesh v
  assert.match(fn,/weight>=\.56/);
  assert.match(fn,/candidates\.sort\(\(a,b\)=>b\.headInfluenced-a\.headInfluenced/);
  assert.doesNotMatch(fn,/candidates\.sort\(\(a,b\)=>b\.vertices-a\.vertices\)/);
- assert.match(fn,/if\(triangles\.length<90\)return null/);
+ assert.match(fn,/for\(const candidate of candidates\)/,'Retry anatomical source candidates');
+ assert.match(fn,/if\(triangles\.length<90\)continue/,'Do not stop after a bald candidate');
 });
