@@ -42,7 +42,7 @@ const active=JSON.parse(found[1]);
 const fresh={...NEW_STORY_ORIGINAL_ART};
 const freshFile='src/story-new-original-art.js';
 const freshSource=fs.readFileSync(toAbs(freshFile),'utf8');
-const freshCapture=/NEW_STORY_ORIGINAL_ART=Object\\.freeze\\((\\{[\\s\\S]*?\\})\\);/;
+const freshCapture=/NEW_STORY_ORIGINAL_ART=Object\.freeze\((\{[\s\S]*?\})\);/;
 if(!freshCapture.test(freshSource))throw Error('New original registry marker changed');
 const compact=readJson('data/story-compact-20chapters.json');
 if(compact.expectedNormalImageSlots!==880)throw Error('Compact story changed');
