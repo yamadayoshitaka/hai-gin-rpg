@@ -4,6 +4,8 @@ import crypto from 'node:crypto';
 import {CHAPTER1_PROVISIONAL_LIVE,chapter1ProvisionalLivePanel} from '../src/story-chapter1-provisional-live.js';
 import {chapterOneReviewPages} from '../src/story-chapter1-review-core.js';
 import {buildChapter1ImagePrompt} from '../src/story-chapter1-image-prompt.js';
+import {registeredStoryPanelAsset} from '../src/story-panel-registered-art.js';
+import {oldStoryArtReuseAllowed} from '../src/story-art-sourcing-policy.js';
 
 const pages=chapterOneReviewPages().filter(p=>p.stageId==='c01-s04'||p.stageId==='c01-s05');
 assert.equal(pages.flatMap(p=>p.shots).length,96,'Stage4+5 must preserve 48 shots each');
@@ -49,9 +51,9 @@ for(const [key,item] of registered){
  assert.equal(bytes.toString('ascii',8,12),'WEBP',key);
  assert.equal(crypto.createHash('sha256').update(bytes).digest('hex'),item.sha256,key+' image differs from registry');
 }
-// Stage5 is now supplied with genuine ChatGPT image bytes. Never assert that
-// this stage remains permanently empty. Accept only canonical, SHA-verified,
-// reversible provisional artwork and keep final P0 approval explicitly false.
+// Stage 5 prior genuine images are kept as historical evidence only.
+ // The owner has now mandated NEW original art from stage 5 onwards.
+ // Validate original bytes and shot provenance WITHOUT allowing active game reuse.
 const stage5Canonical=new Map(pages.filter(p=>p.stageId==='c01-s05')
  .flatMap(p=>p.shots.map(shot=>[shot.key,shot])));
 const liveS05=Object.entries(CHAPTER1_PROVISIONAL_LIVE)
@@ -74,7 +76,10 @@ for(const [key,item] of liveS05){
  assert.equal(crypto.createHash('sha256').update(bytes).digest('hex'),item.sha256,key+' actual image mismatch');
  const proof=JSON.parse(fs.readFileSync(item.provenance,'utf8'));
  assert.equal(proof.shotKey,key);
- assert.equal(proof.scriptText,canonicalShot.scriptText,key+' does not match canonical screenplay');
+ assert(typeof proof.scriptText==='string'&&proof.scriptText.length>=8,
+  key+' archive must retain its original, historical script');
+ // Script changed when narration was split from character dialogue; old script
+ // should NOT be used to drive new illustration generation.
  if(proof.qaStatus==='OWNER_PROVISIONAL'){
   assert.equal(proof.sourceModel,'ChatGPT Images');
   assert.equal(proof.finalP0Approved,false);
@@ -82,10 +87,11 @@ for(const [key,item] of liveS05){
   assert.equal(proof.quality?.realReferenceBytesAttachedToImageGenerator,false);
   assert.equal(proof.imageSha256,item.sha256,'Image proof SHA mismatch');
  }
- assert.equal(chapter1ProvisionalLivePanel({
+ assert.equal(oldStoryArtReuseAllowed(canonicalShot.stageId),false);
+ assert.equal(registeredStoryPanelAsset({
   stageId:canonicalShot.stageId,comicEdition:canonicalShot.edition,
   protagonistGender:canonicalShot.gender,id:canonicalShot.shotId
- })?.asset,item.asset,'Game resolver fails to use the real stage5 image');
+ }),null,key+' historic original must not appear in the game');
 }
 for(const gender of ['male','female']){
  const key='c01-s04|pre|'+gender+'|c01-s04-m1';
