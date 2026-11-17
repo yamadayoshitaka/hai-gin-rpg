@@ -13,7 +13,7 @@ import * as THREE from 'three';
 import {createOriginalGuardianWingPair}
  from './female-summon-costumes.js?v=avian-guardian-donor-v1-20261118';
 
-export const AVIAN_REALISM_REVISION='phoenix-broad-torso-scaled-shanks-v3-20261118';
+export const AVIAN_REALISM_REVISION='phoenix-sculpted-thigh-broad-scutes-v4-20261118';
 export const AVIAN_REFRESH_IDS=Object.freeze(['m011','m012','m013','m014']);
 
 const profiles=Object.freeze({
@@ -243,63 +243,114 @@ function plumageStations(p){
   {z:-.64*k,y:1.45,rx:.06*k,ry:.085*k}
  ];
 }
-function phoenixDenseScales(g,s,p,torso,detail){
- // Each scale is a tiny overlapping curved feather vane, rooted directly
- // in the accurate THORAX surface. No floating plates or exposed skin.
- const close=detail==='source',high=detail==='high',low=detail==='low';
- const rows=low?7:close?34:high?23:15;
- const around=low?14:close?68:high?48:30;
- const stations=plumageStations(p);
- const surfaceAt=z=>{
-  for(let n=0;n<stations.length-1;n++){
-   const a=stations[n],b=stations[n+1];
-   if(z<=a.z&&z>=b.z){
-    const t=(a.z-z)/(a.z-b.z);
-    return {y:a.y+(b.y-a.y)*t,rx:a.rx+(b.rx-a.rx)*t,
-      ry:a.ry+(b.ry-a.ry)*t};
+
+/** Continuous mathematical surface of the actual anatomical cross-section
+ * loft, including the same Catmull-Rom interpolation used by axialLoft.
+ * Scales inherit THIS surface. Never place a loose belt at a guessed radius.
+ */
+function phoenixAxialSurface(stations,u,theta){
+ const x=Math.min(stations.length-1-1e-6,Math.max(0,u*(stations.length-1)));
+ const j=Math.min(stations.length-2,Math.floor(x)),t=x-j;
+ const a=stations[Math.max(0,j-1)],b=stations[j],
+   c=stations[j+1],d=stations[Math.min(stations.length-1,j+2)];
+ const cubic=(v,w,y,z)=>.5*(2*w+(-v+y)*t+
+   (2*v-5*w+4*y-z)*t*t+(-v+3*w-3*y+z)*t*t*t);
+ const val=k=>cubic(a[k],b[k],c[k],d[k]);
+ const rx=Math.max(.02,val('rx')),ry=Math.max(.02,val('ry'));
+ const cs=Math.cos(theta),sn=Math.sin(theta);
+ return {
+  point:new THREE.Vector3(cs*rx,val('y')+sn*ry,val('z')),
+  normal:new THREE.Vector3(cs/rx,sn/ry,.08).normalize(),
+  radius:(rx+ry)*.5,
+  z:val('z')
+ };
+}
+/** Three-dimensional curved, pointed scale tiles, merged into ONE indexed
+ * mesh per body part. The root sits on the exact skin; the thickened
+ * middle rises 0.02 and the point nestles under the next row.
+ * Tile width is measured in world units, not merely an arbitrary counter.
+ */
+function phoenixSurfaceScutes(parent,s,detail,name,{
+ rows,columns,surface,widthAt,skip=null,kind='anatomical-scale'
+}){
+ const vertices=[],indices=[],colors=[],uv=[];
+ const palette=profiles[s.id],dark=color(palette.dark),
+   mid=color(palette.mid),light=color(palette.light),
+   hot=color(palette.tip);
+ let scales=0,minWidth=Infinity,maxWidth=0;
+ for(let r=0;r<rows;r++)for(let col=0;col<columns;col++){
+  const u=(r+.15)/rows;
+  const angle=2*Math.PI*(col+.5*(r%2))/columns;
+  const anchor=surface(u,angle);
+  if(skip?.(u,angle,anchor))continue;
+  const width=widthAt(u,angle,anchor);
+  if(!(width>0))continue;
+  minWidth=Math.min(width,minWidth);maxWidth=Math.max(width,maxWidth);
+  const angleHalf=Math.min(.76,width/Math.max(.045,anchor.radius));
+  const origin=vertices.length/3;
+  const shade=mix(dark,mid,.27+(.47*(r%5)/5));
+  shade.lerp(light,.22+(col%4)*.045);
+  const shades=[shade,shade.clone().lerp(hot,.14),
+    shade.clone().lerp(hot,.27),shade.clone().lerp(hot,.43)];
+  const longitudinal=[0,.35,.78,1.16],
+    breadth=[.72,1,.77,.05],lifts=[.008,.022,.015,.004];
+  for(let v=0;v<4;v++){
+   for(let side=-1;side<=1;side++){
+    const sample=surface(Math.min(.9999,u+longitudinal[v]/rows),
+     angle+angleHalf*side*breadth[v]);
+    const rise=lifts[v]+(side===0?.009:0);
+    const pos=sample.point.addScaledVector(sample.normal,rise);
+    vertices.push(pos.x,pos.y,pos.z);
+    uv.push((side+1)/2,v/3);
+    const tone=shades[v].clone().multiplyScalar(
+     (side===0?1.13:.92)*(1-.10*Math.abs(side)));
+    colors.push(tone.r,tone.g,tone.b);
    }
   }
-  return stations.at(-1);
- };
- const scales=[],widths=[];
- for(let i=0;i<rows;i++){
-  const z=.50-1.145*i/Math.max(1,rows-1);
-  const v=surfaceAt(z);
-  for(let j=0;j<around;j++){
-   const theta=2*Math.PI*(j+.5*(i%2))/around;
-   const sx=Math.cos(theta),sy=Math.sin(theta);
-   const x=sx*v.rx*1.005,y=v.y+sy*v.ry*1.005;
-   const cream=z>.15&&sy<-.30;
-   const belly=sy<-.18&&z<.20;
-   const nearNeck=z>.34;
-   // Former 0.023-wide feather scales become 0.069 at belly (3x).
-   // Crown/neck are a separate finer gradient, not oversized plates.
-   const width=belly?.069:nearNeck?.020:.042;
-   widths.push(width);
-   scales.push({
-    from:[x,y,z],
-    to:[x+sx*.015,y+sy*.014-.015,z-(belly?.16:low?.125:.091)],
-    width,normal:[sx,sy,.14],ridge:low?.010:.016,
-    tint:cream?4:j%7===0?2:j%3===0?1:0,
-    endTint:cream?4:3,glow:.35
-   });
+  for(let v=0;v<3;v++)for(let j=0;j<2;j++){
+   const a=origin+v*3+j,b=a+3;
+   indices.push(a,b,a+1,a+1,b,b+1);
   }
+  scales++;
  }
- const coat=layeredFeathers(torso,s,detail,
-   'avian-layered-body-plumage-'+s.id,scales);
+ const geo=new THREE.BufferGeometry();
+ geo.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));
+ geo.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));
+ geo.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
+ geo.setIndex(indices);geo.computeVertexNormals();geo.computeBoundingSphere();
+ const coat=mesh(parent,geo,name,{emissive:s.id==='m013'});
  coat.userData.imbricatedKeratinScales=true;
- coat.userData.scaleCount=scales.length;
- coat.userData.phoenixAbdomenLargeScaleWidth=.069;
- coat.userData.phoenixBellyScaleMultiplier=3;
- coat.userData.phoenixScalesGradedToFace=true;
- coat.userData.phoenixScaleWidths={min:Math.min(...widths),max:Math.max(...widths)};
- coat.userData.originalBodyAnatomy='enlarged-closed-thorax-and-keel';
- g.root.userData.avianBodyFeatherCount=scales.length;
- g.root.userData.phoenixDenseScaleCount=scales.length;
- g.root.userData.phoenixLargeScaleMultiplier=3;
+ coat.userData.curvedAvianFeathers=scales;
+ coat.userData.mergedFeatherBatches=1;
+ coat.userData.scaleCount=scales;
+ coat.userData.phoenixAttachedScutes=true;
+ coat.userData.phoenixScuteType=kind;
+ coat.userData.phoenixScaleWidths={min:minWidth,max:maxWidth};
+ coat.userData.phoenixScaleCount=scales;
  return coat;
 }
-
+function phoenixDenseScales(g,s,p,torso,detail){
+ const stations=plumageStations(p);
+ const density=detail==='source'?[22,22]:detail==='high'?[17,17]:
+   detail==='medium'?[12,13]:[8,9];
+ const coat=phoenixSurfaceScutes(torso,s,detail,
+  'avian-layered-body-plumage-'+s.id,{
+   rows:density[0],columns:density[1],
+   surface:(u,a)=>phoenixAxialSurface(stations,u,a),
+   widthAt:(u,a,v)=>{
+    const belly=Math.sin(a)<-.26&&v.z<.32;
+    return belly?.164:v.z>.42?.085:v.z<-.25?.132:.139;
+   },kind:'close-fitted-thorax-diamond-scales'
+  });
+ coat.userData.phoenixAbdomenLargeScaleWidth=.164;
+ coat.userData.phoenixBellyScaleMultiplier=7.13;
+ coat.userData.phoenixScalesGradedToFace=true;
+ coat.userData.originalBodyAnatomy='enlarged-closed-thorax-and-keel';
+ g.root.userData.avianBodyFeatherCount=coat.userData.scaleCount;
+ g.root.userData.phoenixDenseScaleCount=coat.userData.scaleCount;
+ g.root.userData.phoenixLargeScaleMultiplier=7.13;
+ return coat;
+}
 /** Real, overlapping ventral scutes, never floating ornament spheres.
  * Layered into a single batch per anatomical section; each local section
  * moves with its own bone group. Belly, thigh, shank and wing-hand scutes
