@@ -43,6 +43,23 @@ const ids=['m002','m003','m004','m007','m008','m009','m010'];
      throw Error(id+' '+action+': empty rendered frame');
     frames.push({action,bytes:result.byteLength,filename});
    }
+   if(['m002','m007'].includes(id)){
+    for(const angle of ['front','side']){
+     const result=await page.evaluate(p=>window.__beastFaceCameraQA?.(p),angle);
+     if(!result||result.id!==id||result.angle!==angle)
+      throw Error(id+': missing real '+angle+' facial camera');
+     if(id==='m002'&&(!result.carvedEyes||!result.eyeDepthFitted))
+      throw Error('m002 eyes still hidden in uncaved forehead');
+     if(id==='m007'&&result.cheekRoots<200)
+      throw Error('m007 face cheek fur not generated');
+     await page.waitForTimeout(190);
+     const filename=path.join(root,id+'-'+angle+'-face.png');
+     const output=await page.locator('#view canvas').screenshot({
+      path:filename,timeout:45000});
+     if(output.length<12000)throw Error(id+': empty '+angle+' face view');
+     frames.push({action:'face-'+angle,bytes:output.length,filename});
+    }
+   }
    if(errors.length)throw Error(id+': runtime error after motion '+errors.join('; '));
    report.push({id,geometry:state.triangles,meshes:state.meshes,
     frames,visualApproved:false,androidFpsVerified:false});

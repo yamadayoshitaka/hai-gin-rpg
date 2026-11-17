@@ -34,3 +34,27 @@ export function copyWolfKingSourceRings(m001Rings,id,kind='cranium'){
  }));
 }
 export const WOLF_CLONE_SOURCE_REVISION='m001-physical-copy-m002-m004-v1-20261117';
+
+/**
+ * The old clone used one fixed +Z eye offset, even though each species
+ * stretches the donor skull. Intersect a horizontal eye line against the
+ * axial ring ellipses. This is only O(rings * 24) arithmetic at authoring
+ * time and avoids per-frame raycasts/extra materials on mobile.
+ */
+export function copiedWolfEyeSurfaceZ(rings,x,y){
+ if(!Array.isArray(rings)||rings.length<3)throw Error('Physical eye source rings required');
+ let best=-Infinity;
+ for(let i=1;i<rings.length;i++){
+  const a=rings[i-1],b=rings[i];
+  for(let k=0;k<=24;k++){
+   const t=k/24;
+   const rx=a.rx+(b.rx-a.rx)*t,ry=a.ry+(b.ry-a.ry)*t;
+   if(rx<=0||ry<=0)continue;
+   const cy=a.y+(b.y-a.y)*t;
+   const q=(x/rx)**2+((y-cy)/ry)**2;
+   if(q<=.985)best=Math.max(best,a.z+(b.z-a.z)*t);
+  }
+ }
+ if(!Number.isFinite(best))throw Error('Eye line does not intersect donor skull');
+ return best;
+}
