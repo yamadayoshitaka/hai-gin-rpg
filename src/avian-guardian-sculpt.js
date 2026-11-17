@@ -659,17 +659,24 @@ function buildPhoenixChickenLeg(g,s,torso,side,detail){
  const foot=g.group('avianFoot'+suffix,[0,-.449,.029],ankle);
  g.bone(foot,'shadow',[0,.04,.012],[0,-.012,.107],.035,
   {tipRadius:.024});
+ // Three bent digits with realistic knuckles and separate hooked talons.
  for(let digit=0;digit<3;digit++){
   const spread=(digit-1)*.147;
-  const root=[spread*.25,-.012,.102],end=[spread,-.060,.337];
-  g.bone(foot,'shadow',root,end,.030,{tipRadius:.017});
+  const root=[spread*.25,-.012,.102],joint=[spread*.63,-.038,.235],
+    end=[spread,-.060,.337];
+  g.bone(foot,'shadow',root,joint,.032,{tipRadius:.025});
+  g.bone(foot,'shadow',joint,end,.025,{tipRadius:.017});
+  g.sphere(foot,'shadow',joint,[.027,.023,.028],
+   {name:'phoenix-toe-knuckle-'+suffix+'-'+digit,rough:.86});
   g.rootedSpike(foot,'bone','shadow',end,
     [spread*1.12,-.145,.449],.026,
     {name:'avian-hooked-talon-'+name+'-'+digit});
  }
- g.bone(foot,'shadow',[0,-.010,-.012],[0,-.050,-.195],.027,
-  {tipRadius:.018});
- g.rootedSpike(foot,'bone','shadow',[0,-.050,-.195],
+ const heel=[0,-.010,-.012],joint=[0,-.028,-.115],
+   end=[0,-.050,-.195];
+ g.bone(foot,'shadow',heel,joint,.029,{tipRadius:.023});
+ g.bone(foot,'shadow',joint,end,.025,{tipRadius:.018});
+ g.rootedSpike(foot,'bone','shadow',end,
   [0,-.120,-.288],.026,{name:'avian-hallux-'+name});
  const shank=phoenixSurfaceScutes(ankle,s,detail,
   'phoenix-chicken-shank-scutes-'+suffix,{
@@ -710,6 +717,7 @@ function buildPhoenixChickenLeg(g,s,torso,side,detail){
  ankle.userData.phoenixTarsusLength=.461;
  ankle.userData.phoenixBareLowerShank=true;
  foot.userData.phoenixChickenToes=4;
+ foot.userData.phoenixArticulatedPhalanges=true;
  g.root.userData.phoenixChickenLegRig=true;
  g.root.userData.phoenixThighShankSeparated=true;
  return {leg,knee,ankle,foot,thighSkin,thigh,shank,toes};
