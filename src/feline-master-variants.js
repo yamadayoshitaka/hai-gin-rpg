@@ -42,7 +42,7 @@ const variants=Object.freeze({
     legWidth:.93,pawWidth:.92,guardHair:.062,underHair:.031,
     saberToothLength:.085,stripeCount:7})
 });
-export const FELINE_SOURCE_MODEL='m007-slender-felid-master-v1';
+export const FELINE_SOURCE_MODEL='m007-slender-felid-master-v2-sharp-eyes-fitted-crest';
 export const FELINE_QUALITY_WAVE_IDS=Object.freeze(Object.keys(variants));
 export const felineMasterVariant=id=>{
  const variant=variants[id];
