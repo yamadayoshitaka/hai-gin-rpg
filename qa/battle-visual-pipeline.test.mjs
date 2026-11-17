@@ -20,9 +20,15 @@ const a={id:2,job:{name:'剣士'},studioPattern:{hairStyleId:'h01'},
 assert.equal(battleScalpCoverageState(a).source,'missing');
 assert.equal(ensureBattleScalpCoverage(a).repaired,true);
 assert.equal(battleScalpCoverageState(a).source,'fitted-source');
-const root={visible:true,parent:{}};
+const lock={visible:true,geometry:{getAttribute:()=>({count:500})}};
+const root={visible:true,parent:{},getObjectByName:name=>name==='SINGLE_MESH_NORMAL_LAYERED_HAIR'?lock:null};
 a.masterHead.studioWig={root};
 assert.equal(ensureBattleScalpCoverage(a).after.source,'studio-scalp');
+assert.equal(battleScalpCoverageState(a).rootedVertices,500);
+lock.visible=false;
+assert.equal(ensureBattleScalpCoverage(a).after.source,'fitted-source','empty/hidden hair mesh must restore genuine source GLB');
+lock.visible=true;
+ensureBattleScalpCoverage(a);
 assert.equal(visible,false,'two hairstyles must never overlap');
 assert.deepEqual(auditBattleCharacterPipeline([a]).baldRisk,[]);
 const missing={...a,id:3,masterHead:{...a.masterHead,studioWig:null},
