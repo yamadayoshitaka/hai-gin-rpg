@@ -79,8 +79,8 @@ assert.doesNotMatch(gpu,/world\.y[^;]*-\.3\*eased/,
  'GPU body roots are NEVER submerged to simulate a hit/death');
 assert.doesNotMatch(gpu,/Math\.PI\*\.47\*eased/,
  'do not rotate the ground-anchored corpse a second time');
-assert.match(gpu,/vec3 runPose=mix\(neutralContact,swingContact/);
-assert.match(gpu,/runPose=neutralContact\+\(runPose-neutralContact\)\*1\.24/,
+assert.match(gpu,/vec3 runPose=mix\(crowdWalkA,crowdWalkB,0\.5\+0\.5\*swing\)/);
+assert.match(gpu,/runPose=mix\(runPose,neutralContact\+\(runPose-neutralContact\)\*1\.10,upperBody\)/,
  'real skinned arm travel amplified without extra vertex attributes');
 assert.match(gpu,/float strikeT=clamp\(crowdMotion\.z/,
  'GPU attacks progress through distinct full-body contact poses');
