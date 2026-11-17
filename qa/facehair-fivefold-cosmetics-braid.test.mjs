@@ -10,11 +10,12 @@ import {catalogHairGroom,groomGuideOffset} from '../src/face-hair-groom-v50.js';
 
 test('female cosmetics receive fivefold pigment without applying makeup to men',()=>{
  assert.equal(FEMALE_MAKEUP_STRENGTH,5);
- const params={nx:.346,ny:.725,lidY:.695,front:1};
+ const params={nx:.123,ny:.725,lidY:.695,front:1};
  const female=v67NaturalEyeMakeup({...params,gender:'female'});
  const male=v67NaturalEyeMakeup({...params,gender:'male'});
  const rear=v67NaturalEyeMakeup({...params,gender:'female',front:0});
- assert.ok(female.shadow>.64&&female.shadow<=.65);
+ assert.ok(female.shadow>.80&&female.shadow<=.94,'fivefold cosmetics must cover the real upper eyelid');
+ assert.ok(v67NaturalEyeMakeup({...params,nx:.346,gender:'female'}).shadow<.02,'pigment must fade before the outer cheek');
  assert.equal(male.shadow,0);
  assert.equal(rear.shadow,0);
  const sculpt=readFileSync(new URL('../src/face-feature-meshes.js',import.meta.url),'utf8');
