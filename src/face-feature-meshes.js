@@ -979,7 +979,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
  // surface, but lipstick is painted ONLY on the original head triangles.
  // Widen the actual vermilion surface only when requested; the v8 saved
  // preset (1x) retains identical 3D lip topology and pigmentation.
- const halfWidth=d.x*.051*Math.min(1.62,Math.pow(settings.lipstickWidth,.46));
+ const halfWidth=d.x*(female?.051:.044)*Math.min(1.62,Math.pow(settings.lipstickWidth,.46));
  const actualLips=new Map();
  for(const upper of [true,false]){
   const material=female?lipMat.clone():lipMat;
@@ -991,7 +991,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
       d.y*.0018*(bell(Math.abs(t),.37,.22)-.42*bell(t,0,.23)):0;
     const cy=lipCenter+(upper?d.y*.006:-d.y*.007)+cupid+
      d.y*.006*(settings.mouthAngle/12)*t;
-    const vertical=(v-.5)*d.y*(upper?.014:.017)*taper;
+    const vertical=(v-.5)*d.y*(female?(upper?.014:.017):(upper?.011:.013))*taper;
     const x=cx+d.x*.004*settings.mouthPositionX+t*halfWidth,y=cy+vertical;
     const fullness=(1-t*t)*Math.sin(Math.PI*v);
     const z=surfaceAt(x,y)+d.z*(.00026+.00155*fullness*taper);
@@ -1107,7 +1107,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   pupilPolarAngleRadians:Number(pupilAngle.toFixed(4)),
   irisDiameterRequestFactor:settings.irisDiameter,
   actualIrisDiameterFactor:Number((Math.sin(irisAngle)/Math.sin(originalIrisAngle)).toFixed(3)),
-  mouthHalfWidthFraction:.051,
+  mouthHalfWidthFraction:female?.051:.044,
   lipCreaseCurvature:Number(bestCrease.toFixed(7)),
   lipCenterNormalized:Number(((lipCenter-box.min.y)/d.y).toFixed(4)),
   eyeScale,eyeSizeDerivedFromWidthHeight:true,
