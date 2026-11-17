@@ -522,6 +522,13 @@ export function createObjectById(id,{cellSize=2.2}={}){
     cap.position.set(Math.sin(a)*1.18*c,1.01*c,Math.cos(a)*1.18*c);
     cap.rotation.y=a;cap.castShadow=true;root.add(cap);
    }
+   // Individual voussoir-like coping stones have a chamfered upper rim.
+   for(let j=0;j<16;j++){
+    const a=(j+.25)*Math.PI/8;
+    const rim=new THREE.Mesh(new THREE.BoxGeometry(.35*c,.035*c,.24*c),stone);
+    rim.position.set(Math.sin(a)*1.18*c,1.092*c,Math.cos(a)*1.18*c);
+    rim.rotation.y=a;rim.name='well_coping_bevel';root.add(rim);
+   }
    const surface=new THREE.Mesh(new THREE.CircleGeometry(1.08*c,24),water);
    surface.rotation.x=-Math.PI/2;surface.position.y=.55*c;root.add(surface);
    for(const x of [-1,1])box(.17*c,2.6*c,.17*c,x*c,1.5*c,0,wood);
@@ -539,6 +546,10 @@ export function createObjectById(id,{cellSize=2.2}={}){
     }
     for(const x of [-1.4,1.4])for(let i=0;i<3;i++)
      box(.2*c,.18*c,.52*c,x*c,y*c,(-.53+i*.53)*c,stone);
+   }
+   // Corner quoins alternate long and short faces so wall bonds do not terminate in floating seams.
+   for(const x of [-1.4,1.4])for(const z of [-.81,.81]){
+    box(.27*c,.17*c,.27*c,x*c,.365*c,z*c,stone).name='planter_corner_quoin';
    }
    for(const z of [-.81,.81])box(3.15*c,.12*c,.24*c,0,.59*c,z*c,stone);
    for(const x of [-1.4,1.4])box(.24*c,.12*c,1.75*c,x*c,.59*c,0,stone);
@@ -658,6 +669,10 @@ export function createObjectById(id,{cellSize=2.2}={}){
     box(.47*c,.17*c,.47*c,x*c,1.39*c,0,stone);
     box(.32*c,.12*c,.32*c,x*c,1.51*c,0,stone);
    }
+   // Projecting pier imposts provide an actual bearing transition into the stone rails.
+   for(const x of [-1.3,0,1.3])for(const y of [.45,.91]){
+    box(.43*c,.085*c,.43*c,x*c,(y+.17)*c,0,stone).name='fence_pier_impost';
+   }
    for(const y of [.45,.91]){
     for(let i=0;i<10;i++){
      const x=-1.43+(i+.5)*.286;
@@ -736,6 +751,11 @@ export function createObjectById(id,{cellSize=2.2}={}){
      box(.32*c,.08*c,.45*c,sign*2.02*c,(rise+.04)*c,z*c,tread).name='cheek_cap';
     }
    }
+   // Dressed nosing lips are separate narrow stones, not texture-only edge lines.
+   for(let i=0;i<7;i++){
+    const rise=(i+1)*.16,z=(i-3)*.43;
+    for(let j=0;j<4;j++)box(.88*c,.035*c,.055*c,(j-1.5)*.95*c,(rise+.093)*c,(z-.205)*c,tread).name='tread_nosing';
+   }
    root.userData.stairRisers=7;
   }
   if(id==='wooden_watchtower_001'){
@@ -765,6 +785,9 @@ export function createObjectById(id,{cellSize=2.2}={}){
     const ring=new THREE.Mesh(new THREE.CylinderGeometry(radius*c,radius*c,height*c,20),stone);
     ring.position.y=y*c;ring.name='column_load_ring';root.add(ring);
    }
+   // Separate dressed collar and inset plinth preserve readable silhouette at mid distance.
+   const collar=new THREE.Mesh(new THREE.CylinderGeometry(.41*c,.37*c,.18*c,20),stone);
+   collar.position.y=3.64*c;collar.name='column_necking';root.add(collar);
    for(let i=0;i<12;i++){
     const angle=i*Math.PI/6;
     const flute=new THREE.Mesh(new THREE.CylinderGeometry(.026*c,.026*c,3.15*c,5),stone);
