@@ -37,7 +37,7 @@ export function makeChatGPTHandoff({reason,shot,attemptedRequests=0}){
  if(!shot?.stageId||!shot?.edition||!shot?.gender||!shot?.shotId)
   throw Error('Missing canonical shot identity');
  if(!/^c(?:0[1-9]|1[0-9]|20)-s(?:0[1-9]|10)$/.test(shot.stageId)||
-    !/^(pre|post-town|post-victory|post-defeat|post-gameover)$/.test(shot.edition)||
+    !/^(?:pre|post-(?:town|victory|defeat|gameover))(?:-(?:choice|route|ending)-[a-z0-9-]+)*$/.test(shot.edition)||
     !['male','female'].includes(shot.gender)||
     !/^c\d{2}-s\d{2}-(?:m\d+|death-\d+)$/.test(shot.shotId)||
     !shot.shotId.startsWith(shot.stageId+'-'))
