@@ -60,6 +60,28 @@ const ids=['m002','m003','m004','m007','m008','m009','m010'];
      frames.push({action:'face-'+angle,bytes:output.length,filename});
     }
    }
+   // Explicitly capture the user's problem angles: upper rear leg
+   // openings and belly/hip seams. Screenshot remains a review candidate.
+   for(const angle of ['back','underbody']){
+    const check=await page.evaluate(p=>window.__beastFaceCameraQA?.(p),angle);
+    if(!check||check.id!==id||check.angle!==angle)
+     throw Error(id+': missing '+angle+' WebGL inspection view');
+    if(['m007','m008','m009','m010'].includes(id)&&
+       (check.closedCatLimbs!==4||!check.closedTorso))
+     throw Error(id+': open cat shell '+JSON.stringify(check));
+    if(['m003','m004'].includes(id)&&
+       (!check.wolfFullCoat||check.wolfDonorStrands<1400))
+     throw Error(id+': m001 source fur absent '+JSON.stringify(check));
+    await page.waitForTimeout(220);
+    const filename=path.join(root,id+'-'+angle+'-seam.png');
+    const result=await page.locator('#view canvas').screenshot({
+     path:filename,timeout:45000
+    });
+    if(result.byteLength<12000)
+     throw Error(id+': empty rear/underbody visual '+angle);
+    frames.push({action:'seam-'+angle,bytes:result.byteLength,filename,
+     visualApproved:false});
+   }
    if(errors.length)throw Error(id+': runtime error after motion '+errors.join('; '));
    report.push({id,geometry:state.triangles,meshes:state.meshes,
     frames,visualApproved:false,androidFpsVerified:false});
