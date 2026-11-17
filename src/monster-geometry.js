@@ -5,7 +5,7 @@
  */
 import * as THREE from 'three';
 import {buildGuardianDerivedBird,AVIAN_REALISM_REVISION}
- from './avian-guardian-sculpt.js?v=phoenix-sculpt-v6-20261118';
+ from './avian-guardian-sculpt.js?v=phoenix-sculpt-v7-20261118';
 import {createSculpture,disposeMonsterSculpture} from './monster-shape-kit.js?v=beast-cat-torso-anchor-tail-v12-20261118';
 import {attachMonsterFaceControls} from './facial-feature-runtime.js?v=1';
 import {generateCanineFurGuides,generateCanineAxialFurGuides} from './canine-fur-guides.js?v=beast-coat-20261116';
