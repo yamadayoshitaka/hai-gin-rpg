@@ -64,7 +64,7 @@ assert.match(html,/followCamera=false;\s*setBattleCamera\(focus,offset\)/,
  'Selecting a left ribbon must open commands rather than force character close-up');
 assert.equal(SQUAD_CIRCLE_DOUBLE_TAP_MS,420,
  'The single-tap disclosure delay matches the double-tap recognition window');
-assert.match(html,/followCamera=true;battleViewMode='commander';\s*if\(team===0\)trackedAllySquadId=String\(id\);\s*closeSquadCircleInfo\(\);\s*setBattleCamera\(focus,/,
+assert.match(html,/followCamera=true;targetViewFollowing=true;battleViewMode='commander';\s*if\(team===0\)trackedAllySquadId=String\(id\);\s*closeSquadCircleInfo\(\);\s*setBattleCamera\(focus,/,
  'Double-tap must close previous squad information before a character close-up');
 assert.match(html,/syncSquadCloseupLabels\(\);\s*setCameraActive\(null\)/,
  'Camera close-up must immediately hide squad overlays without a frame of flicker');

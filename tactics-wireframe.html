@@ -733,8 +733,18 @@ body.compact-command-dock.compact-explore-open .exploreBuildingList button{
  body.compact-command-dock #squadOneClickOrders .quickActions button{min-width:64px!important;flex-basis:64px!important;font-size:11px!important}
  #battleSelectedTargetBar .targetHeading{font-size:10px}
 }
+/* The redundant selected/enemy strip above message obscured combat.
+   Tactical source/target data remains available through the radar/commands. */
+:root{--battleSelectedHeight:0px}
+#battleSelectedTargetBar{display:none!important}
+#battleCancelCircleTarget{display:none!important;position:fixed;z-index:44;
+ right:8px;top:calc(var(--battleTopBottom,175px) + 7px);
+ min-height:37px;min-width:41px;align-items:center;justify-content:center;
+ border:1px solid #ebc87c;border-radius:9px;background:#52352c;color:#fff5cf;
+ font:800 15px system-ui;pointer-events:auto}
+body[data-circle-target] #battleCancelCircleTarget{display:flex!important}
 </style>
-<div id="battleSelectedTargetBar" role="status" aria-live="off" hidden><div class="targetHalf left"><div class="targetHeading" id="battleSelectedAlly">味方 第1隊</div><div class="targetCount" id="battleSelectedAllyCount">--/--</div><div class="targetMode" id="battleSelectedAllyOrder">号令：自動</div></div><div class="targetDirection">➜</div><div class="targetHalf right"><div class="targetHeading" id="battleSelectedEnemy">索敵中</div><div class="targetCount" id="battleSelectedEnemyCount">--/--</div><div class="targetMode" id="battleSelectedTargetMode">攻撃対象（自動選択）</div></div><button id="battleCancelCircleTarget" type="button" hidden aria-label="対象選択を取り消す">✕</button></div>
+<div id="battleSelectedTargetBar" role="status" aria-live="off" hidden><div class="targetHalf left"><div class="targetHeading" id="battleSelectedAlly">味方 第1隊</div><div class="targetCount" id="battleSelectedAllyCount">--/--</div><div class="targetMode" id="battleSelectedAllyOrder">号令：自動</div></div><div class="targetDirection">➜</div><div class="targetHalf right"><div class="targetHeading" id="battleSelectedEnemy">索敵中</div><div class="targetCount" id="battleSelectedEnemyCount">--/--</div><div class="targetMode" id="battleSelectedTargetMode">攻撃対象（自動選択）</div></div></div><button id="battleCancelCircleTarget" type="button" aria-label="対象選択を取り消す">✕</button>
 <div id="squadScreenLabels" aria-label="全味方・敵部隊の接続線付き情報サークル"><svg id="squadCalloutLines" aria-hidden="true"></svg></div>
 <div id="squadCircleInfo" hidden role="status" aria-live="polite" aria-label="選択した部隊の情報・1行表示">
  <div id="squadCircleInfoContent"></div>
@@ -926,6 +936,7 @@ import {registerSquadCircleTap,chooseSquadZoomTarget,SQUAD_CIRCLE_DOUBLE_TAP_MS,
 import {createBattleActorVisibility} from './src/battle-render-visibility.js?v=20261117-mount-hair1';
 import {enableBattleRigidFrustumCulling,countBattleRigCulling} from './src/battle-rigid-frustum-optimization.js?v=20261116-rigid1';
 import {interpolatedSkirmishCameraAnchor,createVisibilityWorkPacer} from './src/battle-frame-pacing.js?v=20261116-p95';
+import {personFacingYaw,writePersonPovOffset} from './src/battle-person-pov-camera.js?v=20261117-person-pov1';
 import {SKIRMISH_DASH_TEMPO,skirmishTravelTempo,realtimeBattleCinematicScale} from './src/battle-tempo-policy.js?v=20261116-tempo1';
 import {BattlePhaseProfiler} from './src/battle-phase-profiler.js?v=20261116-gpu1';
 import {shouldShowOverheadSquadCallouts,closestAliveBattleFocus} from './src/battle-zoom-visibility-policy.js?v=1';
@@ -1210,6 +1221,7 @@ document.addEventListener('pointerdown',()=>creatureAudio.unlock(),{passive:true
 document.addEventListener('keydown',()=>creatureAudio.unlock());
 const controls=new OrbitControls(camera,renderer.domElement);controls.target.set(0,0,0);controls.enableDamping=false;controls.enablePan=true;controls.rotateSpeed=1.3;controls.zoomSpeed=1.4;controls.panSpeed=1.15;controls.minDistance=4;controls.maxDistance=340;controls.minPolarAngle=.08;controls.maxPolarAngle=Math.PI*.46;controls.update();
 let followCamera=false;
+let targetViewFollowing=false; // Follow the character's heading, not a fixed compass view.
 let focusedHumanUnitId=null;
 let cameraPanMode=false;
 function setCameraGesture(){
@@ -1221,7 +1233,7 @@ function setCameraGesture(){
  controls.touches.TWO=THREE.TOUCH.DOLLY_PAN;
 }
 setCameraGesture();
-controls.addEventListener('start',()=>{followCamera=false});
+controls.addEventListener('start',()=>{followCamera=false;targetViewFollowing=false;});
 scene.add(new THREE.HemisphereLight(0xe6f3ff,0x50617b,TOWN_MODE?1.05:2.5));const sun=new THREE.DirectionalLight(0xffffff,TOWN_MODE?3.0:2.2);sun.position.set(-130,260,95);sun.castShadow=true;sun.shadow.mapSize.set(MASS_SIZE||TOWN_MODE?1024:2048,MASS_SIZE||TOWN_MODE?1024:2048);sun.shadow.camera.left=TOWN_MODE?-145:-65;sun.shadow.camera.right=TOWN_MODE?145:65;sun.shadow.camera.top=TOWN_MODE?145:65;sun.shadow.camera.bottom=TOWN_MODE?-145:-65;sun.shadow.camera.near=1;sun.shadow.camera.far=700;if(TOWN_MODE){sun.position.set(65,180,165);sun.target.position.set(110,1,110);sun.target.updateMatrixWorld();}sun.shadow.bias=-0.00025;sun.shadow.normalBias=TOWN_MODE?.009:.035;sun.shadow.radius=TOWN_MODE?1.4:2;scene.add(sun);scene.add(sun.target);
 // Buildings and walls are static between collapse events; rendering their
 // entire shadow depth pass 18 times/sec is wasted mobile GPU work. Shadows
@@ -4900,7 +4912,7 @@ function updateUnitFloorTravel(a,dt){
  if(travel.phase==='climb'){
   if(a===automaticFloorGuide&&!travel.cameraEngaged){
    travel.cameraEngaged=true;
-   followCamera=true;
+   followCamera=true;targetViewFollowing=false;
    setBattleCamera(a.root.position,new THREE.Vector3(8,14,15));
    setCameraActive('camFollow');
    log(travel.viaGrapple?'忍者が鉤縄で上階の窓枠へ上昇中':
@@ -6573,8 +6585,8 @@ const battleDialogue=createBattleStrategistDialogue({
   const offset=chooseClearBattleCameraOffset(focus,nearbyTrees,{terrainHeight:terrainY});
   dialogueCameraReturn=null;focusedHumanUnitId=massSim?unit.id:null;
   if(!massSim)selected=unit;
-  followCamera=true;
-  setBattleCamera(focus,new THREE.Vector3(offset.x,offset.y,offset.z));
+  followCamera=true;targetViewFollowing=true;
+  setBattleCamera(focus,writePersonPovOffset(unit,initialPersonPovOffset,8.8,3.3));
   updateCameraObstructions();setCameraActive(null);
   if(report.squadId!=null)openSquadTactics(String(report.squadId));
 
@@ -8300,10 +8312,10 @@ function zoomToSquadMember(id,team){
  focusedHumanUnitId=massSim?unit.id:null;
  const renderedActor=massSim?actors.find(a=>a.massUnitId===unit.id):unit;
  if(renderedActor)selected=renderedActor;
- followCamera=true;battleViewMode='commander';
+ followCamera=true;targetViewFollowing=true;battleViewMode='commander';
  if(team===0)trackedAllySquadId=String(id);
  closeSquadCircleInfo();
- setBattleCamera(focus,new THREE.Vector3(4,3,7).normalize().multiplyScalar(zoom));
+ setBattleCamera(focus,writePersonPovOffset(unit,initialPersonPovOffset,zoom,3));
  syncSquadCloseupLabels();
  setCameraActive(null);
  lastGroundTap=null;
@@ -9056,6 +9068,7 @@ const centralAlly=actors.filter(a=>a.team===0).sort((a,b)=>
 const cameraHome=(centralAlly?.root.position||openingFocus).clone();
 // Slightly pulled back from the western rear, looking diagonally east.
 const cameraCloseOffset=new THREE.Vector3(-8,6.2,10.5);
+const initialPersonPovOffset=new THREE.Vector3();
 // Three-quarter overview: keep horizon and upper floors visible, unlike true bird's-eye.
 // Approximately 45 degrees above the horizon while retaining a full
 // battlefield view on narrow portrait phones (avoid the former top-down map).
@@ -9075,7 +9088,7 @@ function returnToWholeBattlefield(){
  if(TOWN_MODE||finished)return;
  commandOverviewLocked=false;controls.enabled=true;
  commanderCinematic=null;cinematicFocusQueue.length=0;dialogueCameraReturn=null;
- focusedHumanUnitId=null;followCamera=false;
+ focusedHumanUnitId=null;followCamera=false;targetViewFollowing=false;
  const center=(WORLD_SIZE/2-6)*CELL;
  setBattleCamera(new THREE.Vector3(center,terrainY(center,center),center),cameraOverviewOffset);
  setCameraActive('camOverview');
@@ -9086,7 +9099,7 @@ function enterCommandOverview(){
  commandOverviewLocked=true;
  document.body.classList.add('battle-command-active');
  commanderCinematic=null;cinematicFocusQueue.length=0;dialogueCameraReturn=null;
- followCamera=false;focusedHumanUnitId=null;
+ followCamera=false;targetViewFollowing=false;focusedHumanUnitId=null;
  controls.enabled=false;
  const center=(WORLD_SIZE/2-6)*CELL;
  setBattleCamera(new THREE.Vector3(center,terrainY(center,center),center),cameraOverviewOffset);
@@ -9103,8 +9116,8 @@ function followSelectedCommander(id=trackedAllySquadId??squadIds[0],team=0){
  if(team===0)trackedAllySquadId=String(id);
  focusedHumanUnitId=massSim?target.unit.id:null;
  if(!massSim)selected=target.unit;
- followCamera=true;
- setBattleCamera(target.point,cameraCloseOffset);
+ followCamera=true;targetViewFollowing=true;
+ setBattleCamera(target.point,writePersonPovOffset(target.unit,initialPersonPovOffset,9.4,3.3));
  setCameraActive('camFollow');
  return true;
 }
@@ -9114,7 +9127,7 @@ else followSelectedCommander();
 $('camOverview').onclick=()=>{
  if(commandOverviewLocked)return;
  battleViewMode='overview';commanderCinematic=null;cinematicFocusQueue.length=0;
- focusedHumanUnitId=null;followCamera=false;
+ focusedHumanUnitId=null;followCamera=false;targetViewFollowing=false;
  setBattleCamera(new THREE.Vector3(openingOverviewCenter,terrainY(openingOverviewCenter,openingOverviewCenter),openingOverviewCenter),cameraOverviewOffset);
  setCameraActive('camOverview');
 };
@@ -9164,9 +9177,9 @@ function focusHumanAt(screenX,screenY){
  // Leave tactical orders on the radar/blue squad labels. Directly tapping
  // any soldier brings the camera close, just as tapping a flying summon does.
  const focus=best.world.add(new THREE.Vector3(0,-.18,0));
- followCamera=true;
+ followCamera=true;targetViewFollowing=true;battleViewMode='commander';
  const zoom=Math.max(6.5,Math.min(10,controls.minDistance+4.8));
- setBattleCamera(focus,new THREE.Vector3(4,3,8).normalize().multiplyScalar(zoom));
+ setBattleCamera(focus,writePersonPovOffset(u,initialPersonPovOffset,zoom,3));
  setCameraActive(null);lastGroundTap=null;
  updateUI();
  return true;
@@ -9345,6 +9358,8 @@ let lastMassSnapshotMs=performance.now();
 // separate display frames. Do not reduce the amount of geometry or VFX.
 const sceneVisibilityPacer=createVisibilityWorkPacer();
 const skirmishCameraAnchor=new THREE.Vector3(),cameraFollowShift=new THREE.Vector3();
+// Three reusable vectors and a yaw sample: zero per-frame camera allocations.
+const personPovOffset=new THREE.Vector3(),personPovPosition=new THREE.Vector3(),personPovLook=new THREE.Vector3();
 let shadowRefreshTimer=0;
 const lastShadowFocus=new THREE.Vector3(Infinity,Infinity,Infinity);
 // Camera-facing cutaway is computed only four times per second. Never fade the
@@ -9924,8 +9939,25 @@ function animate(){
      new THREE.Vector3(tracked._visualMotion.x,tracked._visualMotion.y+1.05,tracked._visualMotion.z):
      new THREE.Vector3((tracked.x-6)*CELL,unitGroundY(tracked,(tracked.x-6)*CELL,(tracked.z-6)*CELL)+1.05,(tracked.z-6)*CELL))||
      skirmishFollow;
-   if(anchor){cameraFollowShift.copy(anchor).sub(controls.target);
-    controls.target.add(cameraFollowShift);camera.position.add(cameraFollowShift);}
+   if(anchor){
+    if(targetViewFollowing&&!TOWN_MODE&&!commanderCinematic&&!commandOverviewLocked){
+     const unit=tracked?.alive?tracked:followed;
+     const yaw=personFacingYaw(unit),ease=1-Math.exp(-Math.min(dt,.05)*7);
+     // Look ahead along the actual soldier's direction of travel.
+     personPovLook.copy(anchor);
+     personPovLook.y+=tracked?0:.95;
+     personPovLook.x+=Math.sin(yaw)*1.3;
+     personPovLook.z+=Math.cos(yaw)*1.3;
+     writePersonPovOffset(unit,personPovOffset,9.4,3.3);
+     personPovPosition.copy(anchor).add(personPovOffset);
+     personPovPosition.y+=tracked?0:.95;
+     camera.position.lerp(personPovPosition,ease);
+     controls.target.lerp(personPovLook,ease);
+    }else{
+     cameraFollowShift.copy(anchor).sub(controls.target);
+     controls.target.add(cameraFollowShift);camera.position.add(cameraFollowShift);
+    }
+   }
   }
   updateCommanderCinematic();
   controls.update();

@@ -54,8 +54,38 @@ const clamp=(x,min,max)=>Math.min(max,Math.max(min,x));
  * Keep this independent of camera distance and rarity so LOD cannot bleach it.
  */
 export const BATTLE_FACE_SKIN_TONE_VERSION='battle-skin-photometric-v3';
-export const BATTLE_FACE_LIGHT_RESPONSE_VERSION='battle-face-light-response-v3';
+export const BATTLE_FACE_LIGHT_RESPONSE_VERSION='battle-face-light-response-v4';
 let battleSkinAlbedoTexture=null;
+let battleSkinNormalTexture=null;
+/** Shared tangent-space microrelief for fine pores and irregular skin.
+ * One 128² texture for all humans, no mesh, bone, light or draw-call addition.
+ * Very low amplitude: skin retains its sculpted planes instead of plastic noise.
+ */
+export function getBattleSkinMicroNormalTexture(){
+ if(battleSkinNormalTexture)return battleSkinNormalTexture;
+ const size=128,data=new Uint8Array(size*size*4);
+ const noise=(x,y)=>{
+  let h=Math.imul((x&127)+1,1664525)^Math.imul((y&127)+13,1013904223);
+  h=Math.imul(h^(h>>>15),2246822519);
+  return ((h^(h>>>13))>>>0)/4294967295;
+ };
+ for(let y=0;y<size;y++)for(let x=0;x<size;x++){
+  const dx=noise(x+1,y)-noise(x-1,y);
+  const dy=noise(x,y+1)-noise(x,y-1);
+  const i=(y*size+x)*4;
+  data[i]=Math.round(127.5+dx*12);
+  data[i+1]=Math.round(127.5+dy*12);
+  data[i+2]=255;data[i+3]=255;
+ }
+ const tex=new THREE.DataTexture(data,size,size,THREE.RGBAFormat);
+ tex.wrapS=tex.wrapT=THREE.RepeatWrapping;
+ tex.magFilter=THREE.LinearFilter;
+ tex.minFilter=THREE.LinearMipmapLinearFilter;
+ tex.generateMipmaps=true;tex.needsUpdate=true;
+ tex.name='battle-shared-dermal-micro-normal-v1';
+ battleSkinNormalTexture=tex;
+ return tex;
+}
 /** The real realistic-head-animation.glb has UVs but an UNTEXTURED skin
  * preview material (baseColor 0.65/0.44/0.34). The old studio converter
  * discarded even that warm source pigment and substituted gray clay.
@@ -116,7 +146,9 @@ export function installBattleFaceLightResponse(material){
   if(!shader.fragmentShader?.includes(marker))
    throw Error('Battle face PBR light gate: expected opaque_fragment not found');
   shader.fragmentShader=shader.fragmentShader.replace(marker,
-   'outgoingLight = (outgoingLight * 0.86) / (vec3(1.0) + 0.40 * max(outgoingLight - vec3(0.68), vec3(0.0)));\n'+marker);
+   'outgoingLight = (outgoingLight * 0.86) / (vec3(1.0) + 0.40 * max(outgoingLight - vec3(0.68), vec3(0.0)));\n'+
+   'float faceDiffuseLuma = dot(outgoingLight, vec3(0.2126, 0.7152, 0.0722));\n'+
+   'outgoingLight *= mix(0.90, 1.035, smoothstep(0.14, 0.70, faceDiffuseLuma));\n'+marker);
  };
  material.customProgramCacheKey=()=>previousProgramKey()+'|'+BATTLE_FACE_LIGHT_RESPONSE_VERSION;
  material.userData.battleFaceLightResponseVersion=BATTLE_FACE_LIGHT_RESPONSE_VERSION;
@@ -124,7 +156,7 @@ export function installBattleFaceLightResponse(material){
  material.needsUpdate=true;
  return {applied:true,version:BATTLE_FACE_LIGHT_RESPONSE_VERSION,scale:.86};
 }
-export function correctBattleFaceSkinTone(face,{sex='male'}={}){
+export function correctBattleFaceSkinTone(face,{sex='male',skinToneHex=null}={}){
  if(!face?.isMesh||!face.material||face.userData?.faceColorMode!=='color')
   throw Error('A colorized, real battle face mesh is required');
  const material=Array.isArray(face.material)?face.material[0]:face.material;
@@ -140,12 +172,22 @@ export function correctBattleFaceSkinTone(face,{sex='male'}={}){
  // then dimmed it to 58% in the fragment shader. With a camera closeup,
  // even fair-skinned creator presets appeared almost black. Restore the
  // original warm studio palette and compress only pathological highlights.
- const skinHex=sex==='female'?0xeac9b8:0xe2bda9;
+ const defaultSkinHex=sex==='female'?0xeac9b8:0xe2bda9;
+ // An author-selected tone takes priority, with strict validation so a
+ // corrupt/non-hex costume color never turns the face white or green.
+ const validTone=typeof skinToneHex==='string'&&/^#[0-9a-f]{6}$/i.test(skinToneHex);
+ const skinHex=validTone?parseInt(skinToneHex.slice(1),16):defaultSkinHex;
  material.color.setHex(skinHex);
- if(face.geometry?.getAttribute('uv'))material.map=getBattleSkinAlbedoTexture();
+ if(face.geometry?.getAttribute('uv')){
+  material.map=getBattleSkinAlbedoTexture();
+  // Near/middle detail on the same PBR face. Far distance filtering keeps
+  // these microscopic normals from sparkling or aliasing on Android.
+  material.normalMap=getBattleSkinMicroNormalTexture();
+  material.normalScale=new THREE.Vector2(.20,.20);
+ }
  material.metalness=0;
- material.roughness=.86;
- if('clearcoat' in material)material.clearcoat=.012;
+ material.roughness=.88;
+ if('clearcoat' in material)material.clearcoat=.009;
  if('sheen' in material)material.sheen=.025;
  if('specularIntensity' in material)material.specularIntensity=.48;
  material.toneMapped=true;
@@ -233,7 +275,7 @@ function buildArtistMaster(source,recipe,pattern=null){
  result.root.traverse(mesh=>{
   if(!mesh.isMesh)return;
   const role=String(mesh.userData?.colorRole||'').toLowerCase();
-  if(role!=='lashes'&&role!=='eyeaccent'&&role!=='brow')return;
+  if(!['lashes','eyeaccent','brow','lipbase','eyeliner','blush'].includes(role))return;
   const mats=Array.isArray(mesh.material)?mesh.material:[mesh.material];
   for(const mat of mats){
    if(!mat)return;
@@ -243,14 +285,21 @@ function buildArtistMaster(source,recipe,pattern=null){
     // Thin upper/lower strands stay translucent instead of black slabs.
     mat.opacity=Math.min(mat.opacity??1,recipe.sex==='female'?.83:.71);
    }else if(mat.isMeshStandardMaterial){
-    mat.roughness=Math.max(mat.roughness||0,.83);
+    // Subtle powder makeup stays on the real 3D surface; soft lip sheen,
+    // brow texture, and orbital shadow each respond to the actual sunlight.
+    mat.roughness=role==='lipbase'?.68:Math.max(mat.roughness||0,.83);
     mat.metalness=0;
+    if(role==='eyeaccent'&&mat.transparent)
+     mat.opacity=Math.min(mat.opacity??1,recipe.sex==='female'?.18:.10);
+    if(role==='blush'&&mat.transparent)
+     mat.opacity=Math.min(mat.opacity??1,.20);
    }
    mat.needsUpdate=true;
   }
  });
  // The face editor is allowed to be bright; combat light cannot bleach skin.
- correctBattleFaceSkinTone(result.face,{sex:recipe.sex});
+ correctBattleFaceSkinTone(result.face,{sex:recipe.sex,
+  skinToneHex:pattern?.skinToneHex||recipe.skinToneHex||null});
  return result;
 }
 function findSculptFace(root,sex){

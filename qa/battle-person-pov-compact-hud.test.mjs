@@ -1,0 +1,31 @@
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {personFacingYaw,writePersonPovOffset} from '../src/battle-person-pov-camera.js';
+const original={root:{rotation:{y:0}},team:0};
+const result={set(x,y,z){this.x=x;this.y=y;this.z=z;return this}};
+assert.equal(personFacingYaw(original),0);
+writePersonPovOffset(original,result,9,3.3,0);
+assert.ok(Math.abs(result.z+9)<1e-7,'+Z-facing character: camera behind (-Z)');
+assert.equal(result.y,3.3);
+const east={facingX:1,facingZ:0,team:0};
+assert.ok(Math.abs(personFacingYaw(east)-Math.PI/2)<1e-7);
+writePersonPovOffset(east,result,9,3.3,0);
+assert.ok(Math.abs(result.x+9)<1e-7,'+X-facing: camera stays behind (-X)');
+assert.equal(personFacingYaw({_visualMotion:{yaw:-1.1},root:{rotation:{y:0}}}),-1.1,
+ 'The GPU visual heading, not the lagging AI root, drives the follow camera');
+assert.equal(personFacingYaw({team:1}),-Math.PI/2);
+const html=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
+assert.match(html,/targetViewFollowing=true/);
+assert.match(html,/camera\.position\.lerp\(personPovPosition,ease\)/);
+assert.match(html,/controls\.target\.lerp\(personPovLook,ease\)/);
+assert.match(html,/writePersonPovOffset\(target\.unit,initialPersonPovOffset/);
+assert.match(html,/controls\.addEventListener\('start',\(\)=>\{followCamera=false;targetViewFollowing=false;\}\)/);
+assert.match(html,/#battleSelectedTargetBar\{display:none!important\}/);
+assert.match(html,/body\[data-circle-target\] #battleCancelCircleTarget\{display:flex!important\}/);
+assert.match(html,/<\/div><button id="battleCancelCircleTarget"/,
+ 'Cancel target selection must remain accessible when the obsolete info bar is removed');
+const ceremony=readFileSync(new URL('../src/battle-ceremony.js',import.meta.url),'utf8');
+assert.match(ceremony,/#battleCeremony \.ceremonyShade,[\s\S]*?display:none!important/);
+assert.match(ceremony,/width:min\(325px,43vw\)/);
+assert.match(ceremony,/locked=major/,'Preserve start and ending state transition gates');
+console.log('PASS: selected target POV, no full-screen cut-in and report has no redundant strip');

@@ -55,6 +55,48 @@ export function createBattleCeremony({
  @keyframes ceremonyOrnament{to{transform:scaleX(1)}}
  @keyframes ceremonyLines{to{transform:translateY(20px)}}
  @keyframes ceremonyRise{from{opacity:0;transform:scale(1.38)}to{opacity:1;transform:scale(1)}}
+ /* Compact, passive message cards. No full-screen shade or distracting
+  * beams; retain the existing short input gate only for intro/victory/defeat. */
+ #battleCeremony{display:block;overflow:visible}
+ #battleCeremony .ceremonyShade,
+ #battleCeremony .ceremonyBeam,
+ #battleCeremony .ceremonyOrnament,
+ #battleCeremony .ceremonyLines{display:none!important}
+ #battleCeremony .ceremonyContent,
+ #battleCeremony.order .ceremonyContent{
+  position:absolute;top:calc(var(--battleTopBottom,145px) + 7px);right:8px;
+  width:min(325px,43vw);max-width:43vw;min-width:142px;box-sizing:border-box;
+  display:flex;align-items:center;justify-content:center;flex-wrap:wrap;
+  gap:3px 7px;margin:0;padding:8px 10px;border:1px solid #c6a16c;
+  border-radius:11px;background:linear-gradient(125deg,#102b40f0,#121e31f2);
+  box-shadow:0 3px 14px #0008;filter:none;text-align:center;
+  transform:none;animation:ceremonyCompactEnter .24s ease-out both
+ }
+ #battleCeremony .ceremonyEmblem,
+ #battleCeremony.order .ceremonyEmblem{font-size:22px;line-height:1}
+ #battleCeremony .ceremonyTitle,
+ #battleCeremony.order .ceremonyTitle,
+ #battleCeremony.result .ceremonyTitle{
+  font:bold clamp(15px,2.3vw,22px)/1.18 serif;
+  color:#ffe2a3;text-shadow:0 1px 5px #000;letter-spacing:.04em;
+  -webkit-text-stroke:0
+ }
+ #battleCeremony .ceremonyStage{font:700 10px/1.3 system-ui;max-width:100%}
+ #battleCeremony .ceremonyBuff{font:700 11px/1.3 system-ui;max-width:100%;color:#c4efd0}
+ #battleCeremony .ceremonySub{font:500 11px/1.3 system-ui;letter-spacing:0;max-width:100%}
+ #battleCeremony .ceremonySub,
+ #battleCeremony .ceremonyBuff,
+ #battleCeremony .ceremonyStage{flex-basis:100%}
+ #battleCeremony.intro .ceremonyContent,
+ #battleCeremony.victory .ceremonyContent,
+ #battleCeremony.defeat .ceremonyContent{
+  left:50%;right:auto;top:calc(var(--battleTopBottom,145px) + 8px);
+  transform:translateX(-50%);width:min(400px,75vw);max-width:75vw
+ }
+ @keyframes ceremonyCompactEnter{from{opacity:0}to{opacity:1}}
+ @media(max-width:430px){#battleCeremony.order .ceremonyContent,
+  #battleCeremony.result .ceremonyContent{width:min(205px,46vw);max-width:46vw;padding:6px}
+  #battleCeremony .ceremonySub{font-size:10px}}
  @media(prefers-reduced-motion:reduce){#battleCeremony *{animation:none!important;transition:none!important}}
  `;
  doc.head.appendChild(style);
@@ -83,8 +125,8 @@ export function createBattleCeremony({
   state=kind==='intro'?'intro':major?'outro':kind;
   // Give players enough real time to read multi-line cut-in text.
   const readingCharacters=String(detail||'').length+String(buffText||'').length;
-  const readableMs=kind==='order'?Math.min(6500,3500+readingCharacters*43):
-   kind==='result'?Math.min(5800,3900+readingCharacters*65):
+  const readableMs=kind==='order'?Math.min(3100,1600+readingCharacters*22):
+   kind==='result'?Math.min(2700,1550+readingCharacters*25):
    kind==='intro'?2400:3500;
   locked=major;until=now()+(duration??readableMs);
   el.hidden=false;el.className=kind+' visible'+(locked?' locked':'');
