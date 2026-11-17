@@ -96,7 +96,7 @@ assert.match(source,/createBattleThreeGroupPanel/);
 assert.match(source,/threeGroupPanel\?\.render/);
 assert.match(source,/storyRequest\.units\.length,storyRequest\.enemyCount/);
 assert.match(source,/3段階作戦を選ぶ/);
-assert.match(source,/natural-size-20261116/);
+assert.match(source,/20261117-horse-saddle-fix1/);
 for(const file of ['src/battle-three-group-hierarchy.js','src/battle-three-group-panel.js',
  'src/three-team-sortie.js','src/three-team-sortie-ui.js']){
  new SourceTextModule(readFileSync(new URL('../'+file,import.meta.url),'utf8'),{identifier:file});

@@ -181,7 +181,11 @@ function fittedScalpFibers(surface,bounds,tint,quality='preview'){
    if(direction.lengthSq()<.001){direction.set(0,0,-1);
     direction.addScaledVector(normal,-direction.dot(normal)).normalize()}
    widthAxis.crossVectors(normal,direction).normalize();
-   const length=.015+(j%4)*.004,halfWidth=.00038+(j%3)*.00011;
+   // A sparse, almost-flat scalp was perceived as a bald head in the
+   // 1000v1000 crowd. Keep the same triangle count but give each genuine
+   // root fiber a readable swept silhouette at mid distance.
+   const length=quality==='battle'?.028+(j%4)*.005:.015+(j%4)*.004;
+   const halfWidth=quality==='battle'?.00072+(j%3)*.00014:.00038+(j%3)*.00011;
    const origin=p.clone().addScaledVector(normal,.0018);
    q.copy(origin).addScaledVector(direction,length).addScaledVector(normal,.0008);
    const left=origin.clone().addScaledVector(widthAxis,-halfWidth);

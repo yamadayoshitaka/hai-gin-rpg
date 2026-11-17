@@ -20,7 +20,9 @@ assert.match(page,/ensureBattleScalpCoverage\(next\)/);
 assert.match(page,/ensureBattleScalpCoverage\(a\)/);
 assert.match(mass,/scalp\.after\.source==='missing'/);
 assert.match(mass,/equipBattleStudioHair\(representative\.masterHead/);
-assert.match(mass,/ハゲをGPUモデルへ焼き込まず中断します/);
+assert.match(mass,/ハゲ軍団への焼き込みを中断します/);
+assert.match(mass,/quality:'near',hero:false/,
+ 'mass GPU source uses dense groom fitted to new sculpt rather than old donor');
 assert.match(face,/faceContour = smoothstep/);
 assert.match(face,/battleFaceContourStrength=\.105/);
 assert.match(face,/BATTLE_FACE_LIGHT_RESPONSE_VERSION='battle-face-light-response-v5-face-contour'/);

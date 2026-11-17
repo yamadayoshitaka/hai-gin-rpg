@@ -9,6 +9,11 @@ policy=battleClosedBackCoverage({panel:null});
 assert.equal(policy.closed,false);assert.deepEqual(policy.preserveRegions,['torso'],'no panel retains fallback body');
 assert.equal(battleClosedBackCoverage({panel:{...panel,visible:false}}).closed,false);
 assert.equal(battleClosedBackCoverage({panel,preserveBody:true}).closed,false);
+const sourceLined=battleClosedBackCoverage({panel:{...panel,visible:false},opaqueLining:1});
+assert.equal(sourceLined.closed,true,'verified skinned source fabric replaces flat back sheet');
+assert.deepEqual(sourceLined.forceCoveredRegions,['torso']);
+assert.deepEqual(sourceLined.preserveRegions,[],'bare torso cannot reappear after board removal');
+assert.equal(battleClosedBackCoverage({panel:{...panel,visible:false},opaqueLining:0}).closed,false);
 let visible=false;
 const a={id:2,job:{name:'剣士'},studioPattern:{hairStyleId:'h01'},
   character:{},outfit:{

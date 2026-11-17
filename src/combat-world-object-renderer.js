@@ -11,7 +11,7 @@ import {createAdoptedSpecialSummonRenderer} from './combat-creature-adopted-over
 import {createMonsterSummonRenderer} from './monster-summon-renderer.js?v=m002-feline-action-v4-20261117';
 import { buildCombatObjectGeometry, CREATURE_VISUAL_SPECS } from './combat-creature-geometry.js?v=4.5.20';
 import {subdivideDedicatedSource} from './creature-source-subdivision.js?v=masters-v1';
-import {creatureInstancePhase,creatureFlightHeight,creatureSize,creatureAttackProgress,mountedFlightSway,mountedFlightBaseHeight} from './combat-creature-performance.js?v=natural-size-20261116';
+import {creatureInstancePhase,creatureFlightHeight,creatureSize,creatureAttackProgress,mountedFlightSway,mountedFlightBaseHeight} from './combat-creature-performance.js?v=20261117-horse-saddle-fix1';
 import {createCreatureLocomotion,advanceCreatureLocomotion,creatureLegSwing} from './combat-creature-locomotion.js?v=4.4.59';
 import {createCreatureFootfallFx} from './combat-creature-footfall-fx.js?v=4.4.23';
 import {loadQuaterniusSummonFace} from './combat-summon-face-library.js?v=4.4.78';

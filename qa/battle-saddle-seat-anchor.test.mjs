@@ -5,7 +5,10 @@ import {
 } from '../src/combat-creature-performance.js';
 const horse={id:'horse-1',type:'horse',alive:true,mountedBy:1,category:'mount'};
 const saddle=riderSeatAnchor(horse);
-assert.ok(saddle.z<-.35,'horse saddle must sit behind the shoulders');
+assert.ok(saddle.z<-.15&&saddle.z>-.3,
+ 'horse pelvis stays over the measured saddle pad near z=-.18, not the rear rump');
+assert.ok(saddle.y>=1.82&&saddle.y<=1.95,
+ 'horse saddle top (1.22 + .51 + .055m) must not bury the pelvis inside the horse');
 assert.ok(saddle.y>CREATURE_PERFORMANCE.horse.seat,'horse pelvis requires positive clearance');
 assert.equal(riderSeatLocalOffset(horse).z,saddle.z);
 assert.equal(riderSeatHeight(horse),saddle.y);

@@ -9,7 +9,7 @@ import {massGaitActive} from './mass-visual-motion.js?v=4.6.35';
 import {ensureBattleScalpCoverage} from './character-system/battle-visual-pipeline.js';
 import {equipBattleStudioHair} from './character-system/battle-artist-head-graft.js?v=20261117-shading-back1';
 import {massLocomotionKind,massGpuMotionCode} from './mass-dash-parity.js?v=4.6.34';
-import {riderSeatLocalOffset,mountedFlightSway} from './combat-creature-performance.js?v=4.6.29';
+import {riderSeatLocalOffset,mountedFlightSway} from './combat-creature-performance.js?v=20261117-horse-saddle-fix1';
 import {massAttackVariant} from './mass-battle-vfx-policy.js?v=4.6.31';
 import {createCrowdGroundAnchor,crowdGroundShift,applyCrowdGroundShift} from './crowd-run-grounding.js?v=4.6.32';
 
@@ -247,37 +247,39 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
     if(!representative){
       throw Error(`${job.name}の実物衣装モデルを読み込めません。簡易モデルへの切り替えは行いません。`);
     }
-    // The GPU does not synthesize a new face or hair model: it photographs
-    // the original dressed rig. Never permanently bake a bald prototype.
+    // Critical: the donor's original fitted GLB is aligned to the OLD
+    // Quaternius skull. The replacement sculpted battle face is larger and
+    // may completely engulf this hair, even when attached=true. Source the
+    // GPU crowd from a genuine scalp-anchored dense studio groom on the NEW
+    // sculpt instead. Only ten-ish source rigs need this startup operation;
+    // 2000 instances share the captured result without runtime hair skinning.
+    const fittedBefore=representative.outfit.getHairState?.()??null;
     let scalp=ensureBattleScalpCoverage(representative);
-    if(scalp.after.source==='missing'&&representative.masterHead?.attached&&
-      representative.studioPattern){
+    if(representative.masterHead?.attached&&representative.studioPattern){
       try{
-       equipBattleStudioHair(representative.masterHead,representative.studioPattern,{
-        quality:'middle',hero:false
-       });
-       representative.outfit.setHairVisible(false);
-       scalp=ensureBattleScalpCoverage(representative);
+        equipBattleStudioHair(representative.masterHead,representative.studioPattern,{
+          quality:'near',hero:false
+        });
+        representative.outfit.setHairVisible(false);
+        scalp=ensureBattleScalpCoverage(representative);
       }catch(error){
-       console.warn('Mass battle fallback haircut failed',job.name,error);
+        console.warn('Dense scalp-aligned crowd groom unavailable',job.name,error);
       }
     }
-    if(scalp.after.source==='missing')
-      throw Error(job.name+'の実3D毛髪が見つかりません。ハゲをGPUモデルへ焼き込まず中断します。');
-    // The 120-strand studio middle groom looks sparse once flattened into
-    // thousands of small GPU silhouettes. For the crowd prototype use the
-    // original fitted FULL hairstyle and its anatomical root fibers whenever
-    // attached; restore the inspected studio groom after atlas/snapshot bake.
-    const fittedBefore=representative.outfit.getHairState?.()??null;
-    const studioHairRoot=representative.masterHead?.studioWig?.root??null;
-    const studioHairBefore=studioHairRoot?.visible;
-    if(fittedBefore?.attached){
-      if(studioHairRoot)studioHairRoot.visible=false;
+    // Never photograph an empty scalp. Fitted GLB is fallback only if the
+    // new-sculpt groom genuinely could not be built; it is not the default.
+    if(scalp.after.source==='missing'&&fittedBefore?.attached){
       representative.outfit.setHairVisible(true);
       scalp=ensureBattleScalpCoverage(representative);
-      if(scalp.after.source!=='fitted-source')
-        throw Error(job.name+'のGPU群衆用フル髪メッシュの表示に失敗しました');
     }
+    if(scalp.after.source==='missing')
+      throw Error(job.name+'の顔に合う実3D毛髪がありません。ハゲ軍団への焼き込みを中断します。');
+    const studioHairRoot=representative.masterHead?.studioWig?.root??null;
+    const studioHairBefore=studioHairRoot?.visible;
+    // Keep one groom at a time; otherwise two hair shells z-fight and
+    // expose scalp-coloured regions in the distant atlas.
+    if(scalp.after.source==='studio-scalp')
+      representative.outfit.setHairVisible(false);
     representative.crowdSampling=true;
     const person=representative.character.object3D;
     // LOD.update() may have left the nearest scalp mesh invisible before
@@ -590,7 +592,11 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
     onProgress?.(jobIndex+1,jobs.length,job.name);
     representative.crowdSampling=false;
     if(studioHairRoot)studioHairRoot.visible=studioHairBefore;
-    if(fittedBefore?.attached)representative.outfit.setHairVisible(fittedBefore.visible);
+    // The new sculpt-fitted groom remains on the detailed representative.
+    // Do not reactivate the old donor-aligned wig underneath it.
+    if(fittedBefore?.attached)
+      representative.outfit.setHairVisible(
+        studioHairRoot?false:fittedBefore.visible);
     ensureBattleScalpCoverage(representative);
     for(const state of hairLodStates){
       state.node.autoUpdate=state.autoUpdate;
