@@ -1,0 +1,8 @@
+{
+  "purpose": "Trigger existing Publish RPG Pages workflow from main without changing game assets",
+  "requested_date_jst": "2026-11-18",
+  "target": "GitHub Pages",
+  "source": "ChatGPT user-requested redeploy",
+  "workflow": ".github/workflows/publish-pages.yml",
+  "reason": "Verify publication of Phoenix m013 visual updates and existing fixes"
+}
