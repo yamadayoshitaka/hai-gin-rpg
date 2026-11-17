@@ -3,7 +3,15 @@
  * Keep decisions based on actual attached meshes, not inferred job names.
  * No meshes, shaders, fetches, animations or per-frame allocations are added.
  */
-export const BATTLE_CHARACTER_PIPELINE_VERSION='face-hair-back-20261117-v1';
+export const BATTLE_CHARACTER_PIPELINE_VERSION='face-hair-back-20261117-v2-visible-ancestor';
+function visibleInside(node,root){
+ if(!node)return false;
+ for(let p=node;p;p=p.parent){
+  if(p.visible===false)return false;
+  if(root&&p===root)return true;
+ }
+ return !root;
+}
 export function battleClosedBackCoverage({quality='battle',panel,opaqueLining=0,preserveBody=false}={}){
  const skinned=Boolean(panel?.isSkinnedMesh&&panel.visible!==false&&
    panel.geometry?.getAttribute?.('position')?.count>=100);
@@ -23,8 +31,8 @@ export function battleScalpCoverageState(actor){
   wig?.root?.getObjectByName?.('REAL_ROOTED_SWEPT_HAIR_LOCKS');
  const rootedVertices=Number(locks?.geometry?.getAttribute?.('position')?.count)||0;
  const studioReady=Boolean(head?.attached&&head.face?.visible!==false&&
-  wig?.root&&wig.root.visible!==false&&wig.root.parent&&
-  locks?.visible!==false&&rootedVertices>300);
+  wig?.root&&wig.root.parent&&rootedVertices>300&&
+  visibleInside(locks,actor?.character?.object3D||null));
  const fitted=actor?.outfit?.getHairState?.()??{attached:false,visible:false};
  const fallbackReady=Boolean(fitted.attached&&fitted.visible);
  return {
