@@ -343,7 +343,7 @@ export function createDetailedOutfit(job, sex, body, textures, {quality='preview
     add('anatomically-curved-rear-cuirass-lames',rearArmor,plate);
     // Side fastenings link the fitted rear shell to the breastplate without
     // solid rectangular side cards. Low-count curved straps are skinned too.
-    for(const side of [-1,1])for(const fraction of [.33,.75]){
+    if(!battle)for(const side of [-1,1])for(const fraction of [.33,.75]){
       const y=rearTop-rearSpan*fraction;
       const from=rearContour(side*.92,y),to=edge(side*.94,y);
       const mid=from.clone().lerp(to,.5);
