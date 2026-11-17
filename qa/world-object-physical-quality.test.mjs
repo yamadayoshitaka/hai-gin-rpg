@@ -17,7 +17,7 @@ const targets={
  town_well_001:['Windlass','spindle.rotation.z','new THREE.TorusGeometry'],
  town_crate_001:['inclined beams','brace.rotation.z'],
  town_water_trough_001:['for(const x of [-1.40,1.40])','box(2.67*c'],
- town_signpost_001:['directional tips','tip.rotation.z']
+ town_signpost_001:['new THREE.ConeGeometry(.25*c,.46*c,3)','tip.rotation.z']
 };
 for(const [id,markers] of Object.entries(targets)){
  const start=catalog.indexOf("if(id==='"+id+"'){");
