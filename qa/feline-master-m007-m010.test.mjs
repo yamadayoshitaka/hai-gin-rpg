@@ -91,6 +91,19 @@ test('four actual 3D feline sculpts have narrow heads and continuous cat anatomy
    assert.equal(body.userData.felineMusclesSculptedIntoTrunk,true);
    assert.equal(body.userData.closedAnatomicalHull,true);
    assert.ok(body.userData.anatomicalEndCaps>0);
+   const tailRoot=get(model,'feline-rooted-tail-'+id);
+   const tailMid=get(model,'feline-tail-middle-'+id);
+   for(const part of [tailRoot,tailMid]){
+    assert.ok(part?.userData.felineTailClosedSource,
+     'rear hole came from an open cat tail TubeGeometry: '+id);
+    assert.ok(part.userData.cappedTubularSkin);
+    const radials=part.userData.endCapTriangles;
+    assert.ok(radials>=16,'missing actual two cap fans');
+   }
+   for(const limb of ['frontL','frontR','rearL','rearR']){
+    const skin=get(model,'feline-continuous-skin-'+limb);
+    assert.equal(skin?.userData.felineMedialMuscleOrigin,true);
+   }
    assert.equal(model.userData.felineMasterVariant,variant.archetype);
    assert.equal(model.userData.felineFaceWidthRatio,variant.headWidth);
    assert.equal(model.userData.felineTorsoWidth,variant.torsoWidth);
