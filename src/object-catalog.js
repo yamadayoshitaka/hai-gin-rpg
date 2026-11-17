@@ -505,8 +505,23 @@ export function createObjectById(id,{cellSize=2.2}={}){
    }
   }
   if(id==='town_well_001'){
-   const ring=new THREE.Mesh(new THREE.CylinderGeometry(1.2*c,1.2*c,.95*c,16,1,true),stone);
-   ring.position.y=.48*c;ring.castShadow=true;root.add(ring);
+   // Radially bonded stone courses: staggered joints and a projecting dressed coping.
+   // Segment thickness is structural rather than a paper-thin single-sided cylinder.
+   for(let course=0;course<5;course++){
+    const y=(.095+course*.19)*c;
+    for(let j=0;j<16;j++){
+     const a=(j+(course%2)*.5)*Math.PI/8;
+     const block=new THREE.Mesh(new THREE.BoxGeometry(.37*c,.18*c,.27*c),stone);
+     block.position.set(Math.sin(a)*1.16*c,y,Math.cos(a)*1.16*c);
+     block.rotation.y=a;block.castShadow=true;block.receiveShadow=true;root.add(block);
+    }
+   }
+   for(let j=0;j<16;j++){
+    const a=(j+.25)*Math.PI/8;
+    const cap=new THREE.Mesh(new THREE.BoxGeometry(.43*c,.13*c,.36*c),stone);
+    cap.position.set(Math.sin(a)*1.18*c,1.01*c,Math.cos(a)*1.18*c);
+    cap.rotation.y=a;cap.castShadow=true;root.add(cap);
+   }
    const surface=new THREE.Mesh(new THREE.CircleGeometry(1.08*c,24),water);
    surface.rotation.x=-Math.PI/2;surface.position.y=.55*c;root.add(surface);
    for(const x of [-1,1])box(.17*c,2.6*c,.17*c,x*c,1.5*c,0,wood);
@@ -809,6 +824,14 @@ export function createObjectById(id,{cellSize=2.2}={}){
    for(const [radius,height,y,mat] of [[3.3,.5,.25,stone],[2.8,.14,.58,water],[1.35,.8,.95,stone],[.7,1.6,2.1,stone]]){
     const m=new THREE.Mesh(new THREE.CylinderGeometry(radius*cellSize,radius*cellSize,height*cellSize,24),mat);
     m.position.y=y*cellSize;m.castShadow=true;root.add(m);
+   }
+   // Alternating voussoir-like basin blocks support the lip and avoid a smooth drum silhouette.
+   for(let course=0;course<2;course++)for(let i=0;i<24;i++){
+    const a=(i+(course%2)*.5)*Math.PI/12;
+    const radius=3.22*cellSize;
+    const block=new THREE.Mesh(new THREE.BoxGeometry(.83*cellSize,.21*cellSize,.34*cellSize),stone);
+    block.position.set(Math.sin(a)*radius,(.16+course*.23)*cellSize,Math.cos(a)*radius);
+    block.rotation.y=a;block.castShadow=true;block.receiveShadow=true;root.add(block);
    }
    for(let i=0;i<8;i++){const a=i*Math.PI/4;box(.42*cellSize,.9*cellSize,.42*cellSize,Math.sin(a)*2.9*cellSize,.85*cellSize,Math.cos(a)*2.9*cellSize,stone)}
   }else if(id==='market_stall_001'){
