@@ -1180,6 +1180,7 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
      pelvisMounted?g.pivots.pelvis:
        (s.id==='m001'||felineMaster?torso:g.root));
    if(felineMaster){
+     leg.userData.felineJointSeamRefinement=true;
      leg.scale.x=felineMaster.legWidth;
      leg.scale.z=felineMaster.legWidth;
      leg.userData.felineProximalJoint=fore>0?'scapula':'femur';
@@ -1193,7 +1194,7 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    }
    // Distal motion is independent from shoulder/hip rotation, retaining
    // the original limb and ground-contact positions.
-   if(s.id==='m001'||s.id==='m002'){
+   if(s.id==='m001'||s.id==='m002'||felineMaster){
      leg.userData.proximalSocket=fore>0?'shoulder':'hip';
      // A small overlapped moving proximal sleeve follows the limb's
      // rotation and disappears beneath its torso-mounted fascia.
@@ -1203,7 +1204,8 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
          [0,.34,fore>0?-.018:-.054],
          [0,.575,fore>0?-.020:-.050],
          fore>0?.146:.138,fore>0?.168:.151);
-       sleeve.name='m001-proximal-sleeve-'+name;
+       sleeve.name=(felineMaster?'feline':'m001')+
+         '-proximal-sleeve-'+name;
        sleeve.userData.jointSeamSleeve=true;
      }
    }
@@ -1269,7 +1271,8 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
     }:felineMaster?{
       ...p,rx:p.rx*.81,rz:p.rz*.80
     }:p),{name:'beast-shin-'+name});
-    if(s.id==='m001'&&coatDetail!=='low'){
+    if((s.id==='m001'||s.id==='m002'||felineMaster)&&
+       coatDetail!=='low'){
       // A small overlapping fascia above/below the actual hinge keeps
       // the silhouette continuous while two joint rotations stay free.
       const rear=fore<0;
@@ -1277,13 +1280,15 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
         rear?[0,-.090,.106]:[0,-.070,-.090],
         rear?[0,-.235,.140]:[0,-.225,-.102],
         rear?.136:.130,rear?.122:.113);
-      upperFold.name='m001-upper-knee-fascia-'+name;
+      upperFold.name=(felineMaster?'feline':'m001')+
+        '-upper-knee-fascia-'+name;
       upperFold.userData.kneeUpperCover=true;
       const lowerFold=g.bridge(distal,'skin',
         rear?[0,.090,.100]:[0,.110,-.091],
         rear?[0,-.125,.124]:[0,-.130,-.047],
         rear?.120:.115,rear?.111:.107);
-      lowerFold.name='m001-lower-knee-fascia-'+name;
+      lowerFold.name=(felineMaster?'feline':'m001')+
+        '-lower-knee-fascia-'+name;
       lowerFold.userData.kneeLowerCover=true;
     }
    }else{
@@ -1374,7 +1379,10 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
          [x,-.073,.262],.024,{name:'rooted-claw-m003-'+digit});
      }
    }
-   if(!beastRemesh)g.sphere(leg,'skin',[0,-.04,.015],[.18,.18,.18]);
+   // Old fallback ball was incorrectly added on top of EVERY feline
+   // anatomy-loft limb, producing detached circular shoulder/hip joints.
+   if(!beastRemesh&&!felineMaster)
+     g.sphere(leg,'skin',[0,-.04,.015],[.18,.18,.18]);
    if(canine&&coatDetail!=='low'){
      // Each fur region belongs to its own anatomical joint. Previously
      // all three patches lived on 'leg', so the shank and paw coat detached
