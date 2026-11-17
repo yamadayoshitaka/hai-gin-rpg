@@ -747,6 +747,14 @@ body[data-circle-target] #battleCancelCircleTarget{display:flex!important}
 #overviewSquadHud[hidden],#overviewSquadInspector[hidden],.overviewSquadPin[hidden]{display:none!important}
 #overviewSquadHud{position:fixed;inset:0;z-index:22;pointer-events:none;font-family:system-ui}
 #overviewPins{position:absolute;inset:0;pointer-events:none}
+#overviewMapSummary{
+ position:fixed;left:50%;top:calc(var(--battleTopBottom,185px) + 7px);
+ transform:translateX(-50%);width:max-content;max-width:calc(100vw - 20px);
+ border-radius:8px;border:1px solid #7294ac;background:#0b2338e8;
+ padding:5px 10px;font:800 11px/1.2 system-ui;color:#eff8ff;
+ white-space:nowrap;pointer-events:none;text-align:center;
+ box-shadow:0 2px 7px #0008;z-index:2
+}
 #overviewPinLeaders{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
 .overviewSquadPin{
  position:absolute;transform:translate(-50%,-50%);z-index:2;
@@ -800,6 +808,7 @@ body.compact-command-dock.squad-closeup #enemySquadRibbon{display:none!important
 <div id="overviewSquadHud" hidden aria-label="俯瞰戦場の味方と敵の部隊を選択">
  <svg id="overviewPinLeaders" aria-hidden="true"></svg>
  <div id="overviewPins"></div>
+ <div id="overviewMapSummary" role="status">味方・敵の部隊位置を表示中</div>
  <section id="overviewSquadInspector" hidden aria-label="選択部隊の戦況と作戦情報">
   <div class="overviewInspectorTitle"><strong id="overviewInspectorTitle">部隊情報</strong>
    <button id="overviewInspectorClose" type="button" aria-label="部隊情報を閉じる">✕</button></div>
@@ -8673,6 +8682,14 @@ function updateOverviewSquadPins(dt){
   node.line.style.display=loc.displaced?'':'none';
   node.dot.style.display=loc.displaced?'':'none';
  }
+ const aliveCount=team=>[...overviewPinNodes.values()].filter(node=>{
+  if(node.team!==team)return false;
+  const marker=squadMarkers.get(squadKey(team,node.id));
+  return marker?.visible&&!marker.userData.screenLabel.userDataStrength.textContent.startsWith('0/');
+ }).length;
+ const summary='🔵 味方 '+aliveCount(0)+'/'+squadIds.length+
+  '隊　🔴 敵 '+aliveCount(1)+'/'+enemySquadIds.length+'隊';
+ if($('overviewMapSummary').textContent!==summary)$('overviewMapSummary').textContent=summary;
  renderOverviewSquadInspector();
 }
 window.getOverviewSquadQA=()=>({visible:!overviewHud.hidden,
