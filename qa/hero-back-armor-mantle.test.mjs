@@ -114,8 +114,8 @@ for(const sex of ['male','female']){
  const chunk=JSON.parse(bytes.toString('utf8',20,20+bytes.readUInt32LE(12)));
  const sourceShoulders=chunk.nodes.filter(node=>node.mesh!==undefined&&
   classifyArmorMesh('chest',node.name)==='shoulder');
- assert.equal(sourceShoulders.length,8,
-  sex+': all eight original rigid sleeves/pauldrons/fasteners are accounted for');
+ assert.equal(sourceShoulders.length,10,
+  sex+': all ten original rigid sleeves/pauldrons/fasteners are accounted for');
 }
 const sourceRuntime=readFileSync(new URL(
  '../src/character-system/segmented-armor-runtime.js',import.meta.url),'utf8');
