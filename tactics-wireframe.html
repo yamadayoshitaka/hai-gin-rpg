@@ -1462,9 +1462,26 @@ const slope=Math.min(1,(high-low)/HEIGHT_UNIT);const fade=Math.sin(Math.PI*u)**2
 const rough=(Math.sin(gx*9.7+gz*4.3)*Math.cos(gz*8.1-gx*3.9)*.09+Math.sin(gx*18.2-gz*14.6)*.025)*slope*fade;
 return Math.max(low,Math.min(high,base+rough))}
 const TERRAIN_SEGMENTS=1;
+// Reuse the EXACT vertex heights emitted into the terrain mesh. A live
+// 2000-soldier frame must only read three Float32 values, not execute three
+// expensive 16-sample bicubic height queries for each soldier.
+const terrainContactVertexHeights=new Float32Array((WORLD_SIZE+1)*(WORLD_SIZE+1));
 for(let z=0;z<232;z++)for(let x=0;x<232;x++){const X=(x-6)*CELL,Z=(z-6)*CELL;
 for(let j=0;j<TERRAIN_SEGMENTS;j++)for(let i=0;i<TERRAIN_SEGMENTS;i++){const corners=[],uv=[];
-for(const [ix,iz] of [[i,j],[i,j+1],[i+1,j+1],[i+1,j]]){const gx=x-.5+ix/TERRAIN_SEGMENTS,gz=z-.5+iz/TERRAIN_SEGMENTS;corners.push([(gx-6)*CELL,smoothHeight(gx,gz),(gz-6)*CELL]);uv.push([(x+ix/TERRAIN_SEGMENTS)/232,(z+iz/TERRAIN_SEGMENTS)/232])}quad(corners,uv,0)}}
+for(const [ix,iz] of [[i,j],[i,j+1],[i+1,j+1],[i+1,j]]){
+ const gx=x-.5+ix/TERRAIN_SEGMENTS,gz=z-.5+iz/TERRAIN_SEGMENTS;
+ const y=smoothHeight(gx,gz);
+ if(TERRAIN_SEGMENTS===1)
+   terrainContactVertexHeights[(z+iz)*(WORLD_SIZE+1)+x+ix]=y;
+ corners.push([(gx-6)*CELL,y,(gz-6)*CELL]);
+ uv.push([(x+ix/TERRAIN_SEGMENTS)/232,(z+iz/TERRAIN_SEGMENTS)/232]);
+}quad(corners,uv,0)}}
+function renderedTerrainVertexY(gx,gz){
+ const ix=Math.round(gx+.5),iz=Math.round(gz+.5);
+ if(TERRAIN_SEGMENTS===1&&ix>=0&&ix<=WORLD_SIZE&&iz>=0&&iz<=WORLD_SIZE)
+  return terrainContactVertexHeights[iz*(WORLD_SIZE+1)+ix];
+ return smoothHeight(gx,gz);
+}
 const terrainGeo=new THREE.BufferGeometry();terrainGeo.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));terrainGeo.setAttribute('uv',new THREE.Float32BufferAttribute(uvs,2));terrainGeo.setIndex(indices);for(const g of groups)terrainGeo.addGroup(...g);terrainGeo.computeVertexNormals();
 // Weld shading normals across shared tile edges (geometry stays independently textured).
 const norm=terrainGeo.getAttribute('normal'),pos=terrainGeo.getAttribute('position'),normalSums=new Map();
@@ -3138,7 +3155,7 @@ for(const [id,x,z] of townProps){
 function terrainY(x,z){
  // The same visible polygon height is authoritative for 50v50 and 1000v1000.
  // Explicit deck/tread contact only applies to its real collision footprint.
- return battleWalkSurfaceY(x/CELL+6,z/CELL+6,bridgeHeights,stairCells,smoothHeight);
+ return battleWalkSurfaceY(x/CELL+6,z/CELL+6,bridgeHeights,stairCells,renderedTerrainVertexY);
 }
 const riverSurfaceByRow=new Float32Array(WORLD_SIZE);
 for(const row of riverRows)riverSurfaceByRow[row.z]=row.y+.10;
