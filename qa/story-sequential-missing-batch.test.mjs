@@ -43,4 +43,15 @@ assert.equal(q.noPaidApi,true);
 const invalid=spawnSync(process.execPath,['scripts/story-sequential-missing-batch.mjs','--max','21'],
  {encoding:'utf8'});
 assert.notEqual(invalid.status,0);
+const workflow=fs.readFileSync('.github/workflows/story-sequential-missing-batch.yml','utf8');
+assert(workflow.includes("  schedule:\n    - cron: '35 0 * * *'\n"),
+ 'After Cloudflare UTC quota reset, a daily on-main GitHub Actions batch must run');
+assert(workflow.includes("day=$(date -u +%Y-%m-%d)"),
+ 'Daily quota must use UTC, not local Japan calendar day');
+assert(workflow.includes('Today already used the single Cloudflare Free production dispatch'),
+ 'Never call an image provider twice on the same UTC date');
+assert(workflow.includes('CF_FREE: ${{ vars.CLOUDFLARE_FREE_PLAN_CONFIRMED }}'),
+ 'No provider calls without owner-confirmed Free entitlement');
+assert(workflow.includes('github.event_name != \'pull_request\''),
+ 'PR test must not actually generate images');
 console.log('PASS: 1..200 sequential manga queue; native image and gender guards; generation=0 truth');
