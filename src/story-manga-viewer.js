@@ -43,7 +43,7 @@ export function createMangaViewer({container=document.body,storage=globalThis.lo
    font-family:Georgia,'Noto Serif JP',serif;overflow:auto;overscroll-behavior:contain;
    padding:max(12px,env(safe-area-inset-top)) 12px max(12px,env(safe-area-inset-bottom))}
  #stageMangaViewer[hidden]{display:none!important}
- #stageMangaViewer .manga-board{margin:0 auto;width:min(840px,100%);min-height:100%;display:flex;flex-direction:column;
+ #stageMangaViewer .manga-board{margin:0 auto;width:min(840px,100%);min-height:0;display:flex;flex-direction:column;
    gap:10px;background:linear-gradient(160deg,#111d2c,#050b15);border:1px solid #836f54;box-shadow:0 15px 40px #000c;padding:12px}
  #stageMangaViewer .manga-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
  #stageMangaViewer .manga-heading{min-width:0;display:grid;gap:5px}
@@ -57,6 +57,11 @@ export function createMangaViewer({container=document.body,storage=globalThis.lo
    border:1px solid #bd9d70;background:#111825;box-shadow:0 9px 30px #000b;overflow:hidden}
  #stageMangaViewer .manga-art{display:block;position:absolute;max-width:none;object-fit:fill}
  #stageMangaViewer .manga-art[hidden],#stageMangaViewer .manga-missing[hidden]{display:none!important}
+ #stageMangaViewer .manga-board.narration-intro .manga-art{filter:blur(15px) brightness(.25);transform:scale(1.08)}
+ #stageMangaViewer .manga-board.narration-intro .manga-page-area::after{content:'まずは、ここまでの物語';position:absolute;inset:0;
+   pointer-events:none;display:grid;place-items:center;color:#f2daa7;text-align:center;
+   font:700 clamp(17px,4vw,27px)/1.6 Georgia,'Noto Serif JP',serif;letter-spacing:.05em;
+   text-shadow:0 2px 18px #000,0 1px 4px #000}
  #stageMangaViewer .manga-missing{display:grid;place-items:center;text-align:center;height:100%;padding:24px;
    font:13px/1.7 system-ui;color:#d9c79e;background:#13273b}
  #stageMangaViewer .manga-shot{font:10px system-ui;text-align:right;color:#bfc8c8}
@@ -72,7 +77,7 @@ export function createMangaViewer({container=document.body,storage=globalThis.lo
    margin:6px 0 0;white-space:pre-wrap;max-height:28dvh;overflow-y:auto}
  #stageMangaViewer .manga-line ruby{ruby-position:over;text-decoration:none}
  #stageMangaViewer .manga-line rt{font:600 0.57em/1.3 system-ui;color:#e9c997}
- #stageMangaViewer .manga-bottom{display:grid;gap:10px;margin-top:auto}
+ #stageMangaViewer .manga-bottom{display:grid;gap:10px;margin-top:0}
  #stageMangaViewer .manga-progress{text-align:center;color:#d7c8a9;font:11px system-ui;letter-spacing:.2em}
  #stageMangaViewer .manga-controls{display:grid;grid-template-columns:1fr 1.65fr 1fr;gap:6px}
  #stageMangaViewer .manga-controls button{padding:9px 4px;background:#2b4053;color:#f6ead6;border:1px solid #718296}
@@ -151,6 +156,9 @@ export function createMangaViewer({container=document.body,storage=globalThis.lo
   if(!story||!active)return;
   stopVoice();
   const shot=visiblePanels[index],talk=activeTurn();
+  // Keep the introductory narration visually separate from the characters.
+  // Reveal the unblurred CG and speaker face as soon as dialogue starts.
+  $('.manga-board').classList.toggle('narration-intro',phase==='pre'&&index===0&&turnIndex===0&&!talk.characterId);
   const pagePanels=visiblePanels.filter(p=>p.comicEdition===shot.comicEdition&&p.comicPage===shot.comicPage);
   const reviewLink=$('.manga-preview-link');
   reviewLink.hidden=story.chapter!==1;
@@ -178,6 +186,7 @@ export function createMangaViewer({container=document.body,storage=globalThis.lo
  function close({completed=false}={}){
   if(!active)return;
   active=false;root.hidden=true;stopVoice();
+  $('.manga-board').classList.remove('narration-intro');
   const done=finish;finish=null;
   onClose(story,completed);
   if(completed)done?.();
