@@ -226,17 +226,15 @@ export function clipBodyToGarment(characterModel,coverage,{surfaceCheck=false,pr
    }
    if(surfaceCheck&&displayed!==original)mesh.geometry=displayed;
    const sourceIndices=original.index,kept=[];
-   // Verified opaque panels and fitted pants have no visible internal skin.
-   // Cut majority-covered triangles, but protect neck/hand/exposed seams.
-   // All non-verified outfits keep the previous conservative cut rule.
-   const opaqueEnvelope=surfaceCheck&&enclosed.size>0;
+   // Never discard a triangle that has even one uncovered vertex.
+   // Majority cuts create open seams at the back, knee and boot, especially
+   // when an opaque garment is animated away from its rest pose.
+   // Protected neck/hand transitions remain intact in every render mode.
    for(let i=0;i<sourceIndices.count;i+=3){
     const a=sourceIndices.getX(i),b=sourceIndices.getX(i+1),c=sourceIndices.getX(i+2);
-    const hiddenCorners=cut[a]+cut[b]+cut[c];
+    const fullyCovered=cut[a]===1&&cut[b]===1&&cut[c]===1;
     const visibleEdge=protectedEdge[a]||protectedEdge[b]||protectedEdge[c];
-    const canCut=surfaceCheck?
-      (opaqueEnvelope?hiddenCorners>=2&&!visibleEdge:hiddenCorners===3):hiddenCorners>=2;
-    if(!canCut)kept.push(a,b,c);
+    if(!fullyCovered||visibleEdge)kept.push(a,b,c);
    }
    // A failed / incompatible mesh must not disappear completely.
    const sourceCount=sourceIndices.count/3,keptCount=kept.length/3;
