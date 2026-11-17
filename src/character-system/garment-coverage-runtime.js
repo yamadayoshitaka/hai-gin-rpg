@@ -5,6 +5,19 @@
 import * as THREE from 'three';
 import {buildGarmentSurfaceCoverage} from './garment-surface-coverage.js?v=4.4.93';
 const maskCache=new WeakMap();
+// Stable policy identities let simultaneous battle and preview leases reuse one
+// masked geometry without retaining discarded outfit meshes in a strong Map.
+const surfacePolicyKeys=new WeakMap();
+function surfacePolicyKey(coverage,preserved,forced){
+ if(!coverage||typeof coverage!=='object')return 'missing-coverage';
+ if(!preserved.size&&!forced.length)return coverage;
+ let keys=surfacePolicyKeys.get(coverage);
+ if(!keys){keys=new Map();surfacePolicyKeys.set(coverage,keys)}
+ const signature='preserve:'+([...preserved].sort().join(','))+
+  '|force:'+([...forced].sort().join(','));
+ if(!keys.has(signature))keys.set(signature,{coverage,signature});
+ return keys.get(signature);
+}
 // Each live skinned body can be referenced by more than one asynchronous
 // costume build. A disposed old outfit must NOT unmask a newer outfit.
 const activeMasks=new WeakMap();
@@ -193,8 +206,7 @@ export function clipBodyToGarment(characterModel,coverage,{surfaceCheck=false,pr
   // Each verified closed-tunic policy needs an isolated cached mask.
   // Otherwise a bare source mesh can reuse an incompatible earlier mask.
   const cacheKey=surfaceCheck?
-   (preserved.size||forceCoveredRegions.length?
-     {coverage,preserved:[...preserved],forced:[...forceCoveredRegions]}:coverage):
+   surfacePolicyKey(coverage,preserved,forceCoveredRegions):
    coverage.signature+'|preserve:'+([...preserved].sort().join(','))+
      '|force:'+([...forceCoveredRegions].sort().join(','));
   let record=variants.get(cacheKey);
