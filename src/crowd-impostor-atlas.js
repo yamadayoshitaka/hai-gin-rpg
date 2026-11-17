@@ -54,7 +54,7 @@ function verifyAtlasSilhouette(renderer,target,tileSize=TILE,{row=0,column=0}={}
   return {opaquePixels:pixels,width:maxX-minX+1,height:maxY-minY+1};
 }
 
-export async function captureCrowdImpostorAtlas(renderer,actor,{tileSize=TILE}={}){
+export async function captureCrowdImpostorAtlas(renderer,actor,{tileSize=TILE,footOriginY=0}={}){
   if(!renderer||!actor?.character?.object3D||!actor.outfit)return null;
   const target=new THREE.WebGLRenderTarget(tileSize*GRID,tileSize*ROWS,{
     minFilter:THREE.LinearFilter,magFilter:THREE.LinearFilter,
@@ -97,7 +97,11 @@ export async function captureCrowdImpostorAtlas(renderer,actor,{tileSize=TILE}={
     // Move ONLY the representative live rig temporarily into an isolated
     // studio scene; never re-skin or reassemble its triangles for the photo.
     preview.add(person);
-    person.position.set(0,0,0);person.quaternion.identity();person.scale.set(1,1,1);
+    // The 3D crowd source and its photographed LOD must put the SAME real
+    // ankle at Y=0. Otherwise switching LOD sinks the whole photograph even
+    // when the terrain contact function is correct.
+    person.position.set(0,Number.isFinite(footOriginY)?-footOriginY:0,0);
+    person.quaternion.identity();person.scale.set(1,1,1);
     person.visible=true;
     renderer.setRenderTarget(target);
     renderer.setClearColor(0x000000,0);

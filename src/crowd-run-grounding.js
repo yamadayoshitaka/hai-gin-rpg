@@ -10,14 +10,16 @@
 export function createCrowdGroundAnchor(parts,{footBand=.23,maxFootSamples=4096}={}){
   if(!parts?.length)return null;
   let floor=Infinity;
-  for(const p of parts)if(p.isHumanBody&&p.base){
+  // Covered feet may have their skin removed intentionally. In that case
+  // the ACTUAL opaque boot-foot mesh supplies the anatomical contact plane.
+  for(const p of parts)if((p.isHumanBody||p.isFootSurface)&&p.base){
     const a=p.base;
     for(let i=1;i<a.length;i+=3)if(Number.isFinite(a[i]))floor=Math.min(floor,a[i]);
   }
   if(!Number.isFinite(floor))return null;
   let all=[];
   for(let part=0;part<parts.length;part++){
-    const p=parts[part];if(!p.isHumanBody||!p.base)continue;
+    const p=parts[part];if(!(p.isHumanBody||p.isFootSurface)||!p.base)continue;
     const a=p.base;
     for(let index=1;index<a.length;index+=3)
       if(a[index]>=floor-.01&&a[index]<=floor+footBand)
@@ -58,6 +60,41 @@ export function applyCrowdGroundShift(pose,dy){
   const adjusted=new Float32Array(pose);
   for(let i=1;i<adjusted.length;i+=3)adjusted[i]+=dy;
   return adjusted;
+}
+
+/**
+ * Place the source human's REAL foot-contact plane at local Y=0.
+ * Source GLBs are not guaranteed to have an ankle-based root. A render root
+ * placed at terrainY will bury the same negative foot offset in every
+ * instance unless BOTH the bind and all motion pose buffers are corrected.
+ *
+ * Executed only once per job during GPU prototype construction, never for
+ * each of 2000 live soldiers. Clothes/hair/weapons follow the same delta.
+ */
+export const CROWD_GROUND_POSE_CHANNELS=Object.freeze([
+  'position','crowdWalkA','crowdWalkB','crowdAttack',
+  'crowdHit','crowdDead','crowdRide'
+]);
+export function normalizeCrowdCaptureFootOrigin(sources,anchor){
+  const floor=anchor?.floor;
+  if(!Number.isFinite(floor))throw Error('Missing anatomical foot origin');
+  const offset=-floor;
+  if(Math.abs(offset)<1e-6)return {offset:0,correctedAttributes:0};
+  let correctedAttributes=0;
+  for(const source of sources||[]){
+    const geometry=source.geometry;
+    if(!geometry?.getAttribute)continue;
+    for(const channel of CROWD_GROUND_POSE_CHANNELS){
+      const attr=geometry.getAttribute(channel);
+      if(!attr||attr.itemSize!==3)continue;
+      const a=attr.array;
+      for(let j=1;j<a.length;j+=3)a[j]+=offset;
+      attr.needsUpdate=true;correctedAttributes++;
+    }
+    geometry.computeBoundingSphere?.();
+    geometry.computeBoundingBox?.();
+  }
+  return {offset,correctedAttributes};
 }
 
 /** Two steps equal one complete left/right run cycle: four real render frames

@@ -12,6 +12,7 @@ import {updateDefensivePosture} from './battle-defensive-doctrine.js';
 import {strategistAuraMultipliers} from './strategist-command-aura.js';
 import {chooseBlockedMovementDetour} from './battle-movement-recovery.js';
 import {MASS_GRID_DIRECTIONS,massDiagonalClear,massStepDuration} from './mass-battle-directional-nav.js';
+import {BATTLE_DIRECT_ORDERS,battleOrderSpeedMultiplier} from './battle-shared-command-rules.js';
 import {advanceMassHighGroundRoute,targetVisibleFromWindow} from './mass-battle-highground.js?v=4.6.31';
 
 const SECTOR = 5;
@@ -1024,7 +1025,7 @@ export class MassBattleGridSimulation {
   }
   setSquadCommand(squadId,command,team=0){
     const id=String(squadId);
-    if(!['charge','defend','hold','retreat'].includes(command)||!this.units.some(u=>u.team===team&&String(u.squadId)===id))return false;
+    if(!BATTLE_DIRECT_ORDERS.includes(command)||!this.units.some(u=>u.team===team&&String(u.squadId)===id))return false;
     for(const u of this.units)if(u.team===team&&String(u.squadId)===id){u.tacticalOrder=null;u.tacticalOrderUntil=0;}
     this.clearSquadExploration(id,team);
     if(team===0){
@@ -1613,7 +1614,7 @@ export class MassBattleGridSimulation {
       u.vx=next.x-u.x;u.vz=next.z-u.z;
       u.facingX=u.vx;u.facingZ=u.vz;
       u.x=next.x;u.z=next.z;
-      const multiplier=(order==='charge'?1.3:order==='defend'?.65:1)*(u.itemSpeedMultiplier||1);
+      const multiplier=battleOrderSpeedMultiplier(order)*(u.itemSpeedMultiplier||1);
       const mounted=u.mountId&&this.objects.some(o=>o.id===u.mountId&&o.alive&&o.mountedBy===u.id);
       if(!mounted)u.mountId=null;
       u.moveDuration=massStepDuration(job.speed*(1-this._squadDebuff(u,'speed')),u.vx,u.vz,{
