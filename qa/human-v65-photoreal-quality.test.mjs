@@ -1,9 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
 import * as THREE from 'three';
 import {applyHeroineSkinMaterial} from '../src/heroine-skin-material.js';
 import {v65NasalCartilageDelta,femaleInnerFeatureDelta} from '../src/independent-face-masters.js';
-import {v65IrisOpticalTones,v65ScleralShading,v63IrisOpticalTones,v67NaturalEyeMakeup}
+import {v65IrisOpticalTones,v65ScleralShading,v63IrisOpticalTones,v67NaturalEyeMakeup,v70IrisOpticalTones,v70FaceReliefShadow}
  from '../src/face-feature-meshes.js';
 import {v65ExpressionMuscleDelta,FACE_EXPRESSIONS}
  from '../src/face-expression-animation-v48.js';
@@ -11,6 +12,25 @@ import {makePonytailMicrofibers,makeStyleSpecificHair}
  from '../src/face-wig-ornaments-v49.js';
 import {repairRealCrownScalpHoles,appendRealCrownUnderlay,uniqueHairFibreStations,v63WigScalpTone,v67ScalpMatchedLockTone} from '../src/face-scalp-wig.js';
 
+test('v70: real iris pigment, anatomical shadows and studio fivefold hair fidelity',()=>{
+ const mid=v70IrisOpticalTones(.52,.82,{female:true});
+ const rim=v70IrisOpticalTones(.98,.82,{female:true});
+ const rotated=v70IrisOpticalTones(.52,1.92,{female:true});
+ assert.equal(mid.length,3);
+ assert.ok(mid.every(v=>Number.isFinite(v)&&v>=.28&&v<=1.25));
+ assert.ok(rim[0]<mid[0],'limbal ring must be darker than iris core');
+ assert.ok(mid.some((v,i)=>Math.abs(v-rotated[i])>.003),
+  'multi-angle iris fibres must produce non-flat 3D vertex pigments');
+ const orbital=v70FaceReliefShadow({nx:.145,ny:.73,lidY:.684,front:1});
+ assert.ok(orbital>.03&&orbital<.2);
+ assert.equal(v70FaceReliefShadow({nx:.145,ny:.73,front:0}),0);
+ assert.ok(v70FaceReliefShadow({nx:.94,ny:.22,front:1})<.001);
+ const faceStudio=readFileSync('face-mesh-studio.html','utf8');
+ const bodyStudio=readFileSync('face-body-studio.html','utf8');
+ assert.match(faceStudio,/visualFiberMultiplier:5,staticGroom:true/);
+ assert.match(bodyStudio,/applyHeroineSkinMaterial\(model\.face\)/);
+ assert.match(bodyStudio,/applyHeroineSkinMaterial\(next\.face\)/);
+});
 test('v65: nose cartilage never touches cheeks, eye sockets or rear skull',()=>{
  for(const xn of [-1,-.9,-.4,-.28,.28,.35,.75,1]){
   const d=v65NasalCartilageDelta({xn,yn:.55,zn:.9,depth:.18,height:.24});
