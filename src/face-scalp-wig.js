@@ -872,7 +872,8 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    for(let k=0;k<ribbonStride;k++){
     const at=(base+j*ribbonStride+k)*3;
     const layer=Math.floor(k/2);
-     const tone=v67ScalpMatchedLockTone(wigRoot,box,t,i,layer);
+     const tone=v67ScalpMatchedLockTone(wigRoot,box,t,i,layer)*
+      (1+.018*Math.sin(i*2.39996+layer*.91+t*8.6));
     colors[at]=shaded.r*tone;colors[at+1]=shaded.g*tone;
     colors[at+2]=shaded.b*tone;
    }
@@ -891,9 +892,9 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  geo.setAttribute('color',new THREE.BufferAttribute(colors,3));
  geo.setIndex(indices);
  const mat=new THREE.MeshPhysicalMaterial({
-  color:0xffffff,vertexColors:true,roughness:.60,metalness:0,
-  clearcoat:.055,clearcoatRoughness:.56,
-  sheen:.28,sheenRoughness:.58,sheenColor:new THREE.Color(color).multiplyScalar(.48),
+  color:0xffffff,vertexColors:true,roughness:.57,metalness:0,
+  clearcoat:.045,clearcoatRoughness:.62,
+  sheen:.34,sheenRoughness:.53,sheenColor:new THREE.Color(color).multiplyScalar(.52),
   side:THREE.DoubleSide
  });
  const locks=new THREE.Mesh(geo,mat);
@@ -910,7 +911,8 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  // underlying guides. Fine front fringe keeps its own small width factor.
  // Finer groomed layers: 4 overlapped cards remain, but individual
  // panels no longer read as wide flat white ribbons in side view.
- const half=d.x*.0135;
+ // Reduce plate-like white ribbons; 10x individual fibre mesh replaces width.
+ const half=d.x*.0100;
  // The visible mesh retains all 1440+ locks, but only ~320 master locks
  // require full constraint and capsule solving on Android.
  const guideStride=Math.max(1,Math.ceil(lockCount/320));
@@ -1023,9 +1025,9 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    // broad clean midsection and softly tapered point-cut tip. Keeping
    // crown cards narrow prevents the interlocking square tiles visible
    // in the previous overhead screenshots.
-   const rootProfile=(strand.fringe?.56:.36)+
-    (strand.fringe?.44:.64)*THREE.MathUtils.smoothstep(t,0,.23);
-   const width=half*tip*rootProfile*(.90+.15*fract(i*.35))*
+   const rootProfile=(strand.fringe?.48:.28)+
+    (strand.fringe?.52:.72)*THREE.MathUtils.smoothstep(t,0,.30);
+   const width=half*tip*rootProfile*(.81+.24*fract(i*.35))*
     (strand.zone.startsWith('fringe')?.43:
      strand.zone.startsWith('temple')?.58:
      strand.zone==='crown'?.70:
@@ -1056,11 +1058,12 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
      const at=(i*(segments+1)*ribbonStride+j*ribbonStride+k)*3;
      const layer=Math.floor(k/2),sign=k%2===0?-1:1;
      const thickness=half*(.10+layer*.085)*Math.sin(Math.PI*Math.min(.99,t));
-     const layerWidth=[1,.84,.63,.43][layer];
+     const layerWidth=[1,.78,.55,.32][layer];
      const scale=sign*width*layerWidth,blend=layer/3;
-     let vx=p.x+sway+scale*(wx*(1-blend)+sx*blend)+nx*thickness;
+     const strandSurface=d.x*.00014*Math.sin(t*19+i*.83+layer*1.21);
+     let vx=p.x+sway+scale*(wx*(1-blend)+sx*blend)+nx*(thickness+strandSurface);
      let vy=p.y+scale*(wy*(1-blend)+sy*blend);
-     let vz=p.z+scale*(wz*(1-blend)+sz*blend)+nz*thickness;
+     let vz=p.z+scale*(wz*(1-blend)+sz*blend)+nz*(thickness+strandSurface);
      // Hair must clear the TRUE copied skull even when the guide centre
      // is legal. Broad vertices used to disappear under the visible
      // scalp because only shoulder/clothing collisions were checked.
@@ -1181,7 +1184,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    const strand=strands[i],first=strand.points[0];
    const fine= strand.fringe?.48:
     strand.zone.startsWith('temple')?.75:1.05;
-   const radius=(half*fine)*1.5;
+   const radius=(half*fine)*1.8;
    for(let lane=0;lane<extra;lane++){
     const laneAt=(lane+.5)/extra-.5;
     const base=coords.length/3;
@@ -1199,14 +1202,14 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
      const shell=(Math.sin((lane+1)*2.39996323+i*.277)*.0012+
       Math.sin(t*12.5+i*.37+lane*1.31)*.00033)*d.x*rootFade;
      const offset=radius*(2*laneAt)*rootFade;
-     const width=Math.max(d.x*.00008,
-      half*.12/fiberMultiplier)*(1-.94*Math.pow(t,3));
+     const width=Math.max(d.x*.000045,
+      half*.14/fiberMultiplier)*(1-.965*Math.pow(t,3));
      for(const sign of [-1,1]){
       const q=p.clone().addScaledVector(across,offset+sign*width)
        .addScaledVector(normal,shell);
       coords.push(q.x,q.y,q.z);
-      const c=(.84+.17*((lane+i)%9)/9)*(1-.09*t)+
-       .023*Math.sin(t*9+i*.13+lane*.67);
+      const c=(.81+.19*((lane+i)%11)/11)*(1-.08*t)+
+       .030*Math.sin(t*11+i*.19+lane*.73);
       shades.push(colorSeed.r*c,colorSeed.g*c,colorSeed.b*c);
      }
     }
@@ -1403,7 +1406,8 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    p.y<box.min.y+d.y*.56&&
    Math.abs(p.x-center.x)<d.x*.145&&
    p.z>center.z+d.z*.045)).length,
-  hairStrandWidthFraction:.0135,fullerCrownBackVolume:true,
+  hairStrandWidthFraction:.0100,fullerCrownBackVolume:true,
+  v72HairMicrostrandRealism:'tenfold-static-fibres-thinner-tapered-cards',
   transparentExactHeadWigBase:!normalLayeredSingleMesh,
   wigBaseMaterialOpacity:normalLayeredSingleMesh?null:0,
   wigBaseNeverWritesDepth:true,
