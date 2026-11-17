@@ -31,6 +31,14 @@ const profiles=Object.freeze({
    dark:0x534c47,mid:0x918474,light:0xbeb1a0,tip:0xe2d8c4}),
 });
 export const avianProfile=id=>profiles[id]||null;
+const PHOENIX_HEAD_STATIONS=Object.freeze([
+   {z:.475,y:-.074,rx:.024,ry:.037},
+   {z:.366,y:-.053,rx:.070,ry:.089},
+   {z:.235,y:.012,rx:.110,ry:.135},
+   {z:.075,y:.051,rx:.142,ry:.170},
+   {z:-.175,y:.054,rx:.137,ry:.161},
+   {z:-.395,y:.056,rx:.040,ry:.055}
+ ]);
 const guardianDonors=new Map();
 function guardianPair(detail){
  const d=detail==='source'||detail==='high'?'high':'low';
@@ -383,50 +391,47 @@ function phoenixCylindricalScutes(parent,s,detail,name,{
  result.userData.phoenixScaleCount=guides.length;
  return result;
 }
+
 function phoenixNeckCrownScutes(g,s,p,torso,head,detail){
- const low=detail==='low',n=low?5:detail==='source'?17:11,
-   cols=low?7:detail==='source'?22:15;
+ const low=detail==='low',n=low?5:detail==='source'?17:12,
+   cols=low?8:detail==='source'?22:16;
  const guides=[];
  for(let row=0;row<n;row++){
   const t=(row+.5)/(n+.5);
-  // Same interpolation as the fitted neck geometry; the ends bury into
-  // the original chest and cranium, without exposing hollow seams.
   const rad=(.217*p.body)*(1-t)+(.149*p.neck)*t;
   const cy=1.55+.41*t,cz=.22*p.body+(.30*p.neck-.22*p.body)*t;
   for(let j=0;j<cols;j++){
-   const a=(j+.5*(row%2))*Math.PI*2/cols;
-   const nx=Math.cos(a),nz=Math.sin(a);
-   // The bridge is almost vertical: its radial plane projects X and Z.
-   const width=.040*(1-t)+.009*t;
-   const x=nx*rad*1.018, z=cz+nz*rad*.98;
+   const a=(j+.5*(row%2))*Math.PI*2/cols,
+    nx=Math.cos(a),nz=Math.sin(a);
+   // Body -> throat -> cheek: gradual physical reduction, never a
+   // sudden tiny dot at the crown or a protruding floating necklace.
+   const width=.098*(1-t)+.040*t;
+   const x=nx*rad*1.015,z=cz+nz*rad*.989;
    guides.push({from:[x,cy,z],
-     to:[x+nx*.007,cy+.032*(1-t),z+nz*.012-.025],
-     width,normal:[nx,.15,nz],ridge:.006,
-     tint:j%3===0?2:j%2===0?1:0,endTint:2,glow:.18});
+    to:[x+nx*.007,cy+.039*(1-t),z+nz*.011-.030],
+    width,normal:[nx,.15,nz],ridge:.014,
+    tint:j%3===0?2:j%2===0?1:0,endTint:2,glow:.24});
   }
  }
  const neck=layeredFeathers(torso,s,detail,'phoenix-neck-fine-grading-scutes',guides);
  neck.userData.phoenixScalesShrinkTowardsFace=true;
- neck.userData.phoenixScaleWidthBase=.040;
- neck.userData.phoenixScaleWidthTip=.009;
- // Keep facial geometry free of protruding plates around eyes and beak.
- const faceGuides=[];
- const faceRings=low?3:detail==='source'?8:5;
- for(let row=0;row<faceRings;row++){
-  const z=-.30+row*.063;
-  const r=.105+row*.006;
-  for(let j=0;j<(low?8:14);j++){
-   const angle=(.20+(j+.4)/(low?8:14)*.60)*Math.PI;
-   const nx=Math.cos(angle),ny=Math.sin(angle);
-   faceGuides.push({from:[nx*r,.045+ny*.138,z],
-     to:[nx*(r+.010),.045+ny*.146,z-.030],
-     width:.010-row*.0005,normal:[nx,ny,.10],ridge:.003,
-     tint:j%3===0?2:1,endTint:2,glow:.09});
-  }
- }
- const crown=layeredFeathers(head,s,detail,'phoenix-fine-head-scales',faceGuides);
+ neck.userData.phoenixScaleWidthBase=.098;
+ neck.userData.phoenixScaleWidthTip=.040;
+ // Surface-fitted facial scales rather than an invisible decorative ring.
+ // Leave the forward +Z eye sockets, nostrils and beak clearly exposed.
+ const density=detail==='source'?[16,26]:detail==='high'?[12,20]:
+  detail==='medium'?[9,16]:[6,10];
+ const crown=phoenixSurfaceScutes(head,s,detail,'phoenix-fine-head-scales',{
+  rows:density[0],columns:density[1],
+  surface:(u,a)=>phoenixAxialSurface(PHOENIX_HEAD_STATIONS,u,a),
+  widthAt:(u,a,v)=>v.z>.19?.039:v.z<-.19?.067:.056,
+  skip:(u,a,v)=>v.z>.08&&Math.abs(Math.sin(a))<.45&&
+   Math.abs(v.point.x)>.072,
+  kind:'contour-fitted-forehead-cheek-cranial-scales'
+ });
  crown.userData.phoenixFaceMicroScales=true;
- crown.userData.phoenixScaleWidthMax=.010;
+ crown.userData.phoenixScaleWidthMax=.067;
+ crown.userData.phoenixVisibleFaceScales=true;
  return {neck,crown};
 }
 function phoenixWingHandScutes(parent,s,side,detail,name,segment='elbow'){
@@ -631,14 +636,7 @@ function headAndCrest(g,s,p,torso,detail){
  const head=g.group('head',[0,s.id==='m014'?1.99:2.065,.365*p.neck],torso);
  // Phoenix crown is a compact, LONG skull: narrow brow, pronounced
  // nasal bridge, no ears or lateral ear-like crests.
- const skull=g.axialLoft(head,'skin',s.id==='m013'?[
-   {z:.475,y:-.074,rx:.024,ry:.037},
-   {z:.366,y:-.053,rx:.070,ry:.089},
-   {z:.235,y:.012,rx:.110,ry:.135},
-   {z:.075,y:.051,rx:.142,ry:.170},
-   {z:-.175,y:.054,rx:.137,ry:.161},
-   {z:-.395,y:.056,rx:.040,ry:.055}
- ]:[
+ const skull=g.axialLoft(head,'skin',s.id==='m013'?PHOENIX_HEAD_STATIONS:[
   {z:.36*p.head,y:-.045,rx:.037,ry:.056},
   {z:.25*p.head,y:0,rx:.16*p.head,ry:.175*p.head},
   {z:.06,y:.055,rx:.235*p.head,ry:.235*p.head},
