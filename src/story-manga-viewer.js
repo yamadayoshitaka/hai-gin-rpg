@@ -7,6 +7,7 @@
 import {mangaForStage} from './story-stage-manga.js';
 import {registeredStoryPanelAsset,storySheetCrop,storyArtDisplayUrl} from './story-panel-registered-art.js';
 import {provisionalRegisteredStoryPanel} from './story-provisional-registered-art.js';
+import {restoredStoryArchivePanel} from './story-archive-restored-art.js';
 import {chapter1ProvisionalLivePanel} from './story-chapter1-provisional-live.js';
 import {comicPageAsset} from './story-chapter-comic.js';
 import {compactComicForStage} from './story-compact-comic.js?v=story-20261117-reader1';
@@ -117,7 +118,7 @@ export function createMangaViewer({container=document.body,storage=globalThis.lo
  function loadPanelArt(shot,pagePanels){
   // Only the exact scene/gender/outcome; prefer existing individually cut WebPs.
   const cut=shot.sharedArtAsset||registeredStoryPanelAsset(shot);
-  const draftRegistration=provisionalRegisteredStoryPanel(shot);
+  const draftRegistration=restoredStoryArchivePanel(shot)||provisionalRegisteredStoryPanel(shot);
   const sheet=comicPageAsset(story.id,shot.phase,storyContext,shot.comicPage,shot.protagonistGender);
   const key=[cut||'',sheet||'',shot.comicCell,shot.sourceSheetCount||pagePanels.length,draftRegistration?.status||''].join('|');
   if(key===currentArtKey)return;
@@ -199,7 +200,7 @@ export function createMangaViewer({container=document.body,storage=globalThis.lo
   $('.manga-speaker').textContent=talk.speaker+(talk.characterId?'　／　'+talk.faction+'・'+talk.role:'　／　ナレーション');
   renderPortrait(talk,shot);
   renderStoryRubyText($('.manga-line'),talk);
-  const draftArt=chapter1ProvisionalLivePanel(shot)||provisionalRegisteredStoryPanel(shot);
+  const draftArt=chapter1ProvisionalLivePanel(shot)||restoredStoryArchivePanel(shot)||provisionalRegisteredStoryPanel(shot);
   $('.manga-shot').textContent=story.id.toUpperCase()+' · '+shot.comicEdition+' · ページ'+shot.comicPage+
    (draftArt?' · 仮承認・ゲーム反映中（正式品質審査前／差し戻し可能）':'');
   $('.manga-progress').textContent='イベントCG '+(index+1)+' / '+visiblePanels.length+'　・　セリフ '+(turnIndex+1)+' / '+(shot.dialogueTurns?.length||1);
