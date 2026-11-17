@@ -9,19 +9,19 @@
  */
 import * as THREE from 'three';
 import {createMonsterModel,disposeMonsterSculpture}
- from './monster-geometry.js?v=beast-feline-nose-tail-m005-v13-20261118';
+ from './monster-geometry.js?v=m001-m005-m006-small-cat-nose-v14-20261118';
 import {createCosplayedHumanoidMonster}
  from './monster-character-cosplay.js?v=4.6.90';
 import {humanoidMonsterCostumeFor}
  from './monster-character-cosplay-manifest.js?v=4.5.03';
 import {startMonsterAction,animateMonsterModel}
- from './monster-animation.js?v=m002-feline-action-v4-20261117';
+ from './monster-animation.js?v=m001-m005-canine-actions-v6-20261118';
 import {creatureFlightHeight} from './combat-creature-performance.js?v=natural-size-20261116';
 import {resolveRegisteredMonsterModel}
- from './creature-game-model-routing.js';
+ from './creature-game-model-routing.js?v=m001-m005-m006-v14-20261118';
 import {fetchCreatureRegistry} from './creature-external-runtime.js';
 import {loadCreatureMeshSource} from './creature-real-source-catalog.js?v=real-body-only-v4';
-import {chooseCreatureLod} from './creature-master-library.js?v=masters-v1';
+import {chooseCreatureLod} from './creature-master-library.js?v=m001-m005-m006-v3-20261118';
 import {protectedCreature} from './creature-mesh-adoption.js?v=real-bodies-v3';
 import {isMonsterSummonType,monsterSummonSource,
  monsterSummonWorldScale,MONSTER_SUMMON_MAX_HIGH_DETAIL,
