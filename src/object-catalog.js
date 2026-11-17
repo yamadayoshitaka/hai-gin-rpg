@@ -370,14 +370,26 @@ export function createObjectById(id,{cellSize=2.2}={}){
    for(const x of [-1.1,1.1])for(const z of [-.3,.3])box(.15*c,.48*c,.15*c,x*c,.24*c,z*c,iron);
   }
   if(id==='town_well_001'){
-   const ring=new THREE.Mesh(new THREE.CylinderGeometry(1.2*c,1.2*c,.95*c,16,1,true),stone);
+   const ring=new THREE.Mesh(new THREE.CylinderGeometry(1.2*c,1.2*c,.95*c,20,1,true),stone);
    ring.position.y=.48*c;ring.castShadow=true;root.add(ring);
-   const surface=new THREE.Mesh(new THREE.CircleGeometry(1.08*c,24),water);
-   surface.rotation.x=-Math.PI/2;surface.position.y=.55*c;root.add(surface);
-   for(const x of [-1,1])box(.17*c,2.6*c,.17*c,x*c,1.5*c,0,wood);
+   const surface=new THREE.Mesh(new THREE.CircleGeometry(1.07*c,24),water);
+   surface.rotation.x=-Math.PI/2;surface.position.y=.52*c;root.add(surface);
+   for(const y of [.12,.50,.96]){
+    const masonry=new THREE.Mesh(new THREE.TorusGeometry(1.19*c,.07*c,7,24),stone);
+    masonry.rotation.x=Math.PI/2;masonry.position.y=y*c;root.add(masonry);
+   }
+   for(const x of [-1,1])box(.19*c,2.6*c,.19*c,x*c,1.5*c,0,wood);
    box(2.4*c,.19*c,.2*c,0,2.75*c,0,wood);
    const roof=new THREE.Mesh(new THREE.ConeGeometry(1.8*c,1.1*c,4),wood);
    roof.position.y=3.2*c;roof.rotation.y=Math.PI/4;root.add(roof);
+   // Windlass, suspension rope and tapered bucket, rather than an empty well shell.
+   const spindle=new THREE.Mesh(new THREE.CylinderGeometry(.12*c,.12*c,2.14*c,12),wood);
+   spindle.rotation.z=Math.PI/2;spindle.position.y=2.23*c;root.add(spindle);
+   const rope=new THREE.Mesh(new THREE.CylinderGeometry(.016*c,.016*c,.78*c,6),wood);
+   rope.position.y=1.7*c;root.add(rope);
+   const bucket=new THREE.Mesh(new THREE.CylinderGeometry(.25*c,.20*c,.36*c,12,1,true),wood);
+   bucket.position.y=1.2*c;root.add(bucket);
+   box(.16*c,.1*c,.18*c,1.15*c,2.25*c,0,iron);
   }
   if(id==='town_planter_001'){
    box(3*c,.5*c,1.8*c,0,.25*c,0,stone);
@@ -395,8 +407,15 @@ export function createObjectById(id,{cellSize=2.2}={}){
   }
   if(id==='town_crate_001'){
    box(.95*c,.85*c,.95*c,0,.43*c,0,wood);
-   for(const x of [-.39,.39])box(.1*c,.88*c,1.02*c,x*c,.44*c,0,iron);
-   for(const z of [-.39,.39])box(1.02*c,.12*c,.1*c,0,.8*c,z*c,iron);
+   for(const x of [-.41,.41])box(.09*c,.85*c,.95*c,x*c,.43*c,0,wood);
+   for(const z of [-.42,.42])box(.95*c,.105*c,.09*c,0,.76*c,z*c,wood);
+   // Braces are actual inclined beams; iron pegs register the timber joints.
+   for(const z of [-.49,.49]){
+    const brace=new THREE.Mesh(new THREE.BoxGeometry(1.17*c,.09*c,.075*c),wood);
+    brace.rotation.z=Math.atan2(.76,.86);brace.position.set(0,.45*c,z*c);root.add(brace);
+   }
+   for(const x of [-.36,.36])for(const y of [.13,.70])
+    box(.05*c,.05*c,.022*c,x*c,y*c,.52*c,iron);
   }
   if(id==='town_notice_001'){
    for(const x of [-.8,.8])box(.16*c,2.5*c,.18*c,x*c,1.25*c,0,wood);
@@ -539,14 +558,27 @@ export function createObjectById(id,{cellSize=2.2}={}){
   }
   if(id==='town_water_trough_001'){
    box(2.8*c,.15*c,1.4*c,0,.1*c,0,wood);
-   for(const z of [-.73,.73])box(2.9*c,.85*c,.13*c,0,.5*c,z*c,wood);
+   for(const z of [-.73,.73]){
+    box(2.9*c,.85*c,.13*c,0,.5*c,z*c,wood);
+    box(2.96*c,.09*c,.19*c,0,.93*c,z*c,wood);
+   }
    for(const x of [-1.4,1.4])box(.14*c,.85*c,1.5*c,x*c,.5*c,0,wood);
+   for(const x of [-1.40,1.40])for(const z of [-.72,.72])
+    box(.18*c,1.09*c,.18*c,x*c,.55*c,z*c,wood);
    box(2.67*c,.035*c,1.3*c,0,.61*c,0,water);
   }
   if(id==='town_signpost_001'){
    box(.22*c,3.6*c,.22*c,0,1.8*c,0,wood);
    box(2.55*c,.45*c,.13*c,.45*c,2.75*c,0,wood);
    box(1.9*c,.44*c,.13*c,-.4*c,2*c,0,wood);
+   for(const [x,y,direction] of [[1.72,2.75,1],[-1.38,2,-1]]){
+    const tip=new THREE.Mesh(new THREE.ConeGeometry(.25*c,.46*c,3),wood);
+    tip.rotation.z=direction*-Math.PI/2;tip.position.set(x*c,y*c,0);root.add(tip);
+   }
+   for(const y of [2,2.75]){
+    const peg=new THREE.Mesh(new THREE.CylinderGeometry(.065*c,.065*c,.15*c,8),iron);
+    peg.rotation.x=Math.PI/2;peg.position.set(0,y*c,.10*c);root.add(peg);
+   }
   }
   if(id==='town_sacks_001'){
    const burlap=new THREE.MeshStandardMaterial({color:0x9d8867,roughness:1});
@@ -585,7 +617,8 @@ export function createObjectById(id,{cellSize=2.2}={}){
   // few material batches. Geometry still comes from the physical object BOM.
   if(new Set(['stone_archway_001','stone_steps_001','wooden_watchtower_001',
    'stone_column_001','wall_torch_001','haystack_001','inn_sign_001',
-   'town_firewood_001','town_water_trough_001','town_signpost_001',
+   'town_well_001','town_crate_001',
+    'town_firewood_001','town_water_trough_001','town_signpost_001',
    'town_sacks_001','town_stone_pile_001','town_brazier_001','town_herb_garden_001']).has(id)){
    const batches=new Map();
    for(const child of [...root.children]){
