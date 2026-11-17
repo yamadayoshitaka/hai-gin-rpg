@@ -30,7 +30,7 @@ const tests={
   ['qa/face-expression-v48.test.mjs','qa/face-v49-regression.test.mjs'],
   ['qa/face-expression-v48.test.mjs','qa/battle-face-action-policy.test.mjs'],
   ['qa/human-v64-catalog-and-hair.test.mjs','qa/hair-headwear-occlusion.test.mjs'],
-  ['qa/hair-camera-distance-stability.test.mjs','qa/battle-face-hair-shield-recovery.test.mjs']
+  ['qa/hair-camera-distance-stability.test.mjs','qa/battle-face-hair-shield-recovery.test.mjs','qa/hair-headwear-mask-lifecycle.test.mjs']
  ],
  outfit:[
   ['qa/battle-outfit-integration.test.mjs','qa/outfit-rarity-regression.test.mjs'],
