@@ -12,6 +12,7 @@ import {CAMPAIGN_STAGES,CAMPAIGN_STAGE_BY_ID} from './campaign-stage-plan.js';
 import {comicForStage} from './story-chapter-comic.js';
 import {screenplayForStage,screenplayVoiceText,screenplayRubyTokens} from './story-screenplay-v2.js';
 import {readerIntroForChapter} from './story-reader-intros.js';
+import {recapForStage,dialogueForIllustration} from './story-dialogue-art-binding.js';
 export const COMPACT_STORY_CONFIG=Object.freeze({
  schemaVersion:1, chapters:20, stagesPerChapter:10, chapterOpening:4,
  stagePre:2,stagePost:2,sharedDefeat:2,sharedGameover:2,
@@ -97,9 +98,13 @@ export function compactComicForStage(stageId,phase,context={}){
  const withCount=p=>({...p,sourceSheetCount:original.pages.find(q=>q.number===p.comicPage)?.cellCount||1});
  // Chapter introduction is a plain-language narration before character dialogue.
  // Keep original CG IDs and counts for exact registered-image bindings.
- const scenes=openingArt.map((p,i)=>scene(withCount(p),
-  [i===0?turn(p,readerIntroForChapter(stage.chapter)):turn(p)],{opening:true}));
- let batches=distribute(lines,2).map(group=>group.map(p=>turn(p)));
+ const recap=phase==='pre'?recapForStage(stage,script,{chapterOpening:opening}):null;
+ const used=new Set();
+ const illustrated=p=>dialogueForIllustration(p,{stage,script,phase,used});
+ const scenes=openingArt.map(p=>scene(withCount(p),illustrated(p),{opening:true}));
+ // Script's setting/objective narration is spoken on the dedicated recap
+ // illustration. Character CGs speak only lines matching their on-screen actor.
+ let batches=base.map(p=>illustrated(p));
  let sharedKind=null;
  if(phase==='post'&&original.edition.startsWith('post-defeat')){
    sharedKind='defeat';
@@ -112,7 +117,7 @@ export function compactComicForStage(stageId,phase,context={}){
  for(let i=0;i<2;i++)scenes.push(scene(withCount(base[i]),batches[i],{sharedKind}));
  if(scenes.length!==(opening?6:2))throw Error('Compact frame quota violated');
  const compactScenes=freeze(scenes.map((p,i)=>freeze({...p,compactSceneIndex:i,compactSceneCount:scenes.length})));
- return freeze({...original,compact:true,panels:compactScenes,scenes:compactScenes,
+ return freeze({...original,compact:true,recap,panels:compactScenes,scenes:compactScenes,
   imageCount:scenes.length,originalSceneCount:src.length,chapterOpeningCount:opening?4:0,
   stageSceneCount:2,dialogueCount:compactScenes.reduce((s,p)=>s+p.dialogueTurns.length,0)});
 }
