@@ -54,7 +54,7 @@ const clamp=(x,min,max)=>Math.min(max,Math.max(min,x));
  * Keep this independent of camera distance and rarity so LOD cannot bleach it.
  */
 export const BATTLE_FACE_SKIN_TONE_VERSION='battle-skin-photometric-v3';
-export const BATTLE_FACE_LIGHT_RESPONSE_VERSION='battle-face-light-response-v3';
+export const BATTLE_FACE_LIGHT_RESPONSE_VERSION='battle-face-light-response-v4';
 let battleSkinAlbedoTexture=null;
 let battleSkinNormalTexture=null;
 /** Shared tangent-space microrelief for fine pores and irregular skin.
@@ -146,7 +146,9 @@ export function installBattleFaceLightResponse(material){
   if(!shader.fragmentShader?.includes(marker))
    throw Error('Battle face PBR light gate: expected opaque_fragment not found');
   shader.fragmentShader=shader.fragmentShader.replace(marker,
-   'outgoingLight = (outgoingLight * 0.86) / (vec3(1.0) + 0.40 * max(outgoingLight - vec3(0.68), vec3(0.0)));\n'+marker);
+   'outgoingLight = (outgoingLight * 0.86) / (vec3(1.0) + 0.40 * max(outgoingLight - vec3(0.68), vec3(0.0)));\n'+
+   'float faceDiffuseLuma = dot(outgoingLight, vec3(0.2126, 0.7152, 0.0722));\n'+
+   'outgoingLight *= mix(0.90, 1.035, smoothstep(0.14, 0.70, faceDiffuseLuma));\n'+marker);
  };
  material.customProgramCacheKey=()=>previousProgramKey()+'|'+BATTLE_FACE_LIGHT_RESPONSE_VERSION;
  material.userData.battleFaceLightResponseVersion=BATTLE_FACE_LIGHT_RESPONSE_VERSION;
