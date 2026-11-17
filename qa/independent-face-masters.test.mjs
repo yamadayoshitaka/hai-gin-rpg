@@ -2441,7 +2441,15 @@ test('v71: actual eyeliner depths determine cornea fit and preserve shape across
  const fitted=v71EyeDepthFromEyeliner({upperZ:.12,lowerZ:.10,corneaZ:.135,
   eyeRadius:.05,eyeDepth:0});
  assert.ok(fitted.correctionZ<0,'outward cornea must move back under liner');
- assert.ok(Math.abs(fitted.correctionZ)<=.05*.17+1e-9);
+ assert.ok(Math.abs(fitted.correctionZ)<=.05*.85+1e-9);
+ const deeplySunken=v71EyeDepthFromEyeliner({upperZ:.12,lowerZ:.10,corneaZ:.08,
+  eyeRadius:.05,eyeDepth:0});
+ assert.ok(deeplySunken.correctionZ>.05*.50,
+  'a sunken 3D iris must move forward far enough to reach real eyeliner');
+ assert.ok(Math.abs(deeplySunken.signedDepthRatio+.031)<1e-8,
+  'the corrected iris sits just behind eyeliner, not deep in its socket');
+ assert.ok(Math.abs(deeplySunken.residualRatio)<1e-8,
+  'normal donor eyes must complete the eyeliner fit rather than hitting an undersized cap');
  assert.ok(Number.isFinite(fitted.signedDepthRatio));
  const forward=v71EyeDepthFromEyeliner({upperZ:.12,lowerZ:.10,corneaZ:.106,
   eyeRadius:.05,eyeDepth:.85});
@@ -2486,4 +2494,31 @@ test('v72: studio preview builds tenfold scalp rooted high-density hair',()=>{
  const root=wig.root.getObjectByName('SINGLE_MESH_NORMAL_LAYERED_HAIR');
  assert.ok(root?.isMesh);
  wig.dispose();
+});
+
+
+test('v74: genuinely different 10x scalp-rooted salon and curtain styles',()=>{
+ const head=makeIndependentFaceMaster(fixture().source,'female');
+ const build=styleId=>createScalpAnchoredWig(head.face,{
+  count:96,styleId,visualFiberMultiplier:10,staticGroom:true,
+  normalLayeredSingleMesh:true,gender:'female'
+ });
+ const curtain=build('center-part-gravity-long');
+ const salon=build('salon-layered-long');
+ const a=curtain.root.getObjectByName('SINGLE_MESH_NORMAL_LAYERED_HAIR');
+ const b=salon.root.getObjectByName('SINGLE_MESH_NORMAL_LAYERED_HAIR');
+ assert.ok(a?.isMesh&&b?.isMesh,'both styles must create a real 3D mesh');
+ const ap=a.geometry.getAttribute('position'),bp=b.geometry.getAttribute('position');
+ assert.equal(ap.count,bp.count,'change style geometry, not polygon budget');
+ let sum=0;
+ for(let i=0;i<Math.min(ap.count,bp.count);i+=137)
+  sum+=Math.abs(ap.getX(i)-bp.getX(i))+
+   Math.abs(ap.getY(i)-bp.getY(i))+Math.abs(ap.getZ(i)-bp.getZ(i));
+ assert.ok(sum>1e-3,'salon layer must visibly change strand vertices');
+ for(const wig of [curtain,salon]){
+  assert.equal(wig.getReport().visualFiberMultiplier,10);
+  assert.equal(wig.getReport().v74HighDensityHairCoverage,true);
+  assert.equal(wig.getReport().runtimePhysicsCallsPerFrame,0);
+  wig.dispose();
+ }
 });
