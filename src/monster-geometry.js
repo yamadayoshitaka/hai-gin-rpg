@@ -1230,7 +1230,7 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
        [side*lateralX,beastRemesh?-.540:-.42,.03]:
        [side*lateralX,beastRemesh?.550:.67,fore*.49],
      pelvisMounted?g.pivots.pelvis:
-       (s.id==='m001'||felineMaster?torso:g.root));
+       (s.id==='m001'||s.id==='m002'||felineMaster?torso:g.root));
    if(felineMaster){
      leg.userData.felineJointSeamRefinement=true;
      leg.scale.x=felineMaster.legWidth;
@@ -2568,6 +2568,8 @@ export function createMonsterModel(spec,{detail='high'}={}){
  // m001 performs an action. Pure timing tests can import monster-animation
  // without importing Three.js or allocating a GPU mesh.
  if(spec.id==='m001')g.root.m001FxThree=THREE;
+ if(['m002','m007','m008','m009','m010'].includes(spec.id))
+   g.root.beastFxThree=THREE;
  g.root.userData.speciesId=spec.id;
  g.root.userData.pivots=g.pivots;
  g.root.userData.homeScale=g.root.scale.x;
