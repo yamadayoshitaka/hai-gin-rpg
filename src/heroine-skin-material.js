@@ -9,7 +9,7 @@ export function getHeroineMicroSkinTexture(){
  // v66: pore-height field, not harsh per-pixel television static.
  // Deterministic clustered pores plus two skin-scale frequencies avoid
  // checkerboard freckles and preserve the appearance under mobile mipmaps.
- const width=128,data=new Uint8Array(width*width*4),cell=8;
+ const width=256,data=new Uint8Array(width*width*4),cell=12;
  const hash=(x,y)=>{
   let h=Math.imul(x+13,374761393)^Math.imul(y+43,668265263);
   h=Math.imul(h^(h>>>13),1274126177);return (h^(h>>>16))>>>0;
@@ -36,7 +36,7 @@ export function getHeroineMicroSkinTexture(){
  tex.colorSpace=THREE.NoColorSpace;
  tex.magFilter=THREE.LinearFilter;
  tex.minFilter=THREE.LinearMipmapLinearFilter;
- tex.generateMipmaps=true;tex.repeat.set(5,6);tex.needsUpdate=true;
+ tex.generateMipmaps=true;tex.repeat.set(5,6);tex.anisotropy=4;tex.needsUpdate=true;
  poreTexture=tex;return poreTexture;
 }
 export function applyHeroineSkinMaterial(face){
@@ -51,15 +51,17 @@ export function applyHeroineSkinMaterial(face){
   vertexColors:!!source.vertexColors,
   side:source.side,transparent:source.transparent,opacity:source.opacity,
   roughness:.74,metalness:0,clearcoat:.035,clearcoatRoughness:.82,
+   ior:1.43,specularIntensity:.43,specularColor:new THREE.Color(0xffe0d0),
   sheen:.075,sheenRoughness:.86,sheenColor:new THREE.Color(0xc98978),
   bumpMap:source.bumpMap||(face.geometry?.getAttribute('uv')?getHeroineMicroSkinTexture():null),
   bumpScale:source.bumpMap?source.bumpScale:.00010
  });
- material.name='heroine-natural-skin-v67';
+ material.name='heroine-natural-skin-v70';
  // Retain low-amplitude physical highlights; reduce mannequin-like clearcoat.
  face.userData.v67SoftSkinSpecular=true;
  face.userData.v66MultiScalePoreTexture=true;
- face.userData.v66PoreTextureResolution=128;
+ face.userData.v66PoreTextureResolution=256;
+ face.userData.v70NaturalSkinOptics=true;
  face.material=material;
  face.userData.studioHeroineFaceSurface=true;
  return {applied:true,roughness:material.roughness,clearcoat:material.clearcoat,
