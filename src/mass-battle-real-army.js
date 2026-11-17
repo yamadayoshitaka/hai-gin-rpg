@@ -166,8 +166,11 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
         float gaitPhase=mod(crowdMotion.x,6.2831853);
         float swing=sin(gaitPhase);
         vec3 neutralContact=mix(crowdWalkA,crowdWalkB,0.5);
-        vec3 swingContact=gaitPhase < 3.14159265 ? crowdWalkB : crowdWalkA;
-        vec3 runPose=mix(neutralContact,swingContact,smoothstep(0.0,1.0,abs(swing)));
+        // The two *authentic* Running_* contact samples bracket each
+        // running step. Interpolate continuously rather than abruptly
+        // switching the dominant leg at PI and freezing into a symmetric
+        // average every half-cycle. The 50v50 rig samples this same cycle.
+        vec3 runPose=mix(crowdWalkA,crowdWalkB,0.5+0.5*swing);
         // A planted boot must counteract the distance-based root travel.
         // The previous .14m offset was far too small for a ~1.1m dash
         // footfall, making some soldiers visibly skate with knees lifting.
@@ -183,7 +186,11 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
         // Keep the captured REAL skinned shoulder/arm excursion visible.
         // The two GPU keys previously flattened the upper-body silhouette.
         // Uniform delta scale preserves hand, weapon and garment alignment.
-        runPose=neutralContact+(runPose-neutralContact)*1.24;
+        // Only the shoulders/weapon get a slight accent. Amplifying the
+        // whole skeleton 1.24x pulled knees, boots and trousers apart, making
+        // distant running soldiers appear half-buried or dismembered.
+        float upperBody=smoothstep(0.78,1.35,position.y);
+        runPose=mix(runPose,neutralContact+(runPose-neutralContact)*1.10,upperBody);
         transformed = mix(transformed, runPose, walking);
         // Three distinct full-body strike silhouettes synthesized from the
         // existing real rig poses. Reuse GPU pose attributes for Android:
@@ -671,9 +678,12 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
         if(useFar){
           const cameraDx=camera.position.x-world.x,cameraDz=camera.position.z-world.z;
           pos.set(world.x,world.y+.95,world.z);
-          // Do not leave the plane edge-on when the camera pitches down.
-          // The real 3D mesh is used instead once this card is inspectable.
-          rotation.copy(camera.quaternion);
+          // The old full camera quaternion pitched the full 3.1m standing
+          // photo INTO the ground on an oblique mobile camera. It hid boots
+          // and sometimes the entire lower body behind the terrain depth.
+          // A crowd photo must remain vertically upright (Y-axis billboard).
+          // Its photographed +Z front still faces the camera horizontally.
+          rotation.setFromAxisAngle(up,Math.atan2(cameraDx,cameraDz));
           farTransform.compose(pos,rotation,farScale);
           impostor.shared.matrix.array.set(farTransform.elements,farVisible*16);
           impostor.shared.phases.array[farVisible]=striking?strikeProgress:stepPhase;
