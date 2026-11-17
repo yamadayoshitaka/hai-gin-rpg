@@ -44,5 +44,7 @@ try{
  renderer.render(scene,cam);await new Promise(resolve=>requestAnimationFrame(resolve));renderer.render(scene,cam);
  document.body.dataset.qaReady='true';document.body.dataset.asset=asset;
  document.body.dataset.materials=String(materials);document.body.dataset.geometry=String(size.length());
+ document.body.dataset.drawCalls=String(renderer.info.render.calls);
+ document.body.dataset.triangles=String(renderer.info.render.triangles);
 }catch(error){document.body.dataset.qaReady='error';document.body.dataset.qaError=error.message;throw error}
 </script></body></html>
