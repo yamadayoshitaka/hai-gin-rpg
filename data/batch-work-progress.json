@@ -110,12 +110,12 @@
     },
     "world": {
       "source": "ChatGPTオブジェクト即時回帰＋GitHub六担当実WebGL QA",
-      "lastRunAt": "2026-11-17T15:51:28+09:00",
+      "lastRunAt": "2026-11-17T16:47:36+09:00",
       "status": "in_review",
       "carryover": true,
-      "subject": "見張り塔・石柱・松明・干し草・宿屋看板の5種に実メッシュ追加（描画QA未検証）",
-      "summary": "mainのworld.enabled=trueを確認。既存world/furniture-structural-regression-20261116ブランチの実3D生成器で5種に荷重支持斜材・柱台輪・鍛鉄籠・束ねた藁・木製額縁/鋲を追加。ソースSHA d5a3f96f。チェックポイント0208184f。静的コードアンカー5/5確認、Node/WebGL/Androidは未実施。今回GLB0、QA合格0、main採用0、公開0。",
-      "nextAction": "d5a3f96fを実行可能環境へ取得しnode --checkと指定3QA、createCatalogObjectによる5種の近中遠WebGL比較、当たり判定・FPSを検証。既存PR #441との統合差分も確認し、合格後のみマージ・公開。",
+      "subject": "市場露店の屋根荷重支持構造を実改修（1種・描画QA未検証）",
+      "summary": "mainのworld.enabled=trueを確認。既存専用ブランチsrc/object-catalog.jsのmarket_stall_001に3断面の傾斜垂木6本と棟木を追加（実ソースSHA fda16e27）。既存の未検証変更を優先しNode/WebGL/Android QAを試みたが、実行コンテナのgithub.com DNS解決失敗でソース取得不能。今回実改修1、GLB0、対象別WebGL合格0、ゲーム採用0、Pages0。5〜10種目標未達。",
+      "nextAction": "fda16e27を取得できるCI実行環境でnode --checkと指定3QA、createCatalogObject市場露店の新旧WebGL比較、屋根貫通・LOD・衝突・FPSを検証。次に同一構造系の4〜9種を実改修。QA合格までmainマージ禁止。",
       "steps": {
         "launch": "done",
         "code": "done",
@@ -157,23 +157,27 @@
         {
           "label": "作業ブランチ26件チェックポイント",
           "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/0208184fcdf70087bc300ef8061e2d0967667b47"
+        },
+        {
+          "label": "市場露店の垂木・棟木実ソース改修（未QA）",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/fda16e27c04f875054419d20a7b88304c943efb2"
         }
       ],
       "lastRunOutcome": {
-        "newSourceChangedIds": 5,
+        "newSourceChangedIds": 1,
         "newQAPassed": 0,
         "newGameAppliedIds": 0,
         "newSourceCommits": 1
       },
       "operational": {
         "blockers": [
-          "GitHubソースをNode/WebGL実行環境へ取得できない（github.com DNS解決失敗）",
-          "今回5種のnode --check・指定3テスト・実WebGL新旧画像比較が未実施",
-          "Android実機FPS・配置衝突・LOD未計測"
+          "github.comのDNS解決失敗によりNode実行環境へソースを取得できない",
+          "node --check・指定3QA・WebGL新旧比較・Android FPSが未実施",
+          "5〜10種目標に対して今回1種のみ実改修"
         ],
-        "speedPlan": "5種の静的Node/3QAを実行→createCatalogObject新旧WebGL比較→衝突とFPS検証。失敗時修正、未合格はマージ禁止。",
+        "speedPlan": "CI側でfda16e27の構文/3QAとcreateCatalogObject実描画を検証。合格後に同じ建築骨格4〜9種を追加改修。",
         "lastRunOutcome": {
-          "newSourceChangedIds": 5,
+          "newSourceChangedIds": 1,
           "newQAPassed": 0,
           "newGameAppliedIds": 0,
           "newSourceCommits": 1,
