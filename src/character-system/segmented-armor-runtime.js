@@ -47,7 +47,13 @@ function desiredAnchor(slot,side,bones){
   switch(slot){
     case 'helmet':return bonePos(bones,'head').add(new THREE.Vector3(0,.046,0));
     case 'chest':return bonePos(bones,'spine_03').add(new THREE.Vector3(0,-.060,0));
-    case 'shoulder':return bonePos(bones,`upperarm${suffix}`);
+    case 'shoulder':{
+      // Center each pauldron over the clavicle/upper-arm junction.
+      // The pad remains bone-mounted and follows the actor's arm animation.
+      return bonePos(bones,`upperarm${suffix}`)
+        .lerp(bonePos(bones,`clavicle${suffix}`),.14)
+        .add(new THREE.Vector3(0,.012,0));
+    }
     // Align the metal cuff behind the actual knuckles. The former palm-
     // centered bucket concealed every curling finger and left a black hole
     // around the sword hilt despite passing the fingertip XYZ tests.
@@ -165,6 +171,7 @@ export async function attachSegmentedArmor({root,dressed,sex,textures,characterM
   const boxes=new THREE.Box3(),center=new THREE.Vector3();
   // Cache actual 3D reference positions before classifying mesh sides.
   const thighLeft=bonePos(bones,'thigh_l'),thighRight=bonePos(bones,'thigh_r');
+  const shoulderLeft=bonePos(bones,'upperarm_l'),shoulderRight=bonePos(bones,'upperarm_r');
   for(let i=0;i<parts.length;i++){
     const part=parts[i],source=stage.children[i];
     source.traverse(o=>{
@@ -177,8 +184,10 @@ export async function attachSegmentedArmor({root,dressed,sex,textures,characterM
       }
       if(slot==='helmet'&&!helmetFaceguardPolicy(o.name).keep)return;
       boxes.setFromObject(o);boxes.getCenter(center);
-      const side=['shoulder','gauntlet','thigh','knee','shin','boot-upper','boot-foot'].includes(slot)?
-        nearestArmorLegSide(center,thighLeft,thighRight):null;
+      const side=slot==='shoulder'
+        ?nearestArmorLegSide(center,shoulderLeft,shoulderRight)
+        :['gauntlet','thigh','knee','shin','boot-upper','boot-foot'].includes(slot)
+          ?nearestArmorLegSide(center,thighLeft,thighRight):null;
       descriptors.push({source:o,part,slot,side,center:center.clone(),matrix:o.matrixWorld.clone()});
     });
   }
@@ -229,6 +238,12 @@ export async function attachSegmentedArmor({root,dressed,sex,textures,characterM
       const correction=THREE.MathUtils.clamp(
         target.sub(c.sum).dot(bodyForward)*.45,-.035,.035);
       delta.addScaledVector(bodyForward,correction-delta.dot(bodyForward));
+    }else if(slot==='shoulder'){
+      // GLB pauldrons are source-rear-biased. Preserving their fore/aft Z
+      // placed them across the hero's shoulder blades (back-camera bug).
+      // Apply the full world-space anatomical fit instead, plus modest
+      // clearance along actor-forward (also correct when soldiers rotate).
+      delta.addScaledVector(bodyForward,.035);
     }else if(['thigh','knee','shin','boot-upper','boot-foot'].includes(slot)){
       // The old implementation erased ALL Z corrections for legs/boots.
       // In sideways poses that left the finished boots behind the fabric leg.
@@ -239,7 +254,7 @@ export async function attachSegmentedArmor({root,dressed,sex,textures,characterM
       // units was smaller than the real offset and left the boot behind.
       delta.addScaledVector(bodyForward,relief);
     }else if(slot!=='helmet'){
-      // Keep shoulder and hip original fore/aft relief (unchanged).
+      // Preserve the other original fore/aft relief; shoulders are fitted above.
       delta.addScaledVector(bodyForward,-delta.dot(bodyForward));
     }
     offsetByKey.set(key,delta);
