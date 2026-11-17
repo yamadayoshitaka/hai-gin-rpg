@@ -36,25 +36,30 @@ function quadrupedMotion(p,phase,locomotion,run,actionPulse,spine,speciesId){
     // Keep the actual limb segment lengths fixed: scaling the thigh each
     // support phase opens a geometry/coat seam at the knee. Swing folds
     // the stifle while stance extends the hock, without rigid-column gait.
-    const power=locomotion?(run?1:.68):0;
-    const swing=Math.pow(Math.max(0,sine),2);
-    const stance=Math.pow(Math.max(0,-sine),2);
-    const hipRest=front?.115:-.185;
-    const kneeRest=front?-.165:.225;
-    const hip=hipRest+power*(front?.21:.19)*sine+
-      (front?-.065:.055)*actionPulse;
-    const knee=kneeRest+power*((front?.255:.34)*swing-
-      (front?.095:.135)*stance);
+    // The hip/knee/hock form a visible zig-zag even during IDLE:
+    // hips trail, stifles project forward, hocks rise and toes plant.
+    const power=locomotion?(run?1:.74):0;
+    // The negative-sine half is swing (fold and recover); the positive
+    // half is stance (extend and push off). They must not bend in unison.
+    const swing=Math.pow(Math.max(0,-sine),2);
+    const stance=Math.pow(Math.max(0,sine),2);
+    const breath=locomotion?0:Math.sin(phase*.24+i*.35)*.015;
+    const hipRest=front?.195:-.315;
+    const kneeRest=front?-.340:.555;
+    const hip=hipRest+power*(front?.305:.282)*sine+
+      (front?-.060:.045)*actionPulse+breath*.5;
+    const knee=kneeRest+power*((front?.345:.395)*swing-
+      (front?.110:.142)*stance)+breath;
     apply(p,'leg'+name,'x',hip);
-    apply(p,'leg'+name,'z',(i%2?1:-1)*power*.025*lift);
+    apply(p,'leg'+name,'z',(i%2?1:-1)*power*.022*lift);
     apply(p,'lower'+name,'x',knee);
-    apply(p,'lower'+name,'z',(i%2?1:-1)*power*.018*lift);
-    apply(p,'beastHock'+name,'x',(front?-.095:-.285)+
-      power*((front?.20:.29)*swing-(front?.08:.16)*stance));
-    apply(p,'beastPastern'+name,'x',(front?-.052:.088)+
-      power*((front?.12:.17)*swing-(front?.05:.10)*stance));
-    apply(p,'beastToe'+name,'x',.045+
-      power*(.15*swing-.065*stance));
+    apply(p,'lower'+name,'z',(i%2?1:-1)*power*.012*lift);
+    apply(p,'beastHock'+name,'x',(front?-.126:-.408)+
+      power*((front?.205:.255)*swing-(front?.075:.112)*stance));
+    apply(p,'beastPastern'+name,'x',(front?-.065:.120)+
+      power*((front?.095:.155)*swing-(front?.055:.080)*stance));
+    apply(p,'beastToe'+name,'x',.035+
+      power*(.136*swing-.060*stance));
     // Preserve original rest-length in both locomotion and idle; the
     // visual spring comes from the independent joint angles, not scaling.
     const upperJoint=p['leg'+name];

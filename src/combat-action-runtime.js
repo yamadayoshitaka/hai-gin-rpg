@@ -16,8 +16,9 @@ export const LONG_CAST_SECONDS=Object.freeze({mage:4.0,priest:5.0,summoner:6.0})
 const unitById = (units, id) => units?.[id]?.id === id ? units[id] : units?.find(u => u.id === id);
 
 export class CombatActionRuntime {
-  constructor({ width = 232, height = 232, walkable = null } = {}) {
+  constructor({ width = 232, height = 232, walkable = null, mountForbidden = null } = {}) {
     this.width = width; this.height = height; this.walkable = walkable;
+    this.mountForbidden = mountForbidden instanceof Uint8Array && mountForbidden.length === width*height ? mountForbidden : null;
     this.objects = [];
     this.events = [];
     this._unitHitEvents = 0;
@@ -126,6 +127,7 @@ export class CombatActionRuntime {
   }
 
   inside(x, z) { return x >= 0 && z >= 0 && x < this.width && z < this.height; }
+  groundMountAllowed(x,z){return this.inside(x,z)&&!(this.mountForbidden?.[z*this.width+x]);}
   free(x, z, flying = false) {
     if (!this.inside(x, z)) return false;
     const i = z * this.width + x;
@@ -287,6 +289,8 @@ export class CombatActionRuntime {
   spawnObject(type, owner, x = owner.x, z = owner.z, { mounted = false } = {}) {
     const spec = COMBAT_OBJECT_SPECS[type];
     if (!spec || !isAlive(owner)) return null;
+    const groundMount=!spec.flying&&(spec.category==='mount'||type==='wolf');
+    if (groundMount&&!this.groundMountAllowed(x,z)) return null;
     const sideObjects = this.objects.filter(o => o.alive && o.team === owner.team && o.category !== 'structure');
     const squadId=String(owner.squadId??'unassigned:'+owner.id);
     // Exactly one active familiar and one horse PER SQUAD. A different
@@ -306,7 +310,7 @@ export class CombatActionRuntime {
     let at = { x, z };
     if (!mounted) {
       const candidates = [[1,0],[0,1],[-1,0],[0,-1],[2,0],[0,2],[-2,0],[0,-2]];
-      const found = candidates.map(([dx,dz]) => ({ x: x + dx, z: z + dz })).find(p => this.free(p.x, p.z, spec.flying));
+      const found = candidates.map(([dx,dz]) => ({ x: x + dx, z: z + dz })).find(p => this.free(p.x, p.z, spec.flying)&&(!groundMount||this.groundMountAllowed(p.x,p.z)));
       if (!found) return null;
       at = found;
     }
@@ -332,7 +336,8 @@ export class CombatActionRuntime {
   }
   /** Mount an allied independent creature; no rider object or soldier slot is created. */
   mountObject(actor, creature) {
-    if (!isAlive(actor) || actor.mountId || !mountableCreature(creature) ||
+    if (!isAlive(actor) || actor.mountId || (!creature.flying&&!this.groundMountAllowed(actor.x,actor.z)) ||
+        !mountableCreature(creature) ||
         creature.mountedBy != null || creature.team !== actor.team ||
         distance(actor,creature)>2) return false;
     if (this._occupancy && creature.blocking && this.inside(creature.x,creature.z)) {
@@ -356,7 +361,8 @@ export class CombatActionRuntime {
     if(!creature)return false;
     const spots=[[1,0],[-1,0],[0,1],[0,-1],[2,0],[-2,0],[0,2],[0,-2]];
     const landing=spots.map(([dx,dz])=>({x:actor.x+dx,z:actor.z+dz}))
-      .find(p=>this.free(p.x,p.z,creature.flying));
+      .find(p=>this.free(p.x,p.z,creature.flying)&&
+         (creature.flying||this.groundMountAllowed(p.x,p.z)));
     if(!landing)return false;
     creature.x=landing.x;creature.z=landing.z;
     creature.mountedBy=null;creature.blocking=!creature.flying;
@@ -796,7 +802,8 @@ export class CombatActionRuntime {
           const candidates=Math.abs(target.x-o.x)>Math.abs(target.z-o.z)?[[dx,0],[0,dz]]:[[0,dz],[dx,0]];
           let moved=false;
           for (const [ax,az] of candidates) {
-            if ((!ax && !az) || !this.free(o.x + ax, o.z + az, o.flying)||
+            if ((!ax && !az) || (!o.flying&&!this.groundMountAllowed(o.x+ax,o.z+az)) ||
+               !this.free(o.x + ax, o.z + az, o.flying)||
               (o.flying&&!this.airspaceClear(o,o.x+ax,o.z+az))) continue;
             if (!o.flying && this._occupancy) this._occupancy[o.z * this.width + o.x] = -1;
             o.x += ax; o.z += az; o.moveAccum -= 1;

@@ -87,7 +87,8 @@ assert.match(game,/resolveBattleStudioPattern\(recipe,\{/);
 assert.match(game,/a\.studioPattern=studioPattern/);
 assert.match(game,/source:artistHeadSource,pattern:studioPattern/);
 assert.match(graft,/makeIndependentFaceMaster\(source,recipe\.sex,args\)/);
-assert.match(graft,/pattern\?\.faceControls\|\|artistControls\(recipe\)/);
+assert.match(graft,/const controls=\{\.\.\.artistControls\(recipe\),\.\.\.pattern\?\.faceControls\}/,
+ 'Saved creator controls override deterministic sex-based cosmetic defaults');
 assert.match(graft,/partSelection:pattern\?\.partIds\|\|null/);
 assert.match(graft,/cranialScalpSurface\(artistHead\.face,\{/,
  'Hair cap must use real cranium triangles, never full neck/bust bounds');
@@ -97,8 +98,8 @@ assert.match(game,/a\.outfit\.setHelmetVisible\(false\)/);
 assert.match(game,/a\.outfit\.setHairVisible\(true\)/);
 assert.match(game,/next\.outfit\.setHairVisible\(false\)/);
 assert.match(game,/const STUDIO_GROOM_NEAR_MAX=8/);
-assert.match(game,/const STUDIO_GROOM_MIDDLE_MAX=16/);
-assert.match(game,/const STUDIO_GROOM_MAX=STUDIO_GROOM_NEAR_MAX\+STUDIO_GROOM_MIDDLE_MAX/);
+assert.match(game,/const STUDIO_GROOM_NEAR_CACHE_MAX=12/);
+assert.match(game,/const STUDIO_GROOM_NEAR_DISTANCE=28/);
 assert.match(game,/生成器パターン /);
 assert.match(game,/生成器実髪 /);
 assert.match(game,/window\.getBattleStudioPatternReport/);

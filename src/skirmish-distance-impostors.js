@@ -11,8 +11,11 @@ import {captureCrowdImpostorAtlas} from './crowd-impostor-atlas.js?v=4.6.2';
 const VIEW_STEPS=Math.PI/2;
 // A shared job/sex card has the WRONG personal haircut and boot shape. It
 // may only replace the genuine animated 3D rig once it is tiny on screen.
-export const DISTANT_CARD_ENTER_PX=48;
-export const DISTANT_CARD_EXIT_PX=62;
+// A unique haircut is still readable at 40-60px on Android. Use the shared
+// photographed job/sex card only once the *entire* soldier is truly tiny.
+// Near/middle keep the per-actor 3D head, hairstyle, legs and costume.
+export const DISTANT_CARD_ENTER_PX=26;
+export const DISTANT_CARD_EXIT_PX=40;
 export function projectedSoldierHeightPx(camera,canvasHeight,distance,height=3.1){
  if(!(distance>0)||!(canvasHeight>0))return Infinity;
  if(camera?.isPerspectiveCamera){
@@ -80,7 +83,7 @@ export async function createSkirmishDistanceLod(scene,renderer,actors,{
     const wasCard=!!a._distantCard;
     a._distantCard=false;
     if(a.defeated||a.hp<=0||!a.root||!a.character||a.crowdSampling||
-      a.floorTravel||(a.indoorFloor??1)>1||a.mountId||
+      a.floorTravel||(a.indoorFloor??1)>1||a.mountId||a.isStrategist||a.isPlayerHero||
       a._summonFall){
       continue;
     }
@@ -89,8 +92,8 @@ export async function createSkirmishDistanceLod(scene,renderer,actors,{
     if(distanceSq<thresholdSq)continue;
     const range=Math.sqrt(distanceSq);
     // 45m is NOT a sufficient reason to replace a large visible 3D soldier.
-    // Preserve per-actor real hair, legs and armor down to 48 CSS pixels.
-    // Hysteresis retains the card until a returning actor is 62px tall.
+    // Keep an actual unique hairstyle until the complete soldier is smaller
+    // than 26 CSS px. Restore full 3D by 40px without oscillating on zoom.
     const projected=projectedSoldierHeightPx(camera,canvasHeight(),range);
     if(projected>(wasCard?DISTANT_CARD_EXIT_PX:DISTANT_CARD_ENTER_PX))continue;
     eligible++;

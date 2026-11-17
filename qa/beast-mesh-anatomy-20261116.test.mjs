@@ -244,10 +244,17 @@ for(const id of remeshed){
       const knee=p['lowerrear'+side];
       assert.equal(knee.parent,p['legrear'+side]);
       assert.equal(knee.userData.anatomicalJoint,'stifle');
-      assert.ok(Math.abs(knee.position.y-.100)<.00001,
-        'm001 rear knee must pivot at the anatomical stifle');
-      assert.ok(Math.abs(p['beastHockrear'+side].position.y+.505)<.00001,
-        'm001 hock must be re-based to keep the rest paw in place');
+      assert.ok(Math.abs(knee.position.y+.200)<.00001,
+        'm001 rear stifle must be BELOW hip, never above it');
+      assert.ok(Math.abs(p['beastHockrear'+side].position.y+.205)<.00001,
+        'm001 hock must maintain rest paw with lower knee placement');
+      assert.ok(Math.abs(p['lowerfront'+side].position.y+.180)<.00001,
+        'm001 front elbow must hinge beneath the shoulder');
+      assert.ok(Math.abs(p['beastHockfront'+side].position.y+.285)<.00001,
+        'm001 carpus must remain in original bind foot position');
+      const legR=p['legrear'+side],stifle=p['lowerrear'+side];
+      assert.ok(stifle.position.y<0&&legR.scale.y===.88,
+        'stifle must have a fixed-length upper femur below its coxal joint');
     }
     const sleeves=meshes.filter(m=>m.userData.jointSeamSleeve);
     assert.equal(sleeves.length,4,
@@ -266,6 +273,19 @@ for(const id of remeshed){
     // Exercise multiple stride phases, not only the static idle pose.
     startMonsterAction(model,'walk',0);
     const jointAngles=[],upperAngles=[],lowerAngles=[];
+    const planting=[];
+    const sagittalY=(joint,a)=>joint.position.y*Math.cos(a)-
+      joint.position.z*Math.sin(a);
+    const pawHeight=id=>{
+      const leg=p['leg'+id],k=p['lower'+id],
+        h=p['beastHock'+id],pas=p['beastPastern'+id],
+        toe=p['beastToe'+id];
+      const a=leg.rotation.x,b=a+k.rotation.x,c=b+h.rotation.x,
+        d=c+pas.rotation.x;
+      return leg.position.y+leg.scale.y*(sagittalY(k,a)+
+        sagittalY(h,b)+sagittalY(pas,c)+sagittalY(toe,d)-.034)+
+        model.position.y;
+    };
     for(const time of [.08,.19,.32,.45,.57]){
       animateMonsterModel(model,time);
       model.updateMatrixWorld(true);
@@ -278,6 +298,7 @@ for(const id of remeshed){
       lowerAngles.push(p.lowerrearL.rotation.x);
       assert.ok(Math.abs(p.legrearL.scale.y-.88)<1e-6,
         'm001 gait must not compress femur bone length to fake spring');
+      planting.push(Math.min(...['frontL','frontR','rearL','rearR'].map(pawHeight)));
     }
     assert.ok(Math.max(...jointAngles)-Math.min(...jointAngles)>.01,
       'metatarsal joint needs real cyclic gait flexion, not an inert hierarchy');
@@ -285,8 +306,16 @@ for(const id of remeshed){
       'hip must have separately controlled stride amplitude');
     assert.ok(Math.max(...lowerAngles)-Math.min(...lowerAngles)>.035,
       'stifle must have separately controlled folding amplitude');
+    assert.ok(planting.every(y=>y>-.115&&y<.120),
+      'm001 support paws must remain close to the ground through the gait');
     startMonsterAction(model,'idle',.57);
     animateMonsterModel(model,.58);
+    assert.ok(p.lowerrearL.rotation.x>.35,
+      'wolf idle hind knee must visibly crouch, not stand rigidly straight');
+    assert.ok(p.lowerfrontL.rotation.x<-.20,
+      'wolf idle fore elbow must retain a bent ready pose');
+    assert.ok(model.userData.m001BodySettleY<-.018,
+      'wolf ready stance must lower torso while toes remain planted');
     assert.ok(Math.abs(front.position.x)>=.39,
       'm001 forelegs must attach to the shoulder flank, not front underside');
     assert.ok(Math.abs(rear.position.x)>=.31,
@@ -310,8 +339,8 @@ for(const id of remeshed){
     assert.ok(irisSpacing>.265&&irisSpacing<.285,
       'm001 paired iris centres must be closer than previous 0.332 spacing');
     assert.ok(eyes.every(m=>Math.abs(m.position.x)<.15&&
-      m.position.z>.224&&m.position.z<.25),
-      'm001 irises must be medial and flush with frontal bone');
+      m.position.z>.170&&m.position.z<.200),
+      'm001 flat iris must sit inside orbital bone, not float in front');
     const skull=meshes.find(m=>m.name==='organic-cranium-m001');
     assert.ok(skull?.userData.canineEyeSocketsRecessed,
       'wolf-king source skull must be physically recessed, not padded with spheres');
@@ -341,8 +370,10 @@ for(const id of remeshed){
       'm001 near/source sculpt needs buried left/right shoulder musculature');
     const lids=meshes.filter(m=>m.userData.anatomicalAlmondEyelid);
     assert.equal(lids.length,2,'both eye sockets need continuous almond eyelids');
-    assert.ok(lids.every(m=>m.userData.flushSkinLid&&m.userData.opticsRecessedBehindLid),
-      'm001 must have flush lids in front of the recessed optic surfaces');
+    assert.ok(lids.every(m=>m.userData.flushSkinLid&&
+      m.userData.opticsRecessedBehindLid&&
+      m.userData.curvedSkullAperture&&!m.userData.solidEyeballRequired),
+      'm001 uses draped anatomical lid sockets, not visible eye spheres');
     assert.ok(eyes.every(m=>m.userData.recessedOpticDepth<.005),
       'm001 eyes must no longer pop forward from the skin plane');
     const pupilMeshes=meshes.filter(m=>m.userData.roundCanidPupil);
@@ -389,17 +420,19 @@ for(const id of remeshed){
         zMin=Math.min(zMin,positions.getZ(j));
         zMax=Math.max(zMax,positions.getZ(j));
       }
-      assert.ok(xMax-xMin<=.06&&yMax-yMin<.08&&zMax-zMin<.008,
-        'wolf optics must be narrow and flat, not a bulky sphere');
+      assert.ok(xMax-xMin<=.06&&yMax-yMin<.08&&zMax-zMin<.020,
+        'wolf optics must be a thin draped membrane, not a bulky sphere');
     }
     assert.equal(meshes.filter(m=>m.name.startsWith('m001-eyebrow-ridge-')).length,2,
       'm001 needs two anatomical brow ridges');
     const tinyFace=model.userData.pivots['m001-face-core'];
     assert.ok(tinyFace?.isGroup,'m001 must use an independent small-face group');
-    assert.ok(Math.abs(tinyFace.scale.x-.82)<1e-7&&
-      Math.abs(tinyFace.scale.y-.82)<1e-7&&
+    assert.ok(Math.abs(tinyFace.scale.x-.67)<1e-7&&
+      Math.abs(tinyFace.scale.y-.79)<1e-7&&
       Math.abs(tinyFace.scale.z-.82)<1e-7,
-      'm001 must have compact but connected facial proportions');
+      'm001 must narrow the face laterally but retain orbital depth/height');
+    assert.equal(tinyFace.position.x,0,
+      'the wolf face must remain centered on its head pivot');
     assert.equal(skull.parent,tinyFace,'cranium and eyes share facial group');
     // The previous 0.82-scaled skull tip was still in FRONT of the head-
     // parented black nose. This produced the floating grey nose button.
@@ -458,7 +491,9 @@ for(const id of remeshed){
     // follicle roots outside the mask can flow backwards without hiding eyes.
     const headCoats=model.userData.pivots.head.children.filter(m=>
       m.isMesh&&m.userData.furStrands);
-    let blockedRoots=0,allRoots=0;
+    let blockedRoots=0,allRoots=0,anteriorCheekRoots=0,
+      inwardCheekTips=0,foreheadRoots=0,scalpRoots=0,
+      scalpInwardTips=0,scalpLeft=0,scalpRight=0;
     for(const coat of headCoats){
       const p=coat.geometry.getAttribute('position');
       for(let j=0;j+4<p.count;j+=5){
@@ -466,11 +501,45 @@ for(const id of remeshed){
         const y=(p.getY(j)+p.getY(j+1))*.5;
         const z=(p.getZ(j)+p.getZ(j+1))*.5;
         allRoots++;
-        if(z>.105&&Math.abs(x)<.153&&y>-.195&&y<.151)
+        // Keep the innermost eye, nose and lip corridor bare while
+        // deliberately allowing hairline roots over the outer cheek.
+        if(z>.185&&Math.abs(x)<.111&&y>-.153&&y<.175)
           blockedRoots++;
+        // Front cheek ruff must occupy real 3D space on BOTH sides
+        // and turn inward in front of the muzzle, not just increase
+        // the density of the rear neck halo.
+        if(Math.abs(x)>.216&&Math.abs(x)<.360&&
+          z>.014&&z<.158&&y>-.151&&y<.188){
+          anteriorCheekRoots++;
+          const tipX=p.getX(j+4),tipZ=p.getZ(j+4);
+          if(Math.abs(tipX)<Math.abs(x)-.025&&
+            Math.abs(tipX)>=.165&&tipZ>z+.025)
+            inwardCheekTips++;
+        }
+        if(Math.abs(x)>.125&&Math.abs(x)<.206&&
+          z>.138&&z<.275&&y>-.168&&y<.174){
+          scalpRoots++;
+          if(x<0)scalpLeft++;else scalpRight++;
+          const tipX=p.getX(j+4),tipZ=p.getZ(j+4);
+          if(Math.abs(tipX)<Math.abs(x)-.013&&
+             Math.abs(tipX)>.113&&tipZ>z+.018)
+            scalpInwardTips++;
+        }
+        if(y>.209&&z>.132&&Math.abs(x)>.071&&
+          Math.abs(x)<.219)foreheadRoots++;
       }
     }
     assert.ok(allRoots>1500,'perimeter should have body-like follicle coverage');
+    assert.ok(anteriorCheekRoots>40&&inwardCheekTips>30,
+      'front cheek curtains must grow forward and frame the centered face');
+    assert.ok(foreheadRoots>20,
+      'forelock follicles must grow from the brow perimeter, not the nape');
+    assert.ok(scalpRoots>55&&scalpInwardTips>20,
+      'm001 needs dense FACE-rooted underfur with inward guard hair');
+    assert.ok(scalpLeft>20&&scalpRight>20,
+      'left and right inner cheek roots must both be present');
+    assert.ok(Math.abs(scalpLeft-scalpRight)<scalpRoots*.30,
+      'facial ruff must frame the small mask roughly symmetrically');
     const browRootCount=headCoats.reduce((total,coat)=>{
       const a=coat.geometry.getAttribute('position');let n=0;
       for(let i=0;i+4<a.count;i+=5){
@@ -515,7 +584,7 @@ try{
  });
  assert.equal(hair,0,'low LOD must not allocate any long fur ribbons');
  assert.equal(lowMane,1,'low LOD needs one inexpensive volumetric mane');
- assert.equal(lowKing.userData.pivots['m001-face-core'].scale.x,.82,
+ assert.equal(lowKing.userData.pivots['m001-face-core'].scale.x,.67,
    'low LOD must retain compact connected face proportions');
 }finally{disposeMonsterSculpture(lowKing);}
 // PR #345 protects the old ancient wolf; the mesh upgrade must not touch it.

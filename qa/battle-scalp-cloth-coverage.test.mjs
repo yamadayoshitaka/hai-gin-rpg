@@ -47,13 +47,12 @@ const battle=readFileSync(new URL('../src/character-system/battle-artist-head-gr
 const hair=readFileSync(new URL('../src/face-scalp-wig.js',import.meta.url),'utf8');
 const rig=readFileSync(new URL('../src/character-system/rigged-outfit-runtime.js',import.meta.url),'utf8');
 const game=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
-assert.match(battle,/const previousWig=artistHead\.studioWig\|\|null/);
-assert.doesNotMatch(battle.slice(battle.indexOf('export function equipBattleStudioHair('),
- battle.indexOf('export function releaseBattleStudioHair(')),
- /releaseBattleStudioHair\(artistHead\)/,
- 'LOD promotion MUST NOT remove the visible wig before a new one exists');
-assert.ok(battle.indexOf('wig=createScalpAnchoredWig')<
- battle.indexOf('previousWig.root.removeFromParent()'));
+assert.match(battle,/studioWigVariants/,'Both middle and near styles have stable cached instances');
+assert.match(battle,/artistHead.face.add\(wig.root\)/,'Atomic upgrade adds completed hair first');
+assert.match(battle,/for\(const cached of variants.values\(\)\)cached.root.visible=/,
+ 'Switch near/middle by visibility, never by asynchronous detachment');
+assert.match(battle,/artistHead.studioWigQuality!=='middle'/,
+ 'Dense geometry may be recycled only when the normal haircut is active');
 assert.match(battle,/const count=quality==='middle'\?112:hero\?360:168/);
 assert.match(battle,/normalLayerCount:quality==='middle'\?1:2/);
 assert.match(battle,/battleStableCoverage:true/);
@@ -62,7 +61,7 @@ assert.match(hair,/shortLength=cutKind==='buzz'\?\(battleStableCoverage\?\.088:\
 assert.match(hair,/mesh\.userData\.shortBackCoverageStripCount=shortBackStrips/);
 assert.match(rig,/applyBattleTorsoLining\(copy/);
 assert.match(rig,/opaqueTorsoLiningMaterials\+\+/);
-assert.match(game,/battle-artist-head-graft\.js\?v=20261117-thief-scalp-v8/);
-assert.match(game,/rigged-outfit-runtime\.js\?v=20261117-real-back-v5/);
+assert.match(game,/battle-artist-head-graft\.js\?v=20261117-stable-hair1/);
+assert.match(game,/rigged-outfit-runtime\.js\?v=20261117-mount-hair1/);
 source.dispose();texture.dispose();
 console.log('PASS: atomic wig upgrades, short scalp coverage and opaque torso from same source draw slots');

@@ -7,6 +7,16 @@ on:
       - 'src/combat-world-object-renderer.js'
       - 'src/mass-battle-worker*.js'
       - 'qa/long-battle-navigation-zoom-riding.test.mjs'
+      - 'qa/mount-interior-policy.test.mjs'
+      - 'qa/hair-camera-distance-stability.test.mjs'
+      - 'qa/battle-human-riding-navigation.test.mjs'
+      - 'qa/battle-monster-display-identity.test.mjs'
+      - 'src/battle-unit-display-identity.js'
+      - 'world-map.html'
+      - 'town-hub.html'
+      - 'src/mount-interior-policy.js'
+      - 'src/combat-action-runtime.js'
+      - 'src/battle-render-visibility.js'
       - 'src/skirmish-elevation-targeting.js'
       - 'src/room-item-registry.js'
       - 'qa/loot-once-rooftop-contact.test.mjs'
@@ -37,6 +47,13 @@ on:
       - 'src/mass-dash-parity.js'
       - 'src/character-system/battle-motion-policy.js'
       - 'src/character-system/battle-artist-head-graft.js'
+      - 'src/battle-person-pov-camera.js'
+      - 'src/battle-ceremony.js'
+      - 'qa/battle-person-pov-compact-hud.test.mjs'
+      - 'qa/battle-overview-squad-strategy-pins.test.mjs'
+      - 'src/battle-overview-squad-pins.js'
+      - 'src/targeted-strategy-runtime.js'
+      - 'qa/battle-face-microrelief.test.mjs'
       - 'src/face-scalp-wig.js'
       - 'src/character-system/hair-attachment-runtime.js'
       - 'src/skirmish-distance-impostors.js'
@@ -90,15 +107,26 @@ jobs:
         run: npm install --no-save --ignore-scripts --no-audit --no-fund three@0.180.0
       - name: JavaScript syntax and late-battle state tests
         run: |
+          node --check src/mount-interior-policy.js
+          node --check src/combat-action-runtime.js
           node --check src/mass-battle-grid-sim.js
+          node --check src/battle-unit-display-identity.js
           node --check src/face-scalp-wig.js
           node --check src/character-system/riding-pose.js
           node --check src/character-system/battle-torso-lining.js
           node --check src/skirmish-distance-impostors.js
           node --check src/character-system/hair-attachment-runtime.js
           node --check src/character-system/battle-artist-head-graft.js
+          node --check src/battle-person-pov-camera.js
+          node --check src/battle-overview-squad-pins.js
+          node --check src/targeted-strategy-runtime.js
+          node --check src/battle-ceremony.js
           node --check src/combat-world-object-renderer.js
           node --check src/mass-battle-worker-runtime.js
+          node qa/mount-interior-policy.test.mjs
+          node qa/hair-camera-distance-stability.test.mjs
+          node qa/battle-human-riding-navigation.test.mjs
+          node qa/battle-monster-display-identity.test.mjs
           node qa/battle-riding-chest-floor-ui.test.mjs
           node qa/mass-battle-parity-diagonal.test.mjs
           node qa/mass-interior-unified-command-effects.test.mjs
@@ -113,6 +141,12 @@ jobs:
           node qa/closed-thief-back-geometry.test.mjs
           node qa/thief-scalp-summon-rider-regression.test.mjs
           node qa/battle-face-color-regression.test.mjs
+          node qa/battle-face-microrelief.test.mjs
+          node qa/battle-person-pov-compact-hud.test.mjs
+          node qa/battle-overview-squad-strategy-pins.test.mjs
+          node qa/battle-cinematic-audio-regression.test.mjs
+          node qa/battle-report-cinematic-policy.test.mjs
+          node qa/battle-camera-scale.test.mjs
           node qa/battle-studio-pattern-parity.test.mjs
           node qa/battle-ai-target-highlight-zoom.test.mjs
           node --experimental-vm-modules qa/central-battle-orders.test.mjs

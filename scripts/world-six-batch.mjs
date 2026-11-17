@@ -109,6 +109,23 @@ function integrate(){
  const targets={schemaVersion:1,source:'src/object-catalog.js',count:objectCount,
   objects:objects.map(({id,name,category,kind})=>({id,name,category,kind}))};
  fs.writeFileSync(path.join(root,'data/world-quality/catalog-targets.json'),JSON.stringify(targets,null,2)+'\n');
+ // Six independent gates establish code-level production parity, not final
+ // artist approval. Publish the exact per-ID route from authoring to GAME.
+ const usage=new Map(objects.map(o=>[o.id,0]));
+ for(const stage of Object.values({...STAGE_IDENTITIES,...TERRITORY_IDENTITIES}))
+  for(const [id] of stage.landmarks)usage.set(id,(usage.get(id)||0)+1);
+ const adoption={schemaVersion:1,status:'production_factory_connected_visual_qa_pending',
+  sourceFingerprint:fingerprint,gamePage:'tactics-wireframe.html',
+  runtimeFactory:'src/object-catalog.js#createCatalogObject',
+  rendering:'src/stage-static-instancing.js#batchStaticStageDecorations',
+  objects:objects.map(o=>({id:o.id,name:o.name,kind:o.kind,
+    factoryRegistered:true,staticQaPassed:true,
+    stageLandmarkUses:usage.get(o.id)||0,
+    gameAccess:'shared-catalog-factory',
+    visualQaApproved:false,androidFpsVerified:false})),
+  note:'The game and object viewer share the exact same model factory. Generated reference images and unmerged experimental PRs are NOT automatically production models.'};
+ fs.writeFileSync(path.join(root,'data/world-quality/production-model-adoption.json'),
+  JSON.stringify(adoption,null,2)+'\n');
  console.log(JSON.stringify({integrated:6,objects:objectCount,output:'data/world-quality/live-batch-report.json'}));
 }
 if(argv.includes('--integrate'))integrate();

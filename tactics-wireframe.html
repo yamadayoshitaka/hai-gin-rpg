@@ -733,8 +733,94 @@ body.compact-command-dock.compact-explore-open .exploreBuildingList button{
  body.compact-command-dock #squadOneClickOrders .quickActions button{min-width:64px!important;flex-basis:64px!important;font-size:11px!important}
  #battleSelectedTargetBar .targetHeading{font-size:10px}
 }
+/* The redundant selected/enemy strip above message obscured combat.
+   Tactical source/target data remains available through the radar/commands. */
+:root{--battleSelectedHeight:0px}
+#battleSelectedTargetBar{display:none!important}
+#battleCancelCircleTarget{display:none!important;position:fixed;z-index:44;
+ right:8px;top:calc(var(--battleTopBottom,175px) + 7px);
+ min-height:37px;min-width:41px;align-items:center;justify-content:center;
+ border:1px solid #ebc87c;border-radius:9px;background:#52352c;color:#fff5cf;
+ font:800 15px system-ui;pointer-events:auto}
+body[data-circle-target] #battleCancelCircleTarget{display:flex!important}
+/* The 3D overview IS the command map. Crisp DOM badges do not cost GPU meshes. */
+#overviewSquadHud[hidden],#overviewSquadInspector[hidden],.overviewSquadPin[hidden]{display:none!important}
+#overviewSquadHud{position:fixed;inset:0;z-index:22;pointer-events:none;font-family:system-ui}
+#overviewPins{position:absolute;inset:0;pointer-events:none}
+#overviewMapSummary{
+ position:fixed;left:50%;top:calc(var(--battleTopBottom,185px) + 7px);
+ transform:translateX(-50%);width:max-content;max-width:calc(100vw - 20px);
+ border-radius:8px;border:1px solid #7294ac;background:#0b2338e8;
+ padding:5px 10px;font:800 11px/1.2 system-ui;color:#eff8ff;
+ white-space:nowrap;pointer-events:none;text-align:center;
+ box-shadow:0 2px 7px #0008;z-index:2
+}
+#overviewPinLeaders{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
+.overviewSquadPin{
+ position:absolute;transform:translate(-50%,-50%);z-index:2;
+ display:flex;flex-direction:column;align-items:center;justify-content:center;
+ width:42px;height:40px;border:2px solid #5dc8f1;border-radius:11px;
+ padding:2px 3px;background:#0c3141f2;color:#f7fbff;
+ box-shadow:0 3px 7px #000d,0 0 0 1px #12202aa8;
+ font:800 13px/1.14 system-ui;white-space:nowrap;pointer-events:auto;
+ touch-action:manipulation;user-select:none;-webkit-tap-highlight-color:transparent;
+ font-variant-numeric:tabular-nums
+}
+.overviewSquadPin.enemy{border-color:#fd8792;background:#4a1a2cf2}
+.overviewSquadPin.group-2{border-color:#9ae1a7}
+.overviewSquadPin.group-3{border-color:#d8a5ff}
+.overviewSquadPin.selected{border:3px solid #ffe78b;background:#465129f5;
+ box-shadow:0 0 0 3px #f9d76880,0 4px 11px #000c;z-index:4}
+.overviewSquadPin.critical{border-color:#ff9966}
+.overviewSquadPin.defeated{opacity:.65;filter:grayscale(.7)}
+.overviewSquadPin .overviewPinCount{font:800 10px/1.05 system-ui;color:#dfeefa}
+.overviewSquadPin.enemy .overviewPinCount{color:#ffd9dc}
+.overviewSquadPin:focus-visible{outline:3px solid #ffe38b;outline-offset:3px}
+#overviewSquadInspector{
+ position:fixed;left:8px;right:8px;bottom:calc(var(--battleReportHeight,95px) + 10px);
+ z-index:27;pointer-events:auto;max-width:440px;margin:0 auto;
+ padding:8px 11px;background:#0c273cf5;border:1px solid #8cbcd5;border-radius:11px;
+ box-shadow:0 5px 18px #000c;color:#f1f9ff
+}
+#overviewSquadInspector.enemy{border-color:#ec929b;background:#321e2bf5}
+#overviewSquadInspector .overviewInspectorTitle{display:flex;align-items:center;justify-content:space-between;gap:8px}
+#overviewSquadInspector .overviewInspectorTitle strong{font:800 14px system-ui}
+#overviewSquadInspector .overviewInspectorTitle button{border:1px solid #7097b0;border-radius:6px;
+ background:#1c3a53;color:#f1f9ff;min-width:36px;min-height:30px}
+#overviewSquadInspector .overviewInspectorMeta{font:700 11px/1.5 system-ui;color:#d7e9f6;margin:4px 0}
+#overviewSquadInspector .overviewInspectorActions{display:flex;gap:7px;align-items:center}
+#overviewSquadInspector .overviewInspectorActions button,
+#overviewSquadInspector .overviewInspectorActions select{
+ min-height:40px;border:1px solid #83bddc;border-radius:7px;
+ background:#1c4967;color:white;font:800 12px system-ui;padding:5px 8px
+}
+#overviewSquadInspector .overviewInspectorActions select{flex:1;min-width:0}
+#overviewSquadInspector .overviewInspectorActions button{flex:1.25}
+#overviewSquadInspector .overviewInspectorActions[hidden]{display:none!important}
+body #allySquadRibbon,body #enemySquadRibbon,
+body.compact-command-dock #allySquadRibbon,body.compact-command-dock #enemySquadRibbon,
+body.compact-command-dock.squad-closeup #allySquadRibbon,
+body.compact-command-dock.squad-closeup #enemySquadRibbon{display:none!important}
+#dockSquadSelect,#dockSquadOpen,#squadDockIdle{display:none!important}
+@media(max-width:390px){.overviewSquadPin{width:38px;height:37px;font-size:12px}
+ #overviewSquadInspector{left:5px;right:5px;padding:6px 9px}}
 </style>
-<div id="battleSelectedTargetBar" role="status" aria-live="off" hidden><div class="targetHalf left"><div class="targetHeading" id="battleSelectedAlly">味方 第1隊</div><div class="targetCount" id="battleSelectedAllyCount">--/--</div><div class="targetMode" id="battleSelectedAllyOrder">号令：自動</div></div><div class="targetDirection">➜</div><div class="targetHalf right"><div class="targetHeading" id="battleSelectedEnemy">索敵中</div><div class="targetCount" id="battleSelectedEnemyCount">--/--</div><div class="targetMode" id="battleSelectedTargetMode">攻撃対象（自動選択）</div></div><button id="battleCancelCircleTarget" type="button" hidden aria-label="対象選択を取り消す">✕</button></div>
+<div id="overviewSquadHud" hidden aria-label="俯瞰戦場の味方と敵の部隊を選択">
+ <svg id="overviewPinLeaders" aria-hidden="true"></svg>
+ <div id="overviewPins"></div>
+ <div id="overviewMapSummary" role="status">味方・敵の部隊位置を表示中</div>
+ <section id="overviewSquadInspector" hidden aria-label="選択部隊の戦況と作戦情報">
+  <div class="overviewInspectorTitle"><strong id="overviewInspectorTitle">部隊情報</strong>
+   <button id="overviewInspectorClose" type="button" aria-label="部隊情報を閉じる">✕</button></div>
+  <div id="overviewInspectorMeta" class="overviewInspectorMeta"></div>
+  <div id="overviewInspectorPurpose" class="overviewInspectorMeta"></div>
+  <div id="overviewInspectorActions" class="overviewInspectorActions">
+   <select id="overviewDivisionSelect" aria-label="同じ班の分隊を選択するだけ（個別号令なし）"></select>
+   <button type="button" id="overviewRecommendPlan">★ 推奨作戦を選ぶ</button>
+  </div>
+ </section>
+</div>
+<div id="battleSelectedTargetBar" role="status" aria-live="off" hidden><div class="targetHalf left"><div class="targetHeading" id="battleSelectedAlly">味方 第1隊</div><div class="targetCount" id="battleSelectedAllyCount">--/--</div><div class="targetMode" id="battleSelectedAllyOrder">号令：自動</div></div><div class="targetDirection">➜</div><div class="targetHalf right"><div class="targetHeading" id="battleSelectedEnemy">索敵中</div><div class="targetCount" id="battleSelectedEnemyCount">--/--</div><div class="targetMode" id="battleSelectedTargetMode">攻撃対象（自動選択）</div></div></div><button id="battleCancelCircleTarget" type="button" aria-label="対象選択を取り消す">✕</button>
 <div id="squadScreenLabels" aria-label="全味方・敵部隊の接続線付き情報サークル"><svg id="squadCalloutLines" aria-hidden="true"></svg></div>
 <div id="squadCircleInfo" hidden role="status" aria-live="polite" aria-label="選択した部隊の情報・1行表示">
  <div id="squadCircleInfoContent"></div>
@@ -753,6 +839,7 @@ import {createBattleThreeGroupPanel} from './src/battle-three-group-panel.js';
 import * as THREE from 'three';
 import {createGamePageAudio} from './src/game-page-audio.js';
 import {layoutSquadCallouts,squadCalloutLeader} from './src/battle-squad-callout-layout.js?v=2';
+import {overviewPinLabel,placeOverviewSquadPins,recommendOverviewGroupPlans} from './src/battle-overview-squad-pins.js?v=20261117-map-pins2';
 import {createBattleCeremony} from './src/battle-ceremony.js?v=4.6.69';
 import {updateDefensivePosture} from './src/battle-defensive-doctrine.js?v=4.6.15';
 import {chooseBlockedMovementDetour} from './src/battle-movement-recovery.js?v=4.6.15';
@@ -911,26 +998,27 @@ import {STARTER_TOWN} from './src/starter-town.js';
 import {createCharacter} from './src/character-system/shared-character-runtime.js?v=20261116-skills';
 import {createHeroProductionRecipe,heroProductionActionCue,HERO_VARIANT_COUNT} from './src/hero-production-character-factory.js?v=20261116-vfxskills2';
 import {loadBattleHeadMaster,attachBattleArtistHead,battleHeadMasterStats,
- equipBattleStudioHair,releaseBattleStudioHair,BATTLE_HEAD_MASTER_VERSION,BATTLE_FACE_LIGHT_RESPONSE_VERSION}
- from './src/character-system/battle-artist-head-graft.js?v=20261117-thief-scalp-v8';
+ equipBattleStudioHair,releaseBattleStudioHair,discardBattleStudioNearHair,BATTLE_HEAD_MASTER_VERSION,BATTLE_FACE_LIGHT_RESPONSE_VERSION}
+ from './src/character-system/battle-artist-head-graft.js?v=20261117-stable-hair1';
 import {currentHeroineStudioPreset,resolveBattleStudioPattern}
  from './src/character-system/battle-generator-appearance.js?v=20261116-studio-pattern1';
 import {enhanceStudioCombatMaterials,refineHeroineCostumeSilhouette}
  from './src/heroine-battle-costume-bridge.js?v=70';
 import {applySkinnedBuildMorph} from './src/body-build-morph-v48.js?v=60';
-import {buildRiggedJobOutfit} from './src/character-system/rigged-outfit-runtime.js?v=20261117-real-back-v5';
+import {buildRiggedJobOutfit} from './src/character-system/rigged-outfit-runtime.js?v=20261117-mount-hair1';
 import {batchStaticStageDecorations} from './src/stage-static-instancing.js?v=world60-20261117';
 import {batchStaticBuildingShells} from './src/stage-building-instancing.js?v=2';
 import {cameraSegmentHitsBox,selectCameraOccluders,selectCanopiesAroundCamera,chooseClearBattleCameraOffset,shouldRevealBuildingInterior,safeSelectedInteriorFloor} from './src/battle-camera-occlusion.js?v=4.6.69';
 import {registerSquadCircleTap,chooseSquadZoomTarget,SQUAD_CIRCLE_DOUBLE_TAP_MS,shouldHideSquadLabelsAtDistance} from './src/battle-squad-circle-tap.js?v=4.6.36';
-import {createBattleActorVisibility} from './src/battle-render-visibility.js?v=zoom-human-1';
+import {createBattleActorVisibility} from './src/battle-render-visibility.js?v=20261117-mount-hair1';
 import {enableBattleRigidFrustumCulling,countBattleRigCulling} from './src/battle-rigid-frustum-optimization.js?v=20261116-rigid1';
 import {interpolatedSkirmishCameraAnchor,createVisibilityWorkPacer} from './src/battle-frame-pacing.js?v=20261116-p95';
+import {personFacingYaw,writePersonPovOffset} from './src/battle-person-pov-camera.js?v=20261117-person-pov1';
 import {SKIRMISH_DASH_TEMPO,skirmishTravelTempo,realtimeBattleCinematicScale} from './src/battle-tempo-policy.js?v=20261116-tempo1';
 import {BattlePhaseProfiler} from './src/battle-phase-profiler.js?v=20261116-gpu1';
 import {shouldShowOverheadSquadCallouts,closestAliveBattleFocus} from './src/battle-zoom-visibility-policy.js?v=1';
 import {zoomedSquadMember} from './src/battle-zoom-squad-badge.js?v=20261116-zoom1';
-import {createSkirmishDistanceLod} from './src/skirmish-distance-impostors.js?v=20261116-screenpx1';
+import {createSkirmishDistanceLod} from './src/skirmish-distance-impostors.js?v=20261117-stable-hair1';
 import {OBJECT_CATALOG,createCatalogObject} from './src/object-catalog.js?v=world60-20261117';
 import {RoomItemRegistry,ROOM_ITEM_TYPES,applySquadHeal} from './src/room-item-registry.js?v=4.6.44';
 import {openTreasureChestModel} from './src/treasure-chest-state.js?v=4.6.36';
@@ -947,7 +1035,7 @@ import {sampleMassVisualMotion} from './src/mass-visual-motion.js?v=4.6.36';
 import {createRidingPoseController,ridingStyleForCreature} from './src/character-system/riding-pose.js?v=20261117-three-seats-v3';
 import {randomJobRoster} from './src/tactical-roster.js?v=3.11.0';
 import {JOBS as MASS_JOBS} from './src/mass-battle-sim.js?v=4.6.15';
-import {MassBattleGridSimulation} from './src/mass-battle-grid-sim.js?v=4.6.70';
+import {MassBattleGridSimulation} from './src/mass-battle-grid-sim.js?v=20261117-mount-interior1';
 import {createMassHighGroundRoutes,massHighGroundWorldPoint} from './src/mass-battle-highground.js?v=4.6.36';
 import {massCombatEffectBudget} from './src/mass-battle-vfx-policy.js?v=4.6.36';
 import {territoryAt,NEUTRAL_HALF_WIDTH} from './src/battle-territory.js?v=4.6.15';
@@ -958,18 +1046,20 @@ import {indexBattleDecisionUnits} from './src/battle-ai-decision-index.js?v=2026
 import {createMassBattleRealArmy} from './src/mass-battle-real-army.js?v=4.6.39';
 import {BattleCorpsePolicy,corpseOpacity} from './src/battle-corpse-policy.js?v=4.4.35';
 import {CrowdPerformanceBudget} from './src/crowd-performance-budget.js?v=4.6.36';
-import {createMassBattleWorkerClient} from './src/mass-battle-worker-client.js?v=4.6.70';
+import {createMassBattleWorkerClient} from './src/mass-battle-worker-client.js?v=20261117-mount-interior1';
 import {FramePerformanceMonitor} from './src/frame-performance.js?v=20261116-p95';
 import {ActionVfxRuntime} from './src/character-system/action-vfx-runtime.js?v=20261116-vfxvisibility2';
 import {ConfirmedHitOverlay,selectConfirmedHitEvents} from './src/confirmed-hit-overlay.js?v=4.6.36';
 import {combatEffectDirective} from './src/combat-effect-directives.js?v=4.6.16';
- import {CombatActionRuntime} from './src/combat-action-runtime.js?v=4.6.51';
+ import {CombatActionRuntime} from './src/combat-action-runtime.js?v=20261117-mount-interior1';
+import {createMountInteriorMask,isMountInteriorCell} from './src/mount-interior-policy.js?v=20261117-mount-interior1';
  import {COMBAT_RULES,combatJobId,availableCombatSkills} from './src/combat-action-spec.js?v=4.6.51';
  import {createCombatWorldObjectRenderer} from './src/combat-world-object-renderer.js?v=natural-size-20261116';
 import {describeDestructibleWorld} from './src/destructible-world.js?v=4.6.15';
 import {StructureCollapseVfx} from './src/structure-collapse-vfx.js?v=4.4.34';
  import {createCreatureSoundRuntime} from './src/combat-creature-sounds.js?v=creature-voices-2';
 import {MONSTER_CATALOG} from './src/monster-catalog.js';
+import {battleUnitDisplayName} from './src/battle-unit-display-identity.js?v=monster-display-20261117';
 import {createMonsterModel} from './src/monster-geometry.js';
  import {CREATURE_PERFORMANCE,riderSeatHeight,riderSeatLocalOffset,creatureFlightHeight,creatureSize,mountedFlightSway} from './src/combat-creature-performance.js?v=natural-size-20261116';
 const $=id=>document.getElementById(id);
@@ -1208,6 +1298,7 @@ document.addEventListener('pointerdown',()=>creatureAudio.unlock(),{passive:true
 document.addEventListener('keydown',()=>creatureAudio.unlock());
 const controls=new OrbitControls(camera,renderer.domElement);controls.target.set(0,0,0);controls.enableDamping=false;controls.enablePan=true;controls.rotateSpeed=1.3;controls.zoomSpeed=1.4;controls.panSpeed=1.15;controls.minDistance=4;controls.maxDistance=340;controls.minPolarAngle=.08;controls.maxPolarAngle=Math.PI*.46;controls.update();
 let followCamera=false;
+let targetViewFollowing=false; // Follow the character's heading, not a fixed compass view.
 let focusedHumanUnitId=null;
 let cameraPanMode=false;
 function setCameraGesture(){
@@ -1219,7 +1310,7 @@ function setCameraGesture(){
  controls.touches.TWO=THREE.TOUCH.DOLLY_PAN;
 }
 setCameraGesture();
-controls.addEventListener('start',()=>{followCamera=false});
+controls.addEventListener('start',()=>{followCamera=false;targetViewFollowing=false;});
 scene.add(new THREE.HemisphereLight(0xe6f3ff,0x50617b,TOWN_MODE?1.05:2.5));const sun=new THREE.DirectionalLight(0xffffff,TOWN_MODE?3.0:2.2);sun.position.set(-130,260,95);sun.castShadow=true;sun.shadow.mapSize.set(MASS_SIZE||TOWN_MODE?1024:2048,MASS_SIZE||TOWN_MODE?1024:2048);sun.shadow.camera.left=TOWN_MODE?-145:-65;sun.shadow.camera.right=TOWN_MODE?145:65;sun.shadow.camera.top=TOWN_MODE?145:65;sun.shadow.camera.bottom=TOWN_MODE?-145:-65;sun.shadow.camera.near=1;sun.shadow.camera.far=700;if(TOWN_MODE){sun.position.set(65,180,165);sun.target.position.set(110,1,110);sun.target.updateMatrixWorld();}sun.shadow.bias=-0.00025;sun.shadow.normalBias=TOWN_MODE?.009:.035;sun.shadow.radius=TOWN_MODE?1.4:2;scene.add(sun);scene.add(sun.target);
 // Buildings and walls are static between collapse events; rendering their
 // entire shadow depth pass 18 times/sec is wasted mobile GPU work. Shadows
@@ -2154,6 +2245,19 @@ function mountedCreatureOf(unit){
    o.mountedBy===(massSim&&unit.massUnitId!=null?unit.massUnitId:unit.id)):null;
 }
 function riderElevation(unit,time=creatureVisualTime){return riderSeatHeight(mountedCreatureOf(unit),time);}
+/** One-time exact pelvis anchor from the existing skinned 65-bone person.
+ * The world root tracks the saddle; only the displayed body shifts so the
+ * HIPS rather than the boots meet that saddle. Never resample per frame. */
+function measureRiderPelvisDrop(character){
+ const pelvis=character?.model?.getObjectByName('pelvis')||
+  character?.model?.getObjectByName('Hips');
+ if(!pelvis||!character?.object3D)return .90;
+ const point=new THREE.Vector3();
+ character.object3D.updateWorldMatrix(true,true);
+ pelvis.getWorldPosition(point);
+ character.object3D.worldToLocal(point);
+ return THREE.MathUtils.clamp(point.y,.45,1.22);
+}
 function applyCreatureRidingPose(actor){
  if(!actor?.character?.model)return;
  if(!actor._ridingPose)actor._ridingPose=createRidingPoseController(actor.character.model);
@@ -2692,7 +2796,9 @@ async function installBattleModels(){
      // installs. First footfall must not wait for a network request.
      void character.prefetch('run').catch(()=>{});
      void character.prefetch('attack').catch(()=>{});
-     animated++;motionState.set(a.id,'idle');character.object3D.visible=true;
+     animated++;motionState.set(a.id,'idle');
+       // Keep the donor rig hidden until its head, outfit and haircut form a
+       // complete coherent model. No naked/temporarily bald battle frame.
      if(massSim)a.root.userData.ring.visible=true
     }
     else {console.warn('External idle clip unavailable:',a.job.name);requestMotion(a,'walk')}
@@ -2703,7 +2809,8 @@ async function installBattleModels(){
        job:recipe.outfitJob,sex:recipe.sex,quality:'battle',rarity:recipe.rarity,
        hairStyle:1+studioPattern.hairIndex%(recipe.sex==='female'?12:14),
        hairColor:studioPattern.hairColor,
-       preserveBody:false,weaponOverride:a.job.name==='槍兵'?'spear':null});
+       preserveBody:false,headwearShown:false,
+        weaponOverride:a.job.name==='槍兵'?'spear':null});
       // The authoring preview shows sculpted heads without floating helmets
       // or green hood masks. Expose the studio-aligned fitted middle-LOD hair
       // until an actual scalp-grown near-LOD wig has been fitted.
@@ -2741,6 +2848,7 @@ async function installBattleModels(){
       // Whole-rig width/depth proportions keep skin, knees, neck, boots,
       // armor and weapons bone-aligned without changing world collision.
       character.object3D.scale.set(recipe.visualScaleX,1,recipe.visualScaleZ);
+      a.riderPelvisDropY=measureRiderPelvisDrop(character);
       character.object3D.userData.heroProductionRecipe=recipe;
       a.root.userData.heroProductionVersion=recipe.recipeVersion;
       // The original full-quality armor/cloth stays untouched. Only rigid
@@ -2748,7 +2856,8 @@ async function installBattleModels(){
       // Keep deforming body/hair/animation meshes on their original path.
       if(!TOWN_MODE&&!massSim&&RIGID_CULLING_ENABLED)
        a.rigidCullStats=enableBattleRigidFrustumCulling(a.character.object3D);
-      a.outfitError=null;dressed++;
+      character.object3D.visible=true;
+       a.outfitError=null;dressed++;
       if(aiSteelTrialRequested&&!aiSteelTrial&&sex==='male'&&a.job.name==='剣士'){
        aiSteelTrial={id:a.id,root:a.outfit.root,active:false};
        const btn=document.getElementById('aiSteelTrialToggle');
@@ -2873,7 +2982,26 @@ for(const obj of [...stageObjects.children]){
 }
 // The vegetation and fences are immutable during combat. Draw the exact same
 // meshes/materials through spatial GPU instancing; collision tiles stay as-is.
+// Report the production scene input BEFORE instancing removes its source
+// nodes. This never adds render meshes and verifies authoring→game lineage.
+const stageCatalogModelCounts=new Map();
+for(const object of stageObjects.children){
+ const id=object.userData?.assetId;
+ if(id&&Object.hasOwn(OBJECT_CATALOG,id))
+  stageCatalogModelCounts.set(id,(stageCatalogModelCounts.get(id)||0)+1);
+}
 const stageBatchStats=batchStaticStageDecorations(stageObjects,THREE,{cellSize:CELL});
+const liveObjectTransfer=Object.freeze({
+ source:'src/object-catalog.js#createCatalogObject',
+ catalogCount:Object.keys(OBJECT_CATALOG).length,
+ instantiatedCount:[...stageCatalogModelCounts.values()].reduce((a,b)=>a+b,0),
+ instantiatedIds:[...stageCatalogModelCounts.keys()].sort(),
+ byId:Object.fromEntries(stageCatalogModelCounts),
+ instancedDrawBatches:stageBatchStats.batches,
+ instancedObjectCount:stageBatchStats.objects,
+ visualQaApproved:false,androidFpsVerified:false
+});
+window.getBattleObjectTransferStats=()=>liveObjectTransfer;
 loadingProgress('地形と街のGPU描画を最適化しました',40);
 console.info('[Stage GPU instancing]',stageBatchStats);
 // Fire commands target both bridges and buildings by their real footprint.
@@ -3003,6 +3131,7 @@ function traversableCell(x,z,unit=null){if(x<0||z<0||x>=WORLD_SIZE||z>=WORLD_SIZ
 function worldPassableMap(){const map=new Uint8Array(WORLD_SIZE*WORLD_SIZE);for(let z=0;z<WORLD_SIZE;z++)for(let x=0;x<WORLD_SIZE;x++)map[z*WORLD_SIZE+x]=traversableCell(x,z)?1:0;return map}
 function worldWaterMap(){const map=new Uint8Array(WORLD_SIZE*WORLD_SIZE);for(let z=0;z<WORLD_SIZE;z++)for(let x=0;x<WORLD_SIZE;x++)if(isWaterCell(x,z))map[z*WORLD_SIZE+x]=1;return map}
 function worldOpaqueMap(){const map=new Uint8Array(WORLD_SIZE*WORLD_SIZE);for(let z=0;z<WORLD_SIZE;z++)for(let x=0;x<WORLD_SIZE;x++){const key=x+','+z;map[z*WORLD_SIZE+x]=occupiedTrees.has(key)||solidPropCells.has(key)||solidStairCells.has(key)||hutWall(x,z)||secondHutWall(x,z)||townWall(x,z)||stageData.tiles[z*WORLD_SIZE+x]==='cliff'?1:0}return map}
+ const mountInteriorMask=createMountInteriorMask(WORLD_SIZE,WORLD_SIZE,townInstances,[hutBounds,secondHutBounds]);
  const combatWalkableMap=worldPassableMap();
  const combatWaterMap=worldWaterMap();
  // Sample the actual terrain once. The 2000-person Worker reads a compact
@@ -3014,7 +3143,7 @@ function worldOpaqueMap(){const map=new Uint8Array(WORLD_SIZE*WORLD_SIZE);for(le
  const skirmishObjectOccupancy=!MASS_SIZE?new Int32Array(WORLD_SIZE*WORLD_SIZE).fill(-1):null;
  combatObjectRenderer=createCombatWorldObjectRenderer(scene,{cellSize:CELL,offset:6,terrainY,camera});
  if(!MASS_SIZE){
-  skirmishActions=new CombatActionRuntime({width:WORLD_SIZE,height:WORLD_SIZE,walkable:combatWalkableMap});
+  skirmishActions=new CombatActionRuntime({width:WORLD_SIZE,height:WORLD_SIZE,walkable:combatWalkableMap,mountForbidden:mountInteriorMask});
   skirmishActions.onDeath=u=>{if(!u.defeated)defeatActor(u);u.alive=false};
   skirmishActions.onRevive=u=>{
    if(!availableCell(u.cell.x,u.cell.z,u))return false;
@@ -3035,7 +3164,7 @@ function worldOpaqueMap(){const map=new Uint8Array(WORLD_SIZE*WORLD_SIZE);for(le
  }
 if(MASS_SIZE){
  const crossingData=bridges.filter(b=>!b.destroyed).map(b=>({x:riverAt(b.row),z:b.row,type:b.type}));
-  massSim=new MassBattleGridSimulation(MASS_SIZE,20261104,{width:WORLD_SIZE,height:WORLD_SIZE,walkable:combatWalkableMap,water:combatWaterMap,opaque:worldOpaqueMap(),bridges:crossingData,riverXAt:riverAt,elevationMap:combatElevationMap});
+  massSim=new MassBattleGridSimulation(MASS_SIZE,20261104,{width:WORLD_SIZE,height:WORLD_SIZE,walkable:combatWalkableMap,water:combatWaterMap,opaque:worldOpaqueMap(),bridges:crossingData,riverXAt:riverAt,elevationMap:combatElevationMap,mountForbidden:mountInteriorMask});
 }
 // Damage is applied by the authoritative combat runtime, not a visual-only
 // flame effect. One bounding rectangle represents each complete building or
@@ -3158,7 +3287,12 @@ function startCellMove(a,x,z){
  // Both orthogonal corners remain free throughout a diagonal step.
  if(dx&&dz&&Math.abs(dx)===1&&Math.abs(dz)===1&&
     (!availableCell(a.cell.x+dx,a.cell.z,a)||!availableCell(a.cell.x,a.cell.z+dz,a)))return false;
- reservedCells.set(cellKey(x,z),a);a.nextCell={x,z};a.blockedSince=null;return true;
+ if(a.mountId&&isMountInteriorCell(mountInteriorMask,WORLD_SIZE,x,z)){
+    // Dismount at the LAST outdoor tile; never move a horse under indoor floors.
+    if(!skirmishActions?.dismountObject(a))return false;
+    a._ridingPose?.restore();
+  }
+  reservedCells.set(cellKey(x,z),a);a.nextCell={x,z};a.blockedSince=null;return true;
 }
 function finishCellMove(a){battleAudio.cue('step',a);
  // A hundred moving soldiers emitted a translucent dust effect on EVERY tile.
@@ -3285,7 +3419,7 @@ for(let team=0;team<2;team++)for(let i=0;i<TEAM_SIZE;i++){
  const pos=cellPosition(cell.x,cell.z);
  if(TOWN_MODE&&root.userData.ring)root.userData.ring.visible=false;
  root.position.set(pos.x,terrainY(pos.x,pos.z),pos.z);root.rotation.y=team===0?Math.PI/2:-Math.PI/2;scene.add(root);
- const actor={id:team*TEAM_SIZE+i,team,job,monsterSpec,jobId:combatJobId(job.name),rarity:storyUnit?.rarity||(i%13===0?'UR':i%3===0?'R':'N'),root,cell,nextCell:null,defeated:false,hp:job.hp,maxHp:job.hp,mp:COMBAT_RULES.maxMp,maxMp:COMBAT_RULES.maxMp,speed:job.speed,jumpY:job.jumpY,jumping:false,attackTimer:Math.random()*2,thinkTimer:Math.random()*.4,order:null,targetId:null,home:pos.clone(),velocity:new THREE.Vector3(),walkPhase:0,
+ const actor={id:team*TEAM_SIZE+i,team,job,monsterSpec,displayName:monsterSpec?.name||null,jobId:combatJobId(job.name),rarity:storyUnit?.rarity||(i%13===0?'UR':i%3===0?'R':'N'),root,cell,nextCell:null,defeated:false,hp:job.hp,maxHp:job.hp,mp:COMBAT_RULES.maxMp,maxMp:COMBAT_RULES.maxMp,speed:job.speed,jumpY:job.jumpY,jumping:false,attackTimer:Math.random()*2,thinkTimer:Math.random()*.4,order:null,targetId:null,home:pos.clone(),velocity:new THREE.Vector3(),walkPhase:0,
   squadId:storyUnit?.squadId??Math.floor(i/Math.max(10,Math.ceil(TEAM_SIZE/5))),sourceSquadId:storyUnit?.sourceSquadId??storyUnit?.squadId,
   commanderId:storyUnit?.commanderId??'provisional',armyGroupId:storyUnit?.armyGroupId??null,
   formationBaseStats:withoutFormation,isStrategist:Boolean(storyUnit?.isStrategist),isPlayerHero:Boolean(storyUnit?.isPlayerHero),
@@ -3869,7 +4003,7 @@ if(massSim){
   // Use the immutable bridge catalog held by the simulation itself. The
   // crossingData local only exists in the earlier MASS_SIZE initialization block.
   opaque:massSim.opaque,bridges:massSim.bridges,riverXAt:riverAt,
-  elevationMap:massSim.elevationMap,highGroundRoutes:massSim.highGroundRoutes
+  elevationMap:massSim.elevationMap,mountForbidden:mountInteriorMask,highGroundRoutes:massSim.highGroundRoutes
  },{
   onSnapshot:syncMassBattleSnapshot,
   // Full combat actions remain authoritative in the Worker. An explicit URL
@@ -4855,7 +4989,7 @@ function updateUnitFloorTravel(a,dt){
  if(travel.phase==='climb'){
   if(a===automaticFloorGuide&&!travel.cameraEngaged){
    travel.cameraEngaged=true;
-   followCamera=true;
+   followCamera=true;targetViewFollowing=false;
    setBattleCamera(a.root.position,new THREE.Vector3(8,14,15));
    setCameraActive('camFollow');
    log(travel.viaGrapple?'忍者が鉤縄で上階の窓枠へ上昇中':
@@ -5529,7 +5663,7 @@ let vitalsPage=0,vitalsLastRefresh=-Infinity,vitalsPreviousPause=null;
 const vitalsPageSize=5;
 let vitalsDisplay='individual';
 const vitalRoster=()=>massSim?massSim.units:actors;
-const vitalJobName=u=>massSim?(MASS_JOBS[u.jobIndex]?.name||u.jobId):(u.job?.name||u.jobId);
+const vitalJobName=u=>massSim?battleUnitDisplayName(u,{fallback:MASS_JOBS[u.jobIndex]?.name||u.jobId}):battleUnitDisplayName(u);
 function collectVitals(){
  const sides=Array.from({length:2},()=>({total:0,alive:0,hp:0,maxHp:0,mp:0,maxMp:0,jobs:new Map()}));
  for(const u of vitalRoster()){
@@ -5972,7 +6106,7 @@ function updateBattleFormationIntegrity(){
 }
 const battleJobNameById=new Map(MASS_JOBS.map(job=>[job.id,job.name]));
 function battleUnitJobName(unit){
- return unit.job?.name||battleJobNameById.get(unit.jobId)||unit.jobId||'兵士';
+ return battleUnitDisplayName(unit,{fallback:battleJobNameById.get(unit.jobId)||'兵士'});
 }
 function squadPrimaryJob(id,team=0,sums=lastRibbonSums){
  const liveJobs=sums?.get(squadKey(team,String(id)))?.jobs;
@@ -6528,8 +6662,8 @@ const battleDialogue=createBattleStrategistDialogue({
   const offset=chooseClearBattleCameraOffset(focus,nearbyTrees,{terrainHeight:terrainY});
   dialogueCameraReturn=null;focusedHumanUnitId=massSim?unit.id:null;
   if(!massSim)selected=unit;
-  followCamera=true;
-  setBattleCamera(focus,new THREE.Vector3(offset.x,offset.y,offset.z));
+  followCamera=true;targetViewFollowing=true;
+  setBattleCamera(focus,writePersonPovOffset(unit,initialPersonPovOffset,8.8,3.3));
   updateCameraObstructions();setCameraActive(null);
   if(report.squadId!=null)openSquadTactics(String(report.squadId));
 
@@ -7800,7 +7934,18 @@ const targetedStrategyUi=createTargetedStrategyUi({
    const selected=storyRequest?.battlePlanSelected?.[String(groupId)];
    return [...configured].sort((a,b)=>Number(b.id===selected)-Number(a.id===selected));
   }
-  return BATTLE_PLAN_PRESETS.map(x=>({...x,score:50,reason:'模擬戦向け参考テンプレート'}));
+  // Free battles also get REAL suitability scores from this group's
+  // living jobs, map terrain and current casualties, not seven fake 50s.
+  const own=squadRoster.filter(u=>u.team===0&&!u.isStrategist&&
+   u.hp>0&&u.alive!==false&&
+   normalizeArmyGroup(armyGroupBySquad[String(u.squadId)])===Number(groupId));
+  const lost=own.length?own.reduce((n,u)=>n+1-u.hp/Math.max(1,u.maxHp||u.hp),0)/own.length:0;
+  return recommendOverviewGroupPlans(BATTLE_PLAN_PRESETS,STRATEGY_METHODS,{
+   jobs:own.map(u=>u.jobId||u.job?.id||'sword'),
+   stageKind:selectedStage?.kind||'explore',
+   terrain:selectedStage?.biome||selectedStage?.terrain||'plains',
+   woundedRatio:lost
+  }).slice(0,5);
  },
  getItems:()=>{
   const byId=new Map();
@@ -8255,10 +8400,10 @@ function zoomToSquadMember(id,team){
  focusedHumanUnitId=massSim?unit.id:null;
  const renderedActor=massSim?actors.find(a=>a.massUnitId===unit.id):unit;
  if(renderedActor)selected=renderedActor;
- followCamera=true;battleViewMode='commander';
+ followCamera=true;targetViewFollowing=true;battleViewMode='commander';
  if(team===0)trackedAllySquadId=String(id);
  closeSquadCircleInfo();
- setBattleCamera(focus,new THREE.Vector3(4,3,7).normalize().multiplyScalar(zoom));
+ setBattleCamera(focus,writePersonPovOffset(unit,initialPersonPovOffset,zoom,3));
  syncSquadCloseupLabels();
  setCameraActive(null);
  lastGroundTap=null;
@@ -8361,6 +8506,197 @@ function makeSquadLabel(id,team){
 }
 for(const id of squadIds)squadMarkers.set(squadKey(0,id),makeSquadLabel(id,0));
 for(const id of enemySquadIds)squadMarkers.set(squadKey(1,id),makeSquadLabel(id,1));
+/**
+ * Overview battlefield = tactical map. There is no second squad chooser:
+ * each real 3D squad centroid has a fixed, Android-readable pin.
+ * All 20 DOM nodes and SVG leader paths are allocated ONCE; updates run
+ * at 5Hz, independent of soldier animation and pixel-ratio/FPS adaptation.
+ */
+const overviewHud=$('overviewSquadHud'),overviewPins=$('overviewPins');
+const overviewPinLeaders=$('overviewPinLeaders');
+const overviewInspector=$('overviewSquadInspector');
+const overviewPinNodes=new Map();
+const overviewProjection=new THREE.Vector3();
+let overviewSelectedKey=null,overviewPinClock=0,overviewInspectorSignature='';
+const overviewSvgNS='http://www.w3.org/2000/svg';
+for(const team of [0,1]){
+ const ids=team===0?squadIds:enemySquadIds;
+ for(const [squadIndex,id] of ids.entries()){
+  const key=squadKey(team,id),pin=document.createElement('button');
+  pin.type='button';pin.className='overviewSquadPin'+(team?' enemy':'');
+  const title=document.createElement('span'),count=document.createElement('span');
+  count.className='overviewPinCount';count.textContent='--/--';
+  pin.append(title,count);
+  pin.dataset.squadKey=key;
+  pin.setAttribute('aria-label',(team?'敵':'味方')+squadName(id,team)+'の位置と作戦を表示');
+  pin.onclick=()=>selectOverviewSquad(team,id);
+  overviewPins.append(pin);
+  const line=document.createElementNS(overviewSvgNS,'path');
+  line.setAttribute('stroke',team?'#ffadbb':'#a2e4ff');
+  line.setAttribute('stroke-width','1.5');line.setAttribute('fill','none');
+  const dot=document.createElementNS(overviewSvgNS,'circle');
+  dot.setAttribute('r','3.5');dot.setAttribute('fill',team?'#ff9fac':'#a4eaff');
+  line.style.display='none';dot.style.display='none';
+  overviewPinLeaders.append(line,dot);
+  overviewPinNodes.set(key,{pin,title,count,line,dot,team,id,squadIndex});
+ }
+}
+function overviewSquadActive(){
+ const fullCamera=camera.position.distanceTo(controls.target)>
+  cameraOverviewOffset.length()*.65;
+ return battleReady&&!finished&&!TOWN_MODE&&!battleCeremony.locked&&
+  !commandOverviewLocked&&
+  (battleViewMode==='overview'||fullCamera)&&
+  !document.body.classList.contains('command-target-preview');
+}
+function selectOverviewSquad(team,id){
+ if(!overviewSquadActive())return false;
+ const key=squadKey(team,id),marker=squadMarkers.get(key);
+ if(!marker?.visible)return false;
+ overviewSelectedKey=key;overviewInspectorSignature='';
+ renderOverviewSquadInspector(true);
+ for(const [k,node] of overviewPinNodes)
+  node.pin.classList.toggle('selected',k===key);
+ return true;
+}
+function renderOverviewSquadInspector(force=false){
+ const node=overviewPinNodes.get(overviewSelectedKey);
+ if(!node||!squadMarkers.get(overviewSelectedKey)?.visible){
+  overviewInspector.hidden=true;return;
+ }
+ const {id,team}=node,marker=squadMarkers.get(overviewSelectedKey);
+ const alive=marker.userData.screenLabel.userDataStrength.textContent;
+ const defeated=alive.startsWith('0/'),intent=squadIntent(id,team,defeated);
+ const group=team===0?normalizeArmyGroup(armyGroupBySquad[String(id)]):null;
+ const leader=team===0?squadCommanderUnavailableReason(id):
+  ribbonCommanderAlive(1,id)?'敵軍師が指揮中':'軍師不在';
+ const sig=[id,team,alive,intent.order,intent.purpose,leader,group].join('|');
+ if(!force&&overviewInspectorSignature===sig)return;
+ overviewInspectorSignature=sig;
+ overviewInspector.hidden=false;
+ overviewInspector.classList.toggle('enemy',team===1);
+ $('overviewInspectorTitle').textContent=(team?'🔴 敵 ':'🔵 味方 ')+squadName(id,team);
+ $('overviewInspectorMeta').textContent=
+  '残存 '+alive+'人 ｜ '+intent.order+(leader?' ｜ '+leader:'');
+ $('overviewInspectorPurpose').textContent='目的：'+intent.purpose;
+ $('overviewInspectorActions').hidden=team!==0||defeated;
+ if(team===0){
+  const options=squadIds.filter(sid=>
+   normalizeArmyGroup(armyGroupBySquad[String(sid)])===group);
+  const select=$('overviewDivisionSelect');
+  const optionSignature=group+':'+options.join(',');
+  if(select.dataset.groupSignature!==optionSignature){
+   select.replaceChildren(...options.map(sid=>{
+    const item=document.createElement('option');
+    item.value=String(sid);item.textContent=squadName(sid);
+    return item;
+   }));
+   select.dataset.groupSignature=optionSignature;
+  }
+  select.value=String(id);
+  $('overviewRecommendPlan').disabled=!!leader||!hasSquadCommander(id);
+  $('overviewRecommendPlan').title=leader||'現在の地形・目的・職業に合う宿屋テンプレートを選択';
+ }
+}
+$('overviewInspectorClose').onclick=()=>{
+ overviewSelectedKey=null;overviewInspector.hidden=true;overviewInspectorSignature='';
+ for(const node of overviewPinNodes.values())node.pin.classList.remove('selected');
+};
+$('overviewDivisionSelect').onchange=event=>{
+ // Divisions only SELECT a position; individual commands remain unavailable.
+ selectOverviewSquad(0,event.target.value);
+};
+$('overviewRecommendPlan').onclick=()=>{
+ const node=overviewPinNodes.get(overviewSelectedKey);
+ if(!node||node.team!==0)return;
+ const group=normalizeArmyGroup(armyGroupBySquad[String(node.id)]);
+ const opened=targetedStrategyUi.open(group,{
+  startAtRecommendations:true,groupOnly:true
+ });
+ if(opened)overviewHud.hidden=true;
+};
+function updateOverviewSquadPins(dt){
+ overviewPinClock+=dt;
+ if(overviewPinClock<.16)return;
+ overviewPinClock=0;
+ const visible=overviewSquadActive();
+ if(overviewHud.hidden===visible)overviewHud.hidden=!visible;
+ document.body.classList.toggle('overview-squad-map',visible);
+ if(!visible)return;
+ const rect=renderer.domElement.getBoundingClientRect();
+ const report=$('battleDialogue'),topDock=$('battleTopDock');
+ const bounds={left:Math.max(7,rect.left+7),
+  right:Math.min(innerWidth-7,rect.right-7),
+  top:Math.max(rect.top+7,topDock.getBoundingClientRect().bottom+8),
+  bottom:Math.min(rect.bottom-7,
+   report&&!report.hidden?report.getBoundingClientRect().top-8:innerHeight-7)};
+ if(bounds.bottom-bounds.top<70)return;
+ const points=[];
+ camera.updateMatrixWorld();
+ for(const [key,node] of overviewPinNodes){
+  const marker=squadMarkers.get(key);
+  if(!marker?.visible){node.pin.hidden=true;continue}
+  overviewProjection.copy(marker.position).project(camera);
+  const x=rect.left+(overviewProjection.x+1)*rect.width/2;
+  const y=rect.top+(1-overviewProjection.y)*rect.height/2;
+  if(overviewProjection.z<=-1||overviewProjection.z>=1||
+   x<rect.left-8||x>rect.right+8||
+   y<bounds.top-24||y>bounds.bottom+24){
+   node.pin.hidden=true;node.line.style.display='none';node.dot.style.display='none';continue;
+  }
+  points.push({key,x,y,team:node.team,squadIndex:node.squadIndex});
+ }
+ const placements=placeOverviewSquadPins(points,bounds,{
+  width:innerWidth<=390?38:42,height:innerWidth<=390?37:40
+ });
+ overviewPinLeaders.setAttribute('viewBox','0 0 '+innerWidth+' '+innerHeight);
+ for(const [key,node] of overviewPinNodes){
+  const loc=placements.get(key);
+  if(!loc){node.pin.hidden=true;node.line.style.display='none';node.dot.style.display='none';continue}
+  const marker=squadMarkers.get(key),id=node.id;
+  const group=node.team?0:normalizeArmyGroup(armyGroupBySquad[String(id)]);
+  const number=node.team?node.squadIndex+1:
+   squadNumberByGroup.get(group)?.get(String(id))||node.squadIndex+1;
+  const caption=overviewPinLabel({team:node.team,squadIndex:node.squadIndex,
+   group,division:number});
+  if(node.title.textContent!==caption)node.title.textContent=caption;
+  const remaining=marker.userData.screenLabel.userDataStrength.textContent;
+  if(node.count.textContent!==remaining)node.count.textContent=remaining;
+  node.pin.classList.toggle('group-2',group===2);
+  node.pin.classList.toggle('group-3',group===3);
+  node.pin.classList.toggle('defeated',remaining.startsWith('0/'));
+  node.pin.classList.toggle('critical',Number(remaining.split('/')[0])<=
+   Number(remaining.split('/')[1])*.3);
+  node.pin.classList.toggle('selected',key===overviewSelectedKey);
+  node.pin.style.left=Math.round(loc.x)+'px';
+  node.pin.style.top=Math.round(loc.y)+'px';
+  node.pin.title=(node.team?'敵':'味方')+squadName(id,node.team)+
+   '　残存'+remaining+'名（タップして作戦情報）';
+  node.pin.hidden=false;
+  if(loc.displaced){
+   node.line.setAttribute('d','M'+loc.anchorX.toFixed(1)+','+loc.anchorY.toFixed(1)+
+    ' L'+loc.x.toFixed(1)+','+loc.y.toFixed(1));
+   node.dot.setAttribute('cx',String(loc.anchorX));
+   node.dot.setAttribute('cy',String(loc.anchorY));
+  }
+  node.line.style.display=loc.displaced?'':'none';
+  node.dot.style.display=loc.displaced?'':'none';
+ }
+ const aliveCount=team=>[...overviewPinNodes.values()].filter(node=>{
+  if(node.team!==team)return false;
+  const marker=squadMarkers.get(squadKey(team,node.id));
+  return marker?.visible&&!marker.userData.screenLabel.userDataStrength.textContent.startsWith('0/');
+ }).length;
+ const summary='🔵 味方 '+aliveCount(0)+'/'+squadIds.length+
+  '隊　🔴 敵 '+aliveCount(1)+'/'+enemySquadIds.length+'隊';
+ if($('overviewMapSummary').textContent!==summary)$('overviewMapSummary').textContent=summary;
+ renderOverviewSquadInspector();
+}
+window.getOverviewSquadQA=()=>({visible:!overviewHud.hidden,
+ markerCount:[...overviewPinNodes.values()].filter(n=>!n.pin.hidden).length,
+ totalSquads:overviewPinNodes.size,selectedKey:overviewSelectedKey,
+ groupOnlyRecommendations:true,divisionsSelectionOnly:true});
+
 // One selected source->target arrow, not ten crossing lines.
 const squadTargetSvg=$('squadCalloutLines'),squadTargetNS='http://www.w3.org/2000/svg';
 const arrowDefs=document.createElementNS(squadTargetNS,'defs');
@@ -8973,12 +9309,12 @@ $('enemyCasualties').textContent=Math.max(0,initialCounts[1]-aliveCounts[1])+'/'
    order?order.name+' 発令中（残り'+Math.ceil(liveCommanderOrders.get(battleCommanderSelect.value).until-elapsed)+'秒）':
     '号令を選ぶと配下の兵士に一時的な効果が発動');
  }
- $('selected').textContent=selected?'選択：'+selected.job.name+' HP '+selected.hp+'/'+selected.maxHp+' MP '+Math.floor(selected.mp||0)+'/'+(selected.maxMp||0)+' 移動速度 '+selected.speed+' / ジャンプY '+selected.jumpY:'味方部隊をタップして状況を確認';
+ $('selected').textContent=selected?'選択：'+battleUnitDisplayName(selected)+' HP '+selected.hp+'/'+selected.maxHp+' MP '+Math.floor(selected.mp||0)+'/'+(selected.maxMp||0)+' 移動速度 '+selected.speed+' / ジャンプY '+selected.jumpY:'味方部隊をタップして状況を確認';
  const floorLabel=a=>a.floorTravel?.phase==='roof'?'屋根':(a.indoorFloor??1)+'階';
  const floorAction=a=>a.floorTravel?.phase==='roof'?'屋根から射撃×'+(2**((a.indoorFloor??1)-1)):
   a.floorTravel?.phase==='upstairs'?(a.floorTravel.windowReady?'窓から攻撃・支援×'+(2**((a.indoorFloor??1)-1)):'窓際へ移動中'):'螺旋階段・屋根へ移動中';
- $('unitInfo').textContent=selected?'選択 '+selected.job.name+' / HP '+selected.hp+'/'+selected.maxHp+' MP '+Math.floor(selected.mp||0)+'/'+(selected.maxMp||0)+' / '+floorLabel(selected)+' / 採取 '+(selected.inventory?.length??0)+'個 / '+floorAction(selected):
-  automaticFloorGuide?.floorTravel?'自動探索：'+automaticFloorGuide.job.name+' / '+floorLabel(automaticFloorGuide)+' / 採取 '+(automaticFloorGuide.inventory?.length??0)+'個 / '+floorAction(automaticFloorGuide):'味方部隊をタップして状況を確認';
+ $('unitInfo').textContent=selected?'選択 '+battleUnitDisplayName(selected)+' / HP '+selected.hp+'/'+selected.maxHp+' MP '+Math.floor(selected.mp||0)+'/'+(selected.maxMp||0)+' / '+floorLabel(selected)+' / 採取 '+(selected.inventory?.length??0)+'個 / '+floorAction(selected):
+  automaticFloorGuide?.floorTravel?'自動探索：'+battleUnitDisplayName(automaticFloorGuide)+' / '+floorLabel(automaticFloorGuide)+' / 採取 '+(automaticFloorGuide.inventory?.length??0)+'個 / '+floorAction(automaticFloorGuide):'味方部隊をタップして状況を確認';
  $('unitOrder').disabled=!selected||selected.team!==0;
  $('igniteBridge').disabled=paused||finished||!selected||selected.team!==0||selected.hp<=0||selected.job.name!=='魔法使い'||!nearestBurnableStructure(selected);
  for(const a of actors)a.root.userData.ring.material.color.setHex(a===selected?0xffdf6e:a.team===0?0x52cfff:0xff6b72)
@@ -9011,6 +9347,7 @@ const centralAlly=actors.filter(a=>a.team===0).sort((a,b)=>
 const cameraHome=(centralAlly?.root.position||openingFocus).clone();
 // Slightly pulled back from the western rear, looking diagonally east.
 const cameraCloseOffset=new THREE.Vector3(-8,6.2,10.5);
+const initialPersonPovOffset=new THREE.Vector3();
 // Three-quarter overview: keep horizon and upper floors visible, unlike true bird's-eye.
 // Approximately 45 degrees above the horizon while retaining a full
 // battlefield view on narrow portrait phones (avoid the former top-down map).
@@ -9030,7 +9367,7 @@ function returnToWholeBattlefield(){
  if(TOWN_MODE||finished)return;
  commandOverviewLocked=false;controls.enabled=true;
  commanderCinematic=null;cinematicFocusQueue.length=0;dialogueCameraReturn=null;
- focusedHumanUnitId=null;followCamera=false;
+ focusedHumanUnitId=null;followCamera=false;targetViewFollowing=false;
  const center=(WORLD_SIZE/2-6)*CELL;
  setBattleCamera(new THREE.Vector3(center,terrainY(center,center),center),cameraOverviewOffset);
  setCameraActive('camOverview');
@@ -9041,7 +9378,7 @@ function enterCommandOverview(){
  commandOverviewLocked=true;
  document.body.classList.add('battle-command-active');
  commanderCinematic=null;cinematicFocusQueue.length=0;dialogueCameraReturn=null;
- followCamera=false;focusedHumanUnitId=null;
+ followCamera=false;targetViewFollowing=false;focusedHumanUnitId=null;
  controls.enabled=false;
  const center=(WORLD_SIZE/2-6)*CELL;
  setBattleCamera(new THREE.Vector3(center,terrainY(center,center),center),cameraOverviewOffset);
@@ -9058,8 +9395,8 @@ function followSelectedCommander(id=trackedAllySquadId??squadIds[0],team=0){
  if(team===0)trackedAllySquadId=String(id);
  focusedHumanUnitId=massSim?target.unit.id:null;
  if(!massSim)selected=target.unit;
- followCamera=true;
- setBattleCamera(target.point,cameraCloseOffset);
+ followCamera=true;targetViewFollowing=true;
+ setBattleCamera(target.point,writePersonPovOffset(target.unit,initialPersonPovOffset,9.4,3.3));
  setCameraActive('camFollow');
  return true;
 }
@@ -9069,7 +9406,7 @@ else followSelectedCommander();
 $('camOverview').onclick=()=>{
  if(commandOverviewLocked)return;
  battleViewMode='overview';commanderCinematic=null;cinematicFocusQueue.length=0;
- focusedHumanUnitId=null;followCamera=false;
+ focusedHumanUnitId=null;followCamera=false;targetViewFollowing=false;
  setBattleCamera(new THREE.Vector3(openingOverviewCenter,terrainY(openingOverviewCenter,openingOverviewCenter),openingOverviewCenter),cameraOverviewOffset);
  setCameraActive('camOverview');
 };
@@ -9119,9 +9456,9 @@ function focusHumanAt(screenX,screenY){
  // Leave tactical orders on the radar/blue squad labels. Directly tapping
  // any soldier brings the camera close, just as tapping a flying summon does.
  const focus=best.world.add(new THREE.Vector3(0,-.18,0));
- followCamera=true;
+ followCamera=true;targetViewFollowing=true;battleViewMode='commander';
  const zoom=Math.max(6.5,Math.min(10,controls.minDistance+4.8));
- setBattleCamera(focus,new THREE.Vector3(4,3,8).normalize().multiplyScalar(zoom));
+ setBattleCamera(focus,writePersonPovOffset(u,initialPersonPovOffset,zoom,3));
  setCameraActive(null);lastGroundTap=null;
  updateUI();
  return true;
@@ -9300,6 +9637,8 @@ let lastMassSnapshotMs=performance.now();
 // separate display frames. Do not reduce the amount of geometry or VFX.
 const sceneVisibilityPacer=createVisibilityWorkPacer();
 const skirmishCameraAnchor=new THREE.Vector3(),cameraFollowShift=new THREE.Vector3();
+// Three reusable vectors and a yaw sample: zero per-frame camera allocations.
+const personPovOffset=new THREE.Vector3(),personPovPosition=new THREE.Vector3(),personPovLook=new THREE.Vector3();
 let shadowRefreshTimer=0;
 const lastShadowFocus=new THREE.Vector3(Infinity,Infinity,Infinity);
 // Camera-facing cutaway is computed only four times per second. Never fade the
@@ -9687,6 +10026,7 @@ function animate(){
  updateBattleFormationIntegrity();
  if(!paused){updateActiveSquadBuffVfx();actionVfx.update(worldDt);}
  updateSquadMarkerPositions(dt);
+ updateOverviewSquadPins(dt);
  if(riverFlow)riverFlow.offset.y-=worldDt*.07;
  // Each pass retains its usual 100/240ms refresh, but they no longer all
  // occupy one unlucky Android frame.  This does not affect simulation ticks.
@@ -9858,7 +10198,7 @@ function animate(){
       const t=Math.max(0,Math.min(1,(elapsed-a._summonFall.time)/.85));
       a.character.object3D.position.y=(1-t)*(1-t)*a._summonFall.height;
       if(t>=1)a._summonFall=null;
-    }else a.character.object3D.position.y=0;
+    }else a.character.object3D.position.y=ridden?-(a.riderPelvisDropY??.90):0;
     a.poseMoving=false;
    }else if(visual.update){if(a.mixer)a.mixer.update(visual.delta*cinematicPlaybackScale);else updateBattlePose(a,visual.delta*cinematicPlaybackScale)}
   }
@@ -9879,8 +10219,25 @@ function animate(){
      new THREE.Vector3(tracked._visualMotion.x,tracked._visualMotion.y+1.05,tracked._visualMotion.z):
      new THREE.Vector3((tracked.x-6)*CELL,unitGroundY(tracked,(tracked.x-6)*CELL,(tracked.z-6)*CELL)+1.05,(tracked.z-6)*CELL))||
      skirmishFollow;
-   if(anchor){cameraFollowShift.copy(anchor).sub(controls.target);
-    controls.target.add(cameraFollowShift);camera.position.add(cameraFollowShift);}
+   if(anchor){
+    if(targetViewFollowing&&!TOWN_MODE&&!commanderCinematic&&!commandOverviewLocked){
+     const unit=tracked?.alive?tracked:followed;
+     const yaw=personFacingYaw(unit),ease=1-Math.exp(-Math.min(dt,.05)*7);
+     // Look ahead along the actual soldier's direction of travel.
+     personPovLook.copy(anchor);
+     personPovLook.y+=tracked?0:.95;
+     personPovLook.x+=Math.sin(yaw)*1.3;
+     personPovLook.z+=Math.cos(yaw)*1.3;
+     writePersonPovOffset(unit,personPovOffset,9.4,3.3);
+     personPovPosition.copy(anchor).add(personPovOffset);
+     personPovPosition.y+=tracked?0:.95;
+     camera.position.lerp(personPovPosition,ease);
+     controls.target.lerp(personPovLook,ease);
+    }else{
+     cameraFollowShift.copy(anchor).sub(controls.target);
+     controls.target.add(cameraFollowShift);camera.position.add(cameraFollowShift);
+    }
+   }
   }
   updateCommanderCinematic();
   controls.update();
@@ -10012,18 +10369,20 @@ function animate(){
 
 // Reuse lightweight static groom across crowd camera movement.
 const STUDIO_GROOM_NEAR_MAX=8;
-const STUDIO_GROOM_MIDDLE_MAX=16;
-const STUDIO_GROOM_MAX=STUDIO_GROOM_NEAR_MAX+STUDIO_GROOM_MIDDLE_MAX;
+const STUDIO_GROOM_NEAR_CACHE_MAX=12;
+const STUDIO_GROOM_NEAR_DISTANCE=28;
 let lastStudioGroomAt=0,lastStudioHairSelectionAt=0;
 let prewarmedStudioGrooms=0;
-/** Prepare the visible characters' real hairstyles before the first frame.
- * Middle LOD uses one geometry layer and only 72 locks. The renderer never
- * has to show an unrelated GLB haircut until a deferred expensive bake.
+/** Build ONE stable middle-distance groom per actor before combat begins.
+ * This replaces the old nearest-24 allocation; the camera never changes a
+ * character's hairstyle or temporarily releases its scalp. The additional
+ * setup work happens off the combat/render loop, while the fitted GLB remains
+ * the fully-covered fallback on any individual failure.
  */
 async function prewarmBattleStudioHair(){
  const closest=actors.filter(a=>a.masterHead?.attached&&a.studioPattern&&a.outfit)
   .map(a=>({a,d:a.root.position.distanceToSquared(camera.position)}))
-  .sort((a,b)=>a.d-b.d).slice(0,STUDIO_GROOM_MAX);
+  .sort((a,b)=>a.d-b.d);
  let ready=0;
  for(let i=0;i<closest.length;i++){
   const a=closest[i].a;
@@ -10044,50 +10403,44 @@ async function prewarmBattleStudioHair(){
  prewarmedStudioGrooms=ready;
  lastStudioGroomAt=performance.now();
 }
-/** Creator hairstyle at BOTH near and middle distances. Middle uses a
- * 72-lock one-layer static mesh; near has the authored three layers.
- * Never simulate hair physics or regenerate meshes every render frame.
- * Four-rank hysteresis prevents continuous hair swaps in moving formations.
+/**
+ * All soldiers retain their ORIGINAL studio-cut middle haircut for the
+ * entire battle. No camera movement may release the middle groom or switch
+ * back to a different donor haircut. Near refinement uses cached geometry;
+ * a delayed near bake only delays extra detail, never the visible hair.
  */
 function refreshBattleStudioGroom(distanceSorted,now){
  if(!battleReady||TOWN_MODE)return;
+ const ranked=distanceSorted.map(x=>x.a);
+ const nearSet=new Set(distanceSorted.filter(x=>x.d<STUDIO_GROOM_NEAR_DISTANCE**2)
+  .slice(0,STUDIO_GROOM_NEAR_MAX).map(x=>x.a));
+ // Demotion is a zero-allocation visibility toggle to the already prepared
+ // middle mesh. Update immediately even when the frame budget is saturated.
+ for(const a of actors){
+  if(a.masterHead?.studioWigQuality!=='near'||nearSet.has(a)||!a.studioPattern)continue;
+  equipBattleStudioHair(a.masterHead,a.studioPattern,{quality:'middle'});
+  a.outfit?.setHairVisible(false);
+ }
+ // At most 12 inactive dense variants remain in mobile GPU memory.
+ const cached=actors.filter(a=>a.masterHead?.studioWigVariants?.size>1);
+ if(cached.length>STUDIO_GROOM_NEAR_CACHE_MAX){
+  const evict=cached.filter(a=>!nearSet.has(a)).sort((a,b)=>
+   a.root.position.distanceToSquared(camera.position)-
+   b.root.position.distanceToSquared(camera.position)).reverse();
+  for(let i=0;i<cached.length-STUDIO_GROOM_NEAR_CACHE_MAX&&i<evict.length;i++)
+   discardBattleStudioNearHair(evict[i].masterHead);
+ }
  const perf=framePerformance.getStats();
  const p95=Number(perf.frameP95Ms)||16;
- // Service a visible camera change promptly, but avoid a bake storm when
- // the Android frame-time P95 is already struggling.
  const bakeInterval=p95>33?1400:p95>25?850:350;
- if(now-lastStudioGroomAt<bakeInterval)return;
+ if(p95>35||now-lastStudioGroomAt<bakeInterval)return;
+ const next=ranked.find(a=>nearSet.has(a)&&a.masterHead?.studioWig&&
+  a.masterHead.studioWigQuality!=='near'&&a.studioPattern&&a.outfit);
+ if(!next)return;
  lastStudioGroomAt=now;
- const ranked=distanceSorted.map(x=>x.a);
- const preferred=ranked.slice(0,STUDIO_GROOM_MAX);
- const stable=new Set(ranked.slice(0,STUDIO_GROOM_MAX+8));
- const rank=a=>ranked.indexOf(a);
- for(const a of actors.filter(a=>a.masterHead?.studioWig)){
-  // A screen-visible soldier must not be stripped of their hair because
-  // another squad briefly ranks closer to the camera.
-  if(stable.has(a)||(a.root.visible&&rank(a)<STUDIO_GROOM_MAX*2))continue;
-  releaseBattleStudioHair(a.masterHead);
-  a.outfit?.setHairVisible(true);
- }
- let current=actors.filter(a=>a.masterHead?.studioWig);
- let next=preferred.find(a=>a.studioPattern&&a.outfit&&!a.masterHead?.studioWig);
- if(next&&current.length>=STUDIO_GROOM_MAX){
-  const farthest=current.slice().sort((a,b)=>rank(b)-rank(a))[0];
-  if(rank(farthest)>=rank(next)+8&&
-     (!farthest.root.visible||rank(farthest)>=STUDIO_GROOM_MAX*2)){
-   releaseBattleStudioHair(farthest.masterHead);
-   farthest.outfit?.setHairVisible(true);
-   current=current.filter(a=>a!==farthest);
-  }else next=null;
- }
- // A close-up actor may be promoted without changing its haircut silhouette.
- if(!next&&p95<=20)next=ranked.slice(0,STUDIO_GROOM_NEAR_MAX).find(a=>
-  a.studioPattern&&a.masterHead?.studioWigQuality==='middle');
- if(!next||(!next.masterHead?.studioWig&&current.length>=STUDIO_GROOM_MAX))return;
- const quality=rank(next)<STUDIO_GROOM_NEAR_MAX?'near':'middle';
  try{
   equipBattleStudioHair(next.masterHead,next.studioPattern,{
-   quality,
+   quality:'near',
    hero:!!next.isPlayerHero||!!next.isStrategist||next.team===0&&next.id===0
   });
   next.outfit.setHairVisible(false);
@@ -10095,9 +10448,7 @@ function refreshBattleStudioGroom(distanceSorted,now){
   next.studioHairError=null;
  }catch(e){
   next.studioHairError=String(e?.message||e);
-  console.warn('実頭皮ベース髪LOD生成に失敗',next.id,e);
-  // The old studio groom remains intact on a failed LOD promotion.
-  // Do not overlay the alternate fitted hairstyle on top of it.
+  console.warn('近距離の毛束精細化失敗（既存の髪は維持）',next.id,e);
   next.outfit?.setHairVisible(!next.masterHead?.studioWig);
  }
 }
@@ -10105,6 +10456,7 @@ window.getBattleStartupStats=()=>({ready:battleReady,error:loadingFailure?String
  resolutionScale:BATTLE_RESOLUTION_SCALE,adaptiveQuality:adaptiveBattleResolution.getStats(),
  pixelRatio:renderer.getPixelRatio(),antiAliasing:fxaaComposer?'GPU FXAA':'WebGL MSAA',bufferWidth:renderer.domElement.width,bufferHeight:renderer.domElement.height,
  actors:actors.length,dressed:actors.filter(a=>a.outfit||a.townRegisteredModel).length,buildingBatchStats,stageBatchStats,
+ objectTransfer:liveObjectTransfer,
  massModelBatches:massRenderer?.drawMeshes??0,bodyDrawLayers:massRenderer?.bodyDrawLayers??0,
  prewarmedStudioGrooms,visibility:actorVisibility.stats,elapsed});
 async function finishBattleLoading(){

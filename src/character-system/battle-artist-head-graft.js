@@ -54,8 +54,38 @@ const clamp=(x,min,max)=>Math.min(max,Math.max(min,x));
  * Keep this independent of camera distance and rarity so LOD cannot bleach it.
  */
 export const BATTLE_FACE_SKIN_TONE_VERSION='battle-skin-photometric-v3';
-export const BATTLE_FACE_LIGHT_RESPONSE_VERSION='battle-face-light-response-v3';
+export const BATTLE_FACE_LIGHT_RESPONSE_VERSION='battle-face-light-response-v4';
 let battleSkinAlbedoTexture=null;
+let battleSkinNormalTexture=null;
+/** Shared tangent-space microrelief for fine pores and irregular skin.
+ * One 128² texture for all humans, no mesh, bone, light or draw-call addition.
+ * Very low amplitude: skin retains its sculpted planes instead of plastic noise.
+ */
+export function getBattleSkinMicroNormalTexture(){
+ if(battleSkinNormalTexture)return battleSkinNormalTexture;
+ const size=128,data=new Uint8Array(size*size*4);
+ const noise=(x,y)=>{
+  let h=Math.imul((x&127)+1,1664525)^Math.imul((y&127)+13,1013904223);
+  h=Math.imul(h^(h>>>15),2246822519);
+  return ((h^(h>>>13))>>>0)/4294967295;
+ };
+ for(let y=0;y<size;y++)for(let x=0;x<size;x++){
+  const dx=noise(x+1,y)-noise(x-1,y);
+  const dy=noise(x,y+1)-noise(x,y-1);
+  const i=(y*size+x)*4;
+  data[i]=Math.round(127.5+dx*12);
+  data[i+1]=Math.round(127.5+dy*12);
+  data[i+2]=255;data[i+3]=255;
+ }
+ const tex=new THREE.DataTexture(data,size,size,THREE.RGBAFormat);
+ tex.wrapS=tex.wrapT=THREE.RepeatWrapping;
+ tex.magFilter=THREE.LinearFilter;
+ tex.minFilter=THREE.LinearMipmapLinearFilter;
+ tex.generateMipmaps=true;tex.needsUpdate=true;
+ tex.name='battle-shared-dermal-micro-normal-v1';
+ battleSkinNormalTexture=tex;
+ return tex;
+}
 /** The real realistic-head-animation.glb has UVs but an UNTEXTURED skin
  * preview material (baseColor 0.65/0.44/0.34). The old studio converter
  * discarded even that warm source pigment and substituted gray clay.
@@ -116,7 +146,9 @@ export function installBattleFaceLightResponse(material){
   if(!shader.fragmentShader?.includes(marker))
    throw Error('Battle face PBR light gate: expected opaque_fragment not found');
   shader.fragmentShader=shader.fragmentShader.replace(marker,
-   'outgoingLight = (outgoingLight * 0.86) / (vec3(1.0) + 0.40 * max(outgoingLight - vec3(0.68), vec3(0.0)));\n'+marker);
+   'outgoingLight = (outgoingLight * 0.86) / (vec3(1.0) + 0.40 * max(outgoingLight - vec3(0.68), vec3(0.0)));\n'+
+   'float faceDiffuseLuma = dot(outgoingLight, vec3(0.2126, 0.7152, 0.0722));\n'+
+   'outgoingLight *= mix(0.90, 1.035, smoothstep(0.14, 0.70, faceDiffuseLuma));\n'+marker);
  };
  material.customProgramCacheKey=()=>previousProgramKey()+'|'+BATTLE_FACE_LIGHT_RESPONSE_VERSION;
  material.userData.battleFaceLightResponseVersion=BATTLE_FACE_LIGHT_RESPONSE_VERSION;
@@ -124,7 +156,7 @@ export function installBattleFaceLightResponse(material){
  material.needsUpdate=true;
  return {applied:true,version:BATTLE_FACE_LIGHT_RESPONSE_VERSION,scale:.86};
 }
-export function correctBattleFaceSkinTone(face,{sex='male'}={}){
+export function correctBattleFaceSkinTone(face,{sex='male',skinToneHex=null}={}){
  if(!face?.isMesh||!face.material||face.userData?.faceColorMode!=='color')
   throw Error('A colorized, real battle face mesh is required');
  const material=Array.isArray(face.material)?face.material[0]:face.material;
@@ -140,12 +172,22 @@ export function correctBattleFaceSkinTone(face,{sex='male'}={}){
  // then dimmed it to 58% in the fragment shader. With a camera closeup,
  // even fair-skinned creator presets appeared almost black. Restore the
  // original warm studio palette and compress only pathological highlights.
- const skinHex=sex==='female'?0xeac9b8:0xe2bda9;
+ const defaultSkinHex=sex==='female'?0xeac9b8:0xe2bda9;
+ // An author-selected tone takes priority, with strict validation so a
+ // corrupt/non-hex costume color never turns the face white or green.
+ const validTone=typeof skinToneHex==='string'&&/^#[0-9a-f]{6}$/i.test(skinToneHex);
+ const skinHex=validTone?parseInt(skinToneHex.slice(1),16):defaultSkinHex;
  material.color.setHex(skinHex);
- if(face.geometry?.getAttribute('uv'))material.map=getBattleSkinAlbedoTexture();
+ if(face.geometry?.getAttribute('uv')){
+  material.map=getBattleSkinAlbedoTexture();
+  // Near/middle detail on the same PBR face. Far distance filtering keeps
+  // these microscopic normals from sparkling or aliasing on Android.
+  material.normalMap=getBattleSkinMicroNormalTexture();
+  material.normalScale=new THREE.Vector2(.20,.20);
+ }
  material.metalness=0;
- material.roughness=.86;
- if('clearcoat' in material)material.clearcoat=.012;
+ material.roughness=.88;
+ if('clearcoat' in material)material.clearcoat=.009;
  if('sheen' in material)material.sheen=.025;
  if('specularIntensity' in material)material.specularIntensity=.48;
  material.toneMapped=true;
@@ -199,7 +241,12 @@ function artistControls(recipe){
   noseBridgeSharpness:clamp(2.2+(f%4)*.28,0,5),
   noseTipLift:clamp((f%5-2)*.12,-2,2),
   faceMorph:clamp((f%5-2)*.065,-.6,.6),
-  lashLength:recipe.sex==='female'?1.4:1,
+  // Slightly longer/curlier *tapered existing* eyelashes for women, finer
+  // width for both. No extra meshes or hair physics in the render loop.
+  lashLength:recipe.sex==='female'?1.48:1,
+  lashDensity:recipe.sex==='female'?1.12:1,
+  lashThickness:recipe.sex==='female'?.72:.85,
+  lashCurl:recipe.sex==='female'?.93:.18,
   beardDensity:recipe.sex==='male'&&['sixties','seventies','eightyPlus'].includes(recipe.ageBand)?0.20:0
  };
 }
@@ -207,7 +254,9 @@ function buildArtistMaster(source,recipe,pattern=null){
  // The saved artist/heroine generator owns the SAME controls and v32
  // geometry parts for both views. A generic soldier uses the catalog's
  // deterministic job/age/gender pattern, never a random donor face.
- const controls=pattern?.faceControls||artistControls(recipe);
+ // Use saved artist controls when provided; only unspecified parameters take
+ // the deterministic sex-specific defaults. Never overwrite a user's preset.
+ const controls={...artistControls(recipe),...pattern?.faceControls};
  const args=recipe.sex==='female'?
   {femaleControls:controls,partSelection:pattern?.partIds||null}:
   {maleControls:controls,partSelection:pattern?.partIds||null};
@@ -221,8 +270,36 @@ function buildArtistMaster(source,recipe,pattern=null){
  // This is the same PBR skin finish used by the artist's actual hero preview,
  // not the flat clay material of the source-head geometry.
  enhanceHeroineFaceSurface(result.face);
+ // Tune already-authored cosmetic surfaces in place. Preserve the original
+ // lashes, eyeliner, make-up textures and head rig; no additional draw calls.
+ result.root.traverse(mesh=>{
+  if(!mesh.isMesh)return;
+  const role=String(mesh.userData?.colorRole||'').toLowerCase();
+  if(!['lashes','eyeaccent','brow','lipbase','eyeliner','blush'].includes(role))return;
+  const mats=Array.isArray(mesh.material)?mesh.material:[mesh.material];
+  for(const mat of mats){
+   if(!mat)return;
+   if(role==='lashes'){
+    mat.depthWrite=false;mat.side=THREE.DoubleSide;
+    mat.transparent=true;
+    // Thin upper/lower strands stay translucent instead of black slabs.
+    mat.opacity=Math.min(mat.opacity??1,recipe.sex==='female'?.83:.71);
+   }else if(mat.isMeshStandardMaterial){
+    // Subtle powder makeup stays on the real 3D surface; soft lip sheen,
+    // brow texture, and orbital shadow each respond to the actual sunlight.
+    mat.roughness=role==='lipbase'?.68:Math.max(mat.roughness||0,.83);
+    mat.metalness=0;
+    if(role==='eyeaccent'&&mat.transparent)
+     mat.opacity=Math.min(mat.opacity??1,recipe.sex==='female'?.18:.10);
+    if(role==='blush'&&mat.transparent)
+     mat.opacity=Math.min(mat.opacity??1,.20);
+   }
+   mat.needsUpdate=true;
+  }
+ });
  // The face editor is allowed to be bright; combat light cannot bleach skin.
- correctBattleFaceSkinTone(result.face,{sex:recipe.sex});
+ correctBattleFaceSkinTone(result.face,{sex:recipe.sex,
+  skinToneHex:pattern?.skinToneHex||recipe.skinToneHex||null});
  return result;
 }
 function findSculptFace(root,sex){
@@ -321,7 +398,7 @@ export function attachBattleArtistHead({character,recipe,source,pattern=null,ani
   expressions:!!expression,
   setNearDetail(value){setNearDetail(value);result.nearDetail=near;},
   update(dt){if(result.nearDetail)expression?.update(dt);},
-  dispose(){expression?.dispose();master.root.removeFromParent();}
+  dispose(){releaseBattleStudioHair(result);expression?.dispose();master.root.removeFromParent();}
  };
  character.object3D.userData.battleHeadMaster={
   version:result.version,source:result.sourceAsset,
@@ -405,56 +482,96 @@ export function cranialScalpSurface(face,{cranialFraction=.65}={}){
   croppedHeadHeight:cropped.boundingBox.max.y-cropped.boundingBox.min.y
  };
 }
+/**
+ * Keep a complete, fitted studio haircut for EVERY camera distance.
+ * Near detail is a second *cached* variant of the same authored style.
+ * Moving the camera only toggles visibility; it never frees the underlying
+ * middle groom or re-fetches the original donor model.
+ */
 export function equipBattleStudioHair(artistHead,pattern,{hero=false,quality='near'}={}){
  if(!artistHead?.attached||!artistHead.face?.geometry||!pattern?.hairStyleId)
   throw Error('Physical artist head and compatible v43 hair pattern required');
  if(!['near','middle'].includes(quality))throw Error('Invalid battle hair LOD');
- if(artistHead.studioWig&&artistHead.studioWigQuality===quality&&
-  artistHead.studioWigStyleId===pattern.hairStyleId)return artistHead.studioWig;
- // Keep the old visible hair until a complete replacement has baked.
+ const styleKey=JSON.stringify([pattern.hairStyleId,pattern.hairColor,
+  pattern.sex,pattern.hairLengthScale,pattern.hairVolume||'natural']);
+ const variants=artistHead.studioWigVariants??new Map();
+ const variantKey=quality+(quality==='near'&&hero?':hero':'');
+ const unchanged=artistHead.studioHairStyleKey===styleKey;
+ let wig=unchanged?variants.get(variantKey):null;
+ // Old variant stays visible throughout construction, including a failed bake.
  const previousWig=artistHead.studioWig||null;
- const count=quality==='middle'?112:hero?360:168;
- const scalp=cranialScalpSurface(artistHead.face,{
-  cranialFraction:artistHead.cranialFit?.cranialFraction??.65
- });
- let wig;
- try{
-  wig=createScalpAnchoredWig(scalp.proxy,{
-   count,styleId:pattern.hairStyleId,color:pattern.hairColor,
-   gender:pattern.sex,lengthScale:pattern.hairLengthScale,
-   volumeProfile:pattern.hairVolume||'natural',
-   fineFringeMultiplier:quality==='middle'?1.25:hero?2:1.25,
-   visualFiberMultiplier:1,normalLayerCount:quality==='middle'?1:2,
-   staticGroom:true,normalLayeredSingleMesh:true,
-   battleStableCoverage:true
+ if(!wig){
+  const count=quality==='middle'?112:hero?360:168;
+  const scalp=cranialScalpSurface(artistHead.face,{
+   cranialFraction:artistHead.cranialFit?.cranialFraction??.65
   });
- }finally{
-  // Hair is static; all cap and strand triangles have been baked into
-  // independent geometry. Never keep another copy of the head on the GPU.
-  scalp.geometry.dispose();
+  try{
+   wig=createScalpAnchoredWig(scalp.proxy,{
+    count,styleId:pattern.hairStyleId,color:pattern.hairColor,
+    gender:pattern.sex,lengthScale:pattern.hairLengthScale,
+    volumeProfile:pattern.hairVolume||'natural',
+    fineFringeMultiplier:quality==='middle'?1.25:hero?2:1.25,
+    visualFiberMultiplier:1,normalLayerCount:quality==='middle'?1:2,
+    staticGroom:true,normalLayeredSingleMesh:true,
+    battleStableCoverage:true
+   });
+  }finally{
+   scalp.geometry.dispose();
+  }
+  wig.root.userData.battleGroomCount=count;
+  artistHead.face.add(wig.root);
+  artistHead.studioWigCranialScalpTriangles=scalp.triangles;
+  artistHead.studioWigCranialHeightRatio=
+   +(scalp.croppedHeadHeight/scalp.originalHeadHeight).toFixed(3);
+  // A genuinely different hairstyle invalidates both old cached variants.
+  // Remove the old visible groom only AFTER the replacement is attached.
+  if(!unchanged){
+   for(const stale of variants.values()){
+    stale.root.removeFromParent();stale.dispose();
+   }
+   variants.clear();
+  }
+  variants.set(variantKey,wig);
  }
- artistHead.studioWigCranialScalpTriangles=scalp.triangles;
- artistHead.studioWigCranialHeightRatio=
-  +(scalp.croppedHeadHeight/scalp.originalHeadHeight).toFixed(3);
- // Atomic swap: a failed near/middle bake never leaves a bald character.
- artistHead.face.add(wig.root);
- if(previousWig){
-  previousWig.root.removeFromParent();
-  previousWig.dispose();
- }
+ // Instant (zero-bake) distance transition; the middle hairstyle is NEVER
+ // dropped in favor of a different-looking sparse GLB at long range.
+ for(const cached of variants.values())cached.root.visible=(cached===wig);
+ artistHead.studioWigVariants=variants;
+ artistHead.studioHairStyleKey=styleKey;
  artistHead.studioWig=wig;
  artistHead.studioWigStyleId=pattern.hairStyleId;
  artistHead.studioWigQuality=quality;
- artistHead.studioWigCount=count;
+ artistHead.studioWigCount=wig.root.userData.battleGroomCount;
  artistHead.studioHairSource='heroine-real-scalp-generator';
  return wig;
 }
+/** Recycle only an INACTIVE near cache entry; keep the complete middle hair. */
+export function discardBattleStudioNearHair(artistHead){
+ const variants=artistHead?.studioWigVariants;
+ if(!variants||artistHead.studioWigQuality!=='middle')return false;
+ let removed=0;
+ for(const [key,wig] of variants){
+  if(!key.startsWith('near'))continue;
+  wig.root.removeFromParent();wig.dispose();variants.delete(key);removed++;
+ }
+ return removed>0;
+}
 export function releaseBattleStudioHair(artistHead){
  if(!artistHead?.studioWig)return false;
- artistHead.studioWig.root.removeFromParent();
- artistHead.studioWig.dispose();
+ const variants=artistHead.studioWigVariants;
+ if(variants?.size){
+  for(const wig of variants.values()){
+   wig.root.removeFromParent();wig.dispose();
+  }
+  variants.clear();
+ }else{
+  artistHead.studioWig.root.removeFromParent();
+  artistHead.studioWig.dispose();
+ }
  artistHead.studioWig=null;artistHead.studioHairSource=null;
  artistHead.studioWigQuality=null;
+ artistHead.studioWigVariants=null;
+ artistHead.studioHairStyleKey=null;
  return true;
 }
 export function battleHeadMasterStats(actors=[]){
