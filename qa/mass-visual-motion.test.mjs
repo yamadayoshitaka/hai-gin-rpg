@@ -55,7 +55,7 @@ assert.match(gpu,/const physicallyMoving=massGaitActive\(u\)/,
  'GPU soldier animations should not stop between adjacent tiles');
 assert.match(gpu,/float shoeMask=1\.0-smoothstep\(0\.23,0\.84,position\.y\)/,
  'Grounded boot contact should use a GPU stance mask instead of linear skate');
-assert.match(gpu,/vec3 runPose=mix\(neutralContact,swingContact/,
+assert.match(gpu,/vec3 runPose=mix\(crowdWalkA,crowdWalkB,0\.5\+0\.5\*swing\)/,
  'Four interpolated gait keys run on the same GPU buffers');
 assert.match(atlas,/\(row-1\)\*Math\.PI\*\.5:null/,
  'Distance LOD captures four real footfall frames at 0/90/180/270 degrees');

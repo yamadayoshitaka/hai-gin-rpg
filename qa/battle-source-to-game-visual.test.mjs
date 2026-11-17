@@ -8,8 +8,10 @@ const page=get('tactics-wireframe.html'),pipeline=get('character-quality-pipelin
  face=get('src/character-system/battle-artist-head-graft.js'),
  mass=get('src/mass-battle-real-army.js'),
  contract=get('src/character-system/battle-visual-pipeline.js');
-assert.match(model,/add\('complete-back-tunic-lining',back,cloth\)/);
-assert.match(model,/const width=rogueBack\?\(1\.04-\.13\*t\):\(1\.025-\.12\*t\)/);
+assert.doesNotMatch(model,/add\('complete-back-tunic-lining'/,
+ 'old rectangular back sheet must not be generated');
+assert.match(model,/imported Ranger\/Peasant torso is already a real 65-bone garment/,
+ 'real skinned clothing replaces procedural cardboard covering');
 assert.match(outfit,/const closedBack=battleClosedBackCoverage\(\{/);
 assert.match(outfit,/forceCoveredRegions:forcedTorsoOcclusion/);
 assert.doesNotMatch(outfit,/thiefHasClosedBack\?\['torso'\]/);
@@ -37,4 +39,4 @@ const script=pipeline.match(/<script>([\s\S]*?)<\/script>/)?.[1];
 assert.ok(script,'pipeline must have a real browser inspection script');
 assert.doesNotThrow(()=>new vm.Script(script));
 assert.match(get('master-model-manager.html'),/character-quality-pipeline\.html/);
-console.log('PASS: actual 17-job back geometry, source head shadows, scalp 50/1000 pipeline, mobile inspection');
+console.log('PASS: actual skinned 17-job garments without backboards, head shadows, scalp pipeline, mobile inspection');

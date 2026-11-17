@@ -64,7 +64,7 @@ jobs:
           echo "enabled=$value" >> "$GITHUB_OUTPUT"
   static-contracts:
     needs: scheduled-switch
-    if: (github.event_name != 'schedule' || needs.scheduled-switch.outputs.enabled == 'true') && (github.event_name != 'issues' || (startsWith(github.event.issue.title, '[world-quality]') && github.event.issue.user.login == github.repository_owner))
+    if: needs.scheduled-switch.outputs.enabled == 'true' && (github.event_name != 'issues' || (startsWith(github.event.issue.title, '[world-quality]') && github.event.issue.user.login == github.repository_owner))
     runs-on: ubuntu-24.04
     timeout-minutes: 9
     steps:

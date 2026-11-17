@@ -77,7 +77,7 @@ legend{font-size:12px;color:#e8d9b6;padding:0 6px}
 </style>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
 </head><body>
-<header><a href="./index.html">← メニュー</a><h1>魔物図鑑・モンスター管理 <small>50種 / v4.5.21</small></h1>
+<header><a href="./index.html">← メニュー</a><h1>魔物図鑑・モンスター管理 <small>50種 / v4.5.24</small></h1>
  <a href="./summon-showcase.html?v=4.5.18">召喚獣一覧</a><a href="./creature-model-adoption.html">モデルを選択・採用（簡単）</a><a href="./monster-quality-review.html?monster=m001">品質KPI管理</a><a href="./creature-reconstruction-plan.html">108体再構成</a></header>
 <main id="bestiaryMain">
  <aside id="catalogPanel" aria-label="モンスター一覧">
@@ -91,7 +91,7 @@ legend{font-size:12px;color:#e8d9b6;padding:0 6px}
  </aside>
  <section class="workspace">
   <div id="view">
-   <div id="info"><h2 id="name">モデルを読み込み中...</h2><p id="description"></p><div id="hud"></div></div>
+   <div id="info"><h2 id="name">モデルを読み込み中...</h2><p id="description"></p><div id="hud"></div><div id="modelRevision" role="status" style="font-size:11px;color:#ffe1a2;margin-top:5px">3Dモデル版を確認中…</div></div>
    <div id="viewToolbar" role="toolbar" aria-label="3Dモデル鑑賞操作">
     <button id="toggleCatalog" type="button" aria-expanded="false" aria-controls="catalogPanel">☰ 一覧</button>
     <button id="zoomIn" type="button" aria-label="モデルを拡大">＋ 拡大</button>
@@ -189,8 +189,8 @@ import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {MONSTER_CATALOG,MONSTER_BY_ID,MONSTER_FAMILIES,MONSTER_ELEMENTS,monsterList} from './src/monster-catalog.js?v=4.4.92';
 import {createMonsterModel,disposeMonsterSculpture,MONSTER_DETAIL_LEVELS,
-  monsterSculptCacheStats,monsterPhotoCacheStats} from './src/monster-geometry.js?v=m002-feline-joints-and-fx-v4-20261117';
-import {MONSTER_ACTIONS,startMonsterAction,animateMonsterModel} from './src/monster-animation.js?v=m002-feline-action-v4-20261117';
+  monsterSculptCacheStats,monsterPhotoCacheStats} from './src/monster-geometry.js?v=phoenix-hand-face-stable-v22-20261118';
+import {MONSTER_ACTIONS,startMonsterAction,animateMonsterModel} from './src/monster-animation.js?v=phoenix-hand-face-stable-v13-20261118';
 import {createCosplayedHumanoidMonster} from './src/monster-character-cosplay.js?v=4.6.91';
 import {createBeastfolkMonsterModel,disposeBeastfolkMonsterModel}
  from './src/monster-beastfolk-geometry.js?v=4.5.23';
@@ -200,7 +200,7 @@ import {humanoidMonsterCostumeFor,HUMAN_MONSTER_IDS} from './src/monster-charact
 import {hasDemonCosmetics,withDemonColorTheme}
  from './src/monster-demon-cosmetics.js?v=4.5.04';
 import {fetchCreatureRegistry,loadExternalCreature,loadPersonalGLB} from './src/creature-external-runtime.js?v=4.4.92';
-import {adoptedCreatureMesh} from './src/creature-mesh-adoption.js?v=m002-feline-joints-and-fx-v4-20261117';
+import {adoptedCreatureMesh} from './src/creature-mesh-adoption.js?v=phoenix-featherhands-bigscutes-v19-20261118';
 import {REAL_CREATURE_MESH_SOURCES,loadCreatureMeshSource} from './src/creature-real-source-catalog.js?v=real-body-only-v4';
 import {loadSpeciesSourceComposite,isSpeciesSourcePilot,SPECIES_SOURCE_REBUILD_PILOTS}
  from './src/monster-source-composite.js?v=4.6.90';
@@ -362,12 +362,18 @@ function disposeCurrent(){
 }
 function refreshGeometry(){
  meshStats=meshQualityStats(model);
+ const revision=model?.userData?.avianRebuildRevision||'';
+ byId('modelRevision').textContent=selected==='m013'?
+  (revision?'フェニックス実モデル '+revision+
+     (revision.includes('stable-v8')?' / 新造形':' / 旧造形の可能性'):
+   'フェニックス改修版モデルが読み込まれていません'):
+  (revision?'モデル正本 '+revision:'標準モデル / 外部モデル');
  byId('geometryStats').textContent='三角形 '+meshStats.triangles.toLocaleString()+
   ' / 頂点 '+meshStats.vertices.toLocaleString()+
   ' / メッシュ '+meshStats.meshes+
   ' / 写真材質 '+(meshStats.photoSurfaces.join('・')||'未割当');
 }
-function focusCamera(){
+function focusCamera(full=false){
  controls.minPolarAngle=HUMAN_MONSTER_IDS.includes(selected)?
    HUMAN_INSPECT_MIN_POLAR:0;
  // Keep the existing 16-human protection contract unchanged, while
@@ -387,6 +393,13 @@ function focusCamera(){
  // Favor the real +Z-facing actor's face and torso.
  if(HUMAN_MONSTER_IDS.includes(selected)||model?.userData?.beastfolkSource)
   camera.position.set(center.x+dist*.17,center.y+dist*.14,center.z+dist*.85);
+ else if(selected==='m013'&&!full&&model?.userData?.avianRebuildRevision){
+  // The giant wing bounds must not force the face to appear tiny.
+  const d=Math.min(dist,7.1);
+  controls.target.y=Math.max(.7,center.y+.25);
+  camera.position.set(center.x+d*.18,
+    controls.target.y+d*.12,center.z+d*.90);
+ }
  else camera.position.set(center.x+dist*.30,center.y+dist*.22,center.z+dist*.78);
  controls.update();
 }
@@ -400,9 +413,19 @@ function zoomModel(factor){
 }
 byId('zoomIn').onclick=()=>zoomModel(.76);
 byId('zoomOut').onclick=()=>zoomModel(1.30);
-byId('resetCamera').onclick=()=>{if(model)focusCamera();};
+byId('resetCamera').onclick=()=>{if(model)focusCamera(true);};
 byId('portraitCamera').onclick=()=>{
  if(!model)return;
+ if(selected==='m013'&&model.userData.avianRebuildRevision){
+  const head=model.userData.pivots?.head||model.getObjectByName('head');
+  if(head){
+   model.updateMatrixWorld(true);
+   const target=head.getWorldPosition(new THREE.Vector3());
+   controls.target.set(target.x,target.y+.03,target.z);
+   camera.position.set(target.x+.35,target.y+.13,target.z+3.1);
+   controls.update();return;
+  }
+ }
  const box=new THREE.Box3().setFromObject(model);
  const center=box.getCenter(new THREE.Vector3());
  const height=Math.max(1.3,box.getSize(new THREE.Vector3()).y);
@@ -725,7 +748,7 @@ function frame(){
  // The editing gallery has one character and no game-time simulation.
  // A 30 Hz render cap avoids expensive redundant shadow passes, keeping
  // touch input responsive while dense source meshes are being inspected.
- if(time-lastDrawAt<1/30)return;
+ if(selected!=='m013'&&time-lastDrawAt<1/30)return;
  const delta=Number.isFinite(lastDrawAt)?time-lastDrawAt:1/30;
  lastDrawAt=time;
  if(delta>0)fps=fps*.90+(1/delta)*.10;
@@ -795,12 +818,127 @@ window.__monsterViewerLayoutQA=()=>({
  toolsOpen:!byId('modelTools').hidden,
  canvasWidth:view.clientWidth,canvasHeight:view.clientHeight,
  selected,zoomDistance:camera.position.distanceTo(controls.target),
+  modelRevision:model?.userData?.avianRebuildRevision||null,
  motionStripVisible:byId('actions').getBoundingClientRect().height>0,
  motionButtons:byId('actions').querySelectorAll('button').length,
  selectedMotion:currentAction,
  minPolarAngle:controls.minPolarAngle,
  humanoidPortrait:HUMAN_MONSTER_IDS.includes(selected),
 });
+// Test-only inspection keeps the same real game sculpture/materials,
+ // but renders the eye/cheek seams from frontal AND lateral cameras.
+window.__beastFaceCameraQA=angle=>{
+ if(!['front','side','back','underbody'].includes(angle))
+  throw Error('Unknown quality camera');
+ if(!model)return null;
+ const target=controls.target,dist=Math.max(3.2,camera.position.distanceTo(target));
+ const lift=dist*.085,base=dist*.94;
+ camera.position.set(target.x+(angle==='side'?base:0),
+   target.y+(angle==='underbody'?-base*.26:lift),
+   target.z+(angle==='front'?base:angle==='back'?-base:
+     angle==='underbody'?-base*.79:0));
+ camera.lookAt(target);controls.update();
+ const p=model.userData.pivots||{};
+ const limbNames=['frontL','frontR','rearL','rearR'];
+ const closedCatLimbs=limbNames.filter(name=>{
+  const limb=model.getObjectByName('feline-continuous-skin-'+name);
+  return limb?.isSkinnedMesh&&limb.userData.felineSealedTop&&
+    limb.userData.felineSealedBottom;
+ }).length;
+ const torso=model.getObjectByName('species-shoulder-rib-pelvis-'+selected);
+ model.updateMatrixWorld(true);
+ const feline=!!model.userData.felineMasterSource;
+ const tailTip=p.tailTip?.getWorldPosition(new THREE.Vector3());
+ const torsoBox=torso&&new THREE.Box3().setFromObject(torso);
+ const tailReach=feline&&tailTip&&torsoBox?
+   (torsoBox.min.z-tailTip.z)/Math.max(.001,model.userData.homeScale||1):null;
+ const torsoAnchoredHips=limbNames.filter(name=>{
+   const limb=model.getObjectByName('feline-continuous-skin-'+name);
+   return limb?.isSkinnedMesh&&limb.skeleton.bones.length===4&&
+     limb.skeleton.bones[0].parent===p.torso;
+ }).length;
+ return {id:selected,angle,head:!!p.head,
+   tailReach,torsoAnchoredHips,
+   felineTailConnected:!feline||(
+     p.tail?.parent===p.torso&&
+     p.tailMid?.parent===p.tail&&p.tailTip?.parent===p.tailMid),
+   cheekRoots:model.userData.felineCheekFurRoots||0,
+   carvedEyes:!!model.userData.clonedCanineEyeSocketsCarved,
+   eyeDepthFitted:!!model.userData.cloneOpticalDepthFromSurface,
+   closedCatLimbs,closedTorso:!!torso?.userData.closedAnatomicalHull,
+   wolfFullCoat:!!model.userData.wolfKingDonorFullMane,
+   wolfDonorStrands:model.userData.wolfKingDonorStrands||0};
+};
+window.__avianWingQA=()=>{
+ if(!model||!['m011','m012','m013','m014'].includes(selected))return null;
+ const p=model.userData.pivots||{};
+ const wings=['L','R'].map(side=>{
+  const part=model.getObjectByName('avian-guardian-three-layer-wing-'+selected+'-'+side);
+  return part?{side,donor:part.userData.angelSource,
+   layers:part.userData.angelFeatherLayers,
+   feathers:part.userData.angelFeathersPerSide,
+   vertices:part.geometry.getAttribute('position')?.count||0,
+   shoulder:part.parent===p['wing'+side],
+   elbow:p['wingElbow'+side]?.parent===p['wing'+side],
+   wrist:p['wingWrist'+side]?.parent===p['wingElbow'+side]}:null;
+ });
+ return {id:selected,revision:model.userData.avianRebuildRevision,
+  donor:model.userData.avianGuardianGeometryDonor,
+  bodyFeathers:model.userData.avianBodyFeatherCount||0,
+  tail:model.getObjectByName('avian-tail-rooted-streamers-'+selected)?.userData.curvedAvianFeathers||0,
+  shape:model.userData.avianAnatomicalKind,
+  phoenix:selected==='m013'?{
+   enlargedBody:!!model.userData.phoenixExpandedThorax,
+   torsoRadiusX:model.userData.phoenixTorsoRadiusX||0,
+   torsoRadiusY:model.userData.phoenixTorsoRadiusY||0,
+   denseScales:model.userData.phoenixDenseScaleCount||0,
+   bellyScaleMultiplier:model.getObjectByName('avian-layered-body-plumage-m013')?.userData.phoenixBellyScaleMultiplier||0,
+   bodyScaleWidth:model.getObjectByName('avian-layered-body-plumage-m013')?.userData.phoenixAbdomenLargeScaleWidth||0,
+   visibleFaceScales:model.getObjectByName('phoenix-fine-head-scales')?.userData.scaleCount||0,
+   faceScaleWidth:model.getObjectByName('phoenix-fine-head-scales')?.userData.phoenixScaleWidthMax||0,
+   thighSeparated:!!model.userData.phoenixThighShankSeparated,
+   realKnees:['L','R'].every(side=>!!model.userData.pivots['birdKnee'+side]?.userData.phoenixRealKnee),
+   thighMuscles:['L','R'].every(side=>!!model.getObjectByName('phoenix-femur-muscle-'+side)?.userData.phoenixFemurContinuousSkin),
+   floatingWingBandsRemoved:['L','R'].every(side=>['forearm','hand'].every(part=>
+     !!model.getObjectByName('phoenix-wing-'+part+'-scutes-'+side)?.userData.phoenixWingFloatingBandsRemoved)),
+   thighScales:['L','R'].every(side=>!!model.getObjectByName('phoenix-long-thigh-scutes-'+side)),
+   shankScales:['L','R'].every(side=>!!model.getObjectByName('phoenix-chicken-shank-scutes-'+side)),
+   toeScales:['L','R'].every(side=>!!model.getObjectByName('phoenix-foot-toe-scutes-'+side)),
+   wingHandScales:['L','R'].every(side=>!!model.getObjectByName('phoenix-wing-hand-scutes-'+side)),
+   chickenFeet:!!model.userData.phoenixChickenLegRig,
+   flexedToes:['L','R'].every(side=>
+    !!model.userData.pivots['avianFoot'+side]?.userData.phoenixArticulatedPhalanges),
+   neckScaleFade:!!model.getObjectByName('phoenix-neck-fine-grading-scutes')?.userData.phoenixScalesShrinkTowardsFace,
+   headMicroScales:!!model.getObjectByName('phoenix-fine-head-scales')?.userData.phoenixFaceMicroScales,
+   noEars:!!model.userData.phoenixNoExternalEars,
+   smallHead:!!model.getObjectByName('avian-cranium-m013')?.userData.phoenixSmallElongatedHead,
+   longBeak:!!model.getObjectByName('avian-hooked-beak-m013')?.userData.phoenixLongNarrowBeak,
+   shortBeak:!!model.getObjectByName('avian-hooked-beak-m013')?.userData.phoenixShortBeak,
+   beakLength:model.getObjectByName('avian-hooked-beak-m013')?.userData.phoenixBeakLength||0,
+   thighRadius:model.userData.pivots.legL?.userData.phoenixThighRadius||0,
+   featherHands:!!model.userData.phoenixFeatherHands,
+   raisedScutes:!!model.getObjectByName('avian-layered-body-plumage-m013')?.userData.phoenixRaisedBevelScutes,
+   eyeliner:['L','R'].every(side=>['upper','lower'].every(lid=>
+    !!model.getObjectByName('phoenix-'+lid+'-eyeliner-'+side)?.userData.phoenixPhysicalEyeliner)),
+   visiblePupils:['L','R'].every(side=>!!model.getObjectByName('phoenix-pupil-'+side)),
+   bareHandsHidden:['L','R'].every(side=>
+    !!model.userData.pivots['phoenixFeatherHand'+side]?.userData.phoenixHiddenHandBones),
+   independentArms:['L','R'].every(side=>!!model.userData.pivots['phoenixArm'+side]?.userData.phoenixIndependentFeatherArm),
+   featherHandDigits:['L','R'].map(side=>model.getObjectByName('phoenix-feather-hand-vanes-'+side)?.userData.phoenixFeatherHandDigits||0),
+   allBackCrest:!!model.getObjectByName('avian-articulated-crest-m013')?.userData.phoenixAllBackCrest,
+   tailLength:model.getObjectByName('avian-tail-rooted-streamers-m013')?.userData.phoenixTailLength||0,
+   facialFlameMesh:!!model.getObjectByName('phoenix-cranial-fire-plumage')?.userData.phoenixCranialFireSculpt,
+   facialFlameVanes:model.getObjectByName('phoenix-cranial-fire-plumage')?.userData.phoenixCranialFlameVanes||0,
+   eyesUncovered:!!model.getObjectByName('phoenix-cranial-fire-plumage')?.userData.phoenixEyesUncovered,
+   guardianFeatherHands:['L','R'].every(side=>
+    !!model.getObjectByName('phoenix-feather-hand-vanes-'+side)?.userData.phoenixSameWingVaneSource),
+   handFeathersPerSide:['L','R'].map(side=>model.getObjectByName('phoenix-feather-hand-vanes-'+side)?.userData.angelFeathersPerSide||0),
+   highQualityHandFeathers:['L','R'].every(side=>
+    model.getObjectByName('phoenix-feather-hand-vanes-'+side)?.userData.phoenixMiniatureDonorDetail==='high'),
+   waveMeshes:model.userData.phoenixWaveMeshCount||0
+  }:null,
+  wings,action:currentAction};
+};
 window.__monsterQualityQA=()=>({
  id:selected,detail:byId('quality').value,
  ...(meshStats||{}),fps:Math.round(fps),

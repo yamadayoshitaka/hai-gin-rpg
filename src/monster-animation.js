@@ -1,4 +1,6 @@
-import {applyMonsterBiologicalMotion} from './monster-joint-motion.js?v=m002-feline-motion-v4-20261117';
+import {applyMonsterBiologicalMotion} from './monster-joint-motion.js?v=phoenix-stable-idle-v8-20261118';
+import {updatePhoenixFeatherWaves}
+ from './avian-guardian-sculpt.js?v=phoenix-sculpt-v8-20261118';
 import {updateM001ActionEffects} from './m001-action-effects.js?v=m001-action-perf-v1-20261117';
 import {updateReferenceBeastFx} from './beast-action-effects.js?v=ref-action-v1-20261117';
 import {monsterLeapPose,applyMonsterLeapMotion} from './monster-leap-kinematics.js?v=1';
@@ -92,9 +94,10 @@ export function animateMonsterModel(model,time=0){
  const leaping=action==='leap'?pulse:0;
  const leap=action==='leap'?monsterLeapPose(progress,model.userData.surfaceFamily):null;
  const dying=action==='defeat'?progress:0;
- const springBeast=['m001','m002','m003','m004'].includes(model.userData.speciesId);
+ const springBeast=['m001','m002','m003','m004','m005'].includes(model.userData.speciesId);
  const sourceFeline=['m007','m008','m009','m010'].includes(model.userData.speciesId);
- const sway=Math.sin(motionTime*2.1)*.027*(1-dying);
+ const phoenixIdle=model.userData.speciesId==='m013'&&action==='idle';
+ const sway=Math.sin(motionTime*2.1)*.027*(phoenixIdle?.10:1)*(1-dying);
  // Rare, brief eye closure with a per-species offset. No random state,
  // material allocations or extra draw calls during the animation loop.
  const blinkClock=(motionTime+(model.userData.blinkOffset??
@@ -128,8 +131,8 @@ export function animateMonsterModel(model,time=0){
    }
    if(name==='head'){
      part.rotation.x=-strike*.27-special*.42+hit*.12+
-       Math.sin(motionTime*1.7)*.025+dying*.12;
-     part.rotation.y=dodge*.30+Math.sin(motionTime*.7)*.025;
+       Math.sin(motionTime*1.7)*(phoenixIdle?.003:.025)+dying*.12;
+     part.rotation.y=dodge*.30+Math.sin(motionTime*.7)*(phoenixIdle?.003:.025);
    }else if(name==='jaw'){
      part.rotation.x=(action==='roar'?.55:pulse*.42)+
        Math.sin(motionTime*3)*.022+dying*.08;
@@ -137,9 +140,16 @@ export function animateMonsterModel(model,time=0){
      part.rotation.y=Math.sin(motionTime*2.8)*.19+strike*.35+special*.58;
    }else if(name==='abdomen'){
      part.rotation.z=Math.sin(motionTime*2.2)*.06;
+   }else if(name.startsWith('wingElbow')||name.startsWith('wingWrist')){
+     // Shoulder -> elbow -> wrist are different joints. The avian-specific
+     // wingMotion() below drives folding and twist independently; the old
+     // startsWith('wing') rule incorrectly flapped all three at full force.
+     part.rotation.set(0,0,0);
    }else if(name.startsWith('wing')){
      const side=name.includes('L')?-1:1;
-     part.rotation.z=side*(.22+.23*Math.sin(motionTime*6.1)+
+     const isNewBird=!!model.userData.avianRebuildRevision;
+     const frequency=isNewBird&&model.userData.speciesId==='m013'?4.35:6.1;
+     part.rotation.z=side*(.22+.23*Math.sin(motionTime*frequency)+
        special*.7+leaping*.6-dying*.16);
      part.rotation.x=.08*Math.sin(motionTime*3);
    }else if(name.startsWith('tentacle')){
@@ -168,6 +178,11 @@ export function animateMonsterModel(model,time=0){
    time:motionTime,phase:gait,action,pulse:Math.max(strike,special,leaping),
    locomotion,run:action==='run'
  });
+ // Travelling feather wave is evaluated by the existing wing material's GPU
+ // vertex shader. Only four uniforms/mesh references are touched; no geometry
+ // is rebuilt per frame (important for battles with many actors).
+ if(model.userData.speciesId==='m013')
+   updatePhoenixFeatherWaves(model,motionTime,action);
  if(['m001','m002'].includes(model.userData.speciesId)&&
     action!=='defeat'){
    // m002 inherits the physically authored m001 anticipation, bite,

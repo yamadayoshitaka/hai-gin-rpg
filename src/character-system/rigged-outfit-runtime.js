@@ -5,16 +5,16 @@
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {clone} from 'three/addons/utils/SkeletonUtils.js';
-import {JOBS,outfitStyle,loadPhotoMaterials,createDetailedOutfit} from '../outfit-maintenance-model.js?v=20261117-alljobs-back3';
+import {JOBS,outfitStyle,loadPhotoMaterials,createDetailedOutfit} from '../outfit-maintenance-model.js?v=20261118-shoulder-cape-v78';
 import {EQUIPMENT_TYPES,equipmentForJob} from './equipment-catalog.js?v=4.4.41';
-import {attachSegmentedArmor} from './segmented-armor-runtime.js?v=4.5.2';
+import {attachSegmentedArmor} from './segmented-armor-runtime.js?v=20261118-outer-acromion-v80';
 import {consolidateBattleArmor} from './armor-batch-runtime.js?v=4.5.0';
 import {replacedPlateBaseLegMesh} from './armor-mesh-classification.js?v=4.5.0';
 import {attachCharacterHair} from './hair-attachment-runtime.js?v=20261117-full-root-fibers2';
 import {attachArmorHeraldry} from './armor-heraldry-runtime.js?v=4.4.61';
 import {attachFittedCloth} from './fitted-cloth-runtime.js?v=4.5.2';
 import {outfitSurfaceRole,cleanOutfitPhotoKind} from './outfit-surface-policy.js?v=4.4.43';
-import {shouldClothLineBattleTorso,applyBattleTorsoLining} from './battle-torso-lining.js?v=20261116-torso1';
+import {shouldClothLineBattleTorso,applyBattleTorsoLining} from './battle-torso-lining.js?v=20261117-preview-boardfix';
 import {battleClosedBackCoverage} from './battle-visual-pipeline.js';
 import {fitEyebrowMeshesToFace} from './eyebrow-fit-runtime.js?v=4.4.61';
 import {attachRealisticFace} from './facial-blink-runtime.js?v=1';
@@ -202,7 +202,12 @@ function candidateNames(meshName){
     return ['pelvis',`thigh_${s}`,'spine_01'];
   }
   if(/skirt|hem-seam|bottom-hem/.test(n))return ['pelvis','thigh_l','thigh_r','calf_l','calf_r'];
-  if(/cape|mantle/.test(n))return ['spine_03','spine_02','spine_01','pelvis'];
+  // Pin the top edge and clasp of a real back cape to both collarbones.
+  // The older spine-only weights dragged the cloth off the shoulders when
+  // the pose lifted an arm, making it look detached or front-wrapped.
+  const mantlePin=n.match(/(?:mantle-clasp|hero-mantle-back-shoulder-button)-([lr])$/);
+  if(mantlePin)return ['clavicle_'+mantlePin[1]];
+  if(/cape|mantle/.test(n))return ['clavicle_l','clavicle_r','spine_03','spine_02','spine_01','pelvis'];
   if(/apron|waist|belt|pouch/.test(n))return ['pelvis','spine_01','spine_02'];
   if(/neckline|collar/.test(n))return ['spine_03','neck_01'];
   if(/quiver/.test(n))return ['spine_03','spine_02'];
@@ -228,7 +233,23 @@ export function skinOutfitDetails(details,dressed){
     const indices=new Uint16Array(positions.count*4),weights=new Float32Array(positions.count*4);
     const choices=candidateNames(mesh.name).map(name=>names.indexOf(name)).filter(i=>i>=0);
     if(!choices.length)throw Error('衣装の割当先骨が不明: '+mesh.name);
+    const cape=mesh.userData?.shoulderCape?.clothPanel?mesh.userData.shoulderCape:null;
+    const capeBones=cape?['clavicle_l','clavicle_r','spine_03','pelvis'].map(n=>names.indexOf(n)):null;
+    if(capeBones?.some(n=>n<0))throw Error('マント固定用の鎖骨・背骨が不足');
     for(let i=0;i<positions.count;i++){
+      if(cape){
+        // A cape is supported by two clavicles at its upper seam and the
+        // spine/pelvis below. Nearest-distance skinning pulled the fasteners
+        // off the shoulders when the arms raised or during a sword swing.
+        const t=THREE.MathUtils.clamp(
+          (cape.topY-positions.getY(i))/Math.max(.001,cape.topY-cape.bottomY),0,1);
+        const half=THREE.MathUtils.lerp(cape.topWidth*.5,cape.hemWidth*.5,t);
+        const u=THREE.MathUtils.clamp((positions.getX(i)-cape.centerX)/Math.max(.001,half),-1,1);
+        const clav=.80*(1-t)*(1-t),body=1-clav;
+        const blend=[clav*(1-u)*.5,clav*(1+u)*.5,body*(1-.60*t),body*.60*t];
+        for(let j=0;j<4;j++){indices[i*4+j]=capeBones[j];weights[i*4+j]=blend[j]}
+        continue;
+      }
       vector.fromBufferAttribute(positions,i).applyMatrix4(mesh.matrixWorld);
       const nearest=choices.map(index=>({index,d:Math.max(0.0004,reference[index].distanceToSquared(vector))})).sort((a,b)=>a.d-b.d).slice(0,4);
       const sum=nearest.reduce((v,p)=>v+1/(p.d+.003),0);
@@ -239,6 +260,7 @@ export function skinOutfitDetails(details,dressed){
     const skinned=new THREE.SkinnedMesh(geometry,mesh.material);
     skinned.name=mesh.name;skinned.position.copy(mesh.position);skinned.quaternion.copy(mesh.quaternion);skinned.scale.copy(mesh.scale);
     skinned.castShadow=mesh.castShadow;skinned.receiveShadow=mesh.receiveShadow;skinned.frustumCulled=false;
+    skinned.userData={...mesh.userData}; // Preserve shoulder-cape geometry/anchor diagnostics
     const parent=mesh.parent;parent.add(skinned);parent.remove(mesh);
     skinned.updateMatrixWorld(true);skinned.bind(skeleton,skinned.matrixWorld.clone());
     weightedVertices+=positions.count;skinnedPieces++;
@@ -456,7 +478,7 @@ async function attachGear(dressed,outfitBones,profile,textures,quality){
   return items;
 }
 
-export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male',quality='preview',rarity='N',weaponOverride=null,preserveBody=false,hairStyle=null,hairColor=null,studioPreferSkinnedLegs=false,studioPreserveLegAnatomy=false,studioVisibleLegAnatomy=false,headwearShown=true}={}){
+export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male',quality='preview',rarity='N',weaponOverride=null,preserveBody=false,hairStyle=null,hairColor=null,studioPreferSkinnedLegs=false,studioPreserveLegAnatomy=false,studioVisibleLegAnatomy=false,headwearShown=true,isProtagonist=false}={}){
   if(!characterModel||!parent)throw Error('人物モデルと配置先が必要です');
   // Different preview and battle entry points share the same head-surface
   // correction. The calibrated mesh is cached for all copies of each sex.
@@ -517,7 +539,7 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
       // source tunic is the back covering; count it separately from
       // converted flesh-coloured material so duplicate back cards can be
       // reliably removed for swordsmen AND thieves.
-      if(quality==='battle'&&role==='body'&&
+      if(role==='body'&&
         /^(?:male|female)_(?:ranger|peasant)_body(?:_\d+)?$/i.test(n)){
         copy.transparent=false;copy.opacity=1;copy.alphaTest=0;
         copy.depthWrite=true;copy.depthTest=true;copy.side=THREE.DoubleSide;
@@ -540,7 +562,7 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
       // tunic even at close camera distance. Cloth and opaque lining must
       // be enforced on BOTH sides of the existing skinned body surface.
       // This reuses the material slot: zero added meshes/draw calls.
-      if(quality==='battle'&&jobId==='job06'&&role==='body'){
+      if(jobId==='job06'&&role==='body'){
        const leather=textures.leather||textures['linen-fine']||textures.linen;
        if(leather){copy.map=leather;copy.bumpMap=leather;copy.bumpScale=.0006}
        copy.alphaMap=null;copy.transparent=false;copy.opacity=1;
@@ -582,23 +604,22 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
   });
   // Even the instanced battle source retains the job's identifying stitched
   // seams, harness and crest; only tessellation/inspection micro-details vary.
-  const detail=createDetailedOutfit(jobId,sex,dressed,textures,{quality,rarity:rank});
+  const detail=createDetailedOutfit(jobId,sex,dressed,textures,{quality,rarity:rank,isProtagonist});
   dressed.add(detail);
   const result=skinOutfitDetails(detail,dressed);
-  // The procedural rear panels are broad, nearly planar geometry sampled
-  // from the torso AABB. On a moving soldier they look like a rigid board
-  // strapped across the thief/swordsman's back. Battle outfits already have
-  // an opaque *source* skinned torso (its skin-coloured material was replaced
-  // with photographed linen above), so do not draw duplicate rear sheets.
-  // Keep the source skinned fabric and the real segmented plate equipment.
-  // Retain the backup panel only if no such opaque source fabric was found.
+  // Legacy flat back sheets are no longer generated. Remove any matching
+  // procedural descendants defensively before attaching the outfit, so an
+  // accidental future reintroduction cannot display a cardboard back.
+  const bannedBackPanels=new Set([
+    'complete-back-tunic-lining','heroic-cuirass-backplate',
+    'l-cuirass-closed-flank','r-cuirass-closed-flank'
+  ]);
   let suppressedFlatBackPieces=0;
-  if(lowDetail&&(opaqueTorsoLiningMaterials+sourceOpaqueTorsoMaterials)>0){
-    for(const name of ['complete-back-tunic-lining','heroic-cuirass-backplate',
-      'l-cuirass-closed-flank','r-cuirass-closed-flank']){
-      const panel=detail.getObjectByName(name);
-      if(panel){panel.visible=false;panel.userData.replacedByOpaqueSourceBack=true;
-        suppressedFlatBackPieces++;}
+  for(const name of bannedBackPanels){
+    let panel;
+    while((panel=detail.getObjectByName(name))){
+      panel.removeFromParent();panel.geometry?.dispose();
+      suppressedFlatBackPieces++;
     }
   }
   const root=new THREE.Group();root.name=`rigged-outfit-${jobId}`;root.add(dressed);parent.add(root);
@@ -616,7 +637,7 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
       // sleeve/knee envelope without the preview studio's 96x32 mesh.
       radialSegments:lowDetail?40:96,heightSegments:lowDetail?10:32,
       omitLegSegments:useSourceSkinnedLegs});
-    armor=profile.armor==='plate'?await attachSegmentedArmor({root,dressed,sex,textures,characterModel,rarity:rank}):null;
+    armor=profile.armor==='plate'?await attachSegmentedArmor({root,dressed,sex,textures,characterModel,rarity:rank,quality}):null;
     if(armor){
       // In battle the real, joint-skinned pants replace all procedural leg
       // cylinders. The separate source boots still overlap metal sabatons,
@@ -1076,7 +1097,10 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
   }
   return {root,sync,dispose,face,setBodyOcclusion,setHelmetVisible,setHairVisible,getHairState,
     setArmorDepthOffsets,presentation,fitReport,diagnostics:{job:jobId,sex,matchingBones:linked.length,...result,
-    quality,rarity:rank,rarityOrnaments:detail.userData.rarityOrnaments,
+    quality,rarity:rank,isProtagonist:Boolean(isProtagonist),
+    rearCuirassPresent:!!detail.getObjectByName('anatomically-curved-rear-cuirass-lames'),
+    heroMantlePresent:Boolean(isProtagonist)&&(!!style.cape||!!detail.getObjectByName('hero-protagonist-draped-mantle')),
+    rarityOrnaments:detail.userData.rarityOrnaments,
     triangles:detail.userData.triangles,detailMotif:detail.userData.motif,
     commanderPieces:jobId==='strategist'?detail.children.filter(o=>
       /^(command-|military-standing-collar|strategist-seal)/.test(o.name)).length:0,
@@ -1100,7 +1124,10 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
     preservedUnderGarmentLegRegions:coverageHandle?.diagnostics.preservedRegions||[],
     garmentSurfaceSamples:coverageHandle?.diagnostics.garmentSurfaceSamples||0,
     compactedSkinVertices:Math.max(0,(coverageHandle?.diagnostics.sourceVertices||0)-(coverageHandle?.diagnostics.keptVertices||0)),
-    armorPieces:armor?.objects.length||0,sourceBootShaftsSkipped:armor?.diagnostics.sourceBootShaftsSkipped||0,
+    armorPieces:armor?.objects.length||0,
+    suppressedRigidShoulderMeshes:armor?.diagnostics.suppressedRigidShoulderMeshes||0,
+    fittedShoulderParts:armor?.diagnostics.shoulderSideCounts||null,
+    sourceBootShaftsSkipped:armor?.diagnostics.sourceBootShaftsSkipped||0,
     armorOriginalPieces:armor?.diagnostics.originalArmorPieces||armor?.objects.length||0,
     consolidatedArmorPieces:armor?.diagnostics.consolidatedArmorPieces||0,armorScale:armor?.diagnostics.armorScale||0,
     armorAxisFit:armor?.diagnostics.partAxes||{},

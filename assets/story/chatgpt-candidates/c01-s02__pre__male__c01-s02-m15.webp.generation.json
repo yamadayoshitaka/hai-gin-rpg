@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "kind": "CHATGPT_IMAGES_NATIVE_ART_GITHUB_VERIFIED_PROVISIONAL_CANDIDATE",
+  "shotKey": "c01-s02|pre|male|c01-s02-m15",
+  "canonicalQueueKey": "c01-s02|pre|c01-s02-m15|male",
+  "stageId": "c01-s02",
+  "comicEdition": "pre",
+  "protagonistGender": "male",
+  "sceneId": "c01-s02-m15",
+  "narrativeBeat": "合図を待つ兵士たちに、軍師は静かに頷いた。いよいよ「第一章・第二ステージ 礼拝堂への街道」での戦いが始まる。",
+  "visualBeat": "男性軍師が後姿で合図し兵士が魔物に備える夜の街道",
+  "provider": "ChatGPT Images, user-initiated subscription UI",
+  "generationId": "03f87118-1753-47af-aab8-4de1ccd454cc",
+  "sourceImage": "a_dramatic_cinematic_highly_detailed_hyper_real.png",
+  "asset": "./assets/story/chatgpt-candidates/c01-s02__pre__male__c01-s02-m15.webp",
+  "nativePixels": [
+    1664,
+    936
+  ],
+  "imageBytes": 396770,
+  "sha256": "1ea96c6e634f94fe890368935503ad24e8ec43c6f7e24871b5b619c5aa1abf0c",
+  "gitBlobSha": "705d8b2ed73305535d8d1e58d192d5994706c86c",
+  "actualCharacterMasterBytesAttached": false,
+  "visibleHumanCast": [
+    "commander_male_back_view",
+    "unidentified_friendly_soldiers_helmets"
+  ],
+  "note": "Human male commander and soldiers not compared with true master bytes; must not automatically be rendered in game.",
+  "nativeQAComplete": true,
+  "narrativeMatchReviewed": true,
+  "visualP0Approved": false,
+  "formallyApproved": false,
+  "gameArtworkRegistered": false,
+  "reviewStatus": "UNBOUND_GITHUB_ART_CANDIDATE_HUMAN_IDENTITY_REVIEW_REQUIRED",
+  "generatedFrom": "ChatGPT UI only",
+  "additionalPaidApiCalls": 0
+}

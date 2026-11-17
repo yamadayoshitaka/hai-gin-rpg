@@ -5,7 +5,8 @@
  *
  * A registered baseline is NOT a claim that Android visual/FPS QA passed.
  * External candidates only render after explicit opt-in, source validation,
- * and a successful load. Protected m005/m006 must never be replaced.
+ * and a successful load. m005/m006 now derive m001 locally, but
+ * still block unapproved external mesh replacement.
  */
 import {MONSTER_BY_ID,MONSTER_CATALOG} from './monster-catalog.js';
 import {HUMAN_MONSTER_IDS} from './monster-character-cosplay-manifest.js';
@@ -14,23 +15,27 @@ import {adoptedCreatureMesh,protectedCreature,baseMonsterId,
 
 const humanoids=new Set(HUMAN_MONSTER_IDS);
 export const MODEL_REFERENCE_REVISION='m001-sweptback-nose-v20-20261117';
-const firstWave=new Set(['m002','m003','m004']);
-const felineWave=new Set(['m007','m008','m009','m010']);
+const firstWave=new Set(['m002','m003','m004','m005']);
+const felineWave=new Set(['m006','m007','m008','m009','m010']);
+const avianWave=new Set(['m011','m012','m013','m014']);
 const locked=new Set(['m005','m006']);
 export const GAME_MONSTER_MODEL_REGISTRY=Object.freeze(Object.fromEntries(
  MONSTER_CATALOG.map(spec=>[spec.id,Object.freeze({
   speciesId:spec.id,name:spec.name,family:spec.family,
   model:'procedural:'+spec.id,
   version:spec.id==='m001'?MODEL_REFERENCE_REVISION:
-   spec.id==='m002'?'m002-m001-face-source-v2-20261117':
-   firstWave.has(spec.id)?'canine-wave-one-20261117':
-   felineWave.has(spec.id)?'m001-quality-derived-feline-v4-20261117':
+   spec.id==='m005'?'m001-forest-wolf-mesh-v14-20261118':
+   spec.id==='m006'?'m001-panther-skull-mini-nose-v14-20261118':
+   firstWave.has(spec.id)?'m001-compact-wolf-mouth-v10-20261117':
+   felineWave.has(spec.id)?'m007-torso-anchor-tail-v12-20261118':
+   avianWave.has(spec.id)?'phoenix-featherhands-bigscutes-v19-20261118':
    'catalog-baseline',
-  stage:locked.has(spec.id)?'protected':
+  stage:locked.has(spec.id)?'m001-source-derivative-external-locked':
    humanoids.has(spec.id)?'separate-humanoid-pipeline':
    spec.id==='m001'?'reference-implementation':
-   firstWave.has(spec.id)?'wave-one-in-progress':
-   felineWave.has(spec.id)?'feline-master-wave-two-in-progress':
+   firstWave.has(spec.id)?'copied-wolf-king-geometry-in-review':
+   felineWave.has(spec.id)?'copied-m007-feline-geometry-in-review':
+   avianWave.has(spec.id)?'original-seraph-wing-avian-remesh-in-review':
    'pending-review',
   // Releasing a model does not mean its visual QA has been approved.
   mobileVisualApproved:false,
@@ -38,9 +43,10 @@ export const GAME_MONSTER_MODEL_REGISTRY=Object.freeze(Object.fromEntries(
  })])
 ));
 // Nonhuman wave remains separate from the independent humanoid cosplay
-// workstream. Protected original wolf/panther sources are NEVER queued.
+// workstream. m005/m006 are now in the internal physical donor queue.
 export const MONSTER_REFRESH_PRIORITY=Object.freeze([
- 'm002','m003','m004','m007','m008','m009','m010',
+ 'm002','m003','m004','m005','m006','m007','m008','m009','m010',
+ 'm011','m012','m013','m014',
  ...MONSTER_CATALOG.map(s=>s.id).filter(id=>
   !humanoids.has(id)&&
   !['m001','m002','m003','m004','m005','m006',

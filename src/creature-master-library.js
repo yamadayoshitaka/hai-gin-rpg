@@ -20,7 +20,8 @@ export function chooseCreatureLod(distance,{near=16,mid=52}={}){
  if(!Number.isFinite(distance)||distance<0) return 'far';
  return distance<near?'near':distance<mid?'mid':'far';
 }
-const protectedIds=new Set(['m005','m006','summon_m005','summon_m006']);
+// m005/m006 now share the accepted m001 physical mother; master/source LOD is available.
+const protectedIds=new Set();
 const humanIds=new Set(HUMAN_MONSTER_IDS);
 const monsters=MONSTER_CATALOG.map(m=>Object.freeze({
  id:m.id,baseId:m.id,name:m.name,kind:'monster',family:m.family,element:m.element,

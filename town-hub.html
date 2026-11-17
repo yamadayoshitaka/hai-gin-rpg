@@ -151,6 +151,7 @@ import {storyStageContext} from './src/story-narrative-flow.js';
 import {comicPageAsset} from './src/story-chapter-comic.js';
 import {compactComicForStage} from './src/story-compact-comic.js?v=story-20261117-reader1';
 import {registeredStoryPanelAsset,storySheetCrop,storyArtDisplayUrl} from './src/story-panel-registered-art.js';
+import {oldStoryArtReuseAllowed} from './src/story-art-sourcing-policy.js';
 
 import {fantasyCueForMangaPanel} from './src/fantasy-scene-score.js';
 import {continentForChapter} from './src/continent-campaign.js';
@@ -945,7 +946,8 @@ function eventRender(){
  const shot=eventScenes[eventIndex],talk=currentTownTurn(),context=storyStageContext(game,game.townStage);
  $('eventText').textContent=talk.text;
  const cut=shot.sharedArtAsset||registeredStoryPanelAsset(shot);
- const sheet=comicPageAsset(game.townStage,paperPhase,context,shot.comicPage,shot.protagonistGender);
+ const sheet=oldStoryArtReuseAllowed(shot.stageId)?
+  comicPageAsset(game.townStage,paperPhase,context,shot.comicPage,shot.protagonistGender):null;
  const cells=shot.sourceSheetCount||eventComic.pages.find(p=>p.number===shot.comicPage)?.cellCount||1;
  const frameKey=[shot.id,shot.comicEdition,shot.protagonistGender,cut||'',sheet||''].join('|');
  $('eventSceneArt').style.aspectRatio='16 / 9';
@@ -975,7 +977,7 @@ function eventRender(){
     img.hidden=false;missing.hidden=true;
    };
    img.onerror=()=>{if(ticket!==eventArtRequest)return;
-    if(type==='single'&&!cut?.includes('/chapter1-provisional-live/'))load(sheet,'sheet');else unavailable();
+    if(type==='single'&&sheet&&!cut?.includes('/chapter1-provisional-live/'))load(sheet,'sheet');else unavailable();
    };
    img.src=storyArtDisplayUrl(asset);
    if(img.complete&&img.naturalWidth>0)img.onload();

@@ -47,7 +47,13 @@ function desiredAnchor(slot,side,bones){
   switch(slot){
     case 'helmet':return bonePos(bones,'head').add(new THREE.Vector3(0,.046,0));
     case 'chest':return bonePos(bones,'spine_03').add(new THREE.Vector3(0,-.060,0));
-    case 'shoulder':return bonePos(bones,`upperarm${suffix}`);
+    case 'shoulder':{
+      // Center each pauldron over the clavicle/upper-arm junction.
+      // The pad remains bone-mounted and follows the actor's arm animation.
+      return bonePos(bones,`upperarm${suffix}`)
+        .lerp(bonePos(bones,`clavicle${suffix}`),.28)
+        .add(new THREE.Vector3(0,.024,0));
+    }
     // Align the metal cuff behind the actual knuckles. The former palm-
     // centered bucket concealed every curling finger and left a black hole
     // around the sword hilt despite passing the fingertip XYZ tests.
@@ -70,6 +76,89 @@ function attachBoneName(slot,side){
   return `${segment}_${side}`;
 }
 
+/**
+ * Build an actual shoulder-mounted pair from the wearer's own clavicle and
+ * upper-arm landmarks. The source plate_chest GLB includes large rigid
+ * "plate upper sleeve" tubes and low-poly pauldrons. Their bind axes do
+ * not match the Quaternius shoulders: when animated, they protrude over
+ * the rear cape as the two floating metal blocks reported in v75/v76.
+ *
+ * This replacement contains only shallow, curved metal shells and hems,
+ * not a second rigid upper-arm tube. Attach each to its own upperarm bone:
+ * the shell is anchored in world XYZ once, then inherits the arm motion.
+ */
+export function createAnatomicalShoulderCaps({root,dressed,bones,metal,edge,quality='preview'}={}){
+  if(!root||!dressed||!bones||!metal||!edge)throw Error('肩鎧の人物骨格・素材が不足');
+  root.updateMatrixWorld(true);
+  const left=bonePos(bones,'upperarm_l'),right=bonePos(bones,'upperarm_r');
+  const span=left.distanceTo(right);
+  if(!(span>.18&&span<1.1))throw Error('肩幅を取得できません: '+span);
+  // Keep the entire shell above the upper-arm socket. v79 pulled its centre
+  // 28% toward the clavicle; from above the plate overlapped the neck/hair.
+  const radius=THREE.MathUtils.clamp(span*.225,.070,.108);
+  const rot=dressed.getWorldQuaternion(new THREE.Quaternion());
+  const up=new THREE.Vector3(0,1,0).applyQuaternion(rot).normalize();
+  const forward=new THREE.Vector3(0,0,1).applyQuaternion(rot).normalize();
+  const lateral=new THREE.Vector3(1,0,0).applyQuaternion(rot).normalize();
+  const tiltAxis=forward.clone().applyQuaternion(
+    root.getWorldQuaternion(new THREE.Quaternion()).invert()).normalize();
+  const created=[],anchors={};
+  const radial=quality==='battle'?16:28,segments=quality==='battle'?8:14;
+  for(const side of ['l','r']){
+    const sign=side==='l'?-1:1,bone=bones.get('upperarm_'+side);
+    const upperArm=bonePos(bones,'upperarm_'+side);
+    const clavicle=bonePos(bones,'clavicle_'+side);
+    // Derive outward direction from real shoulder landmarks, not world X.
+    // Project away any arm elevation so the pad cannot slide up into hair.
+    const outward=upperArm.clone().sub(clavicle);
+    outward.addScaledVector(up,-outward.dot(up));
+    if(outward.lengthSq()<1e-8)outward.copy(lateral).multiplyScalar(sign);
+    outward.normalize();
+    const anchor=upperArm.clone()
+      .addScaledVector(outward,radius*.50)
+      // The pauldron covers the acromion, not the front of the breastplate.
+      .addScaledVector(forward,radius*.055)
+      .addScaledVector(up,radius*.84);
+    anchors[side]=anchor.toArray();
+    const add=(name,geometry,material,raise=0)=>{
+      const mesh=new THREE.Mesh(geometry,material);
+      mesh.name=name;
+      // Roll the dome down toward the outside of the shoulder. This
+      // orientation is preserved in bone-local space by bone.attach().
+      mesh.quaternion.setFromAxisAngle(tiltAxis,-sign*.18);
+      const at=anchor.clone().addScaledVector(up,raise);
+      root.add(mesh);
+      mesh.position.copy(root.worldToLocal(at));
+      mesh.castShadow=true;mesh.receiveShadow=true;mesh.frustumCulled=false;
+      mesh.userData={equipmentClass:'armor',equipmentSlot:'shoulder',
+        equipmentMaterial:name.includes('rim')?'metal-trim':'plate-steel',
+        equipmentModel:'anatomical-pauldron-v80',
+        attachmentSide:side,attachedJoint:'upperarm_'+side,
+        originalRearSleeveSuppressed:true};
+      root.updateMatrixWorld(true);
+      bone.attach(mesh);
+      created.push(mesh);
+      return mesh;
+    };
+    const cap=add('armor-shoulder-fitted-cap-'+side,
+      new THREE.SphereGeometry(radius,radial,segments,0,Math.PI*2,0,Math.PI*.49),
+      metal,-radius*.03);
+    cap.scale.multiply(new THREE.Vector3(1.04,.56,.92));
+    // A narrow fitted lower lip creates the layered-steel silhouette without
+    // the old whole-arm cylinder or a second large, hollow shoulder block.
+    const rim=add('armor-shoulder-fitted-rim-'+side,
+      new THREE.SphereGeometry(radius*1.016,radial,quality==='battle'?3:5,
+        0,Math.PI*2,Math.PI*.41,Math.PI*.085),edge,-radius*.03);
+    rim.scale.copy(cap.scale);
+  }
+  root.updateMatrixWorld(true);
+  return {objects:created,anchors,radius,
+    diagnostics:{kind:'outer-acromion-fitted-pauldron-v80',sideCounts:{l:2,r:2},
+      oldSourceRigidShoulderTubesVisible:0,shoulderDistance:span,
+      exteriorCrownRelief:radius*.84,outerLateralRelief:radius*.50,
+      forwardRelief:radius*.055,outerSlopeRadians:.18}};
+}
+
 function textureGeometry(geometry){
   if(geometry.attributes.uv)return geometry;
   // The external plate GLBs have positions, normals and vertex colors but no
@@ -86,7 +175,7 @@ function textureGeometry(geometry){
 
 // Adds independent helmet, cuirass, pauldron, gauntlet, thigh, knee, greave
 // and boot objects. They can be individually hidden/replaced by equipment slot.
-export async function attachSegmentedArmor({root,dressed,sex,textures,characterModel=null,rarity='N',loadModel=loadArmor}){
+export async function attachSegmentedArmor({root,dressed,sex,textures,characterModel=null,rarity='N',quality='preview',loadModel=loadArmor}){
   if(!root||!dressed)throw Error('鎧の人物ルートと骨格が必要です');
   const bones=boneMap(dressed),pelvis=bonePos(bones,'pelvis'),head=bonePos(bones,'head');
   // The stage is a child of root, so both its origin and scale must use
@@ -162,9 +251,11 @@ export async function attachSegmentedArmor({root,dressed,sex,textures,characterM
 
   const descriptors=[];
   let sourceTrouserLegMeshesSkipped=0,sourceBootShaftsSkipped=0;
+  let suppressedRigidShoulderMeshes=0;
   const boxes=new THREE.Box3(),center=new THREE.Vector3();
   // Cache actual 3D reference positions before classifying mesh sides.
   const thighLeft=bonePos(bones,'thigh_l'),thighRight=bonePos(bones,'thigh_r');
+  const shoulderLeft=bonePos(bones,'upperarm_l'),shoulderRight=bonePos(bones,'upperarm_r');
   for(let i=0;i<parts.length;i++){
     const part=parts[i],source=stage.children[i];
     source.traverse(o=>{
@@ -175,10 +266,18 @@ export async function attachSegmentedArmor({root,dressed,sex,textures,characterM
         if(part==='feet'&&/boot[_ -]+upper/i.test(o.name)&&!/folded|ridge|cuff/i.test(o.name))sourceBootShaftsSkipped++;
         return;
       }
+      if(slot==='shoulder'){
+        // Reject ALL ten original unrigged sleeve/pauldron/fixing pieces.
+        // They were the large metal blocks poking through the protagonist cape.
+        suppressedRigidShoulderMeshes++;
+        return;
+      }
       if(slot==='helmet'&&!helmetFaceguardPolicy(o.name).keep)return;
       boxes.setFromObject(o);boxes.getCenter(center);
-      const side=['shoulder','gauntlet','thigh','knee','shin','boot-upper','boot-foot'].includes(slot)?
-        nearestArmorLegSide(center,thighLeft,thighRight):null;
+      const side=slot==='shoulder'
+        ?nearestArmorLegSide(center,shoulderLeft,shoulderRight)
+        :['gauntlet','thigh','knee','shin','boot-upper','boot-foot'].includes(slot)
+          ?nearestArmorLegSide(center,thighLeft,thighRight):null;
       descriptors.push({source:o,part,slot,side,center:center.clone(),matrix:o.matrixWorld.clone()});
     });
   }
@@ -188,6 +287,8 @@ export async function attachSegmentedArmor({root,dressed,sex,textures,characterM
   const legSideCounts=Object.fromEntries(['thigh','knee','shin','boot-foot'].map(slot=>
     [slot,Object.fromEntries(['l','r'].map(side=>
       [side,descriptors.filter(d=>d.slot===slot&&d.side===side).length]))]));
+  const shoulderSideCounts=Object.fromEntries(['l','r'].map(side=>
+    [side,descriptors.filter(d=>d.slot==='shoulder'&&d.side===side).length]));
   for(const [slot,counts] of Object.entries(legSideCounts)){
     if(!counts.l||!counts.r)throw Error('鎧の左右割当が不正: '+slot+' 左'+counts.l+' 右'+counts.r);
   }
@@ -229,6 +330,12 @@ export async function attachSegmentedArmor({root,dressed,sex,textures,characterM
       const correction=THREE.MathUtils.clamp(
         target.sub(c.sum).dot(bodyForward)*.45,-.035,.035);
       delta.addScaledVector(bodyForward,correction-delta.dot(bodyForward));
+    }else if(slot==='shoulder'){
+      // GLB pauldrons are source-rear-biased. Preserving their fore/aft Z
+      // placed them across the hero's shoulder blades (back-camera bug).
+      // Apply the full world-space anatomical fit instead, plus modest
+      // clearance along actor-forward (also correct when soldiers rotate).
+      delta.addScaledVector(bodyForward,.035);
     }else if(['thigh','knee','shin','boot-upper','boot-foot'].includes(slot)){
       // The old implementation erased ALL Z corrections for legs/boots.
       // In sideways poses that left the finished boots behind the fabric leg.
@@ -239,7 +346,7 @@ export async function attachSegmentedArmor({root,dressed,sex,textures,characterM
       // units was smaller than the real offset and left the boot behind.
       delta.addScaledVector(bodyForward,relief);
     }else if(slot!=='helmet'){
-      // Keep shoulder and hip original fore/aft relief (unchanged).
+      // Preserve the other original fore/aft relief; shoulders are fitted above.
       delta.addScaledVector(bodyForward,-delta.dot(bodyForward));
     }
     offsetByKey.set(key,delta);
@@ -306,6 +413,10 @@ export async function attachSegmentedArmor({root,dressed,sex,textures,characterM
     anchor.attach(mesh);created.push(mesh);
   }
   root.remove(stage);
+  const fittedShoulders=createAnatomicalShoulderCaps({
+    root,dressed,bones,metal:matMetal,edge:matTrim,quality
+  });
+  created.push(...fittedShoulders.objects);
   // Independent non-destructive offsets. The heraldry appended later shares
   // the chest offset: it must not float away from the breastplate. All offsets
   // are applied in each attachment bone's local coordinates and follow motion.
@@ -336,10 +447,13 @@ export async function attachSegmentedArmor({root,dressed,sex,textures,characterM
     root.updateMatrixWorld(true);
     return {...depthOffsets};
   }
-  root.userData.armor={variant:'plate',pieceCount:created.length,sourceTrouserLegMeshesSkipped,sourceBootShaftsSkipped,scale,slots:[...centers.keys()],helmetFit,partAxes,legSideCounts};
+  root.userData.armor={variant:'plate',pieceCount:created.length,sourceTrouserLegMeshesSkipped,sourceBootShaftsSkipped,suppressedRigidShoulderMeshes,scale,slots:[...centers.keys()],helmetFit,partAxes,legSideCounts,shoulderSideCounts:fittedShoulders.diagnostics.sideCounts,shoulderPlacement:'bone-mounted-curved-shoulder-v79'};
   return {objects:created,materials,setDepthOffsets,depthOffsets,
     diagnostics:{armorPieces:created.length,sourceTrouserLegMeshesSkipped,sourceBootShaftsSkipped,armorScale:scale,armorSlots:[...centers.keys()],helmetFit,legSideCounts,
-      partAxes,alignmentDepth:Object.fromEntries([...offsetByKey].map(([key,value])=>[key,+value.z.toFixed(5)])),
+      partAxes,shoulderSideCounts:fittedShoulders.diagnostics.sideCounts,
+      suppressedRigidShoulderMeshes,
+      shoulderPlacement:fittedShoulders.diagnostics.kind,
+      alignmentDepth:Object.fromEntries([...offsetByKey].map(([key,value])=>[key,+value.z.toFixed(5)])),
       headWorldSize:headWorldSize?.toArray(),helmetSourceSize:helmetSize.toArray(),
       helmetTarget:scalpCenterWorld?.toArray(),helmetBaseForwardOffset:HELMET_BASE_FORWARD_OFFSET,
       clearanceProfile:'independent-forward-axis-v2'}};

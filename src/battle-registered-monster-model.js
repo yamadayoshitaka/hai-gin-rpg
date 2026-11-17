@@ -6,11 +6,11 @@
  */
 import * as THREE from 'three';
 import {createMonsterModel,disposeMonsterSculpture}
- from './monster-geometry.js?v=m002-feline-joints-and-fx-v4-20261117';
+ from './monster-geometry.js?v=phoenix-featherhands-bigscutes-v19-20261118';
 import {startMonsterAction,animateMonsterModel}
- from './monster-animation.js?v=m002-feline-action-v4-20261117';
+ from './monster-animation.js?v=phoenix-feather-hand-motion-v10-20261118';
 import {resolveRegisteredMonsterModel}
- from './creature-game-model-routing.js';
+ from './creature-game-model-routing.js?v=m001-m005-m006-v14-20261118';
 import {fetchCreatureRegistry} from './creature-external-runtime.js';
 import {loadCreatureMeshSource}
  from './creature-real-source-catalog.js?v=real-body-only-v4';

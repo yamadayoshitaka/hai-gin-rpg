@@ -3,13 +3,15 @@ on:
   schedule:
     - cron: '12 * * * *'
   workflow_dispatch:
+  # Heavy six-lane world WebGL QA only for actual 3D model/scene changes;
+  # batch dashboard changes must not start six model jobs or cancel other PRs.
   pull_request:
-    paths: ['.github/workflows/world-six-lane.yml','scripts/world-six-batch.mjs','src/object-catalog.js','src/stage-library.js','src/stage-static-instancing.js','tactics-wireframe.html','batch-monitor.html','qa/world-quality-contract.test.mjs','qa/world-object-physical-quality.test.mjs','scripts/world-quality-capture.cjs','world-quality-preview.html']
+    paths: ['.github/workflows/world-six-lane.yml','scripts/world-six-batch.mjs','src/object-catalog.js','src/stage-library.js','src/stage-static-instancing.js','qa/world-quality-contract.test.mjs','qa/world-object-physical-quality.test.mjs','scripts/world-quality-capture.cjs','world-quality-preview.html']
 permissions:
   contents: write
   pull-requests: write
 concurrency:
-  group: world-six-lane-${{ github.event_name }}
+  group: world-six-lane-${{ github.ref }}-${{ github.event_name }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
   enabled:
@@ -21,7 +23,7 @@ jobs:
       - id: check
         run: |
           value=$(node -e "const s=require('./data/batch-center-switches.json');process.stdout.write(String(s.groups.world.enabled===true))")
-          if [ "$value" = true ] || [ "${{ github.event_name }}" != schedule ]; then echo 'run=true' >> "$GITHUB_OUTPUT"; else echo 'run=false' >> "$GITHUB_OUTPUT"; fi
+          if [ "$value" = true ]; then echo 'run=true' >> "$GITHUB_OUTPUT"; else echo 'run=false' >> "$GITHUB_OUTPUT"; fi
   six-batches:
     needs: enabled
     if: needs.enabled.outputs.run == 'true'

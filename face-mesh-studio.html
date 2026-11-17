@@ -2,7 +2,7 @@
 <html lang="ja"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#14263a">
-<title>灰銀のレゾナンス｜男女の顔・髪の編集 v55</title>
+<title>灰銀のレゾナンス｜男女の顔・髪の編集 v74</title>
 <style>
 :root{font:15px/1.55 system-ui,-apple-system,"Noto Sans JP",sans-serif;color-scheme:dark}
 *{box-sizing:border-box}
@@ -62,7 +62,7 @@ button{padding:9px 11px}
 </style><style>.v64-manager-link{display:inline-flex;margin:8px 0;padding:9px 12px;border-radius:8px;background:#246b59;color:white;text-decoration:none;border:1px solid #9bd8be}</style></head>
 <body><a class="v64-manager-link" href="character-face-catalog.html">顔・髪・キャラクター管理一覧 v64</a>
 <header>
-<h1>顔・髪の編集 v55</h1>
+<h1>顔・髪の編集 v74｜目・髪型の実メッシュ更新</h1>
 <a class="studioNav" href="./face-body-studio.html?v=57" id="returnToCostume">衣装確認画面に戻る</a>
 <p>ライブラリに保存された実GLBの顔設定（顎先5倍・鼻穴隠し2・鼻筋2.5）を男女の実メッシュ標準に固定。口紅とチークを実メッシュの頂点に着色。上下アイライン・眉・眼球を調整し、女性用の高密度ロング（後頭部・両側頭部・襟足まで髪束生成・顔と肩への衝突対応）を追加。保存値とズームを維持します。</p>
 </header>
@@ -71,6 +71,10 @@ button{padding:9px 11px}
 <div class="controls" aria-label="性別切替">
 <button id="female" aria-pressed="true" disabled>女性・美人ベース</button>
 <button id="male" aria-pressed="false" disabled>男性・美青年ベース</button>
+</div>
+<div class="controls" id="quickHairControl" aria-label="女性の髪型を3D実メッシュで切り替え">
+<label for="quickWigStyle">髪型を切り替え <select id="quickWigStyle" aria-label="女性の髪型を選択"></select></label>
+<output id="activeHairStyle" role="status">髪型を読み込み中…</output>
 </div>
 <div class="previewStage" id="previewStage"><canvas id="faceCanvas" aria-label="髪とメイクを取り除いた、灰色の独立した顔3Dメッシュ"></canvas>
 <div class="controls" aria-label="視点切替">
@@ -81,7 +85,7 @@ button{padding:9px 11px}
 <button id="crown" aria-pressed="false" disabled>頭頂部</button>
 <button id="wire" aria-pressed="false" disabled>ワイヤー表示</button>
 <button id="parts" aria-pressed="true" disabled>目・眉・まつ毛・唇を表示</button>
-<button id="wig" aria-pressed="true" disabled>金髪ロング ON</button>
+<button id="wig" aria-pressed="true" disabled>髪を隠す</button>
 <button id="clay" aria-pressed="false" disabled>灰色メッシュ</button>
 <button id="color" aria-pressed="true" disabled>カラー表示</button>
 </div>
@@ -198,16 +202,16 @@ body.v32-legacy #v32PartsStudio{display:none!important}
 .v32-part-group select{display:block;width:100%;min-height:41px;margin:5px 0;padding:7px;background:#213d55;color:#fff;border:1px solid #7893a5;border-radius:8px}
 .v32-pose-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
 .v32-tip{color:#b8d5e8;font-size:12px}
-</style><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/","./src/independent-face-masters.js":"./src/independent-face-masters.js?v=68","./src/face-feature-meshes.js":"./src/face-feature-meshes.js?v=68","./src/face-v7-controls.js":"./src/face-v7-controls.js?v=41","./src/face-body-assembly.js":"./src/face-body-assembly.js?v=42"}}</script>
+</style><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/","./src/independent-face-masters.js":"./src/independent-face-masters.js?v=20261118-liner-eye-v74","./src/face-feature-meshes.js":"./src/face-feature-meshes.js?v=20261118-liner-eye-v74","./src/face-v7-controls.js":"./src/face-v7-controls.js?v=41","./src/face-body-assembly.js":"./src/face-body-assembly.js?v=42"}}</script>
 <script type="module">
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {GLTFExporter} from 'three/addons/exporters/GLTFExporter.js';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
-import {makeIndependentFaceMaster,FACE_MASTER_SPEC} from './src/independent-face-masters.js?v=68';
+import {makeIndependentFaceMaster,FACE_MASTER_SPEC} from './src/independent-face-masters.js?v=20261118-liner-eye-v74';
 import {createFaceExpressionAnimator,FACE_EXPRESSIONS} from './src/face-expression-animation-v48.js?v=68';
-import {updateFaceFeatureAngles,applyFaceColorMode,updateRealFacePigment} from './src/face-feature-meshes.js?v=68';
-import {createScalpAnchoredWig} from './src/face-scalp-wig.js?v=67';
+import {updateFaceFeatureAngles,applyFaceColorMode,updateRealFacePigment} from './src/face-feature-meshes.js?v=20261118-liner-eye-v74';
+import {createScalpAnchoredWig} from './src/face-scalp-wig.js?v=20261118-wig-coiffure-v74';
 import {createPartSelectorUI} from './src/face-part-selector-ui-v32.js?v=41';
 import {defaultPartSelection,resolvePartSelection,PART_CATALOG,HAIR_COLORS} from './src/face-part-catalog-v32.js?v=41';
 import {listWigStyles,DEFAULT_WIG_STYLE_ID} from './src/face-wig-styles.js?v=44';
@@ -217,10 +221,10 @@ import {characterAppearance,mountCharacterCastSelect,CHARACTER_CAST_BY_ID} from 
 import {AGE_PROFILES,BODY_PROFILES,applyDemographicFaceControls} from './src/character-demographics-v47.js?v=60';
 import {resolveEditedFaceControls,recordFaceManualEdit} from './src/face-state-v49.js?v=49';
 import {loadHeroineFacePreset,saveHeroineFacePreset} from './src/heroine-face-preset-store.js?v=60';
-import {heroineBeautyControlsV43,heroineBeautyControlsV47,HEROINE_BEAUTY_PART_SELECTION_V43,upgradeUneditedHeroineV42ToV43} from './src/heroine-beauty-preset-v42.js?v=47';
+import {heroineBeautyControlsV43,heroineBeautyControlsV47,HEROINE_BEAUTY_PART_SELECTION_V43,upgradeUneditedHeroineV42ToV43} from './src/heroine-beauty-preset-v42.js?v=20261118-art-lash-v2';
 import {loadMaleFacePreset,saveMaleFacePreset} from './src/male-face-preset-store.js?v=60';
 import {youngHeroMaleControls} from './src/hero-youthful-appearance-v50.js?v=50';
-import {applyHeroineSkinMaterial} from './src/heroine-skin-material.js?v=67';
+import {applyHeroineSkinMaterial} from './src/heroine-skin-material.js?v=70';
 import {FEMALE_V7_DEFAULTS,MALE_REFERENCE_DEFAULT,FACE_SLIDER_RANGES,FACE_EYE_SPACING_DEFAULT,FACE_EYE_SPACING_RANGE,CONTACT_COLORS,CONTACT_COLOR_LABELS,safeContactColor,normalizeFemaleFaceControls,normalizeMaleFaceControls} from './src/face-v7-controls.js';
 const $=id=>document.getElementById(id);
 for(const [key,preset] of Object.entries(FACE_EXPRESSIONS)){
@@ -275,11 +279,13 @@ renderer.toneMappingExposure=1.25;
 renderer.setPixelRatio(Math.min(2,devicePixelRatio||1));
 const scene=new THREE.Scene();
 scene.background=new THREE.Color('#203348');
-scene.add(new THREE.HemisphereLight(0xf1f7ff,0x62738b,2.2));
-const mainLight=new THREE.DirectionalLight(0xffffff,2.5);
+scene.add(new THREE.HemisphereLight(0xf1f7ff,0x62738b,1.20));
+const mainLight=new THREE.DirectionalLight(0xffffff,2.85);
 mainLight.position.set(2,3,4);scene.add(mainLight);
-const fill=new THREE.DirectionalLight(0xaecce8,1.5);
+const fill=new THREE.DirectionalLight(0xaecce8,.85);
 fill.position.set(-3,1,-1);scene.add(fill);
+const edgeLight=new THREE.DirectionalLight(0xf4e6d7,.72);
+edgeLight.position.set(-2.5,2,-3);scene.add(edgeLight);
 const camera=new THREE.PerspectiveCamera(34,1,.005,100);
 const orbit=new OrbitControls(camera,canvas);
 orbit.enableDamping=true;orbit.enablePan=false;
@@ -306,6 +312,12 @@ const v32Parts={female:defaultPartSelection(),male:defaultPartSelection()};
 const v32Makeup={female:0,male:0};
 let manualFaceOverrides={female:{},male:{}};
 const savedHeroinePreset=v32PartMode?loadHeroineFacePreset():null;
+// Refresh an unsaved initial character to a recognizably layered 3D salon cut.
+// Never change an existing saved hairstyle or the explicit heroine preset.
+if(v32PartMode&&!savedHeroinePreset&&new URLSearchParams(location.search).get('hero')!=='1'){
+ const fresh=synchronizeHeroHairSelection('female',v32Parts.female,'salon-layered-long');
+ Object.assign(v32Parts.female,fresh.parts);wigStyleId=fresh.styleId;
+}
 if(v32PartMode&&!savedHeroinePreset&&new URLSearchParams(location.search).get('hero')==='1')
  Object.assign(v32Parts.female,HEROINE_BEAUTY_PART_SELECTION_V43);
 const savedMalePreset=v32PartMode?loadMaleFacePreset():null;
@@ -351,8 +363,10 @@ for(const style of listWigStyles('female')){
  const option=document.createElement('option');
  option.value=style.id;option.textContent=style.label;
  $('wigStyle').appendChild(option);
+ $('quickWigStyle').appendChild(option.cloneNode(true));
 }
 $('wigStyle').value=wigStyleId;
+$('quickWigStyle').value=wigStyleId;
 const performanceMetrics={headRebuilds:0,wigRebuilds:0,fastLipstickRepaints:0};
 const expressionPrefs={autoBlink:true,speaking:false,expression:'neutral'},expressions=new Map();
 if(new URLSearchParams(location.search).get('qa')==='expression'){
@@ -510,6 +524,7 @@ function selectGender(next){
  $('returnToCostume').href=gender==='male'?'./male-body-studio.html?v=57':'./face-body-studio.html?v=57';
  for(const [k,m] of models)m.root.visible=k===gender;
  $('wig').hidden=false;
+ $('quickHairControl').hidden=next!=='female';
   $('v47AgeBand').value=v32Parts[gender].ageBand;
   $('v47BodyType').value=v32Parts[gender].bodyType;
   $('v46FemaleCast').parentElement.hidden=gender!=='female';
@@ -564,6 +579,8 @@ function rebuildWig(){
   v32PartMode?null:wigStyleId);
  Object.assign(v32Parts.female,chosen.parts);wigStyleId=chosen.styleId;
  $('wigStyle').value=chosen.styleId;
+ $('quickWigStyle').value=chosen.styleId;
+ $('activeHairStyle').textContent='再生成：'+($('wigStyle').selectedOptions[0]?.textContent||chosen.styleId);
  performanceMetrics.wigRebuilds++;
  const previous=wigs.get('female');
  if(previous){
@@ -573,12 +590,15 @@ function rebuildWig(){
  try{
   const wig=createScalpAnchoredWig(models.get('female').face,{
    count:wigDensity,lengthScale:wigLength,fineFringeMultiplier:3,
+    visualFiberMultiplier:10,staticGroom:true,
    normalLayeredSingleMesh:v32PartMode,gender:'female',
    styleId:chosen.styleId,
    volumeProfile:v32PartMode?v32Parts.female.hairVolume:'natural',
    color:hairPalette[v32PartMode?v32Parts.female.hairColor:wigColor]||hairPalette.blonde
   });
   models.get('female').face.add(wig.root);wigs.set('female',wig);
+   $('activeHairStyle').textContent='反映済：'+wig.root.userData.hairStyleName+
+    '／'+wig.getReport().rootCount+'束・微細毛10倍';
   persistHeroineFace();
   if(v32PartMode){
    const size=models.get('female').face.geometry.boundingBox.getSize(new THREE.Vector3());
@@ -613,6 +633,10 @@ for(const key of ['Density','Length']){
 $('wigColor').addEventListener('change',()=>{
  wigColor=$('wigColor').value;
  rebuildWig();$('metrics').textContent=JSON.stringify(metrics(),null,2);
+});
+$('quickWigStyle').addEventListener('change',()=>{
+ $('wigStyle').value=$('quickWigStyle').value;
+ $('wigStyle').dispatchEvent(new Event('change',{bubbles:true}));
 });
 $('wigStyle').addEventListener('change',()=>{
  const chosen=synchronizeHeroHairSelection('female',v32Parts.female,$('wigStyle').value);
@@ -783,7 +807,10 @@ function syncFaceControlDisplays(){
 }
 // Reconcile values even when the browser restores a prior form snapshot.
 // This must NOT reset user edits: modelChanges/contactColor remain canonical.
-window.addEventListener('pageshow',syncFaceControlDisplays);
+window.addEventListener('pageshow',()=>{
+ syncFaceControlDisplays();
+ $('quickWigStyle').value=wigStyleId;
+});
 for(const key of [...rebuildKeys,...cosmeticKeys,...angleKeys]){
  const el=$(key);
  el.addEventListener('input',()=>{

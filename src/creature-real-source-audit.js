@@ -30,7 +30,8 @@ export const REAL_SOURCE_ACCEPTANCE=Object.freeze([
  'source→near/mid/farのリトポロジー・ベイクと実機検証'
 ]);
 const sectionalFamilies=new Set(['beast','feline','avian','insect','arachnid','reptile']);
-const protectedIds=new Set(['m005','m006','summon_m005','summon_m006']);
+// m005/m006 are now reconstructable m001 source morphs, not frozen legacy bases.
+const protectedIds=new Set();
 export const REAL_SOURCE_AUDIT=Object.freeze(CREATURE_MASTER_ENTRIES.map(entry=>{
  const plan=CREATURE_RECONSTRUCTION_BY_ID[entry.id];
  if(!plan||!REAL_BASE_CRITERIA[entry.family])
@@ -72,7 +73,7 @@ export const REAL_SOURCE_SUMMARY=Object.freeze({
 export function realSourceAuditFor(id){
  return REAL_SOURCE_BY_ID[id]||null;
 }
-if(REAL_SOURCE_SUMMARY.total!==108||REAL_SOURCE_SUMMARY.protected!==4||
+if(REAL_SOURCE_SUMMARY.total!==108||REAL_SOURCE_SUMMARY.protected!==0||
    REAL_SOURCE_SUMMARY.realSourceApproved!==0||
    Object.keys(REAL_SOURCE_BY_ID).length!==108)
  throw Error('Real-source verification counts are inconsistent');

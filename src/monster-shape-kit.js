@@ -181,10 +181,50 @@ export function createSculpture(spec,detail='high'){
      name,rough:.91,metal:shade==='metal'?.54:0
    }));
  };
- const tube=(parent,shade,points,radius=.04)=>{
+ const tube=(parent,shade,points,radius=.04,{
+   name=null,capEnds=false,taper=1
+ }={})=>{
    const curve=new THREE.CatmullRomCurve3(points.map(V));
    const [segments,radial]=resolution.tube;
-   return own(attach(parent,new THREE.TubeGeometry(curve,segments,radius,radial,false),shade));
+   const geo=new THREE.TubeGeometry(curve,segments,radius,radial,false);
+   // Skinned tails and organic necks are NOT open pipes. Rebuild tapered
+   // rings in place, then add real triangles closing both extremities.
+   if(capEnds||taper!==1){
+     const p=geo.getAttribute('position');
+     for(let row=0;row<=segments;row++){
+       const t=row/segments,center=curve.getPointAt(t);
+       const width=1+(taper-1)*(t*t*(3-2*t));
+       for(let j=0;j<=radial;j++){
+         const i=row*(radial+1)+j;
+         p.setXYZ(i,center.x+(p.getX(i)-center.x)*width,
+           center.y+(p.getY(i)-center.y)*width,
+           center.z+(p.getZ(i)-center.z)*width);
+       }
+     }
+     if(capEnds){
+       const positions=Array.from(p.array),uv=Array.from(geo.getAttribute('uv').array);
+       const index=Array.from(geo.getIndex().array);
+       const first=positions.length/3;positions.push(...curve.getPointAt(0).toArray());uv.push(.5,0);
+       const last=positions.length/3;positions.push(...curve.getPointAt(1).toArray());uv.push(.5,1);
+       const end=segments*(radial+1);
+       for(let j=0;j<radial;j++){
+         index.push(first,j+1,j);
+         index.push(last,end+j,end+j+1);
+       }
+       geo.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
+       geo.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
+       geo.setIndex(index);
+     }else p.needsUpdate=true;
+     geo.computeVertexNormals();
+     geo.computeBoundingSphere();
+   }
+   const mesh=own(attach(parent,geo,shade,{name:name||shade}));
+   if(capEnds){
+     mesh.userData.cappedTubularSkin=true;
+     mesh.userData.endCapTriangles=radial*2;
+     mesh.userData.tailTaper=taper;
+   }
+   return mesh;
  };
  /** Smooth continuous tapered joint between shoulder and skull; bury the
   * broad end in the body and the narrow end inside the head.
@@ -226,7 +266,7 @@ export function createSculpture(spec,detail='high'){
   * Station order is nose (+Z) -> tail (-Z). Animated parts remain separate.
   */
  const axialLoft=(parent,shade,stations,{name='axial-anatomical-source',
-   rough=.78,ribbing=.012,faceSculpt=false}={})=>{
+   rough=.78,ribbing=.012,faceSculpt=false,capEnds=false}={})=>{
    if(!Array.isArray(stations)||stations.length<3||
      !stations.every(p=>Number.isFinite(p.z)&&Number.isFinite(p.y)&&
        Number.isFinite(p.rx)&&p.rx>0&&Number.isFinite(p.ry)&&p.ry>0))
@@ -267,6 +307,19 @@ export function createSculpture(spec,detail='high'){
      const a=i*(radial+1)+j,b=a+radial+1;
      indices.push(a,b,a+1,a+1,b,b+1);
    }
+   if(capEnds){
+     // Torso has a genuine closed hull, not just a two-sided open sleeve.
+     const front=vertex.length/3;
+     vertex.push(0,stations[0].y,stations[0].z);uv.push(.5,0);
+     const back=vertex.length/3;
+     const last=stations[stations.length-1];
+     vertex.push(0,last.y,last.z);uv.push(.5,1);
+     const lastRow=(count-1)*(radial+1);
+     for(let j=0;j<radial;j++){
+       indices.push(front,j,j+1);
+       indices.push(back,lastRow+j+1,lastRow+j);
+     }
+   }
    const geo=new THREE.BufferGeometry();
    geo.setAttribute('position',new THREE.Float32BufferAttribute(vertex,3));
    geo.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
@@ -282,6 +335,10 @@ export function createSculpture(spec,detail='high'){
    mesh.userData.axialAnatomy=true;
    mesh.userData.anatomicalStations=stations.length;
    mesh.userData.proceduralSource=true;
+   if(capEnds){
+     mesh.userData.closedAnatomicalHull=true;
+     mesh.userData.anatomicalEndCaps=radial*2;
+   }
    return mesh;
  };
  /** Anatomical quadruped muscle surface, in existing articulated joint space.
@@ -324,6 +381,132 @@ export function createSculpture(spec,detail='high'){
    const mesh=own(attach(parent,geo,shade,{name,rough:.86,metal:0}));
    mesh.userData.anatomicalLimb=true;
    return mesh;
+ };
+ /**
+  * One anatomical skin for each cat leg (hip -> elbow/stifle -> ankle -> paw).
+  * Existing articulated pivots skin one continuous surface rather than
+  * stacking cylinders at moving joints.
+  */
+ const felineContinuousLimb=(leg,distal,toe,{fore=true,side=1,name='feline-continuous-limb'}={})=>{
+   if(!leg||!distal||!toe||!leg.parent)
+     throw Error('Feline limb requires torso, hip, knee and paw joints');
+   // The broad proximal rings remain inside the torso and the distal rings
+   // continue into the paw. No separate seam cover geometry is required.
+   const sections=fore?[
+     // Narrow joint root is buried in the torso, not a visible open pipe.
+     [.72,.018,.062,.077],[.59,.022,.126,.158],[.43,.040,.185,.205],
+     [.27,-.020,.184,.188],[.13,-.065,.150,.152],
+     [.025,-.087,.129,.132],[-.115,-.083,.112,.115],
+     [-.255,-.020,.097,.111],[-.380,.057,.099,.112],
+     [-.479,.147,.112,.139],[-.551,.192,.119,.142],
+     [-.587,.205,.070,.100]
+   ]:[
+     // From inside the pelvis along a real gluteal->femur muscle curve.
+     // Previous z=-.185 root sat OUTSIDE the rear body's narrow croup.
+     [.77,.175,.057,.074],[.64,.105,.112,.141],
+     [.49,-.028,.184,.205],[.34,-.105,.205,.218],
+     [.27,-.015,.204,.197],[.13,.128,.161,.152],
+     [.025,.168,.137,.142],[-.115,.132,.115,.119],
+     [-.255,.000,.099,.113],[-.380,-.109,.090,.106],
+     [-.479,.143,.109,.128],[-.551,.192,.118,.141],
+     [-.587,.210,.070,.102]
+   ];
+   const radial=detail==='source'?48:detail==='high'?32:20;
+   const steps=detail==='source'?6:detail==='high'?4:2;
+   const vertices=[],uv=[],indices=[],weights=[],boneIndices=[];
+   const smooth=t=>{const x=Math.max(0,Math.min(1,t));return x*x*(3-2*x);};
+   for(let row=0;row<sections.length-1;row++)
+     for(let step=0;step<steps;step++){
+       const t=smooth(step/steps),a=sections[row],b=sections[row+1];
+       const y=a[0]+(b[0]-a[0])*t,z=a[1]+(b[1]-a[1])*t;
+       const rx=(a[2]+(b[2]-a[2])*t)*.81;
+       const rz=(a[3]+(b[3]-a[3])*t)*.80;
+       // The upper skin is ANCHORED TO THE TORSO, not to the rotating
+       // hip. The old three-leg-bone version rotated its cut edge out of
+       // the croup during a step, exposing a stump. Smooth shoulder/hip
+       // deform into thigh -> hock -> paw without independent joint tubes.
+       const torsoLock=smooth((y-.19)/.45);
+       const knee=smooth((.23-y)/.34);
+       const paw=smooth((-.34-y)/.23);
+       const w0=torsoLock;
+       const w1=(1-torsoLock)*(1-knee);
+       const w2=(1-torsoLock)*knee*(1-paw);
+       const w3=(1-torsoLock)*knee*paw;
+       for(let j=0;j<=radial;j++){
+         const theta=j/radial*2*Math.PI;
+         const muscle=1+.028*Math.cos(theta*3)*
+           Math.sin(Math.PI*(row+t)/(sections.length-1));
+         // Scapula and femoral head start medially INSIDE the torso,
+         // blending laterally into the lower limb, not a cut tube.
+         const medial=.100*smooth((y-.19)/.49);
+         vertices.push(Math.cos(theta)*rx*muscle-side*medial,y,
+           z+Math.sin(theta)*rz*muscle);
+         uv.push(j/radial,(row+t)/(sections.length-1));
+         boneIndices.push(0,1,2,3);
+         weights.push(w0,w1,w2,w3);
+       }
+     }
+   const last=sections[sections.length-1];
+   for(let j=0;j<=radial;j++){
+     const theta=j/radial*2*Math.PI;
+     vertices.push(Math.cos(theta)*last[2]*.81,last[0],
+       last[1]+Math.sin(theta)*last[3]*.80);
+     uv.push(j/radial,1);
+     boneIndices.push(0,1,2,3);weights.push(0,0,0,1);
+   }
+   const bands=(sections.length-1)*steps;
+   for(let row=0;row<bands;row++)for(let j=0;j<radial;j++){
+     const a=row*(radial+1)+j,b=a+radial+1;
+     indices.push(a,b,a+1,a+1,b,b+1);
+   }
+   // Close BOTH ends in the one skinned shell: a double-sided material
+   // cannot cover the missing triangles that looked like black pipes.
+   const rootCenter=vertices.length/3;
+   // Cap centre shares the same medial blend as the first ring.
+   vertices.push(-side*.100,sections[0][0]+.026,sections[0][1]);
+   uv.push(.5,0);boneIndices.push(0,1,2,3);weights.push(1,0,0,0);
+   const pawCenter=vertices.length/3;
+   vertices.push(0,last[0]-.018,last[1]);
+   uv.push(.5,1);boneIndices.push(0,1,2,3);weights.push(0,0,0,1);
+   const lastStart=bands*(radial+1);
+   for(let j=0;j<radial;j++){
+     indices.push(rootCenter,j+1,j);
+     indices.push(pawCenter,lastStart+j,lastStart+j+1);
+   }
+   const geo=new THREE.BufferGeometry();
+   geo.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));
+   geo.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
+   geo.setAttribute('skinIndex',new THREE.Uint16BufferAttribute(boneIndices,4));
+   geo.setAttribute('skinWeight',new THREE.Float32BufferAttribute(weights,4));
+   geo.setIndex(indices);geo.computeVertexNormals();geo.computeBoundingSphere();
+   const bone0=new THREE.Bone(),bone1=new THREE.Bone(),
+     bone2=new THREE.Bone(),bone3=new THREE.Bone();
+   bone0.name=name+'-torso-anchor';
+   bone1.name=name+'-hip';bone2.name=name+'-stifle';
+   bone3.name=name+'-metapodial';
+   // Bone0 does NOT inherit hip rotation. This fixes the apparent
+   // shoulder/haunch separation in idle, walk, run and turn animations.
+   leg.parent.add(bone0);leg.add(bone1);distal.add(bone2);toe.add(bone3);
+   const skin=new THREE.SkinnedMesh(geo,material(tone.skin,
+     {rough:.86,metal:0},spec,'skin',detail));
+   skin.name=name;skin.castShadow=true;skin.receiveShadow=true;
+   skin.frustumCulled=false;
+   skin.userData.ownedGeometry=true;
+   skin.userData.anatomicalLimb=true;
+   skin.userData.felineContinuousSurface=true;
+   skin.userData.skinningBones=4;
+   skin.userData.jointTopology='torso-anchored-closed-rings-four-bone-weights';
+   skin.userData.torsoAnchoredProximalSkin=true;
+   skin.userData.felineSealedTop=true;
+   skin.userData.felineSealedBottom=true;
+   skin.userData.felineEndCapTriangles=radial*2;
+   skin.userData.felineRootBuriedInTorso=true;
+   skin.userData.felineMedialMuscleOrigin=true;
+   skin.userData.felineHipSculpt=fore?'scapular-fascia':'gluteal-femur-contour';
+   leg.add(skin);
+   root.updateMatrixWorld(true);
+   skin.bind(new THREE.Skeleton([bone0,bone1,bone2,bone3]));
+   return skin;
  };
  /** Buried curved horn/ivory root with continuous ridged tapered skin. */
  const curvedHorn=(parent,shade,rootPoint,elbow,tip,radius,{name='beast-keratin'}={})=>{
@@ -733,7 +916,7 @@ export function createSculpture(spec,detail='high'){
  };
  root.userData.detail=detail;
  return {root,pivots,group,sphere,rock,bone,spike,rootedSpike,seamHem,tube,bridge,
-   axialLoft,limbLoft,curvedHorn,foxPinna,recessCanineEyeSockets,recessedCanineAlmondEye,anatomicalLoft,fur,skinnedFur,bandage,fin,eyes,claws,ring,fine,colors};
+   axialLoft,limbLoft,felineContinuousLimb,curvedHorn,foxPinna,recessCanineEyeSockets,recessedCanineAlmondEye,anatomicalLoft,fur,skinnedFur,bandage,fin,eyes,claws,ring,fine,colors};
 }
 export function disposeMonsterSculpture(model){
  if(!model)return;

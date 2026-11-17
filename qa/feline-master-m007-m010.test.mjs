@@ -1,5 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import * as THREE from 'three';
+import {startMonsterAction,animateMonsterModel} from '../src/monster-animation.js';
 import {MONSTER_BY_ID} from '../src/monster-catalog.js';
 import {FELINE_SOURCE_MODEL,FELINE_QUALITY_WAVE_IDS,
  felineMasterVariant,felineAnatomicalSections}
@@ -16,8 +18,8 @@ const mesh=model=>{const all=[];model.traverse(x=>{if(x.isMesh)all.push(x)});ret
 const get=(m,n)=>mesh(m).find(x=>x.name===n);
 test('m007 is a lean cat master with independently generated lion/leopard/tiger morphs',()=>{
  assert.deepEqual(FELINE_QUALITY_WAVE_IDS,ids);
- assert.equal(felineMasterVariant('m006'),null,
-  'protected original black panther is not a master donor');
+ assert.equal(felineMasterVariant('m006')?.physicalCloneMother,'m001',
+  'black panther now inherits the wolf-king physical mesh');
  const w=ids.map(id=>felineMasterVariant(id));
  assert.ok(w.every(v=>v.source===FELINE_SOURCE_MODEL));
  assert.ok(w.every(v=>v.qualityDonor==='m001'&&
@@ -45,7 +47,7 @@ test('m007 is a lean cat master with independently generated lion/leopard/tiger 
   }),'cat torso must be a morphological transform of m001 eight stations');
   assert.ok(stations.every((x,i)=>i===0||stations[i-1].z>x.z));
   const record=registeredMonsterModel(p.id);
-  assert.equal(record.version,'m001-quality-derived-feline-v4-20261117');
+  assert.equal(record.version,'m007-torso-anchor-tail-v12-20261118');
   assert.equal(record.mobileVisualApproved,false,
    'Android visual signoff is not implied by geometry QA');
  }
@@ -83,28 +85,70 @@ test('four actual 3D feline sculpts have narrow heads and continuous cat anatomy
      REFERENCE_CROWN_QUALITY.high.rows);
    assert.equal(model.userData.felineReferenceCrownLayers,
      REFERENCE_CROWN_QUALITY.high.layers);
-   assert.equal(model.userData.felineReferenceSeamCount,4);
-   assert.equal(mesh(model).filter(x=>x.userData.m001ReferenceSeam).length,4,
-    'm001-style shoulder/hip bridge must be actual skin meshes');
+   assert.equal(model.userData.felineReferenceSeamCount,0);
+   assert.equal(model.userData.felineContinuousLimbCount,4);
+   assert.equal(model.userData.felineJointFillersRemoved,true);
+   assert.equal(mesh(model).filter(x=>x.userData.m001ReferenceSeam).length,0,
+    'no cylindrical shoulder or hip joint fillers');
+   assert.equal(body.userData.felineMusclesSculptedIntoTrunk,true);
+   assert.equal(body.userData.closedAnatomicalHull,true);
+   assert.ok(body.userData.anatomicalEndCaps>0);
+   const tailRoot=get(model,'feline-rooted-tail-'+id);
+   const tailMid=get(model,'feline-tail-middle-'+id);
+   for(const part of [tailRoot,tailMid]){
+    assert.ok(part?.userData.felineTailClosedSource,
+     'rear hole came from an open cat tail TubeGeometry: '+id);
+    assert.equal(part.userData.closedAnatomicalHull,true,
+     'cat tail needs a physically closed axial shell and covered ends: '+id);
+    assert.ok(part.userData.cappedTubularSkin);
+    const radials=part.userData.endCapTriangles;
+    assert.ok(radials>=16,'missing actual two cap fans');
+   }
+   for(const limb of ['frontL','frontR','rearL','rearR']){
+    const skin=get(model,'feline-continuous-skin-'+limb);
+    assert.equal(skin?.userData.felineMedialMuscleOrigin,true);
+   }
+   // The v10 tail was technically sealed but too short/downward to
+   // register as a silhouette. Assert tail projects outside the croup.
+   assert.equal(p.tail.userData.felineTailSilhouetteRestored,true);
+   for(const action of ['idle','walk','run','attack']){
+    startMonsterAction(model,action,0);
+    animateMonsterModel(model,action==='attack'?.4:.22);
+    model.updateMatrixWorld(true);
+    const bodyBack=new THREE.Box3().setFromObject(body).min.z;
+    const tip=p.tailTip.getWorldPosition(new THREE.Vector3());
+    const scale=model.userData.homeScale||1;
+    const reach=(bodyBack-tip.z)/scale;
+    assert.ok(reach>.72,
+     id+' '+action+' lost tail outside croup: projected distance '+reach);
+    assert.ok(tip.y>.10*scale,
+     id+' '+action+' tail hidden under terrain');
+   }
    assert.equal(model.userData.felineMasterVariant,variant.archetype);
    assert.equal(model.userData.felineFaceWidthRatio,variant.headWidth);
    assert.equal(model.userData.felineTorsoWidth,variant.torsoWidth);
    const fur=p.head.children.filter(x=>x.isMesh&&x.userData.furStrands>0);
-   assert.equal(fur.length,3,
-    'cat source coat should stay merged in 3 shade batches');
+   assert.equal(fur.length,4,
+    'three shade-grouped coat meshes plus one batched whisker mesh');
+   assert.equal(model.userData.felineVisibleWhiskers,8);
+   assert.equal(get(model,'feline-long-vibrissae-'+id)?.userData.felineWhiskers,8);
    assert.ok(model.userData.felineFurGuides>800,
     'cat hair must be rooted in 3D on cranial surface');
    for(const limb of ['frontL','frontR','rearL','rearR']){
-    assert.ok(get(model,'beast-upper-limb-leg'+limb)||get(model,'beast-upper-limb-'+limb),
-      'cat upper limb must be a lofted source mesh: '+id+' '+limb);
+    const skin=get(model,'feline-continuous-skin-'+limb);
+    assert.ok(skin?.isSkinnedMesh&&skin.userData.felineContinuousSurface,
+      'cat must have one articulated anatomical shell: '+id+' '+limb);
+    assert.equal(skin.skeleton.bones.length,4);
     assert.ok(p['toe'+limb]?.userData.felinePad,
       'paws must have articulated digitigrade toe pads: '+id+' '+limb);
    }
    const pos=rhinarium.geometry.getAttribute('position');
    let noseHalf=0;
    for(let i=0;i<pos.count;i++)noseHalf=Math.max(noseHalf,Math.abs(pos.getX(i)));
-   assert.ok(Math.abs(noseHalf-variant.noseWidth)<.007,
-    'wet nose must match each feline master proportion: '+id);
+   assert.ok(noseHalf<variant.noseWidth*.70&&noseHalf>variant.noseWidth*.38,
+    'wet nose must be a smaller upside-down triangle: '+id);
+   assert.equal(rhinarium.userData.felineInvertedTriangle,true);
+   assert.equal(rhinarium.userData.felineNoseLift,.044);
    records.push({id,noseHalf,headWidth:variant.headWidth,
       torsoWidth:variant.torsoWidth,fur:fur.reduce((n,x)=>n+x.userData.furStrands,0)});
   }finally{disposeMonsterSculpture(model);}
@@ -112,7 +156,7 @@ test('four actual 3D feline sculpts have narrow heads and continuous cat anatomy
  assert.ok(records.find(r=>r.id==='m009').torsoWidth <
     records.find(r=>r.id==='m008').torsoWidth*.85);
 });
-test('protected m006 and low LOD remain free of new heavy feline coat',()=>{
+test('m006 black panther uses the m001 base, while all crowd LODs stay cheap',()=>{
  for(const id of ['m006',...ids]){
   const model=createMonsterModel(MONSTER_BY_ID[id],{detail:'low'});
   try{
@@ -120,14 +164,20 @@ test('protected m006 and low LOD remain free of new heavy feline coat',()=>{
    assert.equal(model.userData.felineMasterSource,undefined);
    assert.equal(model.userData.felineReferenceFurDensityMultiplier,undefined);
    assert.equal(model.userData.felineReferenceSeamCount,undefined);
-   if(id!=='m006')assert.equal(model.userData.pivots.toefrontL,undefined,
-     'low crowd geometry must not allocate high-detail toe groups: '+id);
+   assert.equal(model.userData.pivots.toefrontL,undefined,
+    'low crowd geometry must not allocate high-detail toe groups: '+id);
+   const legs=mesh(model).filter(x=>x.name.startsWith('feline-low-onepiece-leg-'));
+   assert.equal(legs.length,4,id+' crowd LOD must retain four real limbs');
+   assert.ok(legs.every(x=>!x.isSkinnedMesh),
+    'crowd LOD uses compact static geometry, not heavy skinning');
   }finally{disposeMonsterSculpture(model);}
  }
- const protectedModel=createMonsterModel(MONSTER_BY_ID.m006,{detail:'high'});
+ const panther=createMonsterModel(MONSTER_BY_ID.m006,{detail:'high'});
  try{
-  assert.equal(protectedModel.userData.felineMasterSource,undefined);
-  assert.equal(get(protectedModel,'feline-master-rhinarium-m006'),undefined);
-  assert.ok(get(protectedModel,'nose'),'original m006 nose remains');
- }finally{disposeMonsterSculpture(protectedModel);}
+  assert.equal(panther.userData.physicalCloneMother,'m001');
+  assert.equal(panther.userData.clonedFromSpecies,'m001');
+  assert.equal(get(panther,'organic-cranium-m006')?.userData.m001SourceDonor,'M001_CRANIUM_RINGS');
+  assert.ok(get(panther,'species-shoulder-rib-pelvis-m006')?.userData.closedAnatomicalHull);
+  assert.equal(get(panther,'feline-master-rhinarium-m006')?.userData.felineInvertedTriangle,true);
+ }finally{disposeMonsterSculpture(panther);}
 });

@@ -12,10 +12,22 @@ on:
       - 'ops/resume-c01-stage3-through5-20261114.trigger'
       - 'ops/owner-request-stage4-through10-free-20261115.trigger'
   workflow_dispatch:
+    inputs:
+      start_stage:
+        description: 'First Chapter 1 stage (c01-s01 through c01-s10)'
+        type: string
+        required: false
+        default: c01-s05
+      through_stage:
+        description: 'Last Chapter 1 stage'
+        type: string
+        required: false
+        default: c01-s10
 
 permissions:
   contents: write
   actions: read
+  issues: write
 
 concurrency:
   group: chapter1-free-one-batch-per-day
@@ -50,6 +62,9 @@ jobs:
           node qa/story-c01-stage45-generation-guard.test.mjs
           node qa/story-generation-fallback.test.mjs
           node qa/story-free-spend-policy.test.mjs
+          # Full compact and new-original scene QA requires main's module graph.
+          # Run BEFORE switching to the historical review-only branch.
+          node qa/story-stage-art-sourcing-boundary.test.mjs
       - name: Fail before generation unless Free confirmed and both secrets available
         shell: bash
         env:
@@ -91,31 +106,104 @@ jobs:
           git show origin/main:scripts/generate-story-chapter1-free-batch.mjs > scripts/generate-story-chapter1-free-batch.mjs
           git show origin/main:src/story-generation-fallback.js > src/story-generation-fallback.js
           git show origin/main:data/story-generation-spend-policy.json > data/story-generation-spend-policy.json
+          git show origin/main:data/batch-center-switches.json > data/batch-center-switches.json
+          git show origin/main:src/story-stage-beats-v2.js > src/story-stage-beats-v2.js
+          git show origin/main:scripts/story-chatgpt-fallback-handoff.mjs > scripts/story-chatgpt-fallback-handoff.mjs
           # The review branch predates the compact format: always restore its
           # canonical scene selection manifest from main before any provider call.
           git show origin/main:data/story-compact-20chapters.json > data/story-compact-20chapters.json
+          # Review branch may predate new-only art sourcing; pin its CURRENT main rule.
+          git show origin/main:src/story-art-sourcing-policy.js > src/story-art-sourcing-policy.js
           git show origin/main:src/story-c01-stage45-art-guard.js > src/story-c01-stage45-art-guard.js
           git show origin/main:qa/story-chapter1-draft-regression.mjs > qa/story-chapter1-draft-regression.mjs
           git show origin/main:assets/story/stage-manifests/c01-s04.manifest.json > assets/story/stage-manifests/c01-s04.manifest.json
           git show origin/main:assets/story/stage-manifests/c01-s05.manifest.json > assets/story/stage-manifests/c01-s05.manifest.json
           git show origin/main:src/story-chapter1-provisional-live.js > src/story-chapter1-provisional-live.js
           git show origin/main:src/story-panel-registered-art.js > src/story-panel-registered-art.js
+          # The review branch predates these source files; main's panel resolver
+          # imports BOTH. Without them the next Free batch dies before generation.
+          git show origin/main:src/story-new-original-art.js > src/story-new-original-art.js
+          git show origin/main:src/story-archive-restored-art.js > src/story-archive-restored-art.js
           while IFS= read -r asset; do
             mkdir -p "$(dirname "$asset")"
             git show "origin/main:$asset" > "$asset"
           done < <(git ls-tree -r --name-only origin/main -- assets/story/chapter1-provisional-live)
+          # Preserve exact native SHA-proven stage5+ originals as registered.
+          # Otherwise Free generation may re-request the same five images.
+          while IFS= read -r asset; do
+            mkdir -p "$(dirname "$asset")"
+            git show "origin/main:$asset" > "$asset"
+          done < <(git ls-tree -r --name-only origin/main -- assets/story/new-originals)
           node --check scripts/generate-story-chapter1-free-batch.mjs
+      - name: Prove review branch sees the identical registered NEW source images
+        shell: bash
+        run: |
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          import fs from 'node:fs';
+          import crypto from 'node:crypto';
+          import {NEW_STORY_ORIGINAL_ART} from './src/story-new-original-art.js';
+          import {registeredStoryPanelAsset} from './src/story-panel-registered-art.js';
+          import {oldStoryArtReuseAllowed} from './src/story-art-sourcing-policy.js';
+          for(const [key,row] of Object.entries(NEW_STORY_ORIGINAL_ART)){
+            const [stageId,comicEdition,protagonistGender,id]=key.split('|');
+            assert(!oldStoryArtReuseAllowed(stageId), 'New original cannot belong to reuse-only stage');
+            assert.equal(row.provenanceVerified,true,key);
+            assert.equal(row.nativeQAComplete,true,key);
+            assert.equal(row.visualP0Approved,false,key);
+            assert.equal(registeredStoryPanelAsset({stageId,comicEdition,protagonistGender,id}),row.asset,key);
+            const raw=fs.readFileSync(row.asset.slice(2));
+            assert.equal(crypto.createHash('sha256').update(raw).digest('hex'),row.sha256,key);
+          }
+          console.log('Review workspace has',Object.keys(NEW_STORY_ORIGINAL_ART).length,
+            'exact SHA-verified stage5+ real originals; duplicate Free calls forbidden');
+          NODE
       - name: Audit exact native-stage gaps for stages 1 through 4
         run: node scripts/audit-story-c01-s01-s04-compact.mjs
       - name: Count stage1 through later stage missing real artworks
-        run: node scripts/generate-story-chapter1-free-batch.mjs --mode plan --start-stage c01-s01 --through-stage c01-s10
+        env:
+          START_STAGE: ${{ inputs.start_stage || 'c01-s05' }}
+          THROUGH_STAGE: ${{ inputs.through_stage || 'c01-s10' }}
+        run: node scripts/generate-story-chapter1-free-batch.mjs --mode plan --start-stage "$START_STAGE" --through-stage "$THROUGH_STAGE"
       - name: Generate real review images with strict budget and page commits
         env:
+          START_STAGE: ${{ inputs.start_stage || 'c01-s05' }}
+          THROUGH_STAGE: ${{ inputs.through_stage || 'c01-s10' }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_WORKERS_AI_API_TOKEN: ${{ secrets.CLOUDFLARE_WORKERS_AI_API_TOKEN }}
           CLOUDFLARE_FREE_PLAN_CONFIRMED: ${{ vars.CLOUDFLARE_FREE_PLAN_CONFIRMED }}
           CLOUDFLARE_CHAPTER1_DAILY_ESTIMATE_CAP: '7500'
-        run: node scripts/generate-story-chapter1-free-batch.mjs --mode generate --max-pages 12 --start-stage c01-s01 --through-stage c01-s10
+        run: node scripts/generate-story-chapter1-free-batch.mjs --mode generate --max-pages 12 --start-stage "$START_STAGE" --through-stage "$THROUGH_STAGE"
+      - name: Route Cloudflare Free quota or outage to ChatGPT Images (generation REQUEST only)
+        if: always()
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          handoff=qa-reports/story-stage-production/chapter1-free-render/chatgpt-handoff.json
+          if [ ! -s "$handoff" ]; then
+            echo "No Free quota/outage ChatGPT handoff in this batch"
+            exit 0
+          fi
+          reason=$(jq -r '.reason // empty' "$handoff")
+          shot=$(jq -r '.shotKey // empty' "$handoff")
+          # No safety-moderation bypass or paid fallback. The request only
+          # guides user-initiated ChatGPT Images through the ChatGPT app.
+          node scripts/story-chatgpt-fallback-handoff.mjs \
+            --reason "$reason" --shot-key "$shot" \
+            --output qa-reports/story-stage-production/chapter1-free-render/chatgpt-precise-handoff.json
+          title=$(jq -r '.issueTitle' qa-reports/story-stage-production/chapter1-free-render/chatgpt-precise-handoff.json)
+          existing=$(gh issue list --state open --limit 200 --json number,title |
+            jq -r --arg title "$title" '.[] | select(.title==$title) | .number' | head -n 1)
+          if [ -n "$existing" ]; then
+            echo "ChatGPT Images handoff already pending in issue #$existing" >> "$GITHUB_STEP_SUMMARY"
+          else
+            gh issue create --title "$title" \
+              --body-file qa-reports/story-stage-production/chapter1-free-render/chatgpt-precise-handoff.md
+            echo "ChatGPT Images generation request created: $title" >> "$GITHUB_STEP_SUMMARY"
+          fi
+          echo "No automatic ChatGPT API calls, image bytes or P0 approval." >> "$GITHUB_STEP_SUMMARY"
       - name: Independently regress every canonical image and physical actor master (NO automatic visual approval)
         if: always()
         run: |

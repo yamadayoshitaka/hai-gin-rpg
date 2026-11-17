@@ -299,6 +299,23 @@ def main() -> None:
             content = content.replace("town-visit-20261110", stamp)
             file.write_text(content, encoding="utf-8")
 
+    # Stamp the exact deployed source revision on both model-management UIs
+    # as well as tactical combat. A successful Pages action alone cannot prove
+    # the browser received the same HTML revision (mobile CDN/cache regressions).
+    for page_name in ("tactics-wireframe.html", "batch-monitor.html", "batch-pr-preview.html"):
+        public_page = out / page_name
+        if not public_page.is_file():
+            raise RuntimeError("Required public page absent: " + page_name)
+        html = public_page.read_text(encoding="utf-8")
+        if "<head>" not in html:
+            raise RuntimeError("Missing <head> in " + page_name)
+        html = html.replace(
+            "<head>",
+            '<head><meta name="hai-gin-pages-sha" content="' + release_sha + '">',
+            1,
+        )
+        public_page.write_text(html, encoding="utf-8")
+
     (out / ".nojekyll").touch()
     release = {
         "sha": os.environ.get("GITHUB_SHA", "local"),

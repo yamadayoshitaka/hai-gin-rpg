@@ -9,8 +9,15 @@ test('first quality wave physically changes m002/m003/m004, not only metadata',(
   const model=createMonsterModel(MONSTER_BY_ID[id],{detail:'high'});
   try{
    assert.equal(model.userData.referenceGroomWave,
-    id==='m002'?'m001-source-m002':'canine-m002-m004',
+    'm001-full-mane-'+id,
     'm002 must now inherit actual m001 facial coat; later wolves retain their family crown');
+   if(id!=='m002'){
+    assert.equal(model.userData.wolfKingDonorFullMane,true,
+      'all derived wolves must receive the same full m001 groom recipe');
+    assert.equal(model.userData.wolfKingDonorSource,'m001');
+    assert.ok(model.userData.wolfKingDonorStrands>1400,
+      'a thin dorsal strip is not the wolf king mane');
+   }
    const head=model.userData.pivots.head;
    const coats=head.children.filter(x=>x.isMesh&&x.userData.furStrands>0);
    assert.equal(coats.length,3,
@@ -38,7 +45,40 @@ test('first quality wave physically changes m002/m003/m004, not only metadata',(
   }finally{disposeMonsterSculpture(model);}
  }
 });
-test('low LOD and m005/m006 protected donors are not modified',()=>{
+test('m003/m004 wolf mouths use compact opposing dental arcs rather than floating black plates',async()=>{
+ for(const id of ['m003','m004']){
+  const wolf=createMonsterModel(MONSTER_BY_ID[id],{detail:'high'});
+  try{
+   const p=wolf.userData.pivots;
+   const m=[],collect=[];
+   wolf.traverse(n=>{if(n.isMesh)collect.push(n)});
+   const tongue=collect.find(n=>n.name==='quadruped-tongue');
+   const cavity=collect.find(n=>n.name==='quadruped-oral-cavity');
+   assert.ok(tongue&&cavity);
+   assert.ok(cavity.geometry.type!=='SphereGeometry',
+    id+' old black circular mouth-plate still in scene');
+   assert.ok(tongue.position.z<.16,id+' tongue sticks through muzzle');
+   assert.ok(collect.filter(n=>n.userData.wolfShortEmbeddedCanine).length===2);
+   assert.ok(collect.some(n=>n.name===id+'-upper-incisor-0'));
+   assert.ok(collect.some(n=>n.name===id+'-lower-incisor-0'));
+   p.head.updateWorldMatrix(true,true);
+   const THREE=await import('three');
+   const top=new THREE.Vector3(-.013,-.176,.392);
+   const bottom=new THREE.Vector3(-.014,-.047,.148);
+   for(const action of ['idle','walk','attack']){
+    const {startMonsterAction,animateMonsterModel}=
+      await import('../src/monster-animation.js');
+    startMonsterAction(wolf,action,0);animateMonsterModel(wolf,action==='attack'?.42:.14);
+    p.head.updateWorldMatrix(true,true);
+    const a=p.head.localToWorld(top.clone());
+    const b=p.jaw.localToWorld(bottom.clone());
+    assert.ok(a.distanceTo(b)<.35,
+      id+' opposing upper/lower teeth detached in '+action);
+   }
+  }finally{disposeMonsterSculpture(wolf)}
+ }
+});
+test('m005 and m006 use m001 lineage without adding heavy distant LOD hair',()=>{
  for(const id of ['m002','m003','m004','m005','m006']){
   const low=createMonsterModel(MONSTER_BY_ID[id],{detail:'low'});
   try{
@@ -48,7 +88,10 @@ test('low LOD and m005/m006 protected donors are not modified',()=>{
  }
  for(const id of ['m005','m006']){
   const high=createMonsterModel(MONSTER_BY_ID[id],{detail:'high'});
-  try{assert.equal(high.userData.referenceGroomWave,undefined);}
-  finally{disposeMonsterSculpture(high);}
+  try{
+   assert.equal(high.userData.clonedFromSpecies,'m001');
+   if(id==='m005')assert.equal(high.userData.referenceGroomWave,'m001-full-mane-m005');
+   else assert.equal(high.userData.physicalCloneMother,'m001');
+  }finally{disposeMonsterSculpture(high);}
  }
 });

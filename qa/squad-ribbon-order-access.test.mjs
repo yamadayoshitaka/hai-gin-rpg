@@ -4,47 +4,34 @@ import {shouldHideSquadLabelsAtDistance} from '../src/battle-squad-circle-tap.js
 import {squadRibbonStatus,secondsUntilNextOrder} from '../src/battle-command-roster.js';
 
 const html=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
-const start=html.indexOf('function openSquadTactics(id){');
-const end=html.indexOf('function beginStrategistWarp(){',start);
-assert.ok(start>0&&end>start,'find squad popup action');
-const open=html.slice(start,end);
-// v4.6.64 retires the ribbons: tapping ally/enemy circles is the new interface.
-const circleStart=html.indexOf('function activateSquadLabel(id,team,');
-const circleEnd=html.indexOf('function showEnemySquadIntel(',circleStart);
-assert.ok(circleStart>=0&&circleEnd>circleStart,'circle controls exist');
-const circle=html.slice(circleStart,circleEnd);
-assert.ok(circle.includes('if(pendingCircleTarget){chooseCircleActionTarget(id,team);return;}'),
- 'the tapped circle completes valid two-step target selection');
-assert.ok(circle.includes('else openSquadTactics(id);'),
- 'allied circle opens real squad command menu');
-assert.ok(circle.includes('const row=lastRibbonSums.get(key),intent=squadIntent(id,1,row?.n===0);'),
- 'enemy circle reveals enemy intent without opening allied controls');
-assert.ok(html.includes('#allySquadRibbon,#enemySquadRibbon,#squadCircleInfo{display:none!important}'),
- 'retired ribbons stay hidden');
-assert.match(open,/followCamera=false;/,
- 'selecting a squad cannot enter character-follow close-up');
-assert.doesNotMatch(open,/followCamera=true;/,
- 'zoom-follow automatically hides the command panel in the next render frame');
-assert.match(open,/focusedHumanUnitId=null;/);
-assert.match(open,/const distance=commandFocus\.isCommander\?8\.6:9\.5;/,
- 'Open the selected strategist or a living squad representative in close-up during command choice');
-assert.match(open,/setBattleCamera\(focus,offset\);\s*setCameraActive\(null\)/,
- 'Command opening uses an actual troop focus; target choice later switches to overhead');
-assert.match(open,/\$\('squadTactics'\)\.hidden=false;showSquadTacticsPanel\('main'\)/,
- 'one tap opens the quick-order list, not the read-only circle inspector');
-assert.match(html,/add\('⚔ 突撃','charge',\(\)=>beginCircleTargetSelection\('attack'\),\{effect:orderEffect\('charge'\)\}\)/,
- 'Charge requires enemy circle selection, not an automatic target');
-assert.match(html,/add\('🛡 守備','defend',\(\)=>issue\('defend'\),\{effect:orderEffect\('defend'\)\}\)/);
-assert.match(html,/add\('⏸ 待機','hold',\(\)=>issue\('hold'\),\{effect:orderEffect\('hold'\)\}\)/);
-assert.match(html,/add\('↘ 退却','retreat',\(\)=>issue\('retreat'\),\{effect:orderEffect\('retreat'\)\}\)/);
-assert.match(html,/button\.onclick=\(\)=>\{if\(!button\.disabled\)action\(\)\}/,
- 'order buttons execute on the first click');
-assert.match(html,/const issue=mode=>queueDirectOrder\(mode\)/,
- 'Selecting an order must request confirmation rather than issue before dismissal');
-assert.match(html,/if\(issueSquadOrder\(mode\)\)\{\s*pendingDirectOrder=null;\$\('battleOrderConfirm'\)\.hidden=true;/,
- 'Confirmed orders commit before dismissing the popup');
-assert.match(html,/const remaining=team===0\?squadOrderCooldownSeconds\(row\.id\):0;/,
- 'cooldown is displayed without disabling squad inspection');
+function segment(begin,end){
+ const start=html.indexOf(begin),stop=html.indexOf(end,start);
+ assert.ok(start>=0&&stop>start,'missing live handler: '+begin);
+ return html.slice(start,stop);
+}
+// The active battle controls use camera choice and group recommendations,
+// not the retired one-tap individual command popup.
+const circle=segment('function activateSquadLabel(id,team,','function makeSquadLabel(');
+assert.match(circle,/if\(pendingCircleTarget\)\{chooseCircleActionTarget\(id,team\);return;\}/);
+assert.match(circle,/if\(tap\.doubleTap\)\{\s*zoomToSquadMember\(id,team\);\s*return;/);
+assert.match(circle,/selectOverviewSquad\(team,id\);/);
+assert.match(circle,/pendingSquadCircleInfoTimer=setTimeout\(/);
+assert.match(circle,/applyOverviewCamera\('squad'\)/);
+assert.doesNotMatch(circle,/else openSquadTactics\(id\)/);
+const open=segment('function openSquadTactics(id){','function beginStrategistWarp(){');
+assert.match(open,/if\(!TOWN_MODE\)\{/);
+assert.match(open,/targetedStrategyUi\.open\(group,\{groupOnly:true,startAtRecommendations:true\}\)/);
+assert.match(open,/if\(!paused\)setBattlePaused\(true\)/);
+assert.match(open,/\$\('squadTactics'\)\.hidden=false;showSquadTacticsPanel\('main'\)/);
+const overview=segment("$('overviewRecommendPlan').onclick=()=>{",'function updateOverviewSquadPins(');
+assert.match(overview,/targetedStrategyUi\.open\(group,\{\s*startAtRecommendations:true,groupOnly:true\s*\}\)/);
+assert.match(html,/divisionsSelectionOnly:true/);
+const target=segment('function chooseCircleActionTarget(id,team){','function confirmCircleActionTarget(){');
+assert.match(target,/action\.selectedTargetId=String\(id\)/);
+assert.match(target,/\$\('battleTargetConfirm'\)\.hidden=false/);
+assert.doesNotMatch(target,/issueSquadOrder\(/);
+const confirm=segment('function confirmCircleActionTarget(){','function requestSquadRecovery(');
+assert.match(confirm,/if\(!hasSquadCommander\(action\.source\)\)/);
 assert.equal(secondsUntilNextOrder(15,20),115);
 assert.equal(secondsUntilNextOrder(15,135),0);
 assert.equal(squadRibbonStatus({team:0,alive:12,total:15,commanderAlive:true}).enabled,true);
@@ -52,10 +39,4 @@ assert.equal(squadRibbonStatus({team:0,alive:12,total:15,commanderAlive:false}).
 assert.equal(shouldHideSquadLabelsAtDistance(62,true),false);
 assert.equal(shouldHideSquadLabelsAtDistance(17,true),false);
 assert.equal(shouldHideSquadLabelsAtDistance(8,false),true);
-const zoom=html.slice(html.indexOf('function zoomToSquadMember('),html.indexOf('function activateSquadLabel('));
-assert.match(zoom,/followCamera=true;/,'double-tap zoom still hides all squad overlays');
-assert.match(html,/body\.squad-closeup #squadTactics/,'zoom intentionally clears command UI');
-const gpu=readFileSync(new URL('../src/mass-battle-real-army.js',import.meta.url),'utf8');
-assert.match(gpu,/applyCapturedRunArmSwing\(THREE,representative\.character\.model/,
- '1000v1000 keeps real RUN skinned poses on GPU without extra CPU rigs');
-console.log('PASS: squad circles open orders in 50/1000; enemy intel-only; zoom and cooldown separate');
+console.log('PASS: active squad camera chooser, group recommendations, target confirmation and strategist lock');

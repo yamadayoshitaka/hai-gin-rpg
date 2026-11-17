@@ -7,9 +7,11 @@
 import {mangaForStage} from './story-stage-manga.js';
 import {registeredStoryPanelAsset,storySheetCrop,storyArtDisplayUrl} from './story-panel-registered-art.js';
 import {provisionalRegisteredStoryPanel} from './story-provisional-registered-art.js';
+import {restoredStoryArchivePanel} from './story-archive-restored-art.js';
+import {oldStoryArtReuseAllowed} from './story-art-sourcing-policy.js';
 import {chapter1ProvisionalLivePanel} from './story-chapter1-provisional-live.js';
 import {comicPageAsset} from './story-chapter-comic.js';
-import {compactComicForStage} from './story-compact-comic.js?v=story-20261117-reader1';
+import {compactComicForStage} from './story-compact-comic.js?v=story-20261117-stage5-newonly';
 import {STORY_KEY_PEOPLE} from './story-cinematic.js';
 import {renderStoryRubyText} from './story-ruby-display.js';
 import {fantasyCueForMangaPanel} from './fantasy-scene-score.js';
@@ -100,6 +102,13 @@ export function createMangaViewer({container=document.body,storage=globalThis.lo
  }
  function renderPortrait(turn,shot=null){
   const img=$('.manga-speaker-face');
+  // An archival original with a verified no-actor scene, or without the
+  // current speaker, must not attach the wrong speaker portrait to that CG.
+  // The voice may still be heard as off-screen dialogue.
+  const restored=shot?restoredStoryArchivePanel(shot):null;
+  if(restored&&(!turn.characterId||!restored.visibleActorIds.includes(turn.characterId))){
+   img.hidden=true;img.removeAttribute('src');return;
+  }
   // P0 screenshot regression: the original cast atlas showed a different
   // person's face than the physically registered S03/S05 first CG.
   const exact=shot&&['c01-s03-m1','c01-s05-m1'].includes(shot.id)
@@ -117,8 +126,10 @@ export function createMangaViewer({container=document.body,storage=globalThis.lo
  function loadPanelArt(shot,pagePanels){
   // Only the exact scene/gender/outcome; prefer existing individually cut WebPs.
   const cut=shot.sharedArtAsset||registeredStoryPanelAsset(shot);
-  const draftRegistration=provisionalRegisteredStoryPanel(shot);
-  const sheet=comicPageAsset(story.id,shot.phase,storyContext,shot.comicPage,shot.protagonistGender);
+  const draftRegistration=oldStoryArtReuseAllowed(shot.stageId)?(restoredStoryArchivePanel(shot)||provisionalRegisteredStoryPanel(shot)):null;
+  // Old cropped manga sheets are valid ONLY on the first four chapter-1 stages.
+  const sheet=oldStoryArtReuseAllowed(shot.stageId)?
+   comicPageAsset(story.id,shot.phase,storyContext,shot.comicPage,shot.protagonistGender):null;
   const key=[cut||'',sheet||'',shot.comicCell,shot.sourceSheetCount||pagePanels.length,draftRegistration?.status||''].join('|');
   if(key===currentArtKey)return;
   currentArtKey=key;
@@ -147,7 +158,7 @@ export function createMangaViewer({container=document.body,storage=globalThis.lo
     img.hidden=false;missing.hidden=true;
    };
    img.onerror=()=>{if(request!==pageRequest)return;
-     if(kind==='cut'&&!cut?.includes('/chapter1-provisional-live/'))attempt(sheet,'sheet');else unavailable();};
+     if(kind==='cut'&&sheet&&!cut?.includes('/chapter1-provisional-live/'))attempt(sheet,'sheet');else unavailable();};
    img.src=storyArtDisplayUrl(url);
    if(img.complete&&img.naturalWidth>0)img.onload();
   };
@@ -189,7 +200,7 @@ export function createMangaViewer({container=document.body,storage=globalThis.lo
   // Narration is displayed only on the special recap art, not on a character CG.
   const pagePanels=visiblePanels.filter(p=>p.comicEdition===shot.comicEdition&&p.comicPage===shot.comicPage);
   const reviewLink=$('.manga-preview-link');
-  reviewLink.hidden=story.chapter!==1;
+  reviewLink.hidden=!oldStoryArtReuseAllowed(shot.stageId);
   if(story.chapter===1)reviewLink.href='./story-chapter1-approval.html?'+
    new URLSearchParams({stage:shot.stageId,gender:shot.protagonistGender,edition:shot.comicEdition});
   $('.manga-stage').textContent='第'+story.chapter+'章 · '+story.stageName+' · '+(phase==='post'?(story.stageKind==='town'?'町の後日談':'戦闘後'):phase==='pre'?'開戦前':'全場面');
@@ -199,7 +210,8 @@ export function createMangaViewer({container=document.body,storage=globalThis.lo
   $('.manga-speaker').textContent=talk.speaker+(talk.characterId?'　／　'+talk.faction+'・'+talk.role:'　／　ナレーション');
   renderPortrait(talk,shot);
   renderStoryRubyText($('.manga-line'),talk);
-  const draftArt=chapter1ProvisionalLivePanel(shot)||provisionalRegisteredStoryPanel(shot);
+  const draftArt=oldStoryArtReuseAllowed(shot.stageId)?
+   (chapter1ProvisionalLivePanel(shot)||restoredStoryArchivePanel(shot)||provisionalRegisteredStoryPanel(shot)):null;
   $('.manga-shot').textContent=story.id.toUpperCase()+' · '+shot.comicEdition+' · ページ'+shot.comicPage+
    (draftArt?' · 仮承認・ゲーム反映中（正式品質審査前／差し戻し可能）':'');
   $('.manga-progress').textContent='イベントCG '+(index+1)+' / '+visiblePanels.length+'　・　セリフ '+(turnIndex+1)+' / '+(shot.dialogueTurns?.length||1);

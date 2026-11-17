@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {createAnatomicalFaceParts} from './face-feature-meshes.js?v=68';
+import {createAnatomicalFaceParts} from './face-feature-meshes.js?v=20261118-liner-eye-v74';
 import {attachAgeDetails} from './face-age-detail-v49.js?v=49';
 import {resolveDemographicProfile} from './character-demographics-v47.js?v=51';
 import {normalizeFemaleFaceControls,normalizeMaleFaceControls,FEMALE_V7_DEFAULTS} from './face-v7-controls.js';
@@ -59,15 +59,16 @@ export function femaleInnerFeatureDelta({xn,yn,zn,offsetX,depth,height=0,control
  const central=(1-smooth(.10,.26,ax))*front;
  const tipLift=central*bell(yn,.566,.036);
  const rimMask=bell(ax,.18,.068)*bell(yn,.530,.026)*front;
- const bridgeRidge=bell(ax,0,.092)*bell(yn,.653,.098)*front;
+ // Narrow central bridge elevation with a feathered root into the brow.
+ const bridgeRidge=bell(ax,0,.073)*bell(yn,.646,.108)*front*smooth(.27,.38,yn);
  const cartilage=v65NasalCartilageDelta({xn,yn,zn,depth,height,controls});
  return {
   dx:-offsetX*(.35*noseSupport+.29*mouthSupport),
   dy:height*(.020*controls.noseTipLift*tipLift
     -.012*central*bell(yn,.572,.018)
     -.009*controls.nostrilCover*rimMask)+cartilage.dy,
-  dz:depth*(.023*bridgeSupport+.014*tipSupport-.016*mouthSupport
-   +.020*controls.noseBridgeSharpness*bridgeRidge
+  dz:depth*(.025*bridgeSupport+.015*tipSupport-.016*mouthSupport
+   +.031*controls.noseBridgeSharpness*bridgeRidge
    +.004*controls.nostrilCover*rimMask+.004*tipLift)+cartilage.dz,
   noseSupport,mouthSupport
  };
@@ -100,7 +101,9 @@ export function femaleCheekJawDelta({xn,yn,zn,offsetX,depth,height}){
  // Refill gaunt mid/lower cheeks in depth rather than ballooning the
  // cheekbone or moving the eye sockets. The masks vanish near ears,
  // lips, jaw apex and the rear of the head.
- const dz=depth*(.022*cheekSupport+.006*mouthCornerSupport);
+ const nasolabialFold=bell(ax,.32,.095)*bell(yn,.546,.065)*front;
+  const dz=depth*(.022*cheekSupport+.006*mouthCornerSupport-
+   .0032*nasolabialFold);
  // Full support on the actual chin outline, not only at the centreline.
  // Taper smoothly to zero before reaching the cheeks (yn >= .485).
  const jawBand=bell(yn,.30,.105)*(1-smooth(.39,.45,yn))*front;

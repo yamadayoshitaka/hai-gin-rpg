@@ -27,7 +27,10 @@ assert(runner.includes('world-quality-capture.cjs'));
 assert(runner.includes('world-quality-stage-capture.cjs'));
 assert(pbr.includes('WORLD_QUALITY_AUTO_BEGIN'));
 assert(pbr.includes('WORLD_QUALITY_AUTO_END'));
-assert(html.includes('API+\'/actions/workflows?per_page=100\''));
+assert(html.includes("API+'/actions/runs?per_page=100'"),
+ 'dashboard must request actual workflow run status, not the legacy workflows list');
+assert(html.includes('RUN_BACKOFF_KEY')&&html.includes('r.status===403||r.status===429'),
+ '403/429 must have a bounded retry instead of hammering unauthenticated GitHub');
 assert(html.includes('hourly-batch-dashboard.json'));
 assert(html.includes("REAL_STAGE_CAPTURE_HUMAN_QA_PENDING")===false);
 const preview=fs.readFileSync('world-quality-preview.html','utf8');

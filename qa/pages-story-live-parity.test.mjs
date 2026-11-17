@@ -9,7 +9,9 @@ import {existsSync,readFileSync} from 'node:fs';
 import path from 'node:path';
 import {fileURLToPath,pathToFileURL} from 'node:url';
 import {CHAPTER1_PROVISIONAL_LIVE} from '../src/story-chapter1-provisional-live.js';
+import {NEW_STORY_ORIGINAL_ART} from '../src/story-new-original-art.js';
 import {registeredStoryPanelAsset} from '../src/story-panel-registered-art.js';
+import {oldStoryArtReuseAllowed} from '../src/story-art-sourcing-policy.js';
 import {chapterOneReviewPages} from '../src/story-chapter1-review-core.js';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const dist=path.join(root,'pages-dist');
@@ -20,7 +22,19 @@ const canonical=new Map(chapterOneReviewPages().flatMap(p=>p.shots.map(s=>[s.key
 const counts={},seen=new Set();
 for(const [key,art] of entries){
  assert(canonical.has(key),'Art may not use a noncanonical screenplay key '+key);
- assert(art.asset.startsWith('./assets/story/chapter1-provisional-live/'),key);
+ const oldProvisional=art.asset.startsWith('./assets/story/chapter1-provisional-live/');
+ const freshOriginal=art.asset.startsWith('./assets/story/new-originals/');
+ assert(oldProvisional||freshOriginal,'Unexpected provisional artwork source: '+key);
+ if(freshOriginal){
+  const fresh=NEW_STORY_ORIGINAL_ART[key];
+  assert(fresh,'Provisional stage5 art must have a verified NEW original: '+key);
+  assert.equal(fresh.asset,art.asset,'New original binding differs from provisional game: '+key);
+  assert.equal(fresh.sha256,art.sha256,'New original SHA differs from provisional game: '+key);
+  assert.equal(fresh.provenanceVerified,true,'New origin proof missing: '+key);
+  assert.equal(fresh.nativeQAComplete,true,'New original native image QA missing: '+key);
+  assert.equal(fresh.visualP0Approved,false,'Cannot silently mark visual P0: '+key);
+  assert(!oldStoryArtReuseAllowed(key.split('|')[0]),'Stage1-4 must never masquerade as NEW: '+key);
+ }
  assert.equal(art.status,'PROVISIONAL_OWNER_AUTHORIZED_PENDING_P0',key);
  const rel=art.asset.slice(2),file=path.join(root,rel);
  assert(existsSync(file),'Missing registered game original '+key);
@@ -32,12 +46,17 @@ for(const [key,art] of entries){
   stageId:shot.stageId,comicEdition:shot.edition,
   protagonistGender:shot.gender,id:shot.shotId
  });
- assert.equal(uri,art.asset,'Review and game must resolve the same registered original '+key);
+ if(oldStoryArtReuseAllowed(shot.stageId))
+  assert.equal(uri,art.asset,'Review and game must resolve same old registered original '+key);
+ else
+  assert.equal(uri,NEW_STORY_ORIGINAL_ART[key]?.asset||null,
+   'Stage5+ may only serve its own post-cutover verified NEW original '+key);
  counts[shot.stageId]=(counts[shot.stageId]||0)+1;
 }
 console.log('Verified canonical physical registrations:',JSON.stringify(counts));
 const review=read('src/story-chapter1-approval-ui.js');
 assert(review.includes('const gameAsset=live?.asset||registeredStoryPanelAsset('));
+assert(review.includes('if(!oldStoryArtReuseAllowed(shot.stageId))return null;'),'Old stage5 review must stay archive-only');
 assert(review.includes('storyArtDisplayUrl(gameAsset)'));
 assert(review.includes("if(!imageUrl&&new URLSearchParams(location.search).get('draft')==='1')"),
  'Unregistered draft branch must be separately opted into');
@@ -62,8 +81,14 @@ assert.equal(published.isPublishedStoryRevision(),true);
 for(const [key,art] of entries){
  const expected='https://raw.githubusercontent.com/yamadayoshitaka/hai-gin-rpg/'+sha+'/'+art.asset.slice(2);
  assert.equal(published.storyArtDisplayUrl(art.asset),expected,'Published origin stale for '+key);
- assert(!existsSync(path.join(dist,art.asset.slice(2))),
-  'Unexpected duplicate in capacity-limited Pages distribution: '+key);
+ if(art.asset.startsWith('./assets/story/chapter1-provisional-live/')){
+  assert(!existsSync(path.join(dist,art.asset.slice(2))),
+   'Old provisional originals must use SHA-pinned raw URL, not duplicate in Pages: '+key);
+ }else if(existsSync(path.join(dist,art.asset.slice(2)))){
+  const digest=createHash('sha256')
+   .update(readFileSync(path.join(dist,art.asset.slice(2)))).digest('hex');
+  assert.equal(digest,art.sha256,'Pages NEW original differs from release source: '+key);
+ }
 }
 const revision=sha.slice(0,12);
 for(const [file,token] of [

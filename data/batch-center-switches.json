@@ -3,18 +3,47 @@
   "description": "Owner-confirmed switches controlling next batch work, not the ChatGPT scheduling service itself. Manual one-shot QA remains available while disabled.",
   "groups": {
     "human": {
-      "enabled": true
+      "enabled": false,
+      "retiredFromCenter": true,
+      "retiredAt": "2026-11-17",
+      "reason": "Replaced by FF15-target split quality lanes, historical records retained"
     },
     "monster": {
-      "enabled": true
+      "enabled": false,
+      "retiredFromCenter": true,
+      "retiredAt": "2026-11-17",
+      "reason": "Replaced by FF15-target split quality lanes, historical records retained"
     },
     "world": {
-      "enabled": true
+      "enabled": true,
+      "reinstatedAt": "2026-11-17",
+      "workflow": "world-six-lane.yml",
+      "reason": "Owner requested object quality six-lane batch restored; human/monster legacy batches remain off"
     },
     "anime": {
       "enabled": true,
       "updatedAt": "2026-11-15T08:50:21.054Z",
       "issueNumber": 394
+    },
+    "faceHair": {
+      "enabled": true,
+      "registeredAt": "2026-11-17",
+      "workflow": "character-six-lane.yml"
+    },
+    "outfit": {
+      "enabled": true,
+      "registeredAt": "2026-11-17",
+      "workflow": "character-six-lane.yml"
+    },
+    "creatureMonster": {
+      "enabled": true,
+      "registeredAt": "2026-11-17",
+      "workflow": "creature-six-lane.yml"
+    },
+    "creatureSummon": {
+      "enabled": true,
+      "registeredAt": "2026-11-17",
+      "workflow": "creature-six-lane.yml"
     }
   }
 }

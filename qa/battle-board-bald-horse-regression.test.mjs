@@ -41,10 +41,10 @@ assert.equal(exposed.closed,false,'never mask genuinely uncovered back skin');
 assert.equal(outfitSurfaceRole('male_ranger_body','MI_Ranger'),'body');
 assert.equal(outfitSurfaceRole('male_peasant_body','MI_Peasant'),'body');
 const outfit=read('src/character-system/rigged-outfit-runtime.js');
-assert.match(outfit,/if\(lowDetail&&\(opaqueTorsoLiningMaterials\+sourceOpaqueTorsoMaterials\)>0\)/,
- 'only validated source-fabric costumes suppress redundant back plates');
-assert.match(outfit,/panel\.visible=false;panel\.userData\.replacedByOpaqueSourceBack=true/,
- 'hide flat duplicate sheets, including in the captured GPU army');
+assert.match(outfit,/const bannedBackPanels=new Set\(/,
+ 'all qualities must remove legacy rectangular panels regardless of material metadata');
+assert.match(outfit,/panel\.removeFromParent\(\);panel\.geometry\?\.dispose\(\)/,
+ 'remove duplicated back sheets from geometry, not only visibility');
 for(const name of ['complete-back-tunic-lining','heroic-cuirass-backplate',
  'l-cuirass-closed-flank','r-cuirass-closed-flank'])
  assert.ok(outfit.includes("'"+name+"'"),'cardboard duplicate suppression: '+name);
@@ -60,7 +60,7 @@ const hair=read('src/character-system/hair-attachment-runtime.js');
 assert.match(hair,/length=quality==='battle'\?\.028/,
  'real anatomical scalp retains its visible swept root fibres');
 const battle=read('tactics-wireframe.html');
-assert.match(battle,/20261117-sculpt-hair-saddle4/,
+assert.match(battle,/20261117-ground-walk-yaw1/,
  'browser must load the corrected GPU mesh, not cached prior source');
 assert.match(battle,/20261117-horse-saddle-fix1/,
  'both 50v50 and 1000v1000 riders share the measured horse seat');

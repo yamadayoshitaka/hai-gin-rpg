@@ -3,6 +3,24 @@ on:
   pull_request:
     paths:
       - 'src/story-compact-comic.js'
+      - 'src/story-panel-registered-art.js'
+      - 'src/story-archive-restored-art.js'
+      - 'src/story-art-sourcing-policy.js'
+      - 'src/story-new-original-art.js'
+      - 'qa/story-stage-art-sourcing-boundary.test.mjs'
+      - 'qa/story-panel-one-at-a-time.test.mjs'
+      - 'src/story-draft-dialogue-identity.js'
+      - 'qa/story-draft-dialogue-identity.test.mjs'
+      - 'src/story-new-original-timestamp-guard.js'
+      - 'qa/story-new-original-timestamp-guard.test.mjs'
+      - 'scripts/publish-story-chapter1-provisional.mjs'
+      - 'qa/story-sequential-provisional-intake.test.mjs'
+      - 'src/story-chapter1-review-core.js'
+      - 'scripts/publish-story-chapter1-provisional.mjs'
+      - 'scripts/restore-existing-story-art.mjs'
+      - '.github/workflows/story-chapter1-free-complete-draft-production.yml'
+      - 'qa/story-archive-restoration.test.mjs'
+      - 'assets/story/chapter1-provisional-live/**'
       - 'src/story-dialogue-art-binding.js'
       - 'assets/story/recap/owner-approved-kingdom-overview.webp'
       - 'qa/story-recap-art-and-cast.test.mjs'
@@ -13,6 +31,8 @@ on:
       - 'audio/voicevox/manifest.json'
       - 'qa/story-narration-audio-reachability.test.mjs'
       - 'src/story-manga-viewer.js'
+      - 'src/story-art-sourcing-policy.js'
+      - 'src/story-new-original-art.js'
       - 'src/story-narrative-flow.js'
       - 'game.html'
       - 'town-hub.html'
@@ -69,6 +89,38 @@ jobs:
         run: |
           node --check scripts/generate-story-chapter1-free-batch.mjs
           node qa/story-chapter1-stage-priority.test.mjs
+      - name: Confirm five recovered historical original WebPs are real and exactly matched to stage
+        run: node qa/story-archive-restoration.test.mjs
+      - name: Enforce stage1-4 historical reuse, stage5-200 NEW-only and prevent stale sheet fallback
+        run: node qa/story-stage-art-sourcing-boundary.test.mjs
+      - name: Verify exact source artwork proof after narration-prefix edits
+        run: node qa/story-draft-dialogue-identity.test.mjs
+      - name: Verify real post-cutover original commit age and strict scene identity
+        run: node qa/story-new-original-timestamp-guard.test.mjs
+      - name: Dry-run the ACTUAL review-branch stage5 original proof before merge
+        shell: bash
+        run: |
+          git fetch --no-tags origin refs/heads/story/chapter1-free-actual-art:refs/remotes/origin/story/chapter1-free-actual-art
+          node scripts/publish-story-chapter1-provisional.mjs --plan | tee /tmp/story-provisional-plan.jsonl
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          import {NEW_STORY_ORIGINAL_ART} from './src/story-new-original-art.js';
+          const report=JSON.parse(fs.readFileSync('/tmp/story-provisional-plan.jsonl','utf8').trim().split('\n').at(-1));
+          // Before the first provisional import, verified candidates count.
+          // After the FIVE verified stage5 CGs are already in main, candidates
+          // correctly drops to 0. Do not treat successful registration as failure.
+          const alreadyVerified=Object.values(NEW_STORY_ORIGINAL_ART).filter(row=>
+            row.provenanceVerified===true && row.nativeQAComplete===true &&
+            row.visualP0Approved===false).length;
+          if(report.invalidProof!==0 || report.registeredCandidates+alreadyVerified<5){
+            throw Error('Real new-original proof missing or invalid: '+JSON.stringify(report)+
+              '; already verified='+alreadyVerified);
+          }
+          console.log('Verified new-original CGs: candidates=',report.registeredCandidates,
+            'already registered=',alreadyVerified,'P0 approvals: 0');
+          NODE
+      - name: Verify sequential first-chapter production provisional intake
+        run: node qa/story-sequential-provisional-intake.test.mjs
       - name: Verify compact CG reuse of 40 existing first-four-stage gender/outcome original assets
         run: node qa/story-compact-art-reuse.test.mjs
       - name: Build and verify 880-scene minimum-first CG queue (no paid or free API calls)

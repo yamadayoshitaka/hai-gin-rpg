@@ -1,0 +1,48 @@
+name: Avian phoenix real 3D WebGL QA
+on:
+  push:
+    paths:
+      - 'src/avian-guardian-sculpt.js'
+      - 'src/monster-geometry.js'
+      - 'src/female-summon-costumes.js'
+      - 'src/creature-summon-humanoid-anatomy.js'
+      - 'qa/avian-guardian-webgl-smoke.cjs'
+      - 'qa/avian-guardian-rebuild.test.mjs'
+      - '.github/workflows/avian-guardian-webgl.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: avian-guardian-webgl-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  real-guardian-avian-render:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 22
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Parse real avian wings and model geometry
+        run: |
+          node --check src/avian-guardian-sculpt.js
+          node --check src/monster-geometry.js
+          node --check qa/avian-guardian-webgl-smoke.cjs
+      - name: Install pinned WebGL browser and geometry
+        run: |
+          npm install --no-save --package-lock=false playwright@1.57.0 three@0.180.0
+          npx playwright install --with-deps chromium
+      - name: Verify original angel wing donor and avian LOD
+        run: node --test qa/avian-guardian-rebuild.test.mjs
+      - name: Capture bird source canvases in idle run attack and phoenix all views
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/avian-http.log 2>&1 &
+          node qa/avian-guardian-webgl-smoke.cjs qa-reports/avian-guardian-visual
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: real-avian-phoenix-guardian-wing-review
+          path: qa-reports/avian-guardian-visual/
+          retention-days: 14
+          if-no-files-found: warn

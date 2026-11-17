@@ -20,6 +20,9 @@ import {fileURLToPath} from 'node:url';
 import {chapterOneReviewPages} from '../src/story-chapter1-review-core.js';
 import {chapterReviewedPanelAsset} from '../src/story-chapter-reviewed-art.js';
 import {stage2ReviewedPanelAsset} from '../src/story-stage2-reviewed-art.js';
+import {NEW_STORY_ORIGINAL_ART} from '../src/story-new-original-art.js';
+import {sourceDraftDialogueMatches} from '../src/story-draft-dialogue-identity.js';
+import {eligibleFreshReviewSource} from '../src/story-new-original-timestamp-guard.js';
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const args=process.argv.slice(2);
@@ -38,6 +41,23 @@ const capture=/CHAPTER1_PROVISIONAL_LIVE=Object\.freeze\((\{[\s\S]*?\})\);/;
 const found=capture.exec(source);
 if(!found)throw Error('Provisional map marker changed; refusing write');
 const active=JSON.parse(found[1]);
+const fresh={...NEW_STORY_ORIGINAL_ART};
+const freshFile='src/story-new-original-art.js';
+const freshSource=fs.readFileSync(toAbs(freshFile),'utf8');
+const freshCapture=/NEW_STORY_ORIGINAL_ART=Object\.freeze\((\{[\s\S]*?\})\);/;
+if(!freshCapture.test(freshSource))throw Error('New original registry marker changed');
+const compact=readJson('data/story-compact-20chapters.json');
+if(compact.expectedNormalImageSlots!==880)throw Error('Compact story changed');
+const first=compact.chapters.find(c=>c.chapter===1);
+if(!first||first.stages.length!==10)throw Error('Compact Chapter 1 not found');
+const byStage=new Map(first.stages.map(s=>[s.stageId,{
+ pre:new Set([...s.chapterOpeningIds,...s.beforeIds]),
+ post:new Set(s.afterIds)}]));
+const compactOnly=s=>{
+ const ids=byStage.get(s.stageId);
+ return !!ids&&(s.edition==='pre'&&ids.pre.has(s.shotId)||
+  ['post-victory','post-town'].includes(s.edition)&&ids.post.has(s.shotId));
+};
 const pages=chapterOneReviewPages(),shots=pages.flatMap(x=>x.shots);
 if(shots.length!==462||pages.length!==132)throw Error('Canonical chapter cardinality drift');
 const validKeys=new Set(shots.map(s=>s.key));
@@ -48,6 +68,22 @@ function git(...argv){return execFileSync('git',argv,{cwd:root,maxBuffer:100*102
 function sourceBytes(file){return git('show',sourceBranch+':'+file);}
 function sourceManifest(){
  return new Set(git('ls-tree','-r','--name-only',sourceBranch).toString('utf8').trim().split('\n'));
+}
+// Review branch may have produced a genuinely NEW image in its old directory.
+// Allow it only when the source file was FIRST ADDED after the new-art policy
+// cutover, by an actual stage/gender/edition-specific review image commit.
+// This never treats the old directory alone as proof of fresh generation.
+function sourceCandidate(s,available){
+ const expected=s.draftPath;
+ if(available.has(expected)&&available.has(expected+'.generation.json'))return expected;
+ if(s.stageId<'c01-s05'||!expected.includes('/cloudflare-chapter1-new-originals/'))
+  return expected;
+ const previous=expected.replace('/cloudflare-chapter1-new-originals/','/cloudflare-chapter1-free/');
+ if(!available.has(previous)||!available.has(previous+'.generation.json'))return expected;
+ const firstCommit=git('log',sourceBranch,'--diff-filter=A','-1',
+  '--format=%H%x09%cI%x09%s','--',previous).toString('utf8').trim();
+ return eligibleFreshReviewSource({stageId:s.stageId,edition:s.edition,gender:s.gender,
+  expected,source:previous,gitIntroduction:firstCommit})?previous:expected;
 }
 function expectedPixels(b){
  if(b.length<30||b.toString('ascii',0,4)!=='RIFF'||b.toString('ascii',8,12)!=='WEBP')
@@ -62,16 +98,17 @@ function expectedPixels(b){
  if(type==='VP8X')return [b.readUIntLE(24,3)+1,b.readUIntLE(27,3)+1];
  throw Error('unknown WebP encoding '+type);
 }
-function sourceReviewable(s,available){
- const proof=s.draftPath+'.generation.json';
- if(!available.has(s.draftPath)||!available.has(proof))return null;
+function sourceReviewable(s,available,draftSource=s.draftPath){
+ const proof=draftSource+'.generation.json';
+ if(!available.has(draftSource)||!available.has(proof))return null;
  const meta=JSON.parse(sourceBytes(proof).toString('utf8'));
- const original=sourceBytes(s.draftPath);
+ const original=sourceBytes(draftSource);
  const sum=sha(original),[w,h]=expectedPixels(original);
  const min=s.stageId==='c01-s02'?[768,320]:(s.stageId>='c01-s04'?[800,450]:[1536,864]);
  if(w<min[0]||h<min[1]||w*9!==h*16)throw Error('Low native geometry '+s.key);
  if(meta.shotKey!==s.key||meta.imageSha256!==sum||
-  meta.screenplayText!==s.scriptText||meta.visuallyApproved!==false||
+  !sourceDraftDialogueMatches({stageId:s.stageId,edition:s.edition,shotId:s.shotId,
+   currentText:s.scriptText,sourceText:meta.screenplayText})||meta.visuallyApproved!==false||
   meta.formallyRegistered!==false||meta.model!=='@cf/black-forest-labs/flux-2-klein-4b'||
   meta.imageBytes!==original.length||
   !Array.isArray(meta.nativePixels)||meta.nativePixels[0]!==w||meta.nativePixels[1]!==h)
@@ -95,10 +132,10 @@ function sourceReviewable(s,available){
    sha(fs.readFileSync(toAbs(ref.source)))!==ref.originalSha256)
    throw Error('Source actor reference modified '+s.key);
  }
- return {bytes:original,sha256:sum,meta,pixels:[w,h],proof,original:s.draftPath};
+ return {bytes:original,sha256:sum,meta,pixels:[w,h],proof,original:draftSource};
 }
 const slug=key=>key.replaceAll('|','__');
-const canActOn=(s)=>!chapterReviewedPanelAsset({
+const canActOn=(s)=>s.stageId>='c01-s05'||!chapterReviewedPanelAsset({
  stageId:s.stageId,comicEdition:s.edition,protagonistGender:s.gender,id:s.shotId
 })&&!stage2ReviewedPanelAsset({
  stageId:s.stageId,comicEdition:s.edition,protagonistGender:s.gender,id:s.shotId
@@ -106,7 +143,10 @@ const canActOn=(s)=>!chapterReviewedPanelAsset({
 function writeMapAndLedger(){
  const newBody=source.replace(capture,
   'CHAPTER1_PROVISIONAL_LIVE=Object.freeze('+JSON.stringify(active,null,2)+');');
+ const newFresh=freshSource.replace(freshCapture,
+  'NEW_STORY_ORIGINAL_ART=Object.freeze('+JSON.stringify(fresh,null,2)+');');
  fs.writeFileSync(toAbs(reviewedFile),newBody);
+ fs.writeFileSync(toAbs(freshFile),newFresh);
  fs.writeFileSync(toAbs(ledgerPath),JSON.stringify(ledger,null,2)+'\n');
 }
 let imported=0,removed=0,unchanged=0,missing=0,providerBlocked=0,failures=[];
@@ -128,8 +168,10 @@ if(mode==='--return-issue'){
   if(!allowed.has(vote.key)||!(/^[a-f0-9]{64}$/i.test(vote.imageSha256))||
    typeof vote.feedback!=='string'||!vote.feedback.trim()||vote.feedback.length>500)
    throw Error('Untrusted return vote');
-  if(active[vote.key]?.sha256!==vote.imageSha256)continue;
-  delete active[vote.key];
+  if(active[vote.key]?.sha256!==vote.imageSha256&&
+     fresh[vote.key]?.sha256!==vote.imageSha256)continue;
+  if(active[vote.key]?.sha256===vote.imageSha256)delete active[vote.key];
+  if(fresh[vote.key]?.sha256===vote.imageSha256)delete fresh[vote.key];
   ledger.returned[vote.key]=vote.imageSha256;
   ledger.history.push({kind:'RETURN_FOR_REVISION',key:vote.key,sha256:vote.imageSha256,
    reason:vote.feedback.trim(),issue:process.env.STORY_REVIEW_ISSUE_URL||'',
@@ -144,29 +186,49 @@ if(mode==='--return-issue'){
 const available=sourceManifest();
 const already=new Set();
 for(const s of shots){
- // Current owner scope: continue Chapter 1 from Stage 4; preserve all earlier scenes.
- if(s.stageId<'c01-s04'||s.stageId>'c01-s10')continue;
+ // Follow the current compact CG scene list, not the superseded 462-cut archive.
+ if(s.stageId<'c01-s01'||s.stageId>'c01-s10'||!compactOnly(s))continue;
  if(!canActOn(s))continue;
- // Output rejected by provider safety filters must NEVER be published.
- if(available.has(s.draftPath+'.provider-blocked.json')){providerBlocked++;continue;}
- if(!available.has(s.draftPath)||!available.has(s.draftPath+'.generation.json')){
+ // Provider safety blocks apply to the actual selected image source, not only
+ // the new destination directory. Never bypass a historical 3030 blocker.
+ const draftSource=sourceCandidate(s,available);
+ if(available.has(draftSource+'.provider-blocked.json')){providerBlocked++;continue;}
+ if(!available.has(draftSource)||!available.has(draftSource+'.generation.json')){
   missing++;continue;
  }
  try{
-  const verified=sourceReviewable(s,available);
+  const verified=sourceReviewable(s,available,draftSource);
   if(!verified){missing++;continue;}
   if(already.has(verified.sha256))throw Error('Identical image bytes in multiple distinct canonical scenes');
   already.add(verified.sha256);
   if(ledger.returned[s.key]===verified.sha256){unchanged++;continue;}
-  if(active[s.key]?.sha256===verified.sha256){unchanged++;continue;}
-  const rel='assets/story/chapter1-provisional-live/'+slug(s.key)+'.webp';
+  const newOriginal=s.stageId>='c01-s05';
+  if(newOriginal&&(!s.draftPath.includes('/cloudflare-chapter1-new-originals/')||
+     (verified.original!==s.draftPath&&
+      verified.original!==s.draftPath.replace('/cloudflare-chapter1-new-originals/',
+       '/cloudflare-chapter1-free/'))))
+   throw Error('Unverified archive cannot become new original: '+s.key);
+  if(newOriginal?fresh[s.key]?.sha256===verified.sha256:
+     active[s.key]?.sha256===verified.sha256){unchanged++;continue;}
+  const rel=(newOriginal?'assets/story/new-originals/':
+   'assets/story/chapter1-provisional-live/')+slug(s.key)+'.webp';
+  if(fs.existsSync(toAbs(rel))&&sha(fs.readFileSync(toAbs(rel)))!==verified.sha256)
+   throw Error('Existing destination has different image bytes: '+s.key);
   const binding={asset:'./'+rel,sha256:verified.sha256,provenance:verified.proof,
-   sourceDraft:s.draftPath,status:'PROVISIONAL_OWNER_AUTHORIZED_PENDING_P0',
+   sourceDraft:verified.original,status:'PROVISIONAL_OWNER_AUTHORIZED_PENDING_P0',
    originalLivePath:s.legacyPath||null,stageId:s.stageId,edition:s.edition,gender:s.gender};
   if(mode==='--apply'){
    fs.mkdirSync(path.dirname(toAbs(rel)),{recursive:true});
    fs.writeFileSync(toAbs(rel),verified.bytes);
    active[s.key]=binding;
+   if(newOriginal)fresh[s.key]={
+    origin:'NEW_SCENE_GENERATED_AFTER_2026_11_17',
+    stageId:s.stageId,comicEdition:s.edition,protagonistGender:s.gender,
+    sceneId:s.shotId,asset:'./'+rel,sha256:verified.sha256,
+    provenance:verified.proof,sourceDraft:verified.original,
+    provenanceVerified:true,nativeQAComplete:true,
+    visualP0Approved:false,status:'PROVISIONAL_NATIVE_AND_SOURCE_QA_PENDING_VISUAL_P0'
+   };
   }
   imported++;
  }catch(e){failures.push({key:s.key,message:String(e.message)});}

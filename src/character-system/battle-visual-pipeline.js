@@ -3,7 +3,7 @@
  * Keep decisions based on actual attached meshes, not inferred job names.
  * No meshes, shaders, fetches, animations or per-frame allocations are added.
  */
-export const BATTLE_CHARACTER_PIPELINE_VERSION='face-hair-back-20261117-v2-visible-ancestor';
+export const BATTLE_CHARACTER_PIPELINE_VERSION='face-hair-back-20261117-v3-physical-removed';
 function visibleInside(node,root){
  if(!node)return false;
  for(let p=node;p;p=p.parent){
@@ -18,11 +18,11 @@ export function battleClosedBackCoverage({quality='battle',panel,opaqueLining=0,
  // An opaque, full source skinned torso is stronger evidence than a
  // procedural rear sheet. Keep clipping covered anatomy when that sheet is
  // suppressed, otherwise the old naked back returns under the costume.
- const sourceBack=quality==='battle'&&opaqueLining>0&&!preserveBody;
- const closed=quality==='battle'&&(skinned||sourceBack)&&!preserveBody;
+ const sourceBack=['battle','preview'].includes(quality)&&opaqueLining>0&&!preserveBody;
+ const closed=['battle','preview'].includes(quality)&&(skinned||sourceBack)&&!preserveBody;
  return Object.freeze({
   closed,forceCoveredRegions:closed?['torso']:[],
-  preserveRegions:quality==='battle'&&!closed&&!opaqueLining?['torso']:[],
+  preserveRegions:['battle','preview'].includes(quality)&&!closed&&!opaqueLining?['torso']:[],
   reason:sourceBack?'opaque-source-skinned-tunic':closed?'real-skinned-opaque-back-panel':'unverified-back'
  });
 }

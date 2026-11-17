@@ -32,7 +32,7 @@ assert.match(game,/if\(a\.outfitError\)/);
 
 // 通常の100体は引き続き衣装付き。大軍時は各軍12体の近景モデルに限定する。
 assert.match(outfit,/const lowDetail=quality==='battle'/);
-assert.match(outfit,/const detail=createDetailedOutfit\(jobId,sex,dressed,textures,\{quality,rarity:rank\}\)/,
+assert.match(outfit,/const detail=createDetailedOutfit\(jobId,sex,dressed,textures,\{quality,rarity:rank,isProtagonist\}\)/,
   'battle source must retain optimized job-specific photo couture and the rarity finish');
 assert.match(outfit,/adaptiveFit:true/,'battle garments must be fitted to real arm and leg envelopes');
 const clothFidelity=outfit.match(/radialSegments:lowDetail\?(\d+):(\d+),heightSegments:lowDetail\?(\d+):(\d+)/);

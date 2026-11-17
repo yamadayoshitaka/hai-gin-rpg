@@ -134,7 +134,7 @@ export async function loadPhotoMaterials() {
 // The fitted Quaternius skinned garments form the full body layer. In particular,
 // do not hide them with a straight cylinder: that made the characters look like
 // they wore cardboard barrels, despite a high triangle count.
-export function createDetailedOutfit(job, sex, body, textures, {quality='preview',rarity='N'}={}) {
+export function createDetailedOutfit(job, sex, body, textures, {quality='preview',rarity='N',isProtagonist=false}={}) {
   if(quality!=='preview'&&quality!=='battle')throw Error('未対応の衣装ディテール品質: '+quality);
   const battle=quality==='battle',couture=JOB_COUTURE[job]||JOB_COUTURE.job01;
   const style=outfitStyle(job), group=new THREE.Group();
@@ -243,36 +243,9 @@ export function createDetailedOutfit(job, sex, body, textures, {quality='preview
   // the existing natural cloth silhouette instead of covering it with a box.
   // Battle instances use the same recognizable shapes at a far smaller cost.
   const chestFront=front+H*.009;
-  // Under-tunic back coverage is mandatory for EVERY job. Some imported
-  // Ranger/Peasant clothes have only thin front surfaces, while the old
-  // underlying-body occlusion removed the anatomical back completely.
-  // This panel is skinned with the spine like the rest of the clothing.
-  {
-    const columns=battle?14:24,rows=battle?10:18;
-    const points=[],uv=[],faces=[];
-    // A rogue's split leather back exposed the scapulae because the
-    // inner coverage started too low and stopped at 83% torso width.
-    // Extend the EXISTING skinned panel; no additional mesh or triangles.
-    const rogueBack=job==='job06';
-    const yTop=cy+H*(rogueBack?.135:.112);
-    const yBottom=hips+H*(rogueBack?-.014:.024);
-    for(let row=0;row<=rows;row++)for(let col=0;col<=columns;col++){
-      const t=row/rows,u=col/columns*2-1;
-      const y=yTop+(yBottom-yTop)*t;
-      const width=rogueBack?(1.04-.13*t):(1.025-.12*t);
-      const x=mx+u*sx*width*Math.sqrt(Math.max(.03,1-.10*u*u));
-      const z=surfaceAt(y,true,x)-H*(rogueBack?.012:.011);
-      points.push(x,y,z);uv.push(col/columns,t);
-      if(row<rows&&col<columns){const i=row*(columns+1)+col;
-        faces.push(i,i+1,i+columns+1,i+1,i+columns+2,i+columns+1);
-      }
-    }
-    const back=new THREE.BufferGeometry();
-    back.setAttribute('position',new THREE.Float32BufferAttribute(points,3));
-    back.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
-    back.setIndex(faces);back.computeVertexNormals();
-    add('complete-back-tunic-lining',back,cloth);
-  }
+  // The imported Ranger/Peasant torso is already a real 65-bone garment.
+  // Do NOT create a rectangular rear sheet from torso AABB samples:
+  // it looks like a cardboard board over the back in both studio and battle.
   if(style.armor){
     // Sculpted front and back plate over the actual torso surface.
     // The source GLB has segmented pauldrons but its chest texture exposes a
@@ -322,46 +295,74 @@ export function createDetailedOutfit(job, sex, body, textures, {quality='preview
     });
     mats.push(plate);
     add('heroic-cuirass-shell',plateGeometry,plate);
-    // The front-only shell produced a visibly bare back whenever the hidden
-    // anatomical torso was occluded, and the rear of the swordsman looked
-    // like a hollow shield. Cover the measured *back* of the same skeleton,
-    // with closed flank seams instead of a flat box floating off the body.
-    const backPoints=[],backUv=[],backFaces=[];
-    const backEdge=(x,y)=>{
-      const frontPoint=edge(x,y);
-      return v(frontPoint.x,frontPoint.y,
-        surfaceAt(frontPoint.y,true,frontPoint.x)-H*(heavy?.013:.010));
-    };
-    for(let row=0;row<=rows;row++){
-      const y=top+(bottom-top)*row/rows;
-      for(let col=0;col<=cols;col++){
-        const p=backEdge(col/cols*2-1,y);
-        backPoints.push(p.x,p.y,p.z);backUv.push(col/cols,row/rows);
-        if(row<rows&&col<cols){const i=row*(cols+1)+col;
-          backFaces.push(i,i+1,i+cols+1,i+1,i+cols+2,i+cols+1);
+    // Anatomical segmented BACK armor. The former rectangular backplate was
+    // deliberately removed: these four overlapping curved lames follow the
+    // actually sampled 65-bone garment surface. The upper back is steel rather
+    // than a bare blue tunic, without restoring a giant flat billboard.
+    // Shoulders are BELOW the hairline. The old +.091H top projected a
+    // giant bright plate behind the head, and .88*sx crossed both arm joints.
+    // Use the centered garment's back samples as a stable curvature guide;
+    // querying sparse outer-X bands per vertex made the surface spike outward.
+    const rearTop=cy+H*.012,rearBottom=hips+H*.124;
+    const rearSpan=Math.max(H*.16,rearTop-rearBottom);
+    const rearHalfWidth=sx*(heavy?.72:.65);
+    const upperBack=surfaceAt(rearTop-H*.055,true,mx);
+    const lowerBack=surfaceAt(rearBottom+H*.025,true,mx);
+    function rearContour(u,y){
+      const t=THREE.MathUtils.clamp((rearTop-y)/rearSpan,0,1);
+      const shoulder=.65+.35*Math.sin(Math.PI*(.10+.75*t));
+      const waistTaper=1-.14*t;
+      const x=mx+u*rearHalfWidth*shoulder*waistTaper;
+      // Smooth and symmetric over both scapulae, no individual X sample
+      // jumps or excessive shoulder width. A mild lateral rounding follows
+      // the actual body instead of creating a rear billboard.
+      const center=THREE.MathUtils.lerp(upperBack,lowerBack,t);
+      const sampled=surfaceAt(y,true,mx);
+      const correction=THREE.MathUtils.clamp(sampled-center,-H*.025,H*.025);
+      const z=center+correction*.24-H*.012+H*.015*u*u;
+      return v(x,y,z);
+    }
+    const rearPositions=[],rearUv=[],rearFaces=[];
+    const rearSections=4,rearColumns=battle?12:22,rearRows=battle?3:6;
+    for(let section=0;section<rearSections;section++){
+      const upper=rearTop-rearSpan*section/rearSections;
+      const lower=rearTop-rearSpan*(section+1)/rearSections-
+        (section<rearSections-1?H*.010:0);
+      const first=rearPositions.length/3;
+      for(let row=0;row<=rearRows;row++){
+        const t=row/rearRows,y=upper+(lower-upper)*t;
+        for(let col=0;col<=rearColumns;col++){
+          const u=col/rearColumns*2-1;
+          const p=rearContour(u,y);
+          rearPositions.push(p.x,p.y,p.z);
+          rearUv.push(col/rearColumns,t);
+          if(row<rearRows&&col<rearColumns){
+            const i=first+row*(rearColumns+1)+col;
+            rearFaces.push(i,i+1,i+rearColumns+1,
+              i+1,i+rearColumns+2,i+rearColumns+1);
+          }
         }
       }
     }
-    const backGeometry=new THREE.BufferGeometry();
-    backGeometry.setAttribute('position',new THREE.Float32BufferAttribute(backPoints,3));
-    backGeometry.setAttribute('uv',new THREE.Float32BufferAttribute(backUv,2));
-    backGeometry.setIndex(backFaces);backGeometry.computeVertexNormals();
-    add('heroic-cuirass-backplate',backGeometry,plate);
-    for(const side of [-1,1]){
-      const seamPoints=[],seamUv=[],seamFaces=[];
-      for(let row=0;row<=rows;row++){
-        const y=top+(bottom-top)*row/rows;
-        const frontPoint=edge(side,y),rearPoint=backEdge(side,y);
-        for(const p of [frontPoint,rearPoint])seamPoints.push(p.x,p.y,p.z);
-        seamUv.push(0,row/rows,1,row/rows);
-        if(row<rows){const i=row*2;seamFaces.push(i,i+2,i+1,i+1,i+2,i+3)}
-      }
-      const seam=new THREE.BufferGeometry();
-      seam.setAttribute('position',new THREE.Float32BufferAttribute(seamPoints,3));
-      seam.setAttribute('uv',new THREE.Float32BufferAttribute(seamUv,2));
-      seam.setIndex(seamFaces);seam.computeVertexNormals();
-      add(`${side<0?'l':'r'}-cuirass-closed-flank`,seam,plate);
+    const rearArmor=new THREE.BufferGeometry();
+    rearArmor.setAttribute('position',new THREE.Float32BufferAttribute(rearPositions,3));
+    rearArmor.setAttribute('uv',new THREE.Float32BufferAttribute(rearUv,2));
+    rearArmor.setIndex(rearFaces);rearArmor.computeVertexNormals();
+    add('anatomically-curved-rear-cuirass-lames',rearArmor,plate);
+    // Side fastenings link the fitted rear shell to the breastplate without
+    // solid rectangular side cards. Low-count curved straps are skinned too.
+    if(!battle)for(const side of [-1,1])for(const fraction of [.33,.75]){
+      const y=rearTop-rearSpan*fraction;
+      const from=rearContour(side*.92,y),to=edge(side*.94,y);
+      const mid=from.clone().lerp(to,.5);
+      mid.x=mx+side*sx*(heavy?.88:.82);
+      add(`cuirass-side-curved-fastening-${side<0?'l':'r'}-${fraction}`,
+        new THREE.TubeGeometry(new THREE.CatmullRomCurve3([from,mid,to]),
+          battle?5:10,H*.006,battle?4:7,false),leather);
     }
+
+    // Rear coverage comes from the fitted source garment and real GLB armor,
+    // never a second planar generated backplate or vertical side sheet.
     const edgeMaterial=precious||(heavy?gold:steel);
     // Metal piping follows the actual V neckline, not an impossible flat
     // top edge across the wearer's throat. The curved pectoral stamping
@@ -610,14 +611,85 @@ export function createDetailedOutfit(job, sex, body, textures, {quality='preview
 
   if(style.hem==='short'&&!style.armor)ring('double-stitched-short-hem',sx*.56,H*.003,mx,hips-H*.023,mz,trim);
 
+  // A cape is a cloth PANEL running shoulder-to-hem, NOT a half-cylinder.
+  // CylinderGeometry bent the edges around the arms and placed the entire
+  // fabric in front of the breastplate in side views. All vertices below are
+  // authored in the same skinned 65-bone garment world frame as the shoulders.
+  function addBackShoulderCape(name,mat){
+    const top=cy+H*.030,bottom=Math.max(ankle+H*.14,hips-H*.40);
+    const topHalf=Math.max(left.distanceTo(right)*.56,sx*.70);
+    const hemHalf=topHalf*1.55;
+    // Anchor behind BOTH scapulae. A single Z plane at the neckline avoids
+    // body-surface sampling jumps and stays outside the metal cuirass.
+    const upperBack=surfaceAt(cy-H*.055,true,mx);
+    const waistBack=surfaceAt(hips+H*.124,true,mx);
+    // The neck seam attaches to the ACTUAL upper back; using the deeper
+    // waist sample for the top seam left a gap behind both shoulder clasps.
+    const backAnchor=upperBack-H*.038;
+    const cols=battle?16:32,rows=battle?8:20;
+    const positions=[],uv=[],indices=[];
+    for(let row=0;row<=rows;row++){
+      const t=row/rows;
+      const halfWidth=THREE.MathUtils.lerp(topHalf,hemHalf,t);
+      for(let col=0;col<=cols;col++){
+        const u=col/cols*2-1,edge=Math.abs(u);
+        const ripple=t*t*H*.014*Math.sin(5*u*Math.PI);
+        // Rounded lower corners hang freely; neither side can reach the
+        // character's positive-Z chest or intersect the forearms.
+        const x=mx+u*halfWidth*(1+.028*t*Math.sin(5*u*Math.PI));
+        const y=top+(bottom-top)*t+H*.014*edge*edge*t*t;
+        const torsoBack=THREE.MathUtils.lerp(upperBack,waistBack,Math.min(1,t*1.45));
+        const z=torsoBack-H*(.038+.026*t+.065*t*t)+H*.010*u*u+ripple;
+        positions.push(x,y,z);uv.push(col/cols,t);
+        if(row<rows&&col<cols){
+          const i=row*(cols+1)+col;
+          indices.push(i,i+cols+1,i+1,i+1,i+cols+1,i+cols+2);
+        }
+      }
+    }
+    const geometry=new THREE.BufferGeometry();
+    geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
+    geometry.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
+    geometry.setIndex(indices);geometry.computeVertexNormals();
+    const panel=add(name,geometry,mat);
+    panel.userData.shoulderCape={anchor:'both-clavicles-v78',backZ:backAnchor,centerX:mx,
+      topY:top,bottomY:bottom,topWidth:topHalf*2,hemWidth:hemHalf*2,
+      shoulderClearance:H*.038,clothPanel:true};
+    // A low-profile reinforced yoke joins the two rear-shoulder fasteners.
+    // Its arc follows the nape rather than floating above the pauldrons.
+    const yokeCurve=new THREE.CatmullRomCurve3([
+      v(mx-topHalf*.84,top-H*.004,backAnchor+H*.009),
+      v(mx-topHalf*.44,top+H*.006,backAnchor+H*.005),
+      v(mx,top+H*.009,backAnchor+H*.003),
+      v(mx+topHalf*.44,top+H*.006,backAnchor+H*.005),
+      v(mx+topHalf*.84,top-H*.004,backAnchor+H*.009)
+    ]);
+    add('mantle-reinforced-upper-back-yoke',
+      new THREE.TubeGeometry(yokeCurve,battle?12:32,H*.0038,battle?5:8,false),
+      leather);
+    return {top,topHalf,backAnchor};
+  }
   if(style.cape){
-    const top=cy+H*.07,bottom=Math.max(ankle+H*.05,hips-H*.42);
-    // CylinderGeometry -PI/2..PI creates its half shell at +Z (the face).
-    // PI/2..3PI/2 places the cape behind the shoulders at -Z instead.
-    const geom=new THREE.CylinderGeometry(sx*.90,sx*1.80,top-bottom,battle?20:96,battle?6:40,true,Math.PI/2,Math.PI);
-    geom.scale(1,1,sz/sx*.82);
-    add('three-dimensional-back-and-side-cape',geom,style.crown?material('damask',0xc7aacd):cloth,v(mx,(top+bottom)*.5,mz+sz*.02));
-    for(const s of [-1,1])orb('mantle-clasp',H*.027,mx+s*sx*.64,cy+H*.045,front,trim,32);
+    const cape=addBackShoulderCape('three-dimensional-back-and-side-cape',
+      style.crown?material('damask',0xc7aacd):cloth);
+    for(const side of [-1,1])
+      orb('mantle-clasp-'+(side<0?'l':'r'),H*.014,mx+side*cape.topHalf*.84,
+        cape.top-H*.004,cape.backAnchor+H*.012,trim,12);
+  }
+
+  // Every playable protagonist has a mantle, and every ordinary soldier does
+  // not. Royal/strategist/summoner job capes remain single, never doubled.
+  if(isProtagonist&&!style.cape){
+    const mantleFabric=new THREE.MeshStandardMaterial({
+      map:textures.linen||textures.damask,
+      color:0x55535d,metalness:0,roughness:.89,side:THREE.DoubleSide
+    });
+    mats.push(mantleFabric);
+    const cape=addBackShoulderCape('hero-protagonist-draped-mantle',mantleFabric);
+    for(const side of [-1,1])
+      orb(`hero-mantle-back-shoulder-button-${side<0?'l':'r'}`,
+        H*.014,mx+side*cape.topHalf*.84,
+        cape.top-H*.004,cape.backAnchor+H*.012,gold,12);
   }
 
   // Distinct field-commander silhouette, kept at both inspection and crowd

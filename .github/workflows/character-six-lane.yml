@@ -1,0 +1,105 @@
+name: FF15 character face-hair and costume six-slot QA and production gate
+on:
+  schedule:
+    - cron: '3 * * * *'
+    - cron: '13 * * * *'
+    - cron: '23 * * * *'
+    - cron: '33 * * * *'
+    - cron: '43 * * * *'
+    - cron: '53 * * * *'
+  workflow_dispatch:
+    inputs:
+      category:
+        description: 'Run only one domain (all for scheduled QA)'
+        required: false
+        default: 'all'
+        type: choice
+        options: [all, faceHair, outfit]
+      slot:
+        description: 'Select a lane (0-5) or rotate automatically'
+        required: false
+        default: 'auto'
+        type: choice
+        options: ['auto','0','1','2','3','4','5']
+  pull_request:
+    paths:
+      - 'src/character-system/**'
+      - 'src/face-*.js'
+      - 'data/character-system/quality-six-targets.json'
+      - 'scripts/character-six-batch.mjs'
+      - 'qa/character-six-lane-contract.test.mjs'
+      - 'qa/facehair-*.test.mjs'
+      - 'qa/human-v65-photoreal-quality.test.mjs'
+      - 'qa/independent-face-masters.test.mjs'
+      - 'qa/battle-face-hair-shield-recovery.test.mjs'
+      - 'qa/rider-armor-coverage-regression.test.mjs'
+      - '.github/workflows/character-six-lane.yml'
+permissions:
+  contents: read
+concurrency:
+  group: character-six-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: false
+jobs:
+  six-lane-regression:
+    strategy:
+      fail-fast: false
+      matrix:
+        category: [faceHair, outfit]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 13
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install existing Three.js QA dependency (no paid API)
+        run: npm install --no-save --package-lock=false three@0.160.1
+      - name: Verify six-lane registry and actual GAME entrypoints
+        run: node --test qa/character-six-lane-contract.test.mjs
+      - name: Execute this 10-minute lane for actual existing model sources
+        if: github.event_name != 'pull_request' && (inputs.category == 'all' || inputs.category == matrix.category || github.event_name == 'schedule')
+        env:
+          INPUT_SLOT: ${{ inputs.slot || 'auto' }}
+          SCHEDULED_CRON: ${{ github.event.schedule }}
+        run: |
+          if [ "$INPUT_SLOT" = 'auto' ]; then
+            case "$SCHEDULED_CRON" in
+              '3 * * * *') INPUT_SLOT=0;;
+              '13 * * * *') INPUT_SLOT=1;;
+              '23 * * * *') INPUT_SLOT=2;;
+              '33 * * * *') INPUT_SLOT=3;;
+              '43 * * * *') INPUT_SLOT=4;;
+              '53 * * * *') INPUT_SLOT=5;;
+            esac
+          fi
+          if [ "$INPUT_SLOT" = 'auto' ]; then
+            node scripts/character-six-batch.mjs --category '${{ matrix.category }}'
+          else
+            node scripts/character-six-batch.mjs --category '${{ matrix.category }}' --slot "$INPUT_SLOT"
+          fi
+      # Every PR affecting real model sources must pass all six regression lanes;
+      # the minute-based scheduled rotation alone can miss a broken hair/action lane.
+      - name: Verify all six FF15 acceptance lanes before PR can be merged
+        if: github.event_name == 'pull_request'
+        run: |
+          set -euo pipefail
+          for slot in 0 1 2 3 4 5; do
+            echo "::group::${{ matrix.category }} / six-lane acceptance slot ${slot}"
+            node scripts/character-six-batch.mjs --category '${{ matrix.category }}' --slot "${slot}"
+            echo "::endgroup::"
+          done
+      - name: Archive separate source QA, not a false model approval
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: character-six-${{ matrix.category }}-${{ github.run_id }}
+          path: qa-reports/character-six-lane/${{ matrix.category }}-*.json
+          retention-days: 14
+          if-no-files-found: warn
+      - name: Link production and previews
+        if: always()
+        run: |
+          echo 'Production path: source/GLB change → source QA → WebGL/action QA → Android FPS gate → PR/CI → main merge → Pages release SHA.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Face studio: https://yamadayoshitaka.github.io/hai-gin-rpg/face-mesh-studio.html' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Outfit preview: https://yamadayoshitaka.github.io/hai-gin-rpg/outfit-maintenance.html' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Game: https://yamadayoshitaka.github.io/hai-gin-rpg/tactics-wireframe.html' >> "$GITHUB_STEP_SUMMARY"

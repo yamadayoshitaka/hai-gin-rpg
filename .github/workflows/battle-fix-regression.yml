@@ -43,6 +43,7 @@ on:
       - 'src/crowd-performance-budget.js'
       - 'src/adaptive-battle-resolution.js'
       - 'qa/mass-crowd-occlusion-performance.test.mjs'
+      - 'qa/army-visual-ground-tempo-parity.test.mjs'
       - 'qa/battle-board-bald-horse-regression.test.mjs'
       - 'src/confirmed-hit-overlay.js'
       - 'src/damage-number-style.js'
@@ -149,6 +150,7 @@ jobs:
           node --check src/crowd-lod-policy.js
           node --check src/crowd-performance-budget.js
           node qa/mass-crowd-occlusion-performance.test.mjs
+          node qa/army-visual-ground-tempo-parity.test.mjs
           node qa/battle-board-bald-horse-regression.test.mjs
           node qa/crowd-screen-lod.test.mjs
           node qa/garment-coverage-regression.test.mjs

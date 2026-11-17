@@ -40,35 +40,80 @@ small{font-size:11px}strong{font-weight:700}
 .batch-health .health-alert{color:#ffd29d;font-size:12px}
 .batch-health .health-next{color:#d9ebfb;font-size:12px}
 .batch-health strong{color:#f0d7a5}
+.select-area{display:flex;flex-wrap:wrap;gap:12px;align-items:end;margin:13px 0}
+.select-area label,.select-controls label{display:grid;gap:5px;color:#dceafb;font-weight:650;font-size:13px}
+.select-area select,.select-controls select,#worldObjectPicker{font:inherit;color:#fff;background:#17354b;border:1px solid #7295ac;border-radius:9px;padding:11px;min-height:44px;max-width:100%}
+.select-area select{min-width:min(100%,270px)}
+.select-controls{display:flex;flex-wrap:wrap;align-items:end;gap:10px;margin:10px 0}
+#faceExpressionPreviewLink,#worldObjectPreview{display:inline-flex;align-items:center;padding:10px 13px;min-height:44px;border:1px solid #7898af;border-radius:9px;text-decoration:none;background:#294f69;font-weight:700}
+[hidden]{display:none!important}
 </style></head><body>
-<header><a href="./dev-menu.html">← メンテナンス</a><strong>⚙ 灰銀｜毎時バッチ管理</strong><a href="./monster-quality-review.html">モンスター品質KPI</a><a href="./creature-reconstruction-plan.html">108体再構成計画</a><button class="refresh" id="refresh" type="button">状況を更新</button></header>
-<main><h1>品質改善バッチ：4系統＋ワールド6担当</h1>
-<p>各バッチの<strong>作業ブランチ・PR・QA・mainマージ・Pages公開</strong>を区別して確認できます。改修中の3Dモデルと本編の表示は、下の「PR版と本編を比較」から切り替えます。</p>
-<div class="summary" aria-live="polite"><span id="groupCount">4系統</span><span id="enabledCount">自動実行を確認中</span><span id="activeCount">GitHub実行状況を照合中</span><span id="schedulerCount">ChatGPT実行予約を確認中</span></div>
-<p id="fresh" class="muted">GitHub Actionsは画面表示時・更新時に確認します。ChatGPTの実行中判定はこのページから取得できません。</p>
+<header><a href="./dev-menu.html">← メンテナンス</a><strong>⚙ 灰銀｜FF15品質バッチ管理</strong><a href="./monster-quality-review.html">モンスター品質KPI</a><a href="./creature-reconstruction-plan.html">108体再構成計画</a><button class="refresh" id="refresh" type="button">状況を更新</button></header>
+<main><h1>FF15級品質バッチ：顔・髪／衣装／オブジェクト／モンスター／召喚獣</h1>
+<p>顔・髪、衣装、モンスター、召喚獣は各6テーマを10分間隔で実行する設定です（実際の実行頻度はGitHubの履歴で確認）。オブジェクトは6担当の毎時並列QAを設定しています。実際のモデル改修数と<strong>作業ブランチ・PR・QA・mainマージ・Pages公開</strong>を分けて確認できます。改修中の3Dモデルと本編の表示は、下の「PR版と本編を比較」から切り替えます。</p>
+<div class="summary" aria-live="polite"><span id="groupCount">6系統</span><span id="enabledCount">自動実行を確認中</span><span id="activeCount">GitHub実行状況を照合中</span><span id="schedulerCount">ChatGPT実行予約を確認中</span></div>
+<div class="select-area panel" aria-label="表示するバッチを選択">
+ <label for="batchDisplaySelect">表示するバッチ
+  <select id="batchDisplaySelect">
+   <option value="all">すべてのバッチ</option>
+   <option value="faceHair">顔・髪</option>
+   <option value="outfit">衣装</option>
+   <option value="world">オブジェクト・ステージ</option>
+   <option value="creatureMonster">モンスター</option>
+   <option value="creatureSummon">召喚獣</option>
+   <option value="anime">アニメ・漫画</option>
+  </select>
+ </label><span id="selectedBatchCount" class="muted" role="status">表示を準備中</span>
+</div>
+<section class="panel" id="batchLaunchEvidence" aria-label="手動起動の検証結果">
+ <h2>起動とゲーム反映は別の工程</h2>
+ <p>11月17日23:35の実行確認：<a href="https://github.com/yamadayoshitaka/hai-gin-rpg/issues/575" target="_blank" rel="noopener noreferrer">Issue #575</a>
+ → <a href="https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44104676482" target="_blank" rel="noopener noreferrer">手動起動ワークフロー成功</a>
+ → <a href="https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44104745097" target="_blank" rel="noopener noreferrer">顔・髪QA成功</a>。
+ <strong>これは品質検査の成功であり、モデルのゲーム新規採用は確認されていません。</strong></p>
+ <p class="muted">GitHub Actionsの自動スケジュールが毎時6回実行された証拠ではありません。実行履歴は各カードから確認してください。手動指示にはGitHubでIssueを実際に作成する操作が必要です。403などでGitHubを開けない場合は各カードの「ChatGPT用指示をコピー」を使用できます。</p>
+</section>
+<p id="fresh" class="muted">GitHub Actionsの実行履歴は手動更新時だけ取得します。ChatGPTタスクの実行状況はここではリアルタイム判定できません。</p>
 <p class="panel"><strong>第1章漫画（ゲーム本編との照合）：</strong><span id="chapter4status">各ステージの本編原画を照合中</span>　<a href="./story-chapter1-approval.html?stage=c01-s04">漫画確認・差し戻し</a></p>
 <p class="panel"><strong>予算ルール：</strong><span id="storySpendPolicy">追加の有料APIは使用しません</span></p>
 <p class="panel"><strong>画像生成ルート：</strong>Cloudflare既設API（無料、毎日09:20に最大1回の制作バッチ）を優先。上限時は追加課金せずChatGPT Plusの手動生成へ引き継ぎます。<a id="fallbackLink" href="./story-chapter1-approval.html?stage=c01-s04&provider=chatgpt">未生成コマをChatGPTで制作する</a> （自動API呼出しではありません）</p>
 <p id="releaseStatus" class="muted">公開コミットを照合中…</p>
-<section class="panel" aria-label="ワールド6担当バッチ">
- <h2>🏰 ワールド・オブジェクト6担当（毎時）</h2>
- <p>ゲームと同じ <code>createCatalogObject()</code> を基準に、台帳・造形・PBR材質・衝突/配置・LOD・WebGL実撮影を6本並列で確認します。6本合格後に結果を統合します。自動マージは安全な台帳・QA結果に限定し、3D品質やAndroid FPSの合格は別判定です。</p>
- <p id="worldSixStatus" class="muted">6担当の統合証跡を確認中…</p>
- <div class="links"><a href="https://github.com/yamadayoshitaka/hai-gin-rpg/actions/workflows/world-six-lane.yml" target="_blank" rel="noopener noreferrer">6担当の実行ログ</a><a href="./game.html">本編の実画面</a></div>
- <label for="worldObjectPicker">対象オブジェクト（同一3D生成関数で確認）</label>
- <select id="worldObjectPicker" style="max-width:100%;width:100%;margin:8px 0;padding:10px;color:#fff;background:#1e354b;border:1px solid #476379;border-radius:8px"><option value="">60種類の台帳を読み込み中…</option></select>
- <div class="links"><a href="./world-quality-preview.html?object=castle_001" id="worldObjectPreview">選択モデルを3D確認</a><a href="./object-editor.html">試作用オブジェクト作成（本編とは別）</a></div>
- <p id="worldObjectNote" class="muted">試作用エディタの出力は本編へ自動登録されません。正本カタログへの登録とQA・マージが必要です。</p>
+<section class="panel" id="faceExpressionPanel" aria-label="顔モデルの表情を選択">
+ <h2>顔・髪｜表情を選んで3D確認</h2>
+ <p class="muted">実際のモデル画面に用意された22種類の表情を切り替えます。表情を選ぶだけではゲームの配役・表情設定は変更されません。</p>
+ <div class="select-controls">
+  <label for="facePreviewGender">モデル<select id="facePreviewGender"><option value="female">女性</option><option value="male">男性</option></select></label>
+  <label for="faceExpressionSelect">表情<select id="faceExpressionSelect"><option value="neutral">通常</option></select></label>
+  <label for="facePreviewView">見る角度<select id="facePreviewView"><option value="front">正面</option><option value="threeQuarter">斜め45°</option><option value="side">横顔</option><option value="back">後頭部</option><option value="crown">頭頂部</option></select></label>
+  <a id="faceExpressionPreviewLink" href="./face-mesh-studio.html?gender=female&amp;expression=neutral&amp;view=front">この表情を3Dで見る</a>
+ </div>
+</section>
+<section class="panel" id="worldObjectPanel" aria-label="60種類のオブジェクトを選択">
+ <h2>オブジェクト｜60種類から選択して3D確認</h2>
+ <p class="muted">本編と同じ createCatalogObject() を基準に、台帳・造形・PBR・配置／衝突・LOD・WebGLの6担当が検証します。</p>
+ <div class="select-controls">
+  <label for="worldObjectPicker">対象オブジェクト<select id="worldObjectPicker"><option value="">オブジェクト台帳を読込中…</option></select></label>
+  <a id="worldObjectPreview" href="./world-quality-preview.html?object=castle_001">選択した3Dモデルを見る</a>
+ </div>
+ <p id="worldObjectNote" class="muted">ゲーム本編への採用状況を照合中…</p>
+ <p id="worldSixStatus" class="muted">6担当の品質検証記録を照合中…</p>
+</section>
+<section class="panel" aria-label="FF15級人物・モンスター・召喚獣品質基準">
+ <h2>人物・オブジェクト・モンスター・召喚獣の品質基準（各6工程）</h2>
+ <p>先ほど承認された顔・髪／衣装の設定画を品質ターゲットとします。種族別の基準は、解剖/造形、質感、接合、動作、エフェクト、LODとゲーム採用判定です。<strong>定期QA成功は3Dモデル改修や本編反映の証拠ではありません。</strong></p>
+ <div class="links"><a href="./face-mesh-studio.html">顔・髪の3D画面</a><a href="./outfit-maintenance.html">衣装3D画面</a><a href="./monster-manager.html">モンスター3D画面</a><a href="./creature-reconstruction-plan.html">108体の進捗</a><a href="./tactics-wireframe.html">ゲーム本編</a></div>
+ <p class="muted">旧人物一括・旧モンスター一括バッチは停止維持。オブジェクト6担当は再開。旧PRと履歴は削除せずGitHubに保持します。GitHub Actions定期実行は遅延/スキップが起こり得るため実行履歴を照合します。</p>
  </section>
 <div class="grid" id="cards"><p>バッチ情報を読み込み中…</p></div>
 <footer>
  <h2>表示と手動指示について</h2>
  <p>「毎時有効」はスケジュールが有効という意味で、いま処理しているという意味ではありません。ChatGPT側は取得時点の記録を表示し、GitHub側は最新のActions履歴を取得します。</p>
- <p><strong>有効／無効：</strong>バッチの作業実行を切り替えるには各カードのボタンからGitHub Issueを開き、所有者が「Submit new issue」で確定します。ChatGPTの定期タスクそのもののON/OFF操作とは別です。人・モンスターの既存定期タスクは実行前に切替設定を確認するよう変更が必要です。</p>
+ <p><strong>有効／無効：</strong>顔髪・衣装・オブジェクト・モンスター・召喚獣はGitHub Actionsのスイッチ連動。バッチの作業実行を切り替えるには各カードのボタンからGitHub Issueを開き、所有者が「Submit new issue」で確定します。ChatGPTの定期タスクそのもののON/OFF操作とは別です。旧一括人物・モンスターの定期タスクは停止維持します。</p>
  <p><strong>参考画像：</strong>ここに画像を選択・貼り付けて確認し、画像をコピーしてGitHub Issue本文へ貼り付けてください。画像はPagesから直接アップロードされません。</p>
+ <p><strong>GitHub APIの403対策：</strong>ページ表示中は認証なしGitHub APIを自動連続呼出ししません。「状況を更新」を押した時だけ1回まとめて取得し、403・429時は再試行を抑制します。APIが403でもバッチ停止を意味するわけではありません。</p>
  <p><strong>実作業の工程別進捗：</strong>起動・ソース修正・QA・コミット・PR・マージ・公開を別々に表示します。「実作業未完了」は完了扱いにせず、次回引継ぎを表示します。工程台帳は最終保存時点、PRの最新コミットとマージ状態はGitHubから照会します。改修中の画面はPR版比較で開き、本編の公開SHAも別途照合します。</p>
- <p><strong>手動指示の送り方：</strong>各カードに修正内容を入力 →「手動指示を送る」→ GitHubのIssue画面で「Submit new issue」を押してください。これは1回限りの依頼で、GitHub認証情報をこのサイトに入力する必要はありません。</p>
- <p class="note">人モデル・モンスター・漫画のChatGPT定期タスクはGitHubの切替設定を毎回確認します。現在のスケジュール有効/無効はこのサイトから直接取得できず、最新のChatGPT実行日時は記録時点の情報です。GitHub ActionsのQA成功だけで画像生成・3D修正・本編反映の完了とは判断しません。追加の有料API課金は行いません。</p>
+ <p><strong>手動指示の送り方：</strong>各カードに修正内容を入力 →「GitHubでIssueを作成して起動」→ GitHubのIssue画面で「Submit new issue」を押す必要があります。GitHubへ移動しただけではバッチは起動しません。GitHubが403の場合は「ChatGPT用指示をコピー」から、このチャットに貼り付けてください。これは1回限りの依頼で、GitHub認証情報をこのサイトに入力する必要はありません。</p>
+ <p class="note">旧人モデル一括・旧モンスター一括は停止。新しい4系統は10分間隔、オブジェクトは既存の6担当を毎時並列でQA実行します。漫画は既存のChatGPT定期タスクを維持します。現在のスケジュール有効/無効はこのサイトから直接取得できず、最新のChatGPT実行日時は記録時点の情報です。GitHub ActionsのQA成功だけで画像生成・3D修正・本編反映の完了とは判断しません。追加の有料API課金は行いません。</p>
  <div class="links"><a href="https://github.com/yamadayoshitaka/hai-gin-rpg/actions" target="_blank" rel="noopener noreferrer">全GitHub Actionsを見る</a><a href="https://github.com/yamadayoshitaka/hai-gin-rpg/issues?q=is%3Aissue+is%3Aopen+%22hai-gin-batch%22" target="_blank" rel="noopener noreferrer">手動指示の履歴を見る</a></div>
 </footer>
 </main>
@@ -78,9 +123,55 @@ const REPO='yamadayoshitaka/hai-gin-rpg',GH='https://github.com/'+REPO,API='http
 const $=id=>document.getElementById(id);
 const TIME=v=>v?new Date(v).toLocaleString('ja-JP',{timeZone:'Asia/Tokyo',month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}):'取得なし';
 const groups=[];const elements=new Map();
+const EXPRESSION_OPTIONS=Object.freeze([
+ ['neutral','通常'],['softSmile','微笑み'],['smile','笑顔'],['laugh','大笑い'],
+ ['angry','怒り'],['shout','怒鳴る'],['sad','悲しい'],['surprised','驚き'],
+ ['troubled','困る'],['serious','真剣'],['determined','決意'],['embarrassed','恥ずかしい'],
+ ['tearful','涙目'],['sleepy','眠い'],['skeptical','疑い'],['smug','不敵な笑み'],
+ ['focused','集中'],['curious','好奇心'],['startled','動揺'],['afraid','恐怖'],
+ ['relaxed','安らぎ'],['pout','不満']
+]);
+function setupExpressionSelector(){
+ const sel=$('faceExpressionSelect');sel.replaceChildren();
+ for(const [id,label] of EXPRESSION_OPTIONS){
+  const opt=document.createElement('option');opt.value=id;opt.textContent=label;sel.appendChild(opt);
+ }
+ const params=new URLSearchParams(location.search);
+ if(EXPRESSION_OPTIONS.some(([id])=>id===params.get('expression')))sel.value=params.get('expression');
+ if(['male','female'].includes(params.get('gender')))$('facePreviewGender').value=params.get('gender');
+ const update=()=>{
+  $('faceExpressionPreviewLink').href='./face-mesh-studio.html?'+new URLSearchParams({
+   gender:$('facePreviewGender').value,expression:sel.value,view:$('facePreviewView').value
+  }).toString();
+ };
+ for(const id of ['facePreviewGender','faceExpressionSelect','facePreviewView'])$(id).addEventListener('change',update);
+ update();
+}
+function applyDisplayFilter(){
+ const select=$('batchDisplaySelect'),id=select.value,all=id==='all';
+ for(const g of groups){
+  const v=elements.get(g.id);
+  if(v?.card)v.card.hidden=!all&&g.id!==id;
+ }
+ $('faceExpressionPanel').hidden=!all&&id!=='faceHair';
+ $('worldObjectPanel').hidden=!all&&id!=='world';
+ $('selectedBatchCount').textContent=all?groups.length+'系統を表示中':'1系統を表示中（全'+groups.length+'系統）';
+}
+function setupDisplaySelector(){
+ const sel=$('batchDisplaySelect'),q=new URLSearchParams(location.search);
+ const name=q.get('group');
+ if(groups.some(g=>g.id===name))sel.value=name;
+ sel.addEventListener('change',()=>{
+  const url=new URL(location.href);
+  if(sel.value==='all')url.searchParams.delete('group');else url.searchParams.set('group',sel.value);
+  history.replaceState(null,'',url);
+  applyDisplayFilter();
+ });
+ applyDisplayFilter();
+}
 const PROGRESS_STAGES=[['launch','起動'],['code','ソース修正'],['qa','QA'],['commit','コミット'],['pr','PR'],['merge','マージ'],['deploy','公開']];
 const STEP_LABELS={done:'完了',pending:'未完了',failed:'失敗',skipped:'未実行',unknown:'未確認'};
-const PROGRESS_LABELS={work_incomplete:'実作業未完了',in_review:'検証・審査待ち',deployed:'公開完了',paused:'定期停止',unverified:'状況未確認'};
+const PROGRESS_LABELS={blocked:'停止要因あり',work_incomplete:'実作業未完了',in_review:'検証・審査待ち',deployed:'公開完了',paused:'定期停止',unverified:'状況未確認'};
 
 function tag(t,cls,content){const e=document.createElement(t);if(cls)e.className=cls;if(content!==undefined)e.textContent=content;return e}
 function makeLink(text,url,external){const a=tag('a','',text);a.href=url;if(external){a.target='_blank';a.rel='noopener noreferrer'}return a}
@@ -97,8 +188,8 @@ function statusLabel(result){
  return result.conclusion||'履歴なし';
 }
 function createCard(data){
- const c=tag('section','card');const t=tag('div','top');
- const title=tag('span','name',({"human":"👤 ","monster":"🐉 ","world":"🏰 ","anime":"🎬 "}[data.id]||'')+data.name);
+ const c=tag('section','card');c.dataset.batchGroup=data.id;const t=tag('div','top');
+ const title=tag('span','name',({"faceHair":"👤 ","outfit":"🛡️ ","world":"🏰 ","creatureMonster":"🐉 ","creatureSummon":"✨ ","anime":"🎬 "}[data.id]||'')+data.name);
  const badge=tag('span','badge '+(data.autoEnabled?'on':'off'),data.autoEnabled?'毎時設定：有効':'毎時設定：停止');
  t.append(title,badge);c.appendChild(t);c.appendChild(paragraph(data.subtitle,'muted'));
  const schedule=tag('div','panel');
@@ -113,7 +204,7 @@ function createCard(data){
  const previewPanel=tag('section','panel');
  const previewHead=tag('strong','','改修中の実画面・本編公開を確認');
  const previewStatus=paragraph('関連するGitHub PRを照合中…','status');
- const previewLink=makeLink('PR版と本編を視覚比較','./batch-pr-preview.html?group='+encodeURIComponent(data.id),false);
+ const previewLink=makeLink('PR版と本編を視覚比較','./batch-pr-preview.html?group='+encodeURIComponent(data.previewGroup||data.id),false);
  previewLink.className='link';previewPanel.append(previewHead,previewStatus,previewLink);
  c.appendChild(previewPanel);
  const progressBox=tag('section','panel work-progress');
@@ -151,7 +242,9 @@ function createCard(data){
     +JSON.stringify(cmd,null,2)+'\n```\n\n'
     +'バッチ作業の実行制御を変更してください。';
   const link=GH+'/issues/new?'+new URLSearchParams({title:'[hai-gin-switch] '+data.name+' '+(cmd.enabled?'ON':'OFF'),body});
-  const win=window.open(link,'_blank','noopener,noreferrer');if(!win)location.assign(link);
+  // Android popup return can be null even when a tab opened with noopener.
+  // Navigate the current tab exactly once; the user returns with Back.
+  window.location.assign(link);
   swText.textContent='GitHub Issue画面で「Submit new issue」を押して確定してください';
  });
  const links=tag('div','links');
@@ -161,14 +254,16 @@ function createCard(data){
  const box=tag('div','field');
  const title2=tag('label','','次の手動指示（1回だけ）');
  const instruction=document.createElement('textarea');instruction.maxLength=500;instruction.placeholder={
- human:'例：頭頂部の継ぎ目と地肌露出、横顔の首の長さを修正して',
- monster:'例：龍王の顔を実写寄りにし、天使の羽と飛行姿勢を優先して',
- world:'例：城壁の石材・木目・陰影を見本に近づけて',
+ faceHair:'例：頭頂部UVと黒目の陰影をFF15目標へ改善して',
+ outfit:'例：剣士とシーフ背面の板状パーツと騎乗時貫通を直して',
+ creatureMonster:'例：m002の鼻と毛並みをm001を基準に実メッシュ再造形して',
+ creatureSummon:'例：seraph_guardianの羽と人型顔、飛行姿勢を改善して',
+ world:'例：選択したオブジェクトの木組みや石材・接合・PBRを写実的に改善して',
  anime:'例：第1章の未完成コマを、登場人物とシナリオに忠実に描いて'
  }[data.id];
  title2.appendChild(instruction);box.appendChild(title2);c.appendChild(box);
  const target=field('対象ID（省略すると次の未処理）',
- data.id==='world'?'例：object:castle_001 / stage:c01-s04':data.id==='monster'?'例：m031':data.id==='human'?'例：female':'例：c01-s04',false);
+ data.id==='world'?'例：object:castle_001 / stage:c01-s04':data.id==='monster'?'例：m031':data.id==='faceHair'?'例：female':data.id==='outfit'?'例：job01':'例：c01-s04',false);
  c.appendChild(target.wrapper);
 
  const drop=tag('div','image-drop');drop.tabIndex=0;
@@ -208,22 +303,48 @@ function createCard(data){
   }catch{imgStatus.textContent='コピー非対応。GitHubのIssue本文にこの画像ファイルを直接添付してください'}
  });
  drop.append(help,chooser,preview,imgStatus,copy);c.appendChild(drop);
- const button=tag('button','submit','次の指示を手動で送る');button.type='button';c.appendChild(button);
- const feedback=paragraph('GitHubで内容の確認・送信が必要です。','note');feedback.setAttribute('role','status');c.appendChild(feedback);
+ const button=tag('button','submit','GitHubでIssueを作成して起動');button.type='button';c.appendChild(button);
+ const sendExplain=paragraph('このボタンだけでは起動しません。次のGitHub画面で「Submit new issue」を押すとQAが起動します。GitHubへのログインが必要です。','note');
+ c.appendChild(sendExplain);
+ const copyChat=tag('button','image-copy','ChatGPT用指示をコピー（GitHub 403時の代替）');
+ copyChat.type='button';c.appendChild(copyChat);
+ const manualText=tag('textarea','');manualText.readOnly=true;manualText.hidden=true;
+ manualText.setAttribute('aria-label','コピーできなかった場合のChatGPT用指示');c.appendChild(manualText);
+ const feedback=paragraph('実行未依頼：GitHub Issueを作成するか、指示をChatGPTへ貼り付けてください。','note');
+ feedback.setAttribute('role','status');c.appendChild(feedback);
+ copyChat.addEventListener('click',async()=>{
+  const cmd={category:data.id,target:target.el.value.trim(),instruction:instruction.value.trim(),max:1};
+  if(!cmd.instruction){feedback.textContent='先に改修指示を入力してください';instruction.focus();return}
+  if(cmd.target&&!/^[A-Za-z0-9:_-]{1,80}$/.test(cmd.target)){
+   feedback.textContent='対象IDは半角英数字と : _ - のみです';return;
+  }
+  const request='灰銀のレゾナンス：バッチセンターで指定した作業を、接続済みGitHub経由で実行してください。カテゴリ '+cmd.category+
+   '、対象 '+(cmd.target||'未完了の次対象')+'。指示：'+cmd.instruction+
+   '。無料条件・FF15級品質目標、実改修/QA/PR/本編採用を区別して結果を報告。';
+  try{
+   if(!navigator.clipboard?.writeText)throw Error('unsupported');
+   await navigator.clipboard.writeText(request);
+   manualText.hidden=true;feedback.textContent='ChatGPT用の指示をコピーしました。このチャットに貼り付けて送信してください。';
+  }catch{
+   manualText.hidden=false;manualText.value=request;manualText.select();
+   feedback.textContent='自動コピー不可。下のテキストを選択し、このチャットに貼り付けてください。';
+  }
+ });
  button.addEventListener('click',()=>{
   const cmd={category:data.id,target:target.el.value.trim(),instruction:instruction.value.trim(),max:1};
   if(cmd.target&&!/^[A-Za-z0-9:_-]{1,80}$/.test(cmd.target)){feedback.textContent='対象IDは半角英数字と : _ - で入力してください。';return}
   if(data.id==='world'&&cmd.target&&!/^(object:[a-z][\w-]*|stage:c\d{2}-s\d{2})$/.test(cmd.target)){feedback.textContent='対象は object:... または stage:c01-s04 の形式で指定してください。';return}
   if(!cmd.instruction){feedback.textContent='まず次の指示を入力してください。';instruction.focus();return}
   const content='<!-- hai-gin-hourly-batch-v1 -->\n```json\n'+JSON.stringify(cmd,null,2)+'\n```\n\n'
-   +'毎時品質改善の手動依頼。Issue作成後にカテゴリ別のQAを起動。実際のモデル変更は成果物の検証後に行う。'+(attachment?'\n\n参考画像：'+attachment.name+'（画像をGitHub Issue本文に貼り付けてください）':'');
+   +'毎時品質改善の手動依頼。Issue作成後にカテゴリ別QAのみ起動します。実際のモデル変更は別のChatGPT定期改修タスクがIssueを読み、実ソースを改善します。'+(attachment?'\n\n参考画像：'+attachment.name+'（画像をGitHub Issue本文に貼り付けてください）':'');
   const params=new URLSearchParams({title:'[hai-gin-batch] '+data.name+'：次の指示',body:content});
   const link=GH+'/issues/new?'+params.toString();
-  feedback.textContent=attachment?'参考画像をGitHub Issue本文に添付し、Submit new issueで確定してください。':'GitHub画面でSubmit new issueを押すと指示を送れます。';
-  const win=window.open(link,'_blank','noopener,noreferrer');
-  if(!win)window.location.assign(link);
+  feedback.textContent=attachment?'次のGitHub画面で画像を添付し、「Submit new issue」を押すまで未起動です。':'次のGitHub画面で「Submit new issue」を押すまで未起動です。';
+  // Always navigate exactly once. noopener popups can return null on Android
+  // even when opened, causing duplicate redirections and lost form state.
+  window.location.assign(link);
  });
- $('cards').appendChild(c);elements.set(data.id,{detail,activity,log,swText,swBtn,badge,previewStatus,previewLink,targetInput:target.el,progress:{current,stageGrid,progressTime,progressSummary,nextAction,progressEvidence},health});
+ $('cards').appendChild(c);elements.set(data.id,{card:c,detail,activity,log,swText,swBtn,badge,previewStatus,previewLink,targetInput:target.el,progress:{current,stageGrid,progressTime,progressSummary,nextAction,progressEvidence},health});
 }
 async function fetchJSON(url){const r=await fetch(url,{cache:'no-store',headers:{Accept:'application/vnd.github+json'}});if(!r.ok)throw Error('HTTP '+r.status);return r.json()}
 
@@ -313,24 +434,31 @@ async function updateProgress(){
   }
  }
 }
+/** PR cards use published metadata. Do not fetch unauthenticated GitHub PR API on load. */
 async function updatePreviewStatus(){
  try{
   const catalog=await fetchJSON('./data/batch-pr-previews.json?ts='+Date.now());
   if(catalog.schemaVersion!==1||!catalog.groups)throw Error('PR紐付け不正');
-  await Promise.all(groups.map(async group=>{
-   const view=elements.get(group.id),item=catalog.groups[group.id]?.[0];
-   if(!view||!item)return;
-   view.previewLink.href='./batch-pr-preview.html?group='+encodeURIComponent(group.id)+'&pr='+item.pr;
-   try{
-    const pr=await fetchJSON(API+'/pulls/'+item.pr);
-    const sha=String(pr.head?.sha||'');
-    const latest=sha.length>=12?sha.slice(0,12):'不明';
-    view.previewStatus.textContent='直近の確認対象：PR #'+item.pr+' ／ '+latest+' ／ '+
-     (pr.merged_at?'mainマージ済み（Pages公開は別途照合）':pr.draft?'Draft・main未反映':pr.state==='open'?'PR審査中・main未反映':'PR終了・main未反映');
-   }catch(e){view.previewStatus.textContent='PR #'+item.pr+' の状態取得不可。PRの画面で確認：'+e.message}
-  }));
+  for(const group of groups){
+   const view=elements.get(group.id),item=catalog.groups[group.previewGroup||group.id]?.[0];
+   if(!view)continue;
+   if(!item){
+    view.previewStatus.textContent='現在の登録済みPRはありません（実改修の完了は未確認）';
+    continue;
+   }
+   view.previewLink.href='./batch-pr-preview.html?group='+
+    encodeURIComponent(group.previewGroup||group.id)+'&pr='+item.pr;
+   view.previewStatus.replaceChildren();
+   view.previewStatus.append(
+    document.createTextNode('比較対象：PR #'+item.pr+' ／ マージ・公開状態はGitHubで確認　'),
+    makeLink('PRを直接確認',GH+'/pull/'+item.pr,true)
+   );
+  }
  }catch(e){
-  for(const group of groups){const v=elements.get(group.id);if(v)v.previewStatus.textContent='関連PRを確認できません：'+e.message}
+  for(const group of groups){
+   const view=elements.get(group.id);
+   if(view)view.previewStatus.textContent='PR比較台帳の取得に失敗：'+e.message;
+  }
  }
 }
 async function updateChapter4(){
@@ -384,21 +512,95 @@ async function updateRelease(){
    (sha.length>=12?sha.slice(0,12):'取得不可')+' ／ 漫画画像も同じ公開コミットに固定';
  }catch(e){$('releaseStatus').textContent='公開版の照合に失敗：'+e.message}
 }
-async function updateRuns(){
+/** Avoid HTTP 403 from unauthenticated API rate limits:
+ * no automatic GitHub API requests, one collection request per manual refresh,
+ * backoff on 403/429; live states are never confused with quality improvement.
+ */
+const RUN_CACHE_KEY='hg-batch-runs-v2',RUN_BACKOFF_KEY='hg-batch-api-backoff-v2';
+const RUN_MIN_REFRESH_MS=60000;
+function readSessionJson(key){
+ try{return JSON.parse(sessionStorage.getItem(key)||'null')}catch{return null}
+}
+function saveSessionJson(key,value){
+ try{sessionStorage.setItem(key,JSON.stringify(value))}catch{}
+}
+function displayRunSnapshot(runs,recordedAt){
+ const stamp=TIME(recordedAt);
+ for(const g of groups){
+  const view=elements.get(g.id);
+  if(!view)continue;
+  const matching=runs.filter(r=>typeof r.path==='string'&&
+    r.path.endsWith('/'+g.workflow));
+  // Under a burst of PR checks, a main event may be missing from the
+  // last 100 runs. Never invent a current "running" state.
+  const run=matching.find(r=>r.head_branch==='main')||matching[0];
+  view.activity.textContent=run?'GitHub QA：'+statusLabel(run)+' ／ '+TIME(run.created_at)+
+   '（取得：'+stamp+'）':'GitHub QA：直近100件には実行記録なし。実行ログから確認';
+  if(run?.html_url)view.log.href=run.html_url;
+  if(g.id==='world'&&run)view.detail.textContent=
+   'GitHub実行：'+TIME(run.created_at)+' ／ '+statusLabel(run)+'（造形成果は別判定）';
+ }
+ $('activeCount').textContent='GitHub実行状況：'+stamp+' の記録';
+ $('fresh').textContent='GitHub Actions情報：'+stamp+
+  '取得。画面ではAPIの自動再照会を行いません。ChatGPT実改修は別タスク。';
+}
+async function updateRuns({request=false}={}){
+ const cache=readSessionJson(RUN_CACHE_KEY);
+ if(!request){
+  if(cache&&Array.isArray(cache.runs))displayRunSnapshot(cache.runs,cache.at);
+  else{
+   for(const g of groups){
+    const view=elements.get(g.id);
+    if(view)view.activity.textContent='GitHub APIを自動照会しません。上の「状況を更新」で取得できます';
+   }
+   $('activeCount').textContent='GitHub API未照会（403アクセス制限の回避）';
+   $('fresh').textContent='静的なバッチ設定と工程記録を表示中。最新のActions履歴は「状況を更新」または実行ログから確認できます。';
+  }
+  return;
+ }
+ const now=Date.now(),blocked=Number(readSessionJson(RUN_BACKOFF_KEY)?.until||0);
+ if(now<blocked){
+  $('activeCount').textContent='GitHub API再試行を制限中（アクセス拒否後）';
+  $('fresh').textContent='GitHub APIへのアクセスを一時停止しています。'+
+   TIME(new Date(blocked).toISOString())+'以降に再確認するか、各バッチの実行ログを開いてください。';
+  if(cache&&Array.isArray(cache.runs))displayRunSnapshot(cache.runs,cache.at);
+  return;
+ }
+ if(cache&&Array.isArray(cache.runs)&&now-Date.parse(cache.at)<RUN_MIN_REFRESH_MS){
+  displayRunSnapshot(cache.runs,cache.at);return;
+ }
  try{
-  const workflows=await fetchJSON(API+'/actions/workflows?per_page=100');
-  const wfList=workflows.workflows||[];
-  await Promise.all(groups.map(async g=>{
-    const view=elements.get(g.id),wf=wfList.find(w=>w.path.endsWith('/'+g.workflow));
-    if(!view||!wf){if(view)view.activity.textContent='GitHub QAワークフローが未登録です';return}
-    const result=await fetchJSON(API+'/actions/workflows/'+wf.id+'/runs?per_page=5');
-    const run=result.workflow_runs?.[0];view.activity.textContent='GitHub QA：'+statusLabel(run)+(run?' ／ '+TIME(run.created_at):'');
-    if(run)view.log.href=run.html_url;
-    if(g.id==='world')view.detail.textContent=run?'最新の実行：'+TIME(run.created_at)+' ／ '+statusLabel(run):'実行履歴なし';
-  }));
-  $('activeCount').textContent='GitHub実行状況：更新済み';
-  $('fresh').textContent='GitHubの直近実行を更新：'+TIME(new Date().toISOString())+' ／ ChatGPTの状態は記録時点の情報です';
- }catch(e){$('activeCount').textContent='GitHubの情報取得に失敗';$('fresh').textContent='GitHub情報を取得できませんでした（'+e.message+'）。「実行ログを見る」で直接確認できます。'}
+  const r=await fetch(API+'/actions/runs?per_page=100',{
+   cache:'no-store',headers:{Accept:'application/vnd.github+json'}
+  });
+  if(!r.ok){
+   const remaining=r.headers.get('x-ratelimit-remaining');
+   const reset=Number(r.headers.get('x-ratelimit-reset'));
+   const isLimited=(r.status===403||r.status===429);
+   if(isLimited){
+    const requested=reset>0?reset*1000:now+15*60000;
+    saveSessionJson(RUN_BACKOFF_KEY,{until:Math.max(now+60000,requested)});
+   }
+   throw Error('HTTP '+r.status+
+    (remaining==='0'?'（GitHub API利用上限）':
+    isLimited?'（GitHub APIの権限／アクセス制限）':''));
+  }
+  const data=await r.json(),runs=data.workflow_runs||[];
+  if(!Array.isArray(runs))throw Error('GitHub実行履歴形式が不正');
+  saveSessionJson(RUN_CACHE_KEY,{at:new Date().toISOString(),runs:runs.map(x=>({
+    path:x.path,status:x.status,conclusion:x.conclusion,created_at:x.created_at,
+    head_branch:x.head_branch,html_url:x.html_url
+  }))});
+  displayRunSnapshot(runs,new Date().toISOString());
+ }catch(e){
+  $('activeCount').textContent='GitHub API取得制限（バッチ停止とは限りません）';
+  $('fresh').textContent='GitHub APIの取得に失敗：'+e.message+
+   '。ページは静的台帳を表示し続けます。各カードの「実行ログを見る」から直接確認してください。';
+  for(const g of groups){
+   const v=elements.get(g.id);
+   if(v&&!cache)v.activity.textContent='APIの状態を取得できません（実行停止とは未判定）';
+  }
+ }
 }
 async function updateWorldSix(){
  try{
@@ -442,15 +644,18 @@ async function updateWorldSix(){
 async function start(){
  try{
   const j=await fetchJSON('./data/hourly-batch-dashboard.json');
-  if(!Array.isArray(j.groups)||j.groups.length!==4)throw Error('4系統の設定が不正');
-  $('cards').replaceChildren();groups.push(...j.groups);
+  if(!Array.isArray(j.groups)||j.groups.length!==6)throw Error('6系統の設定が不正');
+  $('cards').replaceChildren();groups.push(...j.groups);$('groupCount').textContent=groups.length+'系統';
   for(const g of groups)createCard(g);
+  setupExpressionSelector();setupDisplaySelector();
   $('enabledCount').textContent='GitHub作業許可：'+groups.filter(g=>g.autoEnabled).length+'有効・'+groups.filter(g=>!g.autoEnabled).length+'停止';
-  $('schedulerCount').textContent='ChatGPT定期タスク：'+groups.filter(g=>g.schedulerEnabled===true&&g.source.includes('ChatGPT')).length+'有効・'+groups.filter(g=>g.schedulerEnabled===false&&g.source.includes('ChatGPT')).length+'停止（記録時点）';
+  const activeTasks=new Set(groups.filter(g=>g.schedulerEnabled===true&&g.source.includes('ChatGPT')).map(g=>g.automationId||g.id));
+  const pausedGroups=groups.filter(g=>g.schedulerEnabled===false&&g.source.includes('ChatGPT')).length;
+  $('schedulerCount').textContent='ChatGPT定期タスク：'+activeTasks.size+'件有効・'+pausedGroups+'系統停止（共有タスクは1件と計算、記録時点）';
   $('fresh').textContent='ChatGPTタスク最終確認：'+TIME(j.asOf)+' ／ 現在処理中かはGitHub Actionsのみ取得可能';
   await updateWorldSix();await updateSwitches();await updateProgress();await updatePreviewStatus();await updateChapter4();await updateStoryBudget();await updateRelease();await updateRuns();
  }catch(e){$('cards').textContent='管理データを読み込めませんでした：'+e.message}
 }
-$('refresh').addEventListener('click',async()=>{await updateWorldSix();await updateSwitches();await updateProgress();await updatePreviewStatus();await updateChapter4();await updateStoryBudget();await updateRelease();await updateRuns()});
-start();setInterval(()=>{if(!document.hidden&&groups.length){updateSwitches();updateProgress();updateRuns()}},90000);
+$('refresh').addEventListener('click',async()=>{await updateWorldSix();await updateSwitches();await updateProgress();await updatePreviewStatus();await updateChapter4();await updateStoryBudget();await updateRelease();await updateRuns({request:true})});
+start();setInterval(()=>{if(!document.hidden&&groups.length){updateSwitches();updateProgress()}},90000);
 </script></body></html>

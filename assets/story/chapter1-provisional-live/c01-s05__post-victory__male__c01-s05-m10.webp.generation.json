@@ -1,0 +1,61 @@
+{
+  "kind": "CLOUDFLARE_REAL_WEBP_REVIEW_CANDIDATE_NOT_APPROVED",
+  "shotKey": "c01-s05|post-victory|male|c01-s05-m10",
+  "stageId": "c01-s05",
+  "edition": "post-victory",
+  "gender": "male",
+  "panelId": "c01-s05-m10",
+  "screenplayText": "次の舞台「灰銀の本城・封印地の討伐」へ進む。ここで見たことを忘れてはならない。",
+  "visibleActorIds": [
+    "vess",
+    "garan"
+  ],
+  "actualReferenceImagesAttached": [
+    {
+      "actorId": "vess",
+      "source": "assets/story-cinema/cast/vess.webp",
+      "originalSha256": "c4b0a92f75cad6f4b4682d4c8eb1b4bb70779271ba3673651a159bf4f9adfd1d",
+      "submittedSha256": "6c51eee922dad5f3a2f67b0809807476fb4a32da4acf3ee3a48f9fc5eaa45e3f",
+      "actualBytes": 324362,
+      "pixels": [
+        329,
+        480
+      ]
+    },
+    {
+      "actorId": "garan",
+      "source": "assets/story-cinema/cast/garan.webp",
+      "originalSha256": "aeb457957485f89244eb0b4f270b72e4bf0670341f2444ac7f43299222075a8b",
+      "submittedSha256": "30c17f9c9f97f0f7a5f66ce2e6f03a711d2ebfb697de0c6a8a84545f9c96cc3c",
+      "actualBytes": 262661,
+      "pixels": [
+        329,
+        480
+      ]
+    },
+    {
+      "actorId": "style_benchmark",
+      "source": "assets/story/chapters/c01/panels/c01-s01-m02-male.webp",
+      "originalSha256": "e70901415a751b576a00dcac34f93065051b3513b875f58546533f59ccfee71d",
+      "submittedSha256": "a6602427e7fde9cda0e99dd5511998682513154a72c029a190abd5e74786eca2",
+      "actualBytes": 247193,
+      "pixels": [
+        480,
+        270
+      ]
+    }
+  ],
+  "imageSha256": "72af149206b590e2040aa062245c2698049593f285380834ad6a3e57029176d6",
+  "nativePixels": [
+    1024,
+    576
+  ],
+  "imageBytes": 192034,
+  "model": "@cf/black-forest-labs/flux-2-klein-4b",
+  "seed": 2082326749,
+  "promptSha256": "01747e7f52ba8d0ebd1e9ef53c78f8c98c989925dc1da538b3a1b41e0facf115",
+  "estimatedNeurons": 120.31,
+  "visuallyApproved": false,
+  "formallyRegistered": false,
+  "gameDeployed": false
+}

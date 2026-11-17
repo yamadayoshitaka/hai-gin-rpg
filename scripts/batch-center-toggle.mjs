@@ -6,8 +6,9 @@
 import fs from 'node:fs';
 import {spawnSync} from 'node:child_process';
 export const MARKER='<!-- hai-gin-batch-switch-v1 -->';
-export const CATEGORIES=Object.freeze(['human','monster','world','anime']);
+export const CATEGORIES=Object.freeze(['human','monster','world','anime','faceHair','outfit','creatureMonster','creatureSummon']);
 const PATH='data/batch-center-switches.json';
+// Retired source groups can stay in history; live split groups use their own switches.
 
 export function parseToggleIssue(issue, owner){
   if(!issue||issue.user?.login!==owner||!String(issue.title).startsWith('[hai-gin-switch] '))

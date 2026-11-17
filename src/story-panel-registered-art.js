@@ -2,6 +2,9 @@ import {stage2ReviewedPanelAsset} from './story-stage2-reviewed-art.js';
 import {chapterReviewedPanelAsset} from './story-chapter-reviewed-art.js';
 import {chapter1ProvisionalLivePanel} from './story-chapter1-provisional-live.js';
 import {provisionalRegisteredStoryPanel} from './story-provisional-registered-art.js';
+import {restoredStoryArchivePanel} from './story-archive-restored-art.js';
+import {oldStoryArtReuseAllowed,requiresNewStoryArt} from './story-art-sourcing-policy.js';
+import {newOriginalStoryPanelAsset} from './story-new-original-art.js';
 /**
  * Exactly registered and already sliced Chapter 1 manga panels.
  * A registered original is NOT an approved/quality-reviewed image.
@@ -17,6 +20,10 @@ const REGISTERED=Object.freeze({
 });
 export function registeredStoryPanelAsset(shot){
  if(!shot||typeof shot.id!=='string')return null;
+ // Stage 5+ must use an independently generated NEW original, never an old
+ // provisional, archive recovery, legacy sheet or prior-generation WebP.
+ if(requiresNewStoryArt(shot.stageId))return newOriginalStoryPanelAsset(shot);
+ if(!oldStoryArtReuseAllowed(shot.stageId))return null;
  const chapterReviewed=chapterReviewedPanelAsset(shot);
  if(chapterReviewed)return chapterReviewed;
  const reviewedStage2=stage2ReviewedPanelAsset(shot);
@@ -25,6 +32,10 @@ export function registeredStoryPanelAsset(shot){
  // per-image human-reviewed final artwork. Removing entry restores old source.
  const draftLive=chapter1ProvisionalLivePanel(shot);
  if(draftLive)return draftLive.asset;
+ // Exact archived originals are playable as provisional scene assets; never
+ // supersede the existing owner-reviewed/provisional copy.
+ const restored=restoredStoryArchivePanel(shot);
+ if(restored)return restored.asset;
  const provisional=provisionalRegisteredStoryPanel(shot);
  if(provisional)return provisional.asset;
  const allowed=REGISTERED[shot.stageId+'|'+shot.comicEdition+'|'+shot.protagonistGender];
@@ -62,6 +73,10 @@ export function isPublishedStoryRevision(){
 export function storyArtDisplayUrl(url){
  if(typeof url!=='string'||!url)return url;
  if(isPublishedStoryRevision()){
+  // New stage5+ CGs are also pinned to exact release commit to avoid stale art.
+  if(url.startsWith('./assets/story/new-originals/'))
+   return 'https://raw.githubusercontent.com/yamadayoshitaka/hai-gin-rpg/'+
+    STORY_PAGES_COMMIT+'/'+url.slice(2);
   if(url.startsWith('./assets/story/chapter1-provisional-live/'))
    return 'https://raw.githubusercontent.com/yamadayoshitaka/hai-gin-rpg/'+
     STORY_PAGES_COMMIT+'/'+url.slice(2);

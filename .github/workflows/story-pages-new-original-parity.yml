@@ -1,0 +1,33 @@
+name: Story new-original Pages release parity
+on:
+  pull_request:
+    paths:
+      - 'qa/pages-story-live-parity.test.mjs'
+      - 'scripts/prepare-pages-site.py'
+      - 'src/story-new-original-art.js'
+      - 'src/story-chapter1-provisional-live.js'
+      - 'src/story-panel-registered-art.js'
+      - '.github/workflows/story-pages-new-original-parity.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  source-to-pages-parity:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install Pages build image dependency
+        run: python -m pip install --disable-pip-version-check -r scripts/requirements-pages.txt
+      - name: Assemble actual release archive and verify new originals in game and review
+        env:
+          GITHUB_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          python scripts/prepare-pages-site.py --out pages-dist
+          node qa/pages-story-live-parity.test.mjs

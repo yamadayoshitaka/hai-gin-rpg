@@ -109,9 +109,9 @@ test('LOD thresholds are deterministic and protect distant army scenes',()=>{
  assert.equal(chooseCreatureLod(-3),'far');
  assert.equal(chooseCreatureLod(20,{near:12,mid:25}),'mid');
 });
-test('protected existing m005/m006 models are never silently replaced',()=>{
+test('m005/m006 now expose true high-detail m001-derived source and never auto-adopt external GLB',()=>{
  for(const id of ['m005','m006','summon_m005','summon_m006']){
-  assert.equal(CREATURE_MASTER_BY_ID[id].protected,true);
+  assert.equal(CREATURE_MASTER_BY_ID[id].protected,false);
  }
  for(const id of ['m001','summon_m001','wolf'])
   assert.equal(CREATURE_MASTER_BY_ID[id].protected,false);

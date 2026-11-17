@@ -14,7 +14,7 @@ test('108-entry reconstruction worklist is complete, unique and does not claim 3
  assert.equal(CREATURE_RECONSTRUCTION_SUMMARY.summon,50);
  assert.equal(CREATURE_RECONSTRUCTION_SUMMARY.dedicated,8);
  assert.equal(CREATURE_RECONSTRUCTION_SUMMARY.humanMonster,16);
- assert.equal(CREATURE_RECONSTRUCTION_SUMMARY.protectedMonster,2);
+ assert.equal(CREATURE_RECONSTRUCTION_SUMMARY.protectedMonster,0);
  assert.equal(CREATURE_RECONSTRUCTION_SUMMARY.qualityPassed,0);
  assert.equal(CREATURE_RECONSTRUCTION_SUMMARY.completed,0);
  assert.equal(new Set(CREATURE_RECONSTRUCTION_WORK.map(x=>x.id)).size,108);
@@ -44,12 +44,15 @@ test('all 50 summon versions inherit the same anatomy with separate acceptance a
   assert.equal(summon.kind,'summon');
  }
 });
-test('previously protected old wolf and panther stay excluded from all rewrite work',()=>{
+test('m005/m006 inherit m001 geometry and enter the scheduled quality batch',()=>{
  for(const id of ['m005','m006','summon_m005','summon_m006']){
   const item=CREATURE_RECONSTRUCTION_BY_ID[id];
   assert.ok(item,id);
-  assert.equal(item.stage,'protected');
-  assert.equal(item.canModify,false);
+  assert.equal(item.stage,'m001-derived');
+  assert.equal(item.baseMesh,'procedural:m001');
+  assert.equal(item.canModify,true);
+  assert.equal(item.modelSelectable,false,
+   'unverified remote 3D must not replace m001 donor geometry');
   assert.equal(item.candidateSources.length,0);
   assert.equal(item.anatomyReferences.length,0);
  }

@@ -34,32 +34,48 @@ function ellipsoid(label,center,size,material){
  mesh.userData.styledHairGeometry=true;
  return mesh;
 }
-function braid(side,box,material){
+function braid(side,box,material,scalpCandidates=[]){
  const d=box.getSize(new THREE.Vector3()),c=box.getCenter(new THREE.Vector3());
- const x=c.x+side*d.x*.39,z=c.z+d.z*.07;
- const y0=box.min.y+d.y*.72,drop=d.y*.49;
+ // Anchor ALL three woven lanes inside the actual head-local scalp instead
+ // of spawning detached rods at .72 of the bounding-box height.
+ const resolved=resolveTiedHairScalpAnchor(box,side,scalpCandidates);
+ const x=c.x+side*d.x*.35,z=c.z-d.z*.23;
+ const y0=box.min.y+d.y*.70,drop=d.y*.43;
  const strands=[];
  for(let lane=0;lane<3;lane++){
   const vertices=[];
   for(let i=0;i<=48;i++){
    const t=i/48,phase=t*Math.PI*12+lane*Math.PI*2/3;
-   const taper=1-.71*t;
-   const radius=d.x*.036*taper;
+   const taper=1-.72*t;
+   const radius=d.x*.032*taper;
    vertices.push(V(
-    x+side*d.x*.12*t+radius*Math.cos(phase),
+    x+side*d.x*.09*t+radius*Math.cos(phase),
     y0-drop*t,
-    z+d.z*.035*Math.sin(t*Math.PI)+radius*Math.sin(phase)
+    z+d.z*.028*Math.sin(t*Math.PI)+radius*Math.sin(phase)
    ));
   }
-  strands.push(tube('BRAID_INTERLEAVED_STRAND_'+side+'_'+lane,
-   vertices,d.x*.016,material,62));
+  // The same continuous strand is grown from the real scalp: no separate
+  // bridge mesh, no invisible attachment and no extra draw calls.
+  const origin=resolved.position.clone();
+  const first=vertices[0];
+  const join=origin.clone().lerp(first,.56);
+  join.y=Math.max(join.y,first.y+d.y*.018);
+  vertices.unshift(join);
+  vertices.unshift(origin);
+  const strand=taperedLock('BRAID_INTERLEAVED_STRAND_'+side+'_'+lane,
+   vertices,d.x*.016,material);
+  strand.userData.braidScalpAnchor=resolved.source;
+  strand.userData.braidContinuousFromScalp=true;
+  strands.push(strand);
  }
- // A tied band finishes each plait; no separate gravity-simulated string.
+ // Tie wraps the narrowed END of the same three attached woven strands.
+ const bandRadius=d.x*.016,bandY=y0-drop*.94;
  const band=tube('BRAID_TIE_'+side,Array.from({length:13},(_,i)=>{
   const angle=2*Math.PI*i/12;
-  return V(x+side*d.x*.12+d.x*.025*Math.cos(angle),
-   y0-drop*.96,z+d.x*.025*Math.sin(angle));
+  return V(x+side*d.x*.09*.94+bandRadius*Math.cos(angle),
+   bandY,z+d.z*.028*Math.sin(.94*Math.PI)+bandRadius*Math.sin(angle));
  }),d.x*.006,fiberMaterial(material.color,.56),20);
+ band.userData.braidScalpAnchor=resolved.source;
  return [...strands,band];
 }
 function bun(box,material){
@@ -119,6 +135,11 @@ function taperedLock(label,points,radius,material){
   const a=i*sides+k,b=i*sides+(k+1)%sides,c=(i+1)*sides+k,d=(i+1)*sides+(k+1)%sides;
   indices.push(a,c,b,b,c,d);
  }
+ // Close the narrow cut tip on the REAL tubular lock (no spherical end cap).
+ const tip=curve.getPointAt(1),tipIndex=vertices.length/3;
+ vertices.push(tip.x,tip.y,tip.z);
+ for(let k=0;k<sides;k++)indices.push(steps*sides+k,tipIndex,
+  steps*sides+(k+1)%sides);
  const geo=new THREE.BufferGeometry();
  geo.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));
  geo.setIndex(indices);geo.computeVertexNormals();geo.computeBoundingSphere();
@@ -237,7 +258,7 @@ export function makeStyleSpecificHair(styleId,box,hairColor,{scalpCandidates=[]}
  if(styleId==='female-low-bun'){
   type='coiled-low-bun';meshes=bun(box,mat);
  }else if(styleId==='female-twin-braids'){
-  type='two-interwoven-plaits';meshes=[...braid(-1,box,mat),...braid(1,box,mat)];
+  type='two-interwoven-plaits';meshes=[...braid(-1,box,mat,scalpCandidates),...braid(1,box,mat,scalpCandidates)];
  }else if(styleId==='female-side-ponytail'){
   type='side-ponytail';meshes=ponytail(box,mat,-1,false,scalpCandidates);
  }else if(styleId==='female-half-up'){

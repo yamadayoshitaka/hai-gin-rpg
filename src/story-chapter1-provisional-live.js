@@ -5,6 +5,22 @@
  * Never modify approved human-reviewed registries from this file.
  */
 export const CHAPTER1_PROVISIONAL_LIVE=Object.freeze({
+  "c01-s02|pre|male|c01-s02-m1": {
+    "asset": "./assets/story/chapter1-provisional-live/c01-s02__pre__male__c01-s02-m1.webp",
+    "sha256": "5f90fd72465ac45690e71cecda1aa369591da238de6f3a6e7817a964eb0befaa",
+    "provenance": "assets/story/chapter1-provisional-live/c01-s02__pre__male__c01-s02-m1.webp.generation.json",
+    "sourceDraft": "assets/story/chapter1-provisional-live/c01-s02__pre__male__c01-s02-m1.webp",
+    "status": "PROVISIONAL_OWNER_AUTHORIZED_PENDING_P0",
+    "originalLivePath": "./assets/story/chapters/c01/panels/c01-s02-m01-male.webp",
+    "stageId": "c01-s02",
+    "edition": "pre",
+    "gender": "male",
+    "provider": "ChatGPT Images",
+    "visibleHumanCast": [],
+    "characterIdentityVisuallyApproved": false,
+    "visualP0Approved": false,
+    "rollback": "Remove only this exact key to restore historical stage2 binding"
+  },
   "c01-s01|pre|male|c01-s01-m1": {
     "asset": "./assets/story/chapter1-provisional-live/c01-s01__pre__male__c01-s01-m1.webp",
     "sha256": "de58d985084b0ec85a20028d5e8baf6db9872c5c82d0296fcc7dbb36df0689e1",
@@ -1763,6 +1779,61 @@ export const CHAPTER1_PROVISIONAL_LIVE=Object.freeze({
     "originalLivePath": null,
     "stageId": "c01-s04",
     "edition": "pre",
+    "gender": "female"
+  },
+  "c01-s05|pre|male|c01-s05-m1": {
+    "asset": "./assets/story/new-originals/c01-s05__pre__male__c01-s05-m1.webp",
+    "sha256": "57cb6bf166acbc620403ea272659845f1afdebcdbedc1c71bbe597e9fd2895c7",
+    "provenance": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s05-pre-male/p01/c01-s05-m01-pre-male.webp.generation.json",
+    "sourceDraft": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s05-pre-male/p01/c01-s05-m01-pre-male.webp",
+    "status": "PROVISIONAL_OWNER_AUTHORIZED_PENDING_P0",
+    "originalLivePath": null,
+    "stageId": "c01-s05",
+    "edition": "pre",
+    "gender": "male"
+  },
+  "c01-s05|pre|male|c01-s05-m15": {
+    "asset": "./assets/story/new-originals/c01-s05__pre__male__c01-s05-m15.webp",
+    "sha256": "83df01b2a4ebfddea418fd00bec95ac9fc0d7ac11d53106b7bd89dfa5f219016",
+    "provenance": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s05-pre-male/p02/c01-s05-m15-pre-male.webp.generation.json",
+    "sourceDraft": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s05-pre-male/p02/c01-s05-m15-pre-male.webp",
+    "status": "PROVISIONAL_OWNER_AUTHORIZED_PENDING_P0",
+    "originalLivePath": null,
+    "stageId": "c01-s05",
+    "edition": "pre",
+    "gender": "male"
+  },
+  "c01-s05|post-victory|male|c01-s05-m6": {
+    "asset": "./assets/story/new-originals/c01-s05__post-victory__male__c01-s05-m6.webp",
+    "sha256": "91f0667d5c1c40c83e8744a51ccebc09536d93663720ca4e08c97d59e67bb4e9",
+    "provenance": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s05-post-victory-male/p01/c01-s05-m06-post-victory-male.webp.generation.json",
+    "sourceDraft": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s05-post-victory-male/p01/c01-s05-m06-post-victory-male.webp",
+    "status": "PROVISIONAL_OWNER_AUTHORIZED_PENDING_P0",
+    "originalLivePath": null,
+    "stageId": "c01-s05",
+    "edition": "post-victory",
+    "gender": "male"
+  },
+  "c01-s05|post-victory|male|c01-s05-m10": {
+    "asset": "./assets/story/new-originals/c01-s05__post-victory__male__c01-s05-m10.webp",
+    "sha256": "72af149206b590e2040aa062245c2698049593f285380834ad6a3e57029176d6",
+    "provenance": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s05-post-victory-male/p02/c01-s05-m10-post-victory-male.webp.generation.json",
+    "sourceDraft": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s05-post-victory-male/p02/c01-s05-m10-post-victory-male.webp",
+    "status": "PROVISIONAL_OWNER_AUTHORIZED_PENDING_P0",
+    "originalLivePath": null,
+    "stageId": "c01-s05",
+    "edition": "post-victory",
+    "gender": "male"
+  },
+  "c01-s05|post-victory|female|c01-s05-m6": {
+    "asset": "./assets/story/new-originals/c01-s05__post-victory__female__c01-s05-m6.webp",
+    "sha256": "14a5afef7dff3574d636bd6632679e07d1d5d2738dd4b12ff4ed9dd77ba02190",
+    "provenance": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s05-post-victory-female/p01/c01-s05-m06-post-victory-female.webp.generation.json",
+    "sourceDraft": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s05-post-victory-female/p01/c01-s05-m06-post-victory-female.webp",
+    "status": "PROVISIONAL_OWNER_AUTHORIZED_PENDING_P0",
+    "originalLivePath": null,
+    "stageId": "c01-s05",
+    "edition": "post-victory",
     "gender": "female"
   }
 });

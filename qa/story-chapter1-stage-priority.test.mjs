@@ -60,4 +60,23 @@ const productionWorkflow=readFileSync(path.join(root,
  '.github/workflows/story-chapter1-free-complete-draft-production.yml'),'utf8');
 assert(productionWorkflow.includes('git show origin/main:data/story-compact-20chapters.json'),
  'Persistent old review branch must receive latest canonical compact shot IDs');
+// The archival Free review branch predates the stage5+ new-original registry.
+// Protect actual future daily generation against missing-module failures and
+// duplicate Cloudflare requests for the five already registered new CGs.
+const workflow=readFileSync(path.join(root,'.github/workflows/story-chapter1-free-complete-draft-production.yml'),'utf8');
+const branchSwitch=workflow.indexOf('git switch -c story/chapter1-free-actual-art');
+const mainSourceQA=workflow.indexOf('node qa/story-stage-art-sourcing-boundary.test.mjs');
+assert(mainSourceQA>0 && mainSourceQA<branchSwitch,
+ 'Stage1-4 reuse vs stage5+ new-original QA must run before changing to archival branch');
+for(const required of [
+ 'git show origin/main:src/story-new-original-art.js > src/story-new-original-art.js',
+ 'git show origin/main:src/story-archive-restored-art.js > src/story-archive-restored-art.js',
+ 'git show origin/main:src/story-panel-registered-art.js > src/story-panel-registered-art.js',
+ 'git ls-tree -r --name-only origin/main -- assets/story/new-originals',
+ 'row.provenanceVerified,true',
+ 'row.nativeQAComplete,true',
+ 'row.visualP0Approved,false',
+ 'registeredStoryPanelAsset({stageId,comicEdition,protagonistGender,id}),row.asset',
+ 'crypto.createHash(\'sha256\').update(raw).digest(\'hex\')'
+])assert(workflow.includes(required),'Free review bridge missing safety proof: '+required);
 console.log('story stage-priority plan: PASS (no generation, no registration)');

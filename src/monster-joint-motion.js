@@ -22,7 +22,7 @@ function quadrupedMotion(p,phase,locomotion,run,actionPulse,spine,speciesId){
  const names=['frontL','frontR','rearL','rearR'];
  // Only the four unprotected sculpted wolves. The legacy generic gait
  // over-swung all four straight-looking limbs and left feet airborne.
- const springBeast=['m001','m002','m003','m004'].includes(speciesId);
+ const springBeast=['m001','m002','m003','m004','m005'].includes(speciesId);
  const referenceFeline=['m007','m008','m009','m010'].includes(speciesId);
  const phases=run&&spine==='feline'
    ?[0,.38*PI,1.02*PI,1.4*PI]
@@ -81,14 +81,13 @@ function quadrupedMotion(p,phase,locomotion,run,actionPulse,spine,speciesId){
     apply(p,'lower'+name,'x',(front?-.165:.225)+
       power*(.205*swing-.155*support));
     apply(p,'lower'+name,'z',(i%2?1:-1)*power*.028*lift);
-    // Compression raises the sole relative to the lowered trunk, leaving
-    // supporting toes close to the floor instead of a pogo-stick bounce.
+    // The source m001 bone lengths are copied to m002/m003/m004.
+    // Changing their lengths each support frame opens gaps at the knee
+    // and moves the fur seam away from the distal pivot. Locomotion is
+    // articulated entirely by hip, knee, hock and toe rotations instead.
     const upperJoint=p['leg'+name];
-    // Scale motion on m002 broke the newly seamless reference donor.
-    // Keep its bone lengths physically constant at every support phase.
     if(upperJoint)upperJoint.scale.y=
-      (upperJoint.userData.restLengthScale??1)*
-      (speciesId==='m002'?1:1-(run?.048:.026)*support);
+      upperJoint.userData.restLengthScale??1;
     if(p['beastHock'+name]){
       apply(p,'beastHock'+name,'x',(front?-.095:-.285)+
         power*(.260*swing-.205*support));
@@ -139,7 +138,11 @@ function quadrupedMotion(p,phase,locomotion,run,actionPulse,spine,speciesId){
 }
 function wingMotion(p,phase,action,actionPulse,reference){
  const hasFlap=action==='special'||action==='leap'||action==='run'||action==='attack';
- const power=hasFlap?1:.25;
+ // The Phoenix idle pose must NOT use a gallop-speed phase (7rad/s).
+ // Previously its whole silhouette shook while the viewer was stationary.
+ const stablePhoenix=reference?.id==='m013'&&action==='idle';
+ if(stablePhoenix)phase*=.14;
+ const power=stablePhoenix?.035:hasFlap?1:.25;
  for(const side of [-1,1]){
   const suffix=side<0?'L':'R';
   const wave=Math.sin(phase*1.18+(side<0?0:.11));
@@ -150,6 +153,25 @@ function wingMotion(p,phase,action,actionPulse,reference){
   apply(p,'wingElbow'+suffix,'x',power*.26*Math.cos(phase-.40));
   apply(p,'wingWrist'+suffix,'y',side*(.09+power*.31*Math.sin(phase+1.04)));
   apply(p,'wingWrist'+suffix,'z',side*.21*power*Math.cos(phase-.73));
+  // Separate feather-covered hand in front of the chest: slight wing-
+  // synchronized sway, never the full rigid 82-feather wing flap.
+  if(p['phoenixArm'+suffix]){
+   apply(p,'phoenixArm'+suffix,'z',
+    side*(.045+power*.095*Math.sin(phase*.88+.28)));
+   apply(p,'phoenixArm'+suffix,'x',
+    -.12*actionPulse+.055*Math.sin(phase*.68));
+   apply(p,'phoenixForearm'+suffix,'x',
+    -.16*actionPulse+.12*power*Math.sin(phase*.96-.35));
+   apply(p,'phoenixFeatherHand'+suffix,'z',
+    side*(.09+power*.12*Math.cos(phase*.94-.45)));
+  }
+  // Phoenix: muscular femur / actual knee / narrow chicken tarsus must
+  // articulate separately. A modest flex retains a planted foot in idle.
+  if(p['birdKnee'+suffix]){
+   const step=Math.sin(phase+(side<0?0:Math.PI));
+   apply(p,'birdKnee'+suffix,'x',
+    hasFlap?-.12+.20*step:.035+.09*Math.max(0,step));
+  }
   apply(p,'birdAnkle'+suffix,'x',hasFlap?-.20+.11*Math.sin(phase):-0.03);
  }
  apply(p,'tail','x',power*.075*Math.sin(phase+.31));

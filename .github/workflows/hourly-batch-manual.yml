@@ -1,4 +1,4 @@
-name: Four-group manual batch instructions (owner only)
+name: Six-group quality center and owner-approved batch instructions
 on:
   issues:
     types: [opened]
@@ -7,6 +7,9 @@ on:
       - '.github/workflows/hourly-batch-manual.yml'
       - 'scripts/manual-hourly-batch-dispatch.mjs'
       - 'qa/manual-hourly-batch-dispatch.test.mjs'
+      - 'qa/batch-center-object-expression-selection.test.mjs'
+      - 'data/hourly-batch-dashboard.json'
+      - 'data/batch-center-switches.json'
       - 'scripts/batch-center-toggle.mjs'
       - 'qa/batch-center-toggle.test.mjs'
       - 'batch-monitor.html'
@@ -14,6 +17,10 @@ on:
       - 'data/batch-pr-previews.json'
       - 'data/batch-work-progress.json'
       - 'qa/batch-work-progress.test.mjs'
+      - 'qa/batch-center-api-rate-limit.test.mjs'
+      - 'qa/batch-pr-403-offline-preview.test.mjs'
+      - 'qa/batch-center-real-launch.test.mjs'
+      - 'qa/batch-scheduler-state-probe.test.mjs'
 permissions:
   contents: write
   actions: write
@@ -31,10 +38,40 @@ jobs:
       - name: Validate instruction routing and strict owner/type controls
         run: |
           node --check scripts/manual-hourly-batch-dispatch.mjs
-          node --test qa/manual-hourly-batch-dispatch.test.mjs
+          node --test qa/manual-hourly-batch-dispatch.test.mjs qa/batch-center-object-expression-selection.test.mjs qa/batch-center-api-rate-limit.test.mjs qa/batch-pr-403-offline-preview.test.mjs qa/batch-center-real-launch.test.mjs
+          node --test qa/batch-scheduler-state-probe.test.mjs
           node --test qa/batch-work-progress.test.mjs
           node --check scripts/batch-center-toggle.mjs
           node --test qa/batch-center-toggle.test.mjs
+      - name: Check three active quality workflow schedules and restore disabled workflow if authorized
+        if: github.event_name == 'issues' && startsWith(github.event.issue.title, '[hai-gin-batch]')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          # GitHub schedule runs may be dropped or disabled independently of
+          # workflow_dispatch. This probe reports states, not a guarantee of
+          # six scheduled runs per hour. Only active user-approved groups.
+          node -e "const g=require('./data/batch-center-switches.json').groups;for(const [name,keys] of [['character-six-lane.yml',['faceHair','outfit']],['creature-six-lane.yml',['creatureMonster','creatureSummon']],['world-six-lane.yml',['world']]])if(keys.some(k=>g[k]?.enabled===true))console.log(name)" >/tmp/enabled-quality-workflows
+          while IFS= read -r workflow; do
+            [[ -n "${workflow}" ]] || continue
+            endpoint="repos/${GITHUB_REPOSITORY}/actions/workflows/${workflow}"
+            if state=$(gh api "${endpoint}" --jq '.state' 2>/tmp/quality-workflow-state-error); then
+              echo "Quality schedule ${workflow} = ${state}" >> "${GITHUB_STEP_SUMMARY}"
+              if [[ "${state}" == disabled_* ]]; then
+                if gh api "${endpoint}/enable" -X PUT >/tmp/quality-workflow-enable-result 2>&1; then
+                  echo "Re-enabled explicitly requested workflow: ${workflow}" >> "${GITHUB_STEP_SUMMARY}"
+                else
+                  echo "::warning::Cannot enable ${workflow} through GitHub Actions token (permission/repository setting)."
+                  echo "Enable denied: ${workflow}; see GitHub Actions repository settings" >> "${GITHUB_STEP_SUMMARY}"
+                fi
+              fi
+            else
+              echo "::warning::Cannot inspect ${workflow} state. Possible GitHub Actions API 403; dispatch still attempted."
+              echo "State unavailable: ${workflow} (API error). Check actions:write permissions." >> "${GITHUB_STEP_SUMMARY}"
+            fi
+          done </tmp/enabled-quality-workflows
       - name: Dispatch selected one-shot workflow
         if: github.event_name == 'issues' && startsWith(github.event.issue.title, '[hai-gin-batch]')
         env:

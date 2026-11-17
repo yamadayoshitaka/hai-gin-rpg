@@ -37,19 +37,20 @@ function createImpostorMaterial(map){
   return material;
 }
 
-function verifyAtlasSilhouette(renderer,target,tileSize=TILE){
+function verifyAtlasSilhouette(renderer,target,tileSize=TILE,{row=0,column=0}={}){
   const rgba=new Uint8Array(tileSize*tileSize*4);
-  renderer.readRenderTargetPixels(target,0,0,tileSize,tileSize,rgba);
+  renderer.readRenderTargetPixels(target,column*tileSize,row*tileSize,tileSize,tileSize,rgba);
   let pixels=0,minX=tileSize,minY=tileSize,maxX=-1,maxY=-1;
   for(let y=0;y<tileSize;y++)for(let x=0;x<tileSize;x++){
     if(rgba[(y*tileSize+x)*4+3]<30)continue;
     pixels++;minX=Math.min(minX,x);maxX=Math.max(maxX,x);
     minY=Math.min(minY,y);maxY=Math.max(maxY,y);
   }
-  // A valid atlas needs visible head-to-foot coverage. This catches an
-  // entirely transparent/unrendered model, not just an allocated texture.
-  if(pixels<Math.round(120*(tileSize/192)**2)||maxX-minX<tileSize*.063||maxY-minY<tileSize*.234)
-    throw Error(`人体撮影LODが空・欠損: ${pixels}px, ${maxX-minX}x${maxY-minY}`);
+  // Reject half-bodies, not just empty images. A 1.7m human must occupy
+  // ~55% of a 3.1m atlas tile. A chest-only impostor occupies ~25%.
+  // Test idle, RUN and ATTACK tiles separately before 2000 copies are used.
+  if(pixels<Math.round(120*(tileSize/192)**2)||maxX-minX<tileSize*.063||maxY-minY<tileSize*.36)
+    throw Error(`人体撮影LODが空・欠損 (row=${row},view=${column}): ${pixels}px, ${maxX-minX}x${maxY-minY}`);
   return {opaquePixels:pixels,width:maxX-minX+1,height:maxY-minY+1};
 }
 
@@ -137,7 +138,12 @@ export async function captureCrowdImpostorAtlas(renderer,actor,{tileSize=TILE}={
         renderer.render(preview,camera);
       }
     }
-    audit=verifyAtlasSilhouette(renderer,target,tileSize);
+    // The prior gate checked only the idle front portrait. It passed even
+    // when all moving photo tiles lacked legs or the attack mesh was absent.
+    const idle=verifyAtlasSilhouette(renderer,target,tileSize,{row:0});
+    const run=verifyAtlasSilhouette(renderer,target,tileSize,{row:2});
+    const strike=verifyAtlasSilhouette(renderer,target,tileSize,{row:RUN_FRAMES+1});
+    audit={...idle,run,attack:strike,verifiedRows:3};
   }catch(error){target.dispose();throw error;}
   finally{
     parent.add(person);

@@ -1,0 +1,72 @@
+#!/usr/bin/env node
+// Pure local filesystem regression; NEVER calls an image provider.
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import {spawnSync} from 'node:child_process';
+const source='qa-reports/story-sequential-missing/next.json';
+const run=spawnSync(process.execPath,['scripts/story-sequential-missing-batch.mjs','--max','20'],
+ {encoding:'utf8'});
+assert.equal(run.status,0,run.stderr);
+const q=JSON.parse(fs.readFileSync(source,'utf8'));
+assert.equal(q.schemaVersion,1);
+assert.equal(q.identities,880);
+assert.equal(q.genderVariants,1760);
+assert.equal(q.entries.length,1760);
+assert.equal(new Set(q.entries.map(row=>row.key)).size,1760);
+assert.equal(q.entries[0].stageId,'c01-s01');
+assert.equal(q.entries.at(-1).stageId,'c20-s10');
+assert.equal(new Set(q.entries.map(row=>row.stageId)).size,200);
+for(let chapter=1;chapter<=20;chapter++){
+ for(let stage=1;stage<=10;stage++){
+  const id='c'+String(chapter).padStart(2,'0')+'-s'+String(stage).padStart(2,'0');
+  const rows=q.entries.filter(row=>row.stageId===id);
+  assert.equal(rows.length,stage===1?16:8,id);
+  for(const row of rows){
+   assert.match(row.key,/\|(male|female)$/);
+   if(chapter===1&&stage<=4)
+    assert.equal(row.policy,'EXACT_OLD_ART_REUSE_ALLOWED');
+   else assert.equal(row.policy,'NEW_ORIGINAL_REQUIRED');
+   assert(['REGISTERED_REAL_NOT_P0','BROKEN_REGISTRATION','MISSING_ART',
+    'PENDING_CHARACTER_IDENTITY_REVIEW'].includes(row.status));
+  }
+ }
+}
+const pending=q.entries.filter(row=>row.status!=='REGISTERED_REAL_NOT_P0');
+assert.equal(q.pending,pending.length);
+assert.equal(q.registered+q.pending,1760);
+assert.equal(q.firstMissing,pending[0]?.key??null);
+assert.deepEqual(q.selected,q.enabled?pending.filter(row=>
+ row.status!=='PENDING_CHARACTER_IDENTITY_REVIEW').slice(0,20):[]);
+assert.equal(q.heldCandidateCount,
+ pending.filter(row=>row.status==='PENDING_CHARACTER_IDENTITY_REVIEW').length);
+assert.equal(q.firstActionable,
+ pending.find(row=>row.status!=='PENDING_CHARACTER_IDENTITY_REVIEW')?.key??null);
+const held= q.entries.find(row=>row.key==='c01-s02|pre|c01-s02-m15|male');
+assert.equal(held?.status,'PENDING_CHARACTER_IDENTITY_REVIEW',
+ 'The real ChatGPT m15 WebP exists on GitHub but is not character-verified.');
+assert.equal(held?.candidateSha256,'1ea96c6e634f94fe890368935503ad24e8ec43c6f7e24871b5b619c5aa1abf0c');
+assert(held.candidateAsset.startsWith('./assets/story/chatgpt-candidates/'));
+assert(!q.selected.some(row=>row.key===held.key),
+ 'Do not request duplicate ChatGPT generation of this already-real image');
+assert.equal(q.registered+q.pending,1760,
+ 'Held does not count as registered art until character identity is verified');
+assert.equal(q.generatedThisRun,0);
+assert.equal(q.provisionallyRegisteredThisRun,0);
+assert.equal(q.formalP0ThisRun,0);
+assert.equal(q.providerRequestsThisRun,0);
+assert.equal(q.noPaidApi,true);
+const invalid=spawnSync(process.execPath,['scripts/story-sequential-missing-batch.mjs','--max','21'],
+ {encoding:'utf8'});
+assert.notEqual(invalid.status,0);
+const workflow=fs.readFileSync('.github/workflows/story-sequential-missing-batch.yml','utf8');
+assert(workflow.includes("  schedule:\n    - cron: '35 0 * * *'\n"),
+ 'After Cloudflare UTC quota reset, a daily on-main GitHub Actions batch must run');
+assert(workflow.includes("day=$(date -u +%Y-%m-%d)"),
+ 'Daily quota must use UTC, not local Japan calendar day');
+assert(workflow.includes('Today already used the single Cloudflare Free production dispatch'),
+ 'Never call an image provider twice on the same UTC date');
+assert(workflow.includes('CF_FREE: ${{ vars.CLOUDFLARE_FREE_PLAN_CONFIRMED }}'),
+ 'No provider calls without owner-confirmed Free entitlement');
+assert(workflow.includes('github.event_name != \'pull_request\''),
+ 'PR test must not actually generate images');
+console.log('PASS: 1..200 sequential manga queue; native image and gender guards; generation=0 truth');

@@ -4,7 +4,7 @@ import {readFileSync,existsSync} from 'node:fs';
 import * as THREE from 'three';
 import {makeIndependentFaceMaster,FACE_MASTER_SPEC,femaleInnerFeatureDelta,femaleCheekJawDelta}
  from '../src/independent-face-masters.js';
-import {updateFaceFeatureAngles,applyFaceColorMode,createFastFaceSurfaceSampler,sculptEyeSocketsInFaceGeometry}
+import {updateFaceFeatureAngles,applyFaceColorMode,createFastFaceSurfaceSampler,sculptEyeSocketsInFaceGeometry,v71EyeDepthFromEyeliner}
  from '../src/face-feature-meshes.js';
 import {createScalpAnchoredWig,wigVolumeLiftAt} from '../src/face-scalp-wig.js';
 import {attachIndependentHeadToBody,buildBodyDepthCollision,removeHeadBustBelowNeck,createSealedNeckBridge,createClosedShoulderCaps} from '../src/face-body-assembly.js';
@@ -92,7 +92,7 @@ test('two source-derived clay face meshes have owned independent vertices and pr
  assert.equal(female.report.detailedParts.lowerOrbitalVolumeMeshCount,0);
  assert.ok(female.report.detailedParts.irisPolarAngleRadians>.55);
  assert.ok(female.report.detailedParts.pupilPolarAngleRadians>.22);
- assert.equal(female.report.detailedParts.mouthHalfWidthFraction,.044,
+ assert.equal(female.report.detailedParts.mouthHalfWidthFraction,.057,
   'Female upper and lower lips must use the selected half-width option');
  assert.equal(male.report.detailedParts.mouthHalfWidthFraction,.044,
   'Male inherits the same smaller structural mouth, without lipstick');
@@ -506,7 +506,7 @@ test('v26 closed eyeliner corners remain linked without under-eye bags',()=>{
  assert.equal(m.report.detailedParts.eyelinerCornersClosed,true);
  assert.ok(m.report.detailedParts.lipCenterNormalized>=.498);
  assert.ok(m.report.detailedParts.lipCenterNormalized<=.520);
- assert.equal(m.report.detailedParts.blushOpacityFactor,.78);
+ assert.equal(m.report.detailedParts.blushOpacityFactor,1);
  for(const side of ['LEFT','RIGHT']){
   const upper=m.parts.getObjectByName(side+'_UPPER_EYELINER');
   const lower=m.parts.getObjectByName(side+'_LOWER_EYELINER');
@@ -723,7 +723,7 @@ test('v15 eyeshadow is a real eyelid child, lipstick fast updates without shape 
   assert.equal(shadow.parent.name,side+'_UPPER_ANATOMICAL_EYELID');
   assert.equal(shadow.geometry.getAttribute('color').itemSize,4);
   // Edge-faded vertex pigment controls visible intensity; material stays bounded.
-  assert.ok(shadow.material.opacity>=.25&&shadow.material.opacity<=.85);
+  assert.ok(shadow.material.opacity>=.79&&shadow.material.opacity<=1);
  }
  const before=m.face.geometry.getAttribute('position').array.slice();
  const prev=m.face.geometry.getAttribute('color').array.slice();
@@ -1155,7 +1155,8 @@ test('v22 salon body locks gain real width without making the fringe thick',()=>
  const face=makeIndependentFaceMaster(source,'female');
  const hair=createScalpAnchoredWig(face.face,{count:96,fineFringeMultiplier:3});
  const report=hair.getReport();
- assert.ok(report.hairStrandWidthFraction>=.012);
+ assert.ok(report.hairStrandWidthFraction>=.0095&&report.hairStrandWidthFraction<=.011,
+  'High density strands should be fine rather than flat plastic ribbons');
  assert.equal(report.fullerCrownBackVolume,true);
  assert.equal(report.glabellaPartClearance,true);
  assert.equal(report.fullBodyTriangleContactBeforeProxy,true);
@@ -1285,14 +1286,14 @@ test('v25 actual contact lens pigment and liner remain visible on linked eyelids
  assert.ok(normalizeFemaleFaceControls({eyeDepth:-9}).eyeDepth>=-.3);
 });
 
-test('v67 makeup remains subtle, face-local and female-only',async()=>{
+test('v68 fivefold makeup stays on face and remains female-only',async()=>{
  const {v67NaturalEyeMakeup}=await import('../src/face-feature-meshes.js');
- const center=v67NaturalEyeMakeup({nx:.346,ny:.63,front:1,lidY:.60});
+ const center=v67NaturalEyeMakeup({nx:.123,ny:.63,front:1,lidY:.60});
  const away=v67NaturalEyeMakeup({nx:.88,ny:.85,front:1,lidY:.60});
- const back=v67NaturalEyeMakeup({nx:.346,ny:.63,front:0,lidY:.60});
- const male=v67NaturalEyeMakeup({nx:.346,ny:.63,front:1,lidY:.60,gender:'male'});
- assert.ok(center.shadow>0&&center.shadow<=.13);
- assert.ok(center.lowerLift>0&&center.lowerLift<=.019);
+ const back=v67NaturalEyeMakeup({nx:.123,ny:.63,front:0,lidY:.60});
+ const male=v67NaturalEyeMakeup({nx:.123,ny:.63,front:1,lidY:.60,gender:'male'});
+ assert.ok(center.shadow>.80&&center.shadow<=.95);
+ assert.ok(center.lowerLift>0&&center.lowerLift<=.008);
  assert.ok(away.shadow<center.shadow/100);
  assert.deepEqual(back,{shadow:0,lowerLift:0});
  assert.deepEqual(male,{shadow:0,lowerLift:0});
@@ -1322,7 +1323,7 @@ test('v26 wig foundation is a transparent unchanged copy of the actual head and 
  assert.equal(wig.getReport().transparentExactHeadWigBase,true);
  assert.equal(wig.getReport().rootScalpLiftFraction,.0125);
  assert.equal(wig.getReport().trueScalpRibbonVertexCollision,true);
- assert.equal(wig.getReport().hairStrandWidthFraction,.0135);
+ assert.equal(wig.getReport().hairStrandWidthFraction,.0100);
  // All original zone roots are now displaced slightly OUTWARD from the
  // copied head, rather than being planted inside its surface.
  const pos=face.face.geometry.getAttribute('position');
@@ -2434,4 +2435,90 @@ test('v68: model viewer exposes hero makeup and facial expression close-up',()=>
  }
  const bridge=readFileSync('src/heroine-battle-costume-bridge.js','utf8');
  assert.match(bridge,/studioVisibleLegAnatomy:chosen\.heroJob==='swordsman'/);
+});
+
+test('v71: actual eyeliner depths determine cornea fit and preserve shape across gaze',()=>{
+ const fitted=v71EyeDepthFromEyeliner({upperZ:.12,lowerZ:.10,corneaZ:.135,
+  eyeRadius:.05,eyeDepth:0});
+ assert.ok(fitted.correctionZ<0,'outward cornea must move back under liner');
+ assert.ok(Math.abs(fitted.correctionZ)<=.05*.85+1e-9);
+ const deeplySunken=v71EyeDepthFromEyeliner({upperZ:.12,lowerZ:.10,corneaZ:.08,
+  eyeRadius:.05,eyeDepth:0});
+ assert.ok(deeplySunken.correctionZ>.05*.50,
+  'a sunken 3D iris must move forward far enough to reach real eyeliner');
+ assert.ok(Math.abs(deeplySunken.signedDepthRatio+.031)<1e-8,
+  'the corrected iris sits just behind eyeliner, not deep in its socket');
+ assert.ok(Math.abs(deeplySunken.residualRatio)<1e-8,
+  'normal donor eyes must complete the eyeliner fit rather than hitting an undersized cap');
+ assert.ok(Number.isFinite(fitted.signedDepthRatio));
+ const forward=v71EyeDepthFromEyeliner({upperZ:.12,lowerZ:.10,corneaZ:.106,
+  eyeRadius:.05,eyeDepth:.85});
+ const shallow=v71EyeDepthFromEyeliner({upperZ:.12,lowerZ:.10,corneaZ:.106,
+  eyeRadius:.05,eyeDepth:-.3});
+ assert.ok(forward.signedDepthRatio>shallow.signedDepthRatio);
+ const face=makeIndependentFaceMaster(fixture().source,'female');
+ const report=face.report.detailedParts;
+ assert.equal(report.eyeCalibrationMethod,'real-upper-and-lower-eyeliner-mesh-depth');
+ assert.equal(report.v71MeasuredEyelinerFits.length,2);
+ for(const side of ['LEFT','RIGHT']){
+  const eye=face.parts.getObjectByName(side+'_ORBITAL_EYEBALL');
+  const iris=face.parts.getObjectByName(side+'_CURVED_IRIS');
+  const pupil=face.parts.getObjectByName(side+'_CURVED_PUPIL');
+  const upper=face.parts.getObjectByName(side+'_UPPER_EYELINER');
+  const lower=face.parts.getObjectByName(side+'_LOWER_EYELINER');
+  assert.ok(eye.userData.v71MeasuredAgainstRealEyeliner);
+  assert.ok(Number.isFinite(eye.userData.v71UpperLinerDistance3D));
+  assert.ok(Number.isFinite(eye.userData.v71LowerLinerDistance3D));
+  assert.ok(upper.parent?.name?.includes('ANATOMICAL_EYELID'));
+  assert.ok(lower.parent?.name?.includes('ANATOMICAL_EYELID'));
+  assert.ok(Math.abs(iris.userData.eyelinerMeasuredDepthCorrection-
+    pupil.userData.eyelinerMeasuredDepthCorrection)<1e-8);
+  assert.ok(Math.abs(iris.userData.eyelinerMeasuredDepthCorrection-
+    eye.userData.eyelinerMeasuredDepthCorrection)<1e-8);
+ }
+});
+test('v72: studio preview builds tenfold scalp rooted high-density hair',()=>{
+ const faceStudio=readFileSync('face-mesh-studio.html','utf8');
+ const bodyStudio=readFileSync('face-body-studio.html','utf8');
+ assert.match(faceStudio,/visualFiberMultiplier:10,staticGroom:true/);
+ assert.match(bodyStudio,/<option value="10" selected>10倍/);
+ const face=makeIndependentFaceMaster(fixture().source,'female');
+ const wig=createScalpAnchoredWig(face.face,{count:96,staticGroom:true,
+  visualFiberMultiplier:10,normalLayeredSingleMesh:true});
+ const r=wig.getReport();
+ assert.equal(r.visualFiberMultiplier,10);
+ assert.ok(r.microFibreTriangles>r.rootCount*9*10);
+ assert.equal(r.runtimePhysicsCallsPerFrame,0);
+ assert.equal(r.hairStrandWidthFraction,.0100);
+ assert.equal(r.meshCount,1);
+ const root=wig.root.getObjectByName('SINGLE_MESH_NORMAL_LAYERED_HAIR');
+ assert.ok(root?.isMesh);
+ wig.dispose();
+});
+
+
+test('v74: genuinely different 10x scalp-rooted salon and curtain styles',()=>{
+ const head=makeIndependentFaceMaster(fixture().source,'female');
+ const build=styleId=>createScalpAnchoredWig(head.face,{
+  count:96,styleId,visualFiberMultiplier:10,staticGroom:true,
+  normalLayeredSingleMesh:true,gender:'female'
+ });
+ const curtain=build('center-part-gravity-long');
+ const salon=build('salon-layered-long');
+ const a=curtain.root.getObjectByName('SINGLE_MESH_NORMAL_LAYERED_HAIR');
+ const b=salon.root.getObjectByName('SINGLE_MESH_NORMAL_LAYERED_HAIR');
+ assert.ok(a?.isMesh&&b?.isMesh,'both styles must create a real 3D mesh');
+ const ap=a.geometry.getAttribute('position'),bp=b.geometry.getAttribute('position');
+ assert.equal(ap.count,bp.count,'change style geometry, not polygon budget');
+ let sum=0;
+ for(let i=0;i<Math.min(ap.count,bp.count);i+=137)
+  sum+=Math.abs(ap.getX(i)-bp.getX(i))+
+   Math.abs(ap.getY(i)-bp.getY(i))+Math.abs(ap.getZ(i)-bp.getZ(i));
+ assert.ok(sum>1e-3,'salon layer must visibly change strand vertices');
+ for(const wig of [curtain,salon]){
+  assert.equal(wig.getReport().visualFiberMultiplier,10);
+  assert.equal(wig.getReport().v74HighDensityHairCoverage,true);
+  assert.equal(wig.getReport().runtimePhysicsCallsPerFrame,0);
+  wig.dispose();
+ }
 });

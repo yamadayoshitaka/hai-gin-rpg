@@ -107,7 +107,8 @@ assert.match(rig,/shieldHandBone\?\.getWorldPosition\(shieldWrist\)/);
 assert.match(rig,/item\.position\.copy\(item\.parent\.worldToLocal\(fitted\.center\)\)/);
 assert.match(rig,/shieldBackClearanceM=fitted\.forwardClearance/);
 assert.match(rig,/shieldBackClearanceM:shield\?\.userData\.shieldBackClearanceM/);
-assert.match(game,/battle-artist-head-graft\.js\?v=20261117-shading-back1/);
+assert.match(game,/battle-artist-head-graft\.js\?v=\d{8}-[A-Za-z0-9_-]+/,
+ 'Head graft must be revision-pinned but not locked to an obsolete cache key');
 assert.match(game,/STUDIO_GROOM_NEAR_CACHE_MAX=12/);
 assert.match(game,/bakeInterval=p95>33\?1400:p95>25\?850:350/);
 assert.match(game,/quality:'near'/);
@@ -116,7 +117,9 @@ assert.match(rig,/const closedBack=battleClosedBackCoverage\(\{/);
 assert.match(rig,/forceCoveredRegions:forcedTorsoOcclusion/);
 const wigSource=readFileSync(new URL('../src/face-scalp-wig.js',import.meta.url),'utf8');
 assert.match(wigSource,/normalLayers=clamp\(Math\.trunc\(normalLayerCount\),1,3\)/);
-assert.match(game,/rigged-outfit-runtime\.js\?v=20261117-flatback-off4/);
-assert.match(game,/vfxvisibility2/);
+assert.match(game,/import\s*\{\s*buildRiggedJobOutfit\s*\}\s*from\s*['"]\.\/src\/character-system\/rigged-outfit-runtime\.js\?v=\d{8}-[A-Za-z0-9_-]+['"]/,
+ 'Battle uses the actual versioned rigged-outfit runtime; changing a cache revision must not break face/hair QA');
+assert.match(game,/action-vfx-runtime\.js\?v=\d{8}-[A-Za-z0-9_-]+/,
+ 'Action VFX runtime remains version-pinned; effect strength is asserted directly below');
 assert.match(fx,/kind==='punch'\?1\.08/);
 console.log('PASS: natural face PBR, true cranium hair, no forearm-through-shield at guard/attack, high-visibility pooled effects');

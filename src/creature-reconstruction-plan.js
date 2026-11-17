@@ -28,7 +28,8 @@ export const MESH_STAGE=Object.freeze({
  anatomy:'解剖学参考のみ・専用メッシュ必要',
  missing:'基準に合うメッシュ未選定',
  human:'人型共通素体あり・個別品質改善待ち',
- protected:'保護対象・既存モデル変更禁止'
+ protected:'保護対象・既存モデル変更禁止',
+ 'm001-derived':'m001物理メッシュ複製・種族別変形・検証中'
 });
 export const RECONSTRUCTION_ACTIONS=Object.freeze([
  'idle','walk','run','attack','roar','hit','defeat'
@@ -99,8 +100,8 @@ const notes=Object.freeze({
  m002:'r-wolfの体型を維持。炎毛・炎牙の表現は新たな未リグ板ポリで代替しない',
  m003:'r-wolfに氷毛・凍結エフェクト。物理の毛束と氷パーツの貫通を検査',
  m004:'r-wolfの紫電表現はテクスチャと発光から。走行アニメを検査',
- m005:'PR #345 由来の獣型。修正・採用切替・回帰検証の対象外',
- m006:'PR #346 由来の獣型。修正・採用切替・回帰検証の対象外',
+ m005:'m001狼王の頭骨・胴体・脚関節・毛並みを母体とする古狼。緑の毛と尾・属性効果を追加',
+ m006:'m001狼王の実断面メッシュを猫型に縮約した黒豹。上寄りの小さな逆三角鼻とヒゲ',
  m007:'虎骨格への剣歯を装着、牙が顎と干渉しないこと',
  m008:'獅子専用のたてがみ・頭骨が未確定。虎は構造参考のみ',
  m011:'鷲GLBは外観参考、飛行リグと羽ばたき未完成',
@@ -118,7 +119,8 @@ const notes=Object.freeze({
  m048:'蛇状の海竜の鰭・長胴を固有化',
  m049:'巨大クラーケンの腕・吸盤の位置と水面を検証'
 });
-const protectedIds=new Set(['m005','m006']);
+// m005/m006 are now eligible for real m001-donor geometry regression.
+const protectedIds=new Set();
 const humanoids=new Set(HUMAN_MONSTER_IDS);
 const shared=monster=>{
  const humanoid=humanoids.has(monster.id);
@@ -128,17 +130,21 @@ const shared=monster=>{
  return {
   family:monster.family,
   archetype:humanoid?'humanoid-'+monster.family:(shapes[monster.id]||monster.family),
-  baseMesh:humanoid?'current-human-rig':monster.id==='m001'?'r-wolf':'legacy',
+  baseMesh:humanoid?'current-human-rig':
+    ['m005','m006'].includes(monster.id)?'procedural:m001':
+    monster.id==='m001'?'r-wolf':'legacy',
   candidateSources:candidatesFor,
   anatomyReferences:referencesFor,
   stage:protectedModel?'protected':humanoid?'human':
+    ['m005','m006'].includes(monster.id)?'m001-derived':
     monster.id==='m001'?'default':candidatesFor.length?'candidate':
     referencesFor.length?'anatomy':'missing',
   canModify:!protectedModel,
   reusedParts:FAMILY_REUSE_PARTS[monster.family],
   strategy:FAMILY_MESH_STRATEGY[monster.family],
   instructions:notes[monster.id]||'現在の形状・関節・装飾を維持し、基準画とのシルエット照合と七動作検査を実施',
-  modelSelectable:!humanoid&&!protectedModel,
+  modelSelectable:!humanoid&&!protectedModel&&
+    !['m005','m006'].includes(monster.id),
   baselineRequired:true,
   originalPreserved:true,
   sourceRigValidated:false,
@@ -214,7 +220,7 @@ export const CREATURE_RECONSTRUCTION_SUMMARY=Object.freeze({
 export function validateReconstructionPlan(){
  const s=CREATURE_RECONSTRUCTION_SUMMARY;
  if(s.total!==108||s.monster!==50||s.summon!==50||s.dedicated!==8||
-  s.humanMonster!==16||s.protectedMonster!==2)
+  s.humanMonster!==16||s.protectedMonster!==0)
   throw Error('Unexpected reconstruction scope/count');
  const ids=new Set(CREATURE_RECONSTRUCTION_WORK.map(x=>x.id));
  if(ids.size!==108)throw Error('Duplicated reconstruction ids');
