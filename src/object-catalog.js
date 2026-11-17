@@ -235,12 +235,64 @@ export function createObjectById(id,{cellSize=2.2}={}){
   const fire=new THREE.MeshStandardMaterial({color:0xff9e31,emissive:0xe65a0c,emissiveIntensity:2});
   const b=(w,h,d,x,y,z,m=timber)=>{const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);o.position.set(x,y,z);o.castShadow=true;o.receiveShadow=true;root.add(o);return o};
   const c=cellSize;
-  if(id==='cottage_table_001'){b(2*c,.13*c,1.25*c,0,.85*c,0);for(const x of [-.82,.82])for(const z of [-.46,.46])b(.14*c,.78*c,.14*c,x*c,.4*c,z*c,dark);for(let i=0;i<6;i++)b(.018*c,.015*c,1.23*c,(i-2.5)*.3*c,.92*c,0,dark)}
-  if(id==='cottage_chair_001'){b(.7*c,.11*c,.65*c,0,.48*c,0);b(.7*c,.83*c,.11*c,0,.88*c,-.29*c);for(const x of [-.27,.27])for(const z of [-.23,.23])b(.1*c,.47*c,.1*c,x*c,.23*c,z*c,dark)}
-  if(id==='cottage_bed_001'){b(1.6*c,.28*c,2.5*c,0,.38*c,0,dark);b(1.5*c,.22*c,2.25*c,0,.6*c,0,linen);b(1.6*c,1.1*c,.16*c,0,.65*c,-1.2*c);b(1.1*c,.14*c,.5*c,0,.76*c,-.78*c,linen)}
-  if(id==='cottage_shelf_001'){for(const x of [-.8,.8])b(.14*c,2.8*c,.7*c,x*c,1.4*c,0);for(let y=.3;y<2.8;y+=.62){b(1.8*c,.12*c,.8*c,0,y*c,0);for(let i=0;i<5;i++)b(.17*c,.36*c,.36*c,(i-2)*.31*c,(y+.23)*c,0,i%2?dark:linen)}}
+  if(id==='cottage_table_001'){
+   b(2*c,.13*c,1.25*c,0,.85*c,0);
+   for(const x of [-.82,.82])for(const z of [-.46,.46])b(.15*c,.78*c,.15*c,x*c,.4*c,z*c,dark);
+   // Four working aprons join the legs beneath the continuous planked top.
+   for(const z of [-.46,.46])b(1.68*c,.16*c,.095*c,0,.72*c,z*c,dark);
+   for(const x of [-.82,.82])b(.095*c,.16*c,.83*c,x*c,.72*c,0,dark);
+   for(let i=0;i<6;i++)b(.012*c,.009*c,1.23*c,(i-2.5)*.3*c,.922*c,0,dark);
+  }
+  if(id==='cottage_chair_001'){
+   b(.7*c,.11*c,.65*c,0,.48*c,0);
+   for(const x of [-.27,.27]){
+    for(const z of [-.23,.23])b(.11*c,.47*c,.11*c,x*c,.23*c,z*c,dark);
+    b(.11*c,.82*c,.11*c,x*c,1.0*c,-.29*c,dark);
+    b(.08*c,.08*c,.5*c,x*c,.26*c,0,dark);
+   }
+   for(const z of [-.23,.23])b(.54*c,.09*c,.09*c,0,.23*c,z*c,dark);
+   for(const y of [.91,1.37])b(.66*c,.1*c,.09*c,0,y*c,-.29*c);
+   for(const x of [-.14,0,.14])b(.065*c,.41*c,.08*c,x*c,1.14*c,-.29*c,dark);
+  }
+  if(id==='cottage_bed_001'){
+   b(1.6*c,.22*c,2.5*c,0,.36*c,0,dark);
+   b(1.5*c,.23*c,2.25*c,0,.59*c,0,linen);
+   for(const x of [-.71,.71]){
+    b(.12*c,.36*c,2.45*c,x*c,.29*c,0);
+    for(const z of [-1.18,1.18])b(.16*c,.97*c,.16*c,x*c,.49*c,z*c,dark);
+   }
+   b(1.51*c,.18*c,.14*c,0,1.0*c,-1.18*c);
+   for(const x of [-.45,-.15,.15,.45])b(.075*c,.53*c,.12*c,x*c,.71*c,-1.18*c);
+   b(1.1*c,.14*c,.5*c,0,.77*c,-.78*c,linen);
+  }
+  if(id==='cottage_shelf_001'){
+   for(const x of [-.8,.8])b(.14*c,2.8*c,.73*c,x*c,1.4*c,0,dark);
+   for(const y of [.56,1.48,2.4])for(const x of [-.72,.72])
+    b(.07*c,.15*c,.70*c,x*c,y*c,0,dark);
+   b(1.79*c,.1*c,.1*c,0,2.69*c,-.33*c,dark);
+   for(let y=.3;y<2.8;y+=.62){
+    b(1.8*c,.12*c,.8*c,0,y*c,0);
+    for(let i=0;i<5;i++)b(.17*c,.36*c,.36*c,(i-2)*.31*c,(y+.23)*c,0,i%2?dark:linen);
+   }
+  }
   if(id==='cottage_fireplace_001'){b(2.6*c,.3*c,1*c,0,.15*c,0,stone);for(const x of [-1.1,1.1])b(.42*c,2.5*c,.9*c,x*c,1.25*c,0,stone);b(2.65*c,.4*c,1.05*c,0,2.5*c,0,stone);b(1.2*c,.45*c,.4*c,0,.48*c,.1*c,fire)}
-  if(id==='cottage_barrel_001'){const o=new THREE.Mesh(new THREE.CylinderGeometry(.48*c,.52*c,1.15*c,24,3),timber);o.position.y=.58*c;o.castShadow=true;root.add(o);for(const y of [.2,.94]){const ring=new THREE.Mesh(new THREE.TorusGeometry(.49*c,.045*c,7,28),dark);ring.rotation.x=Math.PI/2;ring.position.y=y*c;root.add(ring)}}
+  if(id==='cottage_barrel_001'){
+   // Actual coopered belly profile; no straight cylinder masquerading as staves.
+   const profile=[[0,0],[.43,0],[.49,.15],[.54,.45],[.55,.60],[.53,.82],[.49,1.01],[.43,1.15],[0,1.15]]
+    .map(([r,y])=>new THREE.Vector2(r*c,y*c));
+   const body=new THREE.Mesh(new THREE.LatheGeometry(profile,32),timber);
+   body.name='coopered_barrel_body';body.castShadow=true;root.add(body);
+   const ironHoop=new THREE.MeshStandardMaterial({color:0x55534d,metalness:.64,roughness:.59});
+   for(const [y,r] of [[.16,.49],[.60,.55],[1.0,.49]]){
+    const hoop=new THREE.Mesh(new THREE.TorusGeometry(r*c,.027*c,7,32),ironHoop);
+    hoop.rotation.x=Math.PI/2;hoop.position.y=y*c;root.add(hoop);
+   }
+   for(let k=0;k<12;k++){
+    const theta=k*Math.PI/6;
+    const seam=new THREE.Mesh(new THREE.CylinderGeometry(.006*c,.006*c,.99*c,4),dark);
+    seam.position.set(Math.cos(theta)*.533*c,.57*c,Math.sin(theta)*.533*c);root.add(seam);
+   }
+  }
   if(id==='treasure_chest_001'){
    const metal=new THREE.MeshStandardMaterial({color:0xa1874c,metalness:.70,roughness:.36});
    const body=b(.88*c,.38*c,.70*c,0,.30*c,0,dark);body.name='treasure_chest_body';
@@ -256,6 +308,29 @@ export function createObjectById(id,{cellSize=2.2}={}){
    root.userData.lidName='treasure_chest_lid';
   }
   if(id==='cottage_stairs_001'){for(let i=0;i<9;i++)b(1.8*c,.16*c,.48*c,0,(i+.5)*.34*c,(i-4)*.43*c);for(const x of [-.85,.85])b(.12*c,3.2*c,.12*c,x*c,1.6*c,0,dark)}
+  // Physically richer furniture retains few draw calls through material baking.
+  // The animated treasure-chest lid intentionally stays a separate object.
+  if(new Set(['cottage_table_001','cottage_chair_001','cottage_bed_001',
+    'cottage_shelf_001','cottage_barrel_001']).has(id)){
+   const groups=new Map();
+   for(const part of [...root.children]){
+    if(!part.isMesh||Array.isArray(part.material))continue;
+    part.updateMatrix();
+    const geometry=part.geometry.clone();geometry.applyMatrix4(part.matrix);
+    if(!groups.has(part.material))groups.set(part.material,[]);
+    groups.get(part.material).push({part,geometry});
+   }
+   for(const [material,parts] of groups){
+    if(parts.length<2){parts[0].geometry.dispose();continue}
+    const combined=mergeGeometries(parts.map(p=>p.geometry),false);
+    parts.forEach(p=>p.geometry.dispose());
+    if(!combined)continue;
+    for(const {part} of parts){root.remove(part);part.geometry.dispose()}
+    const mesh=new THREE.Mesh(combined,material);
+    mesh.name='optimized_physical_furniture';mesh.castShadow=true;mesh.receiveShadow=true;root.add(mesh);
+   }
+   root.userData.optimizedPhysicalBOM=true;
+  }
   root.userData.catalogId=id;root.userData.passable=false;return root;
  }
  if(OBJECT_CATALOG[id].kind==='town_prop'){
