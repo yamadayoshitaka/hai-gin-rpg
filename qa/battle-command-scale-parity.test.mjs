@@ -25,6 +25,10 @@ assert.match(html,/battleCommandBridge\.issue\(\{squadId:id,team:side,mode\}\)/)
 assert.match(html,/battleCommandBridge\.issue\(\{squadId:id,team:side,mode:'explore'/);
 assert.match(html,/const allowed=allowedBattlePlanOrders\(storyRequest\?\.availableSquadOrders\?\.\[String\(id\)\]\)/);
 assert.match(html,/const multiplier=battleOrderSpeedMultiplier\(order\)/);
+assert.match(html,/\$\('squadOrderChoice'\)\.onclick=\(\)=>\{[\s\S]*?targetedStrategyUi\.open/,
+ 'every army size opens the same central three-step tactical panel');
+assert.match(html,/activateSkirmishSquadItemBuff\(recipient\.id,\{id:buffId,\.\.\.tactic\.buff,duration:24\}\)/,
+ '50-person tactical buffs must not silently fail while mass buffs succeed');
 assert.match(grid,/const multiplier=battleOrderSpeedMultiplier\(order\)/);
 assert.match(grid,/!BATTLE_DIRECT_ORDERS\.includes\(command\)/);
 assert.doesNotMatch(orderText,/massBattle\s*\?/);
