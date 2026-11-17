@@ -1550,7 +1550,7 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
        g.rootedSpike(toe,'bone','skin',[x,-.054,.192],
          [x,-.090,.262],.021,{name:'rooted-claw-m004-'+digit});
      }
-   }else if(beastRemesh&&(s.id==='m001'||s.id==='m002')){
+   }else if(beastRemesh&&(s.id==='m001'||s.id==='m002'||s.id==='m005')){
      // The raised hind hock / front wrist and toes are separate animated
      // groups. Keeping the ankle away from the ground creates digitigrade
      // silhouette even in the idle bind pose.
@@ -1562,12 +1562,12 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
      // m001 has a separately movable metacarpal/metatarsal pad joint.
      // Splitting the former ankle->toe offset preserves bind placement:
      // pastern + toe equals old [-.125/.115, -.205/.213].
-     const pastern=s.id==='m001'?g.group('beastPastern'+name,
+     const pastern=(s.id==='m001'||s.id==='m005')?g.group('beastPastern'+name,
        [0,fore>0?-.075:-.120,fore>0?.065:.130],ankle):null;
      if(pastern)pastern.userData.anatomicalJoint=
        fore>0?'metacarpal':'metatarsal';
      const paw=g.group('beastToe'+name,
-       s.id==='m001'?[0,fore>0?-.050:-.085,fore>0?.050:.083]:
+       (s.id==='m001'||s.id==='m005')?[0,fore>0?-.050:-.085,fore>0?.050:.083]:
          [0,fore>0?-.125:-.205,fore>0?.115:.213],
        pastern||ankle);
      g.bridge(paw,'skin',[0,.045,-.071],[0,-.018,.058],.136,.115);
@@ -1657,7 +1657,7 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
        minVertical:-.72,axis:'y',gravity:.21,
      });
      const toeParent=(s.id==='m003'||s.id==='m004')?
-       g.pivots['toe'+name]:(beastRemesh?g.pivots['beastToe'+name]:distal);
+       g.pivots['toe'+name]:(g.pivots['beastToe'+name]||distal);
      const paw=generateCanineFurGuides({
        center:[0,-.53,.125],radii:[.136,.083,.195],
        rows:source?12:8,around:source?20:14,
