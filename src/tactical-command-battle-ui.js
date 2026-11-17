@@ -72,8 +72,9 @@ export function installBattleTacticalUI({
   preview.hidden=false;
  }
  function showSituation(id,event,sums){
-  if(!isReady()||document.body.classList.contains('squad-closeup'))return;
+  if(!isReady())return;
   if(onSituationChange(id,event,sums)===true){banner.hidden=true;resetEligible();return;}
+  if(document.body.classList.contains('squad-closeup'))return;
   if(noticeTimer!==null)clearTimeout(noticeTimer);
   resetEligible();
   const candidates=getSquadIds().filter(sid=>{
