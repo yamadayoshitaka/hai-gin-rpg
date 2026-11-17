@@ -122,6 +122,11 @@ jobs:
           node --check src/targeted-strategy-runtime.js
           node --check src/battle-ceremony.js
           node --check src/combat-world-object-renderer.js
+          node --check src/battle-engagement-camera.js
+          node --check src/battle-situation-pause.js
+          node qa/battle-engagement-camera.test.mjs
+          node qa/battle-situation-recommendation.test.mjs
+          node qa/battle-saddle-seat-anchor.test.mjs
           node --check src/mass-battle-worker-runtime.js
           node qa/mount-interior-policy.test.mjs
           node qa/hair-camera-distance-stability.test.mjs
