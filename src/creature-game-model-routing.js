@@ -17,6 +17,7 @@ const humanoids=new Set(HUMAN_MONSTER_IDS);
 export const MODEL_REFERENCE_REVISION='m001-sweptback-nose-v20-20261117';
 const firstWave=new Set(['m002','m003','m004','m005']);
 const felineWave=new Set(['m006','m007','m008','m009','m010']);
+const avianWave=new Set(['m011','m012','m013','m014']);
 const locked=new Set(['m005','m006']);
 export const GAME_MONSTER_MODEL_REGISTRY=Object.freeze(Object.fromEntries(
  MONSTER_CATALOG.map(spec=>[spec.id,Object.freeze({
@@ -27,12 +28,14 @@ export const GAME_MONSTER_MODEL_REGISTRY=Object.freeze(Object.fromEntries(
    spec.id==='m006'?'m001-panther-skull-mini-nose-v14-20261118':
    firstWave.has(spec.id)?'m001-compact-wolf-mouth-v10-20261117':
    felineWave.has(spec.id)?'m007-torso-anchor-tail-v12-20261118':
+   avianWave.has(spec.id)?'guardian-82-feather-avian-v15-20261118':
    'catalog-baseline',
   stage:locked.has(spec.id)?'m001-source-derivative-external-locked':
    humanoids.has(spec.id)?'separate-humanoid-pipeline':
    spec.id==='m001'?'reference-implementation':
    firstWave.has(spec.id)?'copied-wolf-king-geometry-in-review':
    felineWave.has(spec.id)?'copied-m007-feline-geometry-in-review':
+   avianWave.has(spec.id)?'original-seraph-wing-avian-remesh-in-review':
    'pending-review',
   // Releasing a model does not mean its visual QA has been approved.
   mobileVisualApproved:false,
@@ -43,6 +46,7 @@ export const GAME_MONSTER_MODEL_REGISTRY=Object.freeze(Object.fromEntries(
 // workstream. m005/m006 are now in the internal physical donor queue.
 export const MONSTER_REFRESH_PRIORITY=Object.freeze([
  'm002','m003','m004','m005','m006','m007','m008','m009','m010',
+ 'm011','m012','m013','m014',
  ...MONSTER_CATALOG.map(s=>s.id).filter(id=>
   !humanoids.has(id)&&
   !['m001','m002','m003','m004','m005','m006',
