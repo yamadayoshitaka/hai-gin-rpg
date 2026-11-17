@@ -28,6 +28,7 @@ on:
       - 'data/character-system/quality-six-targets.json'
       - 'scripts/character-six-batch.mjs'
       - 'qa/character-six-lane-contract.test.mjs'
+      - 'qa/battle-face-hair-shield-recovery.test.mjs'
       - '.github/workflows/character-six-lane.yml'
 permissions:
   contents: read
