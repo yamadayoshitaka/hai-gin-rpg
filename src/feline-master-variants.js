@@ -7,6 +7,8 @@
  * All lengths are in the head/torso local coordinate systems used by
  * monster-geometry.js. No new draw calls are required in low crowd LOD.
  */
+import {referenceBeastTorsoStations,BEAST_REFERENCE_QUALITY_REVISION}
+ from './beast-reference-quality.js';
 const master=Object.freeze({
   id:'m007',
   archetype:'slender-felid-master',
@@ -42,26 +44,23 @@ const variants=Object.freeze({
     legWidth:.93,pawWidth:.92,guardHair:.062,underHair:.031,
     saberToothLength:.085,stripeCount:7})
 });
-export const FELINE_SOURCE_MODEL='m007-slender-felid-master-v2-sharp-eyes-fitted-crest';
+export const FELINE_SOURCE_MODEL='m001-quality-derived-feline-v3-20261117';
 export const FELINE_QUALITY_WAVE_IDS=Object.freeze(Object.keys(variants));
 export const felineMasterVariant=id=>{
  const variant=variants[id];
- return variant?Object.freeze({...master,...variant,id,source:FELINE_SOURCE_MODEL}):null;
+ return variant?Object.freeze({...master,...variant,id,
+  source:FELINE_SOURCE_MODEL,qualityDonor:'m001',
+  qualityRevision:BEAST_REFERENCE_QUALITY_REVISION,
+  geometryDerivation:'m001-subtractive-morph-plus-feline-anatomy'}):null;
 };
+// Reuse the exact 8-ring thoracic topology of the m001 reference sculpt
+// while subtractively narrowing a feline waist and lengthening the flank.
+// It is deliberately NOT a newly invented primitive cat/ball shape.
 export function felineAnatomicalSections(profile){
  if(!profile)throw Error('Feline profile required');
- // Full breast muscle over the scapula, slim waist and pelvic haunches.
- const w=profile.torsoWidth,l=profile.torsoLength,y=profile.torsoHeight;
- return [
-  {z:l*.98,y:y-.080,rx:w*.26,ry:.116},
-  {z:l*.77,y:y-.065,rx:w*.94,ry:.294},
-  {z:l*.48,y:y-.040,rx:w*1.10,ry:.340},
-  {z:l*.14,y:y-.016,rx:w*.95,ry:.305},
-  {z:-l*.25,y:y-.020,rx:w*.76,ry:.258},
-  {z:-l*.60,y:y-.015,rx:w*.71,ry:.263},
-  {z:-l*.87,y:y+.004,rx:w*.61,ry:.225},
-  {z:-l*1.02,y:y+.014,rx:w*.26,ry:.108}
- ];
+ return referenceBeastTorsoStations({
+  width:profile.torsoWidth,length:profile.torsoLength,
+  centerY:profile.torsoHeight,shape:'feline'});
 }
 export function felineFaceRings(profile,baseRings){
  if(!profile||!Array.isArray(baseRings))throw Error('Feline loft required');
