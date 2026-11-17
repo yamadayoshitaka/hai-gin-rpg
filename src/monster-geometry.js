@@ -1019,8 +1019,8 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
      // far tip of the old swollen snout. Fire coloration is material only.
      const root=[side*.112,-.174,.265];
      const fang=g.curvedHorn(head,'bone',root,
-       [side*.122,-.227,.313],[side*.093,-.296,.304],
-       .033,{name:'beast-upper-fang'});
+       [side*.122,-.215,.303],[side*.095,-.263,.301],
+       .025,{name:'beast-upper-fang'});
      fang.userData.m001FangDonor=true;
      if(coatDetail!=='low'){
        const skin=g.bridge(head,'skin',
@@ -1265,7 +1265,7 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
  if(s.id==='m001'||cloneCanine){
    // Small lower incisors erupt UP from the gumline; the previous four
    // downward spikes made the jaw look like disconnected hanging pieces.
-   for(let i=0;i<6;i++){
+   for(let i=0;i<(wolfSibling&&coatDetail==='low'?0:6);i++){
      const x=(i-2.5)*.029;
      const tooth=g.rootedSpike(jaw,'bone','skin',
        [x,-.047,.148],[x*1.04,-.012,.169],.009,
@@ -1274,7 +1274,7 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    }
    // Opposing upper incisors stay fixed to the upper muzzle and reveal
    // their crowns naturally when the mandible opens.
-   for(let i=0;i<6;i++){
+   for(let i=0;i<(wolfSibling&&coatDetail==='low'?0:6);i++){
      const x=(i-2.5)*.026;
      const tooth=g.rootedSpike(head,'bone','skin',
        [x,-.176,wolfSibling?.392:.285],
