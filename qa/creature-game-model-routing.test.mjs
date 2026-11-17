@@ -30,7 +30,11 @@ test('fifty catalog IDs are registered without inventing visual signoff',()=>{
  assert.equal(registeredMonsterModel('m001').version,MODEL_REFERENCE_REVISION);
  assert.equal(registeredMonsterModel('m001').stage,'reference-implementation');
  assert.deepEqual(MONSTER_REFRESH_PRIORITY.slice(0,3),['m002','m003','m004']);
- assert.equal(MONSTER_REFRESH_PRIORITY.length,47);
+ assert.equal(MONSTER_REFRESH_PRIORITY.length,
+   MONSTER_CATALOG.length-HUMAN_MONSTER_IDS.length-3);
+ assert.ok(MONSTER_REFRESH_PRIORITY.every(id=>
+   !HUMAN_MONSTER_IDS.includes(id)&&!['m005','m006'].includes(id)),
+  'the nonhuman batch must not rewrite protected or humanoid sources');
  assert.equal(registeredMonsterModel('m005').stage,'protected');
  assert.equal(registeredMonsterModel('m006').stage,'protected');
  for(const id of HUMAN_MONSTER_IDS)
