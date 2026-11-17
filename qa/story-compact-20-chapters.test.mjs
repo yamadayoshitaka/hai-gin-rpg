@@ -15,7 +15,7 @@ for(const plan of COMPACT_TWENTY_CHAPTER_PLAN){
  assert.equal(opening.recap?.noPortrait,true);
  assert.match(opening.recap.artAsset,/recap\/.+\.webp$/);
  assert(opening.panels.every(p=>p.dialogueTurns.every(t=>t.characterId)),
-  'Opening CG must feature a character rather than a narrator');
+  'Opening CG must feature a character rather than a narrator: '+first+' '+opening.panels.map(p=>p.id+':'+p.dialogueTurns.map(t=>t.speaker+'/'+t.characterId).join(',')).join(' | '));
  assert.deepEqual(opening.panels.slice(0,4).map(x=>x.id),['m1','m2','m3','m4'].map(x=>first+'-'+x));
  assert(opening.panels.slice(0,4).every(x=>x.isChapterOpening));
  assert.equal(compactComicForStage(first,'pre',{chapterOpeningSeen:true}).panels.length,2);
