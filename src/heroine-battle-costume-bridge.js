@@ -6,7 +6,7 @@ import {clipStudioFaceBustPreservingSurface,restoreStudioFaceSurfaceQuality,
  sampleStudioFacePigment,smoothStudioFaceNormals,
  studioAnatomicalSeamY,taperStudioLowerBustBelowChin} from './studio-face-quality-v56.js?v=60';
 import {createCharacter} from './character-system/shared-character-runtime.js?v=4.6.36';
-import {buildRiggedJobOutfit} from './character-system/rigged-outfit-runtime.js?v=20261117-back-gate1';
+import {buildRiggedJobOutfit} from './character-system/rigged-outfit-runtime.js?v=20261117-preview-boardfix';
 import {loadJobMotionMap} from './character-system/job-motion-source.js?v=4.6.36';
 import {measureHeadLocalBounds} from './character-system/hair-attachment-runtime.js?v=4.4.89';
 import {createHeroineBattleActionVfx} from './heroine-battle-action-vfx.js?v=40';
