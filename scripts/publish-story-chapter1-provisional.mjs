@@ -20,6 +20,7 @@ import {fileURLToPath} from 'node:url';
 import {chapterOneReviewPages} from '../src/story-chapter1-review-core.js';
 import {chapterReviewedPanelAsset} from '../src/story-chapter-reviewed-art.js';
 import {stage2ReviewedPanelAsset} from '../src/story-stage2-reviewed-art.js';
+import {NEW_STORY_ORIGINAL_ART} from '../src/story-new-original-art.js';
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const args=process.argv.slice(2);
@@ -38,6 +39,23 @@ const capture=/CHAPTER1_PROVISIONAL_LIVE=Object\.freeze\((\{[\s\S]*?\})\);/;
 const found=capture.exec(source);
 if(!found)throw Error('Provisional map marker changed; refusing write');
 const active=JSON.parse(found[1]);
+const fresh={...NEW_STORY_ORIGINAL_ART};
+const freshFile='src/story-new-original-art.js';
+const freshSource=fs.readFileSync(toAbs(freshFile),'utf8');
+const freshCapture=/NEW_STORY_ORIGINAL_ART=Object\\.freeze\\((\\{[\\s\\S]*?\\})\\);/;
+if(!freshCapture.test(freshSource))throw Error('New original registry marker changed');
+const compact=readJson('data/story-compact-20chapters.json');
+if(compact.expectedNormalImageSlots!==880)throw Error('Compact story changed');
+const first=compact.chapters.find(c=>c.chapter===1);
+if(!first||first.stages.length!==10)throw Error('Compact Chapter 1 not found');
+const byStage=new Map(first.stages.map(s=>[s.stageId,{
+ pre:new Set([...s.chapterOpeningIds,...s.beforeIds]),
+ post:new Set(s.afterIds)}]));
+const compactOnly=s=>{
+ const ids=byStage.get(s.stageId);
+ return !!ids&&(s.edition==='pre'&&ids.pre.has(s.shotId)||
+  ['post-victory','post-town'].includes(s.edition)&&ids.post.has(s.shotId));
+};
 const pages=chapterOneReviewPages(),shots=pages.flatMap(x=>x.shots);
 if(shots.length!==462||pages.length!==132)throw Error('Canonical chapter cardinality drift');
 const validKeys=new Set(shots.map(s=>s.key));
@@ -106,7 +124,10 @@ const canActOn=(s)=>!chapterReviewedPanelAsset({
 function writeMapAndLedger(){
  const newBody=source.replace(capture,
   'CHAPTER1_PROVISIONAL_LIVE=Object.freeze('+JSON.stringify(active,null,2)+');');
+ const newFresh=freshSource.replace(freshCapture,
+  'NEW_STORY_ORIGINAL_ART=Object.freeze('+JSON.stringify(fresh,null,2)+');');
  fs.writeFileSync(toAbs(reviewedFile),newBody);
+ fs.writeFileSync(toAbs(freshFile),newFresh);
  fs.writeFileSync(toAbs(ledgerPath),JSON.stringify(ledger,null,2)+'\n');
 }
 let imported=0,removed=0,unchanged=0,missing=0,providerBlocked=0,failures=[];
@@ -128,8 +149,10 @@ if(mode==='--return-issue'){
   if(!allowed.has(vote.key)||!(/^[a-f0-9]{64}$/i.test(vote.imageSha256))||
    typeof vote.feedback!=='string'||!vote.feedback.trim()||vote.feedback.length>500)
    throw Error('Untrusted return vote');
-  if(active[vote.key]?.sha256!==vote.imageSha256)continue;
-  delete active[vote.key];
+  if(active[vote.key]?.sha256!==vote.imageSha256&&
+     fresh[vote.key]?.sha256!==vote.imageSha256)continue;
+  if(active[vote.key]?.sha256===vote.imageSha256)delete active[vote.key];
+  if(fresh[vote.key]?.sha256===vote.imageSha256)delete fresh[vote.key];
   ledger.returned[vote.key]=vote.imageSha256;
   ledger.history.push({kind:'RETURN_FOR_REVISION',key:vote.key,sha256:vote.imageSha256,
    reason:vote.feedback.trim(),issue:process.env.STORY_REVIEW_ISSUE_URL||'',
@@ -144,8 +167,8 @@ if(mode==='--return-issue'){
 const available=sourceManifest();
 const already=new Set();
 for(const s of shots){
- // Current owner scope: continue Chapter 1 from Stage 4; preserve all earlier scenes.
- if(s.stageId<'c01-s04'||s.stageId>'c01-s10')continue;
+ // Follow the current compact CG scene list, not the superseded 462-cut archive.
+ if(s.stageId<'c01-s01'||s.stageId>'c01-s10'||!compactOnly(s))continue;
  if(!canActOn(s))continue;
  // Output rejected by provider safety filters must NEVER be published.
  if(available.has(s.draftPath+'.provider-blocked.json')){providerBlocked++;continue;}
@@ -158,8 +181,15 @@ for(const s of shots){
   if(already.has(verified.sha256))throw Error('Identical image bytes in multiple distinct canonical scenes');
   already.add(verified.sha256);
   if(ledger.returned[s.key]===verified.sha256){unchanged++;continue;}
-  if(active[s.key]?.sha256===verified.sha256){unchanged++;continue;}
-  const rel='assets/story/chapter1-provisional-live/'+slug(s.key)+'.webp';
+  const newOriginal=s.stageId>='c01-s05';
+  if(newOriginal&& !s.draftPath.includes('/cloudflare-chapter1-new-originals/'))
+   throw Error('Historical image cannot become new original: '+s.key);
+  if(newOriginal?fresh[s.key]?.sha256===verified.sha256:
+     active[s.key]?.sha256===verified.sha256){unchanged++;continue;}
+  const rel=(newOriginal?'assets/story/new-originals/':
+   'assets/story/chapter1-provisional-live/')+slug(s.key)+'.webp';
+  if(fs.existsSync(toAbs(rel))&&sha(fs.readFileSync(toAbs(rel)))!==verified.sha256)
+   throw Error('Existing destination has different image bytes: '+s.key);
   const binding={asset:'./'+rel,sha256:verified.sha256,provenance:verified.proof,
    sourceDraft:s.draftPath,status:'PROVISIONAL_OWNER_AUTHORIZED_PENDING_P0',
    originalLivePath:s.legacyPath||null,stageId:s.stageId,edition:s.edition,gender:s.gender};
@@ -167,6 +197,14 @@ for(const s of shots){
    fs.mkdirSync(path.dirname(toAbs(rel)),{recursive:true});
    fs.writeFileSync(toAbs(rel),verified.bytes);
    active[s.key]=binding;
+   if(newOriginal)fresh[s.key]={
+    origin:'NEW_SCENE_GENERATED_AFTER_2026_11_17',
+    stageId:s.stageId,comicEdition:s.edition,protagonistGender:s.gender,
+    sceneId:s.shotId,asset:'./'+rel,sha256:verified.sha256,
+    provenance:verified.proof,sourceDraft:s.draftPath,
+    provenanceVerified:true,nativeQAComplete:true,
+    visualP0Approved:false,status:'PROVISIONAL_NATIVE_AND_SOURCE_QA_PENDING_VISUAL_P0'
+   };
   }
   imported++;
  }catch(e){failures.push({key:s.key,message:String(e.message)});}
