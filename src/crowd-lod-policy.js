@@ -22,7 +22,10 @@ export function useCrowdImpostor(projectedHeightPixels,wasImpostor=false,enterPi
   const enter=Math.max(CROWD_IMPOSTOR_ENTER_PX,Math.min(100,enterPixels));
   // At 100px the source photograph is still supersampled (224px tile).
   // Hysteresis never turns a zoomed-in, inspectable soldier into a card.
-  return projectedHeightPixels<Math.min(110,wasImpostor?enter+10:enter);
+  // Preserve the historical <=64px close-up guarantee for standard battles.
+  // Only the explicit 1000v1000 high-density budget can widen this tier.
+  const exit=enter<=60?Math.min(64,enter+8):Math.min(110,enter+10);
+  return projectedHeightPixels<(wasImpostor?exit:enter);
 }
 
 // A photographed character has no depth: even a camera-facing card looks
