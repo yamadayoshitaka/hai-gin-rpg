@@ -6,9 +6,9 @@
  */
 import * as THREE from 'three';
 import {createMonsterModel,disposeMonsterSculpture}
- from './monster-geometry.js?v=avian-guardian-82-feather-v15-20261118';
+ from './monster-geometry.js?v=phoenix-scaled-giant-feathers-v16-20261118';
 import {startMonsterAction,animateMonsterModel}
- from './monster-animation.js?v=m001-m005-canine-actions-v6-20261118';
+ from './monster-animation.js?v=phoenix-feather-wave-motion-v7-20261118';
 import {resolveRegisteredMonsterModel}
  from './creature-game-model-routing.js?v=m001-m005-m006-v14-20261118';
 import {fetchCreatureRegistry} from './creature-external-runtime.js';
