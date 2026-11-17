@@ -51,7 +51,11 @@ function scene(base,turns,{opening=false,sharedKind=null}={}){
   subtitleText:first.text,voiceText:first.voiceText,rubyTokens:first.rubyTokens});
 }
 function selectBySuffix(list,token){
- return list.find(p=>p.id.endsWith('-'+token))||null;
+ // A duplicated canonical ID is ambiguous: never silently pick the first
+ // potentially wrong gender/outcome artwork in a compact event.
+ const matches=list.filter(p=>typeof p?.id==='string'&&p.id.endsWith('-'+token));
+ if(matches.length>1)throw Error('Ambiguous compact source art identity '+token);
+ return matches[0]||null;
 }
 function distribute(lines,num){
  const n=Math.ceil(lines.length/num);
