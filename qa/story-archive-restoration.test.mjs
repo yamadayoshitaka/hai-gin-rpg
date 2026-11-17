@@ -34,8 +34,8 @@ for(const [key,entry] of Object.entries(RESTORED_STORY_ARCHIVE)){
  const story=comicForStage(stageId,edition==='pre'?'pre':'post',context);
  const shot=story.panels.find(x=>x.id===panelId);
  assert(shot&&shot.comicEdition===edition, 'Image is for a different story, gender or ending: '+key);
- assert.equal(registeredStoryPanelAsset(shot),entry.asset);
- assert.equal(restoredStoryArchivePanel(shot),entry);
+ assert.equal(registeredStoryPanelAsset(shot),null,'Stage 5 historical CG must not appear in the game');
+ assert.equal(restoredStoryArchivePanel(shot),null,'Stage 5 must not restore historical CGs');
  const abs=path.resolve(entry.asset.replace(/^\.\//,''));
  const proofPath=path.resolve(entry.proof.replace(/^\.\//,''));
  const source=fs.readFileSync(abs);
@@ -70,8 +70,9 @@ for(const [key,entry] of Object.entries(RESTORED_STORY_ARCHIVE)){
  assert.deepEqual(proof.visibleActorIds,entry.visibleActorIds);
  inspected++;
 }
+// Preserve historical proof and source bytes for audit, but no active game link.
 const reviewed=fs.readFileSync('src/story-chapter-reviewed-art.js','utf8');
 assert.match(reviewed,/REGISTERED_CHAPTER_REVIEWED=Object\.freeze\(\{\}\)/,
  'Provisional image must never be silently inserted as formally reviewed');
 console.log(JSON.stringify({status:'PASS',restoredWebPs:inspected,
- provenanceVerified:inspected,noPaidApiCalls:true,formalVisualApproval:false}));
+ provenanceVerified:inspected,inactiveHistoricallyPreserved:inspected,noPaidApiCalls:true,formalVisualApproval:false}));
