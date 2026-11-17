@@ -43,7 +43,7 @@ const ids=['m002','m003','m004','m007','m008','m009','m010'];
      throw Error(id+' '+action+': empty rendered frame');
     frames.push({action,bytes:result.byteLength,filename});
    }
-   if(['m002','m007'].includes(id)){
+   if(['m002','m003','m004','m007'].includes(id)){
     for(const angle of ['front','side']){
      const result=await page.evaluate(p=>window.__beastFaceCameraQA?.(p),angle);
      if(!result||result.id!==id||result.angle!==angle)
