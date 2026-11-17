@@ -189,8 +189,8 @@ import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {MONSTER_CATALOG,MONSTER_BY_ID,MONSTER_FAMILIES,MONSTER_ELEMENTS,monsterList} from './src/monster-catalog.js?v=4.4.92';
 import {createMonsterModel,disposeMonsterSculpture,MONSTER_DETAIL_LEVELS,
-  monsterSculptCacheStats,monsterPhotoCacheStats} from './src/monster-geometry.js?v=phoenix-eyeliner-keratin-v20-20261118';
-import {MONSTER_ACTIONS,startMonsterAction,animateMonsterModel} from './src/monster-animation.js?v=phoenix-eyeliner-feather-motion-v11-20261118';
+  monsterSculptCacheStats,monsterPhotoCacheStats} from './src/monster-geometry.js?v=phoenix-face-flame-wing-v21-20261118';
+import {MONSTER_ACTIONS,startMonsterAction,animateMonsterModel} from './src/monster-animation.js?v=phoenix-face-flame-wing-v12-20261118';
 import {createCosplayedHumanoidMonster} from './src/monster-character-cosplay.js?v=4.6.91';
 import {createBeastfolkMonsterModel,disposeBeastfolkMonsterModel}
  from './src/monster-beastfolk-geometry.js?v=4.5.23';
@@ -903,6 +903,12 @@ window.__avianWingQA=()=>{
    featherHandDigits:['L','R'].map(side=>model.getObjectByName('phoenix-feather-hand-vanes-'+side)?.userData.phoenixFeatherHandDigits||0),
    allBackCrest:!!model.getObjectByName('avian-articulated-crest-m013')?.userData.phoenixAllBackCrest,
    tailLength:model.getObjectByName('avian-tail-rooted-streamers-m013')?.userData.phoenixTailLength||0,
+   facialFlameMesh:!!model.getObjectByName('phoenix-cranial-fire-plumage')?.userData.phoenixCranialFireSculpt,
+   facialFlameVanes:model.getObjectByName('phoenix-cranial-fire-plumage')?.userData.phoenixCranialFlameVanes||0,
+   eyesUncovered:!!model.getObjectByName('phoenix-cranial-fire-plumage')?.userData.phoenixEyesUncovered,
+   guardianFeatherHands:['L','R'].every(side=>
+    !!model.getObjectByName('phoenix-feather-hand-vanes-'+side)?.userData.phoenixSameWingVaneSource),
+   handFeathersPerSide:['L','R'].map(side=>model.getObjectByName('phoenix-feather-hand-vanes-'+side)?.userData.angelFeathersPerSide||0),
    waveMeshes:model.userData.phoenixWaveMeshCount||0
   }:null,
   wings,action:currentAction};
