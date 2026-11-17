@@ -24,7 +24,7 @@ export const GAME_MONSTER_MODEL_REGISTRY=Object.freeze(Object.fromEntries(
   version:spec.id==='m001'?MODEL_REFERENCE_REVISION:
    spec.id==='m002'?'m002-m001-face-source-v2-20261117':
    firstWave.has(spec.id)?'canine-wave-one-20261117':
-   felineWave.has(spec.id)?'m001-quality-derived-feline-v3-20261117':
+   felineWave.has(spec.id)?'m001-quality-derived-feline-v4-20261117':
    'catalog-baseline',
   stage:locked.has(spec.id)?'protected':
    humanoids.has(spec.id)?'separate-humanoid-pipeline':
