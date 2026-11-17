@@ -86,6 +86,8 @@ test('protected m006 and low LOD remain free of new heavy feline coat',()=>{
   try{
    assert.equal(model.userData.felineFurGuides,undefined);
    assert.equal(model.userData.felineMasterSource,undefined);
+   if(id!=='m006')assert.equal(model.userData.pivots.toefrontL,undefined,
+     'low crowd geometry must not allocate high-detail toe groups: '+id);
   }finally{disposeMonsterSculpture(model);}
  }
  const protectedModel=createMonsterModel(MONSTER_BY_ID.m006,{detail:'high'});
