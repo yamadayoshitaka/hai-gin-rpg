@@ -10,6 +10,7 @@ import path from 'node:path';
 import {fileURLToPath,pathToFileURL} from 'node:url';
 import {CHAPTER1_PROVISIONAL_LIVE} from '../src/story-chapter1-provisional-live.js';
 import {registeredStoryPanelAsset} from '../src/story-panel-registered-art.js';
+import {oldStoryArtReuseAllowed} from '../src/story-art-sourcing-policy.js';
 import {chapterOneReviewPages} from '../src/story-chapter1-review-core.js';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const dist=path.join(root,'pages-dist');
@@ -32,12 +33,16 @@ for(const [key,art] of entries){
   stageId:shot.stageId,comicEdition:shot.edition,
   protagonistGender:shot.gender,id:shot.shotId
  });
- assert.equal(uri,art.asset,'Review and game must resolve the same registered original '+key);
+ if(oldStoryArtReuseAllowed(shot.stageId))
+  assert.equal(uri,art.asset,'Review and game must resolve same old registered original '+key);
+ else
+  assert.equal(uri,null,'Stage5+ historical images must remain inactive '+key);
  counts[shot.stageId]=(counts[shot.stageId]||0)+1;
 }
 console.log('Verified canonical physical registrations:',JSON.stringify(counts));
 const review=read('src/story-chapter1-approval-ui.js');
 assert(review.includes('const gameAsset=live?.asset||registeredStoryPanelAsset('));
+assert(review.includes('if(!oldStoryArtReuseAllowed(shot.stageId))return null;'),'Old stage5 review must stay archive-only');
 assert(review.includes('storyArtDisplayUrl(gameAsset)'));
 assert(review.includes("if(!imageUrl&&new URLSearchParams(location.search).get('draft')==='1')"),
  'Unregistered draft branch must be separately opted into');
