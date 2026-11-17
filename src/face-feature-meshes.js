@@ -96,13 +96,15 @@ export function v71EyeDepthFromEyeliner({upperZ,lowerZ,corneaZ,eyeRadius,eyeDept
  const upper=Number(upperZ),lower=Number(lowerZ),cornea=Number(corneaZ);
  if(![upper,lower,cornea].every(Number.isFinite))
   throw Error('Finite real eyeliner and cornea depths required');
- const deepest=Math.min(upper,lower),nearest=Math.max(upper,lower);
- const eyelinerReferenceZ=deepest*.68+nearest*.32;
- // Sclera is slightly inside the real liner; iris/pupil remain inset too.
- const targetInsetRatio=.065-.056*clamp(Number(eyeDepth)||0,-.3,.85);
+ // v74: Both actual liner rims, rather than deeply recessed donor skin,
+ // establish the optical surface with a small upper-lid preference.
+ const eyelinerReferenceZ=upper*.56+lower*.44;
+ // Sclera and iris should be just behind eyeliner, never in front of it.
+ const targetInsetRatio=.031-.020*clamp(Number(eyeDepth)||0,-.3,.85);
  const targetCorneaZ=eyelinerReferenceZ-radius*targetInsetRatio;
- // Limit regression to roughly one eyelid thickness on malformed GLBs.
- const correctionZ=clamp(targetCorneaZ-cornea,-radius*.17,radius*.17);
+ // The retired ±0.17R cap left markedly sunken real-GLB eyes unrepaired.
+ // Permit a full fit within a bounded 0.85R anatomical correction.
+ const correctionZ=clamp(targetCorneaZ-cornea,-radius*.85,radius*.85);
  return {correctionZ,eyelinerReferenceZ,targetCorneaZ,
   signedDepthRatio:(cornea+correctionZ-eyelinerReferenceZ)/radius,
   requestedInsetRatio:targetInsetRatio,
@@ -760,7 +762,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   eyePatch.userData.v33OrbitalSkinFrontEnvelope=orbitFrontZ;
   eyePatch.userData.skinBlendRestrictedToEyelidRim=true;
   eyePatch.userData.anteriorClearanceRatio=(z-faceZ)/eyeRadius;
-  eyePatch.userData.corneaFitVersion='v47-lid-aligned-not-sunken';
+  eyePatch.userData.corneaFitVersion='v74-eyeliner-anchored-slight-recess';
   eyePatch.userData.eyelinerToCenterBulge=true;
   eyePatch.userData.irisFitsApertureWithoutClamp=true;
   eyePatch.userData.eyelinerToCenterBulgeFraction=anteriorGlobeRatio;
@@ -903,6 +905,8 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
    eyePatch.userData.anteriorClearanceRatio=
     (z+fit.correctionZ-faceZ)/eyeRadius;
    eyePatch.userData.v71MeasuredAgainstRealEyeliner=true;
+    eyePatch.userData.v74LinerResidualRatio=fit.residualRatio;
+    eyePatch.userData.v74SmallLinerInsetRatio=fit.requestedInsetRatio;
    eyePatch.userData.v71SignedEyelinerDepthRatio=fit.signedDepthRatio;
    eyePatch.userData.v71UpperLinerDistance3D=upperLinerPoint.distanceTo(
     new THREE.Vector3(x,y,z+fit.correctionZ));
