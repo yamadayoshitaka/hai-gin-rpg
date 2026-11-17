@@ -9,11 +9,11 @@ import {attachMonsterFaceControls} from './facial-feature-runtime.js?v=1';
 import {generateCanineFurGuides,generateCanineAxialFurGuides} from './canine-fur-guides.js?v=beast-coat-20261116';
 import {monsterEvidenceFor} from './monster-anatomy-reference.js';
 import {wolfKingCloneMorph,wolfKingDonorFaceMatchScale,WOLF_KING_FACE_SCALE,copyWolfKingSourceRings,copiedWolfEyeSurfaceZ,WOLF_CLONE_SOURCE_REVISION}
- from './wolf-king-clone-source.js?v=m001-small-head-joint-v7-20261117';
+ from './wolf-king-clone-source.js?v=m001-m005-donor-v8-20261118';
 import {felineMasterVariant,felineFaceRings,felineMuzzleRings,
  felineNasalRings,felineAnatomicalSections,felineEyeSurface,
  felineDorsalSurface,FELINE_SOURCE_MODEL}
- from './feline-master-variants.js?v=beast-m001-m007-cat-v6-20261117';
+ from './feline-master-variants.js?v=beast-m006-m001-cat-v7-20261118';
 import {MORTAL_HEAD_RINGS,MORTAL_TORSO_RINGS} from './monster-realistic-loft.js';
 import {BEAST_REFERENCE_QUALITY_REVISION,REFERENCE_CROWN_QUALITY,
  referenceBeastTorsoStations,referenceDoubleCoat,referenceBeastFlow}
@@ -329,7 +329,7 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
  const felineMaster=feline?felineMasterVariant(s.id):null;
  const wolfClone=canine?wolfKingCloneMorph(s.id):null;
  const cloneCanine=!!wolfClone;
- const beastRemesh=canine&&s.id!=='m005'; // PR #345 protected
+ const beastRemesh=canine; // m005 now uses the physical m001 source
 
  const coatDetail=g.root.userData.detail;
  // This is the SAME two-layer offset/midpoint hair authoring used on m001.
@@ -337,7 +337,7 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
  // proportions. Low-LOD crowds bypass the extra geometry entirely.
  const wolfKingDoubleCoat=s.id==='m001'&&coatDetail!=='low';
  const referenceDualCoat=coatDetail!=='low'&&
-   (wolfKingDoubleCoat||!!felineMaster||
+   (wolfKingDoubleCoat||cloneCanine||!!felineMaster||
     CANINE_GROOM_WAVE_ONE.includes(s.id));
  const doubleFurGuides=guides=>
    referenceDualCoat?referenceDoubleCoat(guides):guides;
@@ -450,9 +450,7 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
   {z:-bodyLength*.83,y:1.28,rx:bodyWidth*.52,ry:.29},
   {z:-bodyLength*1.03,y:1.27,rx:.10,ry:.13}
  ];
- if(s.id==='m005'||s.id==='m006')
-  g.sphere(torso,'skin',[0,1.30,0],[bodyWidth,.43,bodyLength]);
- else {
+ { // m005/m006 now use m001-derived anatomical torso geometry
     const body=g.axialLoft(torso,'skin',bodyStations,
       {name:'species-shoulder-rib-pelvis-'+s.id,
        rough:reptile?.64:.85,ribbing:reptile?.025:.012,
@@ -566,6 +564,14 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
      copyWolfKingSourceRings(M001_CRANIUM_RINGS,s.id),
      {name:'organic-cranium-'+s.id,rough:.91,ribbing:.003,
       faceSculpt:true}):
+   s.id==='m006'?
+   // Morph the SAME eleven m001 source cranium cross-sections into a
+   // black panther; original wolf mother mesh remains unchanged.
+   g.axialLoft(head,'skin',M001_CRANIUM_RINGS.map(r=>({
+     ...r,z:r.z*.94,y:r.y*1.07,
+     rx:r.rx*1.05,ry:r.ry*1.04
+   })),{name:'organic-cranium-m006',rough:.88,ribbing:.002,
+     faceSculpt:true,capEnds:true}):
    g.anatomicalLoft(faceCore,'skin',
      felineMaster?felineFaceRings(felineMaster,QUADRUPED_CRANIUM_RINGS):
      QUADRUPED_CRANIUM_RINGS.map(r=>({
@@ -592,6 +598,14 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
     g.root.userData.m002SkullIsPhysicalM001Morph=true;
     g.root.userData.m002ModelQualityVersion='m001-face-and-follicles-v1';
    }
+ }
+ if(s.id==='m006'){
+   cranium.userData.m001SourceDonor='M001_CRANIUM_RINGS';
+   cranium.userData.m001DerivedAxialSkull=true;
+   g.root.userData.clonedFromSpecies='m001';
+   g.root.userData.cloneMethod='physical-m001-cranium-torso-feline-morph';
+   g.root.userData.cloneSourceRevision=WOLF_CLONE_SOURCE_REVISION;
+   g.root.userData.copyKeepsOriginalSpeciesDecor=true;
  }
  if(s.id==='m001'){
    cranium.userData.anatomyLoft=true;
@@ -722,28 +736,42 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
        {name:'beast-nostril-'+(side<0?'L':'R'),rough:.21});
    }
  }else if(felineMaster){
-   // Raised feline cartilage rather than a submerged dark nose dot.
+   // Small HIGH-SET INVERTED TRIANGLE. Broad at the upper nasal
+   // bridge; sculpt to a sharply narrowed lower tip. The old x1.17
+   // lateral inflation was far too large for a cat.
    const nose=g.axialLoft(head,'shadow',
      felineNasalRings(felineMaster).map(r=>({
-       ...r,z:r.z+.022,rx:r.rx*1.17,ry:r.ry*1.10
+       ...r,y:r.y+.044,z:r.z+.038,rx:r.rx*.66,ry:r.ry*.80
      })),{name:'feline-master-rhinarium-'+s.id,rough:.24,
        ribbing:0,capEnds:true});
+   const points=nose.geometry.getAttribute('position');
+   for(let i=0;i<points.count;i++){
+     const y=points.getY(i);
+     const ventral=clamp01((-.100-y)/.072);
+     points.setX(i,points.getX(i)*(1-.70*ventral));
+   }
+   points.needsUpdate=true;
+   nose.geometry.computeVertexNormals();
+   nose.geometry.computeBoundingSphere();
    nose.userData.felineTriangularRhinarium=true;
-   nose.userData.felineNoseForwardOffset=.022;
+   nose.userData.felineInvertedTriangle=true;
+   nose.userData.felineNoseWidthRatio=.66;
+   nose.userData.felineNoseLift=.044;
+   nose.userData.felineNoseForwardOffset=.038;
    for(const side of [-1,1]){
      const nostril=g.sphere(head,'#14171b',
-       [side*felineMaster.noseWidth*.52,-.157,muzzle+.179],
-       [.012,.007,.005],{name:'feline-master-nostril-'+(side<0?'L':'R'),
-         rough:.38});
+       [side*felineMaster.noseWidth*.295,-.113,muzzle+.181],
+       [.0075,.0042,.0038],{
+         name:'feline-master-nostril-'+(side<0?'L':'R'),rough:.38});
      nostril.userData.embeddedNasalAla=true;
    }
    const sheen=g.sphere(head,'light',
-     [0,-.135,muzzle+.189],[.014,.0045,.004],
+     [0,-.085,muzzle+.202],[.009,.0028,.003],
      {name:'feline-rhinarium-sheen-'+s.id,rough:.24});
    sheen.userData.nasalSurfaceHighlight=true;
    const groove=g.tube(head,'shadow',[
-     [0,-.169,muzzle+.124],[0,-.187,muzzle+.106],
-     [0,-.198,muzzle+.091]],.0045);
+     [0,-.147,muzzle+.152],[0,-.164,muzzle+.121],
+     [0,-.178,muzzle+.090]],.0032);
    groove.name='feline-philtrum-'+s.id;
    if(coatDetail!=='low'){
      // Four long whiskers per cheek, combined in one head-mounted mesh.
