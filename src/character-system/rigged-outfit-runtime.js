@@ -574,6 +574,22 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
   const detail=createDetailedOutfit(jobId,sex,dressed,textures,{quality,rarity:rank});
   dressed.add(detail);
   const result=skinOutfitDetails(detail,dressed);
+  // The procedural rear panels are broad, nearly planar geometry sampled
+  // from the torso AABB. On a moving soldier they look like a rigid board
+  // strapped across the thief/swordsman's back. Battle outfits already have
+  // an opaque *source* skinned torso (its skin-coloured material was replaced
+  // with photographed linen above), so do not draw duplicate rear sheets.
+  // Keep the source skinned fabric and the real segmented plate equipment.
+  // Retain the backup panel only if no such opaque source fabric was found.
+  let suppressedFlatBackPieces=0;
+  if(lowDetail&&opaqueTorsoLiningMaterials>0){
+    for(const name of ['complete-back-tunic-lining','heroic-cuirass-backplate',
+      'l-cuirass-closed-flank','r-cuirass-closed-flank']){
+      const panel=detail.getObjectByName(name);
+      if(panel){panel.visible=false;panel.userData.replacedByOpaqueSourceBack=true;
+        suppressedFlatBackPieces++;}
+    }
+  }
   const root=new THREE.Group();root.name=`rigged-outfit-${jobId}`;root.add(dressed);parent.add(root);
   // Segment joints use one rigid, separately addressable fabric/armor object
   // per bone. This replaces the torn skin-weighted v3 sleeves and trousers.
@@ -1054,7 +1070,8 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
     commanderPieces:jobId==='strategist'?detail.children.filter(o=>
       /^(command-|military-standing-collar|strategist-seal)/.test(o.name)).length:0,
     tunicPanels:detail.userData.tunicPanels,gambesonMeshes,commanderUniformMeshes,
-    opaqueTorsoLiningMaterials,closedBackPanelSkinned:closedBack.closed,
+    opaqueTorsoLiningMaterials,suppressedFlatBackPieces,
+    closedBackPanelSkinned:closedBack.closed,
     torsoForcedCovered:forcedTorsoOcclusion.includes('torso'),
     bareTorsoPreserved:occlusionPreserveRegions.includes('torso'),
     thiefSourceBeltsHidden,
