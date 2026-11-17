@@ -5,6 +5,8 @@ export function battleUnitDisplayName(unit,{fallback='兵士'}={}){
  const species=unit.monsterSpec?.name||unit.monsterName||
   (unit.isMonster&&unit.speciesName)||null;
  if(species)return String(species);
+ // Even a partially loaded/unknown monster must NEVER inherit 'summoner'.
+ if(unit.monsterSpec||unit.isMonster)return String(unit.monsterSpec?.id||'モンスター');
  return String(unit.displayName||unit.job?.name||unit.jobName||
   (fallback!=='兵士'?fallback:unit.jobId)||fallback);
 }
