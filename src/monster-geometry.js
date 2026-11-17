@@ -425,11 +425,28 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
       hip.userData.hipSocketSeal=true;
     }
   }
+ }else if(felineMaster){
+   // m001 buries the scapula/hip fascia beneath its anatomical torso.
+   // Transfer that join construction, with the feline bone proportions:
+   // remove the previous oversized "one-ball" shoulder altogether.
+   if(coatDetail!=='low')for(const side of [-1,1]){
+    const x=side*felineMaster.torsoWidth*.86;
+    const scapula=g.bridge(torso,'skin',
+      [x,1.13,.30],[x*.84,1.36,.49],.125,.073);
+    scapula.name='feline-reference-scapula-'+(side<0?'L':'R');
+    scapula.userData.m001ReferenceSeam=true;
+    const hip=g.bridge(torso,'skin',
+      [x*.82,1.18,-.35],[x,1.02,-.56],.121,.090);
+    hip.name='feline-reference-hip-fascia-'+(side<0?'L':'R');
+    hip.userData.m001ReferenceSeam=true;
+   }
  }else g.sphere(torso,'light',[0,1.48,.22],[.31,.25,.45]);
- // Continuous neck transitions from the shoulder mass into the skull,
- // avoiding the visible "two spheres glued together" silhouette.
+ // Preserve the original m001 neck seam and subtract its thick wolf
+ // throat for cats, instead of welding a spherical lion muzzle on top.
  if(beastRemesh)
   g.bridge(torso,'skin',[0,1.152,.33],[0,1.307,.77+v*.055],.295,.181);
+ else if(felineMaster)
+  g.bridge(torso,'skin',[0,1.29,.32],[0,1.55,.74+v*.055],.246,.158);
  else g.bridge(torso,'skin',[0,1.35,.32],[0,1.57,.76+v*.055],.325,.215);
  const head=g.group('head',[0,beastRemesh?1.300:1.56,.70+v*.06+(beastRemesh?.086:0)]);
  // The earlier 1/3-scale inner "ball face" floated in front of the muzzle.
@@ -1692,9 +1709,14 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
      gravity:.19
    });
    const skullCat=fittedFelineMasterHair(felineMaster,source);
-   addFur(torso,torsoCat);
-   addFur(head,skullCat);
+   addFur(torso,m001Flow(torsoCat));
+   addFur(head,m001Flow(skullCat));
    g.root.userData.felineMasterSource=FELINE_SOURCE_MODEL;
+   g.root.userData.felineReferenceCrownRows=
+     REFERENCE_CROWN_QUALITY[source?'source':'high'].rows;
+   g.root.userData.felineReferenceCrownLayers=
+     REFERENCE_CROWN_QUALITY[source?'source':'high'].layers;
+   g.root.userData.felineReferenceSeamCount=4;
    g.root.userData.felineMasterVariant=felineMaster.archetype;
    g.root.userData.felineFaceWidthRatio=felineMaster.headWidth;
    g.root.userData.felineTorsoWidth=felineMaster.torsoWidth;
