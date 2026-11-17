@@ -891,9 +891,9 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  geo.setAttribute('color',new THREE.BufferAttribute(colors,3));
  geo.setIndex(indices);
  const mat=new THREE.MeshPhysicalMaterial({
-  color:0xffffff,vertexColors:true,roughness:.70,metalness:0,
-  clearcoat:.035,clearcoatRoughness:.68,
-  sheen:.22,sheenRoughness:.65,sheenColor:new THREE.Color(color).multiplyScalar(.42),
+  color:0xffffff,vertexColors:true,roughness:.60,metalness:0,
+  clearcoat:.055,clearcoatRoughness:.56,
+  sheen:.28,sheenRoughness:.58,sheenColor:new THREE.Color(color).multiplyScalar(.48),
   side:THREE.DoubleSide
  });
  const locks=new THREE.Mesh(geo,mat);
@@ -932,8 +932,9 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   const yNorm=(p.y-box.min.y)/d.y;
   if(p.z>center.z+d.z*.025&&yNorm>.40&&yNorm<.82){
    const contactSide=Math.sign(p.x-whorl.x)||1;
-   if(yNorm<.75&&Math.abs(p.x-center.x)<d.x*.055){
-    p.x=center.x+contactSide*d.x*.055;
+   const partGap=yNorm>.75?d.x*.034:d.x*.055;
+   if(yNorm<.815&&Math.abs(p.x-center.x)<partGap){
+    p.x=center.x+contactSide*partGap;
     faceContacts++;collisions++;
     if((zone.startsWith('fringe')||overFace)&&yNorm>.68)
      glabellaClearanceEvents++;
@@ -1219,9 +1220,9 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   fineGeo.setIndex(tris);
   fineGeo.computeVertexNormals();fineGeo.computeBoundingSphere();
   const fineMat=new THREE.MeshPhysicalMaterial({
-   color:0xffffff,vertexColors:true,roughness:.69,metalness:0,
-   clearcoat:.025,clearcoatRoughness:.70,
-   sheen:.16,sheenRoughness:.63,sheenColor:new THREE.Color(color).multiplyScalar(.44),
+   color:0xffffff,vertexColors:true,roughness:.60,metalness:0,
+   clearcoat:.035,clearcoatRoughness:.60,
+   sheen:.23,sheenRoughness:.58,sheenColor:new THREE.Color(color).multiplyScalar(.48),
    side:THREE.DoubleSide
   });
   const fineMesh=new THREE.Mesh(fineGeo,fineMat);
