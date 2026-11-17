@@ -181,10 +181,50 @@ export function createSculpture(spec,detail='high'){
      name,rough:.91,metal:shade==='metal'?.54:0
    }));
  };
- const tube=(parent,shade,points,radius=.04)=>{
+ const tube=(parent,shade,points,radius=.04,{
+   name=null,capEnds=false,taper=1
+ }={})=>{
    const curve=new THREE.CatmullRomCurve3(points.map(V));
    const [segments,radial]=resolution.tube;
-   return own(attach(parent,new THREE.TubeGeometry(curve,segments,radius,radial,false),shade));
+   const geo=new THREE.TubeGeometry(curve,segments,radius,radial,false);
+   // Skinned tails and organic necks are NOT open pipes. Rebuild tapered
+   // rings in place, then add real triangles closing both extremities.
+   if(capEnds||taper!==1){
+     const p=geo.getAttribute('position');
+     for(let row=0;row<=segments;row++){
+       const t=row/segments,center=curve.getPointAt(t);
+       const width=1+(taper-1)*(t*t*(3-2*t));
+       for(let j=0;j<=radial;j++){
+         const i=row*(radial+1)+j;
+         p.setXYZ(i,center.x+(p.getX(i)-center.x)*width,
+           center.y+(p.getY(i)-center.y)*width,
+           center.z+(p.getZ(i)-center.z)*width);
+       }
+     }
+     if(capEnds){
+       const positions=Array.from(p.array),uv=Array.from(geo.getAttribute('uv').array);
+       const index=Array.from(geo.getIndex().array);
+       const first=positions.length/3;positions.push(...curve.getPointAt(0).toArray());uv.push(.5,0);
+       const last=positions.length/3;positions.push(...curve.getPointAt(1).toArray());uv.push(.5,1);
+       const end=segments*(radial+1);
+       for(let j=0;j<radial;j++){
+         index.push(first,j+1,j);
+         index.push(last,end+j,end+j+1);
+       }
+       geo.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
+       geo.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
+       geo.setIndex(index);
+     }else p.needsUpdate=true;
+     geo.computeVertexNormals();
+     geo.computeBoundingSphere();
+   }
+   const mesh=own(attach(parent,geo,shade,{name:name||shade}));
+   if(capEnds){
+     mesh.userData.cappedTubularSkin=true;
+     mesh.userData.endCapTriangles=radial*2;
+     mesh.userData.tailTaper=taper;
+   }
+   return mesh;
  };
  /** Smooth continuous tapered joint between shoulder and skull; bury the
   * broad end in the body and the narrow end inside the head.
