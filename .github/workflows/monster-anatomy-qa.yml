@@ -35,6 +35,7 @@ on:
       - 'src/monster-geometry.js'
       - 'src/wolf-king-clone-source.js'
       - 'qa/beast-mother-clone-source.test.mjs'
+      - 'qa/beast-face-visibility-regression.test.mjs'
       - 'qa/beast-mother-webgl-smoke.cjs'
       - 'src/creature-real-source-audit.js'
       - 'qa/creature-real-source-audit.test.mjs'
@@ -103,7 +104,7 @@ jobs:
         run: npm install --no-save --package-lock=false three@0.180.0
       - name: Run every-monster anatomy / action / reference test and baseline mesh contracts
         run: |
-          node --test qa/monster-anatomy-motion.test.mjs qa/m001-crown-action-vfx.test.mjs qa/beast-m002-feline-gait-face-fx-regression.test.mjs qa/monster-canine-quality-rollout.test.mjs qa/beast-mother-clone-source.test.mjs qa/feline-master-m007-m010.test.mjs qa/creature-game-model-routing.test.mjs qa/creature-mesh-adoption.test.mjs qa/monster-bestiary.test.mjs qa/monster-realism-progress.test.mjs qa/monster-m002-flame-wolf-rig.test.mjs qa/monster-m003-fenrir-rig.test.mjs qa/monster-m004-thunderwolf-gallop.test.mjs
+          node --test qa/monster-anatomy-motion.test.mjs qa/m001-crown-action-vfx.test.mjs qa/beast-m002-feline-gait-face-fx-regression.test.mjs qa/monster-canine-quality-rollout.test.mjs qa/beast-mother-clone-source.test.mjs qa/beast-face-visibility-regression.test.mjs qa/feline-master-m007-m010.test.mjs qa/creature-game-model-routing.test.mjs qa/creature-mesh-adoption.test.mjs qa/monster-bestiary.test.mjs qa/monster-realism-progress.test.mjs qa/monster-m002-flame-wolf-rig.test.mjs qa/monster-m003-fenrir-rig.test.mjs qa/monster-m004-thunderwolf-gallop.test.mjs
       - name: Reject fake photoreal certification, cover all 108 source anatomy baselines
         run: |
           node --check src/monster-shape-kit.js
