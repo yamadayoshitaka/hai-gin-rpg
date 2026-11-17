@@ -5,7 +5,7 @@
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {clone} from 'three/addons/utils/SkeletonUtils.js';
-import {JOBS,outfitStyle,loadPhotoMaterials,createDetailedOutfit} from '../outfit-maintenance-model.js?v=20261117-cape-rear-v74';
+import {JOBS,outfitStyle,loadPhotoMaterials,createDetailedOutfit} from '../outfit-maintenance-model.js?v=20261117-shoulder-cape-v75';
 import {EQUIPMENT_TYPES,equipmentForJob} from './equipment-catalog.js?v=4.4.41';
 import {attachSegmentedArmor} from './segmented-armor-runtime.js?v=4.5.2';
 import {consolidateBattleArmor} from './armor-batch-runtime.js?v=4.5.0';
@@ -202,7 +202,10 @@ function candidateNames(meshName){
     return ['pelvis',`thigh_${s}`,'spine_01'];
   }
   if(/skirt|hem-seam|bottom-hem/.test(n))return ['pelvis','thigh_l','thigh_r','calf_l','calf_r'];
-  if(/cape|mantle/.test(n))return ['spine_03','spine_02','spine_01','pelvis'];
+  // Pin the top edge and clasp of a real back cape to both collarbones.
+  // The older spine-only weights dragged the cloth off the shoulders when
+  // the pose lifted an arm, making it look detached or front-wrapped.
+  if(/cape|mantle/.test(n))return ['clavicle_l','clavicle_r','spine_03','spine_02','spine_01','pelvis'];
   if(/apron|waist|belt|pouch/.test(n))return ['pelvis','spine_01','spine_02'];
   if(/neckline|collar/.test(n))return ['spine_03','neck_01'];
   if(/quiver/.test(n))return ['spine_03','spine_02'];
@@ -239,6 +242,7 @@ export function skinOutfitDetails(details,dressed){
     const skinned=new THREE.SkinnedMesh(geometry,mesh.material);
     skinned.name=mesh.name;skinned.position.copy(mesh.position);skinned.quaternion.copy(mesh.quaternion);skinned.scale.copy(mesh.scale);
     skinned.castShadow=mesh.castShadow;skinned.receiveShadow=mesh.receiveShadow;skinned.frustumCulled=false;
+    skinned.userData={...mesh.userData}; // Preserve shoulder-cape geometry/anchor diagnostics
     const parent=mesh.parent;parent.add(skinned);parent.remove(mesh);
     skinned.updateMatrixWorld(true);skinned.bind(skeleton,skinned.matrixWorld.clone());
     weightedVertices+=positions.count;skinnedPieces++;

@@ -41,6 +41,12 @@ for(const quality of ['preview','battle']){
  let minZ=Infinity,maxZ=-Infinity;
  for(let i=0;i<p.count;i++){minZ=Math.min(minZ,p.getZ(i));maxZ=Math.max(maxZ,p.getZ(i));}
  assert.ok(maxZ-minZ>.012,'anatomical armor must not be a flat card');
+ back.geometry.computeBoundingBox();
+ const rearBox=back.geometry.boundingBox;
+ assert.ok(rearBox.max.y<1.60,
+  'rear metal must end BELOW clavicles / hair instead of rising behind the head');
+ assert.ok(rearBox.max.x-rearBox.min.x<.60,
+  'rear metal must stay on scapulae, not extend outside upper-arm joints');
  assert.ok(!ordinary.getObjectByName('hero-protagonist-draped-mantle'),
   'ordinary swordsman must NOT wear protagonist-only cape');
  assert.ok(!ordinary.getObjectByName('heroic-cuirass-backplate'),
@@ -60,6 +66,15 @@ for(const quality of ['preview','battle']){
   'mantle must hang BEHIND real back armor in negative Z');
  assert.ok(capeBounds.max.z <= .005,
   'rear mantle must not wrap across the character face/front');
+ assert.equal(cape.userData.shoulderCape?.anchor,'both-clavicles',
+  'cape must attach to BOTH shoulder endpoints, not a waist cylinder');
+ assert.equal(cape.userData.shoulderCape?.clothPanel,true);
+ assert.ok(capeBounds.max.z<rearBox.min.z-.02,
+  'every cape panel vertex must sit behind the armored back (no clipping)');
+ assert.ok(Math.abs(capeBounds.max.y-1.53)<.10,
+  'cape top seam must be at clavicle height, not above the head');
+ assert.ok(capeBounds.max.x-capeBounds.min.x>.55,
+  'cape hem must spread beyond the armored back without wrapping forward');
  assert.ok(cape.geometry.getAttribute('position').count < (quality==='battle'?500:1800),
   'hero mantle must keep mobile battle vertex budget bounded');
  const thief=make('job06',false,quality);
@@ -71,6 +86,9 @@ for(const quality of ['preview','battle']){
  assert.ok(heroThief.getObjectByName('hero-protagonist-draped-mantle'),
   'protagonist cape works for light occupations too');
 }
+const reinforced=make('job05',false,'battle');
+assert.ok(reinforced.getObjectByName('anatomically-curved-rear-cuirass-lames'),
+ 'shield fighter must also have centered back steel');
 const summoned=make('job10',true,'battle');
 assert.ok(summoned.getObjectByName('three-dimensional-back-and-side-cape'),
  'existing job-authored cape retained for summoner');
