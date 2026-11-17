@@ -4,7 +4,7 @@ import {
 } from '../src/creature-face-volume.js';
 
 // Check actual vertex displacement, not a label, reference image or registry.
-const point=[.12,.06,.43,.66,.34];
+const point=[.12,.06,.43,.54,-.12];
 const vertex=(id,family,enable)=>sculptAxialFacePoint(
  ...point,{...creatureFaceVolume(id,family),anatomicalRims:enable});
 const changed=(a,b)=>Math.hypot(...a.map((v,i)=>v-b[i]));
