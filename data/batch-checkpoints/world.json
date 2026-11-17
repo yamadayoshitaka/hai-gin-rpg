@@ -171,6 +171,51 @@
       ],
       "commitSha": "be2b0d89a14673eb2e48307b62918191668b668d",
       "qa": "unverified"
+    },
+    {
+      "id": "wooden_watchtower_001",
+      "sourceFiles": [
+        "src/object-catalog.js"
+      ],
+      "commitSha": "d5a3f96f72ebb6763b2ee71a2fac643447be78d0",
+      "qa": "unverified",
+      "changeNote": "Structural geometry updated; WebGL/Android/Node QA unverified"
+    },
+    {
+      "id": "stone_column_001",
+      "sourceFiles": [
+        "src/object-catalog.js"
+      ],
+      "commitSha": "d5a3f96f72ebb6763b2ee71a2fac643447be78d0",
+      "qa": "unverified",
+      "changeNote": "Structural geometry updated; WebGL/Android/Node QA unverified"
+    },
+    {
+      "id": "wall_torch_001",
+      "sourceFiles": [
+        "src/object-catalog.js"
+      ],
+      "commitSha": "d5a3f96f72ebb6763b2ee71a2fac643447be78d0",
+      "qa": "unverified",
+      "changeNote": "Structural geometry updated; WebGL/Android/Node QA unverified"
+    },
+    {
+      "id": "haystack_001",
+      "sourceFiles": [
+        "src/object-catalog.js"
+      ],
+      "commitSha": "d5a3f96f72ebb6763b2ee71a2fac643447be78d0",
+      "qa": "unverified",
+      "changeNote": "Structural geometry updated; WebGL/Android/Node QA unverified"
+    },
+    {
+      "id": "inn_sign_001",
+      "sourceFiles": [
+        "src/object-catalog.js"
+      ],
+      "commitSha": "d5a3f96f72ebb6763b2ee71a2fac643447be78d0",
+      "qa": "unverified",
+      "changeNote": "Structural geometry updated; WebGL/Android/Node QA unverified"
     }
   ],
   "remainingIds": [
