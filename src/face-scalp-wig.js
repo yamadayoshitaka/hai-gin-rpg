@@ -1028,8 +1028,9 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    const rootProfile=(strand.fringe?.48:.28)+
     (strand.fringe?.52:.72)*THREE.MathUtils.smoothstep(t,0,.30);
    const width=half*tip*rootProfile*(.81+.24*fract(i*.35))*
-    (strand.zone.startsWith('fringe')?.43:
-     strand.zone.startsWith('temple')?.58:
+     (fiberMultiplier>=10&&normalLayeredSingleMesh?1.14:1)*
+    (strand.zone.startsWith('fringe')?.52:
+     strand.zone.startsWith('temple')?.65:
      strand.zone==='crown'?.70:
      strand.zone.startsWith('back')?.88:
      strand.zone.startsWith('nape')?.82:.86);
@@ -1184,7 +1185,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    const strand=strands[i],first=strand.points[0];
    const fine= strand.fringe?.48:
     strand.zone.startsWith('temple')?.75:1.05;
-   const radius=(half*fine)*1.8;
+   const radius=(half*fine)*(fiberMultiplier>=10?1.24:1.8);
    for(let lane=0;lane<extra;lane++){
     const laneAt=(lane+.5)/extra-.5;
     const base=coords.length/3;
@@ -1199,8 +1200,8 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
      const t=j/segments;
      const rootFade=Math.min(1,t*7);
      // Additional static fibre curl follows the existing scalp-rooted guides.
-     const shell=(Math.sin((lane+1)*2.39996323+i*.277)*.0012+
-      Math.sin(t*12.5+i*.37+lane*1.31)*.00033)*d.x*rootFade;
+     const shell=(Math.sin((lane+1)*2.39996323+i*.277)*(fiberMultiplier>=10?.00065:.0012)+
+      Math.sin(t*12.5+i*.37+lane*1.31)*(fiberMultiplier>=10?.00020:.00033))*d.x*rootFade;
      const offset=radius*(2*laneAt)*rootFade;
      const width=Math.max(d.x*.000045,
       half*.14/fiberMultiplier)*(1-.965*Math.pow(t,3));
@@ -1334,6 +1335,8 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   style:'real-scalp-shell-growing-then-trimmed',gender,rooted:true,rootCount:lockCount,
   hairstyleId:style.id,styleLabel:style.label,
   v50CatalogGroom:catalogGroom.mode,
+   v74HighDensityHairCoverage:fiberMultiplier>=10&&normalLayeredSingleMesh,
+   v74MicroFibreSpreadFactor:fiberMultiplier>=10?1.24:1.8,
   v50FringeLift:catalogGroom.fringeLift,
   v50SideCutFloor:catalogGroom.templeFloor,
   v49StyledHairType:styled.type,
