@@ -530,7 +530,7 @@ async function updateRuns({request=false}={}){
   if(cache&&Array.isArray(cache.runs))displayRunSnapshot(cache.runs,cache.at);
   return;
  }
- if(cache&&Array.isArray(cache.runs)&&now-cache.at<RUN_MIN_REFRESH_MS){
+ if(cache&&Array.isArray(cache.runs)&&now-Date.parse(cache.at)<RUN_MIN_REFRESH_MS){
   displayRunSnapshot(cache.runs,cache.at);return;
  }
  try{
