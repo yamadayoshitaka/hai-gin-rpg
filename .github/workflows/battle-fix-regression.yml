@@ -98,6 +98,8 @@ on:
       - 'src/crowd-impostor-atlas.js'
       - 'src/mass-battle-real-army.js'
       - 'src/battle-terrain-contact.js'
+      - 'src/battle-shared-command-rules.js'
+      - 'qa/battle-command-scale-parity.test.mjs'
       - 'qa/battle-bridge-bank-foot-contact.test.mjs'
       - 'src/character-system/shared-character-runtime.js'
       - 'src/battle-squad-intent.js'
@@ -152,8 +154,10 @@ jobs:
           node --check src/crowd-lod-policy.js
           node --check src/crowd-performance-budget.js
           node --check src/battle-terrain-contact.js
+          node --check src/battle-shared-command-rules.js
           node --check src/crowd-run-grounding.js
           node qa/battle-bridge-bank-foot-contact.test.mjs
+          node qa/battle-command-scale-parity.test.mjs
           node qa/mass-crowd-occlusion-performance.test.mjs
           node qa/army-visual-ground-tempo-parity.test.mjs
           node qa/battle-board-bald-horse-regression.test.mjs
