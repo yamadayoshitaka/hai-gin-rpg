@@ -8,6 +8,9 @@ import {createSculpture,disposeMonsterSculpture} from './monster-shape-kit.js?v=
 import {attachMonsterFaceControls} from './facial-feature-runtime.js?v=1';
 import {generateCanineFurGuides,generateCanineAxialFurGuides} from './canine-fur-guides.js?v=beast-coat-20261116';
 import {monsterEvidenceFor} from './monster-anatomy-reference.js';
+import {felineMasterVariant,felineFaceRings,felineMuzzleRings,
+ felineNasalRings,felineAnatomicalSections,FELINE_SOURCE_MODEL}
+ from './feline-master-variants.js?v=felid-source-20261117-v1';
 import {MORTAL_HEAD_RINGS,MORTAL_TORSO_RINGS} from './monster-realistic-loft.js';
 import {sculptBloodMoonVampire,sculptVampireHand} from './monster-vampire-sculpt.js';
 /** Organic cranium sections shared by wolves, cats and reptiles.
@@ -205,6 +208,50 @@ function fittedWolfFamilyCrown(spec,source){
  }
  return guides;
 }
+// Cat undercoat and guard hair grow from the actual feline skull loft.
+// m007, m008, m009 and m010 share the same base surface and diverge
+// through proportional morphs rather than wolf-mane copy/paste.
+function fittedFelineMasterHair(profile,source){
+ const out=[],rows=source?33:23,around=source?43:30;
+ for(let i=0;i<rows;i++){
+   const y=-.202+.492*(i+.42)/rows;
+   const rings=QUADRUPED_CRANIUM_RINGS;
+   let a=rings[0],b=rings[rings.length-1];
+   for(let k=1;k<rings.length;k++)if(rings[k].y>=y){
+     a=rings[k-1];b=rings[k];break;
+   }
+   const t=clamp01((y-a.y)/Math.max(1e-4,b.y-a.y));
+   const rx=(a.rx+(b.rx-a.rx)*t)*profile.headWidth*
+     (y<-.085?profile.cheekTaper:1);
+   const rz=(a.rz+(b.rz-a.rz)*t)*profile.headDepth;
+   const cz=a.cz+(b.cz-a.cz)*t+.002;
+   for(let j=0;j<around;j++){
+     const angle=2*Math.PI*(j+.30+(i%2)*.4)/around;
+     const ux=Math.cos(angle),uz=Math.sin(angle);
+     const x=rx*ux,z=cz+rz*uz;
+     // No opaque fur roots over the iris, nose or narrow lip line.
+     if(z>.12&&Math.abs(x)<.205&&y<.17)continue;
+     const lion=profile.maneLength>0,cheek=z>-.12&&y<.06;
+     const len=lion?(cheek?profile.maneLength:.092):
+       (cheek?profile.guardHair*.78:profile.underHair);
+     const length=len*(.88+.14*Math.sin(i*.51+j*.83));
+     const root=[x,y,z],back=(lion&&cheek)?.18:.76;
+     const tip=[x+Math.sign(x)*length*.07,
+       y-length*(lion&&cheek?.67:.17),
+       z-length*back];
+     const mid=[
+       x+(tip[0]-x)*.47+.004*Math.sin(i+j),
+       y+(tip[1]-y)*.40+(lion?.017:.006),
+       z+(tip[2]-z)*.46
+     ];
+     out.push({root,mid,tip,normal:[ux,.20,uz],
+       width:lion?.012:.0065,
+       shade:(i+j)%13===0?'light':(i+j)%9===0?'shadow':'skin',
+       catMaster:FELINE_SOURCE_MODEL});
+   }
+ }
+ return out;
+}
 function feet(g,pivot,x,y,z,clawed=true,scale=1){
  g.sphere(pivot,'skin',[0,-.28,0],[.14*scale,.30*scale,.15*scale]);
  g.sphere(pivot,'shadow',[0,-.53,.13],[.13*scale,.08*scale,.22*scale]);
@@ -213,6 +260,7 @@ function feet(g,pivot,x,y,z,clawed=true,scale=1){
 function quadruped(g,s,{feline=false,reptile=false}={}){
  const v=s.variant,k=s.size;
  const canine=!feline&&!reptile;
+ const felineMaster=feline?felineMasterVariant(s.id):null;
  const beastRemesh=canine&&s.id!=='m005'; // PR #345 protected
 
  const coatDetail=g.root.userData.detail;
@@ -330,11 +378,13 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
  }
  // Individual shoulder, ribcage and pelvis stations replace a rescaled ball.
  // The moving limb pivots and species-specific head/coat are unchanged.
- const bodyWidth=.43+(v%2)*.06,bodyLength=.72+v*.06;
+ const bodyWidth=felineMaster?felineMaster.torsoWidth:.43+(v%2)*.06;
+ const bodyLength=felineMaster?felineMaster.torsoLength:.72+v*.06;
  // Nose is +Z. Reference-matched wolf: broad dropped forequarter,
  // narrow lifted waist and tapered croup instead of a cylindrical trunk.
  // Both torso source geometry and the coat below use these SAME sections.
- const bodyStations=beastRemesh?[
+ const bodyStations=felineMaster?felineAnatomicalSections(felineMaster):
+  beastRemesh?[
   // Shoulder carries mass; chest and abdominal undersides are NOT a
   // circular drum. The forequarter hangs lower while the rear tapers.
   {z:bodyLength*1.01,y:1.235,rx:.110,ry:.140},
@@ -416,6 +466,7 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    g.axialLoft(faceCore,'skin',M001_CRANIUM_RINGS,
      {name:'organic-cranium-m001',rough:.91,ribbing:.003,faceSculpt:true}):
    g.anatomicalLoft(faceCore,'skin',
+     felineMaster?felineFaceRings(felineMaster,QUADRUPED_CRANIUM_RINGS):
      QUADRUPED_CRANIUM_RINGS.map(r=>({
        ...r,rx:r.rx*skullWidth,rz:r.rz*skullDepth,
      })),{name:'organic-cranium-'+s.id,kind:'face',
@@ -452,6 +503,10 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
  }
  if(reptile){
    g.bridge(head,'skin',[0,.045,-.19],[0,-.085,.55],.257,.128);
+ }else if(felineMaster){
+   g.bridge(head,'skin',[0,-.035,.082],
+     [0,-.114,felineMaster.muzzleFront+.015],
+     .151*felineMaster.cheekTaper,.091);
  }else if(feline){
    g.bridge(head,'skin',[0,-.028,.10],[0,-.12,.36],.209,.131);
  }
@@ -459,7 +514,8 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    // Legacy protected m005: preserve its original muzzle topology.
    g.bridge(head,'skin',[0,-.02,.13],[0,-.10,.54],.245,.125);
  }
- const muzzle=s.id==='m001'?.16:beastRemesh?.34:reptile?.57:feline?.32:.43;
+ const muzzle=s.id==='m001'?.16:beastRemesh?.34:reptile?.57:
+   felineMaster?felineMaster.muzzleFront:feline?.32:.43;
  if(reptile){
    g.bridge(head,'skin',[0,-.115,.245],[0,-.152,.82],.203,.116);
    g.sphere(head,'light',[0,-.162,.684],[.145,.064,.226]);
@@ -488,6 +544,9 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    ];
    g.axialLoft(head,'light',muzzleRings,
      {name:'beast-continuous-nasal-bridge-'+s.id,rough:.72,ribbing:.002});
+ }else if(felineMaster){
+   g.axialLoft(head,'light',felineMuzzleRings(felineMaster),
+     {name:'feline-master-short-muzzle-'+s.id,rough:.77,ribbing:.002});
  }else g.sphere(head,'light',[0,-.13,muzzle],
    feline?[.204,.126,.259]:[.23,.15,.31]);
  if(beastRemesh){
@@ -526,6 +585,14 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
        [side*(tight?.035:.108),tight?-.137:-.182,tight?.358:.681],
        tight?[.0058,.0045,.0035]:[.014,.010,.008],
        {name:'beast-nostril-'+(side<0?'L':'R'),rough:.21});
+   }
+ }else if(felineMaster){
+   g.axialLoft(head,'shadow',felineNasalRings(felineMaster),
+     {name:'feline-master-rhinarium-'+s.id,rough:.31,ribbing:0});
+   for(const side of [-1,1]){
+     const x=side*felineMaster.noseWidth*.45;
+     g.sphere(head,'shadow',[x,-.162,muzzle+.129],
+       [.008,.006,.009],{name:'feline-master-nostril-'+(side<0?'L':'R')});
    }
  }else g.sphere(head,'shadow',[0,-.17,muzzle+.19],[.18,.057,.12],{name:'nose'});
  if(canine){
