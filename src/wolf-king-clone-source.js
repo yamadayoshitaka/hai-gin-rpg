@@ -15,7 +15,23 @@ const MORPHS=Object.freeze({
  m004:Object.freeze({faceX:1.20,faceY:1.16,faceZ:1.16,faceAdvance:.022,
   snoutWidth:1.25,snoutLength:1.25,noseWidth:1.30})
 });
+// This transform is already applied to m001's actual rendered face.
+// Copying only its unscaled axial rings made m002 about 1.5x wider.
+export const WOLF_KING_FACE_SCALE=Object.freeze({x:.64,y:.79,z:.82});
 export const wolfKingCloneMorph=id=>MORPHS[id]||null;
+/** Physically match m002's copied cranial silhouette to its small m001 donor.
+ * Applied on the head pivot so eyes, fangs, ears and follicle mesh share
+ * the SAME space. Other species keep their distinct proportions.
+ */
+export function wolfKingDonorFaceMatchScale(id){
+ const morph=wolfKingCloneMorph(id);
+ if(id!=='m002'||!morph)return null;
+ return Object.freeze({
+  x:WOLF_KING_FACE_SCALE.x/morph.faceX,
+  y:WOLF_KING_FACE_SCALE.y/morph.faceY,
+  z:WOLF_KING_FACE_SCALE.z/morph.faceZ
+ });
+}
 export function copyWolfKingSourceRings(m001Rings,id,kind='cranium'){
  const morph=wolfKingCloneMorph(id);
  if(!morph)throw Error('No approved wolf-king clone profile: '+id);
