@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {createAnatomicalFaceParts} from './face-feature-meshes.js?v=20261118-makeup-lipshade-v73';
+import {createAnatomicalFaceParts} from './face-feature-meshes.js?v=20261118-liner-eye-v74';
 import {attachAgeDetails} from './face-age-detail-v49.js?v=49';
 import {resolveDemographicProfile} from './character-demographics-v47.js?v=51';
 import {normalizeFemaleFaceControls,normalizeMaleFaceControls,FEMALE_V7_DEFAULTS} from './face-v7-controls.js';
