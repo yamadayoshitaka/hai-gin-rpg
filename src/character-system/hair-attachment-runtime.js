@@ -120,7 +120,10 @@ function fittedScalpSurface(model,bone,headBounds){
   if(headInfluenced>=30)candidates.push({mesh,index,joints,weights,vertices,headInfluenced});
  });
  candidates.sort((a,b)=>b.headInfluenced-a.headInfluenced||b.vertices-a.vertices);
- const candidate=candidates[0];if(!candidate)return null;
+ // A costume can have many head-weighted vertices below the crown.
+ // Try the next real anatomical candidate if it yields no scalp triangles;
+ // do not fall back to an exposed smooth sphere on that single bad match.
+ for(const candidate of candidates){
  const {mesh,index,joints,weights,vertices}=candidate;
  const threshold=headBounds.max.y-(headBounds.max.y-headBounds.min.y)*.46;
  const center=headBounds.getCenter(new THREE.Vector3());
@@ -148,12 +151,14 @@ function fittedScalpSurface(model,bone,headBounds){
     Math.max(0,Math.min(1,(y-threshold)/Math.max(.01,headBounds.max.y-threshold))));
   }
  }
- if(triangles.length<90)return null;
+ if(triangles.length<90)continue;
  const geometry=new THREE.BufferGeometry();
  geometry.setAttribute('position',new THREE.Float32BufferAttribute(triangles,3));
  geometry.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
  geometry.computeVertexNormals();geometry.computeBoundingSphere();
  return geometry;
+ }
+ return null;
 }
 
 // A correct XYZ scalp mesh alone can still look bald: the previous smooth
