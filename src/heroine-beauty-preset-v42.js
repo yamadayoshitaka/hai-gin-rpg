@@ -58,7 +58,8 @@ export function heroineBeautyControlsV47(base={}){
  return {...heroineBeautyControlsV43(base),
   faceMorph:.43,jawSharpness:4.05,
   eyeWidth:1.27,eyeHeight:1.20,irisDiameter:1.36,eyeDepth:.055,
-  lashCurl:1.24,lashLength:1.69,lashDensity:1.28,
-  lipstickWidth:1.11,lipstickHeight:1.08,
+  lashCurl:1.35,lashLength:1.92,lashDensity:1.42,
+  noseBridgeSharpness:3.15,
+   lipstickWidth:1.25,lipstickHeight:1.08,
   ageBand:'twenties',bodyType:'normal'};
 }
