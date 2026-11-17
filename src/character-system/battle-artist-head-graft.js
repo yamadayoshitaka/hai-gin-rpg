@@ -199,7 +199,12 @@ function artistControls(recipe){
   noseBridgeSharpness:clamp(2.2+(f%4)*.28,0,5),
   noseTipLift:clamp((f%5-2)*.12,-2,2),
   faceMorph:clamp((f%5-2)*.065,-.6,.6),
-  lashLength:recipe.sex==='female'?1.4:1,
+  // Slightly longer/curlier *tapered existing* eyelashes for women, finer
+  // width for both. No extra meshes or hair physics in the render loop.
+  lashLength:recipe.sex==='female'?1.48:1,
+  lashDensity:recipe.sex==='female'?1.12:1,
+  lashThickness:recipe.sex==='female'?.72:.85,
+  lashCurl:recipe.sex==='female'?.93:.18,
   beardDensity:recipe.sex==='male'&&['sixties','seventies','eightyPlus'].includes(recipe.ageBand)?0.20:0
  };
 }
@@ -207,7 +212,9 @@ function buildArtistMaster(source,recipe,pattern=null){
  // The saved artist/heroine generator owns the SAME controls and v32
  // geometry parts for both views. A generic soldier uses the catalog's
  // deterministic job/age/gender pattern, never a random donor face.
- const controls=pattern?.faceControls||artistControls(recipe);
+ // Use saved artist controls when provided; only unspecified parameters take
+ // the deterministic sex-specific defaults. Never overwrite a user's preset.
+ const controls={...artistControls(recipe),...pattern?.faceControls};
  const args=recipe.sex==='female'?
   {femaleControls:controls,partSelection:pattern?.partIds||null}:
   {maleControls:controls,partSelection:pattern?.partIds||null};
@@ -221,6 +228,27 @@ function buildArtistMaster(source,recipe,pattern=null){
  // This is the same PBR skin finish used by the artist's actual hero preview,
  // not the flat clay material of the source-head geometry.
  enhanceHeroineFaceSurface(result.face);
+ // Tune already-authored cosmetic surfaces in place. Preserve the original
+ // lashes, eyeliner, make-up textures and head rig; no additional draw calls.
+ result.root.traverse(mesh=>{
+  if(!mesh.isMesh)return;
+  const role=String(mesh.userData?.colorRole||'').toLowerCase();
+  if(role!=='lashes'&&role!=='eyeaccent'&&role!=='brow')return;
+  const mats=Array.isArray(mesh.material)?mesh.material:[mesh.material];
+  for(const mat of mats){
+   if(!mat)return;
+   if(role==='lashes'){
+    mat.depthWrite=false;mat.side=THREE.DoubleSide;
+    mat.transparent=true;
+    // Thin upper/lower strands stay translucent instead of black slabs.
+    mat.opacity=Math.min(mat.opacity??1,recipe.sex==='female'?.83:.71);
+   }else if(mat.isMeshStandardMaterial){
+    mat.roughness=Math.max(mat.roughness||0,.83);
+    mat.metalness=0;
+   }
+   mat.needsUpdate=true;
+  }
+ });
  // The face editor is allowed to be bright; combat light cannot bleach skin.
  correctBattleFaceSkinTone(result.face,{sex:recipe.sex});
  return result;
