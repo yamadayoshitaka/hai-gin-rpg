@@ -663,9 +663,32 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
      g.sphere(lid,'skin',[0,0,0],[.050,.024,.068],
        {name:'nictitating-membrane',rough:.87});
    }
+ }else if(felineMaster){
+   // Cat-specific almond socket follows the SLIM master skull.
+   // All orbital structures are offset together, not just the pupil.
+   for(const side of [-1,1]){
+     const suffix=side<0?'L':'R',x=side*felineMaster.eyeX,
+       z=felineMaster.eyeZ;
+     g.sphere(head,'shadow',[x,.095,z],
+       [.039,.036,.049],{name:'feline-master-orbit-'+suffix});
+     g.sphere(head,'eye',[x+side*.010,.095,z+.010],
+       [.015,.027,.035],{rough:.24,name:'feline-master-iris-'+suffix});
+     g.sphere(head,'shadow',[x+side*.021,.094,z+.021],
+       [.0045,.020,.009],{name:'feline-master-pupil-'+suffix});
+     g.tube(head,'skin',[
+       [x-side*.044,.128,z-.035],[x,.138,z+.017],
+       [x+side*.045,.122,z+.030]],.011);
+     g.tube(head,'shadow',[
+       [x-side*.035,.067,z-.024],[x,.061,z+.011],
+       [x+side*.036,.078,z+.025]],.008);
+     const lid=g.group('eyelid'+suffix,[x,.144,z+.006],head);
+     lid.userData.restY=lid.position.y;
+     lid.userData.blinkTravel=.052;
+     g.sphere(lid,'skin',[0,0,0],[.044,.018,.060],
+       {name:'feline-master-lid-'+suffix});
+   }
  }else if(feline){
-   // Cats need their own front-facing oval orbital cavities and vertical
-   // pupils. The generic round eye guide previously looked pasted on.
+   // Preserve protected m006's original eye material/position.
    for(const side of [-1,1]){
      const suffix=side<0?'L':'R';
      g.sphere(head,'shadow',[side*.279,.103,.230],
@@ -754,6 +777,20 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
          [side*(.295+v*.008),.52+v*.025,-.055],.059);
        g.sphere(head,'light',[side*.217,.228,-.015],[.071,.045,.052]);
      }
+   }else if(felineMaster){
+     // No generic variant-2 horns or rigid ear spheres on the lion.
+     // Rounded short feline ear cartilage is part of the head rig.
+     const suffix=side<0?'L':'R';
+     const ear=g.group('ear'+suffix,[side*.215,.204,-.076],head);
+     g.foxPinna(ear,{
+       side,height:felineMaster.earHeight,
+       width:felineMaster.earWidth,spread:.038,
+       name:'feline-master-pinna-'+s.id+'-'+suffix
+     });
+     g.sphere(ear,'skin',[0,.016,.008],
+       [.096,.051,.083],{name:'feline-master-ear-root-'+suffix});
+     g.sphere(ear,'shadow',[side*.007,.057,.055],
+       [.060,.079,.022],{name:'feline-master-ear-interior-'+suffix});
    }else if(reptile||v>=2){
      // Horns grow from an embedded keratin socket, travel through a
      // tapered curved base and end in a sharp cap. No floating cone root.
@@ -784,7 +821,16 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    }else if(beastRemesh)g.curvedHorn(head,'bone',
       [side*.13,-.17,muzzle+.05],[side*.146,-.265,muzzle+.14],
       [side*.115,-.335,muzzle+.23],.046,{name:'beast-upper-fang'});
-   else g.spike(head,'bone',[side*.13,-.20,muzzle+.08],[side*.13,-.31,muzzle+.22],.046);
+   else if(felineMaster){
+     const saber=s.id==='m007',length=felineMaster.saberToothLength;
+     const root=[side*.100,-.176,muzzle+.021];
+     const fang=g.curvedHorn(head,'bone',root,
+       [side*.107,-.176-length*.54,muzzle+.082],
+       [side*.073,-.176-length,muzzle+.094],
+       saber?.030:.020,
+       {name:'feline-master-upper-canine-'+s.id+'-'+(side<0?'L':'R')});
+     fang.userData.felineDentalRoot=true;
+   }else g.spike(head,'bone',[side*.13,-.20,muzzle+.08],[side*.13,-.31,muzzle+.22],.046);
  }
  if(s.id==='m004'){
    // Enlarged temporalis and tear-duct ridges give the fast hunter a
@@ -870,8 +916,11 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
  // rest position in head-local coordinates (head 1.300 / .786).
  const jaw=s.id==='m001'?
    g.group('jaw',[0,-.140,.129],head):
+   felineMaster?
+   g.group('jaw',[0,-.140,.26-v*.06],head):
    g.group('jaw',[0,beastRemesh?1.160:1.42,
      beastRemesh?1.046:.96]);
+ if(felineMaster)jaw.userData.felineMasterConnectedJaw=true;
  if(s.id==='m001')jaw.userData.skullMountedMandible=true;
  if(s.id==='m002'){
    // An independently opening lower mandible, with the canine teeth
@@ -900,6 +949,17 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
      {z:.071,y:-.030,rx:.177,ry:.072},
      {z:-.108,y:-.012,rx:.092,ry:.065}
    ],{name:'beast-integrated-mandible-'+s.id,rough:.81,ribbing:.002});
+ }else if(felineMaster){
+   // The separate jaw follows the head turn, with a tapered jaw body
+   // instead of a broad black floating elliptical mouth plate.
+   g.axialLoft(jaw,'skin',[
+     {z:.205,y:-.054,rx:.032,ry:.022},
+     {z:.156,y:-.047,rx:.082,ry:.042},
+     {z:.075,y:-.029,rx:.120,ry:.058},
+     {z:-.025,y:-.014,rx:.132,ry:.064},
+     {z:-.112,y:.003,rx:.069,ry:.052}
+   ].map(p=>({...p,rx:p.rx*felineMaster.cheekTaper})),
+   {name:'feline-master-mandible-'+s.id,rough:.82,ribbing:.003});
  }else{
    g.sphere(jaw,'shadow',[0,-.03,.12],[.24,.045,.29]);
    if(canine)g.sphere(jaw,'skin',[0,-.054,.155],[.22,.060,.27]);
@@ -913,20 +973,28 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
      [side*.112,-.149,.11],
      [side*.106,-.176,.260],
      [side*.068,-.184,.329]
+   ]:felineMaster?[
+     [side*.117,-.163,.072],
+     [side*.108,-.182,muzzle-.022],
+     [side*.061,-.189,muzzle+.114]
    ]:[
      [side*.205,-.192,.135],
      [side*.204,-.200,muzzle+.025],
      [side*.155,-.214,muzzle+.263]
-   ],s.id==='m001'?.007:.012);
+   ],s.id==='m001'?.007:felineMaster?.007:.012);
    g.tube(jaw,'shadow',s.id==='m001'?[
      [side*.108,-.028,-.069],
      [side*.102,-.055,.057],
      [side*.062,-.061,.202]
+   ]:felineMaster?[
+     [side*.107,-.025,-.072],
+     [side*.097,-.049,.032],
+     [side*.051,-.060,.166]
    ]:[
      [side*.200,-.052,.135-jawOffsetZ],
      [side*.198,-.061,muzzle+.025-jawOffsetZ],
      [side*.153,-.065,muzzle+.263-jawOffsetZ]
-   ],s.id==='m001'?.007:.013);
+   ],s.id==='m001'?.007:felineMaster?.008:.013);
  }
  if(s.id==='m001'){
    // Replace the exposed black mouth button with a shallow tapered oral
