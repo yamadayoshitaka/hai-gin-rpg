@@ -13,6 +13,9 @@ import {felineMasterVariant,felineFaceRings,felineMuzzleRings,
  felineDorsalSurface,FELINE_SOURCE_MODEL}
  from './feline-master-variants.js?v=felid-source-20261117-v1';
 import {MORTAL_HEAD_RINGS,MORTAL_TORSO_RINGS} from './monster-realistic-loft.js';
+import {BEAST_REFERENCE_QUALITY_REVISION,REFERENCE_CROWN_QUALITY,
+ referenceBeastTorsoStations,referenceDoubleCoat,referenceBeastFlow}
+ from './beast-reference-quality.js?v=m001-donor-v1-20261117';
 import {sculptBloodMoonVampire,sculptVampireHand} from './monster-vampire-sculpt.js';
 /** Organic cranium sections shared by wolves, cats and reptiles.
  * The muzzle, eyelids and the animated jaw remain their existing species
@@ -265,38 +268,24 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
  const beastRemesh=canine&&s.id!=='m005'; // PR #345 protected
 
  const coatDetail=g.root.userData.detail;
- // Exactly two offset follicles per m001 source/near guide, with NO
- // identical/copanar ribbons or extra draw calls. LOD low stays economical.
+ // This is the SAME two-layer offset/midpoint hair authoring used on m001.
+ // Cats and wolves inherit the reference fidelity, not the wolf's face
+ // proportions. Low-LOD crowds bypass the extra geometry entirely.
  const wolfKingDoubleCoat=s.id==='m001'&&coatDetail!=='low';
- const doubleFurGuides=guides=>{
-   if(!wolfKingDoubleCoat)return guides;
-   const pairs=[];
-   for(const strand of guides){
-     const normal=strand.normal||[0,1,0];
-     const tangent=[normal[2],0,-normal[0]];
-     const n=Math.hypot(...tangent)||1;
-     const d=Math.max(.002,Math.min(.010,strand.width*.43));
-     const offset=tangent.map(v=>v*d/n);
-     for(const side of [-1,1]){
-       const shift=(point,tipFactor)=>point.map((v,k)=>
-         v+side*offset[k]+(k===2&&side>0?-d*.70*tipFactor:0));
-       pairs.push({...strand,width:strand.width*.85,
-         root:shift(strand.root,0),mid:shift(strand.mid,.45),
-         tip:shift(strand.tip,1)});
-     }
-   }
-   return pairs;
- };
+ const referenceDualCoat=coatDetail!=='low'&&
+   (wolfKingDoubleCoat||!!felineMaster||
+    CANINE_GROOM_WAVE_ONE.includes(s.id));
+ const doubleFurGuides=guides=>
+   referenceDualCoat?referenceDoubleCoat(guides):guides;
  if(wolfKingDoubleCoat)g.root.userData.wolfKingFurDensityMultiplier=2;
- const m001Flow=(guides)=>s.id!=='m001'?guides:guides.map((h,i)=>{
-   // Hair streams toward the shoulders, then follows the torso
-   // rearward. A small alternate curl makes a coherent fur wave
-   // without updating any per-strand geometry during animation.
-   const ripple=Math.sin(h.root[2]*12+i*.37)*.009;
-   return {...h,mid:[h.mid[0]+ripple,
-     h.mid[1]+.006*Math.cos(i*.45),h.mid[2]-.008],
-     tip:[h.tip[0]+ripple*.50,h.tip[1],h.tip[2]-.012]};
- });
+ if(felineMaster&&coatDetail!=='low'){
+   g.root.userData.felineReferenceFurDensityMultiplier=2;
+   g.root.userData.felineQualityInheritedFrom='m001';
+   g.root.userData.referenceQualityRevision=BEAST_REFERENCE_QUALITY_REVISION;
+ }
+ const m001Flow=guides=>
+   (s.id==='m001'||felineMaster)?
+     referenceBeastFlow(guides):guides;
  const addFur=(parent,guides)=>{
    // Material groups are batched: three draw calls instead of hundreds of
    // individual cones. The original fur photo/normal maps remain intact.
@@ -385,18 +374,9 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
  // narrow lifted waist and tapered croup instead of a cylindrical trunk.
  // Both torso source geometry and the coat below use these SAME sections.
  const bodyStations=felineMaster?felineAnatomicalSections(felineMaster):
-  beastRemesh?[
-  // Shoulder carries mass; chest and abdominal undersides are NOT a
-  // circular drum. The forequarter hangs lower while the rear tapers.
-  {z:bodyLength*1.01,y:1.235,rx:.110,ry:.140},
-  {z:bodyLength*.77,y:1.190,rx:bodyWidth*1.08,ry:.348},
-  {z:bodyLength*.46,y:1.158,rx:bodyWidth*1.20,ry:.374},
-  {z:bodyLength*.13,y:1.147,rx:bodyWidth*1.02,ry:.330},
-  {z:-bodyLength*.24,y:1.142,rx:bodyWidth*.83,ry:.288},
-  {z:-bodyLength*.56,y:1.141,rx:bodyWidth*.64,ry:.249},
-  {z:-bodyLength*.84,y:1.151,rx:bodyWidth*.52,ry:.217},
-  {z:-bodyLength*1.03,y:1.161,rx:.087,ry:.100}
- ]:[
+  beastRemesh?referenceBeastTorsoStations({
+   width:bodyWidth,length:bodyLength,centerY:1.15,shape:'wolf'
+  }):[
   {z:bodyLength*.96,y:1.34,rx:.12,ry:.17},
   {z:bodyLength*.71,y:1.32,rx:bodyWidth*.84,ry:.365},
   {z:bodyLength*.25,y:1.30,rx:bodyWidth*1.04,ry:.430},
