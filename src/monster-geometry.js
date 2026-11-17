@@ -8,7 +8,7 @@ import {createSculpture,disposeMonsterSculpture} from './monster-shape-kit.js?v=
 import {attachMonsterFaceControls} from './facial-feature-runtime.js?v=1';
 import {generateCanineFurGuides,generateCanineAxialFurGuides} from './canine-fur-guides.js?v=beast-coat-20261116';
 import {monsterEvidenceFor} from './monster-anatomy-reference.js';
-import {wolfKingCloneMorph,copyWolfKingSourceRings,copiedWolfEyeSurfaceZ,WOLF_CLONE_SOURCE_REVISION}
+import {wolfKingCloneMorph,wolfKingDonorFaceMatchScale,WOLF_KING_FACE_SCALE,copyWolfKingSourceRings,copiedWolfEyeSurfaceZ,WOLF_CLONE_SOURCE_REVISION}
  from './wolf-king-clone-source.js?v=m001-face-depth-v6-20261117';
 import {felineMasterVariant,felineFaceRings,felineMuzzleRings,
  felineNasalRings,felineAnatomicalSections,felineEyeSurface,
@@ -531,14 +531,27 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
   g.bridge(torso,'skin',[0,1.29,.32],[0,1.55,.74+v*.055],.246,.158);
  }
  else g.bridge(torso,'skin',[0,1.35,.32],[0,1.57,.76+v*.055],.325,.215);
- const head=g.group('head',[0,beastRemesh?1.300:1.56,.70+v*.06+(beastRemesh?.086:0)]);
+ const head=g.group('head',
+   [0,beastRemesh?1.300:1.56,.70+v*.06+(beastRemesh?.086:0)],
+   // m002 and felines need the same moving frame as the rib cage.
+   (s.id==='m002'||felineMaster)?torso:g.root);
+ if(s.id==='m002'){
+   // The donor m001's tiny face is already compressed in DISPLAY space.
+   // Undo m002's enlarged morph on the complete head pivot, ensuring
+   // skull, nose, eyes, ears, fangs and every facial follicle stay aligned.
+   const donorMatch=wolfKingDonorFaceMatchScale(s.id);
+   head.scale.set(donorMatch.x,donorMatch.y,donorMatch.z);
+   head.userData.m001DisplaySpaceFaceClone=true;
+   g.root.userData.m002HeadScaleSource='m001-rendered-face';
+   g.root.userData.m002HeadScaleRatio=[donorMatch.x,donorMatch.y,donorMatch.z];
+ }
  if(felineMaster){
    // Head-owned overlapping neck fascia covers the rigid head / body seam.
    // The previous torso-only throat bridge stayed behind when the head
    // pitched during run or attack. Its rear end buries inside the torso.
    const collar=g.bridge(head,'skin',
-     [0,-.061,-.150],[0,-.208,-.403],
-     .215*felineMaster.headWidth/.83,.230);
+     [0,-.061,-.150],[0,-.286,-.510],
+     .215*felineMaster.headWidth/.83,.252);
    collar.name='feline-head-neck-continuity-'+s.id;
    collar.userData.followsHeadPitch=true;
    collar.userData.hiddenShoulderRoot=true;
@@ -556,7 +569,8 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    // The reference has a narrow, centered wolf mask nested *inside*
    // the dense mane: scale facial bone/eyes together but NOT the
    // separately articulated jaw, lips, and nose.
-   faceCore.scale.set(.64,.79,.82);
+   faceCore.scale.set(WOLF_KING_FACE_SCALE.x,
+     WOLF_KING_FACE_SCALE.y,WOLF_KING_FACE_SCALE.z);
    faceCore.userData.anatomicalFaceScale=.79;
    faceCore.userData.m001CenteredFaceWidthScale=.64;
    g.root.userData.wolfKingExposedFaceScale=.64;
@@ -1432,6 +1446,16 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
       lowerFold.name=(felineMaster?'feline':'m001')+
         '-lower-knee-fascia-'+name;
       lowerFold.userData.kneeLowerCover=true;
+      if(felineMaster){
+       // Headward muscle belly anchored to the moving lower limb covers
+       // the hinge in both flexion and extension.
+       const jointCapsule=g.bridge(distal,'skin',
+         rear?[0,.220,.115]:[0,.195,-.085],
+         rear?[0,-.150,-.005]:[0,-.135,-.055],
+         rear?.140:.127,rear?.115:.112);
+       jointCapsule.name='feline-knee-continuity-'+name;
+       jointCapsule.userData.attachedKneeCapsule=true;
+      }
     }
    }else{
     g.sphere(distal,'skin',[0,-.16,0],[reptile?.13:.15,.27,reptile?.13:.15]);
@@ -1489,13 +1513,21 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    }else if(felineMaster){
      // Four articulated pads on a true cat toe pivot; none of the
      // cylindrical canine feet or claws are reused on m007-m010.
+     // The old toe pivot floated beyond the distal shin with no tarsus.
+     // An anatomical bridge spans shin -> hock and overlaps the moving paw.
+     const ankleLink=g.bridge(distal,'skin',
+       fore>0?[0,-.265,.027]:[0,-.260,-.154],
+       fore>0?[0,-.483,.103]:[0,-.472,.080],
+       .111,.102);
+     ankleLink.name='feline-continuous-hock-'+name;
+     ankleLink.userData.ankleSocketSeal=true;
      const toe=g.group('toe'+name,[0,-.436,.144],distal);
      toe.userData.felinePad=true;
      // Pastern and palm form an overlapping continuous foot silhouette.
      // The original disconnected pad could hang below the tibia on turns.
      const footRoot=g.bridge(toe,'skin',
-       [0,.075,-.103],[0,-.039,.059],
-       .120*felineMaster.pawWidth,.105*felineMaster.pawWidth);
+       [0,.181,-.139],[0,-.039,.059],
+       .116*felineMaster.pawWidth,.105*felineMaster.pawWidth);
      footRoot.name='feline-ankle-to-toe-fascia-'+name;
      footRoot.userData.donorSurfaceOverlap=true;
      g.sphere(toe,'skin',[0,-.033,.018],
