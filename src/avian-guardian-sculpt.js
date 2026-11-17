@@ -13,7 +13,7 @@ import * as THREE from 'three';
 import {createOriginalGuardianWingPair}
  from './female-summon-costumes.js?v=avian-guardian-donor-v1-20261118';
 
-export const AVIAN_REALISM_REVISION='phoenix-cranial-flame-guardian-hands-stable-v8-20261118';
+export const AVIAN_REALISM_REVISION='phoenix-hover-flight-realism-v9-20261118';
 export const AVIAN_REFRESH_IDS=Object.freeze(['m011','m012','m013','m014']);
 
 const profiles=Object.freeze({
@@ -840,13 +840,14 @@ function phoenixCranialFireFeathers(head,s,detail){
  const flame=layeredFeathers(head,s,detail,
   'phoenix-cranial-fire-plumage',strands);
  flame.material.emissive.setHex(0xe9470c);
- flame.material.emissiveIntensity=.56;
+ flame.material.emissiveIntensity=.48;
  flame.material.roughness=.53;
  flame.castShadow=false;flame.receiveShadow=false;
  flame.userData.phoenixCranialFireSculpt=true;
  flame.userData.phoenixRaisedFireVanes=true;
  flame.userData.phoenixCranialFlameVanes=strands.length;
  flame.userData.phoenixEyesUncovered=true;
+ flame.userData.phoenixLayeredFlameSculpt=true;
  addPhoenixWave(flame,'crest');
  return flame;
 }
@@ -1019,6 +1020,11 @@ export function buildGuardianDerivedBird(g,s){
    g.root.userData.phoenixVisibleEyeliner=true;
     g.root.userData.phoenixFaceFlames=true;
     g.root.userData.phoenixMiniGuardianHandWings=true;
+   // Flight is an anatomical state, not a legacy ground-walk animation.
+   g.root.userData.phoenixFlightMode=true;
+   g.root.userData.phoenixFlightHeight=1.55;
+   g.root.userData.phoenixWingFlightRig=true;
+   g.root.userData.phoenixLegsFoldInFlight=true;
    g.root.userData.phoenixHandSkinHiddenUnderFeathers=true;
   g.root.userData.phoenixWingSpanFactor=p.wing[0];
  }
@@ -1086,5 +1092,6 @@ export function buildGuardianDerivedBird(g,s){
   g.root.userData.phoenixWaveMeshCount=animated.length;
  }
  g.root.scale.setScalar(s.size*.80);
+ if(s.id==='m013')g.root.position.y=g.root.userData.phoenixFlightHeight;
  return true;
 }
