@@ -665,29 +665,32 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
   const bodyBindBox=lowDetail?null:bindGeometryBounds(characterModel);
   const studioSkinPolicy=studioCoveredSkinPolicy({studioPreferSkinnedLegs,
    studioPreserveLegAnatomy,studioVisibleLegAnatomy,preserveBody});
-  // Keep the EXISTING animated torso behind garment back/hip seams. A
-  // partial skinned robe or missing rear triangle must not expose an empty
-  // hollow where bone-region culling previously deleted the entire torso.
-  // No second mesh, material or draw call: the body is already skinned.
-  // Only preserve the entire bare torso when no opaque under-vest exists.
-  // With linen lining, surfaceCheck clips skin hidden by actual clothing;
-  // always preserving it made bare shoulder blades poke through moving coats.
-  const thiefHasClosedBack=quality==='battle'&&jobId==='job06'&&
-    !!detail.getObjectByName('complete-back-tunic-lining');
-  const battleBackUnderlay=quality==='battle'&&opaqueTorsoLiningMaterials===0&&
-    !thiefHasClosedBack?['torso']:[];
-  const occlusionPreserveRegions=[...new Set([
-   ...studioSkinPolicy.preserveRegions,...battleBackUnderlay
-  ])];
+  // A complete, actually skinned and opaque back panel is part of EVERY
+  // registered job's couture BOM. The old fallback preserved the ENTIRE bare
+  // Superhero torso whenever no imported source "skin" slot was replaced;
+  // that projected naked shoulder blades through a perfectly real back tunic
+  // (and the baked 1000v1000 models inherited that exact error).
+  // Do not infer coverage from a material name or the front-only spatial
+  // sampler: use the verified physical rear garment as the contract.
+  const closedBack=detail.getObjectByName('complete-back-tunic-lining');
+  const backMaterial=closedBack?.material;
+  const closedBackContract=Boolean(closedBack?.isSkinnedMesh&&closedBack.visible&&
+   closedBack.geometry?.getAttribute('position')?.count>=100&&
+   backMaterial&&!backMaterial.transparent&&backMaterial.opacity===1);
+  if(quality==='battle'&&!closedBackContract)
+   throw Error(jobId+': 実衣装の背面被覆メッシュが欠損/半透明。裸の胴体をゲームに出しません');
+  // Preserve neck, bare hands and uncovered limbs, NOT skin hidden behind
+  // the complete front/back tunic. This does not add any draw calls.
+  const forceCoveredRegions=closedBackContract?['torso']:[];
+  const occlusionPreserveRegions=studioSkinPolicy.preserveRegions.filter(
+    region=>!forceCoveredRegions.includes(region));
   let coverageHandle=preserveBody?null:clipBodyToGarment(characterModel,garmentCoverage,{surfaceCheck:true,
-    preserveRegions:occlusionPreserveRegions,
-    forceCoveredRegions:thiefHasClosedBack?['torso']:[]});
+    preserveRegions:occlusionPreserveRegions,forceCoveredRegions});
   let bodyMasked=!preserveBody;
   function setBodyOcclusion(enabled){
     if(preserveBody)return;
     if(enabled&&!bodyMasked){coverageHandle=clipBodyToGarment(characterModel,garmentCoverage,{surfaceCheck:true,
-    preserveRegions:occlusionPreserveRegions,
-    forceCoveredRegions:thiefHasClosedBack?['torso']:[]});bodyMasked=true}
+    preserveRegions:occlusionPreserveRegions,forceCoveredRegions});bodyMasked=true}
     else if(!enabled&&bodyMasked){coverageHandle?.restore();coverageHandle=null;bodyMasked=false}
   }
   let disposed=false;
@@ -1014,7 +1017,7 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
       helmetPieces:helm.length,shieldFrontDot,
       shieldBackClearanceM:shield?.userData.shieldBackClearanceM??null,
       shieldForearmPoseVersion:shield?.userData.shieldForearmPoseVersion??null,
-      bodyMasked,
+      bodyMasked,closedBackContract,forceCoveredRegions,
       v63CoveredSkinMasked:studioSkinPolicy.coveredSkinMasked,
       v63BareAnatomyRestorable:studioSkinPolicy.underlyingAnatomyRestorable,
       studioVisibleLegAnatomy:studioSkinPolicy.visibleLegAnatomy,
@@ -1053,6 +1056,7 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
     garmentCoverage:garmentCoverage.regions,coverageSources:garmentCoverage.sources,
     coveredFoot:garmentCoverage.footCovered,
     clippedSkinTriangles:coverageHandle?.diagnostics.removedTriangles||0,
+    closedBackContract,forceCoveredRegions,
     studioPreserveLegAnatomy,
     v63CoveredSkinMasked:studioSkinPolicy.coveredSkinMasked,
     v63BareAnatomyRestorable:studioSkinPolicy.underlyingAnatomyRestorable,

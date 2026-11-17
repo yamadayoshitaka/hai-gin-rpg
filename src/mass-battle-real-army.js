@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {captureCrowdImpostorAtlas} from './crowd-impostor-atlas.js?v=4.6.37';
+import {restoreBattleFaceShaderAfterClone} from './character-system/battle-artist-head-graft.js?v=20261117-shade5';
 import {crowdCardinalView,crowdProjectedHeight,useCrowdImpostor,crowdRequires3DFromOverhead} from './crowd-lod-policy.js?v=4.6.36';
 import {BattleCorpsePolicy} from './battle-corpse-policy.js';
 import {createRidingPoseController} from './character-system/riding-pose.js?v=20261117-three-seats-v3';
@@ -133,7 +134,13 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
   }
 
   function useInstancedRigAnimation(material) {
+    // Preserve authored facial anatomy/photometric shading. Replacing the
+    // entire hook discarded the 3D studio's shadow shader on 1000vs1000
+    // soldiers while keeping the same misleading PBR material name.
+    const authoredCompile=material.onBeforeCompile.bind(material);
+    const authoredProgramKey=material.customProgramCacheKey.bind(material);
     material.onBeforeCompile=shader=>{
+      authoredCompile(shader);
       // Four independent scalar attributes can exceed the 16-slot vertex
       // attribute limit on Android once a skinned body's UVs, vertex color,
       // six baked poses and four-column instanceMatrix are bound. A vec4
@@ -235,7 +242,8 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
         }
       `);
     };
-    material.customProgramCacheKey=()=> 'real-rig-crowd-packed-v11-upper-body-strike';
+    material.customProgramCacheKey=()=>authoredProgramKey()+
+      '|real-rig-crowd-packed-v12-author-face-shadow';
     material.needsUpdate=true;
   }
 
@@ -315,11 +323,24 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
     if(humanVertices<250||bodyTriangles<150||bodyHeight<.30){
       throw Error(`${job.name}: 人体メッシュが部品最適化の前に欠損 (${humanVertices}頂点/${Math.round(bodyTriangles)}面/高さ${bodyHeight.toFixed(2)}m)`);
     }
+    if(!bodyCoverage.at(-1).garmentClosedBack)
+      throw Error(job.name+': 1000対1000のベース衣装に背面被覆がありません');
+    if(!bodyCoverage.at(-1).sourceFaceGLB)
+      throw Error(job.name+': モデル作成の高品質顔原本がGPU反映前に失われました');
     sourceBodyVertices+=humanVertices;
     const footAnchor=createCrowdGroundAnchor(sources.map(source=>({
       isHumanBody:source.isHumanBody,base:source.geometry.getAttribute('position').array})));
     const jobGrounding=[];
-    bodyCoverage.push({job:job.name,vertices:humanVertices,triangles:Math.round(bodyTriangles),height:+bodyHeight.toFixed(3)});
+    bodyCoverage.push({
+      job:job.name,vertices:humanVertices,triangles:Math.round(bodyTriangles),
+      height:+bodyHeight.toFixed(3),
+      sourceFaceGLB:representative.masterHead?.sourceAsset||null,
+      realFaceShading:representative.masterHead?.skinLightResponseVersion||null,
+      garmentClosedBack:!!representative.outfit?.diagnostics?.closedBackContract,
+      hairSource:representative.masterHead?.studioWig?.root?.visible?
+        'real-scalp-studio-groom':'original-full-fitted-hair',
+      groomRoots:representative.masterHead?.studioWigCount??0
+    });
     // Sample the EXISTING animation binding instead of substituting a low-poly
     // or non-rigged proxy. Each soldier uses its own phase/action on the GPU.
     const ridingPose=createRidingPoseController(representative.character.model);
@@ -460,7 +481,13 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
         const original=group.material;
         const material=Array.isArray(original)?original.map(m=>m.clone()):original.clone();
         const mats=Array.isArray(material)?material:[material];
-        for(const m of mats){m.depthWrite=!m.transparent;m.side=THREE.DoubleSide;useInstancedRigAnimation(m);}
+        const originals=Array.isArray(original)?original:[original];
+        for(let i=0;i<mats.length;i++){
+          const m=mats[i];
+          restoreBattleFaceShaderAfterClone(originals[i],m);
+          m.depthWrite=!m.transparent;m.side=THREE.DoubleSide;
+          useInstancedRigAnimation(m);
+        }
         materialMeshes.push({geometry,material,name:group.name,isHumanBody:group.isHumanBody});
       }
     }

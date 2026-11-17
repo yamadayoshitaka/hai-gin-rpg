@@ -10657,6 +10657,50 @@ window.getBattleStartupStats=()=>({ready:battleReady,error:loadingFailure?String
  objectTransfer:liveObjectTransfer,
  massModelBatches:massRenderer?.drawMeshes??0,bodyDrawLayers:massRenderer?.bodyDrawLayers??0,
  prewarmedStudioGrooms,visibility:actorVisibility.stats,elapsed});
+/**
+ * 1000v1000 is drawn from ONE fully dressed live representative per job.
+ * Unlike 50v50, it historically skipped studio-groom prewarm before the GPU
+ * snapshot: all copies therefore inherited a thin donor haircut or bald
+ * scalp instead of the authored real-cranium wig.
+ * Bake only the representative for each job, never all 1000 instances.
+ */
+let massStudioGroomSources=0,massStudioGroomFailures=[];
+async function prewarmMassBattleStudioHair(){
+ const groups=new Set();
+ massStudioGroomSources=0;massStudioGroomFailures=[];
+ for(const a of actors){
+  if(!a.character||!a.outfit||a.outfitError||!a.masterHead?.attached||!a.studioPattern||a.monsterSpec)continue;
+  const key=a.job?.name;
+  if(groups.has(key))continue;
+  groups.add(key);
+  try{
+   equipBattleStudioHair(a.masterHead,a.studioPattern,{quality:'middle',hero:false});
+   if(!a.masterHead.studioWig?.root?.visible)
+    throw Error('実頭皮の髪メッシュが可視化されていません');
+   a.outfit.setHairVisible(false);
+   a.studioHairError=null;
+   massStudioGroomSources++;
+  }catch(error){
+   a.studioHairError=String(error?.message||error);
+   a.outfit.setHairVisible(true); // do not bake a bald soldier
+   massStudioGroomFailures.push({job:key,error:a.studioHairError});
+   console.error('大軍団の髪原型は未検証（既存の有毛GLBを保持）',key,error);
+  }
+ }
+}
+window.getBattleCharacterPipelineQA=()=>({
+ mode:massSim?'mass-instanced':'detailed-rig',
+ faceModel:'realistic-head-animation.glb',
+ profile:'hero-production-character-factory → sculpt → wardrobe → 3D groom → GPU batch → game',
+ characters:actors.filter(a=>a.character).length,
+ sculptedHeads:actors.filter(a=>a.masterHead?.attached).length,
+ backCoverageVerified:actors.filter(a=>a.outfit?.diagnostics?.closedBackContract).length,
+ backCoverageFailed:actors.filter(a=>a.outfit&&!a.outfit.diagnostics?.closedBackContract).map(a=>a.id),
+ actualStudioWigs:actors.filter(a=>a.masterHead?.studioWig?.root?.visible).length,
+ massGroomRepresentatives:massStudioGroomSources,massGroomFailures:massStudioGroomFailures,
+ registeredHairIssues:actors.filter(a=>a.studioHairError||a.outfit?.diagnostics?.hairError)
+  .map(a=>({id:a.id,job:a.job?.name,error:a.studioHairError||a.outfit?.diagnostics?.hairError}))
+});
 async function finishBattleLoading(){
  try{
   const stageBgmReady=battleAudio.prepare();
@@ -10681,7 +10725,11 @@ async function finishBattleLoading(){
     skirmishDistanceLod=null;
    }
   }
-  if(massSim)await prepareMassRenderer();
+  if(massSim){
+   loadingProgress('大軍団の人物髪・衣装を正本から統一中…',65);
+   await prewarmMassBattleStudioHair();
+   await prepareMassRenderer();
+  }
   if(TOWN_MODE){
    loadingProgress('町の3D地形・城・人物の準備完了',100);
    battleAudio.disable();
