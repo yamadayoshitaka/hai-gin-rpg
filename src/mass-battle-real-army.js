@@ -323,11 +323,24 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
     if(humanVertices<250||bodyTriangles<150||bodyHeight<.30){
       throw Error(`${job.name}: 人体メッシュが部品最適化の前に欠損 (${humanVertices}頂点/${Math.round(bodyTriangles)}面/高さ${bodyHeight.toFixed(2)}m)`);
     }
+    if(!bodyCoverage.at(-1).garmentClosedBack)
+      throw Error(job.name+': 1000対1000のベース衣装に背面被覆がありません');
+    if(!bodyCoverage.at(-1).sourceFaceGLB)
+      throw Error(job.name+': モデル作成の高品質顔原本がGPU反映前に失われました');
     sourceBodyVertices+=humanVertices;
     const footAnchor=createCrowdGroundAnchor(sources.map(source=>({
       isHumanBody:source.isHumanBody,base:source.geometry.getAttribute('position').array})));
     const jobGrounding=[];
-    bodyCoverage.push({job:job.name,vertices:humanVertices,triangles:Math.round(bodyTriangles),height:+bodyHeight.toFixed(3)});
+    bodyCoverage.push({
+      job:job.name,vertices:humanVertices,triangles:Math.round(bodyTriangles),
+      height:+bodyHeight.toFixed(3),
+      sourceFaceGLB:representative.masterHead?.sourceAsset||null,
+      realFaceShading:representative.masterHead?.skinLightResponseVersion||null,
+      garmentClosedBack:!!representative.outfit?.diagnostics?.closedBackContract,
+      hairSource:representative.masterHead?.studioWig?.root?.visible?
+        'real-scalp-studio-groom':'original-full-fitted-hair',
+      groomRoots:representative.masterHead?.studioWigCount??0
+    });
     // Sample the EXISTING animation binding instead of substituting a low-poly
     // or non-rigged proxy. Each soldier uses its own phase/action on the GPU.
     const ridingPose=createRidingPoseController(representative.character.model);
