@@ -78,7 +78,7 @@ test('m003/m004 wolf mouths use compact opposing dental arcs rather than floatin
   }finally{disposeMonsterSculpture(wolf)}
  }
 });
-test('low LOD and m005/m006 protected donors are not modified',()=>{
+test('m005 and m006 use m001 lineage without adding heavy distant LOD hair',()=>{
  for(const id of ['m002','m003','m004','m005','m006']){
   const low=createMonsterModel(MONSTER_BY_ID[id],{detail:'low'});
   try{
@@ -88,7 +88,10 @@ test('low LOD and m005/m006 protected donors are not modified',()=>{
  }
  for(const id of ['m005','m006']){
   const high=createMonsterModel(MONSTER_BY_ID[id],{detail:'high'});
-  try{assert.equal(high.userData.referenceGroomWave,undefined);}
-  finally{disposeMonsterSculpture(high);}
+  try{
+   assert.equal(high.userData.clonedFromSpecies,'m001');
+   if(id==='m005')assert.equal(high.userData.referenceGroomWave,'m001-full-mane-m005');
+   else assert.equal(high.userData.physicalCloneMother,'m001');
+  }finally{disposeMonsterSculpture(high);}
  }
 });
