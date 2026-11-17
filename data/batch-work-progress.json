@@ -114,62 +114,68 @@
     },
     "world": {
       "source": "ChatGPTオブジェクト即時回帰＋GitHub六担当実WebGL QA",
-      "lastRunAt": "2026-11-18T03:50:00+09:00",
+      "lastRunAt": "2026-11-18T03:53:54+09:00",
       "status": "work_incomplete",
       "carryover": true,
-      "subject": "家具5種の構造接合メッシュ改修 PR #620（WebGL QA未完了）",
-      "summary": "mainでworld.enabled=true、正本60種を確認。open手動Issueにworldカテゴリなし。食卓・椅子・寝台・本棚・暖炉の5種の接合/支持メッシュを実改修し、SHA 8261aaac、Draft PR #620。Node構文/指定3QA/WebGL比較/Android未実施。GLB0、ゲーム採用0、公開0。",
-      "nextAction": "PR #620のNode構文と指定3QAをGitHub Actions等で実行。5種の近中遠WebGL新旧比較、接合貫通・衝突・1000vs1000 FPSを確認後、既存PR #441/#577/#594/#605/#614との競合を再評価。",
+      "subject": "既存PR #614/#620 CI失敗の実ログ解析・新規Draft増殖停止",
+      "summary": "world.enabled=true。PR #614 のWorld six-lane run 44141156069はcatalog/lod/materials/visual/geometryの5レーン成功、interactionはqa/world-quality-contract.test.mjs:30の旧workflows API文字列固定で失敗。visualレーンは実WebGLスクリーンショット手順成功だが対象別新旧比較・品質承認とは別。PR #620 のRPG architecture run 44151633344は構文/インポート成功後、qa/squad-ribbon-order-access.test.mjs:18の旧UI固定で失敗。PR #619が旧QA契約更新を扱うため重複変更を避けた。新規実造形0、GLB0、本編採用0、公開0。",
+      "nextAction": "PR #619のQA契約更新をCIで検証し安全なら統合。その後PR #614のinteraction失敗job 134244316112 とPR #620のarchitecture失敗job 134281245935 を再検証。PR #614 visual run 44141156069のWebGL画像を旧版と対象ID別に比較し、PR #620も実WebGL/衝突/LOD/1000vs1000 FPSを検証してからマージ。",
       "steps": {
         "launch": "done",
-        "code": "done",
+        "code": "pending",
         "qa": "pending",
-        "commit": "done",
-        "pr": "done",
+        "commit": "skipped",
+        "pr": "skipped",
         "merge": "pending",
         "deploy": "pending"
       },
       "evidence": [
         {
-          "label": "家具5種の実造形コミット",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/8261aaac52c23d64b5a2d8fae6dc8df1c64cb8d0"
+          "label": "PR #614 world six lane 5/6 success, interaction failure",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44141156069"
         },
         {
-          "label": "Draft PR #620",
+          "label": "PR #620 architecture test failure",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44151633344"
+        },
+        {
+          "label": "Existing CI fix PR #619",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/619"
+        },
+        {
+          "label": "World PR #614",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/614"
+        },
+        {
+          "label": "World PR #620",
           "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/620"
         }
       ],
       "lastRunOutcome": {
-        "newSourceChangedIds": 5,
+        "newSourceChangedIds": 0,
         "newQAPassed": 0,
         "newGameAppliedIds": 0,
-        "newSourceCommits": 1,
+        "newSourceCommits": 0,
         "newGeneratedGLBs": 0,
         "newPublishedIds": 0
       },
       "operational": {
         "blockers": [
-          "Node --checkと指定3QA未実施",
-          "WebGL新旧実描画比較未実施",
-          "Android実測と1000vs1000 FPS未計測",
-          "PR #620のマージ可能性は未確定"
+          "PR #614 interaction: old workflows API assertion qa/world-quality-contract.test.mjs:30 (job 134244316112)",
+          "PR #620 architecture: retired squad menu assertion qa/squad-ribbon-order-access.test.mjs:18 (job 134281245935)",
+          "PR #619 fix(ci) open; must verify CI before adopting tests",
+          "WebGL before/after ID-level comparison and Android/1000vs1000 FPS missing"
         ],
-        "speedPlan": "PR #620を先に静的/実描画QA。合格前に本編へ採用しない。",
+        "speedPlan": "PR #619のQA契約更新をCIで検証し安全なら統合。その後PR #614のinteraction失敗job 134244316112 とPR #620のarchitecture失敗job 134281245935 を再検証。PR #614 visual run 44141156069のWebGL画像を旧版と対象ID別に比較し、PR #620も実WebGL/衝突/LOD/1000vs1000 FPSを検証してからマージ。",
         "lastRunOutcome": {
-          "newSourceChangedIds": 5,
+          "newSourceChangedIds": 0,
           "newQAPassed": 0,
           "newGameAppliedIds": 0,
-          "newSourceCommits": 1,
+          "newSourceCommits": 0,
           "newGeneratedGLBs": 0,
           "webglPassedIds": [],
           "gameAppliedIds": [],
-          "sourceChangedIds": [
-            "cottage_table_001",
-            "cottage_chair_001",
-            "cottage_bed_001",
-            "cottage_shelf_001",
-            "cottage_fireplace_001"
-          ],
+          "sourceChangedIds": [],
           "publicVerified": 0
         }
       },
