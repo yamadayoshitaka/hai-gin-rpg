@@ -180,7 +180,7 @@ const maleViewer=readFileSync(new URL('../male-body-studio.html',import.meta.url
 const femaleViewer=readFileSync(new URL('../face-body-studio.html',import.meta.url),'utf8');
 const battleViewer=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
 for(const [page,text] of [['male',maleViewer],['female',femaleViewer],['battle',battleViewer]]){
- assert.match(text,/v79-exterior-shoulder-caps/,
+ assert.match(text,/v80-outer-acromion-pauldron/,
   page+' must load new outfit modules, not cached v75/v76 shoulder attachments');
 }
 console.log('PASS: GLB rigid shoulder parts suppressed; bilateral animated fitted shoulders; v79 preview and battle');
