@@ -125,6 +125,11 @@ jobs:
           node --check src/battle-engagement-camera.js
           node --check src/battle-situation-pause.js
           node qa/battle-engagement-camera.test.mjs
+          node qa/battle-situation-monitor.test.mjs
+          node qa/battle-upper-body-accent.test.mjs
+          node qa/battle-motion-recommendations.test.mjs
+          node --check src/character-system/battle-upper-body-accent.js
+          node --check src/battle-situation-monitor.js
           node qa/battle-situation-recommendation.test.mjs
           node qa/battle-saddle-seat-anchor.test.mjs
           node qa/battle-objective-checkpoints.test.mjs
