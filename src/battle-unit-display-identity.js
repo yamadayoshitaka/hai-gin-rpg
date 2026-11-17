@@ -5,7 +5,8 @@ export function battleUnitDisplayName(unit,{fallback='兵士'}={}){
  const species=unit.monsterSpec?.name||unit.monsterName||
   (unit.isMonster&&unit.speciesName)||null;
  if(species)return String(species);
- return String(unit.displayName||unit.job?.name||unit.jobName||unit.jobId||fallback);
+ return String(unit.displayName||unit.job?.name||unit.jobName||
+  (fallback!=='兵士'?fallback:unit.jobId)||fallback);
 }
 export function battleUnitDisplayClass(unit){
  return unit?.monsterSpec||unit?.monsterName||unit?.isMonster?'monster':'human';
