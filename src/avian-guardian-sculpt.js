@@ -546,7 +546,10 @@ function headAndCrest(g,s,p,torso,detail){
        {name:'owl-pupil-'+side});
    }
  }else{
-   g.eyes(head,.235,.063,.172*p.head,.054);
+   // A tiny phoenix skull cannot use the adult eagle's wide eye socket.
+   // Recess both eyes into the narrow original head, not outside the mesh.
+   if(s.id==='m013')g.eyes(head,.172,.063,.113,.037);
+   else g.eyes(head,.235,.063,.172*p.head,.054);
  }
  const crest=[];
  const count=detail==='low'?Math.min(6,p.crest):p.crest;
