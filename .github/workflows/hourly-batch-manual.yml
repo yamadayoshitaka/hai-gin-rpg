@@ -19,6 +19,7 @@ on:
       - 'qa/batch-work-progress.test.mjs'
       - 'qa/batch-center-api-rate-limit.test.mjs'
       - 'qa/batch-pr-403-offline-preview.test.mjs'
+      - 'qa/batch-center-real-launch.test.mjs'
 permissions:
   contents: write
   actions: write
@@ -36,7 +37,7 @@ jobs:
       - name: Validate instruction routing and strict owner/type controls
         run: |
           node --check scripts/manual-hourly-batch-dispatch.mjs
-          node --test qa/manual-hourly-batch-dispatch.test.mjs qa/batch-center-object-expression-selection.test.mjs qa/batch-center-api-rate-limit.test.mjs qa/batch-pr-403-offline-preview.test.mjs
+          node --test qa/manual-hourly-batch-dispatch.test.mjs qa/batch-center-object-expression-selection.test.mjs qa/batch-center-api-rate-limit.test.mjs qa/batch-pr-403-offline-preview.test.mjs qa/batch-center-real-launch.test.mjs
           node --test qa/batch-work-progress.test.mjs
           node --check scripts/batch-center-toggle.mjs
           node --test qa/batch-center-toggle.test.mjs
