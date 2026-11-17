@@ -110,53 +110,58 @@
     },
     "world": {
       "source": "ChatGPT定期品質回帰の実行結果＋GitHub証跡",
-      "lastRunAt": "2026-11-17T09:52:04+09:00",
+      "lastRunAt": "2026-11-17T10:54:30+09:00",
       "status": "work_incomplete",
       "carryover": true,
-      "subject": "PR #441螺旋階段ソース確認・Node実行環境DNS障害",
-      "summary": "world.enabled=true。正本53ID、main承認0・審査中11、作業ブランチcheckpoint21件全QA unverifiedを照合。src/object-catalog.js作業ブランチの螺旋階段2IDで専用mat clone()とDoubleSide設定をソース確認。実行環境Node v22.16.0は存在するがgithub.com DNS解決不能で取得不可。今回新規3D実ソース変更0、GLB0、QA合格0、ゲーム反映0。",
-      "nextAction": "GitHub連携取得したPR #441ソースをNode実行環境に転送できる経路を確保し node --check、カタログID照合、対象別WebGL/Android実測を行う。失敗時のみ実ソースを修正。",
+      "subject": "PR #441螺旋階段2種の連続外周手すりを実3D生成器へ追加",
+      "summary": "world.enabled=true。正本53件・PR保存21件・main審査中11/承認0は別集計。螺旋階段2種の既存柱は離散配置で連続手すりがなかったため、TubeGeometryで螺旋外周レールを実装。source d1989327、checkpoint f9254913。Node/WebGL/Android未検証、GLB0、ゲーム反映0。",
+      "nextAction": "PR #441最新headのNode構文検査と螺旋階段2IDのWebGL手すり・柱接続/衝突/Android FPS実測。合格後に他の既存21件QA、残り32IDへ。",
       "steps": {
         "launch": "done",
-        "code": "pending",
+        "code": "done",
         "qa": "pending",
-        "commit": "pending",
+        "commit": "done",
         "pr": "done",
         "merge": "pending",
         "deploy": "pending"
       },
       "evidence": [
         {
-          "label": "PR #441",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/441"
+          "label": "螺旋階段2種の実ソース",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/d1989327abcc5c237bfe17be590fdbf8ca3ce31f"
         },
         {
-          "label": "既存螺旋階段実ソースSHA",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/52b27b32e8b31fdcc3b0f0efa37882c5559da289"
+          "label": "21件チェックポイント更新",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/f9254913c8a075caaca9b25d04cb0dc791fb6f82"
+        },
+        {
+          "label": "Draft PR #441",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/441"
         }
       ],
       "lastRunOutcome": {
-        "newSourceChangedIds": 0,
+        "newSourceChangedIds": 2,
         "newQAPassed": 0,
         "newGameAppliedIds": 0,
-        "newSourceCommits": 0,
-        "newGeneratedGLBs": 0,
-        "branchSavedCount": 21,
-        "mainInReviewCount": 11,
-        "mainAcceptedCount": 0
+        "newSourceCommits": 1
       },
       "operational": {
         "blockers": [
-          "実行環境からgithub.com DNS解決不能（git ls-remote失敗）",
-          "GitHub連携で取得できたソースをNode実行環境へ転送できず、Node構文検査未実施",
-          "PR #441保存21IDのWebGL/Android対象別QAがすべてunverified"
+          "Node構文検査未実施（GitHub連携からNode実行環境への転送未確立）",
+          "WebGL描画・スクリーンショット比較未実施",
+          "Android実機FPS未計測",
+          "PR #441未合格のためmainマージ・Pages公開不可"
         ],
-        "speedPlan": "GitHub連携の取得経路と実行環境を橋渡ししてnode --checkを先行、螺旋階段2ID描画→残り21ID対象別QA。",
+        "speedPlan": "螺旋階段2種のレールと支柱接続を最小描画QAで先行検証。CI失敗はオブジェクト固有か切り分ける。",
         "lastRunOutcome": {
-          "newSourceChangedIds": 0,
+          "newSourceChangedIds": 2,
           "newQAPassed": 0,
           "newGameAppliedIds": 0,
-          "newSourceCommits": 0
+          "newSourceCommits": 1,
+          "newGeneratedGLBs": 0,
+          "branchSavedCount": 21,
+          "mainInReviewCount": 11,
+          "mainAcceptedCount": 0
         }
       }
     },
