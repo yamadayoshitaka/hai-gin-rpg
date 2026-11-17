@@ -6,14 +6,16 @@
  * individual pivots and legacy rollback paths.
  */
 export const WOLF_KING_DONOR_ID='m001';
-export const WOLF_KING_DERIVED_IDS=Object.freeze(['m002','m003','m004']);
+export const WOLF_KING_DERIVED_IDS=Object.freeze(['m002','m003','m004','m005']);
 const MORPHS=Object.freeze({
  m002:Object.freeze({faceX:.94,faceY:1.02,faceZ:1.20,faceAdvance:.040,
   snoutWidth:1.20,snoutLength:1.32,noseWidth:1.30}),
  m003:Object.freeze({faceX:1.23,faceY:1.19,faceZ:1.17,faceAdvance:.018,
   snoutWidth:1.29,snoutLength:1.29,noseWidth:1.32}),
  m004:Object.freeze({faceX:1.20,faceY:1.16,faceZ:1.16,faceAdvance:.022,
-  snoutWidth:1.25,snoutLength:1.25,noseWidth:1.30})
+  snoutWidth:1.25,snoutLength:1.25,noseWidth:1.30}),
+ m005:Object.freeze({faceX:1.10,faceY:1.10,faceZ:1.12,faceAdvance:.020,
+  snoutWidth:1.16,snoutLength:1.20,noseWidth:1.14})
 });
 // This transform is already applied to m001's actual rendered face.
 // Copying only its unscaled axial rings made m002 about 1.5x wider.
@@ -49,7 +51,7 @@ export function copyWolfKingSourceRings(m001Rings,id,kind='cranium'){
   ry:r.ry*(snout?(kind==='rhinarium'?1.15:1.12):morph.faceY)
  }));
 }
-export const WOLF_CLONE_SOURCE_REVISION='m001-physical-copy-m002-m004-v1-20261117';
+export const WOLF_CLONE_SOURCE_REVISION='m001-physical-copy-m002-m005-v2-20261118';
 
 /**
  * The old clone used one fixed +Z eye offset, even though each species
