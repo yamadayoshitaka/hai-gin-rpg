@@ -229,7 +229,7 @@ export function buildLeviathanAnatomicalSource(THREE,{segments=56,radial=18}={})
  // Caudal fin is a swept, rib-supported membrane with real camber and thickness,
  // rather than a pair of flat triangles. Rays taper from the caudal peduncle.
  function tailLobe(name,sign){
-  const span=12,chord=8,vertices=[],indices=[];
+  const span=12,chord=8,vertices=[],indices=[],uv=[];
   for(let i=0;i<=span;i++){
    const u=i/span,spread=sign*(.08+1.55*u),sweep=-.12-1.75*u;
    for(let j=0;j<=chord;j++){
@@ -238,6 +238,9 @@ export function buildLeviathanAnatomicalSource(THREE,{segments=56,radial=18}={})
     const y=spread+sign*.14*edge*Math.sin(Math.PI*u);
     const z=.16*edge*Math.sin(Math.PI*u)+.055*Math.sin(v*Math.PI*7)*u;
     vertices.push(x,y,z);
+    // Independent caudal-lobe UV chart: spanwise U, chordwise V.
+    // Both lobes retain the same orientation for consistent PBR baking.
+    uv.push(u,v);
    }
   }
   for(let i=0;i<span;i++)for(let j=0;j<chord;j++){
@@ -246,6 +249,7 @@ export function buildLeviathanAnatomicalSource(THREE,{segments=56,radial=18}={})
   }
   const g=new THREE.BufferGeometry();
   g.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));
+  g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
   g.setIndex(indices);g.computeVertexNormals();
   const membrane=new THREE.Mesh(g,finMat);membrane.name=name+'-cambered-membrane';tail.add(membrane);
   const rayMaterial=bone;
