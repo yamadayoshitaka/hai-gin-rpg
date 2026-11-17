@@ -18,6 +18,10 @@ const ids=['m011','m012','m013','m014'];
    const page=await browser.newPage({viewport:{width:1000,height:710},
     deviceScaleFactor:1});
    const errors=[];page.on('pageerror',e=>errors.push(String(e)));
+   page.on('console',msg=>{
+    if(msg.type()==='error'&&/shader|WebGLProgram|GLSL|VALIDATE_STATUS|INVALID_OPERATION/i.test(msg.text()))
+     errors.push('GPU shader: '+msg.text());
+   });
    try{
     await page.goto('http://127.0.0.1:8765/monster-manager.html?monster='+id+
      '&v=guardian-82-feather-20261118',
@@ -34,6 +38,15 @@ const ids=['m011','m012','m013','m014'];
       throw Error(id+' original guardian wing donor absent: '+JSON.stringify(state));
     if(state.bodyFeathers<100||state.tail<9)
       throw Error(id+' rebuilt plumage missing: '+JSON.stringify(state));
+    if(id==='m013'){
+     const shape=state.phoenix;
+     if(!shape?.slender||!shape.noEars||!shape.smallHead||
+       !shape.longBeak||!shape.allBackCrest||
+       shape.denseScales<1100||shape.tailLength<4.55||
+       shape.waveMeshes!==4||state.tail!==31)
+       throw Error('Phoenix requested remodel absent in actual WebGL viewer: '+
+        JSON.stringify(shape));
+    }
     const frames=[];
     for(const action of ['idle','run','attack']){
      await page.locator('#actions button[title="'+action+'"]').click({timeout:15000});
