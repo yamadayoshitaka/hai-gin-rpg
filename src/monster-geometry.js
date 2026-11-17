@@ -216,9 +216,14 @@ function fittedWolfFamilyCrown(spec,source){
 // m007, m008, m009 and m010 share the same base surface and diverge
 // through proportional morphs rather than wolf-mane copy/paste.
 function fittedFelineMasterHair(profile,source){
- const out=[],rows=source?33:23,around=source?43:30;
- for(let i=0;i<rows;i++){
-   const y=-.202+.492*(i+.42)/rows;
+ // m001's 53x17x2 / 72x20x3 coat LOD is the source of truth.
+ // Only CAT morphology is subtracted: short sleek hair for leopard/tiger,
+ // thick attached ruff for lion, and jaw/eye/muzzle clearance masks.
+ const quality=REFERENCE_CROWN_QUALITY[source?'source':'high'];
+ const out=[],rows=quality.rows,around=quality.columns;
+ for(let layer=0;layer<quality.layers;layer++)
+  for(let i=0;i<rows;i++){
+   const y=-.202+.492*(i+.42+layer*.19)/rows;
    const rings=QUADRUPED_CRANIUM_RINGS;
    let a=rings[0],b=rings[rings.length-1];
    for(let k=1;k<rings.length;k++)if(rings[k].y>=y){
@@ -230,28 +235,38 @@ function fittedFelineMasterHair(profile,source){
    const rz=(a.rz+(b.rz-a.rz)*t)*profile.headDepth;
    const cz=a.cz+(b.cz-a.cz)*t+.002;
    for(let j=0;j<around;j++){
-     const angle=2*Math.PI*(j+.30+(i%2)*.4)/around;
+     const angle=2*Math.PI*(j+.30+(i%2)*.4+layer*.27)/around;
      const ux=Math.cos(angle),uz=Math.sin(angle);
      const x=rx*ux,z=cz+rz*uz;
-     // No opaque fur roots over the iris, nose or narrow lip line.
-     if(z>.12&&Math.abs(x)<.205&&y<.17)continue;
+     // Protective open space around eye and nasal bridge.
+     const eyeRegion=y>.050&&y<.165&&z>.16&&
+       Math.abs(Math.abs(x)-profile.eyeX)<.062;
+     if(eyeRegion||(z>.12&&Math.abs(x)<.205&&y<.17))
+       continue;
      const lion=profile.maneLength>0,cheek=z>-.12&&y<.06;
-     const len=lion?(cheek?profile.maneLength:.092):
-       (cheek?profile.guardHair*.78:profile.underHair);
-     const length=len*(.88+.14*Math.sin(i*.51+j*.83));
-     const root=[x,y,z],back=(lion&&cheek)?.18:.76;
+     const undercoat=layer===0;
+     const baseLength=lion?
+       (cheek?profile.maneLength:profile.guardHair):
+       (cheek?profile.guardHair*.90:
+         Math.max(profile.underHair,.032));
+     const length=(undercoat?baseLength*.67:baseLength*1.28)*
+       (.90+.12*Math.sin(i*.51+j*.83));
+     const root=[x,y,z],back=lion&&cheek?.19:.79;
      const tip=[x+Math.sign(x)*length*.07,
-       y-length*(lion&&cheek?.67:.17),
+       y-length*(lion&&cheek?.68:.14),
        z-length*back];
      const mid=[
-       x+(tip[0]-x)*.47+.004*Math.sin(i+j),
-       y+(tip[1]-y)*.40+(lion?.017:.006),
+       x+(tip[0]-x)*.47+.004*Math.sin(i+j+layer),
+       y+(tip[1]-y)*.40+(lion?.019:.011),
        z+(tip[2]-z)*.46
      ];
      out.push({root,mid,tip,normal:[ux,.20,uz],
-       width:lion?.012:.0065,
-       shade:(i+j)%13===0?'light':(i+j)%9===0?'shadow':'skin',
-       catMaster:FELINE_SOURCE_MODEL});
+       width:lion?(undercoat?.0075:.012):.0068,
+       shade:(i+j+layer)%13===0?'light':
+         (i+j+layer)%9===0?'shadow':'skin',
+       catMaster:FELINE_SOURCE_MODEL,
+       m001QualityCoat:true,
+       m001ReferenceLayer:layer});
    }
  }
  return out;
