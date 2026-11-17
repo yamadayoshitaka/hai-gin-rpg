@@ -9,8 +9,15 @@ test('first quality wave physically changes m002/m003/m004, not only metadata',(
   const model=createMonsterModel(MONSTER_BY_ID[id],{detail:'high'});
   try{
    assert.equal(model.userData.referenceGroomWave,
-    id==='m002'?'m001-source-m002':'canine-m002-m004',
+    'm001-full-mane-'+id,
     'm002 must now inherit actual m001 facial coat; later wolves retain their family crown');
+   if(id!=='m002'){
+    assert.equal(model.userData.wolfKingDonorFullMane,true,
+      'all derived wolves must receive the same full m001 groom recipe');
+    assert.equal(model.userData.wolfKingDonorSource,'m001');
+    assert.ok(model.userData.wolfKingDonorStrands>1400,
+      'a thin dorsal strip is not the wolf king mane');
+   }
    const head=model.userData.pivots.head;
    const coats=head.children.filter(x=>x.isMesh&&x.userData.furStrands>0);
    assert.equal(coats.length,3,
