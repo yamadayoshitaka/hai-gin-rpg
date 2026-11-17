@@ -5,6 +5,7 @@ on:
       - 'src/monster-shape-kit.js'
       - 'src/monster-geometry.js'
       - 'src/creature-game-model-routing.js'
+      - 'qa/beast-mother-webgl-smoke.cjs'
       - 'qa/monster-canine-quality-rollout.test.mjs'
       - 'qa/beast-m002-feline-gait-face-fx-regression.test.mjs'
       - 'qa/beast-mother-clone-source.test.mjs'
@@ -182,7 +183,8 @@ jobs:
           fi
 
   actual-wolf-feline-webgl:
-    if: github.event_name != 'push'
+    # Rendering real WebGL is required for the rear-view hole regression.
+    # No visual art approval is inferred from technical screenshot success.
     runs-on: ubuntu-24.04
     timeout-minutes: 22
     steps:
