@@ -5,7 +5,7 @@
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
 </head><body data-qa-ready="false"><script type="module">
 import * as THREE from 'three';
-import {OBJECT_CATALOG,createCatalogObject} from './src/object-catalog.js?v=world60-20261117';
+import {OBJECT_CATALOG,createCatalogObject} from './src/object-catalog.js?v=world60-physical-20261117';
 const args=new URLSearchParams(location.search);
 const asset=args.get('object')||'cottage_barrel_001';
 const scale=Number(args.get('roughnessScale')||1);
@@ -44,5 +44,7 @@ try{
  renderer.render(scene,cam);await new Promise(resolve=>requestAnimationFrame(resolve));renderer.render(scene,cam);
  document.body.dataset.qaReady='true';document.body.dataset.asset=asset;
  document.body.dataset.materials=String(materials);document.body.dataset.geometry=String(size.length());
+ document.body.dataset.drawCalls=String(renderer.info.render.calls);
+ document.body.dataset.triangles=String(renderer.info.render.triangles);
 }catch(error){document.body.dataset.qaReady='error';document.body.dataset.qaError=error.message;throw error}
 </script></body></html>
