@@ -1,6 +1,6 @@
 import {applyMonsterBiologicalMotion} from './monster-joint-motion.js?v=m005-m001-copy-gait-v6-20261118';
 import {updatePhoenixFeatherWaves}
- from './avian-guardian-sculpt.js?v=phoenix-scaled-wave-v2-20261118';
+ from './avian-guardian-sculpt.js?v=phoenix-broad-body-v3-20261118';
 import {updateM001ActionEffects} from './m001-action-effects.js?v=m001-action-perf-v1-20261117';
 import {updateReferenceBeastFx} from './beast-action-effects.js?v=ref-action-v1-20261117';
 import {monsterLeapPose,applyMonsterLeapMotion} from './monster-leap-kinematics.js?v=1';
