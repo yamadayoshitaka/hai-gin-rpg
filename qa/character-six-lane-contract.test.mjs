@@ -41,3 +41,12 @@ test('Legacy human/monster stopped; restored world and new split groups enabled'
  assert.equal(s.groups.monster.enabled,false);
  assert.equal(s.groups.anime.enabled,true);
 });
+
+test('PR must run ALL six character acceptance lanes instead of the minute-only scheduled slot',()=>{
+ const yaml=fs.readFileSync('.github/workflows/character-six-lane.yml','utf8');
+ assert.match(yaml,/Verify all six FF15 acceptance lanes before PR can be merged/);
+ assert.match(yaml,/if: github\.event_name == 'pull_request'/);
+ assert.match(yaml,/for slot in 0 1 2 3 4 5; do/);
+ assert.match(yaml,/--slot "\\?\$\{slot\}"/);
+ assert.match(yaml,/if: github\.event_name != 'pull_request'/);
+});
