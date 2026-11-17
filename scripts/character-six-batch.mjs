@@ -15,7 +15,7 @@ const value=n=>args[args.indexOf(n)+1];
 const category=value('--category')||'faceHair';
 if(!['faceHair','outfit'].includes(category))throw Error('Unknown character quality category');
 const slotArg=value('--slot');
-const slot=slotArg!==undefined?Number(slotArg):(Math.floor((new Date().getUTCMinutes()+7)/10)%6);
+const slot=slotArg!==undefined?Number(slotArg):(Math.floor(new Date().getUTCMinutes()/10)%6);
 if(!Number.isInteger(slot)||slot<0||slot>=6)throw Error('Slot outside 0..5');
 const switches=JSON.parse(read('data/batch-center-switches.json'));
 if(switches.groups?.[category]?.enabled!==true){
