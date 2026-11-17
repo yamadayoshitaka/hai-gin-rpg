@@ -14,6 +14,8 @@ assert.match(game,/a\._upperBodyAccent\.apply/);
 assert.match(game,/\?v=20261117-recommend2/);
 assert.match(tactical,/situationMonitor\.observe\(rows\)/);
 assert.match(tactical,/situationMonitor\.acknowledge\(event\.id\)/);
+assert.match(tactical,/function reportStrategicEvent\(squadId,event\)/);
+assert.match(game,/battleTacticalUi\.reportStrategicEvent\(String\(id\)/);
 assert.match(tactical,/getCommandSquadIds\(id\)/);
 assert.match(visibility,/const reentered=!state\.wasVisible/);
 assert.match(visibility,/result\.delta=reentered\?0/);
