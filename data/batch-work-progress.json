@@ -114,71 +114,69 @@
     },
     "world": {
       "source": "ChatGPTオブジェクト即時回帰＋GitHub六担当実WebGL QA",
-      "lastRunAt": "2026-11-18T07:50:16+09:00",
+      "lastRunAt": "2026-11-18T08:54:03+09:00",
       "status": "work_incomplete",
       "carryover": true,
-      "subject": "PR #624 旧サークルUI QA修正＋鍵Lv1〜5扉の実3D木組み補強",
-      "summary": "world.enabled=true。PR #624のarchitecture/mobile失敗はqa/battle-unified-voice-and-intent.test.mjs:62の廃止済み命令ポップアップ期待値。現行の単押し部隊選択・視点切替、ダブルタップ拡大、対象選択を検証するQAに更新（95f909af）。さらに既存PR #624のsrc/object-catalog.jsで鍵Lv1〜5の5種類に板目地・裏側の貫と斜材・鍛鉄蝶番と鋲・敷居・水切りの実メッシュを追加（b7e7d922）。今回のNode/WebGL/Android QA実行結果は未取得、GLB0、main採用0、Pages公開0。6レーンの過去成功は今回の品質合格ではない。",
-      "nextAction": "PR #624 head b7e7d922のCIを確認し、node --checkとworld-quality-contract/object-list-catalog/stage-static-instancing、architecture/mobileテストを再検証。扉Lv1〜5の表裏・斜材・蝶番の新旧WebGL画像と接地・1000vs1000 FPSを検査。全合格までDraft・未マージ。",
+      "subject": "PR #624最新head CI再検証：Architecture/6レーン成功、Mobile実行中",
+      "summary": "world.enabled=true。PR #624最新head 464107a3のCIを再照合。RPG architecture #44198313673成功、World six-lane #44198313599全6レーン＋統合成功、world photoreal #44198313704成功。旧head b7e7d922で失敗したArchitecture/Mobileはqa/squad-ribbon-order-access.test.mjsの正規表現構文エラー（Unterminated group）が原因だった。最新headではArchitectureが成功。Mobile Battle #44198313908は確認時点で実行中。今回は新規実3Dソース変更0、GLB0、対象別WebGL新旧比較合格0、Android実測0、main採用0、Pages公開0。過去の5扉改修を新規成果に再計上しない。",
+      "nextAction": "PR #624 head 464107a3のMobile Battle run 44198313908完了を確認し、失敗なら該当job 134445702534のログから同一PRで修正。続いてnode --check・world-quality-contract/object-list-catalog/stage-static-instancing、扉Lv1〜5のWebGL新旧実画像・衝突/配置・1000vs1000 Android FPSを検証。全合格までDraft維持。",
       "steps": {
         "launch": "done",
-        "code": "done",
+        "code": "skipped",
         "qa": "pending",
-        "commit": "done",
+        "commit": "skipped",
         "pr": "done",
         "merge": "pending",
         "deploy": "pending"
       },
       "evidence": [
         {
-          "label": "5扉の実メッシュ構造改修",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/b7e7d9222bd2db5dbd248fb063341fd55cd6861b"
-        },
-        {
-          "label": "旧サークルQA契約修正",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/95f909af46a37a86d82232a4c1ef35fc36d0caac"
-        },
-        {
-          "label": "継続Draft PR #624",
+          "label": "PR #624 最新head",
           "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/624"
         },
         {
-          "label": "失敗した旧architecture CI",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44173930260"
+          "label": "Architecture CI成功",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44198313673"
+        },
+        {
+          "label": "World six-lane成功",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44198313599"
+        },
+        {
+          "label": "World photoreal CI成功",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44198313704"
+        },
+        {
+          "label": "Mobile Battle確認中",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44198313908"
         }
       ],
       "lastRunOutcome": {
-        "newSourceChangedIds": 5,
+        "newSourceChangedIds": 0,
         "newQAPassed": 0,
         "newGameAppliedIds": 0,
-        "newSourceCommits": 1,
+        "newSourceCommits": 0,
         "newGeneratedGLBs": 0,
         "newPublishedIds": 0
       },
       "operational": {
         "blockers": [
-          "PR #624 head b7e7d922のNode構文・3件QAとarchitecture/mobile CI結果未確認",
-          "鍵Lv1〜5の実WebGL前後・裏側接合と衝突/配置の個別QA未実施",
-          "Androidおよび1000vs1000 FPS未計測",
-          "GLB/高密度原型再生成なし・main未採用・Pages未公開"
+          "PR #624 Mobile Battle run 44198313908は実行中で合否未確定",
+          "node --checkと3種指定Node QAの独立実行結果未確認",
+          "扉Lv1〜5の対象別WebGL新旧比較・衝突/配置QA未確認",
+          "Android/1000vs1000 FPS未計測、main未採用・Pages未公開"
         ],
-        "speedPlan": "既存PR #624のCI失敗ジョブから再開し、旧テスト修正後の実行結果を検査。5扉のWebGL前後比較を最優先、失敗なら同一PR内で修正。",
+        "speedPlan": "PR #624 Mobile Battle run 44198313908の完了を第一確認。失敗ならjob 134445702534ログを解析して既存PRを修正。成功なら扉5種の実WebGL前後比較とAndroid FPS検証へ進む。",
         "lastRunOutcome": {
-          "newSourceChangedIds": 5,
+          "newSourceChangedIds": 0,
           "newQAPassed": 0,
           "newGameAppliedIds": 0,
-          "newSourceCommits": 1,
+          "newSourceCommits": 0,
           "newGeneratedGLBs": 0,
           "newPublishedIds": 0,
           "webglPassedIds": [],
           "gameAppliedIds": [],
-          "sourceChangedIds": [
-            "entry_door_lv1_001",
-            "entry_door_lv2_001",
-            "entry_door_lv3_001",
-            "entry_door_lv4_001",
-            "entry_door_lv5_001"
-          ],
+          "sourceChangedIds": [],
           "publicVerified": 0
         }
       },
