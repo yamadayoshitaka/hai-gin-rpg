@@ -979,7 +979,7 @@ export async function createRealBattleOutfitStudio({scene,faceModel,getFaceModel
    nativeCommand=null;nativeClip=null;
    await playAction(currentAction);
    collarFitDirty=true;
-   onStatus('戦闘衣装 v77：'+chosen.label+'／背面鎧 '+(clothing.diagnostics.rearCuirassPresent?'あり':'対象外')+'／主人公マント '+(clothing.diagnostics.heroMantlePresent?'あり':'なし')+'。');
+   onStatus('戦闘衣装 v77：'+chosen.label+'／旧肩鎧 '+(clothing.diagnostics.suppressedRigidShoulderMeshes||0)+'部品除去／肩関節フィット '+(clothing.diagnostics.fittedShoulderParts?'左右各2':'対象外')+'／主人公マント '+(clothing.diagnostics.heroMantlePresent?'あり':'なし')+'。');
   }catch(error){
    clothing?.dispose();fresh.dispose();
    throw error;
