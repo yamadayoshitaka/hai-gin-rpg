@@ -116,7 +116,7 @@ assert.match(rig,/const closedBack=battleClosedBackCoverage\(\{/);
 assert.match(rig,/forceCoveredRegions:forcedTorsoOcclusion/);
 const wigSource=readFileSync(new URL('../src/face-scalp-wig.js',import.meta.url),'utf8');
 assert.match(wigSource,/normalLayers=clamp\(Math\.trunc\(normalLayerCount\),1,3\)/);
-assert.match(game,/rigged-outfit-runtime\.js\?v=20261117-exposed-only3/);
+assert.match(game,/rigged-outfit-runtime\.js\?v=20261117-flatback-off4/);
 assert.match(game,/vfxvisibility2/);
 assert.match(fx,/kind==='punch'\?1\.08/);
 console.log('PASS: natural face PBR, true cranium hair, no forearm-through-shield at guard/attack, high-visibility pooled effects');
