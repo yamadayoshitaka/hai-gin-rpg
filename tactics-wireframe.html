@@ -1019,7 +1019,7 @@ import {createCharacter} from './src/character-system/shared-character-runtime.j
 import {createHeroProductionRecipe,heroProductionActionCue,HERO_VARIANT_COUNT} from './src/hero-production-character-factory.js?v=20261116-vfxskills2';
 import {loadBattleHeadMaster,attachBattleArtistHead,battleHeadMasterStats,
  equipBattleStudioHair,releaseBattleStudioHair,discardBattleStudioNearHair,BATTLE_HEAD_MASTER_VERSION,BATTLE_FACE_LIGHT_RESPONSE_VERSION}
- from './src/character-system/battle-artist-head-graft.js?v=20261117-stable-hair1';
+ from './src/character-system/battle-artist-head-graft.js?v=20261117-hero-face-groom2';
 import {currentHeroineStudioPreset,resolveBattleStudioPattern}
  from './src/character-system/battle-generator-appearance.js?v=20261116-studio-pattern1';
 import {enhanceStudioCombatMaterials,refineHeroineCostumeSilhouette}
@@ -1032,6 +1032,7 @@ import {cameraSegmentHitsBox,selectCameraOccluders,selectCanopiesAroundCamera,ch
 import {registerSquadCircleTap,chooseSquadZoomTarget,SQUAD_CIRCLE_DOUBLE_TAP_MS,shouldHideSquadLabelsAtDistance} from './src/battle-squad-circle-tap.js?v=4.6.36';
 import {createBattleActorVisibility} from './src/battle-render-visibility.js?v=20261117-motion2';
 import {createStableBattleGroomSelector} from './src/battle-studio-groom-policy.js?v=20261117-hysteresis1';
+import {selectBattleFaceExpression,battleFaceExpressionHold} from './src/character-system/battle-face-action-policy.js?v=20261117-action1';
 import {enableBattleRigidFrustumCulling,countBattleRigCulling} from './src/battle-rigid-frustum-optimization.js?v=20261116-rigid1';
 import {interpolatedSkirmishCameraAnchor,createVisibilityWorkPacer} from './src/battle-frame-pacing.js?v=20261116-p95';
 import {personFacingYaw,writePersonPovOffset} from './src/battle-person-pov-camera.js?v=20261117-person-pov1';
@@ -10307,6 +10308,17 @@ function animate(){
       const casting=massSim?massUnit?.action==='skill':false;
       const attacking=massSim?massUnit?.action==='attack':
        Boolean(a.attackPoseUntil&&elapsed<a.attackPoseUntil);
+      // Only protagonist/strategists have independent deformable facial
+      // meshes. Apply expressions on state changes, never per video frame.
+      if(a.masterHead?.expressions&&!TOWN_MODE&&!paused&&!finished){
+       const expression=selectBattleFaceExpression({hit,casting,attacking,moving});
+       if(expression!==a._battleFaceExpression&&
+         elapsed>=(a._battleFaceExpressionAfter??-Infinity)&&
+         a.masterHead.setBattleExpression(expression)){
+        a._battleFaceExpression=expression;
+        a._battleFaceExpressionAfter=elapsed+battleFaceExpressionHold(expression);
+       }
+      }
       const accentAction=hit?'hit':casting?'skill':attacking?'attack':null;
       if(moving&&accentAction&&!a.mountId&&!finished&&!paused){
        if(!a._upperBodyAccent)
