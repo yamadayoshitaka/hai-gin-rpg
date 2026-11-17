@@ -22,7 +22,22 @@ const path=require('node:path');
    if(baselineOnly&&(!Number.isFinite(Number(state.drawCalls))||Number(state.drawCalls)>18||!Number.isFinite(Number(state.triangles))||Number(state.triangles)>25000))
     throw Error('Physical object exceeded small-static-mesh GPU budget: '+JSON.stringify({id,drawCalls:state.drawCalls,triangles:state.triangles}));
    const filename=path.join(dir,id+'-rough-'+String(roughnessScale).replace('.','_')+'.png');
-   await page.locator('canvas').screenshot({path:filename,timeout:25000});
+   // Element screenshots wait for document.fonts.ready. A remote font can
+   // stall forever even after WebGL reports qaReady=true. Capture the actual
+   // rendered canvas rectangle via Chromium CDP instead; this reads pixels
+   // without a misleading font-loading timeout or any synthetic image.
+   const canvasBox=await page.locator('canvas').boundingBox();
+   if(!canvasBox||canvasBox.width<10||canvasBox.height<10)
+    throw Error('WebGL canvas has no drawable bounds for '+id);
+   const cdp=await page.context().newCDPSession(page);
+   try{
+    const shot=await cdp.send('Page.captureScreenshot',{
+     format:'png',captureBeyondViewport:false,
+     clip:{x:canvasBox.x,y:canvasBox.y,width:canvasBox.width,
+      height:canvasBox.height,scale:1}
+    });
+    fs.writeFileSync(filename,Buffer.from(shot.data,'base64'));
+   }finally{await cdp.detach();}
    const stat=fs.statSync(filename);
    if(stat.size<10000)throw Error('Suspiciously empty screenshot');
    result.captures.push({roughnessScale,filename,bytes:stat.size,materials:Number(state.materials),drawCalls:Number(state.drawCalls),triangles:Number(state.triangles),status:'CAPTURED_QA_PENDING'});
