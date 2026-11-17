@@ -104,11 +104,20 @@ jobs:
           node scripts/publish-story-chapter1-provisional.mjs --plan | tee /tmp/story-provisional-plan.jsonl
           node --input-type=module <<'NODE'
           import fs from 'node:fs';
+          import {NEW_STORY_ORIGINAL_ART} from './src/story-new-original-art.js';
           const report=JSON.parse(fs.readFileSync('/tmp/story-provisional-plan.jsonl','utf8').trim().split('\n').at(-1));
-          if(report.invalidProof!==0 || report.registeredCandidates<1){
-            throw Error('Real post-cutover CG source must verify and be eligible for game provisional: '+JSON.stringify(report));
+          // Before the first provisional import, verified candidates count.
+          // After the FIVE verified stage5 CGs are already in main, candidates
+          // correctly drops to 0. Do not treat successful registration as failure.
+          const alreadyVerified=Object.values(NEW_STORY_ORIGINAL_ART).filter(row=>
+            row.provenanceVerified===true && row.nativeQAComplete===true &&
+            row.visualP0Approved===false).length;
+          if(report.invalidProof!==0 || report.registeredCandidates+alreadyVerified<5){
+            throw Error('Real new-original proof missing or invalid: '+JSON.stringify(report)+
+              '; already verified='+alreadyVerified);
           }
-          console.log('Verified native draft candidates:',report.registeredCandidates,'P0 approvals: 0');
+          console.log('Verified new-original CGs: candidates=',report.registeredCandidates,
+            'already registered=',alreadyVerified,'P0 approvals: 0');
           NODE
       - name: Verify sequential first-chapter production provisional intake
         run: node qa/story-sequential-provisional-intake.test.mjs
