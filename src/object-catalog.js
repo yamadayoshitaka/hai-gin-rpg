@@ -203,7 +203,35 @@ export function createObjectById(id,{cellSize=2.2}={}){
    const iron=new THREE.MeshStandardMaterial({color:level>=4?0x313c4a:0x55545a,metalness:.7,roughness:.38});
    const ornament=new THREE.MeshStandardMaterial({color:level===5?0xd6bd7a:0x9f8e6c,metalness:.65,roughness:.4});
    const add=(w,h,d,x,y,z,material,name)=>{const mesh=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material);mesh.position.set(x,y,z);mesh.castShadow=true;mesh.receiveShadow=true;mesh.name=name;root.add(mesh);return mesh};
+   // Structural leaf: separate vertical boards, back battens and diagonal
+   // braces transmit sagging load from the latch edge to the hinge stile.
+   // Keep the original continuous leaf for collision silhouette compatibility.
    add(width,height,.17*c,0,height/2,0,darkWood,'door_leaf');
+   const plankCount=level===5?9:6,plankWidth=width/plankCount;
+   const boardMaterial=cottageMaterial('wood',level>=4?0x66513c:0x9c7852);
+   for(let p=0;p<plankCount;p++){
+    const px=-width/2+(p+.5)*plankWidth;
+    add(plankWidth*.94,height*.975,.026*c,px,height/2,.099*c,boardMaterial,'vertical_tongue_groove_board_'+p);
+   }
+   const hingeX=-width*.43;
+   const backZ=-.125*c;
+   for(const y of [height*.18,height*.82]){
+    add(width*.91,.105*c,.085*c,0,y,backZ,darkWood,'rear_horizontal_batten');
+    add(.14*c,.12*c,.14*c,hingeX,y,-.19*c,iron,'hinge_knuckle');
+    const pin=new THREE.Mesh(new THREE.CylinderGeometry(.034*c,.034*c,.22*c,10),iron);
+    pin.name='hinge_pin';pin.position.set(hingeX,y,-.20*c);root.add(pin);
+   }
+   const braceLength=Math.hypot(width*.77,height*.55);
+   const brace=add(.105*c,braceLength,.075*c,0,height*.50,-.174*c,darkWood,'rear_anti_sag_diagonal_brace');
+   brace.rotation.z=Math.atan2(width*.77,height*.55);
+   // Forged straps spread hinge loads across several boards, not just one plank.
+   for(const y of [height*.18,height*.82]){
+    add(width*.48,.048*c,.036*c,-width*.23,y,.137*c,iron,'front_forged_hinge_strap');
+    for(let k=0;k<3;k++){
+     const rivet=new THREE.Mesh(new THREE.SphereGeometry(.026*c,8,6),iron);
+     rivet.name='hinge_strap_rivet';rivet.position.set(-width*.42+k*width*.15,y,.162*c);root.add(rivet);
+    }
+   }
    for(const sign of [-1,1])add(.16*c,height+.16*c,.27*c,sign*(width/2+.07*c),(height+.16*c)/2,0,iron,'door_frame');
    add(width+.36*c,.18*c,.30*c,0,height+.06*c,0,iron,'door_lintel');
    for(let i=0;i<level;i++)add(width*.90,.055*c,.095*c,0,height*(i+1)/(level+1),.13*c,iron,'reinforcing_bar');
