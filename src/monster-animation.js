@@ -137,9 +137,16 @@ export function animateMonsterModel(model,time=0){
      part.rotation.y=Math.sin(motionTime*2.8)*.19+strike*.35+special*.58;
    }else if(name==='abdomen'){
      part.rotation.z=Math.sin(motionTime*2.2)*.06;
+   }else if(name.startsWith('wingElbow')||name.startsWith('wingWrist')){
+     // Shoulder -> elbow -> wrist are different joints. The avian-specific
+     // wingMotion() below drives folding and twist independently; the old
+     // startsWith('wing') rule incorrectly flapped all three at full force.
+     part.rotation.set(0,0,0);
    }else if(name.startsWith('wing')){
      const side=name.includes('L')?-1:1;
-     part.rotation.z=side*(.22+.23*Math.sin(motionTime*6.1)+
+     const isNewBird=!!model.userData.avianRebuildRevision;
+     const frequency=isNewBird&&model.userData.speciesId==='m013'?4.35:6.1;
+     part.rotation.z=side*(.22+.23*Math.sin(motionTime*frequency)+
        special*.7+leaping*.6-dying*.16);
      part.rotation.x=.08*Math.sin(motionTime*3);
    }else if(name.startsWith('tentacle')){
