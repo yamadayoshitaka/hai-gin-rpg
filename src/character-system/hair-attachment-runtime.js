@@ -341,15 +341,30 @@ export async function attachCharacterHair({model,job,sex='male',style=null,color
   syntheticHelmetFringe:'disabled',sourceHair:true};
  const fit={position:lod.position.clone(),scale:lod.scale.clone()};
  let selectedCoverage=null;
+ // Occlusion returns new BufferGeometry. Previous headwear toggles kept every
+ // masked vertex buffer alive, accumulating GPU memory on battle/studio reuse.
+ // Never dispose source GLB geometry: the loader cache is shared by actors.
+ const ownedMasks=new Map();
+ function replaceMaskedGeometry(mesh,source,nextGeometry){
+  const previous=ownedMasks.get(mesh);
+  if(previous&&previous!==nextGeometry)previous.dispose();
+  if(nextGeometry&&nextGeometry!==source){
+   ownedMasks.set(mesh,nextGeometry);
+   mesh.geometry=nextGeometry;
+  }else{
+   ownedMasks.delete(mesh);
+   mesh.geometry=source;
+  }
+ }
  function setHeadwear(value){
   const next=value==='hood'?'hood':value==='helmet'?'helmet':null;
   if(selectedCoverage===next)return;
   selectedCoverage=next;
   let sourceTriangles=0,keptTriangles=0;
   for(const item of hairMeshes){
-    if(!next){item.mesh.geometry=item.original;continue}
+    if(!next){replaceMaskedGeometry(item.mesh,item.original,null);continue}
     const clipped=maskHairGeometry(item.original,item.sourceMatrix,fit,size.bounds,next,foreheadZ);
-    item.mesh.geometry=clipped.geometry;
+    replaceMaskedGeometry(item.mesh,item.original,clipped.geometry);
     sourceTriangles+=clipped.sourceTriangles;keptTriangles+=clipped.keptTriangles;
   }
   // Mask only the portions hidden BY the headpiece, instead of turning off
@@ -358,15 +373,15 @@ export async function attachCharacterHair({model,job,sex='male',style=null,color
   if(next){
     const cut=maskHairGeometry(crownGeometry,crownMatrix,{
       position:new THREE.Vector3(),scale:new THREE.Vector3(1,1,1)},size.bounds,next,foreheadZ);
-    crown.geometry=cut.geometry;crown.visible=cut.keptTriangles>0;
+    replaceMaskedGeometry(crown,crownGeometry,cut.geometry);crown.visible=cut.keptTriangles>0;
     if(scalpFibers){
       const fibers=maskHairGeometry(scalpFibersGeometry,fiberMatrix,{
         position:new THREE.Vector3(),scale:new THREE.Vector3(1,1,1)},size.bounds,next,foreheadZ);
-      scalpFibers.geometry=fibers.geometry;scalpFibers.visible=fibers.keptTriangles>0;
+      replaceMaskedGeometry(scalpFibers,scalpFibersGeometry,fibers.geometry);scalpFibers.visible=fibers.keptTriangles>0;
     }
   }else{
-    crown.geometry=crownGeometry;crown.visible=true;
-    if(scalpFibers){scalpFibers.geometry=scalpFibersGeometry;scalpFibers.visible=true}
+    replaceMaskedGeometry(crown,crownGeometry,null);crown.visible=true;
+    if(scalpFibers){replaceMaskedGeometry(scalpFibers,scalpFibersGeometry,null);scalpFibers.visible=true}
   }
   hoodWisps.visible=next==='hood';
   hairRoot.userData.headwearMode=next||'none';
@@ -378,7 +393,7 @@ export async function attachCharacterHair({model,job,sex='male',style=null,color
  return {object:hairRoot,style:id,sex,color:tint,diagnostics:hairRoot.userData,
   setVisible(value){hairRoot.visible=Boolean(value)},
   setHeadwear,
-  dispose(){bone.remove(hairRoot);crownGeometry.dispose();crown.material.dispose();
+  dispose(){bone.remove(hairRoot);for(const geometry of ownedMasks.values())geometry.dispose();ownedMasks.clear();crownGeometry.dispose();crown.material.dispose();
    scalpFibersGeometry?.dispose();scalpFibers?.material.dispose();
    hoodWisps.geometry.dispose();hoodWisps.material.dispose()}};
 }
