@@ -60,7 +60,7 @@ function addPhoenixWave(surface,kind){
   const y=kind==='wing'?'0.042':kind==='tail'?'0.105':'0.029';
   const secondary=kind==='wing'?'0.026':kind==='tail'?'0.048':'0.024';
   shader.vertexShader=shader.vertexShader
-   .replace('#include <common>', '#include <common>\\nuniform float phoenixWaveTime;\\nuniform float phoenixWavePower;')
+   .replace('#include <common>', '#include <common>\nuniform float phoenixWaveTime;\nuniform float phoenixWavePower;')
    .replace('#include <begin_vertex>',`#include <begin_vertex>
     float avianDistance = ${distance};
     float avianWaveFade = smoothstep(${threshold}, avianDistance);
