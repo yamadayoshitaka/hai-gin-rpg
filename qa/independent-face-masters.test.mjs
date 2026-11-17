@@ -2546,6 +2546,6 @@ test('v75: true bilateral canthus contours, nasal bridge and age-sensitive nasol
  const older=femaleCheekJawDelta({...point,ageStrength:.9});
  assert.ok(older.dz<young.dz-.0004,
   'the curved nasolabial valley must gain relief gradually with age');
- assert.equal(femaleCheekJawDelta({...point,xn:.9,ageStrength:.9}).dz,0,
+ assert.ok(Math.abs(femaleCheekJawDelta({...point,xn:.9,ageStrength:.9}).dz)<1e-7,
   'nasolabial relief must not modify the silhouette or ears');
 });

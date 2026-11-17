@@ -1218,7 +1218,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
       coords.push(q.x,q.y,q.z);
       // Multi-scale pigment, fine discontinuous glints, darker roots:
       // hair reads as individual fibers rather than a glossy plastic sheet.
-      const glint=.042*Math.exp(-((t-.47)/.15)**2)*
+      const glint=.042*Math.exp(-Math.pow((t-.47)/.15,2))*
        Math.max(0,Math.cos(lane*2.39996323+clumpPhase));
       const c=(.78+.22*((lane+i)%11)/11)*(1-.06*t)+
        .030*Math.sin(t*11+i*.19+lane*.73)+glint;
