@@ -1129,7 +1129,7 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
        minVertical:-.05,maxVertical:.99,gravity:.37
      }).filter(h=>h.root[1]>.222&&h.root[2]>.070&&
        Math.abs(h.root[0])>.098&&Math.abs(h.root[0])<.258)
-       .map(h=>({...h,m001Forelock:true}))),
+       .map(h=>({...h,m001Forelock:true})),
      // Upper crown and both side-manes approach the throat-ruff volume
      // while the bare face stays open; retain three material batches.
      ...generateCanineFurGuides({
