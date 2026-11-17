@@ -5,6 +5,7 @@ import crypto from 'node:crypto';
 import {comicForStage} from '../src/story-chapter-comic.js';
 import {registeredStoryPanelAsset} from '../src/story-panel-registered-art.js';
 import {chapter1ProvisionalLivePanel} from '../src/story-chapter1-provisional-live.js';
+import {NEW_STORY_ORIGINAL_ART} from '../src/story-new-original-art.js';
 import {restoredStoryArchivePanel,RESTORED_STORY_ARCHIVE,
  RESTORED_STORY_ARCHIVE_COUNT} from '../src/story-archive-restored-art.js';
 
@@ -27,14 +28,28 @@ for(const [key,entry] of Object.entries(RESTORED_STORY_ARCHIVE)){
  assert.equal(entry.sourceBranch,'story/chapter1-free-actual-art');
  assert.deepEqual([entry.stageId,entry.edition,entry.gender,entry.panelId],
   [stageId,edition,gender,panelId]);
- assert.equal(chapter1ProvisionalLivePanel({stageId,comicEdition:edition,protagonistGender:gender,id:panelId}),
-  null,'Do not replace an existing live exact scene');
+ const live=chapter1ProvisionalLivePanel({stageId,comicEdition:edition,protagonistGender:gender,id:panelId});
+ const verifiedNew=NEW_STORY_ORIGINAL_ART[key];
+ if(verifiedNew){
+  // Historical proof stays inactive but its genuine post-cutover original may
+  // separately be activated under the NEW original registry, never as old art.
+  assert.equal(verifiedNew.origin,'NEW_SCENE_GENERATED_AFTER_2026_11_17',key);
+  assert.equal(verifiedNew.provenanceVerified,true,key);
+  assert.equal(verifiedNew.nativeQAComplete,true,key);
+  assert.equal(verifiedNew.visualP0Approved,false,key);
+  assert.equal(live?.asset,verifiedNew.asset,'Live binding must use NEW independent path: '+key);
+  assert.equal(live?.sha256,verifiedNew.sha256,'Live and NEW original SHA mismatch: '+key);
+  assert.equal(live?.sha256,entry.sha256,'Historical exact real image bytes changed: '+key);
+ }else{
+  assert.equal(live,null,'Do not replace an existing live exact scene without a verified new original');
+ }
  const context={protagonistGender:gender};
  if(edition==='post-victory')context.battleOutcome={victory:true};
  const story=comicForStage(stageId,edition==='pre'?'pre':'post',context);
  const shot=story.panels.find(x=>x.id===panelId);
  assert(shot&&shot.comicEdition===edition, 'Image is for a different story, gender or ending: '+key);
- assert.equal(registeredStoryPanelAsset(shot),null,'Stage 5 historical CG must not appear in the game');
+ assert.equal(registeredStoryPanelAsset(shot),verifiedNew?.asset||null,
+  'Stage5 must display only its independently verified NEW original, never historical archive');
  assert.equal(restoredStoryArchivePanel(shot),null,'Stage 5 must not restore historical CGs');
  const abs=path.resolve(entry.asset.replace(/^\.\//,''));
  const proofPath=path.resolve(entry.proof.replace(/^\.\//,''));
