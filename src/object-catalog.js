@@ -498,6 +498,11 @@ export function createObjectById(id,{cellSize=2.2}={}){
    }
    for(const y of [1.28,1.68])box(2.35*c,.17*c,.13*c,0,y*c,-.34*c,wood);
    box(2.2*c,.13*c,.13*c,0,.38*c,0,wood);
+   // Pegged mortise joints keep the rear posts and transverse seat bearers tied together.
+   for(const x of [-1.05,1.05])for(const y of [.77,1.28,1.68]){
+    const peg=new THREE.Mesh(new THREE.CylinderGeometry(.035*c,.035*c,.25*c,8),iron);
+    peg.rotation.x=Math.PI/2;peg.position.set(x*c,y*c,-.34*c);root.add(peg);
+   }
   }
   if(id==='town_well_001'){
    const ring=new THREE.Mesh(new THREE.CylinderGeometry(1.2*c,1.2*c,.95*c,16,1,true),stone);
@@ -544,6 +549,11 @@ export function createObjectById(id,{cellSize=2.2}={}){
    for(const z of [-.45,.45])box(.95*c,.08*c,.12*c,0,.86*c,z*c,iron);
    for(const x of [-.45,.45])box(.12*c,.08*c,.95*c,x*c,.86*c,0,iron);
    for(const x of [-.3,.3])box(.12*c,.09*c,1.03*c,x*c,.055*c,0,wood);
+   // Diagonal corner bracing transfers racking forces into the bottom frame.
+   for(const z of [-.46,.46])for(const sign of [-1,1]){
+    const brace=box(.065*c,.68*c,.07*c,sign*.31*c,.47*c,z*c,wood);
+    brace.rotation.z=sign*.54;
+   }
   }
   if(id==='town_notice_001'){
    // Posts transfer the board weight into ground; rafters carry a timber roof.
@@ -558,6 +568,11 @@ export function createObjectById(id,{cellSize=2.2}={}){
    for(let i=0;i<3;i++)box(.45*c,.65*c,.025*c,(i-1)*.53*c,1.82*c,.067*c,paper);
    for(const z of [-.27,.27])box(2.12*c,.12*c,.3*c,0,2.72*c,z*c,wood);
    box(2.2*c,.08*c,.68*c,0,2.83*c,0,wood);
+   // Knee braces carry the small canopy overhang back into the posts.
+   for(const x of [-.78,.78])for(const sign of [-1,1]){
+    const brace=box(.12*c,.48*c,.12*c,x*c,2.32*c,sign*.23*c,wood);
+    brace.rotation.x=sign*.56;
+   }
   }
   if(id==='town_trash_bin_001'){
    // Galvanised open-top municipal bin: rolled steel wall, grounded pressed floor,
@@ -610,6 +625,11 @@ export function createObjectById(id,{cellSize=2.2}={}){
      spoke.position.set(0,.6*c,z*c);spoke.rotation.z=i*Math.PI/8;root.add(spoke);
     }
    }
+   // Axle bearing blocks physically tie the axle to both longitudinal chassis beams.
+   for(const z of [-.63,.63]){
+    box(.4*c,.3*c,.31*c,0,.76*c,z*c,wood).name='axle_bearing_block';
+    for(const x of [-.14,.14])box(.045*c,.34*c,.045*c,x*c,.76*c,z*c,iron);
+   }
    for(const z of [-.53,.53]){
     box(1.72*c,.12*c,.14*c,2.0*c,.95*c,z*c,wood);
     box(.12*c,.25*c,.12*c,2.75*c,.84*c,z*c,iron);
@@ -642,6 +662,11 @@ export function createObjectById(id,{cellSize=2.2}={}){
     const x=-1.18+i*(2.36/11);
     box(.115*c,1.05*c,.095*c,x*c,.65*c,.12*c,wood);
     box(.13*c,.085*c,.115*c,x*c,1.2*c,.12*c,wood);
+   }
+   // Through-pegs lock the two rails into the three structural posts.
+   for(const x of [-1.3,0,1.3])for(const y of [.43,1.04]){
+    const peg=new THREE.Mesh(new THREE.CylinderGeometry(.035*c,.035*c,.25*c,8),iron);
+    peg.rotation.x=Math.PI/2;peg.position.set(x*c,y*c,0);root.add(peg);
    }
   }
   if(id==='stone_archway_001'){
