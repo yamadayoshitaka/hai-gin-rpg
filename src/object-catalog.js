@@ -322,6 +322,10 @@ export function createObjectById(id,{cellSize=2.2}={}){
    for(const z of [-.46,.46])b(1.61*c,.19*c,.065*c,0,.69*c,z*c,dark);
    for(const x of [-.82,.82])b(.065*c,.19*c,.82*c,x*c,.69*c,0,dark);
    b(.085*c,.13*c,1.0*c,0,.66*c,0,dark);
+   for(const x of [-.82,.82])for(const z of [-.46,.46]){
+    const peg=new THREE.Mesh(new THREE.CylinderGeometry(.026*c,.026*c,.018*c,8),timber);
+    peg.rotation.x=Math.PI/2;peg.position.set(x*c,.69*c,(z+Math.sign(z)*.04)*c);root.add(peg);
+   }
   }
   if(id==='cottage_chair_001'){
    // Continuous rear uprights support the back; rails brace the seat against racking.
@@ -334,6 +338,10 @@ export function createObjectById(id,{cellSize=2.2}={}){
    for(const x of [-.27,.27])b(.065*c,.12*c,.4*c,x*c,.375*c,0,dark);
    for(const y of [.85,1.12])b(.53*c,.12*c,.065*c,0,y*c,-.23*c);
    b(.54*c,.065*c,.07*c,0,.2*c,-.23*c,dark);
+   for(const x of [-.27,.27])for(const y of [.85,1.12]){
+    const peg=new THREE.Mesh(new THREE.CylinderGeometry(.019*c,.019*c,.014*c,8),dark);
+    peg.rotation.x=Math.PI/2;peg.position.set(x*c,y*c,-.269*c);root.add(peg);
+   }
   }
   if(id==='cottage_bed_001'){
    // Bed frame: grounded corner posts, longitudinal side rails, transverse slats and headboard.
@@ -346,6 +354,8 @@ export function createObjectById(id,{cellSize=2.2}={}){
    b(1.42*c,.19*c,.13*c,0,1.1*c,-1.16*c,dark);
    b(1.46*c,.18*c,2.22*c,0,.69*c,0,linen);
    b(1.12*c,.13*c,.47*c,0,.85*c,-.77*c,linen);
+   b(.13*c,.15*c,2.12*c,0,.43*c,0,dark);
+   for(const z of [-.72,.72])b(.14*c,.34*c,.14*c,0,.17*c,z*c,dark);
   }
   if(id==='cottage_shelf_001'){
    // Grounded side panels, housed shelves, full back, and anti-racking rear cross brace.
@@ -361,6 +371,10 @@ export function createObjectById(id,{cellSize=2.2}={}){
     }
    }
    for(const x of [-.68,.68])b(.095*c,.13*c,.72*c,x*c,.26*c,0,dark);
+   for(const x of [-.755,.755])for(const y of [.48,1.04,1.60,2.16])for(const z of [-.24,.24]){
+    const pin=new THREE.Mesh(new THREE.CylinderGeometry(.022*c,.022*c,.045*c,8),dark);
+    pin.rotation.z=Math.PI/2;pin.position.set(x*c,(y-.065)*c,z*c);root.add(pin);
+   }
   }
   if(id==='cottage_fireplace_001'){
    // Open masonry firebox: solid jambs carry the lintel and chimney; no solid block masks the opening.
@@ -375,6 +389,8 @@ export function createObjectById(id,{cellSize=2.2}={}){
    b(2.15*c,1.58*c,.10*c,0,1.19*c,-.49*c,dark);
    for(let i=0;i<5;i++)b(2.8*c,.18*c,.72*c,0,(2.83+i*.17)*c,-.17*c,stone);
    for(const x of [-.65,.65])b(.14*c,.13*c,.78*c,x*c,.43*c,-.02*c,fire);
+   for(const x of [-.86,-.43,0,.43,.86])b(.025*c,.24*c,.012*c,x*c,2.55*c,.487*c,mortar);
+   b(2.92*c,.09*c,.31*c,0,.19*c,.51*c,stone);
    root.userData.fireboxOpening={width:1.82*c,height:1.83*c};
   }
   if(id==='cottage_barrel_001'){const o=new THREE.Mesh(new THREE.CylinderGeometry(.48*c,.52*c,1.15*c,24,3),timber);o.position.y=.58*c;o.castShadow=true;root.add(o);for(const y of [.2,.94]){const ring=new THREE.Mesh(new THREE.TorusGeometry(.49*c,.045*c,7,28),dark);ring.rotation.x=Math.PI/2;ring.position.y=y*c;root.add(ring)}}
