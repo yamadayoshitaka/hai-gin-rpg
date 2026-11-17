@@ -114,12 +114,12 @@
     },
     "world": {
       "source": "ChatGPTオブジェクト即時回帰＋GitHub六担当実WebGL QA",
-      "lastRunAt": "2026-11-18T04:52:48+09:00",
+      "lastRunAt": "2026-11-18T05:51:45+09:00",
       "status": "work_incomplete",
       "carryover": true,
-      "subject": "5種の実メッシュ接合・荷重支持改善をDraft PR #624へ保存（描画QA保留）",
-      "summary": "world.enabled=true、正本60種分類。src/object-catalog.jsでベンチ、掲示板、木柵、荷車、石柵の5種に木組み/荷重支持/車軸/石積みディテールを実装。ソースSHA d60c67acc06626e7a7aba3c87e0d4dad78fa4c8a。Draft PR #624。Node/WebGL新旧比較/Android/6レーンCI未検証、GLB0、ゲーム採用0、Pages0。既存PR #614/#620の旧QA失敗と#619修正の検証は継続。",
-      "nextAction": "PR #624でnode --check src/object-catalog.js、qa/world-quality-contract.test.mjs、qa/object-list-catalog.test.mjs、qa/stage-static-instancing.test.mjsと6レーンを実行し、5種のWebGL前後比較・Android/FPSを確認。既存PR #614/#620/#619のCI滞留も解消してから安全にマージ/Pages公開。",
+      "subject": "PR #624に木製家具5種の荷重支持・接合実メッシュを追加（QA未検証）",
+      "summary": "world.enabled=true。正本catalog-targets.jsonは60種。既存PR #624（Draft）のsrc/object-catalog.jsへ木製食卓・椅子・寝台・本棚・木樽の5種に実メッシュ支持構造（貫/隅木/すのこ/棚受け/樽鏡板）を追加しコミット e170951597c277dacc6c477a49a407fd78cf7ca6。PR #619はmerged、#614/#615/#616/#620/#624はDraft open。手動world Issueは検索結果に無し。Node/WebGL/Androidの実測は未実施で合格0。GLB0、本編採用0、Pages公開0。",
+      "nextAction": "PR #624の最新head e1709515でnode --check、world-quality-contract/object-list-catalog/stage-static-instancing各QAと5種WebGL旧新比較を実行。失敗時は同PRで修正。PR #614 interaction run 44141156069とPR #620 architecture run 44151633344の旧CIが#619 merged後の現行コードで通るか確認。Android/FPS未確認ならマージ禁止。",
       "steps": {
         "launch": "done",
         "code": "done",
@@ -131,19 +131,23 @@
       },
       "evidence": [
         {
-          "label": "5 object structural geometry source commit",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/d60c67acc06626e7a7aba3c87e0d4dad78fa4c8a"
+          "label": "今回の家具5種の実ソースコミット",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/e170951597c277dacc6c477a49a407fd78cf7ca6"
         },
         {
-          "label": "Draft PR #624",
+          "label": "既存Draft PR #624",
           "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/624"
         },
         {
-          "label": "PR #614 failed interaction QA",
+          "label": "QA修正済みPR #619 merged",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/619"
+        },
+        {
+          "label": "PR #614 failed interaction",
           "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44141156069"
         },
         {
-          "label": "PR #620 failed architecture QA",
+          "label": "PR #620 failed architecture",
           "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44151633344"
         }
       ],
@@ -157,11 +161,11 @@
       },
       "operational": {
         "blockers": [
-          "Draft PR #624 static/Node and six-lane QA not yet executed",
-          "Five per-ID before/after WebGL screenshots and Android/1000v1000 FPS unverified",
-          "Prior PR #614 interaction and #620 architecture CI failures need validation against #619"
+          "PR #624 latest source commit lacks node --check and 3 required test evidence",
+          "Five furniture IDs have no before/after WebGL screenshots or Android FPS measurement",
+          "Prior #614/#620 failed CI runs remain historical; #619 merged but revalidation is outstanding"
         ],
-        "speedPlan": "PR #624 QA: Node check and three world tests; WebGL five ID screenshot diff; check PR #614/#620 legacy test fixes before merging.",
+        "speedPlan": "PR #624 latest head e1709515: run syntax and 3 world QA, capture five furniture WebGL pairs; only after QA consider merge/deploy.",
         "lastRunOutcome": {
           "newSourceChangedIds": 5,
           "newQAPassed": 0,
@@ -170,11 +174,11 @@
           "newGeneratedGLBs": 0,
           "newPublishedIds": 0,
           "sourceChangedIds": [
-            "town_bench_001",
-            "town_notice_001",
-            "town_fence_001",
-            "town_handcart_001",
-            "stone_fence_001"
+            "cottage_table_001",
+            "cottage_chair_001",
+            "cottage_bed_001",
+            "cottage_shelf_001",
+            "cottage_barrel_001"
           ],
           "webglPassedIds": [],
           "gameAppliedIds": [],
