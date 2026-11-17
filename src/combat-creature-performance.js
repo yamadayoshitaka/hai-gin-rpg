@@ -59,21 +59,34 @@ export function creatureSize(type,mounted=false){
  * All procedural mounts face +Z. The saddle is REAR of the shoulder, not
  * in the neck or belly. The character model stays a complete separate rig.
  */
+/** Mount-local seat anchor is the single source of truth for both the full
+ * skinned rider and the instanced 1000v1000 rider. The pelvis, not the root
+ * or ankles, must meet the saddle. Positive Y includes thigh clearance and
+ * Z is behind the creature's neck in its +Z-forward coordinates.
+ */
+export function riderSeatAnchor(object,time=0){
+ if(!object)return {x:0,y:0,z:0};
+ const settings=CREATURE_PERFORMANCE[object.type];
+ if(settings?.seat==null)return {x:0,y:0,z:0};
+ const size=creatureSize(object.type,true)*(object.commanderMount?1.12:1);
+ // Horse's broad withers are forward of the true seating surface.
+ const back={horse:-.43,wolf:-.24,wyvern:-.29,dragon:-.39,elder_dragon:-.47};
+ // Flying mounts keep their pre-existing exact frame-synchronised vertical contract.
+ const clearance={horse:.20,wolf:.12,wyvern:0,dragon:0,elder_dragon:0};
+ const commanderRise=object.type==='horse'&&object.commanderMount?.26:0;
+ return {
+  x:0,
+  y:settings.seat*(isColossalSummon(object.type)?SUMMON_WORLD_SCALE:1)+
+    (clearance[object.type]??.1)*size+commanderRise+creatureFlightHeight(object,time),
+  z:(back[object.type]??0)*size
+ };
+}
 export function riderSeatLocalOffset(object){
-  if(!object)return {x:0,z:0};
-  const back={horse:-.26,wolf:-.18,wyvern:-.25,dragon:-.34,elder_dragon:-.40};
-  const factor=creatureSize(object.type,true)*(object.commanderMount?1.12:1);
-  return {x:0,z:(back[object.type]??0)*factor};
+ const anchor=riderSeatAnchor(object);
+ return {x:anchor.x,z:anchor.z};
 }
 export function riderSeatHeight(object,time=0){
-  if(!object)return 0;
-  const settings=CREATURE_PERFORMANCE[object.type];
-  if(settings?.seat==null)return 0;
-  // Special commander horses are scaled ×1.12 by the creature renderer.
-  // Add rig-dependent saddle clearance so boots and thighs do not pierce the mount.
-  const commanderRise=object.type==='horse'&&object.commanderMount?.26:0;
-  return settings.seat*(isColossalSummon(object.type)?SUMMON_WORLD_SCALE:1)+
-   commanderRise+creatureFlightHeight(object,time);
+ return riderSeatAnchor(object,time).y;
 }
 
 /** Returns 0 outside the current, server-authoritative attack window. */

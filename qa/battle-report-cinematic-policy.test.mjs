@@ -19,7 +19,8 @@ assert.match(html,/queueBattleResultCutin\(defeatedEnemy\?'⚔ 敵部隊撃破':
 // Strategic highlights preserve the explicitly selected commander/overview mode.
 assert.match(html,/function queueBattleFocusCinematic\(x,z/);
 assert.match(html,/kind==='ultimate'\|\|kind==='result'/);
-assert.match(html,/stamp-lastAutomaticFocusAt<6500/);
+assert.match(html,/stamp-lastAutomaticFocusAt<1200/);
+assert.match(html,/priority>commanderCinematic.priority/);
 assert.match(html,/cinematicFocusQueue\.push\(entry\)/);
 assert.match(html,/overPosition:battleViewMode==='overview'\?overTarget\.clone\(\)\.add\(cameraOverviewOffset\):camera\.position\.clone\(\)/);
 assert.match(html,/if\(battleViewMode==='commander'\)followSelectedCommander\(\)/,

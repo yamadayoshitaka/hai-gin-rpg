@@ -13,7 +13,8 @@ const fragment=(tag,cls,text)=>{
 /** Compact actionable tactical panel tied to the authoritative battle order handler. */
 export function installBattleTacticalUI({
  getUnits,getSquadIds,getCommandSquadIds=id=>[id],getCommander,getSquadName,getCurrentStage,
- getCommanderReason,getCooldown,getSquadCenter,getMarkerLabel,issueOrder,openSquad,closeSquad,isReady
+ getCommanderReason,getCooldown,getSquadCenter,getMarkerLabel,issueOrder,openSquad,closeSquad,isReady,
+ onSituationChange=()=>false
 }){
  const preview=fragment('section','','');
  preview.id='tacticalCommandPreview';
@@ -71,7 +72,9 @@ export function installBattleTacticalUI({
   preview.hidden=false;
  }
  function showSituation(id,event,sums){
-  if(!isReady()||document.body.classList.contains('squad-closeup'))return;
+  if(!isReady())return;
+  if(onSituationChange(id,event,sums)===true){banner.hidden=true;resetEligible();return;}
+  if(document.body.classList.contains('squad-closeup'))return;
   if(noticeTimer!==null)clearTimeout(noticeTimer);
   resetEligible();
   const candidates=getSquadIds().filter(sid=>{

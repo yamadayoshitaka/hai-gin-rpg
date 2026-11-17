@@ -40,6 +40,12 @@ export function createBattleObjectiveCheckpoints({
   const objects=getObjects(),objectById=new Map(objects.map(o=>[String(o.id),o]));
   for(const row of rows){
    if(row.status!=='進行中')continue;
+   // A mission has failed when its assigned non-strategist force is gone.
+   // No guess is made when the assignment has not yet been instantiated.
+   const assigned=getUnits().filter(u=>u.team===0&&!u.isStrategist&&row.squadIds.includes(String(u.squadId)));
+   if(assigned.length&&!assigned.some(alive)){
+    row.status='失敗';report(row,'担当部隊全滅・作戦失敗');continue;
+   }
    let value=row.progress;
    if(row.mode==='charge'&&row.targetIds.length){
     const total=row.targetIds.reduce((n,id)=>n+(row.baseline[id]||1),0);

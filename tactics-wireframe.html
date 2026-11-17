@@ -6,7 +6,8 @@
 #hud{display:none;position:fixed;top:10px;left:10px;z-index:5;background:#101e33e8;border:1px solid #5b91b5;padding:12px;border-radius:10px;max-width:min(90vw,350px)}#hud b{color:#f7dfa0}#hud small{display:block;color:#a9c7d9;margin-top:4px}
 #battleLoading{position:fixed;inset:0;z-index:40;background:linear-gradient(145deg,#071121,#132e4b);display:flex;align-items:center;justify-content:center;padding:24px;text-align:center}#battleLoading[hidden]{display:none}#loadingCard{width:min(440px,100%);max-height:calc(100dvh - 24px);overflow-y:auto;overscroll-behavior:contain;padding:26px 20px;border:1px solid #668eaf;border-radius:16px;background:#091c30;box-shadow:0 16px 50px #000b}#loadingCard h1{font-size:22px;color:#ffe1a7;margin:0 0 12px}#loadingStage{min-height:3em;line-height:1.5;color:#c8e0f2}#loadingBar{height:15px;background:#203952;border:1px solid #6589a2;border-radius:12px;overflow:hidden;margin:18px 0 8px}#loadingFill{height:100%;width:0%;background:linear-gradient(90deg,#4c9ccc,#a4dcc1);transition:width .15s}#loadingPercent{font-variant-numeric:tabular-nums;color:#ffe7a7;font-weight:700}#loadingError{white-space:pre-wrap;color:#ffc4c4;margin-top:12px}#loadingRetry{margin-top:12px}
 #jobTools{display:flex;gap:4px;flex-wrap:wrap;margin-top:7px}#jobTools select{background:#1a3857;color:white;border:1px solid #81b7d8;padding:7px;max-width:140px}#commands{position:fixed;bottom:12px;left:10px;z-index:5;width:min(265px,72vw);display:flex;flex-direction:column;gap:5px;background:#101e33ed;border:2px solid #a4b7d1;border-radius:6px;padding:10px;box-shadow:0 6px 20px #0009}#commands:before{content:'コマンド';color:#f7dfa0;font-weight:700;border-bottom:1px solid #68849d;padding-bottom:5px}#commands button{text-align:left;padding:9px 12px;border:0;background:transparent;border-radius:3px}#commands button:hover,#commands button:focus{background:#31577d}#commands button.active{background:#365d84;color:#ffe8a2}#commands button:before{content:'›  ';color:#e9c46d}#commands button.utility{font-size:11px;color:#b4c9db;border-top:1px solid #455b75}#hud{max-width:min(90vw,350px)}#selected{margin-top:8px;line-height:1.6}#endScreen{display:none;position:fixed;inset:0;background:#08111edb;z-index:20;align-items:center;justify-content:center;flex-direction:column;gap:15px;text-align:center}#endScreen h1{font-size:32px;color:#ffe4a0}#endScreen button{font-size:18px}button{background:#1a3857;color:#fff;border:1px solid #81b7d8;border-radius:8px;padding:11px 15px;font-weight:700}button:disabled{opacity:.4}#log{max-width:300px;white-space:pre-wrap;font-size:11px;color:#e8d39c;margin-top:5px}
-.actor-status{position:fixed;z-index:4;transform:translate(-50%,-100%);width:112px;padding:4px 5px;border:1px solid #b7c9dc99;border-radius:6px;background:#081827e8;color:#fff;text-align:center;font:10px system-ui;pointer-events:none}.actor-name{font-weight:700;margin-bottom:3px}.meter{height:13px;position:relative;background:#26313f;border-radius:3px;overflow:hidden;margin-top:2px}.meter>div{height:100%;background:#40c36e}.meter.mp>div{background:#328ddd}.meter span{position:absolute;inset:0;line-height:13px;text-shadow:0 1px 2px #000;font-weight:700}#cameraTools{position:fixed;top:12px;right:12px;z-index:8;display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;max-width:80vw}#cameraTools button{padding:9px 11px;background:#102a43e8;border:1px solid #8baeca;font-size:12px;box-shadow:0 2px 8px #0008}#cameraTools button.active{background:#3476a1}#stageViewport{position:fixed;inset:0 0 94px 0;overflow:hidden}#stageViewport canvas{width:100%;height:100%}#commands{position:fixed;left:0;right:0;bottom:0;width:100%;height:94px;z-index:9;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;padding:10px 8px calc(10px + env(safe-area-inset-bottom,0px));border:0;border-top:2px solid #6d91ad;border-radius:0;background:#0e2136;box-shadow:0 -3px 16px #0007}#commands:before{display:none}#commands button{font-size:13px;text-align:center;padding:8px 2px;border:1px solid #52728c;background:#1b3855;min-width:0}#commands button:before{display:none}#cameraTools{top:8px;right:8px}#cameraTools button{padding:7px 9px}@media(max-width:380px){#commands button{font-size:12px}}#battleStatus{position:fixed;bottom:94px;left:0;right:0;z-index:9;min-height:43px;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:5px 12px;background:#0d2235ed;border-top:1px solid #426783;color:#eaf5ff;font:12px system-ui;pointer-events:none}#battleStatus .unit{display:flex;flex-direction:column;gap:2px;min-width:0}#battleStatus .unit.enemy{text-align:right}#battleStatus .values{font-size:12px;white-space:nowrap}#stageViewport{bottom:137px!important}.actor-status{display:none!important}#commands{height:105px;grid-template-columns:1.1fr 1.1fr .65fr;grid-template-rows:1fr 22px;align-items:center;padding:8px;gap:4px}#commands label{font-size:10px;color:#a9cde3;display:flex;flex-direction:column;gap:4px}#commands select{min-width:0;width:100%;padding:9px 3px;color:#fff;background:#1a3857;border:1px solid #7199b6;border-radius:5px;font-size:13px}#commands button{height:42px}#unitInfo{grid-column:1/3;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-size:11px;color:#d4e5f1}#specShortcut{grid-column:3/4;align-self:center;text-align:center;color:#ffe0a3;background:#254762;border:1px solid #648ca6;border-radius:5px;padding:2px 5px;text-decoration:none;font-size:11px;font-weight:700;white-space:nowrap}#specShortcut:focus-visible{outline:2px solid #ffe0a3;outline-offset:2px}#battleStatus{bottom:105px}#stageViewport{bottom:145px!important}</style><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script><style id="realTownModeStyle">
+.actor-status{position:fixed;z-index:4;transform:translate(-50%,-100%);width:112px;padding:4px 5px;border:1px solid #b7c9dc99;border-radius:6px;background:#081827e8;color:#fff;text-align:center;font:10px system-ui;pointer-events:none}.actor-name{font-weight:700;margin-bottom:3px}.meter{height:13px;position:relative;background:#26313f;border-radius:3px;overflow:hidden;margin-top:2px}.meter>div{height:100%;background:#40c36e}.meter.mp>div{background:#328ddd}.meter span{position:absolute;inset:0;line-height:13px;text-shadow:0 1px 2px #000;font-weight:700}#cameraTools{position:fixed;top:12px;right:12px;z-index:8;display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;max-width:80vw}#cameraTools button{padding:9px 11px;background:#102a43e8;border:1px solid #8baeca;font-size:12px;box-shadow:0 2px 8px #0008}#cameraTools button.active{background:#3476a1}#stageViewport{position:fixed;inset:0 0 94px 0;overflow:hidden}#stageViewport canvas{width:100%;height:100%}#commands{position:fixed;left:0;right:0;bottom:0;width:100%;height:94px;z-index:9;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;padding:10px 8px calc(10px + env(safe-area-inset-bottom,0px));border:0;border-top:2px solid #6d91ad;border-radius:0;background:#0e2136;box-shadow:0 -3px 16px #0007}#commands:before{display:none}#commands button{font-size:13px;text-align:center;padding:8px 2px;border:1px solid #52728c;background:#1b3855;min-width:0}#commands button:before{display:none}#cameraTools{top:8px;right:8px}#cameraTools button{padding:7px 9px}@media(max-width:380px){#commands button{font-size:12px}}#battleStatus{position:fixed;bottom:94px;left:0;right:0;z-index:9;min-height:43px;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:5px 12px;background:#0d2235ed;border-top:1px solid #426783;color:#eaf5ff;font:12px system-ui;pointer-events:none}#battleStatus .unit{display:flex;flex-direction:column;gap:2px;min-width:0}#battleStatus .unit.enemy{text-align:right}#battleStatus .values{font-size:12px;white-space:nowrap}#stageViewport{bottom:137px!important}.actor-status{display:none!important}#commands{height:105px;grid-template-columns:1.1fr 1.1fr .65fr;grid-template-rows:1fr 22px;align-items:center;padding:8px;gap:4px}#commands label{font-size:10px;color:#a9cde3;display:flex;flex-direction:column;gap:4px}#commands select{min-width:0;width:100%;padding:9px 3px;color:#fff;background:#1a3857;border:1px solid #7199b6;border-radius:5px;font-size:13px}#commands button{height:42px}#unitInfo{grid-column:1/3;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-size:11px;color:#d4e5f1}#specShortcut{grid-column:3/4;align-self:center;text-align:center;color:#ffe0a3;background:#254762;border:1px solid #648ca6;border-radius:5px;padding:2px 5px;text-decoration:none;font-size:11px;font-weight:700;white-space:nowrap}#specShortcut:focus-visible{outline:2px solid #ffe0a3;outline-offset:2px}#battleStatus{bottom:105px}#stageViewport{bottom:145px!important}
+</style><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script><style id="realTownModeStyle">
 body.town-mode > :not(#stageViewport):not(#battleLoading):not(script):not(style){display:none!important}
 body.town-mode #stageViewport{position:fixed!important;inset:0!important;width:100%!important;height:100dvh!important}
 body.town-mode #stageViewport canvas{width:100%!important;height:100%!important}
@@ -804,6 +805,25 @@ body.compact-command-dock.squad-closeup #enemySquadRibbon{display:none!important
 #dockSquadSelect,#dockSquadOpen,#squadDockIdle{display:none!important}
 @media(max-width:390px){.overviewSquadPin{width:38px;height:37px;font-size:12px}
  #overviewSquadInspector{left:5px;right:5px;padding:6px 9px}}
+/* Rendering-cost-free, semantically distinct live squad circles. */
+#squadScreenLabels .squadScreenLabel:not([hidden]){visibility:visible!important;pointer-events:auto!important;border:4px solid #39d9ff!important;background:#063b59f2!important;color:#fff!important;box-shadow:0 0 0 2px #041b2c,0 0 15px #28bfffaa!important}
+#squadScreenLabels .squadScreenLabel.enemy:not([hidden]){border-color:#ff566b!important;background:#56202bf2!important;box-shadow:0 0 0 2px #230611,0 0 17px #ff405daa!important}
+#squadScreenLabels .squadScreenLabel.selected:not([hidden]){border:5px solid #ffe179!important;box-shadow:0 0 0 3px #fff1b0,0 0 25px #ffe28b!important}
+#squadScreenLabels .squadScreenLabel.half-strength:not(.defeated):not(.selected){border-style:dashed!important;border-color:#ffc363!important}
+#squadScreenLabels .squadScreenLabel.critical-strength:not(.defeated):not(.selected){border:5px double #ff9d35!important;box-shadow:0 0 0 2px #611f09,0 0 22px #ff6d22!important}
+#squadScreenLabels .squadScreenLabel.defeated:not([hidden]){border:5px dashed #abb1bd!important;background:#242b34ed!important;color:#d5d8df!important;box-shadow:0 0 0 3px #1a1d21!important;filter:grayscale(.7)}
+#squadScreenLabels .squadScreenLabel.defeated .squadStrength{color:#e6c5c5!important}
+#squadScreenLabels .squadScreenLabel.defeated .squadMarkerIcon{display:block!important;font-size:16px!important;line-height:1!important}
+#battleSituationPause{position:fixed;z-index:87;top:calc(100px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);width:min(410px,calc(100vw - 16px));padding:10px;border:2px solid #ffd177;border-radius:13px;background:#101f32f5;color:#fff;box-shadow:0 10px 35px #000e;text-align:left;font:13px/1.4 system-ui}
+#battleSituationPause[hidden]{display:none!important}
+.battleSituationHeading{display:flex;align-items:center;justify-content:space-between;gap:6px}
+.battleSituationHeading strong{color:#fff0b2;font-size:14px}
+.battleSituationTimer{font-weight:900;color:#ffdc75;white-space:nowrap;font-variant-numeric:tabular-nums}
+.battleSituationReason{display:block;margin:6px 0 8px;color:#d6e9fc}
+.battleSituationActions{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}
+.battleSituationActions button,.battleSituationDismiss{min-height:40px;padding:6px 2px;background:#23445b;color:white;border:1px solid #78a9c5;border-radius:7px;font:700 12px system-ui}
+.battleSituationActions button.recommended{border:2px solid #fce191;background:#496438;color:#fff6d5}
+.battleSituationDismiss{width:100%;margin-top:7px;font-size:11px;min-height:32px}
 </style>
 <div id="overviewSquadHud" hidden aria-label="俯瞰戦場の味方と敵の部隊を選択">
  <svg id="overviewPinLeaders" aria-hidden="true"></svg>
@@ -1053,6 +1073,8 @@ import {ConfirmedHitOverlay,selectConfirmedHitEvents} from './src/confirmed-hit-
 import {combatEffectDirective} from './src/combat-effect-directives.js?v=4.6.16';
  import {CombatActionRuntime} from './src/combat-action-runtime.js?v=20261117-mount-interior1';
 import {createMountInteriorMask,isMountInteriorCell} from './src/mount-interior-policy.js?v=20261117-mount-interior1';
+import {selectActiveBattleEngagement} from './src/battle-engagement-camera.js?v=20261117-focus1';
+import {installBattleSituationPause} from './src/battle-situation-pause.js?v=20261117-interrupt1';
  import {COMBAT_RULES,combatJobId,availableCombatSkills} from './src/combat-action-spec.js?v=4.6.51';
  import {createCombatWorldObjectRenderer} from './src/combat-world-object-renderer.js?v=natural-size-20261116';
 import {describeDestructibleWorld} from './src/destructible-world.js?v=4.6.15';
@@ -2339,6 +2361,7 @@ let squadQuickPage='home',squadQuickPageIndex=0;
 // Manual orders and manual item use share ONE 60 combat-second cooldown per squad.
 const SQUAD_MANUAL_COMMAND_COOLDOWN=ORDER_COOLDOWN_SECONDS;
 const lastSquadOrderAt=new Map();
+let tacticalSituationOverrideGroup=null;
 function commanderOrderInterval(id){
  const cId=storyRequest?.units?.find(u=>String(u.squadId)===String(id))?.commanderId;
  const leader=storyRequest?.commanders?.find(c=>String(c.id)===String(cId));
@@ -2348,6 +2371,7 @@ function commanderOrderInterval(id){
 let lastGlobalOrderAt=null;
 function squadOrderCooldownSeconds(id){
  if(id==null)return 0;
+ if(tacticalSituationOverrideGroup!=null&&commandGroupIds(tacticalSituationOverrideGroup).includes(String(id)))return 0;
  return Math.max(0,...commandGroupIds(id).map(sid=>{const usedAt=lastSquadOrderAt.get(String(sid));return Number.isFinite(usedAt)?Math.max(0,Math.ceil(usedAt+commanderOrderInterval(sid)-elapsed)):0;}));
 }
 function canChangeSquadOrder(id){
@@ -6802,11 +6826,15 @@ function queueBattleFocusCinematic(x,z,{kind='order',priority=90,team=0,detail='
   if(stamp-lastUltimateFocusAt<6500)return false;
   lastUltimateFocusAt=stamp;
  }else if(kind==='result'){
-  if(stamp-lastAutomaticFocusAt<6500)return false;
+  if(stamp-lastAutomaticFocusAt<1200)return false;
   lastAutomaticFocusAt=stamp;
  }
  const entry={x,z,kind,priority,team,detail,focusUnitId,focusY};
  if(commanderCinematic){
+  if((kind==='result'||kind==='failure')&&priority>commanderCinematic.priority){
+   commanderCinematic=null;cinematicFocusQueue.length=0;
+   return startBattleFocusCinematic(entry);
+  }
   if(cinematicFocusQueue.length>=12||
      (automatic&&cinematicFocusQueue.some(item=>item.kind===kind)))return false;
   cinematicFocusQueue.push(entry);
@@ -6830,14 +6858,14 @@ function startBattleFocusCinematic({x,z,priority=90,kind='order',team=0,focusUni
  const roster=massSim?.units??actors;
  let focusUnit=focusUnitId==null?null:roster.find(u=>u.id===focusUnitId&&u.team===team&&
   u.hp>0&&u.alive!==false&&(kind==='order'||!u.isStrategist));
- if(!focusUnit&&kind!=='explore'){
+ if(!focusUnit&&kind!=='explore'&&kind!=='result'&&kind!=='failure'){
   const nearby=closestAliveBattleFocus(roster,x,z,{
    team,gridOffset:massSim?6:0,cellSize:massSim?CELL:1,maxDistance:20*CELL
   });
   focusUnit=nearby?.unit??null;
  }
  const actual=focusUnit?cinematicHumanWorldPoint(focusUnit):null;
- if(kind!=='explore'&&!actual)return false;
+ if(kind!=='explore'&&kind!=='result'&&kind!=='failure'&&!actual)return false;
  const closeTarget=actual||new THREE.Vector3(x,Number.isFinite(focusY)?focusY:terrainY(x,z)+1.4,z);
  const center=(WORLD_SIZE/2-6)*CELL;
  const overTarget=new THREE.Vector3(center,terrainY(center,center)+1,center);
@@ -6865,10 +6893,14 @@ function beginSquadFocusCinematic(squadId,team=0,kind='order'){
  const detailed=members.find(u=>massSim?actors.some(a=>a.massUnitId===u.id&&a.root.visible):
   u.root?.visible);
  const unit=target?.unit||detailed||members[0];
- if(!unit)return false;
+ if(!unit){
+  const location=squadMarkers?.get(squadKey(team,String(squadId)))?.userData?.visualTarget;
+  return (kind==='result'||kind==='failure')&&location?
+   queueBattleFocusCinematic(location.x,location.z,{kind,team,focusY:location.y,priority:160}):false;
+ }
  const point=target?.point||cinematicHumanWorldPoint(unit);
  return point?queueBattleFocusCinematic(point.x,point.z,{
-  kind,team,focusUnitId:unit.id,focusY:point.y,priority:kind==='order'?110:100
+  kind,team,focusUnitId:unit.id,focusY:point.y,priority:kind==='order'?110:(kind==='result'||kind==='failure')?160:100
  }):false;
 }
 function beginCommanderCinematic(squadId){
@@ -6958,6 +6990,29 @@ function battleTerritoryWorld(){
  return massSim?.territoryWorld??{width:WORLD_SIZE,height:WORLD_SIZE,
   riverXAt:z=>stageHasRiver?riverAt(z):WORLD_SIZE/2};
 }
+const battleSituationPause=installBattleSituationPause({
+ getMembers:id=>{
+  const groupIds=new Set(commandGroupIds(id).map(String));
+  return squadRoster.filter(u=>u.team===0&&groupIds.has(String(u.squadId)));
+ },
+ getSquadName:id=>commandGroupName(id),
+ canInterrupt:()=>battleReady&&!finished&&!paused&&!commandOverviewLocked&&
+  !battleCeremony.locked&&!tacticalPlanningActive,
+ getUnavailableReason:id=>squadCommanderUnavailableReason(id),
+ getWasPaused:()=>paused,
+ pauseBattle:value=>setBattlePaused(value),
+ issueGroupOrder:(id,mode)=>{
+  // Subdivisions are selectable for inspection, not independently ordered.
+  const previous=selectedSquadId;
+  selectedSquadId=String(id);tacticalSituationOverrideGroup=String(id);
+  try{return issueSquadOrder(mode);}
+  finally{selectedSquadId=previous;tacticalSituationOverrideGroup=null;}
+ }
+});
+window.getBattleSituationPauseQA=()=>({
+ active:battleSituationPause.active,remaining:battleSituationPause.remaining,
+ squadId:battleSituationPause.squadId,recommended:battleSituationPause.recommended
+});
 const battleTacticalUi=installBattleTacticalUI({
  getUnits:()=>squadRoster,
  getSquadIds:()=>squadIds,
@@ -6973,6 +7028,12 @@ const battleTacticalUi=installBattleTacticalUI({
  issueOrder:(id,mode)=>{selectedSquadId=String(id);return queueDirectOrder(mode,id);},
  openSquad:id=>openSquadTactics(id),
  closeSquad:()=>closeSquadTactics(),
+ onSituationChange:(id,event)=>{
+  if(event.severity==='info')return false;
+  const accepted=battleSituationPause.trigger(id,event);
+  if(accepted)beginSquadFocusCinematic(id,0,'result');
+  return accepted;
+ },
  isReady:()=>battleReady&&!finished
 });
 let pendingDirectOrder=null;
@@ -7895,12 +7956,32 @@ missionCheckpointHud.style.cssText='max-width:100%;overflow:hidden;text-overflow
 missionCheckpointHud.textContent='📍 作戦チェックポイント：発令待ち';
 // Objective progress stays visible even when optional FPS diagnostics are hidden.
 $('topStructureSlot').appendChild(missionCheckpointHud);
+const reportedCheckpointOutcomes=new Set();
 const objectiveCheckpoints=createBattleObjectiveCheckpoints({
  getUnits:()=>squadRoster,
  getObjects:()=>massSim?.actions.objects||skirmishActions?.objects||[],
  getSquadCenter:id=>squadCenter(id,0),
  onReport:message=>log(message),
- onChange:message=>{missionCheckpointHud.textContent=message||'📍 作戦チェックポイント：発令待ち';}
+ onChange:(message,rows)=>{
+  missionCheckpointHud.textContent=message||'📍 作戦チェックポイント：発令待ち';
+  for(const row of rows){
+   if(!['達成','地点到着','失敗'].includes(row.status)||reportedCheckpointOutcomes.has(row.id))continue;
+   reportedCheckpointOutcomes.add(row.id);
+   const id=row.squadIds[0]??squadIds.find(x=>
+    normalizeArmyGroup(armyGroupBySquad[x])===Number(row.groupId));
+   if(id==null)continue;
+   const failed=row.status==='失敗';
+   // Mission outcomes win the camera queue, not mere order confirmations.
+   beginSquadFocusCinematic(String(id),0,failed?'failure':'result');
+   battleDialogue.push({
+    key:'checkpoint-outcome:'+row.id,speaker:'伝令',
+    kind:failed?'warning':'success',priority:failed?99:97,forceDisplay:true,
+    squadId:String(id),focus:false,
+    text:'第'+row.groupId+'班：'+row.label+' '+(failed?'作戦失敗':'作戦成功')+'。'+
+     (failed?'担当部隊が全滅しました':'チェックポイント到達')
+   });
+  }
+ }
 });
 window.getBattleObjectiveCheckpoints=()=>objectiveCheckpoints.snapshot();
 let centralStrategyPreviousPause=null;
@@ -9036,8 +9117,9 @@ function updateSquadMarkerPositions(dt){
   for(const [id,marker] of squadMarkers){
    const sum=sums.get(id);marker.visible=Boolean(sum);
    if(!sum)continue;
-   const label=marker.userData.screenLabel,share=sum.n/Math.max(1,sum.total);
-   const status=sum.n===0?'☠ 全滅':share<=.25?'🆘 壊滅寸前':share<=.5?'⚠ 半数以下':'';
+   const label=marker.userData.screenLabel,share=sum.n/Math.max(1,sum.total),
+    hpShare=sum.hp/Math.max(1,sum.maxHp);
+   const status=sum.n===0?'☠ 全滅':share<=.25||hpShare<=.25?'🆘 壊滅寸前':share<=.5||hpShare<=.5?'⚠ 半数以下':'';
    const previousAlive=marker.userData.previousAlive,previousHp=marker.userData.previousHp;
    marker.userData.previousAlive=sum.n;marker.userData.previousHp=sum.hp;
    if(previousAlive>0&&sum.n===0){
@@ -9071,8 +9153,8 @@ function updateSquadMarkerPositions(dt){
    const shortOrder=commanderReason?'☠ 指揮不能':sum.n===0?'戦闘不能':intent.order.replace(/^号令：/,'').slice(0,7);
    if(label.userDataCurrentOrder.textContent!==shortOrder)label.userDataCurrentOrder.textContent=shortOrder;
    if(label.userDataObjective.textContent!==intent.purpose)label.userDataObjective.textContent=intent.purpose;
-   label.classList.toggle('half-strength',share<=.5&&share>.25);
-   label.classList.toggle('critical-strength',share<=.25);
+   label.classList.toggle('half-strength',(share<=.5||hpShare<=.5)&&share>.25&&hpShare>.25);
+   label.classList.toggle('critical-strength',share<=.25||hpShare<=.25);
    label.classList.toggle('defeated',sum.n===0);
    label.userDataMarkerIcon.textContent=sum.n===0?'☠':'';
    label.title='残存 '+sum.n+'/'+sum.total+'名（戦死 '+(sum.total-sum.n)+'名）';
@@ -9320,7 +9402,10 @@ $('enemyCasualties').textContent=Math.max(0,initialCounts[1]-aliveCounts[1])+'/'
  for(const a of actors)a.root.userData.ring.material.color.setHex(a===selected?0xffdf6e:a.team===0?0x52cfff:0xff6b72)
 }
 $('strategy').onchange=e=>{e.target.value=globalOrder;};
-$('unitOrder').onchange=e=>{if(selected&&selected.team===0){selected.order=e.target.value==='inherit'?null:e.target.value;if(massSim){massSim.units[selected.massUnitId].order=selected.order;massWorker?.setOrder(selected.massUnitId,selected.order)}log(selected.job.name+'：個別命令 '+e.target.selectedOptions[0].text)}};
+// Per-soldier commands are retired. Subdivisions are selectable only;
+// their commander group owns every order (including emergency recommendations).
+$('unitOrder').disabled=true;
+$('unitOrder').onchange=e=>{e.target.value='inherit';};
 $('menuToggle').onclick=()=>{const panel=$('commands');const hidden=panel.style.display==='none';panel.style.display=hidden?'grid':'none';$('menuToggle').textContent=hidden?'✕ 閉じる':'☰ メニュー'};
 $('soundToggle').onclick=()=>{const enabled=battleAudio.toggle();$('soundToggle').textContent=enabled?'♪ BGM読み込み中':'♪ 音OFF';$('topBgm').textContent=enabled?'♪ BGM ON':'♪ BGM OFF';$('topBgm').setAttribute('aria-pressed',String(enabled))};
 $('topBgm').onclick=()=>$('soundToggle').click();
@@ -9333,6 +9418,7 @@ for(const [settingId,buttonId] of topButtonPreferences){
  setting.addEventListener('change',apply);apply();
 }
 function setBattlePaused(next){
+ if(!next&&battleSituationPause.active)return; // The 30-second decision is authoritative.
  if(commandOverviewLocked&&!next)return; // Selection cannot unfreeze combat.
  paused=Boolean(next);massWorker?.setPaused(paused);
  $('pause').textContent=paused?'再開':'一時停止';updateUI();
@@ -9400,6 +9486,32 @@ function followSelectedCommander(id=trackedAllySquadId??squadIds[0],team=0){
  setCameraActive('camFollow');
  return true;
 }
+// Ordinary battle camera follows an ACTIVE allied engagement rather than
+// a stationary rear commander. Spatial contacts are scanned at ~1Hz.
+let automaticContactActorId=null,contactSquadId=null,contactSwitchAt=-Infinity;
+let contactScanAt=-Infinity,manualCameraFocusUntil=0;
+function updateActiveCombatCamera(){
+ if(TOWN_MODE||!battleReady||finished||paused||battleViewMode!=='commander'||
+  !followCamera||commandOverviewLocked||commanderCinematic||battleCeremony.locked||
+  performance.now()<manualCameraFocusUntil)return;
+ const now=performance.now();
+ if(now-contactScanAt<1100)return;
+ contactScanAt=now;
+ const contact=selectActiveBattleEngagement(massSim?.units??actors,{
+  mass:Boolean(massSim),range:massSim?8:12,preferSquadId:contactSquadId
+ });
+ if(!contact)return;
+ if(contactSquadId!==contact.squadId&&now-contactSwitchAt<3900)return;
+ if(contactSquadId!==contact.squadId)contactSwitchAt=now;
+ contactSquadId=contact.squadId;
+ trackedAllySquadId=contactSquadId;
+ if(massSim){focusedHumanUnitId=contact.unitId;automaticContactActorId=null;}
+ else automaticContactActorId=contact.unitId;
+}
+window.getActiveBattleCameraQA=()=>({
+ focusSquadId:contactSquadId,actorId:massSim?focusedHumanUnitId:automaticContactActorId,
+ mode:battleViewMode,cinematic:commanderCinematic?.kind??null
+});
 const openingOverviewCenter=(WORLD_SIZE/2-6)*CELL;
 if(TOWN_MODE)setBattleCamera(cameraHome,cameraCloseOffset);
 else followSelectedCommander();
@@ -9410,7 +9522,7 @@ $('camOverview').onclick=()=>{
  setBattleCamera(new THREE.Vector3(openingOverviewCenter,terrainY(openingOverviewCenter,openingOverviewCenter),openingOverviewCenter),cameraOverviewOffset);
  setCameraActive('camOverview');
 };
-$('camFollow').onclick=()=>{if(!commandOverviewLocked)followSelectedCommander();};
+$('camFollow').onclick=()=>{if(!commandOverviewLocked){followSelectedCommander();manualCameraFocusUntil=performance.now()+8000;}};
 $('camReset').onclick=()=>{
  if(commandOverviewLocked)return;
  if(TOWN_MODE)setBattleCamera(cameraHome,cameraCloseOffset);
@@ -9991,6 +10103,7 @@ function animate(){
  const cpuFrameStart=performance.now();
  requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),.05);
  const now=performance.now(),bankDelta=Math.max(0,(now-tacticalFrameAt)/1000);tacticalFrameAt=now;
+ battleSituationPause.update(bankDelta);
  if(tacticalPlanningActive&&!finished){
   tacticalBankRemaining=Math.max(0,tacticalBankRemaining-bankDelta);refreshTacticalBankLabel();
   if(tacticalBankRemaining<=0){tacticalPlanningActive=false;if(!commandOverviewLocked)setBattlePaused(false);}
@@ -10203,13 +10316,16 @@ function animate(){
    }else if(visual.update){if(a.mixer)a.mixer.update(visual.delta*cinematicPlaybackScale);else updateBattlePose(a,visual.delta*cinematicPlaybackScale)}
   }
   cpuPhaseNow=performance.now();battleCpuProfiler.record('rig',cpuPhaseNow-cpuPhaseAt);cpuPhaseAt=cpuPhaseNow;
+  updateActiveCombatCamera();
   if(followCamera){
    let tracked=focusedHumanUnitId!=null?massSim?.units?.find(u=>u.id===focusedHumanUnitId):null;
    if(massSim&&battleViewMode==='commander'&&(!tracked?.alive||tracked.hp<=0)){
     const replacement=squadCommandFocus(trackedAllySquadId);
     tracked=replacement?.unit??null;focusedHumanUnitId=tracked?.id??null;
    }
-   const followed=automaticFloorGuide||selected||actors[0];
+   const followed=automaticFloorGuide||
+    (automaticContactActorId==null?null:actors.find(a=>a.id===automaticContactActorId&&a.hp>0))||
+    selected||actors[0];
    // In 50v50 the authoritative grid advances at 20Hz, while the visible
    // outfit/rig is eased between ticks at display frequency. Following the
    // discrete root caused a 20Hz rooftop/background judder even at stable FPS.
