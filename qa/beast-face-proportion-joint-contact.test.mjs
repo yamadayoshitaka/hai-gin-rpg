@@ -65,11 +65,26 @@ test('feline joints use one continuous, three-bone shell through motion',()=>{
    const body=node(model,'species-shoulder-rib-pelvis-'+id);
    assert.equal(collar.parent,p.head);
    assert.equal(body.userData.felineMusclesSculptedIntoTrunk,true);
+   assert.equal(body.userData.closedAnatomicalHull,true);
+   assert.ok(body.userData.anatomicalEndCaps>=48,
+    'feline rib cage must be a real closed volume, not a hollow tube');
    const joints=limbNames.map(name=>{
     const skin=node(model,'feline-continuous-skin-'+name);
     assert.ok(skin.isSkinnedMesh&&skin.userData.felineContinuousSurface);
     assert.equal(skin.parent,p['leg'+name]);
     assert.equal(skin.skeleton.bones.length,3);
+    assert.equal(skin.userData.felineSealedTop,true);
+    assert.equal(skin.userData.felineSealedBottom,true);
+    assert.equal(skin.userData.felineRootBuriedInTorso,true);
+    const triangles=skin.geometry.index.count/3;
+    const sections=12,bands=(sections-1)*4,radial=32;
+    assert.equal(triangles,bands*radial*2+radial*2,
+      'two real end-cap fans must close one continuous limb shell');
+    const pos=skin.geometry.getAttribute('position');
+    const rootCentre=pos.count-2,pawCentre=pos.count-1;
+    assert.ok(pos.getY(rootCentre)>.70);
+    assert.ok(pos.getY(pawCentre)<-.58);
+    assert.equal(skin.userData.felineEndCapTriangles,radial*2);
     assert.equal(skin.geometry.groups.length,0);
     const weights=skin.geometry.getAttribute('skinWeight');
     const indices=skin.geometry.getAttribute('skinIndex');
