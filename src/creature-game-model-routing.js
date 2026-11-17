@@ -31,12 +31,18 @@ export const GAME_MONSTER_MODEL_REGISTRY=Object.freeze(Object.fromEntries(
   gameplayFallback:'procedural:'+spec.id
  })])
 ));
+// Nonhuman wave remains separate from the independent humanoid cosplay
+// workstream. Protected original wolf/panther sources are NEVER queued.
 export const MONSTER_REFRESH_PRIORITY=Object.freeze([
  'm002','m003','m004','m007','m008','m009','m010',
  ...MONSTER_CATALOG.map(s=>s.id).filter(id=>
+  !humanoids.has(id)&&
   !['m001','m002','m003','m004','m005','m006',
      'm007','m008','m009','m010'].includes(id))
 ]);
+export const HUMANOID_MONSTER_REVIEW_QUEUE=Object.freeze(
+ HUMAN_MONSTER_IDS.filter(id=>!!GAME_MONSTER_MODEL_REGISTRY[id])
+);
 export const registeredMonsterModel=id=>
  GAME_MONSTER_MODEL_REGISTRY[baseMonsterId(id)]||null;
 
