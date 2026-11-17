@@ -15,10 +15,10 @@
       "reason": "Replaced by FF15-target split quality lanes, historical records retained"
     },
     "world": {
-      "enabled": false,
-      "retiredFromCenter": true,
-      "retiredAt": "2026-11-17",
-      "reason": "Replaced by FF15-target split quality lanes, historical records retained"
+      "enabled": true,
+      "reinstatedAt": "2026-11-17",
+      "workflow": "world-six-lane.yml",
+      "reason": "Owner requested object quality six-lane batch restored; human/monster legacy batches remain off"
     },
     "anime": {
       "enabled": true,
