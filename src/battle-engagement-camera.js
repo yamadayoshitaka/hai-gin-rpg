@@ -5,7 +5,7 @@
  */
 const alive=u=>u&&u.alive!==false&&!u.defeated&&Number(u.hp)>0&&!u.isStrategist;
 const coord=(u,axis,mass)=>{
- const v=mass?u?.[axis]:u?.cell?.[axis]??u?.root?.position?.[axis]??u?.[axis];
+ const v=mass?u?.[axis]:u?.root?.position?.[axis]??u?.cell?.[axis]??u?.[axis];
  return Number.isFinite(v)?v:null;
 };
 export function selectActiveBattleEngagement(units,{mass=false,range=mass?7:12,preferSquadId=null}={}){
