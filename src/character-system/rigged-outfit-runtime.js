@@ -242,6 +242,7 @@ export function skinOutfitDetails(details,dressed){
     const skinned=new THREE.SkinnedMesh(geometry,mesh.material);
     skinned.name=mesh.name;skinned.position.copy(mesh.position);skinned.quaternion.copy(mesh.quaternion);skinned.scale.copy(mesh.scale);
     skinned.castShadow=mesh.castShadow;skinned.receiveShadow=mesh.receiveShadow;skinned.frustumCulled=false;
+    skinned.userData={...mesh.userData}; // Preserve shoulder-cape geometry/anchor diagnostics
     const parent=mesh.parent;parent.add(skinned);parent.remove(mesh);
     skinned.updateMatrixWorld(true);skinned.bind(skeleton,skinned.matrixWorld.clone());
     weightedVertices+=positions.count;skinnedPieces++;
