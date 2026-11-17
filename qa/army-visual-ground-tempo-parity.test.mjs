@@ -49,7 +49,7 @@ assert.match(atlas,/maxY-minY<tileSize\*\.36/,
  'short torso-only/legless photos are rejected at startup');
 assert.match(game,/const seat=u\.mountId\?riderElevation\(u,creatureVisualTime\):0;/,
  'mount riders use the same current-frame seat as the 50v50 horse model');
-assert.match(game,/const corrected=floor\+seat\+\(u\.mountId\?0:\.018\);/,
+assert.match(game,/const corrected=anchoredStandingY\(floor,seat\);/,
  'foot Y is clamped after worker interpolation, not before it');
 assert.match(game,/if\(u\.mountId\|\|out\.y<corrected\)/,
  'mount height is authoritative, not a potentially stale smoothed frame');
