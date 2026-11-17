@@ -1053,6 +1053,7 @@ import {skirmishTravelMotion,measureSkirmishDashCoverage} from './src/skirmish-d
 import {selectMassBattleMotion} from './src/character-system/battle-motion-policy.js?v=4.6.36';
 import {sampleMassVisualMotion} from './src/mass-visual-motion.js?v=4.6.36';
 import {createRidingPoseController,ridingStyleForCreature} from './src/character-system/riding-pose.js?v=20261117-three-seats-v3';
+import {createBattleUpperBodyAccent} from './src/character-system/battle-upper-body-accent.js?v=20261117-realaction1';
 import {randomJobRoster} from './src/tactical-roster.js?v=3.11.0';
 import {JOBS as MASS_JOBS} from './src/mass-battle-sim.js?v=4.6.15';
 import {MassBattleGridSimulation} from './src/mass-battle-grid-sim.js?v=20261117-mount-interior1';
@@ -10246,7 +10247,7 @@ function animate(){
     if(a.crowdSampling)continue;
     // Restore the unmodified clip pose before sampling the next frame. This
     // also cleanly ends the seated pose on dismount without a T-pose flash.
-    if(visual.update)a._ridingPose?.restore();
+    if(visual.update){a._ridingPose?.restore();a._upperBodyAccent?.restore();}
     if(finished){
      // The simulation is frozen but the surviving soldier's IDLE BREATHING
      // and blinking clip continues after the final battle. Don't leave the
@@ -10286,7 +10287,33 @@ function animate(){
        (a.hitPoseUntil&&elapsed<a.hitPoseUntil)){}
      else requestMotion(a,'idle');
     }
-    if(visual.update){a.character.update(paused&&!finished?0:visual.delta*cinematicPlaybackScale);a.masterHead?.update(visual.delta);applyCreatureRidingPose(a);a.outfit?.sync()}
+    if(visual.update){
+      a.character.update(paused&&!finished?0:visual.delta*cinematicPlaybackScale);
+      a.masterHead?.update(visual.delta);
+      applyCreatureRidingPose(a);
+      // A moving fighter keeps their distance-synchronised feet; the arms
+      // and chest still read as a strike, spell or hit without another mesh.
+      const moving=massSim?Boolean(a.massAnimation?.moving):
+       Boolean(a.nextCell||a.lastMovedAt!=null&&elapsed-a.lastMovedAt<.34);
+      const hit=massSim?Boolean(massUnit?.hitFlash>0):
+       Boolean(a.hitPoseUntil&&elapsed<a.hitPoseUntil);
+      const casting=massSim?massUnit?.action==='skill':false;
+      const attacking=massSim?massUnit?.action==='attack':
+       Boolean(a.attackPoseUntil&&elapsed<a.attackPoseUntil);
+      const accentAction=hit?'hit':casting?'skill':attacking?'attack':null;
+      if(moving&&accentAction&&!a.mountId&&!finished&&!paused){
+       if(!a._upperBodyAccent)
+        a._upperBodyAccent=createBattleUpperBodyAccent(a.character.model);
+       const rawProgress=massSim?Number(massUnit?.attackElapsed??0)/.65:
+        hit?1-Math.max(0,a.hitPoseUntil-elapsed)/.5:
+        1-Math.max(0,a.attackPoseUntil-elapsed)/.6;
+       a._upperBodyAccent.apply({
+        action:accentAction,progress:Math.max(.08,Math.min(.92,rawProgress)),
+        moving:true,mounted:false
+       });
+      }
+      a.outfit?.sync();
+     }
     if(skirmishVisual){
      // The authoritative actor root remains on the grid for AI/collisions.
      // Only its visible rig is eased between discrete 50ms simulation ticks.
