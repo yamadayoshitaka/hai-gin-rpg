@@ -155,7 +155,7 @@ function textureGeometry(geometry){
 
 // Adds independent helmet, cuirass, pauldron, gauntlet, thigh, knee, greave
 // and boot objects. They can be individually hidden/replaced by equipment slot.
-export async function attachSegmentedArmor({root,dressed,sex,textures,characterModel=null,rarity='N',loadModel=loadArmor}){
+export async function attachSegmentedArmor({root,dressed,sex,textures,characterModel=null,rarity='N',quality='preview',loadModel=loadArmor}){
   if(!root||!dressed)throw Error('鎧の人物ルートと骨格が必要です');
   const bones=boneMap(dressed),pelvis=bonePos(bones,'pelvis'),head=bonePos(bones,'head');
   // The stage is a child of root, so both its origin and scale must use
@@ -394,7 +394,7 @@ export async function attachSegmentedArmor({root,dressed,sex,textures,characterM
   }
   root.remove(stage);
   const fittedShoulders=createAnatomicalShoulderCaps({
-    root,dressed,bones,metal:matMetal,edge:matTrim,quality:'preview'
+    root,dressed,bones,metal:matMetal,edge:matTrim,quality
   });
   created.push(...fittedShoulders.objects);
   // Independent non-destructive offsets. The heraldry appended later shares
