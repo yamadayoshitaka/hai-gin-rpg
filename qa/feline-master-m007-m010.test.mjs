@@ -116,7 +116,7 @@ test('four actual 3D feline sculpts have narrow heads and continuous cat anatomy
     const skin=get(model,'feline-continuous-skin-'+limb);
     assert.ok(skin?.isSkinnedMesh&&skin.userData.felineContinuousSurface,
       'cat must have one articulated anatomical shell: '+id+' '+limb);
-    assert.equal(skin.skeleton.bones.length,3);
+    assert.equal(skin.skeleton.bones.length,4);
     assert.ok(p['toe'+limb]?.userData.felinePad,
       'paws must have articulated digitigrade toe pads: '+id+' '+limb);
    }
