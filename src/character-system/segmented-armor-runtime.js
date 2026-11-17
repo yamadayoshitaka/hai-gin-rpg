@@ -51,8 +51,8 @@ function desiredAnchor(slot,side,bones){
       // Center each pauldron over the clavicle/upper-arm junction.
       // The pad remains bone-mounted and follows the actor's arm animation.
       return bonePos(bones,`upperarm${suffix}`)
-        .lerp(bonePos(bones,`clavicle${suffix}`),.14)
-        .add(new THREE.Vector3(0,.012,0));
+        .lerp(bonePos(bones,`clavicle${suffix}`),.28)
+        .add(new THREE.Vector3(0,.024,0));
     }
     // Align the metal cuff behind the actual knuckles. The former palm-
     // centered bucket concealed every curling finger and left a black hole
@@ -102,8 +102,8 @@ export function createAnatomicalShoulderCaps({root,dressed,bones,metal,edge,qual
   for(const side of ['l','r']){
     const sign=side==='l'?-1:1,bone=bones.get('upperarm_'+side);
     const anchor=desiredAnchor('shoulder',side,bones)
-      .addScaledVector(lateral,sign*radius*.10)
-      .addScaledVector(forward,radius*.16);
+      .addScaledVector(lateral,sign*radius*.06)
+      .addScaledVector(forward,radius*.34);
     anchors[side]=anchor.toArray();
     const add=(name,geometry,material,raise=0)=>{
       const mesh=new THREE.Mesh(geometry,material);
@@ -114,7 +114,7 @@ export function createAnatomicalShoulderCaps({root,dressed,bones,metal,edge,qual
       mesh.castShadow=true;mesh.receiveShadow=true;mesh.frustumCulled=false;
       mesh.userData={equipmentClass:'armor',equipmentSlot:'shoulder',
         equipmentMaterial:name.includes('rim')?'metal-trim':'plate-steel',
-        equipmentModel:'anatomical-pauldron-v77',
+        equipmentModel:'anatomical-pauldron-v78',
         attachmentSide:side,attachedJoint:'upperarm_'+side,
         originalRearSleeveSuppressed:true};
       root.updateMatrixWorld(true);
@@ -123,19 +123,19 @@ export function createAnatomicalShoulderCaps({root,dressed,bones,metal,edge,qual
       return mesh;
     };
     const cap=add('armor-shoulder-fitted-cap-'+side,
-      new THREE.SphereGeometry(radius,radial,segments,0,Math.PI*2,0,Math.PI*.67),
+      new THREE.SphereGeometry(radius,radial,segments,0,Math.PI*2,0,Math.PI*.59),
       metal,-radius*.03);
-    cap.scale.multiply(new THREE.Vector3(1.06,.77,1.04));
+    cap.scale.multiply(new THREE.Vector3(1.04,.78,1.00));
     // A narrow fitted lower lip creates the layered-steel silhouette without
     // the old whole-arm cylinder or a second large, hollow shoulder block.
     const rim=add('armor-shoulder-fitted-rim-'+side,
       new THREE.SphereGeometry(radius*1.016,radial,quality==='battle'?3:5,
-        0,Math.PI*2,Math.PI*.55,Math.PI*.12),edge,-radius*.03);
+        0,Math.PI*2,Math.PI*.49,Math.PI*.11),edge,-radius*.03);
     rim.scale.copy(cap.scale);
   }
   root.updateMatrixWorld(true);
   return {objects:created,anchors,radius,
-    diagnostics:{kind:'bone-mounted-curved-shoulder-v77',sideCounts:{l:2,r:2},
+    diagnostics:{kind:'bone-mounted-curved-shoulder-v78',sideCounts:{l:2,r:2},
       oldSourceRigidShoulderTubesVisible:0,shoulderDistance:span}};
 }
 
@@ -427,7 +427,7 @@ export async function attachSegmentedArmor({root,dressed,sex,textures,characterM
     root.updateMatrixWorld(true);
     return {...depthOffsets};
   }
-  root.userData.armor={variant:'plate',pieceCount:created.length,sourceTrouserLegMeshesSkipped,sourceBootShaftsSkipped,suppressedRigidShoulderMeshes,scale,slots:[...centers.keys()],helmetFit,partAxes,legSideCounts,shoulderSideCounts:fittedShoulders.diagnostics.sideCounts,shoulderPlacement:'bone-mounted-curved-shoulder-v77'};
+  root.userData.armor={variant:'plate',pieceCount:created.length,sourceTrouserLegMeshesSkipped,sourceBootShaftsSkipped,suppressedRigidShoulderMeshes,scale,slots:[...centers.keys()],helmetFit,partAxes,legSideCounts,shoulderSideCounts:fittedShoulders.diagnostics.sideCounts,shoulderPlacement:'bone-mounted-curved-shoulder-v78'};
   return {objects:created,materials,setDepthOffsets,depthOffsets,
     diagnostics:{armorPieces:created.length,sourceTrouserLegMeshesSkipped,sourceBootShaftsSkipped,armorScale:scale,armorSlots:[...centers.keys()],helmetFit,legSideCounts,
       partAxes,shoulderSideCounts:fittedShoulders.diagnostics.sideCounts,
