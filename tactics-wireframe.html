@@ -6806,11 +6806,15 @@ function queueBattleFocusCinematic(x,z,{kind='order',priority=90,team=0,detail='
   if(stamp-lastUltimateFocusAt<6500)return false;
   lastUltimateFocusAt=stamp;
  }else if(kind==='result'){
-  if(stamp-lastAutomaticFocusAt<6500)return false;
+  if(stamp-lastAutomaticFocusAt<1200)return false;
   lastAutomaticFocusAt=stamp;
  }
  const entry={x,z,kind,priority,team,detail,focusUnitId,focusY};
  if(commanderCinematic){
+  if((kind==='result'||kind==='failure')&&priority>commanderCinematic.priority){
+   commanderCinematic=null;cinematicFocusQueue.length=0;
+   return startBattleFocusCinematic(entry);
+  }
   if(cinematicFocusQueue.length>=12||
      (automatic&&cinematicFocusQueue.some(item=>item.kind===kind)))return false;
   cinematicFocusQueue.push(entry);
@@ -6834,14 +6838,14 @@ function startBattleFocusCinematic({x,z,priority=90,kind='order',team=0,focusUni
  const roster=massSim?.units??actors;
  let focusUnit=focusUnitId==null?null:roster.find(u=>u.id===focusUnitId&&u.team===team&&
   u.hp>0&&u.alive!==false&&(kind==='order'||!u.isStrategist));
- if(!focusUnit&&kind!=='explore'){
+ if(!focusUnit&&kind!=='explore'&&kind!=='result'&&kind!=='failure'){
   const nearby=closestAliveBattleFocus(roster,x,z,{
    team,gridOffset:massSim?6:0,cellSize:massSim?CELL:1,maxDistance:20*CELL
   });
   focusUnit=nearby?.unit??null;
  }
  const actual=focusUnit?cinematicHumanWorldPoint(focusUnit):null;
- if(kind!=='explore'&&!actual)return false;
+ if(kind!=='explore'&&kind!=='result'&&kind!=='failure'&&!actual)return false;
  const closeTarget=actual||new THREE.Vector3(x,Number.isFinite(focusY)?focusY:terrainY(x,z)+1.4,z);
  const center=(WORLD_SIZE/2-6)*CELL;
  const overTarget=new THREE.Vector3(center,terrainY(center,center)+1,center);
@@ -6869,10 +6873,14 @@ function beginSquadFocusCinematic(squadId,team=0,kind='order'){
  const detailed=members.find(u=>massSim?actors.some(a=>a.massUnitId===u.id&&a.root.visible):
   u.root?.visible);
  const unit=target?.unit||detailed||members[0];
- if(!unit)return false;
+ if(!unit){
+  const location=squadMarkers?.get(squadKey(team,String(squadId)))?.userData?.visualTarget;
+  return (kind==='result'||kind==='failure')&&location?
+   queueBattleFocusCinematic(location.x,location.z,{kind,team,focusY:location.y,priority:160}):false;
+ }
  const point=target?.point||cinematicHumanWorldPoint(unit);
  return point?queueBattleFocusCinematic(point.x,point.z,{
-  kind,team,focusUnitId:unit.id,focusY:point.y,priority:kind==='order'?110:100
+  kind,team,focusUnitId:unit.id,focusY:point.y,priority:kind==='order'?110:(kind==='result'||kind==='failure')?160:100
  }):false;
 }
 function beginCommanderCinematic(squadId){
