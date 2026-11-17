@@ -5,7 +5,7 @@
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {clone} from 'three/addons/utils/SkeletonUtils.js';
-import {JOBS,outfitStyle,loadPhotoMaterials,createDetailedOutfit} from '../outfit-maintenance-model.js?v=20261117-rogue-backpanel2';
+import {JOBS,outfitStyle,loadPhotoMaterials,createDetailedOutfit} from '../outfit-maintenance-model.js?v=20261117-alljobs-back3';
 import {EQUIPMENT_TYPES,equipmentForJob} from './equipment-catalog.js?v=4.4.41';
 import {attachSegmentedArmor} from './segmented-armor-runtime.js?v=4.5.2';
 import {consolidateBattleArmor} from './armor-batch-runtime.js?v=4.5.0';
@@ -15,6 +15,7 @@ import {attachArmorHeraldry} from './armor-heraldry-runtime.js?v=4.4.61';
 import {attachFittedCloth} from './fitted-cloth-runtime.js?v=4.5.2';
 import {outfitSurfaceRole,cleanOutfitPhotoKind} from './outfit-surface-policy.js?v=4.4.43';
 import {shouldClothLineBattleTorso,applyBattleTorsoLining} from './battle-torso-lining.js?v=20261116-torso1';
+import {battleClosedBackCoverage} from './battle-visual-pipeline.js';
 import {fitEyebrowMeshesToFace} from './eyebrow-fit-runtime.js?v=4.4.61';
 import {attachRealisticFace} from './facial-blink-runtime.js?v=1';
 import {sourceGripFromBounds} from './equipment-grip-policy.js?v=4.4.41';
@@ -672,22 +673,24 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
   // Only preserve the entire bare torso when no opaque under-vest exists.
   // With linen lining, surfaceCheck clips skin hidden by actual clothing;
   // always preserving it made bare shoulder blades poke through moving coats.
-  const thiefHasClosedBack=quality==='battle'&&jobId==='job06'&&
-    !!detail.getObjectByName('complete-back-tunic-lining');
-  const battleBackUnderlay=quality==='battle'&&opaqueTorsoLiningMaterials===0&&
-    !thiefHasClosedBack?['torso']:[];
+  // All jobs include the actual rigged complete-back-tunic-lining mesh,
+  // not only thieves. Keep donor torso visible only if lining was not proved.
+  const closedBack=battleClosedBackCoverage({
+   quality,panel:detail.getObjectByName('complete-back-tunic-lining'),
+   opaqueLining:opaqueTorsoLiningMaterials,preserveBody
+  });
   const occlusionPreserveRegions=[...new Set([
-   ...studioSkinPolicy.preserveRegions,...battleBackUnderlay
+   ...studioSkinPolicy.preserveRegions,...closedBack.preserveRegions
   ])];
+  const forcedTorsoOcclusion=closedBack.forceCoveredRegions;
   let coverageHandle=preserveBody?null:clipBodyToGarment(characterModel,garmentCoverage,{surfaceCheck:true,
-    preserveRegions:occlusionPreserveRegions,
-    forceCoveredRegions:thiefHasClosedBack?['torso']:[]});
+    preserveRegions:occlusionPreserveRegions,forceCoveredRegions:forcedTorsoOcclusion});
   let bodyMasked=!preserveBody;
   function setBodyOcclusion(enabled){
     if(preserveBody)return;
     if(enabled&&!bodyMasked){coverageHandle=clipBodyToGarment(characterModel,garmentCoverage,{surfaceCheck:true,
     preserveRegions:occlusionPreserveRegions,
-    forceCoveredRegions:thiefHasClosedBack?['torso']:[]});bodyMasked=true}
+    forceCoveredRegions:forcedTorsoOcclusion});bodyMasked=true}
     else if(!enabled&&bodyMasked){coverageHandle?.restore();coverageHandle=null;bodyMasked=false}
   }
   let disposed=false;
@@ -950,6 +953,11 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
     hair?.setHeadwear(show?(style.hood?'hood':armor?'helmet':null):null);
   }
   function setHairVisible(enabled){hair?.setVisible(Boolean(enabled))}
+  function getHairState(){return {
+   attached:!!hair,visible:!!hair?.object?.visible,
+   style:hair?.style??null,scalpPresent:!!hair?.diagnostics?.scalpUnderlay,
+   headwear:hair?.diagnostics?.headwearMode??null,error:hairError
+  }}
   function setArmorDepthOffsets(offsets){
     return armor?.setDepthOffsets?.(offsets)||{helmet:0,chest:0};
   }
@@ -1039,14 +1047,17 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
       worstJointOffsets:boneOffsets.slice(0,4).map(entry=>({bone:entry.bone,error:+entry.xyzError.toFixed(5)})),
       gearContacts};
   }
-  return {root,sync,dispose,face,setBodyOcclusion,setHelmetVisible,setHairVisible,
+  return {root,sync,dispose,face,setBodyOcclusion,setHelmetVisible,setHairVisible,getHairState,
     setArmorDepthOffsets,presentation,fitReport,diagnostics:{job:jobId,sex,matchingBones:linked.length,...result,
     quality,rarity:rank,rarityOrnaments:detail.userData.rarityOrnaments,
     triangles:detail.userData.triangles,detailMotif:detail.userData.motif,
     commanderPieces:jobId==='strategist'?detail.children.filter(o=>
       /^(command-|military-standing-collar|strategist-seal)/.test(o.name)).length:0,
     tunicPanels:detail.userData.tunicPanels,gambesonMeshes,commanderUniformMeshes,
-    opaqueTorsoLiningMaterials,thiefSourceBeltsHidden,
+    opaqueTorsoLiningMaterials,closedBackPanelSkinned:closedBack.closed,
+    torsoForcedCovered:forcedTorsoOcclusion.includes('torso'),
+    bareTorsoPreserved:occlusionPreserveRegions.includes('torso'),
+    thiefSourceBeltsHidden,
     correctedLimbMeshes,preservedSkinMaterials,suppressedBaseLegMeshes,retainedSkinnedLegMeshes,retainedSkinnedBootMeshes,useSourceSkinnedLegs,studioPreferSkinnedLegs,
     gear:gear.length,weaponKinds:gear.map(g=>g.userData.equipmentKind),
     clothPieces:cloth.objects.length,clothFit:cloth.diagnostics.fittedRadii,

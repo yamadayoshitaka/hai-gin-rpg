@@ -6,6 +6,8 @@ import {BattleCorpsePolicy} from './battle-corpse-policy.js';
 import {createRidingPoseController} from './character-system/riding-pose.js?v=20261117-three-seats-v3';
 import {applyCapturedRunArmSwing} from './character-system/rig-arm-dash-correction.js?v=4.6.38';
 import {massGaitActive} from './mass-visual-motion.js?v=4.6.35';
+import {ensureBattleScalpCoverage} from './character-system/battle-visual-pipeline.js';
+import {equipBattleStudioHair} from './character-system/battle-artist-head-graft.js?v=20261117-shading-back1';
 import {massLocomotionKind,massGpuMotionCode} from './mass-dash-parity.js?v=4.6.34';
 import {riderSeatLocalOffset,mountedFlightSway} from './combat-creature-performance.js?v=4.6.29';
 import {massAttackVariant} from './mass-battle-vfx-policy.js?v=4.6.31';
@@ -245,6 +247,23 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
     if(!representative){
       throw Error(`${job.name}の実物衣装モデルを読み込めません。簡易モデルへの切り替えは行いません。`);
     }
+    // The GPU does not synthesize a new face or hair model: it photographs
+    // the original dressed rig. Never permanently bake a bald prototype.
+    let scalp=ensureBattleScalpCoverage(representative);
+    if(scalp.after.source==='missing'&&representative.masterHead?.attached&&
+      representative.studioPattern){
+      try{
+       equipBattleStudioHair(representative.masterHead,representative.studioPattern,{
+        quality:'middle',hero:false
+       });
+       representative.outfit.setHairVisible(false);
+       scalp=ensureBattleScalpCoverage(representative);
+      }catch(error){
+       console.warn('Mass battle fallback haircut failed',job.name,error);
+      }
+    }
+    if(scalp.after.source==='missing')
+      throw Error(job.name+'の実3D毛髪が見つかりません。ハゲをGPUモデルへ焼き込まず中断します。');
     representative.crowdSampling=true;
     const person=representative.character.object3D;
     // LOD.update() may have left the nearest scalp mesh invisible before
