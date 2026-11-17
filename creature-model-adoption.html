@@ -240,6 +240,13 @@ function chooseSpecies(){
  $('external').href=creatureIds.has(id)||id.startsWith('summon_')?
   './monster-manager.html?monster='+id.replace(/^summon_/,''):
   './summon-showcase.html?summon='+id;
+ const battleSpecies=id.replace(/^summon_/,'');
+ $('battleLink').href=MONSTER_BY_ID[battleSpecies]?
+  './tactics-wireframe.html?monster='+encodeURIComponent(battleSpecies):
+  './summon-showcase.html?summon='+encodeURIComponent(id);
+ $('battleLink').textContent=MONSTER_BY_ID[battleSpecies]?
+  'このモンスターが登場する戦闘プレビュー':
+  'この召喚獣をゲームで確認';
  const share=new URLSearchParams(location.search);
  share.set('species',id);share.set('v','real-bodies-v3');
  history.replaceState(null,'','?'+share.toString());
