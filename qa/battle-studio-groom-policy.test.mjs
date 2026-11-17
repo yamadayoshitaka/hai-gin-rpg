@@ -1,0 +1,23 @@
+import assert from 'node:assert/strict';
+import {createStableBattleGroomSelector,BATTLE_GROOM_ENTER_METERS,BATTLE_GROOM_EXIT_METERS} from '../src/battle-studio-groom-policy.js';
+const actor=(id)=>({id,masterHead:{studioWig:{}},studioPattern:{},outfit:{},root:{visible:true}});
+const hero=actor('hero');
+const selector=createStableBattleGroomSelector({enter:25,exit:32,limit:2});
+const data=(...rows)=>rows.map(([a,m])=>({a,d:m*m})).sort((x,y)=>x.d-y.d);
+assert.equal(BATTLE_GROOM_ENTER_METERS,25);
+assert.equal(BATTLE_GROOM_EXIT_METERS,32);
+assert.equal(selector.update(data([hero,26])).has(hero),false,'no early near promotion');
+assert.equal(selector.update(data([hero,24])).has(hero),true);
+for(let k=0;k<20;k++)assert.equal(
+ selector.update(data([hero,k%2?28:27])).has(hero),true,'camera jitter cannot swap hairstyle');
+assert.equal(selector.update(data([hero,32.1])).has(hero),false,'clear exit releases near');
+const a=actor('a'),b=actor('b'),c=actor('c');
+assert.equal(selector.update(data([a,8],[b,9],[c,10])).size,2);
+assert.equal(selector.update(data([a,9],[b,10],[c,10.5])).has(a),true,'close rankings hold existing wigs');
+const chosen=selector.update(data([a,23],[b,24],[c,3]));
+assert.equal(chosen.has(c),true,'truly close target can displace a far groom');
+assert.equal(chosen.size,2);
+b.root.visible=false;selector.update(data([a,10],[b,10]));assert.equal(selector.size,1);
+selector.reset();assert.equal(selector.size,0);
+assert.throws(()=>createStableBattleGroomSelector({enter:32,exit:25}),/hysteresis/);
+console.log('PASS: camera-stable genuine 3D groom near/middle selection');
