@@ -82,7 +82,7 @@ test('phoenix has richer source geometry, warm feathers and long articulated tai
    assert.ok(m.getObjectByName('avian-articulated-crest-m013'));
    const tail=m.getObjectByName('avian-tail-rooted-streamers-m013');
    assert.equal(tail.userData.curvedAvianFeathers,
-     detail==='low'?5:19);
+     detail==='low'?5:detail==='medium'?17:31);
    assert.ok(m.getObjectByName('avian-layered-body-plumage-m013'));
    assert.equal(wing.material.emissiveIntensity,.21);
    const coords=wing.geometry.getAttribute('position');
@@ -104,6 +104,88 @@ test('phoenix has richer source geometry, warm feathers and long articulated tai
    'crowd LOD must remove significant feather triangles');
  assert.ok(counts.source<2_000_000,'source must fit the preview GPU limit');
  assert.ok(counts.high<500000,'near battle model must fit the FPS budget');
+});
+test('phoenix v2 uses visibly larger wings/tail, a thin imbricated torso and small swept head',()=>{
+ const recipe=avianProfile('m013');
+ assert.ok(recipe.wing[0]>=1.20&&recipe.wing[1]>=1,
+  'guardian feather donor must scale to genuinely enlarged phoenix wings');
+ assert.ok(recipe.tail>=3.2&&recipe.body<.9&&recipe.head<.75,
+  'tail enlargement must not make the chest or skull bulky');
+ const m=build('m013','high');
+ try{
+  assert.equal(m.userData.phoenixSlenderAnatomy,true);
+  assert.equal(m.userData.phoenixNoExternalEars,true);
+  assert.equal(m.userData.phoenixWingSpanFactor,recipe.wing[0]);
+  const chest=m.getObjectByName('avian-keel-rib-cavity-m013');
+  assert.equal(chest.userData.avianClosedThorax,true);
+  const scales=m.getObjectByName('avian-layered-body-plumage-m013');
+  assert.equal(scales.userData.imbricatedKeratinScales,true);
+  assert.equal(scales.userData.scaleCount,23*48);
+  assert.equal(m.userData.phoenixDenseScaleCount,23*48);
+  assert.equal(scales.userData.mergedFeatherBatches,1,
+   'more overlapping scales must not create one draw call per scale');
+  const head=m.getObjectByName('avian-cranium-m013');
+  head.geometry.computeBoundingBox();
+  assert.ok(head.geometry.boundingBox.max.x-head.geometry.boundingBox.min.x<.40,
+   'small phoenix skull must stay narrow');
+  assert.equal(head.userData.phoenixSmallElongatedHead,true);
+  assert.equal(head.userData.phoenixNoEars,true);
+  const beak=m.getObjectByName('avian-hooked-beak-m013');
+  assert.equal(beak.userData.phoenixLongNarrowBeak,true);
+  assert.ok(m.getObjectByName('phoenix-long-beak-nostril-L'));
+  assert.ok(m.getObjectByName('phoenix-long-beak-nostril-R'));
+  const crest=m.getObjectByName('avian-articulated-crest-m013');
+  assert.equal(crest.userData.phoenixAllBackCrest,true);
+  assert.equal(crest.userData.phoenixNoEarTufts,true);
+  crest.geometry.computeBoundingBox();
+  assert.ok(crest.geometry.boundingBox.min.z< -1.45,
+   'slicked-back head feathers must trail behind the small skull');
+  const tail=m.getObjectByName('avian-tail-rooted-streamers-m013');
+  assert.equal(tail.userData.phoenixLongTailFan,true);
+  assert.equal(tail.userData.curvedAvianFeathers,31);
+  assert.ok(tail.userData.phoenixTailLength>4.55);
+  tail.geometry.computeBoundingBox();
+  assert.ok(tail.geometry.boundingBox.min.z< -4.7,
+   'enlarged phoenix tail must have actual long geometry, not a particle-only effect');
+ }finally{disposeMonsterSculpture(m);}
+});
+test('phoenix feather waves travel across both wings, swept crest and tail without CPU rebuilding',()=>{
+ const m=build('m013','high');
+ try{
+  assert.equal(m.userData.phoenixWaveMeshCount,4);
+  for(const part of m.userData.phoenixWaveMeshes){
+   assert.equal(part.userData.phoenixWaveDynamic,true);
+   assert.equal(part.userData.phoenixWaveGPU,true);
+   assert.equal(part.userData.ownedGeometry,true);
+   const material=part.material;
+   const shader={uniforms:{},
+    vertexShader:'#include <common>\\nvoid main(){\\n#include <begin_vertex>\\n}'};
+   material.onBeforeCompile(shader);
+   assert.ok(shader.vertexShader.includes('uniform float phoenixWaveTime;'));
+   assert.ok(shader.vertexShader.includes('transformed.y +='));
+   assert.ok(shader.vertexShader.includes('avianDistance'));
+   assert.ok(!shader.vertexShader.includes('\\\\nuniform'),
+    'GLSL uniform declarations cannot contain literal backslash-n');
+   assert.ok(shader.uniforms.phoenixWavePower);
+  }
+  const waveParts=m.userData.phoenixWaveMeshes;
+  const geometries=waveParts.map(p=>p.geometry);
+  startMonsterAction(m,'run',0);
+  animateMonsterModel(m,.2);
+  for(const part of waveParts){
+   const state=part.material.userData.phoenixWaveState;
+   assert.equal(state.power,1.12);
+   assert.ok(Number.isFinite(state.time));
+   assert.equal(state.uniformTime.value,state.time);
+   assert.equal(state.uniformPower.value,state.power);
+  }
+  assert.deepEqual(waveParts.map(p=>p.geometry),geometries,
+   'traveling wing wave cannot reallocate the feather meshes every frame');
+  startMonsterAction(m,'idle',0);
+  animateMonsterModel(m,.4);
+  assert.ok(waveParts.every(p=>p.material.userData.phoenixWaveState.power<1),
+   'idle should produce calm feather-wave flow, not attack-strength flapping');
+ }finally{disposeMonsterSculpture(m);}
 });
 test('griffin has four independently animated legs; owl has facial disks',()=>{
  const griffin=build('m012');
