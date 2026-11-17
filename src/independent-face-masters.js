@@ -60,7 +60,7 @@ export function femaleInnerFeatureDelta({xn,yn,zn,offsetX,depth,height=0,control
  const tipLift=central*bell(yn,.566,.036);
  const rimMask=bell(ax,.18,.068)*bell(yn,.530,.026)*front;
  // Narrow central bridge elevation with a feathered root into the brow.
- const bridgeRidge=bell(ax,0,.073)*bell(yn,.646,.108)*front;
+ const bridgeRidge=bell(ax,0,.073)*bell(yn,.646,.108)*front*smooth(.27,.38,yn);
  const cartilage=v65NasalCartilageDelta({xn,yn,zn,depth,height,controls});
  return {
   dx:-offsetX*(.35*noseSupport+.29*mouthSupport),
