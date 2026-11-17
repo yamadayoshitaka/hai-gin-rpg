@@ -110,54 +110,49 @@
     },
     "world": {
       "source": "ChatGPT定期品質回帰の実行結果＋GitHub証跡",
-      "lastRunAt": "2026-11-17T11:50:12+09:00",
+      "lastRunAt": "2026-11-17T12:45:47+09:00",
       "status": "work_incomplete",
       "carryover": true,
-      "subject": "PR #441の実使用3D螺旋階段レンダラに2種共通の手すり接合を追加",
-      "summary": "mainスイッチworld.enabled=true。正本53件、既存保存21件、main審査11/承認0は別計数。従来の手すりTubeGeometryはbuilding_componentの早期return後の到達不能な分岐に存在したため、実使用renderSpiralStairBOMにフライト別の連続外周手すりを追加。ソースSHA184ddee7、checkpoint SHA73e9ce4。静的アンカー確認のみ。Node/WebGL/Android未検証、GLB0、ゲーム反映0。",
-      "nextAction": "実使用rendererのNode構文検査、2階/3階の手すりと柱頭接合・踊り場クリアランスWebGL画面比較、Android FPS実測。合格前のマージ禁止。",
+      "subject": "PR #441実使用螺旋階段レンダラの静的差分精査（WebGL/Android未検証）",
+      "summary": "main world.enabled=true確認。正本53、保存21、main審査11/承認0を別計数。PR #441のsrc/building-structure.js実差分とrenderSpiralStairBOM実装を直接照合。支柱は偶数stepに生成され、上端高さはstep.top+floorOffset+.38+.85/2=.805。手すり中心高さ+.805と一致する設計を静的確認。ただし奇数stepの補間、踊り場、描画、衝突、FPSは未検証。新規実ソース改修0、GLB0、対象別QA合格0、ゲーム反映0。",
+      "nextAction": "既存PR #441のNode構文・実WebGL 2F/3F手すり接合/踊り場/衝突とAndroid FPSを実測。QA失敗箇所を実ソース修正し、合格前はマージ禁止。",
       "steps": {
         "launch": "done",
-        "code": "done",
+        "code": "pending",
         "qa": "pending",
-        "commit": "done",
+        "commit": "pending",
         "pr": "done",
         "merge": "pending",
         "deploy": "pending"
       },
       "evidence": [
         {
-          "label": "実使用3D階段生成器修正",
+          "label": "PR #441の実ソース差分",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/441/files"
+        },
+        {
+          "label": "既存の実使用レンダラ改修",
           "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/184ddee7b81710d261ec3971998c22ce72a50175"
-        },
-        {
-          "label": "21件チェックポイント更新",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/73e9ce4a0e69792bb74002d04b2312257b3ca96f"
-        },
-        {
-          "label": "Draft PR #441",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/441"
         }
       ],
       "lastRunOutcome": {
-        "newSourceChangedIds": 2,
+        "newSourceChangedIds": 0,
         "newQAPassed": 0,
         "newGameAppliedIds": 0,
-        "newSourceCommits": 1
+        "newSourceCommits": 0
       },
       "operational": {
         "blockers": [
-          "Nodeによる完全構文検査未実施（GitHub連携ソースを実行環境に受け渡す経路未確立）",
-          "WebGLスクリーンショット・接合・衝突未確認",
+          "GitHub連携のソースをNode/WebGL実行環境に転送できず構文・実描画QA未実施",
           "Android実機FPS未計測",
-          "QA未合格のためmainマージ・Pages公開不可"
+          "対象別QA未合格のためmainマージ・Pages公開不可"
         ],
-        "speedPlan": "共有renderSpiralStairBOMの2階/3階モデルを最小WebGLシーンで検証し、踊り場接続を調整。21件の未検証QAを順次解消。",
+        "speedPlan": "renderSpiralStairBOMの2階/3階最小シーンでWebGL比較。まず手すり高さ+.805と支柱上端の一致を確認し、踊り場・当たり判定を計測。",
         "lastRunOutcome": {
-          "newSourceChangedIds": 2,
+          "newSourceChangedIds": 0,
           "newQAPassed": 0,
           "newGameAppliedIds": 0,
-          "newSourceCommits": 1,
+          "newSourceCommits": 0,
           "newGeneratedGLBs": 0,
           "branchSavedCount": 21,
           "mainInReviewCount": 11,
