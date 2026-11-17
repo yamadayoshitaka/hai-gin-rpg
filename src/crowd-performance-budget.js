@@ -8,7 +8,13 @@ export class CrowdPerformanceBudget{
   }
   sample({fps,fullMeshVisible=0,drawCalls=0,paused=false}={}){
     if(paused||!Number.isFinite(fps)||fps<=0)return this.enterPx;
-    if(fps<this.targetFps-6&&fullMeshVisible>=55&&drawCalls>=450){
+    // In a dense 1000v1000 scene the expensive fully dressed meshes must
+    // yield promptly to the already-captured, high-resolution real-rig atlas.
+    // Default (<=60px) battles retain their measured hysteresis unchanged.
+    if(this.maxPx>60&&fps<this.targetFps-16&&fullMeshVisible>=35&&drawCalls>=1000){
+      this.enterPx=Math.min(this.maxPx,this.enterPx+18);
+      this.slowSeconds=0;this.fastSeconds=0;
+    }else if(fps<this.targetFps-6&&fullMeshVisible>=55&&drawCalls>=450){
       this.slowSeconds++;this.fastSeconds=0;
       if(this.slowSeconds>=2){this.enterPx=Math.min(this.maxPx,this.enterPx+12);this.slowSeconds=0;}
     }else if(fps>this.targetFps+6){
