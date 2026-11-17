@@ -23,7 +23,9 @@ const master=Object.freeze({
   stripeCount:0,
 });
 const variants=Object.freeze({
-  m007:Object.freeze({archetype:'slender-sabertooth',saberToothLength:.190}),
+  m007:Object.freeze({archetype:'slender-sabertooth',saberToothLength:.190,
+    // Shorter femur-to-paw reach; keep the paw planted by lowering the pivot.
+    legReach:.84}),
   m008:Object.freeze({archetype:'lion-regal',
     torsoWidth:.415,torsoLength:.860,headWidth:1.02,headDepth:1.00,
     cheekTaper:.98,eyeX:.226,eyeZ:.206,
@@ -44,7 +46,7 @@ const variants=Object.freeze({
     legWidth:.93,pawWidth:.92,guardHair:.062,underHair:.031,
     saberToothLength:.085,stripeCount:7})
 });
-export const FELINE_SOURCE_MODEL='m007-physical-mother-m001-quality-v5-20261117';
+export const FELINE_SOURCE_MODEL='m007-physical-mother-m001-quality-v6-20261117';
 export const FELINE_QUALITY_WAVE_IDS=Object.freeze(Object.keys(variants));
 export const felineMasterVariant=id=>{
  const variant=variants[id];
