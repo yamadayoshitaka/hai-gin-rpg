@@ -210,7 +210,33 @@ export function createObjectById(id,{cellSize=2.2}={}){
    const iron=new THREE.MeshStandardMaterial({color:level>=4?0x313c4a:0x55545a,metalness:.7,roughness:.38});
    const ornament=new THREE.MeshStandardMaterial({color:level===5?0xd6bd7a:0x9f8e6c,metalness:.65,roughness:.4});
    const add=(w,h,d,x,y,z,material,name)=>{const mesh=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material);mesh.position.set(x,y,z);mesh.castShadow=true;mesh.receiveShadow=true;mesh.name=name;root.add(mesh);return mesh};
-   add(width,height,.17*c,0,height/2,0,darkWood,'door_leaf');
+   // Five lock tiers share a joinery-based leaf: individual boards, iron strap
+   // hinges and fasteners. All parts stay inside the existing door footprint.
+   const boardCount=level===5?9:7, boardWidth=width/boardCount;
+   const plankDepth=.17*c;
+   for(let board=0;board<boardCount;board++){
+    const x=-width/2+(board+.5)*boardWidth;
+    const inset=(board%3===0?.006:0)*c;
+    add(boardWidth-.012*c,height-.035*c,plankDepth-inset,x,height/2,-inset/2,darkWood,'vertical_timber_plank');
+    // Raised wooden battens give each door a visible joinery silhouette.
+    if(board===0||board===boardCount-1)
+     add(.042*c,height-.11*c,.035*c,x,height/2,.105*c,darkWood,'edge_stile');
+   }
+   // Horizontal straps are anchored by paired rivets, not floating decorations.
+   for(const hingeY of [height*.23,height*.77]){
+    for(const sign of [-1,1]){
+     const hingeX=sign*(width/2-.16*c);
+     add(.29*c,.105*c,.055*c,hingeX,hingeY,.118*c,iron,'forged_hinge_strap');
+     const pin=new THREE.Mesh(new THREE.CylinderGeometry(.038*c,.038*c,.065*c,10),iron);
+     pin.rotation.x=Math.PI/2;pin.position.set(hingeX,hingeY,.155*c);
+     pin.name='hinge_pin';root.add(pin);
+     for(const offset of [-.09,.09]){
+      const rivet=new THREE.Mesh(new THREE.SphereGeometry(.024*c,8,6),ornament);
+      rivet.scale.z=.55;rivet.position.set(hingeX+offset*c,hingeY,.156*c);
+      rivet.name='hinge_rivet';root.add(rivet);
+     }
+    }
+   }
    for(const sign of [-1,1])add(.16*c,height+.16*c,.27*c,sign*(width/2+.07*c),(height+.16*c)/2,0,iron,'door_frame');
    add(width+.36*c,.18*c,.30*c,0,height+.06*c,0,iron,'door_lintel');
    for(let i=0;i<level;i++)add(width*.90,.055*c,.095*c,0,height*(i+1)/(level+1),.13*c,iron,'reinforcing_bar');
