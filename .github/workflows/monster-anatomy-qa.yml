@@ -4,6 +4,8 @@ on:
     paths:
       - 'src/monster-shape-kit.js'
       - 'src/monster-geometry.js'
+      - 'src/avian-guardian-sculpt.js'
+      - 'qa/avian-guardian-rebuild.test.mjs'
       - 'src/creature-game-model-routing.js'
       - 'qa/beast-mother-webgl-smoke.cjs'
       - 'qa/monster-canine-quality-rollout.test.mjs'
@@ -45,6 +47,8 @@ on:
       - 'qa/beast-m002-feline-gait-face-fx-regression.test.mjs'
       - 'qa/m001-crown-action-vfx.test.mjs'
       - 'src/monster-geometry.js'
+      - 'src/avian-guardian-sculpt.js'
+      - 'qa/avian-guardian-rebuild.test.mjs'
       - 'src/wolf-king-clone-source.js'
       - 'qa/beast-mother-clone-source.test.mjs'
       - 'qa/beast-face-visibility-regression.test.mjs'
@@ -111,12 +115,15 @@ jobs:
         run: |
           node --check src/monster-shape-kit.js
           node --check src/monster-geometry.js
+          node --check src/avian-guardian-sculpt.js
           node --check src/creature-game-model-routing.js
       - name: Install pinned geometry runtime
         run: npm install --no-save --package-lock=false three@0.180.0
       - name: Regression - actual wolf mane and four moving feline limbs
         run: |
           node --test qa/monster-canine-quality-rollout.test.mjs qa/beast-m002-feline-gait-face-fx-regression.test.mjs qa/beast-mother-clone-source.test.mjs qa/beast-face-proportion-joint-contact.test.mjs qa/feline-master-m007-m010.test.mjs qa/beast-face-visibility-regression.test.mjs
+      - name: Guardian-derived wings and rebuilt phoenix bird mesh QA
+        run: node --test qa/avian-guardian-rebuild.test.mjs
   geometry-and-motion:
     if: github.event_name != 'push'
     runs-on: ubuntu-24.04
