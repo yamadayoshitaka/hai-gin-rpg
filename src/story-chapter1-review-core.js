@@ -18,7 +18,7 @@ export function editionContext(edition,gender){
 }
 export function originalDraftPath(stageId,edition,gender,shotId,pageWithinVariant){
  const normalized=shotId.replace(/-m(\d{1,2})$/,(_,n)=>'-m'+String(Number(n)).padStart(2,'0'));
- return 'assets/story/chapter-drafts/c01/cloudflare-chapter1-free/'+stageId+'-'+edition+'-'+gender+
+ return 'assets/story/chapter-drafts/c01/'+(stageId>='c01-s05'?'cloudflare-chapter1-new-originals':'cloudflare-chapter1-free')+'/'+stageId+'-'+edition+'-'+gender+
   '/p'+String(pageWithinVariant).padStart(2,'0')+'/'+normalized+'-'+edition+'-'+gender+'.webp';
 }
 export function legacyReviewProofPath(shot){
