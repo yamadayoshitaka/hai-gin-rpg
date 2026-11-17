@@ -7,7 +7,7 @@ import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {clone} from 'three/addons/utils/SkeletonUtils.js';
 import {JOBS,outfitStyle,loadPhotoMaterials,createDetailedOutfit} from '../outfit-maintenance-model.js?v=20261117-shoulder-cape-v75';
 import {EQUIPMENT_TYPES,equipmentForJob} from './equipment-catalog.js?v=4.4.41';
-import {attachSegmentedArmor} from './segmented-armor-runtime.js?v=20261117-pauldron-shoulder-v76';
+import {attachSegmentedArmor} from './segmented-armor-runtime.js?v=20261117-anatomical-shoulders-v77';
 import {consolidateBattleArmor} from './armor-batch-runtime.js?v=4.5.0';
 import {replacedPlateBaseLegMesh} from './armor-mesh-classification.js?v=4.5.0';
 import {attachCharacterHair} from './hair-attachment-runtime.js?v=20261117-full-root-fibers2';
@@ -619,7 +619,7 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
       // sleeve/knee envelope without the preview studio's 96x32 mesh.
       radialSegments:lowDetail?40:96,heightSegments:lowDetail?10:32,
       omitLegSegments:useSourceSkinnedLegs});
-    armor=profile.armor==='plate'?await attachSegmentedArmor({root,dressed,sex,textures,characterModel,rarity:rank}):null;
+    armor=profile.armor==='plate'?await attachSegmentedArmor({root,dressed,sex,textures,characterModel,rarity:rank,quality}):null;
     if(armor){
       // In battle the real, joint-skinned pants replace all procedural leg
       // cylinders. The separate source boots still overlap metal sabatons,
