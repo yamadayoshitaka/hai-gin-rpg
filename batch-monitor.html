@@ -602,6 +602,29 @@ async function updateRuns({request=false}={}){
   }
  }
 }
+async function updateRecoverySnapshot(){
+ try{
+  const evidence=await fetchJSON('./data/batch-regression-runtime.json?ts='+Date.now());
+  if(evidence.schemaVersion!==1||!Array.isArray(evidence.workflows))return;
+  for(const g of groups){
+   const view=elements.get(g.id),run=evidence.workflows.find(x=>x.groups?.includes(g.id)&&x.enabled);
+   if(!view||!run)continue;
+   const status=run.status==='success'?'Actions成功（造形未承認）':
+    run.status==='api_error'?'GitHub API障害':run.status==='failure'?'Actions失敗':
+    run.status==='in_progress'?'実行中':run.status==='queued'?'待機中':run.status||'未確認';
+   const recovery='回帰監視：'+status+
+    (run.action&&run.action!=='none'?' ／ 復旧：'+run.action:'')+
+    ' ／ 監視更新 '+TIME(evidence.checkedAt);
+   if(view.activity)view.activity.textContent=recovery;
+   if(view.log&&run.runUrl)view.log.href=run.runUrl;
+   if(view.progress?.progressTime)view.progress.progressTime.textContent+=' ／ '+recovery;
+  }
+ }catch(_error){
+  // First recovery run may not have published evidence yet.
+  // Do not infer that scheduled Actions or actual model changes failed.
+ }
+}
+
 async function updateWorldSix(){
  try{
   const catalog=await fetchJSON('./data/world-quality/catalog-targets.json?ts='+Date.now());
@@ -653,9 +676,9 @@ async function start(){
   const pausedGroups=groups.filter(g=>g.schedulerEnabled===false&&g.source.includes('ChatGPT')).length;
   $('schedulerCount').textContent='ChatGPT定期タスク：'+activeTasks.size+'件有効・'+pausedGroups+'系統停止（共有タスクは1件と計算、記録時点）';
   $('fresh').textContent='ChatGPTタスク最終確認：'+TIME(j.asOf)+' ／ 現在処理中かはGitHub Actionsのみ取得可能';
-  await updateWorldSix();await updateSwitches();await updateProgress();await updatePreviewStatus();await updateChapter4();await updateStoryBudget();await updateRelease();await updateRuns();
+  await updateWorldSix();await updateSwitches();await updateProgress();await updatePreviewStatus();await updateChapter4();await updateStoryBudget();await updateRelease();await updateRuns();await updateRecoverySnapshot();
  }catch(e){$('cards').textContent='管理データを読み込めませんでした：'+e.message}
 }
-$('refresh').addEventListener('click',async()=>{await updateWorldSix();await updateSwitches();await updateProgress();await updatePreviewStatus();await updateChapter4();await updateStoryBudget();await updateRelease();await updateRuns({request:true})});
-start();setInterval(()=>{if(!document.hidden&&groups.length){updateSwitches();updateProgress()}},90000);
+$('refresh').addEventListener('click',async()=>{await updateWorldSix();await updateSwitches();await updateProgress();await updatePreviewStatus();await updateChapter4();await updateStoryBudget();await updateRelease();await updateRuns({request:true});await updateRecoverySnapshot()});
+start();setInterval(()=>{if(!document.hidden&&groups.length){updateSwitches();updateProgress().then(updateRecoverySnapshot)}},90000);
 </script></body></html>
