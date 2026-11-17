@@ -76,6 +76,69 @@ function attachBoneName(slot,side){
   return `${segment}_${side}`;
 }
 
+/**
+ * Build an actual shoulder-mounted pair from the wearer's own clavicle and
+ * upper-arm landmarks. The source plate_chest GLB includes large rigid
+ * "plate upper sleeve" tubes and low-poly pauldrons. Their bind axes do
+ * not match the Quaternius shoulders: when animated, they protrude over
+ * the rear cape as the two floating metal blocks reported in v75/v76.
+ *
+ * This replacement contains only shallow, curved metal shells and hems,
+ * not a second rigid upper-arm tube. Attach each to its own upperarm bone:
+ * the shell is anchored in world XYZ once, then inherits the arm motion.
+ */
+export function createAnatomicalShoulderCaps({root,dressed,bones,metal,edge,quality='preview'}={}){
+  if(!root||!dressed||!bones||!metal||!edge)throw Error('肩鎧の人物骨格・素材が不足');
+  root.updateMatrixWorld(true);
+  const left=bonePos(bones,'upperarm_l'),right=bonePos(bones,'upperarm_r');
+  const span=left.distanceTo(right);
+  if(!(span>.18&&span<1.1))throw Error('肩幅を取得できません: '+span);
+  const radius=THREE.MathUtils.clamp(span*.265,.075,.135);
+  const rot=dressed.getWorldQuaternion(new THREE.Quaternion());
+  const forward=new THREE.Vector3(0,0,1).applyQuaternion(rot).normalize();
+  const lateral=new THREE.Vector3(1,0,0).applyQuaternion(rot).normalize();
+  const created=[],anchors={};
+  const radial=quality==='battle'?16:28,segments=quality==='battle'?8:14;
+  for(const side of ['l','r']){
+    const sign=side==='l'?-1:1,bone=bones.get('upperarm_'+side);
+    const anchor=desiredAnchor('shoulder',side,bones)
+      .addScaledVector(lateral,sign*radius*.10)
+      .addScaledVector(forward,radius*.16);
+    anchors[side]=anchor.toArray();
+    const add=(name,geometry,material,raise=0)=>{
+      const mesh=new THREE.Mesh(geometry,material);
+      mesh.name=name;
+      const at=anchor.clone().add(new THREE.Vector3(0,raise,0));
+      root.add(mesh);
+      mesh.position.copy(root.worldToLocal(at));
+      mesh.castShadow=true;mesh.receiveShadow=true;mesh.frustumCulled=false;
+      mesh.userData={equipmentClass:'armor',equipmentSlot:'shoulder',
+        equipmentMaterial:name.includes('rim')?'metal-trim':'plate-steel',
+        equipmentModel:'anatomical-pauldron-v77',
+        attachmentSide:side,attachedJoint:'upperarm_'+side,
+        originalRearSleeveSuppressed:true};
+      root.updateMatrixWorld(true);
+      bone.attach(mesh);
+      created.push(mesh);
+      return mesh;
+    };
+    const cap=add('armor-shoulder-fitted-cap-'+side,
+      new THREE.SphereGeometry(radius,radial,segments,0,Math.PI*2,0,Math.PI*.67),
+      metal,-radius*.03);
+    cap.scale.set(1.06,.77,1.04);
+    // A narrow fitted lower lip creates the layered-steel silhouette without
+    // the old whole-arm cylinder or a second large, hollow shoulder block.
+    const rim=add('armor-shoulder-fitted-rim-'+side,
+      new THREE.SphereGeometry(radius*1.016,radial,quality==='battle'?3:5,
+        0,Math.PI*2,Math.PI*.55,Math.PI*.12),edge,-radius*.03);
+    rim.scale.copy(cap.scale);
+  }
+  root.updateMatrixWorld(true);
+  return {objects:created,anchors,radius,
+    diagnostics:{kind:'bone-mounted-curved-shoulder-v77',sideCounts:{l:2,r:2},
+      oldSourceRigidShoulderTubesVisible:0,shoulderDistance:span}};
+}
+
 function textureGeometry(geometry){
   if(geometry.attributes.uv)return geometry;
   // The external plate GLBs have positions, normals and vertex colors but no
@@ -168,6 +231,7 @@ export async function attachSegmentedArmor({root,dressed,sex,textures,characterM
 
   const descriptors=[];
   let sourceTrouserLegMeshesSkipped=0,sourceBootShaftsSkipped=0;
+  let suppressedRigidShoulderMeshes=0;
   const boxes=new THREE.Box3(),center=new THREE.Vector3();
   // Cache actual 3D reference positions before classifying mesh sides.
   const thighLeft=bonePos(bones,'thigh_l'),thighRight=bonePos(bones,'thigh_r');
@@ -180,6 +244,12 @@ export async function attachSegmentedArmor({root,dressed,sex,textures,characterM
       if(slot==='skip'){
         if(part==='legs'&&isPlateSourceTrouserLeg(o.name))sourceTrouserLegMeshesSkipped++;
         if(part==='feet'&&/boot[_ -]+upper/i.test(o.name)&&!/folded|ridge|cuff/i.test(o.name))sourceBootShaftsSkipped++;
+        return;
+      }
+      if(slot==='shoulder'){
+        // Reject ALL eight original unrigged sleeve/pauldron/fixing pieces.
+        // They were the large metal blocks poking through the protagonist cape.
+        suppressedRigidShoulderMeshes++;
         return;
       }
       if(slot==='helmet'&&!helmetFaceguardPolicy(o.name).keep)return;
@@ -323,6 +393,10 @@ export async function attachSegmentedArmor({root,dressed,sex,textures,characterM
     anchor.attach(mesh);created.push(mesh);
   }
   root.remove(stage);
+  const fittedShoulders=createAnatomicalShoulderCaps({
+    root,dressed,bones,metal:matMetal,edge:matTrim,quality:'preview'
+  });
+  created.push(...fittedShoulders.objects);
   // Independent non-destructive offsets. The heraldry appended later shares
   // the chest offset: it must not float away from the breastplate. All offsets
   // are applied in each attachment bone's local coordinates and follow motion.
@@ -353,10 +427,12 @@ export async function attachSegmentedArmor({root,dressed,sex,textures,characterM
     root.updateMatrixWorld(true);
     return {...depthOffsets};
   }
-  root.userData.armor={variant:'plate',pieceCount:created.length,sourceTrouserLegMeshesSkipped,sourceBootShaftsSkipped,scale,slots:[...centers.keys()],helmetFit,partAxes,legSideCounts,shoulderSideCounts,shoulderPlacement:'clavicle-outer-upperarm-forward-v76'};
+  root.userData.armor={variant:'plate',pieceCount:created.length,sourceTrouserLegMeshesSkipped,sourceBootShaftsSkipped,suppressedRigidShoulderMeshes,scale,slots:[...centers.keys()],helmetFit,partAxes,legSideCounts,shoulderSideCounts,shoulderPlacement:'bone-mounted-curved-shoulder-v77'};
   return {objects:created,materials,setDepthOffsets,depthOffsets,
     diagnostics:{armorPieces:created.length,sourceTrouserLegMeshesSkipped,sourceBootShaftsSkipped,armorScale:scale,armorSlots:[...centers.keys()],helmetFit,legSideCounts,
-      partAxes,shoulderSideCounts,shoulderPlacement:'clavicle-outer-upperarm-forward-v76',
+      partAxes,shoulderSideCounts:fittedShoulders.diagnostics.sideCounts,
+      suppressedRigidShoulderMeshes,
+      shoulderPlacement:fittedShoulders.diagnostics.kind,
       alignmentDepth:Object.fromEntries([...offsetByKey].map(([key,value])=>[key,+value.z.toFixed(5)])),
       headWorldSize:headWorldSize?.toArray(),helmetSourceSize:helmetSize.toArray(),
       helmetTarget:scalpCenterWorld?.toArray(),helmetBaseForwardOffset:HELMET_BASE_FORWARD_OFFSET,
