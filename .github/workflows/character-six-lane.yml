@@ -29,6 +29,7 @@ on:
       - 'scripts/character-six-batch.mjs'
       - 'qa/character-six-lane-contract.test.mjs'
       - 'qa/battle-face-hair-shield-recovery.test.mjs'
+      - 'qa/rider-armor-coverage-regression.test.mjs'
       - '.github/workflows/character-six-lane.yml'
 permissions:
   contents: read
@@ -53,7 +54,7 @@ jobs:
       - name: Verify six-lane registry and actual GAME entrypoints
         run: node --test qa/character-six-lane-contract.test.mjs
       - name: Execute this 10-minute lane for actual existing model sources
-        if: inputs.category == 'all' || inputs.category == matrix.category || github.event_name != 'workflow_dispatch'
+        if: github.event_name != 'pull_request' && (inputs.category == 'all' || inputs.category == matrix.category || github.event_name == 'schedule')
         env:
           INPUT_SLOT: ${{ inputs.slot || 'auto' }}
           SCHEDULED_CRON: ${{ github.event.schedule }}
@@ -73,6 +74,17 @@ jobs:
           else
             node scripts/character-six-batch.mjs --category '${{ matrix.category }}' --slot "$INPUT_SLOT"
           fi
+      # Every PR affecting real model sources must pass all six regression lanes;
+      # the minute-based scheduled rotation alone can miss a broken hair/action lane.
+      - name: Verify all six FF15 acceptance lanes before PR can be merged
+        if: github.event_name == 'pull_request'
+        run: |
+          set -euo pipefail
+          for slot in 0 1 2 3 4 5; do
+            echo "::group::${{ matrix.category }} / six-lane acceptance slot ${slot}"
+            node scripts/character-six-batch.mjs --category '${{ matrix.category }}' --slot "${slot}"
+            echo "::endgroup::"
+          done
       - name: Archive separate source QA, not a false model approval
         if: always()
         uses: actions/upload-artifact@v4
