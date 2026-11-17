@@ -4,14 +4,14 @@
  * never creates these meshes; nothing animates or draws while invisible.
  * This module is renderer-agnostic and is shared by model viewer and game.
  */
-import * as THREE from 'three';
+// Dependency-free until a real m001 high/source render supplies Three.js.
 
 const clamp01=v=>Math.max(0,Math.min(1,v));
 const smooth=(a,b,t)=>{const u=clamp01((t-a)/(b-a));return u*u*(3-2*u);};
 const windowPulse=(t,start,peak,end)=>
   smooth(start,peak,t)*(1-smooth(peak,end,t));
 
-function createClawArcGeometry(){
+function createClawArcGeometry(THREE){
  const vertices=[],indices=[];
  // A single three-claw scratch mesh, not one draw call per claw or shard.
  for(let claw=0;claw<3;claw++){
@@ -34,7 +34,7 @@ function createClawArcGeometry(){
  geometry.computeVertexNormals();
  return geometry;
 }
-function makeTransient(geometry,color,name){
+function makeTransient(THREE,geometry,color,name){
  const material=new THREE.MeshBasicMaterial({
   color,transparent:true,opacity:0,side:THREE.DoubleSide,
   depthWrite:false,toneMapped:false
@@ -51,12 +51,15 @@ function ensureFx(model){
  if(model.userData.m001ActionEffects)return model.userData.m001ActionEffects;
  if(model.userData.speciesId!=='m001'||!['high','source'].includes(model.userData.detail)||
    model.userData.disableMonsterActionEffects)return null;
- const scratches=makeTransient(createClawArcGeometry(),0xbecbd0,'m001-claw-air-streaks');
+ const THREE=model.m001FxThree;
+ if(!THREE)return null;
+ const scratches=makeTransient(THREE,createClawArcGeometry(THREE),
+   0xbecbd0,'m001-claw-air-streaks');
  scratches.position.set(0,1.10,1.32);
- const roar=makeTransient(new THREE.TorusGeometry(.35,.016,7,38),
+ const roar=makeTransient(THREE,new THREE.TorusGeometry(.35,.016,7,38),
    0xc5d4da,'m001-roar-pressure-wave');
  roar.position.set(0,1.16,1.25);
- const dust=makeTransient(new THREE.TorusGeometry(.27,.025,7,32),
+ const dust=makeTransient(THREE,new THREE.TorusGeometry(.27,.025,7,32),
    0x8c9290,'m001-paw-dust-wave');
  dust.rotation.x=-Math.PI/2;
  dust.position.set(0,.047,1.18);
