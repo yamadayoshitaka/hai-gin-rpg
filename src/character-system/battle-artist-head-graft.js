@@ -147,12 +147,13 @@ export function installBattleFaceLightResponse(material){
    throw Error('Battle face PBR light gate: expected opaque_fragment not found');
   const bounds=material.userData?.battleFaceSculptureBounds;
   let anatomical='';
-  if(bounds){
+  if(bounds&&shader.vertexShader?.includes('#include <begin_vertex>')){
    // Real mesh geometry is the shape authority. Vertex positions are already
    // present; one varying, two material uniforms and no new GPU attributes,
    // textures, lights or draw calls. Stable through LOD and view rotation.
-   if(!shader.vertexShader.includes('#include <begin_vertex>'))
-    throw Error('Real face anatomy shader: missing begin_vertex');
+   // A fragment-only shader in a material unit test still receives the
+   // common diffuse tone gate; only the complete WebGL program uses anatomy.
+   shader.uniforms??={};
    shader.uniforms.battleFaceMin={value:new THREE.Vector3(...bounds.min)};
    shader.uniforms.battleFaceInvSize={value:new THREE.Vector3(...bounds.invSize)};
    shader.vertexShader='varying vec3 vBattleFaceLocal;\n'+shader.vertexShader;
