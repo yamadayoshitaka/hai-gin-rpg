@@ -7201,7 +7201,7 @@ function issueIndividualSquadOrder(mode,point=null,silent=false){
  const id=orderedSquad();if(id==null)return false;
 
  let accepted=true;
-  if(!massSim&&mode==='mission'){
+  if(!massSim&&mode==='mission'&&point){
   const squadMembers=actors.filter(a=>a.team===0&&String(a.squadId)===String(id)&&a.hp>0);
   if((point.type.startsWith('burn_')||point.type==='extinguish_fire')&&!squadMembers.some(a=>a.jobId==='mage'))accepted=false;
   if(point.type==='repair_structure'&&!squadMembers.some(a=>['mage','ninja'].includes(a.jobId)))accepted=false;
@@ -7771,10 +7771,10 @@ function showSquadTacticsPanel(panel='main'){
 }
 $('squadDestination').onclick=()=>beginSquadDestination(orderedSquad());
 $('squadOrderChoice').onclick=()=>{
- if(storyRequest?.sortieTeamCount&&orderedSquad()!=null){
-  targetedStrategyUi.open(normalizeArmyGroup(armyGroupBySquad[String(orderedSquad())]),{groupOnly:true,startAtRecommendations:true});return;
- }
- showSquadTacticsPanel('orders');
+ // One tactical UI for 50/100/1000. Engine size is not a UI branch.
+ const id=orderedSquad();if(id==null)return;
+ targetedStrategyUi.open(normalizeArmyGroup(armyGroupBySquad[String(id)]),
+  {groupOnly:true,startAtRecommendations:true});
 };
 $('squadMissionChoice').onclick=()=>showSquadTacticsPanel('missions');
 $('squadTacticalCommand').onchange=e=>{
