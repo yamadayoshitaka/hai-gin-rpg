@@ -512,18 +512,18 @@ function phoenixFeatheredArm(g,s,torso,side,detail){
   [.068,.060,.086],{name:'phoenix-feather-hand-palm-'+suffix});
  handSkin.userData.phoenixAvianHandPalm=true;
  const outer=[],inner=[],fingers=[];
- const layers=detail==='low'?5:detail==='source'?13:9;
+ const layers=detail==='low'?9:detail==='medium'?16:detail==='source'?30:24;
  for(let i=0;i<layers;i++){
   const t=i/Math.max(1,layers-1),q=(i%3)-1;
   outer.push({from:[side*(.012+.018*(i%3)),
       .015-.020*(i%4),-.005],
     to:[side*(.24+.045*t),-.185-.035*t,.105+.045*q],
-    width:.062+.022*(1-t),normal:[.03,.50,.90],
+    width:.090+.030*(1-t),normal:[.03,.50,.90],
     ridge:.018,tint:i%4===0?3:i%3===0?2:1,endTint:3,glow:.35});
   inner.push({from:[side*(.020+.016*(i%3)),
     .006-.016*(i%4),-.004],
     to:[side*(.175+.065*t),-.115-.036*t,.125+.060*q],
-    width:.050+.015*(1-t),normal:[.04,.65,.76],
+    width:.074+.025*(1-t),normal:[.04,.65,.76],
     tint:i%3===0?2:1,endTint:3,glow:.32});
  }
  const sleeve=layeredFeathers(root,s,detail,
@@ -538,13 +538,16 @@ function phoenixFeatheredArm(g,s,torso,side,detail){
   const digitBone=g.bone(palm,'skin',knuckle,tip,.017,
     {tipRadius:.008});
   digitBone.name='phoenix-feather-hand-digit-'+suffix+'-'+digit;
-  for(let layer=0;layer<3;layer++){
-   const t=1-layer*.12;
-   fingers.push({from:[knuckle[0],knuckle[1]+.004*layer,knuckle[2]],
-    to:[tip[0]*t,tip[1]*t,tip[2]+.028*layer],
-    width:.073-.010*layer,
-    normal:[side*.12,.38,.91],ridge:.020,
-    tint:(digit+layer)%3===0?3:digit%2===0?2:1,
+  // Joints still animate, but feather tips conceal their visual geometry.
+  digitBone.visible=false;
+  for(let layer=0;layer<7;layer++){
+   const t=1-layer*.060,offset=(layer-3)*.013;
+   fingers.push({from:[knuckle[0]+side*offset*.24,
+      knuckle[1]+.005*layer,knuckle[2]+.006*(layer%2)],
+    to:[tip[0]*t+side*offset,tip[1]*t-.010*(layer%3),
+      tip[2]+.022*layer],
+    width:.085-.004*layer,normal:[side*.12,.38,.91],
+    ridge:.024,tint:(digit+layer)%3===0?3:digit%2===0?2:1,
     endTint:3,glow:.45});
   }
  }
@@ -556,6 +559,10 @@ function phoenixFeatheredArm(g,s,torso,side,detail){
  }
  featherHand.userData.phoenixFeatherHandDigits=3;
  featherHand.userData.phoenixNoHumanFingers=true;
+ // Keep anatomical animation pivots, never render a bare skinned hand.
+ humerus.visible=false;ulna.visible=false;handSkin.visible=false;
+ palm.userData.phoenixHiddenHandBones=true;
+ featherHand.userData.phoenixDenseHandCover=true;
  root.userData.phoenixIndependentFeatherArm=true;
  forearm.userData.phoenixFeatherWrappedUlna=true;
  palm.userData.phoenixAvianFeatherHand=true;
