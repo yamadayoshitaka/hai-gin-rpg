@@ -51,8 +51,8 @@ assert.match(game,/const seat=u\.mountId\?riderElevation\(u,creatureVisualTime\)
  'mount riders use the same current-frame seat as the 50v50 horse model');
 assert.match(game,/const corrected=anchoredStandingY\(floor,seat\);/,
  'foot Y is clamped after worker interpolation, not before it');
-assert.match(game,/if\(u\.mountId\|\|out\.y<corrected\)/,
- 'mount height is authoritative, not a potentially stale smoothed frame');
+assert.match(game,/out\.y=corrected;smooth\.y=corrected;/,
+ 'saddle and both terrain directions are authoritative after worker smoothing');
 assert.match(game,/const cinematicPlaybackScale=realtimeBattleCinematicScale\(/);
 assert.match(game,/town:TOWN_MODE,mass:Boolean\(MASS_SIZE\),paused,/);
 assert.match(game,/massSim\.setSquadCommand\(id,mode,side\)/,
