@@ -61,7 +61,8 @@ export function groomGuideOffset(profile,{t,zone,partSide,front=false,rootIndex=
   z-=profile.comma*.15*Math.sin(Math.PI*weight);
  }
  if(profile.spike&&(zone==='crown'||forward)){
-  y+=profile.spike*weight*(1-.27*weight);
+  // Ease out at the tip; previous linear lift made blunt spherical quills.
+  y+=profile.spike*weight*(1-.58*weight);
   x+=profile.spike*.15*partSide*tip;
  }
  if(profile.round&&(forward||side)){
