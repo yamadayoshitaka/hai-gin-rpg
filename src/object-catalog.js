@@ -613,6 +613,57 @@ export function createObjectById(id,{cellSize=2.2}={}){
    }
    root.userData.passable=true;
   }
+  // Masonry construction: discrete load-bearing joints and weathered edges.
+  // Kept inside the shared catalog generator so the game and QA preview agree.
+  if(id==='stone_fence_001'){
+   for(const x of [-1.3,0,1.3]){
+    for(const z of [-.19,.19]){
+     const plinth=new THREE.Mesh(new THREE.CylinderGeometry(.26*c,.31*c,.14*c,8),stone);
+     plinth.position.set(x*c,.09*c,z*c);root.add(plinth);
+    }
+    for(const y of [.42,.91])for(const z of [-.16,.16])
+     box(.29*c,.32*c,.08*c,x*c,y*c,z*c,stone);
+   }
+  }
+  if(id==='stone_archway_001'){
+   // Voussoirs project in depth, with individual mortar reveals.
+   for(let i=0;i<10;i++){
+    const a=Math.PI-(i+.5)*Math.PI/10;
+    const voussoir=new THREE.Mesh(new THREE.BoxGeometry(.39*c,.25*c,1.13*c),stone);
+    voussoir.position.set(Math.cos(a)*2.06*c,(3.4+Math.sin(a)*2.06)*c,0);
+    voussoir.rotation.z=a-Math.PI/2;root.add(voussoir);
+   }
+   for(const side of [-1,1])for(let course=0;course<5;course++){
+    const x=(side*(2+.045*(course%2)))*c;
+    box(.76*c,.085*c,1.03*c,x,(.44+course*.61)*c,0,stone);
+   }
+  }
+  if(id==='stone_steps_001'){
+   // Separate projecting nosings and end blocks, matching the seven risers.
+   for(let i=0;i<7;i++){
+    const y=(i+1)*.16*c,z=(i-3)*.40*c;
+    box(3.86*c,.065*c,.12*c,0,y+.025*c,z-.20*c,stone);
+    for(const side of [-1,1])
+     box(.17*c,.16*c,.40*c,side*1.89*c,y-.08*c,z,stone);
+   }
+  }
+  if(id==='stone_column_001'){
+   for(const y of [.43,3.63]){
+    const astragal=new THREE.Mesh(new THREE.TorusGeometry(.36*c,.065*c,6,20),stone);
+    astragal.rotation.x=Math.PI/2;astragal.position.y=y*c;root.add(astragal);
+   }
+   for(const x of [-.38,.38])for(const z of [-.38,.38])
+    box(.18*c,.11*c,.18*c,x*c,3.77*c,z*c,stone);
+  }
+  if(id==='town_planter_001'){
+   // Staggered masonry courses and four corner bond stones around the soil bed.
+   for(const y of [.14,.39]){
+    for(const z of [-.87,.87])for(let i=0;i<6;i++)
+     box(.48*c,.18*c,.12*c,(-1.25+i*.5+(y>.2?.12:0))*c,y*c,z*c,stone);
+    for(const x of [-1.44,1.44])for(let i=0;i<3;i++)
+     box(.13*c,.18*c,.47*c,x*c,y*c,(-.49+i*.49)*c,stone);
+   }
+  }
   // New detailed props are authored from many pieces but submitted as just a
   // few material batches. Geometry still comes from the physical object BOM.
   if(new Set(['stone_archway_001','stone_steps_001','wooden_watchtower_001',
