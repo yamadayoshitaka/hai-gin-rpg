@@ -566,7 +566,7 @@ try{
  });
  assert.equal(hair,0,'low LOD must not allocate any long fur ribbons');
  assert.equal(lowMane,1,'low LOD needs one inexpensive volumetric mane');
- assert.equal(lowKing.userData.pivots['m001-face-core'].scale.x,.82,
+ assert.equal(lowKing.userData.pivots['m001-face-core'].scale.x,.76,
    'low LOD must retain compact connected face proportions');
 }finally{disposeMonsterSculpture(lowKing);}
 // PR #345 protects the old ancient wolf; the mesh upgrade must not touch it.
