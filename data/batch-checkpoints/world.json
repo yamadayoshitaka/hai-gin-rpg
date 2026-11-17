@@ -63,18 +63,18 @@
       "sourceFiles": [
         "src/object-catalog.js"
       ],
-      "commitSha": "d1989327abcc5c237bfe17be590fdbf8ca3ce31f",
+      "commitSha": "184ddee7b81710d261ec3971998c22ce72a50175",
       "qa": "unverified",
-      "changeNote": "Continuous helical guard rail tied to existing posts; WebGL/Android unverified"
+      "changeNote": "Actual shared building-structure renderer now joins baluster heads with per-flight tube handrail; static anchor assertions only, WebGL/Android unverified"
     },
     {
       "id": "spiral_stairs_castle_3f_001",
       "sourceFiles": [
         "src/object-catalog.js"
       ],
-      "commitSha": "d1989327abcc5c237bfe17be590fdbf8ca3ce31f",
+      "commitSha": "184ddee7b81710d261ec3971998c22ce72a50175",
       "qa": "unverified",
-      "changeNote": "Continuous helical guard rail tied to existing posts; WebGL/Android unverified"
+      "changeNote": "Actual shared building-structure renderer now joins baluster heads with per-flight tube handrail; static anchor assertions only, WebGL/Android unverified"
     },
     {
       "id": "town_bench_001",
@@ -207,5 +207,5 @@
     "timber_bridge_broken_001",
     "stone_bridge_broken_001"
   ],
-  "nextAction": "Validate spiral stairs source via Node syntax, WebGL screenshots (rail-to-post connections, winding, collision) and Android FPS; do not merge until QA passes. Then address remaining 32 IDs."
+  "nextAction": "Run Node syntax and visual WebGL comparison on shared renderer for both staircase IDs, check landing clearance, then Android FPS; no merge before QA."
 }
