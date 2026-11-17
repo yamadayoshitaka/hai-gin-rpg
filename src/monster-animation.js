@@ -1,4 +1,4 @@
-import {applyMonsterBiologicalMotion} from './monster-joint-motion.js?v=m001-action-perf-v8-20261117';
+import {applyMonsterBiologicalMotion} from './monster-joint-motion.js?v=m002-feline-motion-v4-20261117';
 import {updateM001ActionEffects} from './m001-action-effects.js?v=m001-action-perf-v1-20261117';
 import {updateReferenceBeastFx} from './beast-action-effects.js?v=ref-action-v1-20261117';
 import {monsterLeapPose,applyMonsterLeapMotion} from './monster-leap-kinematics.js?v=1';
