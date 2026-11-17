@@ -59,8 +59,20 @@ assert.ok(battle.includes("[team===0?commandGroupName(id):'敵班','squadFixedSt
  'circle status labels the actual allied group and identifies enemy AI');
 assert.ok(battle.includes('[intent.order,\'\']'));
 assert.ok(battle.includes('[intent.purpose,\'\']'));
-assert.ok(battle.includes('else openSquadTactics(id);'),
- 'Tap on an allied circle opens the command/item chooser');
+// Current battle UI selects a squad and its camera; individual one-tap orders
+// were retired in favor of the group-only recommended strategy chooser.
+const circleStart=battle.indexOf('function activateSquadLabel(id,team,');
+const circleEnd=battle.indexOf('function makeSquadLabel(',circleStart);
+assert.ok(circleStart>=0&&circleEnd>circleStart,'Active squad circle handler exists');
+const circle=battle.slice(circleStart,circleEnd);
+assert.ok(circle.includes('selectOverviewSquad(team,id);'),
+ 'A squad circle selects the actual group in the overview');
+assert.ok(circle.includes("applyOverviewCamera('squad')"),
+ 'The selected squad is framed by the active battle camera');
+assert.ok(!circle.includes('else openSquadTactics(id);'),
+ 'Retired one-tap individual orders must not be restored');
+assert.ok(battle.includes('targetedStrategyUi.open(group,{groupOnly:true,startAtRecommendations:true})'),
+ 'Group strategy chooser must remain connected to recommended actions');
 assert.ok(battle.includes('#allySquadRibbon,#enemySquadRibbon,#squadCircleInfo{display:none!important}'),
  'Sidebars and obsolete one-line status strip are retired');
 assert.ok(battle.includes('lockedStrategyPanel.hidden=true'),
