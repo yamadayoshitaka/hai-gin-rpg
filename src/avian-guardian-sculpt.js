@@ -166,6 +166,13 @@ function guardianDerivedWing(parent,spec,side,detail,{miniature=false,name=null}
    c.lerp(tip,Math.pow(radial,2.6)*.68);
    // Feather-to-feather tonal variation survives the recolour.
    c.multiplyScalar(.76+.28*sourceShade);
+   if(spec.id==='m013'){
+    // Feathery barb detail encoded in existing vertex colours.
+    // No geometry or draw-call overhead at render time.
+    const barb=.965+.035*Math.sin(positions.getZ(i)*19.0+
+      positions.getY(i)*8.0)*Math.sin(radial*Math.PI);
+    c.multiplyScalar(barb);
+   }
    arr[i*3]=c.r;arr[i*3+1]=c.g;arr[i*3+2]=c.b;
  }
  geo.setAttribute('color',new THREE.Float32BufferAttribute(arr,3));
@@ -179,6 +186,12 @@ function guardianDerivedWing(parent,spec,side,detail,{miniature=false,name=null}
    (base.index?.count??base.getAttribute('position').count)/3;
  wing.userData.birdWingRealGeometry=true;
  wing.userData.birdWingDetail=detail;
+ if(spec.id==='m013'){
+  wing.material.roughness=.69;wing.material.metalness=.012;
+  wing.material.emissive.setHex(0x6b2411);
+  wing.material.emissiveIntensity=.15;
+  wing.userData.phoenixFineFeatherBarbs=true;
+ }
  wing.userData.birdWingRooted=true;
  if(miniature){
   wing.userData.phoenixGuardianFeatherHand=true;
