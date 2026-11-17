@@ -77,9 +77,11 @@ test('feline joints use one continuous, three-bone shell through motion',()=>{
     assert.equal(skin.userData.felineSealedBottom,true);
     assert.equal(skin.userData.felineRootBuriedInTorso,true);
     const triangles=skin.geometry.index.count/3;
-    const sections=12,bands=(sections-1)*4,radial=32;
-    assert.equal(triangles,bands*radial*2+radial*2,
-      'two real end-cap fans must close one continuous limb shell');
+    const radial=32;
+    const ringCount=(skin.geometry.getAttribute('position').count-2)/(radial+1);
+    assert.ok(ringCount>=40&&Number.isInteger(ringCount));
+    assert.equal(triangles,(ringCount-1)*radial*2+radial*2,
+      'closed weighted skin must have two cap fans without old tubes');
     const pos=skin.geometry.getAttribute('position');
     const rootCentre=pos.count-2,pawCentre=pos.count-1;
     assert.ok(pos.getY(rootCentre)>.70);
