@@ -90,8 +90,13 @@ export function compactComicForStage(stageId,phase,context={}){
  const baseIds=phase==='pre'?(stage.slot===1?['m5','m15']:['m1','m15']):['m6','m10'];
  const base=baseIds.map(x=>selectBySuffix(src,x));
  if(phase==='post'&&original.edition.startsWith('post-gameover')){
-  const deaths=src.filter(p=>/-death-[12]$/.test(p.id));
-  if(deaths.length===2)base.splice(0,2,...deaths);
+  // Never silently substitute victory/defeat artwork for a commander death.
+  // Missing or duplicate death frames are a hard registration/QA failure.
+  const deaths=['death-1','death-2'].map(token=>selectBySuffix(src,token));
+  if(deaths.some(p=>!p)||deaths[0].id===deaths[1].id){
+   throw Error('Missing distinct gameover art identities '+stageId+' '+original.edition);
+  }
+  base.splice(0,2,...deaths);
  }
  if(base.some(x=>!x))throw Error('Missing compact source art identity '+stageId+' '+original.edition);
  const withCount=p=>({...p,sourceSheetCount:original.pages.find(q=>q.number===p.comicPage)?.cellCount||1});
