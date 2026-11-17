@@ -387,7 +387,7 @@ export function createSculpture(spec,detail='high'){
   * Existing articulated pivots skin one continuous surface rather than
   * stacking cylinders at moving joints.
   */
- const felineContinuousLimb=(leg,distal,toe,{fore=true,name='feline-continuous-limb'}={})=>{
+ const felineContinuousLimb=(leg,distal,toe,{fore=true,side=1,name='feline-continuous-limb'}={})=>{
    if(!leg||!distal||!toe)throw Error('Feline limb requires three moving joints');
    // The broad proximal rings remain inside the torso and the distal rings
    // continue into the paw. No separate seam cover geometry is required.
@@ -400,8 +400,10 @@ export function createSculpture(spec,detail='high'){
      [-.479,.147,.112,.139],[-.551,.192,.119,.142],
      [-.587,.205,.070,.100]
    ]:[
-     // Narrow hip root terminates under the closed croup geometry.
-     [.72,-.185,.062,.077],[.59,-.208,.144,.182],[.43,-.153,.205,.223],
+     // From inside the pelvis along a real gluteal->femur muscle curve.
+     // Previous z=-.185 root sat OUTSIDE the rear body's narrow croup.
+     [.77,.175,.057,.074],[.64,.105,.112,.141],
+     [.49,-.028,.184,.205],[.34,-.105,.205,.218],
      [.27,-.015,.204,.197],[.13,.128,.161,.152],
      [.025,.168,.137,.142],[-.115,.132,.115,.119],
      [-.255,.000,.099,.113],[-.380,-.109,.090,.106],
@@ -425,7 +427,10 @@ export function createSculpture(spec,detail='high'){
          const theta=j/radial*2*Math.PI;
          const muscle=1+.028*Math.cos(theta*3)*
            Math.sin(Math.PI*(row+t)/(sections.length-1));
-         vertices.push(Math.cos(theta)*rx*muscle,y,
+         // Scapula and femoral head start medially INSIDE the torso,
+         // blending laterally into the lower limb, not a cut tube.
+         const medial=.100*smooth((y-.19)/.49);
+         vertices.push(Math.cos(theta)*rx*muscle-side*medial,y,
            z+Math.sin(theta)*rz*muscle);
          uv.push(j/radial,(row+t)/(sections.length-1));
          boneIndices.push(0,1,2,0);
@@ -481,6 +486,8 @@ export function createSculpture(spec,detail='high'){
    skin.userData.felineSealedBottom=true;
    skin.userData.felineEndCapTriangles=radial*2;
    skin.userData.felineRootBuriedInTorso=true;
+   skin.userData.felineMedialMuscleOrigin=true;
+   skin.userData.felineHipSculpt=fore?'scapular-fascia':'gluteal-femur-contour';
    leg.add(skin);
    root.updateMatrixWorld(true);
    skin.bind(new THREE.Skeleton([bone0,bone1,bone2]));
