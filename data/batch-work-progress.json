@@ -110,49 +110,50 @@
     },
     "world": {
       "source": "ChatGPT定期品質回帰の実行結果＋GitHub証跡",
-      "lastRunAt": "2026-11-17T12:45:47+09:00",
+      "lastRunAt": "2026-11-17T12:51:18+09:00",
       "status": "work_incomplete",
       "carryover": true,
-      "subject": "PR #441実使用螺旋階段レンダラの静的差分精査（WebGL/Android未検証）",
-      "summary": "main world.enabled=true確認。正本53、保存21、main審査11/承認0を別計数。PR #441のsrc/building-structure.js実差分とrenderSpiralStairBOM実装を直接照合。支柱は偶数stepに生成され、上端高さはstep.top+floorOffset+.38+.85/2=.805。手すり中心高さ+.805と一致する設計を静的確認。ただし奇数stepの補間、踊り場、描画、衝突、FPSは未検証。新規実ソース改修0、GLB0、対象別QA合格0、ゲーム反映0。",
-      "nextAction": "既存PR #441のNode構文・実WebGL 2F/3F手すり接合/踊り場/衝突とAndroid FPSを実測。QA失敗箇所を実ソース修正し、合格前はマージ禁止。",
+      "subject": "60種移行・入口扉5種の実構造メッシュ改修（PR #441、描画QA保留）",
+      "summary": "mainのworld.enabled=trueとcatalog-targets count=60を確認。PR #441作業ブランチsrc/object-catalog.jsで入口扉Lv1〜5共通生成器に縦板6/9枚、裏桟、斜め補強、鍛鉄蝶番ストラップ/鋲を追加。実ソースSHA 8a20ff99。GitHub直結DNS失敗のためnode --checkとQAテストおよびWebGL/Androidは未実施。GLB生成0、QA合格0、main採用0、公開0。",
+      "nextAction": "GitHubソースのNode実行環境への転送経路を復旧し、node --check・指定3テスト・入口扉5種のWebGL新旧比較を実施。既存PR #441の階段QAも完了後、安全な場合だけマージ・公開。",
       "steps": {
         "launch": "done",
-        "code": "pending",
+        "code": "done",
         "qa": "pending",
-        "commit": "pending",
+        "commit": "done",
         "pr": "done",
         "merge": "pending",
         "deploy": "pending"
       },
       "evidence": [
         {
-          "label": "PR #441の実ソース差分",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/441/files"
+          "label": "入口扉5種の実造形改修SHA",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/8a20ff990176deda272d6c389a41f6918b60b4db"
         },
         {
-          "label": "既存の実使用レンダラ改修",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/184ddee7b81710d261ec3971998c22ce72a50175"
+          "label": "既存Draft PR #441",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/441"
         }
       ],
       "lastRunOutcome": {
-        "newSourceChangedIds": 0,
+        "newSourceChangedIds": 5,
         "newQAPassed": 0,
         "newGameAppliedIds": 0,
-        "newSourceCommits": 0
+        "newSourceCommits": 1
       },
       "operational": {
         "blockers": [
-          "GitHub連携のソースをNode/WebGL実行環境に転送できず構文・実描画QA未実施",
-          "Android実機FPS未計測",
-          "対象別QA未合格のためmainマージ・Pages公開不可"
+          "GitHubからNode実行環境への直接取得がDNS解決失敗（github.com）",
+          "node --checkと指定3テストは未実施",
+          "WebGL新旧スクリーンショット比較とAndroid FPS未計測",
+          "既存PR #441はDraftかつmergeable=false。対象別QA未合格"
         ],
-        "speedPlan": "renderSpiralStairBOMの2階/3階最小シーンでWebGL比較。まず手すり高さ+.805と支柱上端の一致を確認し、踊り場・当たり判定を計測。",
+        "speedPlan": "入口扉Lv1〜5の実ソースSHA 8a20ff99をローカルへ転送し構文→3テスト→WebGLの順に実行。QA合格までPRを保留。",
         "lastRunOutcome": {
-          "newSourceChangedIds": 0,
+          "newSourceChangedIds": 5,
           "newQAPassed": 0,
           "newGameAppliedIds": 0,
-          "newSourceCommits": 0,
+          "newSourceCommits": 1,
           "newGeneratedGLBs": 0,
           "branchSavedCount": 21,
           "mainInReviewCount": 11,
