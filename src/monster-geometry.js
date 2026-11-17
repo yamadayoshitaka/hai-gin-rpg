@@ -674,13 +674,23 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
        {name:'beast-nostril-'+(side<0?'L':'R'),rough:.21});
    }
  }else if(felineMaster){
-   g.axialLoft(head,'shadow',felineNasalRings(felineMaster),
-     {name:'feline-master-rhinarium-'+s.id,rough:.31,ribbing:0});
+   // Small triangular wet cat nose (not a canine ball): taper width
+   // into the philtrum and expose two inset dark nares on its surface.
+   const nose=g.axialLoft(head,'shadow',
+     felineNasalRings(felineMaster),
+     {name:'feline-master-rhinarium-'+s.id,rough:.26,ribbing:0});
+   nose.userData.felineTriangularRhinarium=true;
    for(const side of [-1,1]){
-     const x=side*felineMaster.noseWidth*.45;
-     g.sphere(head,'shadow',[x,-.162,muzzle+.129],
-       [.008,.006,.009],{name:'feline-master-nostril-'+(side<0?'L':'R')});
+     const x=side*felineMaster.noseWidth*.44;
+     const nostril=g.sphere(head,'shadow',
+       [x,-.157,muzzle+.131],[.009,.005,.008],
+       {name:'feline-master-nostril-'+(side<0?'L':'R')});
+     nostril.userData.embeddedNasalAla=true;
    }
+   const groove=g.tube(head,'shadow',[
+     [0,-.169,muzzle+.118],[0,-.187,muzzle+.106],
+     [0,-.198,muzzle+.091]],.0045);
+   groove.name='feline-philtrum-'+s.id;
  }else g.sphere(head,'shadow',[0,-.17,muzzle+.19],[.18,.057,.12],{name:'nose'});
  if(canine){
    // Small almond eyes set INTO the bone, heavy brows, wet nose and
@@ -948,14 +958,23 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
       [side*.13,-.17,muzzle+.05],[side*.146,-.265,muzzle+.14],
       [side*.115,-.335,muzzle+.23],.046,{name:'beast-upper-fang'});
    else if(felineMaster){
+     // Long sabertooth or small lion/panther tooth is part of the
+     // MAXILLA. Place enamel root under a labial gum sleeve instead
+     // of dangling cone tips from the jaw-opening pivot.
      const saber=s.id==='m007',length=felineMaster.saberToothLength;
-     const root=[side*.100,-.176,muzzle+.021];
+     const root=[side*.096,-.178,muzzle+.020];
+     const gum=g.bridge(head,'skin',
+       [side*.099,-.141,muzzle-.023],
+       [side*.094,-.190,muzzle+.035],.045,.026);
+     gum.name='feline-upper-gum-socket-'+s.id+'-'+(side<0?'L':'R');
+     gum.userData.fangRootCover=true;
      const fang=g.curvedHorn(head,'bone',root,
-       [side*.107,-.176-length*.54,muzzle+.082],
-       [side*.073,-.176-length,muzzle+.094],
-       saber?.030:.020,
+       [side*.100,-.178-length*.52,muzzle+.060],
+       [side*.073,-.178-length,muzzle+.073],
+       saber?.027:.017,
        {name:'feline-master-upper-canine-'+s.id+'-'+(side<0?'L':'R')});
      fang.userData.felineDentalRoot=true;
+     fang.userData.gumCovered=true;
    }else g.spike(head,'bone',[side*.13,-.20,muzzle+.08],[side*.13,-.31,muzzle+.22],.046);
  }
  if(s.id==='m004'){
@@ -1132,19 +1151,29 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
      {z:-.090,y:-.026,rx:.030,ry:.006}
    ],{name:'quadruped-oral-cavity',rough:.93,ribbing:0});
    mouthSlit.userData.m001RecessedOralSlit=true;
+ }else if(felineMaster){
+   // Old generic dark oval hovered in front of the upper feline lip.
+   // A tapered negative-space oral seam belongs to the moving jaw.
+   const cavity=g.axialLoft(jaw,'shadow',[
+     {z:.202,y:-.045,rx:.019,ry:.005},
+     {z:.147,y:-.043,rx:.072,ry:.010},
+     {z:.069,y:-.032,rx:.087,ry:.012},
+     {z:-.062,y:-.024,rx:.033,ry:.006}
+   ],{name:'quadruped-oral-cavity',rough:.92,ribbing:0});
+   cavity.userData.felineMouthSocket=true;
  }else g.sphere(jaw,'shadow',[0,-.035,muzzle-.18+v*.06],
    [.136,.018,.145],{name:'quadruped-oral-cavity'});
  g.sphere(jaw,'light',[0,-.044,muzzle-.12+v*.06],
    (s.id==='m001'||s.id==='m002')?[.060,.010,.058]:[.084,.014,.098],
    {name:'quadruped-tongue'});
- if(s.id==='m001'){
+ if(s.id==='m001'||s.id==='m002'){
    // Small lower incisors erupt UP from the gumline; the previous four
    // downward spikes made the jaw look like disconnected hanging pieces.
    for(let i=0;i<6;i++){
      const x=(i-2.5)*.029;
      const tooth=g.rootedSpike(jaw,'bone','skin',
        [x,-.047,.148],[x*1.04,-.012,.169],.009,
-       {name:'m001-lower-incisor-'+i});
+       {name:s.id+'-lower-incisor-'+i});
      tooth.tooth.userData.m001DentalArch='mandible';
    }
    // Opposing upper incisors stay fixed to the upper muzzle and reveal
@@ -1153,8 +1182,31 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
      const x=(i-2.5)*.026;
      const tooth=g.rootedSpike(head,'bone','skin',
        [x,-.176,.285],[x*1.02,-.202,.297],.0085,
-       {name:'m001-upper-incisor-'+i});
+       {name:s.id+'-upper-incisor-'+i});
      tooth.tooth.userData.m001DentalArch='maxilla';
+   }
+ }else if(felineMaster){
+   // A true six-incisor dental arc: tiny upper crowns move WITH the head,
+   // the small lower crowns move WITH the opening jaw. Do not reuse four
+   // oversized downward cones that float outside the cat's mouth.
+   for(let i=0;i<6;i++){
+     const x=(i-2.5)*.022;
+     const lower=g.rootedSpike(jaw,'bone','skin',
+       [x,-.043,.153],[x*1.025,-.014,.169],.007,
+       {name:'feline-lower-incisor-'+s.id+'-'+i});
+     lower.tooth.userData.felineDentalRoot='mandible';
+     const upper=g.rootedSpike(head,'bone','skin',
+       [x,-.175,muzzle+.037],
+       [x*1.025,-.199,muzzle+.050],.007,
+       {name:'feline-upper-incisor-'+s.id+'-'+i});
+     upper.tooth.userData.felineDentalRoot='maxilla';
+   }
+   for(const side of [-1,1]){
+     const lower=g.rootedSpike(jaw,'bone','skin',
+       [side*.091,-.043,.139],
+       [side*.090,.002,.159],.011,
+       {name:'feline-lower-canine-'+s.id+'-'+(side<0?'L':'R')});
+     lower.tooth.userData.felineDentalRoot='mandible';
    }
  }else for(let i=0;i<4;i++)g.spike(jaw,'bone',
    [(i-1.5)*.12,.01,.27],
