@@ -2893,7 +2893,26 @@ for(const obj of [...stageObjects.children]){
 }
 // The vegetation and fences are immutable during combat. Draw the exact same
 // meshes/materials through spatial GPU instancing; collision tiles stay as-is.
+// Report the production scene input BEFORE instancing removes its source
+// nodes. This never adds render meshes and verifies authoring→game lineage.
+const stageCatalogModelCounts=new Map();
+for(const object of stageObjects.children){
+ const id=object.userData?.assetId;
+ if(id&&Object.hasOwn(OBJECT_CATALOG,id))
+  stageCatalogModelCounts.set(id,(stageCatalogModelCounts.get(id)||0)+1);
+}
 const stageBatchStats=batchStaticStageDecorations(stageObjects,THREE,{cellSize:CELL});
+const liveObjectTransfer=Object.freeze({
+ source:'src/object-catalog.js#createCatalogObject',
+ catalogCount:Object.keys(OBJECT_CATALOG).length,
+ instantiatedCount:[...stageCatalogModelCounts.values()].reduce((a,b)=>a+b,0),
+ instantiatedIds:[...stageCatalogModelCounts.keys()].sort(),
+ byId:Object.fromEntries(stageCatalogModelCounts),
+ instancedDrawBatches:stageBatchStats.batches,
+ instancedObjectCount:stageBatchStats.objects,
+ visualQaApproved:false,androidFpsVerified:false
+});
+window.getBattleObjectTransferStats=()=>liveObjectTransfer;
 loadingProgress('地形と街のGPU描画を最適化しました',40);
 console.info('[Stage GPU instancing]',stageBatchStats);
 // Fire commands target both bridges and buildings by their real footprint.
@@ -10125,6 +10144,7 @@ window.getBattleStartupStats=()=>({ready:battleReady,error:loadingFailure?String
  resolutionScale:BATTLE_RESOLUTION_SCALE,adaptiveQuality:adaptiveBattleResolution.getStats(),
  pixelRatio:renderer.getPixelRatio(),antiAliasing:fxaaComposer?'GPU FXAA':'WebGL MSAA',bufferWidth:renderer.domElement.width,bufferHeight:renderer.domElement.height,
  actors:actors.length,dressed:actors.filter(a=>a.outfit||a.townRegisteredModel).length,buildingBatchStats,stageBatchStats,
+ objectTransfer:liveObjectTransfer,
  massModelBatches:massRenderer?.drawMeshes??0,bodyDrawLayers:massRenderer?.bodyDrawLayers??0,
  prewarmedStudioGrooms,visibility:actorVisibility.stats,elapsed});
 async function finishBattleLoading(){
