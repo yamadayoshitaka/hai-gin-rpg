@@ -5,8 +5,8 @@
     "object:entry_door_lv2_001"
   ],
   "run": {
-    "id": "44070997425",
-    "startedAt": "2026-11-17T11:09:00.511Z",
+    "id": "44164511637",
+    "startedAt": "2026-11-17T20:01:18.095Z",
     "mode": "results",
     "requested": 3,
     "requestedTarget": null,
@@ -24,6 +24,6 @@
     "providerCalls": 0,
     "stopReason": "REVIEW_PROPOSALS_RECORDED_NOT_MERGED",
     "referenceStopReason": "REVIEW_EXISTING_REFERENCE_ONLY",
-    "completedAt": "2026-11-17T11:09:00.511Z"
+    "completedAt": "2026-11-17T20:01:18.095Z"
   }
 }
