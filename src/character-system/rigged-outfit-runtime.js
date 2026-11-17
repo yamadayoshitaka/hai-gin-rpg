@@ -5,7 +5,7 @@
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {clone} from 'three/addons/utils/SkeletonUtils.js';
-import {JOBS,outfitStyle,loadPhotoMaterials,createDetailedOutfit} from '../outfit-maintenance-model.js?v=20261117-alljobs-back3';
+import {JOBS,outfitStyle,loadPhotoMaterials,createDetailedOutfit} from '../outfit-maintenance-model.js?v=20261117-no-back-card-v2';
 import {EQUIPMENT_TYPES,equipmentForJob} from './equipment-catalog.js?v=4.4.41';
 import {attachSegmentedArmor} from './segmented-armor-runtime.js?v=4.5.2';
 import {consolidateBattleArmor} from './armor-batch-runtime.js?v=4.5.0';
@@ -585,20 +585,19 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
   const detail=createDetailedOutfit(jobId,sex,dressed,textures,{quality,rarity:rank});
   dressed.add(detail);
   const result=skinOutfitDetails(detail,dressed);
-  // The procedural rear panels are broad, nearly planar geometry sampled
-  // from the torso AABB. On a moving soldier they look like a rigid board
-  // strapped across the thief/swordsman's back. BOTH preview and battle
-  // have an opaque source skinned torso (including photographic lining in
-  // former flesh-colored slots), so do not draw duplicate rear sheets.
-  // Keep the source skinned fabric and the real segmented plate equipment.
-  // Retain the backup panel only if no such opaque source fabric was found.
+  // Legacy flat back sheets are no longer generated. Remove any matching
+  // procedural descendants defensively before attaching the outfit, so an
+  // accidental future reintroduction cannot display a cardboard back.
+  const bannedBackPanels=new Set([
+    'complete-back-tunic-lining','heroic-cuirass-backplate',
+    'l-cuirass-closed-flank','r-cuirass-closed-flank'
+  ]);
   let suppressedFlatBackPieces=0;
-  if((opaqueTorsoLiningMaterials+sourceOpaqueTorsoMaterials)>0){
-    for(const name of ['complete-back-tunic-lining','heroic-cuirass-backplate',
-      'l-cuirass-closed-flank','r-cuirass-closed-flank']){
-      const panel=detail.getObjectByName(name);
-      if(panel){panel.visible=false;panel.userData.replacedByOpaqueSourceBack=true;
-        suppressedFlatBackPieces++;}
+  for(const name of bannedBackPanels){
+    let panel;
+    while((panel=detail.getObjectByName(name))){
+      panel.removeFromParent();panel.geometry?.dispose();
+      suppressedFlatBackPieces++;
     }
   }
   const root=new THREE.Group();root.name=`rigged-outfit-${jobId}`;root.add(dressed);parent.add(root);

@@ -12,8 +12,9 @@ for(const meshName of ['Male_Ranger_Body','Female_Ranger_Body_001','Male_Peasant
   quality:'battle',meshName,materialName:'MI_Regular_01',role:'skin'
  }),true,meshName);
 }
+assert.equal(shouldClothLineBattleTorso({quality:'preview',meshName:'Male_Ranger_Body',materialName:'MI_Regular_01',role:'skin'}),true);
 for(const [quality,meshName,materialName,role] of [
- ['preview','Male_Ranger_Body','MI_Regular_01','skin'],
+ // Preview now also reuses an opaque cloth material instead of an added back board.
  ['battle','Male_Ranger_Arms','MI_Regular_01','skin'],
  ['battle','Male_Ranger_Legs','MI_Regular_01','skin'],
  ['battle','Male_Ranger_Body','MI_Ranger_Cloth','body'],
@@ -62,6 +63,6 @@ assert.match(hair,/mesh\.userData\.shortBackCoverageStripCount=shortBackStrips/)
 assert.match(rig,/applyBattleTorsoLining\(copy/);
 assert.match(rig,/opaqueTorsoLiningMaterials\+\+/);
 assert.match(game,/battle-artist-head-graft\.js\?v=20261117-shading-back1/);
-assert.match(game,/rigged-outfit-runtime\.js\?v=20261117-flatback-off4/);
+assert.match(game,/rigged-outfit-runtime\.js\?v=20261117-no-back-card-v2/);
 source.dispose();texture.dispose();
 console.log('PASS: atomic wig upgrades, short scalp coverage and opaque torso from same source draw slots');
