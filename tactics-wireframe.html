@@ -320,7 +320,7 @@ body[data-circle-target] #destinationPrompt{border:2px solid #ffed9c;box-shadow:
 <div id="vitalsPanel" hidden role="region" aria-label="戦況HP・MP一覧"><div class="vitalsHead"><strong>部隊別 HP / MP（⏸ 一時停止中）</strong><button id="vitalsClose" aria-label="戦況を閉じる">✕ 閉じる</button></div><div id="vitalsOverview"></div><div class="vitalsFilters"><label>軍<select id="vitalsTeam"><option value="0">味方</option><option value="1">敵</option></select></label><label>部隊<select id="vitalsSquad"><option value="all">全部隊</option></select></label><label>職業<select id="vitalsJob"><option value="all">全職業</option></select></label></div><div class="squadHelp" id="vitalsSquadStatus">部隊を選ぶと個人のHPとMPを確認できます。</div><button id="vitalsHealing" disabled>✚ この部隊へ回復支援を要請</button><div id="vitalsJobSummary"></div><div id="vitalsIndividuals"></div><div class="vitalsPages"><button id="vitalsPrev">◀ 前</button><span id="vitalsPageLabel">1 / 1</span><button id="vitalsNext">次 ▶</button></div></div>
 <button id="battleMenuToggle" aria-expanded="false">☰ メニュー</button>
 <div id="teamLegend" aria-label="陣地識別色"><span class="ally">■ 味方陣地・西</span><span class="enemy">■ 敵陣地・東</span><span>▣ 中立帯</span></div>
-<div id="battleTopDock" aria-label="戦況・戦死者・性能計測"><div id="topRadarSlot"></div><div id="topBattleInfo"><div id="battleTopRow"><div id="topMenuSlot"></div><div id="topTeamsSlot"></div><div id="topQuickActions"><button id="topStrategy" type="button" aria-label="戦闘を停止して班全体の推奨作戦を選ぶ" title="現在の部隊・地形に合う作戦を表示">★ 推奨</button><button id="topBgm" aria-label="BGMと効果音を切り替える">♪ BGM</button><button id="topSurrender" aria-label="降参を確認する">🏳 降参</button></div></div><div id="battleCasualties" aria-live="polite"><span class="allyLoss">味方戦闘不能 <b id="allyCasualties">0/50</b>人</span><span class="enemyLoss">敵戦闘不能 <b id="enemyCasualties">0/50</b>人</span></div><div id="topPerformanceSlot"></div><div id="topStructureSlot"></div></div></div>
+<div id="battleTopDock" aria-label="戦況・戦死者・性能計測"><div id="topRadarSlot"></div><div id="topBattleInfo"><div id="battleTopRow"><div id="topMenuSlot"></div><div id="topTeamsSlot"></div><div id="topQuickActions"><button id="topStrategy" type="button" aria-label="戦闘を停止して班全体の推奨作戦を選ぶ" title="現在の部隊・地形に合う作戦を表示">★ 推奨</button><button id="topBgm" aria-label="BGMと効果音を切り替える">♪ BGM</button><button id="topSurrender" aria-label="降参を確認する">🏳 降参</button></div></div><div id="battleCasualties" aria-live="polite"><span class="allyLoss" role="button" tabindex="0" data-camera-team="0" aria-label="味方部隊の視点へ切り替える">味方戦闘不能 <b id="allyCasualties">0/50</b>人</span><span class="enemyLoss" role="button" tabindex="0" data-camera-team="1" aria-label="敵部隊の視点へ切り替える">敵戦闘不能 <b id="enemyCasualties">0/50</b>人</span></div><div id="topPerformanceSlot"></div><div id="topStructureSlot"></div></div></div>
 <div id="battleMenu" hidden aria-label="ゲームメニュー"><strong>戦闘メニュー</strong><div class="menuLine" id="armyScaleSlot"></div><div class="menuLine" id="menuSoundSlot"></div><div class="menuLine" id="menuPauseSlot"></div><div class="menuLine" id="lockedSquadStrategies" aria-label="現在の隊列作戦（開戦後変更不可）"></div><div class="menuLine menuDisplayOptions retiredRibbonSettings"><strong>左右の隊列ラベル</strong><label><input id="showAllySquadRibbon" type="checkbox" checked> 味方ラベル</label><label><input id="showEnemySquadRibbon" type="checkbox" checked> 敵ラベル</label></div><div class="menuLine menuDisplayOptions"><label><input id="showAllSquadLeaderLines" type="checkbox"> 全隊の引き出し線を表示（通常は選択した隊のみ）</label></div><div class="menuLine menuDisplayOptions"><strong>上部ボタンの表示</strong><label><input id="showTopBgm" type="checkbox" checked> BGM</label><label><input id="showTopSurrender" type="checkbox" checked> 降参</label></div><div class="menuLine"><label for="corpseLifetime">死体の表示（最大100体）</label><select id="corpseLifetime" aria-label="死体が消えるまでの時間"><option value="30">30秒</option><option value="60" selected>60秒</option><option value="120">120秒</option><option value="never">消滅しない</option></select></div><small>分隊は位置の選択・確認のみです。作戦と対象は班全体へ指示します。</small><div class="menuLine" id="menuBridgeSlot"></div><div class="menuLine"><button id="surrender">🏳 降参する</button></div></div>
 <div id="squadTactics" hidden aria-label="部隊の号令・行き先"><div class="tacticsHeading"><strong id="squadTacticsName">部隊を選択</strong><button id="squadInspect">🔍 近景</button><button id="squadTacticsClose">✕ 戻る</button></div><div id="squadTypeStatus">編成タイプは固定</div>
 <div id="squadActiveOrder" style="font-weight:800;color:#8be0ff;margin-top:6px">現在の号令：自動行動</div>
@@ -798,6 +798,14 @@ body[data-circle-target] #battleCancelCircleTarget{display:flex!important}
 #overviewSquadInspector .overviewInspectorActions select{flex:1;min-width:0}
 #overviewSquadInspector .overviewInspectorActions button{flex:1.25}
 #overviewSquadInspector .overviewInspectorActions[hidden]{display:none!important}
+#overviewCameraChoices{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:7px 0}
+#overviewCameraChoices button{min-width:0;min-height:40px;padding:5px 2px;border-radius:7px;
+ border:1px solid #83bddc;background:#193c57;color:#f2f9ff;font:700 11px/1.3 system-ui;touch-action:manipulation}
+#overviewCameraChoices button.active{background:#486747;border:2px solid #ffe28f;color:#fff4c5}
+#overviewCameraChoices button:disabled{opacity:.42}
+#battleTopDock #battleCasualties [data-camera-team]{pointer-events:auto;cursor:pointer;
+ touch-action:manipulation;border-radius:6px;outline-offset:2px}
+#battleTopDock #battleCasualties [data-camera-team]:focus-visible{outline:2px solid #ffe28f}
 body #allySquadRibbon,body #enemySquadRibbon,
 body.compact-command-dock #allySquadRibbon,body.compact-command-dock #enemySquadRibbon,
 body.compact-command-dock.squad-closeup #allySquadRibbon,
@@ -829,17 +837,22 @@ body.compact-command-dock.squad-closeup #enemySquadRibbon{display:none!important
  <svg id="overviewPinLeaders" aria-hidden="true"></svg>
  <div id="overviewPins"></div>
  <div id="overviewMapSummary" role="status">味方・敵の部隊位置を表示中</div>
- <section id="overviewSquadInspector" hidden aria-label="選択部隊の戦況と作戦情報">
+</div>
+<section id="overviewSquadInspector" hidden aria-label="選択部隊の戦況と作戦情報">
   <div class="overviewInspectorTitle"><strong id="overviewInspectorTitle">部隊情報</strong>
    <button id="overviewInspectorClose" type="button" aria-label="部隊情報を閉じる">✕</button></div>
   <div id="overviewInspectorMeta" class="overviewInspectorMeta"></div>
   <div id="overviewInspectorPurpose" class="overviewInspectorMeta"></div>
+  <div id="overviewCameraChoices" role="group" aria-label="選択部隊のカメラ視点">
+   <button type="button" id="overviewCameraWide" data-camera-mode="overview">🌐 全体俯瞰</button>
+   <button type="button" id="overviewCameraSquad" data-camera-mode="squad">🎯 部隊追従</button>
+   <button type="button" id="overviewCameraPerson" data-camera-mode="person">👤 人物目線</button>
+  </div>
   <div id="overviewInspectorActions" class="overviewInspectorActions">
    <select id="overviewDivisionSelect" aria-label="同じ班の分隊を選択するだけ（個別号令なし）"></select>
    <button type="button" id="overviewRecommendPlan">★ 推奨作戦を選ぶ</button>
   </div>
  </section>
-</div>
 <div id="battleSelectedTargetBar" role="status" aria-live="off" hidden><div class="targetHalf left"><div class="targetHeading" id="battleSelectedAlly">味方 第1隊</div><div class="targetCount" id="battleSelectedAllyCount">--/--</div><div class="targetMode" id="battleSelectedAllyOrder">号令：自動</div></div><div class="targetDirection">➜</div><div class="targetHalf right"><div class="targetHeading" id="battleSelectedEnemy">索敵中</div><div class="targetCount" id="battleSelectedEnemyCount">--/--</div><div class="targetMode" id="battleSelectedTargetMode">攻撃対象（自動選択）</div></div></div><button id="battleCancelCircleTarget" type="button" aria-label="対象選択を取り消す">✕</button>
 <div id="squadScreenLabels" aria-label="全味方・敵部隊の接続線付き情報サークル"><svg id="squadCalloutLines" aria-hidden="true"></svg></div>
 <div id="squadCircleInfo" hidden role="status" aria-live="polite" aria-label="選択した部隊の情報・1行表示">
@@ -8387,6 +8400,7 @@ miniCanvas.addEventListener('pointerup',event=>{
   nearest.center:point;
  const x=(focusPoint.x-6)*CELL,z=(focusPoint.z-6)*CELL;
  focusedHumanUnitId=null;followCamera=false;
+ manualCameraSquad=null;manualCameraFocusUntil=0;
  battleViewMode='overview';commanderCinematic=null;cinematicFocusQueue.length=0;
  setBattleCamera(new THREE.Vector3(x,terrainY(x,z),z),cameraOverviewOffset);
  setCameraActive('camOverview');
@@ -8579,19 +8593,11 @@ function activateSquadLabel(id,team,x=0,y=0){
   pendingSquadCircleInfoTimer=null;
   if(!battleReady||finished||squadCloseupLabelsHidden||!lastSquadCircleTap||
      lastSquadCircleTap.key!==key||lastSquadCircleTap.at!==now)return;
-  if(team===0){
-   const reason=squadCommanderUnavailableReason(id);
-   if(reason){
-    battleDialogue.push({key:'circle-unavailable:'+id+':'+Math.floor(elapsed*10),speaker:'伝令',
-     kind:'warning',priority:97,forceDisplay:true,squadId:String(id),
-     text:squadName(id)+'：'+reason+'。操作はできません。'});
-   }else openSquadTactics(id);
-  }else{
-   const row=lastRibbonSums.get(key),intent=squadIntent(id,1,row?.n===0);
-   const general=ribbonCommanderAlive(1,id)?'指揮中':'☠ 軍師戦死';
-   battleDialogue.push({key:'circle-enemy:'+id+':'+Math.floor(elapsed*10),speaker:'斥候',
-    kind:'info',priority:78,forceDisplay:true,text:'敵'+squadName(id,1)+
-    '：生存 '+(row?.n??0)+'/'+(row?.total??0)+'、'+general+'、'+intent.order});
+  // One tap selects a perspective and opens the shared view chooser;
+  // double-tap still has its original character zoom behaviour.
+  if(selectOverviewSquad(team,id)){
+   lastTeamCameraSquad.set(team,String(id));
+   applyOverviewCamera('squad');
   }
  },SQUAD_CIRCLE_DOUBLE_TAP_MS);
 }
@@ -8697,7 +8703,7 @@ function overviewSquadActive(){
   !document.body.classList.contains('command-target-preview');
 }
 function selectOverviewSquad(team,id){
- if(!overviewSquadActive())return false;
+ if(TOWN_MODE||!battleReady||finished||battleCeremony.locked||commandOverviewLocked)return false;
  const key=squadKey(team,id),marker=squadMarkers.get(key);
  if(!marker?.visible)return false;
  overviewSelectedKey=key;overviewInspectorSignature='';
@@ -8722,6 +8728,7 @@ function renderOverviewSquadInspector(force=false){
  overviewInspectorSignature=sig;
  overviewInspector.hidden=false;
  overviewInspector.classList.toggle('enemy',team===1);
+ syncOverviewCameraChoices();
  $('overviewInspectorTitle').textContent=(team?'🔴 敵 ':'🔵 味方 ')+squadName(id,team);
  $('overviewInspectorMeta').textContent=
   '残存 '+alive+'人 ｜ '+intent.order+(leader?' ｜ '+leader:'');
@@ -8744,6 +8751,39 @@ function renderOverviewSquadInspector(force=false){
   $('overviewRecommendPlan').disabled=!!leader||!hasSquadCommander(id);
   $('overviewRecommendPlan').title=leader||'現在の地形・目的・職業に合う宿屋テンプレートを選択';
  }
+}
+function syncOverviewCameraChoices(){
+ const target=overviewSelectedKey,active=manualCameraSquad?.key===target
+  ?manualCameraSquad.mode:'overview';
+ for(const button of $('overviewCameraChoices').querySelectorAll('button'))
+  button.classList.toggle('active',button.dataset.cameraMode===active);
+ const node=overviewPinNodes.get(target);
+ const alive=!!node&&!!squadCommandFocus(node.id,node.team);
+ for(const id of ['overviewCameraSquad','overviewCameraPerson'])
+  $(id).disabled=!alive;
+}
+for(const [id,mode] of [['overviewCameraWide','overview'],
+ ['overviewCameraSquad','squad'],['overviewCameraPerson','person']])
+ $(id).onclick=()=>applyOverviewCamera(mode);
+const lastTeamCameraSquad=new Map();
+function switchTeamCamera(team){
+ if(TOWN_MODE||!battleReady||finished||commandOverviewLocked||battleCeremony.locked)return;
+ const ids=(team===0?squadIds:enemySquadIds).filter(id=>Boolean(squadCommandFocus(id,team)));
+ if(!ids.length){log((team===0?'味方':'敵')+'に生存部隊がありません');return;}
+ const last=lastTeamCameraSquad.get(team);
+ const index=manualCameraSquad?.team===team?ids.indexOf(String(last)):-1;
+ const id=ids[(index+1)%ids.length];
+ if(!selectOverviewSquad(team,id))return;
+ lastTeamCameraSquad.set(team,String(id));
+ applyOverviewCamera('squad');
+}
+for(const team of [0,1]){
+ const element=$('battleCasualties').querySelector('[data-camera-team="'+team+'"]');
+ if(!element)continue;
+ element.onclick=()=>switchTeamCamera(team);
+ element.onkeydown=event=>{if(event.key==='Enter'||event.key===' '){
+  event.preventDefault();switchTeamCamera(team);
+ }};
 }
 $('overviewInspectorClose').onclick=()=>{
  overviewSelectedKey=null;overviewInspector.hidden=true;overviewInspectorSignature='';
@@ -8769,7 +8809,10 @@ function updateOverviewSquadPins(dt){
  const visible=overviewSquadActive();
  if(overviewHud.hidden===visible)overviewHud.hidden=!visible;
  document.body.classList.toggle('overview-squad-map',visible);
- if(!visible)return;
+ if(!visible){
+  if(overviewSelectedKey)renderOverviewSquadInspector();
+  return;
+ }
  const squadNumberByGroup=buildSquadNumberByGroup();
  const rect=renderer.domElement.getBoundingClientRect();
  const report=$('battleDialogue'),topDock=$('battleTopDock');
@@ -9506,6 +9549,7 @@ const initialPersonPovOffset=new THREE.Vector3();
 // battlefield view on narrow portrait phones (avoid the former top-down map).
 const cameraOverviewOffset=new THREE.Vector3(310,310,310);
 let battleViewMode='commander';
+let manualCameraSquad=null;
 controls.maxDistance=850;
 function setBattleCamera(focus,offset){
  if(!TOWN_MODE){
@@ -9553,6 +9597,34 @@ function followSelectedCommander(id=trackedAllySquadId??squadIds[0],team=0){
  setCameraActive('camFollow');
  return true;
 }
+// Selected perspective remains anchored to its team until the user changes it.
+function applyOverviewCamera(mode){
+ const node=overviewPinNodes.get(overviewSelectedKey);
+ if(!node||TOWN_MODE||!battleReady||finished||commandOverviewLocked)return false;
+ if(mode==='overview'){
+  $('camOverview').click();
+  syncOverviewCameraChoices();
+  return true;
+ }
+ const focus=squadCommandFocus(node.id,node.team);
+ if(!focus)return false;
+ battleViewMode='commander';commanderCinematic=null;cinematicFocusQueue.length=0;
+ manualCameraSquad={key:overviewSelectedKey,id:String(node.id),team:node.team,mode};
+ lastTeamCameraSquad.set(node.team,String(node.id));
+ manualCameraFocusUntil=Infinity;
+ if(mode==='person'){
+  followSelectedCommander(node.id,node.team);
+ }else if(mode==='squad'){
+  focusedHumanUnitId=massSim?focus.unit.id:null;
+  if(!massSim)selected=focus.unit;
+  followCamera=true;targetViewFollowing=false;
+  setBattleCamera(focus.point,new THREE.Vector3(-20,16,23));
+  setCameraActive(null);
+ }else return false;
+ syncOverviewCameraChoices();
+ syncSquadCloseupLabels();
+ return true;
+}
 // Ordinary battle camera follows an ACTIVE allied engagement rather than
 // a stationary rear commander. Spatial contacts are scanned at ~1Hz.
 let automaticContactActorId=null,contactSquadId=null,contactSwitchAt=-Infinity;
@@ -9584,14 +9656,20 @@ if(TOWN_MODE)setBattleCamera(cameraHome,cameraCloseOffset);
 else followSelectedCommander();
 $('camOverview').onclick=()=>{
  if(commandOverviewLocked)return;
+ manualCameraSquad=null;manualCameraFocusUntil=0;
  battleViewMode='overview';commanderCinematic=null;cinematicFocusQueue.length=0;
  focusedHumanUnitId=null;followCamera=false;targetViewFollowing=false;
  setBattleCamera(new THREE.Vector3(openingOverviewCenter,terrainY(openingOverviewCenter,openingOverviewCenter),openingOverviewCenter),cameraOverviewOffset);
  setCameraActive('camOverview');
 };
-$('camFollow').onclick=()=>{if(!commandOverviewLocked){followSelectedCommander();manualCameraFocusUntil=performance.now()+8000;}};
+$('camFollow').onclick=()=>{if(!commandOverviewLocked){
+ manualCameraSquad=null;followSelectedCommander();
+ manualCameraFocusUntil=performance.now()+8000;
+ syncOverviewCameraChoices();
+}};
 $('camReset').onclick=()=>{
  if(commandOverviewLocked)return;
+ manualCameraSquad=null;manualCameraFocusUntil=0;
  if(TOWN_MODE)setBattleCamera(cameraHome,cameraCloseOffset);
  else followSelectedCommander();
 };
@@ -10435,8 +10513,11 @@ function animate(){
   if(followCamera){
    let tracked=focusedHumanUnitId!=null?massSim?.units?.find(u=>u.id===focusedHumanUnitId):null;
    if(massSim&&battleViewMode==='commander'&&(!tracked?.alive||tracked.hp<=0)){
-    const replacement=squadCommandFocus(trackedAllySquadId);
+    const replacement=manualCameraSquad?
+     squadCommandFocus(manualCameraSquad.id,manualCameraSquad.team):
+     squadCommandFocus(trackedAllySquadId);
     tracked=replacement?.unit??null;focusedHumanUnitId=tracked?.id??null;
+    if(!tracked&&manualCameraSquad)followCamera=false;
    }
    const followed=automaticFloorGuide||
     (automaticContactActorId==null?null:actors.find(a=>a.id===automaticContactActorId&&a.hp>0))||
