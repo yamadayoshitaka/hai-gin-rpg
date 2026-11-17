@@ -242,6 +242,27 @@ export function v65IrisOpticalTones(r,angle,{female=true}={}){
  const final=THREE.MathUtils.clamp(radial*crypt*pupilRim,.82,1.09);
  return base.map((v,i)=>THREE.MathUtils.clamp(v*final*(i===2?.995:1),.30,1.25));
 }
+/** Fine radial collagen and limbal tones, rendered on the existing 3D iris. */
+export function v70IrisOpticalTones(r,angle,{female=true}={}){
+ const base=v65IrisOpticalTones(r,angle,{female});
+ const rr=clamp(r,0,1);
+ const stroma=Math.sin(angle*23+rr*34)*Math.cos(angle*13-rr*19);
+ const fibre=Math.sin(angle*31-rr*47)*Math.sin(angle*9+rr*23);
+ const envelope=Math.exp(-Math.pow((rr-.63)/.31,2));
+ const collarette=1+.080*Math.exp(-Math.pow((rr-.43)/.075,2));
+ const pupilRim=1-.13*Math.exp(-Math.pow((rr-.14)/.11,2));
+ const limbal=1-.055*smoothstep((rr-.76)/.22);
+ return base.map((v,i)=>clamp(v*(1+envelope*(.065*stroma+.025*fibre))*
+  collarette*pupilRim*limbal*(i===2?.986:1),.28,1.25));
+}
+/** Anatomically restricted face-relief shading, no detached wrinkle meshes. */
+export function v70FaceReliefShadow({nx,ny,front,lidY=.684}={}){
+ const visibility=clamp(Number(front)||0,0,1);
+ const orbital=bell(nx,.147,.077)*bell(ny,lidY+.050,.071);
+ const alar=bell(nx,.127,.049)*bell(ny,.554,.042);
+ const cheek=bell(nx,.286,.120)*bell(ny,.519,.097);
+ return visibility*(.072*orbital+.036*alar+.023*cheek);
+}
 export function v65ScleralShading(u,v){
  const top=Math.pow(THREE.MathUtils.smoothstep(v,.67,1),2);
  const corners=Math.pow(Math.abs(u-.5)*2,5);
@@ -290,14 +311,14 @@ export function updateRealFacePigment(face,controls={},mode='color',gender='fema
   // Actual sculpted-skin vertex colours receive subtle occlusion in the
   // nasolabial fold, eyes, nose wings and philtrum (no flat texture card).
   // Older ages get pronounced crease pigment and lower-eye shadows.
-  const underEye=bell(nx,.345,.14)*bell(ny,.632,.027)*front;
+  const underEye=bell(nx,.135,.075)*bell(ny,.625,.027)*front;
   // Fine eyelid and inner-canthus shading, without adding ageing wrinkles.
   // Follow the actual eye region near ±.35 head width, not the nose
   // bridge (.12). The previous mismatch looked like a floating crease.
   const lidY=.684+THREE.MathUtils.clamp(Number(settings.eyePositionY)||0,-2,2)*.006;
-  const upperLidOcclusion=bell(nx,.346,.112)*bell(ny,lidY+.017,.018)*front;
-  const lowerLidOcclusion=bell(nx,.346,.115)*bell(ny,lidY-.043,.029)*front;
-  const innerCanthus=bell(nx,.245,.046)*bell(ny,lidY-.014,.028)*front;
+  const upperLidOcclusion=bell(nx,.123,.071)*bell(ny,lidY+.022,.022)*front;
+  const lowerLidOcclusion=bell(nx,.123,.078)*bell(ny,lidY-.043,.029)*front;
+  const innerCanthus=bell(nx,.075,.043)*bell(ny,lidY-.014,.028)*front;
    const naturalEyeMakeup=v67NaturalEyeMakeup({nx,ny,front,lidY,gender});
   const noseWing=bell(nx,.115,.045)*bell(ny,.551,.025)*front;
   // A subtle bridge-side contour follows the actual raised cartilage and
@@ -324,7 +345,8 @@ export function updateRealFacePigment(face,controls={},mode='color',gender='fema
    (.018+.052*youthFade)*lipShade+age.sag*.15*underEye+ageShade+
    .047*upperLidOcclusion+.021*innerCanthus+.105*noseBridgeContour+
    (.006+.020*youthFade)*nasolabial+
-   (.010+.020*youthFade)*lowerLidOcclusion;
+   (.010+.020*youthFade)*lowerLidOcclusion+
+   v70FaceReliefShadow({nx,ny,front,lidY});
   const s=Math.max(.55,1-contactShade);
   const rgb=pigmentFactor(skin,blush,cheek)
    .multiply(pigmentFactor(skin,lipstick,cosmeticOpacity(.30)*lipMask))
@@ -344,6 +366,7 @@ export function updateRealFacePigment(face,controls={},mode='color',gender='fema
  face.userData.v63AnatomicalEyelidContactShadow=true;
  face.userData.v64EyeShadowFollowsAnatomicalEyes=true;
   face.userData.v67NaturalEyeMakeupOnRealSkin=gender==='female';
+  face.userData.v70AnatomicalChiaroscuro=true;
  face.userData.v64AgeWrinkleIntensity=age.wrinkles;
  for(const name of ['UPPER','LOWER']){
   const lip=face.getObjectByName(name+'_3D_VERMILION_LIP');
@@ -540,16 +563,16 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
  });
  const eyeMat=new THREE.MeshPhysicalMaterial({
   // Slightly warm white, natural wet sclera sheen rather than a bright disk.
-  color:0xe6e3df,roughness:.27,metalness:0,
-  clearcoat:.35,clearcoatRoughness:.12
+  color:0xe6e3df,roughness:.22,metalness:0,
+  clearcoat:.46,clearcoatRoughness:.075,ior:1.376,specularIntensity:.68
  });
  const irisMat=new THREE.MeshPhysicalMaterial({
-  color:0x747a83,roughness:.24,metalness:0,
-  clearcoat:.39,clearcoatRoughness:.13
+  color:0x747a83,roughness:.21,metalness:0,
+  clearcoat:.53,clearcoatRoughness:.085,ior:1.376,specularIntensity:.75
  });
  const pupilMat=new THREE.MeshPhysicalMaterial({
-  color:0x161719,roughness:.15,metalness:0,
-  clearcoat:.28,clearcoatRoughness:.12
+  color:0x161719,roughness:.12,metalness:0,
+  clearcoat:.47,clearcoatRoughness:.065,ior:1.376
  });
  const root=new THREE.Group();
  root.name=gender.toUpperCase()+'_ANATOMICAL_CLAY_FACE_PARTS';
@@ -731,6 +754,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
    new THREE.Float32BufferAttribute(whiteShading,3));
   eyeMat.vertexColors=true;eyeMat.needsUpdate=true;
   eyePatch.userData.scleralLidOcclusion=true;
+   eyePatch.userData.v70CornealWetness=true;
    eyePatch.userData.v65MoistScleraPBR=true;
   root.add(eyePatch);
   // Both pupils and colored contacts are sections of the same real skin-
@@ -773,14 +797,14 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   const fiberColors=[];
   for(let j=0;j<=20;j++)for(let i=0;i<=64;i++){
    const r=j/20,angle=i/64*Math.PI*2;
-   fiberColors.push(...v65IrisOpticalTones(r,angle,{female}));
+   fiberColors.push(...v70IrisOpticalTones(r,angle,{female}));
   }
   iris.geometry.setAttribute('color',
    new THREE.Float32BufferAttribute(fiberColors,3));
   irisMat.vertexColors=true;
   iris.userData.circularProjected=true;
   iris.userData.radialFibers=true;
-  iris.userData.opticalDetailVersion='v65-radial-crypts-limbal-moisture';
+  iris.userData.opticalDetailVersion='v70-collagen-stroma-limbal-moisture';
    iris.userData.v65MultiscaleIrisFibers=true;
   iris.userData.v63RadialCrypts=true;
   iris.userData.v63DualGlints=true;
