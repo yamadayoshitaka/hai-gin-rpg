@@ -103,6 +103,12 @@ export function installBattleTacticalUI({
   banner.hidden=false;
   noticeTimer=setTimeout(()=>{banner.hidden=true;resetEligible();noticeTimer=null;},5200);
  }
+ function reportStrategicEvent(squadId,event){
+  const members=[...new Set(getCommandSquadIds(squadId).map(String))].sort();
+  if(!members.length)return false;
+  situationMonitor.enqueue('group:'+members.join('|'),event);
+  return true;
+ }
  function onSquadSums(sums){
   if(!isReady())return;
   const rows=[],visited=new Set();
@@ -130,6 +136,18 @@ export function installBattleTacticalUI({
   if(!event)return;
   const representative=situationGroupMembers.get(event.id);
   if(representative==null)return;
+  const unavailable=getCommanderReason(representative);
+  if(unavailable){
+   // Recommendation is still visible as information when the strategist is
+   // defeated; never keep an undeliverable 30-second prompt in the inbox.
+   banner.replaceChildren(fragment('strong','','⚠ 推奨作戦：指揮不可'),
+    fragment('small','',getSquadName(representative)+'：'+unavailable));
+   banner.hidden=false;
+   if(noticeTimer!==null)clearTimeout(noticeTimer);
+   noticeTimer=setTimeout(()=>{banner.hidden=true;noticeTimer=null;},5200);
+   situationMonitor.acknowledge(event.id);
+   return;
+  }
   if(onSituationChange(representative,event,sums)===true){
    situationMonitor.acknowledge(event.id);
    if(noticeTimer!==null){clearTimeout(noticeTimer);noticeTimer=null;}
@@ -137,7 +155,7 @@ export function installBattleTacticalUI({
   }
  }
  window.getBattleSituationInboxQA=()=>situationMonitor.snapshot();
- return {renderFor,onSquadSums};
+ return {renderFor,onSquadSums,reportStrategicEvent};
 }
 
 /** Opening wizard, attached to the actual stage and current squad orders. */
