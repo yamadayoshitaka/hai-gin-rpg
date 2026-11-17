@@ -89,3 +89,24 @@ test('face/body studios and battle use the same pigment module identity',()=>{
   assert.ok(versions.every(v=>v===canonical),
    path+' imported incompatible face modules; cosmetics/vertex tint may desynchronize');
 });
+
+
+test('v74: phone preview exposes the actual selected haircut and bust cache revision',()=>{
+ const html=readFileSync(new URL('../face-mesh-studio.html',import.meta.url),'utf8');
+ const wig=readFileSync(new URL('../src/face-scalp-wig.js',import.meta.url),'utf8');
+ assert.match(html,/id="quickWigStyle"/,'smartphone must expose a visible hairstyle dropdown');
+ assert.match(html,/id="activeHairStyle"/,'user must see which 3D haircut was rebuilt');
+ assert.match(html,/quickWigStyle'\)\.addEventListener\('change'/,
+  'changing the shortcut must rebuild actual selected wig');
+ assert.match(html,/synchronizeHeroHairSelection\('female',v32Parts\.female,'salon-layered-long'\)/,
+  'new untouched preview uses updated layered 3D long hair');
+ assert.match(html,/wig\.getReport\(\)\.rootCount/,'applied style reports generated real roots');
+ assert.match(wig,/v74HighDensityHairCoverage/);
+ assert.match(wig,/fiberMultiplier>=10\?1\.24:1\.8/,
+  'tenfold fine hairs should cluster into cohesive locks instead of long stray needles');
+ const curtain=catalogHairGroom('center-part-gravity-long');
+ const salon=catalogHairGroom('salon-layered-long');
+ const params={t:.78,zone:'fringeLeft',partSide:1,front:true,rootIndex:4};
+ assert.notDeepEqual(groomGuideOffset(curtain,params),groomGuideOffset(salon,params),
+  'haircut selection must change genuine 3D guide offsets');
+});
