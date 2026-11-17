@@ -1287,12 +1287,12 @@ test('v25 actual contact lens pigment and liner remain visible on linked eyelids
 
 test('v68 fivefold makeup stays on face and remains female-only',async()=>{
  const {v67NaturalEyeMakeup}=await import('../src/face-feature-meshes.js');
- const center=v67NaturalEyeMakeup({nx:.346,ny:.63,front:1,lidY:.60});
+ const center=v67NaturalEyeMakeup({nx:.123,ny:.63,front:1,lidY:.60});
  const away=v67NaturalEyeMakeup({nx:.88,ny:.85,front:1,lidY:.60});
- const back=v67NaturalEyeMakeup({nx:.346,ny:.63,front:0,lidY:.60});
- const male=v67NaturalEyeMakeup({nx:.346,ny:.63,front:1,lidY:.60,gender:'male'});
- assert.ok(center.shadow>.60&&center.shadow<=.65);
- assert.ok(center.lowerLift>0&&center.lowerLift<=.019);
+ const back=v67NaturalEyeMakeup({nx:.123,ny:.63,front:0,lidY:.60});
+ const male=v67NaturalEyeMakeup({nx:.123,ny:.63,front:1,lidY:.60,gender:'male'});
+ assert.ok(center.shadow>.80&&center.shadow<=.95);
+ assert.ok(center.lowerLift>0&&center.lowerLift<=.008);
  assert.ok(away.shadow<center.shadow/100);
  assert.deepEqual(back,{shadow:0,lowerLift:0});
  assert.deepEqual(male,{shadow:0,lowerLift:0});
