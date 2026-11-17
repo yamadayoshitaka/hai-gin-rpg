@@ -55,7 +55,7 @@ test('m002 real face width/height matches SMALL m001 on-screen source',()=>{
  }
 });
 
-test('all feline joints and nose-rooted head physically intersect while moving',()=>{
+test('feline joints use one continuous, three-bone shell through motion',()=>{
  for(const id of ['m007','m008','m009','m010']){
   const model=make(id);
   try{
@@ -64,18 +64,26 @@ test('all feline joints and nose-rooted head physically intersect while moving',
    const collar=node(model,'feline-head-neck-continuity-'+id);
    const body=node(model,'species-shoulder-rib-pelvis-'+id);
    assert.equal(collar.parent,p.head);
+   assert.equal(body.userData.felineMusclesSculptedIntoTrunk,true);
    const joints=limbNames.map(name=>{
-    const upper=node(model,'beast-upper-limb-'+name);
-    const shin=node(model,'beast-shin-'+name);
-    const knee=node(model,'feline-knee-continuity-'+name);
-    const hock=node(model,'feline-continuous-hock-'+name);
-    const toe=node(model,'feline-ankle-to-toe-fascia-'+name);
-    assert.equal(knee.parent,p['lower'+name]);
-    assert.equal(hock.parent,p['lower'+name]);
-    assert.equal(toe.parent,p['toe'+name]);
-    assert.equal(knee.userData.attachedKneeCapsule,true);
-    assert.equal(hock.userData.ankleSocketSeal,true);
-    return {name,upper,shin,knee,hock,toe};
+    const skin=node(model,'feline-continuous-skin-'+name);
+    assert.ok(skin.isSkinnedMesh&&skin.userData.felineContinuousSurface);
+    assert.equal(skin.parent,p['leg'+name]);
+    assert.equal(skin.skeleton.bones.length,3);
+    assert.equal(skin.geometry.groups.length,0);
+    const weights=skin.geometry.getAttribute('skinWeight');
+    const indices=skin.geometry.getAttribute('skinIndex');
+    assert.ok(weights.count>800,id+' '+name+' must have real continuous rings');
+    for(let i=0;i<weights.count;i++){
+     const sum=weights.getX(i)+weights.getY(i)+weights.getZ(i);
+     assert.ok(Math.abs(sum-1)<.00001,'all vertices must have normalised bone weights');
+     assert.equal(indices.getX(i),0);
+     assert.equal(indices.getY(i),1);
+     assert.equal(indices.getZ(i),2);
+    }
+    assert.ok(!model.getObjectByName('feline-continuous-hock-'+name));
+    assert.ok(!model.getObjectByName('feline-ankle-to-toe-fascia-'+name));
+    return {name,skin};
    });
    for(const action of ['idle','walk','run','attack','leap']){
     startMonsterAction(model,action,0);
@@ -84,15 +92,11 @@ test('all feline joints and nose-rooted head physically intersect while moving',
      model.updateMatrixWorld(true);
      assert.ok(boundsGap(box(collar),box(body))<.07,
       id+' '+action+' neck disconnected at '+t);
-     for(const {name,upper,shin,knee,hock,toe} of joints){
-      assert.ok(boundsGap(box(upper),box(knee))<.09,
-       id+' '+name+' '+action+' upper/knee separated at '+t);
-      assert.ok(boundsGap(box(shin),box(knee))<.015,
-       id+' '+name+' '+action+' shin/knee separated at '+t);
-      assert.ok(boundsGap(box(shin),box(hock))<.025,
-       id+' '+name+' '+action+' shin/hock separated at '+t);
-      assert.ok(boundsGap(box(hock),box(toe))<.06,
-       id+' '+name+' '+action+' hock/paw separated at '+t);
+     for(const {name,skin} of joints){
+      assert.ok(skin.skeleton.bones.every(b=>
+        b.matrixWorld.elements.every(Number.isFinite)),
+        id+' '+name+' '+action+' broken skinned joint at '+t);
+      assert.ok(Number.isFinite(p['toe'+name].rotation.x));
      }
     }
    }
