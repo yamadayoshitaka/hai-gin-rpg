@@ -46,7 +46,7 @@ for(const detail of ['source','high','low']){
  }
 }
 
-for(const id of ['m005','m007','m008','m009','m010']){
+for(const id of ['m005','m006','m007','m008','m009','m010']){
  for(const detail of ['source','high','low']){
   const model=createMonsterModel(MONSTER_BY_ID[id],{detail});
   try{
@@ -75,7 +75,8 @@ for(const id of ['m005','m007','m008','m009','m010']){
    }
    if(cat){
     const nose=model.getObjectByName('feline-master-rhinarium-'+id);
-    assert.equal(nose?.userData.felineNoseForwardOffset,.022);
+    assert.equal(nose?.userData.felineNoseForwardOffset,.038);
+    assert.equal(nose?.userData.felineInvertedTriangle,true);
     assert.ok(model.getObjectByName('feline-master-nostril-L'));
     assert.ok(model.getObjectByName('feline-master-nostril-R'));
     const whiskers=model.getObjectByName('feline-long-vibrissae-'+id);
