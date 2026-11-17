@@ -616,16 +616,16 @@ export function createDetailedOutfit(job, sex, body, textures, {quality='preview
   // fabric in front of the breastplate in side views. All vertices below are
   // authored in the same skinned 65-bone garment world frame as the shoulders.
   function addBackShoulderCape(name,mat){
-    const top=cy+H*.016,bottom=Math.max(ankle+H*.14,hips-H*.40);
-    const topHalf=Math.max(left.distanceTo(right)*.53,sx*.60);
-    const hemHalf=topHalf*1.75;
+    const top=cy+H*.030,bottom=Math.max(ankle+H*.14,hips-H*.40);
+    const topHalf=Math.max(left.distanceTo(right)*.56,sx*.70);
+    const hemHalf=topHalf*1.55;
     // Anchor behind BOTH scapulae. A single Z plane at the neckline avoids
     // body-surface sampling jumps and stays outside the metal cuirass.
     const upperBack=surfaceAt(cy-H*.055,true,mx);
     const waistBack=surfaceAt(hips+H*.124,true,mx);
     // The neck seam attaches to the ACTUAL upper back; using the deeper
     // waist sample for the top seam left a gap behind both shoulder clasps.
-    const backAnchor=upperBack-H*.060;
+    const backAnchor=upperBack-H*.038;
     const cols=battle?16:32,rows=battle?8:20;
     const positions=[],uv=[],indices=[];
     for(let row=0;row<=rows;row++){
@@ -633,13 +633,13 @@ export function createDetailedOutfit(job, sex, body, textures, {quality='preview
       const halfWidth=THREE.MathUtils.lerp(topHalf,hemHalf,t);
       for(let col=0;col<=cols;col++){
         const u=col/cols*2-1,edge=Math.abs(u);
-        const ripple=t*t*H*.009*Math.sin(7*u*Math.PI);
+        const ripple=t*t*H*.014*Math.sin(5*u*Math.PI);
         // Rounded lower corners hang freely; neither side can reach the
         // character's positive-Z chest or intersect the forearms.
         const x=mx+u*halfWidth*(1+.028*t*Math.sin(5*u*Math.PI));
         const y=top+(bottom-top)*t+H*.014*edge*edge*t*t;
         const torsoBack=THREE.MathUtils.lerp(upperBack,waistBack,Math.min(1,t*1.45));
-        const z=torsoBack-H*(.060+.020*t+.092*t*t)+H*.015*u*u+ripple;
+        const z=torsoBack-H*(.038+.026*t+.065*t*t)+H*.010*u*u+ripple;
         positions.push(x,y,z);uv.push(col/cols,t);
         if(row<rows&&col<cols){
           const i=row*(cols+1)+col;
@@ -652,17 +652,29 @@ export function createDetailedOutfit(job, sex, body, textures, {quality='preview
     geometry.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
     geometry.setIndex(indices);geometry.computeVertexNormals();
     const panel=add(name,geometry,mat);
-    panel.userData.shoulderCape={anchor:'both-clavicles',backZ:backAnchor,
+    panel.userData.shoulderCape={anchor:'both-clavicles-v78',backZ:backAnchor,centerX:mx,
       topY:top,bottomY:bottom,topWidth:topHalf*2,hemWidth:hemHalf*2,
-      shoulderClearance:H*.065,clothPanel:true};
+      shoulderClearance:H*.038,clothPanel:true};
+    // A low-profile reinforced yoke joins the two rear-shoulder fasteners.
+    // Its arc follows the nape rather than floating above the pauldrons.
+    const yokeCurve=new THREE.CatmullRomCurve3([
+      v(mx-topHalf*.84,top-H*.004,backAnchor+H*.009),
+      v(mx-topHalf*.44,top+H*.006,backAnchor+H*.005),
+      v(mx,top+H*.009,backAnchor+H*.003),
+      v(mx+topHalf*.44,top+H*.006,backAnchor+H*.005),
+      v(mx+topHalf*.84,top-H*.004,backAnchor+H*.009)
+    ]);
+    add('mantle-reinforced-upper-back-yoke',
+      new THREE.TubeGeometry(yokeCurve,battle?12:32,H*.0038,battle?5:8,false),
+      leather);
     return {top,topHalf,backAnchor};
   }
   if(style.cape){
     const cape=addBackShoulderCape('three-dimensional-back-and-side-cape',
       style.crown?material('damask',0xc7aacd):cloth);
     for(const side of [-1,1])
-      orb('mantle-clasp',H*.012,mx+side*cape.topHalf*.82,
-        cape.top-H*.009,cape.backAnchor+H*.007,trim,12);
+      orb('mantle-clasp-'+(side<0?'l':'r'),H*.014,mx+side*cape.topHalf*.84,
+        cape.top-H*.004,cape.backAnchor+H*.012,trim,12);
   }
 
   // Every playable protagonist has a mantle, and every ordinary soldier does
@@ -670,14 +682,14 @@ export function createDetailedOutfit(job, sex, body, textures, {quality='preview
   if(isProtagonist&&!style.cape){
     const mantleFabric=new THREE.MeshStandardMaterial({
       map:textures.linen||textures.damask,
-      color:0x8594af,metalness:0,roughness:.86,side:THREE.DoubleSide
+      color:0x55535d,metalness:0,roughness:.89,side:THREE.DoubleSide
     });
     mats.push(mantleFabric);
     const cape=addBackShoulderCape('hero-protagonist-draped-mantle',mantleFabric);
     for(const side of [-1,1])
       orb(`hero-mantle-back-shoulder-button-${side<0?'l':'r'}`,
-        H*.012,mx+side*cape.topHalf*.82,
-        cape.top-H*.009,cape.backAnchor+H*.007,gold,12);
+        H*.014,mx+side*cape.topHalf*.84,
+        cape.top-H*.004,cape.backAnchor+H*.012,gold,12);
   }
 
   // Distinct field-commander silhouette, kept at both inspection and crowd

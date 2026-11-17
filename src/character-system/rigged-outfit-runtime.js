@@ -5,9 +5,9 @@
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {clone} from 'three/addons/utils/SkeletonUtils.js';
-import {JOBS,outfitStyle,loadPhotoMaterials,createDetailedOutfit} from '../outfit-maintenance-model.js?v=20261117-shoulder-cape-v75';
+import {JOBS,outfitStyle,loadPhotoMaterials,createDetailedOutfit} from '../outfit-maintenance-model.js?v=20261118-shoulder-cape-v78';
 import {EQUIPMENT_TYPES,equipmentForJob} from './equipment-catalog.js?v=4.4.41';
-import {attachSegmentedArmor} from './segmented-armor-runtime.js?v=20261117-anatomical-shoulders-v77';
+import {attachSegmentedArmor} from './segmented-armor-runtime.js?v=20261118-anatomical-shoulders-v78';
 import {consolidateBattleArmor} from './armor-batch-runtime.js?v=4.5.0';
 import {replacedPlateBaseLegMesh} from './armor-mesh-classification.js?v=4.5.0';
 import {attachCharacterHair} from './hair-attachment-runtime.js?v=20261117-full-root-fibers2';
@@ -205,6 +205,8 @@ function candidateNames(meshName){
   // Pin the top edge and clasp of a real back cape to both collarbones.
   // The older spine-only weights dragged the cloth off the shoulders when
   // the pose lifted an arm, making it look detached or front-wrapped.
+  const mantlePin=n.match(/(?:mantle-clasp|hero-mantle-back-shoulder-button)-([lr])$/);
+  if(mantlePin)return ['clavicle_'+mantlePin[1]];
   if(/cape|mantle/.test(n))return ['clavicle_l','clavicle_r','spine_03','spine_02','spine_01','pelvis'];
   if(/apron|waist|belt|pouch/.test(n))return ['pelvis','spine_01','spine_02'];
   if(/neckline|collar/.test(n))return ['spine_03','neck_01'];
@@ -231,7 +233,23 @@ export function skinOutfitDetails(details,dressed){
     const indices=new Uint16Array(positions.count*4),weights=new Float32Array(positions.count*4);
     const choices=candidateNames(mesh.name).map(name=>names.indexOf(name)).filter(i=>i>=0);
     if(!choices.length)throw Error('衣装の割当先骨が不明: '+mesh.name);
+    const cape=mesh.userData?.shoulderCape?.clothPanel?mesh.userData.shoulderCape:null;
+    const capeBones=cape?['clavicle_l','clavicle_r','spine_03','pelvis'].map(n=>names.indexOf(n)):null;
+    if(capeBones?.some(n=>n<0))throw Error('マント固定用の鎖骨・背骨が不足');
     for(let i=0;i<positions.count;i++){
+      if(cape){
+        // A cape is supported by two clavicles at its upper seam and the
+        // spine/pelvis below. Nearest-distance skinning pulled the fasteners
+        // off the shoulders when the arms raised or during a sword swing.
+        const t=THREE.MathUtils.clamp(
+          (cape.topY-positions.getY(i))/Math.max(.001,cape.topY-cape.bottomY),0,1);
+        const half=THREE.MathUtils.lerp(cape.topWidth*.5,cape.hemWidth*.5,t);
+        const u=THREE.MathUtils.clamp((positions.getX(i)-cape.centerX)/Math.max(.001,half),-1,1);
+        const clav=.80*(1-t)*(1-t),body=1-clav;
+        const blend=[clav*(1-u)*.5,clav*(1+u)*.5,body*(1-.60*t),body*.60*t];
+        for(let j=0;j<4;j++){indices[i*4+j]=capeBones[j];weights[i*4+j]=blend[j]}
+        continue;
+      }
       vector.fromBufferAttribute(positions,i).applyMatrix4(mesh.matrixWorld);
       const nearest=choices.map(index=>({index,d:Math.max(0.0004,reference[index].distanceToSquared(vector))})).sort((a,b)=>a.d-b.d).slice(0,4);
       const sum=nearest.reduce((v,p)=>v+1/(p.d+.003),0);
