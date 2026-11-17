@@ -1,9 +1,20 @@
 name: FF15 character face-hair and costume six-slot QA and production gate
 on:
   schedule:
-    - cron: '3,13,23,33,43,53 * * * *'
+    - cron: '3 * * * *'
+    - cron: '13 * * * *'
+    - cron: '23 * * * *'
+    - cron: '33 * * * *'
+    - cron: '43 * * * *'
+    - cron: '53 * * * *'
   workflow_dispatch:
     inputs:
+      category:
+        description: 'Run only one domain (all for scheduled QA)'
+        required: false
+        default: 'all'
+        type: choice
+        options: [all, faceHair, outfit]
       slot:
         description: 'Select a lane (0-5) or rotate automatically'
         required: false
@@ -41,9 +52,21 @@ jobs:
       - name: Verify six-lane registry and actual GAME entrypoints
         run: node --test qa/character-six-lane-contract.test.mjs
       - name: Execute this 10-minute lane for actual existing model sources
+        if: inputs.category == 'all' || inputs.category == matrix.category || github.event_name != 'workflow_dispatch'
         env:
           INPUT_SLOT: ${{ inputs.slot || 'auto' }}
+          SCHEDULED_CRON: ${{ github.event.schedule }}
         run: |
+          if [ "$INPUT_SLOT" = 'auto' ]; then
+            case "$SCHEDULED_CRON" in
+              '3 * * * *') INPUT_SLOT=0;;
+              '13 * * * *') INPUT_SLOT=1;;
+              '23 * * * *') INPUT_SLOT=2;;
+              '33 * * * *') INPUT_SLOT=3;;
+              '43 * * * *') INPUT_SLOT=4;;
+              '53 * * * *') INPUT_SLOT=5;;
+            esac
+          fi
           if [ "$INPUT_SLOT" = 'auto' ]; then
             node scripts/character-six-batch.mjs --category '${{ matrix.category }}'
           else
