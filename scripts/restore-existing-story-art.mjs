@@ -14,6 +14,7 @@ import {fileURLToPath} from 'node:url';
 import {COMPACT_TWENTY_CHAPTER_PLAN,compactComicForStage} from '../src/story-compact-comic.js';
 import {registeredStoryPanelAsset} from '../src/story-panel-registered-art.js';
 import {RESTORED_STORY_ARCHIVE} from '../src/story-archive-restored-art.js';
+import {oldStoryArtReuseAllowed} from '../src/story-art-sourcing-policy.js';
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const args=process.argv.slice(2);
@@ -31,6 +32,8 @@ const present=new Map();
 const allScenes=new Map();
 for(const plan of COMPACT_TWENTY_CHAPTER_PLAN)for(const stageId of plan.stageIds)
  for(const gender of ['male','female']){
+  // User-defined archival reuse boundary: chapter 1 stages 1 through 4.
+  if(!oldStoryArtReuseAllowed(stageId))continue;
   const common={protagonistGender:gender,chapterOpeningSeen:false};
   const phases=[
    ['pre',common],
@@ -104,7 +107,7 @@ for(const proofFile of walk(originals)){
 }
 if(duplicate.length)throw Error('Ambiguous archive sources: '+duplicate.join(','));
 matching.sort((a,b)=>a.key.localeCompare(b.key));
-const result={schemaVersion:1,kind:'EXACT_ARCHIVED_STORY_WEBP_REUSE',
+const result={schemaVersion:2,kind:'EXACT_ARCHIVED_STORY_WEBP_REUSE',reuseScope:'c01-s01..c01-s04',
  mode,archivedOriginalCount:seen.size,existingRegistered:present.size,
  eligibleExactUnused:matching.length,refused:rejected.length,
  noExternalImageApiCalls:true,noCrossGenderOrOutcomeReuse:true,
