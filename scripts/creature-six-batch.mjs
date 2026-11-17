@@ -12,7 +12,7 @@ const args=process.argv.slice(2),arg=k=>args[args.indexOf(k)+1];
 const category=arg('--category')||'creatureMonster';
 if(!['creatureMonster','creatureSummon'].includes(category))throw Error('Invalid creature category');
 const minute=new Date().getUTCMinutes(),slotArg=arg('--slot');
-const slot=slotArg!==undefined?Number(slotArg):(Math.floor((minute+5)/10)%6);
+const slot=slotArg!==undefined?Number(slotArg):(Math.floor(minute/10)%6);
 const switches=JSON.parse(fs.readFileSync(new URL('../data/batch-center-switches.json',import.meta.url)));
 if(switches.groups?.[category]?.enabled!==true){console.log(category+' paused: zero writes');process.exit(0);}
 const {lane,items}=taxonomyBatch(CREATURE_RECONSTRUCTION_WORK,category,slot);
