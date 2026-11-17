@@ -18,8 +18,8 @@ const bounds=m=>{const p=m.geometry.getAttribute('position');let min=Infinity,ma
 };
 const limbs=['frontL','frontR','rearL','rearR'];
 
-test('m001 is a copied PHYSICAL donor, not a generic replacement for m002-m004',()=>{
- assert.deepEqual(WOLF_KING_DERIVED_IDS,['m002','m003','m004']);
+test('m001 physical donor now includes m005 and the feline m006 head/torso',()=>{
+ assert.deepEqual(WOLF_KING_DERIVED_IDS,['m002','m003','m004','m005']);
  const mother=Object.freeze([
   Object.freeze({z:.355,y:-.16,rx:.026,ry:.030}),
   Object.freeze({z:.270,y:-.04,rx:.171,ry:.121}),
@@ -34,11 +34,11 @@ test('m001 is a copied PHYSICAL donor, not a generic replacement for m002-m004',
   assert.equal(copy[0].rx,mother[0].rx*wolfKingCloneMorph(id).faceX);
   assert.notEqual(copy[0].z,mother[0].z);
  }
- assert.equal(wolfKingCloneMorph('m005'),null,'protected wolf original unchanged');
- assert.equal(felineMasterVariant('m006'),null,'protected panther original unchanged');
+ assert.equal(felineMasterVariant('m006').physicalCloneMother,'m001',
+  'black panther must inherit the actual m001 body and cranium topology');
 });
 
-test('all cloned wolves visibly contain real m001-based skull, nose, joint sleeves',()=>{
+test('all five wolf-family meshes physically inherit m001 skull nose and joint seams',()=>{
  for(const id of WOLF_KING_DERIVED_IDS){
   const model=createMonsterModel(MONSTER_BY_ID[id],{detail:'high'});
   try{
@@ -81,6 +81,20 @@ test('all cloned wolves visibly contain real m001-based skull, nose, joint sleev
    }
   }finally{disposeMonsterSculpture(model);}
  }
+});
+
+test('m006 black panther physically copies the m001 cranium source',()=>{
+ const model=createMonsterModel(MONSTER_BY_ID.m006,{detail:'high'});
+ try{
+  assert.equal(model.userData.clonedFromSpecies,'m001');
+  assert.equal(model.userData.cloneMethod,'physical-m001-cranium-torso-feline-morph');
+  assert.equal(find(model,'organic-cranium-m006')?.userData.m001DerivedAxialSkull,true);
+  const torso=find(model,'species-shoulder-rib-pelvis-m006');
+  assert.ok(torso?.userData.axialAnatomy);
+  assert.equal(torso.userData.anatomicalStations,8);
+  assert.equal(find(model,'feline-master-rhinarium-m006')?.userData.felineInvertedTriangle,true);
+  assert.ok(meshes(model).filter(x=>x.userData.felineContinuousSurface).length===4);
+ }finally{disposeMonsterSculpture(model);}
 });
 
 test('m007 is the feline physical mother; m008-m010 inherit nose and attached feet',()=>{
