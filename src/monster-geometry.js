@@ -13,7 +13,7 @@ import {wolfKingCloneMorph,wolfKingDonorFaceMatchScale,WOLF_KING_FACE_SCALE,copy
 import {felineMasterVariant,felineFaceRings,felineMuzzleRings,
  felineNasalRings,felineAnatomicalSections,felineEyeSurface,
  felineDorsalSurface,FELINE_SOURCE_MODEL}
- from './feline-master-variants.js?v=beast-m001-m007-cat-v5-20261117';
+ from './feline-master-variants.js?v=beast-m001-m007-cat-v6-20261117';
 import {MORTAL_HEAD_RINGS,MORTAL_TORSO_RINGS} from './monster-realistic-loft.js';
 import {BEAST_REFERENCE_QUALITY_REVISION,REFERENCE_CROWN_QUALITY,
  referenceBeastTorsoStations,referenceDoubleCoat,referenceBeastFlow}
@@ -1331,6 +1331,14 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
      pelvisMounted?g.pivots.pelvis:
        (s.id==='m001'||s.id==='m002'||felineMaster?torso:g.root));
    if(felineMaster){
+     // m007's former hip-to-paw span made the femur emerge as a long
+     // triangular flap. Compress the WHOLE three-bone skin consistently:
+     // the foot stays planted, the proximal ring retreats into the croup,
+     // and skinned animation never opens a seam at the stifle.
+     const legReach=felineMaster.legReach??1;
+     leg.scale.y=legReach;
+     leg.position.y-=(1-legReach)*.587;
+     leg.userData.felinePlantedLegReach=legReach;
      leg.userData.felineJointSeamRefinement=true;
      leg.scale.x=felineMaster.legWidth;
      leg.scale.z=felineMaster.legWidth;
@@ -2032,27 +2040,39 @@ const wolfKingMane=(s.id==='m001'||cloneCanine)?[
  // Drive the thunder wolf tail from its living pelvis; for other species
  // preserve the original root-space animation and coordinates exactly.
  const tail=g.group('tail',
-   s.id==='m004'?[0,.11,-.03]:[0,beastRemesh?1.176:1.35,beastRemesh?-.68:-.55],
+   s.id==='m004'?[0,.11,-.03]:
+   felineMaster?[0,felineMaster.torsoHeight-.025,-bodyLength*.94]:
+   [0,beastRemesh?1.176:1.35,beastRemesh?-.68:-.55],
    s.id==='m004'?g.pivots.pelvis:
    (felineMaster||cloneCanine?torso:g.root));
  if(felineMaster){
-   // The screenshot's rear hole is the uncapped TAIL end, not an
-   // unsealed leg. Build a narrower tapered tail, seal both ends, and
-   // embed its root inside the actual torso.
+   // The caudal root begins DEEP inside the actual pelvic loft, not
+   // halfway along the waist. Each closed tube overlaps its articulated
+   // neighbour: no disconnected white tip or apparent missing tail.
    const caudal=g.tube(tail,'skin',[
-     [0,0,.09],[0,.08,-.14],[0,.17,-.34],[0,.08,-.50]
-   ],.067,{name:'feline-rooted-tail-'+s.id,capEnds:true,taper:.79});
+     [0,.035,.19],[0,.020,.045],[0,-.055,-.11],
+     [0,-.170,-.27],[0,-.280,-.44]
+   ],.092,{name:'feline-rooted-tail-'+s.id,capEnds:true,taper:.72});
    caudal.userData.felineTailClosedSource=true;
+   caudal.userData.felineTailSocketBuried=true;
+   tail.userData.felineTailRootedToCroup=true;
  }else g.tube(tail,'skin',[[0,0,.05],[0,.17,-.34],[0,.08,-.50]],reptile?.14:.085);
- const tailMid=g.group('tailMid',[0,.08,-.50],tail);
+ const tailMid=g.group('tailMid',
+   felineMaster?[0,-.280,-.44]:[0,.08,-.50],tail);
  if(felineMaster){
    const caudalMid=g.tube(tailMid,'skin',[
-     [0,0,.035],[0,.01,-.25-v*.05],[.09,-.11,-.49-v*.10]
-   ],.054,{name:'feline-tail-middle-'+s.id,capEnds:true,taper:.53});
+     [0,.025,.08],[0,-.015,-.035],[0,-.005,-.14],
+     [.045,.072,-.28]
+   ],.070,{name:'feline-tail-middle-'+s.id,capEnds:true,taper:.48});
    caudalMid.userData.felineTailClosedSource=true;
  }else g.tube(tailMid,'skin',[[0,0,0],[0,.01,-.25-v*.05],[.09,-.11,-.49-v*.10]],reptile?.13:.078);
- const tailTip=g.group('tailTip',[.09,-.11,-.49-v*.10],tailMid);
- g.sphere(tailTip,'skin',[0,0,-.025],[.044,.047,.085]);
+ const tailTip=g.group('tailTip',
+   felineMaster?[.045,.072,-.28]:[.09,-.11,-.49-v*.10],tailMid);
+ // The end pad is embedded in the tapered caudal shell, never an
+ // isolated ellipse far behind the silhouette.
+ if(felineMaster)g.sphere(tailTip,'skin',[0,0,-.009],[.037,.040,.052],
+   {name:'feline-connected-tail-tip-'+s.id});
+ else g.sphere(tailTip,'skin',[0,0,-.025],[.044,.047,.085]);
  // Felines need short sleek directional fur instead of reusing a wolf
  // winter coat. Only the lion grows a deep mane, anchored to its head
  // so it follows jaw anticipation and neck pitch without floating.
