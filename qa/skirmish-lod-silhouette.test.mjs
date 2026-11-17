@@ -39,5 +39,5 @@ assert.match(outfit,/useSourceSkinnedLegs=\(lowDetail\|\|studioPreferSkinnedLegs
 assert.match(outfit,/retainedAsSkinnedTrouser=true/);
 assert.match(game,/rigged-outfit-runtime\.js\?v=20261117-flatback-off4/);
 assert.match(game,/skirmish-distance-impostors\.js\?v=20261117-stable-hair2/);
-assert.match(outfit,/hair-attachment-runtime\.js\?v=20261116-silhouette-lod1/);
+assert.match(outfit,/hair-attachment-runtime\.js\?v=20261117-full-root-fibers2/);
 console.log('PASS: 50v50 projected-size photo gate, stable identical hairstyles, skinned legs and FPS-aware prewarm');
