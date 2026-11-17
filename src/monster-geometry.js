@@ -722,23 +722,47 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
        {name:'beast-nostril-'+(side<0?'L':'R'),rough:.21});
    }
  }else if(felineMaster){
-   // Small triangular wet cat nose (not a canine ball): taper width
-   // into the philtrum and expose two inset dark nares on its surface.
+   // Raised feline cartilage rather than a submerged dark nose dot.
    const nose=g.axialLoft(head,'shadow',
-     felineNasalRings(felineMaster),
-     {name:'feline-master-rhinarium-'+s.id,rough:.26,ribbing:0});
+     felineNasalRings(felineMaster).map(r=>({
+       ...r,z:r.z+.022,rx:r.rx*1.17,ry:r.ry*1.10
+     })),{name:'feline-master-rhinarium-'+s.id,rough:.24,
+       ribbing:0,capEnds:true});
    nose.userData.felineTriangularRhinarium=true;
+   nose.userData.felineNoseForwardOffset=.022;
    for(const side of [-1,1]){
-     const x=side*felineMaster.noseWidth*.44;
-     const nostril=g.sphere(head,'shadow',
-       [x,-.157,muzzle+.153],[.011,.006,.008],
-       {name:'feline-master-nostril-'+(side<0?'L':'R')});
+     const nostril=g.sphere(head,'#14171b',
+       [side*felineMaster.noseWidth*.52,-.157,muzzle+.179],
+       [.012,.007,.005],{name:'feline-master-nostril-'+(side<0?'L':'R'),
+         rough:.38});
      nostril.userData.embeddedNasalAla=true;
    }
+   const sheen=g.sphere(head,'light',
+     [0,-.135,muzzle+.189],[.014,.0045,.004],
+     {name:'feline-rhinarium-sheen-'+s.id,rough:.24});
+   sheen.userData.nasalSurfaceHighlight=true;
    const groove=g.tube(head,'shadow',[
-     [0,-.169,muzzle+.118],[0,-.187,muzzle+.106],
+     [0,-.169,muzzle+.124],[0,-.187,muzzle+.106],
      [0,-.198,muzzle+.091]],.0045);
    groove.name='feline-philtrum-'+s.id;
+   if(coatDetail!=='low'){
+     // Four long whiskers per cheek, combined in one head-mounted mesh.
+     const guides=[];
+     for(const side of [-1,1])for(let i=0;i<4;i++){
+       const root=[side*(.137+i*.006),-.117-i*.014,
+         muzzle-.055-i*.013];
+       const mid=[side*(.305+i*.021),-.106-i*.028,
+         muzzle+.006-i*.018];
+       const tip=[side*(.548+i*.024),-.058-i*.057,
+         muzzle+.075-i*.052];
+       guides.push({root,mid,tip,normal:[side*.28,.42,1],
+         width:coatDetail==='source'?.0052:.0044});
+     }
+     const whiskers=g.fur(head,'bone',guides);
+     whiskers.name='feline-long-vibrissae-'+s.id;
+     whiskers.userData.felineWhiskers=8;
+     g.root.userData.felineVisibleWhiskers=8;
+   }
  }else g.sphere(head,'shadow',[0,-.17,muzzle+.19],[.18,.057,.12],{name:'nose'});
  if(canine){
    // Small almond eyes set INTO the bone, heavy brows, wet nose and
@@ -2037,44 +2061,77 @@ const wolfKingMane=(s.id==='m001'||cloneCanine)?[
      }
    }
  }
- // Drive the thunder wolf tail from its living pelvis; for other species
- // preserve the original root-space animation and coordinates exactly.
+ // Closed anatomical hulls replace tubular cat tails that vanished in profile.
+ // m005 keeps its original body/face and receives only a rooted wolf tail.
+ const forestWolf=s.id==='m005';
  const tail=g.group('tail',
    s.id==='m004'?[0,.11,-.03]:
    felineMaster?[0,felineMaster.torsoHeight-.025,-bodyLength*.94]:
+   forestWolf?[0,1.28,-bodyLength*.86]:
    [0,beastRemesh?1.176:1.35,beastRemesh?-.68:-.55],
    s.id==='m004'?g.pivots.pelvis:
-   (felineMaster||cloneCanine?torso:g.root));
+   (felineMaster||cloneCanine||forestWolf?torso:g.root));
  if(felineMaster){
-   // The caudal root begins DEEP inside the actual pelvic loft, not
-   // halfway along the waist. Each closed tube overlaps its articulated
-   // neighbour: no disconnected white tip or apparent missing tail.
-   const caudal=g.tube(tail,'skin',[
-     // Start deeply in the pelvis, then extend *behind* the haunch.
-     // The shortened, downward v10 curve disappeared behind the legs.
-     [0,.035,.19],[0,.070,.035],[0,.130,-.19],
-     [0,.205,-.46],[0,.215,-.72]
-   ],.092,{name:'feline-rooted-tail-'+s.id,capEnds:true,taper:.72});
+   const caudal=g.axialLoft(tail,'skin',[
+     {z:.220,y:.012,rx:.074,ry:.078},
+     {z:.110,y:.044,rx:.091,ry:.091},
+     {z:-.110,y:.105,rx:.093,ry:.089},
+     {z:-.330,y:.220,rx:.083,ry:.080},
+     {z:-.580,y:.307,rx:.074,ry:.074},
+     {z:-.790,y:.320,rx:.067,ry:.067}
+   ],{name:'feline-rooted-tail-'+s.id,rough:.88,ribbing:.001,
+      capEnds:true});
    caudal.userData.felineTailClosedSource=true;
    caudal.userData.felineTailSocketBuried=true;
+   caudal.userData.cappedTubularSkin=true;
+   caudal.userData.endCapTriangles=caudal.userData.anatomicalEndCaps;
    tail.userData.felineTailRootedToCroup=true;
    tail.userData.felineTailSilhouetteRestored=true;
+ }else if(forestWolf){
+   const caudal=g.axialLoft(tail,'skin',[
+     {z:.170,y:.005,rx:.099,ry:.104},
+     {z:.085,y:.032,rx:.122,ry:.117},
+     {z:-.105,y:.092,rx:.116,ry:.108},
+     {z:-.335,y:.159,rx:.096,ry:.097},
+     {z:-.610,y:.174,rx:.080,ry:.085}
+   ],{name:'m005-rooted-caudal-skin',rough:.92,ribbing:.004,
+      capEnds:true});
+   caudal.userData.forestWolfOriginalBodyPreserved=true;
+   tail.userData.forestWolfTailRooted=true;
  }else g.tube(tail,'skin',[[0,0,.05],[0,.17,-.34],[0,.08,-.50]],reptile?.14:.085);
  const tailMid=g.group('tailMid',
-   felineMaster?[0,.215,-.72]:[0,.08,-.50],tail);
+   felineMaster?[0,.320,-.790]:
+   forestWolf?[0,.174,-.610]:[0,.08,-.50],tail);
  if(felineMaster){
-   const caudalMid=g.tube(tailMid,'skin',[
-     [0,0,.075],[0,.026,-.14],[.020,.045,-.31],
-     [.045,.075,-.48],[.065,.055,-.64]
-   ],.069,{name:'feline-tail-middle-'+s.id,capEnds:true,taper:.48});
+   const caudalMid=g.axialLoft(tailMid,'skin',[
+     {z:.100,y:.002,rx:.067,ry:.067},
+     {z:-.055,y:.013,rx:.071,ry:.070},
+     {z:-.250,y:.015,rx:.063,ry:.064},
+     {z:-.475,y:-.062,rx:.052,ry:.053},
+     {z:-.750,y:-.145,rx:.037,ry:.039}
+   ],{name:'feline-tail-middle-'+s.id,rough:.90,ribbing:0,
+      capEnds:true});
    caudalMid.userData.felineTailClosedSource=true;
+   caudalMid.userData.cappedTubularSkin=true;
+   caudalMid.userData.endCapTriangles=caudalMid.userData.anatomicalEndCaps;
+ }else if(forestWolf){
+   const caudalMid=g.axialLoft(tailMid,'skin',[
+     {z:.090,y:.004,rx:.082,ry:.083},
+     {z:-.080,y:.030,rx:.085,ry:.082},
+     {z:-.295,y:.022,rx:.070,ry:.075},
+     {z:-.465,y:.010,rx:.063,ry:.067},
+     {z:-.620,y:.005,rx:.051,ry:.058}
+   ],{name:'m005-middle-caudal-skin',rough:.93,ribbing:.004,
+      capEnds:true});
+   caudalMid.userData.forestWolfTailContinuous=true;
  }else g.tube(tailMid,'skin',[[0,0,0],[0,.01,-.25-v*.05],[.09,-.11,-.49-v*.10]],reptile?.13:.078);
  const tailTip=g.group('tailTip',
-   felineMaster?[.065,.055,-.64]:[.09,-.11,-.49-v*.10],tailMid);
- // The end pad is embedded in the tapered caudal shell, never an
- // isolated ellipse far behind the silhouette.
- if(felineMaster)g.sphere(tailTip,'skin',[0,0,-.009],[.037,.040,.052],
-   {name:'feline-connected-tail-tip-'+s.id});
+   felineMaster?[0,-.145,-.750]:
+   forestWolf?[0,.005,-.620]:[.09,-.11,-.49-v*.10],tailMid);
+ if(felineMaster)g.sphere(tailTip,'skin',[0,-.007,-.012],
+   [.038,.040,.047],{name:'feline-connected-tail-tip-'+s.id});
+ else if(forestWolf)g.sphere(tailTip,'skin',[0,0,-.006],
+   [.052,.057,.066],{name:'m005-embedded-tail-tip'});
  else g.sphere(tailTip,'skin',[0,0,-.025],[.044,.047,.085]);
  // Felines need short sleek directional fur instead of reusing a wolf
  // winter coat. Only the lion grows a deep mane, anchored to its head
@@ -2162,6 +2219,19 @@ const wolfKingMane=(s.id==='m001'||cloneCanine)?[
          coat.userData.furSegment=segment.label;
        }
      }
+   }else if(s.id==='m005'){
+     addFur(tail,generateCanineFurGuides({
+       center:[0,.11,-.30],radii:[.102,.108,.36],
+       rows:coatDetail==='source'?17:10,
+       around:coatDetail==='source'?25:17,
+       length:.084,width:.014,seed:v+21,minVertical:-.95,
+     }));
+     addFur(tailMid,generateCanineFurGuides({
+       center:[0,.015,-.27],radii:[.071,.077,.33],
+       rows:coatDetail==='source'?14:8,
+       around:coatDetail==='source'?22:14,
+       length:.102,width:.017,seed:v+36,minVertical:-.95,
+     }));
    }else addFur(tail,generateCanineFurGuides({
      center:[.015,.065,-.55-v*.055],radii:[.108,.124,.38+v*.04],
      rows:coatDetail==='source'?15:9,
