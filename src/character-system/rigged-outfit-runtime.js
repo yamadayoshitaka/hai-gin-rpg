@@ -202,7 +202,10 @@ function candidateNames(meshName){
     return ['pelvis',`thigh_${s}`,'spine_01'];
   }
   if(/skirt|hem-seam|bottom-hem/.test(n))return ['pelvis','thigh_l','thigh_r','calf_l','calf_r'];
-  if(/cape|mantle/.test(n))return ['spine_03','spine_02','spine_01','pelvis'];
+  // Pin the top edge and clasp of a real back cape to both collarbones.
+  // The older spine-only weights dragged the cloth off the shoulders when
+  // the pose lifted an arm, making it look detached or front-wrapped.
+  if(/cape|mantle/.test(n))return ['clavicle_l','clavicle_r','spine_03','spine_02','spine_01','pelvis'];
   if(/apron|waist|belt|pouch/.test(n))return ['pelvis','spine_01','spine_02'];
   if(/neckline|collar/.test(n))return ['spine_03','neck_01'];
   if(/quiver/.test(n))return ['spine_03','spine_02'];
