@@ -654,17 +654,20 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    // Small almond eyes set INTO the bone, heavy brows, wet nose and
    // divided nostrils. Oversized glowing button eyes looked like toys.
    for(const side of [-1,1]){
-     if(s.id==='m001'&&beastRemesh){
+     if((s.id==='m001'||s.id==='m002')&&beastRemesh){
       // Apply the generator's key idea: a sunken socket and optical almond
       // fitted BEHIND the upper eyelid. This is a mesh aperture rather than
       // spherical eyes mounted on the forehead/cheeks.
-      g.recessedCanineAlmondEye(faceCore,{side,name:'wolf-king',centerX:.128});
-      // Keep only a shallow, fitted skin crease. The former elevated
-      // brow tube projected past both canthi like a thick eyeliner wing.
+      g.recessedCanineAlmondEye(faceCore,{
+        side,name:s.id==='m002'?'flame-wolf':'wolf-king',
+        centerX:s.id==='m002'?.138:.128
+      });
+      // Reuse m001 brow anatomy, scaled with the physical muzzle.
+      const scale=s.id==='m002'?1.08:1;
       const brow=g.tube(faceCore,'skin',[
-        [side*.073,.137,.160],[side*.113,.145,.182],
-        [side*.157,.133,.166]],.0035);
-      brow.name='m001-eyebrow-ridge-'+(side<0?'L':'R');
+        [side*.073*scale,.137,.160],[side*.113*scale,.145,.182],
+        [side*.157*scale,.133,.166]],.0035);
+      brow.name=s.id+'-eyebrow-ridge-'+(side<0?'L':'R');
       brow.userData.orbitalBrow=true;
      }else if(beastRemesh){
       // Real amber iris and a distinct black pupil, partially under the lids.
@@ -690,15 +693,16 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
      }
      if(!beastRemesh)g.sphere(head,'shadow',
        [side*.083,-.164,muzzle+.288],[.027,.019,.011]);
-     if(s.id!=='m001')g.tube(head,'shadow',
+     if(s.id!=='m001'&&s.id!=='m002')g.tube(head,'shadow',
        [[side*.08,-.23,.53],[side*.13,-.235,.58],
         [side*.16,-.213,.62]],.009);
    }
    // Compact philtrum following the small rhinarium instead of a black seam.
-   g.tube(head,'shadow',s.id==='m001'?
+   g.tube(head,'shadow',s.id==='m001'||s.id==='m002'?
       [[0,-.148,.325],[0,-.163,.308],[0,-.178,.284]]:
       [[0,-.195,muzzle+.285],[0,-.235,muzzle+.275],
-       [0,-.26,muzzle+.22]],s.id==='m001'?.005:.009);
+       [0,-.26,muzzle+.22]],
+       (s.id==='m001'||s.id==='m002')?.005:.009);
  }else if(reptile){
    // Narrow slit eyes, partially recessed into the cranium. The eyelids
    // are anatomical pivots for the original blink and death regressions.
@@ -892,6 +896,21 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
          .041,.023);
        lip.name='m001-upper-labial-fold-'+(side<0?'L':'R');
        lip.userData.fangRootCover=true;
+     }
+   }else if(beastRemesh&&s.id==='m002'){
+     // The fang is embedded like m001, not a long detached spike on the
+     // far tip of the old swollen snout. Fire coloration is material only.
+     const root=[side*.112,-.174,.265];
+     const fang=g.curvedHorn(head,'bone',root,
+       [side*.122,-.227,.313],[side*.093,-.296,.304],
+       .033,{name:'beast-upper-fang'});
+     fang.userData.m001FangDonor=true;
+     if(coatDetail!=='low'){
+       const skin=g.bridge(head,'skin',
+         [side*.120,-.150,.236],[side*.112,-.191,.281],
+         .036,.024);
+       skin.name='m002-fang-labial-root-'+(side<0?'L':'R');
+       skin.userData.wolfGumEmbedded=true;
      }
    }else if(beastRemesh)g.curvedHorn(head,'bone',
       [side*.13,-.17,muzzle+.05],[side*.146,-.265,muzzle+.14],
