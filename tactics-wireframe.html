@@ -4027,12 +4027,18 @@ if(massSim){
   if(flyingMount?.flying){
    out.y=terrainY(out.x,out.z)+riderSeatHeight(flyingMount,creatureVisualTime);
    smooth.y=out.y; // GPU instanced mounts read this exact same frame sample.
-  }else if(u.alive&&!upperPoint&&!u.mountId){
-   // A late Worker altitude sample may lag a slope transition. The REAL
-   // displayed terrain/deck defines the boot floor, not an older eased Y.
+  }else if(u.alive&&!upperPoint){
+   // Worker snapshots smooth X/Z only; they are NOT a second ground height
+   // authority. Ground units must stand on the 50v50 terrain/deck surface
+   // after XY interpolation, and mounted units use the same-frame saddle
+   // height as the independently rendered animal.
    const floor=unitGroundY(u,out.x,out.z);
-   if(Number.isFinite(floor)&&out.y<floor+.012){
-    out.y=floor+.012;smooth.y=out.y;
+   if(Number.isFinite(floor)){
+    const seat=u.mountId?riderElevation(u,creatureVisualTime):0;
+    const corrected=floor+seat+(u.mountId?0:.018);
+    if(u.mountId||out.y<corrected){
+      out.y=corrected;smooth.y=corrected;
+    }
    }
   }
   if(!u.alive){
