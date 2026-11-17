@@ -125,7 +125,7 @@ export function createAnatomicalShoulderCaps({root,dressed,bones,metal,edge,qual
     const cap=add('armor-shoulder-fitted-cap-'+side,
       new THREE.SphereGeometry(radius,radial,segments,0,Math.PI*2,0,Math.PI*.67),
       metal,-radius*.03);
-    cap.scale.set(1.06,.77,1.04);
+    cap.scale.multiply(new THREE.Vector3(1.06,.77,1.04));
     // A narrow fitted lower lip creates the layered-steel silhouette without
     // the old whole-arm cylinder or a second large, hollow shoulder block.
     const rim=add('armor-shoulder-fitted-rim-'+side,
@@ -427,7 +427,7 @@ export async function attachSegmentedArmor({root,dressed,sex,textures,characterM
     root.updateMatrixWorld(true);
     return {...depthOffsets};
   }
-  root.userData.armor={variant:'plate',pieceCount:created.length,sourceTrouserLegMeshesSkipped,sourceBootShaftsSkipped,suppressedRigidShoulderMeshes,scale,slots:[...centers.keys()],helmetFit,partAxes,legSideCounts,shoulderSideCounts,shoulderPlacement:'bone-mounted-curved-shoulder-v77'};
+  root.userData.armor={variant:'plate',pieceCount:created.length,sourceTrouserLegMeshesSkipped,sourceBootShaftsSkipped,suppressedRigidShoulderMeshes,scale,slots:[...centers.keys()],helmetFit,partAxes,legSideCounts,shoulderSideCounts:fittedShoulders.diagnostics.sideCounts,shoulderPlacement:'bone-mounted-curved-shoulder-v77'};
   return {objects:created,materials,setDepthOffsets,depthOffsets,
     diagnostics:{armorPieces:created.length,sourceTrouserLegMeshesSkipped,sourceBootShaftsSkipped,armorScale:scale,armorSlots:[...centers.keys()],helmetFit,legSideCounts,
       partAxes,shoulderSideCounts:fittedShoulders.diagnostics.sideCounts,
