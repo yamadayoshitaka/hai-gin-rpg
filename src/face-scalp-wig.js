@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {createFastFaceSurfaceSampler} from './face-feature-meshes.js?v=20261118-liner-eye-v74';
+import {createFastFaceSurfaceSampler} from './face-feature-meshes.js?v=20261118-facial-relief-v75';
 import {getWigStyle,DEFAULT_WIG_STYLE_ID,WIG_BASE_VOLUME_PROFILES,WIG_SILHOUETTE_PROFILES} from './face-wig-styles.js?v=44';
 import {makeStyleSpecificHair} from './face-wig-ornaments-v49.js?v=20261118-braid-root-v1';
 import {catalogHairGroom,groomGuideOffset} from './face-hair-groom-v50.js?v=20261118-wig-coiffure-v74';
@@ -1185,7 +1185,11 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    const strand=strands[i],first=strand.points[0];
    const fine= strand.fringe?.48:
     strand.zone.startsWith('temple')?.75:1.05;
-   const radius=(half*fine)*(fiberMultiplier>=10?1.24:1.8);
+   // Shared clump direction, varied fibre cross sections. The 10x lanes
+   // remain static, preserving the Android physics and triangle budget.
+   const clump=Math.floor(i/9),clumpPhase=clump*2.39996323;
+   const radius=(half*fine)*(fiberMultiplier>=10?1.24:1.8)*
+    (.93+.07*Math.sin(clumpPhase));
    for(let lane=0;lane<extra;lane++){
     const laneAt=(lane+.5)/extra-.5;
     const base=coords.length/3;
@@ -1203,14 +1207,21 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
      const shell=(Math.sin((lane+1)*2.39996323+i*.277)*(fiberMultiplier>=10?.00065:.0012)+
       Math.sin(t*12.5+i*.37+lane*1.31)*(fiberMultiplier>=10?.00020:.00033))*d.x*rootFade;
      const offset=radius*(2*laneAt)*rootFade;
+     // Stagger fine strand tips; avoid nine blunt, coplanar endings.
+     const stagger=.94-.09*fract((i+1)*.75487766+(lane+1)*.61803398);
+     const tipT=Math.min(1,t/stagger);
      const width=Math.max(d.x*.000045,
-      half*.14/fiberMultiplier)*(1-.965*Math.pow(t,3));
+      half*.14/fiberMultiplier)*(1-.982*Math.pow(tipT,3));
      for(const sign of [-1,1]){
       const q=p.clone().addScaledVector(across,offset+sign*width)
        .addScaledVector(normal,shell);
       coords.push(q.x,q.y,q.z);
-      const c=(.81+.19*((lane+i)%11)/11)*(1-.08*t)+
-       .030*Math.sin(t*11+i*.19+lane*.73);
+      // Multi-scale pigment, fine discontinuous glints, darker roots:
+      // hair reads as individual fibers rather than a glossy plastic sheet.
+      const glint=.042*Math.exp(-((t-.47)/.15)**2)*
+       Math.max(0,Math.cos(lane*2.39996323+clumpPhase));
+      const c=(.78+.22*((lane+i)%11)/11)*(1-.06*t)+
+       .030*Math.sin(t*11+i*.19+lane*.73)+glint;
       shades.push(colorSeed.r*c,colorSeed.g*c,colorSeed.b*c);
      }
     }

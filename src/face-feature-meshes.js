@@ -848,15 +848,22 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
    const height=eyeRadius*eyeApertureRatio*eyeHeight;
    const mesh=buildGrid(label+'_ANATOMICAL_EYELID',28,4,(u,v)=>{
     const t=u*2-1,arch=Math.pow(Math.max(0,1-t*t),.73);
-    const cornerTilt=(t+1)*eyeRadius*.045*eyeWidth;
-    const nearY=y+(upper?1:-1)*height*arch+cornerTilt;
-    const farY=nearY+(upper?1:-1)*eyeRadius*(upper?.28:.19)*v;
-    const eyeZ=insetZ(x+t*width,nearY)+eyeRadius*.075;
+    // v75: mirrored inner tear-duct and outer canthus contours.
+    const outer=(1+side*t)*.5,inner=1-outer;
+    const tearDuct=Math.pow(inner,10),lateralNotch=Math.pow(outer,9);
+    const cornerTilt=outer*eyeRadius*.078*eyeWidth;
+    const nearY=y+(upper?1:-1)*height*arch+cornerTilt-
+      eyeRadius*.012*tearDuct;
+    const rimTaper=.27+.73*Math.pow(arch,.46);
+    const farY=nearY+(upper?1:-1)*eyeRadius*(upper?.28:.19)*rimTaper*v;
+    const eyeZ=insetZ(x+t*width,nearY)+
+      eyeRadius*(.075-.022*tearDuct-.010*lateralNotch);
     const skinZ=surfaceAt(x+t*width,farY)+d.z*.0033;
     const zz=eyeZ*(1-smoothstep(v))+skinZ*smoothstep(v);
     return new THREE.Vector3(x+t*width,farY,zz);
    },lidMat);
    mesh.userData.attachedToFace=true;
+   mesh.userData.v75MirroredAnatomicalCanthi=true;
    mesh.userData.colorRole='eyelid';
    root.add(mesh);
    if(female){
