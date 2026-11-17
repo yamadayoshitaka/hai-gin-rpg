@@ -830,7 +830,7 @@ import {createBattleThreeGroupPanel} from './src/battle-three-group-panel.js';
 import * as THREE from 'three';
 import {createGamePageAudio} from './src/game-page-audio.js';
 import {layoutSquadCallouts,squadCalloutLeader} from './src/battle-squad-callout-layout.js?v=2';
-import {overviewPinLabel,placeOverviewSquadPins} from './src/battle-overview-squad-pins.js?v=20261117-map-pins1';
+import {overviewPinLabel,placeOverviewSquadPins,recommendOverviewGroupPlans} from './src/battle-overview-squad-pins.js?v=20261117-map-pins2';
 import {createBattleCeremony} from './src/battle-ceremony.js?v=4.6.69';
 import {updateDefensivePosture} from './src/battle-defensive-doctrine.js?v=4.6.15';
 import {chooseBlockedMovementDetour} from './src/battle-movement-recovery.js?v=4.6.15';
@@ -7925,7 +7925,18 @@ const targetedStrategyUi=createTargetedStrategyUi({
    const selected=storyRequest?.battlePlanSelected?.[String(groupId)];
    return [...configured].sort((a,b)=>Number(b.id===selected)-Number(a.id===selected));
   }
-  return BATTLE_PLAN_PRESETS.map(x=>({...x,score:50,reason:'模擬戦向け参考テンプレート'}));
+  // Free battles also get REAL suitability scores from this group's
+  // living jobs, map terrain and current casualties, not seven fake 50s.
+  const own=squadRoster.filter(u=>u.team===0&&!u.isStrategist&&
+   u.hp>0&&u.alive!==false&&
+   normalizeArmyGroup(armyGroupBySquad[String(u.squadId)])===Number(groupId));
+  const lost=own.length?own.reduce((n,u)=>n+1-u.hp/Math.max(1,u.maxHp||u.hp),0)/own.length:0;
+  return recommendOverviewGroupPlans(BATTLE_PLAN_PRESETS,STRATEGY_METHODS,{
+   jobs:own.map(u=>u.jobId||u.job?.id||'sword'),
+   stageKind:selectedStage?.kind||'explore',
+   terrain:selectedStage?.biome||selectedStage?.terrain||'plains',
+   woundedRatio:lost
+  }).slice(0,5);
  },
  getItems:()=>{
   const byId=new Map();
