@@ -5,7 +5,7 @@ const tactical=readFileSync(new URL('../src/tactical-command-battle-ui.js',impor
 const visibility=readFileSync(new URL('../src/battle-render-visibility.js',import.meta.url),'utf8');
 const selection=readFileSync(new URL('../src/targeted-strategy-runtime.js',import.meta.url),'utf8');
 assert.match(game,/battle-situation-monitor\.js|battle-situation-pause\.js/);
-assert.match(game,/const validConfigured=\(configured\|\|\[\]\)\.filter/);
+assert.match(game,/const validConfigured=\(Array\.isArray\(configured\)\?configured:\[\]\)\.filter/);
 assert.match(game,/targetedStrategyUi\.open\(group,\{startAtRecommendations:true,groupOnly:true\}\)/);
 assert.match(game,/return targetedStrategyUi\.open\(group,\{groupOnly:true,startAtRecommendations:true\}\)/);
 assert.match(game,/createBattleUpperBodyAccent/);
