@@ -5,6 +5,11 @@ on:
       - 'src/story-compact-comic.js'
       - 'src/story-panel-registered-art.js'
       - 'src/story-archive-restored-art.js'
+      - 'src/story-art-sourcing-policy.js'
+      - 'src/story-new-original-art.js'
+      - 'qa/story-stage-art-sourcing-boundary.test.mjs'
+      - 'scripts/restore-existing-story-art.mjs'
+      - '.github/workflows/story-chapter1-free-complete-draft-production.yml'
       - 'qa/story-archive-restoration.test.mjs'
       - 'assets/story/chapter1-provisional-live/**'
       - 'src/story-dialogue-art-binding.js'
@@ -17,6 +22,8 @@ on:
       - 'audio/voicevox/manifest.json'
       - 'qa/story-narration-audio-reachability.test.mjs'
       - 'src/story-manga-viewer.js'
+      - 'src/story-art-sourcing-policy.js'
+      - 'src/story-new-original-art.js'
       - 'src/story-narrative-flow.js'
       - 'game.html'
       - 'town-hub.html'
@@ -75,6 +82,8 @@ jobs:
           node qa/story-chapter1-stage-priority.test.mjs
       - name: Confirm five recovered historical original WebPs are real and exactly matched to stage
         run: node qa/story-archive-restoration.test.mjs
+      - name: Enforce stage1-4 historical reuse, stage5-200 NEW-only and prevent stale sheet fallback
+        run: node qa/story-stage-art-sourcing-boundary.test.mjs
       - name: Verify compact CG reuse of 40 existing first-four-stage gender/outcome original assets
         run: node qa/story-compact-art-reuse.test.mjs
       - name: Build and verify 880-scene minimum-first CG queue (no paid or free API calls)
