@@ -96,7 +96,8 @@ export function animateMonsterModel(model,time=0){
  const dying=action==='defeat'?progress:0;
  const springBeast=['m001','m002','m003','m004','m005'].includes(model.userData.speciesId);
  const sourceFeline=['m007','m008','m009','m010'].includes(model.userData.speciesId);
- const sway=Math.sin(motionTime*2.1)*.027*(1-dying);
+ const phoenixIdle=model.userData.speciesId==='m013'&&action==='idle';
+ const sway=Math.sin(motionTime*2.1)*.027*(phoenixIdle?.10:1)*(1-dying);
  // Rare, brief eye closure with a per-species offset. No random state,
  // material allocations or extra draw calls during the animation loop.
  const blinkClock=(motionTime+(model.userData.blinkOffset??
@@ -130,8 +131,8 @@ export function animateMonsterModel(model,time=0){
    }
    if(name==='head'){
      part.rotation.x=-strike*.27-special*.42+hit*.12+
-       Math.sin(motionTime*1.7)*.025+dying*.12;
-     part.rotation.y=dodge*.30+Math.sin(motionTime*.7)*.025;
+       Math.sin(motionTime*1.7)*(phoenixIdle?.003:.025)+dying*.12;
+     part.rotation.y=dodge*.30+Math.sin(motionTime*.7)*(phoenixIdle?.003:.025);
    }else if(name==='jaw'){
      part.rotation.x=(action==='roar'?.55:pulse*.42)+
        Math.sin(motionTime*3)*.022+dying*.08;
