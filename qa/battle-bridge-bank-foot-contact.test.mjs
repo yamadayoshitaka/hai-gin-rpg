@@ -66,8 +66,12 @@ for(const channel of CROWD_GROUND_POSE_CHANNELS){
 // and re-anchors AFTER worker smoothing, not before the final render.
 const game=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
 const army=readFileSync(new URL('../src/mass-battle-real-army.js',import.meta.url),'utf8');
-assert.match(game,/battleWalkSurfaceY\(x\/CELL\+6,z\/CELL\+6,bridgeHeights,stairCells,smoothHeight\)/,
+assert.match(game,/battleWalkSurfaceY\(x\/CELL\+6,z\/CELL\+6,bridgeHeights,stairCells,renderedTerrainVertexY\)/,
  '50 and 1000 terrainY must match the rendered ground mesh');
+assert.match(game,/terrainContactVertexHeights\[\(z\+iz\)\*\(WORLD_SIZE\+1\)\+x\+ix\]=y/,
+ 'ground contact cache must use the SAME exact y values as terrain vertices');
+assert.match(game,/return terrainContactVertexHeights\[iz\*\(WORLD_SIZE\+1\)\+ix\]/,
+ '2000 soldiers cannot recalculate expensive bicubic patches per draw frame');
 assert.match(game,/const corrected=anchoredStandingY\(floor,seat\)/,
  'all mass soldiers use the same final ground after interpolation');
 assert.match(game,/out\.y=corrected;smooth\.y=corrected/,
