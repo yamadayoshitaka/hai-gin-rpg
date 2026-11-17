@@ -79,15 +79,15 @@ import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {MONSTER_CATALOG,MONSTER_BY_ID} from './src/monster-catalog.js';
 import {MONSTER_SUMMON_ENTRIES} from './src/monster-summon-registry.js';
-import {createMonsterModel,disposeMonsterSculpture} from './src/monster-geometry.js?v=m001-feline-ref-v3-20261117';
-import {startMonsterAction,animateMonsterModel} from './src/monster-animation.js?v=m001-crown-action-vfx-v9-20261117';
+import {createMonsterModel,disposeMonsterSculpture} from './src/monster-geometry.js?v=m002-feline-joints-and-fx-v4-20261117';
+import {startMonsterAction,animateMonsterModel} from './src/monster-animation.js?v=m002-feline-action-v4-20261117';
 import {buildCombatObjectGeometry} from './src/combat-creature-geometry.js';
 import {fetchCreatureRegistry} from './src/creature-external-runtime.js';
 import {REAL_CREATURE_MESH_SOURCES,loadCreatureMeshSource} from './src/creature-real-source-catalog.js?v=real-body-only-v4';
 import {REAL_BODY_CANDIDATES} from './src/creature-real-body-candidates.js';
-import {NONHUMAN_MONSTER_IDS,NONHUMAN_EXTRA_SUMMON_IDS,recommendedMeshSources,adoptedCreatureMesh,setAdoptedCreatureMesh,compatibleSourceWarning,protectedCreature,referenceOnlySource} from './src/creature-mesh-adoption.js?v=m001-feline-ref-v3-20261117';
+import {NONHUMAN_MONSTER_IDS,NONHUMAN_EXTRA_SUMMON_IDS,recommendedMeshSources,adoptedCreatureMesh,setAdoptedCreatureMesh,compatibleSourceWarning,protectedCreature,referenceOnlySource} from './src/creature-mesh-adoption.js?v=m002-feline-joints-and-fx-v4-20261117';
 import {registeredMonsterModel}
- from './src/creature-game-model-routing.js?v=m001-feline-ref-v3-20261117';
+ from './src/creature-game-model-routing.js?v=m002-feline-joints-and-fx-v4-20261117';
 const $=id=>document.getElementById(id);
 const creatureIds=new Set(NONHUMAN_MONSTER_IDS);
 const groups=[
