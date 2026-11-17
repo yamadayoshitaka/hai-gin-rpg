@@ -4,7 +4,15 @@ import crypto from 'node:crypto';
 import {CHAPTER1_PROVISIONAL_LIVE,chapter1ProvisionalLivePanel} from '../src/story-chapter1-provisional-live.js';
 import {chapterOneReviewPages} from '../src/story-chapter1-review-core.js';
 import {buildChapter1ImagePrompt} from '../src/story-chapter1-image-prompt.js';
+import {registeredStoryPanelAsset} from '../src/story-panel-registered-art.js';
+import {oldStoryArtReuseAllowed} from '../src/story-art-sourcing-policy.js';
 
+const sameHistoricSetup=(oldScript,newScript)=>{
+ // Historical stage-1..4 proof predates the current narrator-first,
+ // plain-language prefix, which is displayed independently on recap art.
+ const normalized=String(newScript||'').replace(/^今回の舞台は「[^」]+」。/,'');
+ return oldScript===newScript||oldScript===normalized;
+};
 const pages=chapterOneReviewPages().filter(p=>p.stageId==='c01-s04'||p.stageId==='c01-s05');
 assert.equal(pages.flatMap(p=>p.shots).length,96,'Stage4+5 must preserve 48 shots each');
 const rules=JSON.parse(fs.readFileSync('assets/story/quality/artwork-p0-rules.json','utf8'));
@@ -49,9 +57,9 @@ for(const [key,item] of registered){
  assert.equal(bytes.toString('ascii',8,12),'WEBP',key);
  assert.equal(crypto.createHash('sha256').update(bytes).digest('hex'),item.sha256,key+' image differs from registry');
 }
-// Stage5 is now supplied with genuine ChatGPT image bytes. Never assert that
-// this stage remains permanently empty. Accept only canonical, SHA-verified,
-// reversible provisional artwork and keep final P0 approval explicitly false.
+// Stage 5 prior genuine images are kept as historical evidence only.
+ // The owner has now mandated NEW original art from stage 5 onwards.
+ // Validate original bytes and shot provenance WITHOUT allowing active game reuse.
 const stage5Canonical=new Map(pages.filter(p=>p.stageId==='c01-s05')
  .flatMap(p=>p.shots.map(shot=>[shot.key,shot])));
 const liveS05=Object.entries(CHAPTER1_PROVISIONAL_LIVE)
@@ -74,7 +82,10 @@ for(const [key,item] of liveS05){
  assert.equal(crypto.createHash('sha256').update(bytes).digest('hex'),item.sha256,key+' actual image mismatch');
  const proof=JSON.parse(fs.readFileSync(item.provenance,'utf8'));
  assert.equal(proof.shotKey,key);
- assert.equal(proof.scriptText,canonicalShot.scriptText,key+' does not match canonical screenplay');
+ assert(typeof proof.scriptText==='string'&&proof.scriptText.length>=8,
+  key+' archive must retain its original, historical script');
+ // Script changed when narration was split from character dialogue; old script
+ // should NOT be used to drive new illustration generation.
  if(proof.qaStatus==='OWNER_PROVISIONAL'){
   assert.equal(proof.sourceModel,'ChatGPT Images');
   assert.equal(proof.finalP0Approved,false);
@@ -82,10 +93,11 @@ for(const [key,item] of liveS05){
   assert.equal(proof.quality?.realReferenceBytesAttachedToImageGenerator,false);
   assert.equal(proof.imageSha256,item.sha256,'Image proof SHA mismatch');
  }
- assert.equal(chapter1ProvisionalLivePanel({
+ assert.equal(oldStoryArtReuseAllowed(canonicalShot.stageId),false);
+ assert.equal(registeredStoryPanelAsset({
   stageId:canonicalShot.stageId,comicEdition:canonicalShot.edition,
   protagonistGender:canonicalShot.gender,id:canonicalShot.shotId
- })?.asset,item.asset,'Game resolver fails to use the real stage5 image');
+ }),null,key+' historic original must not appear in the game');
 }
 for(const gender of ['male','female']){
  const key='c01-s04|pre|'+gender+'|c01-s04-m1';
@@ -110,7 +122,8 @@ for(const gender of ['male','female']){
   stageId:'c01-s04',comicEdition:'pre',protagonistGender:gender,id:'c01-s04-m1'
  })?.asset,item.asset,'Live game resolver does not point to owner provisional asset');
  const canonical=pages.flatMap(p=>p.shots).find(x=>x.key===key);
- assert(canonical&&canonical.scriptText===proof.scriptText,'Never bind artwork to a noncanonical script');
+ assert(canonical&&sameHistoricSetup(proof.scriptText,canonical.scriptText),
+  'Stage4 image proof must match its actual story beat (excluding recap prefix)');
 }
 const ledger=JSON.parse(fs.readFileSync('assets/story/chapter1-provisional-revisions.json','utf8'));
 for(const gender of ['male','female'])
@@ -137,7 +150,8 @@ assert.equal(m2Proof.qaStatus,'OWNER_PROVISIONAL');
 assert.equal(m2Proof.finalP0Approved,false);
 assert.equal(m2Proof.quality.exactCast,true);
 assert.equal(m2Proof.quality.realReferenceBytesAttachedToImageGenerator,false);
-assert.equal(m2Proof.scriptText,pages.flatMap(p=>p.shots).find(x=>x.key===newShot).scriptText);
+assert(sameHistoricSetup(m2Proof.scriptText,
+ pages.flatMap(p=>p.shots).find(x=>x.key===newShot).scriptText));
 assert(ledger.history.some(h=>h.key===newShot&&h.kind==='CHATGPT_OWNER_PROVISIONAL_NOT_P0'));
 
 const newNative=[

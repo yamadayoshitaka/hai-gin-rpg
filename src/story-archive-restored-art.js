@@ -7,6 +7,9 @@
  * Additions must pass qa/story-archive-restoration.test.mjs and retain
  * generation proof alongside their true binary WebP.
  */
+import {oldStoryArtReuseAllowed} from './story-art-sourcing-policy.js';
+// Keep stage 5 historical source/proof metadata for rollback history only.
+// These records do NOT grant permission to show an old picture in stage 5+.
 export const RESTORED_STORY_ARCHIVE=Object.freeze({
   "c01-s05|pre|male|c01-s05-m1": {
     "asset": "./assets/story/chapter1-provisional-live/c01-s05__pre__male__c01-s05-m1.webp",
@@ -108,6 +111,7 @@ export const RESTORED_STORY_ARCHIVE=Object.freeze({
 export const RESTORED_STORY_ARCHIVE_COUNT=Object.keys(RESTORED_STORY_ARCHIVE).length;
 export function restoredStoryArchivePanel(shot){
  if(!shot?.stageId||!shot?.comicEdition||!shot?.protagonistGender||!shot?.id)return null;
+ if(!oldStoryArtReuseAllowed(shot.stageId))return null;
  const key=[shot.stageId,shot.comicEdition,shot.protagonistGender,shot.id].join('|');
  return RESTORED_STORY_ARCHIVE[key]||null;
 }

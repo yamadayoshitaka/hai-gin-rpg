@@ -2,6 +2,7 @@ import {chapterOneReviewPages,EDITION_LABELS,REVIEW_BRANCH,REVIEW_REPO} from './
 import {buildChapter1ImagePrompt,CHATGPT_IMAGES_URL} from './story-chapter1-image-prompt.js';
 import {chapter1ProvisionalLivePanel} from './story-chapter1-provisional-live.js';
 import {registeredStoryPanelAsset,storyArtDisplayUrl} from './story-panel-registered-art.js';
+import {oldStoryArtReuseAllowed} from './story-art-sourcing-policy.js';
 const $=id=>document.getElementById(id);
 const all=chapterOneReviewPages(),pages=new Map(all.map(p=>[p.number,p]));
 const gameVisibleCount=all.flatMap(p=>p.shots).filter(s=>!!s.legacyPath).length;
@@ -349,6 +350,8 @@ function dimensionsOK(w,h,stage){
  return w>=a&&h>=b&&(stage==='c01-s02'||w*9===h*16);
 }
 function liveForShot(shot){
+ // Stage5+ historical art remains archive-only even if its old SHA is valid.
+ if(!oldStoryArtReuseAllowed(shot.stageId))return null;
  return chapter1ProvisionalLivePanel({
   stageId:shot.stageId,comicEdition:shot.edition,
   protagonistGender:shot.gender,id:shot.shotId
@@ -428,17 +431,13 @@ function update(){
  // Provisional publication is automatic for real verified frames.
  // Only an explicit "return for revision" needs to be sent to GitHub.
  const needsReturn=corrections.some(s=>states.get(s.key)?.available&&
-  chapter1ProvisionalLivePanel({
-   stageId:s.stageId,comicEdition:s.edition,protagonistGender:s.gender,id:s.shotId
-  })?.sha256===states.get(s.key)?.hash);
+  liveForShot(s)?.sha256===states.get(s.key)?.hash);
  $('submit').disabled=!needsReturn;
 }
 function send(){
  const votes=current.shots.map(s=>{
   const state=states.get(s.key),d=saved[s.key];
-  const live=chapter1ProvisionalLivePanel({
-   stageId:s.stageId,comicEdition:s.edition,protagonistGender:s.gender,id:s.shotId
-  });
+  const live=liveForShot(s);
   if(!state?.available||!d||d.hash!==state.hash||d.decision!=='revise'||
    live?.sha256!==state.hash)return null;
   return {key:s.key,kind:state.kind,decision:d.decision,
