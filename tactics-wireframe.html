@@ -1067,7 +1067,8 @@ import {squadTypeOf,SQUAD_TYPE_NAMES} from './src/mass-battle-formations.js?v=4.
 import {recomposeSquadAssignments,applySquadRecomposition,FORMATION_TYPES,FORMATION_NAMES,FORMATION_ICONS,normalizeFormationType} from './src/battle-squad-recomposition.js?v=4.6.49';
 import {squadJobComposition,chooseEnemyOrder,enemyOrderRefreshSeconds,TACTICAL_TIME_BANK_SECONDS} from './src/battle-tactical-policy.js?v=4.6.69';
 import {indexBattleDecisionUnits} from './src/battle-ai-decision-index.js?v=20261116-ai1';
-import {createMassBattleRealArmy} from './src/mass-battle-real-army.js?v=20261117-ground-walk-yaw1';
+import {createMassBattleRealArmy} from './src/mass-battle-real-army.js?v=20261117-foot-anchor-v2';
+import {triangleTerrainHeight,anchoredStandingY} from './src/battle-terrain-contact.js?v=20261117-riverbank-v1';
 import {BattleCorpsePolicy,corpseOpacity} from './src/battle-corpse-policy.js?v=4.4.35';
 import {CrowdPerformanceBudget} from './src/crowd-performance-budget.js?v=20261117-dense1';
 import {createMassBattleWorkerClient} from './src/mass-battle-worker-client.js?v=20261117-mount-interior1';
@@ -3134,7 +3135,15 @@ for(const [id,x,z] of townProps){
   stairCells.set(key,{height:base+(.16+(dz+1)*.48)*CELL,bridge:null});
  }
 }
-function terrainY(x,z){const gx=Math.round(x/CELL+6),gz=Math.round(z/CELL+6),key=gx+','+gz;return bridgeHeights.get(key)??stairCells.get(key)?.height??smoothHeight(x/CELL+6,z/CELL+6)}
+function terrainY(x,z){
+ const fx=x/CELL+6,fz=z/CELL+6;
+ const gx=Math.round(fx),gz=Math.round(fz),key=gx+','+gz;
+ // Decks and masonry treads override dirt only inside their walkable
+ // collision footprint. Else sample the ACTUAL two terrain triangles;
+ // bicubic smoothHeight at the centre does not equal the rendered surface.
+ return bridgeHeights.get(key)??stairCells.get(key)?.height??
+  triangleTerrainHeight(fx,fz,smoothHeight);
+}
 const riverSurfaceByRow=new Float32Array(WORLD_SIZE);
 for(const row of riverRows)riverSurfaceByRow[row.z]=row.y+.10;
 const isWaterCell=(x,z)=>x>=0&&z>=0&&x<WORLD_SIZE&&z<WORLD_SIZE&&['river','water'].includes(stageData.tiles[z*WORLD_SIZE+x]);
@@ -4035,10 +4044,11 @@ if(massSim){
    const floor=unitGroundY(u,out.x,out.z);
    if(Number.isFinite(floor)){
     const seat=u.mountId?riderElevation(u,creatureVisualTime):0;
-    const corrected=floor+seat+(u.mountId?0:.018);
-    if(u.mountId||out.y<corrected){
-      out.y=corrected;smooth.y=corrected;
-    }
+    // Always use the actual walkable surface after render interpolation.
+    // The prior lower-only clamp allowed downhill actors to hover and
+    // rendered-bank triangles could cover their calves on an upslope.
+    const corrected=anchoredStandingY(floor,seat);
+    out.y=corrected;smooth.y=corrected;
    }
   }
   if(!u.alive){
