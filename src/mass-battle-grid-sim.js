@@ -1,7 +1,7 @@
 // 実ゲームのマス・橋・建物衝突をそのまま使う大軍シミュレーション。
 // 空間索引＋共有フローフィールドで2000体でも全件A*を避ける。
 import { JOBS } from './mass-battle-sim.js';
-import { CombatActionRuntime } from './combat-action-runtime.js?v=4.6.51';
+import { CombatActionRuntime } from './combat-action-runtime.js?v=20261117-mount-interior1';
 import { COMBAT_RULES } from './combat-action-spec.js?v=4.6.51';
 import {applySquadHeal} from './room-item-registry.js?v=4.6.44';
 import {createSquadFormationPlan,squadSpeedFactor} from './mass-battle-formations.js';
@@ -59,12 +59,13 @@ function makeFlow(width,height,walkable,goals) {
 }
 
 export class MassBattleGridSimulation {
-  constructor(sideCount, seed, {width,height,walkable,water,opaque,bridges,riverXAt,elevationMap=null}) {
+  constructor(sideCount, seed, {width,height,walkable,water,opaque,bridges,riverXAt,elevationMap=null,mountForbidden=null}) {
     if(!Number.isInteger(sideCount)||sideCount<1||sideCount>1000)throw RangeError('兵数は1～1000');
     if(!(walkable instanceof Uint8Array)||walkable.length!==width*height)throw Error('通行可能マップが不正です');
     if(!Array.isArray(bridges))throw Error('橋の情報が不正です');
     this.width=width;this.height=height;
     this.walkable=walkable;
+    this.mountForbidden=mountForbidden instanceof Uint8Array&&mountForbidden.length===walkable.length?mountForbidden:null;
     if(elevationMap!=null&&(!(elevationMap instanceof Float32Array)||
        elevationMap.length!==width*height))throw Error('地形の高低差マップが不正です');
     this.elevationMap=elevationMap;
@@ -108,7 +109,7 @@ export class MassBattleGridSimulation {
     this._enemyPursuitFlows=new Map();this._enemyBuildsThisTick=0;
     this.squadHealTargets=new Map();this.squadMissions=new Map();
     this.units=[];this.live=[sideCount,sideCount];this.crossings=[0,0];
-    this.actions=new CombatActionRuntime({width,height,walkable});
+    this.actions=new CombatActionRuntime({width,height,walkable,mountForbidden:this.mountForbidden});
     this.objects=this.actions.objects;
     this.actionEvents=[];
     this._queuedWarpEvents=[];
@@ -220,6 +221,12 @@ export class MassBattleGridSimulation {
   }
 
   _inside(x,z){return x>=0&&z>=0&&x<this.width&&z<this.height}
+  // A mounted rider may enter a house only after the horse is parked on a
+  // legal exterior tile. Applies equally in main-thread and Worker authority.
+  _prepareMountedEntry(unit,x,z){
+    if(!unit.mountId||!this._inside(x,z)||!this.mountForbidden?.[z*this.width+x])return true;
+    return this.actions.dismountObject(unit);
+  }
   get territoryWorld(){return {width:this.width,height:this.height,riverXAt:this.riverXAt};}
   territoryAt(x,z){return territoryAt(x,z,this.territoryWorld);}
   canWarpStrategist(unitId,x,z){
@@ -234,6 +241,7 @@ export class MassBattleGridSimulation {
     if(!this.canWarpStrategist(unitId,x,z))return false;
     const unit=this.units[unitId];
     const before={x:unit.x,z:unit.z};
+    if(!this._prepareMountedEntry(unit,x,z))return false;
     const oldCell=before.z*this.width+before.x,newCell=z*this.width+x;
     const oldFrom=unit.fromZ*this.width+unit.fromX;
     if(this._occupancy[oldCell]===unit.id)this._occupancy[oldCell]=-1;
@@ -1342,6 +1350,7 @@ export class MassBattleGridSimulation {
           const cost=Math.hypot(x-targetX,z-targetZ);
           if(cost+.1<best){best=cost;next={x,z};}
         }
+        if(next&&!this._prepareMountedEntry(u,next.x,next.z))next=null;
         if(next){
           reserve(next.z*this.width+next.x,u.id);
           u.fromX=u.x;u.fromZ=u.z;u.vx=next.x-u.x;u.vz=next.z-u.z;
@@ -1596,6 +1605,7 @@ export class MassBattleGridSimulation {
           });
         }
       }
+      if(next&&!this._prepareMountedEntry(u,next.x,next.z))next=null;
       if(!next){u.action='blocked';u.vx=0;u.vz=0;continue}
       u.blockedTicks=0;
       reserve(next.z*this.width+next.x,u.id);

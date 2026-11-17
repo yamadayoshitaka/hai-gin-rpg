@@ -455,7 +455,7 @@ async function attachGear(dressed,outfitBones,profile,textures,quality){
   return items;
 }
 
-export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male',quality='preview',rarity='N',weaponOverride=null,preserveBody=false,hairStyle=null,hairColor=null,studioPreferSkinnedLegs=false,studioPreserveLegAnatomy=false,studioVisibleLegAnatomy=false}={}){
+export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male',quality='preview',rarity='N',weaponOverride=null,preserveBody=false,hairStyle=null,hairColor=null,studioPreferSkinnedLegs=false,studioPreserveLegAnatomy=false,studioVisibleLegAnatomy=false,headwearShown=true}={}){
   if(!characterModel||!parent)throw Error('人物モデルと配置先が必要です');
   // Different preview and battle entry points share the same head-surface
   // correction. The calibrated mesh is cached for all copies of each sex.
@@ -631,7 +631,7 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
     gear=await attachGear(dressed,outfitBones,profile,textures,quality);
     try{
       hair=await attachCharacterHair({model:characterModel,job:jobId,sex,style:hairStyle,
-        color:hairColor,quality,headwear:style.hood?'hood':armor?'helmet':null});
+        color:hairColor,quality,headwear:headwearShown?(style.hood?'hood':armor?'helmet':null):null});
     }catch(error){
       // A missing cosmetic asset must not strip a soldier of armor and weapons.
       hairError=String(error?.message||error);

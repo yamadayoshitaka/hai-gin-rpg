@@ -43,7 +43,7 @@ export function createBattleActorVisibility(THREE,camera){
     // ten times per second while the body root interpolated every frame.
     // Keep idle soldiers at 10/20 Hz, but visible moving/striking bodies
     // require a 24/30 Hz motion budget to avoid sliding and T-pose holds.
-    const moving=Boolean(actor.nextCell||actor.poseMoving||
+    const moving=Boolean(actor.mountId||actor.nextCell||actor.poseMoving||
       actor.massAnimation?.moving||(actor.attackPoseUntil>actor.battleTime));
     const interval=tier===0?0:moving?(tier===1?1/30:1/24):
       tier===1?1/20:1/10;

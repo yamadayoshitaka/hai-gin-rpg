@@ -1,5 +1,6 @@
-// Hair is a reusable, head-bone-attached visual asset, not an opaque scalp
-// helmet or a procedurally approximated wig. Each style has three game LODs.
+// Hair is a reusable head-bone-attached asset. Never swap to a sparse
+// or differently shaped hair LOD while the camera moves: keep the complete
+// fitted silhouette, then let an optional prebuilt studio groom add near detail.
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {maskHairGeometry,createVisibleHeadwearWisps} from './hair-headwear-occlusion.js?v=4.4.89';
@@ -249,10 +250,15 @@ export async function attachCharacterHair({model,job,sex='male',style=null,color
  const id=selectedHairStyle(job,sex,style);
  const tint=color==null?HAIR_COLORS[Number(id)%HAIR_COLORS.length]:Number(color);
  const prefix=sex==='female'?'female':'male';
- const paths=[0,1,2].map(lod=>`./assets/characters/hair-fitted-v1/${prefix}_hair_${id}_lod${lod}.glb`);
+ // The far/middle GLBs do not preserve every style's scalp coverage.
+ // Load the full hairstyle ONCE and keep it through every camera distance.
+ // This also removes two redundant GLB fetch/decode jobs per actor.
+ const paths=[0].map(lod=>`./assets/characters/hair-fitted-v1/${prefix}_hair_${id}_lod${lod}.glb`);
  const resources=await Promise.all(paths.map(load));
  const bone=headBone(model),size=measureHeadLocalBounds(model,bone);
  const lod=new THREE.LOD(),assetBox=new THREE.Box3(),hairMeshes=[];
+ // Never permit renderer distance updates to hide the only complete hairstyle.
+ lod.autoUpdate=false;
  resources.forEach((resource,index)=>{
   const scene=resource.scene.clone(true);
   scene.name=`hair-${prefix}-${id}-lod${index}`;
@@ -271,11 +277,10 @@ export async function attachCharacterHair({model,job,sex='male',style=null,color
   scene.traverse(child=>{if(child.isMesh)hairMeshes.push({mesh:child,
     original:child.geometry,sourceMatrix:child.matrixWorld.clone()})});
   if(index===0){scene.updateMatrixWorld(true);assetBox.setFromObject(scene)}
-  // Preserve the same fitted haircut at legible camera distances.
-  // The original 12m downgrade changed hair volume long before the whole
-  // soldier became small; far GLB hair often looked like a bare scalp.
-  // Only LOD thresholds change: no new geometry or draw calls are added.
-  lod.addLevel(scene,index===0?0:index===1?14:80);
+  // Retain one fixed, complete hair layer. Camera LOD may refine the studio
+  // groom, but this reliable original hairstyle never disappears or changes.
+  lod.addLevel(scene,0);
+  scene.visible=true;
  });
  if(assetBox.isEmpty())throw Error('髪モデルにメッシュがありません: '+id);
  const bodySize=size.dimensions;
