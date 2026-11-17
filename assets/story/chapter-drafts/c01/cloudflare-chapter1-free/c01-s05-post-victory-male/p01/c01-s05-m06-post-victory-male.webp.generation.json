@@ -1,0 +1,36 @@
+{
+  "kind": "CLOUDFLARE_REAL_WEBP_REVIEW_CANDIDATE_NOT_APPROVED",
+  "shotKey": "c01-s05|post-victory|male|c01-s05-m6",
+  "stageId": "c01-s05",
+  "edition": "post-victory",
+  "gender": "male",
+  "panelId": "c01-s05-m6",
+  "screenplayText": "勝利が確認された。守備線を保ち、城内で勅命を読み直す時間を確保する。",
+  "visibleActorIds": [],
+  "actualReferenceImagesAttached": [
+    {
+      "actorId": "style_benchmark",
+      "source": "assets/story/chapters/c01/panels/c01-s01-m02-male.webp",
+      "originalSha256": "e70901415a751b576a00dcac34f93065051b3513b875f58546533f59ccfee71d",
+      "submittedSha256": "a6602427e7fde9cda0e99dd5511998682513154a72c029a190abd5e74786eca2",
+      "actualBytes": 247193,
+      "pixels": [
+        480,
+        270
+      ]
+    }
+  ],
+  "imageSha256": "91f0667d5c1c40c83e8744a51ccebc09536d93663720ca4e08c97d59e67bb4e9",
+  "nativePixels": [
+    1024,
+    576
+  ],
+  "imageBytes": 139726,
+  "model": "@cf/black-forest-labs/flux-2-klein-4b",
+  "seed": 791332902,
+  "promptSha256": "caed46e014d5368b4af027b5bec8734afc67a6b4086e7e1714eacb43ebc7d789",
+  "estimatedNeurons": 109.57,
+  "visuallyApproved": false,
+  "formallyRegistered": false,
+  "gameDeployed": false
+}
