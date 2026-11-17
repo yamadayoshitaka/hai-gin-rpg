@@ -875,7 +875,11 @@ function headAndCrest(g,s,p,torso,detail){
   {z:.06,y:.055,rx:.235*p.head,ry:.235*p.head},
   {z:-.18,y:.063,rx:.245*p.head,ry:.245*p.head},
   {z:-.34,y:.055,rx:.07,ry:.095}
- ],{name:'avian-cranium-'+s.id,rough:.82,ribbing:.004,capEnds:true});
+ ],{name:'avian-cranium-'+s.id,rough:.82,ribbing:.004,
+   // Apply real cheek, orbit, brow, beak-root and jaw relief to the SAME
+   // continuous skull mesh. The former smooth loft lacked the facial
+   // volume required by the shared monster/summon production QA.
+   faceSculpt:true,capEnds:true});
  skull.userData.avianRealCranium=true;
  if(s.id==='m013'){
   skull.userData.phoenixSmallElongatedHead=true;
