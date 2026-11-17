@@ -37,7 +37,7 @@ assert.match(hair,/const paths=\[0\]\.map/,'The full fitted hairstyle is loaded 
 assert.match(outfit,/useSourceSkinnedLegs=\(lowDetail\|\|studioPreferSkinnedLegs\)/,
  'Keep imported 65-bone legs instead of pipe-shaped LOD placeholders');
 assert.match(outfit,/retainedAsSkinnedTrouser=true/);
-assert.match(game,/rigged-outfit-runtime\.js\?v=20261117-mount-hair1/);
+assert.match(game,/rigged-outfit-runtime\.js\?v=20261117-back-gate1/);
 assert.match(game,/skirmish-distance-impostors\.js\?v=20261117-stable-hair2/);
 assert.match(outfit,/hair-attachment-runtime\.js\?v=20261116-silhouette-lod1/);
 console.log('PASS: 50v50 projected-size photo gate, stable identical hairstyles, skinned legs and FPS-aware prewarm');
