@@ -3,7 +3,8 @@
  * variants change horns, crests, armour, wings, limb lengths, weapons and fins.
  * Each specimen is real 3D geometry, never an image billboard.
  */
-import {createSculpture,disposeMonsterSculpture} from './monster-shape-kit.js?v=m001-contour-eye-fit-v16-20261117';
+import * as THREE from 'three';
+import {createSculpture,disposeMonsterSculpture} from './monster-shape-kit.js?v=m001-crown-motion-v17-20261117';
 import {attachMonsterFaceControls} from './facial-feature-runtime.js?v=1';
 import {generateCanineFurGuides,generateCanineAxialFurGuides} from './canine-fur-guides.js?v=beast-coat-20261116';
 import {monsterEvidenceFor} from './monster-anatomy-reference.js';
@@ -61,8 +62,11 @@ function m001RingAtZ(z){
 function m001FittedFacialMane(faceCore,source){
  const guides=[];
  const add=(root,tip,normal,width,shade,crown)=>{
-  const mid=root.map((v,k)=>v+(tip[k]-v)*.52+
-    (k===2?.012:0));
+  // Midline has an S-shaped lift and cross-flow rather than a rigid
+  // straight blade. Roots are always kept exactly on the skin surface.
+  const ripple=Math.sin(root[0]*41+root[2]*29)*.008;
+  const mid=root.map((v,k)=>v+(tip[k]-v)*(k===1?.44:.52)+
+    (k===0?ripple:k===1?crown?.029:.010:.011));
   guides.push({root,mid,tip,normal,width,shade,
     m001ContourGuide:true,m001ContourCrown:!!crown});
  };
@@ -102,25 +106,41 @@ function m001FittedFacialMane(faceCore,source){
    }
   }
  }
- // Crown hairs are fitted to the skull's upper ellipse and swept forward.
- // The upper forehead used to grow from an unrelated floating ellipsoid.
- const crownRows=source?28:19,crownCols=source?13:9;
- for(let i=0;i<crownRows;i++){
-  const z=.023+.124*(i+.5)/crownRows;
+ // Two offset layers of compact underfur and longer guard hairs cover
+ // the complete crown, not just the frontal 12 cm. Every root samples the
+ // SAME skull loft as the face, eliminating the bald cap and scalp gap.
+ const crownRows=source?64:43,crownCols=source?18:14;
+ for(let layer=0;layer<2;layer++)for(let i=0;i<crownRows;i++){
+  const z=-.365+.545*(i+.40+layer*.43)/crownRows;
   const ring=m001RingAtZ(z);
+  const front=clamp01((z+.045)/.23);
   for(let j=0;j<crownCols;j++){
-   const u=-.88+1.76*(j+.5)/crownCols;
+   const u=-.94+1.88*(j+.46+(i%2)*.19+layer*.24)/crownCols;
+   if(Math.abs(u)>.96)continue;
    const originalX=ring.rx*u;
    const originalY=ring.y+ring.ry*Math.sqrt(1-u*u);
    const root=[
      originalX*faceCore.scale.x,
-     faceCore.position.y+originalY*faceCore.scale.y+.005,
-     faceCore.position.z+z*faceCore.scale.z+.005
+     faceCore.position.y+originalY*faceCore.scale.y+.004+layer*.002,
+     faceCore.position.z+z*faceCore.scale.z+.004
    ];
-   const len=.116+.030*(1-Math.abs(u));
-   const tip=[root[0]+Math.sign(u)*Math.min(.010,Math.abs(u)*.010),
-     Math.max(.149,root[1]-len*.37),root[2]+len*.60];
-   add(root,tip,[u,.88,.30],.008,(i+j)%8===0?'light':'skin',true);
+   // Eye and nasal bridge remain bare, including the doubled-ribbon
+   // tangent offset. Adjacent crown hair flows over the brow, never
+   // roots directly on the cornea or muzzle.
+   if(root[2]>.182&&Math.abs(root[0])<.139&&root[1]<.182)
+     continue;
+   const len=(layer===0?.105:.171)+
+     (1-front)*(layer===0?.025:.055)+
+     .012*Math.sin(i*.91+j*1.3);
+   const sweptZ=len*(front*.45-(1-front)*.55);
+   const tip=[
+     root[0]+Math.sign(u)*(.010+.012*(1-front)),
+     root[1]+(1-front)*len*.11-front*len*.30,
+     root[2]+sweptZ
+   ];
+   add(root,tip,[u,.90,.26],layer===0?.007:.010,
+     (i+j+layer)%11===0?'light':
+       (i+j+layer)%7===0?'shadow':'skin',true);
   }
  }
  return guides;
@@ -159,6 +179,15 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    return pairs;
  };
  if(wolfKingDoubleCoat)g.root.userData.wolfKingFurDensityMultiplier=2;
+ const m001Flow=(guides)=>s.id!=='m001'?guides:guides.map((h,i)=>{
+   // Hair streams toward the shoulders, then follows the torso
+   // rearward. A small alternate curl makes a coherent fur wave
+   // without updating any per-strand geometry during animation.
+   const ripple=Math.sin(h.root[2]*12+i*.37)*.009;
+   return {...h,mid:[h.mid[0]+ripple,
+     h.mid[1]+.006*Math.cos(i*.45),h.mid[2]-.008],
+     tip:[h.tip[0]+ripple*.50,h.tip[1],h.tip[2]-.012]};
+ });
  const addFur=(parent,guides)=>{
    // Material groups are batched: three draw calls instead of hundreds of
    // individual cones. The original fur photo/normal maps remain intact.
@@ -1001,6 +1030,17 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
        width:.014,seed:v*19+side*5+fore*7+31,
        minVertical:-.85,axis:'y',gravity:.20,
      });
+     // Hair-covered shoulder socket follows the proximal bone while
+     // trunk-owned guard hair covers the same seam from the other side.
+     // The two coat layers overlap, but require NO additional limb mesh.
+     const shoulderOverlap=s.id==='m001'?generateCanineFurGuides({
+       center:[0,.456,fore>0?.002:-.061],
+       radii:[.151,.118,.158],
+       rows:source?19:12,around:source?27:20,
+       length:.119,width:.011,seed:v*31+side*13+fore*17+773,
+       axis:'y',minVertical:-.70,maxVertical:.90,gravity:.29,
+     }).filter(h=>h.root[1]>.355&&h.root[1]<.565)
+       .map(h=>({...h,mid:[h.mid[0],h.mid[1]-.009,h.mid[2]-.012]})):[];
      const lower=generateCanineFurGuides({
        center:[0,s.id==='m001'?-.115:-.28,0],
        radii:s.id==='m001'?[.123,.242,.130]:[.145,.29,.156],
@@ -1020,7 +1060,8 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
      // moving limb: stable four draw calls across all legs, GPU deformation,
      // and no coat detachment at the elbow/hock/toe joint.
      g.skinnedFur(leg,'skin',[
-       {joint:leg,region:'upper',guides:doubleFurGuides(upper)},
+       {joint:leg,region:'upper',
+         guides:doubleFurGuides(m001Flow([...upper,...shoulderOverlap]))},
        {joint:distal,region:'lower',guides:doubleFurGuides(lower)},
        {joint:toeParent,region:'paw',guides:doubleFurGuides(paw)},
      ],{name:'canine-coat-leg'+name});
@@ -1086,7 +1127,25 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
      length:.15,width:.024,seed:v*11+19,
      minVertical:-.94,maxVertical:.79,gravity:.28,
    });
-   addFur(torso,[...flank,...chest]);
+   // A second layer is rooted on the actual torso loft directly over the
+   // shoulder seam. Root positions align with the torso instead of
+   // hovering on a generic ellipsoid. The leg sleeve is feathered into it.
+   const shoulderMantle=s.id==='m001'?generateCanineAxialFurGuides({
+     stations:bodyStations,rows:source?24:15,around:source?42:30,
+     lengthProfile:[
+       {z:bodyLength*1.01,length:.085},
+       {z:bodyLength*.77,length:.172},
+       {z:bodyLength*.46,length:.193},
+       {z:bodyLength*.13,length:.136},
+       {z:-bodyLength*.24,length:.069},
+       {z:-bodyLength*1.03,length:.036}
+     ],
+     width:.013,seed:v*71+761,minVertical:-.95,maxVertical:.96,
+     gravity:.38,
+   }).filter(h=>Math.abs(h.root[0])>.292&&
+     h.root[2]>.18&&h.root[2]<.65&&
+     h.root[1]>.97&&h.root[1]<1.48):[];
+   addFur(torso,m001Flow([...flank,...chest,...shoulderMantle]));
    // Merge the long ruff with short skull and cheek hairs, preserving
    // the original three material batches and keeping eyes unobstructed.
    const faceGuides=s.id==='m001'?[]:[
@@ -2020,6 +2079,10 @@ export function createMonsterModel(spec,{detail='high'}={}){
    default:throw Error('Unknown anatomy: '+spec.family);
  }
  addNonhumanMonsterWardrobe(g,spec);
+ // The optional effects are created lazily only when a rendered near-LOD
+ // m001 performs an action. Pure timing tests can import monster-animation
+ // without importing Three.js or allocating a GPU mesh.
+ if(spec.id==='m001')g.root.m001FxThree=THREE;
  g.root.userData.speciesId=spec.id;
  g.root.userData.pivots=g.pivots;
  g.root.userData.homeScale=g.root.scale.x;
@@ -2038,5 +2101,5 @@ export function createMonsterModel(spec,{detail='high'}={}){
 export {disposeMonsterSculpture};
 // All renderer metrics share this module's exact shape/material instance.
 // Never independently import a differently versioned shape-kit into the UI.
-export {MONSTER_DETAIL_LEVELS,monsterSculptCacheStats} from './monster-shape-kit.js?v=m001-contour-eye-fit-v16-20261117';
+export {MONSTER_DETAIL_LEVELS,monsterSculptCacheStats} from './monster-shape-kit.js?v=m001-crown-motion-v17-20261117';
 export {monsterPhotoCacheStats} from './monster-photo-pbr.js?v=4.4.81';
