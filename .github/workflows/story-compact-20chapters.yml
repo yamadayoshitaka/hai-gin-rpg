@@ -96,6 +96,19 @@ jobs:
         run: node qa/story-draft-dialogue-identity.test.mjs
       - name: Verify real post-cutover original commit age and strict scene identity
         run: node qa/story-new-original-timestamp-guard.test.mjs
+      - name: Dry-run the ACTUAL review-branch stage5 original proof before merge
+        shell: bash
+        run: |
+          git fetch --no-tags origin refs/heads/story/chapter1-free-actual-art:refs/remotes/origin/story/chapter1-free-actual-art
+          node scripts/publish-story-chapter1-provisional.mjs --plan | tee /tmp/story-provisional-plan.jsonl
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          const report=JSON.parse(fs.readFileSync('/tmp/story-provisional-plan.jsonl','utf8').trim().split('\n').at(-1));
+          if(report.invalidProof!==0 || report.registeredCandidates<1){
+            throw Error('Real post-cutover CG source must verify and be eligible for game provisional: '+JSON.stringify(report));
+          }
+          console.log('Verified native draft candidates:',report.registeredCandidates,'P0 approvals: 0');
+          NODE
       - name: Verify sequential first-chapter production provisional intake
         run: node qa/story-sequential-provisional-intake.test.mjs
       - name: Verify compact CG reuse of 40 existing first-four-stage gender/outcome original assets
