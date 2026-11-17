@@ -822,7 +822,22 @@ window.__beastFaceCameraQA=angle=>{
     limb.userData.felineSealedBottom;
  }).length;
  const torso=model.getObjectByName('species-shoulder-rib-pelvis-'+selected);
+ model.updateMatrixWorld(true);
+ const feline=!!model.userData.felineMasterSource;
+ const tailTip=p.tailTip?.getWorldPosition(new THREE.Vector3());
+ const torsoBox=torso&&new THREE.Box3().setFromObject(torso);
+ const tailReach=feline&&tailTip&&torsoBox?
+   (torsoBox.min.z-tailTip.z)/Math.max(.001,model.userData.homeScale||1):null;
+ const torsoAnchoredHips=limbNames.filter(name=>{
+   const limb=model.getObjectByName('feline-continuous-skin-'+name);
+   return limb?.isSkinnedMesh&&limb.skeleton.bones.length===4&&
+     limb.skeleton.bones[0].parent===p.torso;
+ }).length;
  return {id:selected,angle,head:!!p.head,
+   tailReach,torsoAnchoredHips,
+   felineTailConnected:!feline||(
+     p.tail?.parent===p.torso&&
+     p.tailMid?.parent===p.tail&&p.tailTip?.parent===p.tailMid),
    cheekRoots:model.userData.felineCheekFurRoots||0,
    carvedEyes:!!model.userData.clonedCanineEyeSocketsCarved,
    eyeDepthFitted:!!model.userData.cloneOpticalDepthFromSurface,
