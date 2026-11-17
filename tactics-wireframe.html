@@ -9117,8 +9117,9 @@ function updateSquadMarkerPositions(dt){
   for(const [id,marker] of squadMarkers){
    const sum=sums.get(id);marker.visible=Boolean(sum);
    if(!sum)continue;
-   const label=marker.userData.screenLabel,share=sum.n/Math.max(1,sum.total);
-   const status=sum.n===0?'☠ 全滅':share<=.25?'🆘 壊滅寸前':share<=.5?'⚠ 半数以下':'';
+   const label=marker.userData.screenLabel,share=sum.n/Math.max(1,sum.total),
+    hpShare=sum.hp/Math.max(1,sum.maxHp);
+   const status=sum.n===0?'☠ 全滅':share<=.25||hpShare<=.25?'🆘 壊滅寸前':share<=.5||hpShare<=.5?'⚠ 半数以下':'';
    const previousAlive=marker.userData.previousAlive,previousHp=marker.userData.previousHp;
    marker.userData.previousAlive=sum.n;marker.userData.previousHp=sum.hp;
    if(previousAlive>0&&sum.n===0){
@@ -9152,8 +9153,8 @@ function updateSquadMarkerPositions(dt){
    const shortOrder=commanderReason?'☠ 指揮不能':sum.n===0?'戦闘不能':intent.order.replace(/^号令：/,'').slice(0,7);
    if(label.userDataCurrentOrder.textContent!==shortOrder)label.userDataCurrentOrder.textContent=shortOrder;
    if(label.userDataObjective.textContent!==intent.purpose)label.userDataObjective.textContent=intent.purpose;
-   label.classList.toggle('half-strength',share<=.5&&share>.25);
-   label.classList.toggle('critical-strength',share<=.25);
+   label.classList.toggle('half-strength',(share<=.5||hpShare<=.5)&&share>.25&&hpShare>.25);
+   label.classList.toggle('critical-strength',share<=.25||hpShare<=.25);
    label.classList.toggle('defeated',sum.n===0);
    label.userDataMarkerIcon.textContent=sum.n===0?'☠':'';
    label.title='残存 '+sum.n+'/'+sum.total+'名（戦死 '+(sum.total-sum.n)+'名）';
