@@ -201,9 +201,14 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
  const faceCore=s.id==='m001'?
    g.group('m001-face-core',[0,.025,.055],head):head;
  if(s.id==='m001'){
-   faceCore.scale.setScalar(.82);
+   // Keep the skull, nose and jaw on the same forward centerline, but
+   // gather the exposed facial mask between the inward-draping cheek ruffs.
+   // Only lateral width contracts: existing orbit depth/jaw articulation
+   // and the full-size nose are unchanged.
+   faceCore.scale.set(.76,.82,.82);
    faceCore.userData.anatomicalFaceScale=.82;
-   g.root.userData.wolfKingExposedFaceScale=.82;
+   faceCore.userData.m001CenteredFaceWidthScale=.76;
+   g.root.userData.wolfKingExposedFaceScale=.76;
    g.root.userData.wolfKingManeLengthMultiplier=1.2;
    g.root.userData.wolfKingReferenceRemesh=true;
  }
@@ -260,10 +265,10 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    // tens of thousands of guard hairs. It frames the same tiny face with
    // zero expensive coat blades or additional skinned draw calls.
    g.axialLoft(head,'skin',[
-     {z:.27,y:.12,rx:.118,ry:.135},
-     {z:.08,y:.035,rx:.272,ry:.294},
-     {z:-.22,y:-.092,rx:.366,ry:.418},
-     {z:-.55,y:-.168,rx:.275,ry:.328},
+     {z:.27,y:.12,rx:.142,ry:.168},
+     {z:.08,y:.035,rx:.326,ry:.340},
+     {z:-.22,y:-.092,rx:.416,ry:.448},
+     {z:-.55,y:-.168,rx:.303,ry:.352},
      {z:-.78,y:-.215,rx:.115,ry:.135},
    ],{name:'m001-low-mane-silhouette',rough:.97,ribbing:.036});
  }
@@ -1060,27 +1065,44 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
      const base=h.tip.map((v,k)=>v-h.root[k]);
      const len=Math.hypot(...base)||.001;
      const tier=.88+.20*((i*17%19)/18);
-     const target=Math.min(.293,Math.max(.085,len*1.06*tier));
+     const target=Math.min(.348,Math.max(.085,len*1.13*tier));
+     const faceCurtain=!!h.m001FaceCurtain;
+     const forelock=!!h.m001Forelock;
      const throat=h.root[1]<-.19;
      // Shear broad side fans toward the shoulder; throat guard hair
      // falls under the mandible rather than forming rigid hanging blades.
      const crown=h.root[1]>.19&&h.root[2]<-.04;
      const temple=!crown&&Math.abs(h.root[0])>.18&&
        h.root[1]>-.06;
-     const wind=crown?
+     // Forehead fringe drops toward the brow; anterior cheek curtains
+     // travel FORWARD and INWARD, framing the facial mask rather than
+     // forming an outward porcupine halo behind the skull.
+     const wind=faceCurtain?
+       [-Math.sign(h.root[0])*len*.63,-len*.81,len*.43]:
+       forelock?
+       [base[0]*.22,-len*.58,len*.49]:
+       crown?
        [base[0]*.55,Math.abs(base[1])*.76+len*.14,
          base[2]*.33-len*.36]:
        temple?
-       [base[0]*.67,base[1]*.48-len*.14,
-         base[2]*.43-len*.37]:
+       [base[0]*.42,base[1]*.36-len*.31,
+         base[2]*.26+len*.11]:
        [base[0]*(throat?.27:.32),
          -Math.abs(base[1])*(throat?.90:.48)-len*(throat?.42:.22),
          base[2]*.46-len*(throat?.23:.39)];
      const n=Math.hypot(...wind)||1;
      const delta=wind.map(v=>v*target/n);
      const tip=h.root.map((v,k)=>v+delta[k]);
-     const mid=h.root.map((v,k)=>v+delta[k]*(.42+(k===2?.02:0))+
-       h.normal[k]*len*.085);
+     if(faceCurtain){
+       // Preserve a symmetric central aperture: no strands end on the
+       // pupils, rhinarium or mouth, even during the head pitch animation.
+       const side=Math.sign(h.root[0]);
+       tip[0]=side*Math.max(.183,Math.abs(tip[0]));
+       tip[2]=Math.max(h.root[2]+.040,tip[2]);
+     }
+     if(forelock)tip[1]=Math.max(.184,tip[1]);
+     const mid=h.root.map((v,k)=>v+(tip[k]-v)*(.44+(k===2?.02:0))+
+       h.normal[k]*len*.072);
      return {...h,mid,tip,
        wolfKingManeLengthMultiplier:1.2,originalHairLength:len};
    });
@@ -1088,9 +1110,28 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    // wolf skull and the mane is entirely groomed on the moving head.
    // Ear / eyebrow / eye clearances are cut out of the hair root mask.
    const wolfKingMane=s.id==='m001'?[
-     // Upper crown and both side-manes now approach throat-ruff volume
-     // while the true eye/nose opening stays exposed; they share the
-     // same 3 head material batches (no extra face draw calls).
+     // Hair grows both behind and IN FRONT of the cheeks. The frontal
+     // curtains are part of the same merged fur batches (no draw-call
+     // increase); eyes, nose and lips remain visible inside the frame.
+     ...[-1,1].flatMap(side=>generateCanineFurGuides({
+       center:[side*.250,.071,.042],radii:[.113,.198,.182],
+       rows:source?37:27,around:source?49:37,
+       length:.284,width:.014,seed:v*109+941+side,
+       minVertical:-.93,maxVertical:.93,gravity:.49
+     }).filter(h=>side*h.root[0]>.216&&side*h.root[0]<.360&&
+       h.root[2]>.014&&h.root[2]<.158&&
+       h.root[1]>-.151&&h.root[1]<.188)
+       .map(h=>({...h,m001FaceCurtain:true}))),
+     ...generateCanineFurGuides({
+       center:[0,.257,.052],radii:[.245,.101,.142],
+       rows:source?29:20,around:source?40:29,
+       length:.217,width:.012,seed:v*103+929,
+       minVertical:-.05,maxVertical:.99,gravity:.37
+     }).filter(h=>h.root[1]>.222&&h.root[2]>.070&&
+       Math.abs(h.root[0])>.098&&Math.abs(h.root[0])<.258)
+       .map(h=>({...h,m001Forelock:true}))),
+     // Upper crown and both side-manes approach the throat-ruff volume
+     // while the bare face stays open; retain three material batches.
      ...generateCanineFurGuides({
        center:[0,.260,-.240],radii:[.247,.119,.194],
        rows:source?38:25,around:source?50:35,
@@ -1190,7 +1231,7 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
        mesh.name='m001-windswept-mane-'+mesh.name;
        mesh.userData.wolfKingMane=true;
        mesh.userData.maneLengthMultiplier=1.2; // groomed layered coat
-       mesh.userData.exposedFaceScale=1/3;
+       mesh.userData.exposedFaceScale=.76;
      }
    }
  }
