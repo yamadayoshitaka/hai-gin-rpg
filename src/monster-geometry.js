@@ -8,7 +8,7 @@ import {createSculpture,disposeMonsterSculpture} from './monster-shape-kit.js?v=
 import {attachMonsterFaceControls} from './facial-feature-runtime.js?v=1';
 import {generateCanineFurGuides,generateCanineAxialFurGuides} from './canine-fur-guides.js?v=beast-coat-20261116';
 import {monsterEvidenceFor} from './monster-anatomy-reference.js';
-import {wolfKingCloneMorph,copyWolfKingSourceRings,WOLF_CLONE_SOURCE_REVISION}
+import {wolfKingCloneMorph,copyWolfKingSourceRings,copiedWolfEyeSurfaceZ,WOLF_CLONE_SOURCE_REVISION}
  from './wolf-king-clone-source.js?v=m001-clone-v1-20261117';
 import {felineMasterVariant,felineFaceRings,felineMuzzleRings,
  felineNasalRings,felineAnatomicalSections,felineEyeSurface,
@@ -487,10 +487,22 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
  // throat for cats, instead of welding a spherical lion muzzle on top.
  if(beastRemesh)
   g.bridge(torso,'skin',[0,1.152,.33],[0,1.307,.77+v*.055],.295,.181);
- else if(felineMaster)
+ else if(felineMaster){
   g.bridge(torso,'skin',[0,1.29,.32],[0,1.55,.74+v*.055],.246,.158);
+ }
  else g.bridge(torso,'skin',[0,1.35,.32],[0,1.57,.76+v*.055],.325,.215);
  const head=g.group('head',[0,beastRemesh?1.300:1.56,.70+v*.06+(beastRemesh?.086:0)]);
+ if(felineMaster){
+   // Head-owned overlapping neck fascia covers the rigid head / body seam.
+   // The previous torso-only throat bridge stayed behind when the head
+   // pitched during run or attack. Its rear end buries inside the torso.
+   const collar=g.bridge(head,'skin',
+     [0,-.061,-.150],[0,-.208,-.403],
+     .215*felineMaster.headWidth/.83,.230);
+   collar.name='feline-head-neck-continuity-'+s.id;
+   collar.userData.followsHeadPitch=true;
+   collar.userData.hiddenShoulderRoot=true;
+ }
  // The earlier 1/3-scale inner "ball face" floated in front of the muzzle.
  // The new compact anatomical skull is a surface loft with directly fitted
  // eye sockets. Nose, jaw and the moving mane retain independent pivots.
@@ -538,6 +550,13 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    g.root.userData.cloneMethod='physical-m001-rings-then-species-morph';
    g.root.userData.cloneSourceRevision=WOLF_CLONE_SOURCE_REVISION;
    g.root.userData.copyKeepsOriginalSpeciesDecor=true;
+   // m001 alone used to receive carved optical sockets; its offspring
+   // were generated with an intact solid forehead covering the iris.
+   g.recessCanineEyeSockets(cranium,{
+     centerX:s.id==='m002'?.138:.153
+   });
+   g.root.userData.clonedCanineEyeSocketsCarved=
+     cranium.userData.canineEyeSocketsRecessed;
    if(s.id==='m002'){
     cranium.userData.m002Morph=M002_REFERENCE_MORPH;
     g.root.userData.m002FaceQualityDonor='m001';
@@ -704,17 +723,31 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
         side,name:s.id==='m002'?'flame-wolf':cloneCanine?s.id:'wolf-king',
         centerX:cloneCanine?(s.id==='m002'?.138:.153):.128
       });
-      // The m002 cranium is the m001 longitudinal source stretched 1.2x
-      // and advanced .04; the aperture must undergo the same transform.
-      // Otherwise ALL dark/iris/lid layers sit INSIDE the new skull.
+      // Match each copied face's optical depth to its ACTUAL physical
+      // cranium. The previous static .077 offset submerged eyes in the
+      // thicker m003/m004 skull and left m002's forelock across its iris.
+      const eyeX=cloneCanine?(s.id==='m002'?.138:.153):.128;
+      const craniumSurface=cloneCanine?
+        copiedWolfEyeSurfaceZ(
+          copyWolfKingSourceRings(M001_CRANIUM_RINGS,s.id),
+          eyeX,.116):null;
       const advance=cloneCanine?
-         (s.id==='m002'?.077:wolfClone.faceAdvance+.055):0;
-      if(advance){
+        Math.max(.062,craniumSurface-.182-.024):0;
+      if(cloneCanine){
         for(const part of [eyeSet.orbital,eyeSet.iris,
           eyeSet.pupil,eyeSet.glint,eyeSet.lid]){
           part.position.z+=advance;
           part.userData.m002OpticalSkullAdvance=advance;
+          part.userData.derivedEyeSurfaceZ=craniumSurface;
         }
+        // Larger exposed amber iris, but still within the almond rim.
+        eyeSet.orbital.scale.set(1.13,1.18,1);
+        eyeSet.iris.scale.set(1.23,1.24,1);
+        eyeSet.pupil.scale.set(1.12,1.17,1);
+        eyeSet.glint.scale.set(1.16,1.15,1);
+        g.root.userData.clonedCanineVisibleEyes=2;
+        g.root.userData.cloneOpticalDepthFromSurface=true;
+        if(s.id==='m002')g.root.userData.m002EyeFrontCorrected=true;
       }
       const scale=cloneCanine?wolfClone.faceX*1.15:1;
       const brow=g.tube(faceCore,'skin',[
