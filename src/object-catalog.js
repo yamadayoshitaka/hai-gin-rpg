@@ -211,6 +211,35 @@ export function createObjectById(id,{cellSize=2.2}={}){
    const ornament=new THREE.MeshStandardMaterial({color:level===5?0xd6bd7a:0x9f8e6c,metalness:.65,roughness:.4});
    const add=(w,h,d,x,y,z,material,name)=>{const mesh=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material);mesh.position.set(x,y,z);mesh.castShadow=true;mesh.receiveShadow=true;mesh.name=name;root.add(mesh);return mesh};
    add(width,height,.17*c,0,height/2,0,darkWood,'door_leaf');
+   // Five lock tiers share a physically supported, panelled timber door.
+   // Plank seams are recessed rather than extra coplanar boxes; transverse
+   // ledgers and diagonal braces on the rear resist sag at the latch edge.
+   // Keep the original leaf/frame envelope and footprint for collision parity.
+   const groove=new THREE.MeshStandardMaterial({color:level>=4?0x241d19:0x463023,roughness:.94});
+   for(let i=1;i<5;i++){
+    const x=-width/2+width*i/5;
+    add(.009*c,height-.16*c,.012*c,x,height/2,.091*c,groove,'plank_reveal');
+   }
+   for(const y of [.28,.76]){
+    add(width*.84,.12*c,.105*c,0,height*y,-.145*c,darkWood,'rear_ledger');
+   }
+   for(const sign of [-1,1]){
+    const braceLength=Math.hypot(width*.37,height*.44);
+    const brace=add(.11*c,braceLength,.105*c,sign*width*.19,height*.52,-.145*c,darkWood,'diagonal_anti_sag_brace');
+    brace.rotation.z=sign*Math.atan2(width*.37,height*.44);
+   }
+   // Two real strap hinges carry the leaf into the jamb, with visible pins.
+   for(const y of [.22,.80]){
+    add(width*.27,.085*c,.045*c,-width*.36,height*y,.125*c,iron,'forged_hinge_strap');
+    const pin=new THREE.Mesh(new THREE.CylinderGeometry(.038*c,.038*c,.19*c,10),iron);
+    pin.position.set(-width*.49,height*y,.16*c);
+    pin.name='hinge_pin';root.add(pin);
+    for(const dx of [-.38,-.27])add(.037*c,.037*c,.015*c,width*dx,height*y,.157*c,ornament,'hinge_rivet');
+   }
+   // Ground-bearing threshold and a projecting drip mould shed rain away
+   // from the leaf instead of leaving a floating door-frame assembly.
+   add(width+.35*c,.10*c,.42*c,0,.05*c,0,level>=4?iron:darkWood,'door_threshold');
+   add(width+.43*c,.08*c,.42*c,0,height+.17*c,0,iron,'lintel_drip_cap');
    for(const sign of [-1,1])add(.16*c,height+.16*c,.27*c,sign*(width/2+.07*c),(height+.16*c)/2,0,iron,'door_frame');
    add(width+.36*c,.18*c,.30*c,0,height+.06*c,0,iron,'door_lintel');
    for(let i=0;i<level;i++)add(width*.90,.055*c,.095*c,0,height*(i+1)/(level+1),.13*c,iron,'reinforcing_bar');
