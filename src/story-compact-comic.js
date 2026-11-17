@@ -101,8 +101,9 @@ export function compactComicForStage(stageId,phase,context={}){
    base.splice(0,2,...[1,2].map(i=>({
     ...reference,id:stageId+'-death-'+i,kind:'gameover',
     artAsset:null,image:null,imageUrl:null,imagePath:null,asset:null,
-    pendingArt:true,artRegistrationStatus:'PENDING_ART',
-    comicPage:reference.comicPage
+    src:null,url:null,webp:null,imageSrc:null,assetPath:null,
+    comicCell:null,comicPage:null,sourceSheetCount:0,
+    pendingArt:true,artRegistrationStatus:'PENDING_ART'
    })));
   }
  }
