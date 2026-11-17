@@ -68,7 +68,7 @@ export function femaleInnerFeatureDelta({xn,yn,zn,offsetX,depth,height=0,control
     -.012*central*bell(yn,.572,.018)
     -.009*controls.nostrilCover*rimMask)+cartilage.dy,
   dz:depth*(.025*bridgeSupport+.015*tipSupport-.016*mouthSupport
-   +.028*controls.noseBridgeSharpness*bridgeRidge
+   +.031*controls.noseBridgeSharpness*bridgeRidge
    +.004*controls.nostrilCover*rimMask+.004*tipLift)+cartilage.dz,
   noseSupport,mouthSupport
  };
@@ -101,7 +101,9 @@ export function femaleCheekJawDelta({xn,yn,zn,offsetX,depth,height}){
  // Refill gaunt mid/lower cheeks in depth rather than ballooning the
  // cheekbone or moving the eye sockets. The masks vanish near ears,
  // lips, jaw apex and the rear of the head.
- const dz=depth*(.022*cheekSupport+.006*mouthCornerSupport);
+ const nasolabialFold=bell(ax,.32,.095)*bell(yn,.546,.065)*front;
+  const dz=depth*(.022*cheekSupport+.006*mouthCornerSupport-
+   .0032*nasolabialFold);
  // Full support on the actual chin outline, not only at the centreline.
  // Taper smoothly to zero before reaching the cheeks (yn >= .485).
  const jawBand=bell(yn,.30,.105)*(1-smooth(.39,.45,yn))*front;
