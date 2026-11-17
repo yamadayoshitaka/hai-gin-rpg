@@ -9,13 +9,13 @@
  */
 import * as THREE from 'three';
 import {createMonsterModel,disposeMonsterSculpture}
- from './monster-geometry.js?v=phoenix-scaled-giant-feathers-v16-20261118';
+ from './monster-geometry.js?v=phoenix-broad-chicken-scutes-v17-20261118';
 import {createCosplayedHumanoidMonster}
  from './monster-character-cosplay.js?v=4.6.90';
 import {humanoidMonsterCostumeFor}
  from './monster-character-cosplay-manifest.js?v=4.5.03';
 import {startMonsterAction,animateMonsterModel}
- from './monster-animation.js?v=phoenix-feather-wave-motion-v7-20261118';
+ from './monster-animation.js?v=phoenix-feather-wave-motion-v8-20261118';
 import {creatureFlightHeight} from './combat-creature-performance.js?v=natural-size-20261116';
 import {resolveRegisteredMonsterModel}
  from './creature-game-model-routing.js?v=m001-m005-m006-v14-20261118';
