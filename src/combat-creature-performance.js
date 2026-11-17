@@ -71,7 +71,8 @@ export function riderSeatAnchor(object,time=0){
  const size=creatureSize(object.type,true)*(object.commanderMount?1.12:1);
  // Horse's broad withers are forward of the true seating surface.
  const back={horse:-.43,wolf:-.24,wyvern:-.29,dragon:-.39,elder_dragon:-.47};
- const clearance={horse:.20,wolf:.12,wyvern:.13,dragon:.16,elder_dragon:.19};
+ // Flying mounts keep their pre-existing exact frame-synchronised vertical contract.
+ const clearance={horse:.20,wolf:.12,wyvern:0,dragon:0,elder_dragon:0};
  const commanderRise=object.type==='horse'&&object.commanderMount?.26:0;
  return {
   x:0,
