@@ -1,5 +1,6 @@
 import {applyMonsterBiologicalMotion} from './monster-joint-motion.js?v=m001-action-perf-v8-20261117';
 import {updateM001ActionEffects} from './m001-action-effects.js?v=m001-action-perf-v1-20261117';
+import {updateReferenceBeastFx} from './beast-action-effects.js?v=ref-action-v1-20261117';
 import {monsterLeapPose,applyMonsterLeapMotion} from './monster-leap-kinematics.js?v=1';
 /** Per-species, per-part procedural animation for bestiary inspection.
  * Separate head, jaws, limbs, wings and tentacles keep animation readable.
@@ -92,6 +93,7 @@ export function animateMonsterModel(model,time=0){
  const leap=action==='leap'?monsterLeapPose(progress,model.userData.surfaceFamily):null;
  const dying=action==='defeat'?progress:0;
  const springBeast=['m001','m002','m003','m004'].includes(model.userData.speciesId);
+ const sourceFeline=['m007','m008','m009','m010'].includes(model.userData.speciesId);
  const sway=Math.sin(motionTime*2.1)*.027*(1-dying);
  // Rare, brief eye closure with a per-species offset. No random state,
  // material allocations or extra draw calls during the animation loop.
@@ -106,6 +108,8 @@ export function animateMonsterModel(model,time=0){
  // The former abs(sin)*.055 made every RUN look like floating in midair.
  const springLift=locomotion?
    (springBeast?(action==='run'?.014:.009)*(1-Math.cos(gait*2))*.5:
+     sourceFeline?(action==='run'?.016:.008)*
+       (1-Math.cos(gait*2))*.5:
      Math.abs(Math.sin(gait))*.055):0;
  model.position.set(dodge*Math.sin(progress*Math.PI)*1.3,
    springLift-(springBeast&&action!=='leap'?.014:0)+
@@ -164,14 +168,18 @@ export function animateMonsterModel(model,time=0){
    time:motionTime,phase:gait,action,pulse:Math.max(strike,special,leaping),
    locomotion,run:action==='run'
  });
- if(model.userData.speciesId==='m001'&&action!=='defeat'){
+ if(['m001','m002'].includes(model.userData.speciesId)&&
+    action!=='defeat'){
+   // m002 inherits the physically authored m001 anticipation, bite,
+   // ear response and stride timing, not a stiff legacy spherical rig.
    animateWolfKingPerformance(p,action,progress,motionTime,gait);
  }
  // Independent upper and lower joints must not visually snap from a
  // planted stride into the ready crouch. Exponential time-step smoothing
  // preserves frame-rate independence while retaining actual knee flex.
  // The solver never scales the bones to fake a mechanical spring.
- if(model.userData.speciesId==='m001'&&(locomotion||action==='idle')){
+ if(['m001','m002'].includes(model.userData.speciesId)&&
+    (locomotion||action==='idle')){
    const prev=model.userData.m001GaitAngles||{};
    const last=model.userData.m001GaitTime;
    const dt=Number.isFinite(last)&&time>last?
@@ -227,7 +235,7 @@ export function animateMonsterModel(model,time=0){
    model.userData.m001BodySettleY=settle;
    model.position.y+=settle;
    model.userData.m001GaitTime=time;
- }else if(model.userData.speciesId==='m001'){
+ }else if(['m001','m002'].includes(model.userData.speciesId)){
    model.userData.m001GaitAngles=null;
    model.userData.m001GaitTime=null;
    model.userData.m001BodySettleY=null;
@@ -240,5 +248,8 @@ export function animateMonsterModel(model,time=0){
  model.userData.facialLastTime=time;
  if(model.userData.speciesId==='m001')
    updateM001ActionEffects(model,{action,progress,time:motionTime});
+ if(['m002','m007','m008','m009','m010'].includes(
+    model.userData.speciesId))
+   updateReferenceBeastFx(model,{action,progress,time:motionTime});
  return {action,progress,...(leap?{leapPhase:leap.phase}:null)};
 }
