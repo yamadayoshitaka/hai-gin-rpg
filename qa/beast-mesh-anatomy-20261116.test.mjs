@@ -427,10 +427,12 @@ for(const id of remeshed){
       'm001 needs two anatomical brow ridges');
     const tinyFace=model.userData.pivots['m001-face-core'];
     assert.ok(tinyFace?.isGroup,'m001 must use an independent small-face group');
-    assert.ok(Math.abs(tinyFace.scale.x-.82)<1e-7&&
+    assert.ok(Math.abs(tinyFace.scale.x-.76)<1e-7&&
       Math.abs(tinyFace.scale.y-.82)<1e-7&&
       Math.abs(tinyFace.scale.z-.82)<1e-7,
-      'm001 must have compact but connected facial proportions');
+      'm001 must narrow the face laterally but retain orbital depth/height');
+    assert.equal(tinyFace.position.x,0,
+      'the wolf face must remain centered on its head pivot');
     assert.equal(skull.parent,tinyFace,'cranium and eyes share facial group');
     // The previous 0.82-scaled skull tip was still in FRONT of the head-
     // parented black nose. This produced the floating grey nose button.
@@ -489,7 +491,8 @@ for(const id of remeshed){
     // follicle roots outside the mask can flow backwards without hiding eyes.
     const headCoats=model.userData.pivots.head.children.filter(m=>
       m.isMesh&&m.userData.furStrands);
-    let blockedRoots=0,allRoots=0;
+    let blockedRoots=0,allRoots=0,anteriorCheekRoots=0,
+      inwardCheekTips=0,foreheadRoots=0;
     for(const coat of headCoats){
       const p=coat.geometry.getAttribute('position');
       for(let j=0;j+4<p.count;j+=5){
@@ -499,9 +502,26 @@ for(const id of remeshed){
         allRoots++;
         if(z>.105&&Math.abs(x)<.153&&y>-.195&&y<.151)
           blockedRoots++;
+        // Front cheek ruff must occupy real 3D space on BOTH sides
+        // and turn inward in front of the muzzle, not just increase
+        // the density of the rear neck halo.
+        if(Math.abs(x)>.216&&Math.abs(x)<.360&&
+          z>.014&&z<.158&&y>-.151&&y<.188){
+          anteriorCheekRoots++;
+          const tipX=p.getX(j+4),tipZ=p.getZ(j+4);
+          if(Math.abs(tipX)<Math.abs(x)-.025&&
+            Math.abs(tipX)>=.165&&tipZ>z+.025)
+            inwardCheekTips++;
+        }
+        if(y>.222&&z>.070&&Math.abs(x)>.098&&
+          Math.abs(x)<.258)foreheadRoots++;
       }
     }
     assert.ok(allRoots>1500,'perimeter should have body-like follicle coverage');
+    assert.ok(anteriorCheekRoots>40&&inwardCheekTips>30,
+      'front cheek curtains must grow forward and frame the centered face');
+    assert.ok(foreheadRoots>10,
+      'the top/front mane must cover the brow perimeter, not only the nape');
     const browRootCount=headCoats.reduce((total,coat)=>{
       const a=coat.geometry.getAttribute('position');let n=0;
       for(let i=0;i+4<a.count;i+=5){
