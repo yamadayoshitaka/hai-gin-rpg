@@ -216,6 +216,24 @@
       "commitSha": "d5a3f96f72ebb6763b2ee71a2fac643447be78d0",
       "qa": "unverified",
       "changeNote": "Structural geometry updated; WebGL/Android/Node QA unverified"
+    },
+    {
+      "id": "town_well_001",
+      "sourceFiles": [
+        "src/object-catalog.js"
+      ],
+      "commitSha": "189571a34fef12603a927b428e136652ce559dd5",
+      "qa": "unverified",
+      "changeNote": "Bonded masonry course geometry; node tests/WebGL/Android not executed"
+    },
+    {
+      "id": "fountain_001",
+      "sourceFiles": [
+        "src/object-catalog.js"
+      ],
+      "commitSha": "189571a34fef12603a927b428e136652ce559dd5",
+      "qa": "unverified",
+      "changeNote": "Bonded masonry course geometry; node tests/WebGL/Android not executed"
     }
   ],
   "remainingIds": [
