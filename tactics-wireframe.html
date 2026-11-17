@@ -1053,6 +1053,8 @@ import {ConfirmedHitOverlay,selectConfirmedHitEvents} from './src/confirmed-hit-
 import {combatEffectDirective} from './src/combat-effect-directives.js?v=4.6.16';
  import {CombatActionRuntime} from './src/combat-action-runtime.js?v=20261117-mount-interior1';
 import {createMountInteriorMask,isMountInteriorCell} from './src/mount-interior-policy.js?v=20261117-mount-interior1';
+import {selectActiveBattleEngagement} from './src/battle-engagement-camera.js?v=20261117-focus1';
+import {installBattleSituationPause} from './src/battle-situation-pause.js?v=20261117-interrupt1';
  import {COMBAT_RULES,combatJobId,availableCombatSkills} from './src/combat-action-spec.js?v=4.6.51';
  import {createCombatWorldObjectRenderer} from './src/combat-world-object-renderer.js?v=natural-size-20261116';
 import {describeDestructibleWorld} from './src/destructible-world.js?v=4.6.15';
@@ -2339,6 +2341,7 @@ let squadQuickPage='home',squadQuickPageIndex=0;
 // Manual orders and manual item use share ONE 60 combat-second cooldown per squad.
 const SQUAD_MANUAL_COMMAND_COOLDOWN=ORDER_COOLDOWN_SECONDS;
 const lastSquadOrderAt=new Map();
+let tacticalSituationOverrideGroup=null;
 function commanderOrderInterval(id){
  const cId=storyRequest?.units?.find(u=>String(u.squadId)===String(id))?.commanderId;
  const leader=storyRequest?.commanders?.find(c=>String(c.id)===String(cId));
@@ -2348,6 +2351,7 @@ function commanderOrderInterval(id){
 let lastGlobalOrderAt=null;
 function squadOrderCooldownSeconds(id){
  if(id==null)return 0;
+ if(tacticalSituationOverrideGroup!=null&&commandGroupIds(tacticalSituationOverrideGroup).includes(String(id)))return 0;
  return Math.max(0,...commandGroupIds(id).map(sid=>{const usedAt=lastSquadOrderAt.get(String(sid));return Number.isFinite(usedAt)?Math.max(0,Math.ceil(usedAt+commanderOrderInterval(sid)-elapsed)):0;}));
 }
 function canChangeSquadOrder(id){
@@ -6958,6 +6962,29 @@ function battleTerritoryWorld(){
  return massSim?.territoryWorld??{width:WORLD_SIZE,height:WORLD_SIZE,
   riverXAt:z=>stageHasRiver?riverAt(z):WORLD_SIZE/2};
 }
+const battleSituationPause=installBattleSituationPause({
+ getMembers:id=>{
+  const groupIds=new Set(commandGroupIds(id).map(String));
+  return squadRoster.filter(u=>u.team===0&&groupIds.has(String(u.squadId)));
+ },
+ getSquadName:id=>commandGroupName(id),
+ canInterrupt:()=>battleReady&&!finished&&!paused&&!commandOverviewLocked&&
+  !battleCeremony.locked&&!tacticalPlanningActive,
+ getUnavailableReason:id=>squadCommanderUnavailableReason(id),
+ getWasPaused:()=>paused,
+ pauseBattle:value=>setBattlePaused(value),
+ issueGroupOrder:(id,mode)=>{
+  // Subdivisions are selectable for inspection, not independently ordered.
+  const previous=selectedSquadId;
+  selectedSquadId=String(id);tacticalSituationOverrideGroup=String(id);
+  try{return issueSquadOrder(mode);}
+  finally{selectedSquadId=previous;tacticalSituationOverrideGroup=null;}
+ }
+});
+window.getBattleSituationPauseQA=()=>({
+ active:battleSituationPause.active,remaining:battleSituationPause.remaining,
+ squadId:battleSituationPause.squadId,recommended:battleSituationPause.recommended
+});
 const battleTacticalUi=installBattleTacticalUI({
  getUnits:()=>squadRoster,
  getSquadIds:()=>squadIds,
@@ -6973,6 +7000,12 @@ const battleTacticalUi=installBattleTacticalUI({
  issueOrder:(id,mode)=>{selectedSquadId=String(id);return queueDirectOrder(mode,id);},
  openSquad:id=>openSquadTactics(id),
  closeSquad:()=>closeSquadTactics(),
+ onSituationChange:(id,event)=>{
+  if(event.severity==='info')return false;
+  const accepted=battleSituationPause.trigger(id,event);
+  if(accepted)beginSquadFocusCinematic(id,0,'result');
+  return accepted;
+ },
  isReady:()=>battleReady&&!finished
 });
 let pendingDirectOrder=null;
@@ -9991,6 +10024,7 @@ function animate(){
  const cpuFrameStart=performance.now();
  requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),.05);
  const now=performance.now(),bankDelta=Math.max(0,(now-tacticalFrameAt)/1000);tacticalFrameAt=now;
+ battleSituationPause.update(bankDelta);
  if(tacticalPlanningActive&&!finished){
   tacticalBankRemaining=Math.max(0,tacticalBankRemaining-bankDelta);refreshTacticalBankLabel();
   if(tacticalBankRemaining<=0){tacticalPlanningActive=false;if(!commandOverviewLocked)setBattlePaused(false);}
