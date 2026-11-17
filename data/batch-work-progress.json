@@ -110,20 +110,20 @@
     },
     "world": {
       "source": "ChatGPTオブジェクト即時回帰＋GitHub六担当実WebGL QA",
-      "lastRunAt": "2026-11-17T13:01:10+09:00",
+      "lastRunAt": "2026-11-17T13:46:34+09:00",
       "status": "in_review",
       "carryover": true,
-      "subject": "実3D 9種類の物理構造を改修・低ドローコール化・main採用・Pages公開（全60種は継続）",
-      "summary": "60種正本のうち9種類（食卓・椅子・寝台・本棚・樽・井戸・荷箱・水槽・道標）の実メッシュと支柱・接合・曲面・巻上げ機構を改善。材質別メッシュ結合で描画を最適化。PR #520のWebGL実撮影9/9成功、drawCalls 3〜5、三角形120〜2050。6担当QAすべて成功、main squash 595d76ed、Pages #44013869408成功。画像の最終外観審査・Android実機FPSは未実施。60種すべての実写品質合格ではない。",
-      "nextAction": "残り51種の実造形改善を継続。既存の入口扉5種 PR #441 は個別WebGL/Android QAと競合の確認を優先。9種は旧版比較・多角度の目視外観、Android実機FPSを測定し、品質未達は次回造形回帰。6担当QAの継続起動・結果統合を監視。",
+      "subject": "木工家具5種の接合・荷重支持メッシュを専用ブランチで追加改修（QA保留）",
+      "summary": "60種正本・world.enabled=trueを確認。専用ブランチ world/furniture-structural-regression-20261116 に食卓・椅子・寝台・本棚・暖炉の5種の実メッシュ追加改修をコミット（2d163c82）。接合ピン・寝台中央梁と脚・棚受けピン・暖炉目地/炉縁を追加。mainには前回の9種が既に採用済みだが今回の5種は未採用。GitHubのDNS解決失敗でNode/WebGL/Android実測は実施できず、品質合格は0。",
+      "nextAction": "2d163c82のNode構文と指定3QA、実ゲームcreateCatalogObjectでの新旧WebGL比較を実施し、家具5種の描画/衝突と既存9種への退行を検証。合格後のみPR→main。",
       "steps": {
         "launch": "done",
         "code": "done",
-        "qa": "done",
+        "qa": "blocked",
         "commit": "done",
-        "pr": "done",
-        "merge": "done",
-        "deploy": "done"
+        "pr": "pending",
+        "merge": "pending",
+        "deploy": "pending"
       },
       "evidence": [
         {
@@ -145,31 +145,31 @@
         {
           "label": "入口扉5種の未完了PR #441",
           "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/441"
+        },
+        {
+          "label": "家具5種の追加実メッシュ改修（QA未実施）",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/2d163c82bc0ee3a4447077bef0283c22596a0c4c"
         }
       ],
       "lastRunOutcome": {
-        "newSourceChangedIds": 9,
-        "newQAPassed": 9,
-        "newGameAppliedIds": 9,
-        "newSourceCommits": 2
+        "newSourceChangedIds": 5,
+        "newQAPassed": 0,
+        "newGameAppliedIds": 0,
+        "newSourceCommits": 1
       },
       "operational": {
         "blockers": [
-          "9種類の旧モデルとの定量的な外観比較・目視承認が未完了",
-          "Android実機FPS（50/100/1000人）未測定",
-          "残り51種類の高品質造形回帰が未完了",
-          "旧PR #441 入口扉5種は個別QA・マージ未確認"
+          "GitHubへのコンテナDNS解決失敗によりローカルNode/3QA/WebGL比較未実施",
+          "Android実機FPS未計測",
+          "5種の新造形の対象別描画QA未合格、main未採用"
         ],
-        "speedPlan": "次回は残りの類似木工／石組みオブジェクト5〜10種を正本メッシュから改善し、三角形・drawCallsを個別WebGLで記録。外観を悪化させたらマージせずPRで比較。毎時50分の実改修・12分の六担当QAを照合。",
+        "speedPlan": "まず2d163c82を取得できる実行環境でnode --checkと3QA、次に5種のWebGL比較。合格までPR/main公開を保留。",
         "lastRunOutcome": {
-          "newSourceChangedIds": 9,
-          "newQAPassed": 9,
-          "newGameAppliedIds": 9,
-          "newSourceCommits": 2,
-          "newGeneratedGLBs": 0,
-          "branchSavedCount": 21,
-          "mainInReviewCount": 16,
-          "mainAcceptedCount": 0
+          "newSourceChangedIds": 5,
+          "newQAPassed": 0,
+          "newGameAppliedIds": 0,
+          "newSourceCommits": 1,
+          "newGeneratedGLBs": 0
         }
       }
     },
