@@ -1068,7 +1068,7 @@ import {recomposeSquadAssignments,applySquadRecomposition,FORMATION_TYPES,FORMAT
 import {squadJobComposition,chooseEnemyOrder,enemyOrderRefreshSeconds,TACTICAL_TIME_BANK_SECONDS} from './src/battle-tactical-policy.js?v=4.6.69';
 import {indexBattleDecisionUnits} from './src/battle-ai-decision-index.js?v=20261116-ai1';
 import {createMassBattleRealArmy} from './src/mass-battle-real-army.js?v=20261117-foot-anchor-v2';
-import {triangleTerrainHeight,anchoredStandingY} from './src/battle-terrain-contact.js?v=20261117-riverbank-v1';
+import {battleWalkSurfaceY,anchoredStandingY} from './src/battle-terrain-contact.js?v=20261117-riverbank-v2';
 import {BattleCorpsePolicy,corpseOpacity} from './src/battle-corpse-policy.js?v=4.4.35';
 import {CrowdPerformanceBudget} from './src/crowd-performance-budget.js?v=20261117-dense1';
 import {createMassBattleWorkerClient} from './src/mass-battle-worker-client.js?v=20261117-mount-interior1';
@@ -3136,13 +3136,9 @@ for(const [id,x,z] of townProps){
  }
 }
 function terrainY(x,z){
- const fx=x/CELL+6,fz=z/CELL+6;
- const gx=Math.round(fx),gz=Math.round(fz),key=gx+','+gz;
- // Decks and masonry treads override dirt only inside their walkable
- // collision footprint. Else sample the ACTUAL two terrain triangles;
- // bicubic smoothHeight at the centre does not equal the rendered surface.
- return bridgeHeights.get(key)??stairCells.get(key)?.height??
-  triangleTerrainHeight(fx,fz,smoothHeight);
+ // The same visible polygon height is authoritative for 50v50 and 1000v1000.
+ // Explicit deck/tread contact only applies to its real collision footprint.
+ return battleWalkSurfaceY(x/CELL+6,z/CELL+6,bridgeHeights,stairCells,smoothHeight);
 }
 const riverSurfaceByRow=new Float32Array(WORLD_SIZE);
 for(const row of riverRows)riverSurfaceByRow[row.z]=row.y+.10;
