@@ -3,6 +3,10 @@ on:
   schedule:
     - cron: '12 * * * *'
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'ops/manual-world-six-once-20261118.trigger'
   # Heavy six-lane world WebGL QA only for actual 3D model/scene changes;
   # batch dashboard changes must not start six model jobs or cancel other PRs.
   pull_request:
