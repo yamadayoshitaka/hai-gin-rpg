@@ -15,11 +15,15 @@ function visibleInside(node,root){
 export function battleClosedBackCoverage({quality='battle',panel,opaqueLining=0,preserveBody=false}={}){
  const skinned=Boolean(panel?.isSkinnedMesh&&panel.visible!==false&&
    panel.geometry?.getAttribute?.('position')?.count>=100);
- const closed=quality==='battle'&&skinned&&!preserveBody;
+ // An opaque, full source skinned torso is stronger evidence than a
+ // procedural rear sheet. Keep clipping covered anatomy when that sheet is
+ // suppressed, otherwise the old naked back returns under the costume.
+ const sourceBack=quality==='battle'&&opaqueLining>0&&!preserveBody;
+ const closed=quality==='battle'&&(skinned||sourceBack)&&!preserveBody;
  return Object.freeze({
   closed,forceCoveredRegions:closed?['torso']:[],
   preserveRegions:quality==='battle'&&!closed&&!opaqueLining?['torso']:[],
-  reason:closed?'real-skinned-opaque-back-panel':opaqueLining?'source-photo-lining':'unverified-back'
+  reason:sourceBack?'opaque-source-skinned-tunic':closed?'real-skinned-opaque-back-panel':'unverified-back'
  });
 }
 export function battleScalpCoverageState(actor){
