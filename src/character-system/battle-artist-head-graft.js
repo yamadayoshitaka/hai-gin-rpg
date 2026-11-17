@@ -14,8 +14,8 @@ import * as THREE from 'three';
 import {fitBattleArtistFaceToHead,BATTLE_FACE_PROPORTION_VERSION}
  from './battle-head-proportion-fit.js?v=20261116-real-cranium-v2';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
-import {makeIndependentFaceMaster} from '../independent-face-masters.js?v=20261118-makeup5-nose-braid-v1';
-import {applyFaceColorMode} from '../face-feature-meshes.js?v=20261118-makeup5-nose-braid-v1';
+import {makeIndependentFaceMaster} from '../independent-face-masters.js?v=20261118-makeup-lipshade-v73';
+import {applyFaceColorMode} from '../face-feature-meshes.js?v=20261118-makeup-lipshade-v73';
 import {FEMALE_V7_DEFAULTS,MALE_REFERENCE_DEFAULT} from '../face-v7-controls.js';
 import {hideBattleDonorFace,attachIndependentFaceToBattleHead,enhanceHeroineFaceSurface}
  from '../heroine-battle-costume-bridge.js?v=70';
