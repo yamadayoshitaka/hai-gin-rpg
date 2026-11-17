@@ -106,9 +106,9 @@ export function deriveGarmentCoverage({dressed,cloth=null,armor=null,style=null}
     fullSkinnedPants=true;
  });
  const enclosedRegions=[];
- if(sides.every(side=>(fullSkinnedPants||clothOn('trouser-thigh',side))&&plateOn('thigh',side)))
+ if(fullSkinnedPants||sides.every(side=>clothOn('trouser-thigh',side)&&plateOn('thigh',side)))
   enclosedRegions.push('thigh');
- if(sides.every(side=>(fullSkinnedPants||clothOn('trouser-calf',side))&&plateOn('shin',side)))
+ if(fullSkinnedPants||sides.every(side=>clothOn('trouser-calf',side)&&plateOn('shin',side)))
   enclosedRegions.push('calf');
  if(sides.every(side=>plateOn('boot-foot',side)))
   enclosedRegions.push('foot');
@@ -200,6 +200,7 @@ export function clipBodyToGarment(characterModel,coverage,{surfaceCheck=false,pr
   let record=variants.get(cacheKey);
   if(!record){
    const cut=new Uint8Array(positions.count);
+   const protectedEdge=new Uint8Array(positions.count);
    const worldPoint=new THREE.Vector3();
    const displayed=mesh.geometry;
    if(surfaceCheck){
@@ -218,18 +219,24 @@ export function clipBodyToGarment(characterModel,coverage,{surfaceCheck=false,pr
     }
     // Protect every finger/face/neck transition. A covered region needs a
     // decisive skinning majority before its geometry may be removed.
+    protectedEdge[i]=exposedWeight>=.56?1:0;
     const isCovered=hiddenWeight>=.56&&exposedWeight<.44;
     cut[i]=isCovered&&(enclosed.has(principalZone)||!surfaceCheck||(principalZone&&
       sampler.covers(principalZone,mesh.getVertexPosition(i,worldPoint).applyMatrix4(mesh.matrixWorld))))?1:0;
    }
    if(surfaceCheck&&displayed!==original)mesh.geometry=displayed;
    const sourceIndices=original.index,kept=[];
+   // Verified opaque panels and fitted pants have no visible internal skin.
+   // Cut majority-covered triangles, but protect neck/hand/exposed seams.
+   // All non-verified outfits keep the previous conservative cut rule.
+   const opaqueEnvelope=surfaceCheck&&enclosed.size>0;
    for(let i=0;i<sourceIndices.count;i+=3){
     const a=sourceIndices.getX(i),b=sourceIndices.getX(i+1),c=sourceIndices.getX(i+2);
-    // Keep a boundary triangle if at least two of its vertices belong to
-    // exposed skin. This preserves an underlap at sleeve/neck/boot openings.
-    // Preserve any triangle touching an exposed vertex, especially on backs.
-    if(surfaceCheck?cut[a]+cut[b]+cut[c]<3:cut[a]+cut[b]+cut[c]<2)kept.push(a,b,c);
+    const hiddenCorners=cut[a]+cut[b]+cut[c];
+    const visibleEdge=protectedEdge[a]||protectedEdge[b]||protectedEdge[c];
+    const canCut=surfaceCheck?
+      (opaqueEnvelope?hiddenCorners>=2&&!visibleEdge:hiddenCorners===3):hiddenCorners>=2;
+    if(!canCut)kept.push(a,b,c);
    }
    // A failed / incompatible mesh must not disappear completely.
    const sourceCount=sourceIndices.count/3,keptCount=kept.length/3;
