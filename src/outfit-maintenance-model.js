@@ -623,7 +623,9 @@ export function createDetailedOutfit(job, sex, body, textures, {quality='preview
     // body-surface sampling jumps and stays outside the metal cuirass.
     const upperBack=surfaceAt(cy-H*.055,true,mx);
     const waistBack=surfaceAt(hips+H*.124,true,mx);
-    const backAnchor=Math.min(upperBack,waistBack)-H*.065;
+    // The neck seam attaches to the ACTUAL upper back; using the deeper
+    // waist sample for the top seam left a gap behind both shoulder clasps.
+    const backAnchor=upperBack-H*.060;
     const cols=battle?16:32,rows=battle?8:20;
     const positions=[],uv=[],indices=[];
     for(let row=0;row<=rows;row++){
@@ -636,7 +638,8 @@ export function createDetailedOutfit(job, sex, body, textures, {quality='preview
         // character's positive-Z chest or intersect the forearms.
         const x=mx+u*halfWidth*(1+.028*t*Math.sin(5*u*Math.PI));
         const y=top+(bottom-top)*t+H*.014*edge*edge*t*t;
-        const z=backAnchor-H*(.018*t+.100*t*t)+H*.019*u*u+ripple;
+        const torsoBack=THREE.MathUtils.lerp(upperBack,waistBack,Math.min(1,t*1.45));
+        const z=torsoBack-H*(.060+.020*t+.092*t*t)+H*.015*u*u+ripple;
         positions.push(x,y,z);uv.push(col/cols,t);
         if(row<rows&&col<cols){
           const i=row*(cols+1)+col;
