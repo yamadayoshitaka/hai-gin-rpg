@@ -7,6 +7,12 @@ import {buildChapter1ImagePrompt} from '../src/story-chapter1-image-prompt.js';
 import {registeredStoryPanelAsset} from '../src/story-panel-registered-art.js';
 import {oldStoryArtReuseAllowed} from '../src/story-art-sourcing-policy.js';
 
+const sameHistoricSetup=(oldScript,newScript)=>{
+ // Historical stage-1..4 proof predates the current narrator-first,
+ // plain-language prefix, which is displayed independently on recap art.
+ const normalized=String(newScript||'').replace(/^今回の舞台は「[^」]+」。/,'');
+ return oldScript===newScript||oldScript===normalized;
+};
 const pages=chapterOneReviewPages().filter(p=>p.stageId==='c01-s04'||p.stageId==='c01-s05');
 assert.equal(pages.flatMap(p=>p.shots).length,96,'Stage4+5 must preserve 48 shots each');
 const rules=JSON.parse(fs.readFileSync('assets/story/quality/artwork-p0-rules.json','utf8'));
@@ -116,7 +122,8 @@ for(const gender of ['male','female']){
   stageId:'c01-s04',comicEdition:'pre',protagonistGender:gender,id:'c01-s04-m1'
  })?.asset,item.asset,'Live game resolver does not point to owner provisional asset');
  const canonical=pages.flatMap(p=>p.shots).find(x=>x.key===key);
- assert(canonical&&canonical.scriptText===proof.scriptText,'Never bind artwork to a noncanonical script');
+ assert(canonical&&sameHistoricSetup(proof.scriptText,canonical.scriptText),
+  'Stage4 image proof must match its actual story beat (excluding recap prefix)');
 }
 const ledger=JSON.parse(fs.readFileSync('assets/story/chapter1-provisional-revisions.json','utf8'));
 for(const gender of ['male','female'])
@@ -143,7 +150,8 @@ assert.equal(m2Proof.qaStatus,'OWNER_PROVISIONAL');
 assert.equal(m2Proof.finalP0Approved,false);
 assert.equal(m2Proof.quality.exactCast,true);
 assert.equal(m2Proof.quality.realReferenceBytesAttachedToImageGenerator,false);
-assert.equal(m2Proof.scriptText,pages.flatMap(p=>p.shots).find(x=>x.key===newShot).scriptText);
+assert(sameHistoricSetup(m2Proof.scriptText,
+ pages.flatMap(p=>p.shots).find(x=>x.key===newShot).scriptText));
 assert(ledger.history.some(h=>h.key===newShot&&h.kind==='CHATGPT_OWNER_PROVISIONAL_NOT_P0'));
 
 const newNative=[
