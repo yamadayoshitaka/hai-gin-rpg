@@ -204,46 +204,47 @@ function m002ReferenceMane(source){
 const CANINE_GROOM_WAVE_ONE=Object.freeze(['m002','m003','m004']);
 function fittedWolfFamilyCrown(spec,source){
  if(!CANINE_GROOM_WAVE_ONE.includes(spec.id))return [];
+ // The accepted m001 axial scalp is physically COPIED, morphed, then the
+ // hair roots are projected onto its new profile. The old crown sampled
+ // a different vertical QUADRUPED_CRANIUM_RINGS shell and floated.
+ const rings=copyWolfKingSourceRings(M001_CRANIUM_RINGS,spec.id);
+ const atZ=z=>{
+  for(let k=1;k<rings.length;k++){
+   const a=rings[k-1],b=rings[k];
+   if(z>=b.z||k===rings.length-1){
+    const t=clamp01((a.z-z)/Math.max(1e-6,a.z-b.z));
+    return {y:a.y+(b.y-a.y)*t,
+      rx:a.rx+(b.rx-a.rx)*t,ry:a.ry+(b.ry-a.ry)*t};
+   }
+  }
+  return rings[0];
+ };
  const guides=[],winter=spec.id==='m003';
- const rows=source?35:24,around=source?46:32;
+ const rows=source?52:39,around=source?62:46;
  for(let layer=0;layer<2;layer++){
   for(let i=0;i<rows;i++){
-   const y=.195+.099*(i+.30+layer*.28)/rows;
-   let a=QUADRUPED_CRANIUM_RINGS[0],b=QUADRUPED_CRANIUM_RINGS.at(-1);
-   for(let k=1;k<QUADRUPED_CRANIUM_RINGS.length;k++){
-    if(QUADRUPED_CRANIUM_RINGS[k].y>=y){
-     a=QUADRUPED_CRANIUM_RINGS[k-1];
-     b=QUADRUPED_CRANIUM_RINGS[k];break;
-    }
-   }
-   const t=clamp01((y-a.y)/Math.max(.0001,b.y-a.y));
-   const rx=a.rx+(b.rx-a.rx)*t;
-   const rz=a.rz+(b.rz-a.rz)*t;
-   const centerZ=a.cz+(b.cz-a.cz)*t;
+   const z=.17-(.75*(i+.25+layer*.14)/rows);
+   const ring=atZ(z);
    for(let j=0;j<around;j++){
-    const theta=Math.PI*2*(j+.36+(i%2)*.41+layer*.24)/around;
-    const x=rx*Math.cos(theta),z=centerZ+rz*Math.sin(theta);
-    // Leave the front orbital aperture exposed; this new crown
-    // begins ABOVE the eyes and follows the occipital hair stream.
-    if(z>.19&&y<.227&&Math.abs(x)<.171)continue;
-    const length=(layer===0?.078:winter?.190:.141)*
+    const theta=Math.PI*2*(j+.26+(i%2)*.36+layer*.21)/around;
+    const cos=Math.cos(theta),sin=Math.sin(theta);
+    const x=ring.rx*cos,y=ring.y+ring.ry*sin;
+    // Hair must live on the upper crown and cheek, not on the exposed
+    // nose cartilage, orbital aperture or underside of the mandible.
+    if(y<.155||(z>.06&&y<.225&&Math.abs(x)<.175))continue;
+    const length=(layer===0?.075:winter?.188:.137)*
       (1+.10*Math.sin(i*.59+j*.47));
-    const root=[x*.997,y,z*.997+centerZ*.003];
-    const tip=[x+Math.sign(x)*.012,y+length*.11,
-      z-length*(layer===0?.55:.80)];
-    const mid=[
-      root[0]+(tip[0]-root[0])*.49+
-        .007*Math.sin(i*.7+j*.9),
-      y+length*.12,
-      z+(tip[2]-z)*.45
-    ];
+    const root=[x,y,z];
+    const tip=[x+Math.sign(x)*length*.07,
+      y+length*.08,z-length*(layer===0?.59:.83)];
+    const mid=[x+(tip[0]-x)*.52+.004*Math.sin(i+j),
+      y+length*.13,z+(tip[2]-z)*.47];
     guides.push({root,mid,tip,
-      normal:[Math.cos(theta),.62,Math.sin(theta)],
-      width:layer===0?.008:.011,
+      normal:[cos,sin*.6,sin],width:layer===0?.008:.011,
       shade:(i+j+layer)%11===0?'light':
         (i+j+layer)%7===0?'shadow':'skin',
-      qualityWave:'m001-cranium-anchored-groom',
-      speciesId:spec.id});
+      qualityWave:'physical-m001-clone-scalp',
+      physicalDonor:'m001',speciesId:spec.id});
    }
   }
  }
@@ -997,8 +998,9 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
        [.107,.142,.178],{name:'m004-temporalis'});
      g.tube(head,'light',[[side*.195,.14,-.09],
        [side*.285,.146,.062],[side*.305,.096,.220]],.027);
-     g.sphere(head,'shadow',[side*.085,-.16,muzzle+.282],
-       [.025,.017,.012],{name:'m004-nostril'});
+     g.sphere(head,'shadow',
+       [side*.049,-.145,.348*wolfClone.snoutLength+.055],
+       [.009,.006,.007],{name:'m004-nostril'});
      for(let n=0;n<4;n++){
        g.sphere(head,'shadow',
          [side*(.145+n*.017),-.202,muzzle+.055+n*.043],
@@ -1015,8 +1017,9 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
        [.127,.196,.209],{name:'m003-temporalis'});
      g.bridge(head,'skin',[side*.226,-.077,.010],
        [side*.241,-.141,.255],.125,.075);
-     g.sphere(head,'shadow',[side*.084,-.166,muzzle+.29],
-       [.027,.016,.013],{name:'m003-nostril'});
+     g.sphere(head,'shadow',
+       [side*.048,-.146,.348*wolfClone.snoutLength+.055],
+       [.009,.006,.007],{name:'m003-nostril'});
      for(let i=0;i<5;i++)
        g.spike(head,i%2?'light':'skin',
          [side*.235,-.095-i*.027,.010+i*.034],
