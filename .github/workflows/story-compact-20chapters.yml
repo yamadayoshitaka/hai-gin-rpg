@@ -3,6 +3,11 @@ on:
   pull_request:
     paths:
       - 'src/story-compact-comic.js'
+      - 'src/story-reader-intros.js'
+      - 'src/story-screenplay-v2.js'
+      - 'src/story-pronunciations.js'
+      - 'audio/voicevox/manifest.json'
+      - 'qa/story-narration-audio-reachability.test.mjs'
       - 'src/story-manga-viewer.js'
       - 'src/story-narrative-flow.js'
       - 'game.html'
@@ -39,10 +44,14 @@ jobs:
       - name: Verify syntax of compact event runtime
         run: |
           node --check src/story-compact-comic.js
+          node --check src/story-reader-intros.js
+          node --check src/story-screenplay-v2.js
           node --check src/story-manga-viewer.js
           node --check src/story-narrative-flow.js
       - name: Verify all twenty chapters, 200 stages and distinct defeat/gameover
         run: node qa/story-compact-20-chapters.test.mjs
+      - name: Verify narration-first, all spoken ruby readings and safe voice cleanup
+        run: node qa/story-narration-audio-reachability.test.mjs
       - name: Verify Cloudflare Free queue selects compact CGs only (plan mode; zero API calls)
         run: |
           node --check scripts/generate-story-chapter1-free-batch.mjs
