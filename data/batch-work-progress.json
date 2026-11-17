@@ -119,7 +119,7 @@
       "steps": {
         "launch": "done",
         "code": "done",
-        "qa": "blocked",
+        "qa": "pending",
         "commit": "done",
         "pr": "pending",
         "merge": "pending",
@@ -170,7 +170,8 @@
           "newGameAppliedIds": 0,
           "newSourceCommits": 1,
           "newGeneratedGLBs": 0
-        }
+        },
+        "qaBlocker": "3D家具のNode/WebGL/Android描画検証が未完了（従来の非規定blocked表記を規定のpendingへ正規化）"
       }
     },
     "anime": {
