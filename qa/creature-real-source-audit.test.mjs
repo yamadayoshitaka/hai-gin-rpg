@@ -9,7 +9,7 @@ const read=path=>readFileSync(new URL(path,import.meta.url),'utf8');
 
 test('all 108 source masters have a species anatomy contract, with no false pass',()=>{
  assert.equal(REAL_SOURCE_SUMMARY.total,108);
- assert.equal(REAL_SOURCE_SUMMARY.protected,4);
+ assert.equal(REAL_SOURCE_SUMMARY.protected,0);
  assert.equal(REAL_SOURCE_SUMMARY.pending,104);
  assert.equal(REAL_SOURCE_SUMMARY.realSourceApproved,0);
  assert.equal(REAL_SOURCE_AUDIT.length,CREATURE_MASTER_ENTRIES.length);
@@ -34,16 +34,17 @@ test('all 108 source masters have a species anatomy contract, with no false pass
     realSourceAuditFor('summon_'+monster.id).kind);
  }
 });
-test('protected species keep their original geometry paths and cannot be adopted',()=>{
+test('m005/m006 now use m001 geometry, with external adoption still explicitly locked',()=>{
  const ids=['m005','m006','summon_m005','summon_m006'];
  for(const id of ids){
-  assert.equal(realSourceAuditFor(id).protected,true);
+  assert.equal(realSourceAuditFor(id).protected,false);
   assert.equal(realSourceAuditFor(id).modifiable,false);
   assert.equal(realSourceAuditFor(id).realSourceApproved,false);
  }
  assert.equal(realSourceAuditFor('m020').protected,false);
  const sculpt=read('../src/monster-geometry.js');
- assert.match(sculpt,/s\.id==='m005'\|\|s\.id==='m006'/);
+ assert.match(sculpt,/s\.id==='m006'/);
+ assert.match(sculpt,/M001_CRANIUM_RINGS/);
  assert.match(sculpt,/s\.id==='m015'\)g\.sphere/);
 });
 test('source silhouettes use authored anatomical cross-sections, never subdivision KPI',()=>{
