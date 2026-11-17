@@ -1930,7 +1930,7 @@ const wolfKingMane=(s.id==='m001'||cloneCanine)?[
      return !(h.root[2]>.078&&Math.abs(h.root[0])<.186&&
        h.root[1]>-.223&&h.root[1]<.293);
    }):[];
-   const waveOneCrown=cloneCanine?fittedWolfFamilyCrown(s,source):[];
+   const waveOneCrown=s.id==='m002'?[]:fittedWolfFamilyCrown(s,source);
     // A complete copy of the *same* m001 crown, cheek and throat groom.
     // Inverse-scale back to m002 head-local space: head.scale already
     // applies the wolf-donor face morph once during rendering.
@@ -1994,7 +1994,9 @@ const wolfKingMane=(s.id==='m001'||cloneCanine)?[
       g.root.userData.m002FaceCoatDensityMultiplier=2;
       g.root.userData.m002CoatSpace='donor-display-to-m002-local';
     }
-    if(waveOneCrown.length)
+    // Preserve the complete donor-groom revision; a sparse crown overlay
+    // must never overwrite which actual fur system the game is using.
+    if(waveOneCrown.length&&!clonedSiblingCoat.length)
       g.root.userData.referenceGroomWave='canine-m003-m004';
     addFur(head,fullHeadCoat);
    if(s.id==='m001'){
