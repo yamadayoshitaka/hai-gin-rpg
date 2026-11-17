@@ -23,9 +23,10 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
-    # The deploy-pages action enforces a hard 10-minute timeout, even when a
-    # larger timeout input is requested. Keep the job slightly above that.
-    timeout-minutes: 15
+    # Preflight tests, asset optimization, artifact upload and public CDN checks
+    # share this job. Allow enough time for all of them; deploy-pages itself
+    # retains its separate action-level timeout.
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v5
       - name: Reject corrupted public HTML and JavaScript blobs
