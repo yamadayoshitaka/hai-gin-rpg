@@ -11,7 +11,7 @@ import {equipBattleStudioHair} from './character-system/battle-artist-head-graft
 import {massLocomotionKind,massGpuMotionCode} from './mass-dash-parity.js?v=4.6.34';
 import {riderSeatLocalOffset,mountedFlightSway} from './combat-creature-performance.js?v=20261117-horse-saddle-fix1';
 import {massAttackVariant} from './mass-battle-vfx-policy.js?v=4.6.31';
-import {createCrowdGroundAnchor,crowdGroundShift,applyCrowdGroundShift} from './crowd-run-grounding.js?v=4.6.32';
+import {createCrowdGroundAnchor,crowdGroundShift,applyCrowdGroundShift,normalizeCrowdCaptureFootOrigin} from './crowd-run-grounding.js?v=20261117-foot-origin2';
 
 /**
  * Real-mesh crowd rendering. One existing, dressed seven-head character per
@@ -333,7 +333,8 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
         humanBounds.expandByObject(new THREE.Mesh(geometry));
       }
       // The skinned human remains behind the separate real clothing meshes.
-      sources.push({object,geometry,isHumanBody});
+      const isFootSurface=/(?:boot[-_]?foot|shoe|ankle|foot[_-]?[lr]?|feet)/i.test(object.name||'');
+      sources.push({object,geometry,isHumanBody,isFootSurface});
       const original=object.material;
       const attributes=Object.entries(geometry.attributes).sort(([a],[b])=>a.localeCompare(b))
         .map(([key,value])=>key+':'+value.itemSize+':'+value.normalized+':'+value.array.constructor.name).join('|');
@@ -359,7 +360,8 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
     }
     sourceBodyVertices+=humanVertices;
     const footAnchor=createCrowdGroundAnchor(sources.map(source=>({
-      isHumanBody:source.isHumanBody,base:source.geometry.getAttribute('position').array})));
+      isHumanBody:source.isHumanBody,isFootSurface:source.isFootSurface,
+      base:source.geometry.getAttribute('position').array})));
     const jobGrounding=[];
     bodyCoverage.push({job:job.name,vertices:humanVertices,triangles:Math.round(bodyTriangles),height:+bodyHeight.toFixed(3)});
     // Sample the EXISTING animation binding instead of substituting a low-poly
@@ -486,6 +488,13 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
     // Measure ground anchoring for every character job, including armor.
     // This is done at loading time; no per-frame CPU vertex inspection.
     bodyCoverage.at(-1).grounding=jobGrounding;
+    // All seven pose channels and the original source geometry share ONE
+    // corrected foot contact. The old code corrected each animated pose
+    // relative to the model's nonzero source floor, so the whole 3D soldier
+    // remained buried when placed at the visible terrain height.
+    const footOrigin=normalizeCrowdCaptureFootOrigin(sources,footAnchor);
+    bodyCoverage.at(-1).footOrigin=footAnchor?.floor??null;
+    bodyCoverage.at(-1).footOriginCorrection=footOrigin.offset;
     representative.character.syncLocomotionPhase(null);
     await representative.character.play('idle');
     representative.character.update(.01);representative.outfit.sync();
