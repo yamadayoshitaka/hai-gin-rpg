@@ -10,6 +10,10 @@ export const MARKER='<!-- hai-gin-hourly-batch-v1 -->';
 const allowed={
  human:'human-v65-quality.yml',
  monster:'monster-anatomy-qa.yml',
+ faceHair:'character-six-lane.yml',
+ outfit:'character-six-lane.yml',
+ creatureMonster:'creature-six-lane.yml',
+ creatureSummon:'creature-six-lane.yml',
  world:'world-quality-photoreal.yml',
  anime:'story-cinematic-qa.yml'
 };
@@ -22,6 +26,7 @@ export function parseRequest(issue,owner){
  if(!m)throw Error('Missing JSON request');
  const data=JSON.parse(m[1]);
  if(!Object.hasOwn(allowed,data.category))throw Error('Unknown batch category');
+ if(['human','world','monster'].includes(data.category))throw Error('Retired batch: use the split FF15 quality lanes');
  const target=String(data.target||'').trim(),instruction=String(data.instruction||'').trim();
  const count=Number(data.max||1);
  if(instruction.length>500||/[\x00-\x08\x0b\x0c\x0e-\x1f]/.test(instruction))
@@ -34,6 +39,9 @@ export function parseRequest(issue,owner){
 }
 function execute(command){
  const args=['workflow','run',command.workflow,'--ref','main'];
+ if(['faceHair','outfit','creatureMonster','creatureSummon'].includes(command.category)){
+  args.push('-f','slot=auto');
+ }
  if(command.category==='world'){
   const type=command.target.startsWith('object:')?'object':command.target.startsWith('stage:')?'stage':'all';
   args.push('-f','target_type='+type,'-f','target_key='+command.target,
