@@ -3,6 +3,8 @@ import {chapterReviewedPanelAsset} from './story-chapter-reviewed-art.js';
 import {chapter1ProvisionalLivePanel} from './story-chapter1-provisional-live.js';
 import {provisionalRegisteredStoryPanel} from './story-provisional-registered-art.js';
 import {restoredStoryArchivePanel} from './story-archive-restored-art.js';
+import {oldStoryArtReuseAllowed,requiresNewStoryArt} from './story-art-sourcing-policy.js';
+import {newOriginalStoryPanelAsset} from './story-new-original-art.js';
 /**
  * Exactly registered and already sliced Chapter 1 manga panels.
  * A registered original is NOT an approved/quality-reviewed image.
@@ -18,6 +20,10 @@ const REGISTERED=Object.freeze({
 });
 export function registeredStoryPanelAsset(shot){
  if(!shot||typeof shot.id!=='string')return null;
+ // Stage 5+ must use an independently generated NEW original, never an old
+ // provisional, archive recovery, legacy sheet or prior-generation WebP.
+ if(requiresNewStoryArt(shot.stageId))return newOriginalStoryPanelAsset(shot);
+ if(!oldStoryArtReuseAllowed(shot.stageId))return null;
  const chapterReviewed=chapterReviewedPanelAsset(shot);
  if(chapterReviewed)return chapterReviewed;
  const reviewedStage2=stage2ReviewedPanelAsset(shot);
