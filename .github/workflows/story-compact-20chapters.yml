@@ -10,6 +10,8 @@ on:
       - 'qa/story-stage-art-sourcing-boundary.test.mjs'
       - 'src/story-draft-dialogue-identity.js'
       - 'qa/story-draft-dialogue-identity.test.mjs'
+      - 'src/story-new-original-timestamp-guard.js'
+      - 'qa/story-new-original-timestamp-guard.test.mjs'
       - 'scripts/publish-story-chapter1-provisional.mjs'
       - 'qa/story-sequential-provisional-intake.test.mjs'
       - 'src/story-chapter1-review-core.js'
@@ -92,6 +94,8 @@ jobs:
         run: node qa/story-stage-art-sourcing-boundary.test.mjs
       - name: Verify exact source artwork proof after narration-prefix edits
         run: node qa/story-draft-dialogue-identity.test.mjs
+      - name: Verify real post-cutover original commit age and strict scene identity
+        run: node qa/story-new-original-timestamp-guard.test.mjs
       - name: Verify sequential first-chapter production provisional intake
         run: node qa/story-sequential-provisional-intake.test.mjs
       - name: Verify compact CG reuse of 40 existing first-four-stage gender/outcome original assets
