@@ -138,7 +138,11 @@ function quadrupedMotion(p,phase,locomotion,run,actionPulse,spine,speciesId){
 }
 function wingMotion(p,phase,action,actionPulse,reference){
  const hasFlap=action==='special'||action==='leap'||action==='run'||action==='attack';
- const power=hasFlap?1:.25;
+ // The Phoenix idle pose must NOT use a gallop-speed phase (7rad/s).
+ // Previously its whole silhouette shook while the viewer was stationary.
+ const stablePhoenix=reference?.id==='m013'&&action==='idle';
+ if(stablePhoenix)phase*=.14;
+ const power=stablePhoenix?.035:hasFlap?1:.25;
  for(const side of [-1,1]){
   const suffix=side<0?'L':'R';
   const wave=Math.sin(phase*1.18+(side<0?0:.11));
