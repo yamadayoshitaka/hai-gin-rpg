@@ -7,7 +7,7 @@
       "sourceFiles": [
         "src/m020-leviathan-anatomical-source.js"
       ],
-      "commitSha": "a67a42415ea34a55500b82d0ddd43f76d59a854c",
+      "commitSha": "12052055e37f1a78fee69ac6bccbe72b24c1e52b",
       "qa": "unverified"
     },
     {
@@ -67,5 +67,5 @@
     "m049",
     "m050"
   ],
-  "nextAction": "m020 dorsal fin UV source patch a67a424: run Node syntax, WebGL four-view/PBR UV and Android FPS; m048 QA and E2E remain unverified. Do not merge before gates."
+  "nextAction": "m020 caudal UV patch 12052055: run Node syntax and front/back/left/right WebGL PBR UV checks; m048 static/WebGL QA and Android FPS unverified; do not merge."
 }
