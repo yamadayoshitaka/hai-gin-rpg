@@ -7,6 +7,8 @@
       "filename": "qa-reports/world-quality/previews/entry_door_lv2_001-rough-1.png",
       "bytes": 61530,
       "materials": 8,
+      "drawCalls": 9,
+      "triangles": 442,
       "status": "CAPTURED_QA_PENDING"
     },
     {
@@ -14,6 +16,8 @@
       "filename": "qa-reports/world-quality/previews/entry_door_lv2_001-rough-0_83.png",
       "bytes": 59156,
       "materials": 8,
+      "drawCalls": 9,
+      "triangles": 442,
       "status": "CAPTURED_QA_PENDING"
     },
     {
@@ -21,6 +25,8 @@
       "filename": "qa-reports/world-quality/previews/entry_door_lv2_001-rough-0_92.png",
       "bytes": 61410,
       "materials": 8,
+      "drawCalls": 9,
+      "triangles": 442,
       "status": "CAPTURED_QA_PENDING"
     },
     {
@@ -28,6 +34,8 @@
       "filename": "qa-reports/world-quality/previews/entry_door_lv2_001-rough-1_08.png",
       "bytes": 63017,
       "materials": 8,
+      "drawCalls": 9,
+      "triangles": 442,
       "status": "CAPTURED_QA_PENDING"
     }
   ]

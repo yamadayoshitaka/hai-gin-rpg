@@ -7,6 +7,8 @@
       "filename": "qa-reports/world-quality/previews/spiral_stairs_castle_3f_001-rough-1.png",
       "bytes": 102123,
       "materials": 3,
+      "drawCalls": 4,
+      "triangles": 6322,
       "status": "CAPTURED_QA_PENDING"
     },
     {
@@ -14,6 +16,8 @@
       "filename": "qa-reports/world-quality/previews/spiral_stairs_castle_3f_001-rough-0_83.png",
       "bytes": 100574,
       "materials": 3,
+      "drawCalls": 4,
+      "triangles": 6322,
       "status": "CAPTURED_QA_PENDING"
     },
     {
@@ -21,6 +25,8 @@
       "filename": "qa-reports/world-quality/previews/spiral_stairs_castle_3f_001-rough-0_92.png",
       "bytes": 100556,
       "materials": 3,
+      "drawCalls": 4,
+      "triangles": 6322,
       "status": "CAPTURED_QA_PENDING"
     },
     {
@@ -28,6 +34,8 @@
       "filename": "qa-reports/world-quality/previews/spiral_stairs_castle_3f_001-rough-1_08.png",
       "bytes": 101633,
       "materials": 3,
+      "drawCalls": 4,
+      "triangles": 6322,
       "status": "CAPTURED_QA_PENDING"
     }
   ]

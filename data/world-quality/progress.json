@@ -158,9 +158,9 @@
       "roughnessProposal": 1,
       "review": "WEBGL_CAPTURE_OR_COMPARE_BLOCKED",
       "productionApplied": false,
-      "lastReviewedAt": "2026-11-17T02:39:32.156Z",
+      "lastReviewedAt": "2026-11-17T11:09:00.511Z",
       "error": "python3 scripts/world-quality-compare.py: Traceback (most recent call last):\n  File \"/home/runner/work/hai-gin-rpg/hai-gin-rpg/scripts/world-quality-compare.py\", line 70, in <module>\n    output=run(Path(args.reference),json.loads(Path(args.capture_json).read_text()))\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/hai-gin-rpg/hai-gin-rpg/scripts/world-quality-compare.py\", line 41, in run\n    ref=features(ref_path)\n        ^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/hai-gin-rpg/hai-gin-rpg/scripts/world-quality-compare.py\", line 25",
-      "captureAttempts": 1
+      "captureAttempts": 2
     },
     "object:entry_door_lv1_001": {
       "name": "入口扉（鍵Lv.1）",
@@ -174,9 +174,9 @@
       "roughnessProposal": 1,
       "review": "WEBGL_CAPTURE_OR_COMPARE_BLOCKED",
       "productionApplied": false,
-      "lastReviewedAt": "2026-11-17T02:39:32.156Z",
+      "lastReviewedAt": "2026-11-17T11:09:00.511Z",
       "error": "python3 scripts/world-quality-compare.py: Traceback (most recent call last):\n  File \"/home/runner/work/hai-gin-rpg/hai-gin-rpg/scripts/world-quality-compare.py\", line 70, in <module>\n    output=run(Path(args.reference),json.loads(Path(args.capture_json).read_text()))\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/hai-gin-rpg/hai-gin-rpg/scripts/world-quality-compare.py\", line 41, in run\n    ref=features(ref_path)\n        ^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/hai-gin-rpg/hai-gin-rpg/scripts/world-quality-compare.py\", line 25",
-      "captureAttempts": 1
+      "captureAttempts": 2
     },
     "object:entry_door_lv2_001": {
       "name": "入口扉（鍵Lv.2）",
@@ -190,55 +190,12 @@
       "roughnessProposal": 1,
       "review": "WEBGL_CAPTURE_OR_COMPARE_BLOCKED",
       "productionApplied": false,
-      "lastReviewedAt": "2026-11-17T02:39:32.156Z",
+      "lastReviewedAt": "2026-11-17T11:09:00.511Z",
       "error": "python3 scripts/world-quality-compare.py: Traceback (most recent call last):\n  File \"/home/runner/work/hai-gin-rpg/hai-gin-rpg/scripts/world-quality-compare.py\", line 70, in <module>\n    output=run(Path(args.reference),json.loads(Path(args.capture_json).read_text()))\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/hai-gin-rpg/hai-gin-rpg/scripts/world-quality-compare.py\", line 41, in run\n    ref=features(ref_path)\n        ^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/hai-gin-rpg/hai-gin-rpg/scripts/world-quality-compare.py\", line 25",
-      "captureAttempts": 1
+      "captureAttempts": 2
     }
   },
   "runs": [
-    {
-      "id": "43692690503",
-      "startedAt": "2026-11-15T08:07:21.570Z",
-      "mode": "reference",
-      "requested": 3,
-      "requestedTarget": null,
-      "requestedKind": "all",
-      "customInstructionHash": null,
-      "stageCount": 200,
-      "objectCount": 53,
-      "targetIds": [
-        "object:cottage_table_001",
-        "object:cottage_chair_001",
-        "object:cottage_bed_001"
-      ],
-      "generated": 3,
-      "failed": [],
-      "providerCalls": 3,
-      "stopReason": "REFERENCE_GENERATED_VISUAL_QA_PENDING",
-      "completedAt": "2026-11-15T08:08:02.278Z"
-    },
-    {
-      "id": "43692690503",
-      "startedAt": "2026-11-15T08:08:37.264Z",
-      "mode": "results",
-      "requested": 3,
-      "requestedTarget": null,
-      "requestedKind": "all",
-      "customInstructionHash": null,
-      "stageCount": 200,
-      "objectCount": 53,
-      "targetIds": [
-        "object:cottage_table_001",
-        "object:cottage_chair_001",
-        "object:cottage_bed_001"
-      ],
-      "generated": 3,
-      "failed": [],
-      "providerCalls": 3,
-      "stopReason": "REVIEW_PROPOSALS_RECORDED_NOT_MERGED",
-      "referenceStopReason": "REFERENCE_GENERATED_VISUAL_QA_PENDING",
-      "completedAt": "2026-11-15T08:08:37.265Z"
-    },
     {
       "id": "43695454991",
       "startedAt": "2026-11-15T08:39:55.564Z",
@@ -625,11 +582,54 @@
       "stopReason": "REVIEW_PROPOSALS_RECORDED_NOT_MERGED",
       "referenceStopReason": "REFERENCE_GENERATED_VISUAL_QA_PENDING",
       "completedAt": "2026-11-17T02:39:32.156Z"
+    },
+    {
+      "id": "44070997425",
+      "startedAt": "2026-11-17T11:08:49.276Z",
+      "mode": "reference",
+      "requested": 3,
+      "requestedTarget": null,
+      "requestedKind": "all",
+      "customInstructionHash": null,
+      "stageCount": 200,
+      "objectCount": 60,
+      "targetIds": [
+        "object:spiral_stairs_castle_3f_001",
+        "object:entry_door_lv1_001",
+        "object:entry_door_lv2_001"
+      ],
+      "generated": 0,
+      "failed": [],
+      "providerCalls": 0,
+      "stopReason": "REVIEW_EXISTING_REFERENCE_ONLY",
+      "completedAt": "2026-11-17T11:08:49.277Z"
+    },
+    {
+      "id": "44070997425",
+      "startedAt": "2026-11-17T11:09:00.511Z",
+      "mode": "results",
+      "requested": 3,
+      "requestedTarget": null,
+      "requestedKind": "all",
+      "customInstructionHash": null,
+      "stageCount": 200,
+      "objectCount": 60,
+      "targetIds": [
+        "object:spiral_stairs_castle_3f_001",
+        "object:entry_door_lv1_001",
+        "object:entry_door_lv2_001"
+      ],
+      "generated": 0,
+      "failed": [],
+      "providerCalls": 0,
+      "stopReason": "REVIEW_PROPOSALS_RECORDED_NOT_MERGED",
+      "referenceStopReason": "REVIEW_EXISTING_REFERENCE_ONLY",
+      "completedAt": "2026-11-17T11:09:00.511Z"
     }
   ],
   "lastRun": {
-    "id": "44004217527",
-    "startedAt": "2026-11-17T02:39:32.156Z",
+    "id": "44070997425",
+    "startedAt": "2026-11-17T11:09:00.511Z",
     "mode": "results",
     "requested": 3,
     "requestedTarget": null,
@@ -642,11 +642,11 @@
       "object:entry_door_lv1_001",
       "object:entry_door_lv2_001"
     ],
-    "generated": 3,
+    "generated": 0,
     "failed": [],
-    "providerCalls": 3,
+    "providerCalls": 0,
     "stopReason": "REVIEW_PROPOSALS_RECORDED_NOT_MERGED",
-    "referenceStopReason": "REFERENCE_GENERATED_VISUAL_QA_PENDING",
-    "completedAt": "2026-11-17T02:39:32.156Z"
+    "referenceStopReason": "REVIEW_EXISTING_REFERENCE_ONLY",
+    "completedAt": "2026-11-17T11:09:00.511Z"
   }
 }
