@@ -1,0 +1,61 @@
+{
+  "kind": "CLOUDFLARE_REAL_WEBP_REVIEW_CANDIDATE_NOT_APPROVED",
+  "shotKey": "c01-s05|pre|male|c01-s05-m15",
+  "stageId": "c01-s05",
+  "edition": "pre",
+  "gender": "male",
+  "panelId": "c01-s05-m15",
+  "screenplayText": "合図を待つ兵士たちに、軍師は静かに頷いた。いよいよ「灰銀の本城・防衛線の死守」での戦いが始まる。",
+  "visibleActorIds": [
+    "garan",
+    "iris"
+  ],
+  "actualReferenceImagesAttached": [
+    {
+      "actorId": "garan",
+      "source": "assets/story-cinema/cast/garan.webp",
+      "originalSha256": "aeb457957485f89244eb0b4f270b72e4bf0670341f2444ac7f43299222075a8b",
+      "submittedSha256": "30c17f9c9f97f0f7a5f66ce2e6f03a711d2ebfb697de0c6a8a84545f9c96cc3c",
+      "actualBytes": 262661,
+      "pixels": [
+        329,
+        480
+      ]
+    },
+    {
+      "actorId": "iris",
+      "source": "assets/story-cinema/cast/iris.webp",
+      "originalSha256": "6b9b49a242f75b39abd8c6ab2084ce50592b8d98c73443a360ab06e041ceadea",
+      "submittedSha256": "1393acc01d44b7907169c469d36fc47844e5ccc1b305c5b4f67f0501470d6741",
+      "actualBytes": 193906,
+      "pixels": [
+        329,
+        480
+      ]
+    },
+    {
+      "actorId": "style_benchmark",
+      "source": "assets/story/chapters/c01/panels/c01-s01-m02-male.webp",
+      "originalSha256": "e70901415a751b576a00dcac34f93065051b3513b875f58546533f59ccfee71d",
+      "submittedSha256": "a6602427e7fde9cda0e99dd5511998682513154a72c029a190abd5e74786eca2",
+      "actualBytes": 247193,
+      "pixels": [
+        480,
+        270
+      ]
+    }
+  ],
+  "imageSha256": "83df01b2a4ebfddea418fd00bec95ac9fc0d7ac11d53106b7bd89dfa5f219016",
+  "nativePixels": [
+    1024,
+    576
+  ],
+  "imageBytes": 180164,
+  "model": "@cf/black-forest-labs/flux-2-klein-4b",
+  "seed": 583355005,
+  "promptSha256": "4d32c0e2cc2c049d24a3eb170445d3d75fb3bdba5ff0d5e0fa9641e5e5a06c8a",
+  "estimatedNeurons": 120.31,
+  "visuallyApproved": false,
+  "formallyRegistered": false,
+  "gameDeployed": false
+}
