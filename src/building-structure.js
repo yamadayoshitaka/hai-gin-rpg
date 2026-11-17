@@ -77,6 +77,22 @@ export function renderSpiralStairBOM(THREE,parent,structure,{mergeGeometries=nul
  const treads=attach(geometries,treadMaterial,'spiral_treads',cached?.treads);
  const balusters=attach(rails,metal,'spiral_balusters',cached?.balusters);
  if(cacheKey&&!cached&&treads&&balusters)SPIRAL_GEOMETRY_CACHE.set(cacheKey,{treads,balusters});
+ // The catalogue stairs and inhabited buildings share this renderer. Build the
+ // guard at the baluster heads (rather than in the unreachable legacy branch).
+ // Per-flight curves stop at landings instead of bridging the open stairwell.
+ for(const flight of plan.flights){
+  const points=flight.steps.map(step=>new THREE.Vector3(
+   s.x+s.outerRadius*Math.cos(step.middleAngle),
+   step.top+(flight.fromFloor-1)*s.rise+.805,
+   s.z+s.outerRadius*Math.sin(step.middleAngle)
+  ));
+  if(points.length<2)continue;
+  const curve=new THREE.CatmullRomCurve3(points,false,'centripetal');
+  const guard=new THREE.Mesh(new THREE.TubeGeometry(curve,Math.max(12,points.length*3),.052,6,false),metal);
+  guard.name='spiral_continuous_outer_guard';
+  guard.castShadow=true;guard.receiveShadow=true;
+  group.add(guard);
+ }
  const pole=new THREE.Mesh(new THREE.CylinderGeometry(s.innerRadius*.85,s.innerRadius*.85,s.rise*(plan.floors-1)+.8,12),metal);
  pole.name='spiral_center_post';pole.position.set(s.x,s.rise*(plan.floors-1)/2,s.z);pole.castShadow=true;group.add(pole);
  group.userData.stairBOM=plan;
