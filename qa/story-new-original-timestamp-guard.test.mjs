@@ -28,7 +28,7 @@ for(const patch of [
 const publisher=fs.readFileSync('scripts/publish-story-chapter1-provisional.mjs','utf8');
 for(const guard of ["'--diff-filter=A'",'sourceCandidate(s,available)',
  'sourceReviewable(s,available,draftSource)','eligibleFreshReviewSource(',
- 'sourceDraft:verified.original','draftSource+'.provider-blocked.json']){
+ 'sourceDraft:verified.original',"draftSource+'.provider-blocked.json'"]){
  assert(publisher.includes(guard),'Source-intake guard missing: '+guard);
 }
 console.log('PASS: post-cutover exact-commit original recovery without old-art borrowing or P0 claim');
