@@ -28,3 +28,18 @@ test('harden wrong stage/gender/shot injections',()=>{
  assert.throws(()=>chatGPTReviewLink({stageId:'../../etc',edition:'pre',gender:'male',shotId:'bad'}));
  assert.throws(()=>chatGPTReviewLink({stageId:'c01-s04',edition:'pre',gender:'unknown',shotId:'c01-s04-m5'}));
 });
+
+test('Daily Free dispatch unavailable becomes a ChatGPT Images request, never an unapproved API fallback',()=>{
+ assert.equal(canOfferChatGPTHandoff('FREE_DAILY_DISPATCH_ALREADY_USED'),true);
+ assert.equal(canOfferChatGPTHandoff('NO_VERIFIED_FREE_ADAPTER'),true);
+ const q=makeChatGPTHandoff({reason:'NO_VERIFIED_FREE_ADAPTER',shot:{
+  stageId:'c20-s10',edition:'pre',gender:'female',shotId:'c20-s10-m1'
+ }});
+ assert.equal(q.providerTo,'ChatGPT Images (user-initiated; not OpenAI API)');
+ assert.equal(q.chatGPTReviewUrl,null);
+ assert.equal(q.actualChatGPTImagesGenerated,0);
+ assert.equal(q.formallyApproved,false);
+ assert.throws(()=>makeChatGPTHandoff({reason:'FREE_DAILY_DISPATCH_ALREADY_USED',shot:{
+  stageId:'c20-s10',edition:'pre',gender:'male',shotId:'c20-s09-m1'
+ }}));
+});
