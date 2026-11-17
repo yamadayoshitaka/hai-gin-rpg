@@ -46,7 +46,8 @@ assert.ok(battle.includes("currentOrder.textContent=intent.order;objective.textC
 assert.ok(battle.includes('label.userDataCurrentOrder.textContent=shortOrder'));
 assert.ok(battle.includes("label.userDataStrength.textContent=sum.n+'/'+sum.total"));
 assert.ok(battle.includes('label.userDataObjective.textContent=intent.purpose'));
-// Both armies use circular markers showing live counts; tapping an allied circle opens the action chooser.
+// Both armies retain live-count markers; a single tap selects a squad and its camera,
+// while a double tap zooms and a pending target tap resolves the target.
 assert.ok(battle.includes('label.userDataCurrentOrder.hidden=false'),
  'Status must remain legible inside the overhead callout circle');
 assert.ok(battle.includes('label.userDataObjective.hidden=true'));
@@ -59,8 +60,22 @@ assert.ok(battle.includes("[team===0?commandGroupName(id):'敵班','squadFixedSt
  'circle status labels the actual allied group and identifies enemy AI');
 assert.ok(battle.includes('[intent.order,\'\']'));
 assert.ok(battle.includes('[intent.purpose,\'\']'));
-assert.ok(battle.includes('else openSquadTactics(id);'),
- 'Tap on an allied circle opens the command/item chooser');
+const circleStart=battle.indexOf('function activateSquadLabel(id,team,');
+const circleEnd=battle.indexOf('function makeSquadLabel(',circleStart);
+assert.ok(circleStart>=0&&circleEnd>circleStart,'Current squad circle handler exists');
+const circle=battle.slice(circleStart,circleEnd);
+assert.match(circle,/if\\(pendingCircleTarget\\)\\{chooseCircleActionTarget\\(id,team\\);return;\\}/,
+ 'Target selection must retain its tap handler');
+assert.match(circle,/if\\(tap\\.doubleTap\\)\\{\\s*zoomToSquadMember\\(id,team\\);\\s*return;/,
+ 'Double tap must retain close-up');
+assert.match(circle,/selectOverviewSquad\\(team,id\\);/,
+ 'Single tap must select the squad');
+assert.match(circle,/pendingSquadCircleInfoTimer=setTimeout\\(/,
+ 'Single-tap camera change must wait for the double-tap window');
+assert.match(circle,/applyOverviewCamera\\('squad'\\)/,
+ 'Camera chooser must apply the selected squad perspective');
+assert.doesNotMatch(circle,/else openSquadTactics\\(id\\)/,
+ 'Retired per-squad command popup must not return');
 assert.ok(battle.includes('#allySquadRibbon,#enemySquadRibbon,#squadCircleInfo{display:none!important}'),
  'Sidebars and obsolete one-line status strip are retired');
 assert.ok(battle.includes('lockedStrategyPanel.hidden=true'),
@@ -99,4 +114,4 @@ assert.match(fallen.order,/軍師不在・追加命令不可/);
 const defeated=formatSquadIntent({mode:'defend',defeated:true});
 assert.equal(defeated.purpose,'目的：生存兵なし');
 
-console.log('PASS: natural voice game + single-tap circular squad markers, casualties and selected details');
+console.log('PASS: natural voice game + current squad camera selection, double-tap zoom, casualties and selected details');
