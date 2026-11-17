@@ -325,6 +325,91 @@ export function createSculpture(spec,detail='high'){
    mesh.userData.anatomicalLimb=true;
    return mesh;
  };
+ /**
+  * One anatomical skin for each cat leg (hip -> elbow/stifle -> ankle -> paw).
+  * Existing articulated pivots skin one continuous surface rather than
+  * stacking cylinders at moving joints.
+  */
+ const felineContinuousLimb=(leg,distal,toe,{fore=true,name='feline-continuous-limb'}={})=>{
+   if(!leg||!distal||!toe)throw Error('Feline limb requires three moving joints');
+   // The broad proximal rings remain inside the torso and the distal rings
+   // continue into the paw. No separate seam cover geometry is required.
+   const sections=fore?[
+     [.59,.022,.126,.158],[.43,.040,.185,.205],
+     [.27,-.020,.184,.188],[.13,-.065,.150,.152],
+     [.025,-.087,.129,.132],[-.115,-.083,.112,.115],
+     [-.255,-.020,.097,.111],[-.380,.057,.099,.112],
+     [-.479,.147,.112,.139],[-.551,.192,.119,.142],
+     [-.587,.205,.070,.100]
+   ]:[
+     [.59,-.208,.144,.182],[.43,-.153,.205,.223],
+     [.27,-.015,.204,.197],[.13,.128,.161,.152],
+     [.025,.168,.137,.142],[-.115,.132,.115,.119],
+     [-.255,.000,.099,.113],[-.380,-.109,.090,.106],
+     [-.479,.143,.109,.128],[-.551,.192,.118,.141],
+     [-.587,.210,.070,.102]
+   ];
+   const radial=detail==='source'?48:detail==='high'?32:20;
+   const steps=detail==='source'?6:detail==='high'?4:2;
+   const vertices=[],uv=[],indices=[],weights=[],boneIndices=[];
+   const smooth=t=>{const x=Math.max(0,Math.min(1,t));return x*x*(3-2*x);};
+   for(let row=0;row<sections.length-1;row++)
+     for(let step=0;step<steps;step++){
+       const t=smooth(step/steps),a=sections[row],b=sections[row+1];
+       const y=a[0]+(b[0]-a[0])*t,z=a[1]+(b[1]-a[1])*t;
+       const rx=(a[2]+(b[2]-a[2])*t)*.81;
+       const rz=(a[3]+(b[3]-a[3])*t)*.80;
+       const lower=smooth((.17-y)/.29);
+       const paw=smooth((-.35-y)/.22);
+       const w0=1-lower,w1=lower*(1-paw),w2=lower*paw;
+       for(let j=0;j<=radial;j++){
+         const theta=j/radial*2*Math.PI;
+         const muscle=1+.028*Math.cos(theta*3)*
+           Math.sin(Math.PI*(row+t)/(sections.length-1));
+         vertices.push(Math.cos(theta)*rx*muscle,y,
+           z+Math.sin(theta)*rz*muscle);
+         uv.push(j/radial,(row+t)/(sections.length-1));
+         boneIndices.push(0,1,2,0);
+         weights.push(w0,w1,w2,0);
+       }
+     }
+   const last=sections[sections.length-1];
+   for(let j=0;j<=radial;j++){
+     const theta=j/radial*2*Math.PI;
+     vertices.push(Math.cos(theta)*last[2]*.81,last[0],
+       last[1]+Math.sin(theta)*last[3]*.80);
+     uv.push(j/radial,1);
+     boneIndices.push(0,1,2,0);weights.push(0,0,1,0);
+   }
+   const bands=(sections.length-1)*steps;
+   for(let row=0;row<bands;row++)for(let j=0;j<radial;j++){
+     const a=row*(radial+1)+j,b=a+radial+1;
+     indices.push(a,b,a+1,a+1,b,b+1);
+   }
+   const geo=new THREE.BufferGeometry();
+   geo.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));
+   geo.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
+   geo.setAttribute('skinIndex',new THREE.Uint16BufferAttribute(boneIndices,4));
+   geo.setAttribute('skinWeight',new THREE.Float32BufferAttribute(weights,4));
+   geo.setIndex(indices);geo.computeVertexNormals();geo.computeBoundingSphere();
+   const bone0=new THREE.Bone(),bone1=new THREE.Bone(),bone2=new THREE.Bone();
+   bone0.name=name+'-scapula';bone1.name=name+'-elbow';
+   bone2.name=name+'-metapodial';
+   leg.add(bone0);distal.add(bone1);toe.add(bone2);
+   const skin=new THREE.SkinnedMesh(geo,material(tone.skin,
+     {rough:.86,metal:0},spec,'skin',detail));
+   skin.name=name;skin.castShadow=true;skin.receiveShadow=true;
+   skin.frustumCulled=false;
+   skin.userData.ownedGeometry=true;
+   skin.userData.anatomicalLimb=true;
+   skin.userData.felineContinuousSurface=true;
+   skin.userData.skinningBones=3;
+   skin.userData.jointTopology='welded-rings-smooth-three-bone-weights';
+   leg.add(skin);
+   root.updateMatrixWorld(true);
+   skin.bind(new THREE.Skeleton([bone0,bone1,bone2]));
+   return skin;
+ };
  /** Buried curved horn/ivory root with continuous ridged tapered skin. */
  const curvedHorn=(parent,shade,rootPoint,elbow,tip,radius,{name='beast-keratin'}={})=>{
    const geo=createRootedCreatureHornGeometry({
@@ -733,7 +818,7 @@ export function createSculpture(spec,detail='high'){
  };
  root.userData.detail=detail;
  return {root,pivots,group,sphere,rock,bone,spike,rootedSpike,seamHem,tube,bridge,
-   axialLoft,limbLoft,curvedHorn,foxPinna,recessCanineEyeSockets,recessedCanineAlmondEye,anatomicalLoft,fur,skinnedFur,bandage,fin,eyes,claws,ring,fine,colors};
+   axialLoft,limbLoft,felineContinuousLimb,curvedHorn,foxPinna,recessCanineEyeSockets,recessedCanineAlmondEye,anatomicalLoft,fur,skinnedFur,bandage,fin,eyes,claws,ring,fine,colors};
 }
 export function disposeMonsterSculpture(model){
  if(!model)return;
