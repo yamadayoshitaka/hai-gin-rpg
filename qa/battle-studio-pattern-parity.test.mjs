@@ -99,7 +99,10 @@ assert.match(game,/a\.outfit\.setHairVisible\(true\)/);
 assert.match(game,/next\.outfit\.setHairVisible\(false\)/);
 assert.match(game,/const STUDIO_GROOM_NEAR_MAX=8/);
 assert.match(game,/const STUDIO_GROOM_NEAR_CACHE_MAX=12/);
-assert.match(game,/const STUDIO_GROOM_NEAR_DISTANCE=28/);
+// The previous constant near-distance gate was replaced on main by a
+// stable camera-aware groom selector. Both enforce a bounded near cohort.
+assert.match(game,/(?:const STUDIO_GROOM_NEAR_DISTANCE=28|const studioGroomSelector=createStableBattleGroomSelector\(\{limit:STUDIO_GROOM_NEAR_MAX\}\))/,
+ 'either the original threshold or the new bounded groom selector must exist');
 assert.match(game,/生成器パターン /);
 assert.match(game,/生成器実髪 /);
 assert.match(game,/window\.getBattleStudioPatternReport/);

@@ -8,7 +8,7 @@ import * as THREE from 'three';
 import { COMBAT_OBJECT_SPECS } from './combat-action-spec.js?v=4.6.51';
 import {isMonsterSummonType} from './monster-summon-registry.js?v=natural-size-20261116';
 import {createAdoptedSpecialSummonRenderer} from './combat-creature-adopted-overlays.js?v=web-mesh-26-v1';
-import {createMonsterSummonRenderer} from './monster-summon-renderer.js?v=natural-size-20261116';
+import {createMonsterSummonRenderer} from './monster-summon-renderer.js?v=registered-wave1-20261117';
 import { buildCombatObjectGeometry, CREATURE_VISUAL_SPECS } from './combat-creature-geometry.js?v=4.5.20';
 import {subdivideDedicatedSource} from './creature-source-subdivision.js?v=masters-v1';
 import {creatureInstancePhase,creatureFlightHeight,creatureSize,creatureAttackProgress,mountedFlightSway,mountedFlightBaseHeight} from './combat-creature-performance.js?v=natural-size-20261116';

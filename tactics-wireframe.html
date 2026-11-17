@@ -1085,7 +1085,8 @@ import {StructureCollapseVfx} from './src/structure-collapse-vfx.js?v=4.4.34';
  import {createCreatureSoundRuntime} from './src/combat-creature-sounds.js?v=creature-voices-2';
 import {MONSTER_CATALOG} from './src/monster-catalog.js';
 import {battleUnitDisplayName} from './src/battle-unit-display-identity.js?v=monster-display-20261117';
-import {createMonsterModel} from './src/monster-geometry.js';
+import {createRegisteredBattleMonster}
+ from './src/battle-registered-monster-model.js?v=registered-bestiary-wave1-20261117';
  import {CREATURE_PERFORMANCE,riderSeatHeight,riderSeatLocalOffset,creatureFlightHeight,creatureSize,mountedFlightSway} from './src/combat-creature-performance.js?v=natural-size-20261116';
 const $=id=>document.getElementById(id);
 // Audio controls stay inside the existing battle menu; no new overlay buttons.
@@ -2735,6 +2736,9 @@ async function installBattleModels(){
  // variants deterministic from the common studio catalog.
  const activeHeroinePreset=currentHeroineStudioPreset();
  let installed=0,animated=0,dressed=0,outfitFailures=0,sculpted=0;
+ // Only the nearest few enemy actors use the high-fidelity registered
+ // model. Dense enemy ranks retain the original low LOD for stable FPS.
+ let registeredHighEnemies=0,registeredExternalEnemies=0;
   // Stagger asynchronous creation to avoid overwhelming mobile memory.
   for(let i=0;i<actors.length;i+=5){
   const batch=actors.slice(i,i+5);
@@ -2742,9 +2746,21 @@ async function installBattleModels(){
    try{
     if(a.monsterSpec){
      for(const child of [...a.root.children])if(child!==a.root.userData.ring)a.root.remove(child);
-     const monster=createMonsterModel(a.monsterSpec,{detail:'low'});
-     monster.traverse(part=>{if(part.isMesh){part.castShadow=true;part.receiveShadow=true;}});
-     a.root.add(monster);a.monsterModel=monster;
+     const highEligible=!['m005','m006'].includes(a.monsterSpec.id)&&
+       ['beast','feline','avian','reptile','aquatic'].includes(a.monsterSpec.family);
+     const detail=highEligible&&registeredHighEnemies<3?'high':'low';
+     if(detail==='high')registeredHighEnemies++;
+     const allowExternal=detail==='high'&&registeredExternalEnemies<1;
+     const monster=createRegisteredBattleMonster(a.monsterSpec,{
+       detail,allowExternal
+     });
+     if(monster.choice.externalSource)registeredExternalEnemies++;
+     monster.root.traverse(part=>{
+       if(part.isMesh){part.castShadow=true;part.receiveShadow=true;}
+     });
+     a.root.add(monster.root);
+     a.monsterModel=monster.root;
+     a.monsterRuntime=monster;
      installed++;dressed++;animated++;
      return;
     }
@@ -3433,7 +3449,14 @@ for(let team=0;team<2;team++)for(let i=0;i<TEAM_SIZE;i++){
   hp:Math.round(baseJob.hp*(1+Math.max(0,Math.min(.6,(Number(passive.defense)||0)-(Number(formationBuff.defense)||0))))),
   speed:Math.max(.5,baseJob.speed)
  }:null;
- const monsterId=storyRequest?.enemyMode==='monsters'&&team===1?storyRequest.enemyMonsterIds?.[i%storyRequest.enemyMonsterIds.length]:null;
+ // Explicit editor preview: one legitimate enemy of the selected catalog
+ // species appears in a normal test battle, without changing story spawns.
+ const selectedPreview=battleParams.get('monster');
+ const previewMonsterId=selectedPreview&&MONSTER_CATALOG.some(m=>m.id===selectedPreview)?
+   selectedPreview:null;
+ const monsterId=team===1&&i===0&&previewMonsterId?previewMonsterId:
+   storyRequest?.enemyMode==='monsters'&&team===1?
+     storyRequest.enemyMonsterIds?.[i%storyRequest.enemyMonsterIds.length]:null;
  const monsterSpec=monsterId?MONSTER_CATALOG.find(m=>m.id===monsterId)||null:null;
  const root=createSoldier(job,team),formation=TOWN_MODE?
  // Start the strategist on the clear town road instead of the forest edge.
@@ -10251,6 +10274,19 @@ function animate(){
     a.root.position.y=terrainY(a.root.position.x,a.root.position.z)+riderElevation(a,creatureVisualTime);
    if(!visual.visible)continue;
    const skirmishVisual=!massSim&&!TOWN_MODE?smoothSkirmishRenderPosition(a,paused?0:dt):null;
+  if(a.monsterRuntime&&visual.update){
+    const moving=massSim?Boolean(massUnit?.moving):
+      Boolean(a.nextCell||a.lastMovedAt!=null&&elapsed-a.lastMovedAt<.34);
+    const hit=massSim?Boolean(massUnit?.hitFlash>0):
+      Boolean(a.hitPoseUntil&&elapsed<a.hitPoseUntil);
+    const attacking=massSim?massUnit?.action==='attack':
+      Boolean(a.attackPoseUntil&&elapsed<a.attackPoseUntil);
+    // Native game actor and adoption preview now share the same action
+    // names and current authored monster animation code. Distant units
+    // do NOT run a source-quality shader, skinned GLB or additional FX.
+    a.monsterRuntime.update(creatureVisualTime,
+      hit?'hit':attacking?'attack':moving?'run':'idle');
+  }
   if(a.character){
     if(a.crowdSampling)continue;
     // Restore the unmodified clip pose before sampling the next frame. This
@@ -10295,8 +10331,7 @@ function animate(){
        (a.hitPoseUntil&&elapsed<a.hitPoseUntil)){}
      else requestMotion(a,'idle');
     }
-    if(visual.update){
-      a.character.update(paused&&!finished?0:visual.delta*cinematicPlaybackScale);
+    if(visual.update){a.character.update(paused&&!finished?0:visual.delta*cinematicPlaybackScale);
       a.masterHead?.update(visual.delta);
       applyCreatureRidingPose(a);
       // A moving fighter keeps their distance-synchronised feet; the arms

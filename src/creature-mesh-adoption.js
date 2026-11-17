@@ -9,10 +9,12 @@ import {WEB_CREATURE_MESH_SOURCES} from './creature-web-mesh-catalog.js';
 import {REAL_BODY_CANDIDATES,REAL_BODY_SUGGESTIONS} from './creature-real-body-candidates.js';
 
 export const MESH_ADOPTION_STORAGE_KEY='hai-gin.creature-mesh-adoption.v1';
-// Shipped visual baseline. These three distinct actors share the same source
-// mesh, but keep separate reversible local overrides.
+// The user-approved m001 wolf-king is the locally generated procedural 3D
+// model. Do not silently replace it with an unverified remote r-wolf GLB on
+// enemy spawn or summon. Dedicated ordinary 'wolf' keeps its previous
+// shipped look; local deliberate selections still override any default.
 export const DEFAULT_CREATURE_MESHES=Object.freeze({
- m001:'r-wolf',summon_m001:'r-wolf',wolf:'r-wolf'
+ wolf:'r-wolf'
 });
 export const NONHUMAN_MONSTER_IDS=Object.freeze(
  MONSTER_CATALOG.filter(m=>!HUMAN_MONSTER_IDS.includes(m.id)).map(m=>m.id));
