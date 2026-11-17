@@ -299,6 +299,20 @@ def main() -> None:
             content = content.replace("town-visit-20261110", stamp)
             file.write_text(content, encoding="utf-8")
 
+    # Stamp the actual tactical HTML, not merely release.json: public QA and
+    # players can distinguish a new source commit from a stale Pages artifact.
+    tactics_page = out / "tactics-wireframe.html"
+    if tactics_page.exists():
+        tactics_html = tactics_page.read_text(encoding="utf-8")
+        if "<head>" not in tactics_html:
+            raise RuntimeError("Missing <head> in tactical battle page")
+        tactics_html = tactics_html.replace(
+            "<head>",
+            '<head><meta name="hai-gin-pages-sha" content="' + release_sha + '">',
+            1,
+        )
+        tactics_page.write_text(tactics_html, encoding="utf-8")
+
     (out / ".nojekyll").touch()
     release = {
         "sha": os.environ.get("GITHUB_SHA", "local"),
