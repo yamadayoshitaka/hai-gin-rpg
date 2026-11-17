@@ -93,7 +93,7 @@ export function createAnatomicalShoulderCaps({root,dressed,bones,metal,edge,qual
   const left=bonePos(bones,'upperarm_l'),right=bonePos(bones,'upperarm_r');
   const span=left.distanceTo(right);
   if(!(span>.18&&span<1.1))throw Error('肩幅を取得できません: '+span);
-  const radius=THREE.MathUtils.clamp(span*.265,.075,.135);
+  const radius=THREE.MathUtils.clamp(span*.245,.075,.118);
   const rot=dressed.getWorldQuaternion(new THREE.Quaternion());
   const forward=new THREE.Vector3(0,0,1).applyQuaternion(rot).normalize();
   const lateral=new THREE.Vector3(1,0,0).applyQuaternion(rot).normalize();
@@ -102,8 +102,11 @@ export function createAnatomicalShoulderCaps({root,dressed,bones,metal,edge,qual
   for(const side of ['l','r']){
     const sign=side==='l'?-1:1,bone=bones.get('upperarm_'+side);
     const anchor=desiredAnchor('shoulder',side,bones)
-      .addScaledVector(lateral,sign*radius*.06)
-      .addScaledVector(forward,radius*.34);
+      .addScaledVector(lateral,sign*radius*.24)
+      .addScaledVector(forward,radius*.29)
+      // Raise the outer cap above the actual shoulder/sleeve surface.
+      // Placing a half-sphere at the bone pivot buried its rim in fabric.
+      .add(new THREE.Vector3(0,radius*.46,0));
     anchors[side]=anchor.toArray();
     const add=(name,geometry,material,raise=0)=>{
       const mesh=new THREE.Mesh(geometry,material);
@@ -114,7 +117,7 @@ export function createAnatomicalShoulderCaps({root,dressed,bones,metal,edge,qual
       mesh.castShadow=true;mesh.receiveShadow=true;mesh.frustumCulled=false;
       mesh.userData={equipmentClass:'armor',equipmentSlot:'shoulder',
         equipmentMaterial:name.includes('rim')?'metal-trim':'plate-steel',
-        equipmentModel:'anatomical-pauldron-v78',
+        equipmentModel:'anatomical-pauldron-v79',
         attachmentSide:side,attachedJoint:'upperarm_'+side,
         originalRearSleeveSuppressed:true};
       root.updateMatrixWorld(true);
@@ -123,20 +126,21 @@ export function createAnatomicalShoulderCaps({root,dressed,bones,metal,edge,qual
       return mesh;
     };
     const cap=add('armor-shoulder-fitted-cap-'+side,
-      new THREE.SphereGeometry(radius,radial,segments,0,Math.PI*2,0,Math.PI*.59),
+      new THREE.SphereGeometry(radius,radial,segments,0,Math.PI*2,0,Math.PI*.49),
       metal,-radius*.03);
-    cap.scale.multiply(new THREE.Vector3(1.04,.78,1.00));
+    cap.scale.multiply(new THREE.Vector3(1.04,.61,1.00));
     // A narrow fitted lower lip creates the layered-steel silhouette without
     // the old whole-arm cylinder or a second large, hollow shoulder block.
     const rim=add('armor-shoulder-fitted-rim-'+side,
       new THREE.SphereGeometry(radius*1.016,radial,quality==='battle'?3:5,
-        0,Math.PI*2,Math.PI*.49,Math.PI*.11),edge,-radius*.03);
+        0,Math.PI*2,Math.PI*.41,Math.PI*.085),edge,-radius*.03);
     rim.scale.copy(cap.scale);
   }
   root.updateMatrixWorld(true);
   return {objects:created,anchors,radius,
-    diagnostics:{kind:'bone-mounted-curved-shoulder-v78',sideCounts:{l:2,r:2},
-      oldSourceRigidShoulderTubesVisible:0,shoulderDistance:span}};
+    diagnostics:{kind:'bone-mounted-curved-shoulder-v79',sideCounts:{l:2,r:2},
+      oldSourceRigidShoulderTubesVisible:0,shoulderDistance:span,
+      exteriorCrownRelief:radius*.46,outerLateralRelief:radius*.24}};
 }
 
 function textureGeometry(geometry){
@@ -427,7 +431,7 @@ export async function attachSegmentedArmor({root,dressed,sex,textures,characterM
     root.updateMatrixWorld(true);
     return {...depthOffsets};
   }
-  root.userData.armor={variant:'plate',pieceCount:created.length,sourceTrouserLegMeshesSkipped,sourceBootShaftsSkipped,suppressedRigidShoulderMeshes,scale,slots:[...centers.keys()],helmetFit,partAxes,legSideCounts,shoulderSideCounts:fittedShoulders.diagnostics.sideCounts,shoulderPlacement:'bone-mounted-curved-shoulder-v78'};
+  root.userData.armor={variant:'plate',pieceCount:created.length,sourceTrouserLegMeshesSkipped,sourceBootShaftsSkipped,suppressedRigidShoulderMeshes,scale,slots:[...centers.keys()],helmetFit,partAxes,legSideCounts,shoulderSideCounts:fittedShoulders.diagnostics.sideCounts,shoulderPlacement:'bone-mounted-curved-shoulder-v79'};
   return {objects:created,materials,setDepthOffsets,depthOffsets,
     diagnostics:{armorPieces:created.length,sourceTrouserLegMeshesSkipped,sourceBootShaftsSkipped,armorScale:scale,armorSlots:[...centers.keys()],helmetFit,legSideCounts,
       partAxes,shoulderSideCounts:fittedShoulders.diagnostics.sideCounts,
