@@ -6,7 +6,7 @@ import {clipStudioFaceBustPreservingSurface,restoreStudioFaceSurfaceQuality,
  sampleStudioFacePigment,smoothStudioFaceNormals,
  studioAnatomicalSeamY,taperStudioLowerBustBelowChin} from './studio-face-quality-v56.js?v=60';
 import {createCharacter} from './character-system/shared-character-runtime.js?v=4.6.36';
-import {buildRiggedJobOutfit} from './character-system/rigged-outfit-runtime.js?v=20261117-rear-armor-mantle1';
+import {buildRiggedJobOutfit} from './character-system/rigged-outfit-runtime.js?v=20261117-cape-rear-v74';
 import {loadJobMotionMap} from './character-system/job-motion-source.js?v=4.6.36';
 import {measureHeadLocalBounds} from './character-system/hair-attachment-runtime.js?v=4.4.89';
 import {createHeroineBattleActionVfx} from './heroine-battle-action-vfx.js?v=40';
@@ -979,7 +979,7 @@ export async function createRealBattleOutfitStudio({scene,faceModel,getFaceModel
    nativeCommand=null;nativeClip=null;
    await playAction(currentAction);
    collarFitDirty=true;
-   onStatus('戦闘の既存衣装を反映：'+chosen.label+'。顔と髪は独立メッシュです。');
+   onStatus('戦闘衣装 v74：'+chosen.label+'／背面鎧 '+(clothing.diagnostics.rearCuirassPresent?'あり':'対象外')+'／主人公マント '+(clothing.diagnostics.heroMantlePresent?'あり':'なし')+'。');
   }catch(error){
    clothing?.dispose();fresh.dispose();
    throw error;
@@ -1128,6 +1128,11 @@ export async function createRealBattleOutfitStudio({scene,faceModel,getFaceModel
   nativeCommand,nativeClip,availableActionCount:availableActions().length,
   garment:chosenOutfit().label,bodyShapeId,ageBand:ageBandId,bodyType:bodyTypeId,
   headReport,headFit,proportions,finishReport,
+  wardrobeRevision:'v74-cape-rear',
+  heroMantlePresent:!!outfit?.diagnostics?.heroMantlePresent,
+  heroMantleMeshPresent:!!outfit?.root?.getObjectByName('hero-protagonist-draped-mantle'),
+  heroMantleVisible:!!outfit?.root?.getObjectByName('hero-protagonist-draped-mantle')?.visible,
+  rearCuirassPresent:!!outfit?.diagnostics?.rearCuirassPresent,
   sourceTrousers:outfit?.presentation?.().useSourceSkinnedLegs||false,
   retainedLegAnatomy:outfit?.diagnostics?.studioPreserveLegAnatomy||false,
   swordsmanVisibleLegAnatomy:outfit?.diagnostics?.studioVisibleLegAnatomy||false,
