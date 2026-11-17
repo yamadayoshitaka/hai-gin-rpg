@@ -1,0 +1,79 @@
+name: Manga 1-20 sequential missing image batch
+on:
+  workflow_dispatch:
+  issues:
+    types: [opened]
+  pull_request:
+    paths:
+      - 'scripts/story-sequential-missing-batch.mjs'
+      - 'qa/story-sequential-missing-batch.test.mjs'
+      - '.github/workflows/story-sequential-missing-batch.yml'
+      - 'scripts/manual-hourly-batch-dispatch.mjs'
+permissions:
+  contents: read
+  actions: write
+concurrency:
+  group: manga-sequential-missing-queue
+  cancel-in-progress: false
+jobs:
+  manga:
+    if: >-
+      github.event_name != 'issues' ||
+      (github.event.issue.user.login == github.repository_owner &&
+       github.event.issue.title == '漫画やって')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Build canonical and actual-byte-checked queue from stage 1 to stage 200
+        run: |
+          node --check scripts/story-sequential-missing-batch.mjs
+          node scripts/story-sequential-missing-batch.mjs --max 20
+          node qa/story-sequential-missing-batch.test.mjs
+      - name: Review first missing stage and safely reuse existing production paths
+        if: github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CF_FREE: ${{ vars.CLOUDFLARE_FREE_PLAN_CONFIRMED }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          enabled=$(jq -r .enabled qa-reports/story-sequential-missing/next.json)
+          stage=$(jq -r '.selected[0].stageId // ""' qa-reports/story-sequential-missing/next.json)
+          if [ "$enabled" != true ] || [ -z "$stage" ]; then
+            echo "Anime switch off or nothing pending; no generation" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          if [[ "$stage" =~ ^c01-s0[1-4]$ ]]; then
+            gh workflow run story-archive-reuse.yml --ref main
+            echo "Requested first-four-stage exact archive reuse, not fabricated generation." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          if [[ "$stage" =~ ^c01-s(0[5-9]|10)$ ]]; then
+            if [ "$CF_FREE" != true ]; then
+              echo "Free-provider confirmation missing; real generation blocked." >> "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+            day=$(date -u +%Y-%m-%d)
+            prior=$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/story-chapter1-free-complete-draft-production.yml/runs?per_page=100" |
+              jq --arg day "$day" '[.workflow_runs[] | select(.event=="workflow_dispatch" or .event=="push") |
+              select(.created_at | startswith($day))] | length')
+            if [ "$prior" -gt 0 ]; then
+              echo "Today already used the single Cloudflare Free production dispatch; no duplicate call." >> "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+            gh workflow run story-chapter1-free-complete-draft-production.yml --ref main
+            echo "Triggered existing FREE Chapter 1 real draft production; not approval/deployment." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Stage $stage: full 200-stage queue exists, but this chapter lacks a verified Free generator adapter; generation=0." >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: manga-sequential-missing-200-stage-queue-${{ github.run_id }}
+          path: qa-reports/story-sequential-missing/
+          if-no-files-found: warn
+          retention-days: 14
