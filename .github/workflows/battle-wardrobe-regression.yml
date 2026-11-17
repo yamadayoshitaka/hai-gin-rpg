@@ -9,6 +9,7 @@ on:
       - 'src/character-system/battle-torso-lining.js'
       - 'src/character-system/battle-visual-pipeline.js'
       - 'qa/physical-back-panel-removal.test.mjs'
+      - 'qa/hero-back-armor-mantle.test.mjs'
       - 'src/character-system/garment-coverage-runtime.js'
       - 'qa/garment-coverage-regression.test.mjs'
       - 'src/character-system/fitted-cloth-runtime.js'
@@ -27,6 +28,7 @@ on:
       - 'src/character-system/battle-torso-lining.js'
       - 'src/character-system/battle-visual-pipeline.js'
       - 'qa/physical-back-panel-removal.test.mjs'
+      - 'qa/hero-back-armor-mantle.test.mjs'
       - 'src/character-system/garment-coverage-runtime.js'
       - 'qa/garment-coverage-regression.test.mjs'
       - 'src/character-system/fitted-cloth-runtime.js'
@@ -60,5 +62,6 @@ jobs:
           node qa/battle-outfit-integration.test.mjs
           node qa/garment-coverage-regression.test.mjs
           node qa/physical-back-panel-removal.test.mjs
+          node qa/hero-back-armor-mantle.test.mjs
           node qa/battle-visual-pipeline.test.mjs
           node qa/battle-scalp-cloth-coverage.test.mjs
