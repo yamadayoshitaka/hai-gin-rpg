@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {createFastFaceSurfaceSampler} from './face-feature-meshes.js?v=20261118-realism-lash-lip-v2';
+import {createFastFaceSurfaceSampler} from './face-feature-meshes.js?v=20261118-face-hair-fidelity-v70';
 import {getWigStyle,DEFAULT_WIG_STYLE_ID,WIG_BASE_VOLUME_PROFILES,WIG_SILHOUETTE_PROFILES} from './face-wig-styles.js?v=44';
 import {makeStyleSpecificHair} from './face-wig-ornaments-v49.js?v=20261118-braid-root-v1';
 import {catalogHairGroom,groomGuideOffset} from './face-hair-groom-v50.js?v=20261118-soft-tips-v1';
@@ -1195,7 +1195,9 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
      across.normalize();
      const t=j/segments;
      const rootFade=Math.min(1,t*7);
-     const shell=Math.sin((lane+1)*2.39996323+i*.277)*d.x*.0012*rootFade;
+     // Additional static fibre curl follows the existing scalp-rooted guides.
+     const shell=(Math.sin((lane+1)*2.39996323+i*.277)*.0012+
+      Math.sin(t*12.5+i*.37+lane*1.31)*.00033)*d.x*rootFade;
      const offset=radius*(2*laneAt)*rootFade;
      const width=Math.max(d.x*.00008,
       half*.12/fiberMultiplier)*(1-.94*Math.pow(t,3));
@@ -1203,7 +1205,8 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
       const q=p.clone().addScaledVector(across,offset+sign*width)
        .addScaledVector(normal,shell);
       coords.push(q.x,q.y,q.z);
-      const c=(.86+.16*((lane+i)%9)/9)*(1-.12*t);
+      const c=(.84+.17*((lane+i)%9)/9)*(1-.09*t)+
+       .023*Math.sin(t*9+i*.13+lane*.67);
       shades.push(colorSeed.r*c,colorSeed.g*c,colorSeed.b*c);
      }
     }
@@ -1238,6 +1241,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  const styled=makeStyleSpecificHair(styleId,box,rootColor,{scalpCandidates});
  styled.meshes.forEach(mesh=>root.add(mesh));
  root.userData.v49StyledHair=styled.type;
+  root.userData.v70FineFibreFlow=true;
  root.userData.v49StyledHairTriangles=styled.triangleCount;
  // Keep the measured scalp anchor before consolidation removes source meshes.
  // Never infer attachment success merely from the selected hairstyle ID.
