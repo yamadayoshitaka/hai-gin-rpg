@@ -24,7 +24,7 @@ const ids=['m011','m012','m013','m014'];
    });
    try{
     await page.goto('http://127.0.0.1:8765/monster-manager.html?monster='+id+
-     '&v=phoenix-diamond-scutes-v18-20261118',
+     '&v=phoenix-feather-hands-v19-20261118',
      {waitUntil:'domcontentloaded',timeout:90000});
     await page.waitForFunction(expected=>{
      const v=window.__monsterQualityQA?.();
@@ -41,9 +41,13 @@ const ids=['m011','m012','m013','m014'];
     if(id==='m013'){
      const shape=state.phoenix;
      if(!shape?.enlargedBody||shape.torsoRadiusX<.36||
-       shape.torsoRadiusY<.46||shape.bellyScaleMultiplier<7||
-       shape.bodyScaleWidth<.16||shape.visibleFaceScales<90||
-       shape.faceScaleWidth<.06||!shape.thighSeparated||
+       shape.torsoRadiusY<.46||shape.bellyScaleMultiplier<11||
+       shape.bodyScaleWidth<.25||shape.visibleFaceScales<90||
+       shape.faceScaleWidth<.09||!shape.thighSeparated||
+       shape.thighRadius<.25||!shape.featherHands||!shape.independentArms||
+       !shape.shortBeak||shape.beakLength>.70||
+       !Array.isArray(shape.featherHandDigits)||
+       !shape.featherHandDigits.every(count=>count===3)||
        !shape.realKnees||!shape.thighMuscles||
        !shape.floatingWingBandsRemoved||
        !shape.thighScales||!shape.shankScales||!shape.toeScales||
