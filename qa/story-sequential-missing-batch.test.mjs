@@ -26,7 +26,8 @@ for(let chapter=1;chapter<=20;chapter++){
    if(chapter===1&&stage<=4)
     assert.equal(row.policy,'EXACT_OLD_ART_REUSE_ALLOWED');
    else assert.equal(row.policy,'NEW_ORIGINAL_REQUIRED');
-   assert(['REGISTERED_REAL_NOT_P0','BROKEN_REGISTRATION','MISSING_ART'].includes(row.status));
+   assert(['REGISTERED_REAL_NOT_P0','BROKEN_REGISTRATION','MISSING_ART',
+    'PENDING_CHARACTER_IDENTITY_REVIEW'].includes(row.status));
   }
  }
 }
@@ -34,7 +35,21 @@ const pending=q.entries.filter(row=>row.status!=='REGISTERED_REAL_NOT_P0');
 assert.equal(q.pending,pending.length);
 assert.equal(q.registered+q.pending,1760);
 assert.equal(q.firstMissing,pending[0]?.key??null);
-assert.deepEqual(q.selected,q.enabled?pending.slice(0,20):[]);
+assert.deepEqual(q.selected,q.enabled?pending.filter(row=>
+ row.status!=='PENDING_CHARACTER_IDENTITY_REVIEW').slice(0,20):[]);
+assert.equal(q.heldCandidateCount,
+ pending.filter(row=>row.status==='PENDING_CHARACTER_IDENTITY_REVIEW').length);
+assert.equal(q.firstActionable,
+ pending.find(row=>row.status!=='PENDING_CHARACTER_IDENTITY_REVIEW')?.key??null);
+const held= q.entries.find(row=>row.key==='c01-s02|pre|c01-s02-m15|male');
+assert.equal(held?.status,'PENDING_CHARACTER_IDENTITY_REVIEW',
+ 'The real ChatGPT m15 WebP exists on GitHub but is not character-verified.');
+assert.equal(held?.candidateSha256,'1ea96c6e634f94fe890368935503ad24e8ec43c6f7e24871b5b619c5aa1abf0c');
+assert(held.candidateAsset.startsWith('./assets/story/chatgpt-candidates/'));
+assert(!q.selected.some(row=>row.key===held.key),
+ 'Do not request duplicate ChatGPT generation of this already-real image');
+assert.equal(q.registered+q.pending,1760,
+ 'Held does not count as registered art until character identity is verified');
 assert.equal(q.generatedThisRun,0);
 assert.equal(q.provisionallyRegisteredThisRun,0);
 assert.equal(q.formalP0ThisRun,0);
