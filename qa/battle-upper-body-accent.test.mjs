@@ -1,0 +1,23 @@
+import assert from 'node:assert/strict';
+import {battleCombatAccent,createBattleUpperBodyAccent} from '../src/character-system/battle-upper-body-accent.js';
+assert.equal(battleCombatAccent('attack',.5,true).weight,1);
+assert.equal(battleCombatAccent('attack',.5,false).weight,0);
+assert.equal(battleCombatAccent('idle',.5,true).weight,0);
+assert.ok(battleCombatAccent('skill',.5,true).left<0);
+assert.ok(battleCombatAccent('attack',.5,true).right>0);
+assert.equal(battleCombatAccent('attack',1,true).weight,Math.sin(Math.PI));
+const mock=()=>{
+ const quaternion={value:0,clone(){return {value:this.value,copy(v){this.value=v.value;return this;}}},copy(v){this.value=v.value;return this;}};
+ return {quaternion,rotateX(n){quaternion.value+=n},rotateY(n){quaternion.value+=n}};
+};
+const left=mock(),right=mock(),chest=mock();
+const bones={upperarm_l:left,upperarm_r:right,spine_02:chest};
+const overlay=createBattleUpperBodyAccent({getObjectByName:n=>bones[n]});
+assert.equal(overlay.boneCount,3);
+overlay.apply({action:'attack',progress:.5,moving:true});
+assert.ok(right.quaternion.value>0);
+overlay.restore();
+assert.equal(right.quaternion.value,0,'must not accumulate an angle after clip update');
+overlay.apply({action:'attack',progress:.5,moving:true,mounted:true});
+assert.equal(overlay.active,false,'mounted pose must remain authoritative');
+console.log('battle upper body accent: OK');

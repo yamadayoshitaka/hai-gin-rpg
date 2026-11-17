@@ -320,8 +320,8 @@ body[data-circle-target] #destinationPrompt{border:2px solid #ffed9c;box-shadow:
 <div id="vitalsPanel" hidden role="region" aria-label="戦況HP・MP一覧"><div class="vitalsHead"><strong>部隊別 HP / MP（⏸ 一時停止中）</strong><button id="vitalsClose" aria-label="戦況を閉じる">✕ 閉じる</button></div><div id="vitalsOverview"></div><div class="vitalsFilters"><label>軍<select id="vitalsTeam"><option value="0">味方</option><option value="1">敵</option></select></label><label>部隊<select id="vitalsSquad"><option value="all">全部隊</option></select></label><label>職業<select id="vitalsJob"><option value="all">全職業</option></select></label></div><div class="squadHelp" id="vitalsSquadStatus">部隊を選ぶと個人のHPとMPを確認できます。</div><button id="vitalsHealing" disabled>✚ この部隊へ回復支援を要請</button><div id="vitalsJobSummary"></div><div id="vitalsIndividuals"></div><div class="vitalsPages"><button id="vitalsPrev">◀ 前</button><span id="vitalsPageLabel">1 / 1</span><button id="vitalsNext">次 ▶</button></div></div>
 <button id="battleMenuToggle" aria-expanded="false">☰ メニュー</button>
 <div id="teamLegend" aria-label="陣地識別色"><span class="ally">■ 味方陣地・西</span><span class="enemy">■ 敵陣地・東</span><span>▣ 中立帯</span></div>
-<div id="battleTopDock" aria-label="戦況・戦死者・性能計測"><div id="topRadarSlot"></div><div id="topBattleInfo"><div id="battleTopRow"><div id="topMenuSlot"></div><div id="topTeamsSlot"></div><div id="topQuickActions"><button id="topStrategy" type="button" aria-label="戦闘を停止して班・個別の作戦を指示">⚔ 作戦</button><button id="topBgm" aria-label="BGMと効果音を切り替える">♪ BGM</button><button id="topSurrender" aria-label="降参を確認する">🏳 降参</button></div></div><div id="battleCasualties" aria-live="polite"><span class="allyLoss">味方戦闘不能 <b id="allyCasualties">0/50</b>人</span><span class="enemyLoss">敵戦闘不能 <b id="enemyCasualties">0/50</b>人</span></div><div id="topPerformanceSlot"></div><div id="topStructureSlot"></div></div></div>
-<div id="battleMenu" hidden aria-label="ゲームメニュー"><strong>戦闘メニュー</strong><div class="menuLine" id="armyScaleSlot"></div><div class="menuLine" id="menuSoundSlot"></div><div class="menuLine" id="menuPauseSlot"></div><div class="menuLine" id="lockedSquadStrategies" aria-label="現在の隊列作戦（開戦後変更不可）"></div><div class="menuLine menuDisplayOptions retiredRibbonSettings"><strong>左右の隊列ラベル</strong><label><input id="showAllySquadRibbon" type="checkbox" checked> 味方ラベル</label><label><input id="showEnemySquadRibbon" type="checkbox" checked> 敵ラベル</label></div><div class="menuLine menuDisplayOptions"><label><input id="showAllSquadLeaderLines" type="checkbox"> 全隊の引き出し線を表示（通常は選択した隊のみ）</label></div><div class="menuLine menuDisplayOptions"><strong>上部ボタンの表示</strong><label><input id="showTopBgm" type="checkbox" checked> BGM</label><label><input id="showTopSurrender" type="checkbox" checked> 降参</label></div><div class="menuLine"><label for="corpseLifetime">死体の表示（最大100体）</label><select id="corpseLifetime" aria-label="死体が消えるまでの時間"><option value="30">30秒</option><option value="60" selected>60秒</option><option value="120">120秒</option><option value="never">消滅しない</option></select></div><small>作戦は青い部隊名から選択。分隊別に敵・地図・オブジェクトを指定できます。</small><div class="menuLine" id="menuBridgeSlot"></div><div class="menuLine"><button id="surrender">🏳 降参する</button></div></div>
+<div id="battleTopDock" aria-label="戦況・戦死者・性能計測"><div id="topRadarSlot"></div><div id="topBattleInfo"><div id="battleTopRow"><div id="topMenuSlot"></div><div id="topTeamsSlot"></div><div id="topQuickActions"><button id="topStrategy" type="button" aria-label="戦闘を停止して班全体の推奨作戦を選ぶ" title="現在の部隊・地形に合う作戦を表示">★ 推奨</button><button id="topBgm" aria-label="BGMと効果音を切り替える">♪ BGM</button><button id="topSurrender" aria-label="降参を確認する">🏳 降参</button></div></div><div id="battleCasualties" aria-live="polite"><span class="allyLoss">味方戦闘不能 <b id="allyCasualties">0/50</b>人</span><span class="enemyLoss">敵戦闘不能 <b id="enemyCasualties">0/50</b>人</span></div><div id="topPerformanceSlot"></div><div id="topStructureSlot"></div></div></div>
+<div id="battleMenu" hidden aria-label="ゲームメニュー"><strong>戦闘メニュー</strong><div class="menuLine" id="armyScaleSlot"></div><div class="menuLine" id="menuSoundSlot"></div><div class="menuLine" id="menuPauseSlot"></div><div class="menuLine" id="lockedSquadStrategies" aria-label="現在の隊列作戦（開戦後変更不可）"></div><div class="menuLine menuDisplayOptions retiredRibbonSettings"><strong>左右の隊列ラベル</strong><label><input id="showAllySquadRibbon" type="checkbox" checked> 味方ラベル</label><label><input id="showEnemySquadRibbon" type="checkbox" checked> 敵ラベル</label></div><div class="menuLine menuDisplayOptions"><label><input id="showAllSquadLeaderLines" type="checkbox"> 全隊の引き出し線を表示（通常は選択した隊のみ）</label></div><div class="menuLine menuDisplayOptions"><strong>上部ボタンの表示</strong><label><input id="showTopBgm" type="checkbox" checked> BGM</label><label><input id="showTopSurrender" type="checkbox" checked> 降参</label></div><div class="menuLine"><label for="corpseLifetime">死体の表示（最大100体）</label><select id="corpseLifetime" aria-label="死体が消えるまでの時間"><option value="30">30秒</option><option value="60" selected>60秒</option><option value="120">120秒</option><option value="never">消滅しない</option></select></div><small>分隊は位置の選択・確認のみです。作戦と対象は班全体へ指示します。</small><div class="menuLine" id="menuBridgeSlot"></div><div class="menuLine"><button id="surrender">🏳 降参する</button></div></div>
 <div id="squadTactics" hidden aria-label="部隊の号令・行き先"><div class="tacticsHeading"><strong id="squadTacticsName">部隊を選択</strong><button id="squadInspect">🔍 近景</button><button id="squadTacticsClose">✕ 戻る</button></div><div id="squadTypeStatus">編成タイプは固定</div>
 <div id="squadActiveOrder" style="font-weight:800;color:#8be0ff;margin-top:6px">現在の号令：自動行動</div>
 <small id="squadOrderStatus">現在の目的：自動迎撃</small><div class="tacticsActions"><button id="squadOrderChoice">📯 作戦</button><button id="squadDestination" hidden aria-hidden="true" tabindex="-1">📍 行き先</button><button id="squadStrategistWarp" hidden>✨ 軍師ワープ</button><button id="squadMissionChoice" hidden aria-hidden="true" tabindex="-1">⚑ 命令</button><button id="squadDetails">📊 HP</button></div><div id="squadTacticsOrders" hidden><strong>一時的な号令（編成は変更されません）</strong><select id="squadTacticalCommand" aria-label="部隊への号令"><option value="">号令を選択</option><option value="charge">⚔ 突撃</option><option value="defend">🛡 守備</option><option value="hold">⏸ 待機</option><option value="retreat">↘ 退却</option></select><div id="squadTacticsCommanderSlot"></div></div><div id="squadTacticsMissions" hidden aria-hidden="true"><strong>部隊ごとの作戦目標</strong><select id="squadMission" aria-label="作戦命令"><option value="">命令を選択</option><option value="destroy_bridge">🌉 橋を破壊</option><option value="burn_tree">🔥 木を焼き払う</option><option value="burn_building">🔥 建物を焼き払う</option><option value="demolish_structure">🧨 障害物を破壊</option><option value="repair_structure">🛠 建物・橋を修理</option><option value="extinguish_fire">💧 火災を消火</option><option value="eliminate_squad">⚔ 指定敵部隊の全滅</option><option value="eliminate_commander">♟ 敵軍師を打ち取れ</option><option value="retreat">↩ 後退</option><option value="clear">× 命令解除</option></select><small>対象をタップして輪郭を表示し、「確定」を押すと命令します。</small></div></div>
@@ -850,7 +850,7 @@ body.compact-command-dock.squad-closeup #enemySquadRibbon{display:none!important
 <button id="loadingStart" type="button" hidden style="font:bold 17px system-ui;padding:13px 17px;border:2px solid #eacb87;background:#245d7a;color:#fff;border-radius:10px;margin:12px auto;min-height:54px">♪ 音楽を有効にして開戦</button>
 <button id="loadingSkipAudio" type="button" hidden style="font:12px system-ui;padding:9px;border:1px solid #92a5bb;background:#132a3b;color:#c9d8e5;border-radius:8px;margin:4px auto">音声なしで開戦</button></div></div><div id="runtimeError" style="display:none;position:fixed;top:65px;left:8px;right:8px;z-index:30;padding:10px;background:#631f28;color:#fff;border:1px solid #ff9d9d;border-radius:8px;font-size:12px;white-space:pre-wrap"></div><script>function showRuntimeError(message){const el=document.getElementById('runtimeError');if(el){el.style.display='block';el.textContent='実行エラー: '+message}const loading=document.getElementById('battleLoading');if(loading&&!loading.hidden){document.getElementById('loadingStage').textContent='ゲームの準備に失敗しました';const detail=document.getElementById('loadingError');detail.hidden=false;detail.textContent=String(message);document.getElementById('loadingRetry').hidden=false}}window.addEventListener('error',e=>showRuntimeError((e.message||'スクリプトの読み込みに失敗')+'\n'+(e.filename||'')+':'+(e.lineno||'')));window.addEventListener('unhandledrejection',e=>showRuntimeError(e.reason?.stack||e.reason?.message||String(e.reason)));</script><script type="module">
 import {normalizeArmyGroup,battleGroupMembers} from './src/army-groups.js';
-import {createTargetedStrategyUi} from './src/targeted-strategy-runtime.js?v=20261116-highlight1';
+import {createTargetedStrategyUi} from './src/targeted-strategy-runtime.js?v=20261117-recommend2';
 import {createBattleObjectiveCheckpoints} from './src/battle-objective-checkpoints.js?v=20261116-team3';
 import {BATTLE_PLAN_PRESETS} from './src/battle-plan-recommendations.js?v=20261116';
 import {STRATEGY_METHODS} from './src/three-step-strategy-catalog.js';
@@ -872,7 +872,7 @@ import {TACTICAL_STRATEGIES,TACTICAL_ORDERS,orderEffect,strategyEffect} from './
 import {coreVictoryReward,territoryVictoryReward,verifiedBattleLoot} from './src/battle-victory-rewards.js?v=2.2';
 import {CAMPAIGN_STAGE_BY_ID} from './src/campaign-stage-plan.js';
 import {TERRITORIES} from './src/story-campaign.js';
-import {installBattleTacticalUI,createPreBattleTacticalSummary} from './src/tactical-command-battle-ui.js?v=army-groups-1';
+import {installBattleTacticalUI,createPreBattleTacticalSummary} from './src/tactical-command-battle-ui.js?v=20261117-recommend2';
 import {describeSquadOrder,describeCommanderBuff} from './src/battle-order-message.js?v=4.6.40';
 import {recommendBattleTactics} from './src/battle-quick-recommendation.js?v=4.6.43';
 import {chooseAutoSquadItem} from './src/battle-auto-item-policy.js?v=1';
@@ -1030,7 +1030,7 @@ import {batchStaticStageDecorations} from './src/stage-static-instancing.js?v=wo
 import {batchStaticBuildingShells} from './src/stage-building-instancing.js?v=2';
 import {cameraSegmentHitsBox,selectCameraOccluders,selectCanopiesAroundCamera,chooseClearBattleCameraOffset,shouldRevealBuildingInterior,safeSelectedInteriorFloor} from './src/battle-camera-occlusion.js?v=4.6.69';
 import {registerSquadCircleTap,chooseSquadZoomTarget,SQUAD_CIRCLE_DOUBLE_TAP_MS,shouldHideSquadLabelsAtDistance} from './src/battle-squad-circle-tap.js?v=4.6.36';
-import {createBattleActorVisibility} from './src/battle-render-visibility.js?v=20261117-mount-hair1';
+import {createBattleActorVisibility} from './src/battle-render-visibility.js?v=20261117-motion2';
 import {enableBattleRigidFrustumCulling,countBattleRigCulling} from './src/battle-rigid-frustum-optimization.js?v=20261116-rigid1';
 import {interpolatedSkirmishCameraAnchor,createVisibilityWorkPacer} from './src/battle-frame-pacing.js?v=20261116-p95';
 import {personFacingYaw,writePersonPovOffset} from './src/battle-person-pov-camera.js?v=20261117-person-pov1';
@@ -1053,6 +1053,7 @@ import {skirmishTravelMotion,measureSkirmishDashCoverage} from './src/skirmish-d
 import {selectMassBattleMotion} from './src/character-system/battle-motion-policy.js?v=4.6.36';
 import {sampleMassVisualMotion} from './src/mass-visual-motion.js?v=4.6.36';
 import {createRidingPoseController,ridingStyleForCreature} from './src/character-system/riding-pose.js?v=20261117-three-seats-v3';
+import {createBattleUpperBodyAccent} from './src/character-system/battle-upper-body-accent.js?v=20261117-realaction1';
 import {randomJobRoster} from './src/tactical-roster.js?v=3.11.0';
 import {JOBS as MASS_JOBS} from './src/mass-battle-sim.js?v=4.6.15';
 import {MassBattleGridSimulation} from './src/mass-battle-grid-sim.js?v=20261117-mount-interior1';
@@ -7205,7 +7206,7 @@ function openSquadTactics(id){
  if(!TOWN_MODE){
   if(!battleReady||finished||battleCeremony.locked)return false;
   const group=normalizeArmyGroup(armyGroupBySquad[String(id)]);
-  return targetedStrategyUi.open(group,{squadId:String(id)});
+  return targetedStrategyUi.open(group,{groupOnly:true,startAtRecommendations:true});
  }
  closeSquadCircleInfo();
  if(!battleReady||finished||!squadIds.includes(String(id))||pendingCircleTarget)return false;
@@ -7543,7 +7544,7 @@ function buildSquadQuickCommands(){
   const groupId=normalizeArmyGroup(armyGroupBySquad[String(id)]);
   heading('第'+groupId+'班の作戦 · 系統 → 目的 → 方法（複数選択）');
   add('🎯 3段階作戦を選ぶ','three_step_strategy',()=>{
-   closeSquadTactics();targetedStrategyUi.open(groupId);
+   closeSquadTactics();targetedStrategyUi.open(groupId,{groupOnly:true,startAtRecommendations:true});
   },{effect:'攻撃・守備・支援・探索・弱体・環境利用を組み合わせる'});
   add('🎒 道具を使う','item_picker',()=>{closeSquadTactics();openBattleItemsForSquad(id)},{needsCommander:false});
   add('📊 戦力・詳細','details',()=>{closeSquadTactics();openVitals(id)},{needsCommander:false});
@@ -7703,7 +7704,7 @@ function showSquadTacticsPanel(panel='main'){
 $('squadDestination').onclick=()=>beginSquadDestination(orderedSquad());
 $('squadOrderChoice').onclick=()=>{
  if(storyRequest?.sortieTeamCount&&orderedSquad()!=null){
-  targetedStrategyUi.open(normalizeArmyGroup(armyGroupBySquad[String(orderedSquad())]));return;
+  targetedStrategyUi.open(normalizeArmyGroup(armyGroupBySquad[String(orderedSquad())]),{groupOnly:true,startAtRecommendations:true});return;
  }
  showSquadTacticsPanel('orders');
 };
@@ -7973,6 +7974,10 @@ const objectiveCheckpoints=createBattleObjectiveCheckpoints({
    const failed=row.status==='失敗';
    // Mission outcomes win the camera queue, not mere order confirmations.
    beginSquadFocusCinematic(String(id),0,failed?'failure':'result');
+   if(failed)battleTacticalUi.reportStrategicEvent(String(id),{
+    severity:'critical',title:row.label+'：作戦失敗',
+    reason:'作戦目標に失敗。生存部隊の再配置・守備を検討',ratio:0
+   });
    battleDialogue.push({
     key:'checkpoint-outcome:'+row.id,speaker:'伝令',
     kind:failed?'warning':'success',priority:failed?99:97,forceDisplay:true,
@@ -7987,7 +7992,9 @@ window.getBattleObjectiveCheckpoints=()=>objectiveCheckpoints.snapshot();
 let centralStrategyPreviousPause=null;
 $('topStrategy').onclick=()=>{
  if(!battleReady||finished||battleCeremony.locked)return;
- targetedStrategyUi.open();
+ const focus=trackedAllySquadId??squadIds.find(id=>(massSim?.units??actors).some(u=>u.team===0&&String(u.squadId)===String(id)&&u.hp>0));
+ const group=focus==null?null:normalizeArmyGroup(armyGroupBySquad[String(focus)]);
+ targetedStrategyUi.open(group,{startAtRecommendations:true,groupOnly:true});
 };
 const targetedStrategyUi=createTargetedStrategyUi({
  onOpen:()=>{
@@ -8011,22 +8018,25 @@ const targetedStrategyUi=createTargetedStrategyUi({
  getMapCellEligible:(x,z)=>traversableCell(x,z),
  getTemplates:groupId=>{
   const configured=storyRequest?.battlePlanRecommendations?.[String(groupId)];
-  if(configured?.length){
-   const selected=storyRequest?.battlePlanSelected?.[String(groupId)];
-   return [...configured].sort((a,b)=>Number(b.id===selected)-Number(a.id===selected));
-  }
+  const validConfigured=(Array.isArray(configured)?configured:[]).filter(plan=>plan&&STRATEGY_METHODS[plan.methodId]);
+  // Keep curated templates but supplement them with actionable live alternatives.
   // Free battles also get REAL suitability scores from this group's
   // living jobs, map terrain and current casualties, not seven fake 50s.
   const own=squadRoster.filter(u=>u.team===0&&!u.isStrategist&&
    u.hp>0&&u.alive!==false&&
    normalizeArmyGroup(armyGroupBySquad[String(u.squadId)])===Number(groupId));
   const lost=own.length?own.reduce((n,u)=>n+1-u.hp/Math.max(1,u.maxHp||u.hp),0)/own.length:0;
-  return recommendOverviewGroupPlans(BATTLE_PLAN_PRESETS,STRATEGY_METHODS,{
+  const liveRecommendations=recommendOverviewGroupPlans(BATTLE_PLAN_PRESETS,STRATEGY_METHODS,{
    jobs:own.map(u=>u.jobId||u.job?.id||'sword'),
    stageKind:selectedStage?.kind||'explore',
    terrain:selectedStage?.biome||selectedStage?.terrain||'plains',
    woundedRatio:lost
-  }).slice(0,5);
+  });
+  const selected=storyRequest?.battlePlanSelected?.[String(groupId)];
+  const saved=[...validConfigured].sort((a,b)=>Number(b.id===selected)-Number(a.id===selected));
+  const existing=new Set(saved.map(plan=>String(plan.id)));
+  const fresh=liveRecommendations.filter(plan=>!existing.has(String(plan.id)));
+  return [...saved,...fresh].slice(0,8);
  },
  getItems:()=>{
   const byId=new Map();
@@ -8879,7 +8889,7 @@ const threeGroupPanel=storyRequest?.sortieTeamCount?createBattleThreeGroupPanel(
  actors,groupBySquad:armyGroupBySquad,initialUnits:storyRequest.units,
  enemyInitial:storyRequest.enemyCount,
  onSquadSelect:id=>{trackedAllySquadId=String(id);refreshBattleTargetSummary(lastRibbonSums);},
- onStrategy:groupId=>{if(battleReady&&!finished)targetedStrategyUi.open(groupId);},
+ onStrategy:groupId=>{if(battleReady&&!finished)targetedStrategyUi.open(groupId,{groupOnly:true,startAtRecommendations:true});},
  onInspect:id=>openVitals(id),
  onReinforce:result=>{
   const point=squadCenter(result.toId,0);
@@ -10243,7 +10253,7 @@ function animate(){
     if(a.crowdSampling)continue;
     // Restore the unmodified clip pose before sampling the next frame. This
     // also cleanly ends the seated pose on dismount without a T-pose flash.
-    if(visual.update)a._ridingPose?.restore();
+    if(visual.update){a._ridingPose?.restore();a._upperBodyAccent?.restore();}
     if(finished){
      // The simulation is frozen but the surviving soldier's IDLE BREATHING
      // and blinking clip continues after the final battle. Don't leave the
@@ -10283,7 +10293,33 @@ function animate(){
        (a.hitPoseUntil&&elapsed<a.hitPoseUntil)){}
      else requestMotion(a,'idle');
     }
-    if(visual.update){a.character.update(paused&&!finished?0:visual.delta*cinematicPlaybackScale);a.masterHead?.update(visual.delta);applyCreatureRidingPose(a);a.outfit?.sync()}
+    if(visual.update){
+      a.character.update(paused&&!finished?0:visual.delta*cinematicPlaybackScale);
+      a.masterHead?.update(visual.delta);
+      applyCreatureRidingPose(a);
+      // A moving fighter keeps their distance-synchronised feet; the arms
+      // and chest still read as a strike, spell or hit without another mesh.
+      const moving=massSim?Boolean(a.massAnimation?.moving):
+       Boolean(a.nextCell||a.lastMovedAt!=null&&elapsed-a.lastMovedAt<.34);
+      const hit=massSim?Boolean(massUnit?.hitFlash>0):
+       Boolean(a.hitPoseUntil&&elapsed<a.hitPoseUntil);
+      const casting=massSim?massUnit?.action==='skill':false;
+      const attacking=massSim?massUnit?.action==='attack':
+       Boolean(a.attackPoseUntil&&elapsed<a.attackPoseUntil);
+      const accentAction=hit?'hit':casting?'skill':attacking?'attack':null;
+      if(moving&&accentAction&&!a.mountId&&!finished&&!paused){
+       if(!a._upperBodyAccent)
+        a._upperBodyAccent=createBattleUpperBodyAccent(a.character.model);
+       const rawProgress=massSim?Number(massUnit?.attackElapsed??0)/.65:
+        hit?1-Math.max(0,a.hitPoseUntil-elapsed)/.5:
+        1-Math.max(0,a.attackPoseUntil-elapsed)/.6;
+       a._upperBodyAccent.apply({
+        action:accentAction,progress:Math.max(.08,Math.min(.92,rawProgress)),
+        moving:true,mounted:false
+       });
+      }
+      a.outfit?.sync();
+     }
     if(skirmishVisual){
      // The authoritative actor root remains on the grid for AI/collisions.
      // Only its visible rig is eased between discrete 50ms simulation ticks.

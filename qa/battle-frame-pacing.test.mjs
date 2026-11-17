@@ -44,7 +44,7 @@ assert.ok(stats.frameP99Ms>=stats.frameP95Ms);
 const battle=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
 assert.match(battle,/interpolatedSkirmishCameraAnchor\(followed,skirmishCameraAnchor\)/);
 assert.match(battle,/sceneVisibilityPacer\.pick\(now,/);
-assert.match(battle,/if\(visual\.update\)\{a\.character\.update/);
+assert.match(battle,/if\(visual\.update\)\{[\s\S]*?a\.character\.update\(/);
 assert.match(battle,/renderBattleFrame\(\);/);
 assert.match(battle,/1000 対 1000/);
 console.log('PASS: smooth camera anchor, frame-paced occlusion, P95/P99 hitch diagnostics and unchanged rig updates');

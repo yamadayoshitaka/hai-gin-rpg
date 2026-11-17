@@ -13,7 +13,7 @@ assert.match(battle,/monsterSpec,displayName:monsterSpec\?\.name\|\|null/);
 assert.match(battle,/function battleUnitJobName\(unit\)\{\s*return battleUnitDisplayName/);
 assert.match(battle,/riderPelvisDropY=measureRiderPelvisDrop\(character\)/);
 assert.match(battle,/position\.y=ridden\?\-\(a\.riderPelvisDropY\?\?\.90\):0/);
-assert.match(battle,/applyCreatureRidingPose\(a\);a\.outfit\?\.sync\(\)/);
+assert.match(battle,/applyCreatureRidingPose\(a\);[\s\S]*?a\.outfit\?\.sync\(\)/);
 assert.match(gpu,/transformed\.y -= riding \* 0\.90/);
 assert.match(battle,/liveObjectTransfer=Object\.freeze/);
 assert.match(battle,/getBattleObjectTransferStats/);
