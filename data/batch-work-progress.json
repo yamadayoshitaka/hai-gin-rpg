@@ -114,12 +114,12 @@
     },
     "world": {
       "source": "ChatGPT定期品質回帰の実行結果＋GitHub証跡",
-      "lastRunAt": "2026-11-17T08:52:40+09:00",
+      "lastRunAt": "2026-11-17T09:52:04+09:00",
       "status": "work_incomplete",
       "carryover": true,
-      "subject": "PR #441 head・実ソースSHAの整合確認と未検証QAの継続",
-      "summary": "world.enabled=true。PR #441はDraft/open、head=3c90ce8e、mergeable=false。実ソース52b27b32はheadの祖先で、差分1コミットはcheckpointのみ。既存21件QA unverified。今回新規造形変更・対象別QA合格・GLB再生成・ゲーム反映なし。Node/WebGL/Androidの実測証跡未取得。",
-      "nextAction": "PR #441のオブジェクト専用Node構文/静的QAを実行し、対象別WebGL画像比較・Android実測を取得。失敗時は実ソース修正を専用ブランチへコミット。",
+      "subject": "PR #441螺旋階段ソース確認・Node実行環境DNS障害",
+      "summary": "world.enabled=true。正本53ID、main承認0・審査中11、作業ブランチcheckpoint21件全QA unverifiedを照合。src/object-catalog.js作業ブランチの螺旋階段2IDで専用mat clone()とDoubleSide設定をソース確認。実行環境Node v22.16.0は存在するがgithub.com DNS解決不能で取得不可。今回新規3D実ソース変更0、GLB0、QA合格0、ゲーム反映0。",
+      "nextAction": "GitHub連携取得したPR #441ソースをNode実行環境に転送できる経路を確保し node --check、カタログID照合、対象別WebGL/Android実測を行う。失敗時のみ実ソースを修正。",
       "steps": {
         "launch": "done",
         "code": "pending",
@@ -131,11 +131,11 @@
       },
       "evidence": [
         {
-          "label": "PR #441 headと状態",
+          "label": "PR #441",
           "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/441"
         },
         {
-          "label": "既存実ソースコミット（今回の新規成果ではない）",
+          "label": "既存螺旋階段実ソースSHA",
           "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/52b27b32e8b31fdcc3b0f0efa37882c5559da289"
         }
       ],
@@ -151,11 +151,11 @@
       },
       "operational": {
         "blockers": [
-          "PR #441 mergeable=false（詳細な競合/ポリシー原因未確認）",
-          "21件のWebGL/Android対象別QAがunverified",
-          "この実行でNode構文検査と描画実測を実施できていない"
+          "実行環境からgithub.com DNS解決不能（git ls-remote失敗）",
+          "GitHub連携で取得できたソースをNode実行環境へ転送できず、Node構文検査未実施",
+          "PR #441保存21IDのWebGL/Android対象別QAがすべてunverified"
         ],
-        "speedPlan": "PR #441 headを基準にオブジェクト専用静的QA→螺旋階段2IDの描画副作用→共通生成器5〜10IDの実ソース改修",
+        "speedPlan": "GitHub連携の取得経路と実行環境を橋渡ししてnode --checkを先行、螺旋階段2ID描画→残り21ID対象別QA。",
         "lastRunOutcome": {
           "newSourceChangedIds": 0,
           "newQAPassed": 0,
