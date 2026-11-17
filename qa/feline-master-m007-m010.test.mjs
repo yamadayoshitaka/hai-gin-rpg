@@ -98,6 +98,8 @@ test('four actual 3D feline sculpts have narrow heads and continuous cat anatomy
    for(const part of [tailRoot,tailMid]){
     assert.ok(part?.userData.felineTailClosedSource,
      'rear hole came from an open cat tail TubeGeometry: '+id);
+    assert.equal(part.userData.closedAnatomicalHull,true,
+     'cat tail needs a physically closed axial shell and covered ends: '+id);
     assert.ok(part.userData.cappedTubularSkin);
     const radials=part.userData.endCapTriangles;
     assert.ok(radials>=16,'missing actual two cap fans');
