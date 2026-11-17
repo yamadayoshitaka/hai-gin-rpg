@@ -38,3 +38,34 @@ export function placeOverviewSquadPins(points,bounds,{width=42,height=40}={}){
  }
  return result;
 }
+
+/** Rank existing (free or story) plans from the REAL live group composition.
+ * The score represents suitability 0-100, never fabricated win probability.
+ * No AI API calls, game-stat mutations, or per-frame work.
+ */
+export function recommendOverviewGroupPlans(plans,methods,{
+ jobs=[],stageKind='explore',terrain='plains',woundedRatio=0
+}={}){
+ const counts=new Map();
+ for(const job of jobs)counts.set(String(job),(counts.get(String(job))||0)+1);
+ const population=jobs.length,pressure=Math.max(0,Math.min(1,woundedRatio));
+ return plans.map(plan=>{
+  const method=methods[plan.methodId],roles=method?.jobs||[];
+  const capable=roles.length?roles.reduce((n,job)=>n+(counts.get(job)||0),0):population;
+  const roleFit=population?capable/population:0;
+  const objectiveFit=plan.kind===stageKind?23:plan.kind==='defend'&&pressure>.4?10:0;
+  const terrainFit=(plan.terrain||[]).includes(terrain)?16:0;
+  const support=plan.id==='support'&&pressure>.25?15:0;
+  const withdrawal=plan.id==='retreat'&&pressure>.55?18:0;
+  const assault=plan.id==='assault'&&pressure>.55?-12:0;
+  const score=Math.max(0,Math.min(100,Math.round(
+   14+roleFit*32+objectiveFit+terrainFit+(capable>0?12:0)+support+withdrawal+assault
+  )));
+  return {...plan,score,eligible:capable>0,
+   reason:(capable>0?capable+'人が実行可能':'対応職なし')+'・'+
+    (objectiveFit?'目的一致':'目的は標準')+'・'+
+    (terrainFit?'地形適性あり':'地形は標準')+
+    (support||withdrawal?'・損耗を考慮':'')};
+ }).sort((a,b)=>Number(b.eligible)-Number(a.eligible)||b.score-a.score||
+  String(a.id).localeCompare(String(b.id)));
+}
