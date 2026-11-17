@@ -9,7 +9,7 @@ import {attachMonsterFaceControls} from './facial-feature-runtime.js?v=1';
 import {generateCanineFurGuides,generateCanineAxialFurGuides} from './canine-fur-guides.js?v=beast-coat-20261116';
 import {monsterEvidenceFor} from './monster-anatomy-reference.js';
 import {wolfKingCloneMorph,wolfKingDonorFaceMatchScale,WOLF_KING_FACE_SCALE,copyWolfKingSourceRings,copiedWolfEyeSurfaceZ,WOLF_CLONE_SOURCE_REVISION}
- from './wolf-king-clone-source.js?v=m001-face-depth-v6-20261117';
+ from './wolf-king-clone-source.js?v=m001-small-head-joint-v7-20261117';
 import {felineMasterVariant,felineFaceRings,felineMuzzleRings,
  felineNasalRings,felineAnatomicalSections,felineEyeSurface,
  felineDorsalSurface,FELINE_SOURCE_MODEL}
