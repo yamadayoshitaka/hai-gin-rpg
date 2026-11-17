@@ -76,7 +76,10 @@ test('feline mother has visible eyes, cheek-root fur and head-following throat',
     'collar must follow head animation, not rigid torso');
    assert.equal(collar.userData.followsHeadPitch,true);
    const headFur=p.head.children.filter(n=>n.isMesh&&n.userData.furStrands>0);
-   assert.equal(headFur.length,3,'cheek coat must reuse existing three shader batches');
+   assert.equal(headFur.length,4,
+     'three existing cheek coat batches plus one batched whisker mesh');
+    assert.equal(headFur.filter(n=>n.userData.felineWhiskers===8).length,1,
+     'whiskers must use exactly one additional draw call');
    for(const action of ['idle','walk','run','attack']){
     startMonsterAction(model,action,0);
     for(const t of [.13,.24,.42]){
