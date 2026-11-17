@@ -2694,6 +2694,10 @@ export function createMonsterModel(spec,{detail='high'}={}){
    overrides:spec.id==='m001'?{
      eyesType:'almond',eyeSpacing:1,eyeSize:1,
      mouthType:'neutral',mouthWidth:1,mouthFullness:1
+   }:['m002','m003','m004','m007','m008','m009','m010'].includes(spec.id)?{
+     // Old hashed monster identities silently shrank the new geometric
+     // optical aperture and partly hid the pupil again at runtime.
+     eyesType:'almond',eyeSpacing:1,eyeSize:1.08
    }:{} });
  return g.root;
 }
