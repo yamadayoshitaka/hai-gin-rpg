@@ -69,7 +69,7 @@ for(const quality of ['preview','battle']){
   'mantle must hang BEHIND real back armor in negative Z');
  assert.ok(capeBounds.max.z <= .005,
   'rear mantle must not wrap across the character face/front');
- assert.equal(cape.userData.shoulderCape?.anchor,'both-clavicles',
+ assert.equal(cape.userData.shoulderCape?.anchor,'both-clavicles-v78',
   'cape must attach to BOTH shoulder endpoints, not a waist cylinder');
  assert.equal(cape.userData.shoulderCape?.clothPanel,true);
  assert.ok(capeBounds.max.z<rearBox.min.z-.02,
@@ -154,9 +154,14 @@ for(const quality of ['preview','battle']){
   const position=shell.getWorldPosition(new THREE.Vector3());
   assert.ok((side==='l'?position.x<-.17:position.x>.17),
    'armor must lie on the OUTER shoulder, never the center of the back');
-  assert.ok(position.z>-.05&&position.z<.08,
+  assert.ok(position.z>-.05&&position.z<.10,
    'shoulder cap center must not protrude from the back plane');
-  assert.ok(shell.geometry.parameters.phiLength<Math.PI*.75,
+  const shoulderJointY=bones.get('upperarm_'+side).getWorldPosition(new THREE.Vector3()).y;
+  const shellBottom=new THREE.Box3().setFromObject(shell).min.y;
+  const rimBottom=new THREE.Box3().setFromObject(rim).min.y;
+  assert.ok(shellBottom>shoulderJointY+.065&&rimBottom>shoulderJointY+.065,
+   'visible cap and lower lip must sit above the sleeve rather than inside it');
+  assert.ok(shell.geometry.parameters.thetaLength<Math.PI*.52,
    'hemispherical shell must not become a full cylindrical arm pipe');
   assert.equal(shell.userData.originalRearSleeveSuppressed,true);
  }
@@ -175,7 +180,7 @@ const maleViewer=readFileSync(new URL('../male-body-studio.html',import.meta.url
 const femaleViewer=readFileSync(new URL('../face-body-studio.html',import.meta.url),'utf8');
 const battleViewer=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
 for(const [page,text] of [['male',maleViewer],['female',femaleViewer],['battle',battleViewer]]){
- assert.match(text,/v77-anatomical-shoulders/,
+ assert.match(text,/v79-exterior-shoulder-caps/,
   page+' must load new outfit modules, not cached v75/v76 shoulder attachments');
 }
-console.log('PASS: GLB rigid shoulder parts suppressed; bilateral animated fitted shoulders; v77 preview and battle');
+console.log('PASS: GLB rigid shoulder parts suppressed; bilateral animated fitted shoulders; v79 preview and battle');
