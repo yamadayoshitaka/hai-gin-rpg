@@ -24,7 +24,7 @@ const ids=['m011','m012','m013','m014'];
    });
    try{
     await page.goto('http://127.0.0.1:8765/monster-manager.html?monster='+id+
-     '&v=phoenix-hand-face-stable-v22-20261118',
+     '&v=phoenix-hover-flight-v23-20261118',
      {waitUntil:'domcontentloaded',timeout:90000});
     await page.waitForFunction(expected=>{
      const v=window.__monsterQualityQA?.();
@@ -40,7 +40,7 @@ const ids=['m011','m012','m013','m014'];
       throw Error(id+' rebuilt plumage missing: '+JSON.stringify(state));
     if(id==='m013'){
      const shape=state.phoenix;
-     if(!state.revision?.includes('stable-v8'))throw Error('Old Phoenix revision still loaded: '+state.revision);
+     if(!state.revision?.includes('flight-realism-v9'))throw Error('Old Phoenix revision still loaded: '+state.revision);
      if(!shape?.enlargedBody||shape.torsoRadiusX<.36||
        shape.torsoRadiusY<.46||shape.bellyScaleMultiplier<11||
        shape.bodyScaleWidth<.25||shape.visibleFaceScales<90||
@@ -63,6 +63,8 @@ const ids=['m011','m012','m013','m014'];
         !Array.isArray(shape.handFeathersPerSide)||
         !shape.handFeathersPerSide.every(n=>n>=82)||
         !shape.highQualityHandFeathers||
+        !shape.flightMode||!shape.inAir||!shape.flightWingRig||
+        !shape.legsFoldInFlight||shape.currentAltitude<.80||
         shape.tailLength<4.55||shape.waveMeshes!==7||state.tail!==31)
        throw Error('Phoenix requested remodel absent in actual WebGL viewer: '+
         JSON.stringify(shape));
@@ -80,8 +82,22 @@ const ids=['m011','m012','m013','m014'];
      if(image.byteLength<12000)
       throw Error(id+' '+action+' empty GPU frame: '+image.byteLength);
      frames.push({name:filename,bytes:image.byteLength,action});
+     if(id==='m013'){
+      const flight=await page.evaluate(()=>window.__avianWingQA()?.phoenix);
+      if(!flight?.inAir||flight.currentAltitude<.35||
+        flight.flightAction!==action||
+        !flight.airborneKnees.every(k=>k<-.4))
+       throw Error('Phoenix '+action+' flight/legs missing: '+JSON.stringify(flight));
+     }
     }
     if(id==='m013'){
+     await page.locator('#actions button[title="defeat"]').click({timeout:15000});
+     await page.waitForTimeout(1400);
+     const landed=await page.evaluate(()=>window.__avianWingQA()?.phoenix);
+     if(!landed||landed.inAir||landed.currentAltitude>.15)
+      throw Error('Phoenix failed to land after defeat: '+JSON.stringify(landed));
+     await page.locator('#actions button[title="idle"]').click({timeout:15000});
+     await page.waitForTimeout(220);
      for(const angle of ['front','side','back']){
       const result=await page.evaluate(a=>window.__beastFaceCameraQA?.(a),angle);
       if(result?.id!==id)throw Error('Phoenix '+angle+' camera failed');
