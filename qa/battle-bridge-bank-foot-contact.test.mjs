@@ -74,6 +74,11 @@ assert.match(game,/out\.y=corrected;smooth\.y=corrected/,
  'cached visual motion cannot reinsert feet into the bank polygon');
 assert.match(game,/if\(upperPoint\)/,
  'authored 2F/roof heights must not be overridden by ground contact');
+const atlas=readFileSync(new URL('../src/crowd-impostor-atlas.js',import.meta.url),'utf8');
+assert.match(army,/footOriginY:footAnchor\?\.floor\?\?0/,
+ 'photo and 3D sprites use the same boot-space baseline');
+assert.match(atlas,/person\.position\.set\(0,Number\.isFinite\(footOriginY\)\?-footOriginY:0,0\)/,
+ 'the distant photographed feet are baked at local ground zero');
 assert.match(army,/normalizeCrowdCaptureFootOrigin\(sources,footAnchor\)/,
  'the 2000-soldier GPU source is normalized once, not per draw');
 assert.match(army,/isFootSurface:source\.isFootSurface/,
