@@ -8015,22 +8015,24 @@ const targetedStrategyUi=createTargetedStrategyUi({
  getTemplates:groupId=>{
   const configured=storyRequest?.battlePlanRecommendations?.[String(groupId)];
   const validConfigured=(configured||[]).filter(plan=>STRATEGY_METHODS[plan.methodId]);
-  if(validConfigured.length){
-   const selected=storyRequest?.battlePlanSelected?.[String(groupId)];
-   return [...validConfigured].sort((a,b)=>Number(b.id===selected)-Number(a.id===selected));
-  }
+  // Keep curated templates but supplement them with actionable live alternatives.
   // Free battles also get REAL suitability scores from this group's
   // living jobs, map terrain and current casualties, not seven fake 50s.
   const own=squadRoster.filter(u=>u.team===0&&!u.isStrategist&&
    u.hp>0&&u.alive!==false&&
    normalizeArmyGroup(armyGroupBySquad[String(u.squadId)])===Number(groupId));
   const lost=own.length?own.reduce((n,u)=>n+1-u.hp/Math.max(1,u.maxHp||u.hp),0)/own.length:0;
-  return recommendOverviewGroupPlans(BATTLE_PLAN_PRESETS,STRATEGY_METHODS,{
+  const liveRecommendations=recommendOverviewGroupPlans(BATTLE_PLAN_PRESETS,STRATEGY_METHODS,{
    jobs:own.map(u=>u.jobId||u.job?.id||'sword'),
    stageKind:selectedStage?.kind||'explore',
    terrain:selectedStage?.biome||selectedStage?.terrain||'plains',
    woundedRatio:lost
-  }).slice(0,5);
+  });
+  const selected=storyRequest?.battlePlanSelected?.[String(groupId)];
+  const saved=[...validConfigured].sort((a,b)=>Number(b.id===selected)-Number(a.id===selected));
+  const existing=new Set(saved.map(plan=>String(plan.id)));
+  const fresh=liveRecommendations.filter(plan=>!existing.has(String(plan.id)));
+  return [...saved,...fresh].slice(0,8);
  },
  getItems:()=>{
   const byId=new Map();
