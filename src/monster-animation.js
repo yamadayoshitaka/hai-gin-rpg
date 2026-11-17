@@ -173,6 +173,12 @@ export function animateMonsterModel(model,time=0){
    // m002 inherits the physically authored m001 anticipation, bite,
    // ear response and stride timing, not a stiff legacy spherical rig.
    animateWolfKingPerformance(p,action,progress,motionTime,gait);
+   if(model.userData.speciesId==='m002'&&
+      (action==='attack'||action==='special')&&p.jaw){
+     // The m001 anticipation envelope closes before m002's late
+     // flame-fang contact. Keep the physical jaw open THROUGH impact.
+     p.jaw.rotation.x=Math.max(p.jaw.rotation.x,.08+.37*pulse);
+   }
  }
  // Independent upper and lower joints must not visually snap from a
  // planted stride into the ready crouch. Exponential time-step smoothing
