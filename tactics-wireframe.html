@@ -3452,9 +3452,9 @@ for(let team=0;team<2;team++)for(let i=0;i<TEAM_SIZE;i++){
  const selectedPreview=battleParams.get('monster');
  const previewMonsterId=selectedPreview&&MONSTER_CATALOG.some(m=>m.id===selectedPreview)?
    selectedPreview:null;
- const monsterId=storyRequest?.enemyMode==='monsters'&&team===1?
-   storyRequest.enemyMonsterIds?.[i%storyRequest.enemyMonsterIds.length]:
-   !storyRequest&&team===1&&i===0?previewMonsterId:null;
+ const monsterId=team===1&&i===0&&previewMonsterId?previewMonsterId:
+   storyRequest?.enemyMode==='monsters'&&team===1?
+     storyRequest.enemyMonsterIds?.[i%storyRequest.enemyMonsterIds.length]:null;
  const monsterSpec=monsterId?MONSTER_CATALOG.find(m=>m.id===monsterId)||null:null;
  const root=createSoldier(job,team),formation=TOWN_MODE?
  // Start the strategist on the clear town road instead of the forest edge.
