@@ -2,6 +2,8 @@ import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import {readFileSync} from 'node:fs';
 import {createDetailedOutfit} from '../src/outfit-maintenance-model.js';
+import {classifyArmorMesh} from '../src/character-system/armor-mesh-classification.js';
+import {createAnatomicalShoulderCaps} from '../src/character-system/segmented-armor-runtime.js';
 
 // Exercise the REAL procedural geometry with a complete anatomical landmark
 // set. No WebGL context is required for the mesh/visibility contract.
@@ -102,19 +104,78 @@ assert.ok(!summoned.getObjectByName('hero-protagonist-draped-mantle'),
 console.log('PASS: curved rear armor, light-job exclusion, hero-only cape, no duplicate capes at preview/battle quality');
 
 
-// Regression: the imported GLB's original rear-biased pauldron center
-// must NOT survive unchanged in the male hero's rear inspection view.
-const shoulderRuntime=readFileSync(new URL(
+// Verify the real source GLBs contain exactly the oversized shoulder parts
+// that v77 MUST suppress. They cannot safely be bolted to upper-arm bones.
+for(const sex of ['male','female']){
+ const bytes=readFileSync(new URL(
+  '../assets/characters/seven-head-equipment-candidates/plate_chest-'+sex+'.glb',
+  import.meta.url));
+ assert.equal(bytes.toString('utf8',0,4),'glTF');
+ const chunk=JSON.parse(bytes.toString('utf8',20,20+bytes.readUInt32LE(12)));
+ const sourceShoulders=chunk.nodes.filter(node=>node.mesh!==undefined&&
+  classifyArmorMesh('chest',node.name)==='shoulder');
+ assert.equal(sourceShoulders.length,8,
+  sex+': all eight original rigid sleeves/pauldrons/fasteners are accounted for');
+}
+const sourceRuntime=readFileSync(new URL(
  '../src/character-system/segmented-armor-runtime.js',import.meta.url),'utf8');
-assert.match(shoulderRuntime,/case 'shoulder':\s*\{[\s\S]*?upperarm[\s\S]*?clavicle/,
- 'shoulder anchor must sit at the clavicle/upper-arm junction');
-assert.match(shoulderRuntime,/slot==='shoulder'\s*\?nearestArmorLegSide\(center,shoulderLeft,shoulderRight\)/,
- 'pauldron left/right assignment must use shoulders, not legs');
-assert.match(shoulderRuntime,/slot==='shoulder'\)\s*\{[\s\S]*?delta\.addScaledVector\(bodyForward,\.035\)/,
- 'pauldron must be moved forward to its anatomical anchor, not left on the back');
-assert.match(shoulderRuntime,/shoulderSideCounts,shoulderPlacement:/,
- 'both sides and attachment revision must be inspectable in runtime diagnostics');
+assert.match(sourceRuntime,/if\(slot==='shoulder'\)\s*\{[\s\S]*?suppressedRigidShoulderMeshes\+\+;/,
+ 'all obsolete unrigged shoulder meshes are suppressed before attachment');
+assert.match(sourceRuntime,/createAnatomicalShoulderCaps\(\{/,
+ 'a real bone-mounted pauldron replaces the protruding GLB parts');
+
+for(const quality of ['preview','battle']){
+ const root=new THREE.Group(),dressed=new THREE.Group();
+ root.add(dressed);
+ const points={
+  pelvis:[0,1.01,0],spine_03:[0,1.43,0],neck_01:[0,1.63,0],
+  upperarm_l:[-.26,1.45,0],upperarm_r:[.26,1.45,0],
+  clavicle_l:[-.17,1.50,0],clavicle_r:[.17,1.50,0]
+ };
+ const bones=new Map();
+ for(const [name,xyz] of Object.entries(points)){
+  const bone=new THREE.Bone();bone.name=name;bone.position.set(...xyz);
+  dressed.add(bone);bones.set(name,bone);
+ }
+ root.updateMatrixWorld(true);
+ const result=createAnatomicalShoulderCaps({root,dressed,bones,
+  metal:new THREE.MeshStandardMaterial(),
+  edge:new THREE.MeshStandardMaterial(),quality});
+ assert.equal(result.objects.length,4,
+  'one metal shell and one narrow rim per shoulder');
+ assert.deepEqual(result.diagnostics.sideCounts,{l:2,r:2});
+ for(const side of ['l','r']){
+  const shell=root.getObjectByName('armor-shoulder-fitted-cap-'+side);
+  const rim=root.getObjectByName('armor-shoulder-fitted-rim-'+side);
+  assert.ok(shell&&rim);
+  assert.equal(shell.parent,bones.get('upperarm_'+side),
+   'shell is physically attached to the correct upperarm');
+  assert.equal(rim.parent,bones.get('upperarm_'+side));
+  const position=shell.getWorldPosition(new THREE.Vector3());
+  assert.ok((side==='l'?position.x<-.17:position.x>.17),
+   'armor must lie on the OUTER shoulder, never the center of the back');
+  assert.ok(position.z>-.05&&position.z<.08,
+   'shoulder cap center must not protrude from the back plane');
+  assert.ok(shell.geometry.parameters.phiLength<Math.PI*.75,
+   'hemispherical shell must not become a full cylindrical arm pipe');
+  assert.equal(shell.userData.originalRearSleeveSuppressed,true);
+ }
+ const left=root.getObjectByName('armor-shoulder-fitted-cap-l');
+ const radius=left.geometry.parameters.radius;
+ const before=left.localToWorld(new THREE.Vector3(0,radius*.55,0)).clone();
+ bones.get('upperarm_l').rotation.z=.5;root.updateMatrixWorld(true);
+ const after=left.localToWorld(new THREE.Vector3(0,radius*.55,0)).clone();
+ assert.ok(before.distanceTo(after)>.002,
+  'armor must follow registered upper-arm animation, not stay stuck behind the cape');
+ const vertices=result.objects.reduce((n,m)=>n+m.geometry.getAttribute('position').count,0);
+ assert.ok(vertices<(quality==='battle'?550:1800),
+  'shoulder replacement must preserve mobile/2000-soldier vertex budget');
+}
 const maleViewer=readFileSync(new URL('../male-body-studio.html',import.meta.url),'utf8');
-assert.match(maleViewer,/v=76-pauldron-shoulder/,
- 'male full-body viewer must bypass v75 cached equipment modules');
-console.log('PASS: hero shoulder plates fit the actual arms instead of the back');
+const femaleViewer=readFileSync(new URL('../face-body-studio.html',import.meta.url),'utf8');
+const battleViewer=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
+for(const [page,text] of [['male',maleViewer],['female',femaleViewer],['battle',battleViewer]]){
+ assert.match(text,/v77-anatomical-shoulders/,
+  page+' must load new outfit modules, not cached v75/v76 shoulder attachments');
+}
+console.log('PASS: GLB rigid shoulder parts suppressed; bilateral animated fitted shoulders; v77 preview and battle');
