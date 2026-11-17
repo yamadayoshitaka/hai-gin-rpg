@@ -25,7 +25,10 @@ export function createBattleSituationMonitor({maxQueued=12}={}){
    seen.add(id);
    const level=situationLevel(row),old=previous.get(id)??0;
    previous.set(id,level);
-   if(!level||!(row.n>0)){waiting.delete(id);continue;}
+   if(!level||!(row.n>0)){
+    if(!(row.n>0)||waiting.get(id)?.kind!=='objective')waiting.delete(id);
+    continue;
+   }
    // Minor (75% casualty / 65% HP) is a notification, not a 30s stop.
    if(level>=2&&level>old){
     const health=row.maxHp>0?row.hp/row.maxHp:1;
@@ -39,8 +42,8 @@ export function createBattleSituationMonitor({maxQueued=12}={}){
     // A severe warning always replaces an unhandled moderate warning.
     if(!waiting.has(id)||waiting.get(id).level<=level)waiting.set(id,event);
    }
-   if(waiting.has(id)&&waiting.get(id).level>level)
-    waiting.delete(id); // recovered while an earlier UI was unavailable
+   if(waiting.has(id)&&waiting.get(id).level>level&&waiting.get(id).kind!=='objective')
+    waiting.delete(id); // old damage was healed; objective failures still matter
   }
   for(const id of previous.keys())if(!seen.has(id)){previous.delete(id);waiting.delete(id);}
   if(waiting.size>maxQueued){
@@ -48,6 +51,13 @@ export function createBattleSituationMonitor({maxQueued=12}={}){
    const retained=new Set(sorted.slice(0,maxQueued).map(e=>e.id));
    for(const id of waiting.keys())if(!retained.has(id))waiting.delete(id);
   }
+ }
+ function enqueue(id,{title='作戦目標の変更',reason='戦況変化',severity='warning',ratio=.5}={}){
+  const key=String(id),level=severity==='critical'?3:2;
+  const previousAlert=waiting.get(key);
+  if(previousAlert&&previousAlert.level>level)return previousAlert;
+  const alert={id:key,level,severity,title,reason,ratio,sequence:++sequence,kind:'objective'};
+  waiting.set(key,alert);return alert;
  }
  function peek(){
   let best=null;
@@ -61,7 +71,7 @@ export function createBattleSituationMonitor({maxQueued=12}={}){
   if(event){delivered.set(key,event.level);waiting.delete(key);}
   return event??null;
  }
- return {observe,peek,acknowledge,hasPending:()=>waiting.size>0,
+ return {observe,enqueue,peek,acknowledge,hasPending:()=>waiting.size>0,
   snapshot:()=>({pending:[...waiting.values()].map(e=>({...e})),
    levels:Object.fromEntries(previous),delivered:Object.fromEntries(delivered)})};
 }
