@@ -80,8 +80,13 @@ function m001FittedFacialMane(faceCore,source){
     const headY=faceCore.position.y+y*faceCore.scale.y;
     const headZ=faceCore.position.z+z*faceCore.scale.z;
     // No roots or growing tips inside the recessed eye, nasal ridge or lips.
+    // Double-coat offsets later shift follicles by up to 0.01 m.
+    // Filter BEFORE doubling, with a padded no-follicle mask so not
+    // even the edge of a strand roots over the eyes/nose/lips.
     if(headY>.073&&headY<.157&&headZ>.160&&
-       Math.abs(headX)<.140)continue;
+       Math.abs(headX)<.143)continue;
+    if(headZ>.185&&headY>-.153&&headY<.175&&
+       Math.abs(headX)<.126)continue;
     if(Math.abs(headX)<.102)continue;
     const root=[headX+side*.006,headY,headZ+.005];
     const longHair=vertical<-.12;
