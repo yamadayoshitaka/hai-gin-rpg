@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "asOf": "2026-11-17T11:20:00Z",
+  "asOf": "2026-11-17T11:53:59.796Z",
   "description": "工程別の実作業証跡。GitHub Actionsの成功や定期タスクの実行完了を、3D改修・PR・デプロイの完了と混同しない。これはGitHubに最後に記録されたスナップショットであり、ChatGPTサービスのライブ状態ではない。 追加のoperational欄は直近の証跡から特定した滞留原因と次の改善策であり、実行成功や品質達成の認定ではない。",
   "stageOrder": [
     "launch",
@@ -119,7 +119,7 @@
       "carryover": true,
       "subject": "PR #441 未検証28件の滞留・実行QA取得経路BLOCKED",
       "summary": "main world.enabled=true確認、正本catalog-targets 60件確認。PR #441 open/draft/mergeable=false、head 9439cf62、実ソース最終SHA 189571a3。GitHub connectorでmainとPRソースを読取れたがコンテナgit ls-remoteはgithub.com DNS解決失敗。Node構文・指定3QA・新旧WebGL・Android未実施。新規実改修0、GLB0、QA0、ゲーム採用0、実ソースコミット0。",
-      "nextAction": "旧品質バッチは停止済み（履歴保持）。後継: 通常センターから除外。未マージ差分は既存PRで別途審査する。",
+      "nextAction": "品質バッチ再開：未検証PR #441等を再確認し、実造形の共通原因を修正→Node・WebGL・Android FPS→main採用/Pages検証。旧未合格モデルは未採用のまま維持。",
       "steps": {
         "launch": "done",
         "code": "pending",
@@ -161,8 +161,8 @@
         },
         "qaBlocker": "3D家具のNode/WebGL/Android描画検証が未完了（従来の非規定blocked表記を規定のpendingへ正規化）"
       },
-      "retiredFromCenter": true,
-      "legacyRecord": true
+      "retiredFromCenter": false,
+      "legacyRecord": false
     },
     "anime": {
       "source": "Cloudflare Free日次ワークフロー再実行＋880場面キュー実CI検証",

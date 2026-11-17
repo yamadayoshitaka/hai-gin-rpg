@@ -26,7 +26,7 @@ export function parseRequest(issue,owner){
  if(!m)throw Error('Missing JSON request');
  const data=JSON.parse(m[1]);
  if(!Object.hasOwn(allowed,data.category))throw Error('Unknown batch category');
- if(['human','world','monster'].includes(data.category))throw Error('Retired batch: use the split FF15 quality lanes');
+ if(['human','monster'].includes(data.category))throw Error('Retired batch: use the split FF15 quality lanes');
  const target=String(data.target||'').trim(),instruction=String(data.instruction||'').trim();
  const count=Number(data.max||1);
  if(instruction.length>500||/[\x00-\x08\x0b\x0c\x0e-\x1f]/.test(instruction))

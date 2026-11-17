@@ -1,4 +1,4 @@
-name: Four-group manual batch instructions (owner only)
+name: Six-group quality center and owner-approved batch instructions
 on:
   issues:
     types: [opened]
@@ -7,6 +7,9 @@ on:
       - '.github/workflows/hourly-batch-manual.yml'
       - 'scripts/manual-hourly-batch-dispatch.mjs'
       - 'qa/manual-hourly-batch-dispatch.test.mjs'
+      - 'qa/batch-center-object-expression-selection.test.mjs'
+      - 'data/hourly-batch-dashboard.json'
+      - 'data/batch-center-switches.json'
       - 'scripts/batch-center-toggle.mjs'
       - 'qa/batch-center-toggle.test.mjs'
       - 'batch-monitor.html'
@@ -31,7 +34,7 @@ jobs:
       - name: Validate instruction routing and strict owner/type controls
         run: |
           node --check scripts/manual-hourly-batch-dispatch.mjs
-          node --test qa/manual-hourly-batch-dispatch.test.mjs
+          node --test qa/manual-hourly-batch-dispatch.test.mjs qa/batch-center-object-expression-selection.test.mjs
           node --test qa/batch-work-progress.test.mjs
           node --check scripts/batch-center-toggle.mjs
           node --test qa/batch-center-toggle.test.mjs

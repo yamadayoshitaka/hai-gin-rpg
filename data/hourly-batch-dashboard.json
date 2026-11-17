@@ -1,8 +1,8 @@
 {
   "schemaVersion": 3,
-  "asOf": "2026-11-17T11:15:00Z",
+  "asOf": "2026-11-17T11:53:56.627Z",
   "tz": "Asia/Tokyo",
-  "description": "旧人モデル・旧オブジェクト・旧モンスターバッチを表示から外し、顔髪・衣装・モンスター・召喚獣のFF15目標各6担当に整理。旧履歴は別ファイル保存。1時間6回のGitHub Actionsで対象を分類/QA。モデル自動改善やゲーム適用済みの宣言とは区別。 FF15新4系統はChatGPT実改修タスクを各1時間に1回新規作成（旧人物・旧オブジェクト・旧モンスタータスクは停止）。GitHub Actionsは各系統6回/時間の独立QA。",
+  "description": "顔・髪／衣装／オブジェクト／モンスター／召喚獣／漫画の6系統。オブジェクト旧6担当並列QAを再利用。旧人物一括・旧モンスター一括は停止継続。ChatGPT各系統1回/時、GitHub QAは人物/獣6回/時・オブジェクト6担当並列/時。実3Dの改善とQA合格、main/Pages採用を分けて管理。",
   "groups": [
     {
       "id": "faceHair",
@@ -47,6 +47,25 @@
       "automationStart": "21:16 JST",
       "automationSchedule": "毎時1回、担当6工程を巡回（ChatGPT側の実改修はGitHub QAとは別）",
       "schedulerLastVerified": "2026-11-17"
+    },
+    {
+      "id": "world",
+      "name": "オブジェクト・ステージ FF15品質回帰",
+      "subtitle": "60種類の実3Dオブジェクト／6担当の並列品質検証",
+      "source": "ChatGPT毎時実造形回帰／GitHub Actions毎時6担当QA",
+      "autoEnabled": true,
+      "time": "毎時12分：6担当並列QA ／ 毎時50分：実造形回帰／毎時41分：無料参考画像",
+      "last": null,
+      "preview": "object-list.html",
+      "secondary": "world-quality-preview.html?object=castle_001",
+      "secondaryName": "3Dモデルを確認",
+      "workflow": "world-six-lane.yml",
+      "workflowName": "ワールド6担当品質回帰",
+      "previewGroup": "world",
+      "schedulerEnabled": true,
+      "automationId": "6af9b03d15148191bc1a225739739ee5",
+      "details": "60種の実モデルを台帳・造形・材質・配置/衝突・LOD・WebGLの6担当で監査。木・石・屋根・窓・家具・橋・城などをモデル正本createCatalogObject()から改修。画像だけで実造形改善とはしない。",
+      "goal": "同一3D工場をゲーム/プレビューで使用。実ソース改修・WebGL前後左右・Android FPSを確認して安全にmain→Pages採用。"
     },
     {
       "id": "creatureMonster",

@@ -24,8 +24,8 @@ test('Face hair and wardrobe and creature variants have independent batch switch
  const registry=JSON.parse(fs.readFileSync('data/batch-center-switches.json','utf8'));
  for(const k of ['faceHair','outfit','creatureMonster','creatureSummon'])
   assert.equal(registry.groups[k].enabled,true);
- for(const k of ['human','world','monster'])assert.equal(registry.groups[k].enabled,false);
- for(const k of ['anime'])assert.equal(registry.groups[k].enabled,true);
+ for(const k of ['human','monster'])assert.equal(registry.groups[k].enabled,false);
+ for(const k of ['anime','world'])assert.equal(registry.groups[k].enabled,true);
 });
 test('Enemy and summoned battle renderer both resolve the canonical registered model',()=>{
  const enemy=fs.readFileSync('src/battle-registered-monster-model.js','utf8');
