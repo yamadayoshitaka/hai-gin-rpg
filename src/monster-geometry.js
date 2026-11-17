@@ -700,15 +700,26 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
       // Apply the generator's key idea: a sunken socket and optical almond
       // fitted BEHIND the upper eyelid. This is a mesh aperture rather than
       // spherical eyes mounted on the forehead/cheeks.
-      g.recessedCanineAlmondEye(faceCore,{
+      const eyeSet=g.recessedCanineAlmondEye(faceCore,{
         side,name:s.id==='m002'?'flame-wolf':'wolf-king',
         centerX:s.id==='m002'?.138:.128
       });
-      // Reuse m001 brow anatomy, scaled with the physical muzzle.
+      // The m002 cranium is the m001 longitudinal source stretched 1.2x
+      // and advanced .04; the aperture must undergo the same transform.
+      // Otherwise ALL dark/iris/lid layers sit INSIDE the new skull.
+      const advance=s.id==='m002'?.077:0;
+      if(advance){
+        for(const part of [eyeSet.orbital,eyeSet.iris,
+          eyeSet.pupil,eyeSet.glint,eyeSet.lid]){
+          part.position.z+=advance;
+          part.userData.m002OpticalSkullAdvance=advance;
+        }
+      }
       const scale=s.id==='m002'?1.08:1;
       const brow=g.tube(faceCore,'skin',[
-        [side*.073*scale,.137,.160],[side*.113*scale,.145,.182],
-        [side*.157*scale,.133,.166]],.0035);
+        [side*.073*scale,.137,.160+advance],
+        [side*.113*scale,.145,.182+advance],
+        [side*.157*scale,.133,.166+advance]],.0035);
       brow.name=s.id+'-eyebrow-ridge-'+(side<0?'L':'R');
       brow.userData.orbitalBrow=true;
      }else if(beastRemesh){
