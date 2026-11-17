@@ -97,20 +97,49 @@ jobs:
           path: |
             data/world-quality/live-batch-report.json
             data/world-quality/production-model-adoption.json
-      - name: Safe report-only PR and squash merge to main
+      - name: Safely commit verified report without repository PR-create permission
         if: github.event_name != 'pull_request'
         env:
           GH_TOKEN: ${{ github.token }}
+        shell: bash
         run: |
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add -- data/world-quality/live-batch-report.json data/world-quality/catalog-targets.json data/world-quality/production-model-adoption.json
-          if git diff --cached --quiet; then echo 'No catalog change; no redundant deployment' >> "$GITHUB_STEP_SUMMARY"; exit 0; fi
-          BRANCH="world/six-parity-$GITHUB_RUN_ID"
+          if git diff --cached --quiet; then
+            echo 'No integration report diff; no redundant commit' >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          BRANCH="world/six-parity-${GITHUB_RUN_ID}"
           git switch -c "$BRANCH"
           git commit -m 'chore(world): six-gate live catalog report'
-          git push origin "$BRANCH"
-          URL=$(gh pr create --base main --head "$BRANCH" --title 'chore(world): six-lane catalog report' --body 'Six independent QA gates passed. Only deterministic source parity data is merged; artwork and Android visual performance still require manual QA.')
-          echo "Integration PR $URL" >> "$GITHUB_STEP_SUMMARY"
-          gh pr merge "$URL" --squash --delete-branch
+          # Report-only writes may go straight to main after six successful QA
+          # gates, but never if the underlying world model source changed
+          # while this workflow was running.
+          for attempt in 1 2 3; do
+            git fetch origin main
+            if ! git diff --quiet "$GITHUB_SHA" origin/main -- \
+              src/object-catalog.js src/stage-library.js src/stage-static-instancing.js \
+              src/world-quality-pbr.js tactics-wireframe.html world-quality-preview.html \
+              src/tree-seasons.js; then
+              echo 'World source advanced since QA: stale evidence not published' >> "$GITHUB_STEP_SUMMARY"
+              break
+            fi
+            if ! git rebase origin/main; then
+              git rebase --abort || true
+              echo 'Report merge conflict: preserving work branch' >> "$GITHUB_STEP_SUMMARY"
+              break
+            fi
+            if git push origin HEAD:main; then
+              echo "Integration-only report committed to main: $(git rev-parse HEAD)" >> "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+            echo "Concurrent main change or permissions prevented push ($attempt/3)" >> "$GITHUB_STEP_SUMMARY"
+          done
+          # Never call gh pr create: GitHub Actions tokens cannot create PRs
+          # in this repository. Keep a SHA-backed branch instead of falsely
+          # reporting a successful main merge.
+          git push origin "HEAD:refs/heads/$BRANCH"
+          echo "Main unavailable; saved verified report as $BRANCH. Manual review required." >> "$GITHUB_STEP_SUMMARY"
+          exit 1
