@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {readFileSync,existsSync} from 'node:fs';
 import {createHash} from 'node:crypto';
 import {CHAPTER1_PROVISIONAL_LIVE} from '../src/story-chapter1-provisional-live.js';
+import {NEW_STORY_ORIGINAL_ART} from '../src/story-new-original-art.js';
 import {comicForStage} from '../src/story-chapter-comic.js';
 import {registeredStoryPanelAsset,storySheetCrop} from '../src/story-panel-registered-art.js';
 const read=p=>readFileSync(new URL('../'+p,import.meta.url),'utf8');
@@ -65,7 +66,21 @@ const liveHashes=new Set();
 for(const [key,rec] of liveEntries){
  assert.equal(rec.status,'PROVISIONAL_OWNER_AUTHORIZED_PENDING_P0',
   'Owner has authorized provisional display but not P0 final quality approval');
- assert(rec.asset.startsWith('./assets/story/chapter1-provisional-live/'));
+ const historicalPath=rec.asset.startsWith('./assets/story/chapter1-provisional-live/');
+ const newOriginalPath=rec.asset.startsWith('./assets/story/new-originals/');
+ assert(historicalPath||newOriginalPath,'Provisional source must be a permitted native-art folder: '+key);
+ if(newOriginalPath){
+  const original=NEW_STORY_ORIGINAL_ART[key];
+  assert(original,'Missing verified NEW original record: '+key);
+  assert.equal(original.asset,rec.asset,'NEW original and provisional path mismatch: '+key);
+  assert.equal(original.sha256,rec.sha256,'NEW original and provisional SHA mismatch: '+key);
+  assert.equal(original.origin,'NEW_SCENE_GENERATED_AFTER_2026_11_17',key);
+  assert.equal(original.provenanceVerified,true,'Unverified provenance: '+key);
+  assert.equal(original.nativeQAComplete,true,'Unverified native format: '+key);
+  assert.equal(original.visualP0Approved,false,'Must not claim visual P0: '+key);
+  assert(key.startsWith('c01-s0')||key.startsWith('c01-s10'),'Unexpected stage format: '+key);
+  assert(key.localeCompare('c01-s05')>0,'Old stage art cannot be promoted as NEW: '+key);
+ }
  assert(rec.asset.includes(key.replaceAll('|','__')),'Provisional scene/gender/outcome path mismatch');
  assert(/^[a-f0-9]{64}$/.test(rec.sha256),'Unverified hash '+key);
  assert(!liveHashes.has(rec.sha256),'Duplicate game image used across scenes');
