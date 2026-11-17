@@ -3,7 +3,8 @@
  * A character CG never narrates an unrelated person's dialogue.
  * A recap belongs on its own gender-neutral overview image.
  */
-import {STORY_KEY_PEOPLE} from './story-cinematic.js';
+import {STORY_KEY_PEOPLE,STORY_KEY_PERSON_BY_NAME} from './story-cinematic.js';
+import {STORY_CHAPTERS} from './story-chapters.js';
 import {screenplayRubyTokens,screenplayVoiceText} from './story-screenplay-v2.js';
 const cast=Object.freeze(Object.fromEntries(STORY_KEY_PEOPLE.map(p=>[p.id,p])));
 const APPROVED_SCENE_SPEAKERS=Object.freeze({
@@ -35,8 +36,9 @@ export function recapForStage(stage,script,{chapterOpening=false}={}){
 }
 function actorForArt(shot,stage){
  const preferred=APPROVED_SCENE_SPEAKERS[shot.id];
- const id=preferred||shot.characterId||shot.secondaryId||
-  (stage.chapter===1?'lucia':'');
+ const featured=STORY_CHAPTERS[stage.chapter-1]?.dialogues?.[(stage.slot-1)%3]?.speaker;
+ const canonical=STORY_KEY_PERSON_BY_NAME.get(featured)?.id||null;
+ const id=preferred||shot.characterId||shot.secondaryId||canonical||'lucia';
  return id&&cast[id]?cast[id]:null;
 }
 function authoredFallback(person,stage,phase){
