@@ -845,6 +845,26 @@ window.__beastFaceCameraQA=angle=>{
    wolfFullCoat:!!model.userData.wolfKingDonorFullMane,
    wolfDonorStrands:model.userData.wolfKingDonorStrands||0};
 };
+window.__avianWingQA=()=>{
+ if(!model||!['m011','m012','m013','m014'].includes(selected))return null;
+ const p=model.userData.pivots||{};
+ const wings=['L','R'].map(side=>{
+  const part=model.getObjectByName('avian-guardian-three-layer-wing-'+selected+'-'+side);
+  return part?{side,donor:part.userData.angelSource,
+   layers:part.userData.angelFeatherLayers,
+   feathers:part.userData.angelFeathersPerSide,
+   vertices:part.geometry.getAttribute('position')?.count||0,
+   shoulder:part.parent===p['wing'+side],
+   elbow:p['wingElbow'+side]?.parent===p['wing'+side],
+   wrist:p['wingWrist'+side]?.parent===p['wingElbow'+side]}:null;
+ });
+ return {id:selected,revision:model.userData.avianRebuildRevision,
+  donor:model.userData.avianGuardianGeometryDonor,
+  bodyFeathers:model.userData.avianBodyFeatherCount||0,
+  tail:model.getObjectByName('avian-tail-rooted-streamers-'+selected)?.userData.curvedAvianFeathers||0,
+  shape:model.userData.avianAnatomicalKind,
+  wings,action:currentAction};
+};
 window.__monsterQualityQA=()=>({
  id:selected,detail:byId('quality').value,
  ...(meshStats||{}),fps:Math.round(fps),
