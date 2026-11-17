@@ -210,7 +210,35 @@ export function createObjectById(id,{cellSize=2.2}={}){
    const iron=new THREE.MeshStandardMaterial({color:level>=4?0x313c4a:0x55545a,metalness:.7,roughness:.38});
    const ornament=new THREE.MeshStandardMaterial({color:level===5?0xd6bd7a:0x9f8e6c,metalness:.65,roughness:.4});
    const add=(w,h,d,x,y,z,material,name)=>{const mesh=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material);mesh.position.set(x,y,z);mesh.castShadow=true;mesh.receiveShadow=true;mesh.name=name;root.add(mesh);return mesh};
+   // Structural leaf: separate vertical boards, back battens and diagonal
+   // braces transmit sagging load from the latch edge to the hinge stile.
+   // Keep the original continuous leaf for collision silhouette compatibility.
    add(width,height,.17*c,0,height/2,0,darkWood,'door_leaf');
+   const plankCount=level===5?9:6,plankWidth=width/plankCount;
+   const boardMaterial=cottageMaterial('wood',level>=4?0x66513c:0x9c7852);
+   for(let p=0;p<plankCount;p++){
+    const px=-width/2+(p+.5)*plankWidth;
+    add(plankWidth*.94,height*.975,.026*c,px,height/2,.099*c,boardMaterial,'vertical_tongue_groove_board_'+p);
+   }
+   const hingeX=-width*.43;
+   const backZ=-.125*c;
+   for(const y of [height*.18,height*.82]){
+    add(width*.91,.105*c,.085*c,0,y,backZ,darkWood,'rear_horizontal_batten');
+    add(.14*c,.12*c,.14*c,hingeX,y,-.19*c,iron,'hinge_knuckle');
+    const pin=new THREE.Mesh(new THREE.CylinderGeometry(.034*c,.034*c,.22*c,10),iron);
+    pin.name='hinge_pin';pin.position.set(hingeX,y,-.20*c);root.add(pin);
+   }
+   const braceLength=Math.hypot(width*.77,height*.55);
+   const brace=add(.105*c,braceLength,.075*c,0,height*.50,-.174*c,darkWood,'rear_anti_sag_diagonal_brace');
+   brace.rotation.z=Math.atan2(width*.77,height*.55);
+   // Forged straps spread hinge loads across several boards, not just one plank.
+   for(const y of [height*.18,height*.82]){
+    add(width*.48,.048*c,.036*c,-width*.23,y,.137*c,iron,'front_forged_hinge_strap');
+    for(let k=0;k<3;k++){
+     const rivet=new THREE.Mesh(new THREE.SphereGeometry(.026*c,8,6),iron);
+     rivet.name='hinge_strap_rivet';rivet.position.set(-width*.42+k*width*.15,y,.162*c);root.add(rivet);
+    }
+   }
    for(const sign of [-1,1])add(.16*c,height+.16*c,.27*c,sign*(width/2+.07*c),(height+.16*c)/2,0,iron,'door_frame');
    add(width+.36*c,.18*c,.30*c,0,height+.06*c,0,iron,'door_lintel');
    for(let i=0;i<level;i++)add(width*.90,.055*c,.095*c,0,height*(i+1)/(level+1),.13*c,iron,'reinforcing_bar');
@@ -226,6 +254,62 @@ export function createObjectById(id,{cellSize=2.2}={}){
   return root;
  }
 
+ if(id==='spiral_stairs_2f_001'||id==='spiral_stairs_castle_3f_001'){
+  // Radial wedge treads bear on a continuous masonry core and outer stringer.
+  // Two-storey timber stairs and three-storey castle stone stairs use distinct dimensions.
+  const castle=id==='spiral_stairs_castle_3f_001';
+  const root=new THREE.Group();root.name=id;
+  const c=cellSize, radius=(castle?3.15:1.32)*c, core=(castle?.48:.24)*c;
+  const height=(castle?7.2:3.8)*c, steps=castle?54:28;
+  const stone=cottageMaterial('stone'), wood=cottageMaterial('wood',0x9b8162);
+  const iron=new THREE.MeshStandardMaterial({color:0x494944,metalness:.65,roughness:.53});
+  const mat=(castle?stone:wood).clone();
+  mat.side=THREE.DoubleSide;
+  const add=(geometry,material,x=0,y=0,z=0,name='')=>{
+   const mesh=new THREE.Mesh(geometry,material);mesh.position.set(x,y,z);
+   mesh.castShadow=true;mesh.receiveShadow=true;mesh.name=name;root.add(mesh);return mesh;
+  };
+  add(new THREE.CylinderGeometry(core,core,height,24),castle?stone:wood,0,height/2,0,'continuous_load_bearing_spindle');
+  const riser=height/steps, sweep=castle?Math.PI*5:Math.PI*3.5;
+  const wedge=(inner,outer,a0,a1,thick)=>{
+   const vertices=[],indices=[];
+   for(const y of [0,thick])for(const a of [a0,a1])for(const r of [inner,outer])
+    vertices.push(Math.cos(a)*r,y,Math.sin(a)*r);
+   for(const quad of [[0,1,3,2],[4,6,7,5],[0,4,5,1],[2,3,7,6],[0,2,6,4],[1,5,7,3]]){
+    const [a,b,c,d]=quad;indices.push(a,b,c,a,c,d);
+   }
+   const g=new THREE.BufferGeometry();
+   g.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));
+   g.setIndex(indices);g.computeVertexNormals();return g;
+  };
+  for(let i=0;i<steps;i++){
+   const a=i*sweep/steps, next=(i+1)*sweep/steps;
+   const tread=add(wedge(core*.96,radius,a,next,riser*.19),mat,0,(i+1)*riser-riser*.19,0,'supported_wedge_tread_'+i);
+   // Double-sided wedge material is local to this staircase; shared catalog materials stay unchanged.
+   const railA=next-.045, postRadius=radius*.94;
+   if(i%2===0){
+    const x=Math.cos(railA)*postRadius,z=Math.sin(railA)*postRadius;
+    add(new THREE.CylinderGeometry(.035*c,.042*c,.92*c,8),castle?stone:iron,x,(i+1)*riser+.46*c,z,'outer_guard_post_'+i);
+   }
+  }
+  // Continuous handrail joins the guard posts into a load-bearing guard assembly.
+  // Follow the same helix as the treads; no disconnected floating rail segments.
+  const guardPath=[];
+  for(let j=1;j<=steps*2;j++){
+   const t=j/(steps*2), angle=t*sweep-.045;
+   guardPath.push(new THREE.Vector3(
+    Math.cos(angle)*radius*.94,
+    t*height+.92*c,
+    Math.sin(angle)*radius*.94
+   ));
+  }
+  add(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(guardPath),steps*4,.048*c,8,false),
+   castle?stone:iron,0,0,0,'continuous_outer_guard_rail');
+  add(new THREE.CylinderGeometry(radius*1.04,radius*1.04,.18*c,32),mat,0,.09*c,0,'grounded_footing');
+  root.userData.catalogId=id;root.userData.footprint={lengthCells:OBJECT_CATALOG[id].widthCells,widthCells:OBJECT_CATALOG[id].depthCells};
+  root.userData.passable=false;root.userData.stairFloors=castle?3:2;
+  return root;
+ }
  if(OBJECT_CATALOG[id].kind==='furniture'){
   const root=new THREE.Group();root.name=id;
   const timber=cottageMaterial('wood',0xffffff);
@@ -235,27 +319,133 @@ export function createObjectById(id,{cellSize=2.2}={}){
   const fire=new THREE.MeshStandardMaterial({color:0xff9e31,emissive:0xe65a0c,emissiveIntensity:2});
   const b=(w,h,d,x,y,z,m=timber)=>{const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);o.position.set(x,y,z);o.castShadow=true;o.receiveShadow=true;root.add(o);return o};
   const c=cellSize;
-  if(id==='cottage_table_001'){b(2*c,.13*c,1.25*c,0,.85*c,0);for(const x of [-.82,.82])for(const z of [-.46,.46])b(.14*c,.78*c,.14*c,x*c,.4*c,z*c,dark);for(let i=0;i<6;i++)b(.018*c,.015*c,1.23*c,(i-2.5)*.3*c,.92*c,0,dark)}
-  if(id==='cottage_chair_001'){b(.7*c,.11*c,.65*c,0,.48*c,0);b(.7*c,.83*c,.11*c,0,.88*c,-.29*c);for(const x of [-.27,.27])for(const z of [-.23,.23])b(.1*c,.47*c,.1*c,x*c,.23*c,z*c,dark)}
-  if(id==='cottage_bed_001'){b(1.6*c,.28*c,2.5*c,0,.38*c,0,dark);b(1.5*c,.22*c,2.25*c,0,.6*c,0,linen);b(1.6*c,1.1*c,.16*c,0,.65*c,-1.2*c);b(1.1*c,.14*c,.5*c,0,.76*c,-.78*c,linen)}
-  if(id==='cottage_shelf_001'){for(const x of [-.8,.8])b(.14*c,2.8*c,.7*c,x*c,1.4*c,0);for(let y=.3;y<2.8;y+=.62){b(1.8*c,.12*c,.8*c,0,y*c,0);for(let i=0;i<5;i++)b(.17*c,.36*c,.36*c,(i-2)*.31*c,(y+.23)*c,0,i%2?dark:linen)}}
-  if(id==='cottage_fireplace_001'){b(2.6*c,.3*c,1*c,0,.15*c,0,stone);for(const x of [-1.1,1.1])b(.42*c,2.5*c,.9*c,x*c,1.25*c,0,stone);b(2.65*c,.4*c,1.05*c,0,2.5*c,0,stone);b(1.2*c,.45*c,.4*c,0,.48*c,.1*c,fire)}
+  if(id==='cottage_table_001'){
+   // Four grounded legs, mortise-and-tenon aprons, and separate edge-jointed top planks.
+   for(let i=0;i<5;i++)b(.394*c,.105*c,1.25*c,(i-2)*.4*c,.855*c,0,i%2?dark:undefined);
+   for(const x of [-.82,.82])for(const z of [-.46,.46]){
+    b(.14*c,.79*c,.14*c,x*c,.395*c,z*c,dark);
+    b(.19*c,.045*c,.19*c,x*c,.765*c,z*c,dark);
+   }
+   for(const z of [-.46,.46])b(1.61*c,.19*c,.065*c,0,.69*c,z*c,dark);
+   for(const x of [-.82,.82])b(.065*c,.19*c,.82*c,x*c,.69*c,0,dark);
+   b(.085*c,.13*c,1.0*c,0,.66*c,0,dark);
+  }
+  if(id==='cottage_chair_001'){
+   // Continuous rear uprights support the back; rails brace the seat against racking.
+   for(let i=0;i<4;i++)b(.167*c,.085*c,.65*c,(i-1.5)*.175*c,.485*c,0,i%2?dark:undefined);
+   for(const x of [-.27,.27]){
+    b(.105*c,.48*c,.105*c,x*c,.24*c,.23*c,dark);
+    b(.105*c,1.24*c,.105*c,x*c,.62*c,-.23*c,dark);
+   }
+   for(const z of [-.23,.23])b(.54*c,.12*c,.07*c,0,.375*c,z*c,dark);
+   for(const x of [-.27,.27])b(.065*c,.12*c,.4*c,x*c,.375*c,0,dark);
+   for(const y of [.85,1.12])b(.53*c,.12*c,.065*c,0,y*c,-.23*c);
+   b(.54*c,.065*c,.07*c,0,.2*c,-.23*c,dark);
+  }
+  if(id==='cottage_bed_001'){
+   // Bed frame: grounded corner posts, longitudinal side rails, transverse slats and headboard.
+   for(const x of [-.73,.73])for(const z of [-1.16,1.16])
+    b(.14*c,(z<0?1.08:.62)*c,.14*c,x*c,(z<0?.54:.31)*c,z*c,dark);
+   for(const x of [-.73,.73])b(.11*c,.2*c,2.32*c,x*c,.43*c,0,dark);
+   for(const z of [-1.16,1.16])b(1.45*c,.19*c,.12*c,0,.43*c,z*c,dark);
+   for(let i=0;i<11;i++)b(1.36*c,.055*c,.135*c,0,.53*c,(i-5)*.205*c,dark);
+   for(let i=0;i<7;i++)b(1.36*c,.085*c,.105*c,0,(.54+i*.078)*c,-1.16*c);
+   b(1.42*c,.19*c,.13*c,0,1.1*c,-1.16*c,dark);
+   b(1.46*c,.18*c,2.22*c,0,.69*c,0,linen);
+   b(1.12*c,.13*c,.47*c,0,.85*c,-.77*c,linen);
+  }
+  if(id==='cottage_shelf_001'){
+   // Grounded side panels, housed shelves, full back, and anti-racking rear cross brace.
+   for(const x of [-.84,.84])b(.13*c,2.72*c,.76*c,x*c,1.36*c,0,dark);
+   b(1.81*c,.13*c,.83*c,0,.085*c,0,dark);
+   b(1.81*c,.12*c,.83*c,0,2.69*c,0,dark);
+   b(1.66*c,2.53*c,.055*c,0,1.37*c,-.39*c,dark);
+   for(const y of [.48,1.04,1.60,2.16]){
+    b(1.65*c,.105*c,.72*c,0,y*c,.025*c);
+    for(let i=0;i<4;i++){
+     const h=(.27+(i%3)*.055)*c;
+     b(.20*c,h,.34*c,(i-1.5)*.36*c,(y+.0525)*c+h/2,.06*c,i%2?dark:linen);
+    }
+   }
+   for(const x of [-.68,.68])b(.095*c,.13*c,.72*c,x*c,.26*c,0,dark);
+  }
+  if(id==='cottage_fireplace_001'){
+   // Open masonry firebox: solid jambs carry the lintel and chimney; no solid block masks the opening.
+   const mortar=new THREE.MeshStandardMaterial({color:0x776d61,roughness:.98});
+   b(2.8*c,.22*c,1.2*c,0,.11*c,0,stone);
+   for(const x of [-1.14,1.14]){
+    b(.46*c,2.12*c,.94*c,x*c,1.28*c,-.08*c,stone);
+    for(let i=0;i<6;i++)b(.035*c,.022*c,.96*c,(x+Math.sign(x)*.235)*c,(.39+i*.34)*c,-.08*c,mortar);
+   }
+   b(2.75*c,.42*c,1.12*c,0,2.55*c,-.08*c,stone);
+   b(2.18*c,.12*c,.85*c,0,.35*c,-.08*c,dark);
+   b(2.15*c,1.58*c,.10*c,0,1.19*c,-.49*c,dark);
+   for(let i=0;i<5;i++)b(2.8*c,.18*c,.72*c,0,(2.83+i*.17)*c,-.17*c,stone);
+   for(const x of [-.65,.65])b(.14*c,.13*c,.78*c,x*c,.43*c,-.02*c,fire);
+   root.userData.fireboxOpening={width:1.82*c,height:1.83*c};
+  }
   if(id==='cottage_barrel_001'){const o=new THREE.Mesh(new THREE.CylinderGeometry(.48*c,.52*c,1.15*c,24,3),timber);o.position.y=.58*c;o.castShadow=true;root.add(o);for(const y of [.2,.94]){const ring=new THREE.Mesh(new THREE.TorusGeometry(.49*c,.045*c,7,28),dark);ring.rotation.x=Math.PI/2;ring.position.y=y*c;root.add(ring)}}
   if(id==='treasure_chest_001'){
-   const metal=new THREE.MeshStandardMaterial({color:0xa1874c,metalness:.70,roughness:.36});
-   const body=b(.88*c,.38*c,.70*c,0,.30*c,0,dark);body.name='treasure_chest_body';
-   for(const x of [-.35,.35])b(.08*c,.46*c,.73*c,x*c,.32*c,0,metal);
-   const lid=new THREE.Group();lid.name='treasure_chest_lid';lid.position.set(0,.54*c,-.34*c);
-   const cap=new THREE.Mesh(new THREE.BoxGeometry(.92*c,.16*c,.73*c),timber);
-   cap.position.set(0,.03*c,.35*c);cap.castShadow=true;lid.add(cap);
-   for(const x of [-.34,.34]){
-    const band=new THREE.Mesh(new THREE.BoxGeometry(.07*c,.19*c,.75*c),metal);
-    band.position.set(x*c,.03*c,.35*c);lid.add(band);
+   // Hollow boarded carcass with four bearing feet, hinge knuckles and a hinged curved lid.
+   const metal=new THREE.MeshStandardMaterial({color:0x796747,metalness:.72,roughness:.38});
+   const body=new THREE.Group();body.name='treasure_chest_body';root.add(body);
+   const plank=(parent,w,h,d,x,y,z,mat=timber)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(w*c,h*c,d*c),mat);m.position.set(x*c,y*c,z*c);m.castShadow=true;m.receiveShadow=true;parent.add(m);return m;};
+   plank(body,.92,.10,.73,0,.16,0);
+   for(let i=0;i<4;i++){
+    plank(body,.92,.105,.075,0,.27+i*.105,-.33);
+    plank(body,.92,.105,.075,0,.27+i*.105,.33);
    }
-   root.add(lid);root.userData.openable=true;root.userData.opened=false;
-   root.userData.lidName='treasure_chest_lid';
+   for(const x of [-.425,.425]){
+    plank(body,.085,.42,.68,x,.40,0);
+    for(const z of [-.25,.25])plank(body,.12,.16,.13,x,.075,z,dark);
+   }
+   for(const x of [-.35,.35])plank(body,.075,.48,.75,x,.40,0,metal);
+   const lid=new THREE.Group();lid.name='treasure_chest_lid';lid.position.set(0,.62*c,-.35*c);
+   for(let i=0;i<7;i++){
+    const a=(i+.5)*Math.PI/7;
+    const z=.35-.34*Math.cos(a),y=.08+.25*Math.sin(a);
+    const board=plank(lid,.96,.075,.18,0,y,z);
+    board.rotation.x=-Math.PI/2+a;
+   }
+   for(const x of [-.34,.34]){
+    for(let i=0;i<7;i++){
+     const a=(i+.5)*Math.PI/7;
+     const z=.35-.35*Math.cos(a),y=.08+.27*Math.sin(a);
+     const band=plank(lid,.065,.09,.19,x,y,z,metal);
+     band.rotation.x=-Math.PI/2+a;
+    }
+    const hinge=new THREE.Mesh(new THREE.CylinderGeometry(.065*c,.065*c,.13*c,12),metal);
+    hinge.rotation.z=Math.PI/2;hinge.position.set(x*c,0,0);lid.add(hinge);
+   }
+   plank(body,.15,.18,.055,0,.50,.37,metal);
+   root.add(lid);root.userData.openable=true;root.userData.opened=false;root.userData.lidName='treasure_chest_lid';
   }
-  if(id==='cottage_stairs_001'){for(let i=0;i<9;i++)b(1.8*c,.16*c,.48*c,0,(i+.5)*.34*c,(i-4)*.43*c);for(const x of [-.85,.85])b(.12*c,3.2*c,.12*c,x*c,1.6*c,0,dark)}
+  if(id==='cottage_stairs_001'){
+   // Continuous inclined stringers support every tread; closed risers block open gaps.
+   const steps=9,rise=.34*c,run=.43*c,startZ=-1.72*c;
+   const slope=Math.atan2(rise,run),length=Math.hypot(9*rise,9*run);
+   for(const x of [-.82,.82]){
+    const stringer=b(.16*c,.28*c,length,x*c,1.53*c,0,dark);
+    stringer.rotation.x=-slope;
+    for(let i=0;i<9;i++){
+     const y=(i+.5)*rise,z=startZ+i*run;
+     b(.14*c,.28*c,.12*c,x*c,y-.11*c,z,dark);
+    }
+   }
+   for(let i=0;i<9;i++){
+    const y=(i+1)*rise,z=startZ+i*run;
+    b(1.85*c,.14*c,.47*c,0,y,z);
+    b(1.76*c,rise-.12*c,.09*c,0,y-rise/2-.07*c,z-.205*c,dark);
+   }
+   for(const x of [-.82,.82]){
+    for(let i of [0,4,8]){
+     const y=(i+1)*rise,z=startZ+i*run;
+     b(.095*c,.85*c,.095*c,x*c,y+.425*c,z,dark);
+    }
+    const rail=b(.10*c,.11*c,length,x*c,2.40*c,0,dark);
+    rail.rotation.x=-slope;
+   }
+  }
   root.userData.catalogId=id;root.userData.passable=false;return root;
  }
  if(OBJECT_CATALOG[id].kind==='town_prop'){
@@ -290,9 +480,15 @@ export function createObjectById(id,{cellSize=2.2}={}){
    root.userData.farmland=true;root.userData.passable=true;
   }
   if(id==='town_bench_001'){
-   for(const z of [-.38,.38])box(2.7*c,.12*c,.18*c,0,.78*c,z*c,wood);
-   box(2.8*c,.16*c,.8*c,0,.47*c,0,wood);
-   for(const x of [-1.1,1.1])for(const z of [-.3,.3])box(.15*c,.48*c,.15*c,x*c,.24*c,z*c,iron);
+   // Timber seat planks rest on two transverse bearers, with mortised legs and rear back posts.
+   for(const z of [-.27,.27])box(2.72*c,.105*c,.43*c,0,.87*c,z*c,wood);
+   for(const x of [-1.05,1.05]){
+    for(const z of [-.3,.3])box(.19*c,.85*c,.19*c,x*c,.425*c,z*c,wood);
+    box(.28*c,.15*c,.85*c,x*c,.77*c,0,wood);
+    box(.19*c,1.15*c,.19*c,x*c,1.37*c,-.34*c,wood);
+   }
+   for(const y of [1.28,1.68])box(2.35*c,.17*c,.13*c,0,y*c,-.34*c,wood);
+   box(2.2*c,.13*c,.13*c,0,.38*c,0,wood);
   }
   if(id==='town_well_001'){
    const ring=new THREE.Mesh(new THREE.CylinderGeometry(1.2*c,1.2*c,.95*c,16,1,true),stone);
@@ -305,13 +501,23 @@ export function createObjectById(id,{cellSize=2.2}={}){
    roof.position.y=3.2*c;roof.rotation.y=Math.PI/4;root.add(roof);
   }
   if(id==='town_planter_001'){
-   box(3*c,.5*c,1.8*c,0,.25*c,0,stone);
+   // Hollow stone planter: bonded courses, interior soil bed and a projecting cap.
    const soil=new THREE.MeshStandardMaterial({color:0x463827,roughness:1});
-   box(2.7*c,.07*c,1.5*c,0,.54*c,0,soil);
+   box(3.02*c,.16*c,1.82*c,0,.08*c,0,stone);
+   for(const y of [.27,.46]){
+    for(const z of [-.81,.81]){
+     for(let i=0;i<6;i++)box(.49*c,.18*c,.18*c,(-1.25+i*.5+(y>.3?.12:0))*c,y*c,z*c,stone);
+    }
+    for(const x of [-1.4,1.4])for(let i=0;i<3;i++)
+     box(.2*c,.18*c,.52*c,x*c,y*c,(-.53+i*.53)*c,stone);
+   }
+   for(const z of [-.81,.81])box(3.15*c,.12*c,.24*c,0,.59*c,z*c,stone);
+   for(const x of [-1.4,1.4])box(.24*c,.12*c,1.75*c,x*c,.59*c,0,stone);
+   box(2.65*c,.11*c,1.42*c,0,.47*c,0,soil);
    const petals=[0xf1a0a7,0xffd05c,0xb68ce5,0xf5f1dc].map(color=>new THREE.MeshStandardMaterial({color,roughness:1}));
    const stem=new THREE.MeshStandardMaterial({color:0x3b793b,roughness:1});
    for(let i=0;i<22;i++){
-    const x=((i*7)%23/23-.5)*2.5*c,z=((i*11)%19/19-.5)*1.3*c;
+    const x=((i*7)%23/23-.5)*2.4*c,z=((i*11)%19/19-.5)*1.2*c;
     const stalk=new THREE.Mesh(new THREE.CylinderGeometry(.025*c,.04*c,.3*c,5),stem);
     stalk.position.set(x,.73*c,z);root.add(stalk);
     const bloom=new THREE.Mesh(new THREE.IcosahedronGeometry(.13*c,1),petals[i%4]);
@@ -319,73 +525,169 @@ export function createObjectById(id,{cellSize=2.2}={}){
    }
   }
   if(id==='town_crate_001'){
-   box(.95*c,.85*c,.95*c,0,.43*c,0,wood);
-   for(const x of [-.39,.39])box(.1*c,.88*c,1.02*c,x*c,.44*c,0,iron);
-   for(const z of [-.39,.39])box(1.02*c,.12*c,.1*c,0,.8*c,z*c,iron);
+   // Openable-looking timber box assembled from separate planks and corner posts.
+   box(.96*c,.09*c,.96*c,0,.075*c,0,wood);
+   for(const x of [-.4,.4])for(const z of [-.4,.4])box(.12*c,.83*c,.12*c,x*c,.45*c,z*c,wood);
+   for(const y of [.23,.43,.63,.83]){
+    for(const z of [-.45,.45])box(.78*c,.17*c,.075*c,0,y*c,z*c,wood);
+    for(const x of [-.45,.45])box(.075*c,.17*c,.78*c,x*c,y*c,0,wood);
+   }
+   for(const z of [-.45,.45])box(.95*c,.08*c,.12*c,0,.86*c,z*c,iron);
+   for(const x of [-.45,.45])box(.12*c,.08*c,.95*c,x*c,.86*c,0,iron);
+   for(const x of [-.3,.3])box(.12*c,.09*c,1.03*c,x*c,.055*c,0,wood);
   }
   if(id==='town_notice_001'){
-   for(const x of [-.8,.8])box(.16*c,2.5*c,.18*c,x*c,1.25*c,0,wood);
-   box(2.1*c,1.25*c,.16*c,0,1.85*c,0,wood);
+   // Posts transfer the board weight into ground; rafters carry a timber roof.
+   for(const x of [-.78,.78]){
+    box(.2*c,2.65*c,.22*c,x*c,1.325*c,0,wood);
+    box(.42*c,.16*c,.42*c,x*c,.08*c,0,stone);
+    box(.18*c,.19*c,.62*c,x*c,2.55*c,0,wood);
+   }
+   for(const y of [1.25,2.4])box(1.82*c,.16*c,.18*c,0,y*c,0,wood);
+   for(let i=0;i<7;i++)box(.245*c,1.05*c,.095*c,(i-3)*.255*c,1.83*c,0,wood);
    const paper=new THREE.MeshStandardMaterial({color:0xe2d3aa,roughness:1});
-   for(let i=0;i<3;i++)box(.48*c,.68*c,.025*c,(i-1)*.58*c,1.85*c,.11*c,paper);
-   box(2.35*c,.15*c,.55*c,0,2.58*c,0,stone);
+   for(let i=0;i<3;i++)box(.45*c,.65*c,.025*c,(i-1)*.53*c,1.82*c,.067*c,paper);
+   for(const z of [-.27,.27])box(2.12*c,.12*c,.3*c,0,2.72*c,z*c,wood);
+   box(2.2*c,.08*c,.68*c,0,2.83*c,0,wood);
   }
   if(id==='town_trash_bin_001'){
-   const metalMat=new THREE.MeshStandardMaterial({color:0x55564f,metalness:.68,roughness:.42});
-   const body=new THREE.Mesh(new THREE.CylinderGeometry(.4*c,.34*c,1.15*c,12,1,true),metalMat);
-   body.position.y=.61*c;body.castShadow=true;root.add(body);
-   const bottom=new THREE.Mesh(new THREE.CylinderGeometry(.35*c,.35*c,.07*c,12),metalMat);
-   bottom.position.y=.06*c;root.add(bottom);
-   const rim=new THREE.Mesh(new THREE.TorusGeometry(.4*c,.065*c,6,16),iron);
-   rim.rotation.x=Math.PI/2;rim.position.y=1.19*c;root.add(rim);
-   for(let i=0;i<12;i++){const a=i*Math.PI/6;
-    const slot=new THREE.Mesh(new THREE.BoxGeometry(.035*c,.8*c,.025*c),wood);
-    slot.position.set(Math.cos(a)*.386*c,.62*c,Math.sin(a)*.386*c);
-    slot.rotation.y=-a;root.add(slot);
+   // Galvanised open-top municipal bin: rolled steel wall, grounded pressed floor,
+   // two structural hoop bands and fixed lifting grips (no floating wooden slats).
+   const galvanised=new THREE.MeshStandardMaterial({color:0x66736d,metalness:.65,roughness:.55,side:THREE.DoubleSide});
+   const darkSteel=new THREE.MeshStandardMaterial({color:0x3c4744,metalness:.7,roughness:.46});
+   const addBin=(geometry,mat,x,y,z,name)=>{const mesh=new THREE.Mesh(geometry,mat);
+    mesh.position.set(x*c,y*c,z*c);mesh.name=name;mesh.castShadow=true;mesh.receiveShadow=true;root.add(mesh);return mesh};
+   addBin(new THREE.CylinderGeometry(.43*c,.355*c,1.12*c,24,1,true),galvanised,0,.635,0,'galvanized_open_wall');
+   addBin(new THREE.CylinderGeometry(.36*c,.36*c,.075*c,24),darkSteel,0,.0375,0,'pressed_grounded_floor');
+   // Reinforcement hoops wrap the wall with correct circular profile and radius.
+   for(const [radius,y] of [[.366,.20],[.434,1.20]]){
+    const band=addBin(new THREE.TorusGeometry(radius*c,.024*c,8,32),darkSteel,0,y,0,'rolled_support_band');
+    band.rotation.x=Math.PI/2;
    }
+   // Twelve riveted vertical steel ribs sit on the tapered cone, not tangential wood blocks.
+   for(let i=0;i<12;i++){
+    const a=i*Math.PI/6;
+    const rib=addBin(new THREE.BoxGeometry(.048*c,.89*c,.025*c),darkSteel,
+     Math.sin(a)*.396,.65,Math.cos(a)*.396,'steel_stiffener');
+    rib.rotation.y=a;
+   }
+   for(const sign of [-1,1]){
+    const bracket=addBin(new THREE.BoxGeometry(.08*c,.22*c,.17*c),darkSteel,
+     sign*.425,.95,0,'lifting_handle_mount');
+    const grip=addBin(new THREE.TorusGeometry(.135*c,.03*c,8,18,Math.PI),darkSteel,
+     sign*.52,.98,0,'hinged_lifting_handle');
+    grip.rotation.z=sign*Math.PI/2;
+   }
+   root.userData.openTop=true;
   }
   if(id==='town_handcart_001'){
-   box(2.8*c,.23*c,1.65*c,0,1.08*c,0,wood);
-   for(const z of [-.73,.73])box(2.9*c,.46*c,.14*c,0,1.42*c,z*c,wood);
-   for(const x of [-1.33,1.33])box(.13*c,.46*c,1.6*c,x*c,1.42*c,0,wood);
-   for(const z of [-1.04,1.04]){
-    const wheel=new THREE.Mesh(new THREE.TorusGeometry(.56*c,.15*c,8,16),wood);
-    wheel.position.set(0,.58*c,z*c);root.add(wheel);
-    for(let i=0;i<6;i++){const a=i*Math.PI/3;
-     const spoke=new THREE.Mesh(new THREE.BoxGeometry(.08*c,.95*c,.08*c),wood);
-     spoke.position.set(0,.58*c,z*c);spoke.rotation.z=a;root.add(spoke);
+   // Longitudinal chassis bears the bed; wheel hubs and axle connect the rolling assembly.
+   for(const z of [-.63,.63])box(3.12*c,.2*c,.17*c,0,.93*c,z*c,wood);
+   for(const x of [-1.22,0,1.22])box(.17*c,.17*c,1.52*c,x*c,.96*c,0,wood);
+   for(let i=0;i<8;i++)box(.34*c,.13*c,1.55*c,(-3.5+i)*.35*c,1.11*c,0,wood);
+   for(const z of [-.79,.79]){
+    for(let i=0;i<5;i++)box(.53*c,.34*c,.105*c,(-2+i)*.54*c,1.42*c,z*c,wood);
+   }
+   for(const x of [-1.37,1.37])box(.12*c,.45*c,1.55*c,x*c,1.4*c,0,wood);
+   const axle=new THREE.Mesh(new THREE.CylinderGeometry(.095*c,.095*c,2.55*c,12),iron);
+   axle.rotation.x=Math.PI/2;axle.position.set(0,.6*c,0);root.add(axle);
+   for(const z of [-1.14,1.14]){
+    const wheel=new THREE.Mesh(new THREE.TorusGeometry(.51*c,.105*c,10,24),wood);
+    wheel.position.set(0,.6*c,z*c);root.add(wheel);
+    const hub=new THREE.Mesh(new THREE.CylinderGeometry(.18*c,.18*c,.21*c,12),wood);
+    hub.rotation.x=Math.PI/2;hub.position.set(0,.6*c,z*c);root.add(hub);
+    for(let i=0;i<8;i++){
+     const spoke=new THREE.Mesh(new THREE.BoxGeometry(.075*c,.83*c,.075*c),wood);
+     spoke.position.set(0,.6*c,z*c);spoke.rotation.z=i*Math.PI/8;root.add(spoke);
     }
    }
-   for(const z of [-.5,.5])box(1.8*c,.1*c,.1*c,2*c,.93*c,z*c,wood);
+   for(const z of [-.53,.53]){
+    box(1.72*c,.12*c,.14*c,2.0*c,.95*c,z*c,wood);
+    box(.12*c,.25*c,.12*c,2.75*c,.84*c,z*c,iron);
+   }
   }
   if(id==='stone_fence_001'){
+   // Individual ashlar courses overlap at the joints rather than intersecting continuous bars.
    for(const x of [-1.3,0,1.3]){
-    box(.32*c,1.25*c,.32*c,x*c,.625*c,0,stone);
-    box(.43*c,.16*c,.43*c,x*c,1.32*c,0,stone);
+    box(.4*c,.19*c,.47*c,x*c,.095*c,0,stone);
+    box(.31*c,1.16*c,.31*c,x*c,.74*c,0,stone);
+    box(.47*c,.17*c,.47*c,x*c,1.39*c,0,stone);
+    box(.32*c,.12*c,.32*c,x*c,1.51*c,0,stone);
    }
-   for(const y of [.42,.91])box(3*c,.23*c,.25*c,0,y*c,0,stone);
+   for(const y of [.45,.91]){
+    for(let i=0;i<10;i++){
+     const x=-1.43+(i+.5)*.286;
+     box(.278*c,.22*c,.25*c,x*c,y*c,0,stone);
+    }
+   }
   }
   if(id==='town_fence_001'){
-   for(const x of [-1.3,0,1.3])box(.16*c,1.3*c,.16*c,x*c,.65*c,0,wood);
-   for(const y of [.45,.95])box(3*c,.13*c,.15*c,0,y*c,0,wood);
+   // Grounded posts, two mortised rails and separate pickets with capped end grain.
+   for(const x of [-1.3,0,1.3]){
+    box(.24*c,.14*c,.26*c,x*c,.07*c,0,stone);
+    box(.19*c,1.38*c,.19*c,x*c,.72*c,0,wood);
+    box(.24*c,.1*c,.24*c,x*c,1.44*c,0,wood);
+   }
+   for(const y of [.43,1.04])box(2.85*c,.15*c,.16*c,0,y*c,0,wood);
+   for(let i=0;i<12;i++){
+    const x=-1.18+i*(2.36/11);
+    box(.115*c,1.05*c,.095*c,x*c,.65*c,.12*c,wood);
+    box(.13*c,.085*c,.115*c,x*c,1.2*c,.12*c,wood);
+   }
   }
   if(id==='stone_archway_001'){
+   // True load-bearing semicircular voussoirs. This is a segmented extruded ring,
+   // not rectangular boxes distributed around a curve with large air gaps.
+   const innerR=1.7*c,outerR=2.22*c,springY=3.1*c,depth=.95*c;
+   const masonry=new THREE.MeshStandardMaterial({color:0x888580,roughness:.93});
+   const keystoneMat=new THREE.MeshStandardMaterial({color:0xa6a198,roughness:.91});
    for(const sign of [-1,1]){
-    box(.68*c,3.5*c,.9*c,sign*2*c,1.75*c,0,stone);
-    box(.93*c,.3*c,1.1*c,sign*2*c,3.5*c,0,stone);
+    box(.95*c,.24*c,1.25*c,sign*2*c,.12*c,0,stone).name='pier_spread_footing';
+    // Staggered ashlar courses expose visible construction joints.
+    for(let row=0;row<8;row++){
+     const height=.38*c,centerY=.24*c+(row+.5)*height;
+     const x=sign*(2.0+(row%2?.025:-.025))*c;
+     box(.74*c,height*.96,depth,x,centerY,0,row%3?stone:masonry).name='pier_ashlar_course';
+    }
+    box(.94*c,.15*c,1.1*c,sign*2*c,3.15*c,0,stone).name='springing_capital';
    }
-   for(let i=0;i<=10;i++){
-    const theta=Math.PI-i*Math.PI/10;
-    const arch=new THREE.Mesh(new THREE.BoxGeometry(.56*c,.48*c,1.0*c),stone);
-    arch.position.set(Math.cos(theta)*2*c,3.4*c+Math.sin(theta)*2*c,0);
-    arch.rotation.z=theta-Math.PI/2;arch.castShadow=true;arch.receiveShadow=true;
-    root.add(arch);
+   const count=13;
+   for(let i=0;i<count;i++){
+    const start=i*Math.PI/count,end=(i+1)*Math.PI/count;
+    const shape=new THREE.Shape();
+    // Inner face: angle 0 on right spring, PI on left spring.
+    const at=(r,a)=>[Math.cos(a)*r,springY+Math.sin(a)*r];
+    let point=at(innerR,start);shape.moveTo(point[0],point[1]);
+    for(let j=1;j<=3;j++){point=at(innerR,start+(end-start)*j/3);shape.lineTo(point[0],point[1]);}
+    for(let j=3;j>=0;j--){point=at(outerR,start+(end-start)*j/3);shape.lineTo(point[0],point[1]);}
+    shape.closePath();
+    const wedge=new THREE.Mesh(new THREE.ExtrudeGeometry(shape,{depth,bevelEnabled:false,curveSegments:4}),
+     i===6?keystoneMat:(i%3===0?masonry:stone));
+    wedge.position.z=-depth/2;wedge.name=i===6?'arch_keystone':'arch_radial_voussoir';
+    wedge.castShadow=true;wedge.receiveShadow=true;root.add(wedge);
    }
-   box(.65*c,.68*c,1.1*c,0,5.45*c,0,stone).name='arch_keystone';
+   root.userData.archClearSpan=innerR*2;
   }
   if(id==='stone_steps_001'){
-   for(let i=0;i<7;i++)box(3.8*c,(i+1)*.16*c,.46*c,0,(i+1)*.08*c,(i-3)*.40*c,stone);
-   for(const x of [-1.95,1.95])box(.23*c,1.25*c,3*c,x*c,.65*c,0,stone);
+   // Seven solid stepped masonry courses with split tread slabs and real joints.
+   // Each course bears on the ground; the tread rises by .16c per step.
+   const tread=new THREE.MeshStandardMaterial({color:0xaaa69c,roughness:.91});
+   const mortar=new THREE.MeshStandardMaterial({color:0x68645f,roughness:1});
+   for(let i=0;i<7;i++){
+    const rise=(i+1)*.16,z=(i-3)*.43;
+    box(3.82*c,rise*c,.45*c,0,rise*c/2,z*c,stone).name='ground_bearing_riser';
+    for(let j=0;j<4;j++){
+     const x=(j-1.5)*.95;
+     box(.94*c,.075*c,.47*c,x*c,(rise+.0375)*c,z*c,j%2?tread:stone).name='individual_tread_slab';
+    }
+    // Visible joint between neighbouring tread slabs, recessed below walking surface.
+    for(let j=1;j<4;j++)box(.013*c,.014*c,.47*c,(j-2)*.95*c,(rise+.077)*c,z*c,mortar);
+    for(const sign of [-1,1]){
+     box(.25*c,rise*c,.45*c,sign*2.02*c,rise*c/2,z*c,stone).name='stepped_cheek_wall';
+     box(.32*c,.08*c,.45*c,sign*2.02*c,(rise+.04)*c,z*c,tread).name='cheek_cap';
+    }
+   }
+   root.userData.stairRisers=7;
   }
   if(id==='wooden_watchtower_001'){
    for(const x of [-1.65,1.65])for(const z of [-1.65,1.65])box(.28*c,5.1*c,.28*c,x*c,2.55*c,z*c,wood);
@@ -444,15 +746,32 @@ export function createObjectById(id,{cellSize=2.2}={}){
    }
    for(let i=0;i<8;i++){const a=i*Math.PI/4;box(.42*cellSize,.9*cellSize,.42*cellSize,Math.sin(a)*2.9*cellSize,.85*cellSize,Math.cos(a)*2.9*cellSize,stone)}
   }else if(id==='market_stall_001'){
-   for(const x of [-2,2])for(const z of [-1.4,1.4])box(.18*cellSize,3*cellSize,.18*cellSize,x*cellSize,1.5*cellSize,z*cellSize,wood);
-   box(4.4*cellSize,.2*cellSize,2.7*cellSize,0,1.45*cellSize,0,wood);
-   for(let i=0;i<8;i++)box(.54*cellSize,.12*cellSize,3.6*cellSize,(i-3.5)*.56*cellSize,3.1*cellSize,0,i%2?cloth:stone);
+   // Four anchored timber posts, diagonal knee braces and rafters carry a pitched fabric canopy.
+   for(const x of [-2,2])for(const z of [-1.4,1.4]){
+    box(.19*c,3.05*c,.19*c,x*c,1.525*c,z*c,wood);
+    const brace=box(.13*c,.85*c,.13*c,(x-Math.sign(x)*.28)*c,2.72*c,z*c,wood);
+    brace.rotation.z=Math.sign(x)*.7;
+   }
+   for(const z of [-1.4,1.4])box(4.35*c,.2*c,.18*c,0,3.02*c,z*c,wood);
+   for(const x of [-2,2])box(.17*c,.15*c,3*c,x*c,3.02*c,0,wood);
+   box(4.4*c,.17*c,2.7*c,0,1.45*c,0,wood);
+   for(const x of [-1.8,0,1.8])box(.14*c,.75*c,.14*c,x*c,.98*c,0,wood);
+   for(let i=0;i<8;i++){
+    const panel=box(.56*c,.045*c,3.25*c,(i-3.5)*.56*c,3.32*c,0,i%2?cloth:wood);
+    panel.rotation.z=(i<4?-.12:.12);
+   }
    for(let i=0;i<9;i++){const m=new THREE.Mesh(new THREE.SphereGeometry(.22*cellSize,6,4),new THREE.MeshStandardMaterial({color:i%2?0xb78a46:0x65944a}));m.position.set(((i%3)-1)*.8*cellSize,1.8*cellSize,(Math.floor(i/3)-1)*.6*cellSize);root.add(m)}
   }else if(id==='street_lamp_001'){
-   box(.24*cellSize,4.2*cellSize,.24*cellSize,0,2.1*cellSize,0,iron);
-   box(1.1*cellSize,.18*cellSize,1.1*cellSize,0,4.3*cellSize,0,iron);
-   const lantern=new THREE.Mesh(new THREE.SphereGeometry(.43*cellSize,12,8),light.clone());lantern.name='street_lamp_bulb';lantern.position.y=4.65*cellSize;root.add(lantern);
-   box(.95*cellSize,.17*cellSize,.95*cellSize,0,5.13*cellSize,0,iron);
+   // Cast-metal pedestal, tapered mast and four-sided glazed lantern cage.
+   box(.78*c,.17*c,.78*c,0,.085*c,0,iron);
+   box(.43*c,.42*c,.43*c,0,.34*c,0,iron);
+   const mast=new THREE.Mesh(new THREE.CylinderGeometry(.095*c,.18*c,3.75*c,10),iron);
+   mast.position.y=2.37*c;mast.castShadow=true;root.add(mast);
+   box(.92*c,.16*c,.92*c,0,4.31*c,0,iron);
+   for(const x of [-.38,.38])for(const z of [-.38,.38])box(.075*c,.8*c,.075*c,x*c,4.78*c,z*c,iron);
+   const lantern=new THREE.Mesh(new THREE.SphereGeometry(.32*c,12,8),light.clone());lantern.name='street_lamp_bulb';lantern.position.y=4.76*c;root.add(lantern);
+   box(.98*c,.15*c,.98*c,0,5.22*c,0,iron);
+   const cap=new THREE.Mesh(new THREE.ConeGeometry(.68*c,.38*c,4),iron);cap.rotation.y=Math.PI/4;cap.position.y=5.48*c;root.add(cap);
   }
 
   // New batch-center catalog assets are authored once for both preview and game.
