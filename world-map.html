@@ -369,7 +369,7 @@ function beginSortie(stage){
  game.storyFlags.stageMangaSeen[stage.id]=true;
  saveSession();
  mapAudio.unlock();
- mangaViewer.open(stage.id,{onFinish:()=>{
+ try{mangaViewer.open(stage.id,{onFinish:()=>{
   game.storyFlags??={};game.storyFlags.stageMangaSeen??={};
   game.storyFlags.stageMangaSeen[stage.id]=true;
   if(stage.slot===1){
@@ -378,6 +378,7 @@ function beginSortie(stage){
   }
   saveSession();launchSelectedStage(stage.id);
  },context:storyStageContext(game,stage.id),phase:'pre'});
+ }catch(error){stageLaunching=false;message(error.message||String(error));}
 }
 $('sortie').onclick=()=>{
  if(stageLaunching)return;
