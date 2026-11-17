@@ -13,7 +13,7 @@ import {wolfKingCloneMorph,copyWolfKingSourceRings,WOLF_CLONE_SOURCE_REVISION}
 import {felineMasterVariant,felineFaceRings,felineMuzzleRings,
  felineNasalRings,felineAnatomicalSections,felineEyeSurface,
  felineDorsalSurface,FELINE_SOURCE_MODEL}
- from './feline-master-variants.js?v=m001-feline-source-v3-20261117';
+ from './feline-master-variants.js?v=beast-m001-m007-cat-v5-20261117';
 import {MORTAL_HEAD_RINGS,MORTAL_TORSO_RINGS} from './monster-realistic-loft.js';
 import {BEAST_REFERENCE_QUALITY_REVISION,REFERENCE_CROWN_QUALITY,
  referenceBeastTorsoStations,referenceDoubleCoat,referenceBeastFlow}
