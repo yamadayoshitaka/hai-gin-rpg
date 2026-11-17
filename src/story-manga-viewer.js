@@ -101,6 +101,13 @@ export function createMangaViewer({container=document.body,storage=globalThis.lo
  }
  function renderPortrait(turn,shot=null){
   const img=$('.manga-speaker-face');
+  // An archival original with a verified no-actor scene, or without the
+  // current speaker, must not attach the wrong speaker portrait to that CG.
+  // The voice may still be heard as off-screen dialogue.
+  const restored=shot?restoredStoryArchivePanel(shot):null;
+  if(restored&&(!turn.characterId||!restored.visibleActorIds.includes(turn.characterId))){
+   img.hidden=true;img.removeAttribute('src');return;
+  }
   // P0 screenshot regression: the original cast atlas showed a different
   // person's face than the physically registered S03/S05 first CG.
   const exact=shot&&['c01-s03-m1','c01-s05-m1'].includes(shot.id)
