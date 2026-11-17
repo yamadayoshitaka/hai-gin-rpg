@@ -47,6 +47,12 @@ on:
       - 'src/mass-dash-parity.js'
       - 'src/character-system/battle-motion-policy.js'
       - 'src/character-system/battle-artist-head-graft.js'
+      - 'src/character-system/battle-visual-pipeline.js'
+      - 'src/outfit-maintenance-model.js'
+      - 'character-quality-pipeline.html'
+      - 'master-model-manager.html'
+      - 'qa/battle-visual-pipeline.test.mjs'
+      - 'qa/battle-source-to-game-visual.test.mjs'
       - 'src/battle-studio-groom-policy.js'
       - 'src/character-system/rig-motion-transition.js'
       - 'src/character-system/battle-face-action-policy.js'
@@ -131,6 +137,12 @@ jobs:
           node --check src/battle-engagement-camera.js
           node --check src/battle-situation-pause.js
           node qa/battle-engagement-camera.test.mjs
+          node --check src/character-system/battle-visual-pipeline.js
+          node --check src/character-system/battle-artist-head-graft.js
+          node --check src/character-system/rigged-outfit-runtime.js
+          node --check src/mass-battle-real-army.js
+          node qa/battle-visual-pipeline.test.mjs
+          node qa/battle-source-to-game-visual.test.mjs
           node --check src/battle-studio-groom-policy.js
           node --check src/character-system/rig-motion-transition.js
           node --check src/character-system/battle-face-action-policy.js
