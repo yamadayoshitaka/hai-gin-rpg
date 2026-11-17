@@ -2213,7 +2213,12 @@ test('v41 real female anatomical legs remain after studio armor coverage across 
  // explicit closure validation of the opaque garment panel. Assert that
  // a missing panel still preserves torso skin instead of a hollow back.
  assert.match(source,/const closedBack=battleClosedBackCoverage\(\{/);
- assert.match(source,/opaqueLining:opaqueTorsoLiningMaterials,preserveBody/);
+ // Real source skinned torso materials can ALSO be fully opaque. The
+ // downstream closed-back policy receives the combined evidence instead
+ // of discarding donor source coverage while using fitted garments.
+ assert.match(source,
+  /opaqueLining:opaqueTorsoLiningMaterials(?:\+sourceOpaqueTorsoMaterials)?,preserveBody/,
+  'back closure must use actual opaque garment/source material evidence');
  assert.match(source,/forceCoveredRegions:forcedTorsoOcclusion/);
  assert.match(coverage,/const preserved=new Set\(preserveRegions\)/);
  assert.match(bridge,/studioPreserveLegAnatomy:true/);
