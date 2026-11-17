@@ -964,33 +964,28 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    }
  }
  if(s.id==='m002'){
-   // Cranial surface references: wolf sagittal crest, zygomatic arch and
-   // molar/masseter space. Shape stays in head-local coordinates, so the
-   // whole snout remains attached during head turns and attack lunges.
-   g.bridge(head,'skin',[0,.083,-.18],[0,-.051,.446],.187,.113);
-   g.tube(head,'light',[[0,.267,-.20],[0,.292,.01],
-     [0,.212,.19]],.034);
+   // High-quality *subtractive* m001 face. No generic thick nasal
+   // bridge, oversized triangular cheek ball, or duplicate forward tube.
+   // The cranium already comes from the physical m001 ring topology.
    for(const side of [-1,1]){
-     // Masseter cheek volume and the bone arch are three-dimensional.
-     g.bridge(head,'skin',[side*.216,-.048,-.043],
-       [side*.281,-.102,.226],.132,.088);
-     g.tube(head,'light',[[side*.185,.104,-.102],
-       [side*.322,.064,.070],[side*.325,-.015,.267]],.030);
-     g.sphere(head,'skin',[side*.236,-.096,.080],
-       [.123,.135,.194],{name:'m002-masseter'});
-     g.sphere(head,'shadow',[side*.085,-.169,muzzle+.288],
-       [.027,.014,.013],{name:'m002-nostril'});
-     // Under-eye tissue overlaps the orbital socket without bulging eyes.
-     g.tube(head,'skin',[[side*.262,.104,.158],
-       [side*.306,.117,.255],[side*.273,.099,.342]],.028);
+     const contour=g.bridge(head,'skin',
+       [side*.189,-.054,-.103],[side*.180,-.122,.165],
+       .095,.049);
+     contour.name='m002-fitted-zygomatic-'+(side<0?'L':'R');
+     // Retain the anatomical masseter with an INSET socket rather than
+     // a spherical pad hovering above the side of the head.
+     g.sphere(head,'skin',[side*.181,-.111,.061],
+       [.069,.095,.117],{name:'m002-masseter'});
+     g.sphere(head,'shadow',[side*.044,-.145,.528],
+       [.009,.005,.007],{name:'m002-nostril'});
      for(let i=0;i<4;i++){
-       const z=muzzle+.09+i*.036;
-       g.sphere(head,'shadow',[side*(.137+i*.010),-.195,z],
-         [.006,.006,.007],{rough:.85,name:'m002-vibrissa-root'});
+       const z=.298+i*.032;
+       g.sphere(head,'shadow',[side*(.085+i*.009),
+         -.191+(i*.006),z],[.004,.005,.005],
+         {rough:.85,name:'m002-vibrissa-root'});
      }
    }
-   if(!beastRemesh)g.sphere(head,'shadow',[0,-.164,muzzle+.294],
-     [.145,.045,.088],{name:'m002-rhinarium'});
+   g.root.userData.m002OriginalFaceBulkRemoved=true;
  }
  if(s.id==='m001'){
    // Skull, cheeks and forehead are now ONE sculpted axial shell above.
@@ -1008,28 +1003,33 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
  // opened an ugly physical seam even when the mouth was CLOSED. Nest the
  // animated mandible under the skull and express its original world-space
  // rest position in head-local coordinates (head 1.300 / .786).
- const jaw=s.id==='m001'?
+ const jaw=s.id==='m001'||s.id==='m002'?
    g.group('jaw',[0,-.140,.129],head):
    felineMaster?
    g.group('jaw',[0,-.140,.26-v*.06],head):
    g.group('jaw',[0,beastRemesh?1.160:1.42,
      beastRemesh?1.046:.96]);
  if(felineMaster)jaw.userData.felineMasterConnectedJaw=true;
- if(s.id==='m001')jaw.userData.skullMountedMandible=true;
+ if(s.id==='m001'||s.id==='m002')jaw.userData.skullMountedMandible=true;
  if(s.id==='m002'){
-   // An independently opening lower mandible, with the canine teeth
-   // mounted on the same jaw pivot (not left floating in the skull).
-   g.bridge(jaw,'skin',[0,-.023,.008],[0,-.065,.367],.173,.100);
+   // Reference m001 jaw is a child of the skull. The mandibular bar is
+   // narrow enough to nest inside the source face and teeth share pivot.
+   const body=g.bridge(jaw,'skin',[0,-.025,-.065],
+     [0,-.059,.198],.119,.076);
+   body.name='m002-embedded-mandibular-body';
    for(const side of [-1,1]){
-     g.tube(jaw,'light',[[side*.155,-.014,.006],
-       [side*.149,-.068,.18],[side*.118,-.082,.355]],.029);
-     g.spike(jaw,'bone',[side*.133,-.035,.309],
-       [side*.127,.094,.347],.041);
+     g.tube(jaw,'light',[
+       [side*.102,-.011,-.035],[side*.090,-.055,.074],
+       [side*.071,-.074,.191]],.015);
+     const tooth=g.rootedSpike(jaw,'bone','skin',
+       [side*.083,-.046,.184],[side*.079,.035,.224],.018,
+       {name:'m002-mandibular-canine-'+(side<0?'L':'R')});
+     tooth.tooth.userData.toothOnMandible=true;
    }
  }
  if(beastRemesh){
    // Continuous lower mandible with chin narrowing, not two stacked spheres.
-   g.axialLoft(jaw,'skin',s.id==='m001'?[
+   g.axialLoft(jaw,'skin',(s.id==='m001'||s.id==='m002')?[
      // Real short muzzle: moving lower jaw matches the compact nose.
      {z:.212,y:-.061,rx:.037,ry:.026},
      {z:.173,y:-.053,rx:.082,ry:.041},
@@ -1063,7 +1063,7 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
  // Keep both surfaces slightly overlapping in the idle pose.
  const jawOffsetZ=.26-v*.06;
  for(const side of [-1,1]){
-   g.tube(head,'shadow',s.id==='m001'?[
+   g.tube(head,'shadow',(s.id==='m001'||s.id==='m002')?[
      [side*.112,-.149,.11],
      [side*.106,-.176,.260],
      [side*.068,-.184,.329]
@@ -1075,8 +1075,8 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
      [side*.205,-.192,.135],
      [side*.204,-.200,muzzle+.025],
      [side*.155,-.214,muzzle+.263]
-   ],s.id==='m001'?.007:felineMaster?.007:.012);
-   g.tube(jaw,'shadow',s.id==='m001'?[
+   ],(s.id==='m001'||s.id==='m002')?.007:felineMaster?.007:.012);
+   g.tube(jaw,'shadow',(s.id==='m001'||s.id==='m002')?[
      [side*.108,-.028,-.069],
      [side*.102,-.055,.057],
      [side*.062,-.061,.202]
@@ -1088,9 +1088,9 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
      [side*.200,-.052,.135-jawOffsetZ],
      [side*.198,-.061,muzzle+.025-jawOffsetZ],
      [side*.153,-.065,muzzle+.263-jawOffsetZ]
-   ],s.id==='m001'?.007:felineMaster?.008:.013);
+   ],(s.id==='m001'||s.id==='m002')?.007:felineMaster?.008:.013);
  }
- if(s.id==='m001'){
+ if(s.id==='m001'||s.id==='m002'){
    // Replace the exposed black mouth button with a shallow tapered oral
    // opening that is entirely inside the opening lower mandible.
    const mouthSlit=g.axialLoft(jaw,'shadow',[
@@ -1103,7 +1103,7 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
  }else g.sphere(jaw,'shadow',[0,-.035,muzzle-.18+v*.06],
    [.136,.018,.145],{name:'quadruped-oral-cavity'});
  g.sphere(jaw,'light',[0,-.044,muzzle-.12+v*.06],
-   s.id==='m001'?[.060,.010,.058]:[.084,.014,.098],
+   (s.id==='m001'||s.id==='m002')?[.060,.010,.058]:[.084,.014,.098],
    {name:'quadruped-tongue'});
  if(s.id==='m001'){
    // Small lower incisors erupt UP from the gumline; the previous four
