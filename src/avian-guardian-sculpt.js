@@ -434,31 +434,61 @@ function phoenixNeckCrownScutes(g,s,p,torso,head,detail){
  crown.userData.phoenixVisibleFaceScales=true;
  return {neck,crown};
 }
-function phoenixWingHandScutes(parent,s,side,detail,name,segment='elbow'){
- // The arms/hands of a bird are the radius/ulna and carpometacarpus,
- // not human hands glued to the wing. Attach scutes to those actual pivots.
- const distal=segment==='wrist';
- const base=.069,rows=detail==='low'?4:detail==='source'?13:9;
- const guides=[];
- for(let i=0;i<rows;i++){
-  const t=(i+.25)/(rows+.45),x=side*(.065+t*(distal?.49:.58));
-  for(let j=0;j<5;j++){
-   const q=(j-2)/2;
-   guides.push({from:[x,.035+q*.069,-.09-q*.026],
-     to:[x+side*.095,.018+q*.076,-.16-q*.043],
-     width:base,normal:[0,.68,.73],ridge:.012,
-     tint:i%3===0?2:j%2===0?1:0,endTint:3,glow:.35});
-  }
+
+function phoenixWingHandScutes(wing,s,side,detail,name,segment,donor){
+ // The previous stand-alone elbow/wrist strips appeared as FREE-FLOATING
+ // orange bands. The seraph feather donor itself is the only trustworthy
+ // surface: sample its actual vertex coordinates in the same wing pivot.
+ const geometry=donor.geometry,positions=geometry.getAttribute('position'),
+   n=positions.count;
+ let maxX=.01,minY=Infinity,maxY=-Infinity;
+ for(let i=0;i<n;i++){
+  maxX=Math.max(maxX,Math.abs(positions.getX(i)));
+  minY=Math.min(minY,positions.getY(i));
+  maxY=Math.max(maxY,positions.getY(i));
  }
- const out=layeredFeathers(parent,s,detail,name,guides);
+ const r0=segment==='elbow'?.10:.30,r1=segment==='elbow'?.31:.56;
+ const bins=new Map();
+ const step=Math.max(1,Math.floor(n/6500));
+ for(let i=0;i<n;i+=step){
+  const x=positions.getX(i),y=positions.getY(i),
+    z=positions.getZ(i),r=Math.abs(x)/maxX;
+  if(r<r0||r>r1)continue;
+  const ix=Math.min(6,Math.floor((r-r0)/(r1-r0)*7)),
+    iy=Math.min(4,Math.floor((y-minY)/Math.max(.001,maxY-minY)*5));
+  const key=ix+':'+iy,prev=bins.get(key);
+  // Choose front-most physical vane in the donor for each surface bin.
+  if(!prev||z>prev.z)bins.set(key,{x,y,z});
+ }
+ const guides=[];
+ for(const v of bins.values()){
+  if(guides.length>32)break;
+  const front=[v.x,v.y,v.z+.014];
+  // A short shingle that follows the original guardian vane rather
+  // than an invented human arm length. Both endpoints stay close.
+  const back=[v.x+side*.058,v.y+.018,v.z+.019];
+  guides.push({from:front,to:back,width:.087,
+   normal:[0,.28,1],ridge:.010,
+   tint:guides.length%3===0?2:guides.length%2===0?1:0,
+   endTint:3,glow:.23});
+ }
+ if(!guides.length){
+  const i=Math.max(0,Math.floor(n*.13)),
+   x=positions.getX(i),y=positions.getY(i),z=positions.getZ(i);
+  guides.push({from:[x,y,z+.012],to:[x+side*.05,y+.02,z+.018],
+   width:.075,normal:[0,.3,1],tint:1,endTint:3});
+ }
+ const out=layeredFeathers(wing,s,detail,name,guides);
  out.userData.phoenixAttachedScutes=true;
- out.userData.phoenixScaleWidth=base;
- out.userData.phoenixScaleMultiplier=3;
- out.userData.phoenixScaleBone=parent.name;
+ out.userData.phoenixScaleWidth=.087;
+ out.userData.phoenixScaleMultiplier=.087/.023;
+ out.userData.phoenixScaleBone=wing.name;
  out.userData.phoenixScaleCount=guides.length;
+ out.userData.phoenixWingFeatherSurfaceFitted=true;
+ out.userData.phoenixWingFloatingBandsRemoved=true;
+ out.userData.phoenixWingScuteSource='guardian-actual-feather-vertices';
  return out;
 }
-
 /** Continuous muscle mass: bulky upper femur narrows into a real knee.
  * The shank below the knee remains bony, dark, narrow and skinless-looking.
  * No shared cylindrical coat bridges the two articulated body parts.
@@ -816,10 +846,10 @@ export function buildGuardianDerivedBird(g,s){
      [side*.56,.33,-.13],elbow);
    wrist.userData.avianWingBone='carpometacarpus';
    if(s.id==='m013'){
-     phoenixWingHandScutes(elbow,s,side,detail,
-       'phoenix-wing-forearm-scutes-'+suffix,'elbow');
-     phoenixWingHandScutes(wrist,s,side,detail,
-       'phoenix-wing-hand-scutes-'+suffix,'wrist');
+     phoenixWingHandScutes(wing,s,side,detail,
+       'phoenix-wing-forearm-scutes-'+suffix,'elbow',donor);
+     phoenixWingHandScutes(wing,s,side,detail,
+       'phoenix-wing-hand-scutes-'+suffix,'wrist',donor);
    }
    // A separate hinged set of overlapping outer feathers gives pose
    // articulation without tearing the ONE-PIECE angel donor feather mesh.
