@@ -452,9 +452,27 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
  ];
  if(s.id==='m005'||s.id==='m006')
   g.sphere(torso,'skin',[0,1.30,0],[bodyWidth,.43,bodyLength]);
- else g.axialLoft(torso,'skin',bodyStations,
-  {name:'species-shoulder-rib-pelvis-'+s.id,
-   rough:reptile?.64:.85,ribbing:reptile?.025:.012});
+ else {
+    const body=g.axialLoft(torso,'skin',bodyStations,
+      {name:'species-shoulder-rib-pelvis-'+s.id,
+       rough:reptile?.64:.85,ribbing:reptile?.025:.012});
+    if(felineMaster&&coatDetail!=='low'){
+      const p=body.geometry.getAttribute('position');
+      for(let i=0;i<p.count;i++){
+        const x=p.getX(i),y=p.getY(i),z=p.getZ(i);
+        const shoulder=Math.exp(-Math.pow((z-.43)/.24,2));
+        const haunch=Math.exp(-Math.pow((z+.48)/.26,2));
+        const underside=clamp01((1.42-y)/.49);
+        const flank=clamp01((Math.abs(x)-.10)/.23);
+        const muscle=(shoulder*.052+haunch*.049)*underside*flank;
+        p.setX(i,x+Math.sign(x)*muscle);
+        p.setY(i,y-.018*(shoulder+haunch)*underside*flank);
+      }
+      p.needsUpdate=true;body.geometry.computeVertexNormals();
+      body.geometry.computeBoundingSphere();
+      body.userData.felineMusclesSculptedIntoTrunk=true;
+    }
+  }
  if(beastRemesh){
   g.bridge(torso,'skin',[0,1.152,.23],[0,1.305,.69],.304,.173);
   for(const side of [-1,1])
@@ -477,21 +495,8 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
     }
   }
  }else if(felineMaster){
-   // m001 buries the scapula/hip fascia beneath its anatomical torso.
-   // Transfer that join construction, with the feline bone proportions:
-   // remove the previous oversized "one-ball" shoulder altogether.
-   if(coatDetail!=='low')for(const side of [-1,1]){
-    const x=side*felineMaster.torsoWidth*.86;
-    const scapula=g.bridge(torso,'skin',
-      [x,1.13,.30],[x*.84,1.36,.49],.125,.073);
-    scapula.name='feline-reference-scapula-'+(side<0?'L':'R');
-    scapula.userData.m001ReferenceSeam=true;
-    const hip=g.bridge(torso,'skin',
-      [x*.82,1.18,-.35],[x,1.02,-.56],.121,.090);
-    hip.name='feline-reference-hip-fascia-'+(side<0?'L':'R');
-    hip.userData.m001ReferenceSeam=true;
-   }
- }else g.sphere(torso,'light',[0,1.48,.22],[.31,.25,.45]);
+    g.root.userData.felineJointFillersRemoved=true;
+  }else g.sphere(torso,'light',[0,1.48,.22],[.31,.25,.45]);
  // Preserve the original m001 neck seam and subtract its thick wolf
  // throat for cats, instead of welding a spherical lion muzzle on top.
  if(beastRemesh)
@@ -1324,7 +1329,7 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
      // A small overlapped moving proximal sleeve follows the limb's
      // rotation and disappears beneath its torso-mounted fascia.
      // Only the near/source mesh needs it; low LOD remains unchanged.
-     if(coatDetail!=='low'){
+     if(coatDetail!=='low'&&!felineMaster){
        const sleeve=g.bridge(leg,'skin',
          [0,.34,fore>0?-.018:-.054],
          [0,.575,fore>0?-.020:-.050],
@@ -1334,7 +1339,7 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
        sleeve.userData.jointSeamSleeve=true;
      }
    }
-   if(beastRemesh||felineMaster)g.limbLoft(leg,'skin',(fore>0?[
+   if(beastRemesh)g.limbLoft(leg,'skin',(fore>0?[
      // Forelimb: scapula -> humerus -> elbow. Elbow lies BEHIND the wrist.
      {x:0,y:.55,z:.025,rx:.133,rz:.154},
      {x:0,y:.34,z:.042,rx:.193,rz:.213},
@@ -1351,7 +1356,7 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    ]).map(p=>s.id==='m001'?{...p,rx:p.rx*.84,rz:p.rz*.86}:
       felineMaster?{...p,rx:p.rx*.81,rz:p.rz*.79}:p),
    {name:'beast-upper-limb-'+name});
-   else g.sphere(leg,'skin',[0,.17,0],
+   else if(!felineMaster)g.sphere(leg,'skin',[0,.17,0],
      [reptile?.18:.21,.40,reptile?.18:.21]);
    // m001 hind "lower" is the true stifle/knee pivot, not a hinge
    // beneath the whole thigh. Preserve the initial foot position by
@@ -1364,7 +1369,7 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
        [0,-.065,.015],leg);
    if(s.id==='m001')distal.userData.anatomicalJoint=
      fore>0?'elbow':'stifle';
-   if(beastRemesh||felineMaster){
+   if(beastRemesh){
     g.limbLoft(distal,'skin',(s.id==='m001'?(fore>0?[
       // Forearm starts over elbow and tapers into elevated carpus.
       {x:0,y:.135,z:-.075,rx:.130,rz:.128},
@@ -1396,7 +1401,7 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
     }:felineMaster?{
       ...p,rx:p.rx*.81,rz:p.rz*.80
     }:p),{name:'beast-shin-'+name});
-    if((s.id==='m001'||cloneCanine||felineMaster)&&
+    if((s.id==='m001'||cloneCanine)&&
        coatDetail!=='low'){
       // A small overlapping fascia above/below the actual hinge keeps
       // the silhouette continuous while two joint rotations stay free.
@@ -1426,7 +1431,7 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
        jointCapsule.userData.attachedKneeCapsule=true;
       }
     }
-   }else{
+   }else if(!felineMaster){
     g.sphere(distal,'skin',[0,-.16,0],[reptile?.13:.15,.27,reptile?.13:.15]);
     g.sphere(distal,'shadow',[0,0,0],[.144,.125,.14],{name:'joint-'+name});
    }
@@ -1480,25 +1485,14 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
      // allocated toe groups and claw roots per leg.
      feet(g,distal,0,0,0,true,.81*felineMaster.pawWidth);
    }else if(felineMaster){
-     // Four articulated pads on a true cat toe pivot; none of the
-     // cylindrical canine feet or claws are reused on m007-m010.
-     // The old toe pivot floated beyond the distal shin with no tarsus.
-     // An anatomical bridge spans shin -> hock and overlaps the moving paw.
-     const ankleLink=g.bridge(distal,'skin',
-       fore>0?[0,-.265,.027]:[0,-.260,-.154],
-       fore>0?[0,-.483,.103]:[0,-.472,.080],
-       .111,.102);
-     ankleLink.name='feline-continuous-hock-'+name;
-     ankleLink.userData.ankleSocketSeal=true;
+     // The entire shoulder -> elbow -> hock -> paw surface is one rigged
+     // anatomical skin. Separate cylindrical caps are not rendered.
      const toe=g.group('toe'+name,[0,-.436,.144],distal);
      toe.userData.felinePad=true;
-     // Pastern and palm form an overlapping continuous foot silhouette.
-     // The original disconnected pad could hang below the tibia on turns.
-     const footRoot=g.bridge(toe,'skin',
-       [0,.181,-.139],[0,-.039,.059],
-       .116*felineMaster.pawWidth,.105*felineMaster.pawWidth);
-     footRoot.name='feline-ankle-to-toe-fascia-'+name;
-     footRoot.userData.donorSurfaceOverlap=true;
+     const limbSkin=g.felineContinuousLimb(leg,distal,toe,{
+       fore:fore>0,name:'feline-continuous-skin-'+name
+     });
+     limbSkin.userData.felinePhysicalMother='m007';
      g.sphere(toe,'skin',[0,-.033,.018],
        [.133*felineMaster.pawWidth,.055,.145],
        {name:'feline-master-metacarpal-pad'});
@@ -2003,7 +1997,8 @@ const wolfKingMane=(s.id==='m001'||s.id==='m002')?[
      REFERENCE_CROWN_QUALITY[source?'source':'high'].rows;
    g.root.userData.felineReferenceCrownLayers=
      REFERENCE_CROWN_QUALITY[source?'source':'high'].layers;
-   g.root.userData.felineReferenceSeamCount=4;
+   g.root.userData.felineReferenceSeamCount=0;
+    g.root.userData.felineContinuousLimbCount=4;
    g.root.userData.felineMasterVariant=felineMaster.archetype;
    g.root.userData.felineFaceWidthRatio=felineMaster.headWidth;
    g.root.userData.felineTorsoWidth=felineMaster.torsoWidth;
