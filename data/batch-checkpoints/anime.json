@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "category": "anime",
+  "saved": [
+    {
+      "id": "shared-defeat-02-reference",
+      "sourceFiles": [
+        "src/story-compact-comic.js"
+      ],
+      "commitSha": "9229e8f1de7b9fb515432e4ceb193b1a04c9c14c",
+      "qa": "unverified"
+    }
+  ],
+  "remainingIds": [
+    "shared-defeat-02-art",
+    "compact-c01-s01-s04-visual-audit",
+    "compact-all-20chapters-asset-audit"
+  ],
+  "nextAction": "Confirm source syntax and browser rendering; inspect existing WebP native dimensions/SHA and exact gender/outcome before reuse; verify free image generator availability."
+}
