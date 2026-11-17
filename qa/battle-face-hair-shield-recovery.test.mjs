@@ -117,7 +117,7 @@ assert.match(rig,/const closedBack=battleClosedBackCoverage\(\{/);
 assert.match(rig,/forceCoveredRegions:forcedTorsoOcclusion/);
 const wigSource=readFileSync(new URL('../src/face-scalp-wig.js',import.meta.url),'utf8');
 assert.match(wigSource,/normalLayers=clamp\(Math\.trunc\(normalLayerCount\),1,3\)/);
-assert.match(game,/import\s*\{\s*buildRiggedJobOutfit\s*\}\s*from\s*['"]\.\/src\/character-system\/rigged-outfit-runtime\.js\?v=\d{8}-[A-Za-z0-9_-]+['"]/,
+assert.match(game,/import\s*\{\s*buildRiggedJobOutfit\s*\}\s*from\s*['"]\.\/src\/character-system\/rigged-outfit-runtime\.js\?v=(?:\d{8}-)?[A-Za-z0-9_-]+['"]/,
  'Battle uses the actual versioned rigged-outfit runtime; changing a cache revision must not break face/hair QA');
 assert.match(game,/action-vfx-runtime\.js\?v=\d{8}-[A-Za-z0-9_-]+/,
  'Action VFX runtime remains version-pinned; effect strength is asserted directly below');
