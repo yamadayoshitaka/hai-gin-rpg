@@ -35,7 +35,7 @@
       "webglQA": "unverified",
       "androidQA": "unverified",
       "mainMerged": true,
-      "pagesDeployed": false,
+      "pagesDeployed": true,
       "accepted": false,
       "evidence": [
         "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/434",
@@ -47,7 +47,8 @@
         "drawCalls": 3,
         "triangles": 182,
         "ci": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44013507318"
-      }
+      },
+      "deployedEvidence": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44013869408"
     },
     {
       "id": "cottage_chair_001",
@@ -61,7 +62,7 @@
       "webglQA": "unverified",
       "androidQA": "unverified",
       "mainMerged": true,
-      "pagesDeployed": false,
+      "pagesDeployed": true,
       "accepted": false,
       "evidence": [
         "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/434",
@@ -73,7 +74,8 @@
         "drawCalls": 3,
         "triangles": 194,
         "ci": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44013507318"
-      }
+      },
+      "deployedEvidence": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44013869408"
     },
     {
       "id": "cottage_bed_001",
@@ -87,7 +89,7 @@
       "webglQA": "unverified",
       "androidQA": "unverified",
       "mainMerged": true,
-      "pagesDeployed": false,
+      "pagesDeployed": true,
       "accepted": false,
       "evidence": [
         "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/520"
@@ -98,7 +100,8 @@
         "triangles": 170,
         "ci": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44013507318"
       },
-      "lastCodeChange": "PR #520: physically improved real procedural geometry and baked static meshes; WebGL render/cost QA passed"
+      "lastCodeChange": "PR #520: physically improved real procedural geometry and baked static meshes; WebGL render/cost QA passed",
+      "deployedEvidence": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44013869408"
     },
     {
       "id": "cottage_shelf_001",
@@ -112,7 +115,7 @@
       "webglQA": "unverified",
       "androidQA": "unverified",
       "mainMerged": true,
-      "pagesDeployed": false,
+      "pagesDeployed": true,
       "accepted": false,
       "evidence": [
         "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/520"
@@ -123,7 +126,8 @@
         "triangles": 470,
         "ci": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44013507318"
       },
-      "lastCodeChange": "PR #520: physically improved real procedural geometry and baked static meshes; WebGL render/cost QA passed"
+      "lastCodeChange": "PR #520: physically improved real procedural geometry and baked static meshes; WebGL render/cost QA passed",
+      "deployedEvidence": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44013869408"
     },
     {
       "id": "cottage_fireplace_001",
@@ -153,7 +157,7 @@
       "webglQA": "unverified",
       "androidQA": "unverified",
       "mainMerged": true,
-      "pagesDeployed": false,
+      "pagesDeployed": true,
       "accepted": false,
       "evidence": [
         "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/430",
@@ -165,7 +169,8 @@
         "drawCalls": 4,
         "triangles": 2050,
         "ci": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44013507318"
-      }
+      },
+      "deployedEvidence": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44013869408"
     },
     {
       "id": "treasure_chest_001",
@@ -402,7 +407,7 @@
       "webglQA": "unverified",
       "androidQA": "unverified",
       "mainMerged": true,
-      "pagesDeployed": false,
+      "pagesDeployed": true,
       "accepted": false,
       "evidence": [
         "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/430",
@@ -414,7 +419,8 @@
         "drawCalls": 5,
         "triangles": 1230,
         "ci": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44013507318"
-      }
+      },
+      "deployedEvidence": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44013869408"
     },
     {
       "id": "town_planter_001",
@@ -444,7 +450,7 @@
       "webglQA": "unverified",
       "androidQA": "unverified",
       "mainMerged": true,
-      "pagesDeployed": false,
+      "pagesDeployed": true,
       "accepted": false,
       "evidence": [
         "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/520"
@@ -455,7 +461,8 @@
         "triangles": 134,
         "ci": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44013507318"
       },
-      "lastCodeChange": "PR #520: physically improved real procedural geometry and baked static meshes; WebGL render/cost QA passed"
+      "lastCodeChange": "PR #520: physically improved real procedural geometry and baked static meshes; WebGL render/cost QA passed",
+      "deployedEvidence": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44013869408"
     },
     {
       "id": "town_notice_001",
@@ -745,7 +752,7 @@
       "webglQA": "unverified",
       "androidQA": "unverified",
       "mainMerged": true,
-      "pagesDeployed": false,
+      "pagesDeployed": true,
       "accepted": false,
       "evidence": [
         "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/520"
@@ -756,7 +763,8 @@
         "triangles": 146,
         "ci": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44013507318"
       },
-      "lastCodeChange": "PR #520: physically improved real procedural geometry and baked static meshes; WebGL render/cost QA passed"
+      "lastCodeChange": "PR #520: physically improved real procedural geometry and baked static meshes; WebGL render/cost QA passed",
+      "deployedEvidence": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44013869408"
     },
     {
       "id": "weapon_shop_001",
@@ -786,7 +794,7 @@
       "webglQA": "unverified",
       "androidQA": "unverified",
       "mainMerged": true,
-      "pagesDeployed": false,
+      "pagesDeployed": true,
       "accepted": false,
       "evidence": [
         "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/520"
@@ -797,7 +805,8 @@
         "triangles": 120,
         "ci": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44013507318"
       },
-      "lastCodeChange": "PR #520: physically improved real procedural geometry and baked static meshes; WebGL render/cost QA passed"
+      "lastCodeChange": "PR #520: physically improved real procedural geometry and baked static meshes; WebGL render/cost QA passed",
+      "deployedEvidence": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44013869408"
     },
     {
       "id": "inn_001",
@@ -1105,6 +1114,7 @@
       "town_water_trough_001",
       "town_signpost_001"
     ],
-    "pagesDeployedVerified": false
+    "pagesDeployedVerified": true,
+    "pagesRun": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44013869408"
   }
 }
