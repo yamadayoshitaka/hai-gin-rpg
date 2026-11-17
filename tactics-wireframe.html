@@ -1015,7 +1015,7 @@ import {selectTownNpcClip,createTownNpcProceduralPose} from './src/town-npc-moti
 import {attachTownCivilianHead,townHeadSourceForSex} from './src/town-civilian-head.js';
 import {TOWN_ADULT_HEIGHT,TOWN_BODY_RADIUS,TOWN_HEIGHT_LIMIT,TOWN_SCENE_MODE,townVisualCorrection,townCapsuleClear,townCameraOccluders} from './src/town-scene-policy.js';
 import {STARTER_TOWN} from './src/starter-town.js';
-import {createCharacter} from './src/character-system/shared-character-runtime.js?v=20261116-skills';
+import {createCharacter} from './src/character-system/shared-character-runtime.js?v=20261117-motionblend1';
 import {createHeroProductionRecipe,heroProductionActionCue,HERO_VARIANT_COUNT} from './src/hero-production-character-factory.js?v=20261116-vfxskills2';
 import {loadBattleHeadMaster,attachBattleArtistHead,battleHeadMasterStats,
  equipBattleStudioHair,releaseBattleStudioHair,discardBattleStudioNearHair,BATTLE_HEAD_MASTER_VERSION,BATTLE_FACE_LIGHT_RESPONSE_VERSION}
@@ -1031,6 +1031,7 @@ import {batchStaticBuildingShells} from './src/stage-building-instancing.js?v=2'
 import {cameraSegmentHitsBox,selectCameraOccluders,selectCanopiesAroundCamera,chooseClearBattleCameraOffset,shouldRevealBuildingInterior,safeSelectedInteriorFloor} from './src/battle-camera-occlusion.js?v=4.6.69';
 import {registerSquadCircleTap,chooseSquadZoomTarget,SQUAD_CIRCLE_DOUBLE_TAP_MS,shouldHideSquadLabelsAtDistance} from './src/battle-squad-circle-tap.js?v=4.6.36';
 import {createBattleActorVisibility} from './src/battle-render-visibility.js?v=20261117-motion2';
+import {createStableBattleGroomSelector} from './src/battle-studio-groom-policy.js?v=20261117-hysteresis1';
 import {enableBattleRigidFrustumCulling,countBattleRigCulling} from './src/battle-rigid-frustum-optimization.js?v=20261116-rigid1';
 import {interpolatedSkirmishCameraAnchor,createVisibilityWorkPacer} from './src/battle-frame-pacing.js?v=20261116-p95';
 import {personFacingYaw,writePersonPovOffset} from './src/battle-person-pov-camera.js?v=20261117-person-pov1';
@@ -1038,7 +1039,7 @@ import {SKIRMISH_DASH_TEMPO,skirmishTravelTempo,realtimeBattleCinematicScale} fr
 import {BattlePhaseProfiler} from './src/battle-phase-profiler.js?v=20261116-gpu1';
 import {shouldShowOverheadSquadCallouts,closestAliveBattleFocus} from './src/battle-zoom-visibility-policy.js?v=1';
 import {zoomedSquadMember} from './src/battle-zoom-squad-badge.js?v=20261116-zoom1';
-import {createSkirmishDistanceLod} from './src/skirmish-distance-impostors.js?v=20261117-stable-hair1';
+import {createSkirmishDistanceLod} from './src/skirmish-distance-impostors.js?v=20261117-stable-hair2';
 import {OBJECT_CATALOG,createCatalogObject} from './src/object-catalog.js?v=world60-physical-20261117';
 import {RoomItemRegistry,ROOM_ITEM_TYPES,applySquadHeal} from './src/room-item-registry.js?v=4.6.44';
 import {openTreasureChestModel} from './src/treasure-chest-state.js?v=4.6.36';
@@ -1064,7 +1065,7 @@ import {squadTypeOf,SQUAD_TYPE_NAMES} from './src/mass-battle-formations.js?v=4.
 import {recomposeSquadAssignments,applySquadRecomposition,FORMATION_TYPES,FORMATION_NAMES,FORMATION_ICONS,normalizeFormationType} from './src/battle-squad-recomposition.js?v=4.6.49';
 import {squadJobComposition,chooseEnemyOrder,enemyOrderRefreshSeconds,TACTICAL_TIME_BANK_SECONDS} from './src/battle-tactical-policy.js?v=4.6.69';
 import {indexBattleDecisionUnits} from './src/battle-ai-decision-index.js?v=20261116-ai1';
-import {createMassBattleRealArmy} from './src/mass-battle-real-army.js?v=4.6.39';
+import {createMassBattleRealArmy} from './src/mass-battle-real-army.js?v=20261117-unblended1';
 import {BattleCorpsePolicy,corpseOpacity} from './src/battle-corpse-policy.js?v=4.4.35';
 import {CrowdPerformanceBudget} from './src/crowd-performance-budget.js?v=4.6.36';
 import {createMassBattleWorkerClient} from './src/mass-battle-worker-client.js?v=20261117-mount-interior1';
@@ -10463,16 +10464,15 @@ function animate(){
     resourceSamples.push(memory);
     if(resourceSamples.length>36)resourceSamples.splice(1,1);
    }
-   if(skirmishPerformancePanel){
-    const highestDetail=actors.filter(a=>a.masterHead&&a.root.visible)
-      .map(a=>({a,d:a.root.position.distanceToSquared(camera.position)}))
-      .sort((x,y)=>x.d-y.d);
-    const detailed=new Set(highestDetail.slice(0,18).map(x=>x.a));
-    for(const a of actors)if(a.masterHead)a.masterHead.setNearDetail(
-     detailed.has(a)||a.isPlayerHero&&a.root.visible);
-    // Matching middle-distance hair is prewarmed before combat. Camera
-    // changes use the separate FPS-aware selection loop above.
-   }
+   // Visual facial expression detail cannot depend on FPS-panel visibility.
+   const highestDetail=actors.filter(a=>a.masterHead&&a.root.visible&&
+     a.root.position.distanceToSquared(camera.position)<65*65)
+    .map(a=>({a,d:a.root.position.distanceToSquared(camera.position)}))
+    .sort((x,y)=>x.d-y.d);
+   const detailed=new Set(highestDetail.slice(0,18).map(x=>x.a));
+   for(const a of actors)if(a.masterHead)a.masterHead.setNearDetail(
+    detailed.has(a)||Boolean(a.isPlayerHero&&a.root.visible));
+   // Hair retains its separate GPU-budgeted near/middle selection.
    if(skirmishPerformancePanel)skirmishPerformancePanel.textContent=
     'FPS '+perf.fps+'｜P95 '+perf.frameP95Ms+'ms｜50ms超 '+(perf.longFrames50??0)+
     '｜80ms超 '+(perf.longFrames80??0)+'｜描画 '+report.drawCalls+
@@ -10522,7 +10522,7 @@ function animate(){
 // Reuse lightweight static groom across crowd camera movement.
 const STUDIO_GROOM_NEAR_MAX=8;
 const STUDIO_GROOM_NEAR_CACHE_MAX=12;
-const STUDIO_GROOM_NEAR_DISTANCE=28;
+const studioGroomSelector=createStableBattleGroomSelector({limit:STUDIO_GROOM_NEAR_MAX});
 let lastStudioGroomAt=0,lastStudioHairSelectionAt=0;
 let prewarmedStudioGrooms=0;
 /** Build ONE stable middle-distance groom per actor before combat begins.
@@ -10564,8 +10564,7 @@ async function prewarmBattleStudioHair(){
 function refreshBattleStudioGroom(distanceSorted,now){
  if(!battleReady||TOWN_MODE)return;
  const ranked=distanceSorted.map(x=>x.a);
- const nearSet=new Set(distanceSorted.filter(x=>x.d<STUDIO_GROOM_NEAR_DISTANCE**2)
-  .slice(0,STUDIO_GROOM_NEAR_MAX).map(x=>x.a));
+ const nearSet=studioGroomSelector.update(distanceSorted);
  // Demotion is a zero-allocation visibility toggle to the already prepared
  // middle mesh. Update immediately even when the frame budget is saturated.
  for(const a of actors){
