@@ -11,7 +11,7 @@ import {monsterEvidenceFor} from './monster-anatomy-reference.js';
 import {felineMasterVariant,felineFaceRings,felineMuzzleRings,
  felineNasalRings,felineAnatomicalSections,felineEyeSurface,
  felineDorsalSurface,FELINE_SOURCE_MODEL}
- from './feline-master-variants.js?v=felid-source-20261117-v1';
+ from './feline-master-variants.js?v=m001-feline-source-v3-20261117';
 import {MORTAL_HEAD_RINGS,MORTAL_TORSO_RINGS} from './monster-realistic-loft.js';
 import {BEAST_REFERENCE_QUALITY_REVISION,REFERENCE_CROWN_QUALITY,
  referenceBeastTorsoStations,referenceDoubleCoat,referenceBeastFlow}
