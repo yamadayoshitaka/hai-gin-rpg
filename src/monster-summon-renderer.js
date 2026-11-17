@@ -144,9 +144,11 @@ export function createMonsterSummonRenderer(scene,{
   stats.created++;
   const node={actor,anchor,detail,type:object.type,size,costumeHandle,
    statusMarker,externalHandle:null,
+   // Source is selected through the SAME validated species/LOD policy as
+   // regular enemies. Invalid local saved donor IDs never reach GLTFLoader.
    sourceChoice:resolveRegisteredMonsterModel(object.type,{
     detail,allowExternal:true
-   }).selected,
+   }).externalSource||'legacy',
    registeredRevision:resolveRegisteredMonsterModel(object.type).record?.version,
    disposed:false,sourceError:null,
    lastX:object.x,lastZ:object.z,lastT:0,lastAttack:-Infinity,
@@ -168,7 +170,9 @@ export function createMonsterSummonRenderer(scene,{
     loadCreatureMeshSource(sourceId,registry,detail,{creatureId:object.type})
    ).then(loaded=>{
     if(removed||node.disposed||!node.anchor.parent||
-       adoptedCreatureMesh(object.type)!==sourceId){
+       (resolveRegisteredMonsterModel(object.type,{
+        detail,allowExternal:true
+       }).externalSource||'legacy')!==sourceId){
       loaded.dispose();return;
     }
     const sourceBounds=new THREE.Box3().setFromObject(loaded.root);
@@ -249,7 +253,9 @@ export function createMonsterSummonRenderer(scene,{
    }
    if(detail==='source')sourceCount++;
    if(detail!=='low')detailedCount++;
-   if(node&&(node.sourceChoice!==adoptedCreatureMesh(o.type)||node.detail!==detail)){
+   if(node&&(node.sourceChoice!==(
+      resolveRegisteredMonsterModel(o.type,{detail,allowExternal:true})
+       .externalSource||'legacy')||node.detail!==detail)){
     release(id);node=null;
    }
    if(!node&&active.size>=MONSTER_SUMMON_MAX_ACTIVE){
