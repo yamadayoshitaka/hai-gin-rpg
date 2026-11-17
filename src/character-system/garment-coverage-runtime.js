@@ -201,6 +201,8 @@ export function clipBodyToGarment(characterModel,coverage,{surfaceCheck=false,pr
   if(!record){
    const cut=new Uint8Array(positions.count);
    const protectedEdge=new Uint8Array(positions.count);
+   // Per-vertex proof of a closed garment envelope, not a global outfit flag.
+   const enclosedVertex=new Uint8Array(positions.count);
    const worldPoint=new THREE.Vector3();
    const displayed=mesh.geometry;
    if(surfaceCheck){
@@ -221,7 +223,8 @@ export function clipBodyToGarment(characterModel,coverage,{surfaceCheck=false,pr
     // decisive skinning majority before its geometry may be removed.
     protectedEdge[i]=exposedWeight>=.56?1:0;
     const isCovered=hiddenWeight>=.56&&exposedWeight<.44;
-    cut[i]=isCovered&&(enclosed.has(principalZone)||!surfaceCheck||(principalZone&&
+    enclosedVertex[i]=isCovered&&enclosed.has(principalZone)?1:0;
+    cut[i]=isCovered&&(enclosedVertex[i]||!surfaceCheck||(principalZone&&
       sampler.covers(principalZone,mesh.getVertexPosition(i,worldPoint).applyMatrix4(mesh.matrixWorld))))?1:0;
    }
    if(surfaceCheck&&displayed!==original)mesh.geometry=displayed;
@@ -234,8 +237,11 @@ export function clipBodyToGarment(characterModel,coverage,{surfaceCheck=false,pr
     const a=sourceIndices.getX(i),b=sourceIndices.getX(i+1),c=sourceIndices.getX(i+2);
     const hiddenCorners=cut[a]+cut[b]+cut[c];
     const visibleEdge=protectedEdge[a]||protectedEdge[b]||protectedEdge[c];
-    const canCut=surfaceCheck?
-      (opaqueEnvelope?hiddenCorners>=2&&!visibleEdge:hiddenCorners===3):hiddenCorners===3;
+    // Closed trousers cannot relax the mask for unrelated torso/back seams.
+    const verifiedTriangle=opaqueEnvelope&&
+      enclosedVertex[a]&&enclosedVertex[b]&&enclosedVertex[c];
+    const canCut=verifiedTriangle?
+      hiddenCorners>=2&&!visibleEdge:hiddenCorners===3;
     if(!canCut)kept.push(a,b,c);
    }
    // A failed / incompatible mesh must not disappear completely.
