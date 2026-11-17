@@ -13,7 +13,7 @@ import * as THREE from 'three';
 import {createOriginalGuardianWingPair}
  from './female-summon-costumes.js?v=avian-guardian-donor-v1-20261118';
 
-export const AVIAN_REALISM_REVISION='phoenix-large-scutes-featherhands-shortbeak-v5-20261118';
+export const AVIAN_REALISM_REVISION='phoenix-keratin-legs-eyeliner-v6-20261118';
 export const AVIAN_REFRESH_IDS=Object.freeze(['m011','m012','m013','m014']);
 
 const profiles=Object.freeze({
@@ -742,6 +742,58 @@ function bodyFeathers(g,s,p,torso,detail){
  g.root.userData.avianBodyFeatherCount=plumes.length;
  return result;
 }
+// Outward-facing avian orbits with independent dark almond eyeliner.
+function phoenixSculptedEyes(head,detail){
+ const shell=(root,name,position,scale,hex,rough=.48)=>{
+  const geo=new THREE.SphereGeometry(1,detail==='low'?10:18,
+   detail==='low'?7:12);
+  const c=color(hex),n=geo.getAttribute('position').count;
+  const rgb=new Float32Array(n*3);
+  for(let i=0;i<n;i++){rgb[i*3]=c.r;rgb[i*3+1]=c.g;rgb[i*3+2]=c.b;}
+  geo.setAttribute('color',new THREE.Float32BufferAttribute(rgb,3));
+  const m=mesh(root,geo,name);
+  m.position.set(...position);m.scale.set(...scale);
+  m.material.roughness=rough;return m;
+ };
+ const liner=(root,name,points,radius,hex)=>{
+  const curve=new THREE.CatmullRomCurve3(
+   points.map(p=>new THREE.Vector3(...p)));
+  const geo=new THREE.TubeGeometry(curve,detail==='low'?8:18,
+   radius,detail==='low'?4:6,false);
+  const c=color(hex),n=geo.getAttribute('position').count;
+  const rgb=new Float32Array(n*3);
+  for(let i=0;i<n;i++){rgb[i*3]=c.r;rgb[i*3+1]=c.g;rgb[i*3+2]=c.b;}
+  geo.setAttribute('color',new THREE.Float32BufferAttribute(rgb,3));
+  const m=mesh(root,geo,name);
+  m.userData.phoenixPhysicalEyeliner=true;return m;
+ };
+ for(const side of [-1,1]){
+  const suffix=side<0?'L':'R',socket=new THREE.Group();
+  socket.name='phoenix-sculpted-orbit-'+suffix;
+  // Lateral skull fitting prevents eyes disappearing inside the beak.
+  socket.position.set(side*.105,.050,.262);
+  socket.rotation.y=side*.91;head.add(socket);
+  shell(socket,'phoenix-eye-socket-'+suffix,[0,0,.003],
+   [.051,.036,.012],0x200e13,.86);
+  shell(socket,'phoenix-amber-eye-'+suffix,[0,0,.014],
+   [.042,.026,.012],0xffdf9a,.30);
+  shell(socket,'phoenix-iris-'+suffix,[side*.002,-.001,.025],
+   [.024,.023,.008],0xc86e28,.26);
+  shell(socket,'phoenix-pupil-'+suffix,[side*.002,-.001,.033],
+   [.010,.017,.004],0x140c15,.19);
+  shell(socket,'phoenix-cornea-glint-'+suffix,[-.009,.010,.039],
+   [.006,.005,.003],0xfff2ce,.12);
+  liner(socket,'phoenix-upper-eyeliner-'+suffix,[
+   [-.051,.003,.020],[-.032,.024,.030],[0,.030,.032],
+   [.030,.025,.030],[.052,.009,.018]],.0065,0x190b16);
+  liner(socket,'phoenix-lower-eyeliner-'+suffix,[
+   [-.046,-.008,.022],[-.025,-.025,.026],[0,-.029,.027],
+   [.027,-.022,.026],[.048,-.008,.019]],.0045,0x39161a);
+  socket.userData.phoenixEyesVisible=true;
+ }
+ head.userData.phoenixSculptedEyeLiner=true;
+}
+
 function headAndCrest(g,s,p,torso,detail){
  const head=g.group('head',[0,s.id==='m014'?1.99:2.065,.365*p.neck],torso);
  // Phoenix crown is a compact, LONG skull: narrow brow, pronounced
@@ -800,7 +852,7 @@ function headAndCrest(g,s,p,torso,detail){
  }else{
    // A tiny phoenix skull cannot use the adult eagle's wide eye socket.
    // Recess both eyes into the narrow original head, not outside the mesh.
-   if(s.id==='m013')g.eyes(head,.172,.063,.113,.037);
+   if(s.id==='m013')phoenixSculptedEyes(head,detail);
    else g.eyes(head,.235,.063,.172*p.head,.054);
  }
  const crest=[];
@@ -904,6 +956,8 @@ export function buildGuardianDerivedBird(g,s){
   g.root.userData.phoenixTorsoRadiusX=.365;
   g.root.userData.phoenixTorsoRadiusY=.468;
   g.root.userData.phoenixNoExternalEars=true;
+   g.root.userData.phoenixVisibleEyeliner=true;
+   g.root.userData.phoenixHandSkinHiddenUnderFeathers=true;
   g.root.userData.phoenixWingSpanFactor=p.wing[0];
  }
  const body=g.axialLoft(torso,'skin',plumageStations(p),
