@@ -15,7 +15,9 @@ export const CREATURE_PERFORMANCE = Object.freeze({
   dragon_lord: Object.freeze({attack:'inferno_breath',windup:.76,duration:1.75,voice:'royal_roar',mountable:false,seat:0,scaleWhenMounted:1.70,voiceLength:1.8}),
   forest_archer: Object.freeze({attack:'spirit_arrow',windup:.38,duration:1.0,voice:'forest_chant',mountable:false,seat:0,scaleWhenMounted:1,voiceLength:.85}),
   seraph_guardian: Object.freeze({attack:'radiant_lance',windup:.54,duration:1.34,voice:'angelic_chime',mountable:false,seat:0,scaleWhenMounted:1,voiceLength:1.28}),
-  horse: Object.freeze({attack:'rear',windup:.2,duration:.78,voice:'whinny',seat:1.34,scaleWhenMounted:1,voiceLength:1.05}),
+  // Real horse saddle top is ~1.79m (horse body 1.22 + saddle .51 + .055).
+  // Old 1.34m root seat embedded the rider's pelvis inside the horse barrel.
+  horse: Object.freeze({attack:'rear',windup:.2,duration:.78,voice:'whinny',seat:1.76,scaleWhenMounted:1,voiceLength:1.05}),
 });
 
 // Flying familiars perform five short attacks in the time formerly used for
@@ -70,9 +72,11 @@ export function riderSeatAnchor(object,time=0){
  if(settings?.seat==null)return {x:0,y:0,z:0};
  const size=creatureSize(object.type,true)*(object.commanderMount?1.12:1);
  // Horse's broad withers are forward of the true seating surface.
- const back={horse:-.43,wolf:-.24,wyvern:-.29,dragon:-.39,elder_dragon:-.47};
+ // The actual horse saddle pad is centred at z=-0.18m. z=-0.43 sat on the
+ // rear edge and made the rider appear to sink into the croup.
+ const back={horse:-.20,wolf:-.24,wyvern:-.29,dragon:-.39,elder_dragon:-.47};
  // Flying mounts keep their pre-existing exact frame-synchronised vertical contract.
- const clearance={horse:.20,wolf:.12,wyvern:0,dragon:0,elder_dragon:0};
+ const clearance={horse:.11,wolf:.12,wyvern:0,dragon:0,elder_dragon:0};
  const commanderRise=object.type==='horse'&&object.commanderMount?.26:0;
  return {
   x:0,
