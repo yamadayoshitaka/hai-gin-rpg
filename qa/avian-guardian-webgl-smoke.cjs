@@ -24,7 +24,7 @@ const ids=['m011','m012','m013','m014'];
    });
    try{
     await page.goto('http://127.0.0.1:8765/monster-manager.html?monster='+id+
-     '&v=phoenix-hover-flight-v23-20261118',
+     '&v=phoenix-hover-flight-v24-20261118',
      {waitUntil:'domcontentloaded',timeout:90000});
     await page.waitForFunction(expected=>{
      const v=window.__monsterQualityQA?.();
@@ -64,7 +64,7 @@ const ids=['m011','m012','m013','m014'];
         !shape.handFeathersPerSide.every(n=>n>=82)||
         !shape.highQualityHandFeathers||
         !shape.flightMode||!shape.inAir||!shape.flightWingRig||
-        !shape.legsFoldInFlight||shape.currentAltitude<.80||
+        !shape.legsFoldInFlight||!shape.fineFeatherBarbs||shape.currentAltitude<.80||
         shape.tailLength<4.55||shape.waveMeshes!==7||state.tail!==31)
        throw Error('Phoenix requested remodel absent in actual WebGL viewer: '+
         JSON.stringify(shape));
