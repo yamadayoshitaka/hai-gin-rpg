@@ -110,18 +110,18 @@
     },
     "world": {
       "source": "ChatGPTオブジェクト即時回帰＋GitHub六担当実WebGL QA",
-      "lastRunAt": "2026-11-17T16:47:36+09:00",
+      "lastRunAt": "2026-11-17T17:52:26+09:00",
       "status": "in_review",
       "carryover": true,
-      "subject": "市場露店の屋根荷重支持構造を実改修（1種・描画QA未検証）",
-      "summary": "mainのworld.enabled=trueを確認。既存専用ブランチsrc/object-catalog.jsのmarket_stall_001に3断面の傾斜垂木6本と棟木を追加（実ソースSHA fda16e27）。既存の未検証変更を優先しNode/WebGL/Android QAを試みたが、実行コンテナのgithub.com DNS解決失敗でソース取得不能。今回実改修1、GLB0、対象別WebGL合格0、ゲーム採用0、Pages0。5〜10種目標未達。",
-      "nextAction": "fda16e27を取得できるCI実行環境でnode --checkと指定3QA、createCatalogObject市場露店の新旧WebGL比較、屋根貫通・LOD・衝突・FPSを検証。次に同一構造系の4〜9種を実改修。QA合格までmainマージ禁止。",
+      "subject": "PR #441未検証造形のQA滞留・GitHub DNS遮断を再確認",
+      "summary": "main world.enabled=true、正本catalog-targets count=60、PR #441 open/draft/mergeable=false/head=fda16e27、変更5ファイルを確認。コンテナ git ls-remote は github.com DNS解決失敗。Node構文・指定3QA・WebGL新旧比較・Android未実施。新規実ソース改修0、QA合格0、GLB0、ゲーム採用0、公開0。品質成果なし。",
+      "nextAction": "PR #441のhead=fda16e27をGitHub Actions checkout可能な実行環境でnode --checkと3指定QAおよびcreateCatalogObjectのWebGL新旧比較に通し、失敗差分を修正。未合格ならマージ禁止。",
       "steps": {
         "launch": "done",
-        "code": "done",
+        "code": "pending",
         "qa": "pending",
-        "commit": "done",
-        "pr": "pending",
+        "commit": "pending",
+        "pr": "done",
         "merge": "pending",
         "deploy": "pending"
       },
@@ -161,26 +161,30 @@
         {
           "label": "市場露店の垂木・棟木実ソース改修（未QA）",
           "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/fda16e27c04f875054419d20a7b88304c943efb2"
+        },
+        {
+          "label": "PR #441 draft/mergeable=false・head fda16e27",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/441"
         }
       ],
       "lastRunOutcome": {
-        "newSourceChangedIds": 1,
+        "newSourceChangedIds": 0,
         "newQAPassed": 0,
         "newGameAppliedIds": 0,
-        "newSourceCommits": 1
+        "newSourceCommits": 0
       },
       "operational": {
         "blockers": [
-          "github.comのDNS解決失敗によりNode実行環境へソースを取得できない",
-          "node --check・指定3QA・WebGL新旧比較・Android FPSが未実施",
-          "5〜10種目標に対して今回1種のみ実改修"
+          "コンテナでgithub.com DNS解決失敗（git ls-remote実測）",
+          "PR #441 draft/mergeable=false、既存3D改修のNode/3QA/WebGL/Android証跡なし",
+          "今回の5〜10種実改修目標未達（新規0）"
         ],
-        "speedPlan": "CI側でfda16e27の構文/3QAとcreateCatalogObject実描画を検証。合格後に同じ建築骨格4〜9種を追加改修。",
+        "speedPlan": "PR #441をActions checkoutしてNode構文・3QA・本編createCatalogObject WebGL比較を優先。合格前の追加造形・マージを避ける。",
         "lastRunOutcome": {
-          "newSourceChangedIds": 1,
+          "newSourceChangedIds": 0,
           "newQAPassed": 0,
           "newGameAppliedIds": 0,
-          "newSourceCommits": 1,
+          "newSourceCommits": 0,
           "newGeneratedGLBs": 0
         },
         "qaBlocker": "3D家具のNode/WebGL/Android描画検証が未完了（従来の非規定blocked表記を規定のpendingへ正規化）"
