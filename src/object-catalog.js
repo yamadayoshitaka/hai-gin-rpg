@@ -242,6 +242,11 @@ export function createObjectById(id,{cellSize=2.2}={}){
    for(const z of [-.46,.46])b(1.68*c,.16*c,.095*c,0,.72*c,z*c,dark);
    for(const x of [-.82,.82])b(.095*c,.16*c,.83*c,x*c,.72*c,0,dark);
    for(let i=0;i<6;i++)b(.012*c,.009*c,1.23*c,(i-2.5)*.3*c,.922*c,0,dark);
+   // Pegged mortise-and-tenon joints and diagonal corner blocks resist racking.
+   for(const x of [-.82,.82])for(const z of [-.46,.46]){
+    b(.18*c,.055*c,.18*c,x*c,.66*c,z*c,dark);
+    b(.035*c,.018*c,.035*c,x*c,.807*c,z*c,dark);
+   }
   }
   if(id==='cottage_chair_001'){
    b(.7*c,.11*c,.65*c,0,.48*c,0);
@@ -253,6 +258,11 @@ export function createObjectById(id,{cellSize=2.2}={}){
    for(const z of [-.23,.23])b(.54*c,.09*c,.09*c,0,.23*c,z*c,dark);
    for(const y of [.91,1.37])b(.66*c,.1*c,.09*c,0,y*c,-.29*c);
    for(const x of [-.14,0,.14])b(.065*c,.41*c,.08*c,x*c,1.14*c,-.29*c,dark);
+   // Through-pegs at the seat-to-rail and back-rest joints.
+   for(const x of [-.27,.27])for(const z of [-.23,.23])
+    b(.027*c,.018*c,.027*c,x*c,.55*c,z*c,dark);
+   for(const x of [-.27,.27])for(const y of [.91,1.37])
+    b(.032*c,.023*c,.022*c,x*c,y*c,-.237*c,dark);
   }
   if(id==='cottage_bed_001'){
    b(1.6*c,.22*c,2.5*c,0,.36*c,0,dark);
@@ -264,18 +274,40 @@ export function createObjectById(id,{cellSize=2.2}={}){
    b(1.51*c,.18*c,.14*c,0,1.0*c,-1.18*c);
    for(const x of [-.45,-.15,.15,.45])b(.075*c,.53*c,.12*c,x*c,.71*c,-1.18*c);
    b(1.1*c,.14*c,.5*c,0,.77*c,-.78*c,linen);
+   // Slatted understructure supports the mattress without a solid floating slab.
+   for(let z=-.95;z<=.96;z+=.38)b(1.36*c,.065*c,.105*c,0,.47*c,z*c);
+   for(const x of [-.71,.71])for(const z of [-1.18,1.18])
+    b(.05*c,.035*c,.05*c,x*c,.93*c,z*c,dark);
   }
   if(id==='cottage_shelf_001'){
    for(const x of [-.8,.8])b(.14*c,2.8*c,.73*c,x*c,1.4*c,0,dark);
    for(const y of [.56,1.48,2.4])for(const x of [-.72,.72])
     b(.07*c,.15*c,.70*c,x*c,y*c,0,dark);
    b(1.79*c,.1*c,.1*c,0,2.69*c,-.33*c,dark);
+   // Rear diagonal braces prevent the open bookcase from shearing sideways.
+   for(const sign of [-1,1]){
+    const brace=b(.075*c,2.15*c,.065*c,0,1.43*c,sign*.315*c,dark);
+    brace.rotation.z=sign*.49;
+   }
    for(let y=.3;y<2.8;y+=.62){
     b(1.8*c,.12*c,.8*c,0,y*c,0);
     for(let i=0;i<5;i++)b(.17*c,.36*c,.36*c,(i-2)*.31*c,(y+.23)*c,0,i%2?dark:linen);
    }
   }
-  if(id==='cottage_fireplace_001'){b(2.6*c,.3*c,1*c,0,.15*c,0,stone);for(const x of [-1.1,1.1])b(.42*c,2.5*c,.9*c,x*c,1.25*c,0,stone);b(2.65*c,.4*c,1.05*c,0,2.5*c,0,stone);b(1.2*c,.45*c,.4*c,0,.48*c,.1*c,fire)}
+  if(id==='cottage_fireplace_001'){
+   b(2.6*c,.3*c,1*c,0,.15*c,0,stone);
+   for(const x of [-1.1,1.1]){
+    b(.42*c,2.5*c,.9*c,x*c,1.25*c,0,stone);
+    // Individually offset ashlar courses and recessed horizontal joints.
+    for(let y=.39;y<2.45;y+=.43){
+     b(.435*c,.045*c,.94*c,x*c,y*c,0,dark);
+     b(.055*c,.29*c,.947*c,(x+(y>.95&&y<1.8?.11:-.11))*c,(y+.21)*c,0,dark);
+    }
+   }
+   b(2.65*c,.4*c,1.05*c,0,2.5*c,0,stone);
+   b(2.82*c,.14*c,1.18*c,0,2.73*c,0,stone);
+   b(1.2*c,.45*c,.4*c,0,.48*c,.1*c,fire);
+  }
   if(id==='cottage_barrel_001'){
    // Actual coopered belly profile; no straight cylinder masquerading as staves.
    const profile=[[0,0],[.43,0],[.49,.15],[.54,.45],[.55,.60],[.53,.82],[.49,1.01],[.43,1.15],[0,1.15]]
