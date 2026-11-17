@@ -89,10 +89,25 @@ export function compactComicForStage(stageId,phase,context={}){
  // Re-entering an opened chapter still receives fresh setup/objective dialogue.
 
  const baseIds=phase==='pre'?(stage.slot===1?['m5','m15']:['m1','m15']):['m6','m10'];
+ const gameover=phase==='post'&&original.edition.startsWith('post-gameover');
  const base=baseIds.map(x=>selectBySuffix(src,x));
- if(phase==='post'&&original.edition.startsWith('post-gameover')){
+ if(gameover){
   const deaths=src.filter(p=>/-death-[12]$/.test(p.id));
-  if(deaths.length===2)base.splice(0,2,...deaths);
+  if(deaths.length===2){
+   base.splice(0,2,...deaths);
+  }else{
+   // Later chapters have no authored death frames. Reserve distinct, unregistered
+   // identities rather than showing victory/retreat artwork on game over.
+   const reference=src[0];
+   if(!reference)throw Error('Missing gameover scene reference '+stageId);
+   base.splice(0,2,...[1,2].map(i=>({
+    ...reference,id:stageId+'-death-'+i,kind:'gameover',
+    artAsset:null,image:null,imageUrl:null,imagePath:null,asset:null,
+    src:null,url:null,webp:null,imageSrc:null,assetPath:null,
+    comicCell:null,comicPage:null,sourceSheetCount:0,
+    pendingArt:true,artRegistrationStatus:'PENDING_ART'
+   })));
+  }
  }
  if(base.some(x=>!x))throw Error('Missing compact source art identity '+stageId+' '+original.edition);
  const withCount=p=>({...p,sourceSheetCount:original.pages.find(q=>q.number===p.comicPage)?.cellCount||1});
