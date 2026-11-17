@@ -8268,6 +8268,17 @@ frontierLine.name='BlueRedInitialTerritoryBoundary';frontierLine.frustumCulled=f
 // Remove the stray floating visual ribbon above humanoid models; the actual
 // team boundary remains represented in the mini-map and combat AI data.
 frontierLine.visible=false;scene.add(frontierLine);
+// Both the mini-map and the overview use live group assignments and one numbering rule.
+function buildSquadNumberByGroup(){
+ const numbers=new Map();
+ for(const id of squadIds){
+  const group=normalizeArmyGroup(armyGroupBySquad[id]);
+  const row=numbers.get(group)||new Map();
+  row.set(String(id),row.size+1);
+  numbers.set(group,row);
+ }
+ return numbers;
+}
 function drawSquadMiniMap(){
  if($('squadMiniMap').classList.contains('collapsed'))return;
  miniCtx.drawImage(miniBase,0,0);
@@ -8288,12 +8299,7 @@ function drawSquadMiniMap(){
  battleHotspots.draw(miniCtx,{limit:24});
  // The top-left HUD uses the same 1-1, 2-1 identifiers as the full radar.
  const teamPinColors=['#59dcfa','#c7a0ff','#93e5a1'];
- const squadNumberByGroup=new Map(),usedPinCenters=[];
- for(const id of squadIds){
-  const group=normalizeArmyGroup(armyGroupBySquad[id]);
-  const row=squadNumberByGroup.get(group)||new Map();
-  row.set(String(id),row.size+1);squadNumberByGroup.set(group,row);
- }
+ const squadNumberByGroup=buildSquadNumberByGroup(),usedPinCenters=[];
  const numberedPin=(point,label,color,selected=false)=>{
   let x=point.x,z=point.z;
   // A small displacement prevents overlapping badges without moving real units.
@@ -8764,6 +8770,7 @@ function updateOverviewSquadPins(dt){
  if(overviewHud.hidden===visible)overviewHud.hidden=!visible;
  document.body.classList.toggle('overview-squad-map',visible);
  if(!visible)return;
+ const squadNumberByGroup=buildSquadNumberByGroup();
  const rect=renderer.domElement.getBoundingClientRect();
  const report=$('battleDialogue'),topDock=$('battleTopDock');
  const bounds={left:Math.max(7,rect.left+7),
