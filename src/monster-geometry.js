@@ -672,9 +672,9 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
      g.sphere(head,'shadow',[x,.095,z],
        [.039,.036,.049],{name:'feline-master-orbit-'+suffix});
      g.sphere(head,'eye',[x+side*.010,.095,z+.010],
-       [.015,.027,.035],{rough:.24,name:'feline-master-iris-'+suffix});
+       [.015,.027,.035],{rough:.24,name:'feline-iris-'+suffix});
      g.sphere(head,'shadow',[x+side*.021,.094,z+.021],
-       [.0045,.020,.009],{name:'feline-master-pupil-'+suffix});
+       [.0045,.020,.009],{name:'feline-slit-pupil-'+suffix});
      g.tube(head,'skin',[
        [x-side*.044,.128,z-.035],[x,.138,z+.017],
        [x+side*.045,.122,z+.030]],.011);
@@ -685,7 +685,7 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
      lid.userData.restY=lid.position.y;
      lid.userData.blinkTravel=.052;
      g.sphere(lid,'skin',[0,0,0],[.044,.018,.060],
-       {name:'feline-master-lid-'+suffix});
+       {name:'feline-upper-eyelid-'+suffix});
    }
  }else if(feline){
    // Preserve protected m006's original eye material/position.
