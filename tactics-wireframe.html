@@ -10627,6 +10627,11 @@ function refreshBattleStudioGroom(distanceSorted,now){
  if(!battleReady||TOWN_MODE)return;
  const ranked=distanceSorted.map(x=>x.a);
  const nearSet=studioGroomSelector.update(distanceSorted);
+ // A stale hidden mid/near groom can surface after frustum return even
+ // without crossing the LOD threshold. Revalidate visible hair every 280ms,
+ // never in the per-soldier animation frame.
+ for(const a of ranked)if(a.character&&a.root.visible)
+  ensureBattleScalpCoverage(a);
  // Demotion is a zero-allocation visibility toggle to the already prepared
  // middle mesh. Update immediately even when the frame budget is saturated.
  for(const a of actors){
