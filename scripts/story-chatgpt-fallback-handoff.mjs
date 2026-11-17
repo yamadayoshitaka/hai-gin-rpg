@@ -24,18 +24,28 @@ if(budget.allowedAdditionalPaidApiSpendJpy!==0||
    budget.chatGPTImageGeneration?.requiresUserInteraction!==true||
    switches.groups?.anime?.enabled!==true)
  throw Error('ChatGPT subscription fallback forbidden by configuration');
-const q=JSON.parse(fs.readFileSync(input,'utf8'));
-if(q.enabled!==true||q.genderVariants!==1760||q.identities!==880||
-   !Array.isArray(q.selected)||q.selected.length>20)
- throw Error('Noncanonical or disabled story missing-image queue');
-const row=q.selected.find(x=>['MISSING_ART','BROKEN_REGISTRATION'].includes(x.status));
+const explicit=arg('--shot-key',null);
+let row;
+if(explicit){
+ const parts=/^(c\d{2}-s\d{2})\|(pre|post-town|post-victory|post-defeat|post-gameover)\|(male|female)\|(c\d{2}-s\d{2}-m\d+)$/.exec(explicit);
+ if(!parts)throw Error('Invalid provider-stopped shot identity');
+ row={stageId:parts[1],edition:parts[2],gender:parts[3],sceneId:parts[4],
+  chapter:Number(parts[1].slice(1,3)),key:[parts[1],parts[2],parts[4],parts[3]].join('|'),
+  status:'MISSING_ART'};
+}else{
+ const q=JSON.parse(fs.readFileSync(input,'utf8'));
+ if(q.enabled!==true||q.genderVariants!==1760||q.identities!==880||
+    !Array.isArray(q.selected)||q.selected.length>20)
+  throw Error('Noncanonical or disabled story missing-image queue');
+ row=q.selected.find(x=>['MISSING_ART','BROKEN_REGISTRATION'].includes(x.status));
+}
 if(!row){
  console.log(JSON.stringify({status:'NO_PENDING_CG',generated:0,registered:0}));
  process.exit(0);
 }
 const m=/^c(0[1-9]|1[0-9]|20)-s(0[1-9]|10)$/.exec(row.stageId);
 if(!m||row.chapter!==Number(m[1])||
- !['pre','post-town','post-victory'].includes(row.edition)||
+ !['pre','post-town','post-victory','post-defeat','post-gameover'].includes(row.edition)||
  !['male','female'].includes(row.gender)||
  !/^c\d{2}-s\d{2}-m\d+$/.test(row.sceneId)||
  !row.sceneId.startsWith(row.stageId+'-')||
