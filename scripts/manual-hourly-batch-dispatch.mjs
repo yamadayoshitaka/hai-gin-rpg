@@ -40,7 +40,7 @@ export function parseRequest(issue,owner){
 function execute(command){
  const args=['workflow','run',command.workflow,'--ref','main'];
  if(['faceHair','outfit','creatureMonster','creatureSummon'].includes(command.category)){
-  args.push('-f','slot=auto');
+  args.push('-f','slot=auto','-f','category='+command.category);
  }
  if(command.category==='world'){
   const type=command.target.startsWith('object:')?'object':command.target.startsWith('stage:')?'stage':'all';
