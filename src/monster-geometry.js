@@ -1210,6 +1210,10 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
         [x,-.016,.146],[x*1.11,-.058,.251],.019,
         {name:'rooted-claw-beast-'+digit});
      }
+   }else if(felineMaster&&coatDetail==='low'){
+     // 1000v1000 crowd uses a single silhouette paw, not four separately
+     // allocated toe groups and claw roots per leg.
+     feet(g,distal,0,0,0,true,.81*felineMaster.pawWidth);
    }else if(felineMaster){
      // Four articulated pads on a true cat toe pivot; none of the
      // cylindrical canine feet or claws are reused on m007-m010.

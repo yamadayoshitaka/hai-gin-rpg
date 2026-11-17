@@ -2209,7 +2209,12 @@ test('v41 real female anatomical legs remain after studio armor coverage across 
  // existing core torso lining behind partial robe-back geometry.
  assert.match(source,/\.\.\.studioSkinPolicy\.preserveRegions/);
  assert.match(source,/preserveRegions:occlusionPreserveRegions/);
- assert.match(source,/battleBackUnderlay=quality==='battle'&&opaqueTorsoLiningMaterials===0/);
+ // The original boolean back-underlay heuristic is now replaced by
+ // explicit closure validation of the opaque garment panel. Assert that
+ // a missing panel still preserves torso skin instead of a hollow back.
+ assert.match(source,/const closedBack=battleClosedBackCoverage\(\{/);
+ assert.match(source,/opaqueLining:opaqueTorsoLiningMaterials,preserveBody/);
+ assert.match(source,/forceCoveredRegions:forcedTorsoOcclusion/);
  assert.match(coverage,/const preserved=new Set\(preserveRegions\)/);
  assert.match(bridge,/studioPreserveLegAnatomy:true/);
  const actor=new THREE.Group();
