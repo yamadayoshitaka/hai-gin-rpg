@@ -89,6 +89,8 @@ test('four actual 3D feline sculpts have narrow heads and continuous cat anatomy
    assert.equal(mesh(model).filter(x=>x.userData.m001ReferenceSeam).length,0,
     'no cylindrical shoulder or hip joint fillers');
    assert.equal(body.userData.felineMusclesSculptedIntoTrunk,true);
+   assert.equal(body.userData.closedAnatomicalHull,true);
+   assert.ok(body.userData.anatomicalEndCaps>0);
    assert.equal(model.userData.felineMasterVariant,variant.archetype);
    assert.equal(model.userData.felineFaceWidthRatio,variant.headWidth);
    assert.equal(model.userData.felineTorsoWidth,variant.torsoWidth);
@@ -125,8 +127,14 @@ test('protected m006 and low LOD remain free of new heavy feline coat',()=>{
    assert.equal(model.userData.felineMasterSource,undefined);
    assert.equal(model.userData.felineReferenceFurDensityMultiplier,undefined);
    assert.equal(model.userData.felineReferenceSeamCount,undefined);
-   if(id!=='m006')assert.equal(model.userData.pivots.toefrontL,undefined,
+   if(id!=='m006'){
+    assert.equal(model.userData.pivots.toefrontL,undefined,
      'low crowd geometry must not allocate high-detail toe groups: '+id);
+    const legs=mesh(model).filter(x=>x.name.startsWith('feline-low-onepiece-leg-'));
+    assert.equal(legs.length,4,id+' crowd LOD must retain four real limbs');
+    assert.ok(legs.every(x=>!x.isSkinnedMesh),
+     'crowd LOD uses compact static geometry, not heavy three-bone skinning');
+   }
   }finally{disposeMonsterSculpture(model);}
  }
  const protectedModel=createMonsterModel(MONSTER_BY_ID.m006,{detail:'high'});
