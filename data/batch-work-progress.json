@@ -110,12 +110,12 @@
     },
     "world": {
       "source": "ChatGPT定期品質回帰の実行結果＋GitHub証跡",
-      "lastRunAt": "2026-11-17T10:54:30+09:00",
+      "lastRunAt": "2026-11-17T11:50:12+09:00",
       "status": "work_incomplete",
       "carryover": true,
-      "subject": "PR #441螺旋階段2種の連続外周手すりを実3D生成器へ追加",
-      "summary": "world.enabled=true。正本53件・PR保存21件・main審査中11/承認0は別集計。螺旋階段2種の既存柱は離散配置で連続手すりがなかったため、TubeGeometryで螺旋外周レールを実装。source d1989327、checkpoint f9254913。Node/WebGL/Android未検証、GLB0、ゲーム反映0。",
-      "nextAction": "PR #441最新headのNode構文検査と螺旋階段2IDのWebGL手すり・柱接続/衝突/Android FPS実測。合格後に他の既存21件QA、残り32IDへ。",
+      "subject": "PR #441の実使用3D螺旋階段レンダラに2種共通の手すり接合を追加",
+      "summary": "mainスイッチworld.enabled=true。正本53件、既存保存21件、main審査11/承認0は別計数。従来の手すりTubeGeometryはbuilding_componentの早期return後の到達不能な分岐に存在したため、実使用renderSpiralStairBOMにフライト別の連続外周手すりを追加。ソースSHA184ddee7、checkpoint SHA73e9ce4。静的アンカー確認のみ。Node/WebGL/Android未検証、GLB0、ゲーム反映0。",
+      "nextAction": "実使用rendererのNode構文検査、2階/3階の手すりと柱頭接合・踊り場クリアランスWebGL画面比較、Android FPS実測。合格前のマージ禁止。",
       "steps": {
         "launch": "done",
         "code": "done",
@@ -127,12 +127,12 @@
       },
       "evidence": [
         {
-          "label": "螺旋階段2種の実ソース",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/d1989327abcc5c237bfe17be590fdbf8ca3ce31f"
+          "label": "実使用3D階段生成器修正",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/184ddee7b81710d261ec3971998c22ce72a50175"
         },
         {
           "label": "21件チェックポイント更新",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/f9254913c8a075caaca9b25d04cb0dc791fb6f82"
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/73e9ce4a0e69792bb74002d04b2312257b3ca96f"
         },
         {
           "label": "Draft PR #441",
@@ -147,12 +147,12 @@
       },
       "operational": {
         "blockers": [
-          "Node構文検査未実施（GitHub連携からNode実行環境への転送未確立）",
-          "WebGL描画・スクリーンショット比較未実施",
+          "Nodeによる完全構文検査未実施（GitHub連携ソースを実行環境に受け渡す経路未確立）",
+          "WebGLスクリーンショット・接合・衝突未確認",
           "Android実機FPS未計測",
-          "PR #441未合格のためmainマージ・Pages公開不可"
+          "QA未合格のためmainマージ・Pages公開不可"
         ],
-        "speedPlan": "螺旋階段2種のレールと支柱接続を最小描画QAで先行検証。CI失敗はオブジェクト固有か切り分ける。",
+        "speedPlan": "共有renderSpiralStairBOMの2階/3階モデルを最小WebGLシーンで検証し、踊り場接続を調整。21件の未検証QAを順次解消。",
         "lastRunOutcome": {
           "newSourceChangedIds": 2,
           "newQAPassed": 0,
