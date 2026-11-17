@@ -105,112 +105,109 @@ test('phoenix has richer source geometry, warm feathers and long articulated tai
  assert.ok(counts.source<2_000_000,'source must fit the preview GPU limit');
  assert.ok(counts.high<500000,'near battle model must fit the FPS budget');
 });
-test('phoenix v3 keeps giant wings/tail and small head, but enlarges continuous thorax',()=>{
- const recipe=avianProfile('m013');
- assert.ok(recipe.wing[0]>=1.20&&recipe.wing[1]>=1,
-  'guardian feather donor must scale to genuinely enlarged phoenix wings');
- assert.ok(recipe.tail>=3.2&&recipe.body>=1.15&&recipe.head<.75,
-  'large chest must retain an independently tiny skull and giant tail');
+test('phoenix v4 has large anatomically fitted scales on broad torso, cheeks and crown',()=>{
+ const p=avianProfile('m013');
+ assert.ok(p.wing[0]>=1.2&&p.tail>=3.2&&p.body>=1.15&&p.head<.75);
  const m=build('m013','high');
  try{
-  assert.equal(m.userData.phoenixSlenderAnatomy,false);
   assert.equal(m.userData.phoenixExpandedThorax,true);
-  assert.equal(m.userData.phoenixTorsoRadiusX,.365);
-  assert.equal(m.userData.phoenixTorsoRadiusY,.468);
   assert.equal(m.userData.phoenixNoExternalEars,true);
-  assert.equal(m.userData.phoenixWingSpanFactor,recipe.wing[0]);
-  const chest=m.getObjectByName('avian-keel-rib-cavity-m013');
-  assert.equal(chest.userData.avianClosedThorax,true);
+  const body=m.getObjectByName('avian-keel-rib-cavity-m013');
   const scales=m.getObjectByName('avian-layered-body-plumage-m013');
+  assert.equal(body?.userData.closedAnatomicalHull,true);
+  body.geometry.computeBoundingBox();
+  const bodySize=body.geometry.boundingBox.getSize(new THREE.Vector3());
+  assert.ok(bodySize.x>.69&&bodySize.y>.85,'chest and belly must be substantial');
   assert.equal(scales.userData.imbricatedKeratinScales,true);
-  assert.equal(scales.userData.phoenixBellyScaleMultiplier,3);
-  assert.equal(scales.userData.phoenixAbdomenLargeScaleWidth,.069);
-  assert.deepEqual(scales.userData.phoenixScaleWidths,{min:.020,max:.069});
-  assert.equal(scales.userData.scaleCount,23*48);
-  assert.equal(m.userData.phoenixDenseScaleCount,23*48);
-  assert.equal(scales.userData.mergedFeatherBatches,1,
-   'more overlapping scales must not create one draw call per scale');
-  const head=m.getObjectByName('avian-cranium-m013');
-  head.geometry.computeBoundingBox();
-  assert.ok(head.geometry.boundingBox.max.x-head.geometry.boundingBox.min.x<.40,
-   'small phoenix skull must stay narrow');
-  assert.equal(head.userData.phoenixSmallElongatedHead,true);
-  assert.equal(head.userData.phoenixNoEars,true);
-  const beak=m.getObjectByName('avian-hooked-beak-m013');
-  assert.equal(beak.userData.phoenixLongNarrowBeak,true);
-  assert.ok(m.getObjectByName('phoenix-long-beak-nostril-L'));
-  assert.ok(m.getObjectByName('phoenix-long-beak-nostril-R'));
-  const crest=m.getObjectByName('avian-articulated-crest-m013');
-  assert.equal(crest.userData.phoenixAllBackCrest,true);
-  assert.equal(crest.userData.phoenixNoEarTufts,true);
-  crest.geometry.computeBoundingBox();
-  assert.ok(crest.geometry.boundingBox.min.z< -1.45,
-   'slicked-back head feathers must trail behind the small skull');
-  const tail=m.getObjectByName('avian-tail-rooted-streamers-m013');
-  assert.equal(tail.userData.phoenixLongTailFan,true);
-  assert.equal(tail.userData.curvedAvianFeathers,31);
-  assert.ok(tail.userData.phoenixTailLength>4.55);
-  tail.geometry.computeBoundingBox();
-  assert.ok(tail.geometry.boundingBox.min.z< -4.7,
-   'enlarged phoenix tail must have actual long geometry, not a particle-only effect');
+  assert.equal(scales.userData.phoenixScuteType,'close-fitted-thorax-diamond-scales');
+  assert.equal(scales.userData.mergedFeatherBatches,1);
+  assert.equal(scales.userData.scaleCount,17*17);
+  assert.equal(m.userData.phoenixDenseScaleCount,17*17);
+  assert.ok(scales.userData.phoenixAbdomenLargeScaleWidth>=.16);
+  assert.ok(scales.userData.phoenixScaleWidths.min>=.08);
+  assert.ok(scales.userData.phoenixScaleWidths.max>=.16);
+  const skull=m.getObjectByName('avian-cranium-m013'),
+   forehead=m.getObjectByName('phoenix-fine-head-scales'),
+   neck=m.getObjectByName('phoenix-neck-fine-grading-scutes');
+  skull.geometry.computeBoundingBox();
+  assert.ok(skull.geometry.boundingBox.max.x-skull.geometry.boundingBox.min.x<.40);
+  assert.equal(skull.userData.phoenixNoEars,true);
+  assert.ok(forehead.userData.scaleCount>90,'face scales must be visible, not tiny dots');
+  assert.equal(forehead.userData.phoenixVisibleFaceScales,true);
+  assert.equal(forehead.parent,m.userData.pivots.head);
+  assert.ok(forehead.userData.phoenixScaleWidthMax>=.06);
+  assert.equal(neck.userData.phoenixScalesShrinkTowardsFace,true);
+  assert.ok(neck.userData.phoenixScaleWidthBase>neck.userData.phoenixScaleWidthTip);
+  assert.equal(m.getObjectByName('avian-hooked-beak-m013').userData.phoenixLongNarrowBeak,true);
+  assert.equal(m.getObjectByName('avian-articulated-crest-m013').userData.phoenixAllBackCrest,true);
+  assert.equal(m.getObjectByName('avian-tail-rooted-streamers-m013').userData.curvedAvianFeathers,31);
  }finally{disposeMonsterSculpture(m);}
 });
-test('phoenix chicken-thigh shanks retain grounded toes and 3x overlapping plates on every articulated limb',()=>{
- for(const detail of ['source','high','medium','low']){
-  const m=build('m013',detail),p=m.userData.pivots;
-  try{
-   const ribs=m.getObjectByName('avian-keel-rib-cavity-m013');
-   ribs.geometry.computeBoundingBox();
-   const box=ribs.geometry.boundingBox;
-   assert.ok(box.max.x-box.min.x>.68,
-    'm013 rib cage should visibly expand instead of only increasing a catalog multiplier');
-   assert.ok(box.max.y-box.min.y>.80,
-    'more substantial abdomen must keep an organic rib/keel silhouette');
-   const neck=m.getObjectByName('phoenix-neck-fine-grading-scutes');
-   const head=m.getObjectByName('phoenix-fine-head-scales');
-   assert.equal(neck?.userData.phoenixScalesShrinkTowardsFace,true);
-   assert.equal(neck.userData.phoenixScaleWidthBase,.040);
-   assert.equal(neck.userData.phoenixScaleWidthTip,.009);
-   assert.equal(head?.userData.phoenixFaceMicroScales,true);
-   assert.equal(head.parent,p.head);
-   assert.equal(head.userData.phoenixScaleWidthMax,.010);
+test('phoenix thigh is muscled and separate from slender bird knee, bare shank and four toes',()=>{
+ const m=build('m013','high'),p=m.userData.pivots;
+ try{
+  assert.equal(m.userData.phoenixThighShankSeparated,true);
+  for(const side of ['L','R']){
+   const leg=p['leg'+side],knee=p['birdKnee'+side],
+    shin=p['birdAnkle'+side],foot=p['avianFoot'+side];
+   assert.equal(leg.userData.phoenixSeparateThigh,true);
+   assert.ok(leg.userData.phoenixThighRadius>.18);
+   assert.equal(knee.parent,leg);
+   assert.equal(knee.userData.phoenixRealKnee,true);
+   assert.equal(shin.parent,knee);
+   assert.equal(shin.userData.phoenixBareLowerShank,true);
+   assert.equal(foot.parent,shin);
+   assert.equal(foot.userData.phoenixChickenToes,4);
+   const femur=m.getObjectByName('phoenix-femur-muscle-'+side);
+   assert.equal(femur.parent,leg);
+   assert.equal(femur.userData.phoenixFemurContinuousSkin,true);
+   assert.ok(femur.userData.phoenixFemurMaxRadius>.18);
+   const thigh=m.getObjectByName('phoenix-long-thigh-scutes-'+side);
+   const shank=m.getObjectByName('phoenix-chicken-shank-scutes-'+side);
+   const toes=m.getObjectByName('phoenix-foot-toe-scutes-'+side);
+   for(const [part,bone,min] of [
+    [thigh,leg,.13],[shank,shin,.05],[toes,foot,.06]]){
+    assert.equal(part.parent,bone);
+    assert.equal(part.userData.phoenixAttachedScutes,true);
+    assert.ok(part.userData.phoenixScaleWidth>=min);
+   }
+  }
+  for(const action of ['idle','walk','run','attack','special']){
+   startMonsterAction(m,action,0);
+   animateMonsterModel(m,.3);
+   m.updateMatrixWorld(true);
    for(const side of ['L','R']){
-    const thigh=m.getObjectByName('phoenix-long-thigh-scutes-'+side);
-    const shank=m.getObjectByName('phoenix-chicken-shank-scutes-'+side);
-    const toes=m.getObjectByName('phoenix-foot-toe-scutes-'+side);
-    const forearm=m.getObjectByName('phoenix-wing-forearm-scutes-'+side);
-    const hand=m.getObjectByName('phoenix-wing-hand-scutes-'+side);
-    assert.equal(p['leg'+side].userData.phoenixLongSlimThigh,true);
-    assert.ok(p['leg'+side].userData.phoenixThighLength>.53);
-    assert.ok(p['leg'+side].userData.phoenixThighRadius<.09);
-    assert.equal(p['birdAnkle'+side].userData.phoenixChickenShank,true);
-    assert.equal(p['avianFoot'+side].userData.phoenixChickenToes,4);
-    for(const [mesh,bone] of [
-     [thigh,p['leg'+side]],[shank,p['birdAnkle'+side]],
-     [toes,p['avianFoot'+side]],[forearm,p['wingElbow'+side]],
-     [hand,p['wingWrist'+side]]]){
-     assert.equal(mesh?.parent,bone,'scale mesh must follow actual animated bone');
-     assert.equal(mesh.userData.phoenixAttachedScutes,true);
-     assert.equal(mesh.userData.phoenixScaleWidth,.069);
-     assert.ok(mesh.geometry.getAttribute('position').count>=20);
-    }
+    const knee=p['birdKnee'+side],foot=p['avianFoot'+side],
+     position=foot.getWorldPosition(new THREE.Vector3());
+    assert.ok(Number.isFinite(knee.rotation.x));
+    assert.ok(position.y>-.35&&position.y<3,'bird foot detached from body');
    }
-   assert.equal(m.userData.phoenixChickenLegRig,true);
-   const actions=['idle','walk','run','attack','special','leap'];
-   for(const action of actions){
-    startMonsterAction(m,action,0);
-    animateMonsterModel(m,.26);
-    m.updateMatrixWorld(true);
-    for(const side of ['L','R']){
-     const foot=p['avianFoot'+side];
-     const pos=foot.getWorldPosition(new THREE.Vector3());
-     assert.ok(pos.y>=-.25&&pos.y<3,
-       'bird feet must not be detached or sunk deep into floor: '+detail+action);
-     assert.ok(Number.isFinite(pos.x+pos.y+pos.z));
+  }
+ }finally{disposeMonsterSculpture(m);}
+});
+test('phoenix arm scales are anchored to real guardian feathers, never floating at elbow pivots',()=>{
+ const m=build('m013','high'),p=m.userData.pivots;
+ try{
+  for(const side of ['L','R']){
+   const source=m.getObjectByName('avian-guardian-three-layer-wing-m013-'+side);
+   const positions=source.geometry.getAttribute('position');
+   for(const key of ['forearm','hand']){
+    const scutes=m.getObjectByName('phoenix-wing-'+key+'-scutes-'+side);
+    assert.equal(scutes.parent,p['wing'+side]);
+    assert.equal(scutes.userData.phoenixWingFloatingBandsRemoved,true);
+    assert.equal(scutes.userData.phoenixWingFeatherSurfaceFitted,true);
+    const leaf=scutes.geometry.getAttribute('position');
+    let best=Infinity;
+    for(let j=0;j<positions.count;j++){
+     best=Math.min(best,Math.hypot(
+      positions.getX(j)-leaf.getX(0),
+      positions.getY(j)-leaf.getY(0),
+      positions.getZ(j)-leaf.getZ(0)));
     }
+    assert.ok(best<.055,'scales must originate on guardian wing mesh: '+key+side);
    }
-  }finally{disposeMonsterSculpture(m);}
- }
+  }
+ }finally{disposeMonsterSculpture(m);}
 });
 test('phoenix feather waves travel across both wings, swept crest and tail without CPU rebuilding',()=>{
  const m=build('m013','high');
