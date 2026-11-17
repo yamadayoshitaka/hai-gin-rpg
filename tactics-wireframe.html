@@ -7974,6 +7974,10 @@ const objectiveCheckpoints=createBattleObjectiveCheckpoints({
    const failed=row.status==='失敗';
    // Mission outcomes win the camera queue, not mere order confirmations.
    beginSquadFocusCinematic(String(id),0,failed?'failure':'result');
+   if(failed)battleTacticalUi.reportStrategicEvent(String(id),{
+    severity:'critical',title:row.label+'：作戦失敗',
+    reason:'作戦目標に失敗。生存部隊の再配置・守備を検討',ratio:0
+   });
    battleDialogue.push({
     key:'checkpoint-outcome:'+row.id,speaker:'伝令',
     kind:failed?'warning':'success',priority:failed?99:97,forceDisplay:true,
