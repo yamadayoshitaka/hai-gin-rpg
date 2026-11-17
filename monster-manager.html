@@ -863,6 +863,16 @@ window.__avianWingQA=()=>{
   bodyFeathers:model.userData.avianBodyFeatherCount||0,
   tail:model.getObjectByName('avian-tail-rooted-streamers-'+selected)?.userData.curvedAvianFeathers||0,
   shape:model.userData.avianAnatomicalKind,
+  phoenix:selected==='m013'?{
+   slender:!!model.userData.phoenixSlenderAnatomy,
+   denseScales:model.userData.phoenixDenseScaleCount||0,
+   noEars:!!model.userData.phoenixNoExternalEars,
+   smallHead:!!model.getObjectByName('avian-cranium-m013')?.userData.phoenixSmallElongatedHead,
+   longBeak:!!model.getObjectByName('avian-hooked-beak-m013')?.userData.phoenixLongNarrowBeak,
+   allBackCrest:!!model.getObjectByName('avian-articulated-crest-m013')?.userData.phoenixAllBackCrest,
+   tailLength:model.getObjectByName('avian-tail-rooted-streamers-m013')?.userData.phoenixTailLength||0,
+   waveMeshes:model.userData.phoenixWaveMeshCount||0
+  }:null,
   wings,action:currentAction};
 };
 window.__monsterQualityQA=()=>({
