@@ -801,6 +801,21 @@ window.__monsterViewerLayoutQA=()=>({
  minPolarAngle:controls.minPolarAngle,
  humanoidPortrait:HUMAN_MONSTER_IDS.includes(selected),
 });
+// Test-only inspection keeps the same real game sculpture/materials,
+ // but renders the eye/cheek seams from frontal AND lateral cameras.
+window.__beastFaceCameraQA=angle=>{
+ if(angle!=='front'&&angle!=='side')throw Error('Unknown quality camera');
+ if(!model)return null;
+ const target=controls.target,dist=Math.max(3.2,camera.position.distanceTo(target));
+ const lift=dist*.085,base=dist*.94;
+ camera.position.set(target.x+(angle==='side'?base:0),
+   target.y+lift,target.z+(angle==='front'?base:0));
+ camera.lookAt(target);controls.update();
+ const p=model.userData.pivots||{};
+ return {id:selected,angle,head:!!p.head,cheekRoots:model.userData.felineCheekFurRoots||0,
+   carvedEyes:!!model.userData.clonedCanineEyeSocketsCarved,
+   eyeDepthFitted:!!model.userData.cloneOpticalDepthFromSurface};
+};
 window.__monsterQualityQA=()=>({
  id:selected,detail:byId('quality').value,
  ...(meshStats||{}),fps:Math.round(fps),
