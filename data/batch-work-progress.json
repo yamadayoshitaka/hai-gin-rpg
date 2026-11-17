@@ -114,12 +114,12 @@
     },
     "world": {
       "source": "ChatGPTオブジェクト即時回帰＋GitHub六担当実WebGL QA",
-      "lastRunAt": "2026-11-17T22:54:48+09:00",
+      "lastRunAt": "2026-11-17T23:51:38+09:00",
       "status": "blocked",
       "carryover": true,
-      "subject": "石工5種の実メッシュ接合・縁石形状改修をGitHub連携経由で保存（QA保留）",
-      "summary": "main world.enabled=true、正本60種確認。GitHub connector経由でstone_steps/stone_column/town_planter/stone_fence/town_wellの5種に踏面鼻先石・柱頸輪・隅石・控え石・井戸笠石縁の実メッシュを追加。作業ブランチ実ソースSHA 91f2b544、checkpoint SHA d313c95e、保存28件。Node/指定3QA/WebGL/Android未実行、対象別QA合格0、GLB0、main採用0、Pages0。未検証のためPR #441 Draft維持。",
-      "nextAction": "PR #441 headのNode構文検査・指定3QA・本編createCatalogObjectによる旧新WebGL実描画比較とAndroid計測を実施し、失敗時は実ソースを修正。ブランチmain分岐を安全に解消後、合格時のみマージ・Pages公開。",
+      "subject": "石工系5種の実メッシュ改修をmain起点のDraft PR #577に保存（QA未実施）",
+      "summary": "world.enabled=true確認。未完了[hai-gin-batch] Issueを検索したがworld該当0件。main起点の新規ブランチでstone_fence_001/stone_archway_001/stone_steps_001/stone_column_001/town_planter_001に石積み接合・迫石・踏面鼻先・柱輪・花壇組積の実造形を追加。コミットa14a26d6、Draft PR #577。Node/指定3QA/WebGL新旧比較/Android未検証、GLB0、ゲーム採用0、Pages公開0。既存Draft #441とは別管理。",
+      "nextAction": "PR #577のNode構文検査と指定3QA、同一createCatalogObjectによる5対象の近中遠WebGL新旧比較、衝突・FPS実測を実施。PR #441の滞留変更と競合を照合。合格時のみマージ・Pages公開。",
       "steps": {
         "launch": "done",
         "code": "done",
@@ -131,16 +131,12 @@
       },
       "evidence": [
         {
-          "label": "5種石工実造形変更",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/91f2b544b5c506b27177c59e1cfe39cda1d3af04"
+          "label": "石工5種実ソース",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/a14a26d678dd7d0624f3fe42a3e3bd1cf6d549b8"
         },
         {
-          "label": "28件チェックポイント",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/d313c95e94382efb557d7fa8d170a372e57ab346"
-        },
-        {
-          "label": "Draft PR #441",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/441"
+          "label": "Draft PR #577",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/577"
         }
       ],
       "lastRunOutcome": {
@@ -152,8 +148,8 @@
       },
       "operational": {
         "blockers": [
-          "Node構文・指定3QA・WebGL新旧描画・Android実測の実行証跡なし",
-          "PR #441作業ブランチはmainから分岐しており、QA未合格のままマージ不可"
+          "Node/3QA/新旧WebGL/Androidの実行証跡なし",
+          "既存Draft PR #441の28件が未検証"
         ],
         "speedPlan": "GitHub Actions上でPR #441 headをチェックアウトしNode/3QAを実行、同じcreateCatalogObjectで石工5種の近中遠WebGL画像比較を採取する",
         "lastRunOutcome": {
@@ -163,7 +159,7 @@
           "newSourceCommits": 1,
           "newGeneratedGLBs": 0
         },
-        "qaBlocker": "3D家具のNode/WebGL/Android描画検証が未完了（従来の非規定blocked表記を規定のpendingへ正規化）"
+        "qaBlocker": "実描画QA未実施"
       },
       "retiredFromCenter": false,
       "legacyRecord": false
