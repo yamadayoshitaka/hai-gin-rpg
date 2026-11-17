@@ -5,7 +5,7 @@
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {clone} from 'three/addons/utils/SkeletonUtils.js';
-import {JOBS,outfitStyle,loadPhotoMaterials,createDetailedOutfit} from '../outfit-maintenance-model.js?v=20261117-no-back-card-v2';
+import {JOBS,outfitStyle,loadPhotoMaterials,createDetailedOutfit} from '../outfit-maintenance-model.js?v=20261117-rear-armor-mantle1';
 import {EQUIPMENT_TYPES,equipmentForJob} from './equipment-catalog.js?v=4.4.41';
 import {attachSegmentedArmor} from './segmented-armor-runtime.js?v=4.5.2';
 import {consolidateBattleArmor} from './armor-batch-runtime.js?v=4.5.0';
@@ -456,7 +456,7 @@ async function attachGear(dressed,outfitBones,profile,textures,quality){
   return items;
 }
 
-export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male',quality='preview',rarity='N',weaponOverride=null,preserveBody=false,hairStyle=null,hairColor=null,studioPreferSkinnedLegs=false,studioPreserveLegAnatomy=false,studioVisibleLegAnatomy=false,headwearShown=true}={}){
+export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male',quality='preview',rarity='N',weaponOverride=null,preserveBody=false,hairStyle=null,hairColor=null,studioPreferSkinnedLegs=false,studioPreserveLegAnatomy=false,studioVisibleLegAnatomy=false,headwearShown=true,isProtagonist=false}={}){
   if(!characterModel||!parent)throw Error('人物モデルと配置先が必要です');
   // Different preview and battle entry points share the same head-surface
   // correction. The calibrated mesh is cached for all copies of each sex.
@@ -582,7 +582,7 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
   });
   // Even the instanced battle source retains the job's identifying stitched
   // seams, harness and crest; only tessellation/inspection micro-details vary.
-  const detail=createDetailedOutfit(jobId,sex,dressed,textures,{quality,rarity:rank});
+  const detail=createDetailedOutfit(jobId,sex,dressed,textures,{quality,rarity:rank,isProtagonist});
   dressed.add(detail);
   const result=skinOutfitDetails(detail,dressed);
   // Legacy flat back sheets are no longer generated. Remove any matching
@@ -1075,7 +1075,10 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
   }
   return {root,sync,dispose,face,setBodyOcclusion,setHelmetVisible,setHairVisible,getHairState,
     setArmorDepthOffsets,presentation,fitReport,diagnostics:{job:jobId,sex,matchingBones:linked.length,...result,
-    quality,rarity:rank,rarityOrnaments:detail.userData.rarityOrnaments,
+    quality,rarity:rank,isProtagonist:Boolean(isProtagonist),
+    rearCuirassPresent:!!detail.getObjectByName('anatomically-curved-rear-cuirass-lames'),
+    heroMantlePresent:Boolean(isProtagonist)&&(!!style.cape||!!detail.getObjectByName('hero-protagonist-draped-mantle')),
+    rarityOrnaments:detail.userData.rarityOrnaments,
     triangles:detail.userData.triangles,detailMotif:detail.userData.motif,
     commanderPieces:jobId==='strategist'?detail.children.filter(o=>
       /^(command-|military-standing-collar|strategist-seal)/.test(o.name)).length:0,
