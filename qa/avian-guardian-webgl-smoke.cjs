@@ -24,7 +24,7 @@ const ids=['m011','m012','m013','m014'];
    });
    try{
     await page.goto('http://127.0.0.1:8765/monster-manager.html?monster='+id+
-     '&v=phoenix-eyeliner-keratin-v20-20261118',
+     '&v=phoenix-face-flame-wing-v21-20261118',
      {waitUntil:'domcontentloaded',timeout:90000});
     await page.waitForFunction(expected=>{
      const v=window.__monsterQualityQA?.();
@@ -57,7 +57,11 @@ const ids=['m011','m012','m013','m014'];
        !shape.neckScaleFade||!shape.headMicroScales||
        !shape.noEars||!shape.smallHead||!shape.longBeak||
        !shape.allBackCrest||shape.denseScales!==15*14||
-       shape.tailLength<4.55||shape.waveMeshes!==4||state.tail!==31)
+       !shape.facialFlameMesh||!shape.eyesUncovered||
+        shape.facialFlameVanes<10||!shape.guardianFeatherHands||
+        !Array.isArray(shape.handFeathersPerSide)||
+        !shape.handFeathersPerSide.every(n=>n>=18)||
+        shape.tailLength<4.55||shape.waveMeshes!==7||state.tail!==31)
        throw Error('Phoenix requested remodel absent in actual WebGL viewer: '+
         JSON.stringify(shape));
     }
