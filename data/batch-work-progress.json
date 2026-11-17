@@ -110,58 +110,22 @@
     },
     "world": {
       "source": "ChatGPTオブジェクト即時回帰＋GitHub六担当実WebGL QA",
-      "lastRunAt": "2026-11-17T18:53:49+09:00",
-      "status": "in_review",
+      "lastRunAt": "2026-11-17T19:52:03+09:00",
+      "status": "blocked",
       "carryover": true,
-      "subject": "井戸・噴水の石積みメッシュ実改修、WebGL QA未完了",
-      "summary": "main world.enabled=true確認。PR #441の既存ブランチに井戸・噴水2IDの段積み石材と笠石・噴水槽の互い違いの石組みを実装（189571a3）。checkpoint保存28件。GitHub connector経由のソース更新は成功したが、コンテナからgithub.com DNS解決失敗、node --check・指定3QA・WebGL比較・Android未実施。5〜10種目標未達、main採用0。",
-      "nextAction": "PR #441 branch 189571a3 をActions checkout可能環境でnode --checkと指定3QA、createCatalogObject新旧WebGL比較に通す。井戸の笠石・噴水の石組みの貫通、描画負荷を確認し、QA合格前はマージしない。",
+      "subject": "PR #441 未検証28件の滞留・実行QA取得経路BLOCKED",
+      "summary": "main world.enabled=true確認、正本catalog-targets 60件確認。PR #441 open/draft/mergeable=false、head 9439cf62、実ソース最終SHA 189571a3。GitHub connectorでmainとPRソースを読取れたがコンテナgit ls-remoteはgithub.com DNS解決失敗。Node構文・指定3QA・新旧WebGL・Android未実施。新規実改修0、GLB0、QA0、ゲーム採用0、実ソースコミット0。",
+      "nextAction": "GitHub ActionsのPR #441 checkoutでNode構文と指定3QAを実行し、createCatalogObjectのWebGL比較を取得。28件の未検証差分を検証してから5〜10種の実造形改修を行う。",
       "steps": {
         "launch": "done",
-        "code": "done",
+        "code": "pending",
         "qa": "pending",
-        "commit": "done",
+        "commit": "pending",
         "pr": "done",
         "merge": "pending",
         "deploy": "pending"
       },
       "evidence": [
-        {
-          "label": "実WebGL 9種・6担当QA合格",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44013507318"
-        },
-        {
-          "label": "main本番反映 SHA 595d76ed",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/595d76ed9f31aa01104df72ffc1dab2e5efcf641"
-        },
-        {
-          "label": "Pages公開成功 #44013869408",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44013869408"
-        },
-        {
-          "label": "入口扉5種の未完了PR #441",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/441"
-        },
-        {
-          "label": "家具5種の追加実メッシュ改修（QA未実施）",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/2d163c82bc0ee3a4447077bef0283c22596a0c4c"
-        },
-        {
-          "label": "木造街設備5種の実メッシュ補強",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/53077d65e4dc89c4731187aa6bf8424a12ca09f0"
-        },
-        {
-          "label": "5種の実3D生成器改修",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/d5a3f96f72ebb6763b2ee71a2fac643447be78d0"
-        },
-        {
-          "label": "作業ブランチ26件チェックポイント",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/0208184fcdf70087bc300ef8061e2d0967667b47"
-        },
-        {
-          "label": "市場露店の垂木・棟木実ソース改修（未QA）",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/fda16e27c04f875054419d20a7b88304c943efb2"
-        },
         {
           "label": "PR #441 draft/mergeable=false・head fda16e27",
           "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/441"
@@ -169,10 +133,6 @@
         {
           "label": "井戸・噴水の石積み実ソース改修（QA未実施）",
           "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/189571a34fef12603a927b428e136652ce559dd5"
-        },
-        {
-          "label": "作業ブランチcheckpoint保存28件",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/9439cf6234b2f9cfc2e81dbdf3d37c14c237cc76"
         }
       ],
       "lastRunOutcome": {
@@ -183,16 +143,16 @@
       },
       "operational": {
         "blockers": [
-          "実行コンテナからgithub.com DNS解決失敗、ローカルQA環境にソースを取得できない",
-          "Node構文・指定3QA・WebGL新旧比較・Android FPSは未実施",
-          "今回2IDで目標5〜10ID未達"
+          "PR #441はdraftかつmergeable=false（2026-11-17 19:52 JST確認）",
+          "実行コンテナからgithub.comのDNS解決不可。Node/3QA/WebGL実行不可",
+          "既存28件の対象別WebGL・Android QA未検証"
         ],
-        "speedPlan": "GitHub Actions側のbranch checkoutでnode構文と指定3QA、createCatalogObject描画差分を先に検証。失敗箇所修正後に次の共通石工生成器群を改修。",
+        "speedPlan": "PR #441でActions checkout/テストを実行できる経路を確立し、静的3QA→実WebGL比較→不具合修正。QA前のmainマージは禁止。",
         "lastRunOutcome": {
-          "newSourceChangedIds": 2,
+          "newSourceChangedIds": 0,
           "newQAPassed": 0,
           "newGameAppliedIds": 0,
-          "newSourceCommits": 1,
+          "newSourceCommits": 0,
           "newGeneratedGLBs": 0
         },
         "qaBlocker": "3D家具のNode/WebGL/Android描画検証が未完了（従来の非規定blocked表記を規定のpendingへ正規化）"
