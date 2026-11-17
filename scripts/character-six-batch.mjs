@@ -11,7 +11,7 @@ import {listWigStyles} from '../src/face-wig-styles.js';
 const root=new URL('../',import.meta.url);
 const read=p=>fs.readFileSync(new URL(p,root),'utf8');
 const args=process.argv.slice(2);
-const value=n=>args[args.indexOf(n)+1];
+const value=n=>args.includes(n)?args[args.indexOf(n)+1]:undefined;
 const category=value('--category')||'faceHair';
 if(!['faceHair','outfit'].includes(category))throw Error('Unknown character quality category');
 const slotArg=value('--slot');
