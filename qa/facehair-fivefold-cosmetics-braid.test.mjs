@@ -80,7 +80,7 @@ test('face/body studios and battle use the same pigment module identity',()=>{
  ];
  const refs=targets.map(path=>{
   const source=readFileSync(new URL(path,import.meta.url),'utf8');
-  const versions=[...source.matchAll(/(?:face-feature-meshes|independent-face-masters|battle-artist-head-graft)\\.js\\?v=([\w-]+)/g)]
+  const versions=[...source.matchAll(/(?:face-feature-meshes|independent-face-masters|battle-artist-head-graft)\.js\?v=([\w-]+)/g)]
    .map(m=>m[1]);
   assert.ok(versions.length>0,path+' must pin the three-dimensional face module');
   return {path,versions};
