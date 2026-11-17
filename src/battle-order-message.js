@@ -1,7 +1,7 @@
 /** Visible battle-order feedback; percentages reflect the actual simulation modifiers. */
-export function describeSquadOrder(mode,{massBattle=false}={}){
+export function describeSquadOrder(mode){
  switch(mode){
-  case 'charge':return {name:'突撃',effect:'移動速度 +'+(massBattle?30:25)+'%（前進時）'};
+  case 'charge':return {name:'突撃',effect:'移動速度 +'+25+'%（前進時）'};
   case 'defend':return {name:'守備',effect:'物理被ダメージ -9〜24%／属性被ダメージ -12〜32%（6秒で最大）。HP自動回復は最大HPの80%まで。移動速度 -35%'};
   case 'hold':return {name:'待機',effect:'現在位置を維持。追加の数値バフなし'};
   case 'retreat':return {name:'退却',effect:'自陣へ後退。追加の数値バフなし'};
