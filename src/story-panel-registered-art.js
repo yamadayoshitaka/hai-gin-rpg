@@ -73,6 +73,10 @@ export function isPublishedStoryRevision(){
 export function storyArtDisplayUrl(url){
  if(typeof url!=='string'||!url)return url;
  if(isPublishedStoryRevision()){
+  // New stage5+ CGs are also pinned to exact release commit to avoid stale art.
+  if(url.startsWith('./assets/story/new-originals/'))
+   return 'https://raw.githubusercontent.com/yamadayoshitaka/hai-gin-rpg/'+
+    STORY_PAGES_COMMIT+'/'+url.slice(2);
   if(url.startsWith('./assets/story/chapter1-provisional-live/'))
    return 'https://raw.githubusercontent.com/yamadayoshitaka/hai-gin-rpg/'+
     STORY_PAGES_COMMIT+'/'+url.slice(2);
