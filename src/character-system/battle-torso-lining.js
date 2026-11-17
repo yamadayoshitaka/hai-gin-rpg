@@ -1,8 +1,8 @@
-// Close exposed imported Ranger/Peasant torso skin with a photographed cloth
-// lining IN THE EXISTING source material slot. No new mesh, draw call, rig
+// Close exposed Ranger/Peasant torso skin in both preview and battle with
+// photographed cloth in the EXISTING skinned material slot. No new mesh, draw call, rig
 // or repeated CPU work. Hands, face and neck meshes remain untouched.
 export function shouldClothLineBattleTorso({quality='',meshName='',materialName='',role=''}={}){
- return quality==='battle'&&role==='skin'&&
+ return (quality==='battle'||quality==='preview')&&role==='skin'&&
   /(?:^|_)(?:ranger|peasant)_body(?:_|$)/i.test(String(meshName))&&
   /(?:mi_regular|skin|flesh|nude)/i.test(String(materialName));
 }
