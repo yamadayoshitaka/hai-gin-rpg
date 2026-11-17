@@ -55,7 +55,7 @@ test('m002 real face width/height matches SMALL m001 on-screen source',()=>{
  }
 });
 
-test('feline joints use one continuous, three-bone shell through motion',()=>{
+test('feline joints use torso-anchored four-bone skin through motion',()=>{
  for(const id of ['m007','m008','m009','m010']){
   const model=make(id);
   try{
@@ -72,7 +72,7 @@ test('feline joints use one continuous, three-bone shell through motion',()=>{
     const skin=node(model,'feline-continuous-skin-'+name);
     assert.ok(skin.isSkinnedMesh&&skin.userData.felineContinuousSurface);
     assert.equal(skin.parent,p['leg'+name]);
-    assert.equal(skin.skeleton.bones.length,3);
+    assert.equal(skin.skeleton.bones.length,4);
     assert.equal(skin.userData.felineSealedTop,true);
     assert.equal(skin.userData.felineSealedBottom,true);
     assert.equal(skin.userData.felineRootBuriedInTorso,true);
@@ -88,20 +88,44 @@ test('feline joints use one continuous, three-bone shell through motion',()=>{
     assert.ok(pos.getY(pawCentre)<-.58);
     assert.equal(skin.userData.felineEndCapTriangles,radial*2);
     assert.equal(skin.geometry.groups.length,0);
+    assert.equal(skin.userData.torsoAnchoredProximalSkin,true);
+    assert.equal(skin.skeleton.bones[0].parent,p.torso);
+    assert.equal(skin.skeleton.bones[1].parent,p['leg'+name]);
+    assert.equal(skin.skeleton.bones[2].parent,p['lower'+name]);
+    assert.equal(skin.skeleton.bones[3].parent,p['toe'+name]);
     const weights=skin.geometry.getAttribute('skinWeight');
     const indices=skin.geometry.getAttribute('skinIndex');
     assert.ok(weights.count>800,id+' '+name+' must have real continuous rings');
+    assert.ok(weights.getX(0)>.99,'top ring must be fixed to torso');
+    assert.ok(weights.getW(weights.count-1)>.99,'paw tip must follow toe');
     for(let i=0;i<weights.count;i++){
-     const sum=weights.getX(i)+weights.getY(i)+weights.getZ(i);
+     const sum=weights.getX(i)+weights.getY(i)+weights.getZ(i)+weights.getW(i);
      assert.ok(Math.abs(sum-1)<.00001,'all vertices must have normalised bone weights');
      assert.equal(indices.getX(i),0);
      assert.equal(indices.getY(i),1);
      assert.equal(indices.getZ(i),2);
+     assert.equal(indices.getW(i),3);
     }
     assert.ok(!model.getObjectByName('feline-continuous-hock-'+name));
     assert.ok(!model.getObjectByName('feline-ankle-to-toe-fascia-'+name));
     return {name,skin};
    });
+   const rearSkin=joints.find(j=>j.name==='rearL').skin;
+   const firstVertex=new THREE.Vector3().fromBufferAttribute(
+     rearSkin.geometry.getAttribute('position'),0);
+   model.updateMatrixWorld(true);
+   const toWorld=()=>{
+    const v=firstVertex.clone();
+    rearSkin.applyBoneTransform(0,v);
+    return rearSkin.localToWorld(v);
+   };
+   const rootBefore=toWorld();
+   p.legrearL.rotation.x=.50;
+   model.updateMatrixWorld(true);
+   const rootAfter=toWorld();
+   assert.ok(rootBefore.distanceTo(rootAfter)<.005,
+     id+' the skin attachment at hip follows the rotating thigh');
+   p.legrearL.rotation.x=0;
    for(const action of ['idle','walk','run','attack','leap']){
     startMonsterAction(model,action,0);
     for(const t of [.04,.16,.31,.47,.71]){
