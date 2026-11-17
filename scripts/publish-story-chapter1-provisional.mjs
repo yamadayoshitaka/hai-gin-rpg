@@ -21,6 +21,7 @@ import {chapterOneReviewPages} from '../src/story-chapter1-review-core.js';
 import {chapterReviewedPanelAsset} from '../src/story-chapter-reviewed-art.js';
 import {stage2ReviewedPanelAsset} from '../src/story-stage2-reviewed-art.js';
 import {NEW_STORY_ORIGINAL_ART} from '../src/story-new-original-art.js';
+import {sourceDraftDialogueMatches} from '../src/story-draft-dialogue-identity.js';
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const args=process.argv.slice(2);
@@ -89,7 +90,8 @@ function sourceReviewable(s,available){
  const min=s.stageId==='c01-s02'?[768,320]:(s.stageId>='c01-s04'?[800,450]:[1536,864]);
  if(w<min[0]||h<min[1]||w*9!==h*16)throw Error('Low native geometry '+s.key);
  if(meta.shotKey!==s.key||meta.imageSha256!==sum||
-  meta.screenplayText!==s.scriptText||meta.visuallyApproved!==false||
+  !sourceDraftDialogueMatches({stageId:s.stageId,edition:s.edition,shotId:s.shotId,
+   currentText:s.scriptText,sourceText:meta.screenplayText})||meta.visuallyApproved!==false||
   meta.formallyRegistered!==false||meta.model!=='@cf/black-forest-labs/flux-2-klein-4b'||
   meta.imageBytes!==original.length||
   !Array.isArray(meta.nativePixels)||meta.nativePixels[0]!==w||meta.nativePixels[1]!==h)

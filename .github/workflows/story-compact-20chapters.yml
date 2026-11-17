@@ -8,6 +8,9 @@ on:
       - 'src/story-art-sourcing-policy.js'
       - 'src/story-new-original-art.js'
       - 'qa/story-stage-art-sourcing-boundary.test.mjs'
+      - 'src/story-draft-dialogue-identity.js'
+      - 'qa/story-draft-dialogue-identity.test.mjs'
+      - 'scripts/publish-story-chapter1-provisional.mjs'
       - 'qa/story-sequential-provisional-intake.test.mjs'
       - 'src/story-chapter1-review-core.js'
       - 'scripts/publish-story-chapter1-provisional.mjs'
@@ -87,6 +90,8 @@ jobs:
         run: node qa/story-archive-restoration.test.mjs
       - name: Enforce stage1-4 historical reuse, stage5-200 NEW-only and prevent stale sheet fallback
         run: node qa/story-stage-art-sourcing-boundary.test.mjs
+      - name: Verify exact source artwork proof after narration-prefix edits
+        run: node qa/story-draft-dialogue-identity.test.mjs
       - name: Verify sequential first-chapter production provisional intake
         run: node qa/story-sequential-provisional-intake.test.mjs
       - name: Verify compact CG reuse of 40 existing first-four-stage gender/outcome original assets
