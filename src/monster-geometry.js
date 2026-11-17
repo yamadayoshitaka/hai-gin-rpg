@@ -23,6 +23,103 @@ const QUADRUPED_CRANIUM_RINGS=Object.freeze([
  {y:.271,rx:.142,rz:.175,cz:.028},
  {y:.310,rx:.039,rz:.068,cz:.015},
 ]);
+// m001's facial outline is the source of truth for both the physical skull
+// and its hair follicles. Do not generate a disconnected spherical hair cap.
+const M001_CRANIUM_RINGS=Object.freeze([
+ {z:.355,y:-.160,rx:.026,ry:.030},
+ {z:.335,y:-.140,rx:.057,ry:.051},
+ {z:.310,y:-.113,rx:.094,ry:.073},
+ {z:.270,y:-.040,rx:.171,ry:.121},
+ {z:.215,y:-.009,rx:.205,ry:.145},
+ {z:.155,y:.022,rx:.233,ry:.168},
+ {z:.060,y:.051,rx:.268,ry:.190},
+ {z:-.120,y:.056,rx:.289,ry:.199},
+ {z:-.335,y:.025,rx:.243,ry:.176},
+ {z:-.520,y:-.016,rx:.174,ry:.126},
+ {z:-.635,y:-.032,rx:.050,ry:.062}
+]);
+const clamp01=v=>Math.max(0,Math.min(1,v));
+const m001CheekContourX=(x,y,z)=>{
+ const under=clamp01((.045-y)/.225);
+ const forward=clamp01((z+.12)/.34);
+ return x*(1-.315*under*forward);
+};
+function m001RingAtZ(z){
+ for(let i=1;i<M001_CRANIUM_RINGS.length;i++){
+  const a=M001_CRANIUM_RINGS[i-1],b=M001_CRANIUM_RINGS[i];
+  if(z>=b.z||i===M001_CRANIUM_RINGS.length-1){
+   const t=clamp01((a.z-z)/(a.z-b.z));
+   return {z,y:a.y+(b.y-a.y)*t,
+     rx:a.rx+(b.rx-a.rx)*t,ry:a.ry+(b.ry-a.ry)*t};
+  }
+ }
+ return M001_CRANIUM_RINGS[0];
+}
+// Root every hair at the SAME tapered cranium surface used by the sculpt.
+// Coordinates are converted from the small face pivot into the moving full
+// head pivot, so the fur never hovers above the scalp when the face narrows.
+function m001FittedFacialMane(faceCore,source){
+ const guides=[];
+ const add=(root,tip,normal,width,shade,crown)=>{
+  const mid=root.map((v,k)=>v+(tip[k]-v)*.52+
+    (k===2?.012:0));
+  guides.push({root,mid,tip,normal,width,shade,
+    m001ContourGuide:true,m001ContourCrown:!!crown});
+ };
+ const longitudinal=source?30:21,around=source?11:8;
+ for(const side of [-1,1]){
+  for(let i=0;i<longitudinal;i++){
+   const z=.065+.168*(i+.5)/longitudinal;
+   const ring=m001RingAtZ(z);
+   for(let j=0;j<around;j++){
+    const vertical=-.67+1.21*(j+.35)/around;
+    const y=ring.y+ring.ry*vertical;
+    const radius=Math.sqrt(1-vertical*vertical);
+    const x=m001CheekContourX(side*ring.rx*radius,y,z);
+    const headX=x*faceCore.scale.x;
+    const headY=faceCore.position.y+y*faceCore.scale.y;
+    const headZ=faceCore.position.z+z*faceCore.scale.z;
+    // No roots or growing tips inside the recessed eye, nasal ridge or lips.
+    if(headY>.073&&headY<.157&&headZ>.160&&
+       Math.abs(headX)<.140)continue;
+    if(Math.abs(headX)<.102)continue;
+    const root=[headX+side*.006,headY,headZ+.005];
+    const longHair=vertical<-.12;
+    const length=(longHair?.192:.115)*(1+.10*((i*7+j*3)%5)/5);
+    const eyeBand=headY>.066&&headY<.158;
+    const tipX=side*Math.max(eyeBand?.139:.111,
+      Math.abs(root[0])-(eyeBand?.004:.019));
+    const tip=[tipX,root[1]-length*(longHair?.76:.47),
+      root[2]+length*.34];
+    add(root,tip,[side*.92,vertical*.20,.32],
+      longHair?.009:.007,
+      (i+j)%9===0?'light':(i+j)%7===0?'shadow':'skin',false);
+   }
+  }
+ }
+ // Crown hairs are fitted to the skull's upper ellipse and swept forward.
+ // The upper forehead used to grow from an unrelated floating ellipsoid.
+ const crownRows=source?28:19,crownCols=source?13:9;
+ for(let i=0;i<crownRows;i++){
+  const z=.023+.124*(i+.5)/crownRows;
+  const ring=m001RingAtZ(z);
+  for(let j=0;j<crownCols;j++){
+   const u=-.88+1.76*(j+.5)/crownCols;
+   const originalX=ring.rx*u;
+   const originalY=ring.y+ring.ry*Math.sqrt(1-u*u);
+   const root=[
+     originalX*faceCore.scale.x,
+     faceCore.position.y+originalY*faceCore.scale.y+.005,
+     faceCore.position.z+z*faceCore.scale.z+.005
+   ];
+   const len=.116+.030*(1-Math.abs(u));
+   const tip=[root[0]+Math.sign(u)*Math.min(.010,Math.abs(u)*.010),
+     Math.max(.149,root[1]-len*.37),root[2]+len*.60];
+   add(root,tip,[u,.88,.30],.008,(i+j)%8===0?'light':'skin',true);
+  }
+ }
+ return guides;
+}
 function feet(g,pivot,x,y,z,clawed=true,scale=1){
  g.sphere(pivot,'skin',[0,-.28,0],[.14*scale,.30*scale,.15*scale]);
  g.sphere(pivot,'shadow',[0,-.53,.13],[.13*scale,.08*scale,.22*scale]);
@@ -208,10 +305,10 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    // The reference has a narrow, centered wolf mask nested *inside*
    // the dense mane: scale facial bone/eyes together but NOT the
    // separately articulated jaw, lips, and nose.
-   faceCore.scale.set(.67,.79,.82);
+   faceCore.scale.set(.64,.79,.82);
    faceCore.userData.anatomicalFaceScale=.79;
-   faceCore.userData.m001CenteredFaceWidthScale=.67;
-   g.root.userData.wolfKingExposedFaceScale=.67;
+   faceCore.userData.m001CenteredFaceWidthScale=.64;
+   g.root.userData.wolfKingExposedFaceScale=.64;
    g.root.userData.wolfKingManeLengthMultiplier=1.2;
    g.root.userData.wolfKingReferenceRemesh=true;
  }
@@ -219,25 +316,8 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
  const skullWidth=reptile?.905:feline?.95:1;
  const skullDepth=reptile?1.065:feline?.965:1;
  const cranium=s.id==='m001'?
-   g.axialLoft(faceCore,'skin',[
-     // One uninterrupted small lupine skull: inset brow, tapered nose root,
-     // strong but compact temples, narrowing into the mane at the nape.
-     // Old scaled skull tip projected ahead of the black nose (z=.416
-     // after faceCore scaling, versus nose z=.366), making a grey round
-     // button float above the real rhinarium. Terminate bone BEHIND nose.
-     // Wedge-shaped wolf muzzle: the nose root is narrow, the orbital
-     // ridge opens into the zygoma and the rear skull closes at the nape.
-     // The terminal ring remains behind the head-parented black nose.
-     {z:.355,y:-.160,rx:.026,ry:.030},
-     {z:.320,y:-.116,rx:.099,ry:.078},
-     {z:.270,y:-.040,rx:.196,ry:.127},
-     {z:.175,y:.012,rx:.250,ry:.164},
-     {z:.060,y:.051,rx:.286,ry:.192},
-     {z:-.120,y:.056,rx:.289,ry:.199},
-     {z:-.335,y:.025,rx:.243,ry:.176},
-     {z:-.520,y:-.016,rx:.174,ry:.126},
-     {z:-.635,y:-.032,rx:.050,ry:.062}
-   ],{name:'organic-cranium-m001',rough:.91,ribbing:.003,faceSculpt:true}):
+   g.axialLoft(faceCore,'skin',M001_CRANIUM_RINGS,
+     {name:'organic-cranium-m001',rough:.91,ribbing:.003,faceSculpt:true}):
    g.anatomicalLoft(faceCore,'skin',
      QUADRUPED_CRANIUM_RINGS.map(r=>({
        ...r,rx:r.rx*skullWidth,rz:r.rz*skullDepth,
@@ -253,15 +333,13 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    for(let i=0;i<faceVertices.count;i++){
      const x=faceVertices.getX(i),y=faceVertices.getY(i),
        z=faceVertices.getZ(i);
-     const under=Math.max(0,Math.min(1,(.045-y)/.225));
-     const forward=Math.max(0,Math.min(1,(z+.12)/.34));
-     faceVertices.setX(i,x*(1-.225*under*forward));
+     faceVertices.setX(i,m001CheekContourX(x,y,z));
    }
    faceVertices.needsUpdate=true;
    cranium.geometry.computeVertexNormals();
    cranium.geometry.computeBoundingSphere();
    cranium.userData.invertedTriangleWolfMask=true;
-   g.recessCanineEyeSockets(cranium);
+   g.recessCanineEyeSockets(cranium,{centerX:.128});
  }
  if(s.id==='m001'&&coatDetail==='low'){
    // In massive battles use one coarse sculpted ruff silhouette instead of
@@ -296,12 +374,13 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
      // The rear section overlaps the sculpted face, without a white tube.
      // The bridge's visible end must tuck BEHIND the wet nose rather than
      // appearing as a separate grey circular button above the nostrils.
-     {z:.315,y:-.133,rx:.018,ry:.017},
-     {z:.300,y:-.130,rx:.046,ry:.035},
-     {z:.281,y:-.120,rx:.072,ry:.054},
-     {z:.255,y:-.101,rx:.097,ry:.065},
-     {z:.192,y:-.047,rx:.132,ry:.090},
-     {z:.115,y:-.019,rx:.160,ry:.118}
+     {z:.315,y:-.133,rx:.014,ry:.015},
+     {z:.300,y:-.130,rx:.039,ry:.033},
+     {z:.281,y:-.120,rx:.057,ry:.049},
+     {z:.255,y:-.101,rx:.073,ry:.060},
+     {z:.215,y:-.075,rx:.089,ry:.073},
+     {z:.165,y:-.032,rx:.107,ry:.091},
+     {z:.115,y:-.019,rx:.127,ry:.110}
    ]:[
      {z:.664,y:-.134,rx:.078,ry:.069},
      {z:.635,y:-.125,rx:.154,ry:.092},
@@ -322,10 +401,10 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
      // Overlap the grey bridge tip so a detached lower black button
      // cannot render beneath an exposed circular grey end-cap.
      {z:.366,y:-.131,rx:.012,ry:.014},
-     {z:.358,y:-.130,rx:.048,ry:.034},
-     {z:.346,y:-.130,rx:.065,ry:.043},
-     {z:.321,y:-.131,rx:.064,ry:.041},
-     {z:.288,y:-.131,rx:.043,ry:.028}
+     {z:.358,y:-.130,rx:.042,ry:.034},
+     {z:.346,y:-.130,rx:.056,ry:.042},
+     {z:.321,y:-.131,rx:.055,ry:.040},
+     {z:.288,y:-.131,rx:.038,ry:.028}
    ]:[
      {z:.706,y:-.161,rx:.027,ry:.029},
      {z:.685,y:-.158,rx:.104,ry:.060},
@@ -340,11 +419,11 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    for(const side of [-1,1]){
      const tight=s.id==='m001';
      g.bridge(head,'shadow',
-       [side*(tight?.042:.094),tight?-.130:-.143,tight?.293:.605],
-       [side*(tight?.048:.110),tight?-.139:-.166,tight?.350:.662],
-       tight?.011:.028,tight?.008:.015);
+       [side*(tight?.037:.094),tight?-.130:-.143,tight?.293:.605],
+       [side*(tight?.043:.110),tight?-.139:-.166,tight?.350:.662],
+       tight?.010:.028,tight?.008:.015);
      g.sphere(head,'shadow',
-       [side*(tight?.048:.108),tight?-.139:-.182,tight?.358:.681],
+       [side*(tight?.043:.108),tight?-.139:-.182,tight?.358:.681],
        tight?[.007,.005,.004]:[.014,.010,.008],
        {name:'beast-nostril-'+(side<0?'L':'R'),rough:.21});
    }
@@ -357,12 +436,12 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
       // Apply the generator's key idea: a sunken socket and optical almond
       // fitted BEHIND the upper eyelid. This is a mesh aperture rather than
       // spherical eyes mounted on the forehead/cheeks.
-      g.recessedCanineAlmondEye(faceCore,{side,name:'wolf-king'});
+      g.recessedCanineAlmondEye(faceCore,{side,name:'wolf-king',centerX:.128});
       // Keep only a shallow, fitted skin crease. The former elevated
       // brow tube projected past both canthi like a thick eyeliner wing.
       const brow=g.tube(faceCore,'skin',[
-        [side*.087,.137,.160],[side*.129,.145,.182],
-        [side*.176,.133,.166]],.0035);
+        [side*.073,.137,.160],[side*.113,.145,.182],
+        [side*.157,.133,.166]],.0035);
       brow.name='m001-eyebrow-ridge-'+(side<0?'L':'R');
       brow.userData.orbitalBrow=true;
      }else if(beastRemesh){
@@ -1069,6 +1148,9 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
      const len=Math.hypot(...base)||.001;
      const tier=.88+.20*((i*17%19)/18);
      const target=Math.min(.348,Math.max(.085,len*1.13*tier));
+     if(h.m001ContourGuide)return {...h,
+       wolfKingManeLengthMultiplier:1.2,
+       originalHairLength:Math.hypot(...h.tip.map((v,k)=>v-h.root[k]))};
      const faceCurtain=!!h.m001FaceCurtain;
      const faceUnderfur=!!h.m001ScalpUnderfur;
      const forelock=!!h.m001Forelock;
@@ -1121,6 +1203,10 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    // wolf skull and the mane is entirely groomed on the moving head.
    // Ear / eyebrow / eye clearances are cut out of the hair root mask.
    const wolfKingMane=s.id==='m001'?[
+     // The first layer follows the actual narrow cranium loft, not an
+     // ellipsoid displaced from the skull. This connects cheek and crown
+     // hair continuously to the newly slimmed facial outline.
+     ...m001FittedFacialMane(faceCore,source),
      // Skin-hugging short fibres grow at the *facial* cheek line, not
      // just at the outer nape. Long guard hairs overlay these roots.
      // Both are merged into the ORIGINAL three head material batches.
@@ -1145,14 +1231,8 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
        h.root[1]>-.163&&h.root[1]<.185)
        .map(h=>({...h,m001FaceCurtain:true}))),
      // Brow fringe starts just above the face rather than behind the ears.
-     ...generateCanineFurGuides({
-       center:[0,.245,.163],radii:[.223,.080,.121],
-       rows:source?32:23,around:source?42:32,
-       length:.225,width:.0095,seed:v*103+929,
-       minVertical:-.04,maxVertical:.99,gravity:.40
-     }).filter(h=>h.root[1]>.209&&h.root[2]>.132&&
-       Math.abs(h.root[0])>.071&&Math.abs(h.root[0])<.219)
-       .map(h=>({...h,m001Forelock:true})),
+     // Crown strands above now use the same sculpted skull rings;
+     // the previous free-floating forehead ellipsoid has been removed.
      // Upper crown and both side-manes approach the throat-ruff volume
      // while the bare face stays open; retain three material batches.
      ...generateCanineFurGuides({
@@ -1246,7 +1326,8 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
      // The old generic bare-face mask deleted all roots within x=.186,
      // which is precisely why the mane began too far from the face.
      // Anterior scalp guides have their own eye/nose clearance masks.
-     if(h.m001ScalpUnderfur||h.m001FaceCurtain||h.m001Forelock)
+     if(h.m001ContourGuide||h.m001ScalpUnderfur||
+        h.m001FaceCurtain||h.m001Forelock)
        return true;
      return !(h.root[2]>.078&&Math.abs(h.root[0])<.186&&
        h.root[1]>-.223&&h.root[1]<.293);
@@ -1262,6 +1343,7 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
        mesh.userData.maneLengthMultiplier=1.2; // groomed layered coat
        mesh.userData.exposedFaceScale=.67;
        mesh.userData.faceRootedRuff=true;
+       mesh.userData.contourAlignedForehead=true;
      }
    }
  }
