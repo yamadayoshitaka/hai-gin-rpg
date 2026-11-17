@@ -9,7 +9,7 @@ import {massGaitActive} from './mass-visual-motion.js?v=4.6.35';
 import {ensureBattleScalpCoverage} from './character-system/battle-visual-pipeline.js';
 import {equipBattleStudioHair} from './character-system/battle-artist-head-graft.js?v=20261117-shading-back1';
 import {massLocomotionKind,massGpuMotionCode} from './mass-dash-parity.js?v=4.6.34';
-import {riderSeatLocalOffset,mountedFlightSway} from './combat-creature-performance.js?v=4.6.29';
+import {riderSeatLocalOffset,mountedFlightSway} from './combat-creature-performance.js?v=20261117-horse-saddle-fix1';
 import {massAttackVariant} from './mass-battle-vfx-policy.js?v=4.6.31';
 import {createCrowdGroundAnchor,crowdGroundShift,applyCrowdGroundShift} from './crowd-run-grounding.js?v=4.6.32';
 
