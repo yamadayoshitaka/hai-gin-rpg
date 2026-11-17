@@ -820,6 +820,15 @@ export function createObjectById(id,{cellSize=2.2}={}){
    }
    for(const z of [-1.4,1.4])box(4.35*c,.2*c,.18*c,0,3.02*c,z*c,wood);
    for(const x of [-2,2])box(.17*c,.15*c,3*c,x*c,3.02*c,0,wood);
+   // Canopy rafters carry fabric load into the front/rear wall plates; ridge ties
+   // prevent the unsupported floating roof silhouette in side-on battle views.
+   for(const z of [-1.35,0,1.35]){
+    for(const side of [-1,1]){
+     const rafter=box(2.24*c,.11*c,.12*c,side*1.05*c,3.23*c,z*c,wood);
+     rafter.rotation.z=-side*.12;
+    }
+   }
+   box(.16*c,.16*c,3.05*c,0,3.39*c,0,wood);
    box(4.4*c,.17*c,2.7*c,0,1.45*c,0,wood);
    for(const x of [-1.8,0,1.8])box(.14*c,.75*c,.14*c,x*c,.98*c,0,wood);
    for(let i=0;i<8;i++){
