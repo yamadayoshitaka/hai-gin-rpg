@@ -110,12 +110,12 @@
     },
     "world": {
       "source": "ChatGPTオブジェクト即時回帰＋GitHub六担当実WebGL QA",
-      "lastRunAt": "2026-11-17T14:56:45+09:00",
+      "lastRunAt": "2026-11-17T15:51:28+09:00",
       "status": "in_review",
       "carryover": true,
-      "subject": "街の木造設備5種の構造補強を実ソースに追加（実描画QA保留）",
-      "summary": "world.enabled=trueを確認。作業ブランチでベンチ、荷箱、掲示板、木柵、荷車の5種に接合ピン、斜材、軸受支持ブロックを実追加。実ソースSHA 53077d65。GitHub DNS失敗でローカルnode --check/指定3QA/新旧WebGL/Androidは未実施。今回main採用0、GLB0、品質QA合格0。",
-      "nextAction": "専用ブランチ53077d65を実行環境へ取得してnode --checkと指定3QA、createCatalogObject新旧WebGL比較、衝突・LOD・Android FPSを検証。不合格なら修正し合格後のみPR/main公開。",
+      "subject": "見張り塔・石柱・松明・干し草・宿屋看板の5種に実メッシュ追加（描画QA未検証）",
+      "summary": "mainのworld.enabled=trueを確認。既存world/furniture-structural-regression-20261116ブランチの実3D生成器で5種に荷重支持斜材・柱台輪・鍛鉄籠・束ねた藁・木製額縁/鋲を追加。ソースSHA d5a3f96f。チェックポイント0208184f。静的コードアンカー5/5確認、Node/WebGL/Androidは未実施。今回GLB0、QA合格0、main採用0、公開0。",
+      "nextAction": "d5a3f96fを実行可能環境へ取得しnode --checkと指定3QA、createCatalogObjectによる5種の近中遠WebGL比較、当たり判定・FPSを検証。既存PR #441との統合差分も確認し、合格後のみマージ・公開。",
       "steps": {
         "launch": "done",
         "code": "done",
@@ -149,6 +149,14 @@
         {
           "label": "木造街設備5種の実メッシュ補強",
           "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/53077d65e4dc89c4731187aa6bf8424a12ca09f0"
+        },
+        {
+          "label": "5種の実3D生成器改修",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/d5a3f96f72ebb6763b2ee71a2fac643447be78d0"
+        },
+        {
+          "label": "作業ブランチ26件チェックポイント",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/0208184fcdf70087bc300ef8061e2d0967667b47"
         }
       ],
       "lastRunOutcome": {
@@ -159,11 +167,11 @@
       },
       "operational": {
         "blockers": [
-          "コンテナからgithub.comのDNS解決失敗でnode --check/指定3QAを実行できない",
-          "対象5種の新旧WebGLスクリーンショット・衝突・LOD QA未実施",
-          "Android実機FPS未計測"
+          "GitHubソースをNode/WebGL実行環境へ取得できない（github.com DNS解決失敗）",
+          "今回5種のnode --check・指定3テスト・実WebGL新旧画像比較が未実施",
+          "Android実機FPS・配置衝突・LOD未計測"
         ],
-        "speedPlan": "53077d65の静的3QA→5種WebGL新旧比較→衝突とFPS。合格までマージ禁止。",
+        "speedPlan": "5種の静的Node/3QAを実行→createCatalogObject新旧WebGL比較→衝突とFPS検証。失敗時修正、未合格はマージ禁止。",
         "lastRunOutcome": {
           "newSourceChangedIds": 5,
           "newQAPassed": 0,
