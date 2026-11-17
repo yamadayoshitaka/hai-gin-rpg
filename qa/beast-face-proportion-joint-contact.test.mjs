@@ -145,7 +145,7 @@ test('feline joints use torso-anchored four-bone skin through motion',()=>{
  }
 });
 
-test('protected m005 and m006 retain original small-LOD lineage',()=>{
+test('m005 and m006 retain compact low LOD despite new m001 source lineage',()=>{
  for(const id of ['m005','m006']){
   const model=createMonsterModel(MONSTER_BY_ID[id],{detail:'low'});
   try{
