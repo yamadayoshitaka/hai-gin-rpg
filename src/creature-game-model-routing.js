@@ -28,7 +28,7 @@ export const GAME_MONSTER_MODEL_REGISTRY=Object.freeze(Object.fromEntries(
    spec.id==='m006'?'m001-panther-skull-mini-nose-v14-20261118':
    firstWave.has(spec.id)?'m001-compact-wolf-mouth-v10-20261117':
    felineWave.has(spec.id)?'m007-torso-anchor-tail-v12-20261118':
-   avianWave.has(spec.id)?'phoenix-broad-chicken-scutes-v17-20261118':
+   avianWave.has(spec.id)?'phoenix-fitted-giant-scutes-v18-20261118':
    'catalog-baseline',
   stage:locked.has(spec.id)?'m001-source-derivative-external-locked':
    humanoids.has(spec.id)?'separate-humanoid-pipeline':
