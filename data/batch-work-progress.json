@@ -114,50 +114,53 @@
     },
     "world": {
       "source": "ChatGPTオブジェクト即時回帰＋GitHub六担当実WebGL QA",
-      "lastRunAt": "2026-11-17T21:47:25+09:00",
+      "lastRunAt": "2026-11-17T22:54:48+09:00",
       "status": "blocked",
       "carryover": true,
-      "subject": "PR #441 既存28件のQA滞留：分岐差異とローカル取得不能を再確認",
-      "summary": "main world.enabled=trueをGitHub connectorで確認。catalog-targets.jsonのcount=60、既存専用作業ブランチworld/furniture-structural-regression-20261116のcheckpointに保存28件（QA全件unverified）。mainとの比較はahead 34/behind 254でdiverged。実行コンテナgit ls-remoteはgithub.com DNS解決失敗。新規実造形0、Node/3QA/WebGL/Android未実施、GLB0、main採用0、公開0。未検証変更を増やさずPRマージ保留。",
-      "nextAction": "既存PR #441のhead/base差異を解消できるQA実行環境を確保し、Node構文・指定3テスト・createCatalogObjectでの新旧WebGL/Android描画を実行。合格後に5〜10種の実ソース改修を再開。",
+      "subject": "石工5種の実メッシュ接合・縁石形状改修をGitHub連携経由で保存（QA保留）",
+      "summary": "main world.enabled=true、正本60種確認。GitHub connector経由でstone_steps/stone_column/town_planter/stone_fence/town_wellの5種に踏面鼻先石・柱頸輪・隅石・控え石・井戸笠石縁の実メッシュを追加。作業ブランチ実ソースSHA 91f2b544、checkpoint SHA d313c95e、保存28件。Node/指定3QA/WebGL/Android未実行、対象別QA合格0、GLB0、main採用0、Pages0。未検証のためPR #441 Draft維持。",
+      "nextAction": "PR #441 headのNode構文検査・指定3QA・本編createCatalogObjectによる旧新WebGL実描画比較とAndroid計測を実施し、失敗時は実ソースを修正。ブランチmain分岐を安全に解消後、合格時のみマージ・Pages公開。",
       "steps": {
         "launch": "done",
-        "code": "pending",
+        "code": "done",
         "qa": "pending",
-        "commit": "pending",
+        "commit": "done",
         "pr": "done",
         "merge": "pending",
         "deploy": "pending"
       },
       "evidence": [
         {
-          "label": "既存Draft PR #441（未マージ）",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/441"
+          "label": "5種石工実造形変更",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/91f2b544b5c506b27177c59e1cfe39cda1d3af04"
         },
         {
-          "label": "作業ブランチのチェックポイント28件",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/blob/world/furniture-structural-regression-20261116/data/batch-checkpoints/world.json"
+          "label": "28件チェックポイント",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/d313c95e94382efb557d7fa8d170a372e57ab346"
+        },
+        {
+          "label": "Draft PR #441",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/441"
         }
       ],
       "lastRunOutcome": {
-        "newSourceChangedIds": 0,
+        "newSourceChangedIds": 5,
         "newQAPassed": 0,
         "newGameAppliedIds": 0,
-        "newSourceCommits": 0,
+        "newSourceCommits": 1,
         "newGeneratedGLBs": 0
       },
       "operational": {
         "blockers": [
-          "github.com DNS解決不可：実行コンテナでgit ls-remote失敗",
-          "作業ブランチはmainに対しahead 34/behind 254で分岐し、無検証マージ不可",
-          "checkpoint保存28件は対象別WebGL/Android QAすべてunverified"
+          "Node構文・指定3QA・WebGL新旧描画・Android実測の実行証跡なし",
+          "PR #441作業ブランチはmainから分岐しており、QA未合格のままマージ不可"
         ],
-        "speedPlan": "PR #441差分のQA経路をGitHub Actions側で確保し、Node/3QAと本編同一生成器のWebGL比較を先に実施。失敗修正後に共通石工生成器5種へ進む。",
+        "speedPlan": "GitHub Actions上でPR #441 headをチェックアウトしNode/3QAを実行、同じcreateCatalogObjectで石工5種の近中遠WebGL画像比較を採取する",
         "lastRunOutcome": {
-          "newSourceChangedIds": 0,
+          "newSourceChangedIds": 5,
           "newQAPassed": 0,
           "newGameAppliedIds": 0,
-          "newSourceCommits": 0,
+          "newSourceCommits": 1,
           "newGeneratedGLBs": 0
         },
         "qaBlocker": "3D家具のNode/WebGL/Android描画検証が未完了（従来の非規定blocked表記を規定のpendingへ正規化）"
