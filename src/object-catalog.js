@@ -726,6 +726,12 @@ export function createObjectById(id,{cellSize=2.2}={}){
   if(id==='wooden_watchtower_001'){
    for(const x of [-1.65,1.65])for(const z of [-1.65,1.65])box(.28*c,5.1*c,.28*c,x*c,2.55*c,z*c,wood);
    box(3.8*c,.28*c,3.8*c,0,4*c,0,wood);
+   // Knee braces transfer deck shear into the continuous posts.
+   for(const x of [-1.65,1.65])for(const z of [-1.65,1.65]){
+    const brace=box(.15*c,.95*c,.15*c,(x-Math.sign(x)*.24)*c,3.44*c,z*c,wood);
+    brace.rotation.z=-Math.sign(x)*.55;
+   }
+   for(const z of [-1.5,1.5])box(3.45*c,.16*c,.18*c,0,3.77*c,z*c,wood).name='deck_bearer';
    for(let i=0;i<9;i++)box(.13*c,.1*c,.25*c,-1.65*c,(i+.5)*.46*c,1.05*c,wood);
    for(const side of [-1,1]){
     box(.16*c,1.1*c,3.9*c,side*1.9*c,4.6*c,0,wood);
@@ -739,6 +745,11 @@ export function createObjectById(id,{cellSize=2.2}={}){
    const column=new THREE.Mesh(new THREE.CylinderGeometry(.32*c,.37*c,3.5*c,16),stone);
    column.position.y=2.0*c;column.castShadow=true;root.add(column);
    box(1.05*c,.38*c,1.05*c,0,3.95*c,0,stone);
+   // Turned base and abacus distribute axial load to the footing.
+   for(const [radius,height,y] of [[.46,.16,.38],[.4,.12,.49],[.43,.12,3.76]]){
+    const ring=new THREE.Mesh(new THREE.CylinderGeometry(radius*c,radius*c,height*c,20),stone);
+    ring.position.y=y*c;ring.name='column_load_ring';root.add(ring);
+   }
    for(let i=0;i<12;i++){
     const angle=i*Math.PI/6;
     const flute=new THREE.Mesh(new THREE.CylinderGeometry(.026*c,.026*c,3.15*c,5),stone);
@@ -748,6 +759,12 @@ export function createObjectById(id,{cellSize=2.2}={}){
   if(id==='wall_torch_001'){
    box(.12*c,2.6*c,.12*c,0,1.3*c,0,iron);
    box(.85*c,.12*c,.22*c,0,2.3*c,0,iron);
+   // Forged diagonal wall bracket and perforated fuel basket.
+   const diagonal=box(.09*c,1.03*c,.11*c,-.24*c,1.84*c,0,iron);
+   diagonal.rotation.z=-.52;
+   const basket=new THREE.Mesh(new THREE.CylinderGeometry(.3*c,.19*c,.34*c,10,1,true),iron);
+   basket.position.y=2.53*c;basket.name='torch_fuel_basket';root.add(basket);
+   for(let i=0;i<6;i++){const a=i*Math.PI/3;const rib=box(.045*c,.37*c,.045*c,Math.cos(a)*.24*c,2.53*c,Math.sin(a)*.24*c,iron);rib.name='basket_forged_rib';}
    const flame=new THREE.Mesh(new THREE.ConeGeometry(.32*c,1.05*c,12),light);
    flame.position.y=2.98*c;flame.castShadow=false;root.add(flame);
    const ember=new THREE.Mesh(new THREE.IcosahedronGeometry(.17*c,1),new THREE.MeshBasicMaterial({color:0xffc14a}));
@@ -758,6 +775,14 @@ export function createObjectById(id,{cellSize=2.2}={}){
    const darkStraw=new THREE.MeshStandardMaterial({color:0x88733e,roughness:1,flatShading:true});
    const pile=new THREE.Mesh(new THREE.ConeGeometry(1.45*c,2.6*c,9,3),straw);
    pile.position.y=1.3*c;pile.castShadow=true;root.add(pile);
+   // Bundled sheaves break up the conical silhouette without changing collision.
+   for(let i=0;i<9;i++){
+    const a=i*Math.PI*2/9,r=.86*c;
+    const sheaf=new THREE.Mesh(new THREE.ConeGeometry(.24*c,1.7*c,5,1),i%3?straw:darkStraw);
+    sheaf.position.set(Math.cos(a)*r,.9*c,Math.sin(a)*r);
+    sheaf.rotation.z=Math.cos(a)*.17;sheaf.rotation.x=Math.sin(a)*.17;
+    sheaf.name='bound_straw_sheaf';root.add(sheaf);
+   }
    for(let i=0;i<12;i++){
     const angle=i*Math.PI/6,r=(.4+(i%4)*.12)*c;
     const strawStem=new THREE.Mesh(new THREE.BoxGeometry(.08*c,.06*c,1.3*c),i%3?straw:darkStraw);
@@ -770,6 +795,13 @@ export function createObjectById(id,{cellSize=2.2}={}){
    box(1.8*c,.17*c,.17*c,.13*c,3.1*c,0,iron);
    for(const x of [-.38,.8])box(.065*c,.48*c,.06*c,x*c,2.8*c,0,iron);
    const sign=box(1.55*c,1.1*c,.13*c,.22*c,2.13*c,0,wood);sign.name='inn_signboard';
+   // Timber perimeter frame carries the panel; rivets pin its corners.
+   for(const y of [1.57,2.69])box(1.64*c,.095*c,.18*c,.22*c,y*c,0,wood).name='sign_frame_rail';
+   for(const x of [-.6,1.04])box(.095*c,1.2*c,.18*c,x*c,2.13*c,0,wood).name='sign_frame_stile';
+   for(const x of [-.5,.94])for(const y of [1.65,2.61]){
+    const rivet=new THREE.Mesh(new THREE.SphereGeometry(.045*c,6,4),iron);
+    rivet.position.set(x*c,y*c,.12*c);rivet.name='sign_frame_rivet';root.add(rivet);
+   }
    const emblem=new THREE.Mesh(new THREE.TorusGeometry(.3*c,.065*c,8,18),light);
    emblem.position.set(.22*c,2.15*c,.1*c);root.add(emblem);
   }
