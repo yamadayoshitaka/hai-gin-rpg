@@ -887,6 +887,12 @@ window.__avianWingQA=()=>{
    noEars:!!model.userData.phoenixNoExternalEars,
    smallHead:!!model.getObjectByName('avian-cranium-m013')?.userData.phoenixSmallElongatedHead,
    longBeak:!!model.getObjectByName('avian-hooked-beak-m013')?.userData.phoenixLongNarrowBeak,
+   shortBeak:!!model.getObjectByName('avian-hooked-beak-m013')?.userData.phoenixShortBeak,
+   beakLength:model.getObjectByName('avian-hooked-beak-m013')?.userData.phoenixBeakLength||0,
+   thighRadius:model.userData.pivots.legL?.userData.phoenixThighRadius||0,
+   featherHands:!!model.userData.phoenixFeatherHands,
+   independentArms:['L','R'].every(side=>!!model.userData.pivots['phoenixArm'+side]?.userData.phoenixIndependentFeatherArm),
+   featherHandDigits:['L','R'].map(side=>model.getObjectByName('phoenix-feather-hand-vanes-'+side)?.userData.phoenixFeatherHandDigits||0),
    allBackCrest:!!model.getObjectByName('avian-articulated-crest-m013')?.userData.phoenixAllBackCrest,
    tailLength:model.getObjectByName('avian-tail-rooted-streamers-m013')?.userData.phoenixTailLength||0,
    waveMeshes:model.userData.phoenixWaveMeshCount||0
