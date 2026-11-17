@@ -264,6 +264,20 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
     }
     if(scalp.after.source==='missing')
       throw Error(job.name+'の実3D毛髪が見つかりません。ハゲをGPUモデルへ焼き込まず中断します。');
+    // The 120-strand studio middle groom looks sparse once flattened into
+    // thousands of small GPU silhouettes. For the crowd prototype use the
+    // original fitted FULL hairstyle and its anatomical root fibers whenever
+    // attached; restore the inspected studio groom after atlas/snapshot bake.
+    const fittedBefore=representative.outfit.getHairState?.()??null;
+    const studioHairRoot=representative.masterHead?.studioWig?.root??null;
+    const studioHairBefore=studioHairRoot?.visible;
+    if(fittedBefore?.attached){
+      if(studioHairRoot)studioHairRoot.visible=false;
+      representative.outfit.setHairVisible(true);
+      scalp=ensureBattleScalpCoverage(representative);
+      if(scalp.after.source!=='fitted-source')
+        throw Error(job.name+'のGPU群衆用フル髪メッシュの表示に失敗しました');
+    }
     representative.crowdSampling=true;
     const person=representative.character.object3D;
     // LOD.update() may have left the nearest scalp mesh invisible before
@@ -575,6 +589,9 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
     instanceGroups.push(...layers);
     onProgress?.(jobIndex+1,jobs.length,job.name);
     representative.crowdSampling=false;
+    if(studioHairRoot)studioHairRoot.visible=studioHairBefore;
+    if(fittedBefore?.attached)representative.outfit.setHairVisible(fittedBefore.visible);
+    ensureBattleScalpCoverage(representative);
     for(const state of hairLodStates){
       state.node.autoUpdate=state.autoUpdate;
       state.node.levels.forEach((level,i)=>{level.object.visible=state.states[i];});
