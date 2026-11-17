@@ -2,7 +2,7 @@
  * Reusable cat-family source sculpt. m007 is the slender feline reference:
  * other cats are subtractive/proportional morphs + independent anatomy
  * (lion mane, leopard profile, tiger temples, saber teeth), never wolf hair
- * applied to a cat skeleton. m006 is an intentionally protected original.
+ * applied to a cat skeleton. m006 is a black-panther morph of the actual m001 donor torso and skull topology.
  *
  * All lengths are in the head/torso local coordinate systems used by
  * monster-geometry.js. No new draw calls are required in low crowd LOD.
@@ -23,6 +23,15 @@ const master=Object.freeze({
   stripeCount:0,
 });
 const variants=Object.freeze({
+  m006:Object.freeze({archetype:'black-panther-m001-clone',
+    torsoWidth:.347,torsoLength:.835,torsoHeight:1.275,
+    headWidth:.805,headDepth:.858,cheekTaper:.80,
+    eyeX:.184,muzzleFront:.220,noseWidth:.077,
+    earHeight:.224,earWidth:.118,
+    legWidth:.86,pawWidth:.88,guardHair:.038,underHair:.020,
+    saberToothLength:.050,qualityDonor:'m001',
+    physicalCloneMother:'m001',
+    geometryDerivation:'m001-cranium-and-torso-physical-source-morph'}),
   m007:Object.freeze({archetype:'slender-sabertooth',saberToothLength:.190,
     // Shorter femur-to-paw reach; keep the paw planted by lowering the pivot.
     legReach:.84}),
@@ -47,14 +56,15 @@ const variants=Object.freeze({
     saberToothLength:.085,stripeCount:7})
 });
 export const FELINE_SOURCE_MODEL='m007-physical-mother-m001-quality-v6-20261117';
-export const FELINE_QUALITY_WAVE_IDS=Object.freeze(Object.keys(variants));
+export const FELINE_QUALITY_WAVE_IDS=Object.freeze(['m007','m008','m009','m010']);
+export const FELINE_M001_DERIVED_IDS=Object.freeze(['m006']);
 export const felineMasterVariant=id=>{
  const variant=variants[id];
  return variant?Object.freeze({...master,...variant,id,
   source:FELINE_SOURCE_MODEL,qualityDonor:'m001',
-  physicalCloneMother:'m007',
+  physicalCloneMother:variant.physicalCloneMother||'m007',
   qualityRevision:BEAST_REFERENCE_QUALITY_REVISION,
-  geometryDerivation:'m001-subtractive-morph-plus-feline-anatomy'}):null;
+  geometryDerivation:variant.geometryDerivation||'m001-subtractive-morph-plus-feline-anatomy'}):null;
 };
 // Reuse the exact 8-ring thoracic topology of the m001 reference sculpt
 // while subtractively narrowing a feline waist and lengthening the flank.
