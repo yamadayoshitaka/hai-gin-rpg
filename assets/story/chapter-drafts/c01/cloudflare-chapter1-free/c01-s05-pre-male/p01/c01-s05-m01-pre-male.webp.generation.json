@@ -1,0 +1,36 @@
+{
+  "kind": "CLOUDFLARE_REAL_WEBP_REVIEW_CANDIDATE_NOT_APPROVED",
+  "shotKey": "c01-s05|pre|male|c01-s05-m1",
+  "stageId": "c01-s05",
+  "edition": "pre",
+  "gender": "male",
+  "panelId": "c01-s05-m1",
+  "screenplayText": "町へ迫る軍勢の気配に、リュシアが住民の退避を指示する。",
+  "visibleActorIds": [],
+  "actualReferenceImagesAttached": [
+    {
+      "actorId": "style_benchmark",
+      "source": "assets/story/chapters/c01/panels/c01-s01-m02-male.webp",
+      "originalSha256": "e70901415a751b576a00dcac34f93065051b3513b875f58546533f59ccfee71d",
+      "submittedSha256": "a6602427e7fde9cda0e99dd5511998682513154a72c029a190abd5e74786eca2",
+      "actualBytes": 247193,
+      "pixels": [
+        480,
+        270
+      ]
+    }
+  ],
+  "imageSha256": "57cb6bf166acbc620403ea272659845f1afdebcdbedc1c71bbe597e9fd2895c7",
+  "nativePixels": [
+    1024,
+    576
+  ],
+  "imageBytes": 163680,
+  "model": "@cf/black-forest-labs/flux-2-klein-4b",
+  "seed": 1196264268,
+  "promptSha256": "d350d61e49525565e278a93b069df7ff42dd5e465ca76755288cfee87f96a104",
+  "estimatedNeurons": 109.57,
+  "visuallyApproved": false,
+  "formallyRegistered": false,
+  "gameDeployed": false
+}
