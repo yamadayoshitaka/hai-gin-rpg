@@ -27,6 +27,9 @@ for(const [id,family] of [['m005','beast'],['m006','feline']]){
 const wolf=creatureFaceVolume('wolf');
 assert.equal(wolf.anatomicalRims,true,'Dedicated summoned wolf source needs physical face');
 assert(changed(vertex('wolf','beast',true),vertex('wolf','beast',false))>.00001);
+const horse=creatureFaceVolume('horse');
+assert.equal(horse.anatomicalRims,true,'Dedicated summon horse needs continuous nasal bridge');
+assert(changed(vertex('horse','beast',true),vertex('horse','beast',false))>.00001);
 const cat=creatureFaceVolume('feline');
 assert.notEqual(cat.anatomicalRims,true,'Protected panther shares generic feline family');
-console.log('PASS: seven enemy skull meshes, dedicated wolf source, protected unchanged');
+console.log('PASS: seven enemy skull meshes, dedicated wolf and horse sources, protected unchanged');
