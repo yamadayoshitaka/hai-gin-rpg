@@ -11,12 +11,20 @@ for(const plan of COMPACT_TWENTY_CHAPTER_PLAN){
  const first=plan.stageIds[0];
  const opening=compactComicForStage(first,'pre',{protagonistGender:'male'});
  assert.equal(opening.panels.length,6);
+ assert(opening.recap?.isNarrationRecap);
+ assert.equal(opening.recap?.noPortrait,true);
+ assert.match(opening.recap.artAsset,/recap\/.+\.webp$/);
+ assert(opening.panels.every(p=>p.dialogueTurns.every(t=>t.characterId)),
+  'Opening CG must feature a character rather than a narrator: '+first+' '+opening.panels.map(p=>p.id+':'+p.dialogueTurns.map(t=>t.speaker+'/'+t.characterId).join(',')).join(' | '));
  assert.deepEqual(opening.panels.slice(0,4).map(x=>x.id),['m1','m2','m3','m4'].map(x=>first+'-'+x));
  assert(opening.panels.slice(0,4).every(x=>x.isChapterOpening));
  assert.equal(compactComicForStage(first,'pre',{chapterOpeningSeen:true}).panels.length,2);
  for(const stageId of plan.stageIds){
   const pre=compactComicForStage(stageId,'pre',{chapterOpeningSeen:true,protagonistGender:'female'});
   assert.equal(pre.panels.length,2,stageId+' pre');
+  assert(pre.recap?.isNarrationRecap,stageId+' requires independent recap');
+  assert(pre.panels.every(p=>p.dialogueTurns.every(t=>Boolean(t.characterId))),
+   stageId+' character CG must not speak omniscient narration');
   for(const [suffix,context] of [
    ['victory',{battleOutcome:{victory:true}}],
    ['defeat',{battleOutcome:{victory:false}}],
@@ -37,12 +45,18 @@ assert.deepEqual(compact.panels.map(x=>x.id),[s+'-m1',s+'-m15']);
 assert(legacy.panels.length>compact.panels.length);
 assert(compact.panels.every(x=>x.originalSceneId===x.id));
 const originalScript=screenplayForStage(s,{protagonistGender:'female'});
-assert.deepEqual(compact.panels.flatMap(p=>p.dialogueTurns.map(t=>t.text)),
- originalScript.pre.map(t=>t.text),
- 'Compact images must play all current stage-specific dialogue, not obsolete repeated legacy lines');
-assert.equal(compact.dialogueCount,originalScript.pre.length);
-assert.equal(new Set(compact.panels.flatMap(p=>p.dialogueTurns.map(t=>t.text))).size,
- compact.dialogueCount,'Do not repeat the same line in one stage');
+assert(compact.recap.text.includes('今回の舞台は'), 'Stage setup belongs on recap');
+assert(compact.recap.text.includes('今回の目標は'), 'Objective belongs on recap');
+assert.equal(compact.dialogueCount,compact.panels.length,'One on-image speaker per illustration');
+assert(!compact.panels.some(p=>p.dialogueTurns.some(t=>t.text===originalScript.pre[0].text)),
+ 'Narration must not be attributed to an on-screen person');
+for(const [id,wrongSpeaker] of [['c01-s03','イリス'],['c01-s05','ガラン']]){
+ const story=compactComicForStage(id,'pre',{protagonistGender:'female'});
+ assert.equal(story.panels[0].dialogueTurns[0].speaker,'リュシア',
+  'First royal-woman CG speaker must match the approved illustration');
+ assert.notEqual(story.panels[0].dialogueTurns[0].speaker,wrongSpeaker);
+ assert.equal(story.recap.speaker,'語り手');
+}
 for(const chapter of COMPACT_TWENTY_CHAPTER_PLAN){
  const first=chapter.stageIds[0];
  const intro=compactComicForStage(first,'pre',{protagonistGender:'male'});
