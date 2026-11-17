@@ -107,11 +107,19 @@ function fittedScalpSurface(model,bone,headBounds){
   if(index<0)return;
   const joints=mesh.geometry.getAttribute('skinIndex'),weights=mesh.geometry.getAttribute('skinWeight');
   if(!joints||!weights)return;
-  // The largest skinned mesh is the actual body; tiny eyebrow/eye meshes
-  // cannot be mistaken for scalp geometry.
-  candidates.push({mesh,index,joints,weights,vertices:mesh.geometry.attributes.position.count});
+  // Rank by vertices actually influenced by the head, not total body size.
+  // Some costumes have more vertices than the face while their head weights
+  // are zero; selecting them produced an empty scalp and a bald sphere fallback.
+  const vertices=mesh.geometry.attributes.position.count;
+  let headInfluenced=0;
+  for(let i=0;i<vertices;i++){
+   let weight=0;
+   for(let k=0;k<4;k++)if(joints.getComponent(i,k)===index)weight+=weights.getComponent(i,k);
+   if(weight>=.56)headInfluenced++;
+  }
+  if(headInfluenced>=30)candidates.push({mesh,index,joints,weights,vertices,headInfluenced});
  });
- candidates.sort((a,b)=>b.vertices-a.vertices);
+ candidates.sort((a,b)=>b.headInfluenced-a.headInfluenced||b.vertices-a.vertices);
  const candidate=candidates[0];if(!candidate)return null;
  const {mesh,index,joints,weights,vertices}=candidate;
  const threshold=headBounds.max.y-(headBounds.max.y-headBounds.min.y)*.46;

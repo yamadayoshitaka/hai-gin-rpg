@@ -29,7 +29,7 @@ const tests={
   ['qa/human-v65-photoreal-quality.test.mjs','qa/studio-face-quality-v56.test.mjs','qa/facehair-fivefold-cosmetics-braid.test.mjs'],
   ['qa/face-expression-v48.test.mjs','qa/face-v49-regression.test.mjs'],
   ['qa/face-expression-v48.test.mjs','qa/battle-face-action-policy.test.mjs'],
-  ['qa/human-v64-catalog-and-hair.test.mjs','qa/hair-headwear-occlusion.test.mjs','qa/facehair-fivefold-cosmetics-braid.test.mjs'],
+  ['qa/human-v64-catalog-and-hair.test.mjs','qa/hair-headwear-occlusion.test.mjs','qa/scalp-head-weighted-selection.test.mjs','qa/facehair-fivefold-cosmetics-braid.test.mjs'],
   ['qa/hair-camera-distance-stability.test.mjs','qa/battle-face-hair-shield-recovery.test.mjs']
  ],
  outfit:[
